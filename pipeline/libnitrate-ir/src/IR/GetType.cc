@@ -615,7 +615,7 @@ NCC_EXPORT std::optional<FlowPtr<Type>> detail::Expr_getType(Expr* E) {
   state.depth++;
 
   InferenceVisitor visitor;
-  E->accept(visitor);
+  E->Accept(visitor);
 
   state.depth--;
 

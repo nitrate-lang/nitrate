@@ -48,7 +48,7 @@ namespace lsp::fmt {
     const size_t tabSize;
     bool failed, did_root;
 
-    void reset_state() {
+    void ResetAutomaton() {
       field_indent_stack = std::stack<size_t>();
       field_indent_stack.push(1);
       line.reset();
@@ -169,15 +169,15 @@ namespace lsp::fmt {
   public:
     CambrianFormatter(std::ostream& out, size_t theTabSize = 2)
         : line(out), indent(0), tabSize(theTabSize) {
-      reset_state();
+      ResetAutomaton();
       (void)tabSize;
     }
     virtual ~CambrianFormatter() = default;
 
     bool format(FlowPtr<parse::Base> root) override {
-      root.accept(*this);
+      root.Accept(*this);
       bool ok = !failed;
-      reset_state();
+      ResetAutomaton();
 
       return ok;
     }

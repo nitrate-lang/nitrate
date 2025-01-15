@@ -138,8 +138,8 @@
 //       if (auto enum_opt = resolve_name(I->getName(), Kind::ScopedEnum)) {
 //         *C = enum_opt.value().first;
 //       } else if (auto var_opt = resolve_name(I->getName(), Kind::Variable)) {
-//         I->setWhat(var_opt.value().first);
-//         I->setName(var_opt.value().second);
+//         I->SetWhat(var_opt.value().first);
+//         I->SetName(var_opt.value().second);
 //       }
 //     }
 

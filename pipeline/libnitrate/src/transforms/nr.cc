@@ -77,13 +77,13 @@ CREATE_TRANSFORM(nit::nr) {
     switch (out_mode) {
       case OutMode::JSON: {
         auto writter = IR_JsonWriter(output);
-        module->accept(writter);
+        module->Accept(writter);
         return false;
       }
 
       case OutMode::MsgPack: {
         auto writter = IR_MsgPackWriter(output);
-        module->accept(writter);
+        module->Accept(writter);
         return false;
       }
     }

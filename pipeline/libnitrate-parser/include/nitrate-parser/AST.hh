@@ -52,7 +52,7 @@ namespace ncc::parse {
       FlowPtr<T> new_obj = MakeFlowPtr<T>(new (Arena<T>().allocate(1))
                                               T(std::forward<Args>(args)...));
 
-      new_obj.set_tracking(origin);
+      new_obj.SetTracking(origin);
 
       return new_obj;
     };

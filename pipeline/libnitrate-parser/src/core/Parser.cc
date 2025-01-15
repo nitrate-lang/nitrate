@@ -78,7 +78,7 @@ FlowPtr<Stmt> Parser::recurse_block(bool expect_braces, bool single_stmt,
 
       if (should_break) {
         auto block = make<Block>(statements, safety)();
-        block->set_offset(block_start);
+        block->SetOffset(block_start);
 
         return BIND_COMMENTS(block, block_comments);
       }
@@ -98,7 +98,7 @@ FlowPtr<Stmt> Parser::recurse_block(bool expect_braces, bool single_stmt,
       }
 
       auto stmt = make<ExprStmt>(expr)();
-      stmt->set_offset(expr->begin());
+      stmt->SetOffset(expr->begin());
 
       statements.push_back(BIND_COMMENTS(stmt, comments));
     } else {
@@ -348,7 +348,7 @@ FlowPtr<Stmt> Parser::recurse_block(bool expect_braces, bool single_stmt,
       }
 
       if (R.has_value()) {
-        R.value()->set_offset(loc_start);
+        R.value()->SetOffset(loc_start);
         R = BIND_COMMENTS(R.value(), comments);
         statements.push_back(R.value());
       }
@@ -374,7 +374,7 @@ NCC_EXPORT ASTRoot Parser::parse() {
     Parser_SetCurrentScanner(&rd);
 
     { /* Subscribe to events emitted by the parser */
-      auto sub_id = log.Subscribe([&](auto, auto, const auto &ec) {
+      auto sub_id = Log.Subscribe([&](auto, auto, const auto &ec) {
         if (ec.GetKind() == SyntaxError.GetKind()) {
           SetFailBit();
         }
@@ -403,7 +403,7 @@ NCC_EXPORT ASTRoot Parser::parse() {
         rd.SkipCommentsState(old_state);
       }
 
-      log.Unsubscribe(sub_id);
+      Log.Unsubscribe(sub_id);
     }
 
     Parser_SetCurrentScanner(nullptr);

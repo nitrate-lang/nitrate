@@ -304,8 +304,8 @@ namespace ncc::parse {
     ///======================================================================
     /// Visitation
 
-    constexpr void accept(ASTVisitor &v) { v.dispatch(MakeFlowPtr(this)); }
-    constexpr void accept(ASTVisitor &v) const {
+    constexpr void Accept(ASTVisitor &v) { v.dispatch(MakeFlowPtr(this)); }
+    constexpr void Accept(ASTVisitor &v) const {
       v.dispatch(MakeFlowPtr(const_cast<Base *>(this)));
     }
 
@@ -366,11 +366,11 @@ namespace ncc::parse {
     ///======================================================================
     /// Setters
 
-    constexpr void set_offset(lex::LocationID pos) {
+    constexpr void SetOffset(lex::LocationID pos) {
       m_data = ExtensionDataStore.Add(pos, end());
     }
 
-    constexpr void setLoc(lex::LocationID begin, lex::LocationID end) {
+    constexpr void SetLoc(lex::LocationID begin, lex::LocationID end) {
       m_data = ExtensionDataStore.Add(begin, end);
     }
 
@@ -528,15 +528,13 @@ namespace ncc::parse {
     constexpr auto get_range_begin() const { return m_range_begin; }
     constexpr auto get_range_end() const { return m_range_end; }
 
-    constexpr void set_range_begin(NullableFlowPtr<Expr> start) {
+    constexpr void SetRangeBegin(NullableFlowPtr<Expr> start) {
       m_range_begin = start;
     }
 
-    constexpr void set_range_end(NullableFlowPtr<Expr> end) {
-      m_range_end = end;
-    }
+    constexpr void SetRangeEnd(NullableFlowPtr<Expr> end) { m_range_end = end; }
 
-    constexpr void set_width(NullableFlowPtr<Expr> width) { m_width = width; }
+    constexpr void SetWidth(NullableFlowPtr<Expr> width) { m_width = width; }
   };
 
   class Expr : public Base {

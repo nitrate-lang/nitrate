@@ -1207,7 +1207,7 @@ public:
 //         b.SetInsertPoint(entry);
 
 //         for (size_t i = 0; i < N->getParams().size(); i++) {
-//           fn->getArg(i)->setName(N->getParams()[i].second);
+//           fn->getArg(i)->SetName(N->getParams()[i].second);
 
 //           AllocaInst *param_alloc = b.CreateAlloca(
 //               fn->getArg(i)->getType(), nullptr, N->getParams()[i].second);

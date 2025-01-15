@@ -38,14 +38,14 @@
 
 using namespace ncc;
 
-static constexpr auto REGION_SIZE = 1024 * 16;
+static constexpr auto kSegmentSize = 1024 * 16;
 
 static inline uint8_t *ALIGNED(uint8_t *ptr, size_t align) {
   auto addr_int = reinterpret_cast<uintptr_t>(ptr);
   return (addr_int % align != 0) ? (ptr + (align - (addr_int % align))) : ptr;
 }
 
-DynamicArena::PImpl::PImpl() { AllocRegion(REGION_SIZE); }
+DynamicArena::PImpl::PImpl() { AllocRegion(kSegmentSize); }
 
 DynamicArena::PImpl::~PImpl() {
   for (auto &base : m_bases) {
@@ -60,7 +60,7 @@ void *DynamicArena::PImpl::Alloc(size_t size, size_t alignment) {
 
   m_mutex.lock();
 
-  if (size > REGION_SIZE) [[unlikely]] {
+  if (size > kSegmentSize) [[unlikely]] {
     AllocRegion(size);
   }
 
@@ -71,7 +71,7 @@ void *DynamicArena::PImpl::Alloc(size_t size, size_t alignment) {
   if ((start + size) <= b.m_base + b.m_size) [[likely]] {
     b.m_offset = start + size;
   } else {
-    AllocRegion(REGION_SIZE);
+    AllocRegion(kSegmentSize);
 
     start = ALIGNED(m_bases.back().m_offset, alignment);
     if ((start + size) > m_bases.back().m_base + m_bases.back().m_size)

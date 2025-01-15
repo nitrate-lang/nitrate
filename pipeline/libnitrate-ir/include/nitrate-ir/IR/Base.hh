@@ -242,9 +242,9 @@ namespace ncc::ir {
     constexpr auto end(lex::IScanner &rd) const { return end().Get(rd); }
 
     constexpr auto getLoc() const { return m_loc; }
-    constexpr void setLoc(SrcLoc loc) { m_loc = loc; }
+    constexpr void SetLoc(SrcLoc loc) { m_loc = loc; }
 
-    constexpr void setLoc(lex::LocationID begin, lex::LocationID end) {
+    constexpr void SetLoc(lex::LocationID begin, lex::LocationID end) {
       m_loc = parse::ExtensionDataStore.Add(begin, end);
     }
 
@@ -300,7 +300,7 @@ namespace ncc::ir {
     constexpr bool is(nr_ty_t type) const { return type == getKind(); }
     constexpr bool isSame(const IR_Vertex_Expr<A> *other) const;
 
-    constexpr void accept(IRVisitor<A> &v) {
+    constexpr void Accept(IRVisitor<A> &v) {
       v.template dispatch(MakeFlowPtr(this));
     }
 

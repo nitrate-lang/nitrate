@@ -191,7 +191,7 @@ FlowPtr<Stmt> Parser::recurse_struct(CompositeType struct_type) {
   auto struct_defintion = make<StructDef>(
       struct_type, struct_attributes, struct_name, struct_template_params,
       struct_terms, struct_fields, struct_methods, struct_static_methods)();
-  struct_defintion->set_offset(start_pos);
+  struct_defintion->SetOffset(start_pos);
 
   return struct_defintion;
 }

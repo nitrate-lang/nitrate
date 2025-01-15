@@ -44,44 +44,46 @@
 
 namespace ncc {
   namespace trace {
-    class origin {
+    class Origin {
       const char *m_file_name, *m_function_name;
       unsigned m_line, m_column;
 
     public:
-      constexpr origin(
+      constexpr Origin(
           std::source_location loc = std::source_location::current())
           : m_file_name(loc.file_name()),
             m_function_name(loc.function_name()),
             m_line(loc.line()),
             m_column(loc.column()) {}
 
-      constexpr auto file_name() const { return m_file_name; }
-      constexpr auto function_name() const { return m_function_name; }
-      constexpr auto line() const { return m_line; }
-      constexpr auto column() const { return m_column; }
+      [[nodiscard]] constexpr auto File() const { return m_file_name; }
+      [[nodiscard]] constexpr auto Function() const { return m_function_name; }
+      [[nodiscard]] constexpr auto Line() const { return m_line; }
+      [[nodiscard]] constexpr auto Column() const { return m_column; }
 
-      constexpr bool operator==(const origin &O) const {
-        std::string_view a(m_file_name), b(O.m_file_name);
-        std::string_view c(m_function_name), d(O.m_function_name);
+      constexpr bool operator==(const Origin &o) const {
+        std::string_view a(m_file_name);
+        std::string_view b(o.m_file_name);
+        std::string_view c(m_function_name);
+        std::string_view d(o.m_function_name);
 
-        return m_line == O.m_line && m_column == O.m_column && a == b && c == d;
+        return m_line == o.m_line && m_column == o.m_column && a == b && c == d;
       }
     };
 
-    class none {
+    class Empty {
     public:
-      constexpr none() {}
-      constexpr bool operator==(const none &) const { return true; }
+      constexpr Empty() = default;
+      constexpr bool operator==(const Empty &) const { return true; }
     };
 
-    static inline trace::none g_notrace_instance;
+    static inline trace::Empty NoTraceStatic;
   }  // namespace trace
 
 #if NITRATE_FLOWPTR_TRACE
-  using DefaultTracking = trace::origin;
+  using DefaultTracking = trace::Origin;
 #else
-  using DefaultTracking = trace::none;
+  using DefaultTracking = trace::Empty;
 #endif
 
   namespace flowptr_detail {
@@ -106,7 +108,7 @@ namespace ncc {
 
     template <class Pointee, class Tracking>
     using flowptr_data_t =
-        std::conditional_t<std::is_same_v<Tracking, trace::none>,
+        std::conditional_t<std::is_same_v<Tracking, trace::Empty>,
                            WithoutTracking<Pointee, Tracking>,
                            WithTracking<Pointee, Tracking>>;
 
@@ -115,7 +117,7 @@ namespace ncc {
       friend class NullableFlowPtr<Pointee, Tracking>;
 
       using SelfData = flowptr_data_t<Pointee, Tracking>;
-      constexpr static bool IsTracking =
+      constexpr static bool kIsTracking =
           std::is_same_v<SelfData, WithTracking<Pointee, Tracking>>;
 
       SelfData m_s;
@@ -142,16 +144,16 @@ namespace ncc {
         qcore_assert(ptr != nullptr, "FlowPtr cannot be null");
       }
 
-      constexpr FlowPtr(const FlowPtr &O) : m_s(O.m_s) {}
-      constexpr FlowPtr(FlowPtr &&O) : m_s(std::move(O.m_s)) {}
+      constexpr FlowPtr(const FlowPtr &o) : m_s(o.m_s) {}
+      constexpr FlowPtr(FlowPtr &&o) noexcept : m_s(std::move(o.m_s)) {}
 
-      constexpr FlowPtr &operator=(const FlowPtr &O) {
-        m_s = O.m_s;
+      constexpr FlowPtr &operator=(const FlowPtr &o) {
+        m_s = o.m_s;
         return *this;
       }
 
-      constexpr FlowPtr &operator=(FlowPtr &&O) {
-        m_s = std::move(O.m_s);
+      constexpr FlowPtr &operator=(FlowPtr &&o) noexcept {
+        m_s = std::move(o.m_s);
         return *this;
       }
 
@@ -160,12 +162,12 @@ namespace ncc {
       ///=========================================================================
       /// Comparison
 
-      constexpr bool operator==(const FlowPtr &O) const {
-        return m_s.m_ref == O.m_s.m_ref;
+      constexpr bool operator==(const FlowPtr &o) const {
+        return m_s.m_ref == o.m_s.m_ref;
       }
 
-      constexpr bool operator!=(const FlowPtr &O) const {
-        return m_s.m_ref != O.m_s.m_ref;
+      constexpr bool operator!=(const FlowPtr &o) const {
+        return m_s.m_ref != o.m_s.m_ref;
       }
 
       constexpr bool operator==(std::nullptr_t) const { return m_s.m_ref == 0; }
@@ -174,7 +176,9 @@ namespace ncc {
       /// Accessors
 
       constexpr auto operator->() const { return m_s.m_ref; }
-      constexpr auto get() const { return m_s.m_ref; }
+      [[nodiscard]] constexpr auto get() const {  // NOLINT
+        return m_s.m_ref;
+      }
       constexpr operator bool() const { return m_s.m_ref != 0; }
 
       ///=========================================================================
@@ -184,27 +188,27 @@ namespace ncc {
       constexpr operator FlowPtr<U>() {
         static_assert(std::is_convertible_v<Pointee *, U *>,
                       "Cannot convert Pointee* to U*");
-        return FlowPtr<U>(static_cast<U *>(get()), trace());
+        return FlowPtr<U>(static_cast<U *>(get()), Trace());
       }
 
       template <class U>
-      constexpr auto as() {
-        return FlowPtr<U>(reinterpret_cast<U *>(get()), trace());
+      constexpr auto as() {  // NOLINT
+        return FlowPtr<U>(reinterpret_cast<U *>(get()), Trace());
       }
 
       ///=========================================================================
       /// Data-Flow tracking
 
-      constexpr const Tracking &trace() const {
-        if constexpr (IsTracking) {
+      [[nodiscard]] constexpr const Tracking &Trace() const {
+        if constexpr (kIsTracking) {
           return m_s.m_tracking;
         } else {
-          return trace::g_notrace_instance;
+          return trace::NoTraceStatic;
         }
       }
 
-      constexpr void set_tracking(auto tracking) {
-        if constexpr (IsTracking) {
+      constexpr void SetTracking(auto tracking) {
+        if constexpr (kIsTracking) {
           m_s.m_tracking = std::move(tracking);
         }
       }
@@ -213,12 +217,10 @@ namespace ncc {
       /// Visitor pass-through
 
       template <class Vistor>
-      constexpr void accept(Vistor &v) {
+      constexpr void Accept(Vistor &v) {
         v.dispatch(*this);
       }
     };
-
-    constexpr auto FlowPtrStructSize = sizeof(FlowPtr<int>);
   }  // namespace flowptr_detail
 
   template <class Pointee, class Tracking = DefaultTracking>

@@ -48,6 +48,7 @@
 #include <nitrate-lexer/Lexer.hh>
 #include <nitrate-lexer/Token.hh>
 #include <queue>
+#include <ranges>
 #include <string>
 #include <string_view>
 #include <utility>
@@ -57,23 +58,23 @@ using namespace ncc;
 using namespace ncc::lex;
 using namespace ncc::lex::detail;
 
-constexpr size_t FLOATING_POINT_PRECISION = 100;
+constexpr size_t kFloatingPointPrecision = 100;
 
 namespace ncc::lex {
-  static const auto operator_set = []() {
+  static const auto OPERATOR_SET = []() {
     google::dense_hash_set<std::string_view> set;
     set.set_empty_key("");
-    for (const auto &op : LexicalOperators.left) {
+    for (const auto &op : LEXICAL_OPERATORS.left) {
       set.insert(op.first);
     }
     return set;
   }();
 
-  static const auto word_operators = []() {
+  static const auto WORD_OPERATORS = []() {
     google::dense_hash_map<std::string_view, Operator> map;
     map.set_empty_key("");
 
-    for (const auto &op : LexicalOperators.left) {
+    for (const auto &op : LEXICAL_OPERATORS.left) {
       std::string_view sv = op.first;
       bool is_word = std::all_of(sv.begin(), sv.end(), [](auto c) {
         return std::isalnum(c) || c == '_';
@@ -87,40 +88,40 @@ namespace ncc::lex {
     return map;
   }();
 
-  static const auto KeywordsMap = []() {
+  static const auto KEYWORDS_MAP = []() {
     google::dense_hash_map<std::string_view, Keyword> map;
     map.set_empty_key("");
 
-    for (const auto &kw : LexicalKeywords.left) {
+    for (const auto &kw : LEXICAL_KEYWORDS.left) {
       map[kw.first] = kw.second;
     }
 
     return map;
   }();
 
-  static const auto OperatorsMap = []() {
+  static const auto OPERATORS_MAP = []() {
     google::dense_hash_map<std::string_view, Operator> map;
     map.set_empty_key("");
 
-    for (const auto &kw : LexicalOperators.left) {
+    for (const auto &kw : LEXICAL_OPERATORS.left) {
       map[kw.first] = kw.second;
     }
 
     return map;
   }();
 
-  static const auto PunctorsMap = []() {
+  static const auto PUNCTORS_MAP = []() {
     google::dense_hash_map<std::string_view, Punctor> map;
     map.set_empty_key("");
 
-    for (const auto &kw : LexicalPunctors.left) {
+    for (const auto &kw : LEXICAL_PUNCTORS.left) {
       map[kw.first] = kw.second;
     }
 
     return map;
   }();
 
-  static constexpr auto hextable = []() {
+  static constexpr auto kHextable = []() {
     std::array<uint8_t, 256> hextable = {};
     hextable['0'] = 0;
     hextable['1'] = 1;
@@ -147,7 +148,7 @@ namespace ncc::lex {
     return hextable;
   }();
 
-  static constexpr std::array<uint8_t, 256> whitespace_table = []() {
+  static constexpr std::array<uint8_t, 256> kWhitespaceTable = []() {
     std::array<uint8_t, 256> tab = {};
     tab[' '] = 1;
     tab['\f'] = 1;
@@ -161,8 +162,8 @@ namespace ncc::lex {
     return tab;
   }();
 
-  static bool lex_is_space(uint8_t c) {
-    return whitespace_table[static_cast<uint8_t>(c)];
+  static bool LexIsSpace(uint8_t c) {
+    return kWhitespaceTable[static_cast<uint8_t>(c)] != 0;
   }
 }  // namespace ncc::lex
 
@@ -175,7 +176,7 @@ enum class NumType {
   Floating,
 };
 
-static NCC_FORCE_INLINE bool validate_identifier(std::string_view id) {
+static NCC_FORCE_INLINE bool ValidateIdentifier(std::string_view id) {
   /*
    * This state machine checks if the identifier looks
    * like 'a::b::c::d_::e::f'.
@@ -186,7 +187,9 @@ static NCC_FORCE_INLINE bool validate_identifier(std::string_view id) {
   for (char c : id) {
     switch (state) {
       case 0:
-        if (std::isalnum(c) || c == '_') continue;
+        if ((std::isalnum(c) != 0) || c == '_') {
+          continue;
+        }
         if (c == ':') {
           state = 1;
           continue;
@@ -204,7 +207,7 @@ static NCC_FORCE_INLINE bool validate_identifier(std::string_view id) {
   return state == 0;
 }
 
-static NCC_FORCE_INLINE bool canonicalize_float(std::string &buf) {
+static NCC_FORCE_INLINE bool CanonicalizeFloat(std::string &buf) {
   size_t e_pos = buf.find('e');
   if (e_pos == std::string::npos) [[likely]] {
     return true;
@@ -224,12 +227,12 @@ static NCC_FORCE_INLINE bool canonicalize_float(std::string &buf) {
 
   long double x = mantissa * std::pow(10.0, exponent);
 
-  std::array<char, FLOATING_POINT_PRECISION> buffer;
-  static_assert(FLOATING_POINT_PRECISION >= 10,
+  std::array<char, kFloatingPointPrecision> buffer;
+  static_assert(kFloatingPointPrecision >= 10,
                 "Floating point precision must be at least 10");
 
   if (std::snprintf(buffer.data(), buffer.size(), "%.*Lf",
-                    (int)(FLOATING_POINT_PRECISION - 1), x) < 0) [[unlikely]] {
+                    (int)(kFloatingPointPrecision - 1), x) < 0) [[unlikely]] {
     return false;
   }
 
@@ -250,9 +253,10 @@ static NCC_FORCE_INLINE bool canonicalize_float(std::string &buf) {
   return true;
 }
 
-static NCC_FORCE_INLINE bool canonicalize_number(std::string &buf,
-                                                 NumType type) {
-  boost::uint128_type x = 0, i = 0;
+static NCC_FORCE_INLINE bool CanonicalizeNumber(std::string &buf,
+                                                NumType type) {
+  boost::uint128_type x = 0;
+  boost::uint128_type i = 0;
 
   std::transform(buf.begin(), buf.end(), buf.begin(), ::tolower);
   std::erase(buf, '_');
@@ -261,7 +265,7 @@ static NCC_FORCE_INLINE bool canonicalize_number(std::string &buf,
     case NumType::Hexadecimal: {
       for (i = 2; i < buf.size(); ++i) {
         // Check for overflow
-        if ((x >> 64) & 0xF000000000000000) [[unlikely]] {
+        if (((x >> 64) & 0xF000000000000000) != 0U) [[unlikely]] {
           return false;
         }
 
@@ -278,7 +282,7 @@ static NCC_FORCE_INLINE bool canonicalize_number(std::string &buf,
     case NumType::Binary: {
       for (i = 2; i < buf.size(); ++i) {
         // Check for overflow
-        if ((x >> 64) & 0x8000000000000000) [[unlikely]] {
+        if (((x >> 64) & 0x8000000000000000) != 0U) [[unlikely]] {
           return false;
         }
         if (buf[i] != '0' && buf[i] != '1') [[unlikely]] {
@@ -292,7 +296,7 @@ static NCC_FORCE_INLINE bool canonicalize_number(std::string &buf,
     case NumType::Octal: {
       for (i = 2; i < buf.size(); ++i) {
         // Check for overflow
-        if ((x >> 64) & 0xE000000000000000) [[unlikely]] {
+        if (((x >> 64) & 0xE000000000000000) != 0U) [[unlikely]] {
           return false;
         }
         if (buf[i] < '0' || buf[i] > '7') [[unlikely]] {
@@ -343,7 +347,7 @@ static NCC_FORCE_INLINE bool canonicalize_number(std::string &buf,
     ss << '0';
   }
 
-  for (i = x; i; i /= 10) {
+  for (i = x; i > 0; i /= 10) {
     ss << (char)('0' + i % 10);
   }
 
@@ -353,7 +357,7 @@ static NCC_FORCE_INLINE bool canonicalize_number(std::string &buf,
   return true;
 }
 
-void Tokenizer::reset_state() { m_fifo = std::queue<char>(); }
+void Tokenizer::ResetAutomaton() { m_fifo = std::queue<char>(); }
 
 enum class LexState {
   Start,
@@ -373,18 +377,18 @@ enum class LexState {
 // optimization capabilities as if the functions has static linkage.
 class Tokenizer::StaticImpl {
 public:
-  static NCC_FORCE_INLINE Token ParseIdentifier(Tokenizer &L, char c,
+  static NCC_FORCE_INLINE Token ParseIdentifier(Tokenizer &l, char c,
                                                 std::string &buf,
                                                 LocationID start_pos) {
     { /* Read in what is hopefully an identifier */
       int colon_state = 0;
 
-      while (std::isalnum(c) || c == '_' || c == ':') {
+      while ((std::isalnum(c) != 0) || c == '_' || c == ':') {
         if (c != ':' && colon_state == 1) {
           if (!buf.ends_with("::")) {
             char tc = buf.back();
             buf.pop_back();
-            L.m_fifo.push(tc);
+            l.m_fifo.push(tc);
             break;
           }
           colon_state = 0;
@@ -393,41 +397,41 @@ public:
         }
 
         buf += c;
-        c = L.nextc();
+        c = l.GetChar();
       }
     }
 
     /* Check for f-string */
     if (buf == "f" && c == '"') {
-      L.m_fifo.push(c);
-      return Token(KeyW, __FString, start_pos);
+      l.m_fifo.push(c);
+      return {KeyW, __FString, start_pos};
     }
 
     /* We overshot; this must be a punctor ':' */
     if (buf.size() > 0 && buf.back() == ':') {
       char tc = buf.back();
       buf.pop_back();
-      L.m_fifo.push(tc);
+      l.m_fifo.push(tc);
     }
-    L.m_fifo.push(c);
+    l.m_fifo.push(c);
 
     { /* Determine if it's a keyword or an identifier */
-      auto it = KeywordsMap.find(buf);
-      if (it != KeywordsMap.end()) {
-        return Token(KeyW, it->second, start_pos);
+      auto it = KEYWORDS_MAP.find(buf);
+      if (it != KEYWORDS_MAP.end()) {
+        return {KeyW, it->second, start_pos};
       }
     }
 
     { /* Check if it's an operator */
-      auto it = word_operators.find(buf);
-      if (it != word_operators.end()) {
-        return Token(Oper, it->second, start_pos);
+      auto it = WORD_OPERATORS.find(buf);
+      if (it != WORD_OPERATORS.end()) {
+        return {Oper, it->second, start_pos};
       }
     }
 
     /* Ensure it's a valid identifier */
-    if (!validate_identifier(buf)) {
-      L.reset_state();
+    if (!ValidateIdentifier(buf)) {
+      l.ResetAutomaton();
       return Token::EndOfFile();
     }
 
@@ -440,10 +444,10 @@ public:
     }
 
     /* Return the identifier */
-    return Token(Name, string(buf), start_pos);
+    return {Name, string(buf), start_pos};
   };
 
-  static NCC_FORCE_INLINE Token ParseString(Tokenizer &L, char c,
+  static NCC_FORCE_INLINE Token ParseString(Tokenizer &l, char c,
                                             std::string &buf,
                                             LocationID start_pos) {
     while (true) {
@@ -453,7 +457,7 @@ public:
           buf += c;
         } else {
           /* String escape sequences */
-          c = L.nextc();
+          c = l.GetChar();
           switch (c) {
             case 'n':
               buf += '\n';
@@ -477,32 +481,33 @@ public:
               buf += '\"';
               break;
             case 'x': {
-              char hex[2] = {L.nextc(), L.nextc()};
-              if (!std::isxdigit(hex[0]) || !std::isxdigit(hex[1])) {
-                L.reset_state();
+              std::array<char, 2> hex = {l.GetChar(), l.GetChar()};
+              if ((std::isxdigit(hex[0]) == 0) ||
+                  (std::isxdigit(hex[1]) == 0)) {
+                l.ResetAutomaton();
                 return Token::EndOfFile();
               }
-              buf +=
-                  (hextable[(uint8_t)hex[0]] << 4) | hextable[(uint8_t)hex[1]];
+              buf += (kHextable[(uint8_t)hex[0]] << 4) |
+                     kHextable[(uint8_t)hex[1]];
               break;
             }
             case 'u': {
-              c = L.nextc();
+              c = l.GetChar();
               if (c != '{') {
-                L.reset_state();
+                l.ResetAutomaton();
                 return Token::EndOfFile();
               }
 
               std::string hex;
 
               while (true) {
-                c = L.nextc();
+                c = l.GetChar();
                 if (c == '}') {
                   break;
                 }
 
-                if (!std::isxdigit(c)) {
-                  L.reset_state();
+                if (std::isxdigit(c) == 0) {
+                  l.ResetAutomaton();
                   return Token::EndOfFile();
                 }
 
@@ -513,7 +518,7 @@ public:
               if (std::from_chars(hex.data(), hex.data() + hex.size(),
                                   codepoint, 16)
                       .ec != std::errc()) {
-                L.reset_state();
+                l.ResetAutomaton();
                 return Token::EndOfFile();
               }
 
@@ -532,17 +537,18 @@ public:
                 buf += (char)(0x80 | ((codepoint >> 6) & 0x3F));
                 buf += (char)(0x80 | (codepoint & 0x3F));
               } else {
-                L.reset_state();
+                l.ResetAutomaton();
                 return Token::EndOfFile();
               }
 
               break;
             }
             case 'o': {
-              char oct[3] = {L.nextc(), L.nextc(), L.nextc()};
+              std::array<char, 3> oct = {l.GetChar(), l.GetChar(), l.GetChar()};
               int val;
-              if (std::from_chars(oct, oct + 3, val, 8).ec != std::errc()) {
-                L.reset_state();
+              if (std::from_chars(oct.data(), oct.data() + oct.size(), val, 8)
+                      .ec != std::errc()) {
+                l.ResetAutomaton();
                 return Token::EndOfFile();
               }
 
@@ -550,22 +556,22 @@ public:
               break;
             }
             case 'b': {
-              c = L.nextc();
+              c = l.GetChar();
               if (c != '{') {
-                L.reset_state();
+                l.ResetAutomaton();
                 return Token::EndOfFile();
               }
 
               std::string bin;
 
               while (true) {
-                c = L.nextc();
+                c = l.GetChar();
                 if (c == '}') {
                   break;
                 }
 
                 if ((c != '0' && c != '1') || bin.size() >= 64) {
-                  L.reset_state();
+                  l.ResetAutomaton();
                   return Token::EndOfFile();
                 }
 
@@ -573,8 +579,8 @@ public:
               }
 
               uint64_t codepoint = 0;
-              for (size_t i = 0; i < bin.size(); i++) {
-                codepoint = (codepoint << 1) | (bin[i] - '0');
+              for (char i : bin) {
+                codepoint = (codepoint << 1) | (i - '0');
               }
 
               if (codepoint > 0xFFFFFFFF) {
@@ -606,31 +612,30 @@ public:
           }
         }
 
-        c = L.nextc();
+        c = l.GetChar();
       }
 
       /* Skip over characters permitted in between multi-part strings */
       do {
-        c = L.nextc();
-      } while (lex_is_space(c) || c == '\\');
+        c = l.GetChar();
+      } while (LexIsSpace(c) || c == '\\');
 
       /* Check for a multi-part string */
       if (c == buf[0]) {
-        c = L.nextc();
+        c = l.GetChar();
         continue;
       }
 
-      L.m_fifo.push(c);
+      l.m_fifo.push(c);
       /* Character or string */
       if (buf.front() == '\'' && buf.size() == 2) {
-        return Token(Char, string(std::string(1, buf[1])), start_pos);
-      } else {
-        return Token(Text, string(buf.substr(1, buf.size() - 1)), start_pos);
+        return {Char, string(std::string(1, buf[1])), start_pos};
       }
+      return {Text, string(buf.substr(1, buf.size() - 1)), start_pos};
     }
   }
 
-  static NCC_FORCE_INLINE void ParseIntegerUnwind(Tokenizer &L, char c,
+  static NCC_FORCE_INLINE void ParseIntegerUnwind(Tokenizer &l, char c,
                                                   std::string &buf) {
     bool spinning = true;
 
@@ -655,12 +660,12 @@ public:
 
     q.push_back(c);
 
-    for (auto it = q.rbegin(); it != q.rend(); ++it) {
-      L.m_fifo.push(*it);
+    for (char &it : std::ranges::reverse_view(q)) {
+      l.m_fifo.push(it);
     }
   }
 
-  static NCC_FORCE_INLINE Token ParseInteger(Tokenizer &L, char c,
+  static NCC_FORCE_INLINE Token ParseInteger(Tokenizer &l, char c,
                                              std::string &buf,
                                              LocationID start_pos) {
     NumType type = NumType::Decimal;
@@ -672,7 +677,7 @@ public:
         case 'X': {
           type = NumType::Hexadecimal;
           buf += c;
-          c = L.nextc();
+          c = l.GetChar();
           break;
         }
 
@@ -680,7 +685,7 @@ public:
         case 'B': {
           type = NumType::Binary;
           buf += c;
-          c = L.nextc();
+          c = l.GetChar();
           break;
         }
 
@@ -688,7 +693,7 @@ public:
         case 'O': {
           type = NumType::Octal;
           buf += c;
-          c = L.nextc();
+          c = l.GetChar();
           break;
         }
 
@@ -696,7 +701,7 @@ public:
         case 'D': {
           type = NumType::DecimalExplicit;
           buf += c;
-          c = L.nextc();
+          c = l.GetChar();
           break;
         }
       }
@@ -713,16 +718,16 @@ public:
     while (is_lexing) {
       /* Skip over the integer syntax formatting */
       if (c == '_') [[unlikely]] {
-        while (lex_is_space(c) || c == '_' || c == '\\') [[unlikely]] {
-          c = L.nextc();
+        while (LexIsSpace(c) || c == '_' || c == '\\') [[unlikely]] {
+          c = l.GetChar();
         }
-      } else if (lex_is_space(c)) [[unlikely]] {
+      } else if (LexIsSpace(c)) [[unlikely]] {
         break;
       }
 
       switch (type) {
         case NumType::Decimal: {
-          if (std::isdigit(c)) [[likely]] {
+          if (std::isdigit(c) != 0) [[likely]] {
             buf += c;
           } else if (c == '.') {
             buf += c;
@@ -733,27 +738,27 @@ public:
             type = NumType::Floating;
             float_lit_state = FloatPart::ExponentSign;
           } else {
-            ParseIntegerUnwind(L, c, buf);
+            ParseIntegerUnwind(l, c, buf);
             is_lexing = false;
           }
           break;
         }
 
         case NumType::DecimalExplicit: {
-          if (std::isdigit(c)) [[likely]] {
+          if (std::isdigit(c) != 0) [[likely]] {
             buf += c;
           } else {
-            ParseIntegerUnwind(L, c, buf);
+            ParseIntegerUnwind(l, c, buf);
             is_lexing = false;
           }
           break;
         }
 
         case NumType::Hexadecimal: {
-          if (std::isxdigit(c)) [[likely]] {
+          if (std::isxdigit(c) != 0) [[likely]] {
             buf += c;
           } else {
-            ParseIntegerUnwind(L, c, buf);
+            ParseIntegerUnwind(l, c, buf);
             is_lexing = false;
           }
           break;
@@ -763,7 +768,7 @@ public:
           if (c == '0' || c == '1') [[likely]] {
             buf += c;
           } else {
-            ParseIntegerUnwind(L, c, buf);
+            ParseIntegerUnwind(l, c, buf);
             is_lexing = false;
           }
           break;
@@ -773,7 +778,7 @@ public:
           if (c >= '0' && c <= '7') [[likely]] {
             buf += c;
           } else {
-            ParseIntegerUnwind(L, c, buf);
+            ParseIntegerUnwind(l, c, buf);
             is_lexing = false;
           }
           break;
@@ -782,13 +787,13 @@ public:
         case NumType::Floating: {
           switch (float_lit_state) {
             case FloatPart::MantissaPost: {
-              if (std::isdigit(c)) {
+              if (std::isdigit(c) != 0) {
                 buf += c;
               } else if (c == 'e' || c == 'E') {
                 buf += 'e';
                 float_lit_state = FloatPart::ExponentSign;
               } else {
-                ParseIntegerUnwind(L, c, buf);
+                ParseIntegerUnwind(l, c, buf);
                 is_lexing = false;
               }
               break;
@@ -799,34 +804,34 @@ public:
                 buf += c;
               } else if (c == '+') {
                 float_lit_state = FloatPart::ExponentPre;
-              } else if (std::isdigit(c)) {
+              } else if (std::isdigit(c) != 0) {
                 buf += c;
                 float_lit_state = FloatPart::ExponentPre;
               } else {
-                ParseIntegerUnwind(L, c, buf);
+                ParseIntegerUnwind(l, c, buf);
                 is_lexing = false;
               }
               break;
             }
 
             case FloatPart::ExponentPre: {
-              if (std::isdigit(c)) {
+              if (std::isdigit(c) != 0) {
                 buf += c;
               } else if (c == '.') {
                 buf += c;
                 float_lit_state = FloatPart::ExponentPost;
               } else {
-                ParseIntegerUnwind(L, c, buf);
+                ParseIntegerUnwind(l, c, buf);
                 is_lexing = false;
               }
               break;
             }
 
             case FloatPart::ExponentPost: {
-              if (std::isdigit(c)) {
+              if (std::isdigit(c) != 0) {
                 buf += c;
               } else {
-                ParseIntegerUnwind(L, c, buf);
+                ParseIntegerUnwind(l, c, buf);
                 is_lexing = false;
               }
               break;
@@ -838,41 +843,41 @@ public:
       }
 
       if (is_lexing) [[likely]] {
-        c = L.nextc();
+        c = l.GetChar();
       }
     }
 
     if (type == NumType::Floating) {
-      if (canonicalize_float(buf)) {
-        return Token(NumL, string(std::move(buf)), start_pos);
+      if (CanonicalizeFloat(buf)) {
+        return {NumL, string(std::move(buf)), start_pos};
       }
-    } else if (canonicalize_number(buf, type)) [[likely]] {
-      return Token(IntL, string(std::move(buf)), start_pos);
+    } else if (CanonicalizeNumber(buf, type)) [[likely]] {
+      return {IntL, string(std::move(buf)), start_pos};
     }
 
-    L.reset_state();
+    l.ResetAutomaton();
     return Token::EndOfFile();
   }
 
-  static NCC_FORCE_INLINE Token ParseCommentSingleLine(Tokenizer &L, char c,
+  static NCC_FORCE_INLINE Token ParseCommentSingleLine(Tokenizer &l, char c,
                                                        std::string &buf,
                                                        LocationID start_pos) {
     while (c != '\n') [[likely]] {
       buf += c;
-      c = L.nextc();
+      c = l.GetChar();
     }
 
-    return Token(Note, string(std::move(buf)), start_pos);
+    return {Note, string(std::move(buf)), start_pos};
   };
 
-  static NCC_FORCE_INLINE Token ParseCommentMultiLine(Tokenizer &L, char c,
+  static NCC_FORCE_INLINE Token ParseCommentMultiLine(Tokenizer &l, char c,
                                                       std::string &buf,
                                                       LocationID start_pos) {
     size_t level = 1;
 
     while (true) {
       if (c == '/') {
-        char tmp = L.nextc();
+        char tmp = l.GetChar();
         if (tmp == '*') {
           level++;
           buf += "/*";
@@ -881,43 +886,43 @@ public:
           buf += tmp;
         }
 
-        c = L.nextc();
+        c = l.GetChar();
       } else if (c == '*') {
-        char tmp = L.nextc();
+        char tmp = l.GetChar();
         if (tmp == '/') {
           level--;
           if (level == 0) {
-            return Token(Note, string(std::move(buf)), start_pos);
-          } else {
-            buf += "*";
-            buf += tmp;
+            return {Note, string(std::move(buf)), start_pos};
           }
+          buf += "*";
+          buf += tmp;
+
         } else {
           buf += c;
           buf += tmp;
         }
-        c = L.nextc();
+        c = l.GetChar();
       } else {
         buf += c;
-        c = L.nextc();
+        c = l.GetChar();
       }
     }
   }
 
-  static NCC_FORCE_INLINE Token ParseSingleLineMacro(Tokenizer &L, char c,
+  static NCC_FORCE_INLINE Token ParseSingleLineMacro(Tokenizer &l, char c,
                                                      std::string &buf,
                                                      LocationID start_pos) {
-    while (std::isalnum(c) || c == '_' || c == ':') [[likely]] {
+    while ((std::isalnum(c) != 0) || c == '_' || c == ':') [[likely]] {
       buf += c;
-      c = L.nextc();
+      c = l.GetChar();
     }
 
-    L.m_fifo.push(c);
+    l.m_fifo.push(c);
 
-    return Token(Macr, string(std::move(buf)), start_pos);
+    return {Macr, string(std::move(buf)), start_pos};
   }
 
-  static NCC_FORCE_INLINE Token ParseBlockMacro(Tokenizer &L, char c,
+  static NCC_FORCE_INLINE Token ParseBlockMacro(Tokenizer &l, char c,
                                                 std::string &buf,
                                                 LocationID start_pos) {
     uint32_t state_parens = 1;
@@ -930,24 +935,24 @@ public:
       }
 
       if (state_parens == 0) {
-        return Token(MacB, string(std::move(buf)), start_pos);
+        return {MacB, string(std::move(buf)), start_pos};
       }
 
       buf += c;
 
-      c = L.nextc();
+      c = l.GetChar();
     }
   }
 
-  static NCC_FORCE_INLINE bool ParseOther(Tokenizer &L, char c,
+  static NCC_FORCE_INLINE bool ParseOther(Tokenizer &l, char c,
                                           std::string &buf,
                                           LocationID start_pos, LexState &state,
                                           Token &token) {
     /* Check if it's a punctor */
     if (buf.size() == 1) {
-      auto it = PunctorsMap.find(buf);
-      if (it != PunctorsMap.end()) {
-        L.m_fifo.push(c);
+      auto it = PUNCTORS_MAP.find(buf);
+      if (it != PUNCTORS_MAP.end()) {
+        l.m_fifo.push(c);
         token = Token(Punc, it->second, start_pos);
         return true;
       }
@@ -963,7 +968,7 @@ public:
     /* Special case for a comment */
     if (buf[0] == '#') {
       buf.clear();
-      L.m_fifo.push(c);
+      l.m_fifo.push(c);
       state = LexState::CommentSingleLine;
       return false;
     }
@@ -971,7 +976,7 @@ public:
     bool found = false;
     while (true) {
       bool contains = false;
-      if (operator_set.count(buf)) {
+      if (OPERATOR_SET.count(buf) != 0U) {
         contains = true;
         found = true;
       }
@@ -979,44 +984,44 @@ public:
       if (contains) {
         buf += c;
         if (buf.size() > 4) { /* Handle infinite error case */
-          L.reset_state();
+          l.ResetAutomaton();
           return false;
         }
-        c = L.nextc();
+        c = l.GetChar();
       } else {
         break;
       }
     }
 
     if (!found) {
-      L.reset_state();
+      l.ResetAutomaton();
       return false;
     }
 
-    L.m_fifo.push(buf.back());
-    L.m_fifo.push(c);
+    l.m_fifo.push(buf.back());
+    l.m_fifo.push(c);
     token =
-        Token(Oper, OperatorsMap.find(buf.substr(0, buf.size() - 1))->second,
+        Token(Oper, OPERATORS_MAP.find(buf.substr(0, buf.size() - 1))->second,
               start_pos);
 
     return true;
   }
 };
 
-void Tokenizer::nextc_refill() {
-  m_file.read(m_getc_buffer.data(), GETC_BUFFER_SIZE);
+void Tokenizer::RefillCharacterBuffer() {
+  m_file.read(m_getc_buffer.data(), kGetcBufferSize);
   auto gcount = m_file.gcount();
 
   // Fill extra buffer with '#' with is a comment character
-  memset(m_getc_buffer.data() + gcount, '\n', GETC_BUFFER_SIZE - gcount);
+  memset(m_getc_buffer.data() + gcount, '\n', kGetcBufferSize - gcount);
   m_getc_buffer_pos = 0;
 
   if (gcount == 0) [[unlikely]] {
     if (m_eof) [[unlikely]] {
-      m_env->set("this.file.eof.offset", std::to_string(m_offset));
-      m_env->set("this.file.eof.line", std::to_string(m_line));
-      m_env->set("this.file.eof.column", std::to_string(m_column));
-      m_env->set("this.file.eof.filename", GetCurrentFilename());
+      m_env->Set("this.file.eof.offset", std::to_string(m_offset));
+      m_env->Set("this.file.eof.line", std::to_string(m_line));
+      m_env->Set("this.file.eof.column", std::to_string(m_column));
+      m_env->Set("this.file.eof.filename", GetCurrentFilename());
 
       // Benchmarks show that this is the fastest way to signal EOF
       // for large files.
@@ -1026,16 +1031,16 @@ void Tokenizer::nextc_refill() {
   }
 }
 
-NCC_FORCE_INLINE char Tokenizer::nextc() {
-  if (m_getc_buffer_pos == GETC_BUFFER_SIZE) [[unlikely]] {
-    nextc_refill();
+NCC_FORCE_INLINE char Tokenizer::GetChar() {
+  if (m_getc_buffer_pos == kGetcBufferSize) [[unlikely]] {
+    RefillCharacterBuffer();
   }
 
   auto c = m_getc_buffer[m_getc_buffer_pos++];
 
   m_offset += 1;
-  m_line = m_line + (c == '\n');
-  m_column = (c != '\n') * (m_column + 1);
+  m_line = m_line + static_cast<uint64_t>(c == '\n');
+  m_column = static_cast<uint64_t>(c != '\n') * (m_column + 1);
 
   return c;
 }
@@ -1059,7 +1064,7 @@ NCC_EXPORT Token Tokenizer::GetNext() {
   while (true) {
     { /* If the Lexer over-consumed, we will return the saved character */
       if (m_fifo.empty()) {
-        c = nextc();
+        c = GetChar();
       } else {
         c = m_fifo.front();
         m_fifo.pop();
@@ -1068,36 +1073,38 @@ NCC_EXPORT Token Tokenizer::GetNext() {
 
     switch (state) {
       case LexState::Start: {
-        if (lex_is_space(c)) {
+        if (LexIsSpace(c)) {
           continue;
         }
 
         start_pos = InternLocation(
             Location(m_offset - 1, m_line, m_column - 1, GetCurrentFilename()));
 
-        if (std::isalpha(c) || c == '_') {
+        if ((std::isalpha(c) != 0) || c == '_') {
           /* Identifier or keyword or operator */
 
           buf += c, state = LexState::Identifier;
           continue;
-        } else if (c == '/') {
+        }
+        if (c == '/') {
           state = LexState::CommentStart; /* Comment or operator */
           continue;
-        } else if (std::isdigit(c)) {
+        }
+        if (std::isdigit(c) != 0) {
           buf += c, state = LexState::Integer;
           continue;
-        } else if (c == '"' || c == '\'') {
+        }
+        if (c == '"' || c == '\'') {
           buf += c, state = LexState::String;
           continue;
-        } else if (c == '@') {
+        }
+        if (c == '@') {
           state = LexState::MacroStart;
           continue;
-        } else {
-          /* Operator or punctor or invalid */
-          buf += c;
-          state = LexState::Other;
-          continue;
-        }
+        } /* Operator or punctor or invalid */
+        buf += c;
+        state = LexState::Other;
+        continue;
       }
       case LexState::Identifier: {
         return StaticImpl::ParseIdentifier(*this, c, buf, start_pos);
@@ -1112,13 +1119,13 @@ NCC_EXPORT Token Tokenizer::GetNext() {
         if (c == '/') { /* Single line comment */
           state = LexState::CommentSingleLine;
           continue;
-        } else if (c == '*') { /* Multi-line comment */
+        }
+        if (c == '*') { /* Multi-line comment */
           state = LexState::CommentMultiLine;
           continue;
-        } else { /* Divide operator */
-          m_fifo.push(c);
-          return Token(Oper, OpSlash, start_pos);
-        }
+        } /* Divide operator */
+        m_fifo.push(c);
+        return {Oper, OpSlash, start_pos};
       }
       case LexState::CommentSingleLine: {
         return StaticImpl::ParseCommentSingleLine(*this, c, buf, start_pos);
@@ -1130,11 +1137,11 @@ NCC_EXPORT Token Tokenizer::GetNext() {
         if (c == '(') {
           state = LexState::BlockMacro;
           continue;
-        } else {
-          state = LexState::SingleLineMacro;
-          buf += c;
-          continue;
         }
+        state = LexState::SingleLineMacro;
+        buf += c;
+        continue;
+
         break;
       }
       case LexState::SingleLineMacro: {
@@ -1253,7 +1260,7 @@ NCC_EXPORT std::ostream &ncc::lex::operator<<(std::ostream &os, TokenType ty) {
   return os;
 }
 
-static void escape_string(std::ostream &ss, std::string_view input) {
+static void EscapeString(std::ostream &ss, std::string_view input) {
   ss << '"';
 
   for (char ch : input) {
@@ -1286,9 +1293,9 @@ static void escape_string(std::ostream &ss, std::string_view input) {
         if (ch >= 32 && ch < 127) {
           ss << ch;
         } else {
-          char hex[5];
-          snprintf(hex, sizeof(hex), "\\x%02x", (int)(uint8_t)ch);
-          ss << hex;
+          std::array<char, 5> hex;
+          snprintf(hex.data(), hex.size(), "\\x%02x", (int)(uint8_t)ch);
+          ss << hex.data();
         }
         break;
     }
@@ -1302,14 +1309,13 @@ NCC_EXPORT std::ostream &ncc::lex::operator<<(std::ostream &os, Token tok) {
 
   os << "${T:{\"type\":" << (int)tok.get_type()
      << ",\"posid\":" << tok.get_start().GetId() << ",\"value\":";
-  escape_string(os, tok.as_string());
+  EscapeString(os, tok.as_string());
   os << "}}";
 
   return os;
 }
 
-NCC_EXPORT
-std::optional<std::vector<std::string>> Tokenizer::GetSourceWindow(
+NCC_EXPORT std::optional<std::vector<std::string>> Tokenizer::GetSourceWindow(
     Point start, Point end, char fillchar) {
   if (start.x > end.x || (start.x == end.x && start.y > end.y)) {
     qcore_print(QCORE_ERROR, "Invalid source window range");
@@ -1324,7 +1330,8 @@ std::optional<std::vector<std::string>> Tokenizer::GetSourceWindow(
   }
 
   if (m_file.seekg(0, std::ios::beg)) {
-    long line = 0, column = 0;
+    long line = 0;
+    long column = 0;
 
     bool spinning = true;
     while (spinning) {

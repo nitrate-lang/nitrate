@@ -41,7 +41,7 @@ using namespace ncc::lex;
 
 // Lower index means higher precedence
 static const std::vector<std::vector<std::tuple<Operator, OpMode, OpAssoc>>>
-    precedence_groups = {
+    PRECEDENCE_GROUPS = {
         {
             {OpDot, OpMode::Binary, OpAssoc::Left},
         },
@@ -222,9 +222,9 @@ NCC_EXPORT short ncc::lex::GetOperatorPrecedence(Operator op, OpMode type) {
         std::unordered_map<std::pair<Operator, OpMode>, short, KeyHash>
             precedence;
 
-        for (size_t i = 0; i < precedence_groups.size(); i++) {
-          for (let[op, mode, _] : precedence_groups[i]) {
-            precedence[{op, mode}] = (precedence_groups.size() - i) * 10;
+        for (size_t i = 0; i < PRECEDENCE_GROUPS.size(); i++) {
+          for (let[op, mode, _] : PRECEDENCE_GROUPS[i]) {
+            precedence[{op, mode}] = (PRECEDENCE_GROUPS.size() - i);
           }
         }
 
@@ -252,8 +252,8 @@ NCC_EXPORT OpAssoc ncc::lex::GetOperatorAssociativity(Operator op,
   static const std::unordered_map<Key, OpAssoc, KeyHash> associativity = [] {
     std::unordered_map<Key, OpAssoc, KeyHash> associativity;
 
-    for (size_t i = 0; i < precedence_groups.size(); i++) {
-      for (let[op, mode, assoc] : precedence_groups[i]) {
+    for (const auto &group : PRECEDENCE_GROUPS) {
+      for (let[op, mode, assoc] : group) {
         associativity[{op, mode}] = assoc;
       }
     }
@@ -270,87 +270,87 @@ NCC_EXPORT OpAssoc ncc::lex::GetOperatorAssociativity(Operator op,
 }
 
 NCC_EXPORT ncc::string ncc::lex::to_string(TokenType ty, TokenData v) {
-  string R;
+  string r;
 
   switch (ty) {
     case EofF: {
-      R = "";
+      r = "";
       break;
     }
 
     case KeyW: {
-      R = ncc::lex::kw_repr(v.key);
+      r = ncc::lex::kw_repr(v.m_key);
       break;
     }
 
     case Oper: {
-      R = ncc::lex::op_repr(v.op);
+      r = ncc::lex::op_repr(v.m_op);
       break;
     }
 
     case Punc: {
-      R = ncc::lex::punct_repr(v.punc);
+      r = ncc::lex::punct_repr(v.m_punc);
       break;
     }
 
     case Name: {
-      R = v.str.get();
+      r = v.m_str.Get();
       break;
     }
 
     case IntL: {
-      R = v.str.get();
+      r = v.m_str.Get();
       break;
     }
 
     case NumL: {
-      R = v.str.get();
+      r = v.m_str.Get();
       break;
     }
 
     case Text: {
-      R = v.str.get();
+      r = v.m_str.Get();
       break;
     }
 
     case Char: {
-      R = v.str.get();
+      r = v.m_str.Get();
       break;
     }
 
     case MacB: {
-      R = v.str.get();
+      r = v.m_str.Get();
       break;
     }
 
     case Macr: {
-      R = v.str.get();
+      r = v.m_str.Get();
       break;
     }
 
     case Note: {
-      R = v.str.get();
+      r = v.m_str.Get();
       break;
     }
   }
 
-  return R;
+  return r;
 }
 
-NCC_EXPORT Location LocationID::Get(IScanner &L) const {
-  return L.GetLocation(m_id);
+NCC_EXPORT Location LocationID::Get(IScanner &l) const {
+  return l.GetLocation(m_id);
 }
 
 class IScanner::StaticImpl {
 public:
-  static NCC_FORCE_INLINE void FillTokenBuffer(IScanner &L) {
-    for (size_t i = 0; i < TOKEN_BUFFER_SIZE; i++) {
+  static NCC_FORCE_INLINE void FillTokenBuffer(IScanner &l) {
+    for (size_t i = 0; i < kTokenBufferSize; i++) {
       try {
-        L.m_ready.push_back(L.GetNext());
+        l.m_ready.push_back(l.GetNext());
       } catch (ScannerEOF &) {
         if (i == 0) {
-          L.m_eof = true;
-          L.m_ready.push_back(Token::EndOfFile());
+          l.m_eof = true;
+          l.m_ready.push_back(Token::EndOfFile());
         }
         break;
       }
@@ -403,46 +403,48 @@ void IScanner::Insert(Token tok) {
   m_current = tok;
 }
 
-static uint32_t strtou64(std::string_view str, uint32_t sentinal) {
+static uint32_t StringToUint32(std::string_view str, uint32_t sentinal) {
   uint32_t result = sentinal;
   std::from_chars(str.data(), str.data() + str.size(), result);
   return result;
 }
 
 Location IScanner::GetEofLocation() {
-  uint32_t offset = QLEX_EOFF, line = QLEX_EOFF, column = QLEX_EOFF;
+  uint32_t offset = kLexEof;
+  uint32_t line = kLexEof;
+  uint32_t column = kLexEof;
   string filename;
 
-  if (auto off = m_env->get("this.file.eof.offset"); off.has_value()) {
-    offset = strtou64(off.value(), QLEX_EOFF);
+  if (auto off = m_env->Get("this.file.eof.offset"); off.has_value()) {
+    offset = StringToUint32(off.value(), kLexEof);
   }
 
-  if (auto ln = m_env->get("this.file.eof.line"); ln.has_value()) {
-    line = strtou64(ln.value(), QLEX_EOFF);
+  if (auto ln = m_env->Get("this.file.eof.line"); ln.has_value()) {
+    line = StringToUint32(ln.value(), kLexEof);
   }
 
-  if (auto col = m_env->get("this.file.eof.column"); col.has_value()) {
-    column = strtou64(col.value(), QLEX_EOFF);
+  if (auto col = m_env->Get("this.file.eof.column"); col.has_value()) {
+    column = StringToUint32(col.value(), kLexEof);
   }
 
-  if (auto fn = m_env->get("this.file.eof.filename"); fn.has_value()) {
+  if (auto fn = m_env->Get("this.file.eof.filename"); fn.has_value()) {
     filename = fn.value();
   }
 
-  return Location(offset, line, column, filename);
+  return {offset, line, column, filename};
 }
 
 Location IScanner::GetLocation(LocationID id) {
   if (id.GetId() < m_location_interned.size()) {
     return m_location_interned[id.GetId()];
-  } else {
-    return GetLocationFallback(id.GetId()).value_or(Location::EndOfFile());
   }
+
+  return GetLocationFallback(id.GetId()).value_or(Location::EndOfFile());
 }
 
 Location IScanner::Start(Token t) { return t.get_start().Get(*this); }
 
-Location IScanner::End(Token) {
+Location IScanner::End(Token) {  /// NOLINT
   /// TODO: Support relexing to get the end location
   return Location::EndOfFile();
 }

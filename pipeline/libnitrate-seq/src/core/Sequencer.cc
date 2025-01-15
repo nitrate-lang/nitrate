@@ -212,7 +212,7 @@ func_entry:  // do tail call optimization manually
             goto emit_token;
           }
 
-          if (auto module_data = m_core->fetch_module_data(import_name.get())) {
+          if (auto module_data = m_core->fetch_module_data(import_name.Get())) {
             RecursiveExpand(module_data.value());
           } else {
             SetFailBit();
@@ -295,7 +295,7 @@ func_entry:  // do tail call optimization manually
       }
 
       case Macr: {
-        auto body = x.as_string().get();
+        auto body = x.as_string().Get();
         auto pos = body.find_first_of("(");
 
         if (pos != std::string_view::npos) {
@@ -418,12 +418,12 @@ std::optional<std::string> Sequencer::PImpl::fetch_module_data(
   auto module_name = canonicalize_module_name(raw_module_name);
 
   /* Dynamic translation of module names into their actual named */
-  if (auto actual_name = m_env->get(dynfetch_get_mapkey(module_name))) {
+  if (auto actual_name = m_env->Get(dynfetch_get_mapkey(module_name))) {
     module_name = actual_name.value();
   }
 
   auto module_uri =
-      dynfetch_get_uri(module_name, m_env->get("this.job").value());
+      dynfetch_get_uri(module_name, m_env->Get("this.job").value());
 
   ncc::Log << SeqError << Debug << "Fetching module: '" << module_name << "'";
 

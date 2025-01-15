@@ -105,7 +105,7 @@ FlowPtr<parse::Type> Parser::recurse_type_suffix(FlowPtr<Type> base) {
 
   if (template_arguments.has_value()) {
     auto templ = make<TemplType>(base, template_arguments.value())();
-    templ->set_offset(base->begin());
+    templ->SetOffset(base->begin());
 
     base = templ;
   }
@@ -126,16 +126,16 @@ FlowPtr<parse::Type> Parser::recurse_type_suffix(FlowPtr<Type> base) {
     }
   }
 
-  base->set_range_begin(range.first);
-  base->set_range_end(range.second);
-  base->set_width(width);
+  base->SetRangeBegin(range.first);
+  base->SetRangeEnd(range.second);
+  base->SetWidth(width);
 
   if (next_if(OpTernary)) {
     auto args = CallArgs{{"0", make<TypeExpr>(base)()}};
     auto opt_type =
         make<TemplType>(make<NamedTy>("__builtin_result")(), args)();
 
-    opt_type->set_offset(current().get_start());
+    opt_type->SetOffset(current().get_start());
 
     base = opt_type;
   }
@@ -158,7 +158,7 @@ FlowPtr<parse::Type> Parser::recurse_function_type() {
                               fn_def->is_variadic(), fn_def->get_purity(),
                               fn_def->get_attributes())();
 
-  func_ty->set_offset(fn->begin());
+  func_ty->SetOffset(fn->begin());
 
   return func_ty;
 }
@@ -172,7 +172,7 @@ FlowPtr<parse::Type> Parser::recurse_opaque_type() {
   if (auto name = next_if(Name)) {
     if (next_if(PuncRPar)) {
       auto opaque = make<OpaqueTy>(name->as_string())();
-      opaque->set_offset(current().get_start());
+      opaque->SetOffset(current().get_start());
 
       return opaque;
     } else {
@@ -214,7 +214,7 @@ FlowPtr<parse::Type> Parser::recurse_type_by_operator(Operator op) {
       auto pointee = recurse_type();
       auto ptr_ty = make<PtrTy>(pointee, false)();
 
-      ptr_ty->set_offset(start);
+      ptr_ty->SetOffset(start);
 
       return ptr_ty;
     }
@@ -224,7 +224,7 @@ FlowPtr<parse::Type> Parser::recurse_type_by_operator(Operator op) {
       auto refee = recurse_type();
       auto ref_ty = make<RefTy>(refee)();
 
-      ref_ty->set_offset(start);
+      ref_ty->SetOffset(start);
 
       return ref_ty;
     }
@@ -232,7 +232,7 @@ FlowPtr<parse::Type> Parser::recurse_type_by_operator(Operator op) {
     case OpTernary: {
       auto infer = make<InferTy>()();
 
-      infer->set_offset(current().get_start());
+      infer->SetOffset(current().get_start());
 
       return infer;
     }
@@ -274,7 +274,7 @@ FlowPtr<parse::Type> Parser::recurse_array_or_vector() {
     auto args = CallArgs{{"0", make<TypeExpr>(first)()}};
     auto vector = make<TemplType>(make<NamedTy>("__builtin_vec")(), args)();
 
-    vector->set_offset(start);
+    vector->SetOffset(start);
 
     return vector;
   }
@@ -293,7 +293,7 @@ FlowPtr<parse::Type> Parser::recurse_array_or_vector() {
   }
 
   auto array = make<ArrayTy>(first, size)();
-  array->set_offset(start);
+  array->SetOffset(start);
 
   return array;
 }
@@ -310,7 +310,7 @@ FlowPtr<parse::Type> Parser::recurse_set_type() {
   auto args = CallArgs{{"0", make<TypeExpr>(set_type)()}};
   auto set = make<TemplType>(make<NamedTy>("__builtin_uset")(), args)();
 
-  set->set_offset(start);
+  set->SetOffset(start);
 
   return set;
 }
@@ -337,7 +337,7 @@ FlowPtr<parse::Type> Parser::recurse_tuple_type() {
   }
 
   auto tuple = make<TupleTy>(items)();
-  tuple->set_offset(start);
+  tuple->SetOffset(start);
 
   return tuple;
 }
@@ -408,7 +408,7 @@ FlowPtr<parse::Type> Parser::recurse_type_by_name(string name) {
     return mock_type();
   }
 
-  type.value()->set_offset(current().get_start());
+  type.value()->SetOffset(current().get_start());
 
   return type.value();
 }

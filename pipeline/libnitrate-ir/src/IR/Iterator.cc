@@ -206,7 +206,7 @@ public:
 static void get_children_sorted(FlowPtr<Expr> base, ChildSelect cs,
                                 std::vector<FlowPtr<Expr>*>& children) {
   GetNodeChildren gnc(children);
-  base.accept(gnc);
+  base.Accept(gnc);
 
   std::sort(children.begin(), children.end(), cs);
 }

@@ -316,10 +316,10 @@ NCC_EXPORT Expr *detail::Expr_getCloneImpl(Expr *self) {
     state.depth++;
 
     CloneVisitor V;
-    self->accept(V);
+    self->Accept(V);
 
     FlowPtr<Expr> E = V.GetClone();
-    E->setLoc(self->getLoc());
+    E->SetLoc(self->getLoc());
 
     state.depth--;
 
@@ -334,7 +334,7 @@ NCC_EXPORT Expr *detail::Expr_getCloneImpl(Expr *self) {
             if (auto what = ident->getWhat()) {
               if (auto it = state.in_out.find(what.value().get());
                   it != state.in_out.end()) {
-                ident->setWhat(it->second);
+                ident->SetWhat(it->second);
               }
             }
           }
@@ -345,7 +345,7 @@ NCC_EXPORT Expr *detail::Expr_getCloneImpl(Expr *self) {
             if (auto target = call->getTarget()) {
               if (auto it = state.in_out.find(target.value().get());
                   it != state.in_out.end()) {
-                call->setTarget(it->second);
+                call->SetTarget(it->second);
               }
             }
           }

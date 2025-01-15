@@ -51,7 +51,7 @@
 namespace ncc::lex {
   namespace detail {
     template <typename L, typename R>
-    boost::bimap<L, R> make_bimap(
+    boost::bimap<L, R> MakeBimap(
         std::initializer_list<typename boost::bimap<L, R>::value_type> list) {
       return boost::bimap<L, R>(list.begin(), list.end());
     }
@@ -62,21 +62,22 @@ namespace ncc::lex {
   enum class OpAssoc { Left, Right };
 
   struct OpConfig {
-    OpType type;
-    bool overloadable;
+    OpType m_type;
+    bool m_overloadable;
 
-    OpConfig(OpType t, bool o) : type(t), overloadable(o) {}
+    OpConfig(OpType t, bool o) : m_type(t), m_overloadable(o) {}
 
     bool operator<(const OpConfig &rhs) const {
-      if (type != rhs.type) {
-        return type < rhs.type;
+      if (m_type != rhs.m_type) {
+        return m_type < rhs.m_type;
       }
-      return overloadable < rhs.overloadable;
+
+      return (int)m_overloadable < (int)rhs.m_overloadable;
     }
   };
 
-  inline static const boost::bimap<std::string, Keyword> LexicalKeywords =
-      detail::make_bimap<std::string, Keyword>({
+  inline static const boost::bimap<std::string, Keyword> LEXICAL_KEYWORDS =
+      detail::MakeBimap<std::string, Keyword>({
           {"scope", Scope},
           {"pub", Pub},
           {"sec", Sec},
@@ -121,8 +122,8 @@ namespace ncc::lex {
           {"false", False},
       });
 
-  inline static const boost::bimap<std::string, Operator> LexicalOperators =
-      detail::make_bimap<std::string, Operator>({
+  inline static const boost::bimap<std::string, Operator> LEXICAL_OPERATORS =
+      detail::MakeBimap<std::string, Operator>({
           {"+", OpPlus},
           {"-", OpMinus},
           {"*", OpTimes},
@@ -180,8 +181,8 @@ namespace ncc::lex {
           {"?", OpTernary},
       });
 
-  inline static const boost::bimap<Operator, OpConfig> LexicalOperatorsConfig =
-      detail::make_bimap<Operator, OpConfig>({
+  inline static const boost::bimap<Operator, OpConfig>
+      LEXICAL_OPERATORS_CONFIG = detail::MakeBimap<Operator, OpConfig>({
           {OpPlus, {OpType::Both, true}},
           {OpMinus, {OpType::Both, true}},
           {OpTimes, {OpType::Both, true}},
@@ -239,8 +240,8 @@ namespace ncc::lex {
           {OpTernary, {OpType::Ternary, false}},
       });
 
-  inline static const boost::bimap<std::string, Punctor> LexicalPunctors =
-      detail::make_bimap<std::string, Punctor>({
+  inline static const boost::bimap<std::string, Punctor> LEXICAL_PUNCTORS =
+      detail::MakeBimap<std::string, Punctor>({
           {"(", PuncLPar},
           {")", PuncRPar},
           {"[", PuncLBrk},
@@ -255,7 +256,7 @@ namespace ncc::lex {
   short GetOperatorPrecedence(Operator op, OpMode type);
   OpAssoc GetOperatorAssociativity(Operator op, OpMode type);
 
-  const char *qlex_ty_str(TokenType ty);
+  const char *qlex_ty_str(TokenType ty);  /// NOLINT
 
   class ISourceFile {
   public:
@@ -265,7 +266,7 @@ namespace ncc::lex {
   struct ScannerEOF final {};
 
   class NCC_EXPORT IScanner {
-    static constexpr size_t TOKEN_BUFFER_SIZE = 256;
+    static constexpr size_t kTokenBufferSize = 256;
 
     std::deque<Token> m_ready;
     std::vector<Token> m_comments;
@@ -294,9 +295,10 @@ namespace ncc::lex {
     };
 
   public:
-    IScanner(std::shared_ptr<Environment> env) : m_env(env) {
-      m_location_interned.reserve(0xffff);
-      m_location_interned.push_back(Location());
+    IScanner(std::shared_ptr<Environment> env) : m_env(std::move(env)) {
+      constexpr size_t kInitialLocationReserve = 0xffff;
+      m_location_interned.reserve(kInitialLocationReserve);
+      m_location_interned.emplace_back();
     }
 
     virtual ~IScanner() = default;
@@ -306,8 +308,8 @@ namespace ncc::lex {
     void Insert(Token tok);
 
     constexpr auto Current() { return m_current; }
-    constexpr auto IsEof() const { return m_eof; }
-    constexpr auto HasError() const { return m_ebit; }
+    [[nodiscard]] constexpr auto IsEof() const { return m_eof; }
+    [[nodiscard]] constexpr auto HasError() const { return m_ebit; }
     void SetFailBit() { m_ebit = true; }
 
     Location Start(Token t);
@@ -324,15 +326,17 @@ namespace ncc::lex {
     }
 
     constexpr void SkipCommentsState(bool skip) { m_skip = skip; }
-    constexpr bool GetSkipCommentsState() const { return m_skip; }
+    [[nodiscard]] constexpr bool GetSkipCommentsState() const { return m_skip; }
 
     constexpr void SetCurrentFilename(auto filename) { m_filename = filename; }
-    constexpr auto GetCurrentFilename() const { return m_filename; }
+    [[nodiscard]] constexpr auto GetCurrentFilename() const {
+      return m_filename;
+    }
 
     Location GetLocation(LocationID id);
 
     struct Point {
-      long x = 0, y = 0;
+      long x = 0, y = 0;  /// NOLINT
     };
 
     virtual std::optional<std::vector<std::string>> GetSourceWindow(
@@ -343,55 +347,56 @@ namespace ncc::lex {
       return std::nullopt;
     }
 
-    auto GetEnvironment() const { return m_env; }
+    [[nodiscard]] auto GetEnvironment() const { return m_env; }
 
     const std::vector<Token> &CommentBuffer() { return m_comments; }
     void ClearCommentBuffer() { m_comments.clear(); }
   };
 
   class NCC_EXPORT Tokenizer final : public IScanner {
-    static constexpr size_t GETC_BUFFER_SIZE = 1024;
+    static constexpr size_t kGetcBufferSize = 1024;
 
     uint64_t m_offset = 0, m_line = 0, m_column = 0;
     std::queue<char> m_fifo;
-    size_t m_getc_buffer_pos = GETC_BUFFER_SIZE;
-    std::array<char, GETC_BUFFER_SIZE> m_getc_buffer;
+    size_t m_getc_buffer_pos = kGetcBufferSize;
+    std::array<char, kGetcBufferSize> m_getc_buffer;
     std::istream &m_file;
     bool m_eof = false;
 
-    void nextc_refill();
-    char nextc();
+    void RefillCharacterBuffer();
+    char GetChar();
 
     class StaticImpl;
     friend class StaticImpl;
 
-    void reset_state();
+    void ResetAutomaton();
 
     Token GetNext() override;
 
   public:
     Tokenizer(std::istream &source_file, std::shared_ptr<Environment> env)
-        : IScanner(env), m_file(source_file) {
-      if (auto filename = env->get("FILE"); filename.has_value()) {
+        : IScanner(std::move(env)), m_file(source_file) {
+      if (auto filename = env->Get("FILE"); filename.has_value()) {
         SetCurrentFilename(filename.value());
       }
     }
-    virtual ~Tokenizer() override {}
 
-    virtual std::optional<std::vector<std::string>> GetSourceWindow(
+    ~Tokenizer() override = default;
+
+    std::optional<std::vector<std::string>> GetSourceWindow(
         Point start, Point end, char fillchar = ' ') override;
   };
 
-  static inline const char *op_repr(Operator op) {
-    return LexicalOperators.right.at(op).c_str();
+  static inline const char *op_repr(Operator op) {  /// NOLINT
+    return LEXICAL_OPERATORS.right.at(op).c_str();
   }
 
-  static inline const char *kw_repr(Keyword kw) {
-    return LexicalKeywords.right.at(kw).c_str();
+  static inline const char *kw_repr(Keyword kw) {  /// NOLINT
+    return LEXICAL_KEYWORDS.right.at(kw).c_str();
   }
 
-  static inline const char *punct_repr(Punctor punct) {
-    return LexicalPunctors.right.at(punct).c_str();
+  static inline const char *punct_repr(Punctor punct) {  /// NOLINT
+    return LEXICAL_PUNCTORS.right.at(punct).c_str();
   }
 
   std::ostream &operator<<(std::ostream &os, TokenType ty);

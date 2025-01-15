@@ -97,19 +97,19 @@ void AST_Writer::write_source_location(FlowPtr<Base> n) const {
 #if NITRATE_FLOWPTR_TRACE
       begin_obj(4);
 
-      let origin = n.trace();
+      let origin = n.Trace();
 
       string("src");
-      string(origin.file_name());
+      string(origin.File());
 
       string("sub");
-      string(origin.function_name());
+      string(origin.Function());
 
       string("row");
-      uint64(origin.line());
+      uint64(origin.Line());
 
       string("col");
-      uint64(origin.column());
+      uint64(origin.Column());
 
       end_obj();
 #else
@@ -125,15 +125,15 @@ void AST_Writer::write_source_location(FlowPtr<Base> n) const {
 
 void AST_Writer::write_type_metadata(FlowPtr<Type> n) {
   string("width");
-  n->get_width() ? n->get_width().value().accept(*this) : null();
+  n->get_width() ? n->get_width().value().Accept(*this) : null();
 
   string("min");
   auto min = n->get_range_begin();
-  min.has_value() ? min.value().accept(*this) : null();
+  min.has_value() ? min.value().Accept(*this) : null();
 
   string("max");
   auto max = n->get_range_end();
-  max.has_value() ? max.value().accept(*this) : null();
+  max.has_value() ? max.value().Accept(*this) : null();
 }
 
 std::string_view AST_Writer::vis_str(Vis vis) const {
@@ -167,7 +167,7 @@ void AST_Writer::visit(FlowPtr<ExprStmt> n) {
   write_source_location(n);
 
   string("expr");
-  n->get_expr().accept(*this);
+  n->get_expr().Accept(*this);
 
   end_obj();
 }
@@ -181,7 +181,7 @@ void AST_Writer::visit(FlowPtr<StmtExpr> n) {
   write_source_location(n);
 
   string("stmt");
-  n->get_stmt().accept(*this);
+  n->get_stmt().Accept(*this);
 
   end_obj();
 }
@@ -195,7 +195,7 @@ void AST_Writer::visit(FlowPtr<TypeExpr> n) {
   write_source_location(n);
 
   string("type");
-  n->get_type().accept(*this);
+  n->get_type().Accept(*this);
 
   end_obj();
 }
@@ -240,7 +240,7 @@ void AST_Writer::visit(FlowPtr<TemplType> n) {
   write_type_metadata(n);
 
   string("template");
-  n->get_template().accept(*this);
+  n->get_template().Accept(*this);
 
   string("arguments");
   auto args = n->get_args();
@@ -252,7 +252,7 @@ void AST_Writer::visit(FlowPtr<TemplType> n) {
     string(*std::get<0>(arg));
 
     string("value");
-    std::get<1>(arg).accept(*this);
+    std::get<1>(arg).Accept(*this);
 
     end_obj();
   });
@@ -483,7 +483,7 @@ void AST_Writer::visit(FlowPtr<PtrTy> n) {
   boolean(n->is_volatile());
 
   string("to");
-  n->get_item().accept(*this);
+  n->get_item().Accept(*this);
 
   end_obj();
 }
@@ -520,7 +520,7 @@ void AST_Writer::visit(FlowPtr<TupleTy> n) {
     auto fields = n->get_items();
     begin_arr(fields.size());
     std::for_each(fields.begin(), fields.end(),
-                  [&](auto field) { field.accept(*this); });
+                  [&](auto field) { field.Accept(*this); });
     end_arr();
   }
 
@@ -538,10 +538,10 @@ void AST_Writer::visit(FlowPtr<ArrayTy> n) {
   write_type_metadata(n);
 
   string("of");
-  n->get_item().accept(*this);
+  n->get_item().Accept(*this);
 
   string("size");
-  n->get_size().accept(*this);
+  n->get_size().Accept(*this);
 
   end_obj();
 }
@@ -557,7 +557,7 @@ void AST_Writer::visit(FlowPtr<RefTy> n) {
   write_type_metadata(n);
 
   string("to");
-  n->get_item().accept(*this);
+  n->get_item().Accept(*this);
 
   end_obj();
 }
@@ -578,12 +578,12 @@ void AST_Writer::visit(FlowPtr<FuncTy> n) {
     auto attrs = n->get_attributes();
     begin_arr(attrs.size());
     std::for_each(attrs.begin(), attrs.end(),
-                  [&](auto attr) { attr.accept(*this); });
+                  [&](auto attr) { attr.Accept(*this); });
     end_arr();
   }
 
   string("return");
-  n->get_return().accept(*this);
+  n->get_return().Accept(*this);
 
   switch (n->get_purity()) {
     case Purity::Impure: {
@@ -648,10 +648,10 @@ void AST_Writer::visit(FlowPtr<FuncTy> n) {
       string(*std::get<0>(param));
 
       string("type");
-      std::get<1>(param).accept(*this);
+      std::get<1>(param).Accept(*this);
 
       string("default");
-      std::get<2>(param) ? std::get<2>(param).value().accept(*this) : null();
+      std::get<2>(param) ? std::get<2>(param).value().Accept(*this) : null();
 
       end_obj();
     });
@@ -675,7 +675,7 @@ void AST_Writer::visit(FlowPtr<UnaryExpr> n) {
   string(op_repr(n->get_op()));
 
   string("rhs");
-  n->get_rhs().accept(*this);
+  n->get_rhs().Accept(*this);
 
   end_obj();
 }
@@ -692,10 +692,10 @@ void AST_Writer::visit(FlowPtr<BinExpr> n) {
   string(op_repr(n->get_op()));
 
   string("lhs");
-  n->get_lhs().accept(*this);
+  n->get_lhs().Accept(*this);
 
   string("rhs");
-  n->get_rhs().accept(*this);
+  n->get_rhs().Accept(*this);
 
   end_obj();
 }
@@ -712,7 +712,7 @@ void AST_Writer::visit(FlowPtr<PostUnaryExpr> n) {
   string(op_repr(n->get_op()));
 
   string("lhs");
-  n->get_lhs().accept(*this);
+  n->get_lhs().Accept(*this);
 
   end_obj();
 }
@@ -726,13 +726,13 @@ void AST_Writer::visit(FlowPtr<TernaryExpr> n) {
   write_source_location(n);
 
   string("cond");
-  n->get_cond().accept(*this);
+  n->get_cond().Accept(*this);
 
   string("lhs");
-  n->get_lhs().accept(*this);
+  n->get_lhs().Accept(*this);
 
   string("rhs");
-  n->get_rhs().accept(*this);
+  n->get_rhs().Accept(*this);
 
   end_obj();
 }
@@ -838,7 +838,7 @@ void AST_Writer::visit(FlowPtr<Call> n) {
   write_source_location(n);
 
   string("callee");
-  n->get_func().accept(*this);
+  n->get_func().Accept(*this);
 
   { /* Write arguments */
     string("arguments");
@@ -852,7 +852,7 @@ void AST_Writer::visit(FlowPtr<Call> n) {
       string(*arg.first);
 
       string("value");
-      arg.second.accept(*this);
+      arg.second.Accept(*this);
 
       end_obj();
     });
@@ -871,7 +871,7 @@ void AST_Writer::visit(FlowPtr<TemplCall> n) {
   write_source_location(n);
 
   string("callee");
-  n->get_func().accept(*this);
+  n->get_func().Accept(*this);
 
   { /* Write template arguments */
     string("template");
@@ -886,7 +886,7 @@ void AST_Writer::visit(FlowPtr<TemplCall> n) {
       string(*arg.first);
 
       string("value");
-      arg.second.accept(*this);
+      arg.second.Accept(*this);
 
       end_obj();
     });
@@ -906,7 +906,7 @@ void AST_Writer::visit(FlowPtr<TemplCall> n) {
       string(*arg.first);
 
       string("value");
-      arg.second.accept(*this);
+      arg.second.Accept(*this);
 
       end_obj();
     });
@@ -930,7 +930,7 @@ void AST_Writer::visit(FlowPtr<List> n) {
     auto items = n->get_items();
     begin_arr(items.size());
     std::for_each(items.begin(), items.end(),
-                  [&](auto item) { item.accept(*this); });
+                  [&](auto item) { item.Accept(*this); });
     end_arr();
   }
 
@@ -946,10 +946,10 @@ void AST_Writer::visit(FlowPtr<Assoc> n) {
   write_source_location(n);
 
   string("key");
-  n->get_key().accept(*this);
+  n->get_key().Accept(*this);
 
   string("value");
-  n->get_value().accept(*this);
+  n->get_value().Accept(*this);
 
   end_obj();
 }
@@ -963,10 +963,10 @@ void AST_Writer::visit(FlowPtr<Index> n) {
   write_source_location(n);
 
   string("base");
-  n->get_base().accept(*this);
+  n->get_base().Accept(*this);
 
   string("index");
-  n->get_index().accept(*this);
+  n->get_index().Accept(*this);
 
   end_obj();
 }
@@ -980,13 +980,13 @@ void AST_Writer::visit(FlowPtr<Slice> n) {
   write_source_location(n);
 
   string("base");
-  n->get_base().accept(*this);
+  n->get_base().Accept(*this);
 
   string("start");
-  n->get_start().accept(*this);
+  n->get_start().Accept(*this);
 
   string("end");
-  n->get_end().accept(*this);
+  n->get_end().Accept(*this);
 
   end_obj();
 }
@@ -1013,7 +1013,7 @@ void AST_Writer::visit(FlowPtr<FString> n) {
 
         end_obj();
       } else {
-        std::get<FlowPtr<Expr>>(item).accept(*this);
+        std::get<FlowPtr<Expr>>(item).Accept(*this);
       }
     });
     end_arr();
@@ -1050,7 +1050,7 @@ void AST_Writer::visit(FlowPtr<SeqPoint> n) {
     auto items = n->get_items();
     begin_arr(items.size());
     std::for_each(items.begin(), items.end(),
-                  [&](auto item) { item.accept(*this); });
+                  [&](auto item) { item.Accept(*this); });
     end_arr();
   }
 
@@ -1087,7 +1087,7 @@ void AST_Writer::visit(FlowPtr<Block> n) {
     auto items = n->get_items();
     begin_arr(items.size());
     std::for_each(items.begin(), items.end(),
-                  [&](auto item) { item.accept(*this); });
+                  [&](auto item) { item.Accept(*this); });
     end_arr();
   }
 
@@ -1119,10 +1119,10 @@ void AST_Writer::visit(FlowPtr<VarDecl> n) {
   string(n->get_name());
 
   string("type");
-  n->get_type() ? n->get_type().value().accept(*this) : null();
+  n->get_type() ? n->get_type().value().Accept(*this) : null();
 
   string("value");
-  n->get_value() ? n->get_value().value().accept(*this) : null();
+  n->get_value() ? n->get_value().value().Accept(*this) : null();
 
   { /* Write attributes */
     string("attributes");
@@ -1130,7 +1130,7 @@ void AST_Writer::visit(FlowPtr<VarDecl> n) {
     auto attrs = n->get_attributes();
     begin_arr(attrs.size());
     std::for_each(attrs.begin(), attrs.end(),
-                  [&](auto attr) { attr.accept(*this); });
+                  [&](auto attr) { attr.Accept(*this); });
     end_arr();
   }
 
@@ -1154,7 +1154,7 @@ void AST_Writer::visit(FlowPtr<InlineAsm> n) {
     auto args = n->get_args();
     begin_arr(args.size());
     std::for_each(args.begin(), args.end(),
-                  [&](auto arg) { arg.accept(*this); });
+                  [&](auto arg) { arg.Accept(*this); });
     end_arr();
   }
 
@@ -1170,14 +1170,14 @@ void AST_Writer::visit(FlowPtr<IfStmt> n) {
   write_source_location(n);
 
   string("cond");
-  n->get_cond().accept(*this);
+  n->get_cond().Accept(*this);
 
   string("then");
-  n->get_then().accept(*this);
+  n->get_then().Accept(*this);
 
   string("else");
   if (n->get_else()) {
-    n->get_else().value().accept(*this);
+    n->get_else().value().Accept(*this);
   } else {
     null();
   }
@@ -1194,10 +1194,10 @@ void AST_Writer::visit(FlowPtr<WhileStmt> n) {
   write_source_location(n);
 
   string("cond");
-  n->get_cond().accept(*this);
+  n->get_cond().Accept(*this);
 
   string("body");
-  n->get_body().accept(*this);
+  n->get_body().Accept(*this);
 
   end_obj();
 }
@@ -1212,27 +1212,27 @@ void AST_Writer::visit(FlowPtr<ForStmt> n) {
 
   string("init");
   if (n->get_init()) {
-    n->get_init().value().accept(*this);
+    n->get_init().value().Accept(*this);
   } else {
     null();
   }
 
   string("cond");
   if (n->get_cond()) {
-    n->get_cond().value().accept(*this);
+    n->get_cond().value().Accept(*this);
   } else {
     null();
   }
 
   string("step");
   if (n->get_step()) {
-    n->get_step().value().accept(*this);
+    n->get_step().value().Accept(*this);
   } else {
     null();
   }
 
   string("body");
-  n->get_body().accept(*this);
+  n->get_body().Accept(*this);
 
   end_obj();
 }
@@ -1252,10 +1252,10 @@ void AST_Writer::visit(FlowPtr<ForeachStmt> n) {
   string(n->get_val_ident());
 
   string("expr");
-  n->get_expr().accept(*this);
+  n->get_expr().Accept(*this);
 
   string("body");
-  n->get_body().accept(*this);
+  n->get_body().Accept(*this);
 
   end_obj();
 }
@@ -1292,7 +1292,7 @@ void AST_Writer::visit(FlowPtr<ReturnStmt> n) {
 
   string("expr");
   if (n->get_value()) {
-    n->get_value().value().accept(*this);
+    n->get_value().value().Accept(*this);
   } else {
     null();
   }
@@ -1309,10 +1309,10 @@ void AST_Writer::visit(FlowPtr<ReturnIfStmt> n) {
   write_source_location(n);
 
   string("cond");
-  n->get_cond().accept(*this);
+  n->get_cond().Accept(*this);
 
   string("expr");
-  n->get_value().accept(*this);
+  n->get_value().Accept(*this);
 
   end_obj();
 }
@@ -1326,10 +1326,10 @@ void AST_Writer::visit(FlowPtr<CaseStmt> n) {
   write_source_location(n);
 
   string("match");
-  n->get_cond().accept(*this);
+  n->get_cond().Accept(*this);
 
   string("body");
-  n->get_body().accept(*this);
+  n->get_body().Accept(*this);
 
   end_obj();
 }
@@ -1343,7 +1343,7 @@ void AST_Writer::visit(FlowPtr<SwitchStmt> n) {
   write_source_location(n);
 
   string("match");
-  n->get_cond().accept(*this);
+  n->get_cond().Accept(*this);
 
   { /* Write cases */
     string("cases");
@@ -1351,12 +1351,12 @@ void AST_Writer::visit(FlowPtr<SwitchStmt> n) {
     auto cases = n->get_cases();
     begin_arr(cases.size());
     std::for_each(cases.begin(), cases.end(),
-                  [&](auto item) { item.accept(*this); });
+                  [&](auto item) { item.Accept(*this); });
     end_arr();
   }
 
   string("default");
-  n->get_default() ? n->get_default().value().accept(*this) : null();
+  n->get_default() ? n->get_default().value().Accept(*this) : null();
 
   end_obj();
 }
@@ -1373,7 +1373,7 @@ void AST_Writer::visit(FlowPtr<TypedefStmt> n) {
   string(n->get_name());
 
   string("type");
-  n->get_type().accept(*this);
+  n->get_type().Accept(*this);
 
   end_obj();
 }
@@ -1392,7 +1392,7 @@ void AST_Writer::visit(FlowPtr<Function> n) {
     auto attrs = n->get_attributes();
     begin_arr(attrs.size());
     std::for_each(attrs.begin(), attrs.end(),
-                  [&](auto attr) { attr.accept(*this); });
+                  [&](auto attr) { attr.Accept(*this); });
     end_arr();
   }
 
@@ -1479,10 +1479,10 @@ void AST_Writer::visit(FlowPtr<Function> n) {
         string(*std::get<0>(param));
 
         string("type");
-        std::get<1>(param).accept(*this);
+        std::get<1>(param).Accept(*this);
 
         string("default");
-        std::get<2>(param) ? std::get<2>(param).value().accept(*this) : null();
+        std::get<2>(param) ? std::get<2>(param).value().Accept(*this) : null();
 
         end_obj();
       });
@@ -1509,10 +1509,10 @@ void AST_Writer::visit(FlowPtr<Function> n) {
       string(*std::get<0>(param));
 
       string("type");
-      std::get<1>(param).accept(*this);
+      std::get<1>(param).Accept(*this);
 
       string("default");
-      std::get<2>(param) ? std::get<2>(param).value().accept(*this) : null();
+      std::get<2>(param) ? std::get<2>(param).value().Accept(*this) : null();
 
       end_obj();
     });
@@ -1522,12 +1522,12 @@ void AST_Writer::visit(FlowPtr<Function> n) {
   }
 
   string("return");
-  n->get_return().accept(*this);
+  n->get_return().Accept(*this);
 
   { /* Write pre conditions */
     string("precond");
     if (n->get_precond().has_value()) {
-      n->get_precond().value().accept(*this);
+      n->get_precond().value().Accept(*this);
     } else {
       null();
     }
@@ -1536,7 +1536,7 @@ void AST_Writer::visit(FlowPtr<Function> n) {
   { /* Write post conditions */
     string("postcond");
     if (n->get_postcond().has_value()) {
-      n->get_postcond().value().accept(*this);
+      n->get_postcond().value().Accept(*this);
     } else {
       null();
     }
@@ -1544,7 +1544,7 @@ void AST_Writer::visit(FlowPtr<Function> n) {
 
   string("body");
   if (n->get_body().has_value()) {
-    n->get_body().value().accept(*this);
+    n->get_body().value().Accept(*this);
   } else {
     null();
   }
@@ -1596,7 +1596,7 @@ void AST_Writer::visit(FlowPtr<StructDef> n) {
 
     begin_arr(attrs.size());
     std::for_each(attrs.begin(), attrs.end(),
-                  [&](auto attr) { attr.accept(*this); });
+                  [&](auto attr) { attr.Accept(*this); });
     end_arr();
   }
 
@@ -1615,10 +1615,10 @@ void AST_Writer::visit(FlowPtr<StructDef> n) {
         string(*std::get<0>(param));
 
         string("type");
-        std::get<1>(param).accept(*this);
+        std::get<1>(param).Accept(*this);
 
         string("default");
-        std::get<2>(param) ? std::get<2>(param).value().accept(*this) : null();
+        std::get<2>(param) ? std::get<2>(param).value().Accept(*this) : null();
 
         end_obj();
       });
@@ -1649,10 +1649,10 @@ void AST_Writer::visit(FlowPtr<StructDef> n) {
       string(field.get_name());
 
       string("type");
-      field.get_type().accept(*this);
+      field.get_type().Accept(*this);
 
       string("default");
-      field.get_value().has_value() ? field.get_value().value().accept(*this)
+      field.get_value().has_value() ? field.get_value().value().Accept(*this)
                                     : null();
 
       string("visibility");
@@ -1678,7 +1678,7 @@ void AST_Writer::visit(FlowPtr<StructDef> n) {
       string(vis_str(method.vis));
 
       string("method");
-      method.func.accept(*this);
+      method.func.Accept(*this);
 
       end_obj();
     });
@@ -1697,7 +1697,7 @@ void AST_Writer::visit(FlowPtr<StructDef> n) {
       string(vis_str(method.vis));
 
       string("method");
-      method.func.accept(*this);
+      method.func.Accept(*this);
 
       end_obj();
     });
@@ -1719,7 +1719,7 @@ void AST_Writer::visit(FlowPtr<EnumDef> n) {
   string(n->get_name());
 
   string("type");
-  n->get_type() ? n->get_type().value().accept(*this) : null();
+  n->get_type() ? n->get_type().value().Accept(*this) : null();
 
   { /* Write items */
     string("fields");
@@ -1733,7 +1733,7 @@ void AST_Writer::visit(FlowPtr<EnumDef> n) {
       string(*item.first);
 
       string("value");
-      item.second ? item.second.value().accept(*this) : null();
+      item.second ? item.second.value().Accept(*this) : null();
 
       end_obj();
     });
@@ -1764,7 +1764,7 @@ void AST_Writer::visit(FlowPtr<ScopeStmt> n) {
   }
 
   string("body");
-  n->get_body().accept(*this);
+  n->get_body().Accept(*this);
 
   end_obj();
 }
@@ -1789,12 +1789,12 @@ void AST_Writer::visit(FlowPtr<ExportStmt> n) {
     auto attrs = n->get_attrs();
     begin_arr(attrs.size());
     std::for_each(attrs.begin(), attrs.end(),
-                  [&](auto attr) { attr.accept(*this); });
+                  [&](auto attr) { attr.Accept(*this); });
     end_arr();
   }
 
   string("body");
-  n->get_body().accept(*this);
+  n->get_body().Accept(*this);
 
   end_obj();
 }

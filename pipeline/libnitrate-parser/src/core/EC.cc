@@ -196,19 +196,19 @@ static std::optional<std::pair<Token, std::string>> find_and_decode_token(
     }
 
     case KeyW: {
-      return {{Token(KeyW, LexicalKeywords.left.at(unescaped.value()),
+      return {{Token(KeyW, LEXICAL_KEYWORDS.left.at(unescaped.value()),
                      LocationID(posid)),
                slice}};
     }
 
     case Oper: {
-      return {{Token(Oper, LexicalOperators.left.at(unescaped.value()),
+      return {{Token(Oper, LEXICAL_OPERATORS.left.at(unescaped.value()),
                      LocationID(posid)),
                slice}};
     }
 
     case Punc: {
-      return {{Token(Punc, LexicalPunctors.left.at(unescaped.value()),
+      return {{Token(Punc, LEXICAL_PUNCTORS.left.at(unescaped.value()),
                      LocationID(posid)),
                slice}};
     }
@@ -255,17 +255,16 @@ NCC_EXPORT std::string ncc::parse::ec::Formatter(std::string_view message_raw,
     std::stringstream ss;
     ss << "[\x1b[0m\x1b[31;1mSyntax\x1b[0m\x1b[37;1m]: ";
     ss << (start_filename->empty() ? "?" : start_filename) << ":";
-    ss << (start_line == QLEX_EOFF ? "?" : std::to_string(start_line + 1))
-       << ":";
-    ss << (start_col == QLEX_EOFF ? "?" : std::to_string(start_col + 1))
+    ss << (start_line == kLexEof ? "?" : std::to_string(start_line + 1)) << ":";
+    ss << (start_col == kLexEof ? "?" : std::to_string(start_col + 1))
        << ":\x1b[0m ";
     ss << "\x1b[37;1m" << message << "\x1b[0m";
 
-    if (start_line != QLEX_EOFF) {
+    if (start_line != kLexEof) {
       IScanner::Point start_pos(start_line == 0 ? 0 : start_line - 1, 0),
           end_pos;
 
-      if (end_line != QLEX_EOFF) {
+      if (end_line != kLexEof) {
         end_pos = IScanner::Point(end_line + 1, -1);
       } else {
         end_pos = IScanner::Point(start_line + 1, -1);

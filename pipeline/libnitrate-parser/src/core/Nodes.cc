@@ -108,7 +108,7 @@ NCC_EXPORT std::ostream &parse::operator<<(std::ostream &os,
 NCC_EXPORT std::ostream &Base::dump(std::ostream &os,
                                     WriterSourceProvider rd) const {
   AST_JsonWriter writer(os, rd);
-  this->accept(writer);
+  this->Accept(writer);
 
   return os;
 }
@@ -116,7 +116,7 @@ NCC_EXPORT std::ostream &Base::dump(std::ostream &os,
 NCC_EXPORT std::string Base::to_json(WriterSourceProvider rd) const {
   std::stringstream ss;
   AST_JsonWriter writer(ss, rd);
-  this->accept(writer);
+  this->Accept(writer);
 
   return ss.str();
 }
@@ -133,8 +133,8 @@ NCC_EXPORT bool Base::isSame(FlowPtr<Base> o) const {
   std::stringstream ss1, ss2;
   AST_MsgPackWriter writer1(ss1), writer2(ss2);
 
-  this->accept(writer1);
-  o.accept(writer2);
+  this->Accept(writer1);
+  o.Accept(writer2);
 
   return ss1.str() == ss2.str();
 }
@@ -142,7 +142,7 @@ NCC_EXPORT bool Base::isSame(FlowPtr<Base> o) const {
 NCC_EXPORT uint64_t Base::hash64() const {
   AST_Hash64 visitor;
 
-  this->accept(visitor);
+  this->Accept(visitor);
 
   return visitor.get();
 }
@@ -179,21 +179,21 @@ NCC_EXPORT bool Type::is_ptr_to(const Type *type) const {
 
 FlowPtr<Stmt> Parser::mock_stmt(std::optional<npar_ty_t>) {
   auto node = make<Stmt>(QAST_BASE)();
-  node->set_offset(rd.Current().get_start());
+  node->SetOffset(rd.Current().get_start());
 
   return node;
 }
 
 FlowPtr<Expr> Parser::mock_expr(std::optional<npar_ty_t>) {
   auto node = make<Expr>(QAST_BASE)();
-  node->set_offset(rd.Current().get_start());
+  node->SetOffset(rd.Current().get_start());
 
   return node;
 }
 
 FlowPtr<Type> Parser::mock_type() {
   auto node = make<Type>(QAST_BASE)();
-  node->set_offset(rd.Current().get_start());
+  node->SetOffset(rd.Current().get_start());
 
   return node;
 }

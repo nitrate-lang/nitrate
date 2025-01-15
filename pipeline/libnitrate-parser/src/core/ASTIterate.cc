@@ -362,7 +362,7 @@ static NCC_FORCE_INLINE void get_children_sorted(
   }
 
   IterVisitor v(children);
-  base.accept(v);
+  base.Accept(v);
 
   return;
 }

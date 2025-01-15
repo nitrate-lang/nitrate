@@ -660,7 +660,7 @@ NullableFlowPtr<Base> AST_Reader::deserialize_object() {
     auto start = m_source.value().get().InternLocation(range->start);
     auto end = m_source.value().get().InternLocation(range->end);
 
-    R.value()->setLoc(start, end);
+    R.value()->SetLoc(start, end);
   }
 
   return R;
@@ -719,8 +719,8 @@ NullableFlowPtr<BinExpr> AST_Reader::ReadKind_Binexpr() {
 
   auto op = next<std::string>();
 
-  auto op_it = lex::LexicalOperators.left.find(op);
-  if (op_it == lex::LexicalOperators.left.end()) {
+  auto op_it = lex::LEXICAL_OPERATORS.left.find(op);
+  if (op_it == lex::LEXICAL_OPERATORS.left.end()) {
     return nullptr;
   }
 
@@ -752,8 +752,8 @@ NullableFlowPtr<UnaryExpr> AST_Reader::ReadKind_Unexpr() {
 
   auto op = next<std::string>();
 
-  auto op_it = lex::LexicalOperators.left.find(op);
-  if (op_it == lex::LexicalOperators.left.end()) {
+  auto op_it = lex::LEXICAL_OPERATORS.left.find(op);
+  if (op_it == lex::LEXICAL_OPERATORS.left.end()) {
     return nullptr;
   }
 
@@ -776,8 +776,8 @@ NullableFlowPtr<PostUnaryExpr> AST_Reader::ReadKind_PostUnexpr() {
 
   auto op = next<std::string>();
 
-  auto op_it = lex::LexicalOperators.left.find(op);
-  if (op_it == lex::LexicalOperators.left.end()) {
+  auto op_it = lex::LEXICAL_OPERATORS.left.find(op);
+  if (op_it == lex::LEXICAL_OPERATORS.left.end()) {
     return nullptr;
   }
 
@@ -1199,9 +1199,9 @@ NullableFlowPtr<U1> AST_Reader::ReadKind_U1() {
   }
 
   auto node = make<U1>()();
-  node->set_width(info->width);
-  node->set_range_begin(info->min);
-  node->set_range_end(info->max);
+  node->SetWidth(info->width);
+  node->SetRangeBegin(info->min);
+  node->SetRangeEnd(info->max);
 
   return node;
 }
@@ -1213,9 +1213,9 @@ NullableFlowPtr<U8> AST_Reader::ReadKind_U8() {
   }
 
   auto node = make<U8>()();
-  node->set_width(info->width);
-  node->set_range_begin(info->min);
-  node->set_range_end(info->max);
+  node->SetWidth(info->width);
+  node->SetRangeBegin(info->min);
+  node->SetRangeEnd(info->max);
 
   return node;
 }
@@ -1227,9 +1227,9 @@ NullableFlowPtr<U16> AST_Reader::ReadKind_U16() {
   }
 
   auto node = make<U16>()();
-  node->set_width(info->width);
-  node->set_range_begin(info->min);
-  node->set_range_end(info->max);
+  node->SetWidth(info->width);
+  node->SetRangeBegin(info->min);
+  node->SetRangeEnd(info->max);
 
   return node;
 }
@@ -1241,9 +1241,9 @@ NullableFlowPtr<U32> AST_Reader::ReadKind_U32() {
   }
 
   auto node = make<U32>()();
-  node->set_width(info->width);
-  node->set_range_begin(info->min);
-  node->set_range_end(info->max);
+  node->SetWidth(info->width);
+  node->SetRangeBegin(info->min);
+  node->SetRangeEnd(info->max);
 
   return node;
 }
@@ -1255,9 +1255,9 @@ NullableFlowPtr<U64> AST_Reader::ReadKind_U64() {
   }
 
   auto node = make<U64>()();
-  node->set_width(info->width);
-  node->set_range_begin(info->min);
-  node->set_range_end(info->max);
+  node->SetWidth(info->width);
+  node->SetRangeBegin(info->min);
+  node->SetRangeEnd(info->max);
 
   return node;
 }
@@ -1269,9 +1269,9 @@ NullableFlowPtr<U128> AST_Reader::ReadKind_U128() {
   }
 
   auto node = make<U128>()();
-  node->set_width(info->width);
-  node->set_range_begin(info->min);
-  node->set_range_end(info->max);
+  node->SetWidth(info->width);
+  node->SetRangeBegin(info->min);
+  node->SetRangeEnd(info->max);
 
   return node;
 }
@@ -1283,9 +1283,9 @@ NullableFlowPtr<I8> AST_Reader::ReadKind_I8() {
   }
 
   auto node = make<I8>()();
-  node->set_width(info->width);
-  node->set_range_begin(info->min);
-  node->set_range_end(info->max);
+  node->SetWidth(info->width);
+  node->SetRangeBegin(info->min);
+  node->SetRangeEnd(info->max);
 
   return node;
 }
@@ -1297,9 +1297,9 @@ NullableFlowPtr<I16> AST_Reader::ReadKind_I16() {
   }
 
   auto node = make<I16>()();
-  node->set_width(info->width);
-  node->set_range_begin(info->min);
-  node->set_range_end(info->max);
+  node->SetWidth(info->width);
+  node->SetRangeBegin(info->min);
+  node->SetRangeEnd(info->max);
 
   return node;
 }
@@ -1311,9 +1311,9 @@ NullableFlowPtr<I32> AST_Reader::ReadKind_I32() {
   }
 
   auto node = make<I32>()();
-  node->set_width(info->width);
-  node->set_range_begin(info->min);
-  node->set_range_end(info->max);
+  node->SetWidth(info->width);
+  node->SetRangeBegin(info->min);
+  node->SetRangeEnd(info->max);
 
   return node;
 }
@@ -1325,9 +1325,9 @@ NullableFlowPtr<I64> AST_Reader::ReadKind_I64() {
   }
 
   auto node = make<I64>()();
-  node->set_width(info->width);
-  node->set_range_begin(info->min);
-  node->set_range_end(info->max);
+  node->SetWidth(info->width);
+  node->SetRangeBegin(info->min);
+  node->SetRangeEnd(info->max);
 
   return node;
 }
@@ -1339,9 +1339,9 @@ NullableFlowPtr<I128> AST_Reader::ReadKind_I128() {
   }
 
   auto node = make<I128>()();
-  node->set_width(info->width);
-  node->set_range_begin(info->min);
-  node->set_range_end(info->max);
+  node->SetWidth(info->width);
+  node->SetRangeBegin(info->min);
+  node->SetRangeEnd(info->max);
 
   return node;
 }
@@ -1353,9 +1353,9 @@ NullableFlowPtr<F16> AST_Reader::ReadKind_F16() {
   }
 
   auto node = make<F16>()();
-  node->set_width(info->width);
-  node->set_range_begin(info->min);
-  node->set_range_end(info->max);
+  node->SetWidth(info->width);
+  node->SetRangeBegin(info->min);
+  node->SetRangeEnd(info->max);
 
   return node;
 }
@@ -1367,9 +1367,9 @@ NullableFlowPtr<F32> AST_Reader::ReadKind_F32() {
   }
 
   auto node = make<F32>()();
-  node->set_width(info->width);
-  node->set_range_begin(info->min);
-  node->set_range_end(info->max);
+  node->SetWidth(info->width);
+  node->SetRangeBegin(info->min);
+  node->SetRangeEnd(info->max);
 
   return node;
 }
@@ -1381,9 +1381,9 @@ NullableFlowPtr<F64> AST_Reader::ReadKind_F64() {
   }
 
   auto node = make<F64>()();
-  node->set_width(info->width);
-  node->set_range_begin(info->min);
-  node->set_range_end(info->max);
+  node->SetWidth(info->width);
+  node->SetRangeBegin(info->min);
+  node->SetRangeEnd(info->max);
 
   return node;
 }
@@ -1395,9 +1395,9 @@ NullableFlowPtr<F128> AST_Reader::ReadKind_F128() {
   }
 
   auto node = make<F128>()();
-  node->set_width(info->width);
-  node->set_range_begin(info->min);
-  node->set_range_end(info->max);
+  node->SetWidth(info->width);
+  node->SetRangeBegin(info->min);
+  node->SetRangeEnd(info->max);
 
   return node;
 }
@@ -1409,9 +1409,9 @@ NullableFlowPtr<VoidTy> AST_Reader::ReadKind_Void() {
   }
 
   auto node = make<VoidTy>()();
-  node->set_width(info->width);
-  node->set_range_begin(info->min);
-  node->set_range_end(info->max);
+  node->SetWidth(info->width);
+  node->SetRangeBegin(info->min);
+  node->SetRangeEnd(info->max);
 
   return node;
 }
@@ -1433,9 +1433,9 @@ NullableFlowPtr<RefTy> AST_Reader::ReadKind_Ref() {
   }
 
   auto node = make<RefTy>(to.value())();
-  node->set_width(info->width);
-  node->set_range_begin(info->min);
-  node->set_range_end(info->max);
+  node->SetWidth(info->width);
+  node->SetRangeBegin(info->min);
+  node->SetRangeEnd(info->max);
 
   return node;
 }
@@ -1462,9 +1462,9 @@ NullableFlowPtr<PtrTy> AST_Reader::ReadKind_Ptr() {
   }
 
   auto node = make<PtrTy>(to.value(), is_volatile)();
-  node->set_width(info->width);
-  node->set_range_begin(info->min);
-  node->set_range_end(info->max);
+  node->SetWidth(info->width);
+  node->SetRangeBegin(info->min);
+  node->SetRangeEnd(info->max);
 
   return node;
 }
@@ -1482,9 +1482,9 @@ NullableFlowPtr<OpaqueTy> AST_Reader::ReadKind_Opaque() {
   auto name = next<std::string>();
 
   auto node = make<OpaqueTy>(name)();
-  node->set_width(info->width);
-  node->set_range_begin(info->min);
-  node->set_range_end(info->max);
+  node->SetWidth(info->width);
+  node->SetRangeBegin(info->min);
+  node->SetRangeEnd(info->max);
 
   return node;
 }
@@ -1514,9 +1514,9 @@ NullableFlowPtr<ArrayTy> AST_Reader::ReadKind_Array() {
   }
 
   auto node = make<ArrayTy>(of.value(), size.value())();
-  node->set_width(info->width);
-  node->set_range_begin(info->min);
-  node->set_range_end(info->max);
+  node->SetWidth(info->width);
+  node->SetRangeBegin(info->min);
+  node->SetRangeEnd(info->max);
 
   return node;
 }
@@ -1546,9 +1546,9 @@ NullableFlowPtr<TupleTy> AST_Reader::ReadKind_Tuple() {
   }
 
   auto node = make<TupleTy>(std::move(fields))();
-  node->set_width(info->width);
-  node->set_range_begin(info->min);
-  node->set_range_end(info->max);
+  node->SetWidth(info->width);
+  node->SetRangeBegin(info->min);
+  node->SetRangeEnd(info->max);
 
   return node;
 }
@@ -1663,9 +1663,9 @@ NullableFlowPtr<FuncTy> AST_Reader::ReadKind_FuncTy() {
 
   auto node = make<FuncTy>(return_type.value(), parameters, variadic, purity,
                            attributes)();
-  node->set_width(info->width);
-  node->set_range_begin(info->min);
-  node->set_range_end(info->max);
+  node->SetWidth(info->width);
+  node->SetRangeBegin(info->min);
+  node->SetRangeEnd(info->max);
 
   return node;
 }
@@ -1683,9 +1683,9 @@ NullableFlowPtr<NamedTy> AST_Reader::ReadKind_Unres() {
   auto name = next<std::string>();
 
   auto node = make<NamedTy>(name)();
-  node->set_width(info->width);
-  node->set_range_begin(info->min);
-  node->set_range_end(info->max);
+  node->SetWidth(info->width);
+  node->SetRangeBegin(info->min);
+  node->SetRangeEnd(info->max);
 
   return node;
 }
@@ -1697,9 +1697,9 @@ NullableFlowPtr<InferTy> AST_Reader::ReadKind_Infer() {
   }
 
   auto node = make<InferTy>()();
-  node->set_width(info->width);
-  node->set_range_begin(info->min);
-  node->set_range_end(info->max);
+  node->SetWidth(info->width);
+  node->SetRangeBegin(info->min);
+  node->SetRangeEnd(info->max);
 
   return node;
 }
@@ -1748,9 +1748,9 @@ NullableFlowPtr<TemplType> AST_Reader::ReadKind_Templ() {
   }
 
   auto node = make<TemplType>(templ.value(), std::move(arguments))();
-  node->set_width(info->width);
-  node->set_range_begin(info->min);
-  node->set_range_end(info->max);
+  node->SetWidth(info->width);
+  node->SetRangeBegin(info->min);
+  node->SetRangeEnd(info->max);
 
   return node;
 }

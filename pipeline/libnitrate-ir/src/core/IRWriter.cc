@@ -104,19 +104,19 @@ void IR_Writer::write_source_location(FlowPtr<Expr> n) const {
 #if NITRATE_FLOWPTR_TRACE
       begin_obj(4);
 
-      let origin = n.trace();
+      let origin = n.Trace();
 
       string("src");
-      string(origin.file_name());
+      string(origin.File());
 
       string("sub");
-      string(origin.function_name());
+      string(origin.Func());
 
       string("row");
-      uint64(origin.line());
+      uint64(origin.Line());
 
       string("col");
-      uint64(origin.column());
+      uint64(origin.Column());
 
       end_obj();
 #else
@@ -153,10 +153,10 @@ void IR_Writer::visit(FlowPtr<BinExpr> n) {
   string(op_repr(n->getOp()));
 
   string("lhs");
-  n->getLHS().accept(*this);
+  n->getLHS().Accept(*this);
 
   string("rhs");
-  n->getRHS().accept(*this);
+  n->getRHS().Accept(*this);
 
   end_obj();
 }
@@ -173,7 +173,7 @@ void IR_Writer::visit(FlowPtr<Unary> n) {
   string(op_repr(n->getOp()));
 
   string("expr");
-  n->getExpr().accept(*this);
+  n->getExpr().Accept(*this);
 
   end_obj();
 }
@@ -363,7 +363,7 @@ void IR_Writer::visit(FlowPtr<PtrTy> n) {
   write_source_location(n);
 
   string("pointee");
-  n->getPointee().accept(*this);
+  n->getPointee().Accept(*this);
 
   end_obj();
 }
@@ -377,7 +377,7 @@ void IR_Writer::visit(FlowPtr<ConstTy> n) {
   write_source_location(n);
 
   string("value");
-  n->getItem().accept(*this);
+  n->getItem().Accept(*this);
 
   end_obj();
 }
@@ -410,7 +410,7 @@ void IR_Writer::visit(FlowPtr<StructTy> n) {
   begin_arr(fields.size());
 
   std::for_each(fields.begin(), fields.end(),
-                [&](auto &field) { field->accept(*this); });
+                [&](auto &field) { field->Accept(*this); });
 
   end_arr();
 
@@ -431,7 +431,7 @@ void IR_Writer::visit(FlowPtr<UnionTy> n) {
   begin_arr(fields.size());
 
   std::for_each(fields.begin(), fields.end(),
-                [&](auto &field) { field->accept(*this); });
+                [&](auto &field) { field->Accept(*this); });
 
   end_arr();
 
@@ -447,7 +447,7 @@ void IR_Writer::visit(FlowPtr<ArrayTy> n) {
   write_source_location(n);
 
   string("element");
-  n->getElement().accept(*this);
+  n->getElement().Accept(*this);
 
   string("size");
   uint64(n->getCount());
@@ -469,7 +469,7 @@ void IR_Writer::visit(FlowPtr<FnTy> n) {
   begin_arr(params.size());
 
   std::for_each(params.begin(), params.end(),
-                [&](auto &param) { param->accept(*this); });
+                [&](auto &param) { param->Accept(*this); });
 
   end_arr();
 
@@ -477,7 +477,7 @@ void IR_Writer::visit(FlowPtr<FnTy> n) {
   boolean(n->isVariadic());
 
   string("return");
-  n->getReturn().accept(*this);
+  n->getReturn().Accept(*this);
 
   end_obj();
 }
@@ -527,7 +527,7 @@ void IR_Writer::visit(FlowPtr<List> n) {
   string("items");
   begin_arr(n->size());
 
-  std::for_each(n->begin(), n->end(), [&](auto &item) { item->accept(*this); });
+  std::for_each(n->begin(), n->end(), [&](auto &item) { item->Accept(*this); });
 
   end_arr();
 
@@ -555,7 +555,7 @@ void IR_Writer::visit(FlowPtr<Call> n) {
   begin_arr(args.size());
 
   std::for_each(args.begin(), args.end(),
-                [&](auto &arg) { arg->accept(*this); });
+                [&](auto &arg) { arg->Accept(*this); });
 
   end_arr();
 
@@ -573,7 +573,7 @@ void IR_Writer::visit(FlowPtr<Seq> n) {
   string("items");
   begin_arr(n->size());
 
-  std::for_each(n->begin(), n->end(), [&](auto &item) { item->accept(*this); });
+  std::for_each(n->begin(), n->end(), [&](auto &item) { item->Accept(*this); });
 
   end_arr();
 
@@ -589,10 +589,10 @@ void IR_Writer::visit(FlowPtr<Index> n) {
   write_source_location(n);
 
   string("base");
-  n->getExpr().accept(*this);
+  n->getExpr().Accept(*this);
 
   string("index");
-  n->getIndex().accept(*this);
+  n->getIndex().Accept(*this);
 
   end_obj();
 }
@@ -620,7 +620,7 @@ void IR_Writer::visit(FlowPtr<Extern> n) {
   write_source_location(n);
 
   string("value");
-  n->getValue().accept(*this);
+  n->getValue().Accept(*this);
 
   string("abi_name");
   string(n->getAbiName());
@@ -649,7 +649,7 @@ void IR_Writer::visit(FlowPtr<Local> n) {
   boolean(n->isReadonly());
 
   string("value");
-  n->getValue().accept(*this);
+  n->getValue().Accept(*this);
 
   end_obj();
 }
@@ -663,7 +663,7 @@ void IR_Writer::visit(FlowPtr<Ret> n) {
   write_source_location(n);
 
   string("expr");
-  n->getExpr().accept(*this);
+  n->getExpr().Accept(*this);
 
   end_obj();
 }
@@ -699,13 +699,13 @@ void IR_Writer::visit(FlowPtr<If> n) {
   write_source_location(n);
 
   string("cond");
-  n->getCond().accept(*this);
+  n->getCond().Accept(*this);
 
   string("then");
-  n->getThen().accept(*this);
+  n->getThen().Accept(*this);
 
   string("else");
-  n->getElse().accept(*this);
+  n->getElse().Accept(*this);
 
   end_obj();
 }
@@ -719,10 +719,10 @@ void IR_Writer::visit(FlowPtr<While> n) {
   write_source_location(n);
 
   string("cond");
-  n->getCond().accept(*this);
+  n->getCond().Accept(*this);
 
   string("body");
-  n->getBody().accept(*this);
+  n->getBody().Accept(*this);
 
   end_obj();
 }
@@ -736,16 +736,16 @@ void IR_Writer::visit(FlowPtr<For> n) {
   write_source_location(n);
 
   string("init");
-  n->getInit().accept(*this);
+  n->getInit().Accept(*this);
 
   string("cond");
-  n->getCond().accept(*this);
+  n->getCond().Accept(*this);
 
   string("step");
-  n->getStep().accept(*this);
+  n->getStep().Accept(*this);
 
   string("body");
-  n->getBody().accept(*this);
+  n->getBody().Accept(*this);
 
   end_obj();
 }
@@ -759,10 +759,10 @@ void IR_Writer::visit(FlowPtr<Case> n) {
   write_source_location(n);
 
   string("cond");
-  n->getCond().accept(*this);
+  n->getCond().Accept(*this);
 
   string("body");
-  n->getBody().accept(*this);
+  n->getBody().Accept(*this);
 
   end_obj();
 }
@@ -776,16 +776,16 @@ void IR_Writer::visit(FlowPtr<Switch> n) {
   write_source_location(n);
 
   string("cond");
-  n->getCond().accept(*this);
+  n->getCond().Accept(*this);
 
   string("default");
-  n->getDefault().has_value() ? n->getDefault().value()->accept(*this) : null();
+  n->getDefault().has_value() ? n->getDefault().value()->Accept(*this) : null();
 
   string("cases");
   auto cases = n->getCases();
   begin_arr(cases.size());
 
-  std::for_each(cases.begin(), cases.end(), [&](auto &c) { c->accept(*this); });
+  std::for_each(cases.begin(), cases.end(), [&](auto &c) { c->Accept(*this); });
 
   end_arr();
 
@@ -817,7 +817,7 @@ void IR_Writer::visit(FlowPtr<Function> n) {
     string(param.second);
 
     string("type");
-    param.first->accept(*this);
+    param.first->Accept(*this);
 
     end_obj();
   });
@@ -828,10 +828,10 @@ void IR_Writer::visit(FlowPtr<Function> n) {
   boolean(n->isVariadic());
 
   string("return");
-  n->getReturn().accept(*this);
+  n->getReturn().Accept(*this);
 
   string("body");
-  n->getBody().has_value() ? n->getBody().value()->accept(*this) : null();
+  n->getBody().has_value() ? n->getBody().value()->Accept(*this) : null();
 
   end_obj();
 }
@@ -867,7 +867,7 @@ void IR_Writer::visit(FlowPtr<Tmp> n) {
     begin_obj(2);
 
     string("base");
-    data.base->accept(*this);
+    data.base->Accept(*this);
 
     string("arguments");
     auto args = data.args;
@@ -880,7 +880,7 @@ void IR_Writer::visit(FlowPtr<Tmp> n) {
       string(arg.first);
 
       string("value");
-      arg.second->accept(*this);
+      arg.second->Accept(*this);
 
       end_obj();
     });

@@ -362,7 +362,7 @@ FlowPtr<Stmt> Parser::recurse_function(bool parse_declaration_only) {
       function_template_parameters, function_parameters.first,
       function_parameters.second, function_return_type, std::nullopt,
       std::nullopt, function_body)();
-  function->set_offset(start_pos);
+  function->SetOffset(start_pos);
 
   return function;
 }

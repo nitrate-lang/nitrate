@@ -1417,7 +1417,7 @@ using namespace ncc;
 //         Vis::Pub, props.first, props.second,
 //         check_is_foreign_function(n->get_attributes()));
 
-//     fndef->setAbiTag(s.abi_mode);
+//     fndef->SetAbiTag(s.abi_mode);
 
 //     { /* Function body */
 
@@ -1438,7 +1438,7 @@ using namespace ncc;
 
 //       s.ns_prefix = old_ns;
 
-//       fndef->setBody(body.value()->as<Seq>());
+//       fndef->SetBody(body.value()->as<Seq>());
 //     }
 
 //     return fndef;
@@ -1541,7 +1541,7 @@ using namespace ncc;
 //         Vis::Pub, props.first, props.second,
 //         check_is_foreign_function(n->get_attributes()));
 
-//     decl->setAbiTag(s.abi_mode);
+//     decl->SetAbiTag(s.abi_mode);
 
 //     return decl;
 //   }
@@ -1715,8 +1715,8 @@ using namespace ncc;
 //       b.createVariable(save(s.join_scope(n->get_name())),
 //                        type.value()->asType(), visibility, storage, false);
 
-//   local->setValue(init.value());
-//   local->setAbiTag(s.abi_mode);
+//   local->SetValue(init.value());
+//   local->SetAbiTag(s.abi_mode);
 
 //   return local;
 // }

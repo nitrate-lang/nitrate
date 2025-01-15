@@ -40,7 +40,7 @@
 #include <type_traits>
 
 namespace ncc::lex {
-  typedef enum TokenType {
+  enum TokenType {
     EofF = 1, /* End of file */
     KeyW,     /* Keyword */
     Oper,     /* Operator */
@@ -53,9 +53,9 @@ namespace ncc::lex {
     MacB,     /* Macro block */
     Macr,     /* Macro call */
     Note,     /* Comment */
-  } __attribute__((packed)) TokenType;
+  };
 
-  typedef enum Punctor {
+  enum Punctor {
     PuncLPar, /* Left parenthesis */
     PuncRPar, /* Right parenthesis */
     PuncLBrk, /* Left bracket */
@@ -65,9 +65,9 @@ namespace ncc::lex {
     PuncComa, /* Comma */
     PuncColn, /* Colon */
     PuncSemi, /* Semicolon */
-  } __attribute__((packed)) Punctor;
+  };
 
-  typedef enum Operator {
+  enum Operator {
     OpPlus,        /* '+':    Addition operator */
     OpMinus,       /* '-':    Subtraction operator */
     OpTimes,       /* '*':    Multiplication operator */
@@ -123,9 +123,9 @@ namespace ncc::lex {
     OpEllipsis,    /* '...':        Ellipsis operator */
     OpArrow,       /* '=>':         Arrow operator */
     OpTernary,     /* '?':          Ternary operator */
-  } __attribute__((packed)) Operator;
+  };
 
-  typedef enum Keyword {
+  enum Keyword {
     Scope,     /* 'scope' */
     Pub,       /* 'pub' */
     Sec,       /* 'sec' */
@@ -168,15 +168,15 @@ namespace ncc::lex {
     Null,      /* 'null' */
     True,      /* 'true' */
     False,     /* 'false' */
-  } __attribute__((packed)) Keyword;
+  };
 
-  constexpr size_t QLEX_EOFF = UINT32_MAX;
-  constexpr size_t QLEX_NOFILE = 16777215;
+  constexpr size_t kLexEof = UINT32_MAX;
+  constexpr size_t kLexNoFile = 16777215;
 
   class IScanner;
 
   class Location {
-    uint32_t m_offset = QLEX_EOFF, m_line = QLEX_EOFF, m_column = QLEX_EOFF;
+    uint32_t m_offset = kLexEof, m_line = kLexEof, m_column = kLexEof;
     string m_filename;
 
   public:
@@ -189,14 +189,14 @@ namespace ncc::lex {
           m_column(column),
           m_filename(filename) {}
 
-    static constexpr Location EndOfFile() {
-      return Location(QLEX_EOFF, QLEX_EOFF, QLEX_EOFF, "");
+    static constexpr auto EndOfFile() {
+      return Location(kLexEof, kLexEof, kLexEof, "");
     }
 
-    constexpr uint32_t GetOffset() const { return m_offset; }
-    constexpr uint32_t GetRow() const { return m_line; }
-    constexpr uint32_t GetCol() const { return m_column; }
-    constexpr string GetFilename() const { return m_filename.get(); }
+    [[nodiscard]] constexpr auto GetOffset() const { return m_offset; }
+    [[nodiscard]] constexpr auto GetRow() const { return m_line; }
+    [[nodiscard]] constexpr auto GetCol() const { return m_column; }
+    [[nodiscard]] constexpr string GetFilename() const { return m_filename; }
   } __attribute__((packed));
 
   class LocationID {
@@ -205,8 +205,8 @@ namespace ncc::lex {
 
     constexpr LocationID(Counter id = 0) : m_id(id) {}
 
-    Location Get(IScanner &L) const;
-    constexpr Counter GetId() const { return m_id; }
+    Location Get(IScanner &l) const;
+    [[nodiscard]] constexpr Counter GetId() const { return m_id; }
 
     constexpr bool operator==(const LocationID &rhs) const {
       return m_id == rhs.m_id;
@@ -223,47 +223,51 @@ namespace ncc::lex {
   using LocationRange = std::pair<LocationID, LocationID>;
 
   union TokenData {
-    Punctor punc;
-    Operator op;
-    Keyword key;
-    string str;
+    Punctor m_punc;
+    Operator m_op;
+    Keyword m_key;
+    string m_str;
 
-    constexpr TokenData(Punctor punc) : punc(punc) {}
-    constexpr TokenData(Operator op) : op(op) {}
-    constexpr TokenData(Keyword key) : key(key) {}
-    constexpr TokenData(string str) : str(str) {}
+    constexpr TokenData(Punctor punc) : m_punc(punc) {}
+    constexpr TokenData(Operator op) : m_op(op) {}
+    constexpr TokenData(Keyword key) : m_key(key) {}
+    constexpr TokenData(string str) : m_str(str) {}
   } __attribute__((packed));
 
-  string to_string(TokenType, TokenData);
+  string to_string(TokenType, TokenData);  /// NOLINT
 
   class TokenBase {
     LocationID m_location_id = 0;
     TokenType m_type;
 
   public:
-    TokenData v;
+    TokenData m_v;
 
-    constexpr TokenBase()
-        : m_location_id(LocationID()), m_type(EofF), v{OpPlus} {}
+    constexpr TokenBase() : m_type(EofF), m_v{OpPlus} {}
 
     template <class T = Operator>
     constexpr TokenBase(TokenType ty, T val, LocationID start = LocationID())
-        : m_location_id(start), m_type(ty), v{val} {}
+        : m_location_id(start), m_type(ty), m_v{val} {}
 
-    constexpr static TokenBase EndOfFile() { return TokenBase(); }
+    constexpr static auto EndOfFile() { return TokenBase(); }
 
-    constexpr bool is(TokenType val) const { return m_type == val; }
+    constexpr bool is(TokenType val) const {  /// NOLINT
+      return m_type == val;
+    }
 
     constexpr bool operator==(const TokenBase &rhs) const {
-      if (m_type != rhs.m_type) return false;
+      if (m_type != rhs.m_type) {
+        return false;
+      }
+
       switch (m_type) {
         case EofF:
         case Punc:
-          return v.punc == rhs.v.punc;
+          return m_v.m_punc == rhs.m_v.m_punc;
         case Oper:
-          return v.op == rhs.v.op;
+          return m_v.m_op == rhs.m_v.m_op;
         case KeyW:
-          return v.key == rhs.v.key;
+          return m_v.m_key == rhs.m_v.m_key;
         case IntL:
         case NumL:
         case Text:
@@ -272,30 +276,39 @@ namespace ncc::lex {
         case MacB:
         case Macr:
         case Note:
-          return v.str == rhs.v.str;
+          return m_v.m_str == rhs.m_v.m_str;
       }
     }
 
     template <auto V>
-    constexpr bool is() const {
+    [[nodiscard]] constexpr bool is() const {  /// NOLINT
       if constexpr (std::is_same_v<decltype(V), Keyword>) {
-        return m_type == KeyW && v.key == V;
+        return m_type == KeyW && m_v.m_key == V;
       } else if constexpr (std::is_same_v<decltype(V), Punctor>) {
-        return m_type == Punc && v.punc == V;
+        return m_type == Punc && m_v.m_punc == V;
       } else if constexpr (std::is_same_v<decltype(V), Operator>) {
-        return m_type == Oper && v.op == V;
+        return m_type == Oper && m_v.m_op == V;
       }
     }
 
-    string as_string() const { return to_string(m_type, v); }
-
-    Keyword as_key() const { return v.key; }
-    Operator as_op() const { return v.op; }
-    Punctor as_punc() const { return v.punc; }
-
-    LocationID get_start() const { return m_location_id; }
-
-    TokenType get_type() const { return m_type; }
+    [[nodiscard]] auto as_string() const {  /// NOLINT
+      return to_string(m_type, m_v);
+    }
+    [[nodiscard]] auto as_key() const {  /// NOLINT
+      return m_v.m_key;
+    }
+    [[nodiscard]] auto as_op() const {  /// NOLINT
+      return m_v.m_op;
+    }
+    [[nodiscard]] auto as_punc() const {  /// NOLINT
+      return m_v.m_punc;
+    }
+    [[nodiscard]] auto get_start() const {  /// NOLINT
+      return m_location_id;
+    }
+    [[nodiscard]] auto get_type() const {  /// NOLINT
+      return m_type;
+    }
 
     constexpr bool operator<(const TokenBase &rhs) const {
       if (m_type != rhs.m_type) {
@@ -306,11 +319,11 @@ namespace ncc::lex {
         case EofF:
           return false;
         case Punc:
-          return v.punc < rhs.v.punc;
+          return m_v.m_punc < rhs.m_v.m_punc;
         case Oper:
-          return v.op < rhs.v.op;
+          return m_v.m_op < rhs.m_v.m_op;
         case KeyW:
-          return v.key < rhs.v.key;
+          return m_v.m_key < rhs.m_v.m_key;
         case IntL:
         case NumL:
         case Text:
@@ -319,14 +332,12 @@ namespace ncc::lex {
         case MacB:
         case Macr:
         case Note:
-          return v.str < rhs.v.str;
+          return m_v.m_str < rhs.m_v.m_str;
       }
     }
   } __attribute__((packed));
 
   using Token = TokenBase;
-
-  constexpr auto QLEX_TOK_SIZE = sizeof(Token);
 }  // namespace ncc::lex
 
 namespace std {

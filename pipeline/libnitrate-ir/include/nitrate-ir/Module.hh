@@ -90,7 +90,7 @@ namespace ncc::ir {
              });
     }
 
-    void accept(IRVisitor<void> &visitor);
+    void Accept(IRVisitor<void> &visitor);
   };
 
   constexpr size_t QMODULE_SIZE = sizeof(IRModule);

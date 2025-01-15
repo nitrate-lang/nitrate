@@ -212,7 +212,7 @@ NCC_EXPORT std::string ec::Formatter(std::string_view msg, Sev sev) {
     /// FIXME: Get source location
     ss << "\x1b[37;1m" << "??" << ":";
 
-    auto default_if = std::pair<uint32_t, uint32_t>(QLEX_EOFF, QLEX_EOFF);
+    auto default_if = std::pair<uint32_t, uint32_t>(kLexEof, kLexEof);
     auto beg = default_if;
     auto end = default_if;
 
@@ -221,16 +221,15 @@ NCC_EXPORT std::string ec::Formatter(std::string_view msg, Sev sev) {
     el = end.first;
     ec = end.second;
 
-    if (sl != QLEX_EOFF || sc != QLEX_EOFF || el != QLEX_EOFF ||
-        ec != QLEX_EOFF) {
-      ss << (sl == QLEX_EOFF ? "?" : std::to_string(sl));
+    if (sl != kLexEof || sc != kLexEof || el != kLexEof || ec != kLexEof) {
+      ss << (sl == kLexEof ? "?" : std::to_string(sl));
       ss << ":";
-      ss << (sc == QLEX_EOFF ? "?" : std::to_string(sc));
+      ss << (sc == kLexEof ? "?" : std::to_string(sc));
 
       ss << "-";
-      ss << (el == QLEX_EOFF ? "?" : std::to_string(el));
+      ss << (el == kLexEof ? "?" : std::to_string(el));
       ss << ":";
-      ss << (ec == QLEX_EOFF ? "?" : std::to_string(ec));
+      ss << (ec == kLexEof ? "?" : std::to_string(ec));
 
       ss << ":\x1b[0m";
     }
@@ -270,7 +269,7 @@ NCC_EXPORT std::string ec::Formatter(std::string_view msg, Sev sev) {
   std::string ind;
   size_t ind_sz;
 
-  if (sl != QLEX_EOFF) {
+  if (sl != kLexEof) {
     ind_sz = std::ceil(std::log10(sl));
     ind = std::string(ind_sz, ' ');
   } else {
@@ -321,8 +320,8 @@ NCC_EXPORT std::string ec::Formatter(std::string_view msg, Sev sev) {
     }
   }
 
-  if (sl != QLEX_EOFF && sc != QLEX_EOFF && el != QLEX_EOFF &&
-      ec != QLEX_EOFF) { /* Source window */
+  if (sl != kLexEof && sc != kLexEof && el != kLexEof &&
+      ec != kLexEof) { /* Source window */
     constexpr size_t WINDOW_WIDTH = 60;
 
     int64_t x_0 = sc, y_0 = sl, x_1 = ec, y_1 = el;
@@ -342,7 +341,7 @@ NCC_EXPORT std::string ec::Formatter(std::string_view msg, Sev sev) {
         auto lines = word_break(source_lines.value()[i], WINDOW_WIDTH);
 
         for (const auto &line : lines) {
-          if (sl != QLEX_EOFF) {
+          if (sl != kLexEof) {
             ss << std::setw(ind_sz + 1)
                << (sl - (source_lines.value().size() / 2)) + i + 1;
           } else {

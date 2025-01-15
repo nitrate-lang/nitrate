@@ -264,7 +264,7 @@ static int do_parse(std::shared_ptr<Environment> &env, std::string source,
       verbose ? WriterSourceProvider(scanner) : std::nullopt;
 
   AST_JsonWriter writer(output, rd);
-  ast.get().accept(writer);
+  ast.get().Accept(writer);
 
   return 0;
 }
@@ -448,7 +448,7 @@ namespace no3::router {
                      ? std::make_unique<std::ostream>(std::cout.rdbuf())
                      : std::make_unique<std::ofstream>(output);
 
-      env->set("FILE", source);
+      env->Set("FILE", source);
 
       return do_parse(env, source, *out, verbose);
     } else if (parser.is_subcommand_used("nr")) {
@@ -464,7 +464,7 @@ namespace no3::router {
                      ? std::make_unique<std::ostream>(std::cout.rdbuf())
                      : std::make_unique<std::ofstream>(output);
 
-      env->set("FILE", source);
+      env->Set("FILE", source);
 
       return do_nr(env, source, *out, opts);
     } else if (parser.is_subcommand_used("codegen")) {
@@ -477,7 +477,7 @@ namespace no3::router {
       std::string opts = nr_parser.get<std::string>("--opts");
       std::string target = nr_parser.get<std::string>("--target");
 
-      env->set("FILE", source);
+      env->Set("FILE", source);
 
       return do_codegen(env, source, output, opts, target);
     } else if (parser.is_used("--demangle")) {

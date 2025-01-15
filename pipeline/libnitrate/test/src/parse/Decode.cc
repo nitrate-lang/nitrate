@@ -16,7 +16,7 @@ TEST(AST, FromJson) {
 
   std::stringstream serialized;
   AST_JsonWriter writer(serialized);
-  original.get()->accept(writer);
+  original.get()->Accept(writer);
 
   auto decoded = AST_JsonReader::FromString(serialized.str());
   ASSERT_TRUE(decoded.has_value());
@@ -31,7 +31,7 @@ TEST(AST, FromMsgPack) {
 
   std::stringstream serialized;
   AST_MsgPackWriter writer(serialized);
-  original.get()->accept(writer);
+  original.get()->Accept(writer);
 
   auto decoded = AST_MsgPackReader::FromString(serialized.str());
   ASSERT_TRUE(decoded.has_value());

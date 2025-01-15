@@ -129,14 +129,14 @@
 //       caller_info
 //           .file_name(),    // Original source file that invoked the external
 //           API
-//       caller_info.line(),  // Original source line that invoked the external
+//       caller_info.Line(),  // Original source line that invoked the external
 //       API caller_info.function_name(),  // Original source function that
 //       invoked the
 //                                     // external API
 
 //       caller.file_name(),  // Library source file that triggered the
 //                            // contract enforcement
-//       caller.line(),       // Library source line that triggered the contract
+//       caller.Line(),       // Library source line that triggered the contract
 //                            // enforcement
 //       caller.function_name(),  // Library source function that triggered the
 //                                // contract enforcement
@@ -162,7 +162,7 @@
 
 //       caller.file_name(),  // Library source file that triggered the contract
 //                            // enforcement
-//       caller.line(),       // Library source line that triggered the contract
+//       caller.Line(),       // Library source line that triggered the contract
 //                            // enforcement
 //       caller.function_name(),  // Library source function that triggered the
 //                                // contract enforcement
@@ -231,8 +231,8 @@
 // public:
 //   virtual void report(IssueCode, IC, std::vector<std::string_view> = {},
 //                       std::tuple<uint32_t, uint32_t> = {
-//                           ncc::lex::QLEX_EOFF,
-//                           ncc::lex::QLEX_NOFILE}) override {}
+//                           ncc::lex::kLexEof,
+//                           ncc::lex::kLexNoFile}) override {}
 
 //   virtual void erase_reports() override {}
 
@@ -301,7 +301,7 @@
 
 //     { /* Clone the IRGraph into the module */
 //       std::swap(nr_allocator, new_mod->GetNodeArena());
-//       new_mod->setRoot(static_cast<FlowPtr<Seq>>(m_root->clone()));
+//       new_mod->SetRoot(static_cast<FlowPtr<Seq>>(m_root->clone()));
 //       std::swap(nr_allocator, new_mod->GetNodeArena());
 //     }
 

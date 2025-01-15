@@ -67,9 +67,9 @@ int ncc::seq::sys_set(lua_State* L) {
   }
 
   if (lua_isnil(L, 2)) {
-    obj->GetEnvironment()->set(key, std::nullopt);
+    obj->GetEnvironment()->Set(key, std::nullopt);
   } else if (lua_isstring(L, 2)) {
-    obj->GetEnvironment()->set(key, lua_tostring(L, 2));
+    obj->GetEnvironment()->Set(key, lua_tostring(L, 2));
   } else {
     return luaL_error(L, "expected string or nil, got %s",
                       lua_typename(L, lua_type(L, 2)));
