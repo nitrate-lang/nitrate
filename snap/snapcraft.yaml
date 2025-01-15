@@ -18,6 +18,7 @@ parts:
     source: .
     build-packages:
      - libboost-all-dev
+     - libsparsehash-dev
      - libssl-dev
      - libgoogle-glog-dev
      - libyaml-cpp-dev

@@ -271,7 +271,7 @@ namespace ncc::lex {
     std::vector<Token> m_comments;
     std::vector<Location> m_location_interned;
     Token m_current;
-    string m_current_filename;
+    string m_filename;
     bool m_skip = false, m_ebit = false, m_eof = false;
 
     class StaticImpl;
@@ -326,12 +326,8 @@ namespace ncc::lex {
     constexpr void SkipCommentsState(bool skip) { m_skip = skip; }
     constexpr bool GetSkipCommentsState() const { return m_skip; }
 
-    constexpr void SetCurrentFilename(string filename) {
-      m_current_filename = filename;
-    }
-    constexpr auto GetCurrentFilename() const {
-      return m_current_filename.get();
-    }
+    constexpr void SetCurrentFilename(auto filename) { m_filename = filename; }
+    constexpr auto GetCurrentFilename() const { return m_filename; }
 
     Location GetLocation(LocationID id);
 

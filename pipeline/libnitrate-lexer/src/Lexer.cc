@@ -169,23 +169,20 @@ static NCC_FORCE_INLINE bool validate_identifier(std::string_view id) {
   return state == 0;
 }
 
-static NCC_FORCE_INLINE bool canonicalize_float(std::string_view input,
-                                                std::string &norm) {
-  size_t e_pos = input.find('e');
+static NCC_FORCE_INLINE bool canonicalize_float(std::string &buf) {
+  size_t e_pos = buf.find('e');
   if (e_pos == std::string::npos) [[likely]] {
-    norm = input;
     return true;
   }
 
   long double mantissa = 0;
-  if (std::from_chars(input.data(), input.data() + e_pos, mantissa).ec !=
+  if (std::from_chars(buf.data(), buf.data() + e_pos, mantissa).ec !=
       std::errc()) [[unlikely]] {
     return false;
   }
 
   long double exponent = 0;
-  if (std::from_chars(input.data() + e_pos + 1, input.data() + input.size(),
-                      exponent)
+  if (std::from_chars(buf.data() + e_pos + 1, buf.data() + buf.size(), exponent)
           .ec != std::errc()) [[unlikely]] {
     return false;
   }
@@ -213,98 +210,96 @@ static NCC_FORCE_INLINE bool canonicalize_float(std::string_view input,
     }
   }
 
-  norm = str;
+  buf = std::move(str);
 
   return true;
 }
 
-static NCC_FORCE_INLINE bool canonicalize_number(std::string &number,
-                                                 std::string &norm,
+static NCC_FORCE_INLINE bool canonicalize_number(std::string &buf,
                                                  NumType type) {
   boost::uint128_type x = 0, i = 0;
 
-  std::transform(number.begin(), number.end(), number.begin(), ::tolower);
-  std::erase(number, '_');
+  std::transform(buf.begin(), buf.end(), buf.begin(), ::tolower);
+  std::erase(buf, '_');
 
   switch (type) {
     case NumType::Hexadecimal: {
-      for (i = 2; i < number.size(); ++i) {
+      for (i = 2; i < buf.size(); ++i) {
         // Check for overflow
-        if ((x >> 64) & 0xF000000000000000) {
+        if ((x >> 64) & 0xF000000000000000) [[unlikely]] {
           return false;
         }
 
-        if (number[i] >= '0' && number[i] <= '9') {
-          x = (x << 4) + (number[i] - '0');
-        } else if (number[i] >= 'a' && number[i] <= 'f') {
-          x = (x << 4) + (number[i] - 'a' + 10);
-        } else {
+        if (buf[i] >= '0' && buf[i] <= '9') {
+          x = (x << 4) + (buf[i] - '0');
+        } else if (buf[i] >= 'a' && buf[i] <= 'f') {
+          x = (x << 4) + (buf[i] - 'a' + 10);
+        } else [[unlikely]] {
           return false;
         }
       }
       break;
     }
     case NumType::Binary: {
-      for (i = 2; i < number.size(); ++i) {
+      for (i = 2; i < buf.size(); ++i) {
         // Check for overflow
-        if ((x >> 64) & 0x8000000000000000) {
+        if ((x >> 64) & 0x8000000000000000) [[unlikely]] {
           return false;
         }
-        if (number[i] != '0' && number[i] != '1') {
+        if (buf[i] != '0' && buf[i] != '1') [[unlikely]] {
           return false;
         }
 
-        x = (x << 1) + (number[i] - '0');
+        x = (x << 1) + (buf[i] - '0');
       }
       break;
     }
     case NumType::Octal: {
-      for (i = 2; i < number.size(); ++i) {
+      for (i = 2; i < buf.size(); ++i) {
         // Check for overflow
-        if ((x >> 64) & 0xE000000000000000) {
+        if ((x >> 64) & 0xE000000000000000) [[unlikely]] {
           return false;
         }
-        if (number[i] < '0' || number[i] > '7') {
+        if (buf[i] < '0' || buf[i] > '7') [[unlikely]] {
           return false;
         }
 
-        x = (x << 3) + (number[i] - '0');
+        x = (x << 3) + (buf[i] - '0');
       }
       break;
     }
     case NumType::DecimalExplicit: {
-      for (i = 2; i < number.size(); ++i) {
-        if (number[i] < '0' || number[i] > '9') {
+      for (i = 2; i < buf.size(); ++i) {
+        if (buf[i] < '0' || buf[i] > '9') [[unlikely]] {
           return false;
         }
 
         // check for overflow
         auto tmp = x;
-        x = (x * 10) + (number[i] - '0');
-
-        if (x < tmp) {
+        x = (x * 10) + (buf[i] - '0');
+        if (x < tmp) [[unlikely]] {
           return false;
         }
       }
       break;
     }
     case NumType::Decimal: {
-      for (i = 0; i < number.size(); ++i) {
-        if (number[i] < '0' || number[i] > '9') {
+      for (i = 0; i < buf.size(); ++i) {
+        if (buf[i] < '0' || buf[i] > '9') [[unlikely]] {
           return false;
         }
 
         // check for overflow
         auto tmp = x;
-        x = (x * 10) + (number[i] - '0');
-        if (x < tmp) {
+        x = (x * 10) + (buf[i] - '0');
+        if (x < tmp) [[unlikely]] {
           return false;
         }
       }
       break;
     }
     case NumType::Floating: {
-      qcore_panic("unreachable");
+      __builtin_unreachable();
     }
   }
 
@@ -317,10 +312,8 @@ static NCC_FORCE_INLINE bool canonicalize_number(std::string &number,
     ss << (char)('0' + i % 10);
   }
 
-  std::string s = ss.str();
-  std::reverse(s.begin(), s.end());
-
-  norm = s;
+  buf.assign(ss.str());
+  std::reverse(buf.begin(), buf.end());
 
   return true;
 }
@@ -359,7 +352,7 @@ public:
           L.m_env->set("this.file.eof.offset", std::to_string(L.m_offset));
           L.m_env->set("this.file.eof.line", std::to_string(L.m_line));
           L.m_env->set("this.file.eof.column", std::to_string(L.m_column));
-          L.m_env->set("this.file.eof.filename", L.GetCurrentFilename());
+          L.m_env->set("this.file.eof.filename", L.GetCurrentFilename().get());
 
           // Benchmarks show that this is the fastest way to signal EOF
           // for large files.
@@ -846,13 +839,12 @@ public:
       }
     }
 
-    std::string norm;
     if (type == NumType::Floating) {
-      if (canonicalize_float(buf, norm)) {
-        return Token(NumL, string(std::move(norm)), start_pos);
+      if (canonicalize_float(buf)) {
+        return Token(NumL, string(std::move(buf)), start_pos);
       }
-    } else if (canonicalize_number(buf, norm, type)) {
-      return Token(IntL, string(std::move(norm)), start_pos);
+    } else if (canonicalize_number(buf, type)) {
+      return Token(IntL, string(std::move(buf)), start_pos);
     }
 
     L.reset_state();

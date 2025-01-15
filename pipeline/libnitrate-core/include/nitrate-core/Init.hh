@@ -34,6 +34,7 @@
 #ifndef __NITRATE_CORE_LIB_H__
 #define __NITRATE_CORE_LIB_H__
 
+#include <atomic>
 #include <mutex>
 #include <optional>
 #include <string>
@@ -152,6 +153,9 @@ namespace ncc {
   };
 
   extern LibraryRC<CoreLibrarySetup> CoreLibrary;
+
+  /* If enabled the compiler is thread-safe. */
+  extern std::atomic<bool> EnableSync;
 }  // namespace ncc
 
 #endif  // __NITRATE_CORE_LIB_H__

@@ -39,6 +39,7 @@
 using namespace ncc;
 
 NCC_EXPORT LibraryRC<CoreLibrarySetup> ncc::CoreLibrary;
+NCC_EXPORT std::atomic<bool> ncc::EnableSync = true;
 
 NCC_EXPORT bool CoreLibrarySetup::Init() {
   // Nothing to do here for now.

@@ -40,6 +40,8 @@
 #include <nitrate-parser/Context.hh>
 #include <sstream>
 
+#include "nitrate-core/Init.hh"
+
 using namespace ncc;
 using namespace ncc::parse;
 
@@ -49,20 +51,51 @@ NCC_EXPORT thread_local std::unique_ptr<ncc::IMemory> parse::npar_allocator =
 NCC_EXPORT ASTExtension parse::ExtensionDataStore;
 
 ASTExtensionKey ASTExtension::Add(lex::LocationID begin, lex::LocationID end) {
-  std::lock_guard<std::mutex> lock(m_mutex);
+  bool sync = EnableSync;
+
+  if (sync) {
+    m_mutex.lock();
+  }
+
   m_pairs.push_back({begin, end});
 
-  return ASTExtensionKey(m_pairs.size() - 1);
+  auto r = ASTExtensionKey(m_pairs.size() - 1);
+
+  if (sync) {
+    m_mutex.unlock();
+  }
+
+  return r;
 }
 
 const ASTExtensionPackage &ASTExtension::Get(ASTExtensionKey loc) {
-  std::lock_guard<std::mutex> lock(m_mutex);
-  return m_pairs.at(loc.Key());
+  bool sync = EnableSync;
+
+  if (sync) {
+    m_mutex.lock();
+  }
+
+  auto &r = m_pairs.at(loc.Key());
+
+  if (sync) {
+    m_mutex.unlock();
+  }
+
+  return r;
 }
 
 void ASTExtension::Set(ASTExtensionKey id, ASTExtensionPackage &&data) {
-  std::lock_guard<std::mutex> lock(m_mutex);
+  bool sync = EnableSync;
+
+  if (sync) {
+    m_mutex.lock();
+  }
+
   m_pairs.at(id.Key()) = std::move(data);
+
+  if (sync) {
+    m_mutex.unlock();
+  }
 }
 
 NCC_EXPORT std::ostream &parse::operator<<(std::ostream &os,

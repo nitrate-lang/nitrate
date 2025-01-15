@@ -35,11 +35,9 @@
 #define __NITRATE_CORE_STRING_FACTORY_H__
 
 #include <cstdint>
-#include <mutex>
 #include <nitrate-core/Macro.hh>
 #include <string>
 #include <string_view>
-#include <unordered_map>
 
 namespace ncc {
   class auto_intern;
@@ -47,25 +45,12 @@ namespace ncc {
   class StringMemory {
     friend class auto_intern;
 
-    struct Storage {
-      std::unordered_map<uint64_t, std::string> m_map_a;
-      std::unordered_map<std::string_view, uint64_t> m_map_b;
-      uint64_t m_next_id = 0;
-      std::mutex m_mutex;
-
-      Storage() {
-        m_map_a[0] = "";
-        m_map_b[""] = 0;
-        m_next_id = 1;
-      }
-    };
-
-    static Storage m_storage;
-
     StringMemory() = delete;
 
-    static std::string_view FromID(uint64_t id);
+    /* assert(!str.empty()) */
     static uint64_t FromString(std::string_view str);
+
+    /* assert(!str.empty()) */
     static uint64_t FromString(std::string &&str);
 
   public:
@@ -81,9 +66,8 @@ namespace ncc {
     constexpr NCC_FORCE_INLINE auto_intern(std::string_view str)
         : m_id(str.empty() ? 0 : StringMemory::FromString(str)) {}
 
-    constexpr NCC_FORCE_INLINE auto_intern(std::string &&str) {
-      m_id = str.empty() ? 0 : StringMemory::FromString(std::move(str));
-    }
+    constexpr NCC_FORCE_INLINE auto_intern(std::string &&str)
+        : m_id(str.empty() ? 0 : StringMemory::FromString(std::move(str))) {}
 
     constexpr NCC_FORCE_INLINE auto_intern(const std::string &str)
         : m_id(str.empty() ? 0 : StringMemory::FromString(str)) {}

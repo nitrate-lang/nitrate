@@ -1,0 +1,5 @@
+missingIncludeSystem
+checkersReport
+unusedFunction
+noExplicitConstructor
+useStlAlgorithm

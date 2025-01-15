@@ -34,6 +34,7 @@
 #include <boost/uuid/uuid.hpp>
 #include <boost/uuid/uuid_generators.hpp>
 #include <boost/uuid/uuid_io.hpp>
+#include <chrono>
 #include <nitrate-core/Environment.hh>
 #include <nitrate-core/Macro.hh>
 
@@ -61,13 +62,11 @@ void Environment::setup_default_env() {
 NCC_EXPORT Environment::Environment() { setup_default_env(); }
 
 NCC_EXPORT bool Environment::contains(std::string_view key) {
-  std::lock_guard<std::mutex> lock(m_mutex);
   return m_data.contains(string(key));
 }
 
 NCC_EXPORT std::optional<std::string_view> Environment::get(
     std::string_view key) {
-  std::lock_guard<std::mutex> lock(m_mutex);
   if (auto it = m_data.find(key); it != m_data.end()) {
     return it->second;
   }
@@ -76,8 +75,6 @@ NCC_EXPORT std::optional<std::string_view> Environment::get(
 
 NCC_EXPORT void Environment::set(std::string_view key,
                                  std::optional<std::string_view> value, bool) {
-  std::lock_guard<std::mutex> lock(m_mutex);
-
   if (value.has_value()) {
     m_data.insert_or_assign(key, *value);
   } else {

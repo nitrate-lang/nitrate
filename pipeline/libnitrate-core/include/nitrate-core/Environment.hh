@@ -34,7 +34,6 @@
 #ifndef __NITRATE_CORE_ENV_H__
 #define __NITRATE_CORE_ENV_H__
 
-#include <mutex>
 #include <nitrate-core/Allocate.hh>
 #include <nitrate-core/String.hh>
 #include <optional>
@@ -56,7 +55,6 @@ namespace ncc {
 
   class Environment : public IEnvironment {
     std::unordered_map<string, string> m_data;
-    std::mutex m_mutex;
 
     void setup_default_env();
 

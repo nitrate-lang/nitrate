@@ -34,8 +34,6 @@ public:
     return true;
   }
 
-  Digest thumbprint();
-
   std::shared_ptr<const std::string> content() {
     std::lock_guard<std::mutex> lock(m_mutex);
     return m_content;

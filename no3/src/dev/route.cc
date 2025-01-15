@@ -383,6 +383,8 @@ namespace no3::router {
       }
     };
 
+    ncc::EnableSync = false;
+
     std::shared_ptr<Environment> env = std::make_shared<Environment>();
 
     if (parser.is_subcommand_used("bench")) {

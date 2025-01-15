@@ -31,67 +31,127 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
+#include <boost/unordered_map.hpp>
+#include <mutex>
+#include <nitrate-core/Init.hh>
 #include <nitrate-core/Logger.hh>
 #include <nitrate-core/Macro.hh>
 #include <nitrate-core/String.hh>
+#include <sparsehash/dense_hash_map>
 
 using namespace ncc;
 
-NCC_EXPORT StringMemory::Storage StringMemory::StringMemory::m_storage;
+static NCC_FORCE_INLINE constexpr std::vector<char> FromStr(
+    std::string_view str) {
+  std::vector<char> vec(str.size());
+  std::copy(str.begin(), str.end(), vec.begin());
+  return vec;
+}
+
+static NCC_FORCE_INLINE constexpr std::string_view FromVec(
+    const std::vector<char>& vec) {
+  return std::string_view(vec.data(), vec.size());
+}
+
+struct Storage {
+  std::vector<std::vector<char>> m_data;
+  google::dense_hash_map<std::string_view, uint64_t> m_map;
+
+  Storage() {
+    m_map.set_empty_key("");
+    m_data.reserve(4096);
+  }
+};
+
+static Storage m_storage;
+static std::mutex m_storage_mutex;
 
 NCC_EXPORT std::string_view auto_intern::get() const {
-  return m_id == 0 ? "" : StringMemory::FromID(m_id);
+  if (m_id == 0) {
+    return "";
+  }
+
+  bool sync = EnableSync;
+  if (sync) {
+    m_storage_mutex.lock();
+  }
+
+  std::string_view str;
+
+  if (m_id < m_storage.m_data.size()) [[likely]] {
+    str = FromVec(m_storage.m_data[m_id]);
+  } else {
+    str = "";
+  }
+
+  if (sync) {
+    m_storage_mutex.unlock();
+  }
+
+  return str;
 }
 
 NCC_EXPORT uint64_t StringMemory::FromString(std::string_view str) {
-  std::lock_guard lock(m_storage.m_mutex);
+  assert(!str.empty());
 
-  if (auto it = m_storage.m_map_b.find(str); it != m_storage.m_map_b.end()) {
-    return it->second;
+  bool sync = EnableSync;
+
+  if (sync) {
+    m_storage_mutex.lock();
   }
 
-  auto new_id = m_storage.m_next_id++;
+  uint64_t id;
+  if (auto it = m_storage.m_map.find(str); it != m_storage.m_map.end()) {
+    id = it->second;
+  } else {
+    id = m_storage.m_data.size();
+    m_storage.m_data.emplace_back(FromStr(str));
+    m_storage.m_map[FromVec(m_storage.m_data.back())] = id;
+  }
 
-  const auto& ref_str =
-      m_storage.m_map_a.insert({new_id, std::string(str)}).first->second;
+  if (sync) {
+    m_storage_mutex.unlock();
+  }
 
-  m_storage.m_map_b.insert({ref_str, new_id});
-
-  return new_id;
+  return id;
 }
 
 NCC_EXPORT uint64_t StringMemory::FromString(std::string&& str) {
-  std::lock_guard lock(m_storage.m_mutex);
+  assert(!str.empty());
 
-  if (auto it = m_storage.m_map_b.find(str); it != m_storage.m_map_b.end()) {
-    return it->second;
+  bool sync = EnableSync;
+
+  if (sync) {
+    m_storage_mutex.lock();
   }
 
-  auto new_id = m_storage.m_next_id++;
-
-  const auto& ref_str =
-      m_storage.m_map_a.insert({new_id, std::move(str)}).first->second;
-
-  m_storage.m_map_b.insert({ref_str, new_id});
-
-  return new_id;
-}
-
-NCC_EXPORT std::string_view StringMemory::FromID(uint64_t id) {
-  std::lock_guard lock(m_storage.m_mutex);
-
-  if (auto it = m_storage.m_map_a.find(id); it != m_storage.m_map_a.end())
-      [[likely]] {
-    return it->second;
+  uint64_t id;
+  if (auto it = m_storage.m_map.find(str); it != m_storage.m_map.end()) {
+    id = it->second;
   } else {
-    qcore_panicf("Unknown interned string ID: %lu", id);
+    id = m_storage.m_data.size();
+    m_storage.m_data.emplace_back(FromStr(std::move(str)));
+    m_storage.m_map[FromVec(m_storage.m_data.back())] = id;
   }
+
+  if (sync) {
+    m_storage_mutex.unlock();
+  }
+
+  return id;
 }
 
 NCC_EXPORT void StringMemory::Reset() {
-  std::lock_guard lock(m_storage.m_mutex);
+  bool sync = EnableSync;
 
-  m_storage.m_map_a.clear();
-  m_storage.m_map_b.clear();
-  m_storage.m_next_id = 0;
+  if (sync) {
+    m_storage_mutex.lock();
+  }
+
+  m_storage.m_map.clear();
+  m_storage.m_data.clear();
+
+  if (sync) {
+    m_storage_mutex.unlock();
+  }
 }

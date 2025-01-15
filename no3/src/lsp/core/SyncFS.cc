@@ -1,5 +1,3 @@
-#include <openssl/sha.h>
-
 #include <cmath>
 #include <cstdlib>
 #include <filesystem>
@@ -90,22 +88,4 @@ std::optional<std::shared_ptr<SyncFSFile>> SyncFS::open(std::string path) {
 void SyncFS::close(const std::string& name) {
   std::lock_guard<std::mutex> lock(m_mutex);
   m_files.erase(name);
-}
-
-///===========================================================================
-
-SyncFSFile::Digest SyncFSFile::thumbprint() {
-  std::lock_guard<std::mutex> lock(m_mutex);
-
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
-  SHA_CTX ctx;
-  SHA1_Init(&ctx);
-  SHA1_Update(&ctx, content()->data(), content()->size());
-
-  std::array<uint8_t, 20> digest;
-  SHA1_Final(digest.data(), &ctx);
-#pragma GCC diagnostic pop
-
-  return digest;
 }
