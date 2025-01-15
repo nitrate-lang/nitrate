@@ -405,7 +405,7 @@ public:
 //     return nullopt;
 //   }
 
-//   if (root->getKind() != IR_eSEQ) {
+//   if (root->GetKind() != IR_eSEQ) {
 //     e << "error: expected sequence node as root" << endl;
 //     return nullopt;
 //   }
@@ -418,9 +418,9 @@ public:
 
 //   // Forward declare all functions
 //   iterate<dfs_pre>(root, [&](auto, auto N) -> IterOp {
-//     if ((*N)->getKind() == IR_eSEQ || (*N)->getKind() == IR_eEXTERN) {
+//     if ((*N)->GetKind() == IR_eSEQ || (*N)->GetKind() == IR_eEXTERN) {
 //       return IterOp::Proceed;
-//     } else if ((*N)->getKind() != IR_eFUNCTION) {
+//     } else if ((*N)->GetKind() != IR_eFUNCTION) {
 //       return IterOp::SkipChildren;
 //     }
 
@@ -490,7 +490,7 @@ public:
 //       }
 
 //       /* Composite casting */
-//       else if (LT->is_array() && RT->getKind() == IR_tSTRUCT) {
+//       else if (LT->is_array() && RT->GetKind() == IR_tSTRUCT) {
 //         ArrayTy *base = LT->as<ArrayTy>();
 //         StructTy *ST = RT->as<StructTy>();
 
@@ -556,8 +556,8 @@ public:
 //           E = b.CreateLoad(new_arr->getAllocatedType(), new_arr);
 //         }
 //       } else {
-//         cout << "Failed to cast from " << LT->getKindName() << " to "
-//              << RT->getKindName() << endl;
+//         cout << "Failed to cast from " << LT->GetKindName() << " to "
+//              << RT->GetKindName() << endl;
 //       }
 //       break;
 //     }
@@ -720,7 +720,7 @@ public:
 //         }
 
 //         case Op::Set: { /* '=': Assignment operator */
-//           if (N->getLHS()->getKind() == IR_eIDENT) {
+//           if (N->getLHS()->GetKind() == IR_eIDENT) {
 //             if (auto find = s.find_named_value(
 //                     m, N->getLHS()->as<Ident>()->getName())) {
 //               if (find->second == PtrClass::DataPtr) {
@@ -840,7 +840,7 @@ public:
 //           break;
 //         }
 //         case Op::BitAnd: {
-//           if (N->getExpr()->getKind() != IR_eIDENT) {
+//           if (N->getExpr()->GetKind() != IR_eIDENT) {
 //             qcore_panic("expected identifier for address_of");
 //           }
 
@@ -1004,7 +1004,7 @@ public:
 //         return nullopt;
 //       }
 
-//       if (N->getExpr()->getKind() == IR_eIDENT) {
+//       if (N->getExpr()->GetKind() == IR_eIDENT) {
 //         Ident *B = N->getExpr()->as<Ident>();
 //         auto find = s.find_named_value(m, B->getName());
 //         if (!find) {
@@ -1040,7 +1040,7 @@ public:
 //         } else {
 //           qcore_panic("unexpected type for index");
 //         }
-//       } else if (N->getExpr()->getKind() == IR_eLIST) {
+//       } else if (N->getExpr()->GetKind() == IR_eLIST) {
 //         qcore_implement();
 //       } else {
 //         qcore_panic("unexpected base expression for index");
@@ -1746,7 +1746,7 @@ public:
 
 //     array<func_t, IR_LAST + 1> R;
 //     R.fill([](ctx_t &, craft_t &, State &, auto n) -> val_t {
-//       qcore_panicf("illegal node in input: kind=%s", n->getKindName());
+//       qcore_panicf("illegal node in input: kind=%s", n->GetKindName());
 //     });
 
 //     { /* NRGraph recursive llvm-ir builders */
@@ -1790,7 +1790,7 @@ public:
 //     return R;
 //   }();
 
-//   return dispatch[N->getKind()](m, b, s, N);
+//   return dispatch[N->GetKind()](m, b, s, N);
 // }
 
 // static auto T_gen(craft_t &b, FlowPtr<Expr> N) -> ty_t {
@@ -1803,7 +1803,7 @@ public:
 
 //     array<func_t, IR_LAST + 1> R;
 //     R.fill([](craft_t &, auto n) -> ty_t {
-//       qcore_panicf("illegal node in input: kind=%s", n->getKindName());
+//       qcore_panicf("illegal node in input: kind=%s", n->GetKindName());
 //     });
 
 //     { /* NRGraph recursive llvm-ir builders */
@@ -1846,7 +1846,7 @@ public:
 //     return R;
 //   }();
 
-//   return dispatch[N->getKind()](b, N);
+//   return dispatch[N->GetKind()](b, N);
 // }
 
 static bool qcode_adapter(IRModule *module, qcode_conf_t *conf, FILE *err,

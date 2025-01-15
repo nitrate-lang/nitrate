@@ -92,7 +92,7 @@ namespace ncc::ir {
 
     template <typename T>
     void dispatch(FlowPtr<T> n) {
-      switch (n->getKind()) {
+      switch (n->GetKind()) {
         case IR_eBIN: {
           visit(n.template as<IR_Vertex_BinExpr<A>>());
           break;

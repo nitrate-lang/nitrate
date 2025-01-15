@@ -114,7 +114,7 @@ namespace ncc::parse {
 
     template <typename T>
     void dispatch(FlowPtr<T> n) {
-      switch (n->getKind()) {
+      switch (n->GetKind()) {
         case QAST_BASE: {
           visit(n.template as<Base>());
           break;

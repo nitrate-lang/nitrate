@@ -84,16 +84,16 @@ namespace ncc::ir {
       m_loc = parse::ExtensionDataStore.Add(begin, end);
     }
 
-    static constexpr uint32_t getKindSize(nr_ty_t kind);
-    static constexpr const char *getKindName(nr_ty_t kind);
+    static constexpr uint32_t GetKindSize(nr_ty_t kind);
+    static constexpr const char *GetKindName(nr_ty_t kind);
 
-    constexpr auto getKind() const { return m_node_type; }
-    constexpr const char *getKindName() const {
-      return getKindName(m_node_type);
+    constexpr auto GetKind() const { return m_node_type; }
+    constexpr const char *GetKindName() const {
+      return GetKindName(m_node_type);
     }
 
     template <typename T>
-    static constexpr nr_ty_t getTypeCode() {
+    static constexpr nr_ty_t GetTypeCode() {
       if constexpr (std::is_same_v<T, IR_Vertex_BinExpr<A>>) {
         return IR_eBIN;
       } else if constexpr (std::is_same_v<T, IR_Vertex_Unary<A>>) {
@@ -193,8 +193,8 @@ namespace ncc::ir {
       }
     }
 
-    constexpr bool isType() const {
-      switch (getKind()) {
+    [[nodiscard]] constexpr bool isType() const {
+      switch (GetKind()) {
         case IR_tU1:
         case IR_tU8:
         case IR_tU16:
@@ -231,15 +231,15 @@ namespace ncc::ir {
 
     constexpr std::string_view getName() const;
 
-    constexpr auto begin() const {
-      return parse::ExtensionDataStore.Get(m_loc).begin();
+    constexpr auto Begin() const {
+      return parse::ExtensionDataStore.Get(m_loc).Begin();
     }
-    constexpr auto begin(lex::IScanner &rd) const { return begin().Get(rd); }
+    constexpr auto Begin(lex::IScanner &rd) const { return Begin().Get(rd); }
 
-    constexpr auto end() const {
-      return parse::ExtensionDataStore.Get(m_loc).end();
+    constexpr auto End() const {
+      return parse::ExtensionDataStore.Get(m_loc).End();
     }
-    constexpr auto end(lex::IScanner &rd) const { return end().Get(rd); }
+    constexpr auto End(lex::IScanner &rd) const { return End().Get(rd); }
 
     constexpr auto getLoc() const { return m_loc; }
     constexpr void SetLoc(SrcLoc loc) { m_loc = loc; }
@@ -262,12 +262,12 @@ namespace ncc::ir {
       if constexpr (std::is_same_v<IR_Vertex_Type<A>, T>) {
         if (!ptr->isType()) [[unlikely]] {
           qcore_panicf("Invalid cast from non-type %s to type",
-                       ptr->getKindName());
+                       ptr->GetKindName());
         }
       } else if constexpr (!std::is_same_v<IR_Vertex_Expr<A>, T>) {
-        if (getTypeCode<T>() != ptr->getKind()) [[unlikely]] {
-          qcore_panicf("Invalid cast from %s to %s", ptr->getKindName(),
-                       getKindName(getTypeCode<T>()));
+        if (GetTypeCode<T>() != ptr->GetKind()) [[unlikely]] {
+          qcore_panicf("Invalid cast from %s to %s", ptr->GetKindName(),
+                       GetKindName(GetTypeCode<T>()));
         }
       }
 #endif
@@ -297,7 +297,7 @@ namespace ncc::ir {
       return const_cast<IR_Vertex_Expr<A> *>(this)->asType();
     }
 
-    constexpr bool is(nr_ty_t type) const { return type == getKind(); }
+    constexpr bool is(nr_ty_t type) const { return type == GetKind(); }
     constexpr bool isSame(const IR_Vertex_Expr<A> *other) const;
 
     constexpr void Accept(IRVisitor<A> &v) {
@@ -352,7 +352,7 @@ namespace ncc::ir {
     }
 
     constexpr bool is_primitive() const {
-      switch (this->getKind()) {
+      switch (this->GetKind()) {
         case IR_tU1:
         case IR_tU8:
         case IR_tU16:
@@ -375,13 +375,13 @@ namespace ncc::ir {
       }
     }
 
-    constexpr bool is_array() const { return this->getKind() == IR_tARRAY; }
-    constexpr bool is_pointer() const { return this->getKind() == IR_tPTR; }
-    constexpr bool is_readonly() const { return this->getKind() == IR_tCONST; }
-    constexpr bool is_function() const { return this->getKind() == IR_tFUNC; }
+    constexpr bool is_array() const { return this->GetKind() == IR_tARRAY; }
+    constexpr bool is_pointer() const { return this->GetKind() == IR_tPTR; }
+    constexpr bool is_readonly() const { return this->GetKind() == IR_tCONST; }
+    constexpr bool is_function() const { return this->GetKind() == IR_tFUNC; }
 
     constexpr bool is_composite() const {
-      switch (this->getKind()) {
+      switch (this->GetKind()) {
         case IR_tSTRUCT:
         case IR_tUNION:
         case IR_tARRAY:
@@ -391,10 +391,10 @@ namespace ncc::ir {
       }
     }
 
-    constexpr bool is_union() const { return this->getKind() == IR_tUNION; }
+    constexpr bool is_union() const { return this->GetKind() == IR_tUNION; }
 
     constexpr bool is_numeric() const {
-      switch (this->getKind()) {
+      switch (this->GetKind()) {
         case IR_tU1:
         case IR_tU8:
         case IR_tU16:
@@ -417,7 +417,7 @@ namespace ncc::ir {
     }
 
     constexpr bool is_integral() const {
-      switch (this->getKind()) {
+      switch (this->GetKind()) {
         case IR_tU1:
         case IR_tU8:
         case IR_tU16:
@@ -436,7 +436,7 @@ namespace ncc::ir {
     }
 
     constexpr bool is_floating_point() const {
-      switch (this->getKind()) {
+      switch (this->GetKind()) {
         case IR_tF16_TY:
         case IR_tF32_TY:
         case IR_tF64_TY:
@@ -448,7 +448,7 @@ namespace ncc::ir {
     }
 
     constexpr bool is_signed() const {
-      switch (this->getKind()) {
+      switch (this->GetKind()) {
         case IR_tI8:
         case IR_tI16:
         case IR_tI32:
@@ -465,7 +465,7 @@ namespace ncc::ir {
     }
 
     constexpr bool is_unsigned() const {
-      switch (this->getKind()) {
+      switch (this->GetKind()) {
         case IR_tU1:
         case IR_tU8:
         case IR_tU16:
@@ -478,8 +478,8 @@ namespace ncc::ir {
       }
     }
 
-    constexpr bool is_void() const { return this->getKind() == IR_tVOID; }
-    constexpr bool is_bool() const { return this->getKind() == IR_tU1; }
+    constexpr bool is_void() const { return this->GetKind() == IR_tVOID; }
+    constexpr bool is_bool() const { return this->GetKind() == IR_tU1; }
   };
 
   template <class A>
@@ -487,7 +487,7 @@ namespace ncc::ir {
 #ifndef NDEBUG
     if (!isType()) {
       qcore_panicf("Failed to cast a non-type node `%s` to a type node",
-                   getKindName());
+                   GetKindName());
     }
 #endif
     return static_cast<IR_Vertex_Type<A> *>(this);
@@ -497,7 +497,7 @@ namespace ncc::ir {
   constexpr std::string_view IR_Vertex_Expr<A>::getName() const {
     std::string_view R = "";
 
-    switch (this->getKind()) {
+    switch (this->GetKind()) {
       case IR_eBIN: {
         break;
       }
@@ -692,7 +692,7 @@ namespace ncc::ir {
   }
 
   template <class A>
-  constexpr uint32_t IR_Vertex_Expr<A>::getKindSize(nr_ty_t type) {
+  constexpr uint32_t IR_Vertex_Expr<A>::GetKindSize(nr_ty_t type) {
     const std::array<size_t, IR_COUNT> sizes = []() {
       std::array<size_t, IR_COUNT> R;
       R.fill(0);
@@ -751,7 +751,7 @@ namespace ncc::ir {
   }
 
   template <class A>
-  constexpr const char *IR_Vertex_Expr<A>::getKindName(nr_ty_t type) {
+  constexpr const char *IR_Vertex_Expr<A>::GetKindName(nr_ty_t type) {
     const std::array<const char *, IR_COUNT> names = []() {
       std::array<const char *, IR_COUNT> R;
       R.fill("");
@@ -812,9 +812,9 @@ namespace ncc::ir {
   template <class A>
   constexpr bool IR_Vertex_Expr<A>::isSame(
       const IR_Vertex_Expr<A> *other) const {
-    nr_ty_t kind = getKind();
+    nr_ty_t kind = GetKind();
 
-    if (kind != other->getKind()) {
+    if (kind != other->GetKind()) {
       return false;
     }
 

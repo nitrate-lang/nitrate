@@ -106,7 +106,7 @@ namespace ncc::parse {
   void for_each(FlowPtr<Base> v,  /// NOLINT
                 const std::function<void(npar_ty_t, FlowPtr<Base>)> &f) {
     iterate<mode>(v, [&](auto, const FlowPtr<Base> &c) -> IterOp {
-      f(c->getKind(), c);
+      f(c->GetKind(), c);
 
       return IterOp::Proceed;
     });
@@ -116,7 +116,7 @@ namespace ncc::parse {
   void for_each(FlowPtr<Base> v,  /// NOLINT
                 std::function<void(FlowPtr<T>)> f) {
     iterate<mode>(v, [&](auto, FlowPtr<Base> c) -> IterOp {
-      if (c->getKind() != Base::getTypeCode<T>()) {
+      if (c->GetKind() != Base::GetTypeCode<T>()) {
         return IterOp::Proceed;
       }
 

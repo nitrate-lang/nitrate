@@ -39,7 +39,7 @@ NCC_EXPORT std::optional<uint64_t> ncc::ir::detail::Type_getSizeBitsImpl(
     const Type* self) {
   std::optional<uint64_t> R;
 
-  switch (self->getKind()) {
+  switch (self->GetKind()) {
     case IR_tU1: {
       R = 8;
       break;

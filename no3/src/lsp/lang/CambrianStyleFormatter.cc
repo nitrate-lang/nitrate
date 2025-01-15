@@ -361,23 +361,23 @@ void CambrianFormatter::visit(FlowPtr<TemplType> n) {
   print_multiline_comments(n);
 
   bool is_optional =
-      n->get_template()->getKind() == QAST_NAMED &&
+      n->get_template()->GetKind() == QAST_NAMED &&
       n->get_template()->as<NamedTy>()->get_name() == "__builtin_result";
 
   bool is_vector =
-      n->get_template()->getKind() == QAST_NAMED &&
+      n->get_template()->GetKind() == QAST_NAMED &&
       n->get_template()->as<NamedTy>()->get_name() == "__builtin_vec";
 
   bool is_map =
-      n->get_template()->getKind() == QAST_NAMED &&
+      n->get_template()->GetKind() == QAST_NAMED &&
       n->get_template()->as<NamedTy>()->get_name() == "__builtin_umap";
 
   bool is_set =
-      n->get_template()->getKind() == QAST_NAMED &&
+      n->get_template()->GetKind() == QAST_NAMED &&
       n->get_template()->as<NamedTy>()->get_name() == "__builtin_uset";
 
   bool is_comptime =
-      n->get_template()->getKind() == QAST_NAMED &&
+      n->get_template()->GetKind() == QAST_NAMED &&
       n->get_template()->as<NamedTy>()->get_name() == "__builtin_meta" &&
       n->get_args().size() == 1 &&
       n->get_args().front().second->is(QAST_UNEXPR) &&
@@ -662,7 +662,7 @@ void CambrianFormatter::visit(FlowPtr<FuncTy> n) {
       [&](auto param, size_t) {
         line << std::get<0>(param);
 
-        if (auto type = std::get<1>(param); type->getKind() != QAST_INFER) {
+        if (auto type = std::get<1>(param); type->GetKind() != QAST_INFER) {
           line << ": ";
           type.Accept(*this);
         }
@@ -920,7 +920,7 @@ void CambrianFormatter::visit(FlowPtr<List> n) {
 
     bool special_case =
         std::any_of(n->get_items().begin(), n->get_items().end(), [&](auto x) {
-          return extra_seperation.contains(x->getKind()) ||
+          return extra_seperation.contains(x->GetKind()) ||
                  x->is_stmt_expr(QAST_FUNCTION);
         });
 
@@ -1168,11 +1168,11 @@ void CambrianFormatter::visit(FlowPtr<Block> n) {
 
     bool is_next_item_different =
         (it + 1 != items.end() &&
-         (*std::next(it))->getKind() != item->getKind());
+         (*std::next(it))->GetKind() != item->GetKind());
 
     bool extra_newline =
         !is_last_item &&
-        (is_next_item_different || extra_seperation.contains(item->getKind()));
+        (is_next_item_different || extra_seperation.contains(item->GetKind()));
 
     if (extra_newline) {
       line << std::endl;
@@ -1456,7 +1456,7 @@ void CambrianFormatter::visit(FlowPtr<Function> n) {
           line << std::get<0>(param);
 
           if (let type = std::get<1>(param)) {
-            if (type->getKind() != QAST_INFER) {
+            if (type->GetKind() != QAST_INFER) {
               line << ": ";
               type->Accept(*this);
             }
@@ -1478,7 +1478,7 @@ void CambrianFormatter::visit(FlowPtr<Function> n) {
         line << std::get<0>(param);
 
         if (let type = std::get<1>(param)) {
-          if (type->getKind() != QAST_INFER) {
+          if (type->GetKind() != QAST_INFER) {
             line << ": ";
             type->Accept(*this);
           }
@@ -1563,7 +1563,7 @@ void CambrianFormatter::visit(FlowPtr<StructDef> n) {
         n->get_template_params().value().end(),
         [&](auto param, size_t) {
           line << std::get<0>(param);
-          if (auto type = std::get<1>(param); type->getKind() != QAST_INFER) {
+          if (auto type = std::get<1>(param); type->GetKind() != QAST_INFER) {
             line << ": ";
             type.Accept(*this);
           }

@@ -147,7 +147,7 @@ using namespace ncc::ir;
 // #define recurse_ex(x, stream) serialize_recurse(x, stream, typedefs, state)
 // #endif
 
-//   switch (n->getKind()) {
+//   switch (n->GetKind()) {
 //     case IR_eBIN: {
 //       ss << "(";
 //       recurse(n->as<BinExpr>()->getLHS());
@@ -222,7 +222,7 @@ using namespace ncc::ir;
 //       break;
 //     }
 //     case IR_eCALL: {
-//       auto tkind = n->as<Call>()->getTarget()->getKind();
+//       auto tkind = n->as<Call>()->getTarget()->GetKind();
 //       if (tkind == IR_eLOCAL) {
 //         ss << n->as<Call>()->getTarget()->as<Local>()->getName();
 //       } else if (tkind == IR_eFUNCTION) {
@@ -247,7 +247,7 @@ using namespace ncc::ir;
 //       indent(ss, state);
 //       for (auto it = n->as<Seq>()->getItems().begin();
 //            it != n->as<Seq>()->getItems().end(); ++it) {
-//         if ((*it)->getKind() == IR_eIGN) {
+//         if ((*it)->GetKind() == IR_eIGN) {
 //           continue;
 //         }
 

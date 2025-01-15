@@ -42,7 +42,7 @@ using namespace ncc::ir;
 using namespace ncc::ir;
 
 static const std::unordered_map<StorageClass, std::string_view>
-    storage_class_repr = {
+    STORAGE_CLASS_REPR = {
         {StorageClass::LLVM_StackAlloa, "auto"},
         {StorageClass::LLVM_Static, "static"},
         {StorageClass::LLVM_ThreadLocal, "thread"},
@@ -57,8 +57,8 @@ void IR_Writer::write_source_location(FlowPtr<Expr> n) const {
 
     begin_obj(3);
 
-    auto begin = n->begin(rd);
-    auto end = n->end(rd);
+    auto begin = n->Begin(rd);
+    auto end = n->End(rd);
 
     {
       string("begin");
@@ -134,7 +134,7 @@ void IR_Writer::visit(FlowPtr<Expr> n) {
   begin_obj(2);
 
   string("kind");
-  string(n->getKindName());
+  string(n->GetKindName());
 
   write_source_location(n);
 
@@ -145,7 +145,7 @@ void IR_Writer::visit(FlowPtr<BinExpr> n) {
   begin_obj(5);
 
   string("kind");
-  string(n->getKindName());
+  string(n->GetKindName());
 
   write_source_location(n);
 
@@ -165,7 +165,7 @@ void IR_Writer::visit(FlowPtr<Unary> n) {
   begin_obj(4);
 
   string("kind");
-  string(n->getKindName());
+  string(n->GetKindName());
 
   write_source_location(n);
 
@@ -182,7 +182,7 @@ void IR_Writer::visit(FlowPtr<U1Ty> n) {
   begin_obj(2);
 
   string("kind");
-  string(n->getKindName());
+  string(n->GetKindName());
 
   write_source_location(n);
 
@@ -193,7 +193,7 @@ void IR_Writer::visit(FlowPtr<U8Ty> n) {
   begin_obj(2);
 
   string("kind");
-  string(n->getKindName());
+  string(n->GetKindName());
 
   write_source_location(n);
 
@@ -204,7 +204,7 @@ void IR_Writer::visit(FlowPtr<U16Ty> n) {
   begin_obj(2);
 
   string("kind");
-  string(n->getKindName());
+  string(n->GetKindName());
 
   write_source_location(n);
 
@@ -215,7 +215,7 @@ void IR_Writer::visit(FlowPtr<U32Ty> n) {
   begin_obj(2);
 
   string("kind");
-  string(n->getKindName());
+  string(n->GetKindName());
 
   write_source_location(n);
 
@@ -226,7 +226,7 @@ void IR_Writer::visit(FlowPtr<U64Ty> n) {
   begin_obj(2);
 
   string("kind");
-  string(n->getKindName());
+  string(n->GetKindName());
 
   write_source_location(n);
 
@@ -237,7 +237,7 @@ void IR_Writer::visit(FlowPtr<U128Ty> n) {
   begin_obj(2);
 
   string("kind");
-  string(n->getKindName());
+  string(n->GetKindName());
 
   write_source_location(n);
 
@@ -248,7 +248,7 @@ void IR_Writer::visit(FlowPtr<I8Ty> n) {
   begin_obj(2);
 
   string("kind");
-  string(n->getKindName());
+  string(n->GetKindName());
 
   write_source_location(n);
 
@@ -259,7 +259,7 @@ void IR_Writer::visit(FlowPtr<I16Ty> n) {
   begin_obj(2);
 
   string("kind");
-  string(n->getKindName());
+  string(n->GetKindName());
 
   write_source_location(n);
 
@@ -270,7 +270,7 @@ void IR_Writer::visit(FlowPtr<I32Ty> n) {
   begin_obj(2);
 
   string("kind");
-  string(n->getKindName());
+  string(n->GetKindName());
 
   write_source_location(n);
 
@@ -281,7 +281,7 @@ void IR_Writer::visit(FlowPtr<I64Ty> n) {
   begin_obj(2);
 
   string("kind");
-  string(n->getKindName());
+  string(n->GetKindName());
 
   write_source_location(n);
 
@@ -292,7 +292,7 @@ void IR_Writer::visit(FlowPtr<I128Ty> n) {
   begin_obj(2);
 
   string("kind");
-  string(n->getKindName());
+  string(n->GetKindName());
 
   write_source_location(n);
 
@@ -303,7 +303,7 @@ void IR_Writer::visit(FlowPtr<F16Ty> n) {
   begin_obj(2);
 
   string("kind");
-  string(n->getKindName());
+  string(n->GetKindName());
 
   write_source_location(n);
 
@@ -314,7 +314,7 @@ void IR_Writer::visit(FlowPtr<F32Ty> n) {
   begin_obj(2);
 
   string("kind");
-  string(n->getKindName());
+  string(n->GetKindName());
 
   write_source_location(n);
 
@@ -325,7 +325,7 @@ void IR_Writer::visit(FlowPtr<F64Ty> n) {
   begin_obj(2);
 
   string("kind");
-  string(n->getKindName());
+  string(n->GetKindName());
 
   write_source_location(n);
 
@@ -336,7 +336,7 @@ void IR_Writer::visit(FlowPtr<F128Ty> n) {
   begin_obj(2);
 
   string("kind");
-  string(n->getKindName());
+  string(n->GetKindName());
 
   write_source_location(n);
 
@@ -347,7 +347,7 @@ void IR_Writer::visit(FlowPtr<VoidTy> n) {
   begin_obj(2);
 
   string("kind");
-  string(n->getKindName());
+  string(n->GetKindName());
 
   write_source_location(n);
 
@@ -358,7 +358,7 @@ void IR_Writer::visit(FlowPtr<PtrTy> n) {
   begin_obj(3);
 
   string("kind");
-  string(n->getKindName());
+  string(n->GetKindName());
 
   write_source_location(n);
 
@@ -372,7 +372,7 @@ void IR_Writer::visit(FlowPtr<ConstTy> n) {
   begin_obj(3);
 
   string("kind");
-  string(n->getKindName());
+  string(n->GetKindName());
 
   write_source_location(n);
 
@@ -386,7 +386,7 @@ void IR_Writer::visit(FlowPtr<OpaqueTy> n) {
   begin_obj(3);
 
   string("kind");
-  string(n->getKindName());
+  string(n->GetKindName());
 
   write_source_location(n);
 
@@ -400,7 +400,7 @@ void IR_Writer::visit(FlowPtr<StructTy> n) {
   begin_obj(3);
 
   string("kind");
-  string(n->getKindName());
+  string(n->GetKindName());
 
   write_source_location(n);
 
@@ -421,7 +421,7 @@ void IR_Writer::visit(FlowPtr<UnionTy> n) {
   begin_obj(3);
 
   string("kind");
-  string(n->getKindName());
+  string(n->GetKindName());
 
   write_source_location(n);
 
@@ -442,7 +442,7 @@ void IR_Writer::visit(FlowPtr<ArrayTy> n) {
   begin_obj(4);
 
   string("kind");
-  string(n->getKindName());
+  string(n->GetKindName());
 
   write_source_location(n);
 
@@ -459,7 +459,7 @@ void IR_Writer::visit(FlowPtr<FnTy> n) {
   begin_obj(5);
 
   string("kind");
-  string(n->getKindName());
+  string(n->GetKindName());
 
   write_source_location(n);
 
@@ -486,7 +486,7 @@ void IR_Writer::visit(FlowPtr<Int> n) {
   begin_obj(4);
 
   string("kind");
-  string(n->getKindName());
+  string(n->GetKindName());
 
   write_source_location(n);
 
@@ -503,7 +503,7 @@ void IR_Writer::visit(FlowPtr<Float> n) {
   begin_obj(4);
 
   string("kind");
-  string(n->getKindName());
+  string(n->GetKindName());
 
   write_source_location(n);
 
@@ -520,7 +520,7 @@ void IR_Writer::visit(FlowPtr<List> n) {
   begin_obj(4);
 
   string("kind");
-  string(n->getKindName());
+  string(n->GetKindName());
 
   write_source_location(n);
 
@@ -541,7 +541,7 @@ void IR_Writer::visit(FlowPtr<Call> n) {
   begin_obj(4);
 
   string("kind");
-  string(n->getKindName());
+  string(n->GetKindName());
 
   write_source_location(n);
 
@@ -566,7 +566,7 @@ void IR_Writer::visit(FlowPtr<Seq> n) {
   begin_obj(3);
 
   string("kind");
-  string(n->getKindName());
+  string(n->GetKindName());
 
   write_source_location(n);
 
@@ -584,7 +584,7 @@ void IR_Writer::visit(FlowPtr<Index> n) {
   begin_obj(4);
 
   string("kind");
-  string(n->getKindName());
+  string(n->GetKindName());
 
   write_source_location(n);
 
@@ -601,7 +601,7 @@ void IR_Writer::visit(FlowPtr<Ident> n) {
   begin_obj(3);
 
   string("kind");
-  string(n->getKindName());
+  string(n->GetKindName());
 
   write_source_location(n);
 
@@ -615,7 +615,7 @@ void IR_Writer::visit(FlowPtr<Extern> n) {
   begin_obj(4);
 
   string("kind");
-  string(n->getKindName());
+  string(n->GetKindName());
 
   write_source_location(n);
 
@@ -632,7 +632,7 @@ void IR_Writer::visit(FlowPtr<Local> n) {
   begin_obj(7);
 
   string("kind");
-  string(n->getKindName());
+  string(n->GetKindName());
 
   write_source_location(n);
 
@@ -643,7 +643,7 @@ void IR_Writer::visit(FlowPtr<Local> n) {
   string(n->getAbiName());
 
   string("storage");
-  string(storage_class_repr.at(n->getStorageClass()));
+  string(STORAGE_CLASS_REPR.at(n->getStorageClass()));
 
   string("readonly");
   boolean(n->isReadonly());
@@ -658,7 +658,7 @@ void IR_Writer::visit(FlowPtr<Ret> n) {
   begin_obj(3);
 
   string("kind");
-  string(n->getKindName());
+  string(n->GetKindName());
 
   write_source_location(n);
 
@@ -672,7 +672,7 @@ void IR_Writer::visit(FlowPtr<Brk> n) {
   begin_obj(2);
 
   string("kind");
-  string(n->getKindName());
+  string(n->GetKindName());
 
   write_source_location(n);
 
@@ -683,7 +683,7 @@ void IR_Writer::visit(FlowPtr<Cont> n) {
   begin_obj(2);
 
   string("kind");
-  string(n->getKindName());
+  string(n->GetKindName());
 
   write_source_location(n);
 
@@ -694,7 +694,7 @@ void IR_Writer::visit(FlowPtr<If> n) {
   begin_obj(5);
 
   string("kind");
-  string(n->getKindName());
+  string(n->GetKindName());
 
   write_source_location(n);
 
@@ -714,7 +714,7 @@ void IR_Writer::visit(FlowPtr<While> n) {
   begin_obj(4);
 
   string("kind");
-  string(n->getKindName());
+  string(n->GetKindName());
 
   write_source_location(n);
 
@@ -731,7 +731,7 @@ void IR_Writer::visit(FlowPtr<For> n) {
   begin_obj(6);
 
   string("kind");
-  string(n->getKindName());
+  string(n->GetKindName());
 
   write_source_location(n);
 
@@ -754,7 +754,7 @@ void IR_Writer::visit(FlowPtr<Case> n) {
   begin_obj(4);
 
   string("kind");
-  string(n->getKindName());
+  string(n->GetKindName());
 
   write_source_location(n);
 
@@ -771,7 +771,7 @@ void IR_Writer::visit(FlowPtr<Switch> n) {
   begin_obj(1);
 
   string("kind");
-  string(n->getKindName());
+  string(n->GetKindName());
 
   write_source_location(n);
 
@@ -796,7 +796,7 @@ void IR_Writer::visit(FlowPtr<Function> n) {
   begin_obj(8);
 
   string("kind");
-  string(n->getKindName());
+  string(n->GetKindName());
 
   write_source_location(n);
 
@@ -840,7 +840,7 @@ void IR_Writer::visit(FlowPtr<Asm> n) {
   begin_obj(2);
 
   string("kind");
-  string(n->getKindName());
+  string(n->GetKindName());
 
   write_source_location(n);
 
@@ -851,7 +851,7 @@ void IR_Writer::visit(FlowPtr<Tmp> n) {
   begin_obj(4);
 
   string("kind");
-  string(n->getKindName());
+  string(n->GetKindName());
 
   write_source_location(n);
 

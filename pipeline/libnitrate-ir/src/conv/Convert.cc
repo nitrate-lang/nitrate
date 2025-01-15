@@ -495,10 +495,10 @@ using namespace ncc;
 //         n->get_rhs()->as<ncc::parse::TypeExpr>()->get_type();
 
 //     bool is_integer_ty = type->is_integral();
-//     bool is_integer_lit = n->get_lhs()->getKind() == QAST_INT;
+//     bool is_integer_lit = n->get_lhs()->GetKind() == QAST_INT;
 
 //     bool is_float_ty = type->is_floating_point();
-//     bool is_float_lit = n->get_lhs()->getKind() == QAST_FLOAT;
+//     bool is_float_lit = n->get_lhs()->GetKind() == QAST_FLOAT;
 
 //     if ((is_integer_lit && is_integer_ty) || (is_float_lit && is_float_ty)) {
 //       if (is_integer_lit) {
@@ -513,7 +513,7 @@ using namespace ncc;
 //                 // {QAST_I128, 128},
 //             };
 
-//         auto it = integer_lit_suffixes.find(type->getKind());
+//         auto it = integer_lit_suffixes.find(type->GetKind());
 //         if (it != integer_lit_suffixes.end()) {
 //           FlowPtr<ncc::parse::ConstInt> N(
 //               n->get_lhs()->as<ncc::parse::ConstInt>());
@@ -530,7 +530,7 @@ using namespace ncc;
 //                 {QAST_F128, 128},
 //             }};
 
-//         auto it = float_lit_suffixes.find(type->getKind());
+//         auto it = float_lit_suffixes.find(type->GetKind());
 //         if (it != float_lit_suffixes.end()) {
 //           FlowPtr<ncc::parse::ConstFloat> N(
 //               n->get_lhs()->as<ncc::parse::ConstFloat>());
@@ -1055,7 +1055,7 @@ using namespace ncc;
 //     return std::nullopt;
 //   }
 
-//   if (result.value()->getKind() != IR_eINT) {
+//   if (result.value()->GetKind() != IR_eINT) {
 //     G->report(CompilerError, IC::Error,
 //               "Non integer literal array size is not supported",
 //               n->get_pos());
@@ -1663,7 +1663,7 @@ using namespace ncc;
 //       return std::nullopt;
 //     }
 
-//     if ((*it)->getKind() == QAST_BLOCK) {
+//     if ((*it)->GetKind() == QAST_BLOCK) {
 //       /* Reduce unneeded nesting in the IR */
 //       qcore_assert(item->size() == 1);
 //       Seq *inner = item->at(0)->as<Seq>();
@@ -1809,7 +1809,7 @@ using namespace ncc;
 
 //   if (!body.has_value()) {
 //     body = create<Seq>(SeqItems({}));
-//   } else if (body.value()->getKind() != IR_eSEQ) {
+//   } else if (body.value()->GetKind() != IR_eSEQ) {
 //     body = create<Seq>(SeqItems({body.value()}));
 //   }
 
@@ -1940,7 +1940,7 @@ using namespace ncc;
 
 //   std::optional<ir::Expr *> out;
 
-//   switch (n->getKind()) {
+//   switch (n->GetKind()) {
 //     case QAST_BASE: {
 //       break;
 //     }
@@ -2211,7 +2211,7 @@ using namespace ncc;
 
 //   BResult out;
 
-//   switch (n->getKind()) {
+//   switch (n->GetKind()) {
 //     case QAST_TYPEDEF:
 //       out = nrgen_typedef(b, s, G, n.as<ncc::parse::TypedefStmt>());
 //       break;

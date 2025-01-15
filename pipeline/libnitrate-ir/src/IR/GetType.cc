@@ -89,7 +89,7 @@ static NullableFlowPtr<Type> promote(NullableFlowPtr<Type> lhs,
   }
   ///===========================================================================
 
-  nr_ty_t LT = L->getKind(), RT = R->getKind();
+  nr_ty_t LT = L->GetKind(), RT = R->GetKind();
 
   ///===========================================================================
   /// NOTE: Primitive numeric types are promoted according to the following

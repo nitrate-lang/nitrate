@@ -126,11 +126,12 @@ NCC_EXPORT bool Base::isSame(FlowPtr<Base> o) const {
     return true;
   }
 
-  if (getKind() != o->getKind()) {
+  if (GetKind() != o->GetKind()) {
     return false;
   }
 
-  std::stringstream ss1, ss2;
+  std::stringstream ss1;
+  std::stringstream ss2;
   AST_MsgPackWriter writer1(ss1), writer2(ss2);
 
   this->Accept(writer1);
@@ -158,7 +159,7 @@ NCC_EXPORT size_t Base::count_children() {
 NCC_EXPORT void Base::BindCodeCommentData(
     std::span<const lex::Token> comment_tokens) {
   auto old = ExtensionDataStore.Get(m_data);
-  old.add_comments(comment_tokens);
+  old.AddComments(comment_tokens);
   ExtensionDataStore.Set(m_data, std::move(old));
 }
 
@@ -174,7 +175,7 @@ NCC_EXPORT bool Type::is_ptr_to(const Type *type) const {
     item = item->as<RefTy>()->get_item();
   }
 
-  return item->is(type->getKind());
+  return item->is(type->GetKind());
 }
 
 FlowPtr<Stmt> Parser::mock_stmt(std::optional<npar_ty_t>) {

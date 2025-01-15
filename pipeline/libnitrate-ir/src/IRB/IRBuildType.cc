@@ -374,7 +374,7 @@
 
 //   std::optional<Expr *> E;
 
-//   switch (_for->getKind()) {
+//   switch (_for->GetKind()) {
 //     case IR_tU1: {
 //       E = createBool(false);
 //       break;

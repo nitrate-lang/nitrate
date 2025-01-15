@@ -221,7 +221,7 @@ std::optional<AST_Reader::TypeMetadata> AST_Reader::Read_TypeMetadata() {
 
 NullableFlowPtr<Base> AST_Reader::deserialize_object() {
   // This code must be the reverse of the map contained in:
-  // 'constexpr std::string_view Base::getKindName(npar_ty_t type)'
+  // 'constexpr std::string_view Base::GetKindName(npar_ty_t type)'
   static const std::unordered_map<std::string, npar_ty_t> node_kinds_map = {
       {"Node", QAST_BASE},
       {"Binexpr", QAST_BINEXPR},
@@ -672,7 +672,7 @@ NullableFlowPtr<Stmt> AST_Reader::deserialize_statement() {
     return nullptr;
   }
 
-  auto kind = object.value()->getKind();
+  auto kind = object.value()->GetKind();
   if (kind < QAST__STMT_FIRST || kind > QAST__STMT_LAST) {
     return nullptr;
   }
@@ -686,7 +686,7 @@ NullableFlowPtr<Expr> AST_Reader::deserialize_expression() {
     return nullptr;
   }
 
-  auto kind = object.value()->getKind();
+  auto kind = object.value()->GetKind();
   if (kind < QAST__EXPR_FIRST || kind > QAST__EXPR_LAST) {
     return nullptr;
   }
@@ -700,7 +700,7 @@ NullableFlowPtr<Type> AST_Reader::deserialize_type() {
     return nullptr;
   }
 
-  auto kind = object.value()->getKind();
+  auto kind = object.value()->GetKind();
   if (kind < QAST__TYPE_FIRST || kind > QAST__TYPE_LAST) {
     return nullptr;
   }

@@ -374,7 +374,7 @@
 
 //       size_t node_count = 0;
 //       for (auto &I : S->getItems()) {
-//         if (non_functional_nodes.contains(I->getKind())) {
+//         if (non_functional_nodes.contains(I->GetKind())) {
 //           I = createIgn();
 //         } else {
 //           node_count++;

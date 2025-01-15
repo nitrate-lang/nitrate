@@ -252,7 +252,7 @@ namespace ncc::ir::abi::azide {
      *                 ::= m # unsigned long
      */
 
-    switch (n->getKind()) {
+    switch (n->GetKind()) {
       case IR_tU1: {
         ss << 'b';
         break;
@@ -412,7 +412,7 @@ namespace ncc::ir::abi::azide {
       }
 
       default: {
-        qcore_panicf("Unknown type kind: %d", (int)n->getKind());
+        qcore_panicf("Unknown type kind: %d", (int)n->GetKind());
       }
     }
   }

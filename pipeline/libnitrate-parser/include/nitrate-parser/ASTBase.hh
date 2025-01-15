@@ -53,9 +53,9 @@ namespace ncc::parse {
     constexpr ASTExtensionKey(uint64_t key) : m_key(key) {}
 
   public:
-    constexpr ASTExtensionKey() : m_key(0) {}
+    constexpr ASTExtensionKey() = default;
 
-    auto Key() const { return m_key; }
+    [[nodiscard]] constexpr auto Key() const { return m_key; }
   } __attribute__((packed));
 
   class ASTExtensionPackage {
@@ -69,11 +69,13 @@ namespace ncc::parse {
         : m_begin(begin), m_end(end) {}
 
   public:
-    auto begin() const { return m_begin; }
-    auto end() const { return m_end; }
-    std::span<const lex::Token> comments() const { return m_comments; }
+    [[nodiscard]] auto Begin() const { return m_begin; }
+    [[nodiscard]] auto End() const { return m_end; }
+    [[nodiscard]] std::span<const lex::Token> Comments() const {
+      return m_comments;
+    }
 
-    void add_comments(std::span<const lex::Token> comments) {
+    void AddComments(std::span<const lex::Token> comments) {
       m_comments.insert(m_comments.end(), comments.begin(), comments.end());
     }
   };
@@ -119,11 +121,11 @@ namespace ncc::parse {
     ///======================================================================
     /// Efficient LLVM-Style reflection
 
-    static constexpr uint32_t getKindSize(npar_ty_t kind);
-    static constexpr std::string_view getKindName(npar_ty_t kind);
+    static constexpr uint32_t GetKindSize(npar_ty_t kind);
+    static constexpr std::string_view GetKindName(npar_ty_t type);
 
     template <typename T>
-    static constexpr npar_ty_t getTypeCode() {
+    static constexpr npar_ty_t GetTypeCode() {
       using namespace ncc::parse;
 
       if constexpr (std::is_same_v<T, Base>) {
@@ -269,37 +271,41 @@ namespace ncc::parse {
       }
     }
 
-    constexpr npar_ty_t getKind() const { return m_node_type; }
-    constexpr auto getKindName() const { return getKindName(m_node_type); }
+    [[nodiscard]] constexpr npar_ty_t GetKind() const { return m_node_type; }
+    [[nodiscard]] constexpr auto GetKindName() const {
+      return GetKindName(m_node_type);
+    }
 
-    constexpr bool is_type() const {
-      auto kind = getKind();
+    [[nodiscard]] constexpr bool is_type() const {
+      auto kind = GetKind();
       return kind >= QAST__TYPE_FIRST && kind <= QAST__TYPE_LAST;
     }
 
-    constexpr bool is_stmt() const {
-      auto kind = getKind();
+    [[nodiscard]] constexpr bool is_stmt() const {
+      auto kind = GetKind();
       return kind >= QAST__STMT_FIRST && kind <= QAST__STMT_LAST;
     }
 
-    constexpr bool is_expr() const {
-      auto kind = getKind();
+    [[nodiscard]] constexpr bool is_expr() const {
+      auto kind = GetKind();
       return kind >= QAST__EXPR_FIRST && kind <= QAST__EXPR_LAST;
     }
 
     template <typename T>
-    constexpr bool is() const {
-      return Base::getTypeCode<T>() == getKind();
+    [[nodiscard]] constexpr bool is() const {
+      return Base::GetTypeCode<T>() == GetKind();
     }
 
-    constexpr bool is(npar_ty_t type) const { return type == getKind(); }
-    constexpr bool is_mock() const { return m_mock; }
+    [[nodiscard]] constexpr bool is(npar_ty_t type) const {
+      return type == GetKind();
+    }
+    [[nodiscard]] constexpr bool is_mock() const { return m_mock; }
 
-    bool isSame(FlowPtr<Base> o) const;
+    [[nodiscard]] bool isSame(FlowPtr<Base> o) const;
 
-    uint64_t hash64() const;
+    [[nodiscard]] uint64_t hash64() const;
 
-    size_t count_children();
+    [[nodiscard]] size_t count_children();
 
     ///======================================================================
     /// Visitation
@@ -313,15 +319,15 @@ namespace ncc::parse {
     /// Debug-mode checked type casting
 
     template <typename T>
-    static constexpr T *safeCastAs(Base *ptr) {
+    [[nodiscard]] static constexpr T *safeCastAs(Base *ptr) {
       if (!ptr) {
         return nullptr;
       }
 
 #ifndef NDEBUG
-      if (getTypeCode<T>() != ptr->getKind()) [[unlikely]] {
-        qcore_panicf("Invalid cast from %s to %s", ptr->getKindName(),
-                     getKindName(getTypeCode<T>()));
+      if (GetTypeCode<T>() != ptr->GetKind()) [[unlikely]] {
+        qcore_panicf("Invalid cast from %s to %s", ptr->GetKindName(),
+                     GetKindName(GetTypeCode<T>()));
       }
 #endif
 
@@ -349,18 +355,24 @@ namespace ncc::parse {
     ///======================================================================
     /// AST Extension Data
 
-    constexpr auto begin() const {
-      return ExtensionDataStore.Get(m_data).begin();
+    [[nodiscard]] constexpr auto begin() const {
+      return ExtensionDataStore.Get(m_data).Begin();
     }
-    constexpr auto begin(lex::IScanner &rd) const { return begin().Get(rd); }
-    constexpr auto end() const { return ExtensionDataStore.Get(m_data).end(); }
-    constexpr auto end(lex::IScanner &rd) const { return end().Get(rd); }
-    constexpr auto get_pos() const {
+    [[nodiscard]] constexpr auto begin(lex::IScanner &rd) const {
+      return begin().Get(rd);
+    }
+    [[nodiscard]] constexpr auto end() const {
+      return ExtensionDataStore.Get(m_data).End();
+    }
+    [[nodiscard]] constexpr auto end(lex::IScanner &rd) const {
+      return end().Get(rd);
+    }
+    [[nodiscard]] constexpr auto get_pos() const {
       return std::pair<lex::LocationID, lex::LocationID>(begin(), end());
     }
 
-    constexpr auto comments() const {
-      return ExtensionDataStore.Get(m_data).comments();
+    [[nodiscard]] constexpr auto comments() const {
+      return ExtensionDataStore.Get(m_data).Comments();
     }
 
     ///======================================================================
@@ -382,7 +394,7 @@ namespace ncc::parse {
   ///======================================================================
 
   namespace detail {
-    constexpr static auto GetKindNames = []() {
+    constexpr static auto kGetKindNames = []() {
       std::array<std::string_view, QAST_COUNT> R;
       R.fill("");
 
@@ -459,15 +471,15 @@ namespace ncc::parse {
     }();
   }  // namespace detail
 
-  constexpr std::string_view Base::getKindName(npar_ty_t type) {
-    return detail::GetKindNames[type];
+  constexpr std::string_view Base::GetKindName(npar_ty_t type) {
+    return detail::kGetKindNames[type];
   }
 
   class Stmt : public Base {
   public:
     constexpr Stmt(npar_ty_t ty) : Base(ty){};
 
-    constexpr bool is_expr_stmt(npar_ty_t type) const;
+    [[nodiscard]] constexpr bool is_expr_stmt(npar_ty_t type) const;
   };
 
   class Type : public Base {
@@ -476,8 +488,8 @@ namespace ncc::parse {
   public:
     constexpr Type(npar_ty_t ty) : Base(ty) {}
 
-    constexpr bool is_primitive() const {
-      switch (getKind()) {
+    [[nodiscard]] constexpr bool is_primitive() const {
+      switch (GetKind()) {
         case QAST_U1:
         case QAST_U8:
         case QAST_U16:
@@ -499,34 +511,52 @@ namespace ncc::parse {
           return false;
       }
     }
-    constexpr bool is_array() const { return getKind() == QAST_ARRAY; };
-    constexpr bool is_tuple() const { return getKind() == QAST_TUPLE; }
-    constexpr bool is_pointer() const { return getKind() == QAST_PTR; }
-    constexpr bool is_function() const { return getKind() == QAST_FUNCTOR; }
-    constexpr bool is_composite() const { return is_array() || is_tuple(); }
-    constexpr bool is_numeric() const {
-      return getKind() >= QAST_U1 && getKind() <= QAST_F128;
+    [[nodiscard]] constexpr bool is_array() const {
+      return GetKind() == QAST_ARRAY;
+    };
+    [[nodiscard]] constexpr bool is_tuple() const {
+      return GetKind() == QAST_TUPLE;
     }
-    constexpr bool is_integral() const {
-      return getKind() >= QAST_U1 && getKind() <= QAST_I128;
+    [[nodiscard]] constexpr bool is_pointer() const {
+      return GetKind() == QAST_PTR;
     }
-    constexpr bool is_floating_point() const {
-      return getKind() >= QAST_F16 && getKind() <= QAST_F128;
+    [[nodiscard]] constexpr bool is_function() const {
+      return GetKind() == QAST_FUNCTOR;
     }
-    constexpr bool is_signed() const {
-      return getKind() >= QAST_I8 && getKind() <= QAST_I128;
+    [[nodiscard]] constexpr bool is_composite() const {
+      return is_array() || is_tuple();
     }
-    constexpr bool is_unsigned() const {
-      return getKind() >= QAST_U1 && getKind() <= QAST_U128;
+    [[nodiscard]] constexpr bool is_numeric() const {
+      return GetKind() >= QAST_U1 && GetKind() <= QAST_F128;
     }
-    constexpr bool is_void() const { return getKind() == QAST_VOID; }
-    constexpr bool is_bool() const { return getKind() == QAST_U1; }
-    constexpr bool is_ref() const { return getKind() == QAST_REF; }
+    [[nodiscard]] constexpr bool is_integral() const {
+      return GetKind() >= QAST_U1 && GetKind() <= QAST_I128;
+    }
+    [[nodiscard]] constexpr bool is_floating_point() const {
+      return GetKind() >= QAST_F16 && GetKind() <= QAST_F128;
+    }
+    [[nodiscard]] constexpr bool is_signed() const {
+      return GetKind() >= QAST_I8 && GetKind() <= QAST_I128;
+    }
+    [[nodiscard]] constexpr bool is_unsigned() const {
+      return GetKind() >= QAST_U1 && GetKind() <= QAST_U128;
+    }
+    [[nodiscard]] constexpr bool is_void() const {
+      return GetKind() == QAST_VOID;
+    }
+    [[nodiscard]] constexpr bool is_bool() const {
+      return GetKind() == QAST_U1;
+    }
+    [[nodiscard]] constexpr bool is_ref() const {
+      return GetKind() == QAST_REF;
+    }
     bool is_ptr_to(const Type *type) const;
 
-    constexpr auto get_width() const { return m_width; }
-    constexpr auto get_range_begin() const { return m_range_begin; }
-    constexpr auto get_range_end() const { return m_range_end; }
+    [[nodiscard]] constexpr auto get_width() const { return m_width; }
+    [[nodiscard]] constexpr auto get_range_begin() const {
+      return m_range_begin;
+    }
+    [[nodiscard]] constexpr auto get_range_end() const { return m_range_end; }
 
     constexpr void SetRangeBegin(NullableFlowPtr<Expr> start) {
       m_range_begin = start;
@@ -541,7 +571,7 @@ namespace ncc::parse {
   public:
     constexpr Expr(npar_ty_t ty) : Base(ty) {}
 
-    constexpr bool is_stmt_expr(npar_ty_t type) const;
+    [[nodiscard]] constexpr bool is_stmt_expr(npar_ty_t type) const;
   };
 }  // namespace ncc::parse
 

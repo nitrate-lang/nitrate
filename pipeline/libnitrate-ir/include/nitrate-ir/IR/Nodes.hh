@@ -53,7 +53,7 @@ namespace ncc::ir {
     return new (Arena<T>().allocate(1)) T(std::forward<Args>(args)...); \
   }
 
-    constexpr nr_ty_t ty = Expr::getTypeCode<T>();
+    constexpr nr_ty_t ty = Expr::GetTypeCode<T>();
 
     NORMAL_ALLOC(IR_eBIN);
     NORMAL_ALLOC(IR_eUNARY);
@@ -141,7 +141,7 @@ namespace ncc::ir {
   void for_each(FlowPtr<Expr> v,
                 std::function<void(nr_ty_t, FlowPtr<Expr>)> f) {
     iterate<mode>(v, [&](auto, auto c) -> IterOp {
-      f((*c)->getKind(), *c);
+      f((*c)->GetKind(), *c);
 
       return IterOp::Proceed;
     });
@@ -151,14 +151,14 @@ namespace ncc::ir {
   void transform(FlowPtr<Expr> v,
                  std::function<bool(nr_ty_t, FlowPtr<Expr> *)> f) {
     iterate<mode>(v, [&](auto, auto c) -> IterOp {
-      return f((*c)->getKind(), c) ? IterOp::Proceed : IterOp::Abort;
+      return f((*c)->GetKind(), c) ? IterOp::Proceed : IterOp::Abort;
     });
   }
 
   template <typename T, auto mode = dfs_pre>
   void for_each(FlowPtr<Expr> v, std::function<void(FlowPtr<T>)> f) {
     iterate<mode>(v, [&](auto, auto c) -> IterOp {
-      if ((*c)->getKind() != Expr::getTypeCode<T>()) {
+      if ((*c)->GetKind() != Expr::GetTypeCode<T>()) {
         return IterOp::Proceed;
       }
 
@@ -171,7 +171,7 @@ namespace ncc::ir {
   template <typename T, auto mode = dfs_pre>
   void transform(FlowPtr<Expr> v, std::function<bool(FlowPtr<T> *)> f) {
     iterate<mode>(v, [&](auto, auto c) -> IterOp {
-      if ((*c)->getKind() != Expr::getTypeCode<T>()) {
+      if ((*c)->GetKind() != Expr::GetTypeCode<T>()) {
         return IterOp::Proceed;
       }
 

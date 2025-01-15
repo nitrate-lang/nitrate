@@ -151,7 +151,7 @@ void AST_Writer::visit(FlowPtr<Base> n) {
   begin_obj(2);
 
   string("kind");
-  string(n->getKindName());
+  string(n->GetKindName());
 
   write_source_location(n);
 
@@ -162,7 +162,7 @@ void AST_Writer::visit(FlowPtr<ExprStmt> n) {
   begin_obj(3);
 
   string("kind");
-  string(n->getKindName());
+  string(n->GetKindName());
 
   write_source_location(n);
 
@@ -176,7 +176,7 @@ void AST_Writer::visit(FlowPtr<StmtExpr> n) {
   begin_obj(3);
 
   string("kind");
-  string(n->getKindName());
+  string(n->GetKindName());
 
   write_source_location(n);
 
@@ -190,7 +190,7 @@ void AST_Writer::visit(FlowPtr<TypeExpr> n) {
   begin_obj(3);
 
   string("kind");
-  string(n->getKindName());
+  string(n->GetKindName());
 
   write_source_location(n);
 
@@ -204,7 +204,7 @@ void AST_Writer::visit(FlowPtr<NamedTy> n) {
   begin_obj(6);
 
   string("kind");
-  string(n->getKindName());
+  string(n->GetKindName());
 
   write_source_location(n);
 
@@ -220,7 +220,7 @@ void AST_Writer::visit(FlowPtr<InferTy> n) {
   begin_obj(5);
 
   string("kind");
-  string(n->getKindName());
+  string(n->GetKindName());
 
   write_source_location(n);
 
@@ -233,7 +233,7 @@ void AST_Writer::visit(FlowPtr<TemplType> n) {
   begin_obj(7);
 
   string("kind");
-  string(n->getKindName());
+  string(n->GetKindName());
 
   write_source_location(n);
 
@@ -265,7 +265,7 @@ void AST_Writer::visit(FlowPtr<U1> n) {
   begin_obj(5);
 
   string("kind");
-  string(n->getKindName());
+  string(n->GetKindName());
 
   write_source_location(n);
 
@@ -278,7 +278,7 @@ void AST_Writer::visit(FlowPtr<U8> n) {
   begin_obj(5);
 
   string("kind");
-  string(n->getKindName());
+  string(n->GetKindName());
 
   write_source_location(n);
 
@@ -291,7 +291,7 @@ void AST_Writer::visit(FlowPtr<U16> n) {
   begin_obj(5);
 
   string("kind");
-  string(n->getKindName());
+  string(n->GetKindName());
 
   write_source_location(n);
 
@@ -304,7 +304,7 @@ void AST_Writer::visit(FlowPtr<U32> n) {
   begin_obj(5);
 
   string("kind");
-  string(n->getKindName());
+  string(n->GetKindName());
 
   write_source_location(n);
 
@@ -317,7 +317,7 @@ void AST_Writer::visit(FlowPtr<U64> n) {
   begin_obj(5);
 
   string("kind");
-  string(n->getKindName());
+  string(n->GetKindName());
 
   write_source_location(n);
 
@@ -330,7 +330,7 @@ void AST_Writer::visit(FlowPtr<U128> n) {
   begin_obj(5);
 
   string("kind");
-  string(n->getKindName());
+  string(n->GetKindName());
 
   write_source_location(n);
 
@@ -343,7 +343,7 @@ void AST_Writer::visit(FlowPtr<I8> n) {
   begin_obj(5);
 
   string("kind");
-  string(n->getKindName());
+  string(n->GetKindName());
 
   write_source_location(n);
 
@@ -356,7 +356,7 @@ void AST_Writer::visit(FlowPtr<I16> n) {
   begin_obj(5);
 
   string("kind");
-  string(n->getKindName());
+  string(n->GetKindName());
 
   write_source_location(n);
 
@@ -369,7 +369,7 @@ void AST_Writer::visit(FlowPtr<I32> n) {
   begin_obj(5);
 
   string("kind");
-  string(n->getKindName());
+  string(n->GetKindName());
 
   write_source_location(n);
 
@@ -382,7 +382,7 @@ void AST_Writer::visit(FlowPtr<I64> n) {
   begin_obj(5);
 
   string("kind");
-  string(n->getKindName());
+  string(n->GetKindName());
 
   write_source_location(n);
 
@@ -395,7 +395,7 @@ void AST_Writer::visit(FlowPtr<I128> n) {
   begin_obj(5);
 
   string("kind");
-  string(n->getKindName());
+  string(n->GetKindName());
 
   write_source_location(n);
 
@@ -408,7 +408,7 @@ void AST_Writer::visit(FlowPtr<F16> n) {
   begin_obj(5);
 
   string("kind");
-  string(n->getKindName());
+  string(n->GetKindName());
 
   write_source_location(n);
 
@@ -421,7 +421,7 @@ void AST_Writer::visit(FlowPtr<F32> n) {
   begin_obj(5);
 
   string("kind");
-  string(n->getKindName());
+  string(n->GetKindName());
 
   write_source_location(n);
 
@@ -434,7 +434,7 @@ void AST_Writer::visit(FlowPtr<F64> n) {
   begin_obj(5);
 
   string("kind");
-  string(n->getKindName());
+  string(n->GetKindName());
 
   write_source_location(n);
 
@@ -447,7 +447,7 @@ void AST_Writer::visit(FlowPtr<F128> n) {
   begin_obj(5);
 
   string("kind");
-  string(n->getKindName());
+  string(n->GetKindName());
 
   write_source_location(n);
 
@@ -460,7 +460,7 @@ void AST_Writer::visit(FlowPtr<VoidTy> n) {
   begin_obj(5);
 
   string("kind");
-  string(n->getKindName());
+  string(n->GetKindName());
 
   write_source_location(n);
 
@@ -473,7 +473,7 @@ void AST_Writer::visit(FlowPtr<PtrTy> n) {
   begin_obj(7);
 
   string("kind");
-  string(n->getKindName());
+  string(n->GetKindName());
 
   write_source_location(n);
 
@@ -492,7 +492,7 @@ void AST_Writer::visit(FlowPtr<OpaqueTy> n) {
   begin_obj(6);
 
   string("kind");
-  string(n->getKindName());
+  string(n->GetKindName());
 
   write_source_location(n);
 
@@ -508,7 +508,7 @@ void AST_Writer::visit(FlowPtr<TupleTy> n) {
   begin_obj(6);
 
   string("kind");
-  string(n->getKindName());
+  string(n->GetKindName());
 
   write_source_location(n);
 
@@ -531,7 +531,7 @@ void AST_Writer::visit(FlowPtr<ArrayTy> n) {
   begin_obj(7);
 
   string("kind");
-  string(n->getKindName());
+  string(n->GetKindName());
 
   write_source_location(n);
 
@@ -550,7 +550,7 @@ void AST_Writer::visit(FlowPtr<RefTy> n) {
   begin_obj(6);
 
   string("kind");
-  string(n->getKindName());
+  string(n->GetKindName());
 
   write_source_location(n);
 
@@ -566,7 +566,7 @@ void AST_Writer::visit(FlowPtr<FuncTy> n) {
   begin_obj(10);
 
   string("kind");
-  string(n->getKindName());
+  string(n->GetKindName());
 
   write_source_location(n);
 
@@ -667,7 +667,7 @@ void AST_Writer::visit(FlowPtr<UnaryExpr> n) {
   begin_obj(4);
 
   string("kind");
-  string(n->getKindName());
+  string(n->GetKindName());
 
   write_source_location(n);
 
@@ -684,7 +684,7 @@ void AST_Writer::visit(FlowPtr<BinExpr> n) {
   begin_obj(5);
 
   string("kind");
-  string(n->getKindName());
+  string(n->GetKindName());
 
   write_source_location(n);
 
@@ -704,7 +704,7 @@ void AST_Writer::visit(FlowPtr<PostUnaryExpr> n) {
   begin_obj(4);
 
   string("kind");
-  string(n->getKindName());
+  string(n->GetKindName());
 
   write_source_location(n);
 
@@ -721,7 +721,7 @@ void AST_Writer::visit(FlowPtr<TernaryExpr> n) {
   begin_obj(5);
 
   string("kind");
-  string(n->getKindName());
+  string(n->GetKindName());
 
   write_source_location(n);
 
@@ -741,7 +741,7 @@ void AST_Writer::visit(FlowPtr<ConstInt> n) {
   begin_obj(3);
 
   string("kind");
-  string(n->getKindName());
+  string(n->GetKindName());
 
   write_source_location(n);
 
@@ -755,7 +755,7 @@ void AST_Writer::visit(FlowPtr<ConstFloat> n) {
   begin_obj(3);
 
   string("kind");
-  string(n->getKindName());
+  string(n->GetKindName());
 
   write_source_location(n);
 
@@ -769,7 +769,7 @@ void AST_Writer::visit(FlowPtr<ConstBool> n) {
   begin_obj(3);
 
   string("kind");
-  string(n->getKindName());
+  string(n->GetKindName());
 
   write_source_location(n);
 
@@ -783,7 +783,7 @@ void AST_Writer::visit(FlowPtr<ConstString> n) {
   begin_obj(3);
 
   string("kind");
-  string(n->getKindName());
+  string(n->GetKindName());
 
   write_source_location(n);
 
@@ -797,7 +797,7 @@ void AST_Writer::visit(FlowPtr<ConstChar> n) {
   begin_obj(3);
 
   string("kind");
-  string(n->getKindName());
+  string(n->GetKindName());
 
   write_source_location(n);
 
@@ -811,7 +811,7 @@ void AST_Writer::visit(FlowPtr<ConstNull> n) {
   begin_obj(2);
 
   string("kind");
-  string(n->getKindName());
+  string(n->GetKindName());
 
   write_source_location(n);
 
@@ -822,7 +822,7 @@ void AST_Writer::visit(FlowPtr<ConstUndef> n) {
   begin_obj(2);
 
   string("kind");
-  string(n->getKindName());
+  string(n->GetKindName());
 
   write_source_location(n);
 
@@ -833,7 +833,7 @@ void AST_Writer::visit(FlowPtr<Call> n) {
   begin_obj(4);
 
   string("kind");
-  string(n->getKindName());
+  string(n->GetKindName());
 
   write_source_location(n);
 
@@ -866,7 +866,7 @@ void AST_Writer::visit(FlowPtr<TemplCall> n) {
   begin_obj(5);
 
   string("kind");
-  string(n->getKindName());
+  string(n->GetKindName());
 
   write_source_location(n);
 
@@ -920,7 +920,7 @@ void AST_Writer::visit(FlowPtr<List> n) {
   begin_obj(3);
 
   string("kind");
-  string(n->getKindName());
+  string(n->GetKindName());
 
   write_source_location(n);
 
@@ -941,7 +941,7 @@ void AST_Writer::visit(FlowPtr<Assoc> n) {
   begin_obj(4);
 
   string("kind");
-  string(n->getKindName());
+  string(n->GetKindName());
 
   write_source_location(n);
 
@@ -958,7 +958,7 @@ void AST_Writer::visit(FlowPtr<Index> n) {
   begin_obj(4);
 
   string("kind");
-  string(n->getKindName());
+  string(n->GetKindName());
 
   write_source_location(n);
 
@@ -975,7 +975,7 @@ void AST_Writer::visit(FlowPtr<Slice> n) {
   begin_obj(5);
 
   string("kind");
-  string(n->getKindName());
+  string(n->GetKindName());
 
   write_source_location(n);
 
@@ -995,7 +995,7 @@ void AST_Writer::visit(FlowPtr<FString> n) {
   begin_obj(3);
 
   string("kind");
-  string(n->getKindName());
+  string(n->GetKindName());
 
   write_source_location(n);
 
@@ -1026,7 +1026,7 @@ void AST_Writer::visit(FlowPtr<Ident> n) {
   begin_obj(3);
 
   string("kind");
-  string(n->getKindName());
+  string(n->GetKindName());
 
   write_source_location(n);
 
@@ -1040,7 +1040,7 @@ void AST_Writer::visit(FlowPtr<SeqPoint> n) {
   begin_obj(3);
 
   string("kind");
-  string(n->getKindName());
+  string(n->GetKindName());
 
   write_source_location(n);
 
@@ -1061,7 +1061,7 @@ void AST_Writer::visit(FlowPtr<Block> n) {
   begin_obj(4);
 
   string("kind");
-  string(n->getKindName());
+  string(n->GetKindName());
 
   write_source_location(n);
 
@@ -1098,7 +1098,7 @@ void AST_Writer::visit(FlowPtr<VarDecl> n) {
   begin_obj(7);
 
   string("kind");
-  string(n->getKindName());
+  string(n->GetKindName());
 
   write_source_location(n);
 
@@ -1141,7 +1141,7 @@ void AST_Writer::visit(FlowPtr<InlineAsm> n) {
   begin_obj(4);
 
   string("kind");
-  string(n->getKindName());
+  string(n->GetKindName());
 
   write_source_location(n);
 
@@ -1165,7 +1165,7 @@ void AST_Writer::visit(FlowPtr<IfStmt> n) {
   begin_obj(5);
 
   string("kind");
-  string(n->getKindName());
+  string(n->GetKindName());
 
   write_source_location(n);
 
@@ -1189,7 +1189,7 @@ void AST_Writer::visit(FlowPtr<WhileStmt> n) {
   begin_obj(4);
 
   string("kind");
-  string(n->getKindName());
+  string(n->GetKindName());
 
   write_source_location(n);
 
@@ -1206,7 +1206,7 @@ void AST_Writer::visit(FlowPtr<ForStmt> n) {
   begin_obj(6);
 
   string("kind");
-  string(n->getKindName());
+  string(n->GetKindName());
 
   write_source_location(n);
 
@@ -1241,7 +1241,7 @@ void AST_Writer::visit(FlowPtr<ForeachStmt> n) {
   begin_obj(6);
 
   string("kind");
-  string(n->getKindName());
+  string(n->GetKindName());
 
   write_source_location(n);
 
@@ -1264,7 +1264,7 @@ void AST_Writer::visit(FlowPtr<BreakStmt> n) {
   begin_obj(2);
 
   string("kind");
-  string(n->getKindName());
+  string(n->GetKindName());
 
   write_source_location(n);
 
@@ -1275,7 +1275,7 @@ void AST_Writer::visit(FlowPtr<ContinueStmt> n) {
   begin_obj(2);
 
   string("kind");
-  string(n->getKindName());
+  string(n->GetKindName());
 
   write_source_location(n);
 
@@ -1286,7 +1286,7 @@ void AST_Writer::visit(FlowPtr<ReturnStmt> n) {
   begin_obj(3);
 
   string("kind");
-  string(n->getKindName());
+  string(n->GetKindName());
 
   write_source_location(n);
 
@@ -1304,7 +1304,7 @@ void AST_Writer::visit(FlowPtr<ReturnIfStmt> n) {
   begin_obj(4);
 
   string("kind");
-  string(n->getKindName());
+  string(n->GetKindName());
 
   write_source_location(n);
 
@@ -1321,7 +1321,7 @@ void AST_Writer::visit(FlowPtr<CaseStmt> n) {
   begin_obj(4);
 
   string("kind");
-  string(n->getKindName());
+  string(n->GetKindName());
 
   write_source_location(n);
 
@@ -1338,7 +1338,7 @@ void AST_Writer::visit(FlowPtr<SwitchStmt> n) {
   begin_obj(5);
 
   string("kind");
-  string(n->getKindName());
+  string(n->GetKindName());
 
   write_source_location(n);
 
@@ -1365,7 +1365,7 @@ void AST_Writer::visit(FlowPtr<TypedefStmt> n) {
   begin_obj(4);
 
   string("kind");
-  string(n->getKindName());
+  string(n->GetKindName());
 
   write_source_location(n);
 
@@ -1382,7 +1382,7 @@ void AST_Writer::visit(FlowPtr<Function> n) {
   begin_obj(13);
 
   string("kind");
-  string(n->getKindName());
+  string(n->GetKindName());
 
   write_source_location(n);
 
@@ -1556,7 +1556,7 @@ void AST_Writer::visit(FlowPtr<StructDef> n) {
   begin_obj(10);
 
   string("kind");
-  string(n->getKindName());
+  string(n->GetKindName());
 
   write_source_location(n);
 
@@ -1711,7 +1711,7 @@ void AST_Writer::visit(FlowPtr<EnumDef> n) {
   begin_obj(5);
 
   string("kind");
-  string(n->getKindName());
+  string(n->GetKindName());
 
   write_source_location(n);
 
@@ -1747,7 +1747,7 @@ void AST_Writer::visit(FlowPtr<ScopeStmt> n) {
   begin_obj(5);
 
   string("kind");
-  string(n->getKindName());
+  string(n->GetKindName());
 
   write_source_location(n);
 
@@ -1773,7 +1773,7 @@ void AST_Writer::visit(FlowPtr<ExportStmt> n) {
   begin_obj(6);
 
   string("kind");
-  string(n->getKindName());
+  string(n->GetKindName());
 
   write_source_location(n);
 

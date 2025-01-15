@@ -54,7 +54,7 @@ public:
 
   Expr *GetClone() { return R.value(); }
 
-  void visit(FlowPtr<Expr> n) override { R = create<Expr>(n->getKind()); }
+  void visit(FlowPtr<Expr> n) override { R = create<Expr>(n->GetKind()); }
 
   void visit(FlowPtr<BinExpr> n) override {
     auto lhs = n->getLHS()->clone();
