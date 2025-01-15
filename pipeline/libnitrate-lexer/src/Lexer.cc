@@ -40,6 +40,8 @@
 #include <csetjmp>
 #include <cstdint>
 #include <cstdio>
+#include <google/dense_hash_map>
+#include <google/dense_hash_set>
 #include <nitrate-core/Logger.hh>
 #include <nitrate-core/Macro.hh>
 #include <nitrate-core/String.hh>
@@ -49,8 +51,6 @@
 #include <stack>
 #include <string>
 #include <string_view>
-#include <unordered_map>
-#include <unordered_set>
 #include <utility>
 #include <vector>
 
@@ -62,8 +62,8 @@ constexpr size_t FLOATING_POINT_PRECISION = 100;
 
 namespace ncc::lex {
   static const auto operator_set = []() {
-    std::unordered_set<std::string_view> set;
-    set.reserve(LexicalOperators.left.size());
+    google::dense_hash_set<std::string_view> set;
+    set.set_empty_key("");
     for (const auto &op : LexicalOperators.left) {
       set.insert(op.first);
     }
@@ -71,18 +71,54 @@ namespace ncc::lex {
   }();
 
   static const auto word_operators = []() {
-    std::unordered_map<std::string_view, Operator> set;
+    google::dense_hash_map<std::string_view, Operator> map;
+    map.set_empty_key("");
+
     for (const auto &op : LexicalOperators.left) {
-      bool is_word = std::all_of(op.first.begin(), op.first.end(), [](auto c) {
+      std::string_view sv = op.first;
+      bool is_word = std::all_of(sv.begin(), sv.end(), [](auto c) {
         return std::isalnum(c) || c == '_';
       });
 
       if (is_word) {
-        set[op.first] = op.second;
+        map[op.first] = op.second;
       }
     }
 
-    return set;
+    return map;
+  }();
+
+  static const auto KeywordsMap = []() {
+    google::dense_hash_map<std::string_view, Keyword> map;
+    map.set_empty_key("");
+
+    for (const auto &kw : LexicalKeywords.left) {
+      map[kw.first] = kw.second;
+    }
+
+    return map;
+  }();
+
+  static const auto OperatorsMap = []() {
+    google::dense_hash_map<std::string_view, Operator> map;
+    map.set_empty_key("");
+
+    for (const auto &kw : LexicalOperators.left) {
+      map[kw.first] = kw.second;
+    }
+
+    return map;
+  }();
+
+  static const auto PunctorsMap = []() {
+    google::dense_hash_map<std::string_view, Punctor> map;
+    map.set_empty_key("");
+
+    for (const auto &kw : LexicalPunctors.left) {
+      map[kw.first] = kw.second;
+    }
+
+    return map;
   }();
 
   static constexpr auto hextable = []() {
@@ -415,8 +451,8 @@ public:
     L.m_fifo.push(c);
 
     { /* Determine if it's a keyword or an identifier */
-      auto it = LexicalKeywords.left.find(buf);
-      if (it != LexicalKeywords.left.end()) {
+      auto it = KeywordsMap.find(buf);
+      if (it != KeywordsMap.end()) {
         return Token(KeyW, it->second, start_pos);
       }
     }
@@ -947,8 +983,8 @@ public:
                                           Token &token) {
     /* Check if it's a punctor */
     if (buf.size() == 1) {
-      auto it = LexicalPunctors.left.find(buf);
-      if (it != LexicalPunctors.left.end()) {
+      auto it = PunctorsMap.find(buf);
+      if (it != PunctorsMap.end()) {
         L.m_fifo.push(c);
         token = Token(Punc, it->second, start_pos);
         return true;
@@ -973,7 +1009,7 @@ public:
     bool found = false;
     while (true) {
       bool contains = false;
-      if (operator_set.contains(buf)) {
+      if (operator_set.count(buf)) {
         contains = true;
         found = true;
       }
@@ -997,8 +1033,9 @@ public:
 
     L.m_fifo.push(buf.back());
     L.m_fifo.push(c);
-    token = Token(Oper, LexicalOperators.left.at(buf.substr(0, buf.size() - 1)),
-                  start_pos);
+    token =
+        Token(Oper, OperatorsMap.find(buf.substr(0, buf.size() - 1))->second,
+              start_pos);
 
     return true;
   }
@@ -1270,18 +1307,6 @@ NCC_EXPORT std::ostream &ncc::lex::operator<<(std::ostream &os, Token tok) {
   os << "}}";
 
   return os;
-}
-
-NCC_EXPORT const char *ncc::lex::op_repr(Operator op) {
-  return LexicalOperators.right.at(op).data();
-}
-
-NCC_EXPORT const char *ncc::lex::kw_repr(Keyword kw) {
-  return LexicalKeywords.right.at(kw).data();
-}
-
-NCC_EXPORT const char *ncc::lex::punct_repr(Punctor punct) {
-  return LexicalPunctors.right.at(punct).data();
 }
 
 NCC_EXPORT

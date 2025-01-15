@@ -80,7 +80,7 @@ class DeserializerAdapterLexer final : public ncc::lex::IScanner {
   bool m_eof_bit;
   std::istream &m_file;
 
-  Token decode(TokenType t, std::string_view data) {
+  Token decode(TokenType t, const std::string &data) {
     Token R;
 
     switch (t) {
@@ -90,17 +90,17 @@ class DeserializerAdapterLexer final : public ncc::lex::IScanner {
       }
 
       case TokenType::KeyW: {
-        R = Token(t, ncc::lex::LexicalKeywords.left.at(data));
+        R = Token(t, ncc::lex::LexicalKeywords.left.at(data.c_str()));
         break;
       }
 
       case TokenType::Oper: {
-        R = Token(t, ncc::lex::LexicalOperators.left.at(data));
+        R = Token(t, ncc::lex::LexicalOperators.left.at(data.c_str()));
         break;
       }
 
       case TokenType::Punc: {
-        R = Token(t, ncc::lex::LexicalPunctors.left.at(data));
+        R = Token(t, ncc::lex::LexicalPunctors.left.at(data.c_str()));
         break;
       }
 

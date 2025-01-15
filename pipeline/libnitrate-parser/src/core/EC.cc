@@ -196,19 +196,19 @@ static std::optional<std::pair<Token, std::string>> find_and_decode_token(
     }
 
     case KeyW: {
-      return {{Token(KeyW, LexicalKeywords.left.at(unescaped.value()),
+      return {{Token(KeyW, LexicalKeywords.left.at(unescaped.value().c_str()),
                      LocationID(posid)),
                slice}};
     }
 
     case Oper: {
-      return {{Token(Oper, LexicalOperators.left.at(unescaped.value()),
+      return {{Token(Oper, LexicalOperators.left.at(unescaped.value().c_str()),
                      LocationID(posid)),
                slice}};
     }
 
     case Punc: {
-      return {{Token(Punc, LexicalPunctors.left.at(unescaped.value()),
+      return {{Token(Punc, LexicalPunctors.left.at(unescaped.value().c_str()),
                      LocationID(posid)),
                slice}};
     }
