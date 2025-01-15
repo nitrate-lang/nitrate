@@ -48,7 +48,6 @@ namespace ncc {
 
   class DynamicArena final : public IMemory {
     class PImpl;
-
     PImpl *m_arena;
     bool m_owned;
 

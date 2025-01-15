@@ -42,7 +42,7 @@
 namespace ncc {
   class String;
 
-  class StringMemory {
+  class NCC_EXPORT StringMemory {
     friend class String;
 
     /* assert(!str.empty()) */
@@ -56,7 +56,7 @@ namespace ncc {
     static void Reset();
   };
 
-  class __attribute__((packed)) String {
+  class NCC_EXPORT __attribute__((packed)) String {
     uint64_t m_id : 40;
 
   public:
@@ -77,7 +77,8 @@ namespace ncc {
 
     [[nodiscard]] auto Get() const -> std::string_view;
 
-    constexpr bool operator==(const String &o) const { return m_id == o.m_id; }
+    bool operator==(const String &o) const;
+    bool operator<(const String &o) const;
 
     constexpr auto operator*() const { return Get(); }
 
@@ -86,8 +87,6 @@ namespace ncc {
       sv = Get();
       return &sv;
     }
-
-    constexpr bool operator<(const String &o) const { return m_id < o.m_id; }
 
     constexpr operator std::string_view() const { return Get(); }
 

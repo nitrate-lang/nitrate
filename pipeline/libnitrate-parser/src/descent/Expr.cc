@@ -34,6 +34,7 @@
 #include <charconv>
 #include <descent/Recurse.hh>
 #include <stack>
+#include <utility>
 
 #define MAX_RECURSION_DEPTH 4096
 #define MAX_LIST_REPEAT_COUNT 4096
@@ -82,7 +83,7 @@ CallArgs Parser::RecurseCallArguments(const std::set<lex::Token> &terminators,
       std::set<Token> terminators_copy(terminators);
       terminators_copy.insert(Token(Punc, PuncComa));
       auto argument_value = RecurseExpr(terminators_copy);
-      call_args.push_back({argument_name, argument_value});
+      call_args.emplace_back(argument_name, argument_value);
     }
 
     next_if(PuncComa);
@@ -95,7 +96,9 @@ FlowPtr<Expr> Parser::RecurseFstring() {
   FStringItems items;
 
   if (auto tok = next_if(Text)) {
-    size_t state = 0, w_beg = 0, w_end{};
+    size_t state = 0;
+    size_t w_beg = 0;
+    size_t w_end{};
     auto fstring_raw = tok->as_string().Get();
 
     std::string buf;
@@ -112,7 +115,7 @@ FlowPtr<Expr> Parser::RecurseFstring() {
         state = 0;
 
         if (!buf.empty()) {
-          items.push_back(string(std::move(buf)));
+          items.emplace_back(string(std::move(buf)));
           buf.clear();
         }
 
@@ -122,7 +125,7 @@ FlowPtr<Expr> Parser::RecurseFstring() {
                     Token(Punc, PuncRCur),
                 });
 
-        items.push_back(subnode);
+        items.emplace_back(subnode);
       } else if (ch == '{') {
         buf += ch;
         state = 0;
@@ -135,7 +138,7 @@ FlowPtr<Expr> Parser::RecurseFstring() {
     }
 
     if (!buf.empty()) {
-      items.push_back(string(std::move(buf)));
+      items.emplace_back(string(std::move(buf)));
       buf.clear();
     }
 
@@ -145,11 +148,10 @@ FlowPtr<Expr> Parser::RecurseFstring() {
     }
 
     return make<FString>(std::move(items))();
-  } else {
-    Log << SyntaxError << current()
-        << "Expected a string literal token for F-string expression";
-    return MockExpr(QAST_FSTRING);
   }
+  Log << SyntaxError << current()
+      << "Expected a string literal token for F-string expression";
+  return MockExpr(QAST_FSTRING);
 }
 
 static bool IsPostUnaryOp(Operator o) { return o == OpInc || o == OpDec; }
@@ -170,7 +172,7 @@ struct Frame {
 
   Frame(FlowPtr<Expr> base, LocationID start_pos, short min_precedence,
         FrameType type, Operator op)
-      : m_base(base),
+      : m_base(std::move(base)),
         m_minPrecedence(min_precedence),
         m_start_pos(start_pos),
         m_type(type),
@@ -220,14 +222,14 @@ FlowPtr<Expr> Parser::RecurseExpr(const std::set<Token> &terminators) {
 
   std::stack<Frame> stack;
   ConstBool start_node(false);
-  stack.push({&start_node, source_offset, 0, FrameType::Start, OpPlus});
+  stack.emplace(&start_node, source_offset, 0, FrameType::Start, OpPlus);
 
   /****************************************
    * Parse pre-unary operators
    ****************************************/
   std::stack<std::pair<Operator, LocationID>> pre_unary_ops;
   while (auto tok = next_if(Oper)) {
-    pre_unary_ops.push({tok->as_op(), tok->get_start()});
+    pre_unary_ops.emplace(tok->as_op(), tok->get_start());
   }
 
   if (auto left_side_opt = RecurseExprPrimary(false)) {
@@ -282,7 +284,7 @@ FlowPtr<Expr> Parser::RecurseExpr(const std::set<Token> &terminators) {
                * Parse pre-unary operators
                ****************************************/
               while (auto tok_op = next_if(Oper)) {
-                pre_unary_ops.push({tok_op->as_op(), tok_op->get_start()});
+                pre_unary_ops.emplace(tok_op->as_op(), tok_op->get_start());
               }
             } else {
               next_if(lex::Type);
@@ -311,8 +313,8 @@ FlowPtr<Expr> Parser::RecurseExpr(const std::set<Token> &terminators) {
                 return MockExpr();
               }
 
-              stack.push(Frame(left_side, source_offset, next_min_precedence,
-                               FrameType::Binary, op));
+              stack.emplace(left_side, source_offset, next_min_precedence,
+                            FrameType::Binary, op);
               left_side = right_side.value();
             } else {
               Log << SyntaxError << current()
@@ -416,11 +418,10 @@ FlowPtr<Expr> Parser::RecurseExpr(const std::set<Token> &terminators) {
     }
 
     return UnwindStack(stack, left_side, 0);
-  } else {
-    Log << SyntaxError << current() << "Expected an expression";
-
-    return MockExpr();
   }
+  Log << SyntaxError << current() << "Expected an expression";
+
+  return MockExpr();
 }
 
 NullableFlowPtr<Expr> Parser::RecurseExprKeyword(lex::Keyword key) {
