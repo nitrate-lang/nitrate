@@ -110,7 +110,7 @@ int ncc::seq::sys_defer(lua_State* L) {
         }
 
         if (!lua_isboolean(L, -1)) {
-          ncc::log << Error
+          ncc::Log << Error
                    << "sys_defer: expected boolean return value or nil, got "
                    << luaL_typename(L, -1);
 
@@ -122,25 +122,25 @@ int ncc::seq::sys_defer(lua_State* L) {
         break;
       }
       case LUA_ERRRUN: {
-        ncc::log << Error << "sys_defer: lua: " << lua_tostring(L, -1);
+        ncc::Log << Error << "sys_defer: lua: " << lua_tostring(L, -1);
         engine->SetFailBit();
         R = Sequencer::EmitToken;
         break;
       }
       case LUA_ERRMEM: {
-        ncc::log << Error << "sys_defer: memory allocation error\n";
+        ncc::Log << Error << "sys_defer: memory allocation error\n";
         engine->SetFailBit();
         R = Sequencer::EmitToken;
         break;
       }
       case LUA_ERRERR: {
-        ncc::log << Error << "sys_defer: error in error handler\n";
+        ncc::Log << Error << "sys_defer: error in error handler\n";
         engine->SetFailBit();
         R = Sequencer::EmitToken;
         break;
       }
       default: {
-        ncc::log << Error << "sys_defer: unexpected error " << err << "\n";
+        ncc::Log << Error << "sys_defer: unexpected error " << err << "\n";
         engine->SetFailBit();
         R = Sequencer::EmitToken;
         break;

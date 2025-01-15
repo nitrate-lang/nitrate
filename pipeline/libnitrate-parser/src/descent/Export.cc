@@ -51,7 +51,7 @@ std::optional<ExpressionList> Parser::recurse_export_attributes() {
 
   while (true) {
     if (next_if(EofF)) [[unlikely]] {
-      log << SyntaxError << current()
+      Log << SyntaxError << current()
           << "Encountered EOF while parsing export attributes";
       break;
     }
@@ -90,7 +90,7 @@ FlowPtr<Stmt> Parser::recurse_export(Vis vis) {
     return make<ExportStmt>(export_body, export_abi, vis,
                             export_attributes.value())();
   } else {
-    log << SyntaxError << current() << "Malformed export attributes";
+    Log << SyntaxError << current() << "Malformed export attributes";
     return mock_stmt(QAST_EXPORT);
   }
 }

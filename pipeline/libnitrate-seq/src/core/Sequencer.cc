@@ -136,7 +136,7 @@ bool Sequencer::ExecuteLua(const char *code) {
   auto rc = luaL_dostring(m_core->L, code);
 
   if (rc) {
-    ncc::log << SeqError << "Lua error: " << lua_tostring(m_core->L, -1);
+    ncc::Log << SeqError << "Lua error: " << lua_tostring(m_core->L, -1);
 
     SetFailBit();
     return false;
@@ -173,7 +173,7 @@ func_entry:  // do tail call optimization manually
   try {
     RecursiveGuard guard(m_core->m_depth);
     if (guard.should_stop()) {
-      ncc::log << SeqError << "Maximum macro recursion depth reached, aborting";
+      ncc::Log << SeqError << "Maximum macro recursion depth reached, aborting";
 
       throw StopException();
     }
@@ -204,7 +204,7 @@ func_entry:  // do tail call optimization manually
           auto import_name = m_scanner->Next().as_string();
           auto semicolon = m_scanner->Next();
           if (!semicolon.is<PuncSemi>()) {
-            ncc::log << SeqError << "Expected semicolon after import name";
+            ncc::Log << SeqError << "Expected semicolon after import name";
 
             SetFailBit();
             x = Token::EndOfFile();
@@ -228,7 +228,7 @@ func_entry:  // do tail call optimization manually
         auto block = ltrim(x.as_string());
         if (!block.starts_with("fn ")) {
           if (!ExecuteLua(std::string(block).c_str())) {
-            ncc::log << SeqError << "Failed to expand macro block: " << block;
+            ncc::Log << SeqError << "Failed to expand macro block: " << block;
 
             SetFailBit();
             x = Token::EndOfFile();
@@ -239,7 +239,7 @@ func_entry:  // do tail call optimization manually
           block = ltrim(block.substr(3));
           auto pos = block.find_first_of("(");
           if (pos == std::string_view::npos) {
-            ncc::log << SeqError
+            ncc::Log << SeqError
                      << "Invalid macro function definition: " << block;
 
             x = Token::EndOfFile();
@@ -255,7 +255,7 @@ func_entry:  // do tail call optimization manually
           { /* Remove the opening brace */
             pos = code.find_first_of("{");
             if (pos == std::string::npos) {
-              ncc::log << SeqError
+              ncc::Log << SeqError
                        << "Invalid macro function definition: " << block;
 
               x = Token::EndOfFile();
@@ -269,7 +269,7 @@ func_entry:  // do tail call optimization manually
           { /* Remove the closing brace */
             pos = code.find_last_of("}");
             if (pos == std::string::npos) {
-              ncc::log << SeqError
+              ncc::Log << SeqError
                        << "Invalid macro function definition: " << block;
 
               x = Token::EndOfFile();
@@ -282,7 +282,7 @@ func_entry:  // do tail call optimization manually
           }
 
           if (!ExecuteLua(code.c_str())) {
-            ncc::log << SeqError << "Failed to expand macro function: " << name;
+            ncc::Log << SeqError << "Failed to expand macro function: " << name;
 
             x = Token::EndOfFile();
             SetFailBit();
@@ -300,7 +300,7 @@ func_entry:  // do tail call optimization manually
 
         if (pos != std::string_view::npos) {
           if (!ExecuteLua(("return " + std::string(body)).c_str())) {
-            ncc::log << SeqError << "Failed to expand macro function: " << body;
+            ncc::Log << SeqError << "Failed to expand macro function: " << body;
 
             x = Token::EndOfFile();
             SetFailBit();
@@ -311,7 +311,7 @@ func_entry:  // do tail call optimization manually
           goto func_entry;
         } else {
           if (!ExecuteLua(("return " + std::string(body) + "()").c_str())) {
-            ncc::log << SeqError << "Failed to expand macro function: " << body;
+            ncc::Log << SeqError << "Failed to expand macro function: " << body;
 
             x = Token::EndOfFile();
             SetFailBit();
@@ -405,7 +405,7 @@ static std::string canonicalize_module_name(std::string_view module_name) {
 void Sequencer::SetFetchFunc(FetchModuleFunc func) {
   if (!func) {
     func = [](std::string_view) {
-      ncc::log << SeqError << Debug << "No module fetch function provided";
+      ncc::Log << SeqError << Debug << "No module fetch function provided";
       return std::nullopt;
     };
   }
@@ -425,7 +425,7 @@ std::optional<std::string> Sequencer::PImpl::fetch_module_data(
   auto module_uri =
       dynfetch_get_uri(module_name, m_env->get("this.job").value());
 
-  ncc::log << SeqError << Debug << "Fetching module: '" << module_name << "'";
+  ncc::Log << SeqError << Debug << "Fetching module: '" << module_name << "'";
 
   if (!m_fetch_module) {
     qcore_panic(
@@ -435,7 +435,7 @@ std::optional<std::string> Sequencer::PImpl::fetch_module_data(
 
   auto module = m_fetch_module(module_uri);
   if (!module.has_value()) {
-    ncc::log << SeqError << "Import not found: '" << module_name << "'";
+    ncc::Log << SeqError << "Import not found: '" << module_name << "'";
 
     return std::nullopt;
   }
@@ -456,7 +456,7 @@ NCC_EXPORT std::optional<std::string> ncc::seq::FileSystemFetchModule(
   auto job_uuid = path.substr(0, 36);
   path.remove_prefix(37);
 
-  ncc::log << Debug << "Opening file '" << path << "' on behalf of job '"
+  ncc::Log << Debug << "Opening file '" << path << "' on behalf of job '"
            << job_uuid << "'";
 
   /// TODO: Get the base directory of the project

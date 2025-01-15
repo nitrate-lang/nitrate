@@ -55,7 +55,7 @@ std::optional<ScopeDeps> Parser::recurse_scope_deps() {
   if (next_if(PuncLBrk)) [[likely]] {
     while (true) {
       if (next_if(EofF)) [[unlikely]] {
-        log << SyntaxError << current()
+        Log << SyntaxError << current()
             << "Unexpected EOF in scope dependencies";
         break;
       }
@@ -68,13 +68,13 @@ std::optional<ScopeDeps> Parser::recurse_scope_deps() {
         auto dependency_name = tok->as_string();
         dependencies.push_back(dependency_name);
       } else {
-        log << SyntaxError << next() << "Expected dependency name";
+        Log << SyntaxError << next() << "Expected dependency name";
       }
 
       next_if(PuncComa);
     }
   } else {
-    log << SyntaxError << current()
+    Log << SyntaxError << current()
         << "Expected '[' at start of scope dependencies";
   }
 
@@ -99,7 +99,7 @@ FlowPtr<Stmt> Parser::recurse_scope() {
 
     return make<ScopeStmt>(scope_name, scope_block, dependencies.value())();
   } else {
-    log << SyntaxError << current() << "Expected scope dependencies";
+    Log << SyntaxError << current() << "Expected scope dependencies";
   }
 
   return mock_stmt(QAST_SCOPE);

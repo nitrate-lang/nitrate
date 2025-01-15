@@ -47,7 +47,7 @@ NullableFlowPtr<Expr> Parser::recurse_type_range_start() {
   });
 
   if (!next_if(PuncColn)) {
-    log << SyntaxError << current() << "Expected ':' after range start";
+    Log << SyntaxError << current() << "Expected ':' after range start";
   }
 
   return min_value;
@@ -63,7 +63,7 @@ NullableFlowPtr<Expr> Parser::recurse_type_range_end() {
   });
 
   if (!next_if(PuncRBrk)) {
-    log << SyntaxError << current() << "Expected ']' after range";
+    Log << SyntaxError << current() << "Expected ']' after range";
   }
 
   return max_val;
@@ -88,7 +88,7 @@ std::optional<CallArgs> Parser::recurse_type_template_arguments() {
   } else if (next_if(OpROTR)) {
     rd.Insert(Token(Oper, OpRShift));
   } else {
-    log << SyntaxError << current() << "Expected '>' after template arguments";
+    Log << SyntaxError << current() << "Expected '>' after template arguments";
   }
 
   return args;
@@ -147,7 +147,7 @@ FlowPtr<parse::Type> Parser::recurse_function_type() {
   auto fn = recurse_function(true);
 
   if (!fn->is<Function>() || !fn->as<Function>()->is_declaration()) {
-    log << SyntaxError << current()
+    Log << SyntaxError << current()
         << "Expected a function declaration but got something else";
     return mock_type();
   }
@@ -165,7 +165,7 @@ FlowPtr<parse::Type> Parser::recurse_function_type() {
 
 FlowPtr<parse::Type> Parser::recurse_opaque_type() {
   if (!next_if(PuncLPar)) {
-    log << SyntaxError << current() << "Expected '(' after 'opaque'";
+    Log << SyntaxError << current() << "Expected '(' after 'opaque'";
     return mock_type();
   }
 
@@ -176,10 +176,10 @@ FlowPtr<parse::Type> Parser::recurse_opaque_type() {
 
       return opaque;
     } else {
-      log << SyntaxError << current() << "Expected ')' after 'opaque(name'";
+      Log << SyntaxError << current() << "Expected ')' after 'opaque(name'";
     }
   } else {
-    log << SyntaxError << current() << "Expected a name after 'opaque('";
+    Log << SyntaxError << current() << "Expected a name after 'opaque('";
   }
 
   return mock_type();
@@ -200,7 +200,7 @@ FlowPtr<parse::Type> Parser::recurse_type_by_keyword(Keyword key) {
     }
 
     default: {
-      log << SyntaxError << current() << "Unexpected '" << key
+      Log << SyntaxError << current() << "Unexpected '" << key
           << "' is type context";
       return mock_type();
     }
@@ -239,7 +239,7 @@ FlowPtr<parse::Type> Parser::recurse_type_by_operator(Operator op) {
 
     case OpComptime: {
       if (!next_if(PuncLPar)) {
-        log << SyntaxError << current() << "Expected '(' after 'comptime'";
+        Log << SyntaxError << current() << "Expected '(' after 'comptime'";
         return mock_type();
       }
 
@@ -249,7 +249,7 @@ FlowPtr<parse::Type> Parser::recurse_type_by_operator(Operator op) {
                                       }))();
 
       if (!next_if(PuncRPar)) {
-        log << SyntaxError << current() << "Expected ')' after 'comptime('";
+        Log << SyntaxError << current() << "Expected ')' after 'comptime('";
       }
 
       auto args = CallArgs{{"0", comptime_expr}};
@@ -258,7 +258,7 @@ FlowPtr<parse::Type> Parser::recurse_type_by_operator(Operator op) {
     }
 
     default: {
-      log << SyntaxError << current() << "Unexpected operator '" << op
+      Log << SyntaxError << current() << "Unexpected operator '" << op
           << "' in type context";
       return mock_type();
     }
@@ -280,7 +280,7 @@ FlowPtr<parse::Type> Parser::recurse_array_or_vector() {
   }
 
   if (!next_if(PuncSemi)) {
-    log << SyntaxError << current()
+    Log << SyntaxError << current()
         << "Expected ';' separator in array type before size";
   }
 
@@ -289,7 +289,7 @@ FlowPtr<parse::Type> Parser::recurse_array_or_vector() {
   });
 
   if (!next_if(PuncRBrk)) {
-    log << SyntaxError << current() << "Expected ']' after array size";
+    Log << SyntaxError << current() << "Expected ']' after array size";
   }
 
   auto array = make<ArrayTy>(first, size)();
@@ -304,7 +304,7 @@ FlowPtr<parse::Type> Parser::recurse_set_type() {
   auto set_type = recurse_type();
 
   if (!next_if(PuncRCur)) {
-    log << SyntaxError << current() << "Expected '}' after set type";
+    Log << SyntaxError << current() << "Expected '}' after set type";
   }
 
   auto args = CallArgs{{"0", make<TypeExpr>(set_type)()}};
@@ -322,7 +322,7 @@ FlowPtr<parse::Type> Parser::recurse_tuple_type() {
 
   while (true) {
     if (next_if(EofF)) {
-      log << SyntaxError << current() << "Unexpected EOF in tuple type";
+      Log << SyntaxError << current() << "Unexpected EOF in tuple type";
       return mock_type();
     }
 
@@ -357,7 +357,7 @@ FlowPtr<parse::Type> Parser::recurse_type_by_punctuation(Punctor punc) {
     }
 
     default: {
-      log << SyntaxError << current()
+      Log << SyntaxError << current()
           << "Punctuation is not valid in this context";
       return mock_type();
     }
@@ -404,7 +404,7 @@ FlowPtr<parse::Type> Parser::recurse_type_by_name(string name) {
   }
 
   if (!type.has_value()) {
-    log << SyntaxError << current() << "Unknown type name: " << name;
+    Log << SyntaxError << current() << "Unknown type name: " << name;
     return mock_type();
   }
 
@@ -449,7 +449,7 @@ FlowPtr<parse::Type> Parser::recurse_type() {
     }
 
     default: {
-      log << SyntaxError << current() << "Expected a type";
+      Log << SyntaxError << current() << "Expected a type";
 
       auto type = mock_type();
 

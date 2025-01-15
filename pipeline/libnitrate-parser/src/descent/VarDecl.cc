@@ -46,7 +46,7 @@ std::optional<ExpressionList> Parser::recurse_variable_attributes() {
 
   while (true) {
     if (next_if(EofF)) [[unlikely]] {
-      log << SyntaxError << current()
+      Log << SyntaxError << current()
           << "Encountered EOF while parsing variable attribute";
       break;
     }
@@ -97,11 +97,11 @@ NullableFlowPtr<Stmt> Parser::recurse_variable_instance(VarDeclType decl_type) {
       return make<VarDecl>(variable_name, variable_type, variable_initial,
                            decl_type, symbol_attributes_opt.value())();
     } else {
-      log << SyntaxError << current() << "Expected variable name";
+      Log << SyntaxError << current() << "Expected variable name";
       return std::nullopt;
     }
   } else {
-    log << SyntaxError << current() << "Malformed variable attributes";
+    Log << SyntaxError << current() << "Malformed variable attributes";
     return mock_stmt(QAST_VAR);
   }
 }
@@ -111,7 +111,7 @@ std::vector<FlowPtr<Stmt>> Parser::recurse_variable(VarDeclType decl_type) {
 
   while (true) {
     if (next_if(EofF)) [[unlikely]] {
-      log << SyntaxError << current()
+      Log << SyntaxError << current()
           << "Unexpected EOF in variable declaration";
       break;
     }
@@ -123,7 +123,7 @@ std::vector<FlowPtr<Stmt>> Parser::recurse_variable(VarDeclType decl_type) {
     if (auto variable_opt = recurse_variable_instance(decl_type)) {
       variables.push_back(variable_opt.value());
     } else {
-      log << SyntaxError << current() << "Failed to parse variable declaration";
+      Log << SyntaxError << current() << "Failed to parse variable declaration";
       break;
     }
 

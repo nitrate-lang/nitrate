@@ -34,9 +34,12 @@
 #ifndef __NITRATE_CORE_OLD_LOGGER_H__
 #define __NITRATE_CORE_OLD_LOGGER_H__
 
+#include <array>
 #include <cerrno>
 #include <cstdarg>
+#include <cstdint>
 #include <cstring>
+#include <string>
 
 #ifdef __cplusplus
 extern "C" {
@@ -51,12 +54,20 @@ void QCoreDebug(const char *msg);
 void QCoreDebugF(const char *fmt, ...);
 void QCoreVDebugF(const char *fmt, va_list args);
 
+static inline auto GetStrerror() {
+  constexpr size_t kMaxMessageSize = 256;
+
+  std::array<char, kMaxMessageSize> buf;
+  strerror_r(errno, buf.data(), buf.size());
+  return std::string(buf.data());
+}
+
 #if defined(NDEBUG)
 #define qcore_panicf(fmt, ...)                                              \
   QCorePanicF(                                                              \
       fmt                                                                   \
       "\nSource File: %s\nSource Line: %d\nFunction: unknown\nErrno: %s\n", \
-      ##__VA_ARGS__, __FILE__, __LINE__, strerror(errno))
+      ##__VA_ARGS__, __FILE__, __LINE__, GetStrerror().c_str())
 
 #define qcore_panic(msg) qcore_panicf("%s", msg)
 
@@ -66,10 +77,11 @@ void QCoreVDebugF(const char *fmt, va_list args);
        : qcore_panicf("Assertion failed: %s;\nCondition: (%s);\n", \
                       "" #__VA_ARGS__, #expr))
 #else
-#define qcore_panicf(fmt, ...)                                             \
-  QCorePanicF(                                                             \
-      fmt "\nSource File: %s\nSource Line: %d\nFunction: %s\nErrno: %s\n", \
-      ##__VA_ARGS__, __FILE__, __LINE__, __PRETTY_FUNCTION__, strerror(errno))
+#define qcore_panicf(fmt, ...)                                                 \
+  QCorePanicF(fmt                                                              \
+              "\nSource File: %s\nSource Line: %d\nFunction: %s\nErrno: %s\n", \
+              ##__VA_ARGS__, __FILE__, __LINE__, __PRETTY_FUNCTION__,          \
+              GetStrerror().c_str())
 
 #define qcore_panic(msg) qcore_panicf("%s", msg)
 
@@ -90,13 +102,13 @@ void QCoreVDebugF(const char *fmt, va_list args);
 
 #define qcore_implement() qcore_panicf("%s is not implemented.", __func__)
 
-typedef enum {
+enum QCoreLog : uint8_t {
   QCORE_DEBUG,
   QCORE_INFO,
   QCORE_WARN,
   QCORE_ERROR,
   QCORE_FATAL,
-} QCoreLog;
+};
 
 void QCoreBegin();
 int QCoreVWriteF(const char *fmt, va_list args);

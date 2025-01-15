@@ -40,7 +40,7 @@
 
 using namespace ncc;
 
-void Environment::setup_default_env() {
+void Environment::SetupDefaultKeys() {
   { /* Generate unique ID for this compilation unit */
     boost::uuids::random_generator gen;
     boost::uuids::uuid uuid = gen();
@@ -59,21 +59,18 @@ void Environment::setup_default_env() {
   m_data.insert({"FILE", "<stdin>"});
 }
 
-NCC_EXPORT Environment::Environment() { setup_default_env(); }
-
-NCC_EXPORT bool Environment::contains(std::string_view key) {
+bool Environment::Contains(std::string_view key) {
   return m_data.contains(string(key));
 }
 
-NCC_EXPORT std::optional<string> Environment::get(string key) {
+std::optional<string> Environment::Get(string key) {
   if (auto it = m_data.find(key); it != m_data.end()) {
     return it->second;
   }
   return std::nullopt;
 }
 
-NCC_EXPORT void Environment::set(string key, std::optional<string> value,
-                                 bool) {
+void Environment::Set(string key, std::optional<string> value, bool) {
   if (value.has_value()) {
     m_data.insert_or_assign(key, *value);
   } else {

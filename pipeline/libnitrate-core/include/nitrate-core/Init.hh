@@ -56,18 +56,18 @@ namespace ncc {
 
   template <typename Impl>
   class LibraryRC final {
-    size_t ref_count{};
-    std::recursive_mutex ref_count_mutex;
+    size_t m_ref_count{};
+    std::recursive_mutex m_ref_count_mutex;
 
   public:
     LibraryRC() = default;
 
     bool InitRC() {
-      std::lock_guard<std::recursive_mutex> lock(ref_count_mutex);
+      std::lock_guard<std::recursive_mutex> lock(m_ref_count_mutex);
 
-      if (ref_count++ == 0) {
+      if (m_ref_count++ == 0) {
         if (!Impl::Init()) {
-          ref_count = 0;
+          m_ref_count = 0;
           return false;
         }
       }
@@ -76,17 +76,17 @@ namespace ncc {
     }
 
     void DeinitRC() {
-      std::lock_guard<std::recursive_mutex> lock(ref_count_mutex);
+      std::lock_guard<std::recursive_mutex> lock(m_ref_count_mutex);
 
-      if (ref_count > 0 && --ref_count == 0) {
+      if (m_ref_count > 0 && --m_ref_count == 0) {
         Impl::Deinit();
       }
     }
 
     bool IsInitialized() {
-      std::lock_guard<std::recursive_mutex> lock(ref_count_mutex);
+      std::lock_guard<std::recursive_mutex> lock(m_ref_count_mutex);
 
-      return ref_count > 0;
+      return m_ref_count > 0;
     }
 
     std::string_view GetVersion() {

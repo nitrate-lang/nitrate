@@ -45,7 +45,7 @@ using namespace ncc;
 using namespace ncc::parse;
 
 NCC_EXPORT thread_local std::unique_ptr<ncc::IMemory> parse::npar_allocator =
-    std::make_unique<ncc::dyn_arena>();
+    std::make_unique<ncc::DynamicArena>();
 
 NCC_EXPORT ASTExtension parse::ExtensionDataStore;
 

@@ -49,7 +49,7 @@ using namespace ncc::lex;
 FlowPtr<Stmt> Parser::recurse_block(bool expect_braces, bool single_stmt,
                                     SafetyMode safety) {
   if (expect_braces && !next().is<PuncLCur>()) {
-    log << SyntaxError << current() << "Expected '{'";
+    Log << SyntaxError << current() << "Expected '{'";
   }
 
   auto block_start = current().get_start();
@@ -70,7 +70,7 @@ FlowPtr<Stmt> Parser::recurse_block(bool expect_braces, bool single_stmt,
 
       if (!should_break && next_if(EofF)) {
         if (expect_braces) {
-          log << SyntaxError << current() << "Expected '}'";
+          Log << SyntaxError << current() << "Expected '}'";
         }
 
         should_break = true;
@@ -93,7 +93,7 @@ FlowPtr<Stmt> Parser::recurse_block(bool expect_braces, bool single_stmt,
       });
 
       if (!next_if(PuncSemi)) {
-        log << SyntaxError << current()
+        Log << SyntaxError << current()
             << "Expected ';' after statement expression";
       }
 
@@ -160,7 +160,7 @@ FlowPtr<Stmt> Parser::recurse_block(bool expect_braces, bool single_stmt,
         }
 
         case Static: {
-          log << SyntaxError << current()
+          Log << SyntaxError << current()
               << "Static variables are not yet "
                  "supported";
           break;
@@ -192,7 +192,7 @@ FlowPtr<Stmt> Parser::recurse_block(bool expect_braces, bool single_stmt,
         }
 
         case Opaque: {
-          log << SyntaxError << current()
+          Log << SyntaxError << current()
               << "Unexpected 'opaque' in block context";
           break;
         }
@@ -233,7 +233,7 @@ FlowPtr<Stmt> Parser::recurse_block(bool expect_braces, bool single_stmt,
         }
 
         case Promise: {
-          log << SyntaxError << current()
+          Log << SyntaxError << current()
               << "Unexpected 'promise' in block context";
           break;
         }
@@ -244,7 +244,7 @@ FlowPtr<Stmt> Parser::recurse_block(bool expect_braces, bool single_stmt,
         }
 
         case Else: {
-          log << SyntaxError << current()
+          Log << SyntaxError << current()
               << "Unexpected 'else' in block context";
           break;
         }
@@ -260,7 +260,7 @@ FlowPtr<Stmt> Parser::recurse_block(bool expect_braces, bool single_stmt,
         }
 
         case Do: {
-          log << SyntaxError << current() << "Unexpected 'do' in block context";
+          Log << SyntaxError << current() << "Unexpected 'do' in block context";
           break;
         }
 
@@ -300,7 +300,7 @@ FlowPtr<Stmt> Parser::recurse_block(bool expect_braces, bool single_stmt,
         }
 
         case Catch: {
-          log << SyntaxError << current()
+          Log << SyntaxError << current()
               << "Unexpected 'catch' in block context";
           break;
         }
@@ -311,7 +311,7 @@ FlowPtr<Stmt> Parser::recurse_block(bool expect_braces, bool single_stmt,
         }
 
         case Async: {
-          log << SyntaxError << current()
+          Log << SyntaxError << current()
               << "Unexpected 'async' in block context";
           break;
         }
@@ -360,7 +360,7 @@ NCC_EXPORT Parser::Parser(ncc::lex::IScanner &lexer,
                           std::shared_ptr<ncc::Environment> env,
                           std::shared_ptr<void> lifetime)
     : m_env(env),
-      m_allocator(std::make_unique<ncc::dyn_arena>()),
+      m_allocator(std::make_unique<ncc::DynamicArena>()),
       rd(lexer),
       m_failed(false),
       m_lifetime(lifetime) {}
@@ -397,7 +397,7 @@ NCC_EXPORT ASTRoot Parser::parse() {
           }
 
           /* Create a new allocator */
-          m_allocator = std::make_unique<ncc::dyn_arena>();
+          m_allocator = std::make_unique<ncc::DynamicArena>();
         }
 
         rd.SkipCommentsState(old_state);

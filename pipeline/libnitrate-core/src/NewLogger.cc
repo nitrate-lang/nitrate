@@ -36,7 +36,7 @@
 
 using namespace ncc;
 
-NCC_EXPORT thread_local LoggerContext ncc::log;
+NCC_EXPORT thread_local LoggerContext ncc::Log;
 
 NCC_EXPORT std::string ncc::Formatter(std::string_view msg, Sev sev) {
   std::stringstream ss;
@@ -100,8 +100,8 @@ NCC_EXPORT ECUnique::ECUnique(std::source_location loc) {
 }
 
 NCC_EXPORT void ECBase::GetJsonRepresentation(std::ostream &os) const {
-  os << "{\"flagname\":\"" << FlagName() << "\",\"nice_name\":\"" << NiceName()
-     << "\",\"details\":\"" << Details() << "\",\"tags\":[";
+  os << R"({"flagname":")" << FlagName() << R"(","nice_name":")" << NiceName()
+     << R"(","details":")" << Details() << R"(","tags":[)";
   for (auto it = Tags().begin(); it != Tags().end(); ++it) {
     os << "\"" << *it << "\"";
     if (it + 1 != Tags().end()) {
@@ -157,7 +157,7 @@ NCC_EXPORT void ECBase::Finalize() {
 }
 
 size_t LoggerContext::Subscribe(LogCallback cb) {
-  m_subscribers.push_back(cb);
+  m_subscribers.push_back(std::move(cb));
   return m_subscribers.size() - 1;
 }
 

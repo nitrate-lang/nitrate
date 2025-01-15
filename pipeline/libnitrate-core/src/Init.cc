@@ -52,8 +52,6 @@ NCC_EXPORT bool CoreLibrarySetup::Init() {
 NCC_EXPORT void CoreLibrarySetup::Deinit() {
   qcore_print(QCORE_DEBUG, "Deinitialing Nitrate Core Library...");
 
-  /* After nitrate-core is deinitialized, all auto_intern objects are invalid.
-   */
   StringMemory::Reset();
 }
 

@@ -43,14 +43,14 @@ std::optional<std::pair<string, string>> Parser::recurse_foreach_names() {
       if (auto name_b = next_if(Name)) [[likely]] {
         return std::make_pair(name_a->as_string(), name_b->as_string());
       } else {
-        log << SyntaxError << current()
+        Log << SyntaxError << current()
             << "Expected identifier in foreach statement";
       }
     } else {
       return std::make_pair("", name_a->as_string());
     }
   } else {
-    log << SyntaxError << current()
+    Log << SyntaxError << current()
         << "Expected identifier in foreach statement";
   }
 
@@ -87,18 +87,18 @@ FlowPtr<Stmt> Parser::recurse_foreach() {
     if (next_if(OpIn)) [[likely]] {
       auto iter_expr = recurse_foreach_expr(foreach_has_paren);
       if (foreach_has_paren && !next_if(PuncRPar)) {
-        log << SyntaxError << current() << "Expected ')' in foreach statement";
+        Log << SyntaxError << current() << "Expected ')' in foreach statement";
       }
 
       auto body = recurse_foreach_body();
 
       return make<ForeachStmt>(index_name, value_name, iter_expr, body)();
     } else {
-      log << SyntaxError << current()
+      Log << SyntaxError << current()
           << "Expected 'in' keyword in foreach statement";
     }
   } else {
-    log << SyntaxError << current()
+    Log << SyntaxError << current()
         << "Expected identifier pair in foreach statement";
   }
 

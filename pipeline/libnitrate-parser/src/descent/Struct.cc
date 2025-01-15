@@ -46,7 +46,7 @@ ExpressionList Parser::recurse_struct_attributes() {
 
   while (true) {
     if (next_if(EofF)) [[unlikely]] {
-      log << SyntaxError << current()
+      Log << SyntaxError << current()
           << "Encountered EOF while parsing struct attributes";
       break;
     }
@@ -117,11 +117,11 @@ void Parser::recurse_struct_field(Vis vis, bool is_static,
 
       fields.push_back(std::move(field));
     } else {
-      log << SyntaxError << current()
+      Log << SyntaxError << current()
           << "Expected ':' after field name in struct";
     }
   } else {
-    log << SyntaxError << next() << "Expected field name in struct";
+    Log << SyntaxError << next() << "Expected field name in struct";
   }
 }
 
@@ -158,13 +158,13 @@ Parser::StructContent Parser::recurse_struct_body() {
   StructContent body;
 
   if (!next_if(PuncLCur)) [[unlikely]] {
-    log << SyntaxError << current() << "Expected '{' to start struct body";
+    Log << SyntaxError << current() << "Expected '{' to start struct body";
     return body;
   }
 
   while (true) {
     if (next_if(EofF)) {
-      log << SyntaxError << current()
+      Log << SyntaxError << current()
           << "Encountered EOF while parsing struct body";
       break;
     }

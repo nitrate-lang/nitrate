@@ -40,17 +40,17 @@
 #include <vector>
 
 namespace ncc {
-  class dyn_arena::PImpl {
-    struct region_t {
-      uintptr_t base = 0;
-      uintptr_t offset = 0;
-      size_t size = 0;
+  class DynamicArena::PImpl {
+    struct Segment {
+      uint8_t *m_base = nullptr;
+      uint8_t *m_offset = nullptr;
+      size_t m_size = 0;
     };
-    std::vector<region_t> m_bases;
+    std::vector<Segment> m_bases;
     std::mutex m_mutex;
 
-    void alloc_region(size_t size) {
-      uintptr_t base = (uintptr_t) new uint8_t[size];
+    void AllocRegion(size_t size) {
+      auto *base = new uint8_t[size];
       m_bases.push_back({base, base, size});
     }
 
@@ -58,17 +58,17 @@ namespace ncc {
     PImpl();
     ~PImpl();
 
-    void *alloc(size_t size, size_t align);
+    void *Alloc(size_t size, size_t align);
   };
 }  // namespace ncc
 
 // class gba_v0_t final : public qcore_arena_t {
-//   struct region_t {
+//   struct Segment {
 //     uintptr_t base = 0;
 //     uintptr_t offset = 0;
 //     size_t size = 0;
 //   };
-//   std::vector<region_t> m_bases;
+//   std::vector<Segment> m_bases;
 //   std::mutex m_mutex;
 //   bool m_thread_safe;
 
@@ -85,12 +85,12 @@ namespace ncc {
 // };
 
 // class riba_v0_t final : public qcore_arena_t {
-//   struct region_t {
+//   struct Segment {
 //     uintptr_t base = 0;
 //     uintptr_t offset = 0;
 //     size_t size = 0;
 //   };
-//   std::vector<region_t> m_bases;
+//   std::vector<Segment> m_bases;
 //   std::mutex m_mutex;
 //   bool m_thread_safe;
 

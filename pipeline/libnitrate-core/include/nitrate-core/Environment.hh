@@ -44,29 +44,29 @@ namespace ncc {
   public:
     virtual ~IEnvironment() = default;
 
-    virtual bool contains(std::string_view key) = 0;
+    virtual bool Contains(std::string_view key) = 0;
 
-    virtual std::optional<string> get(string key) = 0;
+    virtual std::optional<string> Get(string key) = 0;
 
-    virtual void set(string key, std::optional<string> value,
+    virtual void Set(string key, std::optional<string> value,
                      bool privset = false) = 0;
   };
 
-  class Environment : public IEnvironment {
+  class NCC_EXPORT Environment final : public IEnvironment {
     std::unordered_map<string, string> m_data;
 
-    void setup_default_env();
+    void SetupDefaultKeys();
 
   public:
-    Environment();
-    virtual ~Environment() = default;
+    Environment() { SetupDefaultKeys(); }
+    ~Environment() override = default;
 
-    bool contains(std::string_view key) override;
+    bool Contains(std::string_view key) override;
 
-    std::optional<string> get(string key) override;
+    std::optional<string> Get(string key) override;
 
     /* String interning is done internally */
-    void set(string key, std::optional<string> value,
+    void Set(string key, std::optional<string> value,
              bool privset = false) override;
   };
 

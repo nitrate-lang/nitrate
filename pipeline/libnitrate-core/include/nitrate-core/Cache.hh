@@ -42,16 +42,17 @@
 #include <string>
 
 namespace ncc {
-  using ResourceKey = std::array<uint8_t, 20>;
+  constexpr size_t kResourceKeySize = 20;
+  using ResourceKey = std::array<uint8_t, kResourceKeySize>;
 
   template <typename Value>
   class IResourceCache {
   public:
     virtual ~IResourceCache() = default;
 
-    virtual bool has(const ResourceKey &key) = 0;
-    virtual bool read(const ResourceKey &key, Value &value) = 0;
-    virtual bool write(const ResourceKey &key, const Value &value) = 0;
+    virtual bool Has(const ResourceKey &key) = 0;
+    virtual bool Read(const ResourceKey &key, Value &value) = 0;
+    virtual bool Write(const ResourceKey &key, const Value &value) = 0;
   };
 
   template <typename Value>
@@ -66,7 +67,7 @@ namespace ncc {
           m_read([](const ResourceKey &, Value &) { return false; }),
           m_write([](const ResourceKey &, Value) { return false; }) {}
 
-    bool has(const ResourceKey &key) override {
+    bool Has(const ResourceKey &key) override {
       bool sync = EnableSync;
 
       if (sync) {
@@ -82,7 +83,7 @@ namespace ncc {
       return r;
     }
 
-    bool read(const ResourceKey &key, Value &value) override {
+    bool Read(const ResourceKey &key, Value &value) override {
       bool sync = EnableSync;
 
       if (sync) {
@@ -98,7 +99,7 @@ namespace ncc {
       return r;
     }
 
-    bool write(const ResourceKey &key, const Value &value) override {
+    bool Write(const ResourceKey &key, const Value &value) override {
       bool sync = EnableSync;
 
       if (sync) {
@@ -114,7 +115,7 @@ namespace ncc {
       return r;
     }
 
-    void bind(has_t has, read_t read, write_t write) {
+    void Bind(has_t has, read_t read, write_t write) {
       bool sync = EnableSync;
 
       if (sync) {
@@ -140,14 +141,14 @@ namespace ncc {
   template <typename Value>
   class MockArtifactCache final : public IResourceCache<Value> {
   public:
-    bool has(const ResourceKey &) const override { return false; }
-    bool read(const ResourceKey &, Value &) const override { return false; }
-    bool write(const ResourceKey &, const Value &) override { return false; }
+    [[nodiscard]] bool Has(const ResourceKey &) const override { return false; }
+    bool Read(const ResourceKey &, Value &) const override { return false; }
+    bool Write(const ResourceKey &, const Value &) override { return false; }
   };
 
   using TheCache = ExternalResourceCache<std::string>;
 
-  TheCache &get_cache();
+  TheCache &GetCache();
 }  // namespace ncc
 
 #endif  // __NITRATE_CORE_CACHE_H__

@@ -47,7 +47,7 @@
 #include <vector>
 
 namespace ncc {
-  enum Sev {
+  enum Sev : uint8_t {
     Trace,  /* Low-value, high-volume debug info (malloc, free, ...)*/
     Debug,  /* High-value, mid-volume debug info (init, major API calls, ...) */
     Info,   /* Examples: upcoming feature notice, did you know about...? */
@@ -68,7 +68,7 @@ namespace ncc {
     explicit ECUnique(
         std::source_location loc = std::source_location::current());
 
-    constexpr EC Get() const { return m_ec; };
+    [[nodiscard]] constexpr EC Get() const { return m_ec; };
   };
 
   using LogFormatterFunc = std::function<std::string(std::string_view, Sev)>;
@@ -82,42 +82,60 @@ namespace ncc {
       std::string m_flagname, m_nice_name, m_details;
     };
 
-    EC m_ec;
+    EC m_ec = 0;
     ECDetails m_details;
     std::string m_json;
 
-    static std::optional<ECDetails> LoadDetailsFromFile(std::string_view path);
+    static auto LoadDetailsFromFile(std::string_view path)
+        -> std::optional<ECDetails>;
 
   protected:
-    virtual ECUnique GetIdentity() const = 0;
+    [[nodiscard]] virtual ECUnique GetIdentity() const = 0;
 
-    virtual std::optional<std::string_view> GetDetailsPath() const {
+    [[nodiscard]] virtual std::optional<std::string_view> GetDetailsPath()
+        const {
       return std::nullopt;
     }
 
-    virtual LogFormatterFunc GetFormatter() const = 0;
+    [[nodiscard]] virtual LogFormatterFunc GetFormatter() const = 0;
     void GetJsonRepresentation(std::ostream &os) const;
     void Finalize();
 
   public:
-    constexpr ECBase() : m_ec(0) {}
+    constexpr ECBase() = default;
     virtual ~ECBase() = default;
 
-    constexpr EC GetKind() const { return m_ec; }
+    [[nodiscard]] constexpr EC GetKind() const { return m_ec; }
 
-    constexpr std::string_view AsJson() const { return m_json; }
-    constexpr std::string_view FlagName() const { return m_details.m_flagname; }
-    constexpr std::string_view NiceName() const {
-      return m_details.m_nice_name;
+    [[nodiscard]] constexpr auto AsJson() const {
+      return std::string_view(m_json);
     }
-    constexpr std::string_view Details() const { return m_details.m_details; }
-    constexpr auto Tags() const { return std::span(m_details.m_tags); }
-    constexpr auto Fixes() const { return std::span(m_details.m_fixes); }
-    constexpr auto Examples() const { return std::span(m_details.m_examples); }
-    constexpr auto DevNotes() const { return std::span(m_details.m_dev_notes); }
-    constexpr auto UserNotes() const { return std::span(m_details.m_notes); }
+    [[nodiscard]] constexpr auto FlagName() const {
+      return std::string_view(m_details.m_flagname);
+    }
+    [[nodiscard]] constexpr auto NiceName() const {
+      return std::string_view(m_details.m_nice_name);
+    }
+    [[nodiscard]] constexpr auto Details() const {
+      return std::string_view(m_details.m_details);
+    }
+    [[nodiscard]] constexpr auto Tags() const {
+      return std::span(m_details.m_tags);
+    }
+    [[nodiscard]] constexpr auto Fixes() const {
+      return std::span(m_details.m_fixes);
+    }
+    [[nodiscard]] constexpr auto Examples() const {
+      return std::span(m_details.m_examples);
+    }
+    [[nodiscard]] constexpr auto DevNotes() const {
+      return std::span(m_details.m_dev_notes);
+    }
+    [[nodiscard]] constexpr auto UserNotes() const {
+      return std::span(m_details.m_notes);
+    }
 
-    std::string Format(std::string_view msg, Sev sev) const {
+    [[nodiscard]] auto Format(std::string_view msg, Sev sev) const {
       return GetFormatter()(msg, sev);
     }
   };
@@ -169,12 +187,12 @@ namespace ncc {
     LogCallback m_recv;
 
   public:
-    explicit LogStream(LogCallback pub) : m_recv(pub) {}
+    explicit LogStream(LogCallback pub) : m_recv(std::move(pub)) {}
     LogStream(LogStream &&) = default;
 
     ~LogStream() {
       if (m_recv) {
-        m_recv(m_ss.str(), m_severity, m_ec ? *m_ec : UnknownEC);
+        m_recv(m_ss.str(), m_severity, m_ec != nullptr ? *m_ec : UnknownEC);
       }
     }
 
@@ -192,8 +210,11 @@ namespace ncc {
 
   using LogFilterFunc = bool (*)(const std::string &, Sev, const ECBase &);
 
-#define NCC_EC_FILTER(name, msg, sev, ec) \
-  static inline bool name(const std::string &msg, Sev sev, const ECBase &ec)
+#define NCC_EC_FILTER(__name, __msg, __sev, __ec)                \
+  static inline bool __name(const std::string &__msg, Sev __sev, \
+                            const ECBase &__ec)
+
+  NCC_EC_FILTER(TraceFilter, msg, sev, ec);
 
   class NCC_EXPORT LoggerContext final {
     std::vector<LogCallback> m_subscribers;
@@ -215,11 +236,11 @@ namespace ncc {
 
     void operator+=(LogFilterFunc filter) { AddFilter(filter); }
     void operator-=(LogFilterFunc filter) { RemoveFilter(filter); }
-    void operator+=(LogCallback cb) { Subscribe(cb); }
+    void operator+=(LogCallback cb) { Subscribe(std::move(cb)); }
 
     void Enable() { m_enabled = true; }
     void Disable() { m_enabled = false; }
-    bool Enabled() const { return m_enabled; }
+    [[nodiscard]] bool Enabled() const { return m_enabled; }
 
     void Publish(const std::string &msg, Sev sev, const ECBase &ec) const;
   };
@@ -239,7 +260,7 @@ namespace ncc {
     return std::move(stream);
   };
 
-  extern thread_local LoggerContext log;
+  extern thread_local LoggerContext Log;
 }  // namespace ncc
 
 #endif

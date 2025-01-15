@@ -40,12 +40,10 @@
 #include <string_view>
 
 namespace ncc {
-  class auto_intern;
+  class String;
 
   class StringMemory {
-    friend class auto_intern;
-
-    StringMemory() = delete;
+    friend class String;
 
     /* assert(!str.empty()) */
     static uint64_t FromString(std::string_view str);
@@ -54,63 +52,60 @@ namespace ncc {
     static uint64_t FromString(std::string &&str);
 
   public:
+    StringMemory() = delete;
     static void Reset();
   };
 
-  class __attribute__((packed)) auto_intern {
+  class __attribute__((packed)) String {
     uint64_t m_id : 40;
 
   public:
-    constexpr explicit auto_intern() : m_id(0) {}
+    constexpr explicit String() : m_id(0) {}
 
-    constexpr NCC_FORCE_INLINE auto_intern(std::string_view str)
+    constexpr NCC_FORCE_INLINE String(std::string_view str)
         : m_id(str.empty() ? 0 : StringMemory::FromString(str)) {}
 
-    constexpr NCC_FORCE_INLINE auto_intern(std::string &&str)
+    constexpr NCC_FORCE_INLINE String(std::string &&str)
         : m_id(str.empty() ? 0 : StringMemory::FromString(std::move(str))) {}
 
-    constexpr NCC_FORCE_INLINE auto_intern(const std::string &str)
+    constexpr NCC_FORCE_INLINE String(const std::string &str)
         : m_id(str.empty() ? 0 : StringMemory::FromString(str)) {}
 
-    constexpr NCC_FORCE_INLINE auto_intern(const char *str)
-        : m_id(!str[0] ? 0 : StringMemory::FromString(std::string_view(str))) {}
+    constexpr NCC_FORCE_INLINE String(const char *str)
+        : m_id(str[0] == 0 ? 0
+                           : StringMemory::FromString(std::string_view(str))) {}
 
-    std::string_view get() const;
+    [[nodiscard]] auto Get() const -> std::string_view;
 
-    constexpr bool operator==(const auto_intern &O) const {
-      return m_id == O.m_id;
-    }
+    constexpr bool operator==(const String &o) const { return m_id == o.m_id; }
 
-    constexpr auto operator*() const { return get(); }
+    constexpr auto operator*() const { return Get(); }
 
     const auto *operator->() const {
       static thread_local std::string_view sv;
-      sv = get();
+      sv = Get();
       return &sv;
     }
 
-    constexpr bool operator<(const auto_intern &O) const {
-      return m_id < O.m_id;
-    }
+    constexpr bool operator<(const String &o) const { return m_id < o.m_id; }
 
-    constexpr operator std::string_view() const { return get(); }
+    constexpr operator std::string_view() const { return Get(); }
 
-    constexpr auto getId() const { return m_id; }
+    [[nodiscard]] constexpr auto GetId() const { return m_id; }
   };
 
-  using string = auto_intern;
+  using string = String;
 
-  static inline std::ostream &operator<<(std::ostream &os,
-                                         const auto_intern &str) {
-    return os << str.get();
+  static inline std::ostream &operator<<(std::ostream &os, const String &str) {
+    return os << str.Get();
   }
 }  // namespace ncc
 
 namespace std {
   template <>
-  struct hash<ncc::auto_intern> {
-    size_t operator()(const ncc::auto_intern &str) const {
-      return std::hash<uint64_t>{}(str.getId());
+  struct hash<ncc::String> {
+    size_t operator()(const ncc::String &str) const {
+      return std::hash<uint64_t>{}(str.GetId());
     }
   };
 }  // namespace std

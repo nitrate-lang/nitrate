@@ -39,7 +39,7 @@ using namespace ncc::parse;
 
 FlowPtr<Stmt> Parser::recurse_switch_case_body() {
   if (!next_if(OpArrow)) {
-    log << SyntaxError << current() << "Expected '=>' in switch case.";
+    Log << SyntaxError << current() << "Expected '=>' in switch case.";
   }
 
   if (peek().is<PuncLCur>()) {
@@ -73,7 +73,7 @@ Parser::recurse_switch_body() {
 
   while (true) {
     if (next_if(EofF)) [[unlikely]] {
-      log << SyntaxError << current() << "Unexpected EOF in switch statement.";
+      Log << SyntaxError << current() << "Unexpected EOF in switch statement.";
       break;
     }
 
@@ -86,7 +86,7 @@ Parser::recurse_switch_body() {
       if (!default_case) [[likely]] {
         default_case = stmt;
       } else {
-        log << SyntaxError << current() << "Duplicate default case in switch.";
+        Log << SyntaxError << current() << "Duplicate default case in switch.";
       }
     } else {
       cases.push_back(stmt.as<CaseStmt>());
@@ -109,10 +109,10 @@ FlowPtr<Stmt> Parser::recurse_switch() {
 
       return make<SwitchStmt>(switch_cond, switch_cases, switch_default)();
     } else {
-      log << SyntaxError << current() << "Switch statement body is malformed.";
+      Log << SyntaxError << current() << "Switch statement body is malformed.";
     }
   } else {
-    log << SyntaxError << current() << "Expected '{' after switch condition.";
+    Log << SyntaxError << current() << "Expected '{' after switch condition.";
   }
 
   return mock_stmt(QAST_SWITCH);

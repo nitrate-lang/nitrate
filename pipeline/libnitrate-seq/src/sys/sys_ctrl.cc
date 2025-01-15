@@ -52,7 +52,7 @@ int ncc::seq::sys_ctrl(lua_State* L) {
 
   int id = lua_tointeger(L, 1);
 
-  ncc::log << Debug << "sys_ctrl: " << id << " not implemented";
+  ncc::Log << Debug << "sys_ctrl: " << id << " not implemented";
 
   lua_pushnil(L);
 

@@ -35,45 +35,42 @@
 #define __NITRATE_CORE_MEMORY_H__
 
 #include <cstddef>
-#include <utility>
 
 namespace ncc {
   class IMemory {
   public:
     virtual ~IMemory() = default;
 
-    virtual void *alloc(size_t size, size_t align = DEFAULT_ALIGNMENT) = 0;
+    virtual void *Alloc(size_t size, size_t align = kDefaultAlignment) = 0;
 
-    static constexpr size_t DEFAULT_ALIGNMENT = 16;
+    static constexpr size_t kDefaultAlignment = 16;
   };
 
-  class dyn_arena final : public IMemory {
+  class DynamicArena final : public IMemory {
     class PImpl;
 
     PImpl *m_arena;
     bool m_owned;
 
-    dyn_arena(const dyn_arena &) = delete;
-
   public:
-    dyn_arena();
+    DynamicArena();
+    DynamicArena(const DynamicArena &) = delete;
+    ~DynamicArena() override;
 
-    virtual ~dyn_arena() override;
-
-    dyn_arena(dyn_arena &&o) {
-      m_arena = std::move(o.m_arena);
+    DynamicArena(DynamicArena &&o) noexcept {
+      m_arena = o.m_arena;
       o.m_owned = false;
       m_owned = true;
     }
 
-    dyn_arena &operator=(dyn_arena &&o) {
-      m_arena = std::move(o.m_arena);
+    DynamicArena &operator=(DynamicArena &&o) noexcept {
+      m_arena = o.m_arena;
       o.m_owned = false;
       m_owned = true;
       return *this;
     }
 
-    void *alloc(size_t size, size_t align = DEFAULT_ALIGNMENT) override;
+    void *Alloc(size_t size, size_t align = kDefaultAlignment) override;
   };
 }  // namespace ncc
 

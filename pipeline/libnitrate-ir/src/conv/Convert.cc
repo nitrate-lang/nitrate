@@ -112,7 +112,7 @@ using namespace ncc;
 //     name = "module";
 //   }
 
-//   std::unique_ptr<IMemory> scratch_arena = std::make_unique<dyn_arena>();
+//   std::unique_ptr<IMemory> scratch_arena = std::make_unique<DynamicArena>();
 //   std::swap(ir::nr_allocator, scratch_arena);
 
 //   /// TODO: Get the target platform infoformation

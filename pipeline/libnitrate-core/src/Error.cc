@@ -36,6 +36,7 @@
 #include <cstdlib>
 #include <iomanip>
 #include <iostream>
+#include <mutex>
 #include <nitrate-core/Logger.hh>
 #include <nitrate-core/Macro.hh>
 #include <vector>
@@ -130,6 +131,9 @@ static std::vector<std::string> PanicSplitMessage(std::string_view message) {
 }
 
 static void PanicRenderReport(const std::vector<std::string> &lines) {
+  static std::mutex panic_mutex;
+  std::lock_guard<std::mutex> lock(panic_mutex);
+
   { /* Print shockwave */
     std::cout << "\n\n";
     std::cerr

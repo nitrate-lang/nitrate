@@ -39,12 +39,12 @@
 
 using namespace ncc;
 
-static thread_local std::stringstream g_log_buffer;
+static thread_local std::stringstream ThreadLogBuffer;
 
-extern "C" NCC_EXPORT void QCoreBegin() { g_log_buffer.str(""); }
+extern "C" NCC_EXPORT void QCoreBegin() { ThreadLogBuffer.str(""); }
 
 extern "C" NCC_EXPORT void QCoreEnd(QCoreLog level) {
-  std::string message = g_log_buffer.str();
+  std::string message = ThreadLogBuffer.str();
 
   while (message.ends_with("\n")) {
     message.pop_back();
@@ -52,40 +52,40 @@ extern "C" NCC_EXPORT void QCoreEnd(QCoreLog level) {
 
   switch (level) {
     case QCORE_DEBUG: {
-      ncc::log << ncc::Debug << message;
+      ncc::Log << ncc::Debug << message;
       break;
     }
 
     case QCORE_INFO: {
-      ncc::log << Info << message;
+      ncc::Log << Info << message;
       break;
     }
 
     case QCORE_WARN: {
-      ncc::log << Warning << message;
+      ncc::Log << Warning << message;
       break;
     }
 
     case QCORE_ERROR: {
-      ncc::log << Error << message;
+      ncc::Log << Error << message;
       break;
     }
 
     case QCORE_FATAL: {
-      ncc::log << Emergency << message;
+      ncc::Log << Emergency << message;
       break;
     }
   }
 }
 
 extern "C" NCC_EXPORT int QCoreVWriteF(const char *fmt, va_list args) {
-  char *buffer = NULL;
+  char *buffer = nullptr;
   int size = vasprintf(&buffer, fmt, args);
   if (size < 0) {
     qcore_panic("Failed to allocate memory for log message.");
   }
 
-  g_log_buffer << std::string_view(buffer, size);
+  ThreadLogBuffer << std::string_view(buffer, size);
 
   free(buffer);
 

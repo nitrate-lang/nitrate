@@ -85,14 +85,14 @@ static void print_conflict_errors(const std::vector<Conflict> &conflicts,
     switch (conflict.us_kind) {
       case Kind::Function:
       case Kind::Variable: {
-        ncc::log << ConflictingSymbol << conflict.us.value()->getLoc()
+        ncc::Log << ConflictingSymbol << conflict.us.value()->getLoc()
                  << conflict.name << kind_name.at(conflict.them_kind);
         break;
       }
 
       case Kind::TypeDef:
       case Kind::ScopedEnum: {
-        ncc::log << ConflictingType << conflict.us.value()->getLoc()
+        ncc::Log << ConflictingType << conflict.us.value()->getLoc()
                  << conflict.name << kind_name.at(conflict.them_kind);
         break;
       }

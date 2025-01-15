@@ -31,9 +31,6 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <stdint.h>
-#include <stdlib.h>
-
 #include <alloc/Collection.hh>
 #include <cstring>
 #include <nitrate-core/Logger.hh>
@@ -41,54 +38,53 @@
 
 using namespace ncc;
 
-#define REGION_SIZE (1024 * 16)
+static constexpr auto REGION_SIZE = 1024 * 16;
 
-static inline uintptr_t ALIGNED(uintptr_t ptr, size_t align) {
-  return (ptr % align) ? (ptr + (align - (ptr % align))) : ptr;
+static inline uint8_t *ALIGNED(uint8_t *ptr, size_t align) {
+  auto addr_int = reinterpret_cast<uintptr_t>(ptr);
+  return (addr_int % align != 0) ? (ptr + (align - (addr_int % align))) : ptr;
 }
 
-dyn_arena::PImpl::PImpl() { alloc_region(REGION_SIZE); }
+DynamicArena::PImpl::PImpl() { AllocRegion(REGION_SIZE); }
 
-dyn_arena::PImpl::~PImpl() {
-  for (size_t i = 0; i < m_bases.size(); i++) {
-    delete[] reinterpret_cast<uint8_t *>(m_bases[i].base);
+DynamicArena::PImpl::~PImpl() {
+  for (auto &base : m_bases) {
+    delete[] base.m_base;
   }
 }
 
-void *dyn_arena::PImpl::alloc(size_t size, size_t alignment) {
+void *DynamicArena::PImpl::Alloc(size_t size, size_t alignment) {
   if (size == 0 || alignment == 0) {
     return nullptr;
   }
 
   m_mutex.lock();
 
-  uintptr_t start;
-
   if (size > REGION_SIZE) [[unlikely]] {
-    alloc_region(size);
+    AllocRegion(size);
   }
 
-  auto &R = m_bases.back();
+  auto &b = m_bases.back();
 
-  start = ALIGNED(R.offset, alignment);
+  auto *start = ALIGNED(b.m_offset, alignment);
 
-  if ((start + size) <= R.base + R.size) [[likely]] {
-    R.offset = start + size;
+  if ((start + size) <= b.m_base + b.m_size) [[likely]] {
+    b.m_offset = start + size;
   } else {
-    alloc_region(REGION_SIZE);
+    AllocRegion(REGION_SIZE);
 
-    start = ALIGNED(m_bases.back().offset, alignment);
-    if ((start + size) > m_bases.back().base + m_bases.back().size)
+    start = ALIGNED(m_bases.back().m_offset, alignment);
+    if ((start + size) > m_bases.back().m_base + m_bases.back().m_size)
         [[unlikely]] {
       qcore_panicf(
           "Out of memory: failed to allocate %zu bytes @ alignment %zu", size,
           alignment);
     }
 
-    m_bases.back().offset = start + size;
+    m_bases.back().m_offset = start + size;
   }
 
   m_mutex.unlock();
 
-  return reinterpret_cast<void *>(start);
+  return start;
 }

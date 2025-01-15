@@ -71,7 +71,7 @@ std::optional<EnumItem> Parser::recurse_enum_item() {
 
     return EnumItem(member_name->as_string(), member_value);
   } else {
-    log << SyntaxError << next() << "Enum field is missing a name.";
+    Log << SyntaxError << next() << "Enum field is missing a name.";
     return std::nullopt;
   }
 }
@@ -86,7 +86,7 @@ std::optional<EnumDefItems> Parser::recurse_enum_items() {
   if (next_if(PuncLCur)) {
     while (true) {
       if (next_if(EofF)) [[unlikely]] {
-        log << SyntaxError << current()
+        Log << SyntaxError << current()
             << "Unexpected EOF encountered while parsing enum fields.";
         break;
       }
@@ -98,7 +98,7 @@ std::optional<EnumDefItems> Parser::recurse_enum_items() {
       if (auto enum_member = recurse_enum_item()) {
         items.push_back(enum_member.value());
       } else {
-        log << SyntaxError << current() << "Failed to parse enum field.";
+        Log << SyntaxError << current() << "Failed to parse enum field.";
       }
 
       next_if(PuncComa) || next_if(PuncSemi);

@@ -51,7 +51,7 @@ CallArgs Parser::recurse_call_arguments(const std::set<lex::Token> &terminators,
 
   while (true) {
     if (next_if(EofF)) [[unlikely]] {
-      log << SyntaxError << current()
+      Log << SyntaxError << current()
           << "Unexpected end of file while parsing call expression";
       return call_args;
     }
@@ -140,13 +140,13 @@ FlowPtr<Expr> Parser::recurse_fstring() {
     }
 
     if (state != 0) {
-      log << SyntaxError << current()
+      Log << SyntaxError << current()
           << "F-string expression has mismatched braces";
     }
 
     return make<FString>(std::move(items))();
   } else {
-    log << SyntaxError << current()
+    Log << SyntaxError << current()
         << "Expected a string literal token for F-string expression";
     return mock_expr(QAST_FSTRING);
   }
@@ -306,7 +306,7 @@ FlowPtr<Expr> Parser::recurse_expr(const std::set<Token> &terminators) {
               }
 
               if (Stack.size() + 1 > MAX_RECURSION_DEPTH) {
-                log << SyntaxError << current()
+                Log << SyntaxError << current()
                     << "Recursion depth exceeds maximum limit";
                 return mock_expr();
               }
@@ -315,7 +315,7 @@ FlowPtr<Expr> Parser::recurse_expr(const std::set<Token> &terminators) {
                                FrameType::Binary, Op));
               LeftSide = RightSide.value();
             } else {
-              log << SyntaxError << current()
+              Log << SyntaxError << current()
                   << "Failed to parse right-hand side of binary expression";
             }
           } else {
@@ -339,7 +339,7 @@ FlowPtr<Expr> Parser::recurse_expr(const std::set<Token> &terminators) {
             auto Arguments =
                 recurse_call_arguments({Token(Punc, PuncRPar)}, false);
             if (!next_if(PuncRPar)) {
-              log << SyntaxError << current()
+              Log << SyntaxError << current()
                   << "Expected ')' to close the function call";
             }
 
@@ -354,7 +354,7 @@ FlowPtr<Expr> Parser::recurse_expr(const std::set<Token> &terminators) {
             if (next_if(PuncColn)) {
               auto second = recurse_expr({Token(Punc, PuncRBrk)});
               if (!next_if(PuncRBrk)) {
-                log << SyntaxError << current()
+                Log << SyntaxError << current()
                     << "Expected ']' to close the slice";
               }
 
@@ -362,7 +362,7 @@ FlowPtr<Expr> Parser::recurse_expr(const std::set<Token> &terminators) {
               LeftSide->set_offset(SourceOffset);
             } else {
               if (!next_if(PuncRBrk)) {
-                log << SyntaxError << current()
+                Log << SyntaxError << current()
                     << "Expected ']' to close the index expression";
               }
 
@@ -373,19 +373,19 @@ FlowPtr<Expr> Parser::recurse_expr(const std::set<Token> &terminators) {
             auto TemplateArguments =
                 recurse_call_arguments({Token(Punc, PuncRCur)}, true);
             if (!next_if(PuncRCur)) {
-              log << SyntaxError << current()
+              Log << SyntaxError << current()
                   << "Expected '}' to close the template arguments";
             }
 
             if (!next_if(PuncLPar)) {
-              log << SyntaxError << current()
+              Log << SyntaxError << current()
                   << "Expected '(' to open the call arguments";
             }
 
             auto CallArguments =
                 recurse_call_arguments({Token(Punc, PuncRPar)}, false);
             if (!next_if(PuncRPar)) {
-              log << SyntaxError << current()
+              Log << SyntaxError << current()
                   << "Expected ')' to close the call arguments";
             }
 
@@ -417,7 +417,7 @@ FlowPtr<Expr> Parser::recurse_expr(const std::set<Token> &terminators) {
 
     return UnwindStack(Stack, LeftSide, 0);
   } else {
-    log << SyntaxError << current() << "Expected an expression";
+    Log << SyntaxError << current() << "Expected an expression";
 
     return mock_expr();
   }
@@ -454,7 +454,7 @@ NullableFlowPtr<Expr> Parser::recurse_expr_keyword(lex::Keyword key) {
         if (next_if(PuncRPar)) {
           E = make<Call>(expr, args)();
         } else {
-          log << SyntaxError << current()
+          Log << SyntaxError << current()
               << "Expected ')' to close the function call";
           E = mock_expr(QAST_CALL);
         }
@@ -486,7 +486,7 @@ NullableFlowPtr<Expr> Parser::recurse_expr_keyword(lex::Keyword key) {
     }
 
     default: {
-      log << SyntaxError << current() << "Unexpected '" << key
+      Log << SyntaxError << current() << "Unexpected '" << key
           << "' in expression context";
       break;
     }
@@ -505,7 +505,7 @@ NullableFlowPtr<Expr> Parser::recurse_expr_punctor(lex::Punctor punc) {
       });
 
       if (!next_if(PuncRPar)) {
-        log << SyntaxError << current()
+        Log << SyntaxError << current()
             << "Expected ')' to close the expression";
       }
 
@@ -513,7 +513,7 @@ NullableFlowPtr<Expr> Parser::recurse_expr_punctor(lex::Punctor punc) {
     }
 
     case PuncRPar: {
-      log << SyntaxError << current()
+      Log << SyntaxError << current()
           << "Unexpected right parenthesis in expression";
       break;
     }
@@ -523,7 +523,7 @@ NullableFlowPtr<Expr> Parser::recurse_expr_punctor(lex::Punctor punc) {
 
       while (true) {
         if (next_if(EofF)) [[unlikely]] {
-          log << SyntaxError << current()
+          Log << SyntaxError << current()
               << "Unexpected end of file while parsing expression";
           break;
         }
@@ -553,17 +553,17 @@ NullableFlowPtr<Expr> Parser::recurse_expr_punctor(lex::Punctor punc) {
                   items.push_back(expr);
                 }
               } else {
-                log << SyntaxError << current()
+                Log << SyntaxError << current()
                     << "Compressed list size exceeds maximum limit";
               }
 
             } else {
-              log << SyntaxError << current()
+              Log << SyntaxError << current()
                   << "Expected an integer literal for the compressed "
                      "list size";
             }
           } else {
-            log << SyntaxError << current()
+            Log << SyntaxError << current()
                 << "Expected an integer literal for the compressed list "
                    "size";
           }
@@ -579,7 +579,7 @@ NullableFlowPtr<Expr> Parser::recurse_expr_punctor(lex::Punctor punc) {
     }
 
     case PuncRBrk: {
-      log << SyntaxError << current()
+      Log << SyntaxError << current()
           << "Unexpected right bracket in expression";
       break;
     }
@@ -590,7 +590,7 @@ NullableFlowPtr<Expr> Parser::recurse_expr_punctor(lex::Punctor punc) {
 
       while (true) {
         if (next_if(EofF)) [[unlikely]] {
-          log << SyntaxError << current()
+          Log << SyntaxError << current()
               << "Unexpected end of file while parsing dictionary";
           break;
         }
@@ -605,7 +605,7 @@ NullableFlowPtr<Expr> Parser::recurse_expr_punctor(lex::Punctor punc) {
         });
 
         if (!next_if(PuncColn)) {
-          log << SyntaxError << current()
+          Log << SyntaxError << current()
               << "Expected colon after key in dictionary";
           break;
         }
@@ -634,25 +634,25 @@ NullableFlowPtr<Expr> Parser::recurse_expr_punctor(lex::Punctor punc) {
     }
 
     case PuncRCur: {
-      log << SyntaxError << current()
+      Log << SyntaxError << current()
           << "Unexpected right curly brace in expression";
       break;
     }
 
     case PuncComa: {
-      log << SyntaxError << current()
+      Log << SyntaxError << current()
           << "Unexpected comma in expression context";
       break;
     }
 
     case PuncColn: {
-      log << SyntaxError << current()
+      Log << SyntaxError << current()
           << "Unexpected colon in expression context";
       break;
     }
 
     case PuncSemi: {
-      log << SyntaxError << current()
+      Log << SyntaxError << current()
           << "Unexpected semicolon in expression context";
       break;
     }
@@ -709,7 +709,7 @@ NullableFlowPtr<Expr> Parser::recurse_expr_primary(bool isType) {
       }
 
       case Oper: {
-        log << SyntaxError << tok << "Unexpected operator in expression";
+        Log << SyntaxError << tok << "Unexpected operator in expression";
         break;
       }
 
@@ -779,7 +779,7 @@ NullableFlowPtr<Expr> Parser::recurse_expr_primary(bool isType) {
       case Char: {
         auto str_data = tok.as_string();
         if (str_data->size() != 1) [[unlikely]] {
-          log << SyntaxError << tok
+          Log << SyntaxError << tok
               << "Expected a single byte in character literal";
           break;
         }
@@ -800,17 +800,17 @@ NullableFlowPtr<Expr> Parser::recurse_expr_primary(bool isType) {
       }
 
       case MacB: {
-        log << SyntaxError << tok << "Unexpected macro block in expression";
+        Log << SyntaxError << tok << "Unexpected macro block in expression";
         break;
       }
 
       case Macr: {
-        log << SyntaxError << tok << "Unexpected macro call in expression";
+        Log << SyntaxError << tok << "Unexpected macro call in expression";
         break;
       }
 
       case Note: {
-        log << SyntaxError << tok << "Unexpected comment in expression";
+        Log << SyntaxError << tok << "Unexpected comment in expression";
         break;
       }
     }

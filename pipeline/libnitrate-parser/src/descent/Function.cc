@@ -64,7 +64,7 @@ std::optional<FuncParam> Parser::recurse_function_parameter() {
 
     return FuncParam{param_name->as_string(), param_type, param_value};
   } else {
-    log << SyntaxError << next() << "Expected a parameter name before ':'";
+    Log << SyntaxError << next() << "Expected a parameter name before ':'";
   }
 
   return std::nullopt;
@@ -79,7 +79,7 @@ std::optional<TemplateParameters> Parser::recurse_template_parameters() {
 
   while (true) {
     if (next_if(EofF)) [[unlikely]] {
-      log << SyntaxError << current()
+      Log << SyntaxError << current()
           << "Unexpected EOF in template parameters";
       return params;
     }
@@ -93,7 +93,7 @@ std::optional<TemplateParameters> Parser::recurse_template_parameters() {
 
       params.push_back({param_name, param_type, param_value});
     } else {
-      log << SyntaxError << next() << "Expected a template parameter";
+      Log << SyntaxError << next() << "Expected a template parameter";
     }
 
     next_if(PuncComa);
@@ -106,7 +106,7 @@ std::pair<FuncParams, bool> Parser::recurse_function_parameters() {
   std::pair<FuncParams, bool> parameters;
 
   if (!next_if(PuncLPar)) [[unlikely]] {
-    log << SyntaxError << current() << "Expected '(' after function name";
+    Log << SyntaxError << current() << "Expected '(' after function name";
     return parameters;
   }
 
@@ -114,7 +114,7 @@ std::pair<FuncParams, bool> Parser::recurse_function_parameters() {
 
   while (true) {
     if (next_if(EofF)) [[unlikely]] {
-      log << SyntaxError << current()
+      Log << SyntaxError << current()
           << "Unexpected EOF in function parameters";
       return parameters;
     }
@@ -127,7 +127,7 @@ std::pair<FuncParams, bool> Parser::recurse_function_parameters() {
       is_variadic = true;
 
       if (!peek().is<PuncRPar>()) {
-        log << SyntaxError << current()
+        Log << SyntaxError << current()
             << "Expected ')' after variadic parameter";
       }
       continue;
@@ -138,7 +138,7 @@ std::pair<FuncParams, bool> Parser::recurse_function_parameters() {
       parameters.first.push_back({param_name, param_type, param_value});
 
     } else {
-      log << SyntaxError << next() << "Expected a function parameter";
+      Log << SyntaxError << next() << "Expected a function parameter";
     }
 
     next_if(PuncComa);
@@ -154,7 +154,7 @@ Purity Parser::get_purity_specifier(Token start_pos, bool is_thread_safe,
                                     bool is_retro) {
   /* Ensure that there is no duplication of purity specifiers */
   if ((is_impure + is_pure + is_quasi + is_retro) > 1) {
-    log << SyntaxError << start_pos << "Conflicting purity specifiers";
+    Log << SyntaxError << start_pos << "Conflicting purity specifiers";
     return Purity::Impure;
   }
 
@@ -180,7 +180,7 @@ std::optional<std::pair<string, bool>> Parser::recurse_function_capture() {
   if (auto name = next_if(Name)) {
     return {{name->as_string(), is_ref}};
   } else {
-    log << SyntaxError << next() << "Expected a capture name";
+    Log << SyntaxError << next() << "Expected a capture name";
     return std::nullopt;
   }
 }
@@ -204,7 +204,7 @@ Parser::recurse_function_ambigouis() {
 
   while (state != State::End) {
     if (next_if(EofF)) [[unlikely]] {
-      log << SyntaxError << current()
+      Log << SyntaxError << current()
           << "Unexpected EOF in function attributes";
       break;
     }
@@ -232,7 +232,7 @@ Parser::recurse_function_ambigouis() {
           }
         } else if (next_if(PuncLBrk)) {
           if (already_parsed_attributes && already_parsed_captures) {
-            log << SyntaxError << current()
+            Log << SyntaxError << current()
                 << "Unexpected '[' after function attributes and captures";
           } else if (already_parsed_attributes && !already_parsed_captures) {
             state = State::CaptureSection;
@@ -256,7 +256,7 @@ Parser::recurse_function_ambigouis() {
         } else if (auto tok = peek(); tok.is<PuncLPar>() || tok.is<OpLT>()) {
           state = State::End; /* Begin parsing parameters or template options */
         } else {
-          log << SyntaxError << next()
+          Log << SyntaxError << next()
               << "Unexpected token in function declaration";
         }
 
@@ -268,7 +268,7 @@ Parser::recurse_function_ambigouis() {
 
         while (true) {
           if (next_if(EofF)) [[unlikely]] {
-            log << SyntaxError << current()
+            Log << SyntaxError << current()
                 << "Unexpected EOF in function attributes";
             break;
           }
@@ -296,7 +296,7 @@ Parser::recurse_function_ambigouis() {
 
         while (true) {
           if (next_if(EofF)) [[unlikely]] {
-            log << SyntaxError << current()
+            Log << SyntaxError << current()
                 << "Unexpected EOF in function captures";
             break;
           }
