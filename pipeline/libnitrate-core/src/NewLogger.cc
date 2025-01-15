@@ -144,8 +144,9 @@ NCC_EXPORT void ECBase::Finalize() {
 
   /* Try to load information about the error from disk */
   if (auto path = GetDetailsPath(); path.has_value()) {
-    if (auto details = LoadDetailsFromFile(*path); details.has_value()) {
-      m_details = *details;
+    if (auto details_opt = LoadDetailsFromFile(*path);
+        details_opt.has_value()) {
+      m_details = *details_opt;
     }
   }
 

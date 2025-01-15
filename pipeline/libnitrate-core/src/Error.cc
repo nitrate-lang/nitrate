@@ -108,10 +108,6 @@ static std::vector<std::string> panic_split_message(std::string_view message) {
         if (buf.size() + 4 < PANIC_LINE_LENGTH) {
           buf += message[i];
         } else {
-          size_t pad = PANIC_LINE_LENGTH - buf.size() - 4;
-          if (pad > 0) {
-            buf += std::string(pad, ' ');
-          }
           lines.push_back(buf);
           buf.clear();
           buf += message[i];
@@ -149,7 +145,7 @@ static void panic_render_report(const std::vector<std::string> &lines) {
     for (size_t i = 0; i < PANIC_LINE_LENGTH - 2; i++) sep += "━";
 
     std::cerr << "\x1b[31;1m┏" << sep << "┓\x1b[0m\n";
-    for (auto &str : lines)
+    for (const auto &str : lines)
       std::cerr << "\x1b[31;1m┃\x1b[0m " << str << " \x1b[31;1m┃\x1b[0m\n";
     std::cerr << "\x1b[31;1m┗" << sep << "\x1b[31;1m┛\x1b[0m\n\n";
   }
@@ -197,8 +193,8 @@ extern "C" NCC_EXPORT void qcore_panicf_(const char *_fmt, ...) {
   va_list args;
   va_start(args, _fmt);
   qcore_vpanicf_(_fmt, args);
-  va_end(args);  // Unreachable, but whatever
-}  // Unreachable, but whatever
+  va_end(args);
+}
 
 extern "C" NCC_EXPORT void qcore_vpanicf_(const char *fmt, va_list args) {
   char *msg = nullptr;

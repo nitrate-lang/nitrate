@@ -44,7 +44,7 @@ void Environment::setup_default_env() {
     boost::uuids::random_generator gen;
     boost::uuids::uuid uuid = gen();
     std::string uuid_str = boost::uuids::to_string(uuid);
-    set("this.job", uuid_str.c_str());
+    m_data.insert({"this.job", uuid_str});
   }
 
   { /* Set the compiler start time */
@@ -52,17 +52,17 @@ void Environment::setup_default_env() {
     let ms = std::chrono::duration_cast<std::chrono::milliseconds>(
         now.time_since_epoch());
 
-    set("this.created_at", std::to_string(ms.count()).c_str());
+    m_data.insert({"this.created_at", std::to_string(ms.count())});
   }
 
-  set("FILE", "<stdin>");
+  m_data.insert({"FILE", "<stdin>"});
 }
 
 NCC_EXPORT Environment::Environment() { setup_default_env(); }
 
 NCC_EXPORT bool Environment::contains(std::string_view key) {
   std::lock_guard<std::mutex> lock(m_mutex);
-  return m_data.contains(key);
+  return m_data.contains(string(key));
 }
 
 NCC_EXPORT std::optional<std::string_view> Environment::get(
@@ -79,7 +79,7 @@ NCC_EXPORT void Environment::set(std::string_view key,
   std::lock_guard<std::mutex> lock(m_mutex);
 
   if (value.has_value()) {
-    m_data[key] = *value;
+    m_data.insert_or_assign(key, *value);
   } else {
     m_data.erase(key);
   }

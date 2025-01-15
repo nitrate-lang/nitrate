@@ -64,13 +64,13 @@ namespace ncc {
     Environment();
     virtual ~Environment() = default;
 
-    bool contains(std::string_view key);
+    bool contains(std::string_view key) override;
 
-    std::optional<std::string_view> get(std::string_view key);
+    std::optional<std::string_view> get(std::string_view key) override;
 
     /* String interning is done internally */
     void set(std::string_view key, std::optional<std::string_view> value,
-             bool privset = false);
+             bool privset = false) override;
   };
 
 }  // namespace ncc

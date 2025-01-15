@@ -64,15 +64,14 @@ NCC_EXPORT std::string_view CoreLibrarySetup::GetVersionId() {
 #include <boost/throw_exception.hpp>
 #include <iostream>
 
-namespace boost {
-  NCC_EXPORT void throw_exception(std::exception const& m,
-                                  boost::source_location const&) {
-    std::cerr << "boost::throw_exception: " << m.what();
-    std::terminate();
-  }
+[[maybe_unused]] NCC_EXPORT void boost::throw_exception(
+    std::exception const& m, boost::source_location const&) {
+  std::cerr << "boost::throw_exception: " << m.what();
+  std::terminate();
+}
 
-  NCC_EXPORT void throw_exception(std::exception const& m) {
-    std::cerr << "boost::throw_exception: " << m.what();
-    std::terminate();
-  }
-}  // namespace boost
+[[maybe_unused]] NCC_EXPORT void boost::throw_exception(
+    std::exception const& m) {
+  std::cerr << "boost::throw_exception: " << m.what();
+  std::terminate();
+}

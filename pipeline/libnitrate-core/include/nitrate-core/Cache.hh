@@ -60,11 +60,10 @@ namespace ncc {
     using write_t = std::function<bool(const ResourceKey &, Value)>;
 
   public:
-    ExternalResourceCache() {
-      m_has = [](const ResourceKey &) { return false; };
-      m_read = [](const ResourceKey &, Value &) { return false; };
-      m_write = [](const ResourceKey &, Value) { return false; };
-    }
+    ExternalResourceCache()
+        : m_has([](const ResourceKey &) { return false; }),
+          m_read([](const ResourceKey &, Value &) { return false; }),
+          m_write([](const ResourceKey &, Value) { return false; }) {}
 
     bool has(const ResourceKey &key) override {
       std::lock_guard<std::recursive_mutex> lock(m_mutex);

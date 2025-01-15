@@ -65,7 +65,8 @@ namespace ncc {
     std::uint64_t m_ec;
 
   public:
-    ECUnique(std::source_location loc = std::source_location::current());
+    explicit ECUnique(
+        std::source_location loc = std::source_location::current());
 
     constexpr EC get() const { return m_ec; };
   };
@@ -79,7 +80,7 @@ namespace ncc {
       std::vector<std::string> tags, fixes, examples, dev_notes, notes;
       std::string flagname, nice_name, details;
 
-      constexpr Details() { flagname = nice_name = details = ""; }
+      constexpr Details() : flagname(), nice_name(), details() {}
     };
 
     EC m_ec;
@@ -100,6 +101,7 @@ namespace ncc {
     void Finalize();
 
   public:
+    constexpr ECBase() : m_ec(0) {}
     virtual ~ECBase() = default;
 
     constexpr EC getKind() const { return m_ec; }
@@ -166,7 +168,7 @@ namespace ncc {
     LogCallback m_recv;
 
   public:
-    LogStream(LogCallback pub) : m_recv(pub) {}
+    explicit LogStream(LogCallback pub) : m_recv(pub) {}
     LogStream(LogStream &&) = default;
 
     ~LogStream() {

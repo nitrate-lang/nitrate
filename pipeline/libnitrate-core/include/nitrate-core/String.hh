@@ -36,6 +36,7 @@
 
 #include <cstdint>
 #include <mutex>
+#include <nitrate-core/Macro.hh>
 #include <string>
 #include <string_view>
 #include <unordered_map>
@@ -75,25 +76,20 @@ namespace ncc {
     uint64_t m_id : 40;
 
   public:
-    constexpr auto_intern(std::string_view str = "") {
-      m_id = str.empty() ? 0 : StringMemory::FromString(str);
-    }
+    constexpr explicit auto_intern() : m_id(0) {}
 
-    constexpr auto_intern(std::string &&str) {
+    constexpr NCC_FORCE_INLINE auto_intern(std::string_view str)
+        : m_id(str.empty() ? 0 : StringMemory::FromString(str)) {}
+
+    constexpr NCC_FORCE_INLINE auto_intern(std::string &&str) {
       m_id = str.empty() ? 0 : StringMemory::FromString(std::move(str));
     }
 
-    constexpr auto_intern(const std::string &str) {
-      m_id = str.empty() ? 0 : StringMemory::FromString(str);
-    }
+    constexpr NCC_FORCE_INLINE auto_intern(const std::string &str)
+        : m_id(str.empty() ? 0 : StringMemory::FromString(str)) {}
 
-    constexpr auto_intern(const char *str) {
-      if (str[0] == '\0') {
-        m_id = 0;
-      } else {
-        m_id = StringMemory::FromString(std::string_view(str));
-      }
-    }
+    constexpr NCC_FORCE_INLINE auto_intern(const char *str)
+        : m_id(!str[0] ? 0 : StringMemory::FromString(std::string_view(str))) {}
 
     std::string_view get() const;
 
