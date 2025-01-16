@@ -162,12 +162,10 @@ namespace ncc::lex {
     return tab;
   }();
 
-  static bool LexIsSpace(uint8_t c) {
-    return kWhitespaceTable[static_cast<uint8_t>(c)] != 0;
-  }
+  static bool LexIsSpace(uint8_t c) { return kWhitespaceTable[c] != 0; }
 }  // namespace ncc::lex
 
-enum class NumType {
+enum class NumType : uint8_t {
   Decimal,
   DecimalExplicit,
   Hexadecimal,
@@ -359,7 +357,7 @@ static NCC_FORCE_INLINE bool CanonicalizeNumber(std::string &buf,
 
 void Tokenizer::ResetAutomaton() { m_fifo = std::queue<char>(); }
 
-enum class LexState {
+enum class LexState : uint8_t {
   Start,
   Identifier,
   String,
@@ -707,7 +705,7 @@ public:
       }
     }
 
-    enum class FloatPart {
+    enum class FloatPart : uint8_t {
       MantissaPost,
       ExponentSign,
       ExponentPre,

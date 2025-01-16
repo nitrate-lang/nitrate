@@ -1,4 +1,4 @@
-Checks: '-*,readability-*,-readability-identifier-length,-readability-named-parameter,-readability-magic-numbers,-readability-function-cognitive-complexity,portability-*,performance-*,modernize-*,-modernize-use-trailing-return-type,concurrency-*,clang-analyzer-*,boost-*'
+Checks: '-*,readability-*,-readability-identifier-length,-readability-named-parameter,-readability-magic-numbers,-readability-function-cognitive-complexity,portability-*,performance-*,-performance-no-int-to-ptr,modernize-*,-modernize-use-trailing-return-type,concurrency-*,clang-analyzer-*,boost-*'
 WarningsAsErrors: '*,-performance-*'
 CheckOptions:
   - key: readability-identifier-naming.TypedefCase

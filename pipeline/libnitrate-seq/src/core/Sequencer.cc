@@ -39,6 +39,7 @@
 #include <nitrate-lexer/Lexer.hh>
 #include <nitrate-seq/EC.hh>
 #include <nitrate-seq/Sequencer.hh>
+#include <ranges>
 #include <sys/List.hh>
 
 extern "C" {
@@ -47,22 +48,19 @@ extern "C" {
 #include <lua/lualib.h>
 }
 
-#define MAX_RECURSION_DEPTH 10000
+static constexpr auto kMaxRecursionDepth = 10000;
 
 using namespace ncc::lex;
 using namespace ncc::seq;
 using namespace ncc::seq::ec;
 
-Sequencer::PImpl::PImpl(std::shared_ptr<Environment> env) : m_env(env) {
+Sequencer::PImpl::PImpl(std::shared_ptr<Environment> env)
+    : m_env(std::move(env)) {
   m_L = luaL_newstate();
   m_random.seed(0);
 }
 
-Sequencer::PImpl::~PImpl() {
-  if (m_L) {
-    lua_close(m_L);
-  }
-}
+Sequencer::PImpl::~PImpl() { lua_close(m_L); }
 
 static inline std::string_view Ltrim(std::string_view s) {
   s.remove_prefix(std::min(s.find_first_not_of(" \t\n\r"), s.size()));
@@ -126,8 +124,8 @@ void Sequencer::RecursiveExpand(std::string_view code) {
     }
   }
 
-  for (auto it = tokens.rbegin(); it != tokens.rend(); it++) {
-    m_core->m_buffer.push_front(*it);
+  for (auto &token : std::ranges::reverse_view(tokens)) {
+    m_core->m_buffer.push_front(token);
   }
 }
 
@@ -142,12 +140,12 @@ bool Sequencer::ExecuteLua(const char *code) {
     return false;
   }
 
-  if (lua_isstring(m_core->m_L, -1)) {
+  if (lua_isstring(m_core->m_L, -1) != 0) {
     RecursiveExpand(lua_tostring(m_core->m_L, -1));
-  } else if (lua_isnumber(m_core->m_L, -1)) {
+  } else if (lua_isnumber(m_core->m_L, -1) != 0) {
     RecursiveExpand(std::to_string(lua_tonumber(m_core->m_L, -1)));
   } else if (lua_isboolean(m_core->m_L, -1)) {
-    RecursiveExpand(lua_toboolean(m_core->m_L, -1) ? "true" : "false");
+    RecursiveExpand((lua_toboolean(m_core->m_L, -1) != 0) ? "true" : "false");
   } else if (lua_gettop(m_core->m_L) != top && !lua_isnil(m_core->m_L, -1)) {
     return false;
   }
@@ -162,7 +160,9 @@ public:
   RecursiveGuard(size_t &depth) : m_depth(depth) { m_depth++; }
   ~RecursiveGuard() { m_depth--; }
 
-  bool ShouldStop() { return m_depth >= MAX_RECURSION_DEPTH; }
+  [[nodiscard]] bool ShouldStop() const {
+    return m_depth >= kMaxRecursionDepth;
+  }
 };
 
 Token Sequencer::GetNext() {
@@ -237,7 +237,7 @@ func_entry:  // do tail call optimization manually
           }
         } else {
           block = Ltrim(block.substr(3));
-          auto pos = block.find_first_of("(");
+          auto pos = block.find_first_of('(');
           if (pos == std::string_view::npos) {
             ncc::Log << SeqError
                      << "Invalid macro function definition: " << block;
@@ -296,7 +296,7 @@ func_entry:  // do tail call optimization manually
 
       case Macr: {
         auto body = x.GetString().Get();
-        auto pos = body.find_first_of("(");
+        auto pos = body.find_first_of('(');
 
         if (pos != std::string_view::npos) {
           if (!ExecuteLua(("return " + std::string(body)).c_str())) {
@@ -336,15 +336,17 @@ func_entry:  // do tail call optimization manually
 }
 
 void Sequencer::LoadLuaLibs() {
-  static constexpr luaL_Reg kTheLibs[] = {
-      {LUA_GNAME, luaopen_base},        {LUA_TABLIBNAME, luaopen_table},
-      {LUA_STRLIBNAME, luaopen_string}, {LUA_MATHLIBNAME, luaopen_math},
-      {LUA_UTF8LIBNAME, luaopen_utf8},  {NULL, NULL},
+  static constexpr std::array<luaL_Reg, 5> kTheLibs = {
+      luaL_Reg{LUA_GNAME, luaopen_base},
+      luaL_Reg{LUA_TABLIBNAME, luaopen_table},
+      luaL_Reg{LUA_STRLIBNAME, luaopen_string},
+      luaL_Reg{LUA_MATHLIBNAME, luaopen_math},
+      luaL_Reg{LUA_UTF8LIBNAME, luaopen_utf8},
   };
 
-  for (auto lib = kTheLibs; lib->func; lib++) {
-    luaL_requiref(m_core->m_L, lib->name, lib->func, 1);
-    lua_pop(m_core->m_L, 1); /* remove lib */
+  for (const auto &lib : kTheLibs) {
+    luaL_requiref(m_core->m_L, lib.name, lib.func, 1);
+    lua_pop(m_core->m_L, 1);
   }
 }
 
@@ -362,10 +364,10 @@ void Sequencer::BindLuaAPI() {
 
 Sequencer::Sequencer(std::istream &file, std::shared_ptr<ncc::Environment> env,
                      bool is_root)
-    : ncc::lex::IScanner(env),
-      m_scanner(std::make_unique<Tokenizer>(file, env)) {
+    : ncc::lex::IScanner(std::move(env)),
+      m_scanner(std::make_unique<Tokenizer>(file, m_env)) {
   if (is_root) {
-    m_core = std::make_shared<PImpl>(env);
+    m_core = std::make_shared<PImpl>(m_env);
     SetFetchFunc(nullptr);
 
     LoadLuaLibs();

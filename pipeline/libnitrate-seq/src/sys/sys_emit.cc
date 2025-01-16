@@ -45,7 +45,7 @@ int ncc::seq::SysEmit(lua_State* L) {
                       nargs);
   }
 
-  Sequencer* obj = get_engine();
+  auto* obj = get_engine();
 
   for (int i = 1; i <= nargs; i++) {
     if (lua_isstring(L, i) == 0) {

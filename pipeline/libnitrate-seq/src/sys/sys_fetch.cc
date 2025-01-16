@@ -62,7 +62,7 @@ static void CanonicalizeImportName(std::string &name) {
 }
 
 int ncc::seq::SysFetch(lua_State *L) {
-  Sequencer *obj = get_engine();
+  auto *obj = get_engine();
 
   int nargs = lua_gettop(L);
   if (nargs != 1) {
