@@ -77,14 +77,14 @@ namespace ncc::ir {
     IRModule(string module_name = "module");
     ~IRModule();
 
-    auto GetRoot() const { return m_root; }
+    [[nodiscard]] auto GetRoot() const { return m_root; }
 
-    std::span<const string> GetTransformHistory() const { return m_applied; }
+    [[nodiscard]] std::span<const string> GetTransformHistory() const { return m_applied; }
     bool Diagnostics(std::optional<bool> state = std::nullopt);
     string Name(std::optional<string> name = std::nullopt);
     auto &GetNodeArena() { return m_ir_data; }
-    auto GetTargetInfo() const { return m_target_info; }
-    auto GetFunctions() const {
+    [[nodiscard]] auto GetTargetInfo() const { return m_target_info; }
+    [[nodiscard]] auto GetFunctions() const {
       return m_functions.left | std::views::transform([](auto &pair) {
                return pair.second.second;
              });

@@ -972,7 +972,7 @@ namespace argparse {
     }
 
     template <typename Iterator>
-    bool IsValueInChoices(Iterator option_it) const {
+    [[nodiscard]] bool IsValueInChoices(Iterator option_it) const {
       const auto &choices = m_choices.value();
 
       return (std::find(choices.begin(), choices.end(), *option_it) !=
@@ -1118,7 +1118,7 @@ namespace argparse {
       }
     }
 
-    std::string GetNamesCsv(char separator = ',') const {
+    [[nodiscard]] std::string GetNamesCsv(char separator = ',') const {
       return std::accumulate(
           m_names.begin(), m_names.end(), std::string{""},
           [&](const std::string &result, const std::string &name) {
@@ -1126,7 +1126,7 @@ namespace argparse {
           });
     }
 
-    std::string GetUsageFull() const {
+    [[nodiscard]] std::string GetUsageFull() const {
       std::stringstream usage;
 
       usage << GetNamesCsv('/');
@@ -1140,7 +1140,7 @@ namespace argparse {
       return usage.str();
     }
 
-    std::string GetInlineUsage() const {
+    [[nodiscard]] std::string GetInlineUsage() const {
       std::stringstream usage;
       // Find the longest variant to show in the usage string
       std::string longest_name = m_names.front();
@@ -1170,7 +1170,7 @@ namespace argparse {
       return usage.str();
     }
 
-    std::size_t GetArgumentsLength() const {
+    [[nodiscard]] std::size_t GetArgumentsLength() const {
       std::size_t names_size = std::accumulate(
           std::begin(m_names), std::end(m_names), std::size_t(0),
           [](const auto &sum, const auto &s) { return sum + s.size(); });
@@ -1337,19 +1337,19 @@ namespace argparse {
         }
       }
 
-      bool Contains(std::size_t value) const {
+      [[nodiscard]] bool Contains(std::size_t value) const {
         return value >= m_min && value <= m_max;
       }
 
-      bool IsExact() const { return m_min == m_max; }
+      [[nodiscard]] bool IsExact() const { return m_min == m_max; }
 
-      bool IsRightBounded() const {
+      [[nodiscard]] bool IsRightBounded() const {
         return m_max < (std::numeric_limits<std::size_t>::max)();
       }
 
-      std::size_t GetMin() const { return m_min; }
+      [[nodiscard]] std::size_t GetMin() const { return m_min; }
 
-      std::size_t GetMax() const { return m_max; }
+      [[nodiscard]] std::size_t GetMax() const { return m_max; }
 
       // Print help message
       friend auto operator<<(std::ostream &stream,
@@ -1564,7 +1564,7 @@ namespace argparse {
      * @throws std::logic_error in case of incompatible types
      */
     template <typename T>
-    T Get() const {
+    [[nodiscard]] [[nodiscard]] T Get() const {
       if (!m_values.empty()) {
         if constexpr (details::kIsContainer<T>) {
           return any_cast_container<T>(m_values);
@@ -1952,7 +1952,7 @@ namespace argparse {
      * @throws std::bad_any_cast if the option is not of type T
      */
     template <typename T = std::string>
-    T Get(std::string_view arg_name) const {
+    [[nodiscard]] T Get(std::string_view arg_name) const {
       if (!m_is_parsed) {
         throw std::logic_error("Nothing parsed, no arguments are available.");
       }
@@ -1972,19 +1972,19 @@ namespace argparse {
     /* Getter that returns true for user-supplied options. Returns false if not
      * user-supplied, even with a default value.
      */
-    auto IsUsed(std::string_view arg_name) const {
+    [[nodiscard]] auto IsUsed(std::string_view arg_name) const {
       return (*this)[arg_name].m_is_used;
     }
 
     /* Getter that returns true if a subcommand is used.
      */
-    auto IsSubcommandUsed(std::string_view subcommand_name) const {
+    [[nodiscard]] auto IsSubcommandUsed(std::string_view subcommand_name) const {
       return m_subparser_used.at(std::string(subcommand_name));
     }
 
     /* Getter that returns true if a subcommand is used.
      */
-    auto IsSubcommandUsed(const ArgumentParser &subparser) const {
+    [[nodiscard]] auto IsSubcommandUsed(const ArgumentParser &subparser) const {
       return IsSubcommandUsed(subparser.m_program_name);
     }
 
@@ -2102,7 +2102,7 @@ namespace argparse {
     }
 
     // Format help message
-    auto Help() const -> std::stringstream {
+    [[nodiscard]] auto Help() const -> std::stringstream {
       std::stringstream out;
       out << *this;
       return out;
@@ -2122,7 +2122,7 @@ namespace argparse {
     }
 
     // Format usage part of help only
-    auto Usage() const -> std::string {
+    [[nodiscard]] auto Usage() const -> std::string {
       std::stringstream stream;
 
       std::string curline("Usage: ");
@@ -2276,7 +2276,7 @@ namespace argparse {
     // Printing the one and only help message
     // I've stuck with a simple message format, nothing fancy.
     [[deprecated(
-        "Use cout << program; instead.  See also help().")]] std::string
+        "Use cout << program; instead.  See also help().")]] [[nodiscard]] std::string
     PrintHelp() const {
       auto out = Help();
       std::cout << out.rdbuf();
@@ -2303,18 +2303,18 @@ namespace argparse {
       return nullptr;
     }
 
-    bool IsValidPrefixChar(char c) const {
+    [[nodiscard]] bool IsValidPrefixChar(char c) const {
       return m_prefix_chars.find(c) != std::string::npos;
     }
 
-    char GetAnyValidPrefixChar() const { return m_prefix_chars[0]; }
+    [[nodiscard]] char GetAnyValidPrefixChar() const { return m_prefix_chars[0]; }
 
     /*
      * Pre-process this argument list. Anything starting with "--", that
      * contains an =, where the prefix before the = has an entry in the
      * options table, should be split.
      */
-    std::vector<std::string> PreprocessArguments(
+    [[nodiscard]] std::vector<std::string> PreprocessArguments(
         const std::vector<std::string> &raw_arguments) const {
       std::vector<std::string> arguments{};
       for (const auto &arg : raw_arguments) {
@@ -2563,7 +2563,7 @@ namespace argparse {
     }
 
     // Used by print_help.
-    std::size_t GetLengthOfLongestArgument() const {
+    [[nodiscard]] std::size_t GetLengthOfLongestArgument() const {
       if (m_argument_map.empty()) {
         return 0;
       }

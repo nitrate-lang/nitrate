@@ -67,12 +67,12 @@ namespace no3 {
           : m_value(value) {}
 
       template <typename T>
-      T As() const {
+      [[nodiscard]] [[nodiscard]] T As() const {
         return std::get<T>(m_value);
       }
 
       template <typename T>
-      bool Is() const {
+      [[nodiscard]] bool Is() const {
         return std::holds_alternative<T>(m_value);
       }
 

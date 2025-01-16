@@ -74,7 +74,7 @@ namespace ncc::parse {
     void WriteSourceLocation(FlowPtr<Base> n) const;
     void WriteTypeMetadata(FlowPtr<Type> n);
 
-    std::string_view VisStr(Vis vis) const;
+    [[nodiscard]] std::string_view VisStr(Vis vis) const;
 
   public:
     AstWriter(InsertString str_impl, InsertUInt64 uint_impl,

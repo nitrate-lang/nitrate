@@ -77,7 +77,7 @@ public:
     }
   }
 
-  bool IsInitialized() const { return m_ok; }
+  [[nodiscard]] bool IsInitialized() const { return m_ok; }
 };
 
 static std::optional<std::vector<std::string>> ParseOptions(

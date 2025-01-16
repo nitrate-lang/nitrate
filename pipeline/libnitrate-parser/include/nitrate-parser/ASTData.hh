@@ -110,11 +110,11 @@ namespace ncc::parse {
           m_vis(vis),
           m_is_static(is_static) {}
 
-    auto GetVis() const { return m_vis; }
-    auto IsStatic() const { return m_is_static; }
-    auto GetName() const { return m_name; }
-    auto GetType() const { return m_type; }
-    auto GetValue() const { return m_value; }
+    [[nodiscard]] auto GetVis() const { return m_vis; }
+    [[nodiscard]] auto IsStatic() const { return m_is_static; }
+    [[nodiscard]] auto GetName() const { return m_name; }
+    [[nodiscard]] auto GetType() const { return m_type; }
+    [[nodiscard]] auto GetValue() const { return m_value; }
   };
 
   struct StructFunction {

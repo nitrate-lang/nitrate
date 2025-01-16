@@ -11,7 +11,7 @@ class ParseTreeSet {
 public:
   static ParseTreeSet& The();
 
-  std::optional<std::shared_ptr<ParseTree>> Get(std::string_view uri) const;
+  [[nodiscard]] std::optional<std::shared_ptr<ParseTree>> Get(std::string_view uri) const;
 };
 
 void DoCompletion(const lsp::RequestMessage&, lsp::ResponseMessage& resp) {

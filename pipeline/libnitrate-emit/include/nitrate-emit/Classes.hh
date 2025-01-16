@@ -54,7 +54,7 @@ public:
   }
   ~QcodeConf() { QcodeConfFree(m_conf); }
 
-  QCodegenConfig *Get() const { return m_conf; }
+  [[nodiscard]] QCodegenConfig *Get() const { return m_conf; }
 };
 
 #endif  // __NITRATE_CODEGEN_CLASSES_H__

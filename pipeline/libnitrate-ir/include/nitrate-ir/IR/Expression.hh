@@ -49,9 +49,9 @@ namespace ncc::ir {
     constexpr GenericBinExpr(auto lhs, auto rhs, auto op)
         : GenericExpr<A>(IR_eBIN), m_lhs(lhs), m_rhs(rhs), m_op(op) {}
 
-    constexpr auto GetLHS() const { return m_lhs; }
-    constexpr auto GetRHS() const { return m_rhs; }
-    constexpr auto GetOp() const { return m_op; }
+    [[nodiscard]] constexpr auto GetLHS() const { return m_lhs; }
+    [[nodiscard]] constexpr auto GetRHS() const { return m_rhs; }
+    [[nodiscard]] constexpr auto GetOp() const { return m_op; }
 
     constexpr void SetLHS(auto lhs) { m_lhs = lhs; }
     constexpr void SetRHS(auto rhs) { m_rhs = rhs; }
@@ -73,9 +73,9 @@ namespace ncc::ir {
           m_op(op),
           m_postfix(is_postfix) {}
 
-    constexpr auto GetExpr() const { return m_expr; }
-    constexpr auto GetOp() const { return m_op; }
-    constexpr auto IsPostfix() const { return m_postfix; }
+    [[nodiscard]] constexpr auto GetExpr() const { return m_expr; }
+    [[nodiscard]] constexpr auto GetOp() const { return m_op; }
+    [[nodiscard]] constexpr auto IsPostfix() const { return m_postfix; }
 
     constexpr void SetExpr(auto expr) { m_expr = expr; }
     constexpr void SetOp(auto op) { m_op = op; }
@@ -119,9 +119,9 @@ namespace ncc::ir {
       m_size = size;
     }
 
-    constexpr auto GetSize() const { return m_size; }
-    constexpr uint128_t GetValue() const { return m_value; }
-    std::string GetValueString() const { return m_value.str(); }
+    [[nodiscard]] constexpr auto GetSize() const { return m_size; }
+    [[nodiscard]] constexpr uint128_t GetValue() const { return m_value; }
+    [[nodiscard]] std::string GetValueString() const { return m_value.str(); }
   };
 
   template <class A>
@@ -150,8 +150,8 @@ namespace ncc::ir {
       }
     }
 
-    constexpr auto GetSize() const { return m_size; }
-    constexpr auto GetValue() const { return m_data; }
+    [[nodiscard]] constexpr auto GetSize() const { return m_size; }
+    [[nodiscard]] constexpr auto GetValue() const { return m_data; }
   };
 
   template <class A>
@@ -167,14 +167,14 @@ namespace ncc::ir {
           m_items(items),
           m_is_homogenous(is_homogenous) {}
 
-    constexpr auto Begin() const { return m_items.begin(); }
-    constexpr auto End() const { return m_items.end(); }
-    constexpr auto Size() const { return m_items.size(); }
-    constexpr auto Empty() const { return m_items.empty(); }
+    [[nodiscard]] constexpr auto Begin() const { return m_items.begin(); }
+    [[nodiscard]] constexpr auto End() const { return m_items.end(); }
+    [[nodiscard]] constexpr auto Size() const { return m_items.size(); }
+    [[nodiscard]] constexpr auto Empty() const { return m_items.empty(); }
 
     constexpr auto operator[](size_t idx) const { return m_items[idx]; }
-    constexpr auto At(size_t idx) const { return m_items[idx]; }
-    constexpr bool IsHomogenous() const { return m_is_homogenous; }
+    [[nodiscard]] constexpr auto At(size_t idx) const { return m_items[idx]; }
+    [[nodiscard]] constexpr bool IsHomogenous() const { return m_is_homogenous; }
   };
 
   template <class A>
@@ -189,9 +189,9 @@ namespace ncc::ir {
     constexpr GenericCall(auto ref, auto args)
         : GenericExpr<A>(IR_eCALL), m_args(args), m_iref(ref) {}
 
-    constexpr auto GetTarget() const { return m_iref; }
+    [[nodiscard]] constexpr auto GetTarget() const { return m_iref; }
     constexpr auto GetNumArgs() { return m_args.size(); }
-    constexpr auto GetArgs() const { return m_args; }
+    [[nodiscard]] constexpr auto GetArgs() const { return m_args; }
 
     constexpr void SetTarget(auto ref) { m_iref = ref; }
     void SetArgs(auto args) { m_args = args; }
@@ -207,11 +207,11 @@ namespace ncc::ir {
     constexpr GenericSeq(auto items)
         : GenericExpr<A>(IR_eSEQ), m_items(items) {}
 
-    constexpr auto GetItems() const { return m_items; }
-    constexpr auto Begin() const { return m_items.begin(); }
-    constexpr auto End() const { return m_items.end(); }
-    constexpr auto Size() const { return m_items.size(); }
-    constexpr auto Empty() const { return m_items.empty(); }
+    [[nodiscard]] constexpr auto GetItems() const { return m_items; }
+    [[nodiscard]] constexpr auto Begin() const { return m_items.begin(); }
+    [[nodiscard]] constexpr auto End() const { return m_items.end(); }
+    [[nodiscard]] constexpr auto Size() const { return m_items.size(); }
+    [[nodiscard]] constexpr auto Empty() const { return m_items.empty(); }
 
     constexpr void SetItems(auto items) { m_items = items; }
   };
@@ -226,8 +226,8 @@ namespace ncc::ir {
     constexpr GenericIndex(auto expr, auto index)
         : GenericExpr<A>(IR_eINDEX), m_expr(expr), m_index(index) {}
 
-    constexpr auto GetExpr() const { return m_expr; }
-    constexpr auto GetIndex() const { return m_index; }
+    [[nodiscard]] constexpr auto GetExpr() const { return m_expr; }
+    [[nodiscard]] constexpr auto GetIndex() const { return m_index; }
 
     constexpr void SetIndex(auto index) { m_index = index; }
     constexpr void SetExpr(auto expr) { m_expr = expr; }
@@ -244,8 +244,8 @@ namespace ncc::ir {
     constexpr GenericIdent(auto name, auto what)
         : GenericExpr<A>(IR_eIDENT), m_what(what), m_name(name) {}
 
-    constexpr auto GetWhat() const { return m_what; }
-    constexpr auto GetName() const { return m_name.Get(); }
+    [[nodiscard]] constexpr auto GetWhat() const { return m_what; }
+    [[nodiscard]] constexpr auto GetName() const { return m_name.Get(); }
 
     constexpr void SetWhat(auto what) { m_what = what; }
     constexpr void SetName(auto name) { m_name = name; }
@@ -262,8 +262,8 @@ namespace ncc::ir {
     constexpr GenericExtern(auto value, auto abi_name)
         : GenericExpr<A>(IR_eEXTERN), m_value(value), m_abi_name(abi_name) {}
 
-    constexpr auto GetAbiName() const { return m_abi_name.Get(); }
-    constexpr auto GetValue() const { return m_value; }
+    [[nodiscard]] constexpr auto GetAbiName() const { return m_abi_name.Get(); }
+    [[nodiscard]] constexpr auto GetValue() const { return m_value; }
 
     constexpr void SetValue(auto value) { m_value = value; }
     constexpr void SetAbiName(auto abi_name) { m_abi_name = abi_name; }
@@ -289,11 +289,11 @@ namespace ncc::ir {
           m_storage(storage_class),
           m_readonly(readonly) {}
 
-    constexpr auto GetName() const { return m_name.Get(); }
-    constexpr auto GetValue() const { return m_value; }
-    constexpr auto GetAbiName() const { return m_abi_name; }
-    constexpr auto GetStorageClass() const { return m_storage; }
-    constexpr auto IsReadonly() const { return m_readonly; }
+    [[nodiscard]] constexpr auto GetName() const { return m_name.Get(); }
+    [[nodiscard]] constexpr auto GetValue() const { return m_value; }
+    [[nodiscard]] constexpr auto GetAbiName() const { return m_abi_name; }
+    [[nodiscard]] constexpr auto GetStorageClass() const { return m_storage; }
+    [[nodiscard]] constexpr auto IsReadonly() const { return m_readonly; }
 
     constexpr void SetAbiName(auto abi_name) { m_abi_name = abi_name; }
     constexpr void SetValue(auto value) { m_value = value; }
@@ -311,7 +311,7 @@ namespace ncc::ir {
   public:
     constexpr GenericRet(auto expr) : GenericExpr<A>(IR_eRET), m_expr(expr) {}
 
-    constexpr auto GetExpr() const { return m_expr; }
+    [[nodiscard]] constexpr auto GetExpr() const { return m_expr; }
     constexpr void SetExpr(auto expr) { m_expr = expr; }
   };
 
@@ -341,9 +341,9 @@ namespace ncc::ir {
     constexpr GenericIf(auto cond, auto then, auto ele)
         : GenericExpr<A>(IR_eIF), m_cond(cond), m_then(then), m_else(ele) {}
 
-    constexpr auto GetCond() const { return m_cond; }
-    constexpr auto GetThen() const { return m_then; }
-    constexpr auto GetElse() const { return m_else; }
+    [[nodiscard]] constexpr auto GetCond() const { return m_cond; }
+    [[nodiscard]] constexpr auto GetThen() const { return m_then; }
+    [[nodiscard]] constexpr auto GetElse() const { return m_else; }
 
     constexpr void SetCond(auto cond) { m_cond = cond; }
     constexpr void SetThen(auto then) { m_then = then; }
@@ -361,8 +361,8 @@ namespace ncc::ir {
     constexpr GenericWhile(auto cond, auto body)
         : GenericExpr<A>(IR_eWHILE), m_cond(cond), m_body(body) {}
 
-    constexpr auto GetCond() const { return m_cond; }
-    constexpr auto GetBody() const { return m_body; }
+    [[nodiscard]] constexpr auto GetCond() const { return m_cond; }
+    [[nodiscard]] constexpr auto GetBody() const { return m_body; }
 
     constexpr void SetCond(auto cond) { m_cond = cond; }
     constexpr void SetBody(auto body) { m_body = body; }
@@ -382,10 +382,10 @@ namespace ncc::ir {
           m_step(step),
           m_body(body) {}
 
-    constexpr auto GetInit() const { return m_init; }
-    constexpr auto GetCond() const { return m_cond; }
-    constexpr auto GetStep() const { return m_step; }
-    constexpr auto GetBody() const { return m_body; }
+    [[nodiscard]] constexpr auto GetInit() const { return m_init; }
+    [[nodiscard]] constexpr auto GetCond() const { return m_cond; }
+    [[nodiscard]] constexpr auto GetStep() const { return m_step; }
+    [[nodiscard]] constexpr auto GetBody() const { return m_body; }
 
     constexpr void SetInit(auto init) { m_init = init; }
     constexpr void SetCond(auto cond) { m_cond = cond; }
@@ -425,9 +425,9 @@ namespace ncc::ir {
           m_default(default_case),
           m_cases(cases) {}
 
-    constexpr auto GetCond() const { return m_cond; }
-    constexpr auto GetCases() const { return m_cases; }
-    constexpr auto GetDefault() const { return m_default; }
+    [[nodiscard]] constexpr auto GetCond() const { return m_cond; }
+    [[nodiscard]] constexpr auto GetCases() const { return m_cases; }
+    [[nodiscard]] constexpr auto GetDefault() const { return m_default; }
 
     constexpr void SetCond(auto cond) { m_cond = cond; }
     constexpr void SetDefault(auto default_case) { m_default = default_case; }
@@ -455,12 +455,12 @@ namespace ncc::ir {
           m_abi_name(abi_name),
           m_variadic(variadic) {}
 
-    constexpr auto GetParams() const { return m_params; }
-    constexpr auto GetReturn() const { return m_return; }
-    constexpr auto GetBody() const { return m_body; }
-    constexpr auto IsVariadic() const { return m_variadic; }
-    constexpr auto GetAbiName() const { return m_abi_name; }
-    constexpr auto GetName() const { return m_name.Get(); }
+    [[nodiscard]] constexpr auto GetParams() const { return m_params; }
+    [[nodiscard]] constexpr auto GetReturn() const { return m_return; }
+    [[nodiscard]] constexpr auto GetBody() const { return m_body; }
+    [[nodiscard]] constexpr auto IsVariadic() const { return m_variadic; }
+    [[nodiscard]] constexpr auto GetAbiName() const { return m_abi_name; }
+    [[nodiscard]] constexpr auto GetName() const { return m_name.Get(); }
 
     constexpr void SetName(auto name) { m_name = name; }
     constexpr void SetParams(auto params) { m_params = params; }

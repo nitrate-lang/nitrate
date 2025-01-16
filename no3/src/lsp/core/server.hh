@@ -60,7 +60,7 @@ namespace lsp {
     Message(MessageType type) : m_type(type) {}
     virtual ~Message() = default;
 
-    MessageType Type() const { return m_type; }
+    [[nodiscard]] MessageType Type() const { return m_type; }
   };
 
   typedef std::variant<std::string, int64_t> MessageId;
@@ -79,9 +79,9 @@ namespace lsp {
           m_params(std::move(params)) {}
     virtual ~RequestMessage() = default;
 
-    const MessageId& Id() const { return m_id; }
-    const std::string& Method() const { return m_method; }
-    const rapidjson::Document& Params() const { return m_params; }
+    [[nodiscard]] const MessageId& Id() const { return m_id; }
+    [[nodiscard]] const std::string& Method() const { return m_method; }
+    [[nodiscard]] const rapidjson::Document& Params() const { return m_params; }
 
     void Print(std::ostream& os) const {
       os << "{\"id\": ";
@@ -105,8 +105,8 @@ namespace lsp {
           m_params(std::move(params)) {}
     virtual ~NotificationMessage() = default;
 
-    const std::string& Method() const { return m_method; }
-    const rapidjson::Document& Params() const { return m_params; }
+    [[nodiscard]] const std::string& Method() const { return m_method; }
+    [[nodiscard]] const rapidjson::Document& Params() const { return m_params; }
 
     void Print(std::ostream& os) const {
       os << "{\"method\": \"" << m_method << "\"}";
@@ -241,11 +241,11 @@ namespace lsp {
 
     virtual ~ResponseMessage() = default;
 
-    const MessageId& Id() const { return m_id; }
+    [[nodiscard]] const MessageId& Id() const { return m_id; }
     std::optional<rapidjson::Document>& Result() { return m_result; }
     std::optional<ResponseError>& Error() { return m_error; }
 
-    std::string ToString() const {
+    [[nodiscard]] std::string ToString() const {
       rapidjson::StringBuffer buffer;
       rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
       rapidjson::Document doc(rapidjson::kObjectType);

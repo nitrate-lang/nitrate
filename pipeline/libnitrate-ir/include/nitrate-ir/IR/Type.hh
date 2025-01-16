@@ -178,8 +178,8 @@ namespace ncc::ir {
           m_pointee(pointee),
           m_native_size(native_size) {}
 
-    constexpr auto GetPointee() const { return m_pointee; }
-    constexpr auto GetNativeSize() const { return m_native_size; }
+    [[nodiscard]] constexpr auto GetPointee() const { return m_pointee; }
+    [[nodiscard]] constexpr auto GetNativeSize() const { return m_native_size; }
   };
 
   template <class A>
@@ -192,7 +192,7 @@ namespace ncc::ir {
     constexpr GenericConstTy(auto item)
         : GenericType<A>(IR_tCONST), m_item(item) {}
 
-    constexpr auto GetItem() const { return m_item; }
+    [[nodiscard]] constexpr auto GetItem() const { return m_item; }
   };
 
   template <class A>
@@ -205,7 +205,7 @@ namespace ncc::ir {
     constexpr GenericOpaqueTy(auto name)
         : GenericType<A>(IR_tOPAQUE), m_name(name) {}
 
-    constexpr auto GetName() const { return m_name.Get(); }
+    [[nodiscard]] constexpr auto GetName() const { return m_name.Get(); }
   };
 
   template <class A>
@@ -218,7 +218,7 @@ namespace ncc::ir {
     constexpr GenericStructTy(auto fields)
         : GenericType<A>(IR_tSTRUCT), m_fields(fields) {}
 
-    constexpr auto GetFields() const { return m_fields; }
+    [[nodiscard]] constexpr auto GetFields() const { return m_fields; }
   };
 
   template <class A>
@@ -231,7 +231,7 @@ namespace ncc::ir {
     constexpr GenericUnionTy(auto fields)
         : GenericType<A>(IR_tUNION), m_fields(fields) {}
 
-    constexpr auto GetFields() const { return m_fields; }
+    [[nodiscard]] constexpr auto GetFields() const { return m_fields; }
   };
 
   template <class A>
@@ -245,8 +245,8 @@ namespace ncc::ir {
     constexpr GenericArrayTy(auto element, auto size)
         : GenericType<A>(IR_tARRAY), m_element(element), m_size(size) {}
 
-    constexpr auto GetElement() const { return m_element; }
-    constexpr auto GetCount() const { return m_size; }
+    [[nodiscard]] constexpr auto GetElement() const { return m_element; }
+    [[nodiscard]] constexpr auto GetCount() const { return m_size; }
   };
 
   template <class A>
@@ -267,10 +267,10 @@ namespace ncc::ir {
           m_native_size(native_size),
           m_variadic(variadic) {}
 
-    constexpr auto GetParams() const { return m_params; }
-    constexpr auto GetReturn() const { return m_return; }
-    constexpr auto IsVariadic() const { return m_variadic; }
-    constexpr auto GetNativeSize() const { return m_native_size; }
+    [[nodiscard]] constexpr auto GetParams() const { return m_params; }
+    [[nodiscard]] constexpr auto GetReturn() const { return m_return; }
+    [[nodiscard]] constexpr auto IsVariadic() const { return m_variadic; }
+    [[nodiscard]] constexpr auto GetNativeSize() const { return m_native_size; }
   };
 
   template <class A>
@@ -285,7 +285,7 @@ namespace ncc::ir {
         : GenericType<A>(IR_tTMP), m_type(type), m_data(data) {}
 
     auto GetTmpType() { return m_type; }
-    auto GetData() const { return m_data; }
+    [[nodiscard]] auto GetData() const { return m_data; }
   };
 
   static inline U1Ty* GetU1Ty() {

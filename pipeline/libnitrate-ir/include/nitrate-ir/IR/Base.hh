@@ -86,8 +86,8 @@ namespace ncc::ir {
     static constexpr uint32_t GetKindSize(NrTyT kind);
     static constexpr const char *GetKindName(NrTyT kind);
 
-    constexpr auto GetKind() const { return m_node_type; }
-    constexpr const char *GetKindName() const {
+    [[nodiscard]] constexpr auto GetKind() const { return m_node_type; }
+    [[nodiscard]] constexpr const char *GetKindName() const {
       return GetKindName(m_node_type);
     }
 
@@ -224,23 +224,23 @@ namespace ncc::ir {
       }
     }
 
-    constexpr bool IsLiteral() const {
+    [[nodiscard]] constexpr bool IsLiteral() const {
       return m_node_type == IR_eINT || m_node_type == IR_eFLOAT;
     }
 
-    constexpr std::string_view GetName() const;
+    [[nodiscard]] constexpr std::string_view GetName() const;
 
-    constexpr auto Begin() const {
+    [[nodiscard]] constexpr auto Begin() const {
       return parse::ExtensionDataStore.Get(m_loc).Begin();
     }
     constexpr auto Begin(lex::IScanner &rd) const { return Begin().Get(rd); }
 
-    constexpr auto End() const {
+    [[nodiscard]] constexpr auto End() const {
       return parse::ExtensionDataStore.Get(m_loc).End();
     }
     constexpr auto End(lex::IScanner &rd) const { return End().Get(rd); }
 
-    constexpr auto GetLoc() const { return m_loc; }
+    [[nodiscard]] constexpr auto GetLoc() const { return m_loc; }
     constexpr void SetLoc(SrcLoc loc) { m_loc = loc; }
 
     constexpr void SetLoc(lex::LocationID begin, lex::LocationID end) {
@@ -292,7 +292,7 @@ namespace ncc::ir {
 
     constexpr GenericExpr *AsExpr() { return this; }
     constexpr GenericType<A> *AsType();
-    constexpr const GenericType<A> *AsType() const {
+    [[nodiscard]] constexpr const GenericType<A> *AsType() const {
       return const_cast<GenericExpr<A> *>(this)->AsType();
     }
 
@@ -311,7 +311,7 @@ namespace ncc::ir {
                            is_for_debug);
     }
 
-    std::string ToString() const {
+    [[nodiscard]] std::string ToString() const {
       std::stringstream ss;
       Dump(ss, false);
       return ss.str();
@@ -328,11 +328,11 @@ namespace ncc::ir {
   public:
     constexpr GenericType(NrTyT ty) : GenericExpr<A>(ty) {}
 
-    std::optional<uint64_t> GetSizeBits() const {
+    [[nodiscard]] std::optional<uint64_t> GetSizeBits() const {
       return detail::TypeGetSizeBitsImpl(reinterpret_cast<const Type *>(this));
     }
 
-    std::optional<uint64_t> GetSizeBytes() const {
+    [[nodiscard]] std::optional<uint64_t> GetSizeBytes() const {
       if (auto size = GetSizeBits()) [[likely]] {
         return std::ceil(size.value() / 8.0);
       } else {
@@ -340,11 +340,11 @@ namespace ncc::ir {
       }
     }
 
-    std::optional<uint64_t> GetAlignBits() const {
+    [[nodiscard]] std::optional<uint64_t> GetAlignBits() const {
       return detail::TypeGetAlignBitsImpl(reinterpret_cast<const Type *>(this));
     }
 
-    std::optional<uint64_t> GetAlignBytes() const {
+    [[nodiscard]] std::optional<uint64_t> GetAlignBytes() const {
       if (auto align = GetAlignBits()) [[likely]] {
         return std::ceil(align.value() / 8.0);
       } else {
@@ -352,7 +352,7 @@ namespace ncc::ir {
       }
     }
 
-    constexpr bool IsPrimitive() const {
+    [[nodiscard]] constexpr bool IsPrimitive() const {
       switch (this->GetKind()) {
         case IR_tU1:
         case IR_tU8:
@@ -376,12 +376,12 @@ namespace ncc::ir {
       }
     }
 
-    constexpr bool IsArray() const { return this->GetKind() == IR_tARRAY; }
-    constexpr bool IsPointer() const { return this->GetKind() == IR_tPTR; }
-    constexpr bool IsReadonly() const { return this->GetKind() == IR_tCONST; }
-    constexpr bool IsFunction() const { return this->GetKind() == IR_tFUNC; }
+    [[nodiscard]] constexpr bool IsArray() const { return this->GetKind() == IR_tARRAY; }
+    [[nodiscard]] constexpr bool IsPointer() const { return this->GetKind() == IR_tPTR; }
+    [[nodiscard]] constexpr bool IsReadonly() const { return this->GetKind() == IR_tCONST; }
+    [[nodiscard]] constexpr bool IsFunction() const { return this->GetKind() == IR_tFUNC; }
 
-    constexpr bool IsComposite() const {
+    [[nodiscard]] constexpr bool IsComposite() const {
       switch (this->GetKind()) {
         case IR_tSTRUCT:
         case IR_tUNION:
@@ -392,9 +392,9 @@ namespace ncc::ir {
       }
     }
 
-    constexpr bool IsUnion() const { return this->GetKind() == IR_tUNION; }
+    [[nodiscard]] constexpr bool IsUnion() const { return this->GetKind() == IR_tUNION; }
 
-    constexpr bool IsNumeric() const {
+    [[nodiscard]] constexpr bool IsNumeric() const {
       switch (this->GetKind()) {
         case IR_tU1:
         case IR_tU8:
@@ -417,7 +417,7 @@ namespace ncc::ir {
       }
     }
 
-    constexpr bool IsIntegral() const {
+    [[nodiscard]] constexpr bool IsIntegral() const {
       switch (this->GetKind()) {
         case IR_tU1:
         case IR_tU8:
@@ -436,7 +436,7 @@ namespace ncc::ir {
       }
     }
 
-    constexpr bool IsFloatingPoint() const {
+    [[nodiscard]] constexpr bool IsFloatingPoint() const {
       switch (this->GetKind()) {
         case IR_tF16_TY:
         case IR_tF32_TY:
@@ -448,7 +448,7 @@ namespace ncc::ir {
       }
     }
 
-    constexpr bool IsSigned() const {
+    [[nodiscard]] constexpr bool IsSigned() const {
       switch (this->GetKind()) {
         case IR_tI8:
         case IR_tI16:
@@ -465,7 +465,7 @@ namespace ncc::ir {
       }
     }
 
-    constexpr bool IsUnsigned() const {
+    [[nodiscard]] constexpr bool IsUnsigned() const {
       switch (this->GetKind()) {
         case IR_tU1:
         case IR_tU8:
@@ -479,8 +479,8 @@ namespace ncc::ir {
       }
     }
 
-    constexpr bool IsVoid() const { return this->GetKind() == IR_tVOID; }
-    constexpr bool IsBool() const { return this->GetKind() == IR_tU1; }
+    [[nodiscard]] constexpr bool IsVoid() const { return this->GetKind() == IR_tVOID; }
+    [[nodiscard]] constexpr bool IsBool() const { return this->GetKind() == IR_tU1; }
   };
 
   template <class A>

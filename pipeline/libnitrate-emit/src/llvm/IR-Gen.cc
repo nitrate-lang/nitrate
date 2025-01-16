@@ -355,7 +355,7 @@ public:
     m_os.seekp(curpos);
   }
 
-  uint64_t current_pos() const override {
+  [[nodiscard]] uint64_t current_pos() const override {
     auto pos = m_os.tellp();
     qcore_assert(pos != -1, "failed to get current position");
 

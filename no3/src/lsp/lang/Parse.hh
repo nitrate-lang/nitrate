@@ -15,10 +15,10 @@ namespace lang {
     ParseTreeWrapper();
     ~ParseTreeWrapper();
 
-    bool IsOkay() const { return m_root != nullptr; }
+    [[nodiscard]] bool IsOkay() const { return m_root != nullptr; }
     bool FromSyncfs(const std::string& uri);
 
-    const ncc::parse::Base* Root() const { return m_root; }
+    [[nodiscard]] const ncc::parse::Base* Root() const { return m_root; }
   };
   using ParseTree = std::shared_ptr<ParseTreeWrapper>;
 

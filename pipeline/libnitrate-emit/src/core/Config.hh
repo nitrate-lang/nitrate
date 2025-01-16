@@ -44,7 +44,7 @@ struct QCodegenConfig {
 private:
   std::vector<QcodeSettingT> m_data;
 
-  bool VerifyPrechange(QcodeKeyT, QcodeValT) const { return true; }
+  [[nodiscard]] bool VerifyPrechange(QcodeKeyT, QcodeValT) const { return true; }
 
 public:
   QCodegenConfig() = default;
@@ -68,7 +68,7 @@ public:
     return true;
   }
 
-  std::optional<QcodeValT> Get(QcodeKeyT key) const {
+  [[nodiscard]] std::optional<QcodeValT> Get(QcodeKeyT key) const {
     auto it = std::find_if(
         m_data.begin(), m_data.end(),
         [key](const QcodeSettingT &setting) { return setting.m_key == key; });
@@ -90,7 +90,7 @@ public:
     m_data.shrink_to_fit();
   }
 
-  bool Has(QcodeKeyT option, QcodeValT value) const;
+  [[nodiscard]] bool Has(QcodeKeyT option, QcodeValT value) const;
 };
 
 #endif  // __NITRATE_CODEGEN_CORE_CONFIG_H__
