@@ -58,125 +58,125 @@ namespace ncc::parse {
      *  Primary language constructs
      ****************************************************************************/
 
-    FlowPtr<Stmt> RecurseExport(Vis vis);
-    std::vector<FlowPtr<Stmt>> RecurseVariable(VarDeclType type);
-    FlowPtr<Stmt> RecurseEnum();
-    FlowPtr<Stmt> RecurseStruct(CompositeType type);
-    FlowPtr<Stmt> RecurseScope();
-    FlowPtr<Stmt> RecurseFunction(bool parse_declaration_only);
-    FlowPtr<Type> RecurseType();
-    FlowPtr<Stmt> RecurseTypedef();
-    FlowPtr<Stmt> RecurseReturn();
-    FlowPtr<Stmt> RecurseRetif();
-    FlowPtr<Stmt> RecurseIf();
-    FlowPtr<Stmt> RecurseWhile();
-    FlowPtr<Stmt> RecurseFor();
-    FlowPtr<Stmt> RecurseForeach();
-    FlowPtr<Stmt> RecurseSwitch();
-    FlowPtr<Stmt> RecurseInlineAsm();
-    FlowPtr<Stmt> RecurseTry();
-    FlowPtr<Stmt> RecurseThrow();
-    FlowPtr<Stmt> RecurseAwait();
-    FlowPtr<Stmt> RecurseBlock(bool expect_braces, bool single_stmt,
-                               SafetyMode safety);
-    FlowPtr<Expr> RecurseExpr(const std::set<ncc::lex::Token> &terminators);
-    NullableFlowPtr<Expr> RecurseExprPrimary(bool is_type);
-    NullableFlowPtr<Expr> RecurseExprKeyword(lex::Keyword key);
-    NullableFlowPtr<Expr> RecurseExprPunctor(lex::Punctor punc);
-    FlowPtr<Expr> RecurseExprTypeSuffix(FlowPtr<Expr> base);
+    auto RecurseExport(Vis vis) -> FlowPtr<Stmt>;
+    auto RecurseVariable(VarDeclType type) -> std::vector<FlowPtr<Stmt>>;
+    auto RecurseEnum() -> FlowPtr<Stmt>;
+    auto RecurseStruct(CompositeType type) -> FlowPtr<Stmt>;
+    auto RecurseScope() -> FlowPtr<Stmt>;
+    auto RecurseFunction(bool parse_declaration_only) -> FlowPtr<Stmt>;
+    auto RecurseType() -> FlowPtr<Type>;
+    auto RecurseTypedef() -> FlowPtr<Stmt>;
+    auto RecurseReturn() -> FlowPtr<Stmt>;
+    auto RecurseRetif() -> FlowPtr<Stmt>;
+    auto RecurseIf() -> FlowPtr<Stmt>;
+    auto RecurseWhile() -> FlowPtr<Stmt>;
+    auto RecurseFor() -> FlowPtr<Stmt>;
+    auto RecurseForeach() -> FlowPtr<Stmt>;
+    auto RecurseSwitch() -> FlowPtr<Stmt>;
+    auto RecurseInlineAsm() -> FlowPtr<Stmt>;
+    auto RecurseTry() -> FlowPtr<Stmt>;
+    auto RecurseThrow() -> FlowPtr<Stmt>;
+    auto RecurseAwait() -> FlowPtr<Stmt>;
+    auto RecurseBlock(bool expect_braces, bool single_stmt,
+                               SafetyMode safety) -> FlowPtr<Stmt>;
+    auto RecurseExpr(const std::set<ncc::lex::Token> &terminators) -> FlowPtr<Expr>;
+    auto RecurseExprPrimary(bool is_type) -> NullableFlowPtr<Expr>;
+    auto RecurseExprKeyword(lex::Keyword key) -> NullableFlowPtr<Expr>;
+    auto RecurseExprPunctor(lex::Punctor punc) -> NullableFlowPtr<Expr>;
+    auto RecurseExprTypeSuffix(FlowPtr<Expr> base) -> FlowPtr<Expr>;
 
     /****************************************************************************
      * @brief
      *  Helper functions
      ****************************************************************************/
 
-    FlowPtr<Stmt> MockStmt(std::optional<npar_ty_t> expected = std::nullopt);
-    FlowPtr<Expr> MockExpr(std::optional<npar_ty_t> expected = std::nullopt);
-    FlowPtr<Type> MockType();
+    auto MockStmt(std::optional<npar_ty_t> expected = std::nullopt) -> FlowPtr<Stmt>;
+    auto MockExpr(std::optional<npar_ty_t> expected = std::nullopt) -> FlowPtr<Expr>;
+    auto MockType() -> FlowPtr<Type>;
 
-    string RecurseEnumName();
-    NullableFlowPtr<Type> RecurseEnumType();
-    NullableFlowPtr<Expr> RecurseEnumItemValue();
-    std::optional<EnumItem> RecurseEnumItem();
-    std::optional<EnumDefItems> RecurseEnumItems();
+    auto RecurseEnumName() -> string;
+    auto RecurseEnumType() -> NullableFlowPtr<Type>;
+    auto RecurseEnumItemValue() -> NullableFlowPtr<Expr>;
+    auto RecurseEnumItem() -> std::optional<EnumItem>;
+    auto RecurseEnumItems() -> std::optional<EnumDefItems>;
 
-    string RecurseAbiName();
-    std::optional<ExpressionList> RecurseExportAttributes();
-    FlowPtr<Stmt> RecurseExportBody();
+    auto RecurseAbiName() -> string;
+    auto RecurseExportAttributes() -> std::optional<ExpressionList>;
+    auto RecurseExportBody() -> FlowPtr<Stmt>;
 
-    CallArgs RecurseCallArguments(const std::set<lex::Token> &terminators,
-                                  bool type_by_default);
-    FlowPtr<Expr> RecurseFstring();
+    auto RecurseCallArguments(const std::set<lex::Token> &terminators,
+                                  bool type_by_default) -> CallArgs;
+    auto RecurseFstring() -> FlowPtr<Expr>;
 
-    NullableFlowPtr<Stmt> RecurseForInitExpr();
-    NullableFlowPtr<Expr> RecurseForCondition();
-    NullableFlowPtr<Expr> RecurseForStepExpr(bool has_paren);
-    FlowPtr<Stmt> RecurseForBody();
+    auto RecurseForInitExpr() -> NullableFlowPtr<Stmt>;
+    auto RecurseForCondition() -> NullableFlowPtr<Expr>;
+    auto RecurseForStepExpr(bool has_paren) -> NullableFlowPtr<Expr>;
+    auto RecurseForBody() -> FlowPtr<Stmt>;
 
-    std::optional<std::pair<string, string>> RecurseForeachNames();
-    FlowPtr<Expr> RecurseForeachExpr(bool has_paren);
-    FlowPtr<Stmt> RecurseForeachBody();
+    auto RecurseForeachNames() -> std::optional<std::pair<string, string>>;
+    auto RecurseForeachExpr(bool has_paren) -> FlowPtr<Expr>;
+    auto RecurseForeachBody() -> FlowPtr<Stmt>;
 
-    FlowPtr<Type> RecurseFunctionParameterType();
-    NullableFlowPtr<Expr> RecurseFunctionParameterValue();
-    std::optional<FuncParam> RecurseFunctionParameter();
-    std::optional<TemplateParameters> RecurseTemplateParameters();
-    std::pair<FuncParams, bool> RecurseFunctionParameters();
-    NullableFlowPtr<Stmt> RecurseFunctionBody(bool parse_declaration_only);
-    FlowPtr<Type> RecurseFunctionReturnType();
-    static Purity GetPuritySpecifier(lex::Token start_pos, bool is_thread_safe,
+    auto RecurseFunctionParameterType() -> FlowPtr<Type>;
+    auto RecurseFunctionParameterValue() -> NullableFlowPtr<Expr>;
+    auto RecurseFunctionParameter() -> std::optional<FuncParam>;
+    auto RecurseTemplateParameters() -> std::optional<TemplateParameters>;
+    auto RecurseFunctionParameters() -> std::pair<FuncParams, bool>;
+    auto RecurseFunctionBody(bool parse_declaration_only) -> NullableFlowPtr<Stmt>;
+    auto RecurseFunctionReturnType() -> FlowPtr<Type>;
+    static auto GetPuritySpecifier(lex::Token start_pos, bool is_thread_safe,
                                      bool is_pure, bool is_impure,
-                                     bool is_quasi, bool is_retro);
-    std::optional<std::pair<string, bool>> RecurseFunctionCapture();
-    std::tuple<ExpressionList, FnCaptures, Purity, string>
-    RecurseFunctionAmbigouis();
+                                     bool is_quasi, bool is_retro) -> Purity;
+    auto RecurseFunctionCapture() -> std::optional<std::pair<string, bool>>;
+    auto
+    RecurseFunctionAmbigouis() -> std::tuple<ExpressionList, FnCaptures, Purity, string>;
 
-    FlowPtr<Stmt> RecurseIfThen();
-    NullableFlowPtr<Stmt> RecurseIfElse();
+    auto RecurseIfThen() -> FlowPtr<Stmt>;
+    auto RecurseIfElse() -> NullableFlowPtr<Stmt>;
 
-    string RecurseScopeName();
-    std::optional<ScopeDeps> RecurseScopeDeps();
-    FlowPtr<Stmt> RecurseScopeBlock();
+    auto RecurseScopeName() -> string;
+    auto RecurseScopeDeps() -> std::optional<ScopeDeps>;
+    auto RecurseScopeBlock() -> FlowPtr<Stmt>;
 
     struct StructContent {
       StructDefFields m_fields;
       StructDefMethods m_methods;
       StructDefStaticMethods m_static_methods;
     };
-    ExpressionList RecurseStructAttributes();
-    string RecurseStructName();
-    StructDefNames RecurseStructTerms();
-    NullableFlowPtr<Expr> RecurseStructFieldDefaultValue();
+    auto RecurseStructAttributes() -> ExpressionList;
+    auto RecurseStructName() -> string;
+    auto RecurseStructTerms() -> StructDefNames;
+    auto RecurseStructFieldDefaultValue() -> NullableFlowPtr<Expr>;
     void RecurseStructField(Vis vis, bool is_static, StructDefFields &fields);
     void RecurseStructMethodOrField(StructContent &body);
-    StructContent RecurseStructBody();
+    auto RecurseStructBody() -> StructContent;
 
-    FlowPtr<Stmt> RecurseSwitchCaseBody();
-    std::pair<FlowPtr<Stmt>, bool> RecurseSwitchCase();
-    std::optional<std::pair<SwitchCases, NullableFlowPtr<Stmt>>>
-    RecurseSwitchBody();
+    auto RecurseSwitchCaseBody() -> FlowPtr<Stmt>;
+    auto RecurseSwitchCase() -> std::pair<FlowPtr<Stmt>, bool>;
+    auto
+    RecurseSwitchBody() -> std::optional<std::pair<SwitchCases, NullableFlowPtr<Stmt>>>;
 
-    NullableFlowPtr<Expr> RecurseTypeRangeStart();
-    NullableFlowPtr<Expr> RecurseTypeRangeEnd();
-    std::optional<CallArgs> RecurseTypeTemplateArguments();
-    FlowPtr<Type> RecurseTypeSuffix(FlowPtr<Type> base);
-    FlowPtr<Type> RecurseFunctionType();
-    FlowPtr<Type> RecurseOpaqueType();
-    FlowPtr<Type> RecurseTypeByKeyword(lex::Keyword key);
-    FlowPtr<Type> RecurseTypeByOperator(lex::Operator op);
-    FlowPtr<Type> RecurseArrayOrVector();
-    FlowPtr<Type> RecurseSetType();
-    FlowPtr<Type> RecurseTupleType();
-    FlowPtr<Type> RecurseTypeByPunctuation(lex::Punctor punc);
-    FlowPtr<Type> RecurseTypeByName(string name);
+    auto RecurseTypeRangeStart() -> NullableFlowPtr<Expr>;
+    auto RecurseTypeRangeEnd() -> NullableFlowPtr<Expr>;
+    auto RecurseTypeTemplateArguments() -> std::optional<CallArgs>;
+    auto RecurseTypeSuffix(FlowPtr<Type> base) -> FlowPtr<Type>;
+    auto RecurseFunctionType() -> FlowPtr<Type>;
+    auto RecurseOpaqueType() -> FlowPtr<Type>;
+    auto RecurseTypeByKeyword(lex::Keyword key) -> FlowPtr<Type>;
+    auto RecurseTypeByOperator(lex::Operator op) -> FlowPtr<Type>;
+    auto RecurseArrayOrVector() -> FlowPtr<Type>;
+    auto RecurseSetType() -> FlowPtr<Type>;
+    auto RecurseTupleType() -> FlowPtr<Type>;
+    auto RecurseTypeByPunctuation(lex::Punctor punc) -> FlowPtr<Type>;
+    auto RecurseTypeByName(string name) -> FlowPtr<Type>;
 
-    std::optional<ExpressionList> RecurseVariableAttributes();
-    NullableFlowPtr<Type> RecurseVariableType();
-    NullableFlowPtr<Expr> RecurseVariableValue();
-    NullableFlowPtr<Stmt> RecurseVariableInstance(VarDeclType decl_type);
+    auto RecurseVariableAttributes() -> std::optional<ExpressionList>;
+    auto RecurseVariableType() -> NullableFlowPtr<Type>;
+    auto RecurseVariableValue() -> NullableFlowPtr<Expr>;
+    auto RecurseVariableInstance(VarDeclType decl_type) -> NullableFlowPtr<Stmt>;
 
-    FlowPtr<Expr> RecurseWhileCond();
-    FlowPtr<Stmt> RecurseWhileBody();
+    auto RecurseWhileCond() -> FlowPtr<Expr>;
+    auto RecurseWhileBody() -> FlowPtr<Stmt>;
 
   public:
     PImpl(lex::IScanner &lexer, std::shared_ptr<Environment> env,

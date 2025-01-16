@@ -62,18 +62,18 @@ Sequencer::PImpl::PImpl(std::shared_ptr<Environment> env)
 
 Sequencer::PImpl::~PImpl() { lua_close(m_L); }
 
-static inline std::string_view Ltrim(std::string_view s) {
+static inline auto Ltrim(std::string_view s) -> std::string_view {
   s.remove_prefix(std::min(s.find_first_not_of(" \t\n\r"), s.size()));
   return s;
 }
 
-static inline std::string_view Rtrim(std::string_view s) {
+static inline auto Rtrim(std::string_view s) -> std::string_view {
   s.remove_suffix(
       std::min(s.size() - s.find_last_not_of(" \t\n\r") - 1, s.size()));
   return s;
 }
 
-bool Sequencer::ApplyDynamicTransforms(Token last) {
+auto Sequencer::ApplyDynamicTransforms(Token last) -> bool {
   /**
    * @brief We do it this way because the callback could potentially modify the
    * `m_defer` vector, which would invalidate the iterator.
@@ -129,7 +129,7 @@ void Sequencer::RecursiveExpand(std::string_view code) {
   }
 }
 
-bool Sequencer::ExecuteLua(const char *code) {
+auto Sequencer::ExecuteLua(const char *code) -> bool {
   auto top = lua_gettop(m_core->m_L);
   auto rc = luaL_dostring(m_core->m_L, code);
 
@@ -160,12 +160,12 @@ public:
   RecursiveGuard(size_t &depth) : m_depth(depth) { m_depth++; }
   ~RecursiveGuard() { m_depth--; }
 
-  [[nodiscard]] bool ShouldStop() const {
+  [[nodiscard]] auto ShouldStop() const -> bool {
     return m_depth >= kMaxRecursionDepth;
   }
 };
 
-Token Sequencer::GetNext() {
+auto Sequencer::GetNext() -> Token {
 func_entry:  // do tail call optimization manually
 
   Token x;
@@ -376,22 +376,22 @@ Sequencer::Sequencer(std::istream &file, std::shared_ptr<ncc::Environment> env,
   }
 }
 
-std::optional<std::vector<std::string>> Sequencer::GetSourceWindow(
-    Point start, Point end, char fillchar) {
+auto Sequencer::GetSourceWindow(
+    Point start, Point end, char fillchar) -> std::optional<std::vector<std::string>> {
   return m_scanner->GetSourceWindow(start, end, fillchar);
 }
 
-static std::string DynfetchGetMapkey(std::string_view module_name) {
+static auto DynfetchGetMapkey(std::string_view module_name) -> std::string {
   return "map." + std::string(module_name);
 }
 
-static std::string DynfetchGetUri(std::string_view module_name,
-                                  std::string_view jobid) {
+static auto DynfetchGetUri(std::string_view module_name,
+                                  std::string_view jobid) -> std::string {
   return "file:///package/" + std::string(jobid) + "/" +
          std::string(module_name);
 }
 
-static std::string CanonicalizeModuleName(std::string_view module_name) {
+static auto CanonicalizeModuleName(std::string_view module_name) -> std::string {
   std::string text(module_name);
 
   for (size_t pos = 0; (pos = text.find("::", pos)) != std::string::npos;
@@ -415,8 +415,8 @@ void Sequencer::SetFetchFunc(FetchModuleFunc func) {
   m_core->m_fetch_module = func;
 }
 
-std::optional<std::string> Sequencer::PImpl::FetchModuleData(
-    std::string_view raw_module_name) {
+auto Sequencer::PImpl::FetchModuleData(
+    std::string_view raw_module_name) -> std::optional<std::string> {
   auto module_name = CanonicalizeModuleName(raw_module_name);
 
   /* Dynamic translation of module names into their actual named */
@@ -444,8 +444,8 @@ std::optional<std::string> Sequencer::PImpl::FetchModuleData(
   return module;
 }
 
-NCC_EXPORT std::optional<std::string> ncc::seq::FileSystemFetchModule(
-    std::string_view path) {
+NCC_EXPORT auto ncc::seq::FileSystemFetchModule(
+    std::string_view path) -> std::optional<std::string> {
   if (!path.starts_with("file:///package/")) {
     return std::nullopt;
   }

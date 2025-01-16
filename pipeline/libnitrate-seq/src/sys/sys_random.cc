@@ -41,7 +41,7 @@ extern "C" {
 #include <lua/lauxlib.h>
 }
 
-int ncc::seq::SysRandom(lua_State* L) {
+auto ncc::seq::SysRandom(lua_State* L) -> int {
   int64_t min;
   int64_t max;
 

@@ -111,10 +111,10 @@ enum QCoreLog : uint8_t {
 };
 
 void QCoreBegin();
-int QCoreVWriteF(const char *fmt, va_list args);
+auto QCoreVWriteF(const char *fmt, va_list args) -> int;
 void QCoreEnd(QCoreLog level);
 
-static inline int QCoreWritef(const char *fmt, ...) {
+static inline auto QCoreWritef(const char *fmt, ...) -> int {
   va_list args;
   va_start(args, fmt);
   int ret = QCoreVWriteF(fmt, args);
@@ -122,7 +122,7 @@ static inline int QCoreWritef(const char *fmt, ...) {
   return ret;
 }
 
-static inline int QCoreWrite(const char *msg) { return QCoreWritef("%s", msg); }
+static inline auto QCoreWrite(const char *msg) -> int { return QCoreWritef("%s", msg); }
 
 #define qcore_logf(_lvl, ...) \
   do {                        \

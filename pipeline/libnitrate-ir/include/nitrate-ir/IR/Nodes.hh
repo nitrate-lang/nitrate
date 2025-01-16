@@ -39,10 +39,10 @@
 #include <nitrate-ir/IR/Type.hh>
 
 namespace ncc::ir {
-  FlowPtr<Expr> CreateIgn();
+  auto CreateIgn() -> FlowPtr<Expr>;
 
   template <typename T, typename... Args>
-  static constexpr inline T *Create(Args &&...args) {
+  static constexpr inline auto Create(Args &&...args) -> T * {
     /**
      * Create nodes and minimizes the number of allocations by reusing
      * immutable items.
@@ -133,7 +133,7 @@ namespace ncc::ir {
 
   /** Add source debugging information to an IR node */
   template <typename T>
-  static inline T *DebugInfo(T *n, uint32_t, uint32_t) {
+  static inline auto DebugInfo(T *n, uint32_t, uint32_t) -> T * {
     /// TODO: Store source location information
     return n;
   }

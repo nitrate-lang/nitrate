@@ -38,7 +38,7 @@ using namespace ncc;
 
 NCC_EXPORT thread_local LoggerContext ncc::Log;
 
-NCC_EXPORT std::string ncc::Formatter(std::string_view msg, Sev sev) {
+NCC_EXPORT auto ncc::Formatter(std::string_view msg, Sev sev) -> std::string {
   std::stringstream ss;
 
   switch (sev) {
@@ -156,7 +156,7 @@ NCC_EXPORT void ECBase::Finalize() {
   m_json = oss.str();
 }
 
-size_t LoggerContext::Subscribe(LogCallback cb) {
+auto LoggerContext::Subscribe(LogCallback cb) -> size_t {
   m_subscribers.push_back(std::move(cb));
   return m_subscribers.size() - 1;
 }
@@ -169,7 +169,7 @@ void LoggerContext::Unsubscribe(size_t idx) {
 
 void LoggerContext::UnsubscribeAll() { m_subscribers.clear(); }
 
-size_t LoggerContext::AddFilter(LogFilterFunc filter) {
+auto LoggerContext::AddFilter(LogFilterFunc filter) -> size_t {
   m_filters.push_back(filter);
   return m_filters.size() - 1;
 }

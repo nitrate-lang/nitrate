@@ -55,56 +55,58 @@ namespace ncc::seq {
     lua_State* m_L = nullptr;
     size_t m_depth = 0;
 
-    std::optional<std::string> FetchModuleData(std::string_view module_name);
+    auto FetchModuleData(std::string_view module_name)
+        -> std::optional<std::string>;
 
     PImpl(std::shared_ptr<Environment> env);
     ~PImpl();
   };
 
-  using QsyscallT = int (*)(lua_State*);
+  using APICall = int (*)(lua_State*);
+
   class QSysCall final {
     std::string_view m_name;
     uint32_t m_id;
-    QsyscallT m_func;
+    APICall m_func;
 
   public:
     QSysCall(std::string_view name = "", uint32_t id = 0,
-             QsyscallT func = nullptr)
+             APICall func = nullptr)
         : m_name(name), m_id(id), m_func(func) {}
 
-    [[nodiscard]] std::string_view GetName() const { return m_name; }
-    [[nodiscard]] uint32_t GetId() const { return m_id; }
-    [[nodiscard]] QsyscallT GetFunc() const { return m_func; }
+    [[nodiscard]] auto GetName() const { return m_name; }
+    [[nodiscard]] auto GetId() const { return m_id; }
+    [[nodiscard]] auto GetFunc() const { return m_func; }
   };
 
   ///////////// BEGIN QCALL FUNCTIONS /////////////
 
   /* ==== Source processing ==== */
-  int SysNext(lua_State* l);
-  int SysPeek(lua_State* l);
-  int SysEmit(lua_State* l);
-  int SysDefer(lua_State* l);
+  auto SysNext(lua_State* l) -> int;
+  auto SysPeek(lua_State* l) -> int;
+  auto SysEmit(lua_State* l) -> int;
+  auto SysDefer(lua_State* l) -> int;
 
   /* ===== Message Logging ===== */
-  int SysDebug(lua_State* l);
-  int SysInfo(lua_State* l);
-  int SysWarn(lua_State* l);
-  int SysError(lua_State* l);
-  int SysAbort(lua_State* l);
-  int SysFatal(lua_State* l);
+  auto SysDebug(lua_State* l) -> int;
+  auto SysInfo(lua_State* l) -> int;
+  auto SysWarn(lua_State* l) -> int;
+  auto SysError(lua_State* l) -> int;
+  auto SysAbort(lua_State* l) -> int;
+  auto SysFatal(lua_State* l) -> int;
 
   /* ====== Global State ======= */
-  int SysGet(lua_State* l);
-  int SysSet(lua_State* l);
+  auto SysGet(lua_State* l) -> int;
+  auto SysSet(lua_State* l) -> int;
 
   /* ====== Data Feching ======= */
-  int SysFetch(lua_State* l);
+  auto SysFetch(lua_State* l) -> int;
 
   /* ===== Random Generator ===== */
-  int SysRandom(lua_State* l);
+  auto SysRandom(lua_State* l) -> int;
 
   /* ===== Implementation specific ===== */
-  int SysCtrl(lua_State* l);
+  auto SysCtrl(lua_State* l) -> int;
 
   ////////////// END QCALL FUNCTIONS //////////////
 

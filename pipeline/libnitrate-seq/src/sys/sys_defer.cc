@@ -40,7 +40,7 @@ extern "C" {
 
 using namespace ncc::lex;
 
-int ncc::seq::SysDefer(lua_State* L) {
+auto ncc::seq::SysDefer(lua_State* L) -> int {
   int nargs = lua_gettop(L);
   if (nargs < 1) {
     return luaL_error(L, "sys_defer: expected at least 1 argument, got %d",

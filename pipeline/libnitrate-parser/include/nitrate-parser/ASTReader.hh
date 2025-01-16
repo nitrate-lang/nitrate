@@ -59,9 +59,9 @@ namespace ncc::parse {
       template <typename T>
       Value(T&& data) : m_data(std::forward<T>(data)) {}
 
-      Data& operator()() { return m_data; }
-      const Data& operator()() const { return m_data; }
-      bool operator==(const Value& o) const { return m_data == o.m_data; }
+      auto operator()() -> Data& { return m_data; }
+      auto operator()() const -> const Data& { return m_data; }
+      auto operator==(const Value& o) const -> bool { return m_data == o.m_data; }
     };
 
     using NextFunc = std::function<std::optional<Value>()>;
@@ -72,7 +72,7 @@ namespace ncc::parse {
     ReaderSourceManager m_source;
     std::optional<FlowPtr<Base>> m_root;
 
-    std::optional<Value> NextValue() {
+    auto NextValue() -> std::optional<Value> {
       if (m_peek.has_value()) {
         auto val = m_peek;
         m_peek.reset();
@@ -82,7 +82,7 @@ namespace ncc::parse {
       return m_next_func();
     }
 
-    std::optional<Value> PeekValue() {
+    auto PeekValue() -> std::optional<Value> {
       if (!m_peek.has_value()) {
         m_peek = m_next_func();
       }
@@ -94,101 +94,101 @@ namespace ncc::parse {
       lex::Location m_start, m_end;
     };
 
-    std::optional<LocationRange> ReadLocationRange();
+    auto ReadLocationRange() -> std::optional<LocationRange>;
 
-    NullableFlowPtr<Base> DeserializeObject();
-    NullableFlowPtr<Stmt> DeserializeStatement();
-    NullableFlowPtr<Expr> DeserializeExpression();
-    NullableFlowPtr<Type> DeserializeType();
+    auto DeserializeObject() -> NullableFlowPtr<Base>;
+    auto DeserializeStatement() -> NullableFlowPtr<Stmt>;
+    auto DeserializeExpression() -> NullableFlowPtr<Expr>;
+    auto DeserializeType() -> NullableFlowPtr<Type>;
 
     struct TypeMetadata {
       NullableFlowPtr<Expr> m_width, m_min, m_max;
     };
 
-    std::optional<TypeMetadata> ReadTypeMetadata();
+    auto ReadTypeMetadata() -> std::optional<TypeMetadata>;
 
-    NullableFlowPtr<Base> ReadKindNode();
-    NullableFlowPtr<BinExpr> ReadKindBinexpr();
-    NullableFlowPtr<UnaryExpr> ReadKindUnexpr();
-    NullableFlowPtr<TernaryExpr> ReadKindTerexpr();
-    NullableFlowPtr<ConstInt> ReadKindInt();
-    NullableFlowPtr<ConstFloat> ReadKindFloat();
-    NullableFlowPtr<ConstString> ReadKindString();
-    NullableFlowPtr<ConstChar> ReadKindChar();
-    NullableFlowPtr<ConstBool> ReadKindBool();
-    NullableFlowPtr<ConstNull> ReadKindNull();
-    NullableFlowPtr<ConstUndef> ReadKindUndef();
-    NullableFlowPtr<Call> ReadKindCall();
-    NullableFlowPtr<List> ReadKindList();
-    NullableFlowPtr<Assoc> ReadKindAssoc();
-    NullableFlowPtr<Index> ReadKindIndex();
-    NullableFlowPtr<Slice> ReadKindSlice();
-    NullableFlowPtr<FString> ReadKindFstring();
-    NullableFlowPtr<Ident> ReadKindIdent();
-    NullableFlowPtr<SeqPoint> ReadKindSeqPoint();
-    NullableFlowPtr<PostUnaryExpr> ReadKindPostUnexpr();
-    NullableFlowPtr<StmtExpr> ReadKindStmtExpr();
-    NullableFlowPtr<TypeExpr> ReadKindTypeExpr();
-    NullableFlowPtr<TemplCall> ReadKindTemplCall();
-    NullableFlowPtr<RefTy> ReadKindRef();
-    NullableFlowPtr<U1> ReadKindU1();
-    NullableFlowPtr<U8> ReadKindU8();
-    NullableFlowPtr<U16> ReadKindU16();
-    NullableFlowPtr<U32> ReadKindU32();
-    NullableFlowPtr<U64> ReadKindU64();
-    NullableFlowPtr<U128> ReadKindU128();
-    NullableFlowPtr<I8> ReadKindI8();
-    NullableFlowPtr<I16> ReadKindI16();
-    NullableFlowPtr<I32> ReadKindI32();
-    NullableFlowPtr<I64> ReadKindI64();
-    NullableFlowPtr<I128> ReadKindI128();
-    NullableFlowPtr<F16> ReadKindF16();
-    NullableFlowPtr<F32> ReadKindF32();
-    NullableFlowPtr<F64> ReadKindF64();
-    NullableFlowPtr<F128> ReadKindF128();
-    NullableFlowPtr<VoidTy> ReadKindVoid();
-    NullableFlowPtr<PtrTy> ReadKindPtr();
-    NullableFlowPtr<OpaqueTy> ReadKindOpaque();
-    NullableFlowPtr<ArrayTy> ReadKindArray();
-    NullableFlowPtr<TupleTy> ReadKindTuple();
-    NullableFlowPtr<FuncTy> ReadKindFuncTy();
-    NullableFlowPtr<NamedTy> ReadKindUnres();
-    NullableFlowPtr<InferTy> ReadKindInfer();
-    NullableFlowPtr<TemplType> ReadKindTempl();
-    NullableFlowPtr<TypedefStmt> ReadKindTypedef();
-    NullableFlowPtr<StructDef> ReadKindStruct();
-    NullableFlowPtr<EnumDef> ReadKindEnum();
-    NullableFlowPtr<Function> ReadKindFunction();
-    NullableFlowPtr<ScopeStmt> ReadKindScope();
-    NullableFlowPtr<ExportStmt> ReadKindExport();
-    NullableFlowPtr<Block> ReadKindBlock();
-    NullableFlowPtr<VarDecl> ReadKindLet();
-    NullableFlowPtr<InlineAsm> ReadKindInlineAsm();
-    NullableFlowPtr<ReturnStmt> ReadKindReturn();
-    NullableFlowPtr<ReturnIfStmt> ReadKindRetif();
-    NullableFlowPtr<BreakStmt> ReadKindBreak();
-    NullableFlowPtr<ContinueStmt> ReadKindContinue();
-    NullableFlowPtr<IfStmt> ReadKindIf();
-    NullableFlowPtr<WhileStmt> ReadKindWhile();
-    NullableFlowPtr<ForStmt> ReadKindFor();
-    NullableFlowPtr<ForeachStmt> ReadKindForeach();
-    NullableFlowPtr<CaseStmt> ReadKindCase();
-    NullableFlowPtr<SwitchStmt> ReadKindSwitch();
-    NullableFlowPtr<ExprStmt> ReadKindExprStmt();
+    auto ReadKindNode() -> NullableFlowPtr<Base>;
+    auto ReadKindBinexpr() -> NullableFlowPtr<BinExpr>;
+    auto ReadKindUnexpr() -> NullableFlowPtr<UnaryExpr>;
+    auto ReadKindTerexpr() -> NullableFlowPtr<TernaryExpr>;
+    auto ReadKindInt() -> NullableFlowPtr<ConstInt>;
+    auto ReadKindFloat() -> NullableFlowPtr<ConstFloat>;
+    auto ReadKindString() -> NullableFlowPtr<ConstString>;
+    auto ReadKindChar() -> NullableFlowPtr<ConstChar>;
+    auto ReadKindBool() -> NullableFlowPtr<ConstBool>;
+    auto ReadKindNull() -> NullableFlowPtr<ConstNull>;
+    auto ReadKindUndef() -> NullableFlowPtr<ConstUndef>;
+    auto ReadKindCall() -> NullableFlowPtr<Call>;
+    auto ReadKindList() -> NullableFlowPtr<List>;
+    auto ReadKindAssoc() -> NullableFlowPtr<Assoc>;
+    auto ReadKindIndex() -> NullableFlowPtr<Index>;
+    auto ReadKindSlice() -> NullableFlowPtr<Slice>;
+    auto ReadKindFstring() -> NullableFlowPtr<FString>;
+    auto ReadKindIdent() -> NullableFlowPtr<Ident>;
+    auto ReadKindSeqPoint() -> NullableFlowPtr<SeqPoint>;
+    auto ReadKindPostUnexpr() -> NullableFlowPtr<PostUnaryExpr>;
+    auto ReadKindStmtExpr() -> NullableFlowPtr<StmtExpr>;
+    auto ReadKindTypeExpr() -> NullableFlowPtr<TypeExpr>;
+    auto ReadKindTemplCall() -> NullableFlowPtr<TemplCall>;
+    auto ReadKindRef() -> NullableFlowPtr<RefTy>;
+    auto ReadKindU1() -> NullableFlowPtr<U1>;
+    auto ReadKindU8() -> NullableFlowPtr<U8>;
+    auto ReadKindU16() -> NullableFlowPtr<U16>;
+    auto ReadKindU32() -> NullableFlowPtr<U32>;
+    auto ReadKindU64() -> NullableFlowPtr<U64>;
+    auto ReadKindU128() -> NullableFlowPtr<U128>;
+    auto ReadKindI8() -> NullableFlowPtr<I8>;
+    auto ReadKindI16() -> NullableFlowPtr<I16>;
+    auto ReadKindI32() -> NullableFlowPtr<I32>;
+    auto ReadKindI64() -> NullableFlowPtr<I64>;
+    auto ReadKindI128() -> NullableFlowPtr<I128>;
+    auto ReadKindF16() -> NullableFlowPtr<F16>;
+    auto ReadKindF32() -> NullableFlowPtr<F32>;
+    auto ReadKindF64() -> NullableFlowPtr<F64>;
+    auto ReadKindF128() -> NullableFlowPtr<F128>;
+    auto ReadKindVoid() -> NullableFlowPtr<VoidTy>;
+    auto ReadKindPtr() -> NullableFlowPtr<PtrTy>;
+    auto ReadKindOpaque() -> NullableFlowPtr<OpaqueTy>;
+    auto ReadKindArray() -> NullableFlowPtr<ArrayTy>;
+    auto ReadKindTuple() -> NullableFlowPtr<TupleTy>;
+    auto ReadKindFuncTy() -> NullableFlowPtr<FuncTy>;
+    auto ReadKindUnres() -> NullableFlowPtr<NamedTy>;
+    auto ReadKindInfer() -> NullableFlowPtr<InferTy>;
+    auto ReadKindTempl() -> NullableFlowPtr<TemplType>;
+    auto ReadKindTypedef() -> NullableFlowPtr<TypedefStmt>;
+    auto ReadKindStruct() -> NullableFlowPtr<StructDef>;
+    auto ReadKindEnum() -> NullableFlowPtr<EnumDef>;
+    auto ReadKindFunction() -> NullableFlowPtr<Function>;
+    auto ReadKindScope() -> NullableFlowPtr<ScopeStmt>;
+    auto ReadKindExport() -> NullableFlowPtr<ExportStmt>;
+    auto ReadKindBlock() -> NullableFlowPtr<Block>;
+    auto ReadKindLet() -> NullableFlowPtr<VarDecl>;
+    auto ReadKindInlineAsm() -> NullableFlowPtr<InlineAsm>;
+    auto ReadKindReturn() -> NullableFlowPtr<ReturnStmt>;
+    auto ReadKindRetif() -> NullableFlowPtr<ReturnIfStmt>;
+    auto ReadKindBreak() -> NullableFlowPtr<BreakStmt>;
+    auto ReadKindContinue() -> NullableFlowPtr<ContinueStmt>;
+    auto ReadKindIf() -> NullableFlowPtr<IfStmt>;
+    auto ReadKindWhile() -> NullableFlowPtr<WhileStmt>;
+    auto ReadKindFor() -> NullableFlowPtr<ForStmt>;
+    auto ReadKindForeach() -> NullableFlowPtr<ForeachStmt>;
+    auto ReadKindCase() -> NullableFlowPtr<CaseStmt>;
+    auto ReadKindSwitch() -> NullableFlowPtr<SwitchStmt>;
+    auto ReadKindExprStmt() -> NullableFlowPtr<ExprStmt>;
 
     class StrongBool {
     public:
       bool m_val;
 
-      constexpr StrongBool operator!() const { return {!m_val}; }
-      constexpr StrongBool operator||(StrongBool o) const {
+      constexpr auto operator!() const -> StrongBool { return {!m_val}; }
+      constexpr auto operator||(StrongBool o) const -> StrongBool {
         return {m_val || o.m_val};
       }
       constexpr operator bool() const { return m_val; }
     };
 
     template <typename ValueType>
-    constexpr StrongBool NextIf(const ValueType& v = ValueType()) {
+    constexpr auto NextIf(const ValueType& v = ValueType()) -> StrongBool {
       if (auto n = PeekValue()) {
         if (std::holds_alternative<ValueType>(n->operator()()) &&
             std::get<ValueType>(n->operator()()) == v) {
@@ -201,7 +201,7 @@ namespace ncc::parse {
     }
 
     template <typename ValueType>
-    constexpr StrongBool NextIs() {
+    constexpr auto NextIs() -> StrongBool {
       if (auto n = PeekValue()) {
         if (std::holds_alternative<ValueType>(n->operator()())) {
           return StrongBool(true);
@@ -212,7 +212,7 @@ namespace ncc::parse {
     }
 
     template <typename ValueType>
-    constexpr ValueType Next() {
+    constexpr auto Next() -> ValueType {
       if (auto n = NextValue()) {
         if (std::holds_alternative<ValueType>(n->operator()())) {
           return std::get<ValueType>(n->operator()());
@@ -227,11 +227,11 @@ namespace ncc::parse {
         : m_next_func(std::move(data_source)), m_source(source_manager) {}
     virtual ~AstReader() = default;
 
-    std::optional<FlowPtr<Base>> Get();
+    auto Get() -> std::optional<FlowPtr<Base>>;
   };
 
   class NCC_EXPORT AstJsonReader final : public AstReader {
-    std::optional<Value> ReadValue();
+    auto ReadValue() -> std::optional<Value>;
     std::istream& m_is;
 
     struct PImpl;
@@ -241,9 +241,9 @@ namespace ncc::parse {
     AstJsonReader(std::istream& is,
                   ReaderSourceManager source_manager = std::nullopt);
 
-    static std::optional<FlowPtr<Base>> FromString(
+    static auto FromString(
         const std::string& json,
-        ReaderSourceManager source_manager = std::nullopt) {
+        ReaderSourceManager source_manager = std::nullopt) -> std::optional<FlowPtr<Base>> {
       std::istringstream is(json);
       AstJsonReader reader(is, source_manager);
       return reader.Get();
@@ -253,7 +253,7 @@ namespace ncc::parse {
   };
 
   class NCC_EXPORT AstMsgPackReader final : public AstReader {
-    std::optional<Value> ReadValue();
+    auto ReadValue() -> std::optional<Value>;
     std::istream& m_is;
 
     struct PImpl;
@@ -263,9 +263,9 @@ namespace ncc::parse {
     AstMsgPackReader(std::istream& is,
                      ReaderSourceManager source_manager = std::nullopt);
 
-    static std::optional<FlowPtr<Base>> FromString(
+    static auto FromString(
         const std::string& msgpack,
-        ReaderSourceManager source_manager = std::nullopt) {
+        ReaderSourceManager source_manager = std::nullopt) -> std::optional<FlowPtr<Base>> {
       std::istringstream is(msgpack);
       AstMsgPackReader reader(is, source_manager);
       return reader.Get();

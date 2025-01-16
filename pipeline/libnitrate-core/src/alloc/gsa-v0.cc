@@ -44,7 +44,7 @@ using namespace ncc;
 
 static constexpr auto kPrimarySegmentSize = 1024 * 16;
 
-static NCC_FORCE_INLINE uint8_t *ALIGNED(uint8_t *ptr, size_t align) {
+static NCC_FORCE_INLINE auto ALIGNED(uint8_t *ptr, size_t align) -> uint8_t * {
   size_t mod = reinterpret_cast<uintptr_t>(ptr) % align;
   return mod == 0 ? ptr : (ptr + (align - mod));
 }
@@ -72,7 +72,7 @@ public:
     }
   }
 
-  void *Alloc(size_t size, size_t alignment) {
+  auto Alloc(size_t size, size_t alignment) -> void * {
     if (size == 0 || alignment == 0) [[unlikely]] {
       return nullptr;
     }
@@ -124,6 +124,6 @@ NCC_EXPORT DynamicArena::~DynamicArena() {
   }
 }
 
-NCC_EXPORT void *DynamicArena::Alloc(size_t size, size_t alignment) {
+NCC_EXPORT auto DynamicArena::Alloc(size_t size, size_t alignment) -> void * {
   return m_arena->Alloc(size, alignment);
 }

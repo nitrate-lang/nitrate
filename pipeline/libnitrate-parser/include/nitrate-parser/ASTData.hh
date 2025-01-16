@@ -65,11 +65,11 @@ namespace ncc::parse {
   };
 
   template <class T, class U>
-  bool operator==(const Arena<T> &, const Arena<U> &) {
+  auto operator==(const Arena<T> &, const Arena<U> &) -> bool {
     return true;
   }
   template <class T, class U>
-  bool operator!=(const Arena<T> &, const Arena<U> &) {
+  auto operator!=(const Arena<T> &, const Arena<U> &) -> bool {
     return false;
   }
 };  // namespace ncc::parse

@@ -272,7 +272,7 @@ namespace ncc::parse {
     [[nodiscard]] constexpr auto GetItems() const { return m_items; }
   };
 
-  constexpr bool Expr::IsStmtExpr(npar_ty_t type) const {
+  constexpr auto Expr::IsStmtExpr(npar_ty_t type) const -> bool {
     return is(QAST_SEXPR) && as<StmtExpr>()->GetStmt()->is(type);
   }
 }  // namespace ncc::parse

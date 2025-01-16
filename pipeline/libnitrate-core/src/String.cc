@@ -32,7 +32,6 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <boost/unordered_map.hpp>
-#include <iostream>
 #include <mutex>
 #include <nitrate-core/Init.hh>
 #include <nitrate-core/Macro.hh>
@@ -45,11 +44,11 @@ class IStorage {
 public:
   virtual ~IStorage() = default;
 
-  [[nodiscard]] virtual std::string_view Get(uint64_t id) = 0;
-  virtual uint64_t FromString(std::string_view str) = 0;
-  virtual uint64_t FromString(std::string&& str) = 0;
-  [[nodiscard]] virtual bool CompareEq(uint64_t a, uint64_t b) = 0;
-  [[nodiscard]] virtual bool CompareLt(uint64_t a, uint64_t b) = 0;
+  [[nodiscard]] virtual auto Get(uint64_t id) -> std::string_view = 0;
+  virtual auto FromString(std::string_view str) -> uint64_t = 0;
+  virtual auto FromString(std::string&& str) -> uint64_t = 0;
+  [[nodiscard]] virtual auto CompareEq(uint64_t a, uint64_t b) -> bool = 0;
+  [[nodiscard]] virtual auto CompareLt(uint64_t a, uint64_t b) -> bool = 0;
   virtual void Reset() = 0;
 };
 
@@ -79,8 +78,8 @@ class MemoryConservedStorage final : public IStorage {
   google::dense_hash_map<std::string_view, uint64_t> m_map;
   std::mutex m_lock;
 
-  static NCC_FORCE_INLINE constexpr std::vector<char> FromStr(
-      std::string_view str) {
+  static NCC_FORCE_INLINE constexpr auto FromStr(std::string_view str)
+      -> std::vector<char> {
     std::vector<char> vec(str.size());
     std::copy(str.begin(), str.end(), vec.begin());
     return vec;
@@ -100,7 +99,7 @@ public:
 
   ~MemoryConservedStorage() override { Reset(); }
 
-  [[nodiscard]] std::string_view Get(uint64_t id) override {
+  [[nodiscard]] auto Get(uint64_t id) -> std::string_view override {
     assert(id != 0);
 
     ConditionalLockGuard lock(m_lock);
@@ -108,7 +107,7 @@ public:
     return id < m_data.size() ? FromVec(m_data[id]) : "";
   }
 
-  uint64_t FromString(std::string_view str) override {
+  auto FromString(std::string_view str) -> uint64_t override {
     assert(!str.empty());
 
     ConditionalLockGuard lock(m_lock);
@@ -125,7 +124,7 @@ public:
     return id;
   }
 
-  uint64_t FromString(std::string&& str) override {
+  auto FromString(std::string&& str) -> uint64_t override {
     assert(!str.empty());
 
     ConditionalLockGuard lock(m_lock);
@@ -142,11 +141,11 @@ public:
     return id;
   }
 
-  [[nodiscard]] bool CompareEq(uint64_t a, uint64_t b) override {
+  [[nodiscard]] auto CompareEq(uint64_t a, uint64_t b) -> bool override {
     return a == b;
   }
 
-  [[nodiscard]] bool CompareLt(uint64_t a, uint64_t b) override {
+  [[nodiscard]] auto CompareLt(uint64_t a, uint64_t b) -> bool override {
     return a < b;
   }
 
@@ -163,11 +162,11 @@ class FastStorage final : public IStorage {
   std::vector<std::string> m_buffered;
   std::mutex m_lock;
 
-  [[nodiscard]] bool NCC_FORCE_INLINE IsValidId(uint64_t id) const {
+  [[nodiscard]] auto NCC_FORCE_INLINE IsValidId(uint64_t id) const -> bool {
     return id < m_data.size() + m_buffered.size();
   }
 
-  NCC_FORCE_INLINE std::string_view GetUnchecked(uint64_t id) {
+  NCC_FORCE_INLINE auto GetUnchecked(uint64_t id) -> std::string_view {
     assert(id < m_data.size() + m_buffered.size());
 
     if (id >= m_data.size()) {
@@ -198,7 +197,7 @@ public:
 
   ~FastStorage() override { Reset(); }
 
-  [[nodiscard]] std::string_view Get(uint64_t id) override {
+  [[nodiscard]] auto Get(uint64_t id) -> std::string_view override {
     assert(id != 0);
 
     ConditionalLockGuard lock(m_lock);
@@ -210,7 +209,7 @@ public:
     return GetUnchecked(id);
   }
 
-  uint64_t FromString(std::string_view str) override {
+  auto FromString(std::string_view str) -> uint64_t override {
     assert(!str.empty());
 
     ConditionalLockGuard lock(m_lock);
@@ -219,7 +218,7 @@ public:
     return m_data.size() + m_buffered.size() - 1;
   }
 
-  uint64_t FromString(std::string&& str) override {
+  auto FromString(std::string&& str) -> uint64_t override {
     assert(!str.empty());
 
     ConditionalLockGuard lock(m_lock);
@@ -228,7 +227,7 @@ public:
     return m_data.size() + m_buffered.size() - 1;
   }
 
-  [[nodiscard]] bool CompareEq(uint64_t a, uint64_t b) override {
+  [[nodiscard]] auto CompareEq(uint64_t a, uint64_t b) -> bool override {
     if (a == b) {
       return true;
     }
@@ -242,7 +241,7 @@ public:
     return GetUnchecked(a) == GetUnchecked(b);
   }
 
-  [[nodiscard]] bool CompareLt(uint64_t a, uint64_t b) override {
+  [[nodiscard]] auto CompareLt(uint64_t a, uint64_t b) -> bool override {
     if (a == b) {
       return false;
     }
@@ -272,7 +271,7 @@ static FastStorage GlobalStorage;
 
 ///=============================================================================
 
-std::string_view String::Get() const {
+auto String::Get() const -> std::string_view {
   if (m_id == 0) {
     return "";
   }
@@ -280,7 +279,7 @@ std::string_view String::Get() const {
   return GlobalStorage.Get(m_id);
 }
 
-bool String::operator==(const String& o) const {
+auto String::operator==(const String& o) const -> bool {
   if (m_id == 0 && o.m_id == 0) {
     return true;
   }
@@ -288,7 +287,7 @@ bool String::operator==(const String& o) const {
   return GlobalStorage.CompareEq(m_id, o.m_id);
 }
 
-bool String::operator<(const String& o) const {
+auto String::operator<(const String& o) const -> bool {
   if (m_id == 0 && o.m_id == 0) {
     return false;
   }
@@ -296,11 +295,11 @@ bool String::operator<(const String& o) const {
   return GlobalStorage.CompareLt(m_id, o.m_id);
 }
 
-uint64_t StringMemory::FromString(std::string_view str) {
+auto StringMemory::FromString(std::string_view str) -> uint64_t {
   return GlobalStorage.FromString(str);
 }
 
-uint64_t StringMemory::FromString(std::string&& str) {
+auto StringMemory::FromString(std::string&& str) -> uint64_t {
   return GlobalStorage.FromString(std::move(str));
 }
 

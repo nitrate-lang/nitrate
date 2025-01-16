@@ -70,11 +70,11 @@ namespace ncc::ir {
   };
 
   template <class T, class U>
-  bool operator==(const Arena<T> &, const Arena<U> &) {
+  auto operator==(const Arena<T> &, const Arena<U> &) -> bool {
     return true;
   }
   template <class T, class U>
-  bool operator!=(const Arena<T> &, const Arena<U> &) {
+  auto operator!=(const Arena<T> &, const Arena<U> &) -> bool {
     return false;
   }
 
@@ -125,7 +125,7 @@ namespace ncc::ir {
     FlowPtr<GenericExpr<A>> m_base;
     std::span<std::pair<string, FlowPtr<GenericExpr<A>>>> m_args;
 
-    bool operator==(const GenericCallArgsTmpNodeCradle<A> &rhs) const {
+    auto operator==(const GenericCallArgsTmpNodeCradle<A> &rhs) const -> bool {
       return m_base == rhs.m_base && m_args == rhs.m_args;
     }
   };

@@ -46,8 +46,8 @@ using namespace ncc;
 using namespace ncc::parse;
 using namespace ncc::lex;
 
-FlowPtr<Stmt> Parser::PImpl::RecurseBlock(bool expect_braces, bool single_stmt,
-                                          SafetyMode safety) {
+auto Parser::PImpl::RecurseBlock(bool expect_braces, bool single_stmt,
+                                          SafetyMode safety) -> FlowPtr<Stmt> {
   if (expect_braces && !next().is<PuncLCur>()) {
     Log << SyntaxError << current() << "Expected '{'";
   }
@@ -367,9 +367,9 @@ void ParserSetCurrentScanner(IScanner *scanner);
 
 void Parser::SetFailBit() { m_impl->m_failed = true; }
 
-lex::IScanner &Parser::GetLexer() { return m_impl->m_rd; }
+auto Parser::GetLexer() -> lex::IScanner & { return m_impl->m_rd; }
 
-ASTRoot Parser::Parse() {
+auto Parser::Parse() -> ASTRoot {
   std::optional<ASTRoot> ast;
 
   { /* Assign the current context to thread-local global state */
@@ -415,7 +415,7 @@ ASTRoot Parser::Parse() {
   return ast.value();
 }
 
-bool ASTRoot::Check() const {
+auto ASTRoot::Check() const -> bool {
   if (m_failed) {
     return false;
   }

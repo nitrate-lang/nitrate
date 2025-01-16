@@ -89,7 +89,7 @@ namespace ncc::ir {
     uint128_t m_value;
     uint8_t m_size;
 
-    static constexpr uint128_t Str2u128(std::string_view s) {
+    static constexpr auto Str2u128(std::string_view s) -> uint128_t {
       uint128_t x = 0;
 
       for (char c : s) {
@@ -120,8 +120,8 @@ namespace ncc::ir {
     }
 
     [[nodiscard]] constexpr auto GetSize() const { return m_size; }
-    [[nodiscard]] constexpr uint128_t GetValue() const { return m_value; }
-    [[nodiscard]] std::string GetValueString() const { return m_value.str(); }
+    [[nodiscard]] constexpr auto GetValue() const -> uint128_t { return m_value; }
+    [[nodiscard]] auto GetValueString() const -> std::string { return m_value.str(); }
   };
 
   template <class A>
@@ -174,7 +174,7 @@ namespace ncc::ir {
 
     constexpr auto operator[](size_t idx) const { return m_items[idx]; }
     [[nodiscard]] constexpr auto At(size_t idx) const { return m_items[idx]; }
-    [[nodiscard]] constexpr bool IsHomogenous() const { return m_is_homogenous; }
+    [[nodiscard]] constexpr auto IsHomogenous() const -> bool { return m_is_homogenous; }
   };
 
   template <class A>

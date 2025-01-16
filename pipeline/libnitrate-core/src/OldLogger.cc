@@ -78,7 +78,7 @@ extern "C" NCC_EXPORT void QCoreEnd(QCoreLog level) {
   }
 }
 
-extern "C" NCC_EXPORT int QCoreVWriteF(const char *fmt, va_list args) {
+extern "C" NCC_EXPORT auto QCoreVWriteF(const char *fmt, va_list args) -> int {
   char *buffer = nullptr;
   int size = vasprintf(&buffer, fmt, args);
   if (size < 0) {

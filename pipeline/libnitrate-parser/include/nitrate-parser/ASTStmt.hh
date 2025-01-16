@@ -336,14 +336,14 @@ namespace ncc::parse {
     [[nodiscard]] constexpr auto GetBody() const { return m_body; }
 
     [[nodiscard]] constexpr auto IsVariadic() const { return m_variadic; }
-    [[nodiscard]] constexpr bool IsDeclaration() const {
+    [[nodiscard]] constexpr auto IsDeclaration() const -> bool {
       return !m_body.has_value();
     }
-    [[nodiscard]] constexpr bool IsDefinition() const {
+    [[nodiscard]] constexpr auto IsDefinition() const -> bool {
       return m_body.has_value();
     }
 
-    [[nodiscard]] constexpr bool HasContract() const {
+    [[nodiscard]] constexpr auto HasContract() const -> bool {
       return m_precond.has_value() || m_postcond.has_value();
     }
   };
@@ -391,7 +391,7 @@ namespace ncc::parse {
     }
   };
 
-  constexpr bool Stmt::IsExprStmt(npar_ty_t type) const {
+  constexpr auto Stmt::IsExprStmt(npar_ty_t type) const -> bool {
     return is(QAST_ESTMT) && as<ExprStmt>()->GetExpr()->is(type);
   }
 }  // namespace ncc::parse

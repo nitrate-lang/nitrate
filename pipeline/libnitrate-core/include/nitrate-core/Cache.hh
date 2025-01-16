@@ -50,9 +50,9 @@ namespace ncc {
   public:
     virtual ~IResourceCache() = default;
 
-    virtual bool Has(const ResourceKey &key) = 0;
-    virtual bool Read(const ResourceKey &key, Value &value) = 0;
-    virtual bool Write(const ResourceKey &key, const Value &value) = 0;
+    virtual auto Has(const ResourceKey &key) -> bool = 0;
+    virtual auto Read(const ResourceKey &key, Value &value) -> bool = 0;
+    virtual auto Write(const ResourceKey &key, const Value &value) -> bool = 0;
   };
 
   template <typename Value>
@@ -67,7 +67,7 @@ namespace ncc {
           m_read([](const ResourceKey &, Value &) { return false; }),
           m_write([](const ResourceKey &, Value) { return false; }) {}
 
-    bool Has(const ResourceKey &key) override {
+    auto Has(const ResourceKey &key) -> bool override {
       bool sync = EnableSync;
 
       if (sync) {
@@ -83,7 +83,7 @@ namespace ncc {
       return r;
     }
 
-    bool Read(const ResourceKey &key, Value &value) override {
+    auto Read(const ResourceKey &key, Value &value) -> bool override {
       bool sync = EnableSync;
 
       if (sync) {
@@ -99,7 +99,7 @@ namespace ncc {
       return r;
     }
 
-    bool Write(const ResourceKey &key, const Value &value) override {
+    auto Write(const ResourceKey &key, const Value &value) -> bool override {
       bool sync = EnableSync;
 
       if (sync) {
@@ -141,14 +141,14 @@ namespace ncc {
   template <typename Value>
   class MockArtifactCache final : public IResourceCache<Value> {
   public:
-    [[nodiscard]] bool Has(const ResourceKey &) const override { return false; }
-    bool Read(const ResourceKey &, Value &) const override { return false; }
-    bool Write(const ResourceKey &, const Value &) override { return false; }
+    [[nodiscard]] auto Has(const ResourceKey &) const -> bool override { return false; }
+    auto Read(const ResourceKey &, Value &) const -> bool override { return false; }
+    auto Write(const ResourceKey &, const Value &) -> bool override { return false; }
   };
 
   using TheCache = ExternalResourceCache<std::string>;
 
-  TheCache &GetCache();
+  auto GetCache() -> TheCache &;
 }  // namespace ncc
 
 #endif  // __NITRATE_CORE_CACHE_H__

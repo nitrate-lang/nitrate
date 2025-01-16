@@ -70,7 +70,7 @@ namespace ncc::parse {
               [this] { EndArrImpl(); }) {}
     ~AstHash64() override = default;
 
-    uint64_t Get() {
+    auto Get() -> uint64_t {
       boost::uuids::detail::sha1::digest_type digest;
       m_sum.get_digest(digest);
 

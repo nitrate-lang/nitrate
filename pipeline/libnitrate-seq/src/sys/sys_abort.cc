@@ -40,7 +40,7 @@ extern "C" {
 #include <lua/lauxlib.h>
 }
 
-int ncc::seq::SysAbort(lua_State* L) {
+auto ncc::seq::SysAbort(lua_State* L) -> int {
   int nargs = lua_gettop(L);
   if (nargs == 0) {
     return luaL_error(L, "Expected at least one argument, got 0");

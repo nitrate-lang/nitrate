@@ -54,10 +54,10 @@ namespace ncc::parse {
           m_failed(failed),
           m_allocator(std::move(allocator)) {}
 
-    FlowPtr<Base> &Get() { return m_base; }
-    [[nodiscard]] FlowPtr<Base> Get() const { return m_base; }
+    auto Get() -> FlowPtr<Base> & { return m_base; }
+    [[nodiscard]] auto Get() const -> FlowPtr<Base> { return m_base; }
 
-    [[nodiscard]] bool Check() const;
+    [[nodiscard]] auto Check() const -> bool;
   };
 
   class NCC_EXPORT Parser final {
@@ -76,10 +76,10 @@ namespace ncc::parse {
 
     ~Parser();
 
-    ASTRoot Parse();
+    auto Parse() -> ASTRoot;
 
     void SetFailBit();
-    lex::IScanner &GetLexer();
+    auto GetLexer() -> lex::IScanner &;
 
     template <typename Scanner = lex::Tokenizer>
     static auto FromString(std::string_view str,

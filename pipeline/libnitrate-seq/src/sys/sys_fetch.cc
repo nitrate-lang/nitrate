@@ -43,7 +43,7 @@ extern "C" {
 #include <lua/lauxlib.h>
 }
 
-static bool IsValidImportName(const std::string &name) {
+static auto IsValidImportName(const std::string &name) -> bool {
   if (name.empty()) {
     return false;
   }
@@ -61,7 +61,7 @@ static void CanonicalizeImportName(std::string &name) {
   std::transform(name.begin(), name.end(), name.begin(), ::tolower);
 }
 
-int ncc::seq::SysFetch(lua_State *L) {
+auto ncc::seq::SysFetch(lua_State *L) -> int {
   auto *obj = get_engine();
 
   int nargs = lua_gettop(L);

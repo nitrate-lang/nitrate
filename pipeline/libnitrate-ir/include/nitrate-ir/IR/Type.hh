@@ -288,94 +288,94 @@ namespace ncc::ir {
     [[nodiscard]] auto GetData() const { return m_data; }
   };
 
-  static inline U1Ty* GetU1Ty() {
+  static inline auto GetU1Ty() -> U1Ty* {
     static U1Ty u1;
     return &u1;
   }
 
-  static inline U8Ty* GetU8Ty() {
+  static inline auto GetU8Ty() -> U8Ty* {
     static U8Ty u8;
     return &u8;
   }
 
-  static inline U16Ty* GetU16Ty() {
+  static inline auto GetU16Ty() -> U16Ty* {
     static U16Ty u16;
     return &u16;
   }
 
-  static inline U32Ty* GetU32Ty() {
+  static inline auto GetU32Ty() -> U32Ty* {
     static U32Ty u32;
     return &u32;
   }
 
-  static inline U64Ty* GetU64Ty() {
+  static inline auto GetU64Ty() -> U64Ty* {
     static U64Ty u64;
     return &u64;
   }
 
-  static inline U128Ty* GetU128Ty() {
+  static inline auto GetU128Ty() -> U128Ty* {
     static U128Ty u128;
     return &u128;
   }
 
-  static inline I8Ty* GetI8Ty() {
+  static inline auto GetI8Ty() -> I8Ty* {
     static I8Ty i8;
     return &i8;
   }
 
-  static inline I16Ty* GetI16Ty() {
+  static inline auto GetI16Ty() -> I16Ty* {
     static I16Ty i16;
     return &i16;
   }
 
-  static inline I32Ty* GetI32Ty() {
+  static inline auto GetI32Ty() -> I32Ty* {
     static I32Ty i32;
     return &i32;
   }
 
-  static inline I64Ty* GetI64Ty() {
+  static inline auto GetI64Ty() -> I64Ty* {
     static I64Ty i64;
     return &i64;
   }
 
-  static inline I128Ty* GetI128Ty() {
+  static inline auto GetI128Ty() -> I128Ty* {
     static I128Ty i128;
     return &i128;
   }
 
-  static inline F16Ty* GetF16Ty() {
+  static inline auto GetF16Ty() -> F16Ty* {
     static F16Ty f16;
     return &f16;
   }
 
-  static inline F32Ty* GetF32Ty() {
+  static inline auto GetF32Ty() -> F32Ty* {
     static F32Ty f32;
     return &f32;
   }
 
-  static inline F64Ty* GetF64Ty() {
+  static inline auto GetF64Ty() -> F64Ty* {
     static F64Ty f64;
     return &f64;
   }
 
-  static inline F128Ty* GetF128Ty() {
+  static inline auto GetF128Ty() -> F128Ty* {
     static F128Ty f128;
     return &f128;
   }
 
-  static inline VoidTy* GetVoidTy() {
+  static inline auto GetVoidTy() -> VoidTy* {
     static VoidTy void_ty;
     return &void_ty;
   }
 
-  PtrTy* GetPtrTy(FlowPtr<Type> pointee, uint8_t native_size = 8);
-  ConstTy* GetConstTy(FlowPtr<Type> item);
-  OpaqueTy* GetOpaqueTy(string name);
-  StructTy* GetStructTy(std::span<FlowPtr<Type>> fields);
-  UnionTy* GetUnionTy(std::span<FlowPtr<Type>> fields);
-  ArrayTy* GetArrayTy(FlowPtr<Type> element, size_t size);
-  FnTy* GetFnTy(std::span<FlowPtr<Type>> params, FlowPtr<Type> ret,
-                bool variadic, size_t native_size = 8);
+  auto GetPtrTy(FlowPtr<Type> pointee, uint8_t native_size = 8) -> PtrTy*;
+  auto GetConstTy(FlowPtr<Type> item) -> ConstTy*;
+  auto GetOpaqueTy(string name) -> OpaqueTy*;
+  auto GetStructTy(std::span<FlowPtr<Type>> fields) -> StructTy*;
+  auto GetUnionTy(std::span<FlowPtr<Type>> fields) -> UnionTy*;
+  auto GetArrayTy(FlowPtr<Type> element, size_t size) -> ArrayTy*;
+  auto GetFnTy(std::span<FlowPtr<Type>> params, FlowPtr<Type> ret,
+                bool variadic, size_t native_size = 8) -> FnTy*;
 }  // namespace ncc::ir
 
 #endif

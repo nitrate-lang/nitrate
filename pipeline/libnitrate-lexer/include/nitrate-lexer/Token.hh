@@ -196,7 +196,7 @@ namespace ncc::lex {
     [[nodiscard]] constexpr auto GetOffset() const { return m_offset; }
     [[nodiscard]] constexpr auto GetRow() const { return m_line; }
     [[nodiscard]] constexpr auto GetCol() const { return m_column; }
-    [[nodiscard]] constexpr string GetFilename() const { return m_filename; }
+    [[nodiscard]] constexpr auto GetFilename() const -> string { return m_filename; }
   } __attribute__((packed));
 
   class LocationID {
@@ -205,14 +205,14 @@ namespace ncc::lex {
 
     constexpr LocationID(Counter id = 0) : m_id(id) {}
 
-    Location Get(IScanner &l) const;
-    [[nodiscard]] constexpr Counter GetId() const { return m_id; }
+    auto Get(IScanner &l) const -> Location;
+    [[nodiscard]] constexpr auto GetId() const -> Counter { return m_id; }
 
-    constexpr bool operator==(const LocationID &rhs) const {
+    constexpr auto operator==(const LocationID &rhs) const -> bool {
       return m_id == rhs.m_id;
     }
 
-    constexpr bool operator<(const LocationID &rhs) const {
+    constexpr auto operator<(const LocationID &rhs) const -> bool {
       return m_id < rhs.m_id;
     }
 
@@ -255,7 +255,7 @@ namespace ncc::lex {
       return m_type == val;
     }
 
-    constexpr bool operator==(const TokenBase &rhs) const {
+    constexpr auto operator==(const TokenBase &rhs) const -> bool {
       if (m_type != rhs.m_type) {
         return false;
       }
@@ -300,7 +300,7 @@ namespace ncc::lex {
     [[nodiscard]] constexpr auto GetStart() const { return m_location_id; }
     [[nodiscard]] constexpr auto GetKind() const { return m_type; }
 
-    constexpr bool operator<(const TokenBase &rhs) const {
+    constexpr auto operator<(const TokenBase &rhs) const -> bool {
       if (m_type != rhs.m_type) {
         return m_type < rhs.m_type;
       }
@@ -333,14 +333,14 @@ namespace ncc::lex {
 namespace std {
   template <>
   struct hash<ncc::lex::LocationID> {
-    size_t operator()(const ncc::lex::LocationID &loc) const {
+    auto operator()(const ncc::lex::LocationID &loc) const -> size_t {
       return loc.GetId();
     }
   };
 
   template <>
   struct hash<ncc::lex::Token> {
-    constexpr size_t operator()(const ncc::lex::Token &tok) const {
+    constexpr auto operator()(const ncc::lex::Token &tok) const -> size_t {
       size_t h = 0;
 
       switch (tok.GetKind()) {

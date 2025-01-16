@@ -180,8 +180,8 @@ namespace ncc::ir {
   }  // namespace detail
 
   template <typename T>
-  MessageBuffer operator<<(detail::DiagnosticRouterInstance *ctx,
-                           const T &value) {
+  auto operator<<(detail::DiagnosticRouterInstance *ctx,
+                           const T &value) -> MessageBuffer {
     MessageBuffer buf(
         [ctx](std::string msg, SrcLoc loc) { ctx->EmitMessage(msg, loc); });
 
@@ -191,7 +191,7 @@ namespace ncc::ir {
   };
 
   template <typename T>
-  MessageBuffer operator<<(MessageBuffer &&buf, const T &value) {
+  auto operator<<(MessageBuffer &&buf, const T &value) -> MessageBuffer {
     buf.Write(value);
     return std::move(buf);
   };

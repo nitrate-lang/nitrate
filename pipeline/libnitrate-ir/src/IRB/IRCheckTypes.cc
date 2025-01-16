@@ -39,7 +39,7 @@
 
 using namespace ncc::ir;
 
-bool NRBuilder::CheckTypes(FlowPtr<Seq>, IReport *d) {
+auto NRBuilder::CheckTypes(FlowPtr<Seq>, IReport *d) -> bool {
   d->Report(CompilerError, IC::Debug,
             "NRBuilder::check_types() not implemented");
 

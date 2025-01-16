@@ -47,7 +47,7 @@ namespace ncc::seq {
   using FetchModuleFunc =
       std::function<std::optional<std::string>(std::string_view)>;
 
-  std::optional<std::string> FileSystemFetchModule(std::string_view path);
+  auto FileSystemFetchModule(std::string_view path) -> std::optional<std::string>;
 
   class NCC_EXPORT Sequencer final : public ncc::lex::IScanner {
     static std::string_view CodePrefix;
@@ -68,15 +68,15 @@ namespace ncc::seq {
     void RecursiveExpand(std::string_view code);
 
   private:
-    ncc::lex::Token GetNext() override;
-    std::optional<ncc::lex::Location> GetLocationFallback(
-        ncc::lex::LocationID id) override {
+    auto GetNext() -> ncc::lex::Token override;
+    auto GetLocationFallback(
+        ncc::lex::LocationID id) -> std::optional<ncc::lex::Location> override {
       return m_scanner->GetLocation(id);
     }
 
-    bool ApplyDynamicTransforms(ncc::lex::Token last);
+    auto ApplyDynamicTransforms(ncc::lex::Token last) -> bool;
 
-    bool ExecuteLua(const char *code);
+    auto ExecuteLua(const char *code) -> bool;
     void LoadLuaLibs();
     void BindLuaAPI();
 
@@ -85,8 +85,8 @@ namespace ncc::seq {
               bool is_root = true);
     ~Sequencer() override = default;
 
-    std::optional<std::vector<std::string>> GetSourceWindow(
-        Point start, Point end, char fillchar) override;
+    auto GetSourceWindow(
+        Point start, Point end, char fillchar) -> std::optional<std::vector<std::string>> override;
 
     void SetFetchFunc(FetchModuleFunc func);
   };

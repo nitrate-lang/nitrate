@@ -39,7 +39,7 @@ extern "C" {
 #include <lua/lauxlib.h>
 }
 
-int ncc::seq::SysCtrl(lua_State* l) {
+auto ncc::seq::SysCtrl(lua_State* l) -> int {
   int nargs = lua_gettop(l);
   if (nargs < 1) {
     return luaL_error(l, "expected at least 1 argument, got %d", nargs);

@@ -40,7 +40,7 @@
 using namespace ncc::parse;
 using namespace nlohmann;
 
-static std::optional<AstReader::Value> JsonToValue(const ordered_json& v) {
+static auto JsonToValue(const ordered_json& v) -> std::optional<AstReader::Value> {
   switch (v.type()) {
     case json::value_t::null: {
       return AstReader::Value(nullptr);
@@ -123,7 +123,7 @@ AstJsonReader::AstJsonReader(std::istream& is,
 
 AstJsonReader::~AstJsonReader() = default;
 
-std::optional<AstReader::Value> AstJsonReader::ReadValue() {
+auto AstJsonReader::ReadValue() -> std::optional<AstReader::Value> {
   auto& queue = m_pimpl->m_queue;
   if (queue.empty()) [[unlikely]] {
     return std::nullopt;
@@ -156,7 +156,7 @@ AstMsgPackReader::AstMsgPackReader(std::istream& is,
 
 AstMsgPackReader::~AstMsgPackReader() = default;
 
-std::optional<AstReader::Value> AstMsgPackReader::ReadValue() {
+auto AstMsgPackReader::ReadValue() -> std::optional<AstReader::Value> {
   auto& queue = m_pimpl->m_queue;
   if (queue.empty()) [[unlikely]] {
     return std::nullopt;

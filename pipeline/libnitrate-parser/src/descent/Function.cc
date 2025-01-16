@@ -37,7 +37,7 @@ using namespace ncc;
 using namespace ncc::lex;
 using namespace ncc::parse;
 
-FlowPtr<parse::Type> Parser::PImpl::RecurseFunctionParameterType() {
+auto Parser::PImpl::RecurseFunctionParameterType() -> FlowPtr<parse::Type> {
   if (next_if(PuncColn)) {
     return RecurseType();
   }
@@ -45,7 +45,7 @@ FlowPtr<parse::Type> Parser::PImpl::RecurseFunctionParameterType() {
   return make<InferTy>()();
 }
 
-NullableFlowPtr<Expr> Parser::PImpl::RecurseFunctionParameterValue() {
+auto Parser::PImpl::RecurseFunctionParameterValue() -> NullableFlowPtr<Expr> {
   if (next_if(OpSet)) {
     return RecurseExpr({
         Token(Punc, PuncComa),
@@ -57,7 +57,7 @@ NullableFlowPtr<Expr> Parser::PImpl::RecurseFunctionParameterValue() {
   return std::nullopt;
 }
 
-std::optional<FuncParam> Parser::PImpl::RecurseFunctionParameter() {
+auto Parser::PImpl::RecurseFunctionParameter() -> std::optional<FuncParam> {
   if (auto param_name = next_if(Name)) [[likely]] {
     auto param_type = RecurseFunctionParameterType();
     auto param_value = RecurseFunctionParameterValue();
@@ -70,7 +70,7 @@ std::optional<FuncParam> Parser::PImpl::RecurseFunctionParameter() {
   return std::nullopt;
 }
 
-std::optional<TemplateParameters> Parser::PImpl::RecurseTemplateParameters() {
+auto Parser::PImpl::RecurseTemplateParameters() -> std::optional<TemplateParameters> {
   if (!next_if(OpLT)) {
     return std::nullopt;
   }
@@ -102,7 +102,7 @@ std::optional<TemplateParameters> Parser::PImpl::RecurseTemplateParameters() {
   return params;
 }
 
-std::pair<FuncParams, bool> Parser::PImpl::RecurseFunctionParameters() {
+auto Parser::PImpl::RecurseFunctionParameters() -> std::pair<FuncParams, bool> {
   std::pair<FuncParams, bool> parameters;
 
   if (!next_if(PuncLPar)) [[unlikely]] {
@@ -151,9 +151,9 @@ std::pair<FuncParams, bool> Parser::PImpl::RecurseFunctionParameters() {
   return parameters;
 }
 
-Purity Parser::PImpl::GetPuritySpecifier(Token start_pos, bool is_thread_safe,
+auto Parser::PImpl::GetPuritySpecifier(Token start_pos, bool is_thread_safe,
                                          bool is_pure, bool is_impure,
-                                         bool is_quasi, bool is_retro) {
+                                         bool is_quasi, bool is_retro) -> Purity {
   /* Ensure that there is no duplication of purity specifiers */
   if ((static_cast<int>(is_impure) + static_cast<int>(is_pure) +
        static_cast<int>(is_quasi) + static_cast<int>(is_retro)) > 1) {
@@ -184,7 +184,7 @@ Purity Parser::PImpl::GetPuritySpecifier(Token start_pos, bool is_thread_safe,
   return Purity::Impure;
 }
 
-std::optional<std::pair<string, bool>> Parser::PImpl::RecurseFunctionCapture() {
+auto Parser::PImpl::RecurseFunctionCapture() -> std::optional<std::pair<string, bool>> {
   bool is_ref = next_if(OpBitAnd).has_value();
 
   if (auto name = next_if(Name)) {
@@ -196,8 +196,8 @@ std::optional<std::pair<string, bool>> Parser::PImpl::RecurseFunctionCapture() {
   return std::nullopt;
 }
 
-std::tuple<ExpressionList, FnCaptures, Purity, string>
-Parser::PImpl::RecurseFunctionAmbigouis() {
+auto
+Parser::PImpl::RecurseFunctionAmbigouis() -> std::tuple<ExpressionList, FnCaptures, Purity, string> {
   enum class State : uint8_t {
     Ground,
     AttributesSection,
@@ -343,7 +343,7 @@ Parser::PImpl::RecurseFunctionAmbigouis() {
   return {attributes, captures, purity, function_name};
 }
 
-FlowPtr<parse::Type> Parser::PImpl::RecurseFunctionReturnType() {
+auto Parser::PImpl::RecurseFunctionReturnType() -> FlowPtr<parse::Type> {
   if (next_if(PuncColn)) {
     return RecurseType();
   }
@@ -351,8 +351,8 @@ FlowPtr<parse::Type> Parser::PImpl::RecurseFunctionReturnType() {
   return make<InferTy>()();
 }
 
-NullableFlowPtr<Stmt> Parser::PImpl::RecurseFunctionBody(
-    bool parse_declaration_only) {
+auto Parser::PImpl::RecurseFunctionBody(
+    bool parse_declaration_only) -> NullableFlowPtr<Stmt> {
   if (parse_declaration_only || next_if(PuncSemi)) {
     return std::nullopt;
   }
@@ -364,7 +364,7 @@ NullableFlowPtr<Stmt> Parser::PImpl::RecurseFunctionBody(
   return RecurseBlock(true, false, SafetyMode::Unknown);
 }
 
-FlowPtr<Stmt> Parser::PImpl::RecurseFunction(bool parse_declaration_only) {
+auto Parser::PImpl::RecurseFunction(bool parse_declaration_only) -> FlowPtr<Stmt> {
   auto start_pos = current().GetStart();
 
   auto [function_attributes, function_captures, function_purity,

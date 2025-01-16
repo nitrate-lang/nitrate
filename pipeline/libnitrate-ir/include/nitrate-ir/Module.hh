@@ -79,10 +79,10 @@ namespace ncc::ir {
 
     [[nodiscard]] auto GetRoot() const { return m_root; }
 
-    [[nodiscard]] std::span<const string> GetTransformHistory() const { return m_applied; }
-    bool Diagnostics(std::optional<bool> state = std::nullopt);
-    string Name(std::optional<string> name = std::nullopt);
-    auto &GetNodeArena() { return m_ir_data; }
+    [[nodiscard]] auto GetTransformHistory() const -> std::span<const string> { return m_applied; }
+    auto Diagnostics(std::optional<bool> state = std::nullopt) -> bool;
+    auto Name(std::optional<string> name = std::nullopt) -> string;
+    auto GetNodeArena() -> auto & { return m_ir_data; }
     [[nodiscard]] auto GetTargetInfo() const { return m_target_info; }
     [[nodiscard]] auto GetFunctions() const {
       return m_functions.left | std::views::transform([](auto &pair) {

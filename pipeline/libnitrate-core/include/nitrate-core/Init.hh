@@ -62,7 +62,7 @@ namespace ncc {
   public:
     LibraryRC() = default;
 
-    bool InitRC() {
+    auto InitRC() -> bool {
       std::lock_guard<std::recursive_mutex> lock(m_ref_count_mutex);
 
       if (m_ref_count++ == 0) {
@@ -83,13 +83,13 @@ namespace ncc {
       }
     }
 
-    bool IsInitialized() {
+    auto IsInitialized() -> bool {
       std::lock_guard<std::recursive_mutex> lock(m_ref_count_mutex);
 
       return m_ref_count > 0;
     }
 
-    std::string_view GetVersion() {
+    auto GetVersion() -> std::string_view {
       static std::string version_string =
 
           std::string("[") + std::string(Impl::GetVersionId()) +
@@ -137,7 +137,7 @@ namespace ncc {
       return version_string;
     }
 
-    std::optional<LibraryRCAutoClose<Impl>> GetRC() {
+    auto GetRC() -> std::optional<LibraryRCAutoClose<Impl>> {
       if (!InitRC()) {
         return std::nullopt;
       }
@@ -147,9 +147,9 @@ namespace ncc {
   };
 
   struct CoreLibrarySetup final {
-    static bool Init();
+    static auto Init() -> bool;
     static void Deinit();
-    static std::string_view GetVersionId();
+    static auto GetVersionId() -> std::string_view;
   };
 
   extern LibraryRC<CoreLibrarySetup> CoreLibrary;

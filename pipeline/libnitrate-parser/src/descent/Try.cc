@@ -37,7 +37,7 @@ using namespace ncc;
 using namespace ncc::lex;
 using namespace ncc::parse;
 
-FlowPtr<Stmt> Parser::PImpl::RecurseTry() {
+auto Parser::PImpl::RecurseTry() -> FlowPtr<Stmt> {
   Log << SyntaxError << current() << "Try is not yet implemented";
 
   return MockStmt();

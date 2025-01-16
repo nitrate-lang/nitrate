@@ -46,8 +46,8 @@
 namespace ncc::lex {
   namespace detail {
     template <typename L, typename R>
-    boost::bimap<L, R> MakeBimap(
-        std::initializer_list<typename boost::bimap<L, R>::value_type> list) {
+    auto MakeBimap(
+        std::initializer_list<typename boost::bimap<L, R>::value_type> list) -> boost::bimap<L, R> {
       return boost::bimap<L, R>(list.begin(), list.end());
     }
 
@@ -61,7 +61,7 @@ namespace ncc::lex {
 
       OpConfig(OpType t, bool o) : m_type(t), m_overloadable(o) {}
 
-      bool operator<(const OpConfig &rhs) const {
+      auto operator<(const OpConfig &rhs) const -> bool {
         if (m_type != rhs.m_type) {
           return m_type < rhs.m_type;
         }
@@ -251,8 +251,8 @@ namespace ncc::lex {
           {";", PuncSemi},
       });
 
-  short GetOperatorPrecedence(Operator op, OpMode type);
-  Associativity GetOperatorAssociativity(Operator op, OpMode type);
+  auto GetOperatorPrecedence(Operator op, OpMode type) -> short;
+  auto GetOperatorAssociativity(Operator op, OpMode type) -> Associativity;
   const char *qlex_ty_str(TokenType ty);  /// NOLINT
 
   class ISourceFile {
@@ -273,19 +273,19 @@ namespace ncc::lex {
     class StaticImpl;
     friend class StaticImpl;
 
-    Location GetEofLocation();
+    auto GetEofLocation() -> Location;
 
   protected:
     std::shared_ptr<Environment> m_env;
 
-    virtual Token GetNext() = 0;
+    virtual auto GetNext() -> Token = 0;
 
     /**
      * @brief Provide fallback resolution for location IDs.
      * @note The internal map is checked first, it the ID is not found, this
      *       method is called.
      */
-    virtual std::optional<Location> GetLocationFallback(LocationID) {
+    virtual auto GetLocationFallback(LocationID) -> std::optional<Location> {
       return std::nullopt;
     };
 
@@ -298,8 +298,8 @@ namespace ncc::lex {
 
     virtual ~IScanner() = default;
 
-    Token Next();
-    Token Peek();
+    auto Next() -> Token;
+    auto Peek() -> Token;
     void Insert(Token tok);
 
     constexpr auto Current() { return m_current; }
@@ -307,13 +307,13 @@ namespace ncc::lex {
     [[nodiscard]] constexpr auto HasError() const { return m_ebit; }
     void SetFailBit() { m_ebit = true; }
 
-    Location Start(Token t);
-    Location End(Token t);
+    auto Start(Token t) -> Location;
+    auto End(Token t) -> Location;
 
-    uint32_t StartLine(Token t);
-    uint32_t StartColumn(Token t);
-    uint32_t EndLine(Token t);
-    uint32_t EndColumn(Token t);
+    auto StartLine(Token t) -> uint32_t;
+    auto StartColumn(Token t) -> uint32_t;
+    auto EndLine(Token t) -> uint32_t;
+    auto EndColumn(Token t) -> uint32_t;
 
     auto InternLocation(Location loc) {
       m_location_interned.push_back(loc);
@@ -321,21 +321,21 @@ namespace ncc::lex {
     }
 
     constexpr void SkipCommentsState(bool skip) { m_skip = skip; }
-    [[nodiscard]] constexpr bool GetSkipCommentsState() const { return m_skip; }
+    [[nodiscard]] constexpr auto GetSkipCommentsState() const -> bool { return m_skip; }
 
     constexpr void SetCurrentFilename(auto filename) { m_filename = filename; }
     [[nodiscard]] constexpr auto GetCurrentFilename() const {
       return m_filename;
     }
 
-    Location GetLocation(LocationID id);
+    auto GetLocation(LocationID id) -> Location;
 
     struct Point {
       long x = 0, y = 0;  /// NOLINT
     };
 
-    virtual std::optional<std::vector<std::string>> GetSourceWindow(
-        Point start, Point end, char fillchar = ' ') {
+    virtual auto GetSourceWindow(
+        Point start, Point end, char fillchar = ' ') -> std::optional<std::vector<std::string>> {
       (void)start;
       (void)end;
       (void)fillchar;
@@ -344,7 +344,7 @@ namespace ncc::lex {
 
     [[nodiscard]] auto GetEnvironment() const { return m_env; }
 
-    const std::vector<Token> &CommentBuffer() { return m_comments; }
+    auto CommentBuffer() -> const std::vector<Token> & { return m_comments; }
     void ClearCommentBuffer() { m_comments.clear(); }
   };
 
@@ -359,14 +359,14 @@ namespace ncc::lex {
     bool m_eof = false;
 
     void RefillCharacterBuffer();
-    char GetChar();
+    auto GetChar() -> char;
 
     class StaticImpl;
     friend class StaticImpl;
 
     void ResetAutomaton();
 
-    Token GetNext() override;
+    auto GetNext() -> Token override;
 
   public:
     Tokenizer(std::istream &source_file, std::shared_ptr<Environment> env)
@@ -378,8 +378,8 @@ namespace ncc::lex {
 
     ~Tokenizer() override = default;
 
-    std::optional<std::vector<std::string>> GetSourceWindow(
-        Point start, Point end, char fillchar = ' ') override;
+    auto GetSourceWindow(
+        Point start, Point end, char fillchar = ' ') -> std::optional<std::vector<std::string>> override;
   };
 
   static inline const char *op_repr(Operator op) {  /// NOLINT
@@ -394,20 +394,20 @@ namespace ncc::lex {
     return LEXICAL_PUNCTORS.right.at(punct).c_str();
   }
 
-  std::ostream &operator<<(std::ostream &os, TokenType ty);
-  std::ostream &operator<<(std::ostream &os, Token tok);
+  auto operator<<(std::ostream &os, TokenType ty) -> std::ostream &;
+  auto operator<<(std::ostream &os, Token tok) -> std::ostream &;
 
-  inline std::ostream &operator<<(std::ostream &os, Operator op) {
+  inline auto operator<<(std::ostream &os, Operator op) -> std::ostream & {
     os << op_repr(op);
     return os;
   }
 
-  inline std::ostream &operator<<(std::ostream &os, Keyword kw) {
+  inline auto operator<<(std::ostream &os, Keyword kw) -> std::ostream & {
     os << kw_repr(kw);
     return os;
   }
 
-  inline std::ostream &operator<<(std::ostream &os, Punctor punct) {
+  inline auto operator<<(std::ostream &os, Punctor punct) -> std::ostream & {
     os << punct_repr(punct);
     return os;
   }

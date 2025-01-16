@@ -37,7 +37,7 @@
 #include <nitrate-core/Logger.hh>
 
 namespace ncc::ir::ec {
-  std::string Formatter(std::string_view msg, Sev sev);
+  auto Formatter(std::string_view msg, Sev sev) -> std::string;
 #define EXPAND(path) "$NCC_CONF/ec/ir/" path
 #define DEFINE(group, name) NCC_EC_EX(group, name, Formatter, EXPAND(#name));
 

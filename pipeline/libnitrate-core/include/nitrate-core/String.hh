@@ -46,10 +46,10 @@ namespace ncc {
     friend class String;
 
     /* assert(!str.empty()) */
-    static uint64_t FromString(std::string_view str);
+    static auto FromString(std::string_view str) -> uint64_t;
 
     /* assert(!str.empty()) */
-    static uint64_t FromString(std::string &&str);
+    static auto FromString(std::string &&str) -> uint64_t;
 
   public:
     StringMemory() = delete;
@@ -77,12 +77,12 @@ namespace ncc {
 
     [[nodiscard]] auto Get() const -> std::string_view;
 
-    bool operator==(const String &o) const;
-    bool operator<(const String &o) const;
+    auto operator==(const String &o) const -> bool;
+    auto operator<(const String &o) const -> bool;
 
     constexpr auto operator*() const { return Get(); }
 
-    const auto *operator->() const {
+    auto operator->() const -> const auto * {
       static thread_local std::string_view sv;
       sv = Get();
       return &sv;
@@ -95,7 +95,7 @@ namespace ncc {
 
   using string = String;
 
-  static inline std::ostream &operator<<(std::ostream &os, const String &str) {
+  static inline auto operator<<(std::ostream &os, const String &str) -> std::ostream & {
     return os << str.Get();
   }
 }  // namespace ncc
@@ -103,7 +103,7 @@ namespace ncc {
 namespace std {
   template <>
   struct hash<ncc::String> {
-    size_t operator()(const ncc::String &str) const {
+    auto operator()(const ncc::String &str) const -> size_t {
       return std::hash<std::string_view>{}(str.Get());
     }
   };

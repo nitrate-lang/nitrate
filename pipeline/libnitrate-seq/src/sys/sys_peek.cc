@@ -41,7 +41,7 @@ extern "C" {
 
 using namespace ncc::lex;
 
-int ncc::seq::SysPeek(lua_State* L) {
+auto ncc::seq::SysPeek(lua_State* L) -> int {
   auto tok = get_engine()->Peek();
 
   lua_newtable(L);

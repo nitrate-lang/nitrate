@@ -41,7 +41,7 @@ extern "C" {
 
 static const std::vector<std::string_view> IMMUTABLE_NAMESPACES = {"this."};
 
-int ncc::seq::SysSet(lua_State* L) {
+auto ncc::seq::SysSet(lua_State* L) -> int {
   int nargs = lua_gettop(L);
   if (nargs != 2) {
     return luaL_error(L, "expected 2 arguments, got %d", nargs);

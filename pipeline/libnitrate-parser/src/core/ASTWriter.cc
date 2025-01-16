@@ -136,7 +136,7 @@ void AstWriter::WriteTypeMetadata(const FlowPtr<Type>& n) {
   max.has_value() ? max.value().Accept(*this) : null();
 }
 
-std::string_view AstWriter::VisStr(Vis vis) {
+auto AstWriter::VisStr(Vis vis) -> std::string_view {
   switch (vis) {
     case Vis::Sec:
       return "sec";

@@ -39,7 +39,7 @@
 
 using namespace ncc::ir;
 
-bool NRBuilder::CheckControlFlow(FlowPtr<Seq>, IReport *i) {
+auto NRBuilder::CheckControlFlow(FlowPtr<Seq>, IReport *i) -> bool {
   i->Report(CompilerError, IC::Debug,
             "NRBuilder::check_control_flow() not implemented");
 

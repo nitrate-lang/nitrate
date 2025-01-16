@@ -41,7 +41,7 @@ using namespace ncc;
 NCC_EXPORT LibraryRC<CoreLibrarySetup> ncc::CoreLibrary;
 NCC_EXPORT std::atomic<bool> ncc::EnableSync = true;
 
-NCC_EXPORT bool CoreLibrarySetup::Init() {
+NCC_EXPORT auto CoreLibrarySetup::Init() -> bool {
   // Nothing to do here for now.
 
   qcore_print(QCORE_DEBUG, "Initialized Nitrate Core Library");
@@ -55,7 +55,7 @@ NCC_EXPORT void CoreLibrarySetup::Deinit() {
   StringMemory::Reset();
 }
 
-NCC_EXPORT std::string_view CoreLibrarySetup::GetVersionId() {
+NCC_EXPORT auto CoreLibrarySetup::GetVersionId() -> std::string_view {
   return __TARGET_VERSION;
 }
 

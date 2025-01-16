@@ -68,12 +68,12 @@ namespace ncc {
     explicit ECUnique(
         std::source_location loc = std::source_location::current());
 
-    [[nodiscard]] constexpr EC Get() const { return m_ec; };
+    [[nodiscard]] constexpr auto Get() const -> EC { return m_ec; };
   };
 
   using LogFormatterFunc = std::function<std::string(std::string_view, Sev)>;
 
-  std::string Formatter(std::string_view msg, Sev sev);
+  auto Formatter(std::string_view msg, Sev sev) -> std::string;
 
   class ECBase {
     struct ECDetails {
@@ -90,14 +90,14 @@ namespace ncc {
         -> std::optional<ECDetails>;
 
   protected:
-    [[nodiscard]] virtual ECUnique GetIdentity() const = 0;
+    [[nodiscard]] virtual auto GetIdentity() const -> ECUnique = 0;
 
-    [[nodiscard]] virtual std::optional<std::string_view> GetDetailsPath()
-        const {
+    [[nodiscard]] virtual auto GetDetailsPath() const
+        -> std::optional<std::string_view> {
       return std::nullopt;
     }
 
-    [[nodiscard]] virtual LogFormatterFunc GetFormatter() const = 0;
+    [[nodiscard]] virtual auto GetFormatter() const -> LogFormatterFunc = 0;
     void GetJsonRepresentation(std::ostream &os) const;
     void Finalize();
 
@@ -105,7 +105,7 @@ namespace ncc {
     constexpr ECBase() = default;
     virtual ~ECBase() = default;
 
-    [[nodiscard]] constexpr EC GetKind() const { return m_ec; }
+    [[nodiscard]] constexpr auto GetKind() const -> EC { return m_ec; }
 
     [[nodiscard]] constexpr auto AsJson() const {
       return std::string_view(m_json);
@@ -140,31 +140,37 @@ namespace ncc {
     }
   };
 
-#define NCC_EC_GROUP(name)                                   \
-  class name : public ncc::ECBase {                          \
-  protected:                                                 \
-    ncc::ECUnique GetIdentity() const override = 0;          \
-    ncc::LogFormatterFunc GetFormatter() const override = 0; \
+#define NCC_EC_GROUP(name)                                           \
+  class name : public ncc::ECBase {                                  \
+  protected:                                                         \
+    auto GetIdentity() const -> ncc::ECUnique override = 0;          \
+    auto GetFormatter() const -> ncc::LogFormatterFunc override = 0; \
   };
 
-#define NCC_EC(group, name)                                                \
-  static inline class name##Class final : public group {                   \
-  protected:                                                               \
-    ncc::ECUnique GetIdentity() const override { return ncc::ECUnique(); } \
-    ncc::LogFormatterFunc GetFormatter() const override {                  \
-      return ncc::Formatter;                                               \
-    }                                                                      \
-                                                                           \
-  public:                                                                  \
-    constexpr name##Class() { Finalize(); }                                \
+#define NCC_EC(group, name)                                       \
+  static inline class name##Class final : public group {          \
+  protected:                                                      \
+    auto GetIdentity() const -> ncc::ECUnique override {          \
+      return ncc::ECUnique();                                     \
+    }                                                             \
+    auto GetFormatter() const -> ncc::LogFormatterFunc override { \
+      return ncc::Formatter;                                      \
+    }                                                             \
+                                                                  \
+  public:                                                         \
+    constexpr name##Class() { Finalize(); }                       \
   } name;
 
 #define NCC_EC_EX(group, name, formatter, ...)                                \
   static inline class name##Class final : public group {                      \
   protected:                                                                  \
-    ncc::ECUnique GetIdentity() const override { return ncc::ECUnique(); }    \
-    ncc::LogFormatterFunc GetFormatter() const override { return formatter; } \
-    std::optional<std::string_view> GetDetailsPath() const override {         \
+    auto GetIdentity() const -> ncc::ECUnique override {                      \
+      return ncc::ECUnique();                                                 \
+    }                                                                         \
+    auto GetFormatter() const -> ncc::LogFormatterFunc override {             \
+      return formatter;                                                       \
+    }                                                                         \
+    auto GetDetailsPath() const -> std::optional<std::string_view> override { \
       return std::string_view("" __VA_ARGS__);                                \
     }                                                                         \
                                                                               \
@@ -211,8 +217,8 @@ namespace ncc {
   using LogFilterFunc = bool (*)(const std::string &, Sev, const ECBase &);
 
 #define NCC_EC_FILTER(__name, __msg, __sev, __ec)                \
-  static inline bool __name(const std::string &__msg, Sev __sev, \
-                            const ECBase &__ec)
+  static inline auto __name(const std::string &__msg, Sev __sev, \
+                            const ECBase &__ec) -> bool
 
   NCC_EC_FILTER(TraceFilter, msg, sev, ec);
 
@@ -225,11 +231,11 @@ namespace ncc {
     LoggerContext() = default;
     ~LoggerContext() = default;
 
-    size_t Subscribe(LogCallback cb);
+    auto Subscribe(LogCallback cb) -> size_t;
     void Unsubscribe(size_t idx);
     void UnsubscribeAll();
 
-    size_t AddFilter(LogFilterFunc filter);
+    auto AddFilter(LogFilterFunc filter) -> size_t;
     void RemoveFilter(size_t idx);
     void RemoveFilter(LogFilterFunc filter);
     void ClearFilters();
@@ -240,12 +246,12 @@ namespace ncc {
 
     void Enable() { m_enabled = true; }
     void Disable() { m_enabled = false; }
-    [[nodiscard]] bool Enabled() const { return m_enabled; }
+    [[nodiscard]] auto Enabled() const -> bool { return m_enabled; }
 
     void Publish(const std::string &msg, Sev sev, const ECBase &ec) const;
   };
 
-  LogStream operator<<(LoggerContext log, const auto &value) {
+  auto operator<<(LoggerContext log, const auto &value) -> LogStream {
     LogStream stream([log](auto msg, auto sev, const auto &ec) {
       log.Publish(msg, sev, ec);
     });
@@ -255,7 +261,7 @@ namespace ncc {
     return stream;
   };
 
-  LogStream operator<<(LogStream &&stream, const auto &value) {
+  auto operator<<(LogStream &&stream, const auto &value) -> LogStream {
     stream.Write(value);
     return std::move(stream);
   };

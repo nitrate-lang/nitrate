@@ -210,11 +210,11 @@ static const std::vector<
         },
 };
 
-NCC_EXPORT short ncc::lex::GetOperatorPrecedence(Operator op, OpMode type) {
+NCC_EXPORT auto ncc::lex::GetOperatorPrecedence(Operator op, OpMode type) -> short {
   using Key = std::pair<Operator, OpMode>;
 
   struct KeyHash {
-    size_t operator()(const Key &k) const {
+    auto operator()(const Key &k) const -> size_t {
       return std::hash<Operator>()(k.first) ^ std::hash<OpMode>()(k.second);
     }
   };
@@ -241,12 +241,12 @@ NCC_EXPORT short ncc::lex::GetOperatorPrecedence(Operator op, OpMode type) {
   return -1;
 }
 
-NCC_EXPORT Associativity ncc::lex::GetOperatorAssociativity(Operator op,
-                                                            OpMode type) {
+NCC_EXPORT auto ncc::lex::GetOperatorAssociativity(Operator op,
+                                                            OpMode type) -> Associativity {
   using Key = std::pair<Operator, OpMode>;
 
   struct KeyHash {
-    size_t operator()(const Key &k) const {
+    auto operator()(const Key &k) const -> size_t {
       return std::hash<Operator>()(k.first) ^ std::hash<OpMode>()(k.second);
     }
   };
@@ -272,7 +272,7 @@ NCC_EXPORT Associativity ncc::lex::GetOperatorAssociativity(Operator op,
   return Left;
 }
 
-NCC_EXPORT ncc::string ncc::lex::to_string(TokenType ty, TokenData v) {
+NCC_EXPORT auto ncc::lex::to_string(TokenType ty, TokenData v) -> ncc::string {
   string r;
 
   switch (ty) {
@@ -340,7 +340,7 @@ NCC_EXPORT ncc::string ncc::lex::to_string(TokenType ty, TokenData v) {
   return r;
 }
 
-NCC_EXPORT Location LocationID::Get(IScanner &l) const {
+NCC_EXPORT auto LocationID::Get(IScanner &l) const -> Location {
   return l.GetLocation(m_id);
 }
 
@@ -361,7 +361,7 @@ public:
   }
 };
 
-Token IScanner::Next() {
+auto IScanner::Next() -> Token {
   while (true) {
     if (m_ready.empty()) [[unlikely]] {
       StaticImpl::FillTokenBuffer(*this);
@@ -381,7 +381,7 @@ Token IScanner::Next() {
   }
 }
 
-Token IScanner::Peek() {
+auto IScanner::Peek() -> Token {
   while (true) {
     if (m_ready.empty()) [[unlikely]] {
       StaticImpl::FillTokenBuffer(*this);
@@ -406,13 +406,13 @@ void IScanner::Insert(Token tok) {
   m_current = tok;
 }
 
-static uint32_t StringToUint32(std::string_view str, uint32_t sentinal) {
+static auto StringToUint32(std::string_view str, uint32_t sentinal) -> uint32_t {
   uint32_t result = sentinal;
   std::from_chars(str.data(), str.data() + str.size(), result);
   return result;
 }
 
-Location IScanner::GetEofLocation() {
+auto IScanner::GetEofLocation() -> Location {
   uint32_t offset = kLexEof;
   uint32_t line = kLexEof;
   uint32_t column = kLexEof;
@@ -437,7 +437,7 @@ Location IScanner::GetEofLocation() {
   return {offset, line, column, filename};
 }
 
-Location IScanner::GetLocation(LocationID id) {
+auto IScanner::GetLocation(LocationID id) -> Location {
   if (id.GetId() < m_location_interned.size()) {
     return m_location_interned[id.GetId()];
   }
@@ -445,14 +445,14 @@ Location IScanner::GetLocation(LocationID id) {
   return GetLocationFallback(id.GetId()).value_or(Location::EndOfFile());
 }
 
-Location IScanner::Start(Token t) { return t.GetStart().Get(*this); }
+auto IScanner::Start(Token t) -> Location { return t.GetStart().Get(*this); }
 
 Location IScanner::End(Token) {  /// NOLINT
   /// TODO: Support relexing to get the end location
   return Location::EndOfFile();
 }
 
-uint32_t IScanner::StartLine(Token t) { return Start(t).GetRow(); }
-uint32_t IScanner::StartColumn(Token t) { return Start(t).GetCol(); }
-uint32_t IScanner::EndLine(Token t) { return End(t).GetRow(); }
-uint32_t IScanner::EndColumn(Token t) { return End(t).GetCol(); }
+auto IScanner::StartLine(Token t) -> uint32_t { return Start(t).GetRow(); }
+auto IScanner::StartColumn(Token t) -> uint32_t { return Start(t).GetCol(); }
+auto IScanner::EndLine(Token t) -> uint32_t { return End(t).GetRow(); }
+auto IScanner::EndColumn(Token t) -> uint32_t { return End(t).GetCol(); }

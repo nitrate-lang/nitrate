@@ -153,7 +153,7 @@ namespace ncc::parse {
         : Type(QAST_PTR), m_item(std::move(item)), m_is_volatile(is_volatile) {}
 
     [[nodiscard]] constexpr auto GetItem() const { return m_item; }
-    [[nodiscard]] constexpr bool IsVolatile() const { return m_is_volatile; }
+    [[nodiscard]] constexpr auto IsVolatile() const -> bool { return m_is_volatile; }
   };
 
   class OpaqueTy : public Type {

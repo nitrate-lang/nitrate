@@ -52,8 +52,8 @@ namespace ncc::ir {
 
   void NrWrite(IRModule *mod, NullableFlowPtr<Expr> node, std::ostream &out);
 
-  std::unique_ptr<IRModule> NrLower(ncc::parse::Base *base, const char *name,
-                                     bool diagnostics);
+  auto NrLower(ncc::parse::Base *base, const char *name,
+                                     bool diagnostics) -> std::unique_ptr<IRModule>;
 
   typedef void (*NrNodeCb)(Expr *cur, uintptr_t userdata);
 

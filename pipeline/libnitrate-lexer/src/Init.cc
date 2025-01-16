@@ -40,7 +40,7 @@ using namespace ncc::lex;
 
 NCC_EXPORT ncc::LibraryRC<LexerLibrarySetup> ncc::lex::LexerLibrary;
 
-NCC_EXPORT bool LexerLibrarySetup::Init() {
+NCC_EXPORT auto LexerLibrarySetup::Init() -> bool {
   qcore_print(QCORE_DEBUG, "Initializing Nitrate Lexer Library");
 
   if (!ncc::CoreLibrary.InitRC()) {
@@ -60,6 +60,6 @@ NCC_EXPORT void LexerLibrarySetup::Deinit() {
   qcore_print(QCORE_DEBUG, "Nitrate Lexer Library deinitialized");
 }
 
-NCC_EXPORT std::string_view LexerLibrarySetup::GetVersionId() {
+NCC_EXPORT auto LexerLibrarySetup::GetVersionId() -> std::string_view {
   return __TARGET_VERSION;
 }

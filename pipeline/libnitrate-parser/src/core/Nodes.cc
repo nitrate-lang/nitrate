@@ -49,7 +49,7 @@ NCC_EXPORT thread_local std::unique_ptr<ncc::IMemory> parse::NparAllocator =
 
 NCC_EXPORT ASTExtension parse::ExtensionDataStore;
 
-ASTExtensionKey ASTExtension::Add(lex::LocationID begin, lex::LocationID end) {
+auto ASTExtension::Add(lex::LocationID begin, lex::LocationID end) -> ASTExtensionKey {
   bool sync = EnableSync;
 
   if (sync) {
@@ -67,7 +67,7 @@ ASTExtensionKey ASTExtension::Add(lex::LocationID begin, lex::LocationID end) {
   return r;
 }
 
-const ASTExtensionPackage &ASTExtension::Get(ASTExtensionKey loc) {
+auto ASTExtension::Get(ASTExtensionKey loc) -> const ASTExtensionPackage & {
   bool sync = EnableSync;
 
   if (sync) {
@@ -97,23 +97,23 @@ void ASTExtension::Set(ASTExtensionKey id, ASTExtensionPackage &&data) {
   }
 }
 
-NCC_EXPORT std::ostream &parse::operator<<(std::ostream &os,
-                                           const ASTExtensionKey &idx) {
+NCC_EXPORT auto parse::operator<<(std::ostream &os,
+                                           const ASTExtensionKey &idx) -> std::ostream & {
   os << "${L:" << idx.Key() << "}";
   return os;
 }
 
 ///=============================================================================
 
-NCC_EXPORT std::ostream &Base::Dump(std::ostream &os,
-                                    WriterSourceProvider rd) const {
+NCC_EXPORT auto Base::Dump(std::ostream &os,
+                                    WriterSourceProvider rd) const -> std::ostream & {
   AstJsonWriter writer(os, rd);
   this->Accept(writer);
 
   return os;
 }
 
-NCC_EXPORT std::string Base::ToJson(WriterSourceProvider rd) const {
+NCC_EXPORT auto Base::ToJson(WriterSourceProvider rd) const -> std::string {
   std::stringstream ss;
   AstJsonWriter writer(ss, rd);
   this->Accept(writer);
@@ -121,7 +121,7 @@ NCC_EXPORT std::string Base::ToJson(WriterSourceProvider rd) const {
   return ss.str();
 }
 
-NCC_EXPORT bool Base::IsEq(FlowPtr<Base> o) const {
+NCC_EXPORT auto Base::IsEq(FlowPtr<Base> o) const -> bool {
   if (this == o.get()) {
     return true;
   }
@@ -141,7 +141,7 @@ NCC_EXPORT bool Base::IsEq(FlowPtr<Base> o) const {
   return ss1.str() == ss2.str();
 }
 
-NCC_EXPORT uint64_t Base::Hash64() const {
+NCC_EXPORT auto Base::Hash64() const -> uint64_t {
   AstHash64 visitor;
 
   this->Accept(visitor);
@@ -149,7 +149,7 @@ NCC_EXPORT uint64_t Base::Hash64() const {
   return visitor.Get();
 }
 
-NCC_EXPORT size_t Base::RecursiveChildCount() {
+NCC_EXPORT auto Base::RecursiveChildCount() -> size_t {
   size_t count = 0;
 
   for_each(this, [&](auto, auto) { count++; });
@@ -166,7 +166,7 @@ NCC_EXPORT void Base::BindCodeCommentData(
 
 ///=============================================================================
 
-NCC_EXPORT bool Type::IsPtrTo(const Type *type) const {
+NCC_EXPORT auto Type::IsPtrTo(const Type *type) const -> bool {
   if (!IsPointer()) {
     return false;
   }
@@ -179,21 +179,21 @@ NCC_EXPORT bool Type::IsPtrTo(const Type *type) const {
   return item->is(type->GetKind());
 }
 
-FlowPtr<Stmt> Parser::PImpl::MockStmt(std::optional<npar_ty_t>) {
+auto Parser::PImpl::MockStmt(std::optional<npar_ty_t>) -> FlowPtr<Stmt> {
   auto node = make<Stmt>(QAST_BASE)();
   node->SetOffset(m_rd.Current().GetStart());
 
   return node;
 }
 
-FlowPtr<Expr> Parser::PImpl::MockExpr(std::optional<npar_ty_t>) {
+auto Parser::PImpl::MockExpr(std::optional<npar_ty_t>) -> FlowPtr<Expr> {
   auto node = make<Expr>(QAST_BASE)();
   node->SetOffset(m_rd.Current().GetStart());
 
   return node;
 }
 
-FlowPtr<Type> Parser::PImpl::MockType() {
+auto Parser::PImpl::MockType() -> FlowPtr<Type> {
   auto node = make<Type>(QAST_BASE)();
   node->SetOffset(m_rd.Current().GetStart());
 

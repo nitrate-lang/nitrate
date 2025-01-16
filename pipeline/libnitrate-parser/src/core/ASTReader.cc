@@ -48,23 +48,23 @@ using namespace boost::multiprecision;
 
 template <typename Ty,
           typename = std::enable_if_t<std::is_floating_point_v<Ty>>>
-static inline bool StrictFromChars(
+static inline auto StrictFromChars(
     const char* first, const char* last, Ty& value,
-    std::chars_format fmt = std::chars_format::general) noexcept {
+    std::chars_format fmt = std::chars_format::general) noexcept -> bool {
   auto res = std::from_chars(first, last, value, fmt);
 
   return res.ec == std::errc() && res.ptr == last;
 }
 
 template <typename Ty>
-static inline bool StrictFromChars(const char* first, const char* last,
-                                   Ty& value, int base = 10) noexcept {
+static inline auto StrictFromChars(const char* first, const char* last,
+                                   Ty& value, int base = 10) noexcept -> bool {
   auto res = std::from_chars(first, last, value, base);
 
   return res.ec == std::errc() && res.ptr == last;
 }
 
-std::optional<FlowPtr<Base>> AstReader::Get() {
+auto AstReader::Get() -> std::optional<FlowPtr<Base>> {
   if (!m_root) {
     if (auto root = DeserializeObject()) {
       m_root = root.value();
@@ -74,7 +74,7 @@ std::optional<FlowPtr<Base>> AstReader::Get() {
   return m_root;
 }
 
-std::optional<AstReader::LocationRange> AstReader::ReadLocationRange() {
+auto AstReader::ReadLocationRange() -> std::optional<AstReader::LocationRange> {
   const auto parse_location_object = [&]() -> std::optional<lex::Location> {
     if (!NextIf<std::string>("off") || !NextIs<uint64_t>()) {
       return std::nullopt;
@@ -168,7 +168,7 @@ std::optional<AstReader::LocationRange> AstReader::ReadLocationRange() {
   return range;
 }
 
-std::optional<AstReader::TypeMetadata> AstReader::ReadTypeMetadata() {
+auto AstReader::ReadTypeMetadata() -> std::optional<AstReader::TypeMetadata> {
   AstReader::TypeMetadata info;
 
   if (!NextIf<std::string>("width")) {
@@ -219,7 +219,7 @@ std::optional<AstReader::TypeMetadata> AstReader::ReadTypeMetadata() {
   return info;
 }
 
-NullableFlowPtr<Base> AstReader::DeserializeObject() {
+auto AstReader::DeserializeObject() -> NullableFlowPtr<Base> {
   // This code must be the reverse of the map contained in:
   // 'constexpr std::string_view Base::GetKindName(npar_ty_t type)'
   static const std::unordered_map<std::string, npar_ty_t> node_kinds_map = {
@@ -666,7 +666,7 @@ NullableFlowPtr<Base> AstReader::DeserializeObject() {
   return r;
 }
 
-NullableFlowPtr<Stmt> AstReader::DeserializeStatement() {
+auto AstReader::DeserializeStatement() -> NullableFlowPtr<Stmt> {
   auto object = DeserializeObject();
   if (!object.has_value()) {
     return nullptr;
@@ -680,7 +680,7 @@ NullableFlowPtr<Stmt> AstReader::DeserializeStatement() {
   return object.value().as<Stmt>();
 }
 
-NullableFlowPtr<Expr> AstReader::DeserializeExpression() {
+auto AstReader::DeserializeExpression() -> NullableFlowPtr<Expr> {
   auto object = DeserializeObject();
   if (!object.has_value()) {
     return nullptr;
@@ -694,7 +694,7 @@ NullableFlowPtr<Expr> AstReader::DeserializeExpression() {
   return object.value().as<Expr>();
 }
 
-NullableFlowPtr<Type> AstReader::DeserializeType() {
+auto AstReader::DeserializeType() -> NullableFlowPtr<Type> {
   auto object = DeserializeObject();
   if (!object.has_value()) {
     return nullptr;
@@ -712,7 +712,7 @@ NullableFlowPtr<Base> AstReader::ReadKindNode() {  /// NOLINT
   return make<Base>(QAST_BASE)();
 }
 
-NullableFlowPtr<BinExpr> AstReader::ReadKindBinexpr() {
+auto AstReader::ReadKindBinexpr() -> NullableFlowPtr<BinExpr> {
   if (!NextIf<std::string>("op") || !NextIs<std::string>()) {
     return nullptr;
   }
@@ -745,7 +745,7 @@ NullableFlowPtr<BinExpr> AstReader::ReadKindBinexpr() {
   return make<BinExpr>(lhs.value(), op_it->second, rhs.value())();
 }
 
-NullableFlowPtr<UnaryExpr> AstReader::ReadKindUnexpr() {
+auto AstReader::ReadKindUnexpr() -> NullableFlowPtr<UnaryExpr> {
   if (!NextIf<std::string>("op") || !NextIs<std::string>()) {
     return nullptr;
   }
@@ -769,7 +769,7 @@ NullableFlowPtr<UnaryExpr> AstReader::ReadKindUnexpr() {
   return make<UnaryExpr>(op_it->second, rhs.value())();
 }
 
-NullableFlowPtr<PostUnaryExpr> AstReader::ReadKindPostUnexpr() {
+auto AstReader::ReadKindPostUnexpr() -> NullableFlowPtr<PostUnaryExpr> {
   if (!NextIf<std::string>("op") || !NextIs<std::string>()) {
     return nullptr;
   }
@@ -793,7 +793,7 @@ NullableFlowPtr<PostUnaryExpr> AstReader::ReadKindPostUnexpr() {
   return make<PostUnaryExpr>(lhs.value(), op_it->second)();
 }
 
-NullableFlowPtr<TernaryExpr> AstReader::ReadKindTerexpr() {
+auto AstReader::ReadKindTerexpr() -> NullableFlowPtr<TernaryExpr> {
   if (!NextIf<std::string>("cond")) {
     return nullptr;
   }
@@ -824,7 +824,7 @@ NullableFlowPtr<TernaryExpr> AstReader::ReadKindTerexpr() {
   return make<TernaryExpr>(cond.value(), lhs.value(), rhs.value())();
 }
 
-NullableFlowPtr<ConstInt> AstReader::ReadKindInt() {
+auto AstReader::ReadKindInt() -> NullableFlowPtr<ConstInt> {
   if (!NextIf<std::string>("value") || !NextIs<std::string>()) {
     return nullptr;
   }
@@ -845,7 +845,7 @@ NullableFlowPtr<ConstInt> AstReader::ReadKindInt() {
   return make<ConstInt>(std::move(value))();
 }
 
-NullableFlowPtr<ConstFloat> AstReader::ReadKindFloat() {
+auto AstReader::ReadKindFloat() -> NullableFlowPtr<ConstFloat> {
   if (!NextIf<std::string>("value") || !NextIs<std::string>()) {
     return nullptr;
   }
@@ -861,7 +861,7 @@ NullableFlowPtr<ConstFloat> AstReader::ReadKindFloat() {
   return make<ConstFloat>(std::move(value))();
 }
 
-NullableFlowPtr<ConstString> AstReader::ReadKindString() {
+auto AstReader::ReadKindString() -> NullableFlowPtr<ConstString> {
   if (!NextIf<std::string>("value") || !NextIs<std::string>()) {
     return nullptr;
   }
@@ -871,7 +871,7 @@ NullableFlowPtr<ConstString> AstReader::ReadKindString() {
   return make<ConstString>(std::move(value))();
 }
 
-NullableFlowPtr<ConstChar> AstReader::ReadKindChar() {
+auto AstReader::ReadKindChar() -> NullableFlowPtr<ConstChar> {
   if (!NextIf<std::string>("value") || !NextIs<uint64_t>()) {
     return nullptr;
   }
@@ -885,7 +885,7 @@ NullableFlowPtr<ConstChar> AstReader::ReadKindChar() {
   return make<ConstChar>(value)();
 }
 
-NullableFlowPtr<ConstBool> AstReader::ReadKindBool() {
+auto AstReader::ReadKindBool() -> NullableFlowPtr<ConstBool> {
   if (!NextIf<std::string>("value") || !NextIs<bool>()) {
     return nullptr;
   }
@@ -903,7 +903,7 @@ NullableFlowPtr<ConstUndef> AstReader::ReadKindUndef() {  /// NOLINT
   return make<ConstUndef>()();
 }
 
-NullableFlowPtr<Call> AstReader::ReadKindCall() {
+auto AstReader::ReadKindCall() -> NullableFlowPtr<Call> {
   if (!NextIf<std::string>("callee")) {
     return nullptr;
   }
@@ -944,7 +944,7 @@ NullableFlowPtr<Call> AstReader::ReadKindCall() {
   return make<Call>(callee.value(), std::move(arguments))();
 }
 
-NullableFlowPtr<List> AstReader::ReadKindList() {
+auto AstReader::ReadKindList() -> NullableFlowPtr<List> {
   if (!NextIf<std::string>("elements") || !NextIs<uint64_t>()) {
     return nullptr;
   }
@@ -966,7 +966,7 @@ NullableFlowPtr<List> AstReader::ReadKindList() {
   return make<List>(std::move(elements))();
 }
 
-NullableFlowPtr<Assoc> AstReader::ReadKindAssoc() {
+auto AstReader::ReadKindAssoc() -> NullableFlowPtr<Assoc> {
   if (!NextIf<std::string>("key")) {
     return nullptr;
   }
@@ -988,7 +988,7 @@ NullableFlowPtr<Assoc> AstReader::ReadKindAssoc() {
   return make<Assoc>(key.value(), value.value())();
 }
 
-NullableFlowPtr<Index> AstReader::ReadKindIndex() {
+auto AstReader::ReadKindIndex() -> NullableFlowPtr<Index> {
   if (!NextIf<std::string>("base")) {
     return nullptr;
   }
@@ -1007,7 +1007,7 @@ NullableFlowPtr<Index> AstReader::ReadKindIndex() {
   return make<Index>(base.value(), index.value())();
 }
 
-NullableFlowPtr<Slice> AstReader::ReadKindSlice() {
+auto AstReader::ReadKindSlice() -> NullableFlowPtr<Slice> {
   if (!NextIf<std::string>("base")) {
     return nullptr;
   }
@@ -1038,7 +1038,7 @@ NullableFlowPtr<Slice> AstReader::ReadKindSlice() {
   return make<Slice>(base.value(), start.value(), end.value())();
 }
 
-NullableFlowPtr<FString> AstReader::ReadKindFstring() {
+auto AstReader::ReadKindFstring() -> NullableFlowPtr<FString> {
   if (!NextIf<std::string>("terms") || !NextIs<uint64_t>()) {
     return nullptr;
   }
@@ -1064,7 +1064,7 @@ NullableFlowPtr<FString> AstReader::ReadKindFstring() {
   return make<FString>(std::move(terms))();
 }
 
-NullableFlowPtr<Ident> AstReader::ReadKindIdent() {
+auto AstReader::ReadKindIdent() -> NullableFlowPtr<Ident> {
   if (!NextIf<std::string>("name") || !NextIs<std::string>()) {
     return nullptr;
   }
@@ -1074,7 +1074,7 @@ NullableFlowPtr<Ident> AstReader::ReadKindIdent() {
   return make<Ident>(std::move(name))();
 }
 
-NullableFlowPtr<SeqPoint> AstReader::ReadKindSeqPoint() {
+auto AstReader::ReadKindSeqPoint() -> NullableFlowPtr<SeqPoint> {
   if (!NextIf<std::string>("terms") || !NextIs<uint64_t>()) {
     return nullptr;
   }
@@ -1096,7 +1096,7 @@ NullableFlowPtr<SeqPoint> AstReader::ReadKindSeqPoint() {
   return make<SeqPoint>(std::move(terms))();
 }
 
-NullableFlowPtr<StmtExpr> AstReader::ReadKindStmtExpr() {
+auto AstReader::ReadKindStmtExpr() -> NullableFlowPtr<StmtExpr> {
   if (!NextIf<std::string>("stmt")) {
     return nullptr;
   }
@@ -1109,7 +1109,7 @@ NullableFlowPtr<StmtExpr> AstReader::ReadKindStmtExpr() {
   return make<StmtExpr>(stmt.value())();
 }
 
-NullableFlowPtr<TypeExpr> AstReader::ReadKindTypeExpr() {
+auto AstReader::ReadKindTypeExpr() -> NullableFlowPtr<TypeExpr> {
   if (!NextIf<std::string>("type")) {
     return nullptr;
   }
@@ -1122,7 +1122,7 @@ NullableFlowPtr<TypeExpr> AstReader::ReadKindTypeExpr() {
   return make<TypeExpr>(type.value())();
 }
 
-NullableFlowPtr<TemplCall> AstReader::ReadKindTemplCall() {
+auto AstReader::ReadKindTemplCall() -> NullableFlowPtr<TemplCall> {
   if (!NextIf<std::string>("callee")) {
     return nullptr;
   }
@@ -1192,7 +1192,7 @@ NullableFlowPtr<TemplCall> AstReader::ReadKindTemplCall() {
                          std::move(template_args))();
 }
 
-NullableFlowPtr<U1> AstReader::ReadKindU1() {
+auto AstReader::ReadKindU1() -> NullableFlowPtr<U1> {
   auto info = ReadTypeMetadata();
   if (!info.has_value()) {
     return nullptr;
@@ -1206,7 +1206,7 @@ NullableFlowPtr<U1> AstReader::ReadKindU1() {
   return node;
 }
 
-NullableFlowPtr<U8> AstReader::ReadKindU8() {
+auto AstReader::ReadKindU8() -> NullableFlowPtr<U8> {
   auto info = ReadTypeMetadata();
   if (!info.has_value()) {
     return nullptr;
@@ -1220,7 +1220,7 @@ NullableFlowPtr<U8> AstReader::ReadKindU8() {
   return node;
 }
 
-NullableFlowPtr<U16> AstReader::ReadKindU16() {
+auto AstReader::ReadKindU16() -> NullableFlowPtr<U16> {
   auto info = ReadTypeMetadata();
   if (!info.has_value()) {
     return nullptr;
@@ -1234,7 +1234,7 @@ NullableFlowPtr<U16> AstReader::ReadKindU16() {
   return node;
 }
 
-NullableFlowPtr<U32> AstReader::ReadKindU32() {
+auto AstReader::ReadKindU32() -> NullableFlowPtr<U32> {
   auto info = ReadTypeMetadata();
   if (!info.has_value()) {
     return nullptr;
@@ -1248,7 +1248,7 @@ NullableFlowPtr<U32> AstReader::ReadKindU32() {
   return node;
 }
 
-NullableFlowPtr<U64> AstReader::ReadKindU64() {
+auto AstReader::ReadKindU64() -> NullableFlowPtr<U64> {
   auto info = ReadTypeMetadata();
   if (!info.has_value()) {
     return nullptr;
@@ -1262,7 +1262,7 @@ NullableFlowPtr<U64> AstReader::ReadKindU64() {
   return node;
 }
 
-NullableFlowPtr<U128> AstReader::ReadKindU128() {
+auto AstReader::ReadKindU128() -> NullableFlowPtr<U128> {
   auto info = ReadTypeMetadata();
   if (!info.has_value()) {
     return nullptr;
@@ -1276,7 +1276,7 @@ NullableFlowPtr<U128> AstReader::ReadKindU128() {
   return node;
 }
 
-NullableFlowPtr<I8> AstReader::ReadKindI8() {
+auto AstReader::ReadKindI8() -> NullableFlowPtr<I8> {
   auto info = ReadTypeMetadata();
   if (!info.has_value()) {
     return nullptr;
@@ -1290,7 +1290,7 @@ NullableFlowPtr<I8> AstReader::ReadKindI8() {
   return node;
 }
 
-NullableFlowPtr<I16> AstReader::ReadKindI16() {
+auto AstReader::ReadKindI16() -> NullableFlowPtr<I16> {
   auto info = ReadTypeMetadata();
   if (!info.has_value()) {
     return nullptr;
@@ -1304,7 +1304,7 @@ NullableFlowPtr<I16> AstReader::ReadKindI16() {
   return node;
 }
 
-NullableFlowPtr<I32> AstReader::ReadKindI32() {
+auto AstReader::ReadKindI32() -> NullableFlowPtr<I32> {
   auto info = ReadTypeMetadata();
   if (!info.has_value()) {
     return nullptr;
@@ -1318,7 +1318,7 @@ NullableFlowPtr<I32> AstReader::ReadKindI32() {
   return node;
 }
 
-NullableFlowPtr<I64> AstReader::ReadKindI64() {
+auto AstReader::ReadKindI64() -> NullableFlowPtr<I64> {
   auto info = ReadTypeMetadata();
   if (!info.has_value()) {
     return nullptr;
@@ -1332,7 +1332,7 @@ NullableFlowPtr<I64> AstReader::ReadKindI64() {
   return node;
 }
 
-NullableFlowPtr<I128> AstReader::ReadKindI128() {
+auto AstReader::ReadKindI128() -> NullableFlowPtr<I128> {
   auto info = ReadTypeMetadata();
   if (!info.has_value()) {
     return nullptr;
@@ -1346,7 +1346,7 @@ NullableFlowPtr<I128> AstReader::ReadKindI128() {
   return node;
 }
 
-NullableFlowPtr<F16> AstReader::ReadKindF16() {
+auto AstReader::ReadKindF16() -> NullableFlowPtr<F16> {
   auto info = ReadTypeMetadata();
   if (!info.has_value()) {
     return nullptr;
@@ -1360,7 +1360,7 @@ NullableFlowPtr<F16> AstReader::ReadKindF16() {
   return node;
 }
 
-NullableFlowPtr<F32> AstReader::ReadKindF32() {
+auto AstReader::ReadKindF32() -> NullableFlowPtr<F32> {
   auto info = ReadTypeMetadata();
   if (!info.has_value()) {
     return nullptr;
@@ -1374,7 +1374,7 @@ NullableFlowPtr<F32> AstReader::ReadKindF32() {
   return node;
 }
 
-NullableFlowPtr<F64> AstReader::ReadKindF64() {
+auto AstReader::ReadKindF64() -> NullableFlowPtr<F64> {
   auto info = ReadTypeMetadata();
   if (!info.has_value()) {
     return nullptr;
@@ -1388,7 +1388,7 @@ NullableFlowPtr<F64> AstReader::ReadKindF64() {
   return node;
 }
 
-NullableFlowPtr<F128> AstReader::ReadKindF128() {
+auto AstReader::ReadKindF128() -> NullableFlowPtr<F128> {
   auto info = ReadTypeMetadata();
   if (!info.has_value()) {
     return nullptr;
@@ -1402,7 +1402,7 @@ NullableFlowPtr<F128> AstReader::ReadKindF128() {
   return node;
 }
 
-NullableFlowPtr<VoidTy> AstReader::ReadKindVoid() {
+auto AstReader::ReadKindVoid() -> NullableFlowPtr<VoidTy> {
   auto info = ReadTypeMetadata();
   if (!info.has_value()) {
     return nullptr;
@@ -1416,7 +1416,7 @@ NullableFlowPtr<VoidTy> AstReader::ReadKindVoid() {
   return node;
 }
 
-NullableFlowPtr<RefTy> AstReader::ReadKindRef() {
+auto AstReader::ReadKindRef() -> NullableFlowPtr<RefTy> {
   auto info = ReadTypeMetadata();
 
   if (!info.has_value()) {
@@ -1440,7 +1440,7 @@ NullableFlowPtr<RefTy> AstReader::ReadKindRef() {
   return node;
 }
 
-NullableFlowPtr<PtrTy> AstReader::ReadKindPtr() {
+auto AstReader::ReadKindPtr() -> NullableFlowPtr<PtrTy> {
   auto info = ReadTypeMetadata();
   if (!info.has_value()) {
     return nullptr;
@@ -1469,7 +1469,7 @@ NullableFlowPtr<PtrTy> AstReader::ReadKindPtr() {
   return node;
 }
 
-NullableFlowPtr<OpaqueTy> AstReader::ReadKindOpaque() {
+auto AstReader::ReadKindOpaque() -> NullableFlowPtr<OpaqueTy> {
   auto info = ReadTypeMetadata();
   if (!info.has_value()) {
     return nullptr;
@@ -1489,7 +1489,7 @@ NullableFlowPtr<OpaqueTy> AstReader::ReadKindOpaque() {
   return node;
 }
 
-NullableFlowPtr<ArrayTy> AstReader::ReadKindArray() {
+auto AstReader::ReadKindArray() -> NullableFlowPtr<ArrayTy> {
   auto info = ReadTypeMetadata();
   if (!info.has_value()) {
     return nullptr;
@@ -1521,7 +1521,7 @@ NullableFlowPtr<ArrayTy> AstReader::ReadKindArray() {
   return node;
 }
 
-NullableFlowPtr<TupleTy> AstReader::ReadKindTuple() {
+auto AstReader::ReadKindTuple() -> NullableFlowPtr<TupleTy> {
   auto info = ReadTypeMetadata();
   if (!info.has_value()) {
     return nullptr;
@@ -1553,7 +1553,7 @@ NullableFlowPtr<TupleTy> AstReader::ReadKindTuple() {
   return node;
 }
 
-NullableFlowPtr<FuncTy> AstReader::ReadKindFuncTy() {
+auto AstReader::ReadKindFuncTy() -> NullableFlowPtr<FuncTy> {
   auto info = ReadTypeMetadata();
   if (!info.has_value()) {
     return nullptr;
@@ -1670,7 +1670,7 @@ NullableFlowPtr<FuncTy> AstReader::ReadKindFuncTy() {
   return node;
 }
 
-NullableFlowPtr<NamedTy> AstReader::ReadKindUnres() {
+auto AstReader::ReadKindUnres() -> NullableFlowPtr<NamedTy> {
   auto info = ReadTypeMetadata();
   if (!info.has_value()) {
     return nullptr;
@@ -1690,7 +1690,7 @@ NullableFlowPtr<NamedTy> AstReader::ReadKindUnres() {
   return node;
 }
 
-NullableFlowPtr<InferTy> AstReader::ReadKindInfer() {
+auto AstReader::ReadKindInfer() -> NullableFlowPtr<InferTy> {
   auto info = ReadTypeMetadata();
   if (!info.has_value()) {
     return nullptr;
@@ -1704,7 +1704,7 @@ NullableFlowPtr<InferTy> AstReader::ReadKindInfer() {
   return node;
 }
 
-NullableFlowPtr<TemplType> AstReader::ReadKindTempl() {
+auto AstReader::ReadKindTempl() -> NullableFlowPtr<TemplType> {
   auto info = ReadTypeMetadata();
   if (!info.has_value()) {
     return nullptr;
@@ -1755,7 +1755,7 @@ NullableFlowPtr<TemplType> AstReader::ReadKindTempl() {
   return node;
 }
 
-NullableFlowPtr<TypedefStmt> AstReader::ReadKindTypedef() {
+auto AstReader::ReadKindTypedef() -> NullableFlowPtr<TypedefStmt> {
   if (!NextIf<std::string>("name") || !NextIs<std::string>()) {
     return nullptr;
   }
@@ -1774,7 +1774,7 @@ NullableFlowPtr<TypedefStmt> AstReader::ReadKindTypedef() {
   return make<TypedefStmt>(name, type.value())();
 }
 
-NullableFlowPtr<StructDef> AstReader::ReadKindStruct() {
+auto AstReader::ReadKindStruct() -> NullableFlowPtr<StructDef> {
   if (!NextIf<std::string>("mode")) {
     return nullptr;
   }
@@ -2033,7 +2033,7 @@ NullableFlowPtr<StructDef> AstReader::ReadKindStruct() {
                          methods, static_methods)();
 }
 
-NullableFlowPtr<EnumDef> AstReader::ReadKindEnum() {
+auto AstReader::ReadKindEnum() -> NullableFlowPtr<EnumDef> {
   if (!NextIf<std::string>("name") || !NextIs<std::string>()) {
     return nullptr;
   }
@@ -2090,7 +2090,7 @@ NullableFlowPtr<EnumDef> AstReader::ReadKindEnum() {
   return make<EnumDef>(name, type, std::move(fields))();
 }
 
-NullableFlowPtr<Function> AstReader::ReadKindFunction() {
+auto AstReader::ReadKindFunction() -> NullableFlowPtr<Function> {
   if (!NextIf<std::string>("attributes") || !NextIs<uint64_t>()) {
     return nullptr;
   }
@@ -2319,7 +2319,7 @@ NullableFlowPtr<Function> AstReader::ReadKindFunction() {
                         body)();
 }
 
-NullableFlowPtr<ScopeStmt> AstReader::ReadKindScope() {
+auto AstReader::ReadKindScope() -> NullableFlowPtr<ScopeStmt> {
   if (!NextIf<std::string>("name") || !NextIs<std::string>()) {
     return nullptr;
   }
@@ -2352,7 +2352,7 @@ NullableFlowPtr<ScopeStmt> AstReader::ReadKindScope() {
   return make<ScopeStmt>(name, body.value(), dependencies)();
 }
 
-NullableFlowPtr<ExportStmt> AstReader::ReadKindExport() {
+auto AstReader::ReadKindExport() -> NullableFlowPtr<ExportStmt> {
   if (!NextIf<std::string>("abi") || !NextIs<std::string>()) {
     return nullptr;
   }
@@ -2406,7 +2406,7 @@ NullableFlowPtr<ExportStmt> AstReader::ReadKindExport() {
                           std::move(attributes))();
 }
 
-NullableFlowPtr<Block> AstReader::ReadKindBlock() {
+auto AstReader::ReadKindBlock() -> NullableFlowPtr<Block> {
   if (!NextIf<std::string>("safe")) {
     return nullptr;
   }
@@ -2444,7 +2444,7 @@ NullableFlowPtr<Block> AstReader::ReadKindBlock() {
   return make<Block>(std::move(statements), mode)();
 }
 
-NullableFlowPtr<VarDecl> AstReader::ReadKindLet() {
+auto AstReader::ReadKindLet() -> NullableFlowPtr<VarDecl> {
   if (!NextIf<std::string>("mode")) {
     return nullptr;
   }
@@ -2515,7 +2515,7 @@ NullableFlowPtr<VarDecl> AstReader::ReadKindLet() {
   return make<VarDecl>(name, type, value, mode, std::move(attributes))();
 }
 
-NullableFlowPtr<InlineAsm> AstReader::ReadKindInlineAsm() {
+auto AstReader::ReadKindInlineAsm() -> NullableFlowPtr<InlineAsm> {
   if (!NextIf<std::string>("assembly") || !NextIs<std::string>()) {
     return nullptr;
   }
@@ -2543,7 +2543,7 @@ NullableFlowPtr<InlineAsm> AstReader::ReadKindInlineAsm() {
   return make<InlineAsm>(assembly, std::move(parameters))();
 }
 
-NullableFlowPtr<ReturnStmt> AstReader::ReadKindReturn() {
+auto AstReader::ReadKindReturn() -> NullableFlowPtr<ReturnStmt> {
   if (!NextIf<std::string>("expr")) {
     return nullptr;
   }
@@ -2561,7 +2561,7 @@ NullableFlowPtr<ReturnStmt> AstReader::ReadKindReturn() {
   return make<ReturnStmt>(expression)();
 }
 
-NullableFlowPtr<ReturnIfStmt> AstReader::ReadKindRetif() {
+auto AstReader::ReadKindRetif() -> NullableFlowPtr<ReturnIfStmt> {
   if (!NextIf<std::string>("cond")) {
     return nullptr;
   }
@@ -2591,7 +2591,7 @@ NullableFlowPtr<ContinueStmt> AstReader::ReadKindContinue() {  /// NOLINT
   return make<ContinueStmt>()();
 }
 
-NullableFlowPtr<IfStmt> AstReader::ReadKindIf() {
+auto AstReader::ReadKindIf() -> NullableFlowPtr<IfStmt> {
   if (!NextIf<std::string>("cond")) {
     return nullptr;
   }
@@ -2624,7 +2624,7 @@ NullableFlowPtr<IfStmt> AstReader::ReadKindIf() {
   return make<IfStmt>(condition.value(), then_block.value(), else_block)();
 }
 
-NullableFlowPtr<WhileStmt> AstReader::ReadKindWhile() {
+auto AstReader::ReadKindWhile() -> NullableFlowPtr<WhileStmt> {
   if (!NextIf<std::string>("cond")) {
     return nullptr;
   }
@@ -2646,7 +2646,7 @@ NullableFlowPtr<WhileStmt> AstReader::ReadKindWhile() {
   return make<WhileStmt>(condition.value(), body.value())();
 }
 
-NullableFlowPtr<ForStmt> AstReader::ReadKindFor() {
+auto AstReader::ReadKindFor() -> NullableFlowPtr<ForStmt> {
   if (!NextIf<std::string>("init")) {
     return nullptr;
   }
@@ -2701,7 +2701,7 @@ NullableFlowPtr<ForStmt> AstReader::ReadKindFor() {
   return make<ForStmt>(init, condition, step, body.value())();
 }
 
-NullableFlowPtr<ForeachStmt> AstReader::ReadKindForeach() {
+auto AstReader::ReadKindForeach() -> NullableFlowPtr<ForeachStmt> {
   if (!NextIf<std::string>("idx") || !NextIs<std::string>()) {
     return nullptr;
   }
@@ -2736,7 +2736,7 @@ NullableFlowPtr<ForeachStmt> AstReader::ReadKindForeach() {
                            body.value())();
 }
 
-NullableFlowPtr<CaseStmt> AstReader::ReadKindCase() {
+auto AstReader::ReadKindCase() -> NullableFlowPtr<CaseStmt> {
   if (!NextIf<std::string>("match")) {
     return nullptr;
   }
@@ -2758,7 +2758,7 @@ NullableFlowPtr<CaseStmt> AstReader::ReadKindCase() {
   return make<CaseStmt>(match.value(), body.value())();
 }
 
-NullableFlowPtr<SwitchStmt> AstReader::ReadKindSwitch() {
+auto AstReader::ReadKindSwitch() -> NullableFlowPtr<SwitchStmt> {
   if (!NextIf<std::string>("match")) {
     return nullptr;
   }
@@ -2803,7 +2803,7 @@ NullableFlowPtr<SwitchStmt> AstReader::ReadKindSwitch() {
   return make<SwitchStmt>(match.value(), std::move(cases), default_case)();
 }
 
-NullableFlowPtr<ExprStmt> AstReader::ReadKindExprStmt() {
+auto AstReader::ReadKindExprStmt() -> NullableFlowPtr<ExprStmt> {
   if (!NextIf<std::string>("expr")) {
     return nullptr;
   }

@@ -59,11 +59,11 @@ void Environment::SetupDefaultKeys() {
   m_data.insert({"FILE", "<stdin>"});
 }
 
-bool Environment::Contains(std::string_view key) {
+auto Environment::Contains(std::string_view key) -> bool {
   return m_data.contains(string(key));
 }
 
-std::optional<string> Environment::Get(string key) {
+auto Environment::Get(string key) -> std::optional<string> {
   if (auto it = m_data.find(key); it != m_data.end()) {
     return it->second;
   }

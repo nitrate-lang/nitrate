@@ -38,9 +38,9 @@
 
 namespace ncc::seq {
   struct SeqLibrarySetup {
-    static bool Init();
+    static auto Init() -> bool;
     static void Deinit();
-    static std::string_view GetVersionId();
+    static auto GetVersionId() -> std::string_view;
   };
 
   extern LibraryRC<SeqLibrarySetup> SeqLibrary;

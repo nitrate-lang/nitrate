@@ -40,7 +40,7 @@ extern "C" {
 #include <lua/lauxlib.h>
 }
 
-int ncc::seq::SysInfo(lua_State* l) {
+auto ncc::seq::SysInfo(lua_State* l) -> int {
   int nargs = lua_gettop(l);
   if (nargs == 0) {
     return luaL_error(l, "Expected at least one argument, got 0");

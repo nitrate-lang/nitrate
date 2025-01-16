@@ -60,6 +60,73 @@ using namespace ncc::lex::detail;
 
 constexpr size_t kFloatingPointPrecision = 100;
 
+enum class NumType : uint8_t {
+  Decimal,
+  DecimalExplicit,
+  Hexadecimal,
+  Binary,
+  Octal,
+  Floating,
+};
+
+enum class LexState : uint8_t {
+  Start,
+  Identifier,
+  String,
+  Integer,
+  CommentStart,
+  CommentSingleLine,
+  CommentMultiLine,
+  MacroStart,
+  SingleLineMacro,
+  BlockMacro,
+  Other,
+};
+
+static void EscapeString(std::ostream &ss, std::string_view input) {
+  ss << '"';
+
+  for (char ch : input) {
+    switch (ch) {
+      case '"':
+        ss << "\\\"";
+        break;
+      case '\\':
+        ss << "\\\\";
+        break;
+      case '\b':
+        ss << "\\b";
+        break;
+      case '\f':
+        ss << "\\f";
+        break;
+      case '\n':
+        ss << "\\n";
+        break;
+      case '\r':
+        ss << "\\r";
+        break;
+      case '\t':
+        ss << "\\t";
+        break;
+      case '\0':
+        ss << "\\0";
+        break;
+      default:
+        if (ch >= 32 && ch < 127) {
+          ss << ch;
+        } else {
+          std::array<char, 5> hex;
+          snprintf(hex.data(), hex.size(), "\\x%02x", (int)(uint8_t)ch);
+          ss << hex.data();
+        }
+        break;
+    }
+  }
+
+  ss << '"';
+}
+
 namespace ncc::lex {
   static const auto OPERATOR_SET = []() {
     google::dense_hash_set<std::string_view> set;
@@ -162,19 +229,10 @@ namespace ncc::lex {
     return tab;
   }();
 
-  static bool LexIsSpace(uint8_t c) { return kWhitespaceTable[c] != 0; }
+  static auto LexIsSpace(uint8_t c) -> bool { return kWhitespaceTable[c] != 0; }
 }  // namespace ncc::lex
 
-enum class NumType : uint8_t {
-  Decimal,
-  DecimalExplicit,
-  Hexadecimal,
-  Binary,
-  Octal,
-  Floating,
-};
-
-static NCC_FORCE_INLINE bool ValidateIdentifier(std::string_view id) {
+static NCC_FORCE_INLINE auto ValidateIdentifier(std::string_view id) -> bool {
   /*
    * This state machine checks if the identifier looks
    * like 'a::b::c::d_::e::f'.
@@ -205,7 +263,7 @@ static NCC_FORCE_INLINE bool ValidateIdentifier(std::string_view id) {
   return state == 0;
 }
 
-static NCC_FORCE_INLINE bool CanonicalizeFloat(std::string &buf) {
+static NCC_FORCE_INLINE auto CanonicalizeFloat(std::string &buf) -> bool {
   size_t e_pos = buf.find('e');
   if (e_pos == std::string::npos) [[likely]] {
     return true;
@@ -251,8 +309,8 @@ static NCC_FORCE_INLINE bool CanonicalizeFloat(std::string &buf) {
   return true;
 }
 
-static NCC_FORCE_INLINE bool CanonicalizeNumber(std::string &buf,
-                                                NumType type) {
+static NCC_FORCE_INLINE auto CanonicalizeNumber(std::string &buf,
+                                                NumType type) -> bool {
   boost::uint128_type x = 0;
   boost::uint128_type i = 0;
 
@@ -357,27 +415,13 @@ static NCC_FORCE_INLINE bool CanonicalizeNumber(std::string &buf,
 
 void Tokenizer::ResetAutomaton() { m_fifo = std::queue<char>(); }
 
-enum class LexState : uint8_t {
-  Start,
-  Identifier,
-  String,
-  Integer,
-  CommentStart,
-  CommentSingleLine,
-  CommentMultiLine,
-  MacroStart,
-  SingleLineMacro,
-  BlockMacro,
-  Other,
-};
-
 // We use this layer of indirection to ensure that the compiler can have full
 // optimization capabilities as if the functions has static linkage.
 class Tokenizer::StaticImpl {
 public:
-  static NCC_FORCE_INLINE Token ParseIdentifier(Tokenizer &l, char c,
-                                                std::string &buf,
-                                                LocationID start_pos) {
+  static NCC_FORCE_INLINE auto ParseIdentifier(Tokenizer &l, char c,
+                                               std::string &buf,
+                                               LocationID start_pos) -> Token {
     { /* Read in what is hopefully an identifier */
       int colon_state = 0;
 
@@ -445,9 +489,9 @@ public:
     return {Name, string(buf), start_pos};
   };
 
-  static NCC_FORCE_INLINE Token ParseString(Tokenizer &l, char c,
-                                            std::string &buf,
-                                            LocationID start_pos) {
+  static NCC_FORCE_INLINE auto ParseString(Tokenizer &l, char c,
+                                           std::string &buf,
+                                           LocationID start_pos) -> Token {
     while (true) {
       while (c != buf[0]) {
         /* Normal character */
@@ -663,9 +707,9 @@ public:
     }
   }
 
-  static NCC_FORCE_INLINE Token ParseInteger(Tokenizer &l, char c,
-                                             std::string &buf,
-                                             LocationID start_pos) {
+  static NCC_FORCE_INLINE auto ParseInteger(Tokenizer &l, char c,
+                                            std::string &buf,
+                                            LocationID start_pos) -> Token {
     NumType type = NumType::Decimal;
 
     /* [0x, 0X, 0d, 0D, 0b, 0B, 0o, 0O] */
@@ -857,9 +901,8 @@ public:
     return Token::EndOfFile();
   }
 
-  static NCC_FORCE_INLINE Token ParseCommentSingleLine(Tokenizer &l, char c,
-                                                       std::string &buf,
-                                                       LocationID start_pos) {
+  static NCC_FORCE_INLINE auto ParseCommentSingleLine(
+      Tokenizer &l, char c, std::string &buf, LocationID start_pos) -> Token {
     while (c != '\n') [[likely]] {
       buf += c;
       c = l.GetChar();
@@ -868,9 +911,8 @@ public:
     return {Note, string(std::move(buf)), start_pos};
   };
 
-  static NCC_FORCE_INLINE Token ParseCommentMultiLine(Tokenizer &l, char c,
-                                                      std::string &buf,
-                                                      LocationID start_pos) {
+  static NCC_FORCE_INLINE auto ParseCommentMultiLine(
+      Tokenizer &l, char c, std::string &buf, LocationID start_pos) -> Token {
     size_t level = 1;
 
     while (true) {
@@ -907,9 +949,8 @@ public:
     }
   }
 
-  static NCC_FORCE_INLINE Token ParseSingleLineMacro(Tokenizer &l, char c,
-                                                     std::string &buf,
-                                                     LocationID start_pos) {
+  static NCC_FORCE_INLINE auto ParseSingleLineMacro(
+      Tokenizer &l, char c, std::string &buf, LocationID start_pos) -> Token {
     while ((std::isalnum(c) != 0) || c == '_' || c == ':') [[likely]] {
       buf += c;
       c = l.GetChar();
@@ -920,9 +961,9 @@ public:
     return {Macr, string(std::move(buf)), start_pos};
   }
 
-  static NCC_FORCE_INLINE Token ParseBlockMacro(Tokenizer &l, char c,
-                                                std::string &buf,
-                                                LocationID start_pos) {
+  static NCC_FORCE_INLINE auto ParseBlockMacro(Tokenizer &l, char c,
+                                               std::string &buf,
+                                               LocationID start_pos) -> Token {
     uint32_t state_parens = 1;
 
     while (true) {
@@ -942,10 +983,10 @@ public:
     }
   }
 
-  static NCC_FORCE_INLINE bool ParseOther(Tokenizer &l, char c,
+  static NCC_FORCE_INLINE auto ParseOther(Tokenizer &l, char c,
                                           std::string &buf,
                                           LocationID start_pos, LexState &state,
-                                          Token &token) {
+                                          Token &token) -> bool {
     /* Check if it's a punctor */
     if (buf.size() == 1) {
       auto it = PUNCTORS_MAP.find(buf);
@@ -1029,7 +1070,7 @@ void Tokenizer::RefillCharacterBuffer() {
   }
 }
 
-NCC_FORCE_INLINE char Tokenizer::GetChar() {
+NCC_FORCE_INLINE auto Tokenizer::GetChar() -> char {
   if (m_getc_buffer_pos == kGetcBufferSize) [[unlikely]] {
     RefillCharacterBuffer();
   }
@@ -1043,7 +1084,7 @@ NCC_FORCE_INLINE char Tokenizer::GetChar() {
   return c;
 }
 
-NCC_EXPORT Token Tokenizer::GetNext() {
+NCC_EXPORT auto Tokenizer::GetNext() -> Token {
   /**
    * **WARNING**: Do not just start editing this function without
    * having a holistic understanding of all code that depends on the lexer
@@ -1161,7 +1202,7 @@ NCC_EXPORT Token Tokenizer::GetNext() {
 
 ///============================================================================///
 
-NCC_EXPORT const char *ncc::lex::qlex_ty_str(TokenType ty) {
+NCC_EXPORT auto ncc::lex::qlex_ty_str(TokenType ty) -> const char * {
   switch (ty) {
     case EofF:
       return "eof";
@@ -1192,7 +1233,8 @@ NCC_EXPORT const char *ncc::lex::qlex_ty_str(TokenType ty) {
   qcore_panic("unreachable");
 }
 
-NCC_EXPORT std::ostream &ncc::lex::operator<<(std::ostream &os, TokenType ty) {
+NCC_EXPORT auto ncc::lex::operator<<(std::ostream &os,
+                                     TokenType ty) -> std::ostream & {
   switch (ty) {
     case EofF: {
       os << "EofF";
@@ -1258,51 +1300,8 @@ NCC_EXPORT std::ostream &ncc::lex::operator<<(std::ostream &os, TokenType ty) {
   return os;
 }
 
-static void EscapeString(std::ostream &ss, std::string_view input) {
-  ss << '"';
-
-  for (char ch : input) {
-    switch (ch) {
-      case '"':
-        ss << "\\\"";
-        break;
-      case '\\':
-        ss << "\\\\";
-        break;
-      case '\b':
-        ss << "\\b";
-        break;
-      case '\f':
-        ss << "\\f";
-        break;
-      case '\n':
-        ss << "\\n";
-        break;
-      case '\r':
-        ss << "\\r";
-        break;
-      case '\t':
-        ss << "\\t";
-        break;
-      case '\0':
-        ss << "\\0";
-        break;
-      default:
-        if (ch >= 32 && ch < 127) {
-          ss << ch;
-        } else {
-          std::array<char, 5> hex;
-          snprintf(hex.data(), hex.size(), "\\x%02x", (int)(uint8_t)ch);
-          ss << hex.data();
-        }
-        break;
-    }
-  }
-
-  ss << '"';
-}
-
-NCC_EXPORT std::ostream &ncc::lex::operator<<(std::ostream &os, Token tok) {
+NCC_EXPORT auto ncc::lex::operator<<(std::ostream &os,
+                                     Token tok) -> std::ostream & {
   // Serialize the token so that the core logger system can use it
 
   os << "${T:{\"type\":" << (int)tok.GetKind()
@@ -1313,8 +1312,9 @@ NCC_EXPORT std::ostream &ncc::lex::operator<<(std::ostream &os, Token tok) {
   return os;
 }
 
-NCC_EXPORT std::optional<std::vector<std::string>> Tokenizer::GetSourceWindow(
-    Point start, Point end, char fillchar) {
+NCC_EXPORT auto Tokenizer::GetSourceWindow(Point start, Point end,
+                                           char fillchar)
+    -> std::optional<std::vector<std::string>> {
   if (start.x > end.x || (start.x == end.x && start.y > end.y)) {
     qcore_print(QCORE_ERROR, "Invalid source window range");
     return std::nullopt;

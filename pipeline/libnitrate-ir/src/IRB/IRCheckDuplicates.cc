@@ -100,7 +100,7 @@ static void PrintConflictErrors(const std::vector<Conflict> &conflicts,
   }
 }
 
-bool NRBuilder::CheckDuplicates(FlowPtr<Seq>, IReport *i) {
+auto NRBuilder::CheckDuplicates(FlowPtr<Seq>, IReport *i) -> bool {
   std::vector<Conflict> conflicts;
   std::unordered_map<std::string_view, std::pair<Kind, FlowPtr<Expr>>>
       names_map;

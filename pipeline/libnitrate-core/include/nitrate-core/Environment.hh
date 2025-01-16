@@ -44,10 +44,8 @@ namespace ncc {
   public:
     virtual ~IEnvironment() = default;
 
-    virtual bool Contains(std::string_view key) = 0;
-
-    virtual std::optional<string> Get(string key) = 0;
-
+    virtual auto Contains(std::string_view key) -> bool = 0;
+    virtual auto Get(string key) -> std::optional<string> = 0;
     virtual void Set(string key, std::optional<string> value,
                      bool privset = false) = 0;
   };
@@ -61,11 +59,8 @@ namespace ncc {
     Environment() { SetupDefaultKeys(); }
     ~Environment() override = default;
 
-    bool Contains(std::string_view key) override;
-
-    std::optional<string> Get(string key) override;
-
-    /* String interning is done internally */
+    auto Contains(std::string_view key) -> bool override;
+    auto Get(string key) -> std::optional<string> override;
     void Set(string key, std::optional<string> value,
              bool privset = false) override;
   };

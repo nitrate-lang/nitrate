@@ -41,7 +41,7 @@ namespace ncc {
   public:
     virtual ~IMemory() = default;
 
-    virtual void *Alloc(size_t size, size_t align = kDefaultAlignment) = 0;
+    virtual auto Alloc(size_t size, size_t align = kDefaultAlignment) -> void * = 0;
 
     static constexpr size_t kDefaultAlignment = 16;
   };
@@ -62,14 +62,14 @@ namespace ncc {
       m_owned = true;
     }
 
-    DynamicArena &operator=(DynamicArena &&o) noexcept {
+    auto operator=(DynamicArena &&o) noexcept -> DynamicArena & {
       m_arena = o.m_arena;
       o.m_owned = false;
       m_owned = true;
       return *this;
     }
 
-    void *Alloc(size_t size, size_t align = kDefaultAlignment) override;
+    auto Alloc(size_t size, size_t align = kDefaultAlignment) -> void * override;
   };
 }  // namespace ncc
 

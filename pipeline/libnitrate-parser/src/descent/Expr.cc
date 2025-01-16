@@ -44,8 +44,8 @@ using namespace ncc::lex;
 using namespace ncc::parse;
 using namespace ncc;
 
-CallArgs Parser::PImpl::RecurseCallArguments(
-    const std::set<lex::Token> &terminators, bool type_by_default) {
+auto Parser::PImpl::RecurseCallArguments(
+    const std::set<lex::Token> &terminators, bool type_by_default) -> CallArgs {
   CallArgs call_args;
   size_t positional_index = 0;
   string argument_name;
@@ -92,7 +92,7 @@ CallArgs Parser::PImpl::RecurseCallArguments(
   return call_args;
 }
 
-FlowPtr<Expr> Parser::PImpl::RecurseFstring() {
+auto Parser::PImpl::RecurseFstring() -> FlowPtr<Expr> {
   FStringItems items;
 
   if (auto tok = next_if(Text)) {
@@ -154,7 +154,9 @@ FlowPtr<Expr> Parser::PImpl::RecurseFstring() {
   return MockExpr(QAST_FSTRING);
 }
 
-static bool IsPostUnaryOp(Operator o) { return o == OpInc || o == OpDec; }
+static auto IsPostUnaryOp(Operator o) -> bool {
+  return o == OpInc || o == OpDec;
+}
 
 enum class FrameType : uint8_t {
   Start,
@@ -179,9 +181,9 @@ struct Frame {
         m_op(op) {}
 };
 
-static NCC_FORCE_INLINE FlowPtr<Expr> UnwindStack(std::stack<Frame> &stack,
-                                                  FlowPtr<Expr> base,
-                                                  short min_precedence) {
+static NCC_FORCE_INLINE auto UnwindStack(
+    std::stack<Frame> &stack, FlowPtr<Expr> base,
+    short min_precedence) -> FlowPtr<Expr> {
   while (!stack.empty()) {
     auto frame = stack.top();
 
@@ -217,7 +219,8 @@ static NCC_FORCE_INLINE FlowPtr<Expr> UnwindStack(std::stack<Frame> &stack,
   return base;
 }
 
-FlowPtr<Expr> Parser::PImpl::RecurseExpr(const std::set<Token> &terminators) {
+auto Parser::PImpl::RecurseExpr(const std::set<Token> &terminators)
+    -> FlowPtr<Expr> {
   auto source_offset = peek().GetStart();
 
   std::stack<Frame> stack;
@@ -425,7 +428,8 @@ FlowPtr<Expr> Parser::PImpl::RecurseExpr(const std::set<Token> &terminators) {
   return MockExpr();
 }
 
-NullableFlowPtr<Expr> Parser::PImpl::RecurseExprKeyword(lex::Keyword key) {
+auto Parser::PImpl::RecurseExprKeyword(lex::Keyword key)
+    -> NullableFlowPtr<Expr> {
   NullableFlowPtr<Expr> e;
 
   switch (key) {
@@ -497,7 +501,8 @@ NullableFlowPtr<Expr> Parser::PImpl::RecurseExprKeyword(lex::Keyword key) {
   return e;
 }
 
-NullableFlowPtr<Expr> Parser::PImpl::RecurseExprPunctor(lex::Punctor punc) {
+auto Parser::PImpl::RecurseExprPunctor(lex::Punctor punc)
+    -> NullableFlowPtr<Expr> {
   NullableFlowPtr<Expr> e;
 
   switch (punc) {
@@ -663,7 +668,7 @@ NullableFlowPtr<Expr> Parser::PImpl::RecurseExprPunctor(lex::Punctor punc) {
   return e;
 }
 
-FlowPtr<Expr> Parser::PImpl::RecurseExprTypeSuffix(FlowPtr<Expr> base) {
+auto Parser::PImpl::RecurseExprTypeSuffix(FlowPtr<Expr> base) -> FlowPtr<Expr> {
   auto tok = current();
 
   auto suffix = RecurseType();
@@ -675,7 +680,7 @@ FlowPtr<Expr> Parser::PImpl::RecurseExprTypeSuffix(FlowPtr<Expr> base) {
   return make<BinExpr>(base, OpAs, texpr)();
 }
 
-NullableFlowPtr<Expr> Parser::PImpl::RecurseExprPrimary(bool is_type) {
+auto Parser::PImpl::RecurseExprPrimary(bool is_type) -> NullableFlowPtr<Expr> {
   auto start_pos = peek().GetStart();
 
   NullableFlowPtr<Expr> e;

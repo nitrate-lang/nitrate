@@ -37,7 +37,7 @@ using namespace ncc;
 using namespace ncc::lex;
 using namespace ncc::parse;
 
-ExpressionList Parser::PImpl::RecurseStructAttributes() {
+auto Parser::PImpl::RecurseStructAttributes() -> ExpressionList {
   ExpressionList attributes;
 
   if (!next_if(PuncLBrk)) {
@@ -68,13 +68,13 @@ ExpressionList Parser::PImpl::RecurseStructAttributes() {
   return attributes;
 }
 
-string Parser::PImpl::RecurseStructName() {
+auto Parser::PImpl::RecurseStructName() -> string {
   auto tok = next_if(Name);
 
   return tok ? tok->GetString() : "";
 }
 
-StructDefNames Parser::PImpl::RecurseStructTerms() {
+auto Parser::PImpl::RecurseStructTerms() -> StructDefNames {
   StructDefNames names;
 
   if (!next_if(PuncColn)) {
@@ -94,7 +94,7 @@ StructDefNames Parser::PImpl::RecurseStructTerms() {
   return names;
 }
 
-NullableFlowPtr<Expr> Parser::PImpl::RecurseStructFieldDefaultValue() {
+auto Parser::PImpl::RecurseStructFieldDefaultValue() -> NullableFlowPtr<Expr> {
   if (next_if(OpSet)) {
     return RecurseExpr({
         Token(Punc, PuncComa),
@@ -155,7 +155,7 @@ void Parser::PImpl::RecurseStructMethodOrField(StructContent &body) {
   next_if(PuncComa) || next_if(PuncSemi);
 }
 
-Parser::PImpl::StructContent Parser::PImpl::RecurseStructBody() {
+auto Parser::PImpl::RecurseStructBody() -> Parser::PImpl::StructContent {
   StructContent body;
 
   if (!next_if(PuncLCur)) [[unlikely]] {
@@ -181,7 +181,7 @@ Parser::PImpl::StructContent Parser::PImpl::RecurseStructBody() {
   return body;
 }
 
-FlowPtr<Stmt> Parser::PImpl::RecurseStruct(CompositeType struct_type) {
+auto Parser::PImpl::RecurseStruct(CompositeType struct_type) -> FlowPtr<Stmt> {
   auto start_pos = current().GetStart();
   auto struct_attributes = RecurseStructAttributes();
   auto struct_name = RecurseStructName();

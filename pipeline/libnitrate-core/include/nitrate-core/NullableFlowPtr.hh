@@ -95,14 +95,14 @@ namespace ncc {
       constexpr NullableFlowPtr(NullableFlowPtr<Pointee, Tracking> &&o) noexcept
           : m_ptr(std::move(o.m_ptr)) {}
 
-      constexpr NullableFlowPtr &operator=(
-          const NullableFlowPtr<Pointee, Tracking> &o) {
+      constexpr auto operator=(
+          const NullableFlowPtr<Pointee, Tracking> &o) -> NullableFlowPtr & {
         m_ptr = o.m_ptr;
         return *this;
       }
 
-      constexpr NullableFlowPtr &operator=(
-          NullableFlowPtr<Pointee, Tracking> &&o) noexcept {
+      constexpr auto operator=(
+          NullableFlowPtr<Pointee, Tracking> &&o) noexcept -> NullableFlowPtr & {
         m_ptr = std::move(o.m_ptr);
         return *this;
       }
@@ -112,18 +112,18 @@ namespace ncc {
       ///=========================================================================
       /// Comparison
 
-      constexpr bool operator==(const NullableFlowPtr &o) const {
+      constexpr auto operator==(const NullableFlowPtr &o) const -> bool {
         return m_ptr == o.m_ptr;
       }
 
-      constexpr bool operator!=(const NullableFlowPtr &o) const {
+      constexpr auto operator!=(const NullableFlowPtr &o) const -> bool {
         return m_ptr != o.m_ptr;
       }
 
-      constexpr bool operator==(std::nullptr_t) const {
+      constexpr auto operator==(std::nullptr_t) const -> bool {
         return m_ptr == nullptr;
       }
-      constexpr bool operator==(std::nullopt_t) const {
+      constexpr auto operator==(std::nullopt_t) const -> bool {
         return m_ptr == nullptr;
       }
 
@@ -180,8 +180,8 @@ namespace ncc {
   using NullableFlowPtr = flowptr_detail::NullableFlowPtr<Pointee, Tracking>;
 
   template <class Pointee, class Tracking = DefaultTracking>
-  constexpr NullableFlowPtr<Pointee, Tracking> MakeNullableFlowPtr(
-      Pointee *ptr, Tracking tracking = Tracking()) {
+  constexpr auto MakeNullableFlowPtr(
+      Pointee *ptr, Tracking tracking = Tracking()) -> NullableFlowPtr<Pointee, Tracking> {
     return NullableFlowPtr<Pointee, Tracking>(ptr, std::move(tracking));
   }
 }  // namespace ncc
@@ -189,8 +189,8 @@ namespace ncc {
 namespace std {
   template <class Pointee, class Tracking>
   struct hash<ncc::NullableFlowPtr<Pointee, Tracking>> {
-    size_t operator()(
-        const ncc::NullableFlowPtr<Pointee, Tracking> &ptr) const {
+    auto operator()(
+        const ncc::NullableFlowPtr<Pointee, Tracking> &ptr) const -> size_t {
       return std::hash<Pointee *>()(ptr.value_or(nullptr));
     }
   };

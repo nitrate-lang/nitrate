@@ -37,7 +37,7 @@ using namespace ncc;
 using namespace ncc::lex;
 using namespace ncc::parse;
 
-string Parser::PImpl::RecurseScopeName() {
+auto Parser::PImpl::RecurseScopeName() -> string {
   if (auto tok = next_if(Name)) {
     return tok->GetString();
   }
@@ -45,7 +45,7 @@ string Parser::PImpl::RecurseScopeName() {
   return "";
 }
 
-std::optional<ScopeDeps> Parser::PImpl::RecurseScopeDeps() {
+auto Parser::PImpl::RecurseScopeDeps() -> std::optional<ScopeDeps> {
   ScopeDeps dependencies;
 
   if (!next_if(PuncColn)) {
@@ -81,7 +81,7 @@ std::optional<ScopeDeps> Parser::PImpl::RecurseScopeDeps() {
   return std::nullopt;
 }
 
-FlowPtr<Stmt> Parser::PImpl::RecurseScopeBlock() {
+auto Parser::PImpl::RecurseScopeBlock() -> FlowPtr<Stmt> {
   if (next_if(PuncSemi)) {
     return make<Block>(BlockItems(), SafetyMode::Unknown)();
   }
@@ -93,7 +93,7 @@ FlowPtr<Stmt> Parser::PImpl::RecurseScopeBlock() {
   return RecurseBlock(true, false, SafetyMode::Unknown);
 }
 
-FlowPtr<Stmt> Parser::PImpl::RecurseScope() {
+auto Parser::PImpl::RecurseScope() -> FlowPtr<Stmt> {
   auto scope_name = RecurseScopeName();
 
   if (auto dependencies = RecurseScopeDeps()) [[likely]] {

@@ -39,9 +39,9 @@
 
 namespace ncc::lex {
   struct LexerLibrarySetup {
-    static bool Init();
+    static auto Init() -> bool;
     static void Deinit();
-    static std::string_view GetVersionId();
+    static auto GetVersionId() -> std::string_view;
   };
 
   extern LibraryRC<LexerLibrarySetup> LexerLibrary;
