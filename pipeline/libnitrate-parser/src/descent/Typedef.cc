@@ -39,7 +39,7 @@ using namespace ncc::parse;
 
 FlowPtr<Stmt> Parser::RecurseTypedef() {
   if (auto tok = next_if(Name)) [[likely]] {
-    auto type_name = tok->as_string();
+    auto type_name = tok->GetString();
 
     if (next_if(OpSet)) [[likely]] {
       auto the_type = RecurseType();

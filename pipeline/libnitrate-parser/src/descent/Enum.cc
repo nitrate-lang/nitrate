@@ -39,7 +39,7 @@ using namespace ncc::parse;
 
 string Parser::RecurseEnumName() {
   if (auto tok = next_if(Name)) {
-    return tok->as_string();
+    return tok->GetString();
   } else {
     return "";
   }
@@ -69,7 +69,7 @@ std::optional<EnumItem> Parser::RecurseEnumItem() {
   if (auto member_name = next_if(Name)) [[likely]] {
     auto member_value = RecurseEnumItemValue();
 
-    return EnumItem(member_name->as_string(), member_value);
+    return EnumItem(member_name->GetString(), member_value);
   } else {
     Log << SyntaxError << next() << "Enum field is missing a name.";
     return std::nullopt;

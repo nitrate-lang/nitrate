@@ -70,7 +70,7 @@ ExpressionList Parser::RecurseStructAttributes() {
 
 string Parser::RecurseStructName() {
   auto tok = next_if(Name);
-  return tok ? tok->as_string() : "";
+  return tok ? tok->GetString() : "";
 }
 
 StructDefNames Parser::RecurseStructTerms() {
@@ -82,7 +82,7 @@ StructDefNames Parser::RecurseStructTerms() {
 
   while (true) {
     if (auto tok = next_if(Name)) {
-      names.push_back(tok->as_string());
+      names.push_back(tok->GetString());
     } else {
       break;
     }
@@ -112,7 +112,7 @@ void Parser::RecurseStructField(Vis vis, bool is_static,
       auto field_type = RecurseType();
       auto default_value = RecurseStructFieldDefaultValue();
 
-      auto field = StructField(vis, is_static, field_name->as_string(),
+      auto field = StructField(vis, is_static, field_name->GetString(),
                                field_type, default_value);
 
       fields.push_back(std::move(field));
@@ -180,7 +180,7 @@ Parser::StructContent Parser::RecurseStructBody() {
 }
 
 FlowPtr<Stmt> Parser::RecurseStruct(CompositeType struct_type) {
-  auto start_pos = current().get_start();
+  auto start_pos = current().GetStart();
   auto struct_attributes = RecurseStructAttributes();
   auto struct_name = RecurseStructName();
   auto struct_template_params = RecurseTemplateParameters();

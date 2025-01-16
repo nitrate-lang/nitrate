@@ -291,24 +291,14 @@ namespace ncc::lex {
       }
     }
 
-    [[nodiscard]] constexpr auto as_string() const {  /// NOLINT
+    [[nodiscard]] constexpr auto GetString() const {
       return to_string(m_type, m_v);
     }
-    [[nodiscard]] constexpr auto as_key() const {  /// NOLINT
-      return m_v.m_key;
-    }
-    [[nodiscard]] constexpr auto as_op() const {  /// NOLINT
-      return m_v.m_op;
-    }
-    [[nodiscard]] constexpr auto as_punc() const {  /// NOLINT
-      return m_v.m_punc;
-    }
-    [[nodiscard]] constexpr auto get_start() const {  /// NOLINT
-      return m_location_id;
-    }
-    [[nodiscard]] constexpr auto get_type() const {  /// NOLINT
-      return m_type;
-    }
+    [[nodiscard]] constexpr auto GetKeyword() const { return m_v.m_key; }
+    [[nodiscard]] constexpr auto GetOperator() const { return m_v.m_op; }
+    [[nodiscard]] constexpr auto GetPunctor() const { return m_v.m_punc; }
+    [[nodiscard]] constexpr auto GetStart() const { return m_location_id; }
+    [[nodiscard]] constexpr auto GetKind() const { return m_type; }
 
     constexpr bool operator<(const TokenBase &rhs) const {
       if (m_type != rhs.m_type) {
@@ -353,24 +343,28 @@ namespace std {
     constexpr size_t operator()(const ncc::lex::Token &tok) const {
       size_t h = 0;
 
-      switch (tok.get_type()) {
+      switch (tok.GetKind()) {
         case ncc::lex::TokenType::EofF: {
           h = std::hash<uint8_t>{}(0);
+          break;
         }
 
         case ncc::lex::TokenType::KeyW: {
           h = std::hash<uint8_t>{}(1);
-          h ^= std::hash<uint8_t>{}(tok.as_key());
+          h ^= std::hash<uint8_t>{}(tok.GetKeyword());
+          break;
         }
 
         case ncc::lex::TokenType::Oper: {
           h = std::hash<uint8_t>{}(2);
-          h ^= std::hash<uint8_t>{}(tok.as_op());
+          h ^= std::hash<uint8_t>{}(tok.GetOperator());
+          break;
         }
 
         case ncc::lex::TokenType::Punc: {
           h = std::hash<uint8_t>{}(3);
-          h ^= std::hash<uint8_t>{}(tok.as_punc());
+          h ^= std::hash<uint8_t>{}(tok.GetPunctor());
+          break;
         }
 
         case ncc::lex::TokenType::Name:
@@ -382,7 +376,8 @@ namespace std {
         case ncc::lex::TokenType::Macr:
         case ncc::lex::TokenType::Note: {
           h = std::hash<uint8_t>{}(4);
-          h ^= std::hash<ncc::string>{}(tok.as_string());
+          h ^= std::hash<ncc::string>{}(tok.GetString());
+          break;
         }
       }
 

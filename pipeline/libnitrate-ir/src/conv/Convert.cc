@@ -492,7 +492,7 @@ using namespace ncc;
 //   if (n->Getlhs() && n->Getrhs() && n->Getop() == lex::OpAs &&
 //       n->Getrhs()->is(QAST_TEXPR)) {
 //     FlowPtr<ncc::parse::Type> type =
-//         n->Getrhs()->as<ncc::parse::TypeExpr>()->get_type();
+//         n->Getrhs()->as<ncc::parse::TypeExpr>()->GetKind();
 
 //     bool is_integer_ty = type->is_integral();
 //     bool is_integer_lit = n->Getlhs()->GetKind() == QAST_INT;
@@ -1196,7 +1196,7 @@ using namespace ncc;
 //   for (size_t i = 0; i < n->Getfields().size(); i++) {
 //     auto field = n->Getfields()[i];
 
-//     auto field_type = next_one(field.get_type());
+//     auto field_type = next_one(field.GetKind());
 //     if (!field_type.has_value()) {
 //       G->report(ir::CompilerError, IC::Error,
 //                 "Failed to lower struct field type", n->Getpos());

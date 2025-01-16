@@ -41,13 +41,13 @@ std::optional<std::pair<string, string>> Parser::RecurseForeachNames() {
   if (auto name_a = next_if(Name)) [[likely]] {
     if (next_if(PuncComa)) {
       if (auto name_b = next_if(Name)) [[likely]] {
-        return std::make_pair(name_a->as_string(), name_b->as_string());
+        return std::make_pair(name_a->GetString(), name_b->GetString());
       } else {
         Log << SyntaxError << current()
             << "Expected identifier in foreach statement";
       }
     } else {
-      return std::make_pair("", name_a->as_string());
+      return std::make_pair("", name_a->GetString());
     }
   } else {
     Log << SyntaxError << current()

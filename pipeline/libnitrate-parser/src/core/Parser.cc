@@ -52,7 +52,7 @@ FlowPtr<Stmt> Parser::RecurseBlock(bool expect_braces, bool single_stmt,
     Log << SyntaxError << current() << "Expected '{'";
   }
 
-  auto block_start = current().get_start();
+  auto block_start = current().GetStart();
   BlockItems statements;
 
   auto block_comments = m_rd.CommentBuffer();
@@ -103,13 +103,13 @@ FlowPtr<Stmt> Parser::RecurseBlock(bool expect_braces, bool single_stmt,
       statements.push_back(BindComments(stmt, comments));
     } else {
       auto tok = next();
-      auto loc_start = tok.get_start();
+      auto loc_start = tok.GetStart();
       NullableFlowPtr<Stmt> r;
 
       auto comments = m_rd.CommentBuffer();
       m_rd.ClearCommentBuffer();
 
-      switch (tok.as_key()) {
+      switch (tok.GetKeyword()) {
         case Scope: {
           r = RecurseScope();
           break;

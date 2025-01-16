@@ -47,22 +47,22 @@ int ncc::seq::SysNext(lua_State* L) {
   lua_newtable(L);
 
   lua_pushstring(L, "ty");
-  lua_pushstring(L, qlex_ty_str(tok.get_type()));
+  lua_pushstring(L, qlex_ty_str(tok.GetKind()));
   lua_settable(L, -3);
 
   lua_pushstring(L, "v");
-  switch (tok.get_type()) {
+  switch (tok.GetKind()) {
     case EofF:
     case KeyW: {
-      lua_pushstring(L, kw_repr(tok.as_key()));
+      lua_pushstring(L, kw_repr(tok.GetKeyword()));
       break;
     }
     case Oper: {
-      lua_pushstring(L, op_repr(tok.as_op()));
+      lua_pushstring(L, op_repr(tok.GetOperator()));
       break;
     }
     case Punc: {
-      lua_pushstring(L, punct_repr(tok.as_punc()));
+      lua_pushstring(L, punct_repr(tok.GetPunctor()));
       break;
     }
     case IntL:
@@ -73,7 +73,7 @@ int ncc::seq::SysNext(lua_State* L) {
     case MacB:
     case Macr:
     case Note: {
-      lua_pushstring(L, std::string(tok.as_string()).c_str());
+      lua_pushstring(L, std::string(tok.GetString()).c_str());
       break;
     }
   }

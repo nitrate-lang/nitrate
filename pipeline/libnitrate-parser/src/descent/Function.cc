@@ -62,7 +62,7 @@ std::optional<FuncParam> Parser::RecurseFunctionParameter() {
     auto param_type = RecurseFunctionParameterType();
     auto param_value = RecurseFunctionParameterValue();
 
-    return FuncParam{param_name->as_string(), param_type, param_value};
+    return FuncParam{param_name->GetString(), param_type, param_value};
   } else {
     Log << SyntaxError << next() << "Expected a parameter name before ':'";
   }
@@ -150,8 +150,8 @@ std::pair<FuncParams, bool> Parser::RecurseFunctionParameters() {
 }
 
 Purity Parser::GetPuritySpecifier(Token start_pos, bool is_thread_safe,
-                                    bool is_pure, bool is_impure, bool is_quasi,
-                                    bool is_retro) {
+                                  bool is_pure, bool is_impure, bool is_quasi,
+                                  bool is_retro) {
   /* Ensure that there is no duplication of purity specifiers */
   if ((is_impure + is_pure + is_quasi + is_retro) > 1) {
     Log << SyntaxError << start_pos << "Conflicting purity specifiers";
@@ -178,7 +178,7 @@ std::optional<std::pair<string, bool>> Parser::RecurseFunctionCapture() {
   bool is_ref = next_if(OpBitAnd).has_value();
 
   if (auto name = next_if(Name)) {
-    return {{name->as_string(), is_ref}};
+    return {{name->GetString(), is_ref}};
   } else {
     Log << SyntaxError << next() << "Expected a capture name";
     return std::nullopt;
@@ -212,7 +212,7 @@ Parser::RecurseFunctionAmbigouis() {
     switch (state) {
       case State::Ground: {
         if (auto some_identifier = next_if(Name)) {
-          auto some_word = some_identifier->as_string();
+          auto some_word = some_identifier->GetString();
 
           if (some_word == "pure") {
             is_pure = true;
@@ -323,7 +323,7 @@ Parser::RecurseFunctionAmbigouis() {
   }
 
   auto purity = GetPuritySpecifier(start_pos, is_thread_safe, is_pure,
-                                     is_impure, is_quasi, is_retro);
+                                   is_impure, is_quasi, is_retro);
 
   return {attributes, captures, purity, function_name};
 }
@@ -336,8 +336,7 @@ FlowPtr<parse::Type> Parser::Parser::RecurseFunctionReturnType() {
   }
 }
 
-NullableFlowPtr<Stmt> Parser::RecurseFunctionBody(
-    bool parse_declaration_only) {
+NullableFlowPtr<Stmt> Parser::RecurseFunctionBody(bool parse_declaration_only) {
   if (parse_declaration_only || next_if(PuncSemi)) {
     return std::nullopt;
   } else if (next_if(OpArrow)) {
@@ -348,7 +347,7 @@ NullableFlowPtr<Stmt> Parser::RecurseFunctionBody(
 }
 
 FlowPtr<Stmt> Parser::RecurseFunction(bool parse_declaration_only) {
-  auto start_pos = current().get_start();
+  auto start_pos = current().GetStart();
 
   auto [function_attributes, function_captures, function_purity,
         function_name] = RecurseFunctionAmbigouis();

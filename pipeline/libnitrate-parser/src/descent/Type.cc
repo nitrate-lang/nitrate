@@ -135,7 +135,7 @@ FlowPtr<parse::Type> Parser::RecurseTypeSuffix(FlowPtr<Type> base) {
     auto opt_type =
         make<TemplType>(make<NamedTy>("__builtin_result")(), args)();
 
-    opt_type->SetOffset(current().get_start());
+    opt_type->SetOffset(current().GetStart());
 
     base = opt_type;
   }
@@ -171,8 +171,8 @@ FlowPtr<parse::Type> Parser::RecurseOpaqueType() {
 
   if (auto name = next_if(Name)) {
     if (next_if(PuncRPar)) {
-      auto opaque = make<OpaqueTy>(name->as_string())();
-      opaque->SetOffset(current().get_start());
+      auto opaque = make<OpaqueTy>(name->GetString())();
+      opaque->SetOffset(current().GetStart());
 
       return opaque;
     } else {
@@ -210,7 +210,7 @@ FlowPtr<parse::Type> Parser::RecurseTypeByKeyword(Keyword key) {
 FlowPtr<parse::Type> Parser::RecurseTypeByOperator(Operator op) {
   switch (op) {
     case OpTimes: {
-      auto start = current().get_start();
+      auto start = current().GetStart();
       auto pointee = RecurseType();
       auto ptr_ty = make<PtrTy>(pointee, false)();
 
@@ -220,7 +220,7 @@ FlowPtr<parse::Type> Parser::RecurseTypeByOperator(Operator op) {
     }
 
     case OpBitAnd: {
-      auto start = current().get_start();
+      auto start = current().GetStart();
       auto refee = RecurseType();
       auto ref_ty = make<RefTy>(refee)();
 
@@ -232,7 +232,7 @@ FlowPtr<parse::Type> Parser::RecurseTypeByOperator(Operator op) {
     case OpTernary: {
       auto infer = make<InferTy>()();
 
-      infer->SetOffset(current().get_start());
+      infer->SetOffset(current().GetStart());
 
       return infer;
     }
@@ -266,7 +266,7 @@ FlowPtr<parse::Type> Parser::RecurseTypeByOperator(Operator op) {
 }
 
 FlowPtr<parse::Type> Parser::RecurseArrayOrVector() {
-  auto start = current().get_start();
+  auto start = current().GetStart();
 
   auto first = RecurseType();
 
@@ -299,7 +299,7 @@ FlowPtr<parse::Type> Parser::RecurseArrayOrVector() {
 }
 
 FlowPtr<parse::Type> Parser::RecurseSetType() {
-  auto start = current().get_start();
+  auto start = current().GetStart();
 
   auto set_type = RecurseType();
 
@@ -318,7 +318,7 @@ FlowPtr<parse::Type> Parser::RecurseSetType() {
 FlowPtr<parse::Type> Parser::RecurseTupleType() {
   TupleTyItems items;
 
-  auto start = current().get_start();
+  auto start = current().GetStart();
 
   while (true) {
     if (next_if(EofF)) {
@@ -408,7 +408,7 @@ FlowPtr<parse::Type> Parser::RecurseTypeByName(string name) {
     return MockType();
   }
 
-  type.value()->SetOffset(current().get_start());
+  type.value()->SetOffset(current().GetStart());
 
   return type.value();
 }
@@ -419,30 +419,30 @@ FlowPtr<parse::Type> Parser::RecurseType() {
 
   std::optional<FlowPtr<Type>> r;
 
-  switch (auto tok = next(); tok.get_type()) {
+  switch (auto tok = next(); tok.GetKind()) {
     case KeyW: {
-      auto type = RecurseTypeByKeyword(tok.as_key());
+      auto type = RecurseTypeByKeyword(tok.GetKeyword());
 
       r = RecurseTypeSuffix(type);
       break;
     }
 
     case Oper: {
-      auto type = RecurseTypeByOperator(tok.as_op());
+      auto type = RecurseTypeByOperator(tok.GetOperator());
 
       r = RecurseTypeSuffix(type);
       break;
     }
 
     case Punc: {
-      auto type = RecurseTypeByPunctuation(tok.as_punc());
+      auto type = RecurseTypeByPunctuation(tok.GetPunctor());
 
       r = RecurseTypeSuffix(type);
       break;
     }
 
     case Name: {
-      auto type = RecurseTypeByName(tok.as_string());
+      auto type = RecurseTypeByName(tok.GetString());
 
       r = RecurseTypeSuffix(type);
       break;

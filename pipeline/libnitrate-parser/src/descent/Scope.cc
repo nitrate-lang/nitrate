@@ -39,7 +39,7 @@ using namespace ncc::parse;
 
 string Parser::RecurseScopeName() {
   if (auto tok = next_if(Name)) {
-    return tok->as_string();
+    return tok->GetString();
   } else {
     return "";
   }
@@ -65,7 +65,7 @@ std::optional<ScopeDeps> Parser::RecurseScopeDeps() {
       }
 
       if (auto tok = next_if(Name)) {
-        auto dependency_name = tok->as_string();
+        auto dependency_name = tok->GetString();
         dependencies.push_back(dependency_name);
       } else {
         Log << SyntaxError << next() << "Expected dependency name";

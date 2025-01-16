@@ -121,7 +121,7 @@ void Sequencer::RecursiveExpand(std::string_view code) {
     clone.m_core->m_depth = m_core->m_depth + 1;
 
     Token tok;
-    while ((tok = (clone.Next())).get_type() != EofF) {
+    while ((tok = (clone.Next())).GetKind() != EofF) {
       tokens.push_back(tok);
     }
   }
@@ -185,7 +185,7 @@ func_entry:  // do tail call optimization manually
       x = m_scanner->Next();
     }
 
-    switch (x.get_type()) {
+    switch (x.GetKind()) {
       case EofF:
         return x;
       case KeyW:
@@ -200,8 +200,8 @@ func_entry:  // do tail call optimization manually
       }
 
       case Name: { /* Handle the expansion of defines */
-        if (x.as_string() == "import") {
-          auto import_name = m_scanner->Next().as_string();
+        if (x.GetString() == "import") {
+          auto import_name = m_scanner->Next().GetString();
           auto semicolon = m_scanner->Next();
           if (!semicolon.is<PuncSemi>()) {
             ncc::Log << SeqError << "Expected semicolon after import name";
@@ -225,7 +225,7 @@ func_entry:  // do tail call optimization manually
       }
 
       case MacB: {
-        auto block = Ltrim(x.as_string());
+        auto block = Ltrim(x.GetString());
         if (!block.starts_with("fn ")) {
           if (!ExecuteLua(std::string(block).c_str())) {
             ncc::Log << SeqError << "Failed to expand macro block: " << block;
@@ -295,7 +295,7 @@ func_entry:  // do tail call optimization manually
       }
 
       case Macr: {
-        auto body = x.as_string().Get();
+        auto body = x.GetString().Get();
         auto pos = body.find_first_of("(");
 
         if (pos != std::string_view::npos) {

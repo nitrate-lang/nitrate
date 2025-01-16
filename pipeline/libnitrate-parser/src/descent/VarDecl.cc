@@ -90,7 +90,7 @@ NullableFlowPtr<Expr> Parser::RecurseVariableValue() {
 NullableFlowPtr<Stmt> Parser::RecurseVariableInstance(VarDeclType decl_type) {
   if (auto symbol_attributes_opt = RecurseVariableAttributes()) {
     if (auto tok = next_if(Name)) {
-      auto variable_name = tok->as_string();
+      auto variable_name = tok->GetString();
       auto variable_type = RecurseVariableType();
       auto variable_initial = RecurseVariableValue();
 

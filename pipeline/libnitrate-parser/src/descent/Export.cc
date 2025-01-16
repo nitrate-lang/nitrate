@@ -39,7 +39,7 @@ using namespace ncc::parse;
 
 string Parser::RecurseAbiName() {
   auto tok = next_if(Text);
-  return tok ? tok->as_string() : "";
+  return tok ? tok->GetString() : "";
 }
 
 std::optional<ExpressionList> Parser::RecurseExportAttributes() {

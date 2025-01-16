@@ -445,7 +445,7 @@ Location IScanner::GetLocation(LocationID id) {
   return GetLocationFallback(id.GetId()).value_or(Location::EndOfFile());
 }
 
-Location IScanner::Start(Token t) { return t.get_start().Get(*this); }
+Location IScanner::Start(Token t) { return t.GetStart().Get(*this); }
 
 Location IScanner::End(Token) {  /// NOLINT
   /// TODO: Support relexing to get the end location

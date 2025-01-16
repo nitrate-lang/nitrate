@@ -65,7 +65,7 @@ CallArgs Parser::RecurseCallArguments(
     auto next_is_colon = some_identifier && next_if(PuncColn).has_value();
 
     if (some_identifier && next_is_colon) {
-      argument_name = some_identifier->as_string();
+      argument_name = some_identifier->GetString();
     } else {
       if (some_identifier && !next_is_colon) {
         m_rd.Insert(some_identifier.value());
@@ -99,7 +99,7 @@ FlowPtr<Expr> Parser::RecurseFstring() {
     size_t state = 0;
     size_t w_beg = 0;
     size_t w_end{};
-    auto fstring_raw = tok->as_string().Get();
+    auto fstring_raw = tok->GetString().Get();
 
     std::string buf;
     buf.reserve(fstring_raw.size());
@@ -219,7 +219,7 @@ static NCC_FORCE_INLINE FlowPtr<Expr> UnwindStack(std::stack<Frame> &stack,
 
 FlowPtr<Expr> Parser::RecurseExpr(
     const std::unordered_set<Token> &terminators) {
-  auto source_offset = peek().get_start();
+  auto source_offset = peek().GetStart();
 
   std::stack<Frame> stack;
   ConstBool start_node(false);
@@ -230,7 +230,7 @@ FlowPtr<Expr> Parser::RecurseExpr(
    ****************************************/
   std::stack<std::pair<Operator, LocationID>> pre_unary_ops;
   while (auto tok = next_if(Oper)) {
-    pre_unary_ops.emplace(tok->as_op(), tok->get_start());
+    pre_unary_ops.emplace(tok->GetOperator(), tok->GetStart());
   }
 
   if (auto left_side_opt = RecurseExprPrimary(false)) {
@@ -255,9 +255,9 @@ FlowPtr<Expr> Parser::RecurseExpr(
         break;
       }
 
-      switch (tok.get_type()) {
+      switch (tok.GetKind()) {
         case Oper: {
-          auto op = tok.as_op();
+          auto op = tok.GetOperator();
           auto op_type = IsPostUnaryOp(op) ? OpMode::PostUnary : OpMode::Binary;
           auto op_precedence = GetOperatorPrecedence(op, op_type);
 
@@ -285,7 +285,8 @@ FlowPtr<Expr> Parser::RecurseExpr(
                * Parse pre-unary operators
                ****************************************/
               while (auto tok_op = next_if(Oper)) {
-                pre_unary_ops.emplace(tok_op->as_op(), tok_op->get_start());
+                pre_unary_ops.emplace(tok_op->GetOperator(),
+                                      tok_op->GetStart());
               }
             } else {
               next_if(lex::Type);
@@ -430,7 +431,7 @@ NullableFlowPtr<Expr> Parser::RecurseExprKeyword(lex::Keyword key) {
 
   switch (key) {
     case Keyword::Type: {
-      auto start_pos = current().get_start();
+      auto start_pos = current().GetStart();
       auto type = RecurseType();
       type->SetOffset(start_pos);
 
@@ -444,7 +445,7 @@ NullableFlowPtr<Expr> Parser::RecurseExprKeyword(lex::Keyword key) {
     }
 
     case Fn: {
-      auto start_pos = current().get_start();
+      auto start_pos = current().GetStart();
       auto function = RecurseFunction(false);
       function->SetOffset(start_pos);
 
@@ -542,7 +543,7 @@ NullableFlowPtr<Expr> Parser::RecurseExprPunctor(lex::Punctor punc) {
 
         if (next_if(PuncSemi)) {
           if (auto count_tok = next_if(IntL)) {
-            auto item_repeat_str = current().as_string();
+            auto item_repeat_str = current().GetString();
             size_t item_repeat_count = 0;
 
             if (std::from_chars(
@@ -601,7 +602,7 @@ NullableFlowPtr<Expr> Parser::RecurseExprPunctor(lex::Punctor punc) {
           break;
         }
 
-        auto start_pos = peek().get_start();
+        auto start_pos = peek().GetStart();
         auto key = RecurseExpr({
             Token(Punc, PuncColn),
         });
@@ -667,16 +668,16 @@ FlowPtr<Expr> Parser::RecurseExprTypeSuffix(FlowPtr<Expr> base) {
   auto tok = current();
 
   auto suffix = RecurseType();
-  suffix->SetOffset(tok.get_start());
+  suffix->SetOffset(tok.GetStart());
 
   auto texpr = make<TypeExpr>(suffix)();
-  texpr->SetOffset(tok.get_start());
+  texpr->SetOffset(tok.GetStart());
 
   return make<BinExpr>(base, OpAs, texpr)();
 }
 
 NullableFlowPtr<Expr> Parser::RecurseExprPrimary(bool is_type) {
-  auto start_pos = peek().get_start();
+  auto start_pos = peek().GetStart();
 
   NullableFlowPtr<Expr> e;
 
@@ -697,13 +698,13 @@ NullableFlowPtr<Expr> Parser::RecurseExprPrimary(bool is_type) {
     auto comments = m_rd.CommentBuffer();
     m_rd.ClearCommentBuffer();
 
-    switch (tok.get_type()) {
+    switch (tok.GetKind()) {
       case EofF: {
         break;
       }
 
       case KeyW: {
-        if ((e = RecurseExprKeyword(tok.as_key())).has_value()) {
+        if ((e = RecurseExprKeyword(tok.GetKeyword())).has_value()) {
           e.value()->SetOffset(start_pos);
         }
 
@@ -716,14 +717,14 @@ NullableFlowPtr<Expr> Parser::RecurseExprPrimary(bool is_type) {
       }
 
       case Punc: {
-        if ((e = RecurseExprPunctor(tok.as_punc())).has_value()) {
+        if ((e = RecurseExprPunctor(tok.GetPunctor())).has_value()) {
           e.value()->SetOffset(start_pos);
         }
         break;
       }
 
       case Name: {
-        auto identifier = make<Ident>(tok.as_string())();
+        auto identifier = make<Ident>(tok.GetString())();
         identifier->SetOffset(start_pos);
 
         e = identifier;
@@ -731,7 +732,7 @@ NullableFlowPtr<Expr> Parser::RecurseExprPrimary(bool is_type) {
       }
 
       case IntL: {
-        auto integer = make<ConstInt>(tok.as_string())();
+        auto integer = make<ConstInt>(tok.GetString())();
         integer->SetOffset(start_pos);
 
         if (tok = peek(); tok.is(Name)) {
@@ -747,7 +748,7 @@ NullableFlowPtr<Expr> Parser::RecurseExprPrimary(bool is_type) {
       }
 
       case NumL: {
-        auto decimal = make<ConstFloat>(tok.as_string())();
+        auto decimal = make<ConstFloat>(tok.GetString())();
         decimal->SetOffset(start_pos);
 
         if (tok = peek(); tok.is(Name)) {
@@ -763,7 +764,7 @@ NullableFlowPtr<Expr> Parser::RecurseExprPrimary(bool is_type) {
       }
 
       case Text: {
-        auto string = make<ConstString>(tok.as_string())();
+        auto string = make<ConstString>(tok.GetString())();
         string->SetOffset(start_pos);
 
         if (tok = peek(); tok.is(Name)) {
@@ -779,7 +780,7 @@ NullableFlowPtr<Expr> Parser::RecurseExprPrimary(bool is_type) {
       }
 
       case Char: {
-        auto str_data = tok.as_string();
+        auto str_data = tok.GetString();
         if (str_data->size() != 1) [[unlikely]] {
           Log << SyntaxError << tok
               << "Expected a single byte in character literal";
