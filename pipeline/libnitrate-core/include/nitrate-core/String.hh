@@ -35,12 +35,33 @@
 #define __NITRATE_CORE_STRING_FACTORY_H__
 
 #include <cstdint>
+#include <nitrate-core/Logger.hh>
 #include <nitrate-core/Macro.hh>
 #include <string>
 #include <string_view>
 
 namespace ncc {
+  class StringMemory;
   class String;
+
+  class CStringView final : public std::string_view {
+  public:
+    constexpr CStringView() : std::string_view("") {}
+    constexpr CStringView(const char *begin, size_t len)
+        : std::string_view(begin, len - 1) {
+      qcore_assert(begin[len - 1] == '\0');
+    }
+
+    ~CStringView() = default;
+
+    [[nodiscard]]
+    auto c_str() const  /// NOLINT
+        -> const char * {
+      return data();
+    }
+
+    [[nodiscard]] constexpr operator const char *() const { return c_str(); }
+  };
 
   class NCC_EXPORT StringMemory {
     friend class String;
@@ -75,7 +96,7 @@ namespace ncc {
         : m_id(str[0] == 0 ? 0
                            : StringMemory::FromString(std::string_view(str))) {}
 
-    [[nodiscard]] auto Get() const -> std::string_view;
+    [[nodiscard]] auto Get() const -> CStringView;
 
     auto operator==(const String &o) const -> bool;
     auto operator<(const String &o) const -> bool;
@@ -83,19 +104,20 @@ namespace ncc {
     constexpr auto operator*() const { return Get(); }
 
     auto operator->() const -> const auto * {
-      static thread_local std::string_view sv;
+      static thread_local CStringView sv;
       sv = Get();
       return &sv;
     }
 
-    constexpr operator std::string_view() const { return Get(); }
+    constexpr operator CStringView() const { return Get(); }
 
     [[nodiscard]] constexpr auto GetId() const { return m_id; }
   };
 
   using string = String;
 
-  static inline auto operator<<(std::ostream &os, const String &str) -> std::ostream & {
+  static inline auto operator<<(std::ostream &os,
+                                const String &str) -> std::ostream & {
     return os << str.Get();
   }
 }  // namespace ncc

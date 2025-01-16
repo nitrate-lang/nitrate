@@ -31,7 +31,7 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <nitrate-lexer/Lexer.hh>
+#include <nitrate-lexer/Scanner.hh>
 #include <nitrate-seq/Sequencer.hh>
 #include <sys/List.hh>
 
@@ -47,7 +47,7 @@ auto ncc::seq::SysPeek(lua_State* L) -> int {
   lua_newtable(L);
 
   lua_pushstring(L, "ty");
-  lua_pushstring(L, qlex_ty_str(tok.GetKind()));
+  lua_pushstring(L, to_string(tok.GetKind())->c_str());
   lua_settable(L, -3);
 
   lua_pushstring(L, "v");
@@ -73,7 +73,7 @@ auto ncc::seq::SysPeek(lua_State* L) -> int {
     case MacB:
     case Macr:
     case Note: {
-      lua_pushstring(L, std::string(tok.GetString()).c_str());
+      lua_pushstring(L, tok.GetString()->c_str());
       break;
     }
   }

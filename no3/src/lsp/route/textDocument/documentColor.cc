@@ -90,9 +90,8 @@ static auto HslaToRgba(float h, float s, float l, float a) -> RGBA {
 }
 
 template <size_t Argc>
-static auto ParseColorFunction(ncc::FlowPtr<Call> n,
-                                                          ColorMode,
-                                                          IScanner&) -> std::optional<ColorInformation> {
+static auto ParseColorFunction(ncc::FlowPtr<Call> n, ColorMode,
+                               IScanner&) -> std::optional<ColorInformation> {
   static_assert(Argc == 3 || Argc == 4,
                 "Invalid number of arguments. Indexs will be out-of-range.");
 

@@ -260,7 +260,7 @@ namespace no3::benchmark {
   };
 
   static auto DoBenchmark(std::shared_ptr<Environment> &env,
-                         Benchmark bench_type) -> int {
+                          Benchmark bench_type) -> int {
     int r = -1;
 
     switch (bench_type) {
@@ -310,7 +310,7 @@ namespace no3::benchmark {
 }  // namespace no3::benchmark
 
 static auto DoParse(std::shared_ptr<Environment> &env, std::string source,
-                   std::ostream &output, bool verbose) -> int {
+                    std::ostream &output, bool verbose) -> int {
   std::fstream file(source, std::ios::in);
   if (!file.is_open()) {
     LOG(ERROR) << "Failed to open source file: " << source;
@@ -334,7 +334,7 @@ static auto DoParse(std::shared_ptr<Environment> &env, std::string source,
 }
 
 static auto DoNr(std::shared_ptr<Environment> &env, std::string source,
-                std::ostream &output, std::string opts) -> int {
+                 std::ostream &output, std::string opts) -> int {
   if (!opts.empty()) {
     LOG(ERROR) << "Options are not implemented yet";
   }
@@ -363,7 +363,8 @@ static auto DoNr(std::shared_ptr<Environment> &env, std::string source,
 }
 
 static auto DoCodegen(std::shared_ptr<Environment> &env, std::string source,
-                     std::string output, std::string opts, std::string target) -> int {
+                      std::string output, std::string opts,
+                      std::string target) -> int {
   if (!opts.empty()) {
     LOG(ERROR) << "Options are not implemented yet";
   }
@@ -436,10 +437,10 @@ static auto DoDevTest() -> int {
 }
 
 namespace no3::router {
-  auto RunDevMode(
-      const ArgumentParser &parser,
-      const std::unordered_map<std::string_view,
-                               std::unique_ptr<ArgumentParser>> &subparsers) -> int {
+  auto RunDevMode(const ArgumentParser &parser,
+                  const std::unordered_map<std::string_view,
+                                           std::unique_ptr<ArgumentParser>>
+                      &subparsers) -> int {
     ncc::Log += [&](auto msg, auto sev, const auto &ec) {
       if (core::GetDebugMode() || sev > Debug) {
         std::cerr << ec.Format(msg, sev).c_str() << std::endl;

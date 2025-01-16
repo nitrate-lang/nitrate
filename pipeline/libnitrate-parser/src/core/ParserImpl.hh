@@ -38,7 +38,7 @@
 #include <memory>
 #include <nitrate-core/Environment.hh>
 #include <nitrate-core/Logger.hh>
-#include <nitrate-lexer/Lexer.hh>
+#include <nitrate-lexer/Scanner.hh>
 #include <nitrate-parser/AST.hh>
 #include <nitrate-parser/Context.hh>
 #include <set>
@@ -78,8 +78,9 @@ namespace ncc::parse {
     auto RecurseThrow() -> FlowPtr<Stmt>;
     auto RecurseAwait() -> FlowPtr<Stmt>;
     auto RecurseBlock(bool expect_braces, bool single_stmt,
-                               SafetyMode safety) -> FlowPtr<Stmt>;
-    auto RecurseExpr(const std::set<ncc::lex::Token> &terminators) -> FlowPtr<Expr>;
+                      SafetyMode safety) -> FlowPtr<Stmt>;
+    auto RecurseExpr(const std::set<ncc::lex::Token> &terminators)
+        -> FlowPtr<Expr>;
     auto RecurseExprPrimary(bool is_type) -> NullableFlowPtr<Expr>;
     auto RecurseExprKeyword(lex::Keyword key) -> NullableFlowPtr<Expr>;
     auto RecurseExprPunctor(lex::Punctor punc) -> NullableFlowPtr<Expr>;
@@ -90,8 +91,10 @@ namespace ncc::parse {
      *  Helper functions
      ****************************************************************************/
 
-    auto MockStmt(std::optional<npar_ty_t> expected = std::nullopt) -> FlowPtr<Stmt>;
-    auto MockExpr(std::optional<npar_ty_t> expected = std::nullopt) -> FlowPtr<Expr>;
+    auto MockStmt(std::optional<npar_ty_t> expected = std::nullopt)
+        -> FlowPtr<Stmt>;
+    auto MockExpr(std::optional<npar_ty_t> expected = std::nullopt)
+        -> FlowPtr<Expr>;
     auto MockType() -> FlowPtr<Type>;
 
     auto RecurseEnumName() -> string;
@@ -105,7 +108,7 @@ namespace ncc::parse {
     auto RecurseExportBody() -> FlowPtr<Stmt>;
 
     auto RecurseCallArguments(const std::set<lex::Token> &terminators,
-                                  bool type_by_default) -> CallArgs;
+                              bool type_by_default) -> CallArgs;
     auto RecurseFstring() -> FlowPtr<Expr>;
 
     auto RecurseForInitExpr() -> NullableFlowPtr<Stmt>;
@@ -122,14 +125,15 @@ namespace ncc::parse {
     auto RecurseFunctionParameter() -> std::optional<FuncParam>;
     auto RecurseTemplateParameters() -> std::optional<TemplateParameters>;
     auto RecurseFunctionParameters() -> std::pair<FuncParams, bool>;
-    auto RecurseFunctionBody(bool parse_declaration_only) -> NullableFlowPtr<Stmt>;
+    auto RecurseFunctionBody(bool parse_declaration_only)
+        -> NullableFlowPtr<Stmt>;
     auto RecurseFunctionReturnType() -> FlowPtr<Type>;
     static auto GetPuritySpecifier(lex::Token start_pos, bool is_thread_safe,
-                                     bool is_pure, bool is_impure,
-                                     bool is_quasi, bool is_retro) -> Purity;
+                                   bool is_pure, bool is_impure, bool is_quasi,
+                                   bool is_retro) -> Purity;
     auto RecurseFunctionCapture() -> std::optional<std::pair<string, bool>>;
-    auto
-    RecurseFunctionAmbigouis() -> std::tuple<ExpressionList, FnCaptures, Purity, string>;
+    auto RecurseFunctionAmbigouis()
+        -> std::tuple<ExpressionList, FnCaptures, Purity, string>;
 
     auto RecurseIfThen() -> FlowPtr<Stmt>;
     auto RecurseIfElse() -> NullableFlowPtr<Stmt>;
@@ -153,8 +157,8 @@ namespace ncc::parse {
 
     auto RecurseSwitchCaseBody() -> FlowPtr<Stmt>;
     auto RecurseSwitchCase() -> std::pair<FlowPtr<Stmt>, bool>;
-    auto
-    RecurseSwitchBody() -> std::optional<std::pair<SwitchCases, NullableFlowPtr<Stmt>>>;
+    auto RecurseSwitchBody()
+        -> std::optional<std::pair<SwitchCases, NullableFlowPtr<Stmt>>>;
 
     auto RecurseTypeRangeStart() -> NullableFlowPtr<Expr>;
     auto RecurseTypeRangeEnd() -> NullableFlowPtr<Expr>;
@@ -173,7 +177,8 @@ namespace ncc::parse {
     auto RecurseVariableAttributes() -> std::optional<ExpressionList>;
     auto RecurseVariableType() -> NullableFlowPtr<Type>;
     auto RecurseVariableValue() -> NullableFlowPtr<Expr>;
-    auto RecurseVariableInstance(VarDeclType decl_type) -> NullableFlowPtr<Stmt>;
+    auto RecurseVariableInstance(VarDeclType decl_type)
+        -> NullableFlowPtr<Stmt>;
 
     auto RecurseWhileCond() -> FlowPtr<Expr>;
     auto RecurseWhileBody() -> FlowPtr<Stmt>;

@@ -38,7 +38,7 @@
 #include <istream>
 #include <nitrate-core/Macro.hh>
 #include <nitrate-core/NullableFlowPtr.hh>
-#include <nitrate-lexer/Lexer.hh>
+#include <nitrate-lexer/Scanner.hh>
 #include <nitrate-parser/ASTBase.hh>
 #include <optional>
 #include <variant>
@@ -61,7 +61,9 @@ namespace ncc::parse {
 
       auto operator()() -> Data& { return m_data; }
       auto operator()() const -> const Data& { return m_data; }
-      auto operator==(const Value& o) const -> bool { return m_data == o.m_data; }
+      auto operator==(const Value& o) const -> bool {
+        return m_data == o.m_data;
+      }
     };
 
     using NextFunc = std::function<std::optional<Value>()>;
@@ -241,9 +243,9 @@ namespace ncc::parse {
     AstJsonReader(std::istream& is,
                   ReaderSourceManager source_manager = std::nullopt);
 
-    static auto FromString(
-        const std::string& json,
-        ReaderSourceManager source_manager = std::nullopt) -> std::optional<FlowPtr<Base>> {
+    static auto FromString(const std::string& json,
+                           ReaderSourceManager source_manager = std::nullopt)
+        -> std::optional<FlowPtr<Base>> {
       std::istringstream is(json);
       AstJsonReader reader(is, source_manager);
       return reader.Get();
@@ -263,9 +265,9 @@ namespace ncc::parse {
     AstMsgPackReader(std::istream& is,
                      ReaderSourceManager source_manager = std::nullopt);
 
-    static auto FromString(
-        const std::string& msgpack,
-        ReaderSourceManager source_manager = std::nullopt) -> std::optional<FlowPtr<Base>> {
+    static auto FromString(const std::string& msgpack,
+                           ReaderSourceManager source_manager = std::nullopt)
+        -> std::optional<FlowPtr<Base>> {
       std::istringstream is(msgpack);
       AstMsgPackReader reader(is, source_manager);
       return reader.Get();

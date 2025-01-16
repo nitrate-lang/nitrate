@@ -31,7 +31,7 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <nitrate-lexer/Lexer.hh>
+#include <nitrate-lexer/Scanner.hh>
 #include <nitrate-parser/EC.hh>
 
 using namespace ncc;
@@ -41,8 +41,8 @@ static thread_local IScanner *GCurrentScanner = nullptr;
 
 void ParserSetCurrentScanner(IScanner *scanner) { GCurrentScanner = scanner; }
 
-static constexpr auto UnescapeStringSlice(
-    std::string_view &buf) -> std::optional<std::string> {
+static constexpr auto UnescapeStringSlice(std::string_view &buf)
+    -> std::optional<std::string> {
   if (!buf.starts_with("\"")) [[unlikely]] {
     return std::nullopt;
   }
@@ -127,8 +127,8 @@ static constexpr auto UnescapeStringSlice(
   return unescaped;
 }
 
-static auto FindAndDecodeToken(
-    std::string_view buf) -> std::optional<std::pair<Token, std::string>> {
+static auto FindAndDecodeToken(std::string_view buf)
+    -> std::optional<std::pair<Token, std::string>> {
   std::string_view orig_buf = buf;
 
   auto pos = buf.find("${T:{\"type\":");
@@ -231,7 +231,8 @@ static auto FindAndDecodeToken(
   }
 }
 
-NCC_EXPORT auto ncc::parse::ec::Formatter(std::string_view msg, Sev) -> std::string {
+NCC_EXPORT auto ncc::parse::ec::Formatter(std::string_view msg,
+                                          Sev) -> std::string {
   IScanner *rd = GCurrentScanner;
 
   if (rd != nullptr) {

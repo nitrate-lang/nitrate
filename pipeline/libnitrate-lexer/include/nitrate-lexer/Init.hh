@@ -35,7 +35,7 @@
 #define __NITRATE_LEXER_LIB_H__
 
 #include <nitrate-core/Init.hh>
-#include <nitrate-lexer/Lexer.hh>
+#include <nitrate-lexer/Scanner.hh>
 
 namespace ncc::lex {
   struct LexerLibrarySetup {

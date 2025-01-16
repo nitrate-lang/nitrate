@@ -35,7 +35,7 @@
 #include <nitrate-core/Macro.hh>
 #include <nitrate-ir/IR/Nodes.hh>
 #include <nitrate-ir/IRWriter.hh>
-#include <nitrate-lexer/Lexer.hh>
+#include <nitrate-lexer/Scanner.hh>
 #include <variant>
 
 using namespace ncc::ir;

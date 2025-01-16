@@ -1,7 +1,7 @@
 #include <lsp/lang/CambrianStyleFormatter.hh>
 #include <nitrate-core/Logger.hh>
 #include <nitrate-core/Macro.hh>
-#include <nitrate-lexer/Lexer.hh>
+#include <nitrate-lexer/Scanner.hh>
 #include <nitrate-parser/AST.hh>
 #include <nitrate-parser/ASTCommon.hh>
 #include <sstream>
@@ -13,9 +13,8 @@ using namespace ncc;
 using namespace ncc::parse;
 using namespace ncc::lex;
 
-auto
-CambrianFormatter::LineStreamWritter::operator<<(
-    std::ostream& (*func)(std::ostream&)) -> CambrianFormatter::LineStreamWritter& {
+auto CambrianFormatter::LineStreamWritter::operator<<(std::ostream& (*func)(
+    std::ostream&)) -> CambrianFormatter::LineStreamWritter& {
   qcore_assert(func ==
                static_cast<std::ostream& (*)(std::ostream&)>(std::endl));
 
@@ -25,14 +24,14 @@ CambrianFormatter::LineStreamWritter::operator<<(
   return *this;
 }
 
-auto
-CambrianFormatter::LineStreamWritter::operator<<(Operator op) -> CambrianFormatter::LineStreamWritter& {
+auto CambrianFormatter::LineStreamWritter::operator<<(Operator op)
+    -> CambrianFormatter::LineStreamWritter& {
   m_line_buffer << op;
   return *this;
 }
 
-auto
-CambrianFormatter::LineStreamWritter::operator<<(Vis v) -> CambrianFormatter::LineStreamWritter& {
+auto CambrianFormatter::LineStreamWritter::operator<<(Vis v)
+    -> CambrianFormatter::LineStreamWritter& {
   switch (v) {
     case Vis::Sec: {
       m_line_buffer << "sec";
@@ -86,8 +85,8 @@ auto CambrianFormatter::EscapeCharLiteral(char ch) const -> std::string {
   }
 }
 
-auto CambrianFormatter::EscapeStringLiteralChunk(
-    std::string_view str) const -> std::string {
+auto CambrianFormatter::EscapeStringLiteralChunk(std::string_view str) const
+    -> std::string {
   std::stringstream ss;
 
   for (char ch : str) {

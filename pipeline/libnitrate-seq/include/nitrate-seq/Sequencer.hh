@@ -47,7 +47,8 @@ namespace ncc::seq {
   using FetchModuleFunc =
       std::function<std::optional<std::string>(std::string_view)>;
 
-  auto FileSystemFetchModule(std::string_view path) -> std::optional<std::string>;
+  auto FileSystemFetchModule(std::string_view path)
+      -> std::optional<std::string>;
 
   class NCC_EXPORT Sequencer final : public ncc::lex::IScanner {
     static std::string_view CodePrefix;
@@ -69,8 +70,8 @@ namespace ncc::seq {
 
   private:
     auto GetNext() -> ncc::lex::Token override;
-    auto GetLocationFallback(
-        ncc::lex::LocationID id) -> std::optional<ncc::lex::Location> override {
+    auto GetLocationFallback(ncc::lex::LocationID id)
+        -> std::optional<ncc::lex::Location> override {
       return m_scanner->GetLocation(id);
     }
 
@@ -85,8 +86,8 @@ namespace ncc::seq {
               bool is_root = true);
     ~Sequencer() override = default;
 
-    auto GetSourceWindow(
-        Point start, Point end, char fillchar) -> std::optional<std::vector<std::string>> override;
+    auto GetSourceWindow(Point start, Point end, char fillchar)
+        -> std::optional<std::vector<std::string>> override;
 
     void SetFetchFunc(FetchModuleFunc func);
   };

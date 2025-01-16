@@ -38,7 +38,7 @@
 #include <memory>
 #include <nitrate-core/Environment.hh>
 #include <nitrate-core/Logger.hh>
-#include <nitrate-lexer/Lexer.hh>
+#include <nitrate-lexer/Scanner.hh>
 #include <nitrate-parser/AST.hh>
 #include <sstream>
 
@@ -81,7 +81,7 @@ namespace ncc::parse {
     void SetFailBit();
     auto GetLexer() -> lex::IScanner &;
 
-    template <typename Scanner = lex::Tokenizer>
+    template <typename Scanner>
     static auto FromString(std::string_view str,
                            std::shared_ptr<Environment> env) {
       auto state = std::make_shared<
@@ -92,7 +92,7 @@ namespace ncc::parse {
       return Create(*state->second, env, state);
     }
 
-    template <typename Scanner = lex::Tokenizer>
+    template <typename Scanner>
     static auto FromStream(std::istream &stream,
                            std::shared_ptr<Environment> env) {
       auto lexer = std::make_shared<Scanner>(stream, env);

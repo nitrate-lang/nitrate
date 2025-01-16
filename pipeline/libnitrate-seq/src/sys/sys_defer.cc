@@ -66,7 +66,7 @@ auto ncc::seq::SysDefer(lua_State* L) -> int {
       lua_newtable(L);
 
       lua_pushstring(L, "ty");
-      lua_pushstring(L, qlex_ty_str(tok.GetKind()));
+      lua_pushstring(L, to_string(tok.GetKind())->c_str());
       lua_settable(L, -3);
 
       lua_pushstring(L, "v");

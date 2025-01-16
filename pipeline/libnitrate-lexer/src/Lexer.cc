@@ -1202,7 +1202,7 @@ NCC_EXPORT auto Tokenizer::GetNext() -> Token {
 
 ///============================================================================///
 
-NCC_EXPORT auto ncc::lex::qlex_ty_str(TokenType ty) -> const char * {
+NCC_EXPORT auto ncc::lex::to_string(TokenType ty) -> string {
   switch (ty) {
     case EofF:
       return "eof";

@@ -38,7 +38,7 @@
 #include <cstdint>
 #include <functional>
 #include <nitrate-core/Macro.hh>
-#include <nitrate-lexer/Lexer.hh>
+#include <nitrate-lexer/Scanner.hh>
 #include <nitrate-lexer/Token.hh>
 #include <nitrate-parser/ASTVisitor.hh>
 #include <ostream>

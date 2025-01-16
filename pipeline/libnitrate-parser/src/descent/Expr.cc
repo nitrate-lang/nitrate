@@ -33,6 +33,7 @@
 
 #include <charconv>
 #include <descent/Recurse.hh>
+#include <nitrate-lexer/Lexer.hh>
 #include <stack>
 #include <utility>
 
@@ -119,11 +120,11 @@ auto Parser::PImpl::RecurseFstring() -> FlowPtr<Expr> {
           buf.clear();
         }
 
-        auto subnode =
-            Parser::FromString(fstring_raw.substr(w_beg, w_end - w_beg), m_env)
-                ->m_impl->RecurseExpr({
-                    Token(Punc, PuncRCur),
-                });
+        auto subnode = Parser::FromString<Tokenizer>(
+                           fstring_raw.substr(w_beg, w_end - w_beg), m_env)
+                           ->m_impl->RecurseExpr({
+                               Token(Punc, PuncRCur),
+                           });
 
         items.emplace_back(subnode);
       } else if (ch == '{') {

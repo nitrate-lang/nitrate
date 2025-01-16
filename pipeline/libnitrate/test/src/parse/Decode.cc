@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 
+#include <nitrate-lexer/Lexer.hh>
 #include <nitrate-parser/ASTReader.hh>
 #include <nitrate-parser/ASTWriter.hh>
 #include <nitrate-parser/Context.hh>
@@ -11,7 +12,9 @@ using namespace ncc::parse;
 
 TEST(AST, FromJson) {
   auto env = std::make_shared<ncc::Environment>();
-  auto original = Parser::FromString(test::vector::kAstExecise, env)->Parse();
+  auto original =
+      Parser::FromString<ncc::lex::Tokenizer>(test::vector::kAstExecise, env)
+          ->Parse();
   ASSERT_TRUE(original.Check());
 
   std::stringstream serialized;
@@ -26,7 +29,9 @@ TEST(AST, FromJson) {
 
 TEST(AST, FromMsgPack) {
   auto env = std::make_shared<ncc::Environment>();
-  auto original = Parser::FromString(test::vector::kAstExecise, env)->Parse();
+  auto original =
+      Parser::FromString<ncc::lex::Tokenizer>(test::vector::kAstExecise, env)
+          ->Parse();
   ASSERT_TRUE(original.Check());
 
   std::stringstream serialized;

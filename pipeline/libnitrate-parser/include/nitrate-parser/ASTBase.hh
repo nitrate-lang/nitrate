@@ -38,7 +38,7 @@
 #include <iostream>
 #include <nitrate-core/Logger.hh>
 #include <nitrate-core/Macro.hh>
-#include <nitrate-lexer/Lexer.hh>
+#include <nitrate-lexer/Scanner.hh>
 #include <nitrate-lexer/Token.hh>
 #include <nitrate-parser/ASTCommon.hh>
 #include <nitrate-parser/ASTData.hh>
@@ -102,7 +102,8 @@ namespace ncc::parse {
     void Set(ASTExtensionKey id, ASTExtensionPackage &&data);
   };
 
-  auto operator<<(std::ostream &os, const ASTExtensionKey &idx) -> std::ostream &;
+  auto operator<<(std::ostream &os,
+                  const ASTExtensionKey &idx) -> std::ostream &;
 
   extern ASTExtension ExtensionDataStore;
 
@@ -275,7 +276,9 @@ namespace ncc::parse {
       }
     }
 
-    [[nodiscard]] constexpr auto GetKind() const -> npar_ty_t { return m_node_type; }
+    [[nodiscard]] constexpr auto GetKind() const -> npar_ty_t {
+      return m_node_type;
+    }
     [[nodiscard]] constexpr auto GetKindName() const {
       return GetKindName(m_node_type);
     }
@@ -352,10 +355,10 @@ namespace ncc::parse {
     /// Debugging
 
     auto Dump(std::ostream &os = std::cerr,
-                       WriterSourceProvider rd = std::nullopt) const -> std::ostream &;
+              WriterSourceProvider rd = std::nullopt) const -> std::ostream &;
 
-    [[nodiscard]] auto ToJson(
-        WriterSourceProvider rd = std::nullopt) const -> std::string;
+    [[nodiscard]] auto ToJson(WriterSourceProvider rd = std::nullopt) const
+        -> std::string;
 
     ///======================================================================
     /// AST Extension Data
@@ -561,8 +564,12 @@ namespace ncc::parse {
     [[nodiscard]] constexpr auto IsVoid() const -> bool {
       return GetKind() == QAST_VOID;
     }
-    [[nodiscard]] constexpr auto IsBool() const -> bool { return GetKind() == QAST_U1; }
-    [[nodiscard]] constexpr auto IsRef() const -> bool { return GetKind() == QAST_REF; }
+    [[nodiscard]] constexpr auto IsBool() const -> bool {
+      return GetKind() == QAST_U1;
+    }
+    [[nodiscard]] constexpr auto IsRef() const -> bool {
+      return GetKind() == QAST_REF;
+    }
     auto IsPtrTo(const Type *type) const -> bool;
 
     [[nodiscard]] constexpr auto GetWidth() const { return m_width; }

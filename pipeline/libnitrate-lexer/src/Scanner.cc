@@ -34,326 +34,30 @@
 #include <charconv>
 #include <nitrate-core/Logger.hh>
 #include <nitrate-core/Macro.hh>
-#include <nitrate-lexer/Lexer.hh>
-#include <nitrate-lexer/Token.hh>
+#include <nitrate-lexer/Scanner.hh>
 
 using namespace ncc::lex;
 using namespace ncc::lex::detail;
 
-// Lower index means higher precedence
-static const std::vector<
-    std::vector<std::tuple<Operator, OpMode, Associativity>>>
-    PRECEDENCE_GROUPS = {
-        {
-            {OpDot, OpMode::Binary, Left},
-        },
+static constexpr size_t kTokenBufferSize = 1024;
 
-        {
-            {OpInc, OpMode::PostUnary, Left},
-            {OpDec, OpMode::PostUnary, Left},
-        },
-
-        {
-            /* Yee, we have enough overloadable operators to last a lifetime */
-            {OpPlus, OpMode::PreUnary, Right},
-            {OpMinus, OpMode::PreUnary, Right},
-            {OpTimes, OpMode::PreUnary, Right},
-            {OpSlash, OpMode::PreUnary, Right},
-            {OpPercent, OpMode::PreUnary, Right},
-            {OpBitAnd, OpMode::PreUnary, Right},
-            {OpBitOr, OpMode::PreUnary, Right},
-            {OpBitXor, OpMode::PreUnary, Right},
-            {OpBitNot, OpMode::PreUnary, Right},
-            {OpLShift, OpMode::PreUnary, Right},
-            {OpRShift, OpMode::PreUnary, Right},
-            {OpROTL, OpMode::PreUnary, Right},
-            {OpROTR, OpMode::PreUnary, Right},
-            {OpLogicAnd, OpMode::PreUnary, Right},
-            {OpLogicOr, OpMode::PreUnary, Right},
-            {OpLogicXor, OpMode::PreUnary, Right},
-            {OpLogicNot, OpMode::PreUnary, Right},
-            {OpLT, OpMode::PreUnary, Right},
-            {OpGT, OpMode::PreUnary, Right},
-            {OpLE, OpMode::PreUnary, Right},
-            {OpGE, OpMode::PreUnary, Right},
-            {OpEq, OpMode::PreUnary, Right},
-            {OpNE, OpMode::PreUnary, Right},
-            {OpSet, OpMode::PreUnary, Right},
-            {OpPlusSet, OpMode::PreUnary, Right},
-            {OpMinusSet, OpMode::PreUnary, Right},
-            {OpTimesSet, OpMode::PreUnary, Right},
-            {OpSlashSet, OpMode::PreUnary, Right},
-            {OpPercentSet, OpMode::PreUnary, Right},
-            {OpBitAndSet, OpMode::PreUnary, Right},
-            {OpBitOrSet, OpMode::PreUnary, Right},
-            {OpBitXorSet, OpMode::PreUnary, Right},
-            {OpLogicAndSet, OpMode::PreUnary, Right},
-            {OpLogicOrSet, OpMode::PreUnary, Right},
-            {OpLogicXorSet, OpMode::PreUnary, Right},
-            {OpLShiftSet, OpMode::PreUnary, Right},
-            {OpRShiftSet, OpMode::PreUnary, Right},
-            {OpROTLSet, OpMode::PreUnary, Right},
-            {OpROTRSet, OpMode::PreUnary, Right},
-            {OpInc, OpMode::PreUnary, Right},
-            {OpDec, OpMode::PreUnary, Right},
-            {OpAs, OpMode::PreUnary, Right},
-            {OpBitcastAs, OpMode::PreUnary, Right},
-            {OpIn, OpMode::PreUnary, Right},
-            {OpOut, OpMode::PreUnary, Right},
-            {OpSizeof, OpMode::PreUnary, Right},
-            {OpBitsizeof, OpMode::PreUnary, Right},
-            {OpAlignof, OpMode::PreUnary, Right},
-            {OpTypeof, OpMode::PreUnary, Right},
-            {OpComptime, OpMode::PreUnary, Right},
-            {OpDot, OpMode::PreUnary, Right},
-            {OpRange, OpMode::PreUnary, Right},
-            {OpEllipsis, OpMode::PreUnary, Right},
-            {OpArrow, OpMode::PreUnary, Right},
-            {OpTernary, OpMode::PreUnary, Right},
-        },
-
-        {
-            {OpAs, OpMode::Binary, Left},
-            {OpBitcastAs, OpMode::Binary, Left},
-        },
-
-        {
-            {OpTimes, OpMode::Binary, Left},
-            {OpSlash, OpMode::Binary, Left},
-            {OpPercent, OpMode::Binary, Left},
-        },
-
-        {
-            {OpPlus, OpMode::Binary, Left},
-            {OpMinus, OpMode::Binary, Left},
-        },
-
-        {
-            {OpLShift, OpMode::Binary, Left},
-            {OpRShift, OpMode::Binary, Left},
-            {OpROTL, OpMode::Binary, Left},
-            {OpROTR, OpMode::Binary, Left},
-        },
-
-        {
-            {OpBitAnd, OpMode::Binary, Left},
-        },
-
-        {
-            {OpBitXor, OpMode::Binary, Left},
-        },
-
-        {
-            {OpBitOr, OpMode::Binary, Left},
-        },
-
-        {
-            /*
-              Add soup of new operators like '$>', '~?', etc. Maybe like 90 of
-              them? This way we can have a lot of fun with overloading and
-              creating basically custom syntax that is meme worthy.
-             */
-        },
-
-        {
-            {OpEq, OpMode::Binary, Left},
-            {OpNE, OpMode::Binary, Left},
-            {OpLT, OpMode::Binary, Left},
-            {OpGT, OpMode::Binary, Left},
-            {OpLE, OpMode::Binary, Left},
-            {OpGE, OpMode::Binary, Left},
-        },
-
-        {
-            {OpLogicAnd, OpMode::Binary, Left},
-        },
-
-        {
-            {OpLogicOr, OpMode::Binary, Left},
-        },
-
-        {
-            {OpLogicXor, OpMode::Binary, Left},
-        },
-
-        {
-            {OpTernary, OpMode::Ternary, Right},
-        },
-
-        {
-            {OpIn, OpMode::Binary, Left},
-            {OpOut, OpMode::Binary, Left},
-        },
-
-        {
-            {OpRange, OpMode::Binary, Left},
-            {OpArrow, OpMode::Binary, Left},
-        },
-
-        {
-            {OpSet, OpMode::Binary, Right},
-            {OpPlusSet, OpMode::Binary, Right},
-            {OpMinusSet, OpMode::Binary, Right},
-            {OpTimesSet, OpMode::Binary, Right},
-            {OpSlashSet, OpMode::Binary, Right},
-            {OpPercentSet, OpMode::Binary, Right},
-            {OpBitAndSet, OpMode::Binary, Right},
-            {OpBitOrSet, OpMode::Binary, Right},
-            {OpBitXorSet, OpMode::Binary, Right},
-            {OpLogicAndSet, OpMode::Binary, Right},
-            {OpLogicOrSet, OpMode::Binary, Right},
-            {OpLogicXorSet, OpMode::Binary, Right},
-            {OpLShiftSet, OpMode::Binary, Right},
-            {OpRShiftSet, OpMode::Binary, Right},
-            {OpROTLSet, OpMode::Binary, Right},
-            {OpROTRSet, OpMode::Binary, Right},
-        },
-};
-
-NCC_EXPORT auto ncc::lex::GetOperatorPrecedence(Operator op, OpMode type) -> short {
-  using Key = std::pair<Operator, OpMode>;
-
-  struct KeyHash {
-    auto operator()(const Key &k) const -> size_t {
-      return std::hash<Operator>()(k.first) ^ std::hash<OpMode>()(k.second);
-    }
-  };
-
-  static const std::unordered_map<std::pair<Operator, OpMode>, short, KeyHash>
-      precedence = [] {
-        std::unordered_map<std::pair<Operator, OpMode>, short, KeyHash>
-            precedence;
-
-        for (size_t i = 0; i < PRECEDENCE_GROUPS.size(); i++) {
-          for (let[op, mode, _] : PRECEDENCE_GROUPS[i]) {
-            precedence[{op, mode}] = (PRECEDENCE_GROUPS.size() - i);
-          }
-        }
-
-        return precedence;
-      }();
-
-  auto it = precedence.find({op, type});
-  if (it != precedence.end()) [[likely]] {
-    return it->second;
-  }
-
-  return -1;
+static inline auto StringToUint32(std::string_view str,
+                                  uint32_t sentinal) -> uint32_t {
+  uint32_t result = sentinal;
+  std::from_chars(str.data(), str.data() + str.size(), result);
+  return result;
 }
 
-NCC_EXPORT auto ncc::lex::GetOperatorAssociativity(Operator op,
-                                                            OpMode type) -> Associativity {
-  using Key = std::pair<Operator, OpMode>;
-
-  struct KeyHash {
-    auto operator()(const Key &k) const -> size_t {
-      return std::hash<Operator>()(k.first) ^ std::hash<OpMode>()(k.second);
-    }
-  };
-
-  static const std::unordered_map<Key, Associativity, KeyHash> associativity =
-      [] {
-        std::unordered_map<Key, Associativity, KeyHash> associativity;
-
-        for (const auto &group : PRECEDENCE_GROUPS) {
-          for (let[op, mode, assoc] : group) {
-            associativity[{op, mode}] = assoc;
-          }
-        }
-
-        return associativity;
-      }();
-
-  auto it = associativity.find({op, type});
-  if (it != associativity.end()) [[likely]] {
-    return it->second;
-  }
-
-  return Left;
-}
-
-NCC_EXPORT auto ncc::lex::to_string(TokenType ty, TokenData v) -> ncc::string {
-  string r;
-
-  switch (ty) {
-    case EofF: {
-      r = "";
-      break;
-    }
-
-    case KeyW: {
-      r = ncc::lex::kw_repr(v.m_key);
-      break;
-    }
-
-    case Oper: {
-      r = ncc::lex::op_repr(v.m_op);
-      break;
-    }
-
-    case Punc: {
-      r = ncc::lex::punct_repr(v.m_punc);
-      break;
-    }
-
-    case Name: {
-      r = v.m_str;
-      break;
-    }
-
-    case IntL: {
-      r = v.m_str;
-      break;
-    }
-
-    case NumL: {
-      r = v.m_str;
-      break;
-    }
-
-    case Text: {
-      r = v.m_str;
-      break;
-    }
-
-    case Char: {
-      r = v.m_str;
-      break;
-    }
-
-    case MacB: {
-      r = v.m_str;
-      break;
-    }
-
-    case Macr: {
-      r = v.m_str;
-      break;
-    }
-
-    case Note: {
-      r = v.m_str;
-      break;
-    }
-  }
-
-  return r;
-}
-
-NCC_EXPORT auto LocationID::Get(IScanner &l) const -> Location {
-  return l.GetLocation(m_id);
-}
-
-class IScanner::StaticImpl {
+class IScanner::Impl {
 public:
-  static NCC_FORCE_INLINE void FillTokenBuffer(IScanner &l) {
+  static void FillTokenBuffer(IScanner &self) {
     for (size_t i = 0; i < kTokenBufferSize; i++) {
       try {
-        l.m_ready.push_back(l.GetNext());
+        self.m_ready.push_back(self.GetNext());
       } catch (ScannerEOF &) {
         if (i == 0) {
-          l.m_eof = true;
-          l.m_ready.push_back(Token::EndOfFile());
+          self.m_eof = true;
+          self.m_ready.push_back(Token::EndOfFile());
         }
         break;
       }
@@ -361,56 +65,14 @@ public:
   }
 };
 
-auto IScanner::Next() -> Token {
-  while (true) {
-    if (m_ready.empty()) [[unlikely]] {
-      StaticImpl::FillTokenBuffer(*this);
-    }
+IScanner::IScanner(std::shared_ptr<Environment> env) : m_env(std::move(env)) {
+  constexpr size_t kInitialLocationReserve = 0xffff;
 
-    Token tok = m_ready.front();
-    m_ready.pop_front();
-
-    if (GetSkipCommentsState() && tok.is(Note)) {
-      m_comments.push_back(tok);
-      continue;
-    }
-
-    m_current = tok;
-
-    return tok;
-  }
+  m_location_interned.reserve(kInitialLocationReserve);
+  m_location_interned.emplace_back(Location::EndOfFile());
 }
 
-auto IScanner::Peek() -> Token {
-  while (true) {
-    if (m_ready.empty()) [[unlikely]] {
-      StaticImpl::FillTokenBuffer(*this);
-    }
-
-    Token tok = m_ready.front();
-
-    if (GetSkipCommentsState() && tok.is(Note)) {
-      m_comments.push_back(tok);
-      m_ready.pop_front();
-      continue;
-    }
-
-    m_current = tok;
-
-    return tok;
-  }
-}
-
-void IScanner::Insert(Token tok) {
-  m_ready.push_front(tok);
-  m_current = tok;
-}
-
-static auto StringToUint32(std::string_view str, uint32_t sentinal) -> uint32_t {
-  uint32_t result = sentinal;
-  std::from_chars(str.data(), str.data() + str.size(), result);
-  return result;
-}
+IScanner::~IScanner() = default;
 
 auto IScanner::GetEofLocation() -> Location {
   uint32_t offset = kLexEof;
@@ -437,6 +99,72 @@ auto IScanner::GetEofLocation() -> Location {
   return {offset, line, column, filename};
 }
 
+auto IScanner::SetFailBit(bool fail) -> bool {
+  auto old = m_ebit;
+  m_ebit = fail;
+  return old;
+}
+
+auto IScanner::Next() -> Token {
+  while (true) {
+    if (m_ready.empty()) [[unlikely]] {
+      Impl::FillTokenBuffer(*this);
+    }
+
+    auto tok = m_ready.front();
+    m_ready.pop_front();
+
+    if (m_skip && tok.is(Note)) [[unlikely]] {
+      m_comments.push_back(tok);
+      continue;
+    }
+
+    m_current = tok;
+
+    return tok;
+  }
+}
+
+auto IScanner::Peek() -> Token {
+  while (true) {
+    if (m_ready.empty()) [[unlikely]] {
+      Impl::FillTokenBuffer(*this);
+    }
+
+    auto tok = m_ready.front();
+
+    if (m_skip && tok.is(Note)) [[unlikely]] {
+      m_comments.push_back(tok);
+      m_ready.pop_front();
+      continue;
+    }
+
+    m_current = tok;
+
+    return tok;
+  }
+}
+
+auto IScanner::Insert(Token tok) -> void {
+  m_ready.push_front(tok);
+  m_current = tok;
+}
+
+auto IScanner::Start(Token t) -> Location { return t.GetStart().Get(*this); }
+
+auto IScanner::End(Token) -> Location {  /// NOLINT
+  /// TODO: Support relexing to get the end location
+  return Location::EndOfFile();
+}
+
+auto IScanner::StartLine(Token t) -> uint32_t { return Start(t).GetRow(); }
+
+auto IScanner::StartColumn(Token t) -> uint32_t { return Start(t).GetCol(); }
+
+auto IScanner::EndLine(Token t) -> uint32_t { return End(t).GetRow(); }
+
+auto IScanner::EndColumn(Token t) -> uint32_t { return End(t).GetCol(); }
+
 auto IScanner::GetLocation(LocationID id) -> Location {
   if (id.GetId() < m_location_interned.size()) {
     return m_location_interned[id.GetId()];
@@ -445,14 +173,20 @@ auto IScanner::GetLocation(LocationID id) -> Location {
   return GetLocationFallback(id.GetId()).value_or(Location::EndOfFile());
 }
 
-auto IScanner::Start(Token t) -> Location { return t.GetStart().Get(*this); }
+auto IScanner::GetCurrentFilename() const -> string { return m_filename; }
 
-Location IScanner::End(Token) {  /// NOLINT
-  /// TODO: Support relexing to get the end location
-  return Location::EndOfFile();
+auto IScanner::SetCurrentFilename(string filename) -> string {
+  auto old = m_filename;
+  m_filename = filename;
+  return old;
 }
 
-auto IScanner::StartLine(Token t) -> uint32_t { return Start(t).GetRow(); }
-auto IScanner::StartColumn(Token t) -> uint32_t { return Start(t).GetCol(); }
-auto IScanner::EndLine(Token t) -> uint32_t { return End(t).GetRow(); }
-auto IScanner::EndColumn(Token t) -> uint32_t { return End(t).GetCol(); }
+auto IScanner::SkipCommentsState(bool skip) -> bool {
+  auto old = m_skip;
+  m_skip = skip;
+  return old;
+}
+
+auto IScanner::GetEnvironment() const -> std::shared_ptr<Environment> {
+  return m_env;
+}

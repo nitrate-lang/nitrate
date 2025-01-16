@@ -36,7 +36,7 @@
 #include <memory>
 #include <nitrate-core/Logger.hh>
 #include <nitrate-core/Macro.hh>
-#include <nitrate-lexer/Lexer.hh>
+#include <nitrate-lexer/Scanner.hh>
 #include <nitrate-seq/EC.hh>
 #include <nitrate-seq/Sequencer.hh>
 #include <ranges>
@@ -376,8 +376,8 @@ Sequencer::Sequencer(std::istream &file, std::shared_ptr<ncc::Environment> env,
   }
 }
 
-auto Sequencer::GetSourceWindow(
-    Point start, Point end, char fillchar) -> std::optional<std::vector<std::string>> {
+auto Sequencer::GetSourceWindow(Point start, Point end, char fillchar)
+    -> std::optional<std::vector<std::string>> {
   return m_scanner->GetSourceWindow(start, end, fillchar);
 }
 
@@ -386,12 +386,13 @@ static auto DynfetchGetMapkey(std::string_view module_name) -> std::string {
 }
 
 static auto DynfetchGetUri(std::string_view module_name,
-                                  std::string_view jobid) -> std::string {
+                           std::string_view jobid) -> std::string {
   return "file:///package/" + std::string(jobid) + "/" +
          std::string(module_name);
 }
 
-static auto CanonicalizeModuleName(std::string_view module_name) -> std::string {
+static auto CanonicalizeModuleName(std::string_view module_name)
+    -> std::string {
   std::string text(module_name);
 
   for (size_t pos = 0; (pos = text.find("::", pos)) != std::string::npos;
@@ -415,8 +416,8 @@ void Sequencer::SetFetchFunc(FetchModuleFunc func) {
   m_core->m_fetch_module = func;
 }
 
-auto Sequencer::PImpl::FetchModuleData(
-    std::string_view raw_module_name) -> std::optional<std::string> {
+auto Sequencer::PImpl::FetchModuleData(std::string_view raw_module_name)
+    -> std::optional<std::string> {
   auto module_name = CanonicalizeModuleName(raw_module_name);
 
   /* Dynamic translation of module names into their actual named */
@@ -444,8 +445,8 @@ auto Sequencer::PImpl::FetchModuleData(
   return module;
 }
 
-NCC_EXPORT auto ncc::seq::FileSystemFetchModule(
-    std::string_view path) -> std::optional<std::string> {
+NCC_EXPORT auto ncc::seq::FileSystemFetchModule(std::string_view path)
+    -> std::optional<std::string> {
   if (!path.starts_with("file:///package/")) {
     return std::nullopt;
   }

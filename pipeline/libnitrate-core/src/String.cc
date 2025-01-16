@@ -44,7 +44,7 @@ class IStorage {
 public:
   virtual ~IStorage() = default;
 
-  [[nodiscard]] virtual auto Get(uint64_t id) -> std::string_view = 0;
+  [[nodiscard]] virtual auto Get(uint64_t id) -> CStringView = 0;
   virtual auto FromString(std::string_view str) -> uint64_t = 0;
   virtual auto FromString(std::string&& str) -> uint64_t = 0;
   [[nodiscard]] virtual auto CompareEq(uint64_t a, uint64_t b) -> bool = 0;
@@ -80,13 +80,14 @@ class MemoryConservedStorage final : public IStorage {
 
   static NCC_FORCE_INLINE constexpr auto FromStr(std::string_view str)
       -> std::vector<char> {
-    std::vector<char> vec(str.size());
+    std::vector<char> vec(str.size() + 1);
     std::copy(str.begin(), str.end(), vec.begin());
+    vec.back() = '\0';
     return vec;
   }
 
   static NCC_FORCE_INLINE constexpr auto FromVec(const std::vector<char>& vec) {
-    return std::string_view(vec.data(), vec.size());
+    return CStringView(vec.data(), vec.size());
   }
 
 public:
@@ -99,12 +100,12 @@ public:
 
   ~MemoryConservedStorage() override { Reset(); }
 
-  [[nodiscard]] auto Get(uint64_t id) -> std::string_view override {
+  [[nodiscard]] auto Get(uint64_t id) -> CStringView override {
     assert(id != 0);
 
     ConditionalLockGuard lock(m_lock);
 
-    return id < m_data.size() ? FromVec(m_data[id]) : "";
+    return id < m_data.size() ? FromVec(m_data[id]) : CStringView();
   }
 
   auto FromString(std::string_view str) -> uint64_t override {
@@ -166,7 +167,7 @@ class FastStorage final : public IStorage {
     return id < m_data.size() + m_buffered.size();
   }
 
-  NCC_FORCE_INLINE auto GetUnchecked(uint64_t id) -> std::string_view {
+  NCC_FORCE_INLINE auto GetUnchecked(uint64_t id) -> CStringView {
     assert(id < m_data.size() + m_buffered.size());
 
     if (id >= m_data.size()) {
@@ -179,8 +180,9 @@ class FastStorage final : public IStorage {
 
   void FlushBuffered() {
     for (const auto& str : m_buffered) {
-      std::vector<char> vec(str.size());
+      std::vector<char> vec(str.size() + 1);
       std::copy(str.begin(), str.end(), vec.begin());
+      vec.back() = '\0';
       m_data.emplace_back(std::move(vec));
     }
 
@@ -197,13 +199,13 @@ public:
 
   ~FastStorage() override { Reset(); }
 
-  [[nodiscard]] auto Get(uint64_t id) -> std::string_view override {
+  [[nodiscard]] auto Get(uint64_t id) -> CStringView override {
     assert(id != 0);
 
     ConditionalLockGuard lock(m_lock);
 
     if (!IsValidId(id)) [[unlikely]] {
-      return "";
+      return {};
     }
 
     return GetUnchecked(id);
@@ -271,9 +273,9 @@ static FastStorage GlobalStorage;
 
 ///=============================================================================
 
-auto String::Get() const -> std::string_view {
+auto String::Get() const -> CStringView {
   if (m_id == 0) {
-    return "";
+    return {};
   }
 
   return GlobalStorage.Get(m_id);

@@ -2,7 +2,7 @@
 
 #include <lsp/core/SyncFS.hh>
 #include <memory>
-#include <nitrate-lexer/Lexer.hh>
+#include <nitrate-lexer/Scanner.hh>
 #include <nitrate-parser/Context.hh>
 #include <optional>
 #include <unordered_map>
@@ -18,7 +18,9 @@ namespace lang {
     [[nodiscard]] auto IsOkay() const -> bool { return m_root != nullptr; }
     auto FromSyncfs(const std::string& uri) -> bool;
 
-    [[nodiscard]] auto Root() const -> const ncc::parse::Base* { return m_root; }
+    [[nodiscard]] auto Root() const -> const ncc::parse::Base* {
+      return m_root;
+    }
   };
   using ParseTree = std::shared_ptr<ParseTreeWrapper>;
 
@@ -33,7 +35,7 @@ namespace lang {
     static auto The() -> ParseTreeCache&;
 
     auto Get(std::string_view uri,
-                                 bool permit_outdated = false) const -> std::optional<ParseTree>;
+             bool permit_outdated = false) const -> std::optional<ParseTree>;
 
     void Clear();
     void SetCacheLimit(size_t max_bytes);
