@@ -297,42 +297,42 @@ NCC_EXPORT ncc::string ncc::lex::to_string(TokenType ty, TokenData v) {
     }
 
     case Name: {
-      r = v.m_str.Get();
+      r = v.m_str;
       break;
     }
 
     case IntL: {
-      r = v.m_str.Get();
+      r = v.m_str;
       break;
     }
 
     case NumL: {
-      r = v.m_str.Get();
+      r = v.m_str;
       break;
     }
 
     case Text: {
-      r = v.m_str.Get();
+      r = v.m_str;
       break;
     }
 
     case Char: {
-      r = v.m_str.Get();
+      r = v.m_str;
       break;
     }
 
     case MacB: {
-      r = v.m_str.Get();
+      r = v.m_str;
       break;
     }
 
     case Macr: {
-      r = v.m_str.Get();
+      r = v.m_str;
       break;
     }
 
     case Note: {
-      r = v.m_str.Get();
+      r = v.m_str;
       break;
     }
   }

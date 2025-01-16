@@ -42,6 +42,7 @@
 #include <nitrate-parser/AST.hh>
 #include <set>
 #include <sstream>
+#include <unordered_set>
 
 namespace ncc::parse {
   class Parser;
@@ -53,12 +54,14 @@ namespace ncc::parse {
 
   public:
     ASTRoot(FlowPtr<Base> base, std::shared_ptr<void> allocator, bool failed)
-        : m_base(base), m_allocator(allocator), m_failed(failed) {}
+        : m_base(std::move(base)),
+          m_allocator(std::move(allocator)),
+          m_failed(failed) {}
 
     FlowPtr<Base> &Get() { return m_base; }
-    FlowPtr<Base> Get() const { return m_base; }
+    [[nodiscard]] FlowPtr<Base> Get() const { return m_base; }
 
-    bool Check() const;
+    [[nodiscard]] bool Check() const;
   };
 
   class Parser final {
@@ -93,8 +96,9 @@ namespace ncc::parse {
     FlowPtr<Stmt> RecurseThrow();
     FlowPtr<Stmt> RecurseAwait();
     FlowPtr<Stmt> RecurseBlock(bool expect_braces, bool single_stmt,
-                                SafetyMode safety);
-    FlowPtr<Expr> RecurseExpr(const std::set<ncc::lex::Token> &terminators);
+                               SafetyMode safety);
+    FlowPtr<Expr> RecurseExpr(
+        const std::unordered_set<ncc::lex::Token> &terminators);
     NullableFlowPtr<Expr> RecurseExprPrimary(bool is_type);
     NullableFlowPtr<Expr> RecurseExprKeyword(lex::Keyword key);
     NullableFlowPtr<Expr> RecurseExprPunctor(lex::Punctor punc);
@@ -119,8 +123,9 @@ namespace ncc::parse {
     std::optional<ExpressionList> RecurseExportAttributes();
     FlowPtr<Stmt> RecurseExportBody();
 
-    CallArgs RecurseCallArguments(const std::set<lex::Token> &terminators,
-                                    bool type_by_default);
+    CallArgs RecurseCallArguments(
+        const std::unordered_set<lex::Token> &terminators,
+        bool type_by_default);
     FlowPtr<Expr> RecurseFstring();
 
     NullableFlowPtr<Stmt> RecurseForInitExpr();
@@ -140,8 +145,8 @@ namespace ncc::parse {
     NullableFlowPtr<Stmt> RecurseFunctionBody(bool parse_declaration_only);
     FlowPtr<Type> RecurseFunctionReturnType();
     Purity GetPuritySpecifier(lex::Token start_pos, bool is_thread_safe,
-                                bool is_pure, bool is_impure, bool is_quasi,
-                                bool is_retro);
+                              bool is_pure, bool is_impure, bool is_quasi,
+                              bool is_retro);
     std::optional<std::pair<string, bool>> RecurseFunctionCapture();
     std::tuple<ExpressionList, FnCaptures, Purity, string>
     RecurseFunctionAmbigouis();

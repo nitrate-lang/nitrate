@@ -152,6 +152,7 @@ namespace no3::benchmark {
                 << std::endl;
 
       std::vector<double> time_per_token;
+      time_per_token.reserve(times.size());
       for (auto time : times) {
         time_per_token.push_back(time / (total_tokens / rounds));
       }
@@ -164,16 +165,77 @@ namespace no3::benchmark {
       LOG(INFO) << "  Per-token time standard deviation: " << stats.m_stddev
                 << "ns" << std::endl;
 
-      const double input_size_mbit =
-          (LexicalBenchmarkSource.size() / 1000'000.0) * 8;
+      const double input_size_mbit = (LexicalBenchmarkSource.size() / 1e6) * 8;
 
       std::vector<double> round_throughputs;
       for (auto time : times) {
-        double throughput_mbps = input_size_mbit / (time / 1000000000.0);
+        double throughput_mbps = input_size_mbit / (time / 1e9);
         round_throughputs.push_back(throughput_mbps);
       }
 
       stats = CalculateStatistic(round_throughputs);
+
+      LOG(INFO) << "  Throughput mean: " << stats.m_mean << " mbps"
+                << std::endl;
+      LOG(INFO) << "  Throughput variance: " << stats.m_variance << " mbps"
+                << std::endl;
+      LOG(INFO) << "  Throughput standard deviation: " << stats.m_stddev
+                << " mbps" << std::endl;
+    }
+
+    return 0;
+  }
+
+  static void ParserBenchmarkRound(std::shared_ptr<Environment> &env) {
+    std::stringstream source(LexicalBenchmarkSource);
+    Tokenizer tokenizer(source, env);
+
+    auto ast = Parser::Create(tokenizer, env)->Parse();
+    if (!ast.Check()) {
+      LOG(ERROR) << "Failed to parse benchmark source";
+    }
+  }
+
+  static int ParserBenchmark(std::shared_ptr<Environment> &env) {
+    size_t rounds = 128;
+    std::vector<double> times;
+
+    LOG(INFO) << "Starting parser benchmark" << std::endl;
+    LOG(INFO) << "  Rounds: " << rounds << std::endl;
+
+    for (size_t i = 0; i < rounds; i++) {
+      auto start = std::chrono::high_resolution_clock::now();
+      ParserBenchmarkRound(env);
+      auto end = std::chrono::high_resolution_clock::now();
+
+      double nanoseconds =
+          std::chrono::duration_cast<std::chrono::nanoseconds>(end - start)
+              .count();
+      times.push_back(nanoseconds);
+
+      LOG(INFO) << "Round " << i << ": " << nanoseconds << "ns";
+    }
+
+    LOG(INFO) << "Parser benchmark completed" << std::endl;
+
+    double total_time = 0.0;
+    for (auto time : times) {
+      total_time += time;
+    }
+
+    LOG(INFO) << "Parser benchmark results:" << std::endl;
+    LOG(INFO) << "  Rounds: " << rounds << std::endl;
+    LOG(INFO) << "  Total time: " << total_time << "ns" << std::endl;
+
+    {
+      const double input_size_mbit = (LexicalBenchmarkSource.size() / 1e6) * 8;
+
+      std::vector<double> round_throughputs;
+      for (auto time : times) {
+        double throughput_mbps = input_size_mbit / (time / 1e9);
+        round_throughputs.push_back(throughput_mbps);
+      }
+      auto stats = CalculateStatistic(round_throughputs);
 
       LOG(INFO) << "  Throughput mean: " << stats.m_mean << " mbps"
                 << std::endl;
@@ -208,7 +270,7 @@ namespace no3::benchmark {
       }
 
       case Benchmark::PARSER: {
-        /// TODO: Implement benchmark
+        r = ParserBenchmark(env);
         break;
       }
 

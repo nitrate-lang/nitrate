@@ -179,8 +179,6 @@ class FastStorage final : public IStorage {
   }
 
   void FlushBuffered() {
-    std::cout << "Flushing buffered data\n";
-
     for (const auto& str : m_buffered) {
       std::vector<char> vec(str.size());
       std::copy(str.begin(), str.end(), vec.begin());

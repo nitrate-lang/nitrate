@@ -291,22 +291,22 @@ namespace ncc::lex {
       }
     }
 
-    [[nodiscard]] auto as_string() const {  /// NOLINT
+    [[nodiscard]] constexpr auto as_string() const {  /// NOLINT
       return to_string(m_type, m_v);
     }
-    [[nodiscard]] auto as_key() const {  /// NOLINT
+    [[nodiscard]] constexpr auto as_key() const {  /// NOLINT
       return m_v.m_key;
     }
-    [[nodiscard]] auto as_op() const {  /// NOLINT
+    [[nodiscard]] constexpr auto as_op() const {  /// NOLINT
       return m_v.m_op;
     }
-    [[nodiscard]] auto as_punc() const {  /// NOLINT
+    [[nodiscard]] constexpr auto as_punc() const {  /// NOLINT
       return m_v.m_punc;
     }
-    [[nodiscard]] auto get_start() const {  /// NOLINT
+    [[nodiscard]] constexpr auto get_start() const {  /// NOLINT
       return m_location_id;
     }
-    [[nodiscard]] auto get_type() const {  /// NOLINT
+    [[nodiscard]] constexpr auto get_type() const {  /// NOLINT
       return m_type;
     }
 
@@ -345,6 +345,48 @@ namespace std {
   struct hash<ncc::lex::LocationID> {
     size_t operator()(const ncc::lex::LocationID &loc) const {
       return loc.GetId();
+    }
+  };
+
+  template <>
+  struct hash<ncc::lex::Token> {
+    constexpr size_t operator()(const ncc::lex::Token &tok) const {
+      size_t h = 0;
+
+      switch (tok.get_type()) {
+        case ncc::lex::TokenType::EofF: {
+          h = std::hash<uint8_t>{}(0);
+        }
+
+        case ncc::lex::TokenType::KeyW: {
+          h = std::hash<uint8_t>{}(1);
+          h ^= std::hash<uint8_t>{}(tok.as_key());
+        }
+
+        case ncc::lex::TokenType::Oper: {
+          h = std::hash<uint8_t>{}(2);
+          h ^= std::hash<uint8_t>{}(tok.as_op());
+        }
+
+        case ncc::lex::TokenType::Punc: {
+          h = std::hash<uint8_t>{}(3);
+          h ^= std::hash<uint8_t>{}(tok.as_punc());
+        }
+
+        case ncc::lex::TokenType::Name:
+        case ncc::lex::TokenType::IntL:
+        case ncc::lex::TokenType::NumL:
+        case ncc::lex::TokenType::Text:
+        case ncc::lex::TokenType::Char:
+        case ncc::lex::TokenType::MacB:
+        case ncc::lex::TokenType::Macr:
+        case ncc::lex::TokenType::Note: {
+          h = std::hash<uint8_t>{}(4);
+          h ^= std::hash<ncc::string>{}(tok.as_string());
+        }
+      }
+
+      return h;
     }
   };
 

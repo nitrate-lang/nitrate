@@ -44,8 +44,8 @@ using namespace ncc::lex;
 using namespace ncc::parse;
 using namespace ncc;
 
-CallArgs Parser::RecurseCallArguments(const std::set<lex::Token> &terminators,
-                                      bool type_by_default) {
+CallArgs Parser::RecurseCallArguments(
+    const std::unordered_set<lex::Token> &terminators, bool type_by_default) {
   CallArgs call_args;
   size_t positional_index = 0;
   string argument_name;
@@ -80,7 +80,7 @@ CallArgs Parser::RecurseCallArguments(const std::set<lex::Token> &terminators,
 
       call_args.emplace_back(argument_name, type_expr);
     } else {
-      std::set<Token> terminators_copy(terminators);
+      std::unordered_set<Token> terminators_copy(terminators);
       terminators_copy.insert(Token(Punc, PuncComa));
       auto argument_value = RecurseExpr(terminators_copy);
       call_args.emplace_back(argument_name, argument_value);
@@ -217,7 +217,8 @@ static NCC_FORCE_INLINE FlowPtr<Expr> UnwindStack(std::stack<Frame> &stack,
   return base;
 }
 
-FlowPtr<Expr> Parser::RecurseExpr(const std::set<Token> &terminators) {
+FlowPtr<Expr> Parser::RecurseExpr(
+    const std::unordered_set<Token> &terminators) {
   auto source_offset = peek().get_start();
 
   std::stack<Frame> stack;

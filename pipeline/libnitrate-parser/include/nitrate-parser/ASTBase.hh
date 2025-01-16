@@ -56,6 +56,7 @@ namespace ncc::parse {
   public:
     constexpr ASTExtensionKey() = default;
 
+    [[nodiscard]] constexpr bool IsNull() const { return m_key == 0; }
     [[nodiscard]] constexpr auto Key() const { return m_key; }
   } __attribute__((packed));
 
@@ -112,9 +113,11 @@ namespace ncc::parse {
     ASTExtensionKey m_data;
 
   public:
-    constexpr Base(NparTyT ty, bool mock = false,
-                   lex::LocationID begin = lex::LocationID(),
-                   lex::LocationID end = lex::LocationID())
+    constexpr Base(NparTyT ty, bool mock = false)
+        : m_node_type(ty), m_mock(mock) {}
+
+    constexpr Base(NparTyT ty, bool mock, lex::LocationID begin,
+                   lex::LocationID end)
         : m_node_type(ty),
           m_mock(mock),
           m_data(ExtensionDataStore.Add(begin, end)) {}
@@ -358,12 +361,20 @@ namespace ncc::parse {
     /// AST Extension Data
 
     [[nodiscard]] constexpr auto Begin() const {
+      if (m_data.IsNull()) {
+        return lex::LocationID();
+      }
+
       return ExtensionDataStore.Get(m_data).Begin();
     }
     [[nodiscard]] constexpr auto Begin(lex::IScanner &rd) const {
       return Begin().Get(rd);
     }
     [[nodiscard]] constexpr auto End() const {
+      if (m_data.IsNull()) {
+        return lex::LocationID();
+      }
+
       return ExtensionDataStore.Get(m_data).End();
     }
     [[nodiscard]] constexpr auto End(lex::IScanner &rd) const {
@@ -374,6 +385,10 @@ namespace ncc::parse {
     }
 
     [[nodiscard]] constexpr auto Comments() const {
+      if (m_data.IsNull()) {
+        return std::span<const lex::Token>();
+      }
+
       return ExtensionDataStore.Get(m_data).Comments();
     }
 

@@ -49,21 +49,24 @@ namespace ncc::parse {
 #define current() m_rd.Current()
 
   template <auto tok>
-  static std::optional<ncc::lex::Token> NextIf(ncc::lex::IScanner &m_rd) {
-    auto t = peek();
+  static NCC_FORCE_INLINE std::optional<ncc::lex::Token> NextIf(
+      ncc::lex::IScanner &m_rd) {
+    auto t = m_rd.Peek();
     if constexpr (std::is_same_v<decltype(tok), ncc::lex::TokenType>) {
       if (t.is(tok)) {
-        next();
+        m_rd.Next();
         return t;
       }
+
+      return std::nullopt;
     } else {
       if (t.is<tok>()) {
-        next();
+        m_rd.Next();
         return t;
       }
-    }
 
-    return std::nullopt;
+      return std::nullopt;
+    }
   }
 
 #define next_if(tok) NextIf<tok>(m_rd)

@@ -104,7 +104,7 @@ namespace std {
   template <>
   struct hash<ncc::String> {
     size_t operator()(const ncc::String &str) const {
-      return std::hash<uint64_t>{}(str.GetId());
+      return std::hash<std::string_view>{}(str.Get());
     }
   };
 }  // namespace std
