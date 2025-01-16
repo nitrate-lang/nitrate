@@ -37,7 +37,8 @@ using namespace ncc;
 using namespace ncc::lex;
 using namespace ncc::parse;
 
-auto Parser::PImpl::RecurseVariableAttributes() -> std::optional<ExpressionList> {
+auto Parser::PImpl::RecurseVariableAttributes()
+    -> std::optional<ExpressionList> {
   ExpressionList attributes;
 
   if (!next_if(PuncLBrk)) {
@@ -87,11 +88,10 @@ auto Parser::PImpl::RecurseVariableValue() -> NullableFlowPtr<Expr> {
   return std::nullopt;
 }
 
-auto Parser::PImpl::RecurseVariableInstance(
-    VarDeclType decl_type) -> NullableFlowPtr<Stmt> {
+auto Parser::PImpl::RecurseVariableInstance(VarDeclType decl_type)
+    -> NullableFlowPtr<Stmt> {
   if (auto symbol_attributes_opt = RecurseVariableAttributes()) {
-    if (auto tok = next_if(Name)) {
-      auto variable_name = tok->GetString();
+    if (auto variable_name = RecurseName(); !variable_name->empty()) {
       auto variable_type = RecurseVariableType();
       auto variable_initial = RecurseVariableValue();
 
@@ -109,8 +109,8 @@ auto Parser::PImpl::RecurseVariableInstance(
   return MockStmt(QAST_VAR);
 }
 
-auto Parser::PImpl::RecurseVariable(
-    VarDeclType decl_type) -> std::vector<FlowPtr<Stmt>> {
+auto Parser::PImpl::RecurseVariable(VarDeclType decl_type)
+    -> std::vector<FlowPtr<Stmt>> {
   std::vector<FlowPtr<Stmt>> variables;
 
   while (true) {
@@ -120,10 +120,6 @@ auto Parser::PImpl::RecurseVariable(
       break;
     }
 
-    if (next_if(PuncSemi)) {
-      return variables;
-    }
-
     if (auto variable_opt = RecurseVariableInstance(decl_type)) {
       variables.push_back(variable_opt.value());
     } else {
@@ -131,7 +127,15 @@ auto Parser::PImpl::RecurseVariable(
       break;
     }
 
-    next_if(PuncComa);
+    if (next_if(PuncSemi)) {
+      return variables;
+    }
+
+    if (!next_if(PuncComa)) {
+      Log << SyntaxError << current()
+          << "Expected comma or semicolon after variable declaration";
+      break;
+    }
   }
 
   return {MockStmt(QAST_VAR)};

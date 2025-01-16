@@ -66,6 +66,7 @@ namespace ncc::lex {
     PuncComa, /* Comma */
     PuncColn, /* Colon */
     PuncSemi, /* Semicolon */
+    PuncScope /* Scope resolution */
   };
 
   enum Operator : uint8_t {
@@ -538,6 +539,7 @@ namespace ncc::lex {
           {",", PuncComa},
           {":", PuncColn},
           {";", PuncSemi},
+          {"::", PuncScope},
       });
 
   auto GetOperatorPrecedence(Operator op, OpMode type) -> short;

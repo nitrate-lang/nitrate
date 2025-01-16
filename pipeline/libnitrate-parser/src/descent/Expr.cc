@@ -664,6 +664,12 @@ auto Parser::PImpl::RecurseExprPunctor(lex::Punctor punc)
           << "Unexpected semicolon in expression context";
       break;
     }
+
+    case PuncScope: {
+      auto name = "::" + std::string(RecurseName());
+      e = make<Ident>(name)();
+      break;
+    }
   }
 
   return e;

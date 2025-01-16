@@ -46,8 +46,42 @@ using namespace ncc;
 using namespace ncc::parse;
 using namespace ncc::lex;
 
+auto Parser::PImpl::RecurseName() -> string {
+  std::string name;
+  bool last_was_scope = false;
+
+  Token tok;
+
+  while (true) {
+    Token peek = peek();
+
+    if (peek.is(Name)) {
+      name += peek.GetString();
+      last_was_scope = false;
+    } else if (peek.is<PuncScope>()) {
+      if (last_was_scope) {
+        Log << SyntaxError << peek << "Unexpected '::' after '::'";
+        break;
+      }
+
+      name += "::";
+      last_was_scope = true;
+    } else {
+      break;
+    }
+
+    tok = next();
+  }
+
+  if (last_was_scope && name.ends_with("::")) {
+    Log << SyntaxError << tok << "Unexpected '::' at end of name";
+  }
+
+  return name;
+}
+
 auto Parser::PImpl::RecurseBlock(bool expect_braces, bool single_stmt,
-                                          SafetyMode safety) -> FlowPtr<Stmt> {
+                                 SafetyMode safety) -> FlowPtr<Stmt> {
   if (expect_braces && !next().is<PuncLCur>()) {
     Log << SyntaxError << current() << "Expected '{'";
   }

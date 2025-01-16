@@ -37,14 +37,6 @@ using namespace ncc;
 using namespace ncc::lex;
 using namespace ncc::parse;
 
-auto Parser::PImpl::RecurseEnumName() -> string {
-  if (auto tok = next_if(Name)) {
-    return tok->GetString();
-  }
-
-  return "";
-}
-
 auto Parser::PImpl::RecurseEnumType() -> NullableFlowPtr<parse::Type> {
   if (next_if(PuncColn)) {
     return RecurseType();
@@ -53,28 +45,24 @@ auto Parser::PImpl::RecurseEnumType() -> NullableFlowPtr<parse::Type> {
   return std::nullopt;
 }
 
-auto Parser::PImpl::RecurseEnumItemValue() -> NullableFlowPtr<Expr> {
+auto Parser::PImpl::RecurseEnumItem() -> std::optional<EnumItem> {
+  auto member_name = RecurseName();
+  if (member_name->empty()) {
+    Log << SyntaxError << current() << "Enum member name cannot be empty.";
+    return std::nullopt;
+  }
+
   if (next_if(OpSet)) {
-    return RecurseExpr({
+    auto member_value = RecurseExpr({
         Token(Punc, PuncSemi),
         Token(Punc, PuncComa),
         Token(Punc, PuncRCur),
     });
+
+    return EnumItem(member_name, member_value);
   }
 
-  return std::nullopt;
-}
-
-auto Parser::PImpl::RecurseEnumItem() -> std::optional<EnumItem> {
-  if (auto member_name = next_if(Name)) [[likely]] {
-    auto member_value = RecurseEnumItemValue();
-
-    return EnumItem(member_name->GetString(), member_value);
-  }
-
-  Log << SyntaxError << next() << "Enum field is missing a name.";
-
-  return std::nullopt;
+  return EnumItem(member_name, std::nullopt);
 }
 
 auto Parser::PImpl::RecurseEnumItems() -> std::optional<EnumDefItems> {
@@ -115,7 +103,7 @@ auto Parser::PImpl::RecurseEnumItems() -> std::optional<EnumDefItems> {
 }
 
 auto Parser::PImpl::RecurseEnum() -> FlowPtr<Stmt> {
-  auto name = RecurseEnumName();
+  auto name = RecurseName();
   auto type = RecurseEnumType();
 
   if (auto items = RecurseEnumItems()) {

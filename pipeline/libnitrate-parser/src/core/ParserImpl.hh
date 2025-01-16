@@ -97,9 +97,9 @@ namespace ncc::parse {
         -> FlowPtr<Expr>;
     auto MockType() -> FlowPtr<Type>;
 
-    auto RecurseEnumName() -> string;
+    auto RecurseName() -> string;
+
     auto RecurseEnumType() -> NullableFlowPtr<Type>;
-    auto RecurseEnumItemValue() -> NullableFlowPtr<Expr>;
     auto RecurseEnumItem() -> std::optional<EnumItem>;
     auto RecurseEnumItems() -> std::optional<EnumDefItems>;
 
@@ -138,7 +138,6 @@ namespace ncc::parse {
     auto RecurseIfThen() -> FlowPtr<Stmt>;
     auto RecurseIfElse() -> NullableFlowPtr<Stmt>;
 
-    auto RecurseScopeName() -> string;
     auto RecurseScopeDeps() -> std::optional<ScopeDeps>;
     auto RecurseScopeBlock() -> FlowPtr<Stmt>;
 
@@ -148,7 +147,6 @@ namespace ncc::parse {
       StructDefStaticMethods m_static_methods;
     };
     auto RecurseStructAttributes() -> ExpressionList;
-    auto RecurseStructName() -> string;
     auto RecurseStructTerms() -> StructDefNames;
     auto RecurseStructFieldDefaultValue() -> NullableFlowPtr<Expr>;
     void RecurseStructField(Vis vis, bool is_static, StructDefFields &fields);

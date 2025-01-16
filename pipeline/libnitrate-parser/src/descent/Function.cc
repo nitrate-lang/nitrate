@@ -58,11 +58,11 @@ auto Parser::PImpl::RecurseFunctionParameterValue() -> NullableFlowPtr<Expr> {
 }
 
 auto Parser::PImpl::RecurseFunctionParameter() -> std::optional<FuncParam> {
-  if (auto param_name = next_if(Name)) [[likely]] {
+  if (auto param_name = RecurseName(); !param_name->empty()) [[likely]] {
     auto param_type = RecurseFunctionParameterType();
     auto param_value = RecurseFunctionParameterValue();
 
-    return FuncParam{param_name->GetString(), param_type, param_value};
+    return FuncParam{param_name, param_type, param_value};
   }
 
   Log << SyntaxError << next() << "Expected a parameter name before ':'";
@@ -70,7 +70,8 @@ auto Parser::PImpl::RecurseFunctionParameter() -> std::optional<FuncParam> {
   return std::nullopt;
 }
 
-auto Parser::PImpl::RecurseTemplateParameters() -> std::optional<TemplateParameters> {
+auto Parser::PImpl::RecurseTemplateParameters()
+    -> std::optional<TemplateParameters> {
   if (!next_if(OpLT)) {
     return std::nullopt;
   }
@@ -152,8 +153,8 @@ auto Parser::PImpl::RecurseFunctionParameters() -> std::pair<FuncParams, bool> {
 }
 
 auto Parser::PImpl::GetPuritySpecifier(Token start_pos, bool is_thread_safe,
-                                         bool is_pure, bool is_impure,
-                                         bool is_quasi, bool is_retro) -> Purity {
+                                       bool is_pure, bool is_impure,
+                                       bool is_quasi, bool is_retro) -> Purity {
   /* Ensure that there is no duplication of purity specifiers */
   if ((static_cast<int>(is_impure) + static_cast<int>(is_pure) +
        static_cast<int>(is_quasi) + static_cast<int>(is_retro)) > 1) {
@@ -184,11 +185,12 @@ auto Parser::PImpl::GetPuritySpecifier(Token start_pos, bool is_thread_safe,
   return Purity::Impure;
 }
 
-auto Parser::PImpl::RecurseFunctionCapture() -> std::optional<std::pair<string, bool>> {
+auto Parser::PImpl::RecurseFunctionCapture()
+    -> std::optional<std::pair<string, bool>> {
   bool is_ref = next_if(OpBitAnd).has_value();
 
-  if (auto name = next_if(Name)) {
-    return {{name->GetString(), is_ref}};
+  if (auto name = RecurseName(); !name->empty()) {
+    return {{name, is_ref}};
   }
 
   Log << SyntaxError << next() << "Expected a capture name";
@@ -196,8 +198,8 @@ auto Parser::PImpl::RecurseFunctionCapture() -> std::optional<std::pair<string, 
   return std::nullopt;
 }
 
-auto
-Parser::PImpl::RecurseFunctionAmbigouis() -> std::tuple<ExpressionList, FnCaptures, Purity, string> {
+auto Parser::PImpl::RecurseFunctionAmbigouis()
+    -> std::tuple<ExpressionList, FnCaptures, Purity, string> {
   enum class State : uint8_t {
     Ground,
     AttributesSection,
@@ -226,9 +228,7 @@ Parser::PImpl::RecurseFunctionAmbigouis() -> std::tuple<ExpressionList, FnCaptur
 
     switch (state) {
       case State::Ground: {
-        if (auto some_identifier = next_if(Name)) {
-          auto some_word = some_identifier->GetString();
-
+        if (auto some_word = RecurseName(); !some_word->empty()) {
           if (some_word == "pure") {
             is_pure = true;
           } else if (some_word == "impure") {
@@ -262,10 +262,10 @@ Parser::PImpl::RecurseFunctionAmbigouis() -> std::tuple<ExpressionList, FnCaptur
             /* No attribute expression may begin with '&' */
             if (tok.is<OpBitAnd>()) {
               state = State::CaptureSection;
-            } else if (!tok.is(Name)) {
-              state = State::AttributesSection;
-            } else { /* Ambiguous edge case */
+            } else if (tok.is(Name)) {
               state = State::CaptureSection;
+            } else { /* Ambiguous edge case */
+              state = State::AttributesSection;
             }
           }
         } else if (auto tok = peek(); tok.is<PuncLPar>() || tok.is<OpLT>()) {
@@ -351,8 +351,8 @@ auto Parser::PImpl::RecurseFunctionReturnType() -> FlowPtr<parse::Type> {
   return make<InferTy>()();
 }
 
-auto Parser::PImpl::RecurseFunctionBody(
-    bool parse_declaration_only) -> NullableFlowPtr<Stmt> {
+auto Parser::PImpl::RecurseFunctionBody(bool parse_declaration_only)
+    -> NullableFlowPtr<Stmt> {
   if (parse_declaration_only || next_if(PuncSemi)) {
     return std::nullopt;
   }
@@ -364,7 +364,8 @@ auto Parser::PImpl::RecurseFunctionBody(
   return RecurseBlock(true, false, SafetyMode::Unknown);
 }
 
-auto Parser::PImpl::RecurseFunction(bool parse_declaration_only) -> FlowPtr<Stmt> {
+auto Parser::PImpl::RecurseFunction(bool parse_declaration_only)
+    -> FlowPtr<Stmt> {
   auto start_pos = current().GetStart();
 
   auto [function_attributes, function_captures, function_purity,

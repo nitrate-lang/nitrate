@@ -94,7 +94,8 @@ auto Parser::PImpl::RecurseTypeTemplateArguments() -> std::optional<CallArgs> {
   return args;
 }
 
-auto Parser::PImpl::RecurseTypeSuffix(FlowPtr<Type> base) -> FlowPtr<parse::Type> {
+auto Parser::PImpl::RecurseTypeSuffix(FlowPtr<Type> base)
+    -> FlowPtr<parse::Type> {
   static auto bit_width_terminaters = {
       Token(Punc, PuncRPar), Token(Punc, PuncRBrk), Token(Punc, PuncLCur),
       Token(Punc, PuncRCur), Token(Punc, PuncComa), Token(Punc, PuncColn),
@@ -169,9 +170,9 @@ auto Parser::PImpl::RecurseOpaqueType() -> FlowPtr<parse::Type> {
     return MockType();
   }
 
-  if (auto name = next_if(Name)) {
+  if (auto name = RecurseName(); !name->empty()) {
     if (next_if(PuncRPar)) {
-      auto opaque = make<OpaqueTy>(name->GetString())();
+      auto opaque = make<OpaqueTy>(name)();
       opaque->SetOffset(current().GetStart());
 
       return opaque;
@@ -186,6 +187,8 @@ auto Parser::PImpl::RecurseOpaqueType() -> FlowPtr<parse::Type> {
 }
 
 auto Parser::PImpl::RecurseTypeByKeyword(Keyword key) -> FlowPtr<parse::Type> {
+  next();
+
   switch (key) {
     case Fn: {
       return RecurseFunctionType();
@@ -208,6 +211,8 @@ auto Parser::PImpl::RecurseTypeByKeyword(Keyword key) -> FlowPtr<parse::Type> {
 }
 
 auto Parser::PImpl::RecurseTypeByOperator(Operator op) -> FlowPtr<parse::Type> {
+  next();
+
   switch (op) {
     case OpTimes: {
       auto start = current().GetStart();
@@ -342,18 +347,26 @@ auto Parser::PImpl::RecurseTupleType() -> FlowPtr<parse::Type> {
   return tuple;
 }
 
-auto Parser::PImpl::RecurseTypeByPunctuation(Punctor punc) -> FlowPtr<parse::Type> {
+auto Parser::PImpl::RecurseTypeByPunctuation(Punctor punc)
+    -> FlowPtr<parse::Type> {
   switch (punc) {
     case PuncLBrk: {
+      next();
       return RecurseArrayOrVector();
     }
 
     case PuncLCur: {
+      next();
       return RecurseSetType();
     }
 
     case PuncLPar: {
+      next();
       return RecurseTupleType();
+    }
+
+    case PuncScope: {
+      return RecurseTypeByName(RecurseName());
     }
 
     default: {
@@ -419,40 +432,35 @@ auto Parser::PImpl::RecurseType() -> FlowPtr<parse::Type> {
 
   std::optional<FlowPtr<Type>> r;
 
-  switch (auto tok = next(); tok.GetKind()) {
+  switch (auto tok = peek(); tok.GetKind()) {
     case KeyW: {
       auto type = RecurseTypeByKeyword(tok.GetKeyword());
-
       r = RecurseTypeSuffix(type);
       break;
     }
 
     case Oper: {
       auto type = RecurseTypeByOperator(tok.GetOperator());
-
       r = RecurseTypeSuffix(type);
       break;
     }
 
     case Punc: {
       auto type = RecurseTypeByPunctuation(tok.GetPunctor());
-
       r = RecurseTypeSuffix(type);
       break;
     }
 
     case Name: {
-      auto type = RecurseTypeByName(tok.GetString());
-
+      auto type = RecurseTypeByName(RecurseName());
       r = RecurseTypeSuffix(type);
       break;
     }
 
     default: {
-      Log << SyntaxError << current() << "Expected a type";
+      Log << SyntaxError << next() << "Expected a type";
 
       auto type = MockType();
-
       r = RecurseTypeSuffix(type);
       break;
     }

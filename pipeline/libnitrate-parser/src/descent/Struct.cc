@@ -68,12 +68,6 @@ auto Parser::PImpl::RecurseStructAttributes() -> ExpressionList {
   return attributes;
 }
 
-auto Parser::PImpl::RecurseStructName() -> string {
-  auto tok = next_if(Name);
-
-  return tok ? tok->GetString() : "";
-}
-
 auto Parser::PImpl::RecurseStructTerms() -> StructDefNames {
   StructDefNames names;
 
@@ -82,8 +76,8 @@ auto Parser::PImpl::RecurseStructTerms() -> StructDefNames {
   }
 
   while (true) {
-    if (auto tok = next_if(Name)) {
-      names.push_back(tok->GetString());
+    if (auto name = RecurseName(); !name->empty()) {
+      names.push_back(name);
     } else {
       break;
     }
@@ -108,13 +102,13 @@ auto Parser::PImpl::RecurseStructFieldDefaultValue() -> NullableFlowPtr<Expr> {
 
 void Parser::PImpl::RecurseStructField(Vis vis, bool is_static,
                                        StructDefFields &fields) {
-  if (auto field_name = next_if(Name)) {
+  if (auto field_name = RecurseName(); !field_name->empty()) {
     if (next_if(PuncColn)) {
       auto field_type = RecurseType();
       auto default_value = RecurseStructFieldDefaultValue();
 
-      auto field = StructField(vis, is_static, field_name->GetString(),
-                               field_type, default_value);
+      auto field =
+          StructField(vis, is_static, field_name, field_type, default_value);
 
       fields.push_back(std::move(field));
     } else {
@@ -184,7 +178,7 @@ auto Parser::PImpl::RecurseStructBody() -> Parser::PImpl::StructContent {
 auto Parser::PImpl::RecurseStruct(CompositeType struct_type) -> FlowPtr<Stmt> {
   auto start_pos = current().GetStart();
   auto struct_attributes = RecurseStructAttributes();
-  auto struct_name = RecurseStructName();
+  auto struct_name = RecurseName();
   auto struct_template_params = RecurseTemplateParameters();
   auto struct_terms = RecurseStructTerms();
   auto [struct_fields, struct_methods, struct_static_methods] =

@@ -37,17 +37,18 @@ using namespace ncc;
 using namespace ncc::lex;
 using namespace ncc::parse;
 
-auto Parser::PImpl::RecurseForeachNames() -> std::optional<std::pair<string, string>> {
-  if (auto name_a = next_if(Name)) [[likely]] {
+auto Parser::PImpl::RecurseForeachNames()
+    -> std::optional<std::pair<string, string>> {
+  if (auto name_a = RecurseName(); !name_a->empty()) [[likely]] {
     if (next_if(PuncComa)) {
-      if (auto name_b = next_if(Name)) [[likely]] {
-        return std::make_pair(name_a->GetString(), name_b->GetString());
+      if (auto name_b = RecurseName(); !name_b->empty()) [[likely]] {
+        return std::make_pair(name_a, name_b);
       } else {
         Log << SyntaxError << current()
             << "Expected identifier in foreach statement";
       }
     } else {
-      return std::make_pair("", name_a->GetString());
+      return std::make_pair("", name_a);
     }
   } else {
     Log << SyntaxError << current()
