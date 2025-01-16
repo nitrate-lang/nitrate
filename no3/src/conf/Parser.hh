@@ -35,51 +35,44 @@
 #define __NO3_CONF_PARSER_HH__
 
 #include <conf/Config.hh>
-#include <memory>
 #include <optional>
-#include <set>
-#include <stdexcept>
 #include <string>
-#include <unordered_map>
-#include <variant>
 
-namespace no3 {
-  namespace conf {
-    class IParser {
-    public:
-      virtual ~IParser() = default;
+namespace no3::conf {
+  class IParser {
+  public:
+    virtual ~IParser() = default;
 
-      /**
-       * @brief Parse NO3 package configuration file
-       *
-       * @param filepath Configuration filepath
-       * @return std::optional<Config> Configuration object
-       * @note If any error occurs, the function returns an empty optional.
-       */
-      std::optional<Config> Parsef(const std::string &filepath);
+    /**
+     * @brief Parse NO3 package configuration file
+     *
+     * @param filepath Configuration filepath
+     * @return std::optional<Config> Configuration object
+     * @note If any error occurs, the function returns an empty optional.
+     */
+    std::optional<Config> Parsef(const std::string &filepath);
 
-      /**
-       * @brief Parse NO3 package configuration content
-       *
-       * @param data Configuration file content
-       * @return std::optional<Config> Configuration object
-       * @note If any error occurs, the function returns an empty optional.
-       */
-      virtual std::optional<Config> Parse(const std::string &content) = 0;
-    };
+    /**
+     * @brief Parse NO3 package configuration content
+     *
+     * @param data Configuration file content
+     * @return std::optional<Config> Configuration object
+     * @note If any error occurs, the function returns an empty optional.
+     */
+    virtual std::optional<Config> Parse(const std::string &content) = 0;
+  };
 
-    class YamlConfigParser : public IParser {
-    public:
-      /**
-       * @brief Parse NO3 package configuration content
-       *
-       * @param data Configuration file content
-       * @return std::optional<Config> Configuration object
-       * @note If any error occurs, the function returns an empty optional.
-       */
-      std::optional<Config> Parse(const std::string &content) override;
-    };
-  }  // namespace conf
-}  // namespace no3
+  class YamlConfigParser : public IParser {
+  public:
+    /**
+     * @brief Parse NO3 package configuration content
+     *
+     * @param data Configuration file content
+     * @return std::optional<Config> Configuration object
+     * @note If any error occurs, the function returns an empty optional.
+     */
+    std::optional<Config> Parse(const std::string &content) override;
+  };
+}  // namespace no3::conf
 
 #endif  // __NO3_CONF_PARSER_HH__

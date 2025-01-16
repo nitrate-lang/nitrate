@@ -35,11 +35,12 @@
 #define __NITRATE_IR_TYPE_DECL_H__
 
 #include <cstddef>
+#include <cstdint>
 
 namespace ncc::ir {
   class IRModule;
 
-  typedef enum nr_ty_t {
+  enum nr_ty_t : uint8_t {
     IR_eBIN,      /* Binary expression */
     IR_eUNARY,    /* Unary expression */
     IR_eINT,      /* Integer literal */
@@ -91,7 +92,7 @@ namespace ncc::ir {
 
     IR_FIRST = IR_eBIN,
     IR_LAST = IR_tTMP,
-  } NrTyT;
+  };
 
   constexpr size_t kIRNodeKindCount = (IR_LAST - IR_FIRST + 1);
 }  // namespace ncc::ir

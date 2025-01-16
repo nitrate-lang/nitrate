@@ -65,13 +65,12 @@ void no3::core::MyLogSink::send(google::LogSeverity severity, const char*,
                                 const char* base_filename, int line,
                                 const struct tm* tm, const char* message_ptr,
                                 std::size_t message_len) {
-  static const std::unordered_map<google::LogSeverity, ansi::Style> sev_colors =
-      {
-          {google::GLOG_INFO, ansi::Style::FG_GREEN},
-          {google::GLOG_WARNING, ansi::Style::FG_YELLOW},
-          {google::GLOG_ERROR, ansi::Style::FG_RED},
-          {google::GLOG_FATAL, ansi::Style::FG_RED | ansi::Style::BOLD},
-      };
+  static const std::unordered_map<google::LogSeverity, uint32_t> sev_colors = {
+      {google::GLOG_INFO, ansi::FG_GREEN},
+      {google::GLOG_WARNING, ansi::FG_YELLOW},
+      {google::GLOG_ERROR, ansi::FG_RED},
+      {google::GLOG_FATAL, ansi::FG_RED | ansi::BOLD},
+  };
 
   static const std::unordered_map<google::LogSeverity, std::string_view>
       sev_prefix = {
@@ -82,7 +81,8 @@ void no3::core::MyLogSink::send(google::LogSeverity severity, const char*,
       };
 
   std::string_view message(message_ptr, message_len);
-  bool color, debug;
+  bool color;
+  bool debug;
 
   {
     std::lock_guard<std::mutex> lock(GLogMutex);
@@ -100,27 +100,27 @@ void no3::core::MyLogSink::send(google::LogSeverity severity, const char*,
 
       out.SetStyle(sev_colors.at(severity));
       out << sev_prefix.at(severity);
-      out.SetStyle(Style::RESET);
+      out.SetStyle(RESET);
 
       if (debug) {
-        out.SetStyle(Style::FG_DEFAULT);
+        out.SetStyle(FG_DEFAULT);
 
         out << "[" << base_filename << ":" << line << " ";
 
         { /* Get timestamp */
-          char timestamp[64];
-          strftime(timestamp, sizeof(timestamp), "%b %d %H:%M:%S", tm);
-          out << timestamp;
+          std::array<char, 64> timestamp;
+          strftime(timestamp.data(), timestamp.size(), "%b %d %H:%M:%S", tm);
+          out << timestamp.data();
         }
         out << "] ";
 
-        out.SetStyle(Style::RESET);
+        out.SetStyle(RESET);
       }
 
       out.SetStyle(sev_colors.at(severity));
       out << message;
-      out.SetStyle(Style::RESET);
-      out << std::endl;
+      out.SetStyle(RESET);
+      out.Newline();
     } else {
       *m_out << sev_prefix.at(severity);
 
@@ -128,15 +128,16 @@ void no3::core::MyLogSink::send(google::LogSeverity severity, const char*,
         *m_out << "[" << base_filename << ":" << line << " ";
 
         { /* Get timestamp */
-          char timestamp[64];
-          strftime(timestamp, sizeof(timestamp), "%b %d %H:%M:%S", tm);
-          *m_out << timestamp;
+          std::array<char, 64> timestamp;
+          strftime(timestamp.data(), timestamp.size(), "%b %d %H:%M:%S", tm);
+          *m_out << timestamp.data();
         }
 
         *m_out << "] ";
       }
 
-      *m_out << message << std::endl;
+      *m_out << message << "\n";
+      m_out->flush();
     }
   }
 }

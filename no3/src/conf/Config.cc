@@ -134,11 +134,11 @@ std::string no3::conf::ConfigGroup::Dump(
       }
 
       if (std::next(it) != m_items.end()) {
-        ss << std::endl;
+        ss << "\n";
       }
     }
   } else {
-    LOG(FATAL) << "Unsupported serialization target" << std::endl;
+    LOG(FATAL) << "Unsupported serialization target";
   }
 
   return ss.str();

@@ -10,6 +10,7 @@
 #include <lsp/core/thread-pool.hh>
 #include <memory>
 #include <optional>
+#include <utility>
 #include <variant>
 
 struct Configuration {
@@ -31,7 +32,7 @@ class BufIStream : public std::istream {
   std::shared_ptr<std::streambuf> m_buf;
 
 public:
-  BufIStream(std::shared_ptr<std::streambuf> buf)
+  BufIStream(const std::shared_ptr<std::streambuf>& buf)
       : std::istream(buf.get()), m_buf(buf) {}
 };
 
@@ -39,16 +40,16 @@ class BufOStream : public std::ostream {
   std::shared_ptr<std::streambuf> m_buf;
 
 public:
-  BufOStream(std::shared_ptr<std::streambuf> buf)
+  BufOStream(const std::shared_ptr<std::streambuf>& buf)
       : std::ostream(buf.get()), m_buf(buf) {}
-  ~BufOStream();
+  ~BufOStream() override;
 };
 
 using Connection =
     std::pair<std::unique_ptr<BufIStream>, std::unique_ptr<BufOStream>>;
 
 std::optional<Connection> OpenConnection(ConnectionType type,
-                                          const std::string& param);
+                                         const std::string& param);
 
 namespace lsp {
   enum class MessageType { Request, Notification };
@@ -63,7 +64,7 @@ namespace lsp {
     [[nodiscard]] MessageType Type() const { return m_type; }
   };
 
-  typedef std::variant<std::string, int64_t> MessageId;
+  using MessageId = std::variant<std::string, int64_t>;
 
   class RequestMessage : public Message {
     MessageId m_id;
@@ -71,13 +72,12 @@ namespace lsp {
     rapidjson::Document m_params;
 
   public:
-    RequestMessage(const MessageId& id, const std::string& method,
-                   rapidjson::Document params)
+    RequestMessage(MessageId id, std::string method, rapidjson::Document params)
         : Message(MessageType::Request),
-          m_id(id),
-          m_method(method),
+          m_id(std::move(id)),
+          m_method(std::move(method)),
           m_params(std::move(params)) {}
-    virtual ~RequestMessage() = default;
+    ~RequestMessage() override = default;
 
     [[nodiscard]] const MessageId& Id() const { return m_id; }
     [[nodiscard]] const std::string& Method() const { return m_method; }
@@ -90,7 +90,7 @@ namespace lsp {
       } else {
         os << std::get<int64_t>(m_id);
       }
-      os << ", \"method\": \"" << m_method << "\"}";
+      os << R"(, "method": ")" << m_method << "\"}";
     }
   };
 
@@ -99,17 +99,17 @@ namespace lsp {
     rapidjson::Document m_params;
 
   public:
-    NotificationMessage(const std::string& method, rapidjson::Document params)
+    NotificationMessage(std::string method, rapidjson::Document params)
         : Message(MessageType::Notification),
-          m_method(method),
+          m_method(std::move(method)),
           m_params(std::move(params)) {}
-    virtual ~NotificationMessage() = default;
+    ~NotificationMessage() override = default;
 
     [[nodiscard]] const std::string& Method() const { return m_method; }
     [[nodiscard]] const rapidjson::Document& Params() const { return m_params; }
 
     void Print(std::ostream& os) const {
-      os << "{\"method\": \"" << m_method << "\"}";
+      os << R"({"method": ")" << m_method << "\"}";
     }
   };
 
@@ -210,9 +210,11 @@ namespace lsp {
     std::string m_message;
     std::optional<rapidjson::Document> m_data;
 
-    ResponseError(ErrorCodes code, const std::string& message,
+    ResponseError(ErrorCodes code, std::string message,
                   std::optional<rapidjson::Document> data = std::nullopt)
-        : m_code(code), m_message(message), m_data(std::move(data)) {}
+        : m_code(code),
+          m_message(std::move(message)),
+          m_data(std::move(data)) {}
   };
 
   class ResponseMessage : public Message {
@@ -223,7 +225,8 @@ namespace lsp {
     ResponseMessage() : Message(MessageType::Request) {}
 
   public:
-    ResponseMessage(ResponseMessage&& o) : Message(MessageType::Request) {
+    ResponseMessage(ResponseMessage&& o) noexcept
+        : Message(MessageType::Request) {
       m_id = std::move(o.m_id);
       if (o.m_result.has_value()) {
         m_result = std::move(o.m_result.value());
@@ -239,7 +242,7 @@ namespace lsp {
       return response;
     }
 
-    virtual ~ResponseMessage() = default;
+    ~ResponseMessage() override = default;
 
     [[nodiscard]] const MessageId& Id() const { return m_id; }
     std::optional<rapidjson::Document>& Result() { return m_result; }
@@ -304,10 +307,10 @@ namespace lsp {
 
 }  // namespace lsp
 
-typedef std::function<void(const lsp::RequestMessage&, lsp::ResponseMessage&)>
-    RequestHandler;
-typedef std::function<void(const lsp::NotificationMessage&)>
-    NotificationHandler;
+using RequestHandler =
+    std::function<void(const lsp::RequestMessage&, lsp::ResponseMessage&)>;
+using NotificationHandler =
+    std::function<void(const lsp::NotificationMessage&)>;
 
 class ServerContext {
   ThreadPool m_thread_pool;
@@ -320,9 +323,6 @@ class ServerContext {
 
   ServerContext() = default;
 
-  ServerContext(const ServerContext&) = delete;
-  ServerContext(ServerContext&&) = delete;
-
   void RegisterHandlers();
   void RequestQueueLoop(std::stop_token st);
 
@@ -331,9 +331,12 @@ class ServerContext {
 
   std::optional<std::unique_ptr<lsp::Message>> NextMessage(std::istream& in);
 
-  void Dispatch(const std::shared_ptr<lsp::Message> message, std::ostream& out);
+  void Dispatch(std::shared_ptr<lsp::Message> message, std::ostream& out);
 
 public:
+  ServerContext(const ServerContext&) = delete;
+  ServerContext(ServerContext&&) = delete;
+
   static ServerContext& The();
 
   [[noreturn]] void StartServer(Connection& io);
@@ -342,12 +345,13 @@ public:
     m_callback = std::move(callback);
   }
 
-  void RegisterRequestHandler(std::string method, RequestHandler handler) {
+  void RegisterRequestHandler(const std::string& method,
+                              RequestHandler handler) {
     m_request_handlers[method] = std::move(handler);
   }
 
-  void RegisterNotificationHandler(std::string method,
-                                     NotificationHandler handler) {
+  void RegisterNotificationHandler(const std::string& method,
+                                   NotificationHandler handler) {
     m_notification_handlers[method] = std::move(handler);
   }
 };

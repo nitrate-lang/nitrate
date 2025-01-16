@@ -46,19 +46,19 @@ static bool ValidatePackageName(const std::string &package_name) {
 }
 
 bool DownloadGitRepo(const std::string &url, const std::string &dest) {
-  std::cout << "Downloading package from: " << url << std::endl;
+  std::cout << "Downloading package from: " << url << "\n";
 
   /// TODO: Test if it works with git submodules
 
   git_repository *repo = nullptr;
   if (git_clone(&repo, url.c_str(), dest.c_str(), nullptr) != 0) {
-    std::cerr << "Failed to download package" << std::endl;
+    std::cerr << "Failed to download package" << "\n";
     return false;
   }
 
   git_repository_free(repo);
 
-  std::cerr << "Successfully downloaded package" << std::endl;
+  std::cerr << "Successfully downloaded package" << "\n";
 
   return true;
 }
@@ -77,15 +77,15 @@ bool no3::install::InstallFromUrl(std::string url, const std::string &dest,
   if (url.ends_with(".git")) {
     url = url.substr(0, url.size() - 4);
   }
-  if (url.find("/") == std::string::npos) {
+  if (url.find('/') == std::string::npos) {
     std::cerr << "Excpected URL pattern like: 'https://example.com/package'"
-              << std::endl;
+              << "\n";
     return false;
   }
 
   package_name = url.substr(url.find_last_of('/') + 1);
   if (!ValidatePackageName(package_name)) {
-    std::cerr << "Invalid package name: " << package_name << std::endl;
+    std::cerr << "Invalid package name: " << package_name << "\n";
     return false;
   }
 
@@ -94,14 +94,15 @@ bool no3::install::InstallFromUrl(std::string url, const std::string &dest,
   try {
     bool exists = std::filesystem::exists(package_path);
     if (!overwrite && exists) {
-      std::cerr << "Package already exists: " << package_name << std::endl;
+      std::cerr << "Package already exists: " << package_name << "\n";
       return false;
-    } else if (exists) {
+    }
+    if (exists) {
       std::filesystem::remove_all(package_path);
     }
   } catch (std::filesystem::filesystem_error &e) {
-    std::cerr << e.what() << std::endl;
-    std::cerr << "Failed to install package: " << package_name << std::endl;
+    std::cerr << e.what() << "\n";
+    std::cerr << "Failed to install package: " << package_name << "\n";
     return false;
   }
 
@@ -110,14 +111,14 @@ bool no3::install::InstallFromUrl(std::string url, const std::string &dest,
   switch (fetch_type) {
     case FetchType::GIT:
       if (!DownloadGitRepo(url, package_path.string())) {
-        std::cerr << "Failed to fetch package: " << package_name << std::endl;
+        std::cerr << "Failed to fetch package: " << package_name << "\n";
         return false;
       }
       return true;
 
     default:
-      std::cerr << "Unable to fetch package: " << package_name << std::endl;
-      std::cerr << "Unknown repository type" << std::endl;
+      std::cerr << "Unable to fetch package: " << package_name << "\n";
+      std::cerr << "Unknown repository type" << "\n";
       return false;
   }
 }

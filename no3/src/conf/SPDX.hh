@@ -37,10 +37,8 @@
 #include <string_view>
 #include <unordered_set>
 
-namespace no3 {
-  namespace conf {
-    extern const std::unordered_set<std::string_view> SPDX_IDENTIFIERS;
-  }
-}  // namespace no3
+namespace no3::conf {
+  extern const std::unordered_set<std::string_view> SPDX_IDENTIFIERS;
+}  // namespace no3::conf
 
 #endif  // __NO3_CONF_SPDX_HH__

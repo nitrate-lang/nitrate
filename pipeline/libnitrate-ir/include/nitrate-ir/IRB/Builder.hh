@@ -54,7 +54,7 @@
 #include <unordered_set>
 
 namespace ncc::ir {
-  enum class ABIStringStyle {
+  enum class ABIStringStyle : uint8_t {
     CStr, /* Only supported variant */
   };
 
@@ -69,10 +69,6 @@ namespace ncc::ir {
   using boost::multiprecision::uint128_t;
 
   class __attribute__((visibility("default"))) NRBuilder {
-    /** Implicit copying is not allowed */
-    NRBuilder(const NRBuilder &) = delete;
-    NRBuilder &operator=(const NRBuilder &) = delete;
-
     ///**************************************************************************///
     // Builder properties
     ///**************************************************************************///
@@ -164,13 +160,16 @@ namespace ncc::ir {
 #define DEBUG_INFO 1, 1
 
   public:
+    NRBuilder(const NRBuilder &) = delete;
+    NRBuilder &operator=(const NRBuilder &) = delete;
+
     NRBuilder(std::string module_name,
               TargetInfo target_info SOURCE_LOCATION_PARAM);
     ~NRBuilder();
 
     /* Moving the module is permitted */
-    NRBuilder &operator=(NRBuilder &&);
-    NRBuilder(NRBuilder &&);
+    NRBuilder &operator=(NRBuilder &&) noexcept;
+    NRBuilder(NRBuilder &&) noexcept;
 
     /** @warning: This is a slow and resource heavy operation for
      * most programs. */

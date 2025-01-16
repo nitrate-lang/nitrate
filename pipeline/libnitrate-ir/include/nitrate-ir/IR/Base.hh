@@ -69,22 +69,22 @@ namespace ncc::ir {
   class GenericExpr {
     friend A;
 
-    NrTyT m_node_type : 6; /* This node kind */
-    uint8_t m_pad : 2;     /* Padding */
-    SrcLoc m_loc;          /* Source location alias */
+    nr_ty_t m_node_type : 6; /* This node kind */
+    uint8_t m_pad : 2;       /* Padding */
+    SrcLoc m_loc;            /* Source location alias */
 
     GenericExpr(const GenericExpr &) = delete;
     GenericExpr &operator=(const GenericExpr &) = delete;
 
   public:
-    constexpr GenericExpr(NrTyT ty, lex::LocationID begin = lex::LocationID(),
+    constexpr GenericExpr(nr_ty_t ty, lex::LocationID begin = lex::LocationID(),
                           lex::LocationID end = lex::LocationID())
         : m_node_type(ty) {
       m_loc = parse::ExtensionDataStore.Add(begin, end);
     }
 
-    static constexpr uint32_t GetKindSize(NrTyT kind);
-    static constexpr const char *GetKindName(NrTyT kind);
+    static constexpr uint32_t GetKindSize(nr_ty_t kind);
+    static constexpr const char *GetKindName(nr_ty_t kind);
 
     [[nodiscard]] constexpr auto GetKind() const { return m_node_type; }
     [[nodiscard]] constexpr const char *GetKindName() const {
@@ -92,7 +92,7 @@ namespace ncc::ir {
     }
 
     template <typename T>
-    static constexpr NrTyT GetTypeCode() {
+    static constexpr nr_ty_t GetTypeCode() {
       if constexpr (std::is_same_v<T, GenericBinExpr<A>>) {
         return IR_eBIN;
       } else if constexpr (std::is_same_v<T, GenericUnary<A>>) {
@@ -296,7 +296,7 @@ namespace ncc::ir {
       return const_cast<GenericExpr<A> *>(this)->AsType();
     }
 
-    [[nodiscard]] constexpr bool is(NrTyT type) const {  /// NOLINT
+    [[nodiscard]] constexpr bool is(nr_ty_t type) const {  /// NOLINT
       return type == GetKind();
     }
 
@@ -326,7 +326,7 @@ namespace ncc::ir {
     friend A;
 
   public:
-    constexpr GenericType(NrTyT ty) : GenericExpr<A>(ty) {}
+    constexpr GenericType(nr_ty_t ty) : GenericExpr<A>(ty) {}
 
     [[nodiscard]] std::optional<uint64_t> GetSizeBits() const {
       return detail::TypeGetSizeBitsImpl(reinterpret_cast<const Type *>(this));
@@ -376,10 +376,18 @@ namespace ncc::ir {
       }
     }
 
-    [[nodiscard]] constexpr bool IsArray() const { return this->GetKind() == IR_tARRAY; }
-    [[nodiscard]] constexpr bool IsPointer() const { return this->GetKind() == IR_tPTR; }
-    [[nodiscard]] constexpr bool IsReadonly() const { return this->GetKind() == IR_tCONST; }
-    [[nodiscard]] constexpr bool IsFunction() const { return this->GetKind() == IR_tFUNC; }
+    [[nodiscard]] constexpr bool IsArray() const {
+      return this->GetKind() == IR_tARRAY;
+    }
+    [[nodiscard]] constexpr bool IsPointer() const {
+      return this->GetKind() == IR_tPTR;
+    }
+    [[nodiscard]] constexpr bool IsReadonly() const {
+      return this->GetKind() == IR_tCONST;
+    }
+    [[nodiscard]] constexpr bool IsFunction() const {
+      return this->GetKind() == IR_tFUNC;
+    }
 
     [[nodiscard]] constexpr bool IsComposite() const {
       switch (this->GetKind()) {
@@ -392,7 +400,9 @@ namespace ncc::ir {
       }
     }
 
-    [[nodiscard]] constexpr bool IsUnion() const { return this->GetKind() == IR_tUNION; }
+    [[nodiscard]] constexpr bool IsUnion() const {
+      return this->GetKind() == IR_tUNION;
+    }
 
     [[nodiscard]] constexpr bool IsNumeric() const {
       switch (this->GetKind()) {
@@ -479,8 +489,12 @@ namespace ncc::ir {
       }
     }
 
-    [[nodiscard]] constexpr bool IsVoid() const { return this->GetKind() == IR_tVOID; }
-    [[nodiscard]] constexpr bool IsBool() const { return this->GetKind() == IR_tU1; }
+    [[nodiscard]] constexpr bool IsVoid() const {
+      return this->GetKind() == IR_tVOID;
+    }
+    [[nodiscard]] constexpr bool IsBool() const {
+      return this->GetKind() == IR_tU1;
+    }
   };
 
   template <class A>
@@ -693,7 +707,7 @@ namespace ncc::ir {
   }
 
   template <class A>
-  constexpr uint32_t GenericExpr<A>::GetKindSize(NrTyT type) {
+  constexpr uint32_t GenericExpr<A>::GetKindSize(nr_ty_t type) {
     const std::array<size_t, kIRNodeKindCount> sizes = []() {
       std::array<size_t, kIRNodeKindCount> r;
       r.fill(0);
@@ -752,7 +766,7 @@ namespace ncc::ir {
   }
 
   template <class A>
-  constexpr const char *GenericExpr<A>::GetKindName(NrTyT type) {
+  constexpr const char *GenericExpr<A>::GetKindName(nr_ty_t type) {
     const std::array<const char *, kIRNodeKindCount> names = []() {
       std::array<const char *, kIRNodeKindCount> r;
       r.fill("");
@@ -812,7 +826,7 @@ namespace ncc::ir {
 
   template <class A>
   constexpr bool GenericExpr<A>::IsEq(const GenericExpr<A> *other) const {
-    NrTyT kind = GetKind();
+    nr_ty_t kind = GetKind();
 
     if (kind != other->GetKind()) {
       return false;

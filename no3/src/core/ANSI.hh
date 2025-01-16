@@ -38,103 +38,86 @@
 #include <sstream>
 #include <string>
 
-namespace no3 {
-  namespace ansi {
-    enum class Style {
-      /*==== Text Color ====*/
-      FG_BLACK = 1 << 0,
-      FG_RED = 1 << 1,
-      FG_GREEN = 1 << 2,
-      FG_YELLOW = 1 << 3,
-      FG_BLUE = 1 << 4,
-      FG_PURPLE = 1 << 5,
-      FG_CYAN = 1 << 6,
-      FG_WHITE = 1 << 7,
-      FG_DEFAULT = 1 << 8,
+namespace no3::ansi {
+  enum Style {
+    /*==== Text Color ====*/
+    FG_BLACK = 1 << 0,
+    FG_RED = 1 << 1,
+    FG_GREEN = 1 << 2,
+    FG_YELLOW = 1 << 3,
+    FG_BLUE = 1 << 4,
+    FG_PURPLE = 1 << 5,
+    FG_CYAN = 1 << 6,
+    FG_WHITE = 1 << 7,
+    FG_DEFAULT = 1 << 8,
 
-      /*==== Background Color ====*/
-      BG_BLACK = 1 << 9,
-      BG_RED = 1 << 10,
-      BG_GREEN = 1 << 11,
-      BG_YELLOW = 1 << 12,
-      BG_BLUE = 1 << 13,
-      BG_PURPLE = 1 << 14,
-      BG_CYAN = 1 << 15,
-      BG_WHITE = 1 << 16,
-      BG_DEFAULT = 1 << 17,
+    /*==== Background Color ====*/
+    BG_BLACK = 1 << 9,
+    BG_RED = 1 << 10,
+    BG_GREEN = 1 << 11,
+    BG_YELLOW = 1 << 12,
+    BG_BLUE = 1 << 13,
+    BG_PURPLE = 1 << 14,
+    BG_CYAN = 1 << 15,
+    BG_WHITE = 1 << 16,
+    BG_DEFAULT = 1 << 17,
 
-      /*==== Text Attribute ====*/
-      BOLD = 1 << 18,
-      UNDERLINE = 1 << 19,
-      ILTALIC = 1 << 20,
-      STRIKE = 1 << 21,
+    /*==== Text Attribute ====*/
+    BOLD = 1 << 18,
+    UNDERLINE = 1 << 19,
+    ILTALIC = 1 << 20,
+    STRIKE = 1 << 21,
 
-      RESET = FG_DEFAULT | BG_DEFAULT,
+    RESET = FG_DEFAULT | BG_DEFAULT,
 
-      COLOR_MASK = FG_BLACK | FG_RED | FG_GREEN | FG_YELLOW | FG_BLUE |
-                   FG_PURPLE | FG_CYAN | FG_WHITE | FG_DEFAULT,
-      ATTRIBUTE_MASK = BOLD | UNDERLINE | ILTALIC | STRIKE,
-      BG_COLOR_MASK = BG_BLACK | BG_RED | BG_GREEN | BG_YELLOW | BG_BLUE |
-                      BG_PURPLE | BG_CYAN | BG_WHITE | BG_DEFAULT
-    };
+    COLOR_MASK = FG_BLACK | FG_RED | FG_GREEN | FG_YELLOW | FG_BLUE |
+                 FG_PURPLE | FG_CYAN | FG_WHITE | FG_DEFAULT,
+    ATTRIBUTE_MASK = BOLD | UNDERLINE | ILTALIC | STRIKE,
+    BG_COLOR_MASK = BG_BLACK | BG_RED | BG_GREEN | BG_YELLOW | BG_BLUE |
+                    BG_PURPLE | BG_CYAN | BG_WHITE | BG_DEFAULT
+  };
 
-    static inline Style operator|(Style a, Style b) {
-      return static_cast<Style>(static_cast<uint32_t>(a) |
-                                static_cast<uint32_t>(b));
-    }
+  class AnsiOut final {
+    std::ostream &m_out;
+    uint32_t m_style{};
 
-    static inline Style operator&(Style a, Style b) {
-      return static_cast<Style>(static_cast<uint32_t>(a) &
-                                static_cast<uint32_t>(b));
-    }
+  public:
+    AnsiOut(std::ostream &out) : m_out(out){};
 
-    static inline bool operator==(Style a, uint32_t b) {
-      return static_cast<uint32_t>(a) == b;
-    }
-
-    class AnsiOut final {
-      std::ostream &m_out;
-      Style m_style;
-
-    public:
-      AnsiOut(std::ostream &out) : m_out(out), m_style(Style::RESET){};
-
-      AnsiOut &operator<<(const std::string &str);
-
-      template <class T>
-      AnsiOut &Write(const T &msg) {
-        std::stringstream ss;
-        ss << msg;
-        return operator<<(ss.str());
-      }
-
-      AnsiOut Newline();
-
-      AnsiOut &SetStyle(Style style) {
-        this->m_style = style;
-        return *this;
-      }
-    };
+    AnsiOut &operator<<(const std::string &str);
 
     template <class T>
-    AnsiOut &operator<<(AnsiOut &out, const T &msg) {
-      return out.Write(msg);
+    AnsiOut &Write(const T &msg) {
+      std::stringstream ss;
+      ss << msg;
+      return operator<<(ss.str());
     }
 
-    static inline void operator<<(AnsiOut &out,
-                                  std::ostream &(*var)(std::ostream &)) {
-      if (var == static_cast<std::ostream &(*)(std::ostream &)>(std::endl)) {
-        out.Newline();
-      }
+    AnsiOut Newline();
+
+    AnsiOut &SetStyle(uint32_t style) {
+      this->m_style = style;
+      return *this;
     }
+  };
 
-    static inline void operator|=(AnsiOut &out, Style style) {
-      out.SetStyle(style);
+  template <class T>
+  AnsiOut &operator<<(AnsiOut &out, const T &msg) {
+    return out.Write(msg);
+  }
+
+  static inline void operator<<(AnsiOut &out,
+                                std::ostream &(*var)(std::ostream &)) {
+    if (var == static_cast<std::ostream &(*)(std::ostream &)>(std::endl)) {
+      out.Newline();
     }
+  }
 
-    bool IsUsingColors();
-  }  // namespace ansi
+  static inline void operator|=(AnsiOut &out, uint32_t style) {
+    out.SetStyle(style);
+  }
 
-}  // namespace no3
+  bool IsUsingColors();
+}  // namespace no3::ansi
 
 #endif  // __NO3_CORE_ANSI_HH__

@@ -98,7 +98,7 @@
 //   contract_enforce(m_root != nullptr);
 
 //   // Only C-strings are currently supported
-//   contract_enforce(style == ABIStringStyle::CStr);
+//   contract_enforce(style == ABIStringCStr);
 
 //   std::vector<Expr *> items(value.size() + 1);
 

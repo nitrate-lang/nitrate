@@ -53,7 +53,7 @@ namespace ncc::ir {
     return new (Arena<T>().allocate(1)) T(std::forward<Args>(args)...); \
   }
 
-    constexpr NrTyT ty = Expr::GetTypeCode<T>();
+    constexpr nr_ty_t ty = Expr::GetTypeCode<T>();
 
     NORMAL_ALLOC(IR_eBIN);
     NORMAL_ALLOC(IR_eUNARY);
@@ -140,7 +140,7 @@ namespace ncc::ir {
 
   template <auto mode = dfs_pre>
   void for_each(FlowPtr<Expr> v,  /// NOLINT
-                std::function<void(NrTyT, FlowPtr<Expr>)> f) {
+                std::function<void(nr_ty_t, FlowPtr<Expr>)> f) {
     iterate<mode>(v, [&](auto, auto c) -> IterOp {
       f((*c)->GetKind(), *c);
 
@@ -150,7 +150,7 @@ namespace ncc::ir {
 
   template <auto mode = dfs_pre>
   void transform(FlowPtr<Expr> v,  /// NOLINT
-                 std::function<bool(NrTyT, FlowPtr<Expr> *)> f) {
+                 std::function<bool(nr_ty_t, FlowPtr<Expr> *)> f) {
     iterate<mode>(v, [&](auto, auto c) -> IterOp {
       return f((*c)->GetKind(), c) ? IterOp::Proceed : IterOp::Abort;
     });

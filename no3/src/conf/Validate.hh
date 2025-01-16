@@ -37,12 +37,9 @@
 #include <conf/Parser.hh>
 #include <filesystem>
 
-namespace no3 {
-  namespace conf {
-    bool ValidateConfig(const Config &config,
-                        const std::filesystem::path &base);
-    void PopulateConfig(Config &config);
-  }  // namespace conf
-}  // namespace no3
+namespace no3::conf {
+  bool ValidateConfig(const Config &config, const std::filesystem::path &base);
+  void PopulateConfig(Config &config);
+}  // namespace no3::conf
 
 #endif  // __NO3_CONF_VALIDATE_HH__

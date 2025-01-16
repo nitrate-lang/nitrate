@@ -42,36 +42,36 @@ static std::optional<no3::conf::Config> GetConfig(
     auto c = no3::conf::YamlConfigParser().Parsef(base / "no3.yaml");
 
     if (!c) {
-      LOG(ERROR) << "Failed to parse configuration file: " << base / "no3.yaml"
-                 << std::endl;
+      LOG(ERROR) << "Failed to parse configuration file: " << base / "no3.yaml";
       return std::nullopt;
     }
 
     if (!no3::conf::ValidateConfig(*c, base)) {
-      LOG(ERROR) << "Failed to validate configuration" << std::endl;
+      LOG(ERROR) << "Failed to validate configuration";
       return std::nullopt;
     }
 
     no3::conf::PopulateConfig(*c);
 
     return c;
-  } else {
-    LOG(ERROR) << "No configuration file found in package source directory"
-               << std::endl;
-    return std::nullopt;
   }
+  LOG(ERROR) << "No configuration file found in package source directory";
+  return std::nullopt;
 }
 
 static bool RecursveSubpackages(const std::filesystem::path &base,
                                 bool verbose) {
   auto c = GetConfig(base);
 
-  if (!c) return false;
+  if (!c) {
+    return false;
+  }
 
   auto packages = (*c)["packages"].As<std::vector<std::string>>();
 
-  for (const auto &p : packages)
+  for (const auto &p : packages) {
     no3::clean::CleanPackageSource(base / p, verbose);
+  }
 
   return true;
 }
@@ -81,19 +81,17 @@ bool no3::clean::CleanPackageSource(const std::string &package_src,
   std::filesystem::path package_src_path(package_src);
 
   if (!std::filesystem::exists(package_src_path)) {
-    LOG(ERROR) << "Package source path does not exist: " << package_src
-               << std::endl;
+    LOG(ERROR) << "Package source path does not exist: " << package_src;
     return false;
   }
 
   if (!std::filesystem::is_directory(package_src_path)) {
-    LOG(ERROR) << "Package source path is not a directory: " << package_src
-               << std::endl;
+    LOG(ERROR) << "Package source path is not a directory: " << package_src;
     return false;
   }
 
   if (verbose) {
-    LOG(INFO) << "Cleaning package source recursively" << std::endl;
+    LOG(INFO) << "Cleaning package source recursively";
   }
 
   // std::filesystem::path cache_dir = package_src_path / ".no3" / "cache";
@@ -117,26 +115,27 @@ bool no3::clean::CleanPackageSource(const std::string &package_src,
   std::filesystem::path no3_dir = package_src_path / ".no3";
 
   if (std::filesystem::exists(no3_dir)) {
-    if (verbose)
-      LOG(INFO) << "Removing .no3 directory: " << no3_dir << std::endl;
+    if (verbose) {
+      LOG(INFO) << "Removing .no3 directory: " << no3_dir;
+    }
 
     std::filesystem::remove_all(no3_dir);
   }
 
   auto conf = GetConfig(package_src_path);
   if (!conf) {
-    LOG(ERROR) << "Failed to get configuration" << std::endl;
+    LOG(ERROR) << "Failed to get configuration";
     return false;
   }
 
-  std::string name = conf.value()["name"].As<std::string>(), tmp;
+  auto name = conf.value()["name"].As<std::string>();
+  std::string tmp;
 
-#define RMFILE(_file)                                                        \
-  tmp = _file;                                                               \
-  if (std::filesystem::is_regular_file(package_src_path / tmp)) {            \
-    if (verbose)                                                             \
-      LOG(INFO) << "Removing file: " << package_src_path / tmp << std::endl; \
-    std::filesystem::remove(package_src_path / tmp);                         \
+#define RMFILE(_file)                                                      \
+  tmp = _file;                                                             \
+  if (std::filesystem::is_regular_file(package_src_path / tmp)) {          \
+    if (verbose) LOG(INFO) << "Removing file: " << package_src_path / tmp; \
+    std::filesystem::remove(package_src_path / tmp);                       \
   }
 
   RMFILE(name);
@@ -151,8 +150,9 @@ bool no3::clean::CleanPackageSource(const std::string &package_src,
 
   RecursveSubpackages(package_src_path, verbose);
 
-  if (verbose)
-    LOG(INFO) << "Package " << package_src << " cleaned" << std::endl;
+  if (verbose) {
+    LOG(INFO) << "Package " << package_src << " cleaned";
+  }
 
   return true;
 }

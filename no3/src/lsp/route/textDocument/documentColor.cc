@@ -40,39 +40,43 @@ enum class ColorMode {
 
 static RGBA HslaToRgba(float h, float s, float l, float a) {
   // Clamp h to [0, 360), s and l to [0, 100], and a to [0, 1]
-  h = fmod(h, 360.0f);
-  if (h < 0) h += 360.0f;
-  s = std::clamp(s, 0.0f, 100.0f);
-  l = std::clamp(l, 0.0f, 100.0f);
-  a = std::clamp(a, 0.0f, 1.0f);
+  h = fmod(h, 360.0);
+  if (h < 0) {
+    h += 360.0F;
+  }
+  s = std::clamp(s, 0.0F, 100.0F);
+  l = std::clamp(l, 0.0F, 100.0F);
+  a = std::clamp(a, 0.0F, 1.0F);
 
-  h /= 360.0f;
-  s /= 100.0f;
-  l /= 100.0f;
+  h /= 360.0F;
+  s /= 100.0F;
+  l /= 100.0F;
 
   float c = (1 - std::abs(2 * l - 1)) * s;
-  float x = c * (1 - std::abs(fmod(h * 6.0f, 2.0f) - 1));
+  float x = c * (1 - std::abs(fmod(h * 6.0F, 2.0F) - 1));
   float m = l - c / 2;
 
-  float r, g, b;
+  float r;
+  float g;
+  float b;
 
-  if (h >= 0 && h < 1.0f / 6.0f) {
+  if (h >= 0 && h < 1.0F / 6.0F) {
     r = c;
     g = x;
     b = 0;
-  } else if (h >= 1.0f / 6.0f && h < 2.0f / 6.0f) {
+  } else if (h >= 1.0F / 6.0F && h < 2.0F / 6.0F) {
     r = x;
     g = c;
     b = 0;
-  } else if (h >= 2.0f / 6.0f && h < 3.0f / 6.0f) {
+  } else if (h >= 2.0F / 6.0F && h < 3.0F / 6.0F) {
     r = 0;
     g = c;
     b = x;
-  } else if (h >= 3.0f / 6.0f && h < 4.0f / 6.0f) {
+  } else if (h >= 3.0F / 6.0F && h < 4.0F / 6.0F) {
     r = 0;
     g = x;
     b = c;
-  } else if (h >= 4.0f / 6.0f && h < 5.0f / 6.0f) {
+  } else if (h >= 4.0F / 6.0F && h < 5.0F / 6.0F) {
     r = x;
     g = 0;
     b = c;
@@ -87,8 +91,8 @@ static RGBA HslaToRgba(float h, float s, float l, float a) {
 
 template <size_t Argc>
 static std::optional<ColorInformation> ParseColorFunction(ncc::FlowPtr<Call> n,
-                                                          ColorMode mode,
-                                                          IScanner& l) {
+                                                          ColorMode,
+                                                          IScanner&) {
   static_assert(Argc == 3 || Argc == 4,
                 "Invalid number of arguments. Indexs will be out-of-range.");
 
@@ -98,7 +102,7 @@ static std::optional<ColorInformation> ParseColorFunction(ncc::FlowPtr<Call> n,
     return std::nullopt;
   }
 
-  float values[Argc];
+  std::array<float, Argc> values;
   for (size_t i = 0; i < Argc; i++) {
     let arg_expr = args[i].second;
 
@@ -141,11 +145,11 @@ static std::optional<ColorInformation> ParseColorFunction(ncc::FlowPtr<Call> n,
   //       .red = values[0],
   //       .green = values[1],
   //       .blue = values[2],
-  //       .alpha = Argc == 4 ? values[3] : 1.0f,
+  //       .alpha = Argc == 4 ? values[3] : 1.0F,
   //   };
   // } else if (mode == ColorMode::HSLA) {
   //   let rgba = hslaToRgba(values[0], values[1], values[2],
-  //                         Argc == 4 ? values[3] : 1.0f);
+  //                         Argc == 4 ? values[3] : 1.0F);
 
   //   return ColorInformation{
   //       .range = {.start = {.line = start_line, .character = start_column},
@@ -257,6 +261,4 @@ void DoDocumentColor(const lsp::RequestMessage& req,
 
     resp->PushBack(color_info, resp->GetAllocator());
   }
-
-  return;
 }

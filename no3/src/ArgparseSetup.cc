@@ -686,11 +686,13 @@ namespace no3::argparse_setup {
         ncc::ir::IRLibrary.GetVersion(),
         QcodeLibVersion()};
 
-    ss << "{\"ver\":\"" << __TARGET_VERSION
-       << "\",\"stable\":" << (NO3_STABLE ? "true" : "false") << ",\"using\":[";
+    ss << R"({"ver":")" << __TARGET_VERSION << R"(","stable":)"
+       << (NO3_STABLE ? "true" : "false") << ",\"using\":[";
     for (size_t i = 0; i < no3_deps.size(); i++) {
       ss << "\"" << no3_deps[i] << "\"";
-      if (i < no3_deps.size() - 1) ss << ",";
+      if (i < no3_deps.size() - 1) {
+        ss << ",";
+      }
     }
     ss << "]}";
 
