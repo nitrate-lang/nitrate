@@ -31,11 +31,110 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
+#include <git2.h>
+#include <git2/config.h>
+#include <git2/repository.h>
+
 #include <conf/SPDX.hh>
 #include <core/Logger.hh>
 #include <fstream>
 #include <init/Package.hh>
+#include <random>
 #include <regex>
+#include <sstream>
+
+using namespace no3::init;
+
+class GitConfig final {
+  git_config *m_config;
+
+public:
+  GitConfig(git_config *conf) : m_config(conf) {}
+
+  ~GitConfig() { git_config_free(m_config); }
+
+  bool SetString(const char *key, const char *value) {
+    return git_config_set_string(m_config, key, value) == 0;
+  }
+
+  operator git_config *() const { return m_config; }
+};
+
+class GitRepository final {
+  git_repository *m_repo;
+
+public:
+  GitRepository(const char *path) {
+    if (git_repository_init(&m_repo, path, 0) != 0) {
+      m_repo = nullptr;
+    }
+  }
+
+  ~GitRepository() { git_repository_free(m_repo); }
+
+  [[nodiscard]] bool DidInit() const { return m_repo != nullptr; }
+
+  std::optional<GitConfig> GetConfig() {
+    git_config *config;
+    if (git_repository_config(&config, m_repo) != 0) {
+      return std::nullopt;
+    }
+
+    return config;
+  }
+};
+
+static std::string GenerateUUIDv4() {
+  std::random_device rd;
+  std::mt19937 gen(rd());
+  std::uniform_int_distribution<> dis(0, 15);
+  static constexpr std::array<char, 16> kHexChars = {
+      '0', '1', '2', '3', '4', '5', '6', '7',
+      '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'};
+
+  std::stringstream ss;
+  for (int i = 0; i < 36; i++) {
+    if (i == 8 || i == 13 || i == 18 || i == 23) {
+      ss << "-";
+    } else if (i == 14) {
+      ss << "4";
+    } else if (i == 19) {
+      ss << kHexChars[dis(gen) | 0x8];
+    } else {
+      ss << kHexChars[dis(gen)];
+    }
+  }
+
+  return ss.str();
+}
+
+static bool CreatePackageRepository(const char *path, PackageType type) {
+  static constexpr std::array kPackageTypes = {"application", "staticlib",
+                                               "sharedlib"};
+
+  GitRepository repo(path);
+  if (!repo.DidInit()) {
+    LOG(ERROR) << "Failed to initialize git repository" << std::endl;
+    return false;
+  }
+
+  auto config = repo.GetConfig();
+  if (!config) {
+    LOG(ERROR) << "Failed to retrieve git configuration" << std::endl;
+    return false;
+  }
+
+  bool config_ok =
+      config->SetString("no3.package", GenerateUUIDv4().c_str()) &&
+      config->SetString("no3.type", kPackageTypes[static_cast<int>(type)]);
+
+  if (!config_ok) {
+    LOG(ERROR) << "Failed to set git configuration" << std::endl;
+    return false;
+  }
+
+  return true;
+}
 
 bool no3::init::Package::ValidateName(const std::string &name) {
   static std::regex regex("^[a-zA-Z0-9_-]+$");
@@ -109,8 +208,9 @@ bool no3::init::Package::WriteReadme() {
   }
 
   std::string capitalized_name = m_name;
-  if (!capitalized_name.empty())
+  if (!capitalized_name.empty()) {
     capitalized_name[0] = std::toupper(capitalized_name[0]);
+  }
 
   readme << "# " << capitalized_name << " Project\n\n";
 
@@ -154,17 +254,23 @@ bool no3::init::Package::WriteConfig() {
   grp.Set("name", m_name);
   grp.Set("description", m_description);
 
-  if (!m_author.empty())
+  if (!m_author.empty()) {
     grp.Set("authors", std::vector<std::string>({m_author}));
+  }
 
-  if (!m_email.empty()) grp.Set("emails", std::vector<std::string>({m_email}));
+  if (!m_email.empty()) {
+    grp.Set("emails", std::vector<std::string>({m_email}));
+  }
 
-  if (!m_url.empty()) grp.Set("url", m_url);
+  if (!m_url.empty()) {
+    grp.Set("url", m_url);
+  }
 
-  if (!m_license.empty())
+  if (!m_license.empty()) {
     grp.Set("licenses", std::vector<std::string>({m_license}));
-  else
+  } else {
     grp.Set("licenses", std::vector<std::string>());
+  }
 
   grp.Set("sources", std::vector<std::string>({"src"}));
 
@@ -211,9 +317,8 @@ bool no3::init::Package::CreatePackage() {
       return false;
     }
 
-    setenv("NO3_GIT_INJECT_DEST", (m_output / m_name).string().c_str(), 1);
-    if (system("git init -b main $NO3_GIT_INJECT_DEST") != 0) {
-      LOG(ERROR) << "Failed to initialize git repository" << std::endl;
+    if (!CreatePackageRepository((m_output / m_name).c_str(), m_type)) {
+      LOG(ERROR) << "Failed to create git repository" << std::endl;
       return false;
     }
 
@@ -353,7 +458,6 @@ no3::init::PackageBuilder &no3::init::PackageBuilder::Force(bool force) {
 }
 
 no3::init::Package no3::init::PackageBuilder::Build() {
-  return no3::init::Package(m_output, m_name, m_license, m_author, m_email,
-                            m_url, m_version, m_description, m_type, m_verbose,
-                            m_force);
+  return {m_output,  m_name,        m_license, m_author,  m_email, m_url,
+          m_version, m_description, m_type,    m_verbose, m_force};
 }

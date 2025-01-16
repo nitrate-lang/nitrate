@@ -31,6 +31,7 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
+#include <git2/global.h>
 #include <glog/logging.h>
 #include <lsp/nitrated.h>
 #include <nitrate-emit/Code.h>
@@ -327,7 +328,7 @@ extern "C" __attribute__((visibility("default"))) bool No3Init() {
     google::AddLogSink(&GGoogleLogSink);
   }
 
-  { /* Initialize libraries */
+  { /* Initialize compiler pipeline libraries */
     if (!ncc::CoreLibrary.InitRC()) {
       LOG(ERROR) << "Failed to initialize NITRATE-CORE library" << std::endl;
       return false;
@@ -357,6 +358,11 @@ extern "C" __attribute__((visibility("default"))) bool No3Init() {
       LOG(ERROR) << "Failed to initialize NITRATE-CODE library" << std::endl;
       return false;
     }
+  }
+
+  if (git_libgit2_init() <= 0) {
+    LOG(ERROR) << "Failed to initialize libgit2" << std::endl;
+    return false;
   }
 
   is_initialized = true;

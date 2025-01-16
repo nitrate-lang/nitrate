@@ -31,6 +31,10 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
+#include <git2.h>
+#include <git2/clone.h>
+#include <git2/types.h>
+
 #include <filesystem>
 #include <install/Install.hh>
 #include <iostream>
@@ -44,22 +48,23 @@ static bool ValidatePackageName(const std::string &package_name) {
 bool DownloadGitRepo(const std::string &url, const std::string &dest) {
   std::cout << "Downloading package from: " << url << std::endl;
 
-  setenv("NO3_GIT_INJECT_URL", url.c_str(), 1);
-  setenv("NO3_GIT_INJECT_DEST", dest.c_str(), 1);
+  /// TODO: Test if it works with git submodules
 
-  bool e = system(
-               "git clone --recurse-submodules --quiet $NO3_GIT_INJECT_URL "
-               "$NO3_GIT_INJECT_DEST") == 0;
-  if (e) {
-    std::cerr << "Successfully downloaded package" << std::endl;
-  } else {
+  git_repository *repo = nullptr;
+  if (git_clone(&repo, url.c_str(), dest.c_str(), nullptr) != 0) {
     std::cerr << "Failed to download package" << std::endl;
+    return false;
   }
-  return e;
+
+  git_repository_free(repo);
+
+  std::cerr << "Successfully downloaded package" << std::endl;
+
+  return true;
 }
 
 bool no3::install::InstallFromUrl(std::string url, const std::string &dest,
-                                    std::string &package_name, bool overwrite) {
+                                  std::string &package_name, bool overwrite) {
   enum class FetchType {
     GIT,
     UNKNOWN,

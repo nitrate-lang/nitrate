@@ -17,6 +17,7 @@ message(STATUS "no3 VersionId: ${__TARGET_VERSION}")
 find_library(libglog libglog.a REQUIRED)
 find_library(libgflags libgflags.a REQUIRED)
 find_library(libyaml_cpp libyaml-cpp.a REQUIRED)
+find_library(libgit2 git2 REQUIRED)
 
 #================== SET BUILD FLAGS ==================
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
@@ -47,6 +48,7 @@ target_link_libraries(no3 PUBLIC
   ${libyaml_cpp}
   ${libglog}
   ${libgflags}
+  ${libgit2}
   unwind)
 target_compile_options(no3 PUBLIC -DNO3_MAIN)
 add_dependencies(no3 nitrate-emit
@@ -77,6 +79,7 @@ if(BUILD_SHARED_LIBS STREQUAL "OFF")
     ${libyaml_cpp}
     ${libglog}
     ${libgflags}
+    ${libgit2}
     unwind)
   add_dependencies(no3-cli nitrate-emit
     nitrate-ir
