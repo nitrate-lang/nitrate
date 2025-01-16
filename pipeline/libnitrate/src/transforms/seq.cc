@@ -43,8 +43,8 @@
 using namespace ncc::lex;
 using namespace ncc::seq;
 
-extern bool ImplUseMsgpack(IScanner *l, std::ostream &o);
-extern bool ImplUseJson(IScanner *l, std::ostream &o);
+extern auto ImplUseMsgpack(IScanner *l, std::ostream &o) -> bool;
+extern auto ImplUseJson(IScanner *l, std::ostream &o) -> bool;
 
 CREATE_TRANSFORM(nit::seq) {
   Sequencer scanner(source, env);

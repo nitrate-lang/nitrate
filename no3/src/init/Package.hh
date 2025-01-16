@@ -54,18 +54,18 @@ namespace no3::init {
     bool m_verbose;
     bool m_force;
 
-    bool CreatePackage();
+    auto CreatePackage() -> bool;
 
-    static bool ValidateName(const std::string &name);
-    static bool ValidateVersion(const std::string &version);
-    static bool ValidateEmail(const std::string &email);
-    static bool ValidateUrl(const std::string &url);
-    static bool ValidateLicense(const std::string &license);
+    static auto ValidateName(const std::string &name) -> bool;
+    static auto ValidateVersion(const std::string &version) -> bool;
+    static auto ValidateEmail(const std::string &email) -> bool;
+    static auto ValidateUrl(const std::string &url) -> bool;
+    static auto ValidateLicense(const std::string &license) -> bool;
 
-    bool WriteGitIgnore();
-    bool WriteMain();
-    bool WriteReadme();
-    bool WriteConfig();
+    auto WriteGitIgnore() -> bool;
+    auto WriteMain() -> bool;
+    auto WriteReadme() -> bool;
+    auto WriteConfig() -> bool;
 
   public:
     Package(auto output, auto name, auto license, auto author, auto email,
@@ -85,7 +85,7 @@ namespace no3::init {
       (void)m_verbose;
     }
 
-    bool Create();
+    auto Create() -> bool;
   };
 
   class PackageBuilder {
@@ -104,19 +104,19 @@ namespace no3::init {
   public:
     PackageBuilder() = default;
 
-    PackageBuilder &Output(const std::string &output);
-    PackageBuilder &Name(const std::string &name);
-    PackageBuilder &License(const std::string &license);
-    PackageBuilder &Author(const std::string &author);
-    PackageBuilder &Email(const std::string &email);
-    PackageBuilder &Url(const std::string &url);
-    PackageBuilder &Version(const std::string &version);
-    PackageBuilder &Description(const std::string &description);
-    PackageBuilder &Type(PackageType type);
-    PackageBuilder &Verbose(bool verbose);
-    PackageBuilder &Force(bool force);
+    auto Output(const std::string &output) -> PackageBuilder &;
+    auto Name(const std::string &name) -> PackageBuilder &;
+    auto License(const std::string &license) -> PackageBuilder &;
+    auto Author(const std::string &author) -> PackageBuilder &;
+    auto Email(const std::string &email) -> PackageBuilder &;
+    auto Url(const std::string &url) -> PackageBuilder &;
+    auto Version(const std::string &version) -> PackageBuilder &;
+    auto Description(const std::string &description) -> PackageBuilder &;
+    auto Type(PackageType type) -> PackageBuilder &;
+    auto Verbose(bool verbose) -> PackageBuilder &;
+    auto Force(bool force) -> PackageBuilder &;
 
-    Package Build();
+    auto Build() -> Package;
   };
 }  // namespace no3::init
 

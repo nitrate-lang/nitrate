@@ -35,7 +35,7 @@
 #include <core/Logger.hh>
 #include <fstream>
 
-static std::string JsonEscapeString(const std::string &str) {
+static auto JsonEscapeString(const std::string &str) -> std::string {
   std::stringstream ss;
 
   for (char c : str) {
@@ -73,8 +73,8 @@ static std::string JsonEscapeString(const std::string &str) {
   return ss.str();
 }
 
-std::string no3::conf::ConfigGroup::Dump(
-    no3::conf::ConfigItemSerializationTarget target) const {
+auto no3::conf::ConfigGroup::Dump(
+    no3::conf::ConfigItemSerializationTarget target) const -> std::string {
   std::stringstream ss;
 
   if (target == ConfigItemSerializationTarget::JSON) {
@@ -144,8 +144,8 @@ std::string no3::conf::ConfigGroup::Dump(
   return ss.str();
 }
 
-std::string no3::conf::Config::Dump(
-    no3::conf::ConfigItemSerializationTarget target) const {
+auto no3::conf::Config::Dump(
+    no3::conf::ConfigItemSerializationTarget target) const -> std::string {
   std::stringstream ss;
 
   ss << m_root.Dump(target);
@@ -153,8 +153,8 @@ std::string no3::conf::Config::Dump(
   return ss.str();
 }
 
-std::optional<no3::conf::Config> no3::conf::IParser::Parsef(
-    const std::string &path) {
+auto no3::conf::IParser::Parsef(
+    const std::string &path) -> std::optional<no3::conf::Config> {
   try {
     std::ifstream file(path);
     if (!file.is_open()) {

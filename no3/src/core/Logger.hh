@@ -42,7 +42,7 @@
 namespace no3::core {
   void SetColorMode(bool use_color);
   void SetDebugMode(bool debug);
-  bool GetDebugMode();
+  auto GetDebugMode() -> bool;
 
   struct MyLogSink : google::LogSink {
     std::unique_ptr<std::ostream> m_out;
@@ -53,8 +53,8 @@ namespace no3::core {
               const char* base_filename, int line, const struct tm* tm,
               const char* message, std::size_t message_len) override;
 
-    std::unique_ptr<std::ostream> RedirectToStream(
-        std::unique_ptr<std::ostream> new_stream);
+    auto RedirectToStream(
+        std::unique_ptr<std::ostream> new_stream) -> std::unique_ptr<std::ostream>;
   };
 }  // namespace no3::core
 

@@ -37,7 +37,7 @@
 #include <string>
 
 namespace no3::clean {
-  bool CleanPackageSource(const std::string &package_src, bool verbose = false);
+  auto CleanPackageSource(const std::string &package_src, bool verbose = false) -> bool;
 }
 
 #endif  // __NO3_CLEAN_CLEANUP_HH__

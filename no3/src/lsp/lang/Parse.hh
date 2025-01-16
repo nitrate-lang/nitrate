@@ -15,10 +15,10 @@ namespace lang {
     ParseTreeWrapper();
     ~ParseTreeWrapper();
 
-    [[nodiscard]] bool IsOkay() const { return m_root != nullptr; }
-    bool FromSyncfs(const std::string& uri);
+    [[nodiscard]] auto IsOkay() const -> bool { return m_root != nullptr; }
+    auto FromSyncfs(const std::string& uri) -> bool;
 
-    [[nodiscard]] const ncc::parse::Base* Root() const { return m_root; }
+    [[nodiscard]] auto Root() const -> const ncc::parse::Base* { return m_root; }
   };
   using ParseTree = std::shared_ptr<ParseTreeWrapper>;
 
@@ -30,10 +30,10 @@ namespace lang {
   public:
     constexpr static size_t kDefaultCacheLimit = 1024 * 1024 * 10;  // 10 MB
 
-    static ParseTreeCache& The();
+    static auto The() -> ParseTreeCache&;
 
-    std::optional<ParseTree> Get(std::string_view uri,
-                                 bool permit_outdated = false) const;
+    auto Get(std::string_view uri,
+                                 bool permit_outdated = false) const -> std::optional<ParseTree>;
 
     void Clear();
     void SetCacheLimit(size_t max_bytes);

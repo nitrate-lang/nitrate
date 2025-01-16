@@ -38,7 +38,7 @@ enum class ColorMode {
   HSLA,
 };
 
-static RGBA HslaToRgba(float h, float s, float l, float a) {
+static auto HslaToRgba(float h, float s, float l, float a) -> RGBA {
   // Clamp h to [0, 360), s and l to [0, 100], and a to [0, 1]
   h = fmod(h, 360.0);
   if (h < 0) {
@@ -90,9 +90,9 @@ static RGBA HslaToRgba(float h, float s, float l, float a) {
 }
 
 template <size_t Argc>
-static std::optional<ColorInformation> ParseColorFunction(ncc::FlowPtr<Call> n,
+static auto ParseColorFunction(ncc::FlowPtr<Call> n,
                                                           ColorMode,
-                                                          IScanner&) {
+                                                          IScanner&) -> std::optional<ColorInformation> {
   static_assert(Argc == 3 || Argc == 4,
                 "Invalid number of arguments. Indexs will be out-of-range.");
 

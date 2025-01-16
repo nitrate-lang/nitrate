@@ -36,8 +36,8 @@
 #include <conf/Parser.hh>
 #include <core/Logger.hh>
 
-std::optional<no3::conf::Config> no3::conf::YamlConfigParser::Parse(
-    const std::string &content) {
+auto no3::conf::YamlConfigParser::Parse(
+    const std::string &content) -> std::optional<no3::conf::Config> {
   YAML::Node config;
 
   try {

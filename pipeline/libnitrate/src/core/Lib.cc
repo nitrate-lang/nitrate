@@ -44,7 +44,7 @@
 
 static std::atomic<size_t> NitLibRefCount = 0;
 
-bool NitLibInit() {
+auto NitLibInit() -> bool {
   if (NitLibRefCount++ > 1) {
     return true;
   }

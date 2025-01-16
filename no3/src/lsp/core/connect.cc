@@ -12,11 +12,11 @@
 
 using ManagedHandle = std::optional<Connection>;
 
-static ManagedHandle ConnectToPipe(const std::string& path);
-static ManagedHandle ConnectToTcpPort(uint16_t tcp_port);
-static ManagedHandle ConnectToStdio();
+static auto ConnectToPipe(const std::string& path) -> ManagedHandle;
+static auto ConnectToTcpPort(uint16_t tcp_port) -> ManagedHandle;
+static auto ConnectToStdio() -> ManagedHandle;
 
-ManagedHandle OpenConnection(ConnectionType type, const std::string& param) {
+auto OpenConnection(ConnectionType type, const std::string& param) -> ManagedHandle {
   switch (type) {
     case ConnectionType::Pipe: {
       return ConnectToPipe(param);
@@ -63,7 +63,7 @@ public:
     }
   }
 
-  int_type overflow(int_type ch) override {
+  auto overflow(int_type ch) -> int_type override {
     if (ch != EOF) {
       char c = ch;
       if (write(m_fd, &c, 1) != 1) {
@@ -76,7 +76,7 @@ public:
     return ch;
   }
 
-  std::streamsize xsputn(const char* s, std::streamsize count) override {
+  auto xsputn(const char* s, std::streamsize count) -> std::streamsize override {
     std::streamsize written = 0;
     while (written < count) {
       ssize_t n = write(m_fd, s + written, count - written);
@@ -90,7 +90,7 @@ public:
     return count;
   }
 
-  int_type underflow() override {
+  auto underflow() -> int_type override {
     ssize_t res = read(m_fd, &m_c, 1);
     if (res < 0) {
       LOG(ERROR) << "Failed to read from stream: " << GetStrerror();
@@ -106,7 +106,7 @@ public:
     return traits_type::to_int_type(m_c);
   }
 
-  std::streamsize xsgetn(char* s, std::streamsize count) override {
+  auto xsgetn(char* s, std::streamsize count) -> std::streamsize override {
     std::streamsize bytes_read = 0;
 
     while (bytes_read < count) {
@@ -127,7 +127,7 @@ public:
   }
 };
 
-static std::optional<int> ConnectUnixSocket(const std::string& path) {
+static auto ConnectUnixSocket(const std::string& path) -> std::optional<int> {
   int sockfd = socket(AF_UNIX, SOCK_STREAM, 0);
   if (sockfd == -1) {
     LOG(ERROR) << "Failed to create socket: " << GetStrerror();
@@ -147,7 +147,7 @@ static std::optional<int> ConnectUnixSocket(const std::string& path) {
   return sockfd;
 }
 
-static ManagedHandle ConnectToPipe(const std::string& path) {
+static auto ConnectToPipe(const std::string& path) -> ManagedHandle {
   auto conn = ConnectUnixSocket(path);
   if (!conn) {
     LOG(ERROR) << "Failed to connect to UNIX socket " << path;
@@ -164,7 +164,7 @@ static ManagedHandle ConnectToPipe(const std::string& path) {
   return stream;
 }
 
-static std::optional<int> GetTcpClient(const std::string& host, uint16_t port) {
+static auto GetTcpClient(const std::string& host, uint16_t port) -> std::optional<int> {
   int fd = socket(AF_INET, SOCK_STREAM, 0);
   if (fd == -1) {
     LOG(ERROR) << "Failed to create socket: " << GetStrerror();
@@ -205,7 +205,7 @@ static std::optional<int> GetTcpClient(const std::string& host, uint16_t port) {
   return client_fd;
 }
 
-static ManagedHandle ConnectToTcpPort(uint16_t tcp_port) {
+static auto ConnectToTcpPort(uint16_t tcp_port) -> ManagedHandle {
   auto conn = GetTcpClient("127.0.0.1", tcp_port);
   if (!conn) {
     LOG(ERROR) << "Failed to connect to TCP port " << tcp_port;
@@ -222,7 +222,7 @@ static ManagedHandle ConnectToTcpPort(uint16_t tcp_port) {
   return stream;
 }
 
-static ManagedHandle ConnectToStdio() {
+static auto ConnectToStdio() -> ManagedHandle {
   LOG(INFO) << "Connecting to stdio";
 
   auto in_buf = std::make_shared<FdStreamBuf>(STDIN_FILENO, false);

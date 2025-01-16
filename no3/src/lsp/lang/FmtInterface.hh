@@ -6,7 +6,7 @@ namespace lsp::fmt {
   class ICodeFormatter {
   public:
     virtual ~ICodeFormatter() = default;
-    virtual bool Format(ncc::FlowPtr<ncc::parse::Base> root) = 0;
+    virtual auto Format(ncc::FlowPtr<ncc::parse::Base> root) -> bool = 0;
   };
 
 }  // namespace lsp::fmt

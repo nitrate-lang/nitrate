@@ -5,7 +5,7 @@
 #include <lsp/core/server.hh>
 #include <string>
 
-std::optional<Configuration> ParseConfig(const std::string& path) {
+auto ParseConfig(const std::string& path) -> std::optional<Configuration> {
   rapidjson::Document doc;
 
   std::ifstream ifs(path);

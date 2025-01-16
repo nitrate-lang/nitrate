@@ -37,8 +37,8 @@
 #include <string>
 
 namespace no3::install {
-  bool InstallFromUrl(std::string url, const std::string &dest,
-                        std::string &package_name, bool overwrite = false);
+  auto InstallFromUrl(std::string url, const std::string &dest,
+                        std::string &package_name, bool overwrite = false) -> bool;
 }  // namespace no3::install
 
 #endif /* __NO3_INSTALL_HH__ */

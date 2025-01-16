@@ -43,8 +43,8 @@ namespace codegen::conf {
 }
 
 template <typename L, typename R>
-boost::bimap<L, R> MakeBimap(
-    std::initializer_list<typename boost::bimap<L, R>::value_type> list) {
+auto MakeBimap(
+    std::initializer_list<typename boost::bimap<L, R>::value_type> list) -> boost::bimap<L, R> {
   return boost::bimap<L, R>(list.begin(), list.end());
 }
 
@@ -62,7 +62,7 @@ static const boost::bimap<QcodeValT, std::string> VALUES_BIMAP =
         {QCV_FALSE, "false"},
     });
 
-std::ostream &operator<<(std::ostream &os, const QcodeKeyT &key) {
+auto operator<<(std::ostream &os, const QcodeKeyT &key) -> std::ostream & {
   if (OPTIONS_BIMAP.left.find(key) != OPTIONS_BIMAP.left.end()) {
     os << OPTIONS_BIMAP.left.at(key);
   } else {
@@ -71,7 +71,7 @@ std::ostream &operator<<(std::ostream &os, const QcodeKeyT &key) {
   return os;
 }
 
-std::ostream &operator<<(std::ostream &os, const QcodeValT &val) {
+auto operator<<(std::ostream &os, const QcodeValT &val) -> std::ostream & {
   if (VALUES_BIMAP.left.find(val) != VALUES_BIMAP.left.end()) {
     os << VALUES_BIMAP.left.at(val);
   } else {
@@ -87,7 +87,7 @@ static void AssignDefaultOptions(QCodegenConfig &conf) {
   }
 }
 
-extern "C" NCC_EXPORT QCodegenConfig *QcodeConfNew(bool use_defaults) {
+extern "C" NCC_EXPORT auto QcodeConfNew(bool use_defaults) -> QCodegenConfig * {
   QCodegenConfig *obj = new QCodegenConfig();
 
   if (use_defaults) {
@@ -99,13 +99,13 @@ extern "C" NCC_EXPORT QCodegenConfig *QcodeConfNew(bool use_defaults) {
 
 extern "C" NCC_EXPORT void QcodeConfFree(QCodegenConfig *conf) { delete conf; }
 
-extern "C" NCC_EXPORT bool QcodeConfSetopt(QCodegenConfig *conf, QcodeKeyT key,
-                                           QcodeValT value) {
+extern "C" NCC_EXPORT auto QcodeConfSetopt(QCodegenConfig *conf, QcodeKeyT key,
+                                           QcodeValT value) -> bool {
   return conf->SetAndVerify(key, value);
 }
 
-extern "C" NCC_EXPORT bool QcodeConfGetopt(QCodegenConfig *conf, QcodeKeyT key,
-                                           QcodeValT *value) {
+extern "C" NCC_EXPORT auto QcodeConfGetopt(QCodegenConfig *conf, QcodeKeyT key,
+                                           QcodeValT *value) -> bool {
   auto val = conf->Get(key);
 
   if (!val.has_value()) {
@@ -119,8 +119,8 @@ extern "C" NCC_EXPORT bool QcodeConfGetopt(QCodegenConfig *conf, QcodeKeyT key,
   return true;
 }
 
-extern "C" NCC_EXPORT QcodeSettingT *QcodeConfGetopts(QCodegenConfig *conf,
-                                                      size_t *count) {
+extern "C" NCC_EXPORT auto QcodeConfGetopts(QCodegenConfig *conf,
+                                                      size_t *count) -> QcodeSettingT * {
   if (!count) {
     qcore_panic(
         "qcode_conf_getopts: Contract violation: 'count' parameter cannot be "
@@ -149,7 +149,7 @@ extern "C" NCC_EXPORT void QcodeConfClear(QCodegenConfig *conf) {
   conf->ClearNoVerify();
 }
 
-bool QCodegenConfig::Has(QcodeKeyT option, QcodeValT value) const {
+auto QCodegenConfig::Has(QcodeKeyT option, QcodeValT value) const -> bool {
   for (const auto &dat : m_data) {
     if (dat.m_key == option && dat.m_value == value) {
       return true;

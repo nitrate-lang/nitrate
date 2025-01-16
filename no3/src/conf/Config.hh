@@ -65,16 +65,16 @@ namespace no3::conf {
         : m_value(std::move(value)) {}
 
     template <typename T>
-    [[nodiscard]] [[nodiscard]] T As() const {
+    [[nodiscard]] [[nodiscard]] auto As() const -> T {
       return std::get<T>(m_value);
     }
 
     template <typename T>
-    [[nodiscard]] bool Is() const {
+    [[nodiscard]] auto Is() const -> bool {
       return std::holds_alternative<T>(m_value);
     }
 
-    bool operator==(const ConfigValue &value) const {
+    auto operator==(const ConfigValue &value) const -> bool {
       return m_value == value.m_value;
     }
   };
@@ -92,10 +92,10 @@ namespace no3::conf {
      * @note If the target is not supported, the function throws
      * ConfigSerializerException.
      */
-    std::string Dump(ConfigItemSerializationTarget target =
-                         ConfigItemSerializationTarget::JSON) const;
+    auto Dump(ConfigItemSerializationTarget target =
+                         ConfigItemSerializationTarget::JSON) const -> std::string;
 
-    ConfigValue operator[](const std::string &key) const {
+    auto operator[](const std::string &key) const -> ConfigValue {
       return m_items.at(key);
     }
 
@@ -105,16 +105,16 @@ namespace no3::conf {
     }
 
     template <typename T>
-    bool Has(const std::string &key) const {
+    auto Has(const std::string &key) const -> bool {
       return m_items.contains(key) && m_items.at(key).Is<T>();
     }
 
     template <typename T>
-    bool Is(const std::string &key, T value) const {
+    auto Is(const std::string &key, T value) const -> bool {
       return has<T>(key) && m_items.at(key).As<T>() == value;
     }
 
-    bool operator==(const ConfigGroup &grp) const {
+    auto operator==(const ConfigGroup &grp) const -> bool {
       return m_items == grp.m_items;
     }
   };
@@ -135,16 +135,16 @@ namespace no3::conf {
      * @note If the target is not supported, the function throws
      * ConfigSerializerException.
      */
-    std::string Dump(ConfigItemSerializationTarget target =
-                         ConfigItemSerializationTarget::JSON) const;
+    auto Dump(ConfigItemSerializationTarget target =
+                         ConfigItemSerializationTarget::JSON) const -> std::string;
 
-    bool operator==(const Config &cfg) const {
+    auto operator==(const Config &cfg) const -> bool {
       return m_version == cfg.m_version && m_root == cfg.m_root;
     }
 
-    ConfigValue operator[](const std::string &key) const { return m_root[key]; }
+    auto operator[](const std::string &key) const -> ConfigValue { return m_root[key]; }
 
-    std::set<std::string> Keys() const {
+    auto Keys() const -> std::set<std::string> {
       std::set<std::string> keys;
       for (const auto &item : m_root.m_items) {
         keys.insert(item.first);

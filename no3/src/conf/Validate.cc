@@ -83,7 +83,7 @@ static std::set<std::string> TargetValidValues = {"sharedlib", "staticlib",
                                                   "executable"};
 
 /// https://stackoverflow.com/questions/1031645/how-to-detect-utf-8-in-plain-c
-bool IsUtf8(const char *string) {
+auto IsUtf8(const char *string) -> bool {
   if (string == nullptr) {
     return false;
   }
@@ -143,8 +143,8 @@ bool IsUtf8(const char *string) {
   return true;
 }
 
-bool no3::conf::ValidateConfig(const no3::conf::Config &config,
-                               const std::filesystem::path &base) {
+auto no3::conf::ValidateConfig(const no3::conf::Config &config,
+                               const std::filesystem::path &base) -> bool {
   using namespace no3::core;
 
   auto keys = config.Keys();

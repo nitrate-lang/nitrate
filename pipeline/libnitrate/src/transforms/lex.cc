@@ -43,7 +43,7 @@
 
 using namespace ncc::lex;
 
-bool ImplUseJson(IScanner *l, std::ostream &o) {
+auto ImplUseJson(IScanner *l, std::ostream &o) -> bool {
   o << "[";
 
   Token tok;
@@ -149,7 +149,7 @@ static void MsgpackWriteTok(std::ostream &o, uint8_t type, std::string_view val,
   MsgpackWriteUint(o, ec);
 }
 
-bool ImplUseMsgpack(IScanner *l, std::ostream &o) {
+auto ImplUseMsgpack(IScanner *l, std::ostream &o) -> bool {
   size_t num_entries = 0;
 
   o.put(0xdd);

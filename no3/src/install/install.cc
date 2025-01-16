@@ -40,12 +40,12 @@
 #include <iostream>
 #include <regex>
 
-static bool ValidatePackageName(const std::string &package_name) {
+static auto ValidatePackageName(const std::string &package_name) -> bool {
   static std::regex package_name_regex("^[a-zA-Z0-9_-]+$");
   return std::regex_match(package_name, package_name_regex);
 }
 
-bool DownloadGitRepo(const std::string &url, const std::string &dest) {
+auto DownloadGitRepo(const std::string &url, const std::string &dest) -> bool {
   std::cout << "Downloading package from: " << url << "\n";
 
   /// TODO: Test if it works with git submodules
@@ -63,8 +63,8 @@ bool DownloadGitRepo(const std::string &url, const std::string &dest) {
   return true;
 }
 
-bool no3::install::InstallFromUrl(std::string url, const std::string &dest,
-                                  std::string &package_name, bool overwrite) {
+auto no3::install::InstallFromUrl(std::string url, const std::string &dest,
+                                  std::string &package_name, bool overwrite) -> bool {
   enum class FetchType {
     GIT,
     UNKNOWN,

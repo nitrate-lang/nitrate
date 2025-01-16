@@ -12,7 +12,7 @@
 
 using namespace lsp;
 
-ServerContext& ServerContext::The() {
+auto ServerContext::The() -> ServerContext& {
   static ServerContext instance;
   return instance;
 }
@@ -39,8 +39,8 @@ void ServerContext::RequestQueueLoop(std::stop_token st) {
   }
 }
 
-std::optional<std::unique_ptr<Message>> ServerContext::NextMessage(
-    std::istream& io) {
+auto ServerContext::NextMessage(
+    std::istream& io) -> std::optional<std::unique_ptr<Message>> {
   /**
    * We don't need to lock the std::istream because this is the only place where
    * we read from it in a single threaded context. The ostream is seperately

@@ -87,24 +87,24 @@ class OStreamWriter : public std::streambuf {
 public:
   OStreamWriter(FILE* file) : m_file(file) {}
 
-  virtual std::streamsize xsputn(const char* s, std::streamsize n) override {
+  virtual auto xsputn(const char* s, std::streamsize n) -> std::streamsize override {
     return fwrite(s, 1, n, m_file);
   }
 
-  virtual int overflow(int c) override { return fputc(c, m_file); }
+  virtual auto overflow(int c) -> int override { return fputc(c, m_file); }
 };
 
 class OStreamDiscard : public std::streambuf {
 public:
-  virtual std::streamsize xsputn(const char*, std::streamsize n) override {
+  virtual auto xsputn(const char*, std::streamsize n) -> std::streamsize override {
     return n;
   }
-  virtual int overflow(int c) override { return c; }
+  virtual auto overflow(int c) -> int override { return c; }
 };
 
-NCC_EXPORT bool QcodeTranscode(IRModule* module, QCodegenConfig*,
+NCC_EXPORT auto QcodeTranscode(IRModule* module, QCodegenConfig*,
                                QcodeLangT lang, QcodeStyleT, FILE* err,
-                               FILE* out) {
+                               FILE* out) -> bool {
   std::unique_ptr<std::streambuf> err_stream_buf, out_stream_buf;
 
   /* If the error stream is provided, use it. Otherwise, discard the output. */

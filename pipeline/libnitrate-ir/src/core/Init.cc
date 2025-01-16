@@ -42,7 +42,7 @@ NCC_EXPORT ncc::LibraryRC<IRLibrarySetup> ncc::ir::IRLibrary;
 
 extern void IRResetTypeCache();
 
-NCC_EXPORT bool IRLibrarySetup::Init() {
+NCC_EXPORT auto IRLibrarySetup::Init() -> bool {
   if (!ncc::CoreLibrary.InitRC()) {
     return false;
   }
@@ -61,6 +61,6 @@ NCC_EXPORT void IRLibrarySetup::Deinit() {
   ncc::CoreLibrary.DeinitRC();
 }
 
-NCC_EXPORT std::string_view IRLibrarySetup::GetVersionId() {
+NCC_EXPORT auto IRLibrarySetup::GetVersionId() -> std::string_view {
   return __TARGET_VERSION;
 }

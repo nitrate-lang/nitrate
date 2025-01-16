@@ -39,9 +39,9 @@
 #include <string>
 #include <string_view>
 
-std::string CreateJsonString(std::string_view input);
-bool ReadJsonString(std::istream &i, char **str, size_t &len);
-bool MsgpackWriteUint(std::ostream &o, uint64_t x);
-bool MsgpackReadUint(std::istream &i, uint64_t &x);
-bool MsgpackWriteStr(std::ostream &o, std::string_view str);
-bool MsgpackReadStr(std::istream &i, char **str, size_t &len);
+auto CreateJsonString(std::string_view input) -> std::string;
+auto ReadJsonString(std::istream &i, char **str, size_t &len) -> bool;
+auto MsgpackWriteUint(std::ostream &o, uint64_t x) -> bool;
+auto MsgpackReadUint(std::istream &i, uint64_t &x) -> bool;
+auto MsgpackWriteStr(std::ostream &o, std::string_view str) -> bool;
+auto MsgpackReadStr(std::istream &i, char **str, size_t &len) -> bool;

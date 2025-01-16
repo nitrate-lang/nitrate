@@ -9,9 +9,9 @@ class ParseTree {};
 
 class ParseTreeSet {
 public:
-  static ParseTreeSet& The();
+  static auto The() -> ParseTreeSet&;
 
-  [[nodiscard]] std::optional<std::shared_ptr<ParseTree>> Get(std::string_view uri) const;
+  [[nodiscard]] auto Get(std::string_view uri) const -> std::optional<std::shared_ptr<ParseTree>>;
 };
 
 void DoCompletion(const lsp::RequestMessage&, lsp::ResponseMessage& resp) {

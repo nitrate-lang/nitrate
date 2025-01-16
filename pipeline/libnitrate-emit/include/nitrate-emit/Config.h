@@ -88,11 +88,11 @@ struct QcodeSettingT {
 
 #endif
 
-QCodegenConfig *QcodeConfNew(bool use_defaults);
+auto QcodeConfNew(bool use_defaults) -> QCodegenConfig *;
 void QcodeConfFree(QCodegenConfig *conf);
-bool QcodeConfSetopt(QCodegenConfig *conf, QcodeKeyT key, QcodeValT value);
-bool QcodeConfGetopt(QCodegenConfig *conf, QcodeKeyT key, QcodeValT *value);
-QcodeSettingT *QcodeConfGetopts(QCodegenConfig *conf, size_t *count);
+auto QcodeConfSetopt(QCodegenConfig *conf, QcodeKeyT key, QcodeValT value) -> bool;
+auto QcodeConfGetopt(QCodegenConfig *conf, QcodeKeyT key, QcodeValT *value) -> bool;
+auto QcodeConfGetopts(QCodegenConfig *conf, size_t *count) -> QcodeSettingT *;
 void QcodeConfClear(QCodegenConfig *conf);
 
 #ifdef __cplusplus

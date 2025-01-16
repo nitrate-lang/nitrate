@@ -28,7 +28,7 @@ static constexpr void CreateParser(argparse::ArgumentParser& parser) {
       "Use standard I/O");
 }
 
-extern "C" NCC_EXPORT int NitratedMain(int argc, char** argv) {
+extern "C" NCC_EXPORT auto NitratedMain(int argc, char** argv) -> int {
   std::vector<std::string> args(argv, argv + argc);
 
   {

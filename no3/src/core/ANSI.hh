@@ -84,25 +84,25 @@ namespace no3::ansi {
   public:
     AnsiOut(std::ostream &out) : m_out(out){};
 
-    AnsiOut &operator<<(const std::string &str);
+    auto operator<<(const std::string &str) -> AnsiOut &;
 
     template <class T>
-    AnsiOut &Write(const T &msg) {
+    auto Write(const T &msg) -> AnsiOut & {
       std::stringstream ss;
       ss << msg;
       return operator<<(ss.str());
     }
 
-    AnsiOut Newline();
+    auto Newline() -> AnsiOut;
 
-    AnsiOut &SetStyle(uint32_t style) {
+    auto SetStyle(uint32_t style) -> AnsiOut & {
       this->m_style = style;
       return *this;
     }
   };
 
   template <class T>
-  AnsiOut &operator<<(AnsiOut &out, const T &msg) {
+  auto operator<<(AnsiOut &out, const T &msg) -> AnsiOut & {
     return out.Write(msg);
   }
 
@@ -117,7 +117,7 @@ namespace no3::ansi {
     out.SetStyle(style);
   }
 
-  bool IsUsingColors();
+  auto IsUsingColors() -> bool;
 }  // namespace no3::ansi
 
 #endif  // __NO3_CORE_ANSI_HH__

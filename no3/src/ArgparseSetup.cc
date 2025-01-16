@@ -628,7 +628,7 @@ namespace no3::argparse_setup {
     parser.AddSubparser(*subparsers["codegen"]);
   }
 
-  static ArgumentParser &SetupArgparse(
+  static auto SetupArgparse(
       ArgumentParser &parser, ArgumentParser &init_parser,
       ArgumentParser &build_parser, ArgumentParser &clean_parser,
       ArgumentParser &update_parser, ArgumentParser &install_parser,
@@ -636,7 +636,7 @@ namespace no3::argparse_setup {
       ArgumentParser &list_parser, ArgumentParser &test_parser,
       ArgumentParser &lsp_parser, ArgumentParser &dev_parser,
       std::unordered_map<std::string_view, std::unique_ptr<ArgumentParser>>
-          &dev_subparsers) {
+          &dev_subparsers) -> ArgumentParser & {
     using namespace argparse;
 
     SetupArgparseInit(init_parser);
@@ -671,7 +671,7 @@ namespace no3::argparse_setup {
     return parser;
   }
 
-  static std::string No3DepsVersionString() {
+  static auto No3DepsVersionString() -> std::string {
     /* FIXME: Automate setting of 'is stable build' flag */
 
 #define NO3_STABLE false

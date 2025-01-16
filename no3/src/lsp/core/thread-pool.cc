@@ -56,7 +56,7 @@ void ThreadPool::QueueJob(const std::function<void(std::stop_token st)>& job) {
   m_jobs.push(job);
 }
 
-bool ThreadPool::Busy() {
+auto ThreadPool::Busy() -> bool {
   bool poolbusy;
   {
     std::lock_guard<std::mutex> lock(m_queue_mutex);

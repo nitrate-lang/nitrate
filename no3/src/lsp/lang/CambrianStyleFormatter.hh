@@ -26,20 +26,20 @@ namespace lsp::fmt {
       }
 
       template <typename T>
-      LineStreamWritter& operator<<(const T& val) {
+      auto operator<<(const T& val) -> LineStreamWritter& {
         m_line_buffer << val;
         return *this;
       }
-      LineStreamWritter& operator<<(ncc::lex::Operator op);
-      LineStreamWritter& operator<<(parse::Vis op);
-      LineStreamWritter& operator<<(ncc::string str) {
+      auto operator<<(ncc::lex::Operator op) -> LineStreamWritter&;
+      auto operator<<(parse::Vis op) -> LineStreamWritter&;
+      auto operator<<(ncc::string str) -> LineStreamWritter& {
         m_line_buffer << str.Get();
         return *this;
       }
 
-      LineStreamWritter& operator<<(std::ostream& (*func)(std::ostream&));
+      auto operator<<(std::ostream& (*func)(std::ostream&)) -> LineStreamWritter&;
 
-      size_t Length() { return m_line_buffer.tellp(); }
+      auto Length() -> size_t { return m_line_buffer.tellp(); }
     };
 
     LineStreamWritter m_line;
@@ -57,14 +57,14 @@ namespace lsp::fmt {
       m_did_root = false;
     }
 
-    std::string GetIndent() const {
+    auto GetIndent() const -> std::string {
       if (m_indent == 0) {
         return "";
       }
       return std::string(m_indent, ' ');
     }
-    std::string EscapeCharLiteral(char ch) const;
-    std::string EscapeStringLiteralChunk(std::string_view str) const;
+    auto EscapeCharLiteral(char ch) const -> std::string;
+    auto EscapeStringLiteralChunk(std::string_view str) const -> std::string;
     void EscapeStringLiteral(std::string_view str, bool put_quotes = true);
     void WriteFloatLiteralChunk(std::string_view float_str);
     void WriteFloatLiteral(std::string_view float_str);
@@ -174,7 +174,7 @@ namespace lsp::fmt {
     }
     virtual ~CambrianFormatter() = default;
 
-    bool Format(FlowPtr<parse::Base> root) override {
+    auto Format(FlowPtr<parse::Base> root) -> bool override {
       root.Accept(*this);
       bool ok = !m_failed;
       ResetAutomaton();

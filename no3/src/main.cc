@@ -66,7 +66,7 @@ using argparse::ArgumentParser;
 static core::MyLogSink GGoogleLogSink;
 
 namespace no3::router {
-  static int RunInitMode(const ArgumentParser &parser) {
+  static auto RunInitMode(const ArgumentParser &parser) -> int {
     using namespace init;
 
     core::SetDebugMode(parser["--verbose"] == true);
@@ -94,7 +94,7 @@ namespace no3::router {
     return builder.Build().Create() ? 0 : -1;
   }
 
-  static int RunBuildMode(const ArgumentParser &parser) {
+  static auto RunBuildMode(const ArgumentParser &parser) -> int {
     (void)parser;
 
     LOG(ERROR) << "The build subcommand is not implemented yet";
@@ -103,7 +103,7 @@ namespace no3::router {
     return 1;
   }
 
-  static int RunCleanMode(const ArgumentParser &parser) {
+  static auto RunCleanMode(const ArgumentParser &parser) -> int {
     core::SetDebugMode(parser["--verbose"] == true);
 
     if (clean::CleanPackageSource(parser.Get<std::string>("package-src"),
@@ -114,7 +114,7 @@ namespace no3::router {
     }
   }
 
-  static int RunUpdateMode(const ArgumentParser &parser) {
+  static auto RunUpdateMode(const ArgumentParser &parser) -> int {
     (void)parser;
 
     LOG(ERROR) << "The update subcommand is not implemented yet";
@@ -123,7 +123,7 @@ namespace no3::router {
     return 1;
   }
 
-  static int RunInstallMode(const ArgumentParser &parser) {
+  static auto RunInstallMode(const ArgumentParser &parser) -> int {
     (void)parser;
 
     LOG(ERROR) << "The install subcommand is not implemented yet";
@@ -132,7 +132,7 @@ namespace no3::router {
     return 1;
   }
 
-  static int RunDocMode(const ArgumentParser &parser) {
+  static auto RunDocMode(const ArgumentParser &parser) -> int {
     (void)parser;
 
     LOG(ERROR) << "The doc subcommand is not implemented yet";
@@ -141,7 +141,7 @@ namespace no3::router {
     return 1;
   }
 
-  static int RunFormatMode(const ArgumentParser &parser) {
+  static auto RunFormatMode(const ArgumentParser &parser) -> int {
     (void)parser;
 
     LOG(ERROR) << "The format subcommand is not implemented yet";
@@ -150,7 +150,7 @@ namespace no3::router {
     return 1;
   }
 
-  static int RunListMode(const ArgumentParser &parser) {
+  static auto RunListMode(const ArgumentParser &parser) -> int {
     (void)parser;
 
     LOG(ERROR) << "The list subcommand is not implemented yet";
@@ -159,7 +159,7 @@ namespace no3::router {
     return 1;
   }
 
-  static int RunTestMode(const ArgumentParser &parser) {
+  static auto RunTestMode(const ArgumentParser &parser) -> int {
     (void)parser;
 
     LOG(ERROR) << "The test subcommand is not implemented yet";
@@ -168,7 +168,7 @@ namespace no3::router {
     return 1;
   }
 
-  static int RunLspMode(const ArgumentParser &parser) {
+  static auto RunLspMode(const ArgumentParser &parser) -> int {
     core::SetDebugMode(parser["--verbose"] == true);
 
     std::vector<std::string> args;
@@ -223,10 +223,10 @@ namespace no3::router {
     return ret;
   }
 
-  int RunDevMode(
+  auto RunDevMode(
       const ArgumentParser &parser,
       const std::unordered_map<std::string_view,
-                               std::unique_ptr<ArgumentParser>> &subparsers);
+                               std::unique_ptr<ArgumentParser>> &subparsers) -> int;
 }  // namespace no3::router
 
 namespace no3::argparse_setup {
@@ -246,8 +246,8 @@ namespace no3::argparse_setup {
       DevSubparsers;
 }  // namespace no3::argparse_setup
 
-extern "C" __attribute__((visibility("default"))) int No3Command(int argc,
-                                                                 char **argv) {
+extern "C" __attribute__((visibility("default"))) auto No3Command(int argc,
+                                                                 char **argv) -> int {
   using namespace argparse_setup;
 
   core::SetColorMode(ansi::IsUsingColors());
@@ -314,7 +314,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.)"
   }
 }
 
-extern "C" __attribute__((visibility("default"))) bool No3Init() {
+extern "C" __attribute__((visibility("default"))) auto No3Init() -> bool {
   static std::atomic<bool> is_initialized = false;
   if (is_initialized) {
     return true;

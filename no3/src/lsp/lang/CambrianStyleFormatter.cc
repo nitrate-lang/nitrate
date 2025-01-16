@@ -13,9 +13,9 @@ using namespace ncc;
 using namespace ncc::parse;
 using namespace ncc::lex;
 
-CambrianFormatter::LineStreamWritter&
+auto
 CambrianFormatter::LineStreamWritter::operator<<(
-    std::ostream& (*func)(std::ostream&)) {
+    std::ostream& (*func)(std::ostream&)) -> CambrianFormatter::LineStreamWritter& {
   qcore_assert(func ==
                static_cast<std::ostream& (*)(std::ostream&)>(std::endl));
 
@@ -25,14 +25,14 @@ CambrianFormatter::LineStreamWritter::operator<<(
   return *this;
 }
 
-CambrianFormatter::LineStreamWritter&
-CambrianFormatter::LineStreamWritter::operator<<(Operator op) {
+auto
+CambrianFormatter::LineStreamWritter::operator<<(Operator op) -> CambrianFormatter::LineStreamWritter& {
   m_line_buffer << op;
   return *this;
 }
 
-CambrianFormatter::LineStreamWritter&
-CambrianFormatter::LineStreamWritter::operator<<(Vis v) {
+auto
+CambrianFormatter::LineStreamWritter::operator<<(Vis v) -> CambrianFormatter::LineStreamWritter& {
   switch (v) {
     case Vis::Sec: {
       m_line_buffer << "sec";
@@ -52,7 +52,7 @@ CambrianFormatter::LineStreamWritter::operator<<(Vis v) {
   return *this;
 }
 
-std::string CambrianFormatter::EscapeCharLiteral(char ch) const {
+auto CambrianFormatter::EscapeCharLiteral(char ch) const -> std::string {
   if (!std::isspace(ch) && !std::isprint(ch)) {
     const char* tab = "0123456789abcdef";
     uint8_t uch = ch;
@@ -86,8 +86,8 @@ std::string CambrianFormatter::EscapeCharLiteral(char ch) const {
   }
 }
 
-std::string CambrianFormatter::EscapeStringLiteralChunk(
-    std::string_view str) const {
+auto CambrianFormatter::EscapeStringLiteralChunk(
+    std::string_view str) const -> std::string {
   std::stringstream ss;
 
   for (char ch : str) {

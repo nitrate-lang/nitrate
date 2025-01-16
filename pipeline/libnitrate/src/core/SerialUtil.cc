@@ -34,7 +34,7 @@
 #include <core/SerialUtil.hh>
 #include <nitrate-core/Logger.hh>
 
-std::string CreateJsonString(std::string_view input) {
+auto CreateJsonString(std::string_view input) -> std::string {
   std::string output = "\"";
   output.reserve(input.length() * 2);
 
@@ -81,7 +81,7 @@ std::string CreateJsonString(std::string_view input) {
   return output;
 }
 
-bool ReadJsonString(std::istream &i, char **str, size_t &len) {
+auto ReadJsonString(std::istream &i, char **str, size_t &len) -> bool {
   size_t cap = 0;
   *str = nullptr;
   len = 0;
@@ -172,7 +172,7 @@ bool ReadJsonString(std::istream &i, char **str, size_t &len) {
     return false;                            \
   }
 
-bool MsgpackWriteUint(std::ostream &o, uint64_t x) {
+auto MsgpackWriteUint(std::ostream &o, uint64_t x) -> bool {
   if (x <= INT8_MAX) {
     o.put(x & 0x7f);
   } else if (x <= UINT8_MAX) {
@@ -203,7 +203,7 @@ bool MsgpackWriteUint(std::ostream &o, uint64_t x) {
   return true;
 }
 
-bool MsgpackReadUint(std::istream &i, uint64_t &x) {
+auto MsgpackReadUint(std::istream &i, uint64_t &x) -> bool {
   x = 0;
 
   uint32_t ch;
@@ -254,7 +254,7 @@ bool MsgpackReadUint(std::istream &i, uint64_t &x) {
   return true;
 }
 
-bool MsgpackWriteStr(std::ostream &o, std::string_view str) {
+auto MsgpackWriteStr(std::ostream &o, std::string_view str) -> bool {
   size_t sz = str.size();
 
   if (sz <= 31) {
@@ -279,7 +279,7 @@ bool MsgpackWriteStr(std::ostream &o, std::string_view str) {
   return true;
 }
 
-bool MsgpackReadStr(std::istream &i, char **str, size_t &len) {
+auto MsgpackReadStr(std::istream &i, char **str, size_t &len) -> bool {
   len = 0;
 
   uint32_t ch;

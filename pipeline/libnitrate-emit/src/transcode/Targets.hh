@@ -40,12 +40,12 @@
 namespace codegen {
   using IRModule = ncc::ir::IRModule;
 
-  bool ForC11(IRModule* module, std::ostream& err, std::ostream& out);
-  bool ForCxx11(IRModule* module, std::ostream& err, std::ostream& out);
-  bool ForTs(IRModule* module, std::ostream& err, std::ostream& out);
-  bool ForRust(IRModule* module, std::ostream& err, std::ostream& out);
-  bool ForPython(IRModule* module, std::ostream& err, std::ostream& out);
-  bool ForCSharp(IRModule* module, std::ostream& err, std::ostream& out);
+  auto ForC11(IRModule* module, std::ostream& err, std::ostream& out) -> bool;
+  auto ForCxx11(IRModule* module, std::ostream& err, std::ostream& out) -> bool;
+  auto ForTs(IRModule* module, std::ostream& err, std::ostream& out) -> bool;
+  auto ForRust(IRModule* module, std::ostream& err, std::ostream& out) -> bool;
+  auto ForPython(IRModule* module, std::ostream& err, std::ostream& out) -> bool;
+  auto ForCSharp(IRModule* module, std::ostream& err, std::ostream& out) -> bool;
 }  // namespace codegen
 
 #endif  // __NITRATE_TARGET_HH__

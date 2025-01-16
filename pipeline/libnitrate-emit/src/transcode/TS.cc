@@ -36,7 +36,7 @@
 #include <nitrate-core/Macro.hh>
 #include <transcode/Targets.hh>
 
-bool codegen::ForTs(IRModule *module, std::ostream &err, std::ostream &out) {
+auto codegen::ForTs(IRModule *module, std::ostream &err, std::ostream &out) -> bool {
   err << "Not implemented";
   return false;
 }

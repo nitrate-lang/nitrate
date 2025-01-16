@@ -296,15 +296,15 @@ class OStreamWriter : public streambuf {
 public:
   OStreamWriter(FILE *file) : m_file(file) {}
 
-  virtual streamsize xsputn(const char *s, streamsize n) override {
+  virtual auto xsputn(const char *s, streamsize n) -> streamsize override {
     return fwrite(s, 1, n, m_file);
   }
 
-  virtual int overflow(int c) override { return fputc(c, m_file); }
+  virtual auto overflow(int c) -> int override { return fputc(c, m_file); }
 
   // Get current position
-  virtual streampos seekoff(streamoff off, ios_base::seekdir way,
-                            ios_base::openmode) override {
+  virtual auto seekoff(streamoff off, ios_base::seekdir way,
+                            ios_base::openmode) -> streampos override {
     if (way == ios_base::cur) {
       if (fseek(m_file, off, SEEK_CUR) == -1) {
         return -1;
@@ -322,7 +322,7 @@ public:
     return ftell(m_file);
   }
 
-  virtual streampos seekpos(streampos sp, ios_base::openmode) override {
+  virtual auto seekpos(streampos sp, ios_base::openmode) -> streampos override {
     if (fseek(m_file, sp, SEEK_SET) == -1) {
       return -1;
     }
@@ -333,8 +333,8 @@ public:
 
 class OStreamDiscard : public streambuf {
 public:
-  virtual streamsize xsputn(const char *, streamsize n) override { return n; }
-  virtual int overflow(int c) override { return c; }
+  virtual auto xsputn(const char *, streamsize n) -> streamsize override { return n; }
+  virtual auto overflow(int c) -> int override { return c; }
 };
 
 class MyPwriteOstream : public raw_pwrite_stream {
@@ -355,7 +355,7 @@ public:
     m_os.seekp(curpos);
   }
 
-  [[nodiscard]] uint64_t current_pos() const override {
+  [[nodiscard]] auto current_pos() const -> uint64_t override {
     auto pos = m_os.tellp();
     qcore_assert(pos != -1, "failed to get current position");
 
@@ -1850,8 +1850,8 @@ public:
 //   return dispatch[N->GetKind()](b, N);
 // }
 
-static bool QcodeAdapter(IRModule *module, QCodegenConfig *conf, FILE *err,
-                         FILE *out, QcodeAdapterFn impl) {
+static auto QcodeAdapter(IRModule *module, QCodegenConfig *conf, FILE *err,
+                         FILE *out, QcodeAdapterFn impl) -> bool {
   unique_ptr<streambuf> err_stream_buf, out_stream_buf;
 
   {
@@ -1896,16 +1896,16 @@ static bool QcodeAdapter(IRModule *module, QCodegenConfig *conf, FILE *err,
   return true;
 }
 
-static optional<unique_ptr<Module>> FabricateLlvmir(IRModule *module,
+static auto FabricateLlvmir(IRModule *module,
                                                     QCodegenConfig *conf,
                                                     ostream &err,
-                                                    raw_ostream &out) {
+                                                    raw_ostream &out) -> optional<unique_ptr<Module>> {
   /// TODO: Implement conversion for node
   qcore_implement();
 }
 
-NCC_EXPORT bool QcodeIR(IRModule *module, QCodegenConfig *conf, FILE *err,
-                        FILE *out) {
+NCC_EXPORT auto QcodeIR(IRModule *module, QCodegenConfig *conf, FILE *err,
+                        FILE *out) -> bool {
   return QcodeAdapter(module, conf, err, out,
                       [](IRModule *m, QCodegenConfig *c, ostream &e,
                          raw_pwrite_stream &o) -> bool {
@@ -1923,8 +1923,8 @@ NCC_EXPORT bool QcodeIR(IRModule *module, QCodegenConfig *conf, FILE *err,
                       });
 }
 
-NCC_EXPORT bool QcodeAsm(IRModule *module, QCodegenConfig *conf, FILE *err,
-                         FILE *out) {
+NCC_EXPORT auto QcodeAsm(IRModule *module, QCodegenConfig *conf, FILE *err,
+                         FILE *out) -> bool {
   return QcodeAdapter(
       module, conf, err, out,
       [](IRModule *m, QCodegenConfig *c, ostream &e,
@@ -2009,8 +2009,8 @@ NCC_EXPORT bool QcodeAsm(IRModule *module, QCodegenConfig *conf, FILE *err,
       });
 }
 
-NCC_EXPORT bool QcodeObj(IRModule *module, QCodegenConfig *conf, FILE *err,
-                         FILE *out) {
+NCC_EXPORT auto QcodeObj(IRModule *module, QCodegenConfig *conf, FILE *err,
+                         FILE *out) -> bool {
   return QcodeAdapter(
       module, conf, err, out,
       [](IRModule *m, QCodegenConfig *c, ostream &e,

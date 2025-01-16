@@ -56,7 +56,7 @@ void no3::core::SetDebugMode(bool debug) {
   GLogConfig.m_show_debug = debug;
 }
 
-bool no3::core::GetDebugMode() {
+auto no3::core::GetDebugMode() -> bool {
   std::lock_guard<std::mutex> lock(GLogMutex);
   return GLogConfig.m_show_debug;
 }
@@ -142,8 +142,8 @@ void no3::core::MyLogSink::send(google::LogSeverity severity, const char*,
   }
 }
 
-std::unique_ptr<std::ostream> no3::core::MyLogSink::RedirectToStream(
-    std::unique_ptr<std::ostream> new_stream) {
+auto no3::core::MyLogSink::RedirectToStream(
+    std::unique_ptr<std::ostream> new_stream) -> std::unique_ptr<std::ostream> {
   std::lock_guard<std::mutex> lock(GLogMutex);
   std::unique_ptr<std::ostream> old_stream = std::move(m_out);
   m_out = std::move(new_stream);

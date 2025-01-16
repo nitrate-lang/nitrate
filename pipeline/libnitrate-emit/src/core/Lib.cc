@@ -43,7 +43,7 @@
 
 static std::atomic<size_t> QcodeLibRefCount = 0;
 
-static bool InitializeLLVM() {
+static auto InitializeLLVM() -> bool {
 #ifdef LLVM_SUUPORT_ALL_TARGETS
   llvm::InitializeAllTargetInfos();
   llvm::InitializeAllTargets();
@@ -65,7 +65,7 @@ static bool InitializeLLVM() {
 
 static void DoinitializeLLVM() { llvm::llvm_shutdown(); }
 
-static bool DoInit() {
+static auto DoInit() -> bool {
   if (!InitializeLLVM()) {
     return false;
   }
@@ -75,7 +75,7 @@ static bool DoInit() {
 
 static void DoDeinit() { DoinitializeLLVM(); }
 
-extern "C" NCC_EXPORT bool QcodeLibInit() {
+extern "C" NCC_EXPORT auto QcodeLibInit() -> bool {
   if (QcodeLibRefCount++ > 1) {
     return true;
   }
@@ -97,7 +97,7 @@ extern "C" NCC_EXPORT void QcodeLibDeinit() {
   ncc::CoreLibrary.DeinitRC();
 }
 
-extern "C" NCC_EXPORT const char* QcodeLibVersion() {
+extern "C" NCC_EXPORT auto QcodeLibVersion() -> const char* {
   static const char* version_string =
 
       "[" __TARGET_VERSION
@@ -145,4 +145,4 @@ extern "C" NCC_EXPORT const char* QcodeLibVersion() {
   return version_string;
 }
 
-extern "C" NCC_EXPORT const char* QcodeStrerror() { return ""; }
+extern "C" NCC_EXPORT auto QcodeStrerror() -> const char* { return ""; }

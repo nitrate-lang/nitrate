@@ -53,7 +53,7 @@ public:
 
   ~GitConfig() { git_config_free(m_config); }
 
-  bool SetString(const char *key, const char *value) {
+  auto SetString(const char *key, const char *value) -> bool {
     return git_config_set_string(m_config, key, value) == 0;
   }
 
@@ -72,9 +72,9 @@ public:
 
   ~GitRepository() { git_repository_free(m_repo); }
 
-  [[nodiscard]] bool DidInit() const { return m_repo != nullptr; }
+  [[nodiscard]] auto DidInit() const -> bool { return m_repo != nullptr; }
 
-  std::optional<GitConfig> GetConfig() {
+  auto GetConfig() -> std::optional<GitConfig> {
     git_config *config;
     if (git_repository_config(&config, m_repo) != 0) {
       return std::nullopt;
@@ -84,7 +84,7 @@ public:
   }
 };
 
-static std::string GenerateUUIDv4() {
+static auto GenerateUUIDv4() -> std::string {
   std::random_device rd;
   std::mt19937 gen(rd());
   std::uniform_int_distribution<> dis(0, 15);
@@ -108,7 +108,7 @@ static std::string GenerateUUIDv4() {
   return ss.str();
 }
 
-static bool CreatePackageRepository(const char *path, PackageType type) {
+static auto CreatePackageRepository(const char *path, PackageType type) -> bool {
   static constexpr std::array kPackageTypes = {"application", "staticlib",
                                                "sharedlib"};
 
@@ -136,31 +136,31 @@ static bool CreatePackageRepository(const char *path, PackageType type) {
   return true;
 }
 
-bool no3::init::Package::ValidateName(const std::string &name) {
+auto no3::init::Package::ValidateName(const std::string &name) -> bool {
   static std::regex regex("^[a-zA-Z0-9_-]+$");
   return std::regex_match(name, regex);
 }
 
-bool no3::init::Package::ValidateVersion(const std::string &version) {
+auto no3::init::Package::ValidateVersion(const std::string &version) -> bool {
   static std::regex regex("^[0-9]+\\.[0-9]+\\.[0-9]+$");
   return std::regex_match(version, regex);
 }
 
-bool no3::init::Package::ValidateEmail(const std::string &email) {
+auto no3::init::Package::ValidateEmail(const std::string &email) -> bool {
   static std::regex regex("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$");
   return std::regex_match(email, regex);
 }
 
-bool no3::init::Package::ValidateUrl(const std::string &url) {
+auto no3::init::Package::ValidateUrl(const std::string &url) -> bool {
   static std::regex regex("^(http|https)://.*$");
   return std::regex_match(url, regex);
 }
 
-bool no3::init::Package::ValidateLicense(const std::string &license) {
+auto no3::init::Package::ValidateLicense(const std::string &license) -> bool {
   return conf::SPDX_IDENTIFIERS.contains(license);
 }
 
-bool no3::init::Package::WriteGitIgnore() {
+auto no3::init::Package::WriteGitIgnore() -> bool {
   std::ofstream gitignore((m_output / m_name / ".gitignore").string());
   if (!gitignore.is_open()) {
     LOG(ERROR) << "Failed to create .gitignore file";
@@ -176,7 +176,7 @@ bool no3::init::Package::WriteGitIgnore() {
   return true;
 }
 
-bool no3::init::Package::WriteMain() {
+auto no3::init::Package::WriteMain() -> bool {
   if (!std::filesystem::create_directories(m_output / m_name / "src")) {
     LOG(ERROR) << "Failed to create package directories";
     return false;
@@ -200,7 +200,7 @@ pub "std" fn main(args: [str]): i32 {
   return true;
 }
 
-bool no3::init::Package::WriteReadme() {
+auto no3::init::Package::WriteReadme() -> bool {
   std::ofstream readme((m_output / m_name / "README.md").string());
   if (!readme.is_open()) {
     LOG(ERROR) << "Failed to create README file";
@@ -247,7 +247,7 @@ bool no3::init::Package::WriteReadme() {
   return true;
 }
 
-bool no3::init::Package::WriteConfig() {
+auto no3::init::Package::WriteConfig() -> bool {
   conf::ConfigGroup grp;
 
   grp.Set("version", 1);
@@ -299,7 +299,7 @@ bool no3::init::Package::WriteConfig() {
   return true;
 }
 
-bool no3::init::Package::CreatePackage() {
+auto no3::init::Package::CreatePackage() -> bool {
   switch (m_type) {
     case PackageType::PROGRAM:
       LOG(INFO) << "Creating program package";
@@ -341,7 +341,7 @@ bool no3::init::Package::CreatePackage() {
   }
 }
 
-bool no3::init::Package::Create() {
+auto no3::init::Package::Create() -> bool {
   if (!ValidateName(m_name)) {
     LOG(ERROR) << "Invalid package name: " << m_name;
     return false;
@@ -389,71 +389,71 @@ bool no3::init::Package::Create() {
   return CreatePackage();
 }
 
-no3::init::PackageBuilder &no3::init::PackageBuilder::Output(
-    const std::string &output) {
+auto no3::init::PackageBuilder::Output(
+    const std::string &output) -> no3::init::PackageBuilder & {
   m_output = output;
   return *this;
 }
 
-no3::init::PackageBuilder &no3::init::PackageBuilder::Name(
-    const std::string &name) {
+auto no3::init::PackageBuilder::Name(
+    const std::string &name) -> no3::init::PackageBuilder & {
   m_name = name;
   return *this;
 }
 
-no3::init::PackageBuilder &no3::init::PackageBuilder::License(
-    const std::string &license) {
+auto no3::init::PackageBuilder::License(
+    const std::string &license) -> no3::init::PackageBuilder & {
   m_license = license;
   return *this;
 }
 
-no3::init::PackageBuilder &no3::init::PackageBuilder::Author(
-    const std::string &author) {
+auto no3::init::PackageBuilder::Author(
+    const std::string &author) -> no3::init::PackageBuilder & {
   m_author = author;
   return *this;
 }
 
-no3::init::PackageBuilder &no3::init::PackageBuilder::Email(
-    const std::string &email) {
+auto no3::init::PackageBuilder::Email(
+    const std::string &email) -> no3::init::PackageBuilder & {
   m_email = email;
   return *this;
 }
 
-no3::init::PackageBuilder &no3::init::PackageBuilder::Url(
-    const std::string &url) {
+auto no3::init::PackageBuilder::Url(
+    const std::string &url) -> no3::init::PackageBuilder & {
   m_url = url;
   return *this;
 }
 
-no3::init::PackageBuilder &no3::init::PackageBuilder::Version(
-    const std::string &version) {
+auto no3::init::PackageBuilder::Version(
+    const std::string &version) -> no3::init::PackageBuilder & {
   m_version = version;
   return *this;
 }
 
-no3::init::PackageBuilder &no3::init::PackageBuilder::Description(
-    const std::string &description) {
+auto no3::init::PackageBuilder::Description(
+    const std::string &description) -> no3::init::PackageBuilder & {
   m_description = description;
   return *this;
 }
 
-no3::init::PackageBuilder &no3::init::PackageBuilder::Type(
-    no3::init::PackageType type) {
+auto no3::init::PackageBuilder::Type(
+    no3::init::PackageType type) -> no3::init::PackageBuilder & {
   m_type = type;
   return *this;
 }
 
-no3::init::PackageBuilder &no3::init::PackageBuilder::Verbose(bool verbose) {
+auto no3::init::PackageBuilder::Verbose(bool verbose) -> no3::init::PackageBuilder & {
   m_verbose = verbose;
   return *this;
 }
 
-no3::init::PackageBuilder &no3::init::PackageBuilder::Force(bool force) {
+auto no3::init::PackageBuilder::Force(bool force) -> no3::init::PackageBuilder & {
   m_force = force;
   return *this;
 }
 
-no3::init::Package no3::init::PackageBuilder::Build() {
+auto no3::init::PackageBuilder::Build() -> no3::init::Package {
   return {m_output,  m_name,        m_license, m_author,  m_email, m_url,
           m_version, m_description, m_type,    m_verbose, m_force};
 }

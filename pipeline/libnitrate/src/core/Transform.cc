@@ -63,7 +63,7 @@ static const std::unordered_map<std::string_view, nit::TransformFunc>
 
 ///============================================================================///
 
-extern bool NitLibInit();
+extern auto NitLibInit() -> bool;
 extern void NitDeinit();
 
 class LibraryInitRAII {
@@ -77,11 +77,11 @@ public:
     }
   }
 
-  [[nodiscard]] bool IsInitialized() const { return m_ok; }
+  [[nodiscard]] auto IsInitialized() const -> bool { return m_ok; }
 };
 
-static std::optional<std::vector<std::string>> ParseOptions(
-    const char *const *options) {
+static auto ParseOptions(
+    const char *const *options) -> std::optional<std::vector<std::string>> {
   constexpr size_t kMaxOptions = 100000;
 
   if (options == nullptr) {
@@ -103,9 +103,9 @@ static std::optional<std::vector<std::string>> ParseOptions(
   return opts;
 }
 
-static bool NitDispatchRequest(std::istream &in, std::ostream &out,
+static auto NitDispatchRequest(std::istream &in, std::ostream &out,
                                const char *transform, let opts_set,
-                               const std::shared_ptr<ncc::Environment> &env) {
+                               const std::shared_ptr<ncc::Environment> &env) -> bool {
   if (!DISPATCH_FUNCS.contains(transform)) {
     qcore_logf(QCORE_ERROR, "Unknown transform name in options: %s", transform);
     return false;
@@ -119,9 +119,9 @@ static bool NitDispatchRequest(std::istream &in, std::ostream &out,
   return is_success;
 }
 
-static bool NitPipelineStream(std::istream &in, std::ostream &out,
+static auto NitPipelineStream(std::istream &in, std::ostream &out,
                               nitrate::DiagnosticFunc diag_cb,
-                              const char *const *const c_options) {
+                              const char *const *const c_options) -> bool {
   errno = 0;
 
   /***************************************************************************/
@@ -164,9 +164,9 @@ static bool NitPipelineStream(std::istream &in, std::ostream &out,
   return status;
 }
 
-NCC_EXPORT nitrate::LazyResult<bool> nitrate::Pipeline(
+NCC_EXPORT auto nitrate::Pipeline(
     std::istream &in, std::ostream &out, std::vector<std::string> options,
-    std::optional<DiagnosticFunc> diag) {
+    std::optional<DiagnosticFunc> diag) -> nitrate::LazyResult<bool> {
   return {[&in, &out, options = std::move(options),
            diag_func = std::move(diag)]() -> bool {
     /* Convert options to C strings */
@@ -182,9 +182,9 @@ NCC_EXPORT nitrate::LazyResult<bool> nitrate::Pipeline(
   }};
 }
 
-NCC_EXPORT nitrate::LazyResult<bool> nitrate::Chain(
+NCC_EXPORT auto nitrate::Chain(
     std::istream &in, std::ostream &out, ChainOptions operations,
-    std::optional<DiagnosticFunc> diag, bool) {
+    std::optional<DiagnosticFunc> diag, bool) -> nitrate::LazyResult<bool> {
   return {[&in, &out, operations = std::move(operations),
            diag_func = std::move(diag)]() -> bool {
     if (operations.empty()) {
@@ -217,9 +217,9 @@ NCC_EXPORT nitrate::LazyResult<bool> nitrate::Chain(
 
 ///============================================================================///
 
-extern "C" NCC_EXPORT bool NitPipeline(FILE *in, FILE *out, NitDiagFunc diag_cb,
+extern "C" NCC_EXPORT auto NitPipeline(FILE *in, FILE *out, NitDiagFunc diag_cb,
                                        void *opaque,
-                                       const char *const c_options[]) {
+                                       const char *const c_options[]) -> bool {
   class FileStreamBuf : public std::streambuf {
     FILE *m_file;
     char m_c = 0;
@@ -228,7 +228,7 @@ extern "C" NCC_EXPORT bool NitPipeline(FILE *in, FILE *out, NitDiagFunc diag_cb,
     FileStreamBuf(FILE *file) : m_file(file) { errno = 0; }
     ~FileStreamBuf() override = default;
 
-    int_type overflow(int_type ch) override {
+    auto overflow(int_type ch) -> int_type override {
       if (ch != EOF) {
         char temp = ch;
         if (fwrite(&temp, 1, 1, m_file) != 1) {
@@ -246,7 +246,7 @@ extern "C" NCC_EXPORT bool NitPipeline(FILE *in, FILE *out, NitDiagFunc diag_cb,
       return ch;
     }
 
-    std::streamsize xsputn(const char *s, std::streamsize count) override {
+    auto xsputn(const char *s, std::streamsize count) -> std::streamsize override {
       std::streamsize written = 0;
       while (written < count) {
         size_t n = fwrite(s + written, 1, count - written, m_file);
@@ -267,7 +267,7 @@ extern "C" NCC_EXPORT bool NitPipeline(FILE *in, FILE *out, NitDiagFunc diag_cb,
       return written;
     }
 
-    int_type underflow() override {
+    auto underflow() -> int_type override {
       if (gptr() == nullptr || gptr() >= egptr()) {
         size_t res = fread(&m_c, 1, 1, m_file);
         if (res == 0) {
@@ -284,7 +284,7 @@ extern "C" NCC_EXPORT bool NitPipeline(FILE *in, FILE *out, NitDiagFunc diag_cb,
       return traits_type::to_int_type(*gptr());
     }
 
-    std::streamsize xsgetn(char *s, std::streamsize count) override {
+    auto xsgetn(char *s, std::streamsize count) -> std::streamsize override {
       std::streamsize bytes_read = 0;
       while (bytes_read < count) {
         size_t n = fread(s + bytes_read, 1, count - bytes_read, m_file);

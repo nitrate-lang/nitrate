@@ -50,7 +50,7 @@ namespace no3::conf {
      * @return std::optional<Config> Configuration object
      * @note If any error occurs, the function returns an empty optional.
      */
-    std::optional<Config> Parsef(const std::string &filepath);
+    auto Parsef(const std::string &filepath) -> std::optional<Config>;
 
     /**
      * @brief Parse NO3 package configuration content
@@ -59,7 +59,7 @@ namespace no3::conf {
      * @return std::optional<Config> Configuration object
      * @note If any error occurs, the function returns an empty optional.
      */
-    virtual std::optional<Config> Parse(const std::string &content) = 0;
+    virtual auto Parse(const std::string &content) -> std::optional<Config> = 0;
   };
 
   class YamlConfigParser : public IParser {
@@ -71,7 +71,7 @@ namespace no3::conf {
      * @return std::optional<Config> Configuration object
      * @note If any error occurs, the function returns an empty optional.
      */
-    std::optional<Config> Parse(const std::string &content) override;
+    auto Parse(const std::string &content) -> std::optional<Config> override;
   };
 }  // namespace no3::conf
 

@@ -18,13 +18,13 @@ private:
   Configuration() = default;
 
 public:
-  static Configuration Defaults() {
+  static auto Defaults() -> Configuration {
     Configuration config;
     return config;
   }
 };
 
-std::optional<Configuration> ParseConfig(const std::string& path);
+auto ParseConfig(const std::string& path) -> std::optional<Configuration>;
 
 enum class ConnectionType { Pipe, Port, Stdio };
 
@@ -48,8 +48,8 @@ public:
 using Connection =
     std::pair<std::unique_ptr<BufIStream>, std::unique_ptr<BufOStream>>;
 
-std::optional<Connection> OpenConnection(ConnectionType type,
-                                         const std::string& param);
+auto OpenConnection(ConnectionType type,
+                                         const std::string& param) -> std::optional<Connection>;
 
 namespace lsp {
   enum class MessageType { Request, Notification };
@@ -61,7 +61,7 @@ namespace lsp {
     Message(MessageType type) : m_type(type) {}
     virtual ~Message() = default;
 
-    [[nodiscard]] MessageType Type() const { return m_type; }
+    [[nodiscard]] auto Type() const -> MessageType { return m_type; }
   };
 
   using MessageId = std::variant<std::string, int64_t>;
@@ -79,9 +79,9 @@ namespace lsp {
           m_params(std::move(params)) {}
     ~RequestMessage() override = default;
 
-    [[nodiscard]] const MessageId& Id() const { return m_id; }
-    [[nodiscard]] const std::string& Method() const { return m_method; }
-    [[nodiscard]] const rapidjson::Document& Params() const { return m_params; }
+    [[nodiscard]] auto Id() const -> const MessageId& { return m_id; }
+    [[nodiscard]] auto Method() const -> const std::string& { return m_method; }
+    [[nodiscard]] auto Params() const -> const rapidjson::Document& { return m_params; }
 
     void Print(std::ostream& os) const {
       os << "{\"id\": ";
@@ -105,8 +105,8 @@ namespace lsp {
           m_params(std::move(params)) {}
     ~NotificationMessage() override = default;
 
-    [[nodiscard]] const std::string& Method() const { return m_method; }
-    [[nodiscard]] const rapidjson::Document& Params() const { return m_params; }
+    [[nodiscard]] auto Method() const -> const std::string& { return m_method; }
+    [[nodiscard]] auto Params() const -> const rapidjson::Document& { return m_params; }
 
     void Print(std::ostream& os) const {
       os << R"({"method": ")" << m_method << "\"}";
@@ -236,7 +236,7 @@ namespace lsp {
       }
     }
 
-    static ResponseMessage FromRequest(const RequestMessage& request) {
+    static auto FromRequest(const RequestMessage& request) -> ResponseMessage {
       ResponseMessage response;
       response.m_id = request.Id();
       return response;
@@ -244,11 +244,11 @@ namespace lsp {
 
     ~ResponseMessage() override = default;
 
-    [[nodiscard]] const MessageId& Id() const { return m_id; }
-    std::optional<rapidjson::Document>& Result() { return m_result; }
-    std::optional<ResponseError>& Error() { return m_error; }
+    [[nodiscard]] auto Id() const -> const MessageId& { return m_id; }
+    auto Result() -> std::optional<rapidjson::Document>& { return m_result; }
+    auto Error() -> std::optional<ResponseError>& { return m_error; }
 
-    [[nodiscard]] std::string ToString() const {
+    [[nodiscard]] auto ToString() const -> std::string {
       rapidjson::StringBuffer buffer;
       rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
       rapidjson::Document doc(rapidjson::kObjectType);
@@ -285,14 +285,14 @@ namespace lsp {
       return buffer.GetString();
     }
 
-    rapidjson::Document* operator->() {
+    auto operator->() -> rapidjson::Document* {
       if (!m_result.has_value()) {
         m_result = rapidjson::Document(rapidjson::kObjectType);
       }
       return &m_result.value();
     }
 
-    rapidjson::Document& operator*() {
+    auto operator*() -> rapidjson::Document& {
       if (!m_result.has_value()) {
         m_result = rapidjson::Document(rapidjson::kObjectType);
       }
@@ -329,7 +329,7 @@ class ServerContext {
   void HandleRequest(const lsp::RequestMessage& request, std::ostream& out);
   void HandleNotification(const lsp::NotificationMessage& notif);
 
-  std::optional<std::unique_ptr<lsp::Message>> NextMessage(std::istream& in);
+  auto NextMessage(std::istream& in) -> std::optional<std::unique_ptr<lsp::Message>>;
 
   void Dispatch(std::shared_ptr<lsp::Message> message, std::ostream& out);
 
@@ -337,7 +337,7 @@ public:
   ServerContext(const ServerContext&) = delete;
   ServerContext(ServerContext&&) = delete;
 
-  static ServerContext& The();
+  static auto The() -> ServerContext&;
 
   [[noreturn]] void StartServer(Connection& io);
 

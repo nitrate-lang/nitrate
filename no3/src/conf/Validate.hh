@@ -38,7 +38,7 @@
 #include <filesystem>
 
 namespace no3::conf {
-  bool ValidateConfig(const Config &config, const std::filesystem::path &base);
+  auto ValidateConfig(const Config &config, const std::filesystem::path &base) -> bool;
   void PopulateConfig(Config &config);
 }  // namespace no3::conf
 

@@ -19,7 +19,7 @@ public:
   void Start();
   void QueueJob(const std::function<void(std::stop_token)>& job);
   void Stop();
-  bool Busy();
+  auto Busy() -> bool;
 
 private:
   void ThreadLoop(std::stop_token);

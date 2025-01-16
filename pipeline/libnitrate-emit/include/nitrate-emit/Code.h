@@ -69,17 +69,17 @@ typedef enum {
  * Both `err` and `out` will be flushed before returning, irrespective of the
  * return value.
  */
-bool QcodeTranscode(ncc::ir::IRModule* module, QCodegenConfig* conf,
-                    QcodeLangT lang, QcodeStyleT style, FILE* err, FILE* out);
+auto QcodeTranscode(ncc::ir::IRModule* module, QCodegenConfig* conf,
+                    QcodeLangT lang, QcodeStyleT style, FILE* err, FILE* out) -> bool;
 
 ///==============================================================================
 
-bool QcodeIR(ncc::ir::IRModule* module, QCodegenConfig* conf, FILE* err,
-             FILE* out);
-bool QcodeAsm(ncc::ir::IRModule* module, QCodegenConfig* conf, FILE* err,
-              FILE* out);
-bool QcodeObj(ncc::ir::IRModule* module, QCodegenConfig* conf, FILE* err,
-              FILE* out);
+auto QcodeIR(ncc::ir::IRModule* module, QCodegenConfig* conf, FILE* err,
+             FILE* out) -> bool;
+auto QcodeAsm(ncc::ir::IRModule* module, QCodegenConfig* conf, FILE* err,
+              FILE* out) -> bool;
+auto QcodeObj(ncc::ir::IRModule* module, QCodegenConfig* conf, FILE* err,
+              FILE* out) -> bool;
 
 ///==============================================================================
 

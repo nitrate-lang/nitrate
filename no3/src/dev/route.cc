@@ -81,7 +81,7 @@ namespace no3::benchmark {
   };
 
   template <typename T>
-  static Statistic<T> CalculateStatistic(const std::vector<T> &data) {
+  static auto CalculateStatistic(const std::vector<T> &data) -> Statistic<T> {
     T mean = 0.0;
     for (const auto &value : data) {
       mean += value;
@@ -97,7 +97,7 @@ namespace no3::benchmark {
     return {mean, variance, std::sqrt(variance)};
   }
 
-  static size_t LexerBenchmarkRound(std::shared_ptr<Environment> &env) {
+  static auto LexerBenchmarkRound(std::shared_ptr<Environment> &env) -> size_t {
     std::stringstream source(LexicalBenchmarkSource);
     Tokenizer tokenizer(source, env);
 
@@ -110,7 +110,7 @@ namespace no3::benchmark {
     return tokens;
   }
 
-  static int LexerBenchmark(std::shared_ptr<Environment> &env) {
+  static auto LexerBenchmark(std::shared_ptr<Environment> &env) -> int {
     size_t rounds = 128, total_tokens = 0;
     std::vector<double> times;
 
@@ -196,7 +196,7 @@ namespace no3::benchmark {
     }
   }
 
-  static int ParserBenchmark(std::shared_ptr<Environment> &env) {
+  static auto ParserBenchmark(std::shared_ptr<Environment> &env) -> int {
     size_t rounds = 128;
     std::vector<double> times;
 
@@ -259,8 +259,8 @@ namespace no3::benchmark {
     PIPELINE
   };
 
-  static int DoBenchmark(std::shared_ptr<Environment> &env,
-                         Benchmark bench_type) {
+  static auto DoBenchmark(std::shared_ptr<Environment> &env,
+                         Benchmark bench_type) -> int {
     int r = -1;
 
     switch (bench_type) {
@@ -309,8 +309,8 @@ namespace no3::benchmark {
   }
 }  // namespace no3::benchmark
 
-static int DoParse(std::shared_ptr<Environment> &env, std::string source,
-                   std::ostream &output, bool verbose) {
+static auto DoParse(std::shared_ptr<Environment> &env, std::string source,
+                   std::ostream &output, bool verbose) -> int {
   std::fstream file(source, std::ios::in);
   if (!file.is_open()) {
     LOG(ERROR) << "Failed to open source file: " << source;
@@ -333,8 +333,8 @@ static int DoParse(std::shared_ptr<Environment> &env, std::string source,
   return 0;
 }
 
-static int DoNr(std::shared_ptr<Environment> &env, std::string source,
-                std::ostream &output, std::string opts) {
+static auto DoNr(std::shared_ptr<Environment> &env, std::string source,
+                std::ostream &output, std::string opts) -> int {
   if (!opts.empty()) {
     LOG(ERROR) << "Options are not implemented yet";
   }
@@ -362,8 +362,8 @@ static int DoNr(std::shared_ptr<Environment> &env, std::string source,
   return 0;
 }
 
-static int DoCodegen(std::shared_ptr<Environment> &env, std::string source,
-                     std::string output, std::string opts, std::string target) {
+static auto DoCodegen(std::shared_ptr<Environment> &env, std::string source,
+                     std::string output, std::string opts, std::string target) -> int {
   if (!opts.empty()) {
     LOG(ERROR) << "Options are not implemented yet";
   }
@@ -429,17 +429,17 @@ static int DoCodegen(std::shared_ptr<Environment> &env, std::string source,
   return 0;
 }
 
-static int DoDevTest() {
+static auto DoDevTest() -> int {
   /// TODO: Implement testing
   LOG(ERROR) << "The integrated test suite is not implemented yet";
   return 1;
 }
 
 namespace no3::router {
-  int RunDevMode(
+  auto RunDevMode(
       const ArgumentParser &parser,
       const std::unordered_map<std::string_view,
-                               std::unique_ptr<ArgumentParser>> &subparsers) {
+                               std::unique_ptr<ArgumentParser>> &subparsers) -> int {
     ncc::Log += [&](auto msg, auto sev, const auto &ec) {
       if (core::GetDebugMode() || sev > Debug) {
         std::cerr << ec.Format(msg, sev).c_str() << std::endl;

@@ -34,13 +34,13 @@
 #include <core/ANSI.hh>
 #include <iostream>
 
-no3::ansi::AnsiOut no3::ansi::AnsiOut::Newline() {
+auto no3::ansi::AnsiOut::Newline() -> no3::ansi::AnsiOut {
   m_out << "\n";
   m_out.flush();
   return *this;
 }
 
-no3::ansi::AnsiOut &no3::ansi::AnsiOut::operator<<(const std::string &str) {
+auto no3::ansi::AnsiOut::operator<<(const std::string &str) -> no3::ansi::AnsiOut & {
   std::stringstream ansi_str;
 
   ansi_str << "\x1b[";
@@ -131,7 +131,7 @@ no3::ansi::AnsiOut &no3::ansi::AnsiOut::operator<<(const std::string &str) {
   return *this;
 }
 
-bool no3::ansi::IsUsingColors() {
+auto no3::ansi::IsUsingColors() -> bool {
   const char *no_color = getenv("NO_COLOR");
   return no_color == nullptr || no_color[0] == '\0';
 }

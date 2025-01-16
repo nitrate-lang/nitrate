@@ -47,7 +47,7 @@
 using namespace ncc::lex;
 using namespace ncc::parse;
 
-static inline Token EofTok() { return Token::EndOfFile(); }
+static inline auto EofTok() -> Token { return Token::EndOfFile(); }
 
 class DeserializerAdapterLexer final : public ncc::lex::IScanner {
   static constexpr std::array<uint8_t, 256> kValidTyIdTab = []() {
@@ -80,7 +80,7 @@ class DeserializerAdapterLexer final : public ncc::lex::IScanner {
   bool m_eof_bit;
   std::istream &m_file;
 
-  Token Decode(TokenType t, const std::string &data) {
+  auto Decode(TokenType t, const std::string &data) -> Token {
     Token r;
 
     switch (t) {
@@ -148,7 +148,7 @@ class DeserializerAdapterLexer final : public ncc::lex::IScanner {
     return r;
   }
 
-  Token NextImplJson() {
+  auto NextImplJson() -> Token {
     if (m_eof_bit) [[unlikely]] {
       return EofTok();
     }
@@ -204,7 +204,7 @@ class DeserializerAdapterLexer final : public ncc::lex::IScanner {
     return EofTok();
   }
 
-  Token NextImplMsgpack() {
+  auto NextImplMsgpack() -> Token {
     if (m_eof_bit || !m_ele_count) [[unlikely]] {
       return EofTok();
     }
@@ -250,7 +250,7 @@ class DeserializerAdapterLexer final : public ncc::lex::IScanner {
     return EofTok();
   }
 
-  virtual Token GetNext() override {
+  virtual auto GetNext() -> Token override {
     switch (m_mode) {
       case InMode::JSON: {
         return NextImplJson();
