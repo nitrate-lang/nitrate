@@ -181,7 +181,7 @@ namespace ncc {
       [[nodiscard]] constexpr auto get() const {  // NOLINT
         return m_s.m_ref;
       }
-      constexpr operator bool() const { return m_s.m_ref != 0; }
+      constexpr operator bool() const { return m_s.m_ref != nullptr; }
 
       ///=========================================================================
       /// Casting

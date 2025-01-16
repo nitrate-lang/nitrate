@@ -198,7 +198,7 @@ std::optional<std::pair<string, bool>> Parser::PImpl::RecurseFunctionCapture() {
 
 std::tuple<ExpressionList, FnCaptures, Purity, string>
 Parser::PImpl::RecurseFunctionAmbigouis() {
-  enum class State {
+  enum class State : uint8_t {
     Ground,
     AttributesSection,
     CaptureSection,

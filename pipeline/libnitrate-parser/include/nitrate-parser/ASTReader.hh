@@ -184,7 +184,7 @@ namespace ncc::parse {
       constexpr StrongBool operator||(StrongBool o) const {
         return {m_val || o.m_val};
       }
-      constexpr operator bool() { return m_val; }
+      constexpr operator bool() const { return m_val; }
     };
 
     template <typename ValueType>
@@ -224,7 +224,7 @@ namespace ncc::parse {
 
   public:
     AstReader(NextFunc data_source, ReaderSourceManager source_manager)
-        : m_next_func(data_source), m_source(source_manager) {}
+        : m_next_func(std::move(data_source)), m_source(source_manager) {}
     virtual ~AstReader() = default;
 
     std::optional<FlowPtr<Base>> Get();

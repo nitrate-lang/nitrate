@@ -51,7 +51,7 @@ namespace ncc::parse {
     void DoubleImpl(double val);
     void BoolImpl(bool val);
     void NullImpl();
-    void BeginObjImpl(size_t pair_count);
+    void BeginObjImpl(size_t size);
     void EndObjImpl();
     void BeginArrImpl(size_t size);
     void EndArrImpl();
@@ -59,18 +59,16 @@ namespace ncc::parse {
   public:
     AstHash64()
         : AstWriter(
-              std::bind(&AstHash64::StrImpl, this, std::placeholders::_1),
-              std::bind(&AstHash64::UintImpl, this, std::placeholders::_1),
-              std::bind(&AstHash64::DoubleImpl, this, std::placeholders::_1),
-              std::bind(&AstHash64::BoolImpl, this, std::placeholders::_1),
-              std::bind(&AstHash64::NullImpl, this),
-              std::bind(&AstHash64::BeginObjImpl, this,
-                        std::placeholders::_1),
-              std::bind(&AstHash64::EndObjImpl, this),
-              std::bind(&AstHash64::BeginArrImpl, this,
-                        std::placeholders::_1),
-              std::bind(&AstHash64::EndArrImpl, this)) {}
-    virtual ~AstHash64() = default;
+              [this](auto&& x) { StrImpl(std::forward<decltype(x)>(x)); },
+              [this](auto&& x) { UintImpl(std::forward<decltype(x)>(x)); },
+              [this](auto&& x) { DoubleImpl(std::forward<decltype(x)>(x)); },
+              [this](auto&& x) { BoolImpl(std::forward<decltype(x)>(x)); },
+              [this] { NullImpl(); },
+              [this](auto&& x) { BeginObjImpl(std::forward<decltype(x)>(x)); },
+              [this] { EndObjImpl(); },
+              [this](auto&& x) { BeginArrImpl(std::forward<decltype(x)>(x)); },
+              [this] { EndArrImpl(); }) {}
+    ~AstHash64() override = default;
 
     uint64_t Get() {
       boost::uuids::detail::sha1::digest_type digest;

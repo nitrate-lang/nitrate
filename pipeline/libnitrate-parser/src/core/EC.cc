@@ -39,9 +39,7 @@ using namespace ncc::lex;
 
 static thread_local IScanner *GCurrentScanner = nullptr;
 
-void ParserSetCurrentScanner(IScanner *scanner) {
-  GCurrentScanner = scanner;
-}
+void ParserSetCurrentScanner(IScanner *scanner) { GCurrentScanner = scanner; }
 
 static constexpr std::optional<std::string> UnescapeStringSlice(
     std::string_view &buf) {
@@ -104,8 +102,9 @@ static constexpr std::optional<std::string> UnescapeStringSlice(
             return std::nullopt;
           }
 
-          char hex[2] = {buf[0], buf[1]};
-          if (!std::isxdigit(hex[0]) || !std::isxdigit(hex[1])) [[unlikely]] {
+          std::array hex = {buf[0], buf[1]};
+          if ((std::isxdigit(hex[0]) == 0) || (std::isxdigit(hex[1]) == 0))
+              [[unlikely]] {
             return std::nullopt;
           }
 
@@ -143,7 +142,7 @@ static std::optional<std::pair<Token, std::string>> FindAndDecodeToken(
   }
 
   int type = 0;
-  while (std::isdigit(buf[0])) {
+  while (std::isdigit(buf[0]) != 0) {
     type = type * 10 + (buf[0] - '0');
     buf.remove_prefix(1);
 
@@ -162,7 +161,7 @@ static std::optional<std::pair<Token, std::string>> FindAndDecodeToken(
   }
 
   int posid = 0;
-  while (std::isdigit(buf[0])) {
+  while (std::isdigit(buf[0]) != 0) {
     posid = posid * 10 + (buf[0] - '0');
     buf.remove_prefix(1);
 
@@ -232,24 +231,25 @@ static std::optional<std::pair<Token, std::string>> FindAndDecodeToken(
   }
 }
 
-NCC_EXPORT std::string ncc::parse::ec::Formatter(std::string_view message_raw,
-                                                 Sev) {
+NCC_EXPORT std::string ncc::parse::ec::Formatter(std::string_view msg, Sev) {
   IScanner *rd = GCurrentScanner;
 
-  if (rd) {
-    auto result_opt = FindAndDecodeToken(message_raw);
+  if (rd != nullptr) {
+    auto result_opt = FindAndDecodeToken(msg);
     Token tok;
     std::string message;
     if (result_opt.has_value()) {
       tok = result_opt.value().first;
       message = result_opt.value().second;
     } else {
-      message = message_raw;
+      message = msg;
     }
 
-    auto token_start = rd->Start(tok), token_end = rd->End(tok);
+    auto token_start = rd->Start(tok);
+    auto token_end = rd->End(tok);
     auto start_filename = token_start.GetFilename();
-    auto start_line = token_start.GetRow(), start_col = token_start.GetCol();
+    auto start_line = token_start.GetRow();
+    auto start_col = token_start.GetCol();
     auto end_line = token_end.GetRow();
 
     std::stringstream ss;
@@ -261,8 +261,8 @@ NCC_EXPORT std::string ncc::parse::ec::Formatter(std::string_view message_raw,
     ss << "\x1b[37;1m" << message << "\x1b[0m";
 
     if (start_line != kLexEof) {
-      IScanner::Point start_pos(start_line == 0 ? 0 : start_line - 1, 0),
-          end_pos;
+      IScanner::Point start_pos(start_line == 0 ? 0 : start_line - 1, 0);
+      IScanner::Point end_pos;
 
       if (end_line != kLexEof) {
         end_pos = IScanner::Point(end_line + 1, -1);
@@ -285,7 +285,7 @@ NCC_EXPORT std::string ncc::parse::ec::Formatter(std::string_view message_raw,
     }
 
     return ss.str();
-  } else {
-    return std::string(message_raw);
   }
+
+  return std::string(msg);
 }

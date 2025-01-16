@@ -42,7 +42,7 @@ using namespace ncc;
 using namespace ncc::parse;
 using namespace ncc::lex;
 
-void AstWriter::WriteSourceLocation(FlowPtr<Base> n) const {
+void AstWriter::WriteSourceLocation(const FlowPtr<Base>& n) const {
   string("loc");
 
   if (m_rd.has_value()) {
@@ -123,7 +123,7 @@ void AstWriter::WriteSourceLocation(FlowPtr<Base> n) const {
   }
 }
 
-void AstWriter::WriteTypeMetadata(FlowPtr<Type> n) {
+void AstWriter::WriteTypeMetadata(const FlowPtr<Type>& n) {
   string("width");
   n->GetWidth() ? n->GetWidth().value().Accept(*this) : null();
 
@@ -136,7 +136,7 @@ void AstWriter::WriteTypeMetadata(FlowPtr<Type> n) {
   max.has_value() ? max.value().Accept(*this) : null();
 }
 
-std::string_view AstWriter::VisStr(Vis vis) const {
+std::string_view AstWriter::VisStr(Vis vis) {
   switch (vis) {
     case Vis::Sec:
       return "sec";

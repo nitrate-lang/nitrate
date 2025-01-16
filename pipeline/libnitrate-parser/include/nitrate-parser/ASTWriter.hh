@@ -71,10 +71,10 @@ namespace ncc::parse {
     EndArray end_arr;           /// NOLINT
     WriterSourceProvider m_rd;  /// NOLINT
 
-    void WriteSourceLocation(FlowPtr<Base> n) const;
-    void WriteTypeMetadata(FlowPtr<Type> n);
+    void WriteSourceLocation(const FlowPtr<Base>& n) const;
+    void WriteTypeMetadata(const FlowPtr<Type>& n);
 
-    [[nodiscard]] std::string_view VisStr(Vis vis) const;
+    [[nodiscard]] static std::string_view VisStr(Vis vis);
 
   public:
     AstWriter(auto str_impl, auto uint_impl, auto dbl_impl, auto bool_impl,
@@ -203,9 +203,9 @@ namespace ncc::parse {
     std::ostream& m_os;
 
     void StrImpl(std::string_view str);
-    void UintImpl(uint64_t val);
-    void DoubleImpl(double val);
-    void BoolImpl(bool val);
+    void UintImpl(uint64_t x);
+    void DoubleImpl(double x);
+    void BoolImpl(bool x);
     void NullImpl();
     void BeginObjImpl(size_t pair_count);
     void EndObjImpl();

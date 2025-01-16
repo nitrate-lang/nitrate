@@ -42,7 +42,7 @@ namespace ncc::parse {
     FlowPtr<Expr> m_expr;
 
   public:
-    constexpr ExprStmt(auto expr) : Stmt(QAST_ESTMT), m_expr(expr) {}
+    constexpr ExprStmt(auto expr) : Stmt(QAST_ESTMT), m_expr(std::move(expr)) {}
 
     [[nodiscard]] constexpr auto GetExpr() const { return m_expr; }
   };
@@ -267,7 +267,7 @@ namespace ncc::parse {
 
   public:
     constexpr TypedefStmt(auto name, auto type)
-        : Stmt(QAST_TYPEDEF), m_type(type), m_name(name) {}
+        : Stmt(QAST_TYPEDEF), m_type(std::move(type)), m_name(name) {}
 
     [[nodiscard]] constexpr auto GetName() const { return m_name; }
     [[nodiscard]] constexpr auto GetType() const { return m_type; }

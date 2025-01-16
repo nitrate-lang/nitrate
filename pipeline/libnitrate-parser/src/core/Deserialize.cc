@@ -40,7 +40,7 @@
 using namespace ncc::parse;
 using namespace nlohmann;
 
-static std::optional<AstReader::Value> JsonToValue(ordered_json v) {
+static std::optional<AstReader::Value> JsonToValue(const ordered_json& v) {
   switch (v.type()) {
     case json::value_t::null: {
       return AstReader::Value(nullptr);
@@ -88,13 +88,13 @@ static std::optional<AstReader::Value> JsonToValue(ordered_json v) {
 static void FlattenJson(const ordered_json& value,
                         std::queue<ordered_json>& queue) {
   if (value.is_array()) {
-    queue.push(value.size());
+    queue.emplace(value.size());
     for (const auto& val : value) {
       FlattenJson(val, queue);
     }
   } else if (value.is_object()) {
     for (const auto& [key, val] : value.items()) {
-      queue.push(key);
+      queue.emplace(key);
       FlattenJson(val, queue);
     }
   } else {
@@ -131,7 +131,7 @@ std::optional<AstReader::Value> AstJsonReader::ReadValue() {
     auto value = queue.front();
     queue.pop();
 
-    return JsonToValue(std::move(value));
+    return JsonToValue(value);
   }
 }
 
@@ -164,6 +164,6 @@ std::optional<AstReader::Value> AstMsgPackReader::ReadValue() {
     auto value = queue.front();
     queue.pop();
 
-    return JsonToValue(std::move(value));
+    return JsonToValue(value);
   }
 }

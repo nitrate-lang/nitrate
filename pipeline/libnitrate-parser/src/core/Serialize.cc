@@ -70,9 +70,9 @@ static void EscapeString(std::ostream &os, const std::string_view &input) {
         if (ch >= 32 && ch < 127) {
           os << ch;
         } else {
-          char hex[5];
-          snprintf(hex, sizeof(hex), "\\x%02x", (int)(uint8_t)ch);
-          os << hex;
+          std::array<char, 5> hex;
+          snprintf(hex.data(), hex.size(), "\\x%02x", (int)(uint8_t)ch);
+          os << hex.data();
         }
         break;
     }
@@ -84,7 +84,7 @@ static void EscapeString(std::ostream &os, const std::string_view &input) {
 void AstJsonWriter::Delim() {
   if (!m_count.empty() && !m_comma.empty()) {
     if (m_count.top()++ > 0) {
-      bool use_comma = m_comma.top() == true || (m_count.top() & 1) != 0;
+      bool use_comma = m_comma.top() || (m_count.top() & 1) != 0;
 
       m_os << (use_comma ? "," : ":");
     }
@@ -207,8 +207,8 @@ void AstMsgPackWriter::UintImpl(uint64_t x) {
   }
 }
 
-void AstMsgPackWriter::DoubleImpl(double val) {
-  uint64_t raw = std::bit_cast<uint64_t>(val);
+void AstMsgPackWriter::DoubleImpl(double x) {
+  auto raw = std::bit_cast<uint64_t>(x);
 
   m_os.put(0xcb);
   m_os.put((raw >> 56) & 0xff);
@@ -221,7 +221,7 @@ void AstMsgPackWriter::DoubleImpl(double val) {
   m_os.put(raw & 0xff);
 }
 
-void AstMsgPackWriter::BoolImpl(bool val) { m_os.put(val ? 0xc3 : 0xc2); }
+void AstMsgPackWriter::BoolImpl(bool x) { m_os.put(x ? 0xc3 : 0xc2); }
 
 void AstMsgPackWriter::NullImpl() { m_os.put(0xc0); }
 

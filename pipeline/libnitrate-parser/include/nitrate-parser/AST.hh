@@ -49,8 +49,8 @@ namespace ncc::parse {
   template <typename T, typename... Args>
   constexpr static inline auto make(Args &&...args) {  /// NOLINT
     return [&](std::source_location origin = std::source_location::current()) {
-      FlowPtr<T> new_obj = MakeFlowPtr<T>(new (Arena<T>().allocate(1))
-                                              T(std::forward<Args>(args)...));
+      FlowPtr<T> new_obj = MakeFlowPtr<T>(new (Arena<T>().allocate(1)) T(
+          std::forward<Args>(args)...));  /// NOLINT
 
       new_obj.SetTracking(origin);
 

@@ -98,7 +98,7 @@ std::optional<AstReader::LocationRange> AstReader::ReadLocationRange() {
       return std::nullopt;
     }
 
-    std::string src = Next<std::string>();
+    auto src = Next<std::string>();
 
     return lex::Location(off, row, col, src);
   };
@@ -708,7 +708,7 @@ NullableFlowPtr<Type> AstReader::DeserializeType() {
   return object.value().as<Type>();
 }
 
-NullableFlowPtr<Base> AstReader::ReadKindNode() {
+NullableFlowPtr<Base> AstReader::ReadKindNode() {  /// NOLINT
   return make<Base>(QAST_BASE)();
 }
 
@@ -895,11 +895,11 @@ NullableFlowPtr<ConstBool> AstReader::ReadKindBool() {
   return make<ConstBool>(value)();
 }
 
-NullableFlowPtr<ConstNull> AstReader::ReadKindNull() {
+NullableFlowPtr<ConstNull> AstReader::ReadKindNull() {  /// NOLINT
   return make<ConstNull>()();
 }
 
-NullableFlowPtr<ConstUndef> AstReader::ReadKindUndef() {
+NullableFlowPtr<ConstUndef> AstReader::ReadKindUndef() {  /// NOLINT
   return make<ConstUndef>()();
 }
 
@@ -922,7 +922,7 @@ NullableFlowPtr<Call> AstReader::ReadKindCall() {
   CallArgs arguments;
   arguments.reserve(argument_count);
 
-  while (argument_count--) {
+  while (argument_count-- > 0) {
     if (!NextIf<std::string>("name") || !NextIs<std::string>()) {
       return nullptr;
     }
@@ -954,7 +954,7 @@ NullableFlowPtr<List> AstReader::ReadKindList() {
   ExpressionList elements;
   elements.reserve(element_count);
 
-  while (element_count--) {
+  while (element_count-- > 0) {
     auto element = DeserializeExpression();
     if (!element.has_value()) {
       return nullptr;
@@ -1047,7 +1047,7 @@ NullableFlowPtr<FString> AstReader::ReadKindFstring() {
   FStringItems terms;
   terms.reserve(term_count);
 
-  while (term_count--) {
+  while (term_count-- > 0) {
     if (NextIf<std::string>("value") && NextIs<std::string>()) {
       auto value = Next<std::string>();
       terms.emplace_back(value);
@@ -1084,7 +1084,7 @@ NullableFlowPtr<SeqPoint> AstReader::ReadKindSeqPoint() {
   ExpressionList terms;
   terms.reserve(expression_count);
 
-  while (expression_count--) {
+  while (expression_count-- > 0) {
     auto term = DeserializeExpression();
     if (!term.has_value()) {
       return nullptr;
@@ -1141,7 +1141,7 @@ NullableFlowPtr<TemplCall> AstReader::ReadKindTemplCall() {
   CallArgs template_args;
   template_args.reserve(template_count);
 
-  while (template_count--) {
+  while (template_count-- > 0) {
     if (!NextIf<std::string>("name") || !NextIs<std::string>()) {
       return nullptr;
     }
@@ -1169,7 +1169,7 @@ NullableFlowPtr<TemplCall> AstReader::ReadKindTemplCall() {
   CallArgs arguments;
   arguments.reserve(argument_count);
 
-  while (argument_count--) {
+  while (argument_count-- > 0) {
     if (!NextIf<std::string>("name") || !NextIs<std::string>()) {
       return nullptr;
     }
@@ -1536,7 +1536,7 @@ NullableFlowPtr<TupleTy> AstReader::ReadKindTuple() {
   TupleTyItems fields;
   fields.reserve(field_count);
 
-  while (field_count--) {
+  while (field_count-- > 0) {
     auto field = DeserializeType();
     if (!field.has_value()) {
       return nullptr;
@@ -1568,7 +1568,7 @@ NullableFlowPtr<FuncTy> AstReader::ReadKindFuncTy() {
   ExpressionList attributes;
   attributes.reserve(attribute_count);
 
-  while (attribute_count--) {
+  while (attribute_count-- > 0) {
     auto attribute = DeserializeExpression();
     if (!attribute.has_value()) {
       return nullptr;
@@ -1628,7 +1628,7 @@ NullableFlowPtr<FuncTy> AstReader::ReadKindFuncTy() {
   FuncParams parameters;
   parameters.reserve(parameter_count);
 
-  while (parameter_count--) {
+  while (parameter_count-- > 0) {
     if (!NextIf<std::string>("name") || !NextIs<std::string>()) {
       return nullptr;
     }
@@ -1728,7 +1728,7 @@ NullableFlowPtr<TemplType> AstReader::ReadKindTempl() {
   CallArgs arguments;
   arguments.reserve(argument_count);
 
-  while (argument_count--) {
+  while (argument_count-- > 0) {
     if (!NextIf<std::string>("name") || !NextIs<std::string>()) {
       return nullptr;
     }
@@ -1804,7 +1804,7 @@ NullableFlowPtr<StructDef> AstReader::ReadKindStruct() {
   ExpressionList attributes;
   attributes.reserve(attribute_count);
 
-  while (attribute_count--) {
+  while (attribute_count-- > 0) {
     auto attribute = DeserializeExpression();
     if (!attribute.has_value()) {
       return nullptr;
@@ -1835,7 +1835,7 @@ NullableFlowPtr<StructDef> AstReader::ReadKindStruct() {
     template_args = TemplateParameters();
     template_args->reserve(template_count);
 
-    while (template_count--) {
+    while (template_count-- > 0) {
       if (!NextIf<std::string>("name") || !NextIs<std::string>()) {
         return nullptr;
       }
@@ -1878,14 +1878,14 @@ NullableFlowPtr<StructDef> AstReader::ReadKindStruct() {
   StructDefNames names;
   names.reserve(names_count);
 
-  while (names_count--) {
+  while (names_count-- > 0) {
     if (!NextIs<std::string>()) {
       return nullptr;
     }
 
     auto arg_name = Next<std::string>();
 
-    names.push_back(arg_name);
+    names.emplace_back(arg_name);
   }
 
   if (!NextIf<std::string>("fields") || !NextIs<uint64_t>()) {
@@ -1897,7 +1897,7 @@ NullableFlowPtr<StructDef> AstReader::ReadKindStruct() {
   StructDefFields fields;
   fields.reserve(field_count);
 
-  while (field_count--) {
+  while (field_count-- > 0) {
     if (!NextIf<std::string>("name") || !NextIs<std::string>()) {
       return nullptr;
     }
@@ -1949,8 +1949,8 @@ NullableFlowPtr<StructDef> AstReader::ReadKindStruct() {
 
     auto is_static = Next<bool>();
 
-    fields.emplace_back(StructField(visibility, is_static, field_name,
-                                    type.value(), default_value));
+    fields.emplace_back(visibility, is_static, field_name, type.value(),
+                        default_value);
   }
 
   if (!NextIf<std::string>("methods") || !NextIs<uint64_t>()) {
@@ -1962,7 +1962,7 @@ NullableFlowPtr<StructDef> AstReader::ReadKindStruct() {
   StructDefMethods methods;
   methods.reserve(method_count);
 
-  while (method_count--) {
+  while (method_count-- > 0) {
     if (!NextIf<std::string>("visibility")) {
       return nullptr;
     }
@@ -2000,7 +2000,7 @@ NullableFlowPtr<StructDef> AstReader::ReadKindStruct() {
   StructDefStaticMethods static_methods;
   static_methods.reserve(static_method_count);
 
-  while (static_method_count--) {
+  while (static_method_count-- > 0) {
     if (!NextIf<std::string>("visibility")) {
       return nullptr;
     }
@@ -2063,7 +2063,7 @@ NullableFlowPtr<EnumDef> AstReader::ReadKindEnum() {
   EnumDefItems fields;
   fields.reserve(field_count);
 
-  while (field_count--) {
+  while (field_count-- > 0) {
     if (!NextIf<std::string>("name") || !NextIs<std::string>()) {
       return nullptr;
     }
@@ -2100,7 +2100,7 @@ NullableFlowPtr<Function> AstReader::ReadKindFunction() {
   ExpressionList attributes;
   attributes.reserve(attribute_count);
 
-  while (attribute_count--) {
+  while (attribute_count-- > 0) {
     auto attribute = DeserializeExpression();
     if (!attribute.has_value()) {
       return nullptr;
@@ -2141,7 +2141,7 @@ NullableFlowPtr<Function> AstReader::ReadKindFunction() {
   FnCaptures captures;
   captures.reserve(capture_count);
 
-  while (capture_count--) {
+  while (capture_count-- > 0) {
     if (!NextIf<std::string>("name") || !NextIs<std::string>()) {
       return nullptr;
     }
@@ -2175,7 +2175,7 @@ NullableFlowPtr<Function> AstReader::ReadKindFunction() {
     template_args = TemplateParameters();
     template_args->reserve(template_count);
 
-    while (template_count--) {
+    while (template_count-- > 0) {
       if (!NextIf<std::string>("name") || !NextIs<std::string>()) {
         return nullptr;
       }
@@ -2228,7 +2228,7 @@ NullableFlowPtr<Function> AstReader::ReadKindFunction() {
   FuncParams parameters;
   parameters.reserve(parameter_count);
 
-  while (parameter_count--) {
+  while (parameter_count-- > 0) {
     if (!NextIf<std::string>("name") || !NextIs<std::string>()) {
       return nullptr;
     }
@@ -2335,9 +2335,9 @@ NullableFlowPtr<ScopeStmt> AstReader::ReadKindScope() {
   ScopeDeps dependencies;
   dependencies.reserve(dependency_count);
 
-  while (dependency_count--) {
+  while (dependency_count-- > 0) {
     auto dependency = Next<std::string>();
-    dependencies.push_back(dependency);
+    dependencies.emplace_back(dependency);
   }
 
   if (!NextIf<std::string>("body")) {
@@ -2384,7 +2384,7 @@ NullableFlowPtr<ExportStmt> AstReader::ReadKindExport() {
   ExpressionList attributes;
   attributes.reserve(attribute_count);
 
-  while (attribute_count--) {
+  while (attribute_count-- > 0) {
     auto attribute = DeserializeExpression();
     if (!attribute.has_value()) {
       return nullptr;
@@ -2432,7 +2432,7 @@ NullableFlowPtr<Block> AstReader::ReadKindBlock() {
   BlockItems statements;
   statements.reserve(statement_count);
 
-  while (statement_count--) {
+  while (statement_count-- > 0) {
     auto stmt = DeserializeStatement();
     if (!stmt.has_value()) {
       return nullptr;
@@ -2503,7 +2503,7 @@ NullableFlowPtr<VarDecl> AstReader::ReadKindLet() {
   ExpressionList attributes;
   attributes.reserve(attribute_count);
 
-  while (attribute_count--) {
+  while (attribute_count-- > 0) {
     auto attribute = DeserializeExpression();
     if (!attribute.has_value()) {
       return nullptr;
@@ -2531,7 +2531,7 @@ NullableFlowPtr<InlineAsm> AstReader::ReadKindInlineAsm() {
   ExpressionList parameters;
   parameters.reserve(parameter_count);
 
-  while (parameter_count--) {
+  while (parameter_count-- > 0) {
     auto parameter = DeserializeExpression();
     if (!parameter.has_value()) {
       return nullptr;
@@ -2583,11 +2583,11 @@ NullableFlowPtr<ReturnIfStmt> AstReader::ReadKindRetif() {
   return make<ReturnIfStmt>(condition.value(), expression.value())();
 }
 
-NullableFlowPtr<BreakStmt> AstReader::ReadKindBreak() {
+NullableFlowPtr<BreakStmt> AstReader::ReadKindBreak() {  /// NOLINT
   return make<BreakStmt>()();
 }
 
-NullableFlowPtr<ContinueStmt> AstReader::ReadKindContinue() {
+NullableFlowPtr<ContinueStmt> AstReader::ReadKindContinue() {  /// NOLINT
   return make<ContinueStmt>()();
 }
 
@@ -2777,13 +2777,13 @@ NullableFlowPtr<SwitchStmt> AstReader::ReadKindSwitch() {
   SwitchCases cases;
   cases.reserve(case_count);
 
-  while (case_count--) {
+  while (case_count-- > 0) {
     auto case_stmt = DeserializeStatement();
     if (!case_stmt.has_value() || !case_stmt.value()->is(QAST_CASE)) {
       return nullptr;
     }
 
-    cases.push_back(case_stmt.value()->as<CaseStmt>());
+    cases.emplace_back(case_stmt.value()->as<CaseStmt>());
   }
 
   if (!NextIf<std::string>("default")) {
