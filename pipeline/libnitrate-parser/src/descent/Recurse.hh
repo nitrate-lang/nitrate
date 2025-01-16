@@ -34,6 +34,7 @@
 #ifndef __NITRATE_PARSE_H__
 #define __NITRATE_PARSE_H__
 
+#include <core/ParserImpl.hh>
 #include <nitrate-core/Macro.hh>
 #include <nitrate-lexer/Lexer.hh>
 #include <nitrate-parser/AST.hh>

@@ -37,7 +37,7 @@ using namespace ncc;
 using namespace ncc::lex;
 using namespace ncc::parse;
 
-FlowPtr<Stmt> Parser::RecurseAwait() {
+FlowPtr<Stmt> Parser::PImpl::RecurseAwait() {
   Log << SyntaxError << current() << "Await is not yet implemented";
 
   return MockStmt();

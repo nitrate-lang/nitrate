@@ -37,7 +37,7 @@ using namespace ncc;
 using namespace ncc::lex;
 using namespace ncc::parse;
 
-ExpressionList Parser::RecurseStructAttributes() {
+ExpressionList Parser::PImpl::RecurseStructAttributes() {
   ExpressionList attributes;
 
   if (!next_if(PuncLBrk)) {
@@ -68,12 +68,12 @@ ExpressionList Parser::RecurseStructAttributes() {
   return attributes;
 }
 
-string Parser::RecurseStructName() {
+string Parser::PImpl::RecurseStructName() {
   auto tok = next_if(Name);
   return tok ? tok->GetString() : "";
 }
 
-StructDefNames Parser::RecurseStructTerms() {
+StructDefNames Parser::PImpl::RecurseStructTerms() {
   StructDefNames names;
 
   if (!next_if(PuncColn)) {
@@ -93,7 +93,7 @@ StructDefNames Parser::RecurseStructTerms() {
   return names;
 }
 
-NullableFlowPtr<Expr> Parser::RecurseStructFieldDefaultValue() {
+NullableFlowPtr<Expr> Parser::PImpl::RecurseStructFieldDefaultValue() {
   if (next_if(OpSet)) {
     return RecurseExpr({
         Token(Punc, PuncComa),
@@ -105,8 +105,8 @@ NullableFlowPtr<Expr> Parser::RecurseStructFieldDefaultValue() {
   }
 }
 
-void Parser::RecurseStructField(Vis vis, bool is_static,
-                                StructDefFields &fields) {
+void Parser::PImpl::RecurseStructField(Vis vis, bool is_static,
+                                       StructDefFields &fields) {
   if (auto field_name = next_if(Name)) {
     if (next_if(PuncColn)) {
       auto field_type = RecurseType();
@@ -125,7 +125,7 @@ void Parser::RecurseStructField(Vis vis, bool is_static,
   }
 }
 
-void Parser::RecurseStructMethodOrField(StructContent &body) {
+void Parser::PImpl::RecurseStructMethodOrField(StructContent &body) {
   Vis vis = Vis::Sec;
 
   /* Parse visibility of member */
@@ -154,7 +154,7 @@ void Parser::RecurseStructMethodOrField(StructContent &body) {
   next_if(PuncComa) || next_if(PuncSemi);
 }
 
-Parser::StructContent Parser::RecurseStructBody() {
+Parser::PImpl::StructContent Parser::PImpl::RecurseStructBody() {
   StructContent body;
 
   if (!next_if(PuncLCur)) [[unlikely]] {
@@ -179,7 +179,7 @@ Parser::StructContent Parser::RecurseStructBody() {
   return body;
 }
 
-FlowPtr<Stmt> Parser::RecurseStruct(CompositeType struct_type) {
+FlowPtr<Stmt> Parser::PImpl::RecurseStruct(CompositeType struct_type) {
   auto start_pos = current().GetStart();
   auto struct_attributes = RecurseStructAttributes();
   auto struct_name = RecurseStructName();

@@ -37,7 +37,7 @@ using namespace ncc;
 using namespace ncc::lex;
 using namespace ncc::parse;
 
-FlowPtr<Stmt> Parser::RecurseThrow() {
+FlowPtr<Stmt> Parser::PImpl::RecurseThrow() {
   Log << SyntaxError << current() << "Throw is not yet implemented";
 
   return MockStmt();

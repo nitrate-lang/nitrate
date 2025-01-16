@@ -37,12 +37,12 @@ using namespace ncc;
 using namespace ncc::lex;
 using namespace ncc::parse;
 
-string Parser::RecurseAbiName() {
+string Parser::PImpl::RecurseAbiName() {
   auto tok = next_if(Text);
   return tok ? tok->GetString() : "";
 }
 
-std::optional<ExpressionList> Parser::RecurseExportAttributes() {
+std::optional<ExpressionList> Parser::PImpl::RecurseExportAttributes() {
   ExpressionList attributes;
 
   if (!next_if(PuncLBrk)) {
@@ -73,7 +73,7 @@ std::optional<ExpressionList> Parser::RecurseExportAttributes() {
   return std::nullopt;
 }
 
-FlowPtr<Stmt> Parser::RecurseExportBody() {
+FlowPtr<Stmt> Parser::PImpl::RecurseExportBody() {
   if (peek().is<PuncLCur>()) {
     return RecurseBlock(true, false, SafetyMode::Unknown);
   } else {
@@ -81,7 +81,7 @@ FlowPtr<Stmt> Parser::RecurseExportBody() {
   }
 }
 
-FlowPtr<Stmt> Parser::RecurseExport(Vis vis) {
+FlowPtr<Stmt> Parser::PImpl::RecurseExport(Vis vis) {
   auto export_abi = RecurseAbiName();
 
   if (auto export_attributes = RecurseExportAttributes()) {

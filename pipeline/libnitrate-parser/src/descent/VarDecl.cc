@@ -37,7 +37,7 @@ using namespace ncc;
 using namespace ncc::lex;
 using namespace ncc::parse;
 
-std::optional<ExpressionList> Parser::RecurseVariableAttributes() {
+std::optional<ExpressionList> Parser::PImpl::RecurseVariableAttributes() {
   ExpressionList attributes;
 
   if (!next_if(PuncLBrk)) {
@@ -68,7 +68,7 @@ std::optional<ExpressionList> Parser::RecurseVariableAttributes() {
   return std::nullopt;
 }
 
-NullableFlowPtr<parse::Type> Parser::RecurseVariableType() {
+NullableFlowPtr<parse::Type> Parser::PImpl::RecurseVariableType() {
   if (next_if(PuncColn)) {
     return RecurseType();
   } else {
@@ -76,7 +76,7 @@ NullableFlowPtr<parse::Type> Parser::RecurseVariableType() {
   }
 }
 
-NullableFlowPtr<Expr> Parser::RecurseVariableValue() {
+NullableFlowPtr<Expr> Parser::PImpl::RecurseVariableValue() {
   if (next_if(OpSet)) {
     return RecurseExpr({
         Token(Punc, PuncComa),
@@ -87,7 +87,8 @@ NullableFlowPtr<Expr> Parser::RecurseVariableValue() {
   }
 }
 
-NullableFlowPtr<Stmt> Parser::RecurseVariableInstance(VarDeclType decl_type) {
+NullableFlowPtr<Stmt> Parser::PImpl::RecurseVariableInstance(
+    VarDeclType decl_type) {
   if (auto symbol_attributes_opt = RecurseVariableAttributes()) {
     if (auto tok = next_if(Name)) {
       auto variable_name = tok->GetString();
@@ -106,7 +107,8 @@ NullableFlowPtr<Stmt> Parser::RecurseVariableInstance(VarDeclType decl_type) {
   }
 }
 
-std::vector<FlowPtr<Stmt>> Parser::RecurseVariable(VarDeclType decl_type) {
+std::vector<FlowPtr<Stmt>> Parser::PImpl::RecurseVariable(
+    VarDeclType decl_type) {
   std::vector<FlowPtr<Stmt>> variables;
 
   while (true) {

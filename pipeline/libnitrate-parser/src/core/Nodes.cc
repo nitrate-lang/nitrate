@@ -32,13 +32,13 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <core/Hash.hh>
+#include <core/ParserImpl.hh>
 #include <cstring>
 #include <nitrate-core/Init.hh>
 #include <nitrate-core/Logger.hh>
 #include <nitrate-core/Macro.hh>
 #include <nitrate-parser/AST.hh>
 #include <nitrate-parser/ASTWriter.hh>
-#include <nitrate-parser/Context.hh>
 #include <sstream>
 
 using namespace ncc;
@@ -179,21 +179,21 @@ NCC_EXPORT bool Type::IsPtrTo(const Type *type) const {
   return item->is(type->GetKind());
 }
 
-FlowPtr<Stmt> Parser::MockStmt(std::optional<npar_ty_t>) {
+FlowPtr<Stmt> Parser::PImpl::MockStmt(std::optional<npar_ty_t>) {
   auto node = make<Stmt>(QAST_BASE)();
   node->SetOffset(m_rd.Current().GetStart());
 
   return node;
 }
 
-FlowPtr<Expr> Parser::MockExpr(std::optional<npar_ty_t>) {
+FlowPtr<Expr> Parser::PImpl::MockExpr(std::optional<npar_ty_t>) {
   auto node = make<Expr>(QAST_BASE)();
   node->SetOffset(m_rd.Current().GetStart());
 
   return node;
 }
 
-FlowPtr<Type> Parser::MockType() {
+FlowPtr<Type> Parser::PImpl::MockType() {
   auto node = make<Type>(QAST_BASE)();
   node->SetOffset(m_rd.Current().GetStart());
 

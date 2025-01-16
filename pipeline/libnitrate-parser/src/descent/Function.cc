@@ -37,7 +37,7 @@ using namespace ncc;
 using namespace ncc::lex;
 using namespace ncc::parse;
 
-FlowPtr<parse::Type> Parser::RecurseFunctionParameterType() {
+FlowPtr<parse::Type> Parser::PImpl::RecurseFunctionParameterType() {
   if (next_if(PuncColn)) {
     return RecurseType();
   } else {
@@ -45,7 +45,7 @@ FlowPtr<parse::Type> Parser::RecurseFunctionParameterType() {
   }
 }
 
-NullableFlowPtr<Expr> Parser::RecurseFunctionParameterValue() {
+NullableFlowPtr<Expr> Parser::PImpl::RecurseFunctionParameterValue() {
   if (next_if(OpSet)) {
     return RecurseExpr({
         Token(Punc, PuncComa),
@@ -57,7 +57,7 @@ NullableFlowPtr<Expr> Parser::RecurseFunctionParameterValue() {
   }
 }
 
-std::optional<FuncParam> Parser::RecurseFunctionParameter() {
+std::optional<FuncParam> Parser::PImpl::RecurseFunctionParameter() {
   if (auto param_name = next_if(Name)) [[likely]] {
     auto param_type = RecurseFunctionParameterType();
     auto param_value = RecurseFunctionParameterValue();
@@ -70,7 +70,7 @@ std::optional<FuncParam> Parser::RecurseFunctionParameter() {
   return std::nullopt;
 }
 
-std::optional<TemplateParameters> Parser::RecurseTemplateParameters() {
+std::optional<TemplateParameters> Parser::PImpl::RecurseTemplateParameters() {
   if (!next_if(OpLT)) {
     return std::nullopt;
   }
@@ -102,7 +102,7 @@ std::optional<TemplateParameters> Parser::RecurseTemplateParameters() {
   return params;
 }
 
-std::pair<FuncParams, bool> Parser::RecurseFunctionParameters() {
+std::pair<FuncParams, bool> Parser::PImpl::RecurseFunctionParameters() {
   std::pair<FuncParams, bool> parameters;
 
   if (!next_if(PuncLPar)) [[unlikely]] {
@@ -149,9 +149,9 @@ std::pair<FuncParams, bool> Parser::RecurseFunctionParameters() {
   return parameters;
 }
 
-Purity Parser::GetPuritySpecifier(Token start_pos, bool is_thread_safe,
-                                  bool is_pure, bool is_impure, bool is_quasi,
-                                  bool is_retro) {
+Purity Parser::PImpl::GetPuritySpecifier(Token start_pos, bool is_thread_safe,
+                                         bool is_pure, bool is_impure,
+                                         bool is_quasi, bool is_retro) {
   /* Ensure that there is no duplication of purity specifiers */
   if ((is_impure + is_pure + is_quasi + is_retro) > 1) {
     Log << SyntaxError << start_pos << "Conflicting purity specifiers";
@@ -174,7 +174,7 @@ Purity Parser::GetPuritySpecifier(Token start_pos, bool is_thread_safe,
   }
 }
 
-std::optional<std::pair<string, bool>> Parser::RecurseFunctionCapture() {
+std::optional<std::pair<string, bool>> Parser::PImpl::RecurseFunctionCapture() {
   bool is_ref = next_if(OpBitAnd).has_value();
 
   if (auto name = next_if(Name)) {
@@ -186,7 +186,7 @@ std::optional<std::pair<string, bool>> Parser::RecurseFunctionCapture() {
 }
 
 std::tuple<ExpressionList, FnCaptures, Purity, string>
-Parser::RecurseFunctionAmbigouis() {
+Parser::PImpl::RecurseFunctionAmbigouis() {
   enum class State {
     Ground,
     AttributesSection,
@@ -328,7 +328,7 @@ Parser::RecurseFunctionAmbigouis() {
   return {attributes, captures, purity, function_name};
 }
 
-FlowPtr<parse::Type> Parser::Parser::RecurseFunctionReturnType() {
+FlowPtr<parse::Type> Parser::PImpl::RecurseFunctionReturnType() {
   if (next_if(PuncColn)) {
     return RecurseType();
   } else {
@@ -336,7 +336,8 @@ FlowPtr<parse::Type> Parser::Parser::RecurseFunctionReturnType() {
   }
 }
 
-NullableFlowPtr<Stmt> Parser::RecurseFunctionBody(bool parse_declaration_only) {
+NullableFlowPtr<Stmt> Parser::PImpl::RecurseFunctionBody(
+    bool parse_declaration_only) {
   if (parse_declaration_only || next_if(PuncSemi)) {
     return std::nullopt;
   } else if (next_if(OpArrow)) {
@@ -346,7 +347,7 @@ NullableFlowPtr<Stmt> Parser::RecurseFunctionBody(bool parse_declaration_only) {
   }
 }
 
-FlowPtr<Stmt> Parser::RecurseFunction(bool parse_declaration_only) {
+FlowPtr<Stmt> Parser::PImpl::RecurseFunction(bool parse_declaration_only) {
   auto start_pos = current().GetStart();
 
   auto [function_attributes, function_captures, function_purity,

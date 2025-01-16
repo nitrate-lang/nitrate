@@ -37,7 +37,7 @@ using namespace ncc;
 using namespace ncc::lex;
 using namespace ncc::parse;
 
-FlowPtr<Stmt> Parser::RecurseTypedef() {
+FlowPtr<Stmt> Parser::PImpl::RecurseTypedef() {
   if (auto tok = next_if(Name)) [[likely]] {
     auto type_name = tok->GetString();
 

@@ -37,7 +37,7 @@ using namespace ncc;
 using namespace ncc::lex;
 using namespace ncc::parse;
 
-string Parser::RecurseEnumName() {
+string Parser::PImpl::RecurseEnumName() {
   if (auto tok = next_if(Name)) {
     return tok->GetString();
   } else {
@@ -45,7 +45,7 @@ string Parser::RecurseEnumName() {
   }
 }
 
-NullableFlowPtr<parse::Type> Parser::RecurseEnumType() {
+NullableFlowPtr<parse::Type> Parser::PImpl::RecurseEnumType() {
   if (next_if(PuncColn)) {
     return RecurseType();
   } else {
@@ -53,7 +53,7 @@ NullableFlowPtr<parse::Type> Parser::RecurseEnumType() {
   }
 }
 
-NullableFlowPtr<Expr> Parser::RecurseEnumItemValue() {
+NullableFlowPtr<Expr> Parser::PImpl::RecurseEnumItemValue() {
   if (next_if(OpSet)) {
     return RecurseExpr({
         Token(Punc, PuncSemi),
@@ -65,7 +65,7 @@ NullableFlowPtr<Expr> Parser::RecurseEnumItemValue() {
   }
 }
 
-std::optional<EnumItem> Parser::RecurseEnumItem() {
+std::optional<EnumItem> Parser::PImpl::RecurseEnumItem() {
   if (auto member_name = next_if(Name)) [[likely]] {
     auto member_value = RecurseEnumItemValue();
 
@@ -76,7 +76,7 @@ std::optional<EnumItem> Parser::RecurseEnumItem() {
   }
 }
 
-std::optional<EnumDefItems> Parser::RecurseEnumItems() {
+std::optional<EnumDefItems> Parser::PImpl::RecurseEnumItems() {
   EnumDefItems items;
 
   if (next_if(PuncSemi)) {
@@ -113,7 +113,7 @@ std::optional<EnumDefItems> Parser::RecurseEnumItems() {
   return std::nullopt;
 }
 
-FlowPtr<Stmt> Parser::RecurseEnum() {
+FlowPtr<Stmt> Parser::PImpl::RecurseEnum() {
   auto name = RecurseEnumName();
   auto type = RecurseEnumType();
 

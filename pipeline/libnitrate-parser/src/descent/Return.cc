@@ -37,7 +37,7 @@ using namespace ncc;
 using namespace ncc::lex;
 using namespace ncc::parse;
 
-FlowPtr<Stmt> Parser::RecurseReturn() {
+FlowPtr<Stmt> Parser::PImpl::RecurseReturn() {
   if (next_if(PuncSemi)) {
     return make<ReturnStmt>(std::nullopt)();
   } else {
@@ -54,7 +54,7 @@ FlowPtr<Stmt> Parser::RecurseReturn() {
   }
 }
 
-FlowPtr<Stmt> Parser::RecurseRetif() {
+FlowPtr<Stmt> Parser::PImpl::RecurseRetif() {
   auto return_if = RecurseExpr({
       Token(Punc, PuncComa),
   });

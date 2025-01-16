@@ -46,8 +46,8 @@ using namespace ncc;
 using namespace ncc::parse;
 using namespace ncc::lex;
 
-FlowPtr<Stmt> Parser::RecurseBlock(bool expect_braces, bool single_stmt,
-                                   SafetyMode safety) {
+FlowPtr<Stmt> Parser::PImpl::RecurseBlock(bool expect_braces, bool single_stmt,
+                                          SafetyMode safety) {
   if (expect_braces && !next().is<PuncLCur>()) {
     Log << SyntaxError << current() << "Expected '{'";
   }
@@ -136,7 +136,7 @@ FlowPtr<Stmt> Parser::RecurseBlock(bool expect_braces, bool single_stmt,
         }
 
         case Let: {
-          for (auto variable : RecurseVariable(VarDeclType::Let)) {
+          for (const auto &variable : RecurseVariable(VarDeclType::Let)) {
             statements.push_back(BindComments(variable, comments));
             comments.clear();
           }
@@ -144,7 +144,7 @@ FlowPtr<Stmt> Parser::RecurseBlock(bool expect_braces, bool single_stmt,
         }
 
         case Var: {
-          for (auto variable : RecurseVariable(VarDeclType::Var)) {
+          for (const auto &variable : RecurseVariable(VarDeclType::Var)) {
             statements.push_back(BindComments(variable, comments));
             comments.clear();
           }
@@ -152,7 +152,7 @@ FlowPtr<Stmt> Parser::RecurseBlock(bool expect_braces, bool single_stmt,
         }
 
         case Const: {
-          for (auto variable : RecurseVariable(VarDeclType::Const)) {
+          for (const auto &variable : RecurseVariable(VarDeclType::Const)) {
             statements.push_back(BindComments(variable, comments));
             comments.clear();
           }
@@ -356,22 +356,24 @@ FlowPtr<Stmt> Parser::RecurseBlock(bool expect_braces, bool single_stmt,
   }
 }
 
-NCC_EXPORT Parser::Parser(ncc::lex::IScanner &lexer,
-                          std::shared_ptr<ncc::Environment> env,
-                          std::shared_ptr<void> lifetime)
-    : m_env(env),
-      m_allocator(std::make_unique<ncc::DynamicArena>()),
-      m_rd(lexer),
-      m_failed(false),
-      m_lifetime(lifetime) {}
+Parser::Parser(ncc::lex::IScanner &lexer, std::shared_ptr<ncc::Environment> env,
+               std::shared_ptr<void> lifetime)
+    : m_impl(std::make_unique<Parser::PImpl>(lexer, std::move(env),
+                                             std::move(lifetime))) {}
+
+Parser::~Parser() = default;
 
 void ParserSetCurrentScanner(IScanner *scanner);
 
-NCC_EXPORT ASTRoot Parser::Parse() {
+void Parser::SetFailBit() { m_impl->m_failed = true; }
+
+lex::IScanner &Parser::GetLexer() { return m_impl->m_rd; }
+
+ASTRoot Parser::Parse() {
   std::optional<ASTRoot> ast;
 
   { /* Assign the current context to thread-local global state */
-    ParserSetCurrentScanner(&m_rd);
+    ParserSetCurrentScanner(&m_impl->m_rd);
 
     { /* Subscribe to events emitted by the parser */
       auto sub_id = Log.Subscribe([&](auto, auto, const auto &ec) {
@@ -381,26 +383,27 @@ NCC_EXPORT ASTRoot Parser::Parse() {
       });
 
       { /* Configure the scanner to ignore comments */
-        auto old_state = m_rd.GetSkipCommentsState();
-        m_rd.SkipCommentsState(true);
+        auto old_state = m_impl->m_rd.GetSkipCommentsState();
+        m_impl->m_rd.SkipCommentsState(true);
 
         {   /* Parse the input */
           { /* Swap in an arena allocator */
-            std::swap(NparAllocator, m_allocator);
+            std::swap(NparAllocator, m_impl->m_allocator);
 
             /* Recursive descent parsing */
-            auto node = RecurseBlock(false, false, SafetyMode::Unknown);
+            auto node = m_impl->RecurseBlock(false, false, SafetyMode::Unknown);
 
-            std::swap(NparAllocator, m_allocator);
+            std::swap(NparAllocator, m_impl->m_allocator);
 
-            ast = ASTRoot(node, std::move(m_allocator), m_failed);
+            ast =
+                ASTRoot(node, std::move(m_impl->m_allocator), m_impl->m_failed);
           }
 
           /* Create a new allocator */
-          m_allocator = std::make_unique<ncc::DynamicArena>();
+          m_impl->m_allocator = std::make_unique<ncc::DynamicArena>();
         }
 
-        m_rd.SkipCommentsState(old_state);
+        m_impl->m_rd.SkipCommentsState(old_state);
       }
 
       Log.Unsubscribe(sub_id);
@@ -412,7 +415,7 @@ NCC_EXPORT ASTRoot Parser::Parse() {
   return ast.value();
 }
 
-NCC_EXPORT bool ASTRoot::Check() const {
+bool ASTRoot::Check() const {
   if (m_failed) {
     return false;
   }

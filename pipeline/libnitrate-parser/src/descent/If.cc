@@ -37,7 +37,7 @@ using namespace ncc;
 using namespace ncc::lex;
 using namespace ncc::parse;
 
-FlowPtr<Stmt> Parser::RecurseIfThen() {
+FlowPtr<Stmt> Parser::PImpl::RecurseIfThen() {
   if (next_if(OpArrow)) {
     return RecurseBlock(false, true, SafetyMode::Unknown);
   } else {
@@ -45,7 +45,7 @@ FlowPtr<Stmt> Parser::RecurseIfThen() {
   }
 }
 
-NullableFlowPtr<Stmt> Parser::RecurseIfElse() {
+NullableFlowPtr<Stmt> Parser::PImpl::RecurseIfElse() {
   if (next_if(Else)) {
     if (next_if(OpArrow)) {
       return RecurseBlock(false, true, SafetyMode::Unknown);
@@ -59,7 +59,7 @@ NullableFlowPtr<Stmt> Parser::RecurseIfElse() {
   }
 }
 
-FlowPtr<Stmt> Parser::RecurseIf() {
+FlowPtr<Stmt> Parser::PImpl::RecurseIf() {
   auto cond = RecurseExpr({
       Token(Punc, PuncLCur),
       Token(Oper, OpArrow),

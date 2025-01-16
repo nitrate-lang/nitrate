@@ -37,7 +37,7 @@ using namespace ncc;
 using namespace ncc::lex;
 using namespace ncc::parse;
 
-FlowPtr<Expr> Parser::RecurseWhileCond() {
+FlowPtr<Expr> Parser::PImpl::RecurseWhileCond() {
   if (auto cur = peek(); cur.is<OpArrow>() || cur.is<PuncLCur>()) {
     return make<ConstBool>(true)();
   } else {
@@ -48,7 +48,7 @@ FlowPtr<Expr> Parser::RecurseWhileCond() {
   }
 }
 
-FlowPtr<Stmt> Parser::RecurseWhileBody() {
+FlowPtr<Stmt> Parser::PImpl::RecurseWhileBody() {
   if (next_if(OpArrow)) {
     return RecurseBlock(false, true, SafetyMode::Unknown);
   } else {
@@ -56,7 +56,7 @@ FlowPtr<Stmt> Parser::RecurseWhileBody() {
   }
 }
 
-FlowPtr<Stmt> Parser::RecurseWhile() {
+FlowPtr<Stmt> Parser::PImpl::RecurseWhile() {
   auto cond = RecurseWhileCond();
   auto body = RecurseWhileBody();
 

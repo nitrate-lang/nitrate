@@ -44,8 +44,8 @@ using namespace ncc::lex;
 using namespace ncc::parse;
 using namespace ncc;
 
-CallArgs Parser::RecurseCallArguments(
-    const std::unordered_set<lex::Token> &terminators, bool type_by_default) {
+CallArgs Parser::PImpl::RecurseCallArguments(
+    const std::set<lex::Token> &terminators, bool type_by_default) {
   CallArgs call_args;
   size_t positional_index = 0;
   string argument_name;
@@ -80,7 +80,7 @@ CallArgs Parser::RecurseCallArguments(
 
       call_args.emplace_back(argument_name, type_expr);
     } else {
-      std::unordered_set<Token> terminators_copy(terminators);
+      std::set<Token> terminators_copy(terminators);
       terminators_copy.insert(Token(Punc, PuncComa));
       auto argument_value = RecurseExpr(terminators_copy);
       call_args.emplace_back(argument_name, argument_value);
@@ -92,7 +92,7 @@ CallArgs Parser::RecurseCallArguments(
   return call_args;
 }
 
-FlowPtr<Expr> Parser::RecurseFstring() {
+FlowPtr<Expr> Parser::PImpl::RecurseFstring() {
   FStringItems items;
 
   if (auto tok = next_if(Text)) {
@@ -120,8 +120,8 @@ FlowPtr<Expr> Parser::RecurseFstring() {
         }
 
         auto subnode =
-            FromString(fstring_raw.substr(w_beg, w_end - w_beg), m_env)
-                ->RecurseExpr({
+            Parser::FromString(fstring_raw.substr(w_beg, w_end - w_beg), m_env)
+                ->m_impl->RecurseExpr({
                     Token(Punc, PuncRCur),
                 });
 
@@ -217,8 +217,7 @@ static NCC_FORCE_INLINE FlowPtr<Expr> UnwindStack(std::stack<Frame> &stack,
   return base;
 }
 
-FlowPtr<Expr> Parser::RecurseExpr(
-    const std::unordered_set<Token> &terminators) {
+FlowPtr<Expr> Parser::PImpl::RecurseExpr(const std::set<Token> &terminators) {
   auto source_offset = peek().GetStart();
 
   std::stack<Frame> stack;
@@ -426,7 +425,7 @@ FlowPtr<Expr> Parser::RecurseExpr(
   return MockExpr();
 }
 
-NullableFlowPtr<Expr> Parser::RecurseExprKeyword(lex::Keyword key) {
+NullableFlowPtr<Expr> Parser::PImpl::RecurseExprKeyword(lex::Keyword key) {
   NullableFlowPtr<Expr> e;
 
   switch (key) {
@@ -498,7 +497,7 @@ NullableFlowPtr<Expr> Parser::RecurseExprKeyword(lex::Keyword key) {
   return e;
 }
 
-NullableFlowPtr<Expr> Parser::RecurseExprPunctor(lex::Punctor punc) {
+NullableFlowPtr<Expr> Parser::PImpl::RecurseExprPunctor(lex::Punctor punc) {
   NullableFlowPtr<Expr> e;
 
   switch (punc) {
@@ -664,7 +663,7 @@ NullableFlowPtr<Expr> Parser::RecurseExprPunctor(lex::Punctor punc) {
   return e;
 }
 
-FlowPtr<Expr> Parser::RecurseExprTypeSuffix(FlowPtr<Expr> base) {
+FlowPtr<Expr> Parser::PImpl::RecurseExprTypeSuffix(FlowPtr<Expr> base) {
   auto tok = current();
 
   auto suffix = RecurseType();
@@ -676,7 +675,7 @@ FlowPtr<Expr> Parser::RecurseExprTypeSuffix(FlowPtr<Expr> base) {
   return make<BinExpr>(base, OpAs, texpr)();
 }
 
-NullableFlowPtr<Expr> Parser::RecurseExprPrimary(bool is_type) {
+NullableFlowPtr<Expr> Parser::PImpl::RecurseExprPrimary(bool is_type) {
   auto start_pos = peek().GetStart();
 
   NullableFlowPtr<Expr> e;

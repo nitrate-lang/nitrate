@@ -37,7 +37,7 @@ using namespace ncc;
 using namespace ncc::lex;
 using namespace ncc::parse;
 
-NullableFlowPtr<Stmt> Parser::RecurseForInitExpr() {
+NullableFlowPtr<Stmt> Parser::PImpl::RecurseForInitExpr() {
   if (next_if(PuncSemi)) {
     return std::nullopt;
   } else if (next_if(Let)) {
@@ -70,7 +70,7 @@ NullableFlowPtr<Stmt> Parser::RecurseForInitExpr() {
   return std::nullopt;
 }
 
-NullableFlowPtr<Expr> Parser::RecurseForCondition() {
+NullableFlowPtr<Expr> Parser::PImpl::RecurseForCondition() {
   if (next_if(PuncSemi)) {
     return std::nullopt;
   } else {
@@ -87,7 +87,7 @@ NullableFlowPtr<Expr> Parser::RecurseForCondition() {
   }
 }
 
-NullableFlowPtr<Expr> Parser::RecurseForStepExpr(bool has_paren) {
+NullableFlowPtr<Expr> Parser::PImpl::RecurseForStepExpr(bool has_paren) {
   if (has_paren) {
     if (peek().is<PuncRPar>()) {
       return std::nullopt;
@@ -108,7 +108,7 @@ NullableFlowPtr<Expr> Parser::RecurseForStepExpr(bool has_paren) {
   }
 }
 
-FlowPtr<Stmt> Parser::RecurseForBody() {
+FlowPtr<Stmt> Parser::PImpl::RecurseForBody() {
   if (next_if(OpArrow)) {
     return RecurseBlock(false, true, SafetyMode::Unknown);
   } else {
@@ -116,7 +116,7 @@ FlowPtr<Stmt> Parser::RecurseForBody() {
   }
 }
 
-FlowPtr<Stmt> Parser::RecurseFor() {
+FlowPtr<Stmt> Parser::PImpl::RecurseFor() {
   bool for_with_paren = next_if(PuncLPar).has_value();
   auto for_init = RecurseForInitExpr();
   auto for_cond = RecurseForCondition();
