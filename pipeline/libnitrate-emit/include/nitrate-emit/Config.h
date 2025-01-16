@@ -34,9 +34,8 @@
 #ifndef __NITRATE_CODEGEN_CONFIG_H__
 #define __NITRATE_CODEGEN_CONFIG_H__
 
-#include <stdbool.h>
-#include <stddef.h>
-#include <stdio.h>
+#include <cstddef>
+#include <cstdio>
 
 /// TODO: Replace with c++ interface
 
@@ -48,7 +47,7 @@
 extern "C" {
 #endif
 
-typedef struct QCodegenConfig QCodegenConfig;
+using QCodegenConfig = struct QCodegenConfig;
 
 enum QcodeKeyT {
   QCK_UNKNOWN = 0,

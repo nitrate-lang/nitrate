@@ -81,23 +81,23 @@ public:
 };
 
 static std::optional<std::vector<std::string>> ParseOptions(
-    const char *const options[]) {
+    const char *const *options) {
   constexpr size_t kMaxOptions = 100000;
 
-  if (!options) {
+  if (options == nullptr) {
     return std::nullopt;
   }
 
   std::vector<std::string> opts;
 
-  for (size_t i = 0; options[i]; i++) {
+  for (size_t i = 0; options[i] != nullptr; i++) {
     if (i >= kMaxOptions) {
       qcore_logf(QCORE_ERROR, "Too many options provided, max is %zu",
                  kMaxOptions);
       return std::nullopt;
     }
 
-    opts.push_back(options[i]);
+    opts.emplace_back(options[i]);
   }
 
   return opts;
@@ -105,7 +105,7 @@ static std::optional<std::vector<std::string>> ParseOptions(
 
 static bool NitDispatchRequest(std::istream &in, std::ostream &out,
                                const char *transform, let opts_set,
-                               std::shared_ptr<ncc::Environment> env) {
+                               const std::shared_ptr<ncc::Environment> &env) {
   if (!DISPATCH_FUNCS.contains(transform)) {
     qcore_logf(QCORE_ERROR, "Unknown transform name in options: %s", transform);
     return false;
@@ -120,8 +120,8 @@ static bool NitDispatchRequest(std::istream &in, std::ostream &out,
 }
 
 static bool NitPipelineStream(std::istream &in, std::ostream &out,
-                              NitDiagFunc diag_cb, void *opaque,
-                              const char *const c_options[]) {
+                              nitrate::DiagnosticFunc diag_cb,
+                              const char *const *const c_options) {
   errno = 0;
 
   /***************************************************************************/
@@ -139,7 +139,7 @@ static bool NitPipelineStream(std::istream &in, std::ostream &out,
   /***************************************************************************/
 
   auto subid = ncc::Log.Subscribe([&](auto msg, auto sev, const auto &ec) {
-    diag_cb(ec.Format(msg, sev).c_str(), opaque);
+    diag_cb(ec.Format(msg, sev));
   });
 
   auto env = std::make_shared<ncc::Environment>();
@@ -167,8 +167,8 @@ static bool NitPipelineStream(std::istream &in, std::ostream &out,
 NCC_EXPORT nitrate::LazyResult<bool> nitrate::Pipeline(
     std::istream &in, std::ostream &out, std::vector<std::string> options,
     std::optional<DiagnosticFunc> diag) {
-  return nitrate::LazyResult<bool>([&in, &out, options = std::move(options),
-                                    diag]() -> bool {
+  return {[&in, &out, options = std::move(options),
+           diag_func = std::move(diag)]() -> bool {
     /* Convert options to C strings */
     std::vector<const char *> options_c_str(options.size() + 1);
     for (size_t i = 0; i < options.size(); i++) {
@@ -176,54 +176,43 @@ NCC_EXPORT nitrate::LazyResult<bool> nitrate::Pipeline(
     }
     options_c_str[options.size()] = nullptr;
 
-    void *functor_ctx = nullptr;
-    DiagnosticFunc callback = diag.value_or(nullptr);
-
-    if (callback != nullptr) {
-      functor_ctx = reinterpret_cast<void *>(&callback);
-    }
-
-    static let diag_nop = [](const char *, void *) {};
-    static let nit_diag_functor = [](const char *message, void *ctx) {
-      let callback = *reinterpret_cast<nitrate::DiagnosticFunc *>(ctx);
-      callback(message);
-    };
-
-    return NitPipelineStream(in, out, functor_ctx ? nit_diag_functor : diag_nop,
-                             functor_ctx, options_c_str.data());
-  });
+    return NitPipelineStream(in, out,
+                             diag_func.value_or([](std::string_view) {}),
+                             options_c_str.data());
+  }};
 }
 
 NCC_EXPORT nitrate::LazyResult<bool> nitrate::Chain(
     std::istream &in, std::ostream &out, ChainOptions operations,
     std::optional<DiagnosticFunc> diag, bool) {
-  return nitrate::LazyResult<bool>(
-      [&in, &out, operations = std::move(operations), diag]() -> bool {
-        if (operations.empty()) {
-          return true;
-        }
+  return {[&in, &out, operations = std::move(operations),
+           diag_func = std::move(diag)]() -> bool {
+    if (operations.empty()) {
+      return true;
+    }
 
-        if (operations.size() == 1) {
-          return nitrate::Pipeline(in, out, operations[0], diag).Get();
-        } else {
-          std::stringstream s0, s1;
-          if (!nitrate::Pipeline(in, s0, operations[0], diag).Get()) {
-            return false;
-          }
+    if (operations.size() == 1) {
+      return nitrate::Pipeline(in, out, operations[0], diag_func).Get();
+    }
 
-          for (size_t i = 1; i < operations.size() - 1; i++) {
-            if (!nitrate::Pipeline(s0, s1, operations[i], diag).Get()) {
-              return false;
-            }
+    std::stringstream s0;
+    std::stringstream s1;
+    if (!nitrate::Pipeline(in, s0, operations[0], diag_func).Get()) {
+      return false;
+    }
 
-            s0.str("");
-            s0.clear();
-            s0.swap(s1);
-          }
+    for (size_t i = 1; i < operations.size() - 1; i++) {
+      if (!nitrate::Pipeline(s0, s1, operations[i], diag_func).Get()) {
+        return false;
+      }
 
-          return nitrate::Pipeline(s0, out, operations.back(), diag).Get();
-        }
-      });
+      s0.str("");
+      s0.clear();
+      s0.swap(s1);
+    }
+
+    return nitrate::Pipeline(s0, out, operations.back(), diag_func).Get();
+  }};
 }
 
 ///============================================================================///
@@ -237,45 +226,40 @@ extern "C" NCC_EXPORT bool NitPipeline(FILE *in, FILE *out, NitDiagFunc diag_cb,
 
   public:
     FileStreamBuf(FILE *file) : m_file(file) { errno = 0; }
-    ~FileStreamBuf() = default;
+    ~FileStreamBuf() override = default;
 
-    virtual int_type overflow(int_type ch) override {
+    int_type overflow(int_type ch) override {
       if (ch != EOF) {
         char temp = ch;
         if (fwrite(&temp, 1, 1, m_file) != 1) {
-          int saved_errno = errno;
           qcore_logf(QCORE_ERROR, "Failed to write to stream: %s",
-                     strerror(saved_errno));
+                     GetStrerror().c_str());
           return traits_type::eof();
         }
       }
 
-      if (ferror(m_file)) {
-        int saved_errno = errno;
-        qcore_logf(QCORE_ERROR, "File stream error: %s", strerror(saved_errno));
+      if (ferror(m_file) != 0) {
+        qcore_logf(QCORE_ERROR, "File stream error: %s", GetStrerror().c_str());
         return traits_type::eof();
       }
 
       return ch;
     }
 
-    virtual std::streamsize xsputn(const char *s,
-                                   std::streamsize count) override {
+    std::streamsize xsputn(const char *s, std::streamsize count) override {
       std::streamsize written = 0;
       while (written < count) {
         size_t n = fwrite(s + written, 1, count - written, m_file);
         if (n == 0) {
-          int saved_errno = errno;
           qcore_logf(QCORE_ERROR, "Failed to write to stream: %s",
-                     strerror(saved_errno));
+                     GetStrerror().c_str());
           break;
         }
         written += n;
 
-        if (ferror(m_file)) {
-          int saved_errno = errno;
+        if (ferror(m_file) != 0) {
           qcore_logf(QCORE_ERROR, "File stream error: %s",
-                     strerror(saved_errno));
+                     GetStrerror().c_str());
           break;
         }
       }
@@ -283,14 +267,13 @@ extern "C" NCC_EXPORT bool NitPipeline(FILE *in, FILE *out, NitDiagFunc diag_cb,
       return written;
     }
 
-    virtual int_type underflow() override {
+    int_type underflow() override {
       if (gptr() == nullptr || gptr() >= egptr()) {
         size_t res = fread(&m_c, 1, 1, m_file);
         if (res == 0) {
-          if (ferror(m_file)) {
-            int saved_errno = errno;
+          if (ferror(m_file) != 0) {
             qcore_logf(QCORE_ERROR, "File stream error: %s",
-                       strerror(saved_errno));
+                       GetStrerror().c_str());
           }
           setg(nullptr, nullptr, nullptr);
           return traits_type::eof();
@@ -301,15 +284,14 @@ extern "C" NCC_EXPORT bool NitPipeline(FILE *in, FILE *out, NitDiagFunc diag_cb,
       return traits_type::to_int_type(*gptr());
     }
 
-    virtual std::streamsize xsgetn(char *s, std::streamsize count) override {
+    std::streamsize xsgetn(char *s, std::streamsize count) override {
       std::streamsize bytes_read = 0;
       while (bytes_read < count) {
         size_t n = fread(s + bytes_read, 1, count - bytes_read, m_file);
         if (n == 0) {
-          if (ferror(m_file)) {
-            int saved_errno = errno;
+          if (ferror(m_file) != 0) {
             qcore_logf(QCORE_ERROR, "File stream error: %s",
-                       strerror(saved_errno));
+                       GetStrerror().c_str());
           }
           break;
         }
@@ -320,16 +302,17 @@ extern "C" NCC_EXPORT bool NitPipeline(FILE *in, FILE *out, NitDiagFunc diag_cb,
     }
   };
 
-  if (!in || !out) {
+  if ((in == nullptr) || (out == nullptr)) {
     return false;
   }
 
-  diag_cb = diag_cb ? diag_cb : [](const char *, void *) {};
-
-  FileStreamBuf in_buf(in), out_buf(out);
+  FileStreamBuf in_buf(in);
+  FileStreamBuf out_buf(out);
 
   std::istream in_stream(&in_buf);
   std::ostream out_stream(&out_buf);
 
-  return NitPipelineStream(in_stream, out_stream, diag_cb, opaque, c_options);
+  return NitPipelineStream(
+      in_stream, out_stream,
+      [=](std::string_view v) { diag_cb(v.data(), opaque); }, c_options);
 }

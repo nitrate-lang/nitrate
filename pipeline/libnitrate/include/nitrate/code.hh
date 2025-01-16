@@ -80,7 +80,8 @@ namespace nitrate {
   static inline LazyResult<bool> Pipeline(
       const T &in, std::string &out, std::vector<std::string> options,
       std::optional<DiagnosticFunc> diag = DefaultDiagnostic) {
-    std::stringstream out_stream, in_stream(in);
+    std::stringstream out_stream;
+    std::stringstream in_stream(in);
     auto unit = Pipeline(in_stream, out_stream, std::move(options), diag);
     unit.Wait();
     out.assign(out_stream.str());
@@ -91,7 +92,8 @@ namespace nitrate {
   static inline LazyResult<bool> Pipeline(
       std::string_view in, std::string &out, std::vector<std::string> options,
       std::optional<DiagnosticFunc> diag = DefaultDiagnostic) {
-    std::stringstream out_stream, in_stream((std::string(in)));
+    std::stringstream out_stream;
+    std::stringstream in_stream((std::string(in)));
     auto unit = Pipeline(in_stream, out_stream, std::move(options), diag);
     unit.Wait();
     out.assign(out_stream.str());
@@ -101,15 +103,16 @@ namespace nitrate {
 
   using ChainOptions = std::vector<std::vector<std::string>>;
 
-  LazyResult<bool> Chain(
-      std::istream &in, std::ostream &out, ChainOptions operations,
-      std::optional<DiagnosticFunc> diag = DefaultDiagnostic,
-      bool select = false);
+  LazyResult<bool> Chain(std::istream &in, std::ostream &out,
+                         ChainOptions operations,
+                         std::optional<DiagnosticFunc> diag = DefaultDiagnostic,
+                         bool select = false);
 
   static inline LazyResult<bool> Chain(
       const auto &in, std::string &out, ChainOptions operations,
       std::optional<DiagnosticFunc> diag = DefaultDiagnostic) {
-    std::stringstream out_stream, in_stream(in);
+    std::stringstream out_stream;
+    std::stringstream in_stream(in);
     auto unit =
         Chain(in_stream, out_stream, std::move(operations), diag, false);
     unit.Wait();
@@ -122,7 +125,8 @@ namespace nitrate {
   static inline LazyResult<bool> Chain(
       std::string_view in, std::string &out, ChainOptions operations,
       std::optional<DiagnosticFunc> diag = DefaultDiagnostic) {
-    std::stringstream out_stream, in_stream((std::string(in)));
+    std::stringstream out_stream;
+    std::stringstream in_stream((std::string(in)));
     auto unit =
         Chain(in_stream, out_stream, std::move(operations), diag, false);
     unit.Wait();
