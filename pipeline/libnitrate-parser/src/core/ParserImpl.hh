@@ -124,9 +124,9 @@ namespace ncc::parse {
     std::pair<FuncParams, bool> RecurseFunctionParameters();
     NullableFlowPtr<Stmt> RecurseFunctionBody(bool parse_declaration_only);
     FlowPtr<Type> RecurseFunctionReturnType();
-    Purity GetPuritySpecifier(lex::Token start_pos, bool is_thread_safe,
-                              bool is_pure, bool is_impure, bool is_quasi,
-                              bool is_retro);
+    static Purity GetPuritySpecifier(lex::Token start_pos, bool is_thread_safe,
+                                     bool is_pure, bool is_impure,
+                                     bool is_quasi, bool is_retro);
     std::optional<std::pair<string, bool>> RecurseFunctionCapture();
     std::tuple<ExpressionList, FnCaptures, Purity, string>
     RecurseFunctionAmbigouis();

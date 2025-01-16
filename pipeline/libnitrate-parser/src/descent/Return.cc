@@ -40,18 +40,18 @@ using namespace ncc::parse;
 FlowPtr<Stmt> Parser::PImpl::RecurseReturn() {
   if (next_if(PuncSemi)) {
     return make<ReturnStmt>(std::nullopt)();
-  } else {
-    auto return_value = RecurseExpr({
-        Token(Punc, PuncSemi),
-    });
-
-    if (!next_if(PuncSemi)) [[unlikely]] {
-      Log << SyntaxError << current()
-          << "Expected ';' after the return statement.";
-    }
-
-    return make<ReturnStmt>(return_value)();
   }
+
+  auto return_value = RecurseExpr({
+      Token(Punc, PuncSemi),
+  });
+
+  if (!next_if(PuncSemi)) [[unlikely]] {
+    Log << SyntaxError << current()
+        << "Expected ';' after the return statement.";
+  }
+
+  return make<ReturnStmt>(return_value)();
 }
 
 FlowPtr<Stmt> Parser::PImpl::RecurseRetif() {

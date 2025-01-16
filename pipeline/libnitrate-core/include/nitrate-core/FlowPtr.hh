@@ -170,7 +170,9 @@ namespace ncc {
         return m_s.m_ref != o.m_s.m_ref;
       }
 
-      constexpr bool operator==(std::nullptr_t) const { return m_s.m_ref == 0; }
+      constexpr bool operator==(std::nullptr_t) const {
+        return m_s.m_ref == nullptr;
+      }
 
       ///=========================================================================
       /// Accessors

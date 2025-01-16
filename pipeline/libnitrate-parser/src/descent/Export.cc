@@ -39,6 +39,7 @@ using namespace ncc::parse;
 
 string Parser::PImpl::RecurseAbiName() {
   auto tok = next_if(Text);
+
   return tok ? tok->GetString() : "";
 }
 
@@ -76,9 +77,9 @@ std::optional<ExpressionList> Parser::PImpl::RecurseExportAttributes() {
 FlowPtr<Stmt> Parser::PImpl::RecurseExportBody() {
   if (peek().is<PuncLCur>()) {
     return RecurseBlock(true, false, SafetyMode::Unknown);
-  } else {
-    return RecurseBlock(false, true, SafetyMode::Unknown);
   }
+
+  return RecurseBlock(false, true, SafetyMode::Unknown);
 }
 
 FlowPtr<Stmt> Parser::PImpl::RecurseExport(Vis vis) {
@@ -89,8 +90,9 @@ FlowPtr<Stmt> Parser::PImpl::RecurseExport(Vis vis) {
 
     return make<ExportStmt>(export_body, export_abi, vis,
                             export_attributes.value())();
-  } else {
-    Log << SyntaxError << current() << "Malformed export attributes";
-    return MockStmt(QAST_EXPORT);
   }
+
+  Log << SyntaxError << current() << "Malformed export attributes";
+
+  return MockStmt(QAST_EXPORT);
 }

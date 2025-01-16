@@ -44,9 +44,9 @@ FlowPtr<Stmt> Parser::PImpl::RecurseSwitchCaseBody() {
 
   if (peek().is<PuncLCur>()) {
     return RecurseBlock(true, false, SafetyMode::Unknown);
-  } else {
-    return RecurseBlock(false, true, SafetyMode::Unknown);
   }
+
+  return RecurseBlock(false, true, SafetyMode::Unknown);
 }
 
 std::pair<FlowPtr<Stmt>, bool> Parser::PImpl::RecurseSwitchCase() {
@@ -61,9 +61,9 @@ std::pair<FlowPtr<Stmt>, bool> Parser::PImpl::RecurseSwitchCase() {
 
   if (is_the_default_case) {
     return {body, true};
-  } else {
-    return {make<CaseStmt>(cond, body)(), false};
   }
+
+  return {make<CaseStmt>(cond, body)(), false};
 }
 
 std::optional<std::pair<SwitchCases, NullableFlowPtr<Stmt>>>

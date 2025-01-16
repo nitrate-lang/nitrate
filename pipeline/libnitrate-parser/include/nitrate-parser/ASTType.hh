@@ -58,7 +58,7 @@ namespace ncc::parse {
 
   public:
     constexpr TemplType(auto templ, auto args)
-        : Type(QAST_TEMPLATE), m_template(templ), m_args(args) {}
+        : Type(QAST_TEMPLATE), m_template(std::move(templ)), m_args(args) {}
 
     [[nodiscard]] constexpr auto GetTemplate() const { return m_template; }
     [[nodiscard]] constexpr auto GetArgs() const { return m_args; }
@@ -150,7 +150,7 @@ namespace ncc::parse {
 
   public:
     constexpr PtrTy(auto item, auto is_volatile)
-        : Type(QAST_PTR), m_item(item), m_is_volatile(is_volatile) {}
+        : Type(QAST_PTR), m_item(std::move(item)), m_is_volatile(is_volatile) {}
 
     [[nodiscard]] constexpr auto GetItem() const { return m_item; }
     [[nodiscard]] constexpr bool IsVolatile() const { return m_is_volatile; }
@@ -180,7 +180,7 @@ namespace ncc::parse {
 
   public:
     constexpr ArrayTy(auto item, auto size)
-        : Type(QAST_ARRAY), m_item(item), m_size(size) {}
+        : Type(QAST_ARRAY), m_item(std::move(item)), m_size(std::move(size)) {}
 
     [[nodiscard]] constexpr auto GetItem() const { return m_item; }
     [[nodiscard]] constexpr auto GetSize() const { return m_size; }
@@ -190,7 +190,7 @@ namespace ncc::parse {
     FlowPtr<Type> m_item;
 
   public:
-    constexpr RefTy(auto item) : Type(QAST_REF), m_item(item) {}
+    constexpr RefTy(auto item) : Type(QAST_REF), m_item(std::move(item)) {}
 
     [[nodiscard]] constexpr auto GetItem() const { return m_item; }
   };
@@ -208,7 +208,7 @@ namespace ncc::parse {
         : Type(QAST_FUNCTOR),
           m_attributes(attributes),
           m_params(parameters),
-          m_return(return_type),
+          m_return(std::move(return_type)),
           m_purity(purity),
           m_variadic(variadic) {}
 

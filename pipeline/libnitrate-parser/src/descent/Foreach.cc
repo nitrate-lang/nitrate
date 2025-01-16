@@ -62,20 +62,20 @@ FlowPtr<Expr> Parser::PImpl::RecurseForeachExpr(bool has_paren) {
     return RecurseExpr({
         Token(Punc, PuncRPar),
     });
-  } else {
-    return RecurseExpr({
-        Token(Punc, PuncLCur),
-        Token(Oper, OpArrow),
-    });
   }
+
+  return RecurseExpr({
+      Token(Punc, PuncLCur),
+      Token(Oper, OpArrow),
+  });
 }
 
 FlowPtr<Stmt> Parser::PImpl::RecurseForeachBody() {
   if (next_if(OpArrow)) {
     return RecurseBlock(false, true, SafetyMode::Unknown);
-  } else {
-    return RecurseBlock(true, false, SafetyMode::Unknown);
   }
+
+  return RecurseBlock(true, false, SafetyMode::Unknown);
 }
 
 FlowPtr<Stmt> Parser::PImpl::RecurseForeach() {

@@ -40,20 +40,20 @@ using namespace ncc::parse;
 FlowPtr<Expr> Parser::PImpl::RecurseWhileCond() {
   if (auto cur = peek(); cur.is<OpArrow>() || cur.is<PuncLCur>()) {
     return make<ConstBool>(true)();
-  } else {
-    return RecurseExpr({
-        Token(Punc, PuncLCur),
-        Token(Oper, OpArrow),
-    });
   }
+
+  return RecurseExpr({
+      Token(Punc, PuncLCur),
+      Token(Oper, OpArrow),
+  });
 }
 
 FlowPtr<Stmt> Parser::PImpl::RecurseWhileBody() {
   if (next_if(OpArrow)) {
     return RecurseBlock(false, true, SafetyMode::Unknown);
-  } else {
-    return RecurseBlock(true, false, SafetyMode::Unknown);
   }
+
+  return RecurseBlock(true, false, SafetyMode::Unknown);
 }
 
 FlowPtr<Stmt> Parser::PImpl::RecurseWhile() {

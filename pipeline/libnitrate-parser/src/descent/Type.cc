@@ -175,9 +175,9 @@ FlowPtr<parse::Type> Parser::PImpl::RecurseOpaqueType() {
       opaque->SetOffset(current().GetStart());
 
       return opaque;
-    } else {
-      Log << SyntaxError << current() << "Expected ')' after 'opaque(name'";
     }
+
+    Log << SyntaxError << current() << "Expected ')' after 'opaque(name'";
   } else {
     Log << SyntaxError << current() << "Expected a name after 'opaque('";
   }

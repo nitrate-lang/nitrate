@@ -40,27 +40,31 @@ using namespace ncc::parse;
 NullableFlowPtr<Stmt> Parser::PImpl::RecurseForInitExpr() {
   if (next_if(PuncSemi)) {
     return std::nullopt;
-  } else if (next_if(Let)) {
+  }
+
+  if (next_if(Let)) {
     if (auto vars = RecurseVariable(VarDeclType::Let); vars.size() == 1) {
       return vars[0];
-    } else {
-      Log << SyntaxError << current()
-          << "Expected exactly one variable in for loop";
     }
+
+    Log << SyntaxError << current()
+        << "Expected exactly one variable in for loop";
+
   } else if (next_if(Var)) {
     if (auto vars = RecurseVariable(VarDeclType::Var); vars.size() == 1) {
       return vars[0];
-    } else {
-      Log << SyntaxError << current()
-          << "Expected exactly one variable in for loop";
     }
+
+    Log << SyntaxError << current()
+        << "Expected exactly one variable in for loop";
   } else if (next_if(Const)) {
     if (auto vars = RecurseVariable(VarDeclType::Const); vars.size() == 1) {
       return vars[0];
-    } else {
-      Log << SyntaxError << current()
-          << "Expected exactly one variable in for loop";
     }
+
+    Log << SyntaxError << current()
+        << "Expected exactly one variable in for loop";
+
   } else {
     return make<ExprStmt>(RecurseExpr({
         Token(Punc, PuncSemi),
@@ -73,47 +77,46 @@ NullableFlowPtr<Stmt> Parser::PImpl::RecurseForInitExpr() {
 NullableFlowPtr<Expr> Parser::PImpl::RecurseForCondition() {
   if (next_if(PuncSemi)) {
     return std::nullopt;
-  } else {
-    auto condition = RecurseExpr({
-        Token(Punc, PuncSemi),
-    });
-
-    if (!next_if(PuncSemi)) {
-      Log << SyntaxError << current()
-          << "Expected semicolon after condition expression";
-    }
-
-    return condition;
   }
+
+  auto condition = RecurseExpr({
+      Token(Punc, PuncSemi),
+  });
+
+  if (!next_if(PuncSemi)) {
+    Log << SyntaxError << current()
+        << "Expected semicolon after condition expression";
+  }
+
+  return condition;
 }
 
 NullableFlowPtr<Expr> Parser::PImpl::RecurseForStepExpr(bool has_paren) {
   if (has_paren) {
     if (peek().is<PuncRPar>()) {
       return std::nullopt;
-    } else {
-      return RecurseExpr({
-          Token(Punc, PuncRPar),
-      });
     }
-  } else {
-    if (peek().is<OpArrow>() || peek().is<PuncLCur>()) {
-      return std::nullopt;
-    } else {
-      return RecurseExpr({
-          Token(Punc, PuncLCur),
-          Token(Oper, OpArrow),
-      });
-    }
+
+    return RecurseExpr({
+        Token(Punc, PuncRPar),
+    });
   }
+  if (peek().is<OpArrow>() || peek().is<PuncLCur>()) {
+    return std::nullopt;
+  }
+
+  return RecurseExpr({
+      Token(Punc, PuncLCur),
+      Token(Oper, OpArrow),
+  });
 }
 
 FlowPtr<Stmt> Parser::PImpl::RecurseForBody() {
   if (next_if(OpArrow)) {
     return RecurseBlock(false, true, SafetyMode::Unknown);
-  } else {
-    return RecurseBlock(true, false, SafetyMode::Unknown);
   }
+
+  return RecurseBlock(true, false, SafetyMode::Unknown);
 }
 
 FlowPtr<Stmt> Parser::PImpl::RecurseFor() {

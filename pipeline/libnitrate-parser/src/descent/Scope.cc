@@ -40,9 +40,9 @@ using namespace ncc::parse;
 string Parser::PImpl::RecurseScopeName() {
   if (auto tok = next_if(Name)) {
     return tok->GetString();
-  } else {
-    return "";
   }
+
+  return "";
 }
 
 std::optional<ScopeDeps> Parser::PImpl::RecurseScopeDeps() {
@@ -84,11 +84,13 @@ std::optional<ScopeDeps> Parser::PImpl::RecurseScopeDeps() {
 FlowPtr<Stmt> Parser::PImpl::RecurseScopeBlock() {
   if (next_if(PuncSemi)) {
     return make<Block>(BlockItems(), SafetyMode::Unknown)();
-  } else if (next_if(OpArrow)) {
-    return RecurseBlock(false, true, SafetyMode::Unknown);
-  } else {
-    return RecurseBlock(true, false, SafetyMode::Unknown);
   }
+
+  if (next_if(OpArrow)) {
+    return RecurseBlock(false, true, SafetyMode::Unknown);
+  }
+
+  return RecurseBlock(true, false, SafetyMode::Unknown);
 }
 
 FlowPtr<Stmt> Parser::PImpl::RecurseScope() {

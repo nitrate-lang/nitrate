@@ -68,6 +68,7 @@ public:
       char c = ch;
       if (write(m_fd, &c, 1) != 1) {
         LOG(ERROR) << "Failed to write to stream: " << GetStrerror();
+
         return traits_type::eof();
       }
     }

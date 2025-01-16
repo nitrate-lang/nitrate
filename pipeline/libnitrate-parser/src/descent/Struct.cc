@@ -70,6 +70,7 @@ ExpressionList Parser::PImpl::RecurseStructAttributes() {
 
 string Parser::PImpl::RecurseStructName() {
   auto tok = next_if(Name);
+
   return tok ? tok->GetString() : "";
 }
 
@@ -100,9 +101,9 @@ NullableFlowPtr<Expr> Parser::PImpl::RecurseStructFieldDefaultValue() {
         Token(Punc, PuncSemi),
         Token(Punc, PuncRCur),
     });
-  } else {
-    return std::nullopt;
   }
+
+  return std::nullopt;
 }
 
 void Parser::PImpl::RecurseStructField(Vis vis, bool is_static,
@@ -143,9 +144,9 @@ void Parser::PImpl::RecurseStructMethodOrField(StructContent &body) {
     auto method = RecurseFunction(false);
 
     if (is_static_member) {
-      body.m_static_methods.push_back({vis, method});
+      body.m_static_methods.emplace_back(vis, method);
     } else {
-      body.m_methods.push_back({vis, method});
+      body.m_methods.emplace_back(vis, method);
     }
   } else {
     RecurseStructField(vis, is_static_member, body.m_fields);
@@ -159,6 +160,7 @@ Parser::PImpl::StructContent Parser::PImpl::RecurseStructBody() {
 
   if (!next_if(PuncLCur)) [[unlikely]] {
     Log << SyntaxError << current() << "Expected '{' to start struct body";
+
     return body;
   }
 

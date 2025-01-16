@@ -40,9 +40,9 @@ using namespace ncc::parse;
 FlowPtr<parse::Type> Parser::PImpl::RecurseFunctionParameterType() {
   if (next_if(PuncColn)) {
     return RecurseType();
-  } else {
-    return make<InferTy>()();
   }
+
+  return make<InferTy>()();
 }
 
 NullableFlowPtr<Expr> Parser::PImpl::RecurseFunctionParameterValue() {
@@ -52,9 +52,9 @@ NullableFlowPtr<Expr> Parser::PImpl::RecurseFunctionParameterValue() {
         Token(Punc, PuncRPar),
         Token(Oper, OpGT),
     });
-  } else {
-    return std::nullopt;
   }
+
+  return std::nullopt;
 }
 
 std::optional<FuncParam> Parser::PImpl::RecurseFunctionParameter() {
@@ -63,9 +63,9 @@ std::optional<FuncParam> Parser::PImpl::RecurseFunctionParameter() {
     auto param_value = RecurseFunctionParameterValue();
 
     return FuncParam{param_name->GetString(), param_type, param_value};
-  } else {
-    Log << SyntaxError << next() << "Expected a parameter name before ':'";
   }
+
+  Log << SyntaxError << next() << "Expected a parameter name before ':'";
 
   return std::nullopt;
 }
@@ -91,7 +91,7 @@ std::optional<TemplateParameters> Parser::PImpl::RecurseTemplateParameters() {
     if (auto param_opt = RecurseFunctionParameter()) {
       auto [param_name, param_type, param_value] = param_opt.value();
 
-      params.push_back({param_name, param_type, param_value});
+      params.emplace_back(param_name, param_type, param_value);
     } else {
       Log << SyntaxError << next() << "Expected a template parameter";
     }
@@ -107,6 +107,7 @@ std::pair<FuncParams, bool> Parser::PImpl::RecurseFunctionParameters() {
 
   if (!next_if(PuncLPar)) [[unlikely]] {
     Log << SyntaxError << current() << "Expected '(' after function name";
+
     return parameters;
   }
 
@@ -116,6 +117,7 @@ std::pair<FuncParams, bool> Parser::PImpl::RecurseFunctionParameters() {
     if (next_if(EofF)) [[unlikely]] {
       Log << SyntaxError << current()
           << "Unexpected EOF in function parameters";
+
       return parameters;
     }
 
@@ -135,7 +137,7 @@ std::pair<FuncParams, bool> Parser::PImpl::RecurseFunctionParameters() {
 
     if (auto parameter = RecurseFunctionParameter()) {
       auto [param_name, param_type, param_value] = parameter.value();
-      parameters.first.push_back({param_name, param_type, param_value});
+      parameters.first.emplace_back(param_name, param_type, param_value);
 
     } else {
       Log << SyntaxError << next() << "Expected a function parameter";
@@ -153,8 +155,10 @@ Purity Parser::PImpl::GetPuritySpecifier(Token start_pos, bool is_thread_safe,
                                          bool is_pure, bool is_impure,
                                          bool is_quasi, bool is_retro) {
   /* Ensure that there is no duplication of purity specifiers */
-  if ((is_impure + is_pure + is_quasi + is_retro) > 1) {
+  if ((static_cast<int>(is_impure) + static_cast<int>(is_pure) +
+       static_cast<int>(is_quasi) + static_cast<int>(is_retro)) > 1) {
     Log << SyntaxError << start_pos << "Conflicting purity specifiers";
+
     return Purity::Impure;
   }
 
@@ -163,15 +167,21 @@ Purity Parser::PImpl::GetPuritySpecifier(Token start_pos, bool is_thread_safe,
    */
   if (is_pure) {
     return Purity::Pure;
-  } else if (is_quasi) {
-    return Purity::Quasi;
-  } else if (is_retro) {
-    return Purity::Retro;
-  } else if (is_thread_safe) {
-    return Purity::Impure_TSafe;
-  } else {
-    return Purity::Impure;
   }
+
+  if (is_quasi) {
+    return Purity::Quasi;
+  }
+
+  if (is_retro) {
+    return Purity::Retro;
+  }
+
+  if (is_thread_safe) {
+    return Purity::Impure_TSafe;
+  }
+
+  return Purity::Impure;
 }
 
 std::optional<std::pair<string, bool>> Parser::PImpl::RecurseFunctionCapture() {
@@ -179,10 +189,11 @@ std::optional<std::pair<string, bool>> Parser::PImpl::RecurseFunctionCapture() {
 
   if (auto name = next_if(Name)) {
     return {{name->GetString(), is_ref}};
-  } else {
-    Log << SyntaxError << next() << "Expected a capture name";
-    return std::nullopt;
   }
+
+  Log << SyntaxError << next() << "Expected a capture name";
+
+  return std::nullopt;
 }
 
 std::tuple<ExpressionList, FnCaptures, Purity, string>
@@ -198,9 +209,13 @@ Parser::PImpl::RecurseFunctionAmbigouis() {
   ExpressionList attributes;
   FnCaptures captures;
   string function_name;
-  bool is_thread_safe = false, is_pure = false, is_impure = false,
-       is_quasi = false, is_retro = false, already_parsed_attributes = false,
-       already_parsed_captures = false;
+  bool is_thread_safe = false;
+  bool is_pure = false;
+  bool is_impure = false;
+  bool is_quasi = false;
+  bool is_retro = false;
+  bool already_parsed_attributes = false;
+  bool already_parsed_captures = false;
 
   while (state != State::End) {
     if (next_if(EofF)) [[unlikely]] {
@@ -307,7 +322,7 @@ Parser::PImpl::RecurseFunctionAmbigouis() {
           }
 
           if (auto capture = RecurseFunctionCapture()) {
-            captures.push_back({capture->first, capture->second});
+            captures.emplace_back(capture->first, capture->second);
           }
 
           next_if(PuncComa);
@@ -331,20 +346,22 @@ Parser::PImpl::RecurseFunctionAmbigouis() {
 FlowPtr<parse::Type> Parser::PImpl::RecurseFunctionReturnType() {
   if (next_if(PuncColn)) {
     return RecurseType();
-  } else {
-    return make<InferTy>()();
   }
+
+  return make<InferTy>()();
 }
 
 NullableFlowPtr<Stmt> Parser::PImpl::RecurseFunctionBody(
     bool parse_declaration_only) {
   if (parse_declaration_only || next_if(PuncSemi)) {
     return std::nullopt;
-  } else if (next_if(OpArrow)) {
-    return RecurseBlock(false, true, SafetyMode::Unknown);
-  } else {
-    return RecurseBlock(true, false, SafetyMode::Unknown);
   }
+
+  if (next_if(OpArrow)) {
+    return RecurseBlock(false, true, SafetyMode::Unknown);
+  }
+
+  return RecurseBlock(true, false, SafetyMode::Unknown);
 }
 
 FlowPtr<Stmt> Parser::PImpl::RecurseFunction(bool parse_declaration_only) {

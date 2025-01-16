@@ -71,8 +71,8 @@ namespace ncc::parse {
                       auto attributes)
         : Stmt(QAST_VAR),
           m_attributes(attributes),
-          m_type(type),
-          m_value(value),
+          m_type(std::move(type)),
+          m_value(std::move(value)),
           m_decl_type(decl_type),
           m_name(name) {}
 
@@ -102,7 +102,10 @@ namespace ncc::parse {
 
   public:
     constexpr IfStmt(auto cond, auto then, auto ele)
-        : Stmt(QAST_IF), m_cond(cond), m_then(then), m_else(ele) {}
+        : Stmt(QAST_IF),
+          m_cond(std::move(cond)),
+          m_then(std::move(then)),
+          m_else(std::move(ele)) {}
 
     [[nodiscard]] constexpr auto GetCond() const { return m_cond; }
     [[nodiscard]] constexpr auto GetThen() const { return m_then; }
@@ -115,7 +118,7 @@ namespace ncc::parse {
 
   public:
     constexpr WhileStmt(auto cond, auto body)
-        : Stmt(QAST_WHILE), m_cond(cond), m_body(body) {}
+        : Stmt(QAST_WHILE), m_cond(std::move(cond)), m_body(std::move(body)) {}
 
     [[nodiscard]] constexpr auto GetCond() const { return m_cond; }
     [[nodiscard]] constexpr auto GetBody() const { return m_body; }
@@ -129,10 +132,10 @@ namespace ncc::parse {
   public:
     constexpr ForStmt(auto init, auto cond, auto step, auto body)
         : Stmt(QAST_FOR),
-          m_init(init),
-          m_cond(cond),
-          m_step(step),
-          m_body(body) {}
+          m_init(std::move(init)),
+          m_cond(std::move(cond)),
+          m_step(std::move(step)),
+          m_body(std::move(body)) {}
 
     [[nodiscard]] constexpr auto GetInit() const { return m_init; }
     [[nodiscard]] constexpr auto GetCond() const { return m_cond; }
@@ -148,8 +151,8 @@ namespace ncc::parse {
   public:
     constexpr ForeachStmt(auto idx_ident, auto val_ident, auto expr, auto body)
         : Stmt(QAST_FOREACH),
-          m_expr(expr),
-          m_body(body),
+          m_expr(std::move(expr)),
+          m_body(std::move(body)),
           m_idx_ident(idx_ident),
           m_val_ident(val_ident) {}
 
@@ -173,7 +176,8 @@ namespace ncc::parse {
     NullableFlowPtr<Expr> m_value;
 
   public:
-    constexpr ReturnStmt(auto value) : Stmt(QAST_RETURN), m_value(value) {}
+    constexpr ReturnStmt(auto value)
+        : Stmt(QAST_RETURN), m_value(std::move(value)) {}
 
     [[nodiscard]] constexpr auto GetValue() const { return m_value; }
   };
@@ -183,7 +187,9 @@ namespace ncc::parse {
 
   public:
     constexpr ReturnIfStmt(auto cond, auto value)
-        : Stmt(QAST_RETIF), m_cond(cond), m_value(value) {}
+        : Stmt(QAST_RETIF),
+          m_cond(std::move(cond)),
+          m_value(std::move(value)) {}
 
     [[nodiscard]] constexpr auto GetCond() const { return m_cond; }
     [[nodiscard]] constexpr auto GetValue() const { return m_value; }
@@ -195,7 +201,7 @@ namespace ncc::parse {
 
   public:
     constexpr CaseStmt(auto cond, auto body)
-        : Stmt(QAST_CASE), m_cond(cond), m_body(body) {}
+        : Stmt(QAST_CASE), m_cond(std::move(cond)), m_body(std::move(body)) {}
 
     [[nodiscard]] constexpr auto GetCond() const { return m_cond; }
     [[nodiscard]] constexpr auto GetBody() const { return m_body; }
@@ -208,7 +214,10 @@ namespace ncc::parse {
 
   public:
     constexpr SwitchStmt(auto cond, auto cases, auto def)
-        : Stmt(QAST_SWITCH), m_cases(cases), m_cond(cond), m_default(def) {}
+        : Stmt(QAST_SWITCH),
+          m_cases(cases),
+          m_cond(std::move(cond)),
+          m_default(std::move(def)) {}
 
     [[nodiscard]] constexpr auto GetCond() const { return m_cond; }
     [[nodiscard]] constexpr auto GetCases() const { return m_cases; }
@@ -225,7 +234,7 @@ namespace ncc::parse {
     constexpr ExportStmt(auto content, auto abi_name, auto vis, auto attrs)
         : Stmt(QAST_EXPORT),
           m_attrs(attrs),
-          m_body(content),
+          m_body(std::move(content)),
           m_abi_name(abi_name),
           m_vis(vis) {}
 
@@ -242,7 +251,10 @@ namespace ncc::parse {
 
   public:
     constexpr ScopeStmt(auto name, auto body, auto deps)
-        : Stmt(QAST_SCOPE), m_deps(deps), m_body(body), m_name(name) {}
+        : Stmt(QAST_SCOPE),
+          m_deps(deps),
+          m_body(std::move(body)),
+          m_name(name) {}
 
     [[nodiscard]] constexpr auto GetName() const { return m_name; }
     [[nodiscard]] constexpr auto GetBody() const { return m_body; }
@@ -268,7 +280,10 @@ namespace ncc::parse {
 
   public:
     constexpr EnumDef(auto name, auto type, auto items)
-        : Stmt(QAST_ENUM), m_items(items), m_type(type), m_name(name) {}
+        : Stmt(QAST_ENUM),
+          m_items(items),
+          m_type(std::move(type)),
+          m_name(name) {}
 
     [[nodiscard]] constexpr auto GetName() const { return m_name; }
     [[nodiscard]] constexpr auto GetItems() const { return m_items; }
@@ -295,10 +310,10 @@ namespace ncc::parse {
           m_attributes(attributes),
           m_captures(captures),
           m_params(fn_params),
-          m_return(return_type),
-          m_precond(precond),
-          m_postcond(postcond),
-          m_body(body),
+          m_return(std::move(return_type)),
+          m_precond(std::move(precond)),
+          m_postcond(std::move(postcond)),
+          m_body(std::move(body)),
           m_name(name),
           m_purity(purity),
           m_variadic(variadic) {

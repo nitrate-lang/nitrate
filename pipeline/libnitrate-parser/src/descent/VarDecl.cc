@@ -71,9 +71,9 @@ std::optional<ExpressionList> Parser::PImpl::RecurseVariableAttributes() {
 NullableFlowPtr<parse::Type> Parser::PImpl::RecurseVariableType() {
   if (next_if(PuncColn)) {
     return RecurseType();
-  } else {
-    return std::nullopt;
   }
+
+  return std::nullopt;
 }
 
 NullableFlowPtr<Expr> Parser::PImpl::RecurseVariableValue() {
@@ -82,9 +82,9 @@ NullableFlowPtr<Expr> Parser::PImpl::RecurseVariableValue() {
         Token(Punc, PuncComa),
         Token(Punc, PuncSemi),
     });
-  } else {
-    return std::nullopt;
   }
+
+  return std::nullopt;
 }
 
 NullableFlowPtr<Stmt> Parser::PImpl::RecurseVariableInstance(
@@ -97,14 +97,16 @@ NullableFlowPtr<Stmt> Parser::PImpl::RecurseVariableInstance(
 
       return make<VarDecl>(variable_name, variable_type, variable_initial,
                            decl_type, symbol_attributes_opt.value())();
-    } else {
-      Log << SyntaxError << current() << "Expected variable name";
-      return std::nullopt;
     }
-  } else {
-    Log << SyntaxError << current() << "Malformed variable attributes";
-    return MockStmt(QAST_VAR);
+
+    Log << SyntaxError << current() << "Expected variable name";
+
+    return std::nullopt;
   }
+
+  Log << SyntaxError << current() << "Malformed variable attributes";
+
+  return MockStmt(QAST_VAR);
 }
 
 std::vector<FlowPtr<Stmt>> Parser::PImpl::RecurseVariable(

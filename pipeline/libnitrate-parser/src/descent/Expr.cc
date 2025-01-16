@@ -36,8 +36,8 @@
 #include <stack>
 #include <utility>
 
-#define MAX_RECURSION_DEPTH 4096
-#define MAX_LIST_REPEAT_COUNT 4096
+static constexpr size_t kMaxRecursionDepth = 4096;
+static constexpr size_t kMaxListRepeatCount = 4096;
 
 using namespace ncc;
 using namespace ncc::lex;
@@ -308,7 +308,7 @@ FlowPtr<Expr> Parser::PImpl::RecurseExpr(const std::set<Token> &terminators) {
                 right_side = pre_unary_expr;
               }
 
-              if (stack.size() + 1 > MAX_RECURSION_DEPTH) {
+              if (stack.size() + 1 > kMaxRecursionDepth) {
                 Log << SyntaxError << current()
                     << "Recursion depth exceeds maximum limit";
                 return MockExpr();
@@ -550,7 +550,7 @@ NullableFlowPtr<Expr> Parser::PImpl::RecurseExprPunctor(lex::Punctor punc) {
                     item_repeat_str->data() + item_repeat_str->size(),
                     item_repeat_count)
                     .ec == std::errc()) {
-              if (item_repeat_count <= MAX_LIST_REPEAT_COUNT) {
+              if (item_repeat_count <= kMaxListRepeatCount) {
                 for (size_t i = 0; i < item_repeat_count; i++) {
                   items.push_back(expr);
                 }

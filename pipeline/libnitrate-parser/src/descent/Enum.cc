@@ -40,17 +40,17 @@ using namespace ncc::parse;
 string Parser::PImpl::RecurseEnumName() {
   if (auto tok = next_if(Name)) {
     return tok->GetString();
-  } else {
-    return "";
   }
+
+  return "";
 }
 
 NullableFlowPtr<parse::Type> Parser::PImpl::RecurseEnumType() {
   if (next_if(PuncColn)) {
     return RecurseType();
-  } else {
-    return std::nullopt;
   }
+
+  return std::nullopt;
 }
 
 NullableFlowPtr<Expr> Parser::PImpl::RecurseEnumItemValue() {
@@ -60,9 +60,9 @@ NullableFlowPtr<Expr> Parser::PImpl::RecurseEnumItemValue() {
         Token(Punc, PuncComa),
         Token(Punc, PuncRCur),
     });
-  } else {
-    return std::nullopt;
   }
+
+  return std::nullopt;
 }
 
 std::optional<EnumItem> Parser::PImpl::RecurseEnumItem() {
@@ -70,10 +70,11 @@ std::optional<EnumItem> Parser::PImpl::RecurseEnumItem() {
     auto member_value = RecurseEnumItemValue();
 
     return EnumItem(member_name->GetString(), member_value);
-  } else {
-    Log << SyntaxError << next() << "Enum field is missing a name.";
-    return std::nullopt;
   }
+
+  Log << SyntaxError << next() << "Enum field is missing a name.";
+
+  return std::nullopt;
 }
 
 std::optional<EnumDefItems> Parser::PImpl::RecurseEnumItems() {
@@ -119,7 +120,7 @@ FlowPtr<Stmt> Parser::PImpl::RecurseEnum() {
 
   if (auto items = RecurseEnumItems()) {
     return make<EnumDef>(name, type, items.value())();
-  } else {
-    return MockStmt(QAST_ENUM);
   }
+
+  return MockStmt(QAST_ENUM);
 }

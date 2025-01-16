@@ -40,23 +40,25 @@ using namespace ncc::parse;
 FlowPtr<Stmt> Parser::PImpl::RecurseIfThen() {
   if (next_if(OpArrow)) {
     return RecurseBlock(false, true, SafetyMode::Unknown);
-  } else {
-    return RecurseBlock(true, false, SafetyMode::Unknown);
   }
+
+  return RecurseBlock(true, false, SafetyMode::Unknown);
 }
 
 NullableFlowPtr<Stmt> Parser::PImpl::RecurseIfElse() {
   if (next_if(Else)) {
     if (next_if(OpArrow)) {
       return RecurseBlock(false, true, SafetyMode::Unknown);
-    } else if (next_if(If)) {
-      return RecurseIf();
-    } else {
-      return RecurseBlock(true, false, SafetyMode::Unknown);
     }
-  } else {
-    return std::nullopt;
+
+    if (next_if(If)) {
+      return RecurseIf();
+    }
+
+    return RecurseBlock(true, false, SafetyMode::Unknown);
   }
+
+  return std::nullopt;
 }
 
 FlowPtr<Stmt> Parser::PImpl::RecurseIf() {

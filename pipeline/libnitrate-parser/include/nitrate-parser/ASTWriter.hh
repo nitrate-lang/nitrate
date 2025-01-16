@@ -77,22 +77,21 @@ namespace ncc::parse {
     [[nodiscard]] std::string_view VisStr(Vis vis) const;
 
   public:
-    AstWriter(InsertString str_impl, InsertUInt64 uint_impl,
-              InsertDouble dbl_impl, InsertBool bool_impl, InsertNull null_impl,
-              BeginObject begin_obj_impl, EndObject end_obj_impl,
-              BeginArray begin_arr_impl, EndArray end_arr_impl,
+    AstWriter(auto str_impl, auto uint_impl, auto dbl_impl, auto bool_impl,
+              auto null_impl, auto begin_obj_impl, auto end_obj_impl,
+              auto begin_arr_impl, auto end_arr_impl,
               WriterSourceProvider rd = std::nullopt)
-        : string(str_impl),
-          uint64(uint_impl),
-          dbl(dbl_impl),
-          boolean(bool_impl),
-          null(null_impl),
-          begin_obj(begin_obj_impl),
-          end_obj(end_obj_impl),
-          begin_arr(begin_arr_impl),
-          end_arr(end_arr_impl),
+        : string(std::move(str_impl)),
+          uint64(std::move(uint_impl)),
+          dbl(std::move(dbl_impl)),
+          boolean(std::move(bool_impl)),
+          null(std::move(null_impl)),
+          begin_obj(std::move(begin_obj_impl)),
+          end_obj(std::move(end_obj_impl)),
+          begin_arr(std::move(begin_arr_impl)),
+          end_arr(std::move(end_arr_impl)),
           m_rd(rd) {}
-    virtual ~AstWriter() = default;
+    ~AstWriter() override = default;
 
     void Visit(FlowPtr<Base> n) override;
     void Visit(FlowPtr<ExprStmt> n) override;
@@ -184,23 +183,20 @@ namespace ncc::parse {
   public:
     AstJsonWriter(std::ostream& os, WriterSourceProvider rd = std::nullopt)
         : AstWriter(
-              std::bind(&AstJsonWriter::StrImpl, this, std::placeholders::_1),
-              std::bind(&AstJsonWriter::UintImpl, this, std::placeholders::_1),
-              std::bind(&AstJsonWriter::DoubleImpl, this,
-                        std::placeholders::_1),
-              std::bind(&AstJsonWriter::BoolImpl, this, std::placeholders::_1),
-              std::bind(&AstJsonWriter::NullImpl, this),
-              std::bind(&AstJsonWriter::BeginObjImpl, this,
-                        std::placeholders::_1),
-              std::bind(&AstJsonWriter::EndObjImpl, this),
-              std::bind(&AstJsonWriter::BeginArrImpl, this,
-                        std::placeholders::_1),
-              std::bind(&AstJsonWriter::EndArrImpl, this), rd),
+              [this](auto&& x) { StrImpl(std::forward<decltype(x)>(x)); },
+              [this](auto&& x) { UintImpl(std::forward<decltype(x)>(x)); },
+              [this](auto&& x) { DoubleImpl(std::forward<decltype(x)>(x)); },
+              [this](auto&& x) { BoolImpl(std::forward<decltype(x)>(x)); },
+              [this] { NullImpl(); },
+              [this](auto&& x) { BeginObjImpl(std::forward<decltype(x)>(x)); },
+              [this] { EndObjImpl(); },
+              [this](auto&& x) { BeginArrImpl(std::forward<decltype(x)>(x)); },
+              [this] { EndArrImpl(); }, rd),
           m_os(os) {
       m_comma.push(false);
       m_count.push(0);
     }
-    virtual ~AstJsonWriter() = default;
+    ~AstJsonWriter() override = default;
   };
 
   class NCC_EXPORT AstMsgPackWriter : public AstWriter {
@@ -218,23 +214,18 @@ namespace ncc::parse {
 
   public:
     AstMsgPackWriter(std::ostream& os, WriterSourceProvider rd = std::nullopt)
-        : AstWriter(std::bind(&AstMsgPackWriter::StrImpl, this,
-                              std::placeholders::_1),
-                    std::bind(&AstMsgPackWriter::UintImpl, this,
-                              std::placeholders::_1),
-                    std::bind(&AstMsgPackWriter::DoubleImpl, this,
-                              std::placeholders::_1),
-                    std::bind(&AstMsgPackWriter::BoolImpl, this,
-                              std::placeholders::_1),
-                    std::bind(&AstMsgPackWriter::NullImpl, this),
-                    std::bind(&AstMsgPackWriter::BeginObjImpl, this,
-                              std::placeholders::_1),
-                    std::bind(&AstMsgPackWriter::EndObjImpl, this),
-                    std::bind(&AstMsgPackWriter::BeginArrImpl, this,
-                              std::placeholders::_1),
-                    std::bind(&AstMsgPackWriter::EndArrImpl, this), rd),
+        : AstWriter(
+              [this](auto&& x) { StrImpl(std::forward<decltype(x)>(x)); },
+              [this](auto&& x) { UintImpl(std::forward<decltype(x)>(x)); },
+              [this](auto&& x) { DoubleImpl(std::forward<decltype(x)>(x)); },
+              [this](auto&& x) { BoolImpl(std::forward<decltype(x)>(x)); },
+              [this] { NullImpl(); },
+              [this](auto&& x) { BeginObjImpl(std::forward<decltype(x)>(x)); },
+              [this] { EndObjImpl(); },
+              [this](auto&& x) { BeginArrImpl(std::forward<decltype(x)>(x)); },
+              [this] { EndArrImpl(); }, rd),
           m_os(os) {}
-    virtual ~AstMsgPackWriter() = default;
+    ~AstMsgPackWriter() override = default;
   };
 }  // namespace ncc::parse
 
