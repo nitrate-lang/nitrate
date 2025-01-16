@@ -36,7 +36,7 @@
 
 #include <nitrate-core/String.hh>
 
-typedef enum npar_ty_t {
+enum npar_ty_t {
   /*****************************************************************************
    * Base
    ****************************************************************************/
@@ -136,7 +136,7 @@ typedef enum npar_ty_t {
 
   QAST__FIRST = QAST_BASE,
   QAST__LAST = QAST_FUNCTION,
-} NparTyT;
+};
 
 #define QAST_COUNT (QAST__LAST - QAST__FIRST + 1)
 

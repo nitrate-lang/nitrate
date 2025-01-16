@@ -60,7 +60,7 @@ namespace ncc::parse {
 }  // namespace ncc::parse
 
 namespace ncc::parse {
-  enum IterMode {
+  enum IterMode : uint8_t {
     dfs_pre,
     dfs_post,
     bfs_pre,
@@ -68,7 +68,7 @@ namespace ncc::parse {
     children,
   };
 
-  enum class IterOp {
+  enum class IterOp : uint8_t {
     Proceed,
     Abort,
     SkipChildren,

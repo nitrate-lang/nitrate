@@ -52,7 +52,7 @@ int ncc::seq::SysSet(lua_State* L) {
                       lua_typename(L, lua_type(L, 1)));
   }
 
-  Sequencer* obj = get_engine();
+  auto* obj = get_engine();
 
   std::string_view key = lua_tostring(L, 1);
 

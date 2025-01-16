@@ -108,15 +108,15 @@ namespace ncc::parse {
 
   class Base {
   private:
-    NparTyT m_node_type : 7;
+    npar_ty_t m_node_type : 7;
     bool m_mock : 1;
     ASTExtensionKey m_data;
 
   public:
-    constexpr Base(NparTyT ty, bool mock = false)
+    constexpr Base(npar_ty_t ty, bool mock = false)
         : m_node_type(ty), m_mock(mock) {}
 
-    constexpr Base(NparTyT ty, bool mock, lex::LocationID begin,
+    constexpr Base(npar_ty_t ty, bool mock, lex::LocationID begin,
                    lex::LocationID end)
         : m_node_type(ty),
           m_mock(mock),
@@ -125,11 +125,11 @@ namespace ncc::parse {
     ///======================================================================
     /// Efficient LLVM-Style reflection
 
-    static constexpr uint32_t GetKindSize(NparTyT kind);
-    static constexpr std::string_view GetKindName(NparTyT type);
+    static constexpr uint32_t GetKindSize(npar_ty_t kind);
+    static constexpr std::string_view GetKindName(npar_ty_t type);
 
     template <typename T>
-    static constexpr NparTyT GetTypeCode() {
+    static constexpr npar_ty_t GetTypeCode() {
       using namespace ncc::parse;
 
       if constexpr (std::is_same_v<T, Base>) {
@@ -275,7 +275,7 @@ namespace ncc::parse {
       }
     }
 
-    [[nodiscard]] constexpr NparTyT GetKind() const { return m_node_type; }
+    [[nodiscard]] constexpr npar_ty_t GetKind() const { return m_node_type; }
     [[nodiscard]] constexpr auto GetKindName() const {
       return GetKindName(m_node_type);
     }
@@ -300,7 +300,7 @@ namespace ncc::parse {
       return Base::GetTypeCode<T>() == GetKind();
     }
 
-    [[nodiscard]] constexpr bool is(NparTyT type) const {  /// NOLINT
+    [[nodiscard]] constexpr bool is(npar_ty_t type) const {  /// NOLINT
       return type == GetKind();
     }
     [[nodiscard]] constexpr bool IsMock() const { return m_mock; }
@@ -488,22 +488,22 @@ namespace ncc::parse {
     }();
   }  // namespace detail
 
-  constexpr std::string_view Base::GetKindName(NparTyT type) {
+  constexpr std::string_view Base::GetKindName(npar_ty_t type) {
     return detail::kGetKindNames[type];
   }
 
   class Stmt : public Base {
   public:
-    constexpr Stmt(NparTyT ty) : Base(ty){};
+    constexpr Stmt(npar_ty_t ty) : Base(ty){};
 
-    [[nodiscard]] constexpr bool IsExprStmt(NparTyT type) const;
+    [[nodiscard]] constexpr bool IsExprStmt(npar_ty_t type) const;
   };
 
   class Type : public Base {
     NullableFlowPtr<Expr> m_range_begin, m_range_end, m_width;
 
   public:
-    constexpr Type(NparTyT ty) : Base(ty) {}
+    constexpr Type(npar_ty_t ty) : Base(ty) {}
 
     [[nodiscard]] constexpr bool IsPrimitive() const {
       switch (GetKind()) {
@@ -584,9 +584,9 @@ namespace ncc::parse {
 
   class Expr : public Base {
   public:
-    constexpr Expr(NparTyT ty) : Base(ty) {}
+    constexpr Expr(npar_ty_t ty) : Base(ty) {}
 
-    [[nodiscard]] constexpr bool IsStmtExpr(NparTyT type) const;
+    [[nodiscard]] constexpr bool IsStmtExpr(npar_ty_t type) const;
   };
 }  // namespace ncc::parse
 

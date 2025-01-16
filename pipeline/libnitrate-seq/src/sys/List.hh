@@ -40,8 +40,9 @@
 #include <string_view>
 #include <vector>
 
-#define get_engine() \
-  ((Sequencer*)(uintptr_t)luaL_checkinteger(L, lua_upvalueindex(1)))
+#define get_engine()            \
+  reinterpret_cast<Sequencer*>( \
+      static_cast<uintptr_t>(luaL_checkinteger(L, lua_upvalueindex(1))))
 
 namespace ncc::seq {
   class Sequencer::PImpl final {

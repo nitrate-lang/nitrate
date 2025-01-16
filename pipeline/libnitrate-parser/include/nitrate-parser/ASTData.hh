@@ -104,9 +104,9 @@ namespace ncc::parse {
   public:
     StructField(Vis vis, bool is_static, string name, FlowPtr<Type> type,
                 NullableFlowPtr<Expr> value)
-        : m_name(std::move(name)),
+        : m_name(name),
           m_value(std::move(value)),
-          m_type(type),
+          m_type(std::move(type)),
           m_vis(vis),
           m_is_static(is_static) {}
 
@@ -121,7 +121,8 @@ namespace ncc::parse {
     Vis m_vis;
     FlowPtr<Stmt> m_func;
 
-    StructFunction(Vis vis, FlowPtr<Stmt> func) : m_vis(vis), m_func(func) {}
+    StructFunction(Vis vis, FlowPtr<Stmt> func)
+        : m_vis(vis), m_func(std::move(func)) {}
   };
 
   using StructDefFields = std::vector<StructField, Arena<StructField>>;
