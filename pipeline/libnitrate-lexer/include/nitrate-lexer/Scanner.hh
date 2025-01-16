@@ -61,7 +61,6 @@ namespace ncc::lex {
     std::vector<Token> m_comments;
     std::vector<Location> m_location_interned;
     Token m_current;
-    string m_filename;
     bool m_skip = false, m_ebit = false, m_eof = false;
 
     class Impl;
@@ -150,15 +149,6 @@ namespace ncc::lex {
 
     /** @brief Convert a LocationID alias into a Location object. */
     [[nodiscard]] auto GetLocation(LocationID id) -> Location;
-
-    /** @brief Get the location of the end of the file. */
-    [[nodiscard]] auto GetEofLocation() -> Location;
-
-    /** @brief Get the name of the file being scanned. */
-    [[nodiscard]] auto GetCurrentFilename() const -> string;
-
-    /** @brief Set the name of the file being scanned. */
-    auto SetCurrentFilename(string filename) -> string;
 
     /** @brief Get the comment buffer. */
     [[nodiscard]] auto CommentBuffer() -> const std::vector<Token>& {

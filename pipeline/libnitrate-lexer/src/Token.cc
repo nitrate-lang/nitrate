@@ -344,3 +344,157 @@ NCC_EXPORT auto ncc::lex::to_string(TokenType ty, TokenData v) -> ncc::string {
 NCC_EXPORT auto LocationID::Get(IScanner &l) const -> Location {
   return l.GetLocation(m_id);
 }
+
+NCC_EXPORT auto ncc::lex::to_string(TokenType ty) -> string {
+  switch (ty) {
+    case EofF:
+      return "eof";
+    case KeyW:
+      return "key";
+    case Oper:
+      return "op";
+    case Punc:
+      return "sym";
+    case Name:
+      return "name";
+    case IntL:
+      return "int";
+    case NumL:
+      return "num";
+    case Text:
+      return "str";
+    case Char:
+      return "char";
+    case MacB:
+      return "macb";
+    case Macr:
+      return "macr";
+    case Note:
+      return "note";
+  }
+
+  qcore_panic("unreachable");
+}
+
+NCC_EXPORT auto ncc::lex::operator<<(std::ostream &os,
+                                     TokenType ty) -> std::ostream & {
+  switch (ty) {
+    case EofF: {
+      os << "EofF";
+      break;
+    }
+
+    case KeyW: {
+      os << "KeyW";
+      break;
+    }
+
+    case Oper: {
+      os << "Oper";
+      break;
+    }
+
+    case Punc: {
+      os << "Punc";
+      break;
+    }
+
+    case Name: {
+      os << "Name";
+      break;
+    }
+
+    case IntL: {
+      os << "IntL";
+      break;
+    }
+
+    case NumL: {
+      os << "NumL";
+      break;
+    }
+
+    case Text: {
+      os << "Text";
+      break;
+    }
+
+    case Char: {
+      os << "Char";
+      break;
+    }
+
+    case MacB: {
+      os << "MacB";
+      break;
+    }
+
+    case Macr: {
+      os << "Macr";
+      break;
+    }
+
+    case Note: {
+      os << "Note";
+      break;
+    }
+  }
+
+  return os;
+}
+
+static void EscapeString(std::ostream &ss, std::string_view input) {
+  ss << '"';
+
+  for (char ch : input) {
+    switch (ch) {
+      case '"':
+        ss << "\\\"";
+        break;
+      case '\\':
+        ss << "\\\\";
+        break;
+      case '\b':
+        ss << "\\b";
+        break;
+      case '\f':
+        ss << "\\f";
+        break;
+      case '\n':
+        ss << "\\n";
+        break;
+      case '\r':
+        ss << "\\r";
+        break;
+      case '\t':
+        ss << "\\t";
+        break;
+      case '\0':
+        ss << "\\0";
+        break;
+      default:
+        if (ch >= 32 && ch < 127) {
+          ss << ch;
+        } else {
+          std::array<char, 5> hex;
+          snprintf(hex.data(), hex.size(), "\\x%02x", (int)(uint8_t)ch);
+          ss << hex.data();
+        }
+        break;
+    }
+  }
+
+  ss << '"';
+}
+
+NCC_EXPORT auto ncc::lex::operator<<(std::ostream &os,
+                                     Token tok) -> std::ostream & {
+  // Serialize the token so that the core logger system can use it
+
+  os << "${T:{\"type\":" << (int)tok.GetKind()
+     << ",\"posid\":" << tok.GetStart().GetId() << ",\"value\":";
+  EscapeString(os, tok.GetString());
+  os << "}}";
+
+  return os;
+}

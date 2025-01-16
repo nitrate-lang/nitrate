@@ -31,7 +31,6 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <charconv>
 #include <nitrate-core/Logger.hh>
 #include <nitrate-core/Macro.hh>
 #include <nitrate-lexer/Scanner.hh>
@@ -40,13 +39,6 @@ using namespace ncc::lex;
 using namespace ncc::lex::detail;
 
 static constexpr size_t kTokenBufferSize = 1024;
-
-static inline auto StringToUint32(std::string_view str,
-                                  uint32_t sentinal) -> uint32_t {
-  uint32_t result = sentinal;
-  std::from_chars(str.data(), str.data() + str.size(), result);
-  return result;
-}
 
 class IScanner::Impl {
 public:
@@ -73,31 +65,6 @@ IScanner::IScanner(std::shared_ptr<Environment> env) : m_env(std::move(env)) {
 }
 
 IScanner::~IScanner() = default;
-
-auto IScanner::GetEofLocation() -> Location {
-  uint32_t offset = kLexEof;
-  uint32_t line = kLexEof;
-  uint32_t column = kLexEof;
-  string filename;
-
-  if (auto off = m_env->Get("this.file.eof.offset"); off.has_value()) {
-    offset = StringToUint32(off.value(), kLexEof);
-  }
-
-  if (auto ln = m_env->Get("this.file.eof.line"); ln.has_value()) {
-    line = StringToUint32(ln.value(), kLexEof);
-  }
-
-  if (auto col = m_env->Get("this.file.eof.column"); col.has_value()) {
-    column = StringToUint32(col.value(), kLexEof);
-  }
-
-  if (auto fn = m_env->Get("this.file.eof.filename"); fn.has_value()) {
-    filename = fn.value();
-  }
-
-  return {offset, line, column, filename};
-}
 
 auto IScanner::SetFailBit(bool fail) -> bool {
   auto old = m_ebit;
@@ -171,14 +138,6 @@ auto IScanner::GetLocation(LocationID id) -> Location {
   }
 
   return GetLocationFallback(id.GetId()).value_or(Location::EndOfFile());
-}
-
-auto IScanner::GetCurrentFilename() const -> string { return m_filename; }
-
-auto IScanner::SetCurrentFilename(string filename) -> string {
-  auto old = m_filename;
-  m_filename = filename;
-  return old;
 }
 
 auto IScanner::SkipCommentsState(bool skip) -> bool {

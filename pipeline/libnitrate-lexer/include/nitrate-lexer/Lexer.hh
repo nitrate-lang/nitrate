@@ -35,44 +35,27 @@
 #define __NITRATE_LEXER_LEX_HH__
 
 #include <boost/bimap.hpp>
-#include <cstdint>
 #include <memory>
 #include <nitrate-core/Environment.hh>
 #include <nitrate-core/Macro.hh>
 #include <nitrate-lexer/Scanner.hh>
-#include <queue>
 
 namespace ncc::lex {
   class NCC_EXPORT Tokenizer final : public IScanner {
-    static constexpr size_t kGetcBufferSize = 1024;
+    class Impl;
+    std::unique_ptr<Impl> m_impl;
 
-    uint64_t m_offset = 0, m_line = 0, m_column = 0;
-    std::queue<char> m_fifo;
-    size_t m_getc_buffer_pos = kGetcBufferSize;
-    std::array<char, kGetcBufferSize> m_getc_buffer;
-    std::istream &m_file;
-    bool m_eof = false;
-
-    class StaticImpl;
-    friend class StaticImpl;
-
-    void RefillCharacterBuffer();
-    auto GetChar() -> char;
-    void ResetAutomaton();
     auto GetNext() -> Token override;
 
   public:
-    Tokenizer(std::istream &source_file, std::shared_ptr<Environment> env)
-        : IScanner(std::move(env)), m_file(source_file) {
-      if (auto filename = m_env->Get("FILE"); filename.has_value()) {
-        SetCurrentFilename(filename.value());
-      }
-    }
-
-    ~Tokenizer() override = default;
+    Tokenizer(std::istream &source_file, std::shared_ptr<Environment> env);
+    ~Tokenizer() override;
 
     auto GetSourceWindow(Point start, Point end, char fillchar = ' ')
         -> std::optional<std::vector<std::string>> override;
+
+    auto SetCurrentFilename(string filename) -> string;
+    [[nodiscard]] auto GetCurrentFilename() -> string;
   };
 }  // namespace ncc::lex
 
