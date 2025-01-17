@@ -37,6 +37,7 @@
 #include <nitrate-core/Allocate.hh>
 #include <nitrate-core/String.hh>
 #include <optional>
+#include <ranges>
 #include <unordered_map>
 
 namespace ncc {
@@ -59,10 +60,17 @@ namespace ncc {
     Environment() { SetupDefaultKeys(); }
     ~Environment() override = default;
 
+    Environment(const Environment &) = delete;
+    Environment(Environment &&) = delete;
+    Environment &operator=(const Environment &) = delete;
+    Environment &operator=(Environment &&) = delete;
+
     auto Contains(std::string_view key) -> bool override;
     auto Get(string key) -> std::optional<string> override;
     void Set(string key, std::optional<string> value,
              bool privset = false) override;
+
+    auto GetKeys() const { return m_data | std::ranges::views::keys; }
   };
 
 }  // namespace ncc

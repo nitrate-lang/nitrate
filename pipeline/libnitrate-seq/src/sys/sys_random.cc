@@ -31,62 +31,61 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
+#include <core/Sequencer.hh>
 #include <cstdio>
 #include <nitrate-core/Environment.hh>
 #include <nitrate-seq/Sequencer.hh>
-#include <random>
-#include <sys/List.hh>
 
 extern "C" {
 #include <lua/lauxlib.h>
 }
 
-auto ncc::seq::SysRandom(lua_State* L) -> int {
+using namespace ncc::seq;
+
+auto Sequencer::PImpl::SysRandom() -> int {
   int64_t min;
   int64_t max;
 
-  int nargs = lua_gettop(L);
+  auto nargs = lua_gettop(m_L);
   if (nargs == 0) {
     min = 0;
     max = 0xff;
   } else if (nargs == 1) {
     min = 0;
-    if (lua_isnumber(L, 1) != 0) {
-      max = lua_tointeger(L, 1);
+    if (lua_isnumber(m_L, 1) != 0) {
+      max = lua_tointeger(m_L, 1);
     } else {
-      return luaL_error(L, "Invalid argument #1: expected number, got %s",
-                        lua_typename(L, lua_type(L, 1)));
+      return luaL_error(m_L, "Invalid argument #1: expected number, got %s",
+                        lua_typename(m_L, lua_type(m_L, 1)));
     }
   } else if (nargs == 2) {
-    if (lua_isnumber(L, 1) != 0) {
-      min = lua_tointeger(L, 1);
+    if (lua_isnumber(m_L, 1) != 0) {
+      min = lua_tointeger(m_L, 1);
     } else {
-      return luaL_error(L, "Invalid argument #1: expected number, got %s",
-                        lua_typename(L, lua_type(L, 1)));
+      return luaL_error(m_L, "Invalid argument #1: expected number, got %s",
+                        lua_typename(m_L, lua_type(m_L, 1)));
     }
 
-    if (lua_isnumber(L, 2) != 0) {
-      max = lua_tointeger(L, 2);
+    if (lua_isnumber(m_L, 2) != 0) {
+      max = lua_tointeger(m_L, 2);
     } else {
-      return luaL_error(L, "Invalid argument #2: expected number, got %s",
-                        lua_typename(L, lua_type(L, 2)));
+      return luaL_error(m_L, "Invalid argument #2: expected number, got %s",
+                        lua_typename(m_L, lua_type(m_L, 2)));
     }
   } else {
-    return luaL_error(L, "Expected at most two arguments, got %d", nargs);
+    return luaL_error(m_L, "Expected at most two arguments, got %d", nargs);
   }
 
   if (min > max) {
-    return luaL_error(L, "Invalid range: min > max");
+    return luaL_error(m_L, "Invalid range: min > max");
   }
 
-  auto* engine = get_engine();
+  static_assert(sizeof(m_random()) == 8);
 
-  static_assert(sizeof(engine->m_core->m_random()) == 8);
-
-  uint64_t num = engine->m_core->m_random();
+  uint64_t num = m_random();
   num = (num % (max - min + 1)) + min;
 
-  lua_pushinteger(L, num);
+  lua_pushinteger(m_L, num);
 
   return 1;
 }

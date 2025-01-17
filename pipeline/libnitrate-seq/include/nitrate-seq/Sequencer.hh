@@ -52,48 +52,33 @@ namespace ncc::seq {
 
   class NCC_EXPORT Sequencer final : public ncc::lex::IScanner {
     static std::string_view CodePrefix;
-    std::unique_ptr<ncc::lex::Tokenizer> m_scanner;
 
   public:
-    enum DeferOp : uint8_t {
-      EmitToken,
-      SkipToken,
-      UninstallHandler,
-    };
-
-    using DeferCallback =
-        std::function<DeferOp(Sequencer *obj, ncc::lex::Token last)>;
-    class StopException {};
     class PImpl;
+
     std::shared_ptr<PImpl> m_core;
-    void RecursiveExpand(std::string_view code);
+
+    void SequenceSource(std::string_view code);
 
   private:
     auto GetNext() -> ncc::lex::Token override;
 
     auto GetLocationFallback(ncc::lex::LocationID id)
-        -> std::optional<ncc::lex::Location> override {
-      return m_scanner->GetLocation(id);
-    }
+        -> std::optional<ncc::lex::Location> override;
 
     auto ApplyDynamicTransforms(ncc::lex::Token last) -> bool;
-
-    auto ExecuteLua(const char *code) -> bool;
-    void LoadLuaLibs();
-    void BindLuaAPI();
 
   public:
     Sequencer(std::istream &file, std::shared_ptr<ncc::Environment> env,
               bool is_root = true);
-    ~Sequencer() override = default;
-
-    auto GetSourceWindow(Point start, Point end, char fillchar)
-        -> std::optional<std::vector<std::string>> override;
-
-    void SetFetchFunc(FetchModuleFunc func);
+    ~Sequencer() override;
 
     [[nodiscard]] auto HasError() const -> bool override;
     auto SetFailBit(bool fail = true) -> bool override;
+
+    auto SetFetchFunc(FetchModuleFunc func) -> void;
+    auto GetSourceWindow(Point start, Point end, char fillchar)
+        -> std::optional<std::vector<std::string>> override;
   };
 }  // namespace ncc::seq
 

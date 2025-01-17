@@ -32,16 +32,18 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <algorithm>
+#include <core/Sequencer.hh>
 #include <nitrate-core/Environment.hh>
 #include <nitrate-seq/Sequencer.hh>
 #include <optional>
 #include <regex>
 #include <string>
-#include <sys/List.hh>
 
 extern "C" {
 #include <lua/lauxlib.h>
 }
+
+using namespace ncc::seq;
 
 static auto IsValidImportName(const std::string &name) -> bool {
   if (name.empty()) {
@@ -53,6 +55,7 @@ static auto IsValidImportName(const std::string &name) -> bool {
   }
 
   std::regex re(R"(^[a-zA-Z_][a-zA-Z0-9_]*(::[a-zA-Z_][a-zA-Z0-9_]*)*$)");
+
   return std::regex_match(name, re);
 }
 
@@ -61,30 +64,28 @@ static void CanonicalizeImportName(std::string &name) {
   std::transform(name.begin(), name.end(), name.begin(), ::tolower);
 }
 
-auto ncc::seq::SysFetch(lua_State *L) -> int {
-  auto *obj = get_engine();
-
-  int nargs = lua_gettop(L);
+auto Sequencer::PImpl::SysFetch() -> int {
+  auto nargs = lua_gettop(m_L);
   if (nargs != 1) {
-    return luaL_error(L, "expected 1 argument, got %d", nargs);
+    return luaL_error(m_L, "expected 1 argument, got %d", nargs);
   }
 
-  if (lua_isstring(L, 1) == 0) {
-    return luaL_error(L, "expected string, got %s",
-                      lua_typename(L, lua_type(L, 1)));
+  if (lua_isstring(m_L, 1) == 0) {
+    return luaL_error(m_L, "expected string, got %s",
+                      lua_typename(m_L, lua_type(m_L, 1)));
   }
 
-  std::string import_name = lua_tostring(L, 1);
-
+  std::string import_name = lua_tostring(m_L, 1);
   if (!IsValidImportName(import_name)) {
-    return luaL_error(L, "invalid import name");
+    return luaL_error(m_L, "invalid import name");
   }
 
   CanonicalizeImportName(import_name);
 
-  if (auto data = obj->m_core->FetchModuleData(import_name)) {
-    lua_pushstring(L, data->c_str());
+  if (auto data = FetchModuleData(import_name)) {
+    lua_pushstring(m_L, data->c_str());
     return 1;
   }
-  return luaL_error(L, "failed to fetch module");
+
+  return luaL_error(m_L, "failed to fetch module");
 }

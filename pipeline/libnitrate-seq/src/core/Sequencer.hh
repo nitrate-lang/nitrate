@@ -35,99 +35,127 @@
 #define __QPREP_QCALL_LIST_HH__
 
 #include <cstdint>
+#include <nitrate-seq/EC.hh>
 #include <nitrate-seq/Sequencer.hh>
 #include <random>
 #include <string_view>
 #include <vector>
 
-#define get_engine()            \
-  reinterpret_cast<Sequencer*>( \
-      static_cast<uintptr_t>(luaL_checkinteger(L, lua_upvalueindex(1))))
+extern "C" {
+#include <lua/lauxlib.h>
+#include <lua/lua.h>
+#include <lua/lualib.h>
+}
 
 namespace ncc::seq {
+  class StopException {};
+
+  enum DeferOp : uint8_t {
+    EmitToken,
+    SkipToken,
+    UninstallHandler,
+  };
+
+  using DeferCallback =
+      std::function<DeferOp(Sequencer* obj, ncc::lex::Token last)>;
+
   class Sequencer::PImpl final {
   public:
     std::mt19937 m_random;
     std::deque<ncc::lex::Token> m_buffer;
     std::vector<DeferCallback> m_defer;
     std::shared_ptr<Environment> m_env;
+    std::unique_ptr<ncc::lex::Tokenizer> m_scanner;
     FetchModuleFunc m_fetch_module;
     lua_State* m_L = nullptr;
     size_t m_depth = 0;
 
+  private:
+    ///=========================================================================
+
+    [[nodiscard]] auto SysNext() const -> int;
+    [[nodiscard]] auto SysPeek() const -> int;
+    [[nodiscard]] auto SysEmit() const -> int;
+    [[nodiscard]] auto SysDebug() const -> int;
+    [[nodiscard]] auto SysInfo() const -> int;
+    [[nodiscard]] auto SysWarn() const -> int;
+    [[nodiscard]] auto SysError() const -> int;
+    [[nodiscard]] auto SysAbort() const -> int;
+    [[nodiscard]] auto SysFatal() const -> int;
+    [[nodiscard]] auto SysGet() const -> int;
+    [[nodiscard]] auto SysSet() const -> int;
+    [[nodiscard]] auto SysCtrl() const -> int;
+    [[nodiscard]] auto SysFetch() -> int;
+    [[nodiscard]] auto SysRandom() -> int;
+    [[nodiscard]] auto SysDefer() -> int;
+
+    ///=========================================================================
+
+    void BindLuaAPI() const {
+      lua_newtable(m_L);
+
+      // for (auto func : SYS_FUNCTIONS) {
+      //   lua_pushinteger(m_L, (lua_Integer)(uintptr_t)this);
+      //   lua_pushcclosure(m_L, func.GetFunc(), 1);
+      //   lua_setfield(m_L, -2, func.GetName().data());
+      // }
+
+      lua_setglobal(m_L, "n");
+    }
+
+    void LoadLuaLibs() const {
+      static constexpr std::array<luaL_Reg, 5> kTheLibs = {
+          luaL_Reg{LUA_GNAME, luaopen_base},
+          luaL_Reg{LUA_TABLIBNAME, luaopen_table},
+          luaL_Reg{LUA_STRLIBNAME, luaopen_string},
+          luaL_Reg{LUA_MATHLIBNAME, luaopen_math},
+          luaL_Reg{LUA_UTF8LIBNAME, luaopen_utf8},
+      };
+
+      for (const auto& lib : kTheLibs) {
+        luaL_requiref(m_L, lib.name, lib.func, 1);
+        lua_pop(m_L, 1);
+      }
+    }
+
+  public:
     auto FetchModuleData(std::string_view module_name)
         -> std::optional<std::string>;
 
-    PImpl(std::shared_ptr<Environment> env);
+    auto ExecuteLua(const char* code) const -> std::optional<std::string> {
+      auto top = lua_gettop(m_L);
+      auto rc = luaL_dostring(m_L, code);
+
+      if (rc) {
+        ncc::Log << ec::SeqError << "Lua error: " << lua_tostring(m_L, -1);
+        /// TODO: Set error bit
+        // SetFailBit();
+
+        return std::nullopt;
+      }
+
+      if (lua_isstring(m_L, -1) != 0) {
+        return lua_tostring(m_L, -1);
+      }
+
+      if (lua_isnumber(m_L, -1) != 0) {
+        return std::to_string(lua_tonumber(m_L, -1));
+      }
+
+      if (lua_isboolean(m_L, -1)) {
+        return (lua_toboolean(m_L, -1) != 0) ? "true" : "false";
+      }
+
+      if (lua_gettop(m_L) != top && !lua_isnil(m_L, -1)) {
+        return std::nullopt;
+      }
+
+      return "";
+    }
+
+    PImpl(std::shared_ptr<Environment> env, std::istream& scanner);
     ~PImpl();
   };
-
-  using APICall = int (*)(lua_State*);
-
-  class QSysCall final {
-    std::string_view m_name;
-    uint32_t m_id;
-    APICall m_func;
-
-  public:
-    QSysCall(std::string_view name = "", uint32_t id = 0,
-             APICall func = nullptr)
-        : m_name(name), m_id(id), m_func(func) {}
-
-    [[nodiscard]] auto GetName() const { return m_name; }
-    [[nodiscard]] auto GetId() const { return m_id; }
-    [[nodiscard]] auto GetFunc() const { return m_func; }
-  };
-
-  ///////////// BEGIN QCALL FUNCTIONS /////////////
-
-  /* ==== Source processing ==== */
-  auto SysNext(lua_State* l) -> int;
-  auto SysPeek(lua_State* l) -> int;
-  auto SysEmit(lua_State* l) -> int;
-  auto SysDefer(lua_State* l) -> int;
-
-  /* ===== Message Logging ===== */
-  auto SysDebug(lua_State* l) -> int;
-  auto SysInfo(lua_State* l) -> int;
-  auto SysWarn(lua_State* l) -> int;
-  auto SysError(lua_State* l) -> int;
-  auto SysAbort(lua_State* l) -> int;
-  auto SysFatal(lua_State* l) -> int;
-
-  /* ====== Global State ======= */
-  auto SysGet(lua_State* l) -> int;
-  auto SysSet(lua_State* l) -> int;
-
-  /* ====== Data Feching ======= */
-  auto SysFetch(lua_State* l) -> int;
-
-  /* ===== Random Generator ===== */
-  auto SysRandom(lua_State* l) -> int;
-
-  /* ===== Implementation specific ===== */
-  auto SysCtrl(lua_State* l) -> int;
-
-  ////////////// END QCALL FUNCTIONS //////////////
-
-  static inline const std::vector<QSysCall> SYS_FUNCTIONS = {
-      {"next", 0x0010, SysNext},     /* Get the next token from the lexer */
-      {"peek", 0x0011, SysPeek},     /* Peek at the next token from the lexer */
-      {"emit", 0x0012, SysEmit},     /* Emit data  */
-      {"defer", 0x0013, SysDefer},   /* Callback after every token is emitted */
-      {"debug", 0x0050, SysDebug},   /* Print a debug message */
-      {"info", 0x0051, SysInfo},     /* Print an informational message */
-      {"warn", 0x0052, SysWarn},     /* Print a warning message */
-      {"error", 0x0053, SysError},   /* Print an error message */
-      {"abort", 0x0054, SysAbort},   /* Print an error and halt */
-      {"fatal", 0x0055, SysFatal},   /* Print a fatal error and halt */
-      {"get", 0x0080, SysGet},       /* Get a value from the environment */
-      {"set", 0x0081, SysSet},       /* Set a value in the environment */
-      {"fetch", 0x0082, SysFetch},   /* Import module */
-      {"random", 0x00A0, SysRandom}, /* Get a random number */
-      {"ctrl", 0x00C0, SysCtrl}      /* Implementation specific stuff */
-  };
-
 };  // namespace ncc::seq
 
 #endif  // __QPREP_QCALL_LIST_HH__

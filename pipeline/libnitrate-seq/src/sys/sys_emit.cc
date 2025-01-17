@@ -31,30 +31,16 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
+#include <core/Sequencer.hh>
 #include <nitrate-seq/Sequencer.hh>
-#include <sys/List.hh>
 
 extern "C" {
 #include <lua/lauxlib.h>
 }
 
-auto ncc::seq::SysEmit(lua_State* L) -> int {
-  int nargs = lua_gettop(L);
-  if (nargs < 1) {
-    return luaL_error(L, "sys_emit: expected at least 1 argument, got %d",
-                      nargs);
-  }
+using namespace ncc::seq;
 
-  auto* obj = get_engine();
-
-  for (int i = 1; i <= nargs; i++) {
-    if (lua_isstring(L, i) == 0) {
-      return luaL_error(L, "sys_emit: expected string, got %s",
-                        lua_typename(L, lua_type(L, i)));
-    }
-
-    obj->RecursiveExpand(lua_tostring(L, i));
-  }
-
-  return 0;
+auto Sequencer::PImpl::SysEmit() const -> int {
+  /// TODO: Implement function
+  qcore_implement();
 }

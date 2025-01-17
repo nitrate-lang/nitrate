@@ -45,7 +45,7 @@ void Environment::SetupDefaultKeys() {
     boost::uuids::random_generator gen;
     boost::uuids::uuid uuid = gen();
     std::string uuid_str = boost::uuids::to_string(uuid);
-    m_data.insert({"this.job", uuid_str});
+    m_data["this.job"] = uuid_str;
   }
 
   { /* Set the compiler start time */
@@ -53,10 +53,8 @@ void Environment::SetupDefaultKeys() {
     let ms = std::chrono::duration_cast<std::chrono::milliseconds>(
         now.time_since_epoch());
 
-    m_data.insert({"this.created_at", std::to_string(ms.count())});
+    m_data["this.created_at"] = std::to_string(ms.count());
   }
-
-  m_data.insert({"FILE", "<stdin>"});
 }
 
 auto Environment::Contains(std::string_view key) -> bool {

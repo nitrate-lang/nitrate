@@ -31,39 +31,18 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
+#include <core/Sequencer.hh>
 #include <cstdio>
 #include <nitrate-core/Environment.hh>
 #include <nitrate-seq/Sequencer.hh>
-#include <sys/List.hh>
 
 extern "C" {
 #include <lua/lauxlib.h>
 }
 
-auto ncc::seq::SysInfo(lua_State* l) -> int {
-  int nargs = lua_gettop(l);
-  if (nargs == 0) {
-    return luaL_error(l, "Expected at least one argument, got 0");
-  }
+using namespace ncc::seq;
 
-  QCoreBegin();
-
-  for (int i = 1; i <= nargs; i++) {
-    if (lua_isstring(l, i) != 0) {
-      QCoreWrite(lua_tostring(l, i));
-    } else if (lua_isnumber(l, i) != 0) {
-      QCoreWritef("%f", (double)lua_tonumber(l, i));
-    } else if (lua_isboolean(l, i)) {
-      QCoreWrite((lua_toboolean(l, i) != 0) ? "true" : "false");
-    } else {
-      return luaL_error(
-          l,
-          "Invalid argument #%d: expected string, number, or boolean, got %s",
-          i, lua_typename(l, lua_type(l, i)));
-    }
-  }
-
-  QCoreEnd(QCORE_INFO);
-
-  return 0;
+auto Sequencer::PImpl::SysInfo() const -> int {
+  /// TODO: Implement function
+  qcore_implement();
 }

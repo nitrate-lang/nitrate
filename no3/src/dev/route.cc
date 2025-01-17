@@ -512,8 +512,6 @@ namespace no3::router {
                      ? std::make_unique<std::ostream>(std::cout.rdbuf())
                      : std::make_unique<std::ofstream>(output);
 
-      env->Set("FILE", source);
-
       return DoParse(env, source, *out, verbose);
     } else if (parser.IsSubcommandUsed("nr")) {
       auto &nr_parser = *subparsers.at("nr");
@@ -528,8 +526,6 @@ namespace no3::router {
                      ? std::make_unique<std::ostream>(std::cout.rdbuf())
                      : std::make_unique<std::ofstream>(output);
 
-      env->Set("FILE", source);
-
       return DoNr(env, source, *out, opts);
     } else if (parser.IsSubcommandUsed("codegen")) {
       auto &nr_parser = *subparsers.at("codegen");
@@ -540,8 +536,6 @@ namespace no3::router {
       std::string output = nr_parser.Get<std::string>("--output");
       std::string opts = nr_parser.Get<std::string>("--opts");
       std::string target = nr_parser.Get<std::string>("--target");
-
-      env->Set("FILE", source);
 
       return DoCodegen(env, source, output, opts, target);
     } else if (parser.IsUsed("--demangle")) {

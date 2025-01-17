@@ -31,57 +31,57 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
+#include <core/Sequencer.hh>
 #include <nitrate-seq/Sequencer.hh>
-#include <sys/List.hh>
 
 extern "C" {
 #include <lua/lauxlib.h>
 }
 
+using namespace ncc::seq;
 using namespace ncc::lex;
 
-auto ncc::seq::SysDefer(lua_State* L) -> int {
-  int nargs = lua_gettop(L);
+auto Sequencer::PImpl::SysDefer() -> int {
+  int nargs = lua_gettop(m_L);
   if (nargs < 1) {
-    return luaL_error(L, "sys_defer: expected at least 1 argument, got %d",
+    return luaL_error(m_L, "sys_defer: expected at least 1 argument, got %d",
                       nargs);
   }
 
-  if (!lua_isfunction(L, 1)) {
-    return luaL_error(L,
+  if (!lua_isfunction(m_L, 1)) {
+    return luaL_error(m_L,
                       "sys_defer: expected function as first argument, got %s",
-                      luaL_typename(L, 1));
+                      luaL_typename(m_L, 1));
   }
 
-  int id = luaL_ref(L, LUA_REGISTRYINDEX);
+  int id = luaL_ref(m_L, LUA_REGISTRYINDEX);
   if (id == LUA_REFNIL) {
-    return luaL_error(L, "sys_defer: failed to store callback in registry");
+    return luaL_error(m_L, "sys_defer: failed to store callback in registry");
   }
 
-  Sequencer::DeferCallback cb = [L, id](Sequencer* engine,
-                                        Token tok) -> Sequencer::DeferOp {
-    lua_rawgeti(L, LUA_REGISTRYINDEX, id); /* Get the function */
+  DeferCallback cb = [&](Sequencer* engine, Token tok) -> DeferOp {
+    lua_rawgeti(m_L, LUA_REGISTRYINDEX, id); /* Get the function */
 
     { /* Push the function arguments */
-      lua_newtable(L);
+      lua_newtable(m_L);
 
-      lua_pushstring(L, "ty");
-      lua_pushstring(L, to_string(tok.GetKind())->c_str());
-      lua_settable(L, -3);
+      lua_pushstring(m_L, "ty");
+      lua_pushstring(m_L, to_string(tok.GetKind())->c_str());
+      lua_settable(m_L, -3);
 
-      lua_pushstring(L, "v");
+      lua_pushstring(m_L, "v");
       switch (tok.GetKind()) {
         case EofF:
         case KeyW: {
-          lua_pushstring(L, kw_repr(tok.GetKeyword()));
+          lua_pushstring(m_L, kw_repr(tok.GetKeyword()));
           break;
         }
         case Oper: {
-          lua_pushstring(L, op_repr(tok.GetOperator()));
+          lua_pushstring(m_L, op_repr(tok.GetOperator()));
           break;
         }
         case Punc: {
-          lua_pushstring(L, punct_repr(tok.GetPunctor()));
+          lua_pushstring(m_L, punct_repr(tok.GetPunctor()));
           break;
         }
         case IntL:
@@ -92,68 +92,67 @@ auto ncc::seq::SysDefer(lua_State* L) -> int {
         case MacB:
         case Macr:
         case Note: {
-          lua_pushstring(L, std::string(tok.GetString()).c_str());
+          lua_pushstring(m_L, std::string(tok.GetString()).c_str());
           break;
         }
       }
 
-      lua_settable(L, -3);
+      lua_settable(m_L, -3);
     }
 
-    int err = lua_pcall(L, 1, 1, 0);
-    Sequencer::DeferOp r;
+    int err = lua_pcall(m_L, 1, 1, 0);
+    DeferOp r;
 
     switch (err) {
       case LUA_OK: {
-        if (lua_isnil(L, -1)) {
-          return Sequencer::UninstallHandler;
+        if (lua_isnil(m_L, -1)) {
+          return UninstallHandler;
         }
 
-        if (!lua_isboolean(L, -1)) {
+        if (!lua_isboolean(m_L, -1)) {
           ncc::Log << Error
                    << "sys_defer: expected boolean return value or nil, got "
-                   << luaL_typename(L, -1);
+                   << luaL_typename(m_L, -1);
 
           engine->SetFailBit();
-          return Sequencer::EmitToken;
+          return EmitToken;
         }
 
-        r = (lua_toboolean(L, -1) != 0) ? Sequencer::EmitToken
-                                        : Sequencer::SkipToken;
+        r = (lua_toboolean(m_L, -1) != 0) ? EmitToken : SkipToken;
         break;
       }
       case LUA_ERRRUN: {
-        ncc::Log << Error << "sys_defer: lua: " << lua_tostring(L, -1);
+        ncc::Log << Error << "sys_defer: lua: " << lua_tostring(m_L, -1);
         engine->SetFailBit();
-        r = Sequencer::EmitToken;
+        r = EmitToken;
         break;
       }
       case LUA_ERRMEM: {
         ncc::Log << Error << "sys_defer: memory allocation error\n";
         engine->SetFailBit();
-        r = Sequencer::EmitToken;
+        r = EmitToken;
         break;
       }
       case LUA_ERRERR: {
         ncc::Log << Error << "sys_defer: error in error handler\n";
         engine->SetFailBit();
-        r = Sequencer::EmitToken;
+        r = EmitToken;
         break;
       }
       default: {
         ncc::Log << Error << "sys_defer: unexpected error " << err << "\n";
         engine->SetFailBit();
-        r = Sequencer::EmitToken;
+        r = EmitToken;
         break;
       }
     }
 
-    lua_pop(L, 1);
+    lua_pop(m_L, 1);
 
     return r;
   };
 
-  get_engine()->m_core->m_defer.push_back(cb);
+  m_defer.push_back(cb);
 
   return 0;
 }

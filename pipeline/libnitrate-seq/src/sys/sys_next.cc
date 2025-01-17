@@ -31,54 +31,18 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
+#include <core/Sequencer.hh>
 #include <nitrate-lexer/Scanner.hh>
 #include <nitrate-seq/Sequencer.hh>
-#include <sys/List.hh>
 
 extern "C" {
 #include <lua/lauxlib.h>
 }
 
 using namespace ncc::lex;
+using namespace ncc::seq;
 
-auto ncc::seq::SysNext(lua_State* L) -> int {
-  auto tok = get_engine()->Next();
-
-  lua_newtable(L);
-
-  lua_pushstring(L, "ty");
-  lua_pushstring(L, to_string(tok.GetKind())->c_str());
-  lua_settable(L, -3);
-
-  lua_pushstring(L, "v");
-  switch (tok.GetKind()) {
-    case EofF:
-    case KeyW: {
-      lua_pushstring(L, kw_repr(tok.GetKeyword()));
-      break;
-    }
-    case Oper: {
-      lua_pushstring(L, op_repr(tok.GetOperator()));
-      break;
-    }
-    case Punc: {
-      lua_pushstring(L, punct_repr(tok.GetPunctor()));
-      break;
-    }
-    case IntL:
-    case NumL:
-    case Text:
-    case Char:
-    case Name:
-    case MacB:
-    case Macr:
-    case Note: {
-      lua_pushstring(L, tok.GetString()->c_str());
-      break;
-    }
-  }
-
-  lua_settable(L, -3);
-
-  return 1;
+auto Sequencer::PImpl::SysNext() const -> int {
+  /// TODO: Implement function
+  qcore_implement();
 }
