@@ -88,7 +88,7 @@ NCC_EXPORT auto ncc::Formatter(std::string_view msg, Sev sev) -> std::string {
     }
   }
 
-  ss << msg;
+  ss << "\x1b[37;1m" << msg << "\x1b[0m";
 
   return ss.str();
 }

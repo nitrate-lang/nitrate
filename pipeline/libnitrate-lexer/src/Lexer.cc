@@ -50,6 +50,7 @@
 #include <nitrate-lexer/Token.hh>
 #include <queue>
 #include <ranges>
+#include <sstream>
 #include <string>
 #include <string_view>
 #include <utility>
@@ -288,6 +289,34 @@ constexpr auto kCharMap = []() constexpr {
 
 ///============================================================================///
 
+static std::string LexerECFormatter(std::string_view msg, Sev sev) {
+  if (sev <= ncc::Debug) {
+    return "\x1b[37;1m[\x1b[0m\x1b[34;1mLexer\x1b[0m\x1b[37;1m]: debug: " +
+           std::string(msg) + "\x1b[0m";
+  }
+
+  return "\x1b[37;1m[\x1b[0m\x1b[34;1mLexer\x1b[0m\x1b[37;1m]: " +
+         std::string(msg) + "\x1b[0m";
+}
+
+NCC_EC_GROUP(Lexer);
+
+NCC_EC_EX(Lexer, UserRequest, LexerECFormatter);
+
+NCC_EC_EX(Lexer, LiteralOutOfRange, LexerECFormatter);
+NCC_EC_EX(Lexer, InvalidNumber, LexerECFormatter);
+NCC_EC_EX(Lexer, InvalidMantissa, LexerECFormatter);
+NCC_EC_EX(Lexer, InvalidExponent, LexerECFormatter);
+
+NCC_EC_EX(Lexer, InvalidHexDigit, LexerECFormatter);
+NCC_EC_EX(Lexer, InvalidDecimalDigit, LexerECFormatter);
+NCC_EC_EX(Lexer, InvalidOctalDigit, LexerECFormatter);
+NCC_EC_EX(Lexer, InvalidBinaryDigit, LexerECFormatter);
+
+NCC_EC_EX(Lexer, MissingUnicodeBrace, LexerECFormatter);
+NCC_EC_EX(Lexer, InvalidUnicodeCodepoint, LexerECFormatter);
+NCC_EC_EX(Lexer, LexicalGarbage, LexerECFormatter);
+
 // We use this layer of indirection to ensure that the compiler can have full
 // optimization capabilities as if the functions has static linkage.
 class Tokenizer::Impl {
@@ -310,9 +339,19 @@ public:
 
   ///============================================================================///
 
+  [[nodiscard]] [[gnu::noinline]] std::string LogSource() const {
+    std::stringstream ss;
+    ss << "at (";
+
+    ss << (m_filename->empty() ? "?" : *m_filename) << ":";
+    ss << m_line + 1 << ":" << m_column + 1 << "): ";
+
+    return ss.str();
+  }
+
   Impl(std::istream &file) : m_file(file) {}
 
-  void ResetAutomaton() {
+  [[gnu::noinline]] void ResetAutomaton() {
     m_fifo = {};
     m_buf.clear();
   }
@@ -401,7 +440,7 @@ public:
     return c;
   }
 
-  static auto CanonicalizeFloat(std::string &buf) -> bool {
+  auto CanonicalizeFloat(std::string &buf) const -> bool {
     auto e_pos = buf.find('e');
     if (e_pos == std::string::npos) [[likely]] {
       return true;
@@ -411,6 +450,8 @@ public:
 
     if (std::from_chars(buf.data(), buf.data() + e_pos, mantissa).ec !=
         std::errc()) [[unlikely]] {
+      Log << InvalidMantissa << LogSource()
+          << "Invalid mantissa in floating point literal";
       return false;
     }
 
@@ -418,6 +459,8 @@ public:
     if (std::from_chars(buf.data() + e_pos + 1, buf.data() + buf.size(),
                         exponent)
             .ec != std::errc()) [[unlikely]] {
+      Log << InvalidExponent << LogSource()
+          << "Invalid exponent in floating point literal";
       return false;
     }
 
@@ -430,6 +473,8 @@ public:
     if (std::snprintf(buffer.data(), buffer.size(), "%.*Lf",
                       static_cast<int>(kFloatingPointDigits), float_value) < 0)
         [[unlikely]] {
+      Log << InvalidNumber << LogSource()
+          << "Failed to serialize floating point literal";
       return false;
     }
 
@@ -450,7 +495,7 @@ public:
     return true;
   }
 
-  static auto CanonicalizeNumber(std::string &buf, NumberType type) -> bool {
+  auto CanonicalizeNumber(std::string &buf, NumberType type) const -> bool {
     std::transform(buf.begin(), buf.end(), buf.begin(), ::tolower);
     std::erase(buf, '_');
 
@@ -460,10 +505,18 @@ public:
       case NumberType::Hexadecimal: {
         for (uint8_t i : buf) {
           if (((x >> 64) & 0xF000000000000000) != 0U) [[unlikely]] {
+            Log << LiteralOutOfRange << LogSource() << "Hexadecimal literal '0x"
+                << buf << "' is out of range";
+            Log << LiteralOutOfRange << Notice << LogSource()
+                << "The maximum value for a hexadecimal literal is (2^128 - 1) "
+                   "aka uint128_t";
+
             return false;
           }
 
           if (!kHexDigitsTable[i]) [[unlikely]] {
+            Log << InvalidHexDigit << LogSource() << "Unexpected '" << i
+                << "' in hexadecimal literal '0x" << buf << "'";
             return false;
           }
 
@@ -475,10 +528,18 @@ public:
       case NumberType::Binary: {
         for (char i : buf) {
           if (((x >> 64) & 0x8000000000000000) != 0U) [[unlikely]] {
+            Log << LiteralOutOfRange << LogSource() << "Binary literal '0b"
+                << buf << "' is out of range";
+            Log << LiteralOutOfRange << Notice << LogSource()
+                << "The maximum value for a binary literal is (2^128 - 1) aka "
+                   "uint128_t";
+
             return false;
           }
 
           if (i != '0' && i != '1') [[unlikely]] {
+            Log << InvalidBinaryDigit << LogSource() << "Unexpected '" << i
+                << "' in binary literal '0b" << buf << "'";
             return false;
           }
 
@@ -490,10 +551,17 @@ public:
       case NumberType::Octal: {
         for (char i : buf) {
           if (((x >> 64) & 0xE000000000000000) != 0U) [[unlikely]] {
+            Log << LiteralOutOfRange << LogSource() << "Octal literal '0o"
+                << buf << "' is out of range";
+            Log << LiteralOutOfRange << Notice << LogSource()
+                << "The maximum value for an octal literal is (2^128 - 1) aka "
+                   "uint128_t";
             return false;
           }
 
           if (i < '0' || i > '7') [[unlikely]] {
+            Log << InvalidOctalDigit << LogSource() << "Unexpected '" << i
+                << "' in octal literal '0o" << buf << "'";
             return false;
           }
 
@@ -502,10 +570,11 @@ public:
         break;
       }
 
-      case NumberType::DecimalExplicit:
-      case NumberType::Default: {
+      case NumberType::DecimalExplicit: {
         for (char i : buf) {
           if (i < '0' || i > '9') [[unlikely]] {
+            Log << InvalidDecimalDigit << LogSource() << "Unexpected '" << i
+                << "' in decimal literal '0d" << buf << "'";
             return false;
           }
 
@@ -513,6 +582,34 @@ public:
           x = (x * 10) + (i - '0');
 
           if (x < tmp) [[unlikely]] {
+            Log << LiteralOutOfRange << LogSource() << "Decimal literal '0d"
+                << buf << "' is out of range";
+            Log << LiteralOutOfRange << Notice << LogSource()
+                << "The maximum value for an explicit decimal literal is "
+                   "(2^128 - 1) aka uint128_t";
+            return false;
+          }
+        }
+        break;
+      }
+
+      case NumberType::Default: {
+        for (char i : buf) {
+          if (i < '0' || i > '9') [[unlikely]] {
+            Log << InvalidDecimalDigit << LogSource() << "Unexpected '" << i
+                << "' in decimal literal '" << buf << "'";
+            return false;
+          }
+
+          auto tmp = x;
+          x = (x * 10) + (i - '0');
+
+          if (x < tmp) [[unlikely]] {
+            Log << LiteralOutOfRange << LogSource() << "Decimal literal '"
+                << buf << "' is out of range";
+            Log << LiteralOutOfRange << Notice << LogSource()
+                << "The maximum value for a decimal literal is (2^128 - 1) aka "
+                   "uint128_t";
             return false;
           }
         }
@@ -573,6 +670,8 @@ public:
                  "The source code invoked a compiler panic API.");
 
     if (m_buf == "__builtin_lexer_abort") {
+      Log << Debug << UserRequest << LogSource()
+          << "The source code requested lexical truncation";
       return Token::EndOfFile();
     }
 
@@ -605,6 +704,10 @@ public:
             std::array hex = {NextChar(), NextChar()};
             if (!kHexDigitsTable[hex[0]] || !kHexDigitsTable[hex[1]]) {
               ResetAutomaton();
+
+              Log << InvalidHexDigit << LogSource() << "Unexpected '" << hex[0]
+                  << hex[1] << "' in hexadecimal escape sequence";
+
               return Token::EndOfFile();
             }
 
@@ -616,6 +719,9 @@ public:
           case 'u': {
             c = NextChar();
             if (c != '{') [[unlikely]] {
+              Log << MissingUnicodeBrace << LogSource()
+                  << "Missing '{' in unicode escape sequence";
+
               ResetAutomaton();
               return Token::EndOfFile();
             }
@@ -629,6 +735,9 @@ public:
               }
 
               if (!kHexDigitsTable[c]) {
+                Log << InvalidHexDigit << LogSource() << "Unexpected '" << c
+                    << "' in unicode escape sequence";
+
                 ResetAutomaton();
                 return Token::EndOfFile();
               }
@@ -640,6 +749,8 @@ public:
             if (std::from_chars(hex.data(), hex.data() + hex.size(), codepoint,
                                 16)
                     .ec != std::errc()) {
+              Log << InvalidUnicodeCodepoint << LogSource()
+                  << "Invalid unicode codepoint";
               ResetAutomaton();
 
               return Token::EndOfFile();
@@ -660,6 +771,10 @@ public:
               m_buf += (char)(0x80 | ((codepoint >> 6) & 0x3F));
               m_buf += (char)(0x80 | (codepoint & 0x3F));
             } else {
+              Log << InvalidUnicodeCodepoint << LogSource()
+                  << "Codepoint does not embody a "
+                     "valid UTF-8 character";
+
               ResetAutomaton();
 
               return Token::EndOfFile();
@@ -677,7 +792,12 @@ public:
                     reinterpret_cast<const char *>(oct.data() + oct.size()),
                     val, 8)
                     .ec != std::errc()) {
+              Log << InvalidOctalDigit << LogSource()
+                  << "Invalid octal digit in escape sequence '" << oct[0]
+                  << oct[1] << oct[2] << "'";
+
               ResetAutomaton();
+
               return Token::EndOfFile();
             }
 
@@ -822,8 +942,14 @@ public:
       if (CanonicalizeFloat(m_buf)) {
         return {NumL, string(std::move(m_buf)), start_pos};
       }
+
+      Log << InvalidNumber << LogSource()
+          << "Floating point literal is not valid";
     } else if (CanonicalizeNumber(m_buf, kind)) [[likely]] {
       return {IntL, string(std::move(m_buf)), start_pos};
+    } else {
+      Log << InvalidNumber << LogSource()
+          << "Non-floating point literal is not valid";
     }
 
     ResetAutomaton();
@@ -893,7 +1019,6 @@ public:
   }
 
   auto ParseOther(uint8_t c, LocationID start_pos) -> Token {
-    /* Special case for a comment */
     if (c == '#') {
       return ParseCommentSingleLine(start_pos);
     }
@@ -911,7 +1036,6 @@ public:
     m_buf += c;
     c = NextChar();
 
-    /* Special case for a comment */
     if ((m_buf[0] == '~' && c == '>')) {
       m_buf.clear();
       return ParseCommentSingleLine(start_pos);
@@ -928,6 +1052,8 @@ public:
       if (contains) {
         m_buf += c;
         if (m_buf.size() > 4) { /* Handle infinite error case */
+          Log << LexicalGarbage << LogSource()
+              << "Unexpected lexical garbage in source code";
           ResetAutomaton();
 
           return Token::EndOfFile();
@@ -939,7 +1065,10 @@ public:
     }
 
     if (!found) {
+      Log << LexicalGarbage << LogSource()
+          << "Unexpected lexical garbage in source code";
       ResetAutomaton();
+
       return Token::EndOfFile();
     }
 
@@ -952,16 +1081,6 @@ public:
 };
 
 auto Tokenizer::GetNext() -> Token {
-  /**
-   * **WARNING**: Do not just start editing this function without
-   * having a holistic understanding of all code that depends on the lexer
-   * (most of the pipeline).
-   *
-   * This function provides various undocumented invariant guarantees that
-   * if broken will likely result in internal runtime corruption and other
-   * undefined behavior.
-   * */
-
   Impl &impl = *m_impl;
   impl.m_buf.clear();
 
@@ -975,10 +1094,9 @@ auto Tokenizer::GetNext() -> Token {
 
   LexState state;
   if (kAlphabetTable[c] || c == '_') {
-    /* Identifier or keyword or operator */
     state = LexState::Identifier;
   } else if (c == '/') {
-    state = LexState::CommentStart; /* Comment or operator */
+    state = LexState::CommentStart;
   } else if (kDigitsTable[c]) {
     state = LexState::Integer;
   } else if (c == '"' || c == '\'') {
@@ -986,7 +1104,6 @@ auto Tokenizer::GetNext() -> Token {
   } else if (c == '@') {
     state = LexState::MacroStart;
   } else {
-    /* Operator or punctor or invalid */
     state = LexState::Other;
   }
 
