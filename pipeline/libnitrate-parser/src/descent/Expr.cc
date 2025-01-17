@@ -704,7 +704,7 @@ auto Parser::PImpl::RecurseExprPrimary(bool is_type) -> NullableFlowPtr<Expr> {
 
     e = BindComments(texpr, comments);
   } else {
-    auto tok = next();
+    auto tok = peek();
 
     auto comments = m_rd.CommentBuffer();
     m_rd.ClearCommentBuffer();
@@ -715,6 +715,7 @@ auto Parser::PImpl::RecurseExprPrimary(bool is_type) -> NullableFlowPtr<Expr> {
       }
 
       case KeyW: {
+        next();
         if ((e = RecurseExprKeyword(tok.GetKeyword())).has_value()) {
           e.value()->SetOffset(start_pos);
         }
@@ -723,19 +724,22 @@ auto Parser::PImpl::RecurseExprPrimary(bool is_type) -> NullableFlowPtr<Expr> {
       }
 
       case Oper: {
-        Log << SyntaxError << tok << "Unexpected operator in expression";
+        Log << SyntaxError << next() << "Unexpected operator in expression";
         break;
       }
 
       case Punc: {
+        next();
+
         if ((e = RecurseExprPunctor(tok.GetPunctor())).has_value()) {
           e.value()->SetOffset(start_pos);
         }
+
         break;
       }
 
       case Name: {
-        auto identifier = make<Ident>(tok.GetString())();
+        auto identifier = make<Ident>(RecurseName())();
         identifier->SetOffset(start_pos);
 
         e = identifier;
@@ -743,10 +747,12 @@ auto Parser::PImpl::RecurseExprPrimary(bool is_type) -> NullableFlowPtr<Expr> {
       }
 
       case IntL: {
+        next();
+
         auto integer = make<ConstInt>(tok.GetString())();
         integer->SetOffset(start_pos);
 
-        if (tok = peek(); tok.is(Name)) {
+        if (peek().is(Name)) {
           auto casted = RecurseExprTypeSuffix(integer);
           casted->SetOffset(start_pos);
 
@@ -759,10 +765,12 @@ auto Parser::PImpl::RecurseExprPrimary(bool is_type) -> NullableFlowPtr<Expr> {
       }
 
       case NumL: {
+        next();
+
         auto decimal = make<ConstFloat>(tok.GetString())();
         decimal->SetOffset(start_pos);
 
-        if (tok = peek(); tok.is(Name)) {
+        if (peek().is(Name)) {
           auto casted = RecurseExprTypeSuffix(decimal);
           casted->SetOffset(start_pos);
 
@@ -775,10 +783,12 @@ auto Parser::PImpl::RecurseExprPrimary(bool is_type) -> NullableFlowPtr<Expr> {
       }
 
       case Text: {
+        next();
+
         auto string = make<ConstString>(tok.GetString())();
         string->SetOffset(start_pos);
 
-        if (tok = peek(); tok.is(Name)) {
+        if (peek().is(Name)) {
           auto casted = RecurseExprTypeSuffix(string);
           casted->SetOffset(start_pos);
 
@@ -791,6 +801,8 @@ auto Parser::PImpl::RecurseExprPrimary(bool is_type) -> NullableFlowPtr<Expr> {
       }
 
       case Char: {
+        next();
+
         auto str_data = tok.GetString();
         if (str_data->size() != 1) [[unlikely]] {
           Log << SyntaxError << tok
@@ -801,7 +813,7 @@ auto Parser::PImpl::RecurseExprPrimary(bool is_type) -> NullableFlowPtr<Expr> {
         auto character = make<ConstChar>(str_data->at(0))();
         character->SetOffset(start_pos);
 
-        if (tok = peek(); tok.is(Name)) {
+        if (peek().is(Name)) {
           auto casted = RecurseExprTypeSuffix(character);
           casted->SetOffset(start_pos);
 
@@ -814,17 +826,17 @@ auto Parser::PImpl::RecurseExprPrimary(bool is_type) -> NullableFlowPtr<Expr> {
       }
 
       case MacB: {
-        Log << SyntaxError << tok << "Unexpected macro block in expression";
+        Log << SyntaxError << next() << "Unexpected macro block in expression";
         break;
       }
 
       case Macr: {
-        Log << SyntaxError << tok << "Unexpected macro call in expression";
+        Log << SyntaxError << next() << "Unexpected macro call in expression";
         break;
       }
 
       case Note: {
-        Log << SyntaxError << tok << "Unexpected comment in expression";
+        Log << SyntaxError << next() << "Unexpected comment in expression";
         break;
       }
     }

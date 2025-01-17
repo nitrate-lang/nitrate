@@ -48,6 +48,7 @@
 #include <nitrate-core/String.hh>
 #include <nitrate-lexer/Lexer.hh>
 #include <nitrate-lexer/Token.hh>
+#include <queue>
 #include <ranges>
 #include <string>
 #include <string_view>
@@ -58,11 +59,11 @@ using namespace ncc;
 using namespace ncc::lex;
 using namespace ncc::lex::detail;
 
-static constexpr size_t kFloatingPointDigits = 100;
+static constexpr size_t kFloatingPointDigits = 128;
 static constexpr size_t kGetcBufferSize = 512;
 
-enum class NumberLiteralType : char {
-  Decimal,
+enum class NumberType : uint8_t {
+  Default,
   DecimalExplicit,
   Hexadecimal,
   Binary,
@@ -70,7 +71,7 @@ enum class NumberLiteralType : char {
   Floating,
 };
 
-enum class LexState : char {
+enum class LexState : uint8_t {
   Identifier,
   String,
   Integer,
@@ -139,7 +140,7 @@ static const auto PUNCTORS_MAP = []() {
   return map;
 }();
 
-static constexpr auto kHextable = []() {
+static constexpr auto kNibbleTable = []() {
   std::array<uint8_t, 256> hextable = {};
   hextable['0'] = 0;
   hextable['1'] = 1;
@@ -181,18 +182,18 @@ static constexpr auto kWhitespaceTable = []() {
   return tab;
 }();
 
-static constexpr auto kIdentifierBodyCharacters = []() {
+static constexpr auto kIdentifierCharTable = []() {
   std::array<bool, 256> tab = {};
 
-  for (char c = 'a'; c <= 'z'; ++c) {
+  for (uint8_t c = 'a'; c <= 'z'; ++c) {
     tab[c] = true;
   }
 
-  for (char c = 'A'; c <= 'Z'; ++c) {
+  for (uint8_t c = 'A'; c <= 'Z'; ++c) {
     tab[c] = true;
   }
 
-  for (char c = '0'; c <= '9'; ++c) {
+  for (uint8_t c = '0'; c <= '9'; ++c) {
     tab[c] = true;
   }
 
@@ -201,15 +202,99 @@ static constexpr auto kIdentifierBodyCharacters = []() {
   return tab;
 }();
 
+static constexpr auto kNumberTypeMap = []() {
+  std::array<NumberType, std::numeric_limits<uint16_t>::max() + 1> map = {};
+  map.fill(NumberType::Default);
+
+  /* [0x, 0X, 0d, 0D, 0b, 0B, 0o, 0O] */
+  map['0' << 8 | 'x'] = NumberType::Hexadecimal;
+  map['0' << 8 | 'X'] = NumberType::Hexadecimal;
+  map['0' << 8 | 'd'] = NumberType::DecimalExplicit;
+  map['0' << 8 | 'D'] = NumberType::DecimalExplicit;
+  map['0' << 8 | 'b'] = NumberType::Binary;
+  map['0' << 8 | 'B'] = NumberType::Binary;
+  map['0' << 8 | 'o'] = NumberType::Octal;
+  map['0' << 8 | 'O'] = NumberType::Octal;
+
+  return map;
+}();
+
+static constexpr auto kHexDigitsTable = []() {
+  std::array<bool, 256> map = {};
+  map.fill(false);
+
+  for (uint8_t c = '0'; c <= '9'; ++c) {
+    map[c] = true;
+  }
+
+  for (uint8_t c = 'a'; c <= 'f'; ++c) {
+    map[c] = true;
+  }
+
+  for (uint8_t c = 'A'; c <= 'F'; ++c) {
+    map[c] = true;
+  }
+
+  return map;
+}();
+
+static constexpr auto kDigitsTable = []() {
+  std::array<bool, 256> map = {};
+  map.fill(false);
+
+  for (uint8_t c = '0'; c <= '9'; ++c) {
+    map[c] = true;
+  }
+
+  return map;
+}();
+
+static constexpr auto kAlphabetTable = []() {
+  std::array<bool, 256> map = {};
+  map.fill(false);
+
+  for (uint8_t c = 'a'; c <= 'z'; ++c) {
+    map[c] = true;
+  }
+
+  for (uint8_t c = 'A'; c <= 'Z'; ++c) {
+    map[c] = true;
+  }
+
+  return map;
+}();
+
+constexpr auto kCharMap = []() constexpr {
+  std::array<uint8_t, 256> map = {};
+  for (size_t i = 0; i < 256; ++i) {
+    map[i] = (uint8_t)i;
+  }
+
+  map['0'] = '\0';
+  map['a'] = '\a';
+  map['b'] = '\b';
+  map['t'] = '\t';
+  map['n'] = '\n';
+  map['v'] = '\v';
+  map['f'] = '\f';
+  map['r'] = '\r';
+
+  map['x'] = -1;
+  map['u'] = -1;
+  map['o'] = -1;
+
+  return map;
+}();
+
 ///============================================================================///
 
 // We use this layer of indirection to ensure that the compiler can have full
 // optimization capabilities as if the functions has static linkage.
 class Tokenizer::Impl {
 public:
-  std::string buf;  /// NOLINT
+  std::string m_buf;
 
-  std::deque<char> m_fifo;
+  std::queue<char> m_fifo;
 
   uint32_t m_offset = 0;
   uint32_t m_line = 0;
@@ -228,8 +313,8 @@ public:
   Impl(std::istream &file) : m_file(file) {}
 
   void ResetAutomaton() {
-    m_fifo.clear();
-    buf.clear();
+    m_fifo = {};
+    m_buf.clear();
   }
 
   void RefillCharacterBuffer() {
@@ -247,8 +332,8 @@ public:
     m_getc_buffer_pos = 0;
   }
 
-  auto NextCharIf(char cmp) -> bool {
-    char c;
+  auto NextCharIf(uint8_t cmp) -> bool {
+    uint8_t c;
 
     if (!m_fifo.empty()) {
       c = m_fifo.front();
@@ -257,7 +342,7 @@ public:
         return false;
       }
 
-      m_fifo.pop_front();
+      m_fifo.pop();
     } else {
       if (m_getc_buffer_pos == kGetcBufferSize) [[unlikely]] {
         RefillCharacterBuffer();
@@ -273,18 +358,18 @@ public:
     }
 
     m_offset += 1;
-    m_line = m_line + static_cast<uint64_t>(c == '\n');
-    m_column = static_cast<uint64_t>(c != '\n') * (m_column + 1);
+    m_line = m_line + static_cast<uint32_t>(c == '\n');
+    m_column = static_cast<uint32_t>(c != '\n') * (m_column + 1);
 
     return true;
   }
 
-  auto NextChar() -> char {
-    char c;
+  auto NextChar() -> uint8_t {
+    uint8_t c;
 
     if (!m_fifo.empty()) {
       c = m_fifo.front();
-      m_fifo.pop_front();
+      m_fifo.pop();
     } else {
       if (m_getc_buffer_pos == kGetcBufferSize) [[unlikely]] {
         RefillCharacterBuffer();
@@ -294,14 +379,14 @@ public:
     }
 
     m_offset += 1;
-    m_line = m_line + static_cast<uint64_t>(c == '\n');
-    m_column = static_cast<uint64_t>(c != '\n') * (m_column + 1);
+    m_line = m_line + static_cast<uint32_t>(c == '\n');
+    m_column = static_cast<uint32_t>(c != '\n') * (m_column + 1);
 
     return c;
   }
 
-  auto PeekChar() -> char {
-    char c;
+  auto PeekChar() -> uint8_t {
+    uint8_t c;
 
     if (!m_fifo.empty()) {
       c = m_fifo.front();
@@ -317,14 +402,13 @@ public:
   }
 
   static auto CanonicalizeFloat(std::string &buf) -> bool {
-    /* FIXME: Cleanup */
-
-    size_t e_pos = buf.find('e');
+    auto e_pos = buf.find('e');
     if (e_pos == std::string::npos) [[likely]] {
       return true;
     }
 
     long double mantissa = 0;
+
     if (std::from_chars(buf.data(), buf.data() + e_pos, mantissa).ec !=
         std::errc()) [[unlikely]] {
       return false;
@@ -337,14 +421,15 @@ public:
       return false;
     }
 
-    long double x = mantissa * std::pow(10.0, exponent);
+    long double float_value = mantissa * std::pow(10.0, exponent);
 
-    std::array<char, kFloatingPointDigits> buffer;
-    static_assert(kFloatingPointDigits >= 10,
-                  "Floating point precision must be at least 10");
+    static_assert(kFloatingPointDigits >= 1,
+                  "Floating point precision must be at least 1");
 
+    std::array<char, kFloatingPointDigits + 2> buffer;
     if (std::snprintf(buffer.data(), buffer.size(), "%.*Lf",
-                      (int)(kFloatingPointDigits - 1), x) < 0) [[unlikely]] {
+                      static_cast<int>(kFloatingPointDigits), float_value) < 0)
+        [[unlikely]] {
       return false;
     }
 
@@ -365,201 +450,172 @@ public:
     return true;
   }
 
-  static auto CanonicalizeNumber(std::string &buf,
-                                 NumberLiteralType type) -> bool {
-    /* FIXME: Cleanup */
-
-    boost::uint128_type x = 0;
-    boost::uint128_type i = 0;
-
+  static auto CanonicalizeNumber(std::string &buf, NumberType type) -> bool {
     std::transform(buf.begin(), buf.end(), buf.begin(), ::tolower);
     std::erase(buf, '_');
 
+    boost::uint128_type x = 0;
+
     switch (type) {
-      case NumberLiteralType::Hexadecimal: {
-        for (i = 2; i < buf.size(); ++i) {
-          // Check for overflow
+      case NumberType::Hexadecimal: {
+        for (uint8_t i : buf) {
           if (((x >> 64) & 0xF000000000000000) != 0U) [[unlikely]] {
             return false;
           }
 
-          if (buf[i] >= '0' && buf[i] <= '9') {
-            x = (x << 4) + (buf[i] - '0');
-          } else if (buf[i] >= 'a' && buf[i] <= 'f') {
-            x = (x << 4) + (buf[i] - 'a' + 10);
-          } else [[unlikely]] {
+          if (!kHexDigitsTable[i]) [[unlikely]] {
             return false;
           }
+
+          x = (x << 4) + kNibbleTable[i];
         }
         break;
       }
-      case NumberLiteralType::Binary: {
-        for (i = 2; i < buf.size(); ++i) {
-          // Check for overflow
+
+      case NumberType::Binary: {
+        for (char i : buf) {
           if (((x >> 64) & 0x8000000000000000) != 0U) [[unlikely]] {
             return false;
           }
-          if (buf[i] != '0' && buf[i] != '1') [[unlikely]] {
+
+          if (i != '0' && i != '1') [[unlikely]] {
             return false;
           }
 
-          x = (x << 1) + (buf[i] - '0');
+          x = (x << 1) + (i - '0');
         }
         break;
       }
-      case NumberLiteralType::Octal: {
-        for (i = 2; i < buf.size(); ++i) {
-          // Check for overflow
+
+      case NumberType::Octal: {
+        for (char i : buf) {
           if (((x >> 64) & 0xE000000000000000) != 0U) [[unlikely]] {
             return false;
           }
-          if (buf[i] < '0' || buf[i] > '7') [[unlikely]] {
+
+          if (i < '0' || i > '7') [[unlikely]] {
             return false;
           }
 
-          x = (x << 3) + (buf[i] - '0');
+          x = (x << 3) + (i - '0');
         }
         break;
       }
-      case NumberLiteralType::DecimalExplicit: {
-        for (i = 2; i < buf.size(); ++i) {
-          if (buf[i] < '0' || buf[i] > '9') [[unlikely]] {
+
+      case NumberType::DecimalExplicit:
+      case NumberType::Default: {
+        for (char i : buf) {
+          if (i < '0' || i > '9') [[unlikely]] {
             return false;
           }
 
-          // check for overflow
           auto tmp = x;
-          x = (x * 10) + (buf[i] - '0');
+          x = (x * 10) + (i - '0');
+
           if (x < tmp) [[unlikely]] {
             return false;
           }
         }
         break;
       }
-      case NumberLiteralType::Decimal: {
-        for (i = 0; i < buf.size(); ++i) {
-          if (buf[i] < '0' || buf[i] > '9') [[unlikely]] {
-            return false;
-          }
 
-          // check for overflow
-          auto tmp = x;
-          x = (x * 10) + (buf[i] - '0');
-          if (x < tmp) [[unlikely]] {
-            return false;
-          }
-        }
-        break;
-      }
-      case NumberLiteralType::Floating: {
+      case NumberType::Floating: {
         __builtin_unreachable();
       }
     }
 
-    std::stringstream ss;
     if (x == 0) {
-      ss << '0';
+      buf = "0";
+      return true;
     }
 
-    for (i = x; i > 0; i /= 10) {
-      ss << (char)('0' + i % 10);
+    std::array<char, sizeof("340282366920938463463374607431768211455")> buffer;
+    char *buffer_ptr = buffer.data();
+
+    for (auto i = x; i > 0; i /= 10) {
+      *buffer_ptr++ = '0' + i % 10;
     }
 
-    buf.assign(ss.str());
-    std::reverse(buf.begin(), buf.end());
+    std::reverse(buffer.data(), buffer_ptr);
+    buf.assign(buffer.data(), buffer_ptr);
 
     return true;
   }
 
-  auto ParseIdentifier(char c, LocationID start_pos) -> Token {
+  auto ParseIdentifier(uint8_t c, LocationID start_pos) -> Token {
     if (c == 'f' && PeekChar() == '"') {
       return {KeyW, __FString, start_pos};
     }
 
-    while (kIdentifierBodyCharacters[c]) {
-      buf += c;
+    while (kIdentifierCharTable[c]) {
+      m_buf += c;
       c = NextChar();
     }
 
-    m_fifo.push_back(c);
+    m_fifo.push(c);
 
     { /* Determine if it's a keyword */
-      auto it = KEYWORDS_MAP.find(buf);
+      auto it = KEYWORDS_MAP.find(m_buf);
       if (it != KEYWORDS_MAP.end()) {
         return {KeyW, it->second, start_pos};
       }
     }
 
     { /* Determine if it's an operator */
-      auto it = WORD_OPERATORS.find(buf);
+      auto it = WORD_OPERATORS.find(m_buf);
       if (it != WORD_OPERATORS.end()) {
         return {Oper, it->second, start_pos};
       }
     }
 
     /* For compiler internal debugging */
-    qcore_assert(buf != "__builtin_lexer_crash",
+    qcore_assert(m_buf != "__builtin_lexer_crash",
                  "The source code invoked a compiler panic API.");
 
-    if (buf == "__builtin_lexer_abort") {
+    if (m_buf == "__builtin_lexer_abort") {
       return Token::EndOfFile();
     }
 
     /* Return the identifier */
-    return {Name, string(std::move(buf)), start_pos};
+    return {Name, string(std::move(m_buf)), start_pos};
   };
 
-  auto ParseString(char c, LocationID start_pos) -> Token {
-    char quote = c;
+  auto ParseString(uint8_t c, LocationID start_pos) -> Token {
+    auto quote = c;
     c = NextChar();
 
     while (true) {
       while (c != quote) [[likely]] {
         if (c != '\\') [[likely]] {
-          buf += c;
+          m_buf += c;
           c = NextChar();
           continue;
         }
 
         c = NextChar();
 
-        switch (c) {
-          case 'n':
-            buf += '\n';
-            break;
-          case 't':
-            buf += '\t';
-            break;
-          case 'r':
-            buf += '\r';
-            break;
-          case '0':
-            buf += '\0';
-            break;
-          case '\\':
-            buf += '\\';
-            break;
-          case '\'':
-            buf += '\'';
-            break;
-          case '\"':
-            buf += '\"';
-            break;
+        if (kCharMap[c] != 0xff) {
+          m_buf += kCharMap[c];
+          c = NextChar();
+          continue;
+        }
 
+        switch (c) {
           case 'x': {
-            std::array<char, 2> hex = {NextChar(), NextChar()};
-            if ((std::isxdigit(hex[0]) == 0) || (std::isxdigit(hex[1]) == 0)) {
+            std::array hex = {NextChar(), NextChar()};
+            if (!kHexDigitsTable[hex[0]] || !kHexDigitsTable[hex[1]]) {
               ResetAutomaton();
               return Token::EndOfFile();
             }
-            buf +=
-                (kHextable[(uint8_t)hex[0]] << 4) | kHextable[(uint8_t)hex[1]];
+
+            m_buf += (kNibbleTable[hex[0]] << 4) | kNibbleTable[hex[1]];
+
             break;
           }
 
           case 'u': {
             c = NextChar();
-            if (c != '{') {
+            if (c != '{') [[unlikely]] {
               ResetAutomaton();
               return Token::EndOfFile();
             }
@@ -572,7 +628,7 @@ public:
                 break;
               }
 
-              if (std::isxdigit(c) == 0) {
+              if (!kHexDigitsTable[c]) {
                 ResetAutomaton();
                 return Token::EndOfFile();
               }
@@ -585,25 +641,27 @@ public:
                                 16)
                     .ec != std::errc()) {
               ResetAutomaton();
+
               return Token::EndOfFile();
             }
 
             if (codepoint < 0x80) {
-              buf += (char)codepoint;
+              m_buf += (char)codepoint;
             } else if (codepoint < 0x800) {
-              buf += (char)(0xC0 | (codepoint >> 6));
-              buf += (char)(0x80 | (codepoint & 0x3F));
+              m_buf += (char)(0xC0 | (codepoint >> 6));
+              m_buf += (char)(0x80 | (codepoint & 0x3F));
             } else if (codepoint < 0x10000) {
-              buf += (char)(0xE0 | (codepoint >> 12));
-              buf += (char)(0x80 | ((codepoint >> 6) & 0x3F));
-              buf += (char)(0x80 | (codepoint & 0x3F));
+              m_buf += (char)(0xE0 | (codepoint >> 12));
+              m_buf += (char)(0x80 | ((codepoint >> 6) & 0x3F));
+              m_buf += (char)(0x80 | (codepoint & 0x3F));
             } else if (codepoint < 0x110000) {
-              buf += (char)(0xF0 | (codepoint >> 18));
-              buf += (char)(0x80 | ((codepoint >> 12) & 0x3F));
-              buf += (char)(0x80 | ((codepoint >> 6) & 0x3F));
-              buf += (char)(0x80 | (codepoint & 0x3F));
+              m_buf += (char)(0xF0 | (codepoint >> 18));
+              m_buf += (char)(0x80 | ((codepoint >> 12) & 0x3F));
+              m_buf += (char)(0x80 | ((codepoint >> 6) & 0x3F));
+              m_buf += (char)(0x80 | (codepoint & 0x3F));
             } else {
               ResetAutomaton();
+
               return Token::EndOfFile();
             }
 
@@ -611,72 +669,21 @@ public:
           }
 
           case 'o': {
-            std::array<char, 3> oct = {NextChar(), NextChar(), NextChar()};
-            int val;
-            if (std::from_chars(oct.data(), oct.data() + oct.size(), val, 8)
+            std::array<uint8_t, 3> oct = {NextChar(), NextChar(), NextChar()};
+            uint8_t val;
+
+            if (std::from_chars(
+                    reinterpret_cast<const char *>(oct.data()),
+                    reinterpret_cast<const char *>(oct.data() + oct.size()),
+                    val, 8)
                     .ec != std::errc()) {
               ResetAutomaton();
               return Token::EndOfFile();
             }
 
-            buf += val;
+            m_buf += val;
             break;
           }
-
-          case 'b': {
-            c = NextChar();
-            if (c != '{') {
-              ResetAutomaton();
-              return Token::EndOfFile();
-            }
-
-            std::string bin;
-
-            while (true) {
-              c = NextChar();
-              if (c == '}') {
-                break;
-              }
-
-              if ((c != '0' && c != '1') || bin.size() >= 64) {
-                ResetAutomaton();
-                return Token::EndOfFile();
-              }
-
-              bin += c;
-            }
-
-            uint64_t codepoint = 0;
-            for (char i : bin) {
-              codepoint = (codepoint << 1) | (i - '0');
-            }
-
-            if (codepoint > 0xFFFFFFFF) {
-              buf += (char)(codepoint >> 56);
-              buf += (char)(codepoint >> 48);
-              buf += (char)(codepoint >> 40);
-              buf += (char)(codepoint >> 32);
-              buf += (char)(codepoint >> 24);
-              buf += (char)(codepoint >> 16);
-              buf += (char)(codepoint >> 8);
-              buf += (char)(codepoint);
-            } else if (codepoint > 0xFFFF) {
-              buf += (char)(codepoint >> 24);
-              buf += (char)(codepoint >> 16);
-              buf += (char)(codepoint >> 8);
-              buf += (char)(codepoint);
-            } else if (codepoint > 0xFF) {
-              buf += (char)(codepoint >> 8);
-              buf += (char)(codepoint);
-            } else {
-              buf += (char)(codepoint);
-            }
-
-            break;
-          }
-          default:
-            buf += c;
-            break;
         }
 
         c = NextChar();
@@ -692,25 +699,23 @@ public:
         continue;
       }
 
-      m_fifo.push_back(c);
+      m_fifo.push(c);
 
-      if (quote == '\'' && buf.size() == 1) {
-        return {Char, string(std::string_view(buf.data(), 1)), start_pos};
+      if (quote == '\'' && m_buf.size() == 1) {
+        return {Char, string(std::string_view(m_buf.data(), 1)), start_pos};
       }
 
-      return {Text, string(std::move(buf)), start_pos};
+      return {Text, string(std::move(m_buf)), start_pos};
     }
   }
 
-  void ParseIntegerUnwind(char c, std::string &buf) {
-    /* FIXME: Cleanup */
-
+  void ParseIntegerUnwind(uint8_t c, std::string &buf) {
     bool spinning = true;
 
-    std::vector<char> q;
+    std::vector<uint8_t> q;
 
     while (!buf.empty() && spinning) {
-      switch (char ch = buf.back()) {
+      switch (uint8_t ch = buf.back()) {
         case '.':
         case 'e':
         case 'E': {
@@ -726,260 +731,152 @@ public:
       }
     }
 
-    q.push_back(c);
-
-    for (char &it : std::ranges::reverse_view(q)) {
-      m_fifo.push_back(it);
+    for (auto it : std::ranges::reverse_view(q)) {
+      m_fifo.push(it);
     }
+
+    m_fifo.push(c);
   }
 
-  auto ParseInteger(char c, LocationID start_pos) -> Token {
-    /* FIXME: Cleanup */
+  auto ParseInteger(uint8_t c, LocationID start_pos) -> Token {
+    uint16_t prefix = static_cast<uint16_t>(c) << 8 | PeekChar();
+    auto kind = kNumberTypeMap[prefix];
+    bool end_of_float = false;
+    bool is_lexing = true;
 
-    NumberLiteralType type = NumberLiteralType::Decimal;
-
-    /* [0x, 0X, 0d, 0D, 0b, 0B, 0o, 0O] */
-    if (c == '0') [[unlikely]] {
-      buf += c;
+    if (kind != NumberType::Default) {
+      NextChar();
       c = NextChar();
-
-      switch (c) {
-        case 'x':
-        case 'X': {
-          type = NumberLiteralType::Hexadecimal;
-          buf += c;
-          c = NextChar();
-
-          break;
-        }
-
-        case 'b':
-        case 'B': {
-          type = NumberLiteralType::Binary;
-          buf += c;
-          c = NextChar();
-
-          break;
-        }
-
-        case 'o':
-        case 'O': {
-          type = NumberLiteralType::Octal;
-          buf += c;
-          c = NextChar();
-
-          break;
-        }
-
-        case 'd':
-        case 'D': {
-          type = NumberLiteralType::DecimalExplicit;
-          buf += c;
-          c = NextChar();
-
-          break;
-        }
-      }
     }
 
-    enum class FloatPart : uint8_t {
-      MantissaPost,
-      ExponentSign,
-      ExponentPre,
-      ExponentPost,
-    } float_lit_state = FloatPart::MantissaPost;
+    do {
+      if (kWhitespaceTable[c]) {
+        break;
+      }
 
-    bool is_lexing = true;
-    while (is_lexing) {
-      /* Skip over the integer syntax formatting */
       if (c == '_') [[unlikely]] {
         while (kWhitespaceTable[c] || c == '_') [[unlikely]] {
           c = NextChar();
         }
-      } else if (kWhitespaceTable[c]) [[unlikely]] {
-        break;
       }
 
-      switch (type) {
-        case NumberLiteralType::Decimal: {
-          if (std::isdigit(c) != 0) [[likely]] {
-            buf += c;
-          } else if (c == '.') {
-            buf += c;
-            type = NumberLiteralType::Floating;
-            float_lit_state = FloatPart::MantissaPost;
-          } else if (c == 'e' || c == 'E') {
-            buf += 'e';
-            type = NumberLiteralType::Floating;
-            float_lit_state = FloatPart::ExponentSign;
-          } else {
-            ParseIntegerUnwind(c, buf);
-            is_lexing = false;
-          }
-          break;
-        }
-
-        case NumberLiteralType::DecimalExplicit: {
-          if (std::isdigit(c) != 0) [[likely]] {
-            buf += c;
-          } else {
-            ParseIntegerUnwind(c, buf);
-            is_lexing = false;
-          }
-          break;
-        }
-
-        case NumberLiteralType::Hexadecimal: {
-          if (std::isxdigit(c) != 0) [[likely]] {
-            buf += c;
-          } else {
-            ParseIntegerUnwind(c, buf);
-            is_lexing = false;
-          }
-          break;
-        }
-
-        case NumberLiteralType::Binary: {
-          if (c == '0' || c == '1') [[likely]] {
-            buf += c;
-          } else {
-            ParseIntegerUnwind(c, buf);
-            is_lexing = false;
-          }
-          break;
-        }
-
-        case NumberLiteralType::Octal: {
-          if (c >= '0' && c <= '7') [[likely]] {
-            buf += c;
-          } else {
-            ParseIntegerUnwind(c, buf);
-            is_lexing = false;
-          }
-          break;
-        }
-
-        case NumberLiteralType::Floating: {
-          switch (float_lit_state) {
-            case FloatPart::MantissaPost: {
-              if (std::isdigit(c) != 0) {
-                buf += c;
-              } else if (c == 'e' || c == 'E') {
-                buf += 'e';
-                float_lit_state = FloatPart::ExponentSign;
-              } else {
-                ParseIntegerUnwind(c, buf);
-                is_lexing = false;
-              }
-              break;
-            }
-
-            case FloatPart::ExponentSign: {
-              if (c == '-') {
-                buf += c;
-              } else if (c == '+') {
-                float_lit_state = FloatPart::ExponentPre;
-              } else if (std::isdigit(c) != 0) {
-                buf += c;
-                float_lit_state = FloatPart::ExponentPre;
-              } else {
-                ParseIntegerUnwind(c, buf);
-                is_lexing = false;
-              }
-              break;
-            }
-
-            case FloatPart::ExponentPre: {
-              if (std::isdigit(c) != 0) {
-                buf += c;
-              } else if (c == '.') {
-                buf += c;
-                float_lit_state = FloatPart::ExponentPost;
-              } else {
-                ParseIntegerUnwind(c, buf);
-                is_lexing = false;
-              }
-              break;
-            }
-
-            case FloatPart::ExponentPost: {
-              if (std::isdigit(c) != 0) {
-                buf += c;
-              } else {
-                ParseIntegerUnwind(c, buf);
-                is_lexing = false;
-              }
-              break;
-            }
-          }
-
-          break;
-        }
-      }
-
-      if (is_lexing) [[likely]] {
+      if (kHexDigitsTable[c]) [[likely]] {
+        m_buf += c;
         c = NextChar();
+        continue;
       }
+
+      switch (kind) {
+        case NumberType::Default: {
+          if (c == '.') {
+            m_buf += c;
+            kind = NumberType::Floating;
+            c = NextChar();
+          } else {
+            is_lexing = false;
+          }
+
+          break;
+        }
+
+        case NumberType::Floating: {
+          if (end_of_float) {
+            is_lexing = false;
+            break;
+          }
+
+          if (c == '-') {
+            m_buf += c;
+            c = NextChar();
+          } else if (c == '+') {
+            // ignored
+            c = NextChar();
+          } else if (c == '.') {
+            m_buf += c;
+            end_of_float = true;
+            c = NextChar();
+          } else {
+            is_lexing = false;
+          }
+
+          break;
+        }
+
+        default: {
+          is_lexing = false;
+          break;
+        }
+      }
+    } while (is_lexing);
+
+    ParseIntegerUnwind(c, m_buf);
+
+    if (kind == NumberType::Default) {
+      kind = std::any_of(m_buf.begin(), m_buf.end(),
+                         [](auto c) { return c == 'e' || c == 'E'; })
+                 ? NumberType::Floating
+                 : NumberType::Default;
     }
 
-    if (type == NumberLiteralType::Floating) {
-      if (CanonicalizeFloat(buf)) {
-        return {NumL, string(std::move(buf)), start_pos};
+    if (kind == NumberType::Floating) {
+      if (CanonicalizeFloat(m_buf)) {
+        return {NumL, string(std::move(m_buf)), start_pos};
       }
-    } else if (CanonicalizeNumber(buf, type)) [[likely]] {
-      return {IntL, string(std::move(buf)), start_pos};
+    } else if (CanonicalizeNumber(m_buf, kind)) [[likely]] {
+      return {IntL, string(std::move(m_buf)), start_pos};
     }
 
     ResetAutomaton();
+
     return Token::EndOfFile();
   }
 
   auto ParseCommentSingleLine(LocationID start_pos) -> Token {
-    char c;
+    uint8_t c;
 
     do {
       c = NextChar();
-      buf += c;
+      m_buf += c;
     } while (c != '\n');
 
-    return {Note, string(std::move(buf)), start_pos};
+    return {Note, string(std::move(m_buf)), start_pos};
   };
 
   auto ParseCommentMultiLine(LocationID start_pos) -> Token {
     while (true) {
-      char c = NextChar();
+      auto c = NextChar();
 
       if (c == '*') {
         if (NextCharIf('/')) {
-          return {Note, string(std::move(buf)), start_pos};
+          return {Note, string(std::move(m_buf)), start_pos};
         }
       }
 
-      buf += c;
+      m_buf += c;
     }
   }
 
   auto ParseSingleLineMacro(LocationID start_pos) -> Token {
     while (true) {
-      char c = PeekChar();
+      auto c = PeekChar();
 
-      if (!kIdentifierBodyCharacters[c]) {
+      if (!kIdentifierCharTable[c]) {
         break;
       }
 
-      buf += c;
+      m_buf += c;
 
       NextChar();
     }
 
-    return {Macr, string(std::move(buf)), start_pos};
+    return {Macr, string(std::move(m_buf)), start_pos};
   }
 
   auto ParseBlockMacro(LocationID start_pos) -> Token {
     uint32_t state_parens = 1;
 
     while (true) {
-      char c = NextChar();
+      auto c = NextChar();
 
       if (c == '(') {
         state_parens++;
@@ -988,14 +885,14 @@ public:
       }
 
       if (state_parens == 0) {
-        return {MacB, string(std::move(buf)), start_pos};
+        return {MacB, string(std::move(m_buf)), start_pos};
       }
 
-      buf += c;
+      m_buf += c;
     }
   }
 
-  auto ParseOther(char c, LocationID start_pos) -> Token {
+  auto ParseOther(uint8_t c, LocationID start_pos) -> Token {
     /* Special case for a comment */
     if (c == '#') {
       return ParseCommentSingleLine(start_pos);
@@ -1005,31 +902,32 @@ public:
       return {Punc, PuncScope, start_pos};
     }
 
-    auto it = PUNCTORS_MAP.find(std::string_view(&c, 1));
+    auto punc_sv = std::string_view(reinterpret_cast<char *>(&c), 1);
+    auto it = PUNCTORS_MAP.find(punc_sv);
     if (it != PUNCTORS_MAP.end()) {
       return {Punc, it->second, start_pos};
     }
 
-    buf += c;
+    m_buf += c;
     c = NextChar();
 
     /* Special case for a comment */
-    if ((buf[0] == '~' && c == '>')) {
-      buf.clear();
+    if ((m_buf[0] == '~' && c == '>')) {
+      m_buf.clear();
       return ParseCommentSingleLine(start_pos);
     }
 
-    bool found = false;
+    auto found = false;
     while (true) {
-      bool contains = false;
-      if (OPERATOR_SET.count(buf) != 0U) {
+      auto contains = false;
+      if (OPERATOR_SET.count(m_buf) != 0U) {
         contains = true;
         found = true;
       }
 
       if (contains) {
-        buf += c;
-        if (buf.size() > 4) { /* Handle infinite error case */
+        m_buf += c;
+        if (m_buf.size() > 4) { /* Handle infinite error case */
           ResetAutomaton();
 
           return Token::EndOfFile();
@@ -1045,10 +943,10 @@ public:
       return Token::EndOfFile();
     }
 
-    m_fifo.push_back(buf.back());
-    m_fifo.push_back(c);
+    m_fifo.push(m_buf.back());
+    m_fifo.push(c);
 
-    return {Oper, OPERATORS_MAP.find(buf.substr(0, buf.size() - 1))->second,
+    return {Oper, OPERATORS_MAP.find(m_buf.substr(0, m_buf.size() - 1))->second,
             start_pos};
   }
 };
@@ -1065,23 +963,23 @@ auto Tokenizer::GetNext() -> Token {
    * */
 
   Impl &impl = *m_impl;
-  impl.buf.clear();
+  impl.m_buf.clear();
 
-  char c;
+  uint8_t c;
   do {
     c = impl.NextChar();
   } while (kWhitespaceTable[c]);
 
-  LocationID start_pos = InternLocation(
+  auto start_pos = InternLocation(
       Location(impl.m_offset, impl.m_line, impl.m_column, impl.m_filename));
 
   LexState state;
-  if ((std::isalpha(c) != 0) || c == '_') {
+  if (kAlphabetTable[c] || c == '_') {
     /* Identifier or keyword or operator */
     state = LexState::Identifier;
   } else if (c == '/') {
     state = LexState::CommentStart; /* Comment or operator */
-  } else if (std::isdigit(c) != 0) {
+  } else if (kDigitsTable[c]) {
     state = LexState::Integer;
   } else if (c == '"' || c == '\'') {
     state = LexState::String;
