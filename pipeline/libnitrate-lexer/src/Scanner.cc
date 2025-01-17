@@ -49,7 +49,9 @@ public:
       } catch (ScannerEOF &) {
         if (i == 0) {
           self.m_eof = true;
-          self.m_ready.push_back(Token::EndOfFile());
+          for (size_t j = 0; j < kTokenBufferSize; j++) {
+            self.m_ready.push_back(Token::EndOfFile());
+          }
         }
         break;
       }

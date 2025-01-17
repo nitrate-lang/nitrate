@@ -302,6 +302,7 @@ static std::string LexerECFormatter(std::string_view msg, Sev sev) {
 NCC_EC_GROUP(Lexer);
 
 NCC_EC_EX(Lexer, UserRequest, LexerECFormatter);
+NCC_EC_EX(Lexer, UnexpectedEOF, LexerECFormatter);
 
 NCC_EC_EX(Lexer, LiteralOutOfRange, LexerECFormatter);
 NCC_EC_EX(Lexer, InvalidNumber, LexerECFormatter);
@@ -330,14 +331,19 @@ public:
   uint32_t m_column = 0;
 
   uint32_t m_getc_buffer_pos = kGetcBufferSize;
+  std::istream &m_file;
   std::array<char, kGetcBufferSize> m_getc_buffer;
 
   string m_filename;
+  bool m_at_end = false;
+  bool m_parsing = false;
 
-  std::istream &m_file;
-  std::shared_ptr<Environment> m_env;
+  std::function<void()> m_on_eof;
 
   ///============================================================================///
+
+  Impl(std::istream &file, std::function<void()> on_eof)
+      : m_file(file), m_on_eof(std::move(on_eof)) {}
 
   [[nodiscard]] [[gnu::noinline]] std::string LogSource() const {
     std::stringstream ss;
@@ -349,8 +355,6 @@ public:
     return ss.str();
   }
 
-  Impl(std::istream &file) : m_file(file) {}
-
   [[gnu::noinline]] void ResetAutomaton() {
     m_fifo = {};
     m_buf.clear();
@@ -361,9 +365,18 @@ public:
     auto gcount = m_file.gcount();
 
     if (gcount == 0) [[unlikely]] {
-      // Benchmarks show that this is the fastest way to signal EOF
-      // for large files.
-      throw ScannerEOF();
+      if (m_at_end) [[unlikely]] {
+        if (m_parsing) [[unlikely]] {
+          Log << UnexpectedEOF << "Unexpected EOF while reading file";
+          m_on_eof();
+        }
+
+        // Benchmarks show that this is the fastest way to signal EOF
+        // for large files.
+        throw ScannerEOF();
+      }
+
+      m_at_end = true;
     }
 
     // Fill extra buffer with '#' with is a comment character
@@ -809,9 +822,14 @@ public:
         c = NextChar();
       }
 
-      do {
-        c = NextChar();
-      } while (kWhitespaceTable[c]);
+      while (!m_at_end) {
+        c = PeekChar();
+        if (kWhitespaceTable[c]) {
+          NextChar();
+        } else {
+          break;
+        }
+      }
 
       /* Check for a multi-part string */
       if (c == quote) {
@@ -875,7 +893,7 @@ public:
       }
 
       if (c == '_') [[unlikely]] {
-        while (kWhitespaceTable[c] || c == '_') [[unlikely]] {
+        while (!m_at_end && (kWhitespaceTable[c] || c == '_')) [[unlikely]] {
           c = NextChar();
         }
       }
@@ -1001,7 +1019,7 @@ public:
   auto ParseBlockMacro(LocationID start_pos) -> Token {
     uint32_t state_parens = 1;
 
-    while (true) {
+    while (!m_at_end) {
       auto c = NextChar();
 
       if (c == '(') {
@@ -1016,6 +1034,11 @@ public:
 
       m_buf += c;
     }
+
+    Log << UnexpectedEOF << LogSource()
+        << "Unexpected EOF while parsing block macro";
+
+    return Token::EndOfFile();
   }
 
   auto ParseOther(uint8_t c, LocationID start_pos) -> Token {
@@ -1083,11 +1106,14 @@ public:
 auto Tokenizer::GetNext() -> Token {
   Impl &impl = *m_impl;
   impl.m_buf.clear();
+  impl.m_parsing = false;
 
   uint8_t c;
   do {
     c = impl.NextChar();
   } while (kWhitespaceTable[c]);
+
+  impl.m_parsing = true;
 
   auto start_pos = InternLocation(
       Location(impl.m_offset, impl.m_line, impl.m_column, impl.m_filename));
@@ -1166,7 +1192,8 @@ auto Tokenizer::GetNext() -> Token {
 
 Tokenizer::Tokenizer(std::istream &source_file,
                      std::shared_ptr<Environment> env)
-    : IScanner(std::move(env)), m_impl(new Impl(source_file)) {}
+    : IScanner(std::move(env)),
+      m_impl(new Impl(source_file, [&]() { SetFailBit(); })) {}
 
 Tokenizer::~Tokenizer() = default;
 

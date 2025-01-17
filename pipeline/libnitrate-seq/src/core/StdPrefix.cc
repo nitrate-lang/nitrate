@@ -53,7 +53,7 @@ std::string_view ncc::seq::Sequencer::CodePrefix = R"(
         res = res .. '\t';
       end
     end
-    n.debug(res);
+    n.info(res);
   end
 )
 
