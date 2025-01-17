@@ -183,6 +183,8 @@ func_entry:  // do tail call optimization manually
       m_core->m_buffer.pop_front();
     } else {
       x = m_scanner->Next();
+
+      SetFailBit(HasError() || m_scanner->HasError());
     }
 
     switch (x.GetKind()) {
@@ -403,6 +405,19 @@ static auto CanonicalizeModuleName(std::string_view module_name)
   std::replace(text.begin(), text.end(), '/', '.');
 
   return text;
+}
+
+auto Sequencer::HasError() const -> bool {
+  return IScanner::HasError() || m_scanner->HasError();
+}
+
+auto Sequencer::SetFailBit(bool fail) -> bool {
+  auto old = HasError();
+
+  IScanner::SetFailBit(fail);
+  m_scanner->SetFailBit(fail);
+
+  return old;
 }
 
 void Sequencer::SetFetchFunc(FetchModuleFunc func) {

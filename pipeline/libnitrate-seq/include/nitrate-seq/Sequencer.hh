@@ -70,6 +70,7 @@ namespace ncc::seq {
 
   private:
     auto GetNext() -> ncc::lex::Token override;
+
     auto GetLocationFallback(ncc::lex::LocationID id)
         -> std::optional<ncc::lex::Location> override {
       return m_scanner->GetLocation(id);
@@ -90,6 +91,9 @@ namespace ncc::seq {
         -> std::optional<std::vector<std::string>> override;
 
     void SetFetchFunc(FetchModuleFunc func);
+
+    [[nodiscard]] auto HasError() const -> bool override;
+    auto SetFailBit(bool fail = true) -> bool override;
   };
 }  // namespace ncc::seq
 

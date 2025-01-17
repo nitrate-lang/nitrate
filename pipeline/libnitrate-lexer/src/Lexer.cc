@@ -990,44 +990,61 @@ auto Tokenizer::GetNext() -> Token {
     state = LexState::Other;
   }
 
+  Token token;
+
   switch (state) {
     case LexState::Identifier: {
-      return impl.ParseIdentifier(c, start_pos);
+      token = impl.ParseIdentifier(c, start_pos);
+      break;
     }
 
     case LexState::String: {
-      return impl.ParseString(c, start_pos);
+      token = impl.ParseString(c, start_pos);
+      break;
     }
 
     case LexState::Integer: {
-      return impl.ParseInteger(c, start_pos);
+      token = impl.ParseInteger(c, start_pos);
+      break;
     }
 
     case LexState::CommentStart: {
       if (impl.NextCharIf('/')) {
-        return impl.ParseCommentSingleLine(start_pos);
+        token = impl.ParseCommentSingleLine(start_pos);
+        break;
       }
 
       if (impl.NextCharIf('*')) {
-        return impl.ParseCommentMultiLine(start_pos);
+        token = impl.ParseCommentMultiLine(start_pos);
+        break;
       }
 
       /* Divide operator */
-      return {Oper, OpSlash, start_pos};
+      token = {Oper, OpSlash, start_pos};
+      break;
     }
 
     case LexState::MacroStart: {
       if (impl.NextCharIf('(')) {
-        return impl.ParseBlockMacro(start_pos);
+        token = impl.ParseBlockMacro(start_pos);
+        break;
       }
 
-      return impl.ParseSingleLineMacro(start_pos);
+      token = impl.ParseSingleLineMacro(start_pos);
+      break;
     }
 
     case LexState::Other: {
-      return impl.ParseOther(c, start_pos);
+      token = impl.ParseOther(c, start_pos);
+      break;
     }
   }
+
+  if (token.is(EofF)) [[unlikely]] {
+    SetFailBit();
+  }
+
+  return token;
 }
 
 Tokenizer::Tokenizer(std::istream &source_file,

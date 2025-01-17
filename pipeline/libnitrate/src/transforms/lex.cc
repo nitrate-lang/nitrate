@@ -48,8 +48,10 @@ auto ImplUseJson(IScanner *l, std::ostream &o) -> bool {
 
   Token tok;
   while ((tok = (l->Next())).GetKind() != EofF) {
-    uint32_t sl = l->StartLine(tok), sc = l->StartColumn(tok);
-    uint32_t el = l->EndLine(tok), ec = l->EndColumn(tok);
+    uint32_t sl = l->StartLine(tok);
+    uint32_t sc = l->StartColumn(tok);
+    uint32_t el = l->EndLine(tok);
+    uint32_t ec = l->EndColumn(tok);
 
     switch (tok.GetKind()) {
       case EofF: { /* End of file */
@@ -133,7 +135,7 @@ auto ImplUseJson(IScanner *l, std::ostream &o) -> bool {
 
   o << "[1,\"\",0,0,0,0]]";
 
-  return true;
+  return !l->HasError();
 }
 
 static void MsgpackWriteTok(std::ostream &o, uint8_t type, std::string_view val,
@@ -166,8 +168,10 @@ auto ImplUseMsgpack(IScanner *l, std::ostream &o) -> bool {
 
   Token tok;
   while ((tok = (l->Next())).GetKind() != EofF) {
-    uint32_t sl = l->StartLine(tok), sc = l->StartColumn(tok);
-    uint32_t el = l->EndLine(tok), ec = l->EndColumn(tok);
+    uint32_t sl = l->StartLine(tok);
+    uint32_t sc = l->StartColumn(tok);
+    uint32_t el = l->EndLine(tok);
+    uint32_t ec = l->EndColumn(tok);
 
     switch (tok.GetKind()) {
       case EofF: { /* End of file */
@@ -252,7 +256,7 @@ auto ImplUseMsgpack(IScanner *l, std::ostream &o) -> bool {
 
   o.seekp(end_offset, std::ios_base::beg);
 
-  return true;
+  return !l->HasError();
 }
 
 CREATE_TRANSFORM(nit::lex) {
@@ -266,7 +270,9 @@ CREATE_TRANSFORM(nit::lex) {
   if (opts.contains("-fuse-json") && opts.contains("-fuse-msgpack")) {
     qcore_logf(QCORE_ERROR, "Cannot use both JSON and MsgPack output.");
     return false;
-  } else if (opts.contains("-fuse-msgpack")) {
+  }
+
+  if (opts.contains("-fuse-msgpack")) {
     out_mode = OutMode::MsgPack;
   }
 

@@ -87,11 +87,11 @@ namespace ncc::lex {
     /** Check if the VTQ model is empty. */
     [[nodiscard]] auto IsEof() const -> bool { return m_eof; }
 
-    /** Check if the VTQ model has an error. */
-    [[nodiscard]] auto HasError() const -> bool { return m_ebit; }
+    /** Check if the error bit is set. */
+    [[nodiscard]] virtual auto HasError() const -> bool { return m_ebit; }
 
-    /** Set the lexer fail status (can not be undone) */
-    bool SetFailBit(bool fail = true);
+    /** Set the lexer error bit */
+    virtual bool SetFailBit(bool fail = true);
 
     /**
      * Consumes the next token in the VTQ model. If comments are disabled,

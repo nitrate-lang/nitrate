@@ -254,11 +254,18 @@ NCC_EXPORT auto ncc::parse::ec::Formatter(std::string_view msg,
     auto end_line = token_end.GetRow();
 
     std::stringstream ss;
-    ss << "[\x1b[0m\x1b[31;1mSyntax\x1b[0m\x1b[37;1m]: ";
-    ss << (start_filename->empty() ? "?" : start_filename) << ":";
-    ss << (start_line == kLexEof ? "?" : std::to_string(start_line + 1)) << ":";
-    ss << (start_col == kLexEof ? "?" : std::to_string(start_col + 1))
-       << ":\x1b[0m ";
+    ss << "\x1b[37;1m[\x1b[0m\x1b[31;1mSyntax\x1b[0m\x1b[37;1m]: ";
+    bool any_source_location = !start_filename->empty() ||
+                               start_line != kLexEof || start_col != kLexEof;
+
+    if (any_source_location) {
+      ss << (start_filename->empty() ? "?" : start_filename) << ":";
+      ss << (start_line == kLexEof ? "?" : std::to_string(start_line + 1))
+         << ":";
+      ss << (start_col == kLexEof ? "?" : std::to_string(start_col + 1))
+         << ":\x1b[0m ";
+    }
+
     ss << "\x1b[37;1m" << message << "\x1b[0m";
 
     if (start_line != kLexEof) {

@@ -429,11 +429,15 @@ auto Parser::Parse() -> ASTRoot {
 
             std::swap(NparAllocator, m_impl->m_allocator);
 
+            if (m_impl->m_rd.HasError()) {
+              Log << SyntaxError << "Some lexical errors have occurred";
+            }
+
             ast =
                 ASTRoot(node, std::move(m_impl->m_allocator), m_impl->m_failed);
           }
 
-          /* Create a new allocator */
+          /* Recreate the thread-local allocator */
           m_impl->m_allocator = std::make_unique<ncc::DynamicArena>();
         }
 
