@@ -238,6 +238,10 @@ auto Parser::PImpl::RecurseBlock(bool expect_braces, bool single_stmt,
 
         case __FString: {
           r = make<ExprStmt>(RecurseFstring())();
+          if (!next_if(PuncSemi)) {
+            Log << SyntaxError << current()
+                << "Expected ';' after f-string expression";
+          }
           break;
         }
 
@@ -305,11 +309,20 @@ auto Parser::PImpl::RecurseBlock(bool expect_braces, bool single_stmt,
 
         case Break: {
           r = make<BreakStmt>()();
+          if (!next_if(PuncSemi)) {
+            Log << SyntaxError << current()
+                << "Expected ';' after 'break' statement";
+          }
+
           break;
         }
 
         case Continue: {
           r = make<ContinueStmt>()();
+          if (!next_if(PuncSemi)) {
+            Log << SyntaxError << current()
+                << "Expected ';' after 'continue' statement";
+          }
           break;
         }
 
@@ -362,21 +375,37 @@ auto Parser::PImpl::RecurseBlock(bool expect_braces, bool single_stmt,
 
         case Undef: {
           r = make<ExprStmt>(make<ConstUndef>()())();
+          if (!next_if(PuncSemi)) {
+            Log << SyntaxError << current()
+                << "Expected ';' after 'undef' statement";
+          }
           break;
         }
 
         case Null: {
           r = make<ExprStmt>(make<ConstNull>()())();
+          if (!next_if(PuncSemi)) {
+            Log << SyntaxError << current()
+                << "Expected ';' after 'null' statement";
+          }
           break;
         }
 
         case True: {
           r = make<ExprStmt>(make<ConstBool>(true)())();
+          if (!next_if(PuncSemi)) {
+            Log << SyntaxError << current()
+                << "Expected ';' after 'true' statement";
+          }
           break;
         }
 
         case False: {
           r = make<ExprStmt>(make<ConstBool>(false)())();
+          if (!next_if(PuncSemi)) {
+            Log << SyntaxError << current()
+                << "Expected ';' after 'false' statement";
+          }
           break;
         }
       }

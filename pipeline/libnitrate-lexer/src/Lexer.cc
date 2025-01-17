@@ -837,8 +837,6 @@ public:
         continue;
       }
 
-      m_fifo.push(c);
-
       if (quote == '\'' && m_buf.size() == 1) {
         return {Char, string(std::string_view(m_buf.data(), 1)), start_pos};
       }
@@ -1050,10 +1048,12 @@ public:
       return {Punc, PuncScope, start_pos};
     }
 
-    auto punc_sv = std::string_view(reinterpret_cast<char *>(&c), 1);
-    auto it = PUNCTORS_MAP.find(punc_sv);
-    if (it != PUNCTORS_MAP.end()) {
-      return {Punc, it->second, start_pos};
+    {
+      auto punc_sv = std::string_view(reinterpret_cast<char *>(&c), 1);
+      auto it = PUNCTORS_MAP.find(punc_sv);
+      if (it != PUNCTORS_MAP.end()) {
+        return {Punc, it->second, start_pos};
+      }
     }
 
     m_buf += c;
