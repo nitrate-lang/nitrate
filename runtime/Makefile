@@ -1,14 +1,13 @@
+CFLAGS = -Wall -Wextra -Werror -pedantic -O3
 
-# Build the nitrate runtime
+linux: 
+# Build runtime static object
+	$(CC) -o nitrate-linux-rt.o $(CFLAGS) -c nitrate-linux-rt.c
+	$(AR) rcs libnitrate-linux-rt.a nitrate-linux-rt.o
 
-all: nitrate-rt.a nitrate-start.a 
+# Build mock application
+	$(CC) -o mock-app $(CFLAGS) -L. -lnitrate-linux-rt mock-app.c -nostdlib -static -lc -s
 
-nitrate-rt.a: 
-	$(MAKE) -C common
-
-nitrate-start.a:
-	$(MAKE) -C platform
 
 clean:
-	$(MAKE) -C common clean
-	$(MAKE) -C platform clean
+	rm -r *.o *.a mock-app
