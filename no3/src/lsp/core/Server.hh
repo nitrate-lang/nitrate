@@ -5,11 +5,12 @@
 #include <filesystem>
 #include <functional>
 #include <iostream>
+#include <lsp/core/Common.hh>
 #include <lsp/core/LSP.hh>
-#include <lsp/core/common.hh>
-#include <lsp/core/thread-pool.hh>
+#include <lsp/core/ThreadPool.hh>
 #include <memory>
 #include <optional>
+#include <shared_mutex>
 #include <utility>
 
 namespace no3::lsp::srv {
@@ -36,35 +37,30 @@ namespace no3::lsp::srv {
   auto OpenConnection(ConnectionType type,
                       const String& target) -> std::optional<Connection>;
 
-  using RequestHandler = std::function<void(const protocol::RequestMessage&,
-                                            protocol::ResponseMessage&)>;
+  using RequestHandler =
+      std::function<void(const RequestMessage&, ResponseMessage&)>;
 
-  using NotificationHandler =
-      std::function<void(const protocol::NotificationMessage&)>;
+  using NotificationHandler = std::function<void(const NotificationMessage&)>;
 
   class ServerContext {
     ThreadPool m_thread_pool;
-    std::function<void(const protocol::Message* message)> m_callback;
     std::unordered_map<String, RequestHandler> m_request_handlers;
     std::unordered_map<String, NotificationHandler> m_notification_handlers;
     std::queue<std::function<void()>> m_request_queue;
     std::mutex m_request_queue_mutex;
+    std::shared_mutex m_task_mutex;
     std::mutex m_io_mutex;
 
     ServerContext() = default;
 
-    void RegisterHandlers();
-    void RequestQueueLoop(const std::stop_token& st);
+    auto RegisterHandlers() -> void;
+    auto RequestQueueLoop(const std::stop_token& st) -> void;
 
-    void HandleRequest(const protocol::RequestMessage& request,
-                       std::ostream& out);
-    void HandleNotification(const protocol::NotificationMessage& notif);
+    auto NextMessage(std::istream& in) -> std::optional<MessageObject>;
+    auto Dispatch(MessageObject message, std::ostream& out) -> void;
 
-    auto NextMessage(std::istream& in)
-        -> std::optional<std::unique_ptr<protocol::Message>>;
-
-    void Dispatch(const std::shared_ptr<protocol::Message>& message,
-                  std::ostream& out);
+    auto DoRequest(const RequestMessage& request, std::ostream& out) -> void;
+    auto DoNotification(const NotificationMessage& notif) -> void;
 
   public:
     ServerContext(const ServerContext&) = delete;
@@ -73,11 +69,6 @@ namespace no3::lsp::srv {
     static auto The() -> ServerContext&;
 
     [[noreturn]] void StartServer(Connection& io);
-
-    void SetCallback(
-        std::function<void(const protocol::Message* message)> callback) {
-      m_callback = std::move(callback);
-    }
 
     void RegisterRequestHandler(std::string_view method,
                                 RequestHandler handler) {

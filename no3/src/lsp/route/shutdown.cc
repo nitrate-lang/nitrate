@@ -2,8 +2,6 @@
 
 using namespace no3::lsp;
 
-void srv::DoShutdown(const RequestMessage&, ResponseMessage& resp) {
-  LOG(INFO) << "Shutdown requested";
-
-  resp->SetObject();
+void srv::DoShutdown(const RequestMessage&, ResponseMessage&) {
+  /// TODO: Cleanup resources
 }

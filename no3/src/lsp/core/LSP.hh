@@ -1,45 +1,13 @@
 #pragma once
 
-#include <rapidjson/document.h>
-#include <rapidjson/stringbuffer.h>
-#include <rapidjson/writer.h>
-
-#include <lsp/core/common.hh>
+#include <lsp/core/Common.hh>
+#include <nlohmann/json.hpp>
 #include <optional>
 #include <utility>
+#include <variant>
 
 namespace no3::lsp::protocol {
-  enum class MessageType { Request, Notification };
-
-  class Message {
-    MessageType m_type;
-
-  public:
-    Message(MessageType type) : m_type(type) {}
-    virtual ~Message() = default;
-
-    [[nodiscard]] auto GetKind() const -> MessageType { return m_type; }
-  };
-
-  enum class MessageIdKind : int8_t { String, Int };
-
-  class MessageId final {
-    String m_data;
-    int64_t m_int;
-    MessageIdKind m_kind;
-
-  public:
-    MessageId(String id)
-        : m_data(std::move(id)), m_int(0), m_kind(MessageIdKind::String) {}
-    MessageId(int64_t id)
-        : m_data(std::to_string(id)), m_int(id), m_kind(MessageIdKind::Int) {}
-
-    [[nodiscard]] auto GetKind() const { return m_kind; }
-    [[nodiscard]] auto GetString() const { return m_data; }
-    [[nodiscard]] auto GetInt() const { return m_int; }
-  };
-
-  enum class ErrorCodes {
+  enum class LSPStatus {
     // Defined by JSON-RPC
     ParseError = -32700,
     InvalidRequest = -32600,
@@ -131,103 +99,156 @@ namespace no3::lsp::protocol {
     lspReservedErrorRangeEnd = -32800,
   };
 
-  struct ResponseError {
-    std::optional<rapidjson::Document> m_data;
-    String m_message;
-    ErrorCodes m_code;
+  enum class MessageIdKind : uint8_t { String, Int };
 
-    ResponseError(auto code, auto message, auto data)
-        : m_data(std::move(data)),
-          m_message(std::move(message)),
-          m_code(code) {}
+  class MessageId final {
+    String m_data;
+    MessageIdKind m_kind;
+
+  public:
+    MessageId(String id)
+        : m_data(std::move(id)), m_kind(MessageIdKind::String) {}
+    MessageId(int64_t id)
+        : m_data(std::to_string(id)), m_kind(MessageIdKind::Int) {}
+
+    [[nodiscard]] constexpr auto GetKind() const { return m_kind; }
+    [[nodiscard]] constexpr auto GetInt() const { return std::stoll(m_data); }
+    [[nodiscard]] auto GetString() const { return m_data; }
+
+    [[nodiscard]] constexpr bool operator==(const MessageId& o) const {
+      return m_kind == o.m_kind && m_data == o.m_data;
+    }
+
+    [[nodiscard]] constexpr bool operator<(const MessageId& o) const {
+      if (m_kind != o.m_kind) {
+        return m_kind < o.m_kind;
+      }
+
+      return m_data < o.m_data;
+    }
   };
 
-  class RequestMessage final : public Message {
-    rapidjson::Document m_params;
+  class RequestMessage final {
+    nlohmann::json m_params;
     String m_method;
     MessageId m_id;
 
   public:
     RequestMessage(auto id, auto method, auto params)
-        : Message(MessageType::Request),
-          m_params(std::move(params)),
+        : m_params(std::move(params)),
           m_method(std::move(method)),
           m_id(std::move(id)) {}
-    ~RequestMessage() override = default;
 
-    [[nodiscard]] auto GetMID() const -> const MessageId& { return m_id; }
+    [[nodiscard]] constexpr bool operator==(const RequestMessage& o) const {
+      return m_id == o.m_id && m_method == o.m_method && m_params == o.m_params;
+    }
+
+    [[nodiscard]] constexpr size_t GetHash() const {
+      /// FIXME: Fix the hash function
+      return std::hash<String>{}(m_method);
+    }
+
+    [[nodiscard]] auto GetMID() const { return m_id; }
     [[nodiscard]] auto GetMethod() const { return m_method; }
-
-    [[nodiscard]] auto GetJSON() const -> const rapidjson::Document& {
+    [[nodiscard]] constexpr auto GetJSON() const -> const nlohmann::json& {
       return m_params;
     }
   };
 
-  class NotificationMessage final : public Message {
+  class NotificationMessage final {
     String m_method;
-    rapidjson::Document m_params;
+    nlohmann::json m_params;
 
   public:
-    NotificationMessage(String method, rapidjson::Document params)
-        : Message(MessageType::Notification),
-          m_method(std::move(method)),
-          m_params(std::move(params)) {}
-    ~NotificationMessage() override = default;
+    NotificationMessage(String method, nlohmann::json params)
+        : m_method(std::move(method)), m_params(std::move(params)) {}
+
+    [[nodiscard]] constexpr bool operator==(
+        const NotificationMessage& o) const {
+      return m_method == o.m_method && m_params == o.m_params;
+    }
+
+    [[nodiscard]] constexpr size_t GetHash() const {
+      /// FIXME: Fix the hash function
+      return std::hash<String>{}(m_method);
+    }
 
     [[nodiscard]] auto Method() const { return m_method; }
-    [[nodiscard]] auto GetJSON() const -> const rapidjson::Document& {
+    [[nodiscard]] auto GetJSON() const -> const nlohmann::json& {
       return m_params;
     }
   };
 
-  class ResponseMessage : public Message {
+  struct ResponseError {
+    std::optional<nlohmann::json> m_data;
+    String m_message;
+    LSPStatus m_code;
+
+    ResponseError(auto code, auto message, auto data)
+        : m_data(std::move(data)),
+          m_message(std::move(message)),
+          m_code(code) {}
+
+    [[nodiscard]] constexpr bool operator==(const ResponseError& o) const {
+      return m_code == o.m_code && m_message == o.m_message &&
+             m_data == o.m_data;
+    }
+  };
+
+  class ResponseMessage final {
     MessageId m_id;
-    std::optional<rapidjson::Document> m_result;
+    nlohmann::json m_result;
     std::optional<ResponseError> m_error;
 
-    ResponseMessage(MessageId id)
-        : Message(MessageType::Request), m_id(std::move(id)) {}
-
-  public:
-    ResponseMessage(ResponseMessage&& o) noexcept
-        : Message(MessageType::Request), m_id(std::move(o.m_id)) {
-      if (o.m_result.has_value()) {
-        m_result = std::move(o.m_result.value());
-      }
-      if (o.m_error.has_value()) {
-        m_error = std::move(o.m_error.value());
-      }
+    ResponseMessage(MessageId id) : m_id(std::move(id)) {
+      m_result = nlohmann::json::object();
     }
 
+  public:
     static auto FromRequest(const RequestMessage& request) -> ResponseMessage {
       ResponseMessage response(request.GetMID());
       return response;
     }
 
-    ~ResponseMessage() override = default;
+    ResponseMessage(ResponseMessage&& o) noexcept : m_id(std::move(o.m_id)) {
+      m_result = std::move(o.m_result);
+      if (o.m_error.has_value()) {
+        m_error = std::move(o.m_error.value());
+      }
+    }
 
-    [[nodiscard]] auto Id() const -> const MessageId& { return m_id; }
-    auto Result() -> std::optional<rapidjson::Document>& { return m_result; }
+    [[nodiscard]] constexpr bool operator==(const ResponseMessage& o) const {
+      return m_id == o.m_id && m_result == o.m_result && m_error == o.m_error;
+    }
+
+    [[nodiscard]] size_t GetHash() const {
+      /// FIXME: Fix the hash function
+      return std::hash<String>{}(m_id.GetString());
+    }
+
+    [[nodiscard]] auto GetMID() const -> const MessageId& { return m_id; }
+    auto GetJSON() -> nlohmann::json& { return m_result; }
+
     auto Error() -> std::optional<ResponseError>& { return m_error; }
-
-    auto operator->() -> rapidjson::Document* {
-      if (!m_result.has_value()) {
-        m_result = rapidjson::Document(rapidjson::kObjectType);
-      }
-      return &m_result.value();
+    auto Error(auto code, auto message) {
+      m_error = ResponseError(code, std::move(message), std::nullopt);
     }
 
-    auto operator*() -> rapidjson::Document& {
-      if (!m_result.has_value()) {
-        m_result = rapidjson::Document(rapidjson::kObjectType);
-      }
-      return m_result.value();
-    }
+    [[nodiscard]] auto operator->() -> auto& { return m_result; }
+    [[nodiscard]] auto operator*() -> auto& { return m_result; }
 
-    void Error(auto code, auto message,
-               std::optional<rapidjson::Document> data = std::nullopt) {
-      m_error = ResponseError(code, std::move(message), std::move(data));
+    [[nodiscard]] auto GetJSON() const -> const nlohmann::json& {
+      return m_result;
     }
   };
 
+  using MessageVariant =
+      std::variant<RequestMessage, NotificationMessage, ResponseMessage>;
+  [[nodiscard]]
+
+  static inline size_t hash_value(const MessageVariant& m) {  /// NOLINT
+    return std::visit([](const auto& m) { return m.GetHash(); }, m);
+  }
+
+  using MessageObject = boost::flyweight<MessageVariant>;
 }  // namespace no3::lsp::protocol

@@ -2,8 +2,8 @@
 #include <cstdlib>
 #include <filesystem>
 #include <fstream>
+#include <lsp/core/Server.hh>
 #include <lsp/core/SyncFS.hh>
-#include <lsp/core/server.hh>
 
 SyncFS::SyncFS() { LOG(INFO) << "Creating mirrored file system abstraction"; }
 
@@ -47,7 +47,8 @@ static auto UrlDecode(std::string_view str) -> std::string {
   return result;
 }
 
-auto SyncFS::Open(std::string path) -> std::optional<std::shared_ptr<SyncFSFile>> {
+auto SyncFS::Open(std::string path)
+    -> std::optional<std::shared_ptr<SyncFSFile>> {
   path = UrlDecode(path);
   if (path.starts_with("file://")) {
     path = path.substr(7);
@@ -57,20 +58,19 @@ auto SyncFS::Open(std::string path) -> std::optional<std::shared_ptr<SyncFSFile>
 
   auto it = m_files.find(path);
   if (it != m_files.end()) [[likely]] {
-    LOG(INFO) << "SyncFS: File already open: " << path;
     return it->second;
   }
 
   if (!std::filesystem::exists(path)) {
-    LOG(ERROR) << "SyncFS: File not found: " << path;
+    LOG(ERROR) << "File not found: " << path;
     return std::nullopt;
   }
 
-  LOG(INFO) << "SyncFS: Opening file: " << path;
+  LOG(INFO) << "Reading file...: " << path;
 
   std::ifstream file(path);
   if (!file.is_open()) {
-    LOG(ERROR) << "SyncFS: Failed to open file: " << path;
+    LOG(ERROR) << "Failed to open file: " << path;
     return std::nullopt;
   }
 

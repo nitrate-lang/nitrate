@@ -1,6 +1,6 @@
 #include <chrono>
-#include <lsp/core/server.hh>
-#include <lsp/core/thread-pool.hh>
+#include <lsp/core/Server.hh>
+#include <lsp/core/ThreadPool.hh>
 #include <mutex>
 #include <stop_token>
 
@@ -18,11 +18,11 @@ void ThreadPool::Start() {
 
   for (uint32_t ii = 0; ii < num_threads; ++ii) {
     m_threads.emplace_back(
-        std::jthread([this](std::stop_token st) { ThreadLoop(st); }));
+        [this](const std::stop_token& st) { ThreadLoop(st); });
   }
 }
 
-void ThreadPool::ThreadLoop(std::stop_token st) {
+void ThreadPool::ThreadLoop(const std::stop_token& st) {
   bool has_any_yet = false;
 
   while (!st.stop_requested()) {
@@ -73,7 +73,8 @@ void ThreadPool::Stop() {
     }
   }
 
-  while (Busy());
+  while (Busy()) {
+  }
 
   m_threads.clear();
 }

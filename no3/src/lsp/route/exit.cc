@@ -3,7 +3,7 @@
 using namespace no3::lsp;
 
 void srv::DoExit(const NotificationMessage&) {
-  LOG(INFO) << "Exiting language server";
+  /// FIXME: Ensure all threads are cleaned up
 
   std::exit(0);
 }

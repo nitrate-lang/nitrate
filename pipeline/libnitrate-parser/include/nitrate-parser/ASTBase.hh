@@ -531,7 +531,7 @@ namespace ncc::parse {
           return false;
       }
     }
-    [[nodiscard]] constexpr auto IsArray() const -> bool {
+    [[nodiscard]] constexpr auto is_array() const -> bool {
       return GetKind() == QAST_ARRAY;
     };
     [[nodiscard]] constexpr auto IsTuple() const -> bool {
@@ -544,7 +544,7 @@ namespace ncc::parse {
       return GetKind() == QAST_FUNCTOR;
     }
     [[nodiscard]] constexpr auto IsComposite() const -> bool {
-      return IsArray() || IsTuple();
+      return is_array() || IsTuple();
     }
     [[nodiscard]] constexpr auto IsNumeric() const -> bool {
       return GetKind() >= QAST_U1 && GetKind() <= QAST_F128;

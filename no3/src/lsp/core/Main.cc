@@ -5,7 +5,7 @@
 #include <boost/throw_exception.hpp>
 #include <csignal>
 #include <filesystem>
-#include <lsp/core/server.hh>
+#include <lsp/core/Server.hh>
 #include <memory>
 #include <nitrate-core/Macro.hh>
 #include <optional>

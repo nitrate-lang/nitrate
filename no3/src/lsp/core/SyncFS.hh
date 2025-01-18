@@ -7,6 +7,7 @@
 #include <optional>
 #include <string>
 #include <unordered_map>
+#include <utility>
 
 class SyncFSFile {
   std::shared_ptr<std::string> m_content;
@@ -46,7 +47,7 @@ public:
 
   void SetContent(std::shared_ptr<std::string> content) {
     std::lock_guard<std::mutex> lock(m_mutex);
-    m_content = content;
+    m_content = std::move(content);
   }
 };
 
@@ -58,14 +59,14 @@ class SyncFS {
   SyncFS();
   ~SyncFS();
 
+public:
   SyncFS(const SyncFS&) = delete;
   auto operator=(const SyncFS&) -> SyncFS& = delete;
   SyncFS(SyncFS&&) = delete;
 
-public:
   static auto The() -> SyncFS&;
 
-  auto Open(std::string name) -> std::optional<std::shared_ptr<SyncFSFile>>;
+  auto Open(std::string path) -> std::optional<std::shared_ptr<SyncFSFile>>;
 
   void Close(const std::string& name);
 };

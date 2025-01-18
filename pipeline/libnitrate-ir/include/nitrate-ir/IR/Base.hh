@@ -300,7 +300,8 @@ namespace ncc::ir {
       return type == GetKind();
     }
 
-    [[nodiscard]] constexpr auto IsEq(const GenericExpr<A> *other) const -> bool;
+    [[nodiscard]] constexpr auto IsEq(const GenericExpr<A> *other) const
+        -> bool;
 
     constexpr void Accept(IRVisitor<A> &v) {
       v.template Dispatch(MakeFlowPtr(this));
@@ -376,7 +377,7 @@ namespace ncc::ir {
       }
     }
 
-    [[nodiscard]] constexpr auto IsArray() const -> bool {
+    [[nodiscard]] constexpr auto is_array() const -> bool {
       return this->GetKind() == IR_tARRAY;
     }
     [[nodiscard]] constexpr auto IsPointer() const -> bool {
@@ -825,7 +826,8 @@ namespace ncc::ir {
   }
 
   template <class A>
-  constexpr auto GenericExpr<A>::IsEq(const GenericExpr<A> *other) const -> bool {
+  constexpr auto GenericExpr<A>::IsEq(const GenericExpr<A> *other) const
+      -> bool {
     nr_ty_t kind = GetKind();
 
     if (kind != other->GetKind()) {

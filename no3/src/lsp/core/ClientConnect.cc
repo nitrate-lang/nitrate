@@ -9,7 +9,7 @@
 #include <charconv>
 #include <cstdint>
 #include <cstring>
-#include <lsp/core/server.hh>
+#include <lsp/core/Server.hh>
 #include <memory>
 #include <nitrate-core/Logger.hh>
 
@@ -73,12 +73,16 @@ static auto GetTcpClient(const auto& host,
     return std::nullopt;
   }
 
-  struct sockaddr_in addr;
-  addr.sin_family = AF_INET;
-  addr.sin_port = htons(port);
-  addr.sin_addr.s_addr = inet_addr(std::string(host).c_str());
+  union {
+    struct sockaddr_in m_in;
+    struct sockaddr m_addr;
+  } addr;
 
-  if (bind(fd, reinterpret_cast<struct sockaddr*>(&addr), sizeof(addr)) == -1) {
+  addr.m_in.sin_family = AF_INET;
+  addr.m_in.sin_port = htons(port);
+  addr.m_in.sin_addr.s_addr = inet_addr(std::string(host).c_str());
+
+  if (bind(fd, &addr.m_addr, sizeof(addr.m_addr)) == -1) {
     LOG(ERROR) << "Failed to bind socket: " << GetStrerror();
     return std::nullopt;
   }

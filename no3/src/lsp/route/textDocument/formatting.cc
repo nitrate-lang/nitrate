@@ -1,9 +1,7 @@
-#include <rapidjson/document.h>
-
 #include <cctype>
 #include <cstdint>
+#include <lsp/core/Server.hh>
 #include <lsp/core/SyncFS.hh>
-#include <lsp/core/server.hh>
 #include <lsp/lang/Format.hh>
 #include <lsp/route/RoutesList.hh>
 #include <memory>
@@ -16,7 +14,7 @@
 #include <sstream>
 #include <string>
 
-using namespace rapidjson;
+using namespace nlohmann;
 using namespace ncc::lex;
 using namespace ncc::seq;
 using namespace no3::lsp;
@@ -37,70 +35,70 @@ void srv::DoFormatting(const RequestMessage& req, ResponseMessage& resp) {
     bool m_insertSpaces = false;
   };
 
-  if (!req.GetJSON().HasMember("textDocument")) {
-    resp.Error(ErrorCodes::InvalidParams, "Missing textDocument");
+  if (!req.GetJSON().contains("textDocument")) {
+    resp.Error(LSPStatus::InvalidParams, "Missing textDocument");
     return;
   }
 
-  if (!req.GetJSON()["textDocument"].IsObject()) {
-    resp.Error(ErrorCodes::InvalidParams, "textDocument is not an object");
+  if (!req.GetJSON()["textDocument"].is_object()) {
+    resp.Error(LSPStatus::InvalidParams, "textDocument is not an object");
     return;
   }
 
-  if (!req.GetJSON()["textDocument"].HasMember("uri")) {
-    resp.Error(ErrorCodes::InvalidParams, "Missing textDocument.uri");
+  if (!req.GetJSON()["textDocument"].contains("uri")) {
+    resp.Error(LSPStatus::InvalidParams, "Missing textDocument.uri");
     return;
   }
 
-  if (!req.GetJSON()["textDocument"]["uri"].IsString()) {
-    resp.Error(ErrorCodes::InvalidParams, "textDocument.uri is not a string");
+  if (!req.GetJSON()["textDocument"]["uri"].is_string()) {
+    resp.Error(LSPStatus::InvalidParams, "textDocument.uri is not a string");
     return;
   }
 
-  if (!req.GetJSON().HasMember("options")) {
-    resp.Error(ErrorCodes::InvalidParams, "Missing options");
+  if (!req.GetJSON().contains("options")) {
+    resp.Error(LSPStatus::InvalidParams, "Missing options");
     return;
   }
 
-  if (!req.GetJSON()["options"].IsObject()) {
-    resp.Error(ErrorCodes::InvalidParams, "options is not an object");
+  if (!req.GetJSON()["options"].is_object()) {
+    resp.Error(LSPStatus::InvalidParams, "options is not an object");
     return;
   }
 
-  if (!req.GetJSON()["options"].HasMember("tabSize")) {
-    resp.Error(ErrorCodes::InvalidParams, "Missing options.tabSize");
+  if (!req.GetJSON()["options"].contains("tabSize")) {
+    resp.Error(LSPStatus::InvalidParams, "Missing options.tabSize");
     return;
   }
 
-  if (!req.GetJSON()["options"]["tabSize"].IsInt()) {
-    resp.Error(ErrorCodes::InvalidParams, "options.tabSize is not an integer");
+  if (!req.GetJSON()["options"]["tabSize"].is_number_unsigned()) {
+    resp.Error(LSPStatus::InvalidParams, "options.tabSize is not an integer");
     return;
   }
 
-  if (req.GetJSON()["options"]["tabSize"].GetUint() == 0) {
-    resp.Error(ErrorCodes::InvalidParams, "options.tabSize is 0");
+  if (req.GetJSON()["options"]["tabSize"].get<size_t>() == 0) {
+    resp.Error(LSPStatus::InvalidParams, "options.tabSize is 0");
     return;
   }
 
-  if (!req.GetJSON()["options"].HasMember("insertSpaces")) {
-    resp.Error(ErrorCodes::InvalidParams, "Missing options.insertSpaces");
+  if (!req.GetJSON()["options"].contains("insertSpaces")) {
+    resp.Error(LSPStatus::InvalidParams, "Missing options.insertSpaces");
     return;
   }
 
-  if (!req.GetJSON()["options"]["insertSpaces"].IsBool()) {
-    resp.Error(ErrorCodes::InvalidParams,
+  if (!req.GetJSON()["options"]["insertSpaces"].get<bool>()) {
+    resp.Error(LSPStatus::InvalidParams,
                "options.insertSpaces is not a boolean");
     return;
   }
 
   FormattingOptions options;
-  options.m_tabSize = req.GetJSON()["options"]["tabSize"].GetInt();
-  options.m_insertSpaces = req.GetJSON()["options"]["insertSpaces"].GetBool();
+  options.m_tabSize = req.GetJSON()["options"]["tabSize"].get<size_t>();
+  options.m_insertSpaces = req.GetJSON()["options"]["insertSpaces"].get<bool>();
 
-  std::string uri = req.GetJSON()["textDocument"]["uri"].GetString();
+  auto uri = req.GetJSON()["textDocument"]["uri"].get<std::string>();
   auto file_opt = SyncFS::The().Open(uri);
   if (!file_opt.has_value()) {
-    resp.Error(ErrorCodes::InternalError, "Failed to open file");
+    resp.Error(LSPStatus::InternalError, "Failed to open file");
     return;
   }
   auto file = file_opt.value();
@@ -116,13 +114,11 @@ void srv::DoFormatting(const RequestMessage& req, ResponseMessage& resp) {
     return;
   }
 
-  LOG(INFO) << "Requested document format";
-
   std::stringstream formatted_ss;
   if (!lsp::fmt::FormatterFactory::Create(lsp::fmt::Styleguide::Cambrian,
                                           formatted_ss)
            ->Format(ast.Get())) {
-    resp.Error(ErrorCodes::InternalError, "Failed to format document");
+    resp.Error(LSPStatus::InternalError, "Failed to format document");
     return;
   }
 
@@ -133,19 +129,15 @@ void srv::DoFormatting(const RequestMessage& req, ResponseMessage& resp) {
   ///==========================================================
   /// Send the whole new file contents
 
-  resp->SetArray();
-  Value edit(kObjectType);
-  edit.AddMember("range", Value(kObjectType), resp->GetAllocator());
-  edit["range"].AddMember("start", Value(kObjectType), resp->GetAllocator());
-  edit["range"]["start"].AddMember("line", 0, resp->GetAllocator());
-  edit["range"]["start"].AddMember("character", 0, resp->GetAllocator());
-  edit["range"].AddMember("end", Value(kObjectType), resp->GetAllocator());
-  edit["range"]["end"].AddMember("line", SIZE_MAX, resp->GetAllocator());
-  edit["range"]["end"].AddMember("character", SIZE_MAX, resp->GetAllocator());
-  edit.AddMember(
-      "newText",
-      Value(formatted.c_str(), formatted.size(), resp->GetAllocator()).Move(),
-      resp->GetAllocator());
+  resp.GetJSON() = json::array();
 
-  resp->PushBack(edit, resp->GetAllocator());
+  auto edit = json::object();
+
+  edit["range"]["start"]["line"] = 0;
+  edit["range"]["start"]["character"] = 0;
+  edit["range"]["end"]["line"] = SIZE_MAX;
+  edit["range"]["end"]["character"] = SIZE_MAX;
+  edit["newText"] = formatted;
+
+  resp.GetJSON().push_back(edit);
 }

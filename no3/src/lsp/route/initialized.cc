@@ -3,5 +3,5 @@
 using namespace no3::lsp;
 
 void srv::DoInitialized(const NotificationMessage&) {
-  LOG(INFO) << "Language server initialized";
+  /// TODO: Setup state for the server
 }

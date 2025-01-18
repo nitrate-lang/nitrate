@@ -4,29 +4,25 @@
 using namespace no3::lsp;
 
 void srv::DoDidSave(const NotificationMessage& notif) {
-  if (!notif.GetJSON().HasMember("textDocument")) {
+  if (!notif.GetJSON().contains("textDocument")) {
     LOG(ERROR) << "Missing textDocument member";
     return;
   }
 
-  if (!notif.GetJSON()["textDocument"].IsObject()) {
+  if (!notif.GetJSON()["textDocument"].is_object()) {
     LOG(ERROR) << "textDocument is not an object";
     return;
   }
 
   const auto& text_document = notif.GetJSON()["textDocument"];
 
-  if (!text_document.HasMember("uri")) {
+  if (!text_document.contains("uri")) {
     LOG(ERROR) << "Missing uri member";
     return;
   }
 
-  if (!text_document["uri"].IsString()) {
+  if (!text_document["uri"].is_string()) {
     LOG(ERROR) << "uri member is not a string";
     return;
   }
-
-  std::string uri = text_document["uri"].GetString();
-
-  LOG(INFO) << "Saving file: " << uri;
 }

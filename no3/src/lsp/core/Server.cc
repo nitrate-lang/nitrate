@@ -2,10 +2,15 @@
 
 #include <chrono>
 #include <functional>
+#include <lsp/core/LSP.hh>
+#include <lsp/core/Server.hh>
 #include <lsp/route/RoutesList.hh>
 #include <memory>
+#include <mutex>
+#include <shared_mutex>
 #include <stop_token>
 #include <utility>
+#include <variant>
 
 using namespace no3::lsp::srv;
 
@@ -37,7 +42,7 @@ void ServerContext::RequestQueueLoop(const std::stop_token& st) {
 }
 
 auto ServerContext::NextMessage(std::istream& in)
-    -> std::optional<std::unique_ptr<Message>> {
+    -> std::optional<MessageObject> {
   /**
    * We don't need to lock the std::istream because this is the only place where
    * we read from it in a single threaded context. The ostream is seperately
@@ -91,76 +96,76 @@ auto ServerContext::NextMessage(std::istream& in)
 
   LOG(INFO) << "Received message: " << body;
 
-  rapidjson::Document doc;
-  doc.Parse(body.c_str(), body.size());
+  nlohmann::json doc = nlohmann::json::parse(body, nullptr, false);
   body.clear();
 
-  if (doc.HasParseError()) [[unlikely]] {
-    LOG(ERROR) << "Failed to parse JSON: " << doc.GetParseError();
+  if (doc.is_discarded()) {
+    LOG(ERROR) << "Failed to parse JSON: " << doc;
     return std::nullopt;
   }
 
-  if (!doc.HasMember("jsonrpc")) [[unlikely]] {
+  if (!doc.contains("jsonrpc")) [[unlikely]] {
     LOG(ERROR) << "Request object is missing key \"jsonrpc\"";
     return std::nullopt;
   }
 
-  if (!doc["jsonrpc"].IsString()) [[unlikely]] {
+  if (!doc["jsonrpc"].is_string()) [[unlikely]] {
     LOG(ERROR) << "Request object key \"jsonrpc\" is not a string";
     return std::nullopt;
   }
 
-  if (doc["jsonrpc"].GetString() != std::string_view("2.0")) [[unlikely]] {
+  if (doc["jsonrpc"].get<std::string>() != std::string_view("2.0"))
+      [[unlikely]] {
     LOG(ERROR) << "Client is using unsupported LSP JSON-RPC version";
-    LOG(INFO) << "Client is using version: " << doc["jsonrpc"].GetString();
+    LOG(INFO) << "Client is using version: "
+              << doc["jsonrpc"].get<std::string>();
     LOG(INFO) << "Server only supports version: 2.0";
 
     return std::nullopt;
   }
 
-  if (!doc.HasMember("method")) [[unlikely]] {
+  if (!doc.contains("method")) [[unlikely]] {
     LOG(ERROR) << "Request object is missing key \"method\"";
     return std::nullopt;
   }
 
-  if (!doc["method"].IsString()) [[unlikely]] {
+  if (!doc["method"].is_string()) [[unlikely]] {
     LOG(ERROR) << "Request object key \"method\" is not a string";
     return std::nullopt;
   }
 
-  rapidjson::Document params;
+  nlohmann::json params = nlohmann::json::object();
 
-  if (doc.HasMember("params")) {
-    if (!doc["params"].IsObject() && !doc["params"].IsArray()) [[unlikely]] {
+  if (doc.contains("params")) {
+    if (!doc["params"].is_object() && !doc["params"].is_array()) [[unlikely]] {
       LOG(ERROR) << "Method parameters is not an object or array";
       return std::nullopt;
     }
 
-    params.CopyFrom(doc["params"], params.GetAllocator());
-  } else {
-    params.SetObject();
+    params = doc["params"];
   }
 
-  std::unique_ptr<Message> message;
+  std::optional<MessageObject> message;
 
-  bool is_lsp_notification = !doc.HasMember("id");
+  bool is_lsp_notification = !doc.contains("id");
 
   if (is_lsp_notification) {
-    message = std::make_unique<NotificationMessage>(
-        String(doc["method"].GetString()), std::move(params));
+    message = MessageObject(NotificationMessage(
+        String(doc["method"].get<std::string>()), std::move(params)));
   } else {
-    if (!doc["id"].IsString() && !doc["id"].IsInt()) [[unlikely]] {
+    if (!doc["id"].is_string() && !doc["id"].is_number()) [[unlikely]] {
       LOG(ERROR) << "Request object key \"id\" is not a string or int";
       return std::nullopt;
     }
 
-    if (doc["id"].IsString()) {
-      message = std::make_unique<RequestMessage>(String(doc["id"].GetString()),
-                                                 doc["method"].GetString(),
-                                                 std::move(params));
+    if (doc["id"].is_string()) {
+      message = MessageObject(
+          RequestMessage(String(doc["id"].get<std::string>()),
+                         doc["method"].get<std::string>(), std::move(params)));
     } else {
-      message = std::make_unique<RequestMessage>(
-          doc["id"].GetInt(), doc["method"].GetString(), std::move(params));
+      message = MessageObject(RequestMessage(doc["id"].get<int64_t>(),
+                                             doc["method"].get<std::string>(),
+                                             std::move(params)));
     }
   }
 
@@ -175,11 +180,13 @@ void ServerContext::RegisterHandlers() {
   ctx.RegisterRequestHandler("shutdown", DoShutdown);
   ctx.RegisterNotificationHandler("exit", DoExit);
 
+  ctx.RegisterNotificationHandler("$/setTrace", SetTrace);
+
   ctx.RegisterNotificationHandler("textDocument/didChange", DoDidChange);
   ctx.RegisterNotificationHandler("textDocument/didClose", DoDidClose);
   ctx.RegisterNotificationHandler("textDocument/didOpen", DoDidOpen);
   ctx.RegisterNotificationHandler("textDocument/didSave", DoDidSave);
-  ctx.RegisterRequestHandler("textDocument/documentColor", DoDocumentColor);
+
   ctx.RegisterRequestHandler("textDocument/formatting", DoFormatting);
 }
 
@@ -196,18 +203,14 @@ void ServerContext::RegisterHandlers() {
       continue;
     }
 
-    std::shared_ptr<Message> message_ptr = std::move(*message);
-    Dispatch(message_ptr, *io.second);
+    Dispatch(message.value(), *io.second);
   }
 }
 
-void ServerContext::HandleRequest(const RequestMessage& req,
-                                  std::ostream& out) {
-  if (m_callback) {
-    m_callback(&req);
-  }
+void ServerContext::DoRequest(const RequestMessage& req, std::ostream& out) {
+  LOG(INFO) << "Handling request: \"" << req.GetMethod() << "\"";
 
-  auto response = ResponseMessage::FromRequest(req);
+  auto sub_response = ResponseMessage::FromRequest(req);
 
   auto it = m_request_handlers.find(req.GetMethod());
   if (it == m_request_handlers.end()) {
@@ -219,46 +222,26 @@ void ServerContext::HandleRequest(const RequestMessage& req,
     return;
   }
 
-  it->second(req, response);
+  it->second(req, sub_response);
 
-  rapidjson::StringBuffer buffer;
-  rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
+  nlohmann::json response;
+  response["jsonrpc"] = "2.0";
 
-  writer.StartObject();
-  writer.Key("jsonrpc");
-  writer.String("2.0");
-
-  writer.Key("id");
-  if (response.Id().GetKind() == MessageIdKind::String) {
-    auto id = response.Id().GetString();
-    writer.String(id->c_str());
+  if (req.GetMID().GetKind() == MessageIdKind::String) {
+    response["id"] = req.GetMID().GetString();
   } else {
-    writer.Int(response.Id().GetInt());
+    response["id"] = req.GetMID().GetInt();
   }
 
-  if (response.Error().has_value()) {
-    writer.Key("error");
-    writer.StartObject();
-    writer.Key("code");
-    writer.Int((int)response.Error()->m_code);
-    writer.Key("message");
-    writer.String(response.Error()->m_message->c_str());
-    if (response.Error()->m_data.has_value()) {
-      writer.Key("data");
-      response.Error()->m_data->Accept(writer);
-    }
-    writer.EndObject();
+  if (sub_response.Error().has_value()) {
+    response["error"] = nlohmann::json::object();
+    response["error"]["code"] = (int64_t)sub_response.Error()->m_code;
+    response["error"]["message"] = sub_response.Error()->m_message;
+    response["error"]["data"] =
+        sub_response.Error()->m_data.value_or(nlohmann::json::object());
   } else {
-    if (response.Result().has_value()) {
-      writer.Key("result");
-      response.Result()->Accept(writer);
-    } else {
-      writer.Key("result");
-      writer.Null();
-    }
+    response["result"] = sub_response.GetJSON();
   }
-
-  writer.EndObject();
 
   {
     /**
@@ -268,17 +251,21 @@ void ServerContext::HandleRequest(const RequestMessage& req,
      * (RequestMessage/ResponseMessage pairs).
      */
 
-    std::lock_guard<std::mutex> lock(m_io_mutex);
-    out << "Content-Length: " << std::to_string(buffer.GetSize()) << "\r\n\r\n"
-        << std::string_view(buffer.GetString(), buffer.GetSize());
-    out.flush();
+    auto buffer = response.dump(0);
+
+    { /* Write the response */
+      std::lock_guard<std::mutex> lock(m_io_mutex);
+
+      out << "Content-Length: " << std::to_string(buffer.size()) << "\r\n\r\n"
+          << buffer;
+
+      out.flush();
+    }
   }
 }
 
-void ServerContext::HandleNotification(const NotificationMessage& notif) {
-  if (m_callback) {
-    m_callback(&notif);
-  }
+void ServerContext::DoNotification(const NotificationMessage& notif) {
+  LOG(INFO) << "Handling notification: \"" << notif.Method() << "\"";
 
   auto it = m_notification_handlers.find(notif.Method());
   if (it == m_notification_handlers.end()) {
@@ -294,19 +281,18 @@ void ServerContext::HandleNotification(const NotificationMessage& notif) {
   it->second(notif);
 }
 
-void ServerContext::Dispatch(const std::shared_ptr<Message>& message,
-                             std::ostream& out) {
-  if (message->GetKind() == MessageType::Request) {
+void ServerContext::Dispatch(MessageObject message, std::ostream& out) {
+  if (std::holds_alternative<RequestMessage>(message.get())) {
     std::lock_guard<std::mutex> lock(m_request_queue_mutex);
+
     m_request_queue.emplace([this, message, &out]() {
-      HandleRequest(*std::static_pointer_cast<RequestMessage>(message), out);
-    });
-  } else if (message->GetKind() == MessageType::Notification) {
-    m_thread_pool.QueueJob([this, message](const std::stop_token&) {
-      HandleNotification(
-          *std::static_pointer_cast<NotificationMessage>(message));
+      std::shared_lock<std::shared_mutex> lock(m_task_mutex);
+
+      DoRequest(std::get<RequestMessage>(message.get()), out);
     });
   } else {
-    LOG(ERROR) << "Unsupported message type";
+    std::unique_lock<std::shared_mutex> lock(m_task_mutex);
+
+    DoNotification(std::get<NotificationMessage>(message.get()));
   }
 }
