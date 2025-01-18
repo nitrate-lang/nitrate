@@ -18,6 +18,7 @@ find_library(libglog libglog.a REQUIRED)
 find_library(libgflags libgflags.a REQUIRED)
 find_library(libyaml_cpp libyaml-cpp.a REQUIRED)
 find_library(libgit2 git2 REQUIRED)
+find_library(libboost_streams boost_iostreams REQUIRED)
 
 #================== SET BUILD FLAGS ==================
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
@@ -49,7 +50,8 @@ target_link_libraries(no3 PUBLIC
   ${libglog}
   ${libgflags}
   ${libgit2}
-  unwind)
+  unwind
+  ${libboost_streams})
 target_compile_options(no3 PUBLIC -DNO3_MAIN)
 add_dependencies(no3 nitrate-emit
   nitrate-ir
@@ -80,7 +82,8 @@ if(BUILD_SHARED_LIBS STREQUAL "OFF")
     ${libglog}
     ${libgflags}
     ${libgit2}
-    unwind)
+    unwind
+    ${libboost_streams})
   add_dependencies(no3-cli nitrate-emit
     nitrate-ir
     nitrate-parser

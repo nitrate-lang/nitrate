@@ -5,6 +5,7 @@
 #include <rapidjson/stringbuffer.h>
 #include <rapidjson/writer.h>
 
+#include <boost/iostreams/device/file_descriptor.hpp>
 #include <functional>
 #include <iostream>
 #include <lsp/core/thread-pool.hh>
@@ -28,28 +29,11 @@ auto ParseConfig(const std::string& path) -> std::optional<Configuration>;
 
 enum class ConnectionType { Pipe, Port, Stdio };
 
-class BufIStream : public std::istream {
-  std::shared_ptr<std::streambuf> m_buf;
-
-public:
-  BufIStream(const std::shared_ptr<std::streambuf>& buf)
-      : std::istream(buf.get()), m_buf(buf) {}
-};
-
-class BufOStream : public std::ostream {
-  std::shared_ptr<std::streambuf> m_buf;
-
-public:
-  BufOStream(const std::shared_ptr<std::streambuf>& buf)
-      : std::ostream(buf.get()), m_buf(buf) {}
-  ~BufOStream() override;
-};
-
 using Connection =
-    std::pair<std::unique_ptr<BufIStream>, std::unique_ptr<BufOStream>>;
+    std::pair<std::unique_ptr<std::istream>, std::unique_ptr<std::ostream>>;
 
 auto OpenConnection(ConnectionType type,
-                                         const std::string& param) -> std::optional<Connection>;
+                    const std::string& param) -> std::optional<Connection>;
 
 namespace lsp {
   enum class MessageType { Request, Notification };
@@ -81,7 +65,9 @@ namespace lsp {
 
     [[nodiscard]] auto Id() const -> const MessageId& { return m_id; }
     [[nodiscard]] auto Method() const -> const std::string& { return m_method; }
-    [[nodiscard]] auto Params() const -> const rapidjson::Document& { return m_params; }
+    [[nodiscard]] auto Params() const -> const rapidjson::Document& {
+      return m_params;
+    }
 
     void Print(std::ostream& os) const {
       os << "{\"id\": ";
@@ -106,7 +92,9 @@ namespace lsp {
     ~NotificationMessage() override = default;
 
     [[nodiscard]] auto Method() const -> const std::string& { return m_method; }
-    [[nodiscard]] auto Params() const -> const rapidjson::Document& { return m_params; }
+    [[nodiscard]] auto Params() const -> const rapidjson::Document& {
+      return m_params;
+    }
 
     void Print(std::ostream& os) const {
       os << R"({"method": ")" << m_method << "\"}";
@@ -324,14 +312,16 @@ class ServerContext {
   ServerContext() = default;
 
   void RegisterHandlers();
-  void RequestQueueLoop(std::stop_token st);
+  void RequestQueueLoop(const std::stop_token& st);
 
   void HandleRequest(const lsp::RequestMessage& request, std::ostream& out);
   void HandleNotification(const lsp::NotificationMessage& notif);
 
-  auto NextMessage(std::istream& in) -> std::optional<std::unique_ptr<lsp::Message>>;
+  auto NextMessage(std::istream& in)
+      -> std::optional<std::unique_ptr<lsp::Message>>;
 
-  void Dispatch(std::shared_ptr<lsp::Message> message, std::ostream& out);
+  void Dispatch(const std::shared_ptr<lsp::Message>& message,
+                std::ostream& out);
 
 public:
   ServerContext(const ServerContext&) = delete;

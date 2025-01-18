@@ -286,8 +286,6 @@ auto Sequencer::PImpl::FetchModuleData(std::string_view raw_module_name)
 
   qcore_assert(m_fetch_module);
 
-  std::cout << "testing" << std::endl;
-
   if (auto module_content = m_fetch_module(module_uri)) {
     return module_content;
   }

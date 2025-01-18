@@ -4,128 +4,13 @@
 #include <sys/un.h>
 #include <unistd.h>
 
+#include <boost/iostreams/stream.hpp>
 #include <charconv>
 #include <cstdint>
 #include <cstring>
 #include <lsp/core/server.hh>
-#include <nitrate-core/OldLogger.hh>
-
-using ManagedHandle = std::optional<Connection>;
-
-static auto ConnectToPipe(const std::string& path) -> ManagedHandle;
-static auto ConnectToTcpPort(uint16_t tcp_port) -> ManagedHandle;
-static auto ConnectToStdio() -> ManagedHandle;
-
-auto OpenConnection(ConnectionType type, const std::string& param) -> ManagedHandle {
-  switch (type) {
-    case ConnectionType::Pipe: {
-      return ConnectToPipe(param);
-    }
-
-    case ConnectionType::Port: {
-      uint16_t port = 0;
-
-      std::from_chars_result res =
-          std::from_chars(param.data(), param.data() + param.size(), port);
-      if (res.ec != std::errc()) {
-        LOG(ERROR) << "Invalid port number: " << param;
-        return std::nullopt;
-      }
-
-      if (port < 0 || port > UINT16_MAX) {
-        LOG(ERROR) << "Port number is out of the range of valid TCP ports";
-        return std::nullopt;
-      }
-
-      return ConnectToTcpPort(port);
-    }
-
-    case ConnectionType::Stdio: {
-      return ConnectToStdio();
-    }
-  }
-}
-
-class FdStreamBuf : public std::streambuf {
-  int m_fd;
-  bool m_close;
-  char m_c = 0;
-
-public:
-  FdStreamBuf(int fd, bool close) : m_fd(fd), m_close(close) { errno = 0; }
-  ~FdStreamBuf() override {
-    LOG(INFO) << "Closing file descriptor";
-
-    if (m_close) {
-      if (close(m_fd) == -1) {
-        LOG(ERROR) << "Failed to close file descriptor: " << GetStrerror();
-      }
-    }
-  }
-
-  auto overflow(int_type ch) -> int_type override {
-    if (ch != EOF) {
-      char c = ch;
-      if (write(m_fd, &c, 1) != 1) {
-        LOG(ERROR) << "Failed to write to stream: " << GetStrerror();
-
-        return traits_type::eof();
-      }
-    }
-
-    return ch;
-  }
-
-  auto xsputn(const char* s, std::streamsize count) -> std::streamsize override {
-    std::streamsize written = 0;
-    while (written < count) {
-      ssize_t n = write(m_fd, s + written, count - written);
-      if (n == -1) {
-        LOG(ERROR) << "Failed to write to stream: " << GetStrerror();
-        return written;
-      }
-      written += n;
-    }
-
-    return count;
-  }
-
-  auto underflow() -> int_type override {
-    ssize_t res = read(m_fd, &m_c, 1);
-    if (res < 0) {
-      LOG(ERROR) << "Failed to read from stream: " << GetStrerror();
-      return traits_type::eof();
-    }
-
-    if (res == 0) {
-      return traits_type::eof();
-    }
-
-    setg(&m_c, &m_c, &m_c + 1);
-
-    return traits_type::to_int_type(m_c);
-  }
-
-  auto xsgetn(char* s, std::streamsize count) -> std::streamsize override {
-    std::streamsize bytes_read = 0;
-
-    while (bytes_read < count) {
-      ssize_t n = read(m_fd, s + bytes_read, count - bytes_read);
-      if (n == -1) {
-        LOG(ERROR) << "Failed to read from stream: " << GetStrerror();
-        return bytes_read;
-      }
-
-      if (n == 0) {
-        break;
-      }
-
-      bytes_read += n;
-    }
-
-    return bytes_read;
-  }
-};
+#include <memory>
+#include <nitrate-core/Logger.hh>
 
 static auto ConnectUnixSocket(const std::string& path) -> std::optional<int> {
   int sockfd = socket(AF_UNIX, SOCK_STREAM, 0);
@@ -147,24 +32,39 @@ static auto ConnectUnixSocket(const std::string& path) -> std::optional<int> {
   return sockfd;
 }
 
-static auto ConnectToPipe(const std::string& path) -> ManagedHandle {
+static auto ConnectToPipe(const std::string& path)
+    -> std::optional<Connection> {
   auto conn = ConnectUnixSocket(path);
   if (!conn) {
     LOG(ERROR) << "Failed to connect to UNIX socket " << path;
     return std::nullopt;
   }
 
-  auto in_buf = std::make_shared<FdStreamBuf>(conn.value(), true);
-  auto out_buf = std::make_shared<FdStreamBuf>(conn.value(), true);
-  auto stream = std::make_pair(std::make_unique<BufIStream>(in_buf),
-                               std::make_unique<BufOStream>(out_buf));
+  auto source = boost::iostreams::file_descriptor_source(
+      conn.value(), boost::iostreams::close_handle);
+
+  auto in_stream = std::make_unique<
+      boost::iostreams::stream<boost::iostreams::file_descriptor_source>>(
+      (source));
+
+  auto out_stream = std::make_unique<
+      boost::iostreams::stream<boost::iostreams::file_descriptor_sink>>(
+      conn.value(), boost::iostreams::close_handle);
+
+  if (!in_stream->is_open() || !out_stream->is_open()) {
+    LOG(ERROR) << "Failed to open stdio streams";
+    return std::nullopt;
+  }
+
+  auto stream = std::make_pair(std::move(in_stream), std::move(out_stream));
 
   LOG(INFO) << "Connected to UNIX socket " << path;
 
   return stream;
 }
 
-static auto GetTcpClient(const std::string& host, uint16_t port) -> std::optional<int> {
+static auto GetTcpClient(const std::string& host,
+                         uint16_t port) -> std::optional<int> {
   int fd = socket(AF_INET, SOCK_STREAM, 0);
   if (fd == -1) {
     LOG(ERROR) << "Failed to create socket: " << GetStrerror();
@@ -205,39 +105,86 @@ static auto GetTcpClient(const std::string& host, uint16_t port) -> std::optiona
   return client_fd;
 }
 
-static auto ConnectToTcpPort(uint16_t tcp_port) -> ManagedHandle {
+static auto ConnectToTcpPort(uint16_t tcp_port) -> std::optional<Connection> {
   auto conn = GetTcpClient("127.0.0.1", tcp_port);
   if (!conn) {
     LOG(ERROR) << "Failed to connect to TCP port " << tcp_port;
     return std::nullopt;
   }
 
-  auto in_buf = std::make_shared<FdStreamBuf>(conn.value(), true);
-  auto out_buf = std::make_shared<FdStreamBuf>(conn.value(), true);
-  auto stream = std::make_pair(std::make_unique<BufIStream>(in_buf),
-                               std::make_unique<BufOStream>(out_buf));
+  auto source = boost::iostreams::file_descriptor_source(
+      conn.value(), boost::iostreams::close_handle);
+
+  auto in_stream = std::make_unique<
+      boost::iostreams::stream<boost::iostreams::file_descriptor_source>>(
+      (source));
+
+  auto out_stream = std::make_unique<
+      boost::iostreams::stream<boost::iostreams::file_descriptor_sink>>(
+      conn.value(), boost::iostreams::close_handle);
+
+  if (!in_stream->is_open() || !out_stream->is_open()) {
+    LOG(ERROR) << "Failed to open stdio streams";
+    return std::nullopt;
+  }
+
+  auto stream = std::make_pair(std::move(in_stream), std::move(out_stream));
 
   LOG(INFO) << "Connected to TCP port " << tcp_port;
 
   return stream;
 }
 
-static auto ConnectToStdio() -> ManagedHandle {
+static auto ConnectToStdio() -> std::optional<Connection> {
   LOG(INFO) << "Connecting to stdio";
 
-  auto in_buf = std::make_shared<FdStreamBuf>(STDIN_FILENO, false);
-  auto out_buf = std::make_shared<FdStreamBuf>(STDOUT_FILENO, false);
-  auto stream = std::make_pair(std::make_unique<BufIStream>(in_buf),
-                               std::make_unique<BufOStream>(out_buf));
+  auto in_stream = std::make_unique<
+      boost::iostreams::stream<boost::iostreams::file_descriptor>>(
+      STDIN_FILENO, boost::iostreams::never_close_handle);
+
+  auto out_stream = std::make_unique<
+      boost::iostreams::stream<boost::iostreams::file_descriptor>>(
+      STDOUT_FILENO, boost::iostreams::never_close_handle);
+
+  if (!in_stream->is_open() || !out_stream->is_open()) {
+    LOG(ERROR) << "Failed to open stdio streams";
+    return std::nullopt;
+  }
+
+  auto stream = std::make_pair(std::move(in_stream), std::move(out_stream));
 
   LOG(INFO) << "Connected to stdio";
 
   return stream;
 }
 
-///==========================================================
+auto OpenConnection(ConnectionType type,
+                    const std::string& param) -> std::optional<Connection> {
+  switch (type) {
+    case ConnectionType::Pipe: {
+      return ConnectToPipe(param);
+    }
 
-BufOStream::~BufOStream() {
-  LOG(INFO) << "Closing connection";
-  flush();
+    case ConnectionType::Port: {
+      uint16_t port = 0;
+
+      std::from_chars_result res =
+          std::from_chars(param.data(), param.data() + param.size(), port);
+      if (res.ec != std::errc()) {
+        LOG(ERROR) << "Invalid port number: " << param;
+        return std::nullopt;
+      }
+
+      if (port < 0 || port > UINT16_MAX) {
+        LOG(ERROR) << "Port number is out of the range of valid TCP ports";
+        return std::nullopt;
+      }
+
+      return ConnectToTcpPort(port);
+    }
+
+    case ConnectionType::Stdio: {
+      return ConnectToStdio();
+    }
+  }
 }

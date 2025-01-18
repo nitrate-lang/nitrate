@@ -50,7 +50,7 @@ extern "C" NCC_EXPORT auto NitratedMain(int argc, char** argv) -> int {
 
   std::unique_ptr<Configuration> config;
   { /* Setup config */
-    std::string config_file = parser.Get<std::string>("--config");
+    auto config_file = parser.Get<std::string>("--config");
     if (config_file.empty()) {
       config = std::make_unique<Configuration>(Configuration::Defaults());
     } else {

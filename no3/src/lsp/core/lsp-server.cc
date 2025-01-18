@@ -9,6 +9,7 @@
 #include <lsp/route/RoutesList.hh>
 #include <memory>
 #include <stop_token>
+#include <utility>
 
 using namespace lsp;
 
@@ -17,7 +18,7 @@ auto ServerContext::The() -> ServerContext& {
   return instance;
 }
 
-void ServerContext::RequestQueueLoop(std::stop_token st) {
+void ServerContext::RequestQueueLoop(const std::stop_token& st) {
   while (!st.stop_requested()) {
     std::function<void()> job;
     {
@@ -39,8 +40,8 @@ void ServerContext::RequestQueueLoop(std::stop_token st) {
   }
 }
 
-auto ServerContext::NextMessage(
-    std::istream& io) -> std::optional<std::unique_ptr<Message>> {
+auto ServerContext::NextMessage(std::istream& in)
+    -> std::optional<std::unique_ptr<Message>> {
   /**
    * We don't need to lock the std::istream because this is the only place where
    * we read from it in a single threaded context. The ostream is seperately
@@ -49,10 +50,12 @@ auto ServerContext::NextMessage(
 
   size_t remaining_bytes = 0;
   std::string body;
+  std::string header;
 
   while (true) { /* Parse the headers */
-    std::string header;
-    std::getline(io, header);
+    header.clear();
+
+    std::getline(in, header);
 
     if (header.ends_with("\r")) {
       header.pop_back();
@@ -60,12 +63,14 @@ auto ServerContext::NextMessage(
 
     if (header.empty()) {
       break;
-    } else if (header.starts_with("Content-Length: ")) {
+    }
+
+    if (header.starts_with("Content-Length: ")) {
       remaining_bytes = std::stoul(header.substr(16));
     } else if (header.starts_with("Content-Type: ")) {
-      LOG(WARNING) << "Ignoring Content-Type header";
+      LOG(WARNING) << "The Content-Type header is ignored";
     } else {
-      LOG(WARNING) << "Ignoring unknown header: " << header;
+      LOG(WARNING) << "Discarding unrecognized header: " << header;
     }
   }
 
@@ -78,95 +83,91 @@ auto ServerContext::NextMessage(
     size_t bytes_read = 0;
 
     while (remaining_bytes > 0) {
-      if (!io.read(body.data() + bytes_read, remaining_bytes)) {
+      if (!in.read(body.data() + bytes_read, remaining_bytes)) {
         LOG(ERROR) << "Failed to read message body";
         return std::nullopt;
       }
 
-      bytes_read += io.gcount();
-      remaining_bytes -= io.gcount();
+      bytes_read += in.gcount();
+      remaining_bytes -= in.gcount();
     }
   }
 
-  { /* Parse the body */
-    rapidjson::Document doc;
-    doc.Parse(body.c_str(), body.size());
+  LOG(INFO) << "Received message: " << body;
 
-    if (doc.HasParseError()) {
-      LOG(ERROR) << "Failed to parse JSON: " << doc.GetParseError();
+  rapidjson::Document doc;
+  doc.Parse(body.c_str(), body.size());
+  body.clear();
+
+  if (doc.HasParseError()) [[unlikely]] {
+    LOG(ERROR) << "Failed to parse JSON: " << doc.GetParseError();
+    return std::nullopt;
+  }
+
+  if (!doc.HasMember("jsonrpc")) [[unlikely]] {
+    LOG(ERROR) << "Request object is missing key \"jsonrpc\"";
+    return std::nullopt;
+  }
+
+  if (!doc["jsonrpc"].IsString()) [[unlikely]] {
+    LOG(ERROR) << "Request object key \"jsonrpc\" is not a string";
+    return std::nullopt;
+  }
+
+  if (doc["jsonrpc"].GetString() != std::string_view("2.0")) [[unlikely]] {
+    LOG(ERROR) << "Client is using unsupported LSP JSON-RPC version";
+    LOG(INFO) << "Client is using version: " << doc["jsonrpc"].GetString();
+    LOG(INFO) << "Server only supports version: 2.0";
+
+    return std::nullopt;
+  }
+
+  if (!doc.HasMember("method")) [[unlikely]] {
+    LOG(ERROR) << "Request object is missing key \"method\"";
+    return std::nullopt;
+  }
+
+  if (!doc["method"].IsString()) [[unlikely]] {
+    LOG(ERROR) << "Request object key \"method\" is not a string";
+    return std::nullopt;
+  }
+
+  rapidjson::Document params;
+
+  if (doc.HasMember("params")) {
+    if (!doc["params"].IsObject() && !doc["params"].IsArray()) [[unlikely]] {
+      LOG(ERROR) << "Method parameters is not an object or array";
       return std::nullopt;
     }
 
-    if (!doc.HasMember("jsonrpc")) {
-      LOG(ERROR) << "Request is missing jsonrpc";
+    params.CopyFrom(doc["params"], params.GetAllocator());
+  } else {
+    params.SetObject();
+  }
+
+  std::unique_ptr<Message> message;
+
+  bool is_lsp_notification = !doc.HasMember("id");
+
+  if (is_lsp_notification) {
+    message = std::make_unique<NotificationMessage>(doc["method"].GetString(),
+                                                    std::move(params));
+  } else {
+    if (!doc["id"].IsString() && !doc["id"].IsInt()) [[unlikely]] {
+      LOG(ERROR) << "Request object key \"id\" is not a string or int";
       return std::nullopt;
     }
 
-    if (!doc["jsonrpc"].IsString()) {
-      LOG(ERROR) << "jsonrpc is not a string";
-      return std::nullopt;
-    }
-
-    if (doc["jsonrpc"].GetString() != std::string_view("2.0")) {
-      LOG(ERROR) << "Unsupported jsonrpc version: "
-                 << doc["jsonrpc"].GetString();
-      return std::nullopt;
-    }
-
-    if (!doc.HasMember("method")) {
-      LOG(ERROR) << "Request is missing method";
-      return std::nullopt;
-    }
-
-    if (!doc["method"].IsString()) {
-      LOG(ERROR) << "method is not a string";
-      return std::nullopt;
-    }
-
-    if (!doc.HasMember("id")) { /* Notification */
-      if (!doc.HasMember("params")) {
-        return std::make_unique<NotificationMessage>(
-            doc["method"].GetString(),
-            rapidjson::Document(rapidjson::kObjectType));
-      }
-
-      if (!doc["params"].IsObject() && !doc["params"].IsArray()) {
-        LOG(ERROR) << "params is not an object or array";
-        return std::nullopt;
-      }
-
-      rapidjson::Document params;
-      params.CopyFrom(doc["params"], params.GetAllocator());
-      return std::make_unique<NotificationMessage>(doc["method"].GetString(),
-                                                   std::move(params));
-    } else { /* Request or error */
-      if (!doc["id"].IsString() && !doc["id"].IsInt()) {
-        LOG(ERROR) << "id is not a string or integer";
-        return std::nullopt;
-      }
-
-      rapidjson::Document params;
-      if (doc.HasMember("params")) {
-        if (!doc["params"].IsObject() && !doc["params"].IsArray()) {
-          LOG(ERROR) << "params is not an object or array";
-          return std::nullopt;
-        }
-
-        params.CopyFrom(doc["params"], params.GetAllocator());
-      } else {
-        params.SetObject();
-      }
-
-      if (doc["id"].IsString()) {
-        return std::make_unique<RequestMessage>(doc["id"].GetString(),
-                                                doc["method"].GetString(),
-                                                std::move(params));
-      } else {
-        return std::make_unique<RequestMessage>(
-            doc["id"].GetInt(), doc["method"].GetString(), std::move(params));
-      }
+    if (doc["id"].IsString()) {
+      message = std::make_unique<RequestMessage>(
+          doc["id"].GetString(), doc["method"].GetString(), std::move(params));
+    } else {
+      message = std::make_unique<RequestMessage>(
+          doc["id"].GetInt(), doc["method"].GetString(), std::move(params));
     }
   }
+
+  return message;
 }
 
 void ServerContext::RegisterHandlers() {
@@ -192,7 +193,7 @@ void ServerContext::RegisterHandlers() {
   RegisterHandlers();
 
   m_thread_pool.Start();
-  m_thread_pool.QueueJob([this](std::stop_token st) { RequestQueueLoop(st); });
+  m_thread_pool.QueueJob([this](auto st) { RequestQueueLoop(st); });
 
   while (true) {
     auto message = NextMessage(*io.first);
@@ -206,7 +207,8 @@ void ServerContext::RegisterHandlers() {
   }
 }
 
-void ServerContext::HandleRequest(const RequestMessage& req, std::ostream& io) {
+void ServerContext::HandleRequest(const RequestMessage& req,
+                                  std::ostream& out) {
   if (m_callback) {
     m_callback(&req);
   }
@@ -272,8 +274,9 @@ void ServerContext::HandleRequest(const RequestMessage& req, std::ostream& io) {
      */
 
     std::lock_guard<std::mutex> lock(m_io_mutex);
-    io << "Content-Length: " << std::to_string(buffer.GetSize()) << "\r\n\r\n"
-       << std::string_view(buffer.GetString(), buffer.GetSize());
+    out << "Content-Length: " << std::to_string(buffer.GetSize()) << "\r\n\r\n"
+        << std::string_view(buffer.GetString(), buffer.GetSize());
+    out.flush();
   }
 }
 
@@ -296,15 +299,15 @@ void ServerContext::HandleNotification(const NotificationMessage& notif) {
   it->second(notif);
 }
 
-void ServerContext::Dispatch(const std::shared_ptr<Message> message,
-                             std::ostream& io) {
+void ServerContext::Dispatch(const std::shared_ptr<Message>& message,
+                             std::ostream& out) {
   if (message->Type() == MessageType::Request) {
     std::lock_guard<std::mutex> lock(m_request_queue_mutex);
-    m_request_queue.push([this, message, &io]() {
-      HandleRequest(*std::static_pointer_cast<RequestMessage>(message), io);
+    m_request_queue.emplace([this, message, &out]() {
+      HandleRequest(*std::static_pointer_cast<RequestMessage>(message), out);
     });
   } else if (message->Type() == MessageType::Notification) {
-    m_thread_pool.QueueJob([this, message](std::stop_token) {
+    m_thread_pool.QueueJob([this, message](const std::stop_token&) {
       HandleNotification(
           *std::static_pointer_cast<NotificationMessage>(message));
     });
