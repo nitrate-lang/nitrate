@@ -40,7 +40,7 @@ int object_b_ctor(void *obj) {
 int object_b_dtor(void *obj) {
   (void)obj;
   print("Hello, object_b_dtor!\n");
-  _NLR_panic(0);
+  // _NLR_panic(0);
   return 0;
 }
 

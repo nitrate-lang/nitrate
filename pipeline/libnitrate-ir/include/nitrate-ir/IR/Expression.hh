@@ -120,8 +120,12 @@ namespace ncc::ir {
     }
 
     [[nodiscard]] constexpr auto GetSize() const { return m_size; }
-    [[nodiscard]] constexpr auto GetValue() const -> uint128_t { return m_value; }
-    [[nodiscard]] auto GetValueString() const -> std::string { return m_value.str(); }
+    [[nodiscard]] constexpr auto GetValue() const -> uint128_t {
+      return m_value;
+    }
+    [[nodiscard]] auto GetValueString() const -> std::string {
+      return m_value.str();
+    }
   };
 
   template <class A>
@@ -174,7 +178,9 @@ namespace ncc::ir {
 
     constexpr auto operator[](size_t idx) const { return m_items[idx]; }
     [[nodiscard]] constexpr auto At(size_t idx) const { return m_items[idx]; }
-    [[nodiscard]] constexpr auto IsHomogenous() const -> bool { return m_is_homogenous; }
+    [[nodiscard]] constexpr auto IsHomogenous() const -> bool {
+      return m_is_homogenous;
+    }
   };
 
   template <class A>
@@ -460,7 +466,7 @@ namespace ncc::ir {
     [[nodiscard]] constexpr auto GetBody() const { return m_body; }
     [[nodiscard]] constexpr auto IsVariadic() const { return m_variadic; }
     [[nodiscard]] constexpr auto GetAbiName() const { return m_abi_name; }
-    [[nodiscard]] constexpr auto GetName() const { return m_name.Get(); }
+    [[nodiscard]] constexpr auto GetName() const { return m_name; }
 
     constexpr void SetName(auto name) { m_name = name; }
     constexpr void SetParams(auto params) { m_params = params; }

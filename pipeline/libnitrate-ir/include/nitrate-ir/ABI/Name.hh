@@ -41,14 +41,18 @@
 #include <string>
 
 namespace ncc::ir {
-  auto MangleTypeName(FlowPtr<Type> type, AbiTag abi) -> std::optional<std::string>;
+  auto MangleTypeName(FlowPtr<Type> type,
+                      AbiTag abi) -> std::optional<std::string>;
 
   auto GetMangledSymbolName(FlowPtr<Expr> symbol,
-                                                  AbiTag abi) -> std::optional<std::string>;
+                            AbiTag abi) -> std::optional<std::string>;
 
-  auto ExpandSymbolName(std::string_view mangled_name) -> std::optional<std::string>;
-  auto GetSymbolFromMangledName(std::string_view mangled_name) -> NullableFlowPtr<Expr>;
-  auto GetTypeFromMangledName(std::string_view mangled_name) -> NullableFlowPtr<Type>;
+  auto ExpandSymbolName(std::string_view mangled_name)
+      -> std::optional<std::string>;
+  auto GetSymbolFromMangledName(std::string_view mangled_name)
+      -> NullableFlowPtr<Expr>;
+  auto GetTypeFromMangledName(std::string_view mangled_name)
+      -> NullableFlowPtr<Type>;
 }  // namespace ncc::ir
 
 #endif
