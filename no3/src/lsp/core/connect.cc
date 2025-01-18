@@ -4,6 +4,7 @@
 #include <sys/un.h>
 #include <unistd.h>
 
+#include <boost/iostreams/device/file_descriptor.hpp>
 #include <boost/iostreams/stream.hpp>
 #include <charconv>
 #include <cstdint>
@@ -12,7 +13,9 @@
 #include <memory>
 #include <nitrate-core/Logger.hh>
 
-static auto ConnectUnixSocket(const std::string& path) -> std::optional<int> {
+using namespace no3::lsp;
+
+static auto ConnectUnixSocket(const auto& path) -> std::optional<int> {
   int sockfd = socket(AF_UNIX, SOCK_STREAM, 0);
   if (sockfd == -1) {
     LOG(ERROR) << "Failed to create socket: " << GetStrerror();
@@ -22,7 +25,7 @@ static auto ConnectUnixSocket(const std::string& path) -> std::optional<int> {
   struct sockaddr_un addr;
   memset(&addr, 0, sizeof(addr));
   addr.sun_family = AF_UNIX;
-  strncpy(addr.sun_path, path.c_str(), sizeof(addr.sun_path) - 1);
+  strncpy(addr.sun_path, std::string(path).c_str(), sizeof(addr.sun_path) - 1);
 
   if (connect(sockfd, (struct sockaddr*)&addr, sizeof(addr)) == -1) {
     LOG(ERROR) << "Failed to connect to socket: " << GetStrerror();
@@ -32,8 +35,7 @@ static auto ConnectUnixSocket(const std::string& path) -> std::optional<int> {
   return sockfd;
 }
 
-static auto ConnectToPipe(const std::string& path)
-    -> std::optional<Connection> {
+static auto ConnectToPipe(const auto& path) -> std::optional<srv::Connection> {
   auto conn = ConnectUnixSocket(path);
   if (!conn) {
     LOG(ERROR) << "Failed to connect to UNIX socket " << path;
@@ -63,7 +65,7 @@ static auto ConnectToPipe(const std::string& path)
   return stream;
 }
 
-static auto GetTcpClient(const std::string& host,
+static auto GetTcpClient(const auto& host,
                          uint16_t port) -> std::optional<int> {
   int fd = socket(AF_INET, SOCK_STREAM, 0);
   if (fd == -1) {
@@ -74,7 +76,7 @@ static auto GetTcpClient(const std::string& host,
   struct sockaddr_in addr;
   addr.sin_family = AF_INET;
   addr.sin_port = htons(port);
-  addr.sin_addr.s_addr = inet_addr(host.c_str());
+  addr.sin_addr.s_addr = inet_addr(std::string(host).c_str());
 
   if (bind(fd, reinterpret_cast<struct sockaddr*>(&addr), sizeof(addr)) == -1) {
     LOG(ERROR) << "Failed to bind socket: " << GetStrerror();
@@ -105,7 +107,8 @@ static auto GetTcpClient(const std::string& host,
   return client_fd;
 }
 
-static auto ConnectToTcpPort(uint16_t tcp_port) -> std::optional<Connection> {
+static auto ConnectToTcpPort(uint16_t tcp_port)
+    -> std::optional<srv::Connection> {
   auto conn = GetTcpClient("127.0.0.1", tcp_port);
   if (!conn) {
     LOG(ERROR) << "Failed to connect to TCP port " << tcp_port;
@@ -135,7 +138,7 @@ static auto ConnectToTcpPort(uint16_t tcp_port) -> std::optional<Connection> {
   return stream;
 }
 
-static auto ConnectToStdio() -> std::optional<Connection> {
+static auto ConnectToStdio() -> std::optional<srv::Connection> {
   LOG(INFO) << "Connecting to stdio";
 
   auto in_stream = std::make_unique<
@@ -158,20 +161,20 @@ static auto ConnectToStdio() -> std::optional<Connection> {
   return stream;
 }
 
-auto OpenConnection(ConnectionType type,
-                    const std::string& param) -> std::optional<Connection> {
+auto srv::OpenConnection(srv::ConnectionType type, const String& target)
+    -> std::optional<srv::Connection> {
   switch (type) {
     case ConnectionType::Pipe: {
-      return ConnectToPipe(param);
+      return ConnectToPipe(target);
     }
 
     case ConnectionType::Port: {
       uint16_t port = 0;
 
-      std::from_chars_result res =
-          std::from_chars(param.data(), param.data() + param.size(), port);
+      std::from_chars_result res = std::from_chars(
+          target->c_str(), target->c_str() + target->size(), port);
       if (res.ec != std::errc()) {
-        LOG(ERROR) << "Invalid port number: " << param;
+        LOG(ERROR) << "Invalid port number: " << target;
         return std::nullopt;
       }
 

@@ -3,9 +3,11 @@
 
 #include <fstream>
 #include <lsp/core/server.hh>
-#include <string>
 
-auto ParseConfig(const std::string& path) -> std::optional<Configuration> {
+using namespace no3::lsp;
+
+auto srv::ParseConfig(const std::filesystem::path& path)
+    -> std::optional<srv::Configuration> {
   rapidjson::Document doc;
 
   std::ifstream ifs(path);

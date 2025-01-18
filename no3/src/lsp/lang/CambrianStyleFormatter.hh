@@ -5,7 +5,7 @@
 #include <sstream>
 #include <stack>
 
-namespace lsp::fmt {
+namespace no3::lsp::fmt {
   using namespace ncc;
 
   template <typename T>
@@ -37,14 +37,15 @@ namespace lsp::fmt {
         return *this;
       }
 
-      auto operator<<(std::ostream& (*func)(std::ostream&)) -> LineStreamWritter&;
+      auto operator<<(std::ostream& (*func)(std::ostream&))
+          -> LineStreamWritter&;
 
       auto Length() -> size_t { return m_line_buffer.tellp(); }
     };
 
     LineStreamWritter m_line;
     std::stack<size_t> m_field_indent_stack;
-    size_t m_indent;
+    size_t m_indent{};
     const size_t m_tabSize;
     bool m_failed, m_did_root;
 
@@ -57,12 +58,14 @@ namespace lsp::fmt {
       m_did_root = false;
     }
 
-    auto GetIndent() const -> std::string {
+    auto GetIndent() const {
       if (m_indent == 0) {
-        return "";
+        return std::string("");
       }
+
       return std::string(m_indent, ' ');
     }
+
     auto EscapeCharLiteral(char ch) const -> std::string;
     auto EscapeStringLiteralChunk(std::string_view str) const -> std::string;
     void EscapeStringLiteral(std::string_view str, bool put_quotes = true);
@@ -72,11 +75,11 @@ namespace lsp::fmt {
     void FormatTypeMetadata(FlowPtr<parse::Type> n);
 
     void WrapStmtBody(FlowPtr<parse::Stmt> n, size_t size_threshold,
-                        bool use_arrow_if_wrapped);
+                      bool use_arrow_if_wrapped);
 
     template <typename IterBegin, typename IterEnd>
     void IterateExceptLast(IterBegin beg, IterEnd end, auto body,
-                             auto if_not_last) {
+                           auto if_not_last) {
       size_t i = 0;
       for (auto it = beg; it != end; ++it, ++i) {
         body(*it, i);
@@ -168,11 +171,11 @@ namespace lsp::fmt {
 
   public:
     CambrianFormatter(std::ostream& out, size_t the_tab_size = 2)
-        : m_line(out), m_indent(0), m_tabSize(the_tab_size) {
+        : m_line(out), m_tabSize(the_tab_size) {
       ResetAutomaton();
       (void)m_tabSize;
     }
-    virtual ~CambrianFormatter() = default;
+    ~CambrianFormatter() override = default;
 
     auto Format(FlowPtr<parse::Base> root) -> bool override {
       root.Accept(*this);
@@ -182,4 +185,4 @@ namespace lsp::fmt {
       return ok;
     }
   };
-}  // namespace lsp::fmt
+}  // namespace no3::lsp::fmt

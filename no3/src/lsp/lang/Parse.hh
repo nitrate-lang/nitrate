@@ -7,7 +7,7 @@
 #include <optional>
 #include <unordered_map>
 
-namespace lang {
+namespace no3::lsp {
   class ParseTreeWrapper {
     const ncc::parse::Base* m_root;
 
@@ -40,4 +40,4 @@ namespace lang {
     void Clear();
     void SetCacheLimit(size_t max_bytes);
   };
-}  // namespace lang
+}  // namespace no3::lsp

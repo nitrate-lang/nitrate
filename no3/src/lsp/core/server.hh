@@ -1,347 +1,92 @@
 #pragma once
 
 #include <glog/logging.h>
-#include <rapidjson/document.h>
-#include <rapidjson/stringbuffer.h>
-#include <rapidjson/writer.h>
 
-#include <boost/iostreams/device/file_descriptor.hpp>
+#include <filesystem>
 #include <functional>
 #include <iostream>
+#include <lsp/core/LSP.hh>
+#include <lsp/core/common.hh>
 #include <lsp/core/thread-pool.hh>
 #include <memory>
 #include <optional>
 #include <utility>
-#include <variant>
 
-struct Configuration {
-private:
-  Configuration() = default;
+namespace no3::lsp::srv {
+  using namespace no3::lsp::protocol;
 
-public:
-  static auto Defaults() -> Configuration {
-    Configuration config;
-    return config;
-  }
-};
-
-auto ParseConfig(const std::string& path) -> std::optional<Configuration>;
-
-enum class ConnectionType { Pipe, Port, Stdio };
-
-using Connection =
-    std::pair<std::unique_ptr<std::istream>, std::unique_ptr<std::ostream>>;
-
-auto OpenConnection(ConnectionType type,
-                    const std::string& param) -> std::optional<Connection>;
-
-namespace lsp {
-  enum class MessageType { Request, Notification };
-
-  class Message {
-    MessageType m_type;
+  class Configuration {
+    Configuration() = default;
 
   public:
-    Message(MessageType type) : m_type(type) {}
-    virtual ~Message() = default;
-
-    [[nodiscard]] auto Type() const -> MessageType { return m_type; }
+    static auto Defaults() -> Configuration {
+      Configuration config;
+      return config;
+    }
   };
 
-  using MessageId = std::variant<std::string, int64_t>;
+  auto ParseConfig(const std::filesystem::path& path)
+      -> std::optional<Configuration>;
 
-  class RequestMessage : public Message {
-    MessageId m_id;
-    std::string m_method;
-    rapidjson::Document m_params;
+  using Connection =
+      std::pair<std::unique_ptr<std::istream>, std::unique_ptr<std::ostream>>;
+
+  enum class ConnectionType { Pipe, Port, Stdio };
+
+  auto OpenConnection(ConnectionType type,
+                      const String& target) -> std::optional<Connection>;
+
+  using RequestHandler = std::function<void(const protocol::RequestMessage&,
+                                            protocol::ResponseMessage&)>;
+
+  using NotificationHandler =
+      std::function<void(const protocol::NotificationMessage&)>;
+
+  class ServerContext {
+    ThreadPool m_thread_pool;
+    std::function<void(const protocol::Message* message)> m_callback;
+    std::unordered_map<String, RequestHandler> m_request_handlers;
+    std::unordered_map<String, NotificationHandler> m_notification_handlers;
+    std::queue<std::function<void()>> m_request_queue;
+    std::mutex m_request_queue_mutex;
+    std::mutex m_io_mutex;
+
+    ServerContext() = default;
+
+    void RegisterHandlers();
+    void RequestQueueLoop(const std::stop_token& st);
+
+    void HandleRequest(const protocol::RequestMessage& request,
+                       std::ostream& out);
+    void HandleNotification(const protocol::NotificationMessage& notif);
+
+    auto NextMessage(std::istream& in)
+        -> std::optional<std::unique_ptr<protocol::Message>>;
+
+    void Dispatch(const std::shared_ptr<protocol::Message>& message,
+                  std::ostream& out);
 
   public:
-    RequestMessage(MessageId id, std::string method, rapidjson::Document params)
-        : Message(MessageType::Request),
-          m_id(std::move(id)),
-          m_method(std::move(method)),
-          m_params(std::move(params)) {}
-    ~RequestMessage() override = default;
+    ServerContext(const ServerContext&) = delete;
+    ServerContext(ServerContext&&) = delete;
 
-    [[nodiscard]] auto Id() const -> const MessageId& { return m_id; }
-    [[nodiscard]] auto Method() const -> const std::string& { return m_method; }
-    [[nodiscard]] auto Params() const -> const rapidjson::Document& {
-      return m_params;
+    static auto The() -> ServerContext&;
+
+    [[noreturn]] void StartServer(Connection& io);
+
+    void SetCallback(
+        std::function<void(const protocol::Message* message)> callback) {
+      m_callback = std::move(callback);
     }
 
-    void Print(std::ostream& os) const {
-      os << "{\"id\": ";
-      if (std::holds_alternative<std::string>(m_id)) {
-        os << "\"" << std::get<std::string>(m_id) << "\"";
-      } else {
-        os << std::get<int64_t>(m_id);
-      }
-      os << R"(, "method": ")" << m_method << "\"}";
-    }
-  };
-
-  class NotificationMessage : public Message {
-    std::string m_method;
-    rapidjson::Document m_params;
-
-  public:
-    NotificationMessage(std::string method, rapidjson::Document params)
-        : Message(MessageType::Notification),
-          m_method(std::move(method)),
-          m_params(std::move(params)) {}
-    ~NotificationMessage() override = default;
-
-    [[nodiscard]] auto Method() const -> const std::string& { return m_method; }
-    [[nodiscard]] auto Params() const -> const rapidjson::Document& {
-      return m_params;
+    void RegisterRequestHandler(std::string_view method,
+                                RequestHandler handler) {
+      m_request_handlers[String(method)] = std::move(handler);
     }
 
-    void Print(std::ostream& os) const {
-      os << R"({"method": ")" << m_method << "\"}";
+    void RegisterNotificationHandler(std::string_view method,
+                                     NotificationHandler handler) {
+      m_notification_handlers[String(method)] = std::move(handler);
     }
   };
-
-  enum class ErrorCodes {
-    // Defined by JSON-RPC
-    ParseError = -32700,
-    InvalidRequest = -32600,
-    MethodNotFound = -32601,
-    InvalidParams = -32602,
-    InternalError = -32603,
-
-    /**
-     * This is the start range of JSON-RPC reserved error codes.
-     * It doesn't denote a real error code. No LSP error codes should
-     * be defined between the start and end range. For backwards
-     * compatibility the `ServerNotInitialized` and the `UnknownErrorCode`
-     * are left in the range.
-     *
-     * @since 3.16.0
-     */
-    jsonrpcReservedErrorRangeStart = -32099,
-    /** @deprecated use jsonrpcReservedErrorRangeStart */
-    serverErrorStart = jsonrpcReservedErrorRangeStart,
-
-    /**
-     * Error code indicating that a server received a notification or
-     * request before the server has received the `initialize` request.
-     */
-    ServerNotInitialized = -32002,
-    UnknownErrorCode = -32001,
-
-    /**
-     * This is the end range of JSON-RPC reserved error codes.
-     * It doesn't denote a real error code.
-     *
-     * @since 3.16.0
-     */
-    jsonrpcReservedErrorRangeEnd = -32000,
-    /** @deprecated use jsonrpcReservedErrorRangeEnd */
-    serverErrorEnd = jsonrpcReservedErrorRangeEnd,
-
-    /**
-     * This is the start range of LSP reserved error codes.
-     * It doesn't denote a real error code.
-     *
-     * @since 3.16.0
-     */
-    lspReservedErrorRangeStart = -32899,
-
-    /**
-     * A request failed but it was syntactically correct, e.g the
-     * method name was known and the parameters were valid. The error
-     * message should contain human readable information about why
-     * the request failed.
-     *
-     * @since 3.17.0
-     */
-    RequestFailed = -32803,
-
-    /**
-     * The server cancelled the request. This error code should
-     * only be used for requests that explicitly support being
-     * server cancellable.
-     *
-     * @since 3.17.0
-     */
-    ServerCancelled = -32802,
-
-    /**
-     * The server detected that the content of a document got
-     * modified outside normal conditions. A server should
-     * NOT send this error code if it detects a content change
-     * in it unprocessed messages. The result even computed
-     * on an older state might still be useful for the client.
-     *
-     * If a client decides that a result is not of any use anymore
-     * the client should cancel the request.
-     */
-    ContentModified = -32801,
-
-    /**
-     * The client has canceled a request and a server has detected
-     * the cancel.
-     */
-    RequestCancelled = -32800,
-
-    /**
-     * This is the end range of LSP reserved error codes.
-     * It doesn't denote a real error code.
-     *
-     * @since 3.16.0
-     */
-    lspReservedErrorRangeEnd = -32800,
-  };
-
-  struct ResponseError {
-    ErrorCodes m_code;
-    std::string m_message;
-    std::optional<rapidjson::Document> m_data;
-
-    ResponseError(ErrorCodes code, std::string message,
-                  std::optional<rapidjson::Document> data = std::nullopt)
-        : m_code(code),
-          m_message(std::move(message)),
-          m_data(std::move(data)) {}
-  };
-
-  class ResponseMessage : public Message {
-    MessageId m_id;
-    std::optional<rapidjson::Document> m_result;
-    std::optional<ResponseError> m_error;
-
-    ResponseMessage() : Message(MessageType::Request) {}
-
-  public:
-    ResponseMessage(ResponseMessage&& o) noexcept
-        : Message(MessageType::Request) {
-      m_id = std::move(o.m_id);
-      if (o.m_result.has_value()) {
-        m_result = std::move(o.m_result.value());
-      }
-      if (o.m_error.has_value()) {
-        m_error = std::move(o.m_error.value());
-      }
-    }
-
-    static auto FromRequest(const RequestMessage& request) -> ResponseMessage {
-      ResponseMessage response;
-      response.m_id = request.Id();
-      return response;
-    }
-
-    ~ResponseMessage() override = default;
-
-    [[nodiscard]] auto Id() const -> const MessageId& { return m_id; }
-    auto Result() -> std::optional<rapidjson::Document>& { return m_result; }
-    auto Error() -> std::optional<ResponseError>& { return m_error; }
-
-    [[nodiscard]] auto ToString() const -> std::string {
-      rapidjson::StringBuffer buffer;
-      rapidjson::Writer<rapidjson::StringBuffer> writer(buffer);
-      rapidjson::Document doc(rapidjson::kObjectType);
-      doc.SetObject();
-      doc.AddMember("jsonrpc", "2.0", doc.GetAllocator());
-      if (std::holds_alternative<std::string>(m_id)) {
-        rapidjson::Value id;
-        id.SetString(std::get<std::string>(m_id).c_str(),
-                     std::get<std::string>(m_id).size(), doc.GetAllocator());
-        doc.AddMember("id", id, doc.GetAllocator());
-      } else {
-        doc.AddMember("id", std::get<int64_t>(m_id), doc.GetAllocator());
-      }
-      if (m_result.has_value()) {
-        rapidjson::Value result(rapidjson::kObjectType);
-        result.CopyFrom(m_result.value(), doc.GetAllocator());
-        doc.AddMember("result", result, doc.GetAllocator());
-      } else if (m_error.has_value()) {
-        rapidjson::Value error(rapidjson::kObjectType);
-        error.AddMember("code", (int)m_error.value().m_code,
-                        doc.GetAllocator());
-        rapidjson::Value message;
-        message.SetString(m_error.value().m_message.c_str(),
-                          m_error.value().m_message.size(), doc.GetAllocator());
-        error.AddMember("message", message, doc.GetAllocator());
-        if (m_error.value().m_data.has_value()) {
-          rapidjson::Value data(rapidjson::kObjectType);
-          data.CopyFrom(m_error.value().m_data.value(), doc.GetAllocator());
-          error.AddMember("data", data, doc.GetAllocator());
-        }
-        doc.AddMember("error", error, doc.GetAllocator());
-      }
-      doc.Accept(writer);
-      return buffer.GetString();
-    }
-
-    auto operator->() -> rapidjson::Document* {
-      if (!m_result.has_value()) {
-        m_result = rapidjson::Document(rapidjson::kObjectType);
-      }
-      return &m_result.value();
-    }
-
-    auto operator*() -> rapidjson::Document& {
-      if (!m_result.has_value()) {
-        m_result = rapidjson::Document(rapidjson::kObjectType);
-      }
-      return m_result.value();
-    }
-
-    void Error(ErrorCodes code, const std::string& message,
-               std::optional<rapidjson::Document> data = std::nullopt) {
-      m_error = ResponseError(code, message, std::move(data));
-    }
-  };
-
-}  // namespace lsp
-
-using RequestHandler =
-    std::function<void(const lsp::RequestMessage&, lsp::ResponseMessage&)>;
-using NotificationHandler =
-    std::function<void(const lsp::NotificationMessage&)>;
-
-class ServerContext {
-  ThreadPool m_thread_pool;
-  std::function<void(const lsp::Message* message)> m_callback;
-  std::unordered_map<std::string, RequestHandler> m_request_handlers;
-  std::unordered_map<std::string, NotificationHandler> m_notification_handlers;
-  std::queue<std::function<void()>> m_request_queue;
-  std::mutex m_request_queue_mutex;
-  std::mutex m_io_mutex;
-
-  ServerContext() = default;
-
-  void RegisterHandlers();
-  void RequestQueueLoop(const std::stop_token& st);
-
-  void HandleRequest(const lsp::RequestMessage& request, std::ostream& out);
-  void HandleNotification(const lsp::NotificationMessage& notif);
-
-  auto NextMessage(std::istream& in)
-      -> std::optional<std::unique_ptr<lsp::Message>>;
-
-  void Dispatch(const std::shared_ptr<lsp::Message>& message,
-                std::ostream& out);
-
-public:
-  ServerContext(const ServerContext&) = delete;
-  ServerContext(ServerContext&&) = delete;
-
-  static auto The() -> ServerContext&;
-
-  [[noreturn]] void StartServer(Connection& io);
-
-  void SetCallback(std::function<void(const lsp::Message* message)> callback) {
-    m_callback = std::move(callback);
-  }
-
-  void RegisterRequestHandler(const std::string& method,
-                              RequestHandler handler) {
-    m_request_handlers[method] = std::move(handler);
-  }
-
-  void RegisterNotificationHandler(const std::string& method,
-                                   NotificationHandler handler) {
-    m_notification_handlers[method] = std::move(handler);
-  }
-};
+}  // namespace no3::lsp::srv

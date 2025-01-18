@@ -7,7 +7,7 @@
 #include <sstream>
 #include <unordered_set>
 
-using namespace lsp::fmt;
+using namespace no3::lsp::fmt;
 
 using namespace ncc;
 using namespace ncc::parse;
@@ -52,7 +52,7 @@ auto CambrianFormatter::LineStreamWritter::operator<<(Vis v)
 }
 
 auto CambrianFormatter::EscapeCharLiteral(char ch) const -> std::string {
-  if (!std::isspace(ch) && !std::isprint(ch)) {
+  if ((std::isspace(ch) == 0) && (std::isprint(ch) == 0)) {
     const char* tab = "0123456789abcdef";
     uint8_t uch = ch;
     char enc[6] = {'\'', '\\', 'x', 0, 0, '\''};

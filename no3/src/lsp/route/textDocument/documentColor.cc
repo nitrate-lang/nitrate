@@ -1,15 +1,16 @@
 #include <rapidjson/document.h>
 
 #include <charconv>
+#include <cmath>
 #include <lsp/core/SyncFS.hh>
-#include <lsp/core/server.hh>
 #include <lsp/route/RoutesList.hh>
 #include <nitrate-lexer/Lexer.hh>
 #include <nitrate-parser/Context.hh>
 #include <sstream>
-#include <string>
 
 using namespace rapidjson;
+using namespace no3::lsp;
+
 using namespace ncc::lex;
 using namespace ncc::parse;
 
@@ -53,7 +54,7 @@ static auto HslaToRgba(float h, float s, float l, float a) -> RGBA {
   l /= 100.0F;
 
   float c = (1 - std::abs(2 * l - 1)) * s;
-  float x = c * (1 - std::abs(fmod(h * 6.0F, 2.0F) - 1));
+  float x = c * (1 - std::abs(std::fmod(h * 6.0F, 2.0F) - 1));
   float m = l - c / 2;
 
   float r;
@@ -90,7 +91,7 @@ static auto HslaToRgba(float h, float s, float l, float a) -> RGBA {
 }
 
 template <size_t Argc>
-static auto ParseColorFunction(ncc::FlowPtr<Call> n, ColorMode,
+static auto ParseColorFunction(const ncc::FlowPtr<Call>& n, ColorMode,
                                IScanner&) -> std::optional<ColorInformation> {
   static_assert(Argc == 3 || Argc == 4,
                 "Invalid number of arguments. Indexs will be out-of-range.");
@@ -163,36 +164,34 @@ static auto ParseColorFunction(ncc::FlowPtr<Call> n, ColorMode,
   // }
 }
 
-void DoDocumentColor(const lsp::RequestMessage& req,
-                     lsp::ResponseMessage& resp) {
-  if (!req.Params().HasMember("textDocument")) {
-    resp.Error(lsp::ErrorCodes::InvalidParams, "Missing textDocument");
+void srv::DoDocumentColor(const RequestMessage& req, ResponseMessage& resp) {
+  if (!req.GetJSON().HasMember("textDocument")) {
+    resp.Error(ErrorCodes::InvalidParams, "Missing textDocument");
     return;
   }
 
-  if (!req.Params()["textDocument"].IsObject()) {
-    resp.Error(lsp::ErrorCodes::InvalidParams, "textDocument is not an object");
+  if (!req.GetJSON()["textDocument"].IsObject()) {
+    resp.Error(ErrorCodes::InvalidParams, "textDocument is not an object");
     return;
   }
 
-  if (!req.Params()["textDocument"].HasMember("uri")) {
-    resp.Error(lsp::ErrorCodes::InvalidParams, "Missing textDocument.uri");
+  if (!req.GetJSON()["textDocument"].HasMember("uri")) {
+    resp.Error(ErrorCodes::InvalidParams, "Missing textDocument.uri");
     return;
   }
 
-  if (!req.Params()["textDocument"]["uri"].IsString()) {
-    resp.Error(lsp::ErrorCodes::InvalidParams,
-               "textDocument.uri is not a string");
+  if (!req.GetJSON()["textDocument"]["uri"].IsString()) {
+    resp.Error(ErrorCodes::InvalidParams, "textDocument.uri is not a string");
     return;
   }
 
-  let uri = req.Params()["textDocument"]["uri"].GetString();
+  let uri = req.GetJSON()["textDocument"]["uri"].GetString();
 
   LOG(INFO) << "Requested document color box";
 
   let file_opt = SyncFS::The().Open(uri);
   if (!file_opt.has_value()) {
-    resp.Error(lsp::ErrorCodes::InternalError, "Failed to open file");
+    resp.Error(ErrorCodes::InternalError, "Failed to open file");
     return;
   }
   let file = file_opt.value();

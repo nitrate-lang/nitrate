@@ -1,17 +1,13 @@
 #include <glog/logging.h>
-#include <rapidjson/document.h>
-#include <rapidjson/stringbuffer.h>
-#include <rapidjson/writer.h>
 
 #include <chrono>
 #include <functional>
-#include <lsp/core/server.hh>
 #include <lsp/route/RoutesList.hh>
 #include <memory>
 #include <stop_token>
 #include <utility>
 
-using namespace lsp;
+using namespace no3::lsp::srv;
 
 auto ServerContext::The() -> ServerContext& {
   static ServerContext instance;
@@ -150,8 +146,8 @@ auto ServerContext::NextMessage(std::istream& in)
   bool is_lsp_notification = !doc.HasMember("id");
 
   if (is_lsp_notification) {
-    message = std::make_unique<NotificationMessage>(doc["method"].GetString(),
-                                                    std::move(params));
+    message = std::make_unique<NotificationMessage>(
+        String(doc["method"].GetString()), std::move(params));
   } else {
     if (!doc["id"].IsString() && !doc["id"].IsInt()) [[unlikely]] {
       LOG(ERROR) << "Request object key \"id\" is not a string or int";
@@ -159,8 +155,9 @@ auto ServerContext::NextMessage(std::istream& in)
     }
 
     if (doc["id"].IsString()) {
-      message = std::make_unique<RequestMessage>(
-          doc["id"].GetString(), doc["method"].GetString(), std::move(params));
+      message = std::make_unique<RequestMessage>(String(doc["id"].GetString()),
+                                                 doc["method"].GetString(),
+                                                 std::move(params));
     } else {
       message = std::make_unique<RequestMessage>(
           doc["id"].GetInt(), doc["method"].GetString(), std::move(params));
@@ -178,9 +175,6 @@ void ServerContext::RegisterHandlers() {
   ctx.RegisterRequestHandler("shutdown", DoShutdown);
   ctx.RegisterNotificationHandler("exit", DoExit);
 
-  ctx.RegisterRequestHandler("textDocument/completion", DoCompletion);
-  ctx.RegisterRequestHandler("textDocument/declaration", DoDeclaration);
-  ctx.RegisterRequestHandler("textDocument/definition", DoDefinition);
   ctx.RegisterNotificationHandler("textDocument/didChange", DoDidChange);
   ctx.RegisterNotificationHandler("textDocument/didClose", DoDidClose);
   ctx.RegisterNotificationHandler("textDocument/didOpen", DoDidOpen);
@@ -215,13 +209,13 @@ void ServerContext::HandleRequest(const RequestMessage& req,
 
   auto response = ResponseMessage::FromRequest(req);
 
-  auto it = m_request_handlers.find(req.Method());
+  auto it = m_request_handlers.find(req.GetMethod());
   if (it == m_request_handlers.end()) {
-    if (req.Method().starts_with("$/")) {
-      LOG(INFO) << "Ignoring request: " << req.Method();
+    if (req.GetMethod()->starts_with("$/")) {
+      LOG(INFO) << "Ignoring request: " << req.GetMethod();
       return;
     }
-    LOG(WARNING) << "No request handler for method: " << req.Method();
+    LOG(WARNING) << "No request handler for method: " << req.GetMethod();
     return;
   }
 
@@ -235,10 +229,11 @@ void ServerContext::HandleRequest(const RequestMessage& req,
   writer.String("2.0");
 
   writer.Key("id");
-  if (std::holds_alternative<std::string>(response.Id())) {
-    writer.String(std::get<std::string>(response.Id()).c_str());
+  if (response.Id().GetKind() == MessageIdKind::String) {
+    auto id = response.Id().GetString();
+    writer.String(id->c_str());
   } else {
-    writer.Int(std::get<int64_t>(response.Id()));
+    writer.Int(response.Id().GetInt());
   }
 
   if (response.Error().has_value()) {
@@ -247,7 +242,7 @@ void ServerContext::HandleRequest(const RequestMessage& req,
     writer.Key("code");
     writer.Int((int)response.Error()->m_code);
     writer.Key("message");
-    writer.String(response.Error()->m_message.c_str());
+    writer.String(response.Error()->m_message->c_str());
     if (response.Error()->m_data.has_value()) {
       writer.Key("data");
       response.Error()->m_data->Accept(writer);
@@ -287,7 +282,7 @@ void ServerContext::HandleNotification(const NotificationMessage& notif) {
 
   auto it = m_notification_handlers.find(notif.Method());
   if (it == m_notification_handlers.end()) {
-    if (notif.Method().starts_with("$/")) {
+    if (notif.Method()->starts_with("$/")) {
       LOG(INFO) << "Ignoring notification: " << notif.Method();
       return;
     }
@@ -301,12 +296,12 @@ void ServerContext::HandleNotification(const NotificationMessage& notif) {
 
 void ServerContext::Dispatch(const std::shared_ptr<Message>& message,
                              std::ostream& out) {
-  if (message->Type() == MessageType::Request) {
+  if (message->GetKind() == MessageType::Request) {
     std::lock_guard<std::mutex> lock(m_request_queue_mutex);
     m_request_queue.emplace([this, message, &out]() {
       HandleRequest(*std::static_pointer_cast<RequestMessage>(message), out);
     });
-  } else if (message->Type() == MessageType::Notification) {
+  } else if (message->GetKind() == MessageType::Notification) {
     m_thread_pool.QueueJob([this, message](const std::stop_token&) {
       HandleNotification(
           *std::static_pointer_cast<NotificationMessage>(message));

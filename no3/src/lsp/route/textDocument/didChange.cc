@@ -7,23 +7,25 @@
 #include <nitrate-core/Macro.hh>
 #include <string>
 
-typedef int64_t DocVersion;
+using namespace no3::lsp;
 
-void DoDidChange(const lsp::NotificationMessage& notif) {
+using DocVersion = int64_t;
+
+void srv::DoDidChange(const NotificationMessage& notif) {
   using namespace rapidjson;
 
-  if (!notif.Params().HasMember("textDocument")) {
+  if (!notif.GetJSON().HasMember("textDocument")) {
     LOG(ERROR) << "Missing textDocument field in didChange notification";
     return;
   }
 
-  if (!notif.Params()["textDocument"].IsObject()) {
+  if (!notif.GetJSON()["textDocument"].IsObject()) {
     LOG(ERROR)
         << "textDocument field in didChange notification is not an object";
     return;
   }
 
-  let text_document = notif.Params()["textDocument"];
+  let text_document = notif.GetJSON()["textDocument"];
 
   if (!text_document.HasMember("uri")) {
     LOG(ERROR) << "Missing uri field in textDocument object";
@@ -48,18 +50,18 @@ void DoDidChange(const lsp::NotificationMessage& notif) {
   let uri = text_document["uri"].GetString();
   let version = text_document["version"].GetInt64();
 
-  if (!notif.Params().HasMember("contentChanges")) {
+  if (!notif.GetJSON().HasMember("contentChanges")) {
     LOG(ERROR) << "Missing contentChanges field in didChange notification";
     return;
   }
 
-  if (!notif.Params()["contentChanges"].IsArray()) {
+  if (!notif.GetJSON()["contentChanges"].IsArray()) {
     LOG(ERROR)
         << "contentChanges field in didChange notification is not an array";
     return;
   }
 
-  let content_changes = notif.Params()["contentChanges"].GetArray();
+  let content_changes = notif.GetJSON()["contentChanges"].GetArray();
 
   auto file_opt = SyncFS::The().Open(uri);
   if (!file_opt.has_value()) {

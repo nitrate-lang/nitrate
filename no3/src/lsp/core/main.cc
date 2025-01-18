@@ -5,11 +5,13 @@
 #include <boost/throw_exception.hpp>
 #include <csignal>
 #include <filesystem>
-#include <lsp/core/license-data.hh>
 #include <lsp/core/server.hh>
 #include <memory>
 #include <nitrate-core/Macro.hh>
 #include <optional>
+
+using namespace no3::lsp;
+using namespace no3::lsp::srv;
 
 static constexpr void CreateParser(argparse::ArgumentParser& parser) {
   ///=================== BASIC CONFIGURATION ======================
@@ -96,7 +98,7 @@ extern "C" NCC_EXPORT auto NitratedMain(int argc, char** argv) -> int {
         break;
     }
 
-    auto channel_opt = OpenConnection(connection_type, connect_param);
+    auto channel_opt = OpenConnection(connection_type, String(connect_param));
     if (!channel_opt) {
       LOG(ERROR) << "Failed to open channel";
       return 1;

@@ -1,9 +1,9 @@
-#include <lsp/core/server.hh>
 #include <lsp/route/RoutesList.hh>
 
 using namespace rapidjson;
+using namespace no3::lsp;
 
-void DoInitialize(const lsp::RequestMessage&, lsp::ResponseMessage& resp) {
+void srv::DoInitialize(const RequestMessage&, ResponseMessage& resp) {
   LOG(INFO) << "Initializing language server";
 
   auto& alloc = resp->GetAllocator();

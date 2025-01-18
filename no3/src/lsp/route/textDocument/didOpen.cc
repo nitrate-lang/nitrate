@@ -1,24 +1,20 @@
-#include <rapidjson/document.h>
-
 #include <lsp/core/SyncFS.hh>
-#include <lsp/core/server.hh>
 #include <lsp/route/RoutesList.hh>
-#include <string>
 
-using namespace rapidjson;
+using namespace no3::lsp;
 
-void DoDidOpen(const lsp::NotificationMessage& notif) {
-  if (!notif.Params().HasMember("textDocument")) {
+void srv::DoDidOpen(const NotificationMessage& notif) {
+  if (!notif.GetJSON().HasMember("textDocument")) {
     LOG(ERROR) << "Missing textDocument member";
     return;
   }
 
-  if (!notif.Params()["textDocument"].IsObject()) {
+  if (!notif.GetJSON()["textDocument"].IsObject()) {
     LOG(ERROR) << "textDocument is not an object";
     return;
   }
 
-  const auto& text_document = notif.Params()["textDocument"];
+  const auto& text_document = notif.GetJSON()["textDocument"];
 
   if (!text_document.HasMember("uri")) {
     LOG(ERROR) << "Missing uri member";

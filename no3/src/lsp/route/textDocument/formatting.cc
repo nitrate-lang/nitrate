@@ -19,8 +19,9 @@
 using namespace rapidjson;
 using namespace ncc::lex;
 using namespace ncc::seq;
+using namespace no3::lsp;
 
-void DoFormatting(const lsp::RequestMessage& req, lsp::ResponseMessage& resp) {
+void srv::DoFormatting(const RequestMessage& req, ResponseMessage& resp) {
   struct Position {
     size_t m_line = 0;
     size_t m_character = 0;
@@ -36,72 +37,70 @@ void DoFormatting(const lsp::RequestMessage& req, lsp::ResponseMessage& resp) {
     bool m_insertSpaces = false;
   };
 
-  if (!req.Params().HasMember("textDocument")) {
-    resp.Error(lsp::ErrorCodes::InvalidParams, "Missing textDocument");
+  if (!req.GetJSON().HasMember("textDocument")) {
+    resp.Error(ErrorCodes::InvalidParams, "Missing textDocument");
     return;
   }
 
-  if (!req.Params()["textDocument"].IsObject()) {
-    resp.Error(lsp::ErrorCodes::InvalidParams, "textDocument is not an object");
+  if (!req.GetJSON()["textDocument"].IsObject()) {
+    resp.Error(ErrorCodes::InvalidParams, "textDocument is not an object");
     return;
   }
 
-  if (!req.Params()["textDocument"].HasMember("uri")) {
-    resp.Error(lsp::ErrorCodes::InvalidParams, "Missing textDocument.uri");
+  if (!req.GetJSON()["textDocument"].HasMember("uri")) {
+    resp.Error(ErrorCodes::InvalidParams, "Missing textDocument.uri");
     return;
   }
 
-  if (!req.Params()["textDocument"]["uri"].IsString()) {
-    resp.Error(lsp::ErrorCodes::InvalidParams,
-               "textDocument.uri is not a string");
+  if (!req.GetJSON()["textDocument"]["uri"].IsString()) {
+    resp.Error(ErrorCodes::InvalidParams, "textDocument.uri is not a string");
     return;
   }
 
-  if (!req.Params().HasMember("options")) {
-    resp.Error(lsp::ErrorCodes::InvalidParams, "Missing options");
+  if (!req.GetJSON().HasMember("options")) {
+    resp.Error(ErrorCodes::InvalidParams, "Missing options");
     return;
   }
 
-  if (!req.Params()["options"].IsObject()) {
-    resp.Error(lsp::ErrorCodes::InvalidParams, "options is not an object");
+  if (!req.GetJSON()["options"].IsObject()) {
+    resp.Error(ErrorCodes::InvalidParams, "options is not an object");
     return;
   }
 
-  if (!req.Params()["options"].HasMember("tabSize")) {
-    resp.Error(lsp::ErrorCodes::InvalidParams, "Missing options.tabSize");
+  if (!req.GetJSON()["options"].HasMember("tabSize")) {
+    resp.Error(ErrorCodes::InvalidParams, "Missing options.tabSize");
     return;
   }
 
-  if (!req.Params()["options"]["tabSize"].IsInt()) {
-    resp.Error(lsp::ErrorCodes::InvalidParams,
-               "options.tabSize is not an integer");
+  if (!req.GetJSON()["options"]["tabSize"].IsInt()) {
+    resp.Error(ErrorCodes::InvalidParams, "options.tabSize is not an integer");
     return;
   }
 
-  if (req.Params()["options"]["tabSize"].GetUint() == 0) {
-    resp.Error(lsp::ErrorCodes::InvalidParams, "options.tabSize is 0");
+  if (req.GetJSON()["options"]["tabSize"].GetUint() == 0) {
+    resp.Error(ErrorCodes::InvalidParams, "options.tabSize is 0");
     return;
   }
 
-  if (!req.Params()["options"].HasMember("insertSpaces")) {
-    resp.Error(lsp::ErrorCodes::InvalidParams, "Missing options.insertSpaces");
+  if (!req.GetJSON()["options"].HasMember("insertSpaces")) {
+    resp.Error(ErrorCodes::InvalidParams, "Missing options.insertSpaces");
     return;
   }
 
-  if (!req.Params()["options"]["insertSpaces"].IsBool()) {
-    resp.Error(lsp::ErrorCodes::InvalidParams,
+  if (!req.GetJSON()["options"]["insertSpaces"].IsBool()) {
+    resp.Error(ErrorCodes::InvalidParams,
                "options.insertSpaces is not a boolean");
     return;
   }
 
   FormattingOptions options;
-  options.m_tabSize = req.Params()["options"]["tabSize"].GetInt();
-  options.m_insertSpaces = req.Params()["options"]["insertSpaces"].GetBool();
+  options.m_tabSize = req.GetJSON()["options"]["tabSize"].GetInt();
+  options.m_insertSpaces = req.GetJSON()["options"]["insertSpaces"].GetBool();
 
-  std::string uri = req.Params()["textDocument"]["uri"].GetString();
+  std::string uri = req.GetJSON()["textDocument"]["uri"].GetString();
   auto file_opt = SyncFS::The().Open(uri);
   if (!file_opt.has_value()) {
-    resp.Error(lsp::ErrorCodes::InternalError, "Failed to open file");
+    resp.Error(ErrorCodes::InternalError, "Failed to open file");
     return;
   }
   auto file = file_opt.value();
@@ -123,7 +122,7 @@ void DoFormatting(const lsp::RequestMessage& req, lsp::ResponseMessage& resp) {
   if (!lsp::fmt::FormatterFactory::Create(lsp::fmt::Styleguide::Cambrian,
                                           formatted_ss)
            ->Format(ast.Get())) {
-    resp.Error(lsp::ErrorCodes::InternalError, "Failed to format document");
+    resp.Error(ErrorCodes::InternalError, "Failed to format document");
     return;
   }
 
@@ -149,8 +148,4 @@ void DoFormatting(const lsp::RequestMessage& req, lsp::ResponseMessage& resp) {
       resp->GetAllocator());
 
   resp->PushBack(edit, resp->GetAllocator());
-
-  ///==========================================================
-
-  return;
 }
