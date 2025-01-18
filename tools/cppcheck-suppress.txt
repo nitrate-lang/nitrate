@@ -1,6 +1,0 @@
-missingIncludeSystem
-checkersReport
-unusedFunction
-noExplicitConstructor
-useStlAlgorithm
-unmatchedSuppression
