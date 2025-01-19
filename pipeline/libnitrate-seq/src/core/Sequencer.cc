@@ -61,29 +61,28 @@ public:
   }
 };
 
-Sequencer::PImpl::PImpl(std::shared_ptr<Environment> env, std::istream &scanner)
-    : m_env(std::move(env)),
-      m_scanner(std::make_unique<lex::Tokenizer>(scanner, m_env)) {
-  m_L = luaL_newstate();
-  m_random.seed(0);
-
+Sequencer::PImpl::PImpl(std::shared_ptr<Environment> env, std::istream &scanner,
+                        std::function<void()> on_error)
+    : m_random(0),
+      m_scanner(lex::Tokenizer(scanner, env)),
+      m_buffer({}),
+      m_defer({}),
+      m_env(std::move(env)),
+      m_fetch_module(nullptr),
+      m_L(luaL_newstate()),
+      m_depth(0),
+      m_on_error(std::move(on_error)) {
   LoadLuaLibs();
   BindLuaAPI();
-
-  /// TODO: Finish this function
 }
 
-Sequencer::PImpl::~PImpl() {
-  lua_close(m_L);
-
-  /// TODO: Finish this function
-}
+Sequencer::PImpl::~PImpl() { lua_close(m_L); }
 
 Sequencer::Sequencer(std::istream &file, std::shared_ptr<ncc::Environment> env,
                      bool is_root)
     : ncc::lex::IScanner(std::move(env)) {
   if (is_root) {
-    m_core = std::make_shared<PImpl>(m_env, file);
+    m_core = std::make_shared<PImpl>(m_env, file, [this]() { SetFailBit(); });
 
     SetFetchFunc(nullptr);
     SequenceSource(CodePrefix);
@@ -128,9 +127,9 @@ auto Sequencer::GetNext() -> Token {
         x = m_core->m_buffer.front();
         m_core->m_buffer.pop_front();
       } else {
-        x = m_core->m_scanner->Next();
+        x = m_core->m_scanner.Next();
 
-        SetFailBit(HasError() || m_core->m_scanner->HasError());
+        SetFailBit(HasError() || m_core->m_scanner.HasError());
       }
 
       switch (x.GetKind()) {
@@ -148,9 +147,9 @@ auto Sequencer::GetNext() -> Token {
 
         case Name: {
           if (x.GetString() == "import") {
-            auto import_name = m_core->m_scanner->Next().GetString();
+            auto import_name = m_core->m_scanner.Next().GetString();
 
-            if (m_core->m_scanner->Next().is<PuncSemi>()) {
+            if (m_core->m_scanner.Next().is<PuncSemi>()) {
               if (auto content = m_core->FetchModuleData(import_name.Get())) {
                 SequenceSource(content.value());
                 continue;
@@ -175,8 +174,6 @@ auto Sequencer::GetNext() -> Token {
             continue;
           }
 
-          Log << SeqError << "Error executing Lua code block";
-
           x = Token::EndOfFile();
           SetFailBit();
 
@@ -184,10 +181,16 @@ auto Sequencer::GetNext() -> Token {
         }
 
         case Macr: {
-          std::cout << x.GetString();
+          if (auto result_data = m_core->ExecuteLua(
+                  (std::string(x.GetString()) + "()").c_str())) {
+            SequenceSource(result_data.value());
+            continue;
+          }
 
-          /// TODO: Implement macro calls
-          qcore_implement();
+          x = Token::EndOfFile();
+          SetFailBit();
+
+          break;
         }
       }
 
@@ -208,7 +211,7 @@ auto Sequencer::GetNext() -> Token {
 
 auto Sequencer::GetLocationFallback(ncc::lex::LocationID id)
     -> std::optional<ncc::lex::Location> {
-  return m_core->m_scanner->GetLocation(id);
+  return m_core->m_scanner.GetLocation(id);
 }
 
 auto Sequencer::ApplyDynamicTransforms(Token last) -> bool {
@@ -235,14 +238,14 @@ auto Sequencer::ApplyDynamicTransforms(Token last) -> bool {
 }
 
 auto Sequencer::HasError() const -> bool {
-  return IScanner::HasError() || m_core->m_scanner->HasError();
+  return IScanner::HasError() || m_core->m_scanner.HasError();
 }
 
 auto Sequencer::SetFailBit(bool fail) -> bool {
   auto old = HasError();
 
   IScanner::SetFailBit(fail);
-  m_core->m_scanner->SetFailBit(fail);
+  m_core->m_scanner.SetFailBit(fail);
 
   return old;
 }
@@ -260,7 +263,7 @@ auto Sequencer::SetFetchFunc(FetchModuleFunc func) -> void {
 
 auto Sequencer::GetSourceWindow(Point start, Point end, char fillchar)
     -> std::optional<std::vector<std::string>> {
-  return m_core->m_scanner->GetSourceWindow(start, end, fillchar);
+  return m_core->m_scanner.GetSourceWindow(start, end, fillchar);
 }
 
 static auto GetFetchURI(const std::string &module_name,

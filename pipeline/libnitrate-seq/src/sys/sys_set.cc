@@ -52,24 +52,21 @@ auto Sequencer::PImpl::SysSet() -> int {
 
   std::string_view key = lua_tostring(m_L, 1);
 
-  if (key.empty()) {
-    return luaL_error(m_L, "expected non-empty string, got empty string");
-  }
+  bool illegal_set =
+      std::any_of(IMMUTABLE_NAMESPACES.begin(), IMMUTABLE_NAMESPACES.end(),
+                  [&key](auto ns) { return key.starts_with(ns); });
 
-  for (const auto& ns : IMMUTABLE_NAMESPACES) {
-    if (key.starts_with(ns)) {
-      return luaL_error(m_L, "cannot set items in immutable namespace");
-    }
+  if (illegal_set) {
+    return luaL_error(m_L, "cannot set items in immutable namespace");
   }
 
   if (lua_isnil(m_L, 2)) {
     m_env->Set(key, std::nullopt);
-  } else if (lua_isstring(m_L, 2) != 0) {
-    m_env->Set(key, lua_tostring(m_L, 2));
   } else {
-    return luaL_error(m_L, "expected string or nil, got %s",
-                      lua_typename(m_L, lua_type(m_L, 2)));
+    m_env->Set(key, lua_tostring(m_L, 2));
   }
 
-  return 0;
+  lua_pushvalue(m_L, 2);
+
+  return 1;
 }

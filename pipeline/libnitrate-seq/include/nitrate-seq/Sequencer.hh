@@ -71,6 +71,8 @@ namespace ncc::seq {
   public:
     Sequencer(std::istream &file, std::shared_ptr<ncc::Environment> env,
               bool is_root = true);
+    Sequencer(const Sequencer &) = delete;
+    Sequencer(Sequencer &&) = delete;
     ~Sequencer() override;
 
     [[nodiscard]] auto HasError() const -> bool override;
