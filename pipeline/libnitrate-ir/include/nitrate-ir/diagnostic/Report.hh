@@ -181,7 +181,7 @@ namespace ncc::ir {
 
   template <typename T>
   auto operator<<(detail::DiagnosticRouterInstance *ctx,
-                           const T &value) -> MessageBuffer {
+                  const T &value) -> MessageBuffer {
     MessageBuffer buf(
         [ctx](std::string msg, SrcLoc loc) { ctx->EmitMessage(msg, loc); });
 

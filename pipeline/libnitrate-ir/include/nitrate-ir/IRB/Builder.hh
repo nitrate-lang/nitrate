@@ -111,8 +111,8 @@ namespace ncc::ir {
     // Builder helper methods
     ///**************************************************************************///
 
-    auto ResolveName(
-        std::string_view name, Kind kind) -> std::optional<std::pair<FlowPtr<Expr>, std::string_view>>;
+    auto ResolveName(std::string_view name, Kind kind)
+        -> std::optional<std::pair<FlowPtr<Expr>, std::string_view>>;
 
     void TryTransformAlpha(FlowPtr<Expr> root);
     void TryTransformBeta(FlowPtr<Expr> root);
@@ -255,23 +255,21 @@ namespace ncc::ir {
         bool thread_safe = false SOURCE_LOCATION_PARAM) -> Function *;
 
     /* Works for both local and global variables FlowPtr<Type> */
-    auto CreateVariable(std::string_view name, FlowPtr<Type> ty,
-                          Vis visibility = Vis::Sec,
-                          StorageClass storage = StorageClass::LLVM_StackAlloa,
-                          bool is_readonly = false SOURCE_LOCATION_PARAM) -> Local *;
+    auto CreateVariable(
+        std::string_view name, FlowPtr<Type> ty, Vis visibility = Vis::Sec,
+        StorageClass storage = StorageClass::LLVM_StackAlloa,
+        bool is_readonly = false SOURCE_LOCATION_PARAM) -> Local *;
 
     ///**************************************************************************///
     // Create expressions
 
-    auto CreateCall(
-        FlowPtr<Expr> target,
-        std::span<std::pair<std::string_view, FlowPtr<Expr>>> arguments
-            SOURCE_LOCATION_PARAM) -> FlowPtr<Expr>;
+    auto CreateCall(FlowPtr<Expr> target,
+                    std::span<std::pair<std::string_view, FlowPtr<Expr>>>
+                        arguments SOURCE_LOCATION_PARAM) -> FlowPtr<Expr>;
 
-    auto CreateMethodCall(
-        FlowPtr<Expr> object, std::string_view name,
-        std::span<std::pair<std::string_view, FlowPtr<Expr>>> arguments
-            SOURCE_LOCATION_PARAM) -> FlowPtr<Expr>;
+    auto CreateMethodCall(FlowPtr<Expr> object, std::string_view name,
+                          std::span<std::pair<std::string_view, FlowPtr<Expr>>>
+                              arguments SOURCE_LOCATION_PARAM) -> FlowPtr<Expr>;
 
     ///**************************************************************************///
     // Create literals
@@ -282,11 +280,11 @@ namespace ncc::ir {
                             uint8_t width SOURCE_LOCATION_PARAM) -> Int *;
 
     auto CreateFixedFloat(bigfloat_t value,
-                            uint8_t width SOURCE_LOCATION_PARAM) -> Float *;
+                          uint8_t width SOURCE_LOCATION_PARAM) -> Float *;
 
-    auto CreateStringDataArray(
-        std::string_view value,
-        ABIStringStyle style = ABIStringStyle::CStr SOURCE_LOCATION_PARAM) -> List *;
+    auto CreateStringDataArray(std::string_view value,
+                               ABIStringStyle style = ABIStringStyle::CStr
+                                   SOURCE_LOCATION_PARAM) -> List *;
 
     auto CreateList(
         std::span<FlowPtr<Expr>> items,
@@ -300,8 +298,8 @@ namespace ncc::ir {
     ///**************************************************************************///
     // Create values
 
-    auto GetDefaultValue(
-        FlowPtr<Type> src_loc SOURCE_LOCATION_PARAM) -> std::optional<FlowPtr<Expr>>;
+    auto GetDefaultValue(FlowPtr<Type> src_loc SOURCE_LOCATION_PARAM)
+        -> std::optional<FlowPtr<Expr>>;
 
     ///**************************************************************************///
     // Create types
@@ -326,8 +324,8 @@ namespace ncc::ir {
     /* Type inference unknowns; Converted to proper type upon resolution */
     auto GetUnknownTy(SOURCE_LOCATION_PARAM_ONCE) -> OpaqueTy *;
 
-    auto GetUnknownNamedTy(
-        std::string_view name SOURCE_LOCATION_PARAM) -> FlowPtr<Type>;
+    auto GetUnknownNamedTy(std::string_view name SOURCE_LOCATION_PARAM)
+        -> FlowPtr<Type>;
 
     auto GetPtrTy(FlowPtr<Type> pointee SOURCE_LOCATION_PARAM) -> PtrTy *;
 
@@ -337,18 +335,19 @@ namespace ncc::ir {
         std::span<std::tuple<std::string_view, FlowPtr<Type>, FlowPtr<Expr>>>
             fields SOURCE_LOCATION_PARAM) -> StructTy *;
 
-    auto GetStructTy(
-        std::span<FlowPtr<Type>> fields SOURCE_LOCATION_PARAM) -> StructTy *;
+    auto GetStructTy(std::span<FlowPtr<Type>> fields SOURCE_LOCATION_PARAM)
+        -> StructTy *;
 
-    auto GetUnionTy(std::span<FlowPtr<Type>> fields SOURCE_LOCATION_PARAM) -> UnionTy *;
+    auto GetUnionTy(std::span<FlowPtr<Type>> fields SOURCE_LOCATION_PARAM)
+        -> UnionTy *;
 
     auto GetArrayTy(FlowPtr<Type> element_ty,
-                        size_t count SOURCE_LOCATION_PARAM) -> ArrayTy *;
+                    size_t count SOURCE_LOCATION_PARAM) -> ArrayTy *;
 
     auto GetFnTy(std::span<FlowPtr<Type>> params, FlowPtr<Type> ret_ty,
-                  bool is_variadic = false, Purity purity = Purity::Impure,
-                  bool thread_safe = false,
-                  bool foreign = true SOURCE_LOCATION_PARAM) -> FnTy *;
+                 bool is_variadic = false, Purity purity = Purity::Impure,
+                 bool thread_safe = false,
+                 bool foreign = true SOURCE_LOCATION_PARAM) -> FnTy *;
 
     void CreateNamedConstantDefinition(
         std::string_view name,

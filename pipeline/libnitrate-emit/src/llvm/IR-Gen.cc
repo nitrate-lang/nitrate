@@ -304,7 +304,7 @@ public:
 
   // Get current position
   virtual auto seekoff(streamoff off, ios_base::seekdir way,
-                            ios_base::openmode) -> streampos override {
+                       ios_base::openmode) -> streampos override {
     if (way == ios_base::cur) {
       if (fseek(m_file, off, SEEK_CUR) == -1) {
         return -1;
@@ -333,7 +333,9 @@ public:
 
 class OStreamDiscard : public streambuf {
 public:
-  virtual auto xsputn(const char *, streamsize n) -> streamsize override { return n; }
+  virtual auto xsputn(const char *, streamsize n) -> streamsize override {
+    return n;
+  }
   virtual auto overflow(int c) -> int override { return c; }
 };
 
@@ -1896,10 +1898,9 @@ static auto QcodeAdapter(IRModule *module, QCodegenConfig *conf, FILE *err,
   return true;
 }
 
-static auto FabricateLlvmir(IRModule *module,
-                                                    QCodegenConfig *conf,
-                                                    ostream &err,
-                                                    raw_ostream &out) -> optional<unique_ptr<Module>> {
+static auto FabricateLlvmir(IRModule *module, QCodegenConfig *conf,
+                            ostream &err,
+                            raw_ostream &out) -> optional<unique_ptr<Module>> {
   /// TODO: Implement conversion for node
   qcore_implement();
 }

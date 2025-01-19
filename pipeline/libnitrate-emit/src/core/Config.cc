@@ -43,8 +43,8 @@ namespace codegen::conf {
 }
 
 template <typename L, typename R>
-auto MakeBimap(
-    std::initializer_list<typename boost::bimap<L, R>::value_type> list) -> boost::bimap<L, R> {
+auto MakeBimap(std::initializer_list<typename boost::bimap<L, R>::value_type>
+                   list) -> boost::bimap<L, R> {
   return boost::bimap<L, R>(list.begin(), list.end());
 }
 
@@ -120,7 +120,7 @@ extern "C" NCC_EXPORT auto QcodeConfGetopt(QCodegenConfig *conf, QcodeKeyT key,
 }
 
 extern "C" NCC_EXPORT auto QcodeConfGetopts(QCodegenConfig *conf,
-                                                      size_t *count) -> QcodeSettingT * {
+                                            size_t *count) -> QcodeSettingT * {
   if (!count) {
     qcore_panic(
         "qcode_conf_getopts: Contract violation: 'count' parameter cannot be "

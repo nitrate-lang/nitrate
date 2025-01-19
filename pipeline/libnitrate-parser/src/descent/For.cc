@@ -91,7 +91,8 @@ auto Parser::PImpl::RecurseForCondition() -> NullableFlowPtr<Expr> {
   return condition;
 }
 
-auto Parser::PImpl::RecurseForStepExpr(bool has_paren) -> NullableFlowPtr<Expr> {
+auto Parser::PImpl::RecurseForStepExpr(bool has_paren)
+    -> NullableFlowPtr<Expr> {
   if (has_paren) {
     if (peek().is<PuncRPar>()) {
       return std::nullopt;

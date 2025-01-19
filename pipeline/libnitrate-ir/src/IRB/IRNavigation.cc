@@ -44,7 +44,7 @@ using namespace ncc::ir;
 using namespace ncc;
 
 static auto JoinNameSegment(const std::string &a,
-                                     const std::string &b) -> std::string {
+                            const std::string &b) -> std::string {
   if (!a.empty() && !b.empty()) {
     return a + "::" + b;
   } else {
@@ -62,9 +62,9 @@ static void DropTailScope(std::string &scope) {
 }
 
 template <typename T>
-static auto FindInScopeMap(
-    const std::unordered_map<std::string_view, T> &map,
-    std::string_view qualified_name) -> std::optional<std::pair<T, std::string>> {
+static auto FindInScopeMap(const std::unordered_map<std::string_view, T> &map,
+                           std::string_view qualified_name)
+    -> std::optional<std::pair<T, std::string>> {
   auto sep_it = qualified_name.find_last_of("$$");
   if (sep_it == std::string_view::npos) {
     auto it = map.find(qualified_name);
@@ -98,8 +98,8 @@ static auto FindInScopeMap(
   return r;
 }
 
-auto
-NRBuilder::ResolveName(std::string_view name, Kind kind) -> std::optional<std::pair<FlowPtr<Expr>, std::string_view>> {
+auto NRBuilder::ResolveName(std::string_view name, Kind kind)
+    -> std::optional<std::pair<FlowPtr<Expr>, std::string_view>> {
   std::optional<std::pair<FlowPtr<Expr>, std::string>> r;
 
   switch (kind) {

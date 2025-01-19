@@ -48,7 +48,7 @@ using namespace ncc::ir;
 using namespace ncc::lex;
 
 static std::vector<std::string_view> WordBreak(std::string_view text,
-                                                size_t max_width) {
+                                               size_t max_width) {
   std::vector<std::string_view> lines;
   size_t word_beg = 0, cur_beg = 0, cur_len = 0;
 
@@ -138,7 +138,7 @@ static std::vector<std::string_view> WordBreak(std::string_view text,
 }
 
 static std::string FormatOverview(std::string_view overview,
-                                   std::string_view param) {
+                                  std::string_view param) {
   std::string formatted;
   size_t i = 0;
 
@@ -161,7 +161,7 @@ static std::string FormatOverview(std::string_view overview,
 }
 
 static void ConfineRectBounds(int64_t &x_0, int64_t &y_0, int64_t &x_1,
-                                int64_t &y_1, size_t win_width) {
+                              int64_t &y_1, size_t win_width) {
   if (x_1 < x_0) {
     x_1 = x_0;
   }

@@ -43,12 +43,6 @@
 #include <nitrate-seq/Sequencer.hh>
 #include <ranges>
 
-extern "C" {
-#include <lua/lauxlib.h>
-#include <lua/lua.h>
-#include <lua/lualib.h>
-}
-
 using namespace ncc::lex;
 using namespace ncc::seq;
 using namespace ncc::seq::ec;

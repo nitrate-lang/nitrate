@@ -40,7 +40,8 @@
 using namespace ncc::parse;
 using namespace nlohmann;
 
-static auto JsonToValue(const ordered_json& v) -> std::optional<AstReader::Value> {
+static auto JsonToValue(const ordered_json& v)
+    -> std::optional<AstReader::Value> {
   switch (v.type()) {
     case json::value_t::null: {
       return AstReader::Value(nullptr);

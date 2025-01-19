@@ -87,7 +87,8 @@ class OStreamWriter : public std::streambuf {
 public:
   OStreamWriter(FILE* file) : m_file(file) {}
 
-  virtual auto xsputn(const char* s, std::streamsize n) -> std::streamsize override {
+  virtual auto xsputn(const char* s,
+                      std::streamsize n) -> std::streamsize override {
     return fwrite(s, 1, n, m_file);
   }
 
@@ -96,7 +97,8 @@ public:
 
 class OStreamDiscard : public std::streambuf {
 public:
-  virtual auto xsputn(const char*, std::streamsize n) -> std::streamsize override {
+  virtual auto xsputn(const char*,
+                      std::streamsize n) -> std::streamsize override {
     return n;
   }
   virtual auto overflow(int c) -> int override { return c; }

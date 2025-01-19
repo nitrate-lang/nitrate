@@ -90,8 +90,10 @@ struct QcodeSettingT {
 
 auto QcodeConfNew(bool use_defaults) -> QCodegenConfig *;
 void QcodeConfFree(QCodegenConfig *conf);
-auto QcodeConfSetopt(QCodegenConfig *conf, QcodeKeyT key, QcodeValT value) -> bool;
-auto QcodeConfGetopt(QCodegenConfig *conf, QcodeKeyT key, QcodeValT *value) -> bool;
+auto QcodeConfSetopt(QCodegenConfig *conf, QcodeKeyT key,
+                     QcodeValT value) -> bool;
+auto QcodeConfGetopt(QCodegenConfig *conf, QcodeKeyT key,
+                     QcodeValT *value) -> bool;
 auto QcodeConfGetopts(QCodegenConfig *conf, size_t *count) -> QcodeSettingT *;
 void QcodeConfClear(QCodegenConfig *conf);
 

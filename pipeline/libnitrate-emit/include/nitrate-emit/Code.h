@@ -70,7 +70,8 @@ typedef enum {
  * return value.
  */
 auto QcodeTranscode(ncc::ir::IRModule* module, QCodegenConfig* conf,
-                    QcodeLangT lang, QcodeStyleT style, FILE* err, FILE* out) -> bool;
+                    QcodeLangT lang, QcodeStyleT style, FILE* err,
+                    FILE* out) -> bool;
 
 ///==============================================================================
 

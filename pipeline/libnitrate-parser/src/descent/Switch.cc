@@ -66,8 +66,8 @@ auto Parser::PImpl::RecurseSwitchCase() -> std::pair<FlowPtr<Stmt>, bool> {
   return {make<CaseStmt>(cond, body)(), false};
 }
 
-auto
-Parser::PImpl::RecurseSwitchBody() -> std::optional<std::pair<SwitchCases, NullableFlowPtr<Stmt>>> {
+auto Parser::PImpl::RecurseSwitchBody()
+    -> std::optional<std::pair<SwitchCases, NullableFlowPtr<Stmt>>> {
   SwitchCases cases;
   NullableFlowPtr<Stmt> default_case;
 

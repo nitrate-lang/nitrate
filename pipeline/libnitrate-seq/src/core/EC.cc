@@ -36,7 +36,8 @@
 using namespace ncc;
 using namespace ncc::seq;
 
-NCC_EXPORT auto ncc::seq::ec::Formatter(std::string_view msg, Sev sev) -> std::string {
+NCC_EXPORT auto ncc::seq::ec::Formatter(std::string_view msg,
+                                        Sev sev) -> std::string {
   std::stringstream ss;
   ss << "[\x1b[0m\x1b[37;1mMeta\x1b[0m\x1b[37;1m]: ";
 

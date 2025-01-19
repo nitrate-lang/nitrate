@@ -44,7 +44,9 @@ struct QCodegenConfig {
 private:
   std::vector<QcodeSettingT> m_data;
 
-  [[nodiscard]] auto VerifyPrechange(QcodeKeyT, QcodeValT) const -> bool { return true; }
+  [[nodiscard]] auto VerifyPrechange(QcodeKeyT, QcodeValT) const -> bool {
+    return true;
+  }
 
 public:
   QCodegenConfig() = default;

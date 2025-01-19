@@ -375,7 +375,7 @@ namespace ncc::ir {
   auto GetUnionTy(std::span<FlowPtr<Type>> fields) -> UnionTy*;
   auto GetArrayTy(FlowPtr<Type> element, size_t size) -> ArrayTy*;
   auto GetFnTy(std::span<FlowPtr<Type>> params, FlowPtr<Type> ret,
-                bool variadic, size_t native_size = 8) -> FnTy*;
+               bool variadic, size_t native_size = 8) -> FnTy*;
 }  // namespace ncc::ir
 
 #endif
