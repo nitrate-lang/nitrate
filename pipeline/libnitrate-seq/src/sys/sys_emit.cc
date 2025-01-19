@@ -34,13 +34,9 @@
 #include <core/Sequencer.hh>
 #include <nitrate-seq/Sequencer.hh>
 
-extern "C" {
-#include <lua/lauxlib.h>
-}
-
 using namespace ncc::seq;
 
-auto Sequencer::PImpl::SysEmit() const -> int {
+auto Sequencer::PImpl::SysEmit() -> int {
   /// TODO: Implement function
   qcore_implement();
 }

@@ -35,15 +35,11 @@
 #include <nitrate-core/Environment.hh>
 #include <nitrate-seq/Sequencer.hh>
 
-extern "C" {
-#include <lua/lauxlib.h>
-}
-
 using namespace ncc::seq;
 
 static const std::vector<std::string_view> IMMUTABLE_NAMESPACES = {"this."};
 
-auto Sequencer::PImpl::SysSet() const -> int {
+auto Sequencer::PImpl::SysSet() -> int {
   auto nargs = lua_gettop(m_L);
   if (nargs != 2) {
     return luaL_error(m_L, "expected 2 arguments, got %d", nargs);

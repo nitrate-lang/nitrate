@@ -32,17 +32,19 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <core/Sequencer.hh>
-#include <cstdio>
-#include <nitrate-core/Environment.hh>
-#include <nitrate-seq/Sequencer.hh>
-
-extern "C" {
-#include <lua/lauxlib.h>
-}
+#include <sstream>
 
 using namespace ncc::seq;
 
-auto Sequencer::PImpl::SysAbort() const -> int {
-  /// TODO: Implement function
-  qcore_implement();
+auto Sequencer::PImpl::SysAbort() -> int32_t {
+  std::stringstream ss;
+
+  auto top = lua_gettop(m_L);
+  for (auto i = 1; i <= top; i++) {
+    ss << lua_tostring(m_L, i) << " ";
+  }
+
+  ncc::Log << Error << ec::SeqError << ss.str();
+
+  throw StopException();
 }

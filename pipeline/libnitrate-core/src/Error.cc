@@ -54,7 +54,8 @@ static std::string LibcVersion = std::string("GLIBC ") + gnu_get_libc_version();
 #error "This libc version is not supported here"
 #endif
 
-static inline auto GetBacktrace() -> std::vector<std::pair<uintptr_t, std::string>> {
+static inline auto GetBacktrace()
+    -> std::vector<std::pair<uintptr_t, std::string>> {
   constexpr size_t kMaxSymbolSize = 512;
   unw_cursor_t cursor;
   unw_context_t uc;
@@ -92,7 +93,8 @@ static inline auto GetBacktrace() -> std::vector<std::pair<uintptr_t, std::strin
   return trace;
 }
 
-static auto PanicSplitMessage(std::string_view message) -> std::vector<std::string> {
+static auto PanicSplitMessage(std::string_view message)
+    -> std::vector<std::string> {
   std::string buf;
   std::vector<std::string> lines;
 

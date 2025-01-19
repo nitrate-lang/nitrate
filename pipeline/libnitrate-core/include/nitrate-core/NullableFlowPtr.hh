@@ -95,14 +95,14 @@ namespace ncc {
       constexpr NullableFlowPtr(NullableFlowPtr<Pointee, Tracking> &&o) noexcept
           : m_ptr(std::move(o.m_ptr)) {}
 
-      constexpr auto operator=(
-          const NullableFlowPtr<Pointee, Tracking> &o) -> NullableFlowPtr & {
+      constexpr auto operator=(const NullableFlowPtr<Pointee, Tracking> &o)
+          -> NullableFlowPtr & {
         m_ptr = o.m_ptr;
         return *this;
       }
 
-      constexpr auto operator=(
-          NullableFlowPtr<Pointee, Tracking> &&o) noexcept -> NullableFlowPtr & {
+      constexpr auto operator=(NullableFlowPtr<Pointee, Tracking> &&o) noexcept
+          -> NullableFlowPtr & {
         m_ptr = std::move(o.m_ptr);
         return *this;
       }
@@ -180,8 +180,9 @@ namespace ncc {
   using NullableFlowPtr = flowptr_detail::NullableFlowPtr<Pointee, Tracking>;
 
   template <class Pointee, class Tracking = DefaultTracking>
-  constexpr auto MakeNullableFlowPtr(
-      Pointee *ptr, Tracking tracking = Tracking()) -> NullableFlowPtr<Pointee, Tracking> {
+  constexpr auto MakeNullableFlowPtr(Pointee *ptr,
+                                     Tracking tracking = Tracking())
+      -> NullableFlowPtr<Pointee, Tracking> {
     return NullableFlowPtr<Pointee, Tracking>(ptr, std::move(tracking));
   }
 }  // namespace ncc
@@ -189,8 +190,8 @@ namespace ncc {
 namespace std {
   template <class Pointee, class Tracking>
   struct hash<ncc::NullableFlowPtr<Pointee, Tracking>> {
-    auto operator()(
-        const ncc::NullableFlowPtr<Pointee, Tracking> &ptr) const -> size_t {
+    auto operator()(const ncc::NullableFlowPtr<Pointee, Tracking> &ptr) const
+        -> size_t {
       return std::hash<Pointee *>()(ptr.value_or(nullptr));
     }
   };

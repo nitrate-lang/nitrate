@@ -73,11 +73,15 @@ Sequencer::PImpl::PImpl(std::shared_ptr<Environment> env, std::istream &scanner)
   m_L = luaL_newstate();
   m_random.seed(0);
 
+  LoadLuaLibs();
+  BindLuaAPI();
+
   /// TODO: Finish this function
 }
 
 Sequencer::PImpl::~PImpl() {
   lua_close(m_L);
+
   /// TODO: Finish this function
 }
 
@@ -115,86 +119,97 @@ void Sequencer::SequenceSource(std::string_view code) {
 }
 
 auto Sequencer::GetNext() -> Token {
-func_entry:  // do tail call optimization manually
-
-  Token x;
-
   try {
     RecursiveLimitGuard guard(m_core->m_depth);
     if (guard.ShouldStop()) {
-      ncc::Log << SeqError << "Maximum macro recursion depth reached, aborting";
+      Log << SeqError << "Maximum macro recursion depth reached, aborting";
 
       throw StopException();
     }
 
-    if (!m_core->m_buffer.empty()) {
-      x = m_core->m_buffer.front();
-      m_core->m_buffer.pop_front();
-    } else {
-      x = m_core->m_scanner->Next();
+    while (true) {
+      Token x;
 
-      SetFailBit(HasError() || m_core->m_scanner->HasError());
-    }
+      if (!m_core->m_buffer.empty()) {
+        x = m_core->m_buffer.front();
+        m_core->m_buffer.pop_front();
+      } else {
+        x = m_core->m_scanner->Next();
 
-    switch (x.GetKind()) {
-      case EofF:
-        return x;
-      case KeyW:
-      case IntL:
-      case Text:
-      case Char:
-      case NumL:
-      case Oper:
-      case Punc:
-      case Note: {
-        goto emit_token;
+        SetFailBit(HasError() || m_core->m_scanner->HasError());
       }
 
-      case Name: { /* Handle the expansion of defines */
-        if (x.GetString() == "import") {
-          auto import_name = m_core->m_scanner->Next().GetString();
-          auto semicolon = m_core->m_scanner->Next();
-          if (!semicolon.is<PuncSemi>()) {
-            ncc::Log << SeqError << "Expected semicolon after import name";
+      switch (x.GetKind()) {
+        case EofF:
+        case KeyW:
+        case IntL:
+        case Text:
+        case Char:
+        case NumL:
+        case Oper:
+        case Punc:
+        case Note: {
+          break;
+        }
 
-            SetFailBit();
+        case Name: {
+          if (x.GetString() == "import") {
+            auto import_name = m_core->m_scanner->Next().GetString();
+
+            if (m_core->m_scanner->Next().is<PuncSemi>()) {
+              if (auto content = m_core->FetchModuleData(import_name.Get())) {
+                SequenceSource(content.value());
+                continue;
+              }
+
+              SetFailBit();
+              continue;
+            }
+
+            Log << SeqError << "Expected a semicolon after import name";
+
             x = Token::EndOfFile();
             SetFailBit();
-            goto emit_token;
           }
 
-          if (auto module_data = m_core->FetchModuleData(import_name.Get())) {
-            SequenceSource(module_data.value());
-          } else {
-            SetFailBit();
+          break;
+        }
+
+        case MacB: {
+          if (auto result_data = m_core->ExecuteLua(x.GetString().Get())) {
+            SequenceSource(result_data.value());
+            continue;
           }
 
-          goto func_entry;
-        } else {
-          goto emit_token;
+          Log << SeqError << "Error executing Lua code block";
+
+          x = Token::EndOfFile();
+          SetFailBit();
+
+          break;
+        }
+
+        case Macr: {
+          std::cout << x.GetString();
+
+          /// TODO: Implement macro calls
+          qcore_implement();
         }
       }
 
-      case MacB: {
-        /// TODO: Implement macro blocks
-        qcore_implement();
+      if (x.is(EofF)) {
+        return x;
       }
 
-      case Macr: {
-        /// TODO: Implement macro calls
-        qcore_implement();
+      if (!ApplyDynamicTransforms(x)) {
+        continue;
       }
-    }
 
-  emit_token:
-    if (!ApplyDynamicTransforms(x)) {
-      goto func_entry;
+      return x;
     }
   } catch (StopException &) {
-    x = Token::EndOfFile();
+    return Token::EndOfFile();
   }
-
-  return x;
 }
 
 auto Sequencer::GetLocationFallback(ncc::lex::LocationID id)
@@ -241,7 +256,7 @@ auto Sequencer::SetFailBit(bool fail) -> bool {
 auto Sequencer::SetFetchFunc(FetchModuleFunc func) -> void {
   if (!func) {
     func = [](std::string_view) {
-      ncc::Log << SeqError << Debug << "No module fetch function provided";
+      Log << SeqError << Debug << "No module fetch function provided";
       return std::nullopt;
     };
   }
@@ -282,7 +297,7 @@ auto Sequencer::PImpl::FetchModuleData(std::string_view raw_module_name)
   auto jobid = std::string(m_env->Get("this.job").value());
   auto module_uri = GetFetchURI(module_name, jobid);
 
-  ncc::Log << SeqError << Debug << "Fetching module: '" << module_name << "'";
+  Log << SeqError << Debug << "Fetching module: '" << module_name << "'";
 
   qcore_assert(m_fetch_module);
 
@@ -290,7 +305,7 @@ auto Sequencer::PImpl::FetchModuleData(std::string_view raw_module_name)
     return module_content;
   }
 
-  ncc::Log << SeqError << "Import not found: '" << module_name << "'";
+  Log << SeqError << "Import not found: '" << module_name << "'";
 
   return std::nullopt;
 }
@@ -309,8 +324,8 @@ NCC_EXPORT auto ncc::seq::FileSystemFetchModule(std::string_view path)
   auto job_uuid = path.substr(0, 36);
   path.remove_prefix(37);
 
-  ncc::Log << Debug << "Opening file '" << path << "' on behalf of job '"
-           << job_uuid << "'";
+  Log << Debug << "Opening file '" << path << "' on behalf of job '" << job_uuid
+      << "'";
 
   /// TODO: Get the base directory of the project
 

@@ -39,10 +39,6 @@
 #include <regex>
 #include <string>
 
-extern "C" {
-#include <lua/lauxlib.h>
-}
-
 using namespace ncc::seq;
 
 static auto IsValidImportName(const std::string &name) -> bool {

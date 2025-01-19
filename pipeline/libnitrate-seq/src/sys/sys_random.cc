@@ -36,10 +36,6 @@
 #include <nitrate-core/Environment.hh>
 #include <nitrate-seq/Sequencer.hh>
 
-extern "C" {
-#include <lua/lauxlib.h>
-}
-
 using namespace ncc::seq;
 
 auto Sequencer::PImpl::SysRandom() -> int {

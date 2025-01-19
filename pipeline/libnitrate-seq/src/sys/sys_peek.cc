@@ -35,14 +35,10 @@
 #include <nitrate-lexer/Scanner.hh>
 #include <nitrate-seq/Sequencer.hh>
 
-extern "C" {
-#include <lua/lauxlib.h>
-}
-
 using namespace ncc::lex;
 using namespace ncc::seq;
 
-auto Sequencer::PImpl::SysPeek() const -> int {
+auto Sequencer::PImpl::SysPeek() -> int {
   /// TODO: Implement function
   qcore_implement();
 }

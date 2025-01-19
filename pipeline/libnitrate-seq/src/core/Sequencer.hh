@@ -35,6 +35,7 @@
 #define __QPREP_QCALL_LIST_HH__
 
 #include <cstdint>
+#include <list>
 #include <nitrate-seq/EC.hh>
 #include <nitrate-seq/Sequencer.hh>
 #include <random>
@@ -73,26 +74,70 @@ namespace ncc::seq {
   private:
     ///=========================================================================
 
-    [[nodiscard]] auto SysNext() const -> int;
-    [[nodiscard]] auto SysPeek() const -> int;
-    [[nodiscard]] auto SysEmit() const -> int;
-    [[nodiscard]] auto SysDebug() const -> int;
-    [[nodiscard]] auto SysInfo() const -> int;
-    [[nodiscard]] auto SysWarn() const -> int;
-    [[nodiscard]] auto SysError() const -> int;
-    [[nodiscard]] auto SysAbort() const -> int;
-    [[nodiscard]] auto SysFatal() const -> int;
-    [[nodiscard]] auto SysGet() const -> int;
-    [[nodiscard]] auto SysSet() const -> int;
-    [[nodiscard]] auto SysCtrl() const -> int;
-    [[nodiscard]] auto SysFetch() -> int;
-    [[nodiscard]] auto SysRandom() -> int;
-    [[nodiscard]] auto SysDefer() -> int;
+    [[nodiscard]] auto SysNext() -> int32_t;
+    [[nodiscard]] auto SysPeek() -> int32_t;
+    [[nodiscard]] auto SysEmit() -> int32_t;
+    [[nodiscard]] auto SysDebug() -> int32_t;
+    [[nodiscard]] auto SysInfo() -> int32_t;
+    [[nodiscard]] auto SysWarn() -> int32_t;
+    [[nodiscard]] auto SysError() -> int32_t;
+    [[nodiscard]] auto SysAbort() -> int32_t;
+    [[nodiscard]] auto SysFatal() -> int32_t;
+    [[nodiscard]] auto SysGet() -> int32_t;
+    [[nodiscard]] auto SysSet() -> int32_t;
+    [[nodiscard]] auto SysCtrl() -> int32_t;
+    [[nodiscard]] auto SysFetch() -> int32_t;
+    [[nodiscard]] auto SysRandom() -> int32_t;
+    [[nodiscard]] auto SysDefer() -> int32_t;
 
     ///=========================================================================
 
-    void BindLuaAPI() const {
+    using MethodType = int (ncc::seq::Sequencer::PImpl::*)();
+
+    std::list<MethodType> m_captures;
+
+    void BindMethod(const char* name, MethodType func) {
+      m_captures.push_back(func);
+      MethodType& func_ref = m_captures.back();
+
+      lua_pushinteger(m_L, (lua_Integer)(uintptr_t)this);
+      lua_pushinteger(m_L, (lua_Integer)(uintptr_t)&func_ref);
+
+      lua_pushcclosure(
+          m_L,
+          [](lua_State* lua) -> int {
+            auto& self = *(PImpl*)(lua_tointeger(lua, lua_upvalueindex(1)));
+            auto& func =
+                *(MethodType*)(lua_tointeger(lua, lua_upvalueindex(2)));
+
+            return (self.*func)();
+          },
+          2);
+
+      lua_setfield(m_L, -2, name);
+    }
+
+    void BindLuaAPI() {
       lua_newtable(m_L);
+
+      BindMethod("next", &PImpl::SysNext);
+      BindMethod("peek", &PImpl::SysPeek);
+      BindMethod("emit", &PImpl::SysEmit);
+
+      BindMethod("debug", &PImpl::SysDebug);
+      BindMethod("info", &PImpl::SysInfo);
+      BindMethod("warn", &PImpl::SysWarn);
+      BindMethod("error", &PImpl::SysError);
+      BindMethod("abort", &PImpl::SysAbort);
+      BindMethod("fatal", &PImpl::SysFatal);
+
+      BindMethod("get", &PImpl::SysGet);
+      BindMethod("set", &PImpl::SysSet);
+
+      BindMethod("ctrl", &PImpl::SysCtrl);
+      BindMethod("fetch", &PImpl::SysFetch);
+      BindMethod("random", &PImpl::SysRandom);
+      BindMethod("defer", &PImpl::SysDefer);
 
       // for (auto func : SYS_FUNCTIONS) {
       //   lua_pushinteger(m_L, (lua_Integer)(uintptr_t)this);
@@ -119,6 +164,11 @@ namespace ncc::seq {
     }
 
   public:
+    PImpl(std::shared_ptr<Environment> env, std::istream& scanner);
+    PImpl(const PImpl&) = delete;
+    PImpl(PImpl&&) = delete;
+    ~PImpl();
+
     auto FetchModuleData(std::string_view module_name)
         -> std::optional<std::string>;
 
@@ -152,9 +202,6 @@ namespace ncc::seq {
 
       return "";
     }
-
-    PImpl(std::shared_ptr<Environment> env, std::istream& scanner);
-    ~PImpl();
   };
 };  // namespace ncc::seq
 

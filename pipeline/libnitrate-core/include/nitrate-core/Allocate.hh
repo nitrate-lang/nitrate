@@ -41,7 +41,8 @@ namespace ncc {
   public:
     virtual ~IMemory() = default;
 
-    virtual auto Alloc(size_t size, size_t align = kDefaultAlignment) -> void * = 0;
+    virtual auto Alloc(size_t size,
+                       size_t align = kDefaultAlignment) -> void * = 0;
 
     static constexpr size_t kDefaultAlignment = 16;
   };
@@ -69,7 +70,8 @@ namespace ncc {
       return *this;
     }
 
-    auto Alloc(size_t size, size_t align = kDefaultAlignment) -> void * override;
+    auto Alloc(size_t size,
+               size_t align = kDefaultAlignment) -> void * override;
   };
 }  // namespace ncc
 

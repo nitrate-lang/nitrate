@@ -34,10 +34,6 @@
 #include <core/Sequencer.hh>
 #include <nitrate-seq/Sequencer.hh>
 
-extern "C" {
-#include <lua/lauxlib.h>
-}
-
 using namespace ncc::seq;
 using namespace ncc::lex;
 

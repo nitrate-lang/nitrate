@@ -229,8 +229,8 @@ namespace ncc {
   using FlowPtr = flowptr_detail::FlowPtr<Pointee, Tracking>;
 
   template <class Pointee, class Tracking = DefaultTracking>
-  constexpr auto MakeFlowPtr(
-      Pointee *ptr, Tracking tracking = Tracking()) -> FlowPtr<Pointee, Tracking> {
+  constexpr auto MakeFlowPtr(Pointee *ptr, Tracking tracking = Tracking())
+      -> FlowPtr<Pointee, Tracking> {
     return FlowPtr<Pointee, Tracking>(ptr, std::move(tracking));
   }
 }  // namespace ncc
@@ -238,7 +238,8 @@ namespace ncc {
 namespace std {
   template <class Pointee, class Tracking>
   struct hash<ncc::FlowPtr<Pointee, Tracking>> {
-    auto operator()(const ncc::FlowPtr<Pointee, Tracking> &ptr) const -> size_t {
+    auto operator()(const ncc::FlowPtr<Pointee, Tracking> &ptr) const
+        -> size_t {
       return std::hash<Pointee *>()(ptr.get());
     }
   };

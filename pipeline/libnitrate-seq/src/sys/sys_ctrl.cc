@@ -35,13 +35,9 @@
 #include <nitrate-core/Logger.hh>
 #include <nitrate-seq/Sequencer.hh>
 
-extern "C" {
-#include <lua/lauxlib.h>
-}
-
 using namespace ncc::seq;
 
-auto Sequencer::PImpl::SysCtrl() const -> int {
+auto Sequencer::PImpl::SysCtrl() -> int {
   auto nargs = lua_gettop(m_L);
   if (nargs < 1) {
     return luaL_error(m_L, "expected at least 1 argument, got %d", nargs);

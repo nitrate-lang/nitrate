@@ -36,8 +36,8 @@
 
 using namespace ncc;
 
-auto ECBase::LoadDetailsFromFile(
-    std::string_view path) -> std::optional<ECBase::ECDetails> {
+auto ECBase::LoadDetailsFromFile(std::string_view path)
+    -> std::optional<ECBase::ECDetails> {
   /// TODO: Load details from file
   return std::nullopt;
 }

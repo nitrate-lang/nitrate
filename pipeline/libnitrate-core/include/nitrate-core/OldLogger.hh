@@ -122,7 +122,9 @@ static inline auto QCoreWritef(const char *fmt, ...) -> int {
   return ret;
 }
 
-static inline auto QCoreWrite(const char *msg) -> int { return QCoreWritef("%s", msg); }
+static inline auto QCoreWrite(const char *msg) -> int {
+  return QCoreWritef("%s", msg);
+}
 
 #define qcore_logf(_lvl, ...) \
   do {                        \
