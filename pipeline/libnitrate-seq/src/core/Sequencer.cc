@@ -61,17 +61,25 @@ public:
   }
 };
 
-Sequencer::PImpl::PImpl(std::shared_ptr<Environment> env, std::istream &scanner,
+Sequencer::PImpl::PImpl(std::shared_ptr<Environment> env,
                         std::function<void()> on_error)
     : m_random(0),
-      m_scanner(lex::Tokenizer(scanner, env)),
       m_buffer({}),
       m_defer({}),
       m_env(std::move(env)),
-      m_fetch_module(nullptr),
+      m_fetch_module([](std::string_view) {
+        Log << SeqError << Debug << "No module fetch function provided";
+        return std::nullopt;
+      }),
       m_L(luaL_newstate()),
       m_depth(0),
       m_on_error(std::move(on_error)) {
+  if (m_L == nullptr) {
+    Log << SeqError << "Failed to create Lua state";
+    m_on_error();
+    return;
+  }
+
   LoadLuaLibs();
   BindLuaAPI();
 }
@@ -80,11 +88,10 @@ Sequencer::PImpl::~PImpl() { lua_close(m_L); }
 
 Sequencer::Sequencer(std::istream &file, std::shared_ptr<ncc::Environment> env,
                      bool is_root)
-    : ncc::lex::IScanner(std::move(env)) {
+    : ncc::lex::IScanner(env), m_scanner(file, std::move(env)) {
   if (is_root) {
-    m_core = std::make_shared<PImpl>(m_env, file, [this]() { SetFailBit(); });
+    m_core = std::make_shared<PImpl>(m_env, [this]() { SetFailBit(); });
 
-    SetFetchFunc(nullptr);
     SequenceSource(CodePrefix);
   }
 }
@@ -127,9 +134,9 @@ auto Sequencer::GetNext() -> Token {
         x = m_core->m_buffer.front();
         m_core->m_buffer.pop_front();
       } else {
-        x = m_core->m_scanner.Next();
+        x = m_scanner.Next();
 
-        SetFailBit(HasError() || m_core->m_scanner.HasError());
+        SetFailBit(HasError() || m_scanner.HasError());
       }
 
       switch (x.GetKind()) {
@@ -147,9 +154,9 @@ auto Sequencer::GetNext() -> Token {
 
         case Name: {
           if (x.GetString() == "import") {
-            auto import_name = m_core->m_scanner.Next().GetString();
+            auto import_name = m_scanner.Next().GetString();
 
-            if (m_core->m_scanner.Next().is<PuncSemi>()) {
+            if (m_scanner.Next().is<PuncSemi>()) {
               if (auto content = m_core->FetchModuleData(import_name.Get())) {
                 SequenceSource(content.value());
                 continue;
@@ -211,7 +218,7 @@ auto Sequencer::GetNext() -> Token {
 
 auto Sequencer::GetLocationFallback(ncc::lex::LocationID id)
     -> std::optional<ncc::lex::Location> {
-  return m_core->m_scanner.GetLocation(id);
+  return m_scanner.GetLocation(id);
 }
 
 auto Sequencer::ApplyDynamicTransforms(Token last) -> bool {
@@ -238,14 +245,14 @@ auto Sequencer::ApplyDynamicTransforms(Token last) -> bool {
 }
 
 auto Sequencer::HasError() const -> bool {
-  return IScanner::HasError() || m_core->m_scanner.HasError();
+  return IScanner::HasError() || m_scanner.HasError();
 }
 
 auto Sequencer::SetFailBit(bool fail) -> bool {
   auto old = HasError();
 
   IScanner::SetFailBit(fail);
-  m_core->m_scanner.SetFailBit(fail);
+  m_scanner.SetFailBit(fail);
 
   return old;
 }
@@ -263,7 +270,7 @@ auto Sequencer::SetFetchFunc(FetchModuleFunc func) -> void {
 
 auto Sequencer::GetSourceWindow(Point start, Point end, char fillchar)
     -> std::optional<std::vector<std::string>> {
-  return m_core->m_scanner.GetSourceWindow(start, end, fillchar);
+  return m_scanner.GetSourceWindow(start, end, fillchar);
 }
 
 static auto GetFetchURI(const std::string &module_name,

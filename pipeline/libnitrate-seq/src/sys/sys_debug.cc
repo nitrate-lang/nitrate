@@ -48,5 +48,5 @@ auto Sequencer::PImpl::SysDebug() -> int {
 
   ncc::Log << Debug << ec::SeqError << ss.str();
 
-  throw StopException();
+  return 0;
 }

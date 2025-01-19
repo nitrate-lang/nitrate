@@ -64,7 +64,6 @@ namespace ncc::seq {
   class Sequencer::PImpl final {
   public:
     std::mt19937 m_random;
-    ncc::lex::Tokenizer m_scanner;
     std::deque<ncc::lex::Token> m_buffer;
     std::vector<DeferCallback> m_defer;
     std::shared_ptr<Environment> m_env;
@@ -163,8 +162,7 @@ namespace ncc::seq {
     }
 
   public:
-    PImpl(std::shared_ptr<Environment> env, std::istream& scanner,
-          std::function<void()> on_error);
+    PImpl(std::shared_ptr<Environment> env, std::function<void()> on_error);
     PImpl(const PImpl&) = delete;
     PImpl(PImpl&&) = delete;
     ~PImpl();

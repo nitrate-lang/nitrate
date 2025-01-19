@@ -56,6 +56,7 @@ namespace ncc::seq {
   public:
     class PImpl;
 
+    ncc::lex::Tokenizer m_scanner;
     std::shared_ptr<PImpl> m_core;
 
     void SequenceSource(std::string_view code);

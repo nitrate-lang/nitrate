@@ -47,8 +47,7 @@ namespace ncc {
 
     virtual auto Contains(std::string_view key) -> bool = 0;
     virtual auto Get(string key) -> std::optional<string> = 0;
-    virtual void Set(string key, std::optional<string> value,
-                     bool privset = false) = 0;
+    virtual void Set(string key, std::optional<string> value) = 0;
   };
 
   class NCC_EXPORT Environment final : public IEnvironment {
@@ -67,8 +66,7 @@ namespace ncc {
 
     auto Contains(std::string_view key) -> bool override;
     auto Get(string key) -> std::optional<string> override;
-    void Set(string key, std::optional<string> value,
-             bool privset = false) override;
+    void Set(string key, std::optional<string> value) override;
 
     auto GetKeys() const { return m_data | std::ranges::views::keys; }
   };

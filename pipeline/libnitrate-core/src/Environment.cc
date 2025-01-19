@@ -35,9 +35,9 @@
 #include <boost/uuid/uuid_generators.hpp>
 #include <boost/uuid/uuid_io.hpp>
 #include <chrono>
-#include <iostream>
 #include <nitrate-core/Environment.hh>
 #include <nitrate-core/Macro.hh>
+#include <sstream>
 
 using namespace ncc;
 
@@ -55,17 +55,27 @@ void Environment::SetupDefaultKeys() {
 }
 
 auto Environment::Contains(std::string_view key) -> bool {
-  return m_data.contains(string(key));
+  return m_data.contains(key) || key == "this.keys";
 }
 
 auto Environment::Get(string key) -> std::optional<string> {
+  if (key == "this.keys") {
+    std::stringstream keys;
+    for (auto const &[k, _] : m_data) {
+      keys << k->size() << " " << k;
+    }
+
+    return keys.str();
+  }
+
   if (auto it = m_data.find(key); it != m_data.end()) {
     return it->second;
   }
+
   return std::nullopt;
 }
 
-void Environment::Set(string key, std::optional<string> value, bool) {
+void Environment::Set(string key, std::optional<string> value) {
   if (value.has_value()) {
     m_data.insert_or_assign(key, *value);
   } else {
