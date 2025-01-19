@@ -96,20 +96,23 @@ public:
 
     m_map.set_empty_key("");
     m_data.reserve(kInitSize);
+
+    // Insert the empty string for index 0
+    m_data.emplace_back(FromStr(""));
   }
 
   ~MemoryConservedStorage() override { Reset(); }
 
   [[nodiscard]] auto Get(uint64_t id) -> CStringView override {
-    assert(id != 0);
-
     ConditionalLockGuard lock(m_lock);
 
     return id < m_data.size() ? FromVec(m_data[id]) : CStringView();
   }
 
   auto FromString(std::string_view str) -> uint64_t override {
-    assert(!str.empty());
+    if (str.empty()) {
+      return 0;
+    }
 
     ConditionalLockGuard lock(m_lock);
 
@@ -126,7 +129,9 @@ public:
   }
 
   auto FromString(std::string&& str) -> uint64_t override {
-    assert(!str.empty());
+    if (str.empty()) {
+      return 0;
+    }
 
     ConditionalLockGuard lock(m_lock);
 
@@ -195,13 +200,14 @@ public:
 
     m_data.reserve(kInitSize);
     m_buffered.reserve(kInitSize);
+
+    // Insert the empty string for index 0
+    m_data.emplace_back();
   }
 
   ~FastStorage() override { Reset(); }
 
   [[nodiscard]] auto Get(uint64_t id) -> CStringView override {
-    assert(id != 0);
-
     ConditionalLockGuard lock(m_lock);
 
     if (!IsValidId(id)) [[unlikely]] {
@@ -212,8 +218,6 @@ public:
   }
 
   auto FromString(std::string_view str) -> uint64_t override {
-    assert(!str.empty());
-
     ConditionalLockGuard lock(m_lock);
     m_buffered.emplace_back(str);
 
@@ -221,8 +225,6 @@ public:
   }
 
   auto FromString(std::string&& str) -> uint64_t override {
-    assert(!str.empty());
-
     ConditionalLockGuard lock(m_lock);
     m_buffered.emplace_back(std::move(str));
 
@@ -230,10 +232,6 @@ public:
   }
 
   [[nodiscard]] auto CompareEq(uint64_t a, uint64_t b) -> bool override {
-    if (a == b) {
-      return true;
-    }
-
     ConditionalLockGuard lock(m_lock);
 
     if (!IsValidId(a) || !IsValidId(b)) [[unlikely]] {
@@ -244,10 +242,6 @@ public:
   }
 
   [[nodiscard]] auto CompareLt(uint64_t a, uint64_t b) -> bool override {
-    if (a == b) {
-      return false;
-    }
-
     ConditionalLockGuard lock(m_lock);
 
     if (!IsValidId(a) || !IsValidId(b)) [[unlikely]] {
@@ -282,7 +276,7 @@ auto String::Get() const -> CStringView {
 }
 
 auto String::operator==(const String& o) const -> bool {
-  if (m_id == 0 && o.m_id == 0) {
+  if (m_id == o.m_id) {
     return true;
   }
 
@@ -290,7 +284,7 @@ auto String::operator==(const String& o) const -> bool {
 }
 
 auto String::operator<(const String& o) const -> bool {
-  if (m_id == 0 && o.m_id == 0) {
+  if (m_id == o.m_id) {
     return false;
   }
 

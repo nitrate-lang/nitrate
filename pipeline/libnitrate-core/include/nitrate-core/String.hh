@@ -66,10 +66,7 @@ namespace ncc {
   class NCC_EXPORT StringMemory {
     friend class String;
 
-    /* assert(!str.empty()) */
     static auto FromString(std::string_view str) -> uint64_t;
-
-    /* assert(!str.empty()) */
     static auto FromString(std::string &&str) -> uint64_t;
 
   public:
