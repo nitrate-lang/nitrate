@@ -31,12 +31,30 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <core/Sequencer.hh>
 #include <nitrate-seq/Sequencer.hh>
+
+extern "C" {
+#include <lua/lauxlib.h>
+}
 
 using namespace ncc::seq;
 
-auto Sequencer::PImpl::SysEmit() -> int {
-  /// TODO: Implement function
-  qcore_implement();
+auto Sequencer::SysEmit() -> int {
+  auto *lua = m_shared->m_L;
+
+  auto nargs = lua_gettop(lua);
+  if (nargs != 1) {
+    return luaL_error(lua, "expected 1 argument, got %d", nargs);
+  }
+
+  if (lua_isstring(lua, 1) == 0) {
+    return luaL_error(lua, "expected string, got %s",
+                      lua_typename(lua, lua_type(lua, 1)));
+  }
+
+  std::string_view code(lua_tostring(lua, 1));
+
+  SequenceSource(code);
+
+  return 0;
 }

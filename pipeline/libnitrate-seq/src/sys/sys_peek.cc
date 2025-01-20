@@ -31,14 +31,19 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <core/Sequencer.hh>
-#include <nitrate-lexer/Scanner.hh>
 #include <nitrate-seq/Sequencer.hh>
+
+extern "C" {
+#include <lua/lauxlib.h>
+}
 
 using namespace ncc::lex;
 using namespace ncc::seq;
 
-auto Sequencer::PImpl::SysPeek() -> int {
-  /// TODO: Implement function
-  qcore_implement();
+void PushTokenObject(lua_State* lua, Token tok);
+
+auto Sequencer::SysPeek() -> int32_t {
+  PushTokenObject(m_shared->m_L, Peek());
+
+  return 1;
 }

@@ -31,28 +31,31 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <core/Sequencer.hh>
-#include <nitrate-core/Environment.hh>
-#include <nitrate-core/Macro.hh>
 #include <nitrate-seq/Sequencer.hh>
+
+extern "C" {
+#include <lua/lauxlib.h>
+}
 
 using namespace ncc::seq;
 
-auto Sequencer::PImpl::SysGet() -> int {
-  auto nargs = lua_gettop(m_L);
+auto Sequencer::SysGet() -> int {
+  auto *lua = m_shared->m_L;
+
+  auto nargs = lua_gettop(lua);
   if (nargs != 1) {
-    return luaL_error(m_L, "expected 1 argument, got %d", nargs);
+    return luaL_error(lua, "expected 1 argument, got %d", nargs);
   }
 
-  if (lua_isstring(m_L, 1) == 0) {
-    return luaL_error(m_L, "expected string, got %s",
-                      lua_typename(m_L, lua_type(m_L, 1)));
+  if (lua_isstring(lua, 1) == 0) {
+    return luaL_error(lua, "expected string, got %s",
+                      lua_typename(lua, lua_type(lua, 1)));
   }
 
-  if (auto value = m_env->Get(lua_tostring(m_L, 1))) {
-    lua_pushstring(m_L, std::string(*value).c_str());
+  if (auto value = m_env->Get(lua_tostring(lua, 1))) {
+    lua_pushstring(lua, std::string(*value).c_str());
   } else {
-    lua_pushnil(m_L);
+    lua_pushnil(lua);
   }
 
   return 1;

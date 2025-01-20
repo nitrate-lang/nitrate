@@ -31,14 +31,62 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <core/Sequencer.hh>
-#include <nitrate-lexer/Scanner.hh>
 #include <nitrate-seq/Sequencer.hh>
+
+extern "C" {
+#include <lua/lauxlib.h>
+}
 
 using namespace ncc::lex;
 using namespace ncc::seq;
 
-auto Sequencer::PImpl::SysNext() -> int {
-  /// TODO: Implement function
-  qcore_implement();
+void PushTokenObject(lua_State* lua, Token tok) {
+  lua_newtable(lua);
+
+  lua_pushstring(lua, "ty");
+  lua_pushstring(lua, to_string(tok.GetKind())->c_str());
+  lua_settable(lua, -3);
+
+  lua_pushstring(lua, "v");
+  switch (tok.GetKind()) {
+    case EofF: {
+      lua_pushstring(lua, "");
+      break;
+    }
+
+    case KeyW: {
+      lua_pushstring(lua, kw_repr(tok.GetKeyword()));
+      break;
+    }
+
+    case Oper: {
+      lua_pushstring(lua, op_repr(tok.GetOperator()));
+      break;
+    }
+
+    case Punc: {
+      lua_pushstring(lua, punct_repr(tok.GetPunctor()));
+      break;
+    }
+
+    case IntL:
+    case NumL:
+    case Text:
+    case Char:
+    case Name:
+    case MacB:
+    case Macr:
+    case Note: {
+      lua_pushstring(lua, tok.GetString()->c_str());
+      break;
+    }
+  }
+
+  lua_settable(lua, -3);
+}
+
+auto Sequencer::SysNext() -> int32_t {
+  PushTokenObject(m_shared->m_L, Next());
+
+  return 1;
 }

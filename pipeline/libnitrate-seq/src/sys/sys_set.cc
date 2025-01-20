@@ -31,42 +31,46 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <core/Sequencer.hh>
-#include <nitrate-core/Environment.hh>
 #include <nitrate-seq/Sequencer.hh>
+
+extern "C" {
+#include <lua/lauxlib.h>
+}
 
 using namespace ncc::seq;
 
 static const std::vector<std::string_view> IMMUTABLE_NAMESPACES = {"this."};
 
-auto Sequencer::PImpl::SysSet() -> int {
-  auto nargs = lua_gettop(m_L);
+auto Sequencer::SysSet() -> int {
+  auto *lua = m_shared->m_L;
+
+  auto nargs = lua_gettop(lua);
   if (nargs != 2) {
-    return luaL_error(m_L, "expected 2 arguments, got %d", nargs);
+    return luaL_error(lua, "expected 2 arguments, got %d", nargs);
   }
 
-  if (lua_isstring(m_L, 1) == 0) {
-    return luaL_error(m_L, "expected string, got %s",
-                      lua_typename(m_L, lua_type(m_L, 1)));
+  if (lua_isstring(lua, 1) == 0) {
+    return luaL_error(lua, "expected string, got %s",
+                      lua_typename(lua, lua_type(lua, 1)));
   }
 
-  std::string_view key = lua_tostring(m_L, 1);
+  std::string_view key = lua_tostring(lua, 1);
 
   bool illegal_set =
       std::any_of(IMMUTABLE_NAMESPACES.begin(), IMMUTABLE_NAMESPACES.end(),
                   [&key](auto ns) { return key.starts_with(ns); });
 
   if (illegal_set) {
-    return luaL_error(m_L, "cannot set items in immutable namespace");
+    return luaL_error(lua, "cannot set items in immutable namespace");
   }
 
-  if (lua_isnil(m_L, 2)) {
+  if (lua_isnil(lua, 2)) {
     m_env->Set(key, std::nullopt);
   } else {
-    m_env->Set(key, lua_tostring(m_L, 2));
+    m_env->Set(key, lua_tostring(lua, 2));
   }
 
-  lua_pushvalue(m_L, 2);
+  lua_pushvalue(lua, 2);
 
   return 1;
 }

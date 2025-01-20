@@ -31,28 +31,32 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <core/Sequencer.hh>
-#include <nitrate-core/Logger.hh>
 #include <nitrate-seq/Sequencer.hh>
+
+extern "C" {
+#include <lua/lauxlib.h>
+}
 
 using namespace ncc::seq;
 
-auto Sequencer::PImpl::SysCtrl() -> int {
-  auto nargs = lua_gettop(m_L);
+auto Sequencer::SysCtrl() -> int {
+  auto *lua = m_shared->m_L;
+
+  auto nargs = lua_gettop(lua);
   if (nargs < 1) {
-    return luaL_error(m_L, "expected at least 1 argument, got %d", nargs);
+    return luaL_error(lua, "expected at least 1 argument, got %d", nargs);
   }
 
-  if (lua_isnumber(m_L, 1) == 0) {
-    return luaL_error(m_L, "expected number, got %s",
-                      lua_typename(m_L, lua_type(m_L, 1)));
+  if (lua_isnumber(lua, 1) == 0) {
+    return luaL_error(lua, "expected number, got %s",
+                      lua_typename(lua, lua_type(lua, 1)));
   }
 
-  auto id = lua_tointeger(m_L, 1);
+  auto id = lua_tointeger(lua, 1);
 
   ncc::Log << Debug << "sys_ctrl: " << id << " not implemented";
 
-  lua_pushnil(m_L);
+  lua_pushnil(lua);
 
   return 1;
 }

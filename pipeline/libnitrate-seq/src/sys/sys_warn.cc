@@ -31,19 +31,22 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <core/Sequencer.hh>
-#include <cstdio>
-#include <nitrate-core/Environment.hh>
 #include <nitrate-seq/Sequencer.hh>
+
+extern "C" {
+#include <lua/lauxlib.h>
+}
 
 using namespace ncc::seq;
 
-auto Sequencer::PImpl::SysWarn() -> int {
+auto Sequencer::SysWarn() -> int {
+  auto *lua = m_shared->m_L;
+
   std::stringstream ss;
 
-  auto top = lua_gettop(m_L);
+  auto top = lua_gettop(lua);
   for (auto i = 1; i <= top; i++) {
-    ss << lua_tostring(m_L, i) << " ";
+    ss << lua_tostring(lua, i) << " ";
   }
 
   ncc::Log << Warning << ec::SeqError << ss.str();

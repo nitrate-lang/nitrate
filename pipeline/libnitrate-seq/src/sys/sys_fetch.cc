@@ -31,13 +31,12 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <algorithm>
-#include <core/Sequencer.hh>
-#include <nitrate-core/Environment.hh>
 #include <nitrate-seq/Sequencer.hh>
-#include <optional>
 #include <regex>
-#include <string>
+
+extern "C" {
+#include <lua/lauxlib.h>
+}
 
 using namespace ncc::seq;
 
@@ -60,28 +59,30 @@ static void CanonicalizeImportName(std::string &name) {
   std::transform(name.begin(), name.end(), name.begin(), ::tolower);
 }
 
-auto Sequencer::PImpl::SysFetch() -> int {
-  auto nargs = lua_gettop(m_L);
+auto Sequencer::SysFetch() -> int {
+  auto *lua = m_shared->m_L;
+
+  auto nargs = lua_gettop(lua);
   if (nargs != 1) {
-    return luaL_error(m_L, "expected 1 argument, got %d", nargs);
+    return luaL_error(lua, "expected 1 argument, got %d", nargs);
   }
 
-  if (lua_isstring(m_L, 1) == 0) {
-    return luaL_error(m_L, "expected string, got %s",
-                      lua_typename(m_L, lua_type(m_L, 1)));
+  if (lua_isstring(lua, 1) == 0) {
+    return luaL_error(lua, "expected string, got %s",
+                      lua_typename(lua, lua_type(lua, 1)));
   }
 
-  std::string import_name = lua_tostring(m_L, 1);
+  std::string import_name = lua_tostring(lua, 1);
   if (!IsValidImportName(import_name)) {
-    return luaL_error(m_L, "invalid import name");
+    return luaL_error(lua, "invalid import name");
   }
 
   CanonicalizeImportName(import_name);
 
   if (auto data = FetchModuleData(import_name)) {
-    lua_pushstring(m_L, data->c_str());
+    lua_pushstring(lua, data->c_str());
     return 1;
   }
 
-  return luaL_error(m_L, "failed to fetch module");
+  return luaL_error(lua, "failed to fetch module");
 }
