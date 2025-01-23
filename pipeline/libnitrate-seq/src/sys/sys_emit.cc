@@ -52,9 +52,7 @@ auto Sequencer::SysEmit() -> int {
                       lua_typename(lua, lua_type(lua, 1)));
   }
 
-  std::string_view code(lua_tostring(lua, 1));
-
-  SequenceSource(code);
+  SequenceSource(lua_tostring(lua, 1));
 
   return 0;
 }

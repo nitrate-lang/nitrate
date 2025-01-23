@@ -222,104 +222,108 @@ void Sequencer::SequenceSource(std::string_view code) {
   clone.m_shared = m_shared;
   clone.m_shared->m_depth = m_shared->m_depth + 1;
 
+  std::queue<Token> stack;
   Token tok;
+
   while ((tok = (clone.Next())).GetKind() != EofF) {
-    m_shared->m_buffer.push_back(tok);
+    stack.push(tok);
+  }
+
+  if (!stack.empty()) {
+    m_shared->m_emission.push(std::move(stack));
   }
 }
 
 auto Sequencer::GetNext() -> Token {
+  Token tok;
+
   try {
     RecursiveLimitGuard guard(m_shared->m_depth);
     if (guard.ShouldStop()) {
       Log << SeqError << "Maximum macro recursion depth reached, aborting";
-
       throw StopException();
     }
 
     while (true) {
-      Token x;
+      if (!m_shared->m_emission.empty()) {
+        tok = m_shared->m_emission.front().front();
+        m_shared->m_emission.front().pop();
 
-      if (!m_shared->m_buffer.empty()) {
-        x = m_shared->m_buffer.front();
-        m_shared->m_buffer.pop_front();
-      } else {
-        x = m_scanner.Next();
-
-        SetFailBit(HasError() || m_scanner.HasError());
-      }
-
-      switch (x.GetKind()) {
-        case EofF:
-        case KeyW:
-        case IntL:
-        case Text:
-        case Char:
-        case NumL:
-        case Oper:
-        case Punc:
-        case Note: {
-          break;
+        if (m_shared->m_emission.front().empty()) {
+          m_shared->m_emission.pop();
         }
+      } else {
+        tok = m_scanner.Next();
+        SetFailBit(HasError() || m_scanner.HasError());
 
-        case Name: {
-          if (x.GetString() == "import") {
-            auto import_name = m_scanner.Next().GetString();
+        switch (tok.GetKind()) {
+          case EofF:
+          case KeyW:
+          case IntL:
+          case Text:
+          case Char:
+          case NumL:
+          case Oper:
+          case Punc:
+          case Note: {
+            break;
+          }
 
-            if (m_scanner.Next().is<PuncSemi>()) {
-              if (auto content = FetchModuleData(import_name.Get())) {
-                SequenceSource(content.value());
-                continue;
+          case Name: {
+            if (tok.GetString() == "import") {
+              auto import_name = m_scanner.Next().GetString();
+
+              if (m_scanner.Next().is<PuncSemi>()) {
+                if (auto content = FetchModuleData(import_name.Get())) {
+                  SequenceSource(content.value());
+                  std::cout << "Looping" << std::endl;
+                  continue;
+                } /* Failed to fetch module */
+              } else { /* No semicolon after import name */
+                Log << SeqError << "Expected a semicolon after import name";
               }
 
+              tok = Token::EndOfFile();
               SetFailBit();
+            } /* Not an import macro */
+
+            break;
+          }
+
+          case MacB: {
+            if (auto result_data = ExecuteLua(tok.GetString().Get())) {
+              SequenceSource(result_data.value());
               continue;
-            }
+            } /* Failed to execute macro */
 
-            Log << SeqError << "Expected a semicolon after import name";
-
-            x = Token::EndOfFile();
+            tok = Token::EndOfFile();
             SetFailBit();
+
+            break;
           }
 
-          break;
-        }
+          case Macr: {
+            if (auto result_data =
+                    ExecuteLua((std::string(tok.GetString()) + "()").c_str())) {
+              SequenceSource(result_data.value());
+              continue;
+            } /* Failed to execute macro function call */
 
-        case MacB: {
-          if (auto result_data = ExecuteLua(x.GetString().Get())) {
-            SequenceSource(result_data.value());
-            continue;
+            tok = Token::EndOfFile();
+            SetFailBit();
+
+            break;
           }
-
-          x = Token::EndOfFile();
-          SetFailBit();
-
-          break;
-        }
-
-        case Macr: {
-          if (auto result_data =
-                  ExecuteLua((std::string(x.GetString()) + "()").c_str())) {
-            SequenceSource(result_data.value());
-            continue;
-          }
-
-          x = Token::EndOfFile();
-          SetFailBit();
-
-          break;
         }
       }
 
-      if (x.is(EofF)) {
-        return x;
-      }
-
-      return x;
+      break;
     }
   } catch (StopException &) {
-    return Token::EndOfFile();
+    tok = Token::EndOfFile();
   }
+
+  return tok;
 }
 
 auto Sequencer::GetLocationFallback(ncc::lex::LocationID id)
@@ -358,7 +362,6 @@ auto Sequencer::GetSourceWindow(Point start, Point end, char fillchar)
 
 Sequencer::SharedState::SharedState()
     : m_random(0),
-      m_buffer({}),
       m_fetch_module([](std::string_view) {
         Log << SeqError << Debug << "No module fetch function provided";
         return std::nullopt;

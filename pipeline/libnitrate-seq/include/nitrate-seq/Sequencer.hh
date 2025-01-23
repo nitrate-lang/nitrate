@@ -35,7 +35,6 @@
 #define __NITRATE_SEQ_HH__
 
 #include <cstdint>
-#include <deque>
 #include <functional>
 #include <list>
 #include <memory>
@@ -43,6 +42,7 @@
 #include <nitrate-lexer/Lexer.hh>
 #include <nitrate-seq/EC.hh>
 #include <optional>
+#include <queue>
 #include <random>
 #include <string_view>
 #include <vector>
@@ -57,18 +57,12 @@ namespace ncc::seq {
       -> std::optional<std::string>;
 
   class NCC_EXPORT Sequencer final : public ncc::lex::IScanner {
-    enum DeferOp : uint8_t {
-      EmitToken,
-      SkipToken,
-      UninstallHandler,
-    };
-
     using MethodType = int (ncc::seq::Sequencer::*)();
+    struct StopException {};
 
-    class StopException {};
     struct SharedState {
       std::mt19937 m_random;
-      std::deque<lex::Token> m_buffer;
+      std::queue<std::queue<lex::Token>> m_emission;
       FetchModuleFunc m_fetch_module;
       std::list<MethodType> m_captures;
       lua_State* m_L;
@@ -99,7 +93,6 @@ namespace ncc::seq {
     [[nodiscard]] auto SysCtrl() -> int32_t;
     [[nodiscard]] auto SysFetch() -> int32_t;
     [[nodiscard]] auto SysRandom() -> int32_t;
-    // [[nodiscard]] auto SysDefer() -> int32_t;
 
     ///=========================================================================
 

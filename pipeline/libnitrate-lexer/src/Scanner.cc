@@ -38,26 +38,7 @@
 using namespace ncc::lex;
 using namespace ncc::lex::detail;
 
-static constexpr size_t kTokenBufferSize = 1024;
-
-class IScanner::Impl {
-public:
-  static void FillTokenBuffer(IScanner &self) {
-    for (size_t i = 0; i < kTokenBufferSize; i++) {
-      try {
-        self.m_ready.push_back(self.GetNext());
-      } catch (ScannerEOF &) {
-        if (i == 0) {
-          self.m_eof = true;
-          for (size_t j = 0; j < kTokenBufferSize; j++) {
-            self.m_ready.push_back(Token::EndOfFile());
-          }
-        }
-        break;
-      }
-    }
-  }
-};
+class IScanner::Impl {};
 
 IScanner::IScanner(std::shared_ptr<Environment> env) : m_env(std::move(env)) {
   constexpr size_t kInitialLocationReserve = 0xffff;
@@ -75,43 +56,69 @@ auto IScanner::SetFailBit(bool fail) -> bool {
 }
 
 auto IScanner::Next() -> Token {
+  Token tok;
+
   while (true) {
-    if (m_ready.empty()) [[unlikely]] {
-      Impl::FillTokenBuffer(*this);
+    if (m_eof) [[unlikely]] {
+      tok = Token::EndOfFile();
+    } else {
+      try {
+        if (m_ready.empty()) {
+          tok = GetNext();
+        } else {
+          tok = m_ready.front();
+          m_ready.pop_front();
+        }
+
+        if (m_skip && tok.is(Note)) [[unlikely]] {
+          m_comments.push_back(tok);
+          continue;
+        }
+      } catch (ScannerEOF &) {
+        m_eof = true;
+        continue;
+      }
     }
 
-    auto tok = m_ready.front();
-    m_ready.pop_front();
-
-    if (m_skip && tok.is(Note)) [[unlikely]] {
-      m_comments.push_back(tok);
-      continue;
-    }
-
-    m_current = tok;
-
-    return tok;
+    break;
   }
+
+  m_current = tok;
+
+  return tok;
 }
 
 auto IScanner::Peek() -> Token {
+  Token tok;
+
   while (true) {
-    if (m_ready.empty()) [[unlikely]] {
-      Impl::FillTokenBuffer(*this);
+    if (m_eof) [[unlikely]] {
+      tok = Token::EndOfFile();
+    } else {
+      try {
+        if (m_ready.empty()) {
+          m_ready.push_back(GetNext());
+        }
+
+        tok = m_ready.front();
+
+        if (m_skip && tok.is(Note)) [[unlikely]] {
+          m_comments.push_back(tok);
+          m_ready.pop_front();
+          continue;
+        }
+      } catch (ScannerEOF &) {
+        m_eof = true;
+        continue;
+      }
     }
-
-    auto tok = m_ready.front();
-
-    if (m_skip && tok.is(Note)) [[unlikely]] {
-      m_comments.push_back(tok);
-      m_ready.pop_front();
-      continue;
-    }
-
-    m_current = tok;
-
-    return tok;
+    
+    break;
   }
+
+  m_current = tok;
+
+  return tok;
 }
 
 auto IScanner::Insert(Token tok) -> void {
