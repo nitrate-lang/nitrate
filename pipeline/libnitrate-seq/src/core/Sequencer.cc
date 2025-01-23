@@ -258,19 +258,19 @@ auto Sequencer::GetNext() -> Token {
 
         switch (tok.GetKind()) {
           case EofF:
-          case KeyW:
           case IntL:
           case Text:
           case Char:
           case NumL:
           case Oper:
           case Punc:
+          case Name:
           case Note: {
             break;
           }
 
-          case Name: {
-            if (tok.GetString() == "import") {
+          case KeyW: {
+            if (tok.GetKeyword() == Import) [[unlikely]] {
               auto import_name = m_scanner.Next().GetString();
 
               if (m_scanner.Next().is<PuncSemi>()) {
@@ -279,13 +279,13 @@ auto Sequencer::GetNext() -> Token {
                   std::cout << "Looping" << std::endl;
                   continue;
                 } /* Failed to fetch module */
-              } else { /* No semicolon after import name */
+              } else [[unlikely]] { /* No semicolon after import name */
                 Log << SeqError << "Expected a semicolon after import name";
               }
 
               tok = Token::EndOfFile();
               SetFailBit();
-            } /* Not an import macro */
+            }
 
             break;
           }

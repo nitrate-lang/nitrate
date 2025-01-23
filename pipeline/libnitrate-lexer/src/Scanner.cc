@@ -70,19 +70,22 @@ auto IScanner::Next() -> Token {
           m_ready.pop_front();
         }
 
+        /* Handle comment token buffering */
         if (m_skip && tok.is(Note)) [[unlikely]] {
           m_comments.push_back(tok);
           continue;
         }
+
+        /* EOF signal optimization */
       } catch (ScannerEOF &) {
-        m_eof = true;
-        continue;
+        tok = Token::EndOfFile();
       }
     }
 
     break;
   }
 
+  m_eof |= tok.is(EofF);
   m_current = tok;
 
   return tok;
@@ -102,20 +105,23 @@ auto IScanner::Peek() -> Token {
 
         tok = m_ready.front();
 
+        /* Handle comment token buffering */
         if (m_skip && tok.is(Note)) [[unlikely]] {
           m_comments.push_back(tok);
           m_ready.pop_front();
           continue;
         }
+
+        /* EOF signal optimization */
       } catch (ScannerEOF &) {
-        m_eof = true;
-        continue;
+        tok = Token::EndOfFile();
       }
     }
-    
+
     break;
   }
 
+  m_eof |= tok.is(EofF);
   m_current = tok;
 
   return tok;

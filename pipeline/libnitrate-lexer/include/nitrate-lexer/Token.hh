@@ -132,6 +132,7 @@ namespace ncc::lex {
     Pub,       /* 'pub' */
     Sec,       /* 'sec' */
     Pro,       /* 'pro' */
+    Import,    /* 'import' */
     Type,      /* 'type' */
     Let,       /* 'let' */
     Var,       /* 'var' */
@@ -370,6 +371,7 @@ namespace ncc::lex {
           {"pub", Pub},
           {"sec", Sec},
           {"pro", Pro},
+          {"import", Import},
           {"type", Type},
           {"let", Let},
           {"var", Var},

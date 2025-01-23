@@ -533,7 +533,7 @@ namespace no3::argparse_setup {
                                                   default_arguments::help);
 
     bench->AddArgument("-n", "--name")
-        .Choices("lexer", "parser", "nitrate-ir", "delta-ir", "llvm-ir",
+        .Choices("lexer", "sequencer", "parser", "nitrate-ir", "llvm-ir",
                  "llvm-codegen", "c11-codegen", "pipeline")
         .Help("name of benchmark to run");
 

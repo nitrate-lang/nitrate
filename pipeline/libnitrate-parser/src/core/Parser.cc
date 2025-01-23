@@ -164,6 +164,12 @@ auto Parser::PImpl::RecurseBlock(bool expect_braces, bool single_stmt,
           break;
         }
 
+        case Import: {
+          Log << SyntaxError << current()
+              << "Unexpected 'import' in block context";
+          break;
+        }
+
         case Keyword::Type: {
           r = RecurseTypedef();
           break;
