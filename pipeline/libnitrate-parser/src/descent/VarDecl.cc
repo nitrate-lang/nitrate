@@ -41,18 +41,18 @@ auto Parser::PImpl::RecurseVariableAttributes()
     -> std::optional<ExpressionList> {
   ExpressionList attributes;
 
-  if (!next_if(PuncLBrk)) {
+  if (!NextIf(PuncLBrk)) {
     return attributes;
   }
 
   while (true) {
-    if (next_if(EofF)) [[unlikely]] {
+    if (NextIf(EofF)) [[unlikely]] {
       Log << SyntaxError << current()
           << "Encountered EOF while parsing variable attribute";
       break;
     }
 
-    if (next_if(PuncRBrk)) {
+    if (NextIf(PuncRBrk)) {
       return attributes;
     }
 
@@ -63,14 +63,14 @@ auto Parser::PImpl::RecurseVariableAttributes()
 
     attributes.push_back(attribute);
 
-    next_if(PuncComa);
+    NextIf(PuncComa);
   }
 
   return std::nullopt;
 }
 
 auto Parser::PImpl::RecurseVariableType() -> NullableFlowPtr<parse::Type> {
-  if (next_if(PuncColn)) {
+  if (NextIf(PuncColn)) {
     return RecurseType();
   }
 
@@ -78,7 +78,7 @@ auto Parser::PImpl::RecurseVariableType() -> NullableFlowPtr<parse::Type> {
 }
 
 auto Parser::PImpl::RecurseVariableValue() -> NullableFlowPtr<Expr> {
-  if (next_if(OpSet)) {
+  if (NextIf(OpSet)) {
     return RecurseExpr({
         Token(Punc, PuncComa),
         Token(Punc, PuncSemi),
@@ -114,7 +114,7 @@ auto Parser::PImpl::RecurseVariable(VarDeclType decl_type)
   std::vector<FlowPtr<Stmt>> variables;
 
   while (true) {
-    if (next_if(EofF)) [[unlikely]] {
+    if (NextIf(EofF)) [[unlikely]] {
       Log << SyntaxError << current()
           << "Unexpected EOF in variable declaration";
       break;
@@ -127,11 +127,11 @@ auto Parser::PImpl::RecurseVariable(VarDeclType decl_type)
       break;
     }
 
-    if (next_if(PuncSemi)) {
+    if (NextIf(PuncSemi)) {
       return variables;
     }
 
-    if (!next_if(PuncComa)) {
+    if (!NextIf(PuncComa)) {
       Log << SyntaxError << current()
           << "Expected comma or semicolon after variable declaration";
       break;

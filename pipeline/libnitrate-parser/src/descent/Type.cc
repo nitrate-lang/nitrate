@@ -38,7 +38,7 @@ using namespace ncc::lex;
 using namespace ncc::parse;
 
 auto Parser::PImpl::RecurseTypeRangeStart() -> NullableFlowPtr<Expr> {
-  if (next_if(PuncColn)) {
+  if (NextIf(PuncColn)) {
     return std::nullopt;
   }
 
@@ -46,7 +46,7 @@ auto Parser::PImpl::RecurseTypeRangeStart() -> NullableFlowPtr<Expr> {
       Token(Punc, PuncColn),
   });
 
-  if (!next_if(PuncColn)) {
+  if (!NextIf(PuncColn)) {
     Log << SyntaxError << current() << "Expected ':' after range start";
   }
 
@@ -54,7 +54,7 @@ auto Parser::PImpl::RecurseTypeRangeStart() -> NullableFlowPtr<Expr> {
 }
 
 auto Parser::PImpl::RecurseTypeRangeEnd() -> NullableFlowPtr<Expr> {
-  if (next_if(PuncRBrk)) {
+  if (NextIf(PuncRBrk)) {
     return std::nullopt;
   }
 
@@ -62,7 +62,7 @@ auto Parser::PImpl::RecurseTypeRangeEnd() -> NullableFlowPtr<Expr> {
       Token(Punc, PuncRBrk),
   });
 
-  if (!next_if(PuncRBrk)) {
+  if (!NextIf(PuncRBrk)) {
     Log << SyntaxError << current() << "Expected ']' after range";
   }
 
@@ -70,7 +70,7 @@ auto Parser::PImpl::RecurseTypeRangeEnd() -> NullableFlowPtr<Expr> {
 }
 
 auto Parser::PImpl::RecurseTypeTemplateArguments() -> std::optional<CallArgs> {
-  if (!next_if(OpLT)) {
+  if (!NextIf(OpLT)) {
     return std::nullopt;
   }
 
@@ -82,10 +82,10 @@ auto Parser::PImpl::RecurseTypeTemplateArguments() -> std::optional<CallArgs> {
       },
       true);
 
-  if (next_if(OpGT)) {
-  } else if (next_if(OpRShift)) {
+  if (NextIf(OpGT)) {
+  } else if (NextIf(OpRShift)) {
     m_rd.Insert(Token(Oper, OpGT));
-  } else if (next_if(OpROTR)) {
+  } else if (NextIf(OpROTR)) {
     m_rd.Insert(Token(Oper, OpRShift));
   } else {
     Log << SyntaxError << current() << "Expected '>' after template arguments";
@@ -114,12 +114,12 @@ auto Parser::PImpl::RecurseTypeSuffix(FlowPtr<Type> base)
   std::pair<NullableFlowPtr<Expr>, NullableFlowPtr<Expr>> range;
   NullableFlowPtr<Expr> width;
 
-  if (next_if(PuncColn)) {
-    if (next_if(PuncLBrk)) {
+  if (NextIf(PuncColn)) {
+    if (NextIf(PuncLBrk)) {
       range.first = RecurseTypeRangeStart();
       range.second = RecurseTypeRangeEnd();
 
-      if (next_if(PuncColn)) {
+      if (NextIf(PuncColn)) {
         width = RecurseExpr(bit_width_terminaters);
       }
     } else {
@@ -131,7 +131,7 @@ auto Parser::PImpl::RecurseTypeSuffix(FlowPtr<Type> base)
   base->SetRangeEnd(range.second);
   base->SetWidth(width);
 
-  if (next_if(OpTernary)) {
+  if (NextIf(OpTernary)) {
     auto args = CallArgs{{"0", make<TypeExpr>(base)()}};
     auto opt_type =
         make<TemplType>(make<NamedTy>("__builtin_result")(), args)();
@@ -165,13 +165,13 @@ auto Parser::PImpl::RecurseFunctionType() -> FlowPtr<parse::Type> {
 }
 
 auto Parser::PImpl::RecurseOpaqueType() -> FlowPtr<parse::Type> {
-  if (!next_if(PuncLPar)) {
+  if (!NextIf(PuncLPar)) {
     Log << SyntaxError << current() << "Expected '(' after 'opaque'";
     return MockType();
   }
 
   if (auto name = RecurseName(); !name->empty()) {
-    if (next_if(PuncRPar)) {
+    if (NextIf(PuncRPar)) {
       auto opaque = make<OpaqueTy>(name)();
       opaque->SetOffset(current().GetStart());
 
@@ -243,7 +243,7 @@ auto Parser::PImpl::RecurseTypeByOperator(Operator op) -> FlowPtr<parse::Type> {
     }
 
     case OpComptime: {
-      if (!next_if(PuncLPar)) {
+      if (!NextIf(PuncLPar)) {
         Log << SyntaxError << current() << "Expected '(' after 'comptime'";
         return MockType();
       }
@@ -253,7 +253,7 @@ auto Parser::PImpl::RecurseTypeByOperator(Operator op) -> FlowPtr<parse::Type> {
                                           Token(Punc, PuncRPar),
                                       }))();
 
-      if (!next_if(PuncRPar)) {
+      if (!NextIf(PuncRPar)) {
         Log << SyntaxError << current() << "Expected ')' after 'comptime('";
       }
 
@@ -275,7 +275,7 @@ auto Parser::PImpl::RecurseArrayOrVector() -> FlowPtr<parse::Type> {
 
   auto first = RecurseType();
 
-  if (next_if(PuncRBrk)) {
+  if (NextIf(PuncRBrk)) {
     auto args = CallArgs{{"0", make<TypeExpr>(first)()}};
     auto vector = make<TemplType>(make<NamedTy>("__builtin_vec")(), args)();
 
@@ -284,7 +284,7 @@ auto Parser::PImpl::RecurseArrayOrVector() -> FlowPtr<parse::Type> {
     return vector;
   }
 
-  if (!next_if(PuncSemi)) {
+  if (!NextIf(PuncSemi)) {
     Log << SyntaxError << current()
         << "Expected ';' separator in array type before size";
   }
@@ -293,7 +293,7 @@ auto Parser::PImpl::RecurseArrayOrVector() -> FlowPtr<parse::Type> {
       Token(Punc, PuncRBrk),
   });
 
-  if (!next_if(PuncRBrk)) {
+  if (!NextIf(PuncRBrk)) {
     Log << SyntaxError << current() << "Expected ']' after array size";
   }
 
@@ -308,7 +308,7 @@ auto Parser::PImpl::RecurseSetType() -> FlowPtr<parse::Type> {
 
   auto set_type = RecurseType();
 
-  if (!next_if(PuncRCur)) {
+  if (!NextIf(PuncRCur)) {
     Log << SyntaxError << current() << "Expected '}' after set type";
   }
 
@@ -326,19 +326,19 @@ auto Parser::PImpl::RecurseTupleType() -> FlowPtr<parse::Type> {
   auto start = current().GetStart();
 
   while (true) {
-    if (next_if(EofF)) {
+    if (NextIf(EofF)) {
       Log << SyntaxError << current() << "Unexpected EOF in tuple type";
       return MockType();
     }
 
-    if (next_if(PuncRPar)) {
+    if (NextIf(PuncRPar)) {
       break;
     }
 
     auto type = RecurseType();
     items.push_back(type);
 
-    next_if(PuncComa);
+    NextIf(PuncComa);
   }
 
   auto tuple = make<TupleTy>(items)();

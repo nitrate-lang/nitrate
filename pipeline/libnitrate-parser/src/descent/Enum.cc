@@ -38,7 +38,7 @@ using namespace ncc::lex;
 using namespace ncc::parse;
 
 auto Parser::PImpl::RecurseEnumType() -> NullableFlowPtr<parse::Type> {
-  if (next_if(PuncColn)) {
+  if (NextIf(PuncColn)) {
     return RecurseType();
   }
 
@@ -52,7 +52,7 @@ auto Parser::PImpl::RecurseEnumItem() -> std::optional<EnumItem> {
     return std::nullopt;
   }
 
-  if (next_if(OpSet)) {
+  if (NextIf(OpSet)) {
     auto member_value = RecurseExpr({
         Token(Punc, PuncSemi),
         Token(Punc, PuncComa),
@@ -68,19 +68,19 @@ auto Parser::PImpl::RecurseEnumItem() -> std::optional<EnumItem> {
 auto Parser::PImpl::RecurseEnumItems() -> std::optional<EnumDefItems> {
   EnumDefItems items;
 
-  if (next_if(PuncSemi)) {
+  if (NextIf(PuncSemi)) {
     return items;
   }
 
-  if (next_if(PuncLCur)) {
+  if (NextIf(PuncLCur)) {
     while (true) {
-      if (next_if(EofF)) [[unlikely]] {
+      if (NextIf(EofF)) [[unlikely]] {
         Log << SyntaxError << current()
             << "Unexpected EOF encountered while parsing enum fields.";
         break;
       }
 
-      if (next_if(PuncRCur)) {
+      if (NextIf(PuncRCur)) {
         return items;
       }
 
@@ -90,9 +90,9 @@ auto Parser::PImpl::RecurseEnumItems() -> std::optional<EnumDefItems> {
         Log << SyntaxError << current() << "Failed to parse enum field.";
       }
 
-      next_if(PuncComa) || next_if(PuncSemi);
+      NextIf(PuncComa) || NextIf(PuncSemi);
     }
-  } else if (next_if(OpArrow)) {
+  } else if (NextIf(OpArrow)) {
     if (auto item = RecurseEnumItem()) {
       items.push_back(item.value());
       return items;

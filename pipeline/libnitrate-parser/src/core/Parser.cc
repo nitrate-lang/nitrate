@@ -38,7 +38,6 @@
 #include <nitrate-core/Logger.hh>
 #include <nitrate-core/Macro.hh>
 #include <nitrate-parser/AST.hh>
-#include <nitrate-parser/ASTReader.hh>
 #include <nitrate-parser/ASTWriter.hh>
 #include <nitrate-parser/Context.hh>
 
@@ -94,15 +93,15 @@ auto Parser::PImpl::RecurseBlock(bool expect_braces, bool single_stmt,
 
   while (true) {
     /* Ignore extra semicolons */
-    if (next_if(PuncSemi)) {
+    if (NextIf(PuncSemi)) {
       continue;
     }
 
     { /* Detect exit conditon */
-      bool should_break = (expect_braces && next_if(PuncRCur)) ||
+      bool should_break = (expect_braces && NextIf(PuncRCur)) ||
                           (single_stmt && statements.size() == 1);
 
-      if (!should_break && next_if(EofF)) {
+      if (!should_break && NextIf(EofF)) {
         if (expect_braces) {
           Log << SyntaxError << current() << "Expected '}'";
         }
@@ -126,7 +125,7 @@ auto Parser::PImpl::RecurseBlock(bool expect_braces, bool single_stmt,
           Token(Punc, PuncSemi),
       });
 
-      if (!next_if(PuncSemi)) {
+      if (!NextIf(PuncSemi)) {
         Log << SyntaxError << current()
             << "Expected ';' after statement expression";
       }
@@ -244,7 +243,7 @@ auto Parser::PImpl::RecurseBlock(bool expect_braces, bool single_stmt,
 
         case __FString: {
           r = make<ExprStmt>(RecurseFstring())();
-          if (!next_if(PuncSemi)) {
+          if (!NextIf(PuncSemi)) {
             Log << SyntaxError << current()
                 << "Expected ';' after f-string expression";
           }
@@ -315,7 +314,7 @@ auto Parser::PImpl::RecurseBlock(bool expect_braces, bool single_stmt,
 
         case Break: {
           r = make<BreakStmt>()();
-          if (!next_if(PuncSemi)) {
+          if (!NextIf(PuncSemi)) {
             Log << SyntaxError << current()
                 << "Expected ';' after 'break' statement";
           }
@@ -325,7 +324,7 @@ auto Parser::PImpl::RecurseBlock(bool expect_braces, bool single_stmt,
 
         case Continue: {
           r = make<ContinueStmt>()();
-          if (!next_if(PuncSemi)) {
+          if (!NextIf(PuncSemi)) {
             Log << SyntaxError << current()
                 << "Expected ';' after 'continue' statement";
           }
@@ -381,7 +380,7 @@ auto Parser::PImpl::RecurseBlock(bool expect_braces, bool single_stmt,
 
         case Undef: {
           r = make<ExprStmt>(make<ConstUndef>()())();
-          if (!next_if(PuncSemi)) {
+          if (!NextIf(PuncSemi)) {
             Log << SyntaxError << current()
                 << "Expected ';' after 'undef' statement";
           }
@@ -390,7 +389,7 @@ auto Parser::PImpl::RecurseBlock(bool expect_braces, bool single_stmt,
 
         case Null: {
           r = make<ExprStmt>(make<ConstNull>()())();
-          if (!next_if(PuncSemi)) {
+          if (!NextIf(PuncSemi)) {
             Log << SyntaxError << current()
                 << "Expected ';' after 'null' statement";
           }
@@ -399,7 +398,7 @@ auto Parser::PImpl::RecurseBlock(bool expect_braces, bool single_stmt,
 
         case True: {
           r = make<ExprStmt>(make<ConstBool>(true)())();
-          if (!next_if(PuncSemi)) {
+          if (!NextIf(PuncSemi)) {
             Log << SyntaxError << current()
                 << "Expected ';' after 'true' statement";
           }
@@ -408,7 +407,7 @@ auto Parser::PImpl::RecurseBlock(bool expect_braces, bool single_stmt,
 
         case False: {
           r = make<ExprStmt>(make<ConstBool>(false)())();
-          if (!next_if(PuncSemi)) {
+          if (!NextIf(PuncSemi)) {
             Log << SyntaxError << current()
                 << "Expected ';' after 'false' statement";
           }

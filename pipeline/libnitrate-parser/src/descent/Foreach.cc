@@ -40,7 +40,7 @@ using namespace ncc::parse;
 auto Parser::PImpl::RecurseForeachNames()
     -> std::optional<std::pair<string, string>> {
   if (auto name_a = RecurseName(); !name_a->empty()) [[likely]] {
-    if (next_if(PuncComa)) {
+    if (NextIf(PuncComa)) {
       if (auto name_b = RecurseName(); !name_b->empty()) [[likely]] {
         return std::make_pair(name_a, name_b);
       } else {
@@ -72,7 +72,7 @@ auto Parser::PImpl::RecurseForeachExpr(bool has_paren) -> FlowPtr<Expr> {
 }
 
 auto Parser::PImpl::RecurseForeachBody() -> FlowPtr<Stmt> {
-  if (next_if(OpArrow)) {
+  if (NextIf(OpArrow)) {
     return RecurseBlock(false, true, SafetyMode::Unknown);
   }
 
@@ -80,14 +80,14 @@ auto Parser::PImpl::RecurseForeachBody() -> FlowPtr<Stmt> {
 }
 
 auto Parser::PImpl::RecurseForeach() -> FlowPtr<Stmt> {
-  bool foreach_has_paren = next_if(PuncLPar).has_value();
+  bool foreach_has_paren = NextIf(PuncLPar).has_value();
 
   if (auto iter_names = RecurseForeachNames()) {
     auto [index_name, value_name] = iter_names.value();
 
-    if (next_if(OpIn)) [[likely]] {
+    if (NextIf(OpIn)) [[likely]] {
       auto iter_expr = RecurseForeachExpr(foreach_has_paren);
-      if (foreach_has_paren && !next_if(PuncRPar)) {
+      if (foreach_has_paren && !NextIf(PuncRPar)) {
         Log << SyntaxError << current() << "Expected ')' in foreach statement";
       }
 

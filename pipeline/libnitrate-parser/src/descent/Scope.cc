@@ -40,19 +40,19 @@ using namespace ncc::parse;
 auto Parser::PImpl::RecurseScopeDeps() -> std::optional<ScopeDeps> {
   ScopeDeps dependencies;
 
-  if (!next_if(PuncColn)) {
+  if (!NextIf(PuncColn)) {
     return dependencies;
   }
 
-  if (next_if(PuncLBrk)) [[likely]] {
+  if (NextIf(PuncLBrk)) [[likely]] {
     while (true) {
-      if (next_if(EofF)) [[unlikely]] {
+      if (NextIf(EofF)) [[unlikely]] {
         Log << SyntaxError << current()
             << "Unexpected EOF in scope dependencies";
         break;
       }
 
-      if (next_if(PuncRBrk)) {
+      if (NextIf(PuncRBrk)) {
         return dependencies;
       }
 
@@ -62,7 +62,7 @@ auto Parser::PImpl::RecurseScopeDeps() -> std::optional<ScopeDeps> {
         Log << SyntaxError << next() << "Expected dependency name";
       }
 
-      next_if(PuncComa);
+      NextIf(PuncComa);
     }
   } else {
     Log << SyntaxError << current()
@@ -73,11 +73,11 @@ auto Parser::PImpl::RecurseScopeDeps() -> std::optional<ScopeDeps> {
 }
 
 auto Parser::PImpl::RecurseScopeBlock() -> FlowPtr<Stmt> {
-  if (next_if(PuncSemi)) {
+  if (NextIf(PuncSemi)) {
     return make<Block>(BlockItems(), SafetyMode::Unknown)();
   }
 
-  if (next_if(OpArrow)) {
+  if (NextIf(OpArrow)) {
     return RecurseBlock(false, true, SafetyMode::Unknown);
   }
 

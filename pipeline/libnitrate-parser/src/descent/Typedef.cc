@@ -39,10 +39,10 @@ using namespace ncc::parse;
 
 auto Parser::PImpl::RecurseTypedef() -> FlowPtr<Stmt> {
   if (auto type_name = RecurseName(); !type_name->empty()) [[likely]] {
-    if (next_if(OpSet)) [[likely]] {
+    if (NextIf(OpSet)) [[likely]] {
       auto the_type = RecurseType();
 
-      if (next_if(PuncSemi)) [[likely]] {
+      if (NextIf(PuncSemi)) [[likely]] {
         return make<TypedefStmt>(type_name, the_type)();
       } else {
         Log << SyntaxError << current()

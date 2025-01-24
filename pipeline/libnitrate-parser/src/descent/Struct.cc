@@ -40,18 +40,18 @@ using namespace ncc::parse;
 auto Parser::PImpl::RecurseStructAttributes() -> ExpressionList {
   ExpressionList attributes;
 
-  if (!next_if(PuncLBrk)) {
+  if (!NextIf(PuncLBrk)) {
     return attributes;
   }
 
   while (true) {
-    if (next_if(EofF)) [[unlikely]] {
+    if (NextIf(EofF)) [[unlikely]] {
       Log << SyntaxError << current()
           << "Encountered EOF while parsing struct attributes";
       break;
     }
 
-    if (next_if(PuncRBrk)) {
+    if (NextIf(PuncRBrk)) {
       break;
     }
 
@@ -62,7 +62,7 @@ auto Parser::PImpl::RecurseStructAttributes() -> ExpressionList {
 
     attributes.push_back(attribute);
 
-    next_if(PuncComa);
+    NextIf(PuncComa);
   }
 
   return attributes;
@@ -71,7 +71,7 @@ auto Parser::PImpl::RecurseStructAttributes() -> ExpressionList {
 auto Parser::PImpl::RecurseStructTerms() -> StructDefNames {
   StructDefNames names;
 
-  if (!next_if(PuncColn)) {
+  if (!NextIf(PuncColn)) {
     return names;
   }
 
@@ -82,14 +82,14 @@ auto Parser::PImpl::RecurseStructTerms() -> StructDefNames {
       break;
     }
 
-    next_if(PuncComa);
+    NextIf(PuncComa);
   }
 
   return names;
 }
 
 auto Parser::PImpl::RecurseStructFieldDefaultValue() -> NullableFlowPtr<Expr> {
-  if (next_if(OpSet)) {
+  if (NextIf(OpSet)) {
     return RecurseExpr({
         Token(Punc, PuncComa),
         Token(Punc, PuncSemi),
@@ -103,7 +103,7 @@ auto Parser::PImpl::RecurseStructFieldDefaultValue() -> NullableFlowPtr<Expr> {
 void Parser::PImpl::RecurseStructField(Vis vis, bool is_static,
                                        StructDefFields &fields) {
   if (auto field_name = RecurseName(); !field_name->empty()) {
-    if (next_if(PuncColn)) {
+    if (NextIf(PuncColn)) {
       auto field_type = RecurseType();
       auto default_value = RecurseStructFieldDefaultValue();
 
@@ -124,17 +124,17 @@ void Parser::PImpl::RecurseStructMethodOrField(StructContent &body) {
   Vis vis = Vis::Sec;
 
   /* Parse visibility of member */
-  if (next_if(Sec)) {
+  if (NextIf(Sec)) {
     vis = Vis::Sec;
-  } else if (next_if(Pro)) {
+  } else if (NextIf(Pro)) {
     vis = Vis::Pro;
-  } else if (next_if(Pub)) {
+  } else if (NextIf(Pub)) {
     vis = Vis::Pub;
   }
 
-  auto is_static_member = next_if(Static).has_value();
+  auto is_static_member = NextIf(Static).has_value();
 
-  if (next_if(Fn)) {
+  if (NextIf(Fn)) {
     auto method = RecurseFunction(false);
 
     if (is_static_member) {
@@ -146,26 +146,26 @@ void Parser::PImpl::RecurseStructMethodOrField(StructContent &body) {
     RecurseStructField(vis, is_static_member, body.m_fields);
   }
 
-  next_if(PuncComa) || next_if(PuncSemi);
+  NextIf(PuncComa) || NextIf(PuncSemi);
 }
 
 auto Parser::PImpl::RecurseStructBody() -> Parser::PImpl::StructContent {
   StructContent body;
 
-  if (!next_if(PuncLCur)) [[unlikely]] {
+  if (!NextIf(PuncLCur)) [[unlikely]] {
     Log << SyntaxError << current() << "Expected '{' to start struct body";
 
     return body;
   }
 
   while (true) {
-    if (next_if(EofF)) {
+    if (NextIf(EofF)) {
       Log << SyntaxError << current()
           << "Encountered EOF while parsing struct body";
       break;
     }
 
-    if (next_if(PuncRCur)) {
+    if (NextIf(PuncRCur)) {
       break;
     }
 

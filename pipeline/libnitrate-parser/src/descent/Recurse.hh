@@ -50,7 +50,7 @@ namespace ncc::parse {
 #define current() m_rd.Current()
 
   template <auto tok>
-  static NCC_FORCE_INLINE auto NextIf(ncc::lex::IScanner &m_rd)
+  static inline auto NextIfImpl(ncc::lex::IScanner &m_rd)
       -> std::optional<ncc::lex::Token> {
     auto t = m_rd.Peek();
     if constexpr (std::is_same_v<decltype(tok), ncc::lex::TokenType>) {
@@ -70,7 +70,7 @@ namespace ncc::parse {
     }
   }
 
-#define next_if(tok) NextIf<tok>(m_rd)
+#define NextIf(tok) NextIfImpl<tok>(m_rd)
 
   static inline auto BindComments(auto node, auto comments) {
     node->BindCodeCommentData(std::move(comments));

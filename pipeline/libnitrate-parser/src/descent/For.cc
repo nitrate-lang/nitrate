@@ -38,11 +38,11 @@ using namespace ncc::lex;
 using namespace ncc::parse;
 
 auto Parser::PImpl::RecurseForInitExpr() -> NullableFlowPtr<Stmt> {
-  if (next_if(PuncSemi)) {
+  if (NextIf(PuncSemi)) {
     return std::nullopt;
   }
 
-  if (next_if(Let)) {
+  if (NextIf(Let)) {
     if (auto vars = RecurseVariable(VarDeclType::Let); vars.size() == 1) {
       return vars[0];
     }
@@ -50,14 +50,14 @@ auto Parser::PImpl::RecurseForInitExpr() -> NullableFlowPtr<Stmt> {
     Log << SyntaxError << current()
         << "Expected exactly one variable in for loop";
 
-  } else if (next_if(Var)) {
+  } else if (NextIf(Var)) {
     if (auto vars = RecurseVariable(VarDeclType::Var); vars.size() == 1) {
       return vars[0];
     }
 
     Log << SyntaxError << current()
         << "Expected exactly one variable in for loop";
-  } else if (next_if(Const)) {
+  } else if (NextIf(Const)) {
     if (auto vars = RecurseVariable(VarDeclType::Const); vars.size() == 1) {
       return vars[0];
     }
@@ -75,7 +75,7 @@ auto Parser::PImpl::RecurseForInitExpr() -> NullableFlowPtr<Stmt> {
 }
 
 auto Parser::PImpl::RecurseForCondition() -> NullableFlowPtr<Expr> {
-  if (next_if(PuncSemi)) {
+  if (NextIf(PuncSemi)) {
     return std::nullopt;
   }
 
@@ -83,7 +83,7 @@ auto Parser::PImpl::RecurseForCondition() -> NullableFlowPtr<Expr> {
       Token(Punc, PuncSemi),
   });
 
-  if (!next_if(PuncSemi)) {
+  if (!NextIf(PuncSemi)) {
     Log << SyntaxError << current()
         << "Expected semicolon after condition expression";
   }
@@ -113,7 +113,7 @@ auto Parser::PImpl::RecurseForStepExpr(bool has_paren)
 }
 
 auto Parser::PImpl::RecurseForBody() -> FlowPtr<Stmt> {
-  if (next_if(OpArrow)) {
+  if (NextIf(OpArrow)) {
     return RecurseBlock(false, true, SafetyMode::Unknown);
   }
 
@@ -121,12 +121,12 @@ auto Parser::PImpl::RecurseForBody() -> FlowPtr<Stmt> {
 }
 
 auto Parser::PImpl::RecurseFor() -> FlowPtr<Stmt> {
-  bool for_with_paren = next_if(PuncLPar).has_value();
+  bool for_with_paren = NextIf(PuncLPar).has_value();
   auto for_init = RecurseForInitExpr();
   auto for_cond = RecurseForCondition();
   auto for_step = RecurseForStepExpr(for_with_paren);
 
-  if (for_with_paren && !next_if(PuncRPar)) {
+  if (for_with_paren && !NextIf(PuncRPar)) {
     Log << SyntaxError << current()
         << "Expected closing parenthesis in for statement";
   }

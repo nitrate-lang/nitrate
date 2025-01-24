@@ -38,7 +38,7 @@ using namespace ncc::lex;
 using namespace ncc::parse;
 
 auto Parser::PImpl::RecurseFunctionParameterType() -> FlowPtr<parse::Type> {
-  if (next_if(PuncColn)) {
+  if (NextIf(PuncColn)) {
     return RecurseType();
   }
 
@@ -46,7 +46,7 @@ auto Parser::PImpl::RecurseFunctionParameterType() -> FlowPtr<parse::Type> {
 }
 
 auto Parser::PImpl::RecurseFunctionParameterValue() -> NullableFlowPtr<Expr> {
-  if (next_if(OpSet)) {
+  if (NextIf(OpSet)) {
     return RecurseExpr({
         Token(Punc, PuncComa),
         Token(Punc, PuncRPar),
@@ -72,20 +72,20 @@ auto Parser::PImpl::RecurseFunctionParameter() -> std::optional<FuncParam> {
 
 auto Parser::PImpl::RecurseTemplateParameters()
     -> std::optional<TemplateParameters> {
-  if (!next_if(OpLT)) {
+  if (!NextIf(OpLT)) {
     return std::nullopt;
   }
 
   TemplateParameters params;
 
   while (true) {
-    if (next_if(EofF)) [[unlikely]] {
+    if (NextIf(EofF)) [[unlikely]] {
       Log << SyntaxError << current()
           << "Unexpected EOF in template parameters";
       return params;
     }
 
-    if (next_if(OpGT)) {
+    if (NextIf(OpGT)) {
       break;
     }
 
@@ -97,7 +97,7 @@ auto Parser::PImpl::RecurseTemplateParameters()
       Log << SyntaxError << next() << "Expected a template parameter";
     }
 
-    next_if(PuncComa);
+    NextIf(PuncComa);
   }
 
   return params;
@@ -106,7 +106,7 @@ auto Parser::PImpl::RecurseTemplateParameters()
 auto Parser::PImpl::RecurseFunctionParameters() -> std::pair<FuncParams, bool> {
   std::pair<FuncParams, bool> parameters;
 
-  if (!next_if(PuncLPar)) [[unlikely]] {
+  if (!NextIf(PuncLPar)) [[unlikely]] {
     Log << SyntaxError << current() << "Expected '(' after function name";
 
     return parameters;
@@ -115,18 +115,18 @@ auto Parser::PImpl::RecurseFunctionParameters() -> std::pair<FuncParams, bool> {
   bool is_variadic = false;
 
   while (true) {
-    if (next_if(EofF)) [[unlikely]] {
+    if (NextIf(EofF)) [[unlikely]] {
       Log << SyntaxError << current()
           << "Unexpected EOF in function parameters";
 
       return parameters;
     }
 
-    if (next_if(PuncRPar)) {
+    if (NextIf(PuncRPar)) {
       break;
     }
 
-    if (next_if(OpEllipsis)) {
+    if (NextIf(OpEllipsis)) {
       is_variadic = true;
 
       if (!peek().Is<PuncRPar>()) {
@@ -144,7 +144,7 @@ auto Parser::PImpl::RecurseFunctionParameters() -> std::pair<FuncParams, bool> {
       Log << SyntaxError << next() << "Expected a function parameter";
     }
 
-    next_if(PuncComa);
+    NextIf(PuncComa);
   }
 
   parameters.second = is_variadic;
@@ -187,7 +187,7 @@ auto Parser::PImpl::GetPuritySpecifier(Token start_pos, bool is_thread_safe,
 
 auto Parser::PImpl::RecurseFunctionCapture()
     -> std::optional<std::pair<string, bool>> {
-  bool is_ref = next_if(OpBitAnd).has_value();
+  bool is_ref = NextIf(OpBitAnd).has_value();
 
   if (auto name = RecurseName(); !name->empty()) {
     return {{name, is_ref}};
@@ -220,7 +220,7 @@ auto Parser::PImpl::RecurseFunctionAmbigouis()
   bool already_parsed_captures = false;
 
   while (state != State::End) {
-    if (next_if(EofF)) [[unlikely]] {
+    if (NextIf(EofF)) [[unlikely]] {
       Log << SyntaxError << current()
           << "Unexpected EOF in function attributes";
       break;
@@ -245,7 +245,7 @@ auto Parser::PImpl::RecurseFunctionAmbigouis()
             function_name = some_word;
             state = State::End;
           }
-        } else if (next_if(PuncLBrk)) {
+        } else if (NextIf(PuncLBrk)) {
           if (already_parsed_attributes && already_parsed_captures) {
             Log << SyntaxError << current()
                 << "Unexpected '[' after function attributes and captures";
@@ -282,13 +282,13 @@ auto Parser::PImpl::RecurseFunctionAmbigouis()
         already_parsed_attributes = true;
 
         while (true) {
-          if (next_if(EofF)) [[unlikely]] {
+          if (NextIf(EofF)) [[unlikely]] {
             Log << SyntaxError << current()
                 << "Unexpected EOF in function attributes";
             break;
           }
 
-          if (next_if(PuncRBrk)) {
+          if (NextIf(PuncRBrk)) {
             state = State::Ground;
             break;
           }
@@ -300,7 +300,7 @@ auto Parser::PImpl::RecurseFunctionAmbigouis()
 
           attributes.push_back(attribute);
 
-          next_if(PuncComa);
+          NextIf(PuncComa);
         }
 
         break;
@@ -310,13 +310,13 @@ auto Parser::PImpl::RecurseFunctionAmbigouis()
         already_parsed_captures = true;
 
         while (true) {
-          if (next_if(EofF)) [[unlikely]] {
+          if (NextIf(EofF)) [[unlikely]] {
             Log << SyntaxError << current()
                 << "Unexpected EOF in function captures";
             break;
           }
 
-          if (next_if(PuncRBrk)) {
+          if (NextIf(PuncRBrk)) {
             state = State::Ground;
             break;
           }
@@ -325,7 +325,7 @@ auto Parser::PImpl::RecurseFunctionAmbigouis()
             captures.emplace_back(capture->first, capture->second);
           }
 
-          next_if(PuncComa);
+          NextIf(PuncComa);
         }
 
         break;
@@ -344,7 +344,7 @@ auto Parser::PImpl::RecurseFunctionAmbigouis()
 }
 
 auto Parser::PImpl::RecurseFunctionReturnType() -> FlowPtr<parse::Type> {
-  if (next_if(PuncColn)) {
+  if (NextIf(PuncColn)) {
     return RecurseType();
   }
 
@@ -353,11 +353,11 @@ auto Parser::PImpl::RecurseFunctionReturnType() -> FlowPtr<parse::Type> {
 
 auto Parser::PImpl::RecurseFunctionBody(bool parse_declaration_only)
     -> NullableFlowPtr<Stmt> {
-  if (parse_declaration_only || next_if(PuncSemi)) {
+  if (parse_declaration_only || NextIf(PuncSemi)) {
     return std::nullopt;
   }
 
-  if (next_if(OpArrow)) {
+  if (NextIf(OpArrow)) {
     return RecurseBlock(false, true, SafetyMode::Unknown);
   }
 

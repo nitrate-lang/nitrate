@@ -74,6 +74,41 @@ auto AstReader::Get() -> std::optional<FlowPtr<Base>> {
   return m_root;
 }
 
+template <typename ValueType>
+constexpr auto AstReader::NextIf(const ValueType& v) -> bool {
+  if (auto n = PeekValue()) {
+    if (std::holds_alternative<ValueType>(n->operator()()) &&
+        std::get<ValueType>(n->operator()()) == v) {
+      NextValue();
+      return true;
+    }
+  }
+
+  return false;
+}
+
+template <typename ValueType>
+constexpr auto AstReader::NextIs() -> bool {
+  if (auto n = PeekValue()) {
+    if (std::holds_alternative<ValueType>(n->operator()())) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
+template <typename ValueType>
+constexpr auto AstReader::Next() -> ValueType {
+  if (auto n = NextValue()) {
+    if (std::holds_alternative<ValueType>(n->operator()())) {
+      return std::get<ValueType>(n->operator()());
+    }
+  }
+
+  qcore_panic("Attempted to read value of incorrect type");
+}
+
 auto AstReader::ReadLocationRange() -> std::optional<AstReader::LocationRange> {
   const auto parse_location_object = [&]() -> std::optional<lex::Location> {
     if (!NextIf<std::string>("off") || !NextIs<uint64_t>()) {

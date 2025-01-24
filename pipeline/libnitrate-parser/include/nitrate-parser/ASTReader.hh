@@ -179,39 +179,13 @@ namespace ncc::parse {
     auto ReadKindExprStmt() -> NullableFlowPtr<ExprStmt>;
 
     template <typename ValueType>
-    constexpr auto NextIf(const ValueType& v = ValueType()) -> bool {
-      if (auto n = PeekValue()) {
-        if (std::holds_alternative<ValueType>(n->operator()()) &&
-            std::get<ValueType>(n->operator()()) == v) {
-          NextValue();
-          return true;
-        }
-      }
-
-      return false;
-    }
+    constexpr auto NextIf(const ValueType& v = ValueType()) -> bool;
 
     template <typename ValueType>
-    constexpr auto NextIs() -> bool {
-      if (auto n = PeekValue()) {
-        if (std::holds_alternative<ValueType>(n->operator()())) {
-          return true;
-        }
-      }
-
-      return false;
-    }
+    constexpr auto NextIs() -> bool;
 
     template <typename ValueType>
-    constexpr auto Next() -> ValueType {
-      if (auto n = NextValue()) {
-        if (std::holds_alternative<ValueType>(n->operator()())) {
-          return std::get<ValueType>(n->operator()());
-        }
-      }
-
-      qcore_panic("Attempted to read value of incorrect type");
-    }
+    constexpr auto Next() -> ValueType;
 
   public:
     AstReader(NextFunc data_source, ReaderSourceManager source_manager)

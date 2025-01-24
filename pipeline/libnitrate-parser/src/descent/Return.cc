@@ -38,7 +38,7 @@ using namespace ncc::lex;
 using namespace ncc::parse;
 
 auto Parser::PImpl::RecurseReturn() -> FlowPtr<Stmt> {
-  if (next_if(PuncSemi)) {
+  if (NextIf(PuncSemi)) {
     return make<ReturnStmt>(std::nullopt)();
   }
 
@@ -46,7 +46,7 @@ auto Parser::PImpl::RecurseReturn() -> FlowPtr<Stmt> {
       Token(Punc, PuncSemi),
   });
 
-  if (!next_if(PuncSemi)) [[unlikely]] {
+  if (!NextIf(PuncSemi)) [[unlikely]] {
     Log << SyntaxError << current()
         << "Expected ';' after the return statement.";
   }
@@ -59,12 +59,12 @@ auto Parser::PImpl::RecurseRetif() -> FlowPtr<Stmt> {
       Token(Punc, PuncComa),
   });
 
-  if (next_if(PuncComa)) [[likely]] {
+  if (NextIf(PuncComa)) [[likely]] {
     auto return_value = RecurseExpr({
         Token(Punc, PuncSemi),
     });
 
-    if (!next_if(PuncSemi)) [[unlikely]] {
+    if (!NextIf(PuncSemi)) [[unlikely]] {
       Log << SyntaxError << current() << "Expected ';' after the retif value.";
     }
 

@@ -49,7 +49,7 @@ auto Parser::PImpl::RecurseWhileCond() -> FlowPtr<Expr> {
 }
 
 auto Parser::PImpl::RecurseWhileBody() -> FlowPtr<Stmt> {
-  if (next_if(OpArrow)) {
+  if (NextIf(OpArrow)) {
     return RecurseBlock(false, true, SafetyMode::Unknown);
   }
 
