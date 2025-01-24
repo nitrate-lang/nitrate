@@ -34,31 +34,7 @@
 #include <nitrate-seq/Sequencer.hh>
 #include <string_view>
 
-std::string_view ncc::seq::Sequencer::CodePrefix = R"(
-@(
-  -- Disable some lua functions for security and determinism
-  -- From lbaselib.c
-  dofile = nil;
-  loadfile = nil;
-
-  -- From lmathlib.c
-  math.random = nil;
-  math.randomseed = nil;
-
-  print = function(...)
-    local args = {...};
-    local res = '';
-    for i = 1, #args do
-      res = res .. tostring(args[i]);
-      if i < #args then
-        res = res .. '\t';
-      end
-    end
-    n.info(res);
-  end
-)
-
-@(
+std::string_view ncc::seq::Sequencer::CodePrefix = R"(@(
 function comp_if(cond, terminator)
   -- Nothing to do if condition is true
   if cond then

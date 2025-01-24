@@ -49,12 +49,6 @@ IScanner::IScanner(std::shared_ptr<Environment> env) : m_env(std::move(env)) {
 
 IScanner::~IScanner() = default;
 
-auto IScanner::SetFailBit(bool fail) -> bool {
-  auto old = m_ebit;
-  m_ebit = fail;
-  return old;
-}
-
 auto IScanner::Next() -> Token {
   Token tok;
 

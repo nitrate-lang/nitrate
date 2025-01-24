@@ -91,7 +91,11 @@ namespace ncc::lex {
     [[nodiscard]] virtual auto HasError() const -> bool { return m_ebit; }
 
     /** Set the lexer error bit */
-    virtual bool SetFailBit(bool fail = true);
+    virtual auto SetFailBit(bool fail = true) -> bool {
+      auto old = m_ebit;
+      m_ebit = fail;
+      return old;
+    }
 
     /**
      * Consumes the next token in the VTQ model. If comments are disabled,

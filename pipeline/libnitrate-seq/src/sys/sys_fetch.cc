@@ -32,32 +32,12 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <nitrate-seq/Sequencer.hh>
-#include <regex>
 
 extern "C" {
 #include <lua/lauxlib.h>
 }
 
 using namespace ncc::seq;
-
-static auto IsValidImportName(const std::string &name) -> bool {
-  if (name.empty()) {
-    return false;
-  }
-
-  if (std::any_of(name.begin(), name.end(), [](char c) { return c & 0x80; })) {
-    return false;
-  }
-
-  std::regex re(R"(^[a-zA-Z_][a-zA-Z0-9_]*(::[a-zA-Z_][a-zA-Z0-9_]*)*$)");
-
-  return std::regex_match(name, re);
-}
-
-static void CanonicalizeImportName(std::string &name) {
-  // Don't assume that filesystems are case-sensitive.
-  std::transform(name.begin(), name.end(), name.begin(), ::tolower);
-}
 
 auto Sequencer::SysFetch() -> int {
   auto *lua = m_shared->m_L;
@@ -72,14 +52,7 @@ auto Sequencer::SysFetch() -> int {
                       lua_typename(lua, lua_type(lua, 1)));
   }
 
-  std::string import_name = lua_tostring(lua, 1);
-  if (!IsValidImportName(import_name)) {
-    return luaL_error(lua, "invalid import name");
-  }
-
-  CanonicalizeImportName(import_name);
-
-  if (auto data = FetchModuleData(import_name)) {
+  if (auto data = FetchModuleData(lua_tostring(lua, 1))) {
     lua_pushstring(lua, data->c_str());
     return 1;
   }

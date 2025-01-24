@@ -98,7 +98,7 @@ namespace ncc::seq {
 
     auto BindMethod(const char* name, MethodType func) -> void;
     auto BindLuaAPI() -> void;
-    auto LoadLuaLibs() const -> void;
+    auto ConfigureLUAEnvironment() -> void;
     auto ExecuteLua(const char* code) -> std::optional<std::string>;
     auto FetchModuleData(std::string_view module_name)
         -> std::optional<std::string>;
