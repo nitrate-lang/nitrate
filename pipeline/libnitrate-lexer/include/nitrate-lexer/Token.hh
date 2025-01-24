@@ -239,7 +239,7 @@ namespace ncc::lex {
     constexpr TokenData(string str) : m_str(str) {}
   } __attribute__((packed));
 
-  string to_string(TokenType, TokenData);  /// NOLINT
+  string to_string(TokenType, TokenData);  // NOLINT
 
   class TokenBase {
     TokenType m_type;
@@ -518,17 +518,17 @@ namespace ncc::lex {
 
   auto GetOperatorPrecedence(Operator op, OpMode type) -> short;
   auto GetOperatorAssociativity(Operator op, OpMode type) -> Associativity;
-  string to_string(TokenType ty);  /// NOLINT
+  string to_string(TokenType ty);  // NOLINT
 
-  static inline const char *op_repr(Operator op) {  /// NOLINT
+  static inline const char *op_repr(Operator op) {  // NOLINT
     return LEXICAL_OPERATORS.right.at(op).c_str();
   }
 
-  static inline const char *kw_repr(Keyword kw) {  /// NOLINT
+  static inline const char *kw_repr(Keyword kw) {  // NOLINT
     return LEXICAL_KEYWORDS.right.at(kw).c_str();
   }
 
-  static inline const char *punct_repr(Punctor punct) {  /// NOLINT
+  static inline const char *punct_repr(Punctor punct) {  // NOLINT
     return LEXICAL_PUNCTORS.right.at(punct).c_str();
   }
 

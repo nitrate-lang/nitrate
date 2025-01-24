@@ -128,7 +128,7 @@ auto IScanner::Insert(Token tok) -> void {
 
 auto IScanner::Start(Token t) -> Location { return t.GetStart().Get(*this); }
 
-auto IScanner::End(Token) -> Location {  /// NOLINT
+auto IScanner::End(Token) -> Location {
   /// TODO: Support relexing to get the end location
   return Location::EndOfFile();
 }

@@ -91,14 +91,14 @@
 //     }
 
 //     bool is_default_value_expr =
-//         N->is(IR_tTMP) && N->as<Tmp>()->getTmpType() ==
+//         N->is(IR_tTMP) && N->As<Tmp>()->getTmpType() ==
 //         TmpType::DEFAULT_VALUE;
 
-//     if (N->as<Tmp>()->getTmpType() == TmpType::NAMED_TYPE ||
+//     if (N->As<Tmp>()->getTmpType() == TmpType::NAMED_TYPE ||
 //         is_default_value_expr) {
 //       /* Get the fully-qualified type name */
 //       std::string_view type_name =
-//           std::get<std::string_view>(N->as<Tmp>()->getData());
+//           std::get<std::string_view>(N->As<Tmp>()->getData());
 
 //       auto result = resolve_name(type_name, Kind::TypeDef);
 //       if (result.has_value()) [[likely]] {
@@ -132,8 +132,8 @@
 //   iterate<dfs_pre>(root, [&](Expr *, Expr **C) -> IterOp {
 //     Expr *N = *C;
 
-//     if (N->is(IR_eIDENT) && N->as<Ident>()->getWhat() == nullptr) {
-//       Ident *I = N->as<Ident>();
+//     if (N->is(IR_eIDENT) && N->As<Ident>()->getWhat() == nullptr) {
+//       Ident *I = N->As<Ident>();
 
 //       if (auto enum_opt = resolve_name(I->GetName(), Kind::ScopedEnum)) {
 //         *C = enum_opt.value().first;
@@ -237,15 +237,15 @@
 //   iterate<dfs_pre>(root, [&](Expr *, Expr **C) -> IterOp {
 //     auto N = *C;
 
-//     if (N->is(IR_tTMP) && N->as<Tmp>()->getTmpType() == TmpType::CALL) {
+//     if (N->is(IR_tTMP) && N->As<Tmp>()->getTmpType() == TmpType::CALL) {
 //       /* The first stage of conversion stored this context information */
-//       const auto &data = get<CallArgsTmpNodeCradle>(N->as<Tmp>()->getData());
+//       const auto &data = get<CallArgsTmpNodeCradle>(N->As<Tmp>()->getData());
 
 //       qcore_assert(data.base != nullptr);
 
 //       /* Currently, this code only supported direct function calls */
 //       if (data.base->is(IR_eIDENT)) {
-//         auto callee_name = data.base->as<Ident>()->GetName();
+//         auto callee_name = data.base->As<Ident>()->GetName();
 //         qcore_assert(!callee_name.empty());
 
 //         unordered_map<string_view, size_t> name_index_map;
@@ -255,7 +255,7 @@
 //          * the process */
 //         if (auto callee_opt = resolve_name(callee_name, Kind::Function)) {
 //           qcore_assert(callee_opt.value().first->is(IR_eFUNCTION));
-//           auto callee_func_ptr = callee_opt.value().first->as<Function>();
+//           auto callee_func_ptr = callee_opt.value().first->As<Function>();
 
 //           /* This layer of indirection is needed to maintain the acylic
 //            * properties */
@@ -266,7 +266,7 @@
 //           if (auto callee_type_opt = callee_func->GetType();
 //               callee_type_opt.has_value() &&
 //               callee_type_opt.value()->is_function()) {
-//             auto callee_func_type = callee_type_opt.value()->as<FnTy>();
+//             auto callee_func_type = callee_type_opt.value()->As<FnTy>();
 
 //             const auto &func_default_args =
 //                 m_function_defaults.at(callee_func_ptr);
@@ -294,7 +294,7 @@
 //                      [](auto x) { return isdigit(x.first.at(0)); });
 
 //           if (only_positional_args) {
-//             auto callee_local_ptr = callee_opt.value().first->as<Local>();
+//             auto callee_local_ptr = callee_opt.value().first->As<Local>();
 
 //             /* This layer of indirection is needed to maintain the acylic
 //              * properties */
@@ -305,7 +305,7 @@
 //             if (auto local_type = callee_local->GetType();
 //                 local_type.has_value() && local_type.value()->is_function())
 //                 {
-//               auto callee_func_type = local_type.value()->as<FnTy>();
+//               auto callee_func_type = local_type.value()->As<FnTy>();
 
 //               /* Create an identity map */
 //               auto param_count = callee_func_type->getParams().size();
@@ -370,7 +370,7 @@
 //           IR_tCONST,   /* Constant wrapper type */
 //       };
 
-//       Seq *S = (*C)->as<Seq>();
+//       Seq *S = (*C)->As<Seq>();
 
 //       size_t node_count = 0;
 //       for (auto &I : S->GetItems()) {

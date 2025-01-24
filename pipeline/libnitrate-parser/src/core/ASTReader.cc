@@ -677,7 +677,7 @@ auto AstReader::DeserializeStatement() -> NullableFlowPtr<Stmt> {
     return nullptr;
   }
 
-  return object.value().as<Stmt>();
+  return object.value().As<Stmt>();
 }
 
 auto AstReader::DeserializeExpression() -> NullableFlowPtr<Expr> {
@@ -691,7 +691,7 @@ auto AstReader::DeserializeExpression() -> NullableFlowPtr<Expr> {
     return nullptr;
   }
 
-  return object.value().as<Expr>();
+  return object.value().As<Expr>();
 }
 
 auto AstReader::DeserializeType() -> NullableFlowPtr<Type> {
@@ -705,10 +705,10 @@ auto AstReader::DeserializeType() -> NullableFlowPtr<Type> {
     return nullptr;
   }
 
-  return object.value().as<Type>();
+  return object.value().As<Type>();
 }
 
-NullableFlowPtr<Base> AstReader::ReadKindNode() {  /// NOLINT
+NullableFlowPtr<Base> AstReader::ReadKindNode() {  // NOLINT
   return make<Base>(QAST_BASE)();
 }
 
@@ -895,11 +895,11 @@ auto AstReader::ReadKindBool() -> NullableFlowPtr<ConstBool> {
   return make<ConstBool>(value)();
 }
 
-NullableFlowPtr<ConstNull> AstReader::ReadKindNull() {  /// NOLINT
+NullableFlowPtr<ConstNull> AstReader::ReadKindNull() {  // NOLINT
   return make<ConstNull>()();
 }
 
-NullableFlowPtr<ConstUndef> AstReader::ReadKindUndef() {  /// NOLINT
+NullableFlowPtr<ConstUndef> AstReader::ReadKindUndef() {  // NOLINT
   return make<ConstUndef>()();
 }
 
@@ -2583,11 +2583,11 @@ auto AstReader::ReadKindRetif() -> NullableFlowPtr<ReturnIfStmt> {
   return make<ReturnIfStmt>(condition.value(), expression.value())();
 }
 
-NullableFlowPtr<BreakStmt> AstReader::ReadKindBreak() {  /// NOLINT
+NullableFlowPtr<BreakStmt> AstReader::ReadKindBreak() {  // NOLINT
   return make<BreakStmt>()();
 }
 
-NullableFlowPtr<ContinueStmt> AstReader::ReadKindContinue() {  /// NOLINT
+NullableFlowPtr<ContinueStmt> AstReader::ReadKindContinue() {  // NOLINT
   return make<ContinueStmt>()();
 }
 
@@ -2783,7 +2783,7 @@ auto AstReader::ReadKindSwitch() -> NullableFlowPtr<SwitchStmt> {
       return nullptr;
     }
 
-    cases.emplace_back(case_stmt.value()->as<CaseStmt>());
+    cases.emplace_back(case_stmt.value()->As<CaseStmt>());
   }
 
   if (!NextIf<std::string>("default")) {

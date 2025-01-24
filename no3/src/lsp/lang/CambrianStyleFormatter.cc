@@ -131,7 +131,7 @@ void CambrianFormatter::WrapStmtBody(FlowPtr<parse::Stmt> n,
                                      size_t size_threshold,
                                      bool use_arrow_if_wrapped) {
   if (n->Is(QAST_BLOCK)) {
-    auto block = n.as<Block>();
+    auto block = n.As<Block>();
     bool single_stmt = block->GetItems().size() == 1;
     bool few_children =
         single_stmt && block->RecursiveChildCount() <= size_threshold;
@@ -360,29 +360,29 @@ void CambrianFormatter::Visit(FlowPtr<TemplType> n) {
 
   bool is_optional =
       n->GetTemplate()->GetKind() == QAST_NAMED &&
-      n->GetTemplate()->as<NamedTy>()->GetName() == "__builtin_result";
+      n->GetTemplate()->As<NamedTy>()->GetName() == "__builtin_result";
 
   bool is_vector =
       n->GetTemplate()->GetKind() == QAST_NAMED &&
-      n->GetTemplate()->as<NamedTy>()->GetName() == "__builtin_vec";
+      n->GetTemplate()->As<NamedTy>()->GetName() == "__builtin_vec";
 
   bool is_map = n->GetTemplate()->GetKind() == QAST_NAMED &&
-                n->GetTemplate()->as<NamedTy>()->GetName() == "__builtin_umap";
+                n->GetTemplate()->As<NamedTy>()->GetName() == "__builtin_umap";
 
   bool is_set = n->GetTemplate()->GetKind() == QAST_NAMED &&
-                n->GetTemplate()->as<NamedTy>()->GetName() == "__builtin_uset";
+                n->GetTemplate()->As<NamedTy>()->GetName() == "__builtin_uset";
 
   bool is_comptime =
       n->GetTemplate()->GetKind() == QAST_NAMED &&
-      n->GetTemplate()->as<NamedTy>()->GetName() == "__builtin_meta" &&
+      n->GetTemplate()->As<NamedTy>()->GetName() == "__builtin_meta" &&
       n->GetArgs().size() == 1 &&
       n->GetArgs().front().second->Is(QAST_UNEXPR) &&
-      n->GetArgs().front().second.template as<UnaryExpr>()->GetOp() ==
+      n->GetArgs().front().second.template As<UnaryExpr>()->GetOp() ==
           OpComptime;
 
   const auto print_without_type_keyword = [&](auto node) {
     if (node->Is(QAST_TEXPR)) {
-      node->template as<TypeExpr>()->GetType().Accept(*this);
+      node->template As<TypeExpr>()->GetType().Accept(*this);
     } else {
       node->Accept(*this);
     }
@@ -408,7 +408,7 @@ void CambrianFormatter::Visit(FlowPtr<TemplType> n) {
     m_line << "}";
   } else if (is_comptime) {
     m_line << "comptime(";
-    n->GetArgs().front().second.template as<UnaryExpr>()->GetRHS().Accept(
+    n->GetArgs().front().second.template As<UnaryExpr>()->GetRHS().Accept(
         *this);
     m_line << ")";
   } else {
@@ -863,7 +863,7 @@ void CambrianFormatter::Visit(FlowPtr<TemplCall> n) {
         }
 
         if (value->Is(QAST_TEXPR)) {
-          value->template as<TypeExpr>()->GetType().Accept(*this);
+          value->template As<TypeExpr>()->GetType().Accept(*this);
         } else {
           value.Accept(*this);
         }
@@ -1001,7 +1001,7 @@ void CambrianFormatter::Visit(FlowPtr<Assoc> node) {
       [&](FlowPtr<Assoc> n, bool use_braces) {
         bool is_value_map = false;
         if (n->GetValue()->Is(QAST_LIST)) {
-          auto list = n->GetValue()->as<List>();
+          auto list = n->GetValue()->As<List>();
           is_value_map =
               list->GetItems().empty() ||
               std::all_of(list->GetItems().begin(), list->GetItems().end(),
@@ -1018,7 +1018,7 @@ void CambrianFormatter::Visit(FlowPtr<Assoc> node) {
         m_line << ": ";
 
         if (is_value_map) {
-          auto list = n->GetValue()->as<List>();
+          auto list = n->GetValue()->As<List>();
 
           if (list->GetItems().empty()) {
             m_line << "{}";
@@ -1030,7 +1030,7 @@ void CambrianFormatter::Visit(FlowPtr<Assoc> node) {
                  it != list->GetItems().end(); ++it) {
               m_line << GetIndent();
 
-              format(it->as<Assoc>(), false);
+              format(it->As<Assoc>(), false);
 
               if (it != list->GetItems().end() - 1) {
                 m_line << ",";

@@ -8,10 +8,10 @@
 
 /* Demangled: {"name":"app::main","type":"fn (_0: u64, _1: **u8, _2: **u8):
  * i32"} */
-extern _NLR_main_func_t _Q3app4mainFimPPhPPhE_0;  /// NOLINT
+extern _NLR_main_func_t _Q3app4mainFimPPhPPhE_0;  // NOLINT
 
-extern struct _NLR_symbol_t* _NLR_symbols_start;  /// NOLINT
-extern struct _NLR_symbol_t* _NLR_symbols_end;    /// NOLINT
+extern struct _NLR_symbol_t* _NLR_symbols_start;  // NOLINT
+extern struct _NLR_symbol_t* _NLR_symbols_end;    // NOLINT
 
 static _NLR_uword_t _NLR_csprng_next(void);
 static _NLR_argv_pp_t _NLR_get_argv(_NLR_uword_t* argc);
@@ -26,7 +26,7 @@ static void stdio_write(const char* str) {
   syscall(1, 1, str, len);
 }
 
-EXPORT_API void _NLR_panic(_NLR_uword_t cstr_ptr) {  /// NOLINT
+EXPORT_API void _NLR_panic(_NLR_uword_t cstr_ptr) {  // NOLINT
   if (cstr_ptr == 0) {
     stdio_write("[nlr/panic]: Aborting...\n");
   } else {
@@ -61,7 +61,7 @@ EXPORT_API void _NLR_panic(_NLR_uword_t cstr_ptr) {  /// NOLINT
   __builtin_trap();
 }
 
-EXPORT_API _NLR_uword_t _NLR_malloc(_NLR_uword_t size) {  /// NOLINT
+EXPORT_API _NLR_uword_t _NLR_malloc(_NLR_uword_t size) {  // NOLINT
   uint8_t* map;
 
   size += sizeof(_NLR_uword_t);
@@ -78,7 +78,7 @@ EXPORT_API _NLR_uword_t _NLR_malloc(_NLR_uword_t size) {  /// NOLINT
   return (_NLR_uword_t)(map + 8);
 }
 
-EXPORT_API void _NLR_free(_NLR_uword_t ptr) {  /// NOLINT
+EXPORT_API void _NLR_free(_NLR_uword_t ptr) {  // NOLINT
   uint8_t* addr;
   _NLR_uword_t mmap_size;
 
@@ -95,14 +95,14 @@ EXPORT_API void _NLR_free(_NLR_uword_t ptr) {  /// NOLINT
   }
 }
 
-EXPORT_API _NLR_uword_t _NLR_signal_oom(_NLR_uword_t req_size) {  /// NOLINT
+EXPORT_API _NLR_uword_t _NLR_signal_oom(_NLR_uword_t req_size) {  // NOLINT
   (void)req_size;  // Nothing to do here
 
   return 0;
 }
 
 EXPORT_API _NLR_uword_t _NLR_csprng(_NLR_uword_t buf_ptr,
-                                    _NLR_uword_t max_size) {  /// NOLINT
+                                    _NLR_uword_t max_size) {  // NOLINT
   uint8_t* buf;
   _NLR_uword_t remaining, i, rand;
 
@@ -124,7 +124,7 @@ EXPORT_API _NLR_uword_t _NLR_csprng(_NLR_uword_t buf_ptr,
   return max_size;
 }
 
-EXPORT_API void _start(void) {  /// NOLINT
+EXPORT_API void _start(void) {  // NOLINT
   struct _NLR_symbol_t* symbol;
   _NLR_uword_t argc, envc;
   _NLR_argv_pp_t argv;

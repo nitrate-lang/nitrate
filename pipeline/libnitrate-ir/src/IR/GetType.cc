@@ -197,7 +197,7 @@ static NullableFlowPtr<Type> InferUnaryExpression(NullableFlowPtr<Type> e,
 
     case OpTimes: {
       if (e.has_value() && e.value()->IsPointer()) {
-        r = e.value()->as<PtrTy>()->GetPointee();
+        r = e.value()->As<PtrTy>()->GetPointee();
       }
       break;
     }
@@ -521,7 +521,7 @@ public:
     if (auto callee = n->GetTarget()) {
       if (auto callee_ty = callee.value()->GetType()) {
         if (callee_ty.value()->IsFunction()) {
-          m_r = callee_ty.value()->as<FnTy>()->GetReturn();
+          m_r = callee_ty.value()->As<FnTy>()->GetReturn();
         }
       }
     }
@@ -540,14 +540,14 @@ public:
 
     if (base_type_opt.has_value(); auto base = base_type_opt.value()) {
       if (base->is(IR_tPTR)) {  // *X -> X
-        m_r = base->as<PtrTy>()->GetPointee();
+        m_r = base->As<PtrTy>()->GetPointee();
       } else if (base->is(IR_tARRAY)) {  // [X; N] -> X
-        m_r = base->as<ArrayTy>()->GetElement();
+        m_r = base->As<ArrayTy>()->GetElement();
       } else if (base->is(IR_tSTRUCT)) {  // struct { a, b, c }[1] -> b
 
         if (auto index = n->GetIndex(); index->is(IR_eINT)) {
-          auto num = index->as<Int>()->GetValue();
-          auto st = base->as<StructTy>();
+          auto num = index->As<Int>()->GetValue();
+          auto st = base->As<StructTy>();
 
           if (num < st->GetFields().size()) {
             m_r = st->GetFields()[num.convert_to<std::size_t>()];
@@ -559,8 +559,8 @@ public:
         }
       } else if (base->is(IR_tUNION)) {
         if (auto index = n->GetIndex(); index->is(IR_eINT)) {
-          auto num = index->as<Int>()->GetValue();
-          auto st = base->as<UnionTy>();
+          auto num = index->As<Int>()->GetValue();
+          auto st = base->As<UnionTy>();
 
           if (num < st->GetFields().size()) {
             m_r = st->GetFields()[num.convert_to<std::size_t>()];

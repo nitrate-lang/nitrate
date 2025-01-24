@@ -73,18 +73,18 @@ namespace ncc::ir {
     uint8_t m_pad : 2;       /* Padding */
     SrcLoc m_loc;            /* Source location alias */
 
+  public:
     GenericExpr(const GenericExpr &) = delete;
     auto operator=(const GenericExpr &) -> GenericExpr & = delete;
 
-  public:
     constexpr GenericExpr(nr_ty_t ty, lex::LocationID begin = lex::LocationID(),
                           lex::LocationID end = lex::LocationID())
         : m_node_type(ty) {
       m_loc = parse::ExtensionDataStore.Add(begin, end);
     }
 
-    static constexpr auto GetKindSize(nr_ty_t kind) -> uint32_t;
-    static constexpr auto GetKindName(nr_ty_t kind) -> const char *;
+    static constexpr auto GetKindSize(nr_ty_t type) -> uint32_t;
+    static constexpr auto GetKindName(nr_ty_t type) -> const char *;
 
     [[nodiscard]] constexpr auto GetKind() const { return m_node_type; }
     [[nodiscard]] constexpr auto GetKindName() const -> const char * {
@@ -275,19 +275,19 @@ namespace ncc::ir {
     }
 
     template <typename T>
-    [[nodiscard]] constexpr T *as() {  /// NOLINT
+    [[nodiscard]] constexpr T *As() {
       return SafeCastAs<T>(this);
     }
 
     template <typename T>
-    constexpr const T *as() const {  /// NOLINT
+    constexpr const T *As() const {
       return SafeCastAs<T>(const_cast<GenericExpr<A> *>(this));
     }
 
     template <class T = GenericExpr<A>>
     constexpr auto Clone() -> T * {
       return detail::ExprGetCloneImpl(reinterpret_cast<Expr *>(this))
-          ->template as<T>();
+          ->template As<T>();
     }
 
     constexpr auto AsExpr() -> GenericExpr * { return this; }
@@ -296,7 +296,7 @@ namespace ncc::ir {
       return const_cast<GenericExpr<A> *>(this)->AsType();
     }
 
-    [[nodiscard]] constexpr bool is(nr_ty_t type) const {  /// NOLINT
+    [[nodiscard]] constexpr bool is(nr_ty_t type) const {
       return type == GetKind();
     }
 
@@ -377,7 +377,7 @@ namespace ncc::ir {
       }
     }
 
-    [[nodiscard]] constexpr auto is_array() const -> bool {
+    [[nodiscard]] constexpr auto IsArray() const -> bool {
       return this->GetKind() == IR_tARRAY;
     }
     [[nodiscard]] constexpr auto IsPointer() const -> bool {
@@ -511,7 +511,7 @@ namespace ncc::ir {
 
   template <class A>
   constexpr auto GenericExpr<A>::GetName() const -> std::string_view {
-    std::string_view r = "";
+    std::string_view r;
 
     switch (this->GetKind()) {
       case IR_eBIN: {
@@ -547,7 +547,7 @@ namespace ncc::ir {
       }
 
       case IR_eIDENT: {
-        r = as<GenericIdent<A>>()->GetName();
+        r = As<GenericIdent<A>>()->GetName();
         break;
       }
 
@@ -556,7 +556,7 @@ namespace ncc::ir {
       }
 
       case IR_eLOCAL: {
-        r = as<GenericLocal<A>>()->GetName();
+        r = As<GenericLocal<A>>()->GetName();
         break;
       }
 
@@ -597,7 +597,7 @@ namespace ncc::ir {
       }
 
       case IR_eFUNCTION: {
-        r = as<GenericFunction<A>>()->GetName();
+        r = As<GenericFunction<A>>()->GetName();
         break;
       }
 
@@ -674,12 +674,12 @@ namespace ncc::ir {
       }
 
       case IR_tCONST: {
-        r = as<GenericConstTy<A>>()->GetItem()->GetName();
+        r = As<GenericConstTy<A>>()->GetItem()->GetName();
         break;
       }
 
       case IR_tOPAQUE: {
-        r = as<GenericOpaqueTy<A>>()->GetName();
+        r = As<GenericOpaqueTy<A>>()->GetName();
         break;
       }
 

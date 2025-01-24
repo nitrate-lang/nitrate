@@ -335,19 +335,19 @@ namespace ncc::ir::abi::azide {
 
       case IR_tPTR: {
         ss << 'P';
-        MangleTypeRecurse(n->template as<PtrTy>()->GetPointee(), ss);
+        MangleTypeRecurse(n->template As<PtrTy>()->GetPointee(), ss);
         break;
       }
 
       case IR_tCONST: {
         ss << 'K';
-        MangleTypeRecurse(n->template as<ConstTy>()->GetItem(), ss);
+        MangleTypeRecurse(n->template As<ConstTy>()->GetItem(), ss);
         break;
       }
 
       case IR_tOPAQUE: {
         ss << 'N';
-        NslvEncode(n->template as<OpaqueTy>()->GetName(), ss);
+        NslvEncode(n->template As<OpaqueTy>()->GetName(), ss);
         ss << 'E';
         break;
       }
@@ -360,7 +360,7 @@ namespace ncc::ir::abi::azide {
          */
 
         ss << 'c';
-        for (auto field : n->template as<StructTy>()->GetFields()) {
+        for (auto field : n->template As<StructTy>()->GetFields()) {
           MangleTypeRecurse(field, ss);
         }
         ss << 'E';
@@ -375,7 +375,7 @@ namespace ncc::ir::abi::azide {
          */
 
         ss << 'u';
-        for (auto field : n->template as<StructTy>()->GetFields()) {
+        for (auto field : n->template As<StructTy>()->GetFields()) {
           MangleTypeRecurse(field, ss);
         }
         ss << 'E';
@@ -384,9 +384,9 @@ namespace ncc::ir::abi::azide {
 
       case IR_tARRAY: {
         ss << 'A';
-        ss << n->template as<ArrayTy>()->GetCount();
+        ss << n->template As<ArrayTy>()->GetCount();
         ss << '_';
-        MangleTypeRecurse(n->template as<ArrayTy>()->GetElement(), ss);
+        MangleTypeRecurse(n->template As<ArrayTy>()->GetElement(), ss);
         break;
       }
 
@@ -399,7 +399,7 @@ namespace ncc::ir::abi::azide {
          */
 
         ss << 'F';
-        auto *fn = n->template as<FnTy>();
+        auto *fn = n->template As<FnTy>();
         MangleTypeRecurse(fn->GetReturn(), ss);
         for (auto param : fn->GetParams()) {
           MangleTypeRecurse(param, ss);

@@ -342,12 +342,12 @@ namespace ncc::parse {
     }
 
     template <typename T>
-    constexpr T *as() {  /// NOLINT
+    [[nodiscard]] constexpr T *As() {
       return SafeCastAs<T>(this);
     }
 
     template <typename T>
-    constexpr const T *as() const {  /// NOLINT
+    [[nodiscard]] constexpr const T *As() const {
       return SafeCastAs<T>(const_cast<Base *>(this));
     }
 

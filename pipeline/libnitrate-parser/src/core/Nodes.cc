@@ -172,9 +172,9 @@ NCC_EXPORT auto Type::IsPtrTo(const Type *type) const -> bool {
     return false;
   }
 
-  auto item = as<PtrTy>()->GetItem();
+  auto item = As<PtrTy>()->GetItem();
   while (item->Is<RefTy>()) {
-    item = item->as<RefTy>()->GetItem();
+    item = item->As<RefTy>()->GetItem();
   }
 
   return item->Is(type->GetKind());

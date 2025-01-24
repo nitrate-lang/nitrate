@@ -57,15 +57,15 @@ namespace ncc::ir {
     using BeginArray = std::function<void(size_t size)>;
     using EndArray = std::function<void()>;
 
-    InsertString string;    /// NOLINT
-    InsertUInt64 uint64;    /// NOLINT
-    InsertDouble dbl;       /// NOLINT
-    InsertBool boolean;     /// NOLINT
-    InsertNull null;        /// NOLINT
-    BeginObject begin_obj;  /// NOLINT
-    EndObject end_obj;      /// NOLINT
-    BeginArray begin_arr;   /// NOLINT
-    EndArray end_arr;       /// NOLINT
+    InsertString string;    // NOLINT
+    InsertUInt64 uint64;    // NOLINT
+    InsertDouble dbl;       // NOLINT
+    InsertBool boolean;     // NOLINT
+    InsertNull null;        // NOLINT
+    BeginObject begin_obj;  // NOLINT
+    EndObject end_obj;      // NOLINT
+    BeginArray begin_arr;   // NOLINT
+    EndArray end_arr;       // NOLINT
     WriterSourceProvider m_rd;
 
     void WriteSourceLocation(FlowPtr<Expr> n) const;

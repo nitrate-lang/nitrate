@@ -48,7 +48,7 @@ auto NRBuilder::CheckFunctionCalls(FlowPtr<Seq> root, IReport *d) -> bool {
 
       if (auto tarGetKind = target->GetType()) {
         if (tarGetKind.value()->IsFunction()) {
-          FnTy *fn_ty = tarGetKind.value()->template as<FnTy>();
+          FnTy *fn_ty = tarGetKind.value()->template As<FnTy>();
 
           const auto &arguments = x->GetArgs();
 

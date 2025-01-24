@@ -60,16 +60,16 @@ namespace ncc::parse {
     using BeginArray = std::function<void(size_t size)>;
     using EndArray = std::function<void()>;
 
-    InsertString string;        /// NOLINT
-    InsertUInt64 uint64;        /// NOLINT
-    InsertDouble dbl;           /// NOLINT
-    InsertBool boolean;         /// NOLINT
-    InsertNull null;            /// NOLINT
-    BeginObject begin_obj;      /// NOLINT
-    EndObject end_obj;          /// NOLINT
-    BeginArray begin_arr;       /// NOLINT
-    EndArray end_arr;           /// NOLINT
-    WriterSourceProvider m_rd;  /// NOLINT
+    InsertString string;        // NOLINT
+    InsertUInt64 uint64;        // NOLINT
+    InsertDouble dbl;           // NOLINT
+    InsertBool boolean;         // NOLINT
+    InsertNull null;            // NOLINT
+    BeginObject begin_obj;      // NOLINT
+    EndObject end_obj;          // NOLINT
+    BeginArray begin_arr;       // NOLINT
+    EndArray end_arr;           // NOLINT
+    WriterSourceProvider m_rd;  // NOLINT
 
     void WriteSourceLocation(const FlowPtr<Base>& n) const;
     void WriteTypeMetadata(const FlowPtr<Type>& n);

@@ -47,10 +47,10 @@ namespace ncc::parse {
    * and AST debugging.
    */
   template <typename T, typename... Args>
-  constexpr static inline auto make(Args &&...args) {  /// NOLINT
+  constexpr static inline auto make(Args &&...args) {  // NOLINT
     return [&](std::source_location origin = std::source_location::current()) {
       FlowPtr<T> new_obj = MakeFlowPtr<T>(new (Arena<T>().allocate(1)) T(
-          std::forward<Args>(args)...));  /// NOLINT
+          std::forward<Args>(args)...));  // NOLINT
 
       new_obj.SetTracking(origin);
 
@@ -86,7 +86,7 @@ namespace ncc::parse {
   }  // namespace detail
 
   template <IterMode mode, typename T>
-  void iterate(FlowPtr<T> root, const IterCallback &cb) {  /// NOLINT
+  void iterate(FlowPtr<T> root, const IterCallback &cb) {  // NOLINT
     if constexpr (mode == dfs_pre) {
       return detail::DfsPreImpl(root, cb);
     } else if constexpr (mode == dfs_post) {
@@ -103,7 +103,7 @@ namespace ncc::parse {
   }
 
   template <auto mode = dfs_pre>
-  void for_each(FlowPtr<Base> v,  /// NOLINT
+  void for_each(FlowPtr<Base> v,  // NOLINT
                 const std::function<void(npar_ty_t, FlowPtr<Base>)> &f) {
     iterate<mode>(v, [&](auto, const FlowPtr<Base> &c) -> IterOp {
       f(c->GetKind(), c);
@@ -113,14 +113,14 @@ namespace ncc::parse {
   }
 
   template <typename T, auto mode = dfs_pre>
-  void for_each(FlowPtr<Base> v,  /// NOLINT
+  void for_each(FlowPtr<Base> v,  // NOLINT
                 std::function<void(FlowPtr<T>)> f) {
     iterate<mode>(v, [&](auto, FlowPtr<Base> c) -> IterOp {
       if (c->GetKind() != Base::GetTypeCode<T>()) {
         return IterOp::Proceed;
       }
 
-      f(c.as<T>());
+      f(c.As<T>());
 
       return IterOp::Proceed;
     });

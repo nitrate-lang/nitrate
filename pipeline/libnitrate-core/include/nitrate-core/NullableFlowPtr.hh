@@ -138,7 +138,7 @@ namespace ncc {
       }
 
       template <class U>
-      constexpr auto as() {  // NOLINT
+      constexpr auto As() {
         return NullableFlowPtr<U>(reinterpret_cast<U *>(m_ptr.get()),
                                   m_ptr.Trace());
       }

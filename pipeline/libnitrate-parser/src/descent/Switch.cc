@@ -57,7 +57,7 @@ auto Parser::PImpl::RecurseSwitchCase() -> std::pair<FlowPtr<Stmt>, bool> {
   auto body = RecurseSwitchCaseBody();
 
   auto is_the_default_case =
-      cond->Is(QAST_IDENT) && cond->as<Ident>()->GetName() == "_";
+      cond->Is(QAST_IDENT) && cond->As<Ident>()->GetName() == "_";
 
   if (is_the_default_case) {
     return {body, true};
@@ -89,7 +89,7 @@ auto Parser::PImpl::RecurseSwitchBody()
         Log << SyntaxError << current() << "Duplicate default case in switch.";
       }
     } else {
-      cases.push_back(stmt.as<CaseStmt>());
+      cases.push_back(stmt.As<CaseStmt>());
     }
 
     next_if(PuncComa) || next_if(PuncSemi);

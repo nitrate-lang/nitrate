@@ -246,7 +246,7 @@ namespace no3::lsp::protocol {
       std::variant<RequestMessage, NotificationMessage, ResponseMessage>;
   [[nodiscard]]
 
-  static inline size_t hash_value(const MessageVariant& m) {  /// NOLINT
+  static inline size_t hash_value(const MessageVariant& m) {  // NOLINT
     return std::visit([](const auto& m) { return m.GetHash(); }, m);
   }
 

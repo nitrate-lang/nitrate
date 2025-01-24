@@ -462,7 +462,7 @@
 //     }
 
 //     case IR_tCONST: {
-//       ConstTy *const_ty = _for->as<ConstTy>();
+//       ConstTy *const_ty = _for->As<ConstTy>();
 //       auto e = getDefaultValue(const_ty->GetItem());
 //       if (e) {
 //         E = create<BinExpr>(e.value(), _for, Op::CastAs);
@@ -476,7 +476,7 @@
 //     }
 
 //     case IR_tSTRUCT: {
-//       StructTy *struct_ty = _for->as<StructTy>();
+//       StructTy *struct_ty = _for->As<StructTy>();
 
 //       std::vector<Expr *> fields(struct_ty->getFields().size());
 //       for (size_t i = 0; i < fields.size(); i++) {
@@ -495,7 +495,7 @@
 //     }
 
 //     case IR_tUNION: {
-//       UnionTy *union_ty = _for->as<UnionTy>();
+//       UnionTy *union_ty = _for->As<UnionTy>();
 
 //       if (union_ty->getFields().empty()) {
 //         E = create<BinExpr>(createList({}, false), _for, Op::CastAs);
@@ -507,7 +507,7 @@
 //     }
 
 //     case IR_tARRAY: {
-//       auto array_ty = _for->as<ArrayTy>();
+//       auto array_ty = _for->As<ArrayTy>();
 
 //       /// FIXME: This is horribly inefficient in terms of memory, especially
 //       for
@@ -530,13 +530,13 @@
 //     }
 
 //     case IR_tFUNC: {
-//       FnTy *fn_ty = _for->as<FnTy>();
+//       FnTy *fn_ty = _for->As<FnTy>();
 //       E = create<BinExpr>(createFixedInteger(0, 64), fn_ty, Op::BitcastAs);
 //       break;
 //     }
 
 //     case IR_tTMP: {
-//       Tmp *tmp = _for->as<Tmp>();
+//       Tmp *tmp = _for->As<Tmp>();
 //       if (tmp->getTmpType() == TmpType::NAMED_TYPE) {
 //         std::string_view name = std::get<std::string_view>(tmp->getData());
 //         E = create<Tmp>(TmpType::DEFAULT_VALUE, name);

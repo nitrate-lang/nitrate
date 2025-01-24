@@ -157,7 +157,7 @@ using namespace ncc;
 // static bool check_is_foreign_function(auto n) {
 //   return std::any_of(n.begin(), n.end(), [](FlowPtr<ncc::parse::Expr> attr) {
 //     return attr->is(QAST_IDENT) &&
-//            attr->as<ncc::parse::Ident>()->GetName() == "foreign";
+//            attr->As<ncc::parse::Ident>()->GetName() == "foreign";
 //   });
 // }
 
@@ -492,7 +492,7 @@ using namespace ncc;
 //   if (n->Getlhs() && n->Getrhs() && n->Getop() == lex::OpAs &&
 //       n->Getrhs()->is(QAST_TEXPR)) {
 //     FlowPtr<ncc::parse::Type> type =
-//         n->Getrhs()->as<ncc::parse::TypeExpr>()->GetKind();
+//         n->Getrhs()->As<ncc::parse::TypeExpr>()->GetKind();
 
 //     bool is_integer_ty = type->is_integral();
 //     bool is_integer_lit = n->Getlhs()->GetKind() == QAST_INT;
@@ -516,7 +516,7 @@ using namespace ncc;
 //         auto it = integer_lit_suffixes.find(type->GetKind());
 //         if (it != integer_lit_suffixes.end()) {
 //           FlowPtr<ncc::parse::ConstInt> N(
-//               n->Getlhs()->as<ncc::parse::ConstInt>());
+//               n->Getlhs()->As<ncc::parse::ConstInt>());
 
 //           return b.createFixedInteger(
 //               boost::multiprecision::cpp_int(N->get_value()), it->second);
@@ -533,7 +533,7 @@ using namespace ncc;
 //         auto it = float_lit_suffixes.find(type->GetKind());
 //         if (it != float_lit_suffixes.end()) {
 //           FlowPtr<ncc::parse::ConstFloat> N(
-//               n->Getlhs()->as<ncc::parse::ConstFloat>());
+//               n->Getlhs()->As<ncc::parse::ConstFloat>());
 
 //           return b.createFixedFloat(
 //               boost::multiprecision::cpp_dec_float_100(N->get_value()),
@@ -1062,7 +1062,7 @@ using namespace ncc;
 //     return std::nullopt;
 //   }
 
-//   uint128_t size = result.value()->as<Int>()->getValue();
+//   uint128_t size = result.value()->As<Int>()->getValue();
 
 //   if (size > UINT64_MAX) {
 //     G->report(CompilerError, IC::Error, "Array size > UINT64_MAX",
@@ -1438,7 +1438,7 @@ using namespace ncc;
 
 //       s.ns_prefix = old_ns;
 
-//       fndef->SetBody(body.value()->as<Seq>());
+//       fndef->SetBody(body.value()->As<Seq>());
 //     }
 
 //     return fndef;
@@ -1620,7 +1620,7 @@ using namespace ncc;
 //   AbiTag old = s.abi_mode;
 //   s.abi_mode = it->second.second;
 
-//   auto body = n->Getbody()->as<ncc::parse::Block>()->GetItems();
+//   auto body = n->Getbody()->As<ncc::parse::Block>()->GetItems();
 //   std::vector<ir::Expr *> items;
 
 //   for (size_t i = 0; i < body.size(); i++) {
@@ -1666,7 +1666,7 @@ using namespace ncc;
 //     if ((*it)->GetKind() == QAST_BLOCK) {
 //       /* Reduce unneeded nesting in the IR */
 //       qcore_assert(item->size() == 1);
-//       Seq *inner = item->at(0)->as<Seq>();
+//       Seq *inner = item->at(0)->As<Seq>();
 
 //       items.insert(items.end(), inner->GetItems().begin(),
 //                    inner->GetItems().end());
@@ -1813,7 +1813,7 @@ using namespace ncc;
 //     body = create<Seq>(SeqItems({body.value()}));
 //   }
 
-//   return create<While>(cond.value(), body.value()->as<Seq>());
+//   return create<While>(cond.value(), body.value()->As<Seq>());
 // }
 
 // static EResult nrgen_for(NRBuilder &b, PState &s, IReport *G,
@@ -1909,7 +1909,7 @@ using namespace ncc;
 //       return std::nullopt;
 //     }
 
-//     cases.push_back(item.value()->as<Case>());
+//     cases.push_back(item.value()->As<Case>());
 //   }
 
 //   EResult def;

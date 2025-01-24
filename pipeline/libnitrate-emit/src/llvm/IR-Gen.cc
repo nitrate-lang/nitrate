@@ -427,14 +427,14 @@ public:
 //       return IterOp::SkipChildren;
 //     }
 
-//     make_forward_declaration(*m, *b, s, (*N)->template as<Function>());
+//     make_forward_declaration(*m, *b, s, (*N)->template As<Function>());
 
 //     return IterOp::Proceed;
 //   });
 
 //   (void)make_forward_declaration;
 
-//   const Seq *seq = root->as<Seq>();
+//   const Seq *seq = root->As<Seq>();
 
 //   for (auto &node : seq->GetItems()) {
 //     val_t R = V_gen(*m, *b, s, node);
@@ -494,8 +494,8 @@ public:
 
 //       /* Composite casting */
 //       else if (LT->is_array() && RT->GetKind() == IR_tSTRUCT) {
-//         ArrayTy *base = LT->as<ArrayTy>();
-//         StructTy *ST = RT->as<StructTy>();
+//         ArrayTy *base = LT->As<ArrayTy>();
+//         StructTy *ST = RT->As<StructTy>();
 
 //         if (base->getCount() == ST->getFields().size()) {
 //           StructType *new_st_ty = cast<StructType>(R);
@@ -525,8 +525,8 @@ public:
 //           E = b.CreateLoad(new_st->getAllocatedType(), new_st);
 //         }
 //       } else if (LT->is_array() && RT->is_array()) {
-//         ArrayTy *FROM = LT->as<ArrayTy>();
-//         ArrayTy *TO = RT->as<ArrayTy>();
+//         ArrayTy *FROM = LT->As<ArrayTy>();
+//         ArrayTy *TO = RT->As<ArrayTy>();
 
 //         if (FROM->getCount() == TO->getCount()) {
 //           ArrayType *new_arr_ty = cast<ArrayType>(R);
@@ -725,7 +725,7 @@ public:
 //         case Op::Set: { /* '=': Assignment operator */
 //           if (N->getLHS()->GetKind() == IR_eIDENT) {
 //             if (auto find = s.find_named_value(
-//                     m, N->getLHS()->as<Ident>()->GetName())) {
+//                     m, N->getLHS()->As<Ident>()->GetName())) {
 //               if (find->second == PtrClass::DataPtr) {
 //                 b.CreateStore(R.value(), find->first);
 
@@ -847,7 +847,7 @@ public:
 //             qcore_panic("expected identifier for address_of");
 //           }
 
-//           Ident *I = N->getExpr()->as<Ident>();
+//           Ident *I = N->getExpr()->As<Ident>();
 //           auto find = s.find_named_value(m, I->GetName());
 //           if (!find) {
 //             qcore_panic("failed to find identifier for address_of");
@@ -1008,7 +1008,7 @@ public:
 //       }
 
 //       if (N->getExpr()->GetKind() == IR_eIDENT) {
-//         Ident *B = N->getExpr()->as<Ident>();
+//         Ident *B = N->getExpr()->As<Ident>();
 //         auto find = s.find_named_value(m, B->GetName());
 //         if (!find) {
 //           debug("Failed to find named value " << B->GetName());
@@ -1160,7 +1160,7 @@ public:
 //           debug("Failed to get return type");
 //           return nullopt;
 //         }
-//         ty_t R = T(x.value()->as<FnTy>()->getReturn());
+//         ty_t R = T(x.value()->As<FnTy>()->getReturn());
 //         if (!R) {
 //           debug("Failed to get return type");
 //           return nullopt;
@@ -1510,7 +1510,7 @@ public:
 //       }
 
 //       for (auto &node : N->getCases()) {
-//         Case *C = node->as<Case>();
+//         Case *C = node->As<Case>();
 //         auto x = C->getCond()->getType();
 //         if (!x) {
 //           debug("Failed to get case condition type");
@@ -1548,7 +1548,7 @@ public:
 //           b.SetInsertPoint(case_block);
 //           case_block->moveBefore(end);
 
-//           Case *C = node->as<Case>();
+//           Case *C = node->As<Case>();
 
 //           val_t R_C = V(C->getCond());
 //           if (!R_C) {
@@ -1743,7 +1743,7 @@ public:
 //   static let dispatch = []() constexpr {
 // #define FUNCTION(_enum, _func, _type)                                       \
 //   R[_enum] = [](ctx_t &m, craft_t &b, State &s, FlowPtr<Expr> N) -> val_t { \
-//     return _func(m, b, s, N->as<_type>());                                  \
+//     return _func(m, b, s, N->As<_type>());                                  \
 //   }
 //     using func_t = val_t (*)(ctx_t &, craft_t &, State &, FlowPtr<Expr>);
 
@@ -1800,7 +1800,7 @@ public:
 //   static let dispatch = []() constexpr {
 // #define FUNCTION(_enum, _func, _type)                  \
 //   R[_enum] = [](craft_t &b, FlowPtr<Expr> N) -> ty_t { \
-//     return _func(b, N->as<_type>());                   \
+//     return _func(b, N->As<_type>());                   \
 //   }
 //     using func_t = ty_t (*)(craft_t &, FlowPtr<Expr>);
 

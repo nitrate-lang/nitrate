@@ -55,7 +55,7 @@ namespace ncc {
     ~CStringView() = default;
 
     [[nodiscard]]
-    auto c_str() const  /// NOLINT
+    auto c_str() const  // NOLINT
         -> const char * {
       return data();
     }

@@ -42,7 +42,7 @@ using namespace ncc::ir;
 class CloneVisitor : public IRVisitor<void> {
   std::optional<Expr *> m_r;
 
-  void for_each(  /// NOLINT
+  void for_each(  // NOLINT
       const auto &container, const auto &callback) {
     for (const auto &item : container) {
       callback(item);
@@ -330,7 +330,7 @@ NCC_EXPORT Expr *detail::ExprGetCloneImpl(Expr *self) {
       for_each(e, [](auto ty, auto n) {
         switch (ty) {
           case IR_eIDENT: {
-            auto ident = n->template as<Ident>();
+            auto ident = n->template As<Ident>();
 
             if (auto what = ident->GetWhat()) {
               if (auto it = state.m_in_out.find(what.value().get());
@@ -341,7 +341,7 @@ NCC_EXPORT Expr *detail::ExprGetCloneImpl(Expr *self) {
           }
 
           case IR_eCALL: {
-            auto call = n->template as<Call>();
+            auto call = n->template As<Call>();
 
             if (auto target = call->GetTarget()) {
               if (auto it = state.m_in_out.find(target.value().get());

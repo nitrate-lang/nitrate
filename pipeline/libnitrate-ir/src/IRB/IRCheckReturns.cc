@@ -58,7 +58,7 @@ auto NRBuilder::CheckReturns(FlowPtr<Seq> root, IReport *d) -> bool {
       return;
     }
 
-    const auto fn_ty = fn_ty_opt.value()->template as<FnTy>();
+    const auto fn_ty = fn_ty_opt.value()->template As<FnTy>();
     const auto return_ty = fn_ty->GetReturn();
 
     bool found_ret = false;

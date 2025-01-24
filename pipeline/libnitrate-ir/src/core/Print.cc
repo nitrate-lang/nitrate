@@ -150,35 +150,35 @@ using namespace ncc::ir;
 //   switch (n->GetKind()) {
 //     case IR_eBIN: {
 //       ss << "(";
-//       recurse(n->as<BinExpr>()->getLHS());
+//       recurse(n->As<BinExpr>()->getLHS());
 //       ss << " ";
-//       ss << n->as<BinExpr>()->getOp();
+//       ss << n->As<BinExpr>()->getOp();
 //       ss << " ";
-//       recurse(n->as<BinExpr>()->getRHS());
+//       recurse(n->As<BinExpr>()->getRHS());
 //       ss << ")";
 //       break;
 //     }
 //     case IR_eUNARY: {
 //       ss << "(";
-//       ss << n->as<Unary>()->getOp();
+//       ss << n->As<Unary>()->getOp();
 //       ss << "(";
-//       recurse(n->as<Unary>()->getExpr());
+//       recurse(n->As<Unary>()->getExpr());
 //       ss << "))";
 //       break;
 //     }
 //     case IR_eINT: {
-//       recurse(n->as<Int>()->GetType().value_or(nullptr));
-//       ss << " " << n->as<Int>()->getValueString();
+//       recurse(n->As<Int>()->GetType().value_or(nullptr));
+//       ss << " " << n->As<Int>()->getValueString();
 //       break;
 //     }
 //     case IR_eFLOAT: {
-//       recurse(n->as<Float>()->GetType().value_or(nullptr));
-//       ss << " " << n->as<Float>()->getValue();
+//       recurse(n->As<Float>()->GetType().value_or(nullptr));
+//       ss << " " << n->As<Float>()->getValue();
 //       break;
 //     }
 //     case IR_eLIST: {
 //       // Check if it matches the string literal pattern
-//       List *L = n->as<List>();
+//       List *L = n->As<List>();
 
 //       recurse(L->GetType().value_or(nullptr));
 //       ss << " ";
@@ -190,7 +190,7 @@ using namespace ncc::ir;
 //           break;
 //         }
 
-//         Int *C = L->at(i)->as<Int>();
+//         Int *C = L->at(i)->As<Int>();
 //         if (C->getSize() != 8) {
 //           break;
 //         }
@@ -222,19 +222,19 @@ using namespace ncc::ir;
 //       break;
 //     }
 //     case IR_eCALL: {
-//       auto tkind = n->as<Call>()->getTarget()->GetKind();
+//       auto tkind = n->As<Call>()->getTarget()->GetKind();
 //       if (tkind == IR_eLOCAL) {
-//         ss << n->as<Call>()->getTarget()->as<Local>()->GetName();
+//         ss << n->As<Call>()->getTarget()->As<Local>()->GetName();
 //       } else if (tkind == IR_eFUNCTION) {
-//         ss << n->as<Call>()->getTarget()->as<Function>()->GetName();
+//         ss << n->As<Call>()->getTarget()->As<Function>()->GetName();
 //       } else {
-//         recurse(n->as<Call>()->getTarget());
+//         recurse(n->As<Call>()->getTarget());
 //       }
 //       ss << "(";
-//       for (auto it = n->as<Call>()->getArgs().begin();
-//            it != n->as<Call>()->getArgs().end(); ++it) {
+//       for (auto it = n->As<Call>()->getArgs().begin();
+//            it != n->As<Call>()->getArgs().end(); ++it) {
 //         recurse(*it);
-//         if (std::next(it) != n->as<Call>()->getArgs().end()) {
+//         if (std::next(it) != n->As<Call>()->getArgs().end()) {
 //           ss << ", ";
 //         }
 //       }
@@ -245,8 +245,8 @@ using namespace ncc::ir;
 //       ss << "seq {";
 //       state.indent++;
 //       indent(ss, state);
-//       for (auto it = n->as<Seq>()->GetItems().begin();
-//            it != n->as<Seq>()->GetItems().end(); ++it) {
+//       for (auto it = n->As<Seq>()->GetItems().begin();
+//            it != n->As<Seq>()->GetItems().end(); ++it) {
 //         if ((*it)->GetKind() == IR_eIGN) {
 //           continue;
 //         }
@@ -254,7 +254,7 @@ using namespace ncc::ir;
 //         recurse(*it);
 //         ss << ",";
 
-//         if (std::next(it) != n->as<Seq>()->GetItems().end()) {
+//         if (std::next(it) != n->As<Seq>()->GetItems().end()) {
 //           indent(ss, state);
 //         }
 //       }
@@ -264,39 +264,39 @@ using namespace ncc::ir;
 //       break;
 //     }
 //     case IR_eINDEX: {
-//       recurse(n->as<Index>()->getExpr());
+//       recurse(n->As<Index>()->getExpr());
 //       ss << "[";
-//       recurse(n->as<Index>()->getIndex());
+//       recurse(n->As<Index>()->getIndex());
 //       ss << "]";
 //       break;
 //     }
 //     case IR_eIDENT: {
-//       recurse(n->as<Ident>()->GetType().value_or(nullptr));
-//       ss << " " << n->as<Ident>()->GetName();
+//       recurse(n->As<Ident>()->GetType().value_or(nullptr));
+//       ss << " " << n->As<Ident>()->GetName();
 //       break;
 //     }
 //     case IR_eEXTERN: {
 //       ss << "extern ";
-//       escape_string(ss, n->as<Extern>()->getAbiName());
+//       escape_string(ss, n->As<Extern>()->getAbiName());
 //       ss << " ";
-//       recurse(n->as<Extern>()->getValue());
+//       recurse(n->As<Extern>()->getValue());
 //       break;
 //     }
 //     case IR_eLOCAL: {
 //       ss << "local ";
-//       ss << n->as<Local>()->GetName();
-//       if (auto ty = n->as<Local>()->getValue()->GetType()) {
+//       ss << n->As<Local>()->GetName();
+//       if (auto ty = n->As<Local>()->getValue()->GetType()) {
 //         ss << ": ";
 //         recurse(ty.value());
 //       }
 
 //       ss << " = ";
-//       recurse(n->as<Local>()->getValue());
+//       recurse(n->As<Local>()->getValue());
 //       break;
 //     }
 //     case IR_eRET: {
 //       ss << "ret ";
-//       recurse(n->as<Ret>()->getExpr());
+//       recurse(n->As<Ret>()->getExpr());
 //       break;
 //     }
 //     case IR_eBRK: {
@@ -310,52 +310,52 @@ using namespace ncc::ir;
 
 //     case IR_eIF: {
 //       ss << "if (";
-//       recurse(n->as<If>()->getCond());
+//       recurse(n->As<If>()->getCond());
 //       ss << ") then ";
-//       recurse(n->as<If>()->getThen());
+//       recurse(n->As<If>()->getThen());
 //       ss << " else ";
-//       recurse(n->as<If>()->getElse());
+//       recurse(n->As<If>()->getElse());
 //       break;
 //     }
 //     case IR_eWHILE: {
 //       ss << "while (";
-//       recurse(n->as<While>()->getCond());
+//       recurse(n->As<While>()->getCond());
 //       ss << ") ";
-//       recurse(n->as<While>()->getBody());
+//       recurse(n->As<While>()->getBody());
 //       break;
 //     }
 //     case IR_eFOR: {
 //       ss << "for (";
-//       recurse(n->as<For>()->getInit());
+//       recurse(n->As<For>()->getInit());
 //       ss << "; ";
-//       recurse(n->as<For>()->getCond());
+//       recurse(n->As<For>()->getCond());
 //       ss << "; ";
-//       recurse(n->as<For>()->getStep());
+//       recurse(n->As<For>()->getStep());
 //       ss << ") ";
-//       recurse(n->as<For>()->getBody());
+//       recurse(n->As<For>()->getBody());
 //       break;
 //     }
 //     case IR_eCASE: {
 //       ss << "case ";
-//       recurse(n->as<Case>()->getCond());
+//       recurse(n->As<Case>()->getCond());
 //       ss << ": ";
-//       recurse(n->as<Case>()->getBody());
+//       recurse(n->As<Case>()->getBody());
 //       break;
 //     }
 //     case IR_eSWITCH: {
 //       ss << "switch (";
-//       recurse(n->as<Switch>()->getCond());
+//       recurse(n->As<Switch>()->getCond());
 //       ss << ") {";
 //       state.indent++;
 //       indent(ss, state);
-//       for (auto it = n->as<Switch>()->getCases().begin();
-//            it != n->as<Switch>()->getCases().end(); ++it) {
+//       for (auto it = n->As<Switch>()->getCases().begin();
+//            it != n->As<Switch>()->getCases().end(); ++it) {
 //         recurse(*it);
 //         ss << ",";
 //         indent(ss, state);
 //       }
 //       ss << "default: ";
-//       recurse(n->as<Switch>()->getDefault());
+//       recurse(n->As<Switch>()->getDefault());
 //       state.indent--;
 //       indent(ss, state);
 //       ss << "}";
@@ -363,26 +363,26 @@ using namespace ncc::ir;
 //     }
 //     case IR_eFUNCTION: {
 //       ss << "fn ";
-//       ss << n->as<Function>()->GetName();
+//       ss << n->As<Function>()->GetName();
 //       ss << "(";
-//       for (auto it = n->as<Function>()->getParams().begin();
-//            it != n->as<Function>()->getParams().end(); ++it) {
+//       for (auto it = n->As<Function>()->getParams().begin();
+//            it != n->As<Function>()->getParams().end(); ++it) {
 //         ss << it->second << ": ";
 //         recurse(it->first);
-//         if (std::next(it) != n->as<Function>()->getParams().end() ||
-//             n->as<Function>()->isVariadic()) {
+//         if (std::next(it) != n->As<Function>()->getParams().end() ||
+//             n->As<Function>()->isVariadic()) {
 //           ss << ", ";
 //         }
 //       }
-//       if (n->as<Function>()->isVariadic()) {
+//       if (n->As<Function>()->isVariadic()) {
 //         ss << "...";
 //       }
 //       ss << ") -> ";
-//       recurse(n->as<Function>()->getReturn());
+//       recurse(n->As<Function>()->getReturn());
 
-//       if (n->as<Function>()->getBody().has_value()) {
+//       if (n->As<Function>()->getBody().has_value()) {
 //         ss << " ";
-//         recurse(n->as<Function>()->getBody().value());
+//         recurse(n->As<Function>()->getBody().value());
 //       }
 //       break;
 //     }
@@ -457,19 +457,19 @@ using namespace ncc::ir;
 //       break;
 //     }
 //     case IR_tPTR: {
-//       recurse(n->as<PtrTy>()->getPointee());
+//       recurse(n->As<PtrTy>()->getPointee());
 //       ss << "*";
 //       break;
 //     }
 //     case IR_tCONST: {
 //       ss << "const<";
-//       recurse(n->as<ConstTy>()->GetItem());
+//       recurse(n->As<ConstTy>()->GetItem());
 //       ss << ">";
 //       break;
 //     }
 //     case IR_tOPAQUE: {
 //       ss << "opaque ";
-//       ss << n->as<OpaqueTy>()->GetName();
+//       ss << n->As<OpaqueTy>()->GetName();
 //       break;
 //     }
 //     case IR_tSTRUCT: {
@@ -486,18 +486,18 @@ using namespace ncc::ir;
 //     }
 //     case IR_tARRAY: {
 //       ss << "[";
-//       recurse(n->as<ArrayTy>()->getElement());
-//       ss << "; " << n->as<ArrayTy>()->getCount();
+//       recurse(n->As<ArrayTy>()->getElement());
+//       ss << "; " << n->As<ArrayTy>()->getCount();
 //       ss << "]";
 //       break;
 //     }
 //     case IR_tFUNC: {
 //       ss << "fn (";
-//       bool variadic = n->as<FnTy>()->isVariadic();
-//       for (auto it = n->as<FnTy>()->getParams().begin();
-//            it != n->as<FnTy>()->getParams().end(); ++it) {
+//       bool variadic = n->As<FnTy>()->isVariadic();
+//       for (auto it = n->As<FnTy>()->getParams().begin();
+//            it != n->As<FnTy>()->getParams().end(); ++it) {
 //         recurse(*it);
-//         if (std::next(it) != n->as<FnTy>()->getParams().end() || variadic) {
+//         if (std::next(it) != n->As<FnTy>()->getParams().end() || variadic) {
 //           ss << ",";
 //         }
 //       }
@@ -505,12 +505,12 @@ using namespace ncc::ir;
 //         ss << "...";
 //       }
 //       ss << "): ";
-//       recurse(n->as<FnTy>()->getReturn());
+//       recurse(n->As<FnTy>()->getReturn());
 //       break;
 //     }
 //     case IR_tTMP: {
-//       ss << "`" << static_cast<uint64_t>(n->as<Tmp>()->getTmpType());
-//       ss << ";" << n->as<Tmp>()->getData().index() << "`";
+//       ss << "`" << static_cast<uint64_t>(n->As<Tmp>()->getTmpType());
+//       ss << ";" << n->As<Tmp>()->getData().index() << "`";
 //       break;
 //     }
 //   }

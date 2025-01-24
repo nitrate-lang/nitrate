@@ -557,14 +557,14 @@ namespace argparse {
       template <typename U>
       static auto Test(...) -> std::false_type;
 
-      static constexpr bool value  /// NOLINT
+      static constexpr bool value  // NOLINT
           = decltype(Test<T>(0))::value;
     };
 
     template <typename T>
     struct IsChoiceTypeSupported {
       using CleanType = typename std::decay<T>::type;
-      static const bool value =  /// NOLINT
+      static const bool value =  // NOLINT
           std::is_integral<CleanType>::value ||
           std::is_same<CleanType, std::string>::value ||
           std::is_same<CleanType, std::string_view>::value ||

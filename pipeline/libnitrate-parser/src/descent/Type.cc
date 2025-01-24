@@ -147,13 +147,13 @@ auto Parser::PImpl::RecurseTypeSuffix(FlowPtr<Type> base)
 auto Parser::PImpl::RecurseFunctionType() -> FlowPtr<parse::Type> {
   auto fn = RecurseFunction(true);
 
-  if (!fn->Is<Function>() || !fn->as<Function>()->IsDeclaration()) {
+  if (!fn->Is<Function>() || !fn->As<Function>()->IsDeclaration()) {
     Log << SyntaxError << current()
         << "Expected a function declaration but got something else";
     return MockType();
   }
 
-  FlowPtr<Function> fn_def = fn.as<Function>();
+  FlowPtr<Function> fn_def = fn.As<Function>();
 
   auto func_ty = make<FuncTy>(fn_def->GetReturn(), fn_def->GetParams(),
                               fn_def->IsVariadic(), fn_def->GetPurity(),

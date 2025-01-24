@@ -392,7 +392,7 @@ namespace ncc::parse {
   };
 
   constexpr auto Stmt::IsExprStmt(npar_ty_t type) const -> bool {
-    return Is(QAST_ESTMT) && as<ExprStmt>()->GetExpr()->Is(type);
+    return Is(QAST_ESTMT) && As<ExprStmt>()->GetExpr()->Is(type);
   }
 }  // namespace ncc::parse
 

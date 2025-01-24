@@ -191,7 +191,7 @@
 //     FlowPtr<Expr> out_expr = static_cast<FlowPtr<Expr> >(m_root->clone());
 
 //     contract_enforce(out_expr->GetKind() == IR_eSEQ);
-//     r.m_root = out_expr->as<Seq>();
+//     r.m_root = out_expr->As<Seq>();
 //   }
 
 //   return r;

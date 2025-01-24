@@ -194,7 +194,7 @@ namespace ncc {
       }
 
       template <class U>
-      constexpr auto as() {  // NOLINT
+      constexpr auto As() {
         return FlowPtr<U>(reinterpret_cast<U *>(get()), Trace());
       }
 

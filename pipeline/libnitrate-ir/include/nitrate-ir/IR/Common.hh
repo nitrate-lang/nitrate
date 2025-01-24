@@ -62,11 +62,11 @@ namespace ncc::ir {
     template <class U>
     constexpr Arena(const Arena<U> &) {}
 
-    [[nodiscard]] T *allocate(std::size_t n) {  /// NOLINT
+    [[nodiscard]] T *allocate(std::size_t n) {  // NOLINT
       return static_cast<T *>(NrAllocator->Alloc(sizeof(T) * n));
     }
 
-    void deallocate(T *, std::size_t) {};  /// NOLINT
+    void deallocate(T *, std::size_t) {};  // NOLINT
   };
 
   template <class T, class U>

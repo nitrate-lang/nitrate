@@ -116,275 +116,275 @@ namespace ncc::parse {
     void Dispatch(FlowPtr<T> n) {
       switch (n->GetKind()) {
         case QAST_BASE: {
-          Visit(n.template as<Base>());
+          Visit(n.template As<Base>());
           break;
         }
         case QAST_BINEXPR: {
-          Visit(n.template as<BinExpr>());
+          Visit(n.template As<BinExpr>());
           break;
         }
         case QAST_UNEXPR: {
-          Visit(n.template as<UnaryExpr>());
+          Visit(n.template As<UnaryExpr>());
           break;
         }
         case QAST_TEREXPR: {
-          Visit(n.template as<TernaryExpr>());
+          Visit(n.template As<TernaryExpr>());
           break;
         }
         case QAST_INT: {
-          Visit(n.template as<ConstInt>());
+          Visit(n.template As<ConstInt>());
           break;
         }
         case QAST_FLOAT: {
-          Visit(n.template as<ConstFloat>());
+          Visit(n.template As<ConstFloat>());
           break;
         }
         case QAST_STRING: {
-          Visit(n.template as<ConstString>());
+          Visit(n.template As<ConstString>());
           break;
         }
         case QAST_CHAR: {
-          Visit(n.template as<ConstChar>());
+          Visit(n.template As<ConstChar>());
           break;
         }
         case QAST_BOOL: {
-          Visit(n.template as<ConstBool>());
+          Visit(n.template As<ConstBool>());
           break;
         }
         case QAST_NULL: {
-          Visit(n.template as<ConstNull>());
+          Visit(n.template As<ConstNull>());
           break;
         }
         case QAST_UNDEF: {
-          Visit(n.template as<ConstUndef>());
+          Visit(n.template As<ConstUndef>());
           break;
         }
         case QAST_CALL: {
-          Visit(n.template as<Call>());
+          Visit(n.template As<Call>());
           break;
         }
         case QAST_LIST: {
-          Visit(n.template as<List>());
+          Visit(n.template As<List>());
           break;
         }
         case QAST_ASSOC: {
-          Visit(n.template as<Assoc>());
+          Visit(n.template As<Assoc>());
           break;
         }
         case QAST_INDEX: {
-          Visit(n.template as<Index>());
+          Visit(n.template As<Index>());
           break;
         }
         case QAST_SLICE: {
-          Visit(n.template as<Slice>());
+          Visit(n.template As<Slice>());
           break;
         }
         case QAST_FSTRING: {
-          Visit(n.template as<FString>());
+          Visit(n.template As<FString>());
           break;
         }
         case QAST_IDENT: {
-          Visit(n.template as<Ident>());
+          Visit(n.template As<Ident>());
           break;
         }
         case QAST_SEQ: {
-          Visit(n.template as<SeqPoint>());
+          Visit(n.template As<SeqPoint>());
           break;
         }
         case QAST_POST_UNEXPR: {
-          Visit(n.template as<PostUnaryExpr>());
+          Visit(n.template As<PostUnaryExpr>());
           break;
         }
         case QAST_SEXPR: {
-          Visit(n.template as<StmtExpr>());
+          Visit(n.template As<StmtExpr>());
           break;
         }
         case QAST_TEXPR: {
-          Visit(n.template as<TypeExpr>());
+          Visit(n.template As<TypeExpr>());
           break;
         }
         case QAST_TEMPL_CALL: {
-          Visit(n.template as<TemplCall>());
+          Visit(n.template As<TemplCall>());
           break;
         }
         case QAST_REF: {
-          Visit(n.template as<RefTy>());
+          Visit(n.template As<RefTy>());
           break;
         }
         case QAST_U1: {
-          Visit(n.template as<U1>());
+          Visit(n.template As<U1>());
           break;
         }
         case QAST_U8: {
-          Visit(n.template as<U8>());
+          Visit(n.template As<U8>());
           break;
         }
         case QAST_U16: {
-          Visit(n.template as<U16>());
+          Visit(n.template As<U16>());
           break;
         }
         case QAST_U32: {
-          Visit(n.template as<U32>());
+          Visit(n.template As<U32>());
           break;
         }
         case QAST_U64: {
-          Visit(n.template as<U64>());
+          Visit(n.template As<U64>());
           break;
         }
         case QAST_U128: {
-          Visit(n.template as<U128>());
+          Visit(n.template As<U128>());
           break;
         }
         case QAST_I8: {
-          Visit(n.template as<I8>());
+          Visit(n.template As<I8>());
           break;
         }
         case QAST_I16: {
-          Visit(n.template as<I16>());
+          Visit(n.template As<I16>());
           break;
         }
         case QAST_I32: {
-          Visit(n.template as<I32>());
+          Visit(n.template As<I32>());
           break;
         }
         case QAST_I64: {
-          Visit(n.template as<I64>());
+          Visit(n.template As<I64>());
           break;
         }
         case QAST_I128: {
-          Visit(n.template as<I128>());
+          Visit(n.template As<I128>());
           break;
         }
         case QAST_F16: {
-          Visit(n.template as<F16>());
+          Visit(n.template As<F16>());
           break;
         }
         case QAST_F32: {
-          Visit(n.template as<F32>());
+          Visit(n.template As<F32>());
           break;
         }
         case QAST_F64: {
-          Visit(n.template as<F64>());
+          Visit(n.template As<F64>());
           break;
         }
         case QAST_F128: {
-          Visit(n.template as<F128>());
+          Visit(n.template As<F128>());
           break;
         }
         case QAST_VOID: {
-          Visit(n.template as<VoidTy>());
+          Visit(n.template As<VoidTy>());
           break;
         }
         case QAST_PTR: {
-          Visit(n.template as<PtrTy>());
+          Visit(n.template As<PtrTy>());
           break;
         }
         case QAST_OPAQUE: {
-          Visit(n.template as<OpaqueTy>());
+          Visit(n.template As<OpaqueTy>());
           break;
         }
         case QAST_ARRAY: {
-          Visit(n.template as<ArrayTy>());
+          Visit(n.template As<ArrayTy>());
           break;
         }
         case QAST_TUPLE: {
-          Visit(n.template as<TupleTy>());
+          Visit(n.template As<TupleTy>());
           break;
         }
         case QAST_FUNCTOR: {
-          Visit(n.template as<FuncTy>());
+          Visit(n.template As<FuncTy>());
           break;
         }
         case QAST_NAMED: {
-          Visit(n.template as<NamedTy>());
+          Visit(n.template As<NamedTy>());
           break;
         }
         case QAST_INFER: {
-          Visit(n.template as<InferTy>());
+          Visit(n.template As<InferTy>());
           break;
         }
         case QAST_TEMPLATE: {
-          Visit(n.template as<TemplType>());
+          Visit(n.template As<TemplType>());
           break;
         }
         case QAST_TYPEDEF: {
-          Visit(n.template as<TypedefStmt>());
+          Visit(n.template As<TypedefStmt>());
           break;
         }
         case QAST_STRUCT: {
-          Visit(n.template as<StructDef>());
+          Visit(n.template As<StructDef>());
           break;
         }
         case QAST_ENUM: {
-          Visit(n.template as<EnumDef>());
+          Visit(n.template As<EnumDef>());
           break;
         }
         case QAST_FUNCTION: {
-          Visit(n.template as<Function>());
+          Visit(n.template As<Function>());
           break;
         }
         case QAST_SCOPE: {
-          Visit(n.template as<ScopeStmt>());
+          Visit(n.template As<ScopeStmt>());
           break;
         }
         case QAST_EXPORT: {
-          Visit(n.template as<ExportStmt>());
+          Visit(n.template As<ExportStmt>());
           break;
         }
         case QAST_BLOCK: {
-          Visit(n.template as<Block>());
+          Visit(n.template As<Block>());
           break;
         }
         case QAST_VAR: {
-          Visit(n.template as<VarDecl>());
+          Visit(n.template As<VarDecl>());
           break;
         }
         case QAST_INLINE_ASM: {
-          Visit(n.template as<InlineAsm>());
+          Visit(n.template As<InlineAsm>());
           break;
         }
         case QAST_RETURN: {
-          Visit(n.template as<ReturnStmt>());
+          Visit(n.template As<ReturnStmt>());
           break;
         }
         case QAST_RETIF: {
-          Visit(n.template as<ReturnIfStmt>());
+          Visit(n.template As<ReturnIfStmt>());
           break;
         }
         case QAST_BREAK: {
-          Visit(n.template as<BreakStmt>());
+          Visit(n.template As<BreakStmt>());
           break;
         }
         case QAST_CONTINUE: {
-          Visit(n.template as<ContinueStmt>());
+          Visit(n.template As<ContinueStmt>());
           break;
         }
         case QAST_IF: {
-          Visit(n.template as<IfStmt>());
+          Visit(n.template As<IfStmt>());
           break;
         }
         case QAST_WHILE: {
-          Visit(n.template as<WhileStmt>());
+          Visit(n.template As<WhileStmt>());
           break;
         }
         case QAST_FOR: {
-          Visit(n.template as<ForStmt>());
+          Visit(n.template As<ForStmt>());
           break;
         }
         case QAST_FOREACH: {
-          Visit(n.template as<ForeachStmt>());
+          Visit(n.template As<ForeachStmt>());
           break;
         }
         case QAST_CASE: {
-          Visit(n.template as<CaseStmt>());
+          Visit(n.template As<CaseStmt>());
           break;
         }
         case QAST_SWITCH: {
-          Visit(n.template as<SwitchStmt>());
+          Visit(n.template As<SwitchStmt>());
           break;
         }
         case QAST_ESTMT: {
-          Visit(n.template as<ExprStmt>());
+          Visit(n.template As<ExprStmt>());
           break;
         }
       }
