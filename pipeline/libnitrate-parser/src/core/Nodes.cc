@@ -181,21 +181,21 @@ NCC_EXPORT auto Type::IsPtrTo(const Type *type) const -> bool {
 }
 
 auto Parser::PImpl::MockStmt(std::optional<npar_ty_t>) -> FlowPtr<Stmt> {
-  auto node = make<Stmt>(QAST_BASE)();
+  auto node = CreateNode<Stmt>(QAST_BASE)();
   node->SetOffset(m_rd.Current().GetStart());
 
   return node;
 }
 
 auto Parser::PImpl::MockExpr(std::optional<npar_ty_t>) -> FlowPtr<Expr> {
-  auto node = make<Expr>(QAST_BASE)();
+  auto node = CreateNode<Expr>(QAST_BASE)();
   node->SetOffset(m_rd.Current().GetStart());
 
   return node;
 }
 
 auto Parser::PImpl::MockType() -> FlowPtr<Type> {
-  auto node = make<Type>(QAST_BASE)();
+  auto node = CreateNode<Type>(QAST_BASE)();
   node->SetOffset(m_rd.Current().GetStart());
 
   return node;

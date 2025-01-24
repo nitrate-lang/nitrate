@@ -744,7 +744,7 @@ auto AstReader::DeserializeType() -> NullableFlowPtr<Type> {
 }
 
 NullableFlowPtr<Base> AstReader::ReadKindNode() {  // NOLINT
-  return make<Base>(QAST_BASE)();
+  return CreateNode<Base>(QAST_BASE)();
 }
 
 auto AstReader::ReadKindBinexpr() -> NullableFlowPtr<BinExpr> {
@@ -777,7 +777,7 @@ auto AstReader::ReadKindBinexpr() -> NullableFlowPtr<BinExpr> {
     return nullptr;
   }
 
-  return make<BinExpr>(lhs.value(), op_it->second, rhs.value())();
+  return CreateNode<BinExpr>(lhs.value(), op_it->second, rhs.value())();
 }
 
 auto AstReader::ReadKindUnexpr() -> NullableFlowPtr<UnaryExpr> {
@@ -801,7 +801,7 @@ auto AstReader::ReadKindUnexpr() -> NullableFlowPtr<UnaryExpr> {
     return nullptr;
   }
 
-  return make<UnaryExpr>(op_it->second, rhs.value())();
+  return CreateNode<UnaryExpr>(op_it->second, rhs.value())();
 }
 
 auto AstReader::ReadKindPostUnexpr() -> NullableFlowPtr<PostUnaryExpr> {
@@ -825,7 +825,7 @@ auto AstReader::ReadKindPostUnexpr() -> NullableFlowPtr<PostUnaryExpr> {
     return nullptr;
   }
 
-  return make<PostUnaryExpr>(lhs.value(), op_it->second)();
+  return CreateNode<PostUnaryExpr>(lhs.value(), op_it->second)();
 }
 
 auto AstReader::ReadKindTerexpr() -> NullableFlowPtr<TernaryExpr> {
@@ -856,7 +856,7 @@ auto AstReader::ReadKindTerexpr() -> NullableFlowPtr<TernaryExpr> {
     return nullptr;
   }
 
-  return make<TernaryExpr>(cond.value(), lhs.value(), rhs.value())();
+  return CreateNode<TernaryExpr>(cond.value(), lhs.value(), rhs.value())();
 }
 
 auto AstReader::ReadKindInt() -> NullableFlowPtr<ConstInt> {
@@ -877,7 +877,7 @@ auto AstReader::ReadKindInt() -> NullableFlowPtr<ConstInt> {
     return nullptr;
   }
 
-  return make<ConstInt>(std::move(value))();
+  return CreateNode<ConstInt>(std::move(value))();
 }
 
 auto AstReader::ReadKindFloat() -> NullableFlowPtr<ConstFloat> {
@@ -893,7 +893,7 @@ auto AstReader::ReadKindFloat() -> NullableFlowPtr<ConstFloat> {
     return nullptr;
   }
 
-  return make<ConstFloat>(std::move(value))();
+  return CreateNode<ConstFloat>(std::move(value))();
 }
 
 auto AstReader::ReadKindString() -> NullableFlowPtr<ConstString> {
@@ -903,7 +903,7 @@ auto AstReader::ReadKindString() -> NullableFlowPtr<ConstString> {
 
   auto value = Next<std::string>();
 
-  return make<ConstString>(std::move(value))();
+  return CreateNode<ConstString>(std::move(value))();
 }
 
 auto AstReader::ReadKindChar() -> NullableFlowPtr<ConstChar> {
@@ -917,7 +917,7 @@ auto AstReader::ReadKindChar() -> NullableFlowPtr<ConstChar> {
     return nullptr;
   }
 
-  return make<ConstChar>(value)();
+  return CreateNode<ConstChar>(value)();
 }
 
 auto AstReader::ReadKindBool() -> NullableFlowPtr<ConstBool> {
@@ -927,15 +927,15 @@ auto AstReader::ReadKindBool() -> NullableFlowPtr<ConstBool> {
 
   auto value = Next<bool>();
 
-  return make<ConstBool>(value)();
+  return CreateNode<ConstBool>(value)();
 }
 
 NullableFlowPtr<ConstNull> AstReader::ReadKindNull() {  // NOLINT
-  return make<ConstNull>()();
+  return CreateNode<ConstNull>()();
 }
 
 NullableFlowPtr<ConstUndef> AstReader::ReadKindUndef() {  // NOLINT
-  return make<ConstUndef>()();
+  return CreateNode<ConstUndef>()();
 }
 
 auto AstReader::ReadKindCall() -> NullableFlowPtr<Call> {
@@ -976,7 +976,7 @@ auto AstReader::ReadKindCall() -> NullableFlowPtr<Call> {
     arguments.emplace_back(std::move(name), value.value());
   }
 
-  return make<Call>(callee.value(), std::move(arguments))();
+  return CreateNode<Call>(callee.value(), std::move(arguments))();
 }
 
 auto AstReader::ReadKindList() -> NullableFlowPtr<List> {
@@ -998,7 +998,7 @@ auto AstReader::ReadKindList() -> NullableFlowPtr<List> {
     elements.push_back(element.value());
   }
 
-  return make<List>(std::move(elements))();
+  return CreateNode<List>(std::move(elements))();
 }
 
 auto AstReader::ReadKindAssoc() -> NullableFlowPtr<Assoc> {
@@ -1020,7 +1020,7 @@ auto AstReader::ReadKindAssoc() -> NullableFlowPtr<Assoc> {
     return nullptr;
   }
 
-  return make<Assoc>(key.value(), value.value())();
+  return CreateNode<Assoc>(key.value(), value.value())();
 }
 
 auto AstReader::ReadKindIndex() -> NullableFlowPtr<Index> {
@@ -1039,7 +1039,7 @@ auto AstReader::ReadKindIndex() -> NullableFlowPtr<Index> {
 
   auto index = DeserializeExpression();
 
-  return make<Index>(base.value(), index.value())();
+  return CreateNode<Index>(base.value(), index.value())();
 }
 
 auto AstReader::ReadKindSlice() -> NullableFlowPtr<Slice> {
@@ -1070,7 +1070,7 @@ auto AstReader::ReadKindSlice() -> NullableFlowPtr<Slice> {
     return nullptr;
   }
 
-  return make<Slice>(base.value(), start.value(), end.value())();
+  return CreateNode<Slice>(base.value(), start.value(), end.value())();
 }
 
 auto AstReader::ReadKindFstring() -> NullableFlowPtr<FString> {
@@ -1096,7 +1096,7 @@ auto AstReader::ReadKindFstring() -> NullableFlowPtr<FString> {
     }
   }
 
-  return make<FString>(std::move(terms))();
+  return CreateNode<FString>(std::move(terms))();
 }
 
 auto AstReader::ReadKindIdent() -> NullableFlowPtr<Ident> {
@@ -1106,7 +1106,7 @@ auto AstReader::ReadKindIdent() -> NullableFlowPtr<Ident> {
 
   auto name = Next<std::string>();
 
-  return make<Ident>(std::move(name))();
+  return CreateNode<Ident>(std::move(name))();
 }
 
 auto AstReader::ReadKindSeqPoint() -> NullableFlowPtr<SeqPoint> {
@@ -1128,7 +1128,7 @@ auto AstReader::ReadKindSeqPoint() -> NullableFlowPtr<SeqPoint> {
     terms.push_back(term.value());
   }
 
-  return make<SeqPoint>(std::move(terms))();
+  return CreateNode<SeqPoint>(std::move(terms))();
 }
 
 auto AstReader::ReadKindStmtExpr() -> NullableFlowPtr<StmtExpr> {
@@ -1141,7 +1141,7 @@ auto AstReader::ReadKindStmtExpr() -> NullableFlowPtr<StmtExpr> {
     return nullptr;
   }
 
-  return make<StmtExpr>(stmt.value())();
+  return CreateNode<StmtExpr>(stmt.value())();
 }
 
 auto AstReader::ReadKindTypeExpr() -> NullableFlowPtr<TypeExpr> {
@@ -1154,7 +1154,7 @@ auto AstReader::ReadKindTypeExpr() -> NullableFlowPtr<TypeExpr> {
     return nullptr;
   }
 
-  return make<TypeExpr>(type.value())();
+  return CreateNode<TypeExpr>(type.value())();
 }
 
 auto AstReader::ReadKindTemplCall() -> NullableFlowPtr<TemplCall> {
@@ -1223,7 +1223,7 @@ auto AstReader::ReadKindTemplCall() -> NullableFlowPtr<TemplCall> {
     arguments.emplace_back(std::move(name), value.value());
   }
 
-  return make<TemplCall>(callee.value(), std::move(arguments),
+  return CreateNode<TemplCall>(callee.value(), std::move(arguments),
                          std::move(template_args))();
 }
 
@@ -1233,7 +1233,7 @@ auto AstReader::ReadKindU1() -> NullableFlowPtr<U1> {
     return nullptr;
   }
 
-  auto node = make<U1>()();
+  auto node = CreateNode<U1>()();
   node->SetWidth(info->m_width);
   node->SetRangeBegin(info->m_min);
   node->SetRangeEnd(info->m_max);
@@ -1247,7 +1247,7 @@ auto AstReader::ReadKindU8() -> NullableFlowPtr<U8> {
     return nullptr;
   }
 
-  auto node = make<U8>()();
+  auto node = CreateNode<U8>()();
   node->SetWidth(info->m_width);
   node->SetRangeBegin(info->m_min);
   node->SetRangeEnd(info->m_max);
@@ -1261,7 +1261,7 @@ auto AstReader::ReadKindU16() -> NullableFlowPtr<U16> {
     return nullptr;
   }
 
-  auto node = make<U16>()();
+  auto node = CreateNode<U16>()();
   node->SetWidth(info->m_width);
   node->SetRangeBegin(info->m_min);
   node->SetRangeEnd(info->m_max);
@@ -1275,7 +1275,7 @@ auto AstReader::ReadKindU32() -> NullableFlowPtr<U32> {
     return nullptr;
   }
 
-  auto node = make<U32>()();
+  auto node = CreateNode<U32>()();
   node->SetWidth(info->m_width);
   node->SetRangeBegin(info->m_min);
   node->SetRangeEnd(info->m_max);
@@ -1289,7 +1289,7 @@ auto AstReader::ReadKindU64() -> NullableFlowPtr<U64> {
     return nullptr;
   }
 
-  auto node = make<U64>()();
+  auto node = CreateNode<U64>()();
   node->SetWidth(info->m_width);
   node->SetRangeBegin(info->m_min);
   node->SetRangeEnd(info->m_max);
@@ -1303,7 +1303,7 @@ auto AstReader::ReadKindU128() -> NullableFlowPtr<U128> {
     return nullptr;
   }
 
-  auto node = make<U128>()();
+  auto node = CreateNode<U128>()();
   node->SetWidth(info->m_width);
   node->SetRangeBegin(info->m_min);
   node->SetRangeEnd(info->m_max);
@@ -1317,7 +1317,7 @@ auto AstReader::ReadKindI8() -> NullableFlowPtr<I8> {
     return nullptr;
   }
 
-  auto node = make<I8>()();
+  auto node = CreateNode<I8>()();
   node->SetWidth(info->m_width);
   node->SetRangeBegin(info->m_min);
   node->SetRangeEnd(info->m_max);
@@ -1331,7 +1331,7 @@ auto AstReader::ReadKindI16() -> NullableFlowPtr<I16> {
     return nullptr;
   }
 
-  auto node = make<I16>()();
+  auto node = CreateNode<I16>()();
   node->SetWidth(info->m_width);
   node->SetRangeBegin(info->m_min);
   node->SetRangeEnd(info->m_max);
@@ -1345,7 +1345,7 @@ auto AstReader::ReadKindI32() -> NullableFlowPtr<I32> {
     return nullptr;
   }
 
-  auto node = make<I32>()();
+  auto node = CreateNode<I32>()();
   node->SetWidth(info->m_width);
   node->SetRangeBegin(info->m_min);
   node->SetRangeEnd(info->m_max);
@@ -1359,7 +1359,7 @@ auto AstReader::ReadKindI64() -> NullableFlowPtr<I64> {
     return nullptr;
   }
 
-  auto node = make<I64>()();
+  auto node = CreateNode<I64>()();
   node->SetWidth(info->m_width);
   node->SetRangeBegin(info->m_min);
   node->SetRangeEnd(info->m_max);
@@ -1373,7 +1373,7 @@ auto AstReader::ReadKindI128() -> NullableFlowPtr<I128> {
     return nullptr;
   }
 
-  auto node = make<I128>()();
+  auto node = CreateNode<I128>()();
   node->SetWidth(info->m_width);
   node->SetRangeBegin(info->m_min);
   node->SetRangeEnd(info->m_max);
@@ -1387,7 +1387,7 @@ auto AstReader::ReadKindF16() -> NullableFlowPtr<F16> {
     return nullptr;
   }
 
-  auto node = make<F16>()();
+  auto node = CreateNode<F16>()();
   node->SetWidth(info->m_width);
   node->SetRangeBegin(info->m_min);
   node->SetRangeEnd(info->m_max);
@@ -1401,7 +1401,7 @@ auto AstReader::ReadKindF32() -> NullableFlowPtr<F32> {
     return nullptr;
   }
 
-  auto node = make<F32>()();
+  auto node = CreateNode<F32>()();
   node->SetWidth(info->m_width);
   node->SetRangeBegin(info->m_min);
   node->SetRangeEnd(info->m_max);
@@ -1415,7 +1415,7 @@ auto AstReader::ReadKindF64() -> NullableFlowPtr<F64> {
     return nullptr;
   }
 
-  auto node = make<F64>()();
+  auto node = CreateNode<F64>()();
   node->SetWidth(info->m_width);
   node->SetRangeBegin(info->m_min);
   node->SetRangeEnd(info->m_max);
@@ -1429,7 +1429,7 @@ auto AstReader::ReadKindF128() -> NullableFlowPtr<F128> {
     return nullptr;
   }
 
-  auto node = make<F128>()();
+  auto node = CreateNode<F128>()();
   node->SetWidth(info->m_width);
   node->SetRangeBegin(info->m_min);
   node->SetRangeEnd(info->m_max);
@@ -1443,7 +1443,7 @@ auto AstReader::ReadKindVoid() -> NullableFlowPtr<VoidTy> {
     return nullptr;
   }
 
-  auto node = make<VoidTy>()();
+  auto node = CreateNode<VoidTy>()();
   node->SetWidth(info->m_width);
   node->SetRangeBegin(info->m_min);
   node->SetRangeEnd(info->m_max);
@@ -1467,7 +1467,7 @@ auto AstReader::ReadKindRef() -> NullableFlowPtr<RefTy> {
     return nullptr;
   }
 
-  auto node = make<RefTy>(to.value())();
+  auto node = CreateNode<RefTy>(to.value())();
   node->SetWidth(info->m_width);
   node->SetRangeBegin(info->m_min);
   node->SetRangeEnd(info->m_max);
@@ -1496,7 +1496,7 @@ auto AstReader::ReadKindPtr() -> NullableFlowPtr<PtrTy> {
     return nullptr;
   }
 
-  auto node = make<PtrTy>(to.value(), is_volatile)();
+  auto node = CreateNode<PtrTy>(to.value(), is_volatile)();
   node->SetWidth(info->m_width);
   node->SetRangeBegin(info->m_min);
   node->SetRangeEnd(info->m_max);
@@ -1516,7 +1516,7 @@ auto AstReader::ReadKindOpaque() -> NullableFlowPtr<OpaqueTy> {
 
   auto name = Next<std::string>();
 
-  auto node = make<OpaqueTy>(name)();
+  auto node = CreateNode<OpaqueTy>(name)();
   node->SetWidth(info->m_width);
   node->SetRangeBegin(info->m_min);
   node->SetRangeEnd(info->m_max);
@@ -1548,7 +1548,7 @@ auto AstReader::ReadKindArray() -> NullableFlowPtr<ArrayTy> {
     return nullptr;
   }
 
-  auto node = make<ArrayTy>(of.value(), size.value())();
+  auto node = CreateNode<ArrayTy>(of.value(), size.value())();
   node->SetWidth(info->m_width);
   node->SetRangeBegin(info->m_min);
   node->SetRangeEnd(info->m_max);
@@ -1580,7 +1580,7 @@ auto AstReader::ReadKindTuple() -> NullableFlowPtr<TupleTy> {
     fields.push_back(field.value());
   }
 
-  auto node = make<TupleTy>(std::move(fields))();
+  auto node = CreateNode<TupleTy>(std::move(fields))();
   node->SetWidth(info->m_width);
   node->SetRangeBegin(info->m_min);
   node->SetRangeEnd(info->m_max);
@@ -1696,7 +1696,7 @@ auto AstReader::ReadKindFuncTy() -> NullableFlowPtr<FuncTy> {
     parameters.emplace_back(std::move(name), type.value(), default_value);
   }
 
-  auto node = make<FuncTy>(return_type.value(), parameters, variadic, purity,
+  auto node = CreateNode<FuncTy>(return_type.value(), parameters, variadic, purity,
                            attributes)();
   node->SetWidth(info->m_width);
   node->SetRangeBegin(info->m_min);
@@ -1717,7 +1717,7 @@ auto AstReader::ReadKindUnres() -> NullableFlowPtr<NamedTy> {
 
   auto name = Next<std::string>();
 
-  auto node = make<NamedTy>(name)();
+  auto node = CreateNode<NamedTy>(name)();
   node->SetWidth(info->m_width);
   node->SetRangeBegin(info->m_min);
   node->SetRangeEnd(info->m_max);
@@ -1731,7 +1731,7 @@ auto AstReader::ReadKindInfer() -> NullableFlowPtr<InferTy> {
     return nullptr;
   }
 
-  auto node = make<InferTy>()();
+  auto node = CreateNode<InferTy>()();
   node->SetWidth(info->m_width);
   node->SetRangeBegin(info->m_min);
   node->SetRangeEnd(info->m_max);
@@ -1782,7 +1782,7 @@ auto AstReader::ReadKindTempl() -> NullableFlowPtr<TemplType> {
     arguments.emplace_back(std::move(name), value.value());
   }
 
-  auto node = make<TemplType>(templ.value(), std::move(arguments))();
+  auto node = CreateNode<TemplType>(templ.value(), std::move(arguments))();
   node->SetWidth(info->m_width);
   node->SetRangeBegin(info->m_min);
   node->SetRangeEnd(info->m_max);
@@ -1806,7 +1806,7 @@ auto AstReader::ReadKindTypedef() -> NullableFlowPtr<TypedefStmt> {
     return nullptr;
   }
 
-  return make<TypedefStmt>(name, type.value())();
+  return CreateNode<TypedefStmt>(name, type.value())();
 }
 
 auto AstReader::ReadKindStruct() -> NullableFlowPtr<StructDef> {
@@ -2064,7 +2064,7 @@ auto AstReader::ReadKindStruct() -> NullableFlowPtr<StructDef> {
     static_methods.emplace_back(visibility, method.value());
   }
 
-  return make<StructDef>(mode, attributes, name, template_args, names, fields,
+  return CreateNode<StructDef>(mode, attributes, name, template_args, names, fields,
                          methods, static_methods)();
 }
 
@@ -2122,7 +2122,7 @@ auto AstReader::ReadKindEnum() -> NullableFlowPtr<EnumDef> {
     fields.emplace_back(field_name, value);
   }
 
-  return make<EnumDef>(name, type, std::move(fields))();
+  return CreateNode<EnumDef>(name, type, std::move(fields))();
 }
 
 auto AstReader::ReadKindFunction() -> NullableFlowPtr<Function> {
@@ -2348,7 +2348,7 @@ auto AstReader::ReadKindFunction() -> NullableFlowPtr<Function> {
     }
   }
 
-  return make<Function>(std::move(attributes), purity, std::move(captures),
+  return CreateNode<Function>(std::move(attributes), purity, std::move(captures),
                         name, std::move(template_args), std::move(parameters),
                         variadic, return_type.value(), precond, postcond,
                         body)();
@@ -2384,7 +2384,7 @@ auto AstReader::ReadKindScope() -> NullableFlowPtr<ScopeStmt> {
     return nullptr;
   }
 
-  return make<ScopeStmt>(name, body.value(), dependencies)();
+  return CreateNode<ScopeStmt>(name, body.value(), dependencies)();
 }
 
 auto AstReader::ReadKindExport() -> NullableFlowPtr<ExportStmt> {
@@ -2437,7 +2437,7 @@ auto AstReader::ReadKindExport() -> NullableFlowPtr<ExportStmt> {
     return nullptr;
   }
 
-  return make<ExportStmt>(body.value(), abi_name, visibility,
+  return CreateNode<ExportStmt>(body.value(), abi_name, visibility,
                           std::move(attributes))();
 }
 
@@ -2476,7 +2476,7 @@ auto AstReader::ReadKindBlock() -> NullableFlowPtr<Block> {
     statements.push_back(stmt.value());
   }
 
-  return make<Block>(std::move(statements), mode)();
+  return CreateNode<Block>(std::move(statements), mode)();
 }
 
 auto AstReader::ReadKindLet() -> NullableFlowPtr<VarDecl> {
@@ -2547,7 +2547,7 @@ auto AstReader::ReadKindLet() -> NullableFlowPtr<VarDecl> {
     attributes.push_back(attribute.value());
   }
 
-  return make<VarDecl>(name, type, value, mode, std::move(attributes))();
+  return CreateNode<VarDecl>(name, type, value, mode, std::move(attributes))();
 }
 
 auto AstReader::ReadKindInlineAsm() -> NullableFlowPtr<InlineAsm> {
@@ -2575,7 +2575,7 @@ auto AstReader::ReadKindInlineAsm() -> NullableFlowPtr<InlineAsm> {
     parameters.push_back(parameter.value());
   }
 
-  return make<InlineAsm>(assembly, std::move(parameters))();
+  return CreateNode<InlineAsm>(assembly, std::move(parameters))();
 }
 
 auto AstReader::ReadKindReturn() -> NullableFlowPtr<ReturnStmt> {
@@ -2593,7 +2593,7 @@ auto AstReader::ReadKindReturn() -> NullableFlowPtr<ReturnStmt> {
     }
   }
 
-  return make<ReturnStmt>(expression)();
+  return CreateNode<ReturnStmt>(expression)();
 }
 
 auto AstReader::ReadKindRetif() -> NullableFlowPtr<ReturnIfStmt> {
@@ -2615,15 +2615,15 @@ auto AstReader::ReadKindRetif() -> NullableFlowPtr<ReturnIfStmt> {
     return nullptr;
   }
 
-  return make<ReturnIfStmt>(condition.value(), expression.value())();
+  return CreateNode<ReturnIfStmt>(condition.value(), expression.value())();
 }
 
 NullableFlowPtr<BreakStmt> AstReader::ReadKindBreak() {  // NOLINT
-  return make<BreakStmt>()();
+  return CreateNode<BreakStmt>()();
 }
 
 NullableFlowPtr<ContinueStmt> AstReader::ReadKindContinue() {  // NOLINT
-  return make<ContinueStmt>()();
+  return CreateNode<ContinueStmt>()();
 }
 
 auto AstReader::ReadKindIf() -> NullableFlowPtr<IfStmt> {
@@ -2656,7 +2656,7 @@ auto AstReader::ReadKindIf() -> NullableFlowPtr<IfStmt> {
     }
   }
 
-  return make<IfStmt>(condition.value(), then_block.value(), else_block)();
+  return CreateNode<IfStmt>(condition.value(), then_block.value(), else_block)();
 }
 
 auto AstReader::ReadKindWhile() -> NullableFlowPtr<WhileStmt> {
@@ -2678,7 +2678,7 @@ auto AstReader::ReadKindWhile() -> NullableFlowPtr<WhileStmt> {
     return nullptr;
   }
 
-  return make<WhileStmt>(condition.value(), body.value())();
+  return CreateNode<WhileStmt>(condition.value(), body.value())();
 }
 
 auto AstReader::ReadKindFor() -> NullableFlowPtr<ForStmt> {
@@ -2733,7 +2733,7 @@ auto AstReader::ReadKindFor() -> NullableFlowPtr<ForStmt> {
     return nullptr;
   }
 
-  return make<ForStmt>(init, condition, step, body.value())();
+  return CreateNode<ForStmt>(init, condition, step, body.value())();
 }
 
 auto AstReader::ReadKindForeach() -> NullableFlowPtr<ForeachStmt> {
@@ -2767,7 +2767,7 @@ auto AstReader::ReadKindForeach() -> NullableFlowPtr<ForeachStmt> {
     return nullptr;
   }
 
-  return make<ForeachStmt>(index_name, value_name, expression.value(),
+  return CreateNode<ForeachStmt>(index_name, value_name, expression.value(),
                            body.value())();
 }
 
@@ -2790,7 +2790,7 @@ auto AstReader::ReadKindCase() -> NullableFlowPtr<CaseStmt> {
     return nullptr;
   }
 
-  return make<CaseStmt>(match.value(), body.value())();
+  return CreateNode<CaseStmt>(match.value(), body.value())();
 }
 
 auto AstReader::ReadKindSwitch() -> NullableFlowPtr<SwitchStmt> {
@@ -2835,7 +2835,7 @@ auto AstReader::ReadKindSwitch() -> NullableFlowPtr<SwitchStmt> {
     }
   }
 
-  return make<SwitchStmt>(match.value(), std::move(cases), default_case)();
+  return CreateNode<SwitchStmt>(match.value(), std::move(cases), default_case)();
 }
 
 auto AstReader::ReadKindExprStmt() -> NullableFlowPtr<ExprStmt> {
@@ -2848,5 +2848,5 @@ auto AstReader::ReadKindExprStmt() -> NullableFlowPtr<ExprStmt> {
     return nullptr;
   }
 
-  return make<ExprStmt>(expr.value())();
+  return CreateNode<ExprStmt>(expr.value())();
 }

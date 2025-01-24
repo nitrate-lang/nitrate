@@ -88,7 +88,7 @@ auto Parser::PImpl::RecurseExport(Vis vis) -> FlowPtr<Stmt> {
   if (auto export_attributes = RecurseExportAttributes()) {
     auto export_body = RecurseExportBody();
 
-    return make<ExportStmt>(export_body, export_abi, vis,
+    return CreateNode<ExportStmt>(export_body, export_abi, vis,
                             export_attributes.value())();
   }
 

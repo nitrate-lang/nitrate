@@ -47,7 +47,7 @@ namespace ncc::parse {
    * and AST debugging.
    */
   template <typename T, typename... Args>
-  constexpr static inline auto make(Args &&...args) {  // NOLINT
+  constexpr static inline auto CreateNode(Args &&...args) {
     return [&](std::source_location origin = std::source_location::current()) {
       FlowPtr<T> new_obj = MakeFlowPtr<T>(new (Arena<T>().allocate(1)) T(
           std::forward<Args>(args)...));  // NOLINT

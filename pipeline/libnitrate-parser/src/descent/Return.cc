@@ -39,7 +39,7 @@ using namespace ncc::parse;
 
 auto Parser::PImpl::RecurseReturn() -> FlowPtr<Stmt> {
   if (NextIf(PuncSemi)) {
-    return make<ReturnStmt>(std::nullopt)();
+    return CreateNode<ReturnStmt>(std::nullopt)();
   }
 
   auto return_value = RecurseExpr({
@@ -51,7 +51,7 @@ auto Parser::PImpl::RecurseReturn() -> FlowPtr<Stmt> {
         << "Expected ';' after the return statement.";
   }
 
-  return make<ReturnStmt>(return_value)();
+  return CreateNode<ReturnStmt>(return_value)();
 }
 
 auto Parser::PImpl::RecurseRetif() -> FlowPtr<Stmt> {
@@ -68,7 +68,7 @@ auto Parser::PImpl::RecurseRetif() -> FlowPtr<Stmt> {
       Log << SyntaxError << current() << "Expected ';' after the retif value.";
     }
 
-    return make<ReturnIfStmt>(return_if, return_value)();
+    return CreateNode<ReturnIfStmt>(return_if, return_value)();
   } else {
     Log << SyntaxError << current()
         << "Expected ',' after the retif condition.";

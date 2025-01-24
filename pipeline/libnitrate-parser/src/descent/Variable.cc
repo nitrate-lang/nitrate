@@ -95,7 +95,7 @@ auto Parser::PImpl::RecurseVariableInstance(VarDeclType decl_type)
       auto variable_type = RecurseVariableType();
       auto variable_initial = RecurseVariableValue();
 
-      return make<VarDecl>(variable_name, variable_type, variable_initial,
+      return CreateNode<VarDecl>(variable_name, variable_type, variable_initial,
                            decl_type, symbol_attributes_opt.value())();
     }
 

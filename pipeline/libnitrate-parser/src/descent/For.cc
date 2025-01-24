@@ -66,7 +66,7 @@ auto Parser::PImpl::RecurseForInitExpr() -> NullableFlowPtr<Stmt> {
         << "Expected exactly one variable in for loop";
 
   } else {
-    return make<ExprStmt>(RecurseExpr({
+    return CreateNode<ExprStmt>(RecurseExpr({
         Token(Punc, PuncSemi),
     }))();
   }
@@ -133,5 +133,5 @@ auto Parser::PImpl::RecurseFor() -> FlowPtr<Stmt> {
 
   auto for_body = RecurseForBody();
 
-  return make<ForStmt>(for_init, for_cond, for_step, for_body)();
+  return CreateNode<ForStmt>(for_init, for_cond, for_step, for_body)();
 }

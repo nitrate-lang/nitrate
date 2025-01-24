@@ -74,7 +74,7 @@ auto Parser::PImpl::RecurseScopeDeps() -> std::optional<ScopeDeps> {
 
 auto Parser::PImpl::RecurseScopeBlock() -> FlowPtr<Stmt> {
   if (NextIf(PuncSemi)) {
-    return make<Block>(BlockItems(), SafetyMode::Unknown)();
+    return CreateNode<Block>(BlockItems(), SafetyMode::Unknown)();
   }
 
   if (NextIf(OpArrow)) {
@@ -90,7 +90,7 @@ auto Parser::PImpl::RecurseScope() -> FlowPtr<Stmt> {
   if (auto dependencies = RecurseScopeDeps()) [[likely]] {
     auto scope_block = RecurseScopeBlock();
 
-    return make<ScopeStmt>(scope_name, scope_block, dependencies.value())();
+    return CreateNode<ScopeStmt>(scope_name, scope_block, dependencies.value())();
   } else {
     Log << SyntaxError << current() << "Expected scope dependencies";
   }

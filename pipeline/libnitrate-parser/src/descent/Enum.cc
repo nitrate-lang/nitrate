@@ -107,7 +107,7 @@ auto Parser::PImpl::RecurseEnum() -> FlowPtr<Stmt> {
   auto type = RecurseEnumType();
 
   if (auto items = RecurseEnumItems()) {
-    return make<EnumDef>(name, type, items.value())();
+    return CreateNode<EnumDef>(name, type, items.value())();
   }
 
   return MockStmt(QAST_ENUM);

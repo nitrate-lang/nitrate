@@ -63,7 +63,7 @@ auto Parser::PImpl::RecurseSwitchCase() -> std::pair<FlowPtr<Stmt>, bool> {
     return {body, true};
   }
 
-  return {make<CaseStmt>(cond, body)(), false};
+  return {CreateNode<CaseStmt>(cond, body)(), false};
 }
 
 auto Parser::PImpl::RecurseSwitchBody()
@@ -107,7 +107,7 @@ auto Parser::PImpl::RecurseSwitch() -> FlowPtr<Stmt> {
     if (auto switch_body = RecurseSwitchBody()) [[likely]] {
       auto [switch_cases, switch_default] = switch_body.value();
 
-      return make<SwitchStmt>(switch_cond, switch_cases, switch_default)();
+      return CreateNode<SwitchStmt>(switch_cond, switch_cases, switch_default)();
     } else {
       Log << SyntaxError << current() << "Switch statement body is malformed.";
     }

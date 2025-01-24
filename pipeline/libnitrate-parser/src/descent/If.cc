@@ -69,5 +69,5 @@ auto Parser::PImpl::RecurseIf() -> FlowPtr<Stmt> {
   auto then = RecurseIfThen();
   auto ele = RecurseIfElse();
 
-  return make<IfStmt>(cond, then, ele)();
+  return CreateNode<IfStmt>(cond, then, ele)();
 }

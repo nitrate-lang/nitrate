@@ -105,7 +105,7 @@ auto Parser::PImpl::RecurseTypeSuffix(FlowPtr<Type> base)
   auto template_arguments = RecurseTypeTemplateArguments();
 
   if (template_arguments.has_value()) {
-    auto templ = make<TemplType>(base, template_arguments.value())();
+    auto templ = CreateNode<TemplType>(base, template_arguments.value())();
     templ->SetOffset(base->Begin());
 
     base = templ;
@@ -132,9 +132,9 @@ auto Parser::PImpl::RecurseTypeSuffix(FlowPtr<Type> base)
   base->SetWidth(width);
 
   if (NextIf(OpTernary)) {
-    auto args = CallArgs{{"0", make<TypeExpr>(base)()}};
+    auto args = CallArgs{{"0", CreateNode<TypeExpr>(base)()}};
     auto opt_type =
-        make<TemplType>(make<NamedTy>("__builtin_result")(), args)();
+        CreateNode<TemplType>(CreateNode<NamedTy>("__builtin_result")(), args)();
 
     opt_type->SetOffset(current().GetStart());
 
@@ -155,7 +155,7 @@ auto Parser::PImpl::RecurseFunctionType() -> FlowPtr<parse::Type> {
 
   FlowPtr<Function> fn_def = fn.As<Function>();
 
-  auto func_ty = make<FuncTy>(fn_def->GetReturn(), fn_def->GetParams(),
+  auto func_ty = CreateNode<FuncTy>(fn_def->GetReturn(), fn_def->GetParams(),
                               fn_def->IsVariadic(), fn_def->GetPurity(),
                               fn_def->GetAttributes())();
 
@@ -172,7 +172,7 @@ auto Parser::PImpl::RecurseOpaqueType() -> FlowPtr<parse::Type> {
 
   if (auto name = RecurseName(); !name->empty()) {
     if (NextIf(PuncRPar)) {
-      auto opaque = make<OpaqueTy>(name)();
+      auto opaque = CreateNode<OpaqueTy>(name)();
       opaque->SetOffset(current().GetStart());
 
       return opaque;
@@ -217,7 +217,7 @@ auto Parser::PImpl::RecurseTypeByOperator(Operator op) -> FlowPtr<parse::Type> {
     case OpTimes: {
       auto start = current().GetStart();
       auto pointee = RecurseType();
-      auto ptr_ty = make<PtrTy>(pointee, false)();
+      auto ptr_ty = CreateNode<PtrTy>(pointee, false)();
 
       ptr_ty->SetOffset(start);
 
@@ -227,7 +227,7 @@ auto Parser::PImpl::RecurseTypeByOperator(Operator op) -> FlowPtr<parse::Type> {
     case OpBitAnd: {
       auto start = current().GetStart();
       auto refee = RecurseType();
-      auto ref_ty = make<RefTy>(refee)();
+      auto ref_ty = CreateNode<RefTy>(refee)();
 
       ref_ty->SetOffset(start);
 
@@ -235,7 +235,7 @@ auto Parser::PImpl::RecurseTypeByOperator(Operator op) -> FlowPtr<parse::Type> {
     }
 
     case OpTernary: {
-      auto infer = make<InferTy>()();
+      auto infer = CreateNode<InferTy>()();
 
       infer->SetOffset(current().GetStart());
 
@@ -249,7 +249,7 @@ auto Parser::PImpl::RecurseTypeByOperator(Operator op) -> FlowPtr<parse::Type> {
       }
 
       auto comptime_expr =
-          make<UnaryExpr>(OpComptime, RecurseExpr({
+          CreateNode<UnaryExpr>(OpComptime, RecurseExpr({
                                           Token(Punc, PuncRPar),
                                       }))();
 
@@ -258,7 +258,7 @@ auto Parser::PImpl::RecurseTypeByOperator(Operator op) -> FlowPtr<parse::Type> {
       }
 
       auto args = CallArgs{{"0", comptime_expr}};
-      return make<TemplType>(make<NamedTy>("__builtin_meta")(),
+      return CreateNode<TemplType>(CreateNode<NamedTy>("__builtin_meta")(),
                              std::move(args))();
     }
 
@@ -276,8 +276,8 @@ auto Parser::PImpl::RecurseArrayOrVector() -> FlowPtr<parse::Type> {
   auto first = RecurseType();
 
   if (NextIf(PuncRBrk)) {
-    auto args = CallArgs{{"0", make<TypeExpr>(first)()}};
-    auto vector = make<TemplType>(make<NamedTy>("__builtin_vec")(), args)();
+    auto args = CallArgs{{"0", CreateNode<TypeExpr>(first)()}};
+    auto vector = CreateNode<TemplType>(CreateNode<NamedTy>("__builtin_vec")(), args)();
 
     vector->SetOffset(start);
 
@@ -297,7 +297,7 @@ auto Parser::PImpl::RecurseArrayOrVector() -> FlowPtr<parse::Type> {
     Log << SyntaxError << current() << "Expected ']' after array size";
   }
 
-  auto array = make<ArrayTy>(first, size)();
+  auto array = CreateNode<ArrayTy>(first, size)();
   array->SetOffset(start);
 
   return array;
@@ -312,8 +312,8 @@ auto Parser::PImpl::RecurseSetType() -> FlowPtr<parse::Type> {
     Log << SyntaxError << current() << "Expected '}' after set type";
   }
 
-  auto args = CallArgs{{"0", make<TypeExpr>(set_type)()}};
-  auto set = make<TemplType>(make<NamedTy>("__builtin_uset")(), args)();
+  auto args = CallArgs{{"0", CreateNode<TypeExpr>(set_type)()}};
+  auto set = CreateNode<TemplType>(CreateNode<NamedTy>("__builtin_uset")(), args)();
 
   set->SetOffset(start);
 
@@ -341,7 +341,7 @@ auto Parser::PImpl::RecurseTupleType() -> FlowPtr<parse::Type> {
     NextIf(PuncComa);
   }
 
-  auto tuple = make<TupleTy>(items)();
+  auto tuple = CreateNode<TupleTy>(items)();
   tuple->SetOffset(start);
 
   return tuple;
@@ -381,39 +381,39 @@ auto Parser::PImpl::RecurseTypeByName(string name) -> FlowPtr<parse::Type> {
   NullableFlowPtr<Type> type;
 
   if (name == "u1") {
-    type = make<U1>()();
+    type = CreateNode<U1>()();
   } else if (name == "u8") {
-    type = make<U8>()();
+    type = CreateNode<U8>()();
   } else if (name == "u16") {
-    type = make<U16>()();
+    type = CreateNode<U16>()();
   } else if (name == "u32") {
-    type = make<U32>()();
+    type = CreateNode<U32>()();
   } else if (name == "u64") {
-    type = make<U64>()();
+    type = CreateNode<U64>()();
   } else if (name == "u128") {
-    type = make<U128>()();
+    type = CreateNode<U128>()();
   } else if (name == "i8") {
-    type = make<I8>()();
+    type = CreateNode<I8>()();
   } else if (name == "i16") {
-    type = make<I16>()();
+    type = CreateNode<I16>()();
   } else if (name == "i32") {
-    type = make<I32>()();
+    type = CreateNode<I32>()();
   } else if (name == "i64") {
-    type = make<I64>()();
+    type = CreateNode<I64>()();
   } else if (name == "i128") {
-    type = make<I128>()();
+    type = CreateNode<I128>()();
   } else if (name == "f16") {
-    type = make<F16>()();
+    type = CreateNode<F16>()();
   } else if (name == "f32") {
-    type = make<F32>()();
+    type = CreateNode<F32>()();
   } else if (name == "f64") {
-    type = make<F64>()();
+    type = CreateNode<F64>()();
   } else if (name == "f128") {
-    type = make<F128>()();
+    type = CreateNode<F128>()();
   } else if (name == "void") {
-    type = make<VoidTy>()();
+    type = CreateNode<VoidTy>()();
   } else {
-    type = make<NamedTy>(name)();
+    type = CreateNode<NamedTy>(name)();
   }
 
   if (!type.has_value()) {

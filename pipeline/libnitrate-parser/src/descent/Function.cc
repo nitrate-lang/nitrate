@@ -42,7 +42,7 @@ auto Parser::PImpl::RecurseFunctionParameterType() -> FlowPtr<parse::Type> {
     return RecurseType();
   }
 
-  return make<InferTy>()();
+  return CreateNode<InferTy>()();
 }
 
 auto Parser::PImpl::RecurseFunctionParameterValue() -> NullableFlowPtr<Expr> {
@@ -240,7 +240,7 @@ auto Parser::PImpl::RecurseFunctionAmbigouis()
           } else if (some_word == "retro") {
             is_retro = true;
           } else if (some_word == "foreign" || some_word == "inline") {
-            attributes.push_back(make<Ident>(some_word)());
+            attributes.push_back(CreateNode<Ident>(some_word)());
           } else {
             function_name = some_word;
             state = State::End;
@@ -348,7 +348,7 @@ auto Parser::PImpl::RecurseFunctionReturnType() -> FlowPtr<parse::Type> {
     return RecurseType();
   }
 
-  return make<InferTy>()();
+  return CreateNode<InferTy>()();
 }
 
 auto Parser::PImpl::RecurseFunctionBody(bool parse_declaration_only)
@@ -375,7 +375,7 @@ auto Parser::PImpl::RecurseFunction(bool parse_declaration_only)
   auto function_return_type = RecurseFunctionReturnType();
   auto function_body = RecurseFunctionBody(parse_declaration_only);
 
-  auto function = make<Function>(
+  auto function = CreateNode<Function>(
       function_attributes, function_purity, function_captures, function_name,
       function_template_parameters, function_parameters.first,
       function_parameters.second, function_return_type, std::nullopt,

@@ -93,7 +93,7 @@ auto Parser::PImpl::RecurseForeach() -> FlowPtr<Stmt> {
 
       auto body = RecurseForeachBody();
 
-      return make<ForeachStmt>(index_name, value_name, iter_expr, body)();
+      return CreateNode<ForeachStmt>(index_name, value_name, iter_expr, body)();
     } else {
       Log << SyntaxError << current()
           << "Expected 'in' keyword in foreach statement";
