@@ -200,6 +200,11 @@ static constexpr auto kIdentifierCharTable = []() {
 
   tab['_'] = true;
 
+  /* Support UTF-8 */
+  for (uint8_t c = 0x80; c < 0xff; c++) {
+    tab[c] = true;
+  }
+
   return tab;
 }();
 
@@ -250,7 +255,7 @@ static constexpr auto kDigitsTable = []() {
   return map;
 }();
 
-static constexpr auto kAlphabetTable = []() {
+static constexpr auto kIdentiferStartTable = []() {
   std::array<bool, 256> map = {};
   map.fill(false);
 
@@ -259,6 +264,13 @@ static constexpr auto kAlphabetTable = []() {
   }
 
   for (uint8_t c = 'A'; c <= 'Z'; ++c) {
+    map[c] = true;
+  }
+
+  map['_'] = true;
+
+  /* Support UTF-8 */
+  for (uint8_t c = 0x80; c < 0xff; c++) {
     map[c] = true;
   }
 
@@ -1119,7 +1131,7 @@ auto Tokenizer::GetNext() -> Token {
       Location(impl.m_offset, impl.m_line, impl.m_column, impl.m_filename));
 
   LexState state;
-  if (kAlphabetTable[c] || c == '_') {
+  if (kIdentiferStartTable[c]) {
     state = LexState::Identifier;
   } else if (c == '/') {
     state = LexState::CommentStart;

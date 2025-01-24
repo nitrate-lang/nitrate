@@ -34,52 +34,11 @@
 #include <nitrate-core/Logger.hh>
 #include <nitrate-core/Macro.hh>
 #include <nitrate-parser/ASTWriter.hh>
+#include <nlohmann/json.hpp>
+#include <ostream>
+#include <string_view>
 
 using namespace ncc::parse;
-
-static void EscapeString(std::ostream &os, const std::string_view &input) {
-  os << "\"";
-
-  for (char ch : input) {
-    switch (ch) {
-      case '"':
-        os << "\\\"";
-        break;
-      case '\\':
-        os << "\\\\";
-        break;
-      case '\b':
-        os << "\\b";
-        break;
-      case '\f':
-        os << "\\f";
-        break;
-      case '\n':
-        os << "\\n";
-        break;
-      case '\r':
-        os << "\\r";
-        break;
-      case '\t':
-        os << "\\t";
-        break;
-      case '\0':
-        os << "\\0";
-        break;
-      default:
-        if (ch >= 32 && ch < 127) {
-          os << ch;
-        } else {
-          std::array<char, 5> hex;
-          snprintf(hex.data(), hex.size(), "\\x%02x", (int)(uint8_t)ch);
-          os << hex.data();
-        }
-        break;
-    }
-  }
-
-  os << "\"";
-}
 
 void AstJsonWriter::Delim() {
   if (!m_count.empty() && !m_comma.empty()) {
@@ -94,7 +53,7 @@ void AstJsonWriter::Delim() {
 void AstJsonWriter::StrImpl(std::string_view str) {
   Delim();
 
-  EscapeString(m_os, str);
+  m_os << nlohmann::json(str);
 }
 
 void AstJsonWriter::UintImpl(uint64_t val) {
