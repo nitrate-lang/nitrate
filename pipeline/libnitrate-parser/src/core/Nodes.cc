@@ -173,11 +173,11 @@ NCC_EXPORT auto Type::IsPtrTo(const Type *type) const -> bool {
   }
 
   auto item = as<PtrTy>()->GetItem();
-  while (item->is<RefTy>()) {
+  while (item->Is<RefTy>()) {
     item = item->as<RefTy>()->GetItem();
   }
 
-  return item->is(type->GetKind());
+  return item->Is(type->GetKind());
 }
 
 auto Parser::PImpl::MockStmt(std::optional<npar_ty_t>) -> FlowPtr<Stmt> {

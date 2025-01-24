@@ -42,7 +42,7 @@ auto Parser::PImpl::RecurseSwitchCaseBody() -> FlowPtr<Stmt> {
     Log << SyntaxError << current() << "Expected '=>' in switch case.";
   }
 
-  if (peek().is<PuncLCur>()) {
+  if (peek().Is<PuncLCur>()) {
     return RecurseBlock(true, false, SafetyMode::Unknown);
   }
 
@@ -57,7 +57,7 @@ auto Parser::PImpl::RecurseSwitchCase() -> std::pair<FlowPtr<Stmt>, bool> {
   auto body = RecurseSwitchCaseBody();
 
   auto is_the_default_case =
-      cond->is(QAST_IDENT) && cond->as<Ident>()->GetName() == "_";
+      cond->Is(QAST_IDENT) && cond->as<Ident>()->GetName() == "_";
 
   if (is_the_default_case) {
     return {body, true};

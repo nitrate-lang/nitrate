@@ -752,7 +752,7 @@ auto Parser::PImpl::RecurseExprPrimary(bool is_type) -> NullableFlowPtr<Expr> {
         auto integer = make<ConstInt>(tok.GetString())();
         integer->SetOffset(start_pos);
 
-        if (peek().is(Name)) {
+        if (peek().Is(Name)) {
           auto casted = RecurseExprTypeSuffix(integer);
           casted->SetOffset(start_pos);
 
@@ -770,7 +770,7 @@ auto Parser::PImpl::RecurseExprPrimary(bool is_type) -> NullableFlowPtr<Expr> {
         auto decimal = make<ConstFloat>(tok.GetString())();
         decimal->SetOffset(start_pos);
 
-        if (peek().is(Name)) {
+        if (peek().Is(Name)) {
           auto casted = RecurseExprTypeSuffix(decimal);
           casted->SetOffset(start_pos);
 
@@ -788,7 +788,7 @@ auto Parser::PImpl::RecurseExprPrimary(bool is_type) -> NullableFlowPtr<Expr> {
         auto string = make<ConstString>(tok.GetString())();
         string->SetOffset(start_pos);
 
-        if (peek().is(Name)) {
+        if (peek().Is(Name)) {
           auto casted = RecurseExprTypeSuffix(string);
           casted->SetOffset(start_pos);
 
@@ -813,7 +813,7 @@ auto Parser::PImpl::RecurseExprPrimary(bool is_type) -> NullableFlowPtr<Expr> {
         auto character = make<ConstChar>(str_data->at(0))();
         character->SetOffset(start_pos);
 
-        if (peek().is(Name)) {
+        if (peek().Is(Name)) {
           auto casted = RecurseExprTypeSuffix(character);
           casted->SetOffset(start_pos);
 

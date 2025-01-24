@@ -256,7 +256,7 @@ namespace ncc::lex {
 
     constexpr static auto EndOfFile() { return TokenBase(); }
 
-    constexpr bool is(TokenType val) const {  /// NOLINT
+    [[nodiscard]] constexpr bool Is(TokenType val) const {
       return m_type == val;
     }
 
@@ -286,7 +286,7 @@ namespace ncc::lex {
     }
 
     template <auto V>
-    [[nodiscard]] constexpr bool is() const {  /// NOLINT
+    [[nodiscard]] constexpr bool Is() const {
       if constexpr (std::is_same_v<decltype(V), Keyword>) {
         return m_type == KeyW && m_v.m_key == V;
       } else if constexpr (std::is_same_v<decltype(V), Punctor>) {
@@ -367,48 +367,20 @@ namespace ncc::lex {
 
   inline static const auto LEXICAL_KEYWORDS =
       detail::MakeBimap<std::string, Keyword>({
-          {"scope", Scope},
-          {"pub", Pub},
-          {"sec", Sec},
-          {"pro", Pro},
-          {"import", Import},
-          {"type", Type},
-          {"let", Let},
-          {"var", Var},
-          {"const", Const},
-          {"static", Static},
-          {"struct", Struct},
-          {"region", Region},
-          {"group", Group},
-          {"class", Class},
-          {"union", Union},
-          {"opaque", Opaque},
-          {"enum", Enum},
-          {"__fstring", __FString},
-          {"fn", Fn},
-          {"unsafe", Unsafe},
-          {"safe", Safe},
-          {"promise", Promise},
-          {"if", If},
-          {"else", Else},
-          {"for", For},
-          {"while", While},
-          {"do", Do},
-          {"switch", Switch},
-          {"break", Break},
-          {"continue", Continue},
-          {"ret", Return},
-          {"retif", Retif},
-          {"foreach", Foreach},
-          {"try", Try},
-          {"catch", Catch},
-          {"throw", Throw},
-          {"async", Async},
-          {"await", Await},
-          {"__asm__", __Asm__},
-          {"undef", Undef},
-          {"null", Null},
-          {"true", True},
+          {"scope", Scope},     {"pub", Pub},       {"sec", Sec},
+          {"pro", Pro},         {"import", Import}, {"type", Type},
+          {"let", Let},         {"var", Var},       {"const", Const},
+          {"static", Static},   {"struct", Struct}, {"region", Region},
+          {"group", Group},     {"class", Class},   {"union", Union},
+          {"opaque", Opaque},   {"enum", Enum},     {"__fstring", __FString},
+          {"fn", Fn},           {"unsafe", Unsafe}, {"safe", Safe},
+          {"promise", Promise}, {"if", If},         {"else", Else},
+          {"for", For},         {"while", While},   {"do", Do},
+          {"switch", Switch},   {"break", Break},   {"continue", Continue},
+          {"ret", Return},      {"retif", Retif},   {"foreach", Foreach},
+          {"try", Try},         {"catch", Catch},   {"throw", Throw},
+          {"async", Async},     {"await", Await},   {"__asm__", __Asm__},
+          {"undef", Undef},     {"null", Null},     {"true", True},
           {"false", False},
       });
 

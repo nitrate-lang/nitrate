@@ -34,7 +34,6 @@
 #ifndef __NITRATE_IR_IR_H__
 #define __NITRATE_IR_IR_H__
 
-#include <cstddef>
 #include <cstdint>
 #include <cstdio>
 #include <memory>
@@ -46,25 +45,10 @@ namespace ncc::parse {
 }
 
 namespace ncc::ir {
-  typedef enum nr_serial_t {
-    IR_SERIAL_CODE = 0, /* Human readable ASCII text */
-  } NrSerialT;
-
   void NrWrite(IRModule *mod, NullableFlowPtr<Expr> node, std::ostream &out);
 
   auto NrLower(ncc::parse::Base *base, const char *name,
                bool diagnostics) -> std::unique_ptr<IRModule>;
-
-  typedef void (*NrNodeCb)(Expr *cur, uintptr_t userdata);
-
-  typedef enum {
-    IR_LEVEL_DEBUG = 0,
-    IR_LEVEL_INFO = 1,
-    IR_LEVEL_WARN = 2,
-    IR_LEVEL_ERROR = 3,
-    IR_LEVEL_MAX = 5,
-    IR_LEVEL_DEFAULT = IR_LEVEL_WARN,
-  } NrLevelT;
 }  // namespace ncc::ir
 
 #endif  // __NITRATE_IR_IR_H__

@@ -94,7 +94,7 @@ auto Parser::PImpl::RecurseForCondition() -> NullableFlowPtr<Expr> {
 auto Parser::PImpl::RecurseForStepExpr(bool has_paren)
     -> NullableFlowPtr<Expr> {
   if (has_paren) {
-    if (peek().is<PuncRPar>()) {
+    if (peek().Is<PuncRPar>()) {
       return std::nullopt;
     }
 
@@ -102,7 +102,7 @@ auto Parser::PImpl::RecurseForStepExpr(bool has_paren)
         Token(Punc, PuncRPar),
     });
   }
-  if (peek().is<OpArrow>() || peek().is<PuncLCur>()) {
+  if (peek().Is<OpArrow>() || peek().Is<PuncLCur>()) {
     return std::nullopt;
   }
 

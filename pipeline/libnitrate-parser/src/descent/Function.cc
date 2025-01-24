@@ -129,7 +129,7 @@ auto Parser::PImpl::RecurseFunctionParameters() -> std::pair<FuncParams, bool> {
     if (next_if(OpEllipsis)) {
       is_variadic = true;
 
-      if (!peek().is<PuncRPar>()) {
+      if (!peek().Is<PuncRPar>()) {
         Log << SyntaxError << current()
             << "Expected ')' after variadic parameter";
       }
@@ -260,15 +260,15 @@ auto Parser::PImpl::RecurseFunctionAmbigouis()
             auto tok = peek();
 
             /* No attribute expression may begin with '&' */
-            if (tok.is<OpBitAnd>()) {
+            if (tok.Is<OpBitAnd>()) {
               state = State::CaptureSection;
-            } else if (tok.is(Name)) {
+            } else if (tok.Is(Name)) {
               state = State::CaptureSection;
             } else { /* Ambiguous edge case */
               state = State::AttributesSection;
             }
           }
-        } else if (auto tok = peek(); tok.is<PuncLPar>() || tok.is<OpLT>()) {
+        } else if (auto tok = peek(); tok.Is<PuncLPar>() || tok.Is<OpLT>()) {
           state = State::End; /* Begin parsing parameters or template options */
         } else {
           Log << SyntaxError << next()

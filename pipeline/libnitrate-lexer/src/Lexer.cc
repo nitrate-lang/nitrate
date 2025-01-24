@@ -1195,7 +1195,7 @@ auto Tokenizer::GetNext() -> Token {
     }
   }
 
-  if (token.is(EofF)) [[unlikely]] {
+  if (token.Is(EofF)) [[unlikely]] {
     SetFailBit();
   }
 
@@ -1213,7 +1213,7 @@ auto Tokenizer::GetSourceWindow(Point start, Point end, char fillchar)
     -> std::optional<std::vector<std::string>> {
   Impl &impl = *m_impl;
 
-  if (start.x > end.x || (start.x == end.x && start.y > end.y)) {
+  if (start.m_x > end.m_x || (start.m_x == end.m_x && start.m_y > end.m_y)) {
     qcore_print(QCORE_ERROR, "Invalid source window range");
     return std::nullopt;
   }
@@ -1237,12 +1237,12 @@ auto Tokenizer::GetSourceWindow(Point start, Point end, char fillchar)
       }
 
       bool is_begin = false;
-      if (line == start.x && column == start.y) [[unlikely]] {
+      if (line == start.m_x && column == start.m_y) [[unlikely]] {
         is_begin = true;
       } else {
         switch (ch) {
           case '\n': {
-            if (line == start.x && start.y == -1) [[unlikely]] {
+            if (line == start.m_x && start.m_y == -1) [[unlikely]] {
               is_begin = true;
             }
 
@@ -1263,15 +1263,16 @@ auto Tokenizer::GetSourceWindow(Point start, Point end, char fillchar)
         std::string line_buf;
 
         do {
-          long current_line = lines.size() + start.x;
+          long current_line = lines.size() + start.m_x;
           long current_column = line_buf.size();
 
-          if (current_line == end.x && current_column == end.y) [[unlikely]] {
+          if (current_line == end.m_x && current_column == end.m_y)
+              [[unlikely]] {
             spinning = false;
           } else {
             switch (ch) {
               case '\n': {
-                if (current_line == end.x && end.y == -1) [[unlikely]] {
+                if (current_line == end.m_x && end.m_y == -1) [[unlikely]] {
                   spinning = false;
                 }
 

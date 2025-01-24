@@ -65,7 +65,7 @@ auto IScanner::Next() -> Token {
         }
 
         /* Handle comment token buffering */
-        if (m_skip && tok.is(Note)) [[unlikely]] {
+        if (m_skip && tok.Is(Note)) [[unlikely]] {
           m_comments.push_back(tok);
           continue;
         }
@@ -79,7 +79,7 @@ auto IScanner::Next() -> Token {
     break;
   }
 
-  m_eof |= tok.is(EofF);
+  m_eof |= tok.Is(EofF);
   m_current = tok;
 
   return tok;
@@ -100,7 +100,7 @@ auto IScanner::Peek() -> Token {
         tok = m_ready.front();
 
         /* Handle comment token buffering */
-        if (m_skip && tok.is(Note)) [[unlikely]] {
+        if (m_skip && tok.Is(Note)) [[unlikely]] {
           m_comments.push_back(tok);
           m_ready.pop_front();
           continue;
@@ -115,7 +115,7 @@ auto IScanner::Peek() -> Token {
     break;
   }
 
-  m_eof |= tok.is(EofF);
+  m_eof |= tok.Is(EofF);
   m_current = tok;
 
   return tok;

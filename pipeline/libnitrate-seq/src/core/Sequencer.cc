@@ -306,7 +306,7 @@ auto Sequencer::GetNext() -> Token {
             if (tok.GetKeyword() == Import) [[unlikely]] {
               auto import_name = m_scanner.Next().GetString();
 
-              if (!m_scanner.Next().is<PuncSemi>()) [[unlikely]] {
+              if (!m_scanner.Next().Is<PuncSemi>()) [[unlikely]] {
                 Log << SeqError << "Expected a semicolon after import name";
                 tok = Token::EndOfFile();
                 SetFailBit();

@@ -130,7 +130,7 @@ auto CambrianFormatter::EscapeStringLiteralChunk(std::string_view str) const
 void CambrianFormatter::WrapStmtBody(FlowPtr<parse::Stmt> n,
                                      size_t size_threshold,
                                      bool use_arrow_if_wrapped) {
-  if (n->is(QAST_BLOCK)) {
+  if (n->Is(QAST_BLOCK)) {
     auto block = n.as<Block>();
     bool single_stmt = block->GetItems().size() == 1;
     bool few_children =
@@ -376,12 +376,12 @@ void CambrianFormatter::Visit(FlowPtr<TemplType> n) {
       n->GetTemplate()->GetKind() == QAST_NAMED &&
       n->GetTemplate()->as<NamedTy>()->GetName() == "__builtin_meta" &&
       n->GetArgs().size() == 1 &&
-      n->GetArgs().front().second->is(QAST_UNEXPR) &&
+      n->GetArgs().front().second->Is(QAST_UNEXPR) &&
       n->GetArgs().front().second.template as<UnaryExpr>()->GetOp() ==
           OpComptime;
 
   const auto print_without_type_keyword = [&](auto node) {
-    if (node->is(QAST_TEXPR)) {
+    if (node->Is(QAST_TEXPR)) {
       node->template as<TypeExpr>()->GetType().Accept(*this);
     } else {
       node->Accept(*this);
@@ -862,7 +862,7 @@ void CambrianFormatter::Visit(FlowPtr<TemplCall> n) {
           m_line << name << ": ";
         }
 
-        if (value->is(QAST_TEXPR)) {
+        if (value->Is(QAST_TEXPR)) {
           value->template as<TypeExpr>()->GetType().Accept(*this);
         } else {
           value.Accept(*this);
@@ -961,7 +961,7 @@ void CambrianFormatter::Visit(FlowPtr<List> n) {
 
       bool is_assoc_map =
           std::all_of(n->GetItems().begin(), n->GetItems().end(),
-                      [](auto x) { return x->is(QAST_ASSOC); });
+                      [](auto x) { return x->Is(QAST_ASSOC); });
 
       { /* Write list items */
         size_t the_indent =
@@ -1000,12 +1000,12 @@ void CambrianFormatter::Visit(FlowPtr<Assoc> node) {
   const std::function<void(FlowPtr<Assoc>, bool)> format =
       [&](FlowPtr<Assoc> n, bool use_braces) {
         bool is_value_map = false;
-        if (n->GetValue()->is(QAST_LIST)) {
+        if (n->GetValue()->Is(QAST_LIST)) {
           auto list = n->GetValue()->as<List>();
           is_value_map =
               list->GetItems().empty() ||
               std::all_of(list->GetItems().begin(), list->GetItems().end(),
-                          [](auto x) { return x->is(QAST_ASSOC); });
+                          [](auto x) { return x->Is(QAST_ASSOC); });
         }
 
         if (use_braces) {
@@ -1499,7 +1499,7 @@ void CambrianFormatter::Visit(FlowPtr<Function> n) {
   { /* Return type */
     auto return_type = n->GetReturn();
 
-    if (!return_type->is(QAST_INFER)) {
+    if (!return_type->Is(QAST_INFER)) {
       m_line << ": ";
       return_type.Accept(*this);
     }

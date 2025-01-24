@@ -299,11 +299,11 @@ namespace ncc::parse {
     }
 
     template <typename T>
-    [[nodiscard]] constexpr bool is() const {  /// NOLINT
+    [[nodiscard]] constexpr bool Is() const {
       return Base::GetTypeCode<T>() == GetKind();
     }
 
-    [[nodiscard]] constexpr bool is(npar_ty_t type) const {  /// NOLINT
+    [[nodiscard]] constexpr bool Is(npar_ty_t type) const {
       return type == GetKind();
     }
     [[nodiscard]] constexpr auto IsMock() const -> bool { return m_mock; }
@@ -531,7 +531,8 @@ namespace ncc::parse {
           return false;
       }
     }
-    [[nodiscard]] constexpr auto is_array() const -> bool {
+
+    [[nodiscard]] constexpr auto IsArray() const -> bool {
       return GetKind() == QAST_ARRAY;
     };
     [[nodiscard]] constexpr auto IsTuple() const -> bool {
@@ -544,7 +545,7 @@ namespace ncc::parse {
       return GetKind() == QAST_FUNCTOR;
     }
     [[nodiscard]] constexpr auto IsComposite() const -> bool {
-      return is_array() || IsTuple();
+      return IsArray() || IsTuple();
     }
     [[nodiscard]] constexpr auto IsNumeric() const -> bool {
       return GetKind() >= QAST_U1 && GetKind() <= QAST_F128;

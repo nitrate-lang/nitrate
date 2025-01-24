@@ -76,17 +76,17 @@ namespace ncc::ir {
              BeginObject begin_obj_impl, EndObject end_obj_impl,
              BeginArray begin_arr_impl, EndArray end_arr_impl,
              WriterSourceProvider rd = std::nullopt)
-        : string(str_impl),
-          uint64(uint_impl),
-          dbl(dbl_impl),
-          boolean(bool_impl),
-          null(null_impl),
-          begin_obj(begin_obj_impl),
-          end_obj(end_obj_impl),
-          begin_arr(begin_arr_impl),
-          end_arr(end_arr_impl),
+        : string(std::move(str_impl)),
+          uint64(std::move(uint_impl)),
+          dbl(std::move(dbl_impl)),
+          boolean(std::move(bool_impl)),
+          null(std::move(null_impl)),
+          begin_obj(std::move(begin_obj_impl)),
+          end_obj(std::move(end_obj_impl)),
+          begin_arr(std::move(begin_arr_impl)),
+          end_arr(std::move(end_arr_impl)),
           m_rd(rd) {}
-    virtual ~IRWriter() = default;
+    ~IRWriter() override = default;
 
     void Visit(FlowPtr<Expr> n) override;
     void Visit(FlowPtr<BinExpr> n) override;

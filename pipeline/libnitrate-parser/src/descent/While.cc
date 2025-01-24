@@ -38,7 +38,7 @@ using namespace ncc::lex;
 using namespace ncc::parse;
 
 auto Parser::PImpl::RecurseWhileCond() -> FlowPtr<Expr> {
-  if (auto cur = peek(); cur.is<OpArrow>() || cur.is<PuncLCur>()) {
+  if (auto cur = peek(); cur.Is<OpArrow>() || cur.Is<PuncLCur>()) {
     return make<ConstBool>(true)();
   }
 

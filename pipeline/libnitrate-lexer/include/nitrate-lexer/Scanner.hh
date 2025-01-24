@@ -166,7 +166,7 @@ namespace ncc::lex {
     auto SkipCommentsState(bool skip) -> bool;
 
     struct Point {
-      long x = 0, y = 0;  /// NOLINT
+      long m_x = 0, m_y = 0;
     };
 
     virtual auto GetSourceWindow(Point start, Point end, char fillchar = ' ')

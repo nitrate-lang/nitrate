@@ -2779,7 +2779,7 @@ auto AstReader::ReadKindSwitch() -> NullableFlowPtr<SwitchStmt> {
 
   while (case_count-- > 0) {
     auto case_stmt = DeserializeStatement();
-    if (!case_stmt.has_value() || !case_stmt.value()->is(QAST_CASE)) {
+    if (!case_stmt.has_value() || !case_stmt.value()->Is(QAST_CASE)) {
       return nullptr;
     }
 

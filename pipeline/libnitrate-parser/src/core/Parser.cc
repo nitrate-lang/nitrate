@@ -55,10 +55,10 @@ auto Parser::PImpl::RecurseName() -> string {
   while (true) {
     Token peek = peek();
 
-    if (peek.is(Name)) {
+    if (peek.Is(Name)) {
       name += peek.GetString();
       last_was_scope = false;
-    } else if (peek.is<PuncScope>()) {
+    } else if (peek.Is<PuncScope>()) {
       if (last_was_scope) {
         Log << SyntaxError << peek << "Unexpected '::' after '::'";
         break;
@@ -82,7 +82,7 @@ auto Parser::PImpl::RecurseName() -> string {
 
 auto Parser::PImpl::RecurseBlock(bool expect_braces, bool single_stmt,
                                  SafetyMode safety) -> FlowPtr<Stmt> {
-  if (expect_braces && !next().is<PuncLCur>()) {
+  if (expect_braces && !next().Is<PuncLCur>()) {
     Log << SyntaxError << current() << "Expected '{'";
   }
 
@@ -118,7 +118,7 @@ auto Parser::PImpl::RecurseBlock(bool expect_braces, bool single_stmt,
       }
     }
 
-    if (!peek().is(KeyW)) {
+    if (!peek().Is(KeyW)) {
       auto comments = m_rd.CommentBuffer();
       m_rd.ClearCommentBuffer();
 
@@ -257,7 +257,7 @@ auto Parser::PImpl::RecurseBlock(bool expect_braces, bool single_stmt,
         }
 
         case Unsafe: {
-          if (peek().is<PuncLCur>()) {
+          if (peek().Is<PuncLCur>()) {
             r = RecurseBlock(true, false, SafetyMode::Unsafe);
           } else {
             r = RecurseBlock(false, true, SafetyMode::Unsafe);
@@ -267,7 +267,7 @@ auto Parser::PImpl::RecurseBlock(bool expect_braces, bool single_stmt,
         }
 
         case Safe: {
-          if (peek().is<PuncLCur>()) {
+          if (peek().Is<PuncLCur>()) {
             r = RecurseBlock(true, false, SafetyMode::Safe);
           } else {
             r = RecurseBlock(false, true, SafetyMode::Safe);

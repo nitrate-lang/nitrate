@@ -54,14 +54,14 @@ namespace ncc::parse {
       -> std::optional<ncc::lex::Token> {
     auto t = m_rd.Peek();
     if constexpr (std::is_same_v<decltype(tok), ncc::lex::TokenType>) {
-      if (t.is(tok)) {
+      if (t.Is(tok)) {
         m_rd.Next();
         return t;
       }
 
       return std::nullopt;
     } else {
-      if (t.is<tok>()) {
+      if (t.Is<tok>()) {
         m_rd.Next();
         return t;
       }

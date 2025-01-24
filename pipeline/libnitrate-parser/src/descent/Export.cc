@@ -75,7 +75,7 @@ auto Parser::PImpl::RecurseExportAttributes() -> std::optional<ExpressionList> {
 }
 
 auto Parser::PImpl::RecurseExportBody() -> FlowPtr<Stmt> {
-  if (peek().is<PuncLCur>()) {
+  if (peek().Is<PuncLCur>()) {
     return RecurseBlock(true, false, SafetyMode::Unknown);
   }
 
