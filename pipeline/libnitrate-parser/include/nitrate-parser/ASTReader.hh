@@ -178,39 +178,28 @@ namespace ncc::parse {
     auto ReadKindSwitch() -> NullableFlowPtr<SwitchStmt>;
     auto ReadKindExprStmt() -> NullableFlowPtr<ExprStmt>;
 
-    class StrongBool {
-    public:
-      bool m_val;
-
-      constexpr auto operator!() const -> StrongBool { return {!m_val}; }
-      constexpr auto operator||(StrongBool o) const -> StrongBool {
-        return {m_val || o.m_val};
-      }
-      constexpr operator bool() const { return m_val; }
-    };
-
     template <typename ValueType>
-    constexpr auto NextIf(const ValueType& v = ValueType()) -> StrongBool {
+    constexpr auto NextIf(const ValueType& v = ValueType()) -> bool {
       if (auto n = PeekValue()) {
         if (std::holds_alternative<ValueType>(n->operator()()) &&
             std::get<ValueType>(n->operator()()) == v) {
           NextValue();
-          return StrongBool(true);
+          return true;
         }
       }
 
-      return StrongBool(false);
+      return false;
     }
 
     template <typename ValueType>
-    constexpr auto NextIs() -> StrongBool {
+    constexpr auto NextIs() -> bool {
       if (auto n = PeekValue()) {
         if (std::holds_alternative<ValueType>(n->operator()())) {
-          return StrongBool(true);
+          return true;
         }
       }
 
-      return StrongBool(false);
+      return false;
     }
 
     template <typename ValueType>
