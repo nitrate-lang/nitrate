@@ -36,6 +36,7 @@
 #include <nitrate-ir/IR.hh>
 #include <nitrate-ir/IR/Nodes.hh>
 #include <unordered_set>
+#include <utility>
 
 using namespace ncc;
 using namespace ncc::ir;
@@ -74,7 +75,8 @@ static NullableFlowPtr<Type> Promote(NullableFlowPtr<Type> lhs,
     return std::nullopt;
   }
 
-  auto l = lhs.value(), r = rhs.value();
+  auto l = lhs.value();
+  auto r = rhs.value();
 
   if (l->IsReadonly() && !r->IsReadonly()) {
     r = GetConstTy(r);
@@ -89,7 +91,8 @@ static NullableFlowPtr<Type> Promote(NullableFlowPtr<Type> lhs,
   }
   ///===========================================================================
 
-  nr_ty_t lt = l->GetKind(), rt = r->GetKind();
+  nr_ty_t lt = l->GetKind();
+  nr_ty_t rt = r->GetKind();
 
   ///===========================================================================
   /// NOTE: Primitive numeric types are promoted according to the following
@@ -97,23 +100,23 @@ static NullableFlowPtr<Type> Promote(NullableFlowPtr<Type> lhs,
   if (l->IsNumeric() && r->IsNumeric()) {
     ///===========================================================================
     /// NOTE: Floating point always takes precedence over integers.
-    if (l->is(IR_tVOID) || r->is(IR_tVOID)) {
+    if (l->Is(IR_tVOID) || r->Is(IR_tVOID)) {
       return std::nullopt;
     }
 
-    if (l->is(IR_tF128_TY) || r->is(IR_tF128_TY)) {
+    if (l->Is(IR_tF128_TY) || r->Is(IR_tF128_TY)) {
       return MakeFlowPtr(GetF128Ty());
     }
 
-    if (l->is(IR_tF64_TY) || r->is(IR_tF64_TY)) {
+    if (l->Is(IR_tF64_TY) || r->Is(IR_tF64_TY)) {
       return MakeFlowPtr(GetF64Ty());
     }
 
-    if (l->is(IR_tF32_TY) || r->is(IR_tF32_TY)) {
+    if (l->Is(IR_tF32_TY) || r->Is(IR_tF32_TY)) {
       return MakeFlowPtr(GetF32Ty());
     }
 
-    if (l->is(IR_tF16_TY) || r->is(IR_tF16_TY)) {
+    if (l->Is(IR_tF16_TY) || r->Is(IR_tF16_TY)) {
       return MakeFlowPtr(GetF16Ty());
     }
     ///===========================================================================
@@ -121,7 +124,8 @@ static NullableFlowPtr<Type> Promote(NullableFlowPtr<Type> lhs,
     ///===========================================================================
     /// NOTE: If L && R are both unsigned integers, the larger type is used.
     if (l->IsUnsigned() && r->IsUnsigned()) {
-      auto ls = l->GetSizeBits(), rs = r->GetSizeBits();
+      auto ls = l->GetSizeBits();
+      auto rs = r->GetSizeBits();
       if (!ls.has_value() || !rs.has_value()) {
         return std::nullopt;
       }
@@ -133,7 +137,8 @@ static NullableFlowPtr<Type> Promote(NullableFlowPtr<Type> lhs,
     /// NOTE: If L && R are both signed integers, the larger type is used.
     if ((l->IsSigned() && l->IsIntegral()) &&
         (r->IsSigned() && r->IsIntegral())) {
-      auto ls = l->GetSizeBits(), rs = r->GetSizeBits();
+      auto ls = l->GetSizeBits();
+      auto rs = r->GetSizeBits();
       if (!ls.has_value() || !rs.has_value()) {
         return std::nullopt;
       }
@@ -145,35 +150,35 @@ static NullableFlowPtr<Type> Promote(NullableFlowPtr<Type> lhs,
     /// NOTE: If either L or R is a signed integer, the signed integer is
     /// promoted.
     if (l->IsIntegral() && l->IsSigned()) {
-      auto ls = l->GetSizeBits(), rs = r->GetSizeBits();
+      auto ls = l->GetSizeBits();
+      auto rs = r->GetSizeBits();
       if (!ls.has_value() || !rs.has_value()) {
         return std::nullopt;
       }
       if (ls > rs) {
         return SignedComplement(lt);
-      } else {
-        return r;
       }
-    } else if (r->IsIntegral() && r->IsSigned()) {
-      auto ls = l->GetSizeBits(), rs = r->GetSizeBits();
+
+      return r;
+    }
+    if (r->IsIntegral() && r->IsSigned()) {
+      auto ls = l->GetSizeBits();
+      auto rs = r->GetSizeBits();
       if (!ls.has_value() || !rs.has_value()) {
         return std::nullopt;
       }
       if (rs > ls) {
         return SignedComplement(rt);
-      } else {
-        return l;
       }
-    } else {
-      return std::nullopt;
+      return l;
     }
+    return std::nullopt;
+
     ///===========================================================================
   }
   ///===========================================================================
 
-  else {
-    return std::nullopt;
-  }
+  return std::nullopt;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -301,9 +306,9 @@ static NullableFlowPtr<Type> InferUnaryExpression(NullableFlowPtr<Type> e,
   return e;
 }
 
-static NullableFlowPtr<Type> InferBinaryExpression(NullableFlowPtr<Type> lhs,
-                                                   lex::Operator o,
-                                                   NullableFlowPtr<Type> rhs) {
+static NullableFlowPtr<Type> InferBinaryExpression(
+    NullableFlowPtr<Type> lhs, lex::Operator o,
+    const NullableFlowPtr<Type>& rhs) {
   using namespace lex;
 
   NullableFlowPtr<ir::Type> r;
@@ -332,7 +337,7 @@ static NullableFlowPtr<Type> InferBinaryExpression(NullableFlowPtr<Type> lhs,
     case OpTernary:
     case OpInc:
     case OpDec: {
-      r = Promote(lhs, rhs);
+      r = Promote(std::move(lhs), rhs);
     }
 
     case OpLogicAnd:
@@ -383,15 +388,16 @@ class InferenceVisitor : public IRVisitor<void> {
   std::optional<FlowPtr<Type>> m_r;
 
 public:
-  InferenceVisitor() {}
-  virtual ~InferenceVisitor() = default;
+  InferenceVisitor() = default;
+  ~InferenceVisitor() override = default;
 
   std::optional<FlowPtr<Type>> Get() { return m_r; }
 
   void Visit(FlowPtr<Expr>) override {}
 
   void Visit(FlowPtr<BinExpr> n) override {
-    auto lhs = n->GetLHS()->GetType(), rhs = n->GetRHS()->GetType();
+    auto lhs = n->GetLHS()->GetType();
+    auto rhs = n->GetRHS()->GetType();
 
     if (auto type = InferBinaryExpression(lhs, n->GetOp(), rhs)) {
       m_r = type.value();
@@ -539,15 +545,15 @@ public:
     auto base_type_opt = n->GetExpr()->GetType();
 
     if (base_type_opt.has_value(); auto base = base_type_opt.value()) {
-      if (base->is(IR_tPTR)) {  // *X -> X
+      if (base->Is(IR_tPTR)) {  // *X -> X
         m_r = base->As<PtrTy>()->GetPointee();
-      } else if (base->is(IR_tARRAY)) {  // [X; N] -> X
+      } else if (base->Is(IR_tARRAY)) {  // [X; N] -> X
         m_r = base->As<ArrayTy>()->GetElement();
-      } else if (base->is(IR_tSTRUCT)) {  // struct { a, b, c }[1] -> b
+      } else if (base->Is(IR_tSTRUCT)) {  // struct { a, b, c }[1] -> b
 
-        if (auto index = n->GetIndex(); index->is(IR_eINT)) {
+        if (auto index = n->GetIndex(); index->Is(IR_eINT)) {
           auto num = index->As<Int>()->GetValue();
-          auto st = base->As<StructTy>();
+          auto* st = base->As<StructTy>();
 
           if (num < st->GetFields().size()) {
             m_r = st->GetFields()[num.convert_to<std::size_t>()];
@@ -557,10 +563,10 @@ public:
         } else {
           // Invalid: index must be of type int to index into a struct
         }
-      } else if (base->is(IR_tUNION)) {
-        if (auto index = n->GetIndex(); index->is(IR_eINT)) {
+      } else if (base->Is(IR_tUNION)) {
+        if (auto index = n->GetIndex(); index->Is(IR_eINT)) {
           auto num = index->As<Int>()->GetValue();
-          auto st = base->As<UnionTy>();
+          auto* st = base->As<UnionTy>();
 
           if (num < st->GetFields().size()) {
             m_r = st->GetFields()[num.convert_to<std::size_t>()];
@@ -595,7 +601,7 @@ public:
     std::vector<FlowPtr<Type>> params;
     params.reserve(n->GetParams().size());
 
-    for (auto item : n->GetParams()) {
+    for (const auto& item : n->GetParams()) {
       params.push_back(item.first);
     }
 

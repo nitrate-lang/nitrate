@@ -296,7 +296,7 @@ namespace ncc::ir {
       return const_cast<GenericExpr<A> *>(this)->AsType();
     }
 
-    [[nodiscard]] constexpr bool is(nr_ty_t type) const {
+    [[nodiscard]] constexpr bool Is(nr_ty_t type) const {
       return type == GetKind();
     }
 
