@@ -157,7 +157,7 @@ using namespace ncc;
 // static bool check_is_foreign_function(auto n) {
 //   return std::any_of(n.begin(), n.end(), [](FlowPtr<ncc::parse::Expr> attr) {
 //     return attr->is(QAST_IDENT) &&
-//            attr->As<ncc::parse::Ident>()->GetName() == "foreign";
+//            attr->As<ncc::parse::Identifier>()->GetName() == "foreign";
 //   });
 // }
 
@@ -167,11 +167,11 @@ using namespace ncc;
 //                                                      lex::Operator op) {
 //   using namespace ncc::lex;
 
-// #define STD_BINOP(op) ir::create<ir::BinExpr>(lhs, rhs, ir::Op::op)
+// #define STD_BINOP(op) ir::create<ir::BinaryExpression>(lhs, rhs, ir::Op::op)
 // #define ASSIGN_BINOP(op)                                                  \
-//   ir::create<ir::BinExpr>(                                                \
+//   ir::create<ir::BinaryExpression>(                                                \
 //       lhs,                                                                \
-//       ir::create<ir::BinExpr>(static_cast<ir::Expr *>(lhs->clone()), rhs, \
+//       ir::create<ir::BinaryExpression>(static_cast<ir::Expr *>(lhs->clone()), rhs, \
 //                               ir::Op::op),                                \
 //       ir::Op::Set)
 
@@ -224,10 +224,10 @@ using namespace ncc;
 //     }
 //     case OpLogicXor: {
 //       // A ^^ B == (A || B) && !(A && B)
-//       auto a = ir::create<ir::BinExpr>(lhs, rhs, ir::Op::LogicOr);
-//       auto b = ir::create<ir::BinExpr>(lhs, rhs, ir::Op::LogicAnd);
+//       auto a = ir::create<ir::BinaryExpression>(lhs, rhs, ir::Op::LogicOr);
+//       auto b = ir::create<ir::BinaryExpression>(lhs, rhs, ir::Op::LogicAnd);
 //       auto not_b = ir::create<ir::Unary>(b, ir::Op::LogicNot, false);
-//       R = ir::create<ir::BinExpr>(a, not_b, ir::Op::LogicAnd);
+//       R = ir::create<ir::BinaryExpression>(a, not_b, ir::Op::LogicAnd);
 //       break;
 //     }
 //     case OpLogicNot: {
@@ -307,11 +307,11 @@ using namespace ncc;
 //     case OpLogicXorSet: {
 //       // a ^^= b == a = (a || b) && !(a && b)
 
-//       auto a = ir::create<ir::BinExpr>(lhs, rhs, ir::Op::LogicOr);
-//       auto b = ir::create<ir::BinExpr>(lhs, rhs, ir::Op::LogicAnd);
+//       auto a = ir::create<ir::BinaryExpression>(lhs, rhs, ir::Op::LogicOr);
+//       auto b = ir::create<ir::BinaryExpression>(lhs, rhs, ir::Op::LogicAnd);
 //       auto not_b = ir::create<ir::Unary>(b, ir::Op::LogicNot, false);
-//       return ir::create<ir::BinExpr>(
-//           lhs, ir::create<ir::BinExpr>(a, not_b, ir::Op::LogicAnd),
+//       return ir::create<ir::BinaryExpression>(
+//           lhs, ir::create<ir::BinaryExpression>(a, not_b, ir::Op::LogicAnd),
 //           ir::Op::Set);
 //     }
 //     case OpLShiftSet: {
@@ -440,12 +440,12 @@ using namespace ncc;
 
 //     case OpSizeof: {
 //       auto bits = ir::create<ir::Unary>(rhs, ir::Op::Bitsizeof, false);
-//       auto arg = ir::create<ir::BinExpr>(
+//       auto arg = ir::create<ir::BinaryExpression>(
 //           bits, ir::create<ir::Float>(8, 64), ir::Op::Slash);
 
 //       std::array<std::pair<std::string_view, Expr *>, 1> args;
 //       args[0] = {"_0", arg};
-//       R = b.createCall(ir::create<ir::Ident>(save("std::ceil"), nullptr),
+//       R = b.createCall(ir::create<ir::Identifier>(save("std::ceil"), nullptr),
 //       args);
 
 //       break;
@@ -488,7 +488,7 @@ using namespace ncc;
 // }
 
 // static EResult nrgen_binexpr(NRBuilder &b, PState &s, IReport *G,
-//                              FlowPtr<ncc::parse::BinExpr> n) {
+//                              FlowPtr<ncc::parse::BinaryExpression> n) {
 //   if (n->Getlhs() && n->Getrhs() && n->Getop() == lex::OpAs &&
 //       n->Getrhs()->is(QAST_TEXPR)) {
 //     FlowPtr<ncc::parse::Type> type =
@@ -515,8 +515,8 @@ using namespace ncc;
 
 //         auto it = integer_lit_suffixes.find(type->GetKind());
 //         if (it != integer_lit_suffixes.end()) {
-//           FlowPtr<ncc::parse::ConstInt> N(
-//               n->Getlhs()->As<ncc::parse::ConstInt>());
+//           FlowPtr<ncc::parse::Integer> N(
+//               n->Getlhs()->As<ncc::parse::Integer>());
 
 //           return b.createFixedInteger(
 //               boost::multiprecision::cpp_int(N->get_value()), it->second);
@@ -532,8 +532,8 @@ using namespace ncc;
 
 //         auto it = float_lit_suffixes.find(type->GetKind());
 //         if (it != float_lit_suffixes.end()) {
-//           FlowPtr<ncc::parse::ConstFloat> N(
-//               n->Getlhs()->As<ncc::parse::ConstFloat>());
+//           FlowPtr<ncc::parse::Float> N(
+//               n->Getlhs()->As<ncc::parse::Float>());
 
 //           return b.createFixedFloat(
 //               boost::multiprecision::cpp_dec_float_100(N->get_value()),
@@ -569,7 +569,7 @@ using namespace ncc;
 // }
 
 // static EResult nrgen_unexpr(NRBuilder &b, PState &s, IReport *G,
-//                             FlowPtr<ncc::parse::UnaryExpr> n) {
+//                             FlowPtr<ncc::parse::UnaryExpression> n) {
 //   auto rhs = next_one(n->Getrhs());
 //   if (!rhs.has_value()) {
 //     G->report(CompilerError, IC::Error,
@@ -588,7 +588,7 @@ using namespace ncc;
 // }
 
 // static EResult nrgen_post_unexpr(NRBuilder &b, PState &s, IReport *G,
-//                                  FlowPtr<ncc::parse::PostUnaryExpr> n) {
+//                                  FlowPtr<ncc::parse::PostUnaryExpression> n) {
 //   auto lhs = next_one(n->Getlhs());
 //   if (!lhs.has_value()) {
 //     G->report(CompilerError, IC::Error,
@@ -609,7 +609,7 @@ using namespace ncc;
 // }
 
 // static EResult nrgen_terexpr(NRBuilder &b, PState &s, IReport *G,
-//                              FlowPtr<ncc::parse::TernaryExpr> n) {
+//                              FlowPtr<ncc::parse::TernaryExpression> n) {
 //   auto cond = next_one(n->Getcond());
 //   if (!cond.has_value()) {
 //     G->report(CompilerError, IC::Error,
@@ -636,7 +636,7 @@ using namespace ncc;
 // }
 
 // static EResult nrgen_int(NRBuilder &b, PState &, IReport *G,
-//                          FlowPtr<ncc::parse::ConstInt> n) {
+//                          FlowPtr<ncc::parse::Integer> n) {
 //   /**
 //    * Integer types:
 //    *  i32:  [0 - 2147483647]
@@ -667,33 +667,33 @@ using namespace ncc;
 // }
 
 // static EResult nrgen_float(NRBuilder &b, PState &, IReport *,
-//                            FlowPtr<ncc::parse::ConstFloat> n) {
+//                            FlowPtr<ncc::parse::Float> n) {
 //   boost::multiprecision::cpp_dec_float_100 num(n->Getvalue());
 //   return b.createFixedFloat(num, 64);
 // }
 
 // static EResult nrgen_string(NRBuilder &b, PState &, IReport *,
-//                             FlowPtr<ncc::parse::ConstString> n) {
+//                             FlowPtr<ncc::parse::String> n) {
 //   return b.createStringDataArray(n->Getvalue());
 // }
 
 // static EResult nrgen_char(NRBuilder &b, PState &, IReport *,
-//                           FlowPtr<ncc::parse::ConstChar> n) {
+//                           FlowPtr<ncc::parse::Character> n) {
 //   return b.createFixedInteger(n->Getvalue(), 8);
 // }
 
 // static EResult nrgen_bool(NRBuilder &b, PState &, IReport *,
-//                           FlowPtr<ncc::parse::ConstBool> n) {
+//                           FlowPtr<ncc::parse::Boolean> n) {
 //   return b.createBool(n->Getvalue());
 // }
 
 // static EResult nrgen_null(NRBuilder &b, PState &, IReport *,
-//                           FlowPtr<ncc::parse::ConstNull>) {
+//                           FlowPtr<ncc::parse::Null>) {
 //   return b.getUnknownNamedTy("__builtin_null");
 // }
 
 // static EResult nrgen_undef(NRBuilder &, PState &, IReport *G,
-//                            FlowPtr<ncc::parse::ConstUndef> n) {
+//                            FlowPtr<ncc::parse::Undefined> n) {
 //   G->report(UnexpectedUndefLiteral, IC::Error, "", n->Getpos());
 //   return std::nullopt;
 // }
@@ -852,7 +852,7 @@ using namespace ncc;
 //       auto val = *std::get<string>(*it);
 
 //       concated =
-//           create<BinExpr>(concated, b.createStringDataArray(val), Op::Plus);
+//           create<BinaryExpression>(concated, b.createStringDataArray(val), Op::Plus);
 //     } else if (std::holds_alternative<FlowPtr<ncc::parse::Expr>>(*it)) {
 //       auto val = std::get<FlowPtr<ncc::parse::Expr>>(*it);
 //       auto expr = next_one(val);
@@ -865,7 +865,7 @@ using namespace ncc;
 //         return std::nullopt;
 //       }
 
-//       concated = create<BinExpr>(concated, expr.value(), Op::Plus);
+//       concated = create<BinaryExpression>(concated, expr.value(), Op::Plus);
 //     } else {
 //       qcore_panic("Invalid fstring item type");
 //     }
@@ -875,12 +875,12 @@ using namespace ncc;
 // }
 
 // static EResult nrgen_ident(NRBuilder &, PState &s, IReport *,
-//                            FlowPtr<ncc::parse::Ident> n) {
-//   return create<Ident>(save(s.scope_name(n->Getname())), nullptr);
+//                            FlowPtr<ncc::parse::Identifier> n) {
+//   return create<Identifier>(save(s.scope_name(n->Getname())), nullptr);
 // }
 
 // static EResult nrgen_seq_point(NRBuilder &b, PState &s, IReport *G,
-//                                FlowPtr<ncc::parse::SeqPoint> n) {
+//                                FlowPtr<ncc::parse::Sequence> n) {
 //   SeqItems items(n->Getitems().size());
 
 //   for (size_t i = 0; i < n->Getitems().size(); i++) {
@@ -888,7 +888,7 @@ using namespace ncc;
 //     if (!item.has_value()) [[unlikely]] {
 //       G->report(
 //           CompilerError, IC::Error,
-//           "ncc::parse::SeqPoint::GetItems() vector contains std::nullopt",
+//           "ncc::parse::Sequence::GetItems() vector contains std::nullopt",
 //           n->Getpos());
 //       return std::nullopt;
 //     }
@@ -925,7 +925,7 @@ using namespace ncc;
 // }
 
 // static EResult nrgen_templ_call(NRBuilder &, PState &, IReport *G,
-//                                 FlowPtr<ncc::parse::TemplCall> n) {
+//                                 FlowPtr<ncc::parse::TemplateCall> n) {
 //   G->report(CompilerError, IC::Error,
 //             "Attempted to lower an unexpected "
 //             "template function call",
@@ -1153,15 +1153,15 @@ using namespace ncc;
 // }
 
 // static EResult nrgen_templ_ty(NRBuilder &, PState &, IReport *G,
-//                               FlowPtr<ncc::parse::TemplType> n) {
+//                               FlowPtr<ncc::parse::TemplateType> n) {
 //   G->report(ir::CompilerError, IC::Error,
-//             "Attempted to lower an unexpected ncc::parse::TemplType node",
+//             "Attempted to lower an unexpected ncc::parse::TemplateType node",
 //             n->Getpos());
 //   return std::nullopt;
 // }
 
 // static BResult nrgen_typedef(NRBuilder &b, PState &s, IReport *G,
-//                              FlowPtr<ncc::parse::TypedefStmt> n) {
+//                              FlowPtr<ncc::parse::Typedef> n) {
 //   auto type = next_one(n->Gettype());
 //   if (!type.has_value()) {
 //     G->report(ir::CompilerError, IC::Error,
@@ -1178,7 +1178,7 @@ using namespace ncc;
 // #define align(x, a) (((x) + (a) - 1) & ~((a) - 1))
 
 // static BResult nrgen_struct(NRBuilder &b, PState &s, IReport *G,
-//                             FlowPtr<ncc::parse::StructDef> n) {
+//                             FlowPtr<ncc::parse::Struct> n) {
 //   bool is_template = n->GetTemplate_params().has_value();
 //   if (is_template) {
 //     G->report(ir::CompilerError, IC::Error,
@@ -1274,7 +1274,7 @@ using namespace ncc;
 // }
 
 // static BResult nrgen_enum(NRBuilder &b, PState &s, IReport *G,
-//                           FlowPtr<ncc::parse::EnumDef> n) {
+//                           FlowPtr<ncc::parse::Enum> n) {
 //   std::unordered_map<std::string_view, Expr *> values;
 
 //   std::optional<Expr *> last;
@@ -1292,7 +1292,7 @@ using namespace ncc;
 //       last = field_value = val.value();
 //     } else {
 //       if (last.has_value()) {
-//         last = field_value = create<BinExpr>(
+//         last = field_value = create<BinaryExpression>(
 //             last.value(), b.createFixedInteger(1, 32), Op::Plus);
 //       } else {
 //         last = field_value = b.createFixedInteger(0, 32);
@@ -1561,7 +1561,7 @@ using namespace ncc;
 // }
 
 // static BResult nrgen_scope(NRBuilder &b, PState &s, IReport *G,
-//                            FlowPtr<ncc::parse::ScopeStmt> n) {
+//                            FlowPtr<ncc::parse::Scope> n) {
 //   if (!n->Getbody()->is(QAST_BLOCK)) {
 //     return std::nullopt;
 //   }
@@ -1583,7 +1583,7 @@ using namespace ncc;
 // }
 
 // static BResult nrgen_export(NRBuilder &b, PState &s, IReport *G,
-//                             FlowPtr<ncc::parse::ExportStmt> n) {
+//                             FlowPtr<ncc::parse::Export> n) {
 //   static const std::unordered_map<std::string_view,
 //                                   std::pair<std::string_view, AbiTag>>
 //       abi_name_map = {
@@ -1683,12 +1683,12 @@ using namespace ncc;
 // }
 
 // static EResult nrgen_var(NRBuilder &b, PState &s, IReport *G,
-//                          FlowPtr<ncc::parse::VarDecl> n) {
+//                          FlowPtr<ncc::parse::Variable> n) {
 //   auto init = next_one(n->Getvalue().value_or(nullptr));
 //   auto type = next_one(n->Gettype().value_or(nullptr));
 
 //   if (init.has_value() && type.has_value()) { /* Do implicit cast */
-//     init = create<BinExpr>(init.value(), type.value(), Op::CastAs);
+//     init = create<BinaryExpression>(init.value(), type.value(), Op::CastAs);
 //   } else if (init.has_value() && !type.has_value()) {
 //     type = b.getUnknownTy();
 //   } else if (type.has_value() && !init.has_value()) {
@@ -1722,7 +1722,7 @@ using namespace ncc;
 // }
 
 // static EResult nrgen_inline_asm(NRBuilder &, PState &, IReport *G,
-//                                 FlowPtr<ncc::parse::InlineAsm>) {
+//                                 FlowPtr<ncc::parse::Assembly>) {
 //   /// TODO: Decide whether or not to support inline assembly
 //   G->report(ir::CompilerError, IC::Error,
 //             "Inline assembly is not currently supported");
@@ -1730,7 +1730,7 @@ using namespace ncc;
 // }
 
 // static EResult nrgen_return(NRBuilder &b, PState &s, IReport *G,
-//                             FlowPtr<ncc::parse::ReturnStmt> n) {
+//                             FlowPtr<ncc::parse::Return> n) {
 //   if (n->Getvalue()) {
 //     auto val = next_one(n->Getvalue().value_or(nullptr));
 //     if (!val.has_value()) {
@@ -1747,13 +1747,13 @@ using namespace ncc;
 // }
 
 // static EResult nrgen_retif(NRBuilder &b, PState &s, IReport *G,
-//                            FlowPtr<ncc::parse::ReturnIfStmt> n) {
+//                            FlowPtr<ncc::parse::ReturnIf> n) {
 //   auto cond = next_one(n->Getcond());
 //   if (!cond.has_value()) {
 //     return std::nullopt;
 //   }
 
-//   cond = create<BinExpr>(cond.value(), create<U1Ty>(), Op::CastAs);
+//   cond = create<BinaryExpression>(cond.value(), create<U1Ty>(), Op::CastAs);
 
 //   auto val = next_one(n->Getvalue());
 //   if (!val.has_value()) {
@@ -1764,17 +1764,17 @@ using namespace ncc;
 // }
 
 // static EResult nrgen_break(NRBuilder &, PState &, IReport *,
-//                            FlowPtr<ncc::parse::BreakStmt>) {
+//                            FlowPtr<ncc::parse::Break>) {
 //   return create<Brk>();
 // }
 
 // static EResult nrgen_continue(NRBuilder &, PState &, IReport *,
-//                               FlowPtr<ncc::parse::ContinueStmt>) {
+//                               FlowPtr<ncc::parse::Continue>) {
 //   return create<Cont>();
 // }
 
 // static EResult nrgen_if(NRBuilder &b, PState &s, IReport *G,
-//                         FlowPtr<ncc::parse::IfStmt> n) {
+//                         FlowPtr<ncc::parse::If> n) {
 //   auto cond = next_one(n->Getcond());
 //   auto then = next_one(n->Getthen());
 //   auto els = next_one(n->Getelse().value_or(nullptr));
@@ -1783,7 +1783,7 @@ using namespace ncc;
 //     return std::nullopt;
 //   }
 
-//   cond = create<BinExpr>(cond.value(), create<U1Ty>(), Op::CastAs);
+//   cond = create<BinaryExpression>(cond.value(), create<U1Ty>(), Op::CastAs);
 
 //   if (!then.has_value()) {
 //     return std::nullopt;
@@ -1797,7 +1797,7 @@ using namespace ncc;
 // }
 
 // static EResult nrgen_while(NRBuilder &b, PState &s, IReport *G,
-//                            FlowPtr<ncc::parse::WhileStmt> n) {
+//                            FlowPtr<ncc::parse::While> n) {
 //   auto cond = next_one(n->Getcond());
 //   auto body = next_one(n->Getbody());
 
@@ -1805,7 +1805,7 @@ using namespace ncc;
 //     cond = create<Int>(1, 1);
 //   }
 
-//   cond = create<BinExpr>(cond.value(), create<U1Ty>(), Op::CastAs);
+//   cond = create<BinaryExpression>(cond.value(), create<U1Ty>(), Op::CastAs);
 
 //   if (!body.has_value()) {
 //     body = create<Seq>(SeqItems({}));
@@ -1817,7 +1817,7 @@ using namespace ncc;
 // }
 
 // static EResult nrgen_for(NRBuilder &b, PState &s, IReport *G,
-//                          FlowPtr<ncc::parse::ForStmt> n) {
+//                          FlowPtr<ncc::parse::For> n) {
 //   s.inc_scope();
 
 //   auto init = next_one(n->Getinit().value_or(nullptr));
@@ -1831,7 +1831,7 @@ using namespace ncc;
 
 //   if (!cond.has_value()) {
 //     cond = create<Int>(1, 32);  // infinite loop like 'for (;;) {}'
-//     cond = create<BinExpr>(cond.value(), create<U1Ty>(), Op::CastAs);
+//     cond = create<BinaryExpression>(cond.value(), create<U1Ty>(), Op::CastAs);
 //   }
 
 //   if (!step.has_value()) {
@@ -1848,7 +1848,7 @@ using namespace ncc;
 // }
 
 // static EResult nrgen_foreach(NRBuilder &, PState &, IReport *,
-//                              FlowPtr<ncc::parse::ForeachStmt>) {
+//                              FlowPtr<ncc::parse::Foreach>) {
 //   /**
 //    * @brief Convert a foreach loop to a nr expression.
 //    * @details This is a 1-to-1 conversion of the foreach loop.
@@ -1860,14 +1860,14 @@ using namespace ncc;
 //   // auto iter = nrgen_one(b, s,X, n->Getexpr());
 //   // if (!iter) {
 //   //   G->report(CompilerError, IC::Error,
-//   "ncc::parse::ForeachStmt::get_expr()
+//   "ncc::parse::Foreach::get_expr()
 //   //   == std::nullopt",n->begin(),n->Getpos()); return std::nullopt;
 //   // }
 
 //   // auto body = nrgen_one(b, s,X, n->Getbody());
 //   // if (!body) {
 //   //   G->report(CompilerError, IC::Error,
-//   "ncc::parse::ForeachStmt::get_body()
+//   "ncc::parse::Foreach::get_body()
 //       //   == std::nullopt",n->begin(),n->Getpos()); return std::nullopt;
 //       // }
 
@@ -1877,7 +1877,7 @@ using namespace ncc;
 // }
 
 // static EResult nrgen_case(NRBuilder &b, PState &s, IReport *G,
-//                           FlowPtr<ncc::parse::CaseStmt> n) {
+//                           FlowPtr<ncc::parse::Case> n) {
 //   auto cond = next_one(n->Getcond());
 //   if (!cond.has_value()) {
 //     return std::nullopt;
@@ -1892,7 +1892,7 @@ using namespace ncc;
 // }
 
 // static EResult nrgen_switch(NRBuilder &b, PState &s, IReport *G,
-//                             FlowPtr<ncc::parse::SwitchStmt> n) {
+//                             FlowPtr<ncc::parse::Switch> n) {
 //   auto cond = next_one(n->Getcond());
 //   if (!cond.has_value()) {
 //     return std::nullopt;
@@ -1904,7 +1904,7 @@ using namespace ncc;
 //     if (!item.has_value()) {
 //       G->report(
 //           CompilerError, IC::Error,
-//           "ncc::parse::SwitchStmt::get_cases() vector contains std::nullopt",
+//           "ncc::parse::Switch::get_cases() vector contains std::nullopt",
 //           n->Getpos());
 //       return std::nullopt;
 //     }
@@ -1946,43 +1946,43 @@ using namespace ncc;
 //     }
 
 //     case QAST_BINEXPR:
-//       out = nrgen_binexpr(b, s, G, n.as<ncc::parse::BinExpr>());
+//       out = nrgen_binexpr(b, s, G, n.as<ncc::parse::BinaryExpression>());
 //       break;
 
 //     case QAST_UNEXPR:
-//       out = nrgen_unexpr(b, s, G, n.as<ncc::parse::UnaryExpr>());
+//       out = nrgen_unexpr(b, s, G, n.as<ncc::parse::UnaryExpression>());
 //       break;
 
 //     case QAST_TEREXPR:
-//       out = nrgen_terexpr(b, s, G, n.as<ncc::parse::TernaryExpr>());
+//       out = nrgen_terexpr(b, s, G, n.as<ncc::parse::TernaryExpression>());
 //       break;
 
 //     case QAST_INT:
-//       out = nrgen_int(b, s, G, n.as<ncc::parse::ConstInt>());
+//       out = nrgen_int(b, s, G, n.as<ncc::parse::Integer>());
 //       break;
 
 //     case QAST_FLOAT:
-//       out = nrgen_float(b, s, G, n.as<ncc::parse::ConstFloat>());
+//       out = nrgen_float(b, s, G, n.as<ncc::parse::Float>());
 //       break;
 
 //     case QAST_STRING:
-//       out = nrgen_string(b, s, G, n.as<ncc::parse::ConstString>());
+//       out = nrgen_string(b, s, G, n.as<ncc::parse::String>());
 //       break;
 
 //     case QAST_CHAR:
-//       out = nrgen_char(b, s, G, n.as<ncc::parse::ConstChar>());
+//       out = nrgen_char(b, s, G, n.as<ncc::parse::Character>());
 //       break;
 
 //     case QAST_BOOL:
-//       out = nrgen_bool(b, s, G, n.as<ncc::parse::ConstBool>());
+//       out = nrgen_bool(b, s, G, n.as<ncc::parse::Boolean>());
 //       break;
 
 //     case QAST_NULL:
-//       out = nrgen_null(b, s, G, n.as<ncc::parse::ConstNull>());
+//       out = nrgen_null(b, s, G, n.as<ncc::parse::Null>());
 //       break;
 
 //     case QAST_UNDEF:
-//       out = nrgen_undef(b, s, G, n.as<ncc::parse::ConstUndef>());
+//       out = nrgen_undef(b, s, G, n.as<ncc::parse::Undefined>());
 //       break;
 
 //     case QAST_CALL:
@@ -2010,15 +2010,15 @@ using namespace ncc;
 //       break;
 
 //     case QAST_IDENT:
-//       out = nrgen_ident(b, s, G, n.as<ncc::parse::Ident>());
+//       out = nrgen_ident(b, s, G, n.as<ncc::parse::Identifier>());
 //       break;
 
 //     case QAST_SEQ:
-//       out = nrgen_seq_point(b, s, G, n.as<ncc::parse::SeqPoint>());
+//       out = nrgen_seq_point(b, s, G, n.as<ncc::parse::Sequence>());
 //       break;
 
 //     case QAST_POST_UNEXPR:
-//       out = nrgen_post_unexpr(b, s, G, n.as<ncc::parse::PostUnaryExpr>());
+//       out = nrgen_post_unexpr(b, s, G, n.as<ncc::parse::PostUnaryExpression>());
 //       break;
 
 //     case QAST_SEXPR:
@@ -2030,7 +2030,7 @@ using namespace ncc;
 //       break;
 
 //     case QAST_TEMPL_CALL:
-//       out = nrgen_templ_call(b, s, G, n.as<ncc::parse::TemplCall>());
+//       out = nrgen_templ_call(b, s, G, n.as<ncc::parse::TemplateCall>());
 //       break;
 
 //     case QAST_REF:
@@ -2130,7 +2130,7 @@ using namespace ncc;
 //       break;
 
 //     case QAST_TEMPLATE:
-//       out = nrgen_templ_ty(b, s, G, n.as<ncc::parse::TemplType>());
+//       out = nrgen_templ_ty(b, s, G, n.as<ncc::parse::TemplateType>());
 //       break;
 
 //     case QAST_FUNCTION:
@@ -2142,51 +2142,51 @@ using namespace ncc;
 //       break;
 
 //     case QAST_VAR:
-//       out = nrgen_var(b, s, G, n.as<ncc::parse::VarDecl>());
+//       out = nrgen_var(b, s, G, n.as<ncc::parse::Variable>());
 //       break;
 
 //     case QAST_INLINE_ASM:
-//       out = nrgen_inline_asm(b, s, G, n.as<ncc::parse::InlineAsm>());
+//       out = nrgen_inline_asm(b, s, G, n.as<ncc::parse::Assembly>());
 //       break;
 
 //     case QAST_RETURN:
-//       out = nrgen_return(b, s, G, n.as<ncc::parse::ReturnStmt>());
+//       out = nrgen_return(b, s, G, n.as<ncc::parse::Return>());
 //       break;
 
 //     case QAST_RETIF:
-//       out = nrgen_retif(b, s, G, n.as<ncc::parse::ReturnIfStmt>());
+//       out = nrgen_retif(b, s, G, n.as<ncc::parse::ReturnIf>());
 //       break;
 
 //     case QAST_BREAK:
-//       out = nrgen_break(b, s, G, n.as<ncc::parse::BreakStmt>());
+//       out = nrgen_break(b, s, G, n.as<ncc::parse::Break>());
 //       break;
 
 //     case QAST_CONTINUE:
-//       out = nrgen_continue(b, s, G, n.as<ncc::parse::ContinueStmt>());
+//       out = nrgen_continue(b, s, G, n.as<ncc::parse::Continue>());
 //       break;
 
 //     case QAST_IF:
-//       out = nrgen_if(b, s, G, n.as<ncc::parse::IfStmt>());
+//       out = nrgen_if(b, s, G, n.as<ncc::parse::If>());
 //       break;
 
 //     case QAST_WHILE:
-//       out = nrgen_while(b, s, G, n.as<ncc::parse::WhileStmt>());
+//       out = nrgen_while(b, s, G, n.as<ncc::parse::While>());
 //       break;
 
 //     case QAST_FOR:
-//       out = nrgen_for(b, s, G, n.as<ncc::parse::ForStmt>());
+//       out = nrgen_for(b, s, G, n.as<ncc::parse::For>());
 //       break;
 
 //     case QAST_FOREACH:
-//       out = nrgen_foreach(b, s, G, n.as<ncc::parse::ForeachStmt>());
+//       out = nrgen_foreach(b, s, G, n.as<ncc::parse::Foreach>());
 //       break;
 
 //     case QAST_CASE:
-//       out = nrgen_case(b, s, G, n.as<ncc::parse::CaseStmt>());
+//       out = nrgen_case(b, s, G, n.as<ncc::parse::Case>());
 //       break;
 
 //     case QAST_SWITCH:
-//       out = nrgen_switch(b, s, G, n.as<ncc::parse::SwitchStmt>());
+//       out = nrgen_switch(b, s, G, n.as<ncc::parse::Switch>());
 //       break;
 
 //     case QAST_ESTMT:
@@ -2213,23 +2213,23 @@ using namespace ncc;
 
 //   switch (n->GetKind()) {
 //     case QAST_TYPEDEF:
-//       out = nrgen_typedef(b, s, G, n.as<ncc::parse::TypedefStmt>());
+//       out = nrgen_typedef(b, s, G, n.as<ncc::parse::Typedef>());
 //       break;
 
 //     case QAST_ENUM:
-//       out = nrgen_enum(b, s, G, n.as<ncc::parse::EnumDef>());
+//       out = nrgen_enum(b, s, G, n.as<ncc::parse::Enum>());
 //       break;
 
 //     case QAST_STRUCT:
-//       out = nrgen_struct(b, s, G, n.as<ncc::parse::StructDef>());
+//       out = nrgen_struct(b, s, G, n.as<ncc::parse::Struct>());
 //       break;
 
 //     case QAST_SCOPE:
-//       out = nrgen_scope(b, s, G, n.as<ncc::parse::ScopeStmt>());
+//       out = nrgen_scope(b, s, G, n.as<ncc::parse::Scope>());
 //       break;
 
 //     case QAST_EXPORT:
-//       out = nrgen_export(b, s, G, n.as<ncc::parse::ExportStmt>());
+//       out = nrgen_export(b, s, G, n.as<ncc::parse::Export>());
 //       break;
 
 //     default: {

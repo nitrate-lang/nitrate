@@ -93,7 +93,7 @@ namespace ncc::ir {
 
     template <typename T>
     static constexpr auto GetTypeCode() -> nr_ty_t {
-      if constexpr (std::is_same_v<T, GenericBinExpr<A>>) {
+      if constexpr (std::is_same_v<T, GenericBinaryExpression<A>>) {
         return IR_eBIN;
       } else if constexpr (std::is_same_v<T, GenericUnary<A>>) {
         return IR_eUNARY;
@@ -109,7 +109,7 @@ namespace ncc::ir {
         return IR_eSEQ;
       } else if constexpr (std::is_same_v<T, GenericIndex<A>>) {
         return IR_eINDEX;
-      } else if constexpr (std::is_same_v<T, GenericIdent<A>>) {
+      } else if constexpr (std::is_same_v<T, GenericIdentifier<A>>) {
         return IR_eIDENT;
       } else if constexpr (std::is_same_v<T, GenericExtern<A>>) {
         return IR_eEXTERN;
@@ -547,7 +547,7 @@ namespace ncc::ir {
       }
 
       case IR_eIDENT: {
-        r = As<GenericIdent<A>>()->GetName();
+        r = As<GenericIdentifier<A>>()->GetName();
         break;
       }
 
@@ -713,7 +713,7 @@ namespace ncc::ir {
       std::array<size_t, kIRNodeKindCount> r;
       r.fill(0);
 
-      r[IR_eBIN] = sizeof(GenericBinExpr<A>);
+      r[IR_eBIN] = sizeof(GenericBinaryExpression<A>);
       r[IR_eUNARY] = sizeof(GenericUnary<A>);
       r[IR_eINT] = sizeof(GenericInt<A>);
       r[IR_eFLOAT] = sizeof(GenericFloat<A>);
@@ -721,7 +721,7 @@ namespace ncc::ir {
       r[IR_eCALL] = sizeof(GenericCall<A>);
       r[IR_eSEQ] = sizeof(GenericSeq<A>);
       r[IR_eINDEX] = sizeof(GenericIndex<A>);
-      r[IR_eIDENT] = sizeof(GenericIdent<A>);
+      r[IR_eIDENT] = sizeof(GenericIdentifier<A>);
       r[IR_eEXTERN] = sizeof(GenericExtern<A>);
       r[IR_eLOCAL] = sizeof(GenericLocal<A>);
       r[IR_eRET] = sizeof(GenericRet<A>);

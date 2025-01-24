@@ -229,7 +229,7 @@ void AstWriter::Visit(FlowPtr<InferTy> n) {
   end_obj();
 }
 
-void AstWriter::Visit(FlowPtr<TemplType> n) {
+void AstWriter::Visit(FlowPtr<TemplateType> n) {
   begin_obj(7);
 
   string("kind");
@@ -663,7 +663,7 @@ void AstWriter::Visit(FlowPtr<FuncTy> n) {
   end_obj();
 }
 
-void AstWriter::Visit(FlowPtr<UnaryExpr> n) {
+void AstWriter::Visit(FlowPtr<UnaryExpression> n) {
   begin_obj(4);
 
   string("kind");
@@ -680,7 +680,7 @@ void AstWriter::Visit(FlowPtr<UnaryExpr> n) {
   end_obj();
 }
 
-void AstWriter::Visit(FlowPtr<BinExpr> n) {
+void AstWriter::Visit(FlowPtr<BinaryExpression> n) {
   begin_obj(5);
 
   string("kind");
@@ -700,7 +700,7 @@ void AstWriter::Visit(FlowPtr<BinExpr> n) {
   end_obj();
 }
 
-void AstWriter::Visit(FlowPtr<PostUnaryExpr> n) {
+void AstWriter::Visit(FlowPtr<PostUnaryExpression> n) {
   begin_obj(4);
 
   string("kind");
@@ -717,7 +717,7 @@ void AstWriter::Visit(FlowPtr<PostUnaryExpr> n) {
   end_obj();
 }
 
-void AstWriter::Visit(FlowPtr<TernaryExpr> n) {
+void AstWriter::Visit(FlowPtr<TernaryExpression> n) {
   begin_obj(5);
 
   string("kind");
@@ -737,7 +737,7 @@ void AstWriter::Visit(FlowPtr<TernaryExpr> n) {
   end_obj();
 }
 
-void AstWriter::Visit(FlowPtr<ConstInt> n) {
+void AstWriter::Visit(FlowPtr<Integer> n) {
   begin_obj(3);
 
   string("kind");
@@ -751,7 +751,7 @@ void AstWriter::Visit(FlowPtr<ConstInt> n) {
   end_obj();
 }
 
-void AstWriter::Visit(FlowPtr<ConstFloat> n) {
+void AstWriter::Visit(FlowPtr<Float> n) {
   begin_obj(3);
 
   string("kind");
@@ -765,7 +765,7 @@ void AstWriter::Visit(FlowPtr<ConstFloat> n) {
   end_obj();
 }
 
-void AstWriter::Visit(FlowPtr<ConstBool> n) {
+void AstWriter::Visit(FlowPtr<Boolean> n) {
   begin_obj(3);
 
   string("kind");
@@ -779,7 +779,7 @@ void AstWriter::Visit(FlowPtr<ConstBool> n) {
   end_obj();
 }
 
-void AstWriter::Visit(FlowPtr<ConstString> n) {
+void AstWriter::Visit(FlowPtr<String> n) {
   begin_obj(3);
 
   string("kind");
@@ -793,7 +793,7 @@ void AstWriter::Visit(FlowPtr<ConstString> n) {
   end_obj();
 }
 
-void AstWriter::Visit(FlowPtr<ConstChar> n) {
+void AstWriter::Visit(FlowPtr<Character> n) {
   begin_obj(3);
 
   string("kind");
@@ -807,7 +807,7 @@ void AstWriter::Visit(FlowPtr<ConstChar> n) {
   end_obj();
 }
 
-void AstWriter::Visit(FlowPtr<ConstNull> n) {
+void AstWriter::Visit(FlowPtr<Null> n) {
   begin_obj(2);
 
   string("kind");
@@ -818,7 +818,7 @@ void AstWriter::Visit(FlowPtr<ConstNull> n) {
   end_obj();
 }
 
-void AstWriter::Visit(FlowPtr<ConstUndef> n) {
+void AstWriter::Visit(FlowPtr<Undefined> n) {
   begin_obj(2);
 
   string("kind");
@@ -862,7 +862,7 @@ void AstWriter::Visit(FlowPtr<Call> n) {
   end_obj();
 }
 
-void AstWriter::Visit(FlowPtr<TemplCall> n) {
+void AstWriter::Visit(FlowPtr<TemplateCall> n) {
   begin_obj(5);
 
   string("kind");
@@ -1022,7 +1022,7 @@ void AstWriter::Visit(FlowPtr<FString> n) {
   end_obj();
 }
 
-void AstWriter::Visit(FlowPtr<Ident> n) {
+void AstWriter::Visit(FlowPtr<Identifier> n) {
   begin_obj(3);
 
   string("kind");
@@ -1036,7 +1036,7 @@ void AstWriter::Visit(FlowPtr<Ident> n) {
   end_obj();
 }
 
-void AstWriter::Visit(FlowPtr<SeqPoint> n) {
+void AstWriter::Visit(FlowPtr<Sequence> n) {
   begin_obj(3);
 
   string("kind");
@@ -1094,7 +1094,7 @@ void AstWriter::Visit(FlowPtr<Block> n) {
   end_obj();
 }
 
-void AstWriter::Visit(FlowPtr<VarDecl> n) {
+void AstWriter::Visit(FlowPtr<Variable> n) {
   begin_obj(7);
 
   string("kind");
@@ -1104,13 +1104,13 @@ void AstWriter::Visit(FlowPtr<VarDecl> n) {
 
   string("mode");
   switch (n->GetDeclType()) {
-    case VarDeclType::Const:
+    case VariableType::Const:
       string("const");
       break;
-    case VarDeclType::Var:
+    case VariableType::Var:
       string("var");
       break;
-    case VarDeclType::Let:
+    case VariableType::Let:
       string("let");
       break;
   }
@@ -1137,7 +1137,7 @@ void AstWriter::Visit(FlowPtr<VarDecl> n) {
   end_obj();
 }
 
-void AstWriter::Visit(FlowPtr<InlineAsm> n) {
+void AstWriter::Visit(FlowPtr<Assembly> n) {
   begin_obj(4);
 
   string("kind");
@@ -1161,7 +1161,7 @@ void AstWriter::Visit(FlowPtr<InlineAsm> n) {
   end_obj();
 }
 
-void AstWriter::Visit(FlowPtr<IfStmt> n) {
+void AstWriter::Visit(FlowPtr<If> n) {
   begin_obj(5);
 
   string("kind");
@@ -1185,7 +1185,7 @@ void AstWriter::Visit(FlowPtr<IfStmt> n) {
   end_obj();
 }
 
-void AstWriter::Visit(FlowPtr<WhileStmt> n) {
+void AstWriter::Visit(FlowPtr<While> n) {
   begin_obj(4);
 
   string("kind");
@@ -1202,7 +1202,7 @@ void AstWriter::Visit(FlowPtr<WhileStmt> n) {
   end_obj();
 }
 
-void AstWriter::Visit(FlowPtr<ForStmt> n) {
+void AstWriter::Visit(FlowPtr<For> n) {
   begin_obj(6);
 
   string("kind");
@@ -1237,7 +1237,7 @@ void AstWriter::Visit(FlowPtr<ForStmt> n) {
   end_obj();
 }
 
-void AstWriter::Visit(FlowPtr<ForeachStmt> n) {
+void AstWriter::Visit(FlowPtr<Foreach> n) {
   begin_obj(6);
 
   string("kind");
@@ -1246,10 +1246,10 @@ void AstWriter::Visit(FlowPtr<ForeachStmt> n) {
   WriteSourceLocation(n);
 
   string("idx");
-  string(n->GetIdxIdent());
+  string(n->GetIdxIdentifier( ));
 
   string("val");
-  string(n->GetValIdent());
+  string(n->GetValIdentifier( ));
 
   string("expr");
   n->GetExpr().Accept(*this);
@@ -1260,7 +1260,7 @@ void AstWriter::Visit(FlowPtr<ForeachStmt> n) {
   end_obj();
 }
 
-void AstWriter::Visit(FlowPtr<BreakStmt> n) {
+void AstWriter::Visit(FlowPtr<Break> n) {
   begin_obj(2);
 
   string("kind");
@@ -1271,7 +1271,7 @@ void AstWriter::Visit(FlowPtr<BreakStmt> n) {
   end_obj();
 }
 
-void AstWriter::Visit(FlowPtr<ContinueStmt> n) {
+void AstWriter::Visit(FlowPtr<Continue> n) {
   begin_obj(2);
 
   string("kind");
@@ -1282,7 +1282,7 @@ void AstWriter::Visit(FlowPtr<ContinueStmt> n) {
   end_obj();
 }
 
-void AstWriter::Visit(FlowPtr<ReturnStmt> n) {
+void AstWriter::Visit(FlowPtr<Return> n) {
   begin_obj(3);
 
   string("kind");
@@ -1300,7 +1300,7 @@ void AstWriter::Visit(FlowPtr<ReturnStmt> n) {
   end_obj();
 }
 
-void AstWriter::Visit(FlowPtr<ReturnIfStmt> n) {
+void AstWriter::Visit(FlowPtr<ReturnIf> n) {
   begin_obj(4);
 
   string("kind");
@@ -1317,7 +1317,7 @@ void AstWriter::Visit(FlowPtr<ReturnIfStmt> n) {
   end_obj();
 }
 
-void AstWriter::Visit(FlowPtr<CaseStmt> n) {
+void AstWriter::Visit(FlowPtr<Case> n) {
   begin_obj(4);
 
   string("kind");
@@ -1334,7 +1334,7 @@ void AstWriter::Visit(FlowPtr<CaseStmt> n) {
   end_obj();
 }
 
-void AstWriter::Visit(FlowPtr<SwitchStmt> n) {
+void AstWriter::Visit(FlowPtr<Switch> n) {
   begin_obj(5);
 
   string("kind");
@@ -1361,7 +1361,7 @@ void AstWriter::Visit(FlowPtr<SwitchStmt> n) {
   end_obj();
 }
 
-void AstWriter::Visit(FlowPtr<TypedefStmt> n) {
+void AstWriter::Visit(FlowPtr<Typedef> n) {
   begin_obj(4);
 
   string("kind");
@@ -1552,7 +1552,7 @@ void AstWriter::Visit(FlowPtr<Function> n) {
   end_obj();
 }
 
-void AstWriter::Visit(FlowPtr<StructDef> n) {
+void AstWriter::Visit(FlowPtr<Struct> n) {
   begin_obj(10);
 
   string("kind");
@@ -1707,7 +1707,7 @@ void AstWriter::Visit(FlowPtr<StructDef> n) {
   end_obj();
 }
 
-void AstWriter::Visit(FlowPtr<EnumDef> n) {
+void AstWriter::Visit(FlowPtr<Enum> n) {
   begin_obj(5);
 
   string("kind");
@@ -1743,7 +1743,7 @@ void AstWriter::Visit(FlowPtr<EnumDef> n) {
   end_obj();
 }
 
-void AstWriter::Visit(FlowPtr<ScopeStmt> n) {
+void AstWriter::Visit(FlowPtr<Scope> n) {
   begin_obj(5);
 
   string("kind");
@@ -1769,7 +1769,7 @@ void AstWriter::Visit(FlowPtr<ScopeStmt> n) {
   end_obj();
 }
 
-void AstWriter::Visit(FlowPtr<ExportStmt> n) {
+void AstWriter::Visit(FlowPtr<Export> n) {
   begin_obj(6);
 
   string("kind");

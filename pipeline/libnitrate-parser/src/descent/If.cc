@@ -51,7 +51,7 @@ auto Parser::PImpl::RecurseIfElse() -> NullableFlowPtr<Stmt> {
       return RecurseBlock(false, true, SafetyMode::Unknown);
     }
 
-    if (NextIf(If)) {
+    if (NextIf(Keyword::If)) {
       return RecurseIf();
     }
 
@@ -69,5 +69,5 @@ auto Parser::PImpl::RecurseIf() -> FlowPtr<Stmt> {
   auto then = RecurseIfThen();
   auto ele = RecurseIfElse();
 
-  return CreateNode<IfStmt>(cond, then, ele)();
+  return CreateNode<If>(cond, then, ele)();
 }

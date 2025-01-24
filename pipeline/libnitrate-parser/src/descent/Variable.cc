@@ -88,14 +88,14 @@ auto Parser::PImpl::RecurseVariableValue() -> NullableFlowPtr<Expr> {
   return std::nullopt;
 }
 
-auto Parser::PImpl::RecurseVariableInstance(VarDeclType decl_type)
+auto Parser::PImpl::RecurseVariableInstance(VariableType decl_type)
     -> NullableFlowPtr<Stmt> {
   if (auto symbol_attributes_opt = RecurseVariableAttributes()) {
     if (auto variable_name = RecurseName(); !variable_name->empty()) {
       auto variable_type = RecurseVariableType();
       auto variable_initial = RecurseVariableValue();
 
-      return CreateNode<VarDecl>(variable_name, variable_type, variable_initial,
+      return CreateNode<Variable>(variable_name, variable_type, variable_initial,
                            decl_type, symbol_attributes_opt.value())();
     }
 
@@ -109,7 +109,7 @@ auto Parser::PImpl::RecurseVariableInstance(VarDeclType decl_type)
   return MockStmt(QAST_VAR);
 }
 
-auto Parser::PImpl::RecurseVariable(VarDeclType decl_type)
+auto Parser::PImpl::RecurseVariable(VariableType decl_type)
     -> std::vector<FlowPtr<Stmt>> {
   std::vector<FlowPtr<Stmt>> variables;
 

@@ -183,7 +183,7 @@ static NullableFlowPtr<Type> Promote(NullableFlowPtr<Type> lhs,
 
 ////////////////////////////////////////////////////////////////////////////////
 
-static NullableFlowPtr<Type> InferUnaryExpression(NullableFlowPtr<Type> e,
+static NullableFlowPtr<Type> InferUnaryExpressionession(NullableFlowPtr<Type> e,
                                                   lex::Operator o) {
   using namespace lex;
 
@@ -395,7 +395,7 @@ public:
 
   void Visit(FlowPtr<Expr>) override {}
 
-  void Visit(FlowPtr<BinExpr> n) override {
+  void Visit(FlowPtr<BinaryExpression> n) override {
     auto lhs = n->GetLHS()->GetType();
     auto rhs = n->GetRHS()->GetType();
 
@@ -406,7 +406,7 @@ public:
 
   void Visit(FlowPtr<Unary> n) override {
     if (auto e = n->GetExpr()->GetType()) {
-      if (auto type = InferUnaryExpression(e.value(), n->GetOp())) {
+      if (auto type = InferUnaryExpressionession(e.value(), n->GetOp())) {
         m_r = type.value();
       }
     }
@@ -580,7 +580,7 @@ public:
     }
   }
 
-  void Visit(FlowPtr<Ident> n) override {
+  void Visit(FlowPtr<Identifier> n) override {
     if (n->GetWhat().has_value()) {
       m_r = n->GetWhat().value()->GetType();
     }

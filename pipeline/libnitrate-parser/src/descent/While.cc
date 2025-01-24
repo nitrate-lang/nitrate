@@ -39,7 +39,7 @@ using namespace ncc::parse;
 
 auto Parser::PImpl::RecurseWhileCond() -> FlowPtr<Expr> {
   if (auto cur = peek(); cur.Is<OpArrow>() || cur.Is<PuncLCur>()) {
-    return CreateNode<ConstBool>(true)();
+    return CreateNode<Boolean>(true)();
   }
 
   return RecurseExpr({
@@ -60,5 +60,5 @@ auto Parser::PImpl::RecurseWhile() -> FlowPtr<Stmt> {
   auto cond = RecurseWhileCond();
   auto body = RecurseWhileBody();
 
-  return CreateNode<WhileStmt>(cond, body)();
+  return CreateNode<While>(cond, body)();
 }

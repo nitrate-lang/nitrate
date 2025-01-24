@@ -143,7 +143,7 @@ auto Parser::PImpl::RecurseBlock(bool expect_braces, bool single_stmt,
       m_rd.ClearCommentBuffer();
 
       switch (tok.GetKeyword()) {
-        case Scope: {
+        case Keyword::Scope: {
           r = RecurseScope();
           break;
         }
@@ -175,7 +175,7 @@ auto Parser::PImpl::RecurseBlock(bool expect_braces, bool single_stmt,
         }
 
         case Let: {
-          for (const auto &variable : RecurseVariable(VarDeclType::Let)) {
+          for (const auto &variable : RecurseVariable(VariableType::Let)) {
             statements.push_back(BindComments(variable, comments));
             comments.clear();
           }
@@ -183,7 +183,7 @@ auto Parser::PImpl::RecurseBlock(bool expect_braces, bool single_stmt,
         }
 
         case Var: {
-          for (const auto &variable : RecurseVariable(VarDeclType::Var)) {
+          for (const auto &variable : RecurseVariable(VariableType::Var)) {
             statements.push_back(BindComments(variable, comments));
             comments.clear();
           }
@@ -191,7 +191,7 @@ auto Parser::PImpl::RecurseBlock(bool expect_braces, bool single_stmt,
         }
 
         case Const: {
-          for (const auto &variable : RecurseVariable(VarDeclType::Const)) {
+          for (const auto &variable : RecurseVariable(VariableType::Const)) {
             statements.push_back(BindComments(variable, comments));
             comments.clear();
           }
@@ -205,7 +205,7 @@ auto Parser::PImpl::RecurseBlock(bool expect_braces, bool single_stmt,
           break;
         }
 
-        case Struct: {
+        case Keyword::Struct: {
           r = RecurseStruct(CompositeType::Struct);
           break;
         }
@@ -236,7 +236,7 @@ auto Parser::PImpl::RecurseBlock(bool expect_braces, bool single_stmt,
           break;
         }
 
-        case Enum: {
+        case Keyword::Enum: {
           r = RecurseEnum();
           break;
         }
@@ -281,7 +281,7 @@ auto Parser::PImpl::RecurseBlock(bool expect_braces, bool single_stmt,
           break;
         }
 
-        case If: {
+        case Keyword::If: {
           r = RecurseIf();
           break;
         }
@@ -292,12 +292,12 @@ auto Parser::PImpl::RecurseBlock(bool expect_braces, bool single_stmt,
           break;
         }
 
-        case For: {
+        case Keyword::For: {
           r = RecurseFor();
           break;
         }
 
-        case While: {
+        case Keyword::While: {
           r = RecurseWhile();
           break;
         }
@@ -307,13 +307,13 @@ auto Parser::PImpl::RecurseBlock(bool expect_braces, bool single_stmt,
           break;
         }
 
-        case Switch: {
+        case Keyword::Switch: {
           r = RecurseSwitch();
           break;
         }
 
-        case Break: {
-          r = CreateNode<BreakStmt>()();
+        case Keyword::Break: {
+          r = CreateNode<Break>()();
           if (!NextIf(PuncSemi)) {
             Log << SyntaxError << current()
                 << "Expected ';' after 'break' statement";
@@ -322,8 +322,8 @@ auto Parser::PImpl::RecurseBlock(bool expect_braces, bool single_stmt,
           break;
         }
 
-        case Continue: {
-          r = CreateNode<ContinueStmt>()();
+        case Keyword::Continue: {
+          r = CreateNode<Continue>()();
           if (!NextIf(PuncSemi)) {
             Log << SyntaxError << current()
                 << "Expected ';' after 'continue' statement";
@@ -331,7 +331,7 @@ auto Parser::PImpl::RecurseBlock(bool expect_braces, bool single_stmt,
           break;
         }
 
-        case Return: {
+        case Keyword::Return: {
           r = RecurseReturn();
           break;
         }
@@ -341,7 +341,7 @@ auto Parser::PImpl::RecurseBlock(bool expect_braces, bool single_stmt,
           break;
         }
 
-        case Foreach: {
+        case Keyword::Foreach: {
           r = RecurseForeach();
           break;
         }
@@ -374,12 +374,12 @@ auto Parser::PImpl::RecurseBlock(bool expect_braces, bool single_stmt,
         }
 
         case __Asm__: {
-          r = RecurseInlineAsm();
+          r = RecurseAssembly();
           break;
         }
 
         case Undef: {
-          r = CreateNode<ExprStmt>(CreateNode<ConstUndef>()())();
+          r = CreateNode<ExprStmt>(CreateNode<Undefined>()())();
           if (!NextIf(PuncSemi)) {
             Log << SyntaxError << current()
                 << "Expected ';' after 'undef' statement";
@@ -387,8 +387,8 @@ auto Parser::PImpl::RecurseBlock(bool expect_braces, bool single_stmt,
           break;
         }
 
-        case Null: {
-          r = CreateNode<ExprStmt>(CreateNode<ConstNull>()())();
+        case Keyword::Null: {
+          r = CreateNode<ExprStmt>(CreateNode<Null>()())();
           if (!NextIf(PuncSemi)) {
             Log << SyntaxError << current()
                 << "Expected ';' after 'null' statement";
@@ -397,7 +397,7 @@ auto Parser::PImpl::RecurseBlock(bool expect_braces, bool single_stmt,
         }
 
         case True: {
-          r = CreateNode<ExprStmt>(CreateNode<ConstBool>(true)())();
+          r = CreateNode<ExprStmt>(CreateNode<Boolean>(true)())();
           if (!NextIf(PuncSemi)) {
             Log << SyntaxError << current()
                 << "Expected ';' after 'true' statement";
@@ -406,7 +406,7 @@ auto Parser::PImpl::RecurseBlock(bool expect_braces, bool single_stmt,
         }
 
         case False: {
-          r = CreateNode<ExprStmt>(CreateNode<ConstBool>(false)())();
+          r = CreateNode<ExprStmt>(CreateNode<Boolean>(false)())();
           if (!NextIf(PuncSemi)) {
             Log << SyntaxError << current()
                 << "Expected ';' after 'false' statement";

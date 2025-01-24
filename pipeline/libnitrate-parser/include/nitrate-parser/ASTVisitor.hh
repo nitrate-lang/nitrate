@@ -49,7 +49,7 @@ namespace ncc::parse {
     virtual void Visit(FlowPtr<TypeExpr> n) = 0;
     virtual void Visit(FlowPtr<NamedTy> n) = 0;
     virtual void Visit(FlowPtr<InferTy> n) = 0;
-    virtual void Visit(FlowPtr<TemplType> n) = 0;
+    virtual void Visit(FlowPtr<TemplateType> n) = 0;
     virtual void Visit(FlowPtr<U1> n) = 0;
     virtual void Visit(FlowPtr<U8> n) = 0;
     virtual void Visit(FlowPtr<U16> n) = 0;
@@ -72,45 +72,45 @@ namespace ncc::parse {
     virtual void Visit(FlowPtr<ArrayTy> n) = 0;
     virtual void Visit(FlowPtr<RefTy> n) = 0;
     virtual void Visit(FlowPtr<FuncTy> n) = 0;
-    virtual void Visit(FlowPtr<UnaryExpr> n) = 0;
-    virtual void Visit(FlowPtr<BinExpr> n) = 0;
-    virtual void Visit(FlowPtr<PostUnaryExpr> n) = 0;
-    virtual void Visit(FlowPtr<TernaryExpr> n) = 0;
-    virtual void Visit(FlowPtr<ConstInt> n) = 0;
-    virtual void Visit(FlowPtr<ConstFloat> n) = 0;
-    virtual void Visit(FlowPtr<ConstBool> n) = 0;
-    virtual void Visit(FlowPtr<ConstString> n) = 0;
-    virtual void Visit(FlowPtr<ConstChar> n) = 0;
-    virtual void Visit(FlowPtr<ConstNull> n) = 0;
-    virtual void Visit(FlowPtr<ConstUndef> n) = 0;
+    virtual void Visit(FlowPtr<UnaryExpression> n) = 0;
+    virtual void Visit(FlowPtr<BinaryExpression> n) = 0;
+    virtual void Visit(FlowPtr<PostUnaryExpression> n) = 0;
+    virtual void Visit(FlowPtr<TernaryExpression> n) = 0;
+    virtual void Visit(FlowPtr<Integer> n) = 0;
+    virtual void Visit(FlowPtr<Float> n) = 0;
+    virtual void Visit(FlowPtr<Boolean> n) = 0;
+    virtual void Visit(FlowPtr<String> n) = 0;
+    virtual void Visit(FlowPtr<Character> n) = 0;
+    virtual void Visit(FlowPtr<Null> n) = 0;
+    virtual void Visit(FlowPtr<Undefined> n) = 0;
     virtual void Visit(FlowPtr<Call> n) = 0;
-    virtual void Visit(FlowPtr<TemplCall> n) = 0;
+    virtual void Visit(FlowPtr<TemplateCall> n) = 0;
     virtual void Visit(FlowPtr<List> n) = 0;
     virtual void Visit(FlowPtr<Assoc> n) = 0;
     virtual void Visit(FlowPtr<Index> n) = 0;
     virtual void Visit(FlowPtr<Slice> n) = 0;
     virtual void Visit(FlowPtr<FString> n) = 0;
-    virtual void Visit(FlowPtr<Ident> n) = 0;
-    virtual void Visit(FlowPtr<SeqPoint> n) = 0;
+    virtual void Visit(FlowPtr<Identifier> n) = 0;
+    virtual void Visit(FlowPtr<Sequence> n) = 0;
     virtual void Visit(FlowPtr<Block> n) = 0;
-    virtual void Visit(FlowPtr<VarDecl> n) = 0;
-    virtual void Visit(FlowPtr<InlineAsm> n) = 0;
-    virtual void Visit(FlowPtr<IfStmt> n) = 0;
-    virtual void Visit(FlowPtr<WhileStmt> n) = 0;
-    virtual void Visit(FlowPtr<ForStmt> n) = 0;
-    virtual void Visit(FlowPtr<ForeachStmt> n) = 0;
-    virtual void Visit(FlowPtr<BreakStmt> n) = 0;
-    virtual void Visit(FlowPtr<ContinueStmt> n) = 0;
-    virtual void Visit(FlowPtr<ReturnStmt> n) = 0;
-    virtual void Visit(FlowPtr<ReturnIfStmt> n) = 0;
-    virtual void Visit(FlowPtr<CaseStmt> n) = 0;
-    virtual void Visit(FlowPtr<SwitchStmt> n) = 0;
-    virtual void Visit(FlowPtr<TypedefStmt> n) = 0;
+    virtual void Visit(FlowPtr<Variable> n) = 0;
+    virtual void Visit(FlowPtr<Assembly> n) = 0;
+    virtual void Visit(FlowPtr<If> n) = 0;
+    virtual void Visit(FlowPtr<While> n) = 0;
+    virtual void Visit(FlowPtr<For> n) = 0;
+    virtual void Visit(FlowPtr<Foreach> n) = 0;
+    virtual void Visit(FlowPtr<Break> n) = 0;
+    virtual void Visit(FlowPtr<Continue> n) = 0;
+    virtual void Visit(FlowPtr<Return> n) = 0;
+    virtual void Visit(FlowPtr<ReturnIf> n) = 0;
+    virtual void Visit(FlowPtr<Case> n) = 0;
+    virtual void Visit(FlowPtr<Switch> n) = 0;
+    virtual void Visit(FlowPtr<Typedef> n) = 0;
     virtual void Visit(FlowPtr<Function> n) = 0;
-    virtual void Visit(FlowPtr<StructDef> n) = 0;
-    virtual void Visit(FlowPtr<EnumDef> n) = 0;
-    virtual void Visit(FlowPtr<ScopeStmt> n) = 0;
-    virtual void Visit(FlowPtr<ExportStmt> n) = 0;
+    virtual void Visit(FlowPtr<Struct> n) = 0;
+    virtual void Visit(FlowPtr<Enum> n) = 0;
+    virtual void Visit(FlowPtr<Scope> n) = 0;
+    virtual void Visit(FlowPtr<Export> n) = 0;
 
     template <typename T>
     void Dispatch(FlowPtr<T> n) {
@@ -120,43 +120,43 @@ namespace ncc::parse {
           break;
         }
         case QAST_BINEXPR: {
-          Visit(n.template As<BinExpr>());
+          Visit(n.template As<BinaryExpression>());
           break;
         }
         case QAST_UNEXPR: {
-          Visit(n.template As<UnaryExpr>());
+          Visit(n.template As<UnaryExpression>());
           break;
         }
         case QAST_TEREXPR: {
-          Visit(n.template As<TernaryExpr>());
+          Visit(n.template As<TernaryExpression>());
           break;
         }
         case QAST_INT: {
-          Visit(n.template As<ConstInt>());
+          Visit(n.template As<Integer>());
           break;
         }
         case QAST_FLOAT: {
-          Visit(n.template As<ConstFloat>());
+          Visit(n.template As<Float>());
           break;
         }
         case QAST_STRING: {
-          Visit(n.template As<ConstString>());
+          Visit(n.template As<String>());
           break;
         }
         case QAST_CHAR: {
-          Visit(n.template As<ConstChar>());
+          Visit(n.template As<Character>());
           break;
         }
         case QAST_BOOL: {
-          Visit(n.template As<ConstBool>());
+          Visit(n.template As<Boolean>());
           break;
         }
         case QAST_NULL: {
-          Visit(n.template As<ConstNull>());
+          Visit(n.template As<Null>());
           break;
         }
         case QAST_UNDEF: {
-          Visit(n.template As<ConstUndef>());
+          Visit(n.template As<Undefined>());
           break;
         }
         case QAST_CALL: {
@@ -184,15 +184,15 @@ namespace ncc::parse {
           break;
         }
         case QAST_IDENT: {
-          Visit(n.template As<Ident>());
+          Visit(n.template As<Identifier>());
           break;
         }
         case QAST_SEQ: {
-          Visit(n.template As<SeqPoint>());
+          Visit(n.template As<Sequence>());
           break;
         }
         case QAST_POST_UNEXPR: {
-          Visit(n.template As<PostUnaryExpr>());
+          Visit(n.template As<PostUnaryExpression>());
           break;
         }
         case QAST_SEXPR: {
@@ -204,7 +204,7 @@ namespace ncc::parse {
           break;
         }
         case QAST_TEMPL_CALL: {
-          Visit(n.template As<TemplCall>());
+          Visit(n.template As<TemplateCall>());
           break;
         }
         case QAST_REF: {
@@ -304,19 +304,19 @@ namespace ncc::parse {
           break;
         }
         case QAST_TEMPLATE: {
-          Visit(n.template As<TemplType>());
+          Visit(n.template As<TemplateType>());
           break;
         }
         case QAST_TYPEDEF: {
-          Visit(n.template As<TypedefStmt>());
+          Visit(n.template As<Typedef>());
           break;
         }
         case QAST_STRUCT: {
-          Visit(n.template As<StructDef>());
+          Visit(n.template As<Struct>());
           break;
         }
         case QAST_ENUM: {
-          Visit(n.template As<EnumDef>());
+          Visit(n.template As<Enum>());
           break;
         }
         case QAST_FUNCTION: {
@@ -324,11 +324,11 @@ namespace ncc::parse {
           break;
         }
         case QAST_SCOPE: {
-          Visit(n.template As<ScopeStmt>());
+          Visit(n.template As<Scope>());
           break;
         }
         case QAST_EXPORT: {
-          Visit(n.template As<ExportStmt>());
+          Visit(n.template As<Export>());
           break;
         }
         case QAST_BLOCK: {
@@ -336,51 +336,51 @@ namespace ncc::parse {
           break;
         }
         case QAST_VAR: {
-          Visit(n.template As<VarDecl>());
+          Visit(n.template As<Variable>());
           break;
         }
         case QAST_INLINE_ASM: {
-          Visit(n.template As<InlineAsm>());
+          Visit(n.template As<Assembly>());
           break;
         }
         case QAST_RETURN: {
-          Visit(n.template As<ReturnStmt>());
+          Visit(n.template As<Return>());
           break;
         }
         case QAST_RETIF: {
-          Visit(n.template As<ReturnIfStmt>());
+          Visit(n.template As<ReturnIf>());
           break;
         }
         case QAST_BREAK: {
-          Visit(n.template As<BreakStmt>());
+          Visit(n.template As<Break>());
           break;
         }
         case QAST_CONTINUE: {
-          Visit(n.template As<ContinueStmt>());
+          Visit(n.template As<Continue>());
           break;
         }
         case QAST_IF: {
-          Visit(n.template As<IfStmt>());
+          Visit(n.template As<If>());
           break;
         }
         case QAST_WHILE: {
-          Visit(n.template As<WhileStmt>());
+          Visit(n.template As<While>());
           break;
         }
         case QAST_FOR: {
-          Visit(n.template As<ForStmt>());
+          Visit(n.template As<For>());
           break;
         }
         case QAST_FOREACH: {
-          Visit(n.template As<ForeachStmt>());
+          Visit(n.template As<Foreach>());
           break;
         }
         case QAST_CASE: {
-          Visit(n.template As<CaseStmt>());
+          Visit(n.template As<Case>());
           break;
         }
         case QAST_SWITCH: {
-          Visit(n.template As<SwitchStmt>());
+          Visit(n.template As<Switch>());
           break;
         }
         case QAST_ESTMT: {

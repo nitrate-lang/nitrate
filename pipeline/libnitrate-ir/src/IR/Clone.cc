@@ -57,12 +57,12 @@ public:
 
   void Visit(FlowPtr<Expr> n) override { m_r = Create<Expr>(n->GetKind()); }
 
-  void Visit(FlowPtr<BinExpr> n) override {
+  void Visit(FlowPtr<BinaryExpression> n) override {
     auto lhs = n->GetLHS()->Clone();
     auto rhs = n->GetRHS()->Clone();
     auto op = n->GetOp();
 
-    m_r = Create<BinExpr>(lhs, rhs, op);
+    m_r = Create<BinaryExpression>(lhs, rhs, op);
   }
 
   void Visit(FlowPtr<Unary> n) override {
@@ -181,11 +181,11 @@ public:
     m_r = Create<Index>(base, index);
   }
 
-  void Visit(FlowPtr<Ident> n) override {
+  void Visit(FlowPtr<Identifier> n) override {
     auto name = n->GetName();
     auto old_ref = n->GetWhat();  // Resolve later
 
-    m_r = Create<Ident>(name, old_ref);
+    m_r = Create<Identifier>(name, old_ref);
   }
 
   void Visit(FlowPtr<Extern> n) override {
@@ -330,7 +330,7 @@ NCC_EXPORT Expr *detail::ExprGetCloneImpl(Expr *self) {
       for_each(e, [](auto ty, auto n) {
         switch (ty) {
           case IR_eIDENT: {
-            auto ident = n->template As<Ident>();
+            auto ident = n->template As<Identifier>();
 
             if (auto what = ident->GetWhat()) {
               if (auto it = state.m_in_out.find(what.value().get());

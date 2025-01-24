@@ -57,13 +57,13 @@ auto Parser::PImpl::RecurseSwitchCase() -> std::pair<FlowPtr<Stmt>, bool> {
   auto body = RecurseSwitchCaseBody();
 
   auto is_the_default_case =
-      cond->Is(QAST_IDENT) && cond->As<Ident>()->GetName() == "_";
+      cond->Is(QAST_IDENT) && cond->As<Identifier>()->GetName() == "_";
 
   if (is_the_default_case) {
     return {body, true};
   }
 
-  return {CreateNode<CaseStmt>(cond, body)(), false};
+  return {CreateNode<Case>(cond, body)(), false};
 }
 
 auto Parser::PImpl::RecurseSwitchBody()
@@ -89,7 +89,7 @@ auto Parser::PImpl::RecurseSwitchBody()
         Log << SyntaxError << current() << "Duplicate default case in switch.";
       }
     } else {
-      cases.push_back(stmt.As<CaseStmt>());
+      cases.push_back(stmt.As<Case>());
     }
 
     NextIf(PuncComa) || NextIf(PuncSemi);
@@ -107,7 +107,7 @@ auto Parser::PImpl::RecurseSwitch() -> FlowPtr<Stmt> {
     if (auto switch_body = RecurseSwitchBody()) [[likely]] {
       auto [switch_cases, switch_default] = switch_body.value();
 
-      return CreateNode<SwitchStmt>(switch_cond, switch_cases, switch_default)();
+      return CreateNode<Switch>(switch_cond, switch_cases, switch_default)();
     } else {
       Log << SyntaxError << current() << "Switch statement body is malformed.";
     }

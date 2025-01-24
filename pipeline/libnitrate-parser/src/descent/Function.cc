@@ -240,7 +240,7 @@ auto Parser::PImpl::RecurseFunctionAmbigouis()
           } else if (some_word == "retro") {
             is_retro = true;
           } else if (some_word == "foreign" || some_word == "inline") {
-            attributes.push_back(CreateNode<Ident>(some_word)());
+            attributes.push_back(CreateNode<Identifier>(some_word)());
           } else {
             function_name = some_word;
             state = State::End;

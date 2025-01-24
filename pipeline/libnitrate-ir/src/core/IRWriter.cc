@@ -141,7 +141,7 @@ void IRWriter::Visit(FlowPtr<Expr> n) {
   end_obj();
 }
 
-void IRWriter::Visit(FlowPtr<BinExpr> n) {
+void IRWriter::Visit(FlowPtr<BinaryExpression> n) {
   begin_obj(5);
 
   string("kind");
@@ -597,7 +597,7 @@ void IRWriter::Visit(FlowPtr<Index> n) {
   end_obj();
 }
 
-void IRWriter::Visit(FlowPtr<Ident> n) {
+void IRWriter::Visit(FlowPtr<Identifier> n) {
   begin_obj(3);
 
   string("kind");

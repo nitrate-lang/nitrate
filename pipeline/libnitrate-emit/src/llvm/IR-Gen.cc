@@ -575,7 +575,7 @@ public:
 
 // namespace lower {
 //   namespace expr {
-//     static val_t for_BINEXPR(ctx_t &m, craft_t &b, State &s, const BinExpr
+//     static val_t for_BINEXPR(ctx_t &m, craft_t &b, State &s, const BinaryExpression
 //     *N) {
 // #define PROD_LHS()              \
 //   val_t L = V(N->getLHS());     \
@@ -725,7 +725,7 @@ public:
 //         case Op::Set: { /* '=': Assignment operator */
 //           if (N->getLHS()->GetKind() == IR_eIDENT) {
 //             if (auto find = s.find_named_value(
-//                     m, N->getLHS()->As<Ident>()->GetName())) {
+//                     m, N->getLHS()->As<Identifier>()->GetName())) {
 //               if (find->second == PtrClass::DataPtr) {
 //                 b.CreateStore(R.value(), find->first);
 
@@ -847,7 +847,7 @@ public:
 //             qcore_panic("expected identifier for address_of");
 //           }
 
-//           Ident *I = N->getExpr()->As<Ident>();
+//           Identifier *I = N->getExpr()->As<Identifier>();
 //           auto find = s.find_named_value(m, I->GetName());
 //           if (!find) {
 //             qcore_panic("failed to find identifier for address_of");
@@ -1008,7 +1008,7 @@ public:
 //       }
 
 //       if (N->getExpr()->GetKind() == IR_eIDENT) {
-//         Ident *B = N->getExpr()->As<Ident>();
+//         Identifier *B = N->getExpr()->As<Identifier>();
 //         auto find = s.find_named_value(m, B->GetName());
 //         if (!find) {
 //           debug("Failed to find named value " << B->GetName());
@@ -1050,7 +1050,7 @@ public:
 //       }
 //     }
 
-//     static val_t for_IDENT(ctx_t &m, craft_t &b, State &s, const Ident *N) {
+//     static val_t for_IDENT(ctx_t &m, craft_t &b, State &s, const Identifier *N) {
 //       if (auto find = s.find_named_value(m, N->GetName())) {
 //         debug("Found named value " << N->GetName());
 
@@ -1757,7 +1757,7 @@ public:
 //       using namespace lower::expr;
 //       using namespace lower::symbol;
 
-//       FUNCTION(IR_eBIN, for_BINEXPR, BinExpr);
+//       FUNCTION(IR_eBIN, for_BINEXPR, BinaryExpression);
 //       FUNCTION(IR_eUNARY, for_UNEXPR, Unary);
 //       FUNCTION(IR_eINT, for_INT, Int);
 //       FUNCTION(IR_eFLOAT, for_FLOAT, Float);

@@ -61,7 +61,7 @@
 //       symbols.insert(*C);
 
 //       if (replace_with_ident) {
-//         *C = create<Ident>((*C)->GetName(), *C);
+//         *C = create<Identifier>((*C)->GetName(), *C);
 //       } else {
 //         *C = createIgn();
 //       }
@@ -132,8 +132,8 @@
 //   iterate<dfs_pre>(root, [&](Expr *, Expr **C) -> IterOp {
 //     Expr *N = *C;
 
-//     if (N->is(IR_eIDENT) && N->As<Ident>()->getWhat() == nullptr) {
-//       Ident *I = N->As<Ident>();
+//     if (N->is(IR_eIDENT) && N->As<Identifier>()->getWhat() == nullptr) {
+//       Identifier *I = N->As<Identifier>();
 
 //       if (auto enum_opt = resolve_name(I->GetName(), Kind::ScopedEnum)) {
 //         *C = enum_opt.value().first;
@@ -245,7 +245,7 @@
 
 //       /* Currently, this code only supported direct function calls */
 //       if (data.base->is(IR_eIDENT)) {
-//         auto callee_name = data.base->As<Ident>()->GetName();
+//         auto callee_name = data.base->As<Identifier>()->GetName();
 //         qcore_assert(!callee_name.empty());
 
 //         unordered_map<string_view, size_t> name_index_map;
@@ -260,7 +260,7 @@
 //           /* This layer of indirection is needed to maintain the acylic
 //            * properties */
 //           auto callee_func =
-//               create<Ident>(callee_func_ptr->GetName(), callee_func_ptr);
+//               create<Identifier>(callee_func_ptr->GetName(), callee_func_ptr);
 
 //           /* Perform type inference on the callee node */
 //           if (auto callee_type_opt = callee_func->GetType();
@@ -299,7 +299,7 @@
 //             /* This layer of indirection is needed to maintain the acylic
 //              * properties */
 //             auto callee_local =
-//                 create<Ident>(callee_local_ptr->GetName(), callee_local_ptr);
+//                 create<Identifier>(callee_local_ptr->GetName(), callee_local_ptr);
 
 //             /* Perform type inference on the callee node */
 //             if (auto local_type = callee_local->GetType();

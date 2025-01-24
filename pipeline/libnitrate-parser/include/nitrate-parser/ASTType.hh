@@ -52,12 +52,12 @@ namespace ncc::parse {
     constexpr InferTy() : Type(QAST_INFER) {}
   };
 
-  class TemplType : public Type {
+  class TemplateType : public Type {
     FlowPtr<Type> m_template;
     std::span<CallArg> m_args;
 
   public:
-    constexpr TemplType(auto templ, auto args)
+    constexpr TemplateType(auto templ, auto args)
         : Type(QAST_TEMPLATE), m_template(std::move(templ)), m_args(args) {}
 
     [[nodiscard]] constexpr auto GetTemplate() const { return m_template; }

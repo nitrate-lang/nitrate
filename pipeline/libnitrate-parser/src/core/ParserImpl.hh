@@ -59,7 +59,7 @@ namespace ncc::parse {
      ****************************************************************************/
 
     auto RecurseExport(Vis vis) -> FlowPtr<Stmt>;
-    auto RecurseVariable(VarDeclType type) -> std::vector<FlowPtr<Stmt>>;
+    auto RecurseVariable(VariableType type) -> std::vector<FlowPtr<Stmt>>;
     auto RecurseEnum() -> FlowPtr<Stmt>;
     auto RecurseStruct(CompositeType type) -> FlowPtr<Stmt>;
     auto RecurseScope() -> FlowPtr<Stmt>;
@@ -73,7 +73,7 @@ namespace ncc::parse {
     auto RecurseFor() -> FlowPtr<Stmt>;
     auto RecurseForeach() -> FlowPtr<Stmt>;
     auto RecurseSwitch() -> FlowPtr<Stmt>;
-    auto RecurseInlineAsm() -> FlowPtr<Stmt>;
+    auto RecurseAssembly() -> FlowPtr<Stmt>;
     auto RecurseTry() -> FlowPtr<Stmt>;
     auto RecurseThrow() -> FlowPtr<Stmt>;
     auto RecurseAwait() -> FlowPtr<Stmt>;
@@ -101,7 +101,7 @@ namespace ncc::parse {
 
     auto RecurseEnumType() -> NullableFlowPtr<Type>;
     auto RecurseEnumItem() -> std::optional<EnumItem>;
-    auto RecurseEnumItems() -> std::optional<EnumDefItems>;
+    auto RecurseEnumItems() -> std::optional<EnumItems>;
 
     auto RecurseAbiName() -> string;
     auto RecurseExportAttributes() -> std::optional<ExpressionList>;
@@ -142,14 +142,14 @@ namespace ncc::parse {
     auto RecurseScopeBlock() -> FlowPtr<Stmt>;
 
     struct StructContent {
-      StructDefFields m_fields;
-      StructDefMethods m_methods;
-      StructDefStaticMethods m_static_methods;
+      StructFields m_fields;
+      StructMethods m_methods;
+      StructStaticMethods m_static_methods;
     };
     auto RecurseStructAttributes() -> ExpressionList;
-    auto RecurseStructTerms() -> StructDefNames;
+    auto RecurseStructTerms() -> StructNames;
     auto RecurseStructFieldDefaultValue() -> NullableFlowPtr<Expr>;
-    void RecurseStructField(Vis vis, bool is_static, StructDefFields &fields);
+    void RecurseStructField(Vis vis, bool is_static, StructFields &fields);
     void RecurseStructMethodOrField(StructContent &body);
     auto RecurseStructBody() -> StructContent;
 
@@ -175,7 +175,7 @@ namespace ncc::parse {
     auto RecurseVariableAttributes() -> std::optional<ExpressionList>;
     auto RecurseVariableType() -> NullableFlowPtr<Type>;
     auto RecurseVariableValue() -> NullableFlowPtr<Expr>;
-    auto RecurseVariableInstance(VarDeclType decl_type)
+    auto RecurseVariableInstance(VariableType decl_type)
         -> NullableFlowPtr<Stmt>;
 
     auto RecurseWhileCond() -> FlowPtr<Expr>;

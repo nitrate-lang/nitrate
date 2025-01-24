@@ -78,7 +78,7 @@ class IterVisitor : public ASTVisitor {
   void Visit(FlowPtr<NamedTy> n) override { AddTypesuffix(n); }
   void Visit(FlowPtr<InferTy> n) override { AddTypesuffix(n); }
 
-  void Visit(FlowPtr<TemplType> n) override {
+  void Visit(FlowPtr<TemplateType> n) override {
     Add(n->GetTemplate());
     std::for_each(n->GetArgs().begin(), n->GetArgs().end(),
                   [&](auto arg) { Add(arg.second); });
@@ -143,28 +143,28 @@ class IterVisitor : public ASTVisitor {
     AddTypesuffix(n);
   }
 
-  void Visit(FlowPtr<UnaryExpr> n) override { Add(n->GetRHS()); }
+  void Visit(FlowPtr<UnaryExpression> n) override { Add(n->GetRHS()); }
 
-  void Visit(FlowPtr<BinExpr> n) override {
+  void Visit(FlowPtr<BinaryExpression> n) override {
     Add(n->GetLHS());
     Add(n->GetRHS());
   }
 
-  void Visit(FlowPtr<PostUnaryExpr> n) override { Add(n->GetLHS()); }
+  void Visit(FlowPtr<PostUnaryExpression> n) override { Add(n->GetLHS()); }
 
-  void Visit(FlowPtr<TernaryExpr> n) override {
+  void Visit(FlowPtr<TernaryExpression> n) override {
     Add(n->GetCond());
     Add(n->GetLHS());
     Add(n->GetRHS());
   }
 
-  void Visit(FlowPtr<ConstInt>) override {}
-  void Visit(FlowPtr<ConstFloat>) override {}
-  void Visit(FlowPtr<ConstBool>) override {}
-  void Visit(FlowPtr<ConstString>) override {}
-  void Visit(FlowPtr<ConstChar>) override {}
-  void Visit(FlowPtr<ConstNull>) override {}
-  void Visit(FlowPtr<ConstUndef>) override {}
+  void Visit(FlowPtr<Integer>) override {}
+  void Visit(FlowPtr<Float>) override {}
+  void Visit(FlowPtr<Boolean>) override {}
+  void Visit(FlowPtr<parse::String>) override {}
+  void Visit(FlowPtr<Character>) override {}
+  void Visit(FlowPtr<Null>) override {}
+  void Visit(FlowPtr<Undefined>) override {}
 
   void Visit(FlowPtr<Call> n) override {
     Add(n->GetFunc());
@@ -172,7 +172,7 @@ class IterVisitor : public ASTVisitor {
                   [&](auto arg) { Add(arg.second); });
   }
 
-  void Visit(FlowPtr<TemplCall> n) override {
+  void Visit(FlowPtr<TemplateCall> n) override {
     Add(n->GetFunc());
     std::for_each(n->GetTemplateArgs().begin(), n->GetTemplateArgs().end(),
                   [&](auto arg) { Add(arg.second); });
@@ -213,9 +213,9 @@ class IterVisitor : public ASTVisitor {
     });
   }
 
-  void Visit(FlowPtr<Ident>) override {}
+  void Visit(FlowPtr<Identifier>) override {}
 
-  void Visit(FlowPtr<SeqPoint> n) override {
+  void Visit(FlowPtr<Sequence> n) override {
     std::for_each(n->GetItems().begin(), n->GetItems().end(),
                   [&](auto item) { Add(item); });
   }
@@ -225,7 +225,7 @@ class IterVisitor : public ASTVisitor {
                   [&](auto item) { Add(item); });
   }
 
-  void Visit(FlowPtr<VarDecl> n) override {
+  void Visit(FlowPtr<Variable> n) override {
     std::for_each(n->GetAttributes().begin(), n->GetAttributes().end(),
                   [&](auto attr) { Add(attr); });
 
@@ -233,56 +233,56 @@ class IterVisitor : public ASTVisitor {
     Add(n->GetValue());
   }
 
-  void Visit(FlowPtr<InlineAsm> n) override {
+  void Visit(FlowPtr<Assembly> n) override {
     std::for_each(n->GetArgs().begin(), n->GetArgs().end(),
                   [&](auto arg) { Add(arg); });
   }
 
-  void Visit(FlowPtr<IfStmt> n) override {
+  void Visit(FlowPtr<If> n) override {
     Add(n->GetCond());
     Add(n->GetThen());
     Add(n->GetElse());
   }
 
-  void Visit(FlowPtr<WhileStmt> n) override {
+  void Visit(FlowPtr<While> n) override {
     Add(n->GetCond());
     Add(n->GetBody());
   }
 
-  void Visit(FlowPtr<ForStmt> n) override {
+  void Visit(FlowPtr<For> n) override {
     Add(n->GetInit());
     Add(n->GetCond());
     Add(n->GetStep());
     Add(n->GetBody());
   }
 
-  void Visit(FlowPtr<ForeachStmt> n) override {
+  void Visit(FlowPtr<Foreach> n) override {
     Add(n->GetExpr());
     Add(n->GetBody());
   }
 
-  void Visit(FlowPtr<BreakStmt>) override {}
-  void Visit(FlowPtr<ContinueStmt>) override {}
-  void Visit(FlowPtr<ReturnStmt> n) override { Add(n->GetValue()); }
+  void Visit(FlowPtr<Break>) override {}
+  void Visit(FlowPtr<Continue>) override {}
+  void Visit(FlowPtr<Return> n) override { Add(n->GetValue()); }
 
-  void Visit(FlowPtr<ReturnIfStmt> n) override {
+  void Visit(FlowPtr<ReturnIf> n) override {
     Add(n->GetCond());
     Add(n->GetValue());
   }
 
-  void Visit(FlowPtr<CaseStmt> n) override {
+  void Visit(FlowPtr<Case> n) override {
     Add(n->GetCond());
     Add(n->GetBody());
   }
 
-  void Visit(FlowPtr<SwitchStmt> n) override {
+  void Visit(FlowPtr<Switch> n) override {
     Add(n->GetCond());
     std::for_each(n->GetCases().begin(), n->GetCases().end(),
                   [&](auto c) { Add(c); });
     Add(n->GetDefault());
   }
 
-  void Visit(FlowPtr<TypedefStmt> n) override { Add(n->GetType()); }
+  void Visit(FlowPtr<Typedef> n) override { Add(n->GetType()); }
 
   void Visit(FlowPtr<Function> n) override {
     std::for_each(n->GetAttributes().begin(), n->GetAttributes().end(),
@@ -308,7 +308,7 @@ class IterVisitor : public ASTVisitor {
     Add(n->GetBody());
   }
 
-  void Visit(FlowPtr<StructDef> n) override {
+  void Visit(FlowPtr<Struct> n) override {
     std::for_each(n->GetAttributes().begin(), n->GetAttributes().end(),
                   [&](auto attr) { Add(attr); });
 
@@ -333,16 +333,16 @@ class IterVisitor : public ASTVisitor {
                   [&](auto method) { Add(method.m_func); });
   }
 
-  void Visit(FlowPtr<EnumDef> n) override {
+  void Visit(FlowPtr<Enum> n) override {
     Add(n->GetType());
 
     std::for_each(n->GetItems().begin(), n->GetItems().end(),
                   [&](auto item) { Add(item.second); });
   }
 
-  void Visit(FlowPtr<ScopeStmt> n) override { Add(n->GetBody()); }
+  void Visit(FlowPtr<Scope> n) override { Add(n->GetBody()); }
 
-  void Visit(FlowPtr<ExportStmt> n) override {
+  void Visit(FlowPtr<Export> n) override {
     std::for_each(n->GetAttrs().begin(), n->GetAttrs().end(),
                   [&](auto attr) { Add(attr); });
 

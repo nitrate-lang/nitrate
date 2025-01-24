@@ -44,7 +44,7 @@ namespace ncc::ir {
     virtual ~IRVisitor() = default;
 
     virtual void Visit(FlowPtr<GenericExpr<A>> n) = 0;
-    virtual void Visit(FlowPtr<GenericBinExpr<A>> n) = 0;
+    virtual void Visit(FlowPtr<GenericBinaryExpression<A>> n) = 0;
     virtual void Visit(FlowPtr<GenericUnary<A>> n) = 0;
     virtual void Visit(FlowPtr<GenericU1Ty<A>> n) = 0;
     virtual void Visit(FlowPtr<GenericU8Ty<A>> n) = 0;
@@ -75,7 +75,7 @@ namespace ncc::ir {
     virtual void Visit(FlowPtr<GenericCall<A>> n) = 0;
     virtual void Visit(FlowPtr<GenericSeq<A>> n) = 0;
     virtual void Visit(FlowPtr<GenericIndex<A>> n) = 0;
-    virtual void Visit(FlowPtr<GenericIdent<A>> n) = 0;
+    virtual void Visit(FlowPtr<GenericIdentifier<A>> n) = 0;
     virtual void Visit(FlowPtr<GenericExtern<A>> n) = 0;
     virtual void Visit(FlowPtr<GenericLocal<A>> n) = 0;
     virtual void Visit(FlowPtr<GenericRet<A>> n) = 0;
@@ -94,7 +94,7 @@ namespace ncc::ir {
     void Dispatch(FlowPtr<T> n) {
       switch (n->GetKind()) {
         case IR_eBIN: {
-          Visit(n.template As<GenericBinExpr<A>>());
+          Visit(n.template As<GenericBinaryExpression<A>>());
           break;
         }
 
@@ -134,7 +134,7 @@ namespace ncc::ir {
         }
 
         case IR_eIDENT: {
-          Visit(n.template As<GenericIdent<A>>());
+          Visit(n.template As<GenericIdentifier<A>>());
           break;
         }
 

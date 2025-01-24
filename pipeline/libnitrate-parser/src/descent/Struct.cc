@@ -68,8 +68,8 @@ auto Parser::PImpl::RecurseStructAttributes() -> ExpressionList {
   return attributes;
 }
 
-auto Parser::PImpl::RecurseStructTerms() -> StructDefNames {
-  StructDefNames names;
+auto Parser::PImpl::RecurseStructTerms() -> StructNames {
+  StructNames names;
 
   if (!NextIf(PuncColn)) {
     return names;
@@ -101,7 +101,7 @@ auto Parser::PImpl::RecurseStructFieldDefaultValue() -> NullableFlowPtr<Expr> {
 }
 
 void Parser::PImpl::RecurseStructField(Vis vis, bool is_static,
-                                       StructDefFields &fields) {
+                                       StructFields &fields) {
   if (auto field_name = RecurseName(); !field_name->empty()) {
     if (NextIf(PuncColn)) {
       auto field_type = RecurseType();
@@ -184,7 +184,7 @@ auto Parser::PImpl::RecurseStruct(CompositeType struct_type) -> FlowPtr<Stmt> {
   auto [struct_fields, struct_methods, struct_static_methods] =
       RecurseStructBody();
 
-  auto struct_defintion = CreateNode<StructDef>(
+  auto struct_defintion = CreateNode<Struct>(
       struct_type, struct_attributes, struct_name, struct_template_params,
       struct_terms, struct_fields, struct_methods, struct_static_methods)();
   struct_defintion->SetOffset(start_pos);

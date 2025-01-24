@@ -69,7 +69,7 @@ public:
 
   void Visit(FlowPtr<GenericExpr<A>>) override {}
 
-  void Visit(FlowPtr<GenericBinExpr<A>> n) override {
+  void Visit(FlowPtr<GenericBinaryExpression<A>> n) override {
     Add(n->m_lhs);
     Add(n->m_rhs);
   }
@@ -139,7 +139,7 @@ public:
     Add(n->m_index);
   }
 
-  void Visit(FlowPtr<GenericIdent<A>>) override {}
+  void Visit(FlowPtr<GenericIdentifier<A>>) override {}
 
   void Visit(FlowPtr<GenericExtern<A>> n) override { Add(n->m_value); }
 

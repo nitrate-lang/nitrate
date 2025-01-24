@@ -139,25 +139,25 @@ namespace ncc::parse {
         return QAST_BASE;
       } else if constexpr (std::is_same_v<T, Type>) {
         return QAST_BASE;
-      } else if constexpr (std::is_same_v<T, BinExpr>) {
+      } else if constexpr (std::is_same_v<T, BinaryExpression>) {
         return QAST_BINEXPR;
-      } else if constexpr (std::is_same_v<T, UnaryExpr>) {
+      } else if constexpr (std::is_same_v<T, UnaryExpression>) {
         return QAST_UNEXPR;
-      } else if constexpr (std::is_same_v<T, TernaryExpr>) {
+      } else if constexpr (std::is_same_v<T, TernaryExpression>) {
         return QAST_TEREXPR;
-      } else if constexpr (std::is_same_v<T, ConstInt>) {
+      } else if constexpr (std::is_same_v<T, Integer>) {
         return QAST_INT;
-      } else if constexpr (std::is_same_v<T, ConstFloat>) {
+      } else if constexpr (std::is_same_v<T, Float>) {
         return QAST_FLOAT;
-      } else if constexpr (std::is_same_v<T, ConstString>) {
+      } else if constexpr (std::is_same_v<T, String>) {
         return QAST_STRING;
-      } else if constexpr (std::is_same_v<T, ConstChar>) {
+      } else if constexpr (std::is_same_v<T, Character>) {
         return QAST_CHAR;
-      } else if constexpr (std::is_same_v<T, ConstBool>) {
+      } else if constexpr (std::is_same_v<T, Boolean>) {
         return QAST_BOOL;
-      } else if constexpr (std::is_same_v<T, ConstNull>) {
+      } else if constexpr (std::is_same_v<T, Null>) {
         return QAST_NULL;
-      } else if constexpr (std::is_same_v<T, ConstUndef>) {
+      } else if constexpr (std::is_same_v<T, Undefined>) {
         return QAST_UNDEF;
       } else if constexpr (std::is_same_v<T, Call>) {
         return QAST_CALL;
@@ -171,17 +171,17 @@ namespace ncc::parse {
         return QAST_SLICE;
       } else if constexpr (std::is_same_v<T, FString>) {
         return QAST_FSTRING;
-      } else if constexpr (std::is_same_v<T, Ident>) {
+      } else if constexpr (std::is_same_v<T, Identifier>) {
         return QAST_IDENT;
-      } else if constexpr (std::is_same_v<T, SeqPoint>) {
+      } else if constexpr (std::is_same_v<T, Sequence>) {
         return QAST_SEQ;
-      } else if constexpr (std::is_same_v<T, PostUnaryExpr>) {
+      } else if constexpr (std::is_same_v<T, PostUnaryExpression>) {
         return QAST_POST_UNEXPR;
       } else if constexpr (std::is_same_v<T, StmtExpr>) {
         return QAST_SEXPR;
       } else if constexpr (std::is_same_v<T, TypeExpr>) {
         return QAST_TEXPR;
-      } else if constexpr (std::is_same_v<T, TemplCall>) {
+      } else if constexpr (std::is_same_v<T, TemplateCall>) {
         return QAST_TEMPL_CALL;
       } else if constexpr (std::is_same_v<T, RefTy>) {
         return QAST_REF;
@@ -231,45 +231,45 @@ namespace ncc::parse {
         return QAST_NAMED;
       } else if constexpr (std::is_same_v<T, InferTy>) {
         return QAST_INFER;
-      } else if constexpr (std::is_same_v<T, TemplType>) {
+      } else if constexpr (std::is_same_v<T, TemplateType>) {
         return QAST_TEMPLATE;
-      } else if constexpr (std::is_same_v<T, TypedefStmt>) {
+      } else if constexpr (std::is_same_v<T, Typedef>) {
         return QAST_TYPEDEF;
-      } else if constexpr (std::is_same_v<T, StructDef>) {
+      } else if constexpr (std::is_same_v<T, Struct>) {
         return QAST_STRUCT;
-      } else if constexpr (std::is_same_v<T, EnumDef>) {
+      } else if constexpr (std::is_same_v<T, Enum>) {
         return QAST_ENUM;
       } else if constexpr (std::is_same_v<T, Function>) {
         return QAST_FUNCTION;
-      } else if constexpr (std::is_same_v<T, ScopeStmt>) {
+      } else if constexpr (std::is_same_v<T, Scope>) {
         return QAST_SCOPE;
-      } else if constexpr (std::is_same_v<T, ExportStmt>) {
+      } else if constexpr (std::is_same_v<T, Export>) {
         return QAST_EXPORT;
       } else if constexpr (std::is_same_v<T, Block>) {
         return QAST_BLOCK;
-      } else if constexpr (std::is_same_v<T, VarDecl>) {
+      } else if constexpr (std::is_same_v<T, Variable>) {
         return QAST_VAR;
-      } else if constexpr (std::is_same_v<T, InlineAsm>) {
+      } else if constexpr (std::is_same_v<T, Assembly>) {
         return QAST_INLINE_ASM;
-      } else if constexpr (std::is_same_v<T, ReturnStmt>) {
+      } else if constexpr (std::is_same_v<T, Return>) {
         return QAST_RETURN;
-      } else if constexpr (std::is_same_v<T, ReturnIfStmt>) {
+      } else if constexpr (std::is_same_v<T, ReturnIf>) {
         return QAST_RETIF;
-      } else if constexpr (std::is_same_v<T, BreakStmt>) {
+      } else if constexpr (std::is_same_v<T, Break>) {
         return QAST_BREAK;
-      } else if constexpr (std::is_same_v<T, ContinueStmt>) {
+      } else if constexpr (std::is_same_v<T, Continue>) {
         return QAST_CONTINUE;
-      } else if constexpr (std::is_same_v<T, IfStmt>) {
+      } else if constexpr (std::is_same_v<T, If>) {
         return QAST_IF;
-      } else if constexpr (std::is_same_v<T, WhileStmt>) {
+      } else if constexpr (std::is_same_v<T, While>) {
         return QAST_WHILE;
-      } else if constexpr (std::is_same_v<T, ForStmt>) {
+      } else if constexpr (std::is_same_v<T, For>) {
         return QAST_FOR;
-      } else if constexpr (std::is_same_v<T, ForeachStmt>) {
+      } else if constexpr (std::is_same_v<T, Foreach>) {
         return QAST_FOREACH;
-      } else if constexpr (std::is_same_v<T, CaseStmt>) {
+      } else if constexpr (std::is_same_v<T, Case>) {
         return QAST_CASE;
-      } else if constexpr (std::is_same_v<T, SwitchStmt>) {
+      } else if constexpr (std::is_same_v<T, Switch>) {
         return QAST_SWITCH;
       } else if constexpr (std::is_same_v<T, ExprStmt>) {
         return QAST_ESTMT;
@@ -436,11 +436,11 @@ namespace ncc::parse {
       r[QAST_SLICE] = "Slice";
       r[QAST_FSTRING] = "Fstring";
       r[QAST_IDENT] = "Ident";
-      r[QAST_SEQ] = "SeqPoint";
+      r[QAST_SEQ] = "Sequence";
       r[QAST_POST_UNEXPR] = "PostUnexpr";
       r[QAST_SEXPR] = "StmtExpr";
       r[QAST_TEXPR] = "TypeExpr";
-      r[QAST_TEMPL_CALL] = "TemplCall";
+      r[QAST_TEMPL_CALL] = "TemplateCall";
       r[QAST_REF] = "Ref";
       r[QAST_U1] = "U1";
       r[QAST_U8] = "U8";
@@ -474,7 +474,7 @@ namespace ncc::parse {
       r[QAST_EXPORT] = "Export";
       r[QAST_BLOCK] = "Block";
       r[QAST_VAR] = "Let";
-      r[QAST_INLINE_ASM] = "InlineAsm";
+      r[QAST_INLINE_ASM] = "Assembly";
       r[QAST_RETURN] = "Return";
       r[QAST_RETIF] = "Retif";
       r[QAST_BREAK] = "Break";

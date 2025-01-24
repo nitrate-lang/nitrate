@@ -55,10 +55,10 @@ auto CambrianFormatter::EscapeCharLiteral(char ch) const -> std::string {
   if ((std::isspace(ch) == 0) && (std::isprint(ch) == 0)) {
     const char* tab = "0123456789abcdef";
     uint8_t uch = ch;
-    char enc[6] = {'\'', '\\', 'x', 0, 0, '\''};
+    std::array<char, 6> enc = {'\'', '\\', 'x', 0, 0, '\''};
     enc[3] = tab[uch >> 4];
     enc[4] = tab[uch & 0xF];
-    return std::string(enc, 6);
+    return {enc.data(), enc.size()};
   }
 
   switch (ch) {
@@ -149,7 +149,7 @@ void CambrianFormatter::WrapStmtBody(FlowPtr<parse::Stmt> n,
   n.Accept(*this);
 }
 
-void CambrianFormatter::PrintLineComments(FlowPtr<parse::Base> n) {
+void CambrianFormatter::PrintLineComments(const FlowPtr<parse::Base>& n) {
   auto comments = n->Comments();
   auto m_line_size = m_line.Length();
 
@@ -158,14 +158,14 @@ void CambrianFormatter::PrintLineComments(FlowPtr<parse::Base> n) {
       m_line << "#";
       m_line << comment.GetString() << std::endl;
 
-      if (m_line_size) {
+      if (m_line_size != 0U) {
         m_line << std::string(m_line_size, ' ');
       }
     }
   }
 }
 
-void CambrianFormatter::PrintMultilineComments(FlowPtr<parse::Base> n) {
+void CambrianFormatter::PrintMultilineComments(const FlowPtr<parse::Base>& n) {
   auto comments = n->Comments();
   if (!comments.empty()) {
     for (auto comment : comments) {
@@ -191,7 +191,7 @@ void CambrianFormatter::EscapeStringLiteral(std::string_view str,
   auto rem = str.size() % kMaxChunkSize;
   auto m_line_size = m_line.Length();
 
-  if (chunks_n) {
+  if (chunks_n != 0U) {
     std::vector<std::string> chunks(chunks_n);
 
     for (size_t i = 0; i < chunks_n; i++) {
@@ -207,14 +207,14 @@ void CambrianFormatter::EscapeStringLiteral(std::string_view str,
         })->size();
 
     for (size_t i = 0; i < chunks.size(); ++i) {
-      if (i != 0 && m_line_size) {
+      if (i != 0 && (m_line_size != 0U)) {
         m_line << std::string(m_line_size, ' ');
       }
 
       m_line << chunks[i];
 
       auto rpad = (max_segment_size - chunks[i].size());
-      if (rpad) {
+      if (rpad != 0U) {
         m_line << std::string(rpad, ' ');
       }
 
@@ -225,7 +225,7 @@ void CambrianFormatter::EscapeStringLiteral(std::string_view str,
   }
 
   if (rem > 0) {
-    if (m_line_size && chunks_n > 0) {
+    if ((m_line_size != 0U) && chunks_n > 0) {
       m_line << std::string(m_line_size, ' ');
     }
 
@@ -252,8 +252,8 @@ void CambrianFormatter::WriteFloatLiteralChunk(std::string_view float_str) {
 
     if (!already_write_type_suffix && i != 0 && (i % (kInsertSepEvery)) == 0) {
       underscore = true;
-    } else if (!already_write_type_suffix && !std::isdigit(float_str[i]) &&
-               float_str[i] != '.') {
+    } else if (!already_write_type_suffix &&
+               (std::isdigit(float_str[i]) == 0) && float_str[i] != '.') {
       already_write_type_suffix = true;
       underscore = true;
     }
@@ -283,7 +283,7 @@ void CambrianFormatter::WriteFloatLiteral(std::string_view float_str) {
 
     if (rem > 0 || i < chunks_n - 1) {
       m_line << "_ \\" << std::endl;
-      if (m_line_size) {
+      if (m_line_size != 0U) {
         m_line << std::string(m_line_size, ' ');
       }
     }
@@ -294,15 +294,19 @@ void CambrianFormatter::WriteFloatLiteral(std::string_view float_str) {
   }
 }
 
-void CambrianFormatter::FormatTypeMetadata(FlowPtr<parse::Type> n) {
+void CambrianFormatter::FormatTypeMetadata(const FlowPtr<parse::Type>& n) {
   auto range_start = n->GetRangeBegin();
   auto range_end = n->GetRangeEnd();
 
   if (range_start || range_end) {
     m_line << ": [";
-    if (range_start) range_start.value().Accept(*this);
+    if (range_start) {
+      range_start.value().Accept(*this);
+    }
     m_line << ":";
-    if (range_end) range_end.value().Accept(*this);
+    if (range_end) {
+      range_end.value().Accept(*this);
+    }
     m_line << "]";
   }
 
@@ -355,7 +359,7 @@ void CambrianFormatter::Visit(FlowPtr<InferTy> n) {
   FormatTypeMetadata(n);
 }
 
-void CambrianFormatter::Visit(FlowPtr<TemplType> n) {
+void CambrianFormatter::Visit(FlowPtr<TemplateType> n) {
   PrintMultilineComments(n);
 
   bool is_optional =
@@ -377,7 +381,7 @@ void CambrianFormatter::Visit(FlowPtr<TemplType> n) {
       n->GetTemplate()->As<NamedTy>()->GetName() == "__builtin_meta" &&
       n->GetArgs().size() == 1 &&
       n->GetArgs().front().second->Is(QAST_UNEXPR) &&
-      n->GetArgs().front().second.template As<UnaryExpr>()->GetOp() ==
+      n->GetArgs().front().second.template As<UnaryExpression>()->GetOp() ==
           OpComptime;
 
   const auto print_without_type_keyword = [&](auto node) {
@@ -408,7 +412,7 @@ void CambrianFormatter::Visit(FlowPtr<TemplType> n) {
     m_line << "}";
   } else if (is_comptime) {
     m_line << "comptime(";
-    n->GetArgs().front().second.template As<UnaryExpr>()->GetRHS().Accept(
+    n->GetArgs().front().second.template As<UnaryExpression>()->GetRHS().Accept(
         *this);
     m_line << ")";
   } else {
@@ -681,7 +685,7 @@ void CambrianFormatter::Visit(FlowPtr<FuncTy> n) {
   n->GetReturn().Accept(*this);
 }
 
-void CambrianFormatter::Visit(FlowPtr<UnaryExpr> n) {
+void CambrianFormatter::Visit(FlowPtr<UnaryExpression> n) {
   static const std::unordered_set<Operator> word_ops = {
       OpAs,        OpBitcastAs, OpIn,     OpOut,     OpSizeof,
       OpBitsizeof, OpAlignof,   OpTypeof, OpComptime};
@@ -696,7 +700,7 @@ void CambrianFormatter::Visit(FlowPtr<UnaryExpr> n) {
   m_line << ")";
 }
 
-void CambrianFormatter::Visit(FlowPtr<BinExpr> n) {
+void CambrianFormatter::Visit(FlowPtr<BinaryExpression> n) {
   PrintMultilineComments(n);
 
   if (n->GetOp() == OpDot) {
@@ -712,7 +716,7 @@ void CambrianFormatter::Visit(FlowPtr<BinExpr> n) {
   }
 }
 
-void CambrianFormatter::Visit(FlowPtr<PostUnaryExpr> n) {
+void CambrianFormatter::Visit(FlowPtr<PostUnaryExpression> n) {
   PrintMultilineComments(n);
 
   m_line << "(";
@@ -720,7 +724,7 @@ void CambrianFormatter::Visit(FlowPtr<PostUnaryExpr> n) {
   m_line << n->GetOp() << ")";
 }
 
-void CambrianFormatter::Visit(FlowPtr<TernaryExpr> n) {
+void CambrianFormatter::Visit(FlowPtr<TernaryExpression> n) {
   PrintMultilineComments(n);
 
   m_line << "(";
@@ -732,19 +736,19 @@ void CambrianFormatter::Visit(FlowPtr<TernaryExpr> n) {
   m_line << ")";
 }
 
-void CambrianFormatter::Visit(FlowPtr<ConstInt> n) {
+void CambrianFormatter::Visit(FlowPtr<Integer> n) {
   PrintMultilineComments(n);
 
   WriteFloatLiteral(n->GetValue());
 }
 
-void CambrianFormatter::Visit(FlowPtr<ConstFloat> n) {
+void CambrianFormatter::Visit(FlowPtr<Float> n) {
   PrintMultilineComments(n);
 
   WriteFloatLiteral(n->GetValue());
 }
 
-void CambrianFormatter::Visit(FlowPtr<ConstBool> n) {
+void CambrianFormatter::Visit(FlowPtr<Boolean> n) {
   PrintMultilineComments(n);
 
   if (n->GetValue()) {
@@ -754,25 +758,25 @@ void CambrianFormatter::Visit(FlowPtr<ConstBool> n) {
   }
 }
 
-void CambrianFormatter::Visit(FlowPtr<ConstString> n) {
+void CambrianFormatter::Visit(FlowPtr<parse::String> n) {
   PrintMultilineComments(n);
 
   EscapeStringLiteral(n->GetValue());
 }
 
-void CambrianFormatter::Visit(FlowPtr<ConstChar> n) {
+void CambrianFormatter::Visit(FlowPtr<Character> n) {
   PrintMultilineComments(n);
 
   m_line << EscapeCharLiteral(n->GetValue());
 }
 
-void CambrianFormatter::Visit(FlowPtr<ConstNull> n) {
+void CambrianFormatter::Visit(FlowPtr<parse::Null> n) {
   PrintMultilineComments(n);
 
   m_line << "null";
 }
 
-void CambrianFormatter::Visit(FlowPtr<ConstUndef> n) {
+void CambrianFormatter::Visit(FlowPtr<Undefined> n) {
   PrintMultilineComments(n);
 
   m_line << "undef";
@@ -787,11 +791,11 @@ void CambrianFormatter::Visit(FlowPtr<Call> n) {
 
   size_t argc = n->GetArgs().size();
 
-  bool any_named =
-      std::any_of(n->GetArgs().begin(), n->GetArgs().end(), [](CallArg arg) {
-        auto name = arg.first;
-        return !std::isdigit(name->at(0));
-      });
+  bool any_named = std::any_of(n->GetArgs().begin(), n->GetArgs().end(),
+                               [](const CallArg& arg) {
+                                 auto name = arg.first;
+                                 return std::isdigit(name->at(0)) == 0;
+                               });
 
   bool any_lambdas = std::any_of(
       n->GetArgs().begin(), n->GetArgs().end(),
@@ -809,7 +813,7 @@ void CambrianFormatter::Visit(FlowPtr<Call> n) {
       auto name = std::get<0>(arg);
       auto value = std::get<1>(arg);
 
-      if (!std::isdigit(name->at(0))) {
+      if (std::isdigit(name->at(0)) == 0) {
         m_line << name << ": ";
       }
 
@@ -845,7 +849,7 @@ void CambrianFormatter::Visit(FlowPtr<Call> n) {
   }
 }
 
-void CambrianFormatter::Visit(FlowPtr<TemplCall> n) {
+void CambrianFormatter::Visit(FlowPtr<TemplateCall> n) {
   PrintMultilineComments(n);
 
   n->GetFunc().Accept(*this);
@@ -998,10 +1002,10 @@ void CambrianFormatter::Visit(FlowPtr<Assoc> node) {
   PrintMultilineComments(node);
 
   const std::function<void(FlowPtr<Assoc>, bool)> format =
-      [&](FlowPtr<Assoc> n, bool use_braces) {
+      [&](const FlowPtr<Assoc>& n, bool use_braces) {
         bool is_value_map = false;
         if (n->GetValue()->Is(QAST_LIST)) {
-          auto list = n->GetValue()->As<List>();
+          auto* list = n->GetValue()->As<List>();
           is_value_map =
               list->GetItems().empty() ||
               std::all_of(list->GetItems().begin(), list->GetItems().end(),
@@ -1018,7 +1022,7 @@ void CambrianFormatter::Visit(FlowPtr<Assoc> node) {
         m_line << ": ";
 
         if (is_value_map) {
-          auto list = n->GetValue()->As<List>();
+          auto* list = n->GetValue()->As<List>();
 
           if (list->GetItems().empty()) {
             m_line << "{}";
@@ -1095,13 +1099,13 @@ void CambrianFormatter::Visit(FlowPtr<FString> n) {
   m_line << "\"";
 }
 
-void CambrianFormatter::Visit(FlowPtr<Ident> n) {
+void CambrianFormatter::Visit(FlowPtr<Identifier> n) {
   PrintMultilineComments(n);
 
   m_line << n->GetName();
 }
 
-void CambrianFormatter::Visit(FlowPtr<SeqPoint> n) {
+void CambrianFormatter::Visit(FlowPtr<Sequence> n) {
   PrintMultilineComments(n);
 
   m_line << "(";
@@ -1182,21 +1186,21 @@ void CambrianFormatter::Visit(FlowPtr<Block> n) {
   }
 }
 
-void CambrianFormatter::Visit(FlowPtr<VarDecl> n) {
+void CambrianFormatter::Visit(FlowPtr<Variable> n) {
   PrintLineComments(n);
 
   switch (n->GetDeclType()) {
-    case VarDeclType::Let: {
+    case VariableType::Let: {
       m_line << "let ";
       break;
     }
 
-    case VarDeclType::Const: {
+    case VariableType::Const: {
       m_line << "const ";
       break;
     }
 
-    case VarDeclType::Var: {
+    case VariableType::Var: {
       m_line << "var ";
       break;
     }
@@ -1226,7 +1230,7 @@ void CambrianFormatter::Visit(FlowPtr<VarDecl> n) {
   m_line << ";";
 }
 
-void CambrianFormatter::Visit(FlowPtr<InlineAsm> n) {
+void CambrianFormatter::Visit(FlowPtr<Assembly> n) {
   PrintLineComments(n);
 
   /* Support for inline assembly is not avaliable yet */
@@ -1236,7 +1240,7 @@ void CambrianFormatter::Visit(FlowPtr<InlineAsm> n) {
   m_line << "/* !!! */";
 }
 
-void CambrianFormatter::Visit(FlowPtr<IfStmt> n) {
+void CambrianFormatter::Visit(FlowPtr<parse::If> n) {
   PrintLineComments(n);
 
   m_line << "if ";
@@ -1252,7 +1256,7 @@ void CambrianFormatter::Visit(FlowPtr<IfStmt> n) {
   m_line << ";";
 }
 
-void CambrianFormatter::Visit(FlowPtr<WhileStmt> n) {
+void CambrianFormatter::Visit(FlowPtr<parse::While> n) {
   PrintLineComments(n);
 
   m_line << "while ";
@@ -1263,7 +1267,7 @@ void CambrianFormatter::Visit(FlowPtr<WhileStmt> n) {
   m_line << ";";
 }
 
-void CambrianFormatter::Visit(FlowPtr<ForStmt> n) {
+void CambrianFormatter::Visit(FlowPtr<parse::For> n) {
   PrintLineComments(n);
 
   m_line << "for (";
@@ -1294,14 +1298,14 @@ void CambrianFormatter::Visit(FlowPtr<ForStmt> n) {
   m_line << ";";
 }
 
-void CambrianFormatter::Visit(FlowPtr<ForeachStmt> n) {
+void CambrianFormatter::Visit(FlowPtr<parse::Foreach> n) {
   PrintLineComments(n);
 
   m_line << "foreach (";
-  if (n->GetIdxIdent()->empty()) {
-    m_line << n->GetValIdent();
+  if (n->GetIdxIdentifier()->empty()) {
+    m_line << n->GetValIdentifier();
   } else {
-    m_line << n->GetIdxIdent() << ", " << n->GetValIdent();
+    m_line << n->GetIdxIdentifier() << ", " << n->GetValIdentifier();
   }
 
   m_line << " in ";
@@ -1313,19 +1317,19 @@ void CambrianFormatter::Visit(FlowPtr<ForeachStmt> n) {
   m_line << ";";
 }
 
-void CambrianFormatter::Visit(FlowPtr<BreakStmt> n) {
+void CambrianFormatter::Visit(FlowPtr<parse::Break> n) {
   PrintLineComments(n);
 
   m_line << "break;";
 }
 
-void CambrianFormatter::Visit(FlowPtr<ContinueStmt> n) {
+void CambrianFormatter::Visit(FlowPtr<parse::Continue> n) {
   PrintLineComments(n);
 
   m_line << "continue;";
 }
 
-void CambrianFormatter::Visit(FlowPtr<ReturnStmt> n) {
+void CambrianFormatter::Visit(FlowPtr<parse::Return> n) {
   PrintLineComments(n);
 
   if (n->GetValue().has_value()) {
@@ -1337,7 +1341,7 @@ void CambrianFormatter::Visit(FlowPtr<ReturnStmt> n) {
   }
 }
 
-void CambrianFormatter::Visit(FlowPtr<ReturnIfStmt> n) {
+void CambrianFormatter::Visit(FlowPtr<ReturnIf> n) {
   PrintLineComments(n);
 
   m_line << "retif ";
@@ -1347,7 +1351,7 @@ void CambrianFormatter::Visit(FlowPtr<ReturnIfStmt> n) {
   m_line << ";";
 }
 
-void CambrianFormatter::Visit(FlowPtr<CaseStmt> n) {
+void CambrianFormatter::Visit(FlowPtr<Case> n) {
   PrintLineComments(n);
 
   n->GetCond().Accept(*this);
@@ -1355,7 +1359,7 @@ void CambrianFormatter::Visit(FlowPtr<CaseStmt> n) {
   WrapStmtBody(n->GetBody(), 10, false);
 }
 
-void CambrianFormatter::Visit(FlowPtr<SwitchStmt> n) {
+void CambrianFormatter::Visit(FlowPtr<parse::Switch> n) {
   PrintLineComments(n);
 
   m_line << "switch ";
@@ -1380,7 +1384,7 @@ void CambrianFormatter::Visit(FlowPtr<SwitchStmt> n) {
   m_line << GetIndent() << "}";
 }
 
-void CambrianFormatter::Visit(FlowPtr<TypedefStmt> n) {
+void CambrianFormatter::Visit(FlowPtr<Typedef> n) {
   PrintLineComments(n);
 
   m_line << "type " << n->GetName() << " = ";
@@ -1513,7 +1517,7 @@ void CambrianFormatter::Visit(FlowPtr<Function> n) {
   }
 }
 
-void CambrianFormatter::Visit(FlowPtr<StructDef> n) {
+void CambrianFormatter::Visit(FlowPtr<parse::Struct> n) {
   PrintLineComments(n);
 
   switch (n->GetCompositeType()) {
@@ -1637,7 +1641,7 @@ void CambrianFormatter::Visit(FlowPtr<StructDef> n) {
   m_line << "}";
 }
 
-void CambrianFormatter::Visit(FlowPtr<EnumDef> n) {
+void CambrianFormatter::Visit(FlowPtr<parse::Enum> n) {
   PrintLineComments(n);
 
   m_line << "enum " << n->GetName();
@@ -1654,12 +1658,12 @@ void CambrianFormatter::Visit(FlowPtr<EnumDef> n) {
   m_line << " {" << std::endl;
   m_indent += m_tabSize;
 
-  for (auto it = n->GetItems().begin(); it != n->GetItems().end(); ++it) {
+  for (auto& it : n->GetItems()) {
     m_line << GetIndent();
-    m_line << it->first;
-    if (it->second) {
+    m_line << it.first;
+    if (it.second) {
       m_line << " = ";
-      it->second.value().Accept(*this);
+      it.second.value().Accept(*this);
     }
     m_line << "," << std::endl;
   }
@@ -1668,7 +1672,7 @@ void CambrianFormatter::Visit(FlowPtr<EnumDef> n) {
   m_line << GetIndent() << "}";
 }
 
-void CambrianFormatter::Visit(FlowPtr<ScopeStmt> n) {
+void CambrianFormatter::Visit(FlowPtr<parse::Scope> n) {
   PrintLineComments(n);
 
   m_line << "scope ";
@@ -1689,7 +1693,7 @@ void CambrianFormatter::Visit(FlowPtr<ScopeStmt> n) {
   WrapStmtBody(n->GetBody(), 50, true);
 }
 
-void CambrianFormatter::Visit(FlowPtr<ExportStmt> n) {
+void CambrianFormatter::Visit(FlowPtr<Export> n) {
   PrintLineComments(n);
 
   m_line << n->GetVis();

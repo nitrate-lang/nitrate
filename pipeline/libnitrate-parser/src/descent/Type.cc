@@ -105,7 +105,7 @@ auto Parser::PImpl::RecurseTypeSuffix(FlowPtr<Type> base)
   auto template_arguments = RecurseTypeTemplateArguments();
 
   if (template_arguments.has_value()) {
-    auto templ = CreateNode<TemplType>(base, template_arguments.value())();
+    auto templ = CreateNode<TemplateType>(base, template_arguments.value())();
     templ->SetOffset(base->Begin());
 
     base = templ;
@@ -134,7 +134,7 @@ auto Parser::PImpl::RecurseTypeSuffix(FlowPtr<Type> base)
   if (NextIf(OpTernary)) {
     auto args = CallArgs{{"0", CreateNode<TypeExpr>(base)()}};
     auto opt_type =
-        CreateNode<TemplType>(CreateNode<NamedTy>("__builtin_result")(), args)();
+        CreateNode<TemplateType>(CreateNode<NamedTy>("__builtin_result")(), args)();
 
     opt_type->SetOffset(current().GetStart());
 
@@ -249,7 +249,7 @@ auto Parser::PImpl::RecurseTypeByOperator(Operator op) -> FlowPtr<parse::Type> {
       }
 
       auto comptime_expr =
-          CreateNode<UnaryExpr>(OpComptime, RecurseExpr({
+          CreateNode<UnaryExpression>(OpComptime, RecurseExpr({
                                           Token(Punc, PuncRPar),
                                       }))();
 
@@ -258,7 +258,7 @@ auto Parser::PImpl::RecurseTypeByOperator(Operator op) -> FlowPtr<parse::Type> {
       }
 
       auto args = CallArgs{{"0", comptime_expr}};
-      return CreateNode<TemplType>(CreateNode<NamedTy>("__builtin_meta")(),
+      return CreateNode<TemplateType>(CreateNode<NamedTy>("__builtin_meta")(),
                              std::move(args))();
     }
 
@@ -277,7 +277,7 @@ auto Parser::PImpl::RecurseArrayOrVector() -> FlowPtr<parse::Type> {
 
   if (NextIf(PuncRBrk)) {
     auto args = CallArgs{{"0", CreateNode<TypeExpr>(first)()}};
-    auto vector = CreateNode<TemplType>(CreateNode<NamedTy>("__builtin_vec")(), args)();
+    auto vector = CreateNode<TemplateType>(CreateNode<NamedTy>("__builtin_vec")(), args)();
 
     vector->SetOffset(start);
 
@@ -313,7 +313,7 @@ auto Parser::PImpl::RecurseSetType() -> FlowPtr<parse::Type> {
   }
 
   auto args = CallArgs{{"0", CreateNode<TypeExpr>(set_type)()}};
-  auto set = CreateNode<TemplType>(CreateNode<NamedTy>("__builtin_uset")(), args)();
+  auto set = CreateNode<TemplateType>(CreateNode<NamedTy>("__builtin_uset")(), args)();
 
   set->SetOffset(start);
 

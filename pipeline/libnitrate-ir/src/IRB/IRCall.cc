@@ -91,7 +91,7 @@
 //     copy[i] = arguments[i];
 //   }
 
-//   call.base = create<Index>(object, create<Ident>(name, nullptr));
+//   call.base = create<Index>(object, create<Identifier>(name, nullptr));
 //   call.args = std::move(copy);
 
 //   Tmp *R = create<Tmp>(TmpType::CALL, std::move(call));

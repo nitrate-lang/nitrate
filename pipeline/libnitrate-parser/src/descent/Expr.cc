@@ -198,17 +198,17 @@ static NCC_FORCE_INLINE auto UnwindStack(
       }
 
       case FrameType::PreUnary: {
-        base = CreateNode<UnaryExpr>(frame.m_op, base)();
+        base = CreateNode<UnaryExpression>(frame.m_op, base)();
         break;
       }
 
       case FrameType::PostUnary: {
-        base = CreateNode<PostUnaryExpr>(base, frame.m_op)();
+        base = CreateNode<PostUnaryExpression>(base, frame.m_op)();
         break;
       }
 
       case FrameType::Binary: {
-        base = CreateNode<BinExpr>(frame.m_base, frame.m_op, base)();
+        base = CreateNode<BinaryExpression>(frame.m_base, frame.m_op, base)();
         break;
       }
     }
@@ -225,7 +225,7 @@ auto Parser::PImpl::RecurseExpr(const std::set<Token> &terminators)
   auto source_offset = peek().GetStart();
 
   std::stack<Frame> stack;
-  ConstBool start_node(false);
+  Boolean start_node(false);
   stack.emplace(&start_node, source_offset, 0, FrameType::Start, OpPlus);
 
   /****************************************
@@ -247,7 +247,7 @@ auto Parser::PImpl::RecurseExpr(const std::set<Token> &terminators)
       auto [Op, Offset] = pre_unary_ops.top();
       pre_unary_ops.pop();
 
-      left_side = CreateNode<UnaryExpr>(Op, left_side)();
+      left_side = CreateNode<UnaryExpression>(Op, left_side)();
       left_side->SetOffset(Offset);
     }
 
@@ -271,7 +271,7 @@ auto Parser::PImpl::RecurseExpr(const std::set<Token> &terminators)
              * Handle post-unary operators
              ****************************************/
             if (op_type == OpMode::PostUnary) {
-              left_side = CreateNode<PostUnaryExpr>(left_side, op)();
+              left_side = CreateNode<PostUnaryExpression>(left_side, op)();
               left_side->SetOffset(source_offset);
 
               continue;
@@ -306,7 +306,8 @@ auto Parser::PImpl::RecurseExpr(const std::set<Token> &terminators)
                 auto [op, Offset] = pre_unary_ops.top();
                 pre_unary_ops.pop();
 
-                auto pre_unary_expr = CreateNode<UnaryExpr>(op, right_side.value())();
+                auto pre_unary_expr =
+                    CreateNode<UnaryExpression>(op, right_side.value())();
                 pre_unary_expr->SetOffset(Offset);
 
                 right_side = pre_unary_expr;
@@ -396,8 +397,9 @@ auto Parser::PImpl::RecurseExpr(const std::set<Token> &terminators)
                   << "Expected ')' to close the call arguments";
             }
 
-            left_side = CreateNode<TemplCall>(left_side, std::move(call_arguments),
-                                        std::move(template_arguments))();
+            left_side =
+                CreateNode<TemplateCall>(left_side, std::move(call_arguments),
+                                         std::move(template_arguments))();
             left_side->SetOffset(source_offset);
           } else {  // Not part of the expression
             spinning = false;
@@ -473,22 +475,22 @@ auto Parser::PImpl::RecurseExprKeyword(lex::Keyword key)
     }
 
     case Undef: {
-      e = CreateNode<ConstUndef>()();
+      e = CreateNode<Undefined>()();
       break;
     }
 
-    case Null: {
-      e = CreateNode<ConstNull>()();
+    case Keyword::Null: {
+      e = CreateNode<Null>()();
       break;
     }
 
     case True: {
-      e = CreateNode<ConstBool>(true)();
+      e = CreateNode<Boolean>(true)();
       break;
     }
 
     case False: {
-      e = CreateNode<ConstBool>(false)();
+      e = CreateNode<Boolean>(false)();
       break;
     }
 
@@ -667,7 +669,7 @@ auto Parser::PImpl::RecurseExprPunctor(lex::Punctor punc)
 
     case PuncScope: {
       auto name = "::" + std::string(RecurseName());
-      e = CreateNode<Ident>(name)();
+      e = CreateNode<Identifier>(name)();
       break;
     }
   }
@@ -684,7 +686,7 @@ auto Parser::PImpl::RecurseExprTypeSuffix(FlowPtr<Expr> base) -> FlowPtr<Expr> {
   auto texpr = CreateNode<TypeExpr>(suffix)();
   texpr->SetOffset(tok.GetStart());
 
-  return CreateNode<BinExpr>(base, OpAs, texpr)();
+  return CreateNode<BinaryExpression>(base, OpAs, texpr)();
 }
 
 auto Parser::PImpl::RecurseExprPrimary(bool is_type) -> NullableFlowPtr<Expr> {
@@ -739,7 +741,7 @@ auto Parser::PImpl::RecurseExprPrimary(bool is_type) -> NullableFlowPtr<Expr> {
       }
 
       case Name: {
-        auto identifier = CreateNode<Ident>(RecurseName())();
+        auto identifier = CreateNode<Identifier>(RecurseName())();
         identifier->SetOffset(start_pos);
 
         e = identifier;
@@ -749,7 +751,7 @@ auto Parser::PImpl::RecurseExprPrimary(bool is_type) -> NullableFlowPtr<Expr> {
       case IntL: {
         next();
 
-        auto integer = CreateNode<ConstInt>(tok.GetString())();
+        auto integer = CreateNode<Integer>(tok.GetString())();
         integer->SetOffset(start_pos);
 
         if (peek().Is(Name)) {
@@ -767,7 +769,7 @@ auto Parser::PImpl::RecurseExprPrimary(bool is_type) -> NullableFlowPtr<Expr> {
       case NumL: {
         next();
 
-        auto decimal = CreateNode<ConstFloat>(tok.GetString())();
+        auto decimal = CreateNode<Float>(tok.GetString())();
         decimal->SetOffset(start_pos);
 
         if (peek().Is(Name)) {
@@ -785,7 +787,7 @@ auto Parser::PImpl::RecurseExprPrimary(bool is_type) -> NullableFlowPtr<Expr> {
       case Text: {
         next();
 
-        auto string = CreateNode<ConstString>(tok.GetString())();
+        auto string = CreateNode<String>(tok.GetString())();
         string->SetOffset(start_pos);
 
         if (peek().Is(Name)) {
@@ -810,7 +812,7 @@ auto Parser::PImpl::RecurseExprPrimary(bool is_type) -> NullableFlowPtr<Expr> {
           break;
         }
 
-        auto character = CreateNode<ConstChar>(str_data->at(0))();
+        auto character = CreateNode<Character>(str_data->at(0))();
         character->SetOffset(start_pos);
 
         if (peek().Is(Name)) {

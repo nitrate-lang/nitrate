@@ -43,7 +43,7 @@ auto Parser::PImpl::RecurseForInitExpr() -> NullableFlowPtr<Stmt> {
   }
 
   if (NextIf(Let)) {
-    if (auto vars = RecurseVariable(VarDeclType::Let); vars.size() == 1) {
+    if (auto vars = RecurseVariable(VariableType::Let); vars.size() == 1) {
       return vars[0];
     }
 
@@ -51,14 +51,14 @@ auto Parser::PImpl::RecurseForInitExpr() -> NullableFlowPtr<Stmt> {
         << "Expected exactly one variable in for loop";
 
   } else if (NextIf(Var)) {
-    if (auto vars = RecurseVariable(VarDeclType::Var); vars.size() == 1) {
+    if (auto vars = RecurseVariable(VariableType::Var); vars.size() == 1) {
       return vars[0];
     }
 
     Log << SyntaxError << current()
         << "Expected exactly one variable in for loop";
   } else if (NextIf(Const)) {
-    if (auto vars = RecurseVariable(VarDeclType::Const); vars.size() == 1) {
+    if (auto vars = RecurseVariable(VariableType::Const); vars.size() == 1) {
       return vars[0];
     }
 
@@ -133,5 +133,5 @@ auto Parser::PImpl::RecurseFor() -> FlowPtr<Stmt> {
 
   auto for_body = RecurseForBody();
 
-  return CreateNode<ForStmt>(for_init, for_cond, for_step, for_body)();
+  return CreateNode<For>(for_init, for_cond, for_step, for_body)();
 }

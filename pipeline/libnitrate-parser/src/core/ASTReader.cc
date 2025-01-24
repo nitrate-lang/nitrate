@@ -276,11 +276,11 @@ auto AstReader::DeserializeObject() -> NullableFlowPtr<Base> {
       {"Slice", QAST_SLICE},
       {"Fstring", QAST_FSTRING},
       {"Ident", QAST_IDENT},
-      {"SeqPoint", QAST_SEQ},
+      {"Sequence", QAST_SEQ},
       {"PostUnexpr", QAST_POST_UNEXPR},
       {"StmtExpr", QAST_SEXPR},
       {"TypeExpr", QAST_TEXPR},
-      {"TemplCall", QAST_TEMPL_CALL},
+      {"TemplateCall", QAST_TEMPL_CALL},
       {"Ref", QAST_REF},
       {"U1", QAST_U1},
       {"U8", QAST_U8},
@@ -314,7 +314,7 @@ auto AstReader::DeserializeObject() -> NullableFlowPtr<Base> {
       {"Export", QAST_EXPORT},
       {"Block", QAST_BLOCK},
       {"Let", QAST_VAR},
-      {"InlineAsm", QAST_INLINE_ASM},
+      {"Assembly", QAST_INLINE_ASM},
       {"Return", QAST_RETURN},
       {"Retif", QAST_RETIF},
       {"Break", QAST_BREAK},
@@ -428,12 +428,12 @@ auto AstReader::DeserializeObject() -> NullableFlowPtr<Base> {
     }
 
     case QAST_IDENT: {
-      r = ReadKindIdent();
+      r = ReadKindIdentifier( );
       break;
     }
 
     case QAST_SEQ: {
-      r = ReadKindSeqPoint();
+      r = ReadKindSequence();
       break;
     }
 
@@ -453,7 +453,7 @@ auto AstReader::DeserializeObject() -> NullableFlowPtr<Base> {
     }
 
     case QAST_TEMPL_CALL: {
-      r = ReadKindTemplCall();
+      r = ReadKindTemplateCall();
       break;
     }
 
@@ -623,7 +623,7 @@ auto AstReader::DeserializeObject() -> NullableFlowPtr<Base> {
     }
 
     case QAST_INLINE_ASM: {
-      r = ReadKindInlineAsm();
+      r = ReadKindAssembly();
       break;
     }
 
@@ -747,7 +747,7 @@ NullableFlowPtr<Base> AstReader::ReadKindNode() {  // NOLINT
   return CreateNode<Base>(QAST_BASE)();
 }
 
-auto AstReader::ReadKindBinexpr() -> NullableFlowPtr<BinExpr> {
+auto AstReader::ReadKindBinexpr() -> NullableFlowPtr<BinaryExpression> {
   if (!NextIf<std::string>("op") || !NextIs<std::string>()) {
     return nullptr;
   }
@@ -777,10 +777,10 @@ auto AstReader::ReadKindBinexpr() -> NullableFlowPtr<BinExpr> {
     return nullptr;
   }
 
-  return CreateNode<BinExpr>(lhs.value(), op_it->second, rhs.value())();
+  return CreateNode<BinaryExpression>(lhs.value(), op_it->second, rhs.value())();
 }
 
-auto AstReader::ReadKindUnexpr() -> NullableFlowPtr<UnaryExpr> {
+auto AstReader::ReadKindUnexpr() -> NullableFlowPtr<UnaryExpression> {
   if (!NextIf<std::string>("op") || !NextIs<std::string>()) {
     return nullptr;
   }
@@ -801,10 +801,10 @@ auto AstReader::ReadKindUnexpr() -> NullableFlowPtr<UnaryExpr> {
     return nullptr;
   }
 
-  return CreateNode<UnaryExpr>(op_it->second, rhs.value())();
+  return CreateNode<UnaryExpression>(op_it->second, rhs.value())();
 }
 
-auto AstReader::ReadKindPostUnexpr() -> NullableFlowPtr<PostUnaryExpr> {
+auto AstReader::ReadKindPostUnexpr() -> NullableFlowPtr<PostUnaryExpression> {
   if (!NextIf<std::string>("op") || !NextIs<std::string>()) {
     return nullptr;
   }
@@ -825,10 +825,10 @@ auto AstReader::ReadKindPostUnexpr() -> NullableFlowPtr<PostUnaryExpr> {
     return nullptr;
   }
 
-  return CreateNode<PostUnaryExpr>(lhs.value(), op_it->second)();
+  return CreateNode<PostUnaryExpression>(lhs.value(), op_it->second)();
 }
 
-auto AstReader::ReadKindTerexpr() -> NullableFlowPtr<TernaryExpr> {
+auto AstReader::ReadKindTerexpr() -> NullableFlowPtr<TernaryExpression> {
   if (!NextIf<std::string>("cond")) {
     return nullptr;
   }
@@ -856,10 +856,10 @@ auto AstReader::ReadKindTerexpr() -> NullableFlowPtr<TernaryExpr> {
     return nullptr;
   }
 
-  return CreateNode<TernaryExpr>(cond.value(), lhs.value(), rhs.value())();
+  return CreateNode<TernaryExpression>(cond.value(), lhs.value(), rhs.value())();
 }
 
-auto AstReader::ReadKindInt() -> NullableFlowPtr<ConstInt> {
+auto AstReader::ReadKindInt() -> NullableFlowPtr<Integer> {
   if (!NextIf<std::string>("value") || !NextIs<std::string>()) {
     return nullptr;
   }
@@ -877,10 +877,10 @@ auto AstReader::ReadKindInt() -> NullableFlowPtr<ConstInt> {
     return nullptr;
   }
 
-  return CreateNode<ConstInt>(std::move(value))();
+  return CreateNode<Integer>(std::move(value))();
 }
 
-auto AstReader::ReadKindFloat() -> NullableFlowPtr<ConstFloat> {
+auto AstReader::ReadKindFloat() -> NullableFlowPtr<Float> {
   if (!NextIf<std::string>("value") || !NextIs<std::string>()) {
     return nullptr;
   }
@@ -893,20 +893,20 @@ auto AstReader::ReadKindFloat() -> NullableFlowPtr<ConstFloat> {
     return nullptr;
   }
 
-  return CreateNode<ConstFloat>(std::move(value))();
+  return CreateNode<Float>(std::move(value))();
 }
 
-auto AstReader::ReadKindString() -> NullableFlowPtr<ConstString> {
+auto AstReader::ReadKindString() -> NullableFlowPtr<String> {
   if (!NextIf<std::string>("value") || !NextIs<std::string>()) {
     return nullptr;
   }
 
   auto value = Next<std::string>();
 
-  return CreateNode<ConstString>(std::move(value))();
+  return CreateNode<String>(std::move(value))();
 }
 
-auto AstReader::ReadKindChar() -> NullableFlowPtr<ConstChar> {
+auto AstReader::ReadKindChar() -> NullableFlowPtr<Character> {
   if (!NextIf<std::string>("value") || !NextIs<uint64_t>()) {
     return nullptr;
   }
@@ -917,25 +917,25 @@ auto AstReader::ReadKindChar() -> NullableFlowPtr<ConstChar> {
     return nullptr;
   }
 
-  return CreateNode<ConstChar>(value)();
+  return CreateNode<Character>(value)();
 }
 
-auto AstReader::ReadKindBool() -> NullableFlowPtr<ConstBool> {
+auto AstReader::ReadKindBool() -> NullableFlowPtr<Boolean> {
   if (!NextIf<std::string>("value") || !NextIs<bool>()) {
     return nullptr;
   }
 
   auto value = Next<bool>();
 
-  return CreateNode<ConstBool>(value)();
+  return CreateNode<Boolean>(value)();
 }
 
-NullableFlowPtr<ConstNull> AstReader::ReadKindNull() {  // NOLINT
-  return CreateNode<ConstNull>()();
+NullableFlowPtr<Null> AstReader::ReadKindNull() {  // NOLINT
+  return CreateNode<Null>()();
 }
 
-NullableFlowPtr<ConstUndef> AstReader::ReadKindUndef() {  // NOLINT
-  return CreateNode<ConstUndef>()();
+NullableFlowPtr<Undefined> AstReader::ReadKindUndef() {  // NOLINT
+  return CreateNode<Undefined>()();
 }
 
 auto AstReader::ReadKindCall() -> NullableFlowPtr<Call> {
@@ -1099,17 +1099,17 @@ auto AstReader::ReadKindFstring() -> NullableFlowPtr<FString> {
   return CreateNode<FString>(std::move(terms))();
 }
 
-auto AstReader::ReadKindIdent() -> NullableFlowPtr<Ident> {
+auto AstReader::ReadKindIdentifier( ) -> NullableFlowPtr<Identifier> {
   if (!NextIf<std::string>("name") || !NextIs<std::string>()) {
     return nullptr;
   }
 
   auto name = Next<std::string>();
 
-  return CreateNode<Ident>(std::move(name))();
+  return CreateNode<Identifier>(std::move(name))();
 }
 
-auto AstReader::ReadKindSeqPoint() -> NullableFlowPtr<SeqPoint> {
+auto AstReader::ReadKindSequence() -> NullableFlowPtr<Sequence> {
   if (!NextIf<std::string>("terms") || !NextIs<uint64_t>()) {
     return nullptr;
   }
@@ -1128,7 +1128,7 @@ auto AstReader::ReadKindSeqPoint() -> NullableFlowPtr<SeqPoint> {
     terms.push_back(term.value());
   }
 
-  return CreateNode<SeqPoint>(std::move(terms))();
+  return CreateNode<Sequence>(std::move(terms))();
 }
 
 auto AstReader::ReadKindStmtExpr() -> NullableFlowPtr<StmtExpr> {
@@ -1157,7 +1157,7 @@ auto AstReader::ReadKindTypeExpr() -> NullableFlowPtr<TypeExpr> {
   return CreateNode<TypeExpr>(type.value())();
 }
 
-auto AstReader::ReadKindTemplCall() -> NullableFlowPtr<TemplCall> {
+auto AstReader::ReadKindTemplateCall() -> NullableFlowPtr<TemplateCall> {
   if (!NextIf<std::string>("callee")) {
     return nullptr;
   }
@@ -1223,7 +1223,7 @@ auto AstReader::ReadKindTemplCall() -> NullableFlowPtr<TemplCall> {
     arguments.emplace_back(std::move(name), value.value());
   }
 
-  return CreateNode<TemplCall>(callee.value(), std::move(arguments),
+  return CreateNode<TemplateCall>(callee.value(), std::move(arguments),
                          std::move(template_args))();
 }
 
@@ -1739,7 +1739,7 @@ auto AstReader::ReadKindInfer() -> NullableFlowPtr<InferTy> {
   return node;
 }
 
-auto AstReader::ReadKindTempl() -> NullableFlowPtr<TemplType> {
+auto AstReader::ReadKindTempl() -> NullableFlowPtr<TemplateType> {
   auto info = ReadTypeMetadata();
   if (!info.has_value()) {
     return nullptr;
@@ -1782,7 +1782,7 @@ auto AstReader::ReadKindTempl() -> NullableFlowPtr<TemplType> {
     arguments.emplace_back(std::move(name), value.value());
   }
 
-  auto node = CreateNode<TemplType>(templ.value(), std::move(arguments))();
+  auto node = CreateNode<TemplateType>(templ.value(), std::move(arguments))();
   node->SetWidth(info->m_width);
   node->SetRangeBegin(info->m_min);
   node->SetRangeEnd(info->m_max);
@@ -1790,7 +1790,7 @@ auto AstReader::ReadKindTempl() -> NullableFlowPtr<TemplType> {
   return node;
 }
 
-auto AstReader::ReadKindTypedef() -> NullableFlowPtr<TypedefStmt> {
+auto AstReader::ReadKindTypedef() -> NullableFlowPtr<Typedef> {
   if (!NextIf<std::string>("name") || !NextIs<std::string>()) {
     return nullptr;
   }
@@ -1806,10 +1806,10 @@ auto AstReader::ReadKindTypedef() -> NullableFlowPtr<TypedefStmt> {
     return nullptr;
   }
 
-  return CreateNode<TypedefStmt>(name, type.value())();
+  return CreateNode<Typedef>(name, type.value())();
 }
 
-auto AstReader::ReadKindStruct() -> NullableFlowPtr<StructDef> {
+auto AstReader::ReadKindStruct() -> NullableFlowPtr<Struct> {
   if (!NextIf<std::string>("mode")) {
     return nullptr;
   }
@@ -1910,7 +1910,7 @@ auto AstReader::ReadKindStruct() -> NullableFlowPtr<StructDef> {
 
   auto names_count = Next<uint64_t>();
 
-  StructDefNames names;
+  StructNames names;
   names.reserve(names_count);
 
   while (names_count-- > 0) {
@@ -1929,7 +1929,7 @@ auto AstReader::ReadKindStruct() -> NullableFlowPtr<StructDef> {
 
   auto field_count = Next<uint64_t>();
 
-  StructDefFields fields;
+  StructFields fields;
   fields.reserve(field_count);
 
   while (field_count-- > 0) {
@@ -1994,7 +1994,7 @@ auto AstReader::ReadKindStruct() -> NullableFlowPtr<StructDef> {
 
   auto method_count = Next<uint64_t>();
 
-  StructDefMethods methods;
+  StructMethods methods;
   methods.reserve(method_count);
 
   while (method_count-- > 0) {
@@ -2032,7 +2032,7 @@ auto AstReader::ReadKindStruct() -> NullableFlowPtr<StructDef> {
 
   auto static_method_count = Next<uint64_t>();
 
-  StructDefStaticMethods static_methods;
+  StructStaticMethods static_methods;
   static_methods.reserve(static_method_count);
 
   while (static_method_count-- > 0) {
@@ -2064,11 +2064,11 @@ auto AstReader::ReadKindStruct() -> NullableFlowPtr<StructDef> {
     static_methods.emplace_back(visibility, method.value());
   }
 
-  return CreateNode<StructDef>(mode, attributes, name, template_args, names, fields,
+  return CreateNode<Struct>(mode, attributes, name, template_args, names, fields,
                          methods, static_methods)();
 }
 
-auto AstReader::ReadKindEnum() -> NullableFlowPtr<EnumDef> {
+auto AstReader::ReadKindEnum() -> NullableFlowPtr<Enum> {
   if (!NextIf<std::string>("name") || !NextIs<std::string>()) {
     return nullptr;
   }
@@ -2095,7 +2095,7 @@ auto AstReader::ReadKindEnum() -> NullableFlowPtr<EnumDef> {
 
   auto field_count = Next<uint64_t>();
 
-  EnumDefItems fields;
+  EnumItems fields;
   fields.reserve(field_count);
 
   while (field_count-- > 0) {
@@ -2122,7 +2122,7 @@ auto AstReader::ReadKindEnum() -> NullableFlowPtr<EnumDef> {
     fields.emplace_back(field_name, value);
   }
 
-  return CreateNode<EnumDef>(name, type, std::move(fields))();
+  return CreateNode<Enum>(name, type, std::move(fields))();
 }
 
 auto AstReader::ReadKindFunction() -> NullableFlowPtr<Function> {
@@ -2354,7 +2354,7 @@ auto AstReader::ReadKindFunction() -> NullableFlowPtr<Function> {
                         body)();
 }
 
-auto AstReader::ReadKindScope() -> NullableFlowPtr<ScopeStmt> {
+auto AstReader::ReadKindScope() -> NullableFlowPtr<Scope> {
   if (!NextIf<std::string>("name") || !NextIs<std::string>()) {
     return nullptr;
   }
@@ -2384,10 +2384,10 @@ auto AstReader::ReadKindScope() -> NullableFlowPtr<ScopeStmt> {
     return nullptr;
   }
 
-  return CreateNode<ScopeStmt>(name, body.value(), dependencies)();
+  return CreateNode<Scope>(name, body.value(), dependencies)();
 }
 
-auto AstReader::ReadKindExport() -> NullableFlowPtr<ExportStmt> {
+auto AstReader::ReadKindExport() -> NullableFlowPtr<Export> {
   if (!NextIf<std::string>("abi") || !NextIs<std::string>()) {
     return nullptr;
   }
@@ -2437,7 +2437,7 @@ auto AstReader::ReadKindExport() -> NullableFlowPtr<ExportStmt> {
     return nullptr;
   }
 
-  return CreateNode<ExportStmt>(body.value(), abi_name, visibility,
+  return CreateNode<Export>(body.value(), abi_name, visibility,
                           std::move(attributes))();
 }
 
@@ -2479,18 +2479,18 @@ auto AstReader::ReadKindBlock() -> NullableFlowPtr<Block> {
   return CreateNode<Block>(std::move(statements), mode)();
 }
 
-auto AstReader::ReadKindLet() -> NullableFlowPtr<VarDecl> {
+auto AstReader::ReadKindLet() -> NullableFlowPtr<Variable> {
   if (!NextIf<std::string>("mode")) {
     return nullptr;
   }
-  VarDeclType mode;
+  VariableType mode;
 
   if (NextIf<std::string>("let")) {
-    mode = VarDeclType::Let;
+    mode = VariableType::Let;
   } else if (NextIf<std::string>("var")) {
-    mode = VarDeclType::Var;
+    mode = VariableType::Var;
   } else if (NextIf<std::string>("const")) {
-    mode = VarDeclType::Const;
+    mode = VariableType::Const;
   } else {
     return nullptr;
   }
@@ -2547,10 +2547,10 @@ auto AstReader::ReadKindLet() -> NullableFlowPtr<VarDecl> {
     attributes.push_back(attribute.value());
   }
 
-  return CreateNode<VarDecl>(name, type, value, mode, std::move(attributes))();
+  return CreateNode<Variable>(name, type, value, mode, std::move(attributes))();
 }
 
-auto AstReader::ReadKindInlineAsm() -> NullableFlowPtr<InlineAsm> {
+auto AstReader::ReadKindAssembly() -> NullableFlowPtr<Assembly> {
   if (!NextIf<std::string>("assembly") || !NextIs<std::string>()) {
     return nullptr;
   }
@@ -2575,10 +2575,10 @@ auto AstReader::ReadKindInlineAsm() -> NullableFlowPtr<InlineAsm> {
     parameters.push_back(parameter.value());
   }
 
-  return CreateNode<InlineAsm>(assembly, std::move(parameters))();
+  return CreateNode<Assembly>(assembly, std::move(parameters))();
 }
 
-auto AstReader::ReadKindReturn() -> NullableFlowPtr<ReturnStmt> {
+auto AstReader::ReadKindReturn() -> NullableFlowPtr<Return> {
   if (!NextIf<std::string>("expr")) {
     return nullptr;
   }
@@ -2593,10 +2593,10 @@ auto AstReader::ReadKindReturn() -> NullableFlowPtr<ReturnStmt> {
     }
   }
 
-  return CreateNode<ReturnStmt>(expression)();
+  return CreateNode<Return>(expression)();
 }
 
-auto AstReader::ReadKindRetif() -> NullableFlowPtr<ReturnIfStmt> {
+auto AstReader::ReadKindRetif() -> NullableFlowPtr<ReturnIf> {
   if (!NextIf<std::string>("cond")) {
     return nullptr;
   }
@@ -2615,18 +2615,18 @@ auto AstReader::ReadKindRetif() -> NullableFlowPtr<ReturnIfStmt> {
     return nullptr;
   }
 
-  return CreateNode<ReturnIfStmt>(condition.value(), expression.value())();
+  return CreateNode<ReturnIf>(condition.value(), expression.value())();
 }
 
-NullableFlowPtr<BreakStmt> AstReader::ReadKindBreak() {  // NOLINT
-  return CreateNode<BreakStmt>()();
+NullableFlowPtr<Break> AstReader::ReadKindBreak() {  // NOLINT
+  return CreateNode<Break>()();
 }
 
-NullableFlowPtr<ContinueStmt> AstReader::ReadKindContinue() {  // NOLINT
-  return CreateNode<ContinueStmt>()();
+NullableFlowPtr<Continue> AstReader::ReadKindContinue() {  // NOLINT
+  return CreateNode<Continue>()();
 }
 
-auto AstReader::ReadKindIf() -> NullableFlowPtr<IfStmt> {
+auto AstReader::ReadKindIf() -> NullableFlowPtr<If> {
   if (!NextIf<std::string>("cond")) {
     return nullptr;
   }
@@ -2656,10 +2656,10 @@ auto AstReader::ReadKindIf() -> NullableFlowPtr<IfStmt> {
     }
   }
 
-  return CreateNode<IfStmt>(condition.value(), then_block.value(), else_block)();
+  return CreateNode<If>(condition.value(), then_block.value(), else_block)();
 }
 
-auto AstReader::ReadKindWhile() -> NullableFlowPtr<WhileStmt> {
+auto AstReader::ReadKindWhile() -> NullableFlowPtr<While> {
   if (!NextIf<std::string>("cond")) {
     return nullptr;
   }
@@ -2678,10 +2678,10 @@ auto AstReader::ReadKindWhile() -> NullableFlowPtr<WhileStmt> {
     return nullptr;
   }
 
-  return CreateNode<WhileStmt>(condition.value(), body.value())();
+  return CreateNode<While>(condition.value(), body.value())();
 }
 
-auto AstReader::ReadKindFor() -> NullableFlowPtr<ForStmt> {
+auto AstReader::ReadKindFor() -> NullableFlowPtr<For> {
   if (!NextIf<std::string>("init")) {
     return nullptr;
   }
@@ -2733,10 +2733,10 @@ auto AstReader::ReadKindFor() -> NullableFlowPtr<ForStmt> {
     return nullptr;
   }
 
-  return CreateNode<ForStmt>(init, condition, step, body.value())();
+  return CreateNode<For>(init, condition, step, body.value())();
 }
 
-auto AstReader::ReadKindForeach() -> NullableFlowPtr<ForeachStmt> {
+auto AstReader::ReadKindForeach() -> NullableFlowPtr<Foreach> {
   if (!NextIf<std::string>("idx") || !NextIs<std::string>()) {
     return nullptr;
   }
@@ -2767,11 +2767,11 @@ auto AstReader::ReadKindForeach() -> NullableFlowPtr<ForeachStmt> {
     return nullptr;
   }
 
-  return CreateNode<ForeachStmt>(index_name, value_name, expression.value(),
+  return CreateNode<Foreach>(index_name, value_name, expression.value(),
                            body.value())();
 }
 
-auto AstReader::ReadKindCase() -> NullableFlowPtr<CaseStmt> {
+auto AstReader::ReadKindCase() -> NullableFlowPtr<Case> {
   if (!NextIf<std::string>("match")) {
     return nullptr;
   }
@@ -2790,10 +2790,10 @@ auto AstReader::ReadKindCase() -> NullableFlowPtr<CaseStmt> {
     return nullptr;
   }
 
-  return CreateNode<CaseStmt>(match.value(), body.value())();
+  return CreateNode<Case>(match.value(), body.value())();
 }
 
-auto AstReader::ReadKindSwitch() -> NullableFlowPtr<SwitchStmt> {
+auto AstReader::ReadKindSwitch() -> NullableFlowPtr<Switch> {
   if (!NextIf<std::string>("match")) {
     return nullptr;
   }
@@ -2818,7 +2818,7 @@ auto AstReader::ReadKindSwitch() -> NullableFlowPtr<SwitchStmt> {
       return nullptr;
     }
 
-    cases.emplace_back(case_stmt.value()->As<CaseStmt>());
+    cases.emplace_back(case_stmt.value()->As<Case>());
   }
 
   if (!NextIf<std::string>("default")) {
@@ -2835,7 +2835,7 @@ auto AstReader::ReadKindSwitch() -> NullableFlowPtr<SwitchStmt> {
     }
   }
 
-  return CreateNode<SwitchStmt>(match.value(), std::move(cases), default_case)();
+  return CreateNode<Switch>(match.value(), std::move(cases), default_case)();
 }
 
 auto AstReader::ReadKindExprStmt() -> NullableFlowPtr<ExprStmt> {

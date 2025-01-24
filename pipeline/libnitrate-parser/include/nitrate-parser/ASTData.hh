@@ -90,9 +90,9 @@ namespace ncc::parse {
   using BlockItems = std::vector<FlowPtr<Stmt>, Arena<FlowPtr<Stmt>>>;
   using ScopeDeps = std::vector<string, Arena<string>>;
 
-  using SwitchCases = std::vector<FlowPtr<CaseStmt>, Arena<FlowPtr<CaseStmt>>>;
+  using SwitchCases = std::vector<FlowPtr<Case>, Arena<FlowPtr<Case>>>;
   using EnumItem = std::pair<string, NullableFlowPtr<Expr>>;
-  using EnumDefItems = std::vector<EnumItem, Arena<EnumItem>>;
+  using EnumItems = std::vector<EnumItem, Arena<EnumItem>>;
 
   class StructField {
     string m_name;
@@ -125,11 +125,11 @@ namespace ncc::parse {
         : m_vis(vis), m_func(std::move(func)) {}
   };
 
-  using StructDefFields = std::vector<StructField, Arena<StructField>>;
-  using StructDefMethods = std::vector<StructFunction, Arena<StructFunction>>;
-  using StructDefStaticMethods =
+  using StructFields = std::vector<StructField, Arena<StructField>>;
+  using StructMethods = std::vector<StructFunction, Arena<StructFunction>>;
+  using StructStaticMethods =
       std::vector<StructFunction, Arena<StructFunction>>;
-  using StructDefNames = std::vector<string, Arena<string>>;
+  using StructNames = std::vector<string, Arena<string>>;
 
   using FuncParam = std::tuple<string, FlowPtr<Type>, NullableFlowPtr<Expr>>;
   using FuncParams = std::vector<FuncParam, Arena<FuncParam>>;

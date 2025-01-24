@@ -90,7 +90,7 @@ auto Parser::PImpl::RecurseScope() -> FlowPtr<Stmt> {
   if (auto dependencies = RecurseScopeDeps()) [[likely]] {
     auto scope_block = RecurseScopeBlock();
 
-    return CreateNode<ScopeStmt>(scope_name, scope_block, dependencies.value())();
+    return CreateNode<Scope>(scope_name, scope_block, dependencies.value())();
   } else {
     Log << SyntaxError << current() << "Expected scope dependencies";
   }

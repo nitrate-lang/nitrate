@@ -150,11 +150,11 @@ using namespace ncc::ir;
 //   switch (n->GetKind()) {
 //     case IR_eBIN: {
 //       ss << "(";
-//       recurse(n->As<BinExpr>()->getLHS());
+//       recurse(n->As<BinaryExpression>()->getLHS());
 //       ss << " ";
-//       ss << n->As<BinExpr>()->getOp();
+//       ss << n->As<BinaryExpression>()->getOp();
 //       ss << " ";
-//       recurse(n->As<BinExpr>()->getRHS());
+//       recurse(n->As<BinaryExpression>()->getRHS());
 //       ss << ")";
 //       break;
 //     }
@@ -271,8 +271,8 @@ using namespace ncc::ir;
 //       break;
 //     }
 //     case IR_eIDENT: {
-//       recurse(n->As<Ident>()->GetType().value_or(nullptr));
-//       ss << " " << n->As<Ident>()->GetName();
+//       recurse(n->As<Identifier>()->GetType().value_or(nullptr));
+//       ss << " " << n->As<Identifier>()->GetName();
 //       break;
 //     }
 //     case IR_eEXTERN: {

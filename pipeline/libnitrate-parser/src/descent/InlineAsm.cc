@@ -37,7 +37,7 @@ using namespace ncc;
 using namespace ncc::lex;
 using namespace ncc::parse;
 
-auto Parser::PImpl::RecurseInlineAsm() -> FlowPtr<Stmt> {
+auto Parser::PImpl::RecurseAssembly() -> FlowPtr<Stmt> {
   Log << SyntaxError << current() << "Inline assembly is not yet implemented";
 
   return MockStmt(QAST_INLINE_ASM);
