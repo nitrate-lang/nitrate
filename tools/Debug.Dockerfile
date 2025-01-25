@@ -9,7 +9,7 @@ RUN apt update --fix-missing && apt upgrade -y
 RUN apt install -y  libboost-all-dev libssl-dev libgoogle-glog-dev   \
   libyaml-cpp-dev rapidjson-dev libreadline-dev libzstd-dev          \
   libpolly-18-dev llvm-18 nlohmann-json3-dev libsparsehash-dev       \
-  libgit2-dev
+  libgit2-dev libprotobuf-dev protobuf-compiler
 
 RUN apt install -y cmake make clang
 

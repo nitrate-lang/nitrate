@@ -1,4 +1,4 @@
-// Contents: Nitrate parser syntax tree protobuf definition.
+// Contents: Nitrate language syntax tree protobuf definition.
 // Author: Wesley Jones
 
 syntax = "proto2";
@@ -841,5 +841,13 @@ message Type {
     ArrayTy array = 24;
     RefTy ref = 25;
     FuncTy func = 26;
+  }
+}
+
+message Root {
+  oneof node {
+    Expr expr = 1;
+    Stmt stmt = 2;
+    Type type = 3;
   }
 }
