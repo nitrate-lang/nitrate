@@ -258,7 +258,7 @@ namespace ncc::parse {
     string m_name;
 
   public:
-    constexpr Identifier( auto name) : Expr(QAST_IDENT), m_name(name) {}
+    constexpr Identifier(auto name) : Expr(QAST_IDENT), m_name(name) {}
 
     [[nodiscard]] constexpr auto GetName() const { return m_name; }
   };

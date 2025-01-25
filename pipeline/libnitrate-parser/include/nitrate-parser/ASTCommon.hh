@@ -188,7 +188,6 @@ namespace ncc::parse {
   class TemplateCall;
   class List;
   class Assoc;
-  class Field;
   class Index;
   class Slice;
   class FString;
