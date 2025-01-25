@@ -40,7 +40,8 @@
 #include <nitrate-parser/AST.hh>
 #include <nitrate-parser/ASTBase.hh>
 #include <nitrate-parser/ASTReader.hh>
-#include <type_traits>
+
+#include "core/SyntaxTree.pb.h"
 
 using namespace ncc;
 using namespace ncc::parse;

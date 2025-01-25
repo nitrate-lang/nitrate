@@ -38,6 +38,8 @@
 #include <nitrate-parser/AST.hh>
 #include <nitrate-parser/ASTWriter.hh>
 
+#include "core/SyntaxTree.pb.h"
+
 using namespace ncc;
 using namespace ncc::parse;
 using namespace ncc::lex;
