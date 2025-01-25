@@ -150,11 +150,11 @@ using namespace ncc::ir;
 //   switch (n->GetKind()) {
 //     case IR_eBIN: {
 //       ss << "(";
-//       recurse(n->As<BinaryExpression>()->getLHS());
+//       recurse(n->As<BinExpr>()->getLHS());
 //       ss << " ";
-//       ss << n->As<BinaryExpression>()->getOp();
+//       ss << n->As<BinExpr>()->getOp();
 //       ss << " ";
-//       recurse(n->As<BinaryExpression>()->getRHS());
+//       recurse(n->As<BinExpr>()->getRHS());
 //       ss << ")";
 //       break;
 //     }

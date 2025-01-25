@@ -249,9 +249,9 @@ auto Parser::PImpl::RecurseTypeByOperator(Operator op) -> FlowPtr<parse::Type> {
       }
 
       auto comptime_expr =
-          CreateNode<UnaryExpression>(OpComptime, RecurseExpr({
-                                                      Token(Punc, PuncRPar),
-                                                  }))();
+          CreateNode<UnaryExpr>(OpComptime, RecurseExpr({
+                                                Token(Punc, PuncRPar),
+                                            }))();
 
       if (!NextIf(PuncRPar)) {
         Log << SyntaxError << current() << "Expected ')' after 'comptime('";

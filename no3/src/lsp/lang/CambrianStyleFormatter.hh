@@ -72,7 +72,7 @@ namespace no3::lsp::fmt {
     void WriteFloatLiteralChunk(std::string_view float_str);
     void WriteFloatLiteral(std::string_view float_str);
 
-    void FormatTypeMetadata(const FlowPtr<parse::Type> &n);
+    void FormatTypeMetadata(const FlowPtr<parse::Type>& n);
 
     void WrapStmtBody(FlowPtr<parse::Stmt> n, size_t size_threshold,
                       bool use_arrow_if_wrapped);
@@ -97,8 +97,8 @@ namespace no3::lsp::fmt {
       }
     }
 
-    void PrintLineComments(const FlowPtr<parse::Base> &n);
-    void PrintMultilineComments(const FlowPtr<parse::Base> &n);
+    void PrintLineComments(const FlowPtr<parse::Base>& n);
+    void PrintMultilineComments(const FlowPtr<parse::Base>& n);
 
     void Visit(FlowPtr<parse::Base> n) override;
     void Visit(FlowPtr<parse::ExprStmt> n) override;
@@ -129,10 +129,10 @@ namespace no3::lsp::fmt {
     void Visit(FlowPtr<parse::ArrayTy> n) override;
     void Visit(FlowPtr<parse::RefTy> n) override;
     void Visit(FlowPtr<parse::FuncTy> n) override;
-    void Visit(FlowPtr<parse::UnaryExpression> n) override;
-    void Visit(FlowPtr<parse::BinaryExpression> n) override;
-    void Visit(FlowPtr<parse::PostUnaryExpression> n) override;
-    void Visit(FlowPtr<parse::TernaryExpression> n) override;
+    void Visit(FlowPtr<parse::UnaryExpr> n) override;
+    void Visit(FlowPtr<parse::BinExpr> n) override;
+    void Visit(FlowPtr<parse::PostUnary> n) override;
+    void Visit(FlowPtr<parse::TernaryExpr> n) override;
     void Visit(FlowPtr<parse::Integer> n) override;
     void Visit(FlowPtr<parse::Float> n) override;
     void Visit(FlowPtr<parse::Boolean> n) override;

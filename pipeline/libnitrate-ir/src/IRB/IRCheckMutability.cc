@@ -42,7 +42,7 @@ using namespace ncc::ir;
 auto NRBuilder::CheckMutability(FlowPtr<Seq> root, IReport *d) -> bool {
   bool failed = false;
 
-  for_each<BinaryExpression>(root, [&](auto x) {
+  for_each<BinExpr>(root, [&](auto x) {
     if (x->GetOp() != lex::OpSet) {
       return;
     }

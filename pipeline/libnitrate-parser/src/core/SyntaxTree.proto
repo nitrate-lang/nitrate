@@ -434,7 +434,7 @@ message TypeExpr {
   required Type type = 4;
 }
 
-message UnaryExpression {
+message UnaryExpr {
   optional SourceLocationRange from = 1;
   repeated UserComment attached_comments = 2;
 
@@ -442,7 +442,7 @@ message UnaryExpression {
   required Operator op = 5;
 }
 
-message BinaryExpression {
+message BinExpr {
   optional SourceLocationRange from = 1;
   repeated UserComment attached_comments = 2;
 
@@ -451,7 +451,7 @@ message BinaryExpression {
   required Operator op = 6;
 }
 
-message PostUnaryExpression {
+message PostUnary {
   optional SourceLocationRange from = 1;
   repeated UserComment attached_comments = 2;
 
@@ -459,7 +459,7 @@ message PostUnaryExpression {
   required Operator op = 5;
 }
 
-message TernaryExpression {
+message TernaryExpr {
   optional SourceLocationRange from = 1;
   repeated UserComment attached_comments = 2;
 
@@ -775,10 +775,10 @@ message Expr {
     Base base = 1;
     StmtExpr stmt = 2;
     TypeExpr type = 3;
-    UnaryExpression unary_expression = 4;
-    BinaryExpression binary_expression = 5;
-    PostUnaryExpression post_unary_expression = 6;
-    TernaryExpression ternary_expression = 7;
+    UnaryExpr unary = 4;
+    BinExpr binary = 5;
+    PostUnary post_unary = 6;
+    TernaryExpr ternary = 7;
     Integer integer = 8;
     Float float = 9;
     Boolean boolean = 10;
@@ -810,6 +810,17 @@ message Stmt {
     For for = 8;
     Foreach foreach = 9;
     Break break = 10;
+    Continue continue = 11;
+    Return return = 12;
+    ReturnIf return_if = 13;
+    Case case = 14;
+    Switch switch = 15;
+    Export export = 16;
+    Scope scope = 17;
+    Typedef typedef = 18;
+    Enum enum = 19;
+    Function function = 20;
+    Struct struct = 21;
   }
 }
 
@@ -846,8 +857,73 @@ message Type {
 
 message Root {
   oneof node {
-    Expr expr = 1;
-    Stmt stmt = 2;
-    Type type = 3;
+    Base base = 1;
+    StmtExpr stmt = 2;
+    TypeExpr type = 3;
+    UnaryExpr unary = 4;
+    BinExpr binary = 5;
+    PostUnary post_unary = 6;
+    TernaryExpr ternary = 7;
+    Integer integer = 8;
+    Float float = 9;
+    Boolean boolean = 10;
+    String string = 11;
+    Character character = 12;
+    Null null = 13;
+    Undefined undefined = 14;
+    Call call = 15;
+    TemplateCall template_call = 16;
+    List list = 17;
+    Assoc assoc = 18;
+    Index index = 19;
+    Slice slice = 20;
+    FString fstring = 21;
+    Identifier identifier = 22;
+    Sequence sequence = 23;
+    ExprStmt expr = 25;
+    Block block = 26;
+    Variable variable = 27;
+    Assembly assembly = 28;
+    If if = 29;
+    While while = 30;
+    For for = 31;
+    Foreach foreach = 32;
+    Break break = 33;
+    Continue continue = 34;
+    Return return = 35;
+    ReturnIf return_if = 36;
+    Case case = 37;
+    Switch switch = 38;
+    Export export = 39;
+    Scope scope = 40;
+    Typedef typedef = 41;
+    Enum enum = 42;
+    Function function = 43;
+    Struct struct = 44;
+    NamedTy named = 45;
+    InferTy infer = 46;
+    TemplateType template = 47;
+    U1 u1 = 48;
+    U8 u8 = 49;
+    U16 u16 = 50;
+    U32 u32 = 51;
+    U64 u64 = 52;
+    U128 u128 = 53;
+    I8 i8 = 54;
+    I16 i16 = 55;
+    I32 i32 = 56;
+    I64 i64 = 57;
+    I128 i128 = 58;
+    F16 f16 = 59;
+    F32 f32 = 60;
+    F64 f64 = 61;
+    F128 f128 = 62;
+    VoidTy void = 63;
+    PtrTy ptr = 64;
+    OpaqueTy opaque = 65;
+    TupleTy tuple = 66;
+    ArrayTy array = 67;
+    RefTy ref = 68;
+    FuncTy func = 69;
   }
 }

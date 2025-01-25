@@ -26,9 +26,16 @@ endif()
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-exceptions")
 
 #================== COMPILE PROTOBUF ==================
-find_package(Protobuf REQUIRED)
-set(PROTO_FILES ${CMAKE_CURRENT_SOURCE_DIR}/src/core/SyntaxTree.proto)
-protobuf_generate_cpp(PROTO_SRCS PROTO_HDRS ${PROTO_FILES})
+add_custom_command(
+  OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/src/core/SyntaxTree.pb.cc ${CMAKE_CURRENT_SOURCE_DIR}/src/core/SyntaxTree.pb.h
+  COMMAND protoc --proto_path=${CMAKE_CURRENT_SOURCE_DIR}/src/core --cpp_out=${CMAKE_CURRENT_SOURCE_DIR}/src/core SyntaxTree.proto
+  DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/src/core/SyntaxTree.proto
+  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+  COMMENT "Compiling SyntaxTree.proto"
+  VERBATIM
+)
+
+add_custom_target(compile_proto DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/src/core/SyntaxTree.pb.cc ${CMAKE_CURRENT_SOURCE_DIR}/src/core/SyntaxTree.pb.h)
 
 #================== FIND SOURCES ==================
 file(GLOB_RECURSE CXX_SOURCES "src/*.cc")
@@ -38,8 +45,8 @@ add_library(nitrate-parser ${CXX_SOURCES})
 target_include_directories(nitrate-parser PUBLIC src "include"
   ${CMAKE_CURRENT_SOURCE_DIR}/../libnitrate-core/include
   ${CMAKE_CURRENT_SOURCE_DIR}/../libnitrate-lexer/include)
-target_link_libraries(nitrate-parser PUBLIC nitrate-core nitrate-lexer protobuf::libprotobuf)
-add_dependencies(nitrate-parser nitrate-core nitrate-lexer)
+target_link_libraries(nitrate-parser PUBLIC nitrate-core nitrate-lexer protobuf)
+add_dependencies(nitrate-parser nitrate-core nitrate-lexer compile_proto)
 
 install(TARGETS nitrate-parser DESTINATION lib)
 install(DIRECTORY include/ DESTINATION "include")

@@ -144,16 +144,16 @@ class IterVisitor : public ASTVisitor {
     AddTypesuffix(n);
   }
 
-  void Visit(FlowPtr<UnaryExpression> n) override { Add(n->GetRHS()); }
+  void Visit(FlowPtr<UnaryExpr> n) override { Add(n->GetRHS()); }
 
-  void Visit(FlowPtr<BinaryExpression> n) override {
+  void Visit(FlowPtr<BinExpr> n) override {
     Add(n->GetLHS());
     Add(n->GetRHS());
   }
 
-  void Visit(FlowPtr<PostUnaryExpression> n) override { Add(n->GetLHS()); }
+  void Visit(FlowPtr<PostUnary> n) override { Add(n->GetLHS()); }
 
-  void Visit(FlowPtr<TernaryExpression> n) override {
+  void Visit(FlowPtr<TernaryExpr> n) override {
     Add(n->GetCond());
     Add(n->GetLHS());
     Add(n->GetRHS());

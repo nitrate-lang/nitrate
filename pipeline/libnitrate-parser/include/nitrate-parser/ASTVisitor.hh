@@ -72,10 +72,10 @@ namespace ncc::parse {
     virtual void Visit(FlowPtr<ArrayTy> n) = 0;
     virtual void Visit(FlowPtr<RefTy> n) = 0;
     virtual void Visit(FlowPtr<FuncTy> n) = 0;
-    virtual void Visit(FlowPtr<UnaryExpression> n) = 0;
-    virtual void Visit(FlowPtr<BinaryExpression> n) = 0;
-    virtual void Visit(FlowPtr<PostUnaryExpression> n) = 0;
-    virtual void Visit(FlowPtr<TernaryExpression> n) = 0;
+    virtual void Visit(FlowPtr<UnaryExpr> n) = 0;
+    virtual void Visit(FlowPtr<BinExpr> n) = 0;
+    virtual void Visit(FlowPtr<PostUnary> n) = 0;
+    virtual void Visit(FlowPtr<TernaryExpr> n) = 0;
     virtual void Visit(FlowPtr<Integer> n) = 0;
     virtual void Visit(FlowPtr<Float> n) = 0;
     virtual void Visit(FlowPtr<Boolean> n) = 0;
@@ -120,15 +120,15 @@ namespace ncc::parse {
           break;
         }
         case QAST_BINEXPR: {
-          Visit(n.template As<BinaryExpression>());
+          Visit(n.template As<BinExpr>());
           break;
         }
         case QAST_UNEXPR: {
-          Visit(n.template As<UnaryExpression>());
+          Visit(n.template As<UnaryExpr>());
           break;
         }
         case QAST_TEREXPR: {
-          Visit(n.template As<TernaryExpression>());
+          Visit(n.template As<TernaryExpr>());
           break;
         }
         case QAST_INT: {
@@ -192,7 +192,7 @@ namespace ncc::parse {
           break;
         }
         case QAST_POST_UNEXPR: {
-          Visit(n.template As<PostUnaryExpression>());
+          Visit(n.template As<PostUnary>());
           break;
         }
         case QAST_SEXPR: {

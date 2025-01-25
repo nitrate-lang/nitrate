@@ -110,9 +110,9 @@ namespace ncc::parse {
     auto ReadTypeMetadata() -> std::optional<TypeMetadata>;
 
     auto ReadKindNode() -> NullableFlowPtr<Base>;
-    auto ReadKindBinexpr() -> NullableFlowPtr<BinaryExpression>;
-    auto ReadKindUnexpr() -> NullableFlowPtr<UnaryExpression>;
-    auto ReadKindTerexpr() -> NullableFlowPtr<TernaryExpression>;
+    auto ReadKindBinexpr() -> NullableFlowPtr<BinExpr>;
+    auto ReadKindUnexpr() -> NullableFlowPtr<UnaryExpr>;
+    auto ReadKindTerexpr() -> NullableFlowPtr<TernaryExpr>;
     auto ReadKindInt() -> NullableFlowPtr<Integer>;
     auto ReadKindFloat() -> NullableFlowPtr<Float>;
     auto ReadKindString() -> NullableFlowPtr<String>;
@@ -128,7 +128,7 @@ namespace ncc::parse {
     auto ReadKindFstring() -> NullableFlowPtr<FString>;
     auto ReadKindIdentifier() -> NullableFlowPtr<Identifier>;
     auto ReadKindSequence() -> NullableFlowPtr<Sequence>;
-    auto ReadKindPostUnexpr() -> NullableFlowPtr<PostUnaryExpression>;
+    auto ReadKindPostUnexpr() -> NullableFlowPtr<PostUnary>;
     auto ReadKindStmtExpr() -> NullableFlowPtr<StmtExpr>;
     auto ReadKindTypeExpr() -> NullableFlowPtr<TypeExpr>;
     auto ReadKindTemplateCall() -> NullableFlowPtr<TemplateCall>;

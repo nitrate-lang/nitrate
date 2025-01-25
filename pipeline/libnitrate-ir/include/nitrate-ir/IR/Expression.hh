@@ -39,14 +39,14 @@
 
 namespace ncc::ir {
   template <class A>
-  class GenericBinaryExpression final : public GenericExpr<A> {
+  class GenericBinExpr final : public GenericExpr<A> {
     friend A;
 
     FlowPtr<GenericExpr<A>> m_lhs, m_rhs;
     lex::Operator m_op;
 
   public:
-    constexpr GenericBinaryExpression(auto lhs, auto rhs, auto op)
+    constexpr GenericBinExpr(auto lhs, auto rhs, auto op)
         : GenericExpr<A>(IR_eBIN), m_lhs(lhs), m_rhs(rhs), m_op(op) {}
 
     [[nodiscard]] constexpr auto GetLHS() const { return m_lhs; }
@@ -247,7 +247,7 @@ namespace ncc::ir {
     string m_name;
 
   public:
-    constexpr GenericIdentifier( auto name, auto what)
+    constexpr GenericIdentifier(auto name, auto what)
         : GenericExpr<A>(IR_eIDENT), m_what(what), m_name(name) {}
 
     [[nodiscard]] constexpr auto GetWhat() const { return m_what; }

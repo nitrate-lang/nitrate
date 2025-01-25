@@ -167,11 +167,11 @@ using namespace ncc;
 //                                                      lex::Operator op) {
 //   using namespace ncc::lex;
 
-// #define STD_BINOP(op) ir::create<ir::BinaryExpression>(lhs, rhs, ir::Op::op)
+// #define STD_BINOP(op) ir::create<ir::BinExpr>(lhs, rhs, ir::Op::op)
 // #define ASSIGN_BINOP(op)                                                  \
-//   ir::create<ir::BinaryExpression>(                                                \
+//   ir::create<ir::BinExpr>(                                                \
 //       lhs,                                                                \
-//       ir::create<ir::BinaryExpression>(static_cast<ir::Expr *>(lhs->clone()), rhs, \
+//       ir::create<ir::BinExpr>(static_cast<ir::Expr *>(lhs->clone()), rhs, \
 //                               ir::Op::op),                                \
 //       ir::Op::Set)
 
@@ -224,10 +224,10 @@ using namespace ncc;
 //     }
 //     case OpLogicXor: {
 //       // A ^^ B == (A || B) && !(A && B)
-//       auto a = ir::create<ir::BinaryExpression>(lhs, rhs, ir::Op::LogicOr);
-//       auto b = ir::create<ir::BinaryExpression>(lhs, rhs, ir::Op::LogicAnd);
+//       auto a = ir::create<ir::BinExpr>(lhs, rhs, ir::Op::LogicOr);
+//       auto b = ir::create<ir::BinExpr>(lhs, rhs, ir::Op::LogicAnd);
 //       auto not_b = ir::create<ir::Unary>(b, ir::Op::LogicNot, false);
-//       R = ir::create<ir::BinaryExpression>(a, not_b, ir::Op::LogicAnd);
+//       R = ir::create<ir::BinExpr>(a, not_b, ir::Op::LogicAnd);
 //       break;
 //     }
 //     case OpLogicNot: {
@@ -307,11 +307,11 @@ using namespace ncc;
 //     case OpLogicXorSet: {
 //       // a ^^= b == a = (a || b) && !(a && b)
 
-//       auto a = ir::create<ir::BinaryExpression>(lhs, rhs, ir::Op::LogicOr);
-//       auto b = ir::create<ir::BinaryExpression>(lhs, rhs, ir::Op::LogicAnd);
+//       auto a = ir::create<ir::BinExpr>(lhs, rhs, ir::Op::LogicOr);
+//       auto b = ir::create<ir::BinExpr>(lhs, rhs, ir::Op::LogicAnd);
 //       auto not_b = ir::create<ir::Unary>(b, ir::Op::LogicNot, false);
-//       return ir::create<ir::BinaryExpression>(
-//           lhs, ir::create<ir::BinaryExpression>(a, not_b, ir::Op::LogicAnd),
+//       return ir::create<ir::BinExpr>(
+//           lhs, ir::create<ir::BinExpr>(a, not_b, ir::Op::LogicAnd),
 //           ir::Op::Set);
 //     }
 //     case OpLShiftSet: {
@@ -440,13 +440,13 @@ using namespace ncc;
 
 //     case OpSizeof: {
 //       auto bits = ir::create<ir::Unary>(rhs, ir::Op::Bitsizeof, false);
-//       auto arg = ir::create<ir::BinaryExpression>(
+//       auto arg = ir::create<ir::BinExpr>(
 //           bits, ir::create<ir::Float>(8, 64), ir::Op::Slash);
 
 //       std::array<std::pair<std::string_view, Expr *>, 1> args;
 //       args[0] = {"_0", arg};
-//       R = b.createCall(ir::create<ir::Identifier>(save("std::ceil"), nullptr),
-//       args);
+//       R = b.createCall(ir::create<ir::Identifier>(save("std::ceil"),
+//       nullptr), args);
 
 //       break;
 //     }
@@ -488,7 +488,7 @@ using namespace ncc;
 // }
 
 // static EResult nrgen_binexpr(NRBuilder &b, PState &s, IReport *G,
-//                              FlowPtr<ncc::parse::BinaryExpression> n) {
+//                              FlowPtr<ncc::parse::BinExpr> n) {
 //   if (n->Getlhs() && n->Getrhs() && n->Getop() == lex::OpAs &&
 //       n->Getrhs()->is(QAST_TEXPR)) {
 //     FlowPtr<ncc::parse::Type> type =
@@ -569,7 +569,7 @@ using namespace ncc;
 // }
 
 // static EResult nrgen_unexpr(NRBuilder &b, PState &s, IReport *G,
-//                             FlowPtr<ncc::parse::UnaryExpression> n) {
+//                             FlowPtr<ncc::parse::UnaryExpr> n) {
 //   auto rhs = next_one(n->Getrhs());
 //   if (!rhs.has_value()) {
 //     G->report(CompilerError, IC::Error,
@@ -588,7 +588,8 @@ using namespace ncc;
 // }
 
 // static EResult nrgen_post_unexpr(NRBuilder &b, PState &s, IReport *G,
-//                                  FlowPtr<ncc::parse::PostUnaryExpression> n) {
+//                                  FlowPtr<ncc::parse::PostUnary> n)
+//                                  {
 //   auto lhs = next_one(n->Getlhs());
 //   if (!lhs.has_value()) {
 //     G->report(CompilerError, IC::Error,
@@ -609,7 +610,7 @@ using namespace ncc;
 // }
 
 // static EResult nrgen_terexpr(NRBuilder &b, PState &s, IReport *G,
-//                              FlowPtr<ncc::parse::TernaryExpression> n) {
+//                              FlowPtr<ncc::parse::TernaryExpr> n) {
 //   auto cond = next_one(n->Getcond());
 //   if (!cond.has_value()) {
 //     G->report(CompilerError, IC::Error,
@@ -852,7 +853,7 @@ using namespace ncc;
 //       auto val = *std::get<string>(*it);
 
 //       concated =
-//           create<BinaryExpression>(concated, b.createStringDataArray(val), Op::Plus);
+//           create<BinExpr>(concated, b.createStringDataArray(val), Op::Plus);
 //     } else if (std::holds_alternative<FlowPtr<ncc::parse::Expr>>(*it)) {
 //       auto val = std::get<FlowPtr<ncc::parse::Expr>>(*it);
 //       auto expr = next_one(val);
@@ -865,7 +866,7 @@ using namespace ncc;
 //         return std::nullopt;
 //       }
 
-//       concated = create<BinaryExpression>(concated, expr.value(), Op::Plus);
+//       concated = create<BinExpr>(concated, expr.value(), Op::Plus);
 //     } else {
 //       qcore_panic("Invalid fstring item type");
 //     }
@@ -1292,7 +1293,7 @@ using namespace ncc;
 //       last = field_value = val.value();
 //     } else {
 //       if (last.has_value()) {
-//         last = field_value = create<BinaryExpression>(
+//         last = field_value = create<BinExpr>(
 //             last.value(), b.createFixedInteger(1, 32), Op::Plus);
 //       } else {
 //         last = field_value = b.createFixedInteger(0, 32);
@@ -1688,7 +1689,7 @@ using namespace ncc;
 //   auto type = next_one(n->Gettype().value_or(nullptr));
 
 //   if (init.has_value() && type.has_value()) { /* Do implicit cast */
-//     init = create<BinaryExpression>(init.value(), type.value(), Op::CastAs);
+//     init = create<BinExpr>(init.value(), type.value(), Op::CastAs);
 //   } else if (init.has_value() && !type.has_value()) {
 //     type = b.getUnknownTy();
 //   } else if (type.has_value() && !init.has_value()) {
@@ -1753,7 +1754,7 @@ using namespace ncc;
 //     return std::nullopt;
 //   }
 
-//   cond = create<BinaryExpression>(cond.value(), create<U1Ty>(), Op::CastAs);
+//   cond = create<BinExpr>(cond.value(), create<U1Ty>(), Op::CastAs);
 
 //   auto val = next_one(n->Getvalue());
 //   if (!val.has_value()) {
@@ -1783,7 +1784,7 @@ using namespace ncc;
 //     return std::nullopt;
 //   }
 
-//   cond = create<BinaryExpression>(cond.value(), create<U1Ty>(), Op::CastAs);
+//   cond = create<BinExpr>(cond.value(), create<U1Ty>(), Op::CastAs);
 
 //   if (!then.has_value()) {
 //     return std::nullopt;
@@ -1805,7 +1806,7 @@ using namespace ncc;
 //     cond = create<Int>(1, 1);
 //   }
 
-//   cond = create<BinaryExpression>(cond.value(), create<U1Ty>(), Op::CastAs);
+//   cond = create<BinExpr>(cond.value(), create<U1Ty>(), Op::CastAs);
 
 //   if (!body.has_value()) {
 //     body = create<Seq>(SeqItems({}));
@@ -1831,7 +1832,7 @@ using namespace ncc;
 
 //   if (!cond.has_value()) {
 //     cond = create<Int>(1, 32);  // infinite loop like 'for (;;) {}'
-//     cond = create<BinaryExpression>(cond.value(), create<U1Ty>(), Op::CastAs);
+//     cond = create<BinExpr>(cond.value(), create<U1Ty>(), Op::CastAs);
 //   }
 
 //   if (!step.has_value()) {
@@ -1946,15 +1947,15 @@ using namespace ncc;
 //     }
 
 //     case QAST_BINEXPR:
-//       out = nrgen_binexpr(b, s, G, n.as<ncc::parse::BinaryExpression>());
+//       out = nrgen_binexpr(b, s, G, n.as<ncc::parse::BinExpr>());
 //       break;
 
 //     case QAST_UNEXPR:
-//       out = nrgen_unexpr(b, s, G, n.as<ncc::parse::UnaryExpression>());
+//       out = nrgen_unexpr(b, s, G, n.as<ncc::parse::UnaryExpr>());
 //       break;
 
 //     case QAST_TEREXPR:
-//       out = nrgen_terexpr(b, s, G, n.as<ncc::parse::TernaryExpression>());
+//       out = nrgen_terexpr(b, s, G, n.as<ncc::parse::TernaryExpr>());
 //       break;
 
 //     case QAST_INT:
@@ -2018,8 +2019,8 @@ using namespace ncc;
 //       break;
 
 //     case QAST_POST_UNEXPR:
-//       out = nrgen_post_unexpr(b, s, G, n.as<ncc::parse::PostUnaryExpression>());
-//       break;
+//       out = nrgen_post_unexpr(b, s, G,
+//       n.as<ncc::parse::PostUnary>()); break;
 
 //     case QAST_SEXPR:
 //       out = nrgen_stmt_expr(b, s, G, n.as<ncc::parse::StmtExpr>());

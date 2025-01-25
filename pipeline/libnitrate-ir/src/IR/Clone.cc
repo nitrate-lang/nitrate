@@ -57,12 +57,12 @@ public:
 
   void Visit(FlowPtr<Expr> n) override { m_r = Create<Expr>(n->GetKind()); }
 
-  void Visit(FlowPtr<BinaryExpression> n) override {
+  void Visit(FlowPtr<BinExpr> n) override {
     auto lhs = n->GetLHS()->Clone();
     auto rhs = n->GetRHS()->Clone();
     auto op = n->GetOp();
 
-    m_r = Create<BinaryExpression>(lhs, rhs, op);
+    m_r = Create<BinExpr>(lhs, rhs, op);
   }
 
   void Visit(FlowPtr<Unary> n) override {
