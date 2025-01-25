@@ -40,6 +40,7 @@
 #include <nitrate-parser/ASTWriter.hh>
 #include <queue>
 #include <ranges>
+#include <stack>
 
 using namespace ncc;
 using namespace ncc::parse;

@@ -34,65 +34,168 @@
 #ifndef __NITRATE_AST_WRITER_H__
 #define __NITRATE_AST_WRITER_H__
 
-#include <cstddef>
-#include <cstdint>
 #include <functional>
 #include <nitrate-core/Macro.hh>
 #include <nitrate-lexer/Scanner.hh>
 #include <nitrate-lexer/Token.hh>
 #include <nitrate-parser/ASTVisitor.hh>
 #include <ostream>
-#include <stack>
-#include <string_view>
+
+namespace nitrate::parser::SyntaxTree {  // NOLINT
+  class Base;
+  class BinaryExpression;
+  class UnaryExpression;
+  class TernaryExpression;
+  class Integer;
+  class Float;
+  class String;
+  class Character;
+  class Boolean;
+  class Null;
+  class Undefined;
+  class Call;
+  class List;
+  class Assoc;
+  class Index;
+  class Slice;
+  class FString;
+  class Identifier;
+  class Sequence;
+  class PostUnaryExpression;
+  class StmtExpr;
+  class TypeExpr;
+  class TemplateCall;
+  class RefTy;
+  class U1;
+  class U8;
+  class U16;
+  class U32;
+  class U64;
+  class U128;
+  class I8;
+  class I16;
+  class I32;
+  class I64;
+  class I128;
+  class F16;
+  class F32;
+  class F64;
+  class F128;
+  class VoidTy;
+  class PtrTy;
+  class OpaqueTy;
+  class ArrayTy;
+  class TupleTy;
+  class FuncTy;
+  class NamedTy;
+  class InferTy;
+  class TemplateType;
+  class Typedef;
+  class Struct;
+  class Enum;
+  class Function;
+  class Scope;
+  class Export;
+  class Block;
+  class Variable;
+  class Assembly;
+  class Return;
+  class ReturnIf;
+  class Break;
+  class Continue;
+  class If;
+  class While;
+  class For;
+  class Foreach;
+  class Case;
+  class Switch;
+  class ExprStmt;
+}  // namespace nitrate::parser::SyntaxTree
 
 namespace ncc::parse {
+  using namespace nitrate::parser;  // NOLINT
+
   using WriterSourceProvider =
       std::optional<std::reference_wrapper<lex::IScanner>>;
 
   class NCC_EXPORT AstWriter : public ASTVisitor {
-    using InsertString = std::function<void(std::string_view)>;
-    using InsertUInt64 = std::function<void(uint64_t)>;
-    using InsertDouble = std::function<void(double)>;
-    using InsertBool = std::function<void(bool)>;
-    using InsertNull = std::function<void()>;
-    using BeginObject = std::function<void(size_t pair_count)>;
-    using EndObject = std::function<void()>;
-    using BeginArray = std::function<void(size_t size)>;
-    using EndArray = std::function<void()>;
+    std::ostream &m_os;
+    WriterSourceProvider m_rd;
 
-    InsertString string;        // NOLINT
-    InsertUInt64 uint64;        // NOLINT
-    InsertDouble dbl;           // NOLINT
-    InsertBool boolean;         // NOLINT
-    InsertNull null;            // NOLINT
-    BeginObject begin_obj;      // NOLINT
-    EndObject end_obj;          // NOLINT
-    BeginArray begin_arr;       // NOLINT
-    EndArray end_arr;           // NOLINT
-    WriterSourceProvider m_rd;  // NOLINT
+    void Visit(const FlowPtr<Base> &in, SyntaxTree::Base &out);
+    void Visit(const FlowPtr<ExprStmt> &in, SyntaxTree::ExprStmt &out);
+    void Visit(const FlowPtr<StmtExpr> &in, SyntaxTree::StmtExpr &out);
+    void Visit(const FlowPtr<TypeExpr> &in, SyntaxTree::TypeExpr &out);
+    void Visit(const FlowPtr<NamedTy> &in, SyntaxTree::NamedTy &out);
+    void Visit(const FlowPtr<InferTy> &in, SyntaxTree::InferTy &out);
+    void Visit(const FlowPtr<TemplateType> &in, SyntaxTree::TemplateType &out);
+    void Visit(const FlowPtr<U1> &in, SyntaxTree::U1 &out);
+    void Visit(const FlowPtr<U8> &in, SyntaxTree::U8 &out);
+    void Visit(const FlowPtr<U16> &in, SyntaxTree::U16 &out);
+    void Visit(const FlowPtr<U32> &in, SyntaxTree::U32 &out);
+    void Visit(const FlowPtr<U64> &in, SyntaxTree::U64 &out);
+    void Visit(const FlowPtr<U128> &in, SyntaxTree::U128 &out);
+    void Visit(const FlowPtr<I8> &in, SyntaxTree::I8 &out);
+    void Visit(const FlowPtr<I16> &in, SyntaxTree::I16 &out);
+    void Visit(const FlowPtr<I32> &in, SyntaxTree::I32 &out);
+    void Visit(const FlowPtr<I64> &in, SyntaxTree::I64 &out);
+    void Visit(const FlowPtr<I128> &in, SyntaxTree::I128 &out);
+    void Visit(const FlowPtr<F16> &in, SyntaxTree::F16 &out);
+    void Visit(const FlowPtr<F32> &in, SyntaxTree::F32 &out);
+    void Visit(const FlowPtr<F64> &in, SyntaxTree::F64 &out);
+    void Visit(const FlowPtr<F128> &in, SyntaxTree::F128 &out);
+    void Visit(const FlowPtr<VoidTy> &in, SyntaxTree::VoidTy &out);
+    void Visit(const FlowPtr<PtrTy> &in, SyntaxTree::PtrTy &out);
+    void Visit(const FlowPtr<OpaqueTy> &in, SyntaxTree::OpaqueTy &out);
+    void Visit(const FlowPtr<TupleTy> &in, SyntaxTree::TupleTy &out);
+    void Visit(const FlowPtr<ArrayTy> &in, SyntaxTree::ArrayTy &out);
+    void Visit(const FlowPtr<RefTy> &in, SyntaxTree::RefTy &out);
+    void Visit(const FlowPtr<FuncTy> &in, SyntaxTree::FuncTy &out);
+    void Visit(const FlowPtr<UnaryExpression> &in,
+               SyntaxTree::UnaryExpression &out);
+    void Visit(const FlowPtr<BinaryExpression> &in,
+               SyntaxTree::BinaryExpression &out);
+    void Visit(const FlowPtr<PostUnaryExpression> &in,
+               SyntaxTree::PostUnaryExpression &out);
+    void Visit(const FlowPtr<TernaryExpression> &in,
+               SyntaxTree::TernaryExpression &out);
+    void Visit(const FlowPtr<Integer> &in, SyntaxTree::Integer &out);
+    void Visit(const FlowPtr<Float> &in, SyntaxTree::Float &out);
+    void Visit(const FlowPtr<Boolean> &in, SyntaxTree::Boolean &out);
+    void Visit(const FlowPtr<String> &in, SyntaxTree::String &out);
+    void Visit(const FlowPtr<Character> &in, SyntaxTree::Character &out);
+    void Visit(const FlowPtr<Null> &in, SyntaxTree::Null &out);
+    void Visit(const FlowPtr<Undefined> &in, SyntaxTree::Undefined &out);
+    void Visit(const FlowPtr<Call> &in, SyntaxTree::Call &out);
+    void Visit(const FlowPtr<TemplateCall> &in, SyntaxTree::TemplateCall &out);
+    void Visit(const FlowPtr<List> &in, SyntaxTree::List &out);
+    void Visit(const FlowPtr<Assoc> &in, SyntaxTree::Assoc &out);
+    void Visit(const FlowPtr<Index> &in, SyntaxTree::Index &out);
+    void Visit(const FlowPtr<Slice> &in, SyntaxTree::Slice &out);
+    void Visit(const FlowPtr<FString> &in, SyntaxTree::FString &out);
+    void Visit(const FlowPtr<Identifier> &in, SyntaxTree::Identifier &out);
+    void Visit(const FlowPtr<Sequence> &in, SyntaxTree::Sequence &out);
+    void Visit(const FlowPtr<Block> &in, SyntaxTree::Block &out);
+    void Visit(const FlowPtr<Variable> &in, SyntaxTree::Variable &out);
+    void Visit(const FlowPtr<Assembly> &in, SyntaxTree::Assembly &out);
+    void Visit(const FlowPtr<If> &in, SyntaxTree::If &out);
+    void Visit(const FlowPtr<While> &in, SyntaxTree::While &out);
+    void Visit(const FlowPtr<For> &in, SyntaxTree::For &out);
+    void Visit(const FlowPtr<Foreach> &in, SyntaxTree::Foreach &out);
+    void Visit(const FlowPtr<Break> &in, SyntaxTree::Break &out);
+    void Visit(const FlowPtr<Continue> &in, SyntaxTree::Continue &out);
+    void Visit(const FlowPtr<Return> &in, SyntaxTree::Return &out);
+    void Visit(const FlowPtr<ReturnIf> &in, SyntaxTree::ReturnIf &out);
+    void Visit(const FlowPtr<Case> &in, SyntaxTree::Case &out);
+    void Visit(const FlowPtr<Switch> &in, SyntaxTree::Switch &out);
+    void Visit(const FlowPtr<Typedef> &in, SyntaxTree::Typedef &out);
+    void Visit(const FlowPtr<Function> &in, SyntaxTree::Function &out);
+    void Visit(const FlowPtr<Struct> &in, SyntaxTree::Struct &out);
+    void Visit(const FlowPtr<Enum> &in, SyntaxTree::Enum &out);
+    void Visit(const FlowPtr<Scope> &in, SyntaxTree::Scope &out);
+    void Visit(const FlowPtr<Export> &in, SyntaxTree::Export &out);
 
-    void WriteSourceLocation(const FlowPtr<Base>& n) const;
-    void WriteTypeMetadata(const FlowPtr<Type>& n);
-
-    [[nodiscard]] static auto VisStr(Vis vis) -> std::string_view;
-
-  public:
-    AstWriter(auto str_impl, auto uint_impl, auto dbl_impl, auto bool_impl,
-              auto null_impl, auto begin_obj_impl, auto end_obj_impl,
-              auto begin_arr_impl, auto end_arr_impl,
-              WriterSourceProvider rd = std::nullopt)
-        : string(std::move(str_impl)),
-          uint64(std::move(uint_impl)),
-          dbl(std::move(dbl_impl)),
-          boolean(std::move(bool_impl)),
-          null(std::move(null_impl)),
-          begin_obj(std::move(begin_obj_impl)),
-          end_obj(std::move(end_obj_impl)),
-          begin_arr(std::move(begin_arr_impl)),
-          end_arr(std::move(end_arr_impl)),
-          m_rd(rd) {}
-    ~AstWriter() override = default;
-
+  protected:
     void Visit(FlowPtr<Base> n) override;
     void Visit(FlowPtr<ExprStmt> n) override;
     void Visit(FlowPtr<StmtExpr> n) override;
@@ -161,42 +264,11 @@ namespace ncc::parse {
     void Visit(FlowPtr<Enum> n) override;
     void Visit(FlowPtr<Scope> n) override;
     void Visit(FlowPtr<Export> n) override;
-  };
-
-  class NCC_EXPORT AstJsonWriter : public AstWriter {
-    std::ostream& m_os;
-    std::stack<bool> m_comma;
-    std::stack<size_t> m_count;
-
-    void Delim();
-
-    void StrImpl(std::string_view str);
-    void UintImpl(uint64_t val);
-    void DoubleImpl(double val);
-    void BoolImpl(bool val);
-    void NullImpl();
-    void BeginObjImpl(size_t pair_count);
-    void EndObjImpl();
-    void BeginArrImpl(size_t size);
-    void EndArrImpl();
 
   public:
-    AstJsonWriter(std::ostream& os, WriterSourceProvider rd = std::nullopt)
-        : AstWriter(
-              [this](auto&& x) { StrImpl(std::forward<decltype(x)>(x)); },
-              [this](auto&& x) { UintImpl(std::forward<decltype(x)>(x)); },
-              [this](auto&& x) { DoubleImpl(std::forward<decltype(x)>(x)); },
-              [this](auto&& x) { BoolImpl(std::forward<decltype(x)>(x)); },
-              [this] { NullImpl(); },
-              [this](auto&& x) { BeginObjImpl(std::forward<decltype(x)>(x)); },
-              [this] { EndObjImpl(); },
-              [this](auto&& x) { BeginArrImpl(std::forward<decltype(x)>(x)); },
-              [this] { EndArrImpl(); }, rd),
-          m_os(os) {
-      m_comma.push(false);
-      m_count.push(0);
-    }
-    ~AstJsonWriter() override = default;
+    AstWriter(std::ostream &os, WriterSourceProvider rd = std::nullopt)
+        : m_os(os), m_rd(rd) {}
+    ~AstWriter() override;
   };
 }  // namespace ncc::parse
 

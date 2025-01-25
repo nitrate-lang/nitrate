@@ -31,6 +31,8 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
+#include <google/protobuf/message.h>
+
 #include <algorithm>
 #include <nitrate-core/Logger.hh>
 #include <nitrate-core/Macro.hh>
@@ -39,1764 +41,916 @@
 #include <nitrate-parser/ASTWriter.hh>
 
 #include "core/SyntaxTree.pb.h"
+#include "nitrate-core/OldLogger.hh"
 
 using namespace ncc;
+using namespace google::protobuf;
+using namespace nitrate::parser;
+using namespace nitrate::parser::SyntaxTree;
+
+static void WriteKindNode(const FlowPtr<parse::Base> &in, Base &out) {
+  /// TODO: Implement protocol buffer serialization
+  qcore_implement();
+  (void)in;
+  (void)out;
+}
+
+static void WriteKindBinexpr(const FlowPtr<parse::BinaryExpression> &in,
+                             BinaryExpression &out) {
+  /// TODO: Implement protocol buffer serialization
+  qcore_implement();
+  (void)in;
+  (void)out;
+}
+
+static void WriteKindUnexpr(const FlowPtr<parse::UnaryExpression> &in,
+                            UnaryExpression &out) {
+  /// TODO: Implement protocol buffer serialization
+  qcore_implement();
+  (void)in;
+  (void)out;
+}
+
+static void WriteKindTerexpr(const FlowPtr<parse::TernaryExpression> &in,
+                             TernaryExpression &out) {
+  /// TODO: Implement protocol buffer serialization
+  qcore_implement();
+  (void)in;
+  (void)out;
+}
+
+static void WriteKindInt(const FlowPtr<parse::Integer> &in, Integer &out) {
+  /// TODO: Implement protocol buffer serialization
+  qcore_implement();
+  (void)in;
+  (void)out;
+}
+
+static void WriteKindFloat(const FlowPtr<parse::Float> &in, Float &out) {
+  /// TODO: Implement protocol buffer serialization
+  qcore_implement();
+  (void)in;
+  (void)out;
+}
+
+static void WriteKindString(const FlowPtr<parse::String> &in,
+                            SyntaxTree::String &out) {
+  /// TODO: Implement protocol buffer serialization
+  qcore_implement();
+  (void)in;
+  (void)out;
+}
+
+static void WriteKindChar(const FlowPtr<parse::Character> &in, Character &out) {
+  /// TODO: Implement protocol buffer serialization
+  qcore_implement();
+  (void)in;
+  (void)out;
+}
+
+static void WriteKindBool(const FlowPtr<parse::Boolean> &in, Boolean &out) {
+  /// TODO: Implement protocol buffer serialization
+  qcore_implement();
+  (void)in;
+  (void)out;
+}
+
+static void WriteKindNull(const FlowPtr<parse::Null> &in, Null &out) {
+  /// TODO: Implement protocol buffer serialization
+  qcore_implement();
+  (void)in;
+  (void)out;
+}
+
+static void WriteKindUndef(const FlowPtr<parse::Undefined> &in,
+                           Undefined &out) {
+  /// TODO: Implement protocol buffer serialization
+  qcore_implement();
+  (void)in;
+  (void)out;
+}
+
+static void WriteKindCall(const FlowPtr<parse::Call> &in, Call &out) {
+  /// TODO: Implement protocol buffer serialization
+  qcore_implement();
+  (void)in;
+  (void)out;
+}
+
+static void WriteKindList(const FlowPtr<parse::List> &in, List &out) {
+  /// TODO: Implement protocol buffer serialization
+  qcore_implement();
+  (void)in;
+  (void)out;
+}
+
+static void WriteKindAssoc(const FlowPtr<parse::Assoc> &in, Assoc &out) {
+  /// TODO: Implement protocol buffer serialization
+  qcore_implement();
+  (void)in;
+  (void)out;
+}
+
+static void WriteKindIndex(const FlowPtr<parse::Index> &in, Index &out) {
+  /// TODO: Implement protocol buffer serialization
+  qcore_implement();
+  (void)in;
+  (void)out;
+}
+
+static void WriteKindSlice(const FlowPtr<parse::Slice> &in, Slice &out) {
+  /// TODO: Implement protocol buffer serialization
+  qcore_implement();
+  (void)in;
+  (void)out;
+}
+
+static void WriteKindFstring(const FlowPtr<parse::FString> &in, FString &out) {
+  /// TODO: Implement protocol buffer serialization
+  qcore_implement();
+  (void)in;
+  (void)out;
+}
+
+static void WriteKindIdentifier(const FlowPtr<parse::Identifier> &in,
+                                Identifier &out) {
+  /// TODO: Implement protocol buffer serialization
+  qcore_implement();
+  (void)in;
+  (void)out;
+}
+
+static void WriteKindSequence(const FlowPtr<parse::Sequence> &in,
+                              Sequence &out) {
+  /// TODO: Implement protocol buffer serialization
+  qcore_implement();
+  (void)in;
+  (void)out;
+}
+
+static void WriteKindPostUnexpr(const FlowPtr<parse::PostUnaryExpression> &in,
+                                PostUnaryExpression &out) {
+  /// TODO: Implement protocol buffer serialization
+  qcore_implement();
+  (void)in;
+  (void)out;
+}
+
+static void WriteKindStmtExpr(const FlowPtr<parse::StmtExpr> &in,
+                              StmtExpr &out) {
+  /// TODO: Implement protocol buffer serialization
+  qcore_implement();
+  (void)in;
+  (void)out;
+}
+
+static void WriteKindTypeExpr(const FlowPtr<parse::TypeExpr> &in,
+                              TypeExpr &out) {
+  /// TODO: Implement protocol buffer serialization
+  qcore_implement();
+  (void)in;
+  (void)out;
+}
+
+static void WriteKindTemplateCall(const FlowPtr<parse::TemplateCall> &in,
+                                  TemplateCall &out) {
+  /// TODO: Implement protocol buffer serialization
+  qcore_implement();
+  (void)in;
+  (void)out;
+}
+
+static void WriteKindRef(const FlowPtr<parse::RefTy> &in, RefTy &out) {
+  /// TODO: Implement protocol buffer serialization
+  qcore_implement();
+  (void)in;
+  (void)out;
+}
+
+static void WriteKindU1(const FlowPtr<parse::U1> &in, U1 &out) {
+  /// TODO: Implement protocol buffer serialization
+  qcore_implement();
+  (void)in;
+  (void)out;
+}
+
+static void WriteKindU8(const FlowPtr<parse::U8> &in, U8 &out) {
+  /// TODO: Implement protocol buffer serialization
+  qcore_implement();
+  (void)in;
+  (void)out;
+}
+
+static void WriteKindU16(const FlowPtr<parse::U16> &in, U16 &out) {
+  /// TODO: Implement protocol buffer serialization
+  qcore_implement();
+  (void)in;
+  (void)out;
+}
+
+static void WriteKindU32(const FlowPtr<parse::U32> &in, U32 &out) {
+  /// TODO: Implement protocol buffer serialization
+  qcore_implement();
+  (void)in;
+  (void)out;
+}
+
+static void WriteKindU64(const FlowPtr<parse::U64> &in, U64 &out) {
+  /// TODO: Implement protocol buffer serialization
+  qcore_implement();
+  (void)in;
+  (void)out;
+}
+
+static void WriteKindU128(const FlowPtr<parse::U128> &in, U128 &out) {
+  /// TODO: Implement protocol buffer serialization
+  qcore_implement();
+  (void)in;
+  (void)out;
+}
+
+static void WriteKindI8(const FlowPtr<parse::I8> &in, I8 &out) {
+  /// TODO: Implement protocol buffer serialization
+  qcore_implement();
+  (void)in;
+  (void)out;
+}
+
+static void WriteKindI16(const FlowPtr<parse::I16> &in, I16 &out) {
+  /// TODO: Implement protocol buffer serialization
+  qcore_implement();
+  (void)in;
+  (void)out;
+}
+
+static void WriteKindI32(const FlowPtr<parse::I32> &in, I32 &out) {
+  /// TODO: Implement protocol buffer serialization
+  qcore_implement();
+  (void)in;
+  (void)out;
+}
+
+static void WriteKindI64(const FlowPtr<parse::I64> &in, I64 &out) {
+  /// TODO: Implement protocol buffer serialization
+  qcore_implement();
+  (void)in;
+  (void)out;
+}
+
+static void WriteKindI128(const FlowPtr<parse::I128> &in, I128 &out) {
+  /// TODO: Implement protocol buffer serialization
+  qcore_implement();
+  (void)in;
+  (void)out;
+}
+
+static void WriteKindF16(const FlowPtr<parse::F16> &in, F16 &out) {
+  /// TODO: Implement protocol buffer serialization
+  qcore_implement();
+  (void)in;
+  (void)out;
+}
+
+static void WriteKindF32(const FlowPtr<parse::F32> &in, F32 &out) {
+  /// TODO: Implement protocol buffer serialization
+  qcore_implement();
+  (void)in;
+  (void)out;
+}
+
+static void WriteKindF64(const FlowPtr<parse::F64> &in, F64 &out) {
+  /// TODO: Implement protocol buffer serialization
+  qcore_implement();
+  (void)in;
+  (void)out;
+}
+
+static void WriteKindF128(const FlowPtr<parse::F128> &in, F128 &out) {
+  /// TODO: Implement protocol buffer serialization
+  qcore_implement();
+  (void)in;
+  (void)out;
+}
+
+static void WriteKindVoid(const FlowPtr<parse::VoidTy> &in, VoidTy &out) {
+  /// TODO: Implement protocol buffer serialization
+  qcore_implement();
+  (void)in;
+  (void)out;
+}
+
+static void WriteKindPtr(const FlowPtr<parse::PtrTy> &in, PtrTy &out) {
+  /// TODO: Implement protocol buffer serialization
+  qcore_implement();
+  (void)in;
+  (void)out;
+}
+
+static void WriteKindOpaque(const FlowPtr<parse::OpaqueTy> &in, OpaqueTy &out) {
+  /// TODO: Implement protocol buffer serialization
+  qcore_implement();
+  (void)in;
+  (void)out;
+}
+
+static void WriteKindArray(const FlowPtr<parse::ArrayTy> &in, ArrayTy &out) {
+  /// TODO: Implement protocol buffer serialization
+  qcore_implement();
+  (void)in;
+  (void)out;
+}
+
+static void WriteKindTuple(const FlowPtr<parse::TupleTy> &in, TupleTy &out) {
+  /// TODO: Implement protocol buffer serialization
+  qcore_implement();
+  (void)in;
+  (void)out;
+}
+
+static void WriteKindFuncTy(const FlowPtr<parse::FuncTy> &in, FuncTy &out) {
+  /// TODO: Implement protocol buffer serialization
+  qcore_implement();
+  (void)in;
+  (void)out;
+}
+
+static void WriteKindUnres(const FlowPtr<parse::NamedTy> &in, NamedTy &out) {
+  /// TODO: Implement protocol buffer serialization
+  qcore_implement();
+  (void)in;
+  (void)out;
+}
+
+static void WriteKindInfer(const FlowPtr<parse::InferTy> &in, InferTy &out) {
+  /// TODO: Implement protocol buffer serialization
+  qcore_implement();
+  (void)in;
+  (void)out;
+}
+
+static void WriteKindTempl(const FlowPtr<parse::TemplateType> &in,
+                           TemplateType &out) {
+  /// TODO: Implement protocol buffer serialization
+  qcore_implement();
+  (void)in;
+  (void)out;
+}
+
+static void WriteKindTypedef(const FlowPtr<parse::Typedef> &in, Typedef &out) {
+  /// TODO: Implement protocol buffer serialization
+  qcore_implement();
+  (void)in;
+  (void)out;
+}
+
+static void WriteKindStruct(const FlowPtr<parse::Struct> &in, Struct &out) {
+  /// TODO: Implement protocol buffer serialization
+  qcore_implement();
+  (void)in;
+  (void)out;
+}
+
+static void WriteKindEnum(const FlowPtr<parse::Enum> &in, Enum &out) {
+  /// TODO: Implement protocol buffer serialization
+  qcore_implement();
+  (void)in;
+  (void)out;
+}
+
+static void WriteKindFunction(const FlowPtr<parse::Function> &in,
+                              Function &out) {
+  /// TODO: Implement protocol buffer serialization
+  qcore_implement();
+  (void)in;
+  (void)out;
+}
+
+static void WriteKindScope(const FlowPtr<parse::Scope> &in, Scope &out) {
+  /// TODO: Implement protocol buffer serialization
+  qcore_implement();
+  (void)in;
+  (void)out;
+}
+
+static void WriteKindExport(const FlowPtr<parse::Export> &in, Export &out) {
+  /// TODO: Implement protocol buffer serialization
+  qcore_implement();
+  (void)in;
+  (void)out;
+}
+
+static void WriteKindBlock(const FlowPtr<parse::Block> &in, Block &out) {
+  /// TODO: Implement protocol buffer serialization
+  qcore_implement();
+  (void)in;
+  (void)out;
+}
+
+static void WriteKindLet(const FlowPtr<parse::Variable> &in, Variable &out) {
+  /// TODO: Implement protocol buffer serialization
+  qcore_implement();
+  (void)in;
+  (void)out;
+}
+
+static void WriteKindAssembly(const FlowPtr<parse::Assembly> &in,
+                              Assembly &out) {
+  /// TODO: Implement protocol buffer serialization
+  qcore_implement();
+  (void)in;
+  (void)out;
+}
+
+static void WriteKindReturn(const FlowPtr<parse::Return> &in, Return &out) {
+  /// TODO: Implement protocol buffer serialization
+  qcore_implement();
+  (void)in;
+  (void)out;
+}
+
+static void WriteKindRetif(const FlowPtr<parse::ReturnIf> &in, ReturnIf &out) {
+  /// TODO: Implement protocol buffer serialization
+  qcore_implement();
+  (void)in;
+  (void)out;
+}
+
+static void WriteKindBreak(const FlowPtr<parse::Break> &in, Break &out) {
+  /// TODO: Implement protocol buffer serialization
+  qcore_implement();
+  (void)in;
+  (void)out;
+}
+
+static void WriteKindContinue(const FlowPtr<parse::Continue> &in,
+                              Continue &out) {
+  /// TODO: Implement protocol buffer serialization
+  qcore_implement();
+  (void)in;
+  (void)out;
+}
+
+static void WriteKindIf(const FlowPtr<parse::If> &in, If &out) {
+  /// TODO: Implement protocol buffer serialization
+  qcore_implement();
+  (void)in;
+  (void)out;
+}
+
+static void WriteKindWhile(const FlowPtr<parse::While> &in, While &out) {
+  /// TODO: Implement protocol buffer serialization
+  qcore_implement();
+  (void)in;
+  (void)out;
+}
+
+static void WriteKindFor(const FlowPtr<parse::For> &in, For &out) {
+  /// TODO: Implement protocol buffer serialization
+  qcore_implement();
+  (void)in;
+  (void)out;
+}
+
+static void WriteKindForeach(const FlowPtr<parse::Foreach> &in, Foreach &out) {
+  /// TODO: Implement protocol buffer serialization
+  qcore_implement();
+  (void)in;
+  (void)out;
+}
+
+static void WriteKindCase(const FlowPtr<parse::Case> &in, Case &out) {
+  /// TODO: Implement protocol buffer serialization
+  qcore_implement();
+  (void)in;
+  (void)out;
+}
+
+static void WriteKindSwitch(const FlowPtr<parse::Switch> &in, Switch &out) {
+  /// TODO: Implement protocol buffer serialization
+  qcore_implement();
+  (void)in;
+  (void)out;
+}
+
+static void WriteKindExprStmt(const FlowPtr<parse::ExprStmt> &in,
+                              ExprStmt &out) {
+  /// TODO: Implement protocol buffer serialization
+  qcore_implement();
+  (void)in;
+  (void)out;
+}
+
 using namespace ncc::parse;
-using namespace ncc::lex;
 
-void AstWriter::WriteSourceLocation(const FlowPtr<Base>& n) const {
-  string("loc");
-
-  if (m_rd.has_value()) {
-    IScanner& rd = m_rd->get();
-
-    begin_obj(3);
-
-    auto begin = n->Begin(rd);
-    auto end = n->End(rd);
-
-    {
-      string("begin");
-      begin_obj(4);
-
-      string("off");
-      uint64(begin.GetOffset());
-
-      string("row");
-      uint64(begin.GetRow());
-
-      string("col");
-      uint64(begin.GetCol());
-
-      string("src");
-      string(begin.GetFilename());
-
-      end_obj();
-    }
-
-    {
-      string("end");
-      begin_obj(4);
-
-      string("off");
-      uint64(end.GetOffset());
-
-      string("row");
-      uint64(end.GetRow());
-
-      string("col");
-      uint64(end.GetCol());
-
-      string("src");
-      string(end.GetFilename());
-
-      end_obj();
-    }
-
-    {
-      string("trace");
-
-#if NITRATE_FLOWPTR_TRACE
-      begin_obj(4);
-
-      let origin = n.Trace();
-
-      string("src");
-      string(origin.File());
-
-      string("sub");
-      string(origin.Function());
-
-      string("row");
-      uint64(origin.Line());
-
-      string("col");
-      uint64(origin.Column());
-
-      end_obj();
-#else
-      null();
-#endif
-    }
-
-    end_obj();
-  } else {
-    null();
-  }
-}
-
-void AstWriter::WriteTypeMetadata(const FlowPtr<Type>& n) {
-  string("width");
-  n->GetWidth() ? n->GetWidth().value().Accept(*this) : null();
-
-  string("min");
-  auto min = n->GetRangeBegin();
-  min.has_value() ? min.value().Accept(*this) : null();
-
-  string("max");
-  auto max = n->GetRangeEnd();
-  max.has_value() ? max.value().Accept(*this) : null();
-}
-
-auto AstWriter::VisStr(Vis vis) -> std::string_view {
-  switch (vis) {
-    case Vis::Sec:
-      return "sec";
-    case Vis::Pro:
-      return "pro";
-    case Vis::Pub:
-      return "pub";
-  }
-}
+AstWriter::~AstWriter() = default;
 
 void AstWriter::Visit(FlowPtr<Base> n) {
-  begin_obj(2);
-
-  string("kind");
-  string(n->GetKindName());
-
-  WriteSourceLocation(n);
-
-  end_obj();
+  /// TODO: Implement protocol buffer serialization
+  qcore_implement();
+  (void)n;
 }
 
 void AstWriter::Visit(FlowPtr<ExprStmt> n) {
-  begin_obj(3);
+  /// TODO: Implement protocol buffer serialization
+  qcore_implement();
+  (void)n;
 
-  string("kind");
-  string(n->GetKindName());
-
-  WriteSourceLocation(n);
-
-  string("expr");
-  n->GetExpr().Accept(*this);
-
-  end_obj();
+  SyntaxTree::ExprStmt node;
+  WriteKindExprStmt(n, node);
 }
 
 void AstWriter::Visit(FlowPtr<StmtExpr> n) {
-  begin_obj(3);
-
-  string("kind");
-  string(n->GetKindName());
-
-  WriteSourceLocation(n);
-
-  string("stmt");
-  n->GetStmt().Accept(*this);
-
-  end_obj();
+  /// TODO: Implement protocol buffer serialization
+  qcore_implement();
+  (void)n;
 }
 
 void AstWriter::Visit(FlowPtr<TypeExpr> n) {
-  begin_obj(3);
-
-  string("kind");
-  string(n->GetKindName());
-
-  WriteSourceLocation(n);
-
-  string("type");
-  n->GetType().Accept(*this);
-
-  end_obj();
+  /// TODO: Implement protocol buffer serialization
+  qcore_implement();
+  (void)n;
 }
 
 void AstWriter::Visit(FlowPtr<NamedTy> n) {
-  begin_obj(6);
-
-  string("kind");
-  string(n->GetKindName());
-
-  WriteSourceLocation(n);
-
-  WriteTypeMetadata(n);
-
-  string("name");
-  string(n->GetName());
-
-  end_obj();
+  /// TODO: Implement protocol buffer serialization
+  qcore_implement();
+  (void)n;
 }
 
 void AstWriter::Visit(FlowPtr<InferTy> n) {
-  begin_obj(5);
-
-  string("kind");
-  string(n->GetKindName());
-
-  WriteSourceLocation(n);
-
-  WriteTypeMetadata(n);
-
-  end_obj();
+  /// TODO: Implement protocol buffer serialization
+  qcore_implement();
+  (void)n;
 }
 
 void AstWriter::Visit(FlowPtr<TemplateType> n) {
-  begin_obj(7);
-
-  string("kind");
-  string(n->GetKindName());
-
-  WriteSourceLocation(n);
-
-  WriteTypeMetadata(n);
-
-  string("template");
-  n->GetTemplate().Accept(*this);
-
-  string("arguments");
-  auto args = n->GetArgs();
-  begin_arr(args.size());
-  std::for_each(args.begin(), args.end(), [&](auto arg) {
-    begin_obj(2);
-
-    string("name");
-    string(*std::get<0>(arg));
-
-    string("value");
-    std::get<1>(arg).Accept(*this);
-
-    end_obj();
-  });
-  end_arr();
-
-  end_obj();
+  /// TODO: Implement protocol buffer serialization
+  qcore_implement();
+  (void)n;
 }
 
 void AstWriter::Visit(FlowPtr<U1> n) {
-  begin_obj(5);
-
-  string("kind");
-  string(n->GetKindName());
-
-  WriteSourceLocation(n);
-
-  WriteTypeMetadata(n);
-
-  end_obj();
+  /// TODO: Implement protocol buffer serialization
+  qcore_implement();
+  (void)n;
 }
 
 void AstWriter::Visit(FlowPtr<U8> n) {
-  begin_obj(5);
-
-  string("kind");
-  string(n->GetKindName());
-
-  WriteSourceLocation(n);
-
-  WriteTypeMetadata(n);
-
-  end_obj();
+  /// TODO: Implement protocol buffer serialization
+  qcore_implement();
+  (void)n;
 }
 
 void AstWriter::Visit(FlowPtr<U16> n) {
-  begin_obj(5);
-
-  string("kind");
-  string(n->GetKindName());
-
-  WriteSourceLocation(n);
-
-  WriteTypeMetadata(n);
-
-  end_obj();
+  /// TODO: Implement protocol buffer serialization
+  qcore_implement();
+  (void)n;
 }
 
 void AstWriter::Visit(FlowPtr<U32> n) {
-  begin_obj(5);
-
-  string("kind");
-  string(n->GetKindName());
-
-  WriteSourceLocation(n);
-
-  WriteTypeMetadata(n);
-
-  end_obj();
+  /// TODO: Implement protocol buffer serialization
+  qcore_implement();
+  (void)n;
 }
 
 void AstWriter::Visit(FlowPtr<U64> n) {
-  begin_obj(5);
-
-  string("kind");
-  string(n->GetKindName());
-
-  WriteSourceLocation(n);
-
-  WriteTypeMetadata(n);
-
-  end_obj();
+  /// TODO: Implement protocol buffer serialization
+  qcore_implement();
+  (void)n;
 }
 
 void AstWriter::Visit(FlowPtr<U128> n) {
-  begin_obj(5);
-
-  string("kind");
-  string(n->GetKindName());
-
-  WriteSourceLocation(n);
-
-  WriteTypeMetadata(n);
-
-  end_obj();
+  /// TODO: Implement protocol buffer serialization
+  qcore_implement();
+  (void)n;
 }
 
 void AstWriter::Visit(FlowPtr<I8> n) {
-  begin_obj(5);
-
-  string("kind");
-  string(n->GetKindName());
-
-  WriteSourceLocation(n);
-
-  WriteTypeMetadata(n);
-
-  end_obj();
+  /// TODO: Implement protocol buffer serialization
+  qcore_implement();
+  (void)n;
 }
 
 void AstWriter::Visit(FlowPtr<I16> n) {
-  begin_obj(5);
-
-  string("kind");
-  string(n->GetKindName());
-
-  WriteSourceLocation(n);
-
-  WriteTypeMetadata(n);
-
-  end_obj();
+  /// TODO: Implement protocol buffer serialization
+  qcore_implement();
+  (void)n;
 }
 
 void AstWriter::Visit(FlowPtr<I32> n) {
-  begin_obj(5);
-
-  string("kind");
-  string(n->GetKindName());
-
-  WriteSourceLocation(n);
-
-  WriteTypeMetadata(n);
-
-  end_obj();
+  /// TODO: Implement protocol buffer serialization
+  qcore_implement();
+  (void)n;
 }
 
 void AstWriter::Visit(FlowPtr<I64> n) {
-  begin_obj(5);
-
-  string("kind");
-  string(n->GetKindName());
-
-  WriteSourceLocation(n);
-
-  WriteTypeMetadata(n);
-
-  end_obj();
+  /// TODO: Implement protocol buffer serialization
+  qcore_implement();
+  (void)n;
 }
 
 void AstWriter::Visit(FlowPtr<I128> n) {
-  begin_obj(5);
-
-  string("kind");
-  string(n->GetKindName());
-
-  WriteSourceLocation(n);
-
-  WriteTypeMetadata(n);
-
-  end_obj();
+  /// TODO: Implement protocol buffer serialization
+  qcore_implement();
+  (void)n;
 }
 
 void AstWriter::Visit(FlowPtr<F16> n) {
-  begin_obj(5);
-
-  string("kind");
-  string(n->GetKindName());
-
-  WriteSourceLocation(n);
-
-  WriteTypeMetadata(n);
-
-  end_obj();
+  /// TODO: Implement protocol buffer serialization
+  qcore_implement();
+  (void)n;
 }
 
 void AstWriter::Visit(FlowPtr<F32> n) {
-  begin_obj(5);
-
-  string("kind");
-  string(n->GetKindName());
-
-  WriteSourceLocation(n);
-
-  WriteTypeMetadata(n);
-
-  end_obj();
+  /// TODO: Implement protocol buffer serialization
+  qcore_implement();
+  (void)n;
 }
 
 void AstWriter::Visit(FlowPtr<F64> n) {
-  begin_obj(5);
-
-  string("kind");
-  string(n->GetKindName());
-
-  WriteSourceLocation(n);
-
-  WriteTypeMetadata(n);
-
-  end_obj();
+  /// TODO: Implement protocol buffer serialization
+  qcore_implement();
+  (void)n;
 }
 
 void AstWriter::Visit(FlowPtr<F128> n) {
-  begin_obj(5);
-
-  string("kind");
-  string(n->GetKindName());
-
-  WriteSourceLocation(n);
-
-  WriteTypeMetadata(n);
-
-  end_obj();
+  /// TODO: Implement protocol buffer serialization
+  qcore_implement();
+  (void)n;
 }
 
 void AstWriter::Visit(FlowPtr<VoidTy> n) {
-  begin_obj(5);
-
-  string("kind");
-  string(n->GetKindName());
-
-  WriteSourceLocation(n);
-
-  WriteTypeMetadata(n);
-
-  end_obj();
+  /// TODO: Implement protocol buffer serialization
+  qcore_implement();
+  (void)n;
 }
 
 void AstWriter::Visit(FlowPtr<PtrTy> n) {
-  begin_obj(7);
-
-  string("kind");
-  string(n->GetKindName());
-
-  WriteSourceLocation(n);
-
-  WriteTypeMetadata(n);
-
-  string("volatile");
-  boolean(n->IsVolatile());
-
-  string("to");
-  n->GetItem().Accept(*this);
-
-  end_obj();
+  /// TODO: Implement protocol buffer serialization
+  qcore_implement();
+  (void)n;
 }
 
 void AstWriter::Visit(FlowPtr<OpaqueTy> n) {
-  begin_obj(6);
-
-  string("kind");
-  string(n->GetKindName());
-
-  WriteSourceLocation(n);
-
-  WriteTypeMetadata(n);
-
-  string("name");
-  string(n->GetName());
-
-  end_obj();
+  /// TODO: Implement protocol buffer serialization
+  qcore_implement();
+  (void)n;
 }
 
 void AstWriter::Visit(FlowPtr<TupleTy> n) {
-  begin_obj(6);
-
-  string("kind");
-  string(n->GetKindName());
-
-  WriteSourceLocation(n);
-
-  WriteTypeMetadata(n);
-
-  { /* Write sub fields */
-    string("fields");
-
-    auto fields = n->GetItems();
-    begin_arr(fields.size());
-    std::for_each(fields.begin(), fields.end(),
-                  [&](auto field) { field.Accept(*this); });
-    end_arr();
-  }
-
-  end_obj();
+  /// TODO: Implement protocol buffer serialization
+  qcore_implement();
+  (void)n;
 }
 
 void AstWriter::Visit(FlowPtr<ArrayTy> n) {
-  begin_obj(7);
-
-  string("kind");
-  string(n->GetKindName());
-
-  WriteSourceLocation(n);
-
-  WriteTypeMetadata(n);
-
-  string("of");
-  n->GetItem().Accept(*this);
-
-  string("size");
-  n->GetSize().Accept(*this);
-
-  end_obj();
+  /// TODO: Implement protocol buffer serialization
+  qcore_implement();
+  (void)n;
 }
 
 void AstWriter::Visit(FlowPtr<RefTy> n) {
-  begin_obj(6);
-
-  string("kind");
-  string(n->GetKindName());
-
-  WriteSourceLocation(n);
-
-  WriteTypeMetadata(n);
-
-  string("to");
-  n->GetItem().Accept(*this);
-
-  end_obj();
+  /// TODO: Implement protocol buffer serialization
+  qcore_implement();
+  (void)n;
 }
 
 void AstWriter::Visit(FlowPtr<FuncTy> n) {
-  begin_obj(10);
-
-  string("kind");
-  string(n->GetKindName());
-
-  WriteSourceLocation(n);
-
-  WriteTypeMetadata(n);
-
-  { /* Write attributes */
-    string("attributes");
-
-    auto attrs = n->GetAttributes();
-    begin_arr(attrs.size());
-    std::for_each(attrs.begin(), attrs.end(),
-                  [&](auto attr) { attr.Accept(*this); });
-    end_arr();
-  }
-
-  string("return");
-  n->GetReturn().Accept(*this);
-
-  switch (n->GetPurity()) {
-    case Purity::Impure: {
-      string("thread_safe");
-      boolean(false);
-
-      string("purity");
-      string("impure");
-      break;
-    }
-
-    case Purity::Impure_TSafe: {
-      string("thread_safe");
-      boolean(true);
-
-      string("purity");
-      string("impure");
-      break;
-    }
-
-    case Purity::Pure: {
-      string("thread_safe");
-      boolean(true);
-
-      string("purity");
-      string("pure");
-      break;
-    }
-
-    case Purity::Quasi: {
-      string("thread_safe");
-      boolean(true);
-
-      string("purity");
-      string("quasi");
-      break;
-    }
-
-    case Purity::Retro: {
-      string("thread_safe");
-      boolean(true);
-
-      string("purity");
-      string("retro");
-      break;
-    }
-  }
-
-  { /* Write parameters */
-    string("input");
-    begin_obj(2);
-
-    string("variadic");
-    boolean(n->IsVariadic());
-
-    auto params = n->GetParams();
-    string("parameters");
-    begin_arr(params.size());
-    std::for_each(params.begin(), params.end(), [&](auto param) {
-      begin_obj(3);
-      string("name");
-      string(*std::get<0>(param));
-
-      string("type");
-      std::get<1>(param).Accept(*this);
-
-      string("default");
-      std::get<2>(param) ? std::get<2>(param).value().Accept(*this) : null();
-
-      end_obj();
-    });
-    end_arr();
-
-    end_obj();
-  }
-
-  end_obj();
+  /// TODO: Implement protocol buffer serialization
+  qcore_implement();
+  (void)n;
 }
 
 void AstWriter::Visit(FlowPtr<UnaryExpression> n) {
-  begin_obj(4);
-
-  string("kind");
-  string(n->GetKindName());
-
-  WriteSourceLocation(n);
-
-  string("op");
-  string(op_repr(n->GetOp()));
-
-  string("rhs");
-  n->GetRHS().Accept(*this);
-
-  end_obj();
+  /// TODO: Implement protocol buffer serialization
+  qcore_implement();
+  (void)n;
 }
 
 void AstWriter::Visit(FlowPtr<BinaryExpression> n) {
-  begin_obj(5);
-
-  string("kind");
-  string(n->GetKindName());
-
-  WriteSourceLocation(n);
-
-  string("op");
-  string(op_repr(n->GetOp()));
-
-  string("lhs");
-  n->GetLHS().Accept(*this);
-
-  string("rhs");
-  n->GetRHS().Accept(*this);
-
-  end_obj();
+  /// TODO: Implement protocol buffer serialization
+  qcore_implement();
+  (void)n;
 }
 
 void AstWriter::Visit(FlowPtr<PostUnaryExpression> n) {
-  begin_obj(4);
-
-  string("kind");
-  string(n->GetKindName());
-
-  WriteSourceLocation(n);
-
-  string("op");
-  string(op_repr(n->GetOp()));
-
-  string("lhs");
-  n->GetLHS().Accept(*this);
-
-  end_obj();
+  /// TODO: Implement protocol buffer serialization
+  qcore_implement();
+  (void)n;
 }
 
 void AstWriter::Visit(FlowPtr<TernaryExpression> n) {
-  begin_obj(5);
-
-  string("kind");
-  string(n->GetKindName());
-
-  WriteSourceLocation(n);
-
-  string("cond");
-  n->GetCond().Accept(*this);
-
-  string("lhs");
-  n->GetLHS().Accept(*this);
-
-  string("rhs");
-  n->GetRHS().Accept(*this);
-
-  end_obj();
+  /// TODO: Implement protocol buffer serialization
+  qcore_implement();
+  (void)n;
 }
 
 void AstWriter::Visit(FlowPtr<Integer> n) {
-  begin_obj(3);
-
-  string("kind");
-  string(n->GetKindName());
-
-  WriteSourceLocation(n);
-
-  string("value");
-  string(n->GetValue());
-
-  end_obj();
+  /// TODO: Implement protocol buffer serialization
+  qcore_implement();
+  (void)n;
 }
 
 void AstWriter::Visit(FlowPtr<Float> n) {
-  begin_obj(3);
-
-  string("kind");
-  string(n->GetKindName());
-
-  WriteSourceLocation(n);
-
-  string("value");
-  string(n->GetValue());
-
-  end_obj();
+  /// TODO: Implement protocol buffer serialization
+  qcore_implement();
+  (void)n;
 }
 
 void AstWriter::Visit(FlowPtr<Boolean> n) {
-  begin_obj(3);
-
-  string("kind");
-  string(n->GetKindName());
-
-  WriteSourceLocation(n);
-
-  string("value");
-  boolean(n->GetValue());
-
-  end_obj();
+  /// TODO: Implement protocol buffer serialization
+  qcore_implement();
+  (void)n;
 }
 
 void AstWriter::Visit(FlowPtr<String> n) {
-  begin_obj(3);
-
-  string("kind");
-  string(n->GetKindName());
-
-  WriteSourceLocation(n);
-
-  string("value");
-  string(n->GetValue());
-
-  end_obj();
+  /// TODO: Implement protocol buffer serialization
+  qcore_implement();
+  (void)n;
 }
 
 void AstWriter::Visit(FlowPtr<Character> n) {
-  begin_obj(3);
-
-  string("kind");
-  string(n->GetKindName());
-
-  WriteSourceLocation(n);
-
-  string("value");
-  uint64(n->GetValue());
-
-  end_obj();
+  /// TODO: Implement protocol buffer serialization
+  qcore_implement();
+  (void)n;
 }
 
 void AstWriter::Visit(FlowPtr<Null> n) {
-  begin_obj(2);
-
-  string("kind");
-  string(n->GetKindName());
-
-  WriteSourceLocation(n);
-
-  end_obj();
+  /// TODO: Implement protocol buffer serialization
+  qcore_implement();
+  (void)n;
 }
 
 void AstWriter::Visit(FlowPtr<Undefined> n) {
-  begin_obj(2);
-
-  string("kind");
-  string(n->GetKindName());
-
-  WriteSourceLocation(n);
-
-  end_obj();
+  /// TODO: Implement protocol buffer serialization
+  qcore_implement();
+  (void)n;
 }
 
 void AstWriter::Visit(FlowPtr<Call> n) {
-  begin_obj(4);
-
-  string("kind");
-  string(n->GetKindName());
-
-  WriteSourceLocation(n);
-
-  string("callee");
-  n->GetFunc().Accept(*this);
-
-  { /* Write arguments */
-    string("arguments");
-
-    auto args = n->GetArgs();
-    begin_arr(args.size());
-    std::for_each(args.begin(), args.end(), [&](auto arg) {
-      begin_obj(2);
-
-      string("name");
-      string(*arg.first);
-
-      string("value");
-      arg.second.Accept(*this);
-
-      end_obj();
-    });
-    end_arr();
-  }
-
-  end_obj();
+  /// TODO: Implement protocol buffer serialization
+  qcore_implement();
+  (void)n;
 }
 
 void AstWriter::Visit(FlowPtr<TemplateCall> n) {
-  begin_obj(5);
-
-  string("kind");
-  string(n->GetKindName());
-
-  WriteSourceLocation(n);
-
-  string("callee");
-  n->GetFunc().Accept(*this);
-
-  { /* Write template arguments */
-    string("template");
-
-    auto args = n->GetTemplateArgs();
-    begin_arr(args.size());
-
-    std::for_each(args.begin(), args.end(), [&](auto arg) {
-      begin_obj(2);
-
-      string("name");
-      string(*arg.first);
-
-      string("value");
-      arg.second.Accept(*this);
-
-      end_obj();
-    });
-
-    end_arr();
-  }
-
-  { /* Write arguments */
-    string("arguments");
-
-    auto args = n->GetArgs();
-    begin_arr(args.size());
-    std::for_each(args.begin(), args.end(), [&](auto arg) {
-      begin_obj(2);
-
-      string("name");
-      string(*arg.first);
-
-      string("value");
-      arg.second.Accept(*this);
-
-      end_obj();
-    });
-    end_arr();
-  }
-
-  end_obj();
+  /// TODO: Implement protocol buffer serialization
+  qcore_implement();
+  (void)n;
 }
 
 void AstWriter::Visit(FlowPtr<List> n) {
-  begin_obj(3);
-
-  string("kind");
-  string(n->GetKindName());
-
-  WriteSourceLocation(n);
-
-  { /* Write elements */
-    string("elements");
-
-    auto items = n->GetItems();
-    begin_arr(items.size());
-    std::for_each(items.begin(), items.end(),
-                  [&](auto item) { item.Accept(*this); });
-    end_arr();
-  }
-
-  end_obj();
+  /// TODO: Implement protocol buffer serialization
+  qcore_implement();
+  (void)n;
 }
 
 void AstWriter::Visit(FlowPtr<Assoc> n) {
-  begin_obj(4);
-
-  string("kind");
-  string(n->GetKindName());
-
-  WriteSourceLocation(n);
-
-  string("key");
-  n->GetKey().Accept(*this);
-
-  string("value");
-  n->GetValue().Accept(*this);
-
-  end_obj();
+  /// TODO: Implement protocol buffer serialization
+  qcore_implement();
+  (void)n;
 }
 
 void AstWriter::Visit(FlowPtr<Index> n) {
-  begin_obj(4);
-
-  string("kind");
-  string(n->GetKindName());
-
-  WriteSourceLocation(n);
-
-  string("base");
-  n->GetBase().Accept(*this);
-
-  string("index");
-  n->GetIndex().Accept(*this);
-
-  end_obj();
+  /// TODO: Implement protocol buffer serialization
+  qcore_implement();
+  (void)n;
 }
 
 void AstWriter::Visit(FlowPtr<Slice> n) {
-  begin_obj(5);
-
-  string("kind");
-  string(n->GetKindName());
-
-  WriteSourceLocation(n);
-
-  string("base");
-  n->GetBase().Accept(*this);
-
-  string("start");
-  n->GetStart().Accept(*this);
-
-  string("end");
-  n->GetEnd().Accept(*this);
-
-  end_obj();
+  /// TODO: Implement protocol buffer serialization
+  qcore_implement();
+  (void)n;
 }
 
 void AstWriter::Visit(FlowPtr<FString> n) {
-  begin_obj(3);
-
-  string("kind");
-  string(n->GetKindName());
-
-  WriteSourceLocation(n);
-
-  { /* Write items */
-    string("terms");
-
-    auto items = n->GetItems();
-    begin_arr(items.size());
-    std::for_each(items.begin(), items.end(), [&](auto item) {
-      if (std::holds_alternative<ncc::string>(item)) {
-        begin_obj(1);
-
-        string("value");
-        string(*std::get<ncc::string>(item));
-
-        end_obj();
-      } else {
-        std::get<FlowPtr<Expr>>(item).Accept(*this);
-      }
-    });
-    end_arr();
-  }
-
-  end_obj();
+  /// TODO: Implement protocol buffer serialization
+  qcore_implement();
+  (void)n;
 }
 
 void AstWriter::Visit(FlowPtr<Identifier> n) {
-  begin_obj(3);
-
-  string("kind");
-  string(n->GetKindName());
-
-  WriteSourceLocation(n);
-
-  string("name");
-  string(n->GetName());
-
-  end_obj();
+  /// TODO: Implement protocol buffer serialization
+  qcore_implement();
+  (void)n;
 }
 
 void AstWriter::Visit(FlowPtr<Sequence> n) {
-  begin_obj(3);
-
-  string("kind");
-  string(n->GetKindName());
-
-  WriteSourceLocation(n);
-
-  { /* Write items */
-    string("terms");
-
-    auto items = n->GetItems();
-    begin_arr(items.size());
-    std::for_each(items.begin(), items.end(),
-                  [&](auto item) { item.Accept(*this); });
-    end_arr();
-  }
-
-  end_obj();
+  /// TODO: Implement protocol buffer serialization
+  qcore_implement();
+  (void)n;
 }
 
 void AstWriter::Visit(FlowPtr<Block> n) {
-  begin_obj(4);
-
-  string("kind");
-  string(n->GetKindName());
-
-  WriteSourceLocation(n);
-
-  { /* Write safety profile */
-    string("safe");
-
-    switch (n->GetSafety()) {
-      case SafetyMode::Unknown:
-        null();
-        break;
-      case SafetyMode::Safe:
-        string("yes");
-        break;
-      case SafetyMode::Unsafe:
-        string("no");
-        break;
-    }
-  }
-
-  { /* Write body */
-    string("body");
-
-    auto items = n->GetItems();
-    begin_arr(items.size());
-    std::for_each(items.begin(), items.end(),
-                  [&](auto item) { item.Accept(*this); });
-    end_arr();
-  }
-
-  end_obj();
+  /// TODO: Implement protocol buffer serialization
+  qcore_implement();
+  (void)n;
 }
 
 void AstWriter::Visit(FlowPtr<Variable> n) {
-  begin_obj(7);
-
-  string("kind");
-  string(n->GetKindName());
-
-  WriteSourceLocation(n);
-
-  string("mode");
-  switch (n->GetDeclType()) {
-    case VariableType::Const:
-      string("const");
-      break;
-    case VariableType::Var:
-      string("var");
-      break;
-    case VariableType::Let:
-      string("let");
-      break;
-  }
-
-  string("name");
-  string(n->GetName());
-
-  string("type");
-  n->GetType() ? n->GetType().value().Accept(*this) : null();
-
-  string("value");
-  n->GetValue() ? n->GetValue().value().Accept(*this) : null();
-
-  { /* Write attributes */
-    string("attributes");
-
-    auto attrs = n->GetAttributes();
-    begin_arr(attrs.size());
-    std::for_each(attrs.begin(), attrs.end(),
-                  [&](auto attr) { attr.Accept(*this); });
-    end_arr();
-  }
-
-  end_obj();
+  /// TODO: Implement protocol buffer serialization
+  qcore_implement();
+  (void)n;
 }
 
 void AstWriter::Visit(FlowPtr<Assembly> n) {
-  begin_obj(4);
-
-  string("kind");
-  string(n->GetKindName());
-
-  WriteSourceLocation(n);
-
-  string("assembly");
-  string(n->GetCode());
-
-  { /* Write arguments */
-    string("parameters");
-
-    auto args = n->GetArgs();
-    begin_arr(args.size());
-    std::for_each(args.begin(), args.end(),
-                  [&](auto arg) { arg.Accept(*this); });
-    end_arr();
-  }
-
-  end_obj();
+  /// TODO: Implement protocol buffer serialization
+  qcore_implement();
+  (void)n;
 }
 
 void AstWriter::Visit(FlowPtr<If> n) {
-  begin_obj(5);
-
-  string("kind");
-  string(n->GetKindName());
-
-  WriteSourceLocation(n);
-
-  string("cond");
-  n->GetCond().Accept(*this);
-
-  string("then");
-  n->GetThen().Accept(*this);
-
-  string("else");
-  if (n->GetElse()) {
-    n->GetElse().value().Accept(*this);
-  } else {
-    null();
-  }
-
-  end_obj();
+  /// TODO: Implement protocol buffer serialization
+  qcore_implement();
+  (void)n;
 }
 
 void AstWriter::Visit(FlowPtr<While> n) {
-  begin_obj(4);
-
-  string("kind");
-  string(n->GetKindName());
-
-  WriteSourceLocation(n);
-
-  string("cond");
-  n->GetCond().Accept(*this);
-
-  string("body");
-  n->GetBody().Accept(*this);
-
-  end_obj();
+  /// TODO: Implement protocol buffer serialization
+  qcore_implement();
+  (void)n;
 }
 
 void AstWriter::Visit(FlowPtr<For> n) {
-  begin_obj(6);
-
-  string("kind");
-  string(n->GetKindName());
-
-  WriteSourceLocation(n);
-
-  string("init");
-  if (n->GetInit()) {
-    n->GetInit().value().Accept(*this);
-  } else {
-    null();
-  }
-
-  string("cond");
-  if (n->GetCond()) {
-    n->GetCond().value().Accept(*this);
-  } else {
-    null();
-  }
-
-  string("step");
-  if (n->GetStep()) {
-    n->GetStep().value().Accept(*this);
-  } else {
-    null();
-  }
-
-  string("body");
-  n->GetBody().Accept(*this);
-
-  end_obj();
+  /// TODO: Implement protocol buffer serialization
+  qcore_implement();
+  (void)n;
 }
 
 void AstWriter::Visit(FlowPtr<Foreach> n) {
-  begin_obj(6);
-
-  string("kind");
-  string(n->GetKindName());
-
-  WriteSourceLocation(n);
-
-  string("idx");
-  string(n->GetIdxIdentifier());
-
-  string("val");
-  string(n->GetValIdentifier());
-
-  string("expr");
-  n->GetExpr().Accept(*this);
-
-  string("body");
-  n->GetBody().Accept(*this);
-
-  end_obj();
+  /// TODO: Implement protocol buffer serialization
+  qcore_implement();
+  (void)n;
 }
 
 void AstWriter::Visit(FlowPtr<Break> n) {
-  begin_obj(2);
-
-  string("kind");
-  string(n->GetKindName());
-
-  WriteSourceLocation(n);
-
-  end_obj();
+  /// TODO: Implement protocol buffer serialization
+  qcore_implement();
+  (void)n;
 }
 
 void AstWriter::Visit(FlowPtr<Continue> n) {
-  begin_obj(2);
-
-  string("kind");
-  string(n->GetKindName());
-
-  WriteSourceLocation(n);
-
-  end_obj();
+  /// TODO: Implement protocol buffer serialization
+  qcore_implement();
+  (void)n;
 }
 
 void AstWriter::Visit(FlowPtr<Return> n) {
-  begin_obj(3);
-
-  string("kind");
-  string(n->GetKindName());
-
-  WriteSourceLocation(n);
-
-  string("expr");
-  if (n->GetValue()) {
-    n->GetValue().value().Accept(*this);
-  } else {
-    null();
-  }
-
-  end_obj();
+  /// TODO: Implement protocol buffer serialization
+  qcore_implement();
+  (void)n;
 }
 
 void AstWriter::Visit(FlowPtr<ReturnIf> n) {
-  begin_obj(4);
-
-  string("kind");
-  string(n->GetKindName());
-
-  WriteSourceLocation(n);
-
-  string("cond");
-  n->GetCond().Accept(*this);
-
-  string("expr");
-  n->GetValue().Accept(*this);
-
-  end_obj();
+  /// TODO: Implement protocol buffer serialization
+  qcore_implement();
+  (void)n;
 }
 
 void AstWriter::Visit(FlowPtr<Case> n) {
-  begin_obj(4);
-
-  string("kind");
-  string(n->GetKindName());
-
-  WriteSourceLocation(n);
-
-  string("match");
-  n->GetCond().Accept(*this);
-
-  string("body");
-  n->GetBody().Accept(*this);
-
-  end_obj();
+  /// TODO: Implement protocol buffer serialization
+  qcore_implement();
+  (void)n;
 }
 
 void AstWriter::Visit(FlowPtr<Switch> n) {
-  begin_obj(5);
-
-  string("kind");
-  string(n->GetKindName());
-
-  WriteSourceLocation(n);
-
-  string("match");
-  n->GetCond().Accept(*this);
-
-  { /* Write cases */
-    string("cases");
-
-    auto cases = n->GetCases();
-    begin_arr(cases.size());
-    std::for_each(cases.begin(), cases.end(),
-                  [&](auto item) { item.Accept(*this); });
-    end_arr();
-  }
-
-  string("default");
-  n->GetDefault() ? n->GetDefault().value().Accept(*this) : null();
-
-  end_obj();
+  /// TODO: Implement protocol buffer serialization
+  qcore_implement();
+  (void)n;
 }
 
 void AstWriter::Visit(FlowPtr<Typedef> n) {
-  begin_obj(4);
-
-  string("kind");
-  string(n->GetKindName());
-
-  WriteSourceLocation(n);
-
-  string("name");
-  string(n->GetName());
-
-  string("type");
-  n->GetType().Accept(*this);
-
-  end_obj();
+  /// TODO: Implement protocol buffer serialization
+  qcore_implement();
+  (void)n;
 }
 
 void AstWriter::Visit(FlowPtr<Function> n) {
-  begin_obj(13);
-
-  string("kind");
-  string(n->GetKindName());
-
-  WriteSourceLocation(n);
-
-  { /* Write attributes */
-    string("attributes");
-
-    auto attrs = n->GetAttributes();
-    begin_arr(attrs.size());
-    std::for_each(attrs.begin(), attrs.end(),
-                  [&](auto attr) { attr.Accept(*this); });
-    end_arr();
-  }
-
-  { /* Purity */
-    switch (n->GetPurity()) {
-      case Purity::Impure: {
-        string("thread_safe");
-        boolean(false);
-
-        string("purity");
-        string("impure");
-        break;
-      }
-
-      case Purity::Impure_TSafe: {
-        string("thread_safe");
-        boolean(true);
-
-        string("purity");
-        string("impure");
-        break;
-      }
-
-      case Purity::Pure: {
-        string("thread_safe");
-        boolean(true);
-
-        string("purity");
-        string("pure");
-        break;
-      }
-
-      case Purity::Quasi: {
-        string("thread_safe");
-        boolean(true);
-
-        string("purity");
-        string("quasi");
-        break;
-      }
-
-      case Purity::Retro: {
-        string("thread_safe");
-        boolean(true);
-
-        string("purity");
-        string("retro");
-        break;
-      }
-    }
-  }
-
-  { /* Write capture list */
-    string("captures");
-
-    auto captures = n->GetCaptures();
-    begin_arr(captures.size());
-    std::for_each(captures.begin(), captures.end(), [&](auto cap) {
-      begin_obj(2);
-
-      string("name");
-      string(*cap.first);
-
-      string("is_ref");
-      boolean(cap.second);
-
-      end_obj();
-    });
-    end_arr();
-  }
-
-  string("name");
-  string(n->GetName());
-
-  { /* Write template parameters */
-    string("template");
-
-    if (auto params = n->GetTemplateParams()) {
-      begin_arr(params->size());
-      std::for_each(params->begin(), params->end(), [&](auto param) {
-        begin_obj(3);
-
-        string("name");
-        string(*std::get<0>(param));
-
-        string("type");
-        std::get<1>(param).Accept(*this);
-
-        string("default");
-        std::get<2>(param) ? std::get<2>(param).value().Accept(*this) : null();
-
-        end_obj();
-      });
-      end_arr();
-    } else {
-      null();
-    }
-  }
-
-  { /* Write parameters */
-    string("input");
-    begin_obj(2);
-
-    string("variadic");
-    boolean(n->IsVariadic());
-
-    auto params = n->GetParams();
-    string("parameters");
-    begin_arr(params.size());
-    std::for_each(params.begin(), params.end(), [&](auto param) {
-      begin_obj(3);
-
-      string("name");
-      string(*std::get<0>(param));
-
-      string("type");
-      std::get<1>(param).Accept(*this);
-
-      string("default");
-      std::get<2>(param) ? std::get<2>(param).value().Accept(*this) : null();
-
-      end_obj();
-    });
-    end_arr();
-
-    end_obj();
-  }
-
-  string("return");
-  n->GetReturn().Accept(*this);
-
-  { /* Write pre conditions */
-    string("precond");
-    if (n->GetPrecond().has_value()) {
-      n->GetPrecond().value().Accept(*this);
-    } else {
-      null();
-    }
-  }
-
-  { /* Write post conditions */
-    string("postcond");
-    if (n->GetPostcond().has_value()) {
-      n->GetPostcond().value().Accept(*this);
-    } else {
-      null();
-    }
-  }
-
-  string("body");
-  if (n->GetBody().has_value()) {
-    n->GetBody().value().Accept(*this);
-  } else {
-    null();
-  }
-
-  end_obj();
+  /// TODO: Implement protocol buffer serialization
+  qcore_implement();
+  (void)n;
 }
 
 void AstWriter::Visit(FlowPtr<Struct> n) {
-  begin_obj(10);
-
-  string("kind");
-  string(n->GetKindName());
-
-  WriteSourceLocation(n);
-
-  { /* Write composite type */
-    string("mode");
-    switch (n->GetCompositeType()) {
-      case CompositeType::Region: {
-        string("region");
-        break;
-      }
-
-      case CompositeType::Struct: {
-        string("struct");
-        break;
-      }
-
-      case CompositeType::Group: {
-        string("group");
-        break;
-      }
-
-      case CompositeType::Class: {
-        string("class");
-        break;
-      }
-
-      case CompositeType::Union: {
-        string("union");
-        break;
-      }
-    }
-  }
-
-  { /* Write attributes */
-    string("attributes");
-    auto attrs = n->GetAttributes();
-
-    begin_arr(attrs.size());
-    std::for_each(attrs.begin(), attrs.end(),
-                  [&](auto attr) { attr.Accept(*this); });
-    end_arr();
-  }
-
-  string("name");
-  string(n->GetName());
-
-  { /* Write template parameters */
-    string("template");
-
-    if (auto params = n->GetTemplateParams()) {
-      begin_arr(params->size());
-      std::for_each(params->begin(), params->end(), [&](auto param) {
-        begin_obj(3);
-
-        string("name");
-        string(*std::get<0>(param));
-
-        string("type");
-        std::get<1>(param).Accept(*this);
-
-        string("default");
-        std::get<2>(param) ? std::get<2>(param).value().Accept(*this) : null();
-
-        end_obj();
-      });
-      end_arr();
-    } else {
-      null();
-    }
-  }
-
-  { /* Write names */
-    string("names");
-    auto names = n->GetNames();
-    begin_arr(names.size());
-    std::for_each(names.begin(), names.end(),
-                  [&](auto name) { string(*name); });
-    end_arr();
-  }
-
-  { /* Write fields */
-    string("fields");
-
-    auto fields = n->GetFields();
-    begin_arr(fields.size());
-    std::for_each(fields.begin(), fields.end(), [&](auto field) {
-      begin_obj(5);
-
-      string("name");
-      string(field.GetName());
-
-      string("type");
-      field.GetType().Accept(*this);
-
-      string("default");
-      field.GetValue().has_value() ? field.GetValue().value().Accept(*this)
-                                   : null();
-
-      string("visibility");
-      string(VisStr(field.GetVis()));
-
-      string("static");
-      boolean(field.IsStatic());
-
-      end_obj();
-    });
-    end_arr();
-  }
-
-  { /* Write methods */
-    string("methods");
-
-    auto methods = n->GetMethods();
-    begin_arr(methods.size());
-    std::for_each(methods.begin(), methods.end(), [&](auto method) {
-      begin_obj(2);
-
-      string("visibility");
-      string(VisStr(method.m_vis));
-
-      string("method");
-      method.m_func.Accept(*this);
-
-      end_obj();
-    });
-    end_arr();
-  }
-
-  { /* Write static methods */
-    string("static-methods");
-
-    auto statics = n->GetStaticMethods();
-    begin_arr(statics.size());
-    std::for_each(statics.begin(), statics.end(), [&](auto method) {
-      begin_obj(2);
-
-      string("visibility");
-      string(VisStr(method.m_vis));
-
-      string("method");
-      method.m_func.Accept(*this);
-
-      end_obj();
-    });
-    end_arr();
-  }
-
-  end_obj();
+  /// TODO: Implement protocol buffer serialization
+  qcore_implement();
+  (void)n;
 }
 
 void AstWriter::Visit(FlowPtr<Enum> n) {
-  begin_obj(5);
-
-  string("kind");
-  string(n->GetKindName());
-
-  WriteSourceLocation(n);
-
-  string("name");
-  string(n->GetName());
-
-  string("type");
-  n->GetType() ? n->GetType().value().Accept(*this) : null();
-
-  { /* Write items */
-    string("fields");
-
-    auto items = n->GetItems();
-    begin_arr(items.size());
-    std::for_each(items.begin(), items.end(), [&](auto item) {
-      begin_obj(2);
-
-      string("name");
-      string(*item.first);
-
-      string("value");
-      item.second ? item.second.value().Accept(*this) : null();
-
-      end_obj();
-    });
-    end_arr();
-  }
-
-  end_obj();
+  /// TODO: Implement protocol buffer serialization
+  qcore_implement();
+  (void)n;
 }
 
 void AstWriter::Visit(FlowPtr<Scope> n) {
-  begin_obj(5);
-
-  string("kind");
-  string(n->GetKindName());
-
-  WriteSourceLocation(n);
-
-  string("name");
-  string(n->GetName());
-
-  { /* Write implicit dependencies */
-    string("depends");
-
-    auto deps = n->GetDeps();
-    begin_arr(deps.size());
-    std::for_each(deps.begin(), deps.end(), [&](auto dep) { string(*dep); });
-    end_arr();
-  }
-
-  string("body");
-  n->GetBody().Accept(*this);
-
-  end_obj();
+  /// TODO: Implement protocol buffer serialization
+  qcore_implement();
+  (void)n;
 }
 
 void AstWriter::Visit(FlowPtr<Export> n) {
-  begin_obj(6);
-
-  string("kind");
-  string(n->GetKindName());
-
-  WriteSourceLocation(n);
-
-  string("abi");
-  string(n->GetAbiName());
-
-  string("visibility");
-  string(VisStr(n->GetVis()));
-
-  { /* Write attributes */
-    string("attributes");
-
-    auto attrs = n->GetAttrs();
-    begin_arr(attrs.size());
-    std::for_each(attrs.begin(), attrs.end(),
-                  [&](auto attr) { attr.Accept(*this); });
-    end_arr();
-  }
-
-  string("body");
-  n->GetBody().Accept(*this);
-
-  end_obj();
+  /// TODO: Implement protocol buffer serialization
+  qcore_implement();
+  (void)n;
 }

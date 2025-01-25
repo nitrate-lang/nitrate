@@ -354,9 +354,6 @@ namespace ncc::parse {
     ///======================================================================
     /// Debugging
 
-    auto Dump(std::ostream &os = std::cerr,
-              WriterSourceProvider rd = std::nullopt) const -> std::ostream &;
-
     [[nodiscard]] auto ToJson(WriterSourceProvider rd = std::nullopt) const
         -> std::string;
 

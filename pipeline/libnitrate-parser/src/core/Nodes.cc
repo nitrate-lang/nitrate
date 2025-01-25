@@ -31,7 +31,6 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <core/Hash.hh>
 #include <core/ParserImpl.hh>
 #include <cstring>
 #include <nitrate-core/Init.hh>
@@ -106,17 +105,11 @@ NCC_EXPORT auto parse::operator<<(std::ostream &os, const ASTExtensionKey &idx)
 
 ///=============================================================================
 
-NCC_EXPORT auto Base::Dump(std::ostream &os,
-                           WriterSourceProvider rd) const -> std::ostream & {
-  AstJsonWriter writer(os, rd);
-  this->Accept(writer);
-
-  return os;
-}
-
 NCC_EXPORT auto Base::ToJson(WriterSourceProvider rd) const -> std::string {
+  /// TODO: Implement JSON writer
+
   std::stringstream ss;
-  AstJsonWriter writer(ss, rd);
+  AstWriter writer(ss, rd);
   this->Accept(writer);
 
   return ss.str();
@@ -133,8 +126,8 @@ NCC_EXPORT auto Base::IsEq(FlowPtr<Base> o) const -> bool {
 
   std::stringstream ss1;
   std::stringstream ss2;
-  AstJsonWriter writer1(ss1);
-  AstJsonWriter writer2(ss2);
+  AstWriter writer1(ss1);
+  AstWriter writer2(ss2);
 
   this->Accept(writer1);
   o.Accept(writer2);
@@ -143,11 +136,11 @@ NCC_EXPORT auto Base::IsEq(FlowPtr<Base> o) const -> bool {
 }
 
 NCC_EXPORT auto Base::Hash64() const -> uint64_t {
-  AstHash64 visitor;
+  std::stringstream ss;
+  AstWriter writer(ss);
+  this->Accept(writer);
 
-  this->Accept(visitor);
-
-  return visitor.Get();
+  return std::hash<std::string>{}(ss.str());
 }
 
 NCC_EXPORT auto Base::RecursiveChildCount() -> size_t {
