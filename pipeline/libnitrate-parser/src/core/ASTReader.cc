@@ -428,7 +428,7 @@ auto AstReader::DeserializeObject() -> NullableFlowPtr<Base> {
     }
 
     case QAST_IDENT: {
-      r = ReadKindIdentifier( );
+      r = ReadKindIdentifier();
       break;
     }
 
@@ -777,7 +777,8 @@ auto AstReader::ReadKindBinexpr() -> NullableFlowPtr<BinaryExpression> {
     return nullptr;
   }
 
-  return CreateNode<BinaryExpression>(lhs.value(), op_it->second, rhs.value())();
+  return CreateNode<BinaryExpression>(lhs.value(), op_it->second,
+                                      rhs.value())();
 }
 
 auto AstReader::ReadKindUnexpr() -> NullableFlowPtr<UnaryExpression> {
@@ -856,7 +857,8 @@ auto AstReader::ReadKindTerexpr() -> NullableFlowPtr<TernaryExpression> {
     return nullptr;
   }
 
-  return CreateNode<TernaryExpression>(cond.value(), lhs.value(), rhs.value())();
+  return CreateNode<TernaryExpression>(cond.value(), lhs.value(),
+                                       rhs.value())();
 }
 
 auto AstReader::ReadKindInt() -> NullableFlowPtr<Integer> {
@@ -1099,7 +1101,7 @@ auto AstReader::ReadKindFstring() -> NullableFlowPtr<FString> {
   return CreateNode<FString>(std::move(terms))();
 }
 
-auto AstReader::ReadKindIdentifier( ) -> NullableFlowPtr<Identifier> {
+auto AstReader::ReadKindIdentifier() -> NullableFlowPtr<Identifier> {
   if (!NextIf<std::string>("name") || !NextIs<std::string>()) {
     return nullptr;
   }
@@ -1224,7 +1226,7 @@ auto AstReader::ReadKindTemplateCall() -> NullableFlowPtr<TemplateCall> {
   }
 
   return CreateNode<TemplateCall>(callee.value(), std::move(arguments),
-                         std::move(template_args))();
+                                  std::move(template_args))();
 }
 
 auto AstReader::ReadKindU1() -> NullableFlowPtr<U1> {
@@ -1696,8 +1698,8 @@ auto AstReader::ReadKindFuncTy() -> NullableFlowPtr<FuncTy> {
     parameters.emplace_back(std::move(name), type.value(), default_value);
   }
 
-  auto node = CreateNode<FuncTy>(return_type.value(), parameters, variadic, purity,
-                           attributes)();
+  auto node = CreateNode<FuncTy>(return_type.value(), parameters, variadic,
+                                 purity, attributes)();
   node->SetWidth(info->m_width);
   node->SetRangeBegin(info->m_min);
   node->SetRangeEnd(info->m_max);
@@ -2064,8 +2066,8 @@ auto AstReader::ReadKindStruct() -> NullableFlowPtr<Struct> {
     static_methods.emplace_back(visibility, method.value());
   }
 
-  return CreateNode<Struct>(mode, attributes, name, template_args, names, fields,
-                         methods, static_methods)();
+  return CreateNode<Struct>(mode, attributes, name, template_args, names,
+                            fields, methods, static_methods)();
 }
 
 auto AstReader::ReadKindEnum() -> NullableFlowPtr<Enum> {
@@ -2348,10 +2350,10 @@ auto AstReader::ReadKindFunction() -> NullableFlowPtr<Function> {
     }
   }
 
-  return CreateNode<Function>(std::move(attributes), purity, std::move(captures),
-                        name, std::move(template_args), std::move(parameters),
-                        variadic, return_type.value(), precond, postcond,
-                        body)();
+  return CreateNode<Function>(
+      std::move(attributes), purity, std::move(captures), name,
+      std::move(template_args), std::move(parameters), variadic,
+      return_type.value(), precond, postcond, body)();
 }
 
 auto AstReader::ReadKindScope() -> NullableFlowPtr<Scope> {
@@ -2438,7 +2440,7 @@ auto AstReader::ReadKindExport() -> NullableFlowPtr<Export> {
   }
 
   return CreateNode<Export>(body.value(), abi_name, visibility,
-                          std::move(attributes))();
+                            std::move(attributes))();
 }
 
 auto AstReader::ReadKindBlock() -> NullableFlowPtr<Block> {
@@ -2768,7 +2770,7 @@ auto AstReader::ReadKindForeach() -> NullableFlowPtr<Foreach> {
   }
 
   return CreateNode<Foreach>(index_name, value_name, expression.value(),
-                           body.value())();
+                             body.value())();
 }
 
 auto AstReader::ReadKindCase() -> NullableFlowPtr<Case> {

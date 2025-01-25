@@ -1246,10 +1246,10 @@ void AstWriter::Visit(FlowPtr<Foreach> n) {
   WriteSourceLocation(n);
 
   string("idx");
-  string(n->GetIdxIdentifier( ));
+  string(n->GetIdxIdentifier());
 
   string("val");
-  string(n->GetValIdentifier( ));
+  string(n->GetValIdentifier());
 
   string("expr");
   n->GetExpr().Accept(*this);

@@ -89,7 +89,7 @@ auto Parser::PImpl::RecurseExport(Vis vis) -> FlowPtr<Stmt> {
     auto export_body = RecurseExportBody();
 
     return CreateNode<Export>(export_body, export_abi, vis,
-                            export_attributes.value())();
+                              export_attributes.value())();
   }
 
   Log << SyntaxError << current() << "Malformed export attributes";

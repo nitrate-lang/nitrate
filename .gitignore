@@ -54,3 +54,5 @@ examples/test.q
 nitrate-nr
 dev.n
 module.nr
+pipeline/libnitrate-parser/src/protobuf/SyntaxTree.pb.cc
+pipeline/libnitrate-parser/src/protobuf/SyntaxTree.pb.h

@@ -68,7 +68,7 @@ namespace ncc::parse {
 
   public:
     constexpr Variable(auto name, auto type, auto value, auto decl_type,
-                      auto attributes)
+                       auto attributes)
         : Stmt(QAST_VAR),
           m_attributes(attributes),
           m_type(std::move(type)),
@@ -156,8 +156,12 @@ namespace ncc::parse {
           m_idx_ident(idx_ident),
           m_val_ident(val_ident) {}
 
-    [[nodiscard]] constexpr auto GetIdxIdentifier( ) const { return m_idx_ident; }
-    [[nodiscard]] constexpr auto GetValIdentifier( ) const { return m_val_ident; }
+    [[nodiscard]] constexpr auto GetIdxIdentifier() const {
+      return m_idx_ident;
+    }
+    [[nodiscard]] constexpr auto GetValIdentifier() const {
+      return m_val_ident;
+    }
     [[nodiscard]] constexpr auto GetExpr() const { return m_expr; }
     [[nodiscard]] constexpr auto GetBody() const { return m_body; }
   };
@@ -360,8 +364,7 @@ namespace ncc::parse {
 
   public:
     constexpr Struct(auto comp_type, auto attributes, auto name, auto params,
-                        auto names, auto fields, auto methods,
-                        auto static_methods)
+                     auto names, auto fields, auto methods, auto static_methods)
         : Stmt(QAST_STRUCT),
           m_attributes(attributes),
           m_names(names),

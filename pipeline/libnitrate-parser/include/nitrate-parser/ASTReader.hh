@@ -126,7 +126,7 @@ namespace ncc::parse {
     auto ReadKindIndex() -> NullableFlowPtr<Index>;
     auto ReadKindSlice() -> NullableFlowPtr<Slice>;
     auto ReadKindFstring() -> NullableFlowPtr<FString>;
-    auto ReadKindIdentifier( ) -> NullableFlowPtr<Identifier>;
+    auto ReadKindIdentifier() -> NullableFlowPtr<Identifier>;
     auto ReadKindSequence() -> NullableFlowPtr<Sequence>;
     auto ReadKindPostUnexpr() -> NullableFlowPtr<PostUnaryExpression>;
     auto ReadKindStmtExpr() -> NullableFlowPtr<StmtExpr>;

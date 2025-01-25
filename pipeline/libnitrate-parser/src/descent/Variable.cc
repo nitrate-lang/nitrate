@@ -95,8 +95,9 @@ auto Parser::PImpl::RecurseVariableInstance(VariableType decl_type)
       auto variable_type = RecurseVariableType();
       auto variable_initial = RecurseVariableValue();
 
-      return CreateNode<Variable>(variable_name, variable_type, variable_initial,
-                           decl_type, symbol_attributes_opt.value())();
+      return CreateNode<Variable>(variable_name, variable_type,
+                                  variable_initial, decl_type,
+                                  symbol_attributes_opt.value())();
     }
 
     Log << SyntaxError << current() << "Expected variable name";
