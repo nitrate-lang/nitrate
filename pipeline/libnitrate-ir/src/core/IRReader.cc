@@ -37,47 +37,47 @@
 
 using namespace ncc::ir;
 
-void IR_Reader::str(std::string_view str) {
+void IRReader::Str(std::string_view str) {
   /// TODO: Implement generic deserializer
   qcore_implement();
 }
 
-void IR_Reader::uint(uint64_t val) {
+void IRReader::Uint(uint64_t val) {
   /// TODO: Implement generic deserializer
   qcore_implement();
 }
 
-void IR_Reader::dbl(double val) {
+void IRReader::Dbl(double val) {
   /// TODO: Implement generic deserializer
   qcore_implement();
 }
 
-void IR_Reader::boolean(bool val) {
+void IRReader::Boolean(bool val) {
   /// TODO: Implement generic deserializer
   qcore_implement();
 }
 
-void IR_Reader::null() {
+void IRReader::Null() {
   /// TODO: Implement generic deserializer
   qcore_implement();
 }
 
-void IR_Reader::begin_obj() {
+void IRReader::BeginObj() {
   /// TODO: Implement generic deserializer
   qcore_implement();
 }
 
-void IR_Reader::end_obj() {
+void IRReader::EndObj() {
   /// TODO: Implement generic deserializer
   qcore_implement();
 }
 
-void IR_Reader::begin_arr(size_t max_size) {
+void IRReader::BeginArr(size_t max_size) {
   /// TODO: Implement generic deserializer
   qcore_implement();
 }
 
-void IR_Reader::end_arr() {
+void IRReader::EndArr() {
   /// TODO: Implement generic deserializer
   qcore_implement();
 }

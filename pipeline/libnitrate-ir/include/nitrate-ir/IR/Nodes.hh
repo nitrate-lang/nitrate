@@ -39,10 +39,10 @@
 #include <nitrate-ir/IR/Type.hh>
 
 namespace ncc::ir {
-  FlowPtr<Expr> createIgn();
+  auto CreateIgn() -> FlowPtr<Expr>;
 
   template <typename T, typename... Args>
-  static constexpr inline T *create(Args &&...args) {
+  static constexpr inline auto Create(Args &&...args) -> T * {
     /**
      * Create nodes and minimizes the number of allocations by reusing
      * immutable items.
@@ -53,7 +53,7 @@ namespace ncc::ir {
     return new (Arena<T>().allocate(1)) T(std::forward<Args>(args)...); \
   }
 
-    constexpr nr_ty_t ty = Expr::getTypeCode<T>();
+    constexpr nr_ty_t ty = Expr::GetTypeCode<T>();
 
     NORMAL_ALLOC(IR_eBIN);
     NORMAL_ALLOC(IR_eUNARY);
@@ -101,25 +101,26 @@ namespace ncc::ir {
   typedef std::function<bool(FlowPtr<Expr> *a, FlowPtr<Expr> *b)> ChildSelect;
 
   namespace detail {
-    void dfs_pre_impl(FlowPtr<Expr> *base, IterCallback cb, ChildSelect cs);
-    void dfs_post_impl(FlowPtr<Expr> *base, IterCallback cb, ChildSelect cs);
-    void bfs_pre_impl(FlowPtr<Expr> *base, IterCallback cb, ChildSelect cs);
-    void bfs_post_impl(FlowPtr<Expr> *base, IterCallback cb, ChildSelect cs);
-    void iter_children(FlowPtr<Expr> *base, IterCallback cb, ChildSelect cs);
+    void DfsPreImpl(FlowPtr<Expr> *base, IterCallback cb, ChildSelect cs);
+    void DfsPostImpl(FlowPtr<Expr> *base, IterCallback cb, ChildSelect cs);
+    void BfsPreImpl(FlowPtr<Expr> *base, IterCallback cb, ChildSelect cs);
+    void BfsPostImpl(FlowPtr<Expr> *base, IterCallback cb, ChildSelect cs);
+    void IterChildren(FlowPtr<Expr> *base, IterCallback cb, ChildSelect cs);
   }  // namespace detail
 
   template <IterMode mode, typename T>
-  void iterate(FlowPtr<T> &base, IterCallback cb, ChildSelect cs = nullptr) {
+  void iterate(  // NOLINT
+      FlowPtr<T> &base, IterCallback cb, ChildSelect cs = nullptr) {
     if constexpr (mode == dfs_pre) {
-      return detail::dfs_pre_impl((FlowPtr<Expr> *)&base, cb, cs);
+      return detail::DfsPreImpl((FlowPtr<Expr> *)&base, cb, cs);
     } else if constexpr (mode == dfs_post) {
-      return detail::dfs_post_impl((FlowPtr<Expr> *)&base, cb, cs);
+      return detail::DfsPostImpl((FlowPtr<Expr> *)&base, cb, cs);
     } else if constexpr (mode == bfs_pre) {
-      return detail::bfs_pre_impl((FlowPtr<Expr> *)&base, cb, cs);
+      return detail::BfsPreImpl((FlowPtr<Expr> *)&base, cb, cs);
     } else if constexpr (mode == bfs_post) {
-      return detail::bfs_post_impl((FlowPtr<Expr> *)&base, cb, cs);
+      return detail::BfsPostImpl((FlowPtr<Expr> *)&base, cb, cs);
     } else if constexpr (mode == children) {
-      return detail::iter_children((FlowPtr<Expr> *)&base, cb, cs);
+      return detail::IterChildren((FlowPtr<Expr> *)&base, cb, cs);
     } else {
       static_assert(mode != mode, "Invalid iteration mode.");
     }
@@ -132,49 +133,48 @@ namespace ncc::ir {
 
   /** Add source debugging information to an IR node */
   template <typename T>
-  static inline T *debug_info(T *N, uint32_t line, uint32_t col) {
+  static inline auto DebugInfo(T *n, uint32_t, uint32_t) -> T * {
     /// TODO: Store source location information
-    (void)line;
-    (void)col;
-
-    return N;
+    return n;
   }
 
   template <auto mode = dfs_pre>
-  void for_each(FlowPtr<Expr> v,
+  void for_each(FlowPtr<Expr> v,  // NOLINT
                 std::function<void(nr_ty_t, FlowPtr<Expr>)> f) {
     iterate<mode>(v, [&](auto, auto c) -> IterOp {
-      f((*c)->getKind(), *c);
+      f((*c)->GetKind(), *c);
 
       return IterOp::Proceed;
     });
   }
 
   template <auto mode = dfs_pre>
-  void transform(FlowPtr<Expr> v,
+  void transform(FlowPtr<Expr> v,  // NOLINT
                  std::function<bool(nr_ty_t, FlowPtr<Expr> *)> f) {
     iterate<mode>(v, [&](auto, auto c) -> IterOp {
-      return f((*c)->getKind(), c) ? IterOp::Proceed : IterOp::Abort;
+      return f((*c)->GetKind(), c) ? IterOp::Proceed : IterOp::Abort;
     });
   }
 
   template <typename T, auto mode = dfs_pre>
-  void for_each(FlowPtr<Expr> v, std::function<void(FlowPtr<T>)> f) {
+  void for_each(FlowPtr<Expr> v,  // NOLINT
+                std::function<void(FlowPtr<T>)> f) {
     iterate<mode>(v, [&](auto, auto c) -> IterOp {
-      if ((*c)->getKind() != Expr::getTypeCode<T>()) {
+      if ((*c)->GetKind() != Expr::GetTypeCode<T>()) {
         return IterOp::Proceed;
       }
 
-      f((*c)->template as<T>());
+      f((*c)->template As<T>());
 
       return IterOp::Proceed;
     });
   }
 
   template <typename T, auto mode = dfs_pre>
-  void transform(FlowPtr<Expr> v, std::function<bool(FlowPtr<T> *)> f) {
+  void transform(FlowPtr<Expr> v,  // NOLINT
+                 std::function<bool(FlowPtr<T> *)> f) {
     iterate<mode>(v, [&](auto, auto c) -> IterOp {
-      if ((*c)->getKind() != Expr::getTypeCode<T>()) {
+      if ((*c)->GetKind() != Expr::GetTypeCode<T>()) {
         return IterOp::Proceed;
       }
 

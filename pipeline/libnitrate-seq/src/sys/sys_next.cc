@@ -31,40 +31,44 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <nitrate-lexer/Lexer.hh>
 #include <nitrate-seq/Sequencer.hh>
-#include <sys/List.hh>
 
 extern "C" {
 #include <lua/lauxlib.h>
 }
 
 using namespace ncc::lex;
+using namespace ncc::seq;
 
-int ncc::seq::sys_next(lua_State* L) {
-  Token tok = get_engine()->Next();
+void PushTokenObject(lua_State* lua, Token tok) {
+  lua_newtable(lua);
 
-  lua_newtable(L);
+  lua_pushstring(lua, "ty");
+  lua_pushstring(lua, to_string(tok.GetKind())->c_str());
+  lua_settable(lua, -3);
 
-  lua_pushstring(L, "ty");
-  lua_pushstring(L, qlex_ty_str(tok.get_type()));
-  lua_settable(L, -3);
+  lua_pushstring(lua, "v");
+  switch (tok.GetKind()) {
+    case EofF: {
+      lua_pushstring(lua, "");
+      break;
+    }
 
-  lua_pushstring(L, "v");
-  switch (tok.get_type()) {
-    case EofF:
     case KeyW: {
-      lua_pushstring(L, kw_repr(tok.as_key()));
+      lua_pushstring(lua, kw_repr(tok.GetKeyword()));
       break;
     }
+
     case Oper: {
-      lua_pushstring(L, op_repr(tok.as_op()));
+      lua_pushstring(lua, op_repr(tok.GetOperator()));
       break;
     }
+
     case Punc: {
-      lua_pushstring(L, punct_repr(tok.as_punc()));
+      lua_pushstring(lua, punct_repr(tok.GetPunctor()));
       break;
     }
+
     case IntL:
     case NumL:
     case Text:
@@ -73,12 +77,16 @@ int ncc::seq::sys_next(lua_State* L) {
     case MacB:
     case Macr:
     case Note: {
-      lua_pushstring(L, std::string(tok.as_string()).c_str());
+      lua_pushstring(lua, tok.GetString()->c_str());
       break;
     }
   }
 
-  lua_settable(L, -3);
+  lua_settable(lua, -3);
+}
+
+auto Sequencer::SysNext() -> int32_t {
+  PushTokenObject(m_shared->m_L, Next());
 
   return 1;
 }

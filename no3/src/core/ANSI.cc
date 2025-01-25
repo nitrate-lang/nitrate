@@ -34,85 +34,94 @@
 #include <core/ANSI.hh>
 #include <iostream>
 
-no3::ansi::AnsiOut no3::ansi::AnsiOut::newline() {
-  m_out << std::endl;
+auto no3::ansi::AnsiOut::Newline() -> no3::ansi::AnsiOut {
+  m_out << "\n";
+  m_out.flush();
   return *this;
 }
 
-no3::ansi::AnsiOut &no3::ansi::AnsiOut::operator<<(const std::string &str) {
+auto no3::ansi::AnsiOut::operator<<(const std::string &str) -> no3::ansi::AnsiOut & {
   std::stringstream ansi_str;
 
   ansi_str << "\x1b[";
   static const std::string_view reset = "\x1b[0m";
 
-  switch (style & Style::COLOR_MASK) {
-    case Style::FG_BLACK:
+  switch (m_style & COLOR_MASK) {
+    case FG_BLACK:
       ansi_str << "30";
       break;
-    case Style::FG_RED:
+    case FG_RED:
       ansi_str << "31";
       break;
-    case Style::FG_GREEN:
+    case FG_GREEN:
       ansi_str << "32";
       break;
-    case Style::FG_YELLOW:
+    case FG_YELLOW:
       ansi_str << "33";
       break;
-    case Style::FG_BLUE:
+    case FG_BLUE:
       ansi_str << "34";
       break;
-    case Style::FG_PURPLE:
+    case FG_PURPLE:
       ansi_str << "35";
       break;
-    case Style::FG_CYAN:
+    case FG_CYAN:
       ansi_str << "36";
       break;
-    case Style::FG_WHITE:
+    case FG_WHITE:
       ansi_str << "37";
       break;
-    case Style::FG_DEFAULT:
+    case FG_DEFAULT:
       ansi_str << "39";
       break;
     default:
       break;
   };
 
-  switch (style & Style::BG_COLOR_MASK) {
-    case Style::BG_BLACK:
+  switch (m_style & BG_COLOR_MASK) {
+    case BG_BLACK:
       ansi_str << ";40";
       break;
-    case Style::BG_RED:
+    case BG_RED:
       ansi_str << ";41";
       break;
-    case Style::BG_GREEN:
+    case BG_GREEN:
       ansi_str << ";42";
       break;
-    case Style::BG_YELLOW:
+    case BG_YELLOW:
       ansi_str << ";43";
       break;
-    case Style::BG_BLUE:
+    case BG_BLUE:
       ansi_str << ";44";
       break;
-    case Style::BG_PURPLE:
+    case BG_PURPLE:
       ansi_str << ";45";
       break;
-    case Style::BG_CYAN:
+    case BG_CYAN:
       ansi_str << ";46";
       break;
-    case Style::BG_WHITE:
+    case BG_WHITE:
       ansi_str << ";47";
       break;
-    case Style::BG_DEFAULT:
+    case BG_DEFAULT:
       ansi_str << ";49";
       break;
     default:
       break;
   }
 
-  if ((style & Style::BOLD) != 0) ansi_str << ";1";
-  if ((style & Style::ILTALIC) != 0) ansi_str << ";3";
-  if ((style & Style::UNDERLINE) != 0) ansi_str << ";4";
-  if ((style & Style::STRIKE) != 0) ansi_str << ";9";
+  if ((m_style & BOLD) != 0) {
+    ansi_str << ";1";
+  }
+  if ((m_style & ILTALIC) != 0) {
+    ansi_str << ";3";
+  }
+  if ((m_style & UNDERLINE) != 0) {
+    ansi_str << ";4";
+  }
+  if ((m_style & STRIKE) != 0) {
+    ansi_str << ";9";
+  }
 
   ansi_str << "m";
 
@@ -122,7 +131,7 @@ no3::ansi::AnsiOut &no3::ansi::AnsiOut::operator<<(const std::string &str) {
   return *this;
 }
 
-bool no3::ansi::IsUsingColors() {
-  const char *NO_COLOR = getenv("NO_COLOR");
-  return NO_COLOR != NULL && NO_COLOR[0] != '\0' ? false : true;
+auto no3::ansi::IsUsingColors() -> bool {
+  const char *no_color = getenv("NO_COLOR");
+  return no_color == nullptr || no_color[0] == '\0';
 }

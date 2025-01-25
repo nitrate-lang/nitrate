@@ -32,102 +32,60 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <cstdio>
-#include <mutex>
 #include <nitrate-core/Logger.hh>
 #include <nitrate-core/Macro.hh>
-#include <queue>
 #include <sstream>
 #include <string>
 
-static thread_local struct LoggerState {
-  std::stringstream log_buffer;
-  qcore_log_t log_level;
-} g_log;
+using namespace ncc;
 
-static std::queue<std::pair<qcore_log_t, std::string>> g_log_orphaned;
-static std::recursive_mutex g_log_orphaned_mutex;
+static thread_local std::stringstream ThreadLogBuffer;
 
-static void qcore_default_logger(qcore_log_t level, const char *msg, size_t len,
-                                 void *) {
-  std::lock_guard<std::recursive_mutex> lock(g_log_orphaned_mutex);
+extern "C" NCC_EXPORT void QCoreBegin() { ThreadLogBuffer.str(""); }
 
-  g_log_orphaned.push({level, std::string(msg, len)});
-}
-
-static thread_local qcore_logger_t g_current_logger = qcore_default_logger;
-static thread_local void *g_current_logger_data = nullptr;
-
-extern "C" NCC_EXPORT void qcore_bind_logger(qcore_logger_t logger,
-                                             void *data) {
-  g_current_logger = logger ? logger : qcore_default_logger;
-  g_current_logger_data = data;
-}
-extern "C" NCC_EXPORT void qcore_begin(qcore_log_t level) {
-  g_log.log_buffer.str("");
-  g_log.log_level = level;
-}
-
-extern "C" NCC_EXPORT void qcore_end() {
-  std::string message = g_log.log_buffer.str();
+extern "C" NCC_EXPORT void QCoreEnd(QCoreLog level) {
+  std::string message = ThreadLogBuffer.str();
 
   while (message.ends_with("\n")) {
     message.pop_back();
   }
 
-  std::stringstream log_message;
-
-  switch (g_log.log_level) {
+  switch (level) {
     case QCORE_DEBUG: {
-      log_message << "\x1b[1mdebug:\x1b[0m " << message << "\x1b[0m";
+      ncc::Log << ncc::Debug << message;
       break;
     }
 
     case QCORE_INFO: {
-      log_message << "\x1b[37;1minfo:\x1b[0m " << message << "\x1b[0m";
+      ncc::Log << Info << message;
       break;
     }
 
     case QCORE_WARN: {
-      log_message << "\x1b[35;1mwarning:\x1b[0m " << message << "\x1b[0m";
+      ncc::Log << Warning << message;
       break;
     }
 
     case QCORE_ERROR: {
-      log_message << "\x1b[31;1merror:\x1b[0m " << message << "\x1b[0m";
+      ncc::Log << Error << message;
       break;
     }
 
     case QCORE_FATAL: {
-      log_message << "\x1b[31;1;4mfatal error:\x1b[0m " << message << "\x1b[0m";
+      ncc::Log << Emergency << message;
       break;
     }
   }
-
-  // If the logger is not the default logger, we need to flush the log queue
-  // before calling the custom logger.
-  if (g_current_logger != qcore_default_logger) {
-    std::lock_guard<std::recursive_mutex> lock(g_log_orphaned_mutex);
-
-    while (!g_log_orphaned.empty()) {
-      auto [level, msg] = g_log_orphaned.front();
-      g_current_logger(level, msg.c_str(), msg.size(), g_current_logger_data);
-      g_log_orphaned.pop();
-    }
-  }
-
-  message = log_message.str();
-  g_current_logger(g_log.log_level, message.c_str(), message.size(),
-                   g_current_logger_data);
 }
 
-extern "C" NCC_EXPORT int qcore_vwritef(const char *fmt, va_list args) {
-  char *buffer = NULL;
+extern "C" NCC_EXPORT auto QCoreVWriteF(const char *fmt, va_list args) -> int {
+  char *buffer = nullptr;
   int size = vasprintf(&buffer, fmt, args);
   if (size < 0) {
     qcore_panic("Failed to allocate memory for log message.");
   }
 
-  { g_log.log_buffer << std::string_view(buffer, size); }
+  ThreadLogBuffer << std::string_view(buffer, size);
 
   free(buffer);
 

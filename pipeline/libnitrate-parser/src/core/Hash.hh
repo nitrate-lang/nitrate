@@ -41,38 +41,36 @@
 #include <nitrate-parser/ASTWriter.hh>
 
 namespace ncc::parse {
-  class NCC_EXPORT AST_Hash64 : public AST_Writer {
+  class NCC_EXPORT AstHash64 : public AstWriter {
     boost::uuids::detail::sha1 m_sum;
 
-    void update(uint64_t data) { m_sum.process_bytes(&data, sizeof(data)); }
+    void Update(uint64_t data) { m_sum.process_bytes(&data, sizeof(data)); }
 
-    void str_impl(std::string_view str);
-    void uint_impl(uint64_t val);
-    void double_impl(double val);
-    void bool_impl(bool val);
-    void null_impl();
-    void begin_obj_impl(size_t pair_count);
-    void end_obj_impl();
-    void begin_arr_impl(size_t size);
-    void end_arr_impl();
+    void StrImpl(std::string_view str);
+    void UintImpl(uint64_t val);
+    void DoubleImpl(double val);
+    void BoolImpl(bool val);
+    void NullImpl();
+    void BeginObjImpl(size_t size);
+    void EndObjImpl();
+    void BeginArrImpl(size_t size);
+    void EndArrImpl();
 
   public:
-    AST_Hash64()
-        : AST_Writer(
-              std::bind(&AST_Hash64::str_impl, this, std::placeholders::_1),
-              std::bind(&AST_Hash64::uint_impl, this, std::placeholders::_1),
-              std::bind(&AST_Hash64::double_impl, this, std::placeholders::_1),
-              std::bind(&AST_Hash64::bool_impl, this, std::placeholders::_1),
-              std::bind(&AST_Hash64::null_impl, this),
-              std::bind(&AST_Hash64::begin_obj_impl, this,
-                        std::placeholders::_1),
-              std::bind(&AST_Hash64::end_obj_impl, this),
-              std::bind(&AST_Hash64::begin_arr_impl, this,
-                        std::placeholders::_1),
-              std::bind(&AST_Hash64::end_arr_impl, this)) {}
-    virtual ~AST_Hash64() = default;
+    AstHash64()
+        : AstWriter(
+              [this](auto&& x) { StrImpl(std::forward<decltype(x)>(x)); },
+              [this](auto&& x) { UintImpl(std::forward<decltype(x)>(x)); },
+              [this](auto&& x) { DoubleImpl(std::forward<decltype(x)>(x)); },
+              [this](auto&& x) { BoolImpl(std::forward<decltype(x)>(x)); },
+              [this] { NullImpl(); },
+              [this](auto&& x) { BeginObjImpl(std::forward<decltype(x)>(x)); },
+              [this] { EndObjImpl(); },
+              [this](auto&& x) { BeginArrImpl(std::forward<decltype(x)>(x)); },
+              [this] { EndArrImpl(); }) {}
+    ~AstHash64() override = default;
 
-    uint64_t get() {
+    auto Get() -> uint64_t {
       boost::uuids::detail::sha1::digest_type digest;
       m_sum.get_digest(digest);
 

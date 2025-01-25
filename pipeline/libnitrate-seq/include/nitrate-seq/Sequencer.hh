@@ -34,56 +34,95 @@
 #ifndef __NITRATE_SEQ_HH__
 #define __NITRATE_SEQ_HH__
 
+#include <cstdint>
+#include <functional>
+#include <list>
 #include <memory>
 #include <nitrate-core/Environment.hh>
 #include <nitrate-lexer/Lexer.hh>
-#include <nitrate-lexer/Token.hh>
+#include <nitrate-seq/EC.hh>
 #include <optional>
+#include <queue>
+#include <random>
 #include <string_view>
+#include <vector>
 
 struct lua_State;
 
 namespace ncc::seq {
+  using FetchModuleFunc =
+      std::function<std::optional<std::string>(std::string_view)>;
+
+  auto FileSystemFetchModule(std::string_view path)
+      -> std::optional<std::string>;
 
   class NCC_EXPORT Sequencer final : public ncc::lex::IScanner {
-    static std::string_view CodePrefix;
-    std::unique_ptr<ncc::lex::Tokenizer> m_scanner;
+    using MethodType = int (ncc::seq::Sequencer::*)();
+    struct StopException {};
 
-  public:
-    enum DeferOp {
-      EmitToken,
-      SkipToken,
-      UninstallHandler,
+    struct SharedState {
+      std::mt19937 m_random;
+      std::queue<std::queue<lex::Token>> m_emission;
+      FetchModuleFunc m_fetch_module;
+      std::list<MethodType> m_captures;
+      lua_State* m_L;
+      size_t m_depth;
+
+      SharedState();
+      ~SharedState();
     };
 
-    using DeferCallback =
-        std::function<DeferOp(Sequencer *obj, ncc::lex::Token last)>;
-    class StopException {};
+    static std::string_view CodePrefix;
 
-    class PImpl;
-    std::shared_ptr<PImpl> m_core;
+    ncc::lex::Tokenizer m_scanner;
+    std::shared_ptr<SharedState> m_shared;
 
-    virtual ncc::lex::Token GetNext() override;
-    virtual std::optional<ncc::lex::Location> GetLocationFallback(
-        ncc::lex::LocationID id) override {
-      return m_scanner->GetLocation(id);
-    }
+    ///=========================================================================
 
-    bool ApplyDynamicTransforms(ncc::lex::Token last);
+    [[nodiscard]] auto SysNext() -> int32_t;
+    [[nodiscard]] auto SysPeek() -> int32_t;
+    [[nodiscard]] auto SysEmit() -> int32_t;
+    [[nodiscard]] auto SysDebug() -> int32_t;
+    [[nodiscard]] auto SysInfo() -> int32_t;
+    [[nodiscard]] auto SysWarn() -> int32_t;
+    [[nodiscard]] auto SysError() -> int32_t;
+    [[nodiscard]] auto SysAbort() -> int32_t;
+    [[nodiscard]] auto SysFatal() -> int32_t;
+    [[nodiscard]] auto SysGet() -> int32_t;
+    [[nodiscard]] auto SysSet() -> int32_t;
+    [[nodiscard]] auto SysCtrl() -> int32_t;
+    [[nodiscard]] auto SysFetch() -> int32_t;
+    [[nodiscard]] auto SysRandom() -> int32_t;
 
-    bool ExecuteLua(const char *code);
-    void RecursiveExpand(std::string_view code);
-    void LoadLuaLibs();
-    void BindLuaAPI();
+    ///=========================================================================
+
+    auto BindMethod(const char* name, MethodType func) -> void;
+    auto BindLuaAPI() -> void;
+    auto ConfigureLUAEnvironment() -> void;
+    auto ExecuteLua(const char* code) -> std::optional<std::string>;
+    auto FetchModuleData(std::string_view module_name)
+        -> std::optional<std::string>;
+
+    auto SequenceSource(std::string_view code) -> void;
+    auto GetNext() -> ncc::lex::Token override;
+    auto GetLocationFallback(ncc::lex::LocationID id)
+        -> std::optional<ncc::lex::Location> override;
 
   public:
-    Sequencer(std::istream &file, std::shared_ptr<ncc::Environment> env,
+    Sequencer(std::istream& file, std::shared_ptr<ncc::Environment> env,
               bool is_root = true);
-    virtual ~Sequencer() override = default;
+    Sequencer(const Sequencer&) = delete;
+    Sequencer(Sequencer&&) = delete;
+    ~Sequencer() override;
 
-    virtual std::optional<std::vector<std::string>> GetSourceWindow(
-        Point start, Point end, char fillchar) override;
+    [[nodiscard]] auto HasError() const -> bool override;
+    auto SetFailBit(bool fail = true) -> bool override;
+
+    auto SetFetchFunc(FetchModuleFunc func) -> void;
+    auto GetSourceWindow(Point start, Point end, char fillchar)
+        -> std::optional<std::vector<std::string>> override;
   };
+
 }  // namespace ncc::seq
 
 #endif

@@ -46,7 +46,7 @@ namespace ncc::ir {
   using WriterSourceProvider =
       std::optional<std::reference_wrapper<lex::IScanner>>;
 
-  class NCC_EXPORT IR_Writer : public IRVisitor<void> {
+  class NCC_EXPORT IRWriter : public IRVisitor<void> {
     using InsertString = std::function<void(std::string_view)>;
     using InsertUInt64 = std::function<void(uint64_t)>;
     using InsertDouble = std::function<void(double)>;
@@ -57,83 +57,83 @@ namespace ncc::ir {
     using BeginArray = std::function<void(size_t size)>;
     using EndArray = std::function<void()>;
 
-    InsertString string;
-    InsertUInt64 uint64;
-    InsertDouble dbl;
-    InsertBool boolean;
-    InsertNull null;
-    BeginObject begin_obj;
-    EndObject end_obj;
-    BeginArray begin_arr;
-    EndArray end_arr;
+    InsertString string;    // NOLINT
+    InsertUInt64 uint64;    // NOLINT
+    InsertDouble dbl;       // NOLINT
+    InsertBool boolean;     // NOLINT
+    InsertNull null;        // NOLINT
+    BeginObject begin_obj;  // NOLINT
+    EndObject end_obj;      // NOLINT
+    BeginArray begin_arr;   // NOLINT
+    EndArray end_arr;       // NOLINT
     WriterSourceProvider m_rd;
 
-    void write_source_location(FlowPtr<Expr> n) const;
+    void WriteSourceLocation(FlowPtr<Expr> n) const;
 
   public:
-    IR_Writer(InsertString str_impl, InsertUInt64 uint_impl,
-              InsertDouble dbl_impl, InsertBool bool_impl, InsertNull null_impl,
-              BeginObject begin_obj_impl, EndObject end_obj_impl,
-              BeginArray begin_arr_impl, EndArray end_arr_impl,
-              WriterSourceProvider rd = std::nullopt)
-        : string(str_impl),
-          uint64(uint_impl),
-          dbl(dbl_impl),
-          boolean(bool_impl),
-          null(null_impl),
-          begin_obj(begin_obj_impl),
-          end_obj(end_obj_impl),
-          begin_arr(begin_arr_impl),
-          end_arr(end_arr_impl),
+    IRWriter(InsertString str_impl, InsertUInt64 uint_impl,
+             InsertDouble dbl_impl, InsertBool bool_impl, InsertNull null_impl,
+             BeginObject begin_obj_impl, EndObject end_obj_impl,
+             BeginArray begin_arr_impl, EndArray end_arr_impl,
+             WriterSourceProvider rd = std::nullopt)
+        : string(std::move(str_impl)),
+          uint64(std::move(uint_impl)),
+          dbl(std::move(dbl_impl)),
+          boolean(std::move(bool_impl)),
+          null(std::move(null_impl)),
+          begin_obj(std::move(begin_obj_impl)),
+          end_obj(std::move(end_obj_impl)),
+          begin_arr(std::move(begin_arr_impl)),
+          end_arr(std::move(end_arr_impl)),
           m_rd(rd) {}
-    virtual ~IR_Writer() = default;
+    ~IRWriter() override = default;
 
-    void visit(FlowPtr<Expr> n) override;
-    void visit(FlowPtr<BinExpr> n) override;
-    void visit(FlowPtr<Unary> n) override;
-    void visit(FlowPtr<U1Ty> n) override;
-    void visit(FlowPtr<U8Ty> n) override;
-    void visit(FlowPtr<U16Ty> n) override;
-    void visit(FlowPtr<U32Ty> n) override;
-    void visit(FlowPtr<U64Ty> n) override;
-    void visit(FlowPtr<U128Ty> n) override;
-    void visit(FlowPtr<I8Ty> n) override;
-    void visit(FlowPtr<I16Ty> n) override;
-    void visit(FlowPtr<I32Ty> n) override;
-    void visit(FlowPtr<I64Ty> n) override;
-    void visit(FlowPtr<I128Ty> n) override;
-    void visit(FlowPtr<F16Ty> n) override;
-    void visit(FlowPtr<F32Ty> n) override;
-    void visit(FlowPtr<F64Ty> n) override;
-    void visit(FlowPtr<F128Ty> n) override;
-    void visit(FlowPtr<VoidTy> n) override;
-    void visit(FlowPtr<PtrTy> n) override;
-    void visit(FlowPtr<ConstTy> n) override;
-    void visit(FlowPtr<OpaqueTy> n) override;
-    void visit(FlowPtr<StructTy> n) override;
-    void visit(FlowPtr<UnionTy> n) override;
-    void visit(FlowPtr<ArrayTy> n) override;
-    void visit(FlowPtr<FnTy> n) override;
-    void visit(FlowPtr<Int> n) override;
-    void visit(FlowPtr<Float> n) override;
-    void visit(FlowPtr<List> n) override;
-    void visit(FlowPtr<Call> n) override;
-    void visit(FlowPtr<Seq> n) override;
-    void visit(FlowPtr<Index> n) override;
-    void visit(FlowPtr<Ident> n) override;
-    void visit(FlowPtr<Extern> n) override;
-    void visit(FlowPtr<Local> n) override;
-    void visit(FlowPtr<Ret> n) override;
-    void visit(FlowPtr<Brk> n) override;
-    void visit(FlowPtr<Cont> n) override;
-    void visit(FlowPtr<If> n) override;
-    void visit(FlowPtr<While> n) override;
-    void visit(FlowPtr<For> n) override;
-    void visit(FlowPtr<Case> n) override;
-    void visit(FlowPtr<Switch> n) override;
-    void visit(FlowPtr<Function> n) override;
-    void visit(FlowPtr<Asm> n) override;
-    void visit(FlowPtr<Tmp> n) override;
+    void Visit(FlowPtr<Expr> n) override;
+    void Visit(FlowPtr<BinaryExpression> n) override;
+    void Visit(FlowPtr<Unary> n) override;
+    void Visit(FlowPtr<U1Ty> n) override;
+    void Visit(FlowPtr<U8Ty> n) override;
+    void Visit(FlowPtr<U16Ty> n) override;
+    void Visit(FlowPtr<U32Ty> n) override;
+    void Visit(FlowPtr<U64Ty> n) override;
+    void Visit(FlowPtr<U128Ty> n) override;
+    void Visit(FlowPtr<I8Ty> n) override;
+    void Visit(FlowPtr<I16Ty> n) override;
+    void Visit(FlowPtr<I32Ty> n) override;
+    void Visit(FlowPtr<I64Ty> n) override;
+    void Visit(FlowPtr<I128Ty> n) override;
+    void Visit(FlowPtr<F16Ty> n) override;
+    void Visit(FlowPtr<F32Ty> n) override;
+    void Visit(FlowPtr<F64Ty> n) override;
+    void Visit(FlowPtr<F128Ty> n) override;
+    void Visit(FlowPtr<VoidTy> n) override;
+    void Visit(FlowPtr<PtrTy> n) override;
+    void Visit(FlowPtr<ConstTy> n) override;
+    void Visit(FlowPtr<OpaqueTy> n) override;
+    void Visit(FlowPtr<StructTy> n) override;
+    void Visit(FlowPtr<UnionTy> n) override;
+    void Visit(FlowPtr<ArrayTy> n) override;
+    void Visit(FlowPtr<FnTy> n) override;
+    void Visit(FlowPtr<Int> n) override;
+    void Visit(FlowPtr<Float> n) override;
+    void Visit(FlowPtr<List> n) override;
+    void Visit(FlowPtr<Call> n) override;
+    void Visit(FlowPtr<Seq> n) override;
+    void Visit(FlowPtr<Index> n) override;
+    void Visit(FlowPtr<Identifier> n) override;
+    void Visit(FlowPtr<Extern> n) override;
+    void Visit(FlowPtr<Local> n) override;
+    void Visit(FlowPtr<Ret> n) override;
+    void Visit(FlowPtr<Brk> n) override;
+    void Visit(FlowPtr<Cont> n) override;
+    void Visit(FlowPtr<If> n) override;
+    void Visit(FlowPtr<While> n) override;
+    void Visit(FlowPtr<For> n) override;
+    void Visit(FlowPtr<Case> n) override;
+    void Visit(FlowPtr<Switch> n) override;
+    void Visit(FlowPtr<Function> n) override;
+    void Visit(FlowPtr<Asm> n) override;
+    void Visit(FlowPtr<Tmp> n) override;
   };
 }  // namespace ncc::ir
 

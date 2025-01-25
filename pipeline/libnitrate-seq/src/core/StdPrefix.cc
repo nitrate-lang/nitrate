@@ -34,50 +34,8 @@
 #include <nitrate-seq/Sequencer.hh>
 #include <string_view>
 
-std::string_view ncc::seq::Sequencer::CodePrefix = R"(
-@( -- Disable some lua functions for security and determinism
-  -- From lbaselib.c
-  dofile = nil;
-  loadfile = nil;
-
-  -- From lmathlib.c
-  math.random = nil;
-  math.randomseed = nil;
-
-  print = function(...)
-    local args = {...};
-    local res = '';
-    for i = 1, #args do
-      res = res .. tostring(args[i]);
-      if i < #args then
-        res = res .. '\t';
-      end
-    end
-    n.debug(res);
-  end
-)
-
-@(fn define() {
-  -- Read in expected lexical sequence
-  local name = n.next(); local sepr = n.next();
-  local valu = n.next(); local semi = n.next();
-
-  -- Verify that the sequence is correct
-  if name.ty ~= 'name' then
-    n.abort('Expected name in @define macro');
-  end
-  if sepr.ty ~= 'op' or sepr.v ~= '=' then
-    n.abort('Expected = in @define macro');
-  end
-  if semi.ty ~= 'sym' or semi.v ~= ';' then
-    n.abort('Expected ; in @define macro');
-  end
-
-  -- Set the define in the magic 'def.' namespace
-  n.set('def.'.. name.v, valu.v);
-})
-
-@(fn comp_if(cond, terminator) {
+std::string_view ncc::seq::Sequencer::CodePrefix = R"(@(
+function comp_if(cond, terminator)
   -- Nothing to do if condition is true
   if cond then
     return
@@ -108,11 +66,13 @@ std::string_view ncc::seq::Sequencer::CodePrefix = R"(
       rank = rank + 1
     end
   end
-})
+end
+)
 
-@(fn comp_endif() {})
+@(function comp_endif() end)
 
-@(fn use() {
+@(
+function use()
   -- Read in expected lexical sequence
   local ver = n.next(); local semi = n.next();
 
@@ -130,33 +90,8 @@ std::string_view ncc::seq::Sequencer::CodePrefix = R"(
   end
 
   n.debug('Using Nitrate environment version: ', ver.v);
-})
-
-@(fn import() {
-  -- Read in expected lexical sequence
-  local name = n.next(); local semi = n.next();
-
-  -- Verify that the sequence is correct
-  if semi.ty ~= 'sym' or semi.v ~= ';' then
-    n.abort('Expected semicolon after module name');
-  end
-  
-  if name.ty ~= 'str' and name.ty ~= 'name' then
-    n.abort('Expected string literal or identifier after @import.');
-  end
-
-  name = name.v;
-
-  n.debug('Attempting to import module: ', name);
-  local content = n.fetch(name);
-  if content == nil then
-    n.abort('Failed to import module: ', n.errno);
-  end
-
-  n.debug(string.format('Fetched module: %s (%d bytes)', name, #content));
-
-  return content;
-})
+end
+)
 
 @(
   n.isset = function(name, value)
@@ -314,7 +249,8 @@ std::string_view ncc::seq::Sequencer::CodePrefix = R"(
             end
 
             for j = 1, #bin, 8 do
-              res = res .. string.char(tonumber(string.sub(bin, j, j + 7), 2));
+              res = res .. string.char(tonumber(string.sub(bin, j, j + 7),
+              2));
             end
 
             i = i + 1;
@@ -355,6 +291,41 @@ std::string_view ncc::seq::Sequencer::CodePrefix = R"(
     end
 
     return res;
+  end
+)
+
+@(
+  n.env_keys = function()
+    local data = n.get("this.keys")
+    local key_length_buffer = ''
+    local keys = {}
+    local i = 1
+
+    if data == nil or data == "" then
+      return {}
+    end
+
+    while i < #data do
+      local c = data:sub(i, i)
+      i = i + 1
+      
+      if c:match("%d") then
+        key_length_buffer = key_length_buffer .. c
+      else
+        local key_length = tonumber(key_length_buffer)
+        key_length_buffer = ''
+
+        if key_length == nil then
+          return {}
+        end
+
+        table.insert(keys, data:sub(i, i + key_length - 1))
+
+        i = i + key_length
+      end
+    end
+
+    return keys
   end
 )
 )";

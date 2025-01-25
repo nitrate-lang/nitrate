@@ -42,10 +42,10 @@
 #include <nitrate-parser/Init.hh>
 #include <nitrate-seq/Init.hh>
 
-static std::atomic<size_t> nit_lib_ref_count = 0;
+static std::atomic<size_t> NitLibRefCount = 0;
 
-bool nit_lib_init() {
-  if (nit_lib_ref_count++ > 1) {
+auto NitLibInit() -> bool {
+  if (NitLibRefCount++ > 1) {
     return true;
   }
 
@@ -69,19 +69,19 @@ bool nit_lib_init() {
     return false;
   }
 
-  if (!qcode_lib_init()) {
+  if (!QcodeLibInit()) {
     return false;
   }
 
   return true;
 }
 
-void nit_deinit() {
-  if (--nit_lib_ref_count > 0) {
+void NitDeinit() {
+  if (--NitLibRefCount > 0) {
     return;
   }
 
-  qcode_lib_deinit();
+  QcodeLibDeinit();
   ncc::ir::IRLibrary.DeinitRC();
   ncc::parse::ParseLibrary.DeinitRC();
   ncc::seq::SeqLibrary.DeinitRC();

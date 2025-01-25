@@ -142,7 +142,7 @@
 //   return compiler_trace(debug_info(create<F64Ty>(), DEBUG_INFO));
 // }
 
-// F128Ty *NRBuilder::getF128Ty(SOURCE_LOCATION_PARAM_ONCE) {
+// F128Ty *NRBuilder::GetF128Ty(SOURCE_LOCATION_PARAM_ONCE) {
 //   contract_enforce(m_state == SelfState::Constructed);
 //   contract_enforce(m_root != nullptr);
 
@@ -367,14 +367,15 @@
 // }
 
 // std::optional<Expr *> NRBuilder::getDefaultValue(
-//     FlowPtr<Type>_for SOURCE_LOCATION_PARAM) {
+//     FlowPtr<Type>src_loc SOURCE_LOCATION_PARAM) {
 //   contract_enforce(m_state == SelfState::Constructed);
 //   contract_enforce(m_root != nullptr);
-//   contract_enforce(_for != nullptr && static_cast<Expr *>(_for)->isType());
+//   contract_enforce(src_loc != nullptr && static_cast<Expr
+//   *>(_for)->isType());
 
 //   std::optional<Expr *> E;
 
-//   switch (_for->getKind()) {
+//   switch (_for->GetKind()) {
 //     case IR_tU1: {
 //       E = createBool(false);
 //       break;
@@ -456,15 +457,15 @@
 //     }
 
 //     case IR_tPTR: {
-//       E = create<BinExpr>(createFixedInteger(0, 64), _for, Op::BitcastAs);
+//       E = create<BinaryExpression>(createFixedInteger(0, 64), _for, Op::BitcastAs);
 //       break;
 //     }
 
 //     case IR_tCONST: {
-//       ConstTy *const_ty = _for->as<ConstTy>();
-//       auto e = getDefaultValue(const_ty->getItem());
+//       ConstTy *const_ty = _for->As<ConstTy>();
+//       auto e = getDefaultValue(const_ty->GetItem());
 //       if (e) {
-//         E = create<BinExpr>(e.value(), _for, Op::CastAs);
+//         E = create<BinaryExpression>(e.value(), _for, Op::CastAs);
 //       }
 //       break;
 //     }
@@ -475,7 +476,7 @@
 //     }
 
 //     case IR_tSTRUCT: {
-//       StructTy *struct_ty = _for->as<StructTy>();
+//       StructTy *struct_ty = _for->As<StructTy>();
 
 //       std::vector<Expr *> fields(struct_ty->getFields().size());
 //       for (size_t i = 0; i < fields.size(); i++) {
@@ -487,17 +488,17 @@
 //         fields[i] = f.value();
 //       }
 
-//       E = create<BinExpr>(createList(fields, false), _for, Op::CastAs);
+//       E = create<BinaryExpression>(createList(fields, false), _for, Op::CastAs);
 
 //     end:
 //       break;
 //     }
 
 //     case IR_tUNION: {
-//       UnionTy *union_ty = _for->as<UnionTy>();
+//       UnionTy *union_ty = _for->As<UnionTy>();
 
 //       if (union_ty->getFields().empty()) {
-//         E = create<BinExpr>(createList({}, false), _for, Op::CastAs);
+//         E = create<BinaryExpression>(createList({}, false), _for, Op::CastAs);
 //       } else {
 //         E = getDefaultValue(union_ty->getFields()[0]);
 //       }
@@ -506,7 +507,7 @@
 //     }
 
 //     case IR_tARRAY: {
-//       auto array_ty = _for->as<ArrayTy>();
+//       auto array_ty = _for->As<ArrayTy>();
 
 //       /// FIXME: This is horribly inefficient in terms of memory, especially
 //       for
@@ -522,20 +523,20 @@
 //         elements[i] = f.value();
 //       }
 
-//       E = create<BinExpr>(createList(elements, true), _for, Op::CastAs);
+//       E = create<BinaryExpression>(createList(elements, true), _for, Op::CastAs);
 
 //     end2:
 //       break;
 //     }
 
 //     case IR_tFUNC: {
-//       FnTy *fn_ty = _for->as<FnTy>();
-//       E = create<BinExpr>(createFixedInteger(0, 64), fn_ty, Op::BitcastAs);
+//       FnTy *fn_ty = _for->As<FnTy>();
+//       E = create<BinaryExpression>(createFixedInteger(0, 64), fn_ty, Op::BitcastAs);
 //       break;
 //     }
 
 //     case IR_tTMP: {
-//       Tmp *tmp = _for->as<Tmp>();
+//       Tmp *tmp = _for->As<Tmp>();
 //       if (tmp->getTmpType() == TmpType::NAMED_TYPE) {
 //         std::string_view name = std::get<std::string_view>(tmp->getData());
 //         E = create<Tmp>(TmpType::DEFAULT_VALUE, name);
@@ -552,9 +553,9 @@
 //     return std::nullopt;
 //   }
 
-//   if (auto type = E.value()->getType()) {
-//     if (!type.value()->isSame(_for)) {
-//       E = create<BinExpr>(E.value(), _for->asExpr(), Op::CastAs);
+//   if (auto type = E.value()->GetType()) {
+//     if (!type.value()->IsEq(_for)) {
+//       E = create<BinaryExpression>(E.value(), _for->asExpr(), Op::CastAs);
 //     }
 //   }
 

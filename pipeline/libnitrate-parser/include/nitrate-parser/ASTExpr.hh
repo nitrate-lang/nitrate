@@ -43,225 +43,237 @@ namespace ncc::parse {
     FlowPtr<Stmt> m_stmt;
 
   public:
-    constexpr StmtExpr(FlowPtr<Stmt> stmt) : Expr(QAST_SEXPR), m_stmt(stmt) {}
+    constexpr StmtExpr(auto stmt) : Expr(QAST_SEXPR), m_stmt(std::move(stmt)) {}
 
-    constexpr auto get_stmt() const { return m_stmt; }
+    [[nodiscard]] constexpr auto GetStmt() const { return m_stmt; }
   };
 
   class TypeExpr final : public Expr {
     FlowPtr<Type> m_type;
 
   public:
-    constexpr TypeExpr(FlowPtr<Type> type) : Expr(QAST_TEXPR), m_type(type) {}
+    constexpr TypeExpr(auto type) : Expr(QAST_TEXPR), m_type(std::move(type)) {}
 
-    constexpr auto get_type() const { return m_type; }
+    [[nodiscard]] constexpr auto GetType() const { return m_type; }
   };
 
-  class UnaryExpr final : public Expr {
+  class UnaryExpression final : public Expr {
     FlowPtr<Expr> m_rhs;
     lex::Operator m_op;
 
   public:
-    constexpr UnaryExpr(lex::Operator op, FlowPtr<Expr> rhs)
-        : Expr(QAST_UNEXPR), m_rhs(rhs), m_op(op) {}
+    constexpr UnaryExpression(auto op, auto rhs)
+        : Expr(QAST_UNEXPR), m_rhs(std::move(rhs)), m_op(op) {}
 
-    constexpr auto get_rhs() const { return m_rhs; }
-    constexpr auto get_op() const { return m_op; }
+    [[nodiscard]] constexpr auto GetRHS() const { return m_rhs; }
+    [[nodiscard]] constexpr auto GetOp() const { return m_op; }
   };
 
-  class BinExpr final : public Expr {
+  class BinaryExpression final : public Expr {
     FlowPtr<Expr> m_lhs, m_rhs;
     lex::Operator m_op;
 
   public:
-    constexpr BinExpr(FlowPtr<Expr> lhs, lex::Operator op, FlowPtr<Expr> rhs)
-        : Expr(QAST_BINEXPR), m_lhs(lhs), m_rhs(rhs), m_op(op) {}
+    constexpr BinaryExpression(auto lhs, auto op, auto rhs)
+        : Expr(QAST_BINEXPR),
+          m_lhs(std::move(lhs)),
+          m_rhs(std::move(rhs)),
+          m_op(op) {}
 
-    constexpr auto get_lhs() const { return m_lhs; }
-    constexpr auto get_rhs() const { return m_rhs; }
-    constexpr auto get_op() const { return m_op; }
+    [[nodiscard]] constexpr auto GetLHS() const { return m_lhs; }
+    [[nodiscard]] constexpr auto GetRHS() const { return m_rhs; }
+    [[nodiscard]] constexpr auto GetOp() const { return m_op; }
   };
 
-  class PostUnaryExpr final : public Expr {
+  class PostUnaryExpression final : public Expr {
     FlowPtr<Expr> m_lhs;
     lex::Operator m_op;
 
   public:
-    constexpr PostUnaryExpr(FlowPtr<Expr> lhs, lex::Operator op)
-        : Expr(QAST_POST_UNEXPR), m_lhs(lhs), m_op(op) {}
+    constexpr PostUnaryExpression(auto lhs, auto op)
+        : Expr(QAST_POST_UNEXPR), m_lhs(std::move(lhs)), m_op(op) {}
 
-    constexpr auto get_lhs() const { return m_lhs; }
-    constexpr auto get_op() const { return m_op; }
+    [[nodiscard]] constexpr auto GetLHS() const { return m_lhs; }
+    [[nodiscard]] constexpr auto GetOp() const { return m_op; }
   };
 
-  class TernaryExpr final : public Expr {
+  class TernaryExpression final : public Expr {
     FlowPtr<Expr> m_cond, m_lhs, m_rhs;
 
   public:
-    constexpr TernaryExpr(FlowPtr<Expr> cond, FlowPtr<Expr> lhs,
-                          FlowPtr<Expr> rhs)
-        : Expr(QAST_TEREXPR), m_cond(cond), m_lhs(lhs), m_rhs(rhs) {}
+    constexpr TernaryExpression(auto cond, auto lhs, auto rhs)
+        : Expr(QAST_TEREXPR),
+          m_cond(std::move(cond)),
+          m_lhs(std::move(lhs)),
+          m_rhs(std::move(rhs)) {}
 
-    constexpr auto get_cond() const { return m_cond; }
-    constexpr auto get_lhs() const { return m_lhs; }
-    constexpr auto get_rhs() const { return m_rhs; }
+    [[nodiscard]] constexpr auto GetCond() const { return m_cond; }
+    [[nodiscard]] constexpr auto GetLHS() const { return m_lhs; }
+    [[nodiscard]] constexpr auto GetRHS() const { return m_rhs; }
   };
 
-  class ConstInt final : public Expr {
+  class Integer final : public Expr {
     string m_value;
 
   public:
-    constexpr ConstInt(string value) : Expr(QAST_INT), m_value(value) {}
+    constexpr Integer(auto value) : Expr(QAST_INT), m_value(value) {}
 
-    constexpr auto get_value() const { return m_value.get(); }
+    [[nodiscard]] constexpr auto GetValue() const { return m_value; }
   };
 
-  class ConstFloat final : public Expr {
+  class Float final : public Expr {
     string m_value;
 
   public:
-    constexpr ConstFloat(string value) : Expr(QAST_FLOAT), m_value(value) {}
+    constexpr Float(auto value) : Expr(QAST_FLOAT), m_value(value) {}
 
-    constexpr auto get_value() const { return m_value.get(); }
+    [[nodiscard]] constexpr auto GetValue() const { return m_value; }
   };
 
-  class ConstBool final : public Expr {
+  class Boolean final : public Expr {
     bool m_value;
 
   public:
-    constexpr ConstBool(bool value) : Expr(QAST_BOOL), m_value(value) {}
+    constexpr Boolean(auto value) : Expr(QAST_BOOL), m_value(value) {}
 
-    constexpr auto get_value() const { return m_value; }
+    [[nodiscard]] constexpr auto GetValue() const { return m_value; }
   };
 
-  class ConstString final : public Expr {
+  class String final : public Expr {
     string m_value;
 
   public:
-    constexpr ConstString(string value) : Expr(QAST_STRING), m_value(value) {}
+    constexpr String(auto value) : Expr(QAST_STRING), m_value(value) {}
 
-    constexpr auto get_value() const { return m_value.get(); }
+    [[nodiscard]] constexpr auto GetValue() const { return m_value; }
   };
 
-  class ConstChar final : public Expr {
+  class Character final : public Expr {
     uint8_t m_value;
 
   public:
-    constexpr ConstChar(uint8_t value) : Expr(QAST_CHAR), m_value(value) {}
+    constexpr Character(auto value) : Expr(QAST_CHAR), m_value(value) {}
 
-    constexpr auto get_value() const { return m_value; }
+    [[nodiscard]] constexpr auto GetValue() const { return m_value; }
   };
 
-  class ConstNull final : public Expr {
+  class Null final : public Expr {
   public:
-    constexpr ConstNull() : Expr(QAST_NULL) {}
+    constexpr Null() : Expr(QAST_NULL) {}
   };
 
-  class ConstUndef final : public Expr {
+  class Undefined final : public Expr {
   public:
-    constexpr ConstUndef() : Expr(QAST_UNDEF) {}
+    constexpr Undefined() : Expr(QAST_UNDEF) {}
   };
 
   class Call final : public Expr {
     FlowPtr<Expr> m_func;
-    std::span<CallArg> m_args;
+    std::span<const CallArg> m_args;
 
   public:
-    Call(FlowPtr<Expr> func, CallArgs args)
-        : Expr(QAST_CALL), m_func(func), m_args(args) {}
+    constexpr Call(auto func, auto args)
+        : Expr(QAST_CALL), m_func(std::move(func)), m_args(args) {}
 
-    constexpr auto get_func() const { return m_func; }
-    constexpr auto get_args() const { return m_args; }
+    [[nodiscard]] constexpr auto GetFunc() const { return m_func; }
+    [[nodiscard]] constexpr auto GetArgs() const { return m_args; }
   };
 
-  class TemplCall final : public Expr {
+  class TemplateCall final : public Expr {
     FlowPtr<Expr> m_func;
     std::span<CallArg> m_template_args, m_args;
 
   public:
-    TemplCall(FlowPtr<Expr> func, CallArgs args, CallArgs template_args)
+    constexpr TemplateCall(auto func, auto args, auto template_args)
         : Expr(QAST_TEMPL_CALL),
-          m_func(func),
+          m_func(std::move(func)),
           m_template_args(template_args),
           m_args(args) {}
 
-    constexpr auto get_func() const { return m_func; }
-    constexpr auto get_template_args() const { return m_template_args; }
-    constexpr auto get_args() const { return m_args; }
+    [[nodiscard]] constexpr auto GetFunc() const { return m_func; }
+    [[nodiscard]] constexpr auto GetTemplateArgs() const {
+      return m_template_args;
+    }
+    [[nodiscard]] constexpr auto GetArgs() const { return m_args; }
   };
 
   class List final : public Expr {
     std::span<FlowPtr<Expr>> m_items;
 
   public:
-    List(ExpressionList items) : Expr(QAST_LIST), m_items(items) {}
+    constexpr List(auto items) : Expr(QAST_LIST), m_items(items) {}
 
-    constexpr auto get_items() const { return m_items; }
+    [[nodiscard]] constexpr auto GetItems() const { return m_items; }
   };
 
   class Assoc final : public Expr {
     FlowPtr<Expr> m_key, m_value;
 
   public:
-    constexpr Assoc(FlowPtr<Expr> key, FlowPtr<Expr> value)
-        : Expr(QAST_ASSOC), m_key(key), m_value(value) {}
+    constexpr Assoc(auto key, auto value)
+        : Expr(QAST_ASSOC), m_key(std::move(key)), m_value(std::move(value)) {}
 
-    constexpr auto get_key() const { return m_key; }
-    constexpr auto get_value() const { return m_value; }
+    [[nodiscard]] constexpr auto GetKey() const { return m_key; }
+    [[nodiscard]] constexpr auto GetValue() const { return m_value; }
   };
 
   class Index final : public Expr {
     FlowPtr<Expr> m_base, m_index;
 
   public:
-    constexpr Index(FlowPtr<Expr> base, FlowPtr<Expr> index)
-        : Expr(QAST_INDEX), m_base(base), m_index(index) {}
+    constexpr Index(auto base, auto index)
+        : Expr(QAST_INDEX),
+          m_base(std::move(base)),
+          m_index(std::move(index)) {}
 
-    constexpr auto get_base() const { return m_base; }
-    constexpr auto get_index() const { return m_index; }
+    [[nodiscard]] constexpr auto GetBase() const { return m_base; }
+    [[nodiscard]] constexpr auto GetIndex() const { return m_index; }
   };
 
   class Slice final : public Expr {
     FlowPtr<Expr> m_base, m_start, m_end;
 
   public:
-    constexpr Slice(FlowPtr<Expr> base, FlowPtr<Expr> start, FlowPtr<Expr> end)
-        : Expr(QAST_SLICE), m_base(base), m_start(start), m_end(end) {}
+    constexpr Slice(auto base, auto start, auto end)
+        : Expr(QAST_SLICE),
+          m_base(std::move(base)),
+          m_start(std::move(start)),
+          m_end(std::move(end)) {}
 
-    constexpr auto get_base() const { return m_base; }
-    constexpr auto get_start() const { return m_start; }
-    constexpr auto get_end() const { return m_end; }
+    [[nodiscard]] constexpr auto GetBase() const { return m_base; }
+    [[nodiscard]] constexpr auto GetStart() const { return m_start; }
+    [[nodiscard]] constexpr auto GetEnd() const { return m_end; }
   };
 
   class FString final : public Expr {
     std::span<std::variant<string, FlowPtr<Expr>>> m_items;
 
   public:
-    FString(FStringItems items) : Expr(QAST_FSTRING), m_items(items) {}
+    constexpr FString(auto items) : Expr(QAST_FSTRING), m_items(items) {}
 
-    constexpr auto get_items() const { return m_items; }
+    [[nodiscard]] constexpr auto GetItems() const { return m_items; }
   };
 
-  class Ident final : public Expr {
+  class Identifier final : public Expr {
     string m_name;
 
   public:
-    constexpr Ident(string name) : Expr(QAST_IDENT), m_name(name) {}
+    constexpr Identifier( auto name) : Expr(QAST_IDENT), m_name(name) {}
 
-    constexpr auto get_name() const { return m_name.get(); }
+    [[nodiscard]] constexpr auto GetName() const { return m_name; }
   };
 
-  class SeqPoint final : public Expr {
+  class Sequence final : public Expr {
     std::span<FlowPtr<Expr>> m_items;
 
   public:
-    SeqPoint(ExpressionList items) : Expr(QAST_SEQ), m_items(items) {}
+    constexpr Sequence(auto items) : Expr(QAST_SEQ), m_items(items) {}
 
-    constexpr auto get_items() const { return m_items; }
+    [[nodiscard]] constexpr auto GetItems() const { return m_items; }
   };
 
-  constexpr bool Expr::is_stmt_expr(npar_ty_t type) const {
-    return is(QAST_SEXPR) && as<StmtExpr>()->get_stmt()->is(type);
+  constexpr auto Expr::IsStmtExpr(npar_ty_t type) const -> bool {
+    return Is(QAST_SEXPR) && As<StmtExpr>()->GetStmt()->Is(type);
   }
 }  // namespace ncc::parse
 

@@ -36,7 +36,7 @@
 
 #include <nitrate-core/String.hh>
 
-typedef enum npar_ty_t {
+enum npar_ty_t : uint8_t {
   /*****************************************************************************
    * Base
    ****************************************************************************/
@@ -136,7 +136,7 @@ typedef enum npar_ty_t {
 
   QAST__FIRST = QAST_BASE,
   QAST__LAST = QAST_FUNCTION,
-} npar_ty_t;
+};
 
 #define QAST_COUNT (QAST__LAST - QAST__FIRST + 1)
 
@@ -150,7 +150,7 @@ namespace ncc::parse {
   class TypeExpr;
   class NamedTy;
   class InferTy;
-  class TemplType;
+  class TemplateType;
   class U1;
   class U8;
   class U16;
@@ -173,46 +173,46 @@ namespace ncc::parse {
   class ArrayTy;
   class RefTy;
   class FuncTy;
-  class UnaryExpr;
-  class BinExpr;
-  class PostUnaryExpr;
-  class TernaryExpr;
-  class ConstInt;
-  class ConstFloat;
-  class ConstBool;
-  class ConstString;
-  class ConstChar;
-  class ConstNull;
-  class ConstUndef;
+  class UnaryExpression;
+  class BinaryExpression;
+  class PostUnaryExpression;
+  class TernaryExpression;
+  class Integer;
+  class Float;
+  class Boolean;
+  class String;
+  class Character;
+  class Null;
+  class Undefined;
   class Call;
-  class TemplCall;
+  class TemplateCall;
   class List;
   class Assoc;
   class Field;
   class Index;
   class Slice;
   class FString;
-  class Ident;
-  class SeqPoint;
+  class Identifier;
+  class Sequence;
   class Block;
-  class VarDecl;
-  class InlineAsm;
-  class IfStmt;
-  class WhileStmt;
-  class ForStmt;
-  class ForeachStmt;
-  class BreakStmt;
-  class ContinueStmt;
-  class ReturnStmt;
-  class ReturnIfStmt;
-  class CaseStmt;
-  class SwitchStmt;
-  class TypedefStmt;
+  class Variable;
+  class Assembly;
+  class If;
+  class While;
+  class For;
+  class Foreach;
+  class Break;
+  class Continue;
+  class Return;
+  class ReturnIf;
+  class Case;
+  class Switch;
+  class Typedef;
   class Function;
-  class StructDef;
-  class EnumDef;
-  class ScopeStmt;
-  class ExportStmt;
+  class Struct;
+  class Enum;
+  class Scope;
+  class Export;
 }  // namespace ncc::parse
 
 namespace ncc::parse {
@@ -222,7 +222,7 @@ namespace ncc::parse {
     Pro = 2,
   };
 
-  enum class VarDeclType : uint8_t { Const, Var, Let };
+  enum class VariableType : uint8_t { Const, Var, Let };
 
   enum class CompositeType : uint8_t { Region, Struct, Group, Class, Union };
 

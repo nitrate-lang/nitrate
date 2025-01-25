@@ -37,35 +37,37 @@ using namespace ncc;
 using namespace ncc::lex;
 using namespace ncc::parse;
 
-FlowPtr<Stmt> Parser::recurse_if_then() {
-  if (next_if(OpArrow)) {
-    return recurse_block(false, true, SafetyMode::Unknown);
-  } else {
-    return recurse_block(true, false, SafetyMode::Unknown);
+auto Parser::PImpl::RecurseIfThen() -> FlowPtr<Stmt> {
+  if (NextIf(OpArrow)) {
+    return RecurseBlock(false, true, SafetyMode::Unknown);
   }
+
+  return RecurseBlock(true, false, SafetyMode::Unknown);
 }
 
-NullableFlowPtr<Stmt> Parser::recurse_if_else() {
-  if (next_if(Else)) {
-    if (next_if(OpArrow)) {
-      return recurse_block(false, true, SafetyMode::Unknown);
-    } else if (next_if(If)) {
-      return recurse_if();
-    } else {
-      return recurse_block(true, false, SafetyMode::Unknown);
+auto Parser::PImpl::RecurseIfElse() -> NullableFlowPtr<Stmt> {
+  if (NextIf(Else)) {
+    if (NextIf(OpArrow)) {
+      return RecurseBlock(false, true, SafetyMode::Unknown);
     }
-  } else {
-    return std::nullopt;
+
+    if (NextIf(Keyword::If)) {
+      return RecurseIf();
+    }
+
+    return RecurseBlock(true, false, SafetyMode::Unknown);
   }
+
+  return std::nullopt;
 }
 
-FlowPtr<Stmt> Parser::recurse_if() {
-  auto cond = recurse_expr({
+auto Parser::PImpl::RecurseIf() -> FlowPtr<Stmt> {
+  auto cond = RecurseExpr({
       Token(Punc, PuncLCur),
       Token(Oper, OpArrow),
   });
-  auto then = recurse_if_then();
-  auto ele = recurse_if_else();
+  auto then = RecurseIfThen();
+  auto ele = RecurseIfElse();
 
-  return make<IfStmt>(cond, then, ele)();
+  return CreateNode<If>(cond, then, ele)();
 }

@@ -35,98 +35,98 @@
 #include <nitrate-core/Macro.hh>
 #include <nitrate-ir/IR/Nodes.hh>
 
-NCC_EXPORT std::optional<uint64_t> ncc::ir::detail::Type_getSizeBitsImpl(
+NCC_EXPORT std::optional<uint64_t> ncc::ir::detail::TypeGetSizeBitsImpl(
     const Type* self) {
-  std::optional<uint64_t> R;
+  std::optional<uint64_t> r;
 
-  switch (self->getKind()) {
+  switch (self->GetKind()) {
     case IR_tU1: {
-      R = 8;
+      r = 8;
       break;
     }
 
     case IR_tU8: {
-      R = 8;
+      r = 8;
       break;
     }
 
     case IR_tU16: {
-      R = 16;
+      r = 16;
       break;
     }
 
     case IR_tU32: {
-      R = 32;
+      r = 32;
       break;
     }
 
     case IR_tU64: {
-      R = 64;
+      r = 64;
       break;
     }
 
     case IR_tU128: {
-      R = 128;
+      r = 128;
       break;
     }
 
     case IR_tI8: {
-      R = 8;
+      r = 8;
       break;
     }
 
     case IR_tI16: {
-      R = 16;
+      r = 16;
       break;
     }
 
     case IR_tI32: {
-      R = 32;
+      r = 32;
       break;
     }
 
     case IR_tI64: {
-      R = 64;
+      r = 64;
       break;
     }
 
     case IR_tI128: {
-      R = 128;
+      r = 128;
       break;
     }
 
     case IR_tF16_TY: {
-      R = 16;
+      r = 16;
       break;
     }
 
     case IR_tF32_TY: {
-      R = 32;
+      r = 32;
       break;
     }
 
     case IR_tF64_TY: {
-      R = 64;
+      r = 64;
       break;
     }
 
     case IR_tF128_TY: {
-      R = 128;
+      r = 128;
       break;
     }
 
     case IR_tVOID: {
-      R = 0;
+      r = 0;
       break;
     }
 
     case IR_tPTR: {
-      R = self->as<PtrTy>()->getNativeSize() * 8;
+      r = self->As<PtrTy>()->GetNativeSize() * 8;
       break;
     }
 
     case IR_tCONST: {
-      R = self->as<ConstTy>()->getItem()->getSizeBits();
+      r = self->As<ConstTy>()->GetItem()->GetSizeBits();
       break;
     }
 
@@ -135,8 +135,8 @@ NCC_EXPORT std::optional<uint64_t> ncc::ir::detail::Type_getSizeBitsImpl(
       size_t size = 0;
       bool okay = true;
 
-      for (auto f : self->as<StructTy>()->getFields()) {
-        if (auto member_size = f->getSizeBits()) {
+      for (auto f : self->As<StructTy>()->GetFields()) {
+        if (auto member_size = f->GetSizeBits()) {
           size += member_size.value();
         } else {
           okay = false;
@@ -144,7 +144,7 @@ NCC_EXPORT std::optional<uint64_t> ncc::ir::detail::Type_getSizeBitsImpl(
         }
       }
 
-      okay && (R = size);
+      okay && (r = size);
       break;
     }
 
@@ -153,8 +153,8 @@ NCC_EXPORT std::optional<uint64_t> ncc::ir::detail::Type_getSizeBitsImpl(
       size_t max_size = 0;
       bool okay = true;
 
-      for (auto f : self->as<UnionTy>()->getFields()) {
-        if (auto member_size = f->getSizeBits()) {
+      for (auto f : self->As<UnionTy>()->GetFields()) {
+        if (auto member_size = f->GetSizeBits()) {
           max_size = std::max(max_size, member_size.value());
         } else {
           okay = false;
@@ -162,20 +162,20 @@ NCC_EXPORT std::optional<uint64_t> ncc::ir::detail::Type_getSizeBitsImpl(
         }
       }
 
-      okay && (R = max_size);
+      okay && (r = max_size);
       break;
     }
 
     case IR_tARRAY: {
-      auto A = self->as<ArrayTy>();
-      if (auto element_size = A->getElement()->getSizeBits()) {
-        R = element_size.value() * A->getCount();
+      auto a = self->As<ArrayTy>();
+      if (auto element_size = a->GetElement()->GetSizeBits()) {
+        r = element_size.value() * a->GetCount();
       }
       break;
     }
 
     case IR_tFUNC: {
-      R = self->as<FnTy>()->getNativeSize() * 8;
+      r = self->As<FnTy>()->GetNativeSize() * 8;
       break;
     }
 
@@ -184,5 +184,5 @@ NCC_EXPORT std::optional<uint64_t> ncc::ir::detail::Type_getSizeBitsImpl(
     }
   }
 
-  return R;
+  return r;
 }

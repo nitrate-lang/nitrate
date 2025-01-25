@@ -40,9 +40,10 @@ using namespace ncc;
 using namespace ncc::ir;
 
 class CloneVisitor : public IRVisitor<void> {
-  std::optional<Expr *> R;
+  std::optional<Expr *> m_r;
 
-  void for_each(const auto &container, auto callback) {
+  void for_each(  // NOLINT
+      const auto &container, const auto &callback) {
     for (const auto &item : container) {
       callback(item);
     }
@@ -52,252 +53,252 @@ public:
   CloneVisitor() {}
   virtual ~CloneVisitor() = default;
 
-  Expr *GetClone() { return R.value(); }
+  Expr *GetClone() { return m_r.value(); }
 
-  void visit(FlowPtr<Expr> n) override { R = create<Expr>(n->getKind()); }
+  void Visit(FlowPtr<Expr> n) override { m_r = Create<Expr>(n->GetKind()); }
 
-  void visit(FlowPtr<BinExpr> n) override {
-    auto lhs = n->getLHS()->clone();
-    auto rhs = n->getRHS()->clone();
-    auto op = n->getOp();
+  void Visit(FlowPtr<BinaryExpression> n) override {
+    auto lhs = n->GetLHS()->Clone();
+    auto rhs = n->GetRHS()->Clone();
+    auto op = n->GetOp();
 
-    R = create<BinExpr>(lhs, rhs, op);
+    m_r = Create<BinaryExpression>(lhs, rhs, op);
   }
 
-  void visit(FlowPtr<Unary> n) override {
-    auto expr = n->getExpr()->clone();
-    auto op = n->getOp();
-    auto postfix = n->isPostfix();
+  void Visit(FlowPtr<Unary> n) override {
+    auto expr = n->GetExpr()->Clone();
+    auto op = n->GetOp();
+    auto postfix = n->IsPostfix();
 
-    R = create<Unary>(expr, op, postfix);
+    m_r = Create<Unary>(expr, op, postfix);
   }
 
-  void visit(FlowPtr<U1Ty>) override { R = getU1Ty(); }
-  void visit(FlowPtr<U8Ty>) override { R = getU8Ty(); }
-  void visit(FlowPtr<U16Ty>) override { R = getU16Ty(); }
-  void visit(FlowPtr<U32Ty>) override { R = getU32Ty(); }
-  void visit(FlowPtr<U64Ty>) override { R = getU64Ty(); }
-  void visit(FlowPtr<U128Ty>) override { R = getU128Ty(); }
-  void visit(FlowPtr<I8Ty>) override { R = getI8Ty(); }
-  void visit(FlowPtr<I16Ty>) override { R = getI16Ty(); }
-  void visit(FlowPtr<I32Ty>) override { R = getI32Ty(); }
-  void visit(FlowPtr<I64Ty>) override { R = getI64Ty(); }
-  void visit(FlowPtr<I128Ty>) override { R = getI128Ty(); }
-  void visit(FlowPtr<F16Ty>) override { R = getF16Ty(); }
-  void visit(FlowPtr<F32Ty>) override { R = getF32Ty(); }
-  void visit(FlowPtr<F64Ty>) override { R = getF64Ty(); }
-  void visit(FlowPtr<F128Ty>) override { R = getF128Ty(); }
-  void visit(FlowPtr<VoidTy>) override { R = getVoidTy(); }
-  void visit(FlowPtr<OpaqueTy> n) override { R = getOpaqueTy(n->getName()); }
+  void Visit(FlowPtr<U1Ty>) override { m_r = GetU1Ty(); }
+  void Visit(FlowPtr<U8Ty>) override { m_r = GetU8Ty(); }
+  void Visit(FlowPtr<U16Ty>) override { m_r = GetU16Ty(); }
+  void Visit(FlowPtr<U32Ty>) override { m_r = GetU32Ty(); }
+  void Visit(FlowPtr<U64Ty>) override { m_r = GetU64Ty(); }
+  void Visit(FlowPtr<U128Ty>) override { m_r = GetU128Ty(); }
+  void Visit(FlowPtr<I8Ty>) override { m_r = GetI8Ty(); }
+  void Visit(FlowPtr<I16Ty>) override { m_r = GetI16Ty(); }
+  void Visit(FlowPtr<I32Ty>) override { m_r = GetI32Ty(); }
+  void Visit(FlowPtr<I64Ty>) override { m_r = GetI64Ty(); }
+  void Visit(FlowPtr<I128Ty>) override { m_r = GetI128Ty(); }
+  void Visit(FlowPtr<F16Ty>) override { m_r = GetF16Ty(); }
+  void Visit(FlowPtr<F32Ty>) override { m_r = GetF32Ty(); }
+  void Visit(FlowPtr<F64Ty>) override { m_r = GetF64Ty(); }
+  void Visit(FlowPtr<F128Ty>) override { m_r = GetF128Ty(); }
+  void Visit(FlowPtr<VoidTy>) override { m_r = GetVoidTy(); }
+  void Visit(FlowPtr<OpaqueTy> n) override { m_r = GetOpaqueTy(n->GetName()); }
 
-  void visit(FlowPtr<StructTy> n) override {
+  void Visit(FlowPtr<StructTy> n) override {
     std::vector<FlowPtr<Type>> fields;
-    fields.reserve(n->getFields().size());
+    fields.reserve(n->GetFields().size());
 
-    for_each(n->getFields(), [&](auto item) {
-      fields.push_back(item->template clone<Type>());
+    for_each(n->GetFields(), [&](auto item) {
+      fields.push_back(item->template Clone<Type>());
     });
 
-    R = getStructTy(fields);
+    m_r = GetStructTy(fields);
   }
 
-  void visit(FlowPtr<UnionTy> n) override {
+  void Visit(FlowPtr<UnionTy> n) override {
     std::vector<FlowPtr<Type>> fields;
-    fields.reserve(n->getFields().size());
+    fields.reserve(n->GetFields().size());
 
-    for_each(n->getFields(), [&](auto item) {
-      fields.push_back(item->template clone<Type>());
+    for_each(n->GetFields(), [&](auto item) {
+      fields.push_back(item->template Clone<Type>());
     });
 
-    R = getUnionTy(fields);
+    m_r = GetUnionTy(fields);
   }
 
-  void visit(FlowPtr<PtrTy> n) override {
-    R = getPtrTy(n->getPointee()->clone<Type>(), n->getNativeSize());
+  void Visit(FlowPtr<PtrTy> n) override {
+    m_r = GetPtrTy(n->GetPointee()->Clone<Type>(), n->GetNativeSize());
   }
 
-  void visit(FlowPtr<ConstTy> n) override {
-    R = getConstTy(n->getItem()->clone<Type>());
+  void Visit(FlowPtr<ConstTy> n) override {
+    m_r = GetConstTy(n->GetItem()->Clone<Type>());
   }
 
-  void visit(FlowPtr<ArrayTy> n) override {
-    R = getArrayTy(n->getElement()->clone<Type>(), n->getCount());
+  void Visit(FlowPtr<ArrayTy> n) override {
+    m_r = GetArrayTy(n->GetElement()->Clone<Type>(), n->GetCount());
   }
 
-  void visit(FlowPtr<FnTy> n) override {
+  void Visit(FlowPtr<FnTy> n) override {
     std::vector<FlowPtr<Type>> params;
-    params.reserve(n->getParams().size());
-    for_each(n->getParams(), [&](auto item) {
-      params.push_back(item->template clone<Type>());
+    params.reserve(n->GetParams().size());
+    for_each(n->GetParams(), [&](auto item) {
+      params.push_back(item->template Clone<Type>());
     });
 
-    R = getFnTy(params, n->getReturn()->clone<Type>(), n->isVariadic(),
-                n->getNativeSize());
+    m_r = GetFnTy(params, n->GetReturn()->Clone<Type>(), n->IsVariadic(),
+                  n->GetNativeSize());
   }
 
-  void visit(FlowPtr<Int> n) override {
-    R = create<Int>(n->getValue(), n->getSize());
+  void Visit(FlowPtr<Int> n) override {
+    m_r = Create<Int>(n->GetValue(), n->GetSize());
   }
 
-  void visit(FlowPtr<Float> n) override {
-    R = create<Float>(n->getValue(), n->getSize());
+  void Visit(FlowPtr<Float> n) override {
+    m_r = Create<Float>(n->GetValue(), n->GetSize());
   }
 
-  void visit(FlowPtr<List> n) override {
-    IR_Vertex_ListItems<void> items;
-    items.reserve(n->size());
+  void Visit(FlowPtr<List> n) override {
+    GenericListItems<void> items;
+    items.reserve(n->Size());
 
-    std::for_each(n->begin(), n->end(),
-                  [&](auto item) { items.push_back(item->clone()); });
+    std::for_each(n->Begin(), n->End(),
+                  [&](auto item) { items.push_back(item->Clone()); });
 
-    R = create<List>(items, n->isHomogenous());
+    m_r = Create<List>(items, n->IsHomogenous());
   }
 
-  void visit(FlowPtr<Call> n) override {
-    IR_Vertex_CallArgs<void> args;
-    args.reserve(n->getArgs().size());
+  void Visit(FlowPtr<Call> n) override {
+    GenericCallArgs<void> args;
+    args.reserve(n->GetArgs().size());
 
-    for_each(n->getArgs(), [&](auto item) { args.push_back(item->clone()); });
+    for_each(n->GetArgs(), [&](auto item) { args.push_back(item->Clone()); });
 
-    auto old_ref = n->getTarget();  // Resolve later
+    auto old_ref = n->GetTarget();  // Resolve later
 
-    R = create<Call>(old_ref, args);
+    m_r = Create<Call>(old_ref, args);
   }
 
-  void visit(FlowPtr<Seq> n) override {
-    IR_Vertex_SeqItems<void> items;
-    items.reserve(n->size());
+  void Visit(FlowPtr<Seq> n) override {
+    GenericSeqItems<void> items;
+    items.reserve(n->Size());
 
-    for_each(n->getItems(), [&](auto item) { items.push_back(item->clone()); });
+    for_each(n->GetItems(), [&](auto item) { items.push_back(item->Clone()); });
 
-    R = create<Seq>(items);
+    m_r = Create<Seq>(items);
   }
 
-  void visit(FlowPtr<Index> n) override {
-    auto base = n->getExpr()->clone();
-    auto index = n->getIndex()->clone();
+  void Visit(FlowPtr<Index> n) override {
+    auto base = n->GetExpr()->Clone();
+    auto index = n->GetIndex()->Clone();
 
-    R = create<Index>(base, index);
+    m_r = Create<Index>(base, index);
   }
 
-  void visit(FlowPtr<Ident> n) override {
-    auto name = n->getName();
-    auto old_ref = n->getWhat();  // Resolve later
+  void Visit(FlowPtr<Identifier> n) override {
+    auto name = n->GetName();
+    auto old_ref = n->GetWhat();  // Resolve later
 
-    R = create<Ident>(name, old_ref);
+    m_r = Create<Identifier>(name, old_ref);
   }
 
-  void visit(FlowPtr<Extern> n) override {
-    auto value = n->getValue()->clone();
-    auto abi_name = n->getAbiName();
+  void Visit(FlowPtr<Extern> n) override {
+    auto value = n->GetValue()->Clone();
+    auto abi_name = n->GetAbiName();
 
-    R = create<Extern>(value, abi_name);
+    m_r = Create<Extern>(value, abi_name);
   }
 
-  void visit(FlowPtr<Local> n) override {
-    auto name = n->getName();
-    auto value = n->getValue()->clone();
-    auto abi_name = n->getAbiName();
-    auto readonly = n->isReadonly();
-    auto storage_class = n->getStorageClass();
+  void Visit(FlowPtr<Local> n) override {
+    auto name = n->GetName();
+    auto value = n->GetValue()->Clone();
+    auto abi_name = n->GetAbiName();
+    auto readonly = n->IsReadonly();
+    auto storage_class = n->GetStorageClass();
 
-    R = create<Local>(name, value, abi_name, readonly, storage_class);
+    m_r = Create<Local>(name, value, abi_name, readonly, storage_class);
   }
 
-  void visit(FlowPtr<Ret> n) override {
-    auto expr = n->getExpr()->clone();
+  void Visit(FlowPtr<Ret> n) override {
+    auto expr = n->GetExpr()->Clone();
 
-    R = create<Ret>(expr);
+    m_r = Create<Ret>(expr);
   }
 
-  void visit(FlowPtr<Brk>) override { R = create<Brk>(); }
-  void visit(FlowPtr<Cont>) override { R = create<Cont>(); }
+  void Visit(FlowPtr<Brk>) override { m_r = Create<Brk>(); }
+  void Visit(FlowPtr<Cont>) override { m_r = Create<Cont>(); }
 
-  void visit(FlowPtr<If> n) override {
-    auto cond = n->getCond()->clone();
-    auto then = n->getThen()->clone();
-    auto ele = n->getElse()->clone();
+  void Visit(FlowPtr<If> n) override {
+    auto cond = n->GetCond()->Clone();
+    auto then = n->GetThen()->Clone();
+    auto ele = n->GetElse()->Clone();
 
-    R = create<If>(cond, then, ele);
+    m_r = Create<If>(cond, then, ele);
   }
 
-  void visit(FlowPtr<While> n) override {
-    auto cond = n->getCond()->clone();
-    auto body = n->getBody()->clone<Seq>();
+  void Visit(FlowPtr<While> n) override {
+    auto cond = n->GetCond()->Clone();
+    auto body = n->GetBody()->Clone<Seq>();
 
-    R = create<While>(cond, body);
+    m_r = Create<While>(cond, body);
   }
 
-  void visit(FlowPtr<For> n) override {
-    auto init = n->getInit()->clone();
-    auto cond = n->getCond()->clone();
-    auto step = n->getStep()->clone();
-    auto body = n->getBody()->clone();
+  void Visit(FlowPtr<For> n) override {
+    auto init = n->GetInit()->Clone();
+    auto cond = n->GetCond()->Clone();
+    auto step = n->GetStep()->Clone();
+    auto body = n->GetBody()->Clone();
 
-    R = create<For>(init, cond, step, body);
+    m_r = Create<For>(init, cond, step, body);
   }
 
-  void visit(FlowPtr<Case> n) override {
-    auto cond = n->getCond()->clone();
-    auto body = n->getBody()->clone();
+  void Visit(FlowPtr<Case> n) override {
+    auto cond = n->GetCond()->Clone();
+    auto body = n->GetBody()->Clone();
 
-    R = create<Case>(cond, body);
+    m_r = Create<Case>(cond, body);
   }
 
-  void visit(FlowPtr<Switch> n) override {
-    IR_Vertex_SwitchCases<void> cases;
-    cases.reserve(n->getCases().size());
+  void Visit(FlowPtr<Switch> n) override {
+    GenericSwitchCases<void> cases;
+    cases.reserve(n->GetCases().size());
 
-    for_each(n->getCases(),
-             [&](auto item) { cases.push_back(item->template clone<Case>()); });
+    for_each(n->GetCases(),
+             [&](auto item) { cases.push_back(item->template Clone<Case>()); });
 
-    auto cond = n->getCond()->clone();
-    auto default_ = n->getDefault().has_value()
-                        ? n->getDefault().value()->clone()
-                        : nullptr;
+    auto cond = n->GetCond()->Clone();
+    auto default_case = n->GetDefault().has_value()
+                            ? n->GetDefault().value()->Clone()
+                            : nullptr;
 
-    R = create<Switch>(cond, cases, default_);
+    m_r = Create<Switch>(cond, cases, default_case);
   }
 
-  void visit(FlowPtr<Function> n) override {
-    IR_Vertex_Params<void> params;
-    params.reserve(n->getParams().size());
+  void Visit(FlowPtr<Function> n) override {
+    GenericParams<void> params;
+    params.reserve(n->GetParams().size());
 
-    for_each(n->getParams(), [&](auto item) {
-      params.push_back({item.first->template clone<Type>(), item.second});
+    for_each(n->GetParams(), [&](auto item) {
+      params.push_back({item.first->template Clone<Type>(), item.second});
     });
 
     auto body =
-        n->getBody().has_value() ? n->getBody().value()->clone<Seq>() : nullptr;
-    auto return_type = n->getReturn()->clone<Type>();
-    auto name = n->getName();
-    auto abi_name = n->getAbiName();
-    auto is_variadic = n->isVariadic();
+        n->GetBody().has_value() ? n->GetBody().value()->Clone<Seq>() : nullptr;
+    auto return_type = n->GetReturn()->Clone<Type>();
+    auto name = n->GetName();
+    auto abi_name = n->GetAbiName();
+    auto is_variadic = n->IsVariadic();
 
-    R = create<Function>(name, params, return_type, body, is_variadic,
-                         abi_name);
+    m_r = Create<Function>(name, params, return_type, body, is_variadic,
+                           abi_name);
   }
 
-  void visit(FlowPtr<Asm>) override {
-    qcore_panic("Cannot clone Asm node because it is not implemented");
+  void Visit(FlowPtr<Asm>) override {
+    qcore_panic("Cannot Clone Asm node because it is not implemented");
   }
 
-  void visit(FlowPtr<Tmp> n) override {
-    if (std::holds_alternative<string>(n->getData())) {
-      R = create<Tmp>(n->getTmpType(), std::get<string>(n->getData()));
-    } else if (std::holds_alternative<IR_Vertex_CallArgsTmpNodeCradle<void>>(
-                   n->getData())) {
-      auto data = std::get<IR_Vertex_CallArgsTmpNodeCradle<void>>(n->getData());
-      auto base = data.base->clone();
-      IR_Vertex_CallArguments<void> args;
-      args.reserve(data.args.size());
+  void Visit(FlowPtr<Tmp> n) override {
+    if (std::holds_alternative<string>(n->GetData())) {
+      m_r = Create<Tmp>(n->GetTmpType(), std::get<string>(n->GetData()));
+    } else if (std::holds_alternative<GenericCallArgsTmpNodeCradle<void>>(
+                   n->GetData())) {
+      auto data = std::get<GenericCallArgsTmpNodeCradle<void>>(n->GetData());
+      auto base = data.m_base->Clone();
+      GenericCallArguments<void> args;
+      args.reserve(data.m_args.size());
 
-      for_each(data.args, [&](auto item) {
-        args.push_back({item.first, item.second->clone()});
+      for_each(data.m_args, [&](auto item) {
+        args.push_back({item.first, item.second->Clone()});
       });
 
-      R = create<Tmp>(n->getTmpType(),
-                      IR_Vertex_CallArgsTmpNodeCradle<void>{base, args});
+      m_r = Create<Tmp>(n->GetTmpType(),
+                        GenericCallArgsTmpNodeCradle<void>{base, args});
     } else {
       qcore_panic("Unknown Tmp node data type");
     }
@@ -306,46 +307,46 @@ public:
 
 ///===========================================================================///
 
-NCC_EXPORT Expr *detail::Expr_getCloneImpl(Expr *self) {
+NCC_EXPORT Expr *detail::ExprGetCloneImpl(Expr *self) {
   static thread_local struct {
-    std::unordered_map<Expr *, Expr *> in_out;
-    size_t depth = 0;
+    std::unordered_map<Expr *, Expr *> m_in_out;
+    size_t m_depth = 0;
   } state; /* The state behaves like a recursive argument */
 
   {
-    state.depth++;
+    state.m_depth++;
 
-    CloneVisitor V;
-    self->accept(V);
+    CloneVisitor v;
+    self->Accept(v);
 
-    FlowPtr<Expr> E = V.GetClone();
-    E->setLoc(self->getLoc());
+    FlowPtr<Expr> e = v.GetClone();
+    e->SetLoc(self->GetLoc());
 
-    state.depth--;
+    state.m_depth--;
 
-    if (state.depth == 0) {
+    if (state.m_depth == 0) {
       // Resolve internal cyclic references
 
-      for_each(E, [](auto ty, auto n) {
+      for_each(e, [](auto ty, auto n) {
         switch (ty) {
           case IR_eIDENT: {
-            auto ident = n->template as<Ident>();
+            auto ident = n->template As<Identifier>();
 
-            if (auto what = ident->getWhat()) {
-              if (auto it = state.in_out.find(what.value().get());
-                  it != state.in_out.end()) {
-                ident->setWhat(it->second);
+            if (auto what = ident->GetWhat()) {
+              if (auto it = state.m_in_out.find(what.value().get());
+                  it != state.m_in_out.end()) {
+                ident->SetWhat(it->second);
               }
             }
           }
 
           case IR_eCALL: {
-            auto call = n->template as<Call>();
+            auto call = n->template As<Call>();
 
-            if (auto target = call->getTarget()) {
-              if (auto it = state.in_out.find(target.value().get());
-                  it != state.in_out.end()) {
-                call->setTarget(it->second);
+            if (auto target = call->GetTarget()) {
+              if (auto it = state.m_in_out.find(target.value().get());
+                  it != state.m_in_out.end()) {
+                call->SetTarget(it->second);
               }
             }
           }
@@ -356,9 +357,9 @@ NCC_EXPORT Expr *detail::Expr_getCloneImpl(Expr *self) {
         }
       });
 
-      state.in_out.clear();
+      state.m_in_out.clear();
     }
 
-    return E.get();
+    return e.get();
   }
 }

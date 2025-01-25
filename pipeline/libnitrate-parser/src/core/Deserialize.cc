@@ -40,10 +40,11 @@
 using namespace ncc::parse;
 using namespace nlohmann;
 
-static std::optional<AST_Reader::Value> JsonToValue(ordered_json v) {
+static auto JsonToValue(const ordered_json& v)
+    -> std::optional<AstReader::Value> {
   switch (v.type()) {
     case json::value_t::null: {
-      return AST_Reader::Value(nullptr);
+      return AstReader::Value(nullptr);
     }
 
     case json::value_t::object:
@@ -52,11 +53,11 @@ static std::optional<AST_Reader::Value> JsonToValue(ordered_json v) {
     }
 
     case json::value_t::string: {
-      return AST_Reader::Value(v.get<std::string>());
+      return AstReader::Value(v.get<std::string>());
     }
 
     case json::value_t::boolean: {
-      return AST_Reader::Value(v.get<bool>());
+      return AstReader::Value(v.get<bool>());
     }
 
     case json::value_t::number_integer: {
@@ -64,11 +65,11 @@ static std::optional<AST_Reader::Value> JsonToValue(ordered_json v) {
     }
 
     case json::value_t::number_unsigned: {
-      return AST_Reader::Value(v.get<uint64_t>());
+      return AstReader::Value(v.get<uint64_t>());
     }
 
     case json::value_t::number_float: {
-      return AST_Reader::Value(v.get<double>());
+      return AstReader::Value(v.get<double>());
     }
 
     case json::value_t::binary: {
@@ -78,19 +79,23 @@ static std::optional<AST_Reader::Value> JsonToValue(ordered_json v) {
     case json::value_t::discarded: {
       return std::nullopt;
     }
+
+    default: {
+      return std::nullopt;
+    }
   }
 }
 
 static void FlattenJson(const ordered_json& value,
                         std::queue<ordered_json>& queue) {
   if (value.is_array()) {
-    queue.push(value.size());
+    queue.emplace(value.size());
     for (const auto& val : value) {
       FlattenJson(val, queue);
     }
   } else if (value.is_object()) {
     for (const auto& [key, val] : value.items()) {
-      queue.push(key);
+      queue.emplace(key);
       FlattenJson(val, queue);
     }
   } else {
@@ -100,64 +105,66 @@ static void FlattenJson(const ordered_json& value,
 
 ///=============================================================================
 
-struct AST_JsonReader::PImpl {
+struct AstJsonReader::PImpl {
   ordered_json m_json;
-  std::queue<ordered_json> queue;
+  std::queue<ordered_json> m_queue;
 };
 
-AST_JsonReader::AST_JsonReader(std::istream& is,
-                               ReaderSourceManager source_manager)
-    : AST_Reader([&]() { return ReadValue(); }, source_manager), m_is(is) {
-  m_pimpl = std::make_unique<PImpl>();
+AstJsonReader::AstJsonReader(std::istream& is,
+                             ReaderSourceManager source_manager)
+    : AstReader([&]() { return ReadValue(); }, source_manager),
+      m_is(is),
+      m_pimpl(std::make_unique<PImpl>()) {
   m_pimpl->m_json = ordered_json::parse(is, nullptr, false);
 
   if (!m_pimpl->m_json.is_discarded() && m_pimpl->m_json.is_object()) {
-    FlattenJson(m_pimpl->m_json, m_pimpl->queue);
+    FlattenJson(m_pimpl->m_json, m_pimpl->m_queue);
   }
 }
 
-AST_JsonReader::~AST_JsonReader() = default;
+AstJsonReader::~AstJsonReader() = default;
 
-std::optional<AST_Reader::Value> AST_JsonReader::ReadValue() {
-  auto& queue = m_pimpl->queue;
+auto AstJsonReader::ReadValue() -> std::optional<AstReader::Value> {
+  auto& queue = m_pimpl->m_queue;
   if (queue.empty()) [[unlikely]] {
     return std::nullopt;
   } else {
     auto value = queue.front();
     queue.pop();
 
-    return JsonToValue(std::move(value));
+    return JsonToValue(value);
   }
 }
 
 ///=============================================================================
 
-struct AST_MsgPackReader::PImpl {
+struct AstMsgPackReader::PImpl {
   ordered_json m_json;
-  std::queue<ordered_json> queue;
+  std::queue<ordered_json> m_queue;
 };
 
-AST_MsgPackReader::AST_MsgPackReader(std::istream& is,
-                                     ReaderSourceManager source_manager)
-    : AST_Reader([&]() { return ReadValue(); }, source_manager), m_is(is) {
-  m_pimpl = std::make_unique<PImpl>();
+AstMsgPackReader::AstMsgPackReader(std::istream& is,
+                                   ReaderSourceManager source_manager)
+    : AstReader([&]() { return ReadValue(); }, source_manager),
+      m_is(is),
+      m_pimpl(std::make_unique<PImpl>()) {
   m_pimpl->m_json = ordered_json::from_msgpack(is, true, false);
 
   if (!m_pimpl->m_json.is_discarded() && m_pimpl->m_json.is_object()) {
-    FlattenJson(m_pimpl->m_json, m_pimpl->queue);
+    FlattenJson(m_pimpl->m_json, m_pimpl->m_queue);
   }
 }
 
-AST_MsgPackReader::~AST_MsgPackReader() = default;
+AstMsgPackReader::~AstMsgPackReader() = default;
 
-std::optional<AST_Reader::Value> AST_MsgPackReader::ReadValue() {
-  auto& queue = m_pimpl->queue;
+auto AstMsgPackReader::ReadValue() -> std::optional<AstReader::Value> {
+  auto& queue = m_pimpl->m_queue;
   if (queue.empty()) [[unlikely]] {
     return std::nullopt;
   } else {
     auto value = queue.front();
     queue.pop();
 
-    return JsonToValue(std::move(value));
+    return JsonToValue(value);
   }
 }

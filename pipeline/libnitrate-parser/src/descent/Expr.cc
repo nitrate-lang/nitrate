@@ -33,67 +33,76 @@
 
 #include <charconv>
 #include <descent/Recurse.hh>
+#include <nitrate-lexer/Lexer.hh>
 #include <stack>
+#include <utility>
 
-#include "nitrate-parser/EC.hh"
-
-#define MAX_RECURSION_DEPTH 4096
-#define MAX_LIST_REPEAT_COUNT 4096
+static constexpr size_t kMaxRecursionDepth = 4096;
+static constexpr size_t kMaxListRepeatCount = 4096;
 
 using namespace ncc;
 using namespace ncc::lex;
 using namespace ncc::parse;
 using namespace ncc;
 
-CallArgs Parser::recurse_call_arguments(Token terminator) {
+auto Parser::PImpl::RecurseCallArguments(
+    const std::set<lex::Token> &terminators, bool type_by_default) -> CallArgs {
   CallArgs call_args;
   size_t positional_index = 0;
   string argument_name;
 
   while (true) {
-    if (next_if(EofF)) [[unlikely]] {
-      log << SyntaxError << current()
+    if (NextIf(EofF)) [[unlikely]] {
+      Log << SyntaxError << current()
           << "Unexpected end of file while parsing call expression";
       return call_args;
     }
 
-    if (peek() == terminator) {
+    if (terminators.contains(peek())) {
       break;
     }
 
-    auto some_identifier = next_if(Name);
-    auto next_is_colon = some_identifier && next_if(PuncColn).has_value();
+    auto some_identifier = NextIf(Name);
+    auto next_is_colon = some_identifier && NextIf(PuncColn).has_value();
 
     if (some_identifier && next_is_colon) {
-      argument_name = some_identifier->as_string();
+      argument_name = some_identifier->GetString();
     } else {
       if (some_identifier && !next_is_colon) {
-        rd.Undo();
+        m_rd.Insert(some_identifier.value());
       }
 
       argument_name = string(std::to_string(positional_index++));
     }
 
-    auto argument_value = recurse_expr({
-        Token(Punc, PuncComa),
-        terminator,
-    });
+    if (type_by_default) {
+      auto argument_value = RecurseType();
+      auto type_expr = CreateNode<TypeExpr>(argument_value)();
 
-    call_args.push_back({argument_name, argument_value});
+      call_args.emplace_back(argument_name, type_expr);
+    } else {
+      std::set<Token> terminators_copy(terminators);
+      terminators_copy.insert(Token(Punc, PuncComa));
+      auto argument_value = RecurseExpr(terminators_copy);
+      call_args.emplace_back(argument_name, argument_value);
+    }
 
-    next_if(PuncComa);
+    NextIf(PuncComa);
   }
 
   return call_args;
 }
 
-FlowPtr<Expr> Parser::recurse_fstring() {
-  std::string buf;
+auto Parser::PImpl::RecurseFstring() -> FlowPtr<Expr> {
   FStringItems items;
-  size_t state = 0, w_beg = 0, w_end = 0;
 
-  if (auto tok = next_if(Text)) {
-    auto fstring_raw = tok->as_string().get();
+  if (auto tok = NextIf(Text)) {
+    size_t state = 0;
+    size_t w_beg = 0;
+    size_t w_end{};
+    auto fstring_raw = tok->GetString().Get();
+
+    std::string buf;
     buf.reserve(fstring_raw.size());
 
     for (size_t i = 0; i < fstring_raw.size(); i++) {
@@ -107,17 +116,17 @@ FlowPtr<Expr> Parser::recurse_fstring() {
         state = 0;
 
         if (!buf.empty()) {
-          items.push_back(string(std::move(buf)));
+          items.emplace_back(string(std::move(buf)));
           buf.clear();
         }
 
-        auto subnode =
-            FromString(fstring_raw.substr(w_beg, w_end - w_beg), m_env)
-                ->recurse_expr({
-                    Token(Punc, PuncRCur),
-                });
+        auto subnode = Parser::FromString<Tokenizer>(
+                           fstring_raw.substr(w_beg, w_end - w_beg), m_env)
+                           ->m_impl->RecurseExpr({
+                               Token(Punc, PuncRCur),
+                           });
 
-        items.push_back(subnode);
+        items.emplace_back(subnode);
       } else if (ch == '{') {
         buf += ch;
         state = 0;
@@ -130,24 +139,25 @@ FlowPtr<Expr> Parser::recurse_fstring() {
     }
 
     if (!buf.empty()) {
-      items.push_back(string(std::move(buf)));
+      items.emplace_back(string(std::move(buf)));
       buf.clear();
     }
 
     if (state != 0) {
-      log << SyntaxError << current()
+      Log << SyntaxError << current()
           << "F-string expression has mismatched braces";
     }
 
-    return make<FString>(std::move(items))();
-  } else {
-    log << SyntaxError << current()
-        << "Expected a string literal token for F-string expression";
-    return mock_expr(QAST_FSTRING);
+    return CreateNode<FString>(std::move(items))();
   }
+  Log << SyntaxError << current()
+      << "Expected a string literal token for F-string expression";
+  return MockExpr(QAST_FSTRING);
 }
 
-static bool IsPostUnaryOp(Operator O) { return O == OpInc || O == OpDec; }
+static auto IsPostUnaryOp(Operator o) -> bool {
+  return o == OpInc || o == OpDec;
+}
 
 enum class FrameType : uint8_t {
   Start,
@@ -157,164 +167,167 @@ enum class FrameType : uint8_t {
 };
 
 struct Frame {
-  FlowPtr<Expr> base;
-  short minPrecedence;
-  LocationID start_pos;
-  FrameType type;
-  Operator op;
+  FlowPtr<Expr> m_base;
+  short m_minPrecedence;
+  LocationID m_start_pos;
+  FrameType m_type;
+  Operator m_op;
 
-  Frame(FlowPtr<Expr> base, LocationID start_pos, short minPrecedence,
+  Frame(FlowPtr<Expr> base, LocationID start_pos, short min_precedence,
         FrameType type, Operator op)
-      : base(base),
-        minPrecedence(minPrecedence),
-        start_pos(start_pos),
-        type(type),
-        op(op) {}
+      : m_base(std::move(base)),
+        m_minPrecedence(min_precedence),
+        m_start_pos(start_pos),
+        m_type(type),
+        m_op(op) {}
 };
 
-static NCC_FORCE_INLINE FlowPtr<Expr> UnwindStack(std::stack<Frame> &stack,
-                                                  FlowPtr<Expr> base,
-                                                  short minPrecedence) {
+static NCC_FORCE_INLINE auto UnwindStack(
+    std::stack<Frame> &stack, FlowPtr<Expr> base,
+    short min_precedence) -> FlowPtr<Expr> {
   while (!stack.empty()) {
     auto frame = stack.top();
 
-    if (frame.minPrecedence < minPrecedence) {
+    if (frame.m_minPrecedence < min_precedence) {
       break;
     }
 
-    switch (frame.type) {
+    switch (frame.m_type) {
       case FrameType::Start: {
         return base;
       }
 
       case FrameType::PreUnary: {
-        base = make<UnaryExpr>(frame.op, base)();
+        base = CreateNode<UnaryExpression>(frame.m_op, base)();
         break;
       }
 
       case FrameType::PostUnary: {
-        base = make<PostUnaryExpr>(base, frame.op)();
+        base = CreateNode<PostUnaryExpression>(base, frame.m_op)();
         break;
       }
 
       case FrameType::Binary: {
-        base = make<BinExpr>(frame.base, frame.op, base)();
+        base = CreateNode<BinaryExpression>(frame.m_base, frame.m_op, base)();
         break;
       }
     }
 
-    base->set_offset(frame.start_pos);
+    base->SetOffset(frame.m_start_pos);
     stack.pop();
   }
 
   return base;
 }
 
-FlowPtr<Expr> Parser::recurse_expr(const std::set<Token> &terminators) {
-  auto SourceOffset = peek().get_start();
+auto Parser::PImpl::RecurseExpr(const std::set<Token> &terminators)
+    -> FlowPtr<Expr> {
+  auto source_offset = peek().GetStart();
 
-  std::stack<Frame> Stack;
-  ConstBool start_node(false);
-  Stack.push({&start_node, SourceOffset, 0, FrameType::Start, OpPlus});
+  std::stack<Frame> stack;
+  Boolean start_node(false);
+  stack.emplace(&start_node, source_offset, 0, FrameType::Start, OpPlus);
 
   /****************************************
    * Parse pre-unary operators
    ****************************************/
-  std::stack<std::pair<Operator, LocationID>> PreUnaryOps;
-  while (auto Tok = next_if(Oper)) {
-    PreUnaryOps.push({Tok->as_op(), Tok->get_start()});
+  std::stack<std::pair<Operator, LocationID>> pre_unary_ops;
+  while (auto tok = NextIf(Oper)) {
+    pre_unary_ops.emplace(tok->GetOperator(), tok->GetStart());
   }
 
-  if (auto LeftSideOpt = recurse_expr_primary(false)) {
-    auto LeftSide = LeftSideOpt.value();
-    auto Spinning = true;
+  if (auto left_side_opt = RecurseExprPrimary(false)) {
+    auto left_side = left_side_opt.value();
+    auto spinning = true;
 
     /****************************************
      * Combine pre-unary operators
      ****************************************/
-    while (!PreUnaryOps.empty()) {
-      auto [Op, Offset] = PreUnaryOps.top();
-      PreUnaryOps.pop();
+    while (!pre_unary_ops.empty()) {
+      auto [Op, Offset] = pre_unary_ops.top();
+      pre_unary_ops.pop();
 
-      LeftSide = make<UnaryExpr>(Op, LeftSide)();
-      LeftSide->set_offset(Offset);
+      left_side = CreateNode<UnaryExpression>(Op, left_side)();
+      left_side->SetOffset(Offset);
     }
 
-    while (!Stack.empty() && Spinning) {
-      auto Tok = peek();
+    while (!stack.empty() && spinning) {
+      auto tok = peek();
 
-      if (terminators.contains(Tok)) {
+      if (terminators.contains(tok)) {
         break;
       }
 
-      switch (Tok.get_type()) {
+      switch (tok.GetKind()) {
         case Oper: {
-          auto Op = Tok.as_op();
-          auto OpType = IsPostUnaryOp(Op) ? OpMode::PostUnary : OpMode::Binary;
-          auto OpPrecedence = GetOperatorPrecedence(Op, OpType);
+          auto op = tok.GetOperator();
+          auto op_type = IsPostUnaryOp(op) ? OpMode::PostUnary : OpMode::Binary;
+          auto op_precedence = GetOperatorPrecedence(op, op_type);
 
-          if (OpPrecedence >= Stack.top().minPrecedence) {
+          if (op_precedence >= stack.top().m_minPrecedence) {
             next();
 
             /****************************************
              * Handle post-unary operators
              ****************************************/
-            if (OpType == OpMode::PostUnary) {
-              LeftSide = make<PostUnaryExpr>(LeftSide, Op)();
-              LeftSide->set_offset(SourceOffset);
+            if (op_type == OpMode::PostUnary) {
+              left_side = CreateNode<PostUnaryExpression>(left_side, op)();
+              left_side->SetOffset(source_offset);
 
               continue;
             }
 
-            auto IsLeftAssoc =
-                GetOperatorAssociativity(Op, OpType) == OpAssoc::Left;
-            auto NextMinPrecedence =
-                IsLeftAssoc ? OpPrecedence + 1 : OpPrecedence;
-            auto IsType = Op == OpAs || Op == OpBitcastAs;
+            auto is_left_assoc =
+                GetOperatorAssociativity(op, op_type) == Associativity::Left;
+            auto next_min_precedence =
+                is_left_assoc ? op_precedence + 1 : op_precedence;
+            auto is_type = op == OpAs || op == OpBitcastAs;
 
-            if (!IsType) {
+            if (!is_type) {
               /****************************************
                * Parse pre-unary operators
                ****************************************/
-              while (auto Tok = next_if(Oper)) {
-                PreUnaryOps.push({Tok->as_op(), Tok->get_start()});
+              while (auto tok_op = NextIf(Oper)) {
+                pre_unary_ops.emplace(tok_op->GetOperator(),
+                                      tok_op->GetStart());
               }
             } else {
-              next_if(lex::Type);
+              NextIf(lex::Type);
             }
 
             /****************************************
              * Handle binary operators
              ****************************************/
-            if (auto RightSide = recurse_expr_primary(IsType)) {
+            if (auto right_side = RecurseExprPrimary(is_type)) {
               /****************************************
                * Combine pre-unary operators
                ****************************************/
-              while (!PreUnaryOps.empty()) {
-                auto [Op, Offset] = PreUnaryOps.top();
-                PreUnaryOps.pop();
+              while (!pre_unary_ops.empty()) {
+                auto [op, Offset] = pre_unary_ops.top();
+                pre_unary_ops.pop();
 
-                auto PreUnaryExpr = make<UnaryExpr>(Op, RightSide.value())();
-                PreUnaryExpr->set_offset(Offset);
+                auto pre_unary_expr =
+                    CreateNode<UnaryExpression>(op, right_side.value())();
+                pre_unary_expr->SetOffset(Offset);
 
-                RightSide = PreUnaryExpr;
+                right_side = pre_unary_expr;
               }
 
-              if (Stack.size() + 1 > MAX_RECURSION_DEPTH) {
-                log << SyntaxError << current()
+              if (stack.size() + 1 > kMaxRecursionDepth) {
+                Log << SyntaxError << current()
                     << "Recursion depth exceeds maximum limit";
-                return mock_expr();
+                return MockExpr();
               }
 
-              Stack.push(Frame(LeftSide, SourceOffset, NextMinPrecedence,
-                               FrameType::Binary, Op));
-              LeftSide = RightSide.value();
+              stack.emplace(left_side, source_offset, next_min_precedence,
+                            FrameType::Binary, op);
+              left_side = right_side.value();
             } else {
-              log << SyntaxError << current()
+              Log << SyntaxError << current()
                   << "Failed to parse right-hand side of binary expression";
             }
           } else {
-            LeftSide = UnwindStack(Stack, LeftSide, 0);
+            left_side = UnwindStack(stack, left_side, 0);
 
             continue;
           }
@@ -325,46 +338,71 @@ FlowPtr<Expr> Parser::recurse_expr(const std::set<Token> &terminators) {
         case Punc: {
           // Based on the assumption that function calls have the same
           // precedence as the dot operator (member access)
-          static auto SuffixOPPrecedence =
+          static auto suffix_op_precedence =
               GetOperatorPrecedence(OpDot, OpMode::Binary);
 
-          LeftSide = UnwindStack(Stack, LeftSide, SuffixOPPrecedence);
+          left_side = UnwindStack(stack, left_side, suffix_op_precedence);
 
-          if (next_if(PuncLPar)) {
-            auto Arguments = recurse_call_arguments(Token(Punc, PuncRPar));
-            if (!next_if(PuncRPar)) {
-              log << SyntaxError << current()
+          if (NextIf(PuncLPar)) {
+            auto arguments =
+                RecurseCallArguments({Token(Punc, PuncRPar)}, false);
+            if (!NextIf(PuncRPar)) {
+              Log << SyntaxError << current()
                   << "Expected ')' to close the function call";
             }
 
-            LeftSide = make<Call>(LeftSide, Arguments)();
-            LeftSide->set_offset(SourceOffset);
-          } else if (next_if(PuncLBrk)) {
-            auto first = recurse_expr({
+            left_side = CreateNode<Call>(left_side, arguments)();
+            left_side->SetOffset(source_offset);
+          } else if (NextIf(PuncLBrk)) {
+            auto first = RecurseExpr({
                 Token(Punc, PuncRBrk),
                 Token(Punc, PuncColn),
             });
 
-            if (next_if(PuncColn)) {
-              auto second = recurse_expr({Token(Punc, PuncRBrk)});
-              if (!next_if(PuncRBrk)) {
-                log << SyntaxError << current()
+            if (NextIf(PuncColn)) {
+              auto second = RecurseExpr({Token(Punc, PuncRBrk)});
+              if (!NextIf(PuncRBrk)) {
+                Log << SyntaxError << current()
                     << "Expected ']' to close the slice";
               }
 
-              LeftSide = make<Slice>(LeftSide, first, second)();
-              LeftSide->set_offset(SourceOffset);
+              left_side = CreateNode<Slice>(left_side, first, second)();
+              left_side->SetOffset(source_offset);
             } else {
-              if (!next_if(PuncRBrk)) {
-                log << SyntaxError << current()
+              if (!NextIf(PuncRBrk)) {
+                Log << SyntaxError << current()
                     << "Expected ']' to close the index expression";
               }
 
-              LeftSide = make<Index>(LeftSide, first)();
-              LeftSide->set_offset(SourceOffset);
+              left_side = CreateNode<Index>(left_side, first)();
+              left_side->SetOffset(source_offset);
             }
+          } else if (NextIf(PuncLCur)) {
+            auto template_arguments =
+                RecurseCallArguments({Token(Punc, PuncRCur)}, true);
+            if (!NextIf(PuncRCur)) {
+              Log << SyntaxError << current()
+                  << "Expected '}' to close the template arguments";
+            }
+
+            if (!NextIf(PuncLPar)) {
+              Log << SyntaxError << current()
+                  << "Expected '(' to open the call arguments";
+            }
+
+            auto call_arguments =
+                RecurseCallArguments({Token(Punc, PuncRPar)}, false);
+            if (!NextIf(PuncRPar)) {
+              Log << SyntaxError << current()
+                  << "Expected ')' to close the call arguments";
+            }
+
+            left_side =
+                CreateNode<TemplateCall>(left_side, std::move(call_arguments),
+                                         std::move(template_arguments))();
+            left_side->SetOffset(source_offset);
           } else {  // Not part of the expression
-            Spinning = false;
+            spinning = false;
           }
 
           break;
@@ -380,281 +418,104 @@ FlowPtr<Expr> Parser::recurse_expr(const std::set<Token> &terminators) {
         case MacB:
         case Macr:
         case Note: {
-          Spinning = false;
+          spinning = false;
           break;
         }
       }
     }
 
-    return UnwindStack(Stack, LeftSide, 0);
-  } else {
-    log << SyntaxError << current() << "Expected an expression";
-
-    return mock_expr();
+    return UnwindStack(stack, left_side, 0);
   }
+  Log << SyntaxError << current() << "Expected an expression";
+
+  return MockExpr();
 }
 
-NullableFlowPtr<Expr> Parser::recurse_expr_keyword(lex::Keyword key) {
-  NullableFlowPtr<Expr> E;
+auto Parser::PImpl::RecurseExprKeyword(lex::Keyword key)
+    -> NullableFlowPtr<Expr> {
+  NullableFlowPtr<Expr> e;
 
   switch (key) {
-    case Scope: {
-      log << SyntaxError << current()
-          << "Namespace declaration is not valid here";
-      break;
-    }
-
-    case Import: {
-      log << SyntaxError << current() << "Import statement is not valid here";
-      break;
-    }
-
-    case Pub: {
-      log << SyntaxError << current()
-          << "Public access modifier is not valid here";
-      break;
-    }
-
-    case Sec: {
-      log << SyntaxError << current()
-          << "Private access modifier is not valid here";
-      break;
-    }
-
-    case Pro: {
-      log << SyntaxError << current()
-          << "Protected access modifier is not valid here";
-      break;
-    }
-
     case Keyword::Type: {
-      auto start_pos = current().get_start();
-      auto type = recurse_type();
-      type->set_offset(start_pos);
+      auto start_pos = current().GetStart();
+      auto type = RecurseType();
+      type->SetOffset(start_pos);
 
-      E = make<TypeExpr>(type)();
-      break;
-    }
-
-    case Let: {
-      log << SyntaxError << current() << "Let declaration is not valid here";
-      break;
-    }
-
-    case Var: {
-      log << SyntaxError << current() << "Var declaration is not valid here";
-      break;
-    }
-
-    case Const: {
-      log << SyntaxError << current() << "Const declaration is not valid here";
-      break;
-    }
-
-    case Static: {
-      log << SyntaxError << current() << "Static modifier is not valid here";
-      break;
-    }
-
-    case Struct: {
-      log << SyntaxError << current() << "Struct declaration is not valid here";
-      break;
-    }
-
-    case Region: {
-      log << SyntaxError << current() << "Region declaration is not valid here";
-      break;
-    }
-
-    case Group: {
-      log << SyntaxError << current() << "Group declaration is not valid here";
-      break;
-    }
-
-    case Class: {
-      log << SyntaxError << current() << "Class declaration is not valid here";
-      break;
-    }
-
-    case Union: {
-      log << SyntaxError << current() << "Union declaration is not valid here";
-      break;
-    }
-
-    case Opaque: {
-      log << SyntaxError << current() << "Opaque type is not valid here";
-      break;
-    }
-
-    case Enum: {
-      log << SyntaxError << current() << "Enum declaration is not valid here";
+      e = CreateNode<TypeExpr>(type)();
       break;
     }
 
     case __FString: {
-      E = recurse_fstring();
+      e = RecurseFstring();
       break;
     }
 
     case Fn: {
-      auto start_pos = current().get_start();
-      auto function = recurse_function(false);
-      function->set_offset(start_pos);
+      auto start_pos = current().GetStart();
+      auto function = RecurseFunction(false);
+      function->SetOffset(start_pos);
 
-      FlowPtr<Expr> expr = make<StmtExpr>(function)();
+      FlowPtr<Expr> expr = CreateNode<StmtExpr>(function)();
 
-      if (next_if(PuncLPar)) {
-        auto args = recurse_call_arguments(Token(Punc, PuncRPar));
+      if (NextIf(PuncLPar)) {
+        auto args = RecurseCallArguments({Token(Punc, PuncRPar)}, false);
 
-        if (next_if(PuncRPar)) {
-          E = make<Call>(expr, args)();
+        if (NextIf(PuncRPar)) {
+          e = CreateNode<Call>(expr, args)();
         } else {
-          log << SyntaxError << current()
+          Log << SyntaxError << current()
               << "Expected ')' to close the function call";
-          E = mock_expr(QAST_CALL);
+          e = MockExpr(QAST_CALL);
         }
       } else {
-        E = expr;
+        e = expr;
       }
 
       break;
     }
 
-    case Unsafe: {
-      log << SyntaxError << current() << "Unsafe keyword is not valid here";
-      break;
-    }
-
-    case Safe: {
-      log << SyntaxError << current() << "Safe keyword is not valid here";
-      break;
-    }
-
-    case Promise: {
-      log << SyntaxError << current() << "Promise keyword is not valid here";
-      break;
-    }
-
-    case If: {
-      log << SyntaxError << current() << "If statement is not valid here";
-      break;
-    }
-
-    case Else: {
-      log << SyntaxError << current() << "Else statement is not valid here";
-      break;
-    }
-
-    case For: {
-      log << SyntaxError << current() << "For loop is not valid here";
-      break;
-    }
-
-    case While: {
-      log << SyntaxError << current() << "While loop is not valid here";
-      break;
-    }
-
-    case Do: {
-      log << SyntaxError << current() << "Do statement is not valid here";
-      break;
-    }
-
-    case Switch: {
-      log << SyntaxError << current() << "Switch statement is not valid here";
-      break;
-    }
-
-    case Break: {
-      log << SyntaxError << current() << "Break statement is not valid here";
-      break;
-    }
-
-    case Continue: {
-      log << SyntaxError << current() << "Continue statement is not valid here";
-      break;
-    }
-
-    case Return: {
-      log << SyntaxError << current() << "Return statement is not valid here";
-      break;
-    }
-
-    case Retif: {
-      log << SyntaxError << current() << "Retif statement is not valid here";
-      break;
-    }
-
-    case Foreach: {
-      log << SyntaxError << current() << "Foreach loop is not valid here";
-      break;
-    }
-
-    case Try: {
-      log << SyntaxError << current() << "Try statement is not valid here";
-      break;
-    }
-
-    case Catch: {
-      log << SyntaxError << current() << "Catch statement is not valid here";
-      break;
-    }
-
-    case Throw: {
-      log << SyntaxError << current() << "Throw statement is not valid here";
-      break;
-    }
-
-    case Async: {
-      log << SyntaxError << current() << "Async statement is not valid here";
-      break;
-    }
-
-    case Await: {
-      log << SyntaxError << current() << "Await statement is not valid here";
-      break;
-    }
-
-    case __Asm__: {
-      log << SyntaxError << current() << "Inline assembly is not valid here";
-      break;
-    }
-
     case Undef: {
-      E = make<ConstUndef>()();
+      e = CreateNode<Undefined>()();
       break;
     }
 
-    case Null: {
-      E = make<ConstNull>()();
+    case Keyword::Null: {
+      e = CreateNode<Null>()();
       break;
     }
 
     case True: {
-      E = make<ConstBool>(true)();
+      e = CreateNode<Boolean>(true)();
       break;
     }
 
     case False: {
-      E = make<ConstBool>(false)();
+      e = CreateNode<Boolean>(false)();
+      break;
+    }
+
+    default: {
+      Log << SyntaxError << current() << "Unexpected '" << key
+          << "' in expression context";
       break;
     }
   }
 
-  return E;
+  return e;
 }
 
-NullableFlowPtr<Expr> Parser::recurse_expr_punctor(lex::Punctor punc) {
-  NullableFlowPtr<Expr> E;
+auto Parser::PImpl::RecurseExprPunctor(lex::Punctor punc)
+    -> NullableFlowPtr<Expr> {
+  NullableFlowPtr<Expr> e;
 
   switch (punc) {
     case PuncLPar: {
-      E = recurse_expr({
+      e = RecurseExpr({
           Token(Punc, PuncRPar),
       });
 
-      if (!next_if(PuncRPar)) {
-        log << SyntaxError << current()
+      if (!NextIf(PuncRPar)) {
+        Log << SyntaxError << current()
             << "Expected ')' to close the expression";
       }
 
@@ -662,7 +523,7 @@ NullableFlowPtr<Expr> Parser::recurse_expr_punctor(lex::Punctor punc) {
     }
 
     case PuncRPar: {
-      log << SyntaxError << current()
+      Log << SyntaxError << current()
           << "Unexpected right parenthesis in expression";
       break;
     }
@@ -671,25 +532,25 @@ NullableFlowPtr<Expr> Parser::recurse_expr_punctor(lex::Punctor punc) {
       ExpressionList items;
 
       while (true) {
-        if (next_if(EofF)) [[unlikely]] {
-          log << SyntaxError << current()
+        if (NextIf(EofF)) [[unlikely]] {
+          Log << SyntaxError << current()
               << "Unexpected end of file while parsing expression";
           break;
         }
 
-        if (next_if(PuncRBrk)) {
+        if (NextIf(PuncRBrk)) {
           break;
         }
 
-        auto expr = recurse_expr({
+        auto expr = RecurseExpr({
             Token(Punc, PuncComa),
             Token(Punc, PuncRBrk),
             Token(Punc, PuncSemi),
         });
 
-        if (next_if(PuncSemi)) {
-          if (auto count_tok = next_if(IntL)) {
-            auto item_repeat_str = current().as_string();
+        if (NextIf(PuncSemi)) {
+          if (auto count_tok = NextIf(IntL)) {
+            auto item_repeat_str = current().GetString();
             size_t item_repeat_count = 0;
 
             if (std::from_chars(
@@ -697,22 +558,22 @@ NullableFlowPtr<Expr> Parser::recurse_expr_punctor(lex::Punctor punc) {
                     item_repeat_str->data() + item_repeat_str->size(),
                     item_repeat_count)
                     .ec == std::errc()) {
-              if (item_repeat_count <= MAX_LIST_REPEAT_COUNT) {
+              if (item_repeat_count <= kMaxListRepeatCount) {
                 for (size_t i = 0; i < item_repeat_count; i++) {
                   items.push_back(expr);
                 }
               } else {
-                log << SyntaxError << current()
+                Log << SyntaxError << current()
                     << "Compressed list size exceeds maximum limit";
               }
 
             } else {
-              log << SyntaxError << current()
+              Log << SyntaxError << current()
                   << "Expected an integer literal for the compressed "
                      "list size";
             }
           } else {
-            log << SyntaxError << current()
+            Log << SyntaxError << current()
                 << "Expected an integer literal for the compressed list "
                    "size";
           }
@@ -720,15 +581,15 @@ NullableFlowPtr<Expr> Parser::recurse_expr_punctor(lex::Punctor punc) {
           items.push_back(expr);
         }
 
-        next_if(PuncComa);
+        NextIf(PuncComa);
       }
 
-      E = make<List>(items)();
+      e = CreateNode<List>(items)();
       break;
     }
 
     case PuncRBrk: {
-      log << SyntaxError << current()
+      Log << SyntaxError << current()
           << "Unexpected right bracket in expression";
       break;
     }
@@ -738,234 +599,254 @@ NullableFlowPtr<Expr> Parser::recurse_expr_punctor(lex::Punctor punc) {
       std::vector<FlowPtr<Assoc>> items;
 
       while (true) {
-        if (next_if(EofF)) [[unlikely]] {
-          log << SyntaxError << current()
+        if (NextIf(EofF)) [[unlikely]] {
+          Log << SyntaxError << current()
               << "Unexpected end of file while parsing dictionary";
           break;
         }
 
-        if (next_if(PuncRCur)) {
+        if (NextIf(PuncRCur)) {
           break;
         }
 
-        auto start_pos = peek().get_start();
-        auto key = recurse_expr({
+        auto start_pos = peek().GetStart();
+        auto key = RecurseExpr({
             Token(Punc, PuncColn),
         });
 
-        if (!next_if(PuncColn)) {
-          log << SyntaxError << current()
+        if (!NextIf(PuncColn)) {
+          Log << SyntaxError << current()
               << "Expected colon after key in dictionary";
           break;
         }
 
-        auto value = recurse_expr({
+        auto value = RecurseExpr({
             Token(Punc, PuncRCur),
             Token(Punc, PuncComa),
         });
 
-        next_if(PuncComa);
+        NextIf(PuncComa);
 
-        auto assoc = make<Assoc>(key, value)();
-        assoc->set_offset(start_pos);
+        auto assoc = CreateNode<Assoc>(key, value)();
+        assoc->SetOffset(start_pos);
 
         items.push_back(assoc);
       }
 
       if (items.size() == 1) {
-        E = items[0];
+        e = items[0];
       } else {
         ExpressionList items_copy(items.begin(), items.end());
-        E = make<List>(items_copy)();
+        e = CreateNode<List>(items_copy)();
       }
 
       break;
     }
 
     case PuncRCur: {
-      log << SyntaxError << current()
+      Log << SyntaxError << current()
           << "Unexpected right curly brace in expression";
       break;
     }
 
     case PuncComa: {
-      log << SyntaxError << current() << "Comma is not valid in this context";
+      Log << SyntaxError << current()
+          << "Unexpected comma in expression context";
       break;
     }
 
     case PuncColn: {
-      log << SyntaxError << current() << "Colon is not valid in this context";
+      Log << SyntaxError << current()
+          << "Unexpected colon in expression context";
       break;
     }
 
     case PuncSemi: {
-      log << SyntaxError << current()
-          << "Semicolon is not valid in this context";
+      Log << SyntaxError << current()
+          << "Unexpected semicolon in expression context";
+      break;
+    }
+
+    case PuncScope: {
+      auto name = "::" + std::string(RecurseName());
+      e = CreateNode<Identifier>(name)();
       break;
     }
   }
 
-  return E;
+  return e;
 }
 
-FlowPtr<Expr> Parser::recurse_expr_type_suffix(FlowPtr<Expr> base) {
+auto Parser::PImpl::RecurseExprTypeSuffix(FlowPtr<Expr> base) -> FlowPtr<Expr> {
   auto tok = current();
 
-  auto suffix = recurse_type();
-  suffix->set_offset(tok.get_start());
+  auto suffix = RecurseType();
+  suffix->SetOffset(tok.GetStart());
 
-  auto texpr = make<TypeExpr>(suffix)();
-  texpr->set_offset(tok.get_start());
+  auto texpr = CreateNode<TypeExpr>(suffix)();
+  texpr->SetOffset(tok.GetStart());
 
-  return make<BinExpr>(base, OpAs, texpr)();
+  return CreateNode<BinaryExpression>(base, OpAs, texpr)();
 }
 
-NullableFlowPtr<Expr> Parser::recurse_expr_primary(bool isType) {
-  auto start_pos = peek().get_start();
+auto Parser::PImpl::RecurseExprPrimary(bool is_type) -> NullableFlowPtr<Expr> {
+  auto start_pos = peek().GetStart();
 
-  NullableFlowPtr<Expr> E;
+  NullableFlowPtr<Expr> e;
 
-  if (isType) {
-    auto comments = rd.CommentBuffer();
-    rd.ClearCommentBuffer();
+  if (is_type) {
+    auto comments = m_rd.CommentBuffer();
+    m_rd.ClearCommentBuffer();
 
-    auto type = recurse_type();
-    type->set_offset(start_pos);
+    auto type = RecurseType();
+    type->SetOffset(start_pos);
 
-    auto texpr = make<TypeExpr>(type)();
-    texpr->set_offset(start_pos);
+    auto texpr = CreateNode<TypeExpr>(type)();
+    texpr->SetOffset(start_pos);
 
-    E = BIND_COMMENTS(texpr, comments);
+    e = BindComments(texpr, comments);
   } else {
-    auto tok = next();
+    auto tok = peek();
 
-    auto comments = rd.CommentBuffer();
-    rd.ClearCommentBuffer();
+    auto comments = m_rd.CommentBuffer();
+    m_rd.ClearCommentBuffer();
 
-    switch (tok.get_type()) {
+    switch (tok.GetKind()) {
       case EofF: {
         break;
       }
 
       case KeyW: {
-        if ((E = recurse_expr_keyword(tok.as_key())).has_value()) {
-          E.value()->set_offset(start_pos);
+        next();
+        if ((e = RecurseExprKeyword(tok.GetKeyword())).has_value()) {
+          e.value()->SetOffset(start_pos);
         }
 
         break;
       }
 
       case Oper: {
-        log << SyntaxError << tok << "Unexpected operator in expression";
+        Log << SyntaxError << next() << "Unexpected operator in expression";
         break;
       }
 
       case Punc: {
-        if ((E = recurse_expr_punctor(tok.as_punc())).has_value()) {
-          E.value()->set_offset(start_pos);
+        next();
+
+        if ((e = RecurseExprPunctor(tok.GetPunctor())).has_value()) {
+          e.value()->SetOffset(start_pos);
         }
+
         break;
       }
 
       case Name: {
-        auto identifier = make<Ident>(tok.as_string())();
-        identifier->set_offset(start_pos);
+        auto identifier = CreateNode<Identifier>(RecurseName())();
+        identifier->SetOffset(start_pos);
 
-        E = identifier;
+        e = identifier;
         break;
       }
 
       case IntL: {
-        auto integer = make<ConstInt>(tok.as_string())();
-        integer->set_offset(start_pos);
+        next();
 
-        if (auto tok = peek(); tok.is(Name)) {
-          auto casted = recurse_expr_type_suffix(integer);
-          casted->set_offset(start_pos);
+        auto integer = CreateNode<Integer>(tok.GetString())();
+        integer->SetOffset(start_pos);
 
-          E = casted;
+        if (peek().Is(Name)) {
+          auto casted = RecurseExprTypeSuffix(integer);
+          casted->SetOffset(start_pos);
+
+          e = casted;
         } else {
-          E = integer;
+          e = integer;
         }
 
         break;
       }
 
       case NumL: {
-        auto decimal = make<ConstFloat>(tok.as_string())();
-        decimal->set_offset(start_pos);
+        next();
 
-        if (auto tok = peek(); tok.is(Name)) {
-          auto casted = recurse_expr_type_suffix(decimal);
-          casted->set_offset(start_pos);
+        auto decimal = CreateNode<Float>(tok.GetString())();
+        decimal->SetOffset(start_pos);
 
-          E = casted;
+        if (peek().Is(Name)) {
+          auto casted = RecurseExprTypeSuffix(decimal);
+          casted->SetOffset(start_pos);
+
+          e = casted;
         } else {
-          E = decimal;
+          e = decimal;
         }
 
         break;
       }
 
       case Text: {
-        auto string = make<ConstString>(tok.as_string())();
-        string->set_offset(start_pos);
+        next();
 
-        if (auto tok = peek(); tok.is(Name)) {
-          auto casted = recurse_expr_type_suffix(string);
-          casted->set_offset(start_pos);
+        auto string = CreateNode<String>(tok.GetString())();
+        string->SetOffset(start_pos);
 
-          E = casted;
+        if (peek().Is(Name)) {
+          auto casted = RecurseExprTypeSuffix(string);
+          casted->SetOffset(start_pos);
+
+          e = casted;
         } else {
-          E = string;
+          e = string;
         }
 
         break;
       }
 
       case Char: {
-        auto str_data = tok.as_string();
+        next();
+
+        auto str_data = tok.GetString();
         if (str_data->size() != 1) [[unlikely]] {
-          log << SyntaxError << tok
+          Log << SyntaxError << tok
               << "Expected a single byte in character literal";
           break;
         }
 
-        auto character = make<ConstChar>(str_data->at(0))();
-        character->set_offset(start_pos);
+        auto character = CreateNode<Character>(str_data->at(0))();
+        character->SetOffset(start_pos);
 
-        if (auto tok = peek(); tok.is(Name)) {
-          auto casted = recurse_expr_type_suffix(character);
-          casted->set_offset(start_pos);
+        if (peek().Is(Name)) {
+          auto casted = RecurseExprTypeSuffix(character);
+          casted->SetOffset(start_pos);
 
-          E = casted;
+          e = casted;
         } else {
-          E = character;
+          e = character;
         }
 
         break;
       }
 
       case MacB: {
-        log << SyntaxError << tok << "Unexpected macro block in expression";
+        Log << SyntaxError << next() << "Unexpected macro block in expression";
         break;
       }
 
       case Macr: {
-        log << SyntaxError << tok << "Unexpected macro call in expression";
+        Log << SyntaxError << next() << "Unexpected macro call in expression";
         break;
       }
 
       case Note: {
-        log << SyntaxError << tok << "Unexpected comment in expression";
+        Log << SyntaxError << next() << "Unexpected comment in expression";
         break;
       }
     }
 
-    if (E.has_value()) {
-      E = BIND_COMMENTS(E.value(), comments);
+    if (e.has_value()) {
+      e = BindComments(e.value(), comments);
     }
   }
 
-  return E;
+  return e;
 }

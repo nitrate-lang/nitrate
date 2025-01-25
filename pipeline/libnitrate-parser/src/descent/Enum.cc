@@ -37,74 +37,63 @@ using namespace ncc;
 using namespace ncc::lex;
 using namespace ncc::parse;
 
-string Parser::recurse_enum_name() {
-  if (auto tok = next_if(Name)) {
-    return tok->as_string();
-  } else {
-    return "";
+auto Parser::PImpl::RecurseEnumType() -> NullableFlowPtr<parse::Type> {
+  if (NextIf(PuncColn)) {
+    return RecurseType();
   }
+
+  return std::nullopt;
 }
 
-NullableFlowPtr<parse::Type> Parser::recurse_enum_type() {
-  if (next_if(PuncColn)) {
-    return recurse_type();
-  } else {
+auto Parser::PImpl::RecurseEnumItem() -> std::optional<EnumItem> {
+  auto member_name = RecurseName();
+  if (member_name->empty()) {
+    Log << SyntaxError << current() << "Enum member name cannot be empty.";
     return std::nullopt;
   }
-}
 
-NullableFlowPtr<Expr> Parser::recurse_enum_item_value() {
-  if (next_if(OpSet)) {
-    return recurse_expr({
+  if (NextIf(OpSet)) {
+    auto member_value = RecurseExpr({
         Token(Punc, PuncSemi),
         Token(Punc, PuncComa),
         Token(Punc, PuncRCur),
     });
-  } else {
-    return std::nullopt;
+
+    return EnumItem(member_name, member_value);
   }
+
+  return EnumItem(member_name, std::nullopt);
 }
 
-std::optional<EnumItem> Parser::recurse_enum_item() {
-  if (auto member_name = next_if(Name)) [[likely]] {
-    auto member_value = recurse_enum_item_value();
+auto Parser::PImpl::RecurseEnumItems() -> std::optional<EnumItems> {
+  EnumItems items;
 
-    return EnumItem(member_name->as_string(), member_value);
-  } else {
-    log << SyntaxError << next() << "Enum field is missing a name.";
-    return std::nullopt;
-  }
-}
-
-std::optional<EnumDefItems> Parser::recurse_enum_items() {
-  EnumDefItems items;
-
-  if (next_if(PuncSemi)) {
+  if (NextIf(PuncSemi)) {
     return items;
   }
 
-  if (next_if(PuncLCur)) {
+  if (NextIf(PuncLCur)) {
     while (true) {
-      if (next_if(EofF)) [[unlikely]] {
-        log << SyntaxError << current()
+      if (NextIf(EofF)) [[unlikely]] {
+        Log << SyntaxError << current()
             << "Unexpected EOF encountered while parsing enum fields.";
         break;
       }
 
-      if (next_if(PuncRCur)) {
+      if (NextIf(PuncRCur)) {
         return items;
       }
 
-      if (auto enum_member = recurse_enum_item()) {
+      if (auto enum_member = RecurseEnumItem()) {
         items.push_back(enum_member.value());
       } else {
-        log << SyntaxError << current() << "Failed to parse enum field.";
+        Log << SyntaxError << current() << "Failed to parse enum field.";
       }
 
-      next_if(PuncComa) || next_if(PuncSemi);
+      NextIf(PuncComa) || NextIf(PuncSemi);
     }
-  } else if (next_if(OpArrow)) {
-    if (auto item = recurse_enum_item()) {
+  } else if (NextIf(OpArrow)) {
+    if (auto item = RecurseEnumItem()) {
       items.push_back(item.value());
       return items;
     }
@@ -113,13 +102,13 @@ std::optional<EnumDefItems> Parser::recurse_enum_items() {
   return std::nullopt;
 }
 
-FlowPtr<Stmt> Parser::recurse_enum() {
-  auto name = recurse_enum_name();
-  auto type = recurse_enum_type();
+auto Parser::PImpl::RecurseEnum() -> FlowPtr<Stmt> {
+  auto name = RecurseName();
+  auto type = RecurseEnumType();
 
-  if (auto items = recurse_enum_items()) {
-    return make<EnumDef>(name, type, items.value())();
-  } else {
-    return mock_stmt(QAST_ENUM);
+  if (auto items = RecurseEnumItems()) {
+    return CreateNode<Enum>(name, type, items.value())();
   }
+
+  return MockStmt(QAST_ENUM);
 }

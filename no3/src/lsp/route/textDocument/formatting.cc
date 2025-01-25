@@ -1,156 +1,143 @@
-#include <rapidjson/document.h>
-
 #include <cctype>
 #include <cstdint>
+#include <lsp/core/Server.hh>
 #include <lsp/core/SyncFS.hh>
-#include <lsp/core/server.hh>
 #include <lsp/lang/Format.hh>
 #include <lsp/route/RoutesList.hh>
 #include <memory>
 #include <nitrate-core/Environment.hh>
 #include <nitrate-core/Logger.hh>
-#include <nitrate-lexer/Lexer.hh>
+#include <nitrate-lexer/Scanner.hh>
 #include <nitrate-parser/AST.hh>
 #include <nitrate-parser/Context.hh>
 #include <nitrate-seq/Sequencer.hh>
 #include <sstream>
 #include <string>
 
-using namespace rapidjson;
+using namespace nlohmann;
 using namespace ncc::lex;
 using namespace ncc::seq;
+using namespace no3::lsp;
 
-void do_formatting(const lsp::RequestMessage& req, lsp::ResponseMessage& resp) {
+void srv::DoFormatting(const RequestMessage& req, ResponseMessage& resp) {
   struct Position {
-    size_t line = 0;
-    size_t character = 0;
+    size_t m_line = 0;
+    size_t m_character = 0;
   };
 
   struct Range {
-    Position start;
-    Position end;
+    Position m_start;
+    Position m_end;
   };
 
   struct FormattingOptions {
-    size_t tabSize = 0;
-    bool insertSpaces = false;
+    size_t m_tabSize = 0;
+    bool m_insertSpaces = false;
   };
 
-  if (!req.params().HasMember("textDocument")) {
-    resp.error(lsp::ErrorCodes::InvalidParams, "Missing textDocument");
+  if (!req.GetJSON().contains("textDocument")) {
+    resp.Error(LSPStatus::InvalidParams, "Missing textDocument");
     return;
   }
 
-  if (!req.params()["textDocument"].IsObject()) {
-    resp.error(lsp::ErrorCodes::InvalidParams, "textDocument is not an object");
+  if (!req.GetJSON()["textDocument"].is_object()) {
+    resp.Error(LSPStatus::InvalidParams, "textDocument is not an object");
     return;
   }
 
-  if (!req.params()["textDocument"].HasMember("uri")) {
-    resp.error(lsp::ErrorCodes::InvalidParams, "Missing textDocument.uri");
+  if (!req.GetJSON()["textDocument"].contains("uri")) {
+    resp.Error(LSPStatus::InvalidParams, "Missing textDocument.uri");
     return;
   }
 
-  if (!req.params()["textDocument"]["uri"].IsString()) {
-    resp.error(lsp::ErrorCodes::InvalidParams,
-               "textDocument.uri is not a string");
+  if (!req.GetJSON()["textDocument"]["uri"].is_string()) {
+    resp.Error(LSPStatus::InvalidParams, "textDocument.uri is not a string");
     return;
   }
 
-  if (!req.params().HasMember("options")) {
-    resp.error(lsp::ErrorCodes::InvalidParams, "Missing options");
+  if (!req.GetJSON().contains("options")) {
+    resp.Error(LSPStatus::InvalidParams, "Missing options");
     return;
   }
 
-  if (!req.params()["options"].IsObject()) {
-    resp.error(lsp::ErrorCodes::InvalidParams, "options is not an object");
+  if (!req.GetJSON()["options"].is_object()) {
+    resp.Error(LSPStatus::InvalidParams, "options is not an object");
     return;
   }
 
-  if (!req.params()["options"].HasMember("tabSize")) {
-    resp.error(lsp::ErrorCodes::InvalidParams, "Missing options.tabSize");
+  if (!req.GetJSON()["options"].contains("tabSize")) {
+    resp.Error(LSPStatus::InvalidParams, "Missing options.tabSize");
     return;
   }
 
-  if (!req.params()["options"]["tabSize"].IsInt()) {
-    resp.error(lsp::ErrorCodes::InvalidParams,
-               "options.tabSize is not an integer");
+  if (!req.GetJSON()["options"]["tabSize"].is_number_unsigned()) {
+    resp.Error(LSPStatus::InvalidParams, "options.tabSize is not an integer");
     return;
   }
 
-  if (req.params()["options"]["tabSize"].GetUint() == 0) {
-    resp.error(lsp::ErrorCodes::InvalidParams, "options.tabSize is 0");
+  if (req.GetJSON()["options"]["tabSize"].get<size_t>() == 0) {
+    resp.Error(LSPStatus::InvalidParams, "options.tabSize is 0");
     return;
   }
 
-  if (!req.params()["options"].HasMember("insertSpaces")) {
-    resp.error(lsp::ErrorCodes::InvalidParams, "Missing options.insertSpaces");
+  if (!req.GetJSON()["options"].contains("insertSpaces")) {
+    resp.Error(LSPStatus::InvalidParams, "Missing options.insertSpaces");
     return;
   }
 
-  if (!req.params()["options"]["insertSpaces"].IsBool()) {
-    resp.error(lsp::ErrorCodes::InvalidParams,
+  if (!req.GetJSON()["options"]["insertSpaces"].get<bool>()) {
+    resp.Error(LSPStatus::InvalidParams,
                "options.insertSpaces is not a boolean");
     return;
   }
 
   FormattingOptions options;
-  options.tabSize = req.params()["options"]["tabSize"].GetInt();
-  options.insertSpaces = req.params()["options"]["insertSpaces"].GetBool();
+  options.m_tabSize = req.GetJSON()["options"]["tabSize"].get<size_t>();
+  options.m_insertSpaces = req.GetJSON()["options"]["insertSpaces"].get<bool>();
 
-  std::string uri = req.params()["textDocument"]["uri"].GetString();
-  auto file_opt = SyncFS::the().open(uri);
+  auto uri = req.GetJSON()["textDocument"]["uri"].get<std::string>();
+  auto file_opt = SyncFS::The().Open(uri);
   if (!file_opt.has_value()) {
-    resp.error(lsp::ErrorCodes::InternalError, "Failed to open file");
+    resp.Error(LSPStatus::InternalError, "Failed to open file");
     return;
   }
   auto file = file_opt.value();
 
-  std::stringstream ss(*file->content());
+  std::stringstream ss(*file->Content());
 
   auto env = std::make_shared<ncc::Environment>();
-  auto L = Sequencer(ss, env);
-  auto parser = ncc::parse::Parser::Create(L, env);
-  auto ast = parser->parse();
+  auto l = Sequencer(ss, env);
+  auto parser = ncc::parse::Parser::Create(l, env);
+  auto ast = parser->Parse();
 
-  if (L.HasError() || !ast.check()) {
+  if (l.HasError() || !ast.Check()) {
     return;
   }
 
-  LOG(INFO) << "Requested document format";
-
   std::stringstream formatted_ss;
-  if (!lsp::fmt::FormatterFactory::create(lsp::fmt::Styleguide::Cambrian,
+  if (!lsp::fmt::FormatterFactory::Create(lsp::fmt::Styleguide::Cambrian,
                                           formatted_ss)
-           ->format(ast.get())) {
-    resp.error(lsp::ErrorCodes::InternalError, "Failed to format document");
+           ->Format(ast.Get())) {
+    resp.Error(LSPStatus::InternalError, "Failed to format document");
     return;
   }
 
   auto formatted = formatted_ss.str();
 
-  file->replace(0, -1, formatted);
+  file->Replace(0, -1, formatted);
 
   ///==========================================================
   /// Send the whole new file contents
 
-  resp->SetArray();
-  Value edit(kObjectType);
-  edit.AddMember("range", Value(kObjectType), resp->GetAllocator());
-  edit["range"].AddMember("start", Value(kObjectType), resp->GetAllocator());
-  edit["range"]["start"].AddMember("line", 0, resp->GetAllocator());
-  edit["range"]["start"].AddMember("character", 0, resp->GetAllocator());
-  edit["range"].AddMember("end", Value(kObjectType), resp->GetAllocator());
-  edit["range"]["end"].AddMember("line", SIZE_MAX, resp->GetAllocator());
-  edit["range"]["end"].AddMember("character", SIZE_MAX, resp->GetAllocator());
-  edit.AddMember(
-      "newText",
-      Value(formatted.c_str(), formatted.size(), resp->GetAllocator()).Move(),
-      resp->GetAllocator());
+  resp.GetJSON() = json::array();
 
-  resp->PushBack(edit, resp->GetAllocator());
+  auto edit = json::object();
 
-  ///==========================================================
+  edit["range"]["start"]["line"] = 0;
+  edit["range"]["start"]["character"] = 0;
+  edit["range"]["end"]["line"] = SIZE_MAX;
+  edit["range"]["end"]["character"] = SIZE_MAX;
+  edit["newText"] = formatted;
 
-  return;
+  resp.GetJSON().push_back(edit);
 }

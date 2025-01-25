@@ -31,36 +31,64 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <stdint.h>
+#include <nitrate-seq/EC.hh>
 
-#if defined(__x86_64)
-uint64_t csrand64() {
-  uint64_t rand;
+using namespace ncc;
+using namespace ncc::seq;
 
-  asm volatile("rdrand %0" : "=r"(rand));
+NCC_EXPORT auto ncc::seq::ec::Formatter(std::string_view msg,
+                                        Sev sev) -> std::string {
+  std::stringstream ss;
+  ss << "[\x1b[0m\x1b[37;1mMeta\x1b[0m\x1b[37;1m]: ";
 
-  return rand;
-};
+  switch (sev) {
+    case Trace: {
+      ss << "\x1b[1mtrace:\x1b[0m ";
+      break;
+    }
 
-#else
-#error "Architecture not supported by this runtime
-#endif
+    case Debug: {
+      ss << "\x1b[1mdebug:\x1b[0m ";
+      break;
+    }
 
-uint64_t _nlr_csprng_impl(uint64_t buf_ptr, uint64_t req_size) {
-  uint8_t *buffer = (uint8_t *)buf_ptr;
+    case Info: {
+      ss << "\x1b[37;1minfo:\x1b[0m ";
+      break;
+    }
 
-  for (uint64_t i = 0; i < req_size / 8; i += 8) {
-    *(uint64_t *)(buffer + i) = csrand64();
-  }
+    case Notice: {
+      ss << "\x1b[37;1mnotice:\x1b[0m ";
+      break;
+    }
 
-  uint8_t remaining = req_size % 8;
+    case Warning: {
+      ss << "\x1b[35;1mwarning:\x1b[0m ";
+      break;
+    }
 
-  if (remaining) {
-    uint64_t rand = csrand64();
-    for (uint8_t i = 0; i < remaining; ++i) {
-      buffer[req_size - remaining + i] = (rand >> (i * 8)) & 0xFF;
+    case Sev::Error: {
+      ss << "\x1b[31;1merror:\x1b[0m ";
+      break;
+    }
+
+    case Critical: {
+      ss << "\x1b[31;1;4mcritical:\x1b[0m ";
+      break;
+    }
+
+    case Alert: {
+      ss << "\x1b[31;1;4malert:\x1b[0m ";
+      break;
+    }
+
+    case Emergency: {
+      ss << "\x1b[31;1;4memergency:\x1b[0m ";
+      break;
     }
   }
 
-  return req_size;
+  ss << msg;
+
+  return ss.str();
 }

@@ -37,64 +37,76 @@ using namespace ncc;
 using namespace ncc::lex;
 using namespace ncc::parse;
 
-NullableFlowPtr<Expr> Parser::recurse_type_range_start() {
-  if (next_if(PuncColn)) {
+auto Parser::PImpl::RecurseTypeRangeStart() -> NullableFlowPtr<Expr> {
+  if (NextIf(PuncColn)) {
     return std::nullopt;
   }
 
-  auto min_value = recurse_expr({
+  auto min_value = RecurseExpr({
       Token(Punc, PuncColn),
   });
 
-  if (!next_if(PuncColn)) {
-    log << SyntaxError << current() << "Expected ':' after range start";
+  if (!NextIf(PuncColn)) {
+    Log << SyntaxError << current() << "Expected ':' after range start";
   }
 
   return min_value;
 }
 
-NullableFlowPtr<Expr> Parser::recurse_type_range_end() {
-  if (next_if(PuncRBrk)) {
+auto Parser::PImpl::RecurseTypeRangeEnd() -> NullableFlowPtr<Expr> {
+  if (NextIf(PuncRBrk)) {
     return std::nullopt;
   }
 
-  auto max_val = recurse_expr({
+  auto max_val = RecurseExpr({
       Token(Punc, PuncRBrk),
   });
 
-  if (!next_if(PuncRBrk)) {
-    log << SyntaxError << current() << "Expected ']' after range";
+  if (!NextIf(PuncRBrk)) {
+    Log << SyntaxError << current() << "Expected ']' after range";
   }
 
   return max_val;
 }
 
-std::optional<CallArgs> Parser::recurse_type_template_arguments() {
-  if (!next_if(OpLT)) {
+auto Parser::PImpl::RecurseTypeTemplateArguments() -> std::optional<CallArgs> {
+  if (!NextIf(OpLT)) {
     return std::nullopt;
   }
 
-  auto args = recurse_call_arguments(Token(Oper, OpGT));
+  auto args = RecurseCallArguments(
+      {
+          Token(Oper, OpGT),
+          Token(Oper, OpRShift),
+          Token(Oper, OpROTR),
+      },
+      true);
 
-  if (!next_if(OpGT)) {
-    log << SyntaxError << current() << "Expected '>' after template arguments";
+  if (NextIf(OpGT)) {
+  } else if (NextIf(OpRShift)) {
+    m_rd.Insert(Token(Oper, OpGT));
+  } else if (NextIf(OpROTR)) {
+    m_rd.Insert(Token(Oper, OpRShift));
+  } else {
+    Log << SyntaxError << current() << "Expected '>' after template arguments";
   }
 
   return args;
 }
 
-FlowPtr<parse::Type> Parser::recurse_type_suffix(FlowPtr<Type> base) {
+auto Parser::PImpl::RecurseTypeSuffix(FlowPtr<Type> base)
+    -> FlowPtr<parse::Type> {
   static auto bit_width_terminaters = {
       Token(Punc, PuncRPar), Token(Punc, PuncRBrk), Token(Punc, PuncLCur),
       Token(Punc, PuncRCur), Token(Punc, PuncComa), Token(Punc, PuncColn),
       Token(Punc, PuncSemi), Token(Oper, OpSet),    Token(Oper, OpMinus),
       Token(Oper, OpGT)};
 
-  auto template_arguments = recurse_type_template_arguments();
+  auto template_arguments = RecurseTypeTemplateArguments();
 
   if (template_arguments.has_value()) {
-    auto templ = make<TemplType>(base, template_arguments.value())();
-    templ->set_offset(base->begin());
+    auto templ = CreateNode<TemplateType>(base, template_arguments.value())();
+    templ->SetOffset(base->Begin());
 
     base = templ;
   }
@@ -102,29 +114,29 @@ FlowPtr<parse::Type> Parser::recurse_type_suffix(FlowPtr<Type> base) {
   std::pair<NullableFlowPtr<Expr>, NullableFlowPtr<Expr>> range;
   NullableFlowPtr<Expr> width;
 
-  if (next_if(PuncColn)) {
-    if (next_if(PuncLBrk)) {
-      range.first = recurse_type_range_start();
-      range.second = recurse_type_range_end();
+  if (NextIf(PuncColn)) {
+    if (NextIf(PuncLBrk)) {
+      range.first = RecurseTypeRangeStart();
+      range.second = RecurseTypeRangeEnd();
 
-      if (next_if(PuncColn)) {
-        width = recurse_expr(bit_width_terminaters);
+      if (NextIf(PuncColn)) {
+        width = RecurseExpr(bit_width_terminaters);
       }
     } else {
-      width = recurse_expr(bit_width_terminaters);
+      width = RecurseExpr(bit_width_terminaters);
     }
   }
 
-  base->set_range_begin(range.first);
-  base->set_range_end(range.second);
-  base->set_width(width);
+  base->SetRangeBegin(range.first);
+  base->SetRangeEnd(range.second);
+  base->SetWidth(width);
 
-  if (next_if(OpTernary)) {
-    auto args = CallArgs{{"0", make<TypeExpr>(base)()}};
+  if (NextIf(OpTernary)) {
+    auto args = CallArgs{{"0", CreateNode<TypeExpr>(base)()}};
     auto opt_type =
-        make<TemplType>(make<NamedTy>("__builtin_result")(), args)();
+        CreateNode<TemplateType>(CreateNode<NamedTy>("__builtin_result")(), args)();
 
-    opt_type->set_offset(current().get_start());
+    opt_type->SetOffset(current().GetStart());
 
     base = opt_type;
   }
@@ -132,301 +144,329 @@ FlowPtr<parse::Type> Parser::recurse_type_suffix(FlowPtr<Type> base) {
   return base;
 }
 
-FlowPtr<parse::Type> Parser::recurse_function_type() {
-  auto fn = recurse_function(true);
+auto Parser::PImpl::RecurseFunctionType() -> FlowPtr<parse::Type> {
+  auto fn = RecurseFunction(true);
 
-  if (!fn->is<Function>() || !fn->as<Function>()->is_declaration()) {
-    log << SyntaxError << current()
+  if (!fn->Is<Function>() || !fn->As<Function>()->IsDeclaration()) {
+    Log << SyntaxError << current()
         << "Expected a function declaration but got something else";
-    return mock_type();
+    return MockType();
   }
 
-  FlowPtr<Function> fn_def = fn.as<Function>();
+  FlowPtr<Function> fn_def = fn.As<Function>();
 
-  auto func_ty = make<FuncTy>(fn_def->get_return(), fn_def->get_params(),
-                              fn_def->is_variadic(), fn_def->get_purity(),
-                              fn_def->get_attributes())();
+  auto func_ty = CreateNode<FuncTy>(fn_def->GetReturn(), fn_def->GetParams(),
+                              fn_def->IsVariadic(), fn_def->GetPurity(),
+                              fn_def->GetAttributes())();
 
-  func_ty->set_offset(fn->begin());
+  func_ty->SetOffset(fn->Begin());
 
   return func_ty;
 }
 
-FlowPtr<parse::Type> Parser::recurse_opaque_type() {
-  if (!next_if(PuncLPar)) {
-    log << SyntaxError << current() << "Expected '(' after 'opaque'";
-    return mock_type();
+auto Parser::PImpl::RecurseOpaqueType() -> FlowPtr<parse::Type> {
+  if (!NextIf(PuncLPar)) {
+    Log << SyntaxError << current() << "Expected '(' after 'opaque'";
+    return MockType();
   }
 
-  if (auto name = next_if(Name)) {
-    if (next_if(PuncRPar)) {
-      auto opaque = make<OpaqueTy>(name->as_string())();
-      opaque->set_offset(current().get_start());
+  if (auto name = RecurseName(); !name->empty()) {
+    if (NextIf(PuncRPar)) {
+      auto opaque = CreateNode<OpaqueTy>(name)();
+      opaque->SetOffset(current().GetStart());
 
       return opaque;
-    } else {
-      log << SyntaxError << current() << "Expected ')' after 'opaque(name'";
     }
+
+    Log << SyntaxError << current() << "Expected ')' after 'opaque(name'";
   } else {
-    log << SyntaxError << current() << "Expected a name after 'opaque('";
+    Log << SyntaxError << current() << "Expected a name after 'opaque('";
   }
 
-  return mock_type();
+  return MockType();
 }
 
-FlowPtr<parse::Type> Parser::recurse_type_by_keyword(Keyword key) {
+auto Parser::PImpl::RecurseTypeByKeyword(Keyword key) -> FlowPtr<parse::Type> {
+  next();
+
   switch (key) {
     case Fn: {
-      return recurse_function_type();
+      return RecurseFunctionType();
     }
 
     case Opaque: {
-      return recurse_opaque_type();
+      return RecurseOpaqueType();
     }
 
     case Keyword::Type: {
-      return recurse_type();
+      return RecurseType();
     }
 
     default: {
-      log << SyntaxError << current() << "Keyword is not valid in this context";
-      return mock_type();
+      Log << SyntaxError << current() << "Unexpected '" << key
+          << "' is type context";
+      return MockType();
     }
   }
 }
 
-FlowPtr<parse::Type> Parser::recurse_type_by_operator(Operator op) {
+auto Parser::PImpl::RecurseTypeByOperator(Operator op) -> FlowPtr<parse::Type> {
+  next();
+
   switch (op) {
     case OpTimes: {
-      auto start = current().get_start();
-      auto pointee = recurse_type();
-      auto ptr_ty = make<PtrTy>(pointee)();
+      auto start = current().GetStart();
+      auto pointee = RecurseType();
+      auto ptr_ty = CreateNode<PtrTy>(pointee, false)();
 
-      ptr_ty->set_offset(start);
+      ptr_ty->SetOffset(start);
 
       return ptr_ty;
     }
 
     case OpBitAnd: {
-      auto start = current().get_start();
-      auto refee = recurse_type();
-      auto ref_ty = make<RefTy>(refee)();
+      auto start = current().GetStart();
+      auto refee = RecurseType();
+      auto ref_ty = CreateNode<RefTy>(refee)();
 
-      ref_ty->set_offset(start);
+      ref_ty->SetOffset(start);
 
       return ref_ty;
     }
 
     case OpTernary: {
-      auto infer = make<InferTy>()();
+      auto infer = CreateNode<InferTy>()();
 
-      infer->set_offset(current().get_start());
+      infer->SetOffset(current().GetStart());
 
       return infer;
     }
 
+    case OpComptime: {
+      if (!NextIf(PuncLPar)) {
+        Log << SyntaxError << current() << "Expected '(' after 'comptime'";
+        return MockType();
+      }
+
+      auto comptime_expr =
+          CreateNode<UnaryExpression>(OpComptime, RecurseExpr({
+                                          Token(Punc, PuncRPar),
+                                      }))();
+
+      if (!NextIf(PuncRPar)) {
+        Log << SyntaxError << current() << "Expected ')' after 'comptime('";
+      }
+
+      auto args = CallArgs{{"0", comptime_expr}};
+      return CreateNode<TemplateType>(CreateNode<NamedTy>("__builtin_meta")(),
+                             std::move(args))();
+    }
+
     default: {
-      log << SyntaxError << current()
-          << "Operator is not valid in this context";
-      return mock_type();
+      Log << SyntaxError << current() << "Unexpected operator '" << op
+          << "' in type context";
+      return MockType();
     }
   }
 }
 
-FlowPtr<parse::Type> Parser::recurse_array_or_vector() {
-  auto start = current().get_start();
+auto Parser::PImpl::RecurseArrayOrVector() -> FlowPtr<parse::Type> {
+  auto start = current().GetStart();
 
-  auto first = recurse_type();
+  auto first = RecurseType();
 
-  if (next_if(PuncRBrk)) {
-    auto args = CallArgs{{"0", make<TypeExpr>(first)()}};
-    auto vector = make<TemplType>(make<NamedTy>("__builtin_vec")(), args)();
+  if (NextIf(PuncRBrk)) {
+    auto args = CallArgs{{"0", CreateNode<TypeExpr>(first)()}};
+    auto vector = CreateNode<TemplateType>(CreateNode<NamedTy>("__builtin_vec")(), args)();
 
-    vector->set_offset(start);
+    vector->SetOffset(start);
 
     return vector;
   }
 
-  if (!next_if(PuncSemi)) {
-    log << SyntaxError << current()
+  if (!NextIf(PuncSemi)) {
+    Log << SyntaxError << current()
         << "Expected ';' separator in array type before size";
   }
 
-  auto size = recurse_expr({
+  auto size = RecurseExpr({
       Token(Punc, PuncRBrk),
   });
 
-  if (!next_if(PuncRBrk)) {
-    log << SyntaxError << current() << "Expected ']' after array size";
+  if (!NextIf(PuncRBrk)) {
+    Log << SyntaxError << current() << "Expected ']' after array size";
   }
 
-  auto array = make<ArrayTy>(first, size)();
-  array->set_offset(start);
+  auto array = CreateNode<ArrayTy>(first, size)();
+  array->SetOffset(start);
 
   return array;
 }
 
-FlowPtr<parse::Type> Parser::recurse_set_type() {
-  auto start = current().get_start();
+auto Parser::PImpl::RecurseSetType() -> FlowPtr<parse::Type> {
+  auto start = current().GetStart();
 
-  auto set_type = recurse_type();
+  auto set_type = RecurseType();
 
-  if (!next_if(PuncRCur)) {
-    log << SyntaxError << current() << "Expected '}' after set type";
+  if (!NextIf(PuncRCur)) {
+    Log << SyntaxError << current() << "Expected '}' after set type";
   }
 
-  auto args = CallArgs{{"0", make<TypeExpr>(set_type)()}};
-  auto set = make<TemplType>(make<NamedTy>("__builtin_uset")(), args)();
+  auto args = CallArgs{{"0", CreateNode<TypeExpr>(set_type)()}};
+  auto set = CreateNode<TemplateType>(CreateNode<NamedTy>("__builtin_uset")(), args)();
 
-  set->set_offset(start);
+  set->SetOffset(start);
 
   return set;
 }
 
-FlowPtr<parse::Type> Parser::recurse_tuple_type() {
+auto Parser::PImpl::RecurseTupleType() -> FlowPtr<parse::Type> {
   TupleTyItems items;
 
-  auto start = current().get_start();
+  auto start = current().GetStart();
 
   while (true) {
-    if (next_if(EofF)) {
-      log << SyntaxError << current() << "Unexpected EOF in tuple type";
-      return mock_type();
+    if (NextIf(EofF)) {
+      Log << SyntaxError << current() << "Unexpected EOF in tuple type";
+      return MockType();
     }
 
-    if (next_if(PuncRPar)) {
+    if (NextIf(PuncRPar)) {
       break;
     }
 
-    auto type = recurse_type();
+    auto type = RecurseType();
     items.push_back(type);
 
-    next_if(PuncComa);
+    NextIf(PuncComa);
   }
 
-  auto tuple = make<TupleTy>(items)();
-  tuple->set_offset(start);
+  auto tuple = CreateNode<TupleTy>(items)();
+  tuple->SetOffset(start);
 
   return tuple;
 }
 
-FlowPtr<parse::Type> Parser::recurse_type_by_punctuation(Punctor punc) {
+auto Parser::PImpl::RecurseTypeByPunctuation(Punctor punc)
+    -> FlowPtr<parse::Type> {
   switch (punc) {
     case PuncLBrk: {
-      return recurse_array_or_vector();
+      next();
+      return RecurseArrayOrVector();
     }
 
     case PuncLCur: {
-      return recurse_set_type();
+      next();
+      return RecurseSetType();
     }
 
     case PuncLPar: {
-      return recurse_tuple_type();
+      next();
+      return RecurseTupleType();
+    }
+
+    case PuncScope: {
+      return RecurseTypeByName(RecurseName());
     }
 
     default: {
-      log << SyntaxError << current()
+      Log << SyntaxError << current()
           << "Punctuation is not valid in this context";
-      return mock_type();
+      return MockType();
     }
   }
 }
 
-FlowPtr<parse::Type> Parser::recurse_type_by_name(string name) {
+auto Parser::PImpl::RecurseTypeByName(string name) -> FlowPtr<parse::Type> {
   NullableFlowPtr<Type> type;
 
   if (name == "u1") {
-    type = make<U1>()();
+    type = CreateNode<U1>()();
   } else if (name == "u8") {
-    type = make<U8>()();
+    type = CreateNode<U8>()();
   } else if (name == "u16") {
-    type = make<U16>()();
+    type = CreateNode<U16>()();
   } else if (name == "u32") {
-    type = make<U32>()();
+    type = CreateNode<U32>()();
   } else if (name == "u64") {
-    type = make<U64>()();
+    type = CreateNode<U64>()();
   } else if (name == "u128") {
-    type = make<U128>()();
+    type = CreateNode<U128>()();
   } else if (name == "i8") {
-    type = make<I8>()();
+    type = CreateNode<I8>()();
   } else if (name == "i16") {
-    type = make<I16>()();
+    type = CreateNode<I16>()();
   } else if (name == "i32") {
-    type = make<I32>()();
+    type = CreateNode<I32>()();
   } else if (name == "i64") {
-    type = make<I64>()();
+    type = CreateNode<I64>()();
   } else if (name == "i128") {
-    type = make<I128>()();
+    type = CreateNode<I128>()();
   } else if (name == "f16") {
-    type = make<F16>()();
+    type = CreateNode<F16>()();
   } else if (name == "f32") {
-    type = make<F32>()();
+    type = CreateNode<F32>()();
   } else if (name == "f64") {
-    type = make<F64>()();
+    type = CreateNode<F64>()();
   } else if (name == "f128") {
-    type = make<F128>()();
+    type = CreateNode<F128>()();
   } else if (name == "void") {
-    type = make<VoidTy>()();
+    type = CreateNode<VoidTy>()();
   } else {
-    type = make<NamedTy>(name)();
+    type = CreateNode<NamedTy>(name)();
   }
 
   if (!type.has_value()) {
-    log << SyntaxError << current() << "Unknown type name: " << name;
-    return mock_type();
+    Log << SyntaxError << current() << "Unknown type name: " << name;
+    return MockType();
   }
 
-  type.value()->set_offset(current().get_start());
+  type.value()->SetOffset(current().GetStart());
 
   return type.value();
 }
 
-FlowPtr<parse::Type> Parser::recurse_type() {
-  auto comments = rd.CommentBuffer();
-  rd.ClearCommentBuffer();
+auto Parser::PImpl::RecurseType() -> FlowPtr<parse::Type> {
+  auto comments = m_rd.CommentBuffer();
+  m_rd.ClearCommentBuffer();
 
-  std::optional<FlowPtr<Type>> R;
+  std::optional<FlowPtr<Type>> r;
 
-  switch (auto tok = next(); tok.get_type()) {
+  switch (auto tok = peek(); tok.GetKind()) {
     case KeyW: {
-      auto type = recurse_type_by_keyword(tok.as_key());
-
-      R = recurse_type_suffix(type);
+      auto type = RecurseTypeByKeyword(tok.GetKeyword());
+      r = RecurseTypeSuffix(type);
       break;
     }
 
     case Oper: {
-      auto type = recurse_type_by_operator(tok.as_op());
-
-      R = recurse_type_suffix(type);
+      auto type = RecurseTypeByOperator(tok.GetOperator());
+      r = RecurseTypeSuffix(type);
       break;
     }
 
     case Punc: {
-      auto type = recurse_type_by_punctuation(tok.as_punc());
-
-      R = recurse_type_suffix(type);
+      auto type = RecurseTypeByPunctuation(tok.GetPunctor());
+      r = RecurseTypeSuffix(type);
       break;
     }
 
     case Name: {
-      auto type = recurse_type_by_name(tok.as_string());
-
-      R = recurse_type_suffix(type);
+      auto type = RecurseTypeByName(RecurseName());
+      r = RecurseTypeSuffix(type);
       break;
     }
 
     default: {
-      log << SyntaxError << current() << "Expected a type";
+      Log << SyntaxError << next() << "Expected a type";
 
-      auto type = mock_type();
-
-      R = recurse_type_suffix(type);
+      auto type = MockType();
+      r = RecurseTypeSuffix(type);
       break;
     }
   }
 
-  R = BIND_COMMENTS(R.value(), comments);
+  r = BindComments(r.value(), comments);
 
-  return R.value();
+  return r.value();
 }

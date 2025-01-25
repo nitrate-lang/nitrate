@@ -46,7 +46,7 @@ NCC_EXPORT IRModule::IRModule(string module_name) {
   m_root = nullptr;
   m_diagnostics_enabled = true;
 
-  m_ir_data = std::make_unique<ncc::dyn_arena>();
+  m_ir_data = std::make_unique<ncc::DynamicArena>();
 }
 
 NCC_EXPORT IRModule::~IRModule() { m_root = nullptr; }
@@ -71,6 +71,6 @@ NCC_EXPORT string IRModule::Name(std::optional<string> name) {
   return old_name;
 }
 
-NCC_EXPORT void IRModule::accept(IRVisitor<void> &visitor) {
-  m_root.value()->accept(visitor);
+NCC_EXPORT void IRModule::Accept(IRVisitor<void> &visitor) {
+  m_root.value()->Accept(visitor);
 }

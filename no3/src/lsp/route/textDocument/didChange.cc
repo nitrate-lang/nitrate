@@ -1,67 +1,66 @@
-#include <rapidjson/allocators.h>
-#include <rapidjson/document.h>
-
+#include <lsp/core/Server.hh>
 #include <lsp/core/SyncFS.hh>
-#include <lsp/core/server.hh>
 #include <lsp/route/RoutesList.hh>
 #include <nitrate-core/Macro.hh>
 #include <string>
 
-typedef int64_t DocVersion;
+using namespace no3::lsp;
 
-void do_didChange(const lsp::NotificationMessage& notif) {
-  using namespace rapidjson;
+using DocVersion = int64_t;
 
-  if (!notif.params().HasMember("textDocument")) {
+void srv::DoDidChange(const NotificationMessage& notif) {
+  using namespace nlohmann;
+
+  if (!notif.GetJSON().contains("textDocument")) {
     LOG(ERROR) << "Missing textDocument field in didChange notification";
     return;
   }
 
-  if (!notif.params()["textDocument"].IsObject()) {
+  if (!notif.GetJSON()["textDocument"].is_object()) {
     LOG(ERROR)
         << "textDocument field in didChange notification is not an object";
     return;
   }
 
-  let text_document = notif.params()["textDocument"];
+  let text_document = notif.GetJSON()["textDocument"];
 
-  if (!text_document.HasMember("uri")) {
+  if (!text_document.contains("uri")) {
     LOG(ERROR) << "Missing uri field in textDocument object";
     return;
   }
 
-  if (!text_document["uri"].IsString()) {
+  if (!text_document["uri"].is_string()) {
     LOG(ERROR) << "uri field in textDocument object is not a string";
     return;
   }
 
-  if (!text_document.HasMember("version")) {
+  if (!text_document.contains("version")) {
     LOG(ERROR) << "Missing version field in textDocument object";
     return;
   }
 
-  if (!text_document["version"].IsInt64()) {
+  if (!text_document["version"].is_number_integer()) {
     LOG(ERROR) << "version field in textDocument object is not an int64";
     return;
   }
 
-  let uri = text_document["uri"].GetString();
-  let version = text_document["version"].GetInt64();
+  let uri = text_document["uri"].get<std::string>();
+  let version = text_document["version"].get<int64_t>();
 
-  if (!notif.params().HasMember("contentChanges")) {
+  if (!notif.GetJSON().contains("contentChanges")) {
     LOG(ERROR) << "Missing contentChanges field in didChange notification";
     return;
   }
 
-  if (!notif.params()["contentChanges"].IsArray()) {
+  if (!notif.GetJSON()["contentChanges"].is_array()) {
     LOG(ERROR)
         << "contentChanges field in didChange notification is not an array";
     return;
   }
 
-  let content_changes = notif.params()["contentChanges"].GetArray();
+  let content_changes = notif.GetJSON()["contentChanges"];
 
-  auto file_opt = SyncFS::the().open(uri);
+  auto file_opt = SyncFS::The().Open(uri);
   if (!file_opt.has_value()) {
     return;
   }
@@ -69,17 +68,17 @@ void do_didChange(const lsp::NotificationMessage& notif) {
   auto file = file_opt.value();
 
   for (let content_change : content_changes) {
-    if (!content_change.IsObject()) {
+    if (!content_change.is_object()) {
       LOG(ERROR) << "contentChange in contentChanges array is not an object";
       return;
     }
 
-    if (!content_change.HasMember("text")) {
+    if (!content_change.contains("text")) {
       LOG(ERROR) << "Missing text field in contentChange object";
       return;
     }
 
-    if (!content_change["text"].IsString()) {
+    if (!content_change["text"].is_string()) {
       LOG(ERROR) << "text field in contentChange object is not a string";
       return;
     }
@@ -98,14 +97,9 @@ void do_didChange(const lsp::NotificationMessage& notif) {
     }
 
     for (let content_change : content_changes) {
-      std::string_view text(content_change["text"].GetString(),
-                            content_change["text"].GetStringLength());
-
-      file->replace(0, -1, text);
+      file->Replace(0, -1, content_change["text"].get<std::string>());
     }
 
     latest[uri] = version;
-
-    LOG(INFO) << "Document " << uri << " updated to version " << version;
   } /** END: CRITICAL SECTION */
 }

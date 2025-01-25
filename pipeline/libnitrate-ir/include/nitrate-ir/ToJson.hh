@@ -39,43 +39,42 @@
 #include <stack>
 
 namespace ncc::ir {
-  class NCC_EXPORT IR_JsonWriter : public IR_Writer {
+  class NCC_EXPORT IRJsonWriter : public IRWriter {
     std::ostream& m_os;
     std::stack<bool> m_comma;
     std::stack<size_t> m_count;
 
-    void delim();
+    void Delim();
 
-    void str_impl(std::string_view str);
-    void uint_impl(uint64_t val);
-    void double_impl(double val);
-    void bool_impl(bool val);
-    void null_impl();
-    void begin_obj_impl(size_t pair_count);
-    void end_obj_impl();
-    void begin_arr_impl(size_t size);
-    void end_arr_impl();
+    void StrImpl(std::string_view str);
+    void UintImpl(uint64_t val);
+    void DoubleImpl(double val);
+    void BoolImpl(bool val);
+    void NullImpl();
+    void BeginObjImpl(size_t pair_count);
+    void EndObjImpl();
+    void BeginArrImpl(size_t size);
+    void EndArrImpl();
 
   public:
-    IR_JsonWriter(std::ostream& os, WriterSourceProvider rd = std::nullopt)
-        : IR_Writer(
-              std::bind(&IR_JsonWriter::str_impl, this, std::placeholders::_1),
-              std::bind(&IR_JsonWriter::uint_impl, this, std::placeholders::_1),
-              std::bind(&IR_JsonWriter::double_impl, this,
+    IRJsonWriter(std::ostream& os, WriterSourceProvider rd = std::nullopt)
+        : IRWriter(
+              std::bind(&IRJsonWriter::StrImpl, this, std::placeholders::_1),
+              std::bind(&IRJsonWriter::UintImpl, this, std::placeholders::_1),
+              std::bind(&IRJsonWriter::DoubleImpl, this, std::placeholders::_1),
+              std::bind(&IRJsonWriter::BoolImpl, this, std::placeholders::_1),
+              std::bind(&IRJsonWriter::NullImpl, this),
+              std::bind(&IRJsonWriter::BeginObjImpl, this,
                         std::placeholders::_1),
-              std::bind(&IR_JsonWriter::bool_impl, this, std::placeholders::_1),
-              std::bind(&IR_JsonWriter::null_impl, this),
-              std::bind(&IR_JsonWriter::begin_obj_impl, this,
+              std::bind(&IRJsonWriter::EndObjImpl, this),
+              std::bind(&IRJsonWriter::BeginArrImpl, this,
                         std::placeholders::_1),
-              std::bind(&IR_JsonWriter::end_obj_impl, this),
-              std::bind(&IR_JsonWriter::begin_arr_impl, this,
-                        std::placeholders::_1),
-              std::bind(&IR_JsonWriter::end_arr_impl, this), rd),
+              std::bind(&IRJsonWriter::EndArrImpl, this), rd),
           m_os(os) {
       m_comma.push(false);
       m_count.push(0);
     }
-    virtual ~IR_JsonWriter() = default;
+    virtual ~IRJsonWriter() = default;
   };
 }  // namespace ncc::ir
 

@@ -31,54 +31,19 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <nitrate-lexer/Lexer.hh>
 #include <nitrate-seq/Sequencer.hh>
-#include <sys/List.hh>
 
 extern "C" {
 #include <lua/lauxlib.h>
 }
 
 using namespace ncc::lex;
+using namespace ncc::seq;
 
-int ncc::seq::sys_peek(lua_State* L) {
-  Token tok = get_engine()->Peek();
+void PushTokenObject(lua_State* lua, Token tok);
 
-  lua_newtable(L);
-
-  lua_pushstring(L, "ty");
-  lua_pushstring(L, qlex_ty_str(tok.get_type()));
-  lua_settable(L, -3);
-
-  lua_pushstring(L, "v");
-  switch (tok.get_type()) {
-    case EofF:
-    case KeyW: {
-      lua_pushstring(L, kw_repr(tok.as_key()));
-      break;
-    }
-    case Oper: {
-      lua_pushstring(L, op_repr(tok.as_op()));
-      break;
-    }
-    case Punc: {
-      lua_pushstring(L, punct_repr(tok.as_punc()));
-      break;
-    }
-    case IntL:
-    case NumL:
-    case Text:
-    case Char:
-    case Name:
-    case MacB:
-    case Macr:
-    case Note: {
-      lua_pushstring(L, std::string(tok.as_string()).c_str());
-      break;
-    }
-  }
-
-  lua_settable(L, -3);
+auto Sequencer::SysPeek() -> int32_t {
+  PushTokenObject(m_shared->m_L, Peek());
 
   return 1;
 }

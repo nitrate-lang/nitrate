@@ -1,11 +1,9 @@
-#include <openssl/sha.h>
-
 #include <cmath>
 #include <cstdlib>
 #include <filesystem>
 #include <fstream>
+#include <lsp/core/Server.hh>
 #include <lsp/core/SyncFS.hh>
-#include <lsp/core/server.hh>
 
 SyncFS::SyncFS() { LOG(INFO) << "Creating mirrored file system abstraction"; }
 
@@ -13,14 +11,14 @@ SyncFS::~SyncFS() {
   LOG(INFO) << "Destroying mirrored file system abstraction";
 }
 
-SyncFS& SyncFS::the() {
+auto SyncFS::The() -> SyncFS& {
   static SyncFS instance;
   return instance;
 }
 
 ///===========================================================================
 
-static std::string url_decode(std::string_view str) {
+static auto UrlDecode(std::string_view str) -> std::string {
   std::string result;
   result.reserve(str.size());
 
@@ -49,8 +47,9 @@ static std::string url_decode(std::string_view str) {
   return result;
 }
 
-std::optional<std::shared_ptr<SyncFSFile>> SyncFS::open(std::string path) {
-  path = url_decode(path);
+auto SyncFS::Open(std::string path)
+    -> std::optional<std::shared_ptr<SyncFSFile>> {
+  path = UrlDecode(path);
   if (path.starts_with("file://")) {
     path = path.substr(7);
   }
@@ -59,20 +58,19 @@ std::optional<std::shared_ptr<SyncFSFile>> SyncFS::open(std::string path) {
 
   auto it = m_files.find(path);
   if (it != m_files.end()) [[likely]] {
-    LOG(INFO) << "SyncFS: File already open: " << path;
     return it->second;
   }
 
   if (!std::filesystem::exists(path)) {
-    LOG(ERROR) << "SyncFS: File not found: " << path;
+    LOG(ERROR) << "File not found: " << path;
     return std::nullopt;
   }
 
-  LOG(INFO) << "SyncFS: Opening file: " << path;
+  LOG(INFO) << "Reading file...: " << path;
 
   std::ifstream file(path);
   if (!file.is_open()) {
-    LOG(ERROR) << "SyncFS: Failed to open file: " << path;
+    LOG(ERROR) << "Failed to open file: " << path;
     return std::nullopt;
   }
 
@@ -80,32 +78,14 @@ std::optional<std::shared_ptr<SyncFSFile>> SyncFS::open(std::string path) {
                       std::istreambuf_iterator<char>());
 
   auto ptr = std::make_shared<SyncFSFile>();
-  ptr->set_content(std::make_shared<std::string>(std::move(content)));
+  ptr->SetContent(std::make_shared<std::string>(std::move(content)));
 
   m_files[path] = ptr;
 
   return ptr;
 }
 
-void SyncFS::close(const std::string& name) {
+void SyncFS::Close(const std::string& name) {
   std::lock_guard<std::mutex> lock(m_mutex);
   m_files.erase(name);
-}
-
-///===========================================================================
-
-SyncFSFile::Digest SyncFSFile::thumbprint() {
-  std::lock_guard<std::mutex> lock(m_mutex);
-
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
-  SHA_CTX ctx;
-  SHA1_Init(&ctx);
-  SHA1_Update(&ctx, content()->data(), content()->size());
-
-  std::array<uint8_t, 20> digest;
-  SHA1_Final(digest.data(), &ctx);
-#pragma GCC diagnostic pop
-
-  return digest;
 }

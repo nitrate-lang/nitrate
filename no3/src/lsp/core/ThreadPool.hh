@@ -11,7 +11,13 @@
 // The current jobs [in context] will be cleanly stopped
 // It the the callbacks responsibility to check the stop token and return early
 
-class ThreadPool {
+class ThreadPool final {
+  std::mutex m_queue_mutex;
+  std::vector<std::jthread> m_threads;
+  std::queue<std::function<void(std::stop_token)>> m_jobs;
+
+  void ThreadLoop(const std::stop_token&);
+
 public:
   ThreadPool() = default;
   ~ThreadPool() { Stop(); }
@@ -19,12 +25,5 @@ public:
   void Start();
   void QueueJob(const std::function<void(std::stop_token)>& job);
   void Stop();
-  bool busy();
-
-private:
-  void ThreadLoop(std::stop_token);
-
-  std::mutex queue_mutex;
-  std::vector<std::jthread> threads;
-  std::queue<std::function<void(std::stop_token)>> jobs;
+  auto Busy() -> bool;
 };

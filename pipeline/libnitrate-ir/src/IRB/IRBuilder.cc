@@ -107,7 +107,7 @@
 
 // #ifdef CALLEE_KNOWN
 
-//   qcore_panicf_(
+//   QCorePanicF(
 //       "IRBuilder contract violation:\n"
 //       "-----------------------------\n"
 //       "Condition: (%s);\n\n"
@@ -129,14 +129,14 @@
 //       caller_info
 //           .file_name(),    // Original source file that invoked the external
 //           API
-//       caller_info.line(),  // Original source line that invoked the external
+//       caller_info.Line(),  // Original source line that invoked the external
 //       API caller_info.function_name(),  // Original source function that
 //       invoked the
 //                                     // external API
 
 //       caller.file_name(),  // Library source file that triggered the
 //                            // contract enforcement
-//       caller.line(),       // Library source line that triggered the contract
+//       caller.Line(),       // Library source line that triggered the contract
 //                            // enforcement
 //       caller.function_name(),  // Library source function that triggered the
 //                                // contract enforcement
@@ -145,7 +145,7 @@
 
 // #else
 
-//   qcore_panicf_(
+//   QCorePanicF(
 //       "IRBuilder contract violation:\n"
 //       "-----------------------------\n"
 //       "Condition: (%s);\n\n"
@@ -162,7 +162,7 @@
 
 //       caller.file_name(),  // Library source file that triggered the contract
 //                            // enforcement
-//       caller.line(),       // Library source line that triggered the contract
+//       caller.Line(),       // Library source line that triggered the contract
 //                            // enforcement
 //       caller.function_name(),  // Library source function that triggered the
 //                                // contract enforcement
@@ -190,8 +190,8 @@
 
 //     FlowPtr<Expr> out_expr = static_cast<FlowPtr<Expr> >(m_root->clone());
 
-//     contract_enforce(out_expr->getKind() == IR_eSEQ);
-//     r.m_root = out_expr->as<Seq>();
+//     contract_enforce(out_expr->GetKind() == IR_eSEQ);
+//     r.m_root = out_expr->As<Seq>();
 //   }
 
 //   return r;
@@ -231,8 +231,8 @@
 // public:
 //   virtual void report(IssueCode, IC, std::vector<std::string_view> = {},
 //                       std::tuple<uint32_t, uint32_t> = {
-//                           ncc::lex::QLEX_EOFF,
-//                           ncc::lex::QLEX_NOFILE}) override {}
+//                           ncc::lex::kLexEof,
+//                           ncc::lex::kLexNoFile}) override {}
 
 //   virtual void erase_reports() override {}
 
@@ -301,7 +301,7 @@
 
 //     { /* Clone the IRGraph into the module */
 //       std::swap(nr_allocator, new_mod->GetNodeArena());
-//       new_mod->setRoot(static_cast<FlowPtr<Seq>>(m_root->clone()));
+//       new_mod->SetRoot(static_cast<FlowPtr<Seq>>(m_root->clone()));
 //       std::swap(nr_allocator, new_mod->GetNodeArena());
 //     }
 
@@ -317,5 +317,5 @@
 //   contract_enforce(m_state == SelfState::Constructed);
 //   contract_enforce(m_root != nullptr);
 
-//   m_root->getItems().push_back(root);
+//   m_root->GetItems().push_back(root);
 // }

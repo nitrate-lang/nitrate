@@ -39,8 +39,9 @@
 using namespace ncc;
 
 NCC_EXPORT LibraryRC<CoreLibrarySetup> ncc::CoreLibrary;
+NCC_EXPORT std::atomic<bool> ncc::EnableSync = true;
 
-NCC_EXPORT bool CoreLibrarySetup::Init() {
+NCC_EXPORT auto CoreLibrarySetup::Init() -> bool {
   // Nothing to do here for now.
 
   qcore_print(QCORE_DEBUG, "Initialized Nitrate Core Library");
@@ -51,12 +52,10 @@ NCC_EXPORT bool CoreLibrarySetup::Init() {
 NCC_EXPORT void CoreLibrarySetup::Deinit() {
   qcore_print(QCORE_DEBUG, "Deinitialing Nitrate Core Library...");
 
-  /* After nitrate-core is deinitialized, all auto_intern objects are invalid.
-   */
   StringMemory::Reset();
 }
 
-NCC_EXPORT std::string_view CoreLibrarySetup::GetVersionId() {
+NCC_EXPORT auto CoreLibrarySetup::GetVersionId() -> std::string_view {
   return __TARGET_VERSION;
 }
 
@@ -64,15 +63,14 @@ NCC_EXPORT std::string_view CoreLibrarySetup::GetVersionId() {
 #include <boost/throw_exception.hpp>
 #include <iostream>
 
-namespace boost {
-  NCC_EXPORT void throw_exception(std::exception const& m,
-                                  boost::source_location const&) {
-    std::cerr << "boost::throw_exception: " << m.what();
-    std::terminate();
-  }
+[[maybe_unused]] NCC_EXPORT void boost::throw_exception(
+    std::exception const& m, boost::source_location const&) {
+  std::cerr << "boost::throw_exception: " << m.what();
+  std::terminate();
+}
 
-  NCC_EXPORT void throw_exception(std::exception const& m) {
-    std::cerr << "boost::throw_exception: " << m.what();
-    std::terminate();
-  }
-}  // namespace boost
+[[maybe_unused]] NCC_EXPORT void boost::throw_exception(
+    std::exception const& m) {
+  std::cerr << "boost::throw_exception: " << m.what();
+  std::terminate();
+}

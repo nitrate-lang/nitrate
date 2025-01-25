@@ -31,77 +31,112 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#pragma once
+#include <descent/Recurse.hh>
 
-#include <cstddef>
-#include <cstdint>
-#include <mutex>
-#include <nitrate-core/Allocate.hh>
-#include <vector>
+using namespace ncc;
+using namespace ncc::lex;
+using namespace ncc::parse;
 
-namespace ncc {
-  class dyn_arena::PImpl {
-    struct region_t {
-      uintptr_t base = 0;
-      uintptr_t offset = 0;
-      size_t size = 0;
-    };
-    std::vector<region_t> m_bases;
-    std::mutex m_mutex;
+auto Parser::PImpl::RecurseVariableAttributes()
+    -> std::optional<ExpressionList> {
+  ExpressionList attributes;
 
-    void alloc_region(size_t size) {
-      uintptr_t base = (uintptr_t) new uint8_t[size];
-      m_bases.push_back({base, base, size});
+  if (!NextIf(PuncLBrk)) {
+    return attributes;
+  }
+
+  while (true) {
+    if (NextIf(EofF)) [[unlikely]] {
+      Log << SyntaxError << current()
+          << "Encountered EOF while parsing variable attribute";
+      break;
     }
 
-  public:
-    PImpl();
-    ~PImpl();
+    if (NextIf(PuncRBrk)) {
+      return attributes;
+    }
 
-    void *alloc(size_t size, size_t align);
-  };
-}  // namespace ncc
+    auto attribute = RecurseExpr({
+        Token(Punc, PuncComa),
+        Token(Punc, PuncRBrk),
+    });
 
-// class gba_v0_t final : public qcore_arena_t {
-//   struct region_t {
-//     uintptr_t base = 0;
-//     uintptr_t offset = 0;
-//     size_t size = 0;
-//   };
-//   std::vector<region_t> m_bases;
-//   std::mutex m_mutex;
-//   bool m_thread_safe;
+    attributes.push_back(attribute);
 
-//   void alloc_region(size_t size) {
-//     uintptr_t base = (uintptr_t) new uint8_t[size];
-//     m_bases.push_back({base, base, size});
-//   }
+    NextIf(PuncComa);
+  }
 
-// public:
-//   virtual ~gba_v0_t() = default;
-//   void open(bool thread_safe) override;
-//   void *alloc(size_t size, size_t align) override;
-//   size_t close() override;
-// };
+  return std::nullopt;
+}
 
-// class riba_v0_t final : public qcore_arena_t {
-//   struct region_t {
-//     uintptr_t base = 0;
-//     uintptr_t offset = 0;
-//     size_t size = 0;
-//   };
-//   std::vector<region_t> m_bases;
-//   std::mutex m_mutex;
-//   bool m_thread_safe;
+auto Parser::PImpl::RecurseVariableType() -> NullableFlowPtr<parse::Type> {
+  if (NextIf(PuncColn)) {
+    return RecurseType();
+  }
 
-//   void alloc_region(size_t size) {
-//     uintptr_t base = (uintptr_t) new uint8_t[size];
-//     m_bases.push_back({base, base, size});
-//   }
+  return std::nullopt;
+}
 
-// public:
-//   virtual ~riba_v0_t() = default;
-//   void open(bool thread_safe) override;
-//   void *alloc(size_t size, size_t align) override;
-//   size_t close() override;
-// };
+auto Parser::PImpl::RecurseVariableValue() -> NullableFlowPtr<Expr> {
+  if (NextIf(OpSet)) {
+    return RecurseExpr({
+        Token(Punc, PuncComa),
+        Token(Punc, PuncSemi),
+    });
+  }
+
+  return std::nullopt;
+}
+
+auto Parser::PImpl::RecurseVariableInstance(VariableType decl_type)
+    -> NullableFlowPtr<Stmt> {
+  if (auto symbol_attributes_opt = RecurseVariableAttributes()) {
+    if (auto variable_name = RecurseName(); !variable_name->empty()) {
+      auto variable_type = RecurseVariableType();
+      auto variable_initial = RecurseVariableValue();
+
+      return CreateNode<Variable>(variable_name, variable_type, variable_initial,
+                           decl_type, symbol_attributes_opt.value())();
+    }
+
+    Log << SyntaxError << current() << "Expected variable name";
+
+    return std::nullopt;
+  }
+
+  Log << SyntaxError << current() << "Malformed variable attributes";
+
+  return MockStmt(QAST_VAR);
+}
+
+auto Parser::PImpl::RecurseVariable(VariableType decl_type)
+    -> std::vector<FlowPtr<Stmt>> {
+  std::vector<FlowPtr<Stmt>> variables;
+
+  while (true) {
+    if (NextIf(EofF)) [[unlikely]] {
+      Log << SyntaxError << current()
+          << "Unexpected EOF in variable declaration";
+      break;
+    }
+
+    if (auto variable_opt = RecurseVariableInstance(decl_type)) {
+      variables.push_back(variable_opt.value());
+    } else {
+      Log << SyntaxError << current() << "Failed to parse variable declaration";
+      break;
+    }
+
+    if (NextIf(PuncSemi)) {
+      return variables;
+    }
+
+    if (!NextIf(PuncComa)) {
+      Log << SyntaxError << current()
+          << "Expected comma or semicolon after variable declaration";
+      break;
+    }
+  }
+
+  return {MockStmt(QAST_VAR)};
+}

@@ -37,111 +37,114 @@ using namespace ncc;
 using namespace ncc::lex;
 using namespace ncc::parse;
 
-FlowPtr<parse::Type> Parser::recurse_function_parameter_type() {
-  if (next_if(PuncColn)) {
-    return recurse_type();
-  } else {
-    return make<InferTy>()();
+auto Parser::PImpl::RecurseFunctionParameterType() -> FlowPtr<parse::Type> {
+  if (NextIf(PuncColn)) {
+    return RecurseType();
   }
+
+  return CreateNode<InferTy>()();
 }
 
-NullableFlowPtr<Expr> Parser::recurse_function_parameter_value() {
-  if (next_if(OpSet)) {
-    return recurse_expr({
+auto Parser::PImpl::RecurseFunctionParameterValue() -> NullableFlowPtr<Expr> {
+  if (NextIf(OpSet)) {
+    return RecurseExpr({
         Token(Punc, PuncComa),
         Token(Punc, PuncRPar),
         Token(Oper, OpGT),
     });
-  } else {
-    return std::nullopt;
-  }
-}
-
-std::optional<FuncParam> Parser::recurse_function_parameter() {
-  if (auto param_name = next_if(Name)) [[likely]] {
-    auto param_type = recurse_function_parameter_type();
-    auto param_value = recurse_function_parameter_value();
-
-    return FuncParam{param_name->as_string(), param_type, param_value};
-  } else {
-    log << SyntaxError << next() << "Expected a parameter name before ':'";
   }
 
   return std::nullopt;
 }
 
-std::optional<TemplateParameters> Parser::recurse_template_parameters() {
-  if (!next_if(OpLT)) {
+auto Parser::PImpl::RecurseFunctionParameter() -> std::optional<FuncParam> {
+  if (auto param_name = RecurseName(); !param_name->empty()) [[likely]] {
+    auto param_type = RecurseFunctionParameterType();
+    auto param_value = RecurseFunctionParameterValue();
+
+    return FuncParam{param_name, param_type, param_value};
+  }
+
+  Log << SyntaxError << next() << "Expected a parameter name before ':'";
+
+  return std::nullopt;
+}
+
+auto Parser::PImpl::RecurseTemplateParameters()
+    -> std::optional<TemplateParameters> {
+  if (!NextIf(OpLT)) {
     return std::nullopt;
   }
 
   TemplateParameters params;
 
   while (true) {
-    if (next_if(EofF)) [[unlikely]] {
-      log << SyntaxError << current()
+    if (NextIf(EofF)) [[unlikely]] {
+      Log << SyntaxError << current()
           << "Unexpected EOF in template parameters";
       return params;
     }
 
-    if (next_if(OpGT)) {
+    if (NextIf(OpGT)) {
       break;
     }
 
-    if (auto param_opt = recurse_function_parameter()) {
+    if (auto param_opt = RecurseFunctionParameter()) {
       auto [param_name, param_type, param_value] = param_opt.value();
 
-      params.push_back({param_name, param_type, param_value});
+      params.emplace_back(param_name, param_type, param_value);
     } else {
-      log << SyntaxError << next() << "Expected a template parameter";
+      Log << SyntaxError << next() << "Expected a template parameter";
     }
 
-    next_if(PuncComa);
+    NextIf(PuncComa);
   }
 
   return params;
 }
 
-std::pair<FuncParams, bool> Parser::recurse_function_parameters() {
+auto Parser::PImpl::RecurseFunctionParameters() -> std::pair<FuncParams, bool> {
   std::pair<FuncParams, bool> parameters;
 
-  if (!next_if(PuncLPar)) [[unlikely]] {
-    log << SyntaxError << current() << "Expected '(' after function name";
+  if (!NextIf(PuncLPar)) [[unlikely]] {
+    Log << SyntaxError << current() << "Expected '(' after function name";
+
     return parameters;
   }
 
   bool is_variadic = false;
 
   while (true) {
-    if (next_if(EofF)) [[unlikely]] {
-      log << SyntaxError << current()
+    if (NextIf(EofF)) [[unlikely]] {
+      Log << SyntaxError << current()
           << "Unexpected EOF in function parameters";
+
       return parameters;
     }
 
-    if (next_if(PuncRPar)) {
+    if (NextIf(PuncRPar)) {
       break;
     }
 
-    if (next_if(OpEllipsis)) {
+    if (NextIf(OpEllipsis)) {
       is_variadic = true;
 
-      if (!peek().is<PuncRPar>()) {
-        log << SyntaxError << current()
+      if (!peek().Is<PuncRPar>()) {
+        Log << SyntaxError << current()
             << "Expected ')' after variadic parameter";
       }
       continue;
     }
 
-    if (auto parameter = recurse_function_parameter()) {
+    if (auto parameter = RecurseFunctionParameter()) {
       auto [param_name, param_type, param_value] = parameter.value();
-      parameters.first.push_back({param_name, param_type, param_value});
+      parameters.first.emplace_back(param_name, param_type, param_value);
 
     } else {
-      log << SyntaxError << next() << "Expected a function parameter";
+      Log << SyntaxError << next() << "Expected a function parameter";
     }
 
-    next_if(PuncComa);
+    NextIf(PuncComa);
   }
 
   parameters.second = is_variadic;
@@ -149,12 +152,14 @@ std::pair<FuncParams, bool> Parser::recurse_function_parameters() {
   return parameters;
 }
 
-Purity Parser::get_purity_specifier(Token start_pos, bool is_thread_safe,
-                                    bool is_pure, bool is_impure, bool is_quasi,
-                                    bool is_retro) {
+auto Parser::PImpl::GetPuritySpecifier(Token start_pos, bool is_thread_safe,
+                                       bool is_pure, bool is_impure,
+                                       bool is_quasi, bool is_retro) -> Purity {
   /* Ensure that there is no duplication of purity specifiers */
-  if ((is_impure + is_pure + is_quasi + is_retro) > 1) {
-    log << SyntaxError << start_pos << "Conflicting purity specifiers";
+  if ((static_cast<int>(is_impure) + static_cast<int>(is_pure) +
+       static_cast<int>(is_quasi) + static_cast<int>(is_retro)) > 1) {
+    Log << SyntaxError << start_pos << "Conflicting purity specifiers";
+
     return Purity::Impure;
   }
 
@@ -163,31 +168,39 @@ Purity Parser::get_purity_specifier(Token start_pos, bool is_thread_safe,
    */
   if (is_pure) {
     return Purity::Pure;
-  } else if (is_quasi) {
+  }
+
+  if (is_quasi) {
     return Purity::Quasi;
-  } else if (is_retro) {
+  }
+
+  if (is_retro) {
     return Purity::Retro;
-  } else if (is_thread_safe) {
+  }
+
+  if (is_thread_safe) {
     return Purity::Impure_TSafe;
-  } else {
-    return Purity::Impure;
   }
+
+  return Purity::Impure;
 }
 
-std::optional<std::pair<string, bool>> Parser::recurse_function_capture() {
-  bool is_ref = next_if(OpBitAnd).has_value();
+auto Parser::PImpl::RecurseFunctionCapture()
+    -> std::optional<std::pair<string, bool>> {
+  bool is_ref = NextIf(OpBitAnd).has_value();
 
-  if (auto name = next_if(Name)) {
-    return {{name->as_string(), is_ref}};
-  } else {
-    log << SyntaxError << next() << "Expected a capture name";
-    return std::nullopt;
+  if (auto name = RecurseName(); !name->empty()) {
+    return {{name, is_ref}};
   }
+
+  Log << SyntaxError << next() << "Expected a capture name";
+
+  return std::nullopt;
 }
 
-std::tuple<ExpressionList, FnCaptures, Purity, string>
-Parser::recurse_function_ambigouis() {
-  enum class State {
+auto Parser::PImpl::RecurseFunctionAmbigouis()
+    -> std::tuple<ExpressionList, FnCaptures, Purity, string> {
+  enum class State : uint8_t {
     Ground,
     AttributesSection,
     CaptureSection,
@@ -198,22 +211,24 @@ Parser::recurse_function_ambigouis() {
   ExpressionList attributes;
   FnCaptures captures;
   string function_name;
-  bool is_thread_safe = false, is_pure = false, is_impure = false,
-       is_quasi = false, is_retro = false, already_parsed_attributes = false,
-       already_parsed_captures = false;
+  bool is_thread_safe = false;
+  bool is_pure = false;
+  bool is_impure = false;
+  bool is_quasi = false;
+  bool is_retro = false;
+  bool already_parsed_attributes = false;
+  bool already_parsed_captures = false;
 
   while (state != State::End) {
-    if (next_if(EofF)) [[unlikely]] {
-      log << SyntaxError << current()
+    if (NextIf(EofF)) [[unlikely]] {
+      Log << SyntaxError << current()
           << "Unexpected EOF in function attributes";
       break;
     }
 
     switch (state) {
       case State::Ground: {
-        if (auto some_identifier = next_if(Name)) {
-          auto some_word = some_identifier->as_string();
-
+        if (auto some_word = RecurseName(); !some_word->empty()) {
           if (some_word == "pure") {
             is_pure = true;
           } else if (some_word == "impure") {
@@ -225,14 +240,14 @@ Parser::recurse_function_ambigouis() {
           } else if (some_word == "retro") {
             is_retro = true;
           } else if (some_word == "foreign" || some_word == "inline") {
-            attributes.push_back(make<Ident>(some_word)());
+            attributes.push_back(CreateNode<Identifier>(some_word)());
           } else {
             function_name = some_word;
             state = State::End;
           }
-        } else if (next_if(PuncLBrk)) {
+        } else if (NextIf(PuncLBrk)) {
           if (already_parsed_attributes && already_parsed_captures) {
-            log << SyntaxError << current()
+            Log << SyntaxError << current()
                 << "Unexpected '[' after function attributes and captures";
           } else if (already_parsed_attributes && !already_parsed_captures) {
             state = State::CaptureSection;
@@ -245,18 +260,18 @@ Parser::recurse_function_ambigouis() {
             auto tok = peek();
 
             /* No attribute expression may begin with '&' */
-            if (tok.is<OpBitAnd>()) {
+            if (tok.Is<OpBitAnd>()) {
               state = State::CaptureSection;
-            } else if (!tok.is(Name)) {
-              state = State::AttributesSection;
+            } else if (tok.Is(Name)) {
+              state = State::CaptureSection;
             } else { /* Ambiguous edge case */
-              state = State::CaptureSection;
+              state = State::AttributesSection;
             }
           }
-        } else if (auto tok = peek(); tok.is<PuncLPar>() || tok.is<OpLT>()) {
+        } else if (auto tok = peek(); tok.Is<PuncLPar>() || tok.Is<OpLT>()) {
           state = State::End; /* Begin parsing parameters or template options */
         } else {
-          log << SyntaxError << next()
+          Log << SyntaxError << next()
               << "Unexpected token in function declaration";
         }
 
@@ -267,25 +282,25 @@ Parser::recurse_function_ambigouis() {
         already_parsed_attributes = true;
 
         while (true) {
-          if (next_if(EofF)) [[unlikely]] {
-            log << SyntaxError << current()
+          if (NextIf(EofF)) [[unlikely]] {
+            Log << SyntaxError << current()
                 << "Unexpected EOF in function attributes";
             break;
           }
 
-          if (next_if(PuncRBrk)) {
+          if (NextIf(PuncRBrk)) {
             state = State::Ground;
             break;
           }
 
-          auto attribute = recurse_expr({
+          auto attribute = RecurseExpr({
               Token(Punc, PuncComa),
               Token(Punc, PuncRBrk),
           });
 
           attributes.push_back(attribute);
 
-          next_if(PuncComa);
+          NextIf(PuncComa);
         }
 
         break;
@@ -295,22 +310,22 @@ Parser::recurse_function_ambigouis() {
         already_parsed_captures = true;
 
         while (true) {
-          if (next_if(EofF)) [[unlikely]] {
-            log << SyntaxError << current()
+          if (NextIf(EofF)) [[unlikely]] {
+            Log << SyntaxError << current()
                 << "Unexpected EOF in function captures";
             break;
           }
 
-          if (next_if(PuncRBrk)) {
+          if (NextIf(PuncRBrk)) {
             state = State::Ground;
             break;
           }
 
-          if (auto capture = recurse_function_capture()) {
-            captures.push_back({capture->first, capture->second});
+          if (auto capture = RecurseFunctionCapture()) {
+            captures.emplace_back(capture->first, capture->second);
           }
 
-          next_if(PuncComa);
+          NextIf(PuncComa);
         }
 
         break;
@@ -322,47 +337,50 @@ Parser::recurse_function_ambigouis() {
     }
   }
 
-  auto purity = get_purity_specifier(start_pos, is_thread_safe, is_pure,
-                                     is_impure, is_quasi, is_retro);
+  auto purity = GetPuritySpecifier(start_pos, is_thread_safe, is_pure,
+                                   is_impure, is_quasi, is_retro);
 
   return {attributes, captures, purity, function_name};
 }
 
-FlowPtr<parse::Type> Parser::Parser::recurse_function_return_type() {
-  if (next_if(PuncColn)) {
-    return recurse_type();
-  } else {
-    return make<InferTy>()();
+auto Parser::PImpl::RecurseFunctionReturnType() -> FlowPtr<parse::Type> {
+  if (NextIf(PuncColn)) {
+    return RecurseType();
   }
+
+  return CreateNode<InferTy>()();
 }
 
-NullableFlowPtr<Stmt> Parser::recurse_function_body(
-    bool parse_declaration_only) {
-  if (parse_declaration_only || next_if(PuncSemi)) {
+auto Parser::PImpl::RecurseFunctionBody(bool parse_declaration_only)
+    -> NullableFlowPtr<Stmt> {
+  if (parse_declaration_only || NextIf(PuncSemi)) {
     return std::nullopt;
-  } else if (next_if(OpArrow)) {
-    return recurse_block(false, true, SafetyMode::Unknown);
-  } else {
-    return recurse_block(true, false, SafetyMode::Unknown);
   }
+
+  if (NextIf(OpArrow)) {
+    return RecurseBlock(false, true, SafetyMode::Unknown);
+  }
+
+  return RecurseBlock(true, false, SafetyMode::Unknown);
 }
 
-FlowPtr<Stmt> Parser::recurse_function(bool parse_declaration_only) {
-  auto start_pos = current().get_start();
+auto Parser::PImpl::RecurseFunction(bool parse_declaration_only)
+    -> FlowPtr<Stmt> {
+  auto start_pos = current().GetStart();
 
   auto [function_attributes, function_captures, function_purity,
-        function_name] = recurse_function_ambigouis();
-  auto function_template_parameters = recurse_template_parameters();
-  auto function_parameters = recurse_function_parameters();
-  auto function_return_type = recurse_function_return_type();
-  auto function_body = recurse_function_body(parse_declaration_only);
+        function_name] = RecurseFunctionAmbigouis();
+  auto function_template_parameters = RecurseTemplateParameters();
+  auto function_parameters = RecurseFunctionParameters();
+  auto function_return_type = RecurseFunctionReturnType();
+  auto function_body = RecurseFunctionBody(parse_declaration_only);
 
-  auto function = make<Function>(
+  auto function = CreateNode<Function>(
       function_attributes, function_purity, function_captures, function_name,
       function_template_parameters, function_parameters.first,
       function_parameters.second, function_return_type, std::nullopt,
       std::nullopt, function_body)();
-  function->set_offset(start_pos);
+  function->SetOffset(start_pos);
 
   return function;
 }

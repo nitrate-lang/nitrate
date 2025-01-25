@@ -34,30 +34,40 @@
 #ifndef __NITRATE_CORE_OLD_LOGGER_H__
 #define __NITRATE_CORE_OLD_LOGGER_H__
 
+#include <array>
 #include <cerrno>
 #include <cstdarg>
-#include <cstddef>
+#include <cstdint>
 #include <cstring>
+#include <string>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-void qcore_panic_(const char *msg) __attribute__((noreturn));
+void QCorePanic(const char *msg) __attribute__((noreturn));
 
-void qcore_panicf_(const char *fmt, ...) __attribute__((noreturn));
-void qcore_vpanicf_(const char *fmt, va_list args) __attribute__((noreturn));
+void QCorePanicF(const char *fmt, ...) __attribute__((noreturn));
+void QCoreVPanicF(const char *fmt, va_list args) __attribute__((noreturn));
 
-void qcore_debug_(const char *msg);
-void qcore_debugf_(const char *fmt, ...);
-void qcore_vdebugf_(const char *fmt, va_list args);
+void QCoreDebug(const char *msg);
+void QCoreDebugF(const char *fmt, ...);
+void QCoreVDebugF(const char *fmt, va_list args);
+
+static inline auto GetStrerror() {
+  constexpr size_t kMaxMessageSize = 256;
+
+  std::array<char, kMaxMessageSize> buf;
+  strerror_r(errno, buf.data(), buf.size());
+  return std::string(buf.data());
+}
 
 #if defined(NDEBUG)
 #define qcore_panicf(fmt, ...)                                              \
-  qcore_panicf_(                                                            \
+  QCorePanicF(                                                              \
       fmt                                                                   \
       "\nSource File: %s\nSource Line: %d\nFunction: unknown\nErrno: %s\n", \
-      ##__VA_ARGS__, __FILE__, __LINE__, strerror(errno))
+      ##__VA_ARGS__, __FILE__, __LINE__, GetStrerror().c_str())
 
 #define qcore_panic(msg) qcore_panicf("%s", msg)
 
@@ -67,10 +77,11 @@ void qcore_vdebugf_(const char *fmt, va_list args);
        : qcore_panicf("Assertion failed: %s;\nCondition: (%s);\n", \
                       "" #__VA_ARGS__, #expr))
 #else
-#define qcore_panicf(fmt, ...)                                             \
-  qcore_panicf_(                                                           \
-      fmt "\nSource File: %s\nSource Line: %d\nFunction: %s\nErrno: %s\n", \
-      ##__VA_ARGS__, __FILE__, __LINE__, __PRETTY_FUNCTION__, strerror(errno))
+#define qcore_panicf(fmt, ...)                                                 \
+  QCorePanicF(fmt                                                              \
+              "\nSource File: %s\nSource Line: %d\nFunction: %s\nErrno: %s\n", \
+              ##__VA_ARGS__, __FILE__, __LINE__, __PRETTY_FUNCTION__,          \
+              GetStrerror().c_str())
 
 #define qcore_panic(msg) qcore_panicf("%s", msg)
 
@@ -85,53 +96,48 @@ void qcore_vdebugf_(const char *fmt, va_list args);
 #define qcore_debugf(fmt, ...)
 #define qcore_debug(msg)
 #else
-#define qcore_debugf(fmt, ...) qcore_debugf_(fmt, ##__VA_ARGS__)
-#define qcore_debug(msg) qcore_debug_(msg)
+#define qcore_debugf(fmt, ...) QCoreDebugF(fmt, ##__VA_ARGS__)
+#define qcore_debug(msg) QCoreDebug(msg)
 #endif
 
 #define qcore_implement() qcore_panicf("%s is not implemented.", __func__)
 
-typedef enum {
+enum QCoreLog : uint8_t {
   QCORE_DEBUG,
   QCORE_INFO,
   QCORE_WARN,
   QCORE_ERROR,
   QCORE_FATAL,
-} qcore_log_t;
+};
 
-void qcore_begin(qcore_log_t level);
-int qcore_vwritef(const char *fmt, va_list args);
-void qcore_end();
+void QCoreBegin();
+auto QCoreVWriteF(const char *fmt, va_list args) -> int;
+void QCoreEnd(QCoreLog level);
 
-typedef void (*qcore_logger_t)(qcore_log_t level, const char *msg, size_t len,
-                               void *);
-
-void qcore_bind_logger(qcore_logger_t logger, void *data);
-
-static inline int qcore_writef(const char *fmt, ...) {
+static inline auto QCoreWritef(const char *fmt, ...) -> int {
   va_list args;
   va_start(args, fmt);
-  int ret = qcore_vwritef(fmt, args);
+  int ret = QCoreVWriteF(fmt, args);
   va_end(args);
   return ret;
 }
 
-static inline int qcore_write(const char *msg) {
-  return qcore_writef("%s", msg);
+static inline auto QCoreWrite(const char *msg) -> int {
+  return QCoreWritef("%s", msg);
 }
 
-#define qcore_logf(_lvl, ...)  \
-  do {                         \
-    qcore_begin(_lvl);         \
-    qcore_writef(__VA_ARGS__); \
-    qcore_end();               \
+#define qcore_logf(_lvl, ...) \
+  do {                        \
+    QCoreBegin();             \
+    QCoreWritef(__VA_ARGS__); \
+    QCoreEnd(_lvl);           \
   } while (0)
 
 #define qcore_print(_lvl, _msg) \
   do {                          \
-    qcore_begin(_lvl);          \
-    qcore_writef("%s", _msg);   \
-    qcore_end();                \
+    QCoreBegin();               \
+    QCoreWritef("%s", _msg);    \
+    QCoreEnd(_lvl);             \
   } while (0)
 
 #ifdef __cplusplus

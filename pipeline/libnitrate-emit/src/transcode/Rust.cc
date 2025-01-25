@@ -36,7 +36,8 @@
 #include <nitrate-core/Macro.hh>
 #include <transcode/Targets.hh>
 
-bool codegen::for_rust(IRModule *module, std::ostream &err, std::ostream &out) {
+auto codegen::ForRust(IRModule *module, std::ostream &err,
+                      std::ostream &out) -> bool {
   err << "Not implemented";
   return false;
 }

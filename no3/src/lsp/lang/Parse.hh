@@ -2,12 +2,12 @@
 
 #include <lsp/core/SyncFS.hh>
 #include <memory>
-#include <nitrate-lexer/Lexer.hh>
+#include <nitrate-lexer/Scanner.hh>
 #include <nitrate-parser/Context.hh>
 #include <optional>
 #include <unordered_map>
 
-namespace lang {
+namespace no3::lsp {
   class ParseTreeWrapper {
     const ncc::parse::Base* m_root;
 
@@ -15,27 +15,29 @@ namespace lang {
     ParseTreeWrapper();
     ~ParseTreeWrapper();
 
-    bool is_okay() const { return m_root != nullptr; }
-    bool from_syncfs(const std::string& uri);
+    [[nodiscard]] auto IsOkay() const -> bool { return m_root != nullptr; }
+    auto FromSyncfs(const std::string& uri) -> bool;
 
-    const ncc::parse::Base* root() const { return m_root; }
+    [[nodiscard]] auto Root() const -> const ncc::parse::Base* {
+      return m_root;
+    }
   };
   using ParseTree = std::shared_ptr<ParseTreeWrapper>;
 
   class ParseTreeCache {
     std::unordered_map<std::string, std::pair<SyncFSFile::Digest, ParseTree>>
         m_cache;
-    size_t m_cache_size = DEFAULT_CACHE_LIMIT;
+    size_t m_cache_size = kDefaultCacheLimit;
 
   public:
-    constexpr static size_t DEFAULT_CACHE_LIMIT = 1024 * 1024 * 10;  // 10 MB
+    constexpr static size_t kDefaultCacheLimit = 1024 * 1024 * 10;  // 10 MB
 
-    static ParseTreeCache& the();
+    static auto The() -> ParseTreeCache&;
 
-    std::optional<ParseTree> get(std::string_view uri,
-                                 bool permit_outdated = false) const;
+    auto Get(std::string_view uri,
+             bool permit_outdated = false) const -> std::optional<ParseTree>;
 
-    void clear();
-    void set_cache_limit(size_t max_bytes);
+    void Clear();
+    void SetCacheLimit(size_t max_bytes);
   };
-}  // namespace lang
+}  // namespace no3::lsp

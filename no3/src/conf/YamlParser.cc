@@ -36,21 +36,19 @@
 #include <conf/Parser.hh>
 #include <core/Logger.hh>
 
-std::optional<no3::conf::Config> no3::conf::YamlConfigParser::parse(
-    const std::string &content) {
+auto no3::conf::YamlConfigParser::Parse(
+    const std::string &content) -> std::optional<no3::conf::Config> {
   YAML::Node config;
 
   try {
     config = YAML::Load(content);
   } catch (YAML::ParserException &e) {
-    LOG(ERROR) << "Failed to parse YAML configuration: " << e.what()
-               << std::endl;
+    LOG(ERROR) << "Failed to parse YAML configuration: " << e.what();
     return std::nullopt;
   }
 
   if (!config.IsMap()) {
-    LOG(ERROR) << "Invalid YAML configuration: root element must be a map"
-               << std::endl;
+    LOG(ERROR) << "Invalid YAML configuration: root element must be a map";
     return std::nullopt;
   }
 
@@ -59,42 +57,39 @@ std::optional<no3::conf::Config> no3::conf::YamlConfigParser::parse(
   for (auto it = config.begin(); it != config.end(); ++it) {
     if (it->second.IsScalar()) {
       try {
-        int64_t i = it->second.as<int64_t>();
-        grp.set(it->first.as<std::string>(), i);
+        auto i = it->second.as<int64_t>();
+        grp.Set(it->first.as<std::string>(), i);
       } catch (YAML::TypedBadConversion<int64_t> &e) {
         try {
           bool b = it->second.as<bool>();
-          grp.set(it->first.as<std::string>(), b);
+          grp.Set(it->first.as<std::string>(), b);
         } catch (YAML::TypedBadConversion<bool> &e) {
-          grp.set(it->first.as<std::string>(), it->second.as<std::string>());
+          grp.Set(it->first.as<std::string>(), it->second.as<std::string>());
         }
       }
     } else if (it->second.IsSequence()) {
       std::vector<std::string> v;
 
       for (auto it2 = it->second.begin(); it2 != it->second.end(); ++it2) {
-        if (it2->IsScalar())
+        if (it2->IsScalar()) {
           v.push_back(it2->as<std::string>());
-        else {
-          LOG(ERROR) << "Invalid YAML configuration: unsupported value type"
-                     << std::endl;
+        } else {
+          LOG(ERROR) << "Invalid YAML configuration: unsupported value type";
           return std::nullopt;
         }
       }
 
-      grp.set(it->first.as<std::string>(), v);
+      grp.Set(it->first.as<std::string>(), v);
     } else {
-      LOG(ERROR) << "Invalid YAML configuration: unsupported value type"
-                 << std::endl;
+      LOG(ERROR) << "Invalid YAML configuration: unsupported value type";
       return std::nullopt;
     }
   }
 
-  if (!grp.has<int64_t>("version")) {
-    LOG(ERROR) << "Invalid YAML configuration: missing 'version' key"
-               << std::endl;
+  if (!grp.Has<int64_t>("version")) {
+    LOG(ERROR) << "Invalid YAML configuration: missing 'version' key";
     return std::nullopt;
   }
 
-  return Config(grp, grp["version"].as<int64_t>());
+  return Config(grp, grp["version"].As<int64_t>());
 }

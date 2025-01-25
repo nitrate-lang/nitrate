@@ -41,7 +41,7 @@ using namespace ncc::seq;
 
 NCC_EXPORT ncc::LibraryRC<SeqLibrarySetup> ncc::seq::SeqLibrary;
 
-NCC_EXPORT bool SeqLibrarySetup::Init() {
+NCC_EXPORT auto SeqLibrarySetup::Init() -> bool {
   qcore_print(QCORE_DEBUG, "Initializing Nitrate Sequencer Library");
 
   if (!ncc::CoreLibrary.InitRC()) {
@@ -66,6 +66,6 @@ NCC_EXPORT void SeqLibrarySetup::Deinit() {
   qcore_print(QCORE_DEBUG, "Nitrate Sequencer Library deinitialized");
 }
 
-NCC_EXPORT std::string_view SeqLibrarySetup::GetVersionId() {
+NCC_EXPORT auto SeqLibrarySetup::GetVersionId() -> std::string_view {
   return __TARGET_VERSION;
 }

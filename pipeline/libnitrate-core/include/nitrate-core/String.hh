@@ -35,102 +35,95 @@
 #define __NITRATE_CORE_STRING_FACTORY_H__
 
 #include <cstdint>
-#include <mutex>
+#include <nitrate-core/Logger.hh>
+#include <nitrate-core/Macro.hh>
 #include <string>
 #include <string_view>
-#include <unordered_map>
 
 namespace ncc {
-  class auto_intern;
+  class StringMemory;
+  class String;
 
-  class StringMemory {
-    friend class auto_intern;
+  class CStringView final : public std::string_view {
+  public:
+    constexpr CStringView() : std::string_view("") {}
+    constexpr CStringView(const char *begin, size_t len)
+        : std::string_view(begin, len - 1) {
+      qcore_assert(begin[len - 1] == '\0');
+    }
 
-    struct Storage {
-      std::unordered_map<uint64_t, std::string> m_map_a;
-      std::unordered_map<std::string_view, uint64_t> m_map_b;
-      uint64_t m_next_id = 0;
-      std::mutex m_mutex;
+    ~CStringView() = default;
 
-      Storage() {
-        m_map_a[0] = "";
-        m_map_b[""] = 0;
-        m_next_id = 1;
-      }
-    };
+    [[nodiscard]]
+    auto c_str() const  // NOLINT
+        -> const char * {
+      return data();
+    }
 
-    static Storage m_storage;
+    [[nodiscard]] constexpr operator const char *() const { return c_str(); }
+  };
 
-    StringMemory() = delete;
+  class NCC_EXPORT StringMemory {
+    friend class String;
 
-    static std::string_view FromID(uint64_t id);
-    static uint64_t FromString(std::string_view str);
-    static uint64_t FromString(std::string &&str);
+    static auto FromString(std::string_view str) -> uint64_t;
+    static auto FromString(std::string &&str) -> uint64_t;
 
   public:
+    StringMemory() = delete;
     static void Reset();
   };
 
-  class __attribute__((packed)) auto_intern {
+  class NCC_EXPORT __attribute__((packed)) String {
     uint64_t m_id : 40;
 
   public:
-    constexpr auto_intern(std::string_view str = "") {
-      m_id = str.empty() ? 0 : StringMemory::FromString(str);
-    }
+    constexpr explicit String() : m_id(0) {}
 
-    constexpr auto_intern(std::string &&str) {
-      m_id = str.empty() ? 0 : StringMemory::FromString(std::move(str));
-    }
+    constexpr NCC_FORCE_INLINE String(std::string_view str)
+        : m_id(str.empty() ? 0 : StringMemory::FromString(str)) {}
 
-    constexpr auto_intern(const std::string &str) {
-      m_id = str.empty() ? 0 : StringMemory::FromString(str);
-    }
+    constexpr NCC_FORCE_INLINE String(std::string &&str)
+        : m_id(str.empty() ? 0 : StringMemory::FromString(std::move(str))) {}
 
-    constexpr auto_intern(const char *str) {
-      if (str[0] == '\0') {
-        m_id = 0;
-      } else {
-        m_id = StringMemory::FromString(std::string_view(str));
-      }
-    }
+    constexpr NCC_FORCE_INLINE String(const std::string &str)
+        : m_id(str.empty() ? 0 : StringMemory::FromString(str)) {}
 
-    std::string_view get() const;
+    constexpr NCC_FORCE_INLINE String(const char *str)
+        : m_id(str[0] == 0 ? 0
+                           : StringMemory::FromString(std::string_view(str))) {}
 
-    constexpr bool operator==(const auto_intern &O) const {
-      return m_id == O.m_id;
-    }
+    [[nodiscard]] auto Get() const -> CStringView;
 
-    constexpr auto operator*() const { return get(); }
+    auto operator==(const String &o) const -> bool;
+    auto operator<(const String &o) const -> bool;
 
-    const auto *operator->() const {
-      static thread_local std::string_view sv;
-      sv = get();
+    constexpr auto operator*() const { return Get(); }
+
+    auto operator->() const -> const auto * {
+      static thread_local CStringView sv;
+      sv = Get();
       return &sv;
     }
 
-    constexpr bool operator<(const auto_intern &O) const {
-      return m_id < O.m_id;
-    }
+    constexpr operator CStringView() const { return Get(); }
 
-    constexpr operator std::string_view() const { return get(); }
-
-    constexpr auto getId() const { return m_id; }
+    [[nodiscard]] constexpr auto GetId() const { return m_id; }
   };
 
-  using string = auto_intern;
+  using string = String;
 
-  static inline std::ostream &operator<<(std::ostream &os,
-                                         const auto_intern &str) {
-    return os << str.get();
+  static inline auto operator<<(std::ostream &os,
+                                const String &str) -> std::ostream & {
+    return os << str.Get();
   }
 }  // namespace ncc
 
 namespace std {
   template <>
-  struct hash<ncc::auto_intern> {
-    size_t operator()(const ncc::auto_intern &str) const {
-      return std::hash<uint64_t>{}(str.getId());
+  struct hash<ncc::String> {
+    auto operator()(const ncc::String &str) const -> size_t {
+      return std::hash<std::string_view>{}(str.Get());
     }
   };
 }  // namespace std

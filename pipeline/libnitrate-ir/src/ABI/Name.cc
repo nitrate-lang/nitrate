@@ -42,7 +42,7 @@ using namespace ncc;
 using namespace ncc::ir;
 
 namespace util {
-  constexpr std::array<char, 256> ns_valid_chars = []() {
+  constexpr std::array<char, 256> kNamespaceChars = []() {
     auto is_alnum = [](char ch) constexpr {
       return (ch >= '0' && ch <= '9') || (ch >= 'a' && ch <= 'z') ||
              (ch >= 'A' && ch <= 'Z');
@@ -60,7 +60,7 @@ namespace util {
     return valid_chars;
   }();
 
-  static void escape_string(std::ostream &ss, std::string_view input) {
+  static void EscapeString(std::ostream &ss, std::string_view input) {
     ss << '"';
 
     for (char ch : input) {
@@ -106,7 +106,7 @@ namespace util {
 }  // namespace util
 
 namespace ncc::ir::abi::azide {
-  static void nslv_encode(std::string_view input, std::ostream &ss) {
+  static void NslvEncode(std::string_view input, std::ostream &ss) {
     std::string buf;
 
     for (size_t state = 0, i = 0; i < input.size(); i++) {
@@ -136,7 +136,7 @@ namespace ncc::ir::abi::azide {
     }
   }
 
-  static bool nslv_decode(std::string_view &input, std::ostream &ss) {
+  static bool NslvDecode(std::string_view &input, std::ostream &ss) {
     std::string buf;
     bool first = true;
 
@@ -169,7 +169,7 @@ namespace ncc::ir::abi::azide {
           std::string_view part = input.substr(i, size);
 
           if (!std::all_of(part.begin(), part.end(),
-                           [](char ch) { return util::ns_valid_chars[ch]; })) {
+                           [](char ch) { return util::kNamespaceChars[ch]; })) {
             return false;
           }
 
@@ -252,7 +252,7 @@ namespace ncc::ir::abi::azide {
      *                 ::= m # unsigned long
      */
 
-    switch (n->getKind()) {
+    switch (n->GetKind()) {
       case IR_tU1: {
         ss << 'b';
         break;
@@ -335,19 +335,19 @@ namespace ncc::ir::abi::azide {
 
       case IR_tPTR: {
         ss << 'P';
-        MangleTypeRecurse(n->template as<PtrTy>()->getPointee(), ss);
+        MangleTypeRecurse(n->template As<PtrTy>()->GetPointee(), ss);
         break;
       }
 
       case IR_tCONST: {
         ss << 'K';
-        MangleTypeRecurse(n->template as<ConstTy>()->getItem(), ss);
+        MangleTypeRecurse(n->template As<ConstTy>()->GetItem(), ss);
         break;
       }
 
       case IR_tOPAQUE: {
         ss << 'N';
-        nslv_encode(n->template as<OpaqueTy>()->getName(), ss);
+        NslvEncode(n->template As<OpaqueTy>()->GetName(), ss);
         ss << 'E';
         break;
       }
@@ -360,7 +360,7 @@ namespace ncc::ir::abi::azide {
          */
 
         ss << 'c';
-        for (auto field : n->template as<StructTy>()->getFields()) {
+        for (auto field : n->template As<StructTy>()->GetFields()) {
           MangleTypeRecurse(field, ss);
         }
         ss << 'E';
@@ -375,7 +375,7 @@ namespace ncc::ir::abi::azide {
          */
 
         ss << 'u';
-        for (auto field : n->template as<StructTy>()->getFields()) {
+        for (auto field : n->template As<StructTy>()->GetFields()) {
           MangleTypeRecurse(field, ss);
         }
         ss << 'E';
@@ -384,9 +384,9 @@ namespace ncc::ir::abi::azide {
 
       case IR_tARRAY: {
         ss << 'A';
-        ss << n->template as<ArrayTy>()->getCount();
+        ss << n->template As<ArrayTy>()->GetCount();
         ss << '_';
-        MangleTypeRecurse(n->template as<ArrayTy>()->getElement(), ss);
+        MangleTypeRecurse(n->template As<ArrayTy>()->GetElement(), ss);
         break;
       }
 
@@ -399,12 +399,12 @@ namespace ncc::ir::abi::azide {
          */
 
         ss << 'F';
-        auto *fn = n->template as<FnTy>();
-        MangleTypeRecurse(fn->getReturn(), ss);
-        for (auto param : fn->getParams()) {
+        auto *fn = n->template As<FnTy>();
+        MangleTypeRecurse(fn->GetReturn(), ss);
+        for (auto param : fn->GetParams()) {
           MangleTypeRecurse(param, ss);
         }
-        if (fn->isVariadic()) {
+        if (fn->IsVariadic()) {
           ss << '_';
         }
         ss << 'E';
@@ -412,7 +412,7 @@ namespace ncc::ir::abi::azide {
       }
 
       default: {
-        qcore_panicf("Unknown type kind: %d", (int)n->getKind());
+        qcore_panicf("Unknown type kind: %d", (int)n->GetKind());
       }
     }
   }
@@ -489,7 +489,7 @@ namespace ncc::ir::abi::azide {
       case 'N': {
         ss << "opaque ";
         name.remove_prefix(1);
-        if (!nslv_decode(name, ss)) {
+        if (!NslvDecode(name, ss)) {
           return false;
         }
 
@@ -601,7 +601,7 @@ namespace ncc::ir::abi::azide {
     std::stringstream ss;
 
     ss << "_Q";  // Nitrate ABI prefix
-    nslv_encode(name, ss);
+    NslvEncode(name, ss);
     MangleTypeRecurse(type, ss);
     ss << "_0";  // ABI version 0
 
@@ -629,12 +629,12 @@ namespace ncc::ir::abi::azide {
 
     { /* Write the symbol name */
       std::stringstream name_ss;
-      if (!nslv_decode(name, name_ss)) {
+      if (!NslvDecode(name, name_ss)) {
         printf("Failed to decode namespace size value\n");
         return std::nullopt;
       }
 
-      util::escape_string(ss, name_ss.str());
+      util::EscapeString(ss, name_ss.str());
     }
 
     ss << ",\"type\":";
@@ -646,7 +646,7 @@ namespace ncc::ir::abi::azide {
         return std::nullopt;
       }
 
-      util::escape_string(ss, type_ss.str());
+      util::EscapeString(ss, type_ss.str());
     }
 
     ss << "}";
@@ -656,13 +656,13 @@ namespace ncc::ir::abi::azide {
 }  // namespace ncc::ir::abi::azide
 
 namespace ncc::ir::abi::c {
-  static std::string mangle_c_abi(std::string_view name, auto) {
+  static std::string MangleCAbi(std::string_view name, auto) {
     std::string s = std::string(name);
     std::replace(s.begin(), s.end(), ':', '_');
     return s;
   }
 
-  static std::string demangle_c_abi(std::string_view name) {
+  static std::string DemangleCAbi(std::string_view name) {
     /**
      * @brief There isn't really anything to do here.
      * The C ABI is weak and doesn't encode type information.
@@ -692,12 +692,12 @@ NCC_EXPORT std::optional<std::string> ncc::ir::MangleTypeName(
 
 NCC_EXPORT std::optional<std::string> ncc::ir::GetMangledSymbolName(
     FlowPtr<Expr> symbol, AbiTag abi) {
-  auto name = symbol->getName();
+  auto name = symbol->GetName();
 
-  if (auto type_opt = symbol->getType()) {
+  if (auto type_opt = symbol->GetType()) {
     switch (abi) {
       case AbiTag::C: {
-        return abi::c::mangle_c_abi(name, type_opt.value());
+        return abi::c::MangleCAbi(name, type_opt.value());
       }
 
       case AbiTag::Nitrate:
@@ -724,7 +724,7 @@ NCC_EXPORT std::optional<std::string> ncc::ir::ExpandSymbolName(
   if (abi::azide::DemangleTypeRecurse(mangled_name, ss)) {
     return ss.str();
   } else {
-    return abi::c::demangle_c_abi(mangled_name);
+    return abi::c::DemangleCAbi(mangled_name);
   }
 }
 

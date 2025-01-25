@@ -34,13 +34,14 @@
 #ifndef __NITRATE_LEXER_TOKEN_HH__
 #define __NITRATE_LEXER_TOKEN_HH__
 
+#include <boost/bimap.hpp>
 #include <cstdint>
 #include <nitrate-core/Logger.hh>
 #include <nitrate-core/String.hh>
 #include <type_traits>
 
 namespace ncc::lex {
-  typedef enum TokenType {
+  enum TokenType : uint8_t {
     EofF = 1, /* End of file */
     KeyW,     /* Keyword */
     Oper,     /* Operator */
@@ -53,9 +54,9 @@ namespace ncc::lex {
     MacB,     /* Macro block */
     Macr,     /* Macro call */
     Note,     /* Comment */
-  } __attribute__((packed)) TokenType;
+  };
 
-  typedef enum Punctor {
+  enum Punctor : uint8_t {
     PuncLPar, /* Left parenthesis */
     PuncRPar, /* Right parenthesis */
     PuncLBrk, /* Left bracket */
@@ -65,9 +66,10 @@ namespace ncc::lex {
     PuncComa, /* Comma */
     PuncColn, /* Colon */
     PuncSemi, /* Semicolon */
-  } __attribute__((packed)) Punctor;
+    PuncScope /* Scope resolution */
+  };
 
-  typedef enum Operator {
+  enum Operator : uint8_t {
     OpPlus,        /* '+':    Addition operator */
     OpMinus,       /* '-':    Subtraction operator */
     OpTimes,       /* '*':    Multiplication operator */
@@ -117,19 +119,20 @@ namespace ncc::lex {
     OpBitsizeof,   /* 'bitsizeof':  Bit size of operator */
     OpAlignof,     /* 'alignof':    Alignment of operator */
     OpTypeof,      /* 'typeof':     Type of operator */
+    OpComptime,    /* 'comptime':   Compile-time operator */
     OpDot,         /* '.':          Dot operator */
     OpRange,       /* '..':         Range operator */
     OpEllipsis,    /* '...':        Ellipsis operator */
     OpArrow,       /* '=>':         Arrow operator */
     OpTernary,     /* '?':          Ternary operator */
-  } __attribute__((packed)) Operator;
+  };
 
-  typedef enum Keyword {
+  enum Keyword : uint8_t {
     Scope,     /* 'scope' */
-    Import,    /* 'import' */
     Pub,       /* 'pub' */
     Sec,       /* 'sec' */
     Pro,       /* 'pro' */
+    Import,    /* 'import' */
     Type,      /* 'type' */
     Let,       /* 'let' */
     Var,       /* 'var' */
@@ -168,15 +171,15 @@ namespace ncc::lex {
     Null,      /* 'null' */
     True,      /* 'true' */
     False,     /* 'false' */
-  } __attribute__((packed)) Keyword;
+  };
 
-  constexpr size_t QLEX_EOFF = UINT32_MAX;
-  constexpr size_t QLEX_NOFILE = 16777215;
+  constexpr size_t kLexEof = UINT32_MAX;
+  constexpr size_t kLexNoFile = 16777215;
 
   class IScanner;
 
   class Location {
-    uint32_t m_offset = QLEX_EOFF, m_line = QLEX_EOFF, m_column = QLEX_EOFF;
+    uint32_t m_offset = kLexEof, m_line = kLexEof, m_column = kLexEof;
     string m_filename;
 
   public:
@@ -189,14 +192,16 @@ namespace ncc::lex {
           m_column(column),
           m_filename(filename) {}
 
-    static constexpr Location EndOfFile() {
-      return Location(QLEX_EOFF, QLEX_EOFF, QLEX_EOFF, "");
+    static constexpr auto EndOfFile() {
+      return Location(kLexEof, kLexEof, kLexEof, "");
     }
 
-    constexpr uint32_t GetOffset() const { return m_offset; }
-    constexpr uint32_t GetRow() const { return m_line; }
-    constexpr uint32_t GetCol() const { return m_column; }
-    constexpr string GetFilename() const { return m_filename.get(); }
+    [[nodiscard]] constexpr auto GetOffset() const { return m_offset; }
+    [[nodiscard]] constexpr auto GetRow() const { return m_line; }
+    [[nodiscard]] constexpr auto GetCol() const { return m_column; }
+    [[nodiscard]] constexpr auto GetFilename() const -> string {
+      return m_filename;
+    }
   } __attribute__((packed));
 
   class LocationID {
@@ -205,14 +210,14 @@ namespace ncc::lex {
 
     constexpr LocationID(Counter id = 0) : m_id(id) {}
 
-    Location Get(IScanner &L) const;
-    constexpr Counter GetId() const { return m_id; }
+    auto Get(IScanner &l) const -> Location;
+    [[nodiscard]] constexpr auto GetId() const -> Counter { return m_id; }
 
-    constexpr bool operator==(const LocationID &rhs) const {
+    constexpr auto operator==(const LocationID &rhs) const -> bool {
       return m_id == rhs.m_id;
     }
 
-    constexpr bool operator<(const LocationID &rhs) const {
+    constexpr auto operator<(const LocationID &rhs) const -> bool {
       return m_id < rhs.m_id;
     }
 
@@ -223,47 +228,51 @@ namespace ncc::lex {
   using LocationRange = std::pair<LocationID, LocationID>;
 
   union TokenData {
-    Punctor punc;
-    Operator op;
-    Keyword key;
-    string str;
+    Punctor m_punc;
+    Operator m_op;
+    Keyword m_key;
+    string m_str;
 
-    constexpr TokenData(Punctor punc) : punc(punc) {}
-    constexpr TokenData(Operator op) : op(op) {}
-    constexpr TokenData(Keyword key) : key(key) {}
-    constexpr TokenData(string str) : str(str) {}
+    constexpr TokenData(Punctor punc) : m_punc(punc) {}
+    constexpr TokenData(Operator op) : m_op(op) {}
+    constexpr TokenData(Keyword key) : m_key(key) {}
+    constexpr TokenData(string str) : m_str(str) {}
   } __attribute__((packed));
 
-  string to_string(TokenType, TokenData);
+  string to_string(TokenType, TokenData);  // NOLINT
 
   class TokenBase {
-    LocationID m_location_id = 0;
     TokenType m_type;
+    LocationID m_location_id = 0;
 
   public:
-    TokenData v;
+    TokenData m_v;
 
-    constexpr TokenBase()
-        : m_location_id(LocationID()), m_type(EofF), v{OpPlus} {}
+    constexpr TokenBase() : m_type(EofF), m_v{OpPlus} {}
 
     template <class T = Operator>
     constexpr TokenBase(TokenType ty, T val, LocationID start = LocationID())
-        : m_location_id(start), m_type(ty), v{val} {}
+        : m_type(ty), m_location_id(start), m_v{val} {}
 
-    constexpr static TokenBase EndOfFile() { return TokenBase(); }
+    constexpr static auto EndOfFile() { return TokenBase(); }
 
-    constexpr bool is(TokenType val) const { return m_type == val; }
+    [[nodiscard]] constexpr bool Is(TokenType val) const {
+      return m_type == val;
+    }
 
-    constexpr bool operator==(const TokenBase &rhs) const {
-      if (m_type != rhs.m_type) return false;
+    constexpr auto operator==(const TokenBase &rhs) const -> bool {
+      if (m_type != rhs.m_type) {
+        return false;
+      }
+
       switch (m_type) {
         case EofF:
         case Punc:
-          return v.punc == rhs.v.punc;
+          return m_v.m_punc == rhs.m_v.m_punc;
         case Oper:
-          return v.op == rhs.v.op;
+          return m_v.m_op == rhs.m_v.m_op;
         case KeyW:
-          return v.key == rhs.v.key;
+          return m_v.m_key == rhs.m_v.m_key;
         case IntL:
         case NumL:
         case Text:
@@ -272,32 +281,31 @@ namespace ncc::lex {
         case MacB:
         case Macr:
         case Note:
-          return v.str == rhs.v.str;
+          return m_v.m_str == rhs.m_v.m_str;
       }
     }
 
     template <auto V>
-    constexpr bool is() const {
+    [[nodiscard]] constexpr bool Is() const {
       if constexpr (std::is_same_v<decltype(V), Keyword>) {
-        return m_type == KeyW && v.key == V;
+        return m_type == KeyW && m_v.m_key == V;
       } else if constexpr (std::is_same_v<decltype(V), Punctor>) {
-        return m_type == Punc && v.punc == V;
+        return m_type == Punc && m_v.m_punc == V;
       } else if constexpr (std::is_same_v<decltype(V), Operator>) {
-        return m_type == Oper && v.op == V;
+        return m_type == Oper && m_v.m_op == V;
       }
     }
 
-    string as_string() const { return to_string(m_type, v); }
+    [[nodiscard]] constexpr auto GetString() const {
+      return to_string(m_type, m_v);
+    }
+    [[nodiscard]] constexpr auto GetKeyword() const { return m_v.m_key; }
+    [[nodiscard]] constexpr auto GetOperator() const { return m_v.m_op; }
+    [[nodiscard]] constexpr auto GetPunctor() const { return m_v.m_punc; }
+    [[nodiscard]] constexpr auto GetStart() const { return m_location_id; }
+    [[nodiscard]] constexpr auto GetKind() const { return m_type; }
 
-    Keyword as_key() const { return v.key; }
-    Operator as_op() const { return v.op; }
-    Punctor as_punc() const { return v.punc; }
-
-    LocationID get_start() const { return m_location_id; }
-
-    TokenType get_type() const { return m_type; }
-
-    constexpr bool operator<(const TokenBase &rhs) const {
+    constexpr auto operator<(const TokenBase &rhs) const -> bool {
       if (m_type != rhs.m_type) {
         return m_type < rhs.m_type;
       }
@@ -306,11 +314,11 @@ namespace ncc::lex {
         case EofF:
           return false;
         case Punc:
-          return v.punc < rhs.v.punc;
+          return m_v.m_punc < rhs.m_v.m_punc;
         case Oper:
-          return v.op < rhs.v.op;
+          return m_v.m_op < rhs.m_v.m_op;
         case KeyW:
-          return v.key < rhs.v.key;
+          return m_v.m_key < rhs.m_v.m_key;
         case IntL:
         case NumL:
         case Text:
@@ -319,24 +327,284 @@ namespace ncc::lex {
         case MacB:
         case Macr:
         case Note:
-          return v.str < rhs.v.str;
+          return m_v.m_str < rhs.m_v.m_str;
       }
     }
   } __attribute__((packed));
 
   using Token = TokenBase;
 
-  constexpr auto QLEX_TOK_SIZE = sizeof(Token);
+  namespace detail {
+    template <typename L, typename R>
+    auto MakeBimap(
+        std::initializer_list<typename boost::bimap<L, R>::value_type> list)
+        -> boost::bimap<L, R> {
+      return boost::bimap<L, R>(list.begin(), list.end());
+    }
+
+    struct ScannerEOF final {};
+
+    enum OpType : uint8_t { Both, Unary, Binary, Ternary };
+
+    struct OpConfig {
+      OpType m_type;
+      bool m_overloadable;
+
+      OpConfig(OpType t, bool o) : m_type(t), m_overloadable(o) {}
+
+      auto operator<(const OpConfig &rhs) const -> bool {
+        if (m_type != rhs.m_type) {
+          return m_type < rhs.m_type;
+        }
+
+        return (int)m_overloadable < (int)rhs.m_overloadable;
+      }
+    };
+  }  // namespace detail
+
+  enum class OpMode : uint8_t { Binary, PreUnary, PostUnary, Ternary };
+  enum Associativity : uint8_t { Left, Right };
+
+  inline static const auto LEXICAL_KEYWORDS =
+      detail::MakeBimap<std::string, Keyword>({
+          {"scope", Scope},     {"pub", Pub},       {"sec", Sec},
+          {"pro", Pro},         {"import", Import}, {"type", Type},
+          {"let", Let},         {"var", Var},       {"const", Const},
+          {"static", Static},   {"struct", Struct}, {"region", Region},
+          {"group", Group},     {"class", Class},   {"union", Union},
+          {"opaque", Opaque},   {"enum", Enum},     {"__fstring", __FString},
+          {"fn", Fn},           {"unsafe", Unsafe}, {"safe", Safe},
+          {"promise", Promise}, {"if", If},         {"else", Else},
+          {"for", For},         {"while", While},   {"do", Do},
+          {"switch", Switch},   {"break", Break},   {"continue", Continue},
+          {"ret", Return},      {"retif", Retif},   {"foreach", Foreach},
+          {"try", Try},         {"catch", Catch},   {"throw", Throw},
+          {"async", Async},     {"await", Await},   {"__asm__", __Asm__},
+          {"undef", Undef},     {"null", Null},     {"true", True},
+          {"false", False},
+      });
+
+  inline static const auto LEXICAL_OPERATORS =
+      detail::MakeBimap<std::string, Operator>({
+          {"+", OpPlus},
+          {"-", OpMinus},
+          {"*", OpTimes},
+          {"/", OpSlash},
+          {"%", OpPercent},
+          {"&", OpBitAnd},
+          {"|", OpBitOr},
+          {"^", OpBitXor},
+          {"~", OpBitNot},
+          {"<<", OpLShift},
+          {">>", OpRShift},
+          {"<<<", OpROTL},
+          {">>>", OpROTR},
+          {"&&", OpLogicAnd},
+          {"||", OpLogicOr},
+          {"^^", OpLogicXor},
+          {"!", OpLogicNot},
+          {"<", OpLT},
+          {">", OpGT},
+          {"<=", OpLE},
+          {">=", OpGE},
+          {"==", OpEq},
+          {"!=", OpNE},
+          {"=", OpSet},
+          {"+=", OpPlusSet},
+          {"-=", OpMinusSet},
+          {"*=", OpTimesSet},
+          {"/=", OpSlashSet},
+          {"%=", OpPercentSet},
+          {"&=", OpBitAndSet},
+          {"|=", OpBitOrSet},
+          {"^=", OpBitXorSet},
+          {"&&=", OpLogicAndSet},
+          {"||=", OpLogicOrSet},
+          {"^^=", OpLogicXorSet},
+          {"<<=", OpLShiftSet},
+          {">>=", OpRShiftSet},
+          {"<<<=", OpROTLSet},
+          {">>>=", OpROTRSet},
+          {"++", OpInc},
+          {"--", OpDec},
+          {"as", OpAs},
+          {"bitcast_as", OpBitcastAs},
+          {"in", OpIn},
+          {"out", OpOut},
+          {"sizeof", OpSizeof},
+          {"bitsizeof", OpBitsizeof},
+          {"alignof", OpAlignof},
+          {"typeof", OpTypeof},
+          {"comptime", OpComptime},
+          {".", OpDot},
+          {"..", OpRange},
+          {"...", OpEllipsis},
+          {"=>", OpArrow},
+          {"?", OpTernary},
+      });
+
+  inline static const auto LEXICAL_OPERATORS_CONFIG =
+      detail::MakeBimap<Operator, detail::OpConfig>({
+          {OpPlus, {detail::Both, true}},
+          {OpMinus, {detail::Both, true}},
+          {OpTimes, {detail::Both, true}},
+          {OpSlash, {detail::Binary, true}},
+          {OpPercent, {detail::Binary, true}},
+          {OpBitAnd, {detail::Both, true}},
+          {OpBitOr, {detail::Binary, true}},
+          {OpBitXor, {detail::Binary, true}},
+          {OpBitNot, {detail::Unary, true}},
+          {OpLShift, {detail::Binary, true}},
+          {OpRShift, {detail::Binary, true}},
+          {OpROTL, {detail::Binary, true}},
+          {OpROTR, {detail::Binary, true}},
+          {OpLogicAnd, {detail::Binary, true}},
+          {OpLogicOr, {detail::Binary, true}},
+          {OpLogicXor, {detail::Binary, true}},
+          {OpLogicNot, {detail::Unary, true}},
+          {OpLT, {detail::Binary, true}},
+          {OpGT, {detail::Binary, true}},
+          {OpLE, {detail::Binary, true}},
+          {OpGE, {detail::Binary, true}},
+          {OpEq, {detail::Binary, true}},
+          {OpNE, {detail::Binary, true}},
+          {OpSet, {detail::Binary, true}},
+          {OpPlusSet, {detail::Binary, true}},
+          {OpMinusSet, {detail::Binary, true}},
+          {OpTimesSet, {detail::Binary, true}},
+          {OpSlashSet, {detail::Binary, true}},
+          {OpPercentSet, {detail::Binary, true}},
+          {OpBitAndSet, {detail::Binary, true}},
+          {OpBitOrSet, {detail::Binary, true}},
+          {OpBitXorSet, {detail::Binary, true}},
+          {OpLogicAndSet, {detail::Binary, true}},
+          {OpLogicOrSet, {detail::Binary, true}},
+          {OpLogicXorSet, {detail::Binary, true}},
+          {OpLShiftSet, {detail::Binary, true}},
+          {OpRShiftSet, {detail::Binary, true}},
+          {OpROTLSet, {detail::Binary, true}},
+          {OpROTRSet, {detail::Binary, true}},
+          {OpInc, {detail::Unary, true}},
+          {OpDec, {detail::Unary, true}},
+          {OpAs, {detail::Binary, true}},
+          {OpBitcastAs, {detail::Binary, false}},
+          {OpIn, {detail::Both, false}},
+          {OpOut, {detail::Both, false}},
+          {OpSizeof, {detail::Unary, false}},
+          {OpBitsizeof, {detail::Unary, false}},
+          {OpAlignof, {detail::Unary, false}},
+          {OpTypeof, {detail::Unary, false}},
+          {OpComptime, {detail::Unary, false}},
+          {OpDot, {detail::Binary, false}},
+          {OpRange, {detail::Binary, true}},
+          {OpEllipsis, {detail::Unary, false}},
+          {OpArrow, {detail::Binary, false}},
+          {OpTernary, {detail::Ternary, false}},
+      });
+
+  inline static const auto LEXICAL_PUNCTORS =
+      detail::MakeBimap<std::string, Punctor>({
+          {"(", PuncLPar},
+          {")", PuncRPar},
+          {"[", PuncLBrk},
+          {"]", PuncRBrk},
+          {"{", PuncLCur},
+          {"}", PuncRCur},
+          {",", PuncComa},
+          {":", PuncColn},
+          {";", PuncSemi},
+          {"::", PuncScope},
+      });
+
+  auto GetOperatorPrecedence(Operator op, OpMode type) -> short;
+  auto GetOperatorAssociativity(Operator op, OpMode type) -> Associativity;
+  string to_string(TokenType ty);  // NOLINT
+
+  static inline const char *op_repr(Operator op) {  // NOLINT
+    return LEXICAL_OPERATORS.right.at(op).c_str();
+  }
+
+  static inline const char *kw_repr(Keyword kw) {  // NOLINT
+    return LEXICAL_KEYWORDS.right.at(kw).c_str();
+  }
+
+  static inline const char *punct_repr(Punctor punct) {  // NOLINT
+    return LEXICAL_PUNCTORS.right.at(punct).c_str();
+  }
+
+  auto operator<<(std::ostream &os, TokenType ty) -> std::ostream &;
+  auto operator<<(std::ostream &os, Token tok) -> std::ostream &;
+
+  inline auto operator<<(std::ostream &os, Operator op) -> std::ostream & {
+    os << op_repr(op);
+    return os;
+  }
+
+  inline auto operator<<(std::ostream &os, Keyword kw) -> std::ostream & {
+    os << kw_repr(kw);
+    return os;
+  }
+
+  inline auto operator<<(std::ostream &os, Punctor punct) -> std::ostream & {
+    os << punct_repr(punct);
+    return os;
+  }
 }  // namespace ncc::lex
 
 namespace std {
   template <>
   struct hash<ncc::lex::LocationID> {
-    size_t operator()(const ncc::lex::LocationID &loc) const {
+    auto operator()(const ncc::lex::LocationID &loc) const -> size_t {
       return loc.GetId();
     }
   };
 
+  template <>
+  struct hash<ncc::lex::Token> {
+    constexpr auto operator()(const ncc::lex::Token &tok) const -> size_t {
+      size_t h = 0;
+
+      switch (tok.GetKind()) {
+        case ncc::lex::TokenType::EofF: {
+          h = std::hash<uint8_t>{}(0);
+          break;
+        }
+
+        case ncc::lex::TokenType::KeyW: {
+          h = std::hash<uint8_t>{}(1);
+          h ^= std::hash<uint8_t>{}(tok.GetKeyword());
+          break;
+        }
+
+        case ncc::lex::TokenType::Oper: {
+          h = std::hash<uint8_t>{}(2);
+          h ^= std::hash<uint8_t>{}(tok.GetOperator());
+          break;
+        }
+
+        case ncc::lex::TokenType::Punc: {
+          h = std::hash<uint8_t>{}(3);
+          h ^= std::hash<uint8_t>{}(tok.GetPunctor());
+          break;
+        }
+
+        case ncc::lex::TokenType::Name:
+        case ncc::lex::TokenType::IntL:
+        case ncc::lex::TokenType::NumL:
+        case ncc::lex::TokenType::Text:
+        case ncc::lex::TokenType::Char:
+        case ncc::lex::TokenType::MacB:
+        case ncc::lex::TokenType::Macr:
+        case ncc::lex::TokenType::Note: {
+          h = std::hash<uint8_t>{}(4);
+          h ^= std::hash<ncc::string>{}(tok.GetString());
+          break;
+        }
+      }
+
+      return h;
+    }
+  };
 }  // namespace std
 
 #endif  // __NITRATE_LEXER_TOKEN_H__

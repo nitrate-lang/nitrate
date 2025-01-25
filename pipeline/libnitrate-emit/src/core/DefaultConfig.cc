@@ -38,7 +38,7 @@
 #include <vector>
 
 namespace codegen::conf {
-  std::vector<qcode_setting_t> default_settings = {
+  std::vector<QcodeSettingT> DefaultSettings = {
       {QCK_CRASHGUARD, QCV_ON},
       {QCV_FASTERROR, QCV_OFF},
   };

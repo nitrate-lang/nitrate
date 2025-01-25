@@ -39,18 +39,19 @@
 #include <memory>
 #include <nitrate-core/Init.hh>
 #include <nitrate-core/Logger.hh>
-#include <nitrate-lexer/Lexer.hh>
+#include <nitrate-lexer/Scanner.hh>
 #include <nitrate-parser/ASTWriter.hh>
 #include <nitrate-parser/Context.hh>
 #include <unordered_set>
+#include <utility>
 
 using namespace ncc::lex;
 using namespace ncc::parse;
 
-static inline Token eof_tok() { return Token::EndOfFile(); }
+static inline auto EofTok() -> Token { return Token::EndOfFile(); }
 
 class DeserializerAdapterLexer final : public ncc::lex::IScanner {
-  static constexpr std::array<uint8_t, 256> valid_ty_id_tab = []() {
+  static constexpr std::array<uint8_t, 256> kValidTyIdTab = []() {
     std::array<uint8_t, 256> tab = {};
     tab.fill(0);
 
@@ -74,109 +75,127 @@ class DeserializerAdapterLexer final : public ncc::lex::IScanner {
     JSON,
     MsgPack,
     BadCodec,
-  } m_mode;
+  } m_mode = InMode::BadCodec;
 
-  uint64_t m_ele_count;
-  bool m_eof_bit;
+  uint64_t m_ele_count = 0;
+  bool m_eof_bit = false;
   std::istream &m_file;
 
-  Token decode(TokenType t, std::string_view data) {
-    Token R;
+  static auto Decode(TokenType t, const std::string &data) -> Token {
+    Token r;
 
     switch (t) {
       case TokenType::EofF: {
-        R = Token::EndOfFile();
+        r = Token::EndOfFile();
         break;
       }
 
       case TokenType::KeyW: {
-        R = Token(t, ncc::lex::LexicalKeywords.left.at(data));
+        r = Token(t, ncc::lex::LEXICAL_KEYWORDS.left.at(data));
         break;
       }
 
       case TokenType::Oper: {
-        R = Token(t, ncc::lex::LexicalOperators.left.at(data));
+        r = Token(t, ncc::lex::LEXICAL_OPERATORS.left.at(data));
         break;
       }
 
       case TokenType::Punc: {
-        R = Token(t, ncc::lex::LexicalPunctors.left.at(data));
+        r = Token(t, ncc::lex::LEXICAL_PUNCTORS.left.at(data));
         break;
       }
 
       case TokenType::Name: {
-        R = Token(t, ncc::string(data));
+        r = Token(t, ncc::string(data));
         break;
       }
 
       case TokenType::IntL: {
-        R = Token(t, ncc::string(data));
+        r = Token(t, ncc::string(data));
         break;
       }
 
       case TokenType::NumL: {
-        R = Token(t, ncc::string(data));
+        r = Token(t, ncc::string(data));
         break;
       }
 
       case TokenType::Text: {
-        R = Token(t, ncc::string(data));
+        r = Token(t, ncc::string(data));
         break;
       }
 
       case TokenType::Char: {
-        R = Token(t, ncc::string(data));
+        r = Token(t, ncc::string(data));
         break;
       }
 
       case TokenType::MacB: {
-        R = Token(t, ncc::string(data));
+        r = Token(t, ncc::string(data));
         break;
       }
 
       case TokenType::Macr: {
-        R = Token(t, ncc::string(data));
+        r = Token(t, ncc::string(data));
         break;
       }
 
       case TokenType::Note: {
-        R = Token(t, ncc::string(data));
+        r = Token(t, ncc::string(data));
         break;
       }
     }
 
-    return R;
+    return r;
   }
 
-  Token next_impl_json() {
+  auto NextImplJson() -> Token {
     if (m_eof_bit) [[unlikely]] {
-      return eof_tok();
+      return EofTok();
     }
 
-    uint32_t ty, a, b, c, d;
+    uint32_t ty;
+    uint32_t a;
+    uint32_t b;
+    uint32_t c;
+    uint32_t d;
     char *str = nullptr;
 
     { /* Read the token array */
       size_t str_len = 0;
 
-      if (m_file.get() != '[') return eof_tok();
+      if (m_file.get() != '[') {
+        return EofTok();
+      }
       m_file >> ty;
       ty &= 0xff;
-      if (m_file.get() != ',') return eof_tok();
-
-      if (!read_json_string(m_file, &str, str_len)) [[unlikely]] {
-        return eof_tok();
+      if (m_file.get() != ',') {
+        return EofTok();
       }
 
-      if (m_file.get() != ',') return eof_tok();
+      if (!ReadJsonString(m_file, &str, str_len)) [[unlikely]] {
+        return EofTok();
+      }
+
+      if (m_file.get() != ',') {
+        return EofTok();
+      }
       m_file >> a;
-      if (m_file.get() != ',') return eof_tok();
+      if (m_file.get() != ',') {
+        return EofTok();
+      }
       m_file >> b;
-      if (m_file.get() != ',') return eof_tok();
+      if (m_file.get() != ',') {
+        return EofTok();
+      }
       m_file >> c;
-      if (m_file.get() != ',') return eof_tok();
+      if (m_file.get() != ',') {
+        return EofTok();
+      }
       m_file >> d;
-      if (m_file.get() != ']') return eof_tok();
+      if (m_file.get() != ']') {
+        return EofTok();
+      }
     }
 
     { /* Check the delimiter */
@@ -185,81 +204,85 @@ class DeserializerAdapterLexer final : public ncc::lex::IScanner {
       if (delim == ']') [[unlikely]] {
         m_eof_bit = true;
         free(str);
-        return eof_tok();
+        return EofTok();
       } else if (delim != ',') [[unlikely]] {
         free(str);
-        return eof_tok();
+        return EofTok();
       }
     }
 
     /* Validate the token type */
-    if (valid_ty_id_tab[ty]) [[likely]] {
-      Token T = decode(static_cast<TokenType>(ty), str);
+    if (kValidTyIdTab[ty] != 0U) [[likely]] {
+      Token t = Decode(static_cast<TokenType>(ty), str);
 
       free(str);
-      return T;
+      return t;
     }
 
     free(str);
-    return eof_tok();
+    return EofTok();
   }
 
-  Token next_impl_msgpack() {
-    if (m_eof_bit || !m_ele_count) [[unlikely]] {
-      return eof_tok();
+  auto NextImplMsgpack() -> Token {
+    if (m_eof_bit || (m_ele_count == 0U)) [[unlikely]] {
+      return EofTok();
     }
 
-    uint64_t ty, a, b, c, d;
+    uint64_t ty;
+    uint64_t a;
+    uint64_t b;
+    uint64_t c;
+    uint64_t d;
     char *str = nullptr;
 
     { /* Read the token array */
       // Array start byte for 6 elements
       if (m_file.get() != 0x96) {
-        return eof_tok();
+        return EofTok();
       }
 
       size_t str_len;
 
-      if (!msgpack_read_uint(m_file, ty)) [[unlikely]] {
-        return eof_tok();
+      if (!MsgpackReadUint(m_file, ty)) [[unlikely]] {
+        return EofTok();
       }
       ty &= 0xff;
 
-      if (!msgpack_read_str(m_file, &str, str_len)) [[unlikely]] {
-        return eof_tok();
+      if (!MsgpackReadStr(m_file, &str, str_len)) [[unlikely]] {
+        return EofTok();
       }
 
-      if (!msgpack_read_uint(m_file, a) || !msgpack_read_uint(m_file, b) ||
-          !msgpack_read_uint(m_file, c) || !msgpack_read_uint(m_file, d))
+      if (!MsgpackReadUint(m_file, a) || !MsgpackReadUint(m_file, b) ||
+          !MsgpackReadUint(m_file, c) || !MsgpackReadUint(m_file, d))
           [[unlikely]] {
         free(str);
-        return eof_tok();
+        return EofTok();
       }
     }
 
     m_ele_count--;
 
     /* Validate the token type */
-    if (valid_ty_id_tab[ty]) [[likely]] {
-      Token T = decode(static_cast<TokenType>(ty), str);
+    if (kValidTyIdTab[ty] != 0U) [[likely]] {
+      Token t = Decode(static_cast<TokenType>(ty), str);
       free(str);
-      return T;
+      return t;
     }
 
     free(str);
-    return eof_tok();
+    return EofTok();
   }
 
-  virtual Token GetNext() override {
+  auto GetNext() -> Token override {
     switch (m_mode) {
       case InMode::JSON: {
-        return next_impl_json();
+        return NextImplJson();
       }
       case InMode::MsgPack: {
-        return next_impl_msgpack();
+        return NextImplMsgpack();
       }
       case InMode::BadCodec: {
-        return eof_tok();
+        return EofTok();
       }
     }
   }
@@ -267,11 +290,7 @@ class DeserializerAdapterLexer final : public ncc::lex::IScanner {
 public:
   DeserializerAdapterLexer(std::istream &file,
                            std::shared_ptr<ncc::Environment> env)
-      : ncc::lex::IScanner(env),
-        m_mode(InMode::BadCodec),
-        m_ele_count(0),
-        m_eof_bit(false),
-        m_file(file) {
+      : ncc::lex::IScanner(std::move(env)), m_file(file) {
     int ch = file.get();
 
     m_mode = InMode::BadCodec;
@@ -279,28 +298,42 @@ public:
 
     if (ch == EOF) {
       return;
-    } else if (ch == '[') {
+    }
+    if (ch == '[') {
       m_mode = InMode::JSON;
       return;
-    } else if (ch == 0xdd) {
+    }
+    if (ch == 0xdd) {
       m_ele_count = 0;
 
-      if ((ch = file.get()) == EOF) return;
+      if ((ch = file.get()) == EOF) {
+        return;
+      }
       m_ele_count |= ch << 24;
-      if ((ch = file.get()) == EOF) return;
+      if ((ch = file.get()) == EOF) {
+        return;
+      }
       m_ele_count |= ch << 16;
-      if ((ch = file.get()) == EOF) return;
+      if ((ch = file.get()) == EOF) {
+        return;
+      }
       m_ele_count |= ch << 8;
-      if ((ch = file.get()) == EOF) return;
+      if ((ch = file.get()) == EOF) {
+        return;
+      }
       m_ele_count |= ch;
 
       m_mode = InMode::MsgPack;
     } else if (ch == 0xdc) {
       m_ele_count = 0;
 
-      if ((ch = file.get()) == EOF) return;
+      if ((ch = file.get()) == EOF) {
+        return;
+      }
       m_ele_count |= ch << 8;
-      if ((ch = file.get()) == EOF) return;
+      if ((ch = file.get()) == EOF) {
+        return;
+      }
       m_ele_count |= ch;
 
       m_mode = InMode::MsgPack;
@@ -310,7 +343,12 @@ public:
     }
   }
 
-  virtual ~DeserializerAdapterLexer() override = default;
+  ~DeserializerAdapterLexer() override = default;
+
+  auto GetSourceWindow(Point, Point, char = ' ')
+      -> std::optional<std::vector<std::string>> override {
+    return std::nullopt;
+  }
 };
 
 CREATE_TRANSFORM(nit::parse) {
@@ -331,17 +369,17 @@ CREATE_TRANSFORM(nit::parse) {
   DeserializerAdapterLexer lexer(source, env);
   auto parser = Parser::Create(lexer, env);
 
-  let root = parser->parse();
+  let root = parser->Parse();
 
   switch (out_mode) {
     case OutMode::JSON: {
-      auto writter = AST_JsonWriter(output);
-      root.get().accept(writter);
+      auto writter = AstJsonWriter(output);
+      root.Get().Accept(writter);
       return true;
     }
     case OutMode::MsgPack: {
-      auto writter = AST_MsgPackWriter(output);
-      root.get().accept(writter);
+      auto writter = AstMsgPackWriter(output);
+      root.Get().Accept(writter);
       return true;
     }
     default: {

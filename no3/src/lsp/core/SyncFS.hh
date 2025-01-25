@@ -7,6 +7,7 @@
 #include <optional>
 #include <string>
 #include <unordered_map>
+#include <utility>
 
 class SyncFSFile {
   std::shared_ptr<std::string> m_content;
@@ -16,7 +17,7 @@ public:
   SyncFSFile() = default;
   using Digest = std::array<uint8_t, 20>;
 
-  bool replace(size_t offset, int64_t length, std::string_view text) {
+  auto Replace(size_t offset, int64_t length, std::string_view text) -> bool {
     std::lock_guard<std::mutex> lock(m_mutex);
 
     if (length < 0) {  // negative length starts from the end
@@ -34,21 +35,19 @@ public:
     return true;
   }
 
-  Digest thumbprint();
-
-  std::shared_ptr<const std::string> content() {
+  auto Content() -> std::shared_ptr<const std::string> {
     std::lock_guard<std::mutex> lock(m_mutex);
     return m_content;
   }
 
-  size_t size() {
+  auto Size() -> size_t {
     std::lock_guard<std::mutex> lock(m_mutex);
     return m_content->size();
   };
 
-  void set_content(std::shared_ptr<std::string> content) {
+  void SetContent(std::shared_ptr<std::string> content) {
     std::lock_guard<std::mutex> lock(m_mutex);
-    m_content = content;
+    m_content = std::move(content);
   }
 };
 
@@ -60,14 +59,14 @@ class SyncFS {
   SyncFS();
   ~SyncFS();
 
+public:
   SyncFS(const SyncFS&) = delete;
-  SyncFS& operator=(const SyncFS&) = delete;
+  auto operator=(const SyncFS&) -> SyncFS& = delete;
   SyncFS(SyncFS&&) = delete;
 
-public:
-  static SyncFS& the();
+  static auto The() -> SyncFS&;
 
-  std::optional<std::shared_ptr<SyncFSFile>> open(std::string name);
+  auto Open(std::string path) -> std::optional<std::shared_ptr<SyncFSFile>>;
 
-  void close(const std::string& name);
+  void Close(const std::string& name);
 };

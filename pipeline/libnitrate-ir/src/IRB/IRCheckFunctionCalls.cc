@@ -39,59 +39,59 @@
 
 using namespace ncc::ir;
 
-bool NRBuilder::check_function_calls(FlowPtr<Seq> root, IReport *I) {
+auto NRBuilder::CheckFunctionCalls(FlowPtr<Seq> root, IReport *d) -> bool {
   bool failed = false;
 
   for_each<Call>(root, [&](auto x) {
-    if (auto target_opt = x->getTarget()) {
+    if (auto target_opt = x->GetTarget()) {
       auto target = target_opt.value();
 
-      if (auto target_type = target->getType()) {
-        if (target_type.value()->is_function()) {
-          FnTy *fn_ty = target_type.value()->template as<FnTy>();
+      if (auto tarGetKind = target->GetType()) {
+        if (tarGetKind.value()->IsFunction()) {
+          FnTy *fn_ty = tarGetKind.value()->template As<FnTy>();
 
-          const auto &arguments = x->getArgs();
+          const auto &arguments = x->GetArgs();
 
-          bool variadic_two_few = fn_ty->isVariadic() &&
-                                  arguments.size() < fn_ty->getParams().size();
-          bool two_few = arguments.size() < fn_ty->getParams().size();
-          bool two_many = arguments.size() > fn_ty->getParams().size();
+          bool variadic_two_few = fn_ty->IsVariadic() &&
+                                  arguments.size() < fn_ty->GetParams().size();
+          bool two_few = arguments.size() < fn_ty->GetParams().size();
+          bool two_many = arguments.size() > fn_ty->GetParams().size();
 
           if (variadic_two_few) {
-            I->report(VariadicNotEnoughArguments, IC::Error, target->getName(),
-                      x->getLoc());
+            d->Report(VariadicNotEnoughArguments, IC::Error, target->GetName(),
+                      x->GetLoc());
           } else if (two_few) {
-            I->report(TwoFewArguments, IC::Error, target->getName(),
-                      x->getLoc());
+            d->Report(TwoFewArguments, IC::Error, target->GetName(),
+                      x->GetLoc());
           } else if (two_many) {
-            I->report(TwoManyArguments, IC::Error, target->getName(),
-                      x->getLoc());
+            d->Report(TwoManyArguments, IC::Error, target->GetName(),
+                      x->GetLoc());
           }
 
           if (!two_few && !two_many && !variadic_two_few) {
-            for (size_t i = 0; i < fn_ty->getParams().size(); ++i) {
-              auto param_type = fn_ty->getParams()[i]->getType();
+            for (size_t i = 0; i < fn_ty->GetParams().size(); ++i) {
+              auto param_type = fn_ty->GetParams()[i]->GetType();
 
               if (!param_type.has_value()) {
-                I->report(TypeInference, IC::Error,
+                d->Report(TypeInference, IC::Error,
                           "Unable to deduce function parameter type");
                 failed = true;
                 continue;
               }
 
-              auto arg_type = arguments[i]->getType();
+              auto arg_type = arguments[i]->GetType();
               if (!arg_type.has_value()) {
-                I->report(TypeInference, IC::Error,
+                d->Report(TypeInference, IC::Error,
                           "Unable to deduce function argument type");
                 failed = true;
                 continue;
               }
 
-              if (!param_type.value()->isSame(arg_type.value().get())) {
-                I->report(BadCast, IC::Error,
+              if (!param_type.value()->IsEq(arg_type.value().get())) {
+                d->Report(BadCast, IC::Error,
                           {"Bad call argument cast from '",
-                           arg_type.value()->toString(), "' to '",
-                           param_type.value()->toString(), "'"});
+                           arg_type.value()->ToString(), "' to '",
+                           param_type.value()->ToString(), "'"});
                 failed = true;
                 continue;
               }

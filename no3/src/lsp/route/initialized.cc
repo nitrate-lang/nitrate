@@ -1,6 +1,7 @@
-#include <lsp/core/server.hh>
 #include <lsp/route/RoutesList.hh>
 
-void do_initialized(const lsp::NotificationMessage&) {
-  LOG(INFO) << "Language server initialized";
+using namespace no3::lsp;
+
+void srv::DoInitialized(const NotificationMessage&) {
+  /// TODO: Setup state for the server
 }

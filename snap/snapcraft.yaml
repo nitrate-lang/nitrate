@@ -18,10 +18,12 @@ parts:
     source: .
     build-packages:
      - libboost-all-dev
+     - libsparsehash-dev
      - libssl-dev
      - libgoogle-glog-dev
      - libyaml-cpp-dev
      - rapidjson-dev
+     - libgit2-dev
      - nlohmann-json3-dev
      - libreadline-dev
      - libzstd-dev
@@ -31,14 +33,17 @@ parts:
     build-attributes:
      - enable-patchelf
     stage-packages:
-      - git
+      - libgit2-1.7
       - libunwind8
     override-stage: |
         snapcraftctl stage
         rm -rf $SNAPCRAFT_PART_INSTALL/usr/include
-        rm -rf $SNAPCRAFT_PART_INSTALL/usr/lib/x86_64-linux-gnu/libunwind-coredump.so.0.0.0
-        rm -rf $SNAPCRAFT_PART_INSTALL/usr/lib/x86_64-linux-gnu/libunwind-ptrace.so.0.0.0
-        rm -rf $SNAPCRAFT_PART_INSTALL/usr/lib/x86_64-linux-gnu/libunwind-x86_64.so.8.0.1
+        rm -rf $SNAPCRAFT_PART_INSTALL/usr/share/doc
+        rm $SNAPCRAFT_PART_INSTALL/usr/lib/libnitrate*
+        rm $SNAPCRAFT_PART_INSTALL/usr/lib/libno3-cli.a
+        rm $SNAPCRAFT_PART_INSTALL/usr/lib/x86_64-linux-gnu/libunwind-coredump.so.0.0.0
+        rm $SNAPCRAFT_PART_INSTALL/usr/lib/x86_64-linux-gnu/libunwind-ptrace.so.0.0.0
+        rm $SNAPCRAFT_PART_INSTALL/usr/lib/x86_64-linux-gnu/libunwind-x86_64.so.8.0.1
 
 apps:
   nitrate:

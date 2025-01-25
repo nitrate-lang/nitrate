@@ -70,13 +70,13 @@ namespace ncc {
 
         if (ptr_opt.has_value()) {
           auto v = ptr_opt.value();
-          m_ptr = FlowPtr<Pointee, Tracking>(v.get(), v.trace());
+          m_ptr = FlowPtr<Pointee, Tracking>(v.get(), v.Trace());
         }
       }
 
       template <class U = Pointee>
       constexpr NullableFlowPtr(FlowPtr<U, Tracking> ptr)
-          : NullableFlowPtr(ptr.get(), ptr.trace()) {
+          : NullableFlowPtr(ptr.get(), ptr.Trace()) {
         static_assert(std::is_convertible_v<U *, Pointee *>,
                       "U* must be convertible to Pointee*");
       }
@@ -89,23 +89,21 @@ namespace ncc {
           : NullableFlowPtr(static_cast<Pointee *>(nullptr),
                             std::move(tracking)) {}
 
-      constexpr NullableFlowPtr(const NullableFlowPtr<Pointee, Tracking> &O) {
-        m_ptr = O.m_ptr;
-      }
+      constexpr NullableFlowPtr(const NullableFlowPtr<Pointee, Tracking> &o)
+          : m_ptr(o.m_ptr) {}
 
-      constexpr NullableFlowPtr(NullableFlowPtr<Pointee, Tracking> &&O) {
-        m_ptr = std::move(O.m_ptr);
-      }
+      constexpr NullableFlowPtr(NullableFlowPtr<Pointee, Tracking> &&o) noexcept
+          : m_ptr(std::move(o.m_ptr)) {}
 
-      constexpr NullableFlowPtr &operator=(
-          const NullableFlowPtr<Pointee, Tracking> &O) {
-        m_ptr = O.m_ptr;
+      constexpr auto operator=(const NullableFlowPtr<Pointee, Tracking> &o)
+          -> NullableFlowPtr & {
+        m_ptr = o.m_ptr;
         return *this;
       }
 
-      constexpr NullableFlowPtr &operator=(
-          NullableFlowPtr<Pointee, Tracking> &&O) {
-        m_ptr = std::move(O.m_ptr);
+      constexpr auto operator=(NullableFlowPtr<Pointee, Tracking> &&o) noexcept
+          -> NullableFlowPtr & {
+        m_ptr = std::move(o.m_ptr);
         return *this;
       }
 
@@ -114,18 +112,18 @@ namespace ncc {
       ///=========================================================================
       /// Comparison
 
-      constexpr bool operator==(const NullableFlowPtr &O) const {
-        return m_ptr == O.m_ptr;
+      constexpr auto operator==(const NullableFlowPtr &o) const -> bool {
+        return m_ptr == o.m_ptr;
       }
 
-      constexpr bool operator!=(const NullableFlowPtr &O) const {
-        return m_ptr != O.m_ptr;
+      constexpr auto operator!=(const NullableFlowPtr &o) const -> bool {
+        return m_ptr != o.m_ptr;
       }
 
-      constexpr bool operator==(std::nullptr_t) const {
+      constexpr auto operator==(std::nullptr_t) const -> bool {
         return m_ptr == nullptr;
       }
-      constexpr bool operator==(std::nullopt_t) const {
+      constexpr auto operator==(std::nullopt_t) const -> bool {
         return m_ptr == nullptr;
       }
 
@@ -136,22 +134,24 @@ namespace ncc {
       constexpr operator NullableFlowPtr<U>() {
         static_assert(std::is_convertible_v<Pointee *, U *>,
                       "Cannot convert Pointee* to U*");
-        return NullableFlowPtr<U>(static_cast<U *>(m_ptr.get()), m_ptr.trace());
+        return NullableFlowPtr<U>(static_cast<U *>(m_ptr.get()), m_ptr.Trace());
       }
 
       template <class U>
-      constexpr auto as() {
+      constexpr auto As() {
         return NullableFlowPtr<U>(reinterpret_cast<U *>(m_ptr.get()),
-                                  m_ptr.trace());
+                                  m_ptr.Trace());
       }
 
       ///=========================================================================
       /// Accessors
 
-      constexpr bool has_value() const { return m_ptr != nullptr; }
+      [[nodiscard]] constexpr bool has_value() const {  // NOLINT
+        return m_ptr != nullptr;
+      }
       constexpr operator bool() const { return has_value(); }
 
-      constexpr FlowPtr<Pointee, Tracking> &value() {
+      constexpr FlowPtr<Pointee, Tracking> &value() {  // NOLINT
         if (!has_value()) [[unlikely]] {
           qcore_panicf("Attempted to dereference a nullptr. this=%p", this);
         }
@@ -159,7 +159,7 @@ namespace ncc {
         return m_ptr;
       }
 
-      constexpr const FlowPtr<Pointee, Tracking> &value() const {
+      constexpr const FlowPtr<Pointee, Tracking> &value() const {  // NOLINT
         if (!has_value()) [[unlikely]] {
           qcore_panicf("Attempted to dereference a nullptr. this=%p", this);
         }
@@ -168,12 +168,11 @@ namespace ncc {
       }
 
       template <class U>
-      constexpr Pointee *value_or(U &&default_value) const {
+      constexpr Pointee *value_or(U &&default_value) const {  // NOLINT
         return has_value() ? value().get() : std::forward<U>(default_value);
       }
     };
 
-    constexpr auto NullableFlowPtrStructSize = sizeof(NullableFlowPtr<int>);
     static_assert(sizeof(FlowPtr<int>) == sizeof(NullableFlowPtr<int>));
   }  // namespace flowptr_detail
 
@@ -181,8 +180,9 @@ namespace ncc {
   using NullableFlowPtr = flowptr_detail::NullableFlowPtr<Pointee, Tracking>;
 
   template <class Pointee, class Tracking = DefaultTracking>
-  constexpr NullableFlowPtr<Pointee, Tracking> MakeNullableFlowPtr(
-      Pointee *ptr, Tracking tracking = Tracking()) {
+  constexpr auto MakeNullableFlowPtr(Pointee *ptr,
+                                     Tracking tracking = Tracking())
+      -> NullableFlowPtr<Pointee, Tracking> {
     return NullableFlowPtr<Pointee, Tracking>(ptr, std::move(tracking));
   }
 }  // namespace ncc
@@ -190,8 +190,8 @@ namespace ncc {
 namespace std {
   template <class Pointee, class Tracking>
   struct hash<ncc::NullableFlowPtr<Pointee, Tracking>> {
-    size_t operator()(
-        const ncc::NullableFlowPtr<Pointee, Tracking> &ptr) const {
+    auto operator()(const ncc::NullableFlowPtr<Pointee, Tracking> &ptr) const
+        -> size_t {
       return std::hash<Pointee *>()(ptr.value_or(nullptr));
     }
   };

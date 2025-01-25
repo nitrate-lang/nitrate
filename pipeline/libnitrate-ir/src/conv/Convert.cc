@@ -112,7 +112,7 @@ using namespace ncc;
 //     name = "module";
 //   }
 
-//   std::unique_ptr<IMemory> scratch_arena = std::make_unique<dyn_arena>();
+//   std::unique_ptr<IMemory> scratch_arena = std::make_unique<DynamicArena>();
 //   std::swap(ir::nr_allocator, scratch_arena);
 
 //   /// TODO: Get the target platform infoformation
@@ -157,7 +157,7 @@ using namespace ncc;
 // static bool check_is_foreign_function(auto n) {
 //   return std::any_of(n.begin(), n.end(), [](FlowPtr<ncc::parse::Expr> attr) {
 //     return attr->is(QAST_IDENT) &&
-//            attr->as<ncc::parse::Ident>()->get_name() == "foreign";
+//            attr->As<ncc::parse::Identifier>()->GetName() == "foreign";
 //   });
 // }
 
@@ -167,11 +167,11 @@ using namespace ncc;
 //                                                      lex::Operator op) {
 //   using namespace ncc::lex;
 
-// #define STD_BINOP(op) ir::create<ir::BinExpr>(lhs, rhs, ir::Op::op)
+// #define STD_BINOP(op) ir::create<ir::BinaryExpression>(lhs, rhs, ir::Op::op)
 // #define ASSIGN_BINOP(op)                                                  \
-//   ir::create<ir::BinExpr>(                                                \
+//   ir::create<ir::BinaryExpression>(                                                \
 //       lhs,                                                                \
-//       ir::create<ir::BinExpr>(static_cast<ir::Expr *>(lhs->clone()), rhs, \
+//       ir::create<ir::BinaryExpression>(static_cast<ir::Expr *>(lhs->clone()), rhs, \
 //                               ir::Op::op),                                \
 //       ir::Op::Set)
 
@@ -224,10 +224,10 @@ using namespace ncc;
 //     }
 //     case OpLogicXor: {
 //       // A ^^ B == (A || B) && !(A && B)
-//       auto a = ir::create<ir::BinExpr>(lhs, rhs, ir::Op::LogicOr);
-//       auto b = ir::create<ir::BinExpr>(lhs, rhs, ir::Op::LogicAnd);
+//       auto a = ir::create<ir::BinaryExpression>(lhs, rhs, ir::Op::LogicOr);
+//       auto b = ir::create<ir::BinaryExpression>(lhs, rhs, ir::Op::LogicAnd);
 //       auto not_b = ir::create<ir::Unary>(b, ir::Op::LogicNot, false);
-//       R = ir::create<ir::BinExpr>(a, not_b, ir::Op::LogicAnd);
+//       R = ir::create<ir::BinaryExpression>(a, not_b, ir::Op::LogicAnd);
 //       break;
 //     }
 //     case OpLogicNot: {
@@ -307,11 +307,11 @@ using namespace ncc;
 //     case OpLogicXorSet: {
 //       // a ^^= b == a = (a || b) && !(a && b)
 
-//       auto a = ir::create<ir::BinExpr>(lhs, rhs, ir::Op::LogicOr);
-//       auto b = ir::create<ir::BinExpr>(lhs, rhs, ir::Op::LogicAnd);
+//       auto a = ir::create<ir::BinaryExpression>(lhs, rhs, ir::Op::LogicOr);
+//       auto b = ir::create<ir::BinaryExpression>(lhs, rhs, ir::Op::LogicAnd);
 //       auto not_b = ir::create<ir::Unary>(b, ir::Op::LogicNot, false);
-//       return ir::create<ir::BinExpr>(
-//           lhs, ir::create<ir::BinExpr>(a, not_b, ir::Op::LogicAnd),
+//       return ir::create<ir::BinaryExpression>(
+//           lhs, ir::create<ir::BinaryExpression>(a, not_b, ir::Op::LogicAnd),
 //           ir::Op::Set);
 //     }
 //     case OpLShiftSet: {
@@ -440,12 +440,12 @@ using namespace ncc;
 
 //     case OpSizeof: {
 //       auto bits = ir::create<ir::Unary>(rhs, ir::Op::Bitsizeof, false);
-//       auto arg = ir::create<ir::BinExpr>(
+//       auto arg = ir::create<ir::BinaryExpression>(
 //           bits, ir::create<ir::Float>(8, 64), ir::Op::Slash);
 
 //       std::array<std::pair<std::string_view, Expr *>, 1> args;
 //       args[0] = {"_0", arg};
-//       R = b.createCall(ir::create<ir::Ident>(save("std::ceil"), nullptr),
+//       R = b.createCall(ir::create<ir::Identifier>(save("std::ceil"), nullptr),
 //       args);
 
 //       break;
@@ -457,7 +457,7 @@ using namespace ncc;
 //     }
 
 //     case OpTypeof: {
-//       auto inferred = rhs->getType();
+//       auto inferred = rhs->GetType();
 //       if (!inferred.has_value()) {
 //         break;
 //       }
@@ -466,7 +466,7 @@ using namespace ncc;
 //       auto res = se.mangle_name(inferred.value(), ir::AbiTag::Nitrate);
 //       if (!res.has_value()) {
 //         G->report(CompilerError, IC::Error, "Failed to mangle type name",
-//                   rhs->getLoc());
+//                   rhs->GetLoc());
 //         break;
 //       }
 
@@ -488,17 +488,17 @@ using namespace ncc;
 // }
 
 // static EResult nrgen_binexpr(NRBuilder &b, PState &s, IReport *G,
-//                              FlowPtr<ncc::parse::BinExpr> n) {
-//   if (n->get_lhs() && n->get_rhs() && n->get_op() == lex::OpAs &&
-//       n->get_rhs()->is(QAST_TEXPR)) {
+//                              FlowPtr<ncc::parse::BinaryExpression> n) {
+//   if (n->Getlhs() && n->Getrhs() && n->Getop() == lex::OpAs &&
+//       n->Getrhs()->is(QAST_TEXPR)) {
 //     FlowPtr<ncc::parse::Type> type =
-//         n->get_rhs()->as<ncc::parse::TypeExpr>()->get_type();
+//         n->Getrhs()->As<ncc::parse::TypeExpr>()->GetKind();
 
 //     bool is_integer_ty = type->is_integral();
-//     bool is_integer_lit = n->get_lhs()->getKind() == QAST_INT;
+//     bool is_integer_lit = n->Getlhs()->GetKind() == QAST_INT;
 
 //     bool is_float_ty = type->is_floating_point();
-//     bool is_float_lit = n->get_lhs()->getKind() == QAST_FLOAT;
+//     bool is_float_lit = n->Getlhs()->GetKind() == QAST_FLOAT;
 
 //     if ((is_integer_lit && is_integer_ty) || (is_float_lit && is_float_ty)) {
 //       if (is_integer_lit) {
@@ -513,10 +513,10 @@ using namespace ncc;
 //                 // {QAST_I128, 128},
 //             };
 
-//         auto it = integer_lit_suffixes.find(type->getKind());
+//         auto it = integer_lit_suffixes.find(type->GetKind());
 //         if (it != integer_lit_suffixes.end()) {
-//           FlowPtr<ncc::parse::ConstInt> N(
-//               n->get_lhs()->as<ncc::parse::ConstInt>());
+//           FlowPtr<ncc::parse::Integer> N(
+//               n->Getlhs()->As<ncc::parse::Integer>());
 
 //           return b.createFixedInteger(
 //               boost::multiprecision::cpp_int(N->get_value()), it->second);
@@ -530,10 +530,10 @@ using namespace ncc;
 //                 {QAST_F128, 128},
 //             }};
 
-//         auto it = float_lit_suffixes.find(type->getKind());
+//         auto it = float_lit_suffixes.find(type->GetKind());
 //         if (it != float_lit_suffixes.end()) {
-//           FlowPtr<ncc::parse::ConstFloat> N(
-//               n->get_lhs()->as<ncc::parse::ConstFloat>());
+//           FlowPtr<ncc::parse::Float> N(
+//               n->Getlhs()->As<ncc::parse::Float>());
 
 //           return b.createFixedFloat(
 //               boost::multiprecision::cpp_dec_float_100(N->get_value()),
@@ -543,25 +543,25 @@ using namespace ncc;
 //     }
 //   }
 
-//   auto lhs = next_one(n->get_lhs());
+//   auto lhs = next_one(n->Getlhs());
 //   if (!lhs.has_value()) {
 //     G->report(CompilerError, IC::Error,
-//               "Failed to lower LHS of binary expression", n->get_pos());
+//               "Failed to lower LHS of binary expression", n->Getpos());
 //     return std::nullopt;
 //   }
 
-//   auto rhs = next_one(n->get_rhs());
+//   auto rhs = next_one(n->Getrhs());
 //   if (!rhs.has_value()) {
 //     G->report(CompilerError, IC::Error,
-//               "Failed to lower RHS of binary expression", n->get_pos());
+//               "Failed to lower RHS of binary expression", n->Getpos());
 //     return std::nullopt;
 //   }
 
 //   auto E = nrgen_lower_binexpr(b, s, G, lhs.value(), rhs.value(),
-//   n->get_op()); if (!E.has_value()) {
+//   n->Getop()); if (!E.has_value()) {
 //     G->report(CompilerError, IC::Error, "Failed to lower the binary
 //     expression",
-//               n->get_pos());
+//               n->Getpos());
 //     return std::nullopt;
 //   }
 
@@ -569,18 +569,18 @@ using namespace ncc;
 // }
 
 // static EResult nrgen_unexpr(NRBuilder &b, PState &s, IReport *G,
-//                             FlowPtr<ncc::parse::UnaryExpr> n) {
-//   auto rhs = next_one(n->get_rhs());
+//                             FlowPtr<ncc::parse::UnaryExpression> n) {
+//   auto rhs = next_one(n->Getrhs());
 //   if (!rhs.has_value()) {
 //     G->report(CompilerError, IC::Error,
-//               "Failed to lower RHS of unary expression", n->get_pos());
+//               "Failed to lower RHS of unary expression", n->Getpos());
 //     return std::nullopt;
 //   }
 
-//   auto E = nrgen_lower_unary(b, s, G, rhs.value(), n->get_op(), false);
+//   auto E = nrgen_lower_unary(b, s, G, rhs.value(), n->Getop(), false);
 //   if (!E.has_value()) {
 //     G->report(CompilerError, IC::Error, "Failed to lower unary expression",
-//               n->get_pos());
+//               n->Getpos());
 //     return std::nullopt;
 //   }
 
@@ -588,20 +588,20 @@ using namespace ncc;
 // }
 
 // static EResult nrgen_post_unexpr(NRBuilder &b, PState &s, IReport *G,
-//                                  FlowPtr<ncc::parse::PostUnaryExpr> n) {
-//   auto lhs = next_one(n->get_lhs());
+//                                  FlowPtr<ncc::parse::PostUnaryExpression> n) {
+//   auto lhs = next_one(n->Getlhs());
 //   if (!lhs.has_value()) {
 //     G->report(CompilerError, IC::Error,
-//               "Failed to lower LHS of post-unary expression", n->get_pos());
+//               "Failed to lower LHS of post-unary expression", n->Getpos());
 
 //     return std::nullopt;
 //   }
 
-//   auto E = nrgen_lower_unary(b, s, G, lhs.value(), n->get_op(), true);
+//   auto E = nrgen_lower_unary(b, s, G, lhs.value(), n->Getop(), true);
 //   if (!E.has_value()) {
 //     G->report(CompilerError, IC::Error, "Failed to lower post-unary
 //     expression",
-//               n->get_pos());
+//               n->Getpos());
 //     return std::nullopt;
 //   }
 
@@ -609,26 +609,26 @@ using namespace ncc;
 // }
 
 // static EResult nrgen_terexpr(NRBuilder &b, PState &s, IReport *G,
-//                              FlowPtr<ncc::parse::TernaryExpr> n) {
-//   auto cond = next_one(n->get_cond());
+//                              FlowPtr<ncc::parse::TernaryExpression> n) {
+//   auto cond = next_one(n->Getcond());
 //   if (!cond.has_value()) {
 //     G->report(CompilerError, IC::Error,
 //               "Failed to lower condition of ternery expression",
-//               n->get_pos());
+//               n->Getpos());
 //     return std::nullopt;
 //   }
 
-//   auto lhs = next_one(n->get_lhs());
+//   auto lhs = next_one(n->Getlhs());
 //   if (!lhs.has_value()) {
 //     G->report(CompilerError, IC::Error,
-//               "Failed to lower LHS of ternery expression", n->get_pos());
+//               "Failed to lower LHS of ternery expression", n->Getpos());
 //     return std::nullopt;
 //   }
 
-//   auto rhs = next_one(n->get_rhs());
+//   auto rhs = next_one(n->Getrhs());
 //   if (!rhs.has_value()) {
 //     G->report(CompilerError, IC::Error,
-//               "Failed to lower RHS of ternery expression", n->get_pos());
+//               "Failed to lower RHS of ternery expression", n->Getpos());
 //     return std::nullopt;
 //   }
 
@@ -636,7 +636,7 @@ using namespace ncc;
 // }
 
 // static EResult nrgen_int(NRBuilder &b, PState &, IReport *G,
-//                          FlowPtr<ncc::parse::ConstInt> n) {
+//                          FlowPtr<ncc::parse::Integer> n) {
 //   /**
 //    * Integer types:
 //    *  i32:  [0 - 2147483647]
@@ -644,7 +644,7 @@ using namespace ncc;
 //    *  u128: [9223372036854775808 - 340282366920938463463374607431768211455]
 //    *  error: [340282366920938463463374607431768211456 - ...]
 //    */
-//   boost::multiprecision::cpp_int num(n->get_value());
+//   boost::multiprecision::cpp_int num(n->Getvalue());
 
 //   if (num < 0) {
 //     G->report(CompilerError, IC::Error,
@@ -667,48 +667,48 @@ using namespace ncc;
 // }
 
 // static EResult nrgen_float(NRBuilder &b, PState &, IReport *,
-//                            FlowPtr<ncc::parse::ConstFloat> n) {
-//   boost::multiprecision::cpp_dec_float_100 num(n->get_value());
+//                            FlowPtr<ncc::parse::Float> n) {
+//   boost::multiprecision::cpp_dec_float_100 num(n->Getvalue());
 //   return b.createFixedFloat(num, 64);
 // }
 
 // static EResult nrgen_string(NRBuilder &b, PState &, IReport *,
-//                             FlowPtr<ncc::parse::ConstString> n) {
-//   return b.createStringDataArray(n->get_value());
+//                             FlowPtr<ncc::parse::String> n) {
+//   return b.createStringDataArray(n->Getvalue());
 // }
 
 // static EResult nrgen_char(NRBuilder &b, PState &, IReport *,
-//                           FlowPtr<ncc::parse::ConstChar> n) {
-//   return b.createFixedInteger(n->get_value(), 8);
+//                           FlowPtr<ncc::parse::Character> n) {
+//   return b.createFixedInteger(n->Getvalue(), 8);
 // }
 
 // static EResult nrgen_bool(NRBuilder &b, PState &, IReport *,
-//                           FlowPtr<ncc::parse::ConstBool> n) {
-//   return b.createBool(n->get_value());
+//                           FlowPtr<ncc::parse::Boolean> n) {
+//   return b.createBool(n->Getvalue());
 // }
 
 // static EResult nrgen_null(NRBuilder &b, PState &, IReport *,
-//                           FlowPtr<ncc::parse::ConstNull>) {
+//                           FlowPtr<ncc::parse::Null>) {
 //   return b.getUnknownNamedTy("__builtin_null");
 // }
 
 // static EResult nrgen_undef(NRBuilder &, PState &, IReport *G,
-//                            FlowPtr<ncc::parse::ConstUndef> n) {
-//   G->report(UnexpectedUndefLiteral, IC::Error, "", n->get_pos());
+//                            FlowPtr<ncc::parse::Undefined> n) {
+//   G->report(UnexpectedUndefLiteral, IC::Error, "", n->Getpos());
 //   return std::nullopt;
 // }
 
 // static EResult nrgen_call(NRBuilder &b, PState &s, IReport *G,
 //                           FlowPtr<ncc::parse::Call> n) {
-//   auto target = next_one(n->get_func());
+//   auto target = next_one(n->Getfunc());
 //   if (!target.has_value()) {
 //     G->report(ir::CompilerError, IC::Error, "Failed to lower function target
 //     ",
-//               n->get_pos());
+//               n->Getpos());
 //     return std::nullopt;
 //   }
 
-//   auto args = n->get_args();
+//   auto args = n->Getargs();
 
 //   std::vector<std::pair<std::string_view, Expr *>> arguments;
 //   arguments.resize(args.size());
@@ -717,7 +717,7 @@ using namespace ncc;
 //     auto arg = next_one(args[i].second);
 //     if (!arg.has_value()) {
 //       G->report(ir::CompilerError, IC::Error,
-//                 "Failed to lower function argument", n->get_pos());
+//                 "Failed to lower function argument", n->Getpos());
 //       return std::nullopt;
 //     }
 
@@ -731,11 +731,11 @@ using namespace ncc;
 //                           FlowPtr<ncc::parse::List> n) {
 //   ListItems items;
 
-//   for (auto it = n->get_items().begin(); it != n->get_items().end(); ++it) {
+//   for (auto it = n->Getitems().begin(); it != n->Getitems().end(); ++it) {
 //     auto item = next_one(*it);
 //     if (!item.has_value()) {
 //       G->report(ir::CompilerError, IC::Error, "Failed to lower list element",
-//                 n->get_pos());
+//                 n->Getpos());
 //       return std::nullopt;
 //     }
 
@@ -747,18 +747,18 @@ using namespace ncc;
 
 // static EResult nrgen_assoc(NRBuilder &b, PState &s, IReport *G,
 //                            FlowPtr<ncc::parse::Assoc> n) {
-//   auto key = next_one(n->get_key());
+//   auto key = next_one(n->Getkey());
 //   if (!key.has_value()) {
 //     G->report(ir::CompilerError, IC::Error, "Failed to lower associative key
 //     ",
-//               n->get_pos());
+//               n->Getpos());
 //     return std::nullopt;
 //   }
 
-//   auto value = next_one(n->get_value());
+//   auto value = next_one(n->Getvalue());
 //   if (!value.has_value()) {
 //     G->report(ir::CompilerError, IC::Error,
-//               "Failed to lower associative value ", n->get_pos());
+//               "Failed to lower associative value ", n->Getpos());
 //     return std::nullopt;
 //   }
 
@@ -768,17 +768,17 @@ using namespace ncc;
 
 // static EResult nrgen_index(NRBuilder &b, PState &s, IReport *G,
 //                            FlowPtr<ncc::parse::Index> n) {
-//   auto base = next_one(n->get_base());
+//   auto base = next_one(n->Getbase());
 //   if (!base.has_value()) {
 //     G->report(ir::CompilerError, IC::Error,
-//               "Failed to lower index expression base", n->get_pos());
+//               "Failed to lower index expression base", n->Getpos());
 //     return std::nullopt;
 //   }
 
-//   auto index = next_one(n->get_index());
+//   auto index = next_one(n->Getindex());
 //   if (!index.has_value()) {
 //     G->report(ir::CompilerError, IC::Error,
-//               "Failed to lower index expression index", n->get_pos());
+//               "Failed to lower index expression index", n->Getpos());
 //     return std::nullopt;
 //   }
 
@@ -787,24 +787,24 @@ using namespace ncc;
 
 // static EResult nrgen_slice(NRBuilder &b, PState &s, IReport *G,
 //                            FlowPtr<ncc::parse::Slice> n) {
-//   auto base = next_one(n->get_base());
+//   auto base = next_one(n->Getbase());
 //   if (!base.has_value()) {
 //     G->report(ir::CompilerError, IC::Error,
-//               "Failed to lower slice expression base", n->get_pos());
+//               "Failed to lower slice expression base", n->Getpos());
 //     return std::nullopt;
 //   }
 
-//   auto start = next_one(n->get_start());
+//   auto start = next_one(n->Getstart());
 //   if (!start.has_value()) {
 //     G->report(ir::CompilerError, IC::Error,
-//               "Failed to lower slice expression start", n->get_pos());
+//               "Failed to lower slice expression start", n->Getpos());
 //     return std::nullopt;
 //   }
 
-//   auto end = next_one(n->get_end());
+//   auto end = next_one(n->Getend());
 //   if (!end.has_value()) {
 //     G->report(ir::CompilerError, IC::Error,
-//               "Failed to lower slice expression end", n->get_pos());
+//               "Failed to lower slice expression end", n->Getpos());
 //     return std::nullopt;
 //   }
 
@@ -819,12 +819,12 @@ using namespace ncc;
 //                              FlowPtr<ncc::parse::FString> n) {
 //   /// TODO: Cleanup the fstring implementation
 
-//   if (n->get_items().empty()) {
+//   if (n->Getitems().empty()) {
 //     return b.createStringDataArray("");
 //   }
 
-//   if (n->get_items().size() == 1) {
-//     auto val = n->get_items().front();
+//   if (n->Getitems().size() == 1) {
+//     auto val = n->Getitems().front();
 
 //     if (std::holds_alternative<string>(val)) {
 //       return b.createStringDataArray(*std::get<string>(val));
@@ -834,8 +834,8 @@ using namespace ncc;
 //       if (!expr.has_value()) {
 //         G->report(
 //             CompilerError, IC::Error,
-//             "ncc::parse::FString::get_items() vector contains std::nullopt",
-//             n->get_pos());
+//             "ncc::parse::FString::GetItems() vector contains std::nullopt",
+//             n->Getpos());
 //         return std::nullopt;
 //       }
 
@@ -847,12 +847,12 @@ using namespace ncc;
 
 //   Expr *concated = b.createStringDataArray("");
 
-//   for (auto it = n->get_items().begin(); it != n->get_items().end(); ++it) {
+//   for (auto it = n->Getitems().begin(); it != n->Getitems().end(); ++it) {
 //     if (std::holds_alternative<string>(*it)) {
 //       auto val = *std::get<string>(*it);
 
 //       concated =
-//           create<BinExpr>(concated, b.createStringDataArray(val), Op::Plus);
+//           create<BinaryExpression>(concated, b.createStringDataArray(val), Op::Plus);
 //     } else if (std::holds_alternative<FlowPtr<ncc::parse::Expr>>(*it)) {
 //       auto val = std::get<FlowPtr<ncc::parse::Expr>>(*it);
 //       auto expr = next_one(val);
@@ -860,12 +860,12 @@ using namespace ncc;
 //       if (!expr.has_value()) {
 //         G->report(
 //             CompilerError, IC::Error,
-//             "ncc::parse::FString::get_items() vector contains std::nullopt",
-//             n->get_pos());
+//             "ncc::parse::FString::GetItems() vector contains std::nullopt",
+//             n->Getpos());
 //         return std::nullopt;
 //       }
 
-//       concated = create<BinExpr>(concated, expr.value(), Op::Plus);
+//       concated = create<BinaryExpression>(concated, expr.value(), Op::Plus);
 //     } else {
 //       qcore_panic("Invalid fstring item type");
 //     }
@@ -875,21 +875,21 @@ using namespace ncc;
 // }
 
 // static EResult nrgen_ident(NRBuilder &, PState &s, IReport *,
-//                            FlowPtr<ncc::parse::Ident> n) {
-//   return create<Ident>(save(s.scope_name(n->get_name())), nullptr);
+//                            FlowPtr<ncc::parse::Identifier> n) {
+//   return create<Identifier>(save(s.scope_name(n->Getname())), nullptr);
 // }
 
 // static EResult nrgen_seq_point(NRBuilder &b, PState &s, IReport *G,
-//                                FlowPtr<ncc::parse::SeqPoint> n) {
-//   SeqItems items(n->get_items().size());
+//                                FlowPtr<ncc::parse::Sequence> n) {
+//   SeqItems items(n->Getitems().size());
 
-//   for (size_t i = 0; i < n->get_items().size(); i++) {
-//     auto item = next_one(n->get_items()[i]);
+//   for (size_t i = 0; i < n->Getitems().size(); i++) {
+//     auto item = next_one(n->Getitems()[i]);
 //     if (!item.has_value()) [[unlikely]] {
 //       G->report(
 //           CompilerError, IC::Error,
-//           "ncc::parse::SeqPoint::get_items() vector contains std::nullopt",
-//           n->get_pos());
+//           "ncc::parse::Sequence::GetItems() vector contains std::nullopt",
+//           n->Getpos());
 //       return std::nullopt;
 //     }
 
@@ -901,11 +901,11 @@ using namespace ncc;
 
 // static EResult nrgen_stmt_expr(NRBuilder &b, PState &s, IReport *G,
 //                                FlowPtr<ncc::parse::StmtExpr> n) {
-//   auto stmt = next_one(n->get_stmt());
+//   auto stmt = next_one(n->Getstmt());
 //   if (!stmt.has_value()) {
 //     G->report(CompilerError, IC::Error, "Failed to lower statement expression
 //     ",
-//               n->get_pos());
+//               n->Getpos());
 //     return std::nullopt;
 //   }
 
@@ -914,10 +914,10 @@ using namespace ncc;
 
 // static EResult nrgen_type_expr(NRBuilder &b, PState &s, IReport *G,
 //                                FlowPtr<ncc::parse::TypeExpr> n) {
-//   auto type = next_one(n->get_type());
+//   auto type = next_one(n->Gettype());
 //   if (!type.has_value()) {
 //     G->report(CompilerError, IC::Error, "Failed to lower type expression",
-//               n->get_pos());
+//               n->Getpos());
 //     return std::nullopt;
 //   }
 
@@ -925,21 +925,21 @@ using namespace ncc;
 // }
 
 // static EResult nrgen_templ_call(NRBuilder &, PState &, IReport *G,
-//                                 FlowPtr<ncc::parse::TemplCall> n) {
+//                                 FlowPtr<ncc::parse::TemplateCall> n) {
 //   G->report(CompilerError, IC::Error,
 //             "Attempted to lower an unexpected "
 //             "template function call",
-//             n->get_pos());
+//             n->Getpos());
 
 //   return std::nullopt;
 // }
 
 // static EResult nrgen_ref_ty(NRBuilder &b, PState &s, IReport *G,
 //                             FlowPtr<ncc::parse::RefTy> n) {
-//   auto pointee = next_one(n->get_item());
+//   auto pointee = next_one(n->Getitem());
 //   if (!pointee.has_value()) {
 //     G->report(CompilerError, IC::Error, "Failed to lower reference type",
-//               n->get_pos());
+//               n->Getpos());
 //     return std::nullopt;
 //   }
 
@@ -1004,7 +1004,7 @@ using namespace ncc;
 // }
 // static EResult nrgen_f128_ty(NRBuilder &b, PState &, IReport *,
 //                              FlowPtr<ncc::parse::F128>) {
-//   return b.getF128Ty();
+//   return b.GetF128Ty();
 // }
 // static EResult nrgen_void_ty(NRBuilder &b, PState &, IReport *,
 //                              FlowPtr<ncc::parse::VoidTy>) {
@@ -1013,10 +1013,10 @@ using namespace ncc;
 
 // static EResult nrgen_ptr_ty(NRBuilder &b, PState &s, IReport *G,
 //                             FlowPtr<ncc::parse::PtrTy> n) {
-//   auto pointee = next_one(n->get_item());
+//   auto pointee = next_one(n->Getitem());
 //   if (!pointee.has_value()) {
 //     G->report(CompilerError, IC::Error, "Failed to lower pointer type",
-//               n->get_pos());
+//               n->Getpos());
 //     return std::nullopt;
 //   }
 
@@ -1025,48 +1025,48 @@ using namespace ncc;
 
 // static EResult nrgen_opaque_ty(NRBuilder &b, PState &, IReport *,
 //                                FlowPtr<ncc::parse::OpaqueTy> n) {
-//   return b.getOpaqueTy(n->get_name());
+//   return b.getOpaqueTy(n->Getname());
 // }
 
 // static EResult nrgen_array_ty(NRBuilder &b, PState &s, IReport *G,
 //                               FlowPtr<ncc::parse::ArrayTy> n) {
-//   auto item = next_one(n->get_item());
+//   auto item = next_one(n->Getitem());
 //   if (!item.has_value()) {
 //     G->report(CompilerError, IC::Error, "Failed to lower array item type",
-//               n->get_pos());
+//               n->Getpos());
 //     return std::nullopt;
 //   }
 
-//   auto count_expr = next_one(n->get_size());
+//   auto count_expr = next_one(n->Getsize());
 //   if (!count_expr.has_value()) {
 //     G->report(CompilerError, IC::Error, "Failed to lower array size",
-//               n->get_pos());
+//               n->Getpos());
 //     return std::nullopt;
 //   }
 
 //   auto eprintn_cb = [&](std::string_view msg) {
-//     G->report(CompilerError, IC::Error, msg, count_expr.value()->getLoc());
+//     G->report(CompilerError, IC::Error, msg, count_expr.value()->GetLoc());
 //   };
 
 //   auto result = ir::comptime_impl(count_expr.value(), eprintn_cb);
 //   if (!result.has_value()) {
 //     G->report(CompilerError, IC::Error, "Failed to evaluate array size",
-//               count_expr.value()->getLoc());
+//               count_expr.value()->GetLoc());
 //     return std::nullopt;
 //   }
 
-//   if (result.value()->getKind() != IR_eINT) {
+//   if (result.value()->GetKind() != IR_eINT) {
 //     G->report(CompilerError, IC::Error,
 //               "Non integer literal array size is not supported",
-//               n->get_pos());
+//               n->Getpos());
 //     return std::nullopt;
 //   }
 
-//   uint128_t size = result.value()->as<Int>()->getValue();
+//   uint128_t size = result.value()->As<Int>()->getValue();
 
 //   if (size > UINT64_MAX) {
 //     G->report(CompilerError, IC::Error, "Array size > UINT64_MAX",
-//               n->get_pos());
+//               n->Getpos());
 //     return std::nullopt;
 //   }
 
@@ -1075,14 +1075,14 @@ using namespace ncc;
 
 // static EResult nrgen_tuple_ty(NRBuilder &b, PState &s, IReport *G,
 //                               FlowPtr<ncc::parse::TupleTy> n) {
-//   auto items = n->get_items();
+//   auto items = n->Getitems();
 //   StructFields fields(items.size());
 
 //   for (size_t i = 0; i < items.size(); i++) {
 //     auto item = next_one(items[i]);
 //     if (!item.has_value()) {
 //       G->report(CompilerError, IC::Error, "Failed to lower tuple field type",
-//                 n->get_pos());
+//                 n->Getpos());
 //       return std::nullopt;
 //     }
 
@@ -1111,7 +1111,7 @@ using namespace ncc;
 
 // static EResult nrgen_fn_ty(NRBuilder &b, PState &s, IReport *G,
 //                            FlowPtr<ncc::parse::FuncTy> n) {
-//   auto items = n->get_params();
+//   auto items = n->Getparams();
 //   FnParams params(items.size());
 
 //   for (size_t i = 0; i < items.size(); i++) {
@@ -1119,32 +1119,32 @@ using namespace ncc;
 //     if (!type.has_value()) {
 //       G->report(CompilerError, IC::Error, "Failed to lower function parameter
 //       ",
-//                 n->get_pos());
+//                 n->Getpos());
 //       return std::nullopt;
 //     }
 
 //     params[i] = type.value()->asType();
 //   }
 
-//   auto ret = next_one(n->get_return());
+//   auto ret = next_one(n->Getreturn());
 //   if (!ret.has_value()) {
 //     G->report(CompilerError, IC::Error, "Failed to lower function return type
 //     ",
-//               n->get_pos());
+//               n->Getpos());
 //     return std::nullopt;
 //   }
 
-//   auto props = convert_purity(n->get_purity());
+//   auto props = convert_purity(n->Getpurity());
 
 //   return b.getFnTy(params, ret.value()->asType(), n->is_variadic(),
 //   props.first,
 //                    props.second,
-//                    check_is_foreign_function(n->get_attributes()));
+//                    check_is_foreign_function(n->Getattributes()));
 // }
 
 // static EResult nrgen_unres_ty(NRBuilder &b, PState &s, IReport *,
 //                               FlowPtr<ncc::parse::NamedTy> n) {
-//   return b.getUnknownNamedTy(save(s.scope_name(n->get_name())));
+//   return b.getUnknownNamedTy(save(s.scope_name(n->Getname())));
 // }
 
 // static EResult nrgen_infer_ty(NRBuilder &b, PState &, IReport *,
@@ -1153,24 +1153,24 @@ using namespace ncc;
 // }
 
 // static EResult nrgen_templ_ty(NRBuilder &, PState &, IReport *G,
-//                               FlowPtr<ncc::parse::TemplType> n) {
+//                               FlowPtr<ncc::parse::TemplateType> n) {
 //   G->report(ir::CompilerError, IC::Error,
-//             "Attempted to lower an unexpected ncc::parse::TemplType node",
-//             n->get_pos());
+//             "Attempted to lower an unexpected ncc::parse::TemplateType node",
+//             n->Getpos());
 //   return std::nullopt;
 // }
 
 // static BResult nrgen_typedef(NRBuilder &b, PState &s, IReport *G,
-//                              FlowPtr<ncc::parse::TypedefStmt> n) {
-//   auto type = next_one(n->get_type());
+//                              FlowPtr<ncc::parse::Typedef> n) {
+//   auto type = next_one(n->Gettype());
 //   if (!type.has_value()) {
 //     G->report(ir::CompilerError, IC::Error,
-//               "Failed to lower type in typedef statement", n->get_pos());
+//               "Failed to lower type in typedef statement", n->Getpos());
 //     return std::nullopt;
 //   }
 
 //   b.createNamedTypeAlias(type.value()->asType(),
-//                          save(s.join_scope(n->get_name())));
+//                          save(s.join_scope(n->Getname())));
 
 //   return std::vector<Expr *>();
 // }
@@ -1178,33 +1178,33 @@ using namespace ncc;
 // #define align(x, a) (((x) + (a) - 1) & ~((a) - 1))
 
 // static BResult nrgen_struct(NRBuilder &b, PState &s, IReport *G,
-//                             FlowPtr<ncc::parse::StructDef> n) {
-//   bool is_template = n->get_template_params().has_value();
+//                             FlowPtr<ncc::parse::Struct> n) {
+//   bool is_template = n->GetTemplate_params().has_value();
 //   if (is_template) {
 //     G->report(ir::CompilerError, IC::Error,
 //               "Attempted to lower an unexpected template struct node",
-//               n->get_pos());
+//               n->Getpos());
 //     return std::nullopt;
 //   }
 
 //   std::vector<std::tuple<std::string_view, FlowPtr<Type>, Expr *>> fields(
-//       n->get_fields().size());
+//       n->Getfields().size());
 
 //   std::string old_ns = s.ns_prefix;
-//   s.ns_prefix = s.join_scope(n->get_name());
+//   s.ns_prefix = s.join_scope(n->Getname());
 
-//   for (size_t i = 0; i < n->get_fields().size(); i++) {
-//     auto field = n->get_fields()[i];
+//   for (size_t i = 0; i < n->Getfields().size(); i++) {
+//     auto field = n->Getfields()[i];
 
-//     auto field_type = next_one(field.get_type());
+//     auto field_type = next_one(field.GetKind());
 //     if (!field_type.has_value()) {
 //       G->report(ir::CompilerError, IC::Error,
-//                 "Failed to lower struct field type", n->get_pos());
+//                 "Failed to lower struct field type", n->Getpos());
 //       s.ns_prefix = old_ns;
 //       return std::nullopt;
 //     }
 
-//     auto field_name = save(field.get_name());
+//     auto field_name = save(field.GetName());
 
 //     Expr *field_default = nullptr;
 //     if (field.get_value() == nullptr) {
@@ -1212,7 +1212,7 @@ using namespace ncc;
 //       if (!val.has_value()) {
 //         G->report(ir::CompilerError, IC::Error,
 //                   "Failed to lower struct field default value",
-//                   n->get_pos());
+//                   n->Getpos());
 //         s.ns_prefix = old_ns;
 //         return std::nullopt;
 //       }
@@ -1223,7 +1223,7 @@ using namespace ncc;
 //       if (!val.has_value()) {
 //         G->report(ir::CompilerError, IC::Error,
 //                   "Failed to lower struct field default value",
-//                   n->get_pos());
+//                   n->Getpos());
 //         s.ns_prefix = old_ns;
 //         return std::nullopt;
 //       }
@@ -1236,19 +1236,19 @@ using namespace ncc;
 
 //   std::swap(s.ns_prefix, old_ns);
 //   b.createNamedTypeAlias(b.getStructTy(fields),
-//                          save(s.join_scope(n->get_name())));
+//                          save(s.join_scope(n->Getname())));
 //   std::swap(s.ns_prefix, old_ns);
 
 //   BResult R;
 //   R = std::vector<Expr *>();
 
-//   for (auto method : n->get_methods()) {
+//   for (auto method : n->Getmethods()) {
 //     auto val = next_one(method.func);
 //     if (!val.has_value()) {
 //       G->report(ir::CompilerError, IC::Error,
 //                 "Failed to lower struct
 //                 method ",
-//                 n->get_pos());
+//                 n->Getpos());
 //       s.ns_prefix = old_ns;
 //       return std::nullopt;
 //     }
@@ -1256,11 +1256,11 @@ using namespace ncc;
 //     R->push_back(val.value());
 //   }
 
-//   for (auto method : n->get_static_methods()) {
+//   for (auto method : n->Getstatic_methods()) {
 //     auto val = next_one(method.func);
 //     if (!val.has_value()) {
 //       G->report(ir::CompilerError, IC::Error,
-//                 "Failed to lower struct static method", n->get_pos());
+//                 "Failed to lower struct static method", n->Getpos());
 //       s.ns_prefix = old_ns;
 //       return std::nullopt;
 //     }
@@ -1274,25 +1274,25 @@ using namespace ncc;
 // }
 
 // static BResult nrgen_enum(NRBuilder &b, PState &s, IReport *G,
-//                           FlowPtr<ncc::parse::EnumDef> n) {
+//                           FlowPtr<ncc::parse::Enum> n) {
 //   std::unordered_map<std::string_view, Expr *> values;
 
 //   std::optional<Expr *> last;
 
-//   for (auto it = n->get_items().begin(); it != n->get_items().end(); ++it) {
+//   for (auto it = n->Getitems().begin(); it != n->Getitems().end(); ++it) {
 //     Expr *field_value = nullptr;
 
 //     if (it->second.has_value()) {
 //       auto val = next_one(it->second.value());
 //       if (!val.has_value()) {
 //         G->report(ir::CompilerError, IC::Error, "Failed to lower enum field",
-//                   n->get_pos());
+//                   n->Getpos());
 //         return std::nullopt;
 //       }
 //       last = field_value = val.value();
 //     } else {
 //       if (last.has_value()) {
-//         last = field_value = create<BinExpr>(
+//         last = field_value = create<BinaryExpression>(
 //             last.value(), b.createFixedInteger(1, 32), Op::Plus);
 //       } else {
 //         last = field_value = b.createFixedInteger(0, 32);
@@ -1309,7 +1309,7 @@ using namespace ncc;
 //     }
 //   }
 
-//   auto name = save(s.join_scope(n->get_name()));
+//   auto name = save(s.join_scope(n->Getname()));
 //   b.createNamedConstantDefinition(name, values);
 
 //   /* FIXME: Allow for first class enum types */
@@ -1327,19 +1327,19 @@ using namespace ncc;
 //   bool failed = false;
 
 //   {
-//     if (!n->get_captures().empty()) {
+//     if (!n->Getcaptures().empty()) {
 //       G->report(ir::CompilerError, IC::Error,
 //                 "Function capture groups are not currently supported");
 //       failed = true;
 //     }
 
-//     if (n->get_precond().has_value()) {
+//     if (n->Getprecond().has_value()) {
 //       G->report(ir::CompilerError, IC::Error,
 //                 "Function pre-conditions are not currently supported");
 //       failed = true;
 //     }
 
-//     if (n->get_postcond().has_value()) {
+//     if (n->Getpostcond().has_value()) {
 //       G->report(ir::CompilerError, IC::Error,
 //                 "Function post-conditions are not currently supported");
 //       failed = true;
@@ -1351,7 +1351,7 @@ using namespace ncc;
 //   }
 
 //   {
-//     auto params = n->get_params();
+//     auto params = n->Getparams();
 
 //     std::vector<NRBuilder::FnParam> parameters;
 //     parameters.resize(params.size());
@@ -1369,7 +1369,7 @@ using namespace ncc;
 //         if (!tmp.has_value()) {
 //           G->report(CompilerError, ir::IC::Error,
 //                     "Failed to convert function declaration parameter type",
-//                     n->get_pos());
+//                     n->Getpos());
 //           return std::nullopt;
 //         }
 
@@ -1383,7 +1383,7 @@ using namespace ncc;
 //             G->report(CompilerError, ir::IC::Error,
 //                       "Failed to convert function declaration parameter "
 //                       "default value",
-//                       n->get_pos());
+//                       n->Getpos());
 //             return std::nullopt;
 //           }
 
@@ -1394,34 +1394,34 @@ using namespace ncc;
 //       parameters[i] = std::move(p);
 //     }
 
-//     auto ret_type = next_one(n->get_return());
+//     auto ret_type = next_one(n->Getreturn());
 //     if (!ret_type.has_value()) {
 //       G->report(CompilerError, ir::IC::Error,
 //                 "Failed to convert function declaration return type",
-//                 n->get_pos());
+//                 n->Getpos());
 //       return std::nullopt;
 //     }
 
-//     auto props = convert_purity(n->get_purity());
+//     auto props = convert_purity(n->Getpurity());
 
 //     std::string_view name;
 
-//     if (n->get_name().empty()) {
+//     if (n->Getname().empty()) {
 //       name = save(s.join_scope("_A$" + std::to_string(s.anon_fn_ctr++)));
 //     } else {
-//       name = save(s.join_scope(n->get_name()));
+//       name = save(s.join_scope(n->Getname()));
 //     }
 
 //     Function *fndef = b.createFunctionDefintion(
 //         name, parameters, ret_type.value()->asType(), n->is_variadic(),
 //         Vis::Pub, props.first, props.second,
-//         check_is_foreign_function(n->get_attributes()));
+//         check_is_foreign_function(n->Getattributes()));
 
-//     fndef->setAbiTag(s.abi_mode);
+//     fndef->SetAbiTag(s.abi_mode);
 
 //     { /* Function body */
 
-//       if (!n->get_body().value()->is(QAST_BLOCK)) {
+//       if (!n->Getbody().value()->is(QAST_BLOCK)) {
 //         return std::nullopt;
 //       }
 
@@ -1429,16 +1429,16 @@ using namespace ncc;
 //       s.ns_prefix = name;
 
 //       auto body = nrgen_block(
-//           b, s, G, n->get_body().value().as<ncc::parse::Block>(), false);
+//           b, s, G, n->Getbody().value().as<ncc::parse::Block>(), false);
 //       if (!body.has_value()) {
 //         G->report(CompilerError, ir::IC::Error,
-//                   "Failed to convert function body", n->get_pos());
+//                   "Failed to convert function body", n->Getpos());
 //         return std::nullopt;
 //       }
 
 //       s.ns_prefix = old_ns;
 
-//       fndef->setBody(body.value()->as<Seq>());
+//       fndef->SetBody(body.value()->As<Seq>());
 //     }
 
 //     return fndef;
@@ -1451,19 +1451,19 @@ using namespace ncc;
 //   bool failed = false;
 
 //   {
-//     if (!n->get_captures().empty()) {
+//     if (!n->Getcaptures().empty()) {
 //       G->report(ir::CompilerError, IC::Error,
 //                 "Function capture groups are not currently supported");
 //       failed = true;
 //     }
 
-//     if (n->get_precond().has_value()) {
+//     if (n->Getprecond().has_value()) {
 //       G->report(ir::CompilerError, IC::Error,
 //                 "Function pre-conditions are not currently supported");
 //       failed = true;
 //     }
 
-//     if (n->get_postcond().has_value()) {
+//     if (n->Getpostcond().has_value()) {
 //       G->report(ir::CompilerError, IC::Error,
 //                 "Function post-conditions are not currently supported");
 //       failed = true;
@@ -1475,7 +1475,7 @@ using namespace ncc;
 //   }
 
 //   {
-//     auto params = n->get_params();
+//     auto params = n->Getparams();
 
 //     std::vector<NRBuilder::FnParam> parameters;
 //     parameters.resize(params.size());
@@ -1493,7 +1493,7 @@ using namespace ncc;
 //         if (!tmp.has_value()) {
 //           G->report(CompilerError, ir::IC::Error,
 //                     "Failed to convert function declaration parameter type",
-//                     n->get_pos());
+//                     n->Getpos());
 //           return std::nullopt;
 //         }
 
@@ -1507,7 +1507,7 @@ using namespace ncc;
 //             G->report(CompilerError, ir::IC::Error,
 //                       "Failed to convert function declaration parameter "
 //                       "default value",
-//                       n->get_pos());
+//                       n->Getpos());
 //             return std::nullopt;
 //           }
 
@@ -1518,30 +1518,30 @@ using namespace ncc;
 //       parameters[i] = std::move(p);
 //     }
 
-//     auto ret_type = next_one(n->get_return());
+//     auto ret_type = next_one(n->Getreturn());
 //     if (!ret_type.has_value()) {
 //       G->report(CompilerError, ir::IC::Error,
 //                 "Failed to convert function declaration return type",
-//                 n->get_pos());
+//                 n->Getpos());
 //       return std::nullopt;
 //     }
 
-//     auto props = convert_purity(n->get_purity());
+//     auto props = convert_purity(n->Getpurity());
 
 //     std::string_view name;
 
-//     if (n->get_name().empty()) {
+//     if (n->Getname().empty()) {
 //       name = save(s.join_scope("_A$" + std::to_string(s.anon_fn_ctr++)));
 //     } else {
-//       name = save(s.join_scope(n->get_name()));
+//       name = save(s.join_scope(n->Getname()));
 //     }
 
 //     Function *decl = b.createFunctionDeclaration(
 //         name, parameters, ret_type.value()->asType(), n->is_variadic(),
 //         Vis::Pub, props.first, props.second,
-//         check_is_foreign_function(n->get_attributes()));
+//         check_is_foreign_function(n->Getattributes()));
 
-//     decl->setAbiTag(s.abi_mode);
+//     decl->SetAbiTag(s.abi_mode);
 
 //     return decl;
 //   }
@@ -1555,25 +1555,25 @@ using namespace ncc;
 //     return nrgen_function_definition(b, s, G, n);
 //   } else {
 //     G->report(CompilerError, IC::Error, "Failed to lower function",
-//               n->get_pos());
+//               n->Getpos());
 //     return std::nullopt;
 //   }
 // }
 
 // static BResult nrgen_scope(NRBuilder &b, PState &s, IReport *G,
-//                            FlowPtr<ncc::parse::ScopeStmt> n) {
-//   if (!n->get_body()->is(QAST_BLOCK)) {
+//                            FlowPtr<ncc::parse::Scope> n) {
+//   if (!n->Getbody()->is(QAST_BLOCK)) {
 //     return std::nullopt;
 //   }
 
 //   std::string old_ns = s.ns_prefix;
-//   s.ns_prefix = s.join_scope(n->get_name());
+//   s.ns_prefix = s.join_scope(n->Getname());
 
 //   auto body =
-//       nrgen_block(b, s, G, n->get_body().as<ncc::parse::Block>(), false);
+//       nrgen_block(b, s, G, n->Getbody().as<ncc::parse::Block>(), false);
 //   if (!body.has_value()) {
 //     G->report(ir::CompilerError, IC::Error, "Failed to lower scope body",
-//               n->get_pos());
+//               n->Getpos());
 //     return std::nullopt;
 //   }
 
@@ -1583,7 +1583,7 @@ using namespace ncc;
 // }
 
 // static BResult nrgen_export(NRBuilder &b, PState &s, IReport *G,
-//                             FlowPtr<ncc::parse::ExportStmt> n) {
+//                             FlowPtr<ncc::parse::Export> n) {
 //   static const std::unordered_map<std::string_view,
 //                                   std::pair<std::string_view, AbiTag>>
 //       abi_name_map = {
@@ -1598,29 +1598,29 @@ using namespace ncc;
 //           {"c", {"c", AbiTag::C}},
 //       };
 
-//   if (!n->get_body()) {
+//   if (!n->Getbody()) {
 //     G->report(CompilerError, IC::Error,
-//               "Failed to lower extern node; body is null", n->get_pos());
+//               "Failed to lower extern node; body is null", n->Getpos());
 //     return std::nullopt;
 //   }
 
-//   auto it = abi_name_map.find(n->get_abi_name());
+//   auto it = abi_name_map.find(n->Getabi_name());
 //   if (it == abi_name_map.end()) {
 //     G->report(
 //         CompilerError, IC::Error,
-//         {"The requested ABI name '", n->get_abi_name(), "' is not supported
-//         "}, n->get_pos());
+//         {"The requested ABI name '", n->Getabi_name(), "' is not supported
+//         "}, n->Getpos());
 //     return std::nullopt;
 //   }
 
-//   if (!n->get_body()->is(QAST_BLOCK)) {
+//   if (!n->Getbody()->is(QAST_BLOCK)) {
 //     return std::nullopt;
 //   }
 
 //   AbiTag old = s.abi_mode;
 //   s.abi_mode = it->second.second;
 
-//   auto body = n->get_body()->as<ncc::parse::Block>()->get_items();
+//   auto body = n->Getbody()->As<ncc::parse::Block>()->GetItems();
 //   std::vector<ir::Expr *> items;
 
 //   for (size_t i = 0; i < body.size(); i++) {
@@ -1628,7 +1628,7 @@ using namespace ncc;
 //     if (!result.has_value()) {
 //       G->report(CompilerError, IC::Error,
 //                 "Failed to lower element in external declaration",
-//                 n->get_pos());
+//                 n->Getpos());
 //       s.abi_mode = old;
 //       return std::nullopt;
 //     }
@@ -1647,7 +1647,7 @@ using namespace ncc;
 //                            FlowPtr<ncc::parse::Block> n, bool
 //                            insert_scope_id) {
 //   SeqItems items;
-//   items.reserve(n->get_items().size());
+//   items.reserve(n->Getitems().size());
 
 //   std::string old_ns = s.ns_prefix;
 
@@ -1655,21 +1655,21 @@ using namespace ncc;
 //     s.inc_scope();
 //   }
 
-//   for (auto it = n->get_items().begin(); it != n->get_items().end(); ++it) {
+//   for (auto it = n->Getitems().begin(); it != n->Getitems().end(); ++it) {
 //     auto item = next_any(*it);
 //     if (!item.has_value()) {
 //       G->report(ir::CompilerError, IC::Error,
-//                 "Failed to lower element in statement block", n->get_pos());
+//                 "Failed to lower element in statement block", n->Getpos());
 //       return std::nullopt;
 //     }
 
-//     if ((*it)->getKind() == QAST_BLOCK) {
+//     if ((*it)->GetKind() == QAST_BLOCK) {
 //       /* Reduce unneeded nesting in the IR */
 //       qcore_assert(item->size() == 1);
-//       Seq *inner = item->at(0)->as<Seq>();
+//       Seq *inner = item->at(0)->As<Seq>();
 
-//       items.insert(items.end(), inner->getItems().begin(),
-//                    inner->getItems().end());
+//       items.insert(items.end(), inner->GetItems().begin(),
+//                    inner->GetItems().end());
 //     } else {
 //       items.insert(items.end(), item.value().begin(), item.value().end());
 //     }
@@ -1683,12 +1683,12 @@ using namespace ncc;
 // }
 
 // static EResult nrgen_var(NRBuilder &b, PState &s, IReport *G,
-//                          FlowPtr<ncc::parse::VarDecl> n) {
-//   auto init = next_one(n->get_value().value_or(nullptr));
-//   auto type = next_one(n->get_type().value_or(nullptr));
+//                          FlowPtr<ncc::parse::Variable> n) {
+//   auto init = next_one(n->Getvalue().value_or(nullptr));
+//   auto type = next_one(n->Gettype().value_or(nullptr));
 
 //   if (init.has_value() && type.has_value()) { /* Do implicit cast */
-//     init = create<BinExpr>(init.value(), type.value(), Op::CastAs);
+//     init = create<BinaryExpression>(init.value(), type.value(), Op::CastAs);
 //   } else if (init.has_value() && !type.has_value()) {
 //     type = b.getUnknownTy();
 //   } else if (type.has_value() && !init.has_value()) {
@@ -1712,17 +1712,17 @@ using namespace ncc;
 //   Vis visibility = s.abi_mode == AbiTag::Internal ? Vis::Sec : Vis::Pub;
 
 //   Local *local =
-//       b.createVariable(save(s.join_scope(n->get_name())),
+//       b.createVariable(save(s.join_scope(n->Getname())),
 //                        type.value()->asType(), visibility, storage, false);
 
-//   local->setValue(init.value());
-//   local->setAbiTag(s.abi_mode);
+//   local->SetValue(init.value());
+//   local->SetAbiTag(s.abi_mode);
 
 //   return local;
 // }
 
 // static EResult nrgen_inline_asm(NRBuilder &, PState &, IReport *G,
-//                                 FlowPtr<ncc::parse::InlineAsm>) {
+//                                 FlowPtr<ncc::parse::Assembly>) {
 //   /// TODO: Decide whether or not to support inline assembly
 //   G->report(ir::CompilerError, IC::Error,
 //             "Inline assembly is not currently supported");
@@ -1730,12 +1730,12 @@ using namespace ncc;
 // }
 
 // static EResult nrgen_return(NRBuilder &b, PState &s, IReport *G,
-//                             FlowPtr<ncc::parse::ReturnStmt> n) {
-//   if (n->get_value()) {
-//     auto val = next_one(n->get_value().value_or(nullptr));
+//                             FlowPtr<ncc::parse::Return> n) {
+//   if (n->Getvalue()) {
+//     auto val = next_one(n->Getvalue().value_or(nullptr));
 //     if (!val.has_value()) {
 //       G->report(ir::CompilerError, IC::Error,
-//                 "Failed to lower return statement value", n->get_pos());
+//                 "Failed to lower return statement value", n->Getpos());
 //       return std::nullopt;
 //     }
 
@@ -1747,15 +1747,15 @@ using namespace ncc;
 // }
 
 // static EResult nrgen_retif(NRBuilder &b, PState &s, IReport *G,
-//                            FlowPtr<ncc::parse::ReturnIfStmt> n) {
-//   auto cond = next_one(n->get_cond());
+//                            FlowPtr<ncc::parse::ReturnIf> n) {
+//   auto cond = next_one(n->Getcond());
 //   if (!cond.has_value()) {
 //     return std::nullopt;
 //   }
 
-//   cond = create<BinExpr>(cond.value(), create<U1Ty>(), Op::CastAs);
+//   cond = create<BinaryExpression>(cond.value(), create<U1Ty>(), Op::CastAs);
 
-//   auto val = next_one(n->get_value());
+//   auto val = next_one(n->Getvalue());
 //   if (!val.has_value()) {
 //     return std::nullopt;
 //   }
@@ -1764,26 +1764,26 @@ using namespace ncc;
 // }
 
 // static EResult nrgen_break(NRBuilder &, PState &, IReport *,
-//                            FlowPtr<ncc::parse::BreakStmt>) {
+//                            FlowPtr<ncc::parse::Break>) {
 //   return create<Brk>();
 // }
 
 // static EResult nrgen_continue(NRBuilder &, PState &, IReport *,
-//                               FlowPtr<ncc::parse::ContinueStmt>) {
+//                               FlowPtr<ncc::parse::Continue>) {
 //   return create<Cont>();
 // }
 
 // static EResult nrgen_if(NRBuilder &b, PState &s, IReport *G,
-//                         FlowPtr<ncc::parse::IfStmt> n) {
-//   auto cond = next_one(n->get_cond());
-//   auto then = next_one(n->get_then());
-//   auto els = next_one(n->get_else().value_or(nullptr));
+//                         FlowPtr<ncc::parse::If> n) {
+//   auto cond = next_one(n->Getcond());
+//   auto then = next_one(n->Getthen());
+//   auto els = next_one(n->Getelse().value_or(nullptr));
 
 //   if (!cond.has_value()) {
 //     return std::nullopt;
 //   }
 
-//   cond = create<BinExpr>(cond.value(), create<U1Ty>(), Op::CastAs);
+//   cond = create<BinaryExpression>(cond.value(), create<U1Ty>(), Op::CastAs);
 
 //   if (!then.has_value()) {
 //     return std::nullopt;
@@ -1797,33 +1797,33 @@ using namespace ncc;
 // }
 
 // static EResult nrgen_while(NRBuilder &b, PState &s, IReport *G,
-//                            FlowPtr<ncc::parse::WhileStmt> n) {
-//   auto cond = next_one(n->get_cond());
-//   auto body = next_one(n->get_body());
+//                            FlowPtr<ncc::parse::While> n) {
+//   auto cond = next_one(n->Getcond());
+//   auto body = next_one(n->Getbody());
 
 //   if (!cond.has_value()) {
 //     cond = create<Int>(1, 1);
 //   }
 
-//   cond = create<BinExpr>(cond.value(), create<U1Ty>(), Op::CastAs);
+//   cond = create<BinaryExpression>(cond.value(), create<U1Ty>(), Op::CastAs);
 
 //   if (!body.has_value()) {
 //     body = create<Seq>(SeqItems({}));
-//   } else if (body.value()->getKind() != IR_eSEQ) {
+//   } else if (body.value()->GetKind() != IR_eSEQ) {
 //     body = create<Seq>(SeqItems({body.value()}));
 //   }
 
-//   return create<While>(cond.value(), body.value()->as<Seq>());
+//   return create<While>(cond.value(), body.value()->As<Seq>());
 // }
 
 // static EResult nrgen_for(NRBuilder &b, PState &s, IReport *G,
-//                          FlowPtr<ncc::parse::ForStmt> n) {
+//                          FlowPtr<ncc::parse::For> n) {
 //   s.inc_scope();
 
-//   auto init = next_one(n->get_init().value_or(nullptr));
-//   auto cond = next_one(n->get_cond().value_or(nullptr));
-//   auto step = next_one(n->get_step().value_or(nullptr));
-//   auto body = next_one(n->get_body());
+//   auto init = next_one(n->Getinit().value_or(nullptr));
+//   auto cond = next_one(n->Getcond().value_or(nullptr));
+//   auto step = next_one(n->Getstep().value_or(nullptr));
+//   auto body = next_one(n->Getbody());
 
 //   if (!init.has_value()) {
 //     init = create<Int>(1, 32);
@@ -1831,7 +1831,7 @@ using namespace ncc;
 
 //   if (!cond.has_value()) {
 //     cond = create<Int>(1, 32);  // infinite loop like 'for (;;) {}'
-//     cond = create<BinExpr>(cond.value(), create<U1Ty>(), Op::CastAs);
+//     cond = create<BinaryExpression>(cond.value(), create<U1Ty>(), Op::CastAs);
 //   }
 
 //   if (!step.has_value()) {
@@ -1848,27 +1848,27 @@ using namespace ncc;
 // }
 
 // static EResult nrgen_foreach(NRBuilder &, PState &, IReport *,
-//                              FlowPtr<ncc::parse::ForeachStmt>) {
+//                              FlowPtr<ncc::parse::Foreach>) {
 //   /**
 //    * @brief Convert a foreach loop to a nr expression.
 //    * @details This is a 1-to-1 conversion of the foreach loop.
 //    */
 
-//   // auto idx_name = save(n->get_idx_ident());
-//   // auto val_name = save(n->get_val_ident());
+//   // auto idx_name = save(n->Getidx_ident());
+//   // auto val_name = save(n->Getval_ident());
 
-//   // auto iter = nrgen_one(b, s,X, n->get_expr());
+//   // auto iter = nrgen_one(b, s,X, n->Getexpr());
 //   // if (!iter) {
 //   //   G->report(CompilerError, IC::Error,
-//   "ncc::parse::ForeachStmt::get_expr()
-//   //   == std::nullopt",n->begin(),n->get_pos()); return std::nullopt;
+//   "ncc::parse::Foreach::get_expr()
+//   //   == std::nullopt",n->begin(),n->Getpos()); return std::nullopt;
 //   // }
 
-//   // auto body = nrgen_one(b, s,X, n->get_body());
+//   // auto body = nrgen_one(b, s,X, n->Getbody());
 //   // if (!body) {
 //   //   G->report(CompilerError, IC::Error,
-//   "ncc::parse::ForeachStmt::get_body()
-//       //   == std::nullopt",n->begin(),n->get_pos()); return std::nullopt;
+//   "ncc::parse::Foreach::get_body()
+//       //   == std::nullopt",n->begin(),n->Getpos()); return std::nullopt;
 //       // }
 
 //       // return create<Foreach>(idx_name, val_name, iter,
@@ -1877,13 +1877,13 @@ using namespace ncc;
 // }
 
 // static EResult nrgen_case(NRBuilder &b, PState &s, IReport *G,
-//                           FlowPtr<ncc::parse::CaseStmt> n) {
-//   auto cond = next_one(n->get_cond());
+//                           FlowPtr<ncc::parse::Case> n) {
+//   auto cond = next_one(n->Getcond());
 //   if (!cond.has_value()) {
 //     return std::nullopt;
 //   }
 
-//   auto body = next_one(n->get_body());
+//   auto body = next_one(n->Getbody());
 //   if (!body.has_value()) {
 //     return std::nullopt;
 //   }
@@ -1892,29 +1892,29 @@ using namespace ncc;
 // }
 
 // static EResult nrgen_switch(NRBuilder &b, PState &s, IReport *G,
-//                             FlowPtr<ncc::parse::SwitchStmt> n) {
-//   auto cond = next_one(n->get_cond());
+//                             FlowPtr<ncc::parse::Switch> n) {
+//   auto cond = next_one(n->Getcond());
 //   if (!cond.has_value()) {
 //     return std::nullopt;
 //   }
 
-//   IR_Vertex_SwitchCases cases;
-//   for (auto it = n->get_cases().begin(); it != n->get_cases().end(); ++it) {
+//   GenericSwitchCases cases;
+//   for (auto it = n->Getcases().begin(); it != n->Getcases().end(); ++it) {
 //     auto item = next_one(*it);
 //     if (!item.has_value()) {
 //       G->report(
 //           CompilerError, IC::Error,
-//           "ncc::parse::SwitchStmt::get_cases() vector contains std::nullopt",
-//           n->get_pos());
+//           "ncc::parse::Switch::get_cases() vector contains std::nullopt",
+//           n->Getpos());
 //       return std::nullopt;
 //     }
 
-//     cases.push_back(item.value()->as<Case>());
+//     cases.push_back(item.value()->As<Case>());
 //   }
 
 //   EResult def;
-//   if (n->get_default()) {
-//     def = next_one(n->get_default().value());
+//   if (n->Getdefault()) {
+//     def = next_one(n->Getdefault().value());
 //     if (!def.has_value()) {
 //       return std::nullopt;
 //     }
@@ -1927,7 +1927,7 @@ using namespace ncc;
 
 // static EResult nrgen_expr_stmt(NRBuilder &b, PState &s, IReport *G,
 //                                FlowPtr<ncc::parse::ExprStmt> n) {
-//   return next_one(n->get_expr());
+//   return next_one(n->Getexpr());
 // }
 
 // static EResult nrgen_one(NRBuilder &b, PState &s, IReport *G,
@@ -1940,49 +1940,49 @@ using namespace ncc;
 
 //   std::optional<ir::Expr *> out;
 
-//   switch (n->getKind()) {
+//   switch (n->GetKind()) {
 //     case QAST_BASE: {
 //       break;
 //     }
 
 //     case QAST_BINEXPR:
-//       out = nrgen_binexpr(b, s, G, n.as<ncc::parse::BinExpr>());
+//       out = nrgen_binexpr(b, s, G, n.as<ncc::parse::BinaryExpression>());
 //       break;
 
 //     case QAST_UNEXPR:
-//       out = nrgen_unexpr(b, s, G, n.as<ncc::parse::UnaryExpr>());
+//       out = nrgen_unexpr(b, s, G, n.as<ncc::parse::UnaryExpression>());
 //       break;
 
 //     case QAST_TEREXPR:
-//       out = nrgen_terexpr(b, s, G, n.as<ncc::parse::TernaryExpr>());
+//       out = nrgen_terexpr(b, s, G, n.as<ncc::parse::TernaryExpression>());
 //       break;
 
 //     case QAST_INT:
-//       out = nrgen_int(b, s, G, n.as<ncc::parse::ConstInt>());
+//       out = nrgen_int(b, s, G, n.as<ncc::parse::Integer>());
 //       break;
 
 //     case QAST_FLOAT:
-//       out = nrgen_float(b, s, G, n.as<ncc::parse::ConstFloat>());
+//       out = nrgen_float(b, s, G, n.as<ncc::parse::Float>());
 //       break;
 
 //     case QAST_STRING:
-//       out = nrgen_string(b, s, G, n.as<ncc::parse::ConstString>());
+//       out = nrgen_string(b, s, G, n.as<ncc::parse::String>());
 //       break;
 
 //     case QAST_CHAR:
-//       out = nrgen_char(b, s, G, n.as<ncc::parse::ConstChar>());
+//       out = nrgen_char(b, s, G, n.as<ncc::parse::Character>());
 //       break;
 
 //     case QAST_BOOL:
-//       out = nrgen_bool(b, s, G, n.as<ncc::parse::ConstBool>());
+//       out = nrgen_bool(b, s, G, n.as<ncc::parse::Boolean>());
 //       break;
 
 //     case QAST_NULL:
-//       out = nrgen_null(b, s, G, n.as<ncc::parse::ConstNull>());
+//       out = nrgen_null(b, s, G, n.as<ncc::parse::Null>());
 //       break;
 
 //     case QAST_UNDEF:
-//       out = nrgen_undef(b, s, G, n.as<ncc::parse::ConstUndef>());
+//       out = nrgen_undef(b, s, G, n.as<ncc::parse::Undefined>());
 //       break;
 
 //     case QAST_CALL:
@@ -2010,15 +2010,15 @@ using namespace ncc;
 //       break;
 
 //     case QAST_IDENT:
-//       out = nrgen_ident(b, s, G, n.as<ncc::parse::Ident>());
+//       out = nrgen_ident(b, s, G, n.as<ncc::parse::Identifier>());
 //       break;
 
 //     case QAST_SEQ:
-//       out = nrgen_seq_point(b, s, G, n.as<ncc::parse::SeqPoint>());
+//       out = nrgen_seq_point(b, s, G, n.as<ncc::parse::Sequence>());
 //       break;
 
 //     case QAST_POST_UNEXPR:
-//       out = nrgen_post_unexpr(b, s, G, n.as<ncc::parse::PostUnaryExpr>());
+//       out = nrgen_post_unexpr(b, s, G, n.as<ncc::parse::PostUnaryExpression>());
 //       break;
 
 //     case QAST_SEXPR:
@@ -2030,7 +2030,7 @@ using namespace ncc;
 //       break;
 
 //     case QAST_TEMPL_CALL:
-//       out = nrgen_templ_call(b, s, G, n.as<ncc::parse::TemplCall>());
+//       out = nrgen_templ_call(b, s, G, n.as<ncc::parse::TemplateCall>());
 //       break;
 
 //     case QAST_REF:
@@ -2130,7 +2130,7 @@ using namespace ncc;
 //       break;
 
 //     case QAST_TEMPLATE:
-//       out = nrgen_templ_ty(b, s, G, n.as<ncc::parse::TemplType>());
+//       out = nrgen_templ_ty(b, s, G, n.as<ncc::parse::TemplateType>());
 //       break;
 
 //     case QAST_FUNCTION:
@@ -2142,51 +2142,51 @@ using namespace ncc;
 //       break;
 
 //     case QAST_VAR:
-//       out = nrgen_var(b, s, G, n.as<ncc::parse::VarDecl>());
+//       out = nrgen_var(b, s, G, n.as<ncc::parse::Variable>());
 //       break;
 
 //     case QAST_INLINE_ASM:
-//       out = nrgen_inline_asm(b, s, G, n.as<ncc::parse::InlineAsm>());
+//       out = nrgen_inline_asm(b, s, G, n.as<ncc::parse::Assembly>());
 //       break;
 
 //     case QAST_RETURN:
-//       out = nrgen_return(b, s, G, n.as<ncc::parse::ReturnStmt>());
+//       out = nrgen_return(b, s, G, n.as<ncc::parse::Return>());
 //       break;
 
 //     case QAST_RETIF:
-//       out = nrgen_retif(b, s, G, n.as<ncc::parse::ReturnIfStmt>());
+//       out = nrgen_retif(b, s, G, n.as<ncc::parse::ReturnIf>());
 //       break;
 
 //     case QAST_BREAK:
-//       out = nrgen_break(b, s, G, n.as<ncc::parse::BreakStmt>());
+//       out = nrgen_break(b, s, G, n.as<ncc::parse::Break>());
 //       break;
 
 //     case QAST_CONTINUE:
-//       out = nrgen_continue(b, s, G, n.as<ncc::parse::ContinueStmt>());
+//       out = nrgen_continue(b, s, G, n.as<ncc::parse::Continue>());
 //       break;
 
 //     case QAST_IF:
-//       out = nrgen_if(b, s, G, n.as<ncc::parse::IfStmt>());
+//       out = nrgen_if(b, s, G, n.as<ncc::parse::If>());
 //       break;
 
 //     case QAST_WHILE:
-//       out = nrgen_while(b, s, G, n.as<ncc::parse::WhileStmt>());
+//       out = nrgen_while(b, s, G, n.as<ncc::parse::While>());
 //       break;
 
 //     case QAST_FOR:
-//       out = nrgen_for(b, s, G, n.as<ncc::parse::ForStmt>());
+//       out = nrgen_for(b, s, G, n.as<ncc::parse::For>());
 //       break;
 
 //     case QAST_FOREACH:
-//       out = nrgen_foreach(b, s, G, n.as<ncc::parse::ForeachStmt>());
+//       out = nrgen_foreach(b, s, G, n.as<ncc::parse::Foreach>());
 //       break;
 
 //     case QAST_CASE:
-//       out = nrgen_case(b, s, G, n.as<ncc::parse::CaseStmt>());
+//       out = nrgen_case(b, s, G, n.as<ncc::parse::Case>());
 //       break;
 
 //     case QAST_SWITCH:
-//       out = nrgen_switch(b, s, G, n.as<ncc::parse::SwitchStmt>());
+//       out = nrgen_switch(b, s, G, n.as<ncc::parse::Switch>());
 //       break;
 
 //     case QAST_ESTMT:
@@ -2211,25 +2211,25 @@ using namespace ncc;
 
 //   BResult out;
 
-//   switch (n->getKind()) {
+//   switch (n->GetKind()) {
 //     case QAST_TYPEDEF:
-//       out = nrgen_typedef(b, s, G, n.as<ncc::parse::TypedefStmt>());
+//       out = nrgen_typedef(b, s, G, n.as<ncc::parse::Typedef>());
 //       break;
 
 //     case QAST_ENUM:
-//       out = nrgen_enum(b, s, G, n.as<ncc::parse::EnumDef>());
+//       out = nrgen_enum(b, s, G, n.as<ncc::parse::Enum>());
 //       break;
 
 //     case QAST_STRUCT:
-//       out = nrgen_struct(b, s, G, n.as<ncc::parse::StructDef>());
+//       out = nrgen_struct(b, s, G, n.as<ncc::parse::Struct>());
 //       break;
 
 //     case QAST_SCOPE:
-//       out = nrgen_scope(b, s, G, n.as<ncc::parse::ScopeStmt>());
+//       out = nrgen_scope(b, s, G, n.as<ncc::parse::Scope>());
 //       break;
 
 //     case QAST_EXPORT:
-//       out = nrgen_export(b, s, G, n.as<ncc::parse::ExportStmt>());
+//       out = nrgen_export(b, s, G, n.as<ncc::parse::Export>());
 //       break;
 
 //     default: {
@@ -2245,8 +2245,8 @@ using namespace ncc;
 //   return out;
 // }
 
-NCC_EXPORT std::unique_ptr<IRModule> ir::nr_lower(ncc::parse::Base *,
-                                                  const char *, bool) {
+NCC_EXPORT auto ir::NrLower(ncc::parse::Base *, const char *,
+                            bool) -> std::unique_ptr<IRModule> {
   qcore_print(QCORE_ERROR, "Not implemented");
   return nullptr;
 }

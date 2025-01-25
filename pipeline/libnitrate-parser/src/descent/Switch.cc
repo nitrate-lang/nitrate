@@ -37,83 +37,83 @@ using namespace ncc;
 using namespace ncc::lex;
 using namespace ncc::parse;
 
-FlowPtr<Stmt> Parser::recurse_switch_case_body() {
-  if (!next_if(OpArrow)) {
-    log << SyntaxError << current() << "Expected '=>' in switch case.";
+auto Parser::PImpl::RecurseSwitchCaseBody() -> FlowPtr<Stmt> {
+  if (!NextIf(OpArrow)) {
+    Log << SyntaxError << current() << "Expected '=>' in switch case.";
   }
 
-  if (peek().is<PuncLCur>()) {
-    return recurse_block(true, false, SafetyMode::Unknown);
-  } else {
-    return recurse_block(false, true, SafetyMode::Unknown);
+  if (peek().Is<PuncLCur>()) {
+    return RecurseBlock(true, false, SafetyMode::Unknown);
   }
+
+  return RecurseBlock(false, true, SafetyMode::Unknown);
 }
 
-std::pair<FlowPtr<Stmt>, bool> Parser::recurse_switch_case() {
-  auto cond = recurse_expr({
+auto Parser::PImpl::RecurseSwitchCase() -> std::pair<FlowPtr<Stmt>, bool> {
+  auto cond = RecurseExpr({
       Token(Oper, OpArrow),
       Token(Punc, PuncLCur),
   });
-  auto body = recurse_switch_case_body();
+  auto body = RecurseSwitchCaseBody();
 
   auto is_the_default_case =
-      cond->is(QAST_IDENT) && cond->as<Ident>()->get_name() == "_";
+      cond->Is(QAST_IDENT) && cond->As<Identifier>()->GetName() == "_";
 
   if (is_the_default_case) {
     return {body, true};
-  } else {
-    return {make<CaseStmt>(cond, body)(), false};
   }
+
+  return {CreateNode<Case>(cond, body)(), false};
 }
 
-std::optional<std::pair<SwitchCases, NullableFlowPtr<Stmt>>>
-Parser::recurse_switch_body() {
+auto Parser::PImpl::RecurseSwitchBody()
+    -> std::optional<std::pair<SwitchCases, NullableFlowPtr<Stmt>>> {
   SwitchCases cases;
   NullableFlowPtr<Stmt> default_case;
 
   while (true) {
-    if (next_if(EofF)) [[unlikely]] {
-      log << SyntaxError << current() << "Unexpected EOF in switch statement.";
+    if (NextIf(EofF)) [[unlikely]] {
+      Log << SyntaxError << current() << "Unexpected EOF in switch statement.";
       break;
     }
 
-    if (next_if(PuncRCur)) {
+    if (NextIf(PuncRCur)) {
       return {{cases, default_case}};
     }
 
-    auto [stmt, is_default] = recurse_switch_case();
+    auto [stmt, is_default] = RecurseSwitchCase();
     if (is_default) {
       if (!default_case) [[likely]] {
         default_case = stmt;
       } else {
-        log << SyntaxError << current() << "Duplicate default case in switch.";
+        Log << SyntaxError << current() << "Duplicate default case in switch.";
       }
     } else {
-      cases.push_back(stmt.as<CaseStmt>());
+      cases.push_back(stmt.As<Case>());
     }
 
-    next_if(PuncComa) || next_if(PuncSemi);
+    NextIf(PuncComa) || NextIf(PuncSemi);
   }
 
   return std::nullopt;
 }
 
-FlowPtr<Stmt> Parser::recurse_switch() {
-  auto switch_cond = recurse_expr({
+auto Parser::PImpl::RecurseSwitch() -> FlowPtr<Stmt> {
+  auto switch_cond = RecurseExpr({
       Token(Punc, PuncLCur),
   });
 
-  if (next_if(PuncLCur)) [[likely]] {
-    if (auto switch_body = recurse_switch_body()) [[likely]] {
+  if (NextIf(PuncLCur)) [[likely]] {
+    if (auto switch_body = RecurseSwitchBody()) [[likely]] {
       auto [switch_cases, switch_default] = switch_body.value();
 
-      return make<SwitchStmt>(switch_cond, switch_cases, switch_default)();
+      return CreateNode<Switch>(switch_cond, switch_cases, switch_default)();
     } else {
-      log << SyntaxError << current() << "Switch statement body is malformed.";
+      Log << SyntaxError << current() << "Switch statement body is malformed.";
     }
   } else {
-    log << SyntaxError << current() << "Expected '{' after switch condition.";
+    Log << SyntaxError << current() << "Expected '{' after switch condition.";
   }
 
-  return mock_stmt(QAST_SWITCH);
+  return MockStmt(QAST_SWITCH);
 }

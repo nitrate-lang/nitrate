@@ -39,23 +39,23 @@
 
 using namespace ncc::ir;
 
-bool NRBuilder::check_mutability(FlowPtr<Seq> root, IReport *I) {
+auto NRBuilder::CheckMutability(FlowPtr<Seq> root, IReport *d) -> bool {
   bool failed = false;
 
-  for_each<BinExpr>(root, [&](auto x) {
-    if (x->getOp() != lex::OpSet) {
+  for_each<BinaryExpression>(root, [&](auto x) {
+    if (x->GetOp() != lex::OpSet) {
       return;
     }
 
-    auto lhs_type = x->getLHS()->getType();
+    auto lhs_type = x->GetLHS()->GetType();
 
     if (!lhs_type.has_value()) {
       return;
     }
 
-    if (lhs_type.value()->is_readonly()) {
+    if (lhs_type.value()->IsReadonly()) {
       failed = true;
-      I->report(ConstAssign, IC::Error, "", x->getLoc());
+      d->Report(ConstAssign, IC::Error, "", x->GetLoc());
     }
   });
 

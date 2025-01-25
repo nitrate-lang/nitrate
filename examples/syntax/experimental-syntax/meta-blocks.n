@@ -34,19 +34,19 @@ union QResult<T> {
   pub fn val ? {
     @({
       switch @build_type() {
-        case "release": ret this.val.get().get();
+        case "release": ret this.val.get().Get();
         case "debug":
         case "test":
           @panic_if(!this,
               "QResult::val called on an empty QResult.");
 
-          ret this.val.get().get();
+          ret this.val.get().Get();
       }
     });
   }
 
   pub fn err ? {
-    ret this.err.get();
+    ret this.err.Get();
   }
 
   pub fn conv(bool) => ret this.val.suffix() == 0;

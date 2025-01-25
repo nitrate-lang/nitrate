@@ -34,16 +34,10 @@
 #ifndef __NO3_CLEAN_CLEANUP_HH__
 #define __NO3_CLEAN_CLEANUP_HH__
 
-#include <filesystem>
-#include <optional>
-#include <set>
 #include <string>
 
-namespace no3 {
-  namespace clean {
-    bool CleanPackageSource(const std::string &package_src,
-                            bool verbose = false);
-  }
-}  // namespace no3
+namespace no3::clean {
+  auto CleanPackageSource(const std::string &package_src, bool verbose = false) -> bool;
+}
 
 #endif  // __NO3_CLEAN_CLEANUP_HH__

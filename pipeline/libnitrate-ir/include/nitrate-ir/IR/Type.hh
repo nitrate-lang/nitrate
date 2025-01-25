@@ -38,344 +38,344 @@
 
 namespace ncc::ir {
   template <class A>
-  class IR_Vertex_U1Ty final : public IR_Vertex_Type<A> {
+  class GenericU1Ty final : public GenericType<A> {
     friend A;
 
   public:
-    constexpr IR_Vertex_U1Ty() : IR_Vertex_Type<A>(IR_tU1) {}
+    constexpr GenericU1Ty() : GenericType<A>(IR_tU1) {}
   };
 
   template <class A>
-  class IR_Vertex_U8Ty final : public IR_Vertex_Type<A> {
+  class GenericU8Ty final : public GenericType<A> {
     friend A;
 
   public:
-    constexpr IR_Vertex_U8Ty() : IR_Vertex_Type<A>(IR_tU8) {}
+    constexpr GenericU8Ty() : GenericType<A>(IR_tU8) {}
   };
 
   template <class A>
-  class IR_Vertex_U16Ty final : public IR_Vertex_Type<A> {
+  class GenericU16Ty final : public GenericType<A> {
     friend A;
 
   public:
-    constexpr IR_Vertex_U16Ty() : IR_Vertex_Type<A>(IR_tU16) {}
+    constexpr GenericU16Ty() : GenericType<A>(IR_tU16) {}
   };
 
   template <class A>
-  class IR_Vertex_U32Ty final : public IR_Vertex_Type<A> {
+  class GenericU32Ty final : public GenericType<A> {
     friend A;
 
   public:
-    constexpr IR_Vertex_U32Ty() : IR_Vertex_Type<A>(IR_tU32) {}
+    constexpr GenericU32Ty() : GenericType<A>(IR_tU32) {}
   };
 
   template <class A>
-  class IR_Vertex_U64Ty final : public IR_Vertex_Type<A> {
+  class GenericU64Ty final : public GenericType<A> {
     friend A;
 
   public:
-    constexpr IR_Vertex_U64Ty() : IR_Vertex_Type<A>(IR_tU64) {}
+    constexpr GenericU64Ty() : GenericType<A>(IR_tU64) {}
   };
 
   template <class A>
-  class IR_Vertex_U128Ty final : public IR_Vertex_Type<A> {
+  class GenericU128Ty final : public GenericType<A> {
     friend A;
 
   public:
-    constexpr IR_Vertex_U128Ty() : IR_Vertex_Type<A>(IR_tU128) {}
+    constexpr GenericU128Ty() : GenericType<A>(IR_tU128) {}
   };
 
   template <class A>
-  class IR_Vertex_I8Ty final : public IR_Vertex_Type<A> {
+  class GenericI8Ty final : public GenericType<A> {
     friend A;
 
   public:
-    constexpr IR_Vertex_I8Ty() : IR_Vertex_Type<A>(IR_tI8) {}
+    constexpr GenericI8Ty() : GenericType<A>(IR_tI8) {}
   };
 
   template <class A>
-  class IR_Vertex_I16Ty final : public IR_Vertex_Type<A> {
+  class GenericI16Ty final : public GenericType<A> {
     friend A;
 
   public:
-    constexpr IR_Vertex_I16Ty() : IR_Vertex_Type<A>(IR_tI16){};
+    constexpr GenericI16Ty() : GenericType<A>(IR_tI16){};
   };
 
   template <class A>
-  class IR_Vertex_I32Ty final : public IR_Vertex_Type<A> {
+  class GenericI32Ty final : public GenericType<A> {
     friend A;
 
   public:
-    constexpr IR_Vertex_I32Ty() : IR_Vertex_Type<A>(IR_tI32) {}
+    constexpr GenericI32Ty() : GenericType<A>(IR_tI32) {}
   };
 
   template <class A>
-  class IR_Vertex_I64Ty final : public IR_Vertex_Type<A> {
+  class GenericI64Ty final : public GenericType<A> {
     friend A;
 
   public:
-    constexpr IR_Vertex_I64Ty() : IR_Vertex_Type<A>(IR_tI64) {}
+    constexpr GenericI64Ty() : GenericType<A>(IR_tI64) {}
   };
 
   template <class A>
-  class IR_Vertex_I128Ty final : public IR_Vertex_Type<A> {
+  class GenericI128Ty final : public GenericType<A> {
     friend A;
 
   public:
-    constexpr IR_Vertex_I128Ty() : IR_Vertex_Type<A>(IR_tI128) {}
+    constexpr GenericI128Ty() : GenericType<A>(IR_tI128) {}
   };
 
   template <class A>
-  class IR_Vertex_F16Ty final : public IR_Vertex_Type<A> {
+  class GenericF16Ty final : public GenericType<A> {
     friend A;
 
   public:
-    constexpr IR_Vertex_F16Ty() : IR_Vertex_Type<A>(IR_tF16_TY) {}
+    constexpr GenericF16Ty() : GenericType<A>(IR_tF16_TY) {}
   };
 
   template <class A>
-  class IR_Vertex_F32Ty final : public IR_Vertex_Type<A> {
+  class GenericF32Ty final : public GenericType<A> {
     friend A;
 
   public:
-    constexpr IR_Vertex_F32Ty() : IR_Vertex_Type<A>(IR_tF32_TY) {}
+    constexpr GenericF32Ty() : GenericType<A>(IR_tF32_TY) {}
   };
 
   template <class A>
-  class IR_Vertex_F64Ty final : public IR_Vertex_Type<A> {
+  class GenericF64Ty final : public GenericType<A> {
     friend A;
 
   public:
-    constexpr IR_Vertex_F64Ty() : IR_Vertex_Type<A>(IR_tF64_TY) {}
+    constexpr GenericF64Ty() : GenericType<A>(IR_tF64_TY) {}
   };
 
   template <class A>
-  class IR_Vertex_F128Ty final : public IR_Vertex_Type<A> {
+  class GenericF128Ty final : public GenericType<A> {
     friend A;
 
   public:
-    constexpr IR_Vertex_F128Ty() : IR_Vertex_Type<A>(IR_tF128_TY) {}
+    constexpr GenericF128Ty() : GenericType<A>(IR_tF128_TY) {}
   };
 
   template <class A>
-  class IR_Vertex_VoidTy final : public IR_Vertex_Type<A> {
+  class GenericVoidTy final : public GenericType<A> {
     friend A;
 
   public:
-    constexpr IR_Vertex_VoidTy() : IR_Vertex_Type<A>(IR_tVOID) {}
+    constexpr GenericVoidTy() : GenericType<A>(IR_tVOID) {}
   };
 
   template <class A>
-  class IR_Vertex_PtrTy final : public IR_Vertex_Type<A> {
+  class GenericPtrTy final : public GenericType<A> {
     friend A;
 
-    FlowPtr<IR_Vertex_Type<A>> m_pointee;
+    FlowPtr<GenericType<A>> m_pointee;
     uint8_t m_native_size;
 
   public:
-    constexpr IR_Vertex_PtrTy(auto pointee, size_t native_size = 8)
-        : IR_Vertex_Type<A>(IR_tPTR),
+    constexpr GenericPtrTy(auto pointee, size_t native_size = 8)
+        : GenericType<A>(IR_tPTR),
           m_pointee(pointee),
           m_native_size(native_size) {}
 
-    constexpr auto getPointee() const { return m_pointee; }
-    constexpr auto getNativeSize() const { return m_native_size; }
+    [[nodiscard]] constexpr auto GetPointee() const { return m_pointee; }
+    [[nodiscard]] constexpr auto GetNativeSize() const { return m_native_size; }
   };
 
   template <class A>
-  class IR_Vertex_ConstTy final : public IR_Vertex_Type<A> {
+  class GenericConstTy final : public GenericType<A> {
     friend A;
 
-    FlowPtr<IR_Vertex_Type<A>> m_item;
+    FlowPtr<GenericType<A>> m_item;
 
   public:
-    constexpr IR_Vertex_ConstTy(auto item)
-        : IR_Vertex_Type<A>(IR_tCONST), m_item(item) {}
+    constexpr GenericConstTy(auto item)
+        : GenericType<A>(IR_tCONST), m_item(item) {}
 
-    constexpr auto getItem() const { return m_item; }
+    [[nodiscard]] constexpr auto GetItem() const { return m_item; }
   };
 
   template <class A>
-  class IR_Vertex_OpaqueTy final : public IR_Vertex_Type<A> {
+  class GenericOpaqueTy final : public GenericType<A> {
     friend A;
 
     string m_name;
 
   public:
-    constexpr IR_Vertex_OpaqueTy(auto name)
-        : IR_Vertex_Type<A>(IR_tOPAQUE), m_name(name) {}
+    constexpr GenericOpaqueTy(auto name)
+        : GenericType<A>(IR_tOPAQUE), m_name(name) {}
 
-    constexpr auto getName() const { return m_name.get(); }
+    [[nodiscard]] constexpr auto GetName() const { return m_name.Get(); }
   };
 
   template <class A>
-  class IR_Vertex_StructTy final : public IR_Vertex_Type<A> {
+  class GenericStructTy final : public GenericType<A> {
     friend A;
 
-    std::span<FlowPtr<IR_Vertex_Type<A>>> m_fields;
+    std::span<FlowPtr<GenericType<A>>> m_fields;
 
   public:
-    constexpr IR_Vertex_StructTy(auto fields)
-        : IR_Vertex_Type<A>(IR_tSTRUCT), m_fields(fields) {}
+    constexpr GenericStructTy(auto fields)
+        : GenericType<A>(IR_tSTRUCT), m_fields(fields) {}
 
-    constexpr auto getFields() const { return m_fields; }
+    [[nodiscard]] constexpr auto GetFields() const { return m_fields; }
   };
 
   template <class A>
-  class IR_Vertex_UnionTy final : public IR_Vertex_Type<A> {
+  class GenericUnionTy final : public GenericType<A> {
     friend A;
 
-    std::span<FlowPtr<IR_Vertex_Type<A>>> m_fields;
+    std::span<FlowPtr<GenericType<A>>> m_fields;
 
   public:
-    constexpr IR_Vertex_UnionTy(auto fields)
-        : IR_Vertex_Type<A>(IR_tUNION), m_fields(fields) {}
+    constexpr GenericUnionTy(auto fields)
+        : GenericType<A>(IR_tUNION), m_fields(fields) {}
 
-    constexpr auto getFields() const { return m_fields; }
+    [[nodiscard]] constexpr auto GetFields() const { return m_fields; }
   };
 
   template <class A>
-  class IR_Vertex_ArrayTy final : public IR_Vertex_Type<A> {
+  class GenericArrayTy final : public GenericType<A> {
     friend A;
 
-    FlowPtr<IR_Vertex_Type<A>> m_element;
+    FlowPtr<GenericType<A>> m_element;
     size_t m_size;
 
   public:
-    constexpr IR_Vertex_ArrayTy(auto element, auto size)
-        : IR_Vertex_Type<A>(IR_tARRAY), m_element(element), m_size(size) {}
+    constexpr GenericArrayTy(auto element, auto size)
+        : GenericType<A>(IR_tARRAY), m_element(element), m_size(size) {}
 
-    constexpr auto getElement() const { return m_element; }
-    constexpr auto getCount() const { return m_size; }
+    [[nodiscard]] constexpr auto GetElement() const { return m_element; }
+    [[nodiscard]] constexpr auto GetCount() const { return m_size; }
   };
 
   template <class A>
-  class IR_Vertex_FnTy final : public IR_Vertex_Type<A> {
+  class GenericFnTy final : public GenericType<A> {
     friend A;
 
-    std::span<FlowPtr<IR_Vertex_Type<A>>> m_params;
-    FlowPtr<IR_Vertex_Type<A>> m_return;
+    std::span<FlowPtr<GenericType<A>>> m_params;
+    FlowPtr<GenericType<A>> m_return;
     uint8_t m_native_size;
     bool m_variadic;
 
   public:
-    constexpr IR_Vertex_FnTy(auto params, auto ret, auto variadic,
-                             size_t native_size = 8)
-        : IR_Vertex_Type<A>(IR_tFUNC),
+    constexpr GenericFnTy(auto params, auto ret, auto variadic,
+                          size_t native_size = 8)
+        : GenericType<A>(IR_tFUNC),
           m_params(params),
           m_return(ret),
           m_native_size(native_size),
           m_variadic(variadic) {}
 
-    constexpr auto getParams() const { return m_params; }
-    constexpr auto getReturn() const { return m_return; }
-    constexpr auto isVariadic() const { return m_variadic; }
-    constexpr auto getNativeSize() const { return m_native_size; }
+    [[nodiscard]] constexpr auto GetParams() const { return m_params; }
+    [[nodiscard]] constexpr auto GetReturn() const { return m_return; }
+    [[nodiscard]] constexpr auto IsVariadic() const { return m_variadic; }
+    [[nodiscard]] constexpr auto GetNativeSize() const { return m_native_size; }
   };
 
   template <class A>
-  class IR_Vertex_Tmp final : public IR_Vertex_Type<A> {
+  class GenericTmp final : public GenericType<A> {
     friend A;
 
     TmpType m_type;
     TmpNodeCradle<A> m_data;
 
   public:
-    IR_Vertex_Tmp(TmpType type, TmpNodeCradle<A> data = {})
-        : IR_Vertex_Type<A>(IR_tTMP), m_type(type), m_data(data) {}
+    GenericTmp(TmpType type, TmpNodeCradle<A> data = {})
+        : GenericType<A>(IR_tTMP), m_type(type), m_data(data) {}
 
-    auto getTmpType() { return m_type; }
-    auto getData() const { return m_data; }
+    auto GetTmpType() { return m_type; }
+    [[nodiscard]] auto GetData() const { return m_data; }
   };
 
-  static inline U1Ty* getU1Ty() {
+  static inline auto GetU1Ty() -> U1Ty* {
     static U1Ty u1;
     return &u1;
   }
 
-  static inline U8Ty* getU8Ty() {
+  static inline auto GetU8Ty() -> U8Ty* {
     static U8Ty u8;
     return &u8;
   }
 
-  static inline U16Ty* getU16Ty() {
+  static inline auto GetU16Ty() -> U16Ty* {
     static U16Ty u16;
     return &u16;
   }
 
-  static inline U32Ty* getU32Ty() {
+  static inline auto GetU32Ty() -> U32Ty* {
     static U32Ty u32;
     return &u32;
   }
 
-  static inline U64Ty* getU64Ty() {
+  static inline auto GetU64Ty() -> U64Ty* {
     static U64Ty u64;
     return &u64;
   }
 
-  static inline U128Ty* getU128Ty() {
+  static inline auto GetU128Ty() -> U128Ty* {
     static U128Ty u128;
     return &u128;
   }
 
-  static inline I8Ty* getI8Ty() {
+  static inline auto GetI8Ty() -> I8Ty* {
     static I8Ty i8;
     return &i8;
   }
 
-  static inline I16Ty* getI16Ty() {
+  static inline auto GetI16Ty() -> I16Ty* {
     static I16Ty i16;
     return &i16;
   }
 
-  static inline I32Ty* getI32Ty() {
+  static inline auto GetI32Ty() -> I32Ty* {
     static I32Ty i32;
     return &i32;
   }
 
-  static inline I64Ty* getI64Ty() {
+  static inline auto GetI64Ty() -> I64Ty* {
     static I64Ty i64;
     return &i64;
   }
 
-  static inline I128Ty* getI128Ty() {
+  static inline auto GetI128Ty() -> I128Ty* {
     static I128Ty i128;
     return &i128;
   }
 
-  static inline F16Ty* getF16Ty() {
+  static inline auto GetF16Ty() -> F16Ty* {
     static F16Ty f16;
     return &f16;
   }
 
-  static inline F32Ty* getF32Ty() {
+  static inline auto GetF32Ty() -> F32Ty* {
     static F32Ty f32;
     return &f32;
   }
 
-  static inline F64Ty* getF64Ty() {
+  static inline auto GetF64Ty() -> F64Ty* {
     static F64Ty f64;
     return &f64;
   }
 
-  static inline F128Ty* getF128Ty() {
+  static inline auto GetF128Ty() -> F128Ty* {
     static F128Ty f128;
     return &f128;
   }
 
-  static inline VoidTy* getVoidTy() {
+  static inline auto GetVoidTy() -> VoidTy* {
     static VoidTy void_ty;
     return &void_ty;
   }
 
-  PtrTy* getPtrTy(FlowPtr<Type> pointee, uint8_t native_size = 8);
-  ConstTy* getConstTy(FlowPtr<Type> item);
-  OpaqueTy* getOpaqueTy(string name);
-  StructTy* getStructTy(std::span<FlowPtr<Type>> fields);
-  UnionTy* getUnionTy(std::span<FlowPtr<Type>> fields);
-  ArrayTy* getArrayTy(FlowPtr<Type> element, size_t size);
-  FnTy* getFnTy(std::span<FlowPtr<Type>> params, FlowPtr<Type> ret,
-                bool variadic, size_t native_size = 8);
+  auto GetPtrTy(FlowPtr<Type> pointee, uint8_t native_size = 8) -> PtrTy*;
+  auto GetConstTy(FlowPtr<Type> item) -> ConstTy*;
+  auto GetOpaqueTy(string name) -> OpaqueTy*;
+  auto GetStructTy(std::span<FlowPtr<Type>> fields) -> StructTy*;
+  auto GetUnionTy(std::span<FlowPtr<Type>> fields) -> UnionTy*;
+  auto GetArrayTy(FlowPtr<Type> element, size_t size) -> ArrayTy*;
+  auto GetFnTy(std::span<FlowPtr<Type>> params, FlowPtr<Type> ret,
+               bool variadic, size_t native_size = 8) -> FnTy*;
 }  // namespace ncc::ir
 
 #endif

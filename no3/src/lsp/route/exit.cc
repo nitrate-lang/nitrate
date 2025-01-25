@@ -1,8 +1,9 @@
-#include <lsp/core/server.hh>
 #include <lsp/route/RoutesList.hh>
 
-void do_exit(const lsp::NotificationMessage&) {
-  LOG(INFO) << "Exiting language server";
+using namespace no3::lsp;
 
-  exit(0);
+void srv::DoExit(const NotificationMessage&) {
+  /// FIXME: Ensure all threads are cleaned up
+
+  std::exit(0);
 }

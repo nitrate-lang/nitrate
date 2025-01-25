@@ -37,7 +37,7 @@
 #include <nitrate-core/Logger.hh>
 
 namespace ncc::parse::ec {
-  std::string Formatter(std::string_view msg, Sev sev);
+  auto Formatter(std::string_view msg, Sev sev) -> std::string;
 
   NCC_EC_GROUP(ParseEG);
 

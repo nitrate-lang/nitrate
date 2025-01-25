@@ -59,7 +59,10 @@ endif()
 
 add_subdirectory(pipeline)
 add_subdirectory(no3)
-add_subdirectory(examples)
+
+if(BUILD_TESTING)
+  add_subdirectory(examples)
+endif()
 
 if(CMAKE_BUILD_TYPE STREQUAL "Release" AND BUILD_SHARED_LIBS)
   foreach(lib nitrate-core

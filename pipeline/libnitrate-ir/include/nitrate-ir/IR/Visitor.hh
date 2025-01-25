@@ -43,283 +43,283 @@ namespace ncc::ir {
   public:
     virtual ~IRVisitor() = default;
 
-    virtual void visit(FlowPtr<IR_Vertex_Expr<A>> n) = 0;
-    virtual void visit(FlowPtr<IR_Vertex_BinExpr<A>> n) = 0;
-    virtual void visit(FlowPtr<IR_Vertex_Unary<A>> n) = 0;
-    virtual void visit(FlowPtr<IR_Vertex_U1Ty<A>> n) = 0;
-    virtual void visit(FlowPtr<IR_Vertex_U8Ty<A>> n) = 0;
-    virtual void visit(FlowPtr<IR_Vertex_U16Ty<A>> n) = 0;
-    virtual void visit(FlowPtr<IR_Vertex_U32Ty<A>> n) = 0;
-    virtual void visit(FlowPtr<IR_Vertex_U64Ty<A>> n) = 0;
-    virtual void visit(FlowPtr<IR_Vertex_U128Ty<A>> n) = 0;
-    virtual void visit(FlowPtr<IR_Vertex_I8Ty<A>> n) = 0;
-    virtual void visit(FlowPtr<IR_Vertex_I16Ty<A>> n) = 0;
-    virtual void visit(FlowPtr<IR_Vertex_I32Ty<A>> n) = 0;
-    virtual void visit(FlowPtr<IR_Vertex_I64Ty<A>> n) = 0;
-    virtual void visit(FlowPtr<IR_Vertex_I128Ty<A>> n) = 0;
-    virtual void visit(FlowPtr<IR_Vertex_F16Ty<A>> n) = 0;
-    virtual void visit(FlowPtr<IR_Vertex_F32Ty<A>> n) = 0;
-    virtual void visit(FlowPtr<IR_Vertex_F64Ty<A>> n) = 0;
-    virtual void visit(FlowPtr<IR_Vertex_F128Ty<A>> n) = 0;
-    virtual void visit(FlowPtr<IR_Vertex_VoidTy<A>> n) = 0;
-    virtual void visit(FlowPtr<IR_Vertex_PtrTy<A>> n) = 0;
-    virtual void visit(FlowPtr<IR_Vertex_ConstTy<A>> n) = 0;
-    virtual void visit(FlowPtr<IR_Vertex_OpaqueTy<A>> n) = 0;
-    virtual void visit(FlowPtr<IR_Vertex_StructTy<A>> n) = 0;
-    virtual void visit(FlowPtr<IR_Vertex_UnionTy<A>> n) = 0;
-    virtual void visit(FlowPtr<IR_Vertex_ArrayTy<A>> n) = 0;
-    virtual void visit(FlowPtr<IR_Vertex_FnTy<A>> n) = 0;
-    virtual void visit(FlowPtr<IR_Vertex_Int<A>> n) = 0;
-    virtual void visit(FlowPtr<IR_Vertex_Float<A>> n) = 0;
-    virtual void visit(FlowPtr<IR_Vertex_List<A>> n) = 0;
-    virtual void visit(FlowPtr<IR_Vertex_Call<A>> n) = 0;
-    virtual void visit(FlowPtr<IR_Vertex_Seq<A>> n) = 0;
-    virtual void visit(FlowPtr<IR_Vertex_Index<A>> n) = 0;
-    virtual void visit(FlowPtr<IR_Vertex_Ident<A>> n) = 0;
-    virtual void visit(FlowPtr<IR_Vertex_Extern<A>> n) = 0;
-    virtual void visit(FlowPtr<IR_Vertex_Local<A>> n) = 0;
-    virtual void visit(FlowPtr<IR_Vertex_Ret<A>> n) = 0;
-    virtual void visit(FlowPtr<IR_Vertex_Brk<A>> n) = 0;
-    virtual void visit(FlowPtr<IR_Vertex_Cont<A>> n) = 0;
-    virtual void visit(FlowPtr<IR_Vertex_If<A>> n) = 0;
-    virtual void visit(FlowPtr<IR_Vertex_While<A>> n) = 0;
-    virtual void visit(FlowPtr<IR_Vertex_For<A>> n) = 0;
-    virtual void visit(FlowPtr<IR_Vertex_Case<A>> n) = 0;
-    virtual void visit(FlowPtr<IR_Vertex_Switch<A>> n) = 0;
-    virtual void visit(FlowPtr<IR_Vertex_Function<A>> n) = 0;
-    virtual void visit(FlowPtr<IR_Vertex_Asm<A>> n) = 0;
-    virtual void visit(FlowPtr<IR_Vertex_Tmp<A>> n) = 0;
+    virtual void Visit(FlowPtr<GenericExpr<A>> n) = 0;
+    virtual void Visit(FlowPtr<GenericBinaryExpression<A>> n) = 0;
+    virtual void Visit(FlowPtr<GenericUnary<A>> n) = 0;
+    virtual void Visit(FlowPtr<GenericU1Ty<A>> n) = 0;
+    virtual void Visit(FlowPtr<GenericU8Ty<A>> n) = 0;
+    virtual void Visit(FlowPtr<GenericU16Ty<A>> n) = 0;
+    virtual void Visit(FlowPtr<GenericU32Ty<A>> n) = 0;
+    virtual void Visit(FlowPtr<GenericU64Ty<A>> n) = 0;
+    virtual void Visit(FlowPtr<GenericU128Ty<A>> n) = 0;
+    virtual void Visit(FlowPtr<GenericI8Ty<A>> n) = 0;
+    virtual void Visit(FlowPtr<GenericI16Ty<A>> n) = 0;
+    virtual void Visit(FlowPtr<GenericI32Ty<A>> n) = 0;
+    virtual void Visit(FlowPtr<GenericI64Ty<A>> n) = 0;
+    virtual void Visit(FlowPtr<GenericI128Ty<A>> n) = 0;
+    virtual void Visit(FlowPtr<GenericF16Ty<A>> n) = 0;
+    virtual void Visit(FlowPtr<GenericF32Ty<A>> n) = 0;
+    virtual void Visit(FlowPtr<GenericF64Ty<A>> n) = 0;
+    virtual void Visit(FlowPtr<GenericF128Ty<A>> n) = 0;
+    virtual void Visit(FlowPtr<GenericVoidTy<A>> n) = 0;
+    virtual void Visit(FlowPtr<GenericPtrTy<A>> n) = 0;
+    virtual void Visit(FlowPtr<GenericConstTy<A>> n) = 0;
+    virtual void Visit(FlowPtr<GenericOpaqueTy<A>> n) = 0;
+    virtual void Visit(FlowPtr<GenericStructTy<A>> n) = 0;
+    virtual void Visit(FlowPtr<GenericUnionTy<A>> n) = 0;
+    virtual void Visit(FlowPtr<GenericArrayTy<A>> n) = 0;
+    virtual void Visit(FlowPtr<GenericFnTy<A>> n) = 0;
+    virtual void Visit(FlowPtr<GenericInt<A>> n) = 0;
+    virtual void Visit(FlowPtr<GenericFloat<A>> n) = 0;
+    virtual void Visit(FlowPtr<GenericList<A>> n) = 0;
+    virtual void Visit(FlowPtr<GenericCall<A>> n) = 0;
+    virtual void Visit(FlowPtr<GenericSeq<A>> n) = 0;
+    virtual void Visit(FlowPtr<GenericIndex<A>> n) = 0;
+    virtual void Visit(FlowPtr<GenericIdentifier<A>> n) = 0;
+    virtual void Visit(FlowPtr<GenericExtern<A>> n) = 0;
+    virtual void Visit(FlowPtr<GenericLocal<A>> n) = 0;
+    virtual void Visit(FlowPtr<GenericRet<A>> n) = 0;
+    virtual void Visit(FlowPtr<GenericBrk<A>> n) = 0;
+    virtual void Visit(FlowPtr<GenericCont<A>> n) = 0;
+    virtual void Visit(FlowPtr<GenericIf<A>> n) = 0;
+    virtual void Visit(FlowPtr<GenericWhile<A>> n) = 0;
+    virtual void Visit(FlowPtr<GenericFor<A>> n) = 0;
+    virtual void Visit(FlowPtr<GenericCase<A>> n) = 0;
+    virtual void Visit(FlowPtr<GenericSwitch<A>> n) = 0;
+    virtual void Visit(FlowPtr<GenericFunction<A>> n) = 0;
+    virtual void Visit(FlowPtr<GenericAsm<A>> n) = 0;
+    virtual void Visit(FlowPtr<GenericTmp<A>> n) = 0;
 
     template <typename T>
-    void dispatch(FlowPtr<T> n) {
-      switch (n->getKind()) {
+    void Dispatch(FlowPtr<T> n) {
+      switch (n->GetKind()) {
         case IR_eBIN: {
-          visit(n.template as<IR_Vertex_BinExpr<A>>());
+          Visit(n.template As<GenericBinaryExpression<A>>());
           break;
         }
 
         case IR_eUNARY: {
-          visit(n.template as<IR_Vertex_Unary<A>>());
+          Visit(n.template As<GenericUnary<A>>());
           break;
         }
 
         case IR_eINT: {
-          visit(n.template as<IR_Vertex_Int<A>>());
+          Visit(n.template As<GenericInt<A>>());
           break;
         }
 
         case IR_eFLOAT: {
-          visit(n.template as<IR_Vertex_Float<A>>());
+          Visit(n.template As<GenericFloat<A>>());
           break;
         }
 
         case IR_eLIST: {
-          visit(n.template as<IR_Vertex_List<A>>());
+          Visit(n.template As<GenericList<A>>());
           break;
         }
 
         case IR_eCALL: {
-          visit(n.template as<IR_Vertex_Call<A>>());
+          Visit(n.template As<GenericCall<A>>());
           break;
         }
 
         case IR_eSEQ: {
-          visit(n.template as<IR_Vertex_Seq<A>>());
+          Visit(n.template As<GenericSeq<A>>());
           break;
         }
 
         case IR_eINDEX: {
-          visit(n.template as<IR_Vertex_Index<A>>());
+          Visit(n.template As<GenericIndex<A>>());
           break;
         }
 
         case IR_eIDENT: {
-          visit(n.template as<IR_Vertex_Ident<A>>());
+          Visit(n.template As<GenericIdentifier<A>>());
           break;
         }
 
         case IR_eEXTERN: {
-          visit(n.template as<IR_Vertex_Extern<A>>());
+          Visit(n.template As<GenericExtern<A>>());
           break;
         }
 
         case IR_eLOCAL: {
-          visit(n.template as<IR_Vertex_Local<A>>());
+          Visit(n.template As<GenericLocal<A>>());
           break;
         }
 
         case IR_eRET: {
-          visit(n.template as<IR_Vertex_Ret<A>>());
+          Visit(n.template As<GenericRet<A>>());
           break;
         }
 
         case IR_eBRK: {
-          visit(n.template as<IR_Vertex_Brk<A>>());
+          Visit(n.template As<GenericBrk<A>>());
           break;
         }
 
         case IR_eSKIP: {
-          visit(n.template as<IR_Vertex_Cont<A>>());
+          Visit(n.template As<GenericCont<A>>());
           break;
         }
 
         case IR_eIF: {
-          visit(n.template as<IR_Vertex_If<A>>());
+          Visit(n.template As<GenericIf<A>>());
           break;
         }
 
         case IR_eWHILE: {
-          visit(n.template as<IR_Vertex_While<A>>());
+          Visit(n.template As<GenericWhile<A>>());
           break;
         }
 
         case IR_eFOR: {
-          visit(n.template as<IR_Vertex_For<A>>());
+          Visit(n.template As<GenericFor<A>>());
           break;
         }
 
         case IR_eCASE: {
-          visit(n.template as<IR_Vertex_Case<A>>());
+          Visit(n.template As<GenericCase<A>>());
           break;
         }
 
         case IR_eSWITCH: {
-          visit(n.template as<IR_Vertex_Switch<A>>());
+          Visit(n.template As<GenericSwitch<A>>());
           break;
         }
 
         case IR_eFUNCTION: {
-          visit(n.template as<IR_Vertex_Function<A>>());
+          Visit(n.template As<GenericFunction<A>>());
           break;
         }
 
         case IR_eASM: {
-          visit(n.template as<IR_Vertex_Asm<A>>());
+          Visit(n.template As<GenericAsm<A>>());
           break;
         }
 
         case IR_eIGN: {
-          visit(n.template as<IR_Vertex_Expr<A>>());
+          Visit(n.template As<GenericExpr<A>>());
           break;
         }
 
         case IR_tU1: {
-          visit(n.template as<IR_Vertex_U1Ty<A>>());
+          Visit(n.template As<GenericU1Ty<A>>());
           break;
         }
 
         case IR_tU8: {
-          visit(n.template as<IR_Vertex_U8Ty<A>>());
+          Visit(n.template As<GenericU8Ty<A>>());
           break;
         }
 
         case IR_tU16: {
-          visit(n.template as<IR_Vertex_U16Ty<A>>());
+          Visit(n.template As<GenericU16Ty<A>>());
           break;
         }
 
         case IR_tU32: {
-          visit(n.template as<IR_Vertex_U32Ty<A>>());
+          Visit(n.template As<GenericU32Ty<A>>());
           break;
         }
 
         case IR_tU64: {
-          visit(n.template as<IR_Vertex_U64Ty<A>>());
+          Visit(n.template As<GenericU64Ty<A>>());
           break;
         }
 
         case IR_tU128: {
-          visit(n.template as<IR_Vertex_U128Ty<A>>());
+          Visit(n.template As<GenericU128Ty<A>>());
           break;
         }
 
         case IR_tI8: {
-          visit(n.template as<IR_Vertex_I8Ty<A>>());
+          Visit(n.template As<GenericI8Ty<A>>());
           break;
         }
 
         case IR_tI16: {
-          visit(n.template as<IR_Vertex_I16Ty<A>>());
+          Visit(n.template As<GenericI16Ty<A>>());
           break;
         }
 
         case IR_tI32: {
-          visit(n.template as<IR_Vertex_I32Ty<A>>());
+          Visit(n.template As<GenericI32Ty<A>>());
           break;
         }
 
         case IR_tI64: {
-          visit(n.template as<IR_Vertex_I64Ty<A>>());
+          Visit(n.template As<GenericI64Ty<A>>());
           break;
         }
 
         case IR_tI128: {
-          visit(n.template as<IR_Vertex_I128Ty<A>>());
+          Visit(n.template As<GenericI128Ty<A>>());
           break;
         }
 
         case IR_tF16_TY: {
-          visit(n.template as<IR_Vertex_F16Ty<A>>());
+          Visit(n.template As<GenericF16Ty<A>>());
           break;
         }
 
         case IR_tF32_TY: {
-          visit(n.template as<IR_Vertex_F32Ty<A>>());
+          Visit(n.template As<GenericF32Ty<A>>());
           break;
         }
 
         case IR_tF64_TY: {
-          visit(n.template as<IR_Vertex_F64Ty<A>>());
+          Visit(n.template As<GenericF64Ty<A>>());
           break;
         }
 
         case IR_tF128_TY: {
-          visit(n.template as<IR_Vertex_F128Ty<A>>());
+          Visit(n.template As<GenericF128Ty<A>>());
           break;
         }
 
         case IR_tVOID: {
-          visit(n.template as<IR_Vertex_VoidTy<A>>());
+          Visit(n.template As<GenericVoidTy<A>>());
           break;
         }
 
         case IR_tPTR: {
-          visit(n.template as<IR_Vertex_PtrTy<A>>());
+          Visit(n.template As<GenericPtrTy<A>>());
           break;
         }
 
         case IR_tCONST: {
-          visit(n.template as<IR_Vertex_ConstTy<A>>());
+          Visit(n.template As<GenericConstTy<A>>());
           break;
         }
 
         case IR_tOPAQUE: {
-          visit(n.template as<IR_Vertex_OpaqueTy<A>>());
+          Visit(n.template As<GenericOpaqueTy<A>>());
           break;
         }
 
         case IR_tSTRUCT: {
-          visit(n.template as<IR_Vertex_StructTy<A>>());
+          Visit(n.template As<GenericStructTy<A>>());
           break;
         }
 
         case IR_tUNION: {
-          visit(n.template as<IR_Vertex_UnionTy<A>>());
+          Visit(n.template As<GenericUnionTy<A>>());
           break;
         }
 
         case IR_tARRAY: {
-          visit(n.template as<IR_Vertex_ArrayTy<A>>());
+          Visit(n.template As<GenericArrayTy<A>>());
           break;
         }
 
         case IR_tFUNC: {
-          visit(n.template as<IR_Vertex_FnTy<A>>());
+          Visit(n.template As<GenericFnTy<A>>());
           break;
         }
 
         case IR_tTMP: {
-          visit(n.template as<IR_Vertex_Tmp<A>>());
+          Visit(n.template As<GenericTmp<A>>());
           break;
         }
       }

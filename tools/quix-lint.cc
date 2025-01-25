@@ -2,16 +2,16 @@
 #include <string>
 #include <vector>
 
-static std::vector<std::string> checks = {
-    "+official-styleguide",    "+no-redundant-cast", "+memory-safety",
-    "+better-data-structures", "+better-algorithms",
+static const std::vector<std::string> CHECKS = {
+    "official-styleguide",    "no-redundant-cast", "memory-safety",
+    "better-data-structures", "better-algorithms",
 };
 
-static std::string get_lint_options() {
+static std::string GetLintOptions() {
   std::string flags;
-  for (auto it = checks.begin(); it != checks.end(); ++it) {
+  for (auto it = CHECKS.begin(); it != CHECKS.end(); ++it) {
     flags += "+" + *it;
-    if (it + 1 != checks.end()) {
+    if (it + 1 != CHECKS.end()) {
       flags += ' ';
     }
   }
@@ -20,5 +20,8 @@ static std::string get_lint_options() {
 }
 
 int main() {
-  return !nitrate::pipeline(stdin, stdout, {"lint", get_lint_options()}).get();
+  return nitrate::Pipeline(std::cin, std::cout, {"lint", GetLintOptions()})
+                 .Get()
+             ? 0
+             : 1;
 }

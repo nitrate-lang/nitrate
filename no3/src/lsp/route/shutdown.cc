@@ -1,8 +1,7 @@
-#include <lsp/core/server.hh>
 #include <lsp/route/RoutesList.hh>
 
-void do_shutdown(const lsp::RequestMessage&, lsp::ResponseMessage& resp) {
-  LOG(INFO) << "Shutdown requested";
+using namespace no3::lsp;
 
-  resp->SetObject();
+void srv::DoShutdown(const RequestMessage&, ResponseMessage&) {
+  /// TODO: Cleanup resources
 }

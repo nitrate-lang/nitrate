@@ -32,29 +32,27 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <nitrate-seq/Sequencer.hh>
-#include <sys/List.hh>
 
 extern "C" {
 #include <lua/lauxlib.h>
 }
 
-int ncc::seq::sys_emit(lua_State* L) {
-  int nargs = lua_gettop(L);
-  if (nargs < 1) {
-    return luaL_error(L, "sys_emit: expected at least 1 argument, got %d",
-                      nargs);
+using namespace ncc::seq;
+
+auto Sequencer::SysEmit() -> int {
+  auto *lua = m_shared->m_L;
+
+  auto nargs = lua_gettop(lua);
+  if (nargs != 1) {
+    return luaL_error(lua, "expected 1 argument, got %d", nargs);
   }
 
-  Sequencer* obj = get_engine();
-
-  for (int i = 1; i <= nargs; i++) {
-    if (!lua_isstring(L, i)) {
-      return luaL_error(L, "sys_emit: expected string, got %s",
-                        lua_typename(L, lua_type(L, i)));
-    }
-
-    obj->RecursiveExpand(lua_tostring(L, i));
+  if (lua_isstring(lua, 1) == 0) {
+    return luaL_error(lua, "expected string, got %s",
+                      lua_typename(lua, lua_type(lua, 1)));
   }
+
+  SequenceSource(lua_tostring(lua, 1));
 
   return 0;
 }

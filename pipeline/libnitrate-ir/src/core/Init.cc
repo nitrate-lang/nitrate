@@ -40,9 +40,9 @@ using namespace ncc::ir;
 
 NCC_EXPORT ncc::LibraryRC<IRLibrarySetup> ncc::ir::IRLibrary;
 
-extern void IR_resetTypeCache(void);
+extern void IRResetTypeCache();
 
-NCC_EXPORT bool IRLibrarySetup::Init() {
+NCC_EXPORT auto IRLibrarySetup::Init() -> bool {
   if (!ncc::CoreLibrary.InitRC()) {
     return false;
   }
@@ -55,12 +55,12 @@ NCC_EXPORT bool IRLibrarySetup::Init() {
 }
 
 NCC_EXPORT void IRLibrarySetup::Deinit() {
-  IR_resetTypeCache();
+  IRResetTypeCache();
 
   parse::ParseLibrary.DeinitRC();
   ncc::CoreLibrary.DeinitRC();
 }
 
-NCC_EXPORT std::string_view IRLibrarySetup::GetVersionId() {
+NCC_EXPORT auto IRLibrarySetup::GetVersionId() -> std::string_view {
   return __TARGET_VERSION;
 }

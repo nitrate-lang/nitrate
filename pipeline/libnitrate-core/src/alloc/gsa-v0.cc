@@ -31,64 +31,99 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <stdint.h>
-#include <stdlib.h>
-
-#include <alloc/Collection.hh>
 #include <cstring>
+#include <mutex>
+#include <nitrate-core/Allocate.hh>
+#include <nitrate-core/Init.hh>
 #include <nitrate-core/Logger.hh>
+#include <nitrate-core/Macro.hh>
 #include <vector>
 
 using namespace ncc;
+using namespace ncc;
 
-#define REGION_SIZE (1024 * 16)
+static constexpr auto kPrimarySegmentSize = 1024 * 16;
 
-static inline uintptr_t ALIGNED(uintptr_t ptr, size_t align) {
-  return (ptr % align) ? (ptr + (align - (ptr % align))) : ptr;
+static NCC_FORCE_INLINE auto ALIGNED(uint8_t *ptr, size_t align) -> uint8_t * {
+  size_t mod = reinterpret_cast<uintptr_t>(ptr) % align;
+  return mod == 0 ? ptr : (ptr + (align - mod));
 }
 
-dyn_arena::PImpl::PImpl() { alloc_region(REGION_SIZE); }
+struct Segment {
+  uint8_t *m_base = nullptr, *m_offset = nullptr;
+  size_t m_size = 0;
+};
 
-dyn_arena::PImpl::~PImpl() {
-  for (size_t i = 0; i < m_bases.size(); i++) {
-    delete[] reinterpret_cast<uint8_t *>(m_bases[i].base);
-  }
-}
+class ncc::DynamicArena::PImpl final {
+  std::vector<Segment> m_bases;
+  std::mutex m_mutex;
 
-void *dyn_arena::PImpl::alloc(size_t size, size_t alignment) {
-  if (size == 0 || alignment == 0) {
-    return nullptr;
-  }
-
-  m_mutex.lock();
-
-  uintptr_t start;
-
-  if (size > REGION_SIZE) [[unlikely]] {
-    alloc_region(size);
+  void AllocRegion(size_t size) {
+    auto *base = new uint8_t[size];
+    m_bases.push_back({base, base, size});
   }
 
-  auto &R = m_bases.back();
+public:
+  PImpl() { AllocRegion(kPrimarySegmentSize); }
 
-  start = ALIGNED(R.offset, alignment);
+  ~PImpl() {
+    for (auto &base : m_bases) {
+      delete[] base.m_base;
+    }
+  }
 
-  if ((start + size) <= R.base + R.size) [[likely]] {
-    R.offset = start + size;
-  } else {
-    alloc_region(REGION_SIZE);
-
-    start = ALIGNED(m_bases.back().offset, alignment);
-    if ((start + size) > m_bases.back().base + m_bases.back().size)
-        [[unlikely]] {
-      qcore_panicf(
-          "Out of memory: failed to allocate %zu bytes @ alignment %zu", size,
-          alignment);
+  auto Alloc(size_t size, size_t alignment) -> void * {
+    if (size == 0 || alignment == 0) [[unlikely]] {
+      return nullptr;
     }
 
-    m_bases.back().offset = start + size;
+    bool sync = EnableSync;
+    if (sync) {
+      m_mutex.lock();
+    }
+
+    // Put large allocations in their own segment
+    if (size + alignment > kPrimarySegmentSize) [[unlikely]] {
+      AllocRegion(size);
+    }
+
+    auto &b = m_bases.back();
+    auto *start = ALIGNED(b.m_offset, alignment);
+
+    // Check if we can allocate in the current segment
+    if ((start + size) <= b.m_base + b.m_size) [[likely]] {
+      b.m_offset = start + size;
+    } else {
+      AllocRegion(kPrimarySegmentSize);
+
+      start = ALIGNED(m_bases.back().m_offset, alignment);
+
+      // I hope my math is right
+      qcore_assert((start + size) <=
+                   m_bases.back().m_base + m_bases.back().m_size);
+
+      m_bases.back().m_offset = start + size;
+    }
+
+    if (sync) {
+      m_mutex.unlock();
+    }
+
+    return start;
   }
+};
 
-  m_mutex.unlock();
+NCC_EXPORT DynamicArena::DynamicArena() {
+  m_arena = new PImpl();
+  m_owned = true;
+}
 
-  return reinterpret_cast<void *>(start);
+NCC_EXPORT DynamicArena::~DynamicArena() {
+  if (m_owned) {
+    delete m_arena;
+  }
+}
+
+NCC_EXPORT auto DynamicArena::Alloc(size_t size, size_t alignment) -> void * {
+  return m_arena->Alloc(size, alignment);
 }

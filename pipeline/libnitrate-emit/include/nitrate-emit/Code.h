@@ -39,19 +39,19 @@
 
 #include <nitrate-ir/IR/Fwd.hh>
 
-typedef enum {
+enum QcodeLangT {
   QCODE_C11,     /* Generate C 11 Source Code */
   QCODE_CXX11,   /* Generate C++ 11 Source Code */
   QCODE_TS,      /* Generate TypeScript Source Code */
   QCODE_RUST,    /* Generate Rust Source Code */
   QCODE_PYTHON3, /* Generate Python3 Source Code */
   QCODE_CSHARP,  /* Generate C# Source Code */
-} qcode_lang_t;
+};
 
 typedef enum {
   QCODE_MINIFY,
   QCODE_GOOGLE,
-} qcode_style_t;
+} QcodeStyleT;
 
 /**
  * @brief Transcompile the NR module to the target source language.
@@ -69,18 +69,18 @@ typedef enum {
  * Both `err` and `out` will be flushed before returning, irrespective of the
  * return value.
  */
-bool qcode_transcode(ncc::ir::IRModule* module, qcode_conf_t* conf,
-                     qcode_lang_t lang, qcode_style_t style, FILE* err,
-                     FILE* out);
+auto QcodeTranscode(ncc::ir::IRModule* module, QCodegenConfig* conf,
+                    QcodeLangT lang, QcodeStyleT style, FILE* err,
+                    FILE* out) -> bool;
 
 ///==============================================================================
 
-bool qcode_ir(ncc::ir::IRModule* module, qcode_conf_t* conf, FILE* err,
-              FILE* out);
-bool qcode_asm(ncc::ir::IRModule* module, qcode_conf_t* conf, FILE* err,
-               FILE* out);
-bool qcode_obj(ncc::ir::IRModule* module, qcode_conf_t* conf, FILE* err,
-               FILE* out);
+auto QcodeIR(ncc::ir::IRModule* module, QCodegenConfig* conf, FILE* err,
+             FILE* out) -> bool;
+auto QcodeAsm(ncc::ir::IRModule* module, QCodegenConfig* conf, FILE* err,
+              FILE* out) -> bool;
+auto QcodeObj(ncc::ir::IRModule* module, QCodegenConfig* conf, FILE* err,
+              FILE* out) -> bool;
 
 ///==============================================================================
 

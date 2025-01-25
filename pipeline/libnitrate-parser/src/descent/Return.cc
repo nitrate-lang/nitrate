@@ -37,41 +37,41 @@ using namespace ncc;
 using namespace ncc::lex;
 using namespace ncc::parse;
 
-FlowPtr<Stmt> Parser::recurse_return() {
-  if (next_if(PuncSemi)) {
-    return make<ReturnStmt>(std::nullopt)();
-  } else {
-    auto return_value = recurse_expr({
-        Token(Punc, PuncSemi),
-    });
-
-    if (!next_if(PuncSemi)) [[unlikely]] {
-      log << SyntaxError << current()
-          << "Expected ';' after the return statement.";
-    }
-
-    return make<ReturnStmt>(return_value)();
+auto Parser::PImpl::RecurseReturn() -> FlowPtr<Stmt> {
+  if (NextIf(PuncSemi)) {
+    return CreateNode<Return>(std::nullopt)();
   }
+
+  auto return_value = RecurseExpr({
+      Token(Punc, PuncSemi),
+  });
+
+  if (!NextIf(PuncSemi)) [[unlikely]] {
+    Log << SyntaxError << current()
+        << "Expected ';' after the return statement.";
+  }
+
+  return CreateNode<Return>(return_value)();
 }
 
-FlowPtr<Stmt> Parser::recurse_retif() {
-  auto return_if = recurse_expr({
+auto Parser::PImpl::RecurseRetif() -> FlowPtr<Stmt> {
+  auto return_if = RecurseExpr({
       Token(Punc, PuncComa),
   });
 
-  if (next_if(PuncComa)) [[likely]] {
-    auto return_value = recurse_expr({
+  if (NextIf(PuncComa)) [[likely]] {
+    auto return_value = RecurseExpr({
         Token(Punc, PuncSemi),
     });
 
-    if (!next_if(PuncSemi)) [[unlikely]] {
-      log << SyntaxError << current() << "Expected ';' after the retif value.";
+    if (!NextIf(PuncSemi)) [[unlikely]] {
+      Log << SyntaxError << current() << "Expected ';' after the retif value.";
     }
 
-    return make<ReturnIfStmt>(return_if, return_value)();
+    return CreateNode<ReturnIf>(return_if, return_value)();
   } else {
-    log << SyntaxError << current()
+    Log << SyntaxError << current()
         << "Expected ',' after the retif condition.";
-    return mock_stmt(QAST_RETIF);
+    return MockStmt(QAST_RETIF);
   }
 }

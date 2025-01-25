@@ -1,38 +1,37 @@
 #include <lsp/lang/CambrianStyleFormatter.hh>
 #include <nitrate-core/Logger.hh>
 #include <nitrate-core/Macro.hh>
-#include <nitrate-lexer/Lexer.hh>
+#include <nitrate-lexer/Scanner.hh>
 #include <nitrate-parser/AST.hh>
 #include <nitrate-parser/ASTCommon.hh>
 #include <sstream>
 #include <unordered_set>
 
-using namespace lsp::fmt;
+using namespace no3::lsp::fmt;
 
 using namespace ncc;
 using namespace ncc::parse;
 using namespace ncc::lex;
 
-CambrianFormatter::LineStreamWritter&
-CambrianFormatter::LineStreamWritter::operator<<(
-    std::ostream& (*func)(std::ostream&)) {
+auto CambrianFormatter::LineStreamWritter::operator<<(std::ostream& (*func)(
+    std::ostream&)) -> CambrianFormatter::LineStreamWritter& {
   qcore_assert(func ==
                static_cast<std::ostream& (*)(std::ostream&)>(std::endl));
 
   m_file << m_line_buffer.str() << "\n";
-  reset();
+  Reset();
 
   return *this;
 }
 
-CambrianFormatter::LineStreamWritter&
-CambrianFormatter::LineStreamWritter::operator<<(Operator op) {
+auto CambrianFormatter::LineStreamWritter::operator<<(Operator op)
+    -> CambrianFormatter::LineStreamWritter& {
   m_line_buffer << op;
   return *this;
 }
 
-CambrianFormatter::LineStreamWritter&
-CambrianFormatter::LineStreamWritter::operator<<(Vis v) {
+auto CambrianFormatter::LineStreamWritter::operator<<(Vis v)
+    -> CambrianFormatter::LineStreamWritter& {
   switch (v) {
     case Vis::Sec: {
       m_line_buffer << "sec";
@@ -52,14 +51,14 @@ CambrianFormatter::LineStreamWritter::operator<<(Vis v) {
   return *this;
 }
 
-std::string CambrianFormatter::escape_char_literal(char ch) const {
-  if (!std::isspace(ch) && !std::isprint(ch)) {
+auto CambrianFormatter::EscapeCharLiteral(char ch) const -> std::string {
+  if ((std::isspace(ch) == 0) && (std::isprint(ch) == 0)) {
     const char* tab = "0123456789abcdef";
     uint8_t uch = ch;
-    char enc[6] = {'\'', '\\', 'x', 0, 0, '\''};
+    std::array<char, 6> enc = {'\'', '\\', 'x', 0, 0, '\''};
     enc[3] = tab[uch >> 4];
     enc[4] = tab[uch & 0xF];
-    return std::string(enc, 6);
+    return {enc.data(), enc.size()};
   }
 
   switch (ch) {
@@ -86,8 +85,8 @@ std::string CambrianFormatter::escape_char_literal(char ch) const {
   }
 }
 
-std::string CambrianFormatter::escape_string_literal_chunk(
-    std::string_view str) const {
+auto CambrianFormatter::EscapeStringLiteralChunk(std::string_view str) const
+    -> std::string {
   std::stringstream ss;
 
   for (char ch : str) {
@@ -128,77 +127,77 @@ std::string CambrianFormatter::escape_string_literal_chunk(
   return ss.str();
 }
 
-void CambrianFormatter::wrap_stmt_body(FlowPtr<parse::Stmt> n,
-                                       size_t size_threshold,
-                                       bool use_arrow_if_wrapped) {
-  if (n->is(QAST_BLOCK)) {
-    auto block = n.as<Block>();
-    bool single_stmt = block->get_items().size() == 1;
+void CambrianFormatter::WrapStmtBody(FlowPtr<parse::Stmt> n,
+                                     size_t size_threshold,
+                                     bool use_arrow_if_wrapped) {
+  if (n->Is(QAST_BLOCK)) {
+    auto block = n.As<Block>();
+    bool single_stmt = block->GetItems().size() == 1;
     bool few_children =
-        single_stmt && block->count_children() <= size_threshold;
+        single_stmt && block->RecursiveChildCount() <= size_threshold;
 
     if (single_stmt && few_children) {
       if (use_arrow_if_wrapped) {
-        line << "=> ";
+        m_line << "=> ";
       }
 
-      block->get_items().front().accept(*this);
+      block->GetItems().front().Accept(*this);
       return;
     }
   }
 
-  n.accept(*this);
+  n.Accept(*this);
 }
 
-void CambrianFormatter::print_line_comments(FlowPtr<parse::Base> n) {
-  auto comments = n->comments();
-  auto line_size = line.length();
+void CambrianFormatter::PrintLineComments(const FlowPtr<parse::Base>& n) {
+  auto comments = n->Comments();
+  auto m_line_size = m_line.Length();
 
   if (!comments.empty()) {
     for (auto comment : comments) {
-      line << "#";
-      line << comment.as_string() << std::endl;
+      m_line << "#";
+      m_line << comment.GetString() << std::endl;
 
-      if (line_size) {
-        line << std::string(line_size, ' ');
+      if (m_line_size != 0U) {
+        m_line << std::string(m_line_size, ' ');
       }
     }
   }
 }
 
-void CambrianFormatter::print_multiline_comments(FlowPtr<parse::Base> n) {
-  auto comments = n->comments();
+void CambrianFormatter::PrintMultilineComments(const FlowPtr<parse::Base>& n) {
+  auto comments = n->Comments();
   if (!comments.empty()) {
     for (auto comment : comments) {
-      line << "/*";
-      line << comment.as_string();
-      line << "*/ ";
+      m_line << "/*";
+      m_line << comment.GetString();
+      m_line << "*/ ";
     }
   }
 }
 
-void CambrianFormatter::escape_string_literal(std::string_view str,
-                                              bool put_quotes) {
-  constexpr size_t max_chunk_size = 60;
+void CambrianFormatter::EscapeStringLiteral(std::string_view str,
+                                            bool put_quotes) {
+  constexpr size_t kMaxChunkSize = 60;
 
   if (str.empty()) {
     if (put_quotes) {
-      line << "\"\"";
+      m_line << "\"\"";
     }
     return;
   }
 
-  auto chunks_n = str.size() / max_chunk_size;
-  auto rem = str.size() % max_chunk_size;
-  auto line_size = line.length();
+  auto chunks_n = str.size() / kMaxChunkSize;
+  auto rem = str.size() % kMaxChunkSize;
+  auto m_line_size = m_line.Length();
 
-  if (chunks_n) {
+  if (chunks_n != 0U) {
     std::vector<std::string> chunks(chunks_n);
 
     for (size_t i = 0; i < chunks_n; i++) {
       chunks[i] = "\"" +
-                  escape_string_literal_chunk(
-                      str.substr(i * max_chunk_size, max_chunk_size)) +
+                  EscapeStringLiteralChunk(
+                      str.substr(i * kMaxChunkSize, kMaxChunkSize)) +
                   "\"";
     }
 
@@ -208,684 +207,711 @@ void CambrianFormatter::escape_string_literal(std::string_view str,
         })->size();
 
     for (size_t i = 0; i < chunks.size(); ++i) {
-      if (i != 0 && line_size) {
-        line << std::string(line_size, ' ');
+      if (i != 0 && (m_line_size != 0U)) {
+        m_line << std::string(m_line_size, ' ');
       }
 
-      line << chunks[i];
+      m_line << chunks[i];
 
       auto rpad = (max_segment_size - chunks[i].size());
-      if (rpad) {
-        line << std::string(rpad, ' ');
+      if (rpad != 0U) {
+        m_line << std::string(rpad, ' ');
       }
 
       if (rem > 0 || i < chunks_n - 1) {
-        line << " \\" << std::endl;
+        m_line << " \\" << std::endl;
       }
     }
   }
 
   if (rem > 0) {
-    if (line_size && chunks_n > 0) {
-      line << std::string(line_size, ' ');
+    if ((m_line_size != 0U) && chunks_n > 0) {
+      m_line << std::string(m_line_size, ' ');
     }
 
     if (chunks_n > 0 || put_quotes) {
-      line << "\"";
+      m_line << "\"";
     }
 
-    line << escape_string_literal_chunk(
-        str.substr(chunks_n * max_chunk_size, rem));
+    m_line << EscapeStringLiteralChunk(
+        str.substr(chunks_n * kMaxChunkSize, rem));
 
     if (chunks_n > 0 || put_quotes) {
-      line << "\"";
+      m_line << "\"";
     }
   }
 }
 
-void CambrianFormatter::write_float_literal_chunk(std::string_view float_str) {
-  constexpr size_t insert_sep_every = 10;
+void CambrianFormatter::WriteFloatLiteralChunk(std::string_view float_str) {
+  constexpr size_t kInsertSepEvery = 10;
 
   bool already_write_type_suffix = false;
 
   for (size_t i = 0; i < float_str.size(); i++) {
     bool underscore = false;
 
-    if (!already_write_type_suffix && i != 0 && (i % (insert_sep_every)) == 0) {
+    if (!already_write_type_suffix && i != 0 && (i % (kInsertSepEvery)) == 0) {
       underscore = true;
-    } else if (!already_write_type_suffix && !std::isdigit(float_str[i]) &&
-               float_str[i] != '.') {
+    } else if (!already_write_type_suffix &&
+               (std::isdigit(float_str[i]) == 0) && float_str[i] != '.') {
       already_write_type_suffix = true;
       underscore = true;
     }
 
     if (underscore) {
-      line << "_";
+      m_line << "_";
     }
 
-    line << float_str[i];
+    m_line << float_str[i];
   }
 }
 
-void CambrianFormatter::write_float_literal(std::string_view float_str) {
-  constexpr size_t max_chunk_size = 50;
+void CambrianFormatter::WriteFloatLiteral(std::string_view float_str) {
+  constexpr size_t kMaxChunkSize = 50;
 
   if (float_str.empty()) {
-    line << "";
+    m_line << "";
   }
 
-  size_t chunks_n = float_str.size() / max_chunk_size;
-  size_t rem = float_str.size() % max_chunk_size;
+  size_t chunks_n = float_str.size() / kMaxChunkSize;
+  size_t rem = float_str.size() % kMaxChunkSize;
 
-  size_t line_size = line.length();
+  size_t m_line_size = m_line.Length();
 
   for (size_t i = 0; i < chunks_n; i++) {
-    write_float_literal_chunk(
-        float_str.substr(i * max_chunk_size, max_chunk_size));
+    WriteFloatLiteralChunk(float_str.substr(i * kMaxChunkSize, kMaxChunkSize));
 
     if (rem > 0 || i < chunks_n - 1) {
-      line << "_ \\" << std::endl;
-      if (line_size) {
-        line << std::string(line_size, ' ');
+      m_line << "_ \\" << std::endl;
+      if (m_line_size != 0U) {
+        m_line << std::string(m_line_size, ' ');
       }
     }
   }
 
   if (rem > 0) {
-    write_float_literal_chunk(float_str.substr(chunks_n * max_chunk_size, rem));
+    WriteFloatLiteralChunk(float_str.substr(chunks_n * kMaxChunkSize, rem));
   }
 }
 
-void CambrianFormatter::format_type_metadata(FlowPtr<parse::Type> n) {
-  auto range_start = n->get_range_begin();
-  auto range_end = n->get_range_end();
+void CambrianFormatter::FormatTypeMetadata(const FlowPtr<parse::Type>& n) {
+  auto range_start = n->GetRangeBegin();
+  auto range_end = n->GetRangeEnd();
 
   if (range_start || range_end) {
-    line << ": [";
-    if (range_start) range_start.value().accept(*this);
-    line << ":";
-    if (range_end) range_end.value().accept(*this);
-    line << "]";
+    m_line << ": [";
+    if (range_start) {
+      range_start.value().Accept(*this);
+    }
+    m_line << ":";
+    if (range_end) {
+      range_end.value().Accept(*this);
+    }
+    m_line << "]";
   }
 
-  if (n->get_width()) {
-    line << ": ";
-    n->get_width().value().accept(*this);
+  if (n->GetWidth()) {
+    m_line << ": ";
+    n->GetWidth().value().Accept(*this);
   }
 }
 
-void CambrianFormatter::visit(FlowPtr<Base> n) {
-  print_multiline_comments(n);
+void CambrianFormatter::Visit(FlowPtr<Base> n) {
+  PrintMultilineComments(n);
 
   /** This node symbolizes a placeholder value in the event of an error. */
-  failed = true;
+  m_failed = true;
 
-  line << "/* !!! */";
+  m_line << "/* !!! */";
 }
 
-void CambrianFormatter::visit(FlowPtr<ExprStmt> n) {
-  print_line_comments(n);
+void CambrianFormatter::Visit(FlowPtr<ExprStmt> n) {
+  PrintLineComments(n);
 
-  n->get_expr().accept(*this);
-  line << ";";
+  n->GetExpr().Accept(*this);
+  m_line << ";";
 }
 
-void CambrianFormatter::visit(FlowPtr<StmtExpr> n) {
-  print_multiline_comments(n);
+void CambrianFormatter::Visit(FlowPtr<StmtExpr> n) {
+  PrintMultilineComments(n);
 
-  n->get_stmt().accept(*this);
+  n->GetStmt().Accept(*this);
 }
 
-void CambrianFormatter::visit(FlowPtr<TypeExpr> n) {
-  print_multiline_comments(n);
+void CambrianFormatter::Visit(FlowPtr<TypeExpr> n) {
+  PrintMultilineComments(n);
 
-  line << "type ";
-  n->get_type().accept(*this);
+  m_line << "type ";
+  n->GetType().Accept(*this);
 }
 
-void CambrianFormatter::visit(FlowPtr<NamedTy> n) {
-  print_multiline_comments(n);
+void CambrianFormatter::Visit(FlowPtr<NamedTy> n) {
+  PrintMultilineComments(n);
 
-  line << n->get_name();
-  format_type_metadata(n);
+  m_line << n->GetName();
+  FormatTypeMetadata(n);
 }
 
-void CambrianFormatter::visit(FlowPtr<InferTy> n) {
-  print_multiline_comments(n);
+void CambrianFormatter::Visit(FlowPtr<InferTy> n) {
+  PrintMultilineComments(n);
 
-  line << "?";
-  format_type_metadata(n);
+  m_line << "?";
+  FormatTypeMetadata(n);
 }
 
-void CambrianFormatter::visit(FlowPtr<TemplType> n) {
-  print_multiline_comments(n);
+void CambrianFormatter::Visit(FlowPtr<TemplateType> n) {
+  PrintMultilineComments(n);
 
   bool is_optional =
-      n->get_template()->getKind() == QAST_NAMED &&
-      n->get_template()->as<NamedTy>()->get_name() == "__builtin_result";
+      n->GetTemplate()->GetKind() == QAST_NAMED &&
+      n->GetTemplate()->As<NamedTy>()->GetName() == "__builtin_result";
 
   bool is_vector =
-      n->get_template()->getKind() == QAST_NAMED &&
-      n->get_template()->as<NamedTy>()->get_name() == "__builtin_vec";
+      n->GetTemplate()->GetKind() == QAST_NAMED &&
+      n->GetTemplate()->As<NamedTy>()->GetName() == "__builtin_vec";
 
-  bool is_map =
-      n->get_template()->getKind() == QAST_NAMED &&
-      n->get_template()->as<NamedTy>()->get_name() == "__builtin_umap";
+  bool is_map = n->GetTemplate()->GetKind() == QAST_NAMED &&
+                n->GetTemplate()->As<NamedTy>()->GetName() == "__builtin_umap";
 
-  bool is_set =
-      n->get_template()->getKind() == QAST_NAMED &&
-      n->get_template()->as<NamedTy>()->get_name() == "__builtin_uset";
+  bool is_set = n->GetTemplate()->GetKind() == QAST_NAMED &&
+                n->GetTemplate()->As<NamedTy>()->GetName() == "__builtin_uset";
+
+  bool is_comptime =
+      n->GetTemplate()->GetKind() == QAST_NAMED &&
+      n->GetTemplate()->As<NamedTy>()->GetName() == "__builtin_meta" &&
+      n->GetArgs().size() == 1 &&
+      n->GetArgs().front().second->Is(QAST_UNEXPR) &&
+      n->GetArgs().front().second.template As<UnaryExpression>()->GetOp() ==
+          OpComptime;
 
   const auto print_without_type_keyword = [&](auto node) {
-    if (node->getKind() == QAST_TEXPR) {
-      node->template as<TypeExpr>()->get_type().accept(*this);
+    if (node->Is(QAST_TEXPR)) {
+      node->template As<TypeExpr>()->GetType().Accept(*this);
     } else {
-      node->accept(*this);
+      node->Accept(*this);
     }
   };
 
-  size_t argc = n->get_args().size();
+  size_t argc = n->GetArgs().size();
   if (is_optional && argc == 1) {
-    print_without_type_keyword(n->get_args().front().second);
-    line << "?";
+    print_without_type_keyword(n->GetArgs().front().second);
+    m_line << "?";
   } else if (is_vector && argc == 1) {
-    line << "[";
-    print_without_type_keyword(n->get_args().front().second);
-    line << "]";
+    m_line << "[";
+    print_without_type_keyword(n->GetArgs().front().second);
+    m_line << "]";
   } else if (is_map && argc == 2) {
-    line << "[";
-    print_without_type_keyword(n->get_args().front().second);
-    line << "->";
-    print_without_type_keyword(n->get_args().back().second);
-    line << "]";
+    m_line << "[";
+    print_without_type_keyword(n->GetArgs().front().second);
+    m_line << "->";
+    print_without_type_keyword(n->GetArgs().back().second);
+    m_line << "]";
   } else if (is_set && argc == 1) {
-    line << "{";
-    print_without_type_keyword(n->get_args().front().second);
-    line << "}";
+    m_line << "{";
+    print_without_type_keyword(n->GetArgs().front().second);
+    m_line << "}";
+  } else if (is_comptime) {
+    m_line << "comptime(";
+    n->GetArgs().front().second.template As<UnaryExpression>()->GetRHS().Accept(
+        *this);
+    m_line << ")";
   } else {
-    n->get_template().accept(*this);
+    n->GetTemplate().Accept(*this);
 
-    line << "<";
-    iterate_except_last(
-        n->get_args().begin(), n->get_args().end(),
+    m_line << "<";
+    IterateExceptLast(
+        n->GetArgs().begin(), n->GetArgs().end(),
         [&](auto arg, size_t) {
           if (!std::isdigit(arg.first->at(0))) {
-            line << arg.first << ": ";
+            m_line << arg.first << ": ";
           }
-          arg.second.accept(*this);
+
+          print_without_type_keyword(arg.second);
         },
-        [&](let) { line << ", "; });
-    line << ">";
+        [&](let) { m_line << ", "; });
+    m_line << ">";
   }
 
-  format_type_metadata(n);
+  FormatTypeMetadata(n);
 }
 
-void CambrianFormatter::visit(FlowPtr<U1> n) {
-  print_multiline_comments(n);
+void CambrianFormatter::Visit(FlowPtr<U1> n) {
+  PrintMultilineComments(n);
 
-  line << "u1";
-  format_type_metadata(n);
+  m_line << "u1";
+  FormatTypeMetadata(n);
 }
 
-void CambrianFormatter::visit(FlowPtr<U8> n) {
-  print_multiline_comments(n);
+void CambrianFormatter::Visit(FlowPtr<U8> n) {
+  PrintMultilineComments(n);
 
-  line << "u8";
-  format_type_metadata(n);
+  m_line << "u8";
+  FormatTypeMetadata(n);
 }
 
-void CambrianFormatter::visit(FlowPtr<U16> n) {
-  print_multiline_comments(n);
+void CambrianFormatter::Visit(FlowPtr<U16> n) {
+  PrintMultilineComments(n);
 
-  line << "u16";
-  format_type_metadata(n);
+  m_line << "u16";
+  FormatTypeMetadata(n);
 }
 
-void CambrianFormatter::visit(FlowPtr<U32> n) {
-  print_multiline_comments(n);
+void CambrianFormatter::Visit(FlowPtr<U32> n) {
+  PrintMultilineComments(n);
 
-  line << "u32";
-  format_type_metadata(n);
+  m_line << "u32";
+  FormatTypeMetadata(n);
 }
 
-void CambrianFormatter::visit(FlowPtr<U64> n) {
-  print_multiline_comments(n);
+void CambrianFormatter::Visit(FlowPtr<U64> n) {
+  PrintMultilineComments(n);
 
-  line << "u64";
-  format_type_metadata(n);
+  m_line << "u64";
+  FormatTypeMetadata(n);
 }
 
-void CambrianFormatter::visit(FlowPtr<U128> n) {
-  print_multiline_comments(n);
+void CambrianFormatter::Visit(FlowPtr<U128> n) {
+  PrintMultilineComments(n);
 
-  line << "u128";
-  format_type_metadata(n);
+  m_line << "u128";
+  FormatTypeMetadata(n);
 }
 
-void CambrianFormatter::visit(FlowPtr<I8> n) {
-  print_multiline_comments(n);
+void CambrianFormatter::Visit(FlowPtr<I8> n) {
+  PrintMultilineComments(n);
 
-  line << "i8";
-  format_type_metadata(n);
+  m_line << "i8";
+  FormatTypeMetadata(n);
 }
 
-void CambrianFormatter::visit(FlowPtr<I16> n) {
-  print_multiline_comments(n);
+void CambrianFormatter::Visit(FlowPtr<I16> n) {
+  PrintMultilineComments(n);
 
-  line << "i16";
-  format_type_metadata(n);
+  m_line << "i16";
+  FormatTypeMetadata(n);
 }
 
-void CambrianFormatter::visit(FlowPtr<I32> n) {
-  print_multiline_comments(n);
+void CambrianFormatter::Visit(FlowPtr<I32> n) {
+  PrintMultilineComments(n);
 
-  line << "i32";
-  format_type_metadata(n);
+  m_line << "i32";
+  FormatTypeMetadata(n);
 }
 
-void CambrianFormatter::visit(FlowPtr<I64> n) {
-  print_multiline_comments(n);
+void CambrianFormatter::Visit(FlowPtr<I64> n) {
+  PrintMultilineComments(n);
 
-  line << "i64";
-  format_type_metadata(n);
+  m_line << "i64";
+  FormatTypeMetadata(n);
 }
 
-void CambrianFormatter::visit(FlowPtr<I128> n) {
-  print_multiline_comments(n);
+void CambrianFormatter::Visit(FlowPtr<I128> n) {
+  PrintMultilineComments(n);
 
-  line << "i128";
-  format_type_metadata(n);
+  m_line << "i128";
+  FormatTypeMetadata(n);
 }
 
-void CambrianFormatter::visit(FlowPtr<F16> n) {
-  print_multiline_comments(n);
+void CambrianFormatter::Visit(FlowPtr<F16> n) {
+  PrintMultilineComments(n);
 
-  line << "f16";
-  format_type_metadata(n);
+  m_line << "f16";
+  FormatTypeMetadata(n);
 }
 
-void CambrianFormatter::visit(FlowPtr<F32> n) {
-  print_multiline_comments(n);
+void CambrianFormatter::Visit(FlowPtr<F32> n) {
+  PrintMultilineComments(n);
 
-  line << "f32";
-  format_type_metadata(n);
+  m_line << "f32";
+  FormatTypeMetadata(n);
 }
 
-void CambrianFormatter::visit(FlowPtr<F64> n) {
-  print_multiline_comments(n);
+void CambrianFormatter::Visit(FlowPtr<F64> n) {
+  PrintMultilineComments(n);
 
-  line << "f64";
-  format_type_metadata(n);
+  m_line << "f64";
+  FormatTypeMetadata(n);
 }
 
-void CambrianFormatter::visit(FlowPtr<F128> n) {
-  print_multiline_comments(n);
+void CambrianFormatter::Visit(FlowPtr<F128> n) {
+  PrintMultilineComments(n);
 
-  line << "f128";
-  format_type_metadata(n);
+  m_line << "f128";
+  FormatTypeMetadata(n);
 }
 
-void CambrianFormatter::visit(FlowPtr<VoidTy> n) {
-  print_multiline_comments(n);
+void CambrianFormatter::Visit(FlowPtr<VoidTy> n) {
+  PrintMultilineComments(n);
 
-  line << "void";
-  format_type_metadata(n);
+  m_line << "void";
+  FormatTypeMetadata(n);
 }
 
-void CambrianFormatter::visit(FlowPtr<PtrTy> n) {
-  print_multiline_comments(n);
+void CambrianFormatter::Visit(FlowPtr<PtrTy> n) {
+  PrintMultilineComments(n);
 
-  line << "*";
-  n->get_item().accept(*this);
+  m_line << "*";
+  n->GetItem().Accept(*this);
 
-  format_type_metadata(n);
+  FormatTypeMetadata(n);
 }
 
-void CambrianFormatter::visit(FlowPtr<OpaqueTy> n) {
-  print_multiline_comments(n);
+void CambrianFormatter::Visit(FlowPtr<OpaqueTy> n) {
+  PrintMultilineComments(n);
 
-  line << "opaque(" << n->get_name() << ")";
-  format_type_metadata(n);
+  m_line << "opaque(" << n->GetName() << ")";
+  FormatTypeMetadata(n);
 }
 
-void CambrianFormatter::visit(FlowPtr<TupleTy> n) {
+void CambrianFormatter::Visit(FlowPtr<TupleTy> n) {
   /* If the number of fields exceeds the threshold, arange fields into a
    * matrix of row size ceil(sqrt(n)). */
-  print_multiline_comments(n);
+  PrintMultilineComments(n);
 
   auto wrap_threshold = 8ULL;
 
-  line << "(";
+  m_line << "(";
 
-  auto items = n->get_items();
-  auto line_size = line.length();
+  auto items = n->GetItems();
+  auto m_line_size = m_line.Length();
   auto break_at = items.size() <= wrap_threshold
                       ? wrap_threshold
                       : static_cast<size_t>(std::ceil(std::sqrt(items.size())));
 
   for (size_t i = 0; i < items.size(); i++) {
     if (i != 0 && i % break_at == 0) {
-      line << std::endl << std::string(line_size, ' ');
+      m_line << std::endl << std::string(m_line_size, ' ');
     }
 
     auto item = items[i];
-    item.accept(*this);
+    item.Accept(*this);
 
     if (i != items.size() - 1) {
-      line << ", ";
+      m_line << ", ";
     }
   }
-  line << ")";
+  m_line << ")";
 
-  format_type_metadata(n);
+  FormatTypeMetadata(n);
 }
 
-void CambrianFormatter::visit(FlowPtr<ArrayTy> n) {
-  print_multiline_comments(n);
+void CambrianFormatter::Visit(FlowPtr<ArrayTy> n) {
+  PrintMultilineComments(n);
 
-  line << "[";
-  n->get_item().accept(*this);
-  line << "; ";
-  n->get_size().accept(*this);
-  line << "]";
+  m_line << "[";
+  n->GetItem().Accept(*this);
+  m_line << "; ";
+  n->GetSize().Accept(*this);
+  m_line << "]";
 
-  format_type_metadata(n);
+  FormatTypeMetadata(n);
 }
 
-void CambrianFormatter::visit(FlowPtr<RefTy> n) {
-  print_multiline_comments(n);
+void CambrianFormatter::Visit(FlowPtr<RefTy> n) {
+  PrintMultilineComments(n);
 
-  line << "&";
-  n->get_item().accept(*this);
+  m_line << "&";
+  n->GetItem().Accept(*this);
 
-  format_type_metadata(n);
+  FormatTypeMetadata(n);
 }
 
-void CambrianFormatter::visit(FlowPtr<FuncTy> n) {
-  print_multiline_comments(n);
+void CambrianFormatter::Visit(FlowPtr<FuncTy> n) {
+  PrintMultilineComments(n);
 
-  line << "fn";
+  m_line << "fn";
 
-  if (!n->get_attributes().empty()) {
-    line << "[";
-    iterate_except_last(
-        n->get_attributes().begin(), n->get_attributes().end(),
-        [&](auto attr, size_t) { attr.accept(*this); },
-        [&](let) { line << ", "; });
-    line << "] ";
+  if (!n->GetAttributes().empty()) {
+    m_line << "[";
+    IterateExceptLast(
+        n->GetAttributes().begin(), n->GetAttributes().end(),
+        [&](auto attr, size_t) { attr.Accept(*this); },
+        [&](let) { m_line << ", "; });
+    m_line << "] ";
   }
 
-  switch (n->get_purity()) {
+  switch (n->GetPurity()) {
     case Purity::Impure: {
       break;
     }
 
     case Purity::Impure_TSafe: {
-      line << " tsafe";
+      m_line << " tsafe";
       break;
     }
 
     case Purity::Pure: {
-      line << " pure";
+      m_line << " pure";
       break;
     }
 
     case Purity::Quasi: {
-      line << " quasi";
+      m_line << " quasi";
       break;
     }
 
     case Purity::Retro: {
-      line << " retro";
+      m_line << " retro";
       break;
     }
   }
 
-  line << "(";
-  iterate_except_last(
-      n->get_params().begin(), n->get_params().end(),
+  m_line << "(";
+  IterateExceptLast(
+      n->GetParams().begin(), n->GetParams().end(),
       [&](auto param, size_t) {
-        line << std::get<0>(param);
+        m_line << std::get<0>(param);
 
-        if (auto type = std::get<1>(param); type->getKind() != QAST_INFER) {
-          line << ": ";
-          type.accept(*this);
+        if (auto type = std::get<1>(param); type->GetKind() != QAST_INFER) {
+          m_line << ": ";
+          type.Accept(*this);
         }
 
         if (auto def = std::get<2>(param)) {
-          line << " = ";
-          def.value().accept(*this);
+          m_line << " = ";
+          def.value().Accept(*this);
         }
       },
-      [&](let) { line << ", "; });
-  if (n->is_variadic()) {
-    if (!n->get_params().empty()) {
-      line << ", ";
+      [&](let) { m_line << ", "; });
+  if (n->IsVariadic()) {
+    if (!n->GetParams().empty()) {
+      m_line << ", ";
     }
-    line << "...";
+    m_line << "...";
   }
-  line << ")";
+  m_line << ")";
 
-  line << ": ";
-  n->get_return().accept(*this);
+  m_line << ": ";
+  n->GetReturn().Accept(*this);
 }
 
-void CambrianFormatter::visit(FlowPtr<UnaryExpr> n) {
-  print_multiline_comments(n);
+void CambrianFormatter::Visit(FlowPtr<UnaryExpression> n) {
+  static const std::unordered_set<Operator> word_ops = {
+      OpAs,        OpBitcastAs, OpIn,     OpOut,     OpSizeof,
+      OpBitsizeof, OpAlignof,   OpTypeof, OpComptime};
 
-  line << "(" << n->get_op();
-  n->get_rhs().accept(*this);
-  line << ")";
+  PrintMultilineComments(n);
+
+  m_line << "(" << n->GetOp();
+  if (word_ops.contains(n->GetOp())) {
+    m_line << " ";
+  }
+  n->GetRHS().Accept(*this);
+  m_line << ")";
 }
 
-void CambrianFormatter::visit(FlowPtr<BinExpr> n) {
-  print_multiline_comments(n);
+void CambrianFormatter::Visit(FlowPtr<BinaryExpression> n) {
+  PrintMultilineComments(n);
 
-  if (n->get_op() == OpDot) {
-    n->get_lhs().accept(*this);
-    line << ".";
-    n->get_rhs().accept(*this);
+  if (n->GetOp() == OpDot) {
+    n->GetLHS().Accept(*this);
+    m_line << ".";
+    n->GetRHS().Accept(*this);
   } else {
-    line << "(";
-    n->get_lhs().accept(*this);
-    line << " " << n->get_op() << " ";
-    n->get_rhs().accept(*this);
-    line << ")";
+    m_line << "(";
+    n->GetLHS().Accept(*this);
+    m_line << " " << n->GetOp() << " ";
+    n->GetRHS().Accept(*this);
+    m_line << ")";
   }
 }
 
-void CambrianFormatter::visit(FlowPtr<PostUnaryExpr> n) {
-  print_multiline_comments(n);
+void CambrianFormatter::Visit(FlowPtr<PostUnaryExpression> n) {
+  PrintMultilineComments(n);
 
-  line << "(";
-  n->get_lhs().accept(*this);
-  line << n->get_op() << ")";
+  m_line << "(";
+  n->GetLHS().Accept(*this);
+  m_line << n->GetOp() << ")";
 }
 
-void CambrianFormatter::visit(FlowPtr<TernaryExpr> n) {
-  print_multiline_comments(n);
+void CambrianFormatter::Visit(FlowPtr<TernaryExpression> n) {
+  PrintMultilineComments(n);
 
-  line << "(";
-  n->get_cond().accept(*this);
-  line << " ? ";
-  n->get_lhs().accept(*this);
-  line << " : ";
-  n->get_rhs().accept(*this);
-  line << ")";
+  m_line << "(";
+  n->GetCond().Accept(*this);
+  m_line << " ? ";
+  n->GetLHS().Accept(*this);
+  m_line << " : ";
+  n->GetRHS().Accept(*this);
+  m_line << ")";
 }
 
-void CambrianFormatter::visit(FlowPtr<ConstInt> n) {
-  print_multiline_comments(n);
+void CambrianFormatter::Visit(FlowPtr<Integer> n) {
+  PrintMultilineComments(n);
 
-  write_float_literal(n->get_value());
+  WriteFloatLiteral(n->GetValue());
 }
 
-void CambrianFormatter::visit(FlowPtr<ConstFloat> n) {
-  print_multiline_comments(n);
+void CambrianFormatter::Visit(FlowPtr<Float> n) {
+  PrintMultilineComments(n);
 
-  write_float_literal(n->get_value());
+  WriteFloatLiteral(n->GetValue());
 }
 
-void CambrianFormatter::visit(FlowPtr<ConstBool> n) {
-  print_multiline_comments(n);
+void CambrianFormatter::Visit(FlowPtr<Boolean> n) {
+  PrintMultilineComments(n);
 
-  if (n->get_value()) {
-    line << "true";
+  if (n->GetValue()) {
+    m_line << "true";
   } else {
-    line << "false";
+    m_line << "false";
   }
 }
 
-void CambrianFormatter::visit(FlowPtr<ConstString> n) {
-  print_multiline_comments(n);
+void CambrianFormatter::Visit(FlowPtr<parse::String> n) {
+  PrintMultilineComments(n);
 
-  escape_string_literal(n->get_value());
+  EscapeStringLiteral(n->GetValue());
 }
 
-void CambrianFormatter::visit(FlowPtr<ConstChar> n) {
-  print_multiline_comments(n);
+void CambrianFormatter::Visit(FlowPtr<Character> n) {
+  PrintMultilineComments(n);
 
-  line << escape_char_literal(n->get_value());
+  m_line << EscapeCharLiteral(n->GetValue());
 }
 
-void CambrianFormatter::visit(FlowPtr<ConstNull> n) {
-  print_multiline_comments(n);
+void CambrianFormatter::Visit(FlowPtr<parse::Null> n) {
+  PrintMultilineComments(n);
 
-  line << "null";
+  m_line << "null";
 }
 
-void CambrianFormatter::visit(FlowPtr<ConstUndef> n) {
-  print_multiline_comments(n);
+void CambrianFormatter::Visit(FlowPtr<Undefined> n) {
+  PrintMultilineComments(n);
 
-  line << "undef";
+  m_line << "undef";
 }
 
-void CambrianFormatter::visit(FlowPtr<Call> n) {
-  print_multiline_comments(n);
+void CambrianFormatter::Visit(FlowPtr<Call> n) {
+  PrintMultilineComments(n);
 
   auto wrap_threshold = 8ULL;
 
-  n->get_func().accept(*this);
+  n->GetFunc().Accept(*this);
 
-  size_t argc = n->get_args().size();
+  size_t argc = n->GetArgs().size();
 
-  bool any_named =
-      std::any_of(n->get_args().begin(), n->get_args().end(), [](CallArg arg) {
-        auto name = arg.first;
-        return !std::isdigit(name->at(0));
-      });
+  bool any_named = std::any_of(n->GetArgs().begin(), n->GetArgs().end(),
+                               [](const CallArg& arg) {
+                                 auto name = arg.first;
+                                 return std::isdigit(name->at(0)) == 0;
+                               });
 
   bool any_lambdas = std::any_of(
-      n->get_args().begin(), n->get_args().end(),
-      [](auto arg) { return std::get<1>(arg)->is_stmt_expr(QAST_FUNCTION); });
+      n->GetArgs().begin(), n->GetArgs().end(),
+      [](auto arg) { return std::get<1>(arg)->IsStmtExpr(QAST_FUNCTION); });
 
   bool is_wrapping = argc >= wrap_threshold || any_named || any_lambdas;
 
   if (is_wrapping) {
-    line << "(";
-    size_t line_size = line.length();
-    std::swap(indent, line_size);
+    m_line << "(";
+    size_t m_line_size = m_line.Length();
+    std::swap(m_indent, m_line_size);
 
-    for (auto it = n->get_args().begin(); it != n->get_args().end(); ++it) {
+    for (auto it = n->GetArgs().begin(); it != n->GetArgs().end(); ++it) {
       auto arg = *it;
       auto name = std::get<0>(arg);
       auto value = std::get<1>(arg);
 
-      if (!std::isdigit(name->at(0))) {
-        line << name << ": ";
+      if (std::isdigit(name->at(0)) == 0) {
+        m_line << name << ": ";
       }
 
-      value.accept(*this);
+      value.Accept(*this);
 
-      if (it != n->get_args().end() - 1) {
-        line << ", ";
+      if (it != n->GetArgs().end() - 1) {
+        m_line << ", ";
       }
 
-      if (it != n->get_args().end() - 1) {
-        line << std::endl << get_indent();
+      if (it != n->GetArgs().end() - 1) {
+        m_line << std::endl << GetIndent();
       }
     }
 
-    std::swap(indent, line_size);
-    line << ")";
+    std::swap(m_indent, m_line_size);
+    m_line << ")";
   } else {
-    line << "(";
-    iterate_except_last(
-        n->get_args().begin(), n->get_args().end(),
+    m_line << "(";
+    IterateExceptLast(
+        n->GetArgs().begin(), n->GetArgs().end(),
         [&](auto arg, size_t) {
           auto name = std::get<0>(arg);
           auto value = std::get<1>(arg);
 
           if (!std::isdigit(name->at(0))) {
-            line << name << ": ";
+            m_line << name << ": ";
           }
 
-          value.accept(*this);
+          value.Accept(*this);
         },
-        [&](let) { line << ", "; });
-    line << ")";
+        [&](let) { m_line << ", "; });
+    m_line << ")";
   }
 }
 
-void CambrianFormatter::visit(FlowPtr<TemplCall> n) {
-  print_multiline_comments(n);
+void CambrianFormatter::Visit(FlowPtr<TemplateCall> n) {
+  PrintMultilineComments(n);
 
-  n->get_func().accept(*this);
+  n->GetFunc().Accept(*this);
 
-  line << "<";
-  iterate_except_last(
-      n->get_template_args().begin(), n->get_template_args().end(),
+  m_line << "{";
+  IterateExceptLast(
+      n->GetTemplateArgs().begin(), n->GetTemplateArgs().end(),
+      [&](auto arg, size_t) {
+        auto name = std::get<0>(arg);
+        auto value = std::get<1>(arg);
+        bool should_print_name = !std::isdigit(name->at(0));
+
+        if (should_print_name) {
+          m_line << name << ": ";
+        }
+
+        if (value->Is(QAST_TEXPR)) {
+          value->template As<TypeExpr>()->GetType().Accept(*this);
+        } else {
+          value.Accept(*this);
+        }
+      },
+      [&](let) { m_line << ", "; });
+  m_line << "}";
+
+  m_line << "(";
+  IterateExceptLast(
+      n->GetArgs().begin(), n->GetArgs().end(),
       [&](auto arg, size_t) {
         auto name = std::get<0>(arg);
         auto value = std::get<1>(arg);
 
         if (!std::isdigit(name->at(0))) {
-          line << name << ": ";
+          m_line << name << ": ";
         }
 
-        value.accept(*this);
+        value.Accept(*this);
       },
-      [&](let) { line << ", "; });
-  line << ">";
-
-  line << "(";
-  iterate_except_last(
-      n->get_args().begin(), n->get_args().end(),
-      [&](auto arg, size_t) {
-        auto name = std::get<0>(arg);
-        auto value = std::get<1>(arg);
-
-        if (!std::isdigit(name->at(0))) {
-          line << name << ": ";
-        }
-
-        value.accept(*this);
-      },
-      [&](let) { line << ", "; });
-  line << ")";
+      [&](let) { m_line << ", "; });
+  m_line << ")";
 }
 
-void CambrianFormatter::visit(FlowPtr<List> n) {
-  print_multiline_comments(n);
+void CambrianFormatter::Visit(FlowPtr<List> n) {
+  PrintMultilineComments(n);
 
   auto wrap_threshold = 8ULL;
 
-  if (n->get_items().empty()) {
-    line << "[]";
+  if (n->GetItems().empty()) {
+    m_line << "[]";
     return;
   }
 
-  auto argc = n->get_items().size();
+  auto argc = n->GetItems().size();
   bool is_compressing =
       argc >= wrap_threshold &&
-      std::all_of(n->get_items().begin(), n->get_items().end(),
-                  [&](auto x) { return x->isSame(n->get_items().front()); });
+      std::all_of(n->GetItems().begin(), n->GetItems().end(),
+                  [&](auto x) { return x->IsEq(n->GetItems().front()); });
 
   if (is_compressing) {
-    line << "[";
-    n->get_items().front().accept(*this);
-    line << "; " << argc << "]";
+    m_line << "[";
+    n->GetItems().front().Accept(*this);
+    m_line << "; " << argc << "]";
   } else {
     static const std::unordered_set<npar_ty_t> extra_seperation = {
         QAST_TEREXPR, QAST_CALL, QAST_LIST,
@@ -893,9 +919,9 @@ void CambrianFormatter::visit(FlowPtr<List> n) {
     };
 
     bool special_case =
-        std::any_of(n->get_items().begin(), n->get_items().end(), [&](auto x) {
-          return extra_seperation.contains(x->getKind()) ||
-                 x->is_stmt_expr(QAST_FUNCTION);
+        std::any_of(n->GetItems().begin(), n->GetItems().end(), [&](auto x) {
+          return extra_seperation.contains(x->GetKind()) ||
+                 x->IsStmtExpr(QAST_FUNCTION);
         });
 
     size_t break_at{};
@@ -909,200 +935,201 @@ void CambrianFormatter::visit(FlowPtr<List> n) {
     }
 
     if (break_at == 1) {
-      line << "[";
+      m_line << "[";
 
-      line << std::endl;
+      m_line << std::endl;
 
       { /* Write list items */
-        size_t the_indent = indent + tabSize;
-        std::swap(indent, the_indent);
+        size_t the_indent = m_indent + m_tabSize;
+        std::swap(m_indent, the_indent);
 
-        for (size_t i = 0; i < n->get_items().size(); i++) {
-          line << get_indent();
-          auto item = n->get_items()[i];
-          item.accept(*this);
+        for (size_t i = 0; i < n->GetItems().size(); i++) {
+          m_line << GetIndent();
+          auto item = n->GetItems()[i];
+          item.Accept(*this);
 
-          bool is_last = i == n->get_items().size() - 1;
+          bool is_last = i == n->GetItems().size() - 1;
           if (!is_last) {
-            line << ",";
+            m_line << ",";
           }
 
-          line << std::endl;
+          m_line << std::endl;
         }
 
-        std::swap(indent, the_indent);
+        std::swap(m_indent, the_indent);
       }
 
-      line << get_indent() << "]";
+      m_line << GetIndent() << "]";
     } else {
-      line << "[";
+      m_line << "[";
 
       bool is_assoc_map =
-          std::all_of(n->get_items().begin(), n->get_items().end(),
-                      [](auto x) { return x->is(QAST_ASSOC); });
+          std::all_of(n->GetItems().begin(), n->GetItems().end(),
+                      [](auto x) { return x->Is(QAST_ASSOC); });
 
       { /* Write list items */
-        size_t the_indent = is_assoc_map ? indent + tabSize : line.length();
-        std::swap(indent, the_indent);
+        size_t the_indent =
+            is_assoc_map ? m_indent + m_tabSize : m_line.Length();
+        std::swap(m_indent, the_indent);
 
-        for (size_t i = 0; i < n->get_items().size(); i++) {
-          auto item = n->get_items()[i];
-          item.accept(*this);
+        for (size_t i = 0; i < n->GetItems().size(); i++) {
+          auto item = n->GetItems()[i];
+          item.Accept(*this);
 
-          bool is_last = i == n->get_items().size() - 1;
+          bool is_last = i == n->GetItems().size() - 1;
           if (!is_last) {
-            line << ",";
+            m_line << ",";
           }
 
           bool is_break = !is_last && i != 0 && (i + 1) % break_at == 0;
 
           if (is_break) {
-            line << std::endl << get_indent();
+            m_line << std::endl << GetIndent();
           } else if (!is_last) {
-            line << " ";
+            m_line << " ";
           }
         }
 
-        std::swap(indent, the_indent);
+        std::swap(m_indent, the_indent);
       }
 
-      line << "]";
+      m_line << "]";
     }
   }
 }
 
-void CambrianFormatter::visit(FlowPtr<Assoc> node) {
-  print_multiline_comments(node);
+void CambrianFormatter::Visit(FlowPtr<Assoc> node) {
+  PrintMultilineComments(node);
 
   const std::function<void(FlowPtr<Assoc>, bool)> format =
-      [&](FlowPtr<Assoc> n, bool use_braces) {
+      [&](const FlowPtr<Assoc>& n, bool use_braces) {
         bool is_value_map = false;
-        if (n->get_value()->is(QAST_LIST)) {
-          auto list = n->get_value()->as<List>();
+        if (n->GetValue()->Is(QAST_LIST)) {
+          auto* list = n->GetValue()->As<List>();
           is_value_map =
-              list->get_items().empty() ||
-              std::all_of(list->get_items().begin(), list->get_items().end(),
-                          [](auto x) { return x->is(QAST_ASSOC); });
+              list->GetItems().empty() ||
+              std::all_of(list->GetItems().begin(), list->GetItems().end(),
+                          [](auto x) { return x->Is(QAST_ASSOC); });
         }
 
         if (use_braces) {
-          line << "{" << std::endl;
-          indent += tabSize;
-          line << get_indent();
+          m_line << "{" << std::endl;
+          m_indent += m_tabSize;
+          m_line << GetIndent();
         }
 
-        n->get_key().accept(*this);
-        line << ": ";
+        n->GetKey().Accept(*this);
+        m_line << ": ";
 
         if (is_value_map) {
-          auto list = n->get_value()->as<List>();
+          auto* list = n->GetValue()->As<List>();
 
-          if (list->get_items().empty()) {
-            line << "{}";
+          if (list->GetItems().empty()) {
+            m_line << "{}";
           } else {
-            line << "{" << std::endl;
-            indent += tabSize;
+            m_line << "{" << std::endl;
+            m_indent += m_tabSize;
 
-            for (auto it = list->get_items().begin();
-                 it != list->get_items().end(); ++it) {
-              line << get_indent();
+            for (auto it = list->GetItems().begin();
+                 it != list->GetItems().end(); ++it) {
+              m_line << GetIndent();
 
-              format(it->as<Assoc>(), false);
+              format(it->As<Assoc>(), false);
 
-              if (it != list->get_items().end() - 1) {
-                line << ",";
+              if (it != list->GetItems().end() - 1) {
+                m_line << ",";
               }
 
-              line << std::endl;
+              m_line << std::endl;
             }
 
-            indent -= tabSize;
-            line << get_indent() << "}";
+            m_indent -= m_tabSize;
+            m_line << GetIndent() << "}";
           }
         } else {
-          n->get_value().accept(*this);
+          n->GetValue().Accept(*this);
         }
 
         if (use_braces) {
-          indent -= tabSize;
-          line << std::endl << get_indent() << "}";
+          m_indent -= m_tabSize;
+          m_line << std::endl << GetIndent() << "}";
         }
       };
 
   format(node, true);
 }
 
-void CambrianFormatter::visit(FlowPtr<Index> n) {
-  print_multiline_comments(n);
+void CambrianFormatter::Visit(FlowPtr<Index> n) {
+  PrintMultilineComments(n);
 
-  n->get_base().accept(*this);
-  line << "[";
-  n->get_index().accept(*this);
-  line << "]";
+  n->GetBase().Accept(*this);
+  m_line << "[";
+  n->GetIndex().Accept(*this);
+  m_line << "]";
 }
 
-void CambrianFormatter::visit(FlowPtr<Slice> n) {
-  print_multiline_comments(n);
+void CambrianFormatter::Visit(FlowPtr<Slice> n) {
+  PrintMultilineComments(n);
 
-  n->get_base().accept(*this);
-  line << "[";
-  if (n->get_start()) {
-    n->get_start().accept(*this);
+  n->GetBase().Accept(*this);
+  m_line << "[";
+  if (n->GetStart()) {
+    n->GetStart().Accept(*this);
   }
-  line << ":";
-  if (n->get_end()) {
-    n->get_end().accept(*this);
+  m_line << ":";
+  if (n->GetEnd()) {
+    n->GetEnd().Accept(*this);
   }
-  line << "]";
+  m_line << "]";
 }
 
-void CambrianFormatter::visit(FlowPtr<FString> n) {
-  print_multiline_comments(n);
+void CambrianFormatter::Visit(FlowPtr<FString> n) {
+  PrintMultilineComments(n);
 
-  line << "f\"";
-  for (auto part : n->get_items()) {
+  m_line << "f\"";
+  for (auto part : n->GetItems()) {
     if (std::holds_alternative<ncc::string>(part)) {
-      escape_string_literal(*std::get<ncc::string>(part), false);
+      EscapeStringLiteral(*std::get<ncc::string>(part), false);
     } else {
-      line << "{";
-      std::get<FlowPtr<Expr>>(part).accept(*this);
-      line << "}";
+      m_line << "{";
+      std::get<FlowPtr<Expr>>(part).Accept(*this);
+      m_line << "}";
     }
   }
-  line << "\"";
+  m_line << "\"";
 }
 
-void CambrianFormatter::visit(FlowPtr<Ident> n) {
-  print_multiline_comments(n);
+void CambrianFormatter::Visit(FlowPtr<Identifier> n) {
+  PrintMultilineComments(n);
 
-  line << n->get_name();
+  m_line << n->GetName();
 }
 
-void CambrianFormatter::visit(FlowPtr<SeqPoint> n) {
-  print_multiline_comments(n);
+void CambrianFormatter::Visit(FlowPtr<Sequence> n) {
+  PrintMultilineComments(n);
 
-  line << "(";
-  iterate_except_last(
-      n->get_items().begin(), n->get_items().end(),
-      [&](auto item, size_t) { item.accept(*this); },
-      [&](let) { line << ", "; });
-  line << ")";
+  m_line << "(";
+  IterateExceptLast(
+      n->GetItems().begin(), n->GetItems().end(),
+      [&](auto item, size_t) { item.Accept(*this); },
+      [&](let) { m_line << ", "; });
+  m_line << ")";
 }
 
-void CambrianFormatter::visit(FlowPtr<Block> n) {
-  print_line_comments(n);
+void CambrianFormatter::Visit(FlowPtr<Block> n) {
+  PrintLineComments(n);
 
-  bool isRootBlock = !did_root;
-  did_root = true;
+  bool is_root_block = !m_did_root;
+  m_did_root = true;
 
-  switch (n->get_safety()) {
+  switch (n->GetSafety()) {
     case SafetyMode::Safe: {
-      line << "safe ";
+      m_line << "safe ";
       break;
     }
 
     case SafetyMode::Unsafe: {
-      line << "unsafe ";
+      m_line << "unsafe ";
       break;
     }
 
@@ -1119,560 +1146,573 @@ void CambrianFormatter::visit(FlowPtr<Block> n) {
       QAST_FOR,        QAST_FOREACH, QAST_SWITCH,
   };
 
-  if (!isRootBlock && n->get_items().empty()) {
-    line << "{}";
+  if (!is_root_block && n->GetItems().empty()) {
+    m_line << "{}";
     return;
   }
 
-  if (!isRootBlock) {
-    line << "{" << std::endl;
-    indent += tabSize;
+  if (!is_root_block) {
+    m_line << "{" << std::endl;
+    m_indent += m_tabSize;
   }
 
-  auto items = n->get_items();
+  auto items = n->GetItems();
 
   for (auto it = items.begin(); it != items.end(); ++it) {
     auto item = *it;
 
-    line << get_indent();
-    item.accept(*this);
-    line << std::endl;
+    m_line << GetIndent();
+    item.Accept(*this);
+    m_line << std::endl;
 
     bool is_last_item = it == items.end() - 1;
 
     bool is_next_item_different =
         (it + 1 != items.end() &&
-         (*std::next(it))->getKind() != item->getKind());
+         (*std::next(it))->GetKind() != item->GetKind());
 
     bool extra_newline =
         !is_last_item &&
-        (is_next_item_different || extra_seperation.contains(item->getKind()));
+        (is_next_item_different || extra_seperation.contains(item->GetKind()));
 
     if (extra_newline) {
-      line << std::endl;
+      m_line << std::endl;
     }
   }
 
-  if (!isRootBlock) {
-    indent -= tabSize;
-    line << get_indent() << "}";
+  if (!is_root_block) {
+    m_indent -= m_tabSize;
+    m_line << GetIndent() << "}";
   }
 }
 
-void CambrianFormatter::visit(FlowPtr<VarDecl> n) {
-  print_line_comments(n);
+void CambrianFormatter::Visit(FlowPtr<Variable> n) {
+  PrintLineComments(n);
 
-  switch (n->get_decl_type()) {
-    case VarDeclType::Let: {
-      line << "let ";
+  switch (n->GetDeclType()) {
+    case VariableType::Let: {
+      m_line << "let ";
       break;
     }
 
-    case VarDeclType::Const: {
-      line << "const ";
+    case VariableType::Const: {
+      m_line << "const ";
       break;
     }
 
-    case VarDeclType::Var: {
-      line << "var ";
+    case VariableType::Var: {
+      m_line << "var ";
       break;
     }
   }
 
-  if (!n->get_attributes().empty()) {
-    line << "[";
-    iterate_except_last(
-        n->get_attributes().begin(), n->get_attributes().end(),
-        [&](auto attr, size_t) { attr.accept(*this); },
-        [&](let) { line << ", "; });
-    line << "] ";
+  if (!n->GetAttributes().empty()) {
+    m_line << "[";
+    IterateExceptLast(
+        n->GetAttributes().begin(), n->GetAttributes().end(),
+        [&](auto attr, size_t) { attr.Accept(*this); },
+        [&](let) { m_line << ", "; });
+    m_line << "] ";
   }
 
-  line << n->get_name();
+  m_line << n->GetName();
 
-  if (n->get_type()) {
-    line << ": ";
-    n->get_type().value().accept(*this);
+  if (n->GetType()) {
+    m_line << ": ";
+    n->GetType().value().Accept(*this);
   }
 
-  if (n->get_value()) {
-    line << " = ";
-    n->get_value().value().accept(*this);
+  if (n->GetValue()) {
+    m_line << " = ";
+    n->GetValue().value().Accept(*this);
   }
 
-  line << ";";
+  m_line << ";";
 }
 
-void CambrianFormatter::visit(FlowPtr<InlineAsm> n) {
-  print_line_comments(n);
+void CambrianFormatter::Visit(FlowPtr<Assembly> n) {
+  PrintLineComments(n);
 
   /* Support for inline assembly is not avaliable yet */
 
-  failed = true;
+  m_failed = true;
 
-  line << "/* !!! */";
+  m_line << "/* !!! */";
 }
 
-void CambrianFormatter::visit(FlowPtr<IfStmt> n) {
-  print_line_comments(n);
+void CambrianFormatter::Visit(FlowPtr<parse::If> n) {
+  PrintLineComments(n);
 
-  line << "if ";
-  n->get_cond().accept(*this);
-  line << " ";
-  n->get_then().accept(*this);
+  m_line << "if ";
+  n->GetCond().Accept(*this);
+  m_line << " ";
+  n->GetThen().Accept(*this);
 
-  if (n->get_else()) {
-    line << " else ";
-    n->get_else().value().accept(*this);
+  if (n->GetElse()) {
+    m_line << " else ";
+    n->GetElse().value().Accept(*this);
   }
 
-  line << ";";
+  m_line << ";";
 }
 
-void CambrianFormatter::visit(FlowPtr<WhileStmt> n) {
-  print_line_comments(n);
+void CambrianFormatter::Visit(FlowPtr<parse::While> n) {
+  PrintLineComments(n);
 
-  line << "while ";
-  n->get_cond().accept(*this);
-  line << " ";
-  n->get_body().accept(*this);
+  m_line << "while ";
+  n->GetCond().Accept(*this);
+  m_line << " ";
+  n->GetBody().Accept(*this);
 
-  line << ";";
+  m_line << ";";
 }
 
-void CambrianFormatter::visit(FlowPtr<ForStmt> n) {
-  print_line_comments(n);
+void CambrianFormatter::Visit(FlowPtr<parse::For> n) {
+  PrintLineComments(n);
 
-  line << "for (";
+  m_line << "for (";
 
-  if (n->get_init().has_value()) {
-    n->get_init().value().accept(*this);
-    if (!n->get_init().value()->is_stmt()) {
-      line << ";";
+  if (n->GetInit().has_value()) {
+    n->GetInit().value().Accept(*this);
+    if (!n->GetInit().value()->IsStmt()) {
+      m_line << ";";
     }
   } else {
-    line << ";";
+    m_line << ";";
   }
 
-  if (n->get_cond().has_value()) {
-    line << " ";
-    n->get_cond().value().accept(*this);
+  if (n->GetCond().has_value()) {
+    m_line << " ";
+    n->GetCond().value().Accept(*this);
   }
-  line << ";";
+  m_line << ";";
 
-  if (n->get_step().has_value()) {
-    line << " ";
-    n->get_step().value().accept(*this);
+  if (n->GetStep().has_value()) {
+    m_line << " ";
+    n->GetStep().value().Accept(*this);
   }
 
-  line << ") ";
-  n->get_body().accept(*this);
+  m_line << ") ";
+  n->GetBody().Accept(*this);
 
-  line << ";";
+  m_line << ";";
 }
 
-void CambrianFormatter::visit(FlowPtr<ForeachStmt> n) {
-  print_line_comments(n);
+void CambrianFormatter::Visit(FlowPtr<parse::Foreach> n) {
+  PrintLineComments(n);
 
-  line << "foreach (";
-  if (n->get_idx_ident().empty()) {
-    line << n->get_val_ident();
+  m_line << "foreach (";
+  if (n->GetIdxIdentifier()->empty()) {
+    m_line << n->GetValIdentifier();
   } else {
-    line << n->get_idx_ident() << ", " << n->get_val_ident();
+    m_line << n->GetIdxIdentifier() << ", " << n->GetValIdentifier();
   }
 
-  line << " in ";
-  n->get_expr().accept(*this);
-  line << ") ";
+  m_line << " in ";
+  n->GetExpr().Accept(*this);
+  m_line << ") ";
 
-  n->get_body().accept(*this);
+  n->GetBody().Accept(*this);
 
-  line << ";";
+  m_line << ";";
 }
 
-void CambrianFormatter::visit(FlowPtr<BreakStmt> n) {
-  print_line_comments(n);
+void CambrianFormatter::Visit(FlowPtr<parse::Break> n) {
+  PrintLineComments(n);
 
-  line << "break;";
+  m_line << "break;";
 }
 
-void CambrianFormatter::visit(FlowPtr<ContinueStmt> n) {
-  print_line_comments(n);
+void CambrianFormatter::Visit(FlowPtr<parse::Continue> n) {
+  PrintLineComments(n);
 
-  line << "continue;";
+  m_line << "continue;";
 }
 
-void CambrianFormatter::visit(FlowPtr<ReturnStmt> n) {
-  print_line_comments(n);
+void CambrianFormatter::Visit(FlowPtr<parse::Return> n) {
+  PrintLineComments(n);
 
-  if (n->get_value().has_value()) {
-    line << "ret ";
-    n->get_value().value().accept(*this);
-    line << ";";
+  if (n->GetValue().has_value()) {
+    m_line << "ret ";
+    n->GetValue().value().Accept(*this);
+    m_line << ";";
   } else {
-    line << "ret;";
+    m_line << "ret;";
   }
 }
 
-void CambrianFormatter::visit(FlowPtr<ReturnIfStmt> n) {
-  print_line_comments(n);
+void CambrianFormatter::Visit(FlowPtr<ReturnIf> n) {
+  PrintLineComments(n);
 
-  line << "retif ";
-  n->get_cond().accept(*this);
-  line << ", ";
-  n->get_value().accept(*this);
-  line << ";";
+  m_line << "retif ";
+  n->GetCond().Accept(*this);
+  m_line << ", ";
+  n->GetValue().Accept(*this);
+  m_line << ";";
 }
 
-void CambrianFormatter::visit(FlowPtr<CaseStmt> n) {
-  print_line_comments(n);
+void CambrianFormatter::Visit(FlowPtr<Case> n) {
+  PrintLineComments(n);
 
-  n->get_cond().accept(*this);
-  line << " => ";
-  wrap_stmt_body(n->get_body(), 10, false);
+  n->GetCond().Accept(*this);
+  m_line << " => ";
+  WrapStmtBody(n->GetBody(), 10, false);
 }
 
-void CambrianFormatter::visit(FlowPtr<SwitchStmt> n) {
-  print_line_comments(n);
+void CambrianFormatter::Visit(FlowPtr<parse::Switch> n) {
+  PrintLineComments(n);
 
-  line << "switch ";
-  n->get_cond().accept(*this);
-  line << " {" << std::endl;
-  indent += tabSize;
+  m_line << "switch ";
+  n->GetCond().Accept(*this);
+  m_line << " {" << std::endl;
+  m_indent += m_tabSize;
 
-  for (auto c : n->get_cases()) {
-    line << get_indent();
-    c.accept(*this);
-    line << std::endl;
+  for (auto c : n->GetCases()) {
+    m_line << GetIndent();
+    c.Accept(*this);
+    m_line << std::endl;
   }
 
-  if (n->get_default()) {
-    line << get_indent();
-    line << "_ => ";
-    wrap_stmt_body(n->get_default().value(), 10, false);
-    line << std::endl;
+  if (n->GetDefault()) {
+    m_line << GetIndent();
+    m_line << "_ => ";
+    WrapStmtBody(n->GetDefault().value(), 10, false);
+    m_line << std::endl;
   }
 
-  indent -= tabSize;
-  line << get_indent() << "}";
+  m_indent -= m_tabSize;
+  m_line << GetIndent() << "}";
 }
 
-void CambrianFormatter::visit(FlowPtr<TypedefStmt> n) {
-  print_line_comments(n);
+void CambrianFormatter::Visit(FlowPtr<Typedef> n) {
+  PrintLineComments(n);
 
-  line << "type " << n->get_name() << " = ";
-  n->get_type().accept(*this);
-  line << ";";
+  m_line << "type " << n->GetName() << " = ";
+  n->GetType().Accept(*this);
+  m_line << ";";
 }
 
-void CambrianFormatter::visit(FlowPtr<Function> n) {
-  print_line_comments(n);
+void CambrianFormatter::Visit(FlowPtr<Function> n) {
+  PrintLineComments(n);
 
-  line << "fn";
+  m_line << "fn";
 
-  if (!n->get_attributes().empty()) {
-    line << " [";
-    iterate_except_last(
-        n->get_attributes().begin(), n->get_attributes().end(),
-        [&](auto attr, size_t) { attr.accept(*this); },
-        [&](let) { line << ", "; });
-    line << "]";
+  if (!n->GetAttributes().empty()) {
+    m_line << " [";
+    IterateExceptLast(
+        n->GetAttributes().begin(), n->GetAttributes().end(),
+        [&](auto attr, size_t) { attr.Accept(*this); },
+        [&](let) { m_line << ", "; });
+    m_line << "]";
   }
 
-  switch (n->get_purity()) {
+  switch (n->GetPurity()) {
     case Purity::Impure: {
       break;
     }
 
     case Purity::Impure_TSafe: {
-      line << " tsafe";
+      m_line << " tsafe";
       break;
     }
 
     case Purity::Pure: {
-      line << " pure";
+      m_line << " pure";
       break;
     }
 
     case Purity::Quasi: {
-      line << " quasi";
+      m_line << " quasi";
       break;
     }
 
     case Purity::Retro: {
-      line << " retro";
+      m_line << " retro";
       break;
     }
   }
 
-  if (!n->get_captures().empty()) {
-    line << " [";
-    iterate_except_last(
-        n->get_captures().begin(), n->get_captures().end(),
+  if (!n->GetCaptures().empty()) {
+    m_line << " [";
+    IterateExceptLast(
+        n->GetCaptures().begin(), n->GetCaptures().end(),
         [&](auto cap, size_t) {
           if (cap.second) {
-            line << "&";
+            m_line << "&";
           }
-          line << cap.first;
+          m_line << cap.first;
         },
-        [&](let) { line << ", "; });
-    line << "]";
+        [&](let) { m_line << ", "; });
+    m_line << "]";
   }
 
-  line << " " << n->get_name();
+  m_line << " " << n->GetName();
 
-  if (n->get_template_params()) {
-    line << "<";
-    iterate_except_last(
-        n->get_template_params().value().begin(),
-        n->get_template_params().value().end(),
+  if (n->GetTemplateParams()) {
+    m_line << "<";
+    IterateExceptLast(
+        n->GetTemplateParams().value().begin(),
+        n->GetTemplateParams().value().end(),
         [&](auto param, size_t) {
-          line << std::get<0>(param);
+          m_line << std::get<0>(param);
 
           if (let type = std::get<1>(param)) {
-            if (type->getKind() != QAST_INFER) {
-              line << ": ";
-              type->accept(*this);
+            if (type->GetKind() != QAST_INFER) {
+              m_line << ": ";
+              type->Accept(*this);
             }
           }
 
           if (auto val = std::get<2>(param)) {
-            line << " = ";
-            val.value().accept(*this);
+            m_line << " = ";
+            val.value().Accept(*this);
           }
         },
-        [&](let) { line << ", "; });
-    line << ">";
+        [&](let) { m_line << ", "; });
+    m_line << ">";
   }
 
-  line << "(";
-  iterate_except_last(
-      n->get_params().begin(), n->get_params().end(),
+  m_line << "(";
+  IterateExceptLast(
+      n->GetParams().begin(), n->GetParams().end(),
       [&](auto param, size_t) {
-        line << std::get<0>(param);
+        m_line << std::get<0>(param);
 
         if (let type = std::get<1>(param)) {
-          if (type->getKind() != QAST_INFER) {
-            line << ": ";
-            type->accept(*this);
+          if (type->GetKind() != QAST_INFER) {
+            m_line << ": ";
+            type->Accept(*this);
           }
         }
 
         if (auto def = std::get<2>(param)) {
-          line << " = ";
-          def.value().accept(*this);
+          m_line << " = ";
+          def.value().Accept(*this);
         }
       },
-      [&](let) { line << ", "; });
+      [&](let) { m_line << ", "; });
 
-  if (n->is_variadic()) {
-    if (!n->get_params().empty()) {
-      line << ", ";
+  if (n->IsVariadic()) {
+    if (!n->GetParams().empty()) {
+      m_line << ", ";
     }
-    line << "...";
+    m_line << "...";
   }
-  line << ")";
+  m_line << ")";
 
   { /* Return type */
-    auto return_type = n->get_return();
+    auto return_type = n->GetReturn();
 
-    if (!return_type->is(QAST_INFER)) {
-      line << ": ";
-      return_type.accept(*this);
+    if (!return_type->Is(QAST_INFER)) {
+      m_line << ": ";
+      return_type.Accept(*this);
     }
   }
 
-  if (n->is_declaration()) {
-    line << ";";
+  if (n->IsDeclaration()) {
+    m_line << ";";
   } else {
-    line << " ";
-    wrap_stmt_body(n->get_body().value(), 10, true);
+    m_line << " ";
+    WrapStmtBody(n->GetBody().value(), 10, true);
   }
 }
 
-void CambrianFormatter::visit(FlowPtr<StructDef> n) {
-  print_line_comments(n);
+void CambrianFormatter::Visit(FlowPtr<parse::Struct> n) {
+  PrintLineComments(n);
 
-  switch (n->get_composite_type()) {
+  switch (n->GetCompositeType()) {
     case CompositeType::Region: {
-      line << "region ";
+      m_line << "region ";
       break;
     }
 
     case CompositeType::Struct: {
-      line << "struct ";
+      m_line << "struct ";
       break;
     }
 
     case CompositeType::Group: {
-      line << "group ";
+      m_line << "group ";
       break;
     }
 
     case CompositeType::Class: {
-      line << "class ";
+      m_line << "class ";
       break;
     }
 
     case CompositeType::Union: {
-      line << "union ";
+      m_line << "union ";
       break;
     }
   }
 
-  if (!n->get_attributes().empty()) {
-    line << "[";
-    iterate_except_last(
-        n->get_attributes().begin(), n->get_attributes().end(),
-        [&](auto attr, size_t) { attr.accept(*this); },
-        [&](let) { line << ", "; });
-    line << "] ";
+  if (!n->GetAttributes().empty()) {
+    m_line << "[";
+    IterateExceptLast(
+        n->GetAttributes().begin(), n->GetAttributes().end(),
+        [&](auto attr, size_t) { attr.Accept(*this); },
+        [&](let) { m_line << ", "; });
+    m_line << "] ";
   }
 
-  line << n->get_name();
-  if (n->get_template_params().has_value()) {
-    line << "<";
-    iterate_except_last(
-        n->get_template_params().value().begin(),
-        n->get_template_params().value().end(),
+  m_line << n->GetName();
+  if (n->GetTemplateParams().has_value()) {
+    m_line << "<";
+    IterateExceptLast(
+        n->GetTemplateParams().value().begin(),
+        n->GetTemplateParams().value().end(),
         [&](auto param, size_t) {
-          line << std::get<0>(param);
-          if (auto type = std::get<1>(param); type->getKind() != QAST_INFER) {
-            line << ": ";
-            type.accept(*this);
+          m_line << std::get<0>(param);
+          if (auto type = std::get<1>(param); type->GetKind() != QAST_INFER) {
+            m_line << ": ";
+            type.Accept(*this);
           }
           if (auto val = std::get<2>(param)) {
-            line << " = ";
-            val.value().accept(*this);
+            m_line << " = ";
+            val.value().Accept(*this);
           }
         },
-        [&](let) { line << ", "; });
-    line << ">";
+        [&](let) { m_line << ", "; });
+    m_line << ">";
   }
 
-  if (!n->get_names().empty()) {
-    line << ": ";
-    iterate_except_last(
-        n->get_names().begin(), n->get_names().end(),
-        [&](auto name, size_t) { line << name; }, [&](let) { line << ", "; });
+  if (!n->GetNames().empty()) {
+    m_line << ": ";
+    IterateExceptLast(
+        n->GetNames().begin(), n->GetNames().end(),
+        [&](auto name, size_t) { m_line << name; },
+        [&](let) { m_line << ", "; });
   }
 
-  bool is_empty = n->get_fields().empty() && n->get_methods().empty() &&
-                  n->get_static_methods().empty();
+  bool is_empty = n->GetFields().empty() && n->GetMethods().empty() &&
+                  n->GetStaticMethods().empty();
 
   if (is_empty) {
-    line << " {}";
+    m_line << " {}";
     return;
   }
 
-  line << " {" << std::endl;
-  indent += tabSize;
+  m_line << " {" << std::endl;
+  m_indent += m_tabSize;
 
-  std::for_each(n->get_fields().begin(), n->get_fields().end(),
-                [&](auto field) {
-                  line << get_indent() << field.get_vis() << " ";
+  auto fields_count = n->GetFields();
+  auto methods_count = n->GetMethods();
+  auto static_methods_count = n->GetStaticMethods();
 
-                  line << field.get_name() << ": ";
-                  field.get_type().accept(*this);
+  std::for_each(n->GetFields().begin(), n->GetFields().end(), [&](auto field) {
+    m_line << GetIndent() << field.GetVis() << " ";
 
-                  if (field.get_value().has_value()) {
-                    line << " = ";
-                    field.get_value().value().accept(*this);
-                  }
+    m_line << field.GetName() << ": ";
+    field.GetType().Accept(*this);
 
-                  line << "," << std::endl;
-                });
-
-  std::for_each(n->get_methods().begin(), n->get_methods().end(),
-                [&](auto method) {
-                  line << get_indent() << method.vis << " ";
-                  method.func.accept(*this);
-                  line << std::endl;
-                });
-
-  std::for_each(n->get_static_methods().begin(), n->get_static_methods().end(),
-                [&](auto method) {
-                  line << get_indent() << method.vis << " static ";
-                  method.func.accept(*this);
-                  line << std::endl;
-                });
-
-  indent -= tabSize;
-  line << "}";
-}
-
-void CambrianFormatter::visit(FlowPtr<EnumDef> n) {
-  print_line_comments(n);
-
-  line << "enum " << n->get_name();
-  if (n->get_type()) {
-    line << ": ";
-    n->get_type().value().accept(*this);
-  }
-
-  if (n->get_items().empty()) {
-    line << ";";
-    return;
-  }
-
-  line << " {" << std::endl;
-  indent += tabSize;
-
-  for (auto it = n->get_items().begin(); it != n->get_items().end(); ++it) {
-    line << get_indent();
-    line << it->first;
-    if (it->second) {
-      line << " = ";
-      it->second.value().accept(*this);
+    if (field.GetValue().has_value()) {
+      m_line << " = ";
+      field.GetValue().value().Accept(*this);
     }
-    line << "," << std::endl;
+
+    m_line << "," << std::endl;
+  });
+
+  if (!fields_count.empty() && !methods_count.empty()) {
+    m_line << std::endl;
   }
 
-  indent -= tabSize;
-  line << get_indent() << "}";
+  std::for_each(n->GetMethods().begin(), n->GetMethods().end(),
+                [&](auto method) {
+                  m_line << GetIndent() << method.m_vis << " ";
+                  method.m_func.Accept(*this);
+                  m_line << std::endl;
+                });
+
+  if (!static_methods_count.empty() &&
+      (!fields_count.empty() || !methods_count.empty())) {
+    m_line << std::endl;
+  }
+
+  std::for_each(n->GetStaticMethods().begin(), n->GetStaticMethods().end(),
+                [&](auto method) {
+                  m_line << GetIndent() << method.m_vis << " static ";
+                  method.m_func.Accept(*this);
+                  m_line << std::endl;
+                });
+
+  m_indent -= m_tabSize;
+  m_line << "}";
 }
 
-void CambrianFormatter::visit(FlowPtr<ScopeStmt> n) {
-  print_line_comments(n);
+void CambrianFormatter::Visit(FlowPtr<parse::Enum> n) {
+  PrintLineComments(n);
 
-  line << "scope ";
-
-  if (!n->get_name().empty()) {
-    line << n->get_name();
+  m_line << "enum " << n->GetName();
+  if (n->GetType()) {
+    m_line << ": ";
+    n->GetType().value().Accept(*this);
   }
 
-  if (!n->get_deps().empty()) {
-    line << ": [";
-    iterate_except_last(
-        n->get_deps().begin(), n->get_deps().end(),
-        [&](auto dep, size_t) { line << dep; }, [&](let) { line << ", "; });
-    line << "]";
+  if (n->GetItems().empty()) {
+    m_line << ";";
+    return;
   }
 
-  line << " ";
-  wrap_stmt_body(n->get_body(), 50, true);
+  m_line << " {" << std::endl;
+  m_indent += m_tabSize;
+
+  for (auto& it : n->GetItems()) {
+    m_line << GetIndent();
+    m_line << it.first;
+    if (it.second) {
+      m_line << " = ";
+      it.second.value().Accept(*this);
+    }
+    m_line << "," << std::endl;
+  }
+
+  m_indent -= m_tabSize;
+  m_line << GetIndent() << "}";
 }
 
-void CambrianFormatter::visit(FlowPtr<ExportStmt> n) {
-  print_line_comments(n);
+void CambrianFormatter::Visit(FlowPtr<parse::Scope> n) {
+  PrintLineComments(n);
 
-  line << n->get_vis();
+  m_line << "scope ";
 
-  if (!n->get_abi_name().empty()) {
-    line << " ";
-    escape_string_literal(n->get_abi_name());
+  if (!n->GetName()->empty()) {
+    m_line << n->GetName();
   }
 
-  if (!n->get_attrs().empty()) {
-    line << " [";
-    iterate_except_last(
-        n->get_attrs().begin(), n->get_attrs().end(),
-        [&](auto attr, size_t) { attr.accept(*this); },
-        [&](let) { line << ", "; });
-    line << "]";
+  if (!n->GetDeps().empty()) {
+    m_line << ": [";
+    IterateExceptLast(
+        n->GetDeps().begin(), n->GetDeps().end(),
+        [&](auto dep, size_t) { m_line << dep; }, [&](let) { m_line << ", "; });
+    m_line << "]";
   }
 
-  line << " ";
+  m_line << " ";
+  WrapStmtBody(n->GetBody(), 50, true);
+}
 
-  wrap_stmt_body(n->get_body(), -1, false);
+void CambrianFormatter::Visit(FlowPtr<Export> n) {
+  PrintLineComments(n);
+
+  m_line << n->GetVis();
+
+  if (!n->GetAbiName()->empty()) {
+    m_line << " ";
+    EscapeStringLiteral(n->GetAbiName());
+  }
+
+  if (!n->GetAttrs().empty()) {
+    m_line << " [";
+    IterateExceptLast(
+        n->GetAttrs().begin(), n->GetAttrs().end(),
+        [&](auto attr, size_t) { attr.Accept(*this); },
+        [&](let) { m_line << ", "; });
+    m_line << "]";
+  }
+
+  m_line << " ";
+
+  WrapStmtBody(n->GetBody(), -1, false);
 }

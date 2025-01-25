@@ -37,60 +37,62 @@ using namespace ncc;
 using namespace ncc::lex;
 using namespace ncc::parse;
 
-string Parser::recurse_abi_name() {
-  auto tok = next_if(Text);
-  return tok ? tok->as_string() : "";
+auto Parser::PImpl::RecurseAbiName() -> string {
+  auto tok = NextIf(Text);
+
+  return tok ? tok->GetString() : "";
 }
 
-std::optional<ExpressionList> Parser::recurse_export_attributes() {
+auto Parser::PImpl::RecurseExportAttributes() -> std::optional<ExpressionList> {
   ExpressionList attributes;
 
-  if (!next_if(PuncLBrk)) {
+  if (!NextIf(PuncLBrk)) {
     return attributes;
   }
 
   while (true) {
-    if (next_if(EofF)) [[unlikely]] {
-      log << SyntaxError << current()
+    if (NextIf(EofF)) [[unlikely]] {
+      Log << SyntaxError << current()
           << "Encountered EOF while parsing export attributes";
       break;
     }
 
-    if (next_if(PuncRBrk)) {
+    if (NextIf(PuncRBrk)) {
       return attributes;
     }
 
-    auto attribute = recurse_expr({
+    auto attribute = RecurseExpr({
         Token(Punc, PuncComa),
         Token(Punc, PuncRBrk),
     });
 
     attributes.push_back(attribute);
 
-    next_if(PuncComa);
+    NextIf(PuncComa);
   }
 
   return std::nullopt;
 }
 
-FlowPtr<Stmt> Parser::recurse_export_body() {
-  if (peek().is<PuncLCur>()) {
-    return recurse_block(true, false, SafetyMode::Unknown);
-  } else {
-    return recurse_block(false, true, SafetyMode::Unknown);
+auto Parser::PImpl::RecurseExportBody() -> FlowPtr<Stmt> {
+  if (peek().Is<PuncLCur>()) {
+    return RecurseBlock(true, false, SafetyMode::Unknown);
   }
+
+  return RecurseBlock(false, true, SafetyMode::Unknown);
 }
 
-FlowPtr<Stmt> Parser::recurse_export(Vis vis) {
-  auto export_abi = recurse_abi_name();
+auto Parser::PImpl::RecurseExport(Vis vis) -> FlowPtr<Stmt> {
+  auto export_abi = RecurseAbiName();
 
-  if (auto export_attributes = recurse_export_attributes()) {
-    auto export_body = recurse_export_body();
+  if (auto export_attributes = RecurseExportAttributes()) {
+    auto export_body = RecurseExportBody();
 
-    return make<ExportStmt>(export_body, export_abi, vis,
+    return CreateNode<Export>(export_body, export_abi, vis,
                             export_attributes.value())();
-  } else {
-    log << SyntaxError << current() << "Malformed export attributes";
-    return mock_stmt(QAST_EXPORT);
   }
+
+  Log << SyntaxError << current() << "Malformed export attributes";
+
+  return MockStmt(QAST_EXPORT);
 }

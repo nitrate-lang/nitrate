@@ -34,52 +34,50 @@
 #include <boost/uuid/uuid.hpp>
 #include <boost/uuid/uuid_generators.hpp>
 #include <boost/uuid/uuid_io.hpp>
+#include <chrono>
 #include <nitrate-core/Environment.hh>
 #include <nitrate-core/Macro.hh>
+#include <sstream>
 
 using namespace ncc;
 
-void Environment::setup_default_env() {
-  { /* Generate unique ID for this compilation unit */
-    boost::uuids::random_generator gen;
-    boost::uuids::uuid uuid = gen();
-    std::string uuid_str = boost::uuids::to_string(uuid);
-    set("this.job", uuid_str.c_str());
-  }
+void Environment::SetupDefaultKeys() {
+  /* Generate unique ID for this compilation unit */
+  m_data["this.job"] =
+      boost::uuids::to_string(boost::uuids::random_generator()());
 
-  { /* Set the compiler start time */
-    let now = std::chrono::system_clock::now();
-    let ms = std::chrono::duration_cast<std::chrono::milliseconds>(
-        now.time_since_epoch());
+  /* Set the compiler start time */
+  let now = std::chrono::system_clock::now();
+  let ms = std::chrono::duration_cast<std::chrono::milliseconds>(
+      now.time_since_epoch());
 
-    set("this.created_at", std::to_string(ms.count()).c_str());
-  }
-
-  set("FILE", "<stdin>");
+  m_data["this.created_at"] = std::to_string(ms.count());
 }
 
-NCC_EXPORT Environment::Environment() { setup_default_env(); }
-
-NCC_EXPORT bool Environment::contains(std::string_view key) {
-  std::lock_guard<std::mutex> lock(m_mutex);
-  return m_data.contains(key);
+auto Environment::Contains(std::string_view key) -> bool {
+  return m_data.contains(key) || key == "this.keys";
 }
 
-NCC_EXPORT std::optional<std::string_view> Environment::get(
-    std::string_view key) {
-  std::lock_guard<std::mutex> lock(m_mutex);
+auto Environment::Get(string key) -> std::optional<string> {
+  if (key == "this.keys") {
+    std::stringstream keys;
+    for (auto const &[k, _] : m_data) {
+      keys << k->size() << " " << k;
+    }
+
+    return keys.str();
+  }
+
   if (auto it = m_data.find(key); it != m_data.end()) {
     return it->second;
   }
+
   return std::nullopt;
 }
 
-NCC_EXPORT void Environment::set(std::string_view key,
-                                 std::optional<std::string_view> value, bool) {
-  std::lock_guard<std::mutex> lock(m_mutex);
-
+void Environment::Set(string key, std::optional<string> value) {
   if (value.has_value()) {
-    m_data[key] = *value;
+    m_data.insert_or_assign(key, *value);
   } else {
     m_data.erase(key);
   }

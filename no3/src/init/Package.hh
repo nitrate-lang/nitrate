@@ -36,93 +36,88 @@
 
 #include <conf/Config.hh>
 #include <filesystem>
-#include <optional>
-#include <set>
 #include <string>
 
-namespace no3 {
-  namespace init {
-    enum class PackageType { PROGRAM, STATICLIB, SHAREDLIB };
+namespace no3::init {
+  enum class PackageType : uint8_t { PROGRAM, STATICLIB, SHAREDLIB };
 
-    class Package {
-      std::filesystem::path m_output;
-      std::string m_name;
-      std::string m_license;
-      std::string m_author;
-      std::string m_email;
-      std::string m_url;
-      std::string m_version;
-      std::string m_description;
-      PackageType m_type;
-      bool m_verbose;
-      bool m_force;
+  class Package {
+    std::filesystem::path m_output;
+    std::string m_name;
+    std::string m_license;
+    std::string m_author;
+    std::string m_email;
+    std::string m_url;
+    std::string m_version;
+    std::string m_description;
+    PackageType m_type;
+    bool m_verbose;
+    bool m_force;
 
-      bool createPackage();
+    auto CreatePackage() -> bool;
 
-      static bool validateName(const std::string &name);
-      static bool validateVersion(const std::string &version);
-      static bool validateEmail(const std::string &email);
-      static bool validateUrl(const std::string &url);
-      static bool validateLicense(const std::string &license);
+    static auto ValidateName(const std::string &name) -> bool;
+    static auto ValidateVersion(const std::string &version) -> bool;
+    static auto ValidateEmail(const std::string &email) -> bool;
+    static auto ValidateUrl(const std::string &url) -> bool;
+    static auto ValidateLicense(const std::string &license) -> bool;
 
-      bool writeGitIgnore();
-      bool writeMain();
-      bool writeReadme();
-      bool writeConfig();
+    auto WriteGitIgnore() -> bool;
+    auto WriteMain() -> bool;
+    auto WriteReadme() -> bool;
+    auto WriteConfig() -> bool;
 
-    public:
-      Package(std::filesystem::path output, std::string name,
-              std::string license, std::string author, std::string email,
-              std::string url, std::string version, std::string description,
-              PackageType type, bool verbose, bool force)
-          : m_output(output),
-            m_name(name),
-            m_license(license),
-            m_author(author),
-            m_email(email),
-            m_url(url),
-            m_version(version),
-            m_description(description),
-            m_type(type),
-            m_verbose(verbose),
-            m_force(force) {
-        (void)m_verbose;
-      }
+  public:
+    Package(auto output, auto name, auto license, auto author, auto email,
+            auto url, auto version, auto description, PackageType type,
+            auto verbose, auto force)
+        : m_output(std::move(output)),
+          m_name(std::move(name)),
+          m_license(std::move(license)),
+          m_author(std::move(author)),
+          m_email(std::move(email)),
+          m_url(std::move(url)),
+          m_version(std::move(version)),
+          m_description(std::move(description)),
+          m_type(type),
+          m_verbose(verbose),
+          m_force(force) {
+      (void)m_verbose;
+    }
 
-      bool create();
-    };
+    auto Create() -> bool;
+  };
 
-    class PackageBuilder {
-      std::string m_output;
-      std::string m_name;
-      std::string m_license;
-      std::string m_author;
-      std::string m_email;
-      std::string m_url;
-      std::string m_version;
-      std::string m_description;
-      PackageType m_type;
-      bool m_verbose;
-      bool m_force;
+  class PackageBuilder {
+    std::string m_output;
+    std::string m_name;
+    std::string m_license;
+    std::string m_author;
+    std::string m_email;
+    std::string m_url;
+    std::string m_version;
+    std::string m_description;
+    PackageType m_type;
+    bool m_verbose{};
+    bool m_force{};
 
-    public:
-      PackageBuilder() : m_verbose(false), m_force(false) {}
+  public:
+    PackageBuilder() = default;
 
-      PackageBuilder &output(const std::string &output);
-      PackageBuilder &name(const std::string &name);
-      PackageBuilder &license(const std::string &license);
-      PackageBuilder &author(const std::string &author);
-      PackageBuilder &email(const std::string &email);
-      PackageBuilder &url(const std::string &url);
-      PackageBuilder &version(const std::string &version);
-      PackageBuilder &description(const std::string &description);
-      PackageBuilder &type(PackageType type);
-      PackageBuilder &verbose(bool verbose);
-      PackageBuilder &force(bool force);
+    auto Output(const std::string &output) -> PackageBuilder &;
+    auto Name(const std::string &name) -> PackageBuilder &;
+    auto License(const std::string &license) -> PackageBuilder &;
+    auto Author(const std::string &author) -> PackageBuilder &;
+    auto Email(const std::string &email) -> PackageBuilder &;
+    auto Url(const std::string &url) -> PackageBuilder &;
+    auto Version(const std::string &version) -> PackageBuilder &;
+    auto Description(const std::string &description) -> PackageBuilder &;
+    auto Type(PackageType type) -> PackageBuilder &;
+    auto Verbose(bool verbose) -> PackageBuilder &;
+    auto Force(bool force) -> PackageBuilder &;
 
-      Package build();
-    };
-  }  // namespace init
-}  // namespace no3
+    auto Build() -> Package;
+  };
+}  // namespace no3::init
 
 #endif  // __NO3_INIT_PACKAGE_HH__

@@ -46,7 +46,7 @@
 #include <vector>
 
 namespace ncc::parse {
-  extern thread_local std::unique_ptr<ncc::IMemory> npar_allocator;
+  extern thread_local std::unique_ptr<ncc::IMemory> NparAllocator;
 
   template <class T>
   struct Arena {
@@ -57,22 +57,19 @@ namespace ncc::parse {
     template <class U>
     constexpr Arena(const Arena<U> &) {}
 
-    [[nodiscard]] T *allocate(std::size_t n) {
-      return static_cast<T *>(npar_allocator->alloc(sizeof(T) * n));
+    [[nodiscard]] T *allocate(std::size_t n) {  // NOLINT
+      return static_cast<T *>(NparAllocator->Alloc(sizeof(T) * n));
     }
 
-    void deallocate(T *p, std::size_t n) {
-      (void)n;
-      (void)p;
-    }
+    void deallocate(T *, std::size_t) {}  // NOLINT
   };
 
   template <class T, class U>
-  bool operator==(const Arena<T> &, const Arena<U> &) {
+  auto operator==(const Arena<T> &, const Arena<U> &) -> bool {
     return true;
   }
   template <class T, class U>
-  bool operator!=(const Arena<T> &, const Arena<U> &) {
+  auto operator!=(const Arena<T> &, const Arena<U> &) -> bool {
     return false;
   }
 };  // namespace ncc::parse
@@ -93,9 +90,9 @@ namespace ncc::parse {
   using BlockItems = std::vector<FlowPtr<Stmt>, Arena<FlowPtr<Stmt>>>;
   using ScopeDeps = std::vector<string, Arena<string>>;
 
-  using SwitchCases = std::vector<FlowPtr<CaseStmt>, Arena<FlowPtr<CaseStmt>>>;
+  using SwitchCases = std::vector<FlowPtr<Case>, Arena<FlowPtr<Case>>>;
   using EnumItem = std::pair<string, NullableFlowPtr<Expr>>;
-  using EnumDefItems = std::vector<EnumItem, Arena<EnumItem>>;
+  using EnumItems = std::vector<EnumItem, Arena<EnumItem>>;
 
   class StructField {
     string m_name;
@@ -107,31 +104,32 @@ namespace ncc::parse {
   public:
     StructField(Vis vis, bool is_static, string name, FlowPtr<Type> type,
                 NullableFlowPtr<Expr> value)
-        : m_name(std::move(name)),
+        : m_name(name),
           m_value(std::move(value)),
-          m_type(type),
+          m_type(std::move(type)),
           m_vis(vis),
           m_is_static(is_static) {}
 
-    auto get_vis() const { return m_vis; }
-    auto is_static() const { return m_is_static; }
-    auto get_name() const { return m_name.get(); }
-    auto get_type() const { return m_type; }
-    auto get_value() const { return m_value; }
+    [[nodiscard]] auto GetVis() const { return m_vis; }
+    [[nodiscard]] auto IsStatic() const { return m_is_static; }
+    [[nodiscard]] auto GetName() const { return m_name; }
+    [[nodiscard]] auto GetType() const { return m_type; }
+    [[nodiscard]] auto GetValue() const { return m_value; }
   };
 
   struct StructFunction {
-    Vis vis;
-    FlowPtr<Stmt> func;
+    Vis m_vis;
+    FlowPtr<Stmt> m_func;
 
-    StructFunction(Vis vis, FlowPtr<Stmt> func) : vis(vis), func(func) {}
+    StructFunction(Vis vis, FlowPtr<Stmt> func)
+        : m_vis(vis), m_func(std::move(func)) {}
   };
 
-  using StructDefFields = std::vector<StructField, Arena<StructField>>;
-  using StructDefMethods = std::vector<StructFunction, Arena<StructFunction>>;
-  using StructDefStaticMethods =
+  using StructFields = std::vector<StructField, Arena<StructField>>;
+  using StructMethods = std::vector<StructFunction, Arena<StructFunction>>;
+  using StructStaticMethods =
       std::vector<StructFunction, Arena<StructFunction>>;
-  using StructDefNames = std::vector<string, Arena<string>>;
+  using StructNames = std::vector<string, Arena<string>>;
 
   using FuncParam = std::tuple<string, FlowPtr<Type>, NullableFlowPtr<Expr>>;
   using FuncParams = std::vector<FuncParam, Arena<FuncParam>>;

@@ -40,27 +40,24 @@
 #include <optional>
 #include <vector>
 
-struct qcode_conf_t {
+struct QCodegenConfig {
 private:
-  std::vector<qcode_setting_t> m_data;
+  std::vector<QcodeSettingT> m_data;
 
-  bool verify_prechange(qcode_key_t key, qcode_val_t value) const {
-    (void)key;
-    (void)value;
-
+  [[nodiscard]] auto VerifyPrechange(QcodeKeyT, QcodeValT) const -> bool {
     return true;
   }
 
 public:
-  qcode_conf_t() = default;
-  ~qcode_conf_t() = default;
+  QCodegenConfig() = default;
+  ~QCodegenConfig() = default;
 
-  bool SetAndVerify(qcode_key_t key, qcode_val_t value) {
+  auto SetAndVerify(QcodeKeyT key, QcodeValT value) -> bool {
     auto it = std::find_if(
         m_data.begin(), m_data.end(),
-        [key](const qcode_setting_t &setting) { return setting.key == key; });
+        [key](const QcodeSettingT &setting) { return setting.m_key == key; });
 
-    if (!verify_prechange(key, value)) {
+    if (!VerifyPrechange(key, value)) {
       return false;
     }
 
@@ -73,19 +70,19 @@ public:
     return true;
   }
 
-  std::optional<qcode_val_t> Get(qcode_key_t key) const {
+  [[nodiscard]] auto Get(QcodeKeyT key) const -> std::optional<QcodeValT> {
     auto it = std::find_if(
         m_data.begin(), m_data.end(),
-        [key](const qcode_setting_t &setting) { return setting.key == key; });
+        [key](const QcodeSettingT &setting) { return setting.m_key == key; });
 
     if (it == m_data.end()) {
       return std::nullopt;
     }
 
-    return it->value;
+    return it->m_value;
   }
 
-  const qcode_setting_t *GetAll(size_t &count) const {
+  auto GetAll(size_t &count) const -> const QcodeSettingT * {
     count = m_data.size();
     return m_data.data();
   }
@@ -95,7 +92,7 @@ public:
     m_data.shrink_to_fit();
   }
 
-  bool has(qcode_key_t option, qcode_val_t value) const;
+  [[nodiscard]] auto Has(QcodeKeyT option, QcodeValT value) const -> bool;
 };
 
 #endif  // __NITRATE_CODEGEN_CORE_CONFIG_H__

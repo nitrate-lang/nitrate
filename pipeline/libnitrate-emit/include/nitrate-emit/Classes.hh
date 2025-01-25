@@ -43,18 +43,18 @@
 #include <nitrate-core/Logger.hh>
 #include <stdexcept>
 
-class qcode_conf final {
-  qcode_conf_t *m_conf;
+class QcodeConf final {
+  QCodegenConfig *m_conf;
 
 public:
-  qcode_conf(bool use_default = true) {
-    if ((m_conf = qcode_conf_new(use_default)) == nullptr) {
-      throw std::runtime_error("qcode_conf_new failed");
+  QcodeConf(bool use_default = true) {
+    if ((m_conf = QcodeConfNew(use_default)) == nullptr) {
+      throw std::runtime_error("QcodeConfNew failed");
     }
   }
-  ~qcode_conf() { qcode_conf_free(m_conf); }
+  ~QcodeConf() { QcodeConfFree(m_conf); }
 
-  qcode_conf_t *get() const { return m_conf; }
+  [[nodiscard]] auto Get() const -> QCodegenConfig * { return m_conf; }
 };
 
 #endif  // __NITRATE_CODEGEN_CLASSES_H__

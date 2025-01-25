@@ -31,49 +31,46 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <nitrate-core/Environment.hh>
 #include <nitrate-seq/Sequencer.hh>
-#include <sys/List.hh>
 
 extern "C" {
 #include <lua/lauxlib.h>
 }
 
-static const std::vector<std::string_view> immutable_namespaces = {"this."};
+using namespace ncc::seq;
 
-int ncc::seq::sys_set(lua_State* L) {
-  int nargs = lua_gettop(L);
+static const std::vector<std::string_view> IMMUTABLE_NAMESPACES = {"this."};
+
+auto Sequencer::SysSet() -> int {
+  auto *lua = m_shared->m_L;
+
+  auto nargs = lua_gettop(lua);
   if (nargs != 2) {
-    return luaL_error(L, "expected 2 arguments, got %d", nargs);
+    return luaL_error(lua, "expected 2 arguments, got %d", nargs);
   }
 
-  if (!lua_isstring(L, 1)) {
-    return luaL_error(L, "expected string, got %s",
-                      lua_typename(L, lua_type(L, 1)));
+  if (lua_isstring(lua, 1) == 0) {
+    return luaL_error(lua, "expected string, got %s",
+                      lua_typename(lua, lua_type(lua, 1)));
   }
 
-  Sequencer* obj = get_engine();
+  std::string_view key = lua_tostring(lua, 1);
 
-  std::string_view key = lua_tostring(L, 1);
+  bool illegal_set =
+      std::any_of(IMMUTABLE_NAMESPACES.begin(), IMMUTABLE_NAMESPACES.end(),
+                  [&key](auto ns) { return key.starts_with(ns); });
 
-  if (key.empty()) {
-    return luaL_error(L, "expected non-empty string, got empty string");
+  if (illegal_set) {
+    return luaL_error(lua, "cannot set items in immutable namespace");
   }
 
-  for (const auto& ns : immutable_namespaces) {
-    if (key.starts_with(ns)) {
-      return luaL_error(L, "cannot set items in immutable namespace");
-    }
-  }
-
-  if (lua_isnil(L, 2)) {
-    obj->GetEnvironment()->set(key, std::nullopt);
-  } else if (lua_isstring(L, 2)) {
-    obj->GetEnvironment()->set(key, lua_tostring(L, 2));
+  if (lua_isnil(lua, 2)) {
+    m_env->Set(key, std::nullopt);
   } else {
-    return luaL_error(L, "expected string or nil, got %s",
-                      lua_typename(L, lua_type(L, 2)));
+    m_env->Set(key, lua_tostring(lua, 2));
   }
 
-  return 0;
+  lua_pushvalue(lua, 2);
+
+  return 1;
 }

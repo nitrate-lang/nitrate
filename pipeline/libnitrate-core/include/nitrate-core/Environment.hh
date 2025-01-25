@@ -34,10 +34,10 @@
 #ifndef __NITRATE_CORE_ENV_H__
 #define __NITRATE_CORE_ENV_H__
 
-#include <mutex>
 #include <nitrate-core/Allocate.hh>
 #include <nitrate-core/String.hh>
 #include <optional>
+#include <ranges>
 #include <unordered_map>
 
 namespace ncc {
@@ -45,32 +45,30 @@ namespace ncc {
   public:
     virtual ~IEnvironment() = default;
 
-    virtual bool contains(std::string_view key) = 0;
-
-    virtual std::optional<std::string_view> get(std::string_view key) = 0;
-
-    virtual void set(std::string_view key,
-                     std::optional<std::string_view> value,
-                     bool privset = false) = 0;
+    virtual auto Contains(std::string_view key) -> bool = 0;
+    virtual auto Get(string key) -> std::optional<string> = 0;
+    virtual void Set(string key, std::optional<string> value) = 0;
   };
 
-  class Environment : public IEnvironment {
+  class NCC_EXPORT Environment final : public IEnvironment {
     std::unordered_map<string, string> m_data;
-    std::mutex m_mutex;
 
-    void setup_default_env();
+    void SetupDefaultKeys();
 
   public:
-    Environment();
-    virtual ~Environment() = default;
+    Environment() { SetupDefaultKeys(); }
+    ~Environment() override = default;
 
-    bool contains(std::string_view key);
+    Environment(const Environment &) = delete;
+    Environment(Environment &&) = delete;
+    Environment &operator=(const Environment &) = delete;
+    Environment &operator=(Environment &&) = delete;
 
-    std::optional<std::string_view> get(std::string_view key);
+    auto Contains(std::string_view key) -> bool override;
+    auto Get(string key) -> std::optional<string> override;
+    void Set(string key, std::optional<string> value) override;
 
-    /* String interning is done internally */
-    void set(std::string_view key, std::optional<std::string_view> value,
-             bool privset = false);
+    auto GetKeys() const { return m_data | std::ranges::views::keys; }
   };
 
 }  // namespace ncc

@@ -38,38 +38,38 @@
 #include <ostream>
 
 namespace ncc::ir {
-  class NCC_EXPORT IR_MsgPackWriter : public IR_Writer {
+  class NCC_EXPORT IRMsgPackWriter : public IRWriter {
     std::ostream& m_os;
 
-    void str_impl(std::string_view str);
-    void uint_impl(uint64_t val);
-    void double_impl(double val);
-    void bool_impl(bool val);
-    void null_impl();
-    void begin_obj_impl(size_t pair_count);
-    void end_obj_impl();
-    void begin_arr_impl(size_t size);
-    void end_arr_impl();
+    void StrImpl(std::string_view str);
+    void UintImpl(uint64_t val);
+    void DoubleImpl(double val);
+    void BoolImpl(bool val);
+    void NullImpl();
+    void BeginObjImpl(size_t pair_count);
+    void EndObjImpl();
+    void BeginArrImpl(size_t size);
+    void EndArrImpl();
 
   public:
-    IR_MsgPackWriter(std::ostream& os, WriterSourceProvider rd = std::nullopt)
-        : IR_Writer(std::bind(&IR_MsgPackWriter::str_impl, this,
-                              std::placeholders::_1),
-                    std::bind(&IR_MsgPackWriter::uint_impl, this,
-                              std::placeholders::_1),
-                    std::bind(&IR_MsgPackWriter::double_impl, this,
-                              std::placeholders::_1),
-                    std::bind(&IR_MsgPackWriter::bool_impl, this,
-                              std::placeholders::_1),
-                    std::bind(&IR_MsgPackWriter::null_impl, this),
-                    std::bind(&IR_MsgPackWriter::begin_obj_impl, this,
-                              std::placeholders::_1),
-                    std::bind(&IR_MsgPackWriter::end_obj_impl, this),
-                    std::bind(&IR_MsgPackWriter::begin_arr_impl, this,
-                              std::placeholders::_1),
-                    std::bind(&IR_MsgPackWriter::end_arr_impl, this), rd),
+    IRMsgPackWriter(std::ostream& os, WriterSourceProvider rd = std::nullopt)
+        : IRWriter(
+              std::bind(&IRMsgPackWriter::StrImpl, this, std::placeholders::_1),
+              std::bind(&IRMsgPackWriter::UintImpl, this,
+                        std::placeholders::_1),
+              std::bind(&IRMsgPackWriter::DoubleImpl, this,
+                        std::placeholders::_1),
+              std::bind(&IRMsgPackWriter::BoolImpl, this,
+                        std::placeholders::_1),
+              std::bind(&IRMsgPackWriter::NullImpl, this),
+              std::bind(&IRMsgPackWriter::BeginObjImpl, this,
+                        std::placeholders::_1),
+              std::bind(&IRMsgPackWriter::EndObjImpl, this),
+              std::bind(&IRMsgPackWriter::BeginArrImpl, this,
+                        std::placeholders::_1),
+              std::bind(&IRMsgPackWriter::EndArrImpl, this), rd),
           m_os(os) {}
-    virtual ~IR_MsgPackWriter() = default;
+    virtual ~IRMsgPackWriter() = default;
   };
 }  // namespace ncc::ir
 

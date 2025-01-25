@@ -37,15 +37,15 @@
 
 using namespace ncc::parse;
 
-void AST_Hash64::str_impl(std::string_view str) {
-  update(std::hash<std::string_view>{}(str));
+void AstHash64::StrImpl(std::string_view str) {
+  Update(std::hash<std::string_view>{}(str));
 }
 
-void AST_Hash64::uint_impl(uint64_t val) { update(val); }
-void AST_Hash64::double_impl(double val) { update(std::hash<double>{}(val)); }
-void AST_Hash64::bool_impl(bool val) { update(std::hash<bool>{}(val)); }
-void AST_Hash64::null_impl() { update(0); }
-void AST_Hash64::begin_obj_impl(size_t size) { update(size); }
-void AST_Hash64::end_obj_impl() { update(2); }
-void AST_Hash64::begin_arr_impl(size_t size) { update(size); }
-void AST_Hash64::end_arr_impl() { update(3); }
+void AstHash64::UintImpl(uint64_t val) { Update(val); }
+void AstHash64::DoubleImpl(double val) { Update(std::hash<double>{}(val)); }
+void AstHash64::BoolImpl(bool val) { Update(std::hash<bool>{}(val)); }
+void AstHash64::NullImpl() { Update(0); }
+void AstHash64::BeginObjImpl(size_t size) { Update(size); }
+void AstHash64::EndObjImpl() { Update(2); }
+void AstHash64::BeginArrImpl(size_t size) { Update(size); }
+void AstHash64::EndArrImpl() { Update(3); }

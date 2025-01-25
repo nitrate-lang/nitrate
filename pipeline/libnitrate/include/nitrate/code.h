@@ -34,7 +34,6 @@
 #ifndef __LIBNITRATE_CODE_H__
 #define __LIBNITRATE_CODE_H__
 
-#include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
 
@@ -43,7 +42,7 @@ extern "C" {
 #endif
 
 /// @brief Diagnostic callback function prototype.
-typedef void (*nit_diag_func)(const char *message, void *opaque);
+using NitDiagFunc = void (*)(const char *, void *);
 
 /******************************************************************************
  * @brief Generic Nitrate Toolchain tranformation function.                   *
@@ -82,16 +81,16 @@ typedef void (*nit_diag_func)(const char *message, void *opaque);
  ******************************************************************************
  * @note This function is an ideal target for fuzz based testing              *
  *****************************************************************************/
-bool nit_pipeline(FILE *in, FILE *out, nit_diag_func diag, void *opaque,
-                  const char *const options[]);
+auto NitPipeline(FILE *in, FILE *out, NitDiagFunc diag, void *opaque,
+                 const char *const options[]) -> bool;
 
 /******************************************************************************/
 
-static inline void nit_diag_stdout(const char *message, void *) {
+static inline void NitDiagStdout(const char *message, void *) {
   fprintf(stdout, "%s", message);
 }
 
-static inline void nit_diag_stderr(const char *message, void *) {
+static inline void NitDiagStderr(const char *message, void *) {
   fprintf(stderr, "%s", message);
 }
 

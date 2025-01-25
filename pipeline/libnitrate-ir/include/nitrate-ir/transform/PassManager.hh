@@ -49,8 +49,8 @@ namespace ncc::ir::transform {
   class IPassManager {
   public:
     virtual ~IPassManager() = default;
-    virtual void addPass(FunctionPass pass) = 0;
-    virtual void apply() = 0;
+    virtual void AddPass(FunctionPass pass) = 0;
+    virtual void Apply() = 0;
   };
 
   class PassManager final : public IPassManager {
@@ -59,11 +59,11 @@ namespace ncc::ir::transform {
     void* m_data;
 
   public:
-    PassManager(IRModule& M, void* data) : m_module(M), m_data(data) {}
+    PassManager(IRModule& m, void* data) : m_module(m), m_data(data) {}
     virtual ~PassManager() = default;
 
-    void addPass(FunctionPass pass) override { m_passes.push_back(pass); }
-    void apply() override {
+    void AddPass(FunctionPass pass) override { m_passes.push_back(pass); }
+    void Apply() override {
       for (auto& pass : m_passes) {
         std::ranges::for_each(m_module.GetFunctions(), [&](const auto& func) {
           pass(*func, m_module, m_data);

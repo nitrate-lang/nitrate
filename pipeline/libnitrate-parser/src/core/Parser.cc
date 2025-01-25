@@ -38,7 +38,6 @@
 #include <nitrate-core/Logger.hh>
 #include <nitrate-core/Macro.hh>
 #include <nitrate-parser/AST.hh>
-#include <nitrate-parser/ASTReader.hh>
 #include <nitrate-parser/ASTWriter.hh>
 #include <nitrate-parser/Context.hh>
 
@@ -46,316 +45,456 @@ using namespace ncc;
 using namespace ncc::parse;
 using namespace ncc::lex;
 
-FlowPtr<Stmt> Parser::recurse_block(bool expect_braces, bool single_stmt,
-                                    SafetyMode safety) {
-  if (expect_braces && !next().is<PuncLCur>()) {
-    log << SyntaxError << current() << "Expected '{'";
+auto Parser::PImpl::RecurseName() -> string {
+  std::string name;
+  bool last_was_scope = false;
+
+  Token tok;
+
+  while (true) {
+    Token peek = peek();
+
+    if (peek.Is(Name)) {
+      name += peek.GetString();
+      last_was_scope = false;
+    } else if (peek.Is<PuncScope>()) {
+      if (last_was_scope) {
+        Log << SyntaxError << peek << "Unexpected '::' after '::'";
+        break;
+      }
+
+      name += "::";
+      last_was_scope = true;
+    } else {
+      break;
+    }
+
+    tok = next();
   }
 
-  auto block_start = current().get_start();
+  if (last_was_scope && name.ends_with("::")) {
+    Log << SyntaxError << tok << "Unexpected '::' at end of name";
+  }
+
+  return name;
+}
+
+auto Parser::PImpl::RecurseBlock(bool expect_braces, bool single_stmt,
+                                 SafetyMode safety) -> FlowPtr<Stmt> {
+  if (expect_braces && !next().Is<PuncLCur>()) {
+    Log << SyntaxError << current() << "Expected '{'";
+  }
+
+  auto block_start = current().GetStart();
   BlockItems statements;
 
-  auto block_comments = rd.CommentBuffer();
-  rd.ClearCommentBuffer();
+  auto block_comments = m_rd.CommentBuffer();
+  m_rd.ClearCommentBuffer();
 
   while (true) {
     /* Ignore extra semicolons */
-    if (next_if(PuncSemi)) {
+    if (NextIf(PuncSemi)) {
       continue;
     }
 
     { /* Detect exit conditon */
-      bool should_break = (expect_braces && next_if(PuncRCur)) ||
+      bool should_break = (expect_braces && NextIf(PuncRCur)) ||
                           (single_stmt && statements.size() == 1);
 
-      if (!should_break && next_if(EofF)) {
+      if (!should_break && NextIf(EofF)) {
         if (expect_braces) {
-          log << SyntaxError << current() << "Expected '}'";
+          Log << SyntaxError << current() << "Expected '}'";
         }
 
         should_break = true;
       }
 
       if (should_break) {
-        auto block = make<Block>(statements, safety)();
-        block->set_offset(block_start);
+        auto block = CreateNode<Block>(statements, safety)();
+        block->SetOffset(block_start);
 
-        return BIND_COMMENTS(block, block_comments);
+        return BindComments(block, block_comments);
       }
     }
 
-    if (!peek().is(KeyW)) {
-      auto comments = rd.CommentBuffer();
-      rd.ClearCommentBuffer();
+    if (!peek().Is(KeyW)) {
+      auto comments = m_rd.CommentBuffer();
+      m_rd.ClearCommentBuffer();
 
-      auto expr = recurse_expr({
+      auto expr = RecurseExpr({
           Token(Punc, PuncSemi),
       });
 
-      if (!next_if(PuncSemi)) {
-        log << SyntaxError << current()
+      if (!NextIf(PuncSemi)) {
+        Log << SyntaxError << current()
             << "Expected ';' after statement expression";
       }
 
-      auto stmt = make<ExprStmt>(expr)();
-      stmt->set_offset(expr->begin());
+      auto stmt = CreateNode<ExprStmt>(expr)();
+      stmt->SetOffset(expr->Begin());
 
-      statements.push_back(BIND_COMMENTS(stmt, comments));
+      statements.push_back(BindComments(stmt, comments));
     } else {
       auto tok = next();
-      auto loc_start = tok.get_start();
-      NullableFlowPtr<Stmt> R;
+      auto loc_start = tok.GetStart();
+      NullableFlowPtr<Stmt> r;
 
-      auto comments = rd.CommentBuffer();
-      rd.ClearCommentBuffer();
+      auto comments = m_rd.CommentBuffer();
+      m_rd.ClearCommentBuffer();
 
-      switch (tok.as_key()) {
-        case Var: {
-          for (auto decl : recurse_variable(VarDeclType::Var)) {
-            statements.push_back(BIND_COMMENTS(decl, comments));
-          }
+      switch (tok.GetKeyword()) {
+        case Keyword::Scope: {
+          r = RecurseScope();
+          break;
+        }
+
+        case Pub: {  // they both declare external functions
+          r = RecurseExport(Vis::Pub);
+          break;
+        }
+
+        case Sec: {
+          r = RecurseExport(Vis::Sec);
+          break;
+        }
+
+        case Pro: {
+          r = RecurseExport(Vis::Pro);
+          break;
+        }
+
+        case Import: {
+          Log << SyntaxError << current()
+              << "Unexpected 'import' in block context";
+          break;
+        }
+
+        case Keyword::Type: {
+          r = RecurseTypedef();
           break;
         }
 
         case Let: {
-          for (auto decl : recurse_variable(VarDeclType::Let)) {
-            statements.push_back(BIND_COMMENTS(decl, comments));
+          for (const auto &variable : RecurseVariable(VariableType::Let)) {
+            statements.push_back(BindComments(variable, comments));
+            comments.clear();
+          }
+          break;
+        }
+
+        case Var: {
+          for (const auto &variable : RecurseVariable(VariableType::Var)) {
+            statements.push_back(BindComments(variable, comments));
+            comments.clear();
           }
           break;
         }
 
         case Const: {
-          for (auto decl : recurse_variable(VarDeclType::Const)) {
-            statements.push_back(BIND_COMMENTS(decl, comments));
+          for (const auto &variable : RecurseVariable(VariableType::Const)) {
+            statements.push_back(BindComments(variable, comments));
+            comments.clear();
           }
           break;
         }
 
-        case Enum: {
-          R = recurse_enum();
+        case Static: {
+          Log << SyntaxError << current()
+              << "Static variables are not yet "
+                 "supported";
           break;
         }
 
-        case Struct: {
-          R = recurse_struct(CompositeType::Struct);
+        case Keyword::Struct: {
+          r = RecurseStruct(CompositeType::Struct);
           break;
         }
 
         case Region: {
-          R = recurse_struct(CompositeType::Region);
+          r = RecurseStruct(CompositeType::Region);
           break;
         }
 
         case Group: {
-          R = recurse_struct(CompositeType::Group);
+          r = RecurseStruct(CompositeType::Group);
           break;
         }
 
         case Class: {
-          R = recurse_struct(CompositeType::Class);
+          r = RecurseStruct(CompositeType::Class);
           break;
         }
 
         case Union: {
-          R = recurse_struct(CompositeType::Union);
+          r = RecurseStruct(CompositeType::Union);
           break;
         }
 
-        case Keyword::Type: {
-          R = recurse_typedef();
+        case Opaque: {
+          Log << SyntaxError << current()
+              << "Unexpected 'opaque' in block context";
           break;
         }
 
-        case Scope: {
-          R = recurse_scope();
-          break;
-        }
-
-        case Fn: {
-          R = recurse_function(false);
-          break;
-        }
-
-        case Pub:
-        case Import: {  // they both declare external functions
-          R = recurse_export(Vis::Pub);
-          break;
-        }
-
-        case Sec: {
-          R = recurse_export(Vis::Sec);
-          break;
-        }
-
-        case Pro: {
-          R = recurse_export(Vis::Pro);
-          break;
-        }
-
-        case Return: {
-          R = recurse_return();
-          break;
-        }
-
-        case Retif: {
-          R = recurse_retif();
-          break;
-        }
-
-        case Break: {
-          R = make<BreakStmt>()();
-          break;
-        }
-
-        case Continue: {
-          R = make<ContinueStmt>()();
-          break;
-        }
-
-        case If: {
-          R = recurse_if();
-          break;
-        }
-
-        case While: {
-          R = recurse_while();
-          break;
-        }
-
-        case For: {
-          R = recurse_for();
-          break;
-        }
-
-        case Foreach: {
-          R = recurse_foreach();
-          break;
-        }
-
-        case Switch: {
-          R = recurse_switch();
-          break;
-        }
-
-        case __Asm__: {
-          R = recurse_inline_asm();
-          break;
-        }
-
-        case True: {
-          R = make<ExprStmt>(make<ConstBool>(true)())();
-          break;
-        }
-
-        case False: {
-          R = make<ExprStmt>(make<ConstBool>(false)())();
+        case Keyword::Enum: {
+          r = RecurseEnum();
           break;
         }
 
         case __FString: {
-          R = make<ExprStmt>(recurse_fstring())();
+          r = CreateNode<ExprStmt>(RecurseFstring())();
+          if (!NextIf(PuncSemi)) {
+            Log << SyntaxError << current()
+                << "Expected ';' after f-string expression";
+          }
+          break;
+        }
+
+        case Fn: {
+          r = RecurseFunction(false);
           break;
         }
 
         case Unsafe: {
-          if (peek().is<PuncLCur>()) {
-            R = recurse_block(true, false, SafetyMode::Unsafe);
+          if (peek().Is<PuncLCur>()) {
+            r = RecurseBlock(true, false, SafetyMode::Unsafe);
           } else {
-            R = recurse_block(false, true, SafetyMode::Unsafe);
+            r = RecurseBlock(false, true, SafetyMode::Unsafe);
           }
 
           break;
         }
 
         case Safe: {
-          if (peek().is<PuncLCur>()) {
-            R = recurse_block(true, false, SafetyMode::Safe);
+          if (peek().Is<PuncLCur>()) {
+            r = RecurseBlock(true, false, SafetyMode::Safe);
           } else {
-            R = recurse_block(false, true, SafetyMode::Safe);
+            r = RecurseBlock(false, true, SafetyMode::Safe);
           }
 
           break;
         }
 
-        default: {
-          log << SyntaxError << tok << "Unexpected keyword";
+        case Promise: {
+          Log << SyntaxError << current()
+              << "Unexpected 'promise' in block context";
+          break;
+        }
+
+        case Keyword::If: {
+          r = RecurseIf();
+          break;
+        }
+
+        case Else: {
+          Log << SyntaxError << current()
+              << "Unexpected 'else' in block context";
+          break;
+        }
+
+        case Keyword::For: {
+          r = RecurseFor();
+          break;
+        }
+
+        case Keyword::While: {
+          r = RecurseWhile();
+          break;
+        }
+
+        case Do: {
+          Log << SyntaxError << current() << "Unexpected 'do' in block context";
+          break;
+        }
+
+        case Keyword::Switch: {
+          r = RecurseSwitch();
+          break;
+        }
+
+        case Keyword::Break: {
+          r = CreateNode<Break>()();
+          if (!NextIf(PuncSemi)) {
+            Log << SyntaxError << current()
+                << "Expected ';' after 'break' statement";
+          }
+
+          break;
+        }
+
+        case Keyword::Continue: {
+          r = CreateNode<Continue>()();
+          if (!NextIf(PuncSemi)) {
+            Log << SyntaxError << current()
+                << "Expected ';' after 'continue' statement";
+          }
+          break;
+        }
+
+        case Keyword::Return: {
+          r = RecurseReturn();
+          break;
+        }
+
+        case Retif: {
+          r = RecurseRetif();
+          break;
+        }
+
+        case Keyword::Foreach: {
+          r = RecurseForeach();
+          break;
+        }
+
+        case Try: {
+          r = RecurseTry();
+          break;
+        }
+
+        case Catch: {
+          Log << SyntaxError << current()
+              << "Unexpected 'catch' in block context";
+          break;
+        }
+
+        case Throw: {
+          r = RecurseThrow();
+          break;
+        }
+
+        case Async: {
+          Log << SyntaxError << current()
+              << "Unexpected 'async' in block context";
+          break;
+        }
+
+        case Await: {
+          r = RecurseAwait();
+          break;
+        }
+
+        case __Asm__: {
+          r = RecurseAssembly();
+          break;
+        }
+
+        case Undef: {
+          r = CreateNode<ExprStmt>(CreateNode<Undefined>()())();
+          if (!NextIf(PuncSemi)) {
+            Log << SyntaxError << current()
+                << "Expected ';' after 'undef' statement";
+          }
+          break;
+        }
+
+        case Keyword::Null: {
+          r = CreateNode<ExprStmt>(CreateNode<Null>()())();
+          if (!NextIf(PuncSemi)) {
+            Log << SyntaxError << current()
+                << "Expected ';' after 'null' statement";
+          }
+          break;
+        }
+
+        case True: {
+          r = CreateNode<ExprStmt>(CreateNode<Boolean>(true)())();
+          if (!NextIf(PuncSemi)) {
+            Log << SyntaxError << current()
+                << "Expected ';' after 'true' statement";
+          }
+          break;
+        }
+
+        case False: {
+          r = CreateNode<ExprStmt>(CreateNode<Boolean>(false)())();
+          if (!NextIf(PuncSemi)) {
+            Log << SyntaxError << current()
+                << "Expected ';' after 'false' statement";
+          }
           break;
         }
       }
 
-      if (R.has_value()) {
-        R.value()->set_offset(loc_start);
-        R = BIND_COMMENTS(R.value(), comments);
-        statements.push_back(R.value());
+      if (r.has_value()) {
+        r.value()->SetOffset(loc_start);
+        r = BindComments(r.value(), comments);
+        statements.push_back(r.value());
       }
     }
   }
 }
 
-NCC_EXPORT Parser::Parser(ncc::lex::IScanner &lexer,
-                          std::shared_ptr<ncc::Environment> env,
-                          std::shared_ptr<void> lifetime)
-    : rd(lexer), m_lifetime(lifetime) {
-  m_env = env;
-  m_allocator = std::make_unique<ncc::dyn_arena>();
-  m_failed = false;
-}
+Parser::Parser(ncc::lex::IScanner &lexer, std::shared_ptr<ncc::Environment> env,
+               std::shared_ptr<void> lifetime)
+    : m_impl(std::make_unique<Parser::PImpl>(lexer, std::move(env),
+                                             std::move(lifetime))) {}
 
-void Parser_SetCurrentScanner(IScanner *scanner);
+Parser::~Parser() = default;
 
-NCC_EXPORT ASTRoot Parser::parse() {
+void ParserSetCurrentScanner(IScanner *scanner);
+
+void Parser::SetFailBit() { m_impl->m_failed = true; }
+
+auto Parser::GetLexer() -> lex::IScanner & { return m_impl->m_rd; }
+
+auto Parser::Parse() -> ASTRoot {
   std::optional<ASTRoot> ast;
 
   { /* Assign the current context to thread-local global state */
-    Parser_SetCurrentScanner(&rd);
+    ParserSetCurrentScanner(&m_impl->m_rd);
 
     { /* Subscribe to events emitted by the parser */
-      auto sub_id = log.subscribe([&](auto, auto, const auto &ec) {
-        if (ec.getKind() == SyntaxError.getKind()) {
+      auto sub_id = Log.Subscribe([&](auto, auto, const auto &ec) {
+        if (ec.GetKind() == SyntaxError.GetKind()) {
           SetFailBit();
         }
       });
 
       { /* Configure the scanner to ignore comments */
-        auto old_state = rd.GetSkipCommentsState();
-        rd.SkipCommentsState(true);
+        auto old_state = m_impl->m_rd.GetSkipCommentsState();
+        m_impl->m_rd.SkipCommentsState(true);
 
         {   /* Parse the input */
           { /* Swap in an arena allocator */
-            std::swap(npar_allocator, m_allocator);
+            std::swap(NparAllocator, m_impl->m_allocator);
 
             /* Recursive descent parsing */
-            auto node = recurse_block(false, false, SafetyMode::Unknown);
+            auto node = m_impl->RecurseBlock(false, false, SafetyMode::Unknown);
 
-            std::swap(npar_allocator, m_allocator);
+            std::swap(NparAllocator, m_impl->m_allocator);
 
-            ast = ASTRoot(node, std::move(m_allocator), m_failed);
+            if (m_impl->m_rd.HasError()) {
+              Log << SyntaxError << "Some lexical errors have occurred";
+            }
+
+            ast =
+                ASTRoot(node, std::move(m_impl->m_allocator), m_impl->m_failed);
           }
 
-          /* Create a new allocator */
-          m_allocator = std::make_unique<ncc::dyn_arena>();
+          /* Recreate the thread-local allocator */
+          m_impl->m_allocator = std::make_unique<ncc::DynamicArena>();
         }
 
-        rd.SkipCommentsState(old_state);
+        m_impl->m_rd.SkipCommentsState(old_state);
       }
 
-      log.unsubscribe(sub_id);
+      Log.Unsubscribe(sub_id);
     }
 
-    Parser_SetCurrentScanner(nullptr);
+    ParserSetCurrentScanner(nullptr);
   }
 
   return ast.value();
 }
 
-NCC_EXPORT bool ASTRoot::check() const {
+auto ASTRoot::Check() const -> bool {
   if (m_failed) {
     return false;
   }
 
   bool failed = false;
   iterate<dfs_pre>(m_base, [&](auto, auto c) {
-    failed |= !c || c->is_mock();
+    failed |= !c || c->IsMock();
 
     return failed ? IterOp::Abort : IterOp::Proceed;
   });

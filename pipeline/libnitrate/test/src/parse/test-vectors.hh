@@ -3,7 +3,7 @@
 #include <string_view>
 
 namespace test::vector {
-  constexpr static inline std::string_view ASTExecise =
+  constexpr static inline std::string_view kAstExecise =
       R"SOURCE(################################################################################
 # NITRATE PIPELINE TEST VECTOR                                                 #
 # Date: Jan 13, 2024                                                           #
@@ -170,7 +170,7 @@ type _19 = &T: [0:1]: 2;
 type _20 = *T: [0:1]: 2;
 type _21 = [T; 10]: [0:1]: 2;
 type _22 = (T, U, V): [0:1]: 2;
-type _23 = T<x: i32, 10>: [0:1]: 2;
+type _23 = T<x: i32, i32>: [0:1]: 2;
 type _24 = fn[[
   align(16)
 ]]  quasi(x: i32 = 0, x, ...): void: [0:1]: 2;

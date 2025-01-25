@@ -1,9 +1,13 @@
 #pragma once
 
-#include <string_view>
+#include <boost/flyweight.hpp>
+#include <string>
 
-constexpr std::string_view license_text =
-    R"(The Nitrate LSP Server is part of Nitrate Compiler Suite.
+namespace no3::lsp {
+  using String = boost::flyweight<std::string>;
+
+  constexpr std::string_view kLicenseText =
+      R"(The Nitrate LSP Server is part of Nitrate Compiler Suite.
 Copyright (C) 2024 Wesley C. Jones
 
 The Nitrate Compiler Suite is free software: you can redistribute it and/or modify
@@ -18,3 +22,4 @@ GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.))";
+}  // namespace no3::lsp

@@ -38,19 +38,21 @@
 #include <cstdint>
 #include <functional>
 #include <mutex>
+#include <nitrate-core/Init.hh>
 #include <string>
 
 namespace ncc {
-  using ResourceKey = std::array<uint8_t, 20>;
+  constexpr size_t kResourceKeySize = 20;
+  using ResourceKey = std::array<uint8_t, kResourceKeySize>;
 
   template <typename Value>
   class IResourceCache {
   public:
     virtual ~IResourceCache() = default;
 
-    virtual bool has(const ResourceKey &key) = 0;
-    virtual bool read(const ResourceKey &key, Value &value) = 0;
-    virtual bool write(const ResourceKey &key, const Value &value) = 0;
+    virtual auto Has(const ResourceKey &key) -> bool = 0;
+    virtual auto Read(const ResourceKey &key, Value &value) -> bool = 0;
+    virtual auto Write(const ResourceKey &key, const Value &value) -> bool = 0;
   };
 
   template <typename Value>
@@ -60,36 +62,73 @@ namespace ncc {
     using write_t = std::function<bool(const ResourceKey &, Value)>;
 
   public:
-    ExternalResourceCache() {
-      m_has = [](const ResourceKey &) { return false; };
-      m_read = [](const ResourceKey &, Value &) { return false; };
-      m_write = [](const ResourceKey &, Value) { return false; };
+    ExternalResourceCache()
+        : m_has([](const ResourceKey &) { return false; }),
+          m_read([](const ResourceKey &, Value &) { return false; }),
+          m_write([](const ResourceKey &, Value) { return false; }) {}
+
+    auto Has(const ResourceKey &key) -> bool override {
+      bool sync = EnableSync;
+
+      if (sync) {
+        m_mutex.lock();
+      }
+
+      auto r = m_has(key);
+
+      if (sync) {
+        m_mutex.unlock();
+      }
+
+      return r;
     }
 
-    bool has(const ResourceKey &key) override {
-      std::lock_guard<std::recursive_mutex> lock(m_mutex);
+    auto Read(const ResourceKey &key, Value &value) -> bool override {
+      bool sync = EnableSync;
 
-      return m_has(key);
+      if (sync) {
+        m_mutex.lock();
+      }
+
+      auto r = m_read(key, value);
+
+      if (sync) {
+        m_mutex.unlock();
+      }
+
+      return r;
     }
 
-    bool read(const ResourceKey &key, Value &value) override {
-      std::lock_guard<std::recursive_mutex> lock(m_mutex);
+    auto Write(const ResourceKey &key, const Value &value) -> bool override {
+      bool sync = EnableSync;
 
-      return m_read(key, value);
+      if (sync) {
+        m_mutex.lock();
+      }
+
+      auto r = m_write(key, value);
+
+      if (sync) {
+        m_mutex.unlock();
+      }
+
+      return r;
     }
 
-    bool write(const ResourceKey &key, const Value &value) override {
-      std::lock_guard<std::recursive_mutex> lock(m_mutex);
+    void Bind(has_t has, read_t read, write_t write) {
+      bool sync = EnableSync;
 
-      return m_write(key, value);
-    }
-
-    void bind(has_t has, read_t read, write_t write) {
-      std::lock_guard<std::recursive_mutex> lock(m_mutex);
+      if (sync) {
+        m_mutex.lock();
+      }
 
       m_has = std::move(has);
       m_read = std::move(read);
       m_write = std::move(write);
+
+      if (sync) {
+        m_mutex.unlock();
+      }
     }
 
   private:
@@ -102,14 +141,20 @@ namespace ncc {
   template <typename Value>
   class MockArtifactCache final : public IResourceCache<Value> {
   public:
-    bool has(const ResourceKey &) const override { return false; }
-    bool read(const ResourceKey &, Value &) const override { return false; }
-    bool write(const ResourceKey &, const Value &) override { return false; }
+    [[nodiscard]] auto Has(const ResourceKey &) const -> bool override {
+      return false;
+    }
+    auto Read(const ResourceKey &, Value &) const -> bool override {
+      return false;
+    }
+    auto Write(const ResourceKey &, const Value &) -> bool override {
+      return false;
+    }
   };
 
   using TheCache = ExternalResourceCache<std::string>;
 
-  TheCache &get_cache();
+  auto GetCache() -> TheCache &;
 }  // namespace ncc
 
 #endif  // __NITRATE_CORE_CACHE_H__

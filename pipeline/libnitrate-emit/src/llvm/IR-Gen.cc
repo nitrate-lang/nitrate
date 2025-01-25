@@ -96,9 +96,9 @@ using namespace ncc;
 // #define debug(...)
 // #endif
 
-typedef function<bool(IRModule *, qcode_conf_t *, ostream &err,
+typedef function<bool(IRModule *, QCodegenConfig *, ostream &err,
                       raw_pwrite_stream &out)>
-    qcode_adapter_fn;
+    QcodeAdapterFn;
 
 // using ctx_t = Module;
 // using craft_t = IRBuilder<>;
@@ -135,7 +135,7 @@ typedef function<bool(IRModule *, qcode_conf_t *, ostream &err,
 //     m_locals[name] = inst;
 //   }
 
-//   const auto &getLocalVariables() const { return m_locals; }
+//   const auto &GetLocalVariables() const { return m_locals; }
 // };
 
 // class State {
@@ -159,7 +159,7 @@ typedef function<bool(IRModule *, qcode_conf_t *, ostream &err,
 //   optional<pair<Value *, PtrClass>> find_named_value(
 //       ctx_t &m, std::string_view name) const {
 //     if (is_inside_function()) {
-//       for (let[cur_name, inst] : m_stackframe.top().getLocalVariables()) {
+//       for (let[cur_name, inst] : m_stackframe.top().GetLocalVariables()) {
 //         if (cur_name == name) {
 //           return {{inst, PtrClass::DataPtr}};
 //         }
@@ -296,15 +296,15 @@ class OStreamWriter : public streambuf {
 public:
   OStreamWriter(FILE *file) : m_file(file) {}
 
-  virtual streamsize xsputn(const char *s, streamsize n) override {
+  virtual auto xsputn(const char *s, streamsize n) -> streamsize override {
     return fwrite(s, 1, n, m_file);
   }
 
-  virtual int overflow(int c) override { return fputc(c, m_file); }
+  virtual auto overflow(int c) -> int override { return fputc(c, m_file); }
 
   // Get current position
-  virtual streampos seekoff(streamoff off, ios_base::seekdir way,
-                            ios_base::openmode) override {
+  virtual auto seekoff(streamoff off, ios_base::seekdir way,
+                       ios_base::openmode) -> streampos override {
     if (way == ios_base::cur) {
       if (fseek(m_file, off, SEEK_CUR) == -1) {
         return -1;
@@ -322,7 +322,7 @@ public:
     return ftell(m_file);
   }
 
-  virtual streampos seekpos(streampos sp, ios_base::openmode) override {
+  virtual auto seekpos(streampos sp, ios_base::openmode) -> streampos override {
     if (fseek(m_file, sp, SEEK_SET) == -1) {
       return -1;
     }
@@ -333,15 +333,17 @@ public:
 
 class OStreamDiscard : public streambuf {
 public:
-  virtual streamsize xsputn(const char *, streamsize n) override { return n; }
-  virtual int overflow(int c) override { return c; }
+  virtual auto xsputn(const char *, streamsize n) -> streamsize override {
+    return n;
+  }
+  virtual auto overflow(int c) -> int override { return c; }
 };
 
-class my_pwrite_ostream : public raw_pwrite_stream {
+class MyPwriteOstream : public raw_pwrite_stream {
   ostream &m_os;
 
 public:
-  my_pwrite_ostream(ostream &os) : raw_pwrite_stream(true), m_os(os) {}
+  MyPwriteOstream(ostream &os) : raw_pwrite_stream(true), m_os(os) {}
 
   void write_impl(const char *ptr, size_t size) override {
     m_os.write(ptr, size);
@@ -355,7 +357,7 @@ public:
     m_os.seekp(curpos);
   }
 
-  uint64_t current_pos() const override {
+  [[nodiscard]] auto current_pos() const -> uint64_t override {
     auto pos = m_os.tellp();
     qcore_assert(pos != -1, "failed to get current position");
 
@@ -375,7 +377,7 @@ public:
 //   for (auto &arg : N->getParams()) {
 //     auto ty = T(arg.first);
 //     if (!ty) {
-//       debug("Failed to forward declare function: " << N->getName());
+//       debug("Failed to forward declare function: " << N->GetName());
 //       return;
 //     }
 
@@ -384,19 +386,20 @@ public:
 
 //   auto ret_ty = T(N->getReturn());
 //   if (!ret_ty) {
-//     debug("Failed to forward declare function: " << N->getName());
+//     debug("Failed to forward declare function: " << N->GetName());
 //     return;
 //   }
 
 //   auto fn_ty = FunctionType::get(*ret_ty, args, false);
-//   m.getOrInsertFunction(N->getName(), fn_ty);
+//   m.getOrInsertFunction(N->GetName(), fn_ty);
 
-//   debug("Forward declared function: " << N->getName());
+//   debug("Forward declared function: " << N->GetName());
 // }
 
 // static optional<unique_ptr<Module>> fabricate_llvmir(IRModule *src,
-//                                                      qcode_conf_t *, ostream
-//                                                      &e, raw_ostream &) {
+//                                                      QCodegenConfig *,
+//                                                      ostream &e, raw_ostream
+//                                                      &) {
 //   static thread_local unique_ptr<LLVMContext> context;
 
 //   auto root = src->getRoot();
@@ -405,35 +408,35 @@ public:
 //     return nullopt;
 //   }
 
-//   if (root->getKind() != IR_eSEQ) {
+//   if (root->GetKind() != IR_eSEQ) {
 //     e << "error: expected sequence node as root" << endl;
 //     return nullopt;
 //   }
 
 //   context = make_unique<LLVMContext>();
 //   unique_ptr<IRBuilder<>> b = make_unique<IRBuilder<>>(*context);
-//   unique_ptr<Module> m = make_unique<Module>(src->getName(), *context);
+//   unique_ptr<Module> m = make_unique<Module>(src->GetName(), *context);
 
 //   State s;
 
 //   // Forward declare all functions
 //   iterate<dfs_pre>(root, [&](auto, auto N) -> IterOp {
-//     if ((*N)->getKind() == IR_eSEQ || (*N)->getKind() == IR_eEXTERN) {
+//     if ((*N)->GetKind() == IR_eSEQ || (*N)->GetKind() == IR_eEXTERN) {
 //       return IterOp::Proceed;
-//     } else if ((*N)->getKind() != IR_eFUNCTION) {
+//     } else if ((*N)->GetKind() != IR_eFUNCTION) {
 //       return IterOp::SkipChildren;
 //     }
 
-//     make_forward_declaration(*m, *b, s, (*N)->template as<Function>());
+//     make_forward_declaration(*m, *b, s, (*N)->template As<Function>());
 
 //     return IterOp::Proceed;
 //   });
 
 //   (void)make_forward_declaration;
 
-//   const Seq *seq = root->as<Seq>();
+//   const Seq *seq = root->As<Seq>();
 
-//   for (auto &node : seq->getItems()) {
+//   for (auto &node : seq->GetItems()) {
 //     val_t R = V_gen(*m, *b, s, node);
 //     if (!R) {
 //       e << "error: failed to lower code" << endl;
@@ -449,7 +452,7 @@ public:
 //                              FlowPtr<ncc::ir::Type> RT) {
 //   val_t E;
 
-//   if (LT->isSame(RT.get())) {
+//   if (LT->IsEq(RT.get())) {
 //     return L;
 //   }
 
@@ -490,9 +493,9 @@ public:
 //       }
 
 //       /* Composite casting */
-//       else if (LT->is_array() && RT->getKind() == IR_tSTRUCT) {
-//         ArrayTy *base = LT->as<ArrayTy>();
-//         StructTy *ST = RT->as<StructTy>();
+//       else if (LT->is_array() && RT->GetKind() == IR_tSTRUCT) {
+//         ArrayTy *base = LT->As<ArrayTy>();
+//         StructTy *ST = RT->As<StructTy>();
 
 //         if (base->getCount() == ST->getFields().size()) {
 //           StructType *new_st_ty = cast<StructType>(R);
@@ -522,8 +525,8 @@ public:
 //           E = b.CreateLoad(new_st->getAllocatedType(), new_st);
 //         }
 //       } else if (LT->is_array() && RT->is_array()) {
-//         ArrayTy *FROM = LT->as<ArrayTy>();
-//         ArrayTy *TO = RT->as<ArrayTy>();
+//         ArrayTy *FROM = LT->As<ArrayTy>();
+//         ArrayTy *TO = RT->As<ArrayTy>();
 
 //         if (FROM->getCount() == TO->getCount()) {
 //           ArrayType *new_arr_ty = cast<ArrayType>(R);
@@ -556,8 +559,8 @@ public:
 //           E = b.CreateLoad(new_arr->getAllocatedType(), new_arr);
 //         }
 //       } else {
-//         cout << "Failed to cast from " << LT->getKindName() << " to "
-//              << RT->getKindName() << endl;
+//         cout << "Failed to cast from " << LT->GetKindName() << " to "
+//              << RT->GetKindName() << endl;
 //       }
 //       break;
 //     }
@@ -572,7 +575,7 @@ public:
 
 // namespace lower {
 //   namespace expr {
-//     static val_t for_BINEXPR(ctx_t &m, craft_t &b, State &s, const BinExpr
+//     static val_t for_BINEXPR(ctx_t &m, craft_t &b, State &s, const BinaryExpression
 //     *N) {
 // #define PROD_LHS()              \
 //   val_t L = V(N->getLHS());     \
@@ -720,9 +723,9 @@ public:
 //         }
 
 //         case Op::Set: { /* '=': Assignment operator */
-//           if (N->getLHS()->getKind() == IR_eIDENT) {
+//           if (N->getLHS()->GetKind() == IR_eIDENT) {
 //             if (auto find = s.find_named_value(
-//                     m, N->getLHS()->as<Ident>()->getName())) {
+//                     m, N->getLHS()->As<Identifier>()->GetName())) {
 //               if (find->second == PtrClass::DataPtr) {
 //                 b.CreateStore(R.value(), find->first);
 
@@ -840,12 +843,12 @@ public:
 //           break;
 //         }
 //         case Op::BitAnd: {
-//           if (N->getExpr()->getKind() != IR_eIDENT) {
+//           if (N->getExpr()->GetKind() != IR_eIDENT) {
 //             qcore_panic("expected identifier for address_of");
 //           }
 
-//           Ident *I = N->getExpr()->as<Ident>();
-//           auto find = s.find_named_value(m, I->getName());
+//           Identifier *I = N->getExpr()->As<Identifier>();
+//           auto find = s.find_named_value(m, I->GetName());
 //           if (!find) {
 //             qcore_panic("failed to find identifier for address_of");
 //           }
@@ -979,14 +982,14 @@ public:
 //     }
 
 //     static val_t for_SEQ(ctx_t &m, craft_t &b, State &s, const Seq *N) {
-//       if (N->getItems().empty()) {
+//       if (N->GetItems().empty()) {
 //         return
 //         Constant::getNullValue(llvm::Type::getInt32Ty(b.getContext()));
 //       }
 
 //       val_t R;
 
-//       for (auto &node : N->getItems()) {
+//       for (auto &node : N->GetItems()) {
 //         R = V(node);
 //         if (!R.has_value()) {
 //           debug("Failed to get item");
@@ -1004,11 +1007,11 @@ public:
 //         return nullopt;
 //       }
 
-//       if (N->getExpr()->getKind() == IR_eIDENT) {
-//         Ident *B = N->getExpr()->as<Ident>();
-//         auto find = s.find_named_value(m, B->getName());
+//       if (N->getExpr()->GetKind() == IR_eIDENT) {
+//         Identifier *B = N->getExpr()->As<Identifier>();
+//         auto find = s.find_named_value(m, B->GetName());
 //         if (!find) {
-//           debug("Failed to find named value " << B->getName());
+//           debug("Failed to find named value " << B->GetName());
 //           return nullopt;
 //         }
 
@@ -1040,16 +1043,16 @@ public:
 //         } else {
 //           qcore_panic("unexpected type for index");
 //         }
-//       } else if (N->getExpr()->getKind() == IR_eLIST) {
+//       } else if (N->getExpr()->GetKind() == IR_eLIST) {
 //         qcore_implement();
 //       } else {
 //         qcore_panic("unexpected base expression for index");
 //       }
 //     }
 
-//     static val_t for_IDENT(ctx_t &m, craft_t &b, State &s, const Ident *N) {
-//       if (auto find = s.find_named_value(m, N->getName())) {
-//         debug("Found named value " << N->getName());
+//     static val_t for_IDENT(ctx_t &m, craft_t &b, State &s, const Identifier *N) {
+//       if (auto find = s.find_named_value(m, N->GetName())) {
+//         debug("Found named value " << N->GetName());
 
 //         if (find->second == PtrClass::Function) {
 //           return find->first;
@@ -1063,7 +1066,7 @@ public:
 //         }
 //       }
 
-//       debug("Failed to produce ident value " << N->getName());
+//       debug("Failed to produce ident value " << N->GetName());
 
 //       return nullopt;
 //     }
@@ -1106,7 +1109,7 @@ public:
 
 //       if (s.is_inside_function()) {
 //         AllocaInst *local = b.CreateAlloca(R_T.value(), nullptr,
-//         N->getName());
+//         N->GetName());
 
 //         if (N->getValue()) {
 //           val_t R = V(N->getValue());
@@ -1119,13 +1122,13 @@ public:
 //           b.CreateStore(Constant::getNullValue(R_T.value()), local);
 //         }
 
-//         s.get_stackframe().addVariable(N->getName(), local);
+//         s.get_stackframe().addVariable(N->GetName(), local);
 //         return local;
 //       } else {
 //         auto init = Constant::getNullValue(R_T.value());
 
 //         GlobalVariable *global = new GlobalVariable(
-//             m, R_T.value(), false, s.get_linkage(), init, N->getName());
+//             m, R_T.value(), false, s.get_linkage(), init, N->GetName());
 
 //         /// TODO: Set the initializer value during program load???
 //         return global;
@@ -1157,7 +1160,7 @@ public:
 //           debug("Failed to get return type");
 //           return nullopt;
 //         }
-//         ty_t R = T(x.value()->as<FnTy>()->getReturn());
+//         ty_t R = T(x.value()->As<FnTy>()->getReturn());
 //         if (!R) {
 //           debug("Failed to get return type");
 //           return nullopt;
@@ -1167,7 +1170,7 @@ public:
 //       }
 
 //       FunctionType *fn_ty = FunctionType::get(ret_ty, params, false);
-//       Value *callee = m.getOrInsertFunction(N->getName(), fn_ty).getCallee();
+//       Value *callee = m.getOrInsertFunction(N->GetName(), fn_ty).getCallee();
 
 //       if (!N->getBody().has_value()) {  // It is a declaration
 //         return callee;
@@ -1207,7 +1210,7 @@ public:
 //         b.SetInsertPoint(entry);
 
 //         for (size_t i = 0; i < N->getParams().size(); i++) {
-//           fn->getArg(i)->setName(N->getParams()[i].second);
+//           fn->getArg(i)->SetName(N->getParams()[i].second);
 
 //           AllocaInst *param_alloc = b.CreateAlloca(
 //               fn->getArg(i)->getType(), nullptr, N->getParams()[i].second);
@@ -1219,7 +1222,7 @@ public:
 
 //         bool old_branch_early = s.branch_early;
 
-//         for (auto &node : N->getBody().value()->getItems()) {
+//         for (auto &node : N->getBody().value()->GetItems()) {
 //           val_t R = V(node);
 //           if (!R) {
 //             s.pop_return_block();
@@ -1246,7 +1249,7 @@ public:
 //   namespace control {
 //     static val_t for_CALL(ctx_t &m, craft_t &b, State &s, const Call *N) {
 //       if (N->getTarget()->is(IR_eIDENT)) {
-//         let func_name = N->getTarget()->getName();
+//         let func_name = N->getTarget()->GetName();
 
 //         if (let find = s.find_named_value(m, func_name)) {
 //           if (find->second == PtrClass::Function) { /* Direct call */
@@ -1507,13 +1510,13 @@ public:
 //       }
 
 //       for (auto &node : N->getCases()) {
-//         Case *C = node->as<Case>();
+//         Case *C = node->As<Case>();
 //         auto x = C->getCond()->getType();
 //         if (!x) {
 //           debug("Failed to get case condition type");
 //           return false;
 //         }
-//         if (!x.value()->isSame(C_T.value())) {
+//         if (!x.value()->IsEq(C_T.value())) {
 //           return false;
 //         }
 //       }
@@ -1545,7 +1548,7 @@ public:
 //           b.SetInsertPoint(case_block);
 //           case_block->moveBefore(end);
 
-//           Case *C = node->as<Case>();
+//           Case *C = node->As<Case>();
 
 //           val_t R_C = V(C->getCond());
 //           if (!R_C) {
@@ -1656,7 +1659,7 @@ public:
 //       }
 
 //       static ty_t for_CONST_TY(craft_t &b, const ConstTy *N) {
-//         return T(N->getItem());
+//         return T(N->GetItem());
 //       }
 
 //       static ty_t for_FN_TY(craft_t &b, const FnTy *N) {
@@ -1688,8 +1691,8 @@ public:
 //       }
 
 //       static ty_t for_OPAQUE_TY(craft_t &b, const OpaqueTy *N) {
-//         if (!N->getName().empty()) {
-//           return StructType::create(b.getContext(), N->getName());
+//         if (!N->GetName().empty()) {
+//           return StructType::create(b.getContext(), N->GetName());
 //         }
 
 //         return nullopt;
@@ -1740,13 +1743,13 @@ public:
 //   static let dispatch = []() constexpr {
 // #define FUNCTION(_enum, _func, _type)                                       \
 //   R[_enum] = [](ctx_t &m, craft_t &b, State &s, FlowPtr<Expr> N) -> val_t { \
-//     return _func(m, b, s, N->as<_type>());                                  \
+//     return _func(m, b, s, N->As<_type>());                                  \
 //   }
 //     using func_t = val_t (*)(ctx_t &, craft_t &, State &, FlowPtr<Expr>);
 
 //     array<func_t, IR_LAST + 1> R;
 //     R.fill([](ctx_t &, craft_t &, State &, auto n) -> val_t {
-//       qcore_panicf("illegal node in input: kind=%s", n->getKindName());
+//       qcore_panicf("illegal node in input: kind=%s", n->GetKindName());
 //     });
 
 //     { /* NRGraph recursive llvm-ir builders */
@@ -1754,7 +1757,7 @@ public:
 //       using namespace lower::expr;
 //       using namespace lower::symbol;
 
-//       FUNCTION(IR_eBIN, for_BINEXPR, BinExpr);
+//       FUNCTION(IR_eBIN, for_BINEXPR, BinaryExpression);
 //       FUNCTION(IR_eUNARY, for_UNEXPR, Unary);
 //       FUNCTION(IR_eINT, for_INT, Int);
 //       FUNCTION(IR_eFLOAT, for_FLOAT, Float);
@@ -1790,20 +1793,20 @@ public:
 //     return R;
 //   }();
 
-//   return dispatch[N->getKind()](m, b, s, N);
+//   return dispatch[N->GetKind()](m, b, s, N);
 // }
 
 // static auto T_gen(craft_t &b, FlowPtr<Expr> N) -> ty_t {
 //   static let dispatch = []() constexpr {
 // #define FUNCTION(_enum, _func, _type)                  \
 //   R[_enum] = [](craft_t &b, FlowPtr<Expr> N) -> ty_t { \
-//     return _func(b, N->as<_type>());                   \
+//     return _func(b, N->As<_type>());                   \
 //   }
 //     using func_t = ty_t (*)(craft_t &, FlowPtr<Expr>);
 
 //     array<func_t, IR_LAST + 1> R;
 //     R.fill([](craft_t &, auto n) -> ty_t {
-//       qcore_panicf("illegal node in input: kind=%s", n->getKindName());
+//       qcore_panicf("illegal node in input: kind=%s", n->GetKindName());
 //     });
 
 //     { /* NRGraph recursive llvm-ir builders */
@@ -1846,11 +1849,11 @@ public:
 //     return R;
 //   }();
 
-//   return dispatch[N->getKind()](b, N);
+//   return dispatch[N->GetKind()](b, N);
 // }
 
-static bool qcode_adapter(IRModule *module, qcode_conf_t *conf, FILE *err,
-                          FILE *out, qcode_adapter_fn impl) {
+static auto QcodeAdapter(IRModule *module, QCodegenConfig *conf, FILE *err,
+                         FILE *out, QcodeAdapterFn impl) -> bool {
   unique_ptr<streambuf> err_stream_buf, out_stream_buf;
 
   {
@@ -1877,7 +1880,7 @@ static bool qcode_adapter(IRModule *module, qcode_conf_t *conf, FILE *err,
   ostream out_stream(out_stream_buf.get());
 
   {
-    my_pwrite_ostream llvm_adapt(out_stream);
+    MyPwriteOstream llvm_adapt(out_stream);
     if (!impl(module, conf, err_stream, llvm_adapt)) {
       err_stream.flush();
       out_stream.flush();
@@ -1895,63 +1898,62 @@ static bool qcode_adapter(IRModule *module, qcode_conf_t *conf, FILE *err,
   return true;
 }
 
-static optional<unique_ptr<Module>> fabricate_llvmir(IRModule *module,
-                                                     qcode_conf_t *conf,
-                                                     ostream &err,
-                                                     raw_ostream &out) {
+static auto FabricateLlvmir(IRModule *module, QCodegenConfig *conf,
+                            ostream &err,
+                            raw_ostream &out) -> optional<unique_ptr<Module>> {
   /// TODO: Implement conversion for node
   qcore_implement();
 }
 
-NCC_EXPORT bool qcode_ir(IRModule *module, qcode_conf_t *conf, FILE *err,
-                         FILE *out) {
-  return qcode_adapter(module, conf, err, out,
-                       [](IRModule *m, qcode_conf_t *c, ostream &e,
-                          raw_pwrite_stream &o) -> bool {
-                         auto module = fabricate_llvmir(m, c, e, o);
-                         if (!module) {
-                           e << "error: failed to fabricate LLVM IR" << endl;
-                           return false;
-                         }
+NCC_EXPORT auto QcodeIR(IRModule *module, QCodegenConfig *conf, FILE *err,
+                        FILE *out) -> bool {
+  return QcodeAdapter(module, conf, err, out,
+                      [](IRModule *m, QCodegenConfig *c, ostream &e,
+                         raw_pwrite_stream &o) -> bool {
+                        auto module = FabricateLlvmir(m, c, e, o);
+                        if (!module) {
+                          e << "error: failed to fabricate LLVM IR" << endl;
+                          return false;
+                        }
 
-                         bool failed = verifyModule(*module->get(), &o);
+                        bool failed = verifyModule(*module->get(), &o);
 
-                         module.value()->print(o, nullptr);
+                        module.value()->print(o, nullptr);
 
-                         return !failed;
-                       });
+                        return !failed;
+                      });
 }
 
-NCC_EXPORT bool qcode_asm(IRModule *module, qcode_conf_t *conf, FILE *err,
-                          FILE *out) {
-  return qcode_adapter(
+NCC_EXPORT auto QcodeAsm(IRModule *module, QCodegenConfig *conf, FILE *err,
+                         FILE *out) -> bool {
+  return QcodeAdapter(
       module, conf, err, out,
-      [](IRModule *m, qcode_conf_t *c, ostream &e,
+      [](IRModule *m, QCodegenConfig *c, ostream &e,
          raw_pwrite_stream &o) -> bool {
-        auto module_opt = fabricate_llvmir(m, c, e, o);
+        auto module_opt = FabricateLlvmir(m, c, e, o);
         if (!module_opt) {
           e << "error: failed to fabricate LLVM IR" << endl;
           return false;
         }
 
-        auto targetTriple = m->GetTargetInfo().TargetTriple.value_or(
+        auto target_triple = m->GetTargetInfo().m_TargetTriple.value_or(
             sys::getDefaultTargetTriple());
-        auto CPU = m->GetTargetInfo().CPU.value_or("generic");
-        ncc::string Features = m->GetTargetInfo().CPUFeatures.value_or("");
-        bool relocPIC = true;
+        auto cpu = m->GetTargetInfo().m_CPU.value_or("generic");
+        ncc::string features = m->GetTargetInfo().m_CPUFeatures.value_or("");
+        bool reloc_pic = true;
 
         TargetOptions opt;
-        std::string lookupTarget_err;
-        auto Target =
-            TargetRegistry::lookupTarget(targetTriple.get(), lookupTarget_err);
-        if (!Target) {
-          e << "error: failed to lookup target: " << lookupTarget_err << endl;
+        std::string lookup_target_err;
+        auto target = TargetRegistry::lookupTarget(target_triple.Get(),
+                                                   lookup_target_err);
+        if (!target) {
+          e << "error: failed to lookup target: " << lookup_target_err << endl;
           return false;
         }
 
-        auto TargetMachine = Target->createTargetMachine(
-            targetTriple.get(), CPU.get(), Features.get(), opt,
-            relocPIC ? Reloc::PIC_ : Reloc::Static);
+        auto target_machine = target->createTargetMachine(
+            target_triple.Get(), cpu.Get(), features.Get(), opt,
+            reloc_pic ? Reloc::PIC_ : Reloc::Static);
 
         auto &module = *module_opt.value();
 
@@ -1960,45 +1962,45 @@ NCC_EXPORT bool qcode_asm(IRModule *module, qcode_conf_t *conf, FILE *err,
           return false;
         }
 
-        module.setDataLayout(TargetMachine->createDataLayout());
-        module.setTargetTriple(targetTriple.get());
+        module.setDataLayout(target_machine->createDataLayout());
+        module.setTargetTriple(target_triple.Get());
 
         ///==========================================================================
 
         // Create the analysis managers.
         // These must be declared in this order so that they are destroyed in
         // the correct order due to inter-analysis-manager references.
-        LoopAnalysisManager LAM;
-        FunctionAnalysisManager FAM;
-        CGSCCAnalysisManager CGAM;
-        ModuleAnalysisManager MAM;
+        LoopAnalysisManager lam;
+        FunctionAnalysisManager fam;
+        CGSCCAnalysisManager cgam;
+        ModuleAnalysisManager mam;
 
         // Create the new pass manager builder.
         // Take a look at the PassBuilder constructor parameters for more
         // customization, e.g. specifying a TargetMachine or various debugging
         // options.
-        PassBuilder PB;
+        PassBuilder pb;
 
         // Register all the basic analyses with the managers.
-        PB.registerModuleAnalyses(MAM);
-        PB.registerCGSCCAnalyses(CGAM);
-        PB.registerFunctionAnalyses(FAM);
-        PB.registerLoopAnalyses(LAM);
-        PB.crossRegisterProxies(LAM, FAM, CGAM, MAM);
+        pb.registerModuleAnalyses(mam);
+        pb.registerCGSCCAnalyses(cgam);
+        pb.registerFunctionAnalyses(fam);
+        pb.registerLoopAnalyses(lam);
+        pb.crossRegisterProxies(lam, fam, cgam, mam);
 
-        ModulePassManager MPM =
-            PB.buildPerModuleDefaultPipeline(OptimizationLevel::O3);
+        ModulePassManager mpm =
+            pb.buildPerModuleDefaultPipeline(OptimizationLevel::O3);
 
         // Optimize the IR!
-        MPM.run(module, MAM);
+        mpm.run(module, mam);
 
         ///==========================================================================
 
         error_code ec;
 
         legacy::PassManager pass;
-        TargetMachine->addPassesToEmitFile(pass, o, nullptr,
-                                           CodeGenFileType::AssemblyFile);
+        target_machine->addPassesToEmitFile(pass, o, nullptr,
+                                            CodeGenFileType::AssemblyFile);
         if (!pass.run(module)) {
           e << "error: failed to emit object code" << endl;
           return false;
@@ -2008,36 +2010,36 @@ NCC_EXPORT bool qcode_asm(IRModule *module, qcode_conf_t *conf, FILE *err,
       });
 }
 
-NCC_EXPORT bool qcode_obj(IRModule *module, qcode_conf_t *conf, FILE *err,
-                          FILE *out) {
-  return qcode_adapter(
+NCC_EXPORT auto QcodeObj(IRModule *module, QCodegenConfig *conf, FILE *err,
+                         FILE *out) -> bool {
+  return QcodeAdapter(
       module, conf, err, out,
-      [](IRModule *m, qcode_conf_t *c, ostream &e,
+      [](IRModule *m, QCodegenConfig *c, ostream &e,
          raw_pwrite_stream &o) -> bool {
-        auto module_opt = fabricate_llvmir(m, c, e, o);
+        auto module_opt = FabricateLlvmir(m, c, e, o);
         if (!module_opt) {
           e << "error: failed to fabricate LLVM IR" << endl;
           return false;
         }
 
-        ncc::string targetTriple = m->GetTargetInfo().TargetTriple.value_or(
+        ncc::string target_triple = m->GetTargetInfo().m_TargetTriple.value_or(
             sys::getDefaultTargetTriple());
-        ncc::string CPU = m->GetTargetInfo().CPU.value_or("generic");
-        ncc::string Features = m->GetTargetInfo().CPUFeatures.value_or("");
-        bool relocPIC = true;
+        ncc::string cpu = m->GetTargetInfo().m_CPU.value_or("generic");
+        ncc::string features = m->GetTargetInfo().m_CPUFeatures.value_or("");
+        bool reloc_pic = true;
 
         TargetOptions opt;
-        std::string lookupTarget_err;
-        auto Target =
-            TargetRegistry::lookupTarget(targetTriple.get(), lookupTarget_err);
-        if (!Target) {
-          e << "error: failed to lookup target: " << lookupTarget_err << endl;
+        std::string lookup_target_err;
+        auto target = TargetRegistry::lookupTarget(target_triple.Get(),
+                                                   lookup_target_err);
+        if (!target) {
+          e << "error: failed to lookup target: " << lookup_target_err << endl;
           return false;
         }
 
-        auto TargetMachine = Target->createTargetMachine(
-            targetTriple.get(), CPU.get(), Features.get(), opt,
-            relocPIC ? Reloc::PIC_ : Reloc::Static);
+        auto target_machine = target->createTargetMachine(
+            target_triple.Get(), cpu.Get(), features.Get(), opt,
+            reloc_pic ? Reloc::PIC_ : Reloc::Static);
 
         auto &module = *module_opt.value();
 
@@ -2046,45 +2048,45 @@ NCC_EXPORT bool qcode_obj(IRModule *module, qcode_conf_t *conf, FILE *err,
           return false;
         }
 
-        module.setDataLayout(TargetMachine->createDataLayout());
-        module.setTargetTriple(targetTriple.get());
+        module.setDataLayout(target_machine->createDataLayout());
+        module.setTargetTriple(target_triple.Get());
 
         ///==========================================================================
 
         // Create the analysis managers.
         // These must be declared in this order so that they are destroyed in
         // the correct order due to inter-analysis-manager references.
-        LoopAnalysisManager LAM;
-        FunctionAnalysisManager FAM;
-        CGSCCAnalysisManager CGAM;
-        ModuleAnalysisManager MAM;
+        LoopAnalysisManager lam;
+        FunctionAnalysisManager fam;
+        CGSCCAnalysisManager cgam;
+        ModuleAnalysisManager mam;
 
         // Create the new pass manager builder.
         // Take a look at the PassBuilder constructor parameters for more
         // customization, e.g. specifying a TargetMachine or various
         // debugging options.
-        PassBuilder PB;
+        PassBuilder pb;
 
         // Register all the basic analyses with the managers.
-        PB.registerModuleAnalyses(MAM);
-        PB.registerCGSCCAnalyses(CGAM);
-        PB.registerFunctionAnalyses(FAM);
-        PB.registerLoopAnalyses(LAM);
-        PB.crossRegisterProxies(LAM, FAM, CGAM, MAM);
+        pb.registerModuleAnalyses(mam);
+        pb.registerCGSCCAnalyses(cgam);
+        pb.registerFunctionAnalyses(fam);
+        pb.registerLoopAnalyses(lam);
+        pb.crossRegisterProxies(lam, fam, cgam, mam);
 
-        ModulePassManager MPM =
-            PB.buildPerModuleDefaultPipeline(OptimizationLevel::O3);
+        ModulePassManager mpm =
+            pb.buildPerModuleDefaultPipeline(OptimizationLevel::O3);
 
         // Optimize the IR!
-        MPM.run(module, MAM);
+        mpm.run(module, mam);
 
         ///==========================================================================
 
         error_code ec;
 
         legacy::PassManager pass;
-        TargetMachine->addPassesToEmitFile(pass, o, nullptr,
-                                           CodeGenFileType::ObjectFile);
+        target_machine->addPassesToEmitFile(pass, o, nullptr,
+                                            CodeGenFileType::ObjectFile);
         if (!pass.run(module)) {
           e << "error: failed to emit object code" << endl;
           return false;

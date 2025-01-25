@@ -38,7 +38,7 @@
 extern "C" {
 #endif
 
-int nitrated_main(int argc, char** argv);
+auto NitratedMain(int argc, char** argv) -> int;
 
 #ifdef __cplusplus
 }

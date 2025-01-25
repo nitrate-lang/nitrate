@@ -1,7 +1,7 @@
 #include <nitrate/code.hh>
 
 int main() {
-  auto future = nitrate::pipeline(stdin, stdout, {"ir"});
+  auto future = nitrate::Pipeline(std::cin, std::cout, {"ir"});
 
-  return future.get() ? 0 : 1;
+  return future.Get() ? 0 : 1;
 }

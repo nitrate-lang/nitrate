@@ -34,8 +34,9 @@
 #ifndef __NITRATE_PARSE_H__
 #define __NITRATE_PARSE_H__
 
+#include <core/ParserImpl.hh>
 #include <nitrate-core/Macro.hh>
-#include <nitrate-lexer/Lexer.hh>
+#include <nitrate-lexer/Scanner.hh>
 #include <nitrate-parser/AST.hh>
 #include <nitrate-parser/ASTCommon.hh>
 #include <nitrate-parser/Context.hh>
@@ -44,31 +45,34 @@
 namespace ncc::parse {
   using namespace ec;
 
-#define next() rd.Next()
-#define peek() rd.Peek()
-#define current() rd.Current()
+#define next() m_rd.Next()
+#define peek() m_rd.Peek()
+#define current() m_rd.Current()
 
   template <auto tok>
-  static std::optional<ncc::lex::Token> next_if_(ncc::lex::IScanner &rd) {
-    auto t = peek();
+  static inline auto NextIfImpl(ncc::lex::IScanner &m_rd)
+      -> std::optional<ncc::lex::Token> {
+    auto t = m_rd.Peek();
     if constexpr (std::is_same_v<decltype(tok), ncc::lex::TokenType>) {
-      if (t.is(tok)) {
-        next();
+      if (t.Is(tok)) {
+        m_rd.Next();
         return t;
       }
-    } else {
-      if (t.is<tok>()) {
-        next();
-        return t;
-      }
-    }
 
-    return std::nullopt;
+      return std::nullopt;
+    } else {
+      if (t.Is<tok>()) {
+        m_rd.Next();
+        return t;
+      }
+
+      return std::nullopt;
+    }
   }
 
-#define next_if(tok) next_if_<tok>(rd)
+#define NextIf(tok) NextIfImpl<tok>(m_rd)
 
-  static inline auto BIND_COMMENTS(auto node, auto comments) {
+  static inline auto BindComments(auto node, auto comments) {
     node->BindCodeCommentData(std::move(comments));
     return node;
   }

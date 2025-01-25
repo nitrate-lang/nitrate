@@ -1,34 +1,36 @@
-#include <argparse.h>
 #include <glog/logging.h>
 
+#include <argparse.hpp>
 #include <boost/assert/source_location.hpp>
 #include <boost/throw_exception.hpp>
 #include <csignal>
 #include <filesystem>
-#include <lsp/core/license-data.hh>
-#include <lsp/core/server.hh>
+#include <lsp/core/Server.hh>
 #include <memory>
 #include <nitrate-core/Macro.hh>
 #include <optional>
 
-static constexpr void create_parser(argparse::ArgumentParser& parser) {
+using namespace no3::lsp;
+using namespace no3::lsp::srv;
+
+static constexpr void CreateParser(argparse::ArgumentParser& parser) {
   ///=================== BASIC CONFIGURATION ======================
 
-  parser.add_argument("--config")
-      .default_value(std::string(""))
-      .help("Specify the configuration file");
+  parser.AddArgument("--config")
+      .DefaultValue(std::string(""))
+      .Help("Specify the configuration file");
 
   ///=================== CONNECTION CONFIGURATION ======================
 
-  auto& group = parser.add_mutually_exclusive_group();
+  auto& group = parser.AddMutuallyExclusiveGroup();
 
-  group.add_argument("--pipe").help("Specify the pipe file to connect to");
-  group.add_argument("--port").help("Specify the port to connect to");
-  group.add_argument("--stdio").default_value(false).implicit_value(true).help(
+  group.AddArgument("--pipe").Help("Specify the pipe file to connect to");
+  group.AddArgument("--port").Help("Specify the port to connect to");
+  group.AddArgument("--stdio").DefaultValue(false).ImplicitValue(true).Help(
       "Use standard I/O");
 }
 
-extern "C" NCC_EXPORT int nitrated_main(int argc, char** argv) {
+extern "C" NCC_EXPORT auto NitratedMain(int argc, char** argv) -> int {
   std::vector<std::string> args(argv, argv + argc);
 
   {
@@ -44,22 +46,22 @@ extern "C" NCC_EXPORT int nitrated_main(int argc, char** argv) {
   }
 
   argparse::ArgumentParser parser("nitrated", "1.0");
-  create_parser(parser);
+  CreateParser(parser);
 
-  parser.parse_args(args);
+  parser.ParseArgs(args);
 
   std::unique_ptr<Configuration> config;
   { /* Setup config */
-    std::string config_file = parser.get<std::string>("--config");
+    auto config_file = parser.Get<std::string>("--config");
     if (config_file.empty()) {
-      config = std::make_unique<Configuration>(Configuration::defaults());
+      config = std::make_unique<Configuration>(Configuration::Defaults());
     } else {
       if (!std::filesystem::exists(config_file)) {
         LOG(ERROR) << "Configuration file does not exist: " << config_file;
         return 1;
       }
 
-      auto config_opt = parse_config(config_file);
+      auto config_opt = ParseConfig(config_file);
       if (!config_opt.has_value()) {
         LOG(ERROR) << "Failed to parse configuration file: " << config_file;
         return 1;
@@ -74,12 +76,12 @@ extern "C" NCC_EXPORT int nitrated_main(int argc, char** argv) {
     std::string connect_param;
     ConnectionType connection_type;
 
-    if (parser.is_used("--pipe")) {
+    if (parser.IsUsed("--pipe")) {
       connection_type = ConnectionType::Pipe;
-      connect_param = parser.get<std::string>("--pipe");
-    } else if (parser.is_used("--port")) {
+      connect_param = parser.Get<std::string>("--pipe");
+    } else if (parser.IsUsed("--port")) {
       connection_type = ConnectionType::Port;
-      connect_param = parser.get<std::string>("--port");
+      connect_param = parser.Get<std::string>("--port");
     } else {
       connection_type = ConnectionType::Stdio;
     }
@@ -96,7 +98,7 @@ extern "C" NCC_EXPORT int nitrated_main(int argc, char** argv) {
         break;
     }
 
-    auto channel_opt = open_connection(connection_type, connect_param);
+    auto channel_opt = OpenConnection(connection_type, String(connect_param));
     if (!channel_opt) {
       LOG(ERROR) << "Failed to open channel";
       return 1;
@@ -105,5 +107,5 @@ extern "C" NCC_EXPORT int nitrated_main(int argc, char** argv) {
     channel = std::move(channel_opt.value());
   }
 
-  ServerContext::the().start_server(channel);
+  ServerContext::The().StartServer(channel);
 }

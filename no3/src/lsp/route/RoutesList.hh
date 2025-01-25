@@ -1,18 +1,19 @@
 #pragma once
 
-#include <lsp/core/server.hh>
+#include <lsp/core/Server.hh>
 
-void do_initialize(const lsp::RequestMessage&, lsp::ResponseMessage&);
-void do_initialized(const lsp::NotificationMessage&);
-void do_shutdown(const lsp::RequestMessage&, lsp::ResponseMessage&);
-void do_exit(const lsp::NotificationMessage&);
+namespace no3::lsp::srv {
+  void DoInitialize(const RequestMessage&, ResponseMessage&);
+  void DoInitialized(const NotificationMessage&);
+  void DoShutdown(const RequestMessage&, ResponseMessage&);
+  void DoExit(const NotificationMessage&);
 
-void do_completion(const lsp::RequestMessage&, lsp::ResponseMessage&);
-void do_declaration(const lsp::RequestMessage&, lsp::ResponseMessage&);
-void do_definition(const lsp::RequestMessage&, lsp::ResponseMessage&);
-void do_didChange(const lsp::NotificationMessage&);
-void do_didClose(const lsp::NotificationMessage&);
-void do_didOpen(const lsp::NotificationMessage&);
-void do_didSave(const lsp::NotificationMessage&);
-void do_documentColor(const lsp::RequestMessage&, lsp::ResponseMessage&);
-void do_formatting(const lsp::RequestMessage&, lsp::ResponseMessage&);
+  void SetTrace(const NotificationMessage&);
+
+  void DoDidChange(const NotificationMessage&);
+  void DoDidClose(const NotificationMessage&);
+  void DoDidOpen(const NotificationMessage&);
+  void DoDidSave(const NotificationMessage&);
+
+  void DoFormatting(const RequestMessage&, ResponseMessage&);
+}  // namespace no3::lsp::srv

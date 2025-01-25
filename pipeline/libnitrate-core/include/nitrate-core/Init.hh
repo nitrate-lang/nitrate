@@ -34,6 +34,7 @@
 #ifndef __NITRATE_CORE_LIB_H__
 #define __NITRATE_CORE_LIB_H__
 
+#include <atomic>
 #include <mutex>
 #include <optional>
 #include <string>
@@ -55,18 +56,18 @@ namespace ncc {
 
   template <typename Impl>
   class LibraryRC final {
-    size_t ref_count{};
-    std::recursive_mutex ref_count_mutex;
+    size_t m_ref_count{};
+    std::recursive_mutex m_ref_count_mutex;
 
   public:
     LibraryRC() = default;
 
-    bool InitRC() {
-      std::lock_guard<std::recursive_mutex> lock(ref_count_mutex);
+    auto InitRC() -> bool {
+      std::lock_guard<std::recursive_mutex> lock(m_ref_count_mutex);
 
-      if (ref_count++ == 0) {
+      if (m_ref_count++ == 0) {
         if (!Impl::Init()) {
-          ref_count = 0;
+          m_ref_count = 0;
           return false;
         }
       }
@@ -75,20 +76,20 @@ namespace ncc {
     }
 
     void DeinitRC() {
-      std::lock_guard<std::recursive_mutex> lock(ref_count_mutex);
+      std::lock_guard<std::recursive_mutex> lock(m_ref_count_mutex);
 
-      if (ref_count > 0 && --ref_count == 0) {
+      if (m_ref_count > 0 && --m_ref_count == 0) {
         Impl::Deinit();
       }
     }
 
-    bool IsInitialized() {
-      std::lock_guard<std::recursive_mutex> lock(ref_count_mutex);
+    auto IsInitialized() -> bool {
+      std::lock_guard<std::recursive_mutex> lock(m_ref_count_mutex);
 
-      return ref_count > 0;
+      return m_ref_count > 0;
     }
 
-    std::string_view GetVersion() {
+    auto GetVersion() -> std::string_view {
       static std::string version_string =
 
           std::string("[") + std::string(Impl::GetVersionId()) +
@@ -136,7 +137,7 @@ namespace ncc {
       return version_string;
     }
 
-    std::optional<LibraryRCAutoClose<Impl>> GetRC() {
+    auto GetRC() -> std::optional<LibraryRCAutoClose<Impl>> {
       if (!InitRC()) {
         return std::nullopt;
       }
@@ -146,12 +147,15 @@ namespace ncc {
   };
 
   struct CoreLibrarySetup final {
-    static bool Init();
+    static auto Init() -> bool;
     static void Deinit();
-    static std::string_view GetVersionId();
+    static auto GetVersionId() -> std::string_view;
   };
 
   extern LibraryRC<CoreLibrarySetup> CoreLibrary;
+
+  /* If enabled the compiler is thread-safe. */
+  extern std::atomic<bool> EnableSync;
 }  // namespace ncc
 
 #endif  // __NITRATE_CORE_LIB_H__

@@ -43,348 +43,348 @@ namespace ncc::parse {
   public:
     virtual ~ASTVisitor() = default;
 
-    virtual void visit(FlowPtr<Base> n) = 0;
-    virtual void visit(FlowPtr<ExprStmt> n) = 0;
-    virtual void visit(FlowPtr<StmtExpr> n) = 0;
-    virtual void visit(FlowPtr<TypeExpr> n) = 0;
-    virtual void visit(FlowPtr<NamedTy> n) = 0;
-    virtual void visit(FlowPtr<InferTy> n) = 0;
-    virtual void visit(FlowPtr<TemplType> n) = 0;
-    virtual void visit(FlowPtr<U1> n) = 0;
-    virtual void visit(FlowPtr<U8> n) = 0;
-    virtual void visit(FlowPtr<U16> n) = 0;
-    virtual void visit(FlowPtr<U32> n) = 0;
-    virtual void visit(FlowPtr<U64> n) = 0;
-    virtual void visit(FlowPtr<U128> n) = 0;
-    virtual void visit(FlowPtr<I8> n) = 0;
-    virtual void visit(FlowPtr<I16> n) = 0;
-    virtual void visit(FlowPtr<I32> n) = 0;
-    virtual void visit(FlowPtr<I64> n) = 0;
-    virtual void visit(FlowPtr<I128> n) = 0;
-    virtual void visit(FlowPtr<F16> n) = 0;
-    virtual void visit(FlowPtr<F32> n) = 0;
-    virtual void visit(FlowPtr<F64> n) = 0;
-    virtual void visit(FlowPtr<F128> n) = 0;
-    virtual void visit(FlowPtr<VoidTy> n) = 0;
-    virtual void visit(FlowPtr<PtrTy> n) = 0;
-    virtual void visit(FlowPtr<OpaqueTy> n) = 0;
-    virtual void visit(FlowPtr<TupleTy> n) = 0;
-    virtual void visit(FlowPtr<ArrayTy> n) = 0;
-    virtual void visit(FlowPtr<RefTy> n) = 0;
-    virtual void visit(FlowPtr<FuncTy> n) = 0;
-    virtual void visit(FlowPtr<UnaryExpr> n) = 0;
-    virtual void visit(FlowPtr<BinExpr> n) = 0;
-    virtual void visit(FlowPtr<PostUnaryExpr> n) = 0;
-    virtual void visit(FlowPtr<TernaryExpr> n) = 0;
-    virtual void visit(FlowPtr<ConstInt> n) = 0;
-    virtual void visit(FlowPtr<ConstFloat> n) = 0;
-    virtual void visit(FlowPtr<ConstBool> n) = 0;
-    virtual void visit(FlowPtr<ConstString> n) = 0;
-    virtual void visit(FlowPtr<ConstChar> n) = 0;
-    virtual void visit(FlowPtr<ConstNull> n) = 0;
-    virtual void visit(FlowPtr<ConstUndef> n) = 0;
-    virtual void visit(FlowPtr<Call> n) = 0;
-    virtual void visit(FlowPtr<TemplCall> n) = 0;
-    virtual void visit(FlowPtr<List> n) = 0;
-    virtual void visit(FlowPtr<Assoc> n) = 0;
-    virtual void visit(FlowPtr<Index> n) = 0;
-    virtual void visit(FlowPtr<Slice> n) = 0;
-    virtual void visit(FlowPtr<FString> n) = 0;
-    virtual void visit(FlowPtr<Ident> n) = 0;
-    virtual void visit(FlowPtr<SeqPoint> n) = 0;
-    virtual void visit(FlowPtr<Block> n) = 0;
-    virtual void visit(FlowPtr<VarDecl> n) = 0;
-    virtual void visit(FlowPtr<InlineAsm> n) = 0;
-    virtual void visit(FlowPtr<IfStmt> n) = 0;
-    virtual void visit(FlowPtr<WhileStmt> n) = 0;
-    virtual void visit(FlowPtr<ForStmt> n) = 0;
-    virtual void visit(FlowPtr<ForeachStmt> n) = 0;
-    virtual void visit(FlowPtr<BreakStmt> n) = 0;
-    virtual void visit(FlowPtr<ContinueStmt> n) = 0;
-    virtual void visit(FlowPtr<ReturnStmt> n) = 0;
-    virtual void visit(FlowPtr<ReturnIfStmt> n) = 0;
-    virtual void visit(FlowPtr<CaseStmt> n) = 0;
-    virtual void visit(FlowPtr<SwitchStmt> n) = 0;
-    virtual void visit(FlowPtr<TypedefStmt> n) = 0;
-    virtual void visit(FlowPtr<Function> n) = 0;
-    virtual void visit(FlowPtr<StructDef> n) = 0;
-    virtual void visit(FlowPtr<EnumDef> n) = 0;
-    virtual void visit(FlowPtr<ScopeStmt> n) = 0;
-    virtual void visit(FlowPtr<ExportStmt> n) = 0;
+    virtual void Visit(FlowPtr<Base> n) = 0;
+    virtual void Visit(FlowPtr<ExprStmt> n) = 0;
+    virtual void Visit(FlowPtr<StmtExpr> n) = 0;
+    virtual void Visit(FlowPtr<TypeExpr> n) = 0;
+    virtual void Visit(FlowPtr<NamedTy> n) = 0;
+    virtual void Visit(FlowPtr<InferTy> n) = 0;
+    virtual void Visit(FlowPtr<TemplateType> n) = 0;
+    virtual void Visit(FlowPtr<U1> n) = 0;
+    virtual void Visit(FlowPtr<U8> n) = 0;
+    virtual void Visit(FlowPtr<U16> n) = 0;
+    virtual void Visit(FlowPtr<U32> n) = 0;
+    virtual void Visit(FlowPtr<U64> n) = 0;
+    virtual void Visit(FlowPtr<U128> n) = 0;
+    virtual void Visit(FlowPtr<I8> n) = 0;
+    virtual void Visit(FlowPtr<I16> n) = 0;
+    virtual void Visit(FlowPtr<I32> n) = 0;
+    virtual void Visit(FlowPtr<I64> n) = 0;
+    virtual void Visit(FlowPtr<I128> n) = 0;
+    virtual void Visit(FlowPtr<F16> n) = 0;
+    virtual void Visit(FlowPtr<F32> n) = 0;
+    virtual void Visit(FlowPtr<F64> n) = 0;
+    virtual void Visit(FlowPtr<F128> n) = 0;
+    virtual void Visit(FlowPtr<VoidTy> n) = 0;
+    virtual void Visit(FlowPtr<PtrTy> n) = 0;
+    virtual void Visit(FlowPtr<OpaqueTy> n) = 0;
+    virtual void Visit(FlowPtr<TupleTy> n) = 0;
+    virtual void Visit(FlowPtr<ArrayTy> n) = 0;
+    virtual void Visit(FlowPtr<RefTy> n) = 0;
+    virtual void Visit(FlowPtr<FuncTy> n) = 0;
+    virtual void Visit(FlowPtr<UnaryExpression> n) = 0;
+    virtual void Visit(FlowPtr<BinaryExpression> n) = 0;
+    virtual void Visit(FlowPtr<PostUnaryExpression> n) = 0;
+    virtual void Visit(FlowPtr<TernaryExpression> n) = 0;
+    virtual void Visit(FlowPtr<Integer> n) = 0;
+    virtual void Visit(FlowPtr<Float> n) = 0;
+    virtual void Visit(FlowPtr<Boolean> n) = 0;
+    virtual void Visit(FlowPtr<String> n) = 0;
+    virtual void Visit(FlowPtr<Character> n) = 0;
+    virtual void Visit(FlowPtr<Null> n) = 0;
+    virtual void Visit(FlowPtr<Undefined> n) = 0;
+    virtual void Visit(FlowPtr<Call> n) = 0;
+    virtual void Visit(FlowPtr<TemplateCall> n) = 0;
+    virtual void Visit(FlowPtr<List> n) = 0;
+    virtual void Visit(FlowPtr<Assoc> n) = 0;
+    virtual void Visit(FlowPtr<Index> n) = 0;
+    virtual void Visit(FlowPtr<Slice> n) = 0;
+    virtual void Visit(FlowPtr<FString> n) = 0;
+    virtual void Visit(FlowPtr<Identifier> n) = 0;
+    virtual void Visit(FlowPtr<Sequence> n) = 0;
+    virtual void Visit(FlowPtr<Block> n) = 0;
+    virtual void Visit(FlowPtr<Variable> n) = 0;
+    virtual void Visit(FlowPtr<Assembly> n) = 0;
+    virtual void Visit(FlowPtr<If> n) = 0;
+    virtual void Visit(FlowPtr<While> n) = 0;
+    virtual void Visit(FlowPtr<For> n) = 0;
+    virtual void Visit(FlowPtr<Foreach> n) = 0;
+    virtual void Visit(FlowPtr<Break> n) = 0;
+    virtual void Visit(FlowPtr<Continue> n) = 0;
+    virtual void Visit(FlowPtr<Return> n) = 0;
+    virtual void Visit(FlowPtr<ReturnIf> n) = 0;
+    virtual void Visit(FlowPtr<Case> n) = 0;
+    virtual void Visit(FlowPtr<Switch> n) = 0;
+    virtual void Visit(FlowPtr<Typedef> n) = 0;
+    virtual void Visit(FlowPtr<Function> n) = 0;
+    virtual void Visit(FlowPtr<Struct> n) = 0;
+    virtual void Visit(FlowPtr<Enum> n) = 0;
+    virtual void Visit(FlowPtr<Scope> n) = 0;
+    virtual void Visit(FlowPtr<Export> n) = 0;
 
     template <typename T>
-    void dispatch(FlowPtr<T> n) {
-      switch (n->getKind()) {
+    void Dispatch(FlowPtr<T> n) {
+      switch (n->GetKind()) {
         case QAST_BASE: {
-          visit(n.template as<Base>());
+          Visit(n.template As<Base>());
           break;
         }
         case QAST_BINEXPR: {
-          visit(n.template as<BinExpr>());
+          Visit(n.template As<BinaryExpression>());
           break;
         }
         case QAST_UNEXPR: {
-          visit(n.template as<UnaryExpr>());
+          Visit(n.template As<UnaryExpression>());
           break;
         }
         case QAST_TEREXPR: {
-          visit(n.template as<TernaryExpr>());
+          Visit(n.template As<TernaryExpression>());
           break;
         }
         case QAST_INT: {
-          visit(n.template as<ConstInt>());
+          Visit(n.template As<Integer>());
           break;
         }
         case QAST_FLOAT: {
-          visit(n.template as<ConstFloat>());
+          Visit(n.template As<Float>());
           break;
         }
         case QAST_STRING: {
-          visit(n.template as<ConstString>());
+          Visit(n.template As<String>());
           break;
         }
         case QAST_CHAR: {
-          visit(n.template as<ConstChar>());
+          Visit(n.template As<Character>());
           break;
         }
         case QAST_BOOL: {
-          visit(n.template as<ConstBool>());
+          Visit(n.template As<Boolean>());
           break;
         }
         case QAST_NULL: {
-          visit(n.template as<ConstNull>());
+          Visit(n.template As<Null>());
           break;
         }
         case QAST_UNDEF: {
-          visit(n.template as<ConstUndef>());
+          Visit(n.template As<Undefined>());
           break;
         }
         case QAST_CALL: {
-          visit(n.template as<Call>());
+          Visit(n.template As<Call>());
           break;
         }
         case QAST_LIST: {
-          visit(n.template as<List>());
+          Visit(n.template As<List>());
           break;
         }
         case QAST_ASSOC: {
-          visit(n.template as<Assoc>());
+          Visit(n.template As<Assoc>());
           break;
         }
         case QAST_INDEX: {
-          visit(n.template as<Index>());
+          Visit(n.template As<Index>());
           break;
         }
         case QAST_SLICE: {
-          visit(n.template as<Slice>());
+          Visit(n.template As<Slice>());
           break;
         }
         case QAST_FSTRING: {
-          visit(n.template as<FString>());
+          Visit(n.template As<FString>());
           break;
         }
         case QAST_IDENT: {
-          visit(n.template as<Ident>());
+          Visit(n.template As<Identifier>());
           break;
         }
         case QAST_SEQ: {
-          visit(n.template as<SeqPoint>());
+          Visit(n.template As<Sequence>());
           break;
         }
         case QAST_POST_UNEXPR: {
-          visit(n.template as<PostUnaryExpr>());
+          Visit(n.template As<PostUnaryExpression>());
           break;
         }
         case QAST_SEXPR: {
-          visit(n.template as<StmtExpr>());
+          Visit(n.template As<StmtExpr>());
           break;
         }
         case QAST_TEXPR: {
-          visit(n.template as<TypeExpr>());
+          Visit(n.template As<TypeExpr>());
           break;
         }
         case QAST_TEMPL_CALL: {
-          visit(n.template as<TemplCall>());
+          Visit(n.template As<TemplateCall>());
           break;
         }
         case QAST_REF: {
-          visit(n.template as<RefTy>());
+          Visit(n.template As<RefTy>());
           break;
         }
         case QAST_U1: {
-          visit(n.template as<U1>());
+          Visit(n.template As<U1>());
           break;
         }
         case QAST_U8: {
-          visit(n.template as<U8>());
+          Visit(n.template As<U8>());
           break;
         }
         case QAST_U16: {
-          visit(n.template as<U16>());
+          Visit(n.template As<U16>());
           break;
         }
         case QAST_U32: {
-          visit(n.template as<U32>());
+          Visit(n.template As<U32>());
           break;
         }
         case QAST_U64: {
-          visit(n.template as<U64>());
+          Visit(n.template As<U64>());
           break;
         }
         case QAST_U128: {
-          visit(n.template as<U128>());
+          Visit(n.template As<U128>());
           break;
         }
         case QAST_I8: {
-          visit(n.template as<I8>());
+          Visit(n.template As<I8>());
           break;
         }
         case QAST_I16: {
-          visit(n.template as<I16>());
+          Visit(n.template As<I16>());
           break;
         }
         case QAST_I32: {
-          visit(n.template as<I32>());
+          Visit(n.template As<I32>());
           break;
         }
         case QAST_I64: {
-          visit(n.template as<I64>());
+          Visit(n.template As<I64>());
           break;
         }
         case QAST_I128: {
-          visit(n.template as<I128>());
+          Visit(n.template As<I128>());
           break;
         }
         case QAST_F16: {
-          visit(n.template as<F16>());
+          Visit(n.template As<F16>());
           break;
         }
         case QAST_F32: {
-          visit(n.template as<F32>());
+          Visit(n.template As<F32>());
           break;
         }
         case QAST_F64: {
-          visit(n.template as<F64>());
+          Visit(n.template As<F64>());
           break;
         }
         case QAST_F128: {
-          visit(n.template as<F128>());
+          Visit(n.template As<F128>());
           break;
         }
         case QAST_VOID: {
-          visit(n.template as<VoidTy>());
+          Visit(n.template As<VoidTy>());
           break;
         }
         case QAST_PTR: {
-          visit(n.template as<PtrTy>());
+          Visit(n.template As<PtrTy>());
           break;
         }
         case QAST_OPAQUE: {
-          visit(n.template as<OpaqueTy>());
+          Visit(n.template As<OpaqueTy>());
           break;
         }
         case QAST_ARRAY: {
-          visit(n.template as<ArrayTy>());
+          Visit(n.template As<ArrayTy>());
           break;
         }
         case QAST_TUPLE: {
-          visit(n.template as<TupleTy>());
+          Visit(n.template As<TupleTy>());
           break;
         }
         case QAST_FUNCTOR: {
-          visit(n.template as<FuncTy>());
+          Visit(n.template As<FuncTy>());
           break;
         }
         case QAST_NAMED: {
-          visit(n.template as<NamedTy>());
+          Visit(n.template As<NamedTy>());
           break;
         }
         case QAST_INFER: {
-          visit(n.template as<InferTy>());
+          Visit(n.template As<InferTy>());
           break;
         }
         case QAST_TEMPLATE: {
-          visit(n.template as<TemplType>());
+          Visit(n.template As<TemplateType>());
           break;
         }
         case QAST_TYPEDEF: {
-          visit(n.template as<TypedefStmt>());
+          Visit(n.template As<Typedef>());
           break;
         }
         case QAST_STRUCT: {
-          visit(n.template as<StructDef>());
+          Visit(n.template As<Struct>());
           break;
         }
         case QAST_ENUM: {
-          visit(n.template as<EnumDef>());
+          Visit(n.template As<Enum>());
           break;
         }
         case QAST_FUNCTION: {
-          visit(n.template as<Function>());
+          Visit(n.template As<Function>());
           break;
         }
         case QAST_SCOPE: {
-          visit(n.template as<ScopeStmt>());
+          Visit(n.template As<Scope>());
           break;
         }
         case QAST_EXPORT: {
-          visit(n.template as<ExportStmt>());
+          Visit(n.template As<Export>());
           break;
         }
         case QAST_BLOCK: {
-          visit(n.template as<Block>());
+          Visit(n.template As<Block>());
           break;
         }
         case QAST_VAR: {
-          visit(n.template as<VarDecl>());
+          Visit(n.template As<Variable>());
           break;
         }
         case QAST_INLINE_ASM: {
-          visit(n.template as<InlineAsm>());
+          Visit(n.template As<Assembly>());
           break;
         }
         case QAST_RETURN: {
-          visit(n.template as<ReturnStmt>());
+          Visit(n.template As<Return>());
           break;
         }
         case QAST_RETIF: {
-          visit(n.template as<ReturnIfStmt>());
+          Visit(n.template As<ReturnIf>());
           break;
         }
         case QAST_BREAK: {
-          visit(n.template as<BreakStmt>());
+          Visit(n.template As<Break>());
           break;
         }
         case QAST_CONTINUE: {
-          visit(n.template as<ContinueStmt>());
+          Visit(n.template As<Continue>());
           break;
         }
         case QAST_IF: {
-          visit(n.template as<IfStmt>());
+          Visit(n.template As<If>());
           break;
         }
         case QAST_WHILE: {
-          visit(n.template as<WhileStmt>());
+          Visit(n.template As<While>());
           break;
         }
         case QAST_FOR: {
-          visit(n.template as<ForStmt>());
+          Visit(n.template As<For>());
           break;
         }
         case QAST_FOREACH: {
-          visit(n.template as<ForeachStmt>());
+          Visit(n.template As<Foreach>());
           break;
         }
         case QAST_CASE: {
-          visit(n.template as<CaseStmt>());
+          Visit(n.template As<Case>());
           break;
         }
         case QAST_SWITCH: {
-          visit(n.template as<SwitchStmt>());
+          Visit(n.template As<Switch>());
           break;
         }
         case QAST_ESTMT: {
-          visit(n.template as<ExprStmt>());
+          Visit(n.template As<ExprStmt>());
           break;
         }
       }

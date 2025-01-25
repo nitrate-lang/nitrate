@@ -31,12 +31,13 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <argparse.h>
+#include <git2/global.h>
 #include <glog/logging.h>
 #include <lsp/nitrated.h>
 #include <nitrate-emit/Code.h>
 #include <nitrate-emit/Lib.h>
 
+#include <argparse.hpp>
 #include <atomic>
 #include <clean/Cleanup.hh>
 #include <core/ANSI.hh>
@@ -62,38 +63,38 @@
 using namespace no3;
 using argparse::ArgumentParser;
 
-static core::MyLogSink G_google_log_sink;
+static core::MyLogSink GGoogleLogSink;
 
 namespace no3::router {
-  static int run_init_mode(const ArgumentParser &parser) {
+  static auto RunInitMode(const ArgumentParser &parser) -> int {
     using namespace init;
 
     core::SetDebugMode(parser["--verbose"] == true);
 
     PackageBuilder builder =
         PackageBuilder()
-            .output(parser.get<std::string>("--output"))
-            .name(parser.get<std::string>("package-name"))
-            .license(parser.get<std::string>("--license"))
-            .author(parser.get<std::string>("--author"))
-            .email(parser.get<std::string>("--email"))
-            .url(parser.get<std::string>("--url"))
-            .version(parser.get<std::string>("--version"))
-            .description(parser.get<std::string>("--description"))
-            .verbose(parser["--verbose"] == true)
-            .force(parser["--force"] == true);
+            .Output(parser.Get<std::string>("--output"))
+            .Name(parser.Get<std::string>("package-name"))
+            .License(parser.Get<std::string>("--license"))
+            .Author(parser.Get<std::string>("--author"))
+            .Email(parser.Get<std::string>("--email"))
+            .Url(parser.Get<std::string>("--url"))
+            .Version(parser.Get<std::string>("--version"))
+            .Description(parser.Get<std::string>("--description"))
+            .Verbose(parser["--verbose"] == true)
+            .Force(parser["--force"] == true);
 
-    if (parser.get<std::string>("--type") == "program")
-      builder.type(PackageType::PROGRAM);
-    else if (parser.get<std::string>("--type") == "staticlib")
-      builder.type(PackageType::STATICLIB);
-    else if (parser.get<std::string>("--type") == "sharedlib")
-      builder.type(PackageType::SHAREDLIB);
+    if (parser.Get<std::string>("--type") == "program")
+      builder.Type(PackageType::PROGRAM);
+    else if (parser.Get<std::string>("--type") == "staticlib")
+      builder.Type(PackageType::STATICLIB);
+    else if (parser.Get<std::string>("--type") == "sharedlib")
+      builder.Type(PackageType::SHAREDLIB);
 
-    return builder.build().create() ? 0 : -1;
+    return builder.Build().Create() ? 0 : -1;
   }
 
-  static int run_build_mode(const ArgumentParser &parser) {
+  static auto RunBuildMode(const ArgumentParser &parser) -> int {
     (void)parser;
 
     LOG(ERROR) << "The build subcommand is not implemented yet";
@@ -102,10 +103,10 @@ namespace no3::router {
     return 1;
   }
 
-  static int run_clean_mode(const ArgumentParser &parser) {
+  static auto RunCleanMode(const ArgumentParser &parser) -> int {
     core::SetDebugMode(parser["--verbose"] == true);
 
-    if (clean::CleanPackageSource(parser.get<std::string>("package-src"),
+    if (clean::CleanPackageSource(parser.Get<std::string>("package-src"),
                                   parser["--verbose"] == true)) {
       return 0;
     } else {
@@ -113,7 +114,7 @@ namespace no3::router {
     }
   }
 
-  static int run_update_mode(const ArgumentParser &parser) {
+  static auto RunUpdateMode(const ArgumentParser &parser) -> int {
     (void)parser;
 
     LOG(ERROR) << "The update subcommand is not implemented yet";
@@ -122,7 +123,7 @@ namespace no3::router {
     return 1;
   }
 
-  static int run_install_mode(const ArgumentParser &parser) {
+  static auto RunInstallMode(const ArgumentParser &parser) -> int {
     (void)parser;
 
     LOG(ERROR) << "The install subcommand is not implemented yet";
@@ -131,7 +132,7 @@ namespace no3::router {
     return 1;
   }
 
-  static int run_doc_mode(const ArgumentParser &parser) {
+  static auto RunDocMode(const ArgumentParser &parser) -> int {
     (void)parser;
 
     LOG(ERROR) << "The doc subcommand is not implemented yet";
@@ -140,7 +141,7 @@ namespace no3::router {
     return 1;
   }
 
-  static int run_format_mode(const ArgumentParser &parser) {
+  static auto RunFormatMode(const ArgumentParser &parser) -> int {
     (void)parser;
 
     LOG(ERROR) << "The format subcommand is not implemented yet";
@@ -149,7 +150,7 @@ namespace no3::router {
     return 1;
   }
 
-  static int run_list_mode(const ArgumentParser &parser) {
+  static auto RunListMode(const ArgumentParser &parser) -> int {
     (void)parser;
 
     LOG(ERROR) << "The list subcommand is not implemented yet";
@@ -158,7 +159,7 @@ namespace no3::router {
     return 1;
   }
 
-  static int run_test_mode(const ArgumentParser &parser) {
+  static auto RunTestMode(const ArgumentParser &parser) -> int {
     (void)parser;
 
     LOG(ERROR) << "The test subcommand is not implemented yet";
@@ -167,23 +168,23 @@ namespace no3::router {
     return 1;
   }
 
-  static int run_lsp_mode(const ArgumentParser &parser) {
+  static auto RunLspMode(const ArgumentParser &parser) -> int {
     core::SetDebugMode(parser["--verbose"] == true);
 
     std::vector<std::string> args;
     args.push_back("nitrated");
 
-    if (parser.is_used("--config")) {
+    if (parser.IsUsed("--config")) {
       args.push_back("--config");
-      args.push_back(parser.get<std::string>("--config"));
+      args.push_back(parser.Get<std::string>("--config"));
     }
 
-    if (parser.is_used("--pipe")) {
+    if (parser.IsUsed("--pipe")) {
       args.push_back("--pipe");
-      args.push_back(parser.get<std::string>("--pipe"));
-    } else if (parser.is_used("--port")) {
+      args.push_back(parser.Get<std::string>("--pipe"));
+    } else if (parser.IsUsed("--port")) {
       args.push_back("--port");
-      args.push_back(parser.get<std::string>("--port"));
+      args.push_back(parser.Get<std::string>("--port"));
     } else if (parser["--stdio"] == true) {
       args.push_back("--stdio");
     }
@@ -202,51 +203,51 @@ namespace no3::router {
     }
 
     auto log_file = std::make_unique<std::fstream>(
-        parser.get<std::string>("--log"), std::ios::app);
+        parser.Get<std::string>("--log"), std::ios::app);
 
     if (!log_file->is_open()) {
       LOG(ERROR) << "Failed to open log file";
       return -2;
     }
 
-    auto old_stream = G_google_log_sink.redirect_to_stream(std::move(log_file));
+    auto old_stream = GGoogleLogSink.RedirectToStream(std::move(log_file));
 
     /// TODO: Handle log stream redirect
 
     LOG(INFO) << "Invoking LSP: \"" << inner_command << "\"";
 
-    int ret = nitrated_main(args.size(), c_args.data());
+    int ret = NitratedMain(args.size(), c_args.data());
 
-    G_google_log_sink.redirect_to_stream(std::move(old_stream));
+    GGoogleLogSink.RedirectToStream(std::move(old_stream));
 
     return ret;
   }
 
-  int run_dev_mode(
+  auto RunDevMode(
       const ArgumentParser &parser,
       const std::unordered_map<std::string_view,
-                               std::unique_ptr<ArgumentParser>> &subparsers);
+                               std::unique_ptr<ArgumentParser>> &subparsers) -> int;
 }  // namespace no3::router
 
 namespace no3::argparse_setup {
-  extern ArgumentParser &program;
-  extern ArgumentParser init_parser;
-  extern ArgumentParser build_parser;
-  extern ArgumentParser clean_parser;
-  extern ArgumentParser update_parser;
-  extern ArgumentParser install_parser;
-  extern ArgumentParser doc_parser;
-  extern ArgumentParser format_parser;
-  extern ArgumentParser list_parser;
-  extern ArgumentParser test_parser;
-  extern ArgumentParser lsp_parser;
-  extern ArgumentParser dev_parser;
+  extern ArgumentParser &Program;
+  extern ArgumentParser InitParser;
+  extern ArgumentParser BuildParser;
+  extern ArgumentParser CleanParser;
+  extern ArgumentParser UpdateParser;
+  extern ArgumentParser InstallParser;
+  extern ArgumentParser DocParser;
+  extern ArgumentParser FormatParser;
+  extern ArgumentParser ListParser;
+  extern ArgumentParser TestParser;
+  extern ArgumentParser LspParser;
+  extern ArgumentParser DevParser;
   extern std::unordered_map<std::string_view, std::unique_ptr<ArgumentParser>>
-      dev_subparsers;
+      DevSubparsers;
 }  // namespace no3::argparse_setup
 
-extern "C" __attribute__((visibility("default"))) int no3_command(int argc,
-                                                                  char **argv) {
+extern "C" __attribute__((visibility("default"))) auto No3Command(int argc,
+                                                                 char **argv) -> int {
   using namespace argparse_setup;
 
   core::SetColorMode(ansi::IsUsingColors());
@@ -256,16 +257,16 @@ extern "C" __attribute__((visibility("default"))) int no3_command(int argc,
     std::vector<std::string> args(argv, argv + argc);
 
     try {
-      program.parse_args(args);
+      Program.ParseArgs(args);
     } catch (const std::runtime_error &e) {
       std::cerr << e.what() << std::endl;
-      std::cerr << program;
+      std::cerr << Program;
       return 1;
     }
   }
 
   { /* Subcommand routing */
-    if (program["--license"] == true) {
+    if (Program["--license"] == true) {
       std::cout << R"(This file is part of Nitrate Compiler Suite.
 Copyright (C) 2024 Wesley C. Jones
 
@@ -283,37 +284,37 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.)"
                 << std::endl;
       return 0;
-    } else if (program.is_subcommand_used("init")) {
-      return router::run_init_mode(init_parser);
-    } else if (program.is_subcommand_used("build")) {
-      return router::run_build_mode(build_parser);
-    } else if (program.is_subcommand_used("clean")) {
-      return router::run_clean_mode(clean_parser);
-    } else if (program.is_subcommand_used("update")) {
-      return router::run_update_mode(update_parser);
-    } else if (program.is_subcommand_used("install")) {
-      return router::run_install_mode(install_parser);
-    } else if (program.is_subcommand_used("doc")) {
-      return router::run_doc_mode(doc_parser);
-    } else if (program.is_subcommand_used("format")) {
-      return router::run_format_mode(format_parser);
-    } else if (program.is_subcommand_used("list")) {
-      return router::run_list_mode(list_parser);
-    } else if (program.is_subcommand_used("test")) {
-      return router::run_test_mode(test_parser);
-    } else if (program.is_subcommand_used("lsp")) {
-      return router::run_lsp_mode(lsp_parser);
-    } else if (program.is_subcommand_used("dev")) {
-      return router::run_dev_mode(dev_parser, dev_subparsers);
+    } else if (Program.IsSubcommandUsed("init")) {
+      return router::RunInitMode(InitParser);
+    } else if (Program.IsSubcommandUsed("build")) {
+      return router::RunBuildMode(BuildParser);
+    } else if (Program.IsSubcommandUsed("clean")) {
+      return router::RunCleanMode(CleanParser);
+    } else if (Program.IsSubcommandUsed("update")) {
+      return router::RunUpdateMode(UpdateParser);
+    } else if (Program.IsSubcommandUsed("install")) {
+      return router::RunInstallMode(InstallParser);
+    } else if (Program.IsSubcommandUsed("doc")) {
+      return router::RunDocMode(DocParser);
+    } else if (Program.IsSubcommandUsed("format")) {
+      return router::RunFormatMode(FormatParser);
+    } else if (Program.IsSubcommandUsed("list")) {
+      return router::RunListMode(ListParser);
+    } else if (Program.IsSubcommandUsed("test")) {
+      return router::RunTestMode(TestParser);
+    } else if (Program.IsSubcommandUsed("lsp")) {
+      return router::RunLspMode(LspParser);
+    } else if (Program.IsSubcommandUsed("dev")) {
+      return router::RunDevMode(DevParser, DevSubparsers);
     } else {
       std::cerr << "No command specified" << std::endl;
-      std::cerr << program;
+      std::cerr << Program;
       return 1;
     }
   }
 }
 
-extern "C" __attribute__((visibility("default"))) bool no3_init() {
+extern "C" __attribute__((visibility("default"))) auto No3Init() -> bool {
   static std::atomic<bool> is_initialized = false;
   if (is_initialized) {
     return true;
@@ -324,10 +325,10 @@ extern "C" __attribute__((visibility("default"))) bool no3_init() {
     google::InitGoogleLogging("no3");
     google::InstallFailureSignalHandler();
 
-    google::AddLogSink(&G_google_log_sink);
+    google::AddLogSink(&GGoogleLogSink);
   }
 
-  { /* Initialize libraries */
+  { /* Initialize compiler pipeline libraries */
     if (!ncc::CoreLibrary.InitRC()) {
       LOG(ERROR) << "Failed to initialize NITRATE-CORE library" << std::endl;
       return false;
@@ -353,10 +354,15 @@ extern "C" __attribute__((visibility("default"))) bool no3_init() {
       return false;
     }
 
-    if (!qcode_lib_init()) {
+    if (!QcodeLibInit()) {
       LOG(ERROR) << "Failed to initialize NITRATE-CODE library" << std::endl;
       return false;
     }
+  }
+
+  if (git_libgit2_init() <= 0) {
+    LOG(ERROR) << "Failed to initialize libgit2" << std::endl;
+    return false;
   }
 
   is_initialized = true;
@@ -366,11 +372,11 @@ extern "C" __attribute__((visibility("default"))) bool no3_init() {
 
 #ifdef NO3_MAIN
 int main(int argc, char *argv[]) {
-  if (!no3_init()) {
+  if (!No3Init()) {
     std::cerr << "Failed to initialize no3\n";
     return 1;
   }
 
-  return no3_command(argc, argv);
+  return No3Command(argc, argv);
 }
 #endif
