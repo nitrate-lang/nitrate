@@ -353,12 +353,11 @@ namespace ncc::parse {
   };
 
   class Struct final : public Stmt {
-    std::span<FlowPtr<Expr>> m_attributes;
     std::optional<std::span<TemplateParameter>> m_template_parameters;
+    std::span<FlowPtr<Expr>> m_attributes;
     std::span<string> m_names;
     std::span<StructField> m_fields;
-    std::span<StructFunction> m_methods;
-    std::span<StructFunction> m_static_methods;
+    std::span<StructFunction> m_methods, m_static_methods;
     CompositeType m_comp_type;
     string m_name;
 

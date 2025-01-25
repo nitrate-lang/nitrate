@@ -5,289 +5,30 @@ syntax = "proto2";
 
 package nitrate.parser.SyntaxTree;
 
-/* Represents a source location in a translation unit. */
 message SourceLocation {
   required uint32 line = 1;
   required uint32 column = 2;
   required uint32 offset = 3;
-  required string file = 4;
+  optional string file = 4;
 }
 
-/* Represents a contiguous span of a translation unit. */
 message SourceLocationRange {
   optional SourceLocation start = 1;
   optional SourceLocation end = 2;
 }
 
-/* Represents a source code comment. */
 message UserComment {
   required string comment = 1;
 }
 
-/* Represents the polymorphic base of all syntax tree nodes. */
 message Base {
   optional SourceLocationRange from = 1;
   repeated UserComment attached_comments = 2;
 }
 
-///===--------------------------------------------------------------------===///
-
-/* Represents an unresolved named type. */
-message NamedTy {
-  optional SourceLocationRange from = 1;
-  repeated UserComment attached_comments = 2;
-
-  optional Expr bit_width = 4;
-  optional Expr minimum_value = 5;
-  optional Expr maximum_value = 6;
-
-  required string name = 7;
-}
-
-/* Represents a placeholder type subject to type inference. */
-message InferTy {
-  optional SourceLocationRange from = 1;
-  repeated UserComment attached_comments = 2;
-
-  optional Expr bit_width = 4;
-  optional Expr minimum_value = 5;
-  optional Expr maximum_value = 6;
-}
-
-/* Represents a template type instantiation. */
-message TemplateType {
-  optional SourceLocationRange from = 1;
-  repeated UserComment attached_comments = 2;
-
-  optional Expr bit_width = 4;
-  optional Expr minimum_value = 5;
-  optional Expr maximum_value = 6;
-
-  required Type template_base = 7;
-  repeated Type arguments = 8;
-}
-
-/* Represents a 1-bit unsigned integer primitive type. */
-message U1 {
-  optional SourceLocationRange from = 1;
-  repeated UserComment attached_comments = 2;
-
-  optional Expr bit_width = 4;
-  optional Expr minimum_value = 5;
-  optional Expr maximum_value = 6;
-}
-
-/* Represents an 8-bit unsigned integer primitive type. */
-message U8 {
-  optional SourceLocationRange from = 1;
-  repeated UserComment attached_comments = 2;
-
-  optional Expr bit_width = 4;
-  optional Expr minimum_value = 5;
-  optional Expr maximum_value = 6;
-}
-
-/* Represents a 16-bit unsigned integer primitive type. */
-message U16 {
-  optional SourceLocationRange from = 1;
-  repeated UserComment attached_comments = 2;
-
-  optional Expr bit_width = 4;
-  optional Expr minimum_value = 5;
-  optional Expr maximum_value = 6;
-}
-
-/* Represents a 32-bit unsigned integer primitive type. */
-message U32 {
-  optional SourceLocationRange from = 1;
-  repeated UserComment attached_comments = 2;
-
-  optional Expr bit_width = 4;
-  optional Expr minimum_value = 5;
-  optional Expr maximum_value = 6;
-}
-
-/* Represents a 64-bit unsigned integer primitive type. */
-message U64 {
-  optional SourceLocationRange from = 1;
-  repeated UserComment attached_comments = 2;
-
-  optional Expr bit_width = 4;
-  optional Expr minimum_value = 5;
-  optional Expr maximum_value = 6;
-}
-
-/* Represents a 128-bit unsigned integer primitive type. */
-message U128 {
-  optional SourceLocationRange from = 1;
-  repeated UserComment attached_comments = 2;
-
-  optional Expr bit_width = 4;
-  optional Expr minimum_value = 5;
-  optional Expr maximum_value = 6;
-}
-
-/* Represents an 8-bit signed integer primitive type. */
-message I8 {
-  optional SourceLocationRange from = 1;
-  repeated UserComment attached_comments = 2;
-
-  optional Expr bit_width = 4;
-  optional Expr minimum_value = 5;
-  optional Expr maximum_value = 6;
-}
-
-/* Represents a 16-bit signed integer primitive type. */
-message I16 {
-  optional SourceLocationRange from = 1;
-  repeated UserComment attached_comments = 2;
-
-  optional Expr bit_width = 4;
-  optional Expr minimum_value = 5;
-  optional Expr maximum_value = 6;
-}
-
-/* Represents a 32-bit signed integer primitive type. */
-message I32 {
-  optional SourceLocationRange from = 1;
-  repeated UserComment attached_comments = 2;
-
-  optional Expr bit_width = 4;
-  optional Expr minimum_value = 5;
-  optional Expr maximum_value = 6;
-}
-
-/* Represents a 64-bit signed integer primitive type. */
-message I64 {
-  optional SourceLocationRange from = 1;
-  repeated UserComment attached_comments = 2;
-
-  optional Expr bit_width = 4;
-  optional Expr minimum_value = 5;
-  optional Expr maximum_value = 6;
-}
-
-/* Represents a 128-bit signed integer primitive type. */
-message I128 {
-  optional SourceLocationRange from = 1;
-  repeated UserComment attached_comments = 2;
-
-  optional Expr bit_width = 4;
-  optional Expr minimum_value = 5;
-  optional Expr maximum_value = 6;
-}
-
-/* Represents a 16-bit floating point primitive type. */
-message F16 {
-  optional SourceLocationRange from = 1;
-  repeated UserComment attached_comments = 2;
-
-  optional Expr bit_width = 4;
-  optional Expr minimum_value = 5;
-  optional Expr maximum_value = 6;
-}
-
-/* Represents a 32-bit floating point primitive type. */
-message F32 {
-  optional SourceLocationRange from = 1;
-  repeated UserComment attached_comments = 2;
-
-  optional Expr bit_width = 4;
-  optional Expr minimum_value = 5;
-  optional Expr maximum_value = 6;
-}
-
-/* Represents a 64-bit floating point primitive type. */
-message F64 {
-  optional SourceLocationRange from = 1;
-  repeated UserComment attached_comments = 2;
-
-  optional Expr bit_width = 4;
-  optional Expr minimum_value = 5;
-  optional Expr maximum_value = 6;
-}
-
-/* Represents a 128-bit floating point primitive type. */
-message F128 {
-  optional SourceLocationRange from = 1;
-  repeated UserComment attached_comments = 2;
-
-  optional Expr bit_width = 4;
-  optional Expr minimum_value = 5;
-  optional Expr maximum_value = 6;
-}
-
-/* Represents an empty 'void' type of size 0. */
-message VoidTy {
-  optional SourceLocationRange from = 1;
-  repeated UserComment attached_comments = 2;
-
-  optional Expr bit_width = 4;
-  optional Expr minimum_value = 5;
-  optional Expr maximum_value = 6;
-}
-
-/* Represents a raw pointer type. */
-message PtrTy {
-  optional SourceLocationRange from = 1;
-  repeated UserComment attached_comments = 2;
-
-  optional Expr bit_width = 4;
-  optional Expr minimum_value = 5;
-  optional Expr maximum_value = 6;
-
-  /* The type of the thing being pointed to. */
-  required Type pointee = 7;
-}
-
-/* Represents a type defined by name only. */
-message OpaqueTy {
-  optional SourceLocationRange from = 1;
-  repeated UserComment attached_comments = 2;
-
-  optional Expr bit_width = 4;
-  optional Expr minimum_value = 5;
-  optional Expr maximum_value = 6;
-
-  required string identity_name = 7;
-}
-
-/* Represents an anonymous aggregate type. */
-message TupleTy {
-  optional SourceLocationRange from = 1;
-  repeated UserComment attached_comments = 2;
-
-  optional Expr bit_width = 4;
-  optional Expr minimum_value = 5;
-  optional Expr maximum_value = 6;
-
-  /* The types of the elements in the tuple. */
-  repeated Type elements = 7;
-}
-
-/* Represents a fixed-size array type. */
-message ArrayTy {
-  optional SourceLocationRange from = 1;
-  repeated UserComment attached_comments = 2;
-
-  optional Expr bit_width = 4;
-  optional Expr minimum_value = 5;
-  optional Expr maximum_value = 6;
-
-  required Type element_type = 7;
-  required Expr element_count = 8;
-}
-
-/* Represents a reference type. */
-message RefTy {
-  optional SourceLocationRange from = 1;
-  repeated UserComment attached_comments = 2;
-
-  optional Expr bit_width = 4;
-  optional Expr minimum_value = 5;
-  optional Expr maximum_value = 6;
-
-  required Type pointee_type = 7;
+message CallArgument {
+  required string name = 1;
+  required Expr value = 2;
 }
 
 enum FunctionPurity {
@@ -302,6 +43,306 @@ message FunctionParameter {
   required string name = 1;
   required Type type = 2;
   optional Expr default_value = 3;
+}
+
+message FStringTerm {
+  oneof part {
+    string text = 1;
+    Expr expr = 2;
+  }
+}
+
+enum SafetyMode {
+  Safe = 0;
+  Unsafe = 1;
+}
+
+enum VariableKind {
+  Const = 0;
+  Var = 1;
+  Let = 2;
+}
+
+enum Vis {
+  Public = 0;
+  Private = 1;
+  Protected = 2;
+}
+
+message TemplateParameter {
+  required string name = 1;
+  required Type type = 2;
+  optional Expr default_value = 3;
+}
+
+message TemplateParameters {
+  repeated TemplateParameter parameters = 1;
+}
+
+message FunctionCapture {
+  required string name = 1;
+  required bool is_reference = 2;
+}
+
+message StructField {
+  required string name = 1;
+  optional Expr default_value = 3;
+  required Type type = 2;
+  required Vis visibility = 4;
+  required bool is_static = 5;
+}
+
+message StructMethod {
+  required Stmt func = 1;
+  required Vis visibility = 2;
+}
+
+enum AggregateKind {
+  Region_ = 0;
+  Struct_ = 1;
+  Group_ = 2;
+  Class_ = 3;
+  Union_ = 4;
+}
+
+message EnumItem {
+  required string name = 1;
+  optional Expr value = 2;
+}
+
+///===--------------------------------------------------------------------===///
+
+message NamedTy {
+  optional SourceLocationRange from = 1;
+  repeated UserComment attached_comments = 2;
+
+  optional Expr bit_width = 4;
+  optional Expr minimum_value = 5;
+  optional Expr maximum_value = 6;
+
+  required string type_name = 7;
+}
+
+message InferTy {
+  optional SourceLocationRange from = 1;
+  repeated UserComment attached_comments = 2;
+
+  optional Expr bit_width = 4;
+  optional Expr minimum_value = 5;
+  optional Expr maximum_value = 6;
+}
+
+message TemplateType {
+  optional SourceLocationRange from = 1;
+  repeated UserComment attached_comments = 2;
+
+  optional Expr bit_width = 4;
+  optional Expr minimum_value = 5;
+  optional Expr maximum_value = 6;
+
+  required Type template_base = 7;
+  repeated CallArgument template_arguments = 8;
+}
+
+message U1 {
+  optional SourceLocationRange from = 1;
+  repeated UserComment attached_comments = 2;
+
+  optional Expr bit_width = 4;
+  optional Expr minimum_value = 5;
+  optional Expr maximum_value = 6;
+}
+
+message U8 {
+  optional SourceLocationRange from = 1;
+  repeated UserComment attached_comments = 2;
+
+  optional Expr bit_width = 4;
+  optional Expr minimum_value = 5;
+  optional Expr maximum_value = 6;
+}
+
+message U16 {
+  optional SourceLocationRange from = 1;
+  repeated UserComment attached_comments = 2;
+
+  optional Expr bit_width = 4;
+  optional Expr minimum_value = 5;
+  optional Expr maximum_value = 6;
+}
+
+message U32 {
+  optional SourceLocationRange from = 1;
+  repeated UserComment attached_comments = 2;
+
+  optional Expr bit_width = 4;
+  optional Expr minimum_value = 5;
+  optional Expr maximum_value = 6;
+}
+
+message U64 {
+  optional SourceLocationRange from = 1;
+  repeated UserComment attached_comments = 2;
+
+  optional Expr bit_width = 4;
+  optional Expr minimum_value = 5;
+  optional Expr maximum_value = 6;
+}
+
+message U128 {
+  optional SourceLocationRange from = 1;
+  repeated UserComment attached_comments = 2;
+
+  optional Expr bit_width = 4;
+  optional Expr minimum_value = 5;
+  optional Expr maximum_value = 6;
+}
+
+message I8 {
+  optional SourceLocationRange from = 1;
+  repeated UserComment attached_comments = 2;
+
+  optional Expr bit_width = 4;
+  optional Expr minimum_value = 5;
+  optional Expr maximum_value = 6;
+}
+
+message I16 {
+  optional SourceLocationRange from = 1;
+  repeated UserComment attached_comments = 2;
+
+  optional Expr bit_width = 4;
+  optional Expr minimum_value = 5;
+  optional Expr maximum_value = 6;
+}
+
+message I32 {
+  optional SourceLocationRange from = 1;
+  repeated UserComment attached_comments = 2;
+
+  optional Expr bit_width = 4;
+  optional Expr minimum_value = 5;
+  optional Expr maximum_value = 6;
+}
+
+message I64 {
+  optional SourceLocationRange from = 1;
+  repeated UserComment attached_comments = 2;
+
+  optional Expr bit_width = 4;
+  optional Expr minimum_value = 5;
+  optional Expr maximum_value = 6;
+}
+
+message I128 {
+  optional SourceLocationRange from = 1;
+  repeated UserComment attached_comments = 2;
+
+  optional Expr bit_width = 4;
+  optional Expr minimum_value = 5;
+  optional Expr maximum_value = 6;
+}
+
+message F16 {
+  optional SourceLocationRange from = 1;
+  repeated UserComment attached_comments = 2;
+
+  optional Expr bit_width = 4;
+  optional Expr minimum_value = 5;
+  optional Expr maximum_value = 6;
+}
+
+message F32 {
+  optional SourceLocationRange from = 1;
+  repeated UserComment attached_comments = 2;
+
+  optional Expr bit_width = 4;
+  optional Expr minimum_value = 5;
+  optional Expr maximum_value = 6;
+}
+
+message F64 {
+  optional SourceLocationRange from = 1;
+  repeated UserComment attached_comments = 2;
+
+  optional Expr bit_width = 4;
+  optional Expr minimum_value = 5;
+  optional Expr maximum_value = 6;
+}
+
+message F128 {
+  optional SourceLocationRange from = 1;
+  repeated UserComment attached_comments = 2;
+
+  optional Expr bit_width = 4;
+  optional Expr minimum_value = 5;
+  optional Expr maximum_value = 6;
+}
+
+message VoidTy {
+  optional SourceLocationRange from = 1;
+  repeated UserComment attached_comments = 2;
+
+  optional Expr bit_width = 4;
+  optional Expr minimum_value = 5;
+  optional Expr maximum_value = 6;
+}
+
+message PtrTy {
+  optional SourceLocationRange from = 1;
+  repeated UserComment attached_comments = 2;
+
+  optional Expr bit_width = 4;
+  optional Expr minimum_value = 5;
+  optional Expr maximum_value = 6;
+
+  required Type pointee = 7;
+  required bool is_volatile = 8;
+}
+
+message OpaqueTy {
+  optional SourceLocationRange from = 1;
+  repeated UserComment attached_comments = 2;
+
+  optional Expr bit_width = 4;
+  optional Expr minimum_value = 5;
+  optional Expr maximum_value = 6;
+
+  required string identity_name = 7;
+}
+
+message TupleTy {
+  optional SourceLocationRange from = 1;
+  repeated UserComment attached_comments = 2;
+
+  optional Expr bit_width = 4;
+  optional Expr minimum_value = 5;
+  optional Expr maximum_value = 6;
+
+  repeated Type member_types = 7;
+}
+
+message ArrayTy {
+  optional SourceLocationRange from = 1;
+  repeated UserComment attached_comments = 2;
+
+  optional Expr bit_width = 4;
+  optional Expr minimum_value = 5;
+  optional Expr maximum_value = 6;
+
+  required Type element_type = 7;
+  required Expr element_count = 8;
+}
+
+message RefTy {
+  optional SourceLocationRange from = 1;
+  repeated UserComment attached_comments = 2;
+
+  optional Expr bit_width = 4;
+  optional Expr minimum_value = 5;
+  optional Expr maximum_value = 6;
+
+  required Type pointee_type = 7;
 }
 
 message FuncTy {
@@ -379,15 +420,6 @@ enum Operator {
   Ternary = 54;     /* '?':          Ternary operator */
 };
 
-/* An adapter from expression to statement. */
-message ExprStmt {
-  optional SourceLocationRange from = 1;
-  repeated UserComment attached_comments = 2;
-
-  required Expr expr = 4;
-}
-
-/* An adapter from statement to expression. */
 message StmtExpr {
   optional SourceLocationRange from = 1;
   repeated UserComment attached_comments = 2;
@@ -395,7 +427,6 @@ message StmtExpr {
   required Stmt stmt = 4;
 }
 
-/* An adapter from type to expression. */
 message TypeExpr {
   optional SourceLocationRange from = 1;
   repeated UserComment attached_comments = 2;
@@ -407,25 +438,25 @@ message UnaryExpression {
   optional SourceLocationRange from = 1;
   repeated UserComment attached_comments = 2;
 
-  required Operator op = 4;
-  required Expr operand = 5;
+  required Expr rhs = 4;
+  required Operator op = 5;
 }
 
 message BinaryExpression {
   optional SourceLocationRange from = 1;
   repeated UserComment attached_comments = 2;
 
-  required Operator op = 4;
-  required Expr lhs = 5;
-  required Expr rhs = 6;
+  required Expr lhs = 4;
+  required Expr rhs = 5;
+  required Operator op = 6;
 }
 
 message PostUnaryExpression {
   optional SourceLocationRange from = 1;
   repeated UserComment attached_comments = 2;
 
-  required Operator op = 4;
-  required Expr operand = 5;
+  required Expr lhs = 4;
+  required Operator op = 5;
 }
 
 message TernaryExpression {
@@ -433,8 +464,8 @@ message TernaryExpression {
   repeated UserComment attached_comments = 2;
 
   required Expr condition = 4;
-  required Expr true_branch = 5;
-  required Expr false_branch = 6;
+  required Expr lhs = 5;
+  required Expr rhs = 6;
 }
 
 message Integer {
@@ -466,7 +497,6 @@ message String {
   optional SourceLocationRange from = 1;
   repeated UserComment attached_comments = 2;
 
-  /* I might contain any binary data. */
   required bytes value = 4;
 }
 
@@ -492,14 +522,17 @@ message Call {
   optional SourceLocationRange from = 1;
   repeated UserComment attached_comments = 2;
 
-  /// TODO:
+  required Expr callee = 4;
+  repeated CallArgument arguments = 5;
 }
 
 message TemplateCall {
   optional SourceLocationRange from = 1;
   repeated UserComment attached_comments = 2;
 
-  /// TODO:
+  required Expr callee = 4;
+  repeated CallArgument template_arguments = 6;
+  repeated CallArgument arguments = 5;
 }
 
 message List {
@@ -538,7 +571,7 @@ message FString {
   optional SourceLocationRange from = 1;
   repeated UserComment attached_comments = 2;
 
-  /// TODO:
+  repeated FStringTerm terms = 4;
 }
 
 message Identifier {
@@ -557,137 +590,184 @@ message Sequence {
 
 ///===--------------------------------------------------------------------===///
 
+message ExprStmt {
+  optional SourceLocationRange from = 1;
+  repeated UserComment attached_comments = 2;
+
+  required Expr expr = 4;
+}
+
 message Block {
   optional SourceLocationRange from = 1;
   repeated UserComment attached_comments = 2;
 
-  /// TODO:
+  repeated Stmt statements = 5;
+  optional SafetyMode safety = 4;
 }
 
 message Variable {
   optional SourceLocationRange from = 1;
   repeated UserComment attached_comments = 2;
 
-  /// TODO:
+  repeated Expr attributes = 4;
+  optional Type type = 5;
+  optional Expr value = 6;
+  required VariableKind decl_kind = 7;
+  required string name = 8;
 }
 
 message Assembly {
   optional SourceLocationRange from = 1;
   repeated UserComment attached_comments = 2;
 
-  /// TODO:
+  repeated Expr arguments = 4;
+  required string code = 5;
 }
 
 message If {
   optional SourceLocationRange from = 1;
   repeated UserComment attached_comments = 2;
 
-  /// TODO:
+  required Expr condition = 4;
+  required Stmt then = 5;
+  optional Stmt else = 6;
 }
 
 message While {
   optional SourceLocationRange from = 1;
   repeated UserComment attached_comments = 2;
 
-  /// TODO:
+  required Expr condition = 4;
+  required Stmt body = 5;
 }
 
 message For {
   optional SourceLocationRange from = 1;
   repeated UserComment attached_comments = 2;
 
-  /// TODO:
+  optional Stmt init = 4;
+  optional Expr condition = 5;
+  optional Expr step = 6;
+  required Stmt body = 7;
 }
 
 message Foreach {
   optional SourceLocationRange from = 1;
   repeated UserComment attached_comments = 2;
 
-  /// TODO:
+  required Expr expr = 4;
+  required Stmt body = 5;
+  required string index_name = 6;
+  required string value_name = 7;
 }
 
 message Break {
   optional SourceLocationRange from = 1;
   repeated UserComment attached_comments = 2;
-
-  /// TODO:
 }
 
 message Continue {
   optional SourceLocationRange from = 1;
   repeated UserComment attached_comments = 2;
-
-  /// TODO:
 }
 
 message Return {
   optional SourceLocationRange from = 1;
   repeated UserComment attached_comments = 2;
 
-  /// TODO:
+  optional Expr value = 4;
 }
 
 message ReturnIf {
   optional SourceLocationRange from = 1;
   repeated UserComment attached_comments = 2;
 
-  /// TODO:
+  required Expr condition = 4;
+  required Expr value = 5;
 }
 
 message Case {
   optional SourceLocationRange from = 1;
   repeated UserComment attached_comments = 2;
 
-  /// TODO:
+  required Expr condition = 4;
+  required Stmt body = 5;
 }
 
 message Switch {
   optional SourceLocationRange from = 1;
   repeated UserComment attached_comments = 2;
 
-  /// TODO:
-}
-
-message Typedef {
-  optional SourceLocationRange from = 1;
-  repeated UserComment attached_comments = 2;
-
-  /// TODO:
-}
-
-message Function {
-  optional SourceLocationRange from = 1;
-  repeated UserComment attached_comments = 2;
-
-  /// TODO:
-}
-
-message Struct {
-  optional SourceLocationRange from = 1;
-  repeated UserComment attached_comments = 2;
-
-  /// TODO:
-}
-
-message Enum {
-  optional SourceLocationRange from = 1;
-  repeated UserComment attached_comments = 2;
-
-  /// TODO:
-}
-
-message Scope {
-  optional SourceLocationRange from = 1;
-  repeated UserComment attached_comments = 2;
-
-  /// TODO:
+  repeated Case cases = 4;
+  required Expr condition = 5;
+  optional Stmt default_case = 6;
 }
 
 message Export {
   optional SourceLocationRange from = 1;
   repeated UserComment attached_comments = 2;
 
-  /// TODO:
+  repeated Expr attributes = 4;
+  required Stmt body = 5;
+  required string abi_name = 6;
+  required Vis visibility = 7;
+}
+
+message Scope {
+  optional SourceLocationRange from = 1;
+  repeated UserComment attached_comments = 2;
+
+  repeated string dependencies = 4;
+  required Stmt body = 5;
+  required string name = 6;
+}
+
+message Typedef {
+  optional SourceLocationRange from = 1;
+  repeated UserComment attached_comments = 2;
+
+  required Type type = 4;
+  required string name = 5;
+}
+
+message Enum {
+  optional SourceLocationRange from = 1;
+  repeated UserComment attached_comments = 2;
+
+  repeated EnumItem items = 4;
+  optional Type base_type = 5;
+  required string name = 6;
+}
+
+message Function {
+  optional SourceLocationRange from = 1;
+  repeated UserComment attached_comments = 2;
+
+  optional TemplateParameters template_parameters = 4;
+  repeated Expr attributes = 5;
+  repeated FunctionCapture captures = 6;
+  repeated FunctionParameter parameters = 7;
+  required Type return_type = 8;
+  optional Expr precondition = 9;
+  optional Expr postcondition = 10;
+  optional Stmt body = 11;
+  required string name = 12;
+  required FunctionPurity purity = 13;
+  required bool is_variadic = 14;
+}
+
+message Struct {
+  optional SourceLocationRange from = 1;
+  repeated UserComment attached_comments = 2;
+
+  optional TemplateParameters template_parameters = 4;
+  repeated Expr attributes = 5;
+  repeated string names = 6;
+  repeated StructField fields = 7;
+  repeated StructMethod methods = 8;
+  repeated StructMethod static_methods = 9;
+  required AggregateKind kind = 10;
+  required string name = 11;
 }
 
 message Expr {
