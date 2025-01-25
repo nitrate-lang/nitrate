@@ -198,35 +198,6 @@ namespace ncc::parse {
     }
     ~AstJsonWriter() override = default;
   };
-
-  class NCC_EXPORT AstMsgPackWriter : public AstWriter {
-    std::ostream& m_os;
-
-    void StrImpl(std::string_view str);
-    void UintImpl(uint64_t x);
-    void DoubleImpl(double x);
-    void BoolImpl(bool x);
-    void NullImpl();
-    void BeginObjImpl(size_t pair_count);
-    void EndObjImpl();
-    void BeginArrImpl(size_t size);
-    void EndArrImpl();
-
-  public:
-    AstMsgPackWriter(std::ostream& os, WriterSourceProvider rd = std::nullopt)
-        : AstWriter(
-              [this](auto&& x) { StrImpl(std::forward<decltype(x)>(x)); },
-              [this](auto&& x) { UintImpl(std::forward<decltype(x)>(x)); },
-              [this](auto&& x) { DoubleImpl(std::forward<decltype(x)>(x)); },
-              [this](auto&& x) { BoolImpl(std::forward<decltype(x)>(x)); },
-              [this] { NullImpl(); },
-              [this](auto&& x) { BeginObjImpl(std::forward<decltype(x)>(x)); },
-              [this] { EndObjImpl(); },
-              [this](auto&& x) { BeginArrImpl(std::forward<decltype(x)>(x)); },
-              [this] { EndArrImpl(); }, rd),
-          m_os(os) {}
-    ~AstMsgPackWriter() override = default;
-  };
 }  // namespace ncc::parse
 
 #endif

@@ -352,38 +352,14 @@ public:
 };
 
 CREATE_TRANSFORM(nit::parse) {
-  enum class OutMode {
-    JSON,
-    MsgPack,
-  } out_mode = OutMode::JSON;
-
-  if (opts.contains("-fuse-json") && opts.contains("-fuse-msgpack")) {
-    qcore_logf(QCORE_ERROR, "Cannot use both JSON and MsgPack output.");
-    return false;
-  }
-
-  if (opts.contains("-fuse-msgpack")) {
-    out_mode = OutMode::MsgPack;
-  }
+  (void)opts;
 
   DeserializerAdapterLexer lexer(source, env);
   auto parser = Parser::Create(lexer, env);
 
   let root = parser->Parse();
 
-  switch (out_mode) {
-    case OutMode::JSON: {
-      auto writter = AstJsonWriter(output);
-      root.Get().Accept(writter);
-      return true;
-    }
-    case OutMode::MsgPack: {
-      auto writter = AstMsgPackWriter(output);
-      root.Get().Accept(writter);
-      return true;
-    }
-    default: {
-      return false;
-    }
-  }
+  output << root.Get()->ToJson();
+
+  return true;
 }

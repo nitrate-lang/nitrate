@@ -18,16 +18,3 @@ TEST(AST, ToJson) {
 
   ASSERT_FALSE(nlohmann::json::parse(output, nullptr, false).is_discarded());
 }
-
-TEST(AST, ToMsgPack) {
-  std::string output;
-  ASSERT_TRUE(Chain(test::vector::kAstExecise, output,
-                    {
-                        {"lex"},
-                        {"parse", "-fuse-msgpack"},
-                    })
-                  .Get());
-
-  ASSERT_FALSE(
-      nlohmann::json::from_msgpack(output, true, false).is_discarded());
-}

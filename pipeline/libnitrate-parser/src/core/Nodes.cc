@@ -133,8 +133,8 @@ NCC_EXPORT auto Base::IsEq(FlowPtr<Base> o) const -> bool {
 
   std::stringstream ss1;
   std::stringstream ss2;
-  AstMsgPackWriter writer1(ss1);
-  AstMsgPackWriter writer2(ss2);
+  AstJsonWriter writer1(ss1);
+  AstJsonWriter writer2(ss2);
 
   this->Accept(writer1);
   o.Accept(writer2);

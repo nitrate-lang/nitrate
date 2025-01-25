@@ -216,28 +216,6 @@ namespace ncc::parse {
 
     ~AstJsonReader() override;
   };
-
-  class NCC_EXPORT AstMsgPackReader final : public AstReader {
-    auto ReadValue() -> std::optional<Value>;
-    std::istream& m_is;
-
-    struct PImpl;
-    std::unique_ptr<PImpl> m_pimpl;
-
-  public:
-    AstMsgPackReader(std::istream& is,
-                     ReaderSourceManager source_manager = std::nullopt);
-
-    static auto FromString(const std::string& msgpack,
-                           ReaderSourceManager source_manager = std::nullopt)
-        -> std::optional<FlowPtr<Base>> {
-      std::istringstream is(msgpack);
-      AstMsgPackReader reader(is, source_manager);
-      return reader.Get();
-    }
-
-    ~AstMsgPackReader() override;
-  };
 }  // namespace ncc::parse
 
 #endif
