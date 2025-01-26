@@ -3,7 +3,6 @@
 #include <lsp/lang/FmtInterface.hh>
 #include <nitrate-core/String.hh>
 #include <sstream>
-#include <stack>
 
 namespace no3::lsp::fmt {
   using namespace ncc;
@@ -11,47 +10,40 @@ namespace no3::lsp::fmt {
   template <typename T>
   using FlowPtr = ncc::FlowPtr<T>;
 
-  class CambrianFormatter final : public parse::ASTVisitor,
-                                  public ICodeFormatter {
-    class LineStreamWritter {
+  class NCC_EXPORT CambrianFormatter final : public parse::ASTVisitor,
+                                             public ICodeFormatter {
+    class LineWriter final {
       std::stringstream m_line_buffer;
       std::ostream& m_file;
 
     public:
-      LineStreamWritter(std::ostream& out) : m_file(out) {}
+      LineWriter(std::ostream& out) : m_file(out) {}
 
       void Reset() {
         m_line_buffer.str("");
         m_line_buffer.clear();
       }
 
+      auto Length() -> size_t { return m_line_buffer.tellp(); }
+
+      auto operator<<(ncc::lex::Operator op) -> LineWriter&;
+      auto operator<<(parse::Vis v) -> LineWriter&;
+      auto operator<<(ncc::string str) -> LineWriter&;
+      auto operator<<(std::ostream& (*func)(std::ostream&)) -> LineWriter&;
+
       template <typename T>
-      auto operator<<(const T& val) -> LineStreamWritter& {
+      auto operator<<(const T& val) -> LineWriter& {
         m_line_buffer << val;
         return *this;
       }
-      auto operator<<(ncc::lex::Operator op) -> LineStreamWritter&;
-      auto operator<<(parse::Vis v) -> LineStreamWritter&;
-      auto operator<<(ncc::string str) -> LineStreamWritter& {
-        m_line_buffer << str.Get();
-        return *this;
-      }
-
-      auto operator<<(std::ostream& (*func)(std::ostream&))
-          -> LineStreamWritter&;
-
-      auto Length() -> size_t { return m_line_buffer.tellp(); }
     };
 
-    LineStreamWritter m_line;
-    std::stack<size_t> m_field_indent_stack;
+    LineWriter m_line;
     size_t m_indent{};
     const size_t m_tabSize;
     bool m_failed, m_did_root;
 
     void ResetAutomaton() {
-      m_field_indent_stack = std::stack<size_t>();
-      m_field_indent_stack.push(1);
       m_line.Reset();
       m_indent = 0;
       m_failed = false;

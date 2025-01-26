@@ -1,7 +1,7 @@
 #pragma once
 
-#include <lsp/lang/CambrianStyleFormatter.hh>
 #include <lsp/lang/FmtInterface.hh>
+#include <lsp/lang/format/Formatter.hh>
 #include <nitrate-parser/AST.hh>
 
 namespace no3::lsp::fmt {

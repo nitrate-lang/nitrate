@@ -1,10 +1,42 @@
-#include <lsp/lang/CambrianStyleFormatter.hh>
+////////////////////////////////////////////////////////////////////////////////
+///                                                                          ///
+///     .-----------------.    .----------------.     .----------------.     ///
+///    | .--------------. |   | .--------------. |   | .--------------. |    ///
+///    | | ____  _____  | |   | |     ____     | |   | |    ______    | |    ///
+///    | ||_   _|_   _| | |   | |   .'    `.   | |   | |   / ____ `.  | |    ///
+///    | |  |   \ | |   | |   | |  /  .--.  \  | |   | |   `'  __) |  | |    ///
+///    | |  | |\ \| |   | |   | |  | |    | |  | |   | |   _  |__ '.  | |    ///
+///    | | _| |_\   |_  | |   | |  \  `--'  /  | |   | |  | \____) |  | |    ///
+///    | ||_____|\____| | |   | |   `.____.'   | |   | |   \______.'  | |    ///
+///    | |              | |   | |              | |   | |              | |    ///
+///    | '--------------' |   | '--------------' |   | '--------------' |    ///
+///     '----------------'     '----------------'     '----------------'     ///
+///                                                                          ///
+///   * NITRATE TOOLCHAIN - The official toolchain for the Nitrate language. ///
+///   * Copyright (C) 2024 Wesley C. Jones                                   ///
+///                                                                          ///
+///   The Nitrate Toolchain is free software; you can redistribute it or     ///
+///   modify it under the terms of the GNU Lesser General Public             ///
+///   License as published by the Free Software Foundation; either           ///
+///   version 2.1 of the License, or (at your option) any later version.     ///
+///                                                                          ///
+///   The Nitrate Toolcain is distributed in the hope that it will be        ///
+///   useful, but WITHOUT ANY WARRANTY; without even the implied warranty of ///
+///   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU      ///
+///   Lesser General Public License for more details.                        ///
+///                                                                          ///
+///   You should have received a copy of the GNU Lesser General Public       ///
+///   License along with the Nitrate Toolchain; if not, see                  ///
+///   <https://www.gnu.org/licenses/>.                                       ///
+///                                                                          ///
+////////////////////////////////////////////////////////////////////////////////
+
+#include <lsp/lang/format/Formatter.hh>
 #include <nitrate-core/Logger.hh>
 #include <nitrate-core/Macro.hh>
 #include <nitrate-lexer/Scanner.hh>
 #include <nitrate-parser/AST.hh>
 #include <nitrate-parser/ASTCommon.hh>
-#include <sstream>
 #include <unordered_set>
 
 using namespace no3::lsp::fmt;
@@ -12,120 +44,6 @@ using namespace no3::lsp::fmt;
 using namespace ncc;
 using namespace ncc::parse;
 using namespace ncc::lex;
-
-auto CambrianFormatter::LineStreamWritter::operator<<(std::ostream& (*func)(
-    std::ostream&)) -> CambrianFormatter::LineStreamWritter& {
-  qcore_assert(func ==
-               static_cast<std::ostream& (*)(std::ostream&)>(std::endl));
-
-  m_file << m_line_buffer.str() << "\n";
-  Reset();
-
-  return *this;
-}
-
-auto CambrianFormatter::LineStreamWritter::operator<<(Operator op)
-    -> CambrianFormatter::LineStreamWritter& {
-  m_line_buffer << op;
-  return *this;
-}
-
-auto CambrianFormatter::LineStreamWritter::operator<<(Vis v)
-    -> CambrianFormatter::LineStreamWritter& {
-  switch (v) {
-    case Vis::Sec: {
-      m_line_buffer << "sec";
-      break;
-    }
-
-    case Vis::Pro: {
-      m_line_buffer << "pro";
-      break;
-    }
-
-    case Vis::Pub: {
-      m_line_buffer << "pub";
-      break;
-    }
-  }
-  return *this;
-}
-
-auto CambrianFormatter::EscapeCharLiteral(char ch) const -> std::string {
-  if ((std::isspace(ch) == 0) && (std::isprint(ch) == 0)) {
-    const char* tab = "0123456789abcdef";
-    uint8_t uch = ch;
-    std::array<char, 6> enc = {'\'', '\\', 'x', 0, 0, '\''};
-    enc[3] = tab[uch >> 4];
-    enc[4] = tab[uch & 0xF];
-    return {enc.data(), enc.size()};
-  }
-
-  switch (ch) {
-    case '\n':
-      return "'\\n'";
-    case '\t':
-      return "'\\t'";
-    case '\r':
-      return "'\\r'";
-    case '\v':
-      return "'\\v'";
-    case '\f':
-      return "'\\f'";
-    case '\b':
-      return "'\\b'";
-    case '\a':
-      return "'\\a'";
-    case '\\':
-      return "'\\\\'";
-    case '\'':
-      return "'\\''";
-    default:
-      return "'" + std::string(1, ch) + "'";
-  }
-}
-
-auto CambrianFormatter::EscapeStringLiteralChunk(std::string_view str) const
-    -> std::string {
-  std::stringstream ss;
-
-  for (char ch : str) {
-    switch (ch) {
-      case '\n':
-        ss << "\\n";
-        break;
-      case '\t':
-        ss << "\\t";
-        break;
-      case '\r':
-        ss << "\\r";
-        break;
-      case '\v':
-        ss << "\\v";
-        break;
-      case '\f':
-        ss << "\\f";
-        break;
-      case '\b':
-        ss << "\\b";
-        break;
-      case '\a':
-        ss << "\\a";
-        break;
-      case '\\':
-        ss << "\\\\";
-        break;
-      case '"':
-        ss << "\\\"";
-        break;
-      default:
-        ss << ch;
-        break;
-    }
-  }
-
-  return ss.str();
-}
 
 void CambrianFormatter::WrapStmtBody(FlowPtr<parse::Stmt> n,
                                      size_t size_threshold,
@@ -147,173 +65,6 @@ void CambrianFormatter::WrapStmtBody(FlowPtr<parse::Stmt> n,
   }
 
   n.Accept(*this);
-}
-
-void CambrianFormatter::PrintLineComments(const FlowPtr<parse::Base>& n) {
-  auto comments = n->Comments();
-  auto m_line_size = m_line.Length();
-
-  if (!comments.empty()) {
-    for (auto comment : comments) {
-      m_line << "#";
-      m_line << comment.GetString() << std::endl;
-
-      if (m_line_size != 0U) {
-        m_line << std::string(m_line_size, ' ');
-      }
-    }
-  }
-}
-
-void CambrianFormatter::PrintMultilineComments(const FlowPtr<parse::Base>& n) {
-  auto comments = n->Comments();
-  if (!comments.empty()) {
-    for (auto comment : comments) {
-      m_line << "/*";
-      m_line << comment.GetString();
-      m_line << "*/ ";
-    }
-  }
-}
-
-void CambrianFormatter::EscapeStringLiteral(std::string_view str,
-                                            bool put_quotes) {
-  constexpr size_t kMaxChunkSize = 60;
-
-  if (str.empty()) {
-    if (put_quotes) {
-      m_line << "\"\"";
-    }
-    return;
-  }
-
-  auto chunks_n = str.size() / kMaxChunkSize;
-  auto rem = str.size() % kMaxChunkSize;
-  auto m_line_size = m_line.Length();
-
-  if (chunks_n != 0U) {
-    std::vector<std::string> chunks(chunks_n);
-
-    for (size_t i = 0; i < chunks_n; i++) {
-      chunks[i] = "\"" +
-                  EscapeStringLiteralChunk(
-                      str.substr(i * kMaxChunkSize, kMaxChunkSize)) +
-                  "\"";
-    }
-
-    auto max_segment_size =
-        std::max_element(chunks.begin(), chunks.end(), [](auto a, auto b) {
-          return a.size() < b.size();
-        })->size();
-
-    for (size_t i = 0; i < chunks.size(); ++i) {
-      if (i != 0 && (m_line_size != 0U)) {
-        m_line << std::string(m_line_size, ' ');
-      }
-
-      m_line << chunks[i];
-
-      auto rpad = (max_segment_size - chunks[i].size());
-      if (rpad != 0U) {
-        m_line << std::string(rpad, ' ');
-      }
-
-      if (rem > 0 || i < chunks_n - 1) {
-        m_line << " \\" << std::endl;
-      }
-    }
-  }
-
-  if (rem > 0) {
-    if ((m_line_size != 0U) && chunks_n > 0) {
-      m_line << std::string(m_line_size, ' ');
-    }
-
-    if (chunks_n > 0 || put_quotes) {
-      m_line << "\"";
-    }
-
-    m_line << EscapeStringLiteralChunk(
-        str.substr(chunks_n * kMaxChunkSize, rem));
-
-    if (chunks_n > 0 || put_quotes) {
-      m_line << "\"";
-    }
-  }
-}
-
-void CambrianFormatter::WriteFloatLiteralChunk(std::string_view float_str) {
-  constexpr size_t kInsertSepEvery = 10;
-
-  bool already_write_type_suffix = false;
-
-  for (size_t i = 0; i < float_str.size(); i++) {
-    bool underscore = false;
-
-    if (!already_write_type_suffix && i != 0 && (i % (kInsertSepEvery)) == 0) {
-      underscore = true;
-    } else if (!already_write_type_suffix &&
-               (std::isdigit(float_str[i]) == 0) && float_str[i] != '.') {
-      already_write_type_suffix = true;
-      underscore = true;
-    }
-
-    if (underscore) {
-      m_line << "_";
-    }
-
-    m_line << float_str[i];
-  }
-}
-
-void CambrianFormatter::WriteFloatLiteral(std::string_view float_str) {
-  constexpr size_t kMaxChunkSize = 50;
-
-  if (float_str.empty()) {
-    m_line << "";
-  }
-
-  size_t chunks_n = float_str.size() / kMaxChunkSize;
-  size_t rem = float_str.size() % kMaxChunkSize;
-
-  size_t m_line_size = m_line.Length();
-
-  for (size_t i = 0; i < chunks_n; i++) {
-    WriteFloatLiteralChunk(float_str.substr(i * kMaxChunkSize, kMaxChunkSize));
-
-    if (rem > 0 || i < chunks_n - 1) {
-      m_line << "_ \\" << std::endl;
-      if (m_line_size != 0U) {
-        m_line << std::string(m_line_size, ' ');
-      }
-    }
-  }
-
-  if (rem > 0) {
-    WriteFloatLiteralChunk(float_str.substr(chunks_n * kMaxChunkSize, rem));
-  }
-}
-
-void CambrianFormatter::FormatTypeMetadata(const FlowPtr<parse::Type>& n) {
-  auto range_start = n->GetRangeBegin();
-  auto range_end = n->GetRangeEnd();
-
-  if (range_start || range_end) {
-    m_line << ": [";
-    if (range_start) {
-      range_start.value().Accept(*this);
-    }
-    m_line << ":";
-    if (range_end) {
-      range_end.value().Accept(*this);
-    }
-    m_line << "]";
-  }
-
-  if (n->GetWidth()) {
-    m_line << ": ";
-    n->GetWidth().value().Accept(*this);
-  }
 }
 
 void CambrianFormatter::Visit(FlowPtr<Base> n) {
@@ -343,6 +94,28 @@ void CambrianFormatter::Visit(FlowPtr<TypeExpr> n) {
 
   m_line << "type ";
   n->GetType().Accept(*this);
+}
+
+void CambrianFormatter::FormatTypeMetadata(const FlowPtr<parse::Type>& n) {
+  auto range_start = n->GetRangeBegin();
+  auto range_end = n->GetRangeEnd();
+
+  if (range_start || range_end) {
+    m_line << ": [";
+    if (range_start) {
+      range_start.value().Accept(*this);
+    }
+    m_line << ":";
+    if (range_end) {
+      range_end.value().Accept(*this);
+    }
+    m_line << "]";
+  }
+
+  if (n->GetWidth()) {
+    m_line << ": ";
+    n->GetWidth().value().Accept(*this);
+  }
 }
 
 void CambrianFormatter::Visit(FlowPtr<NamedTy> n) {
