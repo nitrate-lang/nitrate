@@ -22,8 +22,8 @@ message UserComment {
 }
 
 message Base {
-  optional SourceLocationRange from = 1;
-  repeated UserComment attached_comments = 2;
+  optional SourceLocationRange location = 1;
+  repeated UserComment comments = 2;
 }
 
 message CallArgument {
@@ -113,251 +113,251 @@ message EnumItem {
 ///===--------------------------------------------------------------------===///
 
 message NamedTy {
-  optional SourceLocationRange from = 1;
-  repeated UserComment attached_comments = 2;
+  optional SourceLocationRange location = 1;
+  repeated UserComment comments = 2;
 
   optional Expr bit_width = 4;
-  optional Expr minimum_value = 5;
-  optional Expr maximum_value = 6;
+  optional Expr minimum = 5;
+  optional Expr maximum = 6;
 
-  required string type_name = 7;
+  required string name = 7;
 }
 
 message InferTy {
-  optional SourceLocationRange from = 1;
-  repeated UserComment attached_comments = 2;
+  optional SourceLocationRange location = 1;
+  repeated UserComment comments = 2;
 
   optional Expr bit_width = 4;
-  optional Expr minimum_value = 5;
-  optional Expr maximum_value = 6;
+  optional Expr minimum = 5;
+  optional Expr maximum = 6;
 }
 
 message TemplateType {
-  optional SourceLocationRange from = 1;
-  repeated UserComment attached_comments = 2;
+  optional SourceLocationRange location = 1;
+  repeated UserComment comments = 2;
 
   optional Expr bit_width = 4;
-  optional Expr minimum_value = 5;
-  optional Expr maximum_value = 6;
+  optional Expr minimum = 5;
+  optional Expr maximum = 6;
 
-  required Type template_base = 7;
-  repeated CallArgument template_arguments = 8;
+  required Type base = 7;
+  repeated CallArgument arguments = 8;
 }
 
 message U1 {
-  optional SourceLocationRange from = 1;
-  repeated UserComment attached_comments = 2;
+  optional SourceLocationRange location = 1;
+  repeated UserComment comments = 2;
 
   optional Expr bit_width = 4;
-  optional Expr minimum_value = 5;
-  optional Expr maximum_value = 6;
+  optional Expr minimum = 5;
+  optional Expr maximum = 6;
 }
 
 message U8 {
-  optional SourceLocationRange from = 1;
-  repeated UserComment attached_comments = 2;
+  optional SourceLocationRange location = 1;
+  repeated UserComment comments = 2;
 
   optional Expr bit_width = 4;
-  optional Expr minimum_value = 5;
-  optional Expr maximum_value = 6;
+  optional Expr minimum = 5;
+  optional Expr maximum = 6;
 }
 
 message U16 {
-  optional SourceLocationRange from = 1;
-  repeated UserComment attached_comments = 2;
+  optional SourceLocationRange location = 1;
+  repeated UserComment comments = 2;
 
   optional Expr bit_width = 4;
-  optional Expr minimum_value = 5;
-  optional Expr maximum_value = 6;
+  optional Expr minimum = 5;
+  optional Expr maximum = 6;
 }
 
 message U32 {
-  optional SourceLocationRange from = 1;
-  repeated UserComment attached_comments = 2;
+  optional SourceLocationRange location = 1;
+  repeated UserComment comments = 2;
 
   optional Expr bit_width = 4;
-  optional Expr minimum_value = 5;
-  optional Expr maximum_value = 6;
+  optional Expr minimum = 5;
+  optional Expr maximum = 6;
 }
 
 message U64 {
-  optional SourceLocationRange from = 1;
-  repeated UserComment attached_comments = 2;
+  optional SourceLocationRange location = 1;
+  repeated UserComment comments = 2;
 
   optional Expr bit_width = 4;
-  optional Expr minimum_value = 5;
-  optional Expr maximum_value = 6;
+  optional Expr minimum = 5;
+  optional Expr maximum = 6;
 }
 
 message U128 {
-  optional SourceLocationRange from = 1;
-  repeated UserComment attached_comments = 2;
+  optional SourceLocationRange location = 1;
+  repeated UserComment comments = 2;
 
   optional Expr bit_width = 4;
-  optional Expr minimum_value = 5;
-  optional Expr maximum_value = 6;
+  optional Expr minimum = 5;
+  optional Expr maximum = 6;
 }
 
 message I8 {
-  optional SourceLocationRange from = 1;
-  repeated UserComment attached_comments = 2;
+  optional SourceLocationRange location = 1;
+  repeated UserComment comments = 2;
 
   optional Expr bit_width = 4;
-  optional Expr minimum_value = 5;
-  optional Expr maximum_value = 6;
+  optional Expr minimum = 5;
+  optional Expr maximum = 6;
 }
 
 message I16 {
-  optional SourceLocationRange from = 1;
-  repeated UserComment attached_comments = 2;
+  optional SourceLocationRange location = 1;
+  repeated UserComment comments = 2;
 
   optional Expr bit_width = 4;
-  optional Expr minimum_value = 5;
-  optional Expr maximum_value = 6;
+  optional Expr minimum = 5;
+  optional Expr maximum = 6;
 }
 
 message I32 {
-  optional SourceLocationRange from = 1;
-  repeated UserComment attached_comments = 2;
+  optional SourceLocationRange location = 1;
+  repeated UserComment comments = 2;
 
   optional Expr bit_width = 4;
-  optional Expr minimum_value = 5;
-  optional Expr maximum_value = 6;
+  optional Expr minimum = 5;
+  optional Expr maximum = 6;
 }
 
 message I64 {
-  optional SourceLocationRange from = 1;
-  repeated UserComment attached_comments = 2;
+  optional SourceLocationRange location = 1;
+  repeated UserComment comments = 2;
 
   optional Expr bit_width = 4;
-  optional Expr minimum_value = 5;
-  optional Expr maximum_value = 6;
+  optional Expr minimum = 5;
+  optional Expr maximum = 6;
 }
 
 message I128 {
-  optional SourceLocationRange from = 1;
-  repeated UserComment attached_comments = 2;
+  optional SourceLocationRange location = 1;
+  repeated UserComment comments = 2;
 
   optional Expr bit_width = 4;
-  optional Expr minimum_value = 5;
-  optional Expr maximum_value = 6;
+  optional Expr minimum = 5;
+  optional Expr maximum = 6;
 }
 
 message F16 {
-  optional SourceLocationRange from = 1;
-  repeated UserComment attached_comments = 2;
+  optional SourceLocationRange location = 1;
+  repeated UserComment comments = 2;
 
   optional Expr bit_width = 4;
-  optional Expr minimum_value = 5;
-  optional Expr maximum_value = 6;
+  optional Expr minimum = 5;
+  optional Expr maximum = 6;
 }
 
 message F32 {
-  optional SourceLocationRange from = 1;
-  repeated UserComment attached_comments = 2;
+  optional SourceLocationRange location = 1;
+  repeated UserComment comments = 2;
 
   optional Expr bit_width = 4;
-  optional Expr minimum_value = 5;
-  optional Expr maximum_value = 6;
+  optional Expr minimum = 5;
+  optional Expr maximum = 6;
 }
 
 message F64 {
-  optional SourceLocationRange from = 1;
-  repeated UserComment attached_comments = 2;
+  optional SourceLocationRange location = 1;
+  repeated UserComment comments = 2;
 
   optional Expr bit_width = 4;
-  optional Expr minimum_value = 5;
-  optional Expr maximum_value = 6;
+  optional Expr minimum = 5;
+  optional Expr maximum = 6;
 }
 
 message F128 {
-  optional SourceLocationRange from = 1;
-  repeated UserComment attached_comments = 2;
+  optional SourceLocationRange location = 1;
+  repeated UserComment comments = 2;
 
   optional Expr bit_width = 4;
-  optional Expr minimum_value = 5;
-  optional Expr maximum_value = 6;
+  optional Expr minimum = 5;
+  optional Expr maximum = 6;
 }
 
 message VoidTy {
-  optional SourceLocationRange from = 1;
-  repeated UserComment attached_comments = 2;
+  optional SourceLocationRange location = 1;
+  repeated UserComment comments = 2;
 
   optional Expr bit_width = 4;
-  optional Expr minimum_value = 5;
-  optional Expr maximum_value = 6;
+  optional Expr minimum = 5;
+  optional Expr maximum = 6;
 }
 
 message PtrTy {
-  optional SourceLocationRange from = 1;
-  repeated UserComment attached_comments = 2;
+  optional SourceLocationRange location = 1;
+  repeated UserComment comments = 2;
 
   optional Expr bit_width = 4;
-  optional Expr minimum_value = 5;
-  optional Expr maximum_value = 6;
+  optional Expr minimum = 5;
+  optional Expr maximum = 6;
 
   required Type pointee = 7;
-  required bool is_volatile = 8;
+  required bool volatile = 8;
 }
 
 message OpaqueTy {
-  optional SourceLocationRange from = 1;
-  repeated UserComment attached_comments = 2;
+  optional SourceLocationRange location = 1;
+  repeated UserComment comments = 2;
 
   optional Expr bit_width = 4;
-  optional Expr minimum_value = 5;
-  optional Expr maximum_value = 6;
+  optional Expr minimum = 5;
+  optional Expr maximum = 6;
 
-  required string identity_name = 7;
+  required string name = 7;
 }
 
 message TupleTy {
-  optional SourceLocationRange from = 1;
-  repeated UserComment attached_comments = 2;
+  optional SourceLocationRange location = 1;
+  repeated UserComment comments = 2;
 
   optional Expr bit_width = 4;
-  optional Expr minimum_value = 5;
-  optional Expr maximum_value = 6;
+  optional Expr minimum = 5;
+  optional Expr maximum = 6;
 
-  repeated Type member_types = 7;
+  repeated Type elements = 7;
 }
 
 message ArrayTy {
-  optional SourceLocationRange from = 1;
-  repeated UserComment attached_comments = 2;
+  optional SourceLocationRange location = 1;
+  repeated UserComment comments = 2;
 
   optional Expr bit_width = 4;
-  optional Expr minimum_value = 5;
-  optional Expr maximum_value = 6;
+  optional Expr minimum = 5;
+  optional Expr maximum = 6;
 
   required Type element_type = 7;
   required Expr element_count = 8;
 }
 
 message RefTy {
-  optional SourceLocationRange from = 1;
-  repeated UserComment attached_comments = 2;
+  optional SourceLocationRange location = 1;
+  repeated UserComment comments = 2;
 
   optional Expr bit_width = 4;
-  optional Expr minimum_value = 5;
-  optional Expr maximum_value = 6;
+  optional Expr minimum = 5;
+  optional Expr maximum = 6;
 
-  required Type pointee_type = 7;
+  required Type pointee = 7;
 }
 
 message FuncTy {
-  optional SourceLocationRange from = 1;
-  repeated UserComment attached_comments = 2;
+  optional SourceLocationRange location = 1;
+  repeated UserComment comments = 2;
 
   optional Expr bit_width = 4;
-  optional Expr minimum_value = 5;
-  optional Expr maximum_value = 6;
+  optional Expr minimum = 5;
+  optional Expr maximum = 6;
 
   repeated Expr attributes = 7;
   repeated FunctionParameter parameters = 8;
-  required Type return_type = 9;
+  required bool variadic = 9;
   required FunctionPurity purity = 10;
-  required bool is_variadic = 11;
+  required Type return_type = 11;
 }
 
 ///===--------------------------------------------------------------------===///
@@ -421,146 +421,146 @@ enum Operator {
 };
 
 message StmtExpr {
-  optional SourceLocationRange from = 1;
-  repeated UserComment attached_comments = 2;
+  optional SourceLocationRange location = 1;
+  repeated UserComment comments = 2;
 
-  required Stmt stmt = 4;
+  required Stmt statement = 4;
 }
 
 message TypeExpr {
-  optional SourceLocationRange from = 1;
-  repeated UserComment attached_comments = 2;
+  optional SourceLocationRange location = 1;
+  repeated UserComment comments = 2;
 
   required Type type = 4;
 }
 
 message UnaryExpr {
-  optional SourceLocationRange from = 1;
-  repeated UserComment attached_comments = 2;
+  optional SourceLocationRange location = 1;
+  repeated UserComment comments = 2;
 
-  required Expr rhs = 4;
-  required Operator op = 5;
+  required Operator operator = 4;
+  required Expr operand = 5;
 }
 
 message BinExpr {
-  optional SourceLocationRange from = 1;
-  repeated UserComment attached_comments = 2;
+  optional SourceLocationRange location = 1;
+  repeated UserComment comments = 2;
 
-  required Expr lhs = 4;
-  required Expr rhs = 5;
-  required Operator op = 6;
+  required Operator operator = 4;
+  required Expr left = 5;
+  required Expr right = 6;
 }
 
 message PostUnary {
-  optional SourceLocationRange from = 1;
-  repeated UserComment attached_comments = 2;
+  optional SourceLocationRange location = 1;
+  repeated UserComment comments = 2;
 
-  required Expr lhs = 4;
-  required Operator op = 5;
+  required Operator operator = 4;
+  required Expr operand = 5;
 }
 
 message TernaryExpr {
-  optional SourceLocationRange from = 1;
-  repeated UserComment attached_comments = 2;
+  optional SourceLocationRange location = 1;
+  repeated UserComment comments = 2;
 
   required Expr condition = 4;
-  required Expr lhs = 5;
-  required Expr rhs = 6;
+  required Expr true_branch = 5;
+  required Expr false_branch = 6;
 }
 
 message Integer {
-  optional SourceLocationRange from = 1;
-  repeated UserComment attached_comments = 2;
+  optional SourceLocationRange location = 1;
+  repeated UserComment comments = 2;
 
   /* Don't forget to verify me! */
   /* I'm a plain integer in range [0, 2^128). */
-  required string value = 4;
+  required string number = 4;
 }
 
 message Float {
-  optional SourceLocationRange from = 1;
-  repeated UserComment attached_comments = 2;
+  optional SourceLocationRange location = 1;
+  repeated UserComment comments = 2;
 
   /* Don't forget to verify me! */
   /* I'm in plain decimal form. */
-  required string value = 4;
+  required string number = 4;
 }
 
 message Boolean {
-  optional SourceLocationRange from = 1;
-  repeated UserComment attached_comments = 2;
+  optional SourceLocationRange location = 1;
+  repeated UserComment comments = 2;
 
   required bool value = 4;
 }
 
 message String {
-  optional SourceLocationRange from = 1;
-  repeated UserComment attached_comments = 2;
+  optional SourceLocationRange location = 1;
+  repeated UserComment comments = 2;
 
-  required bytes value = 4;
+  required bytes text = 4;
 }
 
 message Character {
-  optional SourceLocationRange from = 1;
-  repeated UserComment attached_comments = 2;
+  optional SourceLocationRange location = 1;
+  repeated UserComment comments = 2;
 
   /* Range: [0, 2^8). */
-  required uint32 value = 4;
+  required uint32 char = 4;
 }
 
 message Null {
-  optional SourceLocationRange from = 1;
-  repeated UserComment attached_comments = 2;
+  optional SourceLocationRange location = 1;
+  repeated UserComment comments = 2;
 }
 
 message Undefined {
-  optional SourceLocationRange from = 1;
-  repeated UserComment attached_comments = 2;
+  optional SourceLocationRange location = 1;
+  repeated UserComment comments = 2;
 }
 
 message Call {
-  optional SourceLocationRange from = 1;
-  repeated UserComment attached_comments = 2;
+  optional SourceLocationRange location = 1;
+  repeated UserComment comments = 2;
 
   required Expr callee = 4;
   repeated CallArgument arguments = 5;
 }
 
 message TemplateCall {
-  optional SourceLocationRange from = 1;
-  repeated UserComment attached_comments = 2;
+  optional SourceLocationRange location = 1;
+  repeated UserComment comments = 2;
 
   required Expr callee = 4;
-  repeated CallArgument template_arguments = 6;
-  repeated CallArgument arguments = 5;
+  repeated CallArgument template_arguments = 5;
+  repeated CallArgument arguments = 6;
 }
 
 message List {
-  optional SourceLocationRange from = 1;
-  repeated UserComment attached_comments = 2;
+  optional SourceLocationRange location = 1;
+  repeated UserComment comments = 2;
 
   repeated Expr elements = 4;
 }
 
 message Assoc {
-  optional SourceLocationRange from = 1;
-  repeated UserComment attached_comments = 2;
+  optional SourceLocationRange location = 1;
+  repeated UserComment comments = 2;
 
   required Expr key = 4;
   required Expr value = 5;
 }
 
 message Index {
-  optional SourceLocationRange from = 1;
-  repeated UserComment attached_comments = 2;
+  optional SourceLocationRange location = 1;
+  repeated UserComment comments = 2;
 
   required Expr base = 4;
   required Expr index = 5;
 }
 
 message Slice {
-  optional SourceLocationRange from = 1;
-  repeated UserComment attached_comments = 2;
+  optional SourceLocationRange location = 1;
+  repeated UserComment comments = 2;
 
   required Expr base = 4;
   required Expr start = 5;
@@ -568,82 +568,82 @@ message Slice {
 }
 
 message FString {
-  optional SourceLocationRange from = 1;
-  repeated UserComment attached_comments = 2;
+  optional SourceLocationRange location = 1;
+  repeated UserComment comments = 2;
 
-  repeated FStringTerm terms = 4;
+  repeated FStringTerm elements = 4;
 }
 
 message Identifier {
-  optional SourceLocationRange from = 1;
-  repeated UserComment attached_comments = 2;
+  optional SourceLocationRange location = 1;
+  repeated UserComment comments = 2;
 
   required string name = 4;
 }
 
 message Sequence {
-  optional SourceLocationRange from = 1;
-  repeated UserComment attached_comments = 2;
+  optional SourceLocationRange location = 1;
+  repeated UserComment comments = 2;
 
-  repeated Expr terms = 4;
+  repeated Expr elements = 4;
 }
 
 ///===--------------------------------------------------------------------===///
 
 message ExprStmt {
-  optional SourceLocationRange from = 1;
-  repeated UserComment attached_comments = 2;
+  optional SourceLocationRange location = 1;
+  repeated UserComment comments = 2;
 
-  required Expr expr = 4;
+  required Expr expression = 4;
 }
 
 message Block {
-  optional SourceLocationRange from = 1;
-  repeated UserComment attached_comments = 2;
+  optional SourceLocationRange location = 1;
+  repeated UserComment comments = 2;
 
+  optional SafetyMode guarantor = 4;
   repeated Stmt statements = 5;
-  optional SafetyMode safety = 4;
 }
 
 message Variable {
-  optional SourceLocationRange from = 1;
-  repeated UserComment attached_comments = 2;
+  optional SourceLocationRange location = 1;
+  repeated UserComment comments = 2;
 
-  repeated Expr attributes = 4;
-  optional Type type = 5;
-  optional Expr value = 6;
-  required VariableKind decl_kind = 7;
-  required string name = 8;
+  required VariableKind kind = 4;
+  required string name = 5;
+  optional Type type = 6;
+  optional Expr initial_value = 7;
+  repeated Expr attributes = 8;
 }
 
 message Assembly {
-  optional SourceLocationRange from = 1;
-  repeated UserComment attached_comments = 2;
+  optional SourceLocationRange location = 1;
+  repeated UserComment comments = 2;
 
-  repeated Expr arguments = 4;
-  required string code = 5;
+  required string code = 4;
+  repeated Expr arguments = 5;
 }
 
 message If {
-  optional SourceLocationRange from = 1;
-  repeated UserComment attached_comments = 2;
+  optional SourceLocationRange location = 1;
+  repeated UserComment comments = 2;
 
   required Expr condition = 4;
-  required Stmt then = 5;
-  optional Stmt else = 6;
+  required Stmt true_branch = 5;
+  optional Stmt false_branch = 6;
 }
 
 message While {
-  optional SourceLocationRange from = 1;
-  repeated UserComment attached_comments = 2;
+  optional SourceLocationRange location = 1;
+  repeated UserComment comments = 2;
 
   required Expr condition = 4;
   required Stmt body = 5;
 }
 
 message For {
-  optional SourceLocationRange from = 1;
-  repeated UserComment attached_comments = 2;
+  optional SourceLocationRange location = 1;
+  repeated UserComment comments = 2;
 
   optional Stmt init = 4;
   optional Expr condition = 5;
@@ -652,133 +652,133 @@ message For {
 }
 
 message Foreach {
-  optional SourceLocationRange from = 1;
-  repeated UserComment attached_comments = 2;
+  optional SourceLocationRange location = 1;
+  repeated UserComment comments = 2;
 
-  required Expr expr = 4;
-  required Stmt body = 5;
-  required string index_name = 6;
-  required string value_name = 7;
+  required string index_name = 4;
+  required string value_name = 5;
+  required Expr expression = 6;
+  required Stmt body = 7;
 }
 
 message Break {
-  optional SourceLocationRange from = 1;
-  repeated UserComment attached_comments = 2;
+  optional SourceLocationRange location = 1;
+  repeated UserComment comments = 2;
 }
 
 message Continue {
-  optional SourceLocationRange from = 1;
-  repeated UserComment attached_comments = 2;
+  optional SourceLocationRange location = 1;
+  repeated UserComment comments = 2;
 }
 
 message Return {
-  optional SourceLocationRange from = 1;
-  repeated UserComment attached_comments = 2;
+  optional SourceLocationRange location = 1;
+  repeated UserComment comments = 2;
 
   optional Expr value = 4;
 }
 
 message ReturnIf {
-  optional SourceLocationRange from = 1;
-  repeated UserComment attached_comments = 2;
+  optional SourceLocationRange location = 1;
+  repeated UserComment comments = 2;
 
   required Expr condition = 4;
   required Expr value = 5;
 }
 
 message Case {
-  optional SourceLocationRange from = 1;
-  repeated UserComment attached_comments = 2;
+  optional SourceLocationRange location = 1;
+  repeated UserComment comments = 2;
 
   required Expr condition = 4;
   required Stmt body = 5;
 }
 
 message Switch {
-  optional SourceLocationRange from = 1;
-  repeated UserComment attached_comments = 2;
+  optional SourceLocationRange location = 1;
+  repeated UserComment comments = 2;
 
-  repeated Case cases = 4;
-  required Expr condition = 5;
-  optional Stmt default_case = 6;
+  required Expr condition = 4;
+  repeated Case cases = 5;
+  optional Stmt default = 6;
 }
 
 message Export {
-  optional SourceLocationRange from = 1;
-  repeated UserComment attached_comments = 2;
+  optional SourceLocationRange location = 1;
+  repeated UserComment comments = 2;
 
-  repeated Expr attributes = 4;
-  required Stmt body = 5;
-  required string abi_name = 6;
-  required Vis visibility = 7;
+  required Vis visibility = 4;
+  required string abi_name = 5;
+  repeated Expr attributes = 6;
+  required Stmt body = 7;
 }
 
 message Scope {
-  optional SourceLocationRange from = 1;
-  repeated UserComment attached_comments = 2;
+  optional SourceLocationRange location = 1;
+  repeated UserComment comments = 2;
 
-  repeated string dependencies = 4;
-  required Stmt body = 5;
-  required string name = 6;
+  required string name = 4;
+  repeated string dependencies = 5;
+  required Stmt body = 6;
 }
 
 message Typedef {
-  optional SourceLocationRange from = 1;
-  repeated UserComment attached_comments = 2;
+  optional SourceLocationRange location = 1;
+  repeated UserComment comments = 2;
 
-  required Type type = 4;
-  required string name = 5;
+  required string name = 4;
+  required Type type = 5;
 }
 
 message Enum {
-  optional SourceLocationRange from = 1;
-  repeated UserComment attached_comments = 2;
+  optional SourceLocationRange location = 1;
+  repeated UserComment comments = 2;
 
-  repeated EnumItem items = 4;
+  required string name = 4;
   optional Type base_type = 5;
-  required string name = 6;
+  repeated EnumItem items = 6;
 }
 
 message Function {
-  optional SourceLocationRange from = 1;
-  repeated UserComment attached_comments = 2;
+  optional SourceLocationRange location = 1;
+  repeated UserComment comments = 2;
 
-  optional TemplateParameters template_parameters = 4;
-  repeated Expr attributes = 5;
-  repeated FunctionCapture captures = 6;
-  repeated FunctionParameter parameters = 7;
-  required Type return_type = 8;
-  optional Expr precondition = 9;
-  optional Expr postcondition = 10;
-  optional Stmt body = 11;
-  required string name = 12;
-  required FunctionPurity purity = 13;
-  required bool is_variadic = 14;
+  required string name = 4;
+  required FunctionPurity purity = 5;
+  required Type return_type = 6;
+  optional TemplateParameters template_parameters = 7;
+  repeated FunctionParameter parameters = 8;
+  required bool variadic = 9;
+  repeated FunctionCapture captures = 10;
+  optional Expr precondition = 11;
+  optional Expr postcondition = 12;
+  repeated Expr attributes = 13;
+  optional Stmt body = 14;
 }
 
 message Struct {
-  optional SourceLocationRange from = 1;
-  repeated UserComment attached_comments = 2;
+  optional SourceLocationRange location = 1;
+  repeated UserComment comments = 2;
 
-  optional TemplateParameters template_parameters = 4;
-  repeated Expr attributes = 5;
-  repeated string names = 6;
-  repeated StructField fields = 7;
-  repeated StructMethod methods = 8;
-  repeated StructMethod static_methods = 9;
-  required AggregateKind kind = 10;
-  required string name = 11;
+  required AggregateKind kind = 4;
+  required string name = 5;
+  optional TemplateParameters template_parameters = 6;
+  repeated string names = 7;
+  repeated Expr attributes = 8;
+  repeated StructField fields = 9;
+  repeated StructMethod methods = 10;
+  repeated StructMethod static_methods = 11;
 }
 
 message Expr {
   oneof node {
     Base base = 1;
-    StmtExpr stmt = 2;
-    TypeExpr type = 3;
-    UnaryExpr unary = 4;
-    BinExpr binary = 5;
+    StmtExpr stmt_expr = 2;
+    TypeExpr type_expr = 3;
+    UnaryExpr unary_expr = 4;
+    BinExpr binary_expr = 5;
     PostUnary post_unary = 6;
-    TernaryExpr ternary = 7;
+    TernaryExpr ternary_expr = 7;
     Integer integer = 8;
     Float float = 9;
     Boolean boolean = 10;

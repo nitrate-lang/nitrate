@@ -130,7 +130,7 @@ namespace ncc::parse {
     WriterSourceProvider m_rd;
 
     void AttachTypeMetadata(auto *object, const FlowPtr<Type> &in);
-    SyntaxTree::SourceLocationRange *FromSource(FlowPtr<Base> in);
+    SyntaxTree::SourceLocationRange *FromSource(const FlowPtr<Base> &in);
     SyntaxTree::Expr *From(FlowPtr<Expr> in);
     SyntaxTree::Stmt *From(FlowPtr<Stmt> in);
     SyntaxTree::Type *From(FlowPtr<Type> in);
