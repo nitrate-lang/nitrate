@@ -53,8 +53,9 @@ message FStringTerm {
 }
 
 enum SafetyMode {
-  Safe = 0;
-  Unsafe = 1;
+  Unspecified = 0;
+  Safe = 1;
+  Unsafe = 2;
 }
 
 enum VariableKind {
@@ -601,7 +602,7 @@ message Block {
   optional SourceLocationRange location = 1;
   repeated UserComment comments = 2;
 
-  optional SafetyMode guarantor = 4;
+  required SafetyMode guarantor = 4;
   repeated Stmt statements = 5;
 }
 

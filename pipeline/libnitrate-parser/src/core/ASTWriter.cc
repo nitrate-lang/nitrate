@@ -40,13 +40,215 @@
 #include <nitrate-parser/ASTWriter.hh>
 
 #include "core/SyntaxTree.pb.h"
-#include "nitrate-lexer/Token.hh"
 
 using namespace ncc::parse;
 using namespace google;
 using namespace nitrate::parser::SyntaxTree;
 
 using Pool = google::protobuf::Arena;
+
+static SyntaxTree::Operator FromOperator(ncc::lex::Operator op) {
+  using LexOp = ncc::lex::Operator;
+
+  switch (op) {
+    case LexOp::OpPlus:
+      return SyntaxTree::Plus;
+
+    case LexOp::OpMinus:
+      return SyntaxTree::Minus;
+
+    case LexOp::OpTimes:
+      return SyntaxTree::Times;
+
+    case LexOp::OpSlash:
+      return SyntaxTree::Slash;
+
+    case LexOp::OpPercent:
+      return SyntaxTree::Percent;
+
+    case LexOp::OpBitAnd:
+      return SyntaxTree::BitAnd;
+
+    case LexOp::OpBitOr:
+      return SyntaxTree::BitOr;
+
+    case LexOp::OpBitXor:
+      return SyntaxTree::BitXor;
+
+    case LexOp::OpBitNot:
+      return SyntaxTree::BitNot;
+
+    case LexOp::OpLShift:
+      return SyntaxTree::LShift;
+
+    case LexOp::OpRShift:
+      return SyntaxTree::RShift;
+
+    case LexOp::OpROTL:
+      return SyntaxTree::ROTL;
+
+    case LexOp::OpROTR:
+      return SyntaxTree::ROTR;
+
+    case LexOp::OpLogicAnd:
+      return SyntaxTree::LogicAnd;
+
+    case LexOp::OpLogicOr:
+      return SyntaxTree::LogicOr;
+
+    case LexOp::OpLogicXor:
+      return SyntaxTree::LogicXor;
+
+    case LexOp::OpLogicNot:
+      return SyntaxTree::LogicNot;
+
+    case LexOp::OpLT:
+      return SyntaxTree::LT;
+
+    case LexOp::OpGT:
+      return SyntaxTree::GT;
+
+    case LexOp::OpLE:
+      return SyntaxTree::LE;
+
+    case LexOp::OpGE:
+      return SyntaxTree::GE;
+
+    case LexOp::OpEq:
+      return SyntaxTree::Eq;
+
+    case LexOp::OpNE:
+      return SyntaxTree::NE;
+
+    case LexOp::OpSet:
+      return SyntaxTree::Set;
+
+    case LexOp::OpPlusSet:
+      return SyntaxTree::PlusSet;
+
+    case LexOp::OpMinusSet:
+      return SyntaxTree::MinusSet;
+
+    case LexOp::OpTimesSet:
+      return SyntaxTree::TimesSet;
+
+    case LexOp::OpSlashSet:
+      return SyntaxTree::SlashSet;
+
+    case LexOp::OpPercentSet:
+      return SyntaxTree::PercentSet;
+
+    case LexOp::OpBitAndSet:
+      return SyntaxTree::BitAndSet;
+
+    case LexOp::OpBitOrSet:
+      return SyntaxTree::BitOrSet;
+
+    case LexOp::OpBitXorSet:
+      return SyntaxTree::BitXorSet;
+
+    case LexOp::OpLogicAndSet:
+      return SyntaxTree::LogicAndSet;
+
+    case LexOp::OpLogicOrSet:
+      return SyntaxTree::LogicOrSet;
+
+    case LexOp::OpLogicXorSet:
+      return SyntaxTree::LogicXorSet;
+
+    case LexOp::OpLShiftSet:
+      return SyntaxTree::LShiftSet;
+
+    case LexOp::OpRShiftSet:
+      return SyntaxTree::RShiftSet;
+
+    case LexOp::OpROTLSet:
+      return SyntaxTree::ROTLSet;
+
+    case LexOp::OpROTRSet:
+      return SyntaxTree::ROTRSet;
+
+    case LexOp::OpInc:
+      return SyntaxTree::Inc;
+
+    case LexOp::OpDec:
+      return SyntaxTree::Dec;
+
+    case LexOp::OpAs:
+      return SyntaxTree::As;
+
+    case LexOp::OpBitcastAs:
+      return SyntaxTree::BitcastAs;
+
+    case LexOp::OpIn:
+      return SyntaxTree::In;
+
+    case LexOp::OpOut:
+      return SyntaxTree::Out;
+
+    case LexOp::OpSizeof:
+      return SyntaxTree::Sizeof;
+
+    case LexOp::OpBitsizeof:
+      return SyntaxTree::Bitsizeof;
+
+    case LexOp::OpAlignof:
+      return SyntaxTree::Alignof;
+
+    case LexOp::OpTypeof:
+      return SyntaxTree::Typeof;
+
+    case LexOp::OpComptime:
+      return SyntaxTree::Comptime;
+
+    case LexOp::OpDot:
+      return SyntaxTree::Dot;
+
+    case LexOp::OpRange:
+      return SyntaxTree::Range;
+
+    case LexOp::OpEllipsis:
+      return SyntaxTree::Ellipsis;
+
+    case LexOp::OpArrow:
+      return SyntaxTree::Arrow;
+
+    case LexOp::OpTernary:
+      return SyntaxTree::Question;
+  }
+}
+
+static SyntaxTree::Vis FromVisibility(ncc::parse::Vis vis) {
+  switch (vis) {
+    case ncc::parse::Vis::Pub:
+      return SyntaxTree::Public;
+
+    case ncc::parse::Vis::Pro:
+      return SyntaxTree::Protected;
+
+    case ncc::parse::Vis::Sec:
+      return SyntaxTree::Private;
+  }
+}
+
+static SyntaxTree::FunctionPurity FromPurity(ncc::parse::Purity purity) {
+  switch (purity) {
+    case ncc::parse::Purity::Impure:
+      return SyntaxTree::Impure;
+
+    case ncc::parse::Purity::Impure_TSafe:
+      return SyntaxTree::Impure_TSafe;
+
+    case ncc::parse::Purity::Pure:
+      return SyntaxTree::Pure;
+
+    case ncc::parse::Purity::Quasi:
+      return SyntaxTree::Quasi;
+
+    case ncc::parse::Purity::Retro:
+      return SyntaxTree::Retro;
+  }
+}
 
 void AstWriter::AttachTypeMetadata(auto *object, const FlowPtr<Type> &in) {
   if (in->GetWidth().has_value()) [[unlikely]] {
@@ -538,9 +740,26 @@ SyntaxTree::InferTy *AstWriter::From(FlowPtr<InferTy> in) {
 }
 
 SyntaxTree::TemplateType *AstWriter::From(FlowPtr<TemplateType> in) {
-  /// TODO: From input to protobuf structure
-  qcore_implement();
-  (void)in;
+  auto *object = Pool::CreateMessage<SyntaxTree::TemplateType>(&m_arena);
+
+  object->set_allocated_location(FromSource(in));
+  object->set_allocated_base(From(in->GetTemplate()));
+  AttachTypeMetadata(object, in);
+
+  { /* Add all arguments */
+    const auto &args = in->GetArgs();
+    auto *arg_list = object->mutable_arguments();
+    arg_list->Reserve(args.size());
+
+    for (const auto &arg : args) {
+      auto *argument = Pool::CreateMessage<SyntaxTree::CallArgument>(&m_arena);
+      argument->set_name(arg.first.Get());
+      argument->set_allocated_value(From(arg.second));
+      arg_list->AddAllocated(argument);
+    }
+  }
+
+  return object;
 }
 
 SyntaxTree::U1 *AstWriter::From(FlowPtr<U1> in) {
@@ -709,9 +928,21 @@ SyntaxTree::OpaqueTy *AstWriter::From(FlowPtr<OpaqueTy> in) {
 }
 
 SyntaxTree::TupleTy *AstWriter::From(FlowPtr<TupleTy> in) {
-  /// TODO: From input to protobuf structure
-  qcore_implement();
-  (void)in;
+  auto *object = Pool::CreateMessage<SyntaxTree::TupleTy>(&m_arena);
+
+  object->set_allocated_location(FromSource(in));
+  AttachTypeMetadata(object, in);
+
+  { /* Add all elements */
+    const auto &items = in->GetItems();
+
+    object->mutable_elements()->Reserve(items.size());
+    std::for_each(items.begin(), items.end(), [&](auto item) {
+      object->mutable_elements()->AddAllocated(From(item));
+    });
+  }
+
+  return object;
 }
 
 SyntaxTree::ArrayTy *AstWriter::From(FlowPtr<ArrayTy> in) {
@@ -736,34 +967,84 @@ SyntaxTree::RefTy *AstWriter::From(FlowPtr<RefTy> in) {
 }
 
 SyntaxTree::FuncTy *AstWriter::From(FlowPtr<FuncTy> in) {
-  /// TODO: From input to protobuf structure
-  qcore_implement();
-  (void)in;
+  auto *object = Pool::CreateMessage<SyntaxTree::FuncTy>(&m_arena);
+
+  object->set_allocated_location(FromSource(in));
+  object->set_allocated_return_type(From(in->GetReturn()));
+  object->set_variadic(in->IsVariadic());
+  object->set_purity(FromPurity(in->GetPurity()));
+  AttachTypeMetadata(object, in);
+
+  { /* Add all parameters */
+    const auto &params = in->GetParams();
+    auto *param_list = object->mutable_parameters();
+    param_list->Reserve(params.size());
+
+    for (const auto &param : params) {
+      auto *parameter =
+          Pool::CreateMessage<SyntaxTree::FunctionParameter>(&m_arena);
+      const auto &[name, type, default_] = param;
+      parameter->set_name(name.Get());
+      parameter->set_allocated_type(From(type));
+      if (default_.has_value()) {
+        parameter->set_allocated_default_value(From(default_.value()));
+      }
+
+      param_list->AddAllocated(parameter);
+    }
+  }
+
+  { /* Add all attributes */
+    const auto &attrs = in->GetAttributes();
+    object->mutable_attributes()->Reserve(attrs.size());
+    std::for_each(attrs.begin(), attrs.end(), [&](auto attr) {
+      object->mutable_attributes()->AddAllocated(From(attr));
+    });
+  }
+
+  return object;
 }
 
 SyntaxTree::Unary *AstWriter::From(FlowPtr<Unary> in) {
-  /// TODO: From input to protobuf structure
-  qcore_implement();
-  (void)in;
-  (void)m_os;
+  auto *object = Pool::CreateMessage<SyntaxTree::Unary>(&m_arena);
+
+  object->set_allocated_location(FromSource(in));
+  object->set_operator_(FromOperator(in->GetOp()));
+  object->set_allocated_operand(From(in->GetRHS()));
+
+  return object;
 }
 
 SyntaxTree::Binary *AstWriter::From(FlowPtr<Binary> in) {
-  /// TODO: From input to protobuf structure
-  qcore_implement();
-  (void)in;
+  auto *object = Pool::CreateMessage<SyntaxTree::Binary>(&m_arena);
+
+  object->set_allocated_location(FromSource(in));
+  object->set_operator_(FromOperator(in->GetOp()));
+  object->set_allocated_left(From(in->GetLHS()));
+  object->set_allocated_right(From(in->GetRHS()));
+
+  return object;
 }
 
 SyntaxTree::PostUnary *AstWriter::From(FlowPtr<PostUnary> in) {
-  /// TODO: From input to protobuf structure
-  qcore_implement();
-  (void)in;
+  auto *object = Pool::CreateMessage<SyntaxTree::PostUnary>(&m_arena);
+
+  object->set_allocated_location(FromSource(in));
+  object->set_operator_(FromOperator(in->GetOp()));
+  object->set_allocated_operand(From(in->GetLHS()));
+
+  return object;
 }
 
 SyntaxTree::Ternary *AstWriter::From(FlowPtr<Ternary> in) {
-  /// TODO: From input to protobuf structure
-  qcore_implement();
-  (void)in;
+  auto *object = Pool::CreateMessage<SyntaxTree::Ternary>(&m_arena);
+
+  object->set_allocated_location(FromSource(in));
+  object->set_allocated_condition(From(in->GetCond()));
+  object->set_allocated_true_branch(From(in->GetLHS()));
+  object->set_allocated_false_branch(From(in->GetRHS()));
+
+  return object;
 }
 
 SyntaxTree::Integer *AstWriter::From(FlowPtr<Integer> in) {
@@ -828,21 +1109,74 @@ SyntaxTree::Undefined *AstWriter::From(FlowPtr<Undefined> in) {
 }
 
 SyntaxTree::Call *AstWriter::From(FlowPtr<Call> in) {
-  /// TODO: From input to protobuf structure
-  qcore_implement();
-  (void)in;
+  auto *object = Pool::CreateMessage<SyntaxTree::Call>(&m_arena);
+
+  object->set_allocated_location(FromSource(in));
+  object->set_allocated_callee(From(in->GetFunc()));
+
+  { /* Add all arguments */
+    const auto &args = in->GetArgs();
+    object->mutable_arguments()->Reserve(args.size());
+
+    std::for_each(args.begin(), args.end(), [&](auto arg) {
+      auto *argument = Pool::CreateMessage<SyntaxTree::CallArgument>(&m_arena);
+      argument->set_name(arg.first.Get());
+      argument->set_allocated_value(From(arg.second));
+      object->mutable_arguments()->AddAllocated(argument);
+    });
+  }
+
+  return object;
 }
 
 SyntaxTree::TemplateCall *AstWriter::From(FlowPtr<TemplateCall> in) {
-  /// TODO: From input to protobuf structure
-  qcore_implement();
-  (void)in;
+  auto *object = Pool::CreateMessage<SyntaxTree::TemplateCall>(&m_arena);
+
+  object->set_allocated_location(FromSource(in));
+  object->set_allocated_callee(From(in->GetFunc()));
+
+  { /* Add all arguments */
+    const auto &args = in->GetArgs();
+    object->mutable_arguments()->Reserve(args.size());
+
+    std::for_each(args.begin(), args.end(), [&](auto arg) {
+      auto *argument = Pool::CreateMessage<SyntaxTree::CallArgument>(&m_arena);
+      argument->set_name(arg.first.Get());
+      argument->set_allocated_value(From(arg.second));
+      object->mutable_arguments()->AddAllocated(argument);
+    });
+  }
+
+  { /* Add all template arguments */
+    const auto &args = in->GetTemplateArgs();
+    object->mutable_template_arguments()->Reserve(args.size());
+
+    std::for_each(args.begin(), args.end(), [&](auto arg) {
+      auto *argument = Pool::CreateMessage<SyntaxTree::CallArgument>(&m_arena);
+      argument->set_name(arg.first.Get());
+      argument->set_allocated_value(From(arg.second));
+      object->mutable_template_arguments()->AddAllocated(argument);
+    });
+  }
+
+  return object;
 }
 
 SyntaxTree::List *AstWriter::From(FlowPtr<List> in) {
-  /// TODO: From input to protobuf structure
-  qcore_implement();
-  (void)in;
+  auto *object = Pool::CreateMessage<SyntaxTree::List>(&m_arena);
+
+  object->set_allocated_location(FromSource(in));
+
+  { /* Add all elements */
+    const auto &items = in->GetItems();
+
+    object->mutable_elements()->Reserve(items.size());
+    std::for_each(items.begin(), items.end(), [&](auto item) {
+      object->mutable_elements()->AddAllocated(From(item));
+    });
+  }
+
+  return object;
 }
 
 SyntaxTree::Assoc *AstWriter::From(FlowPtr<Assoc> in) {
@@ -915,6 +1249,7 @@ SyntaxTree::Block *AstWriter::From(FlowPtr<Block> in) {
 
   switch (in->GetSafety()) {
     case SafetyMode::Unknown: {
+      object->set_guarantor(SyntaxTree::SafetyMode::Unspecified);
       break;
     }
 
@@ -942,15 +1277,59 @@ SyntaxTree::Block *AstWriter::From(FlowPtr<Block> in) {
 }
 
 SyntaxTree::Variable *AstWriter::From(FlowPtr<Variable> in) {
-  /// TODO: From input to protobuf structure
-  qcore_implement();
-  (void)in;
+  auto *object = Pool::CreateMessage<SyntaxTree::Variable>(&m_arena);
+
+  object->set_allocated_location(FromSource(in));
+  object->set_name(in->GetName().Get());
+  if (in->GetType().has_value()) {
+    object->set_allocated_type(From(in->GetType().value()));
+  }
+  if (in->GetValue().has_value()) {
+    object->set_allocated_initial_value(From(in->GetValue().value()));
+  }
+
+  switch (in->GetDeclType()) {
+    case VariableType::Var:
+      object->set_kind(SyntaxTree::VariableKind::Var);
+      break;
+
+    case VariableType::Let:
+      object->set_kind(SyntaxTree::VariableKind::Let);
+      break;
+
+    case VariableType::Const:
+      object->set_kind(SyntaxTree::VariableKind::Const);
+      break;
+  }
+
+  { /* Add all attributes */
+    const auto &items = in->GetAttributes();
+
+    object->mutable_attributes()->Reserve(items.size());
+    std::for_each(items.begin(), items.end(), [&](auto item) {
+      object->mutable_attributes()->AddAllocated(From(item));
+    });
+  }
+
+  return object;
 }
 
 SyntaxTree::Assembly *AstWriter::From(FlowPtr<Assembly> in) {
-  /// TODO: From input to protobuf structure
-  qcore_implement();
-  (void)in;
+  auto *object = Pool::CreateMessage<SyntaxTree::Assembly>(&m_arena);
+
+  object->set_allocated_location(FromSource(in));
+  object->set_code(in->GetCode().Get());
+
+  { /* Add all arguments */
+    const auto &items = in->GetArgs();
+
+    object->mutable_arguments()->Reserve(items.size());
+    std::for_each(items.begin(), items.end(), [&](auto item) {
+      object->mutable_arguments()->AddAllocated(From(item));
+    });
+  }
+
+  return object;
 }
 
 SyntaxTree::If *AstWriter::From(FlowPtr<If> in) {
@@ -1059,9 +1438,25 @@ SyntaxTree::Case *AstWriter::From(FlowPtr<Case> in) {
 }
 
 SyntaxTree::Switch *AstWriter::From(FlowPtr<Switch> in) {
-  /// TODO: From input to protobuf structure
-  qcore_implement();
-  (void)in;
+  auto *object = Pool::CreateMessage<SyntaxTree::Switch>(&m_arena);
+
+  object->set_allocated_location(FromSource(in));
+  object->set_allocated_condition(From(in->GetCond()));
+
+  { /* Add all cases */
+    const auto &items = in->GetCases();
+
+    object->mutable_cases()->Reserve(items.size());
+    std::for_each(items.begin(), items.end(), [&](auto item) {
+      object->mutable_cases()->AddAllocated(From(item));
+    });
+  }
+
+  if (in->GetDefault().has_value()) {
+    object->set_allocated_default_(From(in->GetDefault().value()));
+  }
+
+  return object;
 }
 
 SyntaxTree::Typedef *AstWriter::From(FlowPtr<Typedef> in) {
@@ -1093,15 +1488,43 @@ SyntaxTree::Enum *AstWriter::From(FlowPtr<Enum> in) {
 }
 
 SyntaxTree::Scope *AstWriter::From(FlowPtr<Scope> in) {
-  /// TODO: From input to protobuf structure
-  qcore_implement();
-  (void)in;
+  auto *object = Pool::CreateMessage<SyntaxTree::Scope>(&m_arena);
+
+  object->set_allocated_location(FromSource(in));
+
+  { /* Add all dependencies */
+    const auto &items = in->GetDeps();
+    std::vector<std::string_view> names(items.size());
+    std::transform(items.begin(), items.end(), names.begin(),
+                   [](auto item) { return item.Get(); });
+
+    object->mutable_dependencies()->Assign(names.begin(), names.end());
+  }
+
+  object->set_name(in->GetName().Get());
+  object->set_allocated_body(From(in->GetBody()));
+
+  return object;
 }
 
 SyntaxTree::Export *AstWriter::From(FlowPtr<Export> in) {
-  /// TODO: From input to protobuf structure
-  qcore_implement();
-  (void)in;
+  auto *object = Pool::CreateMessage<SyntaxTree::Export>(&m_arena);
+
+  object->set_allocated_location(FromSource(in));
+  object->set_abi_name(in->GetAbiName().Get());
+  object->set_allocated_body(From(in->GetBody()));
+  object->set_visibility(FromVisibility(in->GetVis()));
+
+  { /* Add all attributes */
+    const auto &items = in->GetAttrs();
+
+    object->mutable_attributes()->Reserve(items.size());
+    std::for_each(items.begin(), items.end(), [&](auto item) {
+      object->mutable_attributes()->AddAllocated(From(item));
+    });
+  }
+
+  return object;
 }
 
 ////////////////////////////////////////////////////////////////////////////////
