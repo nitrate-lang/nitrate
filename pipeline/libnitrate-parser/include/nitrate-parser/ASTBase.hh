@@ -139,11 +139,11 @@ namespace ncc::parse {
         return QAST_BASE;
       } else if constexpr (std::is_same_v<T, Type>) {
         return QAST_BASE;
-      } else if constexpr (std::is_same_v<T, BinExpr>) {
+      } else if constexpr (std::is_same_v<T, Binary>) {
         return QAST_BINEXPR;
-      } else if constexpr (std::is_same_v<T, UnaryExpr>) {
+      } else if constexpr (std::is_same_v<T, Unary>) {
         return QAST_UNEXPR;
-      } else if constexpr (std::is_same_v<T, TernaryExpr>) {
+      } else if constexpr (std::is_same_v<T, Ternary>) {
         return QAST_TEREXPR;
       } else if constexpr (std::is_same_v<T, Integer>) {
         return QAST_INT;

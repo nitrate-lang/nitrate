@@ -417,7 +417,7 @@ enum Operator {
   Range = 51;       /* '..':         Range operator */
   Ellipsis = 52;    /* '...':        Ellipsis operator */
   Arrow = 53;       /* '=>':         Arrow operator */
-  Ternary = 54;     /* '?':          Ternary operator */
+  Question = 54;    /* '?':          Question operator */
 };
 
 message StmtExpr {
@@ -434,7 +434,7 @@ message TypeExpr {
   required Type type = 4;
 }
 
-message UnaryExpr {
+message Unary {
   optional SourceLocationRange location = 1;
   repeated UserComment comments = 2;
 
@@ -442,7 +442,7 @@ message UnaryExpr {
   required Expr operand = 5;
 }
 
-message BinExpr {
+message Binary {
   optional SourceLocationRange location = 1;
   repeated UserComment comments = 2;
 
@@ -459,7 +459,7 @@ message PostUnary {
   required Expr operand = 5;
 }
 
-message TernaryExpr {
+message Ternary {
   optional SourceLocationRange location = 1;
   repeated UserComment comments = 2;
 
@@ -775,10 +775,10 @@ message Expr {
     Base base = 1;
     StmtExpr stmt_expr = 2;
     TypeExpr type_expr = 3;
-    UnaryExpr unary_expr = 4;
-    BinExpr binary_expr = 5;
+    Unary unary = 4;
+    Binary binary = 5;
     PostUnary post_unary = 6;
-    TernaryExpr ternary_expr = 7;
+    Ternary ternary = 7;
     Integer integer = 8;
     Float float = 9;
     Boolean boolean = 10;
@@ -801,7 +801,7 @@ message Expr {
 message Stmt {
   oneof node {
     Base base = 1;
-    ExprStmt expr = 2;
+    ExprStmt expr_stmt = 2;
     Block block = 3;
     Variable variable = 4;
     Assembly assembly = 5;
@@ -858,12 +858,12 @@ message Type {
 message Root {
   oneof node {
     Base base = 1;
-    StmtExpr stmt = 2;
-    TypeExpr type = 3;
-    UnaryExpr unary = 4;
-    BinExpr binary = 5;
+    StmtExpr stmt_expr = 2;
+    TypeExpr type_expr = 3;
+    Unary unary = 4;
+    Binary binary = 5;
     PostUnary post_unary = 6;
-    TernaryExpr ternary = 7;
+    Ternary ternary = 7;
     Integer integer = 8;
     Float float = 9;
     Boolean boolean = 10;

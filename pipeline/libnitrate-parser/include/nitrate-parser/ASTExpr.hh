@@ -57,24 +57,24 @@ namespace ncc::parse {
     [[nodiscard]] constexpr auto GetType() const { return m_type; }
   };
 
-  class UnaryExpr final : public Expr {
+  class Unary final : public Expr {
     FlowPtr<Expr> m_rhs;
     lex::Operator m_op;
 
   public:
-    constexpr UnaryExpr(auto op, auto rhs)
+    constexpr Unary(auto op, auto rhs)
         : Expr(QAST_UNEXPR), m_rhs(std::move(rhs)), m_op(op) {}
 
     [[nodiscard]] constexpr auto GetRHS() const { return m_rhs; }
     [[nodiscard]] constexpr auto GetOp() const { return m_op; }
   };
 
-  class BinExpr final : public Expr {
+  class Binary final : public Expr {
     FlowPtr<Expr> m_lhs, m_rhs;
     lex::Operator m_op;
 
   public:
-    constexpr BinExpr(auto lhs, auto op, auto rhs)
+    constexpr Binary(auto lhs, auto op, auto rhs)
         : Expr(QAST_BINEXPR),
           m_lhs(std::move(lhs)),
           m_rhs(std::move(rhs)),
@@ -97,11 +97,11 @@ namespace ncc::parse {
     [[nodiscard]] constexpr auto GetOp() const { return m_op; }
   };
 
-  class TernaryExpr final : public Expr {
+  class Ternary final : public Expr {
     FlowPtr<Expr> m_cond, m_lhs, m_rhs;
 
   public:
-    constexpr TernaryExpr(auto cond, auto lhs, auto rhs)
+    constexpr Ternary(auto cond, auto lhs, auto rhs)
         : Expr(QAST_TEREXPR),
           m_cond(std::move(cond)),
           m_lhs(std::move(lhs)),

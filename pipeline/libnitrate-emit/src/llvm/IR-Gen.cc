@@ -575,7 +575,7 @@ public:
 
 // namespace lower {
 //   namespace expr {
-//     static val_t for_BINEXPR(ctx_t &m, craft_t &b, State &s, const BinExpr
+//     static val_t for_BINEXPR(ctx_t &m, craft_t &b, State &s, const Binary
 //     *N) {
 // #define PROD_LHS()              \
 //   val_t L = V(N->getLHS());     \
@@ -1758,7 +1758,7 @@ public:
 //       using namespace lower::expr;
 //       using namespace lower::symbol;
 
-//       FUNCTION(IR_eBIN, for_BINEXPR, BinExpr);
+//       FUNCTION(IR_eBIN, for_BINEXPR, Binary);
 //       FUNCTION(IR_eUNARY, for_UNEXPR, Unary);
 //       FUNCTION(IR_eINT, for_INT, Int);
 //       FUNCTION(IR_eFLOAT, for_FLOAT, Float);

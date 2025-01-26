@@ -129,10 +129,10 @@ namespace no3::lsp::fmt {
     void Visit(FlowPtr<parse::ArrayTy> n) override;
     void Visit(FlowPtr<parse::RefTy> n) override;
     void Visit(FlowPtr<parse::FuncTy> n) override;
-    void Visit(FlowPtr<parse::UnaryExpr> n) override;
-    void Visit(FlowPtr<parse::BinExpr> n) override;
+    void Visit(FlowPtr<parse::Unary> n) override;
+    void Visit(FlowPtr<parse::Binary> n) override;
     void Visit(FlowPtr<parse::PostUnary> n) override;
-    void Visit(FlowPtr<parse::TernaryExpr> n) override;
+    void Visit(FlowPtr<parse::Ternary> n) override;
     void Visit(FlowPtr<parse::Integer> n) override;
     void Visit(FlowPtr<parse::Float> n) override;
     void Visit(FlowPtr<parse::Boolean> n) override;

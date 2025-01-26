@@ -45,9 +45,9 @@
 
 namespace nitrate::parser::SyntaxTree {  // NOLINT
   class Base;
-  class BinExpr;
-  class UnaryExpr;
-  class TernaryExpr;
+  class Binary;
+  class Unary;
+  class Ternary;
   class Integer;
   class Float;
   class String;
@@ -163,10 +163,10 @@ namespace ncc::parse {
     SyntaxTree::ArrayTy *From(FlowPtr<ArrayTy> in);
     SyntaxTree::RefTy *From(FlowPtr<RefTy> in);
     SyntaxTree::FuncTy *From(FlowPtr<FuncTy> in);
-    SyntaxTree::UnaryExpr *From(FlowPtr<UnaryExpr> in);
-    SyntaxTree::BinExpr *From(FlowPtr<BinExpr> in);
+    SyntaxTree::Unary *From(FlowPtr<Unary> in);
+    SyntaxTree::Binary *From(FlowPtr<Binary> in);
     SyntaxTree::PostUnary *From(FlowPtr<PostUnary> in);
-    SyntaxTree::TernaryExpr *From(FlowPtr<TernaryExpr> in);
+    SyntaxTree::Ternary *From(FlowPtr<Ternary> in);
     SyntaxTree::Integer *From(FlowPtr<Integer> in);
     SyntaxTree::Float *From(FlowPtr<Float> in);
     SyntaxTree::Boolean *From(FlowPtr<Boolean> in);
@@ -233,10 +233,10 @@ namespace ncc::parse {
     void Visit(FlowPtr<ArrayTy> n) override;
     void Visit(FlowPtr<RefTy> n) override;
     void Visit(FlowPtr<FuncTy> n) override;
-    void Visit(FlowPtr<UnaryExpr> n) override;
-    void Visit(FlowPtr<BinExpr> n) override;
+    void Visit(FlowPtr<Unary> n) override;
+    void Visit(FlowPtr<Binary> n) override;
     void Visit(FlowPtr<PostUnary> n) override;
-    void Visit(FlowPtr<TernaryExpr> n) override;
+    void Visit(FlowPtr<Ternary> n) override;
     void Visit(FlowPtr<Integer> n) override;
     void Visit(FlowPtr<Float> n) override;
     void Visit(FlowPtr<Boolean> n) override;

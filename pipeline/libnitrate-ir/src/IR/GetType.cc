@@ -183,8 +183,8 @@ static NullableFlowPtr<Type> Promote(NullableFlowPtr<Type> lhs,
 
 ////////////////////////////////////////////////////////////////////////////////
 
-static NullableFlowPtr<Type> InferUnaryExpression(NullableFlowPtr<Type> e,
-                                                  lex::Operator o) {
+static NullableFlowPtr<Type> InferUnaryession(NullableFlowPtr<Type> e,
+                                              lex::Operator o) {
   using namespace lex;
 
   NullableFlowPtr<ir::Type> r;
@@ -306,9 +306,9 @@ static NullableFlowPtr<Type> InferUnaryExpression(NullableFlowPtr<Type> e,
   return e;
 }
 
-static NullableFlowPtr<Type> InferBinExpr(NullableFlowPtr<Type> lhs,
-                                          lex::Operator o,
-                                          const NullableFlowPtr<Type>& rhs) {
+static NullableFlowPtr<Type> InferBinary(NullableFlowPtr<Type> lhs,
+                                         lex::Operator o,
+                                         const NullableFlowPtr<Type>& rhs) {
   using namespace lex;
 
   NullableFlowPtr<ir::Type> r;
@@ -395,18 +395,18 @@ public:
 
   void Visit(FlowPtr<Expr>) override {}
 
-  void Visit(FlowPtr<BinExpr> n) override {
+  void Visit(FlowPtr<Binary> n) override {
     auto lhs = n->GetLHS()->GetType();
     auto rhs = n->GetRHS()->GetType();
 
-    if (auto type = InferBinExpr(lhs, n->GetOp(), rhs)) {
+    if (auto type = InferBinary(lhs, n->GetOp(), rhs)) {
       m_r = type.value();
     }
   }
 
   void Visit(FlowPtr<Unary> n) override {
     if (auto e = n->GetExpr()->GetType()) {
-      if (auto type = InferUnaryExpression(e.value(), n->GetOp())) {
+      if (auto type = InferUnaryession(e.value(), n->GetOp())) {
         m_r = type.value();
       }
     }

@@ -457,7 +457,7 @@
 //     }
 
 //     case IR_tPTR: {
-//       E = create<BinExpr>(createFixedInteger(0, 64), _for, Op::BitcastAs);
+//       E = create<Binary>(createFixedInteger(0, 64), _for, Op::BitcastAs);
 //       break;
 //     }
 
@@ -465,7 +465,7 @@
 //       ConstTy *const_ty = _for->As<ConstTy>();
 //       auto e = getDefaultValue(const_ty->GetItem());
 //       if (e) {
-//         E = create<BinExpr>(e.value(), _for, Op::CastAs);
+//         E = create<Binary>(e.value(), _for, Op::CastAs);
 //       }
 //       break;
 //     }
@@ -488,7 +488,7 @@
 //         fields[i] = f.value();
 //       }
 
-//       E = create<BinExpr>(createList(fields, false), _for, Op::CastAs);
+//       E = create<Binary>(createList(fields, false), _for, Op::CastAs);
 
 //     end:
 //       break;
@@ -498,7 +498,7 @@
 //       UnionTy *union_ty = _for->As<UnionTy>();
 
 //       if (union_ty->getFields().empty()) {
-//         E = create<BinExpr>(createList({}, false), _for, Op::CastAs);
+//         E = create<Binary>(createList({}, false), _for, Op::CastAs);
 //       } else {
 //         E = getDefaultValue(union_ty->getFields()[0]);
 //       }
@@ -523,7 +523,7 @@
 //         elements[i] = f.value();
 //       }
 
-//       E = create<BinExpr>(createList(elements, true), _for, Op::CastAs);
+//       E = create<Binary>(createList(elements, true), _for, Op::CastAs);
 
 //     end2:
 //       break;
@@ -531,7 +531,7 @@
 
 //     case IR_tFUNC: {
 //       FnTy *fn_ty = _for->As<FnTy>();
-//       E = create<BinExpr>(createFixedInteger(0, 64), fn_ty, Op::BitcastAs);
+//       E = create<Binary>(createFixedInteger(0, 64), fn_ty, Op::BitcastAs);
 //       break;
 //     }
 
@@ -555,7 +555,7 @@
 
 //   if (auto type = E.value()->GetType()) {
 //     if (!type.value()->IsEq(_for)) {
-//       E = create<BinExpr>(E.value(), _for->asExpr(), Op::CastAs);
+//       E = create<Binary>(E.value(), _for->asExpr(), Op::CastAs);
 //     }
 //   }
 

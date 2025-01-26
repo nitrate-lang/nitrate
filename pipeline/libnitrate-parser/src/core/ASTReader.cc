@@ -748,7 +748,7 @@ NullableFlowPtr<Base> AstReader::ReadKindNode() {  // NOLINT
   return CreateNode<Base>(QAST_BASE)();
 }
 
-auto AstReader::ReadKindBinexpr() -> NullableFlowPtr<BinExpr> {
+auto AstReader::ReadKindBinexpr() -> NullableFlowPtr<Binary> {
   if (!NextIf<std::string>("op") || !NextIs<std::string>()) {
     return nullptr;
   }
@@ -778,10 +778,10 @@ auto AstReader::ReadKindBinexpr() -> NullableFlowPtr<BinExpr> {
     return nullptr;
   }
 
-  return CreateNode<BinExpr>(lhs.value(), op_it->second, rhs.value())();
+  return CreateNode<Binary>(lhs.value(), op_it->second, rhs.value())();
 }
 
-auto AstReader::ReadKindUnexpr() -> NullableFlowPtr<UnaryExpr> {
+auto AstReader::ReadKindUnexpr() -> NullableFlowPtr<Unary> {
   if (!NextIf<std::string>("op") || !NextIs<std::string>()) {
     return nullptr;
   }
@@ -802,7 +802,7 @@ auto AstReader::ReadKindUnexpr() -> NullableFlowPtr<UnaryExpr> {
     return nullptr;
   }
 
-  return CreateNode<UnaryExpr>(op_it->second, rhs.value())();
+  return CreateNode<Unary>(op_it->second, rhs.value())();
 }
 
 auto AstReader::ReadKindPostUnexpr() -> NullableFlowPtr<PostUnary> {
@@ -829,7 +829,7 @@ auto AstReader::ReadKindPostUnexpr() -> NullableFlowPtr<PostUnary> {
   return CreateNode<PostUnary>(lhs.value(), op_it->second)();
 }
 
-auto AstReader::ReadKindTerexpr() -> NullableFlowPtr<TernaryExpr> {
+auto AstReader::ReadKindTerexpr() -> NullableFlowPtr<Ternary> {
   if (!NextIf<std::string>("cond")) {
     return nullptr;
   }
@@ -857,7 +857,7 @@ auto AstReader::ReadKindTerexpr() -> NullableFlowPtr<TernaryExpr> {
     return nullptr;
   }
 
-  return CreateNode<TernaryExpr>(cond.value(), lhs.value(), rhs.value())();
+  return CreateNode<Ternary>(cond.value(), lhs.value(), rhs.value())();
 }
 
 auto AstReader::ReadKindInt() -> NullableFlowPtr<Integer> {

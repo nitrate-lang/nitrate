@@ -381,8 +381,7 @@ void CambrianFormatter::Visit(FlowPtr<TemplateType> n) {
       n->GetTemplate()->As<NamedTy>()->GetName() == "__builtin_meta" &&
       n->GetArgs().size() == 1 &&
       n->GetArgs().front().second->Is(QAST_UNEXPR) &&
-      n->GetArgs().front().second.template As<UnaryExpr>()->GetOp() ==
-          OpComptime;
+      n->GetArgs().front().second.template As<Unary>()->GetOp() == OpComptime;
 
   const auto print_without_type_keyword = [&](auto node) {
     if (node->Is(QAST_TEXPR)) {
@@ -412,8 +411,7 @@ void CambrianFormatter::Visit(FlowPtr<TemplateType> n) {
     m_line << "}";
   } else if (is_comptime) {
     m_line << "comptime(";
-    n->GetArgs().front().second.template As<UnaryExpr>()->GetRHS().Accept(
-        *this);
+    n->GetArgs().front().second.template As<Unary>()->GetRHS().Accept(*this);
     m_line << ")";
   } else {
     n->GetTemplate().Accept(*this);
@@ -685,7 +683,7 @@ void CambrianFormatter::Visit(FlowPtr<FuncTy> n) {
   n->GetReturn().Accept(*this);
 }
 
-void CambrianFormatter::Visit(FlowPtr<UnaryExpr> n) {
+void CambrianFormatter::Visit(FlowPtr<Unary> n) {
   static const std::unordered_set<Operator> word_ops = {
       OpAs,        OpBitcastAs, OpIn,     OpOut,     OpSizeof,
       OpBitsizeof, OpAlignof,   OpTypeof, OpComptime};
@@ -700,7 +698,7 @@ void CambrianFormatter::Visit(FlowPtr<UnaryExpr> n) {
   m_line << ")";
 }
 
-void CambrianFormatter::Visit(FlowPtr<BinExpr> n) {
+void CambrianFormatter::Visit(FlowPtr<Binary> n) {
   PrintMultilineComments(n);
 
   if (n->GetOp() == OpDot) {
@@ -724,7 +722,7 @@ void CambrianFormatter::Visit(FlowPtr<PostUnary> n) {
   m_line << n->GetOp() << ")";
 }
 
-void CambrianFormatter::Visit(FlowPtr<TernaryExpr> n) {
+void CambrianFormatter::Visit(FlowPtr<Ternary> n) {
   PrintMultilineComments(n);
 
   m_line << "(";
