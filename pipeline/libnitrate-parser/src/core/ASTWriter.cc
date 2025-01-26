@@ -436,9 +436,11 @@ SyntaxTree::Type *AstWriter::From(FlowPtr<Type> in) {
 }
 
 SyntaxTree::Base *AstWriter::From(FlowPtr<Base> in) {
-  /// TODO: From input to protobuf structure
-  qcore_implement();
-  (void)in;
+  auto *object = Pool::Create<SyntaxTree::Base>(&m_arena);
+
+  object->set_allocated_from(FromSource(std::move(in)));
+
+  return object;
 }
 
 SyntaxTree::ExprStmt *AstWriter::From(FlowPtr<ExprStmt> in) {
@@ -649,9 +651,13 @@ SyntaxTree::PtrTy *AstWriter::From(FlowPtr<PtrTy> in) {
 }
 
 SyntaxTree::OpaqueTy *AstWriter::From(FlowPtr<OpaqueTy> in) {
-  /// TODO: From input to protobuf structure
-  qcore_implement();
-  (void)in;
+  auto *object = Pool::Create<SyntaxTree::OpaqueTy>(&m_arena);
+
+  object->set_allocated_from(FromSource(in));
+  object->set_identity_name(in->GetName().Get());
+  AttachTypeMetadata(object, in);
+
+  return object;
 }
 
 SyntaxTree::TupleTy *AstWriter::From(FlowPtr<TupleTy> in) {
@@ -661,15 +667,24 @@ SyntaxTree::TupleTy *AstWriter::From(FlowPtr<TupleTy> in) {
 }
 
 SyntaxTree::ArrayTy *AstWriter::From(FlowPtr<ArrayTy> in) {
-  /// TODO: From input to protobuf structure
-  qcore_implement();
-  (void)in;
+  auto *object = Pool::Create<SyntaxTree::ArrayTy>(&m_arena);
+
+  object->set_allocated_from(FromSource(in));
+  object->set_allocated_element_type(From(in->GetItem()));
+  object->set_allocated_element_count(From(in->GetSize()));
+  AttachTypeMetadata(object, in);
+
+  return object;
 }
 
 SyntaxTree::RefTy *AstWriter::From(FlowPtr<RefTy> in) {
-  /// TODO: From input to protobuf structure
-  qcore_implement();
-  (void)in;
+  auto *object = Pool::Create<SyntaxTree::RefTy>(&m_arena);
+
+  object->set_allocated_from(FromSource(in));
+  object->set_allocated_pointee_type(From(in->GetItem()));
+  AttachTypeMetadata(object, in);
+
+  return object;
 }
 
 SyntaxTree::FuncTy *AstWriter::From(FlowPtr<FuncTy> in) {
@@ -704,45 +719,64 @@ SyntaxTree::TernaryExpr *AstWriter::From(FlowPtr<TernaryExpr> in) {
 }
 
 SyntaxTree::Integer *AstWriter::From(FlowPtr<Integer> in) {
-  /// TODO: From input to protobuf structure
-  qcore_implement();
-  (void)in;
+  auto *object = Pool::Create<SyntaxTree::Integer>(&m_arena);
+
+  object->set_allocated_from(FromSource(in));
+  object->set_value(in->GetValue());
+
+  return object;
 }
 
 SyntaxTree::Float *AstWriter::From(FlowPtr<Float> in) {
-  /// TODO: From input to protobuf structure
-  qcore_implement();
-  (void)in;
+  auto *object = Pool::Create<SyntaxTree::Float>(&m_arena);
+
+  object->set_allocated_from(FromSource(in));
+  object->set_value(in->GetValue());
+
+  return object;
 }
 
 SyntaxTree::Boolean *AstWriter::From(FlowPtr<Boolean> in) {
-  /// TODO: From input to protobuf structure
-  qcore_implement();
-  (void)in;
+  auto *object = Pool::Create<SyntaxTree::Boolean>(&m_arena);
+
+  object->set_allocated_from(FromSource(in));
+  object->set_value(in->GetValue());
+
+  return object;
 }
 
 SyntaxTree::String *AstWriter::From(FlowPtr<String> in) {
-  /// TODO: From input to protobuf structure
-  qcore_implement();
-  (void)in;
+  auto *object = Pool::Create<SyntaxTree::String>(&m_arena);
+
+  object->set_allocated_from(FromSource(in));
+  object->set_value(in->GetValue().Get());
+
+  return object;
 }
 
 SyntaxTree::Character *AstWriter::From(FlowPtr<Character> in) {
-  /// TODO: From input to protobuf structure
-  qcore_implement();
-  (void)in;
+  auto *object = Pool::Create<SyntaxTree::Character>(&m_arena);
+
+  object->set_allocated_from(FromSource(in));
+  object->set_value(in->GetValue());
+
+  return object;
 }
 
 SyntaxTree::Null *AstWriter::From(FlowPtr<Null> in) {
-  /// TODO: From input to protobuf structure
-  qcore_implement();
-  (void)in;
+  auto *object = Pool::Create<SyntaxTree::Null>(&m_arena);
+
+  object->set_allocated_from(FromSource(in));
+
+  return object;
 }
 
 SyntaxTree::Undefined *AstWriter::From(FlowPtr<Undefined> in) {
-  /// TODO: From input to protobuf structure
-  qcore_implement();
-  (void)in;
+  auto *object = Pool::Create<SyntaxTree::Undefined>(&m_arena);
+
+  object->set_allocated_from(FromSource(in));
+
+  return object;
 }
 
 SyntaxTree::Call *AstWriter::From(FlowPtr<Call> in) {
@@ -764,21 +798,34 @@ SyntaxTree::List *AstWriter::From(FlowPtr<List> in) {
 }
 
 SyntaxTree::Assoc *AstWriter::From(FlowPtr<Assoc> in) {
-  /// TODO: From input to protobuf structure
-  qcore_implement();
-  (void)in;
+  auto *object = Pool::Create<SyntaxTree::Assoc>(&m_arena);
+
+  object->set_allocated_from(FromSource(in));
+  object->set_allocated_key(From(in->GetKey()));
+  object->set_allocated_value(From(in->GetValue()));
+
+  return object;
 }
 
 SyntaxTree::Index *AstWriter::From(FlowPtr<Index> in) {
-  /// TODO: From input to protobuf structure
-  qcore_implement();
-  (void)in;
+  auto *object = Pool::Create<SyntaxTree::Index>(&m_arena);
+
+  object->set_allocated_from(FromSource(in));
+  object->set_allocated_base(From(in->GetBase()));
+  object->set_allocated_index(From(in->GetIndex()));
+
+  return object;
 }
 
 SyntaxTree::Slice *AstWriter::From(FlowPtr<Slice> in) {
-  /// TODO: From input to protobuf structure
-  qcore_implement();
-  (void)in;
+  auto *object = Pool::Create<SyntaxTree::Slice>(&m_arena);
+
+  object->set_allocated_from(FromSource(in));
+  object->set_allocated_base(From(in->GetBase()));
+  object->set_allocated_start(From(in->GetStart()));
+  object->set_allocated_end(From(in->GetEnd()));
+
+  return object;
 }
 
 SyntaxTree::FString *AstWriter::From(FlowPtr<FString> in) {
@@ -788,9 +835,12 @@ SyntaxTree::FString *AstWriter::From(FlowPtr<FString> in) {
 }
 
 SyntaxTree::Identifier *AstWriter::From(FlowPtr<Identifier> in) {
-  /// TODO: From input to protobuf structure
-  qcore_implement();
-  (void)in;
+  auto *object = Pool::Create<SyntaxTree::Identifier>(&m_arena);
+
+  object->set_allocated_from(FromSource(in));
+  object->set_name(in->GetName().Get());
+
+  return object;
 }
 
 SyntaxTree::Sequence *AstWriter::From(FlowPtr<Sequence> in) {
@@ -818,57 +868,108 @@ SyntaxTree::Assembly *AstWriter::From(FlowPtr<Assembly> in) {
 }
 
 SyntaxTree::If *AstWriter::From(FlowPtr<If> in) {
-  /// TODO: From input to protobuf structure
-  qcore_implement();
-  (void)in;
+  auto *object = Pool::Create<SyntaxTree::If>(&m_arena);
+
+  object->set_allocated_from(FromSource(in));
+  object->set_allocated_condition(From(in->GetCond()));
+  object->set_allocated_then(From(in->GetThen()));
+
+  if (in->GetElse().has_value()) {
+    object->set_allocated_else_(From(in->GetElse().value()));
+  }
+
+  return object;
 }
 
 SyntaxTree::While *AstWriter::From(FlowPtr<While> in) {
-  /// TODO: From input to protobuf structure
-  qcore_implement();
-  (void)in;
+  auto *object = Pool::Create<SyntaxTree::While>(&m_arena);
+
+  object->set_allocated_from(FromSource(in));
+  object->set_allocated_condition(From(in->GetCond()));
+  object->set_allocated_body(From(in->GetBody()));
+
+  return object;
 }
 
 SyntaxTree::For *AstWriter::From(FlowPtr<For> in) {
-  /// TODO: From input to protobuf structure
-  qcore_implement();
-  (void)in;
+  auto *object = Pool::Create<SyntaxTree::For>(&m_arena);
+
+  object->set_allocated_from(FromSource(in));
+
+  if (in->GetInit().has_value()) {
+    object->set_allocated_init(From(in->GetInit().value()));
+  }
+
+  if (in->GetCond().has_value()) {
+    object->set_allocated_condition(From(in->GetCond().value()));
+  }
+
+  if (in->GetStep().has_value()) {
+    object->set_allocated_step(From(in->GetStep().value()));
+  }
+
+  object->set_allocated_body(From(in->GetBody()));
+
+  return object;
 }
 
 SyntaxTree::Foreach *AstWriter::From(FlowPtr<Foreach> in) {
-  /// TODO: From input to protobuf structure
-  qcore_implement();
-  (void)in;
+  auto *object = Pool::Create<SyntaxTree::Foreach>(&m_arena);
+
+  object->set_allocated_from(FromSource(in));
+  object->set_index_name(in->GetIdxIdentifier().Get());
+  object->set_value_name(in->GetValIdentifier().Get());
+  object->set_allocated_expr(From(in->GetExpr()));
+  object->set_allocated_body(From(in->GetBody()));
+
+  return object;
 }
 
 SyntaxTree::Break *AstWriter::From(FlowPtr<Break> in) {
-  /// TODO: From input to protobuf structure
-  qcore_implement();
-  (void)in;
+  auto *object = Pool::Create<SyntaxTree::Break>(&m_arena);
+
+  object->set_allocated_from(FromSource(in));
+
+  return object;
 }
 
 SyntaxTree::Continue *AstWriter::From(FlowPtr<Continue> in) {
-  /// TODO: From input to protobuf structure
-  qcore_implement();
-  (void)in;
+  auto *object = Pool::Create<SyntaxTree::Continue>(&m_arena);
+
+  object->set_allocated_from(FromSource(in));
+
+  return object;
 }
 
 SyntaxTree::Return *AstWriter::From(FlowPtr<Return> in) {
-  /// TODO: From input to protobuf structure
-  qcore_implement();
-  (void)in;
+  auto *object = Pool::Create<SyntaxTree::Return>(&m_arena);
+
+  object->set_allocated_from(FromSource(in));
+  if (in->GetValue().has_value()) {
+    object->set_allocated_value(From(in->GetValue().value()));
+  }
+
+  return object;
 }
 
 SyntaxTree::ReturnIf *AstWriter::From(FlowPtr<ReturnIf> in) {
-  /// TODO: From input to protobuf structure
-  qcore_implement();
-  (void)in;
+  auto *object = Pool::Create<SyntaxTree::ReturnIf>(&m_arena);
+
+  object->set_allocated_from(FromSource(in));
+  object->set_allocated_condition(From(in->GetCond()));
+  object->set_allocated_value(From(in->GetValue()));
+
+  return object;
 }
 
 SyntaxTree::Case *AstWriter::From(FlowPtr<Case> in) {
-  /// TODO: From input to protobuf structure
-  qcore_implement();
-  (void)in;
+  auto *object = Pool::Create<SyntaxTree::Case>(&m_arena);
+
+  object->set_allocated_from(FromSource(in));
+  object->set_allocated_condition(From(in->GetCond()));
+  object->set_allocated_body(From(in->GetBody()));
+
+  return object;
 }
 
 SyntaxTree::Switch *AstWriter::From(FlowPtr<Switch> in) {
@@ -878,9 +979,13 @@ SyntaxTree::Switch *AstWriter::From(FlowPtr<Switch> in) {
 }
 
 SyntaxTree::Typedef *AstWriter::From(FlowPtr<Typedef> in) {
-  /// TODO: From input to protobuf structure
-  qcore_implement();
-  (void)in;
+  auto *object = Pool::Create<SyntaxTree::Typedef>(&m_arena);
+
+  object->set_allocated_from(FromSource(in));
+  object->set_name(in->GetName().Get());
+  object->set_allocated_type(From(in->GetType()));
+
+  return object;
 }
 
 SyntaxTree::Function *AstWriter::From(FlowPtr<Function> in) {
