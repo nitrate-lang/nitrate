@@ -35,3 +35,14 @@
 
 using namespace no3::lsp::fmt;
 using namespace ncc::parse;
+
+void CambrianFormatter::Visit(FlowPtr<Sequence> n) {
+  PrintMultilineComments(n);
+
+  m_line << "(";
+  IterateExceptLast(
+      n->GetItems().begin(), n->GetItems().end(),
+      [&](auto item, size_t) { item.Accept(*this); },
+      [&](let) { m_line << ", "; });
+  m_line << ")";
+}

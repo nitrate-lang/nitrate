@@ -36,54 +36,52 @@
 using namespace no3::lsp::fmt;
 using namespace ncc::parse;
 
-void CambrianFormatter::WriteFloatLiteralChunk(std::string_view float_str) {
-  constexpr size_t kInsertSepEvery = 10;
+void CambrianFormatter::Visit(FlowPtr<parse::For> n) {
+  PrintLineComments(n);
 
-  bool already_write_type_suffix = false;
+  m_line << "for (";
 
-  for (size_t i = 0; i < float_str.size(); i++) {
-    bool underscore = false;
-
-    if (!already_write_type_suffix && i != 0 && (i % (kInsertSepEvery)) == 0) {
-      underscore = true;
-    } else if (!already_write_type_suffix &&
-               (std::isdigit(float_str[i]) == 0) && float_str[i] != '.') {
-      already_write_type_suffix = true;
-      underscore = true;
+  if (n->GetInit().has_value()) {
+    n->GetInit().value().Accept(*this);
+    if (!n->GetInit().value()->IsStmt()) {
+      m_line << ";";
     }
-
-    if (underscore) {
-      m_line << "_";
-    }
-
-    m_line << float_str[i];
+  } else {
+    m_line << ";";
   }
+
+  if (n->GetCond().has_value()) {
+    m_line << " ";
+    n->GetCond().value().Accept(*this);
+  }
+  m_line << ";";
+
+  if (n->GetStep().has_value()) {
+    m_line << " ";
+    n->GetStep().value().Accept(*this);
+  }
+
+  m_line << ") ";
+  n->GetBody().Accept(*this);
+
+  m_line << ";";
 }
 
-void CambrianFormatter::WriteFloatLiteral(std::string_view float_str) {
-  constexpr size_t kMaxChunkSize = 50;
+void CambrianFormatter::Visit(FlowPtr<parse::Foreach> n) {
+  PrintLineComments(n);
 
-  if (float_str.empty()) {
-    m_line << "";
+  m_line << "foreach (";
+  if (n->GetIdxIdentifier()->empty()) {
+    m_line << n->GetValIdentifier();
+  } else {
+    m_line << n->GetIdxIdentifier() << ", " << n->GetValIdentifier();
   }
 
-  size_t chunks_n = float_str.size() / kMaxChunkSize;
-  size_t rem = float_str.size() % kMaxChunkSize;
+  m_line << " in ";
+  n->GetExpr().Accept(*this);
+  m_line << ") ";
 
-  size_t m_line_size = m_line.Length();
+  n->GetBody().Accept(*this);
 
-  for (size_t i = 0; i < chunks_n; i++) {
-    WriteFloatLiteralChunk(float_str.substr(i * kMaxChunkSize, kMaxChunkSize));
-
-    if (rem > 0 || i < chunks_n - 1) {
-      m_line << "_ \\" << std::endl;
-      if (m_line_size != 0U) {
-        m_line << std::string(m_line_size, ' ');
-      }
-    }
-  }
-
-  if (rem > 0) {
-    WriteFloatLiteralChunk(float_str.substr(chunks_n * kMaxChunkSize, rem));
-  }
+  m_line << ";";
 }

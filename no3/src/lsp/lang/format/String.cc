@@ -177,3 +177,31 @@ void CambrianFormatter::EscapeStringLiteral(std::string_view str,
     }
   }
 }
+
+void CambrianFormatter::Visit(FlowPtr<parse::String> n) {
+  PrintMultilineComments(n);
+
+  EscapeStringLiteral(n->GetValue());
+}
+
+void CambrianFormatter::Visit(FlowPtr<Character> n) {
+  PrintMultilineComments(n);
+
+  m_line << EscapeCharLiteral(n->GetValue());
+}
+
+void CambrianFormatter::Visit(FlowPtr<FString> n) {
+  PrintMultilineComments(n);
+
+  m_line << "f\"";
+  for (auto part : n->GetItems()) {
+    if (std::holds_alternative<ncc::string>(part)) {
+      EscapeStringLiteral(*std::get<ncc::string>(part), false);
+    } else {
+      m_line << "{";
+      std::get<FlowPtr<Expr>>(part).Accept(*this);
+      m_line << "}";
+    }
+  }
+  m_line << "\"";
+}
