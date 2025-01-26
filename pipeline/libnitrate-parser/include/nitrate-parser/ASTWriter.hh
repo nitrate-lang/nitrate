@@ -34,6 +34,8 @@
 #ifndef __NITRATE_AST_WRITER_H__
 #define __NITRATE_AST_WRITER_H__
 
+#include <google/protobuf/arena.h>
+
 #include <functional>
 #include <nitrate-core/Macro.hh>
 #include <nitrate-lexer/Scanner.hh>
@@ -110,6 +112,10 @@ namespace nitrate::parser::SyntaxTree {  // NOLINT
   class Case;
   class Switch;
   class ExprStmt;
+  class Expr;
+  class Stmt;
+  class Type;
+  class SourceLocationRange;
 }  // namespace nitrate::parser::SyntaxTree
 
 namespace ncc::parse {
@@ -119,77 +125,83 @@ namespace ncc::parse {
       std::optional<std::reference_wrapper<lex::IScanner>>;
 
   class NCC_EXPORT AstWriter : public ASTVisitor {
+    google::protobuf::Arena m_arena;
     std::ostream &m_os;
     WriterSourceProvider m_rd;
 
-    SyntaxTree::Base From(const FlowPtr<Base> &in);
-    SyntaxTree::ExprStmt From(const FlowPtr<ExprStmt> &in);
-    SyntaxTree::StmtExpr From(const FlowPtr<StmtExpr> &in);
-    SyntaxTree::TypeExpr From(const FlowPtr<TypeExpr> &in);
-    SyntaxTree::NamedTy From(const FlowPtr<NamedTy> &in);
-    SyntaxTree::InferTy From(const FlowPtr<InferTy> &in);
-    SyntaxTree::TemplateType From(const FlowPtr<TemplateType> &in);
-    SyntaxTree::U1 From(const FlowPtr<U1> &in);
-    SyntaxTree::U8 From(const FlowPtr<U8> &in);
-    SyntaxTree::U16 From(const FlowPtr<U16> &in);
-    SyntaxTree::U32 From(const FlowPtr<U32> &in);
-    SyntaxTree::U64 From(const FlowPtr<U64> &in);
-    SyntaxTree::U128 From(const FlowPtr<U128> &in);
-    SyntaxTree::I8 From(const FlowPtr<I8> &in);
-    SyntaxTree::I16 From(const FlowPtr<I16> &in);
-    SyntaxTree::I32 From(const FlowPtr<I32> &in);
-    SyntaxTree::I64 From(const FlowPtr<I64> &in);
-    SyntaxTree::I128 From(const FlowPtr<I128> &in);
-    SyntaxTree::F16 From(const FlowPtr<F16> &in);
-    SyntaxTree::F32 From(const FlowPtr<F32> &in);
-    SyntaxTree::F64 From(const FlowPtr<F64> &in);
-    SyntaxTree::F128 From(const FlowPtr<F128> &in);
-    SyntaxTree::VoidTy From(const FlowPtr<VoidTy> &in);
-    SyntaxTree::PtrTy From(const FlowPtr<PtrTy> &in);
-    SyntaxTree::OpaqueTy From(const FlowPtr<OpaqueTy> &in);
-    SyntaxTree::TupleTy From(const FlowPtr<TupleTy> &in);
-    SyntaxTree::ArrayTy From(const FlowPtr<ArrayTy> &in);
-    SyntaxTree::RefTy From(const FlowPtr<RefTy> &in);
-    SyntaxTree::FuncTy From(const FlowPtr<FuncTy> &in);
-    SyntaxTree::UnaryExpr From(const FlowPtr<UnaryExpr> &in);
-    SyntaxTree::BinExpr From(const FlowPtr<BinExpr> &in);
-    SyntaxTree::PostUnary From(const FlowPtr<PostUnary> &in);
-    SyntaxTree::TernaryExpr From(const FlowPtr<TernaryExpr> &in);
-    SyntaxTree::Integer From(const FlowPtr<Integer> &in);
-    SyntaxTree::Float From(const FlowPtr<Float> &in);
-    SyntaxTree::Boolean From(const FlowPtr<Boolean> &in);
-    SyntaxTree::String From(const FlowPtr<String> &in);
-    SyntaxTree::Character From(const FlowPtr<Character> &in);
-    SyntaxTree::Null From(const FlowPtr<Null> &in);
-    SyntaxTree::Undefined From(const FlowPtr<Undefined> &in);
-    SyntaxTree::Call From(const FlowPtr<Call> &in);
-    SyntaxTree::TemplateCall From(const FlowPtr<TemplateCall> &in);
-    SyntaxTree::List From(const FlowPtr<List> &in);
-    SyntaxTree::Assoc From(const FlowPtr<Assoc> &in);
-    SyntaxTree::Index From(const FlowPtr<Index> &in);
-    SyntaxTree::Slice From(const FlowPtr<Slice> &in);
-    SyntaxTree::FString From(const FlowPtr<FString> &in);
-    SyntaxTree::Identifier From(const FlowPtr<Identifier> &in);
-    SyntaxTree::Sequence From(const FlowPtr<Sequence> &in);
-    SyntaxTree::Block From(const FlowPtr<Block> &in);
-    SyntaxTree::Variable From(const FlowPtr<Variable> &in);
-    SyntaxTree::Assembly From(const FlowPtr<Assembly> &in);
-    SyntaxTree::If From(const FlowPtr<If> &in);
-    SyntaxTree::While From(const FlowPtr<While> &in);
-    SyntaxTree::For From(const FlowPtr<For> &in);
-    SyntaxTree::Foreach From(const FlowPtr<Foreach> &in);
-    SyntaxTree::Break From(const FlowPtr<Break> &in);
-    SyntaxTree::Continue From(const FlowPtr<Continue> &in);
-    SyntaxTree::Return From(const FlowPtr<Return> &in);
-    SyntaxTree::ReturnIf From(const FlowPtr<ReturnIf> &in);
-    SyntaxTree::Case From(const FlowPtr<Case> &in);
-    SyntaxTree::Switch From(const FlowPtr<Switch> &in);
-    SyntaxTree::Typedef From(const FlowPtr<Typedef> &in);
-    SyntaxTree::Function From(const FlowPtr<Function> &in);
-    SyntaxTree::Struct From(const FlowPtr<Struct> &in);
-    SyntaxTree::Enum From(const FlowPtr<Enum> &in);
-    SyntaxTree::Scope From(const FlowPtr<Scope> &in);
-    SyntaxTree::Export From(const FlowPtr<Export> &in);
+    void AttachTypeMetadata(auto *object, const FlowPtr<Type> &in);
+    SyntaxTree::SourceLocationRange *FromSource(FlowPtr<Base> in);
+    SyntaxTree::Expr *From(FlowPtr<Expr> in);
+    SyntaxTree::Stmt *From(FlowPtr<Stmt> in);
+    SyntaxTree::Type *From(FlowPtr<Type> in);
+    SyntaxTree::Base *From(FlowPtr<Base> in);
+    SyntaxTree::ExprStmt *From(FlowPtr<ExprStmt> in);
+    SyntaxTree::StmtExpr *From(FlowPtr<StmtExpr> in);
+    SyntaxTree::TypeExpr *From(FlowPtr<TypeExpr> in);
+    SyntaxTree::NamedTy *From(FlowPtr<NamedTy> in);
+    SyntaxTree::InferTy *From(FlowPtr<InferTy> in);
+    SyntaxTree::TemplateType *From(FlowPtr<TemplateType> in);
+    SyntaxTree::U1 *From(FlowPtr<U1> in);
+    SyntaxTree::U8 *From(FlowPtr<U8> in);
+    SyntaxTree::U16 *From(FlowPtr<U16> in);
+    SyntaxTree::U32 *From(FlowPtr<U32> in);
+    SyntaxTree::U64 *From(FlowPtr<U64> in);
+    SyntaxTree::U128 *From(FlowPtr<U128> in);
+    SyntaxTree::I8 *From(FlowPtr<I8> in);
+    SyntaxTree::I16 *From(FlowPtr<I16> in);
+    SyntaxTree::I32 *From(FlowPtr<I32> in);
+    SyntaxTree::I64 *From(FlowPtr<I64> in);
+    SyntaxTree::I128 *From(FlowPtr<I128> in);
+    SyntaxTree::F16 *From(FlowPtr<F16> in);
+    SyntaxTree::F32 *From(FlowPtr<F32> in);
+    SyntaxTree::F64 *From(FlowPtr<F64> in);
+    SyntaxTree::F128 *From(FlowPtr<F128> in);
+    SyntaxTree::VoidTy *From(FlowPtr<VoidTy> in);
+    SyntaxTree::PtrTy *From(FlowPtr<PtrTy> in);
+    SyntaxTree::OpaqueTy *From(FlowPtr<OpaqueTy> in);
+    SyntaxTree::TupleTy *From(FlowPtr<TupleTy> in);
+    SyntaxTree::ArrayTy *From(FlowPtr<ArrayTy> in);
+    SyntaxTree::RefTy *From(FlowPtr<RefTy> in);
+    SyntaxTree::FuncTy *From(FlowPtr<FuncTy> in);
+    SyntaxTree::UnaryExpr *From(FlowPtr<UnaryExpr> in);
+    SyntaxTree::BinExpr *From(FlowPtr<BinExpr> in);
+    SyntaxTree::PostUnary *From(FlowPtr<PostUnary> in);
+    SyntaxTree::TernaryExpr *From(FlowPtr<TernaryExpr> in);
+    SyntaxTree::Integer *From(FlowPtr<Integer> in);
+    SyntaxTree::Float *From(FlowPtr<Float> in);
+    SyntaxTree::Boolean *From(FlowPtr<Boolean> in);
+    SyntaxTree::String *From(FlowPtr<String> in);
+    SyntaxTree::Character *From(FlowPtr<Character> in);
+    SyntaxTree::Null *From(FlowPtr<Null> in);
+    SyntaxTree::Undefined *From(FlowPtr<Undefined> in);
+    SyntaxTree::Call *From(FlowPtr<Call> in);
+    SyntaxTree::TemplateCall *From(FlowPtr<TemplateCall> in);
+    SyntaxTree::List *From(FlowPtr<List> in);
+    SyntaxTree::Assoc *From(FlowPtr<Assoc> in);
+    SyntaxTree::Index *From(FlowPtr<Index> in);
+    SyntaxTree::Slice *From(FlowPtr<Slice> in);
+    SyntaxTree::FString *From(FlowPtr<FString> in);
+    SyntaxTree::Identifier *From(FlowPtr<Identifier> in);
+    SyntaxTree::Sequence *From(FlowPtr<Sequence> in);
+    SyntaxTree::Block *From(FlowPtr<Block> in);
+    SyntaxTree::Variable *From(FlowPtr<Variable> in);
+    SyntaxTree::Assembly *From(FlowPtr<Assembly> in);
+    SyntaxTree::If *From(FlowPtr<If> in);
+    SyntaxTree::While *From(FlowPtr<While> in);
+    SyntaxTree::For *From(FlowPtr<For> in);
+    SyntaxTree::Foreach *From(FlowPtr<Foreach> in);
+    SyntaxTree::Break *From(FlowPtr<Break> in);
+    SyntaxTree::Continue *From(FlowPtr<Continue> in);
+    SyntaxTree::Return *From(FlowPtr<Return> in);
+    SyntaxTree::ReturnIf *From(FlowPtr<ReturnIf> in);
+    SyntaxTree::Case *From(FlowPtr<Case> in);
+    SyntaxTree::Switch *From(FlowPtr<Switch> in);
+    SyntaxTree::Typedef *From(FlowPtr<Typedef> in);
+    SyntaxTree::Function *From(FlowPtr<Function> in);
+    SyntaxTree::Struct *From(FlowPtr<Struct> in);
+    SyntaxTree::Enum *From(FlowPtr<Enum> in);
+    SyntaxTree::Scope *From(FlowPtr<Scope> in);
+    SyntaxTree::Export *From(FlowPtr<Export> in);
 
   protected:
     void Visit(FlowPtr<Base> n) override;
