@@ -251,6 +251,26 @@ static SyntaxTree::FunctionPurity FromPurity(ncc::parse::Purity purity) {
   }
 }
 
+static SyntaxTree::AggregateKind FromStructKind(
+    ncc::parse::CompositeType type) {
+  switch (type) {
+    case ncc::parse::CompositeType::Struct:
+      return SyntaxTree::AggregateKind::Struct_;
+
+    case ncc::parse::CompositeType::Class:
+      return SyntaxTree::AggregateKind::Class_;
+
+    case ncc::parse::CompositeType::Group:
+      return SyntaxTree::AggregateKind::Group_;
+
+    case ncc::parse::CompositeType::Region:
+      return SyntaxTree::AggregateKind::Region_;
+
+    case ncc::parse::CompositeType::Union:
+      return SyntaxTree::AggregateKind::Union_;
+  }
+}
+
 void AstWriter::AttachTypeMetadata(auto *object, const FlowPtr<Type> &in) {
   if (in->GetWidth().has_value()) [[unlikely]] {
     object->set_allocated_bit_width(From(in->GetWidth().value()));
@@ -1494,9 +1514,98 @@ SyntaxTree::Function *AstWriter::From(const FlowPtr<Function> &in) {
 }
 
 SyntaxTree::Struct *AstWriter::From(const FlowPtr<Struct> &in) {
-  /// TODO: From input to protobuf structure
-  qcore_implement();
-  (void)in;
+  auto *object = Pool::CreateMessage<SyntaxTree::Struct>(&m_arena);
+
+  object->set_allocated_location(FromSource(in));
+  object->set_name(in->GetName().Get());
+  object->set_kind(FromStructKind(in->GetCompositeType()));
+
+  if (in->GetTemplateParams().has_value()) {
+    auto items = in->GetTemplateParams().value();
+
+    object->mutable_template_parameters()->mutable_parameters()->Reserve(
+        items.size());
+    std::for_each(items.begin(), items.end(), [&](auto item) {
+      auto *parameter =
+          Pool::CreateMessage<SyntaxTree::TemplateParameter>(&m_arena);
+      const auto &param_name = std::get<0>(item);
+      const auto &param_type = std::get<1>(item);
+      const auto &param_default = std::get<2>(item);
+
+      parameter->set_name(param_name.Get());
+      parameter->set_allocated_type(From(param_type));
+      if (param_default.has_value()) {
+        parameter->set_allocated_default_value(From(param_default.value()));
+      }
+
+      object->mutable_template_parameters()->mutable_parameters()->AddAllocated(
+          parameter);
+    });
+  }
+
+  { /* Add names */
+    const auto &items = in->GetNames();
+
+    object->mutable_names()->Reserve(items.size());
+    std::for_each(items.begin(), items.end(), [&](auto item) {
+      object->mutable_names()->Add(item.Get().c_str());
+    });
+  }
+
+  { /* Add all attributes */
+    const auto &items = in->GetAttributes();
+
+    object->mutable_attributes()->Reserve(items.size());
+    std::for_each(items.begin(), items.end(), [&](auto item) {
+      object->mutable_attributes()->AddAllocated(From(item));
+    });
+  }
+
+  { /* Add all fields */
+    const auto &items = in->GetFields();
+
+    object->mutable_fields()->Reserve(items.size());
+    std::for_each(items.begin(), items.end(), [&](auto item) {
+      auto *field = Pool::CreateMessage<SyntaxTree::StructField>(&m_arena);
+      field->set_name(item.GetName().Get());
+      field->set_allocated_type(From(item.GetType()));
+      field->set_visibility(FromVisibility(item.GetVis()));
+      field->set_is_static(item.IsStatic());
+      if (item.GetValue().has_value()) {
+        field->set_allocated_default_value(From(item.GetValue().value()));
+      }
+
+      object->mutable_fields()->AddAllocated(field);
+    });
+  }
+
+  { /* Add all methods */
+    const auto &items = in->GetMethods();
+
+    object->mutable_methods()->Reserve(items.size());
+    std::for_each(items.begin(), items.end(), [&](auto item) {
+      auto *method = Pool::CreateMessage<SyntaxTree::StructMethod>(&m_arena);
+      method->set_visibility(FromVisibility(item.m_vis));
+      method->set_allocated_func(From(item.m_func));
+
+      object->mutable_methods()->AddAllocated(method);
+    });
+  }
+
+  { /* Add all methods */
+    const auto &items = in->GetStaticMethods();
+
+    object->mutable_static_methods()->Reserve(items.size());
+    std::for_each(items.begin(), items.end(), [&](auto item) {
+      auto *method = Pool::CreateMessage<SyntaxTree::StructMethod>(&m_arena);
+      method->set_visibility(FromVisibility(item.m_vis));
+      method->set_allocated_func(From(item.m_func));
+
+      object->mutable_static_methods()->AddAllocated(method);
+    });
+  }
+
+  return object;
 }
 
 SyntaxTree::Enum *AstWriter::From(const FlowPtr<Enum> &in) {

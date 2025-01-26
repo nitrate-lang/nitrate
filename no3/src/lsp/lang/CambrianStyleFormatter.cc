@@ -1546,12 +1546,28 @@ void CambrianFormatter::Visit(FlowPtr<parse::Struct> n) {
   }
 
   if (!n->GetAttributes().empty()) {
+    const auto wrap_threshold = 2ULL;
+
+    const auto& attrs = n->GetAttributes();
+    const auto break_at =
+        attrs.size() > wrap_threshold ? wrap_threshold : attrs.size();
+
     m_line << "[";
-    IterateExceptLast(
-        n->GetAttributes().begin(), n->GetAttributes().end(),
-        [&](auto attr, size_t) { attr.Accept(*this); },
-        [&](let) { m_line << ", "; });
-    m_line << "] ";
+    auto m_line_size = m_line.Length();
+    for (size_t i = 0; i < attrs.size(); i++) {
+      auto attr = attrs[i];
+      attr.Accept(*this);
+
+      if (i != attrs.size() - 1) {
+        m_line << ", ";
+      }
+
+      if (i != attrs.size() - 1 && (i + 1) % break_at == 0) {
+        m_line << std::endl << std::string(m_line_size, ' ');
+      }
+    }
+
+    m_line << "]" << std::endl << std::string(m_line_size, ' ');
   }
 
   m_line << n->GetName();
@@ -1577,17 +1593,35 @@ void CambrianFormatter::Visit(FlowPtr<parse::Struct> n) {
 
   if (!n->GetNames().empty()) {
     m_line << ": ";
-    IterateExceptLast(
-        n->GetNames().begin(), n->GetNames().end(),
-        [&](auto name, size_t) { m_line << name; },
-        [&](let) { m_line << ", "; });
+
+    const auto wrap_threshold = 2ULL;
+
+    const auto& names = n->GetNames();
+    const auto break_at =
+        names.size() > wrap_threshold ? wrap_threshold : names.size();
+
+    m_line << "[";
+    auto m_line_size = m_line.Length();
+    for (size_t i = 0; i < names.size(); i++) {
+      m_line << names[i];
+
+      if (i != names.size() - 1) {
+        m_line << ", ";
+      }
+
+      if (i != names.size() - 1 && (i + 1) % break_at == 0) {
+        m_line << std::endl << std::string(m_line_size, ' ');
+      }
+    }
+
+    m_line << "]";
   }
 
   bool is_empty = n->GetFields().empty() && n->GetMethods().empty() &&
                   n->GetStaticMethods().empty();
 
   if (is_empty) {
-    m_line << " {}";
+    m_line << ";";
     return;
   }
 
@@ -1636,7 +1670,7 @@ void CambrianFormatter::Visit(FlowPtr<parse::Struct> n) {
                 });
 
   m_indent -= m_tabSize;
-  m_line << "}";
+  m_line << GetIndent() << "}";
 }
 
 void CambrianFormatter::Visit(FlowPtr<parse::Enum> n) {

@@ -75,11 +75,26 @@ auto Parser::PImpl::RecurseStructTerms() -> StructNames {
     return names;
   }
 
+  if (!NextIf(PuncLBrk)) [[unlikely]] {
+    Log << SyntaxError << current() << "Expected '[' to start struct terms";
+    return names;
+  }
+
   while (true) {
+    if (NextIf(EofF)) [[unlikely]] {
+      Log << SyntaxError << current()
+          << "Encountered EOF while parsing struct attributes";
+      break;
+    }
+
+    if (NextIf(PuncRBrk)) {
+      break;
+    }
+
     if (auto name = RecurseName(); !name->empty()) {
       names.push_back(name);
     } else {
-      break;
+      Log << SyntaxError << next() << "Expected identifier in struct terms";
     }
 
     NextIf(PuncComa);
@@ -151,6 +166,10 @@ void Parser::PImpl::RecurseStructMethodOrField(StructContent &body) {
 
 auto Parser::PImpl::RecurseStructBody() -> Parser::PImpl::StructContent {
   StructContent body;
+
+  if (NextIf(PuncSemi)) {
+    return body;
+  }
 
   if (!NextIf(PuncLCur)) [[unlikely]] {
     Log << SyntaxError << current() << "Expected '{' to start struct body";
