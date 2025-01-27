@@ -75,29 +75,55 @@ auto Parser::PImpl::RecurseStructTerms() -> StructNames {
     return names;
   }
 
-  if (!NextIf(PuncLBrk)) [[unlikely]] {
-    Log << SyntaxError << current() << "Expected '[' to start struct terms";
-    return names;
-  }
+  bool enclosed = NextIf(PuncLBrk).has_value();
 
-  while (true) {
-    if (NextIf(EofF)) [[unlikely]] {
-      Log << SyntaxError << current()
-          << "Encountered EOF while parsing struct attributes";
+  if (enclosed) {
+    while (true) {
+      if (NextIf(EofF)) [[unlikely]] {
+        Log << SyntaxError << current()
+            << "Encountered EOF while parsing struct attributes";
+        break;
+      } else if (NextIf(PuncRBrk)) {
+        break;
+      }
+
+      if (auto name = RecurseName(); !name->empty()) {
+        names.push_back(name);
+      } else {
+        Log << SyntaxError << next() << "Expected identifier in struct terms";
+        break;
+      }
+
+      if (NextIf(PuncComa)) {
+        continue;
+      }
+
+      if (NextIf(PuncRBrk)) {
+        break;
+      }
+
+      Log << SyntaxError << next() << "Expected ',' or ']' in struct terms";
       break;
     }
+  } else {
+    while (true) {
+      if (NextIf(EofF)) [[unlikely]] {
+        Log << SyntaxError << current()
+            << "Encountered EOF while parsing struct attributes";
+        break;
+      }
 
-    if (NextIf(PuncRBrk)) {
-      break;
+      if (auto name = RecurseName(); !name->empty()) [[likely]] {
+        names.push_back(name);
+      } else {
+        Log << SyntaxError << next() << "Expected identifier in struct terms";
+        break;
+      }
+
+      if (!NextIf(PuncComa)) {
+        break;
+      }
     }
-
-    if (auto name = RecurseName(); !name->empty()) {
-      names.push_back(name);
-    } else {
-      Log << SyntaxError << next() << "Expected identifier in struct terms";
-    }
-
-    NextIf(PuncComa);
   }
 
   return names;

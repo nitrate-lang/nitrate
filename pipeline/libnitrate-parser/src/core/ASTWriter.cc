@@ -1508,9 +1508,110 @@ SyntaxTree::Typedef *AstWriter::From(const FlowPtr<Typedef> &in) {
 }
 
 SyntaxTree::Function *AstWriter::From(const FlowPtr<Function> &in) {
-  /// TODO: From input to protobuf structure
-  qcore_implement();
-  (void)in;
+  auto *object = Pool::CreateMessage<SyntaxTree::Function>(&m_arena);
+
+  object->set_allocated_location(FromSource(in));
+  object->set_allocated_return_type(From(in->GetReturn()));
+  object->set_name(in->GetName().Get());
+  object->set_purity(FromPurity(in->GetPurity()));
+  object->set_variadic(in->IsVariadic());
+  if (in->GetPrecond().has_value()) {
+    object->set_allocated_precondition(From(in->GetPrecond().value()));
+  }
+
+  if (in->GetPostcond().has_value()) {
+    object->set_allocated_postcondition(From(in->GetPostcond().value()));
+  }
+
+  if (in->GetBody().has_value()) {
+    object->set_allocated_body(From(in->GetBody().value()));
+  }
+
+  { /* Add all attributes */
+    const auto &items = in->GetAttributes();
+
+    object->mutable_attributes()->Reserve(items.size());
+    std::for_each(items.begin(), items.end(), [&](auto item) {
+      object->mutable_attributes()->AddAllocated(From(item));
+    });
+  }
+
+  { /* Add all captures */
+    const auto &items = in->GetCaptures();
+
+    object->mutable_captures()->Reserve(items.size());
+    std::for_each(items.begin(), items.end(), [&](auto item) {
+      auto *capture =
+          Pool::CreateMessage<SyntaxTree::FunctionCapture>(&m_arena);
+      capture->set_name(item.first.Get());
+      capture->set_is_reference(item.second);
+
+      object->mutable_captures()->AddAllocated(capture);
+    });
+  }
+
+  { /* Add all parameters */
+    const auto &params = in->GetParams();
+    auto *param_list = object->mutable_parameters();
+    param_list->Reserve(params.size());
+
+    for (const auto &param : params) {
+      auto *parameter =
+          Pool::CreateMessage<SyntaxTree::FunctionParameter>(&m_arena);
+      const auto &[name, type, default_] = param;
+      parameter->set_name(name.Get());
+      parameter->set_allocated_type(From(type));
+      if (default_.has_value()) {
+        parameter->set_allocated_default_value(From(default_.value()));
+      }
+
+      param_list->AddAllocated(parameter);
+    }
+  }
+
+  { /* Add all parameters */
+    const auto &params = in->GetParams();
+    auto *param_list = object->mutable_parameters();
+    param_list->Reserve(params.size());
+
+    for (const auto &param : params) {
+      auto *parameter =
+          Pool::CreateMessage<SyntaxTree::FunctionParameter>(&m_arena);
+      const auto &[name, type, default_] = param;
+      parameter->set_name(name.Get());
+      parameter->set_allocated_type(From(type));
+      if (default_.has_value()) {
+        parameter->set_allocated_default_value(From(default_.value()));
+      }
+
+      param_list->AddAllocated(parameter);
+    }
+  }
+
+  if (in->GetTemplateParams().has_value()) {
+    auto items = in->GetTemplateParams().value();
+
+    object->mutable_template_parameters()->mutable_parameters()->Reserve(
+        items.size());
+    std::for_each(items.begin(), items.end(), [&](auto item) {
+      auto *parameter =
+          Pool::CreateMessage<SyntaxTree::TemplateParameter>(&m_arena);
+      const auto &param_name = std::get<0>(item);
+      const auto &param_type = std::get<1>(item);
+      const auto &param_default = std::get<2>(item);
+
+      parameter->set_name(param_name.Get());
+      parameter->set_allocated_type(From(param_type));
+      if (param_default.has_value()) {
+        parameter->set_allocated_default_value(From(param_default.value()));
+      }
+
+      object->mutable_template_parameters()->mutable_parameters()->AddAllocated(
+          parameter);
+    });
+  }
+
+  return object;
 }
 
 SyntaxTree::Struct *AstWriter::From(const FlowPtr<Struct> &in) {
