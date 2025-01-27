@@ -32,6 +32,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <lsp/lang/format/Formatter.hh>
+#include <unordered_set>
 
 using namespace no3::lsp::fmt;
 using namespace ncc::parse;

@@ -34,8 +34,6 @@
 #ifndef __NITRATE_AST_WRITER_H__
 #define __NITRATE_AST_WRITER_H__
 
-#include <google/protobuf/arena.h>
-
 #include <functional>
 #include <nitrate-core/Macro.hh>
 #include <nitrate-lexer/Scanner.hh>
@@ -118,6 +116,10 @@ namespace nitrate::parser::SyntaxTree {  // NOLINT
   class SourceLocationRange;
 }  // namespace nitrate::parser::SyntaxTree
 
+namespace google::protobuf {
+  class Arena;
+}  // namespace google::protobuf
+
 namespace ncc::parse {
   using namespace nitrate::parser;  // NOLINT
 
@@ -125,11 +127,11 @@ namespace ncc::parse {
       std::optional<std::reference_wrapper<lex::IScanner>>;
 
   class NCC_EXPORT AstWriter : public ASTVisitor {
-    google::protobuf::Arena m_arena;
+    google::protobuf::Arena *m_arena;
     std::ostream &m_os;
     WriterSourceProvider m_rd;
 
-    void AttachTypeMetadata(auto *object, const FlowPtr<Type> &in);
+    void SetTypeMetadata(auto *message, const FlowPtr<Type> &in);
     SyntaxTree::SourceLocationRange *FromSource(const FlowPtr<Base> &in);
     SyntaxTree::Expr *From(const FlowPtr<Expr> &in);
     SyntaxTree::Stmt *From(const FlowPtr<Stmt> &in);
@@ -274,8 +276,7 @@ namespace ncc::parse {
     void Visit(FlowPtr<Export> n) override;
 
   public:
-    AstWriter(std::ostream &os, WriterSourceProvider rd = std::nullopt)
-        : m_os(os), m_rd(rd) {}
+    AstWriter(std::ostream &os, WriterSourceProvider rd = std::nullopt);
     ~AstWriter() override;
   };
 }  // namespace ncc::parse
