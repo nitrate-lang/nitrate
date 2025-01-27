@@ -34,80 +34,20 @@
 #ifndef __NITRATE_AST_READER_H__
 #define __NITRATE_AST_READER_H__
 
-#include <cstdint>
 #include <istream>
 #include <nitrate-core/Macro.hh>
 #include <nitrate-core/NullableFlowPtr.hh>
 #include <nitrate-lexer/Scanner.hh>
 #include <nitrate-parser/ASTBase.hh>
 #include <optional>
-#include <variant>
 
 namespace ncc::parse {
   using ReaderSourceManager =
       std::optional<std::reference_wrapper<lex::IScanner>>;
 
   class NCC_EXPORT AstReader {
-  public:
-    using none = std::nullptr_t;
-
-    class Value {
-      using Data = std::variant<std::string, uint64_t, double, bool, none>;
-      Data m_data;
-
-    public:
-      template <typename T>
-      Value(T&& data) : m_data(std::forward<T>(data)) {}
-
-      auto operator()() -> Data& { return m_data; }
-      auto operator()() const -> const Data& { return m_data; }
-      auto operator==(const Value& o) const -> bool {
-        return m_data == o.m_data;
-      }
-    };
-
-    using NextFunc = std::function<std::optional<Value>()>;
-
-  private:
-    NextFunc m_next_func;
-    std::optional<Value> m_peek;
-    ReaderSourceManager m_source;
-    std::optional<FlowPtr<Base>> m_root;
-
-    auto NextValue() -> std::optional<Value> {
-      if (m_peek.has_value()) {
-        auto val = m_peek;
-        m_peek.reset();
-        return val;
-      }
-
-      return m_next_func();
-    }
-
-    auto PeekValue() -> std::optional<Value> {
-      if (!m_peek.has_value()) {
-        m_peek = m_next_func();
-      }
-
-      return m_peek;
-    }
-
-    struct LocationRange {
-      lex::Location m_start, m_end;
-    };
-
-    auto ReadLocationRange() -> std::optional<LocationRange>;
-
-    auto DeserializeObject() -> NullableFlowPtr<Base>;
-    auto DeserializeStatement() -> NullableFlowPtr<Stmt>;
-    auto DeserializeExpression() -> NullableFlowPtr<Expr>;
-    auto DeserializeType() -> NullableFlowPtr<Type>;
-
-    struct TypeMetadata {
-      NullableFlowPtr<Expr> m_width, m_min, m_max;
-    };
-
-    auto ReadTypeMetadata() -> std::optional<TypeMetadata>;
+    std::istream& m_is;
+    ReaderSourceManager m_source_manager;
 
     auto ReadKindNode() -> NullableFlowPtr<Base>;
     auto ReadKindBinexpr() -> NullableFlowPtr<Binary>;
@@ -178,43 +118,17 @@ namespace ncc::parse {
     auto ReadKindSwitch() -> NullableFlowPtr<Switch>;
     auto ReadKindExprStmt() -> NullableFlowPtr<ExprStmt>;
 
-    template <typename ValueType>
-    constexpr auto NextIf(const ValueType& v = ValueType()) -> bool;
-
-    template <typename ValueType>
-    constexpr auto NextIs() -> bool;
-
-    template <typename ValueType>
-    constexpr auto Next() -> ValueType;
-
   public:
-    AstReader(NextFunc data_source, ReaderSourceManager source_manager)
-        : m_next_func(std::move(data_source)), m_source(source_manager) {}
+    AstReader(std::istream& in,
+              ReaderSourceManager source_manager = std::nullopt)
+        : m_is(in), m_source_manager(source_manager) {}
     virtual ~AstReader() = default;
 
     auto Get() -> std::optional<FlowPtr<Base>>;
-  };
 
-  class NCC_EXPORT AstJsonReader final : public AstReader {
-    auto ReadValue() -> std::optional<Value>;
-    std::istream& m_is;
-
-    struct PImpl;
-    std::unique_ptr<PImpl> m_pimpl;
-
-  public:
-    AstJsonReader(std::istream& is,
-                  ReaderSourceManager source_manager = std::nullopt);
-
-    static auto FromString(const std::string& json,
+    static auto FromString(std::string_view json,
                            ReaderSourceManager source_manager = std::nullopt)
-        -> std::optional<FlowPtr<Base>> {
-      std::istringstream is(json);
-      AstJsonReader reader(is, source_manager);
-      return reader.Get();
-    }
-
-    ~AstJsonReader() override;
+        -> std::optional<FlowPtr<Base>>;
   };
 }  // namespace ncc::parse
 

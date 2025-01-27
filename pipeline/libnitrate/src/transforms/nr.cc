@@ -62,7 +62,7 @@ CREATE_TRANSFORM(nit::nr) {
     out_mode = OutMode::MsgPack;
   }
 
-  auto root = ncc::parse::AstJsonReader(source).Get();
+  auto root = ncc::parse::AstReader(source).Get();
   if (!root.has_value()) {
     qcore_logf(QCORE_ERROR, "Failed to parse input.");
     return false;
