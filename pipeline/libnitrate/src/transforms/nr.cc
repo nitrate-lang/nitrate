@@ -68,7 +68,7 @@ CREATE_TRANSFORM(nit::nr) {
     return false;
   }
 
-  if (auto module = NrLower(root.value().get(), nullptr, true)) {
+  if (auto module = NrLower(root.value().Get().get(), nullptr, true)) {
     switch (out_mode) {
       case OutMode::JSON: {
         auto writter = IRJsonWriter(output);

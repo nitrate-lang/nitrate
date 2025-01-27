@@ -125,6 +125,23 @@ namespace ncc::parse {
       return IterOp::Proceed;
     });
   }
+
+  class NCC_EXPORT ASTRoot final {
+    FlowPtr<Base> m_base;
+    bool m_failed;
+    std::shared_ptr<void> m_allocator;
+
+  public:
+    constexpr ASTRoot(auto base, auto allocator, auto failed)
+        : m_base(std::move(base)),
+          m_failed(failed),
+          m_allocator(std::move(allocator)) {}
+
+    auto Get() -> FlowPtr<Base> & { return m_base; }
+    [[nodiscard]] auto Get() const -> FlowPtr<Base> { return m_base; }
+
+    [[nodiscard]] auto Check() const -> bool;
+  };
 }  // namespace ncc::parse
 
 #endif

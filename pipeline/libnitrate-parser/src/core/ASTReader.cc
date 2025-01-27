@@ -31,13 +31,14 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
+#include <core/SyntaxTree.pb.h>
+
+#include <memory>
 #include <nitrate-core/Logger.hh>
 #include <nitrate-core/Macro.hh>
 #include <nitrate-parser/AST.hh>
 #include <nitrate-parser/ASTBase.hh>
 #include <nitrate-parser/ASTReader.hh>
-
-#include "core/SyntaxTree.pb.h"
 
 using namespace ncc;
 using namespace ncc::parse;
@@ -483,13 +484,15 @@ auto AstReader::Unmarshal(const SyntaxTree::Export &in) -> Result<Export> {
 
 AstReader::AstReader(std::istream &protobuf_data,
                      ReaderSourceManager source_manager)
-    : m_rd(source_manager) {
+    : m_rd(source_manager), m_mm(std::make_unique<DynamicArena>()) {
   SyntaxTree::Root root;
   if (!root.ParseFromIstream(&protobuf_data)) [[unlikely]] {
     return;
   }
 
+  std::swap(NparAllocator, m_mm);
   m_root = Unmarshal(root);
+  std::swap(NparAllocator, m_mm);
 }
 
 AstReader::AstReader(std::string_view protobuf_data,
@@ -501,9 +504,15 @@ AstReader::AstReader(std::string_view protobuf_data,
     return;
   }
 
+  std::swap(NparAllocator, m_mm);
   m_root = Unmarshal(root);
+  std::swap(NparAllocator, m_mm);
 }
 
-auto AstReader::Get() -> std::optional<FlowPtr<Base>> {
-  return m_root.has_value() ? std::make_optional(m_root.value()) : std::nullopt;
+auto AstReader::Get() -> std::optional<ASTRoot> {
+  if (!m_root.has_value()) [[unlikely]] {
+    return std::nullopt;
+  }
+
+  return ASTRoot(m_root.value(), std::move(m_mm), false);
 }

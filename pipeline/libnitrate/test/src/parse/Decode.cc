@@ -20,5 +20,5 @@ TEST(AST, FromJson) {
   auto decoded = AstReader(serialized).Get();
   ASSERT_TRUE(decoded.has_value());
 
-  EXPECT_TRUE(original.Get()->IsEq(decoded.value()));
+  EXPECT_TRUE(original.Get()->IsEq(decoded.value().Get()));
 }

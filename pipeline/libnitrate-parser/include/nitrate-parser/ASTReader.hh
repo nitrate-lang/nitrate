@@ -35,9 +35,11 @@
 #define __NITRATE_AST_READER_H__
 
 #include <istream>
+#include <memory>
 #include <nitrate-core/Macro.hh>
 #include <nitrate-core/NullableFlowPtr.hh>
 #include <nitrate-lexer/Scanner.hh>
+#include <nitrate-parser/AST.hh>
 #include <nitrate-parser/ASTWriter.hh>
 #include <optional>
 
@@ -51,6 +53,7 @@ namespace ncc::parse {
 
     Result<Base> m_root;
     ReaderSourceManager m_rd;
+    std::unique_ptr<IMemory> m_mm;
 
     auto Unmarshal(const SyntaxTree::Expr &in) -> Result<Expr>;
     auto Unmarshal(const SyntaxTree::Root &in) -> Result<Base>;
@@ -132,7 +135,7 @@ namespace ncc::parse {
               ReaderSourceManager source_manager = std::nullopt);
     ~AstReader() = default;
 
-    auto Get() -> std::optional<FlowPtr<Base>>;
+    auto Get() -> std::optional<ASTRoot>;
   };
 }  // namespace ncc::parse
 
