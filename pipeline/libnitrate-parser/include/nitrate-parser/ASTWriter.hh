@@ -43,6 +43,7 @@
 
 namespace nitrate::parser::SyntaxTree {  // NOLINT
   class Base;
+  class Root;
   class Binary;
   class Unary;
   class Ternary;
