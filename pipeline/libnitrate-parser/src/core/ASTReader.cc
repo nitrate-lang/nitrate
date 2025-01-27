@@ -43,4 +43,33 @@
 
 using namespace ncc;
 using namespace ncc::parse;
-using namespace boost::multiprecision;
+using namespace nitrate::parser::SyntaxTree;
+
+AstReader::AstReader(std::istream& protobuf_data,
+                     ReaderSourceManager source_manager) {
+  Root root;
+  if (!root.ParseFromIstream(&protobuf_data)) [[unlikely]] {
+    return;
+  }
+
+  /// TODO: Transform AST structural representation to AST object representation
+  qcore_implement();
+  (void)source_manager;
+}
+
+AstReader::AstReader(std::string_view protobuf_data,
+                     ReaderSourceManager source_manager) {
+  Root root;
+  if (!root.ParseFromArray(protobuf_data.data(), protobuf_data.size()))
+      [[unlikely]] {
+    return;
+  }
+
+  /// TODO: Transform AST structural representation to AST object representation
+  qcore_implement();
+  (void)source_manager;
+}
+
+auto AstReader::Get() -> std::optional<FlowPtr<Base>> {
+  return m_root.has_value() ? std::make_optional(m_root.value()) : std::nullopt;
+}

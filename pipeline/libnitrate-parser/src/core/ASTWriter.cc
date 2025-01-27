@@ -1787,8 +1787,12 @@ SyntaxTree::Export *AstWriter::From(const FlowPtr<Export> &in) {
     auto *root = Pool::CreateMessage<SyntaxTree::Root>(m_arena); \
     root->set_allocated_##__node_name(message);                  \
     root->CheckInitialized();                                    \
-    if (!root->SerializeToOstream(&m_os)) [[unlikely]] {         \
-      qcore_panic("Failed to serialize protobuf message");       \
+    if (m_plaintext_mode) {                                      \
+      m_os << root->Utf8DebugString();                           \
+    } else {                                                     \
+      if (!root->SerializeToOstream(&m_os)) [[unlikely]] {       \
+        qcore_panic("Failed to serialize protobuf message");     \
+      }                                                          \
     }                                                            \
   }
 
@@ -1861,7 +1865,11 @@ void AstWriter::Visit(FlowPtr<Enum> n) { SEND(From(n), enum_); }
 void AstWriter::Visit(FlowPtr<Scope> n) { SEND(From(n), scope); }
 void AstWriter::Visit(FlowPtr<Export> n) { SEND(From(n), export_); }
 
-AstWriter::AstWriter(std::ostream &os, WriterSourceProvider rd)
-    : m_arena(new google::protobuf::Arena), m_os(os), m_rd(rd) {}
+AstWriter::AstWriter(std::ostream &os, WriterSourceProvider rd,
+                     bool plaintext_mode)
+    : m_arena(new google::protobuf::Arena),
+      m_os(os),
+      m_rd(rd),
+      m_plaintext_mode(plaintext_mode) {}
 
 AstWriter::~AstWriter() { delete m_arena; }

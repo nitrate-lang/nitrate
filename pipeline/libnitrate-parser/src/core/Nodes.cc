@@ -105,17 +105,33 @@ NCC_EXPORT auto parse::operator<<(std::ostream &os, const ASTExtensionKey &idx)
 
 ///=============================================================================
 
-NCC_EXPORT auto Base::ToJson(WriterSourceProvider rd) const -> std::string {
-  /// TODO: Implement JSON writer
-
+std::string Base::DebugString(WriterSourceProvider rd) const {
   std::stringstream ss;
-  AstWriter writer(ss, rd);
+  AstWriter writer(ss, rd, true);
   this->Accept(writer);
 
   return ss.str();
 }
 
-NCC_EXPORT auto Base::IsEq(FlowPtr<Base> o) const -> bool {
+void Base::DebugString(std::ostream &os, WriterSourceProvider rd) const {
+  AstWriter writer(os, rd, true);
+  this->Accept(writer);
+}
+
+void Base::Serialize(std::ostream &os) const {
+  AstWriter writer(os);
+  this->Accept(writer);
+}
+
+std::string Base::Serialize() const {
+  std::stringstream ss;
+  AstWriter writer(ss);
+  this->Accept(writer);
+
+  return ss.str();
+}
+
+auto Base::IsEq(FlowPtr<Base> o) const -> bool {
   if (this == o.get()) {
     return true;
   }
@@ -135,7 +151,7 @@ NCC_EXPORT auto Base::IsEq(FlowPtr<Base> o) const -> bool {
   return ss1.str() == ss2.str();
 }
 
-NCC_EXPORT auto Base::Hash64() const -> uint64_t {
+auto Base::Hash64() const -> uint64_t {
   std::stringstream ss;
   AstWriter writer(ss);
   this->Accept(writer);
@@ -143,7 +159,7 @@ NCC_EXPORT auto Base::Hash64() const -> uint64_t {
   return std::hash<std::string>{}(ss.str());
 }
 
-NCC_EXPORT auto Base::RecursiveChildCount() -> size_t {
+auto Base::RecursiveChildCount() -> size_t {
   size_t count = 0;
 
   for_each(this, [&](auto, auto) { count++; });
@@ -151,8 +167,7 @@ NCC_EXPORT auto Base::RecursiveChildCount() -> size_t {
   return count;
 }
 
-NCC_EXPORT void Base::BindCodeCommentData(
-    std::span<const lex::Token> comment_tokens) {
+void Base::BindCodeCommentData(std::span<const lex::Token> comment_tokens) {
   auto old = ExtensionDataStore.Get(m_data);
   old.AddComments(comment_tokens);
   ExtensionDataStore.Set(m_data, std::move(old));

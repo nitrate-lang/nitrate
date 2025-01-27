@@ -420,7 +420,7 @@ static auto DoParse(std::shared_ptr<Environment> &env,
   WriterSourceProvider rd =
       verbose ? WriterSourceProvider(scanner) : std::nullopt;
 
-  output << ast.Get()->ToJson(rd);
+  output << ast.Get()->DebugString(rd);
 
   return 0;
 }

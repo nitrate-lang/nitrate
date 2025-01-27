@@ -359,7 +359,7 @@ CREATE_TRANSFORM(nit::parse) {
 
   let root = parser->Parse();
 
-  output << root.Get()->ToJson();
+  output << root.Get()->Serialize();
 
   return true;
 }

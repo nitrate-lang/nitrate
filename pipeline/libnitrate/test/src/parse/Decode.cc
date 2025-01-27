@@ -16,8 +16,8 @@ TEST(AST, FromJson) {
           ->Parse();
   ASSERT_TRUE(original.Check());
 
-  auto serialized = original.Get()->ToJson();
-  auto decoded = AstReader::FromString(serialized);
+  auto serialized = original.Get()->Serialize();
+  auto decoded = AstReader(serialized).Get();
   ASSERT_TRUE(decoded.has_value());
 
   EXPECT_TRUE(original.Get()->IsEq(decoded.value()));

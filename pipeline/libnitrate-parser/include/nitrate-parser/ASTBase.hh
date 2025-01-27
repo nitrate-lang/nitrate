@@ -107,7 +107,7 @@ namespace ncc::parse {
 
   extern ASTExtension ExtensionDataStore;
 
-  class Base {
+  class NCC_EXPORT Base {
   private:
     npar_ty_t m_node_type : 7;
     bool m_mock : 1;
@@ -352,10 +352,16 @@ namespace ncc::parse {
     }
 
     ///======================================================================
-    /// Debugging
+    /// Serialization
 
-    [[nodiscard]] auto ToJson(WriterSourceProvider rd = std::nullopt) const
-        -> std::string;
+    void DebugString(std::ostream &os,
+                     WriterSourceProvider rd = std::nullopt) const;
+
+    [[nodiscard]] std::string DebugString(
+        WriterSourceProvider rd = std::nullopt) const;
+
+    void Serialize(std::ostream &os) const;
+    [[nodiscard]] std::string Serialize() const;
 
     ///======================================================================
     /// AST Extension Data
