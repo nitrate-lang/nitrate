@@ -1553,14 +1553,15 @@ SyntaxTree::Function *AstWriter::From(const FlowPtr<Function> &in) {
     });
   }
 
-  { /* Add all parameters */
-    const auto &params = in->GetParams();
-    auto *param_list = message->mutable_parameters();
-    param_list->Reserve(params.size());
+  /* Add all template parameters */
+  if (in->GetTemplateParams().has_value()) {
+    auto params = in->GetTemplateParams().value();
+    auto param_list = message->mutable_template_parameters()->parameters();
+    param_list.Reserve(params.size());
 
     for (const auto &param : params) {
-      auto *parameter =
-          Pool::CreateMessage<SyntaxTree::FunctionParameter>(m_arena);
+      auto *parameter = Pool::CreateMessage<
+          SyntaxTree::TemplateParameters::TemplateParameter>(m_arena);
       const auto &[name, type, default_] = param;
       parameter->set_name(name.Get());
       parameter->set_allocated_type(From(type));
@@ -1568,7 +1569,7 @@ SyntaxTree::Function *AstWriter::From(const FlowPtr<Function> &in) {
         parameter->set_allocated_default_value(From(default_.value()));
       }
 
-      param_list->AddAllocated(parameter);
+      param_list.AddAllocated(parameter);
     }
   }
 

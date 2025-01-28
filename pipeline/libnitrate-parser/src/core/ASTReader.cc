@@ -2636,11 +2636,11 @@ auto AstReader::Unmarshal(const SyntaxTree::Enum &in) -> Result<Enum> {
 
   for (const auto &item : in.items()) {
     auto value = Unmarshal(item.value());
-    if (!value.has_value()) {
+    if (item.has_value() && !value.has_value()) {
       return std::nullopt;
     }
 
-    items.emplace_back(item.name(), value.value());
+    items.emplace_back(item.name(), value);
   }
 
   auto object = CreateNode<Enum>(in.name(), base_type, items)();

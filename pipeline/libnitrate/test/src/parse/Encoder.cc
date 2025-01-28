@@ -9,7 +9,7 @@
 
 using namespace ncc::parse;
 
-TEST(AST, FromJson) {
+TEST(AST, Encoder) {
   auto env = std::make_shared<ncc::Environment>();
   auto original =
       Parser::FromString<ncc::lex::Tokenizer>(test::vector::kAstExecise, env)
@@ -21,4 +21,5 @@ TEST(AST, FromJson) {
   ASSERT_TRUE(decoded.has_value());
 
   EXPECT_TRUE(original.Get()->IsEq(decoded.value().Get()));
+  EXPECT_TRUE(serialized.size() > 100);
 }
