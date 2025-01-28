@@ -322,6 +322,31 @@ static NCC_FORCE_INLINE parse::Vis FromVisibility(SyntaxTree::Vis vis) {
   }
 }
 
+static NCC_FORCE_INLINE parse::CompositeType FromCompType(
+    SyntaxTree::Struct::AggregateKind kind) {
+  switch (kind) {
+    case SyntaxTree::Struct_AggregateKind_Struct_: {
+      return CompositeType::Struct;
+    }
+
+    case SyntaxTree::Struct_AggregateKind_Union_: {
+      return CompositeType::Union;
+    }
+
+    case SyntaxTree::Struct_AggregateKind_Class_: {
+      return CompositeType::Class;
+    }
+
+    case SyntaxTree::Struct_AggregateKind_Group_: {
+      return CompositeType::Group;
+    }
+
+    case SyntaxTree::Struct_AggregateKind_Region_: {
+      return CompositeType::Region;
+    }
+  }
+}
+
 static NCC_FORCE_INLINE parse::Purity FromPurity(
     SyntaxTree::FunctionPurity purity) {
   switch (purity) {
@@ -2419,15 +2444,185 @@ auto AstReader::Unmarshal(const SyntaxTree::Typedef &in) -> Result<Typedef> {
 }
 
 auto AstReader::Unmarshal(const SyntaxTree::Function &in) -> Result<Function> {
-  /// TODO: Unmarshal the protobuf object
-  qcore_implement();
-  (void)in;
+  ExpressionList attributes;
+  attributes.reserve(in.attributes_size());
+
+  for (const auto &attr : in.attributes()) {
+    auto attribute = Unmarshal(attr);
+    if (!attribute.has_value()) {
+      return std::nullopt;
+    }
+
+    attributes.push_back(attribute.value());
+  }
+
+  std::optional<TemplateParameters> template_parameters;
+  if (in.has_template_parameters()) {
+    template_parameters = TemplateParameters();
+
+    for (const auto &param : in.template_parameters().parameters()) {
+      auto type = Unmarshal(param.type());
+      if (!type.has_value()) {
+        return std::nullopt;
+      }
+
+      auto default_value = Unmarshal(param.default_value());
+      if (param.has_default_value() && !default_value.has_value()) {
+        return std::nullopt;
+      }
+
+      template_parameters->emplace_back(param.name(), type.value(),
+                                        default_value);
+    }
+  }
+
+  FnCaptures captures;
+  captures.reserve(in.captures_size());
+
+  for (const auto &cap : in.captures()) {
+    captures.emplace_back(cap.name(), cap.is_reference());
+  }
+
+  FuncParams parameters;
+  parameters.reserve(in.parameters_size());
+
+  for (const auto &param : in.parameters()) {
+    auto type = Unmarshal(param.type());
+    if (!type.has_value()) {
+      return std::nullopt;
+    }
+
+    auto default_value = Unmarshal(param.default_value());
+    if (param.has_default_value() && !default_value.has_value()) {
+      return std::nullopt;
+    }
+
+    parameters.emplace_back(param.name(), type.value(), default_value);
+  }
+
+  auto precondition = Unmarshal(in.precondition());
+  if (in.has_precondition() && !precondition.has_value()) {
+    return std::nullopt;
+  }
+
+  auto postcondition = Unmarshal(in.postcondition());
+  if (in.has_postcondition() && !postcondition.has_value()) {
+    return std::nullopt;
+  }
+
+  auto block = Unmarshal(in.body());
+  if (in.has_body() && !block.has_value()) {
+    return std::nullopt;
+  }
+
+  auto return_type = Unmarshal(in.return_type());
+  if (!return_type.has_value()) {
+    return std::nullopt;
+  }
+
+  auto object = CreateNode<Function>(
+      attributes, FromPurity(in.purity()), captures, in.name(),
+      template_parameters, parameters, in.variadic(), return_type.value(),
+      precondition, postcondition, block)();
+  UnmarshalLocationLocation(in.location(), object);
+  UnmarshalCodeComment(in.comments(), object);
+
+  return object;
 }
 
 auto AstReader::Unmarshal(const SyntaxTree::Struct &in) -> Result<Struct> {
-  /// TODO: Unmarshal the protobuf object
-  qcore_implement();
-  (void)in;
+  ExpressionList attributes;
+  attributes.reserve(in.attributes_size());
+
+  for (const auto &attr : in.attributes()) {
+    auto attribute = Unmarshal(attr);
+    if (!attribute.has_value()) {
+      return std::nullopt;
+    }
+
+    attributes.push_back(attribute.value());
+  }
+
+  StructNames names;
+  names.reserve(in.names_size());
+
+  for (const auto &name : in.names()) {
+    names.emplace_back(name);
+  }
+
+  StructFields fields;
+  fields.reserve(in.fields_size());
+
+  for (const auto &field : in.fields()) {
+    auto vis = FromVisibility(field.visibility());
+    auto is_static = field.is_static();
+
+    auto type = Unmarshal(field.type());
+    if (!type.has_value()) {
+      return std::nullopt;
+    }
+
+    auto value = Unmarshal(field.default_value());
+    if (field.has_default_value() && !value.has_value()) {
+      return std::nullopt;
+    }
+
+    fields.emplace_back(vis, is_static, field.name(), type.value(), value);
+  }
+
+  StructMethods methods;
+  methods.reserve(in.methods_size());
+
+  for (const auto &method : in.methods()) {
+    auto vis = FromVisibility(method.visibility());
+    auto func = Unmarshal(method.func());
+    if (!func.has_value()) {
+      return std::nullopt;
+    }
+
+    methods.emplace_back(vis, func.value());
+  }
+
+  StructMethods static_methods;
+  static_methods.reserve(in.static_methods_size());
+
+  for (const auto &method : in.static_methods()) {
+    auto vis = FromVisibility(method.visibility());
+    auto func = Unmarshal(method.func());
+    if (!func.has_value()) {
+      return std::nullopt;
+    }
+
+    static_methods.emplace_back(vis, func.value());
+  }
+
+  std::optional<TemplateParameters> template_parameters;
+  if (in.has_template_parameters()) {
+    template_parameters = TemplateParameters();
+
+    for (const auto &param : in.template_parameters().parameters()) {
+      auto type = Unmarshal(param.type());
+      if (!type.has_value()) {
+        return std::nullopt;
+      }
+
+      auto default_value = Unmarshal(param.default_value());
+      if (param.has_default_value() && !default_value.has_value()) {
+        return std::nullopt;
+      }
+
+      template_parameters->emplace_back(param.name(), type.value(),
+                                        default_value);
+    }
+  }
+
+  auto object = CreateNode<Struct>(FromCompType(in.kind()), attributes,
+                                   in.name(), template_parameters, names,
+                                   fields, methods, static_methods)();
+  UnmarshalLocationLocation(in.location(), object);
+  UnmarshalCodeComment(in.comments(), object);
+
+  return object;
 }
 
 auto AstReader::Unmarshal(const SyntaxTree::Enum &in) -> Result<Enum> {
