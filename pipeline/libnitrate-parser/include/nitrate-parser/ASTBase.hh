@@ -65,7 +65,7 @@ namespace ncc::parse {
 
     lex::LocationID m_begin;
     lex::LocationID m_end;
-    std::vector<lex::Token> m_comments;
+    std::vector<string> m_comments;
 
     ASTExtensionPackage(lex::LocationID begin, lex::LocationID end)
         : m_begin(begin), m_end(end) {}
@@ -73,11 +73,11 @@ namespace ncc::parse {
   public:
     [[nodiscard]] auto Begin() const { return m_begin; }
     [[nodiscard]] auto End() const { return m_end; }
-    [[nodiscard]] auto Comments() const -> std::span<const lex::Token> {
+    [[nodiscard]] auto Comments() const -> std::span<const string> {
       return m_comments;
     }
 
-    void AddComments(std::span<const lex::Token> comments) {
+    void AddComments(std::span<const string> comments) {
       m_comments.insert(m_comments.end(), comments.begin(), comments.end());
     }
   };
@@ -392,7 +392,7 @@ namespace ncc::parse {
 
     [[nodiscard]] constexpr auto Comments() const {
       if (m_data.IsNull()) {
-        return std::span<const lex::Token>();
+        return std::span<const string>();
       }
 
       return ExtensionDataStore.Get(m_data).Comments();
@@ -409,7 +409,8 @@ namespace ncc::parse {
       m_data = ExtensionDataStore.Add(begin, end);
     }
 
-    void BindCodeCommentData(std::span<const lex::Token> comment_tokens);
+    void SetComments(std::span<const lex::Token> comment_tokens);
+    void SetComments(std::span<const string> comments);
   } __attribute__((packed));
 
   static_assert(sizeof(Base) == 8);

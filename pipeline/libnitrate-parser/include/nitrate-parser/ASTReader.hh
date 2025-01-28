@@ -43,7 +43,6 @@
 #include <nitrate-parser/AST.hh>
 #include <nitrate-parser/ASTWriter.hh>
 #include <optional>
-#include <source_location>
 
 namespace ncc::parse {
   using ReaderSourceManager =
@@ -51,41 +50,7 @@ namespace ncc::parse {
 
   class NCC_EXPORT AstReader final {
     template <typename T>
-    class Result {
-      NullableFlowPtr<T> m_data;
-
-    public:
-#ifndef NDEBUG
-      Result(std::nullopt_t = std::nullopt,
-             std::source_location loc = std::source_location::current()) {
-        std::cerr << "[AstReader failed]: " << loc.function_name() << std::endl;
-      }
-#else
-      Result(std::nullopt_t = std::nullopt) = default;
-#endif
-
-      Result(NullableFlowPtr<T> data) : m_data(data) {}
-      Result(FlowPtr<T> data) : m_data(data) {}
-
-      template <typename U>
-      Result(const Result<U> &other) {
-        if (other.has_value()) {
-          m_data = other.value().template As<T>();
-        }
-      }
-
-      [[nodiscard]] const FlowPtr<T> &value() const {  // NOLINT
-        return m_data.value();
-      }
-
-      [[nodiscard]] bool has_value() const {  // NOLINT
-        return m_data.has_value();
-      }
-
-      [[nodiscard]] NullableFlowPtr<T> get() const {  // NOLINT
-        return m_data;
-      }
-    };
+    using Result = NullableFlowPtr<T>;
 
     Result<Base> m_root;
     ReaderSourceManager m_rd;

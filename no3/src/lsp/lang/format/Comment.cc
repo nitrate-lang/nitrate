@@ -43,7 +43,7 @@ void CambrianFormatter::PrintLineComments(const FlowPtr<parse::Base>& n) {
   if (!comments.empty()) {
     for (auto comment : comments) {
       m_line << "#";
-      m_line << comment.GetString() << std::endl;
+      m_line << comment << std::endl;
 
       if (m_line_size != 0U) {
         m_line << std::string(m_line_size, ' ');
@@ -57,7 +57,7 @@ void CambrianFormatter::PrintMultilineComments(const FlowPtr<parse::Base>& n) {
   if (!comments.empty()) {
     for (auto comment : comments) {
       m_line << "/*";
-      m_line << comment.GetString();
+      m_line << comment;
       m_line << "*/ ";
     }
   }

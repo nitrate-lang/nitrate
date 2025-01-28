@@ -167,9 +167,25 @@ auto Base::RecursiveChildCount() -> size_t {
   return count;
 }
 
-void Base::BindCodeCommentData(std::span<const lex::Token> comment_tokens) {
+void Base::SetComments(std::span<const lex::Token> comment_tokens) {
   auto old = ExtensionDataStore.Get(m_data);
-  old.AddComments(comment_tokens);
+
+  {
+    std::vector<string> comments;
+    comments.reserve(comment_tokens.size());
+    for (const auto &token : comment_tokens) {
+      comments.push_back(token.GetString());
+    }
+
+    old.AddComments(std::move(comments));
+  }
+
+  ExtensionDataStore.Set(m_data, std::move(old));
+}
+
+void Base::SetComments(std::span<const string> comments) {
+  auto old = ExtensionDataStore.Get(m_data);
+  old.AddComments(comments);
   ExtensionDataStore.Set(m_data, std::move(old));
 }
 
