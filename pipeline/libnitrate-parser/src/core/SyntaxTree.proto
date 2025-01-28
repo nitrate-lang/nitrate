@@ -5,14 +5,14 @@ syntax = "proto2";
 
 package nitrate.parser.SyntaxTree;
 
-message SourceLocation {
-  required uint32 line = 1;
-  required uint32 column = 2;
-  required uint32 offset = 3;
-  optional string file = 4;
-}
-
 message SourceLocationRange {
+  message SourceLocation {
+    required uint32 line = 1;
+    required uint32 column = 2;
+    required uint32 offset = 3;
+    optional string file = 4;
+  }
+
   optional SourceLocation start = 1;
   optional SourceLocation end = 2;
 }
@@ -45,70 +45,20 @@ message FunctionParameter {
   optional Expr default_value = 3;
 }
 
-message FStringTerm {
-  oneof part {
-    string text = 1;
-    Expr expr = 2;
-  }
-}
-
-enum SafetyMode {
-  Unspecified = 0;
-  Safe = 1;
-  Unsafe = 2;
-}
-
-enum VariableKind {
-  Const = 0;
-  Var = 1;
-  Let = 2;
-}
-
 enum Vis {
   Public = 0;
   Private = 1;
   Protected = 2;
 }
 
-message TemplateParameter {
-  required string name = 1;
-  required Type type = 2;
-  optional Expr default_value = 3;
-}
-
 message TemplateParameters {
+  message TemplateParameter {
+    required string name = 1;
+    required Type type = 2;
+    optional Expr default_value = 3;
+  }
+
   repeated TemplateParameter parameters = 1;
-}
-
-message FunctionCapture {
-  required string name = 1;
-  required bool is_reference = 2;
-}
-
-message StructField {
-  required string name = 1;
-  optional Expr default_value = 3;
-  required Type type = 2;
-  required Vis visibility = 4;
-  required bool is_static = 5;
-}
-
-message StructMethod {
-  required Stmt func = 1;
-  required Vis visibility = 2;
-}
-
-enum AggregateKind {
-  Region_ = 0;
-  Struct_ = 1;
-  Group_ = 2;
-  Class_ = 3;
-  Union_ = 4;
-}
-
-message EnumItem {
-  required string name = 1;
-  optional Expr value = 2;
 }
 
 ///===--------------------------------------------------------------------===///
@@ -569,6 +519,13 @@ message Slice {
 }
 
 message FString {
+  message FStringTerm {
+    oneof part {
+      string text = 1;
+      Expr expr = 2;
+    }
+  }
+
   optional SourceLocationRange location = 1;
   repeated UserComment comments = 2;
 
@@ -599,6 +556,12 @@ message ExprStmt {
 }
 
 message Block {
+  enum SafetyMode {
+    Unspecified = 0;
+    Safe = 1;
+    Unsafe = 2;
+  }
+
   optional SourceLocationRange location = 1;
   repeated UserComment comments = 2;
 
@@ -607,6 +570,12 @@ message Block {
 }
 
 message Variable {
+  enum VariableKind {
+    Const = 0;
+    Var = 1;
+    Let = 2;
+  }
+
   optional SourceLocationRange location = 1;
   repeated UserComment comments = 2;
 
@@ -732,15 +701,25 @@ message Typedef {
 }
 
 message Enum {
+  message Field {
+    required string name = 1;
+    optional Expr value = 2;
+  }
+
   optional SourceLocationRange location = 1;
   repeated UserComment comments = 2;
 
   required string name = 4;
   optional Type base_type = 5;
-  repeated EnumItem items = 6;
+  repeated Field items = 6;
 }
 
 message Function {
+  message Capture {
+    required string name = 1;
+    required bool is_reference = 2;
+  }
+
   optional SourceLocationRange location = 1;
   repeated UserComment comments = 2;
 
@@ -750,7 +729,7 @@ message Function {
   optional TemplateParameters template_parameters = 7;
   repeated FunctionParameter parameters = 8;
   required bool variadic = 9;
-  repeated FunctionCapture captures = 10;
+  repeated Capture captures = 10;
   optional Expr precondition = 11;
   optional Expr postcondition = 12;
   repeated Expr attributes = 13;
@@ -758,6 +737,27 @@ message Function {
 }
 
 message Struct {
+  enum AggregateKind {
+    Region_ = 0;
+    Struct_ = 1;
+    Group_ = 2;
+    Class_ = 3;
+    Union_ = 4;
+  }
+
+  message Field {
+    required string name = 1;
+    optional Expr default_value = 3;
+    required Type type = 2;
+    required Vis visibility = 4;
+    required bool is_static = 5;
+  }
+
+  message Method {
+    required Stmt func = 1;
+    required Vis visibility = 2;
+  }
+
   optional SourceLocationRange location = 1;
   repeated UserComment comments = 2;
 
@@ -766,9 +766,9 @@ message Struct {
   optional TemplateParameters template_parameters = 6;
   repeated string names = 7;
   repeated Expr attributes = 8;
-  repeated StructField fields = 9;
-  repeated StructMethod methods = 10;
-  repeated StructMethod static_methods = 11;
+  repeated Field fields = 9;
+  repeated Method methods = 10;
+  repeated Method static_methods = 11;
 }
 
 message Expr {

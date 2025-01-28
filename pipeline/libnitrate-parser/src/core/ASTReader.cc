@@ -33,6 +33,8 @@
 
 #include <core/SyntaxTree.pb.h>
 
+#include <boost/multiprecision/cpp_int.hpp>
+#include <charconv>
 #include <iostream>
 #include <memory>
 #include <nitrate-core/Logger.hh>
@@ -46,17 +48,18 @@ using namespace ncc;
 using namespace ncc::parse;
 using namespace nitrate::parser;
 
-static parse::SafetyMode FromSafetyMode(SyntaxTree::SafetyMode mode) noexcept {
+static parse::SafetyMode FromSafetyMode(
+    SyntaxTree::Block_SafetyMode mode) noexcept {
   switch (mode) {
-    case SyntaxTree::SafetyMode::Safe: {
+    case SyntaxTree::Block_SafetyMode_Safe: {
       return parse::SafetyMode::Safe;
     }
 
-    case SyntaxTree::SafetyMode::Unsafe: {
+    case SyntaxTree::Block_SafetyMode_Unsafe: {
       return parse::SafetyMode::Unsafe;
     }
 
-    case SyntaxTree::SafetyMode::Unspecified: {
+    case SyntaxTree::Block_SafetyMode_Unspecified: {
       return parse::SafetyMode::Unknown;
     }
   }
@@ -739,15 +742,57 @@ auto AstReader::Unmarshal(const SyntaxTree::TypeExpr &in) -> Result<TypeExpr> {
 }
 
 auto AstReader::Unmarshal(const SyntaxTree::NamedTy &in) -> Result<NamedTy> {
-  /// TODO: Unmarshal the protobuf object
-  qcore_implement();
-  (void)in;
+  auto bit_width = Unmarshal(in.bit_width());
+  if (in.has_bit_width() && !bit_width.has_value()) {
+    return std::nullopt;
+  }
+
+  auto minimum = Unmarshal(in.minimum());
+  if (in.has_minimum() && !minimum.has_value()) {
+    return std::nullopt;
+  }
+
+  auto maximum = Unmarshal(in.maximum());
+  if (in.has_maximum() && !maximum.has_value()) {
+    return std::nullopt;
+  }
+
+  auto type = CreateNode<NamedTy>(in.name())();
+  type->SetWidth(bit_width.get());
+  type->SetRangeBegin(minimum.get());
+  type->SetRangeEnd(maximum.get());
+
+  UnmarshalLocationLocation(in.location(), type);
+  UnmarshalCodeComment(in.comments(), type);
+
+  return type;
 }
 
 auto AstReader::Unmarshal(const SyntaxTree::InferTy &in) -> Result<InferTy> {
-  /// TODO: Unmarshal the protobuf object
-  qcore_implement();
-  (void)in;
+  auto bit_width = Unmarshal(in.bit_width());
+  if (in.has_bit_width() && !bit_width.has_value()) {
+    return std::nullopt;
+  }
+
+  auto minimum = Unmarshal(in.minimum());
+  if (in.has_minimum() && !minimum.has_value()) {
+    return std::nullopt;
+  }
+
+  auto maximum = Unmarshal(in.maximum());
+  if (in.has_maximum() && !maximum.has_value()) {
+    return std::nullopt;
+  }
+
+  auto type = CreateNode<InferTy>()();
+  type->SetWidth(bit_width.get());
+  type->SetRangeBegin(minimum.get());
+  type->SetRangeEnd(maximum.get());
+
+  UnmarshalLocationLocation(in.location(), type);
+  UnmarshalCodeComment(in.comments(), type);
+
+  return type;
 }
 
 auto AstReader::Unmarshal(const SyntaxTree::TemplateType &in)
@@ -758,99 +803,435 @@ auto AstReader::Unmarshal(const SyntaxTree::TemplateType &in)
 }
 
 auto AstReader::Unmarshal(const SyntaxTree::U1 &in) -> Result<U1> {
-  /// TODO: Unmarshal the protobuf object
-  qcore_implement();
-  (void)in;
+  auto bit_width = Unmarshal(in.bit_width());
+  if (in.has_bit_width() && !bit_width.has_value()) {
+    return std::nullopt;
+  }
+
+  auto minimum = Unmarshal(in.minimum());
+  if (in.has_minimum() && !minimum.has_value()) {
+    return std::nullopt;
+  }
+
+  auto maximum = Unmarshal(in.maximum());
+  if (in.has_maximum() && !maximum.has_value()) {
+    return std::nullopt;
+  }
+
+  auto type = CreateNode<U1>()();
+  type->SetWidth(bit_width.get());
+  type->SetRangeBegin(minimum.get());
+  type->SetRangeEnd(maximum.get());
+
+  UnmarshalLocationLocation(in.location(), type);
+  UnmarshalCodeComment(in.comments(), type);
+
+  return type;
 }
 
 auto AstReader::Unmarshal(const SyntaxTree::U8 &in) -> Result<U8> {
-  /// TODO: Unmarshal the protobuf object
-  qcore_implement();
-  (void)in;
+  auto bit_width = Unmarshal(in.bit_width());
+  if (in.has_bit_width() && !bit_width.has_value()) {
+    return std::nullopt;
+  }
+
+  auto minimum = Unmarshal(in.minimum());
+  if (in.has_minimum() && !minimum.has_value()) {
+    return std::nullopt;
+  }
+
+  auto maximum = Unmarshal(in.maximum());
+  if (in.has_maximum() && !maximum.has_value()) {
+    return std::nullopt;
+  }
+
+  auto type = CreateNode<U8>()();
+  type->SetWidth(bit_width.get());
+  type->SetRangeBegin(minimum.get());
+  type->SetRangeEnd(maximum.get());
+
+  UnmarshalLocationLocation(in.location(), type);
+  UnmarshalCodeComment(in.comments(), type);
+
+  return type;
 }
 
 auto AstReader::Unmarshal(const SyntaxTree::U16 &in) -> Result<U16> {
-  /// TODO: Unmarshal the protobuf object
-  qcore_implement();
-  (void)in;
+  auto bit_width = Unmarshal(in.bit_width());
+  if (in.has_bit_width() && !bit_width.has_value()) {
+    return std::nullopt;
+  }
+
+  auto minimum = Unmarshal(in.minimum());
+  if (in.has_minimum() && !minimum.has_value()) {
+    return std::nullopt;
+  }
+
+  auto maximum = Unmarshal(in.maximum());
+  if (in.has_maximum() && !maximum.has_value()) {
+    return std::nullopt;
+  }
+
+  auto type = CreateNode<U16>()();
+  type->SetWidth(bit_width.get());
+  type->SetRangeBegin(minimum.get());
+  type->SetRangeEnd(maximum.get());
+
+  UnmarshalLocationLocation(in.location(), type);
+  UnmarshalCodeComment(in.comments(), type);
+
+  return type;
 }
 
 auto AstReader::Unmarshal(const SyntaxTree::U32 &in) -> Result<U32> {
-  /// TODO: Unmarshal the protobuf object
-  qcore_implement();
-  (void)in;
+  auto bit_width = Unmarshal(in.bit_width());
+  if (in.has_bit_width() && !bit_width.has_value()) {
+    return std::nullopt;
+  }
+
+  auto minimum = Unmarshal(in.minimum());
+  if (in.has_minimum() && !minimum.has_value()) {
+    return std::nullopt;
+  }
+
+  auto maximum = Unmarshal(in.maximum());
+  if (in.has_maximum() && !maximum.has_value()) {
+    return std::nullopt;
+  }
+
+  auto type = CreateNode<U32>()();
+  type->SetWidth(bit_width.get());
+  type->SetRangeBegin(minimum.get());
+  type->SetRangeEnd(maximum.get());
+
+  UnmarshalLocationLocation(in.location(), type);
+  UnmarshalCodeComment(in.comments(), type);
+
+  return type;
 }
 
 auto AstReader::Unmarshal(const SyntaxTree::U64 &in) -> Result<U64> {
-  /// TODO: Unmarshal the protobuf object
-  qcore_implement();
-  (void)in;
+  auto bit_width = Unmarshal(in.bit_width());
+  if (in.has_bit_width() && !bit_width.has_value()) {
+    return std::nullopt;
+  }
+
+  auto minimum = Unmarshal(in.minimum());
+  if (in.has_minimum() && !minimum.has_value()) {
+    return std::nullopt;
+  }
+
+  auto maximum = Unmarshal(in.maximum());
+  if (in.has_maximum() && !maximum.has_value()) {
+    return std::nullopt;
+  }
+
+  auto type = CreateNode<U64>()();
+  type->SetWidth(bit_width.get());
+  type->SetRangeBegin(minimum.get());
+  type->SetRangeEnd(maximum.get());
+
+  UnmarshalLocationLocation(in.location(), type);
+  UnmarshalCodeComment(in.comments(), type);
+
+  return type;
 }
 
 auto AstReader::Unmarshal(const SyntaxTree::U128 &in) -> Result<U128> {
-  /// TODO: Unmarshal the protobuf object
-  qcore_implement();
-  (void)in;
+  auto bit_width = Unmarshal(in.bit_width());
+  if (in.has_bit_width() && !bit_width.has_value()) {
+    return std::nullopt;
+  }
+
+  auto minimum = Unmarshal(in.minimum());
+  if (in.has_minimum() && !minimum.has_value()) {
+    return std::nullopt;
+  }
+
+  auto maximum = Unmarshal(in.maximum());
+  if (in.has_maximum() && !maximum.has_value()) {
+    return std::nullopt;
+  }
+
+  auto type = CreateNode<U128>()();
+  type->SetWidth(bit_width.get());
+  type->SetRangeBegin(minimum.get());
+  type->SetRangeEnd(maximum.get());
+
+  UnmarshalLocationLocation(in.location(), type);
+  UnmarshalCodeComment(in.comments(), type);
+
+  return type;
 }
 
 auto AstReader::Unmarshal(const SyntaxTree::I8 &in) -> Result<I8> {
-  /// TODO: Unmarshal the protobuf object
-  qcore_implement();
-  (void)in;
+  auto bit_width = Unmarshal(in.bit_width());
+  if (in.has_bit_width() && !bit_width.has_value()) {
+    return std::nullopt;
+  }
+
+  auto minimum = Unmarshal(in.minimum());
+  if (in.has_minimum() && !minimum.has_value()) {
+    return std::nullopt;
+  }
+
+  auto maximum = Unmarshal(in.maximum());
+  if (in.has_maximum() && !maximum.has_value()) {
+    return std::nullopt;
+  }
+
+  auto type = CreateNode<I8>()();
+  type->SetWidth(bit_width.get());
+  type->SetRangeBegin(minimum.get());
+  type->SetRangeEnd(maximum.get());
+
+  UnmarshalLocationLocation(in.location(), type);
+  UnmarshalCodeComment(in.comments(), type);
+
+  return type;
 }
 
 auto AstReader::Unmarshal(const SyntaxTree::I16 &in) -> Result<I16> {
-  /// TODO: Unmarshal the protobuf object
-  qcore_implement();
-  (void)in;
+  auto bit_width = Unmarshal(in.bit_width());
+  if (in.has_bit_width() && !bit_width.has_value()) {
+    return std::nullopt;
+  }
+
+  auto minimum = Unmarshal(in.minimum());
+  if (in.has_minimum() && !minimum.has_value()) {
+    return std::nullopt;
+  }
+
+  auto maximum = Unmarshal(in.maximum());
+  if (in.has_maximum() && !maximum.has_value()) {
+    return std::nullopt;
+  }
+
+  auto type = CreateNode<I16>()();
+  type->SetWidth(bit_width.get());
+  type->SetRangeBegin(minimum.get());
+  type->SetRangeEnd(maximum.get());
+
+  UnmarshalLocationLocation(in.location(), type);
+  UnmarshalCodeComment(in.comments(), type);
+
+  return type;
 }
 
 auto AstReader::Unmarshal(const SyntaxTree::I32 &in) -> Result<I32> {
-  /// TODO: Unmarshal the protobuf object
-  qcore_implement();
-  (void)in;
+  auto bit_width = Unmarshal(in.bit_width());
+  if (in.has_bit_width() && !bit_width.has_value()) {
+    return std::nullopt;
+  }
+
+  auto minimum = Unmarshal(in.minimum());
+  if (in.has_minimum() && !minimum.has_value()) {
+    return std::nullopt;
+  }
+
+  auto maximum = Unmarshal(in.maximum());
+  if (in.has_maximum() && !maximum.has_value()) {
+    return std::nullopt;
+  }
+
+  auto type = CreateNode<I32>()();
+  type->SetWidth(bit_width.get());
+  type->SetRangeBegin(minimum.get());
+  type->SetRangeEnd(maximum.get());
+
+  UnmarshalLocationLocation(in.location(), type);
+  UnmarshalCodeComment(in.comments(), type);
+
+  return type;
 }
 
 auto AstReader::Unmarshal(const SyntaxTree::I64 &in) -> Result<I64> {
-  /// TODO: Unmarshal the protobuf object
-  qcore_implement();
-  (void)in;
+  auto bit_width = Unmarshal(in.bit_width());
+  if (in.has_bit_width() && !bit_width.has_value()) {
+    return std::nullopt;
+  }
+
+  auto minimum = Unmarshal(in.minimum());
+  if (in.has_minimum() && !minimum.has_value()) {
+    return std::nullopt;
+  }
+
+  auto maximum = Unmarshal(in.maximum());
+  if (in.has_maximum() && !maximum.has_value()) {
+    return std::nullopt;
+  }
+
+  auto type = CreateNode<I64>()();
+  type->SetWidth(bit_width.get());
+  type->SetRangeBegin(minimum.get());
+  type->SetRangeEnd(maximum.get());
+
+  UnmarshalLocationLocation(in.location(), type);
+  UnmarshalCodeComment(in.comments(), type);
+
+  return type;
 }
 
 auto AstReader::Unmarshal(const SyntaxTree::I128 &in) -> Result<I128> {
-  /// TODO: Unmarshal the protobuf object
-  qcore_implement();
-  (void)in;
+  auto bit_width = Unmarshal(in.bit_width());
+  if (in.has_bit_width() && !bit_width.has_value()) {
+    return std::nullopt;
+  }
+
+  auto minimum = Unmarshal(in.minimum());
+  if (in.has_minimum() && !minimum.has_value()) {
+    return std::nullopt;
+  }
+
+  auto maximum = Unmarshal(in.maximum());
+  if (in.has_maximum() && !maximum.has_value()) {
+    return std::nullopt;
+  }
+
+  auto type = CreateNode<I128>()();
+  type->SetWidth(bit_width.get());
+  type->SetRangeBegin(minimum.get());
+  type->SetRangeEnd(maximum.get());
+
+  UnmarshalLocationLocation(in.location(), type);
+  UnmarshalCodeComment(in.comments(), type);
+
+  return type;
 }
 
 auto AstReader::Unmarshal(const SyntaxTree::F16 &in) -> Result<F16> {
-  /// TODO: Unmarshal the protobuf object
-  qcore_implement();
-  (void)in;
+  auto bit_width = Unmarshal(in.bit_width());
+  if (in.has_bit_width() && !bit_width.has_value()) {
+    return std::nullopt;
+  }
+
+  auto minimum = Unmarshal(in.minimum());
+  if (in.has_minimum() && !minimum.has_value()) {
+    return std::nullopt;
+  }
+
+  auto maximum = Unmarshal(in.maximum());
+  if (in.has_maximum() && !maximum.has_value()) {
+    return std::nullopt;
+  }
+
+  auto type = CreateNode<F16>()();
+  type->SetWidth(bit_width.get());
+  type->SetRangeBegin(minimum.get());
+  type->SetRangeEnd(maximum.get());
+
+  UnmarshalLocationLocation(in.location(), type);
+  UnmarshalCodeComment(in.comments(), type);
+
+  return type;
 }
 
 auto AstReader::Unmarshal(const SyntaxTree::F32 &in) -> Result<F32> {
-  /// TODO: Unmarshal the protobuf object
-  qcore_implement();
-  (void)in;
+  auto bit_width = Unmarshal(in.bit_width());
+  if (in.has_bit_width() && !bit_width.has_value()) {
+    return std::nullopt;
+  }
+
+  auto minimum = Unmarshal(in.minimum());
+  if (in.has_minimum() && !minimum.has_value()) {
+    return std::nullopt;
+  }
+
+  auto maximum = Unmarshal(in.maximum());
+  if (in.has_maximum() && !maximum.has_value()) {
+    return std::nullopt;
+  }
+
+  auto type = CreateNode<F32>()();
+  type->SetWidth(bit_width.get());
+  type->SetRangeBegin(minimum.get());
+  type->SetRangeEnd(maximum.get());
+
+  UnmarshalLocationLocation(in.location(), type);
+  UnmarshalCodeComment(in.comments(), type);
+
+  return type;
 }
 
 auto AstReader::Unmarshal(const SyntaxTree::F64 &in) -> Result<F64> {
-  /// TODO: Unmarshal the protobuf object
-  qcore_implement();
-  (void)in;
+  auto bit_width = Unmarshal(in.bit_width());
+  if (in.has_bit_width() && !bit_width.has_value()) {
+    return std::nullopt;
+  }
+
+  auto minimum = Unmarshal(in.minimum());
+  if (in.has_minimum() && !minimum.has_value()) {
+    return std::nullopt;
+  }
+
+  auto maximum = Unmarshal(in.maximum());
+  if (in.has_maximum() && !maximum.has_value()) {
+    return std::nullopt;
+  }
+
+  auto type = CreateNode<F64>()();
+  type->SetWidth(bit_width.get());
+  type->SetRangeBegin(minimum.get());
+  type->SetRangeEnd(maximum.get());
+
+  UnmarshalLocationLocation(in.location(), type);
+  UnmarshalCodeComment(in.comments(), type);
+
+  return type;
 }
 
 auto AstReader::Unmarshal(const SyntaxTree::F128 &in) -> Result<F128> {
-  /// TODO: Unmarshal the protobuf object
-  qcore_implement();
-  (void)in;
+  auto bit_width = Unmarshal(in.bit_width());
+  if (in.has_bit_width() && !bit_width.has_value()) {
+    return std::nullopt;
+  }
+
+  auto minimum = Unmarshal(in.minimum());
+  if (in.has_minimum() && !minimum.has_value()) {
+    return std::nullopt;
+  }
+
+  auto maximum = Unmarshal(in.maximum());
+  if (in.has_maximum() && !maximum.has_value()) {
+    return std::nullopt;
+  }
+
+  auto type = CreateNode<F128>()();
+  type->SetWidth(bit_width.get());
+  type->SetRangeBegin(minimum.get());
+  type->SetRangeEnd(maximum.get());
+
+  UnmarshalLocationLocation(in.location(), type);
+  UnmarshalCodeComment(in.comments(), type);
+
+  return type;
 }
 
 auto AstReader::Unmarshal(const SyntaxTree::VoidTy &in) -> Result<VoidTy> {
-  /// TODO: Unmarshal the protobuf object
-  qcore_implement();
-  (void)in;
+  auto bit_width = Unmarshal(in.bit_width());
+  if (in.has_bit_width() && !bit_width.has_value()) {
+    return std::nullopt;
+  }
+
+  auto minimum = Unmarshal(in.minimum());
+  if (in.has_minimum() && !minimum.has_value()) {
+    return std::nullopt;
+  }
+
+  auto maximum = Unmarshal(in.maximum());
+  if (in.has_maximum() && !maximum.has_value()) {
+    return std::nullopt;
+  }
+
+  auto type = CreateNode<VoidTy>()();
+  type->SetWidth(bit_width.get());
+  type->SetRangeBegin(minimum.get());
+  type->SetRangeEnd(maximum.get());
+
+  UnmarshalLocationLocation(in.location(), type);
+  UnmarshalCodeComment(in.comments(), type);
+
+  return type;
 }
 
 auto AstReader::Unmarshal(const SyntaxTree::PtrTy &in) -> Result<PtrTy> {
@@ -860,9 +1241,30 @@ auto AstReader::Unmarshal(const SyntaxTree::PtrTy &in) -> Result<PtrTy> {
 }
 
 auto AstReader::Unmarshal(const SyntaxTree::OpaqueTy &in) -> Result<OpaqueTy> {
-  /// TODO: Unmarshal the protobuf object
-  qcore_implement();
-  (void)in;
+  auto bit_width = Unmarshal(in.bit_width());
+  if (in.has_bit_width() && !bit_width.has_value()) {
+    return std::nullopt;
+  }
+
+  auto minimum = Unmarshal(in.minimum());
+  if (in.has_minimum() && !minimum.has_value()) {
+    return std::nullopt;
+  }
+
+  auto maximum = Unmarshal(in.maximum());
+  if (in.has_maximum() && !maximum.has_value()) {
+    return std::nullopt;
+  }
+
+  auto type = CreateNode<OpaqueTy>(in.name())();
+  type->SetWidth(bit_width.get());
+  type->SetRangeBegin(minimum.get());
+  type->SetRangeEnd(maximum.get());
+
+  UnmarshalLocationLocation(in.location(), type);
+  UnmarshalCodeComment(in.comments(), type);
+
+  return type;
 }
 
 auto AstReader::Unmarshal(const SyntaxTree::TupleTy &in) -> Result<TupleTy> {
@@ -915,15 +1317,41 @@ auto AstReader::Unmarshal(const SyntaxTree::Ternary &in) -> Result<Ternary> {
 }
 
 auto AstReader::Unmarshal(const SyntaxTree::Integer &in) -> Result<Integer> {
-  /// TODO: Unmarshal the protobuf object
-  qcore_implement();
-  (void)in;
+  bool lexically_valid = std::all_of(in.number().begin(), in.number().end(),
+                                     [](char c) { return std::isdigit(c); });
+  if (!lexically_valid) {
+    return std::nullopt;
+  }
+
+  /* Do range checking */
+  boost::multiprecision::cpp_int value(in.number());
+  if (value < 0 || value > boost::multiprecision::cpp_int(
+                               "340282366920938463463374607431768211455")) {
+    return std::nullopt;
+  }
+
+  auto object = CreateNode<Integer>(in.number())();
+  UnmarshalLocationLocation(in.location(), object);
+  UnmarshalCodeComment(in.comments(), object);
+
+  return object;
 }
 
 auto AstReader::Unmarshal(const SyntaxTree::Float &in) -> Result<Float> {
-  /// TODO: Unmarshal the protobuf object
-  qcore_implement();
-  (void)in;
+  long double f = 0.0;
+
+  /* Verify float format  */
+  if (std::from_chars(in.number().data(),
+                      in.number().data() + in.number().size(), f)
+          .ec != std::errc()) {
+    return std::nullopt;
+  }
+
+  auto object = CreateNode<Float>(in.number())();
+  UnmarshalLocationLocation(in.location(), object);
+  UnmarshalCodeComment(in.comments(), object);
+
+  return object;
 }
 
 auto AstReader::Unmarshal(const SyntaxTree::Boolean &in) -> Result<Boolean> {
@@ -935,29 +1363,42 @@ auto AstReader::Unmarshal(const SyntaxTree::Boolean &in) -> Result<Boolean> {
 }
 
 auto AstReader::Unmarshal(const SyntaxTree::String &in) -> Result<String> {
-  /// TODO: Unmarshal the protobuf object
-  qcore_implement();
-  (void)in;
+  auto object = CreateNode<String>(in.text())();
+  UnmarshalLocationLocation(in.location(), object);
+  UnmarshalCodeComment(in.comments(), object);
+
+  return object;
 }
 
 auto AstReader::Unmarshal(const SyntaxTree::Character &in)
     -> Result<Character> {
-  /// TODO: Unmarshal the protobuf object
-  qcore_implement();
-  (void)in;
+  auto value = in.char_();
+  if (value < 0 || value > 255) {
+    return std::nullopt;
+  }
+
+  auto object = CreateNode<Character>(value)();
+  UnmarshalLocationLocation(in.location(), object);
+  UnmarshalCodeComment(in.comments(), object);
+
+  return object;
 }
 
 auto AstReader::Unmarshal(const SyntaxTree::Null &in) -> Result<Null> {
-  /// TODO: Unmarshal the protobuf object
-  qcore_implement();
-  (void)in;
+  auto object = CreateNode<Null>()();
+  UnmarshalLocationLocation(in.location(), object);
+  UnmarshalCodeComment(in.comments(), object);
+
+  return object;
 }
 
 auto AstReader::Unmarshal(const SyntaxTree::Undefined &in)
     -> Result<Undefined> {
-  /// TODO: Unmarshal the protobuf object
-  qcore_implement();
-  (void)in;
+  auto object = CreateNode<Undefined>()();
+  UnmarshalLocationLocation(in.location(), object);
+  UnmarshalCodeComment(in.comments(), object);
+
+  return object;
 }
 
 auto AstReader::Unmarshal(const SyntaxTree::Call &in) -> Result<Call> {

@@ -31,8 +31,7 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <google/protobuf/arena.h>
-#include <google/protobuf/message.h>
+#include <core/SyntaxTree.pb.h>
 
 #include <nitrate-core/Logger.hh>
 #include <nitrate-core/Macro.hh>
@@ -40,8 +39,6 @@
 #include <nitrate-parser/AST.hh>
 #include <nitrate-parser/ASTWriter.hh>
 #include <variant>
-
-#include "core/SyntaxTree.pb.h"
 
 using namespace ncc::parse;
 using namespace google;
@@ -252,23 +249,23 @@ static SyntaxTree::FunctionPurity FromPurity(ncc::parse::Purity purity) {
   }
 }
 
-static SyntaxTree::AggregateKind FromStructKind(
+static SyntaxTree::Struct_AggregateKind FromStructKind(
     ncc::parse::CompositeType type) {
   switch (type) {
     case ncc::parse::CompositeType::Struct:
-      return SyntaxTree::AggregateKind::Struct_;
+      return SyntaxTree::Struct_AggregateKind_Struct_;
 
     case ncc::parse::CompositeType::Class:
-      return SyntaxTree::AggregateKind::Class_;
+      return SyntaxTree::Struct_AggregateKind_Class_;
 
     case ncc::parse::CompositeType::Group:
-      return SyntaxTree::AggregateKind::Group_;
+      return SyntaxTree::Struct_AggregateKind_Group_;
 
     case ncc::parse::CompositeType::Region:
-      return SyntaxTree::AggregateKind::Region_;
+      return SyntaxTree::Struct_AggregateKind_Region_;
 
     case ncc::parse::CompositeType::Union:
-      return SyntaxTree::AggregateKind::Union_;
+      return SyntaxTree::Struct_AggregateKind_Union_;
   }
 }
 
@@ -304,7 +301,9 @@ SyntaxTree::SourceLocationRange *AstWriter::FromSource(
   auto *message = Pool::CreateMessage<SyntaxTree::SourceLocationRange>(m_arena);
 
   if (start_pos != lex::Location::EndOfFile()) {
-    auto *start = Pool::CreateMessage<SyntaxTree::SourceLocation>(m_arena);
+    auto *start =
+        Pool::CreateMessage<SyntaxTree::SourceLocationRange_SourceLocation>(
+            m_arena);
     start->set_line(start_pos.GetRow() + 1);
     start->set_column(start_pos.GetCol() + 1);
     start->set_offset(start_pos.GetOffset());
@@ -314,7 +313,9 @@ SyntaxTree::SourceLocationRange *AstWriter::FromSource(
   }
 
   if (end_pos != lex::Location::EndOfFile()) {
-    auto *end = Pool::CreateMessage<SyntaxTree::SourceLocation>(m_arena);
+    auto *end =
+        Pool::CreateMessage<SyntaxTree::SourceLocationRange_SourceLocation>(
+            m_arena);
     end->set_line(end_pos.GetRow() + 1);
     end->set_column(end_pos.GetCol() + 1);
     end->set_offset(end_pos.GetOffset());
@@ -1241,7 +1242,8 @@ SyntaxTree::FString *AstWriter::From(const FlowPtr<FString> &in) {
     const auto &items = in->GetItems();
     message->mutable_elements()->Reserve(items.size());
     std::for_each(items.begin(), items.end(), [&](auto item) {
-      auto *element = Pool::CreateMessage<SyntaxTree::FStringTerm>(m_arena);
+      auto *element =
+          Pool::CreateMessage<SyntaxTree::FString::FStringTerm>(m_arena);
       if (std::holds_alternative<FlowPtr<Expr>>(item)) {
         element->set_allocated_expr(From(std::get<FlowPtr<Expr>>(item)));
       } else {
@@ -1288,17 +1290,17 @@ SyntaxTree::Block *AstWriter::From(const FlowPtr<Block> &in) {
 
   switch (in->GetSafety()) {
     case SafetyMode::Unknown: {
-      message->set_guarantor(SyntaxTree::SafetyMode::Unspecified);
+      message->set_guarantor(SyntaxTree::Block_SafetyMode_Unspecified);
       break;
     }
 
     case SafetyMode::Safe: {
-      message->set_guarantor(SyntaxTree::SafetyMode::Safe);
+      message->set_guarantor(SyntaxTree::Block_SafetyMode_Safe);
       break;
     }
 
     case SafetyMode::Unsafe: {
-      message->set_guarantor(SyntaxTree::SafetyMode::Unsafe);
+      message->set_guarantor(SyntaxTree::Block_SafetyMode_Unsafe);
       break;
     }
   }
@@ -1329,15 +1331,15 @@ SyntaxTree::Variable *AstWriter::From(const FlowPtr<Variable> &in) {
 
   switch (in->GetDeclType()) {
     case VariableType::Var:
-      message->set_kind(SyntaxTree::VariableKind::Var);
+      message->set_kind(SyntaxTree::Variable_VariableKind_Var);
       break;
 
     case VariableType::Let:
-      message->set_kind(SyntaxTree::VariableKind::Let);
+      message->set_kind(SyntaxTree::Variable_VariableKind_Let);
       break;
 
     case VariableType::Const:
-      message->set_kind(SyntaxTree::VariableKind::Const);
+      message->set_kind(SyntaxTree::Variable_VariableKind_Const);
       break;
   }
 
@@ -1542,7 +1544,8 @@ SyntaxTree::Function *AstWriter::From(const FlowPtr<Function> &in) {
 
     message->mutable_captures()->Reserve(items.size());
     std::for_each(items.begin(), items.end(), [&](auto item) {
-      auto *capture = Pool::CreateMessage<SyntaxTree::FunctionCapture>(m_arena);
+      auto *capture =
+          Pool::CreateMessage<SyntaxTree::Function_Capture>(m_arena);
       capture->set_name(item.first.Get());
       capture->set_is_reference(item.second);
 
@@ -1595,7 +1598,8 @@ SyntaxTree::Function *AstWriter::From(const FlowPtr<Function> &in) {
         items.size());
     std::for_each(items.begin(), items.end(), [&](auto item) {
       auto *parameter =
-          Pool::CreateMessage<SyntaxTree::TemplateParameter>(m_arena);
+          Pool::CreateMessage<SyntaxTree::TemplateParameters_TemplateParameter>(
+              m_arena);
       const auto &param_name = std::get<0>(item);
       const auto &param_type = std::get<1>(item);
       const auto &param_default = std::get<2>(item);
@@ -1629,7 +1633,8 @@ SyntaxTree::Struct *AstWriter::From(const FlowPtr<Struct> &in) {
         items.size());
     std::for_each(items.begin(), items.end(), [&](auto item) {
       auto *parameter =
-          Pool::CreateMessage<SyntaxTree::TemplateParameter>(m_arena);
+          Pool::CreateMessage<SyntaxTree::TemplateParameters_TemplateParameter>(
+              m_arena);
       const auto &param_name = std::get<0>(item);
       const auto &param_type = std::get<1>(item);
       const auto &param_default = std::get<2>(item);
@@ -1669,7 +1674,7 @@ SyntaxTree::Struct *AstWriter::From(const FlowPtr<Struct> &in) {
 
     message->mutable_fields()->Reserve(items.size());
     std::for_each(items.begin(), items.end(), [&](auto item) {
-      auto *field = Pool::CreateMessage<SyntaxTree::StructField>(m_arena);
+      auto *field = Pool::CreateMessage<SyntaxTree::Struct_Field>(m_arena);
       field->set_name(item.GetName().Get());
       field->set_allocated_type(From(item.GetType()));
       field->set_visibility(FromVisibility(item.GetVis()));
@@ -1687,7 +1692,7 @@ SyntaxTree::Struct *AstWriter::From(const FlowPtr<Struct> &in) {
 
     message->mutable_methods()->Reserve(items.size());
     std::for_each(items.begin(), items.end(), [&](auto item) {
-      auto *method = Pool::CreateMessage<SyntaxTree::StructMethod>(m_arena);
+      auto *method = Pool::CreateMessage<SyntaxTree::Struct_Method>(m_arena);
       method->set_visibility(FromVisibility(item.m_vis));
       method->set_allocated_func(From(item.m_func));
 
@@ -1700,7 +1705,7 @@ SyntaxTree::Struct *AstWriter::From(const FlowPtr<Struct> &in) {
 
     message->mutable_static_methods()->Reserve(items.size());
     std::for_each(items.begin(), items.end(), [&](auto item) {
-      auto *method = Pool::CreateMessage<SyntaxTree::StructMethod>(m_arena);
+      auto *method = Pool::CreateMessage<SyntaxTree::Struct_Method>(m_arena);
       method->set_visibility(FromVisibility(item.m_vis));
       method->set_allocated_func(From(item.m_func));
 
@@ -1726,7 +1731,7 @@ SyntaxTree::Enum *AstWriter::From(const FlowPtr<Enum> &in) {
 
     message->mutable_items()->Reserve(items.size());
     std::for_each(items.begin(), items.end(), [&](auto item) {
-      auto *element = Pool::CreateMessage<SyntaxTree::EnumItem>(m_arena);
+      auto *element = Pool::CreateMessage<SyntaxTree::Enum_Field>(m_arena);
       element->set_name(item.first.Get());
       if (item.second.has_value()) {
         element->set_allocated_value(From(item.second.value()));
