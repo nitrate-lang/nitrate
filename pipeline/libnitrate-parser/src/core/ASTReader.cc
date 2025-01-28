@@ -1052,17 +1052,17 @@ auto AstReader::Unmarshal(const SyntaxTree::TypeExpr &in) -> Result<TypeExpr> {
 
 auto AstReader::Unmarshal(const SyntaxTree::NamedTy &in) -> Result<NamedTy> {
   auto bit_width = Unmarshal(in.bit_width());
-  if (in.has_bit_width() && !bit_width.has_value()) {
+  if (in.has_bit_width() && !bit_width.has_value()) [[unlikely]] {
     return std::nullopt;
   }
 
   auto minimum = Unmarshal(in.minimum());
-  if (in.has_minimum() && !minimum.has_value()) {
+  if (in.has_minimum() && !minimum.has_value()) [[unlikely]] {
     return std::nullopt;
   }
 
   auto maximum = Unmarshal(in.maximum());
-  if (in.has_maximum() && !maximum.has_value()) {
+  if (in.has_maximum() && !maximum.has_value()) [[unlikely]] {
     return std::nullopt;
   }
 
@@ -1079,17 +1079,17 @@ auto AstReader::Unmarshal(const SyntaxTree::NamedTy &in) -> Result<NamedTy> {
 
 auto AstReader::Unmarshal(const SyntaxTree::InferTy &in) -> Result<InferTy> {
   auto bit_width = Unmarshal(in.bit_width());
-  if (in.has_bit_width() && !bit_width.has_value()) {
+  if (in.has_bit_width() && !bit_width.has_value()) [[unlikely]] {
     return std::nullopt;
   }
 
   auto minimum = Unmarshal(in.minimum());
-  if (in.has_minimum() && !minimum.has_value()) {
+  if (in.has_minimum() && !minimum.has_value()) [[unlikely]] {
     return std::nullopt;
   }
 
   auto maximum = Unmarshal(in.maximum());
-  if (in.has_maximum() && !maximum.has_value()) {
+  if (in.has_maximum() && !maximum.has_value()) [[unlikely]] {
     return std::nullopt;
   }
 
@@ -1107,17 +1107,17 @@ auto AstReader::Unmarshal(const SyntaxTree::InferTy &in) -> Result<InferTy> {
 auto AstReader::Unmarshal(const SyntaxTree::TemplateType &in)
     -> Result<TemplateType> {
   auto bit_width = Unmarshal(in.bit_width());
-  if (in.has_bit_width() && !bit_width.has_value()) {
+  if (in.has_bit_width() && !bit_width.has_value()) [[unlikely]] {
     return std::nullopt;
   }
 
   auto minimum = Unmarshal(in.minimum());
-  if (in.has_minimum() && !minimum.has_value()) {
+  if (in.has_minimum() && !minimum.has_value()) [[unlikely]] {
     return std::nullopt;
   }
 
   auto maximum = Unmarshal(in.maximum());
-  if (in.has_maximum() && !maximum.has_value()) {
+  if (in.has_maximum() && !maximum.has_value()) [[unlikely]] {
     return std::nullopt;
   }
 
@@ -1131,7 +1131,7 @@ auto AstReader::Unmarshal(const SyntaxTree::TemplateType &in)
 
   for (const auto &arg : in.arguments()) {
     auto argument = Unmarshal(arg.value());
-    if (!argument.has_value()) {
+    if (!argument.has_value()) [[unlikely]] {
       return std::nullopt;
     }
 
@@ -1151,17 +1151,17 @@ auto AstReader::Unmarshal(const SyntaxTree::TemplateType &in)
 
 auto AstReader::Unmarshal(const SyntaxTree::U1 &in) -> Result<U1> {
   auto bit_width = Unmarshal(in.bit_width());
-  if (in.has_bit_width() && !bit_width.has_value()) {
+  if (in.has_bit_width() && !bit_width.has_value()) [[unlikely]] {
     return std::nullopt;
   }
 
   auto minimum = Unmarshal(in.minimum());
-  if (in.has_minimum() && !minimum.has_value()) {
+  if (in.has_minimum() && !minimum.has_value()) [[unlikely]] {
     return std::nullopt;
   }
 
   auto maximum = Unmarshal(in.maximum());
-  if (in.has_maximum() && !maximum.has_value()) {
+  if (in.has_maximum() && !maximum.has_value()) [[unlikely]] {
     return std::nullopt;
   }
 
@@ -1178,17 +1178,17 @@ auto AstReader::Unmarshal(const SyntaxTree::U1 &in) -> Result<U1> {
 
 auto AstReader::Unmarshal(const SyntaxTree::U8 &in) -> Result<U8> {
   auto bit_width = Unmarshal(in.bit_width());
-  if (in.has_bit_width() && !bit_width.has_value()) {
+  if (in.has_bit_width() && !bit_width.has_value()) [[unlikely]] {
     return std::nullopt;
   }
 
   auto minimum = Unmarshal(in.minimum());
-  if (in.has_minimum() && !minimum.has_value()) {
+  if (in.has_minimum() && !minimum.has_value()) [[unlikely]] {
     return std::nullopt;
   }
 
   auto maximum = Unmarshal(in.maximum());
-  if (in.has_maximum() && !maximum.has_value()) {
+  if (in.has_maximum() && !maximum.has_value()) [[unlikely]] {
     return std::nullopt;
   }
 
@@ -1205,17 +1205,17 @@ auto AstReader::Unmarshal(const SyntaxTree::U8 &in) -> Result<U8> {
 
 auto AstReader::Unmarshal(const SyntaxTree::U16 &in) -> Result<U16> {
   auto bit_width = Unmarshal(in.bit_width());
-  if (in.has_bit_width() && !bit_width.has_value()) {
+  if (in.has_bit_width() && !bit_width.has_value()) [[unlikely]] {
     return std::nullopt;
   }
 
   auto minimum = Unmarshal(in.minimum());
-  if (in.has_minimum() && !minimum.has_value()) {
+  if (in.has_minimum() && !minimum.has_value()) [[unlikely]] {
     return std::nullopt;
   }
 
   auto maximum = Unmarshal(in.maximum());
-  if (in.has_maximum() && !maximum.has_value()) {
+  if (in.has_maximum() && !maximum.has_value()) [[unlikely]] {
     return std::nullopt;
   }
 
@@ -1232,17 +1232,17 @@ auto AstReader::Unmarshal(const SyntaxTree::U16 &in) -> Result<U16> {
 
 auto AstReader::Unmarshal(const SyntaxTree::U32 &in) -> Result<U32> {
   auto bit_width = Unmarshal(in.bit_width());
-  if (in.has_bit_width() && !bit_width.has_value()) {
+  if (in.has_bit_width() && !bit_width.has_value()) [[unlikely]] {
     return std::nullopt;
   }
 
   auto minimum = Unmarshal(in.minimum());
-  if (in.has_minimum() && !minimum.has_value()) {
+  if (in.has_minimum() && !minimum.has_value()) [[unlikely]] {
     return std::nullopt;
   }
 
   auto maximum = Unmarshal(in.maximum());
-  if (in.has_maximum() && !maximum.has_value()) {
+  if (in.has_maximum() && !maximum.has_value()) [[unlikely]] {
     return std::nullopt;
   }
 
@@ -1259,17 +1259,17 @@ auto AstReader::Unmarshal(const SyntaxTree::U32 &in) -> Result<U32> {
 
 auto AstReader::Unmarshal(const SyntaxTree::U64 &in) -> Result<U64> {
   auto bit_width = Unmarshal(in.bit_width());
-  if (in.has_bit_width() && !bit_width.has_value()) {
+  if (in.has_bit_width() && !bit_width.has_value()) [[unlikely]] {
     return std::nullopt;
   }
 
   auto minimum = Unmarshal(in.minimum());
-  if (in.has_minimum() && !minimum.has_value()) {
+  if (in.has_minimum() && !minimum.has_value()) [[unlikely]] {
     return std::nullopt;
   }
 
   auto maximum = Unmarshal(in.maximum());
-  if (in.has_maximum() && !maximum.has_value()) {
+  if (in.has_maximum() && !maximum.has_value()) [[unlikely]] {
     return std::nullopt;
   }
 
@@ -1286,17 +1286,17 @@ auto AstReader::Unmarshal(const SyntaxTree::U64 &in) -> Result<U64> {
 
 auto AstReader::Unmarshal(const SyntaxTree::U128 &in) -> Result<U128> {
   auto bit_width = Unmarshal(in.bit_width());
-  if (in.has_bit_width() && !bit_width.has_value()) {
+  if (in.has_bit_width() && !bit_width.has_value()) [[unlikely]] {
     return std::nullopt;
   }
 
   auto minimum = Unmarshal(in.minimum());
-  if (in.has_minimum() && !minimum.has_value()) {
+  if (in.has_minimum() && !minimum.has_value()) [[unlikely]] {
     return std::nullopt;
   }
 
   auto maximum = Unmarshal(in.maximum());
-  if (in.has_maximum() && !maximum.has_value()) {
+  if (in.has_maximum() && !maximum.has_value()) [[unlikely]] {
     return std::nullopt;
   }
 
@@ -1313,17 +1313,17 @@ auto AstReader::Unmarshal(const SyntaxTree::U128 &in) -> Result<U128> {
 
 auto AstReader::Unmarshal(const SyntaxTree::I8 &in) -> Result<I8> {
   auto bit_width = Unmarshal(in.bit_width());
-  if (in.has_bit_width() && !bit_width.has_value()) {
+  if (in.has_bit_width() && !bit_width.has_value()) [[unlikely]] {
     return std::nullopt;
   }
 
   auto minimum = Unmarshal(in.minimum());
-  if (in.has_minimum() && !minimum.has_value()) {
+  if (in.has_minimum() && !minimum.has_value()) [[unlikely]] {
     return std::nullopt;
   }
 
   auto maximum = Unmarshal(in.maximum());
-  if (in.has_maximum() && !maximum.has_value()) {
+  if (in.has_maximum() && !maximum.has_value()) [[unlikely]] {
     return std::nullopt;
   }
 
@@ -1340,17 +1340,17 @@ auto AstReader::Unmarshal(const SyntaxTree::I8 &in) -> Result<I8> {
 
 auto AstReader::Unmarshal(const SyntaxTree::I16 &in) -> Result<I16> {
   auto bit_width = Unmarshal(in.bit_width());
-  if (in.has_bit_width() && !bit_width.has_value()) {
+  if (in.has_bit_width() && !bit_width.has_value()) [[unlikely]] {
     return std::nullopt;
   }
 
   auto minimum = Unmarshal(in.minimum());
-  if (in.has_minimum() && !minimum.has_value()) {
+  if (in.has_minimum() && !minimum.has_value()) [[unlikely]] {
     return std::nullopt;
   }
 
   auto maximum = Unmarshal(in.maximum());
-  if (in.has_maximum() && !maximum.has_value()) {
+  if (in.has_maximum() && !maximum.has_value()) [[unlikely]] {
     return std::nullopt;
   }
 
@@ -1367,17 +1367,17 @@ auto AstReader::Unmarshal(const SyntaxTree::I16 &in) -> Result<I16> {
 
 auto AstReader::Unmarshal(const SyntaxTree::I32 &in) -> Result<I32> {
   auto bit_width = Unmarshal(in.bit_width());
-  if (in.has_bit_width() && !bit_width.has_value()) {
+  if (in.has_bit_width() && !bit_width.has_value()) [[unlikely]] {
     return std::nullopt;
   }
 
   auto minimum = Unmarshal(in.minimum());
-  if (in.has_minimum() && !minimum.has_value()) {
+  if (in.has_minimum() && !minimum.has_value()) [[unlikely]] {
     return std::nullopt;
   }
 
   auto maximum = Unmarshal(in.maximum());
-  if (in.has_maximum() && !maximum.has_value()) {
+  if (in.has_maximum() && !maximum.has_value()) [[unlikely]] {
     return std::nullopt;
   }
 
@@ -1394,17 +1394,17 @@ auto AstReader::Unmarshal(const SyntaxTree::I32 &in) -> Result<I32> {
 
 auto AstReader::Unmarshal(const SyntaxTree::I64 &in) -> Result<I64> {
   auto bit_width = Unmarshal(in.bit_width());
-  if (in.has_bit_width() && !bit_width.has_value()) {
+  if (in.has_bit_width() && !bit_width.has_value()) [[unlikely]] {
     return std::nullopt;
   }
 
   auto minimum = Unmarshal(in.minimum());
-  if (in.has_minimum() && !minimum.has_value()) {
+  if (in.has_minimum() && !minimum.has_value()) [[unlikely]] {
     return std::nullopt;
   }
 
   auto maximum = Unmarshal(in.maximum());
-  if (in.has_maximum() && !maximum.has_value()) {
+  if (in.has_maximum() && !maximum.has_value()) [[unlikely]] {
     return std::nullopt;
   }
 
@@ -1421,17 +1421,17 @@ auto AstReader::Unmarshal(const SyntaxTree::I64 &in) -> Result<I64> {
 
 auto AstReader::Unmarshal(const SyntaxTree::I128 &in) -> Result<I128> {
   auto bit_width = Unmarshal(in.bit_width());
-  if (in.has_bit_width() && !bit_width.has_value()) {
+  if (in.has_bit_width() && !bit_width.has_value()) [[unlikely]] {
     return std::nullopt;
   }
 
   auto minimum = Unmarshal(in.minimum());
-  if (in.has_minimum() && !minimum.has_value()) {
+  if (in.has_minimum() && !minimum.has_value()) [[unlikely]] {
     return std::nullopt;
   }
 
   auto maximum = Unmarshal(in.maximum());
-  if (in.has_maximum() && !maximum.has_value()) {
+  if (in.has_maximum() && !maximum.has_value()) [[unlikely]] {
     return std::nullopt;
   }
 
@@ -1448,17 +1448,17 @@ auto AstReader::Unmarshal(const SyntaxTree::I128 &in) -> Result<I128> {
 
 auto AstReader::Unmarshal(const SyntaxTree::F16 &in) -> Result<F16> {
   auto bit_width = Unmarshal(in.bit_width());
-  if (in.has_bit_width() && !bit_width.has_value()) {
+  if (in.has_bit_width() && !bit_width.has_value()) [[unlikely]] {
     return std::nullopt;
   }
 
   auto minimum = Unmarshal(in.minimum());
-  if (in.has_minimum() && !minimum.has_value()) {
+  if (in.has_minimum() && !minimum.has_value()) [[unlikely]] {
     return std::nullopt;
   }
 
   auto maximum = Unmarshal(in.maximum());
-  if (in.has_maximum() && !maximum.has_value()) {
+  if (in.has_maximum() && !maximum.has_value()) [[unlikely]] {
     return std::nullopt;
   }
 
@@ -1475,17 +1475,17 @@ auto AstReader::Unmarshal(const SyntaxTree::F16 &in) -> Result<F16> {
 
 auto AstReader::Unmarshal(const SyntaxTree::F32 &in) -> Result<F32> {
   auto bit_width = Unmarshal(in.bit_width());
-  if (in.has_bit_width() && !bit_width.has_value()) {
+  if (in.has_bit_width() && !bit_width.has_value()) [[unlikely]] {
     return std::nullopt;
   }
 
   auto minimum = Unmarshal(in.minimum());
-  if (in.has_minimum() && !minimum.has_value()) {
+  if (in.has_minimum() && !minimum.has_value()) [[unlikely]] {
     return std::nullopt;
   }
 
   auto maximum = Unmarshal(in.maximum());
-  if (in.has_maximum() && !maximum.has_value()) {
+  if (in.has_maximum() && !maximum.has_value()) [[unlikely]] {
     return std::nullopt;
   }
 
@@ -1502,17 +1502,17 @@ auto AstReader::Unmarshal(const SyntaxTree::F32 &in) -> Result<F32> {
 
 auto AstReader::Unmarshal(const SyntaxTree::F64 &in) -> Result<F64> {
   auto bit_width = Unmarshal(in.bit_width());
-  if (in.has_bit_width() && !bit_width.has_value()) {
+  if (in.has_bit_width() && !bit_width.has_value()) [[unlikely]] {
     return std::nullopt;
   }
 
   auto minimum = Unmarshal(in.minimum());
-  if (in.has_minimum() && !minimum.has_value()) {
+  if (in.has_minimum() && !minimum.has_value()) [[unlikely]] {
     return std::nullopt;
   }
 
   auto maximum = Unmarshal(in.maximum());
-  if (in.has_maximum() && !maximum.has_value()) {
+  if (in.has_maximum() && !maximum.has_value()) [[unlikely]] {
     return std::nullopt;
   }
 
@@ -1529,17 +1529,17 @@ auto AstReader::Unmarshal(const SyntaxTree::F64 &in) -> Result<F64> {
 
 auto AstReader::Unmarshal(const SyntaxTree::F128 &in) -> Result<F128> {
   auto bit_width = Unmarshal(in.bit_width());
-  if (in.has_bit_width() && !bit_width.has_value()) {
+  if (in.has_bit_width() && !bit_width.has_value()) [[unlikely]] {
     return std::nullopt;
   }
 
   auto minimum = Unmarshal(in.minimum());
-  if (in.has_minimum() && !minimum.has_value()) {
+  if (in.has_minimum() && !minimum.has_value()) [[unlikely]] {
     return std::nullopt;
   }
 
   auto maximum = Unmarshal(in.maximum());
-  if (in.has_maximum() && !maximum.has_value()) {
+  if (in.has_maximum() && !maximum.has_value()) [[unlikely]] {
     return std::nullopt;
   }
 
@@ -1556,17 +1556,17 @@ auto AstReader::Unmarshal(const SyntaxTree::F128 &in) -> Result<F128> {
 
 auto AstReader::Unmarshal(const SyntaxTree::VoidTy &in) -> Result<VoidTy> {
   auto bit_width = Unmarshal(in.bit_width());
-  if (in.has_bit_width() && !bit_width.has_value()) {
+  if (in.has_bit_width() && !bit_width.has_value()) [[unlikely]] {
     return std::nullopt;
   }
 
   auto minimum = Unmarshal(in.minimum());
-  if (in.has_minimum() && !minimum.has_value()) {
+  if (in.has_minimum() && !minimum.has_value()) [[unlikely]] {
     return std::nullopt;
   }
 
   auto maximum = Unmarshal(in.maximum());
-  if (in.has_maximum() && !maximum.has_value()) {
+  if (in.has_maximum() && !maximum.has_value()) [[unlikely]] {
     return std::nullopt;
   }
 
@@ -1583,22 +1583,22 @@ auto AstReader::Unmarshal(const SyntaxTree::VoidTy &in) -> Result<VoidTy> {
 
 auto AstReader::Unmarshal(const SyntaxTree::PtrTy &in) -> Result<PtrTy> {
   auto bit_width = Unmarshal(in.bit_width());
-  if (in.has_bit_width() && !bit_width.has_value()) {
+  if (in.has_bit_width() && !bit_width.has_value()) [[unlikely]] {
     return std::nullopt;
   }
 
   auto minimum = Unmarshal(in.minimum());
-  if (in.has_minimum() && !minimum.has_value()) {
+  if (in.has_minimum() && !minimum.has_value()) [[unlikely]] {
     return std::nullopt;
   }
 
   auto maximum = Unmarshal(in.maximum());
-  if (in.has_maximum() && !maximum.has_value()) {
+  if (in.has_maximum() && !maximum.has_value()) [[unlikely]] {
     return std::nullopt;
   }
 
   auto pointee = Unmarshal(in.pointee());
-  if (!pointee.has_value()) {
+  if (!pointee.has_value()) [[unlikely]] {
     return std::nullopt;
   }
 
@@ -1615,17 +1615,17 @@ auto AstReader::Unmarshal(const SyntaxTree::PtrTy &in) -> Result<PtrTy> {
 
 auto AstReader::Unmarshal(const SyntaxTree::OpaqueTy &in) -> Result<OpaqueTy> {
   auto bit_width = Unmarshal(in.bit_width());
-  if (in.has_bit_width() && !bit_width.has_value()) {
+  if (in.has_bit_width() && !bit_width.has_value()) [[unlikely]] {
     return std::nullopt;
   }
 
   auto minimum = Unmarshal(in.minimum());
-  if (in.has_minimum() && !minimum.has_value()) {
+  if (in.has_minimum() && !minimum.has_value()) [[unlikely]] {
     return std::nullopt;
   }
 
   auto maximum = Unmarshal(in.maximum());
-  if (in.has_maximum() && !maximum.has_value()) {
+  if (in.has_maximum() && !maximum.has_value()) [[unlikely]] {
     return std::nullopt;
   }
 
@@ -1642,17 +1642,17 @@ auto AstReader::Unmarshal(const SyntaxTree::OpaqueTy &in) -> Result<OpaqueTy> {
 
 auto AstReader::Unmarshal(const SyntaxTree::TupleTy &in) -> Result<TupleTy> {
   auto bit_width = Unmarshal(in.bit_width());
-  if (in.has_bit_width() && !bit_width.has_value()) {
+  if (in.has_bit_width() && !bit_width.has_value()) [[unlikely]] {
     return std::nullopt;
   }
 
   auto minimum = Unmarshal(in.minimum());
-  if (in.has_minimum() && !minimum.has_value()) {
+  if (in.has_minimum() && !minimum.has_value()) [[unlikely]] {
     return std::nullopt;
   }
 
   auto maximum = Unmarshal(in.maximum());
-  if (in.has_maximum() && !maximum.has_value()) {
+  if (in.has_maximum() && !maximum.has_value()) [[unlikely]] {
     return std::nullopt;
   }
 
@@ -1661,7 +1661,7 @@ auto AstReader::Unmarshal(const SyntaxTree::TupleTy &in) -> Result<TupleTy> {
 
   for (const auto &element : in.elements()) {
     auto item = Unmarshal(element);
-    if (!item.has_value()) {
+    if (!item.has_value()) [[unlikely]] {
       return std::nullopt;
     }
 
@@ -1681,27 +1681,27 @@ auto AstReader::Unmarshal(const SyntaxTree::TupleTy &in) -> Result<TupleTy> {
 
 auto AstReader::Unmarshal(const SyntaxTree::ArrayTy &in) -> Result<ArrayTy> {
   auto bit_width = Unmarshal(in.bit_width());
-  if (in.has_bit_width() && !bit_width.has_value()) {
+  if (in.has_bit_width() && !bit_width.has_value()) [[unlikely]] {
     return std::nullopt;
   }
 
   auto minimum = Unmarshal(in.minimum());
-  if (in.has_minimum() && !minimum.has_value()) {
+  if (in.has_minimum() && !minimum.has_value()) [[unlikely]] {
     return std::nullopt;
   }
 
   auto maximum = Unmarshal(in.maximum());
-  if (in.has_maximum() && !maximum.has_value()) {
+  if (in.has_maximum() && !maximum.has_value()) [[unlikely]] {
     return std::nullopt;
   }
 
   auto element_type = Unmarshal(in.element_type());
-  if (!element_type.has_value()) {
+  if (!element_type.has_value()) [[unlikely]] {
     return std::nullopt;
   }
 
   auto element_count = Unmarshal(in.element_count());
-  if (!element_count.has_value()) {
+  if (!element_count.has_value()) [[unlikely]] {
     return std::nullopt;
   }
 
@@ -1719,22 +1719,22 @@ auto AstReader::Unmarshal(const SyntaxTree::ArrayTy &in) -> Result<ArrayTy> {
 
 auto AstReader::Unmarshal(const SyntaxTree::RefTy &in) -> Result<RefTy> {
   auto bit_width = Unmarshal(in.bit_width());
-  if (in.has_bit_width() && !bit_width.has_value()) {
+  if (in.has_bit_width() && !bit_width.has_value()) [[unlikely]] {
     return std::nullopt;
   }
 
   auto minimum = Unmarshal(in.minimum());
-  if (in.has_minimum() && !minimum.has_value()) {
+  if (in.has_minimum() && !minimum.has_value()) [[unlikely]] {
     return std::nullopt;
   }
 
   auto maximum = Unmarshal(in.maximum());
-  if (in.has_maximum() && !maximum.has_value()) {
+  if (in.has_maximum() && !maximum.has_value()) [[unlikely]] {
     return std::nullopt;
   }
 
   auto pointee = Unmarshal(in.pointee());
-  if (!pointee.has_value()) {
+  if (!pointee.has_value()) [[unlikely]] {
     return std::nullopt;
   }
 
@@ -1751,22 +1751,22 @@ auto AstReader::Unmarshal(const SyntaxTree::RefTy &in) -> Result<RefTy> {
 
 auto AstReader::Unmarshal(const SyntaxTree::FuncTy &in) -> Result<FuncTy> {
   auto bit_width = Unmarshal(in.bit_width());
-  if (in.has_bit_width() && !bit_width.has_value()) {
+  if (in.has_bit_width() && !bit_width.has_value()) [[unlikely]] {
     return std::nullopt;
   }
 
   auto minimum = Unmarshal(in.minimum());
-  if (in.has_minimum() && !minimum.has_value()) {
+  if (in.has_minimum() && !minimum.has_value()) [[unlikely]] {
     return std::nullopt;
   }
 
   auto maximum = Unmarshal(in.maximum());
-  if (in.has_maximum() && !maximum.has_value()) {
+  if (in.has_maximum() && !maximum.has_value()) [[unlikely]] {
     return std::nullopt;
   }
 
   auto return_type = Unmarshal(in.return_type());
-  if (!return_type.has_value()) {
+  if (!return_type.has_value()) [[unlikely]] {
     return std::nullopt;
   }
 
@@ -1775,12 +1775,12 @@ auto AstReader::Unmarshal(const SyntaxTree::FuncTy &in) -> Result<FuncTy> {
 
   for (const auto &param : in.parameters()) {
     auto type = Unmarshal(param.type());
-    if (!type.has_value()) {
+    if (!type.has_value()) [[unlikely]] {
       return std::nullopt;
     }
 
     auto default_value = Unmarshal(param.default_value());
-    if (param.has_default_value() && !default_value.has_value()) {
+    if (param.has_default_value() && !default_value.has_value()) [[unlikely]] {
       return std::nullopt;
     }
 
@@ -1792,7 +1792,7 @@ auto AstReader::Unmarshal(const SyntaxTree::FuncTy &in) -> Result<FuncTy> {
 
   for (const auto &attr : in.attributes()) {
     auto attribute = Unmarshal(attr);
-    if (!attribute.has_value()) {
+    if (!attribute.has_value()) [[unlikely]] {
       return std::nullopt;
     }
 
@@ -1813,7 +1813,7 @@ auto AstReader::Unmarshal(const SyntaxTree::FuncTy &in) -> Result<FuncTy> {
 
 auto AstReader::Unmarshal(const SyntaxTree::Unary &in) -> Result<Unary> {
   auto operand = Unmarshal(in.operand());
-  if (!operand.has_value()) {
+  if (!operand.has_value()) [[unlikely]] {
     return std::nullopt;
   }
 
@@ -1827,12 +1827,12 @@ auto AstReader::Unmarshal(const SyntaxTree::Unary &in) -> Result<Unary> {
 
 auto AstReader::Unmarshal(const SyntaxTree::Binary &in) -> Result<Binary> {
   auto lhs = Unmarshal(in.left());
-  if (!lhs.has_value()) {
+  if (!lhs.has_value()) [[unlikely]] {
     return std::nullopt;
   }
 
   auto rhs = Unmarshal(in.right());
-  if (!rhs.has_value()) {
+  if (!rhs.has_value()) [[unlikely]] {
     return std::nullopt;
   }
 
@@ -1847,7 +1847,7 @@ auto AstReader::Unmarshal(const SyntaxTree::Binary &in) -> Result<Binary> {
 auto AstReader::Unmarshal(const SyntaxTree::PostUnary &in)
     -> Result<PostUnary> {
   auto operand = Unmarshal(in.operand());
-  if (!operand.has_value()) {
+  if (!operand.has_value()) [[unlikely]] {
     return std::nullopt;
   }
 
@@ -1861,17 +1861,17 @@ auto AstReader::Unmarshal(const SyntaxTree::PostUnary &in)
 
 auto AstReader::Unmarshal(const SyntaxTree::Ternary &in) -> Result<Ternary> {
   auto condition = Unmarshal(in.condition());
-  if (!condition.has_value()) {
+  if (!condition.has_value()) [[unlikely]] {
     return std::nullopt;
   }
 
   auto true_expr = Unmarshal(in.true_branch());
-  if (!true_expr.has_value()) {
+  if (!true_expr.has_value()) [[unlikely]] {
     return std::nullopt;
   }
 
   auto false_expr = Unmarshal(in.false_branch());
-  if (!false_expr.has_value()) {
+  if (!false_expr.has_value()) [[unlikely]] {
     return std::nullopt;
   }
 
@@ -1886,14 +1886,15 @@ auto AstReader::Unmarshal(const SyntaxTree::Ternary &in) -> Result<Ternary> {
 auto AstReader::Unmarshal(const SyntaxTree::Integer &in) -> Result<Integer> {
   bool lexically_valid = std::all_of(in.number().begin(), in.number().end(),
                                      [](char c) { return std::isdigit(c); });
-  if (!lexically_valid) {
+  if (!lexically_valid) [[unlikely]] {
     return std::nullopt;
   }
 
   /* Do range checking */
   boost::multiprecision::cpp_int value(in.number());
   if (value < 0 || value > boost::multiprecision::cpp_int(
-                               "340282366920938463463374607431768211455")) {
+                               "340282366920938463463374607431768211455"))
+      [[unlikely]] {
     return std::nullopt;
   }
 
@@ -1910,7 +1911,7 @@ auto AstReader::Unmarshal(const SyntaxTree::Float &in) -> Result<Float> {
   /* Verify float format  */
   if (std::from_chars(in.number().data(),
                       in.number().data() + in.number().size(), f)
-          .ec != std::errc()) {
+          .ec != std::errc()) [[unlikely]] {
     return std::nullopt;
   }
 
@@ -1940,7 +1941,7 @@ auto AstReader::Unmarshal(const SyntaxTree::String &in) -> Result<String> {
 auto AstReader::Unmarshal(const SyntaxTree::Character &in)
     -> Result<Character> {
   auto value = in.char_();
-  if (value < 0 || value > 255) {
+  if (value < 0 || value > 255) [[unlikely]] {
     return std::nullopt;
   }
 
@@ -1970,7 +1971,7 @@ auto AstReader::Unmarshal(const SyntaxTree::Undefined &in)
 
 auto AstReader::Unmarshal(const SyntaxTree::Call &in) -> Result<Call> {
   auto callee = Unmarshal(in.callee());
-  if (!callee.has_value()) {
+  if (!callee.has_value()) [[unlikely]] {
     return std::nullopt;
   }
 
@@ -1979,7 +1980,7 @@ auto AstReader::Unmarshal(const SyntaxTree::Call &in) -> Result<Call> {
 
   for (const auto &arg : in.arguments()) {
     auto value = Unmarshal(arg.value());
-    if (!value.has_value()) {
+    if (!value.has_value()) [[unlikely]] {
       return std::nullopt;
     }
 
@@ -1996,7 +1997,7 @@ auto AstReader::Unmarshal(const SyntaxTree::Call &in) -> Result<Call> {
 auto AstReader::Unmarshal(const SyntaxTree::TemplateCall &in)
     -> Result<TemplateCall> {
   auto callee = Unmarshal(in.callee());
-  if (!callee.has_value()) {
+  if (!callee.has_value()) [[unlikely]] {
     return std::nullopt;
   }
 
@@ -2005,7 +2006,7 @@ auto AstReader::Unmarshal(const SyntaxTree::TemplateCall &in)
 
   for (const auto &arg : in.arguments()) {
     auto value = Unmarshal(arg.value());
-    if (!value.has_value()) {
+    if (!value.has_value()) [[unlikely]] {
       return std::nullopt;
     }
 
@@ -2017,7 +2018,7 @@ auto AstReader::Unmarshal(const SyntaxTree::TemplateCall &in)
 
   for (const auto &param : in.template_arguments()) {
     auto value = Unmarshal(param.value());
-    if (!value.has_value()) {
+    if (!value.has_value()) [[unlikely]] {
       return std::nullopt;
     }
 
@@ -2038,7 +2039,7 @@ auto AstReader::Unmarshal(const SyntaxTree::List &in) -> Result<List> {
 
   for (const auto &expr : in.elements()) {
     auto expression = Unmarshal(expr);
-    if (!expression.has_value()) {
+    if (!expression.has_value()) [[unlikely]] {
       return std::nullopt;
     }
 
@@ -2054,12 +2055,12 @@ auto AstReader::Unmarshal(const SyntaxTree::List &in) -> Result<List> {
 
 auto AstReader::Unmarshal(const SyntaxTree::Assoc &in) -> Result<Assoc> {
   auto key = Unmarshal(in.key());
-  if (!key.has_value()) {
+  if (!key.has_value()) [[unlikely]] {
     return std::nullopt;
   }
 
   auto value = Unmarshal(in.value());
-  if (!value.has_value()) {
+  if (!value.has_value()) [[unlikely]] {
     return std::nullopt;
   }
 
@@ -2072,12 +2073,12 @@ auto AstReader::Unmarshal(const SyntaxTree::Assoc &in) -> Result<Assoc> {
 
 auto AstReader::Unmarshal(const SyntaxTree::Index &in) -> Result<Index> {
   auto base = Unmarshal(in.base());
-  if (!base.has_value()) {
+  if (!base.has_value()) [[unlikely]] {
     return std::nullopt;
   }
 
   auto index = Unmarshal(in.index());
-  if (!index.has_value()) {
+  if (!index.has_value()) [[unlikely]] {
     return std::nullopt;
   }
 
@@ -2090,17 +2091,17 @@ auto AstReader::Unmarshal(const SyntaxTree::Index &in) -> Result<Index> {
 
 auto AstReader::Unmarshal(const SyntaxTree::Slice &in) -> Result<Slice> {
   auto base = Unmarshal(in.base());
-  if (!base.has_value()) {
+  if (!base.has_value()) [[unlikely]] {
     return std::nullopt;
   }
 
   auto start = Unmarshal(in.start());
-  if (!start.has_value()) {
+  if (!start.has_value()) [[unlikely]] {
     return std::nullopt;
   }
 
   auto end = Unmarshal(in.end());
-  if (!end.has_value()) {
+  if (!end.has_value()) [[unlikely]] {
     return std::nullopt;
   }
 
@@ -2119,7 +2120,7 @@ auto AstReader::Unmarshal(const SyntaxTree::FString &in) -> Result<FString> {
     switch (expr.part_case()) {
       case SyntaxTree::FString::FStringTerm::kExpr: {
         auto expression = Unmarshal(expr.expr());
-        if (!expression.has_value()) {
+        if (!expression.has_value()) [[unlikely]] {
           return std::nullopt;
         }
 
@@ -2160,7 +2161,7 @@ auto AstReader::Unmarshal(const SyntaxTree::Sequence &in) -> Result<Sequence> {
 
   for (const auto &expr : in.elements()) {
     auto expression = Unmarshal(expr);
-    if (!expression.has_value()) {
+    if (!expression.has_value()) [[unlikely]] {
       return std::nullopt;
     }
 
@@ -2309,7 +2310,6 @@ auto AstReader::Unmarshal(const SyntaxTree::For &in) -> Result<For> {
   }
 
   auto object = CreateNode<For>(init, condition, update, block.value())();
-
   UnmarshalLocationLocation(in.location(), object);
   UnmarshalCodeComment(in.comments(), object);
 
@@ -2432,7 +2432,7 @@ auto AstReader::Unmarshal(const SyntaxTree::Switch &in) -> Result<Switch> {
 
 auto AstReader::Unmarshal(const SyntaxTree::Typedef &in) -> Result<Typedef> {
   auto type = Unmarshal(in.type());
-  if (!type.has_value()) {
+  if (!type.has_value()) [[unlikely]] {
     return std::nullopt;
   }
 
@@ -2449,7 +2449,7 @@ auto AstReader::Unmarshal(const SyntaxTree::Function &in) -> Result<Function> {
 
   for (const auto &attr : in.attributes()) {
     auto attribute = Unmarshal(attr);
-    if (!attribute.has_value()) {
+    if (!attribute.has_value()) [[unlikely]] {
       return std::nullopt;
     }
 
@@ -2462,12 +2462,13 @@ auto AstReader::Unmarshal(const SyntaxTree::Function &in) -> Result<Function> {
 
     for (const auto &param : in.template_parameters().parameters()) {
       auto type = Unmarshal(param.type());
-      if (!type.has_value()) {
+      if (!type.has_value()) [[unlikely]] {
         return std::nullopt;
       }
 
       auto default_value = Unmarshal(param.default_value());
-      if (param.has_default_value() && !default_value.has_value()) {
+      if (param.has_default_value() && !default_value.has_value())
+          [[unlikely]] {
         return std::nullopt;
       }
 
@@ -2478,7 +2479,6 @@ auto AstReader::Unmarshal(const SyntaxTree::Function &in) -> Result<Function> {
 
   FnCaptures captures;
   captures.reserve(in.captures_size());
-
   for (const auto &cap : in.captures()) {
     captures.emplace_back(cap.name(), cap.is_reference());
   }
@@ -2488,12 +2488,12 @@ auto AstReader::Unmarshal(const SyntaxTree::Function &in) -> Result<Function> {
 
   for (const auto &param : in.parameters()) {
     auto type = Unmarshal(param.type());
-    if (!type.has_value()) {
+    if (!type.has_value()) [[unlikely]] {
       return std::nullopt;
     }
 
     auto default_value = Unmarshal(param.default_value());
-    if (param.has_default_value() && !default_value.has_value()) {
+    if (param.has_default_value() && !default_value.has_value()) [[unlikely]] {
       return std::nullopt;
     }
 
@@ -2501,22 +2501,22 @@ auto AstReader::Unmarshal(const SyntaxTree::Function &in) -> Result<Function> {
   }
 
   auto precondition = Unmarshal(in.precondition());
-  if (in.has_precondition() && !precondition.has_value()) {
+  if (in.has_precondition() && !precondition.has_value()) [[unlikely]] {
     return std::nullopt;
   }
 
   auto postcondition = Unmarshal(in.postcondition());
-  if (in.has_postcondition() && !postcondition.has_value()) {
+  if (in.has_postcondition() && !postcondition.has_value()) [[unlikely]] {
     return std::nullopt;
   }
 
   auto block = Unmarshal(in.body());
-  if (in.has_body() && !block.has_value()) {
+  if (in.has_body() && !block.has_value()) [[unlikely]] {
     return std::nullopt;
   }
 
   auto return_type = Unmarshal(in.return_type());
-  if (!return_type.has_value()) {
+  if (!return_type.has_value()) [[unlikely]] {
     return std::nullopt;
   }
 
@@ -2536,7 +2536,7 @@ auto AstReader::Unmarshal(const SyntaxTree::Struct &in) -> Result<Struct> {
 
   for (const auto &attr : in.attributes()) {
     auto attribute = Unmarshal(attr);
-    if (!attribute.has_value()) {
+    if (!attribute.has_value()) [[unlikely]] {
       return std::nullopt;
     }
 
@@ -2545,7 +2545,6 @@ auto AstReader::Unmarshal(const SyntaxTree::Struct &in) -> Result<Struct> {
 
   StructNames names;
   names.reserve(in.names_size());
-
   for (const auto &name : in.names()) {
     names.emplace_back(name);
   }
@@ -2558,12 +2557,12 @@ auto AstReader::Unmarshal(const SyntaxTree::Struct &in) -> Result<Struct> {
     auto is_static = field.is_static();
 
     auto type = Unmarshal(field.type());
-    if (!type.has_value()) {
+    if (!type.has_value()) [[unlikely]] {
       return std::nullopt;
     }
 
     auto value = Unmarshal(field.default_value());
-    if (field.has_default_value() && !value.has_value()) {
+    if (field.has_default_value() && !value.has_value()) [[unlikely]] {
       return std::nullopt;
     }
 
@@ -2576,7 +2575,7 @@ auto AstReader::Unmarshal(const SyntaxTree::Struct &in) -> Result<Struct> {
   for (const auto &method : in.methods()) {
     auto vis = FromVisibility(method.visibility());
     auto func = Unmarshal(method.func());
-    if (!func.has_value()) {
+    if (!func.has_value()) [[unlikely]] {
       return std::nullopt;
     }
 
@@ -2589,7 +2588,7 @@ auto AstReader::Unmarshal(const SyntaxTree::Struct &in) -> Result<Struct> {
   for (const auto &method : in.static_methods()) {
     auto vis = FromVisibility(method.visibility());
     auto func = Unmarshal(method.func());
-    if (!func.has_value()) {
+    if (!func.has_value()) [[unlikely]] {
       return std::nullopt;
     }
 
@@ -2602,12 +2601,13 @@ auto AstReader::Unmarshal(const SyntaxTree::Struct &in) -> Result<Struct> {
 
     for (const auto &param : in.template_parameters().parameters()) {
       auto type = Unmarshal(param.type());
-      if (!type.has_value()) {
+      if (!type.has_value()) [[unlikely]] {
         return std::nullopt;
       }
 
       auto default_value = Unmarshal(param.default_value());
-      if (param.has_default_value() && !default_value.has_value()) {
+      if (param.has_default_value() && !default_value.has_value())
+          [[unlikely]] {
         return std::nullopt;
       }
 
@@ -2627,7 +2627,7 @@ auto AstReader::Unmarshal(const SyntaxTree::Struct &in) -> Result<Struct> {
 
 auto AstReader::Unmarshal(const SyntaxTree::Enum &in) -> Result<Enum> {
   auto base_type = Unmarshal(in.base_type());
-  if (in.has_base_type() && !base_type.has_value()) {
+  if (in.has_base_type() && !base_type.has_value()) [[unlikely]] {
     return std::nullopt;
   }
 
@@ -2636,7 +2636,7 @@ auto AstReader::Unmarshal(const SyntaxTree::Enum &in) -> Result<Enum> {
 
   for (const auto &item : in.items()) {
     auto value = Unmarshal(item.value());
-    if (item.has_value() && !value.has_value()) {
+    if (item.has_value() && !value.has_value()) [[unlikely]] {
       return std::nullopt;
     }
 
@@ -2652,13 +2652,12 @@ auto AstReader::Unmarshal(const SyntaxTree::Enum &in) -> Result<Enum> {
 
 auto AstReader::Unmarshal(const SyntaxTree::Scope &in) -> Result<Scope> {
   auto block = Unmarshal(in.body());
-  if (!block.has_value()) {
+  if (!block.has_value()) [[unlikely]] {
     return std::nullopt;
   }
 
   ScopeDeps dependencies;
   dependencies.reserve(in.dependencies_size());
-
   for (const auto &dep : in.dependencies()) {
     dependencies.emplace_back(dep);
   }
@@ -2672,7 +2671,7 @@ auto AstReader::Unmarshal(const SyntaxTree::Scope &in) -> Result<Scope> {
 
 auto AstReader::Unmarshal(const SyntaxTree::Export &in) -> Result<Export> {
   auto block = Unmarshal(in.body());
-  if (!block.has_value()) {
+  if (!block.has_value()) [[unlikely]] {
     return std::nullopt;
   }
 
@@ -2681,7 +2680,7 @@ auto AstReader::Unmarshal(const SyntaxTree::Export &in) -> Result<Export> {
 
   for (const auto &attr : in.attributes()) {
     auto attribute = Unmarshal(attr);
-    if (!attribute.has_value()) {
+    if (!attribute.has_value()) [[unlikely]] {
       return std::nullopt;
     }
 
@@ -2706,9 +2705,9 @@ AstReader::AstReader(std::istream &protobuf_data,
     return;
   }
 
-  std::swap(NparAllocator, m_mm);
+  std::swap(MainAllocator, m_mm);
   m_root = Unmarshal(root);
-  std::swap(NparAllocator, m_mm);
+  std::swap(MainAllocator, m_mm);
 }
 
 AstReader::AstReader(std::string_view protobuf_data,
@@ -2720,9 +2719,9 @@ AstReader::AstReader(std::string_view protobuf_data,
     return;
   }
 
-  std::swap(NparAllocator, m_mm);
+  std::swap(MainAllocator, m_mm);
   m_root = Unmarshal(root);
-  std::swap(NparAllocator, m_mm);
+  std::swap(MainAllocator, m_mm);
 }
 
 auto AstReader::Get() -> std::optional<ASTRoot> {

@@ -43,7 +43,7 @@
 using namespace ncc;
 using namespace ncc::parse;
 
-NCC_EXPORT thread_local std::unique_ptr<ncc::IMemory> parse::NparAllocator =
+NCC_EXPORT thread_local std::unique_ptr<ncc::IMemory> parse::MainAllocator =
     std::make_unique<ncc::DynamicArena>();
 
 NCC_EXPORT ASTExtension parse::ExtensionDataStore;

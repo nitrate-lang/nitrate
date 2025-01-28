@@ -46,7 +46,7 @@
 #include <vector>
 
 namespace ncc::parse {
-  extern thread_local std::unique_ptr<ncc::IMemory> NparAllocator;
+  extern thread_local std::unique_ptr<ncc::IMemory> MainAllocator;
 
   template <class T>
   struct Arena {
@@ -58,7 +58,7 @@ namespace ncc::parse {
     constexpr Arena(const Arena<U> &) {}
 
     [[nodiscard]] T *allocate(std::size_t n) {  // NOLINT
-      return static_cast<T *>(NparAllocator->Alloc(sizeof(T) * n));
+      return static_cast<T *>(MainAllocator->Alloc(sizeof(T) * n));
     }
 
     void deallocate(T *, std::size_t) {}  // NOLINT
