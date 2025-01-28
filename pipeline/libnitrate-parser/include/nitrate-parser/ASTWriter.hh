@@ -115,10 +115,14 @@ namespace nitrate::parser::SyntaxTree {  // NOLINT
   class Stmt;
   class Type;
   class SourceLocationRange;
+  class UserComment;
 }  // namespace nitrate::parser::SyntaxTree
 
 namespace google::protobuf {
   class Arena;
+
+  template <typename T>
+  class RepeatedPtrField;
 }  // namespace google::protobuf
 
 namespace ncc::parse {

@@ -38,40 +38,618 @@
 #include <nitrate-core/Macro.hh>
 #include <nitrate-parser/AST.hh>
 #include <nitrate-parser/ASTBase.hh>
+#include <nitrate-parser/ASTCommon.hh>
 #include <nitrate-parser/ASTReader.hh>
 
 using namespace ncc;
 using namespace ncc::parse;
 using namespace nitrate::parser;
 
-auto AstReader::Unmarshal(const SyntaxTree::Expr &in) -> Result<Expr> {
+void AstReader::UnmarshalLocationLocation(
+    const SyntaxTree::SourceLocationRange &in, FlowPtr<Base> out) {
   /// TODO: Unmarshal the protobuf object
   qcore_implement();
-  (void)in;
+}
+
+void AstReader::UnmarshalCodeComment(
+    const ::google::protobuf::RepeatedPtrField<
+        ::nitrate::parser::SyntaxTree::UserComment> &in,
+    FlowPtr<Base> out) {
+  /// TODO: Unmarshal the protobuf object
+  qcore_implement();
 }
 
 auto AstReader::Unmarshal(const SyntaxTree::Root &in) -> Result<Base> {
-  /// TODO: Unmarshal the protobuf object
-  qcore_implement();
-  (void)in;
+  switch (in.node_case()) {
+    case SyntaxTree::Root::kBase: {
+      return Unmarshal(in.base());
+    }
+
+    case SyntaxTree::Root::kStmtExpr: {
+      return Unmarshal(in.stmt_expr());
+    }
+
+    case SyntaxTree::Root::kTypeExpr: {
+      return Unmarshal(in.type_expr());
+    }
+
+    case SyntaxTree::Root::kUnary: {
+      return Unmarshal(in.unary());
+    }
+
+    case SyntaxTree::Root::kBinary: {
+      return Unmarshal(in.binary());
+    }
+
+    case SyntaxTree::Root::kPostUnary: {
+      return Unmarshal(in.post_unary());
+    }
+
+    case SyntaxTree::Root::kTernary: {
+      return Unmarshal(in.ternary());
+    }
+
+    case SyntaxTree::Root::kInteger: {
+      return Unmarshal(in.integer());
+    }
+
+    case SyntaxTree::Root::kFloat: {
+      return Unmarshal(in.float_());
+    }
+
+    case SyntaxTree::Root::kBoolean: {
+      return Unmarshal(in.boolean());
+    }
+
+    case SyntaxTree::Root::kString: {
+      return Unmarshal(in.string());
+    }
+
+    case SyntaxTree::Root::kCharacter: {
+      return Unmarshal(in.character());
+    }
+
+    case SyntaxTree::Root::kNull: {
+      return Unmarshal(in.null());
+    }
+
+    case SyntaxTree::Root::kUndefined: {
+      return Unmarshal(in.undefined());
+    }
+
+    case SyntaxTree::Root::kCall: {
+      return Unmarshal(in.call());
+    }
+
+    case SyntaxTree::Root::kTemplateCall: {
+      return Unmarshal(in.template_call());
+    }
+
+    case SyntaxTree::Root::kList: {
+      return Unmarshal(in.list());
+    }
+
+    case SyntaxTree::Root::kAssoc: {
+      return Unmarshal(in.assoc());
+    }
+
+    case SyntaxTree::Root::kIndex: {
+      return Unmarshal(in.index());
+    }
+
+    case SyntaxTree::Root::kSlice: {
+      return Unmarshal(in.slice());
+    }
+
+    case SyntaxTree::Root::kFstring: {
+      return Unmarshal(in.fstring());
+    }
+
+    case SyntaxTree::Root::kIdentifier: {
+      return Unmarshal(in.identifier());
+    }
+
+    case SyntaxTree::Root::kSequence: {
+      return Unmarshal(in.sequence());
+    }
+
+    case SyntaxTree::Root::kExpr: {
+      return Unmarshal(in.expr());
+    }
+
+    case SyntaxTree::Root::kBlock: {
+      return Unmarshal(in.block());
+    }
+
+    case SyntaxTree::Root::kVariable: {
+      return Unmarshal(in.variable());
+    }
+
+    case SyntaxTree::Root::kAssembly: {
+      return Unmarshal(in.assembly());
+    }
+
+    case SyntaxTree::Root::kIf: {
+      return Unmarshal(in.if_());
+    }
+
+    case SyntaxTree::Root::kWhile: {
+      return Unmarshal(in.while_());
+    }
+
+    case SyntaxTree::Root::kFor: {
+      return Unmarshal(in.for_());
+    }
+
+    case SyntaxTree::Root::kForeach: {
+      return Unmarshal(in.foreach ());
+    }
+
+    case SyntaxTree::Root::kBreak: {
+      return Unmarshal(in.break_());
+    }
+
+    case SyntaxTree::Root::kContinue: {
+      return Unmarshal(in.continue_());
+    }
+
+    case SyntaxTree::Root::kReturn: {
+      return Unmarshal(in.return_());
+    }
+
+    case SyntaxTree::Root::kReturnIf: {
+      return Unmarshal(in.return_if());
+    }
+
+    case SyntaxTree::Root::kCase: {
+      return Unmarshal(in.case_());
+    }
+
+    case SyntaxTree::Root::kSwitch: {
+      return Unmarshal(in.switch_());
+    }
+
+    case SyntaxTree::Root::kExport: {
+      return Unmarshal(in.export_());
+    }
+
+    case SyntaxTree::Root::kScope: {
+      return Unmarshal(in.scope());
+    }
+
+    case SyntaxTree::Root::kTypedef: {
+      return Unmarshal(in.typedef_());
+    }
+
+    case SyntaxTree::Root::kEnum: {
+      return Unmarshal(in.enum_());
+    }
+
+    case SyntaxTree::Root::kFunction: {
+      return Unmarshal(in.function());
+    }
+
+    case SyntaxTree::Root::kStruct: {
+      return Unmarshal(in.struct_());
+    }
+
+    case SyntaxTree::Root::kNamed: {
+      return Unmarshal(in.named());
+    }
+
+    case SyntaxTree::Root::kInfer: {
+      return Unmarshal(in.infer());
+    }
+
+    case SyntaxTree::Root::kTemplate: {
+      return Unmarshal(in.template_());
+    }
+
+    case SyntaxTree::Root::kU1: {
+      return Unmarshal(in.u1());
+    }
+
+    case SyntaxTree::Root::kU8: {
+      return Unmarshal(in.u8());
+    }
+
+    case SyntaxTree::Root::kU16: {
+      return Unmarshal(in.u16());
+    }
+
+    case SyntaxTree::Root::kU32: {
+      return Unmarshal(in.u32());
+    }
+
+    case SyntaxTree::Root::kU64: {
+      return Unmarshal(in.u64());
+    }
+
+    case SyntaxTree::Root::kU128: {
+      return Unmarshal(in.u128());
+    }
+
+    case SyntaxTree::Root::kI8: {
+      return Unmarshal(in.i8());
+    }
+
+    case SyntaxTree::Root::kI16: {
+      return Unmarshal(in.i16());
+    }
+
+    case SyntaxTree::Root::kI32: {
+      return Unmarshal(in.i32());
+    }
+
+    case SyntaxTree::Root::kI64: {
+      return Unmarshal(in.i64());
+    }
+
+    case SyntaxTree::Root::kI128: {
+      return Unmarshal(in.i128());
+    }
+
+    case SyntaxTree::Root::kF16: {
+      return Unmarshal(in.f16());
+    }
+
+    case SyntaxTree::Root::kF32: {
+      return Unmarshal(in.f32());
+    }
+
+    case SyntaxTree::Root::kF64: {
+      return Unmarshal(in.f64());
+    }
+
+    case SyntaxTree::Root::kF128: {
+      return Unmarshal(in.f128());
+    }
+
+    case SyntaxTree::Root::kVoid: {
+      return Unmarshal(in.void_());
+    }
+
+    case SyntaxTree::Root::kPtr: {
+      return Unmarshal(in.ptr());
+    }
+
+    case SyntaxTree::Root::kOpaque: {
+      return Unmarshal(in.opaque());
+    }
+
+    case SyntaxTree::Root::kTuple: {
+      return Unmarshal(in.tuple());
+    }
+
+    case SyntaxTree::Root::kArray: {
+      return Unmarshal(in.array());
+    }
+
+    case SyntaxTree::Root::kRef: {
+      return Unmarshal(in.ref());
+    }
+
+    case SyntaxTree::Root::kFunc: {
+      return Unmarshal(in.func());
+    }
+
+    case SyntaxTree::Root::NODE_NOT_SET: {
+      return std::nullopt;
+    }
+  }
+}
+
+auto AstReader::Unmarshal(const SyntaxTree::Expr &in) -> Result<Expr> {
+  switch (in.node_case()) {
+    case SyntaxTree::Expr::kBase: {
+      return Unmarshal(in.base());
+    }
+
+    case SyntaxTree::Expr::kStmtExpr: {
+      return Unmarshal(in.stmt_expr());
+    }
+
+    case SyntaxTree::Expr::kTypeExpr: {
+      return Unmarshal(in.type_expr());
+    }
+
+    case SyntaxTree::Expr::kUnary: {
+      return Unmarshal(in.unary());
+    }
+
+    case SyntaxTree::Expr::kBinary: {
+      return Unmarshal(in.binary());
+    }
+
+    case SyntaxTree::Expr::kPostUnary: {
+      return Unmarshal(in.post_unary());
+    }
+
+    case SyntaxTree::Expr::kTernary: {
+      return Unmarshal(in.ternary());
+    }
+
+    case SyntaxTree::Expr::kInteger: {
+      return Unmarshal(in.integer());
+    }
+
+    case SyntaxTree::Expr::kFloat: {
+      return Unmarshal(in.float_());
+    }
+
+    case SyntaxTree::Expr::kBoolean: {
+      return Unmarshal(in.boolean());
+    }
+
+    case SyntaxTree::Expr::kString: {
+      return Unmarshal(in.string());
+    }
+
+    case SyntaxTree::Expr::kCharacter: {
+      return Unmarshal(in.character());
+    }
+
+    case SyntaxTree::Expr::kNull: {
+      return Unmarshal(in.null());
+    }
+
+    case SyntaxTree::Expr::kUndefined: {
+      return Unmarshal(in.undefined());
+    }
+
+    case SyntaxTree::Expr::kCall: {
+      return Unmarshal(in.call());
+    }
+
+    case SyntaxTree::Expr::kTemplateCall: {
+      return Unmarshal(in.template_call());
+    }
+
+    case SyntaxTree::Expr::kList: {
+      return Unmarshal(in.list());
+    }
+
+    case SyntaxTree::Expr::kAssoc: {
+      return Unmarshal(in.assoc());
+    }
+
+    case SyntaxTree::Expr::kIndex: {
+      return Unmarshal(in.index());
+    }
+
+    case SyntaxTree::Expr::kSlice: {
+      return Unmarshal(in.slice());
+    }
+
+    case SyntaxTree::Expr::kFstring: {
+      return Unmarshal(in.fstring());
+    }
+
+    case SyntaxTree::Expr::kIdentifier: {
+      return Unmarshal(in.identifier());
+    }
+
+    case SyntaxTree::Expr::kSequence: {
+      return Unmarshal(in.sequence());
+    }
+
+    case SyntaxTree::Expr::NODE_NOT_SET: {
+      return std::nullopt;
+    }
+  }
 }
 
 auto AstReader::Unmarshal(const SyntaxTree::Stmt &in) -> Result<Stmt> {
-  /// TODO: Unmarshal the protobuf object
-  qcore_implement();
-  (void)in;
+  switch (in.node_case()) {
+    case SyntaxTree::Stmt::kExprStmt: {
+      return Unmarshal(in.expr_stmt());
+    }
+
+    case SyntaxTree::Stmt::kBase: {
+      return Unmarshal(in.base());
+    }
+
+    case SyntaxTree::Stmt::kBlock: {
+      return Unmarshal(in.block());
+    }
+
+    case SyntaxTree::Stmt::kVariable: {
+      return Unmarshal(in.variable());
+    }
+
+    case SyntaxTree::Stmt::kAssembly: {
+      return Unmarshal(in.assembly());
+    }
+
+    case SyntaxTree::Stmt::kIf: {
+      return Unmarshal(in.if_());
+    }
+
+    case SyntaxTree::Stmt::kWhile: {
+      return Unmarshal(in.while_());
+    }
+
+    case SyntaxTree::Stmt::kFor: {
+      return Unmarshal(in.for_());
+    }
+
+    case SyntaxTree::Stmt::kForeach: {
+      return Unmarshal(in.foreach ());
+    }
+
+    case SyntaxTree::Stmt::kBreak: {
+      return Unmarshal(in.break_());
+    }
+
+    case SyntaxTree::Stmt::kContinue: {
+      return Unmarshal(in.continue_());
+    }
+
+    case SyntaxTree::Stmt::kReturn: {
+      return Unmarshal(in.return_());
+    }
+
+    case SyntaxTree::Stmt::kReturnIf: {
+      return Unmarshal(in.return_if());
+    }
+
+    case SyntaxTree::Stmt::kCase: {
+      return Unmarshal(in.case_());
+    }
+
+    case SyntaxTree::Stmt::kSwitch: {
+      return Unmarshal(in.switch_());
+    }
+
+    case SyntaxTree::Stmt::kExport: {
+      return Unmarshal(in.export_());
+    }
+
+    case SyntaxTree::Stmt::kScope: {
+      return Unmarshal(in.scope());
+    }
+
+    case SyntaxTree::Stmt::kTypedef: {
+      return Unmarshal(in.typedef_());
+    }
+
+    case SyntaxTree::Stmt::kEnum: {
+      return Unmarshal(in.enum_());
+    }
+
+    case SyntaxTree::Stmt::kFunction: {
+      return Unmarshal(in.function());
+    }
+
+    case SyntaxTree::Stmt::kStruct: {
+      return Unmarshal(in.struct_());
+    }
+
+    case SyntaxTree::Stmt::NODE_NOT_SET: {
+      return std::nullopt;
+    }
+  }
 }
 
 auto AstReader::Unmarshal(const SyntaxTree::Type &in) -> Result<Type> {
-  /// TODO: Unmarshal the protobuf object
-  qcore_implement();
-  (void)in;
+  switch (in.node_case()) {
+    case SyntaxTree::Type::kBase: {
+      return Unmarshal(in.base());
+    }
+
+    case SyntaxTree::Type::kNamed: {
+      return Unmarshal(in.named());
+    }
+
+    case SyntaxTree::Type::kInfer: {
+      return Unmarshal(in.infer());
+    }
+
+    case SyntaxTree::Type::kTemplate: {
+      return Unmarshal(in.template_());
+    }
+
+    case SyntaxTree::Type::kU1: {
+      return Unmarshal(in.u1());
+    }
+
+    case SyntaxTree::Type::kU8: {
+      return Unmarshal(in.u8());
+    }
+
+    case SyntaxTree::Type::kU16: {
+      return Unmarshal(in.u16());
+    }
+
+    case SyntaxTree::Type::kU32: {
+      return Unmarshal(in.u32());
+    }
+
+    case SyntaxTree::Type::kU64: {
+      return Unmarshal(in.u64());
+    }
+
+    case SyntaxTree::Type::kU128: {
+      return Unmarshal(in.u128());
+    }
+
+    case SyntaxTree::Type::kI8: {
+      return Unmarshal(in.i8());
+    }
+
+    case SyntaxTree::Type::kI16: {
+      return Unmarshal(in.i16());
+    }
+
+    case SyntaxTree::Type::kI32: {
+      return Unmarshal(in.i32());
+    }
+
+    case SyntaxTree::Type::kI64: {
+      return Unmarshal(in.i64());
+    }
+
+    case SyntaxTree::Type::kI128: {
+      return Unmarshal(in.i128());
+    }
+
+    case SyntaxTree::Type::kF16: {
+      return Unmarshal(in.f16());
+    }
+
+    case SyntaxTree::Type::kF32: {
+      return Unmarshal(in.f32());
+    }
+
+    case SyntaxTree::Type::kF64: {
+      return Unmarshal(in.f64());
+    }
+
+    case SyntaxTree::Type::kF128: {
+      return Unmarshal(in.f128());
+    }
+
+    case SyntaxTree::Type::kVoid: {
+      return Unmarshal(in.void_());
+    }
+
+    case SyntaxTree::Type::kPtr: {
+      return Unmarshal(in.ptr());
+    }
+
+    case SyntaxTree::Type::kOpaque: {
+      return Unmarshal(in.opaque());
+    }
+
+    case SyntaxTree::Type::kTuple: {
+      return Unmarshal(in.tuple());
+    }
+
+    case SyntaxTree::Type::kArray: {
+      return Unmarshal(in.array());
+    }
+
+    case SyntaxTree::Type::kRef: {
+      return Unmarshal(in.ref());
+    }
+
+    case SyntaxTree::Type::kFunc: {
+      return Unmarshal(in.func());
+    }
+
+    case SyntaxTree::Type::NODE_NOT_SET: {
+      return std::nullopt;
+    }
+  }
 }
 
 auto AstReader::Unmarshal(const SyntaxTree::Base &in) -> Result<Base> {
-  /// TODO: Unmarshal the protobuf object
-  qcore_implement();
-  (void)in;
+  auto object = CreateNode<Base>(QAST_BASE)();
+
+  UnmarshalLocationLocation(in.location(), object);
+  UnmarshalCodeComment(in.comments(), object);
+
+  return object;
 }
 
 auto AstReader::Unmarshal(const SyntaxTree::ExprStmt &in) -> Result<ExprStmt> {

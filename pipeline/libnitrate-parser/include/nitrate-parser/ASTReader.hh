@@ -55,6 +55,14 @@ namespace ncc::parse {
     ReaderSourceManager m_rd;
     std::unique_ptr<IMemory> m_mm;
 
+    void UnmarshalLocationLocation(const SyntaxTree::SourceLocationRange &in,
+                                   FlowPtr<Base> out);
+
+    void UnmarshalCodeComment(
+        const ::google::protobuf::RepeatedPtrField<
+            ::nitrate::parser::SyntaxTree::UserComment> &in,
+        FlowPtr<Base> out);
+
     auto Unmarshal(const SyntaxTree::Expr &in) -> Result<Expr>;
     auto Unmarshal(const SyntaxTree::Root &in) -> Result<Base>;
     auto Unmarshal(const SyntaxTree::Stmt &in) -> Result<Stmt>;
