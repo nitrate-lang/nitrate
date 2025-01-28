@@ -33,6 +33,7 @@
 
 #include <core/SyntaxTree.pb.h>
 
+#include <iostream>
 #include <memory>
 #include <nitrate-core/Logger.hh>
 #include <nitrate-core/Macro.hh>
@@ -45,18 +46,64 @@ using namespace ncc;
 using namespace ncc::parse;
 using namespace nitrate::parser;
 
+static parse::SafetyMode FromSafetyMode(SyntaxTree::SafetyMode mode) noexcept {
+  switch (mode) {
+    case SyntaxTree::SafetyMode::Safe: {
+      return parse::SafetyMode::Safe;
+    }
+
+    case SyntaxTree::SafetyMode::Unsafe: {
+      return parse::SafetyMode::Unsafe;
+    }
+
+    case SyntaxTree::SafetyMode::Unspecified: {
+      return parse::SafetyMode::Unknown;
+    }
+  }
+}
+
 void AstReader::UnmarshalLocationLocation(
-    const SyntaxTree::SourceLocationRange &in, FlowPtr<Base> out) {
-  /// TODO: Unmarshal the protobuf object
-  qcore_implement();
+    const SyntaxTree::SourceLocationRange &in, const FlowPtr<Base> &out) {
+  if (!m_rd.has_value()) {
+    return;
+  }
+
+  lex::LocationID start_loc;
+  lex::LocationID end_loc;
+
+  if (in.has_start()) {
+    auto line = in.start().line();
+    auto column = in.start().column();
+    auto offset = in.start().offset();
+    auto filename = in.start().has_file() ? in.start().file() : "";
+
+    start_loc = m_rd->get().InternLocation(
+        lex::Location(offset, line, column, filename));
+  }
+
+  if (in.has_end()) {
+    auto line = in.end().line();
+    auto column = in.end().column();
+    auto offset = in.end().offset();
+    auto filename = in.end().has_file() ? in.end().file() : "";
+
+    end_loc = m_rd->get().InternLocation(
+        lex::Location(offset, line, column, filename));
+  }
+
+  out->SetLoc(start_loc, end_loc);
 }
 
 void AstReader::UnmarshalCodeComment(
     const ::google::protobuf::RepeatedPtrField<
         ::nitrate::parser::SyntaxTree::UserComment> &in,
-    FlowPtr<Base> out) {
+    const FlowPtr<Base> &out) {
+  return;
+
   /// TODO: Unmarshal the protobuf object
   qcore_implement();
+  (void)in;
+  (void)out;
 }
 
 auto AstReader::Unmarshal(const SyntaxTree::Root &in) -> Result<Base> {
@@ -653,21 +700,42 @@ auto AstReader::Unmarshal(const SyntaxTree::Base &in) -> Result<Base> {
 }
 
 auto AstReader::Unmarshal(const SyntaxTree::ExprStmt &in) -> Result<ExprStmt> {
-  /// TODO: Unmarshal the protobuf object
-  qcore_implement();
-  (void)in;
+  auto expression = Unmarshal(in.expression());
+  if (!expression.has_value()) [[unlikely]] {
+    return std::nullopt;
+  }
+
+  auto object = CreateNode<ExprStmt>(expression.value())();
+  UnmarshalLocationLocation(in.location(), object);
+  UnmarshalCodeComment(in.comments(), object);
+
+  return object;
 }
 
 auto AstReader::Unmarshal(const SyntaxTree::StmtExpr &in) -> Result<StmtExpr> {
-  /// TODO: Unmarshal the protobuf object
-  qcore_implement();
-  (void)in;
+  auto statement = Unmarshal(in.statement());
+  if (!statement.has_value()) [[unlikely]] {
+    return std::nullopt;
+  }
+
+  auto object = CreateNode<StmtExpr>(statement.value())();
+  UnmarshalLocationLocation(in.location(), object);
+  UnmarshalCodeComment(in.comments(), object);
+
+  return object;
 }
 
 auto AstReader::Unmarshal(const SyntaxTree::TypeExpr &in) -> Result<TypeExpr> {
-  /// TODO: Unmarshal the protobuf object
-  qcore_implement();
-  (void)in;
+  auto type = Unmarshal(in.type());
+  if (!type.has_value()) [[unlikely]] {
+    return std::nullopt;
+  }
+
+  auto object = CreateNode<TypeExpr>(type.value())();
+  UnmarshalLocationLocation(in.location(), object);
+  UnmarshalCodeComment(in.comments(), object);
+
+  return object;
 }
 
 auto AstReader::Unmarshal(const SyntaxTree::NamedTy &in) -> Result<NamedTy> {
@@ -859,9 +927,11 @@ auto AstReader::Unmarshal(const SyntaxTree::Float &in) -> Result<Float> {
 }
 
 auto AstReader::Unmarshal(const SyntaxTree::Boolean &in) -> Result<Boolean> {
-  /// TODO: Unmarshal the protobuf object
-  qcore_implement();
-  (void)in;
+  auto object = CreateNode<Boolean>(in.value())();
+  UnmarshalLocationLocation(in.location(), object);
+  UnmarshalCodeComment(in.comments(), object);
+
+  return object;
 }
 
 auto AstReader::Unmarshal(const SyntaxTree::String &in) -> Result<String> {
@@ -947,9 +1017,23 @@ auto AstReader::Unmarshal(const SyntaxTree::Sequence &in) -> Result<Sequence> {
 }
 
 auto AstReader::Unmarshal(const SyntaxTree::Block &in) -> Result<Block> {
-  /// TODO: Unmarshal the protobuf object
-  qcore_implement();
-  (void)in;
+  BlockItems items;
+  items.reserve(in.statements_size());
+
+  for (const auto &stmt : in.statements()) {
+    auto statement = Unmarshal(stmt);
+    if (!statement.has_value()) [[unlikely]] {
+      return std::nullopt;
+    }
+
+    items.push_back(statement.value());
+  }
+
+  auto object = CreateNode<Block>(items, FromSafetyMode(in.guarantor()))();
+  UnmarshalLocationLocation(in.location(), object);
+  UnmarshalCodeComment(in.comments(), object);
+
+  return object;
 }
 
 auto AstReader::Unmarshal(const SyntaxTree::Variable &in) -> Result<Variable> {
@@ -965,21 +1049,75 @@ auto AstReader::Unmarshal(const SyntaxTree::Assembly &in) -> Result<Assembly> {
 }
 
 auto AstReader::Unmarshal(const SyntaxTree::If &in) -> Result<If> {
-  /// TODO: Unmarshal the protobuf object
-  qcore_implement();
-  (void)in;
+  auto condition = Unmarshal(in.condition());
+  if (!condition.has_value()) [[unlikely]] {
+    return std::nullopt;
+  }
+
+  auto then_block = Unmarshal(in.true_branch());
+  if (!then_block.has_value()) [[unlikely]] {
+    return std::nullopt;
+  }
+
+  auto else_block = Unmarshal(in.false_branch());
+  if (in.has_false_branch() && !else_block.has_value()) [[unlikely]] {
+    return std::nullopt;
+  }
+
+  auto object =
+      CreateNode<If>(condition.value(), then_block.value(), else_block.get())();
+  UnmarshalLocationLocation(in.location(), object);
+  UnmarshalCodeComment(in.comments(), object);
+
+  return object;
 }
 
 auto AstReader::Unmarshal(const SyntaxTree::While &in) -> Result<While> {
-  /// TODO: Unmarshal the protobuf object
-  qcore_implement();
-  (void)in;
+  auto condition = Unmarshal(in.condition());
+  if (!condition.has_value()) [[unlikely]] {
+    return std::nullopt;
+  }
+
+  auto block = Unmarshal(in.body());
+  if (!block.has_value()) [[unlikely]] {
+    return std::nullopt;
+  }
+
+  auto object = CreateNode<While>(condition.value(), block.value())();
+  UnmarshalLocationLocation(in.location(), object);
+  UnmarshalCodeComment(in.comments(), object);
+
+  return object;
 }
 
 auto AstReader::Unmarshal(const SyntaxTree::For &in) -> Result<For> {
-  /// TODO: Unmarshal the protobuf object
-  qcore_implement();
-  (void)in;
+  auto init = Unmarshal(in.init());
+  if (in.has_init() && !init.has_value()) [[unlikely]] {
+    return std::nullopt;
+  }
+
+  auto condition = Unmarshal(in.condition());
+  if (in.has_condition() && !condition.has_value()) [[unlikely]] {
+    return std::nullopt;
+  }
+
+  auto update = Unmarshal(in.step());
+  if (in.has_step() && !update.has_value()) [[unlikely]] {
+    return std::nullopt;
+  }
+
+  auto block = Unmarshal(in.body());
+  if (!block.has_value()) [[unlikely]] {
+    return std::nullopt;
+  }
+
+  auto object = CreateNode<For>(init.value(), condition.value(), update.value(),
+                                block.value())();
+
+  UnmarshalLocationLocation(in.location(), object);
+  UnmarshalCodeComment(in.comments(), object);
+
+  return object;
 }
 
 auto AstReader::Unmarshal(const SyntaxTree::Foreach &in) -> Result<Foreach> {
@@ -989,27 +1127,50 @@ auto AstReader::Unmarshal(const SyntaxTree::Foreach &in) -> Result<Foreach> {
 }
 
 auto AstReader::Unmarshal(const SyntaxTree::Break &in) -> Result<Break> {
-  /// TODO: Unmarshal the protobuf object
-  qcore_implement();
-  (void)in;
+  auto object = CreateNode<Break>()();
+  UnmarshalLocationLocation(in.location(), object);
+  UnmarshalCodeComment(in.comments(), object);
+
+  return object;
 }
 
 auto AstReader::Unmarshal(const SyntaxTree::Continue &in) -> Result<Continue> {
-  /// TODO: Unmarshal the protobuf object
-  qcore_implement();
-  (void)in;
+  auto object = CreateNode<Continue>()();
+  UnmarshalLocationLocation(in.location(), object);
+  UnmarshalCodeComment(in.comments(), object);
+
+  return object;
 }
 
 auto AstReader::Unmarshal(const SyntaxTree::Return &in) -> Result<Return> {
-  /// TODO: Unmarshal the protobuf object
-  qcore_implement();
-  (void)in;
+  auto value = Unmarshal(in.value());
+  if (in.has_value() && !value.has_value()) [[unlikely]] {
+    return std::nullopt;
+  }
+
+  auto object = CreateNode<Return>(value.value())();
+  UnmarshalLocationLocation(in.location(), object);
+  UnmarshalCodeComment(in.comments(), object);
+
+  return object;
 }
 
 auto AstReader::Unmarshal(const SyntaxTree::ReturnIf &in) -> Result<ReturnIf> {
-  /// TODO: Unmarshal the protobuf object
-  qcore_implement();
-  (void)in;
+  auto condition = Unmarshal(in.condition());
+  if (!condition.has_value()) [[unlikely]] {
+    return std::nullopt;
+  }
+
+  auto value = Unmarshal(in.value());
+  if (!value.has_value()) [[unlikely]] {
+    return std::nullopt;
+  }
+
+  auto object = CreateNode<ReturnIf>(condition.value(), value.value())();
+  UnmarshalLocationLocation(in.location(), object);
+  UnmarshalCodeComment(in.comments(), object);
+
+  return object;
 }
 
 auto AstReader::Unmarshal(const SyntaxTree::Case &in) -> Result<Case> {
@@ -1075,7 +1236,7 @@ AstReader::AstReader(std::istream &protobuf_data,
 
 AstReader::AstReader(std::string_view protobuf_data,
                      ReaderSourceManager source_manager)
-    : m_rd(source_manager) {
+    : m_rd(source_manager), m_mm(std::make_unique<DynamicArena>()) {
   SyntaxTree::Root root;
   if (!root.ParseFromArray(protobuf_data.data(), protobuf_data.size()))
       [[unlikely]] {
