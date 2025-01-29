@@ -80,8 +80,8 @@ extern "C" NCC_EXPORT void QCoreEnd(QCoreLog level) {
 
 extern "C" NCC_EXPORT auto QCoreVWriteF(const char *fmt, va_list args) -> int {
   char *buffer = nullptr;
-  int size = vasprintf(&buffer, fmt, args);
-  if (size < 0) {
+  auto size = vasprintf(&buffer, fmt, args);
+  if (size < 0) [[unlikely]] {
     qcore_panic("Failed to allocate memory for log message.");
   }
 
