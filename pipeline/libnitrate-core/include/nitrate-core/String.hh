@@ -37,6 +37,7 @@
 #include <cstdint>
 #include <nitrate-core/Logger.hh>
 #include <nitrate-core/Macro.hh>
+#include <nitrate-core/Testing.hh>
 #include <string>
 #include <string_view>
 
@@ -64,6 +65,8 @@ namespace ncc {
   };
 
   class NCC_EXPORT StringMemory {
+    NCC_TESTING_ACCESSIBLE();
+
     friend class String;
 
     static auto FromString(std::string_view str) -> uint64_t;
@@ -75,6 +78,8 @@ namespace ncc {
   };
 
   class NCC_EXPORT __attribute__((packed)) String {
+    NCC_TESTING_ACCESSIBLE();
+
     uint64_t m_id : 40;
 
   public:
@@ -97,6 +102,9 @@ namespace ncc {
 
     auto operator==(const String &o) const -> bool;
     auto operator<(const String &o) const -> bool;
+    auto operator<=(const String &o) const -> bool;
+    auto operator>(const String &o) const -> bool;
+    auto operator>=(const String &o) const -> bool;
 
     constexpr auto operator*() const { return Get(); }
 

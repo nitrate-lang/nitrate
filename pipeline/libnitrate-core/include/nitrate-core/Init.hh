@@ -35,6 +35,7 @@
 #define __NITRATE_CORE_LIB_H__
 
 #include <atomic>
+#include <functional>
 #include <mutex>
 #include <optional>
 #include <string>
@@ -44,14 +45,28 @@ namespace ncc {
   template <typename Impl>
   class LibraryRC;
 
-  template <typename Impl>
   class LibraryRCAutoClose final {
-    friend class LibraryRC<Impl>;
-
-    LibraryRCAutoClose() = default;
+    std::function<void()> m_inc, m_dec;
 
   public:
-    ~LibraryRCAutoClose() { Impl::Deinit(); }
+    LibraryRCAutoClose(std::function<void()> inc, std::function<void()> dec)
+        : m_inc(std::move(inc)), m_dec(std::move(dec)) {}
+
+    LibraryRCAutoClose(const LibraryRCAutoClose& o)
+        : m_inc(o.m_inc), m_dec(o.m_dec) {
+      if (m_inc) {
+        m_inc();
+      }
+    }
+
+    LibraryRCAutoClose(LibraryRCAutoClose&& o) noexcept
+        : m_inc(std::move(o.m_inc)), m_dec(std::move(o.m_dec)) {}
+
+    ~LibraryRCAutoClose() {
+      if (m_dec) {
+        m_dec();
+      }
+    }
   };
 
   template <typename Impl>
@@ -137,12 +152,12 @@ namespace ncc {
       return version_string;
     }
 
-    auto GetRC() -> std::optional<LibraryRCAutoClose<Impl>> {
+    auto GetRC() -> std::optional<LibraryRCAutoClose> {
       if (!InitRC()) {
         return std::nullopt;
       }
 
-      return LibraryRCAutoClose<Impl>();
+      return LibraryRCAutoClose([this] { InitRC(); }, [this] { DeinitRC(); });
     }
   };
 
