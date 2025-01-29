@@ -50,5 +50,3 @@ add_dependencies(nitrate-parser nitrate-core nitrate-lexer compile_proto)
 
 install(TARGETS nitrate-parser DESTINATION lib)
 install(DIRECTORY include/ DESTINATION "include")
-
-add_subdirectory(bench)

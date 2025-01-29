@@ -3,7 +3,7 @@
 #include <string_view>
 
 namespace test::vector {
-  constexpr static inline std::string_view kAstExecise =
+  static inline const std::string_view SOURCE_SAMPLE_01 =
       R"SOURCE(################################################################################
 # NITRATE PIPELINE TEST VECTOR                                                 #
 # Date: Jan 13, 2024                                                           #

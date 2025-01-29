@@ -44,9 +44,5 @@ target_link_libraries(nitrate PUBLIC nitrate-core
 add_dependencies(nitrate nitrate-core nitrate-lexer nitrate-seq nitrate-parser nitrate-ir nitrate-emit)
 set_target_properties(nitrate PROPERTIES OUTPUT_NAME nitrate)
 
-if(BUILD_TESTING)
-  add_subdirectory(test)
-endif()
-
 install(TARGETS nitrate DESTINATION lib)
 install(DIRECTORY include/ DESTINATION "include")
