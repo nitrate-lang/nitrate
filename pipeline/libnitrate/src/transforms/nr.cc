@@ -56,24 +56,21 @@ CREATE_TRANSFORM(nit::nr) {
   if (opts.contains("-fuse-json") && opts.contains("-fuse-msgpack")) {
     qcore_logf(QCORE_ERROR, "Cannot use both JSON and MsgPack output.");
     return false;
-  } else if (opts.contains("-fuse-msgpack")) {
+  }
+
+  if (opts.contains("-fuse-msgpack")) {
     out_mode = OutMode::MsgPack;
   }
 
-  std::optional<ncc::FlowPtr<ncc::parse::Base> > root;
+  std::string source_str(std::istreambuf_iterator<char>(source), {});
 
-  if (source.peek() == '{') {
-    root = ncc::parse::AstJsonReader(source).Get();
-  } else {
-    root = ncc::parse::AstMsgPackReader(source).Get();
-  }
-
+  auto root = ncc::parse::AstReader(source_str).Get();
   if (!root.has_value()) {
     qcore_logf(QCORE_ERROR, "Failed to parse input.");
     return false;
   }
 
-  if (auto module = NrLower(root.value().get(), nullptr, true)) {
+  if (auto module = NrLower(root.value().Get().get(), nullptr, true)) {
     switch (out_mode) {
       case OutMode::JSON: {
         auto writter = IRJsonWriter(output);

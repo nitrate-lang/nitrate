@@ -93,7 +93,7 @@ namespace ncc::ir {
 
     template <typename T>
     static constexpr auto GetTypeCode() -> nr_ty_t {
-      if constexpr (std::is_same_v<T, GenericBinaryExpression<A>>) {
+      if constexpr (std::is_same_v<T, GenericBinary<A>>) {
         return IR_eBIN;
       } else if constexpr (std::is_same_v<T, GenericUnary<A>>) {
         return IR_eUNARY;
@@ -713,7 +713,7 @@ namespace ncc::ir {
       std::array<size_t, kIRNodeKindCount> r;
       r.fill(0);
 
-      r[IR_eBIN] = sizeof(GenericBinaryExpression<A>);
+      r[IR_eBIN] = sizeof(GenericBinary<A>);
       r[IR_eUNARY] = sizeof(GenericUnary<A>);
       r[IR_eINT] = sizeof(GenericInt<A>);
       r[IR_eFLOAT] = sizeof(GenericFloat<A>);

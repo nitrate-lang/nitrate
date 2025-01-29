@@ -198,17 +198,17 @@ static NCC_FORCE_INLINE auto UnwindStack(
       }
 
       case FrameType::PreUnary: {
-        base = CreateNode<UnaryExpression>(frame.m_op, base)();
+        base = CreateNode<Unary>(frame.m_op, base)();
         break;
       }
 
       case FrameType::PostUnary: {
-        base = CreateNode<PostUnaryExpression>(base, frame.m_op)();
+        base = CreateNode<PostUnary>(base, frame.m_op)();
         break;
       }
 
       case FrameType::Binary: {
-        base = CreateNode<BinaryExpression>(frame.m_base, frame.m_op, base)();
+        base = CreateNode<Binary>(frame.m_base, frame.m_op, base)();
         break;
       }
     }
@@ -247,7 +247,7 @@ auto Parser::PImpl::RecurseExpr(const std::set<Token> &terminators)
       auto [Op, Offset] = pre_unary_ops.top();
       pre_unary_ops.pop();
 
-      left_side = CreateNode<UnaryExpression>(Op, left_side)();
+      left_side = CreateNode<Unary>(Op, left_side)();
       left_side->SetOffset(Offset);
     }
 
@@ -271,7 +271,7 @@ auto Parser::PImpl::RecurseExpr(const std::set<Token> &terminators)
              * Handle post-unary operators
              ****************************************/
             if (op_type == OpMode::PostUnary) {
-              left_side = CreateNode<PostUnaryExpression>(left_side, op)();
+              left_side = CreateNode<PostUnary>(left_side, op)();
               left_side->SetOffset(source_offset);
 
               continue;
@@ -307,7 +307,7 @@ auto Parser::PImpl::RecurseExpr(const std::set<Token> &terminators)
                 pre_unary_ops.pop();
 
                 auto pre_unary_expr =
-                    CreateNode<UnaryExpression>(op, right_side.value())();
+                    CreateNode<Unary>(op, right_side.value())();
                 pre_unary_expr->SetOffset(Offset);
 
                 right_side = pre_unary_expr;
@@ -686,7 +686,7 @@ auto Parser::PImpl::RecurseExprTypeSuffix(FlowPtr<Expr> base) -> FlowPtr<Expr> {
   auto texpr = CreateNode<TypeExpr>(suffix)();
   texpr->SetOffset(tok.GetStart());
 
-  return CreateNode<BinaryExpression>(base, OpAs, texpr)();
+  return CreateNode<Binary>(base, OpAs, texpr)();
 }
 
 auto Parser::PImpl::RecurseExprPrimary(bool is_type) -> NullableFlowPtr<Expr> {

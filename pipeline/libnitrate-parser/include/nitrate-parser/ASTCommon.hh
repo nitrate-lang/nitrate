@@ -173,10 +173,10 @@ namespace ncc::parse {
   class ArrayTy;
   class RefTy;
   class FuncTy;
-  class UnaryExpression;
-  class BinaryExpression;
-  class PostUnaryExpression;
-  class TernaryExpression;
+  class Unary;
+  class Binary;
+  class PostUnary;
+  class Ternary;
   class Integer;
   class Float;
   class Boolean;
@@ -188,7 +188,6 @@ namespace ncc::parse {
   class TemplateCall;
   class List;
   class Assoc;
-  class Field;
   class Index;
   class Slice;
   class FString;

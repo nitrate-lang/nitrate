@@ -31,21 +31,57 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <core/Hash.hh>
-#include <nitrate-core/Logger.hh>
-#include <nitrate-core/Macro.hh>
+#include <lsp/lang/format/Formatter.hh>
 
+using namespace no3::lsp::fmt;
 using namespace ncc::parse;
 
-void AstHash64::StrImpl(std::string_view str) {
-  Update(std::hash<std::string_view>{}(str));
+void CambrianFormatter::Visit(FlowPtr<parse::For> n) {
+  PrintLineComments(n);
+
+  m_line << "for (";
+
+  if (n->GetInit().has_value()) {
+    n->GetInit().value().Accept(*this);
+    if (!n->GetInit().value()->IsStmt()) {
+      m_line << ";";
+    }
+  } else {
+    m_line << ";";
+  }
+
+  if (n->GetCond().has_value()) {
+    m_line << " ";
+    n->GetCond().value().Accept(*this);
+  }
+  m_line << ";";
+
+  if (n->GetStep().has_value()) {
+    m_line << " ";
+    n->GetStep().value().Accept(*this);
+  }
+
+  m_line << ") ";
+  n->GetBody().Accept(*this);
+
+  m_line << ";";
 }
 
-void AstHash64::UintImpl(uint64_t val) { Update(val); }
-void AstHash64::DoubleImpl(double val) { Update(std::hash<double>{}(val)); }
-void AstHash64::BoolImpl(bool val) { Update(std::hash<bool>{}(val)); }
-void AstHash64::NullImpl() { Update(0); }
-void AstHash64::BeginObjImpl(size_t size) { Update(size); }
-void AstHash64::EndObjImpl() { Update(2); }
-void AstHash64::BeginArrImpl(size_t size) { Update(size); }
-void AstHash64::EndArrImpl() { Update(3); }
+void CambrianFormatter::Visit(FlowPtr<parse::Foreach> n) {
+  PrintLineComments(n);
+
+  m_line << "foreach (";
+  if (n->GetIdxIdentifier()->empty()) {
+    m_line << n->GetValIdentifier();
+  } else {
+    m_line << n->GetIdxIdentifier() << ", " << n->GetValIdentifier();
+  }
+
+  m_line << " in ";
+  n->GetExpr().Accept(*this);
+  m_line << ") ";
+
+  n->GetBody().Accept(*this);
+
+  m_line << ";";
+}

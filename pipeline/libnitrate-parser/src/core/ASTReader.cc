@@ -31,2822 +31,2695 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#define AST_READER_IMPL
+#include <core/SyntaxTree.pb.h>
+#include <google/protobuf/io/coded_stream.h>
 
 #include <boost/multiprecision/cpp_int.hpp>
 #include <charconv>
+#include <memory>
 #include <nitrate-core/Logger.hh>
 #include <nitrate-core/Macro.hh>
 #include <nitrate-parser/AST.hh>
 #include <nitrate-parser/ASTBase.hh>
+#include <nitrate-parser/ASTCommon.hh>
 #include <nitrate-parser/ASTReader.hh>
-#include <type_traits>
+
+static constexpr size_t kRecursionLimit = 100000;
 
 using namespace ncc;
 using namespace ncc::parse;
-using namespace boost::multiprecision;
+using namespace nitrate::parser;
 
-template <typename Ty,
-          typename = std::enable_if_t<std::is_floating_point_v<Ty>>>
-static inline auto StrictFromChars(
-    const char* first, const char* last, Ty& value,
-    std::chars_format fmt = std::chars_format::general) noexcept -> bool {
-  auto res = std::from_chars(first, last, value, fmt);
+static NCC_FORCE_INLINE parse::SafetyMode FromSafetyMode(
+    SyntaxTree::Block_SafetyMode mode) noexcept {
+  switch (mode) {
+    case SyntaxTree::Block_SafetyMode_Safe: {
+      return parse::SafetyMode::Safe;
+    }
 
-  return res.ec == std::errc() && res.ptr == last;
-}
+    case SyntaxTree::Block_SafetyMode_Unsafe: {
+      return parse::SafetyMode::Unsafe;
+    }
 
-template <typename Ty>
-static inline auto StrictFromChars(const char* first, const char* last,
-                                   Ty& value, int base = 10) noexcept -> bool {
-  auto res = std::from_chars(first, last, value, base);
-
-  return res.ec == std::errc() && res.ptr == last;
-}
-
-auto AstReader::Get() -> std::optional<FlowPtr<Base>> {
-  if (!m_root) {
-    if (auto root = DeserializeObject()) {
-      m_root = root.value();
+    case SyntaxTree::Block_SafetyMode_Unspecified: {
+      return parse::SafetyMode::Unknown;
     }
   }
-
-  return m_root;
 }
 
-template <typename ValueType>
-constexpr auto AstReader::NextIf(const ValueType& v) -> bool {
-  if (auto n = PeekValue()) {
-    if (std::holds_alternative<ValueType>(n->operator()()) &&
-        std::get<ValueType>(n->operator()()) == v) {
-      NextValue();
-      return true;
+static NCC_FORCE_INLINE parse::VariableType FromVariableKind(
+    SyntaxTree::Variable::VariableKind type) noexcept {
+  switch (type) {
+    case SyntaxTree::Variable_VariableKind_Let: {
+      return parse::VariableType::Let;
+    }
+
+    case SyntaxTree::Variable_VariableKind_Var: {
+      return parse::VariableType::Var;
+    }
+
+    case SyntaxTree::Variable_VariableKind_Const: {
+      return parse::VariableType::Const;
     }
   }
-
-  return false;
 }
 
-template <typename ValueType>
-constexpr auto AstReader::NextIs() -> bool {
-  if (auto n = PeekValue()) {
-    if (std::holds_alternative<ValueType>(n->operator()())) {
-      return true;
+static NCC_FORCE_INLINE lex::Operator FromOperator(SyntaxTree::Operator op) {
+  switch (op) {
+    case SyntaxTree::Plus: {
+      return lex::OpPlus;
+    }
+
+    case SyntaxTree::Minus: {
+      return lex::OpMinus;
+    }
+
+    case SyntaxTree::Times: {
+      return lex::OpTimes;
+    }
+
+    case SyntaxTree::Slash: {
+      return lex::OpSlash;
+    }
+
+    case SyntaxTree::Percent: {
+      return lex::OpPercent;
+    }
+
+    case SyntaxTree::BitAnd: {
+      return lex::OpBitAnd;
+    }
+
+    case SyntaxTree::BitOr: {
+      return lex::OpBitOr;
+    }
+
+    case SyntaxTree::BitXor: {
+      return lex::OpBitXor;
+    }
+
+    case SyntaxTree::BitNot: {
+      return lex::OpBitNot;
+    }
+
+    case SyntaxTree::LShift: {
+      return lex::OpLShift;
+    }
+
+    case SyntaxTree::RShift: {
+      return lex::OpRShift;
+    }
+
+    case SyntaxTree::ROTL: {
+      return lex::OpROTL;
+    }
+
+    case SyntaxTree::ROTR: {
+      return lex::OpROTR;
+    }
+
+    case SyntaxTree::LogicAnd: {
+      return lex::OpLogicAnd;
+    }
+
+    case SyntaxTree::LogicOr: {
+      return lex::OpLogicOr;
+    }
+
+    case SyntaxTree::LogicXor: {
+      return lex::OpLogicXor;
+    }
+
+    case SyntaxTree::LogicNot: {
+      return lex::OpLogicNot;
+    }
+
+    case SyntaxTree::LT: {
+      return lex::OpLT;
+    }
+
+    case SyntaxTree::GT: {
+      return lex::OpGT;
+    }
+
+    case SyntaxTree::LE: {
+      return lex::OpLE;
+    }
+
+    case SyntaxTree::GE: {
+      return lex::OpGE;
+    }
+
+    case SyntaxTree::Eq: {
+      return lex::OpEq;
+    }
+
+    case SyntaxTree::NE: {
+      return lex::OpNE;
+    }
+
+    case SyntaxTree::Set: {
+      return lex::OpSet;
+    }
+
+    case SyntaxTree::PlusSet: {
+      return lex::OpPlusSet;
+    }
+
+    case SyntaxTree::MinusSet: {
+      return lex::OpMinusSet;
+    }
+
+    case SyntaxTree::TimesSet: {
+      return lex::OpTimesSet;
+    }
+
+    case SyntaxTree::SlashSet: {
+      return lex::OpSlashSet;
+    }
+
+    case SyntaxTree::PercentSet: {
+      return lex::OpPercentSet;
+    }
+
+    case SyntaxTree::BitAndSet: {
+      return lex::OpBitAndSet;
+    }
+
+    case SyntaxTree::BitOrSet: {
+      return lex::OpBitOrSet;
+    }
+
+    case SyntaxTree::BitXorSet: {
+      return lex::OpBitXorSet;
+    }
+
+    case SyntaxTree::LogicAndSet: {
+      return lex::OpLogicAndSet;
+    }
+
+    case SyntaxTree::LogicOrSet: {
+      return lex::OpLogicOrSet;
+    }
+
+    case SyntaxTree::LogicXorSet: {
+      return lex::OpLogicXorSet;
+    }
+
+    case SyntaxTree::LShiftSet: {
+      return lex::OpLShiftSet;
+    }
+
+    case SyntaxTree::RShiftSet: {
+      return lex::OpRShiftSet;
+    }
+
+    case SyntaxTree::ROTLSet: {
+      return lex::OpROTLSet;
+    }
+
+    case SyntaxTree::ROTRSet: {
+      return lex::OpROTRSet;
+    }
+
+    case SyntaxTree::Inc: {
+      return lex::OpInc;
+    }
+
+    case SyntaxTree::Dec: {
+      return lex::OpDec;
+    }
+
+    case SyntaxTree::As: {
+      return lex::OpAs;
+    }
+
+    case SyntaxTree::BitcastAs: {
+      return lex::OpBitcastAs;
+    }
+
+    case SyntaxTree::In: {
+      return lex::OpIn;
+    }
+
+    case SyntaxTree::Out: {
+      return lex::OpOut;
+    }
+
+    case SyntaxTree::Sizeof: {
+      return lex::OpSizeof;
+    }
+
+    case SyntaxTree::Bitsizeof: {
+      return lex::OpBitsizeof;
+    }
+
+    case SyntaxTree::Alignof: {
+      return lex::OpAlignof;
+    }
+
+    case SyntaxTree::Typeof: {
+      return lex::OpTypeof;
+    }
+
+    case SyntaxTree::Comptime: {
+      return lex::OpComptime;
+    }
+
+    case SyntaxTree::Dot: {
+      return lex::OpDot;
+    }
+
+    case SyntaxTree::Range: {
+      return lex::OpRange;
+    }
+
+    case SyntaxTree::Ellipsis: {
+      return lex::OpEllipsis;
+    }
+
+    case SyntaxTree::Arrow: {
+      return lex::OpArrow;
+    }
+
+    case SyntaxTree::Question: {
+      return lex::OpTernary;
     }
   }
-
-  return false;
 }
 
-template <typename ValueType>
-constexpr auto AstReader::Next() -> ValueType {
-  if (auto n = NextValue()) {
-    if (std::holds_alternative<ValueType>(n->operator()())) {
-      return std::get<ValueType>(n->operator()());
+static NCC_FORCE_INLINE parse::Vis FromVisibility(SyntaxTree::Vis vis) {
+  switch (vis) {
+    case SyntaxTree::Vis::Public: {
+      return Vis::Pub;
+    }
+
+    case SyntaxTree::Vis::Private: {
+      return Vis::Sec;
+    }
+
+    case SyntaxTree::Vis::Protected: {
+      return Vis::Pro;
     }
   }
-
-  qcore_panic("Attempted to read value of incorrect type");
 }
 
-auto AstReader::ReadLocationRange() -> std::optional<AstReader::LocationRange> {
-  const auto parse_location_object = [&]() -> std::optional<lex::Location> {
-    if (!NextIf<std::string>("off") || !NextIs<uint64_t>()) {
+static NCC_FORCE_INLINE parse::CompositeType FromCompType(
+    SyntaxTree::Struct::AggregateKind kind) {
+  switch (kind) {
+    case SyntaxTree::Struct_AggregateKind_Struct_: {
+      return CompositeType::Struct;
+    }
+
+    case SyntaxTree::Struct_AggregateKind_Union_: {
+      return CompositeType::Union;
+    }
+
+    case SyntaxTree::Struct_AggregateKind_Class_: {
+      return CompositeType::Class;
+    }
+
+    case SyntaxTree::Struct_AggregateKind_Group_: {
+      return CompositeType::Group;
+    }
+
+    case SyntaxTree::Struct_AggregateKind_Region_: {
+      return CompositeType::Region;
+    }
+  }
+}
+
+static NCC_FORCE_INLINE parse::Purity FromPurity(
+    SyntaxTree::FunctionPurity purity) {
+  switch (purity) {
+    case SyntaxTree::FunctionPurity::Pure: {
+      return Purity::Pure;
+    }
+
+    case SyntaxTree::FunctionPurity::Impure: {
+      return Purity::Impure;
+    }
+
+    case SyntaxTree::FunctionPurity::Impure_TSafe: {
+      return Purity::Impure_TSafe;
+    }
+
+    case SyntaxTree::FunctionPurity::Quasi: {
+      return Purity::Quasi;
+    }
+
+    case SyntaxTree::FunctionPurity::Retro: {
+      return Purity::Retro;
+    }
+  }
+}
+
+void AstReader::UnmarshalLocationLocation(
+    const SyntaxTree::SourceLocationRange &in, const FlowPtr<Base> &out) {
+  if (!m_rd.has_value()) {
+    return;
+  }
+
+  lex::LocationID start_loc;
+  lex::LocationID end_loc;
+
+  if (in.has_start()) {
+    auto line = in.start().line();
+    auto column = in.start().column();
+    auto offset = in.start().offset();
+    auto filename = in.start().has_file() ? in.start().file() : "";
+
+    start_loc = m_rd->get().InternLocation(
+        lex::Location(offset, line, column, filename));
+  }
+
+  if (in.has_end()) {
+    auto line = in.end().line();
+    auto column = in.end().column();
+    auto offset = in.end().offset();
+    auto filename = in.end().has_file() ? in.end().file() : "";
+
+    end_loc = m_rd->get().InternLocation(
+        lex::Location(offset, line, column, filename));
+  }
+
+  out->SetLoc(start_loc, end_loc);
+}
+
+void AstReader::UnmarshalCodeComment(
+    const ::google::protobuf::RepeatedPtrField<
+        ::nitrate::parser::SyntaxTree::UserComment> &in,
+    const FlowPtr<Base> &out) {
+  std::vector<string> comments;
+  comments.reserve(in.size());
+
+  for (const auto &comment : in) {
+    comments.emplace_back(comment.comment());
+  }
+
+  out->SetComments(comments);
+}
+
+auto AstReader::Unmarshal(const SyntaxTree::Root &in) -> Result<Base> {
+  switch (in.node_case()) {
+    case SyntaxTree::Root::kBase: {
+      return Unmarshal(in.base());
+    }
+
+    case SyntaxTree::Root::kStmtExpr: {
+      return Unmarshal(in.stmt_expr());
+    }
+
+    case SyntaxTree::Root::kTypeExpr: {
+      return Unmarshal(in.type_expr());
+    }
+
+    case SyntaxTree::Root::kUnary: {
+      return Unmarshal(in.unary());
+    }
+
+    case SyntaxTree::Root::kBinary: {
+      return Unmarshal(in.binary());
+    }
+
+    case SyntaxTree::Root::kPostUnary: {
+      return Unmarshal(in.post_unary());
+    }
+
+    case SyntaxTree::Root::kTernary: {
+      return Unmarshal(in.ternary());
+    }
+
+    case SyntaxTree::Root::kInteger: {
+      return Unmarshal(in.integer());
+    }
+
+    case SyntaxTree::Root::kFloat: {
+      return Unmarshal(in.float_());
+    }
+
+    case SyntaxTree::Root::kBoolean: {
+      return Unmarshal(in.boolean());
+    }
+
+    case SyntaxTree::Root::kString: {
+      return Unmarshal(in.string());
+    }
+
+    case SyntaxTree::Root::kCharacter: {
+      return Unmarshal(in.character());
+    }
+
+    case SyntaxTree::Root::kNull: {
+      return Unmarshal(in.null());
+    }
+
+    case SyntaxTree::Root::kUndefined: {
+      return Unmarshal(in.undefined());
+    }
+
+    case SyntaxTree::Root::kCall: {
+      return Unmarshal(in.call());
+    }
+
+    case SyntaxTree::Root::kTemplateCall: {
+      return Unmarshal(in.template_call());
+    }
+
+    case SyntaxTree::Root::kList: {
+      return Unmarshal(in.list());
+    }
+
+    case SyntaxTree::Root::kAssoc: {
+      return Unmarshal(in.assoc());
+    }
+
+    case SyntaxTree::Root::kIndex: {
+      return Unmarshal(in.index());
+    }
+
+    case SyntaxTree::Root::kSlice: {
+      return Unmarshal(in.slice());
+    }
+
+    case SyntaxTree::Root::kFstring: {
+      return Unmarshal(in.fstring());
+    }
+
+    case SyntaxTree::Root::kIdentifier: {
+      return Unmarshal(in.identifier());
+    }
+
+    case SyntaxTree::Root::kSequence: {
+      return Unmarshal(in.sequence());
+    }
+
+    case SyntaxTree::Root::kExpr: {
+      return Unmarshal(in.expr());
+    }
+
+    case SyntaxTree::Root::kBlock: {
+      return Unmarshal(in.block());
+    }
+
+    case SyntaxTree::Root::kVariable: {
+      return Unmarshal(in.variable());
+    }
+
+    case SyntaxTree::Root::kAssembly: {
+      return Unmarshal(in.assembly());
+    }
+
+    case SyntaxTree::Root::kIf: {
+      return Unmarshal(in.if_());
+    }
+
+    case SyntaxTree::Root::kWhile: {
+      return Unmarshal(in.while_());
+    }
+
+    case SyntaxTree::Root::kFor: {
+      return Unmarshal(in.for_());
+    }
+
+    case SyntaxTree::Root::kForeach: {
+      return Unmarshal(in.foreach ());
+    }
+
+    case SyntaxTree::Root::kBreak: {
+      return Unmarshal(in.break_());
+    }
+
+    case SyntaxTree::Root::kContinue: {
+      return Unmarshal(in.continue_());
+    }
+
+    case SyntaxTree::Root::kReturn: {
+      return Unmarshal(in.return_());
+    }
+
+    case SyntaxTree::Root::kReturnIf: {
+      return Unmarshal(in.return_if());
+    }
+
+    case SyntaxTree::Root::kCase: {
+      return Unmarshal(in.case_());
+    }
+
+    case SyntaxTree::Root::kSwitch: {
+      return Unmarshal(in.switch_());
+    }
+
+    case SyntaxTree::Root::kExport: {
+      return Unmarshal(in.export_());
+    }
+
+    case SyntaxTree::Root::kScope: {
+      return Unmarshal(in.scope());
+    }
+
+    case SyntaxTree::Root::kTypedef: {
+      return Unmarshal(in.typedef_());
+    }
+
+    case SyntaxTree::Root::kEnum: {
+      return Unmarshal(in.enum_());
+    }
+
+    case SyntaxTree::Root::kFunction: {
+      return Unmarshal(in.function());
+    }
+
+    case SyntaxTree::Root::kStruct: {
+      return Unmarshal(in.struct_());
+    }
+
+    case SyntaxTree::Root::kNamed: {
+      return Unmarshal(in.named());
+    }
+
+    case SyntaxTree::Root::kInfer: {
+      return Unmarshal(in.infer());
+    }
+
+    case SyntaxTree::Root::kTemplate: {
+      return Unmarshal(in.template_());
+    }
+
+    case SyntaxTree::Root::kU1: {
+      return Unmarshal(in.u1());
+    }
+
+    case SyntaxTree::Root::kU8: {
+      return Unmarshal(in.u8());
+    }
+
+    case SyntaxTree::Root::kU16: {
+      return Unmarshal(in.u16());
+    }
+
+    case SyntaxTree::Root::kU32: {
+      return Unmarshal(in.u32());
+    }
+
+    case SyntaxTree::Root::kU64: {
+      return Unmarshal(in.u64());
+    }
+
+    case SyntaxTree::Root::kU128: {
+      return Unmarshal(in.u128());
+    }
+
+    case SyntaxTree::Root::kI8: {
+      return Unmarshal(in.i8());
+    }
+
+    case SyntaxTree::Root::kI16: {
+      return Unmarshal(in.i16());
+    }
+
+    case SyntaxTree::Root::kI32: {
+      return Unmarshal(in.i32());
+    }
+
+    case SyntaxTree::Root::kI64: {
+      return Unmarshal(in.i64());
+    }
+
+    case SyntaxTree::Root::kI128: {
+      return Unmarshal(in.i128());
+    }
+
+    case SyntaxTree::Root::kF16: {
+      return Unmarshal(in.f16());
+    }
+
+    case SyntaxTree::Root::kF32: {
+      return Unmarshal(in.f32());
+    }
+
+    case SyntaxTree::Root::kF64: {
+      return Unmarshal(in.f64());
+    }
+
+    case SyntaxTree::Root::kF128: {
+      return Unmarshal(in.f128());
+    }
+
+    case SyntaxTree::Root::kVoid: {
+      return Unmarshal(in.void_());
+    }
+
+    case SyntaxTree::Root::kPtr: {
+      return Unmarshal(in.ptr());
+    }
+
+    case SyntaxTree::Root::kOpaque: {
+      return Unmarshal(in.opaque());
+    }
+
+    case SyntaxTree::Root::kTuple: {
+      return Unmarshal(in.tuple());
+    }
+
+    case SyntaxTree::Root::kArray: {
+      return Unmarshal(in.array());
+    }
+
+    case SyntaxTree::Root::kRef: {
+      return Unmarshal(in.ref());
+    }
+
+    case SyntaxTree::Root::kFunc: {
+      return Unmarshal(in.func());
+    }
+
+    case SyntaxTree::Root::NODE_NOT_SET: {
       return std::nullopt;
     }
+  }
+}
 
-    uint32_t off = Next<uint64_t>();
+auto AstReader::Unmarshal(const SyntaxTree::Expr &in) -> Result<Expr> {
+  switch (in.node_case()) {
+    case SyntaxTree::Expr::kBase: {
+      return CreateNode<Expr>(QAST_BASE)();
+    }
 
-    if (!NextIf<std::string>("row") || !NextIs<uint64_t>()) {
+    case SyntaxTree::Expr::kStmtExpr: {
+      return Unmarshal(in.stmt_expr());
+    }
+
+    case SyntaxTree::Expr::kTypeExpr: {
+      return Unmarshal(in.type_expr());
+    }
+
+    case SyntaxTree::Expr::kUnary: {
+      return Unmarshal(in.unary());
+    }
+
+    case SyntaxTree::Expr::kBinary: {
+      return Unmarshal(in.binary());
+    }
+
+    case SyntaxTree::Expr::kPostUnary: {
+      return Unmarshal(in.post_unary());
+    }
+
+    case SyntaxTree::Expr::kTernary: {
+      return Unmarshal(in.ternary());
+    }
+
+    case SyntaxTree::Expr::kInteger: {
+      return Unmarshal(in.integer());
+    }
+
+    case SyntaxTree::Expr::kFloat: {
+      return Unmarshal(in.float_());
+    }
+
+    case SyntaxTree::Expr::kBoolean: {
+      return Unmarshal(in.boolean());
+    }
+
+    case SyntaxTree::Expr::kString: {
+      return Unmarshal(in.string());
+    }
+
+    case SyntaxTree::Expr::kCharacter: {
+      return Unmarshal(in.character());
+    }
+
+    case SyntaxTree::Expr::kNull: {
+      return Unmarshal(in.null());
+    }
+
+    case SyntaxTree::Expr::kUndefined: {
+      return Unmarshal(in.undefined());
+    }
+
+    case SyntaxTree::Expr::kCall: {
+      return Unmarshal(in.call());
+    }
+
+    case SyntaxTree::Expr::kTemplateCall: {
+      return Unmarshal(in.template_call());
+    }
+
+    case SyntaxTree::Expr::kList: {
+      return Unmarshal(in.list());
+    }
+
+    case SyntaxTree::Expr::kAssoc: {
+      return Unmarshal(in.assoc());
+    }
+
+    case SyntaxTree::Expr::kIndex: {
+      return Unmarshal(in.index());
+    }
+
+    case SyntaxTree::Expr::kSlice: {
+      return Unmarshal(in.slice());
+    }
+
+    case SyntaxTree::Expr::kFstring: {
+      return Unmarshal(in.fstring());
+    }
+
+    case SyntaxTree::Expr::kIdentifier: {
+      return Unmarshal(in.identifier());
+    }
+
+    case SyntaxTree::Expr::kSequence: {
+      return Unmarshal(in.sequence());
+    }
+
+    case SyntaxTree::Expr::NODE_NOT_SET: {
       return std::nullopt;
     }
+  }
+}
 
-    uint32_t row = Next<uint64_t>();
+auto AstReader::Unmarshal(const SyntaxTree::Stmt &in) -> Result<Stmt> {
+  switch (in.node_case()) {
+    case SyntaxTree::Stmt::kExprStmt: {
+      return Unmarshal(in.expr_stmt());
+    }
 
-    if (!NextIf<std::string>("col") || !NextIs<uint64_t>()) {
+    case SyntaxTree::Stmt::kBase: {
+      return CreateNode<Stmt>(QAST_BASE)();
+    }
+
+    case SyntaxTree::Stmt::kBlock: {
+      return Unmarshal(in.block());
+    }
+
+    case SyntaxTree::Stmt::kVariable: {
+      return Unmarshal(in.variable());
+    }
+
+    case SyntaxTree::Stmt::kAssembly: {
+      return Unmarshal(in.assembly());
+    }
+
+    case SyntaxTree::Stmt::kIf: {
+      return Unmarshal(in.if_());
+    }
+
+    case SyntaxTree::Stmt::kWhile: {
+      return Unmarshal(in.while_());
+    }
+
+    case SyntaxTree::Stmt::kFor: {
+      return Unmarshal(in.for_());
+    }
+
+    case SyntaxTree::Stmt::kForeach: {
+      return Unmarshal(in.foreach ());
+    }
+
+    case SyntaxTree::Stmt::kBreak: {
+      return Unmarshal(in.break_());
+    }
+
+    case SyntaxTree::Stmt::kContinue: {
+      return Unmarshal(in.continue_());
+    }
+
+    case SyntaxTree::Stmt::kReturn: {
+      return Unmarshal(in.return_());
+    }
+
+    case SyntaxTree::Stmt::kReturnIf: {
+      return Unmarshal(in.return_if());
+    }
+
+    case SyntaxTree::Stmt::kCase: {
+      return Unmarshal(in.case_());
+    }
+
+    case SyntaxTree::Stmt::kSwitch: {
+      return Unmarshal(in.switch_());
+    }
+
+    case SyntaxTree::Stmt::kExport: {
+      return Unmarshal(in.export_());
+    }
+
+    case SyntaxTree::Stmt::kScope: {
+      return Unmarshal(in.scope());
+    }
+
+    case SyntaxTree::Stmt::kTypedef: {
+      return Unmarshal(in.typedef_());
+    }
+
+    case SyntaxTree::Stmt::kEnum: {
+      return Unmarshal(in.enum_());
+    }
+
+    case SyntaxTree::Stmt::kFunction: {
+      return Unmarshal(in.function());
+    }
+
+    case SyntaxTree::Stmt::kStruct: {
+      return Unmarshal(in.struct_());
+    }
+
+    case SyntaxTree::Stmt::NODE_NOT_SET: {
       return std::nullopt;
     }
+  }
+}
 
-    uint32_t col = Next<uint64_t>();
+auto AstReader::Unmarshal(const SyntaxTree::Type &in) -> Result<Type> {
+  switch (in.node_case()) {
+    case SyntaxTree::Type::kBase: {
+      return CreateNode<Type>(QAST_BASE)();
+    }
 
-    if (!NextIf<std::string>("src") || !NextIs<std::string>()) {
+    case SyntaxTree::Type::kNamed: {
+      return Unmarshal(in.named());
+    }
+
+    case SyntaxTree::Type::kInfer: {
+      return Unmarshal(in.infer());
+    }
+
+    case SyntaxTree::Type::kTemplate: {
+      return Unmarshal(in.template_());
+    }
+
+    case SyntaxTree::Type::kU1: {
+      return Unmarshal(in.u1());
+    }
+
+    case SyntaxTree::Type::kU8: {
+      return Unmarshal(in.u8());
+    }
+
+    case SyntaxTree::Type::kU16: {
+      return Unmarshal(in.u16());
+    }
+
+    case SyntaxTree::Type::kU32: {
+      return Unmarshal(in.u32());
+    }
+
+    case SyntaxTree::Type::kU64: {
+      return Unmarshal(in.u64());
+    }
+
+    case SyntaxTree::Type::kU128: {
+      return Unmarshal(in.u128());
+    }
+
+    case SyntaxTree::Type::kI8: {
+      return Unmarshal(in.i8());
+    }
+
+    case SyntaxTree::Type::kI16: {
+      return Unmarshal(in.i16());
+    }
+
+    case SyntaxTree::Type::kI32: {
+      return Unmarshal(in.i32());
+    }
+
+    case SyntaxTree::Type::kI64: {
+      return Unmarshal(in.i64());
+    }
+
+    case SyntaxTree::Type::kI128: {
+      return Unmarshal(in.i128());
+    }
+
+    case SyntaxTree::Type::kF16: {
+      return Unmarshal(in.f16());
+    }
+
+    case SyntaxTree::Type::kF32: {
+      return Unmarshal(in.f32());
+    }
+
+    case SyntaxTree::Type::kF64: {
+      return Unmarshal(in.f64());
+    }
+
+    case SyntaxTree::Type::kF128: {
+      return Unmarshal(in.f128());
+    }
+
+    case SyntaxTree::Type::kVoid: {
+      return Unmarshal(in.void_());
+    }
+
+    case SyntaxTree::Type::kPtr: {
+      return Unmarshal(in.ptr());
+    }
+
+    case SyntaxTree::Type::kOpaque: {
+      return Unmarshal(in.opaque());
+    }
+
+    case SyntaxTree::Type::kTuple: {
+      return Unmarshal(in.tuple());
+    }
+
+    case SyntaxTree::Type::kArray: {
+      return Unmarshal(in.array());
+    }
+
+    case SyntaxTree::Type::kRef: {
+      return Unmarshal(in.ref());
+    }
+
+    case SyntaxTree::Type::kFunc: {
+      return Unmarshal(in.func());
+    }
+
+    case SyntaxTree::Type::NODE_NOT_SET: {
       return std::nullopt;
     }
+  }
+}
 
-    auto src = Next<std::string>();
+auto AstReader::Unmarshal(const SyntaxTree::Base &in) -> Result<Base> {
+  auto object = CreateNode<Base>(QAST_BASE)();
 
-    return lex::Location(off, row, col, src);
-  };
+  UnmarshalLocationLocation(in.location(), object);
+  UnmarshalCodeComment(in.comments(), object);
 
-  if (!NextIf<std::string>("loc")) {
+  return object;
+}
+
+auto AstReader::Unmarshal(const SyntaxTree::ExprStmt &in) -> Result<ExprStmt> {
+  auto expression = Unmarshal(in.expression());
+  if (!expression.has_value()) [[unlikely]] {
     return std::nullopt;
   }
 
-  LocationRange range;
+  auto object = CreateNode<ExprStmt>(expression.value())();
+  UnmarshalLocationLocation(in.location(), object);
+  UnmarshalCodeComment(in.comments(), object);
 
-  if (NextIf<none>()) {
-    return range;
-  }
+  return object;
+}
 
-  if (!NextIf<std::string>("begin")) {
+auto AstReader::Unmarshal(const SyntaxTree::StmtExpr &in) -> Result<StmtExpr> {
+  auto statement = Unmarshal(in.statement());
+  if (!statement.has_value()) [[unlikely]] {
     return std::nullopt;
   }
 
-  if (auto begin = parse_location_object()) {
-    range.m_start = begin.value();
-  } else {
+  auto object = CreateNode<StmtExpr>(statement.value())();
+  UnmarshalLocationLocation(in.location(), object);
+  UnmarshalCodeComment(in.comments(), object);
+
+  return object;
+}
+
+auto AstReader::Unmarshal(const SyntaxTree::TypeExpr &in) -> Result<TypeExpr> {
+  auto type = Unmarshal(in.type());
+  if (!type.has_value()) [[unlikely]] {
     return std::nullopt;
   }
 
-  if (!NextIf<std::string>("end")) {
+  auto object = CreateNode<TypeExpr>(type.value())();
+  UnmarshalLocationLocation(in.location(), object);
+  UnmarshalCodeComment(in.comments(), object);
+
+  return object;
+}
+
+auto AstReader::Unmarshal(const SyntaxTree::NamedTy &in) -> Result<NamedTy> {
+  auto bit_width = Unmarshal(in.bit_width());
+  if (in.has_bit_width() && !bit_width.has_value()) [[unlikely]] {
     return std::nullopt;
   }
 
-  if (auto end = parse_location_object()) {
-    range.m_end = end.value();
-  } else {
+  auto minimum = Unmarshal(in.minimum());
+  if (in.has_minimum() && !minimum.has_value()) [[unlikely]] {
     return std::nullopt;
   }
 
-  if (!NextIf<std::string>("trace")) {
+  auto maximum = Unmarshal(in.maximum());
+  if (in.has_maximum() && !maximum.has_value()) [[unlikely]] {
     return std::nullopt;
   }
 
-  if (NextIf<none>()) {
-    return range;
-  }
+  auto type = CreateNode<NamedTy>(in.name())();
+  type->SetWidth(bit_width);
+  type->SetRangeBegin(minimum);
+  type->SetRangeEnd(maximum);
 
-  if (!NextIf<std::string>("src") || !NextIs<std::string>()) {
+  UnmarshalLocationLocation(in.location(), type);
+  UnmarshalCodeComment(in.comments(), type);
+
+  return type;
+}
+
+auto AstReader::Unmarshal(const SyntaxTree::InferTy &in) -> Result<InferTy> {
+  auto bit_width = Unmarshal(in.bit_width());
+  if (in.has_bit_width() && !bit_width.has_value()) [[unlikely]] {
     return std::nullopt;
   }
 
-  Next<std::string>();
-
-  if (!NextIf<std::string>("sub") || !NextIs<std::string>()) {
+  auto minimum = Unmarshal(in.minimum());
+  if (in.has_minimum() && !minimum.has_value()) [[unlikely]] {
     return std::nullopt;
   }
 
-  Next<std::string>();
-
-  if (!NextIf<std::string>("row") || !NextIs<uint64_t>()) {
+  auto maximum = Unmarshal(in.maximum());
+  if (in.has_maximum() && !maximum.has_value()) [[unlikely]] {
     return std::nullopt;
   }
 
-  Next<uint64_t>();
+  auto type = CreateNode<InferTy>()();
+  type->SetWidth(bit_width);
+  type->SetRangeBegin(minimum);
+  type->SetRangeEnd(maximum);
 
-  if (!NextIf<std::string>("col") || !NextIs<uint64_t>()) {
+  UnmarshalLocationLocation(in.location(), type);
+  UnmarshalCodeComment(in.comments(), type);
+
+  return type;
+}
+
+auto AstReader::Unmarshal(const SyntaxTree::TemplateType &in)
+    -> Result<TemplateType> {
+  auto bit_width = Unmarshal(in.bit_width());
+  if (in.has_bit_width() && !bit_width.has_value()) [[unlikely]] {
     return std::nullopt;
   }
 
-  Next<uint64_t>();
-
-  return range;
-}
-
-auto AstReader::ReadTypeMetadata() -> std::optional<AstReader::TypeMetadata> {
-  AstReader::TypeMetadata info;
-
-  if (!NextIf<std::string>("width")) {
+  auto minimum = Unmarshal(in.minimum());
+  if (in.has_minimum() && !minimum.has_value()) [[unlikely]] {
     return std::nullopt;
   }
 
-  if (NextIf<none>()) {
-    info.m_width = nullptr;
-  } else {
-    auto width = DeserializeExpression();
-    if (!width.has_value()) {
-      return std::nullopt;
-    }
-
-    info.m_width = width.value();
-  }
-
-  if (!NextIf<std::string>("min")) {
+  auto maximum = Unmarshal(in.maximum());
+  if (in.has_maximum() && !maximum.has_value()) [[unlikely]] {
     return std::nullopt;
   }
 
-  if (NextIf<none>()) {
-    info.m_min = nullptr;
-  } else {
-    auto min = DeserializeExpression();
-    if (!min.has_value()) {
-      return std::nullopt;
-    }
-
-    info.m_min = min.value();
-  }
-
-  if (!NextIf<std::string>("max")) {
-    return std::nullopt;
-  }
-
-  if (NextIf<none>()) {
-    info.m_max = nullptr;
-  } else {
-    auto max = DeserializeExpression();
-    if (!max.has_value()) {
-      return std::nullopt;
-    }
-
-    info.m_max = max.value();
-  }
-
-  return info;
-}
-
-auto AstReader::DeserializeObject() -> NullableFlowPtr<Base> {
-  // This code must be the reverse of the map contained in:
-  // 'constexpr std::string_view Base::GetKindName(npar_ty_t type)'
-  static const std::unordered_map<std::string, npar_ty_t> node_kinds_map = {
-      {"Node", QAST_BASE},
-      {"Binexpr", QAST_BINEXPR},
-      {"Unexpr", QAST_UNEXPR},
-      {"Terexpr", QAST_TEREXPR},
-      {"Int", QAST_INT},
-      {"Float", QAST_FLOAT},
-      {"String", QAST_STRING},
-      {"Char", QAST_CHAR},
-      {"Bool", QAST_BOOL},
-      {"Null", QAST_NULL},
-      {"Undef", QAST_UNDEF},
-      {"Call", QAST_CALL},
-      {"List", QAST_LIST},
-      {"Assoc", QAST_ASSOC},
-      {"Index", QAST_INDEX},
-      {"Slice", QAST_SLICE},
-      {"Fstring", QAST_FSTRING},
-      {"Ident", QAST_IDENT},
-      {"Sequence", QAST_SEQ},
-      {"PostUnexpr", QAST_POST_UNEXPR},
-      {"StmtExpr", QAST_SEXPR},
-      {"TypeExpr", QAST_TEXPR},
-      {"TemplateCall", QAST_TEMPL_CALL},
-      {"Ref", QAST_REF},
-      {"U1", QAST_U1},
-      {"U8", QAST_U8},
-      {"U16", QAST_U16},
-      {"U32", QAST_U32},
-      {"U64", QAST_U64},
-      {"U128", QAST_U128},
-      {"I8", QAST_I8},
-      {"I16", QAST_I16},
-      {"I32", QAST_I32},
-      {"I64", QAST_I64},
-      {"I128", QAST_I128},
-      {"F16", QAST_F16},
-      {"F32", QAST_F32},
-      {"F64", QAST_F64},
-      {"F128", QAST_F128},
-      {"Void", QAST_VOID},
-      {"Ptr", QAST_PTR},
-      {"Opaque", QAST_OPAQUE},
-      {"Array", QAST_ARRAY},
-      {"Tuple", QAST_TUPLE},
-      {"FuncTy", QAST_FUNCTOR},
-      {"Unres", QAST_NAMED},
-      {"Infer", QAST_INFER},
-      {"Templ", QAST_TEMPLATE},
-      {"Typedef", QAST_TYPEDEF},
-      {"Struct", QAST_STRUCT},
-      {"Enum", QAST_ENUM},
-      {"Function", QAST_FUNCTION},
-      {"Scope", QAST_SCOPE},
-      {"Export", QAST_EXPORT},
-      {"Block", QAST_BLOCK},
-      {"Let", QAST_VAR},
-      {"Assembly", QAST_INLINE_ASM},
-      {"Return", QAST_RETURN},
-      {"Retif", QAST_RETIF},
-      {"Break", QAST_BREAK},
-      {"Continue", QAST_CONTINUE},
-      {"If", QAST_IF},
-      {"While", QAST_WHILE},
-      {"For", QAST_FOR},
-      {"Foreach", QAST_FOREACH},
-      {"Case", QAST_CASE},
-      {"Switch", QAST_SWITCH},
-      {"ExprStmt", QAST_ESTMT},
-  };
-
-  if (!NextIf<std::string>("kind") || !NextIs<std::string>()) {
-    return nullptr;
-  }
-
-  auto it = node_kinds_map.find(Next<std::string>());
-  if (it == node_kinds_map.end()) {
-    return nullptr;
-  }
-
-  auto range = ReadLocationRange();
-
-  NullableFlowPtr<Base> r;
-
-  switch (it->second) {
-    case QAST_BASE: {
-      r = ReadKindNode();
-      break;
-    }
-
-    case QAST_BINEXPR: {
-      r = ReadKindBinexpr();
-      break;
-    }
-
-    case QAST_UNEXPR: {
-      r = ReadKindUnexpr();
-      break;
-    }
-
-    case QAST_TEREXPR: {
-      r = ReadKindTerexpr();
-      break;
-    }
-
-    case QAST_INT: {
-      r = ReadKindInt();
-      break;
-    }
-
-    case QAST_FLOAT: {
-      r = ReadKindFloat();
-      break;
-    }
-
-    case QAST_STRING: {
-      r = ReadKindString();
-      break;
-    }
-
-    case QAST_CHAR: {
-      r = ReadKindChar();
-      break;
-    }
-
-    case QAST_BOOL: {
-      r = ReadKindBool();
-      break;
-    }
-
-    case QAST_NULL: {
-      r = ReadKindNull();
-      break;
-    }
-
-    case QAST_UNDEF: {
-      r = ReadKindUndef();
-      break;
-    }
-
-    case QAST_CALL: {
-      r = ReadKindCall();
-      break;
-    }
-
-    case QAST_LIST: {
-      r = ReadKindList();
-      break;
-    }
-
-    case QAST_ASSOC: {
-      r = ReadKindAssoc();
-      break;
-    }
-
-    case QAST_INDEX: {
-      r = ReadKindIndex();
-      break;
-    }
-
-    case QAST_SLICE: {
-      r = ReadKindSlice();
-      break;
-    }
-
-    case QAST_FSTRING: {
-      r = ReadKindFstring();
-      break;
-    }
-
-    case QAST_IDENT: {
-      r = ReadKindIdentifier( );
-      break;
-    }
-
-    case QAST_SEQ: {
-      r = ReadKindSequence();
-      break;
-    }
-
-    case QAST_POST_UNEXPR: {
-      r = ReadKindPostUnexpr();
-      break;
-    }
-
-    case QAST_SEXPR: {
-      r = ReadKindStmtExpr();
-      break;
-    }
-
-    case QAST_TEXPR: {
-      r = ReadKindTypeExpr();
-      break;
-    }
-
-    case QAST_TEMPL_CALL: {
-      r = ReadKindTemplateCall();
-      break;
-    }
-
-    case QAST_REF: {
-      r = ReadKindRef();
-      break;
-    }
-
-    case QAST_U1: {
-      r = ReadKindU1();
-      break;
-    }
-
-    case QAST_U8: {
-      r = ReadKindU8();
-      break;
-    }
-
-    case QAST_U16: {
-      r = ReadKindU16();
-      break;
-    }
-
-    case QAST_U32: {
-      r = ReadKindU32();
-      break;
-    }
-
-    case QAST_U64: {
-      r = ReadKindU64();
-      break;
-    }
-
-    case QAST_U128: {
-      r = ReadKindU128();
-      break;
-    }
-
-    case QAST_I8: {
-      r = ReadKindI8();
-      break;
-    }
-
-    case QAST_I16: {
-      r = ReadKindI16();
-      break;
-    }
-
-    case QAST_I32: {
-      r = ReadKindI32();
-      break;
-    }
-
-    case QAST_I64: {
-      r = ReadKindI64();
-      break;
-    }
-
-    case QAST_I128: {
-      r = ReadKindI128();
-      break;
-    }
-
-    case QAST_F16: {
-      r = ReadKindF16();
-      break;
-    }
-
-    case QAST_F32: {
-      r = ReadKindF32();
-      break;
-    }
-
-    case QAST_F64: {
-      r = ReadKindF64();
-      break;
-    }
-
-    case QAST_F128: {
-      r = ReadKindF128();
-      break;
-    }
-
-    case QAST_VOID: {
-      r = ReadKindVoid();
-      break;
-    }
-
-    case QAST_PTR: {
-      r = ReadKindPtr();
-      break;
-    }
-
-    case QAST_OPAQUE: {
-      r = ReadKindOpaque();
-      break;
-    }
-
-    case QAST_ARRAY: {
-      r = ReadKindArray();
-      break;
-    }
-
-    case QAST_TUPLE: {
-      r = ReadKindTuple();
-      break;
-    }
-
-    case QAST_FUNCTOR: {
-      r = ReadKindFuncTy();
-      break;
-    }
-
-    case QAST_NAMED: {
-      r = ReadKindUnres();
-      break;
-    }
-
-    case QAST_INFER: {
-      r = ReadKindInfer();
-      break;
-    }
-
-    case QAST_TEMPLATE: {
-      r = ReadKindTempl();
-      break;
-    }
-
-    case QAST_TYPEDEF: {
-      r = ReadKindTypedef();
-      break;
-    }
-
-    case QAST_STRUCT: {
-      r = ReadKindStruct();
-      break;
-    }
-
-    case QAST_ENUM: {
-      r = ReadKindEnum();
-      break;
-    }
-
-    case QAST_FUNCTION: {
-      r = ReadKindFunction();
-      break;
-    }
-
-    case QAST_SCOPE: {
-      r = ReadKindScope();
-      break;
-    }
-
-    case QAST_EXPORT: {
-      r = ReadKindExport();
-      break;
-    }
-
-    case QAST_BLOCK: {
-      r = ReadKindBlock();
-      break;
-    }
-
-    case QAST_VAR: {
-      r = ReadKindLet();
-      break;
-    }
-
-    case QAST_INLINE_ASM: {
-      r = ReadKindAssembly();
-      break;
-    }
-
-    case QAST_RETURN: {
-      r = ReadKindReturn();
-      break;
-    }
-
-    case QAST_RETIF: {
-      r = ReadKindRetif();
-      break;
-    }
-
-    case QAST_BREAK: {
-      r = ReadKindBreak();
-      break;
-    }
-
-    case QAST_CONTINUE: {
-      r = ReadKindContinue();
-      break;
-    }
-
-    case QAST_IF: {
-      r = ReadKindIf();
-      break;
-    }
-
-    case QAST_WHILE: {
-      r = ReadKindWhile();
-      break;
-    }
-
-    case QAST_FOR: {
-      r = ReadKindFor();
-      break;
-    }
-
-    case QAST_FOREACH: {
-      r = ReadKindForeach();
-      break;
-    }
-
-    case QAST_CASE: {
-      r = ReadKindCase();
-      break;
-    }
-
-    case QAST_SWITCH: {
-      r = ReadKindSwitch();
-      break;
-    }
-
-    case QAST_ESTMT: {
-      r = ReadKindExprStmt();
-      break;
-    }
-  }
-
-  if (!r.has_value()) {
-    std::cout << "Failed to deserialize object of type: " << it->first
-              << std::endl;
-  }
-
-  bool can_save_source_location =
-      m_source.has_value() && r.has_value() && range.has_value();
-
-  if (can_save_source_location) {
-    auto start = m_source.value().get().InternLocation(range->m_start);
-    auto end = m_source.value().get().InternLocation(range->m_end);
-
-    r.value()->SetLoc(start, end);
-  }
-
-  return r;
-}
-
-auto AstReader::DeserializeStatement() -> NullableFlowPtr<Stmt> {
-  auto object = DeserializeObject();
-  if (!object.has_value()) {
-    return nullptr;
-  }
-
-  auto kind = object.value()->GetKind();
-  if (kind < QAST__STMT_FIRST || kind > QAST__STMT_LAST) {
-    return nullptr;
-  }
-
-  return object.value().As<Stmt>();
-}
-
-auto AstReader::DeserializeExpression() -> NullableFlowPtr<Expr> {
-  auto object = DeserializeObject();
-  if (!object.has_value()) {
-    return nullptr;
-  }
-
-  auto kind = object.value()->GetKind();
-  if (kind < QAST__EXPR_FIRST || kind > QAST__EXPR_LAST) {
-    return nullptr;
-  }
-
-  return object.value().As<Expr>();
-}
-
-auto AstReader::DeserializeType() -> NullableFlowPtr<Type> {
-  auto object = DeserializeObject();
-  if (!object.has_value()) {
-    return nullptr;
-  }
-
-  auto kind = object.value()->GetKind();
-  if (kind < QAST__TYPE_FIRST || kind > QAST__TYPE_LAST) {
-    return nullptr;
-  }
-
-  return object.value().As<Type>();
-}
-
-NullableFlowPtr<Base> AstReader::ReadKindNode() {  // NOLINT
-  return CreateNode<Base>(QAST_BASE)();
-}
-
-auto AstReader::ReadKindBinexpr() -> NullableFlowPtr<BinaryExpression> {
-  if (!NextIf<std::string>("op") || !NextIs<std::string>()) {
-    return nullptr;
-  }
-
-  auto op = Next<std::string>();
-
-  auto op_it = lex::LEXICAL_OPERATORS.left.find(op);
-  if (op_it == lex::LEXICAL_OPERATORS.left.end()) {
-    return nullptr;
-  }
-
-  if (!NextIf<std::string>("lhs")) {
-    return nullptr;
-  }
-
-  auto lhs = DeserializeExpression();
-  if (!lhs.has_value()) {
-    return nullptr;
-  }
-
-  if (!NextIf<std::string>("rhs")) {
-    return nullptr;
-  }
-
-  auto rhs = DeserializeExpression();
-  if (!rhs.has_value()) {
-    return nullptr;
-  }
-
-  return CreateNode<BinaryExpression>(lhs.value(), op_it->second, rhs.value())();
-}
-
-auto AstReader::ReadKindUnexpr() -> NullableFlowPtr<UnaryExpression> {
-  if (!NextIf<std::string>("op") || !NextIs<std::string>()) {
-    return nullptr;
-  }
-
-  auto op = Next<std::string>();
-
-  auto op_it = lex::LEXICAL_OPERATORS.left.find(op);
-  if (op_it == lex::LEXICAL_OPERATORS.left.end()) {
-    return nullptr;
-  }
-
-  if (!NextIf<std::string>("rhs")) {
-    return nullptr;
-  }
-
-  auto rhs = DeserializeExpression();
-  if (!rhs.has_value()) {
-    return nullptr;
-  }
-
-  return CreateNode<UnaryExpression>(op_it->second, rhs.value())();
-}
-
-auto AstReader::ReadKindPostUnexpr() -> NullableFlowPtr<PostUnaryExpression> {
-  if (!NextIf<std::string>("op") || !NextIs<std::string>()) {
-    return nullptr;
-  }
-
-  auto op = Next<std::string>();
-
-  auto op_it = lex::LEXICAL_OPERATORS.left.find(op);
-  if (op_it == lex::LEXICAL_OPERATORS.left.end()) {
-    return nullptr;
-  }
-
-  if (!NextIf<std::string>("lhs")) {
-    return nullptr;
-  }
-
-  auto lhs = DeserializeExpression();
-  if (!lhs.has_value()) {
-    return nullptr;
-  }
-
-  return CreateNode<PostUnaryExpression>(lhs.value(), op_it->second)();
-}
-
-auto AstReader::ReadKindTerexpr() -> NullableFlowPtr<TernaryExpression> {
-  if (!NextIf<std::string>("cond")) {
-    return nullptr;
-  }
-
-  auto cond = DeserializeExpression();
-  if (!cond.has_value()) {
-    return nullptr;
-  }
-
-  if (!NextIf<std::string>("lhs")) {
-    return nullptr;
-  }
-
-  auto lhs = DeserializeExpression();
-  if (!lhs.has_value()) {
-    return nullptr;
-  }
-
-  if (!NextIf<std::string>("rhs")) {
-    return nullptr;
-  }
-
-  auto rhs = DeserializeExpression();
-  if (!rhs.has_value()) {
-    return nullptr;
-  }
-
-  return CreateNode<TernaryExpression>(cond.value(), lhs.value(), rhs.value())();
-}
-
-auto AstReader::ReadKindInt() -> NullableFlowPtr<Integer> {
-  if (!NextIf<std::string>("value") || !NextIs<std::string>()) {
-    return nullptr;
-  }
-
-  auto value = Next<std::string>();
-
-  /* Ensure boost won't call std::terminate */
-  bool all_digits = std::all_of(value.begin(), value.end(), ::isdigit);
-  if (!all_digits) {
-    return nullptr;
-  }
-
-  /* Ensure the value is within the bounds of a unsigned 128-bit integer */
-  if (cpp_int(value) > cpp_int("340282366920938463463374607431768211455")) {
-    return nullptr;
-  }
-
-  return CreateNode<Integer>(std::move(value))();
-}
-
-auto AstReader::ReadKindFloat() -> NullableFlowPtr<Float> {
-  if (!NextIf<std::string>("value") || !NextIs<std::string>()) {
-    return nullptr;
-  }
-
-  auto value = Next<std::string>();
-
-  long double d = 0;
-  if (!StrictFromChars(value.data(), value.data() + value.size(), d,
-                       std::chars_format::fixed)) {
-    return nullptr;
-  }
-
-  return CreateNode<Float>(std::move(value))();
-}
-
-auto AstReader::ReadKindString() -> NullableFlowPtr<String> {
-  if (!NextIf<std::string>("value") || !NextIs<std::string>()) {
-    return nullptr;
-  }
-
-  auto value = Next<std::string>();
-
-  return CreateNode<String>(std::move(value))();
-}
-
-auto AstReader::ReadKindChar() -> NullableFlowPtr<Character> {
-  if (!NextIf<std::string>("value") || !NextIs<uint64_t>()) {
-    return nullptr;
-  }
-
-  auto value = Next<uint64_t>();
-
-  if (value > 255) {
-    return nullptr;
-  }
-
-  return CreateNode<Character>(value)();
-}
-
-auto AstReader::ReadKindBool() -> NullableFlowPtr<Boolean> {
-  if (!NextIf<std::string>("value") || !NextIs<bool>()) {
-    return nullptr;
-  }
-
-  auto value = Next<bool>();
-
-  return CreateNode<Boolean>(value)();
-}
-
-NullableFlowPtr<Null> AstReader::ReadKindNull() {  // NOLINT
-  return CreateNode<Null>()();
-}
-
-NullableFlowPtr<Undefined> AstReader::ReadKindUndef() {  // NOLINT
-  return CreateNode<Undefined>()();
-}
-
-auto AstReader::ReadKindCall() -> NullableFlowPtr<Call> {
-  if (!NextIf<std::string>("callee")) {
-    return nullptr;
-  }
-
-  auto callee = DeserializeExpression();
-  if (!callee.has_value()) {
-    return nullptr;
-  }
-
-  if (!NextIf<std::string>("arguments") || !NextIs<uint64_t>()) {
-    return nullptr;
-  }
-
-  auto argument_count = Next<uint64_t>();
-
-  CallArgs arguments;
-  arguments.reserve(argument_count);
-
-  while (argument_count-- > 0) {
-    if (!NextIf<std::string>("name") || !NextIs<std::string>()) {
-      return nullptr;
-    }
-
-    auto name = Next<std::string>();
-
-    if (!NextIf<std::string>("value")) {
-      return nullptr;
-    }
-
-    auto value = DeserializeExpression();
-    if (!value.has_value()) {
-      return nullptr;
-    }
-
-    arguments.emplace_back(std::move(name), value.value());
-  }
-
-  return CreateNode<Call>(callee.value(), std::move(arguments))();
-}
-
-auto AstReader::ReadKindList() -> NullableFlowPtr<List> {
-  if (!NextIf<std::string>("elements") || !NextIs<uint64_t>()) {
-    return nullptr;
-  }
-
-  auto element_count = Next<uint64_t>();
-
-  ExpressionList elements;
-  elements.reserve(element_count);
-
-  while (element_count-- > 0) {
-    auto element = DeserializeExpression();
-    if (!element.has_value()) {
-      return nullptr;
-    }
-
-    elements.push_back(element.value());
-  }
-
-  return CreateNode<List>(std::move(elements))();
-}
-
-auto AstReader::ReadKindAssoc() -> NullableFlowPtr<Assoc> {
-  if (!NextIf<std::string>("key")) {
-    return nullptr;
-  }
-
-  auto key = DeserializeExpression();
-  if (!key.has_value()) {
-    return nullptr;
-  }
-
-  if (!NextIf<std::string>("value")) {
-    return nullptr;
-  }
-
-  auto value = DeserializeExpression();
-  if (!value.has_value()) {
-    return nullptr;
-  }
-
-  return CreateNode<Assoc>(key.value(), value.value())();
-}
-
-auto AstReader::ReadKindIndex() -> NullableFlowPtr<Index> {
-  if (!NextIf<std::string>("base")) {
-    return nullptr;
-  }
-
-  auto base = DeserializeExpression();
+  auto base = Unmarshal(in.base());
   if (!base.has_value()) {
-    return nullptr;
+    return std::nullopt;
   }
 
-  if (!NextIf<std::string>("index")) {
-    return nullptr;
-  }
+  CallArgs args;
+  args.reserve(in.arguments_size());
 
-  auto index = DeserializeExpression();
-
-  return CreateNode<Index>(base.value(), index.value())();
-}
-
-auto AstReader::ReadKindSlice() -> NullableFlowPtr<Slice> {
-  if (!NextIf<std::string>("base")) {
-    return nullptr;
-  }
-
-  auto base = DeserializeExpression();
-  if (!base.has_value()) {
-    return nullptr;
-  }
-
-  if (!NextIf<std::string>("start")) {
-    return nullptr;
-  }
-
-  auto start = DeserializeExpression();
-  if (!start.has_value()) {
-    return nullptr;
-  }
-
-  if (!NextIf<std::string>("end")) {
-    return nullptr;
-  }
-
-  auto end = DeserializeExpression();
-  if (!end.has_value()) {
-    return nullptr;
-  }
-
-  return CreateNode<Slice>(base.value(), start.value(), end.value())();
-}
-
-auto AstReader::ReadKindFstring() -> NullableFlowPtr<FString> {
-  if (!NextIf<std::string>("terms") || !NextIs<uint64_t>()) {
-    return nullptr;
-  }
-
-  auto term_count = Next<uint64_t>();
-  FStringItems terms;
-  terms.reserve(term_count);
-
-  while (term_count-- > 0) {
-    if (NextIf<std::string>("value") && NextIs<std::string>()) {
-      auto value = Next<std::string>();
-      terms.emplace_back(value);
-    } else {
-      auto term = DeserializeExpression();
-      if (!term.has_value()) {
-        return nullptr;
-      }
-
-      terms.emplace_back(term.value());
-    }
-  }
-
-  return CreateNode<FString>(std::move(terms))();
-}
-
-auto AstReader::ReadKindIdentifier( ) -> NullableFlowPtr<Identifier> {
-  if (!NextIf<std::string>("name") || !NextIs<std::string>()) {
-    return nullptr;
-  }
-
-  auto name = Next<std::string>();
-
-  return CreateNode<Identifier>(std::move(name))();
-}
-
-auto AstReader::ReadKindSequence() -> NullableFlowPtr<Sequence> {
-  if (!NextIf<std::string>("terms") || !NextIs<uint64_t>()) {
-    return nullptr;
-  }
-
-  auto expression_count = Next<uint64_t>();
-
-  ExpressionList terms;
-  terms.reserve(expression_count);
-
-  while (expression_count-- > 0) {
-    auto term = DeserializeExpression();
-    if (!term.has_value()) {
-      return nullptr;
+  for (const auto &arg : in.arguments()) {
+    auto argument = Unmarshal(arg.value());
+    if (!argument.has_value()) [[unlikely]] {
+      return std::nullopt;
     }
 
-    terms.push_back(term.value());
+    args.emplace_back(arg.name(), argument.value());
   }
 
-  return CreateNode<Sequence>(std::move(terms))();
+  auto type = CreateNode<TemplateType>(base.value(), args)();
+  type->SetWidth(bit_width);
+  type->SetRangeBegin(minimum);
+  type->SetRangeEnd(maximum);
+
+  UnmarshalLocationLocation(in.location(), type);
+  UnmarshalCodeComment(in.comments(), type);
+
+  return type;
 }
 
-auto AstReader::ReadKindStmtExpr() -> NullableFlowPtr<StmtExpr> {
-  if (!NextIf<std::string>("stmt")) {
-    return nullptr;
+auto AstReader::Unmarshal(const SyntaxTree::U1 &in) -> Result<U1> {
+  auto bit_width = Unmarshal(in.bit_width());
+  if (in.has_bit_width() && !bit_width.has_value()) [[unlikely]] {
+    return std::nullopt;
   }
 
-  auto stmt = DeserializeStatement();
-  if (!stmt.has_value()) {
-    return nullptr;
+  auto minimum = Unmarshal(in.minimum());
+  if (in.has_minimum() && !minimum.has_value()) [[unlikely]] {
+    return std::nullopt;
   }
 
-  return CreateNode<StmtExpr>(stmt.value())();
+  auto maximum = Unmarshal(in.maximum());
+  if (in.has_maximum() && !maximum.has_value()) [[unlikely]] {
+    return std::nullopt;
+  }
+
+  auto type = CreateNode<U1>()();
+  type->SetWidth(bit_width);
+  type->SetRangeBegin(minimum);
+  type->SetRangeEnd(maximum);
+
+  UnmarshalLocationLocation(in.location(), type);
+  UnmarshalCodeComment(in.comments(), type);
+
+  return type;
 }
 
-auto AstReader::ReadKindTypeExpr() -> NullableFlowPtr<TypeExpr> {
-  if (!NextIf<std::string>("type")) {
-    return nullptr;
+auto AstReader::Unmarshal(const SyntaxTree::U8 &in) -> Result<U8> {
+  auto bit_width = Unmarshal(in.bit_width());
+  if (in.has_bit_width() && !bit_width.has_value()) [[unlikely]] {
+    return std::nullopt;
   }
 
-  auto type = DeserializeType();
-  if (!type.has_value()) {
-    return nullptr;
+  auto minimum = Unmarshal(in.minimum());
+  if (in.has_minimum() && !minimum.has_value()) [[unlikely]] {
+    return std::nullopt;
   }
 
-  return CreateNode<TypeExpr>(type.value())();
+  auto maximum = Unmarshal(in.maximum());
+  if (in.has_maximum() && !maximum.has_value()) [[unlikely]] {
+    return std::nullopt;
+  }
+
+  auto type = CreateNode<U8>()();
+  type->SetWidth(bit_width);
+  type->SetRangeBegin(minimum);
+  type->SetRangeEnd(maximum);
+
+  UnmarshalLocationLocation(in.location(), type);
+  UnmarshalCodeComment(in.comments(), type);
+
+  return type;
 }
 
-auto AstReader::ReadKindTemplateCall() -> NullableFlowPtr<TemplateCall> {
-  if (!NextIf<std::string>("callee")) {
-    return nullptr;
+auto AstReader::Unmarshal(const SyntaxTree::U16 &in) -> Result<U16> {
+  auto bit_width = Unmarshal(in.bit_width());
+  if (in.has_bit_width() && !bit_width.has_value()) [[unlikely]] {
+    return std::nullopt;
   }
 
-  auto callee = DeserializeExpression();
-  if (!callee.has_value()) {
-    return nullptr;
+  auto minimum = Unmarshal(in.minimum());
+  if (in.has_minimum() && !minimum.has_value()) [[unlikely]] {
+    return std::nullopt;
   }
 
-  if (!NextIf<std::string>("template") || !NextIs<uint64_t>()) {
-    return nullptr;
+  auto maximum = Unmarshal(in.maximum());
+  if (in.has_maximum() && !maximum.has_value()) [[unlikely]] {
+    return std::nullopt;
   }
 
-  auto template_count = Next<uint64_t>();
+  auto type = CreateNode<U16>()();
+  type->SetWidth(bit_width);
+  type->SetRangeBegin(minimum);
+  type->SetRangeEnd(maximum);
 
-  CallArgs template_args;
-  template_args.reserve(template_count);
+  UnmarshalLocationLocation(in.location(), type);
+  UnmarshalCodeComment(in.comments(), type);
 
-  while (template_count-- > 0) {
-    if (!NextIf<std::string>("name") || !NextIs<std::string>()) {
-      return nullptr;
+  return type;
+}
+
+auto AstReader::Unmarshal(const SyntaxTree::U32 &in) -> Result<U32> {
+  auto bit_width = Unmarshal(in.bit_width());
+  if (in.has_bit_width() && !bit_width.has_value()) [[unlikely]] {
+    return std::nullopt;
+  }
+
+  auto minimum = Unmarshal(in.minimum());
+  if (in.has_minimum() && !minimum.has_value()) [[unlikely]] {
+    return std::nullopt;
+  }
+
+  auto maximum = Unmarshal(in.maximum());
+  if (in.has_maximum() && !maximum.has_value()) [[unlikely]] {
+    return std::nullopt;
+  }
+
+  auto type = CreateNode<U32>()();
+  type->SetWidth(bit_width);
+  type->SetRangeBegin(minimum);
+  type->SetRangeEnd(maximum);
+
+  UnmarshalLocationLocation(in.location(), type);
+  UnmarshalCodeComment(in.comments(), type);
+
+  return type;
+}
+
+auto AstReader::Unmarshal(const SyntaxTree::U64 &in) -> Result<U64> {
+  auto bit_width = Unmarshal(in.bit_width());
+  if (in.has_bit_width() && !bit_width.has_value()) [[unlikely]] {
+    return std::nullopt;
+  }
+
+  auto minimum = Unmarshal(in.minimum());
+  if (in.has_minimum() && !minimum.has_value()) [[unlikely]] {
+    return std::nullopt;
+  }
+
+  auto maximum = Unmarshal(in.maximum());
+  if (in.has_maximum() && !maximum.has_value()) [[unlikely]] {
+    return std::nullopt;
+  }
+
+  auto type = CreateNode<U64>()();
+  type->SetWidth(bit_width);
+  type->SetRangeBegin(minimum);
+  type->SetRangeEnd(maximum);
+
+  UnmarshalLocationLocation(in.location(), type);
+  UnmarshalCodeComment(in.comments(), type);
+
+  return type;
+}
+
+auto AstReader::Unmarshal(const SyntaxTree::U128 &in) -> Result<U128> {
+  auto bit_width = Unmarshal(in.bit_width());
+  if (in.has_bit_width() && !bit_width.has_value()) [[unlikely]] {
+    return std::nullopt;
+  }
+
+  auto minimum = Unmarshal(in.minimum());
+  if (in.has_minimum() && !minimum.has_value()) [[unlikely]] {
+    return std::nullopt;
+  }
+
+  auto maximum = Unmarshal(in.maximum());
+  if (in.has_maximum() && !maximum.has_value()) [[unlikely]] {
+    return std::nullopt;
+  }
+
+  auto type = CreateNode<U128>()();
+  type->SetWidth(bit_width);
+  type->SetRangeBegin(minimum);
+  type->SetRangeEnd(maximum);
+
+  UnmarshalLocationLocation(in.location(), type);
+  UnmarshalCodeComment(in.comments(), type);
+
+  return type;
+}
+
+auto AstReader::Unmarshal(const SyntaxTree::I8 &in) -> Result<I8> {
+  auto bit_width = Unmarshal(in.bit_width());
+  if (in.has_bit_width() && !bit_width.has_value()) [[unlikely]] {
+    return std::nullopt;
+  }
+
+  auto minimum = Unmarshal(in.minimum());
+  if (in.has_minimum() && !minimum.has_value()) [[unlikely]] {
+    return std::nullopt;
+  }
+
+  auto maximum = Unmarshal(in.maximum());
+  if (in.has_maximum() && !maximum.has_value()) [[unlikely]] {
+    return std::nullopt;
+  }
+
+  auto type = CreateNode<I8>()();
+  type->SetWidth(bit_width);
+  type->SetRangeBegin(minimum);
+  type->SetRangeEnd(maximum);
+
+  UnmarshalLocationLocation(in.location(), type);
+  UnmarshalCodeComment(in.comments(), type);
+
+  return type;
+}
+
+auto AstReader::Unmarshal(const SyntaxTree::I16 &in) -> Result<I16> {
+  auto bit_width = Unmarshal(in.bit_width());
+  if (in.has_bit_width() && !bit_width.has_value()) [[unlikely]] {
+    return std::nullopt;
+  }
+
+  auto minimum = Unmarshal(in.minimum());
+  if (in.has_minimum() && !minimum.has_value()) [[unlikely]] {
+    return std::nullopt;
+  }
+
+  auto maximum = Unmarshal(in.maximum());
+  if (in.has_maximum() && !maximum.has_value()) [[unlikely]] {
+    return std::nullopt;
+  }
+
+  auto type = CreateNode<I16>()();
+  type->SetWidth(bit_width);
+  type->SetRangeBegin(minimum);
+  type->SetRangeEnd(maximum);
+
+  UnmarshalLocationLocation(in.location(), type);
+  UnmarshalCodeComment(in.comments(), type);
+
+  return type;
+}
+
+auto AstReader::Unmarshal(const SyntaxTree::I32 &in) -> Result<I32> {
+  auto bit_width = Unmarshal(in.bit_width());
+  if (in.has_bit_width() && !bit_width.has_value()) [[unlikely]] {
+    return std::nullopt;
+  }
+
+  auto minimum = Unmarshal(in.minimum());
+  if (in.has_minimum() && !minimum.has_value()) [[unlikely]] {
+    return std::nullopt;
+  }
+
+  auto maximum = Unmarshal(in.maximum());
+  if (in.has_maximum() && !maximum.has_value()) [[unlikely]] {
+    return std::nullopt;
+  }
+
+  auto type = CreateNode<I32>()();
+  type->SetWidth(bit_width);
+  type->SetRangeBegin(minimum);
+  type->SetRangeEnd(maximum);
+
+  UnmarshalLocationLocation(in.location(), type);
+  UnmarshalCodeComment(in.comments(), type);
+
+  return type;
+}
+
+auto AstReader::Unmarshal(const SyntaxTree::I64 &in) -> Result<I64> {
+  auto bit_width = Unmarshal(in.bit_width());
+  if (in.has_bit_width() && !bit_width.has_value()) [[unlikely]] {
+    return std::nullopt;
+  }
+
+  auto minimum = Unmarshal(in.minimum());
+  if (in.has_minimum() && !minimum.has_value()) [[unlikely]] {
+    return std::nullopt;
+  }
+
+  auto maximum = Unmarshal(in.maximum());
+  if (in.has_maximum() && !maximum.has_value()) [[unlikely]] {
+    return std::nullopt;
+  }
+
+  auto type = CreateNode<I64>()();
+  type->SetWidth(bit_width);
+  type->SetRangeBegin(minimum);
+  type->SetRangeEnd(maximum);
+
+  UnmarshalLocationLocation(in.location(), type);
+  UnmarshalCodeComment(in.comments(), type);
+
+  return type;
+}
+
+auto AstReader::Unmarshal(const SyntaxTree::I128 &in) -> Result<I128> {
+  auto bit_width = Unmarshal(in.bit_width());
+  if (in.has_bit_width() && !bit_width.has_value()) [[unlikely]] {
+    return std::nullopt;
+  }
+
+  auto minimum = Unmarshal(in.minimum());
+  if (in.has_minimum() && !minimum.has_value()) [[unlikely]] {
+    return std::nullopt;
+  }
+
+  auto maximum = Unmarshal(in.maximum());
+  if (in.has_maximum() && !maximum.has_value()) [[unlikely]] {
+    return std::nullopt;
+  }
+
+  auto type = CreateNode<I128>()();
+  type->SetWidth(bit_width);
+  type->SetRangeBegin(minimum);
+  type->SetRangeEnd(maximum);
+
+  UnmarshalLocationLocation(in.location(), type);
+  UnmarshalCodeComment(in.comments(), type);
+
+  return type;
+}
+
+auto AstReader::Unmarshal(const SyntaxTree::F16 &in) -> Result<F16> {
+  auto bit_width = Unmarshal(in.bit_width());
+  if (in.has_bit_width() && !bit_width.has_value()) [[unlikely]] {
+    return std::nullopt;
+  }
+
+  auto minimum = Unmarshal(in.minimum());
+  if (in.has_minimum() && !minimum.has_value()) [[unlikely]] {
+    return std::nullopt;
+  }
+
+  auto maximum = Unmarshal(in.maximum());
+  if (in.has_maximum() && !maximum.has_value()) [[unlikely]] {
+    return std::nullopt;
+  }
+
+  auto type = CreateNode<F16>()();
+  type->SetWidth(bit_width);
+  type->SetRangeBegin(minimum);
+  type->SetRangeEnd(maximum);
+
+  UnmarshalLocationLocation(in.location(), type);
+  UnmarshalCodeComment(in.comments(), type);
+
+  return type;
+}
+
+auto AstReader::Unmarshal(const SyntaxTree::F32 &in) -> Result<F32> {
+  auto bit_width = Unmarshal(in.bit_width());
+  if (in.has_bit_width() && !bit_width.has_value()) [[unlikely]] {
+    return std::nullopt;
+  }
+
+  auto minimum = Unmarshal(in.minimum());
+  if (in.has_minimum() && !minimum.has_value()) [[unlikely]] {
+    return std::nullopt;
+  }
+
+  auto maximum = Unmarshal(in.maximum());
+  if (in.has_maximum() && !maximum.has_value()) [[unlikely]] {
+    return std::nullopt;
+  }
+
+  auto type = CreateNode<F32>()();
+  type->SetWidth(bit_width);
+  type->SetRangeBegin(minimum);
+  type->SetRangeEnd(maximum);
+
+  UnmarshalLocationLocation(in.location(), type);
+  UnmarshalCodeComment(in.comments(), type);
+
+  return type;
+}
+
+auto AstReader::Unmarshal(const SyntaxTree::F64 &in) -> Result<F64> {
+  auto bit_width = Unmarshal(in.bit_width());
+  if (in.has_bit_width() && !bit_width.has_value()) [[unlikely]] {
+    return std::nullopt;
+  }
+
+  auto minimum = Unmarshal(in.minimum());
+  if (in.has_minimum() && !minimum.has_value()) [[unlikely]] {
+    return std::nullopt;
+  }
+
+  auto maximum = Unmarshal(in.maximum());
+  if (in.has_maximum() && !maximum.has_value()) [[unlikely]] {
+    return std::nullopt;
+  }
+
+  auto type = CreateNode<F64>()();
+  type->SetWidth(bit_width);
+  type->SetRangeBegin(minimum);
+  type->SetRangeEnd(maximum);
+
+  UnmarshalLocationLocation(in.location(), type);
+  UnmarshalCodeComment(in.comments(), type);
+
+  return type;
+}
+
+auto AstReader::Unmarshal(const SyntaxTree::F128 &in) -> Result<F128> {
+  auto bit_width = Unmarshal(in.bit_width());
+  if (in.has_bit_width() && !bit_width.has_value()) [[unlikely]] {
+    return std::nullopt;
+  }
+
+  auto minimum = Unmarshal(in.minimum());
+  if (in.has_minimum() && !minimum.has_value()) [[unlikely]] {
+    return std::nullopt;
+  }
+
+  auto maximum = Unmarshal(in.maximum());
+  if (in.has_maximum() && !maximum.has_value()) [[unlikely]] {
+    return std::nullopt;
+  }
+
+  auto type = CreateNode<F128>()();
+  type->SetWidth(bit_width);
+  type->SetRangeBegin(minimum);
+  type->SetRangeEnd(maximum);
+
+  UnmarshalLocationLocation(in.location(), type);
+  UnmarshalCodeComment(in.comments(), type);
+
+  return type;
+}
+
+auto AstReader::Unmarshal(const SyntaxTree::VoidTy &in) -> Result<VoidTy> {
+  auto bit_width = Unmarshal(in.bit_width());
+  if (in.has_bit_width() && !bit_width.has_value()) [[unlikely]] {
+    return std::nullopt;
+  }
+
+  auto minimum = Unmarshal(in.minimum());
+  if (in.has_minimum() && !minimum.has_value()) [[unlikely]] {
+    return std::nullopt;
+  }
+
+  auto maximum = Unmarshal(in.maximum());
+  if (in.has_maximum() && !maximum.has_value()) [[unlikely]] {
+    return std::nullopt;
+  }
+
+  auto type = CreateNode<VoidTy>()();
+  type->SetWidth(bit_width);
+  type->SetRangeBegin(minimum);
+  type->SetRangeEnd(maximum);
+
+  UnmarshalLocationLocation(in.location(), type);
+  UnmarshalCodeComment(in.comments(), type);
+
+  return type;
+}
+
+auto AstReader::Unmarshal(const SyntaxTree::PtrTy &in) -> Result<PtrTy> {
+  auto bit_width = Unmarshal(in.bit_width());
+  if (in.has_bit_width() && !bit_width.has_value()) [[unlikely]] {
+    return std::nullopt;
+  }
+
+  auto minimum = Unmarshal(in.minimum());
+  if (in.has_minimum() && !minimum.has_value()) [[unlikely]] {
+    return std::nullopt;
+  }
+
+  auto maximum = Unmarshal(in.maximum());
+  if (in.has_maximum() && !maximum.has_value()) [[unlikely]] {
+    return std::nullopt;
+  }
+
+  auto pointee = Unmarshal(in.pointee());
+  if (!pointee.has_value()) [[unlikely]] {
+    return std::nullopt;
+  }
+
+  auto type = CreateNode<PtrTy>(pointee.value(), in.volatile_())();
+  type->SetWidth(bit_width);
+  type->SetRangeBegin(minimum);
+  type->SetRangeEnd(maximum);
+
+  UnmarshalLocationLocation(in.location(), type);
+  UnmarshalCodeComment(in.comments(), type);
+
+  return type;
+}
+
+auto AstReader::Unmarshal(const SyntaxTree::OpaqueTy &in) -> Result<OpaqueTy> {
+  auto bit_width = Unmarshal(in.bit_width());
+  if (in.has_bit_width() && !bit_width.has_value()) [[unlikely]] {
+    return std::nullopt;
+  }
+
+  auto minimum = Unmarshal(in.minimum());
+  if (in.has_minimum() && !minimum.has_value()) [[unlikely]] {
+    return std::nullopt;
+  }
+
+  auto maximum = Unmarshal(in.maximum());
+  if (in.has_maximum() && !maximum.has_value()) [[unlikely]] {
+    return std::nullopt;
+  }
+
+  auto type = CreateNode<OpaqueTy>(in.name())();
+  type->SetWidth(bit_width);
+  type->SetRangeBegin(minimum);
+  type->SetRangeEnd(maximum);
+
+  UnmarshalLocationLocation(in.location(), type);
+  UnmarshalCodeComment(in.comments(), type);
+
+  return type;
+}
+
+auto AstReader::Unmarshal(const SyntaxTree::TupleTy &in) -> Result<TupleTy> {
+  auto bit_width = Unmarshal(in.bit_width());
+  if (in.has_bit_width() && !bit_width.has_value()) [[unlikely]] {
+    return std::nullopt;
+  }
+
+  auto minimum = Unmarshal(in.minimum());
+  if (in.has_minimum() && !minimum.has_value()) [[unlikely]] {
+    return std::nullopt;
+  }
+
+  auto maximum = Unmarshal(in.maximum());
+  if (in.has_maximum() && !maximum.has_value()) [[unlikely]] {
+    return std::nullopt;
+  }
+
+  TupleTyItems items;
+  items.reserve(in.elements_size());
+
+  for (const auto &element : in.elements()) {
+    auto item = Unmarshal(element);
+    if (!item.has_value()) [[unlikely]] {
+      return std::nullopt;
     }
 
-    auto name = Next<std::string>();
-
-    if (!NextIf<std::string>("value")) {
-      return nullptr;
-    }
-
-    auto value = DeserializeExpression();
-    if (!value.has_value()) {
-      return nullptr;
-    }
-
-    template_args.emplace_back(std::move(name), value.value());
+    items.push_back(item.value());
   }
 
-  if (!NextIf<std::string>("arguments") || !NextIs<uint64_t>()) {
-    return nullptr;
-  }
+  auto type = CreateNode<TupleTy>(items)();
+  type->SetWidth(bit_width);
+  type->SetRangeBegin(minimum);
+  type->SetRangeEnd(maximum);
 
-  auto argument_count = Next<uint64_t>();
+  UnmarshalLocationLocation(in.location(), type);
+  UnmarshalCodeComment(in.comments(), type);
 
-  CallArgs arguments;
-  arguments.reserve(argument_count);
-
-  while (argument_count-- > 0) {
-    if (!NextIf<std::string>("name") || !NextIs<std::string>()) {
-      return nullptr;
-    }
-
-    auto name = Next<std::string>();
-
-    if (!NextIf<std::string>("value")) {
-      return nullptr;
-    }
-
-    auto value = DeserializeExpression();
-    if (!value.has_value()) {
-      return nullptr;
-    }
-
-    arguments.emplace_back(std::move(name), value.value());
-  }
-
-  return CreateNode<TemplateCall>(callee.value(), std::move(arguments),
-                         std::move(template_args))();
+  return type;
 }
 
-auto AstReader::ReadKindU1() -> NullableFlowPtr<U1> {
-  auto info = ReadTypeMetadata();
-  if (!info.has_value()) {
-    return nullptr;
+auto AstReader::Unmarshal(const SyntaxTree::ArrayTy &in) -> Result<ArrayTy> {
+  auto bit_width = Unmarshal(in.bit_width());
+  if (in.has_bit_width() && !bit_width.has_value()) [[unlikely]] {
+    return std::nullopt;
   }
 
-  auto node = CreateNode<U1>()();
-  node->SetWidth(info->m_width);
-  node->SetRangeBegin(info->m_min);
-  node->SetRangeEnd(info->m_max);
+  auto minimum = Unmarshal(in.minimum());
+  if (in.has_minimum() && !minimum.has_value()) [[unlikely]] {
+    return std::nullopt;
+  }
 
-  return node;
+  auto maximum = Unmarshal(in.maximum());
+  if (in.has_maximum() && !maximum.has_value()) [[unlikely]] {
+    return std::nullopt;
+  }
+
+  auto element_type = Unmarshal(in.element_type());
+  if (!element_type.has_value()) [[unlikely]] {
+    return std::nullopt;
+  }
+
+  auto element_count = Unmarshal(in.element_count());
+  if (!element_count.has_value()) [[unlikely]] {
+    return std::nullopt;
+  }
+
+  auto type =
+      CreateNode<ArrayTy>(element_type.value(), element_count.value())();
+  type->SetWidth(bit_width);
+  type->SetRangeBegin(minimum);
+  type->SetRangeEnd(maximum);
+
+  UnmarshalLocationLocation(in.location(), type);
+  UnmarshalCodeComment(in.comments(), type);
+
+  return type;
 }
 
-auto AstReader::ReadKindU8() -> NullableFlowPtr<U8> {
-  auto info = ReadTypeMetadata();
-  if (!info.has_value()) {
-    return nullptr;
+auto AstReader::Unmarshal(const SyntaxTree::RefTy &in) -> Result<RefTy> {
+  auto bit_width = Unmarshal(in.bit_width());
+  if (in.has_bit_width() && !bit_width.has_value()) [[unlikely]] {
+    return std::nullopt;
   }
 
-  auto node = CreateNode<U8>()();
-  node->SetWidth(info->m_width);
-  node->SetRangeBegin(info->m_min);
-  node->SetRangeEnd(info->m_max);
+  auto minimum = Unmarshal(in.minimum());
+  if (in.has_minimum() && !minimum.has_value()) [[unlikely]] {
+    return std::nullopt;
+  }
 
-  return node;
+  auto maximum = Unmarshal(in.maximum());
+  if (in.has_maximum() && !maximum.has_value()) [[unlikely]] {
+    return std::nullopt;
+  }
+
+  auto pointee = Unmarshal(in.pointee());
+  if (!pointee.has_value()) [[unlikely]] {
+    return std::nullopt;
+  }
+
+  auto type = CreateNode<RefTy>(pointee.value())();
+  type->SetWidth(bit_width);
+  type->SetRangeBegin(minimum);
+  type->SetRangeEnd(maximum);
+
+  UnmarshalLocationLocation(in.location(), type);
+  UnmarshalCodeComment(in.comments(), type);
+
+  return type;
 }
 
-auto AstReader::ReadKindU16() -> NullableFlowPtr<U16> {
-  auto info = ReadTypeMetadata();
-  if (!info.has_value()) {
-    return nullptr;
+auto AstReader::Unmarshal(const SyntaxTree::FuncTy &in) -> Result<FuncTy> {
+  auto bit_width = Unmarshal(in.bit_width());
+  if (in.has_bit_width() && !bit_width.has_value()) [[unlikely]] {
+    return std::nullopt;
   }
 
-  auto node = CreateNode<U16>()();
-  node->SetWidth(info->m_width);
-  node->SetRangeBegin(info->m_min);
-  node->SetRangeEnd(info->m_max);
-
-  return node;
-}
-
-auto AstReader::ReadKindU32() -> NullableFlowPtr<U32> {
-  auto info = ReadTypeMetadata();
-  if (!info.has_value()) {
-    return nullptr;
+  auto minimum = Unmarshal(in.minimum());
+  if (in.has_minimum() && !minimum.has_value()) [[unlikely]] {
+    return std::nullopt;
   }
 
-  auto node = CreateNode<U32>()();
-  node->SetWidth(info->m_width);
-  node->SetRangeBegin(info->m_min);
-  node->SetRangeEnd(info->m_max);
-
-  return node;
-}
-
-auto AstReader::ReadKindU64() -> NullableFlowPtr<U64> {
-  auto info = ReadTypeMetadata();
-  if (!info.has_value()) {
-    return nullptr;
+  auto maximum = Unmarshal(in.maximum());
+  if (in.has_maximum() && !maximum.has_value()) [[unlikely]] {
+    return std::nullopt;
   }
 
-  auto node = CreateNode<U64>()();
-  node->SetWidth(info->m_width);
-  node->SetRangeBegin(info->m_min);
-  node->SetRangeEnd(info->m_max);
-
-  return node;
-}
-
-auto AstReader::ReadKindU128() -> NullableFlowPtr<U128> {
-  auto info = ReadTypeMetadata();
-  if (!info.has_value()) {
-    return nullptr;
+  auto return_type = Unmarshal(in.return_type());
+  if (!return_type.has_value()) [[unlikely]] {
+    return std::nullopt;
   }
-
-  auto node = CreateNode<U128>()();
-  node->SetWidth(info->m_width);
-  node->SetRangeBegin(info->m_min);
-  node->SetRangeEnd(info->m_max);
-
-  return node;
-}
-
-auto AstReader::ReadKindI8() -> NullableFlowPtr<I8> {
-  auto info = ReadTypeMetadata();
-  if (!info.has_value()) {
-    return nullptr;
-  }
-
-  auto node = CreateNode<I8>()();
-  node->SetWidth(info->m_width);
-  node->SetRangeBegin(info->m_min);
-  node->SetRangeEnd(info->m_max);
-
-  return node;
-}
-
-auto AstReader::ReadKindI16() -> NullableFlowPtr<I16> {
-  auto info = ReadTypeMetadata();
-  if (!info.has_value()) {
-    return nullptr;
-  }
-
-  auto node = CreateNode<I16>()();
-  node->SetWidth(info->m_width);
-  node->SetRangeBegin(info->m_min);
-  node->SetRangeEnd(info->m_max);
-
-  return node;
-}
-
-auto AstReader::ReadKindI32() -> NullableFlowPtr<I32> {
-  auto info = ReadTypeMetadata();
-  if (!info.has_value()) {
-    return nullptr;
-  }
-
-  auto node = CreateNode<I32>()();
-  node->SetWidth(info->m_width);
-  node->SetRangeBegin(info->m_min);
-  node->SetRangeEnd(info->m_max);
-
-  return node;
-}
-
-auto AstReader::ReadKindI64() -> NullableFlowPtr<I64> {
-  auto info = ReadTypeMetadata();
-  if (!info.has_value()) {
-    return nullptr;
-  }
-
-  auto node = CreateNode<I64>()();
-  node->SetWidth(info->m_width);
-  node->SetRangeBegin(info->m_min);
-  node->SetRangeEnd(info->m_max);
-
-  return node;
-}
-
-auto AstReader::ReadKindI128() -> NullableFlowPtr<I128> {
-  auto info = ReadTypeMetadata();
-  if (!info.has_value()) {
-    return nullptr;
-  }
-
-  auto node = CreateNode<I128>()();
-  node->SetWidth(info->m_width);
-  node->SetRangeBegin(info->m_min);
-  node->SetRangeEnd(info->m_max);
-
-  return node;
-}
-
-auto AstReader::ReadKindF16() -> NullableFlowPtr<F16> {
-  auto info = ReadTypeMetadata();
-  if (!info.has_value()) {
-    return nullptr;
-  }
-
-  auto node = CreateNode<F16>()();
-  node->SetWidth(info->m_width);
-  node->SetRangeBegin(info->m_min);
-  node->SetRangeEnd(info->m_max);
-
-  return node;
-}
-
-auto AstReader::ReadKindF32() -> NullableFlowPtr<F32> {
-  auto info = ReadTypeMetadata();
-  if (!info.has_value()) {
-    return nullptr;
-  }
-
-  auto node = CreateNode<F32>()();
-  node->SetWidth(info->m_width);
-  node->SetRangeBegin(info->m_min);
-  node->SetRangeEnd(info->m_max);
-
-  return node;
-}
-
-auto AstReader::ReadKindF64() -> NullableFlowPtr<F64> {
-  auto info = ReadTypeMetadata();
-  if (!info.has_value()) {
-    return nullptr;
-  }
-
-  auto node = CreateNode<F64>()();
-  node->SetWidth(info->m_width);
-  node->SetRangeBegin(info->m_min);
-  node->SetRangeEnd(info->m_max);
-
-  return node;
-}
-
-auto AstReader::ReadKindF128() -> NullableFlowPtr<F128> {
-  auto info = ReadTypeMetadata();
-  if (!info.has_value()) {
-    return nullptr;
-  }
-
-  auto node = CreateNode<F128>()();
-  node->SetWidth(info->m_width);
-  node->SetRangeBegin(info->m_min);
-  node->SetRangeEnd(info->m_max);
-
-  return node;
-}
-
-auto AstReader::ReadKindVoid() -> NullableFlowPtr<VoidTy> {
-  auto info = ReadTypeMetadata();
-  if (!info.has_value()) {
-    return nullptr;
-  }
-
-  auto node = CreateNode<VoidTy>()();
-  node->SetWidth(info->m_width);
-  node->SetRangeBegin(info->m_min);
-  node->SetRangeEnd(info->m_max);
-
-  return node;
-}
-
-auto AstReader::ReadKindRef() -> NullableFlowPtr<RefTy> {
-  auto info = ReadTypeMetadata();
-
-  if (!info.has_value()) {
-    return nullptr;
-  }
-
-  if (!NextIf<std::string>("to")) {
-    return nullptr;
-  }
-
-  auto to = DeserializeType();
-  if (!to.has_value()) {
-    return nullptr;
-  }
-
-  auto node = CreateNode<RefTy>(to.value())();
-  node->SetWidth(info->m_width);
-  node->SetRangeBegin(info->m_min);
-  node->SetRangeEnd(info->m_max);
-
-  return node;
-}
-
-auto AstReader::ReadKindPtr() -> NullableFlowPtr<PtrTy> {
-  auto info = ReadTypeMetadata();
-  if (!info.has_value()) {
-    return nullptr;
-  }
-
-  if (!NextIf<std::string>("volatile") || !NextIs<bool>()) {
-    return nullptr;
-  }
-
-  bool is_volatile = Next<bool>();
-
-  if (!NextIf<std::string>("to")) {
-    return nullptr;
-  }
-
-  auto to = DeserializeType();
-  if (!to.has_value()) {
-    return nullptr;
-  }
-
-  auto node = CreateNode<PtrTy>(to.value(), is_volatile)();
-  node->SetWidth(info->m_width);
-  node->SetRangeBegin(info->m_min);
-  node->SetRangeEnd(info->m_max);
-
-  return node;
-}
-
-auto AstReader::ReadKindOpaque() -> NullableFlowPtr<OpaqueTy> {
-  auto info = ReadTypeMetadata();
-  if (!info.has_value()) {
-    return nullptr;
-  }
-
-  if (!NextIf<std::string>("name") || !NextIs<std::string>()) {
-    return nullptr;
-  }
-
-  auto name = Next<std::string>();
-
-  auto node = CreateNode<OpaqueTy>(name)();
-  node->SetWidth(info->m_width);
-  node->SetRangeBegin(info->m_min);
-  node->SetRangeEnd(info->m_max);
-
-  return node;
-}
-
-auto AstReader::ReadKindArray() -> NullableFlowPtr<ArrayTy> {
-  auto info = ReadTypeMetadata();
-  if (!info.has_value()) {
-    return nullptr;
-  }
-
-  if (!NextIf<std::string>("of")) {
-    return nullptr;
-  }
-
-  auto of = DeserializeType();
-  if (!of.has_value()) {
-    return nullptr;
-  }
-
-  if (!NextIf<std::string>("size")) {
-    return nullptr;
-  }
-
-  auto size = DeserializeExpression();
-  if (!size.has_value()) {
-    return nullptr;
-  }
-
-  auto node = CreateNode<ArrayTy>(of.value(), size.value())();
-  node->SetWidth(info->m_width);
-  node->SetRangeBegin(info->m_min);
-  node->SetRangeEnd(info->m_max);
-
-  return node;
-}
-
-auto AstReader::ReadKindTuple() -> NullableFlowPtr<TupleTy> {
-  auto info = ReadTypeMetadata();
-  if (!info.has_value()) {
-    return nullptr;
-  }
-
-  if (!NextIf<std::string>("fields") || !NextIs<uint64_t>()) {
-    return nullptr;
-  }
-
-  auto field_count = Next<uint64_t>();
-
-  TupleTyItems fields;
-  fields.reserve(field_count);
-
-  while (field_count-- > 0) {
-    auto field = DeserializeType();
-    if (!field.has_value()) {
-      return nullptr;
-    }
-
-    fields.push_back(field.value());
-  }
-
-  auto node = CreateNode<TupleTy>(std::move(fields))();
-  node->SetWidth(info->m_width);
-  node->SetRangeBegin(info->m_min);
-  node->SetRangeEnd(info->m_max);
-
-  return node;
-}
-
-auto AstReader::ReadKindFuncTy() -> NullableFlowPtr<FuncTy> {
-  auto info = ReadTypeMetadata();
-  if (!info.has_value()) {
-    return nullptr;
-  }
-
-  if (!NextIf<std::string>("attributes") || !NextIs<uint64_t>()) {
-    return nullptr;
-  }
-
-  auto attribute_count = Next<uint64_t>();
-
-  ExpressionList attributes;
-  attributes.reserve(attribute_count);
-
-  while (attribute_count-- > 0) {
-    auto attribute = DeserializeExpression();
-    if (!attribute.has_value()) {
-      return nullptr;
-    }
-
-    attributes.push_back(attribute.value());
-  }
-
-  if (!NextIf<std::string>("return")) {
-    return nullptr;
-  }
-
-  auto return_type = DeserializeType();
-  if (!return_type.has_value()) {
-    return nullptr;
-  }
-
-  if (!NextIf<std::string>("thread_safe") || !NextIs<bool>()) {
-    return nullptr;
-  }
-
-  auto thread_safe = Next<bool>();
-
-  if (!NextIf<std::string>("purity")) {
-    return nullptr;
-  }
-
-  Purity purity;
-  if (NextIf<std::string>("impure")) {
-    purity = thread_safe ? Purity::Impure_TSafe : Purity::Impure;
-  } else if (NextIf<std::string>("pure")) {
-    purity = Purity::Pure;
-  } else if (NextIf<std::string>("quasi")) {
-    purity = Purity::Quasi;
-  } else if (NextIf<std::string>("retro")) {
-    purity = Purity::Retro;
-  } else {
-    return nullptr;
-  }
-
-  if (!NextIf<std::string>("input")) {
-    return nullptr;
-  }
-
-  if (!NextIf<std::string>("variadic") || !NextIs<bool>()) {
-    return nullptr;
-  }
-
-  auto variadic = Next<bool>();
-
-  if (!NextIf<std::string>("parameters") || !NextIs<uint64_t>()) {
-    return nullptr;
-  }
-
-  auto parameter_count = Next<uint64_t>();
 
   FuncParams parameters;
-  parameters.reserve(parameter_count);
+  parameters.reserve(in.parameters_size());
 
-  while (parameter_count-- > 0) {
-    if (!NextIf<std::string>("name") || !NextIs<std::string>()) {
-      return nullptr;
+  for (const auto &param : in.parameters()) {
+    auto type = Unmarshal(param.type());
+    if (!type.has_value()) [[unlikely]] {
+      return std::nullopt;
     }
 
-    auto name = Next<std::string>();
-
-    if (!NextIf<std::string>("type")) {
-      return nullptr;
+    auto default_value = Unmarshal(param.default_value());
+    if (param.has_default_value() && !default_value.has_value()) [[unlikely]] {
+      return std::nullopt;
     }
 
-    auto type = DeserializeType();
-    if (!type.has_value()) {
-      return nullptr;
-    }
-
-    if (!NextIf<std::string>("default")) {
-      return nullptr;
-    }
-
-    NullableFlowPtr<Expr> default_value;
-    if (NextIf<none>()) {
-      default_value = nullptr;
-    } else {
-      default_value = DeserializeExpression();
-      if (!default_value.has_value()) {
-        return nullptr;
-      }
-    }
-
-    parameters.emplace_back(std::move(name), type.value(), default_value);
+    parameters.emplace_back(param.name(), type.value(), default_value);
   }
 
-  auto node = CreateNode<FuncTy>(return_type.value(), parameters, variadic, purity,
-                           attributes)();
-  node->SetWidth(info->m_width);
-  node->SetRangeBegin(info->m_min);
-  node->SetRangeEnd(info->m_max);
+  ExpressionList attributes;
+  attributes.reserve(in.attributes_size());
 
-  return node;
+  for (const auto &attr : in.attributes()) {
+    auto attribute = Unmarshal(attr);
+    if (!attribute.has_value()) [[unlikely]] {
+      return std::nullopt;
+    }
+
+    attributes.push_back(attribute.value());
+  }
+
+  auto type = CreateNode<FuncTy>(return_type.value(), parameters, in.variadic(),
+                                 FromPurity(in.purity()), attributes)();
+  type->SetWidth(bit_width);
+  type->SetRangeBegin(minimum);
+  type->SetRangeEnd(maximum);
+
+  UnmarshalLocationLocation(in.location(), type);
+  UnmarshalCodeComment(in.comments(), type);
+
+  return type;
 }
 
-auto AstReader::ReadKindUnres() -> NullableFlowPtr<NamedTy> {
-  auto info = ReadTypeMetadata();
-  if (!info.has_value()) {
-    return nullptr;
+auto AstReader::Unmarshal(const SyntaxTree::Unary &in) -> Result<Unary> {
+  auto operand = Unmarshal(in.operand());
+  if (!operand.has_value()) [[unlikely]] {
+    return std::nullopt;
   }
 
-  if (!NextIf<std::string>("name") || !NextIs<std::string>()) {
-    return nullptr;
-  }
+  auto object =
+      CreateNode<Unary>(FromOperator(in.operator_()), operand.value())();
+  UnmarshalLocationLocation(in.location(), object);
+  UnmarshalCodeComment(in.comments(), object);
 
-  auto name = Next<std::string>();
-
-  auto node = CreateNode<NamedTy>(name)();
-  node->SetWidth(info->m_width);
-  node->SetRangeBegin(info->m_min);
-  node->SetRangeEnd(info->m_max);
-
-  return node;
+  return object;
 }
 
-auto AstReader::ReadKindInfer() -> NullableFlowPtr<InferTy> {
-  auto info = ReadTypeMetadata();
-  if (!info.has_value()) {
-    return nullptr;
+auto AstReader::Unmarshal(const SyntaxTree::Binary &in) -> Result<Binary> {
+  auto lhs = Unmarshal(in.left());
+  if (!lhs.has_value()) [[unlikely]] {
+    return std::nullopt;
   }
 
-  auto node = CreateNode<InferTy>()();
-  node->SetWidth(info->m_width);
-  node->SetRangeBegin(info->m_min);
-  node->SetRangeEnd(info->m_max);
+  auto rhs = Unmarshal(in.right());
+  if (!rhs.has_value()) [[unlikely]] {
+    return std::nullopt;
+  }
 
-  return node;
+  auto object = CreateNode<Binary>(lhs.value(), FromOperator(in.operator_()),
+                                   rhs.value())();
+  UnmarshalLocationLocation(in.location(), object);
+  UnmarshalCodeComment(in.comments(), object);
+
+  return object;
 }
 
-auto AstReader::ReadKindTempl() -> NullableFlowPtr<TemplateType> {
-  auto info = ReadTypeMetadata();
-  if (!info.has_value()) {
-    return nullptr;
+auto AstReader::Unmarshal(const SyntaxTree::PostUnary &in)
+    -> Result<PostUnary> {
+  auto operand = Unmarshal(in.operand());
+  if (!operand.has_value()) [[unlikely]] {
+    return std::nullopt;
   }
 
-  if (!NextIf<std::string>("template")) {
-    return nullptr;
+  auto object =
+      CreateNode<PostUnary>(operand.value(), FromOperator(in.operator_()))();
+  UnmarshalLocationLocation(in.location(), object);
+  UnmarshalCodeComment(in.comments(), object);
+
+  return object;
+}
+
+auto AstReader::Unmarshal(const SyntaxTree::Ternary &in) -> Result<Ternary> {
+  auto condition = Unmarshal(in.condition());
+  if (!condition.has_value()) [[unlikely]] {
+    return std::nullopt;
   }
 
-  auto templ = DeserializeType();
-  if (!templ.has_value()) {
-    return nullptr;
+  auto true_expr = Unmarshal(in.true_branch());
+  if (!true_expr.has_value()) [[unlikely]] {
+    return std::nullopt;
   }
 
-  if (!NextIf<std::string>("arguments") || !NextIs<uint64_t>()) {
-    return nullptr;
+  auto false_expr = Unmarshal(in.false_branch());
+  if (!false_expr.has_value()) [[unlikely]] {
+    return std::nullopt;
   }
 
-  auto argument_count = Next<uint64_t>();
+  auto object = CreateNode<Ternary>(condition.value(), true_expr.value(),
+                                    false_expr.value())();
+  UnmarshalLocationLocation(in.location(), object);
+  UnmarshalCodeComment(in.comments(), object);
+
+  return object;
+}
+
+auto AstReader::Unmarshal(const SyntaxTree::Integer &in) -> Result<Integer> {
+  bool lexically_valid = std::all_of(in.number().begin(), in.number().end(),
+                                     [](char c) { return std::isdigit(c); });
+  if (!lexically_valid) [[unlikely]] {
+    return std::nullopt;
+  }
+
+  /* Do range checking */
+  boost::multiprecision::cpp_int value(in.number());
+  if (value < 0 || value > boost::multiprecision::cpp_int(
+                               "340282366920938463463374607431768211455"))
+      [[unlikely]] {
+    return std::nullopt;
+  }
+
+  auto object = CreateNode<Integer>(in.number())();
+  UnmarshalLocationLocation(in.location(), object);
+  UnmarshalCodeComment(in.comments(), object);
+
+  return object;
+}
+
+auto AstReader::Unmarshal(const SyntaxTree::Float &in) -> Result<Float> {
+  long double f = 0.0;
+
+  /* Verify float format  */
+  if (std::from_chars(in.number().data(),
+                      in.number().data() + in.number().size(), f)
+          .ec != std::errc()) [[unlikely]] {
+    return std::nullopt;
+  }
+
+  auto object = CreateNode<Float>(in.number())();
+  UnmarshalLocationLocation(in.location(), object);
+  UnmarshalCodeComment(in.comments(), object);
+
+  return object;
+}
+
+auto AstReader::Unmarshal(const SyntaxTree::Boolean &in) -> Result<Boolean> {
+  auto object = CreateNode<Boolean>(in.value())();
+  UnmarshalLocationLocation(in.location(), object);
+  UnmarshalCodeComment(in.comments(), object);
+
+  return object;
+}
+
+auto AstReader::Unmarshal(const SyntaxTree::String &in) -> Result<String> {
+  auto object = CreateNode<String>(in.text())();
+  UnmarshalLocationLocation(in.location(), object);
+  UnmarshalCodeComment(in.comments(), object);
+
+  return object;
+}
+
+auto AstReader::Unmarshal(const SyntaxTree::Character &in)
+    -> Result<Character> {
+  auto value = in.char_();
+  if (value < 0 || value > 255) [[unlikely]] {
+    return std::nullopt;
+  }
+
+  auto object = CreateNode<Character>(value)();
+  UnmarshalLocationLocation(in.location(), object);
+  UnmarshalCodeComment(in.comments(), object);
+
+  return object;
+}
+
+auto AstReader::Unmarshal(const SyntaxTree::Null &in) -> Result<Null> {
+  auto object = CreateNode<Null>()();
+  UnmarshalLocationLocation(in.location(), object);
+  UnmarshalCodeComment(in.comments(), object);
+
+  return object;
+}
+
+auto AstReader::Unmarshal(const SyntaxTree::Undefined &in)
+    -> Result<Undefined> {
+  auto object = CreateNode<Undefined>()();
+  UnmarshalLocationLocation(in.location(), object);
+  UnmarshalCodeComment(in.comments(), object);
+
+  return object;
+}
+
+auto AstReader::Unmarshal(const SyntaxTree::Call &in) -> Result<Call> {
+  auto callee = Unmarshal(in.callee());
+  if (!callee.has_value()) [[unlikely]] {
+    return std::nullopt;
+  }
 
   CallArgs arguments;
-  arguments.reserve(argument_count);
+  arguments.reserve(in.arguments_size());
 
-  while (argument_count-- > 0) {
-    if (!NextIf<std::string>("name") || !NextIs<std::string>()) {
-      return nullptr;
+  for (const auto &arg : in.arguments()) {
+    auto value = Unmarshal(arg.value());
+    if (!value.has_value()) [[unlikely]] {
+      return std::nullopt;
     }
 
-    auto name = Next<std::string>();
-
-    if (!NextIf<std::string>("value")) {
-      return nullptr;
-    }
-
-    auto value = DeserializeExpression();
-    if (!value.has_value()) {
-      return nullptr;
-    }
-
-    arguments.emplace_back(std::move(name), value.value());
+    arguments.emplace_back(arg.name(), value.value());
   }
 
-  auto node = CreateNode<TemplateType>(templ.value(), std::move(arguments))();
-  node->SetWidth(info->m_width);
-  node->SetRangeBegin(info->m_min);
-  node->SetRangeEnd(info->m_max);
+  auto object = CreateNode<Call>(callee.value(), arguments)();
+  UnmarshalLocationLocation(in.location(), object);
+  UnmarshalCodeComment(in.comments(), object);
 
-  return node;
+  return object;
 }
 
-auto AstReader::ReadKindTypedef() -> NullableFlowPtr<Typedef> {
-  if (!NextIf<std::string>("name") || !NextIs<std::string>()) {
-    return nullptr;
+auto AstReader::Unmarshal(const SyntaxTree::TemplateCall &in)
+    -> Result<TemplateCall> {
+  auto callee = Unmarshal(in.callee());
+  if (!callee.has_value()) [[unlikely]] {
+    return std::nullopt;
   }
 
-  auto name = Next<std::string>();
+  CallArgs arguments;
+  arguments.reserve(in.arguments_size());
 
-  if (!NextIf<std::string>("type")) {
-    return nullptr;
+  for (const auto &arg : in.arguments()) {
+    auto value = Unmarshal(arg.value());
+    if (!value.has_value()) [[unlikely]] {
+      return std::nullopt;
+    }
+
+    arguments.emplace_back(arg.name(), value.value());
   }
 
-  auto type = DeserializeType();
-  if (!type.has_value()) {
-    return nullptr;
+  CallArgs parameters;
+  parameters.reserve(in.template_arguments_size());
+
+  for (const auto &param : in.template_arguments()) {
+    auto value = Unmarshal(param.value());
+    if (!value.has_value()) [[unlikely]] {
+      return std::nullopt;
+    }
+
+    parameters.emplace_back(param.name(), value.value());
   }
 
-  return CreateNode<Typedef>(name, type.value())();
+  auto object =
+      CreateNode<TemplateCall>(callee.value(), arguments, parameters)();
+  UnmarshalLocationLocation(in.location(), object);
+  UnmarshalCodeComment(in.comments(), object);
+
+  return object;
 }
 
-auto AstReader::ReadKindStruct() -> NullableFlowPtr<Struct> {
-  if (!NextIf<std::string>("mode")) {
-    return nullptr;
-  }
+auto AstReader::Unmarshal(const SyntaxTree::List &in) -> Result<List> {
+  ExpressionList items;
+  items.reserve(in.elements_size());
 
-  CompositeType mode;
-
-  if (NextIf<std::string>("region")) {
-    mode = CompositeType::Region;
-  } else if (NextIf<std::string>("struct")) {
-    mode = CompositeType::Struct;
-  } else if (NextIf<std::string>("group")) {
-    mode = CompositeType::Group;
-  } else if (NextIf<std::string>("class")) {
-    mode = CompositeType::Class;
-  } else if (NextIf<std::string>("union")) {
-    mode = CompositeType::Union;
-  } else {
-    return nullptr;
-  }
-
-  if (!NextIf<std::string>("attributes") || !NextIs<uint64_t>()) {
-    return nullptr;
-  }
-
-  auto attribute_count = Next<uint64_t>();
-
-  ExpressionList attributes;
-  attributes.reserve(attribute_count);
-
-  while (attribute_count-- > 0) {
-    auto attribute = DeserializeExpression();
-    if (!attribute.has_value()) {
-      return nullptr;
+  for (const auto &expr : in.elements()) {
+    auto expression = Unmarshal(expr);
+    if (!expression.has_value()) [[unlikely]] {
+      return std::nullopt;
     }
 
-    attributes.push_back(attribute.value());
+    items.push_back(expression.value());
   }
 
-  if (!NextIf<std::string>("name") || !NextIs<std::string>()) {
-    return nullptr;
+  auto object = CreateNode<List>(items)();
+  UnmarshalLocationLocation(in.location(), object);
+  UnmarshalCodeComment(in.comments(), object);
+
+  return object;
+}
+
+auto AstReader::Unmarshal(const SyntaxTree::Assoc &in) -> Result<Assoc> {
+  auto key = Unmarshal(in.key());
+  if (!key.has_value()) [[unlikely]] {
+    return std::nullopt;
   }
 
-  auto name = Next<std::string>();
-
-  if (!NextIf<std::string>("template")) {
-    return nullptr;
+  auto value = Unmarshal(in.value());
+  if (!value.has_value()) [[unlikely]] {
+    return std::nullopt;
   }
 
-  std::optional<TemplateParameters> template_args;
+  auto object = CreateNode<Assoc>(key.value(), value.value())();
+  UnmarshalLocationLocation(in.location(), object);
+  UnmarshalCodeComment(in.comments(), object);
 
-  if (!NextIf<none>()) {
-    if (!NextIs<uint64_t>()) {
-      return nullptr;
-    }
+  return object;
+}
 
-    auto template_count = Next<uint64_t>();
+auto AstReader::Unmarshal(const SyntaxTree::Index &in) -> Result<Index> {
+  auto base = Unmarshal(in.base());
+  if (!base.has_value()) [[unlikely]] {
+    return std::nullopt;
+  }
 
-    template_args = TemplateParameters();
-    template_args->reserve(template_count);
+  auto index = Unmarshal(in.index());
+  if (!index.has_value()) [[unlikely]] {
+    return std::nullopt;
+  }
 
-    while (template_count-- > 0) {
-      if (!NextIf<std::string>("name") || !NextIs<std::string>()) {
-        return nullptr;
-      }
+  auto object = CreateNode<Index>(base.value(), index.value())();
+  UnmarshalLocationLocation(in.location(), object);
+  UnmarshalCodeComment(in.comments(), object);
 
-      auto arg_name = Next<std::string>();
+  return object;
+}
 
-      if (!NextIf<std::string>("type")) {
-        return nullptr;
-      }
+auto AstReader::Unmarshal(const SyntaxTree::Slice &in) -> Result<Slice> {
+  auto base = Unmarshal(in.base());
+  if (!base.has_value()) [[unlikely]] {
+    return std::nullopt;
+  }
 
-      auto type = DeserializeType();
-      if (!type.has_value()) {
-        return nullptr;
-      }
+  auto start = Unmarshal(in.start());
+  if (!start.has_value()) [[unlikely]] {
+    return std::nullopt;
+  }
 
-      if (!NextIf<std::string>("default")) {
-        return nullptr;
-      }
+  auto end = Unmarshal(in.end());
+  if (!end.has_value()) [[unlikely]] {
+    return std::nullopt;
+  }
 
-      NullableFlowPtr<Expr> default_value;
-      if (NextIf<none>()) {
-        default_value = nullptr;
-      } else {
-        default_value = DeserializeExpression();
-        if (!default_value.has_value()) {
-          return nullptr;
+  auto object = CreateNode<Slice>(base.value(), start.value(), end.value())();
+  UnmarshalLocationLocation(in.location(), object);
+  UnmarshalCodeComment(in.comments(), object);
+
+  return object;
+}
+
+auto AstReader::Unmarshal(const SyntaxTree::FString &in) -> Result<FString> {
+  FStringItems items;
+  items.reserve(in.elements_size());
+
+  for (const auto &expr : in.elements()) {
+    switch (expr.part_case()) {
+      case SyntaxTree::FString::FStringTerm::kExpr: {
+        auto expression = Unmarshal(expr.expr());
+        if (!expression.has_value()) [[unlikely]] {
+          return std::nullopt;
         }
+
+        items.emplace_back(expression.value());
+        break;
       }
 
-      template_args->emplace_back(arg_name, type.value(), default_value);
-    }
-  }
+      case SyntaxTree::FString::FStringTerm::kText: {
+        items.emplace_back(expr.text());
+        break;
+      }
 
-  if (!NextIf<std::string>("names") || !NextIs<uint64_t>()) {
-    return nullptr;
-  }
-
-  auto names_count = Next<uint64_t>();
-
-  StructNames names;
-  names.reserve(names_count);
-
-  while (names_count-- > 0) {
-    if (!NextIs<std::string>()) {
-      return nullptr;
-    }
-
-    auto arg_name = Next<std::string>();
-
-    names.emplace_back(arg_name);
-  }
-
-  if (!NextIf<std::string>("fields") || !NextIs<uint64_t>()) {
-    return nullptr;
-  }
-
-  auto field_count = Next<uint64_t>();
-
-  StructFields fields;
-  fields.reserve(field_count);
-
-  while (field_count-- > 0) {
-    if (!NextIf<std::string>("name") || !NextIs<std::string>()) {
-      return nullptr;
-    }
-
-    auto field_name = Next<std::string>();
-
-    if (!NextIf<std::string>("type")) {
-      return nullptr;
-    }
-
-    auto type = DeserializeType();
-    if (!type.has_value()) {
-      return nullptr;
-    }
-
-    if (!NextIf<std::string>("default")) {
-      return nullptr;
-    }
-
-    NullableFlowPtr<Expr> default_value;
-    if (NextIf<none>()) {
-      default_value = nullptr;
-    } else {
-      default_value = DeserializeExpression();
-      if (!default_value.has_value()) {
-        return nullptr;
+      case SyntaxTree::FString::FStringTerm::PART_NOT_SET: {
+        return std::nullopt;
       }
     }
-
-    if (!NextIf<std::string>("visibility")) {
-      return nullptr;
-    }
-
-    Vis visibility;
-
-    if (NextIf<std::string>("pub")) {
-      visibility = Vis::Pub;
-    } else if (NextIf<std::string>("pro")) {
-      visibility = Vis::Pro;
-    } else if (NextIf<std::string>("sec")) {
-      visibility = Vis::Sec;
-    } else {
-      return nullptr;
-    }
-
-    if (!NextIf<std::string>("static") || !NextIs<bool>()) {
-      return nullptr;
-    }
-
-    auto is_static = Next<bool>();
-
-    fields.emplace_back(visibility, is_static, field_name, type.value(),
-                        default_value);
   }
 
-  if (!NextIf<std::string>("methods") || !NextIs<uint64_t>()) {
-    return nullptr;
-  }
+  auto object = CreateNode<FString>(items)();
+  UnmarshalLocationLocation(in.location(), object);
+  UnmarshalCodeComment(in.comments(), object);
 
-  auto method_count = Next<uint64_t>();
-
-  StructMethods methods;
-  methods.reserve(method_count);
-
-  while (method_count-- > 0) {
-    if (!NextIf<std::string>("visibility")) {
-      return nullptr;
-    }
-
-    Vis visibility;
-
-    if (NextIf<std::string>("pub")) {
-      visibility = Vis::Pub;
-    } else if (NextIf<std::string>("pro")) {
-      visibility = Vis::Pro;
-    } else if (NextIf<std::string>("sec")) {
-      visibility = Vis::Sec;
-    } else {
-      return nullptr;
-    }
-
-    if (!NextIf<std::string>("method")) {
-      return nullptr;
-    }
-
-    auto method = DeserializeStatement();
-    if (!method.has_value()) {
-      return nullptr;
-    }
-
-    methods.emplace_back(visibility, method.value());
-  }
-
-  if (!NextIf<std::string>("static-methods") || !NextIs<uint64_t>()) {
-    return nullptr;
-  }
-
-  auto static_method_count = Next<uint64_t>();
-
-  StructStaticMethods static_methods;
-  static_methods.reserve(static_method_count);
-
-  while (static_method_count-- > 0) {
-    if (!NextIf<std::string>("visibility")) {
-      return nullptr;
-    }
-
-    Vis visibility;
-
-    if (NextIf<std::string>("pub")) {
-      visibility = Vis::Pub;
-    } else if (NextIf<std::string>("pro")) {
-      visibility = Vis::Pro;
-    } else if (NextIf<std::string>("sec")) {
-      visibility = Vis::Sec;
-    } else {
-      return nullptr;
-    }
-
-    if (!NextIf<std::string>("method")) {
-      return nullptr;
-    }
-
-    auto method = DeserializeStatement();
-    if (!method.has_value()) {
-      return nullptr;
-    }
-
-    static_methods.emplace_back(visibility, method.value());
-  }
-
-  return CreateNode<Struct>(mode, attributes, name, template_args, names, fields,
-                         methods, static_methods)();
+  return object;
 }
 
-auto AstReader::ReadKindEnum() -> NullableFlowPtr<Enum> {
-  if (!NextIf<std::string>("name") || !NextIs<std::string>()) {
-    return nullptr;
-  }
+auto AstReader::Unmarshal(const SyntaxTree::Identifier &in)
+    -> Result<Identifier> {
+  auto object = CreateNode<Identifier>(in.name())();
+  UnmarshalLocationLocation(in.location(), object);
+  UnmarshalCodeComment(in.comments(), object);
 
-  auto name = Next<std::string>();
-
-  if (!NextIf<std::string>("type")) {
-    return nullptr;
-  }
-
-  NullableFlowPtr<Type> type;
-  if (NextIf<none>()) {
-    type = nullptr;
-  } else {
-    type = DeserializeType();
-    if (!type.has_value()) {
-      return nullptr;
-    }
-  }
-
-  if (!NextIf<std::string>("fields") || !NextIs<uint64_t>()) {
-    return nullptr;
-  }
-
-  auto field_count = Next<uint64_t>();
-
-  EnumItems fields;
-  fields.reserve(field_count);
-
-  while (field_count-- > 0) {
-    if (!NextIf<std::string>("name") || !NextIs<std::string>()) {
-      return nullptr;
-    }
-
-    auto field_name = Next<std::string>();
-
-    if (!NextIf<std::string>("value")) {
-      return nullptr;
-    }
-
-    NullableFlowPtr<Expr> value;
-    if (NextIf<none>()) {
-      value = nullptr;
-    } else {
-      value = DeserializeExpression();
-      if (!value.has_value()) {
-        return nullptr;
-      }
-    }
-
-    fields.emplace_back(field_name, value);
-  }
-
-  return CreateNode<Enum>(name, type, std::move(fields))();
+  return object;
 }
 
-auto AstReader::ReadKindFunction() -> NullableFlowPtr<Function> {
-  if (!NextIf<std::string>("attributes") || !NextIs<uint64_t>()) {
-    return nullptr;
+auto AstReader::Unmarshal(const SyntaxTree::Sequence &in) -> Result<Sequence> {
+  ExpressionList items;
+  items.reserve(in.elements_size());
+
+  for (const auto &expr : in.elements()) {
+    auto expression = Unmarshal(expr);
+    if (!expression.has_value()) [[unlikely]] {
+      return std::nullopt;
+    }
+
+    items.push_back(expression.value());
   }
 
-  auto attribute_count = Next<uint64_t>();
+  auto object = CreateNode<Sequence>(items)();
+  UnmarshalLocationLocation(in.location(), object);
+  UnmarshalCodeComment(in.comments(), object);
+
+  return object;
+}
+
+auto AstReader::Unmarshal(const SyntaxTree::Block &in) -> Result<Block> {
+  BlockItems items;
+  items.reserve(in.statements_size());
+
+  for (const auto &stmt : in.statements()) {
+    auto statement = Unmarshal(stmt);
+    if (!statement.has_value()) [[unlikely]] {
+      return std::nullopt;
+    }
+
+    items.push_back(statement.value());
+  }
+
+  auto object = CreateNode<Block>(items, FromSafetyMode(in.guarantor()))();
+  UnmarshalLocationLocation(in.location(), object);
+  UnmarshalCodeComment(in.comments(), object);
+
+  return object;
+}
+
+auto AstReader::Unmarshal(const SyntaxTree::Variable &in) -> Result<Variable> {
+  auto type = Unmarshal(in.type());
+  if (in.has_type() && !type.has_value()) [[unlikely]] {
+    return std::nullopt;
+  }
+
+  auto value = Unmarshal(in.initial_value());
+  if (in.has_initial_value() && !value.has_value()) [[unlikely]] {
+    return std::nullopt;
+  }
 
   ExpressionList attributes;
-  attributes.reserve(attribute_count);
+  attributes.reserve(in.attributes_size());
 
-  while (attribute_count-- > 0) {
-    auto attribute = DeserializeExpression();
-    if (!attribute.has_value()) {
-      return nullptr;
+  for (const auto &attr : in.attributes()) {
+    auto attribute = Unmarshal(attr);
+    if (!attribute.has_value()) [[unlikely]] {
+      return std::nullopt;
     }
 
     attributes.push_back(attribute.value());
   }
 
-  if (!NextIf<std::string>("thread_safe") || !NextIs<bool>()) {
-    return nullptr;
-  }
+  auto object = CreateNode<Variable>(in.name(), type, value,
+                                     FromVariableKind(in.kind()), attributes)();
+  UnmarshalLocationLocation(in.location(), object);
+  UnmarshalCodeComment(in.comments(), object);
 
-  auto thread_safe = Next<bool>();
-
-  if (!NextIf<std::string>("purity")) {
-    return nullptr;
-  }
-
-  Purity purity;
-  if (NextIf<std::string>("impure")) {
-    purity = thread_safe ? Purity::Impure_TSafe : Purity::Impure;
-  } else if (NextIf<std::string>("pure")) {
-    purity = Purity::Pure;
-  } else if (NextIf<std::string>("quasi")) {
-    purity = Purity::Quasi;
-  } else if (NextIf<std::string>("retro")) {
-    purity = Purity::Retro;
-  } else {
-    return nullptr;
-  }
-
-  if (!NextIf<std::string>("captures") || !NextIs<uint64_t>()) {
-    return nullptr;
-  }
-
-  auto capture_count = Next<uint64_t>();
-
-  FnCaptures captures;
-  captures.reserve(capture_count);
-
-  while (capture_count-- > 0) {
-    if (!NextIf<std::string>("name") || !NextIs<std::string>()) {
-      return nullptr;
-    }
-
-    auto name = Next<std::string>();
-
-    if (!NextIf<std::string>("is_ref") || !NextIs<bool>()) {
-      return nullptr;
-    }
-
-    auto is_ref = Next<bool>();
-
-    captures.emplace_back(name, is_ref);
-  }
-
-  if (!NextIf<std::string>("name") || !NextIs<std::string>()) {
-    return nullptr;
-  }
-
-  auto name = Next<std::string>();
-
-  if (!NextIf<std::string>("template")) {
-    return nullptr;
-  }
-
-  std::optional<TemplateParameters> template_args;
-
-  if (!NextIf<none>()) {
-    auto template_count = Next<uint64_t>();
-
-    template_args = TemplateParameters();
-    template_args->reserve(template_count);
-
-    while (template_count-- > 0) {
-      if (!NextIf<std::string>("name") || !NextIs<std::string>()) {
-        return nullptr;
-      }
-
-      auto arg_name = Next<std::string>();
-
-      if (!NextIf<std::string>("type")) {
-        return nullptr;
-      }
-
-      auto type = DeserializeType();
-      if (!type.has_value()) {
-        return nullptr;
-      }
-
-      if (!NextIf<std::string>("default")) {
-        return nullptr;
-      }
-
-      NullableFlowPtr<Expr> default_value;
-      if (NextIf<none>()) {
-        default_value = nullptr;
-      } else {
-        default_value = DeserializeExpression();
-        if (!default_value.has_value()) {
-          return nullptr;
-        }
-      }
-
-      template_args->emplace_back(arg_name, type.value(), default_value);
-    }
-  }
-
-  if (!NextIf<std::string>("input")) {
-    return nullptr;
-  }
-
-  if (!NextIf<std::string>("variadic") || !NextIs<bool>()) {
-    return nullptr;
-  }
-
-  auto variadic = Next<bool>();
-
-  if (!NextIf<std::string>("parameters") || !NextIs<uint64_t>()) {
-    return nullptr;
-  }
-
-  auto parameter_count = Next<uint64_t>();
-
-  FuncParams parameters;
-  parameters.reserve(parameter_count);
-
-  while (parameter_count-- > 0) {
-    if (!NextIf<std::string>("name") || !NextIs<std::string>()) {
-      return nullptr;
-    }
-
-    auto parameter_name = Next<std::string>();
-
-    if (!NextIf<std::string>("type")) {
-      return nullptr;
-    }
-
-    auto type = DeserializeType();
-    if (!type.has_value()) {
-      return nullptr;
-    }
-
-    if (!NextIf<std::string>("default")) {
-      return nullptr;
-    }
-
-    NullableFlowPtr<Expr> default_value;
-    if (NextIf<none>()) {
-      default_value = nullptr;
-    } else {
-      default_value = DeserializeExpression();
-      if (!default_value.has_value()) {
-        return nullptr;
-      }
-    }
-
-    parameters.emplace_back(std::move(parameter_name), type.value(),
-                            default_value);
-  }
-
-  if (!NextIf<std::string>("return")) {
-    return nullptr;
-  }
-
-  auto return_type = DeserializeType();
-  if (!return_type.has_value()) {
-    return nullptr;
-  }
-
-  if (!NextIf<std::string>("precond")) {
-    return nullptr;
-  }
-
-  NullableFlowPtr<Expr> precond;
-  if (NextIf<none>()) {
-    precond = nullptr;
-  } else {
-    precond = DeserializeExpression();
-    if (!precond.has_value()) {
-      return nullptr;
-    }
-  }
-
-  if (!NextIf<std::string>("postcond")) {
-    return nullptr;
-  }
-
-  NullableFlowPtr<Expr> postcond;
-  if (NextIf<none>()) {
-    postcond = nullptr;
-  } else {
-    postcond = DeserializeExpression();
-    if (!postcond.has_value()) {
-      return nullptr;
-    }
-  }
-
-  if (!NextIf<std::string>("body")) {
-    return nullptr;
-  }
-
-  NullableFlowPtr<Stmt> body;
-  if (NextIf<none>()) {
-    body = nullptr;
-  } else {
-    body = DeserializeStatement();
-    if (!body.has_value()) {
-      return nullptr;
-    }
-  }
-
-  return CreateNode<Function>(std::move(attributes), purity, std::move(captures),
-                        name, std::move(template_args), std::move(parameters),
-                        variadic, return_type.value(), precond, postcond,
-                        body)();
+  return object;
 }
 
-auto AstReader::ReadKindScope() -> NullableFlowPtr<Scope> {
-  if (!NextIf<std::string>("name") || !NextIs<std::string>()) {
-    return nullptr;
-  }
+auto AstReader::Unmarshal(const SyntaxTree::Assembly &in) -> Result<Assembly> {
+  ExpressionList arguments;
+  arguments.reserve(in.arguments_size());
 
-  auto name = Next<std::string>();
-
-  if (!NextIf<std::string>("depends") || !NextIs<uint64_t>()) {
-    return nullptr;
-  }
-
-  auto dependency_count = Next<uint64_t>();
-
-  ScopeDeps dependencies;
-  dependencies.reserve(dependency_count);
-
-  while (dependency_count-- > 0) {
-    auto dependency = Next<std::string>();
-    dependencies.emplace_back(dependency);
-  }
-
-  if (!NextIf<std::string>("body")) {
-    return nullptr;
-  }
-
-  auto body = DeserializeStatement();
-  if (!body.has_value()) {
-    return nullptr;
-  }
-
-  return CreateNode<Scope>(name, body.value(), dependencies)();
-}
-
-auto AstReader::ReadKindExport() -> NullableFlowPtr<Export> {
-  if (!NextIf<std::string>("abi") || !NextIs<std::string>()) {
-    return nullptr;
-  }
-
-  auto abi_name = Next<std::string>();
-
-  if (!NextIf<std::string>("visibility") || !NextIs<std::string>()) {
-    return nullptr;
-  }
-
-  Vis visibility;
-
-  if (NextIf<std::string>("pub")) {
-    visibility = Vis::Pub;
-  } else if (NextIf<std::string>("pro")) {
-    visibility = Vis::Pro;
-  } else if (NextIf<std::string>("sec")) {
-    visibility = Vis::Sec;
-  } else {
-    return nullptr;
-  }
-
-  if (!NextIf<std::string>("attributes") || !NextIs<uint64_t>()) {
-    return nullptr;
-  }
-
-  auto attribute_count = Next<uint64_t>();
-
-  ExpressionList attributes;
-  attributes.reserve(attribute_count);
-
-  while (attribute_count-- > 0) {
-    auto attribute = DeserializeExpression();
-    if (!attribute.has_value()) {
-      return nullptr;
+  for (const auto &arg : in.arguments()) {
+    auto value = Unmarshal(arg);
+    if (!value.has_value()) [[unlikely]] {
+      return std::nullopt;
     }
 
-    attributes.push_back(attribute.value());
+    arguments.push_back(value.value());
   }
 
-  if (!NextIf<std::string>("body")) {
-    return nullptr;
-  }
+  auto object = CreateNode<Assembly>(in.code(), arguments)();
+  UnmarshalLocationLocation(in.location(), object);
+  UnmarshalCodeComment(in.comments(), object);
 
-  auto body = DeserializeStatement();
-  if (!body.has_value()) {
-    return nullptr;
-  }
-
-  return CreateNode<Export>(body.value(), abi_name, visibility,
-                          std::move(attributes))();
+  return object;
 }
 
-auto AstReader::ReadKindBlock() -> NullableFlowPtr<Block> {
-  if (!NextIf<std::string>("safe")) {
-    return nullptr;
+auto AstReader::Unmarshal(const SyntaxTree::If &in) -> Result<If> {
+  auto condition = Unmarshal(in.condition());
+  if (!condition.has_value()) [[unlikely]] {
+    return std::nullopt;
   }
 
-  SafetyMode mode;
-
-  if (NextIf<none>()) {
-    mode = SafetyMode::Unknown;
-  } else if (NextIf<std::string>("yes")) {
-    mode = SafetyMode::Safe;
-  } else if (NextIf<std::string>("no")) {
-    mode = SafetyMode::Unsafe;
-  } else {
-    return nullptr;
+  auto then_block = Unmarshal(in.true_branch());
+  if (!then_block.has_value()) [[unlikely]] {
+    return std::nullopt;
   }
 
-  if (!NextIf<std::string>("body") || !NextIs<uint64_t>()) {
-    return nullptr;
+  auto else_block = Unmarshal(in.false_branch());
+  if (in.has_false_branch() && !else_block.has_value()) [[unlikely]] {
+    return std::nullopt;
   }
 
-  auto statement_count = Next<uint64_t>();
+  auto object =
+      CreateNode<If>(condition.value(), then_block.value(), else_block)();
+  UnmarshalLocationLocation(in.location(), object);
+  UnmarshalCodeComment(in.comments(), object);
 
-  BlockItems statements;
-  statements.reserve(statement_count);
-
-  while (statement_count-- > 0) {
-    auto stmt = DeserializeStatement();
-    if (!stmt.has_value()) {
-      return nullptr;
-    }
-
-    statements.push_back(stmt.value());
-  }
-
-  return CreateNode<Block>(std::move(statements), mode)();
+  return object;
 }
 
-auto AstReader::ReadKindLet() -> NullableFlowPtr<Variable> {
-  if (!NextIf<std::string>("mode")) {
-    return nullptr;
-  }
-  VariableType mode;
-
-  if (NextIf<std::string>("let")) {
-    mode = VariableType::Let;
-  } else if (NextIf<std::string>("var")) {
-    mode = VariableType::Var;
-  } else if (NextIf<std::string>("const")) {
-    mode = VariableType::Const;
-  } else {
-    return nullptr;
+auto AstReader::Unmarshal(const SyntaxTree::While &in) -> Result<While> {
+  auto condition = Unmarshal(in.condition());
+  if (!condition.has_value()) [[unlikely]] {
+    return std::nullopt;
   }
 
-  if (!NextIf<std::string>("name") || !NextIs<std::string>()) {
-    return nullptr;
+  auto block = Unmarshal(in.body());
+  if (!block.has_value()) [[unlikely]] {
+    return std::nullopt;
   }
 
-  auto name = Next<std::string>();
+  auto object = CreateNode<While>(condition.value(), block.value())();
+  UnmarshalLocationLocation(in.location(), object);
+  UnmarshalCodeComment(in.comments(), object);
 
-  if (!NextIf<std::string>("type")) {
-    return nullptr;
-  }
-
-  NullableFlowPtr<Type> type;
-  if (NextIf<none>()) {
-    type = nullptr;
-  } else {
-    type = DeserializeType();
-    if (!type.has_value()) {
-      return nullptr;
-    }
-  }
-
-  if (!NextIf<std::string>("value")) {
-    return nullptr;
-  }
-
-  NullableFlowPtr<Expr> value;
-  if (NextIf<none>()) {
-    value = nullptr;
-  } else {
-    value = DeserializeExpression();
-    if (!value.has_value()) {
-      return nullptr;
-    }
-  }
-
-  if (!NextIf<std::string>("attributes") || !NextIs<uint64_t>()) {
-    return nullptr;
-  }
-
-  auto attribute_count = Next<uint64_t>();
-
-  ExpressionList attributes;
-  attributes.reserve(attribute_count);
-
-  while (attribute_count-- > 0) {
-    auto attribute = DeserializeExpression();
-    if (!attribute.has_value()) {
-      return nullptr;
-    }
-
-    attributes.push_back(attribute.value());
-  }
-
-  return CreateNode<Variable>(name, type, value, mode, std::move(attributes))();
+  return object;
 }
 
-auto AstReader::ReadKindAssembly() -> NullableFlowPtr<Assembly> {
-  if (!NextIf<std::string>("assembly") || !NextIs<std::string>()) {
-    return nullptr;
+auto AstReader::Unmarshal(const SyntaxTree::For &in) -> Result<For> {
+  auto init = Unmarshal(in.init());
+  if (in.has_init() && !init.has_value()) [[unlikely]] {
+    return std::nullopt;
   }
 
-  auto assembly = Next<std::string>();
-
-  if (!NextIf<std::string>("parameters") || !NextIs<uint64_t>()) {
-    return nullptr;
+  auto condition = Unmarshal(in.condition());
+  if (in.has_condition() && !condition.has_value()) [[unlikely]] {
+    return std::nullopt;
   }
 
-  auto parameter_count = Next<uint64_t>();
-
-  ExpressionList parameters;
-  parameters.reserve(parameter_count);
-
-  while (parameter_count-- > 0) {
-    auto parameter = DeserializeExpression();
-    if (!parameter.has_value()) {
-      return nullptr;
-    }
-
-    parameters.push_back(parameter.value());
+  auto update = Unmarshal(in.step());
+  if (in.has_step() && !update.has_value()) [[unlikely]] {
+    return std::nullopt;
   }
 
-  return CreateNode<Assembly>(assembly, std::move(parameters))();
+  auto block = Unmarshal(in.body());
+  if (!block.has_value()) [[unlikely]] {
+    return std::nullopt;
+  }
+
+  auto object = CreateNode<For>(init, condition, update, block.value())();
+  UnmarshalLocationLocation(in.location(), object);
+  UnmarshalCodeComment(in.comments(), object);
+
+  return object;
 }
 
-auto AstReader::ReadKindReturn() -> NullableFlowPtr<Return> {
-  if (!NextIf<std::string>("expr")) {
-    return nullptr;
+auto AstReader::Unmarshal(const SyntaxTree::Foreach &in) -> Result<Foreach> {
+  auto expression = Unmarshal(in.expression());
+  if (!expression.has_value()) [[unlikely]] {
+    return std::nullopt;
   }
 
-  NullableFlowPtr<Expr> expression;
-  if (NextIf<none>()) {
-    expression = nullptr;
-  } else {
-    expression = DeserializeExpression();
-    if (!expression.has_value()) {
-      return nullptr;
-    }
+  auto block = Unmarshal(in.body());
+  if (!block.has_value()) [[unlikely]] {
+    return std::nullopt;
   }
 
-  return CreateNode<Return>(expression)();
+  auto object = CreateNode<Foreach>(in.index_name(), in.value_name(),
+                                    expression.value(), block.value())();
+  UnmarshalLocationLocation(in.location(), object);
+  UnmarshalCodeComment(in.comments(), object);
+
+  return object;
 }
 
-auto AstReader::ReadKindRetif() -> NullableFlowPtr<ReturnIf> {
-  if (!NextIf<std::string>("cond")) {
-    return nullptr;
-  }
+auto AstReader::Unmarshal(const SyntaxTree::Break &in) -> Result<Break> {
+  auto object = CreateNode<Break>()();
+  UnmarshalLocationLocation(in.location(), object);
+  UnmarshalCodeComment(in.comments(), object);
 
-  auto condition = DeserializeExpression();
-  if (!condition.has_value()) {
-    return nullptr;
-  }
-
-  if (!NextIf<std::string>("expr")) {
-    return nullptr;
-  }
-
-  auto expression = DeserializeExpression();
-  if (!expression.has_value()) {
-    return nullptr;
-  }
-
-  return CreateNode<ReturnIf>(condition.value(), expression.value())();
+  return object;
 }
 
-NullableFlowPtr<Break> AstReader::ReadKindBreak() {  // NOLINT
-  return CreateNode<Break>()();
+auto AstReader::Unmarshal(const SyntaxTree::Continue &in) -> Result<Continue> {
+  auto object = CreateNode<Continue>()();
+  UnmarshalLocationLocation(in.location(), object);
+  UnmarshalCodeComment(in.comments(), object);
+
+  return object;
 }
 
-NullableFlowPtr<Continue> AstReader::ReadKindContinue() {  // NOLINT
-  return CreateNode<Continue>()();
+auto AstReader::Unmarshal(const SyntaxTree::Return &in) -> Result<Return> {
+  auto value = Unmarshal(in.value());
+  if (in.has_value() && !value.has_value()) [[unlikely]] {
+    return std::nullopt;
+  }
+
+  auto object = CreateNode<Return>(value)();
+  UnmarshalLocationLocation(in.location(), object);
+  UnmarshalCodeComment(in.comments(), object);
+
+  return object;
 }
 
-auto AstReader::ReadKindIf() -> NullableFlowPtr<If> {
-  if (!NextIf<std::string>("cond")) {
-    return nullptr;
+auto AstReader::Unmarshal(const SyntaxTree::ReturnIf &in) -> Result<ReturnIf> {
+  auto condition = Unmarshal(in.condition());
+  if (!condition.has_value()) [[unlikely]] {
+    return std::nullopt;
   }
 
-  auto condition = DeserializeExpression();
-  if (!condition.has_value()) {
-    return nullptr;
+  auto value = Unmarshal(in.value());
+  if (!value.has_value()) [[unlikely]] {
+    return std::nullopt;
   }
 
-  if (!NextIf<std::string>("then")) {
-    return nullptr;
-  }
+  auto object = CreateNode<ReturnIf>(condition.value(), value.value())();
+  UnmarshalLocationLocation(in.location(), object);
+  UnmarshalCodeComment(in.comments(), object);
 
-  auto then_block = DeserializeStatement();
-
-  if (!NextIf<std::string>("else")) {
-    return nullptr;
-  }
-
-  NullableFlowPtr<Stmt> else_block;
-  if (NextIf<none>()) {
-    else_block = nullptr;
-  } else {
-    else_block = DeserializeStatement();
-    if (!else_block.has_value()) {
-      return nullptr;
-    }
-  }
-
-  return CreateNode<If>(condition.value(), then_block.value(), else_block)();
+  return object;
 }
 
-auto AstReader::ReadKindWhile() -> NullableFlowPtr<While> {
-  if (!NextIf<std::string>("cond")) {
-    return nullptr;
+auto AstReader::Unmarshal(const SyntaxTree::Case &in) -> Result<Case> {
+  auto condition = Unmarshal(in.condition());
+  if (!condition.has_value()) [[unlikely]] {
+    return std::nullopt;
   }
 
-  auto condition = DeserializeExpression();
-  if (!condition.has_value()) {
-    return nullptr;
+  auto block = Unmarshal(in.body());
+  if (!block.has_value()) [[unlikely]] {
+    return std::nullopt;
   }
 
-  if (!NextIf<std::string>("body")) {
-    return nullptr;
-  }
+  auto object = CreateNode<Case>(condition.value(), block.value())();
+  UnmarshalLocationLocation(in.location(), object);
+  UnmarshalCodeComment(in.comments(), object);
 
-  auto body = DeserializeStatement();
-  if (!body.has_value()) {
-    return nullptr;
-  }
-
-  return CreateNode<While>(condition.value(), body.value())();
+  return object;
 }
 
-auto AstReader::ReadKindFor() -> NullableFlowPtr<For> {
-  if (!NextIf<std::string>("init")) {
-    return nullptr;
+auto AstReader::Unmarshal(const SyntaxTree::Switch &in) -> Result<Switch> {
+  auto condition = Unmarshal(in.condition());
+  if (!condition.has_value()) [[unlikely]] {
+    return std::nullopt;
   }
-
-  NullableFlowPtr<Stmt> init;
-  if (NextIf<none>()) {
-    init = nullptr;
-  } else {
-    init = DeserializeStatement();
-    if (!init.has_value()) {
-      return nullptr;
-    }
-  }
-
-  if (!NextIf<std::string>("cond")) {
-    return nullptr;
-  }
-
-  NullableFlowPtr<Expr> condition;
-  if (NextIf<none>()) {
-    condition = nullptr;
-  } else {
-    condition = DeserializeExpression();
-    if (!condition.has_value()) {
-      return nullptr;
-    }
-  }
-
-  if (!NextIf<std::string>("step")) {
-    return nullptr;
-  }
-
-  NullableFlowPtr<Expr> step;
-  if (NextIf<none>()) {
-    step = nullptr;
-  } else {
-    step = DeserializeExpression();
-    if (!step.has_value()) {
-      return nullptr;
-    }
-  }
-
-  if (!NextIf<std::string>("body")) {
-    return nullptr;
-  }
-
-  auto body = DeserializeStatement();
-  if (!body.has_value()) {
-    return nullptr;
-  }
-
-  return CreateNode<For>(init, condition, step, body.value())();
-}
-
-auto AstReader::ReadKindForeach() -> NullableFlowPtr<Foreach> {
-  if (!NextIf<std::string>("idx") || !NextIs<std::string>()) {
-    return nullptr;
-  }
-
-  auto index_name = Next<std::string>();
-
-  if (!NextIf<std::string>("val") || !NextIs<std::string>()) {
-    return nullptr;
-  }
-
-  auto value_name = Next<std::string>();
-
-  if (!NextIf<std::string>("expr")) {
-    return nullptr;
-  }
-
-  auto expression = DeserializeExpression();
-  if (!expression.has_value()) {
-    return nullptr;
-  }
-
-  if (!NextIf<std::string>("body")) {
-    return nullptr;
-  }
-
-  auto body = DeserializeStatement();
-  if (!body.has_value()) {
-    return nullptr;
-  }
-
-  return CreateNode<Foreach>(index_name, value_name, expression.value(),
-                           body.value())();
-}
-
-auto AstReader::ReadKindCase() -> NullableFlowPtr<Case> {
-  if (!NextIf<std::string>("match")) {
-    return nullptr;
-  }
-
-  auto match = DeserializeExpression();
-  if (!match.has_value()) {
-    return nullptr;
-  }
-
-  if (!NextIf<std::string>("body")) {
-    return nullptr;
-  }
-
-  auto body = DeserializeStatement();
-  if (!body.has_value()) {
-    return nullptr;
-  }
-
-  return CreateNode<Case>(match.value(), body.value())();
-}
-
-auto AstReader::ReadKindSwitch() -> NullableFlowPtr<Switch> {
-  if (!NextIf<std::string>("match")) {
-    return nullptr;
-  }
-
-  auto match = DeserializeExpression();
-  if (!match.has_value()) {
-    return nullptr;
-  }
-
-  if (!NextIf<std::string>("cases") || !NextIs<uint64_t>()) {
-    return nullptr;
-  }
-
-  auto case_count = Next<uint64_t>();
 
   SwitchCases cases;
-  cases.reserve(case_count);
+  cases.reserve(in.cases_size());
 
-  while (case_count-- > 0) {
-    auto case_stmt = DeserializeStatement();
-    if (!case_stmt.has_value() || !case_stmt.value()->Is(QAST_CASE)) {
-      return nullptr;
+  for (const auto &c : in.cases()) {
+    auto case_statement = Unmarshal(c);
+    if (!case_statement.has_value()) [[unlikely]] {
+      return std::nullopt;
     }
 
-    cases.emplace_back(case_stmt.value()->As<Case>());
+    cases.push_back(case_statement.value());
   }
 
-  if (!NextIf<std::string>("default")) {
-    return nullptr;
+  auto default_case = Unmarshal(in.default_());
+  if (in.has_default_() && !default_case.has_value()) [[unlikely]] {
+    return std::nullopt;
   }
 
-  NullableFlowPtr<Stmt> default_case;
-  if (NextIf<none>()) {
-    default_case = nullptr;
-  } else {
-    default_case = DeserializeStatement();
-    if (!default_case.has_value()) {
-      return nullptr;
-    }
-  }
+  auto object = CreateNode<Switch>(condition.value(), cases, default_case)();
+  UnmarshalLocationLocation(in.location(), object);
+  UnmarshalCodeComment(in.comments(), object);
 
-  return CreateNode<Switch>(match.value(), std::move(cases), default_case)();
+  return object;
 }
 
-auto AstReader::ReadKindExprStmt() -> NullableFlowPtr<ExprStmt> {
-  if (!NextIf<std::string>("expr")) {
-    return nullptr;
+auto AstReader::Unmarshal(const SyntaxTree::Typedef &in) -> Result<Typedef> {
+  auto type = Unmarshal(in.type());
+  if (!type.has_value()) [[unlikely]] {
+    return std::nullopt;
   }
 
-  auto expr = DeserializeExpression();
-  if (!expr.has_value()) {
-    return nullptr;
+  auto object = CreateNode<Typedef>(in.name(), type.value())();
+  UnmarshalLocationLocation(in.location(), object);
+  UnmarshalCodeComment(in.comments(), object);
+
+  return object;
+}
+
+auto AstReader::Unmarshal(const SyntaxTree::Function &in) -> Result<Function> {
+  ExpressionList attributes;
+  attributes.reserve(in.attributes_size());
+
+  for (const auto &attr : in.attributes()) {
+    auto attribute = Unmarshal(attr);
+    if (!attribute.has_value()) [[unlikely]] {
+      return std::nullopt;
+    }
+
+    attributes.push_back(attribute.value());
   }
 
-  return CreateNode<ExprStmt>(expr.value())();
+  std::optional<TemplateParameters> template_parameters;
+  if (in.has_template_parameters()) {
+    template_parameters = TemplateParameters();
+
+    for (const auto &param : in.template_parameters().parameters()) {
+      auto type = Unmarshal(param.type());
+      if (!type.has_value()) [[unlikely]] {
+        return std::nullopt;
+      }
+
+      auto default_value = Unmarshal(param.default_value());
+      if (param.has_default_value() && !default_value.has_value())
+          [[unlikely]] {
+        return std::nullopt;
+      }
+
+      template_parameters->emplace_back(param.name(), type.value(),
+                                        default_value);
+    }
+  }
+
+  FnCaptures captures;
+  captures.reserve(in.captures_size());
+  for (const auto &cap : in.captures()) {
+    captures.emplace_back(cap.name(), cap.is_reference());
+  }
+
+  FuncParams parameters;
+  parameters.reserve(in.parameters_size());
+
+  for (const auto &param : in.parameters()) {
+    auto type = Unmarshal(param.type());
+    if (!type.has_value()) [[unlikely]] {
+      return std::nullopt;
+    }
+
+    auto default_value = Unmarshal(param.default_value());
+    if (param.has_default_value() && !default_value.has_value()) [[unlikely]] {
+      return std::nullopt;
+    }
+
+    parameters.emplace_back(param.name(), type.value(), default_value);
+  }
+
+  auto precondition = Unmarshal(in.precondition());
+  if (in.has_precondition() && !precondition.has_value()) [[unlikely]] {
+    return std::nullopt;
+  }
+
+  auto postcondition = Unmarshal(in.postcondition());
+  if (in.has_postcondition() && !postcondition.has_value()) [[unlikely]] {
+    return std::nullopt;
+  }
+
+  auto block = Unmarshal(in.body());
+  if (in.has_body() && !block.has_value()) [[unlikely]] {
+    return std::nullopt;
+  }
+
+  auto return_type = Unmarshal(in.return_type());
+  if (!return_type.has_value()) [[unlikely]] {
+    return std::nullopt;
+  }
+
+  auto object = CreateNode<Function>(
+      attributes, FromPurity(in.purity()), captures, in.name(),
+      template_parameters, parameters, in.variadic(), return_type.value(),
+      precondition, postcondition, block)();
+  UnmarshalLocationLocation(in.location(), object);
+  UnmarshalCodeComment(in.comments(), object);
+
+  return object;
+}
+
+auto AstReader::Unmarshal(const SyntaxTree::Struct &in) -> Result<Struct> {
+  ExpressionList attributes;
+  attributes.reserve(in.attributes_size());
+
+  for (const auto &attr : in.attributes()) {
+    auto attribute = Unmarshal(attr);
+    if (!attribute.has_value()) [[unlikely]] {
+      return std::nullopt;
+    }
+
+    attributes.push_back(attribute.value());
+  }
+
+  StructNames names;
+  names.reserve(in.names_size());
+  for (const auto &name : in.names()) {
+    names.emplace_back(name);
+  }
+
+  StructFields fields;
+  fields.reserve(in.fields_size());
+
+  for (const auto &field : in.fields()) {
+    auto vis = FromVisibility(field.visibility());
+    auto is_static = field.is_static();
+
+    auto type = Unmarshal(field.type());
+    if (!type.has_value()) [[unlikely]] {
+      return std::nullopt;
+    }
+
+    auto value = Unmarshal(field.default_value());
+    if (field.has_default_value() && !value.has_value()) [[unlikely]] {
+      return std::nullopt;
+    }
+
+    fields.emplace_back(vis, is_static, field.name(), type.value(), value);
+  }
+
+  StructMethods methods;
+  methods.reserve(in.methods_size());
+
+  for (const auto &method : in.methods()) {
+    auto vis = FromVisibility(method.visibility());
+    auto func = Unmarshal(method.func());
+    if (!func.has_value()) [[unlikely]] {
+      return std::nullopt;
+    }
+
+    methods.emplace_back(vis, func.value());
+  }
+
+  StructMethods static_methods;
+  static_methods.reserve(in.static_methods_size());
+
+  for (const auto &method : in.static_methods()) {
+    auto vis = FromVisibility(method.visibility());
+    auto func = Unmarshal(method.func());
+    if (!func.has_value()) [[unlikely]] {
+      return std::nullopt;
+    }
+
+    static_methods.emplace_back(vis, func.value());
+  }
+
+  std::optional<TemplateParameters> template_parameters;
+  if (in.has_template_parameters()) {
+    template_parameters = TemplateParameters();
+
+    for (const auto &param : in.template_parameters().parameters()) {
+      auto type = Unmarshal(param.type());
+      if (!type.has_value()) [[unlikely]] {
+        return std::nullopt;
+      }
+
+      auto default_value = Unmarshal(param.default_value());
+      if (param.has_default_value() && !default_value.has_value())
+          [[unlikely]] {
+        return std::nullopt;
+      }
+
+      template_parameters->emplace_back(param.name(), type.value(),
+                                        default_value);
+    }
+  }
+
+  auto object = CreateNode<Struct>(FromCompType(in.kind()), attributes,
+                                   in.name(), template_parameters, names,
+                                   fields, methods, static_methods)();
+  UnmarshalLocationLocation(in.location(), object);
+  UnmarshalCodeComment(in.comments(), object);
+
+  return object;
+}
+
+auto AstReader::Unmarshal(const SyntaxTree::Enum &in) -> Result<Enum> {
+  auto base_type = Unmarshal(in.base_type());
+  if (in.has_base_type() && !base_type.has_value()) [[unlikely]] {
+    return std::nullopt;
+  }
+
+  EnumItems items;
+  items.reserve(in.items_size());
+
+  for (const auto &item : in.items()) {
+    auto value = Unmarshal(item.value());
+    if (item.has_value() && !value.has_value()) [[unlikely]] {
+      return std::nullopt;
+    }
+
+    items.emplace_back(item.name(), value);
+  }
+
+  auto object = CreateNode<Enum>(in.name(), base_type, items)();
+  UnmarshalLocationLocation(in.location(), object);
+  UnmarshalCodeComment(in.comments(), object);
+
+  return object;
+}
+
+auto AstReader::Unmarshal(const SyntaxTree::Scope &in) -> Result<Scope> {
+  auto block = Unmarshal(in.body());
+  if (!block.has_value()) [[unlikely]] {
+    return std::nullopt;
+  }
+
+  ScopeDeps dependencies;
+  dependencies.reserve(in.dependencies_size());
+  for (const auto &dep : in.dependencies()) {
+    dependencies.emplace_back(dep);
+  }
+
+  auto object = CreateNode<Scope>(in.name(), block.value(), dependencies)();
+  UnmarshalLocationLocation(in.location(), object);
+  UnmarshalCodeComment(in.comments(), object);
+
+  return object;
+}
+
+auto AstReader::Unmarshal(const SyntaxTree::Export &in) -> Result<Export> {
+  auto block = Unmarshal(in.body());
+  if (!block.has_value()) [[unlikely]] {
+    return std::nullopt;
+  }
+
+  ExpressionList attributes;
+  attributes.reserve(in.attributes_size());
+
+  for (const auto &attr : in.attributes()) {
+    auto attribute = Unmarshal(attr);
+    if (!attribute.has_value()) [[unlikely]] {
+      return std::nullopt;
+    }
+
+    attributes.push_back(attribute.value());
+  }
+
+  auto vis = FromVisibility(in.visibility());
+
+  auto object =
+      CreateNode<Export>(block.value(), in.abi_name(), vis, attributes)();
+  UnmarshalLocationLocation(in.location(), object);
+  UnmarshalCodeComment(in.comments(), object);
+
+  return object;
+}
+
+AstReader::AstReader(std::string_view protobuf_data,
+                     ReaderSourceManager source_manager)
+    : m_rd(source_manager), m_mm(std::make_unique<DynamicArena>()) {
+  google::protobuf::io::CodedInputStream input(
+      (const uint8_t *)protobuf_data.data(), protobuf_data.size());
+  input.SetRecursionLimit(kRecursionLimit);
+
+  SyntaxTree::Root root;
+  if (!root.ParseFromCodedStream(&input)) [[unlikely]] {
+    return;
+  }
+
+  std::swap(MainAllocator, m_mm);
+  m_root = Unmarshal(root);
+  std::swap(MainAllocator, m_mm);
+}
+
+auto AstReader::Get() -> std::optional<ASTRoot> {
+  if (!m_root.has_value()) [[unlikely]] {
+    return std::nullopt;
+  }
+
+  return ASTRoot(m_root.value(), std::move(m_mm), false);
 }

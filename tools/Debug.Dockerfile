@@ -9,7 +9,7 @@ RUN apt update --fix-missing && apt upgrade -y
 RUN apt install -y  libboost-all-dev libssl-dev libgoogle-glog-dev   \
   libyaml-cpp-dev rapidjson-dev libreadline-dev libzstd-dev          \
   libpolly-18-dev llvm-18 nlohmann-json3-dev libsparsehash-dev       \
-  libgit2-dev
+  libgit2-dev libprotobuf-dev protobuf-compiler
 
 RUN apt install -y cmake make clang
 
@@ -20,7 +20,7 @@ RUN update-alternatives --install /usr/bin/c++ c++ /usr/bin/clang++ 100
 ########################## Make the build script #######################
 RUN echo "#!/bin/sh" > /opt/build.sh
 RUN echo "mkdir -p /app/.build/debug" >> /opt/build.sh
-RUN echo "cmake -S /app -B /app/.build/debug -DCMAKE_BUILD_TYPE=Debug -DCOVERAGE=OFF -DBUILD_SHARED_LIBS=ON -DBUILD_TESTING=ON -DCMAKE_INSTALL_PREFIX=/app/build || exit 1" >> /opt/build.sh
+RUN echo "cmake -S /app -B /app/.build/debug -DCMAKE_BUILD_TYPE=Debug -DCOVERAGE=ON -DBUILD_SHARED_LIBS=ON -DBUILD_TESTING=ON -DCMAKE_INSTALL_PREFIX=/app/build || exit 1" >> /opt/build.sh
 RUN echo "cmake --build /app/.build/debug -j`nproc` || exit 1" >> /opt/build.sh
 RUN echo "mkdir -p /app/build" >> /opt/build.sh
 RUN echo "rm -rf /app/build/*" >> /opt/build.sh

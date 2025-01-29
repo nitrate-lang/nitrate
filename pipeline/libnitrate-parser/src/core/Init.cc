@@ -31,6 +31,8 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
+#include <google/protobuf/stubs/common.h>
+
 #include <nitrate-core/Init.hh>
 #include <nitrate-core/Logger.hh>
 #include <nitrate-core/Macro.hh>
@@ -43,6 +45,8 @@ using namespace ncc::parse;
 NCC_EXPORT ncc::LibraryRC<ParseLibrarySetup> ncc::parse::ParseLibrary;
 
 NCC_EXPORT auto ParseLibrarySetup::Init() -> bool {
+  GOOGLE_PROTOBUF_VERIFY_VERSION;
+
   qcore_print(QCORE_DEBUG, "Initializing Nitrate Parser Library");
 
   if (!ncc::CoreLibrary.InitRC()) {

@@ -40,6 +40,7 @@
 #include <nitrate-parser/ASTWriter.hh>
 #include <queue>
 #include <ranges>
+#include <stack>
 
 using namespace ncc;
 using namespace ncc::parse;
@@ -143,16 +144,16 @@ class IterVisitor : public ASTVisitor {
     AddTypesuffix(n);
   }
 
-  void Visit(FlowPtr<UnaryExpression> n) override { Add(n->GetRHS()); }
+  void Visit(FlowPtr<Unary> n) override { Add(n->GetRHS()); }
 
-  void Visit(FlowPtr<BinaryExpression> n) override {
+  void Visit(FlowPtr<Binary> n) override {
     Add(n->GetLHS());
     Add(n->GetRHS());
   }
 
-  void Visit(FlowPtr<PostUnaryExpression> n) override { Add(n->GetLHS()); }
+  void Visit(FlowPtr<PostUnary> n) override { Add(n->GetLHS()); }
 
-  void Visit(FlowPtr<TernaryExpression> n) override {
+  void Visit(FlowPtr<Ternary> n) override {
     Add(n->GetCond());
     Add(n->GetLHS());
     Add(n->GetRHS());

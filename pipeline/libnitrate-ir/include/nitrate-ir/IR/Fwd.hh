@@ -103,7 +103,7 @@ namespace ncc::ir {
   template <class Attorney>
   class GenericType;
   template <class Attorney>
-  class GenericBinaryExpression;
+  class GenericBinary;
   template <class Attorney>
   class GenericUnary;
   template <class Attorney>
@@ -195,7 +195,7 @@ namespace ncc::ir {
 
   using Expr = GenericExpr<void>;
   using Type = GenericType<void>;
-  using BinaryExpression = GenericBinaryExpression<void>;
+  using Binary = GenericBinary<void>;
   using Unary = GenericUnary<void>;
   using U1Ty = GenericU1Ty<void>;
   using U8Ty = GenericU8Ty<void>;

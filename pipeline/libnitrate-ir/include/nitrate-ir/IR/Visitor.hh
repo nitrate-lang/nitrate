@@ -44,7 +44,7 @@ namespace ncc::ir {
     virtual ~IRVisitor() = default;
 
     virtual void Visit(FlowPtr<GenericExpr<A>> n) = 0;
-    virtual void Visit(FlowPtr<GenericBinaryExpression<A>> n) = 0;
+    virtual void Visit(FlowPtr<GenericBinary<A>> n) = 0;
     virtual void Visit(FlowPtr<GenericUnary<A>> n) = 0;
     virtual void Visit(FlowPtr<GenericU1Ty<A>> n) = 0;
     virtual void Visit(FlowPtr<GenericU8Ty<A>> n) = 0;
@@ -94,7 +94,7 @@ namespace ncc::ir {
     void Dispatch(FlowPtr<T> n) {
       switch (n->GetKind()) {
         case IR_eBIN: {
-          Visit(n.template As<GenericBinaryExpression<A>>());
+          Visit(n.template As<GenericBinary<A>>());
           break;
         }
 

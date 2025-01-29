@@ -31,7 +31,6 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <core/Hash.hh>
 #include <core/ParserImpl.hh>
 #include <cstring>
 #include <nitrate-core/Init.hh>
@@ -44,7 +43,7 @@
 using namespace ncc;
 using namespace ncc::parse;
 
-NCC_EXPORT thread_local std::unique_ptr<ncc::IMemory> parse::NparAllocator =
+NCC_EXPORT thread_local std::unique_ptr<ncc::IMemory> parse::MainAllocator =
     std::make_unique<ncc::DynamicArena>();
 
 NCC_EXPORT ASTExtension parse::ExtensionDataStore;
@@ -106,23 +105,33 @@ NCC_EXPORT auto parse::operator<<(std::ostream &os, const ASTExtensionKey &idx)
 
 ///=============================================================================
 
-NCC_EXPORT auto Base::Dump(std::ostream &os,
-                           WriterSourceProvider rd) const -> std::ostream & {
-  AstJsonWriter writer(os, rd);
-  this->Accept(writer);
-
-  return os;
-}
-
-NCC_EXPORT auto Base::ToJson(WriterSourceProvider rd) const -> std::string {
+std::string Base::DebugString(WriterSourceProvider rd) const {
   std::stringstream ss;
-  AstJsonWriter writer(ss, rd);
+  AstWriter writer(ss, rd, true);
   this->Accept(writer);
 
   return ss.str();
 }
 
-NCC_EXPORT auto Base::IsEq(FlowPtr<Base> o) const -> bool {
+void Base::DebugString(std::ostream &os, WriterSourceProvider rd) const {
+  AstWriter writer(os, rd, true);
+  this->Accept(writer);
+}
+
+void Base::Serialize(std::ostream &os) const {
+  AstWriter writer(os);
+  this->Accept(writer);
+}
+
+std::string Base::Serialize() const {
+  std::stringstream ss;
+  AstWriter writer(ss);
+  this->Accept(writer);
+
+  return ss.str();
+}
+
+auto Base::IsEq(FlowPtr<Base> o) const -> bool {
   if (this == o.get()) {
     return true;
   }
@@ -133,8 +142,8 @@ NCC_EXPORT auto Base::IsEq(FlowPtr<Base> o) const -> bool {
 
   std::stringstream ss1;
   std::stringstream ss2;
-  AstMsgPackWriter writer1(ss1);
-  AstMsgPackWriter writer2(ss2);
+  AstWriter writer1(ss1);
+  AstWriter writer2(ss2);
 
   this->Accept(writer1);
   o.Accept(writer2);
@@ -142,15 +151,15 @@ NCC_EXPORT auto Base::IsEq(FlowPtr<Base> o) const -> bool {
   return ss1.str() == ss2.str();
 }
 
-NCC_EXPORT auto Base::Hash64() const -> uint64_t {
-  AstHash64 visitor;
+auto Base::Hash64() const -> uint64_t {
+  std::stringstream ss;
+  AstWriter writer(ss);
+  this->Accept(writer);
 
-  this->Accept(visitor);
-
-  return visitor.Get();
+  return std::hash<std::string>{}(ss.str());
 }
 
-NCC_EXPORT auto Base::RecursiveChildCount() -> size_t {
+auto Base::RecursiveChildCount() -> size_t {
   size_t count = 0;
 
   for_each(this, [&](auto, auto) { count++; });
@@ -158,10 +167,25 @@ NCC_EXPORT auto Base::RecursiveChildCount() -> size_t {
   return count;
 }
 
-NCC_EXPORT void Base::BindCodeCommentData(
-    std::span<const lex::Token> comment_tokens) {
+void Base::SetComments(std::span<const lex::Token> comment_tokens) {
   auto old = ExtensionDataStore.Get(m_data);
-  old.AddComments(comment_tokens);
+
+  {
+    std::vector<string> comments;
+    comments.reserve(comment_tokens.size());
+    for (const auto &token : comment_tokens) {
+      comments.push_back(token.GetString());
+    }
+
+    old.AddComments(std::move(comments));
+  }
+
+  ExtensionDataStore.Set(m_data, std::move(old));
+}
+
+void Base::SetComments(std::span<const string> comments) {
+  auto old = ExtensionDataStore.Get(m_data);
+  old.AddComments(comments);
   ExtensionDataStore.Set(m_data, std::move(old));
 }
 

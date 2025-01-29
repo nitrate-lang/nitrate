@@ -31,1770 +31,1851 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <algorithm>
+#include <core/SyntaxTree.pb.h>
+
 #include <nitrate-core/Logger.hh>
 #include <nitrate-core/Macro.hh>
 #include <nitrate-lexer/Scanner.hh>
 #include <nitrate-parser/AST.hh>
 #include <nitrate-parser/ASTWriter.hh>
+#include <variant>
 
-using namespace ncc;
 using namespace ncc::parse;
-using namespace ncc::lex;
+using namespace google;
+using namespace nitrate::parser::SyntaxTree;
 
-void AstWriter::WriteSourceLocation(const FlowPtr<Base>& n) const {
-  string("loc");
+using Pool = google::protobuf::Arena;
 
-  if (m_rd.has_value()) {
-    IScanner& rd = m_rd->get();
+static SyntaxTree::Operator FromOperator(ncc::lex::Operator op) {
+  using LexOp = ncc::lex::Operator;
 
-    begin_obj(3);
+  switch (op) {
+    case LexOp::OpPlus:
+      return SyntaxTree::Plus;
 
-    auto begin = n->Begin(rd);
-    auto end = n->End(rd);
+    case LexOp::OpMinus:
+      return SyntaxTree::Minus;
 
-    {
-      string("begin");
-      begin_obj(4);
+    case LexOp::OpTimes:
+      return SyntaxTree::Times;
 
-      string("off");
-      uint64(begin.GetOffset());
+    case LexOp::OpSlash:
+      return SyntaxTree::Slash;
 
-      string("row");
-      uint64(begin.GetRow());
+    case LexOp::OpPercent:
+      return SyntaxTree::Percent;
 
-      string("col");
-      uint64(begin.GetCol());
+    case LexOp::OpBitAnd:
+      return SyntaxTree::BitAnd;
 
-      string("src");
-      string(begin.GetFilename());
+    case LexOp::OpBitOr:
+      return SyntaxTree::BitOr;
 
-      end_obj();
-    }
+    case LexOp::OpBitXor:
+      return SyntaxTree::BitXor;
 
-    {
-      string("end");
-      begin_obj(4);
+    case LexOp::OpBitNot:
+      return SyntaxTree::BitNot;
 
-      string("off");
-      uint64(end.GetOffset());
+    case LexOp::OpLShift:
+      return SyntaxTree::LShift;
 
-      string("row");
-      uint64(end.GetRow());
+    case LexOp::OpRShift:
+      return SyntaxTree::RShift;
 
-      string("col");
-      uint64(end.GetCol());
+    case LexOp::OpROTL:
+      return SyntaxTree::ROTL;
 
-      string("src");
-      string(end.GetFilename());
+    case LexOp::OpROTR:
+      return SyntaxTree::ROTR;
 
-      end_obj();
-    }
+    case LexOp::OpLogicAnd:
+      return SyntaxTree::LogicAnd;
 
-    {
-      string("trace");
+    case LexOp::OpLogicOr:
+      return SyntaxTree::LogicOr;
 
-#if NITRATE_FLOWPTR_TRACE
-      begin_obj(4);
+    case LexOp::OpLogicXor:
+      return SyntaxTree::LogicXor;
 
-      let origin = n.Trace();
+    case LexOp::OpLogicNot:
+      return SyntaxTree::LogicNot;
 
-      string("src");
-      string(origin.File());
+    case LexOp::OpLT:
+      return SyntaxTree::LT;
 
-      string("sub");
-      string(origin.Function());
+    case LexOp::OpGT:
+      return SyntaxTree::GT;
 
-      string("row");
-      uint64(origin.Line());
+    case LexOp::OpLE:
+      return SyntaxTree::LE;
 
-      string("col");
-      uint64(origin.Column());
+    case LexOp::OpGE:
+      return SyntaxTree::GE;
 
-      end_obj();
-#else
-      null();
-#endif
-    }
+    case LexOp::OpEq:
+      return SyntaxTree::Eq;
 
-    end_obj();
-  } else {
-    null();
+    case LexOp::OpNE:
+      return SyntaxTree::NE;
+
+    case LexOp::OpSet:
+      return SyntaxTree::Set;
+
+    case LexOp::OpPlusSet:
+      return SyntaxTree::PlusSet;
+
+    case LexOp::OpMinusSet:
+      return SyntaxTree::MinusSet;
+
+    case LexOp::OpTimesSet:
+      return SyntaxTree::TimesSet;
+
+    case LexOp::OpSlashSet:
+      return SyntaxTree::SlashSet;
+
+    case LexOp::OpPercentSet:
+      return SyntaxTree::PercentSet;
+
+    case LexOp::OpBitAndSet:
+      return SyntaxTree::BitAndSet;
+
+    case LexOp::OpBitOrSet:
+      return SyntaxTree::BitOrSet;
+
+    case LexOp::OpBitXorSet:
+      return SyntaxTree::BitXorSet;
+
+    case LexOp::OpLogicAndSet:
+      return SyntaxTree::LogicAndSet;
+
+    case LexOp::OpLogicOrSet:
+      return SyntaxTree::LogicOrSet;
+
+    case LexOp::OpLogicXorSet:
+      return SyntaxTree::LogicXorSet;
+
+    case LexOp::OpLShiftSet:
+      return SyntaxTree::LShiftSet;
+
+    case LexOp::OpRShiftSet:
+      return SyntaxTree::RShiftSet;
+
+    case LexOp::OpROTLSet:
+      return SyntaxTree::ROTLSet;
+
+    case LexOp::OpROTRSet:
+      return SyntaxTree::ROTRSet;
+
+    case LexOp::OpInc:
+      return SyntaxTree::Inc;
+
+    case LexOp::OpDec:
+      return SyntaxTree::Dec;
+
+    case LexOp::OpAs:
+      return SyntaxTree::As;
+
+    case LexOp::OpBitcastAs:
+      return SyntaxTree::BitcastAs;
+
+    case LexOp::OpIn:
+      return SyntaxTree::In;
+
+    case LexOp::OpOut:
+      return SyntaxTree::Out;
+
+    case LexOp::OpSizeof:
+      return SyntaxTree::Sizeof;
+
+    case LexOp::OpBitsizeof:
+      return SyntaxTree::Bitsizeof;
+
+    case LexOp::OpAlignof:
+      return SyntaxTree::Alignof;
+
+    case LexOp::OpTypeof:
+      return SyntaxTree::Typeof;
+
+    case LexOp::OpComptime:
+      return SyntaxTree::Comptime;
+
+    case LexOp::OpDot:
+      return SyntaxTree::Dot;
+
+    case LexOp::OpRange:
+      return SyntaxTree::Range;
+
+    case LexOp::OpEllipsis:
+      return SyntaxTree::Ellipsis;
+
+    case LexOp::OpArrow:
+      return SyntaxTree::Arrow;
+
+    case LexOp::OpTernary:
+      return SyntaxTree::Question;
   }
 }
 
-void AstWriter::WriteTypeMetadata(const FlowPtr<Type>& n) {
-  string("width");
-  n->GetWidth() ? n->GetWidth().value().Accept(*this) : null();
-
-  string("min");
-  auto min = n->GetRangeBegin();
-  min.has_value() ? min.value().Accept(*this) : null();
-
-  string("max");
-  auto max = n->GetRangeEnd();
-  max.has_value() ? max.value().Accept(*this) : null();
-}
-
-auto AstWriter::VisStr(Vis vis) -> std::string_view {
+static SyntaxTree::Vis FromVisibility(ncc::parse::Vis vis) {
   switch (vis) {
-    case Vis::Sec:
-      return "sec";
-    case Vis::Pro:
-      return "pro";
-    case Vis::Pub:
-      return "pub";
+    case ncc::parse::Vis::Pub:
+      return SyntaxTree::Public;
+
+    case ncc::parse::Vis::Pro:
+      return SyntaxTree::Protected;
+
+    case ncc::parse::Vis::Sec:
+      return SyntaxTree::Private;
   }
 }
 
-void AstWriter::Visit(FlowPtr<Base> n) {
-  begin_obj(2);
+static SyntaxTree::FunctionPurity FromPurity(ncc::parse::Purity purity) {
+  switch (purity) {
+    case ncc::parse::Purity::Impure:
+      return SyntaxTree::Impure;
 
-  string("kind");
-  string(n->GetKindName());
+    case ncc::parse::Purity::Impure_TSafe:
+      return SyntaxTree::Impure_TSafe;
 
-  WriteSourceLocation(n);
+    case ncc::parse::Purity::Pure:
+      return SyntaxTree::Pure;
 
-  end_obj();
+    case ncc::parse::Purity::Quasi:
+      return SyntaxTree::Quasi;
+
+    case ncc::parse::Purity::Retro:
+      return SyntaxTree::Retro;
+  }
 }
 
-void AstWriter::Visit(FlowPtr<ExprStmt> n) {
-  begin_obj(3);
+static SyntaxTree::Struct_AggregateKind FromStructKind(
+    ncc::parse::CompositeType type) {
+  switch (type) {
+    case ncc::parse::CompositeType::Struct:
+      return SyntaxTree::Struct_AggregateKind_Struct_;
 
-  string("kind");
-  string(n->GetKindName());
+    case ncc::parse::CompositeType::Class:
+      return SyntaxTree::Struct_AggregateKind_Class_;
 
-  WriteSourceLocation(n);
+    case ncc::parse::CompositeType::Group:
+      return SyntaxTree::Struct_AggregateKind_Group_;
 
-  string("expr");
-  n->GetExpr().Accept(*this);
+    case ncc::parse::CompositeType::Region:
+      return SyntaxTree::Struct_AggregateKind_Region_;
 
-  end_obj();
+    case ncc::parse::CompositeType::Union:
+      return SyntaxTree::Struct_AggregateKind_Union_;
+  }
 }
 
-void AstWriter::Visit(FlowPtr<StmtExpr> n) {
-  begin_obj(3);
-
-  string("kind");
-  string(n->GetKindName());
-
-  WriteSourceLocation(n);
-
-  string("stmt");
-  n->GetStmt().Accept(*this);
-
-  end_obj();
-}
-
-void AstWriter::Visit(FlowPtr<TypeExpr> n) {
-  begin_obj(3);
-
-  string("kind");
-  string(n->GetKindName());
-
-  WriteSourceLocation(n);
-
-  string("type");
-  n->GetType().Accept(*this);
-
-  end_obj();
-}
-
-void AstWriter::Visit(FlowPtr<NamedTy> n) {
-  begin_obj(6);
-
-  string("kind");
-  string(n->GetKindName());
-
-  WriteSourceLocation(n);
-
-  WriteTypeMetadata(n);
-
-  string("name");
-  string(n->GetName());
-
-  end_obj();
-}
-
-void AstWriter::Visit(FlowPtr<InferTy> n) {
-  begin_obj(5);
-
-  string("kind");
-  string(n->GetKindName());
-
-  WriteSourceLocation(n);
-
-  WriteTypeMetadata(n);
-
-  end_obj();
-}
-
-void AstWriter::Visit(FlowPtr<TemplateType> n) {
-  begin_obj(7);
-
-  string("kind");
-  string(n->GetKindName());
-
-  WriteSourceLocation(n);
-
-  WriteTypeMetadata(n);
-
-  string("template");
-  n->GetTemplate().Accept(*this);
-
-  string("arguments");
-  auto args = n->GetArgs();
-  begin_arr(args.size());
-  std::for_each(args.begin(), args.end(), [&](auto arg) {
-    begin_obj(2);
-
-    string("name");
-    string(*std::get<0>(arg));
-
-    string("value");
-    std::get<1>(arg).Accept(*this);
-
-    end_obj();
-  });
-  end_arr();
-
-  end_obj();
-}
-
-void AstWriter::Visit(FlowPtr<U1> n) {
-  begin_obj(5);
-
-  string("kind");
-  string(n->GetKindName());
-
-  WriteSourceLocation(n);
-
-  WriteTypeMetadata(n);
-
-  end_obj();
-}
-
-void AstWriter::Visit(FlowPtr<U8> n) {
-  begin_obj(5);
-
-  string("kind");
-  string(n->GetKindName());
-
-  WriteSourceLocation(n);
-
-  WriteTypeMetadata(n);
-
-  end_obj();
-}
-
-void AstWriter::Visit(FlowPtr<U16> n) {
-  begin_obj(5);
-
-  string("kind");
-  string(n->GetKindName());
-
-  WriteSourceLocation(n);
-
-  WriteTypeMetadata(n);
-
-  end_obj();
-}
-
-void AstWriter::Visit(FlowPtr<U32> n) {
-  begin_obj(5);
-
-  string("kind");
-  string(n->GetKindName());
-
-  WriteSourceLocation(n);
-
-  WriteTypeMetadata(n);
-
-  end_obj();
-}
-
-void AstWriter::Visit(FlowPtr<U64> n) {
-  begin_obj(5);
-
-  string("kind");
-  string(n->GetKindName());
-
-  WriteSourceLocation(n);
-
-  WriteTypeMetadata(n);
-
-  end_obj();
-}
-
-void AstWriter::Visit(FlowPtr<U128> n) {
-  begin_obj(5);
-
-  string("kind");
-  string(n->GetKindName());
-
-  WriteSourceLocation(n);
-
-  WriteTypeMetadata(n);
-
-  end_obj();
-}
-
-void AstWriter::Visit(FlowPtr<I8> n) {
-  begin_obj(5);
-
-  string("kind");
-  string(n->GetKindName());
-
-  WriteSourceLocation(n);
-
-  WriteTypeMetadata(n);
-
-  end_obj();
-}
-
-void AstWriter::Visit(FlowPtr<I16> n) {
-  begin_obj(5);
-
-  string("kind");
-  string(n->GetKindName());
-
-  WriteSourceLocation(n);
-
-  WriteTypeMetadata(n);
-
-  end_obj();
-}
-
-void AstWriter::Visit(FlowPtr<I32> n) {
-  begin_obj(5);
-
-  string("kind");
-  string(n->GetKindName());
-
-  WriteSourceLocation(n);
-
-  WriteTypeMetadata(n);
-
-  end_obj();
-}
-
-void AstWriter::Visit(FlowPtr<I64> n) {
-  begin_obj(5);
-
-  string("kind");
-  string(n->GetKindName());
-
-  WriteSourceLocation(n);
-
-  WriteTypeMetadata(n);
-
-  end_obj();
-}
-
-void AstWriter::Visit(FlowPtr<I128> n) {
-  begin_obj(5);
-
-  string("kind");
-  string(n->GetKindName());
-
-  WriteSourceLocation(n);
-
-  WriteTypeMetadata(n);
-
-  end_obj();
-}
-
-void AstWriter::Visit(FlowPtr<F16> n) {
-  begin_obj(5);
-
-  string("kind");
-  string(n->GetKindName());
-
-  WriteSourceLocation(n);
-
-  WriteTypeMetadata(n);
-
-  end_obj();
-}
-
-void AstWriter::Visit(FlowPtr<F32> n) {
-  begin_obj(5);
-
-  string("kind");
-  string(n->GetKindName());
-
-  WriteSourceLocation(n);
-
-  WriteTypeMetadata(n);
-
-  end_obj();
-}
-
-void AstWriter::Visit(FlowPtr<F64> n) {
-  begin_obj(5);
-
-  string("kind");
-  string(n->GetKindName());
-
-  WriteSourceLocation(n);
-
-  WriteTypeMetadata(n);
-
-  end_obj();
-}
-
-void AstWriter::Visit(FlowPtr<F128> n) {
-  begin_obj(5);
-
-  string("kind");
-  string(n->GetKindName());
-
-  WriteSourceLocation(n);
-
-  WriteTypeMetadata(n);
-
-  end_obj();
-}
-
-void AstWriter::Visit(FlowPtr<VoidTy> n) {
-  begin_obj(5);
-
-  string("kind");
-  string(n->GetKindName());
-
-  WriteSourceLocation(n);
-
-  WriteTypeMetadata(n);
-
-  end_obj();
-}
-
-void AstWriter::Visit(FlowPtr<PtrTy> n) {
-  begin_obj(7);
-
-  string("kind");
-  string(n->GetKindName());
-
-  WriteSourceLocation(n);
-
-  WriteTypeMetadata(n);
-
-  string("volatile");
-  boolean(n->IsVolatile());
-
-  string("to");
-  n->GetItem().Accept(*this);
-
-  end_obj();
-}
-
-void AstWriter::Visit(FlowPtr<OpaqueTy> n) {
-  begin_obj(6);
-
-  string("kind");
-  string(n->GetKindName());
-
-  WriteSourceLocation(n);
-
-  WriteTypeMetadata(n);
-
-  string("name");
-  string(n->GetName());
-
-  end_obj();
-}
-
-void AstWriter::Visit(FlowPtr<TupleTy> n) {
-  begin_obj(6);
-
-  string("kind");
-  string(n->GetKindName());
-
-  WriteSourceLocation(n);
-
-  WriteTypeMetadata(n);
-
-  { /* Write sub fields */
-    string("fields");
-
-    auto fields = n->GetItems();
-    begin_arr(fields.size());
-    std::for_each(fields.begin(), fields.end(),
-                  [&](auto field) { field.Accept(*this); });
-    end_arr();
+void AstWriter::SetTypeMetadata(auto *message, const FlowPtr<Type> &in) {
+  if (in->GetWidth().has_value()) [[unlikely]] {
+    message->set_allocated_bit_width(From(in->GetWidth().value()));
   }
 
-  end_obj();
-}
-
-void AstWriter::Visit(FlowPtr<ArrayTy> n) {
-  begin_obj(7);
-
-  string("kind");
-  string(n->GetKindName());
-
-  WriteSourceLocation(n);
-
-  WriteTypeMetadata(n);
-
-  string("of");
-  n->GetItem().Accept(*this);
-
-  string("size");
-  n->GetSize().Accept(*this);
-
-  end_obj();
-}
-
-void AstWriter::Visit(FlowPtr<RefTy> n) {
-  begin_obj(6);
-
-  string("kind");
-  string(n->GetKindName());
-
-  WriteSourceLocation(n);
-
-  WriteTypeMetadata(n);
-
-  string("to");
-  n->GetItem().Accept(*this);
-
-  end_obj();
-}
-
-void AstWriter::Visit(FlowPtr<FuncTy> n) {
-  begin_obj(10);
-
-  string("kind");
-  string(n->GetKindName());
-
-  WriteSourceLocation(n);
-
-  WriteTypeMetadata(n);
-
-  { /* Write attributes */
-    string("attributes");
-
-    auto attrs = n->GetAttributes();
-    begin_arr(attrs.size());
-    std::for_each(attrs.begin(), attrs.end(),
-                  [&](auto attr) { attr.Accept(*this); });
-    end_arr();
+  if (in->GetRangeBegin().has_value()) [[unlikely]] {
+    message->set_allocated_minimum(From(in->GetRangeBegin().value()));
   }
 
-  string("return");
-  n->GetReturn().Accept(*this);
+  if (in->GetRangeEnd().has_value()) [[unlikely]] {
+    message->set_allocated_maximum(From(in->GetRangeEnd().value()));
+  }
+}
 
-  switch (n->GetPurity()) {
-    case Purity::Impure: {
-      string("thread_safe");
-      boolean(false);
+SyntaxTree::SourceLocationRange *AstWriter::FromSource(
+    const FlowPtr<Base> &in) {
+  if (!m_rd.has_value()) {
+    return nullptr;
+  }
 
-      string("purity");
-      string("impure");
+  const auto &pos = in->GetPos();
+  auto start_pos = m_rd->get().GetLocation(pos.first);
+  auto end_pos = m_rd->get().GetLocation(pos.second);
+
+  if (start_pos == lex::Location::EndOfFile() &&
+      end_pos == lex::Location::EndOfFile()) {
+    return nullptr;
+  }
+
+  auto *message = Pool::CreateMessage<SyntaxTree::SourceLocationRange>(m_arena);
+
+  if (start_pos != lex::Location::EndOfFile()) {
+    auto *start =
+        Pool::CreateMessage<SyntaxTree::SourceLocationRange_SourceLocation>(
+            m_arena);
+    start->set_line(start_pos.GetRow() + 1);
+    start->set_column(start_pos.GetCol() + 1);
+    start->set_offset(start_pos.GetOffset());
+    start->set_file(start_pos.GetFilename().Get());
+
+    message->set_allocated_start(start);
+  }
+
+  if (end_pos != lex::Location::EndOfFile()) {
+    auto *end =
+        Pool::CreateMessage<SyntaxTree::SourceLocationRange_SourceLocation>(
+            m_arena);
+    end->set_line(end_pos.GetRow() + 1);
+    end->set_column(end_pos.GetCol() + 1);
+    end->set_offset(end_pos.GetOffset());
+    end->set_file(end_pos.GetFilename().Get());
+
+    message->set_allocated_end(end);
+  }
+
+  return message;
+}
+
+SyntaxTree::Expr *AstWriter::From(const FlowPtr<Expr> &in) {
+  auto *message = Pool::CreateMessage<SyntaxTree::Expr>(m_arena);
+
+  switch (in->GetKind()) {
+    case QAST_BASE: {
+      message->set_allocated_base(From(in.As<Base>()));
       break;
     }
 
-    case Purity::Impure_TSafe: {
-      string("thread_safe");
-      boolean(true);
-
-      string("purity");
-      string("impure");
+    case QAST_BINEXPR: {
+      message->set_allocated_binary(From(in.As<Binary>()));
       break;
     }
 
-    case Purity::Pure: {
-      string("thread_safe");
-      boolean(true);
-
-      string("purity");
-      string("pure");
+    case QAST_UNEXPR: {
+      message->set_allocated_unary(From(in.As<Unary>()));
       break;
     }
 
-    case Purity::Quasi: {
-      string("thread_safe");
-      boolean(true);
-
-      string("purity");
-      string("quasi");
+    case QAST_POST_UNEXPR: {
+      message->set_allocated_post_unary(From(in.As<PostUnary>()));
       break;
     }
 
-    case Purity::Retro: {
-      string("thread_safe");
-      boolean(true);
-
-      string("purity");
-      string("retro");
+    case QAST_TEREXPR: {
+      message->set_allocated_ternary(From(in.As<Ternary>()));
       break;
+    }
+
+    case QAST_INT: {
+      message->set_allocated_integer(From(in.As<Integer>()));
+      break;
+    }
+
+    case QAST_FLOAT: {
+      message->set_allocated_float_(From(in.As<Float>()));
+      break;
+    }
+
+    case QAST_STRING: {
+      message->set_allocated_string(From(in.As<String>()));
+      break;
+    }
+
+    case QAST_CHAR: {
+      message->set_allocated_character(From(in.As<Character>()));
+      break;
+    }
+
+    case QAST_BOOL: {
+      message->set_allocated_boolean(From(in.As<Boolean>()));
+      break;
+    }
+
+    case QAST_NULL: {
+      message->set_allocated_null(From(in.As<Null>()));
+      break;
+    }
+
+    case QAST_UNDEF: {
+      message->set_allocated_undefined(From(in.As<Undefined>()));
+      break;
+    }
+
+    case QAST_CALL: {
+      message->set_allocated_call(From(in.As<Call>()));
+      break;
+    }
+
+    case QAST_LIST: {
+      message->set_allocated_list(From(in.As<List>()));
+      break;
+    }
+
+    case QAST_ASSOC: {
+      message->set_allocated_assoc(From(in.As<Assoc>()));
+      break;
+    }
+
+    case QAST_INDEX: {
+      message->set_allocated_index(From(in.As<Index>()));
+      break;
+    }
+
+    case QAST_SLICE: {
+      message->set_allocated_slice(From(in.As<Slice>()));
+      break;
+    }
+
+    case QAST_FSTRING: {
+      message->set_allocated_fstring(From(in.As<FString>()));
+      break;
+    }
+
+    case QAST_IDENT: {
+      message->set_allocated_identifier(From(in.As<Identifier>()));
+      break;
+    }
+
+    case QAST_SEXPR: {
+      message->set_allocated_stmt_expr(From(in.As<StmtExpr>()));
+      break;
+    }
+
+    case QAST_TEXPR: {
+      message->set_allocated_type_expr(From(in.As<TypeExpr>()));
+      break;
+    }
+
+    case QAST_TEMPL_CALL: {
+      message->set_allocated_template_call(From(in.As<TemplateCall>()));
+      break;
+    }
+
+    default: {
+      qcore_panic("Unknown expression kind");
     }
   }
 
-  { /* Write parameters */
-    string("input");
-    begin_obj(2);
+  return message;
+}
 
-    string("variadic");
-    boolean(n->IsVariadic());
+SyntaxTree::Stmt *AstWriter::From(const FlowPtr<Stmt> &in) {
+  auto *message = Pool::CreateMessage<SyntaxTree::Stmt>(m_arena);
 
-    auto params = n->GetParams();
-    string("parameters");
-    begin_arr(params.size());
-    std::for_each(params.begin(), params.end(), [&](auto param) {
-      begin_obj(3);
-      string("name");
-      string(*std::get<0>(param));
+  switch (in->GetKind()) {
+    case QAST_BASE: {
+      message->set_allocated_base(From(in.As<Base>()));
+      break;
+    }
 
-      string("type");
-      std::get<1>(param).Accept(*this);
+    case QAST_IF: {
+      message->set_allocated_if_(From(in.As<If>()));
+      break;
+    }
 
-      string("default");
-      std::get<2>(param) ? std::get<2>(param).value().Accept(*this) : null();
+    case QAST_RETIF: {
+      message->set_allocated_return_if(From(in.As<ReturnIf>()));
+      break;
+    }
 
-      end_obj();
-    });
-    end_arr();
+    case QAST_SWITCH: {
+      message->set_allocated_switch_(From(in.As<Switch>()));
+      break;
+    }
 
-    end_obj();
+    case QAST_CASE: {
+      message->set_allocated_case_(From(in.As<Case>()));
+      break;
+    }
+
+    case QAST_RETURN: {
+      message->set_allocated_return_(From(in.As<Return>()));
+      break;
+    }
+
+    case QAST_BREAK: {
+      message->set_allocated_break_(From(in.As<Break>()));
+      break;
+    }
+
+    case QAST_CONTINUE: {
+      message->set_allocated_continue_(From(in.As<Continue>()));
+      break;
+    }
+
+    case QAST_WHILE: {
+      message->set_allocated_while_(From(in.As<While>()));
+      break;
+    }
+
+    case QAST_FOR: {
+      message->set_allocated_for_(From(in.As<For>()));
+      break;
+    }
+
+    case QAST_FOREACH: {
+      message->set_allocated_foreach(From(in.As<Foreach>()));
+      break;
+    }
+
+    case QAST_INLINE_ASM: {
+      message->set_allocated_assembly(From(in.As<Assembly>()));
+      break;
+    }
+
+    case QAST_ESTMT: {
+      message->set_allocated_expr_stmt(From(in.As<ExprStmt>()));
+      break;
+    }
+
+    case QAST_TYPEDEF: {
+      message->set_allocated_typedef_(From(in.As<Typedef>()));
+      break;
+    }
+
+    case QAST_STRUCT: {
+      message->set_allocated_struct_(From(in.As<Struct>()));
+      break;
+    }
+
+    case QAST_ENUM: {
+      message->set_allocated_enum_(From(in.As<Enum>()));
+      break;
+    }
+
+    case QAST_SCOPE: {
+      message->set_allocated_scope(From(in.As<Scope>()));
+      break;
+    }
+
+    case QAST_BLOCK: {
+      message->set_allocated_block(From(in.As<Block>()));
+      break;
+    }
+
+    case QAST_EXPORT: {
+      message->set_allocated_export_(From(in.As<Export>()));
+      break;
+    }
+
+    case QAST_VAR: {
+      message->set_allocated_variable(From(in.As<Variable>()));
+      break;
+    }
+
+    case QAST_FUNCTION: {
+      message->set_allocated_function(From(in.As<Function>()));
+      break;
+    }
+
+    default: {
+      qcore_panic("Unknown statement kind");
+    }
   }
 
-  end_obj();
+  return message;
 }
 
-void AstWriter::Visit(FlowPtr<UnaryExpression> n) {
-  begin_obj(4);
-
-  string("kind");
-  string(n->GetKindName());
-
-  WriteSourceLocation(n);
-
-  string("op");
-  string(op_repr(n->GetOp()));
-
-  string("rhs");
-  n->GetRHS().Accept(*this);
-
-  end_obj();
-}
-
-void AstWriter::Visit(FlowPtr<BinaryExpression> n) {
-  begin_obj(5);
-
-  string("kind");
-  string(n->GetKindName());
-
-  WriteSourceLocation(n);
-
-  string("op");
-  string(op_repr(n->GetOp()));
-
-  string("lhs");
-  n->GetLHS().Accept(*this);
-
-  string("rhs");
-  n->GetRHS().Accept(*this);
-
-  end_obj();
-}
-
-void AstWriter::Visit(FlowPtr<PostUnaryExpression> n) {
-  begin_obj(4);
-
-  string("kind");
-  string(n->GetKindName());
-
-  WriteSourceLocation(n);
-
-  string("op");
-  string(op_repr(n->GetOp()));
-
-  string("lhs");
-  n->GetLHS().Accept(*this);
-
-  end_obj();
-}
-
-void AstWriter::Visit(FlowPtr<TernaryExpression> n) {
-  begin_obj(5);
-
-  string("kind");
-  string(n->GetKindName());
-
-  WriteSourceLocation(n);
-
-  string("cond");
-  n->GetCond().Accept(*this);
-
-  string("lhs");
-  n->GetLHS().Accept(*this);
-
-  string("rhs");
-  n->GetRHS().Accept(*this);
-
-  end_obj();
-}
-
-void AstWriter::Visit(FlowPtr<Integer> n) {
-  begin_obj(3);
-
-  string("kind");
-  string(n->GetKindName());
-
-  WriteSourceLocation(n);
-
-  string("value");
-  string(n->GetValue());
-
-  end_obj();
-}
-
-void AstWriter::Visit(FlowPtr<Float> n) {
-  begin_obj(3);
-
-  string("kind");
-  string(n->GetKindName());
-
-  WriteSourceLocation(n);
-
-  string("value");
-  string(n->GetValue());
-
-  end_obj();
-}
-
-void AstWriter::Visit(FlowPtr<Boolean> n) {
-  begin_obj(3);
-
-  string("kind");
-  string(n->GetKindName());
-
-  WriteSourceLocation(n);
-
-  string("value");
-  boolean(n->GetValue());
-
-  end_obj();
-}
-
-void AstWriter::Visit(FlowPtr<String> n) {
-  begin_obj(3);
-
-  string("kind");
-  string(n->GetKindName());
-
-  WriteSourceLocation(n);
-
-  string("value");
-  string(n->GetValue());
-
-  end_obj();
-}
-
-void AstWriter::Visit(FlowPtr<Character> n) {
-  begin_obj(3);
-
-  string("kind");
-  string(n->GetKindName());
-
-  WriteSourceLocation(n);
-
-  string("value");
-  uint64(n->GetValue());
-
-  end_obj();
-}
-
-void AstWriter::Visit(FlowPtr<Null> n) {
-  begin_obj(2);
-
-  string("kind");
-  string(n->GetKindName());
-
-  WriteSourceLocation(n);
-
-  end_obj();
-}
-
-void AstWriter::Visit(FlowPtr<Undefined> n) {
-  begin_obj(2);
-
-  string("kind");
-  string(n->GetKindName());
-
-  WriteSourceLocation(n);
-
-  end_obj();
-}
-
-void AstWriter::Visit(FlowPtr<Call> n) {
-  begin_obj(4);
-
-  string("kind");
-  string(n->GetKindName());
-
-  WriteSourceLocation(n);
-
-  string("callee");
-  n->GetFunc().Accept(*this);
-
-  { /* Write arguments */
-    string("arguments");
-
-    auto args = n->GetArgs();
-    begin_arr(args.size());
-    std::for_each(args.begin(), args.end(), [&](auto arg) {
-      begin_obj(2);
-
-      string("name");
-      string(*arg.first);
-
-      string("value");
-      arg.second.Accept(*this);
-
-      end_obj();
-    });
-    end_arr();
+SyntaxTree::Type *AstWriter::From(const FlowPtr<Type> &in) {
+  auto *message = Pool::CreateMessage<SyntaxTree::Type>(m_arena);
+
+  switch (in->GetKind()) {
+    case QAST_BASE: {
+      message->set_allocated_base(From(in.As<Base>()));
+      break;
+    }
+
+    case QAST_U1: {
+      message->set_allocated_u1(From(in.As<U1>()));
+      break;
+    }
+
+    case QAST_U8: {
+      message->set_allocated_u8(From(in.As<U8>()));
+      break;
+    }
+
+    case QAST_U16: {
+      message->set_allocated_u16(From(in.As<U16>()));
+      break;
+    }
+
+    case QAST_U32: {
+      message->set_allocated_u32(From(in.As<U32>()));
+      break;
+    }
+
+    case QAST_U64: {
+      message->set_allocated_u64(From(in.As<U64>()));
+      break;
+    }
+
+    case QAST_U128: {
+      message->set_allocated_u128(From(in.As<U128>()));
+      break;
+    }
+
+    case QAST_I8: {
+      message->set_allocated_i8(From(in.As<I8>()));
+      break;
+    }
+
+    case QAST_I16: {
+      message->set_allocated_i16(From(in.As<I16>()));
+      break;
+    }
+
+    case QAST_I32: {
+      message->set_allocated_i32(From(in.As<I32>()));
+      break;
+    }
+
+    case QAST_I64: {
+      message->set_allocated_i64(From(in.As<I64>()));
+      break;
+    }
+
+    case QAST_I128: {
+      message->set_allocated_i128(From(in.As<I128>()));
+      break;
+    }
+
+    case QAST_F16: {
+      message->set_allocated_f16(From(in.As<F16>()));
+      break;
+    }
+
+    case QAST_F32: {
+      message->set_allocated_f32(From(in.As<F32>()));
+      break;
+    }
+
+    case QAST_F64: {
+      message->set_allocated_f64(From(in.As<F64>()));
+      break;
+    }
+
+    case QAST_F128: {
+      message->set_allocated_f128(From(in.As<F128>()));
+      break;
+    }
+
+    case QAST_VOID: {
+      message->set_allocated_void_(From(in.As<VoidTy>()));
+      break;
+    }
+
+    case QAST_INFER: {
+      message->set_allocated_infer(From(in.As<InferTy>()));
+      break;
+    }
+
+    case QAST_OPAQUE: {
+      message->set_allocated_opaque(From(in.As<OpaqueTy>()));
+      break;
+    }
+
+    case QAST_NAMED: {
+      message->set_allocated_named(From(in.As<NamedTy>()));
+      break;
+    }
+
+    case QAST_REF: {
+      message->set_allocated_ref(From(in.As<RefTy>()));
+      break;
+    }
+
+    case QAST_PTR: {
+      message->set_allocated_ptr(From(in.As<PtrTy>()));
+      break;
+    }
+
+    case QAST_ARRAY: {
+      message->set_allocated_array(From(in.As<ArrayTy>()));
+      break;
+    }
+
+    case QAST_TUPLE: {
+      message->set_allocated_tuple(From(in.As<TupleTy>()));
+      break;
+    }
+
+    case QAST_TEMPLATE: {
+      message->set_allocated_template_(From(in.As<TemplateType>()));
+      break;
+    }
+
+    case QAST_FUNCTOR: {
+      message->set_allocated_func(From(in.As<FuncTy>()));
+      break;
+    }
+
+    default: {
+      qcore_panic("Unknown type kind");
+    }
   }
 
-  end_obj();
+  return message;
 }
 
-void AstWriter::Visit(FlowPtr<TemplateCall> n) {
-  begin_obj(5);
+SyntaxTree::Base *AstWriter::From(const FlowPtr<Base> &in) {
+  auto *message = Pool::CreateMessage<SyntaxTree::Base>(m_arena);
 
-  string("kind");
-  string(n->GetKindName());
+  message->set_allocated_location(FromSource(in));
 
-  WriteSourceLocation(n);
+  return message;
+}
 
-  string("callee");
-  n->GetFunc().Accept(*this);
+SyntaxTree::ExprStmt *AstWriter::From(const FlowPtr<ExprStmt> &in) {
+  auto *message = Pool::CreateMessage<SyntaxTree::ExprStmt>(m_arena);
 
-  { /* Write template arguments */
-    string("template");
+  message->set_allocated_location(FromSource(in));
+  message->set_allocated_expression(From(in->GetExpr()));
 
-    auto args = n->GetTemplateArgs();
-    begin_arr(args.size());
+  return message;
+}
 
-    std::for_each(args.begin(), args.end(), [&](auto arg) {
-      begin_obj(2);
+SyntaxTree::StmtExpr *AstWriter::From(const FlowPtr<StmtExpr> &in) {
+  auto *message = Pool::CreateMessage<SyntaxTree::StmtExpr>(m_arena);
 
-      string("name");
-      string(*arg.first);
+  message->set_allocated_location(FromSource(in));
+  message->set_allocated_statement(From(in->GetStmt()));
 
-      string("value");
-      arg.second.Accept(*this);
+  return message;
+}
 
-      end_obj();
-    });
+SyntaxTree::TypeExpr *AstWriter::From(const FlowPtr<TypeExpr> &in) {
+  auto *message = Pool::CreateMessage<SyntaxTree::TypeExpr>(m_arena);
 
-    end_arr();
+  message->set_allocated_location(FromSource(in));
+  message->set_allocated_type(From(in->GetType()));
+
+  return message;
+}
+
+SyntaxTree::NamedTy *AstWriter::From(const FlowPtr<NamedTy> &in) {
+  auto *message = Pool::CreateMessage<SyntaxTree::NamedTy>(m_arena);
+
+  message->set_allocated_location(FromSource(in));
+  message->set_name(in->GetName().Get());
+  SetTypeMetadata(message, in);
+
+  return message;
+}
+
+SyntaxTree::InferTy *AstWriter::From(const FlowPtr<InferTy> &in) {
+  auto *message = Pool::CreateMessage<SyntaxTree::InferTy>(m_arena);
+
+  message->set_allocated_location(FromSource(in));
+  SetTypeMetadata(message, in);
+
+  return message;
+}
+
+SyntaxTree::TemplateType *AstWriter::From(const FlowPtr<TemplateType> &in) {
+  auto *message = Pool::CreateMessage<SyntaxTree::TemplateType>(m_arena);
+
+  message->set_allocated_location(FromSource(in));
+  message->set_allocated_base(From(in->GetTemplate()));
+  SetTypeMetadata(message, in);
+
+  { /* Add all arguments */
+    const auto &args = in->GetArgs();
+    auto *arg_list = message->mutable_arguments();
+    arg_list->Reserve(args.size());
+
+    for (const auto &arg : args) {
+      auto *argument = Pool::CreateMessage<SyntaxTree::CallArgument>(m_arena);
+      argument->set_name(arg.first.Get());
+      argument->set_allocated_value(From(arg.second));
+      arg_list->AddAllocated(argument);
+    }
   }
 
-  { /* Write arguments */
-    string("arguments");
-
-    auto args = n->GetArgs();
-    begin_arr(args.size());
-    std::for_each(args.begin(), args.end(), [&](auto arg) {
-      begin_obj(2);
-
-      string("name");
-      string(*arg.first);
-
-      string("value");
-      arg.second.Accept(*this);
-
-      end_obj();
-    });
-    end_arr();
-  }
-
-  end_obj();
+  return message;
 }
 
-void AstWriter::Visit(FlowPtr<List> n) {
-  begin_obj(3);
+SyntaxTree::U1 *AstWriter::From(const FlowPtr<U1> &in) {
+  auto *message = Pool::CreateMessage<SyntaxTree::U1>(m_arena);
 
-  string("kind");
-  string(n->GetKindName());
+  message->set_allocated_location(FromSource(in));
+  SetTypeMetadata(message, in);
 
-  WriteSourceLocation(n);
-
-  { /* Write elements */
-    string("elements");
-
-    auto items = n->GetItems();
-    begin_arr(items.size());
-    std::for_each(items.begin(), items.end(),
-                  [&](auto item) { item.Accept(*this); });
-    end_arr();
-  }
-
-  end_obj();
+  return message;
 }
 
-void AstWriter::Visit(FlowPtr<Assoc> n) {
-  begin_obj(4);
+SyntaxTree::U8 *AstWriter::From(const FlowPtr<U8> &in) {
+  auto *message = Pool::CreateMessage<SyntaxTree::U8>(m_arena);
 
-  string("kind");
-  string(n->GetKindName());
+  message->set_allocated_location(FromSource(in));
+  SetTypeMetadata(message, in);
 
-  WriteSourceLocation(n);
-
-  string("key");
-  n->GetKey().Accept(*this);
-
-  string("value");
-  n->GetValue().Accept(*this);
-
-  end_obj();
+  return message;
 }
 
-void AstWriter::Visit(FlowPtr<Index> n) {
-  begin_obj(4);
+SyntaxTree::U16 *AstWriter::From(const FlowPtr<U16> &in) {
+  auto *message = Pool::CreateMessage<SyntaxTree::U16>(m_arena);
 
-  string("kind");
-  string(n->GetKindName());
+  message->set_allocated_location(FromSource(in));
+  SetTypeMetadata(message, in);
 
-  WriteSourceLocation(n);
-
-  string("base");
-  n->GetBase().Accept(*this);
-
-  string("index");
-  n->GetIndex().Accept(*this);
-
-  end_obj();
+  return message;
 }
 
-void AstWriter::Visit(FlowPtr<Slice> n) {
-  begin_obj(5);
+SyntaxTree::U32 *AstWriter::From(const FlowPtr<U32> &in) {
+  auto *message = Pool::CreateMessage<SyntaxTree::U32>(m_arena);
 
-  string("kind");
-  string(n->GetKindName());
+  message->set_allocated_location(FromSource(in));
+  SetTypeMetadata(message, in);
 
-  WriteSourceLocation(n);
-
-  string("base");
-  n->GetBase().Accept(*this);
-
-  string("start");
-  n->GetStart().Accept(*this);
-
-  string("end");
-  n->GetEnd().Accept(*this);
-
-  end_obj();
+  return message;
 }
 
-void AstWriter::Visit(FlowPtr<FString> n) {
-  begin_obj(3);
+SyntaxTree::U64 *AstWriter::From(const FlowPtr<U64> &in) {
+  auto *message = Pool::CreateMessage<SyntaxTree::U64>(m_arena);
 
-  string("kind");
-  string(n->GetKindName());
+  message->set_allocated_location(FromSource(in));
+  SetTypeMetadata(message, in);
 
-  WriteSourceLocation(n);
+  return message;
+}
 
-  { /* Write items */
-    string("terms");
+SyntaxTree::U128 *AstWriter::From(const FlowPtr<U128> &in) {
+  auto *message = Pool::CreateMessage<SyntaxTree::U128>(m_arena);
 
-    auto items = n->GetItems();
-    begin_arr(items.size());
+  message->set_allocated_location(FromSource(in));
+  SetTypeMetadata(message, in);
+
+  return message;
+}
+
+SyntaxTree::I8 *AstWriter::From(const FlowPtr<I8> &in) {
+  auto *message = Pool::CreateMessage<SyntaxTree::I8>(m_arena);
+
+  message->set_allocated_location(FromSource(in));
+  SetTypeMetadata(message, in);
+
+  return message;
+}
+
+SyntaxTree::I16 *AstWriter::From(const FlowPtr<I16> &in) {
+  auto *message = Pool::CreateMessage<SyntaxTree::I16>(m_arena);
+
+  message->set_allocated_location(FromSource(in));
+  SetTypeMetadata(message, in);
+
+  return message;
+}
+
+SyntaxTree::I32 *AstWriter::From(const FlowPtr<I32> &in) {
+  auto *message = Pool::CreateMessage<SyntaxTree::I32>(m_arena);
+
+  message->set_allocated_location(FromSource(in));
+  SetTypeMetadata(message, in);
+
+  return message;
+}
+
+SyntaxTree::I64 *AstWriter::From(const FlowPtr<I64> &in) {
+  auto *message = Pool::CreateMessage<SyntaxTree::I64>(m_arena);
+
+  message->set_allocated_location(FromSource(in));
+  SetTypeMetadata(message, in);
+
+  return message;
+}
+
+SyntaxTree::I128 *AstWriter::From(const FlowPtr<I128> &in) {
+  auto *message = Pool::CreateMessage<SyntaxTree::I128>(m_arena);
+
+  message->set_allocated_location(FromSource(in));
+  SetTypeMetadata(message, in);
+
+  return message;
+}
+
+SyntaxTree::F16 *AstWriter::From(const FlowPtr<F16> &in) {
+  auto *message = Pool::CreateMessage<SyntaxTree::F16>(m_arena);
+
+  message->set_allocated_location(FromSource(in));
+  SetTypeMetadata(message, in);
+
+  return message;
+}
+
+SyntaxTree::F32 *AstWriter::From(const FlowPtr<F32> &in) {
+  auto *message = Pool::CreateMessage<SyntaxTree::F32>(m_arena);
+
+  message->set_allocated_location(FromSource(in));
+  SetTypeMetadata(message, in);
+
+  return message;
+}
+
+SyntaxTree::F64 *AstWriter::From(const FlowPtr<F64> &in) {
+  auto *message = Pool::CreateMessage<SyntaxTree::F64>(m_arena);
+
+  message->set_allocated_location(FromSource(in));
+  SetTypeMetadata(message, in);
+
+  return message;
+}
+
+SyntaxTree::F128 *AstWriter::From(const FlowPtr<F128> &in) {
+  auto *message = Pool::CreateMessage<SyntaxTree::F128>(m_arena);
+
+  message->set_allocated_location(FromSource(in));
+  SetTypeMetadata(message, in);
+
+  return message;
+}
+
+SyntaxTree::VoidTy *AstWriter::From(const FlowPtr<VoidTy> &in) {
+  auto *message = Pool::CreateMessage<SyntaxTree::VoidTy>(m_arena);
+
+  message->set_allocated_location(FromSource(in));
+  SetTypeMetadata(message, in);
+
+  return message;
+}
+
+SyntaxTree::PtrTy *AstWriter::From(const FlowPtr<PtrTy> &in) {
+  auto *message = Pool::CreateMessage<SyntaxTree::PtrTy>(m_arena);
+
+  message->set_allocated_location(FromSource(in));
+  message->set_allocated_pointee(From(in->GetItem()));
+  message->set_volatile_(in->IsVolatile());
+  SetTypeMetadata(message, in);
+
+  return message;
+}
+
+SyntaxTree::OpaqueTy *AstWriter::From(const FlowPtr<OpaqueTy> &in) {
+  auto *message = Pool::CreateMessage<SyntaxTree::OpaqueTy>(m_arena);
+
+  message->set_allocated_location(FromSource(in));
+  message->set_name(in->GetName().Get());
+  SetTypeMetadata(message, in);
+
+  return message;
+}
+
+SyntaxTree::TupleTy *AstWriter::From(const FlowPtr<TupleTy> &in) {
+  auto *message = Pool::CreateMessage<SyntaxTree::TupleTy>(m_arena);
+
+  message->set_allocated_location(FromSource(in));
+  SetTypeMetadata(message, in);
+
+  { /* Add all elements */
+    const auto &items = in->GetItems();
+
+    message->mutable_elements()->Reserve(items.size());
     std::for_each(items.begin(), items.end(), [&](auto item) {
-      if (std::holds_alternative<ncc::string>(item)) {
-        begin_obj(1);
+      message->mutable_elements()->AddAllocated(From(item));
+    });
+  }
 
-        string("value");
-        string(*std::get<ncc::string>(item));
+  return message;
+}
 
-        end_obj();
+SyntaxTree::ArrayTy *AstWriter::From(const FlowPtr<ArrayTy> &in) {
+  auto *message = Pool::CreateMessage<SyntaxTree::ArrayTy>(m_arena);
+
+  message->set_allocated_location(FromSource(in));
+  message->set_allocated_element_type(From(in->GetItem()));
+  message->set_allocated_element_count(From(in->GetSize()));
+  SetTypeMetadata(message, in);
+
+  return message;
+}
+
+SyntaxTree::RefTy *AstWriter::From(const FlowPtr<RefTy> &in) {
+  auto *message = Pool::CreateMessage<SyntaxTree::RefTy>(m_arena);
+
+  message->set_allocated_location(FromSource(in));
+  message->set_allocated_pointee(From(in->GetItem()));
+  SetTypeMetadata(message, in);
+
+  return message;
+}
+
+SyntaxTree::FuncTy *AstWriter::From(const FlowPtr<FuncTy> &in) {
+  auto *message = Pool::CreateMessage<SyntaxTree::FuncTy>(m_arena);
+
+  message->set_allocated_location(FromSource(in));
+  message->set_allocated_return_type(From(in->GetReturn()));
+  message->set_variadic(in->IsVariadic());
+  message->set_purity(FromPurity(in->GetPurity()));
+  SetTypeMetadata(message, in);
+
+  { /* Add all parameters */
+    const auto &params = in->GetParams();
+    auto *param_list = message->mutable_parameters();
+    param_list->Reserve(params.size());
+
+    for (const auto &param : params) {
+      auto *parameter =
+          Pool::CreateMessage<SyntaxTree::FunctionParameter>(m_arena);
+      const auto &[name, type, default_] = param;
+      parameter->set_name(name.Get());
+      parameter->set_allocated_type(From(type));
+      if (default_.has_value()) {
+        parameter->set_allocated_default_value(From(default_.value()));
+      }
+
+      param_list->AddAllocated(parameter);
+    }
+  }
+
+  { /* Add all attributes */
+    const auto &attrs = in->GetAttributes();
+    message->mutable_attributes()->Reserve(attrs.size());
+    std::for_each(attrs.begin(), attrs.end(), [&](auto attr) {
+      message->mutable_attributes()->AddAllocated(From(attr));
+    });
+  }
+
+  return message;
+}
+
+SyntaxTree::Unary *AstWriter::From(const FlowPtr<Unary> &in) {
+  auto *message = Pool::CreateMessage<SyntaxTree::Unary>(m_arena);
+
+  message->set_allocated_location(FromSource(in));
+  message->set_operator_(FromOperator(in->GetOp()));
+  message->set_allocated_operand(From(in->GetRHS()));
+
+  return message;
+}
+
+SyntaxTree::Binary *AstWriter::From(const FlowPtr<Binary> &in) {
+  auto *message = Pool::CreateMessage<SyntaxTree::Binary>(m_arena);
+
+  message->set_allocated_location(FromSource(in));
+  message->set_operator_(FromOperator(in->GetOp()));
+  message->set_allocated_left(From(in->GetLHS()));
+  message->set_allocated_right(From(in->GetRHS()));
+
+  return message;
+}
+
+SyntaxTree::PostUnary *AstWriter::From(const FlowPtr<PostUnary> &in) {
+  auto *message = Pool::CreateMessage<SyntaxTree::PostUnary>(m_arena);
+
+  message->set_allocated_location(FromSource(in));
+  message->set_operator_(FromOperator(in->GetOp()));
+  message->set_allocated_operand(From(in->GetLHS()));
+
+  return message;
+}
+
+SyntaxTree::Ternary *AstWriter::From(const FlowPtr<Ternary> &in) {
+  auto *message = Pool::CreateMessage<SyntaxTree::Ternary>(m_arena);
+
+  message->set_allocated_location(FromSource(in));
+  message->set_allocated_condition(From(in->GetCond()));
+  message->set_allocated_true_branch(From(in->GetLHS()));
+  message->set_allocated_false_branch(From(in->GetRHS()));
+
+  return message;
+}
+
+SyntaxTree::Integer *AstWriter::From(const FlowPtr<Integer> &in) {
+  auto *message = Pool::CreateMessage<SyntaxTree::Integer>(m_arena);
+
+  message->set_allocated_location(FromSource(in));
+  message->set_number(in->GetValue().Get());
+
+  return message;
+}
+
+SyntaxTree::Float *AstWriter::From(const FlowPtr<Float> &in) {
+  auto *message = Pool::CreateMessage<SyntaxTree::Float>(m_arena);
+
+  message->set_allocated_location(FromSource(in));
+  message->set_number(in->GetValue().Get());
+
+  return message;
+}
+
+SyntaxTree::Boolean *AstWriter::From(const FlowPtr<Boolean> &in) {
+  auto *message = Pool::CreateMessage<SyntaxTree::Boolean>(m_arena);
+
+  message->set_allocated_location(FromSource(in));
+  message->set_value(in->GetValue());
+
+  return message;
+}
+
+SyntaxTree::String *AstWriter::From(const FlowPtr<String> &in) {
+  auto *message = Pool::CreateMessage<SyntaxTree::String>(m_arena);
+
+  message->set_allocated_location(FromSource(in));
+  message->set_text(in->GetValue().Get());
+
+  return message;
+}
+
+SyntaxTree::Character *AstWriter::From(const FlowPtr<Character> &in) {
+  auto *message = Pool::CreateMessage<SyntaxTree::Character>(m_arena);
+
+  message->set_allocated_location(FromSource(in));
+  message->set_char_(in->GetValue());
+
+  return message;
+}
+
+SyntaxTree::Null *AstWriter::From(const FlowPtr<Null> &in) {
+  auto *message = Pool::CreateMessage<SyntaxTree::Null>(m_arena);
+
+  message->set_allocated_location(FromSource(in));
+
+  return message;
+}
+
+SyntaxTree::Undefined *AstWriter::From(const FlowPtr<Undefined> &in) {
+  auto *message = Pool::CreateMessage<SyntaxTree::Undefined>(m_arena);
+
+  message->set_allocated_location(FromSource(in));
+
+  return message;
+}
+
+SyntaxTree::Call *AstWriter::From(const FlowPtr<Call> &in) {
+  auto *message = Pool::CreateMessage<SyntaxTree::Call>(m_arena);
+
+  message->set_allocated_location(FromSource(in));
+  message->set_allocated_callee(From(in->GetFunc()));
+
+  { /* Add all arguments */
+    const auto &args = in->GetArgs();
+    message->mutable_arguments()->Reserve(args.size());
+
+    std::for_each(args.begin(), args.end(), [&](auto arg) {
+      auto *argument = Pool::CreateMessage<SyntaxTree::CallArgument>(m_arena);
+      argument->set_name(arg.first.Get());
+      argument->set_allocated_value(From(arg.second));
+      message->mutable_arguments()->AddAllocated(argument);
+    });
+  }
+
+  return message;
+}
+
+SyntaxTree::TemplateCall *AstWriter::From(const FlowPtr<TemplateCall> &in) {
+  auto *message = Pool::CreateMessage<SyntaxTree::TemplateCall>(m_arena);
+
+  message->set_allocated_location(FromSource(in));
+  message->set_allocated_callee(From(in->GetFunc()));
+
+  { /* Add all arguments */
+    const auto &args = in->GetArgs();
+    message->mutable_arguments()->Reserve(args.size());
+
+    std::for_each(args.begin(), args.end(), [&](auto arg) {
+      auto *argument = Pool::CreateMessage<SyntaxTree::CallArgument>(m_arena);
+      argument->set_name(arg.first.Get());
+      argument->set_allocated_value(From(arg.second));
+      message->mutable_arguments()->AddAllocated(argument);
+    });
+  }
+
+  { /* Add all template arguments */
+    const auto &args = in->GetTemplateArgs();
+    message->mutable_template_arguments()->Reserve(args.size());
+
+    std::for_each(args.begin(), args.end(), [&](auto arg) {
+      auto *argument = Pool::CreateMessage<SyntaxTree::CallArgument>(m_arena);
+      argument->set_name(arg.first.Get());
+      argument->set_allocated_value(From(arg.second));
+      message->mutable_template_arguments()->AddAllocated(argument);
+    });
+  }
+
+  return message;
+}
+
+SyntaxTree::List *AstWriter::From(const FlowPtr<List> &in) {
+  auto *message = Pool::CreateMessage<SyntaxTree::List>(m_arena);
+
+  message->set_allocated_location(FromSource(in));
+
+  { /* Add all elements */
+    const auto &items = in->GetItems();
+
+    message->mutable_elements()->Reserve(items.size());
+    std::for_each(items.begin(), items.end(), [&](auto item) {
+      message->mutable_elements()->AddAllocated(From(item));
+    });
+  }
+
+  return message;
+}
+
+SyntaxTree::Assoc *AstWriter::From(const FlowPtr<Assoc> &in) {
+  auto *message = Pool::CreateMessage<SyntaxTree::Assoc>(m_arena);
+
+  message->set_allocated_location(FromSource(in));
+  message->set_allocated_key(From(in->GetKey()));
+  message->set_allocated_value(From(in->GetValue()));
+
+  return message;
+}
+
+SyntaxTree::Index *AstWriter::From(const FlowPtr<Index> &in) {
+  auto *message = Pool::CreateMessage<SyntaxTree::Index>(m_arena);
+
+  message->set_allocated_location(FromSource(in));
+  message->set_allocated_base(From(in->GetBase()));
+  message->set_allocated_index(From(in->GetIndex()));
+
+  return message;
+}
+
+SyntaxTree::Slice *AstWriter::From(const FlowPtr<Slice> &in) {
+  auto *message = Pool::CreateMessage<SyntaxTree::Slice>(m_arena);
+
+  message->set_allocated_location(FromSource(in));
+  message->set_allocated_base(From(in->GetBase()));
+  message->set_allocated_start(From(in->GetStart()));
+  message->set_allocated_end(From(in->GetEnd()));
+
+  return message;
+}
+
+SyntaxTree::FString *AstWriter::From(const FlowPtr<FString> &in) {
+  auto *message = Pool::CreateMessage<SyntaxTree::FString>(m_arena);
+
+  message->set_allocated_location(FromSource(in));
+
+  { /* Add all elements */
+    const auto &items = in->GetItems();
+    message->mutable_elements()->Reserve(items.size());
+    std::for_each(items.begin(), items.end(), [&](auto item) {
+      auto *element =
+          Pool::CreateMessage<SyntaxTree::FString::FStringTerm>(m_arena);
+      if (std::holds_alternative<FlowPtr<Expr>>(item)) {
+        element->set_allocated_expr(From(std::get<FlowPtr<Expr>>(item)));
       } else {
-        std::get<FlowPtr<Expr>>(item).Accept(*this);
+        element->set_text(std::get<ncc::String>(item).Get());
       }
+
+      message->mutable_elements()->AddAllocated(element);
     });
-    end_arr();
   }
 
-  end_obj();
+  return message;
 }
 
-void AstWriter::Visit(FlowPtr<Identifier> n) {
-  begin_obj(3);
+SyntaxTree::Identifier *AstWriter::From(const FlowPtr<Identifier> &in) {
+  auto *message = Pool::CreateMessage<SyntaxTree::Identifier>(m_arena);
 
-  string("kind");
-  string(n->GetKindName());
+  message->set_allocated_location(FromSource(in));
+  message->set_name(in->GetName().Get());
 
-  WriteSourceLocation(n);
-
-  string("name");
-  string(n->GetName());
-
-  end_obj();
+  return message;
 }
 
-void AstWriter::Visit(FlowPtr<Sequence> n) {
-  begin_obj(3);
+SyntaxTree::Sequence *AstWriter::From(const FlowPtr<Sequence> &in) {
+  auto *message = Pool::CreateMessage<SyntaxTree::Sequence>(m_arena);
 
-  string("kind");
-  string(n->GetKindName());
+  message->set_allocated_location(FromSource(in));
 
-  WriteSourceLocation(n);
+  { /* Add all elements */
+    const auto &items = in->GetItems();
 
-  { /* Write items */
-    string("terms");
-
-    auto items = n->GetItems();
-    begin_arr(items.size());
-    std::for_each(items.begin(), items.end(),
-                  [&](auto item) { item.Accept(*this); });
-    end_arr();
-  }
-
-  end_obj();
-}
-
-void AstWriter::Visit(FlowPtr<Block> n) {
-  begin_obj(4);
-
-  string("kind");
-  string(n->GetKindName());
-
-  WriteSourceLocation(n);
-
-  { /* Write safety profile */
-    string("safe");
-
-    switch (n->GetSafety()) {
-      case SafetyMode::Unknown:
-        null();
-        break;
-      case SafetyMode::Safe:
-        string("yes");
-        break;
-      case SafetyMode::Unsafe:
-        string("no");
-        break;
-    }
-  }
-
-  { /* Write body */
-    string("body");
-
-    auto items = n->GetItems();
-    begin_arr(items.size());
-    std::for_each(items.begin(), items.end(),
-                  [&](auto item) { item.Accept(*this); });
-    end_arr();
-  }
-
-  end_obj();
-}
-
-void AstWriter::Visit(FlowPtr<Variable> n) {
-  begin_obj(7);
-
-  string("kind");
-  string(n->GetKindName());
-
-  WriteSourceLocation(n);
-
-  string("mode");
-  switch (n->GetDeclType()) {
-    case VariableType::Const:
-      string("const");
-      break;
-    case VariableType::Var:
-      string("var");
-      break;
-    case VariableType::Let:
-      string("let");
-      break;
-  }
-
-  string("name");
-  string(n->GetName());
-
-  string("type");
-  n->GetType() ? n->GetType().value().Accept(*this) : null();
-
-  string("value");
-  n->GetValue() ? n->GetValue().value().Accept(*this) : null();
-
-  { /* Write attributes */
-    string("attributes");
-
-    auto attrs = n->GetAttributes();
-    begin_arr(attrs.size());
-    std::for_each(attrs.begin(), attrs.end(),
-                  [&](auto attr) { attr.Accept(*this); });
-    end_arr();
-  }
-
-  end_obj();
-}
-
-void AstWriter::Visit(FlowPtr<Assembly> n) {
-  begin_obj(4);
-
-  string("kind");
-  string(n->GetKindName());
-
-  WriteSourceLocation(n);
-
-  string("assembly");
-  string(n->GetCode());
-
-  { /* Write arguments */
-    string("parameters");
-
-    auto args = n->GetArgs();
-    begin_arr(args.size());
-    std::for_each(args.begin(), args.end(),
-                  [&](auto arg) { arg.Accept(*this); });
-    end_arr();
-  }
-
-  end_obj();
-}
-
-void AstWriter::Visit(FlowPtr<If> n) {
-  begin_obj(5);
-
-  string("kind");
-  string(n->GetKindName());
-
-  WriteSourceLocation(n);
-
-  string("cond");
-  n->GetCond().Accept(*this);
-
-  string("then");
-  n->GetThen().Accept(*this);
-
-  string("else");
-  if (n->GetElse()) {
-    n->GetElse().value().Accept(*this);
-  } else {
-    null();
-  }
-
-  end_obj();
-}
-
-void AstWriter::Visit(FlowPtr<While> n) {
-  begin_obj(4);
-
-  string("kind");
-  string(n->GetKindName());
-
-  WriteSourceLocation(n);
-
-  string("cond");
-  n->GetCond().Accept(*this);
-
-  string("body");
-  n->GetBody().Accept(*this);
-
-  end_obj();
-}
-
-void AstWriter::Visit(FlowPtr<For> n) {
-  begin_obj(6);
-
-  string("kind");
-  string(n->GetKindName());
-
-  WriteSourceLocation(n);
-
-  string("init");
-  if (n->GetInit()) {
-    n->GetInit().value().Accept(*this);
-  } else {
-    null();
-  }
-
-  string("cond");
-  if (n->GetCond()) {
-    n->GetCond().value().Accept(*this);
-  } else {
-    null();
-  }
-
-  string("step");
-  if (n->GetStep()) {
-    n->GetStep().value().Accept(*this);
-  } else {
-    null();
-  }
-
-  string("body");
-  n->GetBody().Accept(*this);
-
-  end_obj();
-}
-
-void AstWriter::Visit(FlowPtr<Foreach> n) {
-  begin_obj(6);
-
-  string("kind");
-  string(n->GetKindName());
-
-  WriteSourceLocation(n);
-
-  string("idx");
-  string(n->GetIdxIdentifier( ));
-
-  string("val");
-  string(n->GetValIdentifier( ));
-
-  string("expr");
-  n->GetExpr().Accept(*this);
-
-  string("body");
-  n->GetBody().Accept(*this);
-
-  end_obj();
-}
-
-void AstWriter::Visit(FlowPtr<Break> n) {
-  begin_obj(2);
-
-  string("kind");
-  string(n->GetKindName());
-
-  WriteSourceLocation(n);
-
-  end_obj();
-}
-
-void AstWriter::Visit(FlowPtr<Continue> n) {
-  begin_obj(2);
-
-  string("kind");
-  string(n->GetKindName());
-
-  WriteSourceLocation(n);
-
-  end_obj();
-}
-
-void AstWriter::Visit(FlowPtr<Return> n) {
-  begin_obj(3);
-
-  string("kind");
-  string(n->GetKindName());
-
-  WriteSourceLocation(n);
-
-  string("expr");
-  if (n->GetValue()) {
-    n->GetValue().value().Accept(*this);
-  } else {
-    null();
-  }
-
-  end_obj();
-}
-
-void AstWriter::Visit(FlowPtr<ReturnIf> n) {
-  begin_obj(4);
-
-  string("kind");
-  string(n->GetKindName());
-
-  WriteSourceLocation(n);
-
-  string("cond");
-  n->GetCond().Accept(*this);
-
-  string("expr");
-  n->GetValue().Accept(*this);
-
-  end_obj();
-}
-
-void AstWriter::Visit(FlowPtr<Case> n) {
-  begin_obj(4);
-
-  string("kind");
-  string(n->GetKindName());
-
-  WriteSourceLocation(n);
-
-  string("match");
-  n->GetCond().Accept(*this);
-
-  string("body");
-  n->GetBody().Accept(*this);
-
-  end_obj();
-}
-
-void AstWriter::Visit(FlowPtr<Switch> n) {
-  begin_obj(5);
-
-  string("kind");
-  string(n->GetKindName());
-
-  WriteSourceLocation(n);
-
-  string("match");
-  n->GetCond().Accept(*this);
-
-  { /* Write cases */
-    string("cases");
-
-    auto cases = n->GetCases();
-    begin_arr(cases.size());
-    std::for_each(cases.begin(), cases.end(),
-                  [&](auto item) { item.Accept(*this); });
-    end_arr();
-  }
-
-  string("default");
-  n->GetDefault() ? n->GetDefault().value().Accept(*this) : null();
-
-  end_obj();
-}
-
-void AstWriter::Visit(FlowPtr<Typedef> n) {
-  begin_obj(4);
-
-  string("kind");
-  string(n->GetKindName());
-
-  WriteSourceLocation(n);
-
-  string("name");
-  string(n->GetName());
-
-  string("type");
-  n->GetType().Accept(*this);
-
-  end_obj();
-}
-
-void AstWriter::Visit(FlowPtr<Function> n) {
-  begin_obj(13);
-
-  string("kind");
-  string(n->GetKindName());
-
-  WriteSourceLocation(n);
-
-  { /* Write attributes */
-    string("attributes");
-
-    auto attrs = n->GetAttributes();
-    begin_arr(attrs.size());
-    std::for_each(attrs.begin(), attrs.end(),
-                  [&](auto attr) { attr.Accept(*this); });
-    end_arr();
-  }
-
-  { /* Purity */
-    switch (n->GetPurity()) {
-      case Purity::Impure: {
-        string("thread_safe");
-        boolean(false);
-
-        string("purity");
-        string("impure");
-        break;
-      }
-
-      case Purity::Impure_TSafe: {
-        string("thread_safe");
-        boolean(true);
-
-        string("purity");
-        string("impure");
-        break;
-      }
-
-      case Purity::Pure: {
-        string("thread_safe");
-        boolean(true);
-
-        string("purity");
-        string("pure");
-        break;
-      }
-
-      case Purity::Quasi: {
-        string("thread_safe");
-        boolean(true);
-
-        string("purity");
-        string("quasi");
-        break;
-      }
-
-      case Purity::Retro: {
-        string("thread_safe");
-        boolean(true);
-
-        string("purity");
-        string("retro");
-        break;
-      }
-    }
-  }
-
-  { /* Write capture list */
-    string("captures");
-
-    auto captures = n->GetCaptures();
-    begin_arr(captures.size());
-    std::for_each(captures.begin(), captures.end(), [&](auto cap) {
-      begin_obj(2);
-
-      string("name");
-      string(*cap.first);
-
-      string("is_ref");
-      boolean(cap.second);
-
-      end_obj();
-    });
-    end_arr();
-  }
-
-  string("name");
-  string(n->GetName());
-
-  { /* Write template parameters */
-    string("template");
-
-    if (auto params = n->GetTemplateParams()) {
-      begin_arr(params->size());
-      std::for_each(params->begin(), params->end(), [&](auto param) {
-        begin_obj(3);
-
-        string("name");
-        string(*std::get<0>(param));
-
-        string("type");
-        std::get<1>(param).Accept(*this);
-
-        string("default");
-        std::get<2>(param) ? std::get<2>(param).value().Accept(*this) : null();
-
-        end_obj();
-      });
-      end_arr();
-    } else {
-      null();
-    }
-  }
-
-  { /* Write parameters */
-    string("input");
-    begin_obj(2);
-
-    string("variadic");
-    boolean(n->IsVariadic());
-
-    auto params = n->GetParams();
-    string("parameters");
-    begin_arr(params.size());
-    std::for_each(params.begin(), params.end(), [&](auto param) {
-      begin_obj(3);
-
-      string("name");
-      string(*std::get<0>(param));
-
-      string("type");
-      std::get<1>(param).Accept(*this);
-
-      string("default");
-      std::get<2>(param) ? std::get<2>(param).value().Accept(*this) : null();
-
-      end_obj();
-    });
-    end_arr();
-
-    end_obj();
-  }
-
-  string("return");
-  n->GetReturn().Accept(*this);
-
-  { /* Write pre conditions */
-    string("precond");
-    if (n->GetPrecond().has_value()) {
-      n->GetPrecond().value().Accept(*this);
-    } else {
-      null();
-    }
-  }
-
-  { /* Write post conditions */
-    string("postcond");
-    if (n->GetPostcond().has_value()) {
-      n->GetPostcond().value().Accept(*this);
-    } else {
-      null();
-    }
-  }
-
-  string("body");
-  if (n->GetBody().has_value()) {
-    n->GetBody().value().Accept(*this);
-  } else {
-    null();
-  }
-
-  end_obj();
-}
-
-void AstWriter::Visit(FlowPtr<Struct> n) {
-  begin_obj(10);
-
-  string("kind");
-  string(n->GetKindName());
-
-  WriteSourceLocation(n);
-
-  { /* Write composite type */
-    string("mode");
-    switch (n->GetCompositeType()) {
-      case CompositeType::Region: {
-        string("region");
-        break;
-      }
-
-      case CompositeType::Struct: {
-        string("struct");
-        break;
-      }
-
-      case CompositeType::Group: {
-        string("group");
-        break;
-      }
-
-      case CompositeType::Class: {
-        string("class");
-        break;
-      }
-
-      case CompositeType::Union: {
-        string("union");
-        break;
-      }
-    }
-  }
-
-  { /* Write attributes */
-    string("attributes");
-    auto attrs = n->GetAttributes();
-
-    begin_arr(attrs.size());
-    std::for_each(attrs.begin(), attrs.end(),
-                  [&](auto attr) { attr.Accept(*this); });
-    end_arr();
-  }
-
-  string("name");
-  string(n->GetName());
-
-  { /* Write template parameters */
-    string("template");
-
-    if (auto params = n->GetTemplateParams()) {
-      begin_arr(params->size());
-      std::for_each(params->begin(), params->end(), [&](auto param) {
-        begin_obj(3);
-
-        string("name");
-        string(*std::get<0>(param));
-
-        string("type");
-        std::get<1>(param).Accept(*this);
-
-        string("default");
-        std::get<2>(param) ? std::get<2>(param).value().Accept(*this) : null();
-
-        end_obj();
-      });
-      end_arr();
-    } else {
-      null();
-    }
-  }
-
-  { /* Write names */
-    string("names");
-    auto names = n->GetNames();
-    begin_arr(names.size());
-    std::for_each(names.begin(), names.end(),
-                  [&](auto name) { string(*name); });
-    end_arr();
-  }
-
-  { /* Write fields */
-    string("fields");
-
-    auto fields = n->GetFields();
-    begin_arr(fields.size());
-    std::for_each(fields.begin(), fields.end(), [&](auto field) {
-      begin_obj(5);
-
-      string("name");
-      string(field.GetName());
-
-      string("type");
-      field.GetType().Accept(*this);
-
-      string("default");
-      field.GetValue().has_value() ? field.GetValue().value().Accept(*this)
-                                   : null();
-
-      string("visibility");
-      string(VisStr(field.GetVis()));
-
-      string("static");
-      boolean(field.IsStatic());
-
-      end_obj();
-    });
-    end_arr();
-  }
-
-  { /* Write methods */
-    string("methods");
-
-    auto methods = n->GetMethods();
-    begin_arr(methods.size());
-    std::for_each(methods.begin(), methods.end(), [&](auto method) {
-      begin_obj(2);
-
-      string("visibility");
-      string(VisStr(method.m_vis));
-
-      string("method");
-      method.m_func.Accept(*this);
-
-      end_obj();
-    });
-    end_arr();
-  }
-
-  { /* Write static methods */
-    string("static-methods");
-
-    auto statics = n->GetStaticMethods();
-    begin_arr(statics.size());
-    std::for_each(statics.begin(), statics.end(), [&](auto method) {
-      begin_obj(2);
-
-      string("visibility");
-      string(VisStr(method.m_vis));
-
-      string("method");
-      method.m_func.Accept(*this);
-
-      end_obj();
-    });
-    end_arr();
-  }
-
-  end_obj();
-}
-
-void AstWriter::Visit(FlowPtr<Enum> n) {
-  begin_obj(5);
-
-  string("kind");
-  string(n->GetKindName());
-
-  WriteSourceLocation(n);
-
-  string("name");
-  string(n->GetName());
-
-  string("type");
-  n->GetType() ? n->GetType().value().Accept(*this) : null();
-
-  { /* Write items */
-    string("fields");
-
-    auto items = n->GetItems();
-    begin_arr(items.size());
+    message->mutable_elements()->Reserve(items.size());
     std::for_each(items.begin(), items.end(), [&](auto item) {
-      begin_obj(2);
-
-      string("name");
-      string(*item.first);
-
-      string("value");
-      item.second ? item.second.value().Accept(*this) : null();
-
-      end_obj();
+      message->mutable_elements()->AddAllocated(From(item));
     });
-    end_arr();
   }
 
-  end_obj();
+  return message;
 }
 
-void AstWriter::Visit(FlowPtr<Scope> n) {
-  begin_obj(5);
+SyntaxTree::Block *AstWriter::From(const FlowPtr<Block> &in) {
+  auto *message = Pool::CreateMessage<SyntaxTree::Block>(m_arena);
 
-  string("kind");
-  string(n->GetKindName());
+  message->set_allocated_location(FromSource(in));
 
-  WriteSourceLocation(n);
+  switch (in->GetSafety()) {
+    case SafetyMode::Unknown: {
+      message->set_guarantor(SyntaxTree::Block_SafetyMode_Unspecified);
+      break;
+    }
 
-  string("name");
-  string(n->GetName());
+    case SafetyMode::Safe: {
+      message->set_guarantor(SyntaxTree::Block_SafetyMode_Safe);
+      break;
+    }
 
-  { /* Write implicit dependencies */
-    string("depends");
-
-    auto deps = n->GetDeps();
-    begin_arr(deps.size());
-    std::for_each(deps.begin(), deps.end(), [&](auto dep) { string(*dep); });
-    end_arr();
+    case SafetyMode::Unsafe: {
+      message->set_guarantor(SyntaxTree::Block_SafetyMode_Unsafe);
+      break;
+    }
   }
 
-  string("body");
-  n->GetBody().Accept(*this);
+  { /* Add all statements */
+    const auto &items = in->GetItems();
 
-  end_obj();
-}
-
-void AstWriter::Visit(FlowPtr<Export> n) {
-  begin_obj(6);
-
-  string("kind");
-  string(n->GetKindName());
-
-  WriteSourceLocation(n);
-
-  string("abi");
-  string(n->GetAbiName());
-
-  string("visibility");
-  string(VisStr(n->GetVis()));
-
-  { /* Write attributes */
-    string("attributes");
-
-    auto attrs = n->GetAttrs();
-    begin_arr(attrs.size());
-    std::for_each(attrs.begin(), attrs.end(),
-                  [&](auto attr) { attr.Accept(*this); });
-    end_arr();
+    message->mutable_statements()->Reserve(items.size());
+    std::for_each(items.begin(), items.end(), [&](auto item) {
+      message->mutable_statements()->AddAllocated(From(item));
+    });
   }
 
-  string("body");
-  n->GetBody().Accept(*this);
-
-  end_obj();
+  return message;
 }
+
+SyntaxTree::Variable *AstWriter::From(const FlowPtr<Variable> &in) {
+  auto *message = Pool::CreateMessage<SyntaxTree::Variable>(m_arena);
+
+  message->set_allocated_location(FromSource(in));
+  message->set_name(in->GetName().Get());
+  if (in->GetType().has_value()) {
+    message->set_allocated_type(From(in->GetType().value()));
+  }
+  if (in->GetValue().has_value()) {
+    message->set_allocated_initial_value(From(in->GetValue().value()));
+  }
+
+  switch (in->GetDeclType()) {
+    case VariableType::Var:
+      message->set_kind(SyntaxTree::Variable_VariableKind_Var);
+      break;
+
+    case VariableType::Let:
+      message->set_kind(SyntaxTree::Variable_VariableKind_Let);
+      break;
+
+    case VariableType::Const:
+      message->set_kind(SyntaxTree::Variable_VariableKind_Const);
+      break;
+  }
+
+  { /* Add all attributes */
+    const auto &items = in->GetAttributes();
+
+    message->mutable_attributes()->Reserve(items.size());
+    std::for_each(items.begin(), items.end(), [&](auto item) {
+      message->mutable_attributes()->AddAllocated(From(item));
+    });
+  }
+
+  return message;
+}
+
+SyntaxTree::Assembly *AstWriter::From(const FlowPtr<Assembly> &in) {
+  auto *message = Pool::CreateMessage<SyntaxTree::Assembly>(m_arena);
+
+  message->set_allocated_location(FromSource(in));
+  message->set_code(in->GetCode().Get());
+
+  { /* Add all arguments */
+    const auto &items = in->GetArgs();
+
+    message->mutable_arguments()->Reserve(items.size());
+    std::for_each(items.begin(), items.end(), [&](auto item) {
+      message->mutable_arguments()->AddAllocated(From(item));
+    });
+  }
+
+  return message;
+}
+
+SyntaxTree::If *AstWriter::From(const FlowPtr<If> &in) {
+  auto *message = Pool::CreateMessage<SyntaxTree::If>(m_arena);
+
+  message->set_allocated_location(FromSource(in));
+  message->set_allocated_condition(From(in->GetCond()));
+  message->set_allocated_true_branch(From(in->GetThen()));
+
+  if (in->GetElse().has_value()) {
+    message->set_allocated_false_branch(From(in->GetElse().value()));
+  }
+
+  return message;
+}
+
+SyntaxTree::While *AstWriter::From(const FlowPtr<While> &in) {
+  auto *message = Pool::CreateMessage<SyntaxTree::While>(m_arena);
+
+  message->set_allocated_location(FromSource(in));
+  message->set_allocated_condition(From(in->GetCond()));
+  message->set_allocated_body(From(in->GetBody()));
+
+  return message;
+}
+
+SyntaxTree::For *AstWriter::From(const FlowPtr<For> &in) {
+  auto *message = Pool::CreateMessage<SyntaxTree::For>(m_arena);
+
+  message->set_allocated_location(FromSource(in));
+
+  if (in->GetInit().has_value()) {
+    message->set_allocated_init(From(in->GetInit().value()));
+  }
+
+  if (in->GetCond().has_value()) {
+    message->set_allocated_condition(From(in->GetCond().value()));
+  }
+
+  if (in->GetStep().has_value()) {
+    message->set_allocated_step(From(in->GetStep().value()));
+  }
+
+  message->set_allocated_body(From(in->GetBody()));
+
+  return message;
+}
+
+SyntaxTree::Foreach *AstWriter::From(const FlowPtr<Foreach> &in) {
+  auto *message = Pool::CreateMessage<SyntaxTree::Foreach>(m_arena);
+
+  message->set_allocated_location(FromSource(in));
+  message->set_index_name(in->GetIdxIdentifier().Get());
+  message->set_value_name(in->GetValIdentifier().Get());
+  message->set_allocated_expression(From(in->GetExpr()));
+  message->set_allocated_body(From(in->GetBody()));
+
+  return message;
+}
+
+SyntaxTree::Break *AstWriter::From(const FlowPtr<Break> &in) {
+  auto *message = Pool::CreateMessage<SyntaxTree::Break>(m_arena);
+
+  message->set_allocated_location(FromSource(in));
+
+  return message;
+}
+
+SyntaxTree::Continue *AstWriter::From(const FlowPtr<Continue> &in) {
+  auto *message = Pool::CreateMessage<SyntaxTree::Continue>(m_arena);
+
+  message->set_allocated_location(FromSource(in));
+
+  return message;
+}
+
+SyntaxTree::Return *AstWriter::From(const FlowPtr<Return> &in) {
+  auto *message = Pool::CreateMessage<SyntaxTree::Return>(m_arena);
+
+  message->set_allocated_location(FromSource(in));
+  if (in->GetValue().has_value()) {
+    message->set_allocated_value(From(in->GetValue().value()));
+  }
+
+  return message;
+}
+
+SyntaxTree::ReturnIf *AstWriter::From(const FlowPtr<ReturnIf> &in) {
+  auto *message = Pool::CreateMessage<SyntaxTree::ReturnIf>(m_arena);
+
+  message->set_allocated_location(FromSource(in));
+  message->set_allocated_condition(From(in->GetCond()));
+  message->set_allocated_value(From(in->GetValue()));
+
+  return message;
+}
+
+SyntaxTree::Case *AstWriter::From(const FlowPtr<Case> &in) {
+  auto *message = Pool::CreateMessage<SyntaxTree::Case>(m_arena);
+
+  message->set_allocated_location(FromSource(in));
+  message->set_allocated_condition(From(in->GetCond()));
+  message->set_allocated_body(From(in->GetBody()));
+
+  return message;
+}
+
+SyntaxTree::Switch *AstWriter::From(const FlowPtr<Switch> &in) {
+  auto *message = Pool::CreateMessage<SyntaxTree::Switch>(m_arena);
+
+  message->set_allocated_location(FromSource(in));
+  message->set_allocated_condition(From(in->GetCond()));
+
+  { /* Add all cases */
+    const auto &items = in->GetCases();
+
+    message->mutable_cases()->Reserve(items.size());
+    std::for_each(items.begin(), items.end(), [&](auto item) {
+      message->mutable_cases()->AddAllocated(From(item));
+    });
+  }
+
+  if (in->GetDefault().has_value()) {
+    message->set_allocated_default_(From(in->GetDefault().value()));
+  }
+
+  return message;
+}
+
+SyntaxTree::Typedef *AstWriter::From(const FlowPtr<Typedef> &in) {
+  auto *message = Pool::CreateMessage<SyntaxTree::Typedef>(m_arena);
+
+  message->set_allocated_location(FromSource(in));
+  message->set_name(in->GetName().Get());
+  message->set_allocated_type(From(in->GetType()));
+
+  return message;
+}
+
+SyntaxTree::Function *AstWriter::From(const FlowPtr<Function> &in) {
+  auto *message = Pool::CreateMessage<SyntaxTree::Function>(m_arena);
+
+  message->set_allocated_location(FromSource(in));
+  message->set_allocated_return_type(From(in->GetReturn()));
+  message->set_name(in->GetName().Get());
+  message->set_purity(FromPurity(in->GetPurity()));
+  message->set_variadic(in->IsVariadic());
+  if (in->GetPrecond().has_value()) {
+    message->set_allocated_precondition(From(in->GetPrecond().value()));
+  }
+
+  if (in->GetPostcond().has_value()) {
+    message->set_allocated_postcondition(From(in->GetPostcond().value()));
+  }
+
+  if (in->GetBody().has_value()) {
+    message->set_allocated_body(From(in->GetBody().value()));
+  }
+
+  { /* Add all attributes */
+    const auto &items = in->GetAttributes();
+
+    message->mutable_attributes()->Reserve(items.size());
+    std::for_each(items.begin(), items.end(), [&](auto item) {
+      message->mutable_attributes()->AddAllocated(From(item));
+    });
+  }
+
+  { /* Add all captures */
+    const auto &items = in->GetCaptures();
+
+    message->mutable_captures()->Reserve(items.size());
+    std::for_each(items.begin(), items.end(), [&](auto item) {
+      auto *capture =
+          Pool::CreateMessage<SyntaxTree::Function_Capture>(m_arena);
+      capture->set_name(item.first.Get());
+      capture->set_is_reference(item.second);
+
+      message->mutable_captures()->AddAllocated(capture);
+    });
+  }
+
+  /* Add all template parameters */
+  if (in->GetTemplateParams().has_value()) {
+    auto params = in->GetTemplateParams().value();
+    auto param_list = message->mutable_template_parameters()->parameters();
+    param_list.Reserve(params.size());
+
+    for (const auto &param : params) {
+      auto *parameter = Pool::CreateMessage<
+          SyntaxTree::TemplateParameters::TemplateParameter>(m_arena);
+      const auto &[name, type, default_] = param;
+      parameter->set_name(name.Get());
+      parameter->set_allocated_type(From(type));
+      if (default_.has_value()) {
+        parameter->set_allocated_default_value(From(default_.value()));
+      }
+
+      param_list.AddAllocated(parameter);
+    }
+  }
+
+  { /* Add all parameters */
+    const auto &params = in->GetParams();
+    auto *param_list = message->mutable_parameters();
+    param_list->Reserve(params.size());
+
+    for (const auto &param : params) {
+      auto *parameter =
+          Pool::CreateMessage<SyntaxTree::FunctionParameter>(m_arena);
+      const auto &[name, type, default_] = param;
+      parameter->set_name(name.Get());
+      parameter->set_allocated_type(From(type));
+      if (default_.has_value()) {
+        parameter->set_allocated_default_value(From(default_.value()));
+      }
+
+      param_list->AddAllocated(parameter);
+    }
+  }
+
+  if (in->GetTemplateParams().has_value()) {
+    auto items = in->GetTemplateParams().value();
+
+    message->mutable_template_parameters()->mutable_parameters()->Reserve(
+        items.size());
+    std::for_each(items.begin(), items.end(), [&](auto item) {
+      auto *parameter =
+          Pool::CreateMessage<SyntaxTree::TemplateParameters_TemplateParameter>(
+              m_arena);
+      const auto &param_name = std::get<0>(item);
+      const auto &param_type = std::get<1>(item);
+      const auto &param_default = std::get<2>(item);
+
+      parameter->set_name(param_name.Get());
+      parameter->set_allocated_type(From(param_type));
+      if (param_default.has_value()) {
+        parameter->set_allocated_default_value(From(param_default.value()));
+      }
+
+      message->mutable_template_parameters()
+          ->mutable_parameters()
+          ->AddAllocated(parameter);
+    });
+  }
+
+  return message;
+}
+
+SyntaxTree::Struct *AstWriter::From(const FlowPtr<Struct> &in) {
+  auto *message = Pool::CreateMessage<SyntaxTree::Struct>(m_arena);
+
+  message->set_allocated_location(FromSource(in));
+  message->set_name(in->GetName().Get());
+  message->set_kind(FromStructKind(in->GetCompositeType()));
+
+  if (in->GetTemplateParams().has_value()) {
+    auto items = in->GetTemplateParams().value();
+
+    message->mutable_template_parameters()->mutable_parameters()->Reserve(
+        items.size());
+    std::for_each(items.begin(), items.end(), [&](auto item) {
+      auto *parameter =
+          Pool::CreateMessage<SyntaxTree::TemplateParameters_TemplateParameter>(
+              m_arena);
+      const auto &param_name = std::get<0>(item);
+      const auto &param_type = std::get<1>(item);
+      const auto &param_default = std::get<2>(item);
+
+      parameter->set_name(param_name.Get());
+      parameter->set_allocated_type(From(param_type));
+      if (param_default.has_value()) {
+        parameter->set_allocated_default_value(From(param_default.value()));
+      }
+
+      message->mutable_template_parameters()
+          ->mutable_parameters()
+          ->AddAllocated(parameter);
+    });
+  }
+
+  { /* Add names */
+    const auto &items = in->GetNames();
+
+    message->mutable_names()->Reserve(items.size());
+    std::for_each(items.begin(), items.end(), [&](auto item) {
+      message->mutable_names()->Add(item.Get().c_str());
+    });
+  }
+
+  { /* Add all attributes */
+    const auto &items = in->GetAttributes();
+
+    message->mutable_attributes()->Reserve(items.size());
+    std::for_each(items.begin(), items.end(), [&](auto item) {
+      message->mutable_attributes()->AddAllocated(From(item));
+    });
+  }
+
+  { /* Add all fields */
+    const auto &items = in->GetFields();
+
+    message->mutable_fields()->Reserve(items.size());
+    std::for_each(items.begin(), items.end(), [&](auto item) {
+      auto *field = Pool::CreateMessage<SyntaxTree::Struct_Field>(m_arena);
+      field->set_name(item.GetName().Get());
+      field->set_allocated_type(From(item.GetType()));
+      field->set_visibility(FromVisibility(item.GetVis()));
+      field->set_is_static(item.IsStatic());
+      if (item.GetValue().has_value()) {
+        field->set_allocated_default_value(From(item.GetValue().value()));
+      }
+
+      message->mutable_fields()->AddAllocated(field);
+    });
+  }
+
+  { /* Add all methods */
+    const auto &items = in->GetMethods();
+
+    message->mutable_methods()->Reserve(items.size());
+    std::for_each(items.begin(), items.end(), [&](auto item) {
+      auto *method = Pool::CreateMessage<SyntaxTree::Struct_Method>(m_arena);
+      method->set_visibility(FromVisibility(item.m_vis));
+      method->set_allocated_func(From(item.m_func));
+
+      message->mutable_methods()->AddAllocated(method);
+    });
+  }
+
+  { /* Add all methods */
+    const auto &items = in->GetStaticMethods();
+
+    message->mutable_static_methods()->Reserve(items.size());
+    std::for_each(items.begin(), items.end(), [&](auto item) {
+      auto *method = Pool::CreateMessage<SyntaxTree::Struct_Method>(m_arena);
+      method->set_visibility(FromVisibility(item.m_vis));
+      method->set_allocated_func(From(item.m_func));
+
+      message->mutable_static_methods()->AddAllocated(method);
+    });
+  }
+
+  return message;
+}
+
+SyntaxTree::Enum *AstWriter::From(const FlowPtr<Enum> &in) {
+  auto *message = Pool::CreateMessage<SyntaxTree::Enum>(m_arena);
+
+  message->set_allocated_location(FromSource(in));
+  message->set_name(in->GetName().Get());
+
+  if (in->GetType().has_value()) {
+    message->set_allocated_base_type(From(in->GetType().value()));
+  }
+
+  { /* Add all elements */
+    const auto &items = in->GetItems();
+
+    message->mutable_items()->Reserve(items.size());
+    std::for_each(items.begin(), items.end(), [&](auto item) {
+      auto *element = Pool::CreateMessage<SyntaxTree::Enum_Field>(m_arena);
+      element->set_name(item.first.Get());
+      if (item.second.has_value()) {
+        element->set_allocated_value(From(item.second.value()));
+      }
+      message->mutable_items()->AddAllocated(element);
+    });
+  }
+
+  return message;
+}
+
+SyntaxTree::Scope *AstWriter::From(const FlowPtr<Scope> &in) {
+  auto *message = Pool::CreateMessage<SyntaxTree::Scope>(m_arena);
+
+  message->set_allocated_location(FromSource(in));
+
+  { /* Add all dependencies */
+    const auto &items = in->GetDeps();
+    std::vector<std::string_view> names(items.size());
+    std::transform(items.begin(), items.end(), names.begin(),
+                   [](auto item) { return item.Get(); });
+
+    message->mutable_dependencies()->Assign(names.begin(), names.end());
+  }
+
+  message->set_name(in->GetName().Get());
+  message->set_allocated_body(From(in->GetBody()));
+
+  return message;
+}
+
+SyntaxTree::Export *AstWriter::From(const FlowPtr<Export> &in) {
+  auto *message = Pool::CreateMessage<SyntaxTree::Export>(m_arena);
+
+  message->set_allocated_location(FromSource(in));
+  message->set_abi_name(in->GetAbiName().Get());
+  message->set_allocated_body(From(in->GetBody()));
+  message->set_visibility(FromVisibility(in->GetVis()));
+
+  { /* Add all attributes */
+    const auto &items = in->GetAttrs();
+
+    message->mutable_attributes()->Reserve(items.size());
+    std::for_each(items.begin(), items.end(), [&](auto item) {
+      message->mutable_attributes()->AddAllocated(From(item));
+    });
+  }
+
+  return message;
+}
+
+////////////////////////////////////////////////////////////////////////////////
+
+#define SEND(__message, __node_name)                             \
+  {                                                              \
+    auto *message = From(n);                                     \
+    message->CheckInitialized();                                 \
+    auto *root = Pool::CreateMessage<SyntaxTree::Root>(m_arena); \
+    root->set_allocated_##__node_name(message);                  \
+    root->CheckInitialized();                                    \
+    if (m_plaintext_mode) {                                      \
+      m_os << root->Utf8DebugString();                           \
+    } else {                                                     \
+      if (!root->SerializeToOstream(&m_os)) [[unlikely]] {       \
+        qcore_panic("Failed to serialize protobuf message");     \
+      }                                                          \
+    }                                                            \
+  }
+
+void AstWriter::Visit(FlowPtr<Base> n) { SEND(From(n), base); }
+void AstWriter::Visit(FlowPtr<ExprStmt> n) { SEND(From(n), expr); }
+void AstWriter::Visit(FlowPtr<StmtExpr> n) { SEND(From(n), stmt_expr); }
+void AstWriter::Visit(FlowPtr<TypeExpr> n) { SEND(From(n), type_expr); }
+void AstWriter::Visit(FlowPtr<NamedTy> n) { SEND(From(n), named); }
+void AstWriter::Visit(FlowPtr<InferTy> n) { SEND(From(n), infer); }
+void AstWriter::Visit(FlowPtr<TemplateType> n) { SEND(From(n), template_); }
+void AstWriter::Visit(FlowPtr<U1> n) { SEND(From(n), u1); }
+void AstWriter::Visit(FlowPtr<U8> n) { SEND(From(n), u8); }
+void AstWriter::Visit(FlowPtr<U16> n) { SEND(From(n), u16); }
+void AstWriter::Visit(FlowPtr<U32> n) { SEND(From(n), u32); }
+void AstWriter::Visit(FlowPtr<U64> n) { SEND(From(n), u64); }
+void AstWriter::Visit(FlowPtr<U128> n) { SEND(From(n), u128); }
+void AstWriter::Visit(FlowPtr<I8> n) { SEND(From(n), i8); }
+void AstWriter::Visit(FlowPtr<I16> n) { SEND(From(n), i16); }
+void AstWriter::Visit(FlowPtr<I32> n) { SEND(From(n), i32); }
+void AstWriter::Visit(FlowPtr<I64> n) { SEND(From(n), i64); }
+void AstWriter::Visit(FlowPtr<I128> n) { SEND(From(n), i128); }
+void AstWriter::Visit(FlowPtr<F16> n) { SEND(From(n), f16); }
+void AstWriter::Visit(FlowPtr<F32> n) { SEND(From(n), f32); }
+void AstWriter::Visit(FlowPtr<F64> n) { SEND(From(n), f64); }
+void AstWriter::Visit(FlowPtr<F128> n) { SEND(From(n), f128); }
+void AstWriter::Visit(FlowPtr<VoidTy> n) { SEND(From(n), void_); }
+void AstWriter::Visit(FlowPtr<PtrTy> n) { SEND(From(n), ptr); }
+void AstWriter::Visit(FlowPtr<OpaqueTy> n) { SEND(From(n), opaque); }
+void AstWriter::Visit(FlowPtr<TupleTy> n) { SEND(From(n), tuple); }
+void AstWriter::Visit(FlowPtr<ArrayTy> n) SEND(From(n), array);
+void AstWriter::Visit(FlowPtr<RefTy> n) { SEND(From(n), ref); }
+void AstWriter::Visit(FlowPtr<FuncTy> n) { SEND(From(n), func); }
+void AstWriter::Visit(FlowPtr<Unary> n) { SEND(From(n), unary); }
+void AstWriter::Visit(FlowPtr<Binary> n) { SEND(From(n), binary); }
+void AstWriter::Visit(FlowPtr<PostUnary> n) { SEND(From(n), post_unary); }
+void AstWriter::Visit(FlowPtr<Ternary> n) { SEND(From(n), ternary); }
+void AstWriter::Visit(FlowPtr<Integer> n) { SEND(From(n), integer); }
+void AstWriter::Visit(FlowPtr<Float> n) { SEND(From(n), float_); }
+void AstWriter::Visit(FlowPtr<Boolean> n) { SEND(From(n), boolean); }
+void AstWriter::Visit(FlowPtr<String> n) { SEND(From(n), string); }
+void AstWriter::Visit(FlowPtr<Character> n) { SEND(From(n), character); }
+void AstWriter::Visit(FlowPtr<Null> n) { SEND(From(n), null); }
+void AstWriter::Visit(FlowPtr<Undefined> n) { SEND(From(n), undefined); }
+void AstWriter::Visit(FlowPtr<Call> n) { SEND(From(n), call); }
+void AstWriter::Visit(FlowPtr<TemplateCall> n) { SEND(From(n), template_call); }
+void AstWriter::Visit(FlowPtr<List> n) { SEND(From(n), list); }
+void AstWriter::Visit(FlowPtr<Assoc> n) { SEND(From(n), assoc); }
+void AstWriter::Visit(FlowPtr<Index> n) { SEND(From(n), index); }
+void AstWriter::Visit(FlowPtr<Slice> n) { SEND(From(n), slice); }
+void AstWriter::Visit(FlowPtr<FString> n) { SEND(From(n), fstring); }
+void AstWriter::Visit(FlowPtr<Identifier> n) { SEND(From(n), identifier); }
+void AstWriter::Visit(FlowPtr<Sequence> n) { SEND(From(n), sequence); }
+void AstWriter::Visit(FlowPtr<Block> n) { SEND(From(n), block); }
+void AstWriter::Visit(FlowPtr<Variable> n) { SEND(From(n), variable); }
+void AstWriter::Visit(FlowPtr<Assembly> n) { SEND(From(n), assembly); }
+void AstWriter::Visit(FlowPtr<If> n) { SEND(From(n), if_); }
+void AstWriter::Visit(FlowPtr<While> n) { SEND(From(n), while_); }
+void AstWriter::Visit(FlowPtr<For> n) { SEND(From(n), for_); }
+void AstWriter::Visit(FlowPtr<Foreach> n) { SEND(From(n), foreach); }
+void AstWriter::Visit(FlowPtr<Break> n) { SEND(From(n), break_); }
+void AstWriter::Visit(FlowPtr<Continue> n) { SEND(From(n), continue_); }
+void AstWriter::Visit(FlowPtr<Return> n) { SEND(From(n), return_); }
+void AstWriter::Visit(FlowPtr<ReturnIf> n) { SEND(From(n), return_if); }
+void AstWriter::Visit(FlowPtr<Case> n) { SEND(From(n), case_); }
+void AstWriter::Visit(FlowPtr<Switch> n) { SEND(From(n), switch_); }
+void AstWriter::Visit(FlowPtr<Typedef> n) { SEND(From(n), typedef_); }
+void AstWriter::Visit(FlowPtr<Function> n) { SEND(From(n), function); }
+void AstWriter::Visit(FlowPtr<Struct> n) { SEND(From(n), struct_); }
+void AstWriter::Visit(FlowPtr<Enum> n) { SEND(From(n), enum_); }
+void AstWriter::Visit(FlowPtr<Scope> n) { SEND(From(n), scope); }
+void AstWriter::Visit(FlowPtr<Export> n) { SEND(From(n), export_); }
+
+AstWriter::AstWriter(std::ostream &os, WriterSourceProvider rd,
+                     bool plaintext_mode)
+    : m_arena(new google::protobuf::Arena),
+      m_os(os),
+      m_rd(rd),
+      m_plaintext_mode(plaintext_mode) {}
+
+AstWriter::~AstWriter() { delete m_arena; }

@@ -575,7 +575,7 @@ public:
 
 // namespace lower {
 //   namespace expr {
-//     static val_t for_BINEXPR(ctx_t &m, craft_t &b, State &s, const BinaryExpression
+//     static val_t for_BINEXPR(ctx_t &m, craft_t &b, State &s, const Binary
 //     *N) {
 // #define PROD_LHS()              \
 //   val_t L = V(N->getLHS());     \
@@ -1050,7 +1050,8 @@ public:
 //       }
 //     }
 
-//     static val_t for_IDENT(ctx_t &m, craft_t &b, State &s, const Identifier *N) {
+//     static val_t for_IDENT(ctx_t &m, craft_t &b, State &s, const Identifier
+//     *N) {
 //       if (auto find = s.find_named_value(m, N->GetName())) {
 //         debug("Found named value " << N->GetName());
 
@@ -1757,7 +1758,7 @@ public:
 //       using namespace lower::expr;
 //       using namespace lower::symbol;
 
-//       FUNCTION(IR_eBIN, for_BINEXPR, BinaryExpression);
+//       FUNCTION(IR_eBIN, for_BINEXPR, Binary);
 //       FUNCTION(IR_eUNARY, for_UNEXPR, Unary);
 //       FUNCTION(IR_eINT, for_INT, Int);
 //       FUNCTION(IR_eFLOAT, for_FLOAT, Float);

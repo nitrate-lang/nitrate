@@ -456,12 +456,12 @@ auto Parser::Parse() -> ASTRoot {
 
         {   /* Parse the input */
           { /* Swap in an arena allocator */
-            std::swap(NparAllocator, m_impl->m_allocator);
+            std::swap(MainAllocator, m_impl->m_allocator);
 
             /* Recursive descent parsing */
             auto node = m_impl->RecurseBlock(false, false, SafetyMode::Unknown);
 
-            std::swap(NparAllocator, m_impl->m_allocator);
+            std::swap(MainAllocator, m_impl->m_allocator);
 
             if (m_impl->m_rd.HasError()) {
               Log << SyntaxError << "Some lexical errors have occurred";

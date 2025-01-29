@@ -34,209 +34,113 @@
 #ifndef __NITRATE_AST_READER_H__
 #define __NITRATE_AST_READER_H__
 
-#include <cstdint>
-#include <istream>
+#include <memory>
 #include <nitrate-core/Macro.hh>
 #include <nitrate-core/NullableFlowPtr.hh>
 #include <nitrate-lexer/Scanner.hh>
-#include <nitrate-parser/ASTBase.hh>
+#include <nitrate-parser/AST.hh>
+#include <nitrate-parser/ASTWriter.hh>
 #include <optional>
-#include <variant>
 
 namespace ncc::parse {
   using ReaderSourceManager =
       std::optional<std::reference_wrapper<lex::IScanner>>;
 
-  class NCC_EXPORT AstReader {
-  public:
-    using none = std::nullptr_t;
+  class NCC_EXPORT AstReader final {
+    template <typename T>
+    using Result = NullableFlowPtr<T>;
 
-    class Value {
-      using Data = std::variant<std::string, uint64_t, double, bool, none>;
-      Data m_data;
+    Result<Base> m_root;
+    ReaderSourceManager m_rd;
+    std::unique_ptr<IMemory> m_mm;
 
-    public:
-      template <typename T>
-      Value(T&& data) : m_data(std::forward<T>(data)) {}
+    void UnmarshalLocationLocation(const SyntaxTree::SourceLocationRange &in,
+                                   const FlowPtr<Base> &out);
 
-      auto operator()() -> Data& { return m_data; }
-      auto operator()() const -> const Data& { return m_data; }
-      auto operator==(const Value& o) const -> bool {
-        return m_data == o.m_data;
-      }
-    };
+    void UnmarshalCodeComment(
+        const ::google::protobuf::RepeatedPtrField<
+            ::nitrate::parser::SyntaxTree::UserComment> &in,
+        const FlowPtr<Base> &out);
 
-    using NextFunc = std::function<std::optional<Value>()>;
-
-  private:
-    NextFunc m_next_func;
-    std::optional<Value> m_peek;
-    ReaderSourceManager m_source;
-    std::optional<FlowPtr<Base>> m_root;
-
-    auto NextValue() -> std::optional<Value> {
-      if (m_peek.has_value()) {
-        auto val = m_peek;
-        m_peek.reset();
-        return val;
-      }
-
-      return m_next_func();
-    }
-
-    auto PeekValue() -> std::optional<Value> {
-      if (!m_peek.has_value()) {
-        m_peek = m_next_func();
-      }
-
-      return m_peek;
-    }
-
-    struct LocationRange {
-      lex::Location m_start, m_end;
-    };
-
-    auto ReadLocationRange() -> std::optional<LocationRange>;
-
-    auto DeserializeObject() -> NullableFlowPtr<Base>;
-    auto DeserializeStatement() -> NullableFlowPtr<Stmt>;
-    auto DeserializeExpression() -> NullableFlowPtr<Expr>;
-    auto DeserializeType() -> NullableFlowPtr<Type>;
-
-    struct TypeMetadata {
-      NullableFlowPtr<Expr> m_width, m_min, m_max;
-    };
-
-    auto ReadTypeMetadata() -> std::optional<TypeMetadata>;
-
-    auto ReadKindNode() -> NullableFlowPtr<Base>;
-    auto ReadKindBinexpr() -> NullableFlowPtr<BinaryExpression>;
-    auto ReadKindUnexpr() -> NullableFlowPtr<UnaryExpression>;
-    auto ReadKindTerexpr() -> NullableFlowPtr<TernaryExpression>;
-    auto ReadKindInt() -> NullableFlowPtr<Integer>;
-    auto ReadKindFloat() -> NullableFlowPtr<Float>;
-    auto ReadKindString() -> NullableFlowPtr<String>;
-    auto ReadKindChar() -> NullableFlowPtr<Character>;
-    auto ReadKindBool() -> NullableFlowPtr<Boolean>;
-    auto ReadKindNull() -> NullableFlowPtr<Null>;
-    auto ReadKindUndef() -> NullableFlowPtr<Undefined>;
-    auto ReadKindCall() -> NullableFlowPtr<Call>;
-    auto ReadKindList() -> NullableFlowPtr<List>;
-    auto ReadKindAssoc() -> NullableFlowPtr<Assoc>;
-    auto ReadKindIndex() -> NullableFlowPtr<Index>;
-    auto ReadKindSlice() -> NullableFlowPtr<Slice>;
-    auto ReadKindFstring() -> NullableFlowPtr<FString>;
-    auto ReadKindIdentifier( ) -> NullableFlowPtr<Identifier>;
-    auto ReadKindSequence() -> NullableFlowPtr<Sequence>;
-    auto ReadKindPostUnexpr() -> NullableFlowPtr<PostUnaryExpression>;
-    auto ReadKindStmtExpr() -> NullableFlowPtr<StmtExpr>;
-    auto ReadKindTypeExpr() -> NullableFlowPtr<TypeExpr>;
-    auto ReadKindTemplateCall() -> NullableFlowPtr<TemplateCall>;
-    auto ReadKindRef() -> NullableFlowPtr<RefTy>;
-    auto ReadKindU1() -> NullableFlowPtr<U1>;
-    auto ReadKindU8() -> NullableFlowPtr<U8>;
-    auto ReadKindU16() -> NullableFlowPtr<U16>;
-    auto ReadKindU32() -> NullableFlowPtr<U32>;
-    auto ReadKindU64() -> NullableFlowPtr<U64>;
-    auto ReadKindU128() -> NullableFlowPtr<U128>;
-    auto ReadKindI8() -> NullableFlowPtr<I8>;
-    auto ReadKindI16() -> NullableFlowPtr<I16>;
-    auto ReadKindI32() -> NullableFlowPtr<I32>;
-    auto ReadKindI64() -> NullableFlowPtr<I64>;
-    auto ReadKindI128() -> NullableFlowPtr<I128>;
-    auto ReadKindF16() -> NullableFlowPtr<F16>;
-    auto ReadKindF32() -> NullableFlowPtr<F32>;
-    auto ReadKindF64() -> NullableFlowPtr<F64>;
-    auto ReadKindF128() -> NullableFlowPtr<F128>;
-    auto ReadKindVoid() -> NullableFlowPtr<VoidTy>;
-    auto ReadKindPtr() -> NullableFlowPtr<PtrTy>;
-    auto ReadKindOpaque() -> NullableFlowPtr<OpaqueTy>;
-    auto ReadKindArray() -> NullableFlowPtr<ArrayTy>;
-    auto ReadKindTuple() -> NullableFlowPtr<TupleTy>;
-    auto ReadKindFuncTy() -> NullableFlowPtr<FuncTy>;
-    auto ReadKindUnres() -> NullableFlowPtr<NamedTy>;
-    auto ReadKindInfer() -> NullableFlowPtr<InferTy>;
-    auto ReadKindTempl() -> NullableFlowPtr<TemplateType>;
-    auto ReadKindTypedef() -> NullableFlowPtr<Typedef>;
-    auto ReadKindStruct() -> NullableFlowPtr<Struct>;
-    auto ReadKindEnum() -> NullableFlowPtr<Enum>;
-    auto ReadKindFunction() -> NullableFlowPtr<Function>;
-    auto ReadKindScope() -> NullableFlowPtr<Scope>;
-    auto ReadKindExport() -> NullableFlowPtr<Export>;
-    auto ReadKindBlock() -> NullableFlowPtr<Block>;
-    auto ReadKindLet() -> NullableFlowPtr<Variable>;
-    auto ReadKindAssembly() -> NullableFlowPtr<Assembly>;
-    auto ReadKindReturn() -> NullableFlowPtr<Return>;
-    auto ReadKindRetif() -> NullableFlowPtr<ReturnIf>;
-    auto ReadKindBreak() -> NullableFlowPtr<Break>;
-    auto ReadKindContinue() -> NullableFlowPtr<Continue>;
-    auto ReadKindIf() -> NullableFlowPtr<If>;
-    auto ReadKindWhile() -> NullableFlowPtr<While>;
-    auto ReadKindFor() -> NullableFlowPtr<For>;
-    auto ReadKindForeach() -> NullableFlowPtr<Foreach>;
-    auto ReadKindCase() -> NullableFlowPtr<Case>;
-    auto ReadKindSwitch() -> NullableFlowPtr<Switch>;
-    auto ReadKindExprStmt() -> NullableFlowPtr<ExprStmt>;
-
-    template <typename ValueType>
-    constexpr auto NextIf(const ValueType& v = ValueType()) -> bool;
-
-    template <typename ValueType>
-    constexpr auto NextIs() -> bool;
-
-    template <typename ValueType>
-    constexpr auto Next() -> ValueType;
+    auto Unmarshal(const SyntaxTree::Expr &in) -> Result<Expr>;
+    auto Unmarshal(const SyntaxTree::Root &in) -> Result<Base>;
+    auto Unmarshal(const SyntaxTree::Stmt &in) -> Result<Stmt>;
+    auto Unmarshal(const SyntaxTree::Type &in) -> Result<Type>;
+    auto Unmarshal(const SyntaxTree::Base &in) -> Result<Base>;
+    auto Unmarshal(const SyntaxTree::ExprStmt &in) -> Result<ExprStmt>;
+    auto Unmarshal(const SyntaxTree::StmtExpr &in) -> Result<StmtExpr>;
+    auto Unmarshal(const SyntaxTree::TypeExpr &in) -> Result<TypeExpr>;
+    auto Unmarshal(const SyntaxTree::NamedTy &in) -> Result<NamedTy>;
+    auto Unmarshal(const SyntaxTree::InferTy &in) -> Result<InferTy>;
+    auto Unmarshal(const SyntaxTree::TemplateType &in) -> Result<TemplateType>;
+    auto Unmarshal(const SyntaxTree::U1 &in) -> Result<U1>;
+    auto Unmarshal(const SyntaxTree::U8 &in) -> Result<U8>;
+    auto Unmarshal(const SyntaxTree::U16 &in) -> Result<U16>;
+    auto Unmarshal(const SyntaxTree::U32 &in) -> Result<U32>;
+    auto Unmarshal(const SyntaxTree::U64 &in) -> Result<U64>;
+    auto Unmarshal(const SyntaxTree::U128 &in) -> Result<U128>;
+    auto Unmarshal(const SyntaxTree::I8 &in) -> Result<I8>;
+    auto Unmarshal(const SyntaxTree::I16 &in) -> Result<I16>;
+    auto Unmarshal(const SyntaxTree::I32 &in) -> Result<I32>;
+    auto Unmarshal(const SyntaxTree::I64 &in) -> Result<I64>;
+    auto Unmarshal(const SyntaxTree::I128 &in) -> Result<I128>;
+    auto Unmarshal(const SyntaxTree::F16 &in) -> Result<F16>;
+    auto Unmarshal(const SyntaxTree::F32 &in) -> Result<F32>;
+    auto Unmarshal(const SyntaxTree::F64 &in) -> Result<F64>;
+    auto Unmarshal(const SyntaxTree::F128 &in) -> Result<F128>;
+    auto Unmarshal(const SyntaxTree::VoidTy &in) -> Result<VoidTy>;
+    auto Unmarshal(const SyntaxTree::PtrTy &in) -> Result<PtrTy>;
+    auto Unmarshal(const SyntaxTree::OpaqueTy &in) -> Result<OpaqueTy>;
+    auto Unmarshal(const SyntaxTree::TupleTy &in) -> Result<TupleTy>;
+    auto Unmarshal(const SyntaxTree::ArrayTy &in) -> Result<ArrayTy>;
+    auto Unmarshal(const SyntaxTree::RefTy &in) -> Result<RefTy>;
+    auto Unmarshal(const SyntaxTree::FuncTy &in) -> Result<FuncTy>;
+    auto Unmarshal(const SyntaxTree::Unary &in) -> Result<Unary>;
+    auto Unmarshal(const SyntaxTree::Binary &in) -> Result<Binary>;
+    auto Unmarshal(const SyntaxTree::PostUnary &in) -> Result<PostUnary>;
+    auto Unmarshal(const SyntaxTree::Ternary &in) -> Result<Ternary>;
+    auto Unmarshal(const SyntaxTree::Integer &in) -> Result<Integer>;
+    auto Unmarshal(const SyntaxTree::Float &in) -> Result<Float>;
+    auto Unmarshal(const SyntaxTree::Boolean &in) -> Result<Boolean>;
+    auto Unmarshal(const SyntaxTree::String &in) -> Result<String>;
+    auto Unmarshal(const SyntaxTree::Character &in) -> Result<Character>;
+    auto Unmarshal(const SyntaxTree::Null &in) -> Result<Null>;
+    auto Unmarshal(const SyntaxTree::Undefined &in) -> Result<Undefined>;
+    auto Unmarshal(const SyntaxTree::Call &in) -> Result<Call>;
+    auto Unmarshal(const SyntaxTree::TemplateCall &in) -> Result<TemplateCall>;
+    auto Unmarshal(const SyntaxTree::List &in) -> Result<List>;
+    auto Unmarshal(const SyntaxTree::Assoc &in) -> Result<Assoc>;
+    auto Unmarshal(const SyntaxTree::Index &in) -> Result<Index>;
+    auto Unmarshal(const SyntaxTree::Slice &in) -> Result<Slice>;
+    auto Unmarshal(const SyntaxTree::FString &in) -> Result<FString>;
+    auto Unmarshal(const SyntaxTree::Identifier &in) -> Result<Identifier>;
+    auto Unmarshal(const SyntaxTree::Sequence &in) -> Result<Sequence>;
+    auto Unmarshal(const SyntaxTree::Block &in) -> Result<Block>;
+    auto Unmarshal(const SyntaxTree::Variable &in) -> Result<Variable>;
+    auto Unmarshal(const SyntaxTree::Assembly &in) -> Result<Assembly>;
+    auto Unmarshal(const SyntaxTree::If &in) -> Result<If>;
+    auto Unmarshal(const SyntaxTree::While &in) -> Result<While>;
+    auto Unmarshal(const SyntaxTree::For &in) -> Result<For>;
+    auto Unmarshal(const SyntaxTree::Foreach &in) -> Result<Foreach>;
+    auto Unmarshal(const SyntaxTree::Break &in) -> Result<Break>;
+    auto Unmarshal(const SyntaxTree::Continue &in) -> Result<Continue>;
+    auto Unmarshal(const SyntaxTree::Return &in) -> Result<Return>;
+    auto Unmarshal(const SyntaxTree::ReturnIf &in) -> Result<ReturnIf>;
+    auto Unmarshal(const SyntaxTree::Case &in) -> Result<Case>;
+    auto Unmarshal(const SyntaxTree::Switch &in) -> Result<Switch>;
+    auto Unmarshal(const SyntaxTree::Typedef &in) -> Result<Typedef>;
+    auto Unmarshal(const SyntaxTree::Function &in) -> Result<Function>;
+    auto Unmarshal(const SyntaxTree::Struct &in) -> Result<Struct>;
+    auto Unmarshal(const SyntaxTree::Enum &in) -> Result<Enum>;
+    auto Unmarshal(const SyntaxTree::Scope &in) -> Result<Scope>;
+    auto Unmarshal(const SyntaxTree::Export &in) -> Result<Export>;
 
   public:
-    AstReader(NextFunc data_source, ReaderSourceManager source_manager)
-        : m_next_func(std::move(data_source)), m_source(source_manager) {}
-    virtual ~AstReader() = default;
+    AstReader(std::string_view protobuf_data,
+              ReaderSourceManager source_manager = std::nullopt);
+    ~AstReader() = default;
 
-    auto Get() -> std::optional<FlowPtr<Base>>;
-  };
-
-  class NCC_EXPORT AstJsonReader final : public AstReader {
-    auto ReadValue() -> std::optional<Value>;
-    std::istream& m_is;
-
-    struct PImpl;
-    std::unique_ptr<PImpl> m_pimpl;
-
-  public:
-    AstJsonReader(std::istream& is,
-                  ReaderSourceManager source_manager = std::nullopt);
-
-    static auto FromString(const std::string& json,
-                           ReaderSourceManager source_manager = std::nullopt)
-        -> std::optional<FlowPtr<Base>> {
-      std::istringstream is(json);
-      AstJsonReader reader(is, source_manager);
-      return reader.Get();
-    }
-
-    ~AstJsonReader() override;
-  };
-
-  class NCC_EXPORT AstMsgPackReader final : public AstReader {
-    auto ReadValue() -> std::optional<Value>;
-    std::istream& m_is;
-
-    struct PImpl;
-    std::unique_ptr<PImpl> m_pimpl;
-
-  public:
-    AstMsgPackReader(std::istream& is,
-                     ReaderSourceManager source_manager = std::nullopt);
-
-    static auto FromString(const std::string& msgpack,
-                           ReaderSourceManager source_manager = std::nullopt)
-        -> std::optional<FlowPtr<Base>> {
-      std::istringstream is(msgpack);
-      AstMsgPackReader reader(is, source_manager);
-      return reader.Get();
-    }
-
-    ~AstMsgPackReader() override;
+    auto Get() -> std::optional<ASTRoot>;
   };
 }  // namespace ncc::parse
 

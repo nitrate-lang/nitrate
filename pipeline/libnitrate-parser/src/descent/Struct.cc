@@ -75,14 +75,55 @@ auto Parser::PImpl::RecurseStructTerms() -> StructNames {
     return names;
   }
 
-  while (true) {
-    if (auto name = RecurseName(); !name->empty()) {
-      names.push_back(name);
-    } else {
+  bool enclosed = NextIf(PuncLBrk).has_value();
+
+  if (enclosed) {
+    while (true) {
+      if (NextIf(EofF)) [[unlikely]] {
+        Log << SyntaxError << current()
+            << "Encountered EOF while parsing struct attributes";
+        break;
+      } else if (NextIf(PuncRBrk)) {
+        break;
+      }
+
+      if (auto name = RecurseName(); !name->empty()) {
+        names.push_back(name);
+      } else {
+        Log << SyntaxError << next() << "Expected identifier in struct terms";
+        break;
+      }
+
+      if (NextIf(PuncComa)) {
+        continue;
+      }
+
+      if (NextIf(PuncRBrk)) {
+        break;
+      }
+
+      Log << SyntaxError << next() << "Expected ',' or ']' in struct terms";
       break;
     }
+  } else {
+    while (true) {
+      if (NextIf(EofF)) [[unlikely]] {
+        Log << SyntaxError << current()
+            << "Encountered EOF while parsing struct attributes";
+        break;
+      }
 
-    NextIf(PuncComa);
+      if (auto name = RecurseName(); !name->empty()) [[likely]] {
+        names.push_back(name);
+      } else {
+        Log << SyntaxError << next() << "Expected identifier in struct terms";
+        break;
+      }
+
+      if (!NextIf(PuncComa)) {
+        break;
+      }
+    }
   }
 
   return names;
@@ -151,6 +192,10 @@ void Parser::PImpl::RecurseStructMethodOrField(StructContent &body) {
 
 auto Parser::PImpl::RecurseStructBody() -> Parser::PImpl::StructContent {
   StructContent body;
+
+  if (NextIf(PuncSemi)) {
+    return body;
+  }
 
   if (!NextIf(PuncLCur)) [[unlikely]] {
     Log << SyntaxError << current() << "Expected '{' to start struct body";

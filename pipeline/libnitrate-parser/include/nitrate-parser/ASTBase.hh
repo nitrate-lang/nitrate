@@ -65,7 +65,7 @@ namespace ncc::parse {
 
     lex::LocationID m_begin;
     lex::LocationID m_end;
-    std::vector<lex::Token> m_comments;
+    std::vector<string> m_comments;
 
     ASTExtensionPackage(lex::LocationID begin, lex::LocationID end)
         : m_begin(begin), m_end(end) {}
@@ -73,11 +73,11 @@ namespace ncc::parse {
   public:
     [[nodiscard]] auto Begin() const { return m_begin; }
     [[nodiscard]] auto End() const { return m_end; }
-    [[nodiscard]] auto Comments() const -> std::span<const lex::Token> {
+    [[nodiscard]] auto Comments() const -> std::span<const string> {
       return m_comments;
     }
 
-    void AddComments(std::span<const lex::Token> comments) {
+    void AddComments(std::span<const string> comments) {
       m_comments.insert(m_comments.end(), comments.begin(), comments.end());
     }
   };
@@ -107,7 +107,7 @@ namespace ncc::parse {
 
   extern ASTExtension ExtensionDataStore;
 
-  class Base {
+  class NCC_EXPORT Base {
   private:
     npar_ty_t m_node_type : 7;
     bool m_mock : 1;
@@ -139,11 +139,11 @@ namespace ncc::parse {
         return QAST_BASE;
       } else if constexpr (std::is_same_v<T, Type>) {
         return QAST_BASE;
-      } else if constexpr (std::is_same_v<T, BinaryExpression>) {
+      } else if constexpr (std::is_same_v<T, Binary>) {
         return QAST_BINEXPR;
-      } else if constexpr (std::is_same_v<T, UnaryExpression>) {
+      } else if constexpr (std::is_same_v<T, Unary>) {
         return QAST_UNEXPR;
-      } else if constexpr (std::is_same_v<T, TernaryExpression>) {
+      } else if constexpr (std::is_same_v<T, Ternary>) {
         return QAST_TEREXPR;
       } else if constexpr (std::is_same_v<T, Integer>) {
         return QAST_INT;
@@ -175,7 +175,7 @@ namespace ncc::parse {
         return QAST_IDENT;
       } else if constexpr (std::is_same_v<T, Sequence>) {
         return QAST_SEQ;
-      } else if constexpr (std::is_same_v<T, PostUnaryExpression>) {
+      } else if constexpr (std::is_same_v<T, PostUnary>) {
         return QAST_POST_UNEXPR;
       } else if constexpr (std::is_same_v<T, StmtExpr>) {
         return QAST_SEXPR;
@@ -352,13 +352,16 @@ namespace ncc::parse {
     }
 
     ///======================================================================
-    /// Debugging
+    /// Serialization
 
-    auto Dump(std::ostream &os = std::cerr,
-              WriterSourceProvider rd = std::nullopt) const -> std::ostream &;
+    void DebugString(std::ostream &os,
+                     WriterSourceProvider rd = std::nullopt) const;
 
-    [[nodiscard]] auto ToJson(WriterSourceProvider rd = std::nullopt) const
-        -> std::string;
+    [[nodiscard]] std::string DebugString(
+        WriterSourceProvider rd = std::nullopt) const;
+
+    void Serialize(std::ostream &os) const;
+    [[nodiscard]] std::string Serialize() const;
 
     ///======================================================================
     /// AST Extension Data
@@ -389,7 +392,7 @@ namespace ncc::parse {
 
     [[nodiscard]] constexpr auto Comments() const {
       if (m_data.IsNull()) {
-        return std::span<const lex::Token>();
+        return std::span<const string>();
       }
 
       return ExtensionDataStore.Get(m_data).Comments();
@@ -406,7 +409,8 @@ namespace ncc::parse {
       m_data = ExtensionDataStore.Add(begin, end);
     }
 
-    void BindCodeCommentData(std::span<const lex::Token> comment_tokens);
+    void SetComments(std::span<const lex::Token> comment_tokens);
+    void SetComments(std::span<const string> comments);
   } __attribute__((packed));
 
   static_assert(sizeof(Base) == 8);

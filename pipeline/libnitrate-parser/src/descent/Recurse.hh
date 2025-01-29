@@ -73,7 +73,7 @@ namespace ncc::parse {
 #define NextIf(tok) NextIfImpl<tok>(m_rd)
 
   static inline auto BindComments(auto node, auto comments) {
-    node->BindCodeCommentData(std::move(comments));
+    node->SetComments(std::move(comments));
     return node;
   }
 

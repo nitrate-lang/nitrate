@@ -3,7 +3,6 @@
 #include <lsp/lang/FmtInterface.hh>
 #include <nitrate-core/String.hh>
 #include <sstream>
-#include <stack>
 
 namespace no3::lsp::fmt {
   using namespace ncc;
@@ -11,47 +10,40 @@ namespace no3::lsp::fmt {
   template <typename T>
   using FlowPtr = ncc::FlowPtr<T>;
 
-  class CambrianFormatter final : public parse::ASTVisitor,
-                                  public ICodeFormatter {
-    class LineStreamWritter {
+  class NCC_EXPORT CambrianFormatter final : public parse::ASTVisitor,
+                                             public ICodeFormatter {
+    class LineWriter final {
       std::stringstream m_line_buffer;
       std::ostream& m_file;
 
     public:
-      LineStreamWritter(std::ostream& out) : m_file(out) {}
+      LineWriter(std::ostream& out) : m_file(out) {}
 
       void Reset() {
         m_line_buffer.str("");
         m_line_buffer.clear();
       }
 
+      auto Length() -> size_t { return m_line_buffer.tellp(); }
+
+      auto operator<<(ncc::lex::Operator op) -> LineWriter&;
+      auto operator<<(parse::Vis v) -> LineWriter&;
+      auto operator<<(ncc::string str) -> LineWriter&;
+      auto operator<<(std::ostream& (*func)(std::ostream&)) -> LineWriter&;
+
       template <typename T>
-      auto operator<<(const T& val) -> LineStreamWritter& {
+      auto operator<<(const T& val) -> LineWriter& {
         m_line_buffer << val;
         return *this;
       }
-      auto operator<<(ncc::lex::Operator op) -> LineStreamWritter&;
-      auto operator<<(parse::Vis v) -> LineStreamWritter&;
-      auto operator<<(ncc::string str) -> LineStreamWritter& {
-        m_line_buffer << str.Get();
-        return *this;
-      }
-
-      auto operator<<(std::ostream& (*func)(std::ostream&))
-          -> LineStreamWritter&;
-
-      auto Length() -> size_t { return m_line_buffer.tellp(); }
     };
 
-    LineStreamWritter m_line;
-    std::stack<size_t> m_field_indent_stack;
+    LineWriter m_line;
     size_t m_indent{};
     const size_t m_tabSize;
     bool m_failed, m_did_root;
 
     void ResetAutomaton() {
-      m_field_indent_stack = std::stack<size_t>();
-      m_field_indent_stack.push(1);
       m_line.Reset();
       m_indent = 0;
       m_failed = false;
@@ -72,7 +64,7 @@ namespace no3::lsp::fmt {
     void WriteFloatLiteralChunk(std::string_view float_str);
     void WriteFloatLiteral(std::string_view float_str);
 
-    void FormatTypeMetadata(const FlowPtr<parse::Type> &n);
+    void FormatTypeMetadata(const FlowPtr<parse::Type>& n);
 
     void WrapStmtBody(FlowPtr<parse::Stmt> n, size_t size_threshold,
                       bool use_arrow_if_wrapped);
@@ -97,8 +89,8 @@ namespace no3::lsp::fmt {
       }
     }
 
-    void PrintLineComments(const FlowPtr<parse::Base> &n);
-    void PrintMultilineComments(const FlowPtr<parse::Base> &n);
+    void PrintLineComments(const FlowPtr<parse::Base>& n);
+    void PrintMultilineComments(const FlowPtr<parse::Base>& n);
 
     void Visit(FlowPtr<parse::Base> n) override;
     void Visit(FlowPtr<parse::ExprStmt> n) override;
@@ -129,10 +121,10 @@ namespace no3::lsp::fmt {
     void Visit(FlowPtr<parse::ArrayTy> n) override;
     void Visit(FlowPtr<parse::RefTy> n) override;
     void Visit(FlowPtr<parse::FuncTy> n) override;
-    void Visit(FlowPtr<parse::UnaryExpression> n) override;
-    void Visit(FlowPtr<parse::BinaryExpression> n) override;
-    void Visit(FlowPtr<parse::PostUnaryExpression> n) override;
-    void Visit(FlowPtr<parse::TernaryExpression> n) override;
+    void Visit(FlowPtr<parse::Unary> n) override;
+    void Visit(FlowPtr<parse::Binary> n) override;
+    void Visit(FlowPtr<parse::PostUnary> n) override;
+    void Visit(FlowPtr<parse::Ternary> n) override;
     void Visit(FlowPtr<parse::Integer> n) override;
     void Visit(FlowPtr<parse::Float> n) override;
     void Visit(FlowPtr<parse::Boolean> n) override;

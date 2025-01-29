@@ -187,14 +187,14 @@ namespace ncc {
       /// Casting
 
       template <class U>
-      constexpr operator FlowPtr<U>() {
+      constexpr operator FlowPtr<U>() const {
         static_assert(std::is_convertible_v<Pointee *, U *>,
                       "Cannot convert Pointee* to U*");
         return FlowPtr<U>(static_cast<U *>(get()), Trace());
       }
 
       template <class U>
-      constexpr auto As() {
+      constexpr auto As() const {
         return FlowPtr<U>(reinterpret_cast<U *>(get()), Trace());
       }
 

@@ -89,7 +89,7 @@ namespace ncc::ir {
     ~IRWriter() override = default;
 
     void Visit(FlowPtr<Expr> n) override;
-    void Visit(FlowPtr<BinaryExpression> n) override;
+    void Visit(FlowPtr<Binary> n) override;
     void Visit(FlowPtr<Unary> n) override;
     void Visit(FlowPtr<U1Ty> n) override;
     void Visit(FlowPtr<U8Ty> n) override;

@@ -68,7 +68,7 @@ namespace ncc::parse {
 
   public:
     constexpr Variable(auto name, auto type, auto value, auto decl_type,
-                      auto attributes)
+                       auto attributes)
         : Stmt(QAST_VAR),
           m_attributes(attributes),
           m_type(std::move(type)),
@@ -156,8 +156,12 @@ namespace ncc::parse {
           m_idx_ident(idx_ident),
           m_val_ident(val_ident) {}
 
-    [[nodiscard]] constexpr auto GetIdxIdentifier( ) const { return m_idx_ident; }
-    [[nodiscard]] constexpr auto GetValIdentifier( ) const { return m_val_ident; }
+    [[nodiscard]] constexpr auto GetIdxIdentifier() const {
+      return m_idx_ident;
+    }
+    [[nodiscard]] constexpr auto GetValIdentifier() const {
+      return m_val_ident;
+    }
     [[nodiscard]] constexpr auto GetExpr() const { return m_expr; }
     [[nodiscard]] constexpr auto GetBody() const { return m_body; }
   };
@@ -349,19 +353,17 @@ namespace ncc::parse {
   };
 
   class Struct final : public Stmt {
-    std::span<FlowPtr<Expr>> m_attributes;
     std::optional<std::span<TemplateParameter>> m_template_parameters;
+    std::span<FlowPtr<Expr>> m_attributes;
     std::span<string> m_names;
     std::span<StructField> m_fields;
-    std::span<StructFunction> m_methods;
-    std::span<StructFunction> m_static_methods;
+    std::span<StructFunction> m_methods, m_static_methods;
     CompositeType m_comp_type;
     string m_name;
 
   public:
     constexpr Struct(auto comp_type, auto attributes, auto name, auto params,
-                        auto names, auto fields, auto methods,
-                        auto static_methods)
+                     auto names, auto fields, auto methods, auto static_methods)
         : Stmt(QAST_STRUCT),
           m_attributes(attributes),
           m_names(names),
