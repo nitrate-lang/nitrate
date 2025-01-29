@@ -589,12 +589,14 @@ namespace no3::router {
 
       return DoBenchmark(env, name_map.at(bench_name));
     }
+
     if (parser.IsSubcommandUsed("test")) {
       auto &test_parser = *subparsers.at("test");
       core::SetDebugMode(test_parser["--verbose"] == true);
 
       return DoDevTest();
     }
+
     if (parser.IsSubcommandUsed("parse")) {
       auto &parse_parser = *subparsers.at("parse");
       bool verbose = parse_parser["--verbose"] == true;
@@ -609,6 +611,7 @@ namespace no3::router {
 
       return DoParse(env, source, *out, verbose);
     }
+
     if (parser.IsSubcommandUsed("nr")) {
       auto &nr_parser = *subparsers.at("nr");
 
@@ -624,6 +627,7 @@ namespace no3::router {
 
       return DoNr(env, source, *out, opts);
     }
+
     if (parser.IsSubcommandUsed("codegen")) {
       auto &nr_parser = *subparsers.at("codegen");
 
@@ -636,6 +640,7 @@ namespace no3::router {
 
       return DoCodegen(env, source, output, opts, target);
     }
+
     if (parser.IsUsed("--demangle")) {
       auto mangled_name = parser.Get<std::string>("--demangle");
       if (mangled_name.starts_with("@")) {
@@ -651,6 +656,7 @@ namespace no3::router {
       std::cout << demangled_name.value() << std::endl;
       return 0;
     }
+
     std::cerr << "Unknown subcommand for dev" << std::endl;
     std::cerr << parser;
 

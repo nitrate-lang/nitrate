@@ -62,7 +62,9 @@ CREATE_TRANSFORM(nit::nr) {
     out_mode = OutMode::MsgPack;
   }
 
-  auto root = ncc::parse::AstReader(source).Get();
+  std::string source_str(std::istreambuf_iterator<char>(source), {});
+
+  auto root = ncc::parse::AstReader(source_str).Get();
   if (!root.has_value()) {
     qcore_logf(QCORE_ERROR, "Failed to parse input.");
     return false;

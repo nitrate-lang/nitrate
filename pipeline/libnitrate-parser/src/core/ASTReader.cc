@@ -32,10 +32,10 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <core/SyntaxTree.pb.h>
+#include <google/protobuf/io/coded_stream.h>
 
 #include <boost/multiprecision/cpp_int.hpp>
 #include <charconv>
-#include <iostream>
 #include <memory>
 #include <nitrate-core/Logger.hh>
 #include <nitrate-core/Macro.hh>
@@ -43,6 +43,8 @@
 #include <nitrate-parser/ASTBase.hh>
 #include <nitrate-parser/ASTCommon.hh>
 #include <nitrate-parser/ASTReader.hh>
+
+static constexpr size_t kRecursionLimit = 100000;
 
 using namespace ncc;
 using namespace ncc::parse;
@@ -2697,25 +2699,15 @@ auto AstReader::Unmarshal(const SyntaxTree::Export &in) -> Result<Export> {
   return object;
 }
 
-AstReader::AstReader(std::istream &protobuf_data,
-                     ReaderSourceManager source_manager)
-    : m_rd(source_manager), m_mm(std::make_unique<DynamicArena>()) {
-  SyntaxTree::Root root;
-  if (!root.ParseFromIstream(&protobuf_data)) [[unlikely]] {
-    return;
-  }
-
-  std::swap(MainAllocator, m_mm);
-  m_root = Unmarshal(root);
-  std::swap(MainAllocator, m_mm);
-}
-
 AstReader::AstReader(std::string_view protobuf_data,
                      ReaderSourceManager source_manager)
     : m_rd(source_manager), m_mm(std::make_unique<DynamicArena>()) {
+  google::protobuf::io::CodedInputStream input(
+      (const uint8_t *)protobuf_data.data(), protobuf_data.size());
+  input.SetRecursionLimit(kRecursionLimit);
+
   SyntaxTree::Root root;
-  if (!root.ParseFromArray(protobuf_data.data(), protobuf_data.size()))
-      [[unlikely]] {
+  if (!root.ParseFromCodedStream(&input)) [[unlikely]] {
     return;
   }
 

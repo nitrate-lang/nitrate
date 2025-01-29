@@ -34,8 +34,6 @@
 #ifndef __NITRATE_AST_READER_H__
 #define __NITRATE_AST_READER_H__
 
-#include <iostream>
-#include <istream>
 #include <memory>
 #include <nitrate-core/Macro.hh>
 #include <nitrate-core/NullableFlowPtr.hh>
@@ -138,8 +136,6 @@ namespace ncc::parse {
     auto Unmarshal(const SyntaxTree::Export &in) -> Result<Export>;
 
   public:
-    AstReader(std::istream &protobuf_data,
-              ReaderSourceManager source_manager = std::nullopt);
     AstReader(std::string_view protobuf_data,
               ReaderSourceManager source_manager = std::nullopt);
     ~AstReader() = default;
