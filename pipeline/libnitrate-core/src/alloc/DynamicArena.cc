@@ -40,9 +40,8 @@
 #include <vector>
 
 using namespace ncc;
-using namespace ncc;
 
-static constexpr auto kPrimarySegmentSize = 1024 * 16;
+static constexpr size_t kPrimarySegmentSize = 1024 * 16;
 
 static NCC_FORCE_INLINE auto ALIGNED(uint8_t *ptr, size_t align) -> uint8_t * {
   size_t mod = reinterpret_cast<uintptr_t>(ptr) % align;
@@ -64,7 +63,11 @@ class ncc::DynamicArena::PImpl final {
   }
 
 public:
-  PImpl() { AllocRegion(kPrimarySegmentSize); }
+  PImpl() {
+    m_bases.reserve(64);
+
+    AllocRegion(kPrimarySegmentSize);
+  }
 
   ~PImpl() {
     for (auto &base : m_bases) {
@@ -73,41 +76,53 @@ public:
   }
 
   auto Alloc(size_t size, size_t alignment) -> void * {
-    if (size == 0 || alignment == 0) [[unlikely]] {
+    /* Sizeof 0 is permitted as long the the returned address isn't read from or
+     * written to. */
+
+    uint8_t *start;
+    Segment *b;
+    bool sync;
+
+    if (alignment == 0) [[unlikely]] {
       return nullptr;
     }
 
-    bool sync = EnableSync;
+    sync = EnableSync;
     if (sync) {
       m_mutex.lock();
     }
 
-    // Put large allocations in their own segment
+    /* If the requested size plus the alignment is greater than the primary
+     * segment size, then allocate a new segment to store the payload. */
     if (size + alignment > kPrimarySegmentSize) [[unlikely]] {
-      AllocRegion(size);
-    }
-
-    auto &b = m_bases.back();
-    auto *start = ALIGNED(b.m_offset, alignment);
-
-    // Check if we can allocate in the current segment
-    if ((start + size) <= b.m_base + b.m_size) [[likely]] {
-      b.m_offset = start + size;
+      AllocRegion(size + alignment);
+      b = &m_bases.back();
+      start = ALIGNED(b->m_offset, alignment);
     } else {
-      AllocRegion(kPrimarySegmentSize);
+      /* Otherwise, prepare to allocate in the current segment. */
+      b = &m_bases.back();
+      start = ALIGNED(b->m_offset, alignment);
 
-      start = ALIGNED(m_bases.back().m_offset, alignment);
+      /* If the requested size is greater than the remaining space in the
+       * current segment, allocate a new primary size segment to store the
+       * payload. */
+      if (start + size > b->m_base + b->m_size) [[unlikely]] {
+        AllocRegion(kPrimarySegmentSize);
+        b = &m_bases.back();
 
-      // I hope my math is right
-      qcore_assert((start + size) <=
-                   m_bases.back().m_base + m_bases.back().m_size);
-
-      m_bases.back().m_offset = start + size;
+        start = ALIGNED(b->m_offset, alignment);
+      }
     }
+
+    b->m_offset = start + size;
 
     if (sync) {
       m_mutex.unlock();
     }
+
+    /* Ensure that the returned space is within the bounds of the current
+     * segment. */
+    qcore_assert((start + size) <= b->m_base + b->m_size);
 
     return start;
   }
