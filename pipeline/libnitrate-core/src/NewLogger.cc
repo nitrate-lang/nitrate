@@ -32,6 +32,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <algorithm>
+#include <fstream>
 #include <nitrate-core/NewLogger.hh>
 
 using namespace ncc;
@@ -139,14 +140,35 @@ NCC_EXPORT void ECBase::GetJsonRepresentation(std::ostream &os) const {
   os << "]}";
 }
 
+static std::optional<std::string> GetRealPath(std::string_view in_path) {
+  std::string path((in_path));
+
+  if (auto index = path.find("$NCC_CONF"); index != std::string::npos) {
+    const char *ncc_conf = std::getenv("NCC_CONF");
+    if (ncc_conf == nullptr) {
+      return std::nullopt;
+    }
+
+    path.replace(index, 9, ncc_conf);
+  }
+
+  return path;
+}
+
 NCC_EXPORT void ECBase::Finalize() {
   m_ec = GetIdentity().Get();
 
   /* Try to load information about the error from disk */
-  if (auto path = GetDetailsPath(); path.has_value()) {
-    if (auto details_opt = LoadDetailsFromFile(*path);
-        details_opt.has_value()) {
-      m_details = *details_opt;
+  if (auto prepath_opt = GetDetailsPath()) {
+    if (auto path_opt = GetRealPath(*prepath_opt)) {
+      if (std::ifstream ifs(*path_opt); ifs.is_open()) {
+        std::string json((std::istreambuf_iterator<char>(ifs)),
+                         std::istreambuf_iterator<char>());
+
+        if (auto details_opt = ParseJsonECConfig(json)) {
+          m_details = std::move(*details_opt);
+        }
+      }
     }
   }
 
@@ -178,11 +200,6 @@ void LoggerContext::RemoveFilter(size_t idx) {
   if (idx < m_filters.size()) {
     m_filters.erase(m_filters.begin() + idx);
   }
-}
-
-void LoggerContext::RemoveFilter(LogFilterFunc filter) {
-  m_filters.erase(std::remove(m_filters.begin(), m_filters.end(), filter),
-                  m_filters.end());
 }
 
 void LoggerContext::ClearFilters() { m_filters.clear(); }
