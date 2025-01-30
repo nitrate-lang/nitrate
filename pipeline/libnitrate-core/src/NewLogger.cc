@@ -100,7 +100,7 @@ NCC_EXPORT ECUnique::ECUnique(std::source_location loc) {
   m_ec = std::hash<std::string>{}(ss.str());
 }
 
-NCC_EXPORT void ECBase::GetJsonRepresentation(std::ostream &os) const {
+void ECBase::GetJsonRepresentation(std::ostream &os) const {
   os << R"({"flagname":")" << FlagName() << R"(","nice_name":")" << NiceName()
      << R"(","details":")" << Details() << R"(","tags":[)";
   for (auto it = Tags().begin(); it != Tags().end(); ++it) {
@@ -155,7 +155,7 @@ static std::optional<std::string> GetRealPath(std::string_view in_path) {
   return path;
 }
 
-NCC_EXPORT void ECBase::Finalize() {
+void ECBase::Finalize() {
   m_ec = GetIdentity().Get();
 
   /* Try to load information about the error from disk */

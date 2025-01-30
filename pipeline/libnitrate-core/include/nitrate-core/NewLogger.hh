@@ -87,7 +87,7 @@ namespace ncc {
     }
   };
 
-  class ECBase {
+  class NCC_EXPORT ECBase {
     EC m_ec = 0;
     ECDetails m_details;
     std::string m_json;

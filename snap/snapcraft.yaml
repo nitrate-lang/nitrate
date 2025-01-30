@@ -17,16 +17,16 @@ parts:
       - -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF -DBUILD_TESTING=OFF -DSTRIP_OUTPUT=ON -DCMAKE_CXX_COMPILER=/usr/bin/clang++ -DCMAKE_C_COMPILER=/usr/bin/clang
     source: .
     build-packages:
-     - libboost-all-dev
-     - libsparsehash-dev
-     - libssl-dev
      - libgoogle-glog-dev
-     - libyaml-cpp-dev
-     - rapidjson-dev
-     - libgit2-dev
+     - libsparsehash-dev
      - libprotobuf-dev
      - protobuf-compiler
+     - libyaml-cpp-dev
+     - rapidjson-dev
      - nlohmann-json3-dev
+     - libboost-all-dev
+     - libgit2-dev
+     - libssl-dev
      - libreadline-dev
      - libzstd-dev
      - llvm-18-dev
@@ -37,6 +37,8 @@ parts:
     stage-packages:
       - libgit2-1.7
       - libunwind8
+      - libprotobuf32t64
+      - libboost-iostreams1.83.0
     override-stage: |
         snapcraftctl stage
         rm -rf $SNAPCRAFT_PART_INSTALL/usr/include
