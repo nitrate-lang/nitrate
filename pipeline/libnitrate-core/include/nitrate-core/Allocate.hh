@@ -41,6 +41,17 @@ namespace ncc {
   public:
     virtual ~IMemory() = default;
 
+    /**
+     * @brief Allocates a block of memory.
+     *  @param size The size of the block to allocate. Values of 0 are permitted
+     *  as long as the returned address isn't read from or written to.
+     *  @param align The alignment of the block to allocate. A Value of 0 will
+     * return nullptr.
+     *  @return A pointer to the allocated block of memory. If the allocation
+     * fails, a panic will occur. The returned address is guaranteed to be
+     * aligned to the specified alignment except when the alignment is 0.
+     * @note nullptr is only returned when the alignment is 0.
+     */
     virtual auto Alloc(size_t size,
                        size_t align = kDefaultAlignment) -> void * = 0;
 

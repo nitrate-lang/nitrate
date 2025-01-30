@@ -7,13 +7,13 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS ON)
 
 #================== CALCULATE BUILD ID ==================
-# execute_process(COMMAND find ${CMAKE_CURRENT_SOURCE_DIR} -type f -name "*.*" -exec sha256sum {} \; COMMAND sha256sum
-#   OUTPUT_VARIABLE SHA256SUMS OUTPUT_STRIP_TRAILING_WHITESPACE)
-# string(REGEX REPLACE " .*" "" SHA256SUMS ${SHA256SUMS})
-# string(TOUPPER ${SHA256SUMS} SHA256SUMS)
-# string(SUBSTRING ${SHA256SUMS} 0 32 SHA256SUMS)
+execute_process(COMMAND find ${CMAKE_CURRENT_SOURCE_DIR} -type f -name "*.*" -exec sha256sum {} \; COMMAND sha256sum
+  OUTPUT_VARIABLE SHA256SUMS OUTPUT_STRIP_TRAILING_WHITESPACE)
+string(REGEX REPLACE " .*" "" SHA256SUMS ${SHA256SUMS})
+string(TOUPPER ${SHA256SUMS} SHA256SUMS)
+string(SUBSTRING ${SHA256SUMS} 0 32 SHA256SUMS)
 set(__TARGET_VERSION "\"NPAR_${SHA256SUMS}\"")
-# message(STATUS "libnitrate-parser VersionId: ${__TARGET_VERSION}")
+message(STATUS "libnitrate-parser VersionId: ${__TARGET_VERSION}")
 
 #================== SET BUILD FLAGS ==================
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
@@ -50,5 +50,3 @@ add_dependencies(nitrate-parser nitrate-core nitrate-lexer compile_proto)
 
 install(TARGETS nitrate-parser DESTINATION lib)
 install(DIRECTORY include/ DESTINATION "include")
-
-add_subdirectory(bench)

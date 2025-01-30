@@ -31,63 +31,114 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <cstdio>
+#include <cstring>
+#include <mutex>
+#include <nitrate-core/Allocate.hh>
+#include <nitrate-core/Init.hh>
 #include <nitrate-core/Logger.hh>
 #include <nitrate-core/Macro.hh>
-#include <sstream>
-#include <string>
+#include <vector>
 
 using namespace ncc;
 
-static thread_local std::stringstream ThreadLogBuffer;
+static constexpr size_t kPrimarySegmentSize = 1024 * 16;
 
-extern "C" NCC_EXPORT void QCoreBegin() { ThreadLogBuffer.str(""); }
+static NCC_FORCE_INLINE auto ALIGNED(uint8_t *ptr, size_t align) -> uint8_t * {
+  size_t mod = reinterpret_cast<uintptr_t>(ptr) % align;
+  return mod == 0 ? ptr : (ptr + (align - mod));
+}
 
-extern "C" NCC_EXPORT void QCoreEnd(QCoreLog level) {
-  std::string message = ThreadLogBuffer.str();
+struct Segment {
+  uint8_t *m_base = nullptr, *m_offset = nullptr;
+  size_t m_size = 0;
+};
 
-  while (message.ends_with("\n")) {
-    message.pop_back();
+class ncc::DynamicArena::PImpl final {
+  std::vector<Segment> m_bases;
+  std::mutex m_mutex;
+
+  void AllocRegion(size_t size) {
+    auto *base = new uint8_t[size];
+    m_bases.push_back({base, base, size});
   }
 
-  switch (level) {
-    case QCORE_DEBUG: {
-      ncc::Log << ncc::Debug << message;
-      break;
+public:
+  PImpl() {
+    m_bases.reserve(64);
+
+    AllocRegion(kPrimarySegmentSize);
+  }
+
+  ~PImpl() {
+    for (auto &base : m_bases) {
+      delete[] base.m_base;
+    }
+  }
+
+  auto Alloc(size_t size, size_t alignment) -> void * {
+    /* Sizeof 0 is permitted as long the the returned address isn't read from or
+     * written to. */
+
+    uint8_t *start;
+    Segment *b;
+    bool sync;
+
+    if (alignment == 0) [[unlikely]] {
+      return nullptr;
     }
 
-    case QCORE_INFO: {
-      ncc::Log << Info << message;
-      break;
+    sync = EnableSync;
+    if (sync) {
+      m_mutex.lock();
     }
 
-    case QCORE_WARN: {
-      ncc::Log << Warning << message;
-      break;
+    /* If the requested size plus the alignment is greater than the primary
+     * segment size, then allocate a new segment to store the payload. */
+    if (size + alignment > kPrimarySegmentSize) [[unlikely]] {
+      AllocRegion(size + alignment);
+      b = &m_bases.back();
+      start = ALIGNED(b->m_offset, alignment);
+    } else {
+      /* Otherwise, prepare to allocate in the current segment. */
+      b = &m_bases.back();
+      start = ALIGNED(b->m_offset, alignment);
+
+      /* If the requested size is greater than the remaining space in the
+       * current segment, allocate a new primary size segment to store the
+       * payload. */
+      if (start + size > b->m_base + b->m_size) [[unlikely]] {
+        AllocRegion(kPrimarySegmentSize);
+        b = &m_bases.back();
+
+        start = ALIGNED(b->m_offset, alignment);
+      }
     }
 
-    case QCORE_ERROR: {
-      ncc::Log << Error << message;
-      break;
+    b->m_offset = start + size;
+
+    if (sync) {
+      m_mutex.unlock();
     }
 
-    case QCORE_FATAL: {
-      ncc::Log << Emergency << message;
-      break;
-    }
+    /* Ensure that the returned space is within the bounds of the current
+     * segment. */
+    qcore_assert((start + size) <= b->m_base + b->m_size);
+
+    return start;
+  }
+};
+
+NCC_EXPORT DynamicArena::DynamicArena() {
+  m_arena = new PImpl();
+  m_owned = true;
+}
+
+NCC_EXPORT DynamicArena::~DynamicArena() {
+  if (m_owned) {
+    delete m_arena;
   }
 }
 
-extern "C" NCC_EXPORT auto QCoreVWriteF(const char *fmt, va_list args) -> int {
-  char *buffer = nullptr;
-  auto size = vasprintf(&buffer, fmt, args);
-  if (size < 0) [[unlikely]] {
-    qcore_panic("Failed to allocate memory for log message.");
-  }
-
-  ThreadLogBuffer << std::string_view(buffer, size);
-
-  free(buffer);
-
-  return size;
+NCC_EXPORT auto DynamicArena::Alloc(size_t size, size_t alignment) -> void * {
+  return m_arena->Alloc(size, alignment);
 }

@@ -1,6 +1,0 @@
-{
-    global:
-        no3_*;
-    local:
-        *;
-};

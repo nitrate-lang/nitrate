@@ -1,0 +1,13 @@
+{
+  "flagname": "-Wcore-internal",
+  "nice_name": "Core library internal compiler diagnostics",
+  "details": "Diagnostic messages produced for reasons primarily of interest to compiler developers. These diagnostics are generally independent of the code under translation and are often useful internal compiler optimization.",
+  "tags": [
+    "nitrate-core",
+    "pipeline"
+  ],
+  "fixes": [],
+  "examples": [],
+  "dev_notes": [],
+  "user_notes": []
+}
