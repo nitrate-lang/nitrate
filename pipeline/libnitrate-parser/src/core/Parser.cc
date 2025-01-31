@@ -85,6 +85,7 @@ auto Parser::PImpl::RecurseName() -> string {
           Log << SyntaxError << last << "Expected identifier after '::'";
           name.clear();
           state = Exit;
+          next();  // Prevent infinite loops elsewhere
         }
         break;
       }
