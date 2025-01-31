@@ -39,6 +39,8 @@ add_custom_target(compile_proto DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/src/core/Syn
 
 #================== FIND SOURCES ==================
 file(GLOB_RECURSE CXX_SOURCES "src/*.cc")
+remove(CXX_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/src/core/SyntaxTree.pb.cc")
+set(CXX_SOURCES ${CXX_SOURCES} ${CMAKE_CURRENT_SOURCE_DIR}/src/core/SyntaxTree.pb.cc)
 
 #================== BUILD TARGET ==================
 add_library(nitrate-parser ${CXX_SOURCES})
