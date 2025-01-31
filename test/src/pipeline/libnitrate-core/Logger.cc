@@ -1,6 +1,7 @@
 
 #include <gtest/gtest.h>
 
+#include <algorithm>
 #include <nitrate-core/Init.hh>
 #include <nitrate-core/Logger.hh>
 #include <optional>
