@@ -11,6 +11,7 @@
 #include <cstring>
 #include <lsp/core/Server.hh>
 #include <memory>
+#include <nitrate-core/Assert.hh>
 #include <nitrate-core/Logger.hh>
 
 using namespace no3::lsp;

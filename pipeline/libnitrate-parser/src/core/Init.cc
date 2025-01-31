@@ -47,7 +47,7 @@ NCC_EXPORT ncc::LibraryRC<ParseLibrarySetup> ncc::parse::ParseLibrary;
 NCC_EXPORT auto ParseLibrarySetup::Init() -> bool {
   GOOGLE_PROTOBUF_VERIFY_VERSION;
 
-  qcore_print(QCORE_DEBUG, "Initializing Nitrate Parser Library");
+  Log << Debug << "Initializing Nitrate Parser Library";
 
   if (!ncc::CoreLibrary.InitRC()) {
     return false;
@@ -57,20 +57,20 @@ NCC_EXPORT auto ParseLibrarySetup::Init() -> bool {
     return false;
   }
 
-  qcore_print(QCORE_DEBUG, "Nitrate Parser Library Initialized");
+  Log << Debug << "Nitrate Parser Library Initialized";
 
   return true;
 }
 
 NCC_EXPORT void ParseLibrarySetup::Deinit() {
-  qcore_print(QCORE_DEBUG, "Deinitializing Nitrate Parser Library");
+  Log << Debug << "Deinitializing Nitrate Parser Library";
 
   ExtensionDataStore.Reset();
 
   ncc::lex::LexerLibrary.DeinitRC();
   ncc::CoreLibrary.DeinitRC();
 
-  qcore_print(QCORE_DEBUG, "Nitrate Parser Library Deinitialized");
+  Log << Debug << "Nitrate Parser Library Deinitialized";
 }
 
 NCC_EXPORT auto ParseLibrarySetup::GetVersionId() -> std::string_view {

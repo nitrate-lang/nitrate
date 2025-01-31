@@ -35,6 +35,7 @@
 
 #include <boost/bimap.hpp>
 #include <core/Config.hh>
+#include <nitrate-core/Assert.hh>
 #include <nitrate-core/Logger.hh>
 #include <nitrate-core/Macro.hh>
 

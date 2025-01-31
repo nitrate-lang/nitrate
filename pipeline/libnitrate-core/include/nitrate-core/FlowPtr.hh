@@ -35,6 +35,7 @@
 #define __NITRATE_CORE_FLOWPTR_H__
 
 #include <cstddef>
+#include <nitrate-core/Assert.hh>
 #include <nitrate-core/Logger.hh>
 #include <nitrate-core/Macro.hh>
 #include <source_location>

@@ -1214,14 +1214,14 @@ auto Tokenizer::GetSourceWindow(Point start, Point end, char fillchar)
   Impl &impl = *m_impl;
 
   if (start.m_x > end.m_x || (start.m_x == end.m_x && start.m_y > end.m_y)) {
-    qcore_print(QCORE_ERROR, "Invalid source window range");
+    Log << "Invalid source window range";
     return std::nullopt;
   }
 
   impl.m_file.clear();
   auto current_source_offset = impl.m_file.tellg();
   if (!impl.m_file) {
-    qcore_print(QCORE_ERROR, "Failed to get the current file offset");
+    Log << "Failed to get the current file offset";
     return std::nullopt;
   }
 
@@ -1314,7 +1314,7 @@ auto Tokenizer::GetSourceWindow(Point start, Point end, char fillchar)
       }
     }
   } else {
-    qcore_print(QCORE_ERROR, "Failed to seek to the beginning of the file");
+    Log << "Failed to seek to the beginning of the file";
   }
 
   impl.m_file.seekg(current_source_offset);
