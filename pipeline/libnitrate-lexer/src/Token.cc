@@ -223,7 +223,7 @@ static const std::unordered_map<PrecedenceKey, short, PrecedenceKeyHash>
 
       for (size_t i = 0; i < PRECEDENCE_GROUPS.size(); i++) {
         for (let[op, mode, _] : PRECEDENCE_GROUPS[i]) {
-          precedence[{op, mode}] = (PRECEDENCE_GROUPS.size() - i);
+          precedence[{op, mode}] = (PRECEDENCE_GROUPS.size() - i) * 10;
         }
       }
 
@@ -374,73 +374,6 @@ NCC_EXPORT auto ncc::lex::to_string(TokenType ty) -> string {
   }
 
   qcore_panic("unreachable");
-}
-
-NCC_EXPORT auto ncc::lex::operator<<(std::ostream &os,
-                                     TokenType ty) -> std::ostream & {
-  switch (ty) {
-    case EofF: {
-      os << "EofF";
-      break;
-    }
-
-    case KeyW: {
-      os << "KeyW";
-      break;
-    }
-
-    case Oper: {
-      os << "Oper";
-      break;
-    }
-
-    case Punc: {
-      os << "Punc";
-      break;
-    }
-
-    case Name: {
-      os << "Name";
-      break;
-    }
-
-    case IntL: {
-      os << "IntL";
-      break;
-    }
-
-    case NumL: {
-      os << "NumL";
-      break;
-    }
-
-    case Text: {
-      os << "Text";
-      break;
-    }
-
-    case Char: {
-      os << "Char";
-      break;
-    }
-
-    case MacB: {
-      os << "MacB";
-      break;
-    }
-
-    case Macr: {
-      os << "Macr";
-      break;
-    }
-
-    case Note: {
-      os << "Note";
-      break;
-    }
-  }
-
-  return os;
 }
 
 static void EscapeString(std::ostream &ss, std::string_view input) {

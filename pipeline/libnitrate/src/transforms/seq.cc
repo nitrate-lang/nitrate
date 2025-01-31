@@ -40,6 +40,7 @@
 #include <nitrate-seq/Sequencer.hh>
 #include <unordered_set>
 
+using namespace ncc;
 using namespace ncc::lex;
 using namespace ncc::seq;
 
@@ -55,9 +56,11 @@ CREATE_TRANSFORM(nit::seq) {
   } out_mode = OutMode::JSON;
 
   if (opts.contains("-fuse-json") && opts.contains("-fuse-msgpack")) {
-    qcore_logf(QCORE_ERROR, "Cannot use both JSON and MsgPack output.");
+    Log << "Cannot use both JSON and MsgPack output.";
     return false;
-  } else if (opts.contains("-fuse-msgpack")) {
+  }
+
+  if (opts.contains("-fuse-msgpack")) {
     out_mode = OutMode::MsgPack;
   }
 

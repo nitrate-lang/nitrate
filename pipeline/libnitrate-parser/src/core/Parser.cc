@@ -46,34 +46,65 @@ using namespace ncc::parse;
 using namespace ncc::lex;
 
 auto Parser::PImpl::RecurseName() -> string {
+  enum State {
+    Start,
+    RequireName,
+    RequireScopeOrEnd,
+    Exit,
+  } state = Start;
+
+  Token last;
   std::string name;
-  bool last_was_scope = false;
 
-  Token tok;
+  while (state != Exit) {
+    last = peek();
 
-  while (true) {
-    Token peek = peek();
-
-    if (peek.Is(Name)) {
-      name += peek.GetString();
-      last_was_scope = false;
-    } else if (peek.Is<PuncScope>()) {
-      if (last_was_scope) {
-        Log << SyntaxError << peek << "Unexpected '::' after '::'";
+    switch (state) {
+      case Start: {
+        if (last.Is<PuncScope>()) {
+          name += last.GetString();
+          state = RequireName;
+          next();
+        } else if (last.Is(Name)) {
+          name += last.GetString();
+          state = RequireScopeOrEnd;
+          next();
+        } else {
+          /* No identifier to parse */
+          state = Exit;
+        }
         break;
       }
 
-      name += "::";
-      last_was_scope = true;
-    } else {
-      break;
+      case RequireName: {
+        if (last.Is(Name)) {
+          name += last.GetString();
+          state = RequireScopeOrEnd;
+          next();
+        } else {
+          Log << SyntaxError << last << "Expected identifier after '::'";
+          name.clear();
+          state = Exit;
+          next();  // Prevent infinite loops elsewhere
+        }
+        break;
+      }
+
+      case RequireScopeOrEnd: {
+        if (last.Is<PuncScope>()) {
+          name += last.GetString();
+          state = RequireName;
+          next();
+        } else {
+          state = Exit;
+        }
+        break;
+      }
+
+      case Exit: {
+        break;
+      }
     }
-
-    tok = next();
-  }
-
-  if (last_was_scope && name.ends_with("::")) {
-    Log << SyntaxError << tok << "Unexpected '::' at end of name";
   }
 
   return name;

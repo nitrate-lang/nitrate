@@ -37,6 +37,7 @@
 #include <iomanip>
 #include <iostream>
 #include <mutex>
+#include <nitrate-core/Assert.hh>
 #include <nitrate-core/Logger.hh>
 #include <nitrate-core/Macro.hh>
 #include <vector>
@@ -202,14 +203,7 @@ extern "C" NCC_EXPORT void QCorePanic(const char *msg) {
   QCorePanicF("%s", msg);
 }
 
-extern "C" NCC_EXPORT void QCorePanicF(const char *fmt, ...) {
-  va_list args;
-  va_start(args, fmt);
-  QCoreVPanicF(fmt, args);
-  va_end(args);
-}
-
-extern "C" NCC_EXPORT void QCoreVPanicF(const char *fmt, va_list args) {
+[[noreturn]] static void QCoreVPanicF(const char *fmt, va_list args) {
   char *msg = nullptr;
 
   { /* Parse the format string */
@@ -224,17 +218,9 @@ extern "C" NCC_EXPORT void QCoreVPanicF(const char *fmt, va_list args) {
   abort();
 }
 
-extern "C" NCC_EXPORT void QCoreDebug(const char *msg) {
-  QCoreDebugF("%s", msg);
-}
-
-extern "C" NCC_EXPORT void QCoreDebugF(const char *fmt, ...) {
+extern "C" NCC_EXPORT void QCorePanicF(const char *fmt, ...) {
   va_list args;
   va_start(args, fmt);
-  QCoreVDebugF(fmt, args);
+  QCoreVPanicF(fmt, args);
   va_end(args);
-}
-
-extern "C" NCC_EXPORT void QCoreVDebugF(const char *fmt, va_list args) {
-  vfprintf(stderr, fmt, args);
 }

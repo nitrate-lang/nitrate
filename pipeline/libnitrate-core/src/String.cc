@@ -33,6 +33,7 @@
 
 #include <boost/unordered_map.hpp>
 #include <mutex>
+#include <nitrate-core/Assert.hh>
 #include <nitrate-core/Init.hh>
 #include <nitrate-core/Macro.hh>
 #include <nitrate-core/String.hh>

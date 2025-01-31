@@ -35,6 +35,7 @@
 #define __NITRATE_CORE_STRING_FACTORY_H__
 
 #include <cstdint>
+#include <nitrate-core/Assert.hh>
 #include <nitrate-core/Logger.hh>
 #include <nitrate-core/Macro.hh>
 #include <nitrate-core/Testing.hh>

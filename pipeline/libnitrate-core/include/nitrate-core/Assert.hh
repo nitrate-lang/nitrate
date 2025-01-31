@@ -31,13 +31,12 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __NITRATE_CORE_OLD_LOGGER_H__
-#define __NITRATE_CORE_OLD_LOGGER_H__
+#ifndef __NITRATE_CORE_ASSERT_H__
+#define __NITRATE_CORE_ASSERT_H__
 
 #include <array>
 #include <cerrno>
 #include <cstdarg>
-#include <cstdint>
 #include <cstring>
 #include <string>
 
@@ -46,13 +45,7 @@ extern "C" {
 #endif
 
 void QCorePanic(const char *msg) __attribute__((noreturn));
-
 void QCorePanicF(const char *fmt, ...) __attribute__((noreturn));
-void QCoreVPanicF(const char *fmt, va_list args) __attribute__((noreturn));
-
-void QCoreDebug(const char *msg);
-void QCoreDebugF(const char *fmt, ...);
-void QCoreVDebugF(const char *fmt, va_list args);
 
 static inline auto GetStrerror() {
   constexpr size_t kMaxMessageSize = 256;
@@ -92,53 +85,7 @@ static inline auto GetStrerror() {
                       "" #__VA_ARGS__, #expr))
 #endif
 
-#if defined(NDEBUG) || defined(QCORE_NDEBUG)
-#define qcore_debugf(fmt, ...)
-#define qcore_debug(msg)
-#else
-#define qcore_debugf(fmt, ...) QCoreDebugF(fmt, ##__VA_ARGS__)
-#define qcore_debug(msg) QCoreDebug(msg)
-#endif
-
 #define qcore_implement() qcore_panicf("%s is not implemented.", __func__)
-
-enum QCoreLog : uint8_t {
-  QCORE_DEBUG,
-  QCORE_INFO,
-  QCORE_WARN,
-  QCORE_ERROR,
-  QCORE_FATAL,
-};
-
-void QCoreBegin();
-auto QCoreVWriteF(const char *fmt, va_list args) -> int;
-void QCoreEnd(QCoreLog level);
-
-static inline auto QCoreWritef(const char *fmt, ...) -> int {
-  va_list args;
-  va_start(args, fmt);
-  int ret = QCoreVWriteF(fmt, args);
-  va_end(args);
-  return ret;
-}
-
-static inline auto QCoreWrite(const char *msg) -> int {
-  return QCoreWritef("%s", msg);
-}
-
-#define qcore_logf(_lvl, ...) \
-  do {                        \
-    QCoreBegin();             \
-    QCoreWritef(__VA_ARGS__); \
-    QCoreEnd(_lvl);           \
-  } while (0)
-
-#define qcore_print(_lvl, _msg) \
-  do {                          \
-    QCoreBegin();               \
-    QCoreWritef("%s", _msg);    \
-    QCoreEnd(_lvl);             \
-  } while (0)
 
 #ifdef __cplusplus
 }

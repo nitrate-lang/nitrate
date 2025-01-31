@@ -537,7 +537,12 @@ namespace ncc::lex {
     return LEXICAL_PUNCTORS.right.at(punct).c_str();
   }
 
-  auto operator<<(std::ostream &os, TokenType ty) -> std::ostream &;
+  static inline auto operator<<(std::ostream &os,
+                                TokenType ty) -> std::ostream & {
+    os << to_string(ty);
+    return os;
+  }
+
   auto operator<<(std::ostream &os, Token tok) -> std::ostream &;
 
   inline auto operator<<(std::ostream &os, Operator op) -> std::ostream & {

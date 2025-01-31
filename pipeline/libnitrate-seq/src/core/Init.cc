@@ -42,7 +42,7 @@ using namespace ncc::seq;
 NCC_EXPORT ncc::LibraryRC<SeqLibrarySetup> ncc::seq::SeqLibrary;
 
 NCC_EXPORT auto SeqLibrarySetup::Init() -> bool {
-  qcore_print(QCORE_DEBUG, "Initializing Nitrate Sequencer Library");
+  Log << Debug << "Initializing Nitrate Sequencer Library";
 
   if (!ncc::CoreLibrary.InitRC()) {
     return false;
@@ -52,18 +52,18 @@ NCC_EXPORT auto SeqLibrarySetup::Init() -> bool {
     return false;
   }
 
-  qcore_print(QCORE_DEBUG, "Nitrate Sequencer Library initialized");
+  Log << Debug << "Nitrate Sequencer Library initialized";
 
   return true;
 }
 
 NCC_EXPORT void SeqLibrarySetup::Deinit() {
-  qcore_print(QCORE_DEBUG, "Deinitializing Nitrate Sequencer Library");
+  Log << Debug << "Deinitializing Nitrate Sequencer Library";
 
   ncc::lex::LexerLibrary.DeinitRC();
   ncc::CoreLibrary.DeinitRC();
 
-  qcore_print(QCORE_DEBUG, "Nitrate Sequencer Library deinitialized");
+  Log << Debug << "Nitrate Sequencer Library deinitialized";
 }
 
 NCC_EXPORT auto SeqLibrarySetup::GetVersionId() -> std::string_view {

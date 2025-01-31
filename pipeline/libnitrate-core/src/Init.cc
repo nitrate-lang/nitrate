@@ -44,13 +44,13 @@ NCC_EXPORT std::atomic<bool> ncc::EnableSync = true;
 NCC_EXPORT auto CoreLibrarySetup::Init() -> bool {
   // Nothing to do here for now.
 
-  qcore_print(QCORE_DEBUG, "Initialized Nitrate Core Library");
+  Log << Debug << "Initialized Nitrate Core Library";
 
   return true;
 }
 
 NCC_EXPORT void CoreLibrarySetup::Deinit() {
-  qcore_print(QCORE_DEBUG, "Deinitialing Nitrate Core Library...");
+  Log << Debug << "Deinitialing Nitrate Core Library...";
 
   StringMemory::Reset();
 }

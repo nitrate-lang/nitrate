@@ -31,8 +31,7 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <nitrate-core/NewLogger.hh>
-#include <nitrate-core/OldLogger.hh>
+#include <nitrate-core/Logger.hh>
 #include <nlohmann/json.hpp>
 
 using namespace ncc;

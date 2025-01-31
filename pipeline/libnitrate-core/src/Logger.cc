@@ -33,7 +33,7 @@
 
 #include <algorithm>
 #include <fstream>
-#include <nitrate-core/NewLogger.hh>
+#include <nitrate-core/Logger.hh>
 
 using namespace ncc;
 

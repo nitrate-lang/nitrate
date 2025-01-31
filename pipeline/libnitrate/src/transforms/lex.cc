@@ -41,6 +41,7 @@
 #include <string_view>
 #include <unordered_set>
 
+using namespace ncc;
 using namespace ncc::lex;
 
 auto ImplUseJson(IScanner *l, std::ostream &o) -> bool {
@@ -268,7 +269,7 @@ CREATE_TRANSFORM(nit::lex) {
   } out_mode = OutMode::JSON;
 
   if (opts.contains("-fuse-json") && opts.contains("-fuse-msgpack")) {
-    qcore_logf(QCORE_ERROR, "Cannot use both JSON and MsgPack output.");
+    Log << "Cannot use both JSON and MsgPack output.";
     return false;
   }
 

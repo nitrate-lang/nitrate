@@ -43,6 +43,7 @@
 #include <nitrate-parser/ASTReader.hh>
 #include <unordered_set>
 
+using namespace ncc;
 using namespace ncc::ir;
 
 CREATE_TRANSFORM(nit::nr) {
@@ -54,7 +55,7 @@ CREATE_TRANSFORM(nit::nr) {
   } out_mode = OutMode::JSON;
 
   if (opts.contains("-fuse-json") && opts.contains("-fuse-msgpack")) {
-    qcore_logf(QCORE_ERROR, "Cannot use both JSON and MsgPack output.");
+    Log << "Cannot use both JSON and MsgPack output.";
     return false;
   }
 
@@ -66,7 +67,7 @@ CREATE_TRANSFORM(nit::nr) {
 
   auto root = ncc::parse::AstReader(source_str).Get();
   if (!root.has_value()) {
-    qcore_logf(QCORE_ERROR, "Failed to parse input.");
+    Log << "Failed to parse input.";
     return false;
   }
 
@@ -85,7 +86,7 @@ CREATE_TRANSFORM(nit::nr) {
       }
     }
   } else {
-    qcore_print(QCORE_ERROR, "Failed to lower IR module.\n");
+    Log << "Failed to lower IR module.";
     return false;
   }
 }

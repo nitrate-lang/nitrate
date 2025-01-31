@@ -54,6 +54,8 @@
 #include <unordered_set>
 #include <vector>
 
+using namespace ncc;
+
 static const std::unordered_map<std::string_view, nit::TransformFunc>
     DISPATCH_FUNCS = {{"echo", nit::echo},
                       {"lex", nit::lex},
@@ -80,8 +82,8 @@ public:
   [[nodiscard]] auto IsInitialized() const -> bool { return m_ok; }
 };
 
-static auto ParseOptions(
-    const char *const *options) -> std::optional<std::vector<std::string>> {
+static auto ParseOptions(const char *const *options)
+    -> std::optional<std::vector<std::string>> {
   constexpr size_t kMaxOptions = 100000;
 
   if (options == nullptr) {
@@ -92,8 +94,7 @@ static auto ParseOptions(
 
   for (size_t i = 0; options[i] != nullptr; i++) {
     if (i >= kMaxOptions) {
-      qcore_logf(QCORE_ERROR, "Too many options provided, max is %zu",
-                 kMaxOptions);
+      Log << "Too many options provided, max is " << kMaxOptions;
       return std::nullopt;
     }
 
@@ -103,11 +104,11 @@ static auto ParseOptions(
   return opts;
 }
 
-static auto NitDispatchRequest(std::istream &in, std::ostream &out,
-                               const char *transform, let opts_set,
-                               const std::shared_ptr<ncc::Environment> &env) -> bool {
+static auto NitDispatchRequest(
+    std::istream &in, std::ostream &out, const char *transform, let opts_set,
+    const std::shared_ptr<ncc::Environment> &env) -> bool {
   if (!DISPATCH_FUNCS.contains(transform)) {
-    qcore_logf(QCORE_ERROR, "Unknown transform name in options: %s", transform);
+    Log << "Unknown transform name in options: " << transform;
     return false;
   }
 
@@ -182,9 +183,10 @@ NCC_EXPORT auto nitrate::Pipeline(
   }};
 }
 
-NCC_EXPORT auto nitrate::Chain(
-    std::istream &in, std::ostream &out, ChainOptions operations,
-    std::optional<DiagnosticFunc> diag, bool) -> nitrate::LazyResult<bool> {
+NCC_EXPORT auto nitrate::Chain(std::istream &in, std::ostream &out,
+                               ChainOptions operations,
+                               std::optional<DiagnosticFunc> diag,
+                               bool) -> nitrate::LazyResult<bool> {
   return {[&in, &out, operations = std::move(operations),
            diag_func = std::move(diag)]() -> bool {
     if (operations.empty()) {
@@ -232,34 +234,32 @@ extern "C" NCC_EXPORT auto NitPipeline(FILE *in, FILE *out, NitDiagFunc diag_cb,
       if (ch != EOF) {
         char temp = ch;
         if (fwrite(&temp, 1, 1, m_file) != 1) {
-          qcore_logf(QCORE_ERROR, "Failed to write to stream: %s",
-                     GetStrerror().c_str());
+          Log << "Failed to write to stream: " << GetStrerror();
           return traits_type::eof();
         }
       }
 
       if (ferror(m_file) != 0) {
-        qcore_logf(QCORE_ERROR, "File stream error: %s", GetStrerror().c_str());
+        Log << "File stream error: " << GetStrerror();
         return traits_type::eof();
       }
 
       return ch;
     }
 
-    auto xsputn(const char *s, std::streamsize count) -> std::streamsize override {
+    auto xsputn(const char *s,
+                std::streamsize count) -> std::streamsize override {
       std::streamsize written = 0;
       while (written < count) {
         size_t n = fwrite(s + written, 1, count - written, m_file);
         if (n == 0) {
-          qcore_logf(QCORE_ERROR, "Failed to write to stream: %s",
-                     GetStrerror().c_str());
+          Log << "Failed to write to stream: " << GetStrerror();
           break;
         }
         written += n;
 
         if (ferror(m_file) != 0) {
-          qcore_logf(QCORE_ERROR, "File stream error: %s",
-                     GetStrerror().c_str());
+          Log << "File stream error: " << GetStrerror();
           break;
         }
       }
@@ -272,8 +272,7 @@ extern "C" NCC_EXPORT auto NitPipeline(FILE *in, FILE *out, NitDiagFunc diag_cb,
         size_t res = fread(&m_c, 1, 1, m_file);
         if (res == 0) {
           if (ferror(m_file) != 0) {
-            qcore_logf(QCORE_ERROR, "File stream error: %s",
-                       GetStrerror().c_str());
+            Log << "File stream error: " << GetStrerror();
           }
           setg(nullptr, nullptr, nullptr);
           return traits_type::eof();
@@ -290,8 +289,7 @@ extern "C" NCC_EXPORT auto NitPipeline(FILE *in, FILE *out, NitDiagFunc diag_cb,
         size_t n = fread(s + bytes_read, 1, count - bytes_read, m_file);
         if (n == 0) {
           if (ferror(m_file) != 0) {
-            qcore_logf(QCORE_ERROR, "File stream error: %s",
-                       GetStrerror().c_str());
+            Log << "File stream error: " << GetStrerror();
           }
           break;
         }
