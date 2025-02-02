@@ -69,8 +69,7 @@ static NullableFlowPtr<Type> SignedComplement(nr_ty_t ty) {
   }
 }
 
-static NullableFlowPtr<Type> Promote(NullableFlowPtr<Type> lhs,
-                                     NullableFlowPtr<Type> rhs) {
+static NullableFlowPtr<Type> Promote(NullableFlowPtr<Type> lhs, NullableFlowPtr<Type> rhs) {
   if (!lhs.has_value() || !rhs.has_value()) {
     return std::nullopt;
   }
@@ -135,8 +134,7 @@ static NullableFlowPtr<Type> Promote(NullableFlowPtr<Type> lhs,
 
     ///===========================================================================
     /// NOTE: If L && R are both signed integers, the larger type is used.
-    if ((l->IsSigned() && l->IsIntegral()) &&
-        (r->IsSigned() && r->IsIntegral())) {
+    if ((l->IsSigned() && l->IsIntegral()) && (r->IsSigned() && r->IsIntegral())) {
       auto ls = l->GetSizeBits();
       auto rs = r->GetSizeBits();
       if (!ls.has_value() || !rs.has_value()) {
@@ -183,8 +181,7 @@ static NullableFlowPtr<Type> Promote(NullableFlowPtr<Type> lhs,
 
 ////////////////////////////////////////////////////////////////////////////////
 
-static NullableFlowPtr<Type> InferUnaryession(NullableFlowPtr<Type> e,
-                                              lex::Operator o) {
+static NullableFlowPtr<Type> InferUnaryession(NullableFlowPtr<Type> e, lex::Operator o) {
   using namespace lex;
 
   NullableFlowPtr<ir::Type> r;
@@ -306,9 +303,7 @@ static NullableFlowPtr<Type> InferUnaryession(NullableFlowPtr<Type> e,
   return e;
 }
 
-static NullableFlowPtr<Type> InferBinary(NullableFlowPtr<Type> lhs,
-                                         lex::Operator o,
-                                         const NullableFlowPtr<Type>& rhs) {
+static NullableFlowPtr<Type> InferBinary(NullableFlowPtr<Type> lhs, lex::Operator o, const NullableFlowPtr<Type>& rhs) {
   using namespace lex;
 
   NullableFlowPtr<ir::Type> r;

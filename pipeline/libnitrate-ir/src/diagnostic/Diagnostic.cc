@@ -47,8 +47,7 @@ using namespace ncc;
 using namespace ncc::ir;
 using namespace ncc::lex;
 
-static std::vector<std::string_view> WordBreak(std::string_view text,
-                                               size_t max_width) {
+static std::vector<std::string_view> WordBreak(std::string_view text, size_t max_width) {
   std::vector<std::string_view> lines;
   size_t word_beg = 0, cur_beg = 0, cur_len = 0;
 
@@ -137,8 +136,7 @@ static std::vector<std::string_view> WordBreak(std::string_view text,
   return lines;
 }
 
-static std::string FormatOverview(std::string_view overview,
-                                  std::string_view param) {
+static std::string FormatOverview(std::string_view overview, std::string_view param) {
   std::string formatted;
   size_t i = 0;
 
@@ -160,8 +158,7 @@ static std::string FormatOverview(std::string_view overview,
   return formatted;
 }
 
-static void ConfineRectBounds(int64_t &x_0, int64_t &y_0, int64_t &x_1,
-                              int64_t &y_1, size_t win_width) {
+static void ConfineRectBounds(int64_t &x_0, int64_t &y_0, int64_t &x_1, int64_t &y_1, size_t win_width) {
   if (x_1 < x_0) {
     x_1 = x_0;
   }
@@ -289,8 +286,7 @@ NCC_EXPORT std::string ec::Formatter(std::string_view msg, Sev sev) {
       for (size_t i = 1; i < lines.size() - 1; i++) {
         ss << ind << "\x1b[33m║\x1b[0m \x1b[35;1m" << lines[i] << "\x1b[0m\n";
       }
-      ss << ind << "\x1b[33m╚\x1b[0m \x1b[35;1m" << lines[lines.size() - 1]
-         << "\x1b[0m\n\n";
+      ss << ind << "\x1b[33m╚\x1b[0m \x1b[35;1m" << lines[lines.size() - 1] << "\x1b[0m\n\n";
     }
   }
 
@@ -308,11 +304,9 @@ NCC_EXPORT std::string ec::Formatter(std::string_view msg, Sev sev) {
         } else {
           ss << ind << "\x1b[33m╠═\x1b[0m \x1b[37m" << lines[0] << "\x1b[0m\n";
           for (size_t i = 1; i < lines.size() - 1; i++) {
-            ss << ind << "\x1b[33m║\x1b[0m   \x1b[37m" << lines[i]
-               << "\x1b[0m\n";
+            ss << ind << "\x1b[33m║\x1b[0m   \x1b[37m" << lines[i] << "\x1b[0m\n";
           }
-          ss << ind << "\x1b[33m║\x1b[0m   \x1b[37m" << lines[lines.size() - 1]
-             << "\x1b[0m\n";
+          ss << ind << "\x1b[33m║\x1b[0m   \x1b[37m" << lines[lines.size() - 1] << "\x1b[0m\n";
         }
       }
 
@@ -320,8 +314,7 @@ NCC_EXPORT std::string ec::Formatter(std::string_view msg, Sev sev) {
     }
   }
 
-  if (sl != kLexEof && sc != kLexEof && el != kLexEof &&
-      ec != kLexEof) { /* Source window */
+  if (sl != kLexEof && sc != kLexEof && el != kLexEof && ec != kLexEof) { /* Source window */
     constexpr size_t kWindowWidth = 60;
 
     int64_t x_0 = sc, y_0 = sl, x_1 = ec, y_1 = el;
@@ -342,8 +335,7 @@ NCC_EXPORT std::string ec::Formatter(std::string_view msg, Sev sev) {
 
         for (const auto &line : lines) {
           if (sl != kLexEof) {
-            ss << std::setw(ind_sz + 1)
-               << (sl - (source_lines.value().size() / 2)) + i + 1;
+            ss << std::setw(ind_sz + 1) << (sl - (source_lines.value().size() / 2)) + i + 1;
           } else {
             ss << std::setw(ind_sz + 1) << "?";
           }

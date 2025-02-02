@@ -110,8 +110,7 @@ auto Parser::PImpl::RecurseName() -> string {
   return name;
 }
 
-auto Parser::PImpl::RecurseBlock(bool expect_braces, bool single_stmt,
-                                 SafetyMode safety) -> FlowPtr<Stmt> {
+auto Parser::PImpl::RecurseBlock(bool expect_braces, bool single_stmt, SafetyMode safety) -> FlowPtr<Stmt> {
   if (expect_braces && !next().Is<PuncLCur>()) {
     Log << SyntaxError << current() << "Expected '{'";
   }
@@ -129,8 +128,7 @@ auto Parser::PImpl::RecurseBlock(bool expect_braces, bool single_stmt,
     }
 
     { /* Detect exit conditon */
-      bool should_break = (expect_braces && NextIf(PuncRCur)) ||
-                          (single_stmt && statements.size() == 1);
+      bool should_break = (expect_braces && NextIf(PuncRCur)) || (single_stmt && statements.size() == 1);
 
       if (!should_break && NextIf(EofF)) {
         if (expect_braces) {
@@ -157,8 +155,7 @@ auto Parser::PImpl::RecurseBlock(bool expect_braces, bool single_stmt,
       });
 
       if (!NextIf(PuncSemi)) {
-        Log << SyntaxError << current()
-            << "Expected ';' after statement expression";
+        Log << SyntaxError << current() << "Expected ';' after statement expression";
       }
 
       auto stmt = CreateNode<ExprStmt>(expr)();
@@ -195,8 +192,7 @@ auto Parser::PImpl::RecurseBlock(bool expect_braces, bool single_stmt,
         }
 
         case Import: {
-          Log << SyntaxError << current()
-              << "Unexpected 'import' in block context";
+          Log << SyntaxError << current() << "Unexpected 'import' in block context";
           break;
         }
 
@@ -262,8 +258,7 @@ auto Parser::PImpl::RecurseBlock(bool expect_braces, bool single_stmt,
         }
 
         case Opaque: {
-          Log << SyntaxError << current()
-              << "Unexpected 'opaque' in block context";
+          Log << SyntaxError << current() << "Unexpected 'opaque' in block context";
           break;
         }
 
@@ -275,8 +270,7 @@ auto Parser::PImpl::RecurseBlock(bool expect_braces, bool single_stmt,
         case __FString: {
           r = CreateNode<ExprStmt>(RecurseFstring())();
           if (!NextIf(PuncSemi)) {
-            Log << SyntaxError << current()
-                << "Expected ';' after f-string expression";
+            Log << SyntaxError << current() << "Expected ';' after f-string expression";
           }
           break;
         }
@@ -307,8 +301,7 @@ auto Parser::PImpl::RecurseBlock(bool expect_braces, bool single_stmt,
         }
 
         case Promise: {
-          Log << SyntaxError << current()
-              << "Unexpected 'promise' in block context";
+          Log << SyntaxError << current() << "Unexpected 'promise' in block context";
           break;
         }
 
@@ -318,8 +311,7 @@ auto Parser::PImpl::RecurseBlock(bool expect_braces, bool single_stmt,
         }
 
         case Else: {
-          Log << SyntaxError << current()
-              << "Unexpected 'else' in block context";
+          Log << SyntaxError << current() << "Unexpected 'else' in block context";
           break;
         }
 
@@ -346,8 +338,7 @@ auto Parser::PImpl::RecurseBlock(bool expect_braces, bool single_stmt,
         case Keyword::Break: {
           r = CreateNode<Break>()();
           if (!NextIf(PuncSemi)) {
-            Log << SyntaxError << current()
-                << "Expected ';' after 'break' statement";
+            Log << SyntaxError << current() << "Expected ';' after 'break' statement";
           }
 
           break;
@@ -356,8 +347,7 @@ auto Parser::PImpl::RecurseBlock(bool expect_braces, bool single_stmt,
         case Keyword::Continue: {
           r = CreateNode<Continue>()();
           if (!NextIf(PuncSemi)) {
-            Log << SyntaxError << current()
-                << "Expected ';' after 'continue' statement";
+            Log << SyntaxError << current() << "Expected ';' after 'continue' statement";
           }
           break;
         }
@@ -383,8 +373,7 @@ auto Parser::PImpl::RecurseBlock(bool expect_braces, bool single_stmt,
         }
 
         case Catch: {
-          Log << SyntaxError << current()
-              << "Unexpected 'catch' in block context";
+          Log << SyntaxError << current() << "Unexpected 'catch' in block context";
           break;
         }
 
@@ -394,8 +383,7 @@ auto Parser::PImpl::RecurseBlock(bool expect_braces, bool single_stmt,
         }
 
         case Async: {
-          Log << SyntaxError << current()
-              << "Unexpected 'async' in block context";
+          Log << SyntaxError << current() << "Unexpected 'async' in block context";
           break;
         }
 
@@ -412,8 +400,7 @@ auto Parser::PImpl::RecurseBlock(bool expect_braces, bool single_stmt,
         case Undef: {
           r = CreateNode<ExprStmt>(CreateNode<Undefined>()())();
           if (!NextIf(PuncSemi)) {
-            Log << SyntaxError << current()
-                << "Expected ';' after 'undef' statement";
+            Log << SyntaxError << current() << "Expected ';' after 'undef' statement";
           }
           break;
         }
@@ -421,8 +408,7 @@ auto Parser::PImpl::RecurseBlock(bool expect_braces, bool single_stmt,
         case Keyword::Null: {
           r = CreateNode<ExprStmt>(CreateNode<Null>()())();
           if (!NextIf(PuncSemi)) {
-            Log << SyntaxError << current()
-                << "Expected ';' after 'null' statement";
+            Log << SyntaxError << current() << "Expected ';' after 'null' statement";
           }
           break;
         }
@@ -430,8 +416,7 @@ auto Parser::PImpl::RecurseBlock(bool expect_braces, bool single_stmt,
         case True: {
           r = CreateNode<ExprStmt>(CreateNode<Boolean>(true)())();
           if (!NextIf(PuncSemi)) {
-            Log << SyntaxError << current()
-                << "Expected ';' after 'true' statement";
+            Log << SyntaxError << current() << "Expected ';' after 'true' statement";
           }
           break;
         }
@@ -439,8 +424,7 @@ auto Parser::PImpl::RecurseBlock(bool expect_braces, bool single_stmt,
         case False: {
           r = CreateNode<ExprStmt>(CreateNode<Boolean>(false)())();
           if (!NextIf(PuncSemi)) {
-            Log << SyntaxError << current()
-                << "Expected ';' after 'false' statement";
+            Log << SyntaxError << current() << "Expected ';' after 'false' statement";
           }
           break;
         }
@@ -455,10 +439,8 @@ auto Parser::PImpl::RecurseBlock(bool expect_braces, bool single_stmt,
   }
 }
 
-Parser::Parser(ncc::lex::IScanner &lexer, std::shared_ptr<ncc::Environment> env,
-               std::shared_ptr<void> lifetime)
-    : m_impl(std::make_unique<Parser::PImpl>(lexer, std::move(env),
-                                             std::move(lifetime))) {}
+Parser::Parser(ncc::lex::IScanner &lexer, std::shared_ptr<ncc::Environment> env, std::shared_ptr<void> lifetime)
+    : m_impl(std::make_unique<Parser::PImpl>(lexer, std::move(env), std::move(lifetime))) {}
 
 Parser::~Parser() = default;
 
@@ -498,8 +480,7 @@ auto Parser::Parse() -> ASTRoot {
               Log << SyntaxError << "Some lexical errors have occurred";
             }
 
-            ast =
-                ASTRoot(node, std::move(m_impl->m_allocator), m_impl->m_failed);
+            ast = ASTRoot(node, std::move(m_impl->m_allocator), m_impl->m_failed);
           }
 
           /* Recreate the thread-local allocator */

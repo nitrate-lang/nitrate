@@ -44,8 +44,7 @@ using namespace ncc::ir;
 namespace util {
   constexpr std::array<char, 256> kNamespaceChars = []() {
     auto is_alnum = [](char ch) constexpr {
-      return (ch >= '0' && ch <= '9') || (ch >= 'a' && ch <= 'z') ||
-             (ch >= 'A' && ch <= 'Z');
+      return (ch >= '0' && ch <= '9') || (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z');
     };
 
     std::array<char, 256> valid_chars = {};
@@ -168,8 +167,7 @@ namespace ncc::ir::abi::azide {
 
           std::string_view part = input.substr(i, size);
 
-          if (!std::all_of(part.begin(), part.end(),
-                           [](char ch) { return util::kNamespaceChars[ch]; })) {
+          if (!std::all_of(part.begin(), part.end(), [](char ch) { return util::kNamespaceChars[ch]; })) {
             return false;
           }
 
@@ -419,9 +417,8 @@ namespace ncc::ir::abi::azide {
 
   static bool DemangleTypeRecurse(std::string_view &name, std::ostream &ss) {
     static std::unordered_map<char, std::string_view> basic_types = {
-        {'b', "u1"},  {'h', "u8"},   {'t', "u16"},  {'j', "u32"},
-        {'m', "u64"}, {'o', "u128"}, {'a', "i8"},   {'s', "i16"},
-        {'i', "i32"}, {'l', "i64"},  {'n', "i128"}, {'v', "void"},
+        {'b', "u1"}, {'h', "u8"},  {'t', "u16"}, {'j', "u32"}, {'m', "u64"},  {'o', "u128"},
+        {'a', "i8"}, {'s', "i16"}, {'i', "i32"}, {'l', "i64"}, {'n', "i128"}, {'v', "void"},
     };
 
     if (name.empty()) {
@@ -674,8 +671,7 @@ namespace ncc::ir::abi::c {
 
 ///=============================================================================
 
-NCC_EXPORT std::optional<std::string> ncc::ir::MangleTypeName(
-    FlowPtr<Type> type, AbiTag abi) {
+NCC_EXPORT std::optional<std::string> ncc::ir::MangleTypeName(FlowPtr<Type> type, AbiTag abi) {
   switch (abi) {
     case AbiTag::C: {
       return "";
@@ -690,8 +686,7 @@ NCC_EXPORT std::optional<std::string> ncc::ir::MangleTypeName(
   }
 }
 
-NCC_EXPORT std::optional<std::string> ncc::ir::GetMangledSymbolName(
-    FlowPtr<Expr> symbol, AbiTag abi) {
+NCC_EXPORT std::optional<std::string> ncc::ir::GetMangledSymbolName(FlowPtr<Expr> symbol, AbiTag abi) {
   auto name = symbol->GetName();
 
   if (auto type_opt = symbol->GetType()) {
@@ -710,8 +705,7 @@ NCC_EXPORT std::optional<std::string> ncc::ir::GetMangledSymbolName(
   }
 }
 
-NCC_EXPORT std::optional<std::string> ncc::ir::ExpandSymbolName(
-    std::string_view mangled_name) {
+NCC_EXPORT std::optional<std::string> ncc::ir::ExpandSymbolName(std::string_view mangled_name) {
   if (mangled_name.empty()) {
     return std::nullopt;
   }
@@ -728,14 +722,12 @@ NCC_EXPORT std::optional<std::string> ncc::ir::ExpandSymbolName(
   }
 }
 
-NCC_EXPORT NullableFlowPtr<Expr> ncc::ir::GetSymbolFromMangledName(
-    std::string_view mangled_name) {
+NCC_EXPORT NullableFlowPtr<Expr> ncc::ir::GetSymbolFromMangledName(std::string_view mangled_name) {
   /// TODO: Implement this function
   qcore_implement();
 }
 
-NCC_EXPORT NullableFlowPtr<Type> ncc::ir::GetTypeFromMangledName(
-    std::string_view mangled_name) {
+NCC_EXPORT NullableFlowPtr<Type> ncc::ir::GetTypeFromMangledName(std::string_view mangled_name) {
   /// TODO: Implement this function
   qcore_implement();
 }

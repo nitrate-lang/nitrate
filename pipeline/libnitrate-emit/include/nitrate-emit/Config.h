@@ -73,8 +73,7 @@ typedef struct QcodeSettingT {
 
 #if defined(__cplusplus) && defined(__NITRATE_CODEGEN_IMPL__)
   constexpr QcodeSettingT(const std::initializer_list<int> &list)
-      : m_key(static_cast<QcodeKeyT>(list.begin()[0])),
-        m_value(static_cast<QcodeValT>(list.begin()[1])) {}
+      : m_key(static_cast<QcodeKeyT>(list.begin()[0])), m_value(static_cast<QcodeValT>(list.begin()[1])) {}
 #endif
 } QcodeSettingT;
 
@@ -90,10 +89,8 @@ struct QcodeSettingT {
 
 auto QcodeConfNew(bool use_defaults) -> QCodegenConfig *;
 void QcodeConfFree(QCodegenConfig *conf);
-auto QcodeConfSetopt(QCodegenConfig *conf, QcodeKeyT key,
-                     QcodeValT value) -> bool;
-auto QcodeConfGetopt(QCodegenConfig *conf, QcodeKeyT key,
-                     QcodeValT *value) -> bool;
+auto QcodeConfSetopt(QCodegenConfig *conf, QcodeKeyT key, QcodeValT value) -> bool;
+auto QcodeConfGetopt(QCodegenConfig *conf, QcodeKeyT key, QcodeValT *value) -> bool;
 auto QcodeConfGetopts(QCodegenConfig *conf, size_t *count) -> QcodeSettingT *;
 void QcodeConfClear(QCodegenConfig *conf);
 

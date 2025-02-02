@@ -101,8 +101,8 @@ NCC_EXPORT ECUnique::ECUnique(std::source_location loc) {
 }
 
 void ECBase::GetJsonRepresentation(std::ostream &os) const {
-  os << R"({"flagname":")" << FlagName() << R"(","nice_name":")" << NiceName()
-     << R"(","details":")" << Details() << R"(","tags":[)";
+  os << R"({"flagname":")" << FlagName() << R"(","nice_name":")" << NiceName() << R"(","details":")" << Details()
+     << R"(","tags":[)";
   for (auto it = Tags().begin(); it != Tags().end(); ++it) {
     os << "\"" << *it << "\"";
     if (it + 1 != Tags().end()) {
@@ -162,8 +162,7 @@ void ECBase::Finalize() {
   if (auto prepath_opt = GetDetailsPath()) {
     if (auto path_opt = GetRealPath(*prepath_opt)) {
       if (std::ifstream ifs(*path_opt); ifs.is_open()) {
-        std::string json((std::istreambuf_iterator<char>(ifs)),
-                         std::istreambuf_iterator<char>());
+        std::string json((std::istreambuf_iterator<char>(ifs)), std::istreambuf_iterator<char>());
 
         if (auto details_opt = ParseJsonECConfig(json)) {
           m_details = std::move(*details_opt);
@@ -204,12 +203,10 @@ void LoggerContext::RemoveFilter(size_t idx) {
 
 void LoggerContext::ClearFilters() { m_filters.clear(); }
 
-void LoggerContext::Publish(const std::string &msg, Sev sev,
-                            const ECBase &ec) const {
+void LoggerContext::Publish(const std::string &msg, Sev sev, const ECBase &ec) const {
   if (m_enabled) {
     bool emit = m_filters.empty() ||
-                std::all_of(m_filters.begin(), m_filters.end(),
-                            [&](const auto &f) { return f(msg, sev, ec); });
+                std::all_of(m_filters.begin(), m_filters.end(), [&](const auto &f) { return f(msg, sev, ec); });
 
     if (emit) {
       for (const auto &sub : m_subscribers) {

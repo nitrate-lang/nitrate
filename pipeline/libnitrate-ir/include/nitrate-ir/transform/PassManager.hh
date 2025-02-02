@@ -40,11 +40,9 @@
 #include <vector>
 
 namespace ncc::ir::transform {
-  using FunctionPass =
-      std::function<void(ncc::ir::Function&, ncc::ir::IRModule&, void*)>;
+  using FunctionPass = std::function<void(ncc::ir::Function&, ncc::ir::IRModule&, void*)>;
 
-#define NITRATE_IR_PASS(NAME, ...) \
-  void IR_Pass_##NAME(ncc::ir::Function& func, ncc::ir::IRModule& M, void* data)
+#define NITRATE_IR_PASS(NAME, ...) void IR_Pass_##NAME(ncc::ir::Function& func, ncc::ir::IRModule& M, void* data)
 
   class IPassManager {
   public:
@@ -65,9 +63,7 @@ namespace ncc::ir::transform {
     void AddPass(FunctionPass pass) override { m_passes.push_back(pass); }
     void Apply() override {
       for (auto& pass : m_passes) {
-        std::ranges::for_each(m_module.GetFunctions(), [&](const auto& func) {
-          pass(*func, m_module, m_data);
-        });
+        std::ranges::for_each(m_module.GetFunctions(), [&](const auto& func) { pass(*func, m_module, m_data); });
       }
     }
   };

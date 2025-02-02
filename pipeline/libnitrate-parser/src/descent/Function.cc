@@ -70,8 +70,7 @@ auto Parser::PImpl::RecurseFunctionParameter() -> std::optional<FuncParam> {
   return std::nullopt;
 }
 
-auto Parser::PImpl::RecurseTemplateParameters()
-    -> std::optional<TemplateParameters> {
+auto Parser::PImpl::RecurseTemplateParameters() -> std::optional<TemplateParameters> {
   if (!NextIf(OpLT)) {
     return std::nullopt;
   }
@@ -80,8 +79,7 @@ auto Parser::PImpl::RecurseTemplateParameters()
 
   while (true) {
     if (NextIf(EofF)) [[unlikely]] {
-      Log << SyntaxError << current()
-          << "Unexpected EOF in template parameters";
+      Log << SyntaxError << current() << "Unexpected EOF in template parameters";
       return params;
     }
 
@@ -116,8 +114,7 @@ auto Parser::PImpl::RecurseFunctionParameters() -> std::pair<FuncParams, bool> {
 
   while (true) {
     if (NextIf(EofF)) [[unlikely]] {
-      Log << SyntaxError << current()
-          << "Unexpected EOF in function parameters";
+      Log << SyntaxError << current() << "Unexpected EOF in function parameters";
 
       return parameters;
     }
@@ -130,8 +127,7 @@ auto Parser::PImpl::RecurseFunctionParameters() -> std::pair<FuncParams, bool> {
       is_variadic = true;
 
       if (!peek().Is<PuncRPar>()) {
-        Log << SyntaxError << current()
-            << "Expected ')' after variadic parameter";
+        Log << SyntaxError << current() << "Expected ')' after variadic parameter";
       }
       continue;
     }
@@ -152,12 +148,11 @@ auto Parser::PImpl::RecurseFunctionParameters() -> std::pair<FuncParams, bool> {
   return parameters;
 }
 
-auto Parser::PImpl::GetPuritySpecifier(Token start_pos, bool is_thread_safe,
-                                       bool is_pure, bool is_impure,
+auto Parser::PImpl::GetPuritySpecifier(Token start_pos, bool is_thread_safe, bool is_pure, bool is_impure,
                                        bool is_quasi, bool is_retro) -> Purity {
   /* Ensure that there is no duplication of purity specifiers */
-  if ((static_cast<int>(is_impure) + static_cast<int>(is_pure) +
-       static_cast<int>(is_quasi) + static_cast<int>(is_retro)) > 1) {
+  if ((static_cast<int>(is_impure) + static_cast<int>(is_pure) + static_cast<int>(is_quasi) +
+       static_cast<int>(is_retro)) > 1) {
     Log << SyntaxError << start_pos << "Conflicting purity specifiers";
 
     return Purity::Impure;
@@ -185,8 +180,7 @@ auto Parser::PImpl::GetPuritySpecifier(Token start_pos, bool is_thread_safe,
   return Purity::Impure;
 }
 
-auto Parser::PImpl::RecurseFunctionCapture()
-    -> std::optional<std::pair<string, bool>> {
+auto Parser::PImpl::RecurseFunctionCapture() -> std::optional<std::pair<string, bool>> {
   bool is_ref = NextIf(OpBitAnd).has_value();
 
   if (auto name = RecurseName(); !name.empty()) {
@@ -198,8 +192,7 @@ auto Parser::PImpl::RecurseFunctionCapture()
   return std::nullopt;
 }
 
-auto Parser::PImpl::RecurseFunctionAmbigouis()
-    -> std::tuple<ExpressionList, FnCaptures, Purity, string> {
+auto Parser::PImpl::RecurseFunctionAmbigouis() -> std::tuple<ExpressionList, FnCaptures, Purity, string> {
   enum class State : uint8_t {
     Ground,
     AttributesSection,
@@ -221,8 +214,7 @@ auto Parser::PImpl::RecurseFunctionAmbigouis()
 
   while (state != State::End) {
     if (NextIf(EofF)) [[unlikely]] {
-      Log << SyntaxError << current()
-          << "Unexpected EOF in function attributes";
+      Log << SyntaxError << current() << "Unexpected EOF in function attributes";
       break;
     }
 
@@ -247,15 +239,13 @@ auto Parser::PImpl::RecurseFunctionAmbigouis()
           }
         } else if (NextIf(PuncLBrk)) {
           if (already_parsed_attributes && already_parsed_captures) {
-            Log << SyntaxError << current()
-                << "Unexpected '[' after function attributes and captures";
+            Log << SyntaxError << current() << "Unexpected '[' after function attributes and captures";
           } else if (already_parsed_attributes && !already_parsed_captures) {
             state = State::CaptureSection;
           } else if (!already_parsed_attributes && already_parsed_captures) {
             state = State::AttributesSection;
           } else {
-            qcore_assert(!already_parsed_attributes &&
-                         !already_parsed_captures);
+            qcore_assert(!already_parsed_attributes && !already_parsed_captures);
 
             auto tok = peek();
 
@@ -271,8 +261,7 @@ auto Parser::PImpl::RecurseFunctionAmbigouis()
         } else if (auto tok = peek(); tok.Is<PuncLPar>() || tok.Is<OpLT>()) {
           state = State::End; /* Begin parsing parameters or template options */
         } else {
-          Log << SyntaxError << next()
-              << "Unexpected token in function declaration";
+          Log << SyntaxError << next() << "Unexpected token in function declaration";
         }
 
         break;
@@ -283,8 +272,7 @@ auto Parser::PImpl::RecurseFunctionAmbigouis()
 
         while (true) {
           if (NextIf(EofF)) [[unlikely]] {
-            Log << SyntaxError << current()
-                << "Unexpected EOF in function attributes";
+            Log << SyntaxError << current() << "Unexpected EOF in function attributes";
             break;
           }
 
@@ -311,8 +299,7 @@ auto Parser::PImpl::RecurseFunctionAmbigouis()
 
         while (true) {
           if (NextIf(EofF)) [[unlikely]] {
-            Log << SyntaxError << current()
-                << "Unexpected EOF in function captures";
+            Log << SyntaxError << current() << "Unexpected EOF in function captures";
             break;
           }
 
@@ -337,8 +324,7 @@ auto Parser::PImpl::RecurseFunctionAmbigouis()
     }
   }
 
-  auto purity = GetPuritySpecifier(start_pos, is_thread_safe, is_pure,
-                                   is_impure, is_quasi, is_retro);
+  auto purity = GetPuritySpecifier(start_pos, is_thread_safe, is_pure, is_impure, is_quasi, is_retro);
 
   return {attributes, captures, purity, function_name};
 }
@@ -351,8 +337,7 @@ auto Parser::PImpl::RecurseFunctionReturnType() -> FlowPtr<parse::Type> {
   return CreateNode<InferTy>()();
 }
 
-auto Parser::PImpl::RecurseFunctionBody(bool parse_declaration_only)
-    -> NullableFlowPtr<Stmt> {
+auto Parser::PImpl::RecurseFunctionBody(bool parse_declaration_only) -> NullableFlowPtr<Stmt> {
   if (parse_declaration_only || NextIf(PuncSemi)) {
     return std::nullopt;
   }
@@ -364,22 +349,19 @@ auto Parser::PImpl::RecurseFunctionBody(bool parse_declaration_only)
   return RecurseBlock(true, false, SafetyMode::Unknown);
 }
 
-auto Parser::PImpl::RecurseFunction(bool parse_declaration_only)
-    -> FlowPtr<Stmt> {
+auto Parser::PImpl::RecurseFunction(bool parse_declaration_only) -> FlowPtr<Stmt> {
   auto start_pos = current().GetStart();
 
-  auto [function_attributes, function_captures, function_purity,
-        function_name] = RecurseFunctionAmbigouis();
+  auto [function_attributes, function_captures, function_purity, function_name] = RecurseFunctionAmbigouis();
   auto function_template_parameters = RecurseTemplateParameters();
   auto function_parameters = RecurseFunctionParameters();
   auto function_return_type = RecurseFunctionReturnType();
   auto function_body = RecurseFunctionBody(parse_declaration_only);
 
-  auto function = CreateNode<Function>(
-      function_attributes, function_purity, function_captures, function_name,
-      function_template_parameters, function_parameters.first,
-      function_parameters.second, function_return_type, std::nullopt,
-      std::nullopt, function_body)();
+  auto function =
+      CreateNode<Function>(function_attributes, function_purity, function_captures, function_name,
+                           function_template_parameters, function_parameters.first, function_parameters.second,
+                           function_return_type, std::nullopt, std::nullopt, function_body)();
   function->SetOffset(start_pos);
 
   return function;

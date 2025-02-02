@@ -43,8 +43,7 @@
 using namespace ncc::ir;
 using namespace ncc;
 
-static auto JoinNameSegment(const std::string &a,
-                            const std::string &b) -> std::string {
+static auto JoinNameSegment(const std::string &a, const std::string &b) -> std::string {
   if (!a.empty() && !b.empty()) {
     return a + "::" + b;
   } else {
@@ -63,14 +62,12 @@ static void DropTailScope(std::string &scope) {
 
 template <typename T>
 static auto FindInScopeMap(const std::unordered_map<std::string_view, T> &map,
-                           std::string_view qualified_name)
-    -> std::optional<std::pair<T, std::string>> {
+                           std::string_view qualified_name) -> std::optional<std::pair<T, std::string>> {
   auto sep_it = qualified_name.find_last_of("$$");
   if (sep_it == std::string_view::npos) {
     auto it = map.find(qualified_name);
     return it == map.end() ? std::nullopt
-                           : std::optional<std::pair<T, std::string>>(
-                                 {it->second, std::string(qualified_name)});
+                           : std::optional<std::pair<T, std::string>>({it->second, std::string(qualified_name)});
   }
 
   std::string scope = std::string(qualified_name.substr(0, sep_it - 1));
@@ -98,8 +95,8 @@ static auto FindInScopeMap(const std::unordered_map<std::string_view, T> &map,
   return r;
 }
 
-auto NRBuilder::ResolveName(std::string_view name, Kind kind)
-    -> std::optional<std::pair<FlowPtr<Expr>, std::string_view>> {
+auto NRBuilder::ResolveName(std::string_view name,
+                            Kind kind) -> std::optional<std::pair<FlowPtr<Expr>, std::string_view>> {
   std::optional<std::pair<FlowPtr<Expr>, std::string>> r;
 
   switch (kind) {
@@ -114,8 +111,7 @@ auto NRBuilder::ResolveName(std::string_view name, Kind kind)
         std::string_view basename = name.substr(0, idx - 1);
         std::string_view field_name = name.substr(idx + 1);
 
-        if (const auto &submap =
-                FindInScopeMap(m_named_constant_group, basename)) {
+        if (const auto &submap = FindInScopeMap(m_named_constant_group, basename)) {
           auto it = submap.value().first.find(field_name);
           if (it != submap.value().first.end()) {
             r = {it->second, std::string(name)};

@@ -46,8 +46,7 @@ namespace ncc::ir {
     lex::Operator m_op;
 
   public:
-    constexpr GenericBinary(auto lhs, auto rhs, auto op)
-        : GenericExpr<A>(IR_eBIN), m_lhs(lhs), m_rhs(rhs), m_op(op) {}
+    constexpr GenericBinary(auto lhs, auto rhs, auto op) : GenericExpr<A>(IR_eBIN), m_lhs(lhs), m_rhs(rhs), m_op(op) {}
 
     [[nodiscard]] constexpr auto GetLHS() const { return m_lhs; }
     [[nodiscard]] constexpr auto GetRHS() const { return m_rhs; }
@@ -68,10 +67,7 @@ namespace ncc::ir {
 
   public:
     constexpr GenericUnary(auto expr, auto op, auto is_postfix)
-        : GenericExpr<A>(IR_eUNARY),
-          m_expr(expr),
-          m_op(op),
-          m_postfix(is_postfix) {}
+        : GenericExpr<A>(IR_eUNARY), m_expr(expr), m_op(op), m_postfix(is_postfix) {}
 
     [[nodiscard]] constexpr auto GetExpr() const { return m_expr; }
     [[nodiscard]] constexpr auto GetOp() const { return m_op; }
@@ -98,10 +94,8 @@ namespace ncc::ir {
         }
 
         // Check for overflow
-        if (x > (std::numeric_limits<uint128_t>::max() - (c - '0')) / 10)
-            [[unlikely]] {
-          qcore_panicf("Overflow when converting string `%s` to uint128_t",
-                       s.data());
+        if (x > (std::numeric_limits<uint128_t>::max() - (c - '0')) / 10) [[unlikely]] {
+          qcore_panicf("Overflow when converting string `%s` to uint128_t", s.data());
         }
 
         x = x * 10 + (c - '0');
@@ -111,21 +105,15 @@ namespace ncc::ir {
     }
 
   public:
-    constexpr GenericInt(auto val, auto size)
-        : GenericExpr<A>(IR_eINT), m_value(val), m_size(size) {}
+    constexpr GenericInt(auto val, auto size) : GenericExpr<A>(IR_eINT), m_value(val), m_size(size) {}
 
-    constexpr GenericInt(std::string_view str, uint8_t size)
-        : GenericExpr<A>(IR_eINT), m_value(Str2u128(str)) {
+    constexpr GenericInt(std::string_view str, uint8_t size) : GenericExpr<A>(IR_eINT), m_value(Str2u128(str)) {
       m_size = size;
     }
 
     [[nodiscard]] constexpr auto GetSize() const { return m_size; }
-    [[nodiscard]] constexpr auto GetValue() const -> uint128_t {
-      return m_value;
-    }
-    [[nodiscard]] auto GetValueString() const -> std::string {
-      return m_value.str();
-    }
+    [[nodiscard]] constexpr auto GetValue() const -> uint128_t { return m_value; }
+    [[nodiscard]] auto GetValueString() const -> std::string { return m_value.str(); }
   };
 
   template <class A>
@@ -138,8 +126,7 @@ namespace ncc::ir {
     static_assert(sizeof(double) == 8);
 
   public:
-    constexpr GenericFloat(auto dec, auto size)
-        : GenericExpr<A>(IR_eFLOAT), m_data{dec}, m_size(size) {}
+    constexpr GenericFloat(auto dec, auto size) : GenericExpr<A>(IR_eFLOAT), m_data{dec}, m_size(size) {}
 
     constexpr GenericFloat(string str) : GenericExpr<A>(IR_eFLOAT) {
       m_data = std::stod(std::string(str));
@@ -167,9 +154,7 @@ namespace ncc::ir {
 
   public:
     constexpr GenericList(auto items, auto is_homogenous)
-        : GenericExpr<A>(IR_eLIST),
-          m_items(items),
-          m_is_homogenous(is_homogenous) {}
+        : GenericExpr<A>(IR_eLIST), m_items(items), m_is_homogenous(is_homogenous) {}
 
     [[nodiscard]] constexpr auto Begin() const { return m_items.begin(); }
     [[nodiscard]] constexpr auto End() const { return m_items.end(); }
@@ -178,9 +163,7 @@ namespace ncc::ir {
 
     constexpr auto operator[](size_t idx) const { return m_items[idx]; }
     [[nodiscard]] constexpr auto At(size_t idx) const { return m_items[idx]; }
-    [[nodiscard]] constexpr auto IsHomogenous() const -> bool {
-      return m_is_homogenous;
-    }
+    [[nodiscard]] constexpr auto IsHomogenous() const -> bool { return m_is_homogenous; }
   };
 
   template <class A>
@@ -192,8 +175,7 @@ namespace ncc::ir {
     NullableFlowPtr<GenericExpr<A>> m_iref;
 
   public:
-    constexpr GenericCall(auto ref, auto args)
-        : GenericExpr<A>(IR_eCALL), m_args(args), m_iref(ref) {}
+    constexpr GenericCall(auto ref, auto args) : GenericExpr<A>(IR_eCALL), m_args(args), m_iref(ref) {}
 
     [[nodiscard]] constexpr auto GetTarget() const { return m_iref; }
     constexpr auto GetNumArgs() { return m_args.size(); }
@@ -210,8 +192,7 @@ namespace ncc::ir {
     std::span<FlowPtr<GenericExpr<A>>> m_items;
 
   public:
-    constexpr GenericSeq(auto items)
-        : GenericExpr<A>(IR_eSEQ), m_items(items) {}
+    constexpr GenericSeq(auto items) : GenericExpr<A>(IR_eSEQ), m_items(items) {}
 
     [[nodiscard]] constexpr auto GetItems() const { return m_items; }
     [[nodiscard]] constexpr auto Begin() const { return m_items.begin(); }
@@ -229,8 +210,7 @@ namespace ncc::ir {
     FlowPtr<GenericExpr<A>> m_expr, m_index;
 
   public:
-    constexpr GenericIndex(auto expr, auto index)
-        : GenericExpr<A>(IR_eINDEX), m_expr(expr), m_index(index) {}
+    constexpr GenericIndex(auto expr, auto index) : GenericExpr<A>(IR_eINDEX), m_expr(expr), m_index(index) {}
 
     [[nodiscard]] constexpr auto GetExpr() const { return m_expr; }
     [[nodiscard]] constexpr auto GetIndex() const { return m_index; }
@@ -247,8 +227,7 @@ namespace ncc::ir {
     string m_name;
 
   public:
-    constexpr GenericIdentifier(auto name, auto what)
-        : GenericExpr<A>(IR_eIDENT), m_what(what), m_name(name) {}
+    constexpr GenericIdentifier(auto name, auto what) : GenericExpr<A>(IR_eIDENT), m_what(what), m_name(name) {}
 
     [[nodiscard]] constexpr auto GetWhat() const { return m_what; }
     [[nodiscard]] constexpr auto GetName() const { return m_name.Get(); }
@@ -285,8 +264,7 @@ namespace ncc::ir {
     bool m_readonly;
 
   public:
-    constexpr GenericLocal(auto name, auto value, auto abi_name,
-                           auto readonly = false,
+    constexpr GenericLocal(auto name, auto value, auto abi_name, auto readonly = false,
                            auto storage_class = StorageClass::LLVM_StackAlloa)
         : GenericExpr<A>(IR_eLOCAL),
           m_value(value),
@@ -364,8 +342,7 @@ namespace ncc::ir {
     FlowPtr<GenericSeq<A>> m_body;
 
   public:
-    constexpr GenericWhile(auto cond, auto body)
-        : GenericExpr<A>(IR_eWHILE), m_cond(cond), m_body(body) {}
+    constexpr GenericWhile(auto cond, auto body) : GenericExpr<A>(IR_eWHILE), m_cond(cond), m_body(body) {}
 
     [[nodiscard]] constexpr auto GetCond() const { return m_cond; }
     [[nodiscard]] constexpr auto GetBody() const { return m_body; }
@@ -382,11 +359,7 @@ namespace ncc::ir {
 
   public:
     constexpr GenericFor(auto init, auto cond, auto step, auto body)
-        : GenericExpr<A>(IR_eFOR),
-          m_init(init),
-          m_cond(cond),
-          m_step(step),
-          m_body(body) {}
+        : GenericExpr<A>(IR_eFOR), m_init(init), m_cond(cond), m_step(step), m_body(body) {}
 
     [[nodiscard]] constexpr auto GetInit() const { return m_init; }
     [[nodiscard]] constexpr auto GetCond() const { return m_cond; }
@@ -406,8 +379,7 @@ namespace ncc::ir {
     FlowPtr<GenericExpr<A>> m_cond, m_body;
 
   public:
-    constexpr GenericCase(auto cond, auto body)
-        : GenericExpr<A>(IR_eCASE), m_cond(cond), m_body(body) {}
+    constexpr GenericCase(auto cond, auto body) : GenericExpr<A>(IR_eCASE), m_cond(cond), m_body(body) {}
 
     constexpr auto GetCond() { return m_cond; }
     constexpr auto GetBody() { return m_body; }
@@ -426,10 +398,7 @@ namespace ncc::ir {
 
   public:
     constexpr GenericSwitch(auto cond, auto cases, auto default_case)
-        : GenericExpr<A>(IR_eSWITCH),
-          m_cond(cond),
-          m_default(default_case),
-          m_cases(cases) {}
+        : GenericExpr<A>(IR_eSWITCH), m_cond(cond), m_default(default_case), m_cases(cases) {}
 
     [[nodiscard]] constexpr auto GetCond() const { return m_cond; }
     [[nodiscard]] constexpr auto GetCases() const { return m_cases; }
@@ -451,8 +420,7 @@ namespace ncc::ir {
     bool m_variadic;
 
   public:
-    constexpr GenericFunction(auto name, auto params, auto ret_ty, auto body,
-                              auto variadic, auto abi_name)
+    constexpr GenericFunction(auto name, auto params, auto ret_ty, auto body, auto variadic, auto abi_name)
         : GenericExpr<A>(IR_eFUNCTION),
           m_params(params),
           m_body(body),

@@ -37,8 +37,7 @@ using namespace ncc;
 using namespace ncc::lex;
 using namespace ncc::parse;
 
-auto Parser::PImpl::RecurseVariableAttributes()
-    -> std::optional<ExpressionList> {
+auto Parser::PImpl::RecurseVariableAttributes() -> std::optional<ExpressionList> {
   ExpressionList attributes;
 
   if (!NextIf(PuncLBrk)) {
@@ -47,8 +46,7 @@ auto Parser::PImpl::RecurseVariableAttributes()
 
   while (true) {
     if (NextIf(EofF)) [[unlikely]] {
-      Log << SyntaxError << current()
-          << "Encountered EOF while parsing variable attribute";
+      Log << SyntaxError << current() << "Encountered EOF while parsing variable attribute";
       break;
     }
 
@@ -88,15 +86,13 @@ auto Parser::PImpl::RecurseVariableValue() -> NullableFlowPtr<Expr> {
   return std::nullopt;
 }
 
-auto Parser::PImpl::RecurseVariableInstance(VariableType decl_type)
-    -> NullableFlowPtr<Stmt> {
+auto Parser::PImpl::RecurseVariableInstance(VariableType decl_type) -> NullableFlowPtr<Stmt> {
   if (auto symbol_attributes_opt = RecurseVariableAttributes()) {
     if (auto variable_name = RecurseName(); !variable_name.empty()) {
       auto variable_type = RecurseVariableType();
       auto variable_initial = RecurseVariableValue();
 
-      return CreateNode<Variable>(variable_name, variable_type,
-                                  variable_initial, decl_type,
+      return CreateNode<Variable>(variable_name, variable_type, variable_initial, decl_type,
                                   symbol_attributes_opt.value())();
     }
 
@@ -110,14 +106,12 @@ auto Parser::PImpl::RecurseVariableInstance(VariableType decl_type)
   return MockStmt(QAST_VAR);
 }
 
-auto Parser::PImpl::RecurseVariable(VariableType decl_type)
-    -> std::vector<FlowPtr<Stmt>> {
+auto Parser::PImpl::RecurseVariable(VariableType decl_type) -> std::vector<FlowPtr<Stmt>> {
   std::vector<FlowPtr<Stmt>> variables;
 
   while (true) {
     if (NextIf(EofF)) [[unlikely]] {
-      Log << SyntaxError << current()
-          << "Unexpected EOF in variable declaration";
+      Log << SyntaxError << current() << "Unexpected EOF in variable declaration";
       break;
     }
 
@@ -133,8 +127,7 @@ auto Parser::PImpl::RecurseVariable(VariableType decl_type)
     }
 
     if (!NextIf(PuncComa)) {
-      Log << SyntaxError << current()
-          << "Expected comma or semicolon after variable declaration";
+      Log << SyntaxError << current() << "Expected comma or semicolon after variable declaration";
       break;
     }
   }

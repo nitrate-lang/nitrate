@@ -50,8 +50,7 @@ namespace ncc {
       unsigned m_line, m_column;
 
     public:
-      constexpr Origin(
-          std::source_location loc = std::source_location::current())
+      constexpr Origin(std::source_location loc = std::source_location::current())
           : m_file_name(loc.file_name()),
             m_function_name(loc.function_name()),
             m_line(loc.line()),
@@ -93,8 +92,7 @@ namespace ncc {
       Pointee *m_ref;
       Tracking m_tracking;
 
-      constexpr WithTracking(Pointee *ptr, Tracking tracking)
-          : m_ref(ptr), m_tracking(std::move(tracking)) {}
+      constexpr WithTracking(Pointee *ptr, Tracking tracking) : m_ref(ptr), m_tracking(std::move(tracking)) {}
     };
 
     template <class Pointee, class Tracking>
@@ -108,18 +106,15 @@ namespace ncc {
     class NullableFlowPtr;
 
     template <class Pointee, class Tracking>
-    using flowptr_data_t =
-        std::conditional_t<std::is_same_v<Tracking, trace::Empty>,
-                           WithoutTracking<Pointee, Tracking>,
-                           WithTracking<Pointee, Tracking>>;
+    using flowptr_data_t = std::conditional_t<std::is_same_v<Tracking, trace::Empty>,
+                                              WithoutTracking<Pointee, Tracking>, WithTracking<Pointee, Tracking>>;
 
     template <class Pointee, class Tracking = DefaultTracking>
     class FlowPtr {
       friend class NullableFlowPtr<Pointee, Tracking>;
 
       using SelfData = flowptr_data_t<Pointee, Tracking>;
-      constexpr static bool kIsTracking =
-          std::is_same_v<SelfData, WithTracking<Pointee, Tracking>>;
+      constexpr static bool kIsTracking = std::is_same_v<SelfData, WithTracking<Pointee, Tracking>>;
 
       SelfData m_s;
 
@@ -138,10 +133,8 @@ namespace ncc {
       /// Constructors
 
       template <class U>
-      constexpr FlowPtr(U *ptr, Tracking tracking = Tracking())
-          : m_s(ptr, std::move(tracking)) {
-        static_assert(std::is_convertible_v<U *, Pointee *>,
-                      "Cannot convert U* to Pointee*");
+      constexpr FlowPtr(U *ptr, Tracking tracking = Tracking()) : m_s(ptr, std::move(tracking)) {
+        static_assert(std::is_convertible_v<U *, Pointee *>, "Cannot convert U* to Pointee*");
         qcore_assert(ptr != nullptr, "FlowPtr cannot be null");
       }
 
@@ -163,17 +156,11 @@ namespace ncc {
       ///=========================================================================
       /// Comparison
 
-      constexpr auto operator==(const FlowPtr &o) const -> bool {
-        return m_s.m_ref == o.m_s.m_ref;
-      }
+      constexpr auto operator==(const FlowPtr &o) const -> bool { return m_s.m_ref == o.m_s.m_ref; }
 
-      constexpr auto operator!=(const FlowPtr &o) const -> bool {
-        return m_s.m_ref != o.m_s.m_ref;
-      }
+      constexpr auto operator!=(const FlowPtr &o) const -> bool { return m_s.m_ref != o.m_s.m_ref; }
 
-      constexpr auto operator==(std::nullptr_t) const -> bool {
-        return m_s.m_ref == nullptr;
-      }
+      constexpr auto operator==(std::nullptr_t) const -> bool { return m_s.m_ref == nullptr; }
 
       ///=========================================================================
       /// Accessors
@@ -189,8 +176,7 @@ namespace ncc {
 
       template <class U>
       constexpr operator FlowPtr<U>() const {
-        static_assert(std::is_convertible_v<Pointee *, U *>,
-                      "Cannot convert Pointee* to U*");
+        static_assert(std::is_convertible_v<Pointee *, U *>, "Cannot convert Pointee* to U*");
         return FlowPtr<U>(static_cast<U *>(get()), Trace());
       }
 
@@ -230,8 +216,7 @@ namespace ncc {
   using FlowPtr = flowptr_detail::FlowPtr<Pointee, Tracking>;
 
   template <class Pointee, class Tracking = DefaultTracking>
-  constexpr auto MakeFlowPtr(Pointee *ptr, Tracking tracking = Tracking())
-      -> FlowPtr<Pointee, Tracking> {
+  constexpr auto MakeFlowPtr(Pointee *ptr, Tracking tracking = Tracking()) -> FlowPtr<Pointee, Tracking> {
     return FlowPtr<Pointee, Tracking>(ptr, std::move(tracking));
   }
 }  // namespace ncc
@@ -239,8 +224,7 @@ namespace ncc {
 namespace std {
   template <class Pointee, class Tracking>
   struct hash<ncc::FlowPtr<Pointee, Tracking>> {
-    auto operator()(const ncc::FlowPtr<Pointee, Tracking> &ptr) const
-        -> size_t {
+    auto operator()(const ncc::FlowPtr<Pointee, Tracking> &ptr) const -> size_t {
       return std::hash<Pointee *>()(ptr.get());
     }
   };

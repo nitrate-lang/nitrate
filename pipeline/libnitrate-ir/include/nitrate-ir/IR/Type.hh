@@ -174,9 +174,7 @@ namespace ncc::ir {
 
   public:
     constexpr GenericPtrTy(auto pointee, size_t native_size = 8)
-        : GenericType<A>(IR_tPTR),
-          m_pointee(pointee),
-          m_native_size(native_size) {}
+        : GenericType<A>(IR_tPTR), m_pointee(pointee), m_native_size(native_size) {}
 
     [[nodiscard]] constexpr auto GetPointee() const { return m_pointee; }
     [[nodiscard]] constexpr auto GetNativeSize() const { return m_native_size; }
@@ -189,8 +187,7 @@ namespace ncc::ir {
     FlowPtr<GenericType<A>> m_item;
 
   public:
-    constexpr GenericConstTy(auto item)
-        : GenericType<A>(IR_tCONST), m_item(item) {}
+    constexpr GenericConstTy(auto item) : GenericType<A>(IR_tCONST), m_item(item) {}
 
     [[nodiscard]] constexpr auto GetItem() const { return m_item; }
   };
@@ -202,8 +199,7 @@ namespace ncc::ir {
     string m_name;
 
   public:
-    constexpr GenericOpaqueTy(auto name)
-        : GenericType<A>(IR_tOPAQUE), m_name(name) {}
+    constexpr GenericOpaqueTy(auto name) : GenericType<A>(IR_tOPAQUE), m_name(name) {}
 
     [[nodiscard]] constexpr auto GetName() const { return m_name.Get(); }
   };
@@ -215,8 +211,7 @@ namespace ncc::ir {
     std::span<FlowPtr<GenericType<A>>> m_fields;
 
   public:
-    constexpr GenericStructTy(auto fields)
-        : GenericType<A>(IR_tSTRUCT), m_fields(fields) {}
+    constexpr GenericStructTy(auto fields) : GenericType<A>(IR_tSTRUCT), m_fields(fields) {}
 
     [[nodiscard]] constexpr auto GetFields() const { return m_fields; }
   };
@@ -228,8 +223,7 @@ namespace ncc::ir {
     std::span<FlowPtr<GenericType<A>>> m_fields;
 
   public:
-    constexpr GenericUnionTy(auto fields)
-        : GenericType<A>(IR_tUNION), m_fields(fields) {}
+    constexpr GenericUnionTy(auto fields) : GenericType<A>(IR_tUNION), m_fields(fields) {}
 
     [[nodiscard]] constexpr auto GetFields() const { return m_fields; }
   };
@@ -242,8 +236,7 @@ namespace ncc::ir {
     size_t m_size;
 
   public:
-    constexpr GenericArrayTy(auto element, auto size)
-        : GenericType<A>(IR_tARRAY), m_element(element), m_size(size) {}
+    constexpr GenericArrayTy(auto element, auto size) : GenericType<A>(IR_tARRAY), m_element(element), m_size(size) {}
 
     [[nodiscard]] constexpr auto GetElement() const { return m_element; }
     [[nodiscard]] constexpr auto GetCount() const { return m_size; }
@@ -259,13 +252,8 @@ namespace ncc::ir {
     bool m_variadic;
 
   public:
-    constexpr GenericFnTy(auto params, auto ret, auto variadic,
-                          size_t native_size = 8)
-        : GenericType<A>(IR_tFUNC),
-          m_params(params),
-          m_return(ret),
-          m_native_size(native_size),
-          m_variadic(variadic) {}
+    constexpr GenericFnTy(auto params, auto ret, auto variadic, size_t native_size = 8)
+        : GenericType<A>(IR_tFUNC), m_params(params), m_return(ret), m_native_size(native_size), m_variadic(variadic) {}
 
     [[nodiscard]] constexpr auto GetParams() const { return m_params; }
     [[nodiscard]] constexpr auto GetReturn() const { return m_return; }
@@ -281,8 +269,7 @@ namespace ncc::ir {
     TmpNodeCradle<A> m_data;
 
   public:
-    GenericTmp(TmpType type, TmpNodeCradle<A> data = {})
-        : GenericType<A>(IR_tTMP), m_type(type), m_data(data) {}
+    GenericTmp(TmpType type, TmpNodeCradle<A> data = {}) : GenericType<A>(IR_tTMP), m_type(type), m_data(data) {}
 
     auto GetTmpType() { return m_type; }
     [[nodiscard]] auto GetData() const { return m_data; }
@@ -374,8 +361,7 @@ namespace ncc::ir {
   auto GetStructTy(std::span<FlowPtr<Type>> fields) -> StructTy*;
   auto GetUnionTy(std::span<FlowPtr<Type>> fields) -> UnionTy*;
   auto GetArrayTy(FlowPtr<Type> element, size_t size) -> ArrayTy*;
-  auto GetFnTy(std::span<FlowPtr<Type>> params, FlowPtr<Type> ret,
-               bool variadic, size_t native_size = 8) -> FnTy*;
+  auto GetFnTy(std::span<FlowPtr<Type>> params, FlowPtr<Type> ret, bool variadic, size_t native_size = 8) -> FnTy*;
 }  // namespace ncc::ir
 
 #endif

@@ -94,12 +94,10 @@ namespace ncc::ir {
 
     virtual ~IReport() = default;
 
-    virtual void Report(IssueCode code, IC level,
-                        std::vector<std::string_view> params = {},
+    virtual void Report(IssueCode code, IC level, std::vector<std::string_view> params = {},
                         SrcLoc location = SrcLoc()) = 0;
 
-    void Report(IssueCode code, IC level, std::string_view message,
-                SrcLoc loc = SrcLoc()) {
+    void Report(IssueCode code, IC level, std::string_view message, SrcLoc loc = SrcLoc()) {
       Report(code, level, std::vector<std::string_view>({message}), loc);
     };
 
@@ -116,8 +114,7 @@ namespace ncc::ir {
     SrcLoc m_range;
 
   public:
-    MessageBuffer(std::function<void(std::string, SrcLoc)> on_flush)
-        : m_on_flush(on_flush) {}
+    MessageBuffer(std::function<void(std::string, SrcLoc)> on_flush) : m_on_flush(on_flush) {}
 
     MessageBuffer(MessageBuffer &&o) {
       m_buffer = std::move(o.m_buffer);
@@ -164,8 +161,7 @@ namespace ncc::ir {
     public:
       virtual ~DiagnosticRouterInstance() = default;
 
-      DiagnosticRouterInstance(MessageFunc func, lex::IScanner &scanner)
-          : m_func(func), m_scanner(&scanner) {}
+      DiagnosticRouterInstance(MessageFunc func, lex::IScanner &scanner) : m_func(func), m_scanner(&scanner) {}
 
       void EmitMessage(std::string_view, SrcLoc) override {
         /// TODO: Implement this function
@@ -180,10 +176,8 @@ namespace ncc::ir {
   }  // namespace detail
 
   template <typename T>
-  auto operator<<(detail::DiagnosticRouterInstance *ctx,
-                  const T &value) -> MessageBuffer {
-    MessageBuffer buf(
-        [ctx](std::string msg, SrcLoc loc) { ctx->EmitMessage(msg, loc); });
+  auto operator<<(detail::DiagnosticRouterInstance *ctx, const T &value) -> MessageBuffer {
+    MessageBuffer buf([ctx](std::string msg, SrcLoc loc) { ctx->EmitMessage(msg, loc); });
 
     buf.Write(value);
 

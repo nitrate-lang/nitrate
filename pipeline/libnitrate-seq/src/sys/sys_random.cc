@@ -54,22 +54,19 @@ auto Sequencer::SysRandom() -> int {
     if (lua_isnumber(lua, 1) != 0) {
       max = lua_tointeger(lua, 1);
     } else {
-      return luaL_error(lua, "Invalid argument #1: expected number, got %s",
-                        lua_typename(lua, lua_type(lua, 1)));
+      return luaL_error(lua, "Invalid argument #1: expected number, got %s", lua_typename(lua, lua_type(lua, 1)));
     }
   } else if (nargs == 2) {
     if (lua_isnumber(lua, 1) != 0) {
       min = lua_tointeger(lua, 1);
     } else {
-      return luaL_error(lua, "Invalid argument #1: expected number, got %s",
-                        lua_typename(lua, lua_type(lua, 1)));
+      return luaL_error(lua, "Invalid argument #1: expected number, got %s", lua_typename(lua, lua_type(lua, 1)));
     }
 
     if (lua_isnumber(lua, 2) != 0) {
       max = lua_tointeger(lua, 2);
     } else {
-      return luaL_error(lua, "Invalid argument #2: expected number, got %s",
-                        lua_typename(lua, lua_type(lua, 2)));
+      return luaL_error(lua, "Invalid argument #2: expected number, got %s", lua_typename(lua, lua_type(lua, 2)));
     }
   } else {
     return luaL_error(lua, "Expected at most two arguments, got %d", nargs);

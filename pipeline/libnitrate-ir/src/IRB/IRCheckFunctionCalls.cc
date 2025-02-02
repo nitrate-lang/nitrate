@@ -52,20 +52,16 @@ auto NRBuilder::CheckFunctionCalls(FlowPtr<Seq> root, IReport *d) -> bool {
 
           const auto &arguments = x->GetArgs();
 
-          bool variadic_two_few = fn_ty->IsVariadic() &&
-                                  arguments.size() < fn_ty->GetParams().size();
+          bool variadic_two_few = fn_ty->IsVariadic() && arguments.size() < fn_ty->GetParams().size();
           bool two_few = arguments.size() < fn_ty->GetParams().size();
           bool two_many = arguments.size() > fn_ty->GetParams().size();
 
           if (variadic_two_few) {
-            d->Report(VariadicNotEnoughArguments, IC::Error, target->GetName(),
-                      x->GetLoc());
+            d->Report(VariadicNotEnoughArguments, IC::Error, target->GetName(), x->GetLoc());
           } else if (two_few) {
-            d->Report(TwoFewArguments, IC::Error, target->GetName(),
-                      x->GetLoc());
+            d->Report(TwoFewArguments, IC::Error, target->GetName(), x->GetLoc());
           } else if (two_many) {
-            d->Report(TwoManyArguments, IC::Error, target->GetName(),
-                      x->GetLoc());
+            d->Report(TwoManyArguments, IC::Error, target->GetName(), x->GetLoc());
           }
 
           if (!two_few && !two_many && !variadic_two_few) {
@@ -73,24 +69,21 @@ auto NRBuilder::CheckFunctionCalls(FlowPtr<Seq> root, IReport *d) -> bool {
               auto param_type = fn_ty->GetParams()[i]->GetType();
 
               if (!param_type.has_value()) {
-                d->Report(TypeInference, IC::Error,
-                          "Unable to deduce function parameter type");
+                d->Report(TypeInference, IC::Error, "Unable to deduce function parameter type");
                 failed = true;
                 continue;
               }
 
               auto arg_type = arguments[i]->GetType();
               if (!arg_type.has_value()) {
-                d->Report(TypeInference, IC::Error,
-                          "Unable to deduce function argument type");
+                d->Report(TypeInference, IC::Error, "Unable to deduce function argument type");
                 failed = true;
                 continue;
               }
 
               if (!param_type.value()->IsEq(arg_type.value().get())) {
                 d->Report(BadCast, IC::Error,
-                          {"Bad call argument cast from '",
-                           arg_type.value()->ToString(), "' to '",
+                          {"Bad call argument cast from '", arg_type.value()->ToString(), "' to '",
                            param_type.value()->ToString(), "'"});
                 failed = true;
                 continue;

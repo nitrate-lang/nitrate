@@ -49,8 +49,7 @@ namespace ncc {
   class CStringView final : public std::string_view {
   public:
     constexpr CStringView() : std::string_view("") {}
-    constexpr CStringView(const char *begin, size_t len)
-        : std::string_view(begin, len - 1) {
+    constexpr CStringView(const char *begin, size_t len) : std::string_view(begin, len - 1) {
       qcore_assert(begin[len - 1] == '\0');
     }
 
@@ -86,18 +85,15 @@ namespace ncc {
   public:
     constexpr explicit String() : m_id(0) {}
 
-    constexpr NCC_FORCE_INLINE String(std::string_view str)
-        : m_id(str.empty() ? 0 : StringMemory::FromString(str)) {}
+    constexpr NCC_FORCE_INLINE String(std::string_view str) : m_id(str.empty() ? 0 : StringMemory::FromString(str)) {}
 
     constexpr NCC_FORCE_INLINE String(std::string &&str)
         : m_id(str.empty() ? 0 : StringMemory::FromString(std::move(str))) {}
 
-    constexpr NCC_FORCE_INLINE String(const std::string &str)
-        : m_id(str.empty() ? 0 : StringMemory::FromString(str)) {}
+    constexpr NCC_FORCE_INLINE String(const std::string &str) : m_id(str.empty() ? 0 : StringMemory::FromString(str)) {}
 
     constexpr NCC_FORCE_INLINE String(const char *str)
-        : m_id(str[0] == 0 ? 0
-                           : StringMemory::FromString(std::string_view(str))) {}
+        : m_id(str[0] == 0 ? 0 : StringMemory::FromString(std::string_view(str))) {}
 
     [[nodiscard]] auto Get() const -> CStringView;
 
@@ -144,18 +140,13 @@ namespace ncc {
 
   using string = String;
 
-  static inline auto operator<<(std::ostream &os,
-                                const String &str) -> std::ostream & {
-    return os << str.Get();
-  }
+  static inline auto operator<<(std::ostream &os, const String &str) -> std::ostream & { return os << str.Get(); }
 }  // namespace ncc
 
 namespace std {
   template <>
   struct hash<ncc::String> {
-    auto operator()(const ncc::String &str) const -> size_t {
-      return std::hash<std::string_view>{}(str.Get());
-    }
+    auto operator()(const ncc::String &str) const -> size_t { return std::hash<std::string_view>{}(str.Get()); }
   };
 }  // namespace std
 

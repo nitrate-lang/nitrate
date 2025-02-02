@@ -128,8 +128,7 @@ namespace google::protobuf {
 namespace ncc::parse {
   using namespace nitrate::parser;  // NOLINT
 
-  using WriterSourceProvider =
-      std::optional<std::reference_wrapper<lex::IScanner>>;
+  using WriterSourceProvider = std::optional<std::reference_wrapper<lex::IScanner>>;
 
   class NCC_EXPORT AstWriter : public ASTVisitor {
     google::protobuf::Arena *m_arena;
@@ -282,8 +281,7 @@ namespace ncc::parse {
     void Visit(FlowPtr<Export> n) override;
 
   public:
-    AstWriter(std::ostream &os, WriterSourceProvider rd = std::nullopt,
-              bool plaintext_mode = false);
+    AstWriter(std::ostream &os, WriterSourceProvider rd = std::nullopt, bool plaintext_mode = false);
     ~AstWriter() override;
   };
 }  // namespace ncc::parse

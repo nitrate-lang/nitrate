@@ -2246,8 +2246,7 @@ using namespace ncc;
 //   return out;
 // }
 
-NCC_EXPORT auto ir::NrLower(ncc::parse::Base *, const char *,
-                            bool) -> std::unique_ptr<IRModule> {
+NCC_EXPORT auto ir::NrLower(ncc::parse::Base *, const char *, bool) -> std::unique_ptr<IRModule> {
   Log << "Not implemented";
   return nullptr;
 }

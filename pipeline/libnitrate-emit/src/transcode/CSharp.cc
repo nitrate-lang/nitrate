@@ -36,8 +36,7 @@
 #include <nitrate-core/Macro.hh>
 #include <transcode/Targets.hh>
 
-auto codegen::ForCSharp(IRModule *module, std::ostream &err,
-                        std::ostream &out) -> bool {
+auto codegen::ForCSharp(IRModule *module, std::ostream &err, std::ostream &out) -> bool {
   err << "Not implemented";
   return false;
 }

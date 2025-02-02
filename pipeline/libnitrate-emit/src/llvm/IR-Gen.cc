@@ -96,9 +96,7 @@ using namespace ncc;
 // #define debug(...)
 // #endif
 
-typedef function<bool(IRModule *, QCodegenConfig *, ostream &err,
-                      raw_pwrite_stream &out)>
-    QcodeAdapterFn;
+typedef function<bool(IRModule *, QCodegenConfig *, ostream &err, raw_pwrite_stream &out)> QcodeAdapterFn;
 
 // using ctx_t = Module;
 // using craft_t = IRBuilder<>;
@@ -296,15 +294,12 @@ class OStreamWriter : public streambuf {
 public:
   OStreamWriter(FILE *file) : m_file(file) {}
 
-  virtual auto xsputn(const char *s, streamsize n) -> streamsize override {
-    return fwrite(s, 1, n, m_file);
-  }
+  virtual auto xsputn(const char *s, streamsize n) -> streamsize override { return fwrite(s, 1, n, m_file); }
 
   virtual auto overflow(int c) -> int override { return fputc(c, m_file); }
 
   // Get current position
-  virtual auto seekoff(streamoff off, ios_base::seekdir way,
-                       ios_base::openmode) -> streampos override {
+  virtual auto seekoff(streamoff off, ios_base::seekdir way, ios_base::openmode) -> streampos override {
     if (way == ios_base::cur) {
       if (fseek(m_file, off, SEEK_CUR) == -1) {
         return -1;
@@ -333,9 +328,7 @@ public:
 
 class OStreamDiscard : public streambuf {
 public:
-  virtual auto xsputn(const char *, streamsize n) -> streamsize override {
-    return n;
-  }
+  virtual auto xsputn(const char *, streamsize n) -> streamsize override { return n; }
   virtual auto overflow(int c) -> int override { return c; }
 };
 
@@ -345,9 +338,7 @@ class MyPwriteOstream : public raw_pwrite_stream {
 public:
   MyPwriteOstream(ostream &os) : raw_pwrite_stream(true), m_os(os) {}
 
-  void write_impl(const char *ptr, size_t size) override {
-    m_os.write(ptr, size);
-  }
+  void write_impl(const char *ptr, size_t size) override { m_os.write(ptr, size); }
 
   void pwrite_impl(const char *ptr, size_t size, uint64_t offset) override {
     auto curpos = current_pos();
@@ -1853,8 +1844,7 @@ public:
 //   return dispatch[N->GetKind()](b, N);
 // }
 
-static auto QcodeAdapter(IRModule *module, QCodegenConfig *conf, FILE *err,
-                         FILE *out, QcodeAdapterFn impl) -> bool {
+static auto QcodeAdapter(IRModule *module, QCodegenConfig *conf, FILE *err, FILE *out, QcodeAdapterFn impl) -> bool {
   unique_ptr<streambuf> err_stream_buf, out_stream_buf;
 
   {
@@ -1899,18 +1889,15 @@ static auto QcodeAdapter(IRModule *module, QCodegenConfig *conf, FILE *err,
   return true;
 }
 
-static auto FabricateLlvmir(IRModule *module, QCodegenConfig *conf,
-                            ostream &err,
+static auto FabricateLlvmir(IRModule *module, QCodegenConfig *conf, ostream &err,
                             raw_ostream &out) -> optional<unique_ptr<Module>> {
   /// TODO: Implement conversion for node
   qcore_implement();
 }
 
-NCC_EXPORT auto QcodeIR(IRModule *module, QCodegenConfig *conf, FILE *err,
-                        FILE *out) -> bool {
+NCC_EXPORT auto QcodeIR(IRModule *module, QCodegenConfig *conf, FILE *err, FILE *out) -> bool {
   return QcodeAdapter(module, conf, err, out,
-                      [](IRModule *m, QCodegenConfig *c, ostream &e,
-                         raw_pwrite_stream &o) -> bool {
+                      [](IRModule *m, QCodegenConfig *c, ostream &e, raw_pwrite_stream &o) -> bool {
                         auto module = FabricateLlvmir(m, c, e, o);
                         if (!module) {
                           e << "error: failed to fabricate LLVM IR" << endl;
@@ -1925,36 +1912,30 @@ NCC_EXPORT auto QcodeIR(IRModule *module, QCodegenConfig *conf, FILE *err,
                       });
 }
 
-NCC_EXPORT auto QcodeAsm(IRModule *module, QCodegenConfig *conf, FILE *err,
-                         FILE *out) -> bool {
+NCC_EXPORT auto QcodeAsm(IRModule *module, QCodegenConfig *conf, FILE *err, FILE *out) -> bool {
   return QcodeAdapter(
-      module, conf, err, out,
-      [](IRModule *m, QCodegenConfig *c, ostream &e,
-         raw_pwrite_stream &o) -> bool {
+      module, conf, err, out, [](IRModule *m, QCodegenConfig *c, ostream &e, raw_pwrite_stream &o) -> bool {
         auto module_opt = FabricateLlvmir(m, c, e, o);
         if (!module_opt) {
           e << "error: failed to fabricate LLVM IR" << endl;
           return false;
         }
 
-        auto target_triple = m->GetTargetInfo().m_TargetTriple.value_or(
-            sys::getDefaultTargetTriple());
+        auto target_triple = m->GetTargetInfo().m_TargetTriple.value_or(sys::getDefaultTargetTriple());
         auto cpu = m->GetTargetInfo().m_CPU.value_or("generic");
         ncc::string features = m->GetTargetInfo().m_CPUFeatures.value_or("");
         bool reloc_pic = true;
 
         TargetOptions opt;
         std::string lookup_target_err;
-        auto target = TargetRegistry::lookupTarget(target_triple.Get(),
-                                                   lookup_target_err);
+        auto target = TargetRegistry::lookupTarget(target_triple.Get(), lookup_target_err);
         if (!target) {
           e << "error: failed to lookup target: " << lookup_target_err << endl;
           return false;
         }
 
-        auto target_machine = target->createTargetMachine(
-            target_triple.Get(), cpu.Get(), features.Get(), opt,
-            reloc_pic ? Reloc::PIC_ : Reloc::Static);
+        auto target_machine = target->createTargetMachine(target_triple.Get(), cpu.Get(), features.Get(), opt,
+                                                          reloc_pic ? Reloc::PIC_ : Reloc::Static);
 
         auto &module = *module_opt.value();
 
@@ -1989,8 +1970,7 @@ NCC_EXPORT auto QcodeAsm(IRModule *module, QCodegenConfig *conf, FILE *err,
         pb.registerLoopAnalyses(lam);
         pb.crossRegisterProxies(lam, fam, cgam, mam);
 
-        ModulePassManager mpm =
-            pb.buildPerModuleDefaultPipeline(OptimizationLevel::O3);
+        ModulePassManager mpm = pb.buildPerModuleDefaultPipeline(OptimizationLevel::O3);
 
         // Optimize the IR!
         mpm.run(module, mam);
@@ -2000,8 +1980,7 @@ NCC_EXPORT auto QcodeAsm(IRModule *module, QCodegenConfig *conf, FILE *err,
         error_code ec;
 
         legacy::PassManager pass;
-        target_machine->addPassesToEmitFile(pass, o, nullptr,
-                                            CodeGenFileType::AssemblyFile);
+        target_machine->addPassesToEmitFile(pass, o, nullptr, CodeGenFileType::AssemblyFile);
         if (!pass.run(module)) {
           e << "error: failed to emit object code" << endl;
           return false;
@@ -2011,36 +1990,30 @@ NCC_EXPORT auto QcodeAsm(IRModule *module, QCodegenConfig *conf, FILE *err,
       });
 }
 
-NCC_EXPORT auto QcodeObj(IRModule *module, QCodegenConfig *conf, FILE *err,
-                         FILE *out) -> bool {
+NCC_EXPORT auto QcodeObj(IRModule *module, QCodegenConfig *conf, FILE *err, FILE *out) -> bool {
   return QcodeAdapter(
-      module, conf, err, out,
-      [](IRModule *m, QCodegenConfig *c, ostream &e,
-         raw_pwrite_stream &o) -> bool {
+      module, conf, err, out, [](IRModule *m, QCodegenConfig *c, ostream &e, raw_pwrite_stream &o) -> bool {
         auto module_opt = FabricateLlvmir(m, c, e, o);
         if (!module_opt) {
           e << "error: failed to fabricate LLVM IR" << endl;
           return false;
         }
 
-        ncc::string target_triple = m->GetTargetInfo().m_TargetTriple.value_or(
-            sys::getDefaultTargetTriple());
+        ncc::string target_triple = m->GetTargetInfo().m_TargetTriple.value_or(sys::getDefaultTargetTriple());
         ncc::string cpu = m->GetTargetInfo().m_CPU.value_or("generic");
         ncc::string features = m->GetTargetInfo().m_CPUFeatures.value_or("");
         bool reloc_pic = true;
 
         TargetOptions opt;
         std::string lookup_target_err;
-        auto target = TargetRegistry::lookupTarget(target_triple.Get(),
-                                                   lookup_target_err);
+        auto target = TargetRegistry::lookupTarget(target_triple.Get(), lookup_target_err);
         if (!target) {
           e << "error: failed to lookup target: " << lookup_target_err << endl;
           return false;
         }
 
-        auto target_machine = target->createTargetMachine(
-            target_triple.Get(), cpu.Get(), features.Get(), opt,
-            reloc_pic ? Reloc::PIC_ : Reloc::Static);
+        auto target_machine = target->createTargetMachine(target_triple.Get(), cpu.Get(), features.Get(), opt,
+                                                          reloc_pic ? Reloc::PIC_ : Reloc::Static);
 
         auto &module = *module_opt.value();
 
@@ -2075,8 +2048,7 @@ NCC_EXPORT auto QcodeObj(IRModule *module, QCodegenConfig *conf, FILE *err,
         pb.registerLoopAnalyses(lam);
         pb.crossRegisterProxies(lam, fam, cgam, mam);
 
-        ModulePassManager mpm =
-            pb.buildPerModuleDefaultPipeline(OptimizationLevel::O3);
+        ModulePassManager mpm = pb.buildPerModuleDefaultPipeline(OptimizationLevel::O3);
 
         // Optimize the IR!
         mpm.run(module, mam);
@@ -2086,8 +2058,7 @@ NCC_EXPORT auto QcodeObj(IRModule *module, QCodegenConfig *conf, FILE *err,
         error_code ec;
 
         legacy::PassManager pass;
-        target_machine->addPassesToEmitFile(pass, o, nullptr,
-                                            CodeGenFileType::ObjectFile);
+        target_machine->addPassesToEmitFile(pass, o, nullptr, CodeGenFileType::ObjectFile);
         if (!pass.run(module)) {
           e << "error: failed to emit object code" << endl;
           return false;

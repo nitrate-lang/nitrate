@@ -60,8 +60,7 @@ namespace ncc::ir {
     friend Expr;
     friend class NRBuilder;
 
-    using FunctionNameBimap =
-        boost::bimap<std::string, std::pair<FnTy *, Function *>>;
+    using FunctionNameBimap = boost::bimap<std::string, std::pair<FnTy *, Function *>>;
 
     NullableFlowPtr<Seq> m_root;
     FunctionNameBimap m_functions{};
@@ -79,17 +78,13 @@ namespace ncc::ir {
 
     [[nodiscard]] auto GetRoot() const { return m_root; }
 
-    [[nodiscard]] auto GetTransformHistory() const -> std::span<const string> {
-      return m_applied;
-    }
+    [[nodiscard]] auto GetTransformHistory() const -> std::span<const string> { return m_applied; }
     auto Diagnostics(std::optional<bool> state = std::nullopt) -> bool;
     auto Name(std::optional<string> name = std::nullopt) -> string;
     auto GetNodeArena() -> auto & { return m_ir_data; }
     [[nodiscard]] auto GetTargetInfo() const { return m_target_info; }
     [[nodiscard]] auto GetFunctions() const {
-      return m_functions.left | std::views::transform([](auto &pair) {
-               return pair.second.second;
-             });
+      return m_functions.left | std::views::transform([](auto &pair) { return pair.second.second; });
     }
 
     void Accept(IRVisitor<void> &visitor);

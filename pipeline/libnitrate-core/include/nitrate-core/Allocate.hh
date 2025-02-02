@@ -52,8 +52,7 @@ namespace ncc {
      * aligned to the specified alignment except when the alignment is 0.
      * @note nullptr is only returned when the alignment is 0.
      */
-    virtual auto Alloc(size_t size,
-                       size_t align = kDefaultAlignment) -> void * = 0;
+    virtual auto Alloc(size_t size, size_t align = kDefaultAlignment) -> void * = 0;
 
     static constexpr size_t kDefaultAlignment = 16;
   };
@@ -81,8 +80,7 @@ namespace ncc {
       return *this;
     }
 
-    auto Alloc(size_t size,
-               size_t align = kDefaultAlignment) -> void * override;
+    auto Alloc(size_t size, size_t align = kDefaultAlignment) -> void * override;
   };
 }  // namespace ncc
 

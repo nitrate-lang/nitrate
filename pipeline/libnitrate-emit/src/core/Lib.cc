@@ -103,8 +103,7 @@ extern "C" NCC_EXPORT auto QcodeLibVersion() -> const char* {
       "[" __TARGET_VERSION
       "] ["
 
-#if defined(__x86_64__) || defined(__amd64__) || defined(__amd64) || \
-    defined(_M_X64) || defined(_M_AMD64)
+#if defined(__x86_64__) || defined(__amd64__) || defined(__amd64) || defined(_M_X64) || defined(_M_AMD64)
       "x86_64-"
 #elif defined(__i386__) || defined(__i386) || defined(_M_IX86)
       "x86-"

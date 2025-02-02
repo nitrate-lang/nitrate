@@ -49,8 +49,7 @@ namespace ncc::parse {
   template <typename T, typename... Args>
   constexpr static inline auto CreateNode(Args &&...args) {
     return [&](std::source_location origin = std::source_location::current()) {
-      FlowPtr<T> new_obj = MakeFlowPtr<T>(new (Arena<T>().allocate(1)) T(
-          std::forward<Args>(args)...));  // NOLINT
+      FlowPtr<T> new_obj = MakeFlowPtr<T>(new (Arena<T>().allocate(1)) T(std::forward<Args>(args)...));  // NOLINT
 
       new_obj.SetTracking(origin);
 
@@ -74,8 +73,7 @@ namespace ncc::parse {
     SkipChildren,
   };
 
-  using IterCallback =
-      std::function<IterOp(NullableFlowPtr<Base>, FlowPtr<Base>)>;
+  using IterCallback = std::function<IterOp(NullableFlowPtr<Base>, FlowPtr<Base>)>;
 
   namespace detail {
     void DfsPreImpl(const FlowPtr<Base> &base, const IterCallback &cb);
@@ -133,9 +131,7 @@ namespace ncc::parse {
 
   public:
     constexpr ASTRoot(auto base, auto allocator, auto failed)
-        : m_base(std::move(base)),
-          m_failed(failed),
-          m_allocator(std::move(allocator)) {}
+        : m_base(std::move(base)), m_failed(failed), m_allocator(std::move(allocator)) {}
 
     auto Get() -> FlowPtr<Base> & { return m_base; }
     [[nodiscard]] auto Get() const -> FlowPtr<Base> { return m_base; }

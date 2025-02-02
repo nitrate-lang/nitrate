@@ -35,8 +35,7 @@
 #include <nitrate-core/Macro.hh>
 #include <nitrate-ir/IR/Nodes.hh>
 
-NCC_EXPORT std::optional<uint64_t> ncc::ir::detail::TypeGetSizeBitsImpl(
-    const Type* self) {
+NCC_EXPORT std::optional<uint64_t> ncc::ir::detail::TypeGetSizeBitsImpl(const Type* self) {
   std::optional<uint64_t> r;
 
   switch (self->GetKind()) {

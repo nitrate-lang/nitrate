@@ -82,10 +82,8 @@ namespace ncc::parse {
   using FStringItem = std::variant<string, FlowPtr<Expr>>;
   using FStringItems = std::vector<FStringItem, Arena<FStringItem>>;
 
-  using TemplateParameter =
-      std::tuple<string, FlowPtr<Type>, NullableFlowPtr<Expr>>;
-  using TemplateParameters =
-      std::vector<TemplateParameter, Arena<TemplateParameter>>;
+  using TemplateParameter = std::tuple<string, FlowPtr<Type>, NullableFlowPtr<Expr>>;
+  using TemplateParameters = std::vector<TemplateParameter, Arena<TemplateParameter>>;
 
   using BlockItems = std::vector<FlowPtr<Stmt>, Arena<FlowPtr<Stmt>>>;
   using ScopeDeps = std::vector<string, Arena<string>>;
@@ -102,13 +100,8 @@ namespace ncc::parse {
     bool m_is_static;
 
   public:
-    StructField(Vis vis, bool is_static, string name, FlowPtr<Type> type,
-                NullableFlowPtr<Expr> value)
-        : m_name(name),
-          m_value(std::move(value)),
-          m_type(std::move(type)),
-          m_vis(vis),
-          m_is_static(is_static) {}
+    StructField(Vis vis, bool is_static, string name, FlowPtr<Type> type, NullableFlowPtr<Expr> value)
+        : m_name(name), m_value(std::move(value)), m_type(std::move(type)), m_vis(vis), m_is_static(is_static) {}
 
     [[nodiscard]] auto GetVis() const { return m_vis; }
     [[nodiscard]] auto IsStatic() const { return m_is_static; }
@@ -121,21 +114,18 @@ namespace ncc::parse {
     Vis m_vis;
     FlowPtr<Stmt> m_func;
 
-    StructFunction(Vis vis, FlowPtr<Stmt> func)
-        : m_vis(vis), m_func(std::move(func)) {}
+    StructFunction(Vis vis, FlowPtr<Stmt> func) : m_vis(vis), m_func(std::move(func)) {}
   };
 
   using StructFields = std::vector<StructField, Arena<StructField>>;
   using StructMethods = std::vector<StructFunction, Arena<StructFunction>>;
-  using StructStaticMethods =
-      std::vector<StructFunction, Arena<StructFunction>>;
+  using StructStaticMethods = std::vector<StructFunction, Arena<StructFunction>>;
   using StructNames = std::vector<string, Arena<string>>;
 
   using FuncParam = std::tuple<string, FlowPtr<Type>, NullableFlowPtr<Expr>>;
   using FuncParams = std::vector<FuncParam, Arena<FuncParam>>;
 
-  using FnCaptures =
-      std::vector<std::pair<string, bool>, Arena<std::pair<string, bool>>>;
+  using FnCaptures = std::vector<std::pair<string, bool>, Arena<std::pair<string, bool>>>;
 }  // namespace ncc::parse
 
 #endif

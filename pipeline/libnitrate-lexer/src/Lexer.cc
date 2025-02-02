@@ -96,9 +96,7 @@ static const auto WORD_OPERATORS = []() {
 
   for (const auto &op : LEXICAL_OPERATORS.left) {
     std::string_view sv = op.first;
-    bool is_word = std::all_of(sv.begin(), sv.end(), [](auto c) {
-      return std::isalnum(c) || c == '_';
-    });
+    bool is_word = std::all_of(sv.begin(), sv.end(), [](auto c) { return std::isalnum(c) || c == '_'; });
 
     if (is_word) {
       map[op.first] = op.second;
@@ -303,12 +301,10 @@ constexpr auto kCharMap = []() constexpr {
 
 static std::string LexerECFormatter(std::string_view msg, Sev sev) {
   if (sev <= ncc::Debug) {
-    return "\x1b[37;1m[\x1b[0m\x1b[34;1mLexer\x1b[0m\x1b[37;1m]: debug: " +
-           std::string(msg) + "\x1b[0m";
+    return "\x1b[37;1m[\x1b[0m\x1b[34;1mLexer\x1b[0m\x1b[37;1m]: debug: " + std::string(msg) + "\x1b[0m";
   }
 
-  return "\x1b[37;1m[\x1b[0m\x1b[34;1mLexer\x1b[0m\x1b[37;1m]: " +
-         std::string(msg) + "\x1b[0m";
+  return "\x1b[37;1m[\x1b[0m\x1b[34;1mLexer\x1b[0m\x1b[37;1m]: " + std::string(msg) + "\x1b[0m";
 }
 
 NCC_EC_GROUP(Lexer);
@@ -354,8 +350,7 @@ public:
 
   ///============================================================================///
 
-  Impl(std::istream &file, std::function<void()> on_eof)
-      : m_file(file), m_on_eof(std::move(on_eof)) {}
+  Impl(std::istream &file, std::function<void()> on_eof) : m_file(file), m_on_eof(std::move(on_eof)) {}
 
   [[nodiscard]] [[gnu::noinline]] std::string LogSource() const {
     std::stringstream ss;
@@ -473,33 +468,25 @@ public:
 
     long double mantissa = 0;
 
-    if (std::from_chars(buf.data(), buf.data() + e_pos, mantissa).ec !=
-        std::errc()) [[unlikely]] {
-      Log << InvalidMantissa << LogSource()
-          << "Invalid mantissa in floating point literal";
+    if (std::from_chars(buf.data(), buf.data() + e_pos, mantissa).ec != std::errc()) [[unlikely]] {
+      Log << InvalidMantissa << LogSource() << "Invalid mantissa in floating point literal";
       return false;
     }
 
     long double exponent = 0;
-    if (std::from_chars(buf.data() + e_pos + 1, buf.data() + buf.size(),
-                        exponent)
-            .ec != std::errc()) [[unlikely]] {
-      Log << InvalidExponent << LogSource()
-          << "Invalid exponent in floating point literal";
+    if (std::from_chars(buf.data() + e_pos + 1, buf.data() + buf.size(), exponent).ec != std::errc()) [[unlikely]] {
+      Log << InvalidExponent << LogSource() << "Invalid exponent in floating point literal";
       return false;
     }
 
     long double float_value = mantissa * std::pow(10.0, exponent);
 
-    static_assert(kFloatingPointDigits >= 1,
-                  "Floating point precision must be at least 1");
+    static_assert(kFloatingPointDigits >= 1, "Floating point precision must be at least 1");
 
     std::array<char, kFloatingPointDigits + 2> buffer;
-    if (std::snprintf(buffer.data(), buffer.size(), "%.*Lf",
-                      static_cast<int>(kFloatingPointDigits), float_value) < 0)
+    if (std::snprintf(buffer.data(), buffer.size(), "%.*Lf", static_cast<int>(kFloatingPointDigits), float_value) < 0)
         [[unlikely]] {
-      Log << InvalidNumber << LogSource()
-          << "Failed to serialize floating point literal";
+      Log << InvalidNumber << LogSource() << "Failed to serialize floating point literal";
       return false;
     }
 
@@ -530,8 +517,7 @@ public:
       case NumberType::Hexadecimal: {
         for (uint8_t i : buf) {
           if (((x >> 64) & 0xF000000000000000) != 0U) [[unlikely]] {
-            Log << LiteralOutOfRange << LogSource() << "Hexadecimal literal '0x"
-                << buf << "' is out of range";
+            Log << LiteralOutOfRange << LogSource() << "Hexadecimal literal '0x" << buf << "' is out of range";
             Log << LiteralOutOfRange << Notice << LogSource()
                 << "The maximum value for a hexadecimal literal is (2^128 - 1) "
                    "aka uint128_t";
@@ -540,8 +526,8 @@ public:
           }
 
           if (!kHexDigitsTable[i]) [[unlikely]] {
-            Log << InvalidHexDigit << LogSource() << "Unexpected '" << i
-                << "' in hexadecimal literal '0x" << buf << "'";
+            Log << InvalidHexDigit << LogSource() << "Unexpected '" << i << "' in hexadecimal literal '0x" << buf
+                << "'";
             return false;
           }
 
@@ -553,8 +539,7 @@ public:
       case NumberType::Binary: {
         for (char i : buf) {
           if (((x >> 64) & 0x8000000000000000) != 0U) [[unlikely]] {
-            Log << LiteralOutOfRange << LogSource() << "Binary literal '0b"
-                << buf << "' is out of range";
+            Log << LiteralOutOfRange << LogSource() << "Binary literal '0b" << buf << "' is out of range";
             Log << LiteralOutOfRange << Notice << LogSource()
                 << "The maximum value for a binary literal is (2^128 - 1) aka "
                    "uint128_t";
@@ -563,8 +548,7 @@ public:
           }
 
           if (i != '0' && i != '1') [[unlikely]] {
-            Log << InvalidBinaryDigit << LogSource() << "Unexpected '" << i
-                << "' in binary literal '0b" << buf << "'";
+            Log << InvalidBinaryDigit << LogSource() << "Unexpected '" << i << "' in binary literal '0b" << buf << "'";
             return false;
           }
 
@@ -576,8 +560,7 @@ public:
       case NumberType::Octal: {
         for (char i : buf) {
           if (((x >> 64) & 0xE000000000000000) != 0U) [[unlikely]] {
-            Log << LiteralOutOfRange << LogSource() << "Octal literal '0o"
-                << buf << "' is out of range";
+            Log << LiteralOutOfRange << LogSource() << "Octal literal '0o" << buf << "' is out of range";
             Log << LiteralOutOfRange << Notice << LogSource()
                 << "The maximum value for an octal literal is (2^128 - 1) aka "
                    "uint128_t";
@@ -585,8 +568,7 @@ public:
           }
 
           if (i < '0' || i > '7') [[unlikely]] {
-            Log << InvalidOctalDigit << LogSource() << "Unexpected '" << i
-                << "' in octal literal '0o" << buf << "'";
+            Log << InvalidOctalDigit << LogSource() << "Unexpected '" << i << "' in octal literal '0o" << buf << "'";
             return false;
           }
 
@@ -598,8 +580,8 @@ public:
       case NumberType::DecimalExplicit: {
         for (char i : buf) {
           if (i < '0' || i > '9') [[unlikely]] {
-            Log << InvalidDecimalDigit << LogSource() << "Unexpected '" << i
-                << "' in decimal literal '0d" << buf << "'";
+            Log << InvalidDecimalDigit << LogSource() << "Unexpected '" << i << "' in decimal literal '0d" << buf
+                << "'";
             return false;
           }
 
@@ -607,8 +589,7 @@ public:
           x = (x * 10) + (i - '0');
 
           if (x < tmp) [[unlikely]] {
-            Log << LiteralOutOfRange << LogSource() << "Decimal literal '0d"
-                << buf << "' is out of range";
+            Log << LiteralOutOfRange << LogSource() << "Decimal literal '0d" << buf << "' is out of range";
             Log << LiteralOutOfRange << Notice << LogSource()
                 << "The maximum value for an explicit decimal literal is "
                    "(2^128 - 1) aka uint128_t";
@@ -621,8 +602,7 @@ public:
       case NumberType::Default: {
         for (char i : buf) {
           if (i < '0' || i > '9') [[unlikely]] {
-            Log << InvalidDecimalDigit << LogSource() << "Unexpected '" << i
-                << "' in decimal literal '" << buf << "'";
+            Log << InvalidDecimalDigit << LogSource() << "Unexpected '" << i << "' in decimal literal '" << buf << "'";
             return false;
           }
 
@@ -630,8 +610,7 @@ public:
           x = (x * 10) + (i - '0');
 
           if (x < tmp) [[unlikely]] {
-            Log << LiteralOutOfRange << LogSource() << "Decimal literal '"
-                << buf << "' is out of range";
+            Log << LiteralOutOfRange << LogSource() << "Decimal literal '" << buf << "' is out of range";
             Log << LiteralOutOfRange << Notice << LogSource()
                 << "The maximum value for a decimal literal is (2^128 - 1) aka "
                    "uint128_t";
@@ -691,12 +670,10 @@ public:
     }
 
     /* For compiler internal debugging */
-    qcore_assert(m_buf != "__builtin_lexer_crash",
-                 "The source code invoked a compiler panic API.");
+    qcore_assert(m_buf != "__builtin_lexer_crash", "The source code invoked a compiler panic API.");
 
     if (m_buf == "__builtin_lexer_abort") {
-      Log << Debug << UserRequest << LogSource()
-          << "The source code requested lexical truncation";
+      Log << Debug << UserRequest << LogSource() << "The source code requested lexical truncation";
       return Token::EndOfFile();
     }
 
@@ -730,8 +707,8 @@ public:
             if (!kHexDigitsTable[hex[0]] || !kHexDigitsTable[hex[1]]) {
               ResetAutomaton();
 
-              Log << InvalidHexDigit << LogSource() << "Unexpected '" << hex[0]
-                  << hex[1] << "' in hexadecimal escape sequence";
+              Log << InvalidHexDigit << LogSource() << "Unexpected '" << hex[0] << hex[1]
+                  << "' in hexadecimal escape sequence";
 
               return Token::EndOfFile();
             }
@@ -744,8 +721,7 @@ public:
           case 'u': {
             c = NextChar();
             if (c != '{') [[unlikely]] {
-              Log << MissingUnicodeBrace << LogSource()
-                  << "Missing '{' in unicode escape sequence";
+              Log << MissingUnicodeBrace << LogSource() << "Missing '{' in unicode escape sequence";
 
               ResetAutomaton();
               return Token::EndOfFile();
@@ -760,8 +736,7 @@ public:
               }
 
               if (!kHexDigitsTable[c]) {
-                Log << InvalidHexDigit << LogSource() << "Unexpected '" << c
-                    << "' in unicode escape sequence";
+                Log << InvalidHexDigit << LogSource() << "Unexpected '" << c << "' in unicode escape sequence";
 
                 ResetAutomaton();
                 return Token::EndOfFile();
@@ -771,11 +746,8 @@ public:
             }
 
             uint32_t codepoint;
-            if (std::from_chars(hex.data(), hex.data() + hex.size(), codepoint,
-                                16)
-                    .ec != std::errc()) {
-              Log << InvalidUnicodeCodepoint << LogSource()
-                  << "Invalid unicode codepoint";
+            if (std::from_chars(hex.data(), hex.data() + hex.size(), codepoint, 16).ec != std::errc()) {
+              Log << InvalidUnicodeCodepoint << LogSource() << "Invalid unicode codepoint";
               ResetAutomaton();
 
               return Token::EndOfFile();
@@ -812,14 +784,11 @@ public:
             std::array<uint8_t, 3> oct = {NextChar(), NextChar(), NextChar()};
             uint8_t val;
 
-            if (std::from_chars(
-                    reinterpret_cast<const char *>(oct.data()),
-                    reinterpret_cast<const char *>(oct.data() + oct.size()),
-                    val, 8)
+            if (std::from_chars(reinterpret_cast<const char *>(oct.data()),
+                                reinterpret_cast<const char *>(oct.data() + oct.size()), val, 8)
                     .ec != std::errc()) {
-              Log << InvalidOctalDigit << LogSource()
-                  << "Invalid octal digit in escape sequence '" << oct[0]
-                  << oct[1] << oct[2] << "'";
+              Log << InvalidOctalDigit << LogSource() << "Invalid octal digit in escape sequence '" << oct[0] << oct[1]
+                  << oct[2] << "'";
 
               ResetAutomaton();
 
@@ -960,10 +929,8 @@ public:
     ParseIntegerUnwind(c, m_buf);
 
     if (kind == NumberType::Default) {
-      kind = std::any_of(m_buf.begin(), m_buf.end(),
-                         [](auto c) { return c == 'e' || c == 'E'; })
-                 ? NumberType::Floating
-                 : NumberType::Default;
+      kind = std::any_of(m_buf.begin(), m_buf.end(), [](auto c) { return c == 'e' || c == 'E'; }) ? NumberType::Floating
+                                                                                                  : NumberType::Default;
     }
 
     if (kind == NumberType::Floating) {
@@ -971,13 +938,11 @@ public:
         return {NumL, string(std::move(m_buf)), start_pos};
       }
 
-      Log << InvalidNumber << LogSource()
-          << "Floating point literal is not valid";
+      Log << InvalidNumber << LogSource() << "Floating point literal is not valid";
     } else if (CanonicalizeNumber(m_buf, kind)) [[likely]] {
       return {IntL, string(std::move(m_buf)), start_pos};
     } else {
-      Log << InvalidNumber << LogSource()
-          << "Non-floating point literal is not valid";
+      Log << InvalidNumber << LogSource() << "Non-floating point literal is not valid";
     }
 
     ResetAutomaton();
@@ -1049,8 +1014,7 @@ public:
       m_buf += c;
     }
 
-    Log << UnexpectedEOF << LogSource()
-        << "Unexpected EOF while parsing block macro";
+    Log << UnexpectedEOF << LogSource() << "Unexpected EOF while parsing block macro";
 
     return Token::EndOfFile();
   }
@@ -1086,8 +1050,7 @@ public:
     }
 
     if (!was_match) {
-      Log << LexicalGarbage << LogSource()
-          << "Unexpected lexical garbage in source code";
+      Log << LexicalGarbage << LogSource() << "Unexpected lexical garbage in source code";
       ResetAutomaton();
 
       return Token::EndOfFile();
@@ -1095,8 +1058,7 @@ public:
 
     m_fifo.push(m_buf.back());
 
-    return {Oper, OPERATORS_MAP.find(m_buf.substr(0, m_buf.size() - 1))->second,
-            start_pos};
+    return {Oper, OPERATORS_MAP.find(m_buf.substr(0, m_buf.size() - 1))->second, start_pos};
   }
 };
 
@@ -1112,8 +1074,7 @@ auto Tokenizer::GetNext() -> Token {
 
   impl.m_parsing = true;
 
-  auto start_pos = InternLocation(
-      Location(impl.m_offset, impl.m_line, impl.m_column, impl.m_filename));
+  auto start_pos = InternLocation(Location(impl.m_offset, impl.m_line, impl.m_column, impl.m_filename));
 
   LexState state;
   if (kIdentiferStartTable[c]) {
@@ -1186,15 +1147,12 @@ auto Tokenizer::GetNext() -> Token {
   return token;
 }
 
-Tokenizer::Tokenizer(std::istream &source_file,
-                     std::shared_ptr<Environment> env)
-    : IScanner(std::move(env)),
-      m_impl(new Impl(source_file, [&]() { SetFailBit(); })) {}
+Tokenizer::Tokenizer(std::istream &source_file, std::shared_ptr<Environment> env)
+    : IScanner(std::move(env)), m_impl(new Impl(source_file, [&]() { SetFailBit(); })) {}
 
 Tokenizer::~Tokenizer() = default;
 
-auto Tokenizer::GetSourceWindow(Point start, Point end, char fillchar)
-    -> std::optional<std::vector<std::string>> {
+auto Tokenizer::GetSourceWindow(Point start, Point end, char fillchar) -> std::optional<std::vector<std::string>> {
   Impl &impl = *m_impl;
 
   if (start.m_x > end.m_x || (start.m_x == end.m_x && start.m_y > end.m_y)) {
@@ -1250,8 +1208,7 @@ auto Tokenizer::GetSourceWindow(Point start, Point end, char fillchar)
           long current_line = lines.size() + start.m_x;
           long current_column = line_buf.size();
 
-          if (current_line == end.m_x && current_column == end.m_y)
-              [[unlikely]] {
+          if (current_line == end.m_x && current_column == end.m_y) [[unlikely]] {
             spinning = false;
           } else {
             switch (ch) {

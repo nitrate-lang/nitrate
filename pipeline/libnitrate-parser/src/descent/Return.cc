@@ -47,8 +47,7 @@ auto Parser::PImpl::RecurseReturn() -> FlowPtr<Stmt> {
   });
 
   if (!NextIf(PuncSemi)) [[unlikely]] {
-    Log << SyntaxError << current()
-        << "Expected ';' after the return statement.";
+    Log << SyntaxError << current() << "Expected ';' after the return statement.";
   }
 
   return CreateNode<Return>(return_value)();
@@ -70,8 +69,7 @@ auto Parser::PImpl::RecurseRetif() -> FlowPtr<Stmt> {
 
     return CreateNode<ReturnIf>(return_if, return_value)();
   } else {
-    Log << SyntaxError << current()
-        << "Expected ',' after the retif condition.";
+    Log << SyntaxError << current() << "Expected ',' after the retif condition.";
     return MockStmt(QAST_RETIF);
   }
 }

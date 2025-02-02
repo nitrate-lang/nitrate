@@ -73,31 +73,26 @@ static bool ValidateJsonObject(const nlohmann::json &j) {
     return false;
   }
 
-  if (!std::all_of(j["tags"].begin(), j["tags"].end(),
-                   [](auto tag) { return tag.is_string(); })) [[unlikely]] {
+  if (!std::all_of(j["tags"].begin(), j["tags"].end(), [](auto tag) { return tag.is_string(); })) [[unlikely]] {
     return false;
   }
 
-  if (!std::all_of(j["fixes"].begin(), j["fixes"].end(),
-                   [](auto fix) { return fix.is_string(); })) [[unlikely]] {
+  if (!std::all_of(j["fixes"].begin(), j["fixes"].end(), [](auto fix) { return fix.is_string(); })) [[unlikely]] {
     return false;
   }
 
-  if (!std::all_of(j["examples"].begin(), j["examples"].end(),
-                   [](auto example) { return example.is_string(); }))
+  if (!std::all_of(j["examples"].begin(), j["examples"].end(), [](auto example) { return example.is_string(); }))
       [[unlikely]] {
     return false;
   }
 
-  if (!std::all_of(j["dev_notes"].begin(), j["dev_notes"].end(),
-                   [](auto dev_note) { return dev_note.is_string(); }))
+  if (!std::all_of(j["dev_notes"].begin(), j["dev_notes"].end(), [](auto dev_note) { return dev_note.is_string(); }))
       [[unlikely]] {
     return false;
   }
 
   if (!std::all_of(j["user_notes"].begin(), j["user_notes"].end(),
-                   [](auto user_note) { return user_note.is_string(); }))
-      [[unlikely]] {
+                   [](auto user_note) { return user_note.is_string(); })) [[unlikely]] {
     return false;
   }
 
@@ -138,8 +133,7 @@ static ECDetails JsonObjectToStructure(const nlohmann::json &j) {
   return details;
 };
 
-auto ECBase::ParseJsonECConfig(std::string_view json)
-    -> std::optional<ECDetails> {
+auto ECBase::ParseJsonECConfig(std::string_view json) -> std::optional<ECDetails> {
   auto j = nlohmann::json::parse(json, nullptr, false);
   if (j.is_discarded()) {
     /* No error logging here, as the logger is not initialized yet. */

@@ -53,14 +53,12 @@ static std::optional<Token> ParseJsonToken(const nlohmann::json &j) {
 
   const auto type = static_cast<TokenType>(j["type"].get<int>());
 
-  LocationID start =
-      j["pos"].is_null() ? LocationID() : LocationID(j["pos"].get<uint32_t>());
+  LocationID start = j["pos"].is_null() ? LocationID() : LocationID(j["pos"].get<uint32_t>());
 
   return Token(type, TokenData::GetDefault(type), start);
 }
 
-static auto FindAndDecodeToken(std::string_view buf)
-    -> std::optional<std::pair<Token, std::string>> {
+static auto FindAndDecodeToken(std::string_view buf) -> std::optional<std::pair<Token, std::string>> {
   const auto pos = buf.find("$TOKEN{");
   if (pos == std::string_view::npos) {
     return std::nullopt;
@@ -100,14 +98,11 @@ static auto FindAndDecodeToken(std::string_view buf)
     return std::nullopt;
   }
 
-  return std::make_pair(
-      token_opt.value(),
-      std::string(orig_buf.substr(0, pos)) +
-          std::string(orig_buf.substr(pos + 7 + (payload_length + 1) + 2)));
+  return std::make_pair(token_opt.value(), std::string(orig_buf.substr(0, pos)) +
+                                               std::string(orig_buf.substr(pos + 7 + (payload_length + 1) + 2)));
 }
 
-NCC_EXPORT auto ncc::parse::ec::Formatter(std::string_view msg,
-                                          Sev) -> std::string {
+NCC_EXPORT auto ncc::parse::ec::Formatter(std::string_view msg, Sev) -> std::string {
   IScanner *rd = GCurrentScanner;
 
   if (rd != nullptr) {
@@ -130,15 +125,12 @@ NCC_EXPORT auto ncc::parse::ec::Formatter(std::string_view msg,
 
     std::stringstream ss;
     ss << "\x1b[37;1m[\x1b[0m\x1b[31;1mParse\x1b[0m\x1b[37;1m]: ";
-    bool any_source_location = !start_filename.empty() ||
-                               start_line != kLexEof || start_col != kLexEof;
+    bool any_source_location = !start_filename.empty() || start_line != kLexEof || start_col != kLexEof;
 
     if (any_source_location) {
       ss << (start_filename.empty() ? "?" : start_filename) << ":";
-      ss << (start_line == kLexEof ? "?" : std::to_string(start_line + 1))
-         << ":";
-      ss << (start_col == kLexEof ? "?" : std::to_string(start_col + 1))
-         << ":\x1b[0m ";
+      ss << (start_line == kLexEof ? "?" : std::to_string(start_line + 1)) << ":";
+      ss << (start_col == kLexEof ? "?" : std::to_string(start_col + 1)) << ":\x1b[0m ";
     }
 
     ss << "\x1b[37;1m" << message << "\x1b[0m";

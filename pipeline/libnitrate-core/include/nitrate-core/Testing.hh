@@ -38,8 +38,7 @@ namespace ncc {
   class TestAttorney;
 
 #define NCC_TESTING_ACCESSIBLE() friend class ncc::TestAttorney
-#define NCC_CREATE_TEST_ATTORNEY() \
-  __attribute__((visibility("hidden"))) ncc::TestAttorney final
+#define NCC_CREATE_TEST_ATTORNEY() __attribute__((visibility("hidden"))) ncc::TestAttorney final
 }  // namespace ncc
 
 #endif

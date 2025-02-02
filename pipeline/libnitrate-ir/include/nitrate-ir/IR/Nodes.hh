@@ -96,8 +96,7 @@ namespace ncc::ir {
     SkipChildren,
   };
 
-  typedef std::function<IterOp(NullableFlowPtr<Expr> p, FlowPtr<Expr> *c)>
-      IterCallback;
+  typedef std::function<IterOp(NullableFlowPtr<Expr> p, FlowPtr<Expr> *c)> IterCallback;
   typedef std::function<bool(FlowPtr<Expr> *a, FlowPtr<Expr> *b)> ChildSelect;
 
   namespace detail {
@@ -151,9 +150,7 @@ namespace ncc::ir {
   template <auto mode = dfs_pre>
   void transform(FlowPtr<Expr> v,  // NOLINT
                  std::function<bool(nr_ty_t, FlowPtr<Expr> *)> f) {
-    iterate<mode>(v, [&](auto, auto c) -> IterOp {
-      return f((*c)->GetKind(), c) ? IterOp::Proceed : IterOp::Abort;
-    });
+    iterate<mode>(v, [&](auto, auto c) -> IterOp { return f((*c)->GetKind(), c) ? IterOp::Proceed : IterOp::Abort; });
   }
 
   template <typename T, auto mode = dfs_pre>
@@ -178,8 +175,7 @@ namespace ncc::ir {
         return IterOp::Proceed;
       }
 
-      return f(reinterpret_cast<FlowPtr<T> *>(c)) ? IterOp::Proceed
-                                                  : IterOp::Abort;
+      return f(reinterpret_cast<FlowPtr<T> *>(c)) ? IterOp::Proceed : IterOp::Abort;
     });
   }
 }  // namespace ncc::ir

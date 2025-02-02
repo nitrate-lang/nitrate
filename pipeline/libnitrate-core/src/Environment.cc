@@ -43,20 +43,16 @@ using namespace ncc;
 
 void Environment::SetupDefaultKeys() {
   /* Generate unique ID for this compilation unit */
-  m_data["this.job"] =
-      boost::uuids::to_string(boost::uuids::random_generator()());
+  m_data["this.job"] = boost::uuids::to_string(boost::uuids::random_generator()());
 
   /* Set the compiler start time */
   let now = std::chrono::system_clock::now();
-  let ms = std::chrono::duration_cast<std::chrono::milliseconds>(
-      now.time_since_epoch());
+  let ms = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch());
 
   m_data["this.created_at"] = std::to_string(ms.count());
 }
 
-auto Environment::Contains(std::string_view key) -> bool {
-  return m_data.contains(key) || key == "this.keys";
-}
+auto Environment::Contains(std::string_view key) -> bool { return m_data.contains(key) || key == "this.keys"; }
 
 auto Environment::Get(string key) -> std::optional<string> {
   if (key == "this.keys") {

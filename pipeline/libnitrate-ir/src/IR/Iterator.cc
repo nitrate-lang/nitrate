@@ -63,8 +63,7 @@ class GetNodeChildren final : public IRVisitor<GetNodeChildren> {
   }
 
 public:
-  GetNodeChildren(std::vector<FlowPtr<Expr>*>& children)
-      : m_children(children) {}
+  GetNodeChildren(std::vector<FlowPtr<Expr>*>& children) : m_children(children) {}
   virtual ~GetNodeChildren() = default;
 
   void Visit(FlowPtr<GenericExpr<A>>) override {}
@@ -100,20 +99,17 @@ public:
   void Visit(FlowPtr<GenericOpaqueTy<A>>) override {}
 
   void Visit(FlowPtr<GenericStructTy<A>> n) override {
-    std::for_each(n->m_fields.begin(), n->m_fields.end(),
-                  [&](auto& f) { Add(f); });
+    std::for_each(n->m_fields.begin(), n->m_fields.end(), [&](auto& f) { Add(f); });
   }
 
   void Visit(FlowPtr<GenericUnionTy<A>> n) override {
-    std::for_each(n->m_fields.begin(), n->m_fields.end(),
-                  [&](auto& f) { Add(f); });
+    std::for_each(n->m_fields.begin(), n->m_fields.end(), [&](auto& f) { Add(f); });
   }
 
   void Visit(FlowPtr<GenericArrayTy<A>> n) override { Add(n->m_element); }
 
   void Visit(FlowPtr<GenericFnTy<A>> n) override {
-    std::for_each(n->m_params.begin(), n->m_params.end(),
-                  [&](auto& p) { Add(p); });
+    std::for_each(n->m_params.begin(), n->m_params.end(), [&](auto& p) { Add(p); });
     Add(n->m_return);
   }
 
@@ -121,8 +117,7 @@ public:
   void Visit(FlowPtr<GenericFloat<A>>) override {}
 
   void Visit(FlowPtr<GenericList<A>> n) override {
-    std::for_each(n->m_items.begin(), n->m_items.end(),
-                  [&](auto& i) { Add(i); });
+    std::for_each(n->m_items.begin(), n->m_items.end(), [&](auto& i) { Add(i); });
   }
 
   void Visit(FlowPtr<GenericCall<A>> n) override {
@@ -130,8 +125,7 @@ public:
   }
 
   void Visit(FlowPtr<GenericSeq<A>> n) override {
-    std::for_each(n->m_items.begin(), n->m_items.end(),
-                  [&](auto& i) { Add(i); });
+    std::for_each(n->m_items.begin(), n->m_items.end(), [&](auto& i) { Add(i); });
   }
 
   void Visit(FlowPtr<GenericIndex<A>> n) override {
@@ -176,13 +170,11 @@ public:
   void Visit(FlowPtr<GenericSwitch<A>> n) override {
     Add(n->m_cond);
     Add(n->m_default);
-    std::for_each(n->m_cases.begin(), n->m_cases.end(),
-                  [&](auto& c) { Add(c); });
+    std::for_each(n->m_cases.begin(), n->m_cases.end(), [&](auto& c) { Add(c); });
   }
 
   void Visit(FlowPtr<GenericFunction<A>> n) override {
-    std::for_each(n->m_params.begin(), n->m_params.end(),
-                  [&](auto& p) { Add(p.first); });
+    std::for_each(n->m_params.begin(), n->m_params.end(), [&](auto& p) { Add(p.first); });
     Add(n->m_body);
     Add(n->m_return);
   }
@@ -193,8 +185,7 @@ public:
     if (std::holds_alternative<GenericCallArgsTmpNodeCradle<A>>(n->GetData())) {
       auto cradle = std::get<GenericCallArgsTmpNodeCradle<A>>(n->GetData());
       Add(cradle.m_base);
-      std::for_each(cradle.m_args.begin(), cradle.m_args.end(),
-                    [&](auto& a) { Add(a.second); });
+      std::for_each(cradle.m_args.begin(), cradle.m_args.end(), [&](auto& a) { Add(a.second); });
     } else if (std::holds_alternative<string>(n->GetData())) {
     } else {
       qcore_panic("GetNodeChildren: unknown TmpNodeCradle type");
@@ -202,16 +193,14 @@ public:
   }
 };
 
-static void GetChildrenSorted(FlowPtr<Expr> base, ChildSelect cs,
-                              std::vector<FlowPtr<Expr>*>& children) {
+static void GetChildrenSorted(FlowPtr<Expr> base, ChildSelect cs, std::vector<FlowPtr<Expr>*>& children) {
   GetNodeChildren gnc(children);
   base.Accept(gnc);
 
   std::sort(children.begin(), children.end(), cs);
 }
 
-NCC_EXPORT void detail::DfsPreImpl(FlowPtr<Expr>* base, IterCallback cb,
-                                   ChildSelect cs) {
+NCC_EXPORT void detail::DfsPreImpl(FlowPtr<Expr>* base, IterCallback cb, ChildSelect cs) {
   if (!cs) {
     cs = [](auto a, auto b) { return (uintptr_t)a < (uintptr_t)b; };
   }
@@ -250,8 +239,7 @@ NCC_EXPORT void detail::DfsPreImpl(FlowPtr<Expr>* base, IterCallback cb,
   kSyncfn(base, cb, cs);
 }
 
-NCC_EXPORT void detail::DfsPostImpl(FlowPtr<Expr>* base, IterCallback cb,
-                                    ChildSelect cs) {
+NCC_EXPORT void detail::DfsPostImpl(FlowPtr<Expr>* base, IterCallback cb, ChildSelect cs) {
   if (!cs) {
     cs = [](auto a, auto b) { return (uintptr_t)a < (uintptr_t)b; };
   }
@@ -287,8 +275,7 @@ NCC_EXPORT void detail::DfsPostImpl(FlowPtr<Expr>* base, IterCallback cb,
   cb(nullptr, base);
 }
 
-NCC_EXPORT void detail::BfsPreImpl(FlowPtr<Expr>* base, IterCallback cb,
-                                   ChildSelect cs) {
+NCC_EXPORT void detail::BfsPreImpl(FlowPtr<Expr>* base, IterCallback cb, ChildSelect cs) {
   if (!cs) {
     cs = [](auto a, auto b) { return (uintptr_t)a < (uintptr_t)b; };
   }
@@ -327,8 +314,7 @@ NCC_EXPORT void detail::BfsPreImpl(FlowPtr<Expr>* base, IterCallback cb,
   kSyncfn(base, cb, cs);
 }
 
-NCC_EXPORT void detail::BfsPostImpl(FlowPtr<Expr>* base, IterCallback cb,
-                                    ChildSelect cs) {
+NCC_EXPORT void detail::BfsPostImpl(FlowPtr<Expr>* base, IterCallback cb, ChildSelect cs) {
   if (!cs) {
     cs = [](auto a, auto b) { return (uintptr_t)a < (uintptr_t)b; };
   }
@@ -363,8 +349,7 @@ NCC_EXPORT void detail::BfsPostImpl(FlowPtr<Expr>* base, IterCallback cb,
   kSyncfn(base, cb, cs);
 }
 
-NCC_EXPORT void detail::IterChildren(FlowPtr<Expr>* base, IterCallback cb,
-                                     ChildSelect cs) {
+NCC_EXPORT void detail::IterChildren(FlowPtr<Expr>* base, IterCallback cb, ChildSelect cs) {
   if (!cs) {
     cs = [](auto a, auto b) { return (uintptr_t)a < (uintptr_t)b; };
   }

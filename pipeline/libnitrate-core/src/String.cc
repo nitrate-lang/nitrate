@@ -82,8 +82,7 @@ class MemoryConservedStorage final : public IStorage {
   google::dense_hash_map<std::string_view, uint64_t> m_map;
   std::mutex m_lock;
 
-  static NCC_FORCE_INLINE constexpr auto FromStr(std::string_view str)
-      -> std::vector<char> {
+  static NCC_FORCE_INLINE constexpr auto FromStr(std::string_view str) -> std::vector<char> {
     std::vector<char> vec(str.size() + 1);
     std::copy(str.begin(), str.end(), vec.begin());
     vec.back() = '\0';
@@ -151,25 +150,15 @@ public:
     return id;
   }
 
-  [[nodiscard]] auto CompareEq(uint64_t a, uint64_t b) -> bool override {
-    return a == b;
-  }
+  [[nodiscard]] auto CompareEq(uint64_t a, uint64_t b) -> bool override { return a == b; }
 
-  [[nodiscard]] auto CompareLt(uint64_t a, uint64_t b) -> bool override {
-    return a < b;
-  }
+  [[nodiscard]] auto CompareLt(uint64_t a, uint64_t b) -> bool override { return a < b; }
 
-  [[nodiscard]] auto CompareLe(uint64_t a, uint64_t b) -> bool override {
-    return a <= b;
-  }
+  [[nodiscard]] auto CompareLe(uint64_t a, uint64_t b) -> bool override { return a <= b; }
 
-  [[nodiscard]] auto CompareGt(uint64_t a, uint64_t b) -> bool override {
-    return a > b;
-  }
+  [[nodiscard]] auto CompareGt(uint64_t a, uint64_t b) -> bool override { return a > b; }
 
-  [[nodiscard]] auto CompareGe(uint64_t a, uint64_t b) -> bool override {
-    return a >= b;
-  }
+  [[nodiscard]] auto CompareGe(uint64_t a, uint64_t b) -> bool override { return a >= b; }
 
   void Reset() override {
     ConditionalLockGuard lock(m_lock);
@@ -326,32 +315,18 @@ auto String::Get() const -> CStringView {
   return GlobalStorage.Get(m_id);
 }
 
-auto String::operator==(const String& o) const -> bool {
-  return GlobalStorage.CompareEq(m_id, o.m_id);
-}
+auto String::operator==(const String& o) const -> bool { return GlobalStorage.CompareEq(m_id, o.m_id); }
 
-auto String::operator<(const String& o) const -> bool {
-  return GlobalStorage.CompareLt(m_id, o.m_id);
-}
+auto String::operator<(const String& o) const -> bool { return GlobalStorage.CompareLt(m_id, o.m_id); }
 
-auto String::operator<=(const String& o) const -> bool {
-  return GlobalStorage.CompareLe(m_id, o.m_id);
-}
+auto String::operator<=(const String& o) const -> bool { return GlobalStorage.CompareLe(m_id, o.m_id); }
 
-auto String::operator>(const String& o) const -> bool {
-  return GlobalStorage.CompareGt(m_id, o.m_id);
-}
+auto String::operator>(const String& o) const -> bool { return GlobalStorage.CompareGt(m_id, o.m_id); }
 
-auto String::operator>=(const String& o) const -> bool {
-  return GlobalStorage.CompareGe(m_id, o.m_id);
-}
+auto String::operator>=(const String& o) const -> bool { return GlobalStorage.CompareGe(m_id, o.m_id); }
 
-auto StringMemory::FromString(std::string_view str) -> uint64_t {
-  return GlobalStorage.FromString(str);
-}
+auto StringMemory::FromString(std::string_view str) -> uint64_t { return GlobalStorage.FromString(str); }
 
-auto StringMemory::FromString(std::string&& str) -> uint64_t {
-  return GlobalStorage.FromString(std::move(str));
-}
+auto StringMemory::FromString(std::string&& str) -> uint64_t { return GlobalStorage.FromString(std::move(str)); }
 
 void StringMemory::Reset() { GlobalStorage.Reset(); }

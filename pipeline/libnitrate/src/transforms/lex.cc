@@ -60,73 +60,62 @@ auto ImplUseJson(IScanner *l, std::ostream &o) -> bool {
       }
 
       case KeyW: { /* Keyword */
-        o << "[2," << CreateJsonString(tok.GetString()) << "," << sl << ","
-          << sc << "," << el << "," << ec << "],";
+        o << "[2," << CreateJsonString(tok.GetString()) << "," << sl << "," << sc << "," << el << "," << ec << "],";
         break;
       }
 
       case Oper: { /* Operator */
-        o << "[3," << CreateJsonString(tok.GetString()) << "," << sl << ","
-          << sc << "," << el << "," << ec << "],";
+        o << "[3," << CreateJsonString(tok.GetString()) << "," << sl << "," << sc << "," << el << "," << ec << "],";
         break;
       }
 
       case Punc: { /* Punctuation */
-        o << "[4," << CreateJsonString(tok.GetString()) << "," << sl << ","
-          << sc << "," << el << "," << ec << "],";
+        o << "[4," << CreateJsonString(tok.GetString()) << "," << sl << "," << sc << "," << el << "," << ec << "],";
         break;
       }
 
       case Name: { /* Identifier */
-        o << "[5," << CreateJsonString(tok.GetString()) << "," << sl << ","
-          << sc << "," << el << "," << ec << "],";
+        o << "[5," << CreateJsonString(tok.GetString()) << "," << sl << "," << sc << "," << el << "," << ec << "],";
         break;
       }
 
       case IntL: { /* Integer literal */
         /// We assume that int's are not allowed to contain NULL bytes and
-        o << "[6," << CreateJsonString(tok.GetString()) << "," << sl << ","
-          << sc << "," << el << "," << ec << "],";
+        o << "[6," << CreateJsonString(tok.GetString()) << "," << sl << "," << sc << "," << el << "," << ec << "],";
         break;
       }
 
       case NumL: { /* Floating-point literal */
         /// We assume that int's are not allowed to contain NULL bytes and
-        o << "[7," << CreateJsonString(tok.GetString()) << "," << sl << ","
-          << sc << "," << el << "," << ec << "],";
+        o << "[7," << CreateJsonString(tok.GetString()) << "," << sl << "," << sc << "," << el << "," << ec << "],";
         break;
       }
 
       case Text: { /* String literal */
-        o << "[8," << CreateJsonString(tok.GetString()) << "," << sl << ","
-          << sc << "," << el << "," << ec << "],";
+        o << "[8," << CreateJsonString(tok.GetString()) << "," << sl << "," << sc << "," << el << "," << ec << "],";
         break;
       }
 
       case Char: { /* Character literal */
 
-        o << "[9," << CreateJsonString(tok.GetString()) << "," << sl << ","
-          << sc << "," << el << "," << ec << "],";
+        o << "[9," << CreateJsonString(tok.GetString()) << "," << sl << "," << sc << "," << el << "," << ec << "],";
         break;
       }
 
       case MacB: { /* Macro block */
         /// We assume that int's are not allowed to contain NULL bytes and
-        o << "[10," << CreateJsonString(tok.GetString()) << "," << sl << ","
-          << sc << "," << el << "," << ec << "],";
+        o << "[10," << CreateJsonString(tok.GetString()) << "," << sl << "," << sc << "," << el << "," << ec << "],";
         break;
       }
 
       case Macr: { /* Macro call */
         /// We assume that int's are not allowed to contain NULL bytes and
-        o << "[11," << CreateJsonString(tok.GetString()) << "," << sl << ","
-          << sc << "," << el << "," << ec << "],";
+        o << "[11," << CreateJsonString(tok.GetString()) << "," << sl << "," << sc << "," << el << "," << ec << "],";
         break;
       }
 
       case Note: { /* Comment */
-        o << "[12," << CreateJsonString(tok.GetString()) << "," << sl << ","
-          << sc << "," << el << "," << ec << "],";
+        o << "[12," << CreateJsonString(tok.GetString()) << "," << sl << "," << sc << "," << el << "," << ec << "],";
         break;
       }
     }
@@ -139,8 +128,7 @@ auto ImplUseJson(IScanner *l, std::ostream &o) -> bool {
   return !l->HasError();
 }
 
-static void MsgpackWriteTok(std::ostream &o, uint8_t type, std::string_view val,
-                            uint32_t sl, uint32_t sc, uint32_t el,
+static void MsgpackWriteTok(std::ostream &o, uint8_t type, std::string_view val, uint32_t sl, uint32_t sc, uint32_t el,
                             uint32_t ec) {
   o.put(0x96);
 

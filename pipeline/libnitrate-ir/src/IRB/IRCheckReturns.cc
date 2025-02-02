@@ -51,8 +51,7 @@ auto NRBuilder::CheckReturns(FlowPtr<Seq> root, IReport *d) -> bool {
 
     auto fn_ty_opt = x->GetType();
     if (!fn_ty_opt) {
-      d->Report(TypeInference, IC::Error, "Failed to deduce function type",
-                x->GetLoc());
+      d->Report(TypeInference, IC::Error, "Failed to deduce function type", x->GetLoc());
       failed = true;
 
       return;
@@ -68,8 +67,7 @@ auto NRBuilder::CheckReturns(FlowPtr<Seq> root, IReport *d) -> bool {
 
       auto ret_expr_ty_opt = y->GetExpr()->GetType();
       if (!ret_expr_ty_opt) {
-        d->Report(TypeInference, IC::Error,
-                  "Failed to deduce return expression type", y->GetLoc());
+        d->Report(TypeInference, IC::Error, "Failed to deduce return expression type", y->GetLoc());
         failed = true;
 
         return;
@@ -80,8 +78,7 @@ auto NRBuilder::CheckReturns(FlowPtr<Seq> root, IReport *d) -> bool {
       if (!return_ty->IsEq(ret_expr_ty_opt.value().get())) {
         d->Report(ReturnTypeMismatch, IC::Error,
                   {"Return value type '", ret_expr_ty_opt.value()->ToString(),
-                   "' does not match function return type '",
-                   return_ty->ToString(), "'"},
+                   "' does not match function return type '", return_ty->ToString(), "'"},
                   y->GetLoc());
         failed = true;
 

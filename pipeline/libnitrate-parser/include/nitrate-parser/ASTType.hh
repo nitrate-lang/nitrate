@@ -57,8 +57,7 @@ namespace ncc::parse {
     std::span<CallArg> m_args;
 
   public:
-    constexpr TemplateType(auto templ, auto args)
-        : Type(QAST_TEMPLATE), m_template(std::move(templ)), m_args(args) {}
+    constexpr TemplateType(auto templ, auto args) : Type(QAST_TEMPLATE), m_template(std::move(templ)), m_args(args) {}
 
     [[nodiscard]] constexpr auto GetTemplate() const { return m_template; }
     [[nodiscard]] constexpr auto GetArgs() const { return m_args; }
@@ -153,9 +152,7 @@ namespace ncc::parse {
         : Type(QAST_PTR), m_item(std::move(item)), m_is_volatile(is_volatile) {}
 
     [[nodiscard]] constexpr auto GetItem() const { return m_item; }
-    [[nodiscard]] constexpr auto IsVolatile() const -> bool {
-      return m_is_volatile;
-    }
+    [[nodiscard]] constexpr auto IsVolatile() const -> bool { return m_is_volatile; }
   };
 
   class OpaqueTy : public Type {
@@ -181,8 +178,7 @@ namespace ncc::parse {
     FlowPtr<Expr> m_size;
 
   public:
-    constexpr ArrayTy(auto item, auto size)
-        : Type(QAST_ARRAY), m_item(std::move(item)), m_size(std::move(size)) {}
+    constexpr ArrayTy(auto item, auto size) : Type(QAST_ARRAY), m_item(std::move(item)), m_size(std::move(size)) {}
 
     [[nodiscard]] constexpr auto GetItem() const { return m_item; }
     [[nodiscard]] constexpr auto GetSize() const { return m_size; }
@@ -205,8 +201,7 @@ namespace ncc::parse {
     bool m_variadic;
 
   public:
-    constexpr FuncTy(auto return_type, auto parameters, auto variadic,
-                     auto purity, auto attributes)
+    constexpr FuncTy(auto return_type, auto parameters, auto variadic, auto purity, auto attributes)
         : Type(QAST_FUNCTOR),
           m_attributes(attributes),
           m_params(parameters),

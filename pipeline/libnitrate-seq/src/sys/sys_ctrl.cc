@@ -48,8 +48,7 @@ auto Sequencer::SysCtrl() -> int {
   }
 
   if (lua_isnumber(lua, 1) == 0) {
-    return luaL_error(lua, "expected number, got %s",
-                      lua_typename(lua, lua_type(lua, 1)));
+    return luaL_error(lua, "expected number, got %s", lua_typename(lua, lua_type(lua, 1)));
   }
 
   auto id = lua_tointeger(lua, 1);

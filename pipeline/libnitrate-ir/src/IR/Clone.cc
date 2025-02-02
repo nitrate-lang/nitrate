@@ -95,9 +95,7 @@ public:
     std::vector<FlowPtr<Type>> fields;
     fields.reserve(n->GetFields().size());
 
-    for_each(n->GetFields(), [&](auto item) {
-      fields.push_back(item->template Clone<Type>());
-    });
+    for_each(n->GetFields(), [&](auto item) { fields.push_back(item->template Clone<Type>()); });
 
     m_r = GetStructTy(fields);
   }
@@ -106,50 +104,34 @@ public:
     std::vector<FlowPtr<Type>> fields;
     fields.reserve(n->GetFields().size());
 
-    for_each(n->GetFields(), [&](auto item) {
-      fields.push_back(item->template Clone<Type>());
-    });
+    for_each(n->GetFields(), [&](auto item) { fields.push_back(item->template Clone<Type>()); });
 
     m_r = GetUnionTy(fields);
   }
 
-  void Visit(FlowPtr<PtrTy> n) override {
-    m_r = GetPtrTy(n->GetPointee()->Clone<Type>(), n->GetNativeSize());
-  }
+  void Visit(FlowPtr<PtrTy> n) override { m_r = GetPtrTy(n->GetPointee()->Clone<Type>(), n->GetNativeSize()); }
 
-  void Visit(FlowPtr<ConstTy> n) override {
-    m_r = GetConstTy(n->GetItem()->Clone<Type>());
-  }
+  void Visit(FlowPtr<ConstTy> n) override { m_r = GetConstTy(n->GetItem()->Clone<Type>()); }
 
-  void Visit(FlowPtr<ArrayTy> n) override {
-    m_r = GetArrayTy(n->GetElement()->Clone<Type>(), n->GetCount());
-  }
+  void Visit(FlowPtr<ArrayTy> n) override { m_r = GetArrayTy(n->GetElement()->Clone<Type>(), n->GetCount()); }
 
   void Visit(FlowPtr<FnTy> n) override {
     std::vector<FlowPtr<Type>> params;
     params.reserve(n->GetParams().size());
-    for_each(n->GetParams(), [&](auto item) {
-      params.push_back(item->template Clone<Type>());
-    });
+    for_each(n->GetParams(), [&](auto item) { params.push_back(item->template Clone<Type>()); });
 
-    m_r = GetFnTy(params, n->GetReturn()->Clone<Type>(), n->IsVariadic(),
-                  n->GetNativeSize());
+    m_r = GetFnTy(params, n->GetReturn()->Clone<Type>(), n->IsVariadic(), n->GetNativeSize());
   }
 
-  void Visit(FlowPtr<Int> n) override {
-    m_r = Create<Int>(n->GetValue(), n->GetSize());
-  }
+  void Visit(FlowPtr<Int> n) override { m_r = Create<Int>(n->GetValue(), n->GetSize()); }
 
-  void Visit(FlowPtr<Float> n) override {
-    m_r = Create<Float>(n->GetValue(), n->GetSize());
-  }
+  void Visit(FlowPtr<Float> n) override { m_r = Create<Float>(n->GetValue(), n->GetSize()); }
 
   void Visit(FlowPtr<List> n) override {
     GenericListItems<void> items;
     items.reserve(n->Size());
 
-    std::for_each(n->Begin(), n->End(),
-                  [&](auto item) { items.push_back(item->Clone()); });
+    std::for_each(n->Begin(), n->End(), [&](auto item) { items.push_back(item->Clone()); });
 
     m_r = Create<List>(items, n->IsHomogenous());
   }
@@ -249,13 +231,10 @@ public:
     GenericSwitchCases<void> cases;
     cases.reserve(n->GetCases().size());
 
-    for_each(n->GetCases(),
-             [&](auto item) { cases.push_back(item->template Clone<Case>()); });
+    for_each(n->GetCases(), [&](auto item) { cases.push_back(item->template Clone<Case>()); });
 
     auto cond = n->GetCond()->Clone();
-    auto default_case = n->GetDefault().has_value()
-                            ? n->GetDefault().value()->Clone()
-                            : nullptr;
+    auto default_case = n->GetDefault().has_value() ? n->GetDefault().value()->Clone() : nullptr;
 
     m_r = Create<Switch>(cond, cases, default_case);
   }
@@ -264,41 +243,31 @@ public:
     GenericParams<void> params;
     params.reserve(n->GetParams().size());
 
-    for_each(n->GetParams(), [&](auto item) {
-      params.push_back({item.first->template Clone<Type>(), item.second});
-    });
+    for_each(n->GetParams(), [&](auto item) { params.push_back({item.first->template Clone<Type>(), item.second}); });
 
-    auto body =
-        n->GetBody().has_value() ? n->GetBody().value()->Clone<Seq>() : nullptr;
+    auto body = n->GetBody().has_value() ? n->GetBody().value()->Clone<Seq>() : nullptr;
     auto return_type = n->GetReturn()->Clone<Type>();
     auto name = n->GetName();
     auto abi_name = n->GetAbiName();
     auto is_variadic = n->IsVariadic();
 
-    m_r = Create<Function>(name, params, return_type, body, is_variadic,
-                           abi_name);
+    m_r = Create<Function>(name, params, return_type, body, is_variadic, abi_name);
   }
 
-  void Visit(FlowPtr<Asm>) override {
-    qcore_panic("Cannot Clone Asm node because it is not implemented");
-  }
+  void Visit(FlowPtr<Asm>) override { qcore_panic("Cannot Clone Asm node because it is not implemented"); }
 
   void Visit(FlowPtr<Tmp> n) override {
     if (std::holds_alternative<string>(n->GetData())) {
       m_r = Create<Tmp>(n->GetTmpType(), std::get<string>(n->GetData()));
-    } else if (std::holds_alternative<GenericCallArgsTmpNodeCradle<void>>(
-                   n->GetData())) {
+    } else if (std::holds_alternative<GenericCallArgsTmpNodeCradle<void>>(n->GetData())) {
       auto data = std::get<GenericCallArgsTmpNodeCradle<void>>(n->GetData());
       auto base = data.m_base->Clone();
       GenericCallArguments<void> args;
       args.reserve(data.m_args.size());
 
-      for_each(data.m_args, [&](auto item) {
-        args.push_back({item.first, item.second->Clone()});
-      });
+      for_each(data.m_args, [&](auto item) { args.push_back({item.first, item.second->Clone()}); });
 
-      m_r = Create<Tmp>(n->GetTmpType(),
-                        GenericCallArgsTmpNodeCradle<void>{base, args});
+      m_r = Create<Tmp>(n->GetTmpType(), GenericCallArgsTmpNodeCradle<void>{base, args});
     } else {
       qcore_panic("Unknown Tmp node data type");
     }
@@ -333,8 +302,7 @@ NCC_EXPORT Expr *detail::ExprGetCloneImpl(Expr *self) {
             auto ident = n->template As<Identifier>();
 
             if (auto what = ident->GetWhat()) {
-              if (auto it = state.m_in_out.find(what.value().get());
-                  it != state.m_in_out.end()) {
+              if (auto it = state.m_in_out.find(what.value().get()); it != state.m_in_out.end()) {
                 ident->SetWhat(it->second);
               }
             }
@@ -344,8 +312,7 @@ NCC_EXPORT Expr *detail::ExprGetCloneImpl(Expr *self) {
             auto call = n->template As<Call>();
 
             if (auto target = call->GetTarget()) {
-              if (auto it = state.m_in_out.find(target.value().get());
-                  it != state.m_in_out.end()) {
+              if (auto it = state.m_in_out.find(target.value().get()); it != state.m_in_out.end()) {
                 call->SetTarget(it->second);
               }
             }

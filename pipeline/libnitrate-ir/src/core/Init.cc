@@ -61,6 +61,4 @@ NCC_EXPORT void IRLibrarySetup::Deinit() {
   ncc::CoreLibrary.DeinitRC();
 }
 
-NCC_EXPORT auto IRLibrarySetup::GetVersionId() -> std::string_view {
-  return __TARGET_VERSION;
-}
+NCC_EXPORT auto IRLibrarySetup::GetVersionId() -> std::string_view { return __TARGET_VERSION; }

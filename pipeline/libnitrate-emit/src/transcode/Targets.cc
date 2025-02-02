@@ -53,9 +53,8 @@ using namespace ncc::ir;
 #define TRANSCODE_TARGET_CSHARP
 #endif
 
-static const std::unordered_map<
-    QcodeLangT, std::function<bool(IRModule*, std::ostream&, std::ostream&)>>
-    TRANSCODERS = {
+static const std::unordered_map<QcodeLangT, std::function<bool(IRModule*, std::ostream&, std::ostream&)>> TRANSCODERS =
+    {
 #ifdef TRANSCODE_TARGET_C11
         {QCODE_C11, codegen::ForC11},
 #endif
@@ -87,25 +86,18 @@ class OStreamWriter : public std::streambuf {
 public:
   OStreamWriter(FILE* file) : m_file(file) {}
 
-  virtual auto xsputn(const char* s,
-                      std::streamsize n) -> std::streamsize override {
-    return fwrite(s, 1, n, m_file);
-  }
+  virtual auto xsputn(const char* s, std::streamsize n) -> std::streamsize override { return fwrite(s, 1, n, m_file); }
 
   virtual auto overflow(int c) -> int override { return fputc(c, m_file); }
 };
 
 class OStreamDiscard : public std::streambuf {
 public:
-  virtual auto xsputn(const char*,
-                      std::streamsize n) -> std::streamsize override {
-    return n;
-  }
+  virtual auto xsputn(const char*, std::streamsize n) -> std::streamsize override { return n; }
   virtual auto overflow(int c) -> int override { return c; }
 };
 
-NCC_EXPORT auto QcodeTranscode(IRModule* module, QCodegenConfig*,
-                               QcodeLangT lang, QcodeStyleT, FILE* err,
+NCC_EXPORT auto QcodeTranscode(IRModule* module, QCodegenConfig*, QcodeLangT lang, QcodeStyleT, FILE* err,
                                FILE* out) -> bool {
   std::unique_ptr<std::streambuf> err_stream_buf, out_stream_buf;
 

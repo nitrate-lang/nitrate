@@ -51,8 +51,7 @@ using namespace ncc::lex;
 using namespace ncc::seq;
 using namespace ncc::seq::ec;
 
-NCC_EXPORT auto ncc::seq::FileSystemFetchModule(std::string_view path)
-    -> std::optional<std::string> {
+NCC_EXPORT auto ncc::seq::FileSystemFetchModule(std::string_view path) -> std::optional<std::string> {
   if (!path.starts_with("file:///package/")) {
     return std::nullopt;
   }
@@ -65,8 +64,7 @@ NCC_EXPORT auto ncc::seq::FileSystemFetchModule(std::string_view path)
   auto job_uuid = path.substr(0, 36);
   path.remove_prefix(37);
 
-  Log << Debug << "Opening file '" << path << "' on behalf of job '" << job_uuid
-      << "'";
+  Log << Debug << "Opening file '" << path << "' on behalf of job '" << job_uuid << "'";
 
   /// TODO: Get the base directory of the project
 
@@ -75,8 +73,7 @@ NCC_EXPORT auto ncc::seq::FileSystemFetchModule(std::string_view path)
     return std::nullopt;
   }
 
-  return std::string((std::istreambuf_iterator<char>(file)),
-                     (std::istreambuf_iterator<char>()));
+  return std::string((std::istreambuf_iterator<char>(file)), (std::istreambuf_iterator<char>()));
 }
 
 void Sequencer::BindMethod(const char *name, MethodType func) {
@@ -89,10 +86,8 @@ void Sequencer::BindMethod(const char *name, MethodType func) {
   lua_pushcclosure(
       m_shared->m_L,
       [](auto lua) -> int {
-        auto &this_ref = *reinterpret_cast<Sequencer *>(
-            lua_tointeger(lua, lua_upvalueindex(1)));
-        auto &method = *reinterpret_cast<MethodType *>(
-            lua_tointeger(lua, lua_upvalueindex(2)));
+        auto &this_ref = *reinterpret_cast<Sequencer *>(lua_tointeger(lua, lua_upvalueindex(1)));
+        auto &method = *reinterpret_cast<MethodType *>(lua_tointeger(lua, lua_upvalueindex(2)));
 
         return (this_ref.*method)();
       },
@@ -180,8 +175,7 @@ auto Sequencer::ExecuteLua(const char *code) -> std::optional<std::string> {
   auto rc = luaL_dostring(m_shared->m_L, code);
 
   if (rc) {
-    ncc::Log << ec::SeqError
-             << "Lua error: " << lua_tostring(m_shared->m_L, -1);
+    ncc::Log << ec::SeqError << "Lua error: " << lua_tostring(m_shared->m_L, -1);
     SetFailBit();
 
     return std::nullopt;
@@ -195,15 +189,12 @@ auto Sequencer::ExecuteLua(const char *code) -> std::optional<std::string> {
   return lua_tostring(m_shared->m_L, -1);
 }
 
-auto Sequencer::FetchModuleData(std::string_view raw_module_name)
-    -> std::optional<std::string> {
-  const auto get_fetch_uri = [](const std::string &module_name,
-                                const std::string &jobid) -> std::string {
+auto Sequencer::FetchModuleData(std::string_view raw_module_name) -> std::optional<std::string> {
+  const auto get_fetch_uri = [](const std::string &module_name, const std::string &jobid) -> std::string {
     return "file:///package/" + jobid + "/" + module_name;
   };
 
-  const auto canonicalize_module_name =
-      [](std::string module_name) -> std::string {
+  const auto canonicalize_module_name = [](std::string module_name) -> std::string {
     size_t pos = 0;
     while ((pos = module_name.find("::", pos)) != std::string::npos) {
       module_name.replace(pos, 2, ".");
@@ -326,8 +317,7 @@ auto Sequencer::GetNext() -> Token {
           }
 
           case MacB: {
-            if (auto result_data = ExecuteLua(tok.GetString().Get()))
-                [[likely]] {
+            if (auto result_data = ExecuteLua(tok.GetString().Get())) [[likely]] {
               SequenceSource(result_data.value());
               continue;
             } /* Failed to execute macro */
@@ -339,8 +329,7 @@ auto Sequencer::GetNext() -> Token {
           }
 
           case Macr: {
-            if (auto result_data = ExecuteLua(
-                    (std::string(tok.GetString()) + "()").c_str())) [[likely]] {
+            if (auto result_data = ExecuteLua((std::string(tok.GetString()) + "()").c_str())) [[likely]] {
               SequenceSource(result_data.value());
               continue;
             } /* Failed to execute macro function call */
@@ -362,14 +351,11 @@ auto Sequencer::GetNext() -> Token {
   return tok;
 }
 
-auto Sequencer::GetLocationFallback(ncc::lex::LocationID id)
-    -> std::optional<ncc::lex::Location> {
+auto Sequencer::GetLocationFallback(ncc::lex::LocationID id) -> std::optional<ncc::lex::Location> {
   return m_scanner.GetLocation(id);
 }
 
-auto Sequencer::HasError() const -> bool {
-  return IScanner::HasError() || m_scanner.HasError();
-}
+auto Sequencer::HasError() const -> bool { return IScanner::HasError() || m_scanner.HasError(); }
 
 auto Sequencer::SetFailBit(bool fail) -> bool {
   auto old = HasError();
@@ -391,8 +377,7 @@ auto Sequencer::SetFetchFunc(FetchModuleFunc func) -> void {
   m_shared->m_fetch_module = func;
 }
 
-auto Sequencer::GetSourceWindow(Point start, Point end, char fillchar)
-    -> std::optional<std::vector<std::string>> {
+auto Sequencer::GetSourceWindow(Point start, Point end, char fillchar) -> std::optional<std::vector<std::string>> {
   return m_scanner.GetSourceWindow(start, end, fillchar);
 }
 
@@ -413,8 +398,7 @@ Sequencer::SharedState::SharedState()
 
 Sequencer::SharedState::~SharedState() { lua_close(m_L); }
 
-Sequencer::Sequencer(std::istream &file, std::shared_ptr<ncc::Environment> env,
-                     bool is_root)
+Sequencer::Sequencer(std::istream &file, std::shared_ptr<ncc::Environment> env, bool is_root)
     : ncc::lex::IScanner(std::move(env)),
       m_scanner(file, m_env),
       m_shared(is_root ? std::make_shared<SharedState>() : nullptr) {

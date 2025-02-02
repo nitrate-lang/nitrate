@@ -79,9 +79,7 @@ namespace ncc::lex {
      * @note The internal map is checked first, it the ID is not found, this
      *       method is called.
      */
-    virtual auto GetLocationFallback(LocationID) -> std::optional<Location> {
-      return std::nullopt;
-    };
+    virtual auto GetLocationFallback(LocationID) -> std::optional<Location> { return std::nullopt; };
 
   public:
     IScanner(std::shared_ptr<Environment> env);
@@ -158,9 +156,7 @@ namespace ncc::lex {
     [[nodiscard]] auto GetLocation(LocationID id) -> Location;
 
     /** @brief Get the comment buffer. */
-    [[nodiscard]] auto CommentBuffer() -> const std::vector<Token>& {
-      return m_comments;
-    }
+    [[nodiscard]] auto CommentBuffer() -> const std::vector<Token>& { return m_comments; }
 
     /** @brief Clear the comment buffer. */
     auto ClearCommentBuffer() -> void { m_comments.clear(); }
@@ -172,8 +168,8 @@ namespace ncc::lex {
       long m_x = 0, m_y = 0;
     };
 
-    virtual auto GetSourceWindow(Point start, Point end, char fillchar = ' ')
-        -> std::optional<std::vector<std::string>> = 0;
+    virtual auto GetSourceWindow(Point start, Point end,
+                                 char fillchar = ' ') -> std::optional<std::vector<std::string>> = 0;
 
     [[nodiscard]] auto GetEnvironment() const -> std::shared_ptr<Environment>;
 

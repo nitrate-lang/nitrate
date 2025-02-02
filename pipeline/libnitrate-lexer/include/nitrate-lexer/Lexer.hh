@@ -51,8 +51,8 @@ namespace ncc::lex {
     Tokenizer(std::istream &source_file, std::shared_ptr<Environment> env);
     ~Tokenizer() override;
 
-    auto GetSourceWindow(Point start, Point end, char fillchar = ' ')
-        -> std::optional<std::vector<std::string>> override;
+    auto GetSourceWindow(Point start, Point end,
+                         char fillchar = ' ') -> std::optional<std::vector<std::string>> override;
 
     auto SetCurrentFilename(string filename) -> string;
     [[nodiscard]] auto GetCurrentFilename() -> string;

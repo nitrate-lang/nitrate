@@ -47,8 +47,7 @@ auto Parser::PImpl::RecurseScopeDeps() -> std::optional<ScopeDeps> {
   if (NextIf(PuncLBrk)) [[likely]] {
     while (true) {
       if (NextIf(EofF)) [[unlikely]] {
-        Log << SyntaxError << current()
-            << "Unexpected EOF in scope dependencies";
+        Log << SyntaxError << current() << "Unexpected EOF in scope dependencies";
         break;
       }
 
@@ -65,8 +64,7 @@ auto Parser::PImpl::RecurseScopeDeps() -> std::optional<ScopeDeps> {
       NextIf(PuncComa);
     }
   } else {
-    Log << SyntaxError << current()
-        << "Expected '[' at start of scope dependencies";
+    Log << SyntaxError << current() << "Expected '[' at start of scope dependencies";
   }
 
   return std::nullopt;
