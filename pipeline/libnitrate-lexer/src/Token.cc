@@ -373,8 +373,6 @@ NCC_EXPORT auto ncc::lex::to_string(TokenType ty) -> string {
     case Note:
       return "note";
   }
-
-  qcore_panic("unreachable");
 }
 
 NCC_EXPORT auto ncc::lex::operator<<(std::ostream &os,

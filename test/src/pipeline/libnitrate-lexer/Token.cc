@@ -3,7 +3,6 @@
 #include <array>
 #include <nitrate-lexer/Token.hh>
 #include <sstream>
-#include <string>
 
 using namespace ncc::lex;
 
@@ -326,7 +325,65 @@ TEST(Lexer, TokenType_ToString) {
 
 TEST(Lexer, Token_OStream) {
   static std::unordered_map<Token, std::string_view> test_vectors = {
-      {Token(EofF, TokenData("")), ""},
+      {Token(EofF, TokenData::GetDefault(EofF)),
+       R"($TOKEN{21{"pos":null,"type":1}})"},
+      {Token(EofF, TokenData::GetDefault(EofF), 3434),
+       R"($TOKEN{21{"pos":3434,"type":1}})"},
+
+      {Token(KeyW, TokenData::GetDefault(KeyW)),
+       R"($TOKEN{21{"pos":null,"type":2}})"},
+      {Token(KeyW, TokenData::GetDefault(KeyW), 3434),
+       R"($TOKEN{21{"pos":3434,"type":2}})"},
+
+      {Token(Oper, TokenData::GetDefault(Oper)),
+       R"($TOKEN{21{"pos":null,"type":3}})"},
+      {Token(Oper, TokenData::GetDefault(Oper), 3434),
+       R"($TOKEN{21{"pos":3434,"type":3}})"},
+
+      {Token(Punc, TokenData::GetDefault(Punc)),
+       R"($TOKEN{21{"pos":null,"type":4}})"},
+      {Token(Punc, TokenData::GetDefault(Punc), 3434),
+       R"($TOKEN{21{"pos":3434,"type":4}})"},
+
+      {Token(Name, TokenData::GetDefault(Name)),
+       R"($TOKEN{21{"pos":null,"type":5}})"},
+      {Token(Name, TokenData::GetDefault(Name), 3434),
+       R"($TOKEN{21{"pos":3434,"type":5}})"},
+
+      {Token(IntL, TokenData::GetDefault(IntL)),
+       R"($TOKEN{21{"pos":null,"type":6}})"},
+      {Token(IntL, TokenData::GetDefault(IntL), 3434),
+       R"($TOKEN{21{"pos":3434,"type":6}})"},
+
+      {Token(NumL, TokenData::GetDefault(NumL)),
+       R"($TOKEN{21{"pos":null,"type":7}})"},
+      {Token(NumL, TokenData::GetDefault(NumL), 3434),
+       R"($TOKEN{21{"pos":3434,"type":7}})"},
+
+      {Token(Text, TokenData::GetDefault(Text)),
+       R"($TOKEN{21{"pos":null,"type":8}})"},
+      {Token(Text, TokenData::GetDefault(Text), 3434),
+       R"($TOKEN{21{"pos":3434,"type":8}})"},
+
+      {Token(Char, TokenData::GetDefault(Char)),
+       R"($TOKEN{21{"pos":null,"type":9}})"},
+      {Token(Char, TokenData::GetDefault(Char), 3434),
+       R"($TOKEN{21{"pos":3434,"type":9}})"},
+
+      {Token(MacB, TokenData::GetDefault(MacB)),
+       R"($TOKEN{22{"pos":null,"type":10}})"},
+      {Token(MacB, TokenData::GetDefault(MacB), 3434),
+       R"($TOKEN{22{"pos":3434,"type":10}})"},
+
+      {Token(Macr, TokenData::GetDefault(Macr)),
+       R"($TOKEN{22{"pos":null,"type":11}})"},
+      {Token(Macr, TokenData::GetDefault(Macr), 3434),
+       R"($TOKEN{22{"pos":3434,"type":11}})"},
+
+      {Token(Note, TokenData::GetDefault(Note)),
+       R"($TOKEN{22{"pos":null,"type":12}})"},
+      {Token(Note, TokenData::GetDefault(Note), 3434),
+       R"($TOKEN{22{"pos":3434,"type":12}})"},
   };
 
   for (const auto &[token, expected_output] : test_vectors) {
