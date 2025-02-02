@@ -8,7 +8,7 @@ description: |
   the entire Nitrate Toolchain and provides a consistent and reliable way to deal with
   Nitrate projects.
 
-confinement: strict
+confinement: classic
 
 parts:
   nitrate:

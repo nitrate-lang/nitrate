@@ -186,11 +186,11 @@ using namespace ncc::ir;
 //       bool is_cstring = false;
 //       std::string c_string;
 //       for (size_t i = 0; i < L->size(); i++) {
-//         if (!L->at(i)->is(IR_eINT)) {
+//         if (!L.at(i)->is(IR_eINT)) {
 //           break;
 //         }
 
-//         Int *C = L->at(i)->As<Int>();
+//         Int *C = L.at(i)->As<Int>();
 //         if (C->getSize() != 8) {
 //           break;
 //         }

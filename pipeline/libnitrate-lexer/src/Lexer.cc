@@ -361,7 +361,7 @@ public:
     std::stringstream ss;
     ss << "at (";
 
-    ss << (m_filename->empty() ? "?" : *m_filename) << ":";
+    ss << (m_filename.empty() ? "?" : *m_filename) << ":";
     ss << m_line + 1 << ":" << m_column + 1 << "): ";
 
     return ss.str();

@@ -44,7 +44,7 @@ void PushTokenObject(lua_State* lua, Token tok) {
   lua_newtable(lua);
 
   lua_pushstring(lua, "ty");
-  lua_pushstring(lua, to_string(tok.GetKind())->c_str());
+  lua_pushstring(lua, to_string(tok.GetKind()).c_str());
   lua_settable(lua, -3);
 
   lua_pushstring(lua, "v");
@@ -77,7 +77,7 @@ void PushTokenObject(lua_State* lua, Token tok) {
     case MacB:
     case Macr:
     case Note: {
-      lua_pushstring(lua, tok.GetString()->c_str());
+      lua_pushstring(lua, tok.GetString().c_str());
       break;
     }
   }

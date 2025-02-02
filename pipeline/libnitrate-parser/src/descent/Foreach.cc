@@ -39,9 +39,9 @@ using namespace ncc::parse;
 
 auto Parser::PImpl::RecurseForeachNames()
     -> std::optional<std::pair<string, string>> {
-  if (auto name_a = RecurseName(); !name_a->empty()) [[likely]] {
+  if (auto name_a = RecurseName(); !name_a.empty()) [[likely]] {
     if (NextIf(PuncComa)) {
-      if (auto name_b = RecurseName(); !name_b->empty()) [[likely]] {
+      if (auto name_b = RecurseName(); !name_b.empty()) [[likely]] {
         return std::make_pair(name_a, name_b);
       } else {
         Log << SyntaxError << current()

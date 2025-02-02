@@ -2,6 +2,7 @@
 #include <gtest/gtest.h>
 
 #include <algorithm>
+#include <nitrate-core/Assert.hh>
 #include <nitrate-core/Init.hh>
 #include <nitrate-core/Logger.hh>
 #include <optional>
@@ -232,8 +233,9 @@ NCC_EC_EX(Test_Core, TestError, Formatter, "$NCC_CONF/ec/core/TestError")
 TEST(Core, Log_EC_ToJson) {
   if (std::getenv  // NOLINT
       ("NCC_CONF") == nullptr) {
-    FAIL() << "NCC_CONF environment variable not set. Set it prior to running "
-              "the tests.";
+    qcore_panic(
+        "NCC_CONF environment variable not set. Set it prior to running "
+        "the tests.");
   }
 
   if (auto lib_rc = CoreLibrary.GetRC()) {

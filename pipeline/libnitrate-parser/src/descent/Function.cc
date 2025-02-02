@@ -58,7 +58,7 @@ auto Parser::PImpl::RecurseFunctionParameterValue() -> NullableFlowPtr<Expr> {
 }
 
 auto Parser::PImpl::RecurseFunctionParameter() -> std::optional<FuncParam> {
-  if (auto param_name = RecurseName(); !param_name->empty()) [[likely]] {
+  if (auto param_name = RecurseName(); !param_name.empty()) [[likely]] {
     auto param_type = RecurseFunctionParameterType();
     auto param_value = RecurseFunctionParameterValue();
 
@@ -189,7 +189,7 @@ auto Parser::PImpl::RecurseFunctionCapture()
     -> std::optional<std::pair<string, bool>> {
   bool is_ref = NextIf(OpBitAnd).has_value();
 
-  if (auto name = RecurseName(); !name->empty()) {
+  if (auto name = RecurseName(); !name.empty()) {
     return {{name, is_ref}};
   }
 
@@ -228,7 +228,7 @@ auto Parser::PImpl::RecurseFunctionAmbigouis()
 
     switch (state) {
       case State::Ground: {
-        if (auto some_word = RecurseName(); !some_word->empty()) {
+        if (auto some_word = RecurseName(); !some_word.empty()) {
           if (some_word == "pure") {
             is_pure = true;
           } else if (some_word == "impure") {

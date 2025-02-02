@@ -47,7 +47,7 @@ auto Parser::PImpl::RecurseEnumType() -> NullableFlowPtr<parse::Type> {
 
 auto Parser::PImpl::RecurseEnumItem() -> std::optional<EnumItem> {
   auto member_name = RecurseName();
-  if (member_name->empty()) {
+  if (member_name.empty()) {
     Log << SyntaxError << current() << "Enum member name cannot be empty.";
     return std::nullopt;
   }

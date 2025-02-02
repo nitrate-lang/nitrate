@@ -143,11 +143,11 @@ namespace ncc::ir {
 
     constexpr GenericFloat(string str) : GenericExpr<A>(IR_eFLOAT) {
       m_data = std::stod(std::string(str));
-      if (str->ends_with("f128")) {
+      if (str.ends_with("f128")) {
         m_size = 128;
-      } else if (str->ends_with("f32")) {
+      } else if (str.ends_with("f32")) {
         m_size = 32;
-      } else if (str->ends_with("f16")) {
+      } else if (str.ends_with("f16")) {
         m_size = 16;
       } else {
         m_size = 64;

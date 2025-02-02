@@ -255,11 +255,11 @@ NCC_EXPORT auto ncc::parse::ec::Formatter(std::string_view msg,
 
     std::stringstream ss;
     ss << "\x1b[37;1m[\x1b[0m\x1b[31;1mParse\x1b[0m\x1b[37;1m]: ";
-    bool any_source_location = !start_filename->empty() ||
+    bool any_source_location = !start_filename.empty() ||
                                start_line != kLexEof || start_col != kLexEof;
 
     if (any_source_location) {
-      ss << (start_filename->empty() ? "?" : start_filename) << ":";
+      ss << (start_filename.empty() ? "?" : start_filename) << ":";
       ss << (start_line == kLexEof ? "?" : std::to_string(start_line + 1))
          << ":";
       ss << (start_col == kLexEof ? "?" : std::to_string(start_col + 1))

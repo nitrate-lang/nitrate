@@ -315,7 +315,7 @@ TEST(Lexer, TokenType_ToString) {
   EXPECT_EQ(to_string(Name), "name");
   EXPECT_EQ(to_string(IntL), "int");
   EXPECT_EQ(to_string(NumL), "num");
-  EXPECT_EQ(to_string(Text), "text");
+  EXPECT_EQ(to_string(Text), "str");
   EXPECT_EQ(to_string(Char), "char");
   EXPECT_EQ(to_string(MacB), "macb");
   EXPECT_EQ(to_string(Macr), "macr");

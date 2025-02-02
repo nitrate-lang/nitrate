@@ -170,7 +170,7 @@ auto Parser::PImpl::RecurseOpaqueType() -> FlowPtr<parse::Type> {
     return MockType();
   }
 
-  if (auto name = RecurseName(); !name->empty()) {
+  if (auto name = RecurseName(); !name.empty()) {
     if (NextIf(PuncRPar)) {
       auto opaque = CreateNode<OpaqueTy>(name)();
       opaque->SetOffset(current().GetStart());

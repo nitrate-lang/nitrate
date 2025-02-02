@@ -554,8 +554,8 @@ auto Parser::PImpl::RecurseExprPunctor(lex::Punctor punc)
             size_t item_repeat_count = 0;
 
             if (std::from_chars(
-                    item_repeat_str->data(),
-                    item_repeat_str->data() + item_repeat_str->size(),
+                    item_repeat_str.c_str(),
+                    item_repeat_str.c_str() + item_repeat_str.size(),
                     item_repeat_count)
                     .ec == std::errc()) {
               if (item_repeat_count <= kMaxListRepeatCount) {
@@ -806,13 +806,13 @@ auto Parser::PImpl::RecurseExprPrimary(bool is_type) -> NullableFlowPtr<Expr> {
         next();
 
         auto str_data = tok.GetString();
-        if (str_data->size() != 1) [[unlikely]] {
+        if (str_data.size() != 1) [[unlikely]] {
           Log << SyntaxError << tok
               << "Expected a single byte in character literal";
           break;
         }
 
-        auto character = CreateNode<Character>(str_data->at(0))();
+        auto character = CreateNode<Character>(str_data.at(0))();
         character->SetOffset(start_pos);
 
         if (peek().Is(Name)) {

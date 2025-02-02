@@ -87,7 +87,7 @@ auto Parser::PImpl::RecurseStructTerms() -> StructNames {
         break;
       }
 
-      if (auto name = RecurseName(); !name->empty()) {
+      if (auto name = RecurseName(); !name.empty()) {
         names.push_back(name);
       } else {
         Log << SyntaxError << next() << "Expected identifier in struct terms";
@@ -113,7 +113,7 @@ auto Parser::PImpl::RecurseStructTerms() -> StructNames {
         break;
       }
 
-      if (auto name = RecurseName(); !name->empty()) [[likely]] {
+      if (auto name = RecurseName(); !name.empty()) [[likely]] {
         names.push_back(name);
       } else {
         Log << SyntaxError << next() << "Expected identifier in struct terms";
@@ -143,7 +143,7 @@ auto Parser::PImpl::RecurseStructFieldDefaultValue() -> NullableFlowPtr<Expr> {
 
 void Parser::PImpl::RecurseStructField(Vis vis, bool is_static,
                                        StructFields &fields) {
-  if (auto field_name = RecurseName(); !field_name->empty()) {
+  if (auto field_name = RecurseName(); !field_name.empty()) {
     if (NextIf(PuncColn)) {
       auto field_type = RecurseType();
       auto default_value = RecurseStructFieldDefaultValue();

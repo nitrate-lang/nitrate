@@ -1667,7 +1667,7 @@ using namespace ncc;
 //     if ((*it)->GetKind() == QAST_BLOCK) {
 //       /* Reduce unneeded nesting in the IR */
 //       qcore_assert(item->size() == 1);
-//       Seq *inner = item->at(0)->As<Seq>();
+//       Seq *inner = item.at(0)->As<Seq>();
 
 //       items.insert(items.end(), inner->GetItems().begin(),
 //                    inner->GetItems().end());

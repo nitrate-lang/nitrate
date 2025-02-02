@@ -108,14 +108,36 @@ namespace ncc {
     auto operator>=(const String &o) const -> bool;
 
     constexpr auto operator*() const { return Get(); }
+    auto operator->() const { return Get().c_str(); }
+    constexpr operator CStringView() const { return Get(); }
 
-    auto operator->() const -> const auto * {
-      static thread_local CStringView sv;
-      sv = Get();
-      return &sv;
+    [[nodiscard]] size_t size() const {  // NOLINT
+      return Get().size();
     }
 
-    constexpr operator CStringView() const { return Get(); }
+    [[nodiscard]] bool empty() const {  // NOLINT
+      return Get().empty();
+    }
+
+    [[nodiscard]] auto c_str() const {  // NOLINT
+      return Get().c_str();
+    }
+
+    [[nodiscard]] auto data() const {  // NOLINT
+      return Get().data();
+    }
+
+    [[nodiscard]] auto at(size_t i) const {  // NOLINT
+      return Get().at(i);
+    }
+
+    [[nodiscard]] auto ends_with(std::string_view end) const {  // NOLINT
+      return Get().ends_with(end);
+    }
+
+    [[nodiscard]] auto starts_with(std::string_view start) const {  // NOLINT
+      return Get().starts_with(start);
+    }
 
     [[nodiscard]] constexpr auto GetId() const { return m_id; }
   };
