@@ -988,10 +988,14 @@ public:
   auto ParseCommentSingleLine(LocationID start_pos) -> Token {
     uint8_t c;
 
-    do {
+    while (true) {
       c = NextChar();
+      if (c == '\n') {
+        break;
+      }
+
       m_buf += c;
-    } while (c != '\n');
+    }
 
     return {Note, string(std::move(m_buf)), start_pos};
   };
