@@ -226,6 +226,10 @@ namespace ncc::lex {
       return m_id < rhs.m_id;
     }
 
+    [[nodiscard]] constexpr bool has_value() const {  // NOLINT
+      return m_id != 0;
+    }
+
   private:
     Counter m_id;
   } __attribute__((packed));
@@ -242,6 +246,28 @@ namespace ncc::lex {
     constexpr TokenData(Operator op) : m_op(op) {}
     constexpr TokenData(Keyword key) : m_key(key) {}
     constexpr TokenData(string str) : m_str(str) {}
+
+    static constexpr TokenData GetDefault(TokenType ty) {
+      switch (ty) {
+        case EofF:
+          return Operator();
+        case Punc:
+          return Punctor();
+        case Oper:
+          return Operator();
+        case KeyW:
+          return Keyword();
+        case IntL:
+        case NumL:
+        case Text:
+        case Name:
+        case Char:
+        case MacB:
+        case Macr:
+        case Note:
+          return string();
+      }
+    }
   } __attribute__((packed));
 
   string to_string(TokenType, TokenData);  // NOLINT

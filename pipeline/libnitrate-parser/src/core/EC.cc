@@ -33,6 +33,7 @@
 
 #include <nitrate-lexer/Scanner.hh>
 #include <nitrate-parser/EC.hh>
+#include <nlohmann/json.hpp>
 
 using namespace ncc;
 using namespace ncc::lex;
@@ -41,194 +42,68 @@ static thread_local IScanner *GCurrentScanner = nullptr;
 
 void ParserSetCurrentScanner(IScanner *scanner) { GCurrentScanner = scanner; }
 
-static constexpr auto UnescapeStringSlice(std::string_view &buf)
-    -> std::optional<std::string> {
-  if (!buf.starts_with("\"")) [[unlikely]] {
+static std::optional<Token> ParseJsonToken(const nlohmann::json &j) {
+  if (!j.is_object()) {
     return std::nullopt;
   }
 
-  buf.remove_prefix(1);
-
-  std::string unescaped;
-
-  while (!buf.empty()) {
-    char c = buf[0];
-    buf.remove_prefix(1);
-
-    if (c == '\\') {
-      if (buf.empty()) [[unlikely]] {
-        return std::nullopt;
-      }
-
-      c = buf[0];
-      buf.remove_prefix(1);
-
-      switch (c) {
-        case 'n':
-          unescaped += '\n';
-          break;
-        case 't':
-          unescaped += '\t';
-          break;
-        case 'r':
-          unescaped += '\r';
-          break;
-        case '0':
-          unescaped += '\0';
-          break;
-        case '\\':
-          unescaped += '\\';
-          break;
-        case '\'':
-          unescaped += '\'';
-          break;
-        case '\"':
-          unescaped += '\"';
-          break;
-        case 'x': {
-          constexpr std::array<uint8_t, 256> kHextable = [] {
-            std::array<uint8_t, 256> table = {};
-            for (uint8_t i = 0; i < 10; i++) {
-              table['0' + i] = i;
-            }
-            for (uint8_t i = 0; i < 6; i++) {
-              table['a' + i] = 10 + i;
-              table['A' + i] = 10 + i;
-            }
-            return table;
-          }();
-
-          if (buf.size() < 2) [[unlikely]] {
-            return std::nullopt;
-          }
-
-          std::array hex = {buf[0], buf[1]};
-          if ((std::isxdigit(hex[0]) == 0) || (std::isxdigit(hex[1]) == 0))
-              [[unlikely]] {
-            return std::nullopt;
-          }
-
-          unescaped +=
-              (kHextable[(uint8_t)hex[0]] << 4) | kHextable[(uint8_t)hex[1]];
-          buf.remove_prefix(2);
-          break;
-        }
-        default: {
-          return std::nullopt;
-        }
-      }
-    } else if (c == '\"') {
-      break;
-    } else {
-      unescaped += c;
-    }
+  if (!j.contains("type") || !j.contains("pos")) {
+    return std::nullopt;
   }
 
-  return unescaped;
+  const auto type = static_cast<TokenType>(j["type"].get<int>());
+
+  LocationID start =
+      j["pos"].is_null() ? LocationID() : LocationID(j["pos"].get<uint32_t>());
+
+  return Token(type, TokenData::GetDefault(type), start);
 }
 
 static auto FindAndDecodeToken(std::string_view buf)
     -> std::optional<std::pair<Token, std::string>> {
+  const auto pos = buf.find("$TOKEN{");
+  if (pos == std::string_view::npos) {
+    return std::nullopt;
+  }
+
   std::string_view orig_buf = buf;
 
-  auto pos = buf.find("${T:{\"type\":");
-  if (pos == std::string_view::npos) [[unlikely]] {
-    return std::nullopt;
-  }
-  const auto start_offset = pos;
-  buf.remove_prefix(pos + 12);
-  if (buf.empty()) [[unlikely]] {
+  buf.remove_prefix(pos + 7);
+  if (buf.empty()) {
     return std::nullopt;
   }
 
-  int type = 0;
-  while (std::isdigit(buf[0]) != 0) {
-    type = type * 10 + (buf[0] - '0');
+  size_t payload_length = 0;
+  while (!buf.empty() && std::isdigit(buf.front()) != 0) {
+    payload_length = payload_length * 10 + (buf.front() - '0');
     buf.remove_prefix(1);
-
-    if (buf.empty()) [[unlikely]] {
-      return std::nullopt;
-    }
   }
 
-  if (!buf.starts_with(",\"posid\":")) [[unlikely]] {
+  if (buf.size() < payload_length + 1) {
     return std::nullopt;
   }
 
-  buf.remove_prefix(9);
-  if (buf.empty()) [[unlikely]] {
+  if (buf[payload_length] != '}') {
     return std::nullopt;
   }
 
-  int posid = 0;
-  while (std::isdigit(buf[0]) != 0) {
-    posid = posid * 10 + (buf[0] - '0');
-    buf.remove_prefix(1);
+  std::string_view json_payload = buf.substr(0, payload_length);
 
-    if (buf.empty()) [[unlikely]] {
-      return std::nullopt;
-    }
-  }
-
-  if (!buf.starts_with(",\"value\":")) [[unlikely]] {
+  nlohmann::json j = nlohmann::json::parse(json_payload, nullptr, false);
+  if (j.is_discarded()) {
     return std::nullopt;
   }
 
-  buf.remove_prefix(9);
-  auto unescaped = UnescapeStringSlice(buf);
+  auto token_opt = ParseJsonToken(j);
 
-  if (!unescaped.has_value()) [[unlikely]] {
+  if (!token_opt.has_value()) {
     return std::nullopt;
   }
 
-  if (!buf.starts_with("}}")) [[unlikely]] {
-    return std::nullopt;
-  }
-
-  buf.remove_prefix(2);
-
-  auto slice = std::string(orig_buf.substr(0, start_offset)) + std::string(buf);
-
-  switch (type) {
-    case EofF: {
-      return {{Token::EndOfFile(), slice}};
-    }
-
-    case KeyW: {
-      return {{Token(KeyW, LEXICAL_KEYWORDS.left.at(unescaped.value()),
-                     LocationID(posid)),
-               slice}};
-    }
-
-    case Oper: {
-      return {{Token(Oper, LEXICAL_OPERATORS.left.at(unescaped.value()),
-                     LocationID(posid)),
-               slice}};
-    }
-
-    case Punc: {
-      return {{Token(Punc, LEXICAL_PUNCTORS.left.at(unescaped.value()),
-                     LocationID(posid)),
-               slice}};
-    }
-
-    case Name:
-    case IntL:
-    case NumL:
-    case Text:
-    case Char:
-    case MacB:
-    case Macr:
-    case Note: {
-      return {{Token(static_cast<TokenType>(type), unescaped.value(),
-                     LocationID(posid)),
-               slice}};
-    }
-
-    default: {
-      return std::nullopt;
-    }
-  }
+  return std::make_pair(
+      token_opt.value(),
+      std::string(orig_buf.substr(0, pos)) +
+          std::string(orig_buf.substr(pos + 7 + (payload_length + 1) + 2)));
 }
 
 NCC_EXPORT auto ncc::parse::ec::Formatter(std::string_view msg,

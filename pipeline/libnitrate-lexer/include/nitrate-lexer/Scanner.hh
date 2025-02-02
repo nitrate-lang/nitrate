@@ -39,6 +39,7 @@
 #include <memory>
 #include <nitrate-core/Environment.hh>
 #include <nitrate-core/Macro.hh>
+#include <nitrate-core/Testing.hh>
 #include <nitrate-lexer/Token.hh>
 
 namespace ncc::lex {
@@ -57,6 +58,8 @@ namespace ncc::lex {
    * VTQ model will return a continuous stream of `qEof` type tokens.
    */
   class NCC_EXPORT IScanner {
+    friend class TestAttorney;
+
     std::deque<Token> m_ready;
     std::vector<Token> m_comments;
     std::vector<Location> m_location_interned;

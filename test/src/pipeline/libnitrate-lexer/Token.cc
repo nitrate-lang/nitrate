@@ -2,6 +2,8 @@
 
 #include <array>
 #include <nitrate-lexer/Token.hh>
+#include <sstream>
+#include <string>
 
 using namespace ncc::lex;
 
@@ -323,5 +325,13 @@ TEST(Lexer, TokenType_ToString) {
 }
 
 TEST(Lexer, Token_OStream) {
-  //
+  static std::unordered_map<Token, std::string_view> test_vectors = {
+      {Token(EofF, TokenData("")), ""},
+  };
+
+  for (const auto &[token, expected_output] : test_vectors) {
+    std::stringstream ss;
+    ss << token;
+    EXPECT_EQ(ss.str(), expected_output);
+  }
 }

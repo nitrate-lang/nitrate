@@ -35,6 +35,7 @@
 #include <nitrate-core/Macro.hh>
 #include <nitrate-lexer/Lexer.hh>
 #include <nitrate-lexer/Token.hh>
+#include <nlohmann/json.hpp>
 
 using namespace ncc::lex;
 using namespace ncc::lex::detail;
@@ -376,58 +377,23 @@ NCC_EXPORT auto ncc::lex::to_string(TokenType ty) -> string {
   qcore_panic("unreachable");
 }
 
-static void EscapeString(std::ostream &ss, std::string_view input) {
-  ss << '"';
-
-  for (char ch : input) {
-    switch (ch) {
-      case '"':
-        ss << "\\\"";
-        break;
-      case '\\':
-        ss << "\\\\";
-        break;
-      case '\b':
-        ss << "\\b";
-        break;
-      case '\f':
-        ss << "\\f";
-        break;
-      case '\n':
-        ss << "\\n";
-        break;
-      case '\r':
-        ss << "\\r";
-        break;
-      case '\t':
-        ss << "\\t";
-        break;
-      case '\0':
-        ss << "\\0";
-        break;
-      default:
-        if (ch >= 32 && ch < 127) {
-          ss << ch;
-        } else {
-          std::array<char, 5> hex;
-          snprintf(hex.data(), hex.size(), "\\x%02x", (int)(uint8_t)ch);
-          ss << hex.data();
-        }
-        break;
-    }
-  }
-
-  ss << '"';
-}
-
 NCC_EXPORT auto ncc::lex::operator<<(std::ostream &os,
                                      Token tok) -> std::ostream & {
   // Serialize the token so that the core logger system can use it
 
-  os << "${T:{\"type\":" << (int)tok.GetKind()
-     << ",\"posid\":" << tok.GetStart().GetId() << ",\"value\":";
-  EscapeString(os, tok.GetString());
-  os << "}}";
+  {
+    nlohmann::json j;
+    j["type"] = (int)tok.GetKind();
+
+    if (tok.GetStart().has_value()) {
+      j["pos"] = tok.GetStart().GetId();
+    } else {
+      j["pos"] = nullptr;
+    }
+
+    std::string s = j.dump();
+    os << "$TOKEN{" << s.size() << s << "}";
+  }
 
   return os;
 }
