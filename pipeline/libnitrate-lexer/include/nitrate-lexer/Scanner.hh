@@ -180,7 +180,7 @@ namespace ncc::lex {
     /** Create a new LocationID from a Location */
     NCC_FORCE_INLINE auto InternLocation(Location loc) -> LocationID {
       m_location_interned.push_back(loc);
-      return m_location_interned.size() - 1;
+      return LocationID(m_location_interned.size() - 1);
     }
   };
 }  // namespace ncc::lex

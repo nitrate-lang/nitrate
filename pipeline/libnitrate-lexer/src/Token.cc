@@ -343,7 +343,7 @@ NCC_EXPORT auto ncc::lex::to_string(TokenType ty, TokenData v) -> ncc::string {
 }
 
 NCC_EXPORT auto LocationID::Get(IScanner &l) const -> Location {
-  return l.GetLocation(m_id);
+  return l.GetLocation(LocationID(m_id));
 }
 
 NCC_EXPORT auto ncc::lex::to_string(TokenType ty) -> string {

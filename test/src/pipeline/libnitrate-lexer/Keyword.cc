@@ -1,5 +1,5 @@
 #include <gtest/gtest.h>
 
-#include <nitrate-lexer/Lexer.hh>
+#include <pipeline/libnitrate-lexer/LexicalCase.hh>
 
 using namespace ncc::lex;

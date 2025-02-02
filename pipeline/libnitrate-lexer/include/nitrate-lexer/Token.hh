@@ -213,7 +213,7 @@ namespace ncc::lex {
   public:
     using Counter = uint32_t;
 
-    constexpr LocationID(Counter id = 0) : m_id(id) {}
+    constexpr explicit LocationID(Counter id = 0) : m_id(id) {}
 
     auto Get(IScanner &l) const -> Location;
     [[nodiscard]] constexpr auto GetId() const -> Counter { return m_id; }
@@ -274,7 +274,7 @@ namespace ncc::lex {
 
   class TokenBase {
     TokenType m_type;
-    LocationID m_location_id = 0;
+    LocationID m_location_id;
 
   public:
     TokenData m_v;
@@ -284,6 +284,12 @@ namespace ncc::lex {
     template <class T = Operator>
     constexpr TokenBase(TokenType ty, T val, LocationID start = LocationID())
         : m_type(ty), m_location_id(start), m_v{val} {}
+
+    constexpr TokenBase(TokenType ty, size_t str_len, const char *str_ptr,
+                        LocationID start = LocationID())
+        : m_type(ty),
+          m_location_id(start),
+          m_v{std::string_view(str_ptr, str_len)} {}
 
     constexpr static auto EndOfFile() { return TokenBase(); }
 

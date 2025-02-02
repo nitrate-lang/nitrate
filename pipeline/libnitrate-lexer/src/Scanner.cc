@@ -146,7 +146,8 @@ auto IScanner::GetLocation(LocationID id) -> Location {
     return m_location_interned[id.GetId()];
   }
 
-  return GetLocationFallback(id.GetId()).value_or(Location::EndOfFile());
+  return GetLocationFallback(LocationID(id.GetId()))
+      .value_or(Location::EndOfFile());
 }
 
 auto IScanner::SkipCommentsState(bool skip) -> bool {
