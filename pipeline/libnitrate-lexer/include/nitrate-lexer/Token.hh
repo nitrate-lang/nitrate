@@ -291,6 +291,21 @@ namespace ncc::lex {
           m_location_id(start),
           m_v{std::string_view(str_ptr, str_len)} {}
 
+    constexpr TokenBase(Operator op, LocationID start = LocationID())
+        : m_type(Oper), m_location_id(start), m_v{op} {}
+
+    constexpr TokenBase(Punctor punc, LocationID start = LocationID())
+        : m_type(Punc), m_location_id(start), m_v{punc} {}
+
+    constexpr TokenBase(Keyword key, LocationID start = LocationID())
+        : m_type(KeyW), m_location_id(start), m_v{key} {}
+
+    constexpr TokenBase(double num, LocationID start = LocationID())
+        : m_type(NumL), m_location_id(start), m_v{std::to_string(num)} {}
+
+    constexpr TokenBase(uint64_t num, LocationID start = LocationID())
+        : m_type(IntL), m_location_id(start), m_v{std::to_string(num)} {}
+
     constexpr static auto EndOfFile() { return TokenBase(); }
 
     [[nodiscard]] constexpr bool Is(TokenType val) const {

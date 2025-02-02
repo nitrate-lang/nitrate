@@ -1069,37 +1069,19 @@ public:
     }
 
     m_buf += c;
-    c = NextChar();
-
-    if ((m_buf[0] == '~' && c == '>')) {
+    if ((m_buf[0] == '~' && NextCharIf('>'))) {
       m_buf.clear();
       return ParseCommentSingleLine(start_pos);
     }
 
-    auto found = false;
-    while (true) {
-      auto contains = false;
-      if (OPERATOR_SET.count(m_buf) != 0U) {
-        contains = true;
-        found = true;
-      }
+    bool was_match = false;
+    while (OPERATOR_SET.count(m_buf) != 0) {
+      was_match = true;
 
-      if (contains) {
-        m_buf += c;
-        if (m_buf.size() > 4) { /* Handle infinite error case */
-          Log << LexicalGarbage << LogSource()
-              << "Unexpected lexical garbage in source code";
-          ResetAutomaton();
-
-          return Token::EndOfFile();
-        }
-        c = NextChar();
-      } else {
-        break;
-      }
+      m_buf += NextChar();
     }
 
-    if (!found) {
+    if (!was_match) {
       Log << LexicalGarbage << LogSource()
           << "Unexpected lexical garbage in source code";
       ResetAutomaton();
@@ -1108,7 +1090,6 @@ public:
     }
 
     m_fifo.push(m_buf.back());
-    m_fifo.push(c);
 
     return {Oper, OPERATORS_MAP.find(m_buf.substr(0, m_buf.size() - 1))->second,
             start_pos};
@@ -1174,8 +1155,7 @@ auto Tokenizer::GetNext() -> Token {
         break;
       }
 
-      /* Divide operator */
-      token = {Oper, OpSlash, start_pos};
+      token = impl.ParseOther('/', start_pos);
       break;
     }
 
