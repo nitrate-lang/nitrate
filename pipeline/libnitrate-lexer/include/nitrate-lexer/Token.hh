@@ -38,6 +38,7 @@
 #include <cstdint>
 #include <nitrate-core/Logger.hh>
 #include <nitrate-core/String.hh>
+#include <sstream>
 #include <type_traits>
 
 namespace ncc::lex {
@@ -273,24 +274,29 @@ namespace ncc::lex {
     constexpr TokenBase(TokenType ty, T val, LocationID start = LocationID())
         : m_type(ty), m_location_id(start), m_v{val} {}
 
-    constexpr TokenBase(TokenType ty, size_t str_len, const char *str_ptr, LocationID start = LocationID())
+    constexpr explicit TokenBase(TokenType ty, size_t str_len, const char *str_ptr, LocationID start = LocationID())
         : m_type(ty), m_location_id(start), m_v{std::string_view(str_ptr, str_len)} {}
 
     constexpr TokenBase(Operator op, LocationID start = LocationID()) : m_type(Oper), m_location_id(start), m_v{op} {}
 
-    constexpr TokenBase(Punctor punc, LocationID start = LocationID())
+    constexpr explicit TokenBase(Punctor punc, LocationID start = LocationID())
         : m_type(Punc), m_location_id(start), m_v{punc} {}
 
-    constexpr TokenBase(Keyword key, LocationID start = LocationID()) : m_type(KeyW), m_location_id(start), m_v{key} {}
+    constexpr explicit TokenBase(Keyword key, LocationID start = LocationID())
+        : m_type(KeyW), m_location_id(start), m_v{key} {}
 
-    constexpr TokenBase(double num, LocationID start = LocationID())
-        : m_type(NumL), m_location_id(start), m_v{std::to_string(num)} {}
+    constexpr explicit TokenBase(double num, LocationID start = LocationID())
+        : m_type(NumL), m_location_id(start), m_v([](double num) {
+            std::ostringstream out;
+            out << std::fixed << num;
+            return out.str();
+          }(num)) {}
+
+    constexpr explicit TokenBase(uint64_t num, LocationID start = LocationID())
+        : m_type(IntL), m_location_id(start), m_v{std::to_string(num)} {}
 
     constexpr TokenBase(string identifier, LocationID start = LocationID())
         : m_type(Name), m_location_id(start), m_v{identifier} {}
-
-    constexpr TokenBase(uint64_t num, LocationID start = LocationID())
-        : m_type(IntL), m_location_id(start), m_v{std::to_string(num)} {}
 
     constexpr static auto EndOfFile() { return TokenBase(); }
 

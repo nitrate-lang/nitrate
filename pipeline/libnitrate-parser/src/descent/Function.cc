@@ -135,7 +135,6 @@ auto Parser::PImpl::RecurseFunctionParameters() -> std::pair<FuncParams, bool> {
     if (auto parameter = RecurseFunctionParameter()) {
       auto [param_name, param_type, param_value] = parameter.value();
       parameters.first.emplace_back(param_name, param_type, param_value);
-
     } else {
       Log << SyntaxError << next() << "Expected a function parameter";
     }

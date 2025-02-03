@@ -358,7 +358,7 @@ auto Parser::PImpl::RecurseTypeByPunctuation(Punctor punc) -> FlowPtr<parse::Typ
     }
 
     default: {
-      Log << SyntaxError << current() << "Punctuation is not valid in this context";
+      Log << SyntaxError << next() << "Punctuation is not valid in this context";
       return MockType();
     }
   }
