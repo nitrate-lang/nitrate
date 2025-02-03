@@ -2,6 +2,8 @@
 
 #include <pipeline/libnitrate-lexer/LexicalCase.hh>
 
+#include "nitrate-lexer/Token.hh"
+
 using namespace ncc::lex;
 
 #pragma clang optimize off
@@ -207,12 +209,12 @@ TEST_CASE(Operator, Permute, 79, R"(>=..>-)", {OpGE, OpRange, OpGT, OpMinus, Tok
 TEST_CASE(Operator, Permute, 80, R"(>>=%=/===)", {OpRShiftSet, OpPercentSet, OpSlashSet, OpEq, Token()});
 TEST_CASE(Operator, Permute, 81, R"(<<<=.==^=)", {OpROTLSet, OpDot, OpEq, OpBitXorSet, Token()});
 TEST_CASE(Operator, Permute, 82, R"(>|=^^=~)", {OpGT, OpBitOrSet, OpLogicXorSet, OpBitNot, Token()});
-TEST_CASE(Operator, Permute, 83, R"(>>>><<..)", {OpGT, OpROTR, OpLShift, OpRange, Token()});
+TEST_CASE(Operator, Permute, 83, R"(>>>><<..)", {OpROTR, OpGT, OpLShift, OpRange, Token()});
 TEST_CASE(Operator, Permute, 84, R"(...=+==>)", {OpEllipsis, OpSet, OpPlusSet, OpArrow, Token()});
-TEST_CASE(Operator, Permute, 85, R"(&=---/)", {OpBitAndSet, OpMinus, OpDec, OpSlash, Token()});
+TEST_CASE(Operator, Permute, 85, R"(&=---/)", {OpBitAndSet, OpDec, OpMinus, OpSlash, Token()});
 TEST_CASE(Operator, Permute, 86, R"(+|++!)", {OpPlus, OpBitOr, OpInc, OpLogicNot, Token()});
 TEST_CASE(Operator, Permute, 87, R"(!&&=<<<=&&)", {OpLogicNot, OpLogicAndSet, OpROTLSet, OpLogicAnd, Token()});
-TEST_CASE(Operator, Permute, 88, R"(<=&&=<<<<<)", {OpLE, OpLogicAndSet, OpLShift, OpROTL, Token()});
+TEST_CASE(Operator, Permute, 88, R"(<=&&=<<<<<)", {OpLE, OpLogicAndSet, OpROTL, OpLShift, Token()});
 TEST_CASE(Operator, Permute, 89, R"(^--^^=>>)", {OpBitXor, OpDec, OpLogicXorSet, OpRShift, Token()});
 TEST_CASE(Operator, Permute, 90, R"(--^<=<<)", {OpDec, OpBitXor, OpLE, OpLShift, Token()});
 TEST_CASE(Operator, Permute, 91, R"(>>>=-=+=>>)", {OpROTRSet, OpMinusSet, OpPlusSet, OpRShift, Token()});
@@ -222,12 +224,12 @@ TEST_CASE(Operator, Permute, 94, R"(&/===^^=)", {OpBitAnd, OpSlashSet, OpEq, OpL
 TEST_CASE(Operator, Permute, 95, R"(>=>>=?>>>=)", {OpGE, OpRShiftSet, OpTernary, OpROTRSet, Token()});
 TEST_CASE(Operator, Permute, 96, R"(<||<<-)", {OpLT, OpLogicOr, OpLShift, OpMinus, Token()});
 TEST_CASE(Operator, Permute, 97, R"(+=^^<=/)", {OpPlusSet, OpLogicXor, OpLE, OpSlash, Token()});
-TEST_CASE(Operator, Permute, 98, R"(|=>&=~)", {OpBitOr, OpArrow, OpBitAndSet, OpBitNot, Token()});
+TEST_CASE(Operator, Permute, 98, R"(|=>&=~)", {OpBitOrSet, OpGT, OpBitAndSet, OpBitNot, Token()});
 TEST_CASE(Operator, Permute, 99, R"(>>||&&=%)", {OpRShift, OpLogicOr, OpLogicAndSet, OpPercent, Token()});
 TEST_CASE(Operator, Permute, 100, R"(>>>-=^^^^=)", {OpROTR, OpMinusSet, OpLogicXor, OpLogicXorSet, Token()});
 TEST_CASE(Operator, Permute, 101, R"(||=!/=>=)", {OpLogicOrSet, OpLogicNot, OpSlashSet, OpGE, Token()});
 TEST_CASE(Operator, Permute, 102, R"(||=>=?--)", {OpLogicOrSet, OpGE, OpTernary, OpDec, Token()});
-TEST_CASE(Operator, Permute, 103, R"(!&==>>>)", {OpLogicNot, OpBitAnd, OpEq, OpROTR, Token()});
+TEST_CASE(Operator, Permute, 103, R"(!&==>>>)", {OpLogicNot, OpBitAndSet, OpArrow, OpRShift, Token()});
 TEST_CASE(Operator, Permute, 104, R"(*&=<=<<<)", {OpTimes, OpBitAndSet, OpLE, OpROTL, Token()});
 TEST_CASE(Operator, Permute, 105, R"(%->>>=*=)", {OpPercent, OpMinus, OpROTRSet, OpTimesSet, Token()});
 TEST_CASE(Operator, Permute, 106, R"(>>|=%===)", {OpRShift, OpBitOrSet, OpPercentSet, OpEq, Token()});
@@ -244,18 +246,18 @@ TEST_CASE(Operator, Permute, 116, R"(>^=&==)", {OpGT, OpBitXorSet, OpBitAndSet, 
 TEST_CASE(Operator, Permute, 117, R"(-!&...)", {OpMinus, OpLogicNot, OpBitAnd, OpEllipsis, Token()});
 TEST_CASE(Operator, Permute, 118, R"(^^...|<<<=)", {OpLogicXor, OpEllipsis, OpBitOr, OpROTLSet, Token()});
 TEST_CASE(Operator, Permute, 119, R"(<>..&&)", {OpLT, OpGT, OpRange, OpLogicAnd, Token()});
-TEST_CASE(Operator, Permute, 120, R"(!=>>>=>>>=>)", {OpNE, OpROTRSet, OpROTR, OpArrow, Token()});
+TEST_CASE(Operator, Permute, 120, R"(!=>>>=>>>=>)", {OpNE, OpROTRSet, OpROTRSet, OpGT, Token()});
 TEST_CASE(Operator, Permute, 121, R"(&&<<^=>>=)", {OpLogicAnd, OpLShift, OpBitXorSet, OpRShiftSet, Token()});
 TEST_CASE(Operator, Permute, 122, R"(||&&||==>)", {OpLogicOr, OpLogicAnd, OpLogicOrSet, OpArrow, Token()});
 TEST_CASE(Operator, Permute, 123, R"(+>>>&|)", {OpPlus, OpROTR, OpBitAnd, OpBitOr, Token()});
-TEST_CASE(Operator, Permute, 124, R"(!=>..||)", {OpLogicNot, OpArrow, OpRange, OpLogicOr, Token()});
-TEST_CASE(Operator, Permute, 125, R"(||=>>>?)", {OpLogicOrSet, OpRShift, OpGT, OpTernary, Token()});
-TEST_CASE(Operator, Permute, 126, R"(&=>>-=>)", {OpBitAndSet, OpRShift, OpMinus, OpArrow, Token()});
+TEST_CASE(Operator, Permute, 124, R"(!=>..||)", {OpNE, OpGT, OpRange, OpLogicOr, Token()});
+TEST_CASE(Operator, Permute, 125, R"(||=>>>?)", {OpLogicOrSet, OpROTR, OpTernary, Token()});
+TEST_CASE(Operator, Permute, 126, R"(&=>>-=>)", {OpBitAndSet, OpRShift, OpMinusSet, OpGT, Token()});
 TEST_CASE(Operator, Permute, 127, R"(||=^^>=<<)", {OpLogicOrSet, OpLogicXor, OpGE, OpLShift, Token()});
 TEST_CASE(Operator, Permute, 128, R"(++<<<=>?)", {OpInc, OpROTLSet, OpGT, OpTernary, Token()});
 TEST_CASE(Operator, Permute, 129, R"(=&..%)", {OpSet, OpBitAnd, OpRange, OpPercent, Token()});
 TEST_CASE(Operator, Permute, 130, R"(<<^^--*)", {OpLShift, OpLogicXor, OpDec, OpTimes, Token()});
-TEST_CASE(Operator, Permute, 131, R"(~...>>>=>)", {OpBitNot, OpEllipsis, OpROTR, OpArrow, Token()});
+TEST_CASE(Operator, Permute, 131, R"(~...>>>=>)", {OpBitNot, OpEllipsis, OpROTRSet, OpGT, Token()});
 TEST_CASE(Operator, Permute, 132, R"(==<<<=|++)", {OpEq, OpROTLSet, OpBitOr, OpInc, Token()});
 TEST_CASE(Operator, Permute, 133, R"(>>>=>>=!/)", {OpROTRSet, OpRShiftSet, OpLogicNot, OpSlash, Token()});
 TEST_CASE(Operator, Permute, 134, R"(&&=|||=%=)", {OpLogicAndSet, OpBitOr, OpLogicOrSet, OpPercentSet, Token()});
