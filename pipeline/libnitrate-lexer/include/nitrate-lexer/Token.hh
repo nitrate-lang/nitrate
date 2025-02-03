@@ -286,6 +286,9 @@ namespace ncc::lex {
     constexpr TokenBase(double num, LocationID start = LocationID())
         : m_type(NumL), m_location_id(start), m_v{std::to_string(num)} {}
 
+    constexpr TokenBase(string identifier, LocationID start = LocationID())
+        : m_type(Name), m_location_id(start), m_v{identifier} {}
+
     constexpr TokenBase(uint64_t num, LocationID start = LocationID())
         : m_type(IntL), m_location_id(start), m_v{std::to_string(num)} {}
 
