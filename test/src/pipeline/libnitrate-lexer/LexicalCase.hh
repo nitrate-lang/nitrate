@@ -11,12 +11,8 @@
       ncc::lex::Tokenizer tokenizer(ss, env);                    \
       std::vector<ncc::lex::Token> expected = __VA_ARGS__;       \
       std::vector<ncc::lex::Token> actual;                       \
-      while (true) {                                             \
-        auto token = tokenizer.Next();                           \
+      while (auto token = tokenizer.Next()) {                    \
         actual.push_back(token);                                 \
-        if (token.GetKind() == ncc::lex::TokenType::EofF) {      \
-          break;                                                 \
-        }                                                        \
       }                                                          \
       EXPECT_EQ(expected, actual);                               \
     }                                                            \

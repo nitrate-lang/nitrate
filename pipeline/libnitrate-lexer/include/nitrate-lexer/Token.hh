@@ -360,6 +360,8 @@ namespace ncc::lex {
           return m_v.m_str < rhs.m_v.m_str;
       }
     }
+
+    constexpr operator bool() const { return m_type != EofF; }
   } __attribute__((packed));
 
   using Token = TokenBase;
