@@ -19,15 +19,15 @@ TEST_CASE(Identifier, ASCII, 8, " 123.6i32/1 ",
 
 ///============================================================================///
 /// UNICODE IDENTIFIERS
-TEST_CASE(Identifier, Unicode, 20, "🔥", {Token("🔥"), Token()});
-TEST_CASE(Identifier, Unicode, 21, "🔥🍉", {Token("🔥🍉"), Token()});
-TEST_CASE(Identifier, Unicode, 22, "🔥 🍉", {Token("🔥"), Token("🍉"), Token()});
-TEST_CASE(Identifier, Unicode, 23, "1🔥", {Token(1UL), Token("🔥"), Token()});
-TEST_CASE(Identifier, Unicode, 24, "🔥1", {Token("🔥1"), Token()});
-TEST_CASE(Identifier, Unicode, 25, "+שלום_עולם+", {Token(OpPlus), Token("שלום_עולם"), Token(OpPlus), Token()});
+TEST_CASE(Identifier, Unicode, 0, "🔥", {Token("🔥"), Token()});
+TEST_CASE(Identifier, Unicode, 1, "🔥🍉", {Token("🔥🍉"), Token()});
+TEST_CASE(Identifier, Unicode, 2, "🔥 🍉", {Token("🔥"), Token("🍉"), Token()});
+TEST_CASE(Identifier, Unicode, 3, "1🔥", {Token(1UL), Token("🔥"), Token()});
+TEST_CASE(Identifier, Unicode, 4, "🔥1", {Token("🔥1"), Token()});
+TEST_CASE(Identifier, Unicode, 5, "+שלום_עולם+", {Token(OpPlus), Token("שלום_עולם"), Token(OpPlus), Token()});
 
 ///============================================================================///
 /// MIXED IDENTIFIERS
-TEST_CASE(Identifier, Unicode, 50, "2a", {Token(2UL), Token("a"), Token()});
-TEST_CASE(Identifier, Unicode, 51, "a2", {Token("a2"), Token()});
-TEST_CASE(Identifier, Unicode, 52, "_2a", {Token("_2a"), Token()});
+TEST_CASE(Identifier, Mixed, 0, "2a", {Token(2UL), Token("a"), Token()});
+TEST_CASE(Identifier, Mixed, 1, "a2", {Token("a2"), Token()});
+TEST_CASE(Identifier, Mixed, 2, "_2a", {Token("_2a"), Token()});

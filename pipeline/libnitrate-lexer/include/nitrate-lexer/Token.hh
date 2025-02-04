@@ -174,7 +174,6 @@ namespace ncc::lex {
   };
 
   constexpr size_t kLexEof = UINT32_MAX;
-  constexpr size_t kLexNoFile = 16777215;
 
   class IScanner;
 
@@ -273,18 +272,17 @@ namespace ncc::lex {
     constexpr TokenBase(TokenType ty, T val, LocationID start = LocationID())
         : m_type(ty), m_location_id(start), m_v{val} {}
 
-    constexpr explicit TokenBase(TokenType ty, size_t str_len, const char *str_ptr, LocationID start = LocationID())
+    constexpr TokenBase(TokenType ty, size_t str_len, const char *str_ptr, LocationID start = LocationID())
         : m_type(ty), m_location_id(start), m_v{std::string_view(str_ptr, str_len)} {}
 
     constexpr TokenBase(Operator op, LocationID start = LocationID()) : m_type(Oper), m_location_id(start), m_v{op} {}
 
-    constexpr explicit TokenBase(Punctor punc, LocationID start = LocationID())
+    constexpr TokenBase(Punctor punc, LocationID start = LocationID())
         : m_type(Punc), m_location_id(start), m_v{punc} {}
 
-    constexpr explicit TokenBase(Keyword key, LocationID start = LocationID())
-        : m_type(KeyW), m_location_id(start), m_v{key} {}
+    constexpr TokenBase(Keyword key, LocationID start = LocationID()) : m_type(KeyW), m_location_id(start), m_v{key} {}
 
-    constexpr explicit TokenBase(uint64_t num, LocationID start = LocationID())
+    constexpr TokenBase(uint64_t num, LocationID start = LocationID())
         : m_type(IntL), m_location_id(start), m_v{std::to_string(num)} {}
 
     constexpr TokenBase(string identifier, LocationID start = LocationID())
