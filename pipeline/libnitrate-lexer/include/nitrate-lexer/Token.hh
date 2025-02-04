@@ -38,7 +38,6 @@
 #include <cstdint>
 #include <nitrate-core/Logger.hh>
 #include <nitrate-core/String.hh>
-#include <sstream>
 #include <type_traits>
 
 namespace ncc::lex {
@@ -284,13 +283,6 @@ namespace ncc::lex {
 
     constexpr explicit TokenBase(Keyword key, LocationID start = LocationID())
         : m_type(KeyW), m_location_id(start), m_v{key} {}
-
-    constexpr explicit TokenBase(double num, LocationID start = LocationID())
-        : m_type(NumL), m_location_id(start), m_v([](double num) {
-            std::ostringstream out;
-            out << std::fixed << num;
-            return out.str();
-          }(num)) {}
 
     constexpr explicit TokenBase(uint64_t num, LocationID start = LocationID())
         : m_type(IntL), m_location_id(start), m_v{std::to_string(num)} {}

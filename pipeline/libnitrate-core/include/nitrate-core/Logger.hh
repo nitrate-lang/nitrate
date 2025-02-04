@@ -143,7 +143,8 @@ namespace ncc {
     [[nodiscard]] auto GetIdentity() const -> ncc::ECUnique override { return ncc::ECUnique(); }    \
     [[nodiscard]] auto GetFormatter() const -> ncc::LogFormatterFunc override { return formatter; } \
     [[nodiscard]] auto GetDetailsPath() const -> std::optional<std::string_view> override {         \
-      std::string_view path = "" __VA_ARGS__;                                                       \
+      std::string_view path;                                                                        \
+      path = "" __VA_ARGS__;                                                                        \
       return path.empty() ? std::nullopt : std::make_optional(path);                                \
     }                                                                                               \
                                                                                                     \
