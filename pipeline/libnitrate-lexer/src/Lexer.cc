@@ -1098,13 +1098,25 @@ public:
   };
 
   auto ParseCommentMultiLine(LocationID start_pos) -> Token {
+    size_t depth = 1;
+
     while (true) {
       auto c = NextChar();
 
-      if (c == '*') {
-        if (NextCharIf('/')) {
+      /* Support for nested comments */
+      if (c == '/' && NextCharIf('*')) [[unlikely]] {
+        ++depth;
+        m_buf += "/*";
+        continue;
+      }
+
+      if (c == '*' && NextCharIf('/')) {
+        if (--depth == 0) {
           return {Note, string(std::move(m_buf)), start_pos};
         }
+
+        m_buf += "*/";
+        continue;
       }
 
       m_buf += c;
