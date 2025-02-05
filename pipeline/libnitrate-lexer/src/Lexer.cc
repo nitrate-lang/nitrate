@@ -63,13 +63,13 @@ using namespace ncc::lex::detail;
 static constexpr size_t kFloatingPointDigits = 128;
 static constexpr size_t kGetcBufferSize = 512;
 
-enum class NumberType : uint8_t {
-  Default,
-  DecimalExplicit,
-  Hexadecimal,
-  Binary,
-  Octal,
-  Floating,
+enum NumberKind : uint8_t {
+  DecNum,
+  ExpDec,
+  HexNum,
+  BinNum,
+  OctNum,
+  Double,
 };
 
 enum class LexState : uint8_t {
@@ -206,19 +206,19 @@ static constexpr auto kIdentifierCharTable = []() {
   return tab;
 }();
 
-static constexpr auto kNumberTypeMap = []() {
-  std::array<NumberType, std::numeric_limits<uint16_t>::max() + 1> map = {};
-  map.fill(NumberType::Default);
+static constexpr auto kNumberKindMap = []() {
+  std::array<NumberKind, std::numeric_limits<uint16_t>::max() + 1> map = {};
+  map.fill(DecNum);
 
   /* [0x, 0X, 0d, 0D, 0b, 0B, 0o, 0O] */
-  map['0' << 8 | 'x'] = NumberType::Hexadecimal;
-  map['0' << 8 | 'X'] = NumberType::Hexadecimal;
-  map['0' << 8 | 'd'] = NumberType::DecimalExplicit;
-  map['0' << 8 | 'D'] = NumberType::DecimalExplicit;
-  map['0' << 8 | 'b'] = NumberType::Binary;
-  map['0' << 8 | 'B'] = NumberType::Binary;
-  map['0' << 8 | 'o'] = NumberType::Octal;
-  map['0' << 8 | 'O'] = NumberType::Octal;
+  map['0' << 8 | 'x'] = HexNum;
+  map['0' << 8 | 'X'] = HexNum;
+  map['0' << 8 | 'd'] = ExpDec;
+  map['0' << 8 | 'D'] = ExpDec;
+  map['0' << 8 | 'b'] = BinNum;
+  map['0' << 8 | 'B'] = BinNum;
+  map['0' << 8 | 'o'] = OctNum;
+  map['0' << 8 | 'O'] = OctNum;
 
   return map;
 }();
@@ -236,6 +236,17 @@ static constexpr auto kHexDigitsTable = []() {
   }
 
   for (uint8_t c = 'A'; c <= 'F'; ++c) {
+    map[c] = true;
+  }
+
+  return map;
+}();
+
+static constexpr auto kOctalDigitsTable = []() {
+  std::array<bool, 256> map = {};
+  map.fill(false);
+
+  for (uint8_t c = '0'; c <= '7'; ++c) {
     map[c] = true;
   }
 
@@ -559,14 +570,14 @@ public:
     return true;
   }
 
-  auto CanonicalizeNumber(std::string &buf, NumberType type) const -> bool {
+  auto CanonicalizeNumber(std::string &buf, NumberKind type) const -> bool {
     std::transform(buf.begin(), buf.end(), buf.begin(), ::tolower);
     std::erase(buf, '_');
 
     boost::uint128_type x = 0;
 
     switch (type) {
-      case NumberType::Hexadecimal: {
+      case HexNum: {
         for (uint8_t i : buf) {
           if (((x >> 64) & 0xF000000000000000) != 0U) [[unlikely]] {
             Log << LiteralOutOfRange << LogSource() << "Hexadecimal literal '0x" << buf << "' is out of range";
@@ -588,7 +599,7 @@ public:
         break;
       }
 
-      case NumberType::Binary: {
+      case BinNum: {
         for (char i : buf) {
           if (((x >> 64) & 0x8000000000000000) != 0U) [[unlikely]] {
             Log << LiteralOutOfRange << LogSource() << "Binary literal '0b" << buf << "' is out of range";
@@ -609,7 +620,7 @@ public:
         break;
       }
 
-      case NumberType::Octal: {
+      case OctNum: {
         for (char i : buf) {
           if (((x >> 64) & 0xE000000000000000) != 0U) [[unlikely]] {
             Log << LiteralOutOfRange << LogSource() << "Octal literal '0o" << buf << "' is out of range";
@@ -629,7 +640,7 @@ public:
         break;
       }
 
-      case NumberType::DecimalExplicit: {
+      case ExpDec: {
         for (char i : buf) {
           if (i < '0' || i > '9') [[unlikely]] {
             Log << InvalidDecimalDigit << LogSource() << "Unexpected '" << i << "' in decimal literal '0d" << buf
@@ -651,7 +662,7 @@ public:
         break;
       }
 
-      case NumberType::Default: {
+      case DecNum: {
         for (char i : buf) {
           if (i < '0' || i > '9') [[unlikely]] {
             Log << InvalidDecimalDigit << LogSource() << "Unexpected '" << i << "' in decimal literal '" << buf << "'";
@@ -672,7 +683,7 @@ public:
         break;
       }
 
-      case NumberType::Floating: {
+      case Double: {
         __builtin_unreachable();
       }
     }
@@ -883,25 +894,90 @@ public:
     }
   }
 
-  void ParseIntegerUnwind(uint8_t c, std::string &buf) {
-    bool spinning = true;
-
+  void ParseIntegerUnwind(uint8_t c, NumberKind kind, std::string &buf) {
     std::vector<uint8_t> q;
 
-    while (!buf.empty() && spinning) {
-      switch (uint8_t ch = buf.back()) {
-        case '.':
-        case 'e':
-        case 'E': {
-          q.push_back(ch);
-          buf.pop_back();
-          break;
+    switch (kind) {
+      case DecNum:
+      case ExpDec: {
+        while (!buf.empty()) {
+          auto ch = buf.back();
+          if (!kDigitsTable[ch]) {
+            q.push_back(ch);
+            buf.pop_back();
+          } else {
+            break;
+          }
         }
 
-        default: {
-          spinning = false;
-          break;
+        break;
+      }
+
+      case HexNum: {
+        while (!buf.empty()) {
+          auto ch = buf.back();
+          if (!kHexDigitsTable[ch]) {
+            q.push_back(ch);
+            buf.pop_back();
+          } else {
+            break;
+          }
         }
+
+        break;
+      }
+
+      case BinNum: {
+        while (!buf.empty()) {
+          auto ch = buf.back();
+          if (ch != '0' && ch != '1') {
+            q.push_back(ch);
+            buf.pop_back();
+          } else {
+            break;
+          }
+        }
+
+        break;
+      }
+
+      case OctNum: {
+        while (!buf.empty()) {
+          auto ch = buf.back();
+          if (!kOctalDigitsTable[ch]) {
+            q.push_back(ch);
+            buf.pop_back();
+          } else {
+            break;
+          }
+        }
+
+        break;
+      }
+
+      case Double: {
+        while (!buf.empty()) {
+          bool do_break = false;
+          switch (auto ch = buf.back()) {
+            case '.':
+            case 'e':
+            case 'E': {
+              q.push_back(ch);
+              buf.pop_back();
+              break;
+            }
+
+            default: {
+              do_break = true;
+              break;
+            }
+          }
+
+          if (do_break) {
+            break;
+          }
+        }
+        break;
       }
     }
 
@@ -913,12 +989,12 @@ public:
   }
 
   auto ParseInteger(uint8_t c, LocationID start_pos) -> Token {
-    uint16_t prefix = static_cast<uint16_t>(c) << 8 | PeekChar();
-    auto kind = kNumberTypeMap[prefix];
+    const auto prefix = static_cast<uint16_t>(c) << 8 | PeekChar();
+    auto kind = kNumberKindMap[prefix];
     bool end_of_float = false;
     bool is_lexing = true;
 
-    if (kind != NumberType::Default) {
+    if (kind != DecNum) {
       NextChar();
       c = NextChar();
     }
@@ -941,10 +1017,10 @@ public:
       }
 
       switch (kind) {
-        case NumberType::Default: {
+        case DecNum: {
           if (c == '.') {
             m_buf += c;
-            kind = NumberType::Floating;
+            kind = Double;
             c = NextChar();
           } else {
             is_lexing = false;
@@ -953,7 +1029,7 @@ public:
           break;
         }
 
-        case NumberType::Floating: {
+        case Double: {
           if (end_of_float) {
             is_lexing = false;
             break;
@@ -983,14 +1059,13 @@ public:
       }
     } while (is_lexing);
 
-    ParseIntegerUnwind(c, m_buf);
+    ParseIntegerUnwind(c, kind, m_buf);
 
-    if (kind == NumberType::Default) {
-      kind = std::any_of(m_buf.begin(), m_buf.end(), [](auto c) { return c == 'e' || c == 'E'; }) ? NumberType::Floating
-                                                                                                  : NumberType::Default;
+    if (kind == DecNum) {
+      kind = std::any_of(m_buf.begin(), m_buf.end(), [](auto c) { return c == 'e' || c == 'E'; }) ? Double : DecNum;
     }
 
-    if (kind == NumberType::Floating) {
+    if (kind == Double) {
       if (CanonicalizeFloat(m_buf)) {
         return {NumL, string(std::move(m_buf)), start_pos};
       }
