@@ -52,15 +52,13 @@ namespace ncc {
     LibraryRCAutoClose(std::function<void()> inc, std::function<void()> dec)
         : m_inc(std::move(inc)), m_dec(std::move(dec)) {}
 
-    LibraryRCAutoClose(const LibraryRCAutoClose& o)
-        : m_inc(o.m_inc), m_dec(o.m_dec) {
+    LibraryRCAutoClose(const LibraryRCAutoClose& o) : m_inc(o.m_inc), m_dec(o.m_dec) {
       if (m_inc) {
         m_inc();
       }
     }
 
-    LibraryRCAutoClose(LibraryRCAutoClose&& o) noexcept
-        : m_inc(std::move(o.m_inc)), m_dec(std::move(o.m_dec)) {}
+    LibraryRCAutoClose(LibraryRCAutoClose&& o) noexcept : m_inc(std::move(o.m_inc)), m_dec(std::move(o.m_dec)) {}
 
     ~LibraryRCAutoClose() {
       if (m_dec) {
@@ -111,8 +109,7 @@ namespace ncc {
           std::string(
               "] ["
 
-#if defined(__x86_64__) || defined(__amd64__) || defined(__amd64) || \
-    defined(_M_X64) || defined(_M_AMD64)
+#if defined(__x86_64__) || defined(__amd64__) || defined(__amd64) || defined(_M_X64) || defined(_M_AMD64)
               "x86_64-"
 #elif defined(__i386__) || defined(__i386) || defined(_M_IX86)
               "x86-"

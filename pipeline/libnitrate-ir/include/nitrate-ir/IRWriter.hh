@@ -43,8 +43,7 @@
 #include <string_view>
 
 namespace ncc::ir {
-  using WriterSourceProvider =
-      std::optional<std::reference_wrapper<lex::IScanner>>;
+  using WriterSourceProvider = std::optional<std::reference_wrapper<lex::IScanner>>;
 
   class NCC_EXPORT IRWriter : public IRVisitor<void> {
     using InsertString = std::function<void(std::string_view)>;
@@ -71,11 +70,9 @@ namespace ncc::ir {
     void WriteSourceLocation(FlowPtr<Expr> n) const;
 
   public:
-    IRWriter(InsertString str_impl, InsertUInt64 uint_impl,
-             InsertDouble dbl_impl, InsertBool bool_impl, InsertNull null_impl,
-             BeginObject begin_obj_impl, EndObject end_obj_impl,
-             BeginArray begin_arr_impl, EndArray end_arr_impl,
-             WriterSourceProvider rd = std::nullopt)
+    IRWriter(InsertString str_impl, InsertUInt64 uint_impl, InsertDouble dbl_impl, InsertBool bool_impl,
+             InsertNull null_impl, BeginObject begin_obj_impl, EndObject end_obj_impl, BeginArray begin_arr_impl,
+             EndArray end_arr_impl, WriterSourceProvider rd = std::nullopt)
         : string(std::move(str_impl)),
           uint64(std::move(uint_impl)),
           dbl(std::move(dbl_impl)),

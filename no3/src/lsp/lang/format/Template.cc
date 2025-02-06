@@ -98,7 +98,7 @@ void CambrianFormatter::Visit(FlowPtr<TemplateType> n) {
     IterateExceptLast(
         n->GetArgs().begin(), n->GetArgs().end(),
         [&](auto arg, size_t) {
-          if (!std::isdigit(arg.first->at(0))) {
+          if (!std::isdigit(arg.first.at(0))) {
             m_line << arg.first << ": ";
           }
 

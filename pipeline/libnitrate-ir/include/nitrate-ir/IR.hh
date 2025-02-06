@@ -47,8 +47,7 @@ namespace ncc::parse {
 namespace ncc::ir {
   void NrWrite(IRModule *mod, NullableFlowPtr<Expr> node, std::ostream &out);
 
-  auto NrLower(ncc::parse::Base *base, const char *name,
-               bool diagnostics) -> std::unique_ptr<IRModule>;
+  auto NrLower(ncc::parse::Base *base, const char *name, bool diagnostics) -> std::unique_ptr<IRModule>;
 }  // namespace ncc::ir
 
 #endif  // __NITRATE_IR_IR_H__

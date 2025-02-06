@@ -43,13 +43,11 @@
 using namespace ncc;
 using namespace ncc::parse;
 
-NCC_EXPORT thread_local std::unique_ptr<ncc::IMemory> parse::MainAllocator =
-    std::make_unique<ncc::DynamicArena>();
+NCC_EXPORT thread_local std::unique_ptr<ncc::IMemory> parse::MainAllocator = std::make_unique<ncc::DynamicArena>();
 
 NCC_EXPORT ASTExtension parse::ExtensionDataStore;
 
-auto ASTExtension::Add(lex::LocationID begin,
-                       lex::LocationID end) -> ASTExtensionKey {
+auto ASTExtension::Add(lex::LocationID begin, lex::LocationID end) -> ASTExtensionKey {
   bool sync = EnableSync;
 
   if (sync) {
@@ -97,8 +95,7 @@ void ASTExtension::Set(ASTExtensionKey id, ASTExtensionPackage &&data) {
   }
 }
 
-NCC_EXPORT auto parse::operator<<(std::ostream &os, const ASTExtensionKey &idx)
-    -> std::ostream & {
+NCC_EXPORT auto parse::operator<<(std::ostream &os, const ASTExtensionKey &idx) -> std::ostream & {
   os << "${L:" << idx.Key() << "}";
   return os;
 }

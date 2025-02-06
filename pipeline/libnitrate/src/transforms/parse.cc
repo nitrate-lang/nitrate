@@ -252,9 +252,8 @@ class DeserializerAdapterLexer final : public ncc::lex::IScanner {
         return EofTok();
       }
 
-      if (!MsgpackReadUint(m_file, a) || !MsgpackReadUint(m_file, b) ||
-          !MsgpackReadUint(m_file, c) || !MsgpackReadUint(m_file, d))
-          [[unlikely]] {
+      if (!MsgpackReadUint(m_file, a) || !MsgpackReadUint(m_file, b) || !MsgpackReadUint(m_file, c) ||
+          !MsgpackReadUint(m_file, d)) [[unlikely]] {
         free(str);
         return EofTok();
       }
@@ -288,8 +287,7 @@ class DeserializerAdapterLexer final : public ncc::lex::IScanner {
   }
 
 public:
-  DeserializerAdapterLexer(std::istream &file,
-                           std::shared_ptr<ncc::Environment> env)
+  DeserializerAdapterLexer(std::istream &file, std::shared_ptr<ncc::Environment> env)
       : ncc::lex::IScanner(std::move(env)), m_file(file) {
     int ch = file.get();
 
@@ -345,8 +343,7 @@ public:
 
   ~DeserializerAdapterLexer() override = default;
 
-  auto GetSourceWindow(Point, Point, char = ' ')
-      -> std::optional<std::vector<std::string>> override {
+  auto GetSourceWindow(Point, Point, char = ' ') -> std::optional<std::vector<std::string>> override {
     return std::nullopt;
   }
 };

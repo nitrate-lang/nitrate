@@ -66,6 +66,4 @@ NCC_EXPORT void SeqLibrarySetup::Deinit() {
   Log << Debug << "Nitrate Sequencer Library deinitialized";
 }
 
-NCC_EXPORT auto SeqLibrarySetup::GetVersionId() -> std::string_view {
-  return __TARGET_VERSION;
-}
+NCC_EXPORT auto SeqLibrarySetup::GetVersionId() -> std::string_view { return __TARGET_VERSION; }

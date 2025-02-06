@@ -44,10 +44,8 @@ namespace codegen {
   auto ForCxx11(IRModule* module, std::ostream& err, std::ostream& out) -> bool;
   auto ForTs(IRModule* module, std::ostream& err, std::ostream& out) -> bool;
   auto ForRust(IRModule* module, std::ostream& err, std::ostream& out) -> bool;
-  auto ForPython(IRModule* module, std::ostream& err,
-                 std::ostream& out) -> bool;
-  auto ForCSharp(IRModule* module, std::ostream& err,
-                 std::ostream& out) -> bool;
+  auto ForPython(IRModule* module, std::ostream& err, std::ostream& out) -> bool;
+  auto ForCSharp(IRModule* module, std::ostream& err, std::ostream& out) -> bool;
 }  // namespace codegen
 
 #endif  // __NITRATE_TARGET_HH__

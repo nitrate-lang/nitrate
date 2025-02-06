@@ -41,7 +41,7 @@ void CambrianFormatter::Visit(FlowPtr<parse::Scope> n) {
 
   m_line << "scope ";
 
-  if (!n->GetName()->empty()) {
+  if (!n->GetName().empty()) {
     m_line << n->GetName();
   }
 
@@ -62,7 +62,7 @@ void CambrianFormatter::Visit(FlowPtr<Export> n) {
 
   m_line << n->GetVis();
 
-  if (!n->GetAbiName()->empty()) {
+  if (!n->GetAbiName().empty()) {
     m_line << " ";
     EscapeStringLiteral(n->GetAbiName());
   }

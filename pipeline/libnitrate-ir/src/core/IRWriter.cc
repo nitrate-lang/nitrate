@@ -41,12 +41,11 @@
 using namespace ncc::ir;
 using namespace ncc::ir;
 
-static const std::unordered_map<StorageClass, std::string_view>
-    STORAGE_CLASS_REPR = {
-        {StorageClass::LLVM_StackAlloa, "auto"},
-        {StorageClass::LLVM_Static, "static"},
-        {StorageClass::LLVM_ThreadLocal, "thread"},
-        {StorageClass::Managed, "managed"},
+static const std::unordered_map<StorageClass, std::string_view> STORAGE_CLASS_REPR = {
+    {StorageClass::LLVM_StackAlloa, "auto"},
+    {StorageClass::LLVM_Static, "static"},
+    {StorageClass::LLVM_ThreadLocal, "thread"},
+    {StorageClass::Managed, "managed"},
 };
 
 void IRWriter::WriteSourceLocation(FlowPtr<Expr> n) const {
@@ -409,8 +408,7 @@ void IRWriter::Visit(FlowPtr<StructTy> n) {
   string("fields");
   begin_arr(fields.size());
 
-  std::for_each(fields.begin(), fields.end(),
-                [&](auto &field) { field->Accept(*this); });
+  std::for_each(fields.begin(), fields.end(), [&](auto &field) { field->Accept(*this); });
 
   end_arr();
 
@@ -430,8 +428,7 @@ void IRWriter::Visit(FlowPtr<UnionTy> n) {
   string("fields");
   begin_arr(fields.size());
 
-  std::for_each(fields.begin(), fields.end(),
-                [&](auto &field) { field->Accept(*this); });
+  std::for_each(fields.begin(), fields.end(), [&](auto &field) { field->Accept(*this); });
 
   end_arr();
 
@@ -468,8 +465,7 @@ void IRWriter::Visit(FlowPtr<FnTy> n) {
   auto params = n->GetParams();
   begin_arr(params.size());
 
-  std::for_each(params.begin(), params.end(),
-                [&](auto &param) { param->Accept(*this); });
+  std::for_each(params.begin(), params.end(), [&](auto &param) { param->Accept(*this); });
 
   end_arr();
 
@@ -554,8 +550,7 @@ void IRWriter::Visit(FlowPtr<Call> n) {
   auto args = n->GetArgs();
   begin_arr(args.size());
 
-  std::for_each(args.begin(), args.end(),
-                [&](auto &arg) { arg->Accept(*this); });
+  std::for_each(args.begin(), args.end(), [&](auto &arg) { arg->Accept(*this); });
 
   end_arr();
 
@@ -860,8 +855,7 @@ void IRWriter::Visit(FlowPtr<Tmp> n) {
 
   string("data");
 
-  if (std::holds_alternative<GenericCallArgsTmpNodeCradle<void>>(
-          n->GetData())) {
+  if (std::holds_alternative<GenericCallArgsTmpNodeCradle<void>>(n->GetData())) {
     auto data = std::get<GenericCallArgsTmpNodeCradle<void>>(n->GetData());
 
     begin_obj(2);

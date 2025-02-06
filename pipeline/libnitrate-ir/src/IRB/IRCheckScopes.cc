@@ -40,8 +40,7 @@
 using namespace ncc::ir;
 
 auto NRBuilder::CheckScopes(FlowPtr<Seq>, IReport *d) -> bool {
-  d->Report(CompilerError, IC::Debug,
-            "NRBuilder::check_scopes() not implemented");
+  d->Report(CompilerError, IC::Debug, "NRBuilder::check_scopes() not implemented");
 
   /// TODO: Implement check
   return true;

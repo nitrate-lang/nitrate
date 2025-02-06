@@ -186,11 +186,11 @@ using namespace ncc::ir;
 //       bool is_cstring = false;
 //       std::string c_string;
 //       for (size_t i = 0; i < L->size(); i++) {
-//         if (!L->at(i)->is(IR_eINT)) {
+//         if (!L.at(i)->is(IR_eINT)) {
 //           break;
 //         }
 
-//         Int *C = L->at(i)->As<Int>();
+//         Int *C = L.at(i)->As<Int>();
 //         if (C->getSize() != 8) {
 //           break;
 //         }
@@ -620,8 +620,7 @@ using namespace ncc::ir;
 //   return true;
 // }
 
-NCC_EXPORT void ir::NrWrite(IRModule *mod, NullableFlowPtr<Expr> node,
-                            std::ostream &out) {
+NCC_EXPORT void ir::NrWrite(IRModule *mod, NullableFlowPtr<Expr> node, std::ostream &out) {
   // if (!mod && !_node) {
   //   return;
   // }
@@ -642,8 +641,7 @@ NCC_EXPORT void ir::NrWrite(IRModule *mod, NullableFlowPtr<Expr> node,
   (void)out;
 }
 
-NCC_EXPORT void ir::detail::NodeDumpImpl(const Expr *e, std::ostream &os,
-                                         bool is_for_debug) {
+NCC_EXPORT void ir::detail::NodeDumpImpl(const Expr *e, std::ostream &os, bool is_for_debug) {
   (void)e;
   (void)os;
   (void)is_for_debug;

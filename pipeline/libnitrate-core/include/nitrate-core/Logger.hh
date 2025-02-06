@@ -48,10 +48,10 @@
 
 namespace ncc {
   enum Sev : uint8_t {
-    Trace,  /* Low-value, high-volume debug info (malloc, free, ...)*/
-    Debug,  /* High-value, mid-volume debug info (init, major API calls, ...) */
-    Info,   /* Examples: upcoming feature notice, did you know about...? */
-    Notice, /* Examples: Bad design choice, suboptimal code, ... */
+    Trace,    /* Low-value, high-volume debug info (malloc, free, ...)*/
+    Debug,    /* High-value, mid-volume debug info (init, major API calls, ...) */
+    Info,     /* Examples: upcoming feature notice, did you know about...? */
+    Notice,   /* Examples: Bad design choice, suboptimal code, ... */
     Warning,  /* Example: Design likely to cause problems, horrible code, ... */
     Error,    /* Example: Missing semicolon after statement */
     Critical, /* Example: Arena opened with 4 KB capacity, but 8 KB requested */
@@ -65,8 +65,7 @@ namespace ncc {
     std::uint64_t m_ec;
 
   public:
-    explicit ECUnique(
-        std::source_location loc = std::source_location::current());
+    explicit ECUnique(std::source_location loc = std::source_location::current());
 
     [[nodiscard]] constexpr auto Get() const -> EC { return m_ec; };
   };
@@ -80,9 +79,8 @@ namespace ncc {
     std::string m_flagname, m_nice_name, m_details;
 
     bool operator==(const ECDetails &rhs) const {
-      return m_flagname == rhs.m_flagname && m_nice_name == rhs.m_nice_name &&
-             m_details == rhs.m_details && m_tags == rhs.m_tags &&
-             m_fixes == rhs.m_fixes && m_examples == rhs.m_examples &&
+      return m_flagname == rhs.m_flagname && m_nice_name == rhs.m_nice_name && m_details == rhs.m_details &&
+             m_tags == rhs.m_tags && m_fixes == rhs.m_fixes && m_examples == rhs.m_examples &&
              m_dev_notes == rhs.m_dev_notes && m_notes == rhs.m_notes;
     }
   };
@@ -95,10 +93,7 @@ namespace ncc {
   protected:
     [[nodiscard]] virtual auto GetIdentity() const -> ECUnique = 0;
 
-    [[nodiscard]] virtual auto GetDetailsPath() const
-        -> std::optional<std::string_view> {
-      return std::nullopt;
-    }
+    [[nodiscard]] virtual auto GetDetailsPath() const -> std::optional<std::string_view> { return std::nullopt; }
 
     [[nodiscard]] virtual auto GetFormatter() const -> LogFormatterFunc = 0;
     void GetJsonRepresentation(std::ostream &os) const;
@@ -108,85 +103,53 @@ namespace ncc {
     constexpr ECBase() = default;
     virtual ~ECBase() = default;
 
-    static auto ParseJsonECConfig(std::string_view json)
-        -> std::optional<ECDetails>;
+    static auto ParseJsonECConfig(std::string_view json) -> std::optional<ECDetails>;
 
     [[nodiscard]] constexpr auto GetKind() const -> EC { return m_ec; }
 
-    [[nodiscard]] constexpr auto AsJson() const {
-      return std::string_view(m_json);
-    }
-    [[nodiscard]] constexpr auto FlagName() const {
-      return std::string_view(m_details.m_flagname);
-    }
-    [[nodiscard]] constexpr auto NiceName() const {
-      return std::string_view(m_details.m_nice_name);
-    }
-    [[nodiscard]] constexpr auto Details() const {
-      return std::string_view(m_details.m_details);
-    }
-    [[nodiscard]] constexpr auto Tags() const {
-      return std::span(m_details.m_tags);
-    }
-    [[nodiscard]] constexpr auto Fixes() const {
-      return std::span(m_details.m_fixes);
-    }
-    [[nodiscard]] constexpr auto Examples() const {
-      return std::span(m_details.m_examples);
-    }
-    [[nodiscard]] constexpr auto DevNotes() const {
-      return std::span(m_details.m_dev_notes);
-    }
-    [[nodiscard]] constexpr auto UserNotes() const {
-      return std::span(m_details.m_notes);
-    }
+    [[nodiscard]] constexpr auto AsJson() const { return std::string_view(m_json); }
+    [[nodiscard]] constexpr auto FlagName() const { return std::string_view(m_details.m_flagname); }
+    [[nodiscard]] constexpr auto NiceName() const { return std::string_view(m_details.m_nice_name); }
+    [[nodiscard]] constexpr auto Details() const { return std::string_view(m_details.m_details); }
+    [[nodiscard]] constexpr auto Tags() const { return std::span(m_details.m_tags); }
+    [[nodiscard]] constexpr auto Fixes() const { return std::span(m_details.m_fixes); }
+    [[nodiscard]] constexpr auto Examples() const { return std::span(m_details.m_examples); }
+    [[nodiscard]] constexpr auto DevNotes() const { return std::span(m_details.m_dev_notes); }
+    [[nodiscard]] constexpr auto UserNotes() const { return std::span(m_details.m_notes); }
 
-    [[nodiscard]] auto Format(std::string_view msg, Sev sev) const {
-      return GetFormatter()(msg, sev);
-    }
+    [[nodiscard]] auto Format(std::string_view msg, Sev sev) const { return GetFormatter()(msg, sev); }
   };
 
-#define NCC_EC_GROUP(name)                                                \
-  class name : public ncc::ECBase {                                       \
-  protected:                                                              \
-    [[nodiscard]] auto GetIdentity() const -> ncc::ECUnique override = 0; \
-    [[nodiscard]] auto GetFormatter() const                               \
-        -> ncc::LogFormatterFunc override = 0;                            \
+#define NCC_EC_GROUP(name)                                                         \
+  class name : public ncc::ECBase {                                                \
+  protected:                                                                       \
+    [[nodiscard]] auto GetIdentity() const -> ncc::ECUnique override = 0;          \
+    [[nodiscard]] auto GetFormatter() const -> ncc::LogFormatterFunc override = 0; \
   };
 
-#define NCC_EC(group, name)                                            \
-  static inline class name##Class final : public group {               \
-  protected:                                                           \
-    [[nodiscard]] auto GetIdentity() const -> ncc::ECUnique override { \
-      return ncc::ECUnique();                                          \
-    }                                                                  \
-    [[nodiscard]] auto GetFormatter() const                            \
-        -> ncc::LogFormatterFunc override {                            \
-      return ncc::Formatter;                                           \
-    }                                                                  \
-                                                                       \
-  public:                                                              \
-    constexpr name##Class() { Finalize(); }                            \
+#define NCC_EC(group, name)                                                                              \
+  static inline class name##Class final : public group {                                                 \
+  protected:                                                                                             \
+    [[nodiscard]] auto GetIdentity() const -> ncc::ECUnique override { return ncc::ECUnique(); }         \
+    [[nodiscard]] auto GetFormatter() const -> ncc::LogFormatterFunc override { return ncc::Formatter; } \
+                                                                                                         \
+  public:                                                                                                \
+    constexpr name##Class() { Finalize(); }                                                              \
   } name;
 
-#define NCC_EC_EX(group, name, formatter, ...)                         \
-  static inline class name##Class final : public group {               \
-  protected:                                                           \
-    [[nodiscard]] auto GetIdentity() const -> ncc::ECUnique override { \
-      return ncc::ECUnique();                                          \
-    }                                                                  \
-    [[nodiscard]] auto GetFormatter() const                            \
-        -> ncc::LogFormatterFunc override {                            \
-      return formatter;                                                \
-    }                                                                  \
-    [[nodiscard]] auto GetDetailsPath() const                          \
-        -> std::optional<std::string_view> override {                  \
-      std::string_view path = "" __VA_ARGS__;                          \
-      return path.empty() ? std::nullopt : std::make_optional(path);   \
-    }                                                                  \
-                                                                       \
-  public:                                                              \
-    constexpr name##Class() { Finalize(); }                            \
+#define NCC_EC_EX(group, name, formatter, ...)                                                      \
+  static inline class name##Class final : public group {                                            \
+  protected:                                                                                        \
+    [[nodiscard]] auto GetIdentity() const -> ncc::ECUnique override { return ncc::ECUnique(); }    \
+    [[nodiscard]] auto GetFormatter() const -> ncc::LogFormatterFunc override { return formatter; } \
+    [[nodiscard]] auto GetDetailsPath() const -> std::optional<std::string_view> override {         \
+      std::string_view path;                                                                        \
+      path = "" __VA_ARGS__;                                                                        \
+      return path.empty() ? std::nullopt : std::make_optional(path);                                \
+    }                                                                                               \
+                                                                                                    \
+  public:                                                                                           \
+    constexpr name##Class() { Finalize(); }                                                         \
   } name;
 
   NCC_EC_GROUP(CoreEC);
@@ -194,8 +157,7 @@ namespace ncc {
 
   ///=========================================================================///
 
-  using LogCallback =
-      std::function<void(const std::string &, Sev, const ECBase &)>;
+  using LogCallback = std::function<void(const std::string &, Sev, const ECBase &)>;
 
   class LogStream final {
     std::stringstream m_ss;
@@ -227,9 +189,8 @@ namespace ncc {
 
   using LogFilterFunc = bool (*)(const std::string &, Sev, const ECBase &);
 
-#define NCC_EC_FILTER(__name, __msg, __sev, __ec)                \
-  static inline auto __name(const std::string &__msg, Sev __sev, \
-                            const ECBase &__ec) -> bool
+#define NCC_EC_FILTER(__name, __msg, __sev, __ec) \
+  static inline auto __name(const std::string &__msg, Sev __sev, const ECBase &__ec) -> bool
 
   NCC_EC_FILTER(TraceFilter, msg, sev, ec);
 
@@ -261,9 +222,7 @@ namespace ncc {
   };
 
   auto operator<<(LoggerContext log, const auto &value) -> LogStream {
-    LogStream stream([log](auto msg, auto sev, const auto &ec) {
-      log.Publish(msg, sev, ec);
-    });
+    LogStream stream([log](auto msg, auto sev, const auto &ec) { log.Publish(msg, sev, ec); });
 
     stream.Write(value);
 

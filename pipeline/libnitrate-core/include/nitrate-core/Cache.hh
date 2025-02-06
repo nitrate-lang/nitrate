@@ -141,15 +141,9 @@ namespace ncc {
   template <typename Value>
   class MockArtifactCache final : public IResourceCache<Value> {
   public:
-    [[nodiscard]] auto Has(const ResourceKey &) const -> bool override {
-      return false;
-    }
-    auto Read(const ResourceKey &, Value &) const -> bool override {
-      return false;
-    }
-    auto Write(const ResourceKey &, const Value &) -> bool override {
-      return false;
-    }
+    [[nodiscard]] auto Has(const ResourceKey &) const -> bool override { return false; }
+    auto Read(const ResourceKey &, Value &) const -> bool override { return false; }
+    auto Write(const ResourceKey &, const Value &) -> bool override { return false; }
   };
 
   using TheCache = ExternalResourceCache<std::string>;

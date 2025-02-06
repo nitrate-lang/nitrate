@@ -73,6 +73,4 @@ NCC_EXPORT void ParseLibrarySetup::Deinit() {
   Log << Debug << "Nitrate Parser Library Deinitialized";
 }
 
-NCC_EXPORT auto ParseLibrarySetup::GetVersionId() -> std::string_view {
-  return __TARGET_VERSION;
-}
+NCC_EXPORT auto ParseLibrarySetup::GetVersionId() -> std::string_view { return __TARGET_VERSION; }

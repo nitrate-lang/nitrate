@@ -56,12 +56,8 @@
 
 using namespace ncc;
 
-static const std::unordered_map<std::string_view, nit::TransformFunc>
-    DISPATCH_FUNCS = {{"echo", nit::echo},
-                      {"lex", nit::lex},
-                      {"seq", nit::seq},
-                      {"parse", nit::parse},
-                      {"ir", nit::nr}};
+static const std::unordered_map<std::string_view, nit::TransformFunc> DISPATCH_FUNCS = {
+    {"echo", nit::echo}, {"lex", nit::lex}, {"seq", nit::seq}, {"parse", nit::parse}, {"ir", nit::nr}};
 
 ///============================================================================///
 
@@ -82,8 +78,7 @@ public:
   [[nodiscard]] auto IsInitialized() const -> bool { return m_ok; }
 };
 
-static auto ParseOptions(const char *const *options)
-    -> std::optional<std::vector<std::string>> {
+static auto ParseOptions(const char *const *options) -> std::optional<std::vector<std::string>> {
   constexpr size_t kMaxOptions = 100000;
 
   if (options == nullptr) {
@@ -104,9 +99,8 @@ static auto ParseOptions(const char *const *options)
   return opts;
 }
 
-static auto NitDispatchRequest(
-    std::istream &in, std::ostream &out, const char *transform, let opts_set,
-    const std::shared_ptr<ncc::Environment> &env) -> bool {
+static auto NitDispatchRequest(std::istream &in, std::ostream &out, const char *transform, let opts_set,
+                               const std::shared_ptr<ncc::Environment> &env) -> bool {
   if (!DISPATCH_FUNCS.contains(transform)) {
     Log << "Unknown transform name in options: " << transform;
     return false;
@@ -120,8 +114,7 @@ static auto NitDispatchRequest(
   return is_success;
 }
 
-static auto NitPipelineStream(std::istream &in, std::ostream &out,
-                              nitrate::DiagnosticFunc diag_cb,
+static auto NitPipelineStream(std::istream &in, std::ostream &out, nitrate::DiagnosticFunc diag_cb,
                               const char *const *const c_options) -> bool {
   errno = 0;
 
@@ -139,9 +132,7 @@ static auto NitPipelineStream(std::istream &in, std::ostream &out,
   /* Setup thread-local shared environment                                   */
   /***************************************************************************/
 
-  auto subid = ncc::Log.Subscribe([&](auto msg, auto sev, const auto &ec) {
-    diag_cb(ec.Format(msg, sev));
-  });
+  auto subid = ncc::Log.Subscribe([&](auto msg, auto sev, const auto &ec) { diag_cb(ec.Format(msg, sev)); });
 
   auto env = std::make_shared<ncc::Environment>();
 
@@ -165,11 +156,9 @@ static auto NitPipelineStream(std::istream &in, std::ostream &out,
   return status;
 }
 
-NCC_EXPORT auto nitrate::Pipeline(
-    std::istream &in, std::ostream &out, std::vector<std::string> options,
-    std::optional<DiagnosticFunc> diag) -> nitrate::LazyResult<bool> {
-  return {[&in, &out, options = std::move(options),
-           diag_func = std::move(diag)]() -> bool {
+NCC_EXPORT auto nitrate::Pipeline(std::istream &in, std::ostream &out, std::vector<std::string> options,
+                                  std::optional<DiagnosticFunc> diag) -> nitrate::LazyResult<bool> {
+  return {[&in, &out, options = std::move(options), diag_func = std::move(diag)]() -> bool {
     /* Convert options to C strings */
     std::vector<const char *> options_c_str(options.size() + 1);
     for (size_t i = 0; i < options.size(); i++) {
@@ -177,18 +166,13 @@ NCC_EXPORT auto nitrate::Pipeline(
     }
     options_c_str[options.size()] = nullptr;
 
-    return NitPipelineStream(in, out,
-                             diag_func.value_or([](std::string_view) {}),
-                             options_c_str.data());
+    return NitPipelineStream(in, out, diag_func.value_or([](std::string_view) {}), options_c_str.data());
   }};
 }
 
-NCC_EXPORT auto nitrate::Chain(std::istream &in, std::ostream &out,
-                               ChainOptions operations,
-                               std::optional<DiagnosticFunc> diag,
-                               bool) -> nitrate::LazyResult<bool> {
-  return {[&in, &out, operations = std::move(operations),
-           diag_func = std::move(diag)]() -> bool {
+NCC_EXPORT auto nitrate::Chain(std::istream &in, std::ostream &out, ChainOptions operations,
+                               std::optional<DiagnosticFunc> diag, bool) -> nitrate::LazyResult<bool> {
+  return {[&in, &out, operations = std::move(operations), diag_func = std::move(diag)]() -> bool {
     if (operations.empty()) {
       return true;
     }
@@ -219,8 +203,7 @@ NCC_EXPORT auto nitrate::Chain(std::istream &in, std::ostream &out,
 
 ///============================================================================///
 
-extern "C" NCC_EXPORT auto NitPipeline(FILE *in, FILE *out, NitDiagFunc diag_cb,
-                                       void *opaque,
+extern "C" NCC_EXPORT auto NitPipeline(FILE *in, FILE *out, NitDiagFunc diag_cb, void *opaque,
                                        const char *const c_options[]) -> bool {
   class FileStreamBuf : public std::streambuf {
     FILE *m_file;
@@ -247,8 +230,7 @@ extern "C" NCC_EXPORT auto NitPipeline(FILE *in, FILE *out, NitDiagFunc diag_cb,
       return ch;
     }
 
-    auto xsputn(const char *s,
-                std::streamsize count) -> std::streamsize override {
+    auto xsputn(const char *s, std::streamsize count) -> std::streamsize override {
       std::streamsize written = 0;
       while (written < count) {
         size_t n = fwrite(s + written, 1, count - written, m_file);
@@ -310,7 +292,5 @@ extern "C" NCC_EXPORT auto NitPipeline(FILE *in, FILE *out, NitDiagFunc diag_cb,
   std::istream in_stream(&in_buf);
   std::ostream out_stream(&out_buf);
 
-  return NitPipelineStream(
-      in_stream, out_stream,
-      [=](std::string_view v) { diag_cb(v.data(), opaque); }, c_options);
+  return NitPipelineStream(in_stream, out_stream, [=](std::string_view v) { diag_cb(v.data(), opaque); }, c_options);
 }

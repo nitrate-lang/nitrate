@@ -87,9 +87,7 @@ namespace ncc::ir {
     static constexpr auto GetKindName(nr_ty_t type) -> const char *;
 
     [[nodiscard]] constexpr auto GetKind() const { return m_node_type; }
-    [[nodiscard]] constexpr auto GetKindName() const -> const char * {
-      return GetKindName(m_node_type);
-    }
+    [[nodiscard]] constexpr auto GetKindName() const -> const char * { return GetKindName(m_node_type); }
 
     template <typename T>
     static constexpr auto GetTypeCode() -> nr_ty_t {
@@ -186,9 +184,7 @@ namespace ncc::ir {
       } else if constexpr (std::is_same_v<T, GenericTmp<A>>) {
         return IR_tTMP;
       } else {
-        static_assert(
-            !std::is_same_v<T, T>,
-            "The requested type target is not supported by this function.");
+        static_assert(!std::is_same_v<T, T>, "The requested type target is not supported by this function.");
       }
     }
 
@@ -230,14 +226,10 @@ namespace ncc::ir {
 
     [[nodiscard]] constexpr auto GetName() const -> std::string_view;
 
-    [[nodiscard]] constexpr auto Begin() const {
-      return parse::ExtensionDataStore.Get(m_loc).Begin();
-    }
+    [[nodiscard]] constexpr auto Begin() const { return parse::ExtensionDataStore.Get(m_loc).Begin(); }
     constexpr auto Begin(lex::IScanner &rd) const { return Begin().Get(rd); }
 
-    [[nodiscard]] constexpr auto End() const {
-      return parse::ExtensionDataStore.Get(m_loc).End();
-    }
+    [[nodiscard]] constexpr auto End() const { return parse::ExtensionDataStore.Get(m_loc).End(); }
     constexpr auto End(lex::IScanner &rd) const { return End().Get(rd); }
 
     [[nodiscard]] constexpr auto GetLoc() const { return m_loc; }
@@ -247,9 +239,7 @@ namespace ncc::ir {
       m_loc = parse::ExtensionDataStore.Add(begin, end);
     }
 
-    auto GetType() -> std::optional<FlowPtr<Type>> {
-      return detail::ExprGetType(reinterpret_cast<Expr *>(this));
-    }
+    auto GetType() -> std::optional<FlowPtr<Type>> { return detail::ExprGetType(reinterpret_cast<Expr *>(this)); }
 
     template <typename T>
     static constexpr auto SafeCastAs(GenericExpr<A> *ptr) -> T * {
@@ -260,13 +250,11 @@ namespace ncc::ir {
 #ifndef NDEBUG
       if constexpr (std::is_same_v<GenericType<A>, T>) {
         if (!ptr->IsType()) [[unlikely]] {
-          qcore_panicf("Invalid cast from non-type %s to type",
-                       ptr->GetKindName());
+          qcore_panicf("Invalid cast from non-type %s to type", ptr->GetKindName());
         }
       } else if constexpr (!std::is_same_v<GenericExpr<A>, T>) {
         if (GetTypeCode<T>() != ptr->GetKind()) [[unlikely]] {
-          qcore_panicf("Invalid cast from %s to %s", ptr->GetKindName(),
-                       GetKindName(GetTypeCode<T>()));
+          qcore_panicf("Invalid cast from %s to %s", ptr->GetKindName(), GetKindName(GetTypeCode<T>()));
         }
       }
 #endif
@@ -286,8 +274,7 @@ namespace ncc::ir {
 
     template <class T = GenericExpr<A>>
     constexpr auto Clone() -> T * {
-      return detail::ExprGetCloneImpl(reinterpret_cast<Expr *>(this))
-          ->template As<T>();
+      return detail::ExprGetCloneImpl(reinterpret_cast<Expr *>(this))->template As<T>();
     }
 
     constexpr auto AsExpr() -> GenericExpr * { return this; }
@@ -296,20 +283,14 @@ namespace ncc::ir {
       return const_cast<GenericExpr<A> *>(this)->AsType();
     }
 
-    [[nodiscard]] constexpr bool Is(nr_ty_t type) const {
-      return type == GetKind();
-    }
+    [[nodiscard]] constexpr bool Is(nr_ty_t type) const { return type == GetKind(); }
 
-    [[nodiscard]] constexpr auto IsEq(const GenericExpr<A> *other) const
-        -> bool;
+    [[nodiscard]] constexpr auto IsEq(const GenericExpr<A> *other) const -> bool;
 
-    constexpr void Accept(IRVisitor<A> &v) {
-      v.template Dispatch(MakeFlowPtr(this));
-    }
+    constexpr void Accept(IRVisitor<A> &v) { v.template Dispatch(MakeFlowPtr(this)); }
 
     void Dump(std::ostream &os = std::cout, bool is_for_debug = false) const {
-      detail::NodeDumpImpl(reinterpret_cast<const Expr *>(this), os,
-                           is_for_debug);
+      detail::NodeDumpImpl(reinterpret_cast<const Expr *>(this), os, is_for_debug);
     }
 
     [[nodiscard]] auto ToString() const -> std::string {
@@ -319,8 +300,7 @@ namespace ncc::ir {
     };
   } __attribute__((packed)) __attribute__((aligned(1)));
 
-  static_assert(sizeof(GenericExpr<void>) == 8,
-                "GenericExpr<void> is not 8 bytes in size.");
+  static_assert(sizeof(GenericExpr<void>) == 8, "GenericExpr<void> is not 8 bytes in size.");
 
   template <class A>
   class GenericType : public GenericExpr<A> {
@@ -377,18 +357,10 @@ namespace ncc::ir {
       }
     }
 
-    [[nodiscard]] constexpr auto IsArray() const -> bool {
-      return this->GetKind() == IR_tARRAY;
-    }
-    [[nodiscard]] constexpr auto IsPointer() const -> bool {
-      return this->GetKind() == IR_tPTR;
-    }
-    [[nodiscard]] constexpr auto IsReadonly() const -> bool {
-      return this->GetKind() == IR_tCONST;
-    }
-    [[nodiscard]] constexpr auto IsFunction() const -> bool {
-      return this->GetKind() == IR_tFUNC;
-    }
+    [[nodiscard]] constexpr auto IsArray() const -> bool { return this->GetKind() == IR_tARRAY; }
+    [[nodiscard]] constexpr auto IsPointer() const -> bool { return this->GetKind() == IR_tPTR; }
+    [[nodiscard]] constexpr auto IsReadonly() const -> bool { return this->GetKind() == IR_tCONST; }
+    [[nodiscard]] constexpr auto IsFunction() const -> bool { return this->GetKind() == IR_tFUNC; }
 
     [[nodiscard]] constexpr auto IsComposite() const -> bool {
       switch (this->GetKind()) {
@@ -401,9 +373,7 @@ namespace ncc::ir {
       }
     }
 
-    [[nodiscard]] constexpr auto IsUnion() const -> bool {
-      return this->GetKind() == IR_tUNION;
-    }
+    [[nodiscard]] constexpr auto IsUnion() const -> bool { return this->GetKind() == IR_tUNION; }
 
     [[nodiscard]] constexpr auto IsNumeric() const -> bool {
       switch (this->GetKind()) {
@@ -490,20 +460,15 @@ namespace ncc::ir {
       }
     }
 
-    [[nodiscard]] constexpr auto IsVoid() const -> bool {
-      return this->GetKind() == IR_tVOID;
-    }
-    [[nodiscard]] constexpr auto IsBool() const -> bool {
-      return this->GetKind() == IR_tU1;
-    }
+    [[nodiscard]] constexpr auto IsVoid() const -> bool { return this->GetKind() == IR_tVOID; }
+    [[nodiscard]] constexpr auto IsBool() const -> bool { return this->GetKind() == IR_tU1; }
   };
 
   template <class A>
   constexpr auto GenericExpr<A>::AsType() -> GenericType<A> * {
 #ifndef NDEBUG
     if (!IsType()) {
-      qcore_panicf("Failed to cast a non-type node `%s` to a type node",
-                   GetKindName());
+      qcore_panicf("Failed to cast a non-type node `%s` to a type node", GetKindName());
     }
 #endif
     return static_cast<GenericType<A> *>(this);
@@ -826,8 +791,7 @@ namespace ncc::ir {
   }
 
   template <class A>
-  constexpr auto GenericExpr<A>::IsEq(const GenericExpr<A> *other) const
-      -> bool {
+  constexpr auto GenericExpr<A>::IsEq(const GenericExpr<A> *other) const -> bool {
     nr_ty_t kind = GetKind();
 
     if (kind != other->GetKind()) {

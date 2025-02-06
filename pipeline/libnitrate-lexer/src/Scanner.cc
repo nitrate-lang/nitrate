@@ -146,7 +146,7 @@ auto IScanner::GetLocation(LocationID id) -> Location {
     return m_location_interned[id.GetId()];
   }
 
-  return GetLocationFallback(id.GetId()).value_or(Location::EndOfFile());
+  return GetLocationFallback(LocationID(id.GetId())).value_or(Location::EndOfFile());
 }
 
 auto IScanner::SkipCommentsState(bool skip) -> bool {
@@ -155,6 +155,4 @@ auto IScanner::SkipCommentsState(bool skip) -> bool {
   return old;
 }
 
-auto IScanner::GetEnvironment() const -> std::shared_ptr<Environment> {
-  return m_env;
-}
+auto IScanner::GetEnvironment() const -> std::shared_ptr<Environment> { return m_env; }

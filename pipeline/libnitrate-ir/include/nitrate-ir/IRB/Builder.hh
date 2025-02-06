@@ -93,26 +93,21 @@ namespace ncc::ir {
     FlowPtr<Seq> m_root;
 
     std::unordered_map<std::string_view, FlowPtr<Type>> m_named_types;
-    std::unordered_map<std::string_view,
-                       std::unordered_map<std::string_view, FlowPtr<Expr>>>
-        m_named_constant_group;
+    std::unordered_map<std::string_view, std::unordered_map<std::string_view, FlowPtr<Expr>>> m_named_constant_group;
     std::unordered_map<std::string_view, Function *> m_functions;
-    std::unordered_map<Function *, std::unordered_map<size_t, FlowPtr<Expr>>>
-        m_function_defaults;
+    std::unordered_map<Function *, std::unordered_map<size_t, FlowPtr<Expr>>> m_function_defaults;
     std::unordered_map<std::string_view, Local *> m_variables;
 
     std::optional<std::unordered_set<Function *>> m_duplicate_functions;
     std::optional<std::unordered_set<Local *>> m_duplicate_variables;
     std::optional<std::unordered_set<std::string_view>> m_duplicate_named_types;
-    std::optional<std::unordered_set<std::string_view>>
-        m_duplicate_named_constants;
+    std::optional<std::unordered_set<std::string_view>> m_duplicate_named_constants;
 
     ///**************************************************************************///
     // Builder helper methods
     ///**************************************************************************///
 
-    auto ResolveName(std::string_view name, Kind kind)
-        -> std::optional<std::pair<FlowPtr<Expr>, std::string_view>>;
+    auto ResolveName(std::string_view name, Kind kind) -> std::optional<std::pair<FlowPtr<Expr>, std::string_view>>;
 
     void TryTransformAlpha(FlowPtr<Expr> root);
     void TryTransformBeta(FlowPtr<Expr> root);
@@ -138,21 +133,17 @@ namespace ncc::ir {
 
     void contract_enforce_(
         bool cond, std::string_view cond_str,
-        std::experimental::source_location caller =
-            std::experimental::source_location::current()) const;
+        std::experimental::source_location caller = std::experimental::source_location::current()) const;
 #define contract_enforce(cond) contract_enforce_(cond, #cond)
 #else
-#define SOURCE_LOCATION_PARAM                        \
-  , std::experimental::source_location caller_info = \
-        std::experimental::source_location::current()
-#define SOURCE_LOCATION_PARAM_ONCE                 \
-  std::experimental::source_location caller_info = \
-      std::experimental::source_location::current()
+#define SOURCE_LOCATION_PARAM \
+  , std::experimental::source_location caller_info = std::experimental::source_location::current()
+#define SOURCE_LOCATION_PARAM_ONCE \
+  std::experimental::source_location caller_info = std::experimental::source_location::current()
 
     void ContractEnforce(
         bool cond, std::string_view cond_str SOURCE_LOCATION_PARAM,
-        std::experimental::source_location caller =
-            std::experimental::source_location::current()) const;
+        std::experimental::source_location caller = std::experimental::source_location::current()) const;
 #define contract_enforce(cond) contract_enforce_(cond, #cond, caller_info)
 
 #endif
@@ -163,8 +154,7 @@ namespace ncc::ir {
     NRBuilder(const NRBuilder &) = delete;
     auto operator=(const NRBuilder &) -> NRBuilder & = delete;
 
-    NRBuilder(std::string module_name,
-              TargetInfo target_info SOURCE_LOCATION_PARAM);
+    NRBuilder(std::string module_name, TargetInfo target_info SOURCE_LOCATION_PARAM);
     ~NRBuilder();
 
     /* Moving the module is permitted */
@@ -233,73 +223,60 @@ namespace ncc::ir {
     ///**************************************************************************///
     // Create linkable symbols
 
-    using FnParam = std::tuple<std::string_view, FlowPtr<Type>,
-                               std::optional<FlowPtr<Expr>>>;
+    using FnParam = std::tuple<std::string_view, FlowPtr<Type>, std::optional<FlowPtr<Expr>>>;
 
-    auto CreateFunctionDefintion(
-        std::string_view name, std::span<FnParam> params, FlowPtr<Type> ret_ty,
-        bool is_variadic = false, Vis visibility = Vis::Sec,
-        Purity purity = Purity::Impure, bool thread_safe = false,
-        bool foreign = true SOURCE_LOCATION_PARAM) -> Function *;
+    auto CreateFunctionDefintion(std::string_view name, std::span<FnParam> params, FlowPtr<Type> ret_ty,
+                                 bool is_variadic = false, Vis visibility = Vis::Sec, Purity purity = Purity::Impure,
+                                 bool thread_safe = false, bool foreign = true SOURCE_LOCATION_PARAM) -> Function *;
 
-    auto CreateFunctionDeclaration(
-        std::string_view name, std::span<FnParam> params, FlowPtr<Type> ret_ty,
-        bool is_variadic = false, Vis visibility = Vis::Sec,
-        Purity purity = Purity::Impure, bool thread_safe = false,
-        bool foreign = true SOURCE_LOCATION_PARAM) -> Function *;
+    auto CreateFunctionDeclaration(std::string_view name, std::span<FnParam> params, FlowPtr<Type> ret_ty,
+                                   bool is_variadic = false, Vis visibility = Vis::Sec, Purity purity = Purity::Impure,
+                                   bool thread_safe = false, bool foreign = true SOURCE_LOCATION_PARAM) -> Function *;
 
     /* This is the only intended way to overload operaters */
-    auto CreateOperatorOverload(
-        lex::Operator op, std::span<FlowPtr<Type>> params, FlowPtr<Type> ret_ty,
-        Purity purity = Purity::Impure,
-        bool thread_safe = false SOURCE_LOCATION_PARAM) -> Function *;
+    auto CreateOperatorOverload(lex::Operator op, std::span<FlowPtr<Type>> params, FlowPtr<Type> ret_ty,
+                                Purity purity = Purity::Impure,
+                                bool thread_safe = false SOURCE_LOCATION_PARAM) -> Function *;
 
     /* Works for both local and global variables FlowPtr<Type> */
-    auto CreateVariable(
-        std::string_view name, FlowPtr<Type> ty, Vis visibility = Vis::Sec,
-        StorageClass storage = StorageClass::LLVM_StackAlloa,
-        bool is_readonly = false SOURCE_LOCATION_PARAM) -> Local *;
+    auto CreateVariable(std::string_view name, FlowPtr<Type> ty, Vis visibility = Vis::Sec,
+                        StorageClass storage = StorageClass::LLVM_StackAlloa,
+                        bool is_readonly = false SOURCE_LOCATION_PARAM) -> Local *;
 
     ///**************************************************************************///
     // Create expressions
 
-    auto CreateCall(FlowPtr<Expr> target,
-                    std::span<std::pair<std::string_view, FlowPtr<Expr>>>
-                        arguments SOURCE_LOCATION_PARAM) -> FlowPtr<Expr>;
+    auto CreateCall(FlowPtr<Expr> target, std::span<std::pair<std::string_view, FlowPtr<Expr>>> arguments
+                                              SOURCE_LOCATION_PARAM) -> FlowPtr<Expr>;
 
     auto CreateMethodCall(FlowPtr<Expr> object, std::string_view name,
-                          std::span<std::pair<std::string_view, FlowPtr<Expr>>>
-                              arguments SOURCE_LOCATION_PARAM) -> FlowPtr<Expr>;
+                          std::span<std::pair<std::string_view, FlowPtr<Expr>>> arguments SOURCE_LOCATION_PARAM)
+        -> FlowPtr<Expr>;
 
     ///**************************************************************************///
     // Create literals
 
     auto CreateBool(bool value SOURCE_LOCATION_PARAM) -> Int *;
 
-    auto CreateFixedInteger(boost::multiprecision::cpp_int value,
-                            uint8_t width SOURCE_LOCATION_PARAM) -> Int *;
+    auto CreateFixedInteger(boost::multiprecision::cpp_int value, uint8_t width SOURCE_LOCATION_PARAM) -> Int *;
 
-    auto CreateFixedFloat(bigfloat_t value,
-                          uint8_t width SOURCE_LOCATION_PARAM) -> Float *;
+    auto CreateFixedFloat(bigfloat_t value, uint8_t width SOURCE_LOCATION_PARAM) -> Float *;
 
     auto CreateStringDataArray(std::string_view value,
-                               ABIStringStyle style = ABIStringStyle::CStr
-                                   SOURCE_LOCATION_PARAM) -> List *;
+                               ABIStringStyle style = ABIStringStyle::CStr SOURCE_LOCATION_PARAM) -> List *;
 
-    auto CreateList(
-        std::span<FlowPtr<Expr>> items,
+    auto CreateList(std::span<FlowPtr<Expr>> items,
 
-        /* Require assert(typeof(result)==typeof(array<result.element,
-         * result.size>)) ? Reason: It has to do with type inference and
-         * implicit conversions of the elements in the list.
-         */
-        bool cast_homogenous SOURCE_LOCATION_PARAM) -> List *;
+                    /* Require assert(typeof(result)==typeof(array<result.element,
+                     * result.size>)) ? Reason: It has to do with type inference and
+                     * implicit conversions of the elements in the list.
+                     */
+                    bool cast_homogenous SOURCE_LOCATION_PARAM) -> List *;
 
     ///**************************************************************************///
     // Create values
 
-    auto GetDefaultValue(FlowPtr<Type> src_loc SOURCE_LOCATION_PARAM)
-        -> std::optional<FlowPtr<Expr>>;
+    auto GetDefaultValue(FlowPtr<Type> src_loc SOURCE_LOCATION_PARAM) -> std::optional<FlowPtr<Expr>>;
 
     ///**************************************************************************///
     // Create types
@@ -324,38 +301,29 @@ namespace ncc::ir {
     /* Type inference unknowns; Converted to proper type upon resolution */
     auto GetUnknownTy(SOURCE_LOCATION_PARAM_ONCE) -> OpaqueTy *;
 
-    auto GetUnknownNamedTy(std::string_view name SOURCE_LOCATION_PARAM)
-        -> FlowPtr<Type>;
+    auto GetUnknownNamedTy(std::string_view name SOURCE_LOCATION_PARAM) -> FlowPtr<Type>;
 
     auto GetPtrTy(FlowPtr<Type> pointee SOURCE_LOCATION_PARAM) -> PtrTy *;
 
     auto GetOpaqueTy(std::string_view name SOURCE_LOCATION_PARAM) -> OpaqueTy *;
 
-    auto GetStructTy(
-        std::span<std::tuple<std::string_view, FlowPtr<Type>, FlowPtr<Expr>>>
-            fields SOURCE_LOCATION_PARAM) -> StructTy *;
-
-    auto GetStructTy(std::span<FlowPtr<Type>> fields SOURCE_LOCATION_PARAM)
+    auto GetStructTy(std::span<std::tuple<std::string_view, FlowPtr<Type>, FlowPtr<Expr>>> fields SOURCE_LOCATION_PARAM)
         -> StructTy *;
 
-    auto GetUnionTy(std::span<FlowPtr<Type>> fields SOURCE_LOCATION_PARAM)
-        -> UnionTy *;
+    auto GetStructTy(std::span<FlowPtr<Type>> fields SOURCE_LOCATION_PARAM) -> StructTy *;
 
-    auto GetArrayTy(FlowPtr<Type> element_ty,
-                    size_t count SOURCE_LOCATION_PARAM) -> ArrayTy *;
+    auto GetUnionTy(std::span<FlowPtr<Type>> fields SOURCE_LOCATION_PARAM) -> UnionTy *;
 
-    auto GetFnTy(std::span<FlowPtr<Type>> params, FlowPtr<Type> ret_ty,
-                 bool is_variadic = false, Purity purity = Purity::Impure,
-                 bool thread_safe = false,
+    auto GetArrayTy(FlowPtr<Type> element_ty, size_t count SOURCE_LOCATION_PARAM) -> ArrayTy *;
+
+    auto GetFnTy(std::span<FlowPtr<Type>> params, FlowPtr<Type> ret_ty, bool is_variadic = false,
+                 Purity purity = Purity::Impure, bool thread_safe = false,
                  bool foreign = true SOURCE_LOCATION_PARAM) -> FnTy *;
 
     void CreateNamedConstantDefinition(
-        std::string_view name,
-        const std::unordered_map<std::string_view, FlowPtr<Expr>> &values
-            SOURCE_LOCATION_PARAM);
+        std::string_view name, const std::unordered_map<std::string_view, FlowPtr<Expr>> &values SOURCE_LOCATION_PARAM);
 
-    void CreateNamedTypeAlias(FlowPtr<Type> type,
-                              std::string_view name SOURCE_LOCATION_PARAM);
+    void CreateNamedTypeAlias(FlowPtr<Type> type, std::string_view name SOURCE_LOCATION_PARAM);
 
     ///**************************************************************************///
 
@@ -372,8 +340,7 @@ namespace ncc::ir {
 #define compiler_trace(x) x
 #else
 #define SOURCE_LOCATION_PARAM , std::experimental::source_location caller_info
-#define SOURCE_LOCATION_PARAM_ONCE \
-  std::experimental::source_location caller_info
+#define SOURCE_LOCATION_PARAM_ONCE std::experimental::source_location caller_info
 #define CALLER_INFO caller_info
 #define CALLEE_KNOWN
 #define ignore_caller_info() (void)caller_info;

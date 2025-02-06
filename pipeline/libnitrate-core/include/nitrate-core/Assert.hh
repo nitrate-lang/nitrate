@@ -56,33 +56,25 @@ static inline auto GetStrerror() {
 }
 
 #if defined(NDEBUG)
-#define qcore_panicf(fmt, ...)                                              \
-  QCorePanicF(                                                              \
-      fmt                                                                   \
-      "\nSource File: %s\nSource Line: %d\nFunction: unknown\nErrno: %s\n", \
-      ##__VA_ARGS__, __FILE__, __LINE__, GetStrerror().c_str())
+#define qcore_panicf(fmt, ...)                                                                                   \
+  QCorePanicF(fmt "\nSource File: %s\nSource Line: %d\nFunction: unknown\nErrno: %s\n", ##__VA_ARGS__, __FILE__, \
+              __LINE__, GetStrerror().c_str())
 
 #define qcore_panic(msg) qcore_panicf("%s", msg)
 
-#define qcore_assert(expr, ...)                                    \
-  (static_cast<bool>(expr)                                         \
-       ? void(0)                                                   \
-       : qcore_panicf("Assertion failed: %s;\nCondition: (%s);\n", \
-                      "" #__VA_ARGS__, #expr))
+#define qcore_assert(expr, ...)      \
+  (static_cast<bool>(expr) ? void(0) \
+                           : qcore_panicf("Assertion failed: %s;\nCondition: (%s);\n", "" #__VA_ARGS__, #expr))
 #else
-#define qcore_panicf(fmt, ...)                                                 \
-  QCorePanicF(fmt                                                              \
-              "\nSource File: %s\nSource Line: %d\nFunction: %s\nErrno: %s\n", \
-              ##__VA_ARGS__, __FILE__, __LINE__, __PRETTY_FUNCTION__,          \
-              GetStrerror().c_str())
+#define qcore_panicf(fmt, ...)                                                                                        \
+  QCorePanicF(fmt "\nSource File: %s\nSource Line: %d\nFunction: %s\nErrno: %s\n", ##__VA_ARGS__, __FILE__, __LINE__, \
+              __PRETTY_FUNCTION__, GetStrerror().c_str())
 
 #define qcore_panic(msg) qcore_panicf("%s", msg)
 
-#define qcore_assert(expr, ...)                                    \
-  (static_cast<bool>(expr)                                         \
-       ? void(0)                                                   \
-       : qcore_panicf("Assertion failed: %s;\nCondition: (%s);\n", \
-                      "" #__VA_ARGS__, #expr))
+#define qcore_assert(expr, ...)      \
+  (static_cast<bool>(expr) ? void(0) \
+                           : qcore_panicf("Assertion failed: %s;\nCondition: (%s);\n", "" #__VA_ARGS__, #expr))
 #endif
 
 #define qcore_implement() qcore_panicf("%s is not implemented.", __func__)

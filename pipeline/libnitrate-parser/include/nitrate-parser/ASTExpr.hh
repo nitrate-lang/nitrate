@@ -62,8 +62,7 @@ namespace ncc::parse {
     lex::Operator m_op;
 
   public:
-    constexpr Unary(auto op, auto rhs)
-        : Expr(QAST_UNEXPR), m_rhs(std::move(rhs)), m_op(op) {}
+    constexpr Unary(auto op, auto rhs) : Expr(QAST_UNEXPR), m_rhs(std::move(rhs)), m_op(op) {}
 
     [[nodiscard]] constexpr auto GetRHS() const { return m_rhs; }
     [[nodiscard]] constexpr auto GetOp() const { return m_op; }
@@ -75,10 +74,7 @@ namespace ncc::parse {
 
   public:
     constexpr Binary(auto lhs, auto op, auto rhs)
-        : Expr(QAST_BINEXPR),
-          m_lhs(std::move(lhs)),
-          m_rhs(std::move(rhs)),
-          m_op(op) {}
+        : Expr(QAST_BINEXPR), m_lhs(std::move(lhs)), m_rhs(std::move(rhs)), m_op(op) {}
 
     [[nodiscard]] constexpr auto GetLHS() const { return m_lhs; }
     [[nodiscard]] constexpr auto GetRHS() const { return m_rhs; }
@@ -90,8 +86,7 @@ namespace ncc::parse {
     lex::Operator m_op;
 
   public:
-    constexpr PostUnary(auto lhs, auto op)
-        : Expr(QAST_POST_UNEXPR), m_lhs(std::move(lhs)), m_op(op) {}
+    constexpr PostUnary(auto lhs, auto op) : Expr(QAST_POST_UNEXPR), m_lhs(std::move(lhs)), m_op(op) {}
 
     [[nodiscard]] constexpr auto GetLHS() const { return m_lhs; }
     [[nodiscard]] constexpr auto GetOp() const { return m_op; }
@@ -102,10 +97,7 @@ namespace ncc::parse {
 
   public:
     constexpr Ternary(auto cond, auto lhs, auto rhs)
-        : Expr(QAST_TEREXPR),
-          m_cond(std::move(cond)),
-          m_lhs(std::move(lhs)),
-          m_rhs(std::move(rhs)) {}
+        : Expr(QAST_TEREXPR), m_cond(std::move(cond)), m_lhs(std::move(lhs)), m_rhs(std::move(rhs)) {}
 
     [[nodiscard]] constexpr auto GetCond() const { return m_cond; }
     [[nodiscard]] constexpr auto GetLHS() const { return m_lhs; }
@@ -172,8 +164,7 @@ namespace ncc::parse {
     std::span<const CallArg> m_args;
 
   public:
-    constexpr Call(auto func, auto args)
-        : Expr(QAST_CALL), m_func(std::move(func)), m_args(args) {}
+    constexpr Call(auto func, auto args) : Expr(QAST_CALL), m_func(std::move(func)), m_args(args) {}
 
     [[nodiscard]] constexpr auto GetFunc() const { return m_func; }
     [[nodiscard]] constexpr auto GetArgs() const { return m_args; }
@@ -185,15 +176,10 @@ namespace ncc::parse {
 
   public:
     constexpr TemplateCall(auto func, auto args, auto template_args)
-        : Expr(QAST_TEMPL_CALL),
-          m_func(std::move(func)),
-          m_template_args(template_args),
-          m_args(args) {}
+        : Expr(QAST_TEMPL_CALL), m_func(std::move(func)), m_template_args(template_args), m_args(args) {}
 
     [[nodiscard]] constexpr auto GetFunc() const { return m_func; }
-    [[nodiscard]] constexpr auto GetTemplateArgs() const {
-      return m_template_args;
-    }
+    [[nodiscard]] constexpr auto GetTemplateArgs() const { return m_template_args; }
     [[nodiscard]] constexpr auto GetArgs() const { return m_args; }
   };
 
@@ -210,8 +196,7 @@ namespace ncc::parse {
     FlowPtr<Expr> m_key, m_value;
 
   public:
-    constexpr Assoc(auto key, auto value)
-        : Expr(QAST_ASSOC), m_key(std::move(key)), m_value(std::move(value)) {}
+    constexpr Assoc(auto key, auto value) : Expr(QAST_ASSOC), m_key(std::move(key)), m_value(std::move(value)) {}
 
     [[nodiscard]] constexpr auto GetKey() const { return m_key; }
     [[nodiscard]] constexpr auto GetValue() const { return m_value; }
@@ -221,10 +206,7 @@ namespace ncc::parse {
     FlowPtr<Expr> m_base, m_index;
 
   public:
-    constexpr Index(auto base, auto index)
-        : Expr(QAST_INDEX),
-          m_base(std::move(base)),
-          m_index(std::move(index)) {}
+    constexpr Index(auto base, auto index) : Expr(QAST_INDEX), m_base(std::move(base)), m_index(std::move(index)) {}
 
     [[nodiscard]] constexpr auto GetBase() const { return m_base; }
     [[nodiscard]] constexpr auto GetIndex() const { return m_index; }
@@ -235,10 +217,7 @@ namespace ncc::parse {
 
   public:
     constexpr Slice(auto base, auto start, auto end)
-        : Expr(QAST_SLICE),
-          m_base(std::move(base)),
-          m_start(std::move(start)),
-          m_end(std::move(end)) {}
+        : Expr(QAST_SLICE), m_base(std::move(base)), m_start(std::move(start)), m_end(std::move(end)) {}
 
     [[nodiscard]] constexpr auto GetBase() const { return m_base; }
     [[nodiscard]] constexpr auto GetStart() const { return m_start; }

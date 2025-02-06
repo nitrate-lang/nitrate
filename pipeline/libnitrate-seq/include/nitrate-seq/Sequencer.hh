@@ -50,11 +50,9 @@
 struct lua_State;
 
 namespace ncc::seq {
-  using FetchModuleFunc =
-      std::function<std::optional<std::string>(std::string_view)>;
+  using FetchModuleFunc = std::function<std::optional<std::string>(std::string_view)>;
 
-  auto FileSystemFetchModule(std::string_view path)
-      -> std::optional<std::string>;
+  auto FileSystemFetchModule(std::string_view path) -> std::optional<std::string>;
 
   class NCC_EXPORT Sequencer final : public ncc::lex::IScanner {
     using MethodType = int (ncc::seq::Sequencer::*)();
@@ -100,17 +98,14 @@ namespace ncc::seq {
     auto BindLuaAPI() -> void;
     auto ConfigureLUAEnvironment() -> void;
     auto ExecuteLua(const char* code) -> std::optional<std::string>;
-    auto FetchModuleData(std::string_view module_name)
-        -> std::optional<std::string>;
+    auto FetchModuleData(std::string_view module_name) -> std::optional<std::string>;
 
     auto SequenceSource(std::string_view code) -> void;
     auto GetNext() -> ncc::lex::Token override;
-    auto GetLocationFallback(ncc::lex::LocationID id)
-        -> std::optional<ncc::lex::Location> override;
+    auto GetLocationFallback(ncc::lex::LocationID id) -> std::optional<ncc::lex::Location> override;
 
   public:
-    Sequencer(std::istream& file, std::shared_ptr<ncc::Environment> env,
-              bool is_root = true);
+    Sequencer(std::istream& file, std::shared_ptr<ncc::Environment> env, bool is_root = true);
     Sequencer(const Sequencer&) = delete;
     Sequencer(Sequencer&&) = delete;
     ~Sequencer() override;
@@ -119,8 +114,7 @@ namespace ncc::seq {
     auto SetFailBit(bool fail = true) -> bool override;
 
     auto SetFetchFunc(FetchModuleFunc func) -> void;
-    auto GetSourceWindow(Point start, Point end, char fillchar)
-        -> std::optional<std::vector<std::string>> override;
+    auto GetSourceWindow(Point start, Point end, char fillchar) -> std::optional<std::vector<std::string>> override;
   };
 
 }  // namespace ncc::seq

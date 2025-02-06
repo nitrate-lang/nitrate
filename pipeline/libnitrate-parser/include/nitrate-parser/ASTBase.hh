@@ -67,15 +67,12 @@ namespace ncc::parse {
     lex::LocationID m_end;
     std::vector<string> m_comments;
 
-    ASTExtensionPackage(lex::LocationID begin, lex::LocationID end)
-        : m_begin(begin), m_end(end) {}
+    ASTExtensionPackage(lex::LocationID begin, lex::LocationID end) : m_begin(begin), m_end(end) {}
 
   public:
     [[nodiscard]] auto Begin() const { return m_begin; }
     [[nodiscard]] auto End() const { return m_end; }
-    [[nodiscard]] auto Comments() const -> std::span<const string> {
-      return m_comments;
-    }
+    [[nodiscard]] auto Comments() const -> std::span<const string> { return m_comments; }
 
     void AddComments(std::span<const string> comments) {
       m_comments.insert(m_comments.end(), comments.begin(), comments.end());
@@ -102,8 +99,7 @@ namespace ncc::parse {
     void Set(ASTExtensionKey id, ASTExtensionPackage &&data);
   };
 
-  auto operator<<(std::ostream &os,
-                  const ASTExtensionKey &idx) -> std::ostream &;
+  auto operator<<(std::ostream &os, const ASTExtensionKey &idx) -> std::ostream &;
 
   extern ASTExtension ExtensionDataStore;
 
@@ -114,14 +110,10 @@ namespace ncc::parse {
     ASTExtensionKey m_data;
 
   public:
-    constexpr Base(npar_ty_t ty, bool mock = false)
-        : m_node_type(ty), m_mock(mock) {}
+    constexpr Base(npar_ty_t ty, bool mock = false) : m_node_type(ty), m_mock(mock) {}
 
-    constexpr Base(npar_ty_t ty, bool mock, lex::LocationID begin,
-                   lex::LocationID end)
-        : m_node_type(ty),
-          m_mock(mock),
-          m_data(ExtensionDataStore.Add(begin, end)) {}
+    constexpr Base(npar_ty_t ty, bool mock, lex::LocationID begin, lex::LocationID end)
+        : m_node_type(ty), m_mock(mock), m_data(ExtensionDataStore.Add(begin, end)) {}
 
     ///======================================================================
     /// Efficient LLVM-Style reflection
@@ -276,12 +268,8 @@ namespace ncc::parse {
       }
     }
 
-    [[nodiscard]] constexpr auto GetKind() const -> npar_ty_t {
-      return m_node_type;
-    }
-    [[nodiscard]] constexpr auto GetKindName() const {
-      return GetKindName(m_node_type);
-    }
+    [[nodiscard]] constexpr auto GetKind() const -> npar_ty_t { return m_node_type; }
+    [[nodiscard]] constexpr auto GetKindName() const { return GetKindName(m_node_type); }
 
     [[nodiscard]] constexpr auto IsType() const -> bool {
       auto kind = GetKind();
@@ -303,9 +291,7 @@ namespace ncc::parse {
       return Base::GetTypeCode<T>() == GetKind();
     }
 
-    [[nodiscard]] constexpr bool Is(npar_ty_t type) const {
-      return type == GetKind();
-    }
+    [[nodiscard]] constexpr bool Is(npar_ty_t type) const { return type == GetKind(); }
     [[nodiscard]] constexpr auto IsMock() const -> bool { return m_mock; }
 
     [[nodiscard]] auto IsEq(FlowPtr<Base> o) const -> bool;
@@ -318,9 +304,7 @@ namespace ncc::parse {
     /// Visitation
 
     constexpr void Accept(ASTVisitor &v) { v.Dispatch(MakeFlowPtr(this)); }
-    constexpr void Accept(ASTVisitor &v) const {
-      v.Dispatch(MakeFlowPtr(const_cast<Base *>(this)));
-    }
+    constexpr void Accept(ASTVisitor &v) const { v.Dispatch(MakeFlowPtr(const_cast<Base *>(this))); }
 
     ///======================================================================
     /// Debug-mode checked type casting
@@ -333,8 +317,7 @@ namespace ncc::parse {
 
 #ifndef NDEBUG
       if (GetTypeCode<T>() != ptr->GetKind()) [[unlikely]] {
-        qcore_panicf("Invalid cast from %s to %s", ptr->GetKindName(),
-                     GetKindName(GetTypeCode<T>()));
+        qcore_panicf("Invalid cast from %s to %s", ptr->GetKindName(), GetKindName(GetTypeCode<T>()));
       }
 #endif
 
@@ -354,11 +337,9 @@ namespace ncc::parse {
     ///======================================================================
     /// Serialization
 
-    void DebugString(std::ostream &os,
-                     WriterSourceProvider rd = std::nullopt) const;
+    void DebugString(std::ostream &os, WriterSourceProvider rd = std::nullopt) const;
 
-    [[nodiscard]] std::string DebugString(
-        WriterSourceProvider rd = std::nullopt) const;
+    [[nodiscard]] std::string DebugString(WriterSourceProvider rd = std::nullopt) const;
 
     void Serialize(std::ostream &os) const;
     [[nodiscard]] std::string Serialize() const;
@@ -373,9 +354,7 @@ namespace ncc::parse {
 
       return ExtensionDataStore.Get(m_data).Begin();
     }
-    [[nodiscard]] constexpr auto Begin(lex::IScanner &rd) const {
-      return Begin().Get(rd);
-    }
+    [[nodiscard]] constexpr auto Begin(lex::IScanner &rd) const { return Begin().Get(rd); }
     [[nodiscard]] constexpr auto End() const {
       if (m_data.IsNull()) {
         return lex::LocationID();
@@ -383,12 +362,8 @@ namespace ncc::parse {
 
       return ExtensionDataStore.Get(m_data).End();
     }
-    [[nodiscard]] constexpr auto End(lex::IScanner &rd) const {
-      return End().Get(rd);
-    }
-    [[nodiscard]] constexpr auto GetPos() const {
-      return std::pair<lex::LocationID, lex::LocationID>(Begin(), End());
-    }
+    [[nodiscard]] constexpr auto End(lex::IScanner &rd) const { return End().Get(rd); }
+    [[nodiscard]] constexpr auto GetPos() const { return std::pair<lex::LocationID, lex::LocationID>(Begin(), End()); }
 
     [[nodiscard]] constexpr auto Comments() const {
       if (m_data.IsNull()) {
@@ -401,13 +376,9 @@ namespace ncc::parse {
     ///======================================================================
     /// Setters
 
-    constexpr void SetOffset(lex::LocationID pos) {
-      m_data = ExtensionDataStore.Add(pos, End());
-    }
+    constexpr void SetOffset(lex::LocationID pos) { m_data = ExtensionDataStore.Add(pos, End()); }
 
-    constexpr void SetLoc(lex::LocationID begin, lex::LocationID end) {
-      m_data = ExtensionDataStore.Add(begin, end);
-    }
+    constexpr void SetLoc(lex::LocationID begin, lex::LocationID end) { m_data = ExtensionDataStore.Add(begin, end); }
 
     void SetComments(std::span<const lex::Token> comment_tokens);
     void SetComments(std::span<const string> comments);
@@ -495,9 +466,7 @@ namespace ncc::parse {
     }();
   }  // namespace detail
 
-  constexpr auto Base::GetKindName(npar_ty_t type) -> std::string_view {
-    return detail::kGetKindNames[type];
-  }
+  constexpr auto Base::GetKindName(npar_ty_t type) -> std::string_view { return detail::kGetKindNames[type]; }
 
   class Stmt : public Base {
   public:
@@ -536,62 +505,32 @@ namespace ncc::parse {
       }
     }
 
-    [[nodiscard]] constexpr auto IsArray() const -> bool {
-      return GetKind() == QAST_ARRAY;
-    };
-    [[nodiscard]] constexpr auto IsTuple() const -> bool {
-      return GetKind() == QAST_TUPLE;
-    }
-    [[nodiscard]] constexpr auto IsPointer() const -> bool {
-      return GetKind() == QAST_PTR;
-    }
-    [[nodiscard]] constexpr auto IsFunction() const -> bool {
-      return GetKind() == QAST_FUNCTOR;
-    }
-    [[nodiscard]] constexpr auto IsComposite() const -> bool {
-      return IsArray() || IsTuple();
-    }
-    [[nodiscard]] constexpr auto IsNumeric() const -> bool {
-      return GetKind() >= QAST_U1 && GetKind() <= QAST_F128;
-    }
-    [[nodiscard]] constexpr auto IsIntegral() const -> bool {
-      return GetKind() >= QAST_U1 && GetKind() <= QAST_I128;
-    }
+    [[nodiscard]] constexpr auto IsArray() const -> bool { return GetKind() == QAST_ARRAY; };
+    [[nodiscard]] constexpr auto IsTuple() const -> bool { return GetKind() == QAST_TUPLE; }
+    [[nodiscard]] constexpr auto IsPointer() const -> bool { return GetKind() == QAST_PTR; }
+    [[nodiscard]] constexpr auto IsFunction() const -> bool { return GetKind() == QAST_FUNCTOR; }
+    [[nodiscard]] constexpr auto IsComposite() const -> bool { return IsArray() || IsTuple(); }
+    [[nodiscard]] constexpr auto IsNumeric() const -> bool { return GetKind() >= QAST_U1 && GetKind() <= QAST_F128; }
+    [[nodiscard]] constexpr auto IsIntegral() const -> bool { return GetKind() >= QAST_U1 && GetKind() <= QAST_I128; }
     [[nodiscard]] constexpr auto IsFloatingPoint() const -> bool {
       return GetKind() >= QAST_F16 && GetKind() <= QAST_F128;
     }
-    [[nodiscard]] constexpr auto IsSigned() const -> bool {
-      return GetKind() >= QAST_I8 && GetKind() <= QAST_I128;
-    }
-    [[nodiscard]] constexpr auto IsUnsigned() const -> bool {
-      return GetKind() >= QAST_U1 && GetKind() <= QAST_U128;
-    }
-    [[nodiscard]] constexpr auto IsVoid() const -> bool {
-      return GetKind() == QAST_VOID;
-    }
-    [[nodiscard]] constexpr auto IsBool() const -> bool {
-      return GetKind() == QAST_U1;
-    }
-    [[nodiscard]] constexpr auto IsRef() const -> bool {
-      return GetKind() == QAST_REF;
-    }
+    [[nodiscard]] constexpr auto IsSigned() const -> bool { return GetKind() >= QAST_I8 && GetKind() <= QAST_I128; }
+    [[nodiscard]] constexpr auto IsUnsigned() const -> bool { return GetKind() >= QAST_U1 && GetKind() <= QAST_U128; }
+    [[nodiscard]] constexpr auto IsVoid() const -> bool { return GetKind() == QAST_VOID; }
+    [[nodiscard]] constexpr auto IsBool() const -> bool { return GetKind() == QAST_U1; }
+    [[nodiscard]] constexpr auto IsRef() const -> bool { return GetKind() == QAST_REF; }
     auto IsPtrTo(const Type *type) const -> bool;
 
     [[nodiscard]] constexpr auto GetWidth() const { return m_width; }
     [[nodiscard]] constexpr auto GetRangeBegin() const { return m_range_begin; }
     [[nodiscard]] constexpr auto GetRangeEnd() const { return m_range_end; }
 
-    constexpr void SetRangeBegin(NullableFlowPtr<Expr> start) {
-      m_range_begin = std::move(start);
-    }
+    constexpr void SetRangeBegin(NullableFlowPtr<Expr> start) { m_range_begin = std::move(start); }
 
-    constexpr void SetRangeEnd(NullableFlowPtr<Expr> end) {
-      m_range_end = std::move(end);
-    }
+    constexpr void SetRangeEnd(NullableFlowPtr<Expr> end) { m_range_end = std::move(end); }
 
-    constexpr void SetWidth(NullableFlowPtr<Expr> width) {
-      m_width = std::move(width);
-    }
+    constexpr void SetWidth(NullableFlowPtr<Expr> width) { m_width = std::move(width); }
   };
 
   class Expr : public Base {

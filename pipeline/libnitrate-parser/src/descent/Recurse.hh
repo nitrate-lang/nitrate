@@ -50,8 +50,7 @@ namespace ncc::parse {
 #define current() m_rd.Current()
 
   template <auto tok>
-  static inline auto NextIfImpl(ncc::lex::IScanner &m_rd)
-      -> std::optional<ncc::lex::Token> {
+  static inline auto NextIfImpl(ncc::lex::IScanner &m_rd) -> std::optional<ncc::lex::Token> {
     auto t = m_rd.Peek();
     if constexpr (std::is_same_v<decltype(tok), ncc::lex::TokenType>) {
       if (t.Is(tok)) {

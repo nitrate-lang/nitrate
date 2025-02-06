@@ -46,16 +46,14 @@
 using namespace ncc;
 using namespace ncc::ir;
 
-thread_local std::unique_ptr<ncc::IMemory> ncc::ir::NrAllocator =
-    std::make_unique<ncc::DynamicArena>();
+thread_local std::unique_ptr<ncc::IMemory> ncc::ir::NrAllocator = std::make_unique<ncc::DynamicArena>();
 
 struct PtrState {
   FlowPtr<Type> m_pointee;
   uint8_t m_native_size;
 
   bool operator==(PtrState const& other) const {
-    return m_pointee->IsEq(other.m_pointee.get()) &&
-           m_native_size == other.m_native_size;
+    return m_pointee->IsEq(other.m_pointee.get()) && m_native_size == other.m_native_size;
   }
 };
 
@@ -68,29 +66,21 @@ struct PtrStateHash {
 struct ConstState {
   FlowPtr<Type> m_item;
 
-  bool operator==(ConstState const& other) const {
-    return m_item->IsEq(other.m_item.get());
-  }
+  bool operator==(ConstState const& other) const { return m_item->IsEq(other.m_item.get()); }
 };
 
 struct ConstStateHash {
-  size_t operator()(ConstState const& state) const {
-    return std::hash<FlowPtr<Type>>{}(state.m_item);
-  }
+  size_t operator()(ConstState const& state) const { return std::hash<FlowPtr<Type>>{}(state.m_item); }
 };
 
 struct OpaqueState {
   string m_name;
 
-  bool operator==(OpaqueState const& other) const {
-    return m_name == other.m_name;
-  }
+  bool operator==(OpaqueState const& other) const { return m_name == other.m_name; }
 };
 
 struct OpaqueStateHash {
-  size_t operator()(OpaqueState const& state) const {
-    return std::hash<string>{}(state.m_name);
-  }
+  size_t operator()(OpaqueState const& state) const { return std::hash<string>{}(state.m_name); }
 };
 
 struct StructState {
@@ -185,8 +175,7 @@ struct FnState {
       }
     }
 
-    return m_ret->IsEq(other.m_ret.get()) && m_variadic == other.m_variadic &&
-           m_native_size == other.m_native_size;
+    return m_ret->IsEq(other.m_ret.get()) && m_variadic == other.m_variadic && m_native_size == other.m_native_size;
   }
 };
 
@@ -198,38 +187,27 @@ struct FnStateHash {
       hash ^= std::hash<FlowPtr<Type>>{}(param);
     }
 
-    return hash ^ std::hash<FlowPtr<Type>>{}(state.m_ret) ^ state.m_variadic ^
-           state.m_native_size;
+    return hash ^ std::hash<FlowPtr<Type>>{}(state.m_ret) ^ state.m_variadic ^ state.m_native_size;
   }
 };
 
-static std::unordered_map<PtrState, std::unique_ptr<PtrTy>, PtrStateHash>
-    GPtrCache;
-static std::unordered_map<ConstState, std::unique_ptr<ConstTy>, ConstStateHash>
-    GConstCache;
-static std::unordered_map<OpaqueState, std::unique_ptr<OpaqueTy>,
-                          OpaqueStateHash>
-    GOpaqueCache;
-static std::unordered_map<
-    StructState,
-    std::pair<std::unique_ptr<StructTy>, std::vector<FlowPtr<Type>>>,
-    StructStateHash>
+static std::unordered_map<PtrState, std::unique_ptr<PtrTy>, PtrStateHash> GPtrCache;
+static std::unordered_map<ConstState, std::unique_ptr<ConstTy>, ConstStateHash> GConstCache;
+static std::unordered_map<OpaqueState, std::unique_ptr<OpaqueTy>, OpaqueStateHash> GOpaqueCache;
+static std::unordered_map<StructState, std::pair<std::unique_ptr<StructTy>, std::vector<FlowPtr<Type>>>,
+                          StructStateHash>
     GStructCache;
-static std::unordered_map<
-    UnionState, std::pair<std::unique_ptr<UnionTy>, std::vector<FlowPtr<Type>>>,
-    UnionStateHash>
+static std::unordered_map<UnionState, std::pair<std::unique_ptr<UnionTy>, std::vector<FlowPtr<Type>>>, UnionStateHash>
     GUnionCache;
-static std::unordered_map<ArrayState, std::unique_ptr<ArrayTy>, ArrayStateHash>
-    GArrayCache;
+static std::unordered_map<ArrayState, std::unique_ptr<ArrayTy>, ArrayStateHash> GArrayCache;
 static std::unordered_map<FnState, std::unique_ptr<FnTy>, FnStateHash> GFnCache;
 
-static std::mutex GPtrCacheMutex, GConstCacheMutex, GOpaqueCacheMutex,
-    GStructCacheMutex, GUnionCacheMutex, GArrayCacheMutex, GFnCacheMutex;
+static std::mutex GPtrCacheMutex, GConstCacheMutex, GOpaqueCacheMutex, GStructCacheMutex, GUnionCacheMutex,
+    GArrayCacheMutex, GFnCacheMutex;
 
 void IRResetTypeCache() {
-  std::lock_guard l0(GPtrCacheMutex), l1(GConstCacheMutex),
-      l2(GOpaqueCacheMutex), l3(GStructCacheMutex), l4(GUnionCacheMutex),
-      l5(GArrayCacheMutex), l6(GFnCacheMutex);
+  std::lock_guard l0(GPtrCacheMutex), l1(GConstCacheMutex), l2(GOpaqueCacheMutex), l3(GStructCacheMutex),
+      l4(GUnionCacheMutex), l5(GArrayCacheMutex), l6(GFnCacheMutex);
 
   GPtrCache.clear();
   GConstCache.clear();
@@ -247,10 +225,7 @@ NCC_EXPORT PtrTy* ir::GetPtrTy(FlowPtr<Type> pointee, uint8_t native_size) {
   auto it = GPtrCache.find(state);
 
   if (it == GPtrCache.end()) [[unlikely]] {
-    it = GPtrCache
-             .emplace(std::move(state),
-                      std::make_unique<PtrTy>(pointee, native_size))
-             .first;
+    it = GPtrCache.emplace(std::move(state), std::make_unique<PtrTy>(pointee, native_size)).first;
   }
 
   return it->second.get();
@@ -263,8 +238,7 @@ NCC_EXPORT ConstTy* ir::GetConstTy(FlowPtr<Type> item) {
   auto it = GConstCache.find(state);
 
   if (it == GConstCache.end()) [[unlikely]] {
-    it = GConstCache.emplace(std::move(state), std::make_unique<ConstTy>(item))
-             .first;
+    it = GConstCache.emplace(std::move(state), std::make_unique<ConstTy>(item)).first;
   }
 
   return it->second.get();
@@ -277,9 +251,7 @@ NCC_EXPORT OpaqueTy* ir::GetOpaqueTy(string name) {
   auto it = GOpaqueCache.find(state);
 
   if (it == GOpaqueCache.end()) [[unlikely]] {
-    it =
-        GOpaqueCache.emplace(std::move(state), std::make_unique<OpaqueTy>(name))
-            .first;
+    it = GOpaqueCache.emplace(std::move(state), std::make_unique<OpaqueTy>(name)).first;
   }
 
   return it->second.get();
@@ -292,8 +264,7 @@ NCC_EXPORT StructTy* ir::GetStructTy(std::span<FlowPtr<Type>> fields) {
   auto it = GStructCache.find(state);
 
   if (it == GStructCache.end()) [[unlikely]] {
-    using Value =
-        std::pair<std::unique_ptr<StructTy>, std::vector<FlowPtr<Type>>>;
+    using Value = std::pair<std::unique_ptr<StructTy>, std::vector<FlowPtr<Type>>>;
 
     Value v{nullptr, std::vector<FlowPtr<Type>>(fields.begin(), fields.end())};
     v.first = std::make_unique<StructTy>(v.second);
@@ -311,8 +282,7 @@ NCC_EXPORT UnionTy* ir::GetUnionTy(std::span<FlowPtr<Type>> fields) {
   auto it = GUnionCache.find(state);
 
   if (it == GUnionCache.end()) [[unlikely]] {
-    using Value =
-        std::pair<std::unique_ptr<UnionTy>, std::vector<FlowPtr<Type>>>;
+    using Value = std::pair<std::unique_ptr<UnionTy>, std::vector<FlowPtr<Type>>>;
 
     Value v{nullptr, std::vector<FlowPtr<Type>>(fields.begin(), fields.end())};
     v.first = std::make_unique<UnionTy>(v.second);
@@ -330,27 +300,20 @@ NCC_EXPORT ArrayTy* ir::GetArrayTy(FlowPtr<Type> element, size_t size) {
   auto it = GArrayCache.find(state);
 
   if (it == GArrayCache.end()) [[unlikely]] {
-    it =
-        GArrayCache
-            .emplace(std::move(state), std::make_unique<ArrayTy>(element, size))
-            .first;
+    it = GArrayCache.emplace(std::move(state), std::make_unique<ArrayTy>(element, size)).first;
   }
 
   return it->second.get();
 }
 
-NCC_EXPORT FnTy* ir::GetFnTy(std::span<FlowPtr<Type>> params, FlowPtr<Type> ret,
-                             bool variadic, size_t native_size) {
+NCC_EXPORT FnTy* ir::GetFnTy(std::span<FlowPtr<Type>> params, FlowPtr<Type> ret, bool variadic, size_t native_size) {
   FnState state{params, ret, variadic, native_size};
 
   std::lock_guard lock(GFnCacheMutex);
   auto it = GFnCache.find(state);
 
   if (it == GFnCache.end()) [[unlikely]] {
-    it = GFnCache
-             .emplace(std::move(state), std::make_unique<FnTy>(
-                                            params, ret, variadic, native_size))
-             .first;
+    it = GFnCache.emplace(std::move(state), std::make_unique<FnTy>(params, ret, variadic, native_size)).first;
   }
 
   return it->second.get();
@@ -372,19 +335,17 @@ static bool IsCyclicUtil(auto base, std::unordered_set<FlowPtr<Expr>>& visited,
 
     // Recurse for all the vertices adjacent
     // to this vertex
-    iterate<IterMode::children>(
-        base, [&](auto, auto const* const cur) -> IterOp {
-          if (!visited.contains(*cur) && IsCyclicUtil(*cur, visited, rec_stack))
-              [[unlikely]] {
-            has_cycle = true;
-            return IterOp::Abort;
-          } else if (rec_stack.contains(*cur)) [[unlikely]] {
-            has_cycle = true;
-            return IterOp::Abort;
-          }
+    iterate<IterMode::children>(base, [&](auto, auto const* const cur) -> IterOp {
+      if (!visited.contains(*cur) && IsCyclicUtil(*cur, visited, rec_stack)) [[unlikely]] {
+        has_cycle = true;
+        return IterOp::Abort;
+      } else if (rec_stack.contains(*cur)) [[unlikely]] {
+        has_cycle = true;
+        return IterOp::Abort;
+      }
 
-          return IterOp::Proceed;
-        });
+      return IterOp::Proceed;
+    });
   }
 
   // Remove the vertex from recursion stack
@@ -397,8 +358,7 @@ NCC_EXPORT bool detail::IsAcyclicImpl(FlowPtr<Expr> self) {
   bool has_cycle = false;
 
   iterate<IterMode::children>(self, [&](auto, auto c) -> IterOp {
-    if (!visited.contains(*c) && IsCyclicUtil(*c, visited, rec_stack))
-        [[unlikely]] {
+    if (!visited.contains(*c) && IsCyclicUtil(*c, visited, rec_stack)) [[unlikely]] {
       has_cycle = true;
       return IterOp::Abort;
     }

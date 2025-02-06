@@ -40,13 +40,11 @@
 #include <unordered_set>
 
 namespace nit {
-  using TransformFunc = bool (*)(std::istream &, std::ostream &,
-                                 const std::unordered_set<std::string> &,
+  using TransformFunc = bool (*)(std::istream &, std::ostream &, const std::unordered_set<std::string> &,
                                  const std::shared_ptr<ncc::Environment> &);
 
-#define CREATE_TRANSFORM(name)                           \
-  bool name(std::istream &source, std::ostream &output,  \
-            const std::unordered_set<std::string> &opts, \
+#define CREATE_TRANSFORM(name)                                                                       \
+  bool name(std::istream &source, std::ostream &output, const std::unordered_set<std::string> &opts, \
             const std::shared_ptr<ncc::Environment> &env)
 
   CREATE_TRANSFORM(echo);

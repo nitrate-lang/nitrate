@@ -55,8 +55,7 @@ static std::string LibcVersion = std::string("GLIBC ") + gnu_get_libc_version();
 #error "This libc version is not supported here"
 #endif
 
-static inline auto GetBacktrace()
-    -> std::vector<std::pair<uintptr_t, std::string>> {
+static inline auto GetBacktrace() -> std::vector<std::pair<uintptr_t, std::string>> {
   constexpr size_t kMaxSymbolSize = 512;
   unw_cursor_t cursor;
   unw_context_t uc;
@@ -76,8 +75,7 @@ static inline auto GetBacktrace()
       std::string_view name(sym.data());
       if (name.starts_with("_Z")) {
         int status;
-        char *demangled =
-            abi::__cxa_demangle(sym.data(), nullptr, nullptr, &status);
+        char *demangled = abi::__cxa_demangle(sym.data(), nullptr, nullptr, &status);
         if (status == 0) {
           trace.emplace_back(ip, demangled);
           free(demangled);
@@ -94,8 +92,7 @@ static inline auto GetBacktrace()
   return trace;
 }
 
-static auto PanicSplitMessage(std::string_view message)
-    -> std::vector<std::string> {
+static auto PanicSplitMessage(std::string_view message) -> std::vector<std::string> {
   std::string buf;
   std::vector<std::string> lines;
 
@@ -143,12 +140,10 @@ static void PanicRenderReport(const std::vector<std::string> &lines) {
 
   { /* Print shockwave */
     std::cout << "\n\n";
-    std::cerr
-        << "▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚"
-           "▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚\n";
-    std::cerr
-        << "▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚"
-           "▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚\n\n\n";
+    std::cerr << "▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚"
+                 "▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚\n";
+    std::cerr << "▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚"
+                 "▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚\n\n\n";
   }
 
   {
@@ -171,8 +166,7 @@ static void PanicRenderReport(const std::vector<std::string> &lines) {
 
   for (auto &[addr, name] : trace) {
     std::cerr << "\x1b[31;1m┣╸╸\x1b[0m \x1b[37;1m";
-    std::cerr << "0x" << std::hex << std::setfill('0') << addr << std::dec
-              << ":\x1b[0m \t";
+    std::cerr << "0x" << std::hex << std::setfill('0') << addr << std::dec << ":\x1b[0m \t";
     std::cerr << name << "\n";
   }
   std::cerr << std::dec;
@@ -189,9 +183,8 @@ static void PanicRenderReport(const std::vector<std::string> &lines) {
                "at\n\x1b[36;1;4m"
             << kProjectRepoUrl << "\x1b[0m.\n\n";
 
-  std::cerr
-      << "\n\n▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚"
-         "▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚\n";
+  std::cerr << "\n\n▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚"
+               "▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚\n";
   std::cerr << "▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚"
                "▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚\n\n";
 
@@ -199,9 +192,7 @@ static void PanicRenderReport(const std::vector<std::string> &lines) {
   std::cerr.flush();
 }
 
-extern "C" NCC_EXPORT void QCorePanic(const char *msg) {
-  QCorePanicF("%s", msg);
-}
+extern "C" NCC_EXPORT void QCorePanic(const char *msg) { QCorePanicF("%s", msg); }
 
 [[noreturn]] static void QCoreVPanicF(const char *fmt, va_list args) {
   char *msg = nullptr;

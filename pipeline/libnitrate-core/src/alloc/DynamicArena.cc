@@ -140,6 +140,4 @@ NCC_EXPORT DynamicArena::~DynamicArena() {
   }
 }
 
-NCC_EXPORT auto DynamicArena::Alloc(size_t size, size_t alignment) -> void * {
-  return m_arena->Alloc(size, alignment);
-}
+NCC_EXPORT auto DynamicArena::Alloc(size_t size, size_t alignment) -> void * { return m_arena->Alloc(size, alignment); }

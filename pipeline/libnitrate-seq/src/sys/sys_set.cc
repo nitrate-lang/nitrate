@@ -50,15 +50,13 @@ auto Sequencer::SysSet() -> int {
   }
 
   if (lua_isstring(lua, 1) == 0) {
-    return luaL_error(lua, "expected string, got %s",
-                      lua_typename(lua, lua_type(lua, 1)));
+    return luaL_error(lua, "expected string, got %s", lua_typename(lua, lua_type(lua, 1)));
   }
 
   std::string_view key = lua_tostring(lua, 1);
 
-  bool illegal_set =
-      std::any_of(IMMUTABLE_NAMESPACES.begin(), IMMUTABLE_NAMESPACES.end(),
-                  [&key](auto ns) { return key.starts_with(ns); });
+  bool illegal_set = std::any_of(IMMUTABLE_NAMESPACES.begin(), IMMUTABLE_NAMESPACES.end(),
+                                 [&key](auto ns) { return key.starts_with(ns); });
 
   if (illegal_set) {
     return luaL_error(lua, "cannot set items in immutable namespace");

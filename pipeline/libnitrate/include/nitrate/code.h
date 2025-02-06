@@ -81,18 +81,13 @@ using NitDiagFunc = void (*)(const char *, void *);
  ******************************************************************************
  * @note This function is an ideal target for fuzz based testing              *
  *****************************************************************************/
-auto NitPipeline(FILE *in, FILE *out, NitDiagFunc diag, void *opaque,
-                 const char *const options[]) -> bool;
+auto NitPipeline(FILE *in, FILE *out, NitDiagFunc diag, void *opaque, const char *const options[]) -> bool;
 
 /******************************************************************************/
 
-static inline void NitDiagStdout(const char *message, void *) {
-  fprintf(stdout, "%s", message);
-}
+static inline void NitDiagStdout(const char *message, void *) { fprintf(stdout, "%s", message); }
 
-static inline void NitDiagStderr(const char *message, void *) {
-  fprintf(stderr, "%s", message);
-}
+static inline void NitDiagStderr(const char *message, void *) { fprintf(stderr, "%s", message); }
 
 #ifdef __cplusplus
 }

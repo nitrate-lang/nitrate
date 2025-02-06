@@ -1667,7 +1667,7 @@ using namespace ncc;
 //     if ((*it)->GetKind() == QAST_BLOCK) {
 //       /* Reduce unneeded nesting in the IR */
 //       qcore_assert(item->size() == 1);
-//       Seq *inner = item->at(0)->As<Seq>();
+//       Seq *inner = item.at(0)->As<Seq>();
 
 //       items.insert(items.end(), inner->GetItems().begin(),
 //                    inner->GetItems().end());
@@ -2246,8 +2246,7 @@ using namespace ncc;
 //   return out;
 // }
 
-NCC_EXPORT auto ir::NrLower(ncc::parse::Base *, const char *,
-                            bool) -> std::unique_ptr<IRModule> {
+NCC_EXPORT auto ir::NrLower(ncc::parse::Base *, const char *, bool) -> std::unique_ptr<IRModule> {
   Log << "Not implemented";
   return nullptr;
 }

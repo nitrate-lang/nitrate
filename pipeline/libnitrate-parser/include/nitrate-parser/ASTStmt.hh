@@ -52,8 +52,7 @@ namespace ncc::parse {
     SafetyMode m_safety;
 
   public:
-    constexpr Block(auto items, auto safety)
-        : Stmt(QAST_BLOCK), m_items(items), m_safety(safety) {}
+    constexpr Block(auto items, auto safety) : Stmt(QAST_BLOCK), m_items(items), m_safety(safety) {}
 
     [[nodiscard]] constexpr auto GetItems() const { return m_items; }
     [[nodiscard]] constexpr auto GetSafety() const { return m_safety; }
@@ -67,8 +66,7 @@ namespace ncc::parse {
     string m_name;
 
   public:
-    constexpr Variable(auto name, auto type, auto value, auto decl_type,
-                       auto attributes)
+    constexpr Variable(auto name, auto type, auto value, auto decl_type, auto attributes)
         : Stmt(QAST_VAR),
           m_attributes(attributes),
           m_type(std::move(type)),
@@ -88,8 +86,7 @@ namespace ncc::parse {
     string m_code;
 
   public:
-    constexpr Assembly(auto code, auto args)
-        : Stmt(QAST_INLINE_ASM), m_args(args), m_code(code) {}
+    constexpr Assembly(auto code, auto args) : Stmt(QAST_INLINE_ASM), m_args(args), m_code(code) {}
 
     [[nodiscard]] constexpr auto GetCode() const { return m_code; }
     [[nodiscard]] constexpr auto GetArgs() const { return m_args; }
@@ -102,10 +99,7 @@ namespace ncc::parse {
 
   public:
     constexpr If(auto cond, auto then, auto ele)
-        : Stmt(QAST_IF),
-          m_cond(std::move(cond)),
-          m_then(std::move(then)),
-          m_else(std::move(ele)) {}
+        : Stmt(QAST_IF), m_cond(std::move(cond)), m_then(std::move(then)), m_else(std::move(ele)) {}
 
     [[nodiscard]] constexpr auto GetCond() const { return m_cond; }
     [[nodiscard]] constexpr auto GetThen() const { return m_then; }
@@ -117,8 +111,7 @@ namespace ncc::parse {
     FlowPtr<Stmt> m_body;
 
   public:
-    constexpr While(auto cond, auto body)
-        : Stmt(QAST_WHILE), m_cond(std::move(cond)), m_body(std::move(body)) {}
+    constexpr While(auto cond, auto body) : Stmt(QAST_WHILE), m_cond(std::move(cond)), m_body(std::move(body)) {}
 
     [[nodiscard]] constexpr auto GetCond() const { return m_cond; }
     [[nodiscard]] constexpr auto GetBody() const { return m_body; }
@@ -156,12 +149,8 @@ namespace ncc::parse {
           m_idx_ident(idx_ident),
           m_val_ident(val_ident) {}
 
-    [[nodiscard]] constexpr auto GetIdxIdentifier() const {
-      return m_idx_ident;
-    }
-    [[nodiscard]] constexpr auto GetValIdentifier() const {
-      return m_val_ident;
-    }
+    [[nodiscard]] constexpr auto GetIdxIdentifier() const { return m_idx_ident; }
+    [[nodiscard]] constexpr auto GetValIdentifier() const { return m_val_ident; }
     [[nodiscard]] constexpr auto GetExpr() const { return m_expr; }
     [[nodiscard]] constexpr auto GetBody() const { return m_body; }
   };
@@ -180,8 +169,7 @@ namespace ncc::parse {
     NullableFlowPtr<Expr> m_value;
 
   public:
-    constexpr Return(auto value)
-        : Stmt(QAST_RETURN), m_value(std::move(value)) {}
+    constexpr Return(auto value) : Stmt(QAST_RETURN), m_value(std::move(value)) {}
 
     [[nodiscard]] constexpr auto GetValue() const { return m_value; }
   };
@@ -190,10 +178,7 @@ namespace ncc::parse {
     FlowPtr<Expr> m_cond, m_value;
 
   public:
-    constexpr ReturnIf(auto cond, auto value)
-        : Stmt(QAST_RETIF),
-          m_cond(std::move(cond)),
-          m_value(std::move(value)) {}
+    constexpr ReturnIf(auto cond, auto value) : Stmt(QAST_RETIF), m_cond(std::move(cond)), m_value(std::move(value)) {}
 
     [[nodiscard]] constexpr auto GetCond() const { return m_cond; }
     [[nodiscard]] constexpr auto GetValue() const { return m_value; }
@@ -204,8 +189,7 @@ namespace ncc::parse {
     FlowPtr<Stmt> m_body;
 
   public:
-    constexpr Case(auto cond, auto body)
-        : Stmt(QAST_CASE), m_cond(std::move(cond)), m_body(std::move(body)) {}
+    constexpr Case(auto cond, auto body) : Stmt(QAST_CASE), m_cond(std::move(cond)), m_body(std::move(body)) {}
 
     [[nodiscard]] constexpr auto GetCond() const { return m_cond; }
     [[nodiscard]] constexpr auto GetBody() const { return m_body; }
@@ -218,10 +202,7 @@ namespace ncc::parse {
 
   public:
     constexpr Switch(auto cond, auto cases, auto def)
-        : Stmt(QAST_SWITCH),
-          m_cases(cases),
-          m_cond(std::move(cond)),
-          m_default(std::move(def)) {}
+        : Stmt(QAST_SWITCH), m_cases(cases), m_cond(std::move(cond)), m_default(std::move(def)) {}
 
     [[nodiscard]] constexpr auto GetCond() const { return m_cond; }
     [[nodiscard]] constexpr auto GetCases() const { return m_cases; }
@@ -236,11 +217,7 @@ namespace ncc::parse {
 
   public:
     constexpr Export(auto content, auto abi_name, auto vis, auto attrs)
-        : Stmt(QAST_EXPORT),
-          m_attrs(attrs),
-          m_body(std::move(content)),
-          m_abi_name(abi_name),
-          m_vis(vis) {}
+        : Stmt(QAST_EXPORT), m_attrs(attrs), m_body(std::move(content)), m_abi_name(abi_name), m_vis(vis) {}
 
     [[nodiscard]] constexpr auto GetAbiName() const { return m_abi_name; }
     [[nodiscard]] constexpr auto GetBody() const { return m_body; }
@@ -255,10 +232,7 @@ namespace ncc::parse {
 
   public:
     constexpr Scope(auto name, auto body, auto deps)
-        : Stmt(QAST_SCOPE),
-          m_deps(deps),
-          m_body(std::move(body)),
-          m_name(name) {}
+        : Stmt(QAST_SCOPE), m_deps(deps), m_body(std::move(body)), m_name(name) {}
 
     [[nodiscard]] constexpr auto GetName() const { return m_name; }
     [[nodiscard]] constexpr auto GetBody() const { return m_body; }
@@ -270,8 +244,7 @@ namespace ncc::parse {
     string m_name;
 
   public:
-    constexpr Typedef(auto name, auto type)
-        : Stmt(QAST_TYPEDEF), m_type(std::move(type)), m_name(name) {}
+    constexpr Typedef(auto name, auto type) : Stmt(QAST_TYPEDEF), m_type(std::move(type)), m_name(name) {}
 
     [[nodiscard]] constexpr auto GetName() const { return m_name; }
     [[nodiscard]] constexpr auto GetType() const { return m_type; }
@@ -284,10 +257,7 @@ namespace ncc::parse {
 
   public:
     constexpr Enum(auto name, auto type, auto items)
-        : Stmt(QAST_ENUM),
-          m_items(items),
-          m_type(std::move(type)),
-          m_name(name) {}
+        : Stmt(QAST_ENUM), m_items(items), m_type(std::move(type)), m_name(name) {}
 
     [[nodiscard]] constexpr auto GetName() const { return m_name; }
     [[nodiscard]] constexpr auto GetItems() const { return m_items; }
@@ -307,9 +277,8 @@ namespace ncc::parse {
     bool m_variadic;
 
   public:
-    constexpr Function(auto attributes, auto purity, auto captures, auto name,
-                       auto params, auto fn_params, auto variadic,
-                       auto return_type, auto precond, auto postcond, auto body)
+    constexpr Function(auto attributes, auto purity, auto captures, auto name, auto params, auto fn_params,
+                       auto variadic, auto return_type, auto precond, auto postcond, auto body)
         : Stmt(QAST_FUNCTION),
           m_attributes(attributes),
           m_captures(captures),
@@ -330,9 +299,7 @@ namespace ncc::parse {
     [[nodiscard]] constexpr auto GetAttributes() const { return m_attributes; }
     [[nodiscard]] constexpr auto GetPurity() const { return m_purity; }
     [[nodiscard]] constexpr auto GetCaptures() const { return m_captures; }
-    [[nodiscard]] constexpr auto GetTemplateParams() const {
-      return m_template_parameters;
-    }
+    [[nodiscard]] constexpr auto GetTemplateParams() const { return m_template_parameters; }
     [[nodiscard]] constexpr auto GetParams() const { return m_params; }
     [[nodiscard]] constexpr auto GetReturn() const { return m_return; }
     [[nodiscard]] constexpr auto GetPrecond() const { return m_precond; }
@@ -340,16 +307,10 @@ namespace ncc::parse {
     [[nodiscard]] constexpr auto GetBody() const { return m_body; }
 
     [[nodiscard]] constexpr auto IsVariadic() const { return m_variadic; }
-    [[nodiscard]] constexpr auto IsDeclaration() const -> bool {
-      return !m_body.has_value();
-    }
-    [[nodiscard]] constexpr auto IsDefinition() const -> bool {
-      return m_body.has_value();
-    }
+    [[nodiscard]] constexpr auto IsDeclaration() const -> bool { return !m_body.has_value(); }
+    [[nodiscard]] constexpr auto IsDefinition() const -> bool { return m_body.has_value(); }
 
-    [[nodiscard]] constexpr auto HasContract() const -> bool {
-      return m_precond.has_value() || m_postcond.has_value();
-    }
+    [[nodiscard]] constexpr auto HasContract() const -> bool { return m_precond.has_value() || m_postcond.has_value(); }
   };
 
   class Struct final : public Stmt {
@@ -362,8 +323,8 @@ namespace ncc::parse {
     string m_name;
 
   public:
-    constexpr Struct(auto comp_type, auto attributes, auto name, auto params,
-                     auto names, auto fields, auto methods, auto static_methods)
+    constexpr Struct(auto comp_type, auto attributes, auto name, auto params, auto names, auto fields, auto methods,
+                     auto static_methods)
         : Stmt(QAST_STRUCT),
           m_attributes(attributes),
           m_names(names),
@@ -378,19 +339,13 @@ namespace ncc::parse {
     }
 
     [[nodiscard]] constexpr auto GetName() const { return m_name; }
-    [[nodiscard]] constexpr auto GetCompositeType() const {
-      return m_comp_type;
-    }
+    [[nodiscard]] constexpr auto GetCompositeType() const { return m_comp_type; }
     [[nodiscard]] constexpr auto GetAttributes() const { return m_attributes; }
-    [[nodiscard]] constexpr auto GetTemplateParams() const {
-      return m_template_parameters;
-    }
+    [[nodiscard]] constexpr auto GetTemplateParams() const { return m_template_parameters; }
     [[nodiscard]] constexpr auto GetNames() const { return m_names; }
     [[nodiscard]] constexpr auto GetFields() const { return m_fields; }
     [[nodiscard]] constexpr auto GetMethods() const { return m_methods; }
-    [[nodiscard]] constexpr auto GetStaticMethods() const {
-      return m_static_methods;
-    }
+    [[nodiscard]] constexpr auto GetStaticMethods() const { return m_static_methods; }
   };
 
   constexpr auto Stmt::IsExprStmt(npar_ty_t type) const -> bool {

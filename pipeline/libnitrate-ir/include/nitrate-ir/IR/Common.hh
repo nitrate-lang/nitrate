@@ -107,12 +107,10 @@ namespace ncc::ir {
 
   template <class A>
   using GenericCallArguments =
-      std::vector<std::pair<string, FlowPtr<GenericExpr<A>>>,
-                  Arena<std::pair<string, FlowPtr<GenericExpr<A>>>>>;
+      std::vector<std::pair<string, FlowPtr<GenericExpr<A>>>, Arena<std::pair<string, FlowPtr<GenericExpr<A>>>>>;
 
   template <class A>
-  using FnParams =
-      std::vector<FlowPtr<GenericType<A>>, Arena<FlowPtr<GenericType<A>>>>;
+  using FnParams = std::vector<FlowPtr<GenericType<A>>, Arena<FlowPtr<GenericType<A>>>>;
 
   enum class TmpType {
     CALL,
@@ -134,8 +132,7 @@ namespace ncc::ir {
   using TmpNodeCradle = std::variant<GenericCallArgsTmpNodeCradle<A>, string>;
 
   template <class A>
-  using GenericListItems =
-      std::vector<FlowPtr<GenericExpr<A>>, Arena<FlowPtr<GenericExpr<A>>>>;
+  using GenericListItems = std::vector<FlowPtr<GenericExpr<A>>, Arena<FlowPtr<GenericExpr<A>>>>;
 
   enum class AbiTag {
     C,
@@ -145,21 +142,17 @@ namespace ncc::ir {
   };
 
   template <class A>
-  using GenericCallArgs =
-      std::vector<FlowPtr<GenericExpr<A>>, Arena<FlowPtr<GenericExpr<A>>>>;
+  using GenericCallArgs = std::vector<FlowPtr<GenericExpr<A>>, Arena<FlowPtr<GenericExpr<A>>>>;
 
   template <class A>
-  using GenericSeqItems =
-      std::vector<FlowPtr<GenericExpr<A>>, Arena<FlowPtr<GenericExpr<A>>>>;
+  using GenericSeqItems = std::vector<FlowPtr<GenericExpr<A>>, Arena<FlowPtr<GenericExpr<A>>>>;
 
   template <class A>
   using GenericParams =
-      std::vector<std::pair<FlowPtr<GenericType<A>>, string>,
-                  Arena<std::pair<FlowPtr<GenericType<A>>, string>>>;
+      std::vector<std::pair<FlowPtr<GenericType<A>>, string>, Arena<std::pair<FlowPtr<GenericType<A>>, string>>>;
 
   template <class A>
-  using GenericSwitchCases =
-      std::vector<FlowPtr<GenericCase<A>>, Arena<FlowPtr<GenericCase<A>>>>;
+  using GenericSwitchCases = std::vector<FlowPtr<GenericCase<A>>, Arena<FlowPtr<GenericCase<A>>>>;
 
 }  // namespace ncc::ir
 

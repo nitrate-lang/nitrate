@@ -174,7 +174,6 @@ namespace ncc::lex {
   };
 
   constexpr size_t kLexEof = UINT32_MAX;
-  constexpr size_t kLexNoFile = 16777215;
 
   class IScanner;
 
@@ -185,27 +184,19 @@ namespace ncc::lex {
   public:
     constexpr Location() = default;
 
-    constexpr Location(uint32_t offset, uint32_t line, uint32_t column,
-                       string filename)
-        : m_offset(offset),
-          m_line(line),
-          m_column(column),
-          m_filename(filename) {}
+    constexpr Location(uint32_t offset, uint32_t line, uint32_t column, string filename)
+        : m_offset(offset), m_line(line), m_column(column), m_filename(filename) {}
 
-    static constexpr auto EndOfFile() {
-      return Location(kLexEof, kLexEof, kLexEof, "");
-    }
+    static constexpr auto EndOfFile() { return Location(kLexEof, kLexEof, kLexEof, ""); }
 
     [[nodiscard]] constexpr auto GetOffset() const { return m_offset; }
     [[nodiscard]] constexpr auto GetRow() const { return m_line; }
     [[nodiscard]] constexpr auto GetCol() const { return m_column; }
-    [[nodiscard]] constexpr auto GetFilename() const -> string {
-      return m_filename;
-    }
+    [[nodiscard]] constexpr auto GetFilename() const -> string { return m_filename; }
 
     bool operator==(const Location &rhs) const {
-      return m_offset == rhs.m_offset && m_line == rhs.m_line &&
-             m_column == rhs.m_column && m_filename == rhs.m_filename;
+      return m_offset == rhs.m_offset && m_line == rhs.m_line && m_column == rhs.m_column &&
+             m_filename == rhs.m_filename;
     }
   } __attribute__((packed));
 
@@ -213,17 +204,17 @@ namespace ncc::lex {
   public:
     using Counter = uint32_t;
 
-    constexpr LocationID(Counter id = 0) : m_id(id) {}
+    constexpr explicit LocationID(Counter id = 0) : m_id(id) {}
 
     auto Get(IScanner &l) const -> Location;
     [[nodiscard]] constexpr auto GetId() const -> Counter { return m_id; }
 
-    constexpr auto operator==(const LocationID &rhs) const -> bool {
-      return m_id == rhs.m_id;
-    }
+    constexpr auto operator==(const LocationID &rhs) const -> bool { return m_id == rhs.m_id; }
 
-    constexpr auto operator<(const LocationID &rhs) const -> bool {
-      return m_id < rhs.m_id;
+    constexpr auto operator<(const LocationID &rhs) const -> bool { return m_id < rhs.m_id; }
+
+    [[nodiscard]] constexpr bool has_value() const {  // NOLINT
+      return m_id != 0;
     }
 
   private:
@@ -242,13 +233,35 @@ namespace ncc::lex {
     constexpr TokenData(Operator op) : m_op(op) {}
     constexpr TokenData(Keyword key) : m_key(key) {}
     constexpr TokenData(string str) : m_str(str) {}
+
+    static constexpr TokenData GetDefault(TokenType ty) {
+      switch (ty) {
+        case EofF:
+          return Operator();
+        case Punc:
+          return Punctor();
+        case Oper:
+          return Operator();
+        case KeyW:
+          return Keyword();
+        case IntL:
+        case NumL:
+        case Text:
+        case Name:
+        case Char:
+        case MacB:
+        case Macr:
+        case Note:
+          return string();
+      }
+    }
   } __attribute__((packed));
 
   string to_string(TokenType, TokenData);  // NOLINT
 
   class TokenBase {
     TokenType m_type;
-    LocationID m_location_id = 0;
+    LocationID m_location_id;
 
   public:
     TokenData m_v;
@@ -259,11 +272,25 @@ namespace ncc::lex {
     constexpr TokenBase(TokenType ty, T val, LocationID start = LocationID())
         : m_type(ty), m_location_id(start), m_v{val} {}
 
+    constexpr TokenBase(TokenType ty, size_t str_len, const char *str_ptr, LocationID start = LocationID())
+        : m_type(ty), m_location_id(start), m_v{std::string_view(str_ptr, str_len)} {}
+
+    constexpr TokenBase(Operator op, LocationID start = LocationID()) : m_type(Oper), m_location_id(start), m_v{op} {}
+
+    constexpr TokenBase(Punctor punc, LocationID start = LocationID())
+        : m_type(Punc), m_location_id(start), m_v{punc} {}
+
+    constexpr TokenBase(Keyword key, LocationID start = LocationID()) : m_type(KeyW), m_location_id(start), m_v{key} {}
+
+    constexpr TokenBase(uint64_t num, LocationID start = LocationID())
+        : m_type(IntL), m_location_id(start), m_v{std::to_string(num)} {}
+
+    constexpr TokenBase(string identifier, LocationID start = LocationID())
+        : m_type(Name), m_location_id(start), m_v{identifier} {}
+
     constexpr static auto EndOfFile() { return TokenBase(); }
 
-    [[nodiscard]] constexpr bool Is(TokenType val) const {
-      return m_type == val;
-    }
+    [[nodiscard]] constexpr bool Is(TokenType val) const { return m_type == val; }
 
     constexpr auto operator==(const TokenBase &rhs) const -> bool {
       if (m_type != rhs.m_type) {
@@ -301,9 +328,7 @@ namespace ncc::lex {
       }
     }
 
-    [[nodiscard]] constexpr auto GetString() const {
-      return to_string(m_type, m_v);
-    }
+    [[nodiscard]] constexpr auto GetString() const { return to_string(m_type, m_v); }
     [[nodiscard]] constexpr auto GetKeyword() const { return m_v.m_key; }
     [[nodiscard]] constexpr auto GetOperator() const { return m_v.m_op; }
     [[nodiscard]] constexpr auto GetPunctor() const { return m_v.m_punc; }
@@ -335,15 +360,15 @@ namespace ncc::lex {
           return m_v.m_str < rhs.m_v.m_str;
       }
     }
+
+    constexpr operator bool() const { return m_type != EofF; }
   } __attribute__((packed));
 
   using Token = TokenBase;
 
   namespace detail {
     template <typename L, typename R>
-    auto MakeBimap(
-        std::initializer_list<typename boost::bimap<L, R>::value_type> list)
-        -> boost::bimap<L, R> {
+    auto MakeBimap(std::initializer_list<typename boost::bimap<L, R>::value_type> list) -> boost::bimap<L, R> {
       return boost::bimap<L, R>(list.begin(), list.end());
     }
 
@@ -370,156 +395,125 @@ namespace ncc::lex {
   enum class OpMode : uint8_t { Binary, PreUnary, PostUnary, Ternary };
   enum Associativity : uint8_t { Left, Right };
 
-  inline static const auto LEXICAL_KEYWORDS =
-      detail::MakeBimap<std::string, Keyword>({
-          {"scope", Scope},     {"pub", Pub},       {"sec", Sec},
-          {"pro", Pro},         {"import", Import}, {"type", Type},
-          {"let", Let},         {"var", Var},       {"const", Const},
-          {"static", Static},   {"struct", Struct}, {"region", Region},
-          {"group", Group},     {"class", Class},   {"union", Union},
-          {"opaque", Opaque},   {"enum", Enum},     {"__fstring", __FString},
-          {"fn", Fn},           {"unsafe", Unsafe}, {"safe", Safe},
-          {"promise", Promise}, {"if", If},         {"else", Else},
-          {"for", For},         {"while", While},   {"do", Do},
-          {"switch", Switch},   {"break", Break},   {"continue", Continue},
-          {"ret", Return},      {"retif", Retif},   {"foreach", Foreach},
-          {"try", Try},         {"catch", Catch},   {"throw", Throw},
-          {"async", Async},     {"await", Await},   {"__asm__", __Asm__},
-          {"undef", Undef},     {"null", Null},     {"true", True},
-          {"false", False},
-      });
+  inline static const auto LEXICAL_KEYWORDS = detail::MakeBimap<std::string, Keyword>({
+      {"scope", Scope},     {"pub", Pub},       {"sec", Sec},
+      {"pro", Pro},         {"import", Import}, {"type", Type},
+      {"let", Let},         {"var", Var},       {"const", Const},
+      {"static", Static},   {"struct", Struct}, {"region", Region},
+      {"group", Group},     {"class", Class},   {"union", Union},
+      {"opaque", Opaque},   {"enum", Enum},     {"__fstring", __FString},
+      {"fn", Fn},           {"unsafe", Unsafe}, {"safe", Safe},
+      {"promise", Promise}, {"if", If},         {"else", Else},
+      {"for", For},         {"while", While},   {"do", Do},
+      {"switch", Switch},   {"break", Break},   {"continue", Continue},
+      {"ret", Return},      {"retif", Retif},   {"foreach", Foreach},
+      {"try", Try},         {"catch", Catch},   {"throw", Throw},
+      {"async", Async},     {"await", Await},   {"__asm__", __Asm__},
+      {"undef", Undef},     {"null", Null},     {"true", True},
+      {"false", False},
+  });
 
-  inline static const auto LEXICAL_OPERATORS =
-      detail::MakeBimap<std::string, Operator>({
-          {"+", OpPlus},
-          {"-", OpMinus},
-          {"*", OpTimes},
-          {"/", OpSlash},
-          {"%", OpPercent},
-          {"&", OpBitAnd},
-          {"|", OpBitOr},
-          {"^", OpBitXor},
-          {"~", OpBitNot},
-          {"<<", OpLShift},
-          {">>", OpRShift},
-          {"<<<", OpROTL},
-          {">>>", OpROTR},
-          {"&&", OpLogicAnd},
-          {"||", OpLogicOr},
-          {"^^", OpLogicXor},
-          {"!", OpLogicNot},
-          {"<", OpLT},
-          {">", OpGT},
-          {"<=", OpLE},
-          {">=", OpGE},
-          {"==", OpEq},
-          {"!=", OpNE},
-          {"=", OpSet},
-          {"+=", OpPlusSet},
-          {"-=", OpMinusSet},
-          {"*=", OpTimesSet},
-          {"/=", OpSlashSet},
-          {"%=", OpPercentSet},
-          {"&=", OpBitAndSet},
-          {"|=", OpBitOrSet},
-          {"^=", OpBitXorSet},
-          {"&&=", OpLogicAndSet},
-          {"||=", OpLogicOrSet},
-          {"^^=", OpLogicXorSet},
-          {"<<=", OpLShiftSet},
-          {">>=", OpRShiftSet},
-          {"<<<=", OpROTLSet},
-          {">>>=", OpROTRSet},
-          {"++", OpInc},
-          {"--", OpDec},
-          {"as", OpAs},
-          {"bitcast_as", OpBitcastAs},
-          {"in", OpIn},
-          {"out", OpOut},
-          {"sizeof", OpSizeof},
-          {"bitsizeof", OpBitsizeof},
-          {"alignof", OpAlignof},
-          {"typeof", OpTypeof},
-          {"comptime", OpComptime},
-          {".", OpDot},
-          {"..", OpRange},
-          {"...", OpEllipsis},
-          {"=>", OpArrow},
-          {"?", OpTernary},
-      });
+  inline static const auto LEXICAL_OPERATORS = detail::MakeBimap<std::string, Operator>({
+      {"+", OpPlus},
+      {"-", OpMinus},
+      {"*", OpTimes},
+      {"/", OpSlash},
+      {"%", OpPercent},
+      {"&", OpBitAnd},
+      {"|", OpBitOr},
+      {"^", OpBitXor},
+      {"~", OpBitNot},
+      {"<<", OpLShift},
+      {">>", OpRShift},
+      {"<<<", OpROTL},
+      {">>>", OpROTR},
+      {"&&", OpLogicAnd},
+      {"||", OpLogicOr},
+      {"^^", OpLogicXor},
+      {"!", OpLogicNot},
+      {"<", OpLT},
+      {">", OpGT},
+      {"<=", OpLE},
+      {">=", OpGE},
+      {"==", OpEq},
+      {"!=", OpNE},
+      {"=", OpSet},
+      {"+=", OpPlusSet},
+      {"-=", OpMinusSet},
+      {"*=", OpTimesSet},
+      {"/=", OpSlashSet},
+      {"%=", OpPercentSet},
+      {"&=", OpBitAndSet},
+      {"|=", OpBitOrSet},
+      {"^=", OpBitXorSet},
+      {"&&=", OpLogicAndSet},
+      {"||=", OpLogicOrSet},
+      {"^^=", OpLogicXorSet},
+      {"<<=", OpLShiftSet},
+      {">>=", OpRShiftSet},
+      {"<<<=", OpROTLSet},
+      {">>>=", OpROTRSet},
+      {"++", OpInc},
+      {"--", OpDec},
+      {"as", OpAs},
+      {"bitcast_as", OpBitcastAs},
+      {"in", OpIn},
+      {"out", OpOut},
+      {"sizeof", OpSizeof},
+      {"bitsizeof", OpBitsizeof},
+      {"alignof", OpAlignof},
+      {"typeof", OpTypeof},
+      {"comptime", OpComptime},
+      {".", OpDot},
+      {"..", OpRange},
+      {"...", OpEllipsis},
+      {"=>", OpArrow},
+      {"?", OpTernary},
+  });
 
-  inline static const auto LEXICAL_OPERATORS_CONFIG =
-      detail::MakeBimap<Operator, detail::OpConfig>({
-          {OpPlus, {detail::Both, true}},
-          {OpMinus, {detail::Both, true}},
-          {OpTimes, {detail::Both, true}},
-          {OpSlash, {detail::Binary, true}},
-          {OpPercent, {detail::Binary, true}},
-          {OpBitAnd, {detail::Both, true}},
-          {OpBitOr, {detail::Binary, true}},
-          {OpBitXor, {detail::Binary, true}},
-          {OpBitNot, {detail::Unary, true}},
-          {OpLShift, {detail::Binary, true}},
-          {OpRShift, {detail::Binary, true}},
-          {OpROTL, {detail::Binary, true}},
-          {OpROTR, {detail::Binary, true}},
-          {OpLogicAnd, {detail::Binary, true}},
-          {OpLogicOr, {detail::Binary, true}},
-          {OpLogicXor, {detail::Binary, true}},
-          {OpLogicNot, {detail::Unary, true}},
-          {OpLT, {detail::Binary, true}},
-          {OpGT, {detail::Binary, true}},
-          {OpLE, {detail::Binary, true}},
-          {OpGE, {detail::Binary, true}},
-          {OpEq, {detail::Binary, true}},
-          {OpNE, {detail::Binary, true}},
-          {OpSet, {detail::Binary, true}},
-          {OpPlusSet, {detail::Binary, true}},
-          {OpMinusSet, {detail::Binary, true}},
-          {OpTimesSet, {detail::Binary, true}},
-          {OpSlashSet, {detail::Binary, true}},
-          {OpPercentSet, {detail::Binary, true}},
-          {OpBitAndSet, {detail::Binary, true}},
-          {OpBitOrSet, {detail::Binary, true}},
-          {OpBitXorSet, {detail::Binary, true}},
-          {OpLogicAndSet, {detail::Binary, true}},
-          {OpLogicOrSet, {detail::Binary, true}},
-          {OpLogicXorSet, {detail::Binary, true}},
-          {OpLShiftSet, {detail::Binary, true}},
-          {OpRShiftSet, {detail::Binary, true}},
-          {OpROTLSet, {detail::Binary, true}},
-          {OpROTRSet, {detail::Binary, true}},
-          {OpInc, {detail::Unary, true}},
-          {OpDec, {detail::Unary, true}},
-          {OpAs, {detail::Binary, true}},
-          {OpBitcastAs, {detail::Binary, false}},
-          {OpIn, {detail::Both, false}},
-          {OpOut, {detail::Both, false}},
-          {OpSizeof, {detail::Unary, false}},
-          {OpBitsizeof, {detail::Unary, false}},
-          {OpAlignof, {detail::Unary, false}},
-          {OpTypeof, {detail::Unary, false}},
-          {OpComptime, {detail::Unary, false}},
-          {OpDot, {detail::Binary, false}},
-          {OpRange, {detail::Binary, true}},
-          {OpEllipsis, {detail::Unary, false}},
-          {OpArrow, {detail::Binary, false}},
-          {OpTernary, {detail::Ternary, false}},
-      });
+  inline static const auto LEXICAL_OPERATORS_CONFIG = detail::MakeBimap<Operator, detail::OpConfig>({
+      {OpPlus, {detail::Both, true}},          {OpMinus, {detail::Both, true}},
+      {OpTimes, {detail::Both, true}},         {OpSlash, {detail::Binary, true}},
+      {OpPercent, {detail::Binary, true}},     {OpBitAnd, {detail::Both, true}},
+      {OpBitOr, {detail::Binary, true}},       {OpBitXor, {detail::Binary, true}},
+      {OpBitNot, {detail::Unary, true}},       {OpLShift, {detail::Binary, true}},
+      {OpRShift, {detail::Binary, true}},      {OpROTL, {detail::Binary, true}},
+      {OpROTR, {detail::Binary, true}},        {OpLogicAnd, {detail::Binary, true}},
+      {OpLogicOr, {detail::Binary, true}},     {OpLogicXor, {detail::Binary, true}},
+      {OpLogicNot, {detail::Unary, true}},     {OpLT, {detail::Binary, true}},
+      {OpGT, {detail::Binary, true}},          {OpLE, {detail::Binary, true}},
+      {OpGE, {detail::Binary, true}},          {OpEq, {detail::Binary, true}},
+      {OpNE, {detail::Binary, true}},          {OpSet, {detail::Binary, true}},
+      {OpPlusSet, {detail::Binary, true}},     {OpMinusSet, {detail::Binary, true}},
+      {OpTimesSet, {detail::Binary, true}},    {OpSlashSet, {detail::Binary, true}},
+      {OpPercentSet, {detail::Binary, true}},  {OpBitAndSet, {detail::Binary, true}},
+      {OpBitOrSet, {detail::Binary, true}},    {OpBitXorSet, {detail::Binary, true}},
+      {OpLogicAndSet, {detail::Binary, true}}, {OpLogicOrSet, {detail::Binary, true}},
+      {OpLogicXorSet, {detail::Binary, true}}, {OpLShiftSet, {detail::Binary, true}},
+      {OpRShiftSet, {detail::Binary, true}},   {OpROTLSet, {detail::Binary, true}},
+      {OpROTRSet, {detail::Binary, true}},     {OpInc, {detail::Unary, true}},
+      {OpDec, {detail::Unary, true}},          {OpAs, {detail::Binary, true}},
+      {OpBitcastAs, {detail::Binary, false}},  {OpIn, {detail::Both, false}},
+      {OpOut, {detail::Both, false}},          {OpSizeof, {detail::Unary, false}},
+      {OpBitsizeof, {detail::Unary, false}},   {OpAlignof, {detail::Unary, false}},
+      {OpTypeof, {detail::Unary, false}},      {OpComptime, {detail::Unary, false}},
+      {OpDot, {detail::Binary, false}},        {OpRange, {detail::Binary, true}},
+      {OpEllipsis, {detail::Unary, false}},    {OpArrow, {detail::Binary, false}},
+      {OpTernary, {detail::Ternary, false}},
+  });
 
-  inline static const auto LEXICAL_PUNCTORS =
-      detail::MakeBimap<std::string, Punctor>({
-          {"(", PuncLPar},
-          {")", PuncRPar},
-          {"[", PuncLBrk},
-          {"]", PuncRBrk},
-          {"{", PuncLCur},
-          {"}", PuncRCur},
-          {",", PuncComa},
-          {":", PuncColn},
-          {";", PuncSemi},
-          {"::", PuncScope},
-      });
+  inline static const auto LEXICAL_PUNCTORS = detail::MakeBimap<std::string, Punctor>({
+      {"(", PuncLPar},
+      {")", PuncRPar},
+      {"[", PuncLBrk},
+      {"]", PuncRBrk},
+      {"{", PuncLCur},
+      {"}", PuncRCur},
+      {",", PuncComa},
+      {":", PuncColn},
+      {";", PuncSemi},
+      {"::", PuncScope},
+  });
 
   auto GetOperatorPrecedence(Operator op, OpMode type) -> short;
   auto GetOperatorAssociativity(Operator op, OpMode type) -> Associativity;
@@ -537,8 +531,7 @@ namespace ncc::lex {
     return LEXICAL_PUNCTORS.right.at(punct).c_str();
   }
 
-  static inline auto operator<<(std::ostream &os,
-                                TokenType ty) -> std::ostream & {
+  static inline auto operator<<(std::ostream &os, TokenType ty) -> std::ostream & {
     os << to_string(ty);
     return os;
   }
@@ -564,9 +557,7 @@ namespace ncc::lex {
 namespace std {
   template <>
   struct hash<ncc::lex::LocationID> {
-    auto operator()(const ncc::lex::LocationID &loc) const -> size_t {
-      return loc.GetId();
-    }
+    auto operator()(const ncc::lex::LocationID &loc) const -> size_t { return loc.GetId(); }
   };
 
   template <>

@@ -48,8 +48,7 @@ auto Sequencer::SysFetch() -> int {
   }
 
   if (lua_isstring(lua, 1) == 0) {
-    return luaL_error(lua, "expected string, got %s",
-                      lua_typename(lua, lua_type(lua, 1)));
+    return luaL_error(lua, "expected string, got %s", lua_typename(lua, lua_type(lua, 1)));
   }
 
   if (auto data = FetchModuleData(lua_tostring(lua, 1))) {

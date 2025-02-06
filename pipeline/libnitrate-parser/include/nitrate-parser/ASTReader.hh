@@ -43,8 +43,7 @@
 #include <optional>
 
 namespace ncc::parse {
-  using ReaderSourceManager =
-      std::optional<std::reference_wrapper<lex::IScanner>>;
+  using ReaderSourceManager = std::optional<std::reference_wrapper<lex::IScanner>>;
 
   class NCC_EXPORT AstReader final {
     template <typename T>
@@ -54,12 +53,10 @@ namespace ncc::parse {
     ReaderSourceManager m_rd;
     std::unique_ptr<IMemory> m_mm;
 
-    void UnmarshalLocationLocation(const SyntaxTree::SourceLocationRange &in,
-                                   const FlowPtr<Base> &out);
+    void UnmarshalLocationLocation(const SyntaxTree::SourceLocationRange &in, const FlowPtr<Base> &out);
 
     void UnmarshalCodeComment(
-        const ::google::protobuf::RepeatedPtrField<
-            ::nitrate::parser::SyntaxTree::UserComment> &in,
+        const ::google::protobuf::RepeatedPtrField<::nitrate::parser::SyntaxTree::UserComment> &in,
         const FlowPtr<Base> &out);
 
     auto Unmarshal(const SyntaxTree::Expr &in) -> Result<Expr>;
@@ -136,8 +133,7 @@ namespace ncc::parse {
     auto Unmarshal(const SyntaxTree::Export &in) -> Result<Export>;
 
   public:
-    AstReader(std::string_view protobuf_data,
-              ReaderSourceManager source_manager = std::nullopt);
+    AstReader(std::string_view protobuf_data, ReaderSourceManager source_manager = std::nullopt);
     ~AstReader() = default;
 
     auto Get() -> std::optional<ASTRoot>;

@@ -60,6 +60,4 @@ NCC_EXPORT void LexerLibrarySetup::Deinit() {
   Log << Debug << "Nitrate Lexer Library deinitialized";
 }
 
-NCC_EXPORT auto LexerLibrarySetup::GetVersionId() -> std::string_view {
-  return __TARGET_VERSION;
-}
+NCC_EXPORT auto LexerLibrarySetup::GetVersionId() -> std::string_view { return __TARGET_VERSION; }

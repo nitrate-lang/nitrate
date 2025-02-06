@@ -56,8 +56,7 @@ auto Parser::PImpl::RecurseSwitchCase() -> std::pair<FlowPtr<Stmt>, bool> {
   });
   auto body = RecurseSwitchCaseBody();
 
-  auto is_the_default_case =
-      cond->Is(QAST_IDENT) && cond->As<Identifier>()->GetName() == "_";
+  auto is_the_default_case = cond->Is(QAST_IDENT) && cond->As<Identifier>()->GetName() == "_";
 
   if (is_the_default_case) {
     return {body, true};
@@ -66,8 +65,7 @@ auto Parser::PImpl::RecurseSwitchCase() -> std::pair<FlowPtr<Stmt>, bool> {
   return {CreateNode<Case>(cond, body)(), false};
 }
 
-auto Parser::PImpl::RecurseSwitchBody()
-    -> std::optional<std::pair<SwitchCases, NullableFlowPtr<Stmt>>> {
+auto Parser::PImpl::RecurseSwitchBody() -> std::optional<std::pair<SwitchCases, NullableFlowPtr<Stmt>>> {
   SwitchCases cases;
   NullableFlowPtr<Stmt> default_case;
 

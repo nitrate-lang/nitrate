@@ -47,7 +47,7 @@ auto Parser::PImpl::RecurseEnumType() -> NullableFlowPtr<parse::Type> {
 
 auto Parser::PImpl::RecurseEnumItem() -> std::optional<EnumItem> {
   auto member_name = RecurseName();
-  if (member_name->empty()) {
+  if (member_name.empty()) {
     Log << SyntaxError << current() << "Enum member name cannot be empty.";
     return std::nullopt;
   }
@@ -75,8 +75,7 @@ auto Parser::PImpl::RecurseEnumItems() -> std::optional<EnumItems> {
   if (NextIf(PuncLCur)) {
     while (true) {
       if (NextIf(EofF)) [[unlikely]] {
-        Log << SyntaxError << current()
-            << "Unexpected EOF encountered while parsing enum fields.";
+        Log << SyntaxError << current() << "Unexpected EOF encountered while parsing enum fields.";
         break;
       }
 

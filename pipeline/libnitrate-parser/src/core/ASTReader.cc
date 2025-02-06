@@ -50,8 +50,7 @@ using namespace ncc;
 using namespace ncc::parse;
 using namespace nitrate::parser;
 
-static NCC_FORCE_INLINE parse::SafetyMode FromSafetyMode(
-    SyntaxTree::Block_SafetyMode mode) noexcept {
+static NCC_FORCE_INLINE parse::SafetyMode FromSafetyMode(SyntaxTree::Block_SafetyMode mode) noexcept {
   switch (mode) {
     case SyntaxTree::Block_SafetyMode_Safe: {
       return parse::SafetyMode::Safe;
@@ -67,8 +66,7 @@ static NCC_FORCE_INLINE parse::SafetyMode FromSafetyMode(
   }
 }
 
-static NCC_FORCE_INLINE parse::VariableType FromVariableKind(
-    SyntaxTree::Variable::VariableKind type) noexcept {
+static NCC_FORCE_INLINE parse::VariableType FromVariableKind(SyntaxTree::Variable::VariableKind type) noexcept {
   switch (type) {
     case SyntaxTree::Variable_VariableKind_Let: {
       return parse::VariableType::Let;
@@ -324,8 +322,7 @@ static NCC_FORCE_INLINE parse::Vis FromVisibility(SyntaxTree::Vis vis) {
   }
 }
 
-static NCC_FORCE_INLINE parse::CompositeType FromCompType(
-    SyntaxTree::Struct::AggregateKind kind) {
+static NCC_FORCE_INLINE parse::CompositeType FromCompType(SyntaxTree::Struct::AggregateKind kind) {
   switch (kind) {
     case SyntaxTree::Struct_AggregateKind_Struct_: {
       return CompositeType::Struct;
@@ -349,8 +346,7 @@ static NCC_FORCE_INLINE parse::CompositeType FromCompType(
   }
 }
 
-static NCC_FORCE_INLINE parse::Purity FromPurity(
-    SyntaxTree::FunctionPurity purity) {
+static NCC_FORCE_INLINE parse::Purity FromPurity(SyntaxTree::FunctionPurity purity) {
   switch (purity) {
     case SyntaxTree::FunctionPurity::Pure: {
       return Purity::Pure;
@@ -374,8 +370,7 @@ static NCC_FORCE_INLINE parse::Purity FromPurity(
   }
 }
 
-void AstReader::UnmarshalLocationLocation(
-    const SyntaxTree::SourceLocationRange &in, const FlowPtr<Base> &out) {
+void AstReader::UnmarshalLocationLocation(const SyntaxTree::SourceLocationRange &in, const FlowPtr<Base> &out) {
   if (!m_rd.has_value()) {
     return;
   }
@@ -389,8 +384,7 @@ void AstReader::UnmarshalLocationLocation(
     auto offset = in.start().offset();
     auto filename = in.start().has_file() ? in.start().file() : "";
 
-    start_loc = m_rd->get().InternLocation(
-        lex::Location(offset, line, column, filename));
+    start_loc = m_rd->get().InternLocation(lex::Location(offset, line, column, filename));
   }
 
   if (in.has_end()) {
@@ -399,16 +393,14 @@ void AstReader::UnmarshalLocationLocation(
     auto offset = in.end().offset();
     auto filename = in.end().has_file() ? in.end().file() : "";
 
-    end_loc = m_rd->get().InternLocation(
-        lex::Location(offset, line, column, filename));
+    end_loc = m_rd->get().InternLocation(lex::Location(offset, line, column, filename));
   }
 
   out->SetLoc(start_loc, end_loc);
 }
 
 void AstReader::UnmarshalCodeComment(
-    const ::google::protobuf::RepeatedPtrField<
-        ::nitrate::parser::SyntaxTree::UserComment> &in,
+    const ::google::protobuf::RepeatedPtrField< ::nitrate::parser::SyntaxTree::UserComment> &in,
     const FlowPtr<Base> &out) {
   std::vector<string> comments;
   comments.reserve(in.size());
@@ -1106,8 +1098,7 @@ auto AstReader::Unmarshal(const SyntaxTree::InferTy &in) -> Result<InferTy> {
   return type;
 }
 
-auto AstReader::Unmarshal(const SyntaxTree::TemplateType &in)
-    -> Result<TemplateType> {
+auto AstReader::Unmarshal(const SyntaxTree::TemplateType &in) -> Result<TemplateType> {
   auto bit_width = Unmarshal(in.bit_width());
   if (in.has_bit_width() && !bit_width.has_value()) [[unlikely]] {
     return std::nullopt;
@@ -1707,8 +1698,7 @@ auto AstReader::Unmarshal(const SyntaxTree::ArrayTy &in) -> Result<ArrayTy> {
     return std::nullopt;
   }
 
-  auto type =
-      CreateNode<ArrayTy>(element_type.value(), element_count.value())();
+  auto type = CreateNode<ArrayTy>(element_type.value(), element_count.value())();
   type->SetWidth(bit_width);
   type->SetRangeBegin(minimum);
   type->SetRangeEnd(maximum);
@@ -1801,8 +1791,7 @@ auto AstReader::Unmarshal(const SyntaxTree::FuncTy &in) -> Result<FuncTy> {
     attributes.push_back(attribute.value());
   }
 
-  auto type = CreateNode<FuncTy>(return_type.value(), parameters, in.variadic(),
-                                 FromPurity(in.purity()), attributes)();
+  auto type = CreateNode<FuncTy>(return_type.value(), parameters, in.variadic(), FromPurity(in.purity()), attributes)();
   type->SetWidth(bit_width);
   type->SetRangeBegin(minimum);
   type->SetRangeEnd(maximum);
@@ -1819,8 +1808,7 @@ auto AstReader::Unmarshal(const SyntaxTree::Unary &in) -> Result<Unary> {
     return std::nullopt;
   }
 
-  auto object =
-      CreateNode<Unary>(FromOperator(in.operator_()), operand.value())();
+  auto object = CreateNode<Unary>(FromOperator(in.operator_()), operand.value())();
   UnmarshalLocationLocation(in.location(), object);
   UnmarshalCodeComment(in.comments(), object);
 
@@ -1838,23 +1826,20 @@ auto AstReader::Unmarshal(const SyntaxTree::Binary &in) -> Result<Binary> {
     return std::nullopt;
   }
 
-  auto object = CreateNode<Binary>(lhs.value(), FromOperator(in.operator_()),
-                                   rhs.value())();
+  auto object = CreateNode<Binary>(lhs.value(), FromOperator(in.operator_()), rhs.value())();
   UnmarshalLocationLocation(in.location(), object);
   UnmarshalCodeComment(in.comments(), object);
 
   return object;
 }
 
-auto AstReader::Unmarshal(const SyntaxTree::PostUnary &in)
-    -> Result<PostUnary> {
+auto AstReader::Unmarshal(const SyntaxTree::PostUnary &in) -> Result<PostUnary> {
   auto operand = Unmarshal(in.operand());
   if (!operand.has_value()) [[unlikely]] {
     return std::nullopt;
   }
 
-  auto object =
-      CreateNode<PostUnary>(operand.value(), FromOperator(in.operator_()))();
+  auto object = CreateNode<PostUnary>(operand.value(), FromOperator(in.operator_()))();
   UnmarshalLocationLocation(in.location(), object);
   UnmarshalCodeComment(in.comments(), object);
 
@@ -1877,8 +1862,7 @@ auto AstReader::Unmarshal(const SyntaxTree::Ternary &in) -> Result<Ternary> {
     return std::nullopt;
   }
 
-  auto object = CreateNode<Ternary>(condition.value(), true_expr.value(),
-                                    false_expr.value())();
+  auto object = CreateNode<Ternary>(condition.value(), true_expr.value(), false_expr.value())();
   UnmarshalLocationLocation(in.location(), object);
   UnmarshalCodeComment(in.comments(), object);
 
@@ -1886,17 +1870,14 @@ auto AstReader::Unmarshal(const SyntaxTree::Ternary &in) -> Result<Ternary> {
 }
 
 auto AstReader::Unmarshal(const SyntaxTree::Integer &in) -> Result<Integer> {
-  bool lexically_valid = std::all_of(in.number().begin(), in.number().end(),
-                                     [](char c) { return std::isdigit(c); });
+  bool lexically_valid = std::all_of(in.number().begin(), in.number().end(), [](char c) { return std::isdigit(c); });
   if (!lexically_valid) [[unlikely]] {
     return std::nullopt;
   }
 
   /* Do range checking */
   boost::multiprecision::cpp_int value(in.number());
-  if (value < 0 || value > boost::multiprecision::cpp_int(
-                               "340282366920938463463374607431768211455"))
-      [[unlikely]] {
+  if (value < 0 || value > boost::multiprecision::cpp_int("340282366920938463463374607431768211455")) [[unlikely]] {
     return std::nullopt;
   }
 
@@ -1911,9 +1892,7 @@ auto AstReader::Unmarshal(const SyntaxTree::Float &in) -> Result<Float> {
   long double f = 0.0;
 
   /* Verify float format  */
-  if (std::from_chars(in.number().data(),
-                      in.number().data() + in.number().size(), f)
-          .ec != std::errc()) [[unlikely]] {
+  if (std::from_chars(in.number().data(), in.number().data() + in.number().size(), f).ec != std::errc()) [[unlikely]] {
     return std::nullopt;
   }
 
@@ -1940,8 +1919,7 @@ auto AstReader::Unmarshal(const SyntaxTree::String &in) -> Result<String> {
   return object;
 }
 
-auto AstReader::Unmarshal(const SyntaxTree::Character &in)
-    -> Result<Character> {
+auto AstReader::Unmarshal(const SyntaxTree::Character &in) -> Result<Character> {
   auto value = in.char_();
   if (value < 0 || value > 255) [[unlikely]] {
     return std::nullopt;
@@ -1962,8 +1940,7 @@ auto AstReader::Unmarshal(const SyntaxTree::Null &in) -> Result<Null> {
   return object;
 }
 
-auto AstReader::Unmarshal(const SyntaxTree::Undefined &in)
-    -> Result<Undefined> {
+auto AstReader::Unmarshal(const SyntaxTree::Undefined &in) -> Result<Undefined> {
   auto object = CreateNode<Undefined>()();
   UnmarshalLocationLocation(in.location(), object);
   UnmarshalCodeComment(in.comments(), object);
@@ -1996,8 +1973,7 @@ auto AstReader::Unmarshal(const SyntaxTree::Call &in) -> Result<Call> {
   return object;
 }
 
-auto AstReader::Unmarshal(const SyntaxTree::TemplateCall &in)
-    -> Result<TemplateCall> {
+auto AstReader::Unmarshal(const SyntaxTree::TemplateCall &in) -> Result<TemplateCall> {
   auto callee = Unmarshal(in.callee());
   if (!callee.has_value()) [[unlikely]] {
     return std::nullopt;
@@ -2027,8 +2003,7 @@ auto AstReader::Unmarshal(const SyntaxTree::TemplateCall &in)
     parameters.emplace_back(param.name(), value.value());
   }
 
-  auto object =
-      CreateNode<TemplateCall>(callee.value(), arguments, parameters)();
+  auto object = CreateNode<TemplateCall>(callee.value(), arguments, parameters)();
   UnmarshalLocationLocation(in.location(), object);
   UnmarshalCodeComment(in.comments(), object);
 
@@ -2148,8 +2123,7 @@ auto AstReader::Unmarshal(const SyntaxTree::FString &in) -> Result<FString> {
   return object;
 }
 
-auto AstReader::Unmarshal(const SyntaxTree::Identifier &in)
-    -> Result<Identifier> {
+auto AstReader::Unmarshal(const SyntaxTree::Identifier &in) -> Result<Identifier> {
   auto object = CreateNode<Identifier>(in.name())();
   UnmarshalLocationLocation(in.location(), object);
   UnmarshalCodeComment(in.comments(), object);
@@ -2220,8 +2194,7 @@ auto AstReader::Unmarshal(const SyntaxTree::Variable &in) -> Result<Variable> {
     attributes.push_back(attribute.value());
   }
 
-  auto object = CreateNode<Variable>(in.name(), type, value,
-                                     FromVariableKind(in.kind()), attributes)();
+  auto object = CreateNode<Variable>(in.name(), type, value, FromVariableKind(in.kind()), attributes)();
   UnmarshalLocationLocation(in.location(), object);
   UnmarshalCodeComment(in.comments(), object);
 
@@ -2264,8 +2237,7 @@ auto AstReader::Unmarshal(const SyntaxTree::If &in) -> Result<If> {
     return std::nullopt;
   }
 
-  auto object =
-      CreateNode<If>(condition.value(), then_block.value(), else_block)();
+  auto object = CreateNode<If>(condition.value(), then_block.value(), else_block)();
   UnmarshalLocationLocation(in.location(), object);
   UnmarshalCodeComment(in.comments(), object);
 
@@ -2329,8 +2301,7 @@ auto AstReader::Unmarshal(const SyntaxTree::Foreach &in) -> Result<Foreach> {
     return std::nullopt;
   }
 
-  auto object = CreateNode<Foreach>(in.index_name(), in.value_name(),
-                                    expression.value(), block.value())();
+  auto object = CreateNode<Foreach>(in.index_name(), in.value_name(), expression.value(), block.value())();
   UnmarshalLocationLocation(in.location(), object);
   UnmarshalCodeComment(in.comments(), object);
 
@@ -2469,13 +2440,11 @@ auto AstReader::Unmarshal(const SyntaxTree::Function &in) -> Result<Function> {
       }
 
       auto default_value = Unmarshal(param.default_value());
-      if (param.has_default_value() && !default_value.has_value())
-          [[unlikely]] {
+      if (param.has_default_value() && !default_value.has_value()) [[unlikely]] {
         return std::nullopt;
       }
 
-      template_parameters->emplace_back(param.name(), type.value(),
-                                        default_value);
+      template_parameters->emplace_back(param.name(), type.value(), default_value);
     }
   }
 
@@ -2522,10 +2491,9 @@ auto AstReader::Unmarshal(const SyntaxTree::Function &in) -> Result<Function> {
     return std::nullopt;
   }
 
-  auto object = CreateNode<Function>(
-      attributes, FromPurity(in.purity()), captures, in.name(),
-      template_parameters, parameters, in.variadic(), return_type.value(),
-      precondition, postcondition, block)();
+  auto object =
+      CreateNode<Function>(attributes, FromPurity(in.purity()), captures, in.name(), template_parameters, parameters,
+                           in.variadic(), return_type.value(), precondition, postcondition, block)();
   UnmarshalLocationLocation(in.location(), object);
   UnmarshalCodeComment(in.comments(), object);
 
@@ -2608,19 +2576,16 @@ auto AstReader::Unmarshal(const SyntaxTree::Struct &in) -> Result<Struct> {
       }
 
       auto default_value = Unmarshal(param.default_value());
-      if (param.has_default_value() && !default_value.has_value())
-          [[unlikely]] {
+      if (param.has_default_value() && !default_value.has_value()) [[unlikely]] {
         return std::nullopt;
       }
 
-      template_parameters->emplace_back(param.name(), type.value(),
-                                        default_value);
+      template_parameters->emplace_back(param.name(), type.value(), default_value);
     }
   }
 
-  auto object = CreateNode<Struct>(FromCompType(in.kind()), attributes,
-                                   in.name(), template_parameters, names,
-                                   fields, methods, static_methods)();
+  auto object = CreateNode<Struct>(FromCompType(in.kind()), attributes, in.name(), template_parameters, names, fields,
+                                   methods, static_methods)();
   UnmarshalLocationLocation(in.location(), object);
   UnmarshalCodeComment(in.comments(), object);
 
@@ -2691,19 +2656,16 @@ auto AstReader::Unmarshal(const SyntaxTree::Export &in) -> Result<Export> {
 
   auto vis = FromVisibility(in.visibility());
 
-  auto object =
-      CreateNode<Export>(block.value(), in.abi_name(), vis, attributes)();
+  auto object = CreateNode<Export>(block.value(), in.abi_name(), vis, attributes)();
   UnmarshalLocationLocation(in.location(), object);
   UnmarshalCodeComment(in.comments(), object);
 
   return object;
 }
 
-AstReader::AstReader(std::string_view protobuf_data,
-                     ReaderSourceManager source_manager)
+AstReader::AstReader(std::string_view protobuf_data, ReaderSourceManager source_manager)
     : m_rd(source_manager), m_mm(std::make_unique<DynamicArena>()) {
-  google::protobuf::io::CodedInputStream input(
-      (const uint8_t *)protobuf_data.data(), protobuf_data.size());
+  google::protobuf::io::CodedInputStream input((const uint8_t *)protobuf_data.data(), protobuf_data.size());
   input.SetRecursionLimit(kRecursionLimit);
 
   SyntaxTree::Root root;

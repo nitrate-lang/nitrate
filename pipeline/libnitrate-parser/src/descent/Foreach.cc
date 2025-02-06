@@ -37,22 +37,19 @@ using namespace ncc;
 using namespace ncc::lex;
 using namespace ncc::parse;
 
-auto Parser::PImpl::RecurseForeachNames()
-    -> std::optional<std::pair<string, string>> {
-  if (auto name_a = RecurseName(); !name_a->empty()) [[likely]] {
+auto Parser::PImpl::RecurseForeachNames() -> std::optional<std::pair<string, string>> {
+  if (auto name_a = RecurseName(); !name_a.empty()) [[likely]] {
     if (NextIf(PuncComa)) {
-      if (auto name_b = RecurseName(); !name_b->empty()) [[likely]] {
+      if (auto name_b = RecurseName(); !name_b.empty()) [[likely]] {
         return std::make_pair(name_a, name_b);
       } else {
-        Log << SyntaxError << current()
-            << "Expected identifier in foreach statement";
+        Log << SyntaxError << current() << "Expected identifier in foreach statement";
       }
     } else {
       return std::make_pair("", name_a);
     }
   } else {
-    Log << SyntaxError << current()
-        << "Expected identifier in foreach statement";
+    Log << SyntaxError << current() << "Expected identifier in foreach statement";
   }
 
   return std::nullopt;
@@ -95,12 +92,10 @@ auto Parser::PImpl::RecurseForeach() -> FlowPtr<Stmt> {
 
       return CreateNode<Foreach>(index_name, value_name, iter_expr, body)();
     } else {
-      Log << SyntaxError << current()
-          << "Expected 'in' keyword in foreach statement";
+      Log << SyntaxError << current() << "Expected 'in' keyword in foreach statement";
     }
   } else {
-    Log << SyntaxError << current()
-        << "Expected identifier pair in foreach statement";
+    Log << SyntaxError << current() << "Expected identifier pair in foreach statement";
   }
 
   return MockStmt(QAST_FOREACH);
