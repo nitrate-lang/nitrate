@@ -882,6 +882,7 @@ public:
 
       /* Check for a multi-part string */
       if (c == quote) {
+        NextChar();
         c = NextChar();
         continue;
       }
