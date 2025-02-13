@@ -47,27 +47,33 @@
 static constexpr size_t kRecursionLimit = 100000;
 
 using namespace ncc;
+using namespace ncc::lex;
 using namespace ncc::parse;
 using namespace nitrate::parser;
 
-static NCC_FORCE_INLINE parse::SafetyMode FromSafetyMode(SyntaxTree::Block_SafetyMode mode) noexcept {
+static NCC_FORCE_INLINE parse::SafetyMode FromSafetyMode(SyntaxTree::Block_Safety mode) noexcept {
   switch (mode) {
-    case SyntaxTree::Block_SafetyMode_Safe: {
+    case SyntaxTree::Block_Safety_Safe: {
       return parse::SafetyMode::Safe;
     }
 
-    case SyntaxTree::Block_SafetyMode_Unsafe: {
+    case SyntaxTree::Block_Safety_Unsafe: {
       return parse::SafetyMode::Unsafe;
     }
 
-    case SyntaxTree::Block_SafetyMode_Unspecified: {
+    case SyntaxTree::Block_Safety_None: {
       return parse::SafetyMode::Unknown;
     }
   }
 }
 
-static NCC_FORCE_INLINE parse::VariableType FromVariableKind(SyntaxTree::Variable::VariableKind type) noexcept {
+static NCC_FORCE_INLINE std::optional<parse::VariableType> FromVariableKind(
+    SyntaxTree::Variable::VariableKind type) noexcept {
   switch (type) {
+    case SyntaxTree::Variable_VariableKind_Unspecified: {
+      return std::nullopt;
+    }
+
     case SyntaxTree::Variable_VariableKind_Let: {
       return parse::VariableType::Let;
     }
@@ -82,248 +88,260 @@ static NCC_FORCE_INLINE parse::VariableType FromVariableKind(SyntaxTree::Variabl
   }
 }
 
-static NCC_FORCE_INLINE lex::Operator FromOperator(SyntaxTree::Operator op) {
+static NCC_FORCE_INLINE std::optional<Operator> FromOperator(SyntaxTree::Operator op) {
   switch (op) {
-    case SyntaxTree::Plus: {
-      return lex::OpPlus;
+    case SyntaxTree::Op_Unspecified: {
+      return std::nullopt;
     }
 
-    case SyntaxTree::Minus: {
-      return lex::OpMinus;
+    case SyntaxTree::Op_Plus: {
+      return OpPlus;
     }
 
-    case SyntaxTree::Times: {
-      return lex::OpTimes;
+    case SyntaxTree::Op_Minus: {
+      return OpMinus;
     }
 
-    case SyntaxTree::Slash: {
-      return lex::OpSlash;
+    case SyntaxTree::Op_Times: {
+      return OpTimes;
     }
 
-    case SyntaxTree::Percent: {
-      return lex::OpPercent;
+    case SyntaxTree::Op_Slash: {
+      return OpSlash;
     }
 
-    case SyntaxTree::BitAnd: {
-      return lex::OpBitAnd;
+    case SyntaxTree::Op_Percent: {
+      return OpPercent;
     }
 
-    case SyntaxTree::BitOr: {
-      return lex::OpBitOr;
+    case SyntaxTree::Op_BitAnd: {
+      return OpBitAnd;
     }
 
-    case SyntaxTree::BitXor: {
-      return lex::OpBitXor;
+    case SyntaxTree::Op_BitOr: {
+      return OpBitOr;
     }
 
-    case SyntaxTree::BitNot: {
-      return lex::OpBitNot;
+    case SyntaxTree::Op_BitXor: {
+      return OpBitXor;
     }
 
-    case SyntaxTree::LShift: {
-      return lex::OpLShift;
+    case SyntaxTree::Op_BitNot: {
+      return OpBitNot;
     }
 
-    case SyntaxTree::RShift: {
-      return lex::OpRShift;
+    case SyntaxTree::Op_LShift: {
+      return OpLShift;
     }
 
-    case SyntaxTree::ROTL: {
-      return lex::OpROTL;
+    case SyntaxTree::Op_RShift: {
+      return OpRShift;
     }
 
-    case SyntaxTree::ROTR: {
-      return lex::OpROTR;
+    case SyntaxTree::Op_ROTL: {
+      return OpROTL;
     }
 
-    case SyntaxTree::LogicAnd: {
-      return lex::OpLogicAnd;
+    case SyntaxTree::Op_ROTR: {
+      return OpROTR;
     }
 
-    case SyntaxTree::LogicOr: {
-      return lex::OpLogicOr;
+    case SyntaxTree::Op_LogicAnd: {
+      return OpLogicAnd;
     }
 
-    case SyntaxTree::LogicXor: {
-      return lex::OpLogicXor;
+    case SyntaxTree::Op_LogicOr: {
+      return OpLogicOr;
     }
 
-    case SyntaxTree::LogicNot: {
-      return lex::OpLogicNot;
+    case SyntaxTree::Op_LogicXor: {
+      return OpLogicXor;
     }
 
-    case SyntaxTree::LT: {
-      return lex::OpLT;
+    case SyntaxTree::Op_LogicNot: {
+      return OpLogicNot;
     }
 
-    case SyntaxTree::GT: {
-      return lex::OpGT;
+    case SyntaxTree::Op_LT: {
+      return OpLT;
     }
 
-    case SyntaxTree::LE: {
-      return lex::OpLE;
+    case SyntaxTree::Op_GT: {
+      return OpGT;
     }
 
-    case SyntaxTree::GE: {
-      return lex::OpGE;
+    case SyntaxTree::Op_LE: {
+      return OpLE;
     }
 
-    case SyntaxTree::Eq: {
-      return lex::OpEq;
+    case SyntaxTree::Op_GE: {
+      return OpGE;
     }
 
-    case SyntaxTree::NE: {
-      return lex::OpNE;
+    case SyntaxTree::Op_Eq: {
+      return OpEq;
     }
 
-    case SyntaxTree::Set: {
-      return lex::OpSet;
+    case SyntaxTree::Op_NE: {
+      return OpNE;
     }
 
-    case SyntaxTree::PlusSet: {
-      return lex::OpPlusSet;
+    case SyntaxTree::Op_Set: {
+      return OpSet;
     }
 
-    case SyntaxTree::MinusSet: {
-      return lex::OpMinusSet;
+    case SyntaxTree::Op_PlusSet: {
+      return OpPlusSet;
     }
 
-    case SyntaxTree::TimesSet: {
-      return lex::OpTimesSet;
+    case SyntaxTree::Op_MinusSet: {
+      return OpMinusSet;
     }
 
-    case SyntaxTree::SlashSet: {
-      return lex::OpSlashSet;
+    case SyntaxTree::Op_TimesSet: {
+      return OpTimesSet;
     }
 
-    case SyntaxTree::PercentSet: {
-      return lex::OpPercentSet;
+    case SyntaxTree::Op_SlashSet: {
+      return OpSlashSet;
     }
 
-    case SyntaxTree::BitAndSet: {
-      return lex::OpBitAndSet;
+    case SyntaxTree::Op_PercentSet: {
+      return OpPercentSet;
     }
 
-    case SyntaxTree::BitOrSet: {
-      return lex::OpBitOrSet;
+    case SyntaxTree::Op_BitAndSet: {
+      return OpBitAndSet;
     }
 
-    case SyntaxTree::BitXorSet: {
-      return lex::OpBitXorSet;
+    case SyntaxTree::Op_BitOrSet: {
+      return OpBitOrSet;
     }
 
-    case SyntaxTree::LogicAndSet: {
-      return lex::OpLogicAndSet;
+    case SyntaxTree::Op_BitXorSet: {
+      return OpBitXorSet;
     }
 
-    case SyntaxTree::LogicOrSet: {
-      return lex::OpLogicOrSet;
+    case SyntaxTree::Op_LogicAndSet: {
+      return OpLogicAndSet;
     }
 
-    case SyntaxTree::LogicXorSet: {
-      return lex::OpLogicXorSet;
+    case SyntaxTree::Op_LogicOrSet: {
+      return OpLogicOrSet;
     }
 
-    case SyntaxTree::LShiftSet: {
-      return lex::OpLShiftSet;
+    case SyntaxTree::Op_LogicXorSet: {
+      return OpLogicXorSet;
     }
 
-    case SyntaxTree::RShiftSet: {
-      return lex::OpRShiftSet;
+    case SyntaxTree::Op_LShiftSet: {
+      return OpLShiftSet;
     }
 
-    case SyntaxTree::ROTLSet: {
-      return lex::OpROTLSet;
+    case SyntaxTree::Op_RShiftSet: {
+      return OpRShiftSet;
     }
 
-    case SyntaxTree::ROTRSet: {
-      return lex::OpROTRSet;
+    case SyntaxTree::Op_ROTLSet: {
+      return OpROTLSet;
     }
 
-    case SyntaxTree::Inc: {
-      return lex::OpInc;
+    case SyntaxTree::Op_ROTRSet: {
+      return OpROTRSet;
     }
 
-    case SyntaxTree::Dec: {
-      return lex::OpDec;
+    case SyntaxTree::Op_Inc: {
+      return OpInc;
     }
 
-    case SyntaxTree::As: {
-      return lex::OpAs;
+    case SyntaxTree::Op_Dec: {
+      return OpDec;
     }
 
-    case SyntaxTree::BitcastAs: {
-      return lex::OpBitcastAs;
+    case SyntaxTree::Op_As: {
+      return OpAs;
     }
 
-    case SyntaxTree::In: {
-      return lex::OpIn;
+    case SyntaxTree::Op_BitcastAs: {
+      return OpBitcastAs;
     }
 
-    case SyntaxTree::Out: {
-      return lex::OpOut;
+    case SyntaxTree::Op_In: {
+      return OpIn;
     }
 
-    case SyntaxTree::Sizeof: {
-      return lex::OpSizeof;
+    case SyntaxTree::Op_Out: {
+      return OpOut;
     }
 
-    case SyntaxTree::Bitsizeof: {
-      return lex::OpBitsizeof;
+    case SyntaxTree::Op_Sizeof: {
+      return OpSizeof;
     }
 
-    case SyntaxTree::Alignof: {
-      return lex::OpAlignof;
+    case SyntaxTree::Op_Bitsizeof: {
+      return OpBitsizeof;
     }
 
-    case SyntaxTree::Typeof: {
-      return lex::OpTypeof;
+    case SyntaxTree::Op_Alignof: {
+      return OpAlignof;
     }
 
-    case SyntaxTree::Comptime: {
-      return lex::OpComptime;
+    case SyntaxTree::Op_Typeof: {
+      return OpTypeof;
     }
 
-    case SyntaxTree::Dot: {
-      return lex::OpDot;
+    case SyntaxTree::Op_Comptime: {
+      return OpComptime;
     }
 
-    case SyntaxTree::Range: {
-      return lex::OpRange;
+    case SyntaxTree::Op_Dot: {
+      return OpDot;
     }
 
-    case SyntaxTree::Ellipsis: {
-      return lex::OpEllipsis;
+    case SyntaxTree::Op_Range: {
+      return OpRange;
     }
 
-    case SyntaxTree::Arrow: {
-      return lex::OpArrow;
+    case SyntaxTree::Op_Ellipsis: {
+      return OpEllipsis;
     }
 
-    case SyntaxTree::Question: {
-      return lex::OpTernary;
+    case SyntaxTree::Op_Arrow: {
+      return OpArrow;
+    }
+
+    case SyntaxTree::Op_Question: {
+      return OpTernary;
     }
   }
 }
 
-static NCC_FORCE_INLINE parse::Vis FromVisibility(SyntaxTree::Vis vis) {
+static NCC_FORCE_INLINE std::optional<parse::Vis> FromVisibility(SyntaxTree::Vis vis) {
   switch (vis) {
-    case SyntaxTree::Vis::Public: {
+    case SyntaxTree::Vis_Unspecified: {
+      return std::nullopt;
+    }
+
+    case SyntaxTree::Vis_Public: {
       return Vis::Pub;
     }
 
-    case SyntaxTree::Vis::Private: {
+    case SyntaxTree::Vis_Private: {
       return Vis::Sec;
     }
 
-    case SyntaxTree::Vis::Protected: {
+    case SyntaxTree::Vis_Protected: {
       return Vis::Pro;
     }
   }
 }
 
-static NCC_FORCE_INLINE parse::CompositeType FromCompType(SyntaxTree::Struct::AggregateKind kind) {
+static NCC_FORCE_INLINE std::optional<parse::CompositeType> FromCompType(SyntaxTree::Struct::AggregateKind kind) {
   switch (kind) {
+    case SyntaxTree::Struct_AggregateKind_Unspecified: {
+      return std::nullopt;
+    }
+
     case SyntaxTree::Struct_AggregateKind_Struct_: {
       return CompositeType::Struct;
     }
@@ -346,25 +364,29 @@ static NCC_FORCE_INLINE parse::CompositeType FromCompType(SyntaxTree::Struct::Ag
   }
 }
 
-static NCC_FORCE_INLINE parse::Purity FromPurity(SyntaxTree::FunctionPurity purity) {
+static NCC_FORCE_INLINE std::optional<parse::Purity> FromPurity(SyntaxTree::FunctionPurity purity) {
   switch (purity) {
-    case SyntaxTree::FunctionPurity::Pure: {
+    case SyntaxTree::Purity_Unspecified: {
+      return std::nullopt;
+    }
+
+    case SyntaxTree::Purity_Pure: {
       return Purity::Pure;
     }
 
-    case SyntaxTree::FunctionPurity::Impure: {
+    case SyntaxTree::Purity_Impure: {
       return Purity::Impure;
     }
 
-    case SyntaxTree::FunctionPurity::Impure_TSafe: {
+    case SyntaxTree::Purity_Impure_TSafe: {
       return Purity::Impure_TSafe;
     }
 
-    case SyntaxTree::FunctionPurity::Quasi: {
+    case SyntaxTree::Purity_Quasi: {
       return Purity::Quasi;
     }
 
-    case SyntaxTree::FunctionPurity::Retro: {
+    case SyntaxTree::Purity_Retro: {
       return Purity::Retro;
     }
   }
@@ -375,8 +397,8 @@ void AstReader::UnmarshalLocationLocation(const SyntaxTree::SourceLocationRange 
     return;
   }
 
-  lex::LocationID start_loc;
-  lex::LocationID end_loc;
+  LocationID start_loc;
+  LocationID end_loc;
 
   if (in.has_start()) {
     auto line = in.start().line();
@@ -384,7 +406,7 @@ void AstReader::UnmarshalLocationLocation(const SyntaxTree::SourceLocationRange 
     auto offset = in.start().offset();
     auto filename = in.start().has_file() ? in.start().file() : "";
 
-    start_loc = m_rd->get().InternLocation(lex::Location(offset, line, column, filename));
+    start_loc = m_rd->get().InternLocation(Location(offset, line, column, filename));
   }
 
   if (in.has_end()) {
@@ -393,7 +415,7 @@ void AstReader::UnmarshalLocationLocation(const SyntaxTree::SourceLocationRange 
     auto offset = in.end().offset();
     auto filename = in.end().has_file() ? in.end().file() : "";
 
-    end_loc = m_rd->get().InternLocation(lex::Location(offset, line, column, filename));
+    end_loc = m_rd->get().InternLocation(Location(offset, line, column, filename));
   }
 
   out->SetLoc(start_loc, end_loc);
@@ -1791,7 +1813,12 @@ auto AstReader::Unmarshal(const SyntaxTree::FuncTy &in) -> Result<FuncTy> {
     attributes.push_back(attribute.value());
   }
 
-  auto type = CreateNode<FuncTy>(return_type.value(), parameters, in.variadic(), FromPurity(in.purity()), attributes)();
+  auto purity = FromPurity(in.purity());
+  if (!purity.has_value()) [[unlikely]] {
+    return std::nullopt;
+  }
+
+  auto type = CreateNode<FuncTy>(return_type.value(), parameters, in.variadic(), purity.value(), attributes)();
   type->SetWidth(bit_width);
   type->SetRangeBegin(minimum);
   type->SetRangeEnd(maximum);
@@ -1808,7 +1835,12 @@ auto AstReader::Unmarshal(const SyntaxTree::Unary &in) -> Result<Unary> {
     return std::nullopt;
   }
 
-  auto object = CreateNode<Unary>(FromOperator(in.operator_()), operand.value())();
+  auto op = FromOperator(in.operator_());
+  if (!op.has_value()) [[unlikely]] {
+    return std::nullopt;
+  }
+
+  auto object = CreateNode<Unary>(op.value(), operand.value())();
   UnmarshalLocationLocation(in.location(), object);
   UnmarshalCodeComment(in.comments(), object);
 
@@ -1826,7 +1858,12 @@ auto AstReader::Unmarshal(const SyntaxTree::Binary &in) -> Result<Binary> {
     return std::nullopt;
   }
 
-  auto object = CreateNode<Binary>(lhs.value(), FromOperator(in.operator_()), rhs.value())();
+  auto op = FromOperator(in.operator_());
+  if (!op.has_value()) [[unlikely]] {
+    return std::nullopt;
+  }
+
+  auto object = CreateNode<Binary>(lhs.value(), op.value(), rhs.value())();
   UnmarshalLocationLocation(in.location(), object);
   UnmarshalCodeComment(in.comments(), object);
 
@@ -1839,7 +1876,12 @@ auto AstReader::Unmarshal(const SyntaxTree::PostUnary &in) -> Result<PostUnary> 
     return std::nullopt;
   }
 
-  auto object = CreateNode<PostUnary>(operand.value(), FromOperator(in.operator_()))();
+  auto op = FromOperator(in.operator_());
+  if (!op.has_value()) [[unlikely]] {
+    return std::nullopt;
+  }
+
+  auto object = CreateNode<PostUnary>(operand.value(), op.value())();
   UnmarshalLocationLocation(in.location(), object);
   UnmarshalCodeComment(in.comments(), object);
 
@@ -2164,7 +2206,7 @@ auto AstReader::Unmarshal(const SyntaxTree::Block &in) -> Result<Block> {
     items.push_back(statement.value());
   }
 
-  auto object = CreateNode<Block>(items, FromSafetyMode(in.guarantor()))();
+  auto object = CreateNode<Block>(items, FromSafetyMode(in.safety()))();
   UnmarshalLocationLocation(in.location(), object);
   UnmarshalCodeComment(in.comments(), object);
 
@@ -2194,7 +2236,12 @@ auto AstReader::Unmarshal(const SyntaxTree::Variable &in) -> Result<Variable> {
     attributes.push_back(attribute.value());
   }
 
-  auto object = CreateNode<Variable>(in.name(), type, value, FromVariableKind(in.kind()), attributes)();
+  auto varkind = FromVariableKind(in.kind());
+  if (!varkind.has_value()) [[unlikely]] {
+    return std::nullopt;
+  }
+
+  auto object = CreateNode<Variable>(in.name(), type, value, varkind.value(), attributes)();
   UnmarshalLocationLocation(in.location(), object);
   UnmarshalCodeComment(in.comments(), object);
 
@@ -2491,9 +2538,13 @@ auto AstReader::Unmarshal(const SyntaxTree::Function &in) -> Result<Function> {
     return std::nullopt;
   }
 
-  auto object =
-      CreateNode<Function>(attributes, FromPurity(in.purity()), captures, in.name(), template_parameters, parameters,
-                           in.variadic(), return_type.value(), precondition, postcondition, block)();
+  auto op = FromPurity(in.purity());
+  if (!op.has_value()) [[unlikely]] {
+    return std::nullopt;
+  }
+
+  auto object = CreateNode<Function>(attributes, op.value(), captures, in.name(), template_parameters, parameters,
+                                     in.variadic(), return_type.value(), precondition, postcondition, block)();
   UnmarshalLocationLocation(in.location(), object);
   UnmarshalCodeComment(in.comments(), object);
 
@@ -2523,7 +2574,6 @@ auto AstReader::Unmarshal(const SyntaxTree::Struct &in) -> Result<Struct> {
   fields.reserve(in.fields_size());
 
   for (const auto &field : in.fields()) {
-    auto vis = FromVisibility(field.visibility());
     auto is_static = field.is_static();
 
     auto type = Unmarshal(field.type());
@@ -2536,33 +2586,46 @@ auto AstReader::Unmarshal(const SyntaxTree::Struct &in) -> Result<Struct> {
       return std::nullopt;
     }
 
-    fields.emplace_back(vis, is_static, field.name(), type.value(), value);
+    auto vis = FromVisibility(field.visibility());
+    if (!vis.has_value()) [[unlikely]] {
+      return std::nullopt;
+    }
+
+    fields.emplace_back(vis.value(), is_static, field.name(), type.value(), value);
   }
 
   StructMethods methods;
   methods.reserve(in.methods_size());
 
   for (const auto &method : in.methods()) {
-    auto vis = FromVisibility(method.visibility());
     auto func = Unmarshal(method.func());
     if (!func.has_value()) [[unlikely]] {
       return std::nullopt;
     }
 
-    methods.emplace_back(vis, func.value());
+    auto vis = FromVisibility(method.visibility());
+    if (!vis.has_value()) [[unlikely]] {
+      return std::nullopt;
+    }
+
+    methods.emplace_back(vis.value(), func.value());
   }
 
   StructMethods static_methods;
   static_methods.reserve(in.static_methods_size());
 
   for (const auto &method : in.static_methods()) {
-    auto vis = FromVisibility(method.visibility());
     auto func = Unmarshal(method.func());
     if (!func.has_value()) [[unlikely]] {
       return std::nullopt;
     }
 
-    static_methods.emplace_back(vis, func.value());
+    auto vis = FromVisibility(method.visibility());
+    if (!vis.has_value()) [[unlikely]] {
+      return std::nullopt;
+    }
+
+    static_methods.emplace_back(vis.value(), func.value());
   }
 
   std::optional<TemplateParameters> template_parameters;
@@ -2584,8 +2647,13 @@ auto AstReader::Unmarshal(const SyntaxTree::Struct &in) -> Result<Struct> {
     }
   }
 
-  auto object = CreateNode<Struct>(FromCompType(in.kind()), attributes, in.name(), template_parameters, names, fields,
-                                   methods, static_methods)();
+  auto comptype = FromCompType(in.kind());
+  if (!comptype.has_value()) [[unlikely]] {
+    return std::nullopt;
+  }
+
+  auto object = CreateNode<Struct>(comptype.value(), attributes, in.name(), template_parameters, names, fields, methods,
+                                   static_methods)();
   UnmarshalLocationLocation(in.location(), object);
   UnmarshalCodeComment(in.comments(), object);
 
@@ -2655,8 +2723,11 @@ auto AstReader::Unmarshal(const SyntaxTree::Export &in) -> Result<Export> {
   }
 
   auto vis = FromVisibility(in.visibility());
+  if (!vis.has_value()) [[unlikely]] {
+    return std::nullopt;
+  }
 
-  auto object = CreateNode<Export>(block.value(), in.abi_name(), vis, attributes)();
+  auto object = CreateNode<Export>(block.value(), in.abi_name(), vis.value(), attributes)();
   UnmarshalLocationLocation(in.location(), object);
   UnmarshalCodeComment(in.comments(), object);
 

@@ -51,201 +51,201 @@ static SyntaxTree::Operator FromOperator(ncc::lex::Operator op) {
 
   switch (op) {
     case LexOp::OpPlus:
-      return SyntaxTree::Plus;
+      return SyntaxTree::Op_Plus;
 
     case LexOp::OpMinus:
-      return SyntaxTree::Minus;
+      return SyntaxTree::Op_Minus;
 
     case LexOp::OpTimes:
-      return SyntaxTree::Times;
+      return SyntaxTree::Op_Times;
 
     case LexOp::OpSlash:
-      return SyntaxTree::Slash;
+      return SyntaxTree::Op_Slash;
 
     case LexOp::OpPercent:
-      return SyntaxTree::Percent;
+      return SyntaxTree::Op_Percent;
 
     case LexOp::OpBitAnd:
-      return SyntaxTree::BitAnd;
+      return SyntaxTree::Op_BitAnd;
 
     case LexOp::OpBitOr:
-      return SyntaxTree::BitOr;
+      return SyntaxTree::Op_BitOr;
 
     case LexOp::OpBitXor:
-      return SyntaxTree::BitXor;
+      return SyntaxTree::Op_BitXor;
 
     case LexOp::OpBitNot:
-      return SyntaxTree::BitNot;
+      return SyntaxTree::Op_BitNot;
 
     case LexOp::OpLShift:
-      return SyntaxTree::LShift;
+      return SyntaxTree::Op_LShift;
 
     case LexOp::OpRShift:
-      return SyntaxTree::RShift;
+      return SyntaxTree::Op_RShift;
 
     case LexOp::OpROTL:
-      return SyntaxTree::ROTL;
+      return SyntaxTree::Op_ROTL;
 
     case LexOp::OpROTR:
-      return SyntaxTree::ROTR;
+      return SyntaxTree::Op_ROTR;
 
     case LexOp::OpLogicAnd:
-      return SyntaxTree::LogicAnd;
+      return SyntaxTree::Op_LogicAnd;
 
     case LexOp::OpLogicOr:
-      return SyntaxTree::LogicOr;
+      return SyntaxTree::Op_LogicOr;
 
     case LexOp::OpLogicXor:
-      return SyntaxTree::LogicXor;
+      return SyntaxTree::Op_LogicXor;
 
     case LexOp::OpLogicNot:
-      return SyntaxTree::LogicNot;
+      return SyntaxTree::Op_LogicNot;
 
     case LexOp::OpLT:
-      return SyntaxTree::LT;
+      return SyntaxTree::Op_LT;
 
     case LexOp::OpGT:
-      return SyntaxTree::GT;
+      return SyntaxTree::Op_GT;
 
     case LexOp::OpLE:
-      return SyntaxTree::LE;
+      return SyntaxTree::Op_LE;
 
     case LexOp::OpGE:
-      return SyntaxTree::GE;
+      return SyntaxTree::Op_GE;
 
     case LexOp::OpEq:
-      return SyntaxTree::Eq;
+      return SyntaxTree::Op_Eq;
 
     case LexOp::OpNE:
-      return SyntaxTree::NE;
+      return SyntaxTree::Op_NE;
 
     case LexOp::OpSet:
-      return SyntaxTree::Set;
+      return SyntaxTree::Op_Set;
 
     case LexOp::OpPlusSet:
-      return SyntaxTree::PlusSet;
+      return SyntaxTree::Op_PlusSet;
 
     case LexOp::OpMinusSet:
-      return SyntaxTree::MinusSet;
+      return SyntaxTree::Op_MinusSet;
 
     case LexOp::OpTimesSet:
-      return SyntaxTree::TimesSet;
+      return SyntaxTree::Op_TimesSet;
 
     case LexOp::OpSlashSet:
-      return SyntaxTree::SlashSet;
+      return SyntaxTree::Op_SlashSet;
 
     case LexOp::OpPercentSet:
-      return SyntaxTree::PercentSet;
+      return SyntaxTree::Op_PercentSet;
 
     case LexOp::OpBitAndSet:
-      return SyntaxTree::BitAndSet;
+      return SyntaxTree::Op_BitAndSet;
 
     case LexOp::OpBitOrSet:
-      return SyntaxTree::BitOrSet;
+      return SyntaxTree::Op_BitOrSet;
 
     case LexOp::OpBitXorSet:
-      return SyntaxTree::BitXorSet;
+      return SyntaxTree::Op_BitXorSet;
 
     case LexOp::OpLogicAndSet:
-      return SyntaxTree::LogicAndSet;
+      return SyntaxTree::Op_LogicAndSet;
 
     case LexOp::OpLogicOrSet:
-      return SyntaxTree::LogicOrSet;
+      return SyntaxTree::Op_LogicOrSet;
 
     case LexOp::OpLogicXorSet:
-      return SyntaxTree::LogicXorSet;
+      return SyntaxTree::Op_LogicXorSet;
 
     case LexOp::OpLShiftSet:
-      return SyntaxTree::LShiftSet;
+      return SyntaxTree::Op_LShiftSet;
 
     case LexOp::OpRShiftSet:
-      return SyntaxTree::RShiftSet;
+      return SyntaxTree::Op_RShiftSet;
 
     case LexOp::OpROTLSet:
-      return SyntaxTree::ROTLSet;
+      return SyntaxTree::Op_ROTLSet;
 
     case LexOp::OpROTRSet:
-      return SyntaxTree::ROTRSet;
+      return SyntaxTree::Op_ROTRSet;
 
     case LexOp::OpInc:
-      return SyntaxTree::Inc;
+      return SyntaxTree::Op_Inc;
 
     case LexOp::OpDec:
-      return SyntaxTree::Dec;
+      return SyntaxTree::Op_Dec;
 
     case LexOp::OpAs:
-      return SyntaxTree::As;
+      return SyntaxTree::Op_As;
 
     case LexOp::OpBitcastAs:
-      return SyntaxTree::BitcastAs;
+      return SyntaxTree::Op_BitcastAs;
 
     case LexOp::OpIn:
-      return SyntaxTree::In;
+      return SyntaxTree::Op_In;
 
     case LexOp::OpOut:
-      return SyntaxTree::Out;
+      return SyntaxTree::Op_Out;
 
     case LexOp::OpSizeof:
-      return SyntaxTree::Sizeof;
+      return SyntaxTree::Op_Sizeof;
 
     case LexOp::OpBitsizeof:
-      return SyntaxTree::Bitsizeof;
+      return SyntaxTree::Op_Bitsizeof;
 
     case LexOp::OpAlignof:
-      return SyntaxTree::Alignof;
+      return SyntaxTree::Op_Alignof;
 
     case LexOp::OpTypeof:
-      return SyntaxTree::Typeof;
+      return SyntaxTree::Op_Typeof;
 
     case LexOp::OpComptime:
-      return SyntaxTree::Comptime;
+      return SyntaxTree::Op_Comptime;
 
     case LexOp::OpDot:
-      return SyntaxTree::Dot;
+      return SyntaxTree::Op_Dot;
 
     case LexOp::OpRange:
-      return SyntaxTree::Range;
+      return SyntaxTree::Op_Range;
 
     case LexOp::OpEllipsis:
-      return SyntaxTree::Ellipsis;
+      return SyntaxTree::Op_Ellipsis;
 
     case LexOp::OpArrow:
-      return SyntaxTree::Arrow;
+      return SyntaxTree::Op_Arrow;
 
     case LexOp::OpTernary:
-      return SyntaxTree::Question;
+      return SyntaxTree::Op_Question;
   }
 }
 
 static SyntaxTree::Vis FromVisibility(ncc::parse::Vis vis) {
   switch (vis) {
     case ncc::parse::Vis::Pub:
-      return SyntaxTree::Public;
+      return SyntaxTree::Vis_Public;
 
     case ncc::parse::Vis::Pro:
-      return SyntaxTree::Protected;
+      return SyntaxTree::Vis_Protected;
 
     case ncc::parse::Vis::Sec:
-      return SyntaxTree::Private;
+      return SyntaxTree::Vis_Private;
   }
 }
 
 static SyntaxTree::FunctionPurity FromPurity(ncc::parse::Purity purity) {
   switch (purity) {
     case ncc::parse::Purity::Impure:
-      return SyntaxTree::Impure;
+      return SyntaxTree::Purity_Impure;
 
     case ncc::parse::Purity::Impure_TSafe:
-      return SyntaxTree::Impure_TSafe;
+      return SyntaxTree::Purity_Impure_TSafe;
 
     case ncc::parse::Purity::Pure:
-      return SyntaxTree::Pure;
+      return SyntaxTree::Purity_Pure;
 
     case ncc::parse::Purity::Quasi:
-      return SyntaxTree::Quasi;
+      return SyntaxTree::Purity_Quasi;
 
     case ncc::parse::Purity::Retro:
-      return SyntaxTree::Retro;
+      return SyntaxTree::Purity_Retro;
   }
 }
 
@@ -1277,17 +1277,17 @@ SyntaxTree::Block *AstWriter::From(const FlowPtr<Block> &in) {
 
   switch (in->GetSafety()) {
     case SafetyMode::Unknown: {
-      message->set_guarantor(SyntaxTree::Block_SafetyMode_Unspecified);
+      message->set_safety(SyntaxTree::Block_Safety_None);
       break;
     }
 
     case SafetyMode::Safe: {
-      message->set_guarantor(SyntaxTree::Block_SafetyMode_Safe);
+      message->set_safety(SyntaxTree::Block_Safety_Safe);
       break;
     }
 
     case SafetyMode::Unsafe: {
-      message->set_guarantor(SyntaxTree::Block_SafetyMode_Unsafe);
+      message->set_safety(SyntaxTree::Block_Safety_Unsafe);
       break;
     }
   }
