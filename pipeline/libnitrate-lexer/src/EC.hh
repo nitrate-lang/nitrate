@@ -31,42 +31,34 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <core/EC.hh>
-#include <nitrate-core/Init.hh>
+#ifndef __NITRATE_LEXER_EC_H__
+#define __NITRATE_LEXER_EC_H__
+
 #include <nitrate-core/Logger.hh>
-#include <nitrate-core/Macro.hh>
-#include <nitrate-lexer/Init.hh>
-#include <nitrate-seq/Init.hh>
 
-using namespace ncc::seq;
+namespace ncc::lex {
+  std::string Formatter(std::string_view msg, Sev sev);
 
-NCC_EXPORT ncc::LibraryRC<SeqLibrarySetup> ncc::seq::SeqLibrary;
+  NCC_EC_GROUP(Lexer);
 
-NCC_EXPORT auto SeqLibrarySetup::Init() -> bool {
-  Log << ec::SeqLog << Debug << "libnitrate-seq initializing...";
+  NCC_EC_EX(Lexer, Runtime, Formatter);
+  NCC_EC_EX(Lexer, UserRequest, Formatter);
+  NCC_EC_EX(Lexer, UnexpectedEOF, Formatter);
 
-  if (!ncc::CoreLibrary.InitRC()) {
-    Log << ec::SeqLog << "libnitrate-seq init failed: libnitrate-core failed to initialize";
-    return false;
-  }
+  NCC_EC_EX(Lexer, LiteralOutOfRange, Formatter);
+  NCC_EC_EX(Lexer, InvalidNumber, Formatter);
+  NCC_EC_EX(Lexer, InvalidMantissa, Formatter);
+  NCC_EC_EX(Lexer, InvalidExponent, Formatter);
 
-  if (!ncc::lex::LexerLibrary.InitRC()) {
-    Log << ec::SeqLog << "libnitrate-seq init failed: libnitrate-lexer failed to initialize";
-    return false;
-  }
+  NCC_EC_EX(Lexer, InvalidHexDigit, Formatter);
+  NCC_EC_EX(Lexer, InvalidDecimalDigit, Formatter);
+  NCC_EC_EX(Lexer, InvalidOctalDigit, Formatter);
+  NCC_EC_EX(Lexer, InvalidBinaryDigit, Formatter);
 
-  Log << ec::SeqLog << Debug << "libnitrate-seq initialized";
+  NCC_EC_EX(Lexer, MissingUnicodeBrace, Formatter);
+  NCC_EC_EX(Lexer, InvalidUnicodeCodepoint, Formatter);
+  NCC_EC_EX(Lexer, LexicalGarbage, Formatter);
+  NCC_EC_EX(Lexer, InvalidUTF8, Formatter);
+}  // namespace ncc::lex
 
-  return true;
-}
-
-NCC_EXPORT void SeqLibrarySetup::Deinit() {
-  Log << ec::SeqLog << Debug << "libnitrate-seq deinitializing...";
-
-  ncc::lex::LexerLibrary.DeinitRC();
-  ncc::CoreLibrary.DeinitRC();
-
-  Log << ec::SeqLog << Debug << "libnitrate-seq deinitialized";
-}
-
-NCC_EXPORT auto SeqLibrarySetup::GetVersionId() -> std::string_view { return __TARGET_VERSION; }
+#endif

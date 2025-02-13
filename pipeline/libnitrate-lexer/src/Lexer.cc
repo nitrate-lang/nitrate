@@ -56,6 +56,8 @@
 #include <utility>
 #include <vector>
 
+#include "EC.hh"
+
 using namespace ncc;
 using namespace ncc::lex;
 using namespace ncc::lex::detail;
@@ -360,34 +362,6 @@ static auto IsUtf8(const char *string) -> bool {
 }
 
 ///============================================================================///
-
-static std::string LexerECFormatter(std::string_view msg, Sev sev) {
-  if (sev <= ncc::Debug) {
-    return "\x1b[0m\x1b[37;1m[\x1b[0m\x1b[34;1mLexer\x1b[0m\x1b[37;1m]: debug: " + std::string(msg) + "\x1b[0m";
-  }
-
-  return "\x1b[0m\x1b[37;1m[\x1b[0m\x1b[34;1mLexer\x1b[0m\x1b[37;1m]: " + std::string(msg) + "\x1b[0m";
-}
-
-NCC_EC_GROUP(Lexer);
-
-NCC_EC_EX(Lexer, UserRequest, LexerECFormatter);
-NCC_EC_EX(Lexer, UnexpectedEOF, LexerECFormatter);
-
-NCC_EC_EX(Lexer, LiteralOutOfRange, LexerECFormatter);
-NCC_EC_EX(Lexer, InvalidNumber, LexerECFormatter);
-NCC_EC_EX(Lexer, InvalidMantissa, LexerECFormatter);
-NCC_EC_EX(Lexer, InvalidExponent, LexerECFormatter);
-
-NCC_EC_EX(Lexer, InvalidHexDigit, LexerECFormatter);
-NCC_EC_EX(Lexer, InvalidDecimalDigit, LexerECFormatter);
-NCC_EC_EX(Lexer, InvalidOctalDigit, LexerECFormatter);
-NCC_EC_EX(Lexer, InvalidBinaryDigit, LexerECFormatter);
-
-NCC_EC_EX(Lexer, MissingUnicodeBrace, LexerECFormatter);
-NCC_EC_EX(Lexer, InvalidUnicodeCodepoint, LexerECFormatter);
-NCC_EC_EX(Lexer, LexicalGarbage, LexerECFormatter);
-NCC_EC_EX(Lexer, InvalidUTF8, LexerECFormatter);
 
 // We use this layer of indirection to ensure that the compiler can have full
 // optimization capabilities as if the functions has static linkage.
