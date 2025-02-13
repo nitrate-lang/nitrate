@@ -31,9 +31,10 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
+#include <boost/iostreams/device/array.hpp>
+#include <boost/iostreams/stream.hpp>
 #include <core/EC.hh>
 #include <core/PImpl.hh>
-#include <cstddef>
 #include <iostream>
 #include <memory>
 #include <nitrate-core/Logger.hh>
@@ -59,7 +60,7 @@ static const std::array LUA_AUTOLOAD_WHITELIST = {
     luaL_Reg{LUA_UTF8LIBNAME, luaopen_utf8},  /* UTF-8 manipulation */
 };
 
-void Sequencer::BindMethod(Sequencer &self, const char *name, MethodType func) {
+void Sequencer::BindMethod(Sequencer &self, const char *name, MethodType func) noexcept {
   /**
    * This function binds a C++ method to a LUA function.
    * The process is as follows:
@@ -95,7 +96,7 @@ void Sequencer::BindMethod(Sequencer &self, const char *name, MethodType func) {
   lua_setfield(s->m_L, -2, name);
 }
 
-void Sequencer::AttachAPIFunctions(Sequencer &self) {
+void Sequencer::AttachAPIFunctions(Sequencer &self) noexcept {
   /**
    * This function initializes the LUA environment with the following functions:
    *  | Name  | Description
@@ -155,7 +156,7 @@ void Sequencer::AttachAPIFunctions(Sequencer &self) {
   lua_setglobal(lua, "n");
 }
 
-void Sequencer::LoadSecureLibs(Sequencer &self) {
+void Sequencer::LoadSecureLibs(Sequencer &self) noexcept {
   /**
    * This function loads a secure subset of the LUA core libraries
    * and disables some functions for security and to ensure fully
@@ -194,149 +195,141 @@ void Sequencer::LoadSecureLibs(Sequencer &self) {
 }
 
 auto Sequencer::ExecuteLua(Sequencer &self, const char *code) -> std::optional<std::string> {
-  /// TODO: Refactor me
+  auto *lua = self.m_shared->m_L;
+  const auto old_stack_size = lua_gettop(lua);
 
-  auto s = self.m_shared;
-  auto top = lua_gettop(s->m_L);
-  auto rc = luaL_dostring(s->m_L, code);
-
-  if (rc) {
-    ncc::Log << ec::SeqError << "Lua error: " << lua_tostring(s->m_L, -1);
+  if (luaL_dostring(lua, code)) [[unlikely]] {
+    ncc::Log << ec::SeqError << "Lua error: " << lua_tostring(lua, -1);
     self.SetFailBit();
 
     return std::nullopt;
   }
 
-  // If no value was returned, return an empty string
-  if (lua_gettop(s->m_L) == top) {
-    return "";
+  const auto new_stack_size = lua_gettop(lua);
+  const auto any_return = new_stack_size != old_stack_size;
+
+  return any_return ? std::optional<std::string>(lua_tostring(lua, -1)) : "";
+}
+
+auto Sequencer::CreateChild(Sequencer &self, std::istream &file) -> std::unique_ptr<Sequencer> {
+  static constexpr auto kMaxRecursionDepth = 10000;
+
+  auto clone = std::unique_ptr<Sequencer>(new Sequencer(file, self.m_shared));
+  clone->m_shared->m_depth = self.m_shared->m_depth + 1;
+
+  if (clone->m_shared->m_depth > kMaxRecursionDepth) [[unlikely]] {
+    Log << SeqError << "Maximum macro recursion depth reached, aborting";
+    return nullptr;
   }
 
-  return lua_tostring(s->m_L, -1);
+  return clone;
 }
 
 void Sequencer::SequenceSource(Sequencer &self, std::string_view code) {
-  /// TODO: Refactor me
+  /**
+   * Preprocess the given source code and push the tokens onto the emission queue.
+   */
 
-  std::istringstream ss(std::string(code.data(), code.size()));
+  auto ss = boost::iostreams::stream<boost::iostreams::array_source>(code.data(), code.size());
+  auto clone = CreateChild(self, ss);
+  if (!clone) [[unlikely]] {
+    self.SetFailBit();
 
-  Sequencer clone(ss, self.m_env, false);
-  clone.m_shared = self.m_shared;
-  clone.m_shared->m_depth = self.m_shared->m_depth + 1;
-
-  std::queue<Token> stack;
-  Token tok;
-
-  while ((tok = (clone.Next())).GetKind() != EofF) {
-    stack.push(tok);
+    /* Push an end-of-file token to the emission queue */
+    self.m_shared->m_emission.push(std::queue<Token>({Token::EndOfFile()}));
+    return;
   }
 
-  if (!stack.empty()) {
-    self.m_shared->m_emission.push(std::move(stack));
+  std::queue<Token> q;
+  while (Token tok = clone->Next()) {
+    q.push(tok);
+  }
+
+  if (!q.empty()) {
+    self.m_shared->m_emission.push(std::move(q));
   }
 }
 
 auto Sequencer::GetNext() -> Token {
   /// TODO: Refactor me
 
-  class RecursiveLimitGuard {
-    size_t &m_depth;
-
-  public:
-    RecursiveLimitGuard(size_t &depth) : m_depth(++depth) {}
-    ~RecursiveLimitGuard() { m_depth--; }
-
-    [[nodiscard]] auto ShouldStop() const -> bool {
-      static constexpr auto kMaxRecursionDepth = 10000;
-      return m_depth >= kMaxRecursionDepth;
-    }
-  } guard(m_shared->m_depth);
-  if (guard.ShouldStop()) [[unlikely]] {
-    Log << SeqError << "Maximum macro recursion depth reached, aborting";
-    throw SequencerStopException();
-  }
-
   Token tok;
 
-  try {
-    while (true) {
-      if (!m_shared->m_emission.empty()) [[unlikely]] {
-        tok = m_shared->m_emission.front().front();
-        m_shared->m_emission.front().pop();
+  while (true) {
+    if (!m_shared->m_emission.empty()) [[unlikely]] {
+      tok = m_shared->m_emission.front().front();
+      m_shared->m_emission.front().pop();
 
-        if (m_shared->m_emission.front().empty()) {
-          m_shared->m_emission.pop();
+      if (m_shared->m_emission.front().empty()) {
+        m_shared->m_emission.pop();
+      }
+    } else {
+      tok = m_scanner.Next();
+      SetFailBit(HasError() || m_scanner.HasError());
+
+      switch (tok.GetKind()) {
+        case EofF:
+        case IntL:
+        case Text:
+        case Char:
+        case NumL:
+        case Oper:
+        case Punc:
+        case Name:
+        case Note: {
+          break;
         }
-      } else {
-        tok = m_scanner.Next();
-        SetFailBit(HasError() || m_scanner.HasError());
 
-        switch (tok.GetKind()) {
-          case EofF:
-          case IntL:
-          case Text:
-          case Char:
-          case NumL:
-          case Oper:
-          case Punc:
-          case Name:
-          case Note: {
-            break;
-          }
+        case KeyW: {
+          if (tok.GetKeyword() == Import) [[unlikely]] {
+            auto import_name = m_scanner.Next().GetString();
 
-          case KeyW: {
-            if (tok.GetKeyword() == Import) [[unlikely]] {
-              auto import_name = m_scanner.Next().GetString();
-
-              if (!m_scanner.Next().Is<PuncSemi>()) [[unlikely]] {
-                Log << SeqError << "Expected a semicolon after import name";
-                tok = Token::EndOfFile();
-                SetFailBit();
-                break;
-              }
-
-              if (auto content = FetchModuleData(*this, import_name.Get())) {
-                SequenceSource(*this, content.value());
-              } else {
-                SetFailBit();
-              }
-
-              continue;
+            if (!m_scanner.Next().Is<PuncSemi>()) [[unlikely]] {
+              Log << SeqError << "Expected a semicolon after import name";
+              tok = Token::EndOfFile();
+              SetFailBit();
+              break;
             }
 
-            break;
+            if (auto content = FetchModuleData(*this, import_name.Get())) {
+              SequenceSource(*this, content.value());
+            } else {
+              SetFailBit();
+            }
+
+            continue;
           }
 
-          case MacB: {
-            if (auto result_data = ExecuteLua(*this, tok.GetString().Get())) [[likely]] {
-              SequenceSource(*this, result_data.value());
-              continue;
-            } /* Failed to execute macro */
+          break;
+        }
 
-            tok = Token::EndOfFile();
-            SetFailBit();
+        case MacB: {
+          if (auto result_data = ExecuteLua(*this, tok.GetString().Get())) [[likely]] {
+            SequenceSource(*this, result_data.value());
+            continue;
+          } /* Failed to execute macro */
 
-            break;
-          }
+          tok = Token::EndOfFile();
+          SetFailBit();
 
-          case Macr: {
-            if (auto result_data = ExecuteLua(*this, (std::string(tok.GetString()) + "()").c_str())) [[likely]] {
-              SequenceSource(*this, result_data.value());
-              continue;
-            } /* Failed to execute macro function call */
+          break;
+        }
 
-            tok = Token::EndOfFile();
-            SetFailBit();
+        case Macr: {
+          if (auto result_data = ExecuteLua(*this, (std::string(tok.GetString()) + "()").c_str())) [[likely]] {
+            SequenceSource(*this, result_data.value());
+            continue;
+          } /* Failed to execute macro function call */
 
-            break;
-          }
+          tok = Token::EndOfFile();
+          SetFailBit();
+
+          break;
         }
       }
-
-      break;
     }
-  } catch (SequencerStopException &) {
-    tok = Token::EndOfFile();
+
+    break;
   }
 
   return tok;
@@ -346,38 +339,29 @@ auto Sequencer::GetLocationFallback(ncc::lex::LocationID id) -> std::optional<nc
   return m_scanner.GetLocation(id);
 }
 
-SequencerPImpl::SequencerPImpl()
+SequencerPImpl::SequencerPImpl(std::shared_ptr<ncc::Environment> env)
     : m_random(0),
-      m_fetch_module([](std::string_view) {
-        Log << SeqError << Debug << "No module fetch function provided";
-        return std::nullopt;
-      }),
+      m_fetch_module(FileSystemFetchModule),
       m_captures({}),
+      m_env(std::move(env)),
       m_L(luaL_newstate()),
       m_depth(0) {
-  /// TODO: Refactor me
-
   if (m_L == nullptr) {
     Log << Emergency << SeqError << "Failed to create Lua state";
-    qcore_panic("Failed to allocate Lua state");
+    qcore_panic("Failed to create LUA context");
   }
 }
 
 SequencerPImpl::~SequencerPImpl() { lua_close(m_L); }
 
-Sequencer::Sequencer(std::istream &file, std::shared_ptr<ncc::Environment> env, bool is_root)
-    : ncc::lex::IScanner(std::move(env)),
-      m_scanner(file, m_env),
-      m_shared(is_root ? std::make_shared<SequencerPImpl>() : nullptr) {
-  /// TODO: Refactor me
+Sequencer::Sequencer(std::istream &file, std::shared_ptr<SequencerPImpl> shared)
+    : ncc::lex::IScanner(shared->m_env), m_scanner(file, m_env), m_shared(std::move(shared)) {}
 
-  if (is_root) {
-    AttachAPIFunctions(*this);
-    LoadSecureLibs(*this);
-
-    /* Execute this code before every translation unit */
-    SequenceSource(*this, SEQUENCER_DIALECT_CODE_PREFIX);
-  }
+Sequencer::Sequencer(std::istream &file, std::shared_ptr<ncc::Environment> env)
+    : ncc::lex::IScanner(std::move(env)), m_scanner(file, m_env), m_shared(std::make_shared<SequencerPImpl>(m_env)) {
+  AttachAPIFunctions(*this);
+  LoadSecureLibs(*this);
+  SequenceSource(*this, SEQUENCER_DIALECT_CODE_PREFIX);
 }
 
 Sequencer::~Sequencer() = default;
@@ -394,16 +378,7 @@ auto Sequencer::SetFailBit(bool fail) -> bool {
 }
 
 auto Sequencer::SetFetchFunc(FetchModuleFunc func) -> void {
-  /// TODO: Refactor me
-
-  if (!func) {
-    func = [](std::string_view) {
-      Log << SeqError << Debug << "No module fetch function provided";
-      return std::nullopt;
-    };
-  }
-
-  m_shared->m_fetch_module = func;
+  m_shared->m_fetch_module = func ? std::move(func) : FileSystemFetchModule;
 }
 
 auto Sequencer::GetSourceWindow(Point start, Point end, char fillchar) -> std::optional<std::vector<std::string>> {

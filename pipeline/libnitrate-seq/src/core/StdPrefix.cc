@@ -32,7 +32,6 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <nitrate-seq/Sequencer.hh>
-#include <string_view>
 
 const std::string_view ncc::seq::SEQUENCER_DIALECT_CODE_PREFIX = R"(@(
 function comp_if(cond, terminator)

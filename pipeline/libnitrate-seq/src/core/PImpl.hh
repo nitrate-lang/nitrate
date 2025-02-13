@@ -46,10 +46,11 @@ namespace ncc::seq {
     std::queue<std::queue<lex::Token>> m_emission;
     FetchModuleFunc m_fetch_module;
     std::list<MethodType> m_captures;
+    std::shared_ptr<Environment> m_env;
     lua_State* m_L;
     size_t m_depth;
 
-    SequencerPImpl();
+    SequencerPImpl(std::shared_ptr<Environment> env);
     ~SequencerPImpl();
   };
 }  // namespace ncc::seq

@@ -83,15 +83,16 @@ namespace ncc::seq {
     ///=========================================================================
     /// Helper functions to configure the LUA interpreter
 
-    static void BindMethod(Sequencer& self, const char* name, MethodType func);
-    static void AttachAPIFunctions(Sequencer& self);
-    static void LoadSecureLibs(Sequencer& self);
+    static void BindMethod(Sequencer& self, const char* name, MethodType func) noexcept;
+    static void AttachAPIFunctions(Sequencer& self) noexcept;
+    static void LoadSecureLibs(Sequencer& self) noexcept;
 
     ///=========================================================================
     /// Preprocessor helper functions
 
     static auto FetchModuleData(Sequencer& self, std::string_view module_name) -> std::optional<std::string>;
     static auto ExecuteLua(Sequencer& self, const char* code) -> std::optional<std::string>;
+    static auto CreateChild(Sequencer& self, std::istream& file) -> std::unique_ptr<Sequencer>;
     static auto SequenceSource(Sequencer& self, std::string_view code) -> void;
 
     ///=========================================================================
@@ -100,8 +101,10 @@ namespace ncc::seq {
     auto GetNext() -> lex::Token override;
     auto GetLocationFallback(lex::LocationID id) -> std::optional<lex::Location> override;
 
+    Sequencer(std::istream& file, std::shared_ptr<SequencerPImpl> shared);
+
   public:
-    Sequencer(std::istream& file, std::shared_ptr<Environment> env, bool is_root = true);
+    Sequencer(std::istream& file, std::shared_ptr<Environment> env);
     ~Sequencer() override;
 
     [[nodiscard]] auto HasError() const -> bool override;
