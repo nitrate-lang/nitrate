@@ -15,6 +15,10 @@ string(SUBSTRING ${SHA256SUMS} 0 32 SHA256SUMS)
 set(__TARGET_VERSION "\"CODEGEN_${SHA256SUMS}\"")
 message(STATUS "libnitrate-emit VersionId: ${__TARGET_VERSION}")
 
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+  set(__TARGET_VERSION "\"undefined\"")
+endif()
+
 #================== GET LLVM LIBRARIES =====================
 execute_process(COMMAND llvm-config-18 --ldflags
   OUTPUT_VARIABLE LLVM_LD_FLAGS
@@ -48,13 +52,8 @@ find_library(libz z REQUIRED)
 find_library(libzstd zstd REQUIRED)
 find_library(libtinfo tinfo REQUIRED)
 
-if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D__TARGET_VERSION=\\\"undefined\\\" ${BUILD_FLAGS_COMMON}")
-elseif(CMAKE_BUILD_TYPE STREQUAL "Release")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D__TARGET_VERSION=\\\"${__TARGET_VERSION}\\\" ${BUILD_FLAGS_COMMON}")
-else()
-  message(FATAL_ERROR "Invalid build type: ${CMAKE_BUILD_TYPE}")
-endif()
+#================== SET BUILD FLAGS ==================
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D__TARGET_VERSION=\\\"${__TARGET_VERSION}\\\" ${BUILD_FLAGS_COMMON}")
 
 file(GLOB_RECURSE CXX_SOURCES "src/*.cc")
 
