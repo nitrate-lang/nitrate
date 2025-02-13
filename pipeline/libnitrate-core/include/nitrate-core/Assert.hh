@@ -62,9 +62,7 @@ static inline auto GetStrerror() {
 
 #define qcore_panic(msg) qcore_panicf("%s", msg)
 
-#define qcore_assert(expr, ...)      \
-  (static_cast<bool>(expr) ? void(0) \
-                           : qcore_panicf("Assertion failed: %s;\nCondition: (%s);\n", "" #__VA_ARGS__, #expr))
+#define qcore_assert(expr, ...)
 #else
 #define qcore_panicf(fmt, ...)                                                                                        \
   QCorePanicF(fmt "\nSource File: %s\nSource Line: %d\nFunction: %s\nErrno: %s\n", ##__VA_ARGS__, __FILE__, __LINE__, \

@@ -42,6 +42,8 @@
 #include <ranges>
 #include <stack>
 
+#include "nitrate-core/Assert.hh"
+
 using namespace ncc;
 using namespace ncc::parse;
 
@@ -199,9 +201,8 @@ class IterVisitor : public ASTVisitor {
     std::for_each(n->GetItems().begin(), n->GetItems().end(), [&](auto arg) {
       if (std::holds_alternative<FlowPtr<Expr>>(arg)) {
         Add(std::get<FlowPtr<Expr>>(arg));
-      } else if (std::holds_alternative<string>(arg)) {
       } else {
-        qcore_implement();
+        qcore_assert(std::holds_alternative<string>(arg));
       }
     });
   }

@@ -328,10 +328,29 @@ namespace ncc::lex {
       }
     }
 
-    [[nodiscard]] constexpr auto GetString() const { return to_string(m_type, m_v); }
-    [[nodiscard]] constexpr auto GetKeyword() const { return m_v.m_key; }
-    [[nodiscard]] constexpr auto GetOperator() const { return m_v.m_op; }
-    [[nodiscard]] constexpr auto GetPunctor() const { return m_v.m_punc; }
+    [[nodiscard]] constexpr auto AsString() const { return to_string(m_type, m_v); }
+
+    [[nodiscard]] constexpr auto GetString() const {
+      qcore_assert(m_type == IntL || m_type == NumL || m_type == Text || m_type == Name || m_type == Char ||
+                   m_type == MacB || m_type == Macr || m_type == Note);
+      return m_v.m_str;
+    }
+
+    [[nodiscard]] constexpr auto GetKeyword() const {
+      qcore_assert(m_type == KeyW);
+      return m_v.m_key;
+    }
+
+    [[nodiscard]] constexpr auto GetOperator() const {
+      qcore_assert(m_type == Oper);
+      return m_v.m_op;
+    }
+
+    [[nodiscard]] constexpr auto GetPunctor() const {
+      qcore_assert(m_type == Punc);
+      return m_v.m_punc;
+    }
+
     [[nodiscard]] constexpr auto GetStart() const { return m_location_id; }
     [[nodiscard]] constexpr auto GetKind() const { return m_type; }
 

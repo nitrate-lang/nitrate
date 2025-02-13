@@ -510,7 +510,7 @@ auto Parser::PImpl::RecurseExprPunctor(lex::Punctor punc) -> NullableFlowPtr<Exp
 
         if (NextIf(PuncSemi)) {
           if (auto count_tok = NextIf(IntL)) {
-            auto item_repeat_str = current().GetString();
+            auto item_repeat_str = count_tok->GetString();
             size_t item_repeat_count = 0;
 
             if (std::from_chars(item_repeat_str.c_str(), item_repeat_str.c_str() + item_repeat_str.size(),

@@ -62,7 +62,7 @@ auto Parser::PImpl::RecurseName() -> string {
     switch (state) {
       case Start: {
         if (last.Is<PuncScope>()) {
-          name += last.GetString();
+          name += "::";
           state = RequireName;
           next();
         } else if (last.Is(Name)) {
@@ -92,7 +92,7 @@ auto Parser::PImpl::RecurseName() -> string {
 
       case RequireScopeOrEnd: {
         if (last.Is<PuncScope>()) {
-          name += last.GetString();
+          name += "::";
           state = RequireName;
           next();
         } else {

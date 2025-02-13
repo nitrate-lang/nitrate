@@ -251,9 +251,7 @@ void Sequencer::SequenceSource(Sequencer &self, std::string_view code) {
 }
 
 auto Sequencer::HandleImportDirective(Sequencer &self) -> bool {
-  /// TODO: Refactor me
-
-  auto import_name = self.m_scanner.Next().GetString();
+  const auto import_name = self.m_scanner.Next().AsString();
 
   if (!self.m_scanner.Next().Is<PuncSemi>()) [[unlikely]] {
     Log << SeqError << "Expected a semicolon after import name";
@@ -262,7 +260,7 @@ auto Sequencer::HandleImportDirective(Sequencer &self) -> bool {
     return false;
   }
 
-  if (auto content = FetchModuleData(self, import_name.Get())) {
+  if (auto content = FetchModuleData(self, import_name)) {
     SequenceSource(self, content.value());
   } else {
     self.SetFailBit();
@@ -272,6 +270,8 @@ auto Sequencer::HandleImportDirective(Sequencer &self) -> bool {
 }
 
 auto Sequencer::HandleMacroBlock(Sequencer &self, Token macro) -> bool {
+  qcore_assert(macro.GetKind() == MacB);
+
   if (auto result_data = ExecuteLua(self, macro.GetString().c_str())) [[likely]] {
     SequenceSource(self, result_data.value());
     return true;
@@ -283,6 +283,8 @@ auto Sequencer::HandleMacroBlock(Sequencer &self, Token macro) -> bool {
 }
 
 auto Sequencer::HandleMacroStatement(Sequencer &self, Token macro) -> bool {
+  qcore_assert(macro.GetKind() == Macr);
+
   if (auto result_code = ExecuteLua(self, (std::string(macro.GetString()) + "()").c_str())) [[likely]] {
     SequenceSource(self, result_code.value());
     return true;

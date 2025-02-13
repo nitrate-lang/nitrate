@@ -40,27 +40,27 @@
 
 using namespace ncc::seq;
 using namespace ncc::seq::ec;
+using namespace std::literals;
 
 NCC_EXPORT auto ncc::seq::FileSystemFetchModule(std::string_view path) -> std::optional<std::string> {
-  /// TODO: Refactor me
-
-  if (!path.starts_with("file:///package/")) {
+  const auto expected_prefix = "file:///package/"sv;
+  if (!path.starts_with(expected_prefix)) {
     return std::nullopt;
   }
 
-  path.remove_prefix(16);
-
+  path.remove_prefix(expected_prefix.size());
   if (path.size() < 37) {
     return std::nullopt;
   }
-  auto job_uuid = path.substr(0, 36);
+
+  const auto job_uuid = path.substr(0, 36);
   path.remove_prefix(37);
 
   Log << Debug << "Opening file '" << path << "' on behalf of job '" << job_uuid << "'";
 
   /// TODO: Get the base directory of the project
 
-  std::fstream file(std::string(path), std::ios::in);
+  auto file = std::fstream(std::string(path), std::ios::in);
   if (!file.is_open()) {
     return std::nullopt;
   }
@@ -69,13 +69,11 @@ NCC_EXPORT auto ncc::seq::FileSystemFetchModule(std::string_view path) -> std::o
 }
 
 auto Sequencer::FetchModuleData(Sequencer &self, std::string_view raw_module_name) -> std::optional<std::string> {
-  /// TODO: Refactor me
-
-  const auto get_fetch_uri = [](const std::string &module_name, const std::string &jobid) -> std::string {
+  const auto get_fetch_uri = [](const std::string &module_name, const std::string &jobid) {
     return "file:///package/" + jobid + "/" + module_name;
   };
 
-  const auto canonicalize_module_name = [](std::string module_name) -> std::string {
+  const auto canonicalize_module_name = [](std::string module_name) {
     size_t pos = 0;
     while ((pos = module_name.find("::", pos)) != std::string::npos) {
       module_name.replace(pos, 2, ".");
@@ -93,14 +91,12 @@ auto Sequencer::FetchModuleData(Sequencer &self, std::string_view raw_module_nam
     module_name = actual_name.value();
   }
 
-  auto jobid = std::string(self.m_env->Get("this.job").value());
-  auto module_uri = get_fetch_uri(module_name, jobid);
+  const auto jobid = std::string(self.m_env->Get("this.job").value());
+  const auto module_uri = get_fetch_uri(module_name, jobid);
 
   Log << SeqError << Debug << "Fetching module: '" << module_name << "'";
 
-  qcore_assert(self.m_shared->m_fetch_module);
-
-  if (auto module_content = self.m_shared->m_fetch_module(module_uri)) {
+  if (const auto module_content = self.m_shared->m_fetch_module(module_uri)) {
     return module_content;
   }
 
