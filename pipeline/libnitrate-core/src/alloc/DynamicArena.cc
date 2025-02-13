@@ -129,15 +129,8 @@ public:
   }
 };
 
-NCC_EXPORT DynamicArena::DynamicArena() {
-  m_arena = new PImpl();
-  m_owned = true;
-}
+NCC_EXPORT DynamicArena::DynamicArena() { m_pimpl = new PImpl(); }
 
-NCC_EXPORT DynamicArena::~DynamicArena() {
-  if (m_owned) {
-    delete m_arena;
-  }
-}
+NCC_EXPORT DynamicArena::~DynamicArena() { delete m_pimpl; }
 
-NCC_EXPORT auto DynamicArena::Alloc(size_t size, size_t alignment) -> void * { return m_arena->Alloc(size, alignment); }
+NCC_EXPORT auto DynamicArena::Alloc(size_t size, size_t alignment) -> void * { return m_pimpl->Alloc(size, alignment); }

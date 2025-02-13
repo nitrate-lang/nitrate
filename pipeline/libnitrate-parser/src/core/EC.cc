@@ -31,9 +31,10 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
+#include <core/SyntaxDiagnostics.hh>
 #include <nitrate-lexer/Scanner.hh>
-#include <nitrate-parser/EC.hh>
 #include <nlohmann/json.hpp>
+#include <sstream>
 
 using namespace ncc;
 using namespace ncc::lex;
@@ -102,7 +103,7 @@ static auto FindAndDecodeToken(std::string_view buf) -> std::optional<std::pair<
                                                std::string(orig_buf.substr(pos + 7 + (payload_length + 1) + 2)));
 }
 
-NCC_EXPORT auto ncc::parse::ec::Formatter(std::string_view msg, Sev) -> std::string {
+NCC_EXPORT auto ncc::parse::ec::Formatter(std::string_view msg, Sev sev) -> std::string {
   IScanner *rd = GCurrentScanner;
 
   if (rd != nullptr) {
@@ -124,7 +125,7 @@ NCC_EXPORT auto ncc::parse::ec::Formatter(std::string_view msg, Sev) -> std::str
     auto end_line = token_end.GetRow();
 
     std::stringstream ss;
-    ss << "\x1b[0m\x1b[37;1m[\x1b[0m\x1b[31;1mParse\x1b[0m\x1b[37;1m]: ";
+    ss << "\x1b[0m\x1b[37;1m[\x1b[0m\x1b[31;1mParse\x1b[0m\x1b[37;1m]: " << sev << ":\x1b[0m ";
     bool any_source_location = !start_filename.empty() || start_line != kLexEof || start_col != kLexEof;
 
     if (any_source_location) {
@@ -162,5 +163,8 @@ NCC_EXPORT auto ncc::parse::ec::Formatter(std::string_view msg, Sev) -> std::str
     return ss.str();
   }
 
-  return std::string(msg);
+  std::stringstream ss;
+  ss << "\x1b[0m\x1b[37;1m[\x1b[0m\x1b[31;1mParse\x1b[0m\x1b[37;1m]: " << sev << ":\x1b[0m " << msg;
+
+  return ss.str();
 }

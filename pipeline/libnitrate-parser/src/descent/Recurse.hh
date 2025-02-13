@@ -35,12 +35,12 @@
 #define __NITRATE_PARSE_H__
 
 #include <core/ParserImpl.hh>
+#include <core/SyntaxDiagnostics.hh>
 #include <nitrate-core/Macro.hh>
 #include <nitrate-lexer/Scanner.hh>
 #include <nitrate-parser/AST.hh>
 #include <nitrate-parser/ASTCommon.hh>
 #include <nitrate-parser/Context.hh>
-#include <nitrate-parser/EC.hh>
 
 namespace ncc::parse {
   using namespace ec;

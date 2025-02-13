@@ -33,6 +33,7 @@
 
 #include <google/protobuf/stubs/common.h>
 
+#include <core/SyntaxDiagnostics.hh>
 #include <nitrate-core/Init.hh>
 #include <nitrate-core/Logger.hh>
 #include <nitrate-core/Macro.hh>
@@ -44,33 +45,37 @@ using namespace ncc::parse;
 
 NCC_EXPORT ncc::LibraryRC<ParseLibrarySetup> ncc::parse::ParseLibrary;
 
+NCC_EC_EX(ec::ParseEG, Runtime, ec::Formatter);
+
 NCC_EXPORT auto ParseLibrarySetup::Init() -> bool {
   GOOGLE_PROTOBUF_VERIFY_VERSION;
 
-  Log << Debug << "Initializing Nitrate Parser Library";
+  Log << Runtime << Debug << "libnitrate-parser: initializing...";
 
   if (!ncc::CoreLibrary.InitRC()) {
+    Log << Runtime << "libnitrate-parser init failed: libnitrate-core failed to initialize";
     return false;
   }
 
   if (!ncc::lex::LexerLibrary.InitRC()) {
+    Log << Runtime << "libnitrate-parser init failed: libnitrate-lexer failed to initialize";
     return false;
   }
 
-  Log << Debug << "Nitrate Parser Library Initialized";
+  Log << Runtime << Debug << "libnitrate-parser: initialized";
 
   return true;
 }
 
 NCC_EXPORT void ParseLibrarySetup::Deinit() {
-  Log << Debug << "Deinitializing Nitrate Parser Library";
+  Log << Runtime << Debug << "libnitrate-parser: deinitializing...";
 
   ExtensionDataStore.Reset();
 
   ncc::lex::LexerLibrary.DeinitRC();
   ncc::CoreLibrary.DeinitRC();
 
-  Log << Debug << "Nitrate Parser Library Deinitialized";
+  Log << Runtime << Debug << "libnitrate-parser: deinitialized";
 }
 
 NCC_EXPORT auto ParseLibrarySetup::GetVersionId() -> std::string_view { return __TARGET_VERSION; }

@@ -59,6 +59,42 @@ namespace ncc {
     Emergency /* Example: Segmentation fault */
   };
 
+  static inline std::string_view ToString(Sev sev) {
+    switch (sev) {
+      case Sev::Trace:
+        return "trace";
+
+      case Sev::Debug:
+        return "debug";
+
+      case Sev::Info:
+        return "info";
+
+      case Sev::Notice:
+        return "notice";
+
+      case Sev::Warning:
+        return "warning";
+
+      case Sev::Error:
+        return "error";
+
+      case Sev::Critical:
+        return "critical";
+
+      case Sev::Alert:
+        return "alert";
+
+      case Sev::Emergency:
+        return "emergency";
+    }
+  }
+
+  static inline std::ostream &operator<<(std::ostream &os, Sev sev) {
+    os << ToString(sev);
+    return os;
+  }
+
   using EC = std::uint64_t;
 
   class ECUnique {
