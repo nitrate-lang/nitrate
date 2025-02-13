@@ -199,7 +199,7 @@ auto Sequencer::ExecuteLua(Sequencer &self, const char *code) -> std::optional<s
   const auto old_stack_size = lua_gettop(lua);
 
   if (luaL_dostring(lua, code)) [[unlikely]] {
-    ncc::Log << ec::SeqError << "Lua error: " << lua_tostring(lua, -1);
+    Log << SeqLog << "Lua error: " << lua_tostring(lua, -1);
     self.SetFailBit();
 
     return std::nullopt;
@@ -218,7 +218,7 @@ auto Sequencer::CreateChild(Sequencer &self, std::istream &file) -> std::unique_
   clone->m_shared->m_depth = self.m_shared->m_depth + 1;
 
   if (clone->m_shared->m_depth > kMaxRecursionDepth) [[unlikely]] {
-    Log << SeqError << "Maximum macro recursion depth reached, aborting";
+    Log << SeqLog << "Maximum macro recursion depth reached, aborting";
     return nullptr;
   }
 
@@ -254,7 +254,7 @@ auto Sequencer::HandleImportDirective(Sequencer &self) -> bool {
   const auto import_name = self.m_scanner.Next().AsString();
 
   if (!self.m_scanner.Next().Is<PuncSemi>()) [[unlikely]] {
-    Log << SeqError << "Expected a semicolon after import name";
+    Log << SeqLog << "Expected a semicolon after import name";
     self.SetFailBit();
 
     return false;
@@ -365,7 +365,7 @@ SequencerPImpl::SequencerPImpl(std::shared_ptr<ncc::Environment> env)
       m_L(luaL_newstate()),
       m_depth(0) {
   if (m_L == nullptr) {
-    Log << Emergency << SeqError << "Failed to create Lua state";
+    Log << Emergency << SeqLog << "Failed to create Lua state";
     qcore_panic("Failed to create LUA context");
   }
 }

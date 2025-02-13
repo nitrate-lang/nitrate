@@ -51,7 +51,7 @@ auto Sequencer::SysWarn() -> int {
     ss << lua_tostring(lua, i) << " ";
   }
 
-  ncc::Log << Warning << ec::SeqError << ss.str();
+  Log << ec::SeqLog << Warning << ec::SeqLog << ss.str();
 
   return 0;
 }

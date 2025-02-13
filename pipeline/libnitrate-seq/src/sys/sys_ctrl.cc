@@ -31,6 +31,7 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
+#include <core/EC.hh>
 #include <core/PImpl.hh>
 #include <nitrate-seq/Sequencer.hh>
 
@@ -54,7 +55,7 @@ auto Sequencer::SysCtrl() -> int {
 
   auto id = lua_tointeger(lua, 1);
 
-  ncc::Log << Debug << "sys_ctrl: " << id << " not implemented";
+  Log << ec::SeqLog << Debug << "sys_ctrl: " << id << " not implemented";
 
   lua_pushnil(lua);
 

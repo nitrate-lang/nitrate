@@ -51,7 +51,7 @@ auto Sequencer::SysDebug() -> int {
     ss << lua_tostring(lua, i) << " ";
   }
 
-  ncc::Log << Debug << ec::SeqError << ss.str();
+  Log << ec::SeqLog << Debug << ec::SeqLog << ss.str();
 
   return 0;
 }

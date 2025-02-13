@@ -43,7 +43,7 @@ namespace ncc::seq::ec {
 
 #define EXPAND(path) "$NCC_CONF/ec/seq/" path
 
-  NCC_EC_EX(SeqEG, SeqError, Formatter, EXPAND("SeqError"));
+  NCC_EC_EX(SeqEG, SeqLog, Formatter, EXPAND("SeqLog"));
 
 #undef EXPAND
 }  // namespace ncc::seq::ec

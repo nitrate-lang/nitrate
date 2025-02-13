@@ -56,7 +56,7 @@ NCC_EXPORT auto ncc::seq::FileSystemFetchModule(std::string_view path) -> std::o
   const auto job_uuid = path.substr(0, 36);
   path.remove_prefix(37);
 
-  Log << Debug << "Opening file '" << path << "' on behalf of job '" << job_uuid << "'";
+  Log << SeqLog << Debug << "Opening file '" << path << "' on behalf of job '" << job_uuid << "'";
 
   /// TODO: Get the base directory of the project
 
@@ -87,20 +87,20 @@ auto Sequencer::FetchModuleData(Sequencer &self, std::string_view raw_module_nam
   auto module_name = canonicalize_module_name(std::string(raw_module_name));
 
   /* Translate module names into their actual names */
-  if (auto actual_name = self.m_env->Get("map." + module_name)) {
+  if (const auto actual_name = self.m_env->Get("map." + module_name)) {
     module_name = actual_name.value();
   }
 
   const auto jobid = std::string(self.m_env->Get("this.job").value());
   const auto module_uri = get_fetch_uri(module_name, jobid);
 
-  Log << SeqError << Debug << "Fetching module: '" << module_name << "'";
+  Log << SeqLog << Debug << "Importing module: '" << module_name << "'...";
 
   if (const auto module_content = self.m_shared->m_fetch_module(module_uri)) {
     return module_content;
   }
 
-  Log << SeqError << "Import not found: '" << module_name << "'";
+  Log << SeqLog << "Import not found: '" << module_name << "'";
 
   return std::nullopt;
 }

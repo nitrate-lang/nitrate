@@ -51,7 +51,7 @@ auto Sequencer::SysFatal() -> int {
     ss << lua_tostring(lua, i) << " ";
   }
 
-  ncc::Log << Critical << ec::SeqError << ss.str();
+  Log << ec::SeqLog << Critical << ec::SeqLog << ss.str();
 
   throw lex::detail::ScannerEOF();
 }
