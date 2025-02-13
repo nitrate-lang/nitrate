@@ -31,6 +31,7 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
+#include <core/PImpl.hh>
 #include <nitrate-seq/Sequencer.hh>
 
 extern "C" {

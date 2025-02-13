@@ -34,7 +34,7 @@
 #include <nitrate-seq/Sequencer.hh>
 #include <string_view>
 
-std::string_view ncc::seq::Sequencer::CodePrefix = R"(@(
+const std::string_view ncc::seq::SEQUENCER_DIALECT_CODE_PREFIX = R"(@(
 function comp_if(cond, terminator)
   -- Nothing to do if condition is true
   if cond then

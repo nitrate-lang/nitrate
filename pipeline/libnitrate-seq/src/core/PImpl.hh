@@ -31,28 +31,27 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <core/PImpl.hh>
+#ifndef __NITRATE_SEQ_PIMPL_H__
+#define __NITRATE_SEQ_PIMPL_H__
+
+#include <list>
 #include <nitrate-seq/Sequencer.hh>
+#include <queue>
+#include <random>
 
-extern "C" {
-#include <lua/lauxlib.h>
-}
+namespace ncc::seq {
+  class SequencerPImpl {
+  public:
+    std::mt19937 m_random;
+    std::queue<std::queue<lex::Token>> m_emission;
+    FetchModuleFunc m_fetch_module;
+    std::list<MethodType> m_captures;
+    lua_State* m_L;
+    size_t m_depth;
 
-using namespace ncc::seq;
+    SequencerPImpl();
+    ~SequencerPImpl();
+  };
+}  // namespace ncc::seq
 
-auto Sequencer::SysEmit() -> int {
-  auto *lua = m_shared->m_L;
-
-  auto nargs = lua_gettop(lua);
-  if (nargs != 1) {
-    return luaL_error(lua, "expected 1 argument, got %d", nargs);
-  }
-
-  if (lua_isstring(lua, 1) == 0) {
-    return luaL_error(lua, "expected string, got %s", lua_typename(lua, lua_type(lua, 1)));
-  }
-
-  SequenceSource(*this, lua_tostring(lua, 1));
-
-  return 0;
-}
+#endif

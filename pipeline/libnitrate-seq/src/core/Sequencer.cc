@@ -31,6 +31,8 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
+#include <core/EC.hh>
+#include <core/PImpl.hh>
 #include <cstddef>
 #include <fstream>
 #include <iostream>
@@ -38,7 +40,6 @@
 #include <nitrate-core/Logger.hh>
 #include <nitrate-core/Macro.hh>
 #include <nitrate-lexer/Scanner.hh>
-#include <nitrate-seq/EC.hh>
 #include <nitrate-seq/Sequencer.hh>
 
 extern "C" {
@@ -76,15 +77,17 @@ NCC_EXPORT auto ncc::seq::FileSystemFetchModule(std::string_view path) -> std::o
   return std::string((std::istreambuf_iterator<char>(file)), (std::istreambuf_iterator<char>()));
 }
 
-void Sequencer::BindMethod(const char *name, MethodType func) {
-  m_shared->m_captures.push_back(func);
-  auto &func_ref = m_shared->m_captures.back();
+void Sequencer::BindMethod(Sequencer &self, const char *name, MethodType func) {
+  auto s = self.m_shared;
 
-  lua_pushinteger(m_shared->m_L, reinterpret_cast<lua_Integer>(this));
-  lua_pushinteger(m_shared->m_L, reinterpret_cast<lua_Integer>(&func_ref));
+  s->m_captures.push_back(func);
+  auto &func_ref = s->m_captures.back();
+
+  lua_pushinteger(s->m_L, reinterpret_cast<lua_Integer>(&self));
+  lua_pushinteger(s->m_L, reinterpret_cast<lua_Integer>(&func_ref));
 
   lua_pushcclosure(
-      m_shared->m_L,
+      s->m_L,
       [](auto lua) -> int {
         auto &this_ref = *reinterpret_cast<Sequencer *>(lua_tointeger(lua, lua_upvalueindex(1)));
         auto &method = *reinterpret_cast<MethodType *>(lua_tointeger(lua, lua_upvalueindex(2)));
@@ -93,45 +96,45 @@ void Sequencer::BindMethod(const char *name, MethodType func) {
       },
       2);
 
-  lua_setfield(m_shared->m_L, -2, name);
+  lua_setfield(s->m_L, -2, name);
 }
 
-void Sequencer::BindLuaAPI() {
-  lua_newtable(m_shared->m_L);
+void Sequencer::BindLuaAPI(Sequencer &self) {
+  lua_newtable(self.m_shared->m_L);
 
   /* Lexical API */
-  BindMethod("next", &Sequencer::SysNext);
-  BindMethod("peek", &Sequencer::SysPeek);
-  BindMethod("emit", &Sequencer::SysEmit);
+  BindMethod(self, "next", &Sequencer::SysNext);
+  BindMethod(self, "peek", &Sequencer::SysPeek);
+  BindMethod(self, "emit", &Sequencer::SysEmit);
 
   /* Logging API */
-  BindMethod("debug", &Sequencer::SysDebug);
-  BindMethod("info", &Sequencer::SysInfo);
-  BindMethod("warn", &Sequencer::SysWarn);
-  BindMethod("error", &Sequencer::SysError);
-  BindMethod("abort", &Sequencer::SysAbort);
-  BindMethod("fatal", &Sequencer::SysFatal);
+  BindMethod(self, "debug", &Sequencer::SysDebug);
+  BindMethod(self, "info", &Sequencer::SysInfo);
+  BindMethod(self, "warn", &Sequencer::SysWarn);
+  BindMethod(self, "error", &Sequencer::SysError);
+  BindMethod(self, "abort", &Sequencer::SysAbort);
+  BindMethod(self, "fatal", &Sequencer::SysFatal);
 
   /* Environment API */
-  BindMethod("get", &Sequencer::SysGet);
-  BindMethod("set", &Sequencer::SysSet);
+  BindMethod(self, "get", &Sequencer::SysGet);
+  BindMethod(self, "set", &Sequencer::SysSet);
 
   /* Vendor interaction API */
-  BindMethod("ctrl", &Sequencer::SysCtrl);
+  BindMethod(self, "ctrl", &Sequencer::SysCtrl);
 
   /* Filesystem API */
-  BindMethod("fetch", &Sequencer::SysFetch);
+  BindMethod(self, "fetch", &Sequencer::SysFetch);
 
   /* Math and Logic API */
-  BindMethod("random", &Sequencer::SysRandom);
+  BindMethod(self, "random", &Sequencer::SysRandom);
 
   /* Store the API in namespace 'n' inside LUA */
-  lua_setglobal(m_shared->m_L, "n");
+  lua_setglobal(self.m_shared->m_L, "n");
 }
 
-void Sequencer::ConfigureLUAEnvironment() {
+void Sequencer::ConfigureLUAEnvironment(Sequencer &self) {
   /* Attach our C++ functions to the LUA environment */
-  BindLuaAPI();
+  BindLuaAPI(self);
 
   /* Load a secure subset of the LUA core libraries */
   for (const auto &lib : {
@@ -141,13 +144,13 @@ void Sequencer::ConfigureLUAEnvironment() {
            luaL_Reg{LUA_MATHLIBNAME, luaopen_math},  /* Math functions */
            luaL_Reg{LUA_UTF8LIBNAME, luaopen_utf8},  /* UTF-8 manipulation */
        }) {
-    luaL_requiref(m_shared->m_L, lib.name, lib.func, 1);
-    lua_pop(m_shared->m_L, 1);
+    luaL_requiref(self.m_shared->m_L, lib.name, lib.func, 1);
+    lua_pop(self.m_shared->m_L, 1);
   }
 
   /* Disable some lua functions for security and determinism */
-  SequenceSource(
-      R"(@(
+  SequenceSource(self,
+                 R"(@(
   -- From lbaselib.c
   dofile = nil;
   loadfile = nil;
@@ -170,26 +173,27 @@ void Sequencer::ConfigureLUAEnvironment() {
 ))");
 }
 
-auto Sequencer::ExecuteLua(const char *code) -> std::optional<std::string> {
-  auto top = lua_gettop(m_shared->m_L);
-  auto rc = luaL_dostring(m_shared->m_L, code);
+auto Sequencer::ExecuteLua(Sequencer &self, const char *code) -> std::optional<std::string> {
+  auto s = self.m_shared;
+  auto top = lua_gettop(s->m_L);
+  auto rc = luaL_dostring(s->m_L, code);
 
   if (rc) {
-    ncc::Log << ec::SeqError << "Lua error: " << lua_tostring(m_shared->m_L, -1);
-    SetFailBit();
+    ncc::Log << ec::SeqError << "Lua error: " << lua_tostring(s->m_L, -1);
+    self.SetFailBit();
 
     return std::nullopt;
   }
 
   // If no value was returned, return an empty string
-  if (lua_gettop(m_shared->m_L) == top) {
+  if (lua_gettop(s->m_L) == top) {
     return "";
   }
 
-  return lua_tostring(m_shared->m_L, -1);
+  return lua_tostring(s->m_L, -1);
 }
 
-auto Sequencer::FetchModuleData(std::string_view raw_module_name) -> std::optional<std::string> {
+auto Sequencer::FetchModuleData(Sequencer &self, std::string_view raw_module_name) -> std::optional<std::string> {
   const auto get_fetch_uri = [](const std::string &module_name, const std::string &jobid) -> std::string {
     return "file:///package/" + jobid + "/" + module_name;
   };
@@ -208,18 +212,18 @@ auto Sequencer::FetchModuleData(std::string_view raw_module_name) -> std::option
   auto module_name = canonicalize_module_name(std::string(raw_module_name));
 
   /* Translate module names into their actual names */
-  if (auto actual_name = m_env->Get("map." + module_name)) {
+  if (auto actual_name = self.m_env->Get("map." + module_name)) {
     module_name = actual_name.value();
   }
 
-  auto jobid = std::string(m_env->Get("this.job").value());
+  auto jobid = std::string(self.m_env->Get("this.job").value());
   auto module_uri = get_fetch_uri(module_name, jobid);
 
   Log << SeqError << Debug << "Fetching module: '" << module_name << "'";
 
-  qcore_assert(m_shared->m_fetch_module);
+  qcore_assert(self.m_shared->m_fetch_module);
 
-  if (auto module_content = m_shared->m_fetch_module(module_uri)) {
+  if (auto module_content = self.m_shared->m_fetch_module(module_uri)) {
     return module_content;
   }
 
@@ -228,12 +232,12 @@ auto Sequencer::FetchModuleData(std::string_view raw_module_name) -> std::option
   return std::nullopt;
 }
 
-void Sequencer::SequenceSource(std::string_view code) {
+void Sequencer::SequenceSource(Sequencer &self, std::string_view code) {
   std::istringstream ss(std::string(code.data(), code.size()));
 
-  Sequencer clone(ss, m_env, false);
-  clone.m_shared = m_shared;
-  clone.m_shared->m_depth = m_shared->m_depth + 1;
+  Sequencer clone(ss, self.m_env, false);
+  clone.m_shared = self.m_shared;
+  clone.m_shared->m_depth = self.m_shared->m_depth + 1;
 
   std::queue<Token> stack;
   Token tok;
@@ -243,7 +247,7 @@ void Sequencer::SequenceSource(std::string_view code) {
   }
 
   if (!stack.empty()) {
-    m_shared->m_emission.push(std::move(stack));
+    self.m_shared->m_emission.push(std::move(stack));
   }
 }
 
@@ -262,7 +266,7 @@ auto Sequencer::GetNext() -> Token {
   } guard(m_shared->m_depth);
   if (guard.ShouldStop()) [[unlikely]] {
     Log << SeqError << "Maximum macro recursion depth reached, aborting";
-    throw StopException();
+    throw SequencerStopException();
   }
 
   Token tok;
@@ -304,8 +308,8 @@ auto Sequencer::GetNext() -> Token {
                 break;
               }
 
-              if (auto content = FetchModuleData(import_name.Get())) {
-                SequenceSource(content.value());
+              if (auto content = FetchModuleData(*this, import_name.Get())) {
+                SequenceSource(*this, content.value());
               } else {
                 SetFailBit();
               }
@@ -317,8 +321,8 @@ auto Sequencer::GetNext() -> Token {
           }
 
           case MacB: {
-            if (auto result_data = ExecuteLua(tok.GetString().Get())) [[likely]] {
-              SequenceSource(result_data.value());
+            if (auto result_data = ExecuteLua(*this, tok.GetString().Get())) [[likely]] {
+              SequenceSource(*this, result_data.value());
               continue;
             } /* Failed to execute macro */
 
@@ -329,8 +333,8 @@ auto Sequencer::GetNext() -> Token {
           }
 
           case Macr: {
-            if (auto result_data = ExecuteLua((std::string(tok.GetString()) + "()").c_str())) [[likely]] {
-              SequenceSource(result_data.value());
+            if (auto result_data = ExecuteLua(*this, (std::string(tok.GetString()) + "()").c_str())) [[likely]] {
+              SequenceSource(*this, result_data.value());
               continue;
             } /* Failed to execute macro function call */
 
@@ -344,7 +348,7 @@ auto Sequencer::GetNext() -> Token {
 
       break;
     }
-  } catch (StopException &) {
+  } catch (SequencerStopException &) {
     tok = Token::EndOfFile();
   }
 
@@ -381,7 +385,7 @@ auto Sequencer::GetSourceWindow(Point start, Point end, char fillchar) -> std::o
   return m_scanner.GetSourceWindow(start, end, fillchar);
 }
 
-Sequencer::SharedState::SharedState()
+SequencerPImpl::SequencerPImpl()
     : m_random(0),
       m_fetch_module([](std::string_view) {
         Log << SeqError << Debug << "No module fetch function provided";
@@ -396,17 +400,17 @@ Sequencer::SharedState::SharedState()
   }
 }
 
-Sequencer::SharedState::~SharedState() { lua_close(m_L); }
+SequencerPImpl::~SequencerPImpl() { lua_close(m_L); }
 
 Sequencer::Sequencer(std::istream &file, std::shared_ptr<ncc::Environment> env, bool is_root)
     : ncc::lex::IScanner(std::move(env)),
       m_scanner(file, m_env),
-      m_shared(is_root ? std::make_shared<SharedState>() : nullptr) {
+      m_shared(is_root ? std::make_shared<SequencerPImpl>() : nullptr) {
   if (is_root) {
-    ConfigureLUAEnvironment();
+    ConfigureLUAEnvironment(*this);
 
     /* Execute this code before every translation unit */
-    SequenceSource(CodePrefix);
+    SequenceSource(*this, SEQUENCER_DIALECT_CODE_PREFIX);
   }
 }
 

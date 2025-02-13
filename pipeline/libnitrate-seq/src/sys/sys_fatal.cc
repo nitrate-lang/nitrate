@@ -31,6 +31,8 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
+#include <core/EC.hh>
+#include <core/PImpl.hh>
 #include <nitrate-seq/Sequencer.hh>
 
 extern "C" {
@@ -51,5 +53,5 @@ auto Sequencer::SysFatal() -> int {
 
   ncc::Log << Critical << ec::SeqError << ss.str();
 
-  throw StopException();
+  throw SequencerStopException();
 }
