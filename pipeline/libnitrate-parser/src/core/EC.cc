@@ -124,7 +124,7 @@ NCC_EXPORT auto ncc::parse::ec::Formatter(std::string_view msg, Sev) -> std::str
     auto end_line = token_end.GetRow();
 
     std::stringstream ss;
-    ss << "\x1b[37;1m[\x1b[0m\x1b[31;1mParse\x1b[0m\x1b[37;1m]: ";
+    ss << "\x1b[0m\x1b[37;1m[\x1b[0m\x1b[31;1mParse\x1b[0m\x1b[37;1m]: ";
     bool any_source_location = !start_filename.empty() || start_line != kLexEof || start_col != kLexEof;
 
     if (any_source_location) {

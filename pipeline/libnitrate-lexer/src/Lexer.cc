@@ -363,10 +363,10 @@ static auto IsUtf8(const char *string) -> bool {
 
 static std::string LexerECFormatter(std::string_view msg, Sev sev) {
   if (sev <= ncc::Debug) {
-    return "\x1b[37;1m[\x1b[0m\x1b[34;1mLexer\x1b[0m\x1b[37;1m]: debug: " + std::string(msg) + "\x1b[0m";
+    return "\x1b[0m\x1b[37;1m[\x1b[0m\x1b[34;1mLexer\x1b[0m\x1b[37;1m]: debug: " + std::string(msg) + "\x1b[0m";
   }
 
-  return "\x1b[37;1m[\x1b[0m\x1b[34;1mLexer\x1b[0m\x1b[37;1m]: " + std::string(msg) + "\x1b[0m";
+  return "\x1b[0m\x1b[37;1m[\x1b[0m\x1b[34;1mLexer\x1b[0m\x1b[37;1m]: " + std::string(msg) + "\x1b[0m";
 }
 
 NCC_EC_GROUP(Lexer);

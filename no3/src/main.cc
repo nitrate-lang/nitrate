@@ -71,18 +71,17 @@ namespace no3::router {
 
     core::SetDebugMode(parser["--verbose"] == true);
 
-    PackageBuilder builder =
-        PackageBuilder()
-            .Output(parser.Get<std::string>("--output"))
-            .Name(parser.Get<std::string>("package-name"))
-            .License(parser.Get<std::string>("--license"))
-            .Author(parser.Get<std::string>("--author"))
-            .Email(parser.Get<std::string>("--email"))
-            .Url(parser.Get<std::string>("--url"))
-            .Version(parser.Get<std::string>("--version"))
-            .Description(parser.Get<std::string>("--description"))
-            .Verbose(parser["--verbose"] == true)
-            .Force(parser["--force"] == true);
+    PackageBuilder builder = PackageBuilder()
+                                 .Output(parser.Get<std::string>("--output"))
+                                 .Name(parser.Get<std::string>("package-name"))
+                                 .License(parser.Get<std::string>("--license"))
+                                 .Author(parser.Get<std::string>("--author"))
+                                 .Email(parser.Get<std::string>("--email"))
+                                 .Url(parser.Get<std::string>("--url"))
+                                 .Version(parser.Get<std::string>("--version"))
+                                 .Description(parser.Get<std::string>("--description"))
+                                 .Verbose(parser["--verbose"] == true)
+                                 .Force(parser["--force"] == true);
 
     if (parser.Get<std::string>("--type") == "program")
       builder.Type(PackageType::PROGRAM);
@@ -106,8 +105,7 @@ namespace no3::router {
   static auto RunCleanMode(const ArgumentParser &parser) -> int {
     core::SetDebugMode(parser["--verbose"] == true);
 
-    if (clean::CleanPackageSource(parser.Get<std::string>("package-src"),
-                                  parser["--verbose"] == true)) {
+    if (clean::CleanPackageSource(parser.Get<std::string>("package-src"), parser["--verbose"] == true)) {
       return 0;
     } else {
       return -1;
@@ -202,8 +200,7 @@ namespace no3::router {
       }
     }
 
-    auto log_file = std::make_unique<std::fstream>(
-        parser.Get<std::string>("--log"), std::ios::app);
+    auto log_file = std::make_unique<std::fstream>(parser.Get<std::string>("--log"), std::ios::app);
 
     if (!log_file->is_open()) {
       LOG(ERROR) << "Failed to open log file";
@@ -223,10 +220,8 @@ namespace no3::router {
     return ret;
   }
 
-  auto RunDevMode(
-      const ArgumentParser &parser,
-      const std::unordered_map<std::string_view,
-                               std::unique_ptr<ArgumentParser>> &subparsers) -> int;
+  auto RunDevMode(const ArgumentParser &parser,
+                  const std::unordered_map<std::string_view, std::unique_ptr<ArgumentParser>> &subparsers) -> int;
 }  // namespace no3::router
 
 namespace no3::argparse_setup {
@@ -242,12 +237,10 @@ namespace no3::argparse_setup {
   extern ArgumentParser TestParser;
   extern ArgumentParser LspParser;
   extern ArgumentParser DevParser;
-  extern std::unordered_map<std::string_view, std::unique_ptr<ArgumentParser>>
-      DevSubparsers;
+  extern std::unordered_map<std::string_view, std::unique_ptr<ArgumentParser>> DevSubparsers;
 }  // namespace no3::argparse_setup
 
-extern "C" __attribute__((visibility("default"))) auto No3Command(int argc,
-                                                                 char **argv) -> int {
+extern "C" __attribute__((visibility("default"))) auto No3Command(int argc, char **argv) -> int {
   using namespace argparse_setup;
 
   core::SetColorMode(ansi::IsUsingColors());
@@ -330,38 +323,67 @@ extern "C" __attribute__((visibility("default"))) auto No3Init() -> bool {
 
   { /* Initialize compiler pipeline libraries */
     if (!ncc::CoreLibrary.InitRC()) {
-      LOG(ERROR) << "Failed to initialize NITRATE-CORE library" << std::endl;
+      LOG(ERROR) << "Failed to initialize NITRATE-CORE library";
       return false;
     }
 
+    ncc::Log.Subscribe([](auto msg, auto sev, const auto &ec) {
+      using namespace ncc;
+
+      if (sev > Debug || core::GetDebugMode()) {
+        switch (sev) {
+          case Trace:
+          case Debug:
+          case Info:
+          case Notice: {
+            LOG(INFO) << "ncc: " << ec.Format(msg, sev);
+            break;
+          }
+
+          case Warning: {
+            LOG(WARNING) << "ncc: " << ec.Format(msg, sev);
+            break;
+          }
+
+          case Error:
+          case Critical:
+          case Alert:
+          case Emergency: {
+            LOG(ERROR) << "ncc: " << ec.Format(msg, sev);
+            break;
+          }
+        }
+      }
+    });
+
     if (!ncc::lex::LexerLibrary.InitRC()) {
-      LOG(ERROR) << "Failed to initialize NITRATE-LEX library" << std::endl;
+      LOG(ERROR) << "Failed to initialize NITRATE-LEX library";
       return false;
     }
 
     if (!ncc::seq::SeqLibrary.InitRC()) {
-      LOG(ERROR) << "Failed to initialize NITRATE-PREP library" << std::endl;
+      LOG(ERROR) << "Failed to initialize NITRATE-PREP library";
       return false;
     }
 
     if (!ncc::parse::ParseLibrary.InitRC()) {
-      LOG(ERROR) << "Failed to initialize NITRATE-PARSE library" << std::endl;
+      LOG(ERROR) << "Failed to initialize NITRATE-PARSE library";
       return false;
     }
 
     if (!ncc::ir::IRLibrary.InitRC()) {
-      LOG(ERROR) << "Failed to initialize NITRATE-IR library" << std::endl;
+      LOG(ERROR) << "Failed to initialize NITRATE-IR library";
       return false;
     }
 
     if (!QcodeLibInit()) {
-      LOG(ERROR) << "Failed to initialize NITRATE-CODE library" << std::endl;
+      LOG(ERROR) << "Failed to initialize NITRATE-CODE library";
       return false;
     }
   }
 
   if (git_libgit2_init() <= 0) {
-    LOG(ERROR) << "Failed to initialize libgit2" << std::endl;
+    LOG(ERROR) << "Failed to initialize libgit2";
     return false;
   }
 

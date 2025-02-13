@@ -207,7 +207,7 @@ NCC_EXPORT std::string ec::Formatter(std::string_view msg, Sev sev) {
 
   { /* Print filename and source row:column start and end */
     /// FIXME: Get source location
-    ss << "\x1b[37;1m" << "??" << ":";
+    ss << "\x1b[0m\x1b[37;1m" << "??" << ":";
 
     auto default_if = std::pair<uint32_t, uint32_t>(kLexEof, kLexEof);
     auto beg = default_if;
