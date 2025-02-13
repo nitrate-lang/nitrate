@@ -57,8 +57,6 @@ namespace ncc::seq {
   extern const std::string_view SEQUENCER_DIALECT_CODE_PREFIX;
 
   class NCC_EXPORT Sequencer final : public lex::IScanner {
-    struct SequencerStopException {};
-
     lex::Tokenizer m_scanner;
     std::shared_ptr<SequencerPImpl> m_shared;
 
@@ -94,6 +92,9 @@ namespace ncc::seq {
     static auto ExecuteLua(Sequencer& self, const char* code) -> std::optional<std::string>;
     static auto CreateChild(Sequencer& self, std::istream& file) -> std::unique_ptr<Sequencer>;
     static auto SequenceSource(Sequencer& self, std::string_view code) -> void;
+    static auto HandleImportDirective(Sequencer& self) -> bool;
+    static auto HandleMacroBlock(Sequencer& self, lex::Token macro) -> bool;
+    static auto HandleMacroStatement(Sequencer& self, lex::Token macro) -> bool;
 
     ///=========================================================================
     /// IScanner overrides

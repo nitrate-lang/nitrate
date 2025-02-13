@@ -52,31 +52,25 @@ IScanner::~IScanner() = default;
 auto IScanner::Next() -> Token {
   Token tok;
 
-  while (true) {
-    if (m_eof) [[unlikely]] {
-      tok = Token::EndOfFile();
-    } else {
-      try {
-        if (m_ready.empty()) {
-          tok = GetNext();
-        } else {
-          tok = m_ready.front();
-          m_ready.pop_front();
-        }
-
-        /* Handle comment token buffering */
-        if (m_skip && tok.Is(Note)) [[unlikely]] {
-          m_comments.push_back(tok);
-          continue;
-        }
-
-        /* EOF signal optimization */
-      } catch (ScannerEOF &) {
-        tok = Token::EndOfFile();
+  try {
+    while (true) {
+      if (m_ready.empty()) {
+        tok = GetNext();
+      } else {
+        tok = m_ready.front();
+        m_ready.pop_front();
       }
-    }
 
-    break;
+      /* Handle comment token buffering */
+      if (m_skip && tok.Is(Note)) [[unlikely]] {
+        m_comments.push_back(tok);
+        continue;
+      }
+
+      break;
+    }
+  } catch (ScannerEOF &) { /* EOF signal optimization */
+    tok = Token::EndOfFile();
   }
 
   m_eof |= tok.Is(EofF);
@@ -88,31 +82,25 @@ auto IScanner::Next() -> Token {
 auto IScanner::Peek() -> Token {
   Token tok;
 
-  while (true) {
-    if (m_eof) [[unlikely]] {
-      tok = Token::EndOfFile();
-    } else {
-      try {
-        if (m_ready.empty()) {
-          m_ready.push_back(GetNext());
-        }
-
-        tok = m_ready.front();
-
-        /* Handle comment token buffering */
-        if (m_skip && tok.Is(Note)) [[unlikely]] {
-          m_comments.push_back(tok);
-          m_ready.pop_front();
-          continue;
-        }
-
-        /* EOF signal optimization */
-      } catch (ScannerEOF &) {
-        tok = Token::EndOfFile();
+  try {
+    while (true) {
+      if (m_ready.empty()) {
+        m_ready.push_back(GetNext());
       }
-    }
 
-    break;
+      tok = m_ready.front();
+
+      /* Handle comment token buffering */
+      if (m_skip && tok.Is(Note)) [[unlikely]] {
+        m_comments.push_back(tok);
+        m_ready.pop_front();
+        continue;
+      }
+
+      break;
+    }
+  } catch (ScannerEOF &) { /* EOF signal optimization */
+    tok = Token::EndOfFile();
   }
 
   m_eof |= tok.Is(EofF);

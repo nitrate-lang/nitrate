@@ -53,5 +53,5 @@ auto Sequencer::SysAbort() -> int32_t {
 
   ncc::Log << Error << ec::SeqError << ss.str();
 
-  throw SequencerStopException();
+  throw lex::detail::ScannerEOF();
 }

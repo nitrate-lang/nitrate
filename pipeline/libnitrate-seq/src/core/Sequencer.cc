@@ -250,24 +250,64 @@ void Sequencer::SequenceSource(Sequencer &self, std::string_view code) {
   }
 }
 
-auto Sequencer::GetNext() -> Token {
+auto Sequencer::HandleImportDirective(Sequencer &self) -> bool {
   /// TODO: Refactor me
 
+  auto import_name = self.m_scanner.Next().GetString();
+
+  if (!self.m_scanner.Next().Is<PuncSemi>()) [[unlikely]] {
+    Log << SeqError << "Expected a semicolon after import name";
+    self.SetFailBit();
+
+    return false;
+  }
+
+  if (auto content = FetchModuleData(self, import_name.Get())) {
+    SequenceSource(self, content.value());
+  } else {
+    self.SetFailBit();
+  }
+
+  return true;
+}
+
+auto Sequencer::HandleMacroBlock(Sequencer &self, Token macro) -> bool {
+  if (auto result_data = ExecuteLua(self, macro.GetString().c_str())) [[likely]] {
+    SequenceSource(self, result_data.value());
+    return true;
+  }
+
+  self.SetFailBit();
+
+  return false;
+}
+
+auto Sequencer::HandleMacroStatement(Sequencer &self, Token macro) -> bool {
+  if (auto result_code = ExecuteLua(self, (std::string(macro.GetString()) + "()").c_str())) [[likely]] {
+    SequenceSource(self, result_code.value());
+    return true;
+  }
+
+  self.SetFailBit();
+
+  return false;
+}
+
+auto Sequencer::GetNext() -> Token {
   Token tok;
 
   while (true) {
     if (!m_shared->m_emission.empty()) [[unlikely]] {
-      tok = m_shared->m_emission.front().front();
-      m_shared->m_emission.front().pop();
+      auto &emission = m_shared->m_emission.front();
 
-      if (m_shared->m_emission.front().empty()) {
+      tok = emission.front();
+      emission.pop();
+
+      if (emission.empty()) {
         m_shared->m_emission.pop();
       }
     } else {
-      tok = m_scanner.Next();
-      SetFailBit(HasError() || m_scanner.HasError());
-
-      switch (tok.GetKind()) {
+      switch (tok = m_scanner.Next(); tok.GetKind()) {
         case EofF:
         case IntL:
         case Text:
@@ -276,27 +316,11 @@ auto Sequencer::GetNext() -> Token {
         case Oper:
         case Punc:
         case Name:
-        case Note: {
-          break;
-        }
+        case Note:
+          [[likely]] { break; }
 
         case KeyW: {
-          if (tok.GetKeyword() == Import) [[unlikely]] {
-            auto import_name = m_scanner.Next().GetString();
-
-            if (!m_scanner.Next().Is<PuncSemi>()) [[unlikely]] {
-              Log << SeqError << "Expected a semicolon after import name";
-              tok = Token::EndOfFile();
-              SetFailBit();
-              break;
-            }
-
-            if (auto content = FetchModuleData(*this, import_name.Get())) {
-              SequenceSource(*this, content.value());
-            } else {
-              SetFailBit();
-            }
-
+          if (tok.GetKeyword() == Import && HandleImportDirective(*this)) [[unlikely]] {
             continue;
           }
 
@@ -304,35 +328,27 @@ auto Sequencer::GetNext() -> Token {
         }
 
         case MacB: {
-          if (auto result_data = ExecuteLua(*this, tok.GetString().Get())) [[likely]] {
-            SequenceSource(*this, result_data.value());
+          if (HandleMacroBlock(*this, tok)) [[likely]] {
             continue;
-          } /* Failed to execute macro */
-
-          tok = Token::EndOfFile();
-          SetFailBit();
-
-          break;
+          } else {
+            tok = Token::EndOfFile();
+            break;
+          }
         }
 
         case Macr: {
-          if (auto result_data = ExecuteLua(*this, (std::string(tok.GetString()) + "()").c_str())) [[likely]] {
-            SequenceSource(*this, result_data.value());
+          if (HandleMacroStatement(*this, tok)) [[likely]] {
             continue;
-          } /* Failed to execute macro function call */
-
-          tok = Token::EndOfFile();
-          SetFailBit();
-
-          break;
+          } else {
+            tok = Token::EndOfFile();
+            break;
+          }
         }
       }
     }
 
-    break;
+    return tok;
   }
-
-  return tok;
 }
 
 auto Sequencer::GetLocationFallback(ncc::lex::LocationID id) -> std::optional<ncc::lex::Location> {

@@ -53,5 +53,5 @@ auto Sequencer::SysFatal() -> int {
 
   ncc::Log << Critical << ec::SeqError << ss.str();
 
-  throw SequencerStopException();
+  throw lex::detail::ScannerEOF();
 }
