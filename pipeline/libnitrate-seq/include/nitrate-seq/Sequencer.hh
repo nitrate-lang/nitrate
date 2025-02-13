@@ -81,24 +81,24 @@ namespace ncc::seq {
     [[nodiscard]] int32_t SysRandom();
 
     ///=========================================================================
-    /// Helper functions to construct the LUA interpreter
+    /// Helper functions to configure the LUA interpreter
 
     static void BindMethod(Sequencer& self, const char* name, MethodType func);
-    static void BindLuaAPI(Sequencer& self);
-    static void ConfigureLUAEnvironment(Sequencer& self);
+    static void AttachAPIFunctions(Sequencer& self);
+    static void LoadSecureLibs(Sequencer& self);
 
     ///=========================================================================
+    /// Preprocessor helper functions
 
-    static auto ExecuteLua(Sequencer& self, const char* code) -> std::optional<std::string>;
     static auto FetchModuleData(Sequencer& self, std::string_view module_name) -> std::optional<std::string>;
+    static auto ExecuteLua(Sequencer& self, const char* code) -> std::optional<std::string>;
     static auto SequenceSource(Sequencer& self, std::string_view code) -> void;
 
     ///=========================================================================
+    /// IScanner overrides
 
     auto GetNext() -> lex::Token override;
     auto GetLocationFallback(lex::LocationID id) -> std::optional<lex::Location> override;
-
-    ///=========================================================================
 
   public:
     Sequencer(std::istream& file, std::shared_ptr<Environment> env, bool is_root = true);
