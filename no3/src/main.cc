@@ -83,12 +83,13 @@ namespace no3::router {
                                  .Verbose(parser["--verbose"] == true)
                                  .Force(parser["--force"] == true);
 
-    if (parser.Get<std::string>("--type") == "program")
+    if (parser.Get<std::string>("--type") == "program") {
       builder.Type(PackageType::PROGRAM);
-    else if (parser.Get<std::string>("--type") == "staticlib")
+    } else if (parser.Get<std::string>("--type") == "staticlib") {
       builder.Type(PackageType::STATICLIB);
-    else if (parser.Get<std::string>("--type") == "sharedlib")
+    } else if (parser.Get<std::string>("--type") == "sharedlib") {
       builder.Type(PackageType::SHAREDLIB);
+    }
 
     return builder.Build().Create() ? 0 : -1;
   }
@@ -107,9 +108,8 @@ namespace no3::router {
 
     if (clean::CleanPackageSource(parser.Get<std::string>("package-src"), parser["--verbose"] == true)) {
       return 0;
-    } else {
-      return -1;
     }
+    return -1;
   }
 
   static auto RunUpdateMode(const ArgumentParser &parser) -> int {
@@ -170,21 +170,21 @@ namespace no3::router {
     core::SetDebugMode(parser["--verbose"] == true);
 
     std::vector<std::string> args;
-    args.push_back("nitrated");
+    args.emplace_back("nitrated");
 
     if (parser.IsUsed("--config")) {
-      args.push_back("--config");
+      args.emplace_back("--config");
       args.push_back(parser.Get<std::string>("--config"));
     }
 
     if (parser.IsUsed("--pipe")) {
-      args.push_back("--pipe");
+      args.emplace_back("--pipe");
       args.push_back(parser.Get<std::string>("--pipe"));
     } else if (parser.IsUsed("--port")) {
-      args.push_back("--port");
+      args.emplace_back("--port");
       args.push_back(parser.Get<std::string>("--port"));
     } else if (parser["--stdio"] == true) {
-      args.push_back("--stdio");
+      args.emplace_back("--stdio");
     }
 
     std::vector<char *> c_args;
@@ -277,33 +277,44 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.)"
                 << std::endl;
       return 0;
-    } else if (Program.IsSubcommandUsed("init")) {
-      return router::RunInitMode(InitParser);
-    } else if (Program.IsSubcommandUsed("build")) {
-      return router::RunBuildMode(BuildParser);
-    } else if (Program.IsSubcommandUsed("clean")) {
-      return router::RunCleanMode(CleanParser);
-    } else if (Program.IsSubcommandUsed("update")) {
-      return router::RunUpdateMode(UpdateParser);
-    } else if (Program.IsSubcommandUsed("install")) {
-      return router::RunInstallMode(InstallParser);
-    } else if (Program.IsSubcommandUsed("doc")) {
-      return router::RunDocMode(DocParser);
-    } else if (Program.IsSubcommandUsed("format")) {
-      return router::RunFormatMode(FormatParser);
-    } else if (Program.IsSubcommandUsed("list")) {
-      return router::RunListMode(ListParser);
-    } else if (Program.IsSubcommandUsed("test")) {
-      return router::RunTestMode(TestParser);
-    } else if (Program.IsSubcommandUsed("lsp")) {
-      return router::RunLspMode(LspParser);
-    } else if (Program.IsSubcommandUsed("dev")) {
-      return router::RunDevMode(DevParser, DevSubparsers);
-    } else {
-      std::cerr << "No command specified" << std::endl;
-      std::cerr << Program;
-      return 1;
     }
+    if (Program.IsSubcommandUsed("init")) {
+      return router::RunInitMode(InitParser);
+    }
+    if (Program.IsSubcommandUsed("build")) {
+      return router::RunBuildMode(BuildParser);
+    }
+    if (Program.IsSubcommandUsed("clean")) {
+      return router::RunCleanMode(CleanParser);
+    }
+    if (Program.IsSubcommandUsed("update")) {
+      return router::RunUpdateMode(UpdateParser);
+    }
+    if (Program.IsSubcommandUsed("install")) {
+      return router::RunInstallMode(InstallParser);
+    }
+    if (Program.IsSubcommandUsed("doc")) {
+      return router::RunDocMode(DocParser);
+    }
+    if (Program.IsSubcommandUsed("format")) {
+      return router::RunFormatMode(FormatParser);
+    }
+    if (Program.IsSubcommandUsed("list")) {
+      return router::RunListMode(ListParser);
+    }
+    if (Program.IsSubcommandUsed("test")) {
+      return router::RunTestMode(TestParser);
+    }
+    if (Program.IsSubcommandUsed("lsp")) {
+      return router::RunLspMode(LspParser);
+    }
+    if (Program.IsSubcommandUsed("dev")) {
+      return router::RunDevMode(DevParser, DevSubparsers);
+    }
+
+    std::cerr << "No command specified" << std::endl;
+    std::cerr << Program;
+    return 1;
   }
 }
 
@@ -330,29 +341,29 @@ extern "C" __attribute__((visibility("default"))) auto No3Init() -> bool {
     ncc::Log.Subscribe([](auto msg, auto sev, const auto &ec) {
       using namespace ncc;
 
-      if (sev > Debug || core::GetDebugMode()) {
-        switch (sev) {
-          case Trace:
-          case Debug:
-          case Info:
-          case Notice: {
-            LOG(INFO) << "ncc: " << ec.Format(msg, sev);
-            break;
-          }
-
-          case Warning: {
-            LOG(WARNING) << "ncc: " << ec.Format(msg, sev);
-            break;
-          }
-
-          case Error:
-          case Critical:
-          case Alert:
-          case Emergency: {
-            LOG(ERROR) << "ncc: " << ec.Format(msg, sev);
-            break;
-          }
+      // if (sev > Debug || core::GetDebugMode()) {
+      switch (sev) {
+        case Trace:
+        case Debug:
+        case Info:
+        case Notice: {
+          LOG(INFO) << "ncc: " << ec.Format(msg, sev);
+          break;
         }
+
+        case Warning: {
+          LOG(WARNING) << "ncc: " << ec.Format(msg, sev);
+          break;
+        }
+
+        case Error:
+        case Critical:
+        case Alert:
+        case Emergency: {
+          LOG(ERROR) << "ncc: " << ec.Format(msg, sev);
+          break;
+        }
+          // }
       }
     });
 
