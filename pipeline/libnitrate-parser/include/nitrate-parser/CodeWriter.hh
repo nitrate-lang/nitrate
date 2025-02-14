@@ -54,6 +54,9 @@ namespace ncc::parse {
   namespace detail {
     class NCC_EXPORT CodeWriter_v1_0 final : public ICodeWriter {  // NOLINT(readability-identifier-naming)
       std::ostream &m_os;
+      lex::TokenType m_last;
+      lex::TokenData m_ldata;
+      bool m_did_root;
 
       void PutKeyword(lex::Keyword kw);
       void PutOperator(lex::Operator op);

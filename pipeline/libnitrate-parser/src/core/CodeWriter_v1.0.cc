@@ -41,70 +41,431 @@ using namespace ncc::parse::detail;
 
 static bool IsNamedParameter(std::string_view name) { return std::isdigit(name.at(0)) == 0; }
 
-void CodeWriter_v1_0::PutKeyword(lex::Keyword kw) {
-  /// TODO: Implement code writer
-  qcore_implement();
-  (void)kw;
+static bool IsWordOperator(Operator op) {
+  switch (op) {
+    case OpAs:
+    case OpBitcastAs:
+    case OpIn:
+    case OpOut:
+    case OpSizeof:
+    case OpBitsizeof:
+    case OpAlignof:
+    case OpTypeof:
+    case OpComptime:
+      return true;
+
+    default:
+      return false;
+  }
 }
 
-void CodeWriter_v1_0::PutOperator(lex::Operator op) {
-  /// TODO: Implement code writer
-  qcore_implement();
-  (void)op;
+static std::string StringEscape(std::string_view str) {
+  std::stringstream ss;
+
+  for (char ch : str) {
+    switch (ch) {
+      case '\n': {
+        ss << "\\n";
+        break;
+      }
+
+      case '\t': {
+        ss << "\\t";
+        break;
+      }
+
+      case '\r': {
+        ss << "\\r";
+        break;
+      }
+
+      case '\v': {
+        ss << "\\v";
+        break;
+      }
+
+      case '\f': {
+        ss << "\\f";
+        break;
+      }
+
+      case '\b': {
+        ss << "\\b";
+        break;
+      }
+
+      case '\a': {
+        ss << "\\a";
+        break;
+      }
+
+      case '\\': {
+        ss << "\\\\";
+        break;
+      }
+
+      case '"': {
+        ss << "\\\"";
+        break;
+      }
+
+      default: {
+        ss << ch;
+        break;
+      }
+    }
+  }
+
+  return ss.str();
 }
 
-void CodeWriter_v1_0::PutPunctor(lex::Punctor punc) {
-  /// TODO: Implement code writer
-  qcore_implement();
-  (void)punc;
+void CodeWriter_v1_0::PutKeyword(Keyword kw) {
+  switch (m_last) {
+    case KeyW:
+    case Name:
+    case Macr:
+    case NumL: {
+      m_os << ' ' << kw;
+      break;
+    }
+
+    case Oper: {
+      if (IsWordOperator(m_ldata.m_op)) {
+        m_os << ' ' << kw;
+      } else {
+        m_os << kw;
+      }
+      break;
+    }
+
+    case EofF:
+    case Punc:
+    case IntL:
+    case Text:
+    case Char:
+    case MacB:
+    case Note: {
+      m_os << kw;
+      break;
+    }
+  }
+
+  m_last = KeyW;
+  m_ldata = kw;
+}
+
+void CodeWriter_v1_0::PutOperator(Operator op) {
+  /// TODO: Ensure this is correct
+
+  switch (m_last) {
+    case Oper: {
+      if (IsWordOperator(m_ldata.m_op) && IsWordOperator(op)) {
+        m_os << ' ' << op;
+      } else {
+        m_os << op;
+      }
+      break;
+    }
+
+    case KeyW:
+    case Name:
+    case Macr: {
+      if (IsWordOperator(op)) {
+        m_os << ' ' << op;
+      } else {
+        m_os << op;
+      }
+      break;
+    }
+
+    case Punc:
+    case IntL:
+    case NumL: {
+      m_os << ' ' << op;
+      break;
+    }
+
+    case EofF:
+    case Text:
+    case Char:
+    case MacB:
+    case Note: {
+      m_os << op;
+      break;
+    }
+  }
+
+  m_last = Oper;
+  m_ldata = op;
+}
+
+void CodeWriter_v1_0::PutPunctor(Punctor punc) {
+  /// TODO: Ensure this is correct
+
+  switch (m_last) {
+    case Oper: {
+      m_os << ' ' << punc;
+      break;
+    }
+
+    case Punc: {
+      m_os << ' ' << punc;
+      break;
+    }
+
+    case IntL:
+    case NumL:
+    case Macr:
+    case EofF:
+    case KeyW:
+    case Name:
+    case Text:
+    case Char:
+    case MacB:
+    case Note: {
+      m_os << punc;
+      break;
+    }
+  }
+
+  m_last = Punc;
+  m_ldata = punc;
 }
 
 void CodeWriter_v1_0::PutIdentifier(std::string_view name) {
-  /// TODO: Implement code writer
-  qcore_implement();
-  (void)name;
+  /// TODO: Ensure this is correct
+
+  switch (m_last) {
+    case Oper: {
+      if (IsWordOperator(m_ldata.m_op)) {
+        m_os << ' ' << name;
+      } else {
+        m_os << name;
+      }
+      break;
+    }
+
+    case KeyW:
+    case Name:
+    case Macr: {
+      m_os << ' ' << name;
+      break;
+    }
+
+    case EofF:
+    case Punc:
+    case IntL:
+    case NumL:
+    case Text:
+    case Char:
+    case MacB:
+    case Note: {
+      m_os << name;
+      break;
+    }
+  }
+
+  m_last = Name;
+  m_ldata = string(name);
 }
 
 void CodeWriter_v1_0::PutInteger(std::string_view num) {
-  /// TODO: Implement code writer
-  qcore_implement();
-  (void)num;
+  /// TODO: Ensure this is correct
+
+  switch (m_last) {
+    case Oper: {
+      if (IsWordOperator(m_ldata.m_op)) {
+        m_os << ' ' << num;
+      } else {
+        m_os << num;
+      }
+      break;
+    }
+
+    case KeyW:
+    case Name:
+    case IntL:
+    case NumL:
+    case Macr: {
+      m_os << ' ' << num;
+      break;
+    }
+
+    case EofF:
+    case Punc:
+    case Text:
+    case Char:
+    case MacB:
+    case Note: {
+      m_os << num;
+      break;
+    }
+  }
+
+  m_last = IntL;
+  m_ldata = string(num);
 }
 
 void CodeWriter_v1_0::PutFloat(std::string_view num) {
-  /// TODO: Implement code writer
-  qcore_implement();
-  (void)num;
+  /// TODO: Ensure this is correct
+
+  switch (m_last) {
+    case Oper: {
+      if (IsWordOperator(m_ldata.m_op)) {
+        m_os << ' ' << num;
+      } else {
+        m_os << num;
+      }
+      break;
+    }
+
+    case KeyW:
+    case Name:
+    case IntL:
+    case NumL:
+    case Macr: {
+      m_os << ' ' << num;
+      break;
+    }
+
+    case EofF:
+    case Punc:
+    case Text:
+    case Char:
+    case MacB:
+    case Note: {
+      m_os << num;
+      break;
+    }
+  }
+
+  m_last = NumL;
+  m_ldata = string(num);
 }
 
 void CodeWriter_v1_0::PutString(std::string_view str) {
-  /// TODO: Implement code writer
-  qcore_implement();
-  (void)str;
+  /// TODO: Ensure this is correct
+
+  switch (m_last) {
+    case Text:
+    case Char:
+    case Oper:
+    case KeyW:
+    case Name:
+    case IntL:
+    case NumL:
+    case Macr:
+    case EofF:
+    case Punc:
+    case MacB:
+    case Note: {
+      m_os << '"' << StringEscape(str) << '"';
+      break;
+    }
+  }
+
+  m_last = Text;
+  m_ldata = string(str);
 }
 
 void CodeWriter_v1_0::PutCharacter(std::string_view ch) {
-  /// TODO: Implement code writer
-  qcore_implement();
-  (void)ch;
+  /// TODO: Ensure this is correct
+
+  switch (m_last) {
+    case Text:
+    case Char:
+    case Oper:
+    case KeyW:
+    case Name:
+    case IntL:
+    case NumL:
+    case Macr:
+    case EofF:
+    case Punc:
+    case MacB:
+    case Note: {
+      m_os << '\'' << StringEscape(ch) << '\'';
+      break;
+    }
+  }
+
+  m_last = Char;
+  m_ldata = string(ch);
 }
 
 void CodeWriter_v1_0::PutMacroBlock(std::string_view macro) {
-  /// TODO: Implement code writer
-  qcore_implement();
-  (void)macro;
+  /// TODO: Ensure this is correct
+
+  switch (m_last) {
+    case Text:
+    case Char:
+    case Oper:
+    case KeyW:
+    case Name:
+    case IntL:
+    case NumL:
+    case Macr:
+    case EofF:
+    case Punc:
+    case MacB:
+    case Note: {
+      m_os << "@(" << macro << ")";
+      break;
+    }
+  }
+
+  m_last = MacB;
+  m_ldata = string(macro);
 }
 
 void CodeWriter_v1_0::PutMacroCall(std::string_view macro) {
-  /// TODO: Implement code writer
-  qcore_implement();
-  (void)macro;
+  /// TODO: Ensure this is correct
+
+  switch (m_last) {
+    case Text:
+    case Char:
+    case Oper:
+    case KeyW:
+    case Name:
+    case IntL:
+    case NumL:
+    case Macr:
+    case EofF:
+    case Punc:
+    case MacB:
+    case Note: {
+      m_os << "@" << macro;
+      break;
+    }
+  }
+
+  m_last = Macr;
+  m_ldata = string(macro);
 }
 
 void CodeWriter_v1_0::PutComment(std::string_view note) {
-  /// TODO: Implement code writer
-  qcore_implement();
-  (void)note;
+  /// TODO: Ensure this is correct
+
+  switch (m_last) {
+    case Text:
+    case Char:
+    case Oper:
+    case KeyW:
+    case Name:
+    case IntL:
+    case NumL:
+    case Macr:
+    case EofF:
+    case Punc:
+    case MacB:
+    case Note: {
+      m_os << "/*" << note << "*/";
+      break;
+    }
+  }
+
+  m_last = Note;
+  m_ldata = string(note);
 }
 
 ///=============================================================================
@@ -275,7 +636,7 @@ void CodeWriter_v1_0::Visit(FlowPtr<TupleTy> n) {
 void CodeWriter_v1_0::Visit(FlowPtr<ArrayTy> n) {
   PutPunctor(PuncLBrk);
   n->GetItem()->Accept(*this);
-  PutPunctor(lex::PuncColn);
+  PutPunctor(PuncColn);
   n->GetSize()->Accept(*this);
   PutPunctor(PuncRBrk);
   PutTypeStuff(n);
@@ -389,9 +750,19 @@ void CodeWriter_v1_0::Visit(FlowPtr<Sequence> n) {
 }
 
 void CodeWriter_v1_0::Visit(FlowPtr<Block> n) {
-  /// TODO: Implement code writer
-  qcore_implement();
-  (void)n;
+  if (!m_did_root) {
+    m_did_root = true;
+
+    for (const auto& stmt : n->GetStatements()) {
+      stmt->Accept(*this);
+    }
+  } else {
+    PutPunctor(PuncLCur);
+    for (const auto& stmt : n->GetStatements()) {
+      stmt->Accept(*this);
+    }
+    PutPunctor(PuncRCur);
+  }
 }
 
 void CodeWriter_v1_0::Visit(FlowPtr<Variable> n) {
@@ -407,21 +778,41 @@ void CodeWriter_v1_0::Visit(FlowPtr<Assembly> n) {
 }
 
 void CodeWriter_v1_0::Visit(FlowPtr<If> n) {
-  /// TODO: Implement code writer
-  qcore_implement();
-  (void)n;
+  PutKeyword(lex::If);
+  n->GetCond()->Accept(*this);
+  n->GetThen()->Accept(*this);
+  if (n->GetElse()) {
+    PutKeyword(lex::Else);
+    n->GetElse().value()->Accept(*this);
+  }
 }
 
 void CodeWriter_v1_0::Visit(FlowPtr<While> n) {
-  /// TODO: Implement code writer
-  qcore_implement();
-  (void)n;
+  PutKeyword(lex::While);
+  n->GetCond()->Accept(*this);
+  n->GetBody()->Accept(*this);
 }
 
 void CodeWriter_v1_0::Visit(FlowPtr<For> n) {
-  /// TODO: Implement code writer
-  qcore_implement();
-  (void)n;
+  PutKeyword(lex::For);
+
+  if (n->GetInit()) {
+    n->GetInit().value()->Accept(*this);
+  } else {
+    PutPunctor(PuncSemi);
+  }
+
+  if (n->GetCond()) {
+    n->GetCond().value()->Accept(*this);
+  } else {
+    PutPunctor(PuncSemi);
+  }
+
+  if (n->GetStep()) {
+    n->GetStep().value()->Accept(*this);
+  }
+
+  n->GetBody()->Accept(*this);
 }
 
 void CodeWriter_v1_0::Visit(FlowPtr<Foreach> n) {
@@ -430,16 +821,14 @@ void CodeWriter_v1_0::Visit(FlowPtr<Foreach> n) {
   (void)n;
 }
 
-void CodeWriter_v1_0::Visit(FlowPtr<Break> n) {
-  /// TODO: Implement code writer
-  qcore_implement();
-  (void)n;
+void CodeWriter_v1_0::Visit(FlowPtr<Break>) {
+  PutKeyword(lex::Break);
+  PutPunctor(PuncSemi);
 }
 
-void CodeWriter_v1_0::Visit(FlowPtr<Continue> n) {
-  /// TODO: Implement code writer
-  qcore_implement();
-  (void)n;
+void CodeWriter_v1_0::Visit(FlowPtr<Continue>) {
+  PutKeyword(lex::Continue);
+  PutPunctor(PuncSemi);
 }
 
 void CodeWriter_v1_0::Visit(FlowPtr<Return> n) {
@@ -451,9 +840,11 @@ void CodeWriter_v1_0::Visit(FlowPtr<Return> n) {
 }
 
 void CodeWriter_v1_0::Visit(FlowPtr<ReturnIf> n) {
-  /// TODO: Implement code writer
-  qcore_implement();
-  (void)n;
+  PutKeyword(lex::Retif);
+  n->GetCond()->Accept(*this);
+  PutPunctor(PuncComa);
+  n->GetValue()->Accept(*this);
+  PutPunctor(PuncSemi);
 }
 
 void CodeWriter_v1_0::Visit(FlowPtr<Case> n) {
@@ -469,9 +860,11 @@ void CodeWriter_v1_0::Visit(FlowPtr<Switch> n) {
 }
 
 void CodeWriter_v1_0::Visit(FlowPtr<Typedef> n) {
-  /// TODO: Implement code writer
-  qcore_implement();
-  (void)n;
+  PutKeyword(lex::Type);
+  PutIdentifier(n->GetName());
+  PutOperator(OpSet);
+  n->GetType()->Accept(*this);
+  PutPunctor(PuncSemi);
 }
 
 void CodeWriter_v1_0::Visit(FlowPtr<Function> n) {
@@ -504,4 +897,6 @@ void CodeWriter_v1_0::Visit(FlowPtr<Export> n) {
   (void)n;
 }
 
-CodeWriter_v1_0::CodeWriter_v1_0(std::ostream& os) : m_os(os) { (void)m_os; }
+CodeWriter_v1_0::CodeWriter_v1_0(std::ostream& os) : m_os(os), m_last(EofF), m_ldata(OpPlus), m_did_root(false) {
+  (void)m_os;
+}
