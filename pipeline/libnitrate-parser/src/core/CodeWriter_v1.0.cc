@@ -35,8 +35,11 @@
 #include <nitrate-parser/AST.hh>
 #include <nitrate-parser/CodeWriter.hh>
 
+using namespace ncc::lex;
 using namespace ncc::parse;
 using namespace ncc::parse::detail;
+
+static bool IsNamedParameter(std::string_view name) { return std::isdigit(name.at(0)) == 0; }
 
 void CodeWriter_v1_0::PutKeyword(lex::Keyword kw) {
   /// TODO: Implement code writer
@@ -106,172 +109,182 @@ void CodeWriter_v1_0::PutComment(std::string_view note) {
 
 ///=============================================================================
 
-void CodeWriter_v1_0::Visit(FlowPtr<Base> n) {
+void CodeWriter_v1_0::PutTypeStuff(const FlowPtr<Type>& n) {
   /// TODO: Implement code writer
   qcore_implement();
   (void)n;
 }
 
+void CodeWriter_v1_0::Visit(FlowPtr<Base>) {}
+
 void CodeWriter_v1_0::Visit(FlowPtr<ExprStmt> n) {
-  /// TODO: Implement code writer
-  qcore_implement();
-  (void)n;
+  n->GetExpr()->Accept(*this);
+  PutPunctor(PuncSemi);
 }
 
 void CodeWriter_v1_0::Visit(FlowPtr<StmtExpr> n) {
-  /// TODO: Implement code writer
-  qcore_implement();
-  (void)n;
+  PutPunctor(PuncLPar);
+  n->GetStmt()->Accept(*this);
+  PutPunctor(PuncRPar);
 }
 
 void CodeWriter_v1_0::Visit(FlowPtr<TypeExpr> n) {
-  /// TODO: Implement code writer
-  qcore_implement();
-  (void)n;
+  PutPunctor(PuncLPar);
+  n->GetType()->Accept(*this);
+  PutPunctor(PuncRPar);
 }
 
 void CodeWriter_v1_0::Visit(FlowPtr<NamedTy> n) {
-  /// TODO: Implement code writer
-  qcore_implement();
-  (void)n;
+  PutIdentifier(n->GetName());
+  PutTypeStuff(n);
 }
 
 void CodeWriter_v1_0::Visit(FlowPtr<InferTy> n) {
-  /// TODO: Implement code writer
-  qcore_implement();
-  (void)n;
+  PutOperator(OpTernary);
+  PutTypeStuff(n);
 }
 
 void CodeWriter_v1_0::Visit(FlowPtr<TemplateType> n) {
-  /// TODO: Implement code writer
-  qcore_implement();
-  (void)n;
+  n->GetTemplate()->Accept(*this);
+  PutOperator(OpLT);
+  for (auto it = n->GetArgs().begin(); it != n->GetArgs().end(); ++it) {
+    if (it != n->GetArgs().begin()) {
+      PutPunctor(PuncComa);
+    }
+
+    const auto [pname, pval] = *it;
+    if (IsNamedParameter(pname)) {
+      PutIdentifier(pname);
+      PutPunctor(PuncColn);
+    }
+
+    pval->Accept(*this);
+  }
+  PutOperator(OpGT);
+
+  PutTypeStuff(n);
 }
 
 void CodeWriter_v1_0::Visit(FlowPtr<U1> n) {
-  /// TODO: Implement code writer
-  qcore_implement();
-  (void)n;
+  PutIdentifier("u1");
+  PutTypeStuff(n);
 }
 
 void CodeWriter_v1_0::Visit(FlowPtr<U8> n) {
-  /// TODO: Implement code writer
-  qcore_implement();
-  (void)n;
+  PutIdentifier("u8");
+  PutTypeStuff(n);
 }
 
 void CodeWriter_v1_0::Visit(FlowPtr<U16> n) {
-  /// TODO: Implement code writer
-  qcore_implement();
-  (void)n;
+  PutIdentifier("u16");
+  PutTypeStuff(n);
 }
 
 void CodeWriter_v1_0::Visit(FlowPtr<U32> n) {
-  /// TODO: Implement code writer
-  qcore_implement();
-  (void)n;
+  PutIdentifier("u32");
+  PutTypeStuff(n);
 }
 
 void CodeWriter_v1_0::Visit(FlowPtr<U64> n) {
-  /// TODO: Implement code writer
-  qcore_implement();
-  (void)n;
+  PutIdentifier("u64");
+  PutTypeStuff(n);
 }
 
 void CodeWriter_v1_0::Visit(FlowPtr<U128> n) {
-  /// TODO: Implement code writer
-  qcore_implement();
-  (void)n;
+  PutIdentifier("u128");
+  PutTypeStuff(n);
 }
 
 void CodeWriter_v1_0::Visit(FlowPtr<I8> n) {
-  /// TODO: Implement code writer
-  qcore_implement();
-  (void)n;
+  PutIdentifier("i8");
+  PutTypeStuff(n);
 }
 
 void CodeWriter_v1_0::Visit(FlowPtr<I16> n) {
-  /// TODO: Implement code writer
-  qcore_implement();
-  (void)n;
+  PutIdentifier("i16");
+  PutTypeStuff(n);
 }
 
 void CodeWriter_v1_0::Visit(FlowPtr<I32> n) {
-  /// TODO: Implement code writer
-  qcore_implement();
-  (void)n;
+  PutIdentifier("i32");
+  PutTypeStuff(n);
 }
 
 void CodeWriter_v1_0::Visit(FlowPtr<I64> n) {
-  /// TODO: Implement code writer
-  qcore_implement();
-  (void)n;
+  PutIdentifier("i64");
+  PutTypeStuff(n);
 }
 
 void CodeWriter_v1_0::Visit(FlowPtr<I128> n) {
-  /// TODO: Implement code writer
-  qcore_implement();
-  (void)n;
+  PutIdentifier("i128");
+  PutTypeStuff(n);
 }
 
 void CodeWriter_v1_0::Visit(FlowPtr<F16> n) {
-  /// TODO: Implement code writer
-  qcore_implement();
-  (void)n;
+  PutIdentifier("f16");
+  PutTypeStuff(n);
 }
 
 void CodeWriter_v1_0::Visit(FlowPtr<F32> n) {
-  /// TODO: Implement code writer
-  qcore_implement();
-  (void)n;
+  PutIdentifier("f32");
+  PutTypeStuff(n);
 }
 
 void CodeWriter_v1_0::Visit(FlowPtr<F64> n) {
-  /// TODO: Implement code writer
-  qcore_implement();
-  (void)n;
+  PutIdentifier("f64");
+  PutTypeStuff(n);
 }
 
 void CodeWriter_v1_0::Visit(FlowPtr<F128> n) {
-  /// TODO: Implement code writer
-  qcore_implement();
-  (void)n;
+  PutIdentifier("f128");
+  PutTypeStuff(n);
 }
 
 void CodeWriter_v1_0::Visit(FlowPtr<VoidTy> n) {
-  /// TODO: Implement code writer
-  qcore_implement();
-  (void)n;
+  PutIdentifier("void");
+  PutTypeStuff(n);
 }
 
 void CodeWriter_v1_0::Visit(FlowPtr<PtrTy> n) {
-  /// TODO: Implement code writer
-  qcore_implement();
-  (void)n;
+  PutOperator(OpTimes);
+  n->GetItem()->Accept(*this);
+  PutTypeStuff(n);
 }
 
 void CodeWriter_v1_0::Visit(FlowPtr<OpaqueTy> n) {
-  /// TODO: Implement code writer
-  qcore_implement();
-  (void)n;
+  PutKeyword(Opaque);
+  PutPunctor(PuncLPar);
+  PutIdentifier(n->GetName());
+  PutPunctor(PuncRPar);
+  PutTypeStuff(n);
 }
 
 void CodeWriter_v1_0::Visit(FlowPtr<TupleTy> n) {
-  /// TODO: Implement code writer
-  qcore_implement();
-  (void)n;
+  PutPunctor(PuncLPar);
+  for (auto it = n->GetItems().begin(); it != n->GetItems().end(); ++it) {
+    if (it != n->GetItems().begin()) {
+      PutPunctor(PuncComa);
+    }
+
+    (*it)->Accept(*this);
+  }
+  PutPunctor(PuncRPar);
+  PutTypeStuff(n);
 }
 
 void CodeWriter_v1_0::Visit(FlowPtr<ArrayTy> n) {
-  /// TODO: Implement code writer
-  qcore_implement();
-  (void)n;
+  PutPunctor(PuncLBrk);
+  n->GetItem()->Accept(*this);
+  PutPunctor(lex::PuncColn);
+  n->GetSize()->Accept(*this);
+  PutPunctor(PuncRBrk);
+  PutTypeStuff(n);
 }
 
 void CodeWriter_v1_0::Visit(FlowPtr<RefTy> n) {
-  /// TODO: Implement code writer
-  qcore_implement();
-  (void)n;
+  PutOperator(OpBitAnd);
+  n->GetItem()->Accept(*this);
+  PutTypeStuff(n);
 }
 
 void CodeWriter_v1_0::Visit(FlowPtr<FuncTy> n) {
@@ -281,21 +294,25 @@ void CodeWriter_v1_0::Visit(FlowPtr<FuncTy> n) {
 }
 
 void CodeWriter_v1_0::Visit(FlowPtr<Unary> n) {
-  /// TODO: Implement code writer
-  qcore_implement();
-  (void)n;
+  PutPunctor(PuncLPar);
+  PutOperator(n->GetOp());
+  n->GetRHS()->Accept(*this);
+  PutPunctor(PuncRPar);
 }
 
 void CodeWriter_v1_0::Visit(FlowPtr<Binary> n) {
-  /// TODO: Implement code writer
-  qcore_implement();
-  (void)n;
+  PutPunctor(PuncLPar);
+  n->GetLHS()->Accept(*this);
+  PutOperator(n->GetOp());
+  n->GetRHS()->Accept(*this);
+  PutPunctor(PuncRPar);
 }
 
 void CodeWriter_v1_0::Visit(FlowPtr<PostUnary> n) {
-  /// TODO: Implement code writer
-  qcore_implement();
-  (void)n;
+  PutPunctor(PuncLPar);
+  n->GetLHS()->Accept(*this);
+  PutOperator(n->GetOp());
+  PutPunctor(PuncRPar);
 }
 
 void CodeWriter_v1_0::Visit(FlowPtr<Ternary> n) {
@@ -304,47 +321,18 @@ void CodeWriter_v1_0::Visit(FlowPtr<Ternary> n) {
   (void)n;
 }
 
-void CodeWriter_v1_0::Visit(FlowPtr<Integer> n) {
-  /// TODO: Implement code writer
-  qcore_implement();
-  (void)n;
-}
-
-void CodeWriter_v1_0::Visit(FlowPtr<Float> n) {
-  /// TODO: Implement code writer
-  qcore_implement();
-  (void)n;
-}
-
-void CodeWriter_v1_0::Visit(FlowPtr<Boolean> n) {
-  /// TODO: Implement code writer
-  qcore_implement();
-  (void)n;
-}
-
-void CodeWriter_v1_0::Visit(FlowPtr<String> n) {
-  /// TODO: Implement code writer
-  qcore_implement();
-  (void)n;
-}
+void CodeWriter_v1_0::Visit(FlowPtr<Integer> n) { PutInteger(n->GetValue()); }
+void CodeWriter_v1_0::Visit(FlowPtr<Float> n) { PutFloat(n->GetValue()); }
+void CodeWriter_v1_0::Visit(FlowPtr<Boolean> n) { PutKeyword(n->GetValue() ? True : False); }
+void CodeWriter_v1_0::Visit(FlowPtr<String> n) { PutString(n->GetValue()); }
 
 void CodeWriter_v1_0::Visit(FlowPtr<Character> n) {
-  /// TODO: Implement code writer
-  qcore_implement();
-  (void)n;
+  std::array buf = {static_cast<char>(n->GetValue()), '\0'};
+  PutCharacter(std::string_view(buf.data(), buf.size()));
 }
 
-void CodeWriter_v1_0::Visit(FlowPtr<Null> n) {
-  /// TODO: Implement code writer
-  qcore_implement();
-  (void)n;
-}
-
-void CodeWriter_v1_0::Visit(FlowPtr<Undefined> n) {
-  /// TODO: Implement code writer
-  qcore_implement();
-  (void)n;
-}
+void CodeWriter_v1_0::Visit(FlowPtr<Null>) { PutKeyword(lex::Null); }
+void CodeWriter_v1_0::Visit(FlowPtr<Undefined>) { PutKeyword(Undef); }
 
 void CodeWriter_v1_0::Visit(FlowPtr<Call> n) {
   /// TODO: Implement code writer
@@ -455,9 +443,11 @@ void CodeWriter_v1_0::Visit(FlowPtr<Continue> n) {
 }
 
 void CodeWriter_v1_0::Visit(FlowPtr<Return> n) {
-  /// TODO: Implement code writer
-  qcore_implement();
-  (void)n;
+  PutKeyword(lex::Return);
+  if (n->GetValue()) {
+    n->GetValue().value()->Accept(*this);
+  }
+  PutPunctor(PuncSemi);
 }
 
 void CodeWriter_v1_0::Visit(FlowPtr<ReturnIf> n) {
@@ -514,4 +504,4 @@ void CodeWriter_v1_0::Visit(FlowPtr<Export> n) {
   (void)n;
 }
 
-CodeWriter_v1_0::CodeWriter_v1_0(std::ostream &os) : m_os(os) { (void)m_os; }
+CodeWriter_v1_0::CodeWriter_v1_0(std::ostream& os) : m_os(os) { (void)m_os; }

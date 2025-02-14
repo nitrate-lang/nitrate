@@ -67,6 +67,8 @@ namespace ncc::parse {
       void PutMacroCall(std::string_view macro);
       void PutComment(std::string_view note);
 
+      void PutTypeStuff(const FlowPtr<Type> &n);
+
     protected:
       void Visit(FlowPtr<Base> n) override;
       void Visit(FlowPtr<ExprStmt> n) override;
