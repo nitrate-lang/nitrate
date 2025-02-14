@@ -214,18 +214,18 @@ class IterVisitor : public ASTVisitor {
   }
 
   void Visit(FlowPtr<Block> n) override {
-    std::for_each(n->GetItems().begin(), n->GetItems().end(), [&](auto item) { Add(item); });
+    std::for_each(n->GetStatements().begin(), n->GetStatements().end(), [&](auto item) { Add(item); });
   }
 
   void Visit(FlowPtr<Variable> n) override {
     std::for_each(n->GetAttributes().begin(), n->GetAttributes().end(), [&](auto attr) { Add(attr); });
 
     Add(n->GetType());
-    Add(n->GetValue());
+    Add(n->GetInitializer());
   }
 
   void Visit(FlowPtr<Assembly> n) override {
-    std::for_each(n->GetArgs().begin(), n->GetArgs().end(), [&](auto arg) { Add(arg); });
+    std::for_each(n->GetArguments().begin(), n->GetArguments().end(), [&](auto arg) { Add(arg); });
   }
 
   void Visit(FlowPtr<If> n) override {
@@ -317,13 +317,13 @@ class IterVisitor : public ASTVisitor {
   void Visit(FlowPtr<Enum> n) override {
     Add(n->GetType());
 
-    std::for_each(n->GetItems().begin(), n->GetItems().end(), [&](auto item) { Add(item.second); });
+    std::for_each(n->GetFields().begin(), n->GetFields().end(), [&](auto item) { Add(item.second); });
   }
 
   void Visit(FlowPtr<Scope> n) override { Add(n->GetBody()); }
 
   void Visit(FlowPtr<Export> n) override {
-    std::for_each(n->GetAttrs().begin(), n->GetAttrs().end(), [&](auto attr) { Add(attr); });
+    std::for_each(n->GetAttributes().begin(), n->GetAttributes().end(), [&](auto attr) { Add(attr); });
 
     Add(n->GetBody());
   }

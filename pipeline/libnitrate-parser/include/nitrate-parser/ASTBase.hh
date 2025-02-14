@@ -390,7 +390,7 @@ namespace ncc::parse {
 
   namespace detail {
     constexpr static auto kGetKindNames = []() {
-      std::array<std::string_view, QAST_COUNT> r;
+      std::array<std::string_view, kASTNodeCount> r;
       r.fill("");
 
       r[QAST_BASE] = "Node";

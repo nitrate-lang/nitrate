@@ -60,14 +60,12 @@ void CambrianFormatter::Visit(FlowPtr<Block> n) {
   }
 
   static const std::unordered_set<npar_ty_t> extra_seperation = {
-      QAST_STRUCT,     QAST_ENUM,    QAST_FUNCTION,
-      QAST_SCOPE,      QAST_EXPORT,  QAST_BLOCK,
+      QAST_STRUCT,     QAST_ENUM, QAST_FUNCTION, QAST_SCOPE, QAST_EXPORT,  QAST_BLOCK,
 
-      QAST_INLINE_ASM, QAST_IF,      QAST_WHILE,
-      QAST_FOR,        QAST_FOREACH, QAST_SWITCH,
+      QAST_INLINE_ASM, QAST_IF,   QAST_WHILE,    QAST_FOR,   QAST_FOREACH, QAST_SWITCH,
   };
 
-  if (!is_root_block && n->GetItems().empty()) {
+  if (!is_root_block && n->GetStatements().empty()) {
     m_line << "{}";
     return;
   }
@@ -77,7 +75,7 @@ void CambrianFormatter::Visit(FlowPtr<Block> n) {
     m_indent += m_tabSize;
   }
 
-  auto items = n->GetItems();
+  auto items = n->GetStatements();
 
   for (auto it = items.begin(); it != items.end(); ++it) {
     auto item = *it;
@@ -88,13 +86,9 @@ void CambrianFormatter::Visit(FlowPtr<Block> n) {
 
     bool is_last_item = it == items.end() - 1;
 
-    bool is_next_item_different =
-        (it + 1 != items.end() &&
-         (*std::next(it))->GetKind() != item->GetKind());
+    bool is_next_item_different = (it + 1 != items.end() && (*std::next(it))->GetKind() != item->GetKind());
 
-    bool extra_newline =
-        !is_last_item &&
-        (is_next_item_different || extra_seperation.contains(item->GetKind()));
+    bool extra_newline = !is_last_item && (is_next_item_different || extra_seperation.contains(item->GetKind()));
 
     if (extra_newline) {
       m_line << std::endl;

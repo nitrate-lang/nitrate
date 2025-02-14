@@ -95,6 +95,7 @@ namespace ncc::seq {
     static auto HandleImportDirective(Sequencer& self) -> bool;
     static auto HandleMacroBlock(Sequencer& self, lex::Token macro) -> bool;
     static auto HandleMacroStatement(Sequencer& self, lex::Token macro) -> bool;
+    static auto RenderTranslationUnitSource(Sequencer& self, std::string_view source) -> std::optional<std::string>;
 
     ///=========================================================================
     /// IScanner overrides

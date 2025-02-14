@@ -48,8 +48,8 @@ void CambrianFormatter::Visit(FlowPtr<parse::Scope> n) {
   if (!n->GetDeps().empty()) {
     m_line << ": [";
     IterateExceptLast(
-        n->GetDeps().begin(), n->GetDeps().end(),
-        [&](auto dep, size_t) { m_line << dep; }, [&](let) { m_line << ", "; });
+        n->GetDeps().begin(), n->GetDeps().end(), [&](auto dep, size_t) { m_line << dep; },
+        [&](let) { m_line << ", "; });
     m_line << "]";
   }
 
@@ -67,11 +67,10 @@ void CambrianFormatter::Visit(FlowPtr<Export> n) {
     EscapeStringLiteral(n->GetAbiName());
   }
 
-  if (!n->GetAttrs().empty()) {
+  if (!n->GetAttributes().empty()) {
     m_line << " [";
     IterateExceptLast(
-        n->GetAttrs().begin(), n->GetAttrs().end(),
-        [&](auto attr, size_t) { attr.Accept(*this); },
+        n->GetAttributes().begin(), n->GetAttributes().end(), [&](auto attr, size_t) { attr.Accept(*this); },
         [&](let) { m_line << ", "; });
     m_line << "]";
   }

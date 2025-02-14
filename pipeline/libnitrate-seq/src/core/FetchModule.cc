@@ -32,13 +32,18 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <algorithm>
+#include <boost/iostreams/device/array.hpp>
+#include <boost/iostreams/stream.hpp>
 #include <core/EC.hh>
 #include <core/PImpl.hh>
 #include <cstddef>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <nitrate-parser/CodeWriter.hh>
+#include <nitrate-parser/Context.hh>
 #include <nitrate-seq/Sequencer.hh>
+#include <sstream>
 
 using namespace ncc;
 using namespace ncc::seq;
@@ -119,6 +124,45 @@ NCC_EXPORT auto ncc::seq::FileSystemFetchModule(std::string_view path) -> std::o
   return std::nullopt;
 }
 
+auto Sequencer::RenderTranslationUnitSource(Sequencer &self, std::string_view source) -> std::optional<std::string> {
+  std::stringstream output;
+
+  {
+    using namespace ncc::parse;
+
+    auto istream = boost::iostreams::stream<boost::iostreams::array_source>(source.data(), source.size());
+    auto sub_scanner = CreateChild(self, istream);
+    if (!sub_scanner) [[unlikely]] { /* Default to returning the whole TU */
+      Log << SeqLog << "Failed to create child scanner";
+      return std::nullopt;
+    }
+
+    const auto ast_root = Parser::Create(*sub_scanner, self.m_env)->Parse();
+    if (!ast_root.Check()) [[unlikely]] {
+      Log << SeqLog << "Failed to parse translation unit";
+      return std::nullopt;
+    }
+
+    /// TODO: Replace definitions with declarations
+
+    for_each<Function>(ast_root.Get(), [](auto node) {
+      auto function = node.template As<Function>();
+      function->SetBody(nullptr);
+    });
+
+    /// FIXME: Fix this
+    for_each<Variable>(ast_root.Get(), [](auto node) {
+      auto variable = node.template As<Variable>();
+      variable->SetInitializer(nullptr);
+    });
+
+    auto writer = CodeWriterFactory::Create(output);
+    ast_root.Get()->Accept(*writer);
+  }
+
+  return output.str();
+}
+
 auto Sequencer::FetchModuleData(Sequencer &self, std::string_view raw_module_name) -> std::optional<std::string> {
   auto module_name = std::string(raw_module_name);
 
@@ -137,7 +181,7 @@ auto Sequencer::FetchModuleData(Sequencer &self, std::string_view raw_module_nam
   Log << SeqLog << Debug << "Importing module: '" << module_name << "'...";
 
   if (const auto module_content = self.m_shared->m_fetch_module(module_uri)) {
-    return module_content;
+    return RenderTranslationUnitSource(self, module_content.value());
   }
 
   Log << SeqLog << "Import not found: '" << module_name << "'";

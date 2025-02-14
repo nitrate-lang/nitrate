@@ -1293,7 +1293,7 @@ SyntaxTree::Block *AstWriter::From(const FlowPtr<Block> &in) {
   }
 
   { /* Add all statements */
-    const auto &items = in->GetItems();
+    const auto &items = in->GetStatements();
 
     message->mutable_statements()->Reserve(items.size());
     std::for_each(items.begin(), items.end(),
@@ -1311,11 +1311,11 @@ SyntaxTree::Variable *AstWriter::From(const FlowPtr<Variable> &in) {
   if (in->GetType().has_value()) {
     message->set_allocated_type(From(in->GetType().value()));
   }
-  if (in->GetValue().has_value()) {
-    message->set_allocated_initial_value(From(in->GetValue().value()));
+  if (in->GetInitializer().has_value()) {
+    message->set_allocated_initial_value(From(in->GetInitializer().value()));
   }
 
-  switch (in->GetDeclType()) {
+  switch (in->GetVariableKind()) {
     case VariableType::Var:
       message->set_kind(SyntaxTree::Variable_VariableKind_Var);
       break;
@@ -1347,7 +1347,7 @@ SyntaxTree::Assembly *AstWriter::From(const FlowPtr<Assembly> &in) {
   message->set_code(in->GetCode().Get());
 
   { /* Add all arguments */
-    const auto &items = in->GetArgs();
+    const auto &items = in->GetArguments();
 
     message->mutable_arguments()->Reserve(items.size());
     std::for_each(items.begin(), items.end(),
@@ -1407,8 +1407,8 @@ SyntaxTree::Foreach *AstWriter::From(const FlowPtr<Foreach> &in) {
   auto *message = Pool::CreateMessage<SyntaxTree::Foreach>(m_arena);
 
   message->set_allocated_location(FromSource(in));
-  message->set_index_name(in->GetIdxIdentifier().Get());
-  message->set_value_name(in->GetValIdentifier().Get());
+  message->set_index_name(in->GetIndex().Get());
+  message->set_value_name(in->GetValue().Get());
   message->set_allocated_expression(From(in->GetExpr()));
   message->set_allocated_body(From(in->GetBody()));
 
@@ -1693,7 +1693,7 @@ SyntaxTree::Enum *AstWriter::From(const FlowPtr<Enum> &in) {
   }
 
   { /* Add all elements */
-    const auto &items = in->GetItems();
+    const auto &items = in->GetFields();
 
     message->mutable_items()->Reserve(items.size());
     std::for_each(items.begin(), items.end(), [&](auto item) {
@@ -1737,7 +1737,7 @@ SyntaxTree::Export *AstWriter::From(const FlowPtr<Export> &in) {
   message->set_visibility(FromVisibility(in->GetVis()));
 
   { /* Add all attributes */
-    const auto &items = in->GetAttrs();
+    const auto &items = in->GetAttributes();
 
     message->mutable_attributes()->Reserve(items.size());
     std::for_each(items.begin(), items.end(),

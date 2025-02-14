@@ -45,6 +45,8 @@ namespace ncc::parse {
     constexpr ExprStmt(auto expr) : Stmt(QAST_ESTMT), m_expr(std::move(expr)) {}
 
     [[nodiscard]] constexpr auto GetExpr() const { return m_expr; }
+
+    constexpr void SetExpr(auto expr) { m_expr = std::move(expr); }
   };
 
   class Block final : public Stmt {
@@ -54,8 +56,11 @@ namespace ncc::parse {
   public:
     constexpr Block(auto items, auto safety) : Stmt(QAST_BLOCK), m_items(items), m_safety(safety) {}
 
-    [[nodiscard]] constexpr auto GetItems() const { return m_items; }
+    [[nodiscard]] constexpr auto GetStatements() const { return m_items; }
     [[nodiscard]] constexpr auto GetSafety() const { return m_safety; }
+
+    constexpr void SetStatements(auto items) { m_items = items; }
+    constexpr void SetSafety(auto safety) { m_safety = safety; }
   };
 
   class Variable final : public Stmt {
@@ -76,9 +81,15 @@ namespace ncc::parse {
 
     [[nodiscard]] constexpr auto GetName() const { return m_name; }
     [[nodiscard]] constexpr auto GetType() const { return m_type; }
-    [[nodiscard]] constexpr auto GetValue() const { return m_value; }
-    [[nodiscard]] constexpr auto GetDeclType() const { return m_decl_type; }
+    [[nodiscard]] constexpr auto GetInitializer() const { return m_value; }
+    [[nodiscard]] constexpr auto GetVariableKind() const { return m_decl_type; }
     [[nodiscard]] constexpr auto GetAttributes() const { return m_attributes; }
+
+    constexpr void SetName(auto name) { m_name = name; }
+    constexpr void SetType(auto type) { m_type = std::move(type); }
+    constexpr void SetInitializer(auto value) { m_value = std::move(value); }
+    constexpr void SetVariableKind(auto decl_type) { m_decl_type = decl_type; }
+    constexpr void SetAttributes(auto attributes) { m_attributes = attributes; }
   };
 
   class Assembly final : public Stmt {
@@ -89,7 +100,10 @@ namespace ncc::parse {
     constexpr Assembly(auto code, auto args) : Stmt(QAST_INLINE_ASM), m_args(args), m_code(code) {}
 
     [[nodiscard]] constexpr auto GetCode() const { return m_code; }
-    [[nodiscard]] constexpr auto GetArgs() const { return m_args; }
+    [[nodiscard]] constexpr auto GetArguments() const { return m_args; }
+
+    constexpr void SetCode(auto code) { m_code = code; }
+    constexpr void SetArguments(auto args) { m_args = args; }
   };
 
   class If final : public Stmt {
@@ -104,6 +118,10 @@ namespace ncc::parse {
     [[nodiscard]] constexpr auto GetCond() const { return m_cond; }
     [[nodiscard]] constexpr auto GetThen() const { return m_then; }
     [[nodiscard]] constexpr auto GetElse() const { return m_else; }
+
+    constexpr void SetCond(auto cond) { m_cond = std::move(cond); }
+    constexpr void SetThen(auto then) { m_then = std::move(then); }
+    constexpr void SetElse(auto ele) { m_else = std::move(ele); }
   };
 
   class While final : public Stmt {
@@ -115,6 +133,9 @@ namespace ncc::parse {
 
     [[nodiscard]] constexpr auto GetCond() const { return m_cond; }
     [[nodiscard]] constexpr auto GetBody() const { return m_body; }
+
+    constexpr void SetCond(auto cond) { m_cond = std::move(cond); }
+    constexpr void SetBody(auto body) { m_body = std::move(body); }
   };
 
   class For final : public Stmt {
@@ -134,6 +155,11 @@ namespace ncc::parse {
     [[nodiscard]] constexpr auto GetCond() const { return m_cond; }
     [[nodiscard]] constexpr auto GetStep() const { return m_step; }
     [[nodiscard]] constexpr auto GetBody() const { return m_body; }
+
+    constexpr void SetInit(auto init) { m_init = std::move(init); }
+    constexpr void SetCond(auto cond) { m_cond = std::move(cond); }
+    constexpr void SetStep(auto step) { m_step = std::move(step); }
+    constexpr void SetBody(auto body) { m_body = std::move(body); }
   };
 
   class Foreach final : public Stmt {
@@ -149,10 +175,15 @@ namespace ncc::parse {
           m_idx_ident(idx_ident),
           m_val_ident(val_ident) {}
 
-    [[nodiscard]] constexpr auto GetIdxIdentifier() const { return m_idx_ident; }
-    [[nodiscard]] constexpr auto GetValIdentifier() const { return m_val_ident; }
+    [[nodiscard]] constexpr auto GetIndex() const { return m_idx_ident; }
+    [[nodiscard]] constexpr auto GetValue() const { return m_val_ident; }
     [[nodiscard]] constexpr auto GetExpr() const { return m_expr; }
     [[nodiscard]] constexpr auto GetBody() const { return m_body; }
+
+    constexpr void SetIndex(auto idx_ident) { m_idx_ident = idx_ident; }
+    constexpr void SetValue(auto val_ident) { m_val_ident = val_ident; }
+    constexpr void SetExpr(auto expr) { m_expr = std::move(expr); }
+    constexpr void SetBody(auto body) { m_body = std::move(body); }
   };
 
   class Break final : public Stmt {
@@ -172,6 +203,8 @@ namespace ncc::parse {
     constexpr Return(auto value) : Stmt(QAST_RETURN), m_value(std::move(value)) {}
 
     [[nodiscard]] constexpr auto GetValue() const { return m_value; }
+
+    constexpr void SetValue(auto value) { m_value = std::move(value); }
   };
 
   class ReturnIf final : public Stmt {
@@ -182,6 +215,9 @@ namespace ncc::parse {
 
     [[nodiscard]] constexpr auto GetCond() const { return m_cond; }
     [[nodiscard]] constexpr auto GetValue() const { return m_value; }
+
+    constexpr void SetCond(auto cond) { m_cond = std::move(cond); }
+    constexpr void SetValue(auto value) { m_value = std::move(value); }
   };
 
   class Case final : public Stmt {
@@ -193,6 +229,9 @@ namespace ncc::parse {
 
     [[nodiscard]] constexpr auto GetCond() const { return m_cond; }
     [[nodiscard]] constexpr auto GetBody() const { return m_body; }
+
+    constexpr void SetCond(auto cond) { m_cond = std::move(cond); }
+    constexpr void SetBody(auto body) { m_body = std::move(body); }
   };
 
   class Switch final : public Stmt {
@@ -207,6 +246,10 @@ namespace ncc::parse {
     [[nodiscard]] constexpr auto GetCond() const { return m_cond; }
     [[nodiscard]] constexpr auto GetCases() const { return m_cases; }
     [[nodiscard]] constexpr auto GetDefault() const { return m_default; }
+
+    constexpr void SetCond(auto cond) { m_cond = std::move(cond); }
+    constexpr void SetCases(auto cases) { m_cases = cases; }
+    constexpr void SetDefault(auto def) { m_default = std::move(def); }
   };
 
   class Export final : public Stmt {
@@ -222,7 +265,12 @@ namespace ncc::parse {
     [[nodiscard]] constexpr auto GetAbiName() const { return m_abi_name; }
     [[nodiscard]] constexpr auto GetBody() const { return m_body; }
     [[nodiscard]] constexpr auto GetVis() const { return m_vis; }
-    [[nodiscard]] constexpr auto GetAttrs() const { return m_attrs; }
+    [[nodiscard]] constexpr auto GetAttributes() const { return m_attrs; }
+
+    constexpr void SetAbiName(auto abi_name) { m_abi_name = abi_name; }
+    constexpr void SetBody(auto content) { m_body = std::move(content); }
+    constexpr void SetVis(auto vis) { m_vis = vis; }
+    constexpr void SetAttributes(auto attrs) { m_attrs = attrs; }
   };
 
   class Scope final : public Stmt {
@@ -237,6 +285,10 @@ namespace ncc::parse {
     [[nodiscard]] constexpr auto GetName() const { return m_name; }
     [[nodiscard]] constexpr auto GetBody() const { return m_body; }
     [[nodiscard]] constexpr auto GetDeps() const { return m_deps; }
+
+    constexpr void SetName(auto name) { m_name = name; }
+    constexpr void SetBody(auto body) { m_body = std::move(body); }
+    constexpr void SetDeps(auto deps) { m_deps = deps; }
   };
 
   class Typedef final : public Stmt {
@@ -248,6 +300,9 @@ namespace ncc::parse {
 
     [[nodiscard]] constexpr auto GetName() const { return m_name; }
     [[nodiscard]] constexpr auto GetType() const { return m_type; }
+
+    constexpr void SetName(auto name) { m_name = name; }
+    constexpr void SetType(auto type) { m_type = std::move(type); }
   };
 
   class Enum final : public Stmt {
@@ -260,8 +315,12 @@ namespace ncc::parse {
         : Stmt(QAST_ENUM), m_items(items), m_type(std::move(type)), m_name(name) {}
 
     [[nodiscard]] constexpr auto GetName() const { return m_name; }
-    [[nodiscard]] constexpr auto GetItems() const { return m_items; }
+    [[nodiscard]] constexpr auto GetFields() const { return m_items; }
     [[nodiscard]] constexpr auto GetType() const { return m_type; }
+
+    constexpr void SetName(auto name) { m_name = name; }
+    constexpr void SetFields(auto items) { m_items = items; }
+    constexpr void SetType(auto type) { m_type = std::move(type); }
   };
 
   class Function final : public Stmt {
@@ -305,12 +364,22 @@ namespace ncc::parse {
     [[nodiscard]] constexpr auto GetPrecond() const { return m_precond; }
     [[nodiscard]] constexpr auto GetPostcond() const { return m_postcond; }
     [[nodiscard]] constexpr auto GetBody() const { return m_body; }
-
     [[nodiscard]] constexpr auto IsVariadic() const { return m_variadic; }
     [[nodiscard]] constexpr auto IsDeclaration() const -> bool { return !m_body.has_value(); }
     [[nodiscard]] constexpr auto IsDefinition() const -> bool { return m_body.has_value(); }
-
     [[nodiscard]] constexpr auto HasContract() const -> bool { return m_precond.has_value() || m_postcond.has_value(); }
+
+    constexpr void SetName(auto name) { m_name = name; }
+    constexpr void SetAttributes(auto attributes) { m_attributes = attributes; }
+    constexpr void SetPurity(auto purity) { m_purity = purity; }
+    constexpr void SetCaptures(auto captures) { m_captures = captures; }
+    constexpr void SetTemplateParams(auto params) { m_template_parameters = params; }
+    constexpr void SetParams(auto params) { m_params = params; }
+    constexpr void SetReturn(auto return_type) { m_return = std::move(return_type); }
+    constexpr void SetPrecond(auto precond) { m_precond = std::move(precond); }
+    constexpr void SetPostcond(auto postcond) { m_postcond = std::move(postcond); }
+    constexpr void SetBody(auto body) { m_body = std::move(body); }
+    constexpr void SetVariadic(auto variadic) { m_variadic = variadic; }
   };
 
   class Struct final : public Stmt {
@@ -346,6 +415,15 @@ namespace ncc::parse {
     [[nodiscard]] constexpr auto GetFields() const { return m_fields; }
     [[nodiscard]] constexpr auto GetMethods() const { return m_methods; }
     [[nodiscard]] constexpr auto GetStaticMethods() const { return m_static_methods; }
+
+    constexpr void SetName(auto name) { m_name = name; }
+    constexpr void SetCompositeType(auto comp_type) { m_comp_type = comp_type; }
+    constexpr void SetAttributes(auto attributes) { m_attributes = attributes; }
+    constexpr void SetTemplateParams(auto params) { m_template_parameters = params; }
+    constexpr void SetNames(auto names) { m_names = names; }
+    constexpr void SetFields(auto fields) { m_fields = fields; }
+    constexpr void SetMethods(auto methods) { m_methods = methods; }
+    constexpr void SetStaticMethods(auto static_methods) { m_static_methods = static_methods; }
   };
 
   constexpr auto Stmt::IsExprStmt(npar_ty_t type) const -> bool {

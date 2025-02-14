@@ -38,21 +38,18 @@ using namespace no3::lsp::fmt;
 using namespace ncc::parse;
 using namespace ncc::lex;
 
-void CambrianFormatter::WrapStmtBody(FlowPtr<parse::Stmt> n,
-                                     size_t size_threshold,
-                                     bool use_arrow_if_wrapped) {
+void CambrianFormatter::WrapStmtBody(FlowPtr<parse::Stmt> n, size_t size_threshold, bool use_arrow_if_wrapped) {
   if (n->Is(QAST_BLOCK)) {
     auto block = n.As<Block>();
-    bool single_stmt = block->GetItems().size() == 1;
-    bool few_children =
-        single_stmt && block->RecursiveChildCount() <= size_threshold;
+    bool single_stmt = block->GetStatements().size() == 1;
+    bool few_children = single_stmt && block->RecursiveChildCount() <= size_threshold;
 
     if (single_stmt && few_children) {
       if (use_arrow_if_wrapped) {
         m_line << "=> ";
       }
 
-      block->GetItems().front().Accept(*this);
+      block->GetStatements().front().Accept(*this);
       return;
     }
   }
@@ -90,9 +87,8 @@ void CambrianFormatter::Visit(FlowPtr<TypeExpr> n) {
 }
 
 void CambrianFormatter::Visit(FlowPtr<Unary> n) {
-  static const std::unordered_set<Operator> word_ops = {
-      OpAs,        OpBitcastAs, OpIn,     OpOut,     OpSizeof,
-      OpBitsizeof, OpAlignof,   OpTypeof, OpComptime};
+  static const std::unordered_set<Operator> word_ops = {OpAs,        OpBitcastAs, OpIn,     OpOut,     OpSizeof,
+                                                        OpBitsizeof, OpAlignof,   OpTypeof, OpComptime};
 
   PrintMultilineComments(n);
 

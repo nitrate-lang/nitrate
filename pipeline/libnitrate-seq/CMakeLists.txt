@@ -38,9 +38,10 @@ add_library(nitrate-seq ${CXX_SOURCES})
 target_include_directories(nitrate-seq PUBLIC src "include"
   ${CMAKE_CURRENT_SOURCE_DIR}/../libnitrate-core/include
   ${CMAKE_CURRENT_SOURCE_DIR}/../libnitrate-lexer/include
+  ${CMAKE_CURRENT_SOURCE_DIR}/../libnitrate-parser/include
   ${CMAKE_CURRENT_SOURCE_DIR}/../libnitrate-seq/third_party)
-target_link_libraries(nitrate-seq PUBLIC nitrate-core nitrate-lexer ${LIB_NITRATELUA})
-add_dependencies(nitrate-seq nitrate-core nitrate-lexer nitratelua)
+target_link_libraries(nitrate-seq PUBLIC nitrate-core nitrate-lexer nitrate-parser ${LIB_NITRATELUA})
+add_dependencies(nitrate-seq nitrate-core nitrate-lexer nitrate-parser nitratelua)
 
 install(TARGETS nitrate-seq DESTINATION lib)
 install(DIRECTORY include/ DESTINATION "include")
