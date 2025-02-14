@@ -932,26 +932,15 @@ public:
 
       case Double: {
         while (!buf.empty()) {
-          bool do_break = false;
-          switch (auto ch = buf.back()) {
-            case '.':
-            case 'e':
-            case 'E': {
-              q.push_back(ch);
-              buf.pop_back();
-              break;
-            }
-
-            default: {
-              do_break = true;
-              break;
-            }
-          }
-
-          if (do_break) {
+          auto ch = buf.back();
+          if (!kDigitsTable[ch]) {
+            q.push_back(ch);
+            buf.pop_back();
+          } else {
             break;
           }
         }
+
         break;
       }
     }
