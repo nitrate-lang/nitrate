@@ -41,8 +41,7 @@ void ServerContext::RequestQueueLoop(const std::stop_token& st) {
   }
 }
 
-auto ServerContext::NextMessage(std::istream& in)
-    -> std::optional<MessageObject> {
+auto ServerContext::NextMessage(std::istream& in) -> std::optional<MessageObject> {
   /**
    * We don't need to lock the std::istream because this is the only place where
    * we read from it in a single threaded context. The ostream is seperately
@@ -114,11 +113,9 @@ auto ServerContext::NextMessage(std::istream& in)
     return std::nullopt;
   }
 
-  if (doc["jsonrpc"].get<std::string>() != std::string_view("2.0"))
-      [[unlikely]] {
+  if (doc["jsonrpc"].get<std::string>() != std::string_view("2.0")) [[unlikely]] {
     LOG(ERROR) << "Client is using unsupported LSP JSON-RPC version";
-    LOG(INFO) << "Client is using version: "
-              << doc["jsonrpc"].get<std::string>();
+    LOG(INFO) << "Client is using version: " << doc["jsonrpc"].get<std::string>();
     LOG(INFO) << "Server only supports version: 2.0";
 
     return std::nullopt;
@@ -150,8 +147,7 @@ auto ServerContext::NextMessage(std::istream& in)
   bool is_lsp_notification = !doc.contains("id");
 
   if (is_lsp_notification) {
-    message = MessageObject(NotificationMessage(
-        String(doc["method"].get<std::string>()), std::move(params)));
+    message = MessageObject(NotificationMessage(String(doc["method"].get<std::string>()), std::move(params)));
   } else {
     if (!doc["id"].is_string() && !doc["id"].is_number()) [[unlikely]] {
       LOG(ERROR) << "Request object key \"id\" is not a string or int";
@@ -160,12 +156,10 @@ auto ServerContext::NextMessage(std::istream& in)
 
     if (doc["id"].is_string()) {
       message = MessageObject(
-          RequestMessage(String(doc["id"].get<std::string>()),
-                         doc["method"].get<std::string>(), std::move(params)));
+          RequestMessage(String(doc["id"].get<std::string>()), doc["method"].get<std::string>(), std::move(params)));
     } else {
-      message = MessageObject(RequestMessage(doc["id"].get<int64_t>(),
-                                             doc["method"].get<std::string>(),
-                                             std::move(params)));
+      message =
+          MessageObject(RequestMessage(doc["id"].get<int64_t>(), doc["method"].get<std::string>(), std::move(params)));
     }
   }
 
@@ -237,8 +231,7 @@ void ServerContext::DoRequest(const RequestMessage& req, std::ostream& out) {
     response["error"] = nlohmann::json::object();
     response["error"]["code"] = (int64_t)sub_response.Error()->m_code;
     response["error"]["message"] = sub_response.Error()->m_message;
-    response["error"]["data"] =
-        sub_response.Error()->m_data.value_or(nlohmann::json::object());
+    response["error"]["data"] = sub_response.Error()->m_data.value_or(nlohmann::json::object());
   } else {
     response["result"] = sub_response.GetJSON();
   }
@@ -256,8 +249,7 @@ void ServerContext::DoRequest(const RequestMessage& req, std::ostream& out) {
     { /* Write the response */
       std::lock_guard<std::mutex> lock(m_io_mutex);
 
-      out << "Content-Length: " << std::to_string(buffer.size()) << "\r\n\r\n"
-          << buffer;
+      out << "Content-Length: " << std::to_string(buffer.size()) << "\r\n\r\n" << buffer;
 
       out.flush();
     }

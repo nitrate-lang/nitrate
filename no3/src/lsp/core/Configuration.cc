@@ -3,8 +3,7 @@
 
 using namespace no3::lsp;
 
-auto srv::ParseConfig(const std::filesystem::path& path)
-    -> std::optional<srv::Configuration> {
+auto srv::ParseConfig(const std::filesystem::path& path) -> std::optional<srv::Configuration> {
   std::ifstream ifs(path);
   if (!ifs.is_open()) {
     LOG(ERROR) << "Failed to open file: " << path;
@@ -29,14 +28,12 @@ auto srv::ParseConfig(const std::filesystem::path& path)
   }
 
   if (!doc["version"].is_number()) {
-    LOG(ERROR)
-        << "Expected 'version' field in the config file to be an integer";
+    LOG(ERROR) << "Expected 'version' field in the config file to be an integer";
     return std::nullopt;
   }
 
   if (doc["version"].get<int>() != 1) {
-    LOG(ERROR)
-        << "Unsupported config file version. Only version 1 is supportted now";
+    LOG(ERROR) << "Unsupported config file version. Only version 1 is supportted now";
     return std::nullopt;
   }
 

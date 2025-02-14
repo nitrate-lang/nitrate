@@ -43,15 +43,11 @@ static auto ConnectToPipe(const auto& path) -> std::optional<srv::Connection> {
     return std::nullopt;
   }
 
-  auto source = boost::iostreams::file_descriptor_source(
-      conn.value(), boost::iostreams::close_handle);
+  auto source = boost::iostreams::file_descriptor_source(conn.value(), boost::iostreams::close_handle);
 
-  auto in_stream = std::make_unique<
-      boost::iostreams::stream<boost::iostreams::file_descriptor_source>>(
-      (source));
+  auto in_stream = std::make_unique<boost::iostreams::stream<boost::iostreams::file_descriptor_source>>((source));
 
-  auto out_stream = std::make_unique<
-      boost::iostreams::stream<boost::iostreams::file_descriptor_sink>>(
+  auto out_stream = std::make_unique<boost::iostreams::stream<boost::iostreams::file_descriptor_sink>>(
       conn.value(), boost::iostreams::close_handle);
 
   if (!in_stream->is_open() || !out_stream->is_open()) {
@@ -66,8 +62,7 @@ static auto ConnectToPipe(const auto& path) -> std::optional<srv::Connection> {
   return stream;
 }
 
-static auto GetTcpClient(const auto& host,
-                         uint16_t port) -> std::optional<int> {
+static auto GetTcpClient(const auto& host, uint16_t port) -> std::optional<int> {
   int fd = socket(AF_INET, SOCK_STREAM, 0);
   if (fd == -1) {
     LOG(ERROR) << "Failed to create socket: " << GetStrerror();
@@ -112,23 +107,18 @@ static auto GetTcpClient(const auto& host,
   return client_fd;
 }
 
-static auto ConnectToTcpPort(uint16_t tcp_port)
-    -> std::optional<srv::Connection> {
+static auto ConnectToTcpPort(uint16_t tcp_port) -> std::optional<srv::Connection> {
   auto conn = GetTcpClient("127.0.0.1", tcp_port);
   if (!conn) {
     LOG(ERROR) << "Failed to connect to TCP port " << tcp_port;
     return std::nullopt;
   }
 
-  auto source = boost::iostreams::file_descriptor_source(
-      conn.value(), boost::iostreams::close_handle);
+  auto source = boost::iostreams::file_descriptor_source(conn.value(), boost::iostreams::close_handle);
 
-  auto in_stream = std::make_unique<
-      boost::iostreams::stream<boost::iostreams::file_descriptor_source>>(
-      (source));
+  auto in_stream = std::make_unique<boost::iostreams::stream<boost::iostreams::file_descriptor_source>>((source));
 
-  auto out_stream = std::make_unique<
-      boost::iostreams::stream<boost::iostreams::file_descriptor_sink>>(
+  auto out_stream = std::make_unique<boost::iostreams::stream<boost::iostreams::file_descriptor_sink>>(
       conn.value(), boost::iostreams::close_handle);
 
   if (!in_stream->is_open() || !out_stream->is_open()) {
@@ -146,12 +136,10 @@ static auto ConnectToTcpPort(uint16_t tcp_port)
 static auto ConnectToStdio() -> std::optional<srv::Connection> {
   LOG(INFO) << "Connecting to stdio";
 
-  auto in_stream = std::make_unique<
-      boost::iostreams::stream<boost::iostreams::file_descriptor>>(
+  auto in_stream = std::make_unique<boost::iostreams::stream<boost::iostreams::file_descriptor>>(
       STDIN_FILENO, boost::iostreams::never_close_handle);
 
-  auto out_stream = std::make_unique<
-      boost::iostreams::stream<boost::iostreams::file_descriptor>>(
+  auto out_stream = std::make_unique<boost::iostreams::stream<boost::iostreams::file_descriptor>>(
       STDOUT_FILENO, boost::iostreams::never_close_handle);
 
   if (!in_stream->is_open() || !out_stream->is_open()) {
@@ -166,8 +154,7 @@ static auto ConnectToStdio() -> std::optional<srv::Connection> {
   return stream;
 }
 
-auto srv::OpenConnection(srv::ConnectionType type, const String& target)
-    -> std::optional<srv::Connection> {
+auto srv::OpenConnection(srv::ConnectionType type, const String& target) -> std::optional<srv::Connection> {
   switch (type) {
     case ConnectionType::Pipe: {
       return ConnectToPipe(target);
@@ -176,8 +163,7 @@ auto srv::OpenConnection(srv::ConnectionType type, const String& target)
     case ConnectionType::Port: {
       uint16_t port = 0;
 
-      std::from_chars_result res = std::from_chars(
-          target->c_str(), target->c_str() + target->size(), port);
+      std::from_chars_result res = std::from_chars(target->c_str(), target->c_str() + target->size(), port);
       if (res.ec != std::errc()) {
         LOG(ERROR) << "Invalid port number: " << target;
         return std::nullopt;

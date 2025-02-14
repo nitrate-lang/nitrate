@@ -25,8 +25,8 @@ public:
     }
 
     if (offset + length > m_content->size()) {
-      LOG(ERROR) << "Invalid replace operation: offset=" << offset
-                 << ", length=" << length << ", size=" << m_content->size();
+      LOG(ERROR) << "Invalid replace operation: offset=" << offset << ", length=" << length
+                 << ", size=" << m_content->size();
       return false;
     }
 

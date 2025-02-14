@@ -56,21 +56,11 @@ enum class KeyName : uint8_t {
 enum class ValueType : uint8_t { STRING, INTEGER, BOOLEAN, STRING_ARRAY };
 
 static std::unordered_map<std::string, KeyName> KeyMap = {
-    {"name", KeyName::NAME},
-    {"version", KeyName::VERSION},
-    {"description", KeyName::DESCRIPTION},
-    {"authors", KeyName::AUTHORS},
-    {"emails", KeyName::EMAILS},
-    {"url", KeyName::URL},
-    {"licenses", KeyName::LICENSES},
-    {"sources", KeyName::SOURCES},
-    {"target", KeyName::TARGET},
-    {"triple", KeyName::TRIPLE},
-    {"cpu", KeyName::CPU},
-    {"cflags", KeyName::CFLAGS},
-    {"lflags", KeyName::LFLAGS},
-    {"nolink", KeyName::NOLINK},
-    {"packages", KeyName::PACKAGES}};
+    {"name", KeyName::NAME},         {"version", KeyName::VERSION}, {"description", KeyName::DESCRIPTION},
+    {"authors", KeyName::AUTHORS},   {"emails", KeyName::EMAILS},   {"url", KeyName::URL},
+    {"licenses", KeyName::LICENSES}, {"sources", KeyName::SOURCES}, {"target", KeyName::TARGET},
+    {"triple", KeyName::TRIPLE},     {"cpu", KeyName::CPU},         {"cflags", KeyName::CFLAGS},
+    {"lflags", KeyName::LFLAGS},     {"nolink", KeyName::NOLINK},   {"packages", KeyName::PACKAGES}};
 
 static std::set<std::string> RequiredKeys = {
     "name",
@@ -79,8 +69,7 @@ static std::set<std::string> RequiredKeys = {
     "target",
 };
 
-static std::set<std::string> TargetValidValues = {"sharedlib", "staticlib",
-                                                  "executable"};
+static std::set<std::string> TargetValidValues = {"sharedlib", "staticlib", "executable"};
 
 /// https://stackoverflow.com/questions/1031645/how-to-detect-utf-8-in-plain-c
 auto IsUtf8(const char *string) -> bool {
@@ -92,46 +81,36 @@ auto IsUtf8(const char *string) -> bool {
   while (*bytes != 0U) {
     if ((  // ASCII
            // use bytes[0] <= 0x7F to allow ASCII control characters
-            bytes[0] == 0x09 || bytes[0] == 0x0A || bytes[0] == 0x0D ||
-            (0x20 <= bytes[0] && bytes[0] <= 0x7E))) {
+            bytes[0] == 0x09 || bytes[0] == 0x0A || bytes[0] == 0x0D || (0x20 <= bytes[0] && bytes[0] <= 0x7E))) {
       bytes += 1;
       continue;
     }
 
     if ((  // non-overlong 2-byte
-            (0xC2 <= bytes[0] && bytes[0] <= 0xDF) &&
-            (0x80 <= bytes[1] && bytes[1] <= 0xBF))) {
+            (0xC2 <= bytes[0] && bytes[0] <= 0xDF) && (0x80 <= bytes[1] && bytes[1] <= 0xBF))) {
       bytes += 2;
       continue;
     }
 
     if ((  // excluding overlongs
-            bytes[0] == 0xE0 && (0xA0 <= bytes[1] && bytes[1] <= 0xBF) &&
-            (0x80 <= bytes[2] && bytes[2] <= 0xBF)) ||
+            bytes[0] == 0xE0 && (0xA0 <= bytes[1] && bytes[1] <= 0xBF) && (0x80 <= bytes[2] && bytes[2] <= 0xBF)) ||
         (  // straight 3-byte
-            ((0xE1 <= bytes[0] && bytes[0] <= 0xEC) || bytes[0] == 0xEE ||
-             bytes[0] == 0xEF) &&
-            (0x80 <= bytes[1] && bytes[1] <= 0xBF) &&
-            (0x80 <= bytes[2] && bytes[2] <= 0xBF)) ||
+            ((0xE1 <= bytes[0] && bytes[0] <= 0xEC) || bytes[0] == 0xEE || bytes[0] == 0xEF) &&
+            (0x80 <= bytes[1] && bytes[1] <= 0xBF) && (0x80 <= bytes[2] && bytes[2] <= 0xBF)) ||
         (  // excluding surrogates
-            bytes[0] == 0xED && (0x80 <= bytes[1] && bytes[1] <= 0x9F) &&
-            (0x80 <= bytes[2] && bytes[2] <= 0xBF))) {
+            bytes[0] == 0xED && (0x80 <= bytes[1] && bytes[1] <= 0x9F) && (0x80 <= bytes[2] && bytes[2] <= 0xBF))) {
       bytes += 3;
       continue;
     }
 
     if ((  // planes 1-3
-            bytes[0] == 0xF0 && (0x90 <= bytes[1] && bytes[1] <= 0xBF) &&
-            (0x80 <= bytes[2] && bytes[2] <= 0xBF) &&
+            bytes[0] == 0xF0 && (0x90 <= bytes[1] && bytes[1] <= 0xBF) && (0x80 <= bytes[2] && bytes[2] <= 0xBF) &&
             (0x80 <= bytes[3] && bytes[3] <= 0xBF)) ||
         (  // planes 4-15
-            (0xF1 <= bytes[0] && bytes[0] <= 0xF3) &&
-            (0x80 <= bytes[1] && bytes[1] <= 0xBF) &&
-            (0x80 <= bytes[2] && bytes[2] <= 0xBF) &&
-            (0x80 <= bytes[3] && bytes[3] <= 0xBF)) ||
+            (0xF1 <= bytes[0] && bytes[0] <= 0xF3) && (0x80 <= bytes[1] && bytes[1] <= 0xBF) &&
+            (0x80 <= bytes[2] && bytes[2] <= 0xBF) && (0x80 <= bytes[3] && bytes[3] <= 0xBF)) ||
         (  // plane 16
-            bytes[0] == 0xF4 && (0x80 <= bytes[1] && bytes[1] <= 0x8F) &&
-            (0x80 <= bytes[2] && bytes[2] <= 0xBF) &&
+            bytes[0] == 0xF4 && (0x80 <= bytes[1] && bytes[1] <= 0x8F) && (0x80 <= bytes[2] && bytes[2] <= 0xBF) &&
             (0x80 <= bytes[3] && bytes[3] <= 0xBF))) {
       bytes += 4;
       continue;
@@ -143,8 +122,7 @@ auto IsUtf8(const char *string) -> bool {
   return true;
 }
 
-auto no3::conf::ValidateConfig(const no3::conf::Config &config,
-                               const std::filesystem::path &base) -> bool {
+auto no3::conf::ValidateConfig(const no3::conf::Config &config, const std::filesystem::path &base) -> bool {
   using namespace no3::core;
 
   auto keys = config.Keys();
@@ -162,8 +140,7 @@ auto no3::conf::ValidateConfig(const no3::conf::Config &config,
           return false;
         }
         if (!IsUtf8(config[key].As<std::string>().c_str())) {
-          LOG(ERROR)
-              << "Invalid value for key 'name' in configuration: must be UTF-8";
+          LOG(ERROR) << "Invalid value for key 'name' in configuration: must be UTF-8";
           return false;
         }
         break;
@@ -173,15 +150,13 @@ auto no3::conf::ValidateConfig(const no3::conf::Config &config,
           return false;
         }
         if (config[key].As<int64_t>() != 1) {
-          LOG(ERROR)
-              << "This version of the NO3 system only supports version 1";
+          LOG(ERROR) << "This version of the NO3 system only supports version 1";
           return false;
         }
         break;
       case KeyName::DESCRIPTION:
         if (!config[key].Is<std::string>()) {
-          LOG(ERROR)
-              << "Invalid value type for key 'description' in configuration";
+          LOG(ERROR) << "Invalid value type for key 'description' in configuration";
           return false;
         }
         if (!IsUtf8(config[key].As<std::string>().c_str())) {
@@ -222,15 +197,13 @@ auto no3::conf::ValidateConfig(const no3::conf::Config &config,
           return false;
         }
         if (!IsUtf8(config[key].As<std::string>().c_str())) {
-          LOG(ERROR)
-              << "Invalid value for key 'url' in configuration: must be UTF-8";
+          LOG(ERROR) << "Invalid value for key 'url' in configuration: must be UTF-8";
           return false;
         }
         break;
       case KeyName::LICENSES:
         if (!config[key].Is<std::vector<std::string>>()) {
-          LOG(ERROR)
-              << "Invalid value type for key 'licenses' in configuration";
+          LOG(ERROR) << "Invalid value type for key 'licenses' in configuration";
           return false;
         }
         for (const auto &license : config[key].As<std::vector<std::string>>()) {
@@ -258,9 +231,8 @@ auto no3::conf::ValidateConfig(const no3::conf::Config &config,
           return false;
         }
         if (!TargetValidValues.contains(config[key].As<std::string>())) {
-          LOG(ERROR)
-              << "Invalid value for key 'target' in configuration: must be one "
-                 "of 'sharedlib', 'staticlib', or 'executable'";
+          LOG(ERROR) << "Invalid value for key 'target' in configuration: must be one "
+                        "of 'sharedlib', 'staticlib', or 'executable'";
           return false;
         }
         break;
@@ -281,8 +253,7 @@ auto no3::conf::ValidateConfig(const no3::conf::Config &config,
           return false;
         }
         if (!IsUtf8(config[key].As<std::string>().c_str())) {
-          LOG(ERROR)
-              << "Invalid value for key 'cpu' in configuration: must be UTF-8";
+          LOG(ERROR) << "Invalid value for key 'cpu' in configuration: must be UTF-8";
           return false;
         }
         break;
@@ -306,13 +277,11 @@ auto no3::conf::ValidateConfig(const no3::conf::Config &config,
         break;
       case KeyName::PACKAGES:
         if (!config[key].Is<std::vector<std::string>>()) {
-          LOG(ERROR)
-              << "Invalid value type for key 'packages' in configuration";
+          LOG(ERROR) << "Invalid value type for key 'packages' in configuration";
           return false;
         }
         for (const auto &source : config[key].As<std::vector<std::string>>()) {
-          if (!std::filesystem::exists(base / source) ||
-              !std::filesystem::is_directory(base / source)) {
+          if (!std::filesystem::exists(base / source) || !std::filesystem::is_directory(base / source)) {
             LOG(ERROR) << "Dependency does not exist: " << source;
             return false;
           }
@@ -324,8 +293,7 @@ auto no3::conf::ValidateConfig(const no3::conf::Config &config,
     }
   }
 
-  if (!std::all_of(RequiredKeys.begin(), RequiredKeys.end(),
-                   [&keys](const auto &key) { return keys.contains(key); })) {
+  if (!std::all_of(RequiredKeys.begin(), RequiredKeys.end(), [&keys](const auto &key) { return keys.contains(key); })) {
     LOG(ERROR) << "Missing required key in configuration";
     return false;
   }

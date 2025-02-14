@@ -17,8 +17,7 @@ void srv::DoDidChange(const NotificationMessage& notif) {
   }
 
   if (!notif.GetJSON()["textDocument"].is_object()) {
-    LOG(ERROR)
-        << "textDocument field in didChange notification is not an object";
+    LOG(ERROR) << "textDocument field in didChange notification is not an object";
     return;
   }
 
@@ -53,8 +52,7 @@ void srv::DoDidChange(const NotificationMessage& notif) {
   }
 
   if (!notif.GetJSON()["contentChanges"].is_array()) {
-    LOG(ERROR)
-        << "contentChanges field in didChange notification is not an array";
+    LOG(ERROR) << "contentChanges field in didChange notification is not an array";
     return;
   }
 
@@ -91,8 +89,8 @@ void srv::DoDidChange(const NotificationMessage& notif) {
     std::lock_guard<std::mutex> lock(mutex);
 
     if (latest[uri] >= version) {
-      LOG(INFO) << "Discarding outdated document " << uri << " version "
-                << version << " (latest is " << latest[uri] << ")";
+      LOG(INFO) << "Discarding outdated document " << uri << " version " << version << " (latest is " << latest[uri]
+                << ")";
       return;
     }
 

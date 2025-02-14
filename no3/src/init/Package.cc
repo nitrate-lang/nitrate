@@ -88,9 +88,8 @@ static auto GenerateUUIDv4() -> std::string {
   std::random_device rd;
   std::mt19937 gen(rd());
   std::uniform_int_distribution<> dis(0, 15);
-  static constexpr std::array<char, 16> kHexChars = {
-      '0', '1', '2', '3', '4', '5', '6', '7',
-      '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'};
+  static constexpr std::array<char, 16> kHexChars = {'0', '1', '2', '3', '4', '5', '6', '7',
+                                                     '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'};
 
   std::stringstream ss;
   for (int i = 0; i < 36; i++) {
@@ -109,8 +108,7 @@ static auto GenerateUUIDv4() -> std::string {
 }
 
 static auto CreatePackageRepository(const char *path, PackageType type) -> bool {
-  static constexpr std::array kPackageTypes = {"application", "staticlib",
-                                               "sharedlib"};
+  static constexpr std::array kPackageTypes = {"application", "staticlib", "sharedlib"};
 
   GitRepository repo(path);
   if (!repo.DidInit()) {
@@ -124,9 +122,8 @@ static auto CreatePackageRepository(const char *path, PackageType type) -> bool 
     return false;
   }
 
-  bool config_ok =
-      config->SetString("no3.package", GenerateUUIDv4().c_str()) &&
-      config->SetString("no3.type", kPackageTypes[static_cast<int>(type)]);
+  bool config_ok = config->SetString("no3.package", GenerateUUIDv4().c_str()) &&
+                   config->SetString("no3.type", kPackageTypes[static_cast<int>(type)]);
 
   if (!config_ok) {
     LOG(ERROR) << "Failed to set git configuration";
@@ -389,56 +386,47 @@ auto no3::init::Package::Create() -> bool {
   return CreatePackage();
 }
 
-auto no3::init::PackageBuilder::Output(
-    const std::string &output) -> no3::init::PackageBuilder & {
+auto no3::init::PackageBuilder::Output(const std::string &output) -> no3::init::PackageBuilder & {
   m_output = output;
   return *this;
 }
 
-auto no3::init::PackageBuilder::Name(
-    const std::string &name) -> no3::init::PackageBuilder & {
+auto no3::init::PackageBuilder::Name(const std::string &name) -> no3::init::PackageBuilder & {
   m_name = name;
   return *this;
 }
 
-auto no3::init::PackageBuilder::License(
-    const std::string &license) -> no3::init::PackageBuilder & {
+auto no3::init::PackageBuilder::License(const std::string &license) -> no3::init::PackageBuilder & {
   m_license = license;
   return *this;
 }
 
-auto no3::init::PackageBuilder::Author(
-    const std::string &author) -> no3::init::PackageBuilder & {
+auto no3::init::PackageBuilder::Author(const std::string &author) -> no3::init::PackageBuilder & {
   m_author = author;
   return *this;
 }
 
-auto no3::init::PackageBuilder::Email(
-    const std::string &email) -> no3::init::PackageBuilder & {
+auto no3::init::PackageBuilder::Email(const std::string &email) -> no3::init::PackageBuilder & {
   m_email = email;
   return *this;
 }
 
-auto no3::init::PackageBuilder::Url(
-    const std::string &url) -> no3::init::PackageBuilder & {
+auto no3::init::PackageBuilder::Url(const std::string &url) -> no3::init::PackageBuilder & {
   m_url = url;
   return *this;
 }
 
-auto no3::init::PackageBuilder::Version(
-    const std::string &version) -> no3::init::PackageBuilder & {
+auto no3::init::PackageBuilder::Version(const std::string &version) -> no3::init::PackageBuilder & {
   m_version = version;
   return *this;
 }
 
-auto no3::init::PackageBuilder::Description(
-    const std::string &description) -> no3::init::PackageBuilder & {
+auto no3::init::PackageBuilder::Description(const std::string &description) -> no3::init::PackageBuilder & {
   m_description = description;
   return *this;
 }
 
-auto no3::init::PackageBuilder::Type(
-    no3::init::PackageType type) -> no3::init::PackageBuilder & {
+auto no3::init::PackageBuilder::Type(no3::init::PackageType type) -> no3::init::PackageBuilder & {
   m_type = type;
   return *this;
 }
@@ -454,6 +442,5 @@ auto no3::init::PackageBuilder::Force(bool force) -> no3::init::PackageBuilder &
 }
 
 auto no3::init::PackageBuilder::Build() -> no3::init::Package {
-  return {m_output,  m_name,        m_license, m_author,  m_email, m_url,
-          m_version, m_description, m_type,    m_verbose, m_force};
+  return {m_output, m_name, m_license, m_author, m_email, m_url, m_version, m_description, m_type, m_verbose, m_force};
 }

@@ -26,19 +26,15 @@ namespace no3::lsp::srv {
     }
   };
 
-  auto ParseConfig(const std::filesystem::path& path)
-      -> std::optional<Configuration>;
+  auto ParseConfig(const std::filesystem::path& path) -> std::optional<Configuration>;
 
-  using Connection =
-      std::pair<std::unique_ptr<std::istream>, std::unique_ptr<std::ostream>>;
+  using Connection = std::pair<std::unique_ptr<std::istream>, std::unique_ptr<std::ostream>>;
 
   enum class ConnectionType { Pipe, Port, Stdio };
 
-  auto OpenConnection(ConnectionType type,
-                      const String& target) -> std::optional<Connection>;
+  auto OpenConnection(ConnectionType type, const String& target) -> std::optional<Connection>;
 
-  using RequestHandler =
-      std::function<void(const RequestMessage&, ResponseMessage&)>;
+  using RequestHandler = std::function<void(const RequestMessage&, ResponseMessage&)>;
 
   using NotificationHandler = std::function<void(const NotificationMessage&)>;
 
@@ -70,13 +66,11 @@ namespace no3::lsp::srv {
 
     [[noreturn]] void StartServer(Connection& io);
 
-    void RegisterRequestHandler(std::string_view method,
-                                RequestHandler handler) {
+    void RegisterRequestHandler(std::string_view method, RequestHandler handler) {
       m_request_handlers[String(method)] = std::move(handler);
     }
 
-    void RegisterNotificationHandler(std::string_view method,
-                                     NotificationHandler handler) {
+    void RegisterNotificationHandler(std::string_view method, NotificationHandler handler) {
       m_notification_handlers[String(method)] = std::move(handler);
     }
   };

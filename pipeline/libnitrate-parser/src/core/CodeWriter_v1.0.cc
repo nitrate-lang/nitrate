@@ -480,11 +480,7 @@ void CodeWriter_v1_0::Visit(FlowPtr<ExprStmt> n) {
   PutPunctor(PuncSemi);
 }
 
-void CodeWriter_v1_0::Visit(FlowPtr<LambdaExpr> n) {
-  PutPunctor(PuncLPar);
-  n->GetFunc()->Accept(*this);
-  PutPunctor(PuncRPar);
-}
+void CodeWriter_v1_0::Visit(FlowPtr<LambdaExpr> n) { n->GetFunc()->Accept(*this); }
 
 void CodeWriter_v1_0::Visit(FlowPtr<TypeExpr> n) {
   PutPunctor(PuncLPar);

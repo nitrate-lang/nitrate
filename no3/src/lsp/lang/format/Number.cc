@@ -46,8 +46,7 @@ void CambrianFormatter::WriteFloatLiteralChunk(std::string_view float_str) {
 
     if (!already_write_type_suffix && i != 0 && (i % (kInsertSepEvery)) == 0) {
       underscore = true;
-    } else if (!already_write_type_suffix &&
-               (std::isdigit(float_str[i]) == 0) && float_str[i] != '.') {
+    } else if (!already_write_type_suffix && (std::isdigit(float_str[i]) == 0) && float_str[i] != '.') {
       already_write_type_suffix = true;
       underscore = true;
     }

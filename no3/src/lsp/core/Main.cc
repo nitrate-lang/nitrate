@@ -16,9 +16,7 @@ using namespace no3::lsp::srv;
 static constexpr void CreateParser(argparse::ArgumentParser& parser) {
   ///=================== BASIC CONFIGURATION ======================
 
-  parser.AddArgument("--config")
-      .DefaultValue(std::string(""))
-      .Help("Specify the configuration file");
+  parser.AddArgument("--config").DefaultValue(std::string("")).Help("Specify the configuration file");
 
   ///=================== CONNECTION CONFIGURATION ======================
 
@@ -26,8 +24,7 @@ static constexpr void CreateParser(argparse::ArgumentParser& parser) {
 
   group.AddArgument("--pipe").Help("Specify the pipe file to connect to");
   group.AddArgument("--port").Help("Specify the port to connect to");
-  group.AddArgument("--stdio").DefaultValue(false).ImplicitValue(true).Help(
-      "Use standard I/O");
+  group.AddArgument("--stdio").DefaultValue(false).ImplicitValue(true).Help("Use standard I/O");
 }
 
 extern "C" NCC_EXPORT auto NitratedMain(int argc, char** argv) -> int {

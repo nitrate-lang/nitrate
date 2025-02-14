@@ -70,8 +70,7 @@ auto CambrianFormatter::EscapeCharLiteral(char ch) const -> std::string {
   }
 }
 
-auto CambrianFormatter::EscapeStringLiteralChunk(std::string_view str) const
-    -> std::string {
+auto CambrianFormatter::EscapeStringLiteralChunk(std::string_view str) const -> std::string {
   std::stringstream ss;
 
   for (char ch : str) {
@@ -112,8 +111,7 @@ auto CambrianFormatter::EscapeStringLiteralChunk(std::string_view str) const
   return ss.str();
 }
 
-void CambrianFormatter::EscapeStringLiteral(std::string_view str,
-                                            bool put_quotes) {
+void CambrianFormatter::EscapeStringLiteral(std::string_view str, bool put_quotes) {
   constexpr size_t kMaxChunkSize = 60;
 
   if (str.empty()) {
@@ -131,16 +129,11 @@ void CambrianFormatter::EscapeStringLiteral(std::string_view str,
     std::vector<std::string> chunks(chunks_n);
 
     for (size_t i = 0; i < chunks_n; i++) {
-      chunks[i] = "\"" +
-                  EscapeStringLiteralChunk(
-                      str.substr(i * kMaxChunkSize, kMaxChunkSize)) +
-                  "\"";
+      chunks[i] = "\"" + EscapeStringLiteralChunk(str.substr(i * kMaxChunkSize, kMaxChunkSize)) + "\"";
     }
 
     auto max_segment_size =
-        std::max_element(chunks.begin(), chunks.end(), [](auto a, auto b) {
-          return a.size() < b.size();
-        })->size();
+        std::max_element(chunks.begin(), chunks.end(), [](auto a, auto b) { return a.size() < b.size(); })->size();
 
     for (size_t i = 0; i < chunks.size(); ++i) {
       if (i != 0 && (m_line_size != 0U)) {
@@ -169,8 +162,7 @@ void CambrianFormatter::EscapeStringLiteral(std::string_view str,
       m_line << "\"";
     }
 
-    m_line << EscapeStringLiteralChunk(
-        str.substr(chunks_n * kMaxChunkSize, rem));
+    m_line << EscapeStringLiteralChunk(str.substr(chunks_n * kMaxChunkSize, rem));
 
     if (chunks_n > 0 || put_quotes) {
       m_line << "\"";

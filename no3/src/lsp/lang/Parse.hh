@@ -18,15 +18,12 @@ namespace no3::lsp {
     [[nodiscard]] auto IsOkay() const -> bool { return m_root != nullptr; }
     auto FromSyncfs(const std::string& uri) -> bool;
 
-    [[nodiscard]] auto Root() const -> const ncc::parse::Base* {
-      return m_root;
-    }
+    [[nodiscard]] auto Root() const -> const ncc::parse::Base* { return m_root; }
   };
   using ParseTree = std::shared_ptr<ParseTreeWrapper>;
 
   class ParseTreeCache {
-    std::unordered_map<std::string, std::pair<SyncFSFile::Digest, ParseTree>>
-        m_cache;
+    std::unordered_map<std::string, std::pair<SyncFSFile::Digest, ParseTree>> m_cache;
     size_t m_cache_size = kDefaultCacheLimit;
 
   public:
@@ -34,8 +31,7 @@ namespace no3::lsp {
 
     static auto The() -> ParseTreeCache&;
 
-    auto Get(std::string_view uri,
-             bool permit_outdated = false) const -> std::optional<ParseTree>;
+    auto Get(std::string_view uri, bool permit_outdated = false) const -> std::optional<ParseTree>;
 
     void Clear();
     void SetCacheLimit(size_t max_bytes);

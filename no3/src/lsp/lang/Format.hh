@@ -9,8 +9,7 @@ namespace no3::lsp::fmt {
 
   class FormatterFactory final {
   public:
-    static auto Create(Styleguide style,
-                       std::ostream& out) -> std::unique_ptr<ICodeFormatter> {
+    static auto Create(Styleguide style, std::ostream& out) -> std::unique_ptr<ICodeFormatter> {
       switch (style) {
         case Styleguide::Cambrian: {
           return std::make_unique<CambrianFormatter>(out);

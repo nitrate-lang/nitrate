@@ -7,9 +7,7 @@
 
 SyncFS::SyncFS() { LOG(INFO) << "Creating mirrored file system abstraction"; }
 
-SyncFS::~SyncFS() {
-  LOG(INFO) << "Destroying mirrored file system abstraction";
-}
+SyncFS::~SyncFS() { LOG(INFO) << "Destroying mirrored file system abstraction"; }
 
 auto SyncFS::The() -> SyncFS& {
   static SyncFS instance;
@@ -47,8 +45,7 @@ static auto UrlDecode(std::string_view str) -> std::string {
   return result;
 }
 
-auto SyncFS::Open(std::string path)
-    -> std::optional<std::shared_ptr<SyncFSFile>> {
+auto SyncFS::Open(std::string path) -> std::optional<std::shared_ptr<SyncFSFile>> {
   path = UrlDecode(path);
   if (path.starts_with("file://")) {
     path = path.substr(7);
@@ -74,8 +71,7 @@ auto SyncFS::Open(std::string path)
     return std::nullopt;
   }
 
-  std::string content((std::istreambuf_iterator<char>(file)),
-                      std::istreambuf_iterator<char>());
+  std::string content((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
 
   auto ptr = std::make_shared<SyncFSFile>();
   ptr->SetContent(std::make_shared<std::string>(std::move(content)));

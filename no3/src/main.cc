@@ -341,29 +341,29 @@ extern "C" __attribute__((visibility("default"))) auto No3Init() -> bool {
     ncc::Log.Subscribe([](auto msg, auto sev, const auto &ec) {
       using namespace ncc;
 
-      // if (sev > Debug || core::GetDebugMode()) {
-      switch (sev) {
-        case Trace:
-        case Debug:
-        case Info:
-        case Notice: {
-          LOG(INFO) << "ncc: " << ec.Format(msg, sev);
-          break;
-        }
+      if (sev > Debug || core::GetDebugMode()) {
+        switch (sev) {
+          case Trace:
+          case Debug:
+          case Info:
+          case Notice: {
+            LOG(INFO) << ec.Format(msg, sev);
+            break;
+          }
 
-        case Warning: {
-          LOG(WARNING) << "ncc: " << ec.Format(msg, sev);
-          break;
-        }
+          case Warning: {
+            LOG(WARNING) << ec.Format(msg, sev);
+            break;
+          }
 
-        case Error:
-        case Critical:
-        case Alert:
-        case Emergency: {
-          LOG(ERROR) << "ncc: " << ec.Format(msg, sev);
-          break;
+          case Error:
+          case Critical:
+          case Alert:
+          case Emergency: {
+            LOG(ERROR) << ec.Format(msg, sev);
+            break;
+          }
         }
-          // }
       }
     });
 

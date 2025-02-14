@@ -106,10 +106,8 @@ namespace no3::lsp::protocol {
     MessageIdKind m_kind;
 
   public:
-    MessageId(String id)
-        : m_data(std::move(id)), m_kind(MessageIdKind::String) {}
-    MessageId(int64_t id)
-        : m_data(std::to_string(id)), m_kind(MessageIdKind::Int) {}
+    MessageId(String id) : m_data(std::move(id)), m_kind(MessageIdKind::String) {}
+    MessageId(int64_t id) : m_data(std::to_string(id)), m_kind(MessageIdKind::Int) {}
 
     [[nodiscard]] constexpr auto GetKind() const { return m_kind; }
     [[nodiscard]] constexpr auto GetInt() const { return std::stoll(m_data); }
@@ -135,9 +133,7 @@ namespace no3::lsp::protocol {
 
   public:
     RequestMessage(auto id, auto method, auto params)
-        : m_params(std::move(params)),
-          m_method(std::move(method)),
-          m_id(std::move(id)) {}
+        : m_params(std::move(params)), m_method(std::move(method)), m_id(std::move(id)) {}
 
     [[nodiscard]] constexpr bool operator==(const RequestMessage& o) const {
       return m_id == o.m_id && m_method == o.m_method && m_params == o.m_params;
@@ -150,9 +146,7 @@ namespace no3::lsp::protocol {
 
     [[nodiscard]] auto GetMID() const { return m_id; }
     [[nodiscard]] auto GetMethod() const { return m_method; }
-    [[nodiscard]] constexpr auto GetJSON() const -> const nlohmann::json& {
-      return m_params;
-    }
+    [[nodiscard]] constexpr auto GetJSON() const -> const nlohmann::json& { return m_params; }
   };
 
   class NotificationMessage final {
@@ -163,8 +157,7 @@ namespace no3::lsp::protocol {
     NotificationMessage(String method, nlohmann::json params)
         : m_method(std::move(method)), m_params(std::move(params)) {}
 
-    [[nodiscard]] constexpr bool operator==(
-        const NotificationMessage& o) const {
+    [[nodiscard]] constexpr bool operator==(const NotificationMessage& o) const {
       return m_method == o.m_method && m_params == o.m_params;
     }
 
@@ -174,9 +167,7 @@ namespace no3::lsp::protocol {
     }
 
     [[nodiscard]] auto Method() const { return m_method; }
-    [[nodiscard]] auto GetJSON() const -> const nlohmann::json& {
-      return m_params;
-    }
+    [[nodiscard]] auto GetJSON() const -> const nlohmann::json& { return m_params; }
   };
 
   struct ResponseError {
@@ -185,13 +176,10 @@ namespace no3::lsp::protocol {
     LSPStatus m_code;
 
     ResponseError(auto code, auto message, auto data)
-        : m_data(std::move(data)),
-          m_message(std::move(message)),
-          m_code(code) {}
+        : m_data(std::move(data)), m_message(std::move(message)), m_code(code) {}
 
     [[nodiscard]] constexpr bool operator==(const ResponseError& o) const {
-      return m_code == o.m_code && m_message == o.m_message &&
-             m_data == o.m_data;
+      return m_code == o.m_code && m_message == o.m_message && m_data == o.m_data;
     }
   };
 
@@ -200,9 +188,7 @@ namespace no3::lsp::protocol {
     nlohmann::json m_result;
     std::optional<ResponseError> m_error;
 
-    ResponseMessage(MessageId id) : m_id(std::move(id)) {
-      m_result = nlohmann::json::object();
-    }
+    ResponseMessage(MessageId id) : m_id(std::move(id)) { m_result = nlohmann::json::object(); }
 
   public:
     static auto FromRequest(const RequestMessage& request) -> ResponseMessage {
@@ -230,20 +216,15 @@ namespace no3::lsp::protocol {
     auto GetJSON() -> nlohmann::json& { return m_result; }
 
     auto Error() -> std::optional<ResponseError>& { return m_error; }
-    auto Error(auto code, auto message) {
-      m_error = ResponseError(code, std::move(message), std::nullopt);
-    }
+    auto Error(auto code, auto message) { m_error = ResponseError(code, std::move(message), std::nullopt); }
 
     [[nodiscard]] auto operator->() -> auto& { return m_result; }
     [[nodiscard]] auto operator*() -> auto& { return m_result; }
 
-    [[nodiscard]] auto GetJSON() const -> const nlohmann::json& {
-      return m_result;
-    }
+    [[nodiscard]] auto GetJSON() const -> const nlohmann::json& { return m_result; }
   };
 
-  using MessageVariant =
-      std::variant<RequestMessage, NotificationMessage, ResponseMessage>;
+  using MessageVariant = std::variant<RequestMessage, NotificationMessage, ResponseMessage>;
   [[nodiscard]]
 
   static inline size_t hash_value(const MessageVariant& m) {  // NOLINT

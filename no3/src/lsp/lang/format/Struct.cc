@@ -70,8 +70,7 @@ void CambrianFormatter::Visit(FlowPtr<parse::Struct> n) {
     const auto wrap_threshold = 2ULL;
 
     const auto& attrs = n->GetAttributes();
-    const auto break_at =
-        attrs.size() > wrap_threshold ? wrap_threshold : attrs.size();
+    const auto break_at = attrs.size() > wrap_threshold ? wrap_threshold : attrs.size();
 
     m_line << "[";
     auto m_line_size = m_line.Length();
@@ -95,8 +94,7 @@ void CambrianFormatter::Visit(FlowPtr<parse::Struct> n) {
   if (n->GetTemplateParams().has_value()) {
     m_line << "<";
     IterateExceptLast(
-        n->GetTemplateParams().value().begin(),
-        n->GetTemplateParams().value().end(),
+        n->GetTemplateParams().value().begin(), n->GetTemplateParams().value().end(),
         [&](auto param, size_t) {
           m_line << std::get<0>(param);
           if (auto type = std::get<1>(param); type->GetKind() != QAST_INFER) {
@@ -118,8 +116,7 @@ void CambrianFormatter::Visit(FlowPtr<parse::Struct> n) {
     const auto wrap_threshold = 2ULL;
 
     const auto& names = n->GetNames();
-    const auto break_at =
-        names.size() > wrap_threshold ? wrap_threshold : names.size();
+    const auto break_at = names.size() > wrap_threshold ? wrap_threshold : names.size();
 
     m_line << "[";
     auto m_line_size = m_line.Length();
@@ -138,8 +135,7 @@ void CambrianFormatter::Visit(FlowPtr<parse::Struct> n) {
     m_line << "]";
   }
 
-  bool is_empty = n->GetFields().empty() && n->GetMethods().empty() &&
-                  n->GetStaticMethods().empty();
+  bool is_empty = n->GetFields().empty() && n->GetMethods().empty() && n->GetStaticMethods().empty();
 
   if (is_empty) {
     m_line << ";";
@@ -171,24 +167,21 @@ void CambrianFormatter::Visit(FlowPtr<parse::Struct> n) {
     m_line << std::endl;
   }
 
-  std::for_each(n->GetMethods().begin(), n->GetMethods().end(),
-                [&](auto method) {
-                  m_line << GetIndent() << method.m_vis << " ";
-                  method.m_func.Accept(*this);
-                  m_line << std::endl;
-                });
+  std::for_each(n->GetMethods().begin(), n->GetMethods().end(), [&](auto method) {
+    m_line << GetIndent() << method.m_vis << " ";
+    method.m_func.Accept(*this);
+    m_line << std::endl;
+  });
 
-  if (!static_methods_count.empty() &&
-      (!fields_count.empty() || !methods_count.empty())) {
+  if (!static_methods_count.empty() && (!fields_count.empty() || !methods_count.empty())) {
     m_line << std::endl;
   }
 
-  std::for_each(n->GetStaticMethods().begin(), n->GetStaticMethods().end(),
-                [&](auto method) {
-                  m_line << GetIndent() << method.m_vis << " static ";
-                  method.m_func.Accept(*this);
-                  m_line << std::endl;
-                });
+  std::for_each(n->GetStaticMethods().begin(), n->GetStaticMethods().end(), [&](auto method) {
+    m_line << GetIndent() << method.m_vis << " static ";
+    method.m_func.Accept(*this);
+    m_line << std::endl;
+  });
 
   m_indent -= m_tabSize;
   m_line << GetIndent() << "}";
@@ -205,9 +198,8 @@ void CambrianFormatter::Visit(FlowPtr<TupleTy> n) {
 
   auto items = n->GetItems();
   auto m_line_size = m_line.Length();
-  auto break_at = items.size() <= wrap_threshold
-                      ? wrap_threshold
-                      : static_cast<size_t>(std::ceil(std::sqrt(items.size())));
+  auto break_at =
+      items.size() <= wrap_threshold ? wrap_threshold : static_cast<size_t>(std::ceil(std::sqrt(items.size())));
 
   for (size_t i = 0; i < items.size(); i++) {
     if (i != 0 && i % break_at == 0) {

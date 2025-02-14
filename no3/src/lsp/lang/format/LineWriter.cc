@@ -38,10 +38,8 @@ using namespace no3::lsp::fmt;
 using namespace ncc::parse;
 using namespace ncc::lex;
 
-auto CambrianFormatter::LineWriter::operator<<(
-    std::ostream& (*func)(std::ostream&)) -> CambrianFormatter::LineWriter& {
-  qcore_assert(func ==
-               static_cast<std::ostream& (*)(std::ostream&)>(std::endl));
+auto CambrianFormatter::LineWriter::operator<<(std::ostream& (*func)(std::ostream&)) -> CambrianFormatter::LineWriter& {
+  qcore_assert(func == static_cast<std::ostream& (*)(std::ostream&)>(std::endl));
 
   m_file << m_line_buffer.str() << "\n";
   Reset();
@@ -49,14 +47,12 @@ auto CambrianFormatter::LineWriter::operator<<(
   return *this;
 }
 
-auto CambrianFormatter::LineWriter::operator<<(Operator op)
-    -> CambrianFormatter::LineWriter& {
+auto CambrianFormatter::LineWriter::operator<<(Operator op) -> CambrianFormatter::LineWriter& {
   m_line_buffer << op;
   return *this;
 }
 
-auto CambrianFormatter::LineWriter::operator<<(Vis v)
-    -> CambrianFormatter::LineWriter& {
+auto CambrianFormatter::LineWriter::operator<<(Vis v) -> CambrianFormatter::LineWriter& {
   switch (v) {
     case Vis::Sec: {
       m_line_buffer << "sec";

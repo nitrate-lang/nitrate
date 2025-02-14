@@ -61,10 +61,8 @@ auto no3::core::GetDebugMode() -> bool {
   return GLogConfig.m_show_debug;
 }
 
-void no3::core::MyLogSink::send(google::LogSeverity severity, const char*,
-                                const char* base_filename, int line,
-                                const struct tm* tm, const char* message_ptr,
-                                std::size_t message_len) {
+void no3::core::MyLogSink::send(google::LogSeverity severity, const char*, const char* base_filename, int line,
+                                const struct tm* tm, const char* message_ptr, std::size_t message_len) {
   static const std::unordered_map<google::LogSeverity, uint32_t> sev_colors = {
       {google::GLOG_INFO, ansi::FG_GREEN},
       {google::GLOG_WARNING, ansi::FG_YELLOW},
@@ -72,13 +70,12 @@ void no3::core::MyLogSink::send(google::LogSeverity severity, const char*,
       {google::GLOG_FATAL, ansi::FG_RED | ansi::BOLD},
   };
 
-  static const std::unordered_map<google::LogSeverity, std::string_view>
-      sev_prefix = {
-          {google::GLOG_INFO, "I: "},
-          {google::GLOG_WARNING, "W: "},
-          {google::GLOG_ERROR, "E: "},
-          {google::GLOG_FATAL, "F: "},
-      };
+  static const std::unordered_map<google::LogSeverity, std::string_view> sev_prefix = {
+      {google::GLOG_INFO, "I: "},
+      {google::GLOG_WARNING, "W: "},
+      {google::GLOG_ERROR, "E: "},
+      {google::GLOG_FATAL, "F: "},
+  };
 
   std::string_view message(message_ptr, message_len);
   bool color;
@@ -142,8 +139,7 @@ void no3::core::MyLogSink::send(google::LogSeverity severity, const char*,
   }
 }
 
-auto no3::core::MyLogSink::RedirectToStream(
-    std::unique_ptr<std::ostream> new_stream) -> std::unique_ptr<std::ostream> {
+auto no3::core::MyLogSink::RedirectToStream(std::unique_ptr<std::ostream> new_stream) -> std::unique_ptr<std::ostream> {
   std::lock_guard<std::mutex> lock(GLogMutex);
   std::unique_ptr<std::ostream> old_stream = std::move(m_out);
   m_out = std::move(new_stream);
