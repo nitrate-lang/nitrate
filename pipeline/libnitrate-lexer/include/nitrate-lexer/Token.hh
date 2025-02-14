@@ -57,16 +57,16 @@ namespace ncc::lex {
   };
 
   enum Punctor : uint8_t {
-    PuncLPar, /* Left parenthesis */
-    PuncRPar, /* Right parenthesis */
-    PuncLBrk, /* Left bracket */
-    PuncRBrk, /* Right bracket */
-    PuncLCur, /* Left curly brace */
-    PuncRCur, /* Right curly brace */
-    PuncComa, /* Comma */
-    PuncColn, /* Colon */
-    PuncSemi, /* Semicolon */
-    PuncScope /* Scope resolution */
+    PuncLPar,  /* '(':  Left parenthesis */
+    PuncRPar,  /* ')':  Right parenthesis */
+    PuncLBrk,  /* '[':  Left bracket */
+    PuncRBrk,  /* ']':  Right bracket */
+    PuncLCur,  /* '{':  Left curly brace */
+    PuncRCur,  /* '}':  Right curly brace */
+    PuncComa,  /* ',':  Comma */
+    PuncColn,  /* ':':  Colon */
+    PuncSemi,  /* ';':  Semicolon */
+    PuncScope, /* '::': Scope resolution */
   };
 
   enum Operator : uint8_t {

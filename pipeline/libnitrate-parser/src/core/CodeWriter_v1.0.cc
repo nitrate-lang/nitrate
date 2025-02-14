@@ -155,18 +155,7 @@ void CodeWriter_v1_0::PutKeyword(Keyword kw) {
 }
 
 void CodeWriter_v1_0::PutOperator(Operator op) {
-  /// TODO: Ensure this is correct
-
   switch (m_last) {
-    case Oper: {
-      if (IsWordOperator(m_ldata.m_op) && IsWordOperator(op)) {
-        m_os << ' ' << op;
-      } else {
-        m_os << op;
-      }
-      break;
-    }
-
     case KeyW:
     case Name:
     case Macr: {
@@ -178,9 +167,11 @@ void CodeWriter_v1_0::PutOperator(Operator op) {
       break;
     }
 
+    case Oper:
     case Punc:
     case IntL:
     case NumL: {
+      /// FIXME: Minimize redundant whitespace
       m_os << ' ' << op;
       break;
     }
@@ -200,15 +191,15 @@ void CodeWriter_v1_0::PutOperator(Operator op) {
 }
 
 void CodeWriter_v1_0::PutPunctor(Punctor punc) {
-  /// TODO: Ensure this is correct
-
   switch (m_last) {
     case Oper: {
+      /// FIXME: Minimize redundant whitespace
       m_os << ' ' << punc;
       break;
     }
 
     case Punc: {
+      /// FIXME: Minimize redundant whitespace
       m_os << ' ' << punc;
       break;
     }
@@ -233,8 +224,6 @@ void CodeWriter_v1_0::PutPunctor(Punctor punc) {
 }
 
 void CodeWriter_v1_0::PutIdentifier(std::string_view name) {
-  /// TODO: Ensure this is correct
-
   switch (m_last) {
     case Oper: {
       if (IsWordOperator(m_ldata.m_op)) {
@@ -252,10 +241,20 @@ void CodeWriter_v1_0::PutIdentifier(std::string_view name) {
       break;
     }
 
+    case NumL: {
+      /// FIXME: Minimize redundant whitespace
+      m_os << ' ' << name;
+      break;
+    }
+
+    case IntL: {
+      /// FIXME: Minimize redundant whitespace
+      m_os << ' ' << name;
+      break;
+    }
+
     case EofF:
     case Punc:
-    case IntL:
-    case NumL:
     case Text:
     case Char:
     case MacB:
@@ -270,8 +269,6 @@ void CodeWriter_v1_0::PutIdentifier(std::string_view name) {
 }
 
 void CodeWriter_v1_0::PutInteger(std::string_view num) {
-  /// TODO: Ensure this is correct
-
   switch (m_last) {
     case Oper: {
       if (IsWordOperator(m_ldata.m_op)) {
@@ -307,8 +304,6 @@ void CodeWriter_v1_0::PutInteger(std::string_view num) {
 }
 
 void CodeWriter_v1_0::PutFloat(std::string_view num) {
-  /// TODO: Ensure this is correct
-
   switch (m_last) {
     case Oper: {
       if (IsWordOperator(m_ldata.m_op)) {
@@ -344,10 +339,14 @@ void CodeWriter_v1_0::PutFloat(std::string_view num) {
 }
 
 void CodeWriter_v1_0::PutString(std::string_view str) {
-  /// TODO: Ensure this is correct
-
   switch (m_last) {
-    case Text:
+    case Text: {
+      /// FIXME: Minimize redundant whitespace
+      /// FIXME: Ensure adjacent strings are not concatenated?
+      m_os << ' ' << '"' << StringEscape(str) << '"';
+      break;
+    }
+
     case Char:
     case Oper:
     case KeyW:
@@ -369,11 +368,15 @@ void CodeWriter_v1_0::PutString(std::string_view str) {
 }
 
 void CodeWriter_v1_0::PutCharacter(std::string_view ch) {
-  /// TODO: Ensure this is correct
-
   switch (m_last) {
+    case Char: {
+      /// FIXME: Minimize redundant whitespace
+      /// FIXME: Ensure adjacent characters are not concatenated?
+      m_os << ' ' << '\'' << StringEscape(ch) << '\'';
+      break;
+    }
+
     case Text:
-    case Char:
     case Oper:
     case KeyW:
     case Name:
@@ -394,8 +397,6 @@ void CodeWriter_v1_0::PutCharacter(std::string_view ch) {
 }
 
 void CodeWriter_v1_0::PutMacroBlock(std::string_view macro) {
-  /// TODO: Ensure this is correct
-
   switch (m_last) {
     case Text:
     case Char:
@@ -419,8 +420,6 @@ void CodeWriter_v1_0::PutMacroBlock(std::string_view macro) {
 }
 
 void CodeWriter_v1_0::PutMacroCall(std::string_view macro) {
-  /// TODO: Ensure this is correct
-
   switch (m_last) {
     case Text:
     case Char:
@@ -444,8 +443,6 @@ void CodeWriter_v1_0::PutMacroCall(std::string_view macro) {
 }
 
 void CodeWriter_v1_0::PutComment(std::string_view note) {
-  /// TODO: Ensure this is correct
-
   switch (m_last) {
     case Text:
     case Char:
