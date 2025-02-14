@@ -64,7 +64,6 @@ namespace nitrate::parser::SyntaxTree {  // NOLINT
   class Sequence;
   class PostUnary;
   class LambdaExpr;
-  class TypeExpr;
   class TemplateCall;
   class RefTy;
   class U1;
@@ -144,7 +143,6 @@ namespace ncc::parse {
     SyntaxTree::Base *From(const FlowPtr<Base> &in);
     SyntaxTree::ExprStmt *From(const FlowPtr<ExprStmt> &in);
     SyntaxTree::LambdaExpr *From(const FlowPtr<LambdaExpr> &in);
-    SyntaxTree::TypeExpr *From(const FlowPtr<TypeExpr> &in);
     SyntaxTree::NamedTy *From(const FlowPtr<NamedTy> &in);
     SyntaxTree::InferTy *From(const FlowPtr<InferTy> &in);
     SyntaxTree::TemplateType *From(const FlowPtr<TemplateType> &in);
@@ -214,7 +212,6 @@ namespace ncc::parse {
     void Visit(FlowPtr<Base> n) override;
     void Visit(FlowPtr<ExprStmt> n) override;
     void Visit(FlowPtr<LambdaExpr> n) override;
-    void Visit(FlowPtr<TypeExpr> n) override;
     void Visit(FlowPtr<NamedTy> n) override;
     void Visit(FlowPtr<InferTy> n) override;
     void Visit(FlowPtr<TemplateType> n) override;

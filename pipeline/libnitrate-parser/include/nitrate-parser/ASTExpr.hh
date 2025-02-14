@@ -48,15 +48,6 @@ namespace ncc::parse {
     [[nodiscard]] constexpr auto GetFunc() const { return m_func; }
   };
 
-  class TypeExpr final : public Expr {
-    FlowPtr<Type> m_type;
-
-  public:
-    constexpr TypeExpr(auto type) : Expr(QAST_TEXPR), m_type(std::move(type)) {}
-
-    [[nodiscard]] constexpr auto GetType() const { return m_type; }
-  };
-
   class Unary final : public Expr {
     FlowPtr<Expr> m_rhs;
     lex::Operator m_op;

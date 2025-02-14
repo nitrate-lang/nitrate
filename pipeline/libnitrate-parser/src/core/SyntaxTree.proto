@@ -380,13 +380,6 @@ message LambdaExpr {
   required Stmt function = 4;
 }
 
-message TypeExpr {
-  optional SourceLocationRange location = 1;
-  repeated UserComment comments = 2;
-
-  required Type type = 4;
-}
-
 message Unary {
   optional SourceLocationRange location = 1;
   repeated UserComment comments = 2;
@@ -779,7 +772,6 @@ message Expr {
   oneof node {
     Base base = 1;
     LambdaExpr lambda_expr = 2;
-    TypeExpr type_expr = 3;
     Unary unary = 4;
     Binary binary = 5;
     PostUnary post_unary = 6;
@@ -800,6 +792,32 @@ message Expr {
     FString fstring = 21;
     Identifier identifier = 22;
     Sequence sequence = 23;
+
+    NamedTy named = 24;
+    InferTy infer = 25;
+    TemplateType template = 26;
+    U1 u1 = 27;
+    U8 u8 = 28;
+    U16 u16 = 29;
+    U32 u32 = 30;
+    U64 u64 = 31;
+    U128 u128 = 32;
+    I8 i8 = 33;
+    I16 i16 = 34;
+    I32 i32 = 35;
+    I64 i64 = 36;
+    I128 i128 = 37;
+    F16 f16 = 38;
+    F32 f32 = 39;
+    F64 f64 = 40;
+    F128 f128 = 41;
+    VoidTy void = 42;
+    PtrTy ptr = 43;
+    OpaqueTy opaque = 44;
+    TupleTy tuple = 45;
+    ArrayTy array = 46;
+    RefTy ref = 47;
+    FuncTy func = 48;
   }
 }
 
@@ -864,7 +882,6 @@ message Root {
   oneof node {
     Base base = 1;
     LambdaExpr lambda_expr = 2;
-    TypeExpr type_expr = 3;
     Unary unary = 4;
     Binary binary = 5;
     PostUnary post_unary = 6;

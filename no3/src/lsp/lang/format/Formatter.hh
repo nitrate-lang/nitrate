@@ -92,7 +92,6 @@ namespace no3::lsp::fmt {
     void Visit(FlowPtr<parse::Base> n) override;
     void Visit(FlowPtr<parse::ExprStmt> n) override;
     void Visit(FlowPtr<parse::LambdaExpr> n) override;
-    void Visit(FlowPtr<parse::TypeExpr> n) override;
     void Visit(FlowPtr<parse::NamedTy> n) override;
     void Visit(FlowPtr<parse::InferTy> n) override;
     void Visit(FlowPtr<parse::TemplateType> n) override;

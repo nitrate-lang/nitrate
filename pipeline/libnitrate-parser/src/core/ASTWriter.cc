@@ -424,13 +424,133 @@ SyntaxTree::Expr *AstWriter::From(const FlowPtr<Expr> &in) {
       break;
     }
 
-    case QAST_TEXPR: {
-      message->set_allocated_type_expr(From(in.As<TypeExpr>()));
+    case QAST_TEMPL_CALL: {
+      message->set_allocated_template_call(From(in.As<TemplateCall>()));
       break;
     }
 
-    case QAST_TEMPL_CALL: {
-      message->set_allocated_template_call(From(in.As<TemplateCall>()));
+    case QAST_U1: {
+      message->set_allocated_u1(From(in.As<U1>()));
+      break;
+    }
+
+    case QAST_U8: {
+      message->set_allocated_u8(From(in.As<U8>()));
+      break;
+    }
+
+    case QAST_U16: {
+      message->set_allocated_u16(From(in.As<U16>()));
+      break;
+    }
+
+    case QAST_U32: {
+      message->set_allocated_u32(From(in.As<U32>()));
+      break;
+    }
+
+    case QAST_U64: {
+      message->set_allocated_u64(From(in.As<U64>()));
+      break;
+    }
+
+    case QAST_U128: {
+      message->set_allocated_u128(From(in.As<U128>()));
+      break;
+    }
+
+    case QAST_I8: {
+      message->set_allocated_i8(From(in.As<I8>()));
+      break;
+    }
+
+    case QAST_I16: {
+      message->set_allocated_i16(From(in.As<I16>()));
+      break;
+    }
+
+    case QAST_I32: {
+      message->set_allocated_i32(From(in.As<I32>()));
+      break;
+    }
+
+    case QAST_I64: {
+      message->set_allocated_i64(From(in.As<I64>()));
+      break;
+    }
+
+    case QAST_I128: {
+      message->set_allocated_i128(From(in.As<I128>()));
+      break;
+    }
+
+    case QAST_F16: {
+      message->set_allocated_f16(From(in.As<F16>()));
+      break;
+    }
+
+    case QAST_F32: {
+      message->set_allocated_f32(From(in.As<F32>()));
+      break;
+    }
+
+    case QAST_F64: {
+      message->set_allocated_f64(From(in.As<F64>()));
+      break;
+    }
+
+    case QAST_F128: {
+      message->set_allocated_f128(From(in.As<F128>()));
+      break;
+    }
+
+    case QAST_VOID: {
+      message->set_allocated_void_(From(in.As<VoidTy>()));
+      break;
+    }
+
+    case QAST_INFER: {
+      message->set_allocated_infer(From(in.As<InferTy>()));
+      break;
+    }
+
+    case QAST_OPAQUE: {
+      message->set_allocated_opaque(From(in.As<OpaqueTy>()));
+      break;
+    }
+
+    case QAST_NAMED: {
+      message->set_allocated_named(From(in.As<NamedTy>()));
+      break;
+    }
+
+    case QAST_REF: {
+      message->set_allocated_ref(From(in.As<RefTy>()));
+      break;
+    }
+
+    case QAST_PTR: {
+      message->set_allocated_ptr(From(in.As<PtrTy>()));
+      break;
+    }
+
+    case QAST_ARRAY: {
+      message->set_allocated_array(From(in.As<ArrayTy>()));
+      break;
+    }
+
+    case QAST_TUPLE: {
+      message->set_allocated_tuple(From(in.As<TupleTy>()));
+      break;
+    }
+
+    case QAST_TEMPLATE: {
+      message->set_allocated_template_(From(in.As<TemplateType>()));
+      break;
+    }
+
+    case QAST_FUNCTOR: {
+      message->set_allocated_func(From(in.As<FuncTy>()));
       break;
     }
 
@@ -723,15 +843,6 @@ SyntaxTree::LambdaExpr *AstWriter::From(const FlowPtr<LambdaExpr> &in) {
 
   message->set_allocated_location(FromSource(in));
   message->set_allocated_function(From(in->GetFunc()));
-
-  return message;
-}
-
-SyntaxTree::TypeExpr *AstWriter::From(const FlowPtr<TypeExpr> &in) {
-  auto *message = Pool::CreateMessage<SyntaxTree::TypeExpr>(m_arena);
-
-  message->set_allocated_location(FromSource(in));
-  message->set_allocated_type(From(in->GetType()));
 
   return message;
 }
@@ -1768,7 +1879,6 @@ SyntaxTree::Export *AstWriter::From(const FlowPtr<Export> &in) {
 void AstWriter::Visit(FlowPtr<Base> n) { SEND(From(n), base); }
 void AstWriter::Visit(FlowPtr<ExprStmt> n) { SEND(From(n), expr); }
 void AstWriter::Visit(FlowPtr<LambdaExpr> n) { SEND(From(n), lambda_expr); }
-void AstWriter::Visit(FlowPtr<TypeExpr> n) { SEND(From(n), type_expr); }
 void AstWriter::Visit(FlowPtr<NamedTy> n) { SEND(From(n), named); }
 void AstWriter::Visit(FlowPtr<InferTy> n) { SEND(From(n), infer); }
 void AstWriter::Visit(FlowPtr<TemplateType> n) { SEND(From(n), template_); }

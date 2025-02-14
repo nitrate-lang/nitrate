@@ -79,13 +79,6 @@ void CambrianFormatter::Visit(FlowPtr<LambdaExpr> n) {
   n->GetFunc().Accept(*this);
 }
 
-void CambrianFormatter::Visit(FlowPtr<TypeExpr> n) {
-  PrintMultilineComments(n);
-
-  m_line << "type ";
-  n->GetType().Accept(*this);
-}
-
 void CambrianFormatter::Visit(FlowPtr<Unary> n) {
   static const std::unordered_set<Operator> word_ops = {OpAs,        OpBitcastAs, OpIn,     OpOut,     OpSizeof,
                                                         OpBitsizeof, OpAlignof,   OpTypeof, OpComptime};

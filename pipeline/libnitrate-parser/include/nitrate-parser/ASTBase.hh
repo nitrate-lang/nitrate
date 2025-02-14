@@ -171,8 +171,6 @@ namespace ncc::parse {
         return QAST_POST_UNEXPR;
       } else if constexpr (std::is_same_v<T, LambdaExpr>) {
         return QAST_LAMBDA;
-      } else if constexpr (std::is_same_v<T, TypeExpr>) {
-        return QAST_TEXPR;
       } else if constexpr (std::is_same_v<T, TemplateCall>) {
         return QAST_TEMPL_CALL;
       } else if constexpr (std::is_same_v<T, RefTy>) {
@@ -414,7 +412,6 @@ namespace ncc::parse {
       r[QAST_SEQ] = "Sequence";
       r[QAST_POST_UNEXPR] = "PostUnexpr";
       r[QAST_LAMBDA] = "LambdaExpr";
-      r[QAST_TEXPR] = "TypeExpr";
       r[QAST_TEMPL_CALL] = "TemplateCall";
       r[QAST_REF] = "Ref";
       r[QAST_U1] = "U1";
@@ -475,11 +472,16 @@ namespace ncc::parse {
     [[nodiscard]] constexpr auto IsExprStmt(npar_ty_t type) const -> bool;
   };
 
-  class Type : public Base {
+  class Expr : public Base {
+  public:
+    constexpr Expr(npar_ty_t ty) : Base(ty) {}
+  };
+
+  class Type : public Expr {
     NullableFlowPtr<Expr> m_range_begin, m_range_end, m_width;
 
   public:
-    constexpr Type(npar_ty_t ty) : Base(ty) {}
+    constexpr Type(npar_ty_t ty) : Expr(ty) {}
 
     [[nodiscard]] constexpr auto IsPrimitive() const -> bool {
       switch (GetKind()) {
@@ -527,16 +529,10 @@ namespace ncc::parse {
     [[nodiscard]] constexpr auto GetRangeEnd() const { return m_range_end; }
 
     constexpr void SetRangeBegin(NullableFlowPtr<Expr> start) { m_range_begin = std::move(start); }
-
     constexpr void SetRangeEnd(NullableFlowPtr<Expr> end) { m_range_end = std::move(end); }
-
     constexpr void SetWidth(NullableFlowPtr<Expr> width) { m_width = std::move(width); }
   };
 
-  class Expr : public Base {
-  public:
-    constexpr Expr(npar_ty_t ty) : Base(ty) {}
-  };
 }  // namespace ncc::parse
 
 #endif

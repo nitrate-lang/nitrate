@@ -468,9 +468,23 @@ void CodeWriter_v1_0::PutComment(std::string_view note) {
 ///=============================================================================
 
 void CodeWriter_v1_0::PutTypeStuff(const FlowPtr<Type>& n) {
-  /// TODO: Implement code writer
-  qcore_implement();
-  (void)n;
+  if (n->GetRangeBegin() || n->GetRangeEnd()) {
+    PutPunctor(PuncColn);
+    PutPunctor(PuncLBrk);
+    if (n->GetRangeBegin()) {
+      n->GetRangeBegin().value()->Accept(*this);
+    }
+    PutPunctor(PuncColn);
+    if (n->GetRangeEnd()) {
+      n->GetRangeEnd().value()->Accept(*this);
+    }
+    PutPunctor(PuncRBrk);
+  }
+
+  if (n->GetWidth()) {
+    PutPunctor(PuncColn);
+    n->GetWidth().value()->Accept(*this);
+  }
 }
 
 void CodeWriter_v1_0::Visit(FlowPtr<Base>) {}
@@ -481,12 +495,6 @@ void CodeWriter_v1_0::Visit(FlowPtr<ExprStmt> n) {
 }
 
 void CodeWriter_v1_0::Visit(FlowPtr<LambdaExpr> n) { n->GetFunc()->Accept(*this); }
-
-void CodeWriter_v1_0::Visit(FlowPtr<TypeExpr> n) {
-  PutPunctor(PuncLPar);
-  n->GetType()->Accept(*this);
-  PutPunctor(PuncRPar);
-}
 
 void CodeWriter_v1_0::Visit(FlowPtr<NamedTy> n) {
   PutIdentifier(n->GetName());
@@ -730,11 +738,7 @@ void CodeWriter_v1_0::Visit(FlowPtr<FString> n) {
   (void)n;
 }
 
-void CodeWriter_v1_0::Visit(FlowPtr<Identifier> n) {
-  /// TODO: Implement code writer
-  qcore_implement();
-  (void)n;
-}
+void CodeWriter_v1_0::Visit(FlowPtr<Identifier> n) { PutIdentifier(n->GetName()); }
 
 void CodeWriter_v1_0::Visit(FlowPtr<Sequence> n) {
   /// TODO: Implement code writer

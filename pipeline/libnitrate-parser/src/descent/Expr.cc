@@ -75,9 +75,7 @@ auto Parser::PImpl::RecurseCallArguments(const std::set<lex::Token> &terminators
 
     if (type_by_default) {
       auto argument_value = RecurseType();
-      auto type_expr = CreateNode<TypeExpr>(argument_value)();
-
-      call_args.emplace_back(argument_name, type_expr);
+      call_args.emplace_back(argument_name, argument_value);
     } else {
       std::set<Token> terminators_copy(terminators);
       terminators_copy.insert(Token(Punc, PuncComa));
@@ -407,7 +405,7 @@ auto Parser::PImpl::RecurseExprKeyword(lex::Keyword key) -> NullableFlowPtr<Expr
       auto type = RecurseType();
       type->SetOffset(start_pos);
 
-      e = CreateNode<TypeExpr>(type)();
+      e = type;
       break;
     }
 
@@ -633,10 +631,7 @@ auto Parser::PImpl::RecurseExprTypeSuffix(FlowPtr<Expr> base) -> FlowPtr<Expr> {
   auto suffix = RecurseType();
   suffix->SetOffset(tok.GetStart());
 
-  auto texpr = CreateNode<TypeExpr>(suffix)();
-  texpr->SetOffset(tok.GetStart());
-
-  return CreateNode<Binary>(base, OpAs, texpr)();
+  return CreateNode<Binary>(base, OpAs, suffix)();
 }
 
 auto Parser::PImpl::RecurseExprPrimary(bool is_type) -> NullableFlowPtr<Expr> {
@@ -651,10 +646,7 @@ auto Parser::PImpl::RecurseExprPrimary(bool is_type) -> NullableFlowPtr<Expr> {
     auto type = RecurseType();
     type->SetOffset(start_pos);
 
-    auto texpr = CreateNode<TypeExpr>(type)();
-    texpr->SetOffset(start_pos);
-
-    e = BindComments(texpr, comments);
+    e = BindComments(type, comments);
   } else {
     auto tok = peek();
 

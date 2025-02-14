@@ -129,7 +129,7 @@ auto Parser::PImpl::RecurseTypeSuffix(FlowPtr<Type> base) -> FlowPtr<parse::Type
   base->SetWidth(width);
 
   if (NextIf(OpTernary)) {
-    auto args = CallArgs{{"0", CreateNode<TypeExpr>(base)()}};
+    auto args = CallArgs{{"0", base}};
     auto opt_type = CreateNode<TemplateType>(CreateNode<NamedTy>("__builtin_result")(), args)();
 
     opt_type->SetOffset(current().GetStart());
@@ -266,7 +266,7 @@ auto Parser::PImpl::RecurseArrayOrVector() -> FlowPtr<parse::Type> {
   auto first = RecurseType();
 
   if (NextIf(PuncRBrk)) {
-    auto args = CallArgs{{"0", CreateNode<TypeExpr>(first)()}};
+    auto args = CallArgs{{"0", first}};
     auto vector = CreateNode<TemplateType>(CreateNode<NamedTy>("__builtin_vec")(), args)();
 
     vector->SetOffset(start);
@@ -301,7 +301,7 @@ auto Parser::PImpl::RecurseSetType() -> FlowPtr<parse::Type> {
     Log << SyntaxError << current() << "Expected '}' after set type";
   }
 
-  auto args = CallArgs{{"0", CreateNode<TypeExpr>(set_type)()}};
+  auto args = CallArgs{{"0", set_type}};
   auto set = CreateNode<TemplateType>(CreateNode<NamedTy>("__builtin_uset")(), args)();
 
   set->SetOffset(start);

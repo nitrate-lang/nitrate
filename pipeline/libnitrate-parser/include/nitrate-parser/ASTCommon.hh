@@ -62,14 +62,13 @@ namespace ncc::parse {
     QAST_CALL = 12,       /* Function call */
     QAST_LIST = 13,       /* List expression */
     QAST_ASSOC = 14,      /* Associative pair */
-    QAST_INDEX = 16,      /* Index access */
-    QAST_SLICE = 17,      /* Slice access */
-    QAST_FSTRING = 18,    /* Formatted string */
-    QAST_IDENT = 19,      /* Identifier */
-    QAST_SEQ = 20,        /* Sequence point */
-    QAST_LAMBDA = 21,     /* Lambda expression */
-    QAST_TEXPR = 22,      /* Type expression */
-    QAST_TEMPL_CALL = 23, /* Template call */
+    QAST_INDEX = 15,      /* Index access */
+    QAST_SLICE = 16,      /* Slice access */
+    QAST_FSTRING = 17,    /* Formatted string */
+    QAST_IDENT = 18,      /* Identifier */
+    QAST_SEQ = 19,        /* Sequence point */
+    QAST_LAMBDA = 20,     /* Lambda expression */
+    QAST_TEMPL_CALL = 21, /* Template call */
 
     QAST__EXPR_FIRST = QAST_BINEXPR,
     QAST__EXPR_LAST = QAST_TEMPL_CALL,
@@ -177,7 +176,6 @@ namespace ncc::parse {
   class Expr;
   class ExprStmt;
   class LambdaExpr;
-  class TypeExpr;
   class NamedTy;
   class InferTy;
   class TemplateType;

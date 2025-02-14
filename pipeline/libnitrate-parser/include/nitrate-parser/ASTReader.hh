@@ -66,7 +66,6 @@ namespace ncc::parse {
     auto Unmarshal(const SyntaxTree::Base &in) -> Result<Base>;
     auto Unmarshal(const SyntaxTree::ExprStmt &in) -> Result<ExprStmt>;
     auto Unmarshal(const SyntaxTree::LambdaExpr &in) -> Result<LambdaExpr>;
-    auto Unmarshal(const SyntaxTree::TypeExpr &in) -> Result<TypeExpr>;
     auto Unmarshal(const SyntaxTree::NamedTy &in) -> Result<NamedTy>;
     auto Unmarshal(const SyntaxTree::InferTy &in) -> Result<InferTy>;
     auto Unmarshal(const SyntaxTree::TemplateType &in) -> Result<TemplateType>;

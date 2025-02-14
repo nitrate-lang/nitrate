@@ -444,10 +444,6 @@ auto AstReader::Unmarshal(const SyntaxTree::Root &in) -> Result<Base> {
       return Unmarshal(in.lambda_expr());
     }
 
-    case SyntaxTree::Root::kTypeExpr: {
-      return Unmarshal(in.type_expr());
-    }
-
     case SyntaxTree::Root::kUnary: {
       return Unmarshal(in.unary());
     }
@@ -724,10 +720,6 @@ auto AstReader::Unmarshal(const SyntaxTree::Expr &in) -> Result<Expr> {
       return Unmarshal(in.lambda_expr());
     }
 
-    case SyntaxTree::Expr::kTypeExpr: {
-      return Unmarshal(in.type_expr());
-    }
-
     case SyntaxTree::Expr::kUnary: {
       return Unmarshal(in.unary());
     }
@@ -806,6 +798,106 @@ auto AstReader::Unmarshal(const SyntaxTree::Expr &in) -> Result<Expr> {
 
     case SyntaxTree::Expr::kSequence: {
       return Unmarshal(in.sequence());
+    }
+
+    case SyntaxTree::Expr::kNamed: {
+      return Unmarshal(in.named());
+    }
+
+    case SyntaxTree::Expr::kInfer: {
+      return Unmarshal(in.infer());
+    }
+
+    case SyntaxTree::Expr::kTemplate: {
+      return Unmarshal(in.template_());
+    }
+
+    case SyntaxTree::Expr::kU1: {
+      return Unmarshal(in.u1());
+    }
+
+    case SyntaxTree::Expr::kU8: {
+      return Unmarshal(in.u8());
+    }
+
+    case SyntaxTree::Expr::kU16: {
+      return Unmarshal(in.u16());
+    }
+
+    case SyntaxTree::Expr::kU32: {
+      return Unmarshal(in.u32());
+    }
+
+    case SyntaxTree::Expr::kU64: {
+      return Unmarshal(in.u64());
+    }
+
+    case SyntaxTree::Expr::kU128: {
+      return Unmarshal(in.u128());
+    }
+
+    case SyntaxTree::Expr::kI8: {
+      return Unmarshal(in.i8());
+    }
+
+    case SyntaxTree::Expr::kI16: {
+      return Unmarshal(in.i16());
+    }
+
+    case SyntaxTree::Expr::kI32: {
+      return Unmarshal(in.i32());
+    }
+
+    case SyntaxTree::Expr::kI64: {
+      return Unmarshal(in.i64());
+    }
+
+    case SyntaxTree::Expr::kI128: {
+      return Unmarshal(in.i128());
+    }
+
+    case SyntaxTree::Expr::kF16: {
+      return Unmarshal(in.f16());
+    }
+
+    case SyntaxTree::Expr::kF32: {
+      return Unmarshal(in.f32());
+    }
+
+    case SyntaxTree::Expr::kF64: {
+      return Unmarshal(in.f64());
+    }
+
+    case SyntaxTree::Expr::kF128: {
+      return Unmarshal(in.f128());
+    }
+
+    case SyntaxTree::Expr::kVoid: {
+      return Unmarshal(in.void_());
+    }
+
+    case SyntaxTree::Expr::kPtr: {
+      return Unmarshal(in.ptr());
+    }
+
+    case SyntaxTree::Expr::kOpaque: {
+      return Unmarshal(in.opaque());
+    }
+
+    case SyntaxTree::Expr::kTuple: {
+      return Unmarshal(in.tuple());
+    }
+
+    case SyntaxTree::Expr::kArray: {
+      return Unmarshal(in.array());
+    }
+
+    case SyntaxTree::Expr::kRef: {
+      return Unmarshal(in.ref());
+    }
+
+    case SyntaxTree::Expr::kFunc: {
+      return Unmarshal(in.func());
     }
 
     case SyntaxTree::Expr::NODE_NOT_SET: {
@@ -1047,19 +1139,6 @@ auto AstReader::Unmarshal(const SyntaxTree::LambdaExpr &in) -> Result<LambdaExpr
   }
 
   auto object = CreateNode<LambdaExpr>(func.value())();
-  UnmarshalLocationLocation(in.location(), object);
-  UnmarshalCodeComment(in.comments(), object);
-
-  return object;
-}
-
-auto AstReader::Unmarshal(const SyntaxTree::TypeExpr &in) -> Result<TypeExpr> {
-  auto type = Unmarshal(in.type());
-  if (!type.has_value()) [[unlikely]] {
-    return std::nullopt;
-  }
-
-  auto object = CreateNode<TypeExpr>(type.value())();
   UnmarshalLocationLocation(in.location(), object);
   UnmarshalCodeComment(in.comments(), object);
 

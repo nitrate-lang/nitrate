@@ -118,11 +118,7 @@ void CambrianFormatter::Visit(FlowPtr<TemplateCall> n) {
           m_line << name << ": ";
         }
 
-        if (value->Is(QAST_TEXPR)) {
-          value->template As<TypeExpr>()->GetType().Accept(*this);
-        } else {
-          value.Accept(*this);
-        }
+        value.Accept(*this);
       },
       [&](let) { m_line << ", "; });
   m_line << "}";
