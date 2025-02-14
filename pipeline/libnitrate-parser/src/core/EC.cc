@@ -164,7 +164,13 @@ NCC_EXPORT auto ncc::parse::ec::Formatter(std::string_view msg, Sev sev) -> std:
   }
 
   std::stringstream ss;
-  ss << "\x1b[0m\x1b[37;1m[\x1b[0m\x1b[31;1mParse\x1b[0m\x1b[37;1m]: " << sev << ":\x1b[0m " << msg;
+  ss << "\x1b[0m\x1b[37;1m[\x1b[0m\x1b[31;1mParse\x1b[0m\x1b[37;1m]: " << sev << ":\x1b[0m ";
+
+  if (auto result = FindAndDecodeToken(msg)) {
+    ss << result.value().second;
+  } else {
+    ss << msg;
+  }
 
   return ss.str();
 }
