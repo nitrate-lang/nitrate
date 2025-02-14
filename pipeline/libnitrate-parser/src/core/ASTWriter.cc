@@ -419,8 +419,8 @@ SyntaxTree::Expr *AstWriter::From(const FlowPtr<Expr> &in) {
       break;
     }
 
-    case QAST_SEXPR: {
-      message->set_allocated_stmt_expr(From(in.As<StmtExpr>()));
+    case QAST_LAMBDA: {
+      message->set_allocated_lambda_expr(From(in.As<LambdaExpr>()));
       break;
     }
 
@@ -718,11 +718,11 @@ SyntaxTree::ExprStmt *AstWriter::From(const FlowPtr<ExprStmt> &in) {
   return message;
 }
 
-SyntaxTree::StmtExpr *AstWriter::From(const FlowPtr<StmtExpr> &in) {
-  auto *message = Pool::CreateMessage<SyntaxTree::StmtExpr>(m_arena);
+SyntaxTree::LambdaExpr *AstWriter::From(const FlowPtr<LambdaExpr> &in) {
+  auto *message = Pool::CreateMessage<SyntaxTree::LambdaExpr>(m_arena);
 
   message->set_allocated_location(FromSource(in));
-  message->set_allocated_statement(From(in->GetStmt()));
+  message->set_allocated_function(From(in->GetFunc()));
 
   return message;
 }
@@ -1767,7 +1767,7 @@ SyntaxTree::Export *AstWriter::From(const FlowPtr<Export> &in) {
 
 void AstWriter::Visit(FlowPtr<Base> n) { SEND(From(n), base); }
 void AstWriter::Visit(FlowPtr<ExprStmt> n) { SEND(From(n), expr); }
-void AstWriter::Visit(FlowPtr<StmtExpr> n) { SEND(From(n), stmt_expr); }
+void AstWriter::Visit(FlowPtr<LambdaExpr> n) { SEND(From(n), lambda_expr); }
 void AstWriter::Visit(FlowPtr<TypeExpr> n) { SEND(From(n), type_expr); }
 void AstWriter::Visit(FlowPtr<NamedTy> n) { SEND(From(n), named); }
 void AstWriter::Visit(FlowPtr<InferTy> n) { SEND(From(n), infer); }

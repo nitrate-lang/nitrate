@@ -373,11 +373,11 @@ enum Operator {
   Op_Question = 55;    /* '?':          Question operator */
 }
 
-message StmtExpr {
+message LambdaExpr {
   optional SourceLocationRange location = 1;
   repeated UserComment comments = 2;
 
-  required Stmt statement = 4;
+  required Stmt function = 4;
 }
 
 message TypeExpr {
@@ -778,7 +778,7 @@ message Struct {
 message Expr {
   oneof node {
     Base base = 1;
-    StmtExpr stmt_expr = 2;
+    LambdaExpr lambda_expr = 2;
     TypeExpr type_expr = 3;
     Unary unary = 4;
     Binary binary = 5;
@@ -863,7 +863,7 @@ message Type {
 message Root {
   oneof node {
     Base base = 1;
-    StmtExpr stmt_expr = 2;
+    LambdaExpr lambda_expr = 2;
     TypeExpr type_expr = 3;
     Unary unary = 4;
     Binary binary = 5;

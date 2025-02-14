@@ -67,7 +67,7 @@ namespace ncc::parse {
     QAST_FSTRING = 18,    /* Formatted string */
     QAST_IDENT = 19,      /* Identifier */
     QAST_SEQ = 20,        /* Sequence point */
-    QAST_SEXPR = 21,      /* Statement expression */
+    QAST_LAMBDA = 21,     /* Lambda expression */
     QAST_TEXPR = 22,      /* Type expression */
     QAST_TEMPL_CALL = 23, /* Template call */
 
@@ -176,7 +176,7 @@ namespace ncc::parse {
   class Type;
   class Expr;
   class ExprStmt;
-  class StmtExpr;
+  class LambdaExpr;
   class TypeExpr;
   class NamedTy;
   class InferTy;

@@ -421,7 +421,7 @@ auto Parser::PImpl::RecurseExprKeyword(lex::Keyword key) -> NullableFlowPtr<Expr
       auto function = RecurseFunction(false);
       function->SetOffset(start_pos);
 
-      FlowPtr<Expr> expr = CreateNode<StmtExpr>(function)();
+      auto expr = CreateNode<LambdaExpr>(function)();
 
       if (NextIf(PuncLPar)) {
         auto args = RecurseCallArguments({Token(Punc, PuncRPar)}, false);

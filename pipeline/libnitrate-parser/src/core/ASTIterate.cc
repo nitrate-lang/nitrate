@@ -76,7 +76,7 @@ class IterVisitor : public ASTVisitor {
 
   void Visit(FlowPtr<Base>) override {}
   void Visit(FlowPtr<ExprStmt> n) override { Add(n->GetExpr()); }
-  void Visit(FlowPtr<StmtExpr> n) override { Add(n->GetStmt()); }
+  void Visit(FlowPtr<LambdaExpr> n) override { Add(n->GetFunc()); }
   void Visit(FlowPtr<TypeExpr> n) override { Add(n->GetType()); }
   void Visit(FlowPtr<NamedTy> n) override { AddTypesuffix(n); }
   void Visit(FlowPtr<InferTy> n) override { AddTypesuffix(n); }

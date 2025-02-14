@@ -45,7 +45,7 @@ namespace ncc::parse {
 
     virtual void Visit(FlowPtr<Base> n) = 0;
     virtual void Visit(FlowPtr<ExprStmt> n) = 0;
-    virtual void Visit(FlowPtr<StmtExpr> n) = 0;
+    virtual void Visit(FlowPtr<LambdaExpr> n) = 0;
     virtual void Visit(FlowPtr<TypeExpr> n) = 0;
     virtual void Visit(FlowPtr<NamedTy> n) = 0;
     virtual void Visit(FlowPtr<InferTy> n) = 0;
@@ -195,8 +195,8 @@ namespace ncc::parse {
           Visit(n.template As<PostUnary>());
           break;
         }
-        case QAST_SEXPR: {
-          Visit(n.template As<StmtExpr>());
+        case QAST_LAMBDA: {
+          Visit(n.template As<LambdaExpr>());
           break;
         }
         case QAST_TEXPR: {

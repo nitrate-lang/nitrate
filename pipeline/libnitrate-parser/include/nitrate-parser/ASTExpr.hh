@@ -39,13 +39,13 @@
 #include <span>
 
 namespace ncc::parse {
-  class StmtExpr final : public Expr {
-    FlowPtr<Stmt> m_stmt;
+  class LambdaExpr final : public Expr {
+    FlowPtr<Stmt> m_func;
 
   public:
-    constexpr StmtExpr(auto stmt) : Expr(QAST_SEXPR), m_stmt(std::move(stmt)) {}
+    constexpr LambdaExpr(auto func) : Expr(QAST_LAMBDA), m_func(std::move(func)) {}
 
-    [[nodiscard]] constexpr auto GetStmt() const { return m_stmt; }
+    [[nodiscard]] constexpr auto GetFunc() const { return m_func; }
   };
 
   class TypeExpr final : public Expr {
@@ -250,10 +250,6 @@ namespace ncc::parse {
 
     [[nodiscard]] constexpr auto GetItems() const { return m_items; }
   };
-
-  constexpr auto Expr::IsStmtExpr(npar_ty_t type) const -> bool {
-    return Is(QAST_SEXPR) && As<StmtExpr>()->GetStmt()->Is(type);
-  }
 }  // namespace ncc::parse
 
 #endif

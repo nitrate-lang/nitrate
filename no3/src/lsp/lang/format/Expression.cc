@@ -73,10 +73,10 @@ void CambrianFormatter::Visit(FlowPtr<ExprStmt> n) {
   m_line << ";";
 }
 
-void CambrianFormatter::Visit(FlowPtr<StmtExpr> n) {
+void CambrianFormatter::Visit(FlowPtr<LambdaExpr> n) {
   PrintMultilineComments(n);
 
-  n->GetStmt().Accept(*this);
+  n->GetFunc().Accept(*this);
 }
 
 void CambrianFormatter::Visit(FlowPtr<TypeExpr> n) {

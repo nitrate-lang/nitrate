@@ -440,8 +440,8 @@ auto AstReader::Unmarshal(const SyntaxTree::Root &in) -> Result<Base> {
       return Unmarshal(in.base());
     }
 
-    case SyntaxTree::Root::kStmtExpr: {
-      return Unmarshal(in.stmt_expr());
+    case SyntaxTree::Root::kLambdaExpr: {
+      return Unmarshal(in.lambda_expr());
     }
 
     case SyntaxTree::Root::kTypeExpr: {
@@ -720,8 +720,8 @@ auto AstReader::Unmarshal(const SyntaxTree::Expr &in) -> Result<Expr> {
       return CreateNode<Expr>(QAST_BASE)();
     }
 
-    case SyntaxTree::Expr::kStmtExpr: {
-      return Unmarshal(in.stmt_expr());
+    case SyntaxTree::Expr::kLambdaExpr: {
+      return Unmarshal(in.lambda_expr());
     }
 
     case SyntaxTree::Expr::kTypeExpr: {
@@ -1040,13 +1040,13 @@ auto AstReader::Unmarshal(const SyntaxTree::ExprStmt &in) -> Result<ExprStmt> {
   return object;
 }
 
-auto AstReader::Unmarshal(const SyntaxTree::StmtExpr &in) -> Result<StmtExpr> {
-  auto statement = Unmarshal(in.statement());
-  if (!statement.has_value()) [[unlikely]] {
+auto AstReader::Unmarshal(const SyntaxTree::LambdaExpr &in) -> Result<LambdaExpr> {
+  auto func = Unmarshal(in.function());
+  if (!func.has_value()) [[unlikely]] {
     return std::nullopt;
   }
 
-  auto object = CreateNode<StmtExpr>(statement.value())();
+  auto object = CreateNode<LambdaExpr>(func.value())();
   UnmarshalLocationLocation(in.location(), object);
   UnmarshalCodeComment(in.comments(), object);
 

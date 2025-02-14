@@ -169,8 +169,8 @@ namespace ncc::parse {
         return QAST_SEQ;
       } else if constexpr (std::is_same_v<T, PostUnary>) {
         return QAST_POST_UNEXPR;
-      } else if constexpr (std::is_same_v<T, StmtExpr>) {
-        return QAST_SEXPR;
+      } else if constexpr (std::is_same_v<T, LambdaExpr>) {
+        return QAST_LAMBDA;
       } else if constexpr (std::is_same_v<T, TypeExpr>) {
         return QAST_TEXPR;
       } else if constexpr (std::is_same_v<T, TemplateCall>) {
@@ -413,7 +413,7 @@ namespace ncc::parse {
       r[QAST_IDENT] = "Ident";
       r[QAST_SEQ] = "Sequence";
       r[QAST_POST_UNEXPR] = "PostUnexpr";
-      r[QAST_SEXPR] = "StmtExpr";
+      r[QAST_LAMBDA] = "LambdaExpr";
       r[QAST_TEXPR] = "TypeExpr";
       r[QAST_TEMPL_CALL] = "TemplateCall";
       r[QAST_REF] = "Ref";
@@ -536,8 +536,6 @@ namespace ncc::parse {
   class Expr : public Base {
   public:
     constexpr Expr(npar_ty_t ty) : Base(ty) {}
-
-    [[nodiscard]] constexpr auto IsStmtExpr(npar_ty_t type) const -> bool;
   };
 }  // namespace ncc::parse
 

@@ -48,10 +48,8 @@ void CambrianFormatter::Visit(FlowPtr<List> n) {
   }
 
   auto argc = n->GetItems().size();
-  bool is_compressing =
-      argc >= wrap_threshold &&
-      std::all_of(n->GetItems().begin(), n->GetItems().end(),
-                  [&](auto x) { return x->IsEq(n->GetItems().front()); });
+  bool is_compressing = argc >= wrap_threshold && std::all_of(n->GetItems().begin(), n->GetItems().end(),
+                                                              [&](auto x) { return x->IsEq(n->GetItems().front()); });
 
   if (is_compressing) {
     m_line << "[";
@@ -59,24 +57,19 @@ void CambrianFormatter::Visit(FlowPtr<List> n) {
     m_line << "; " << argc << "]";
   } else {
     static const std::unordered_set<npar_ty_t> extra_seperation = {
-        QAST_TEREXPR, QAST_CALL, QAST_LIST,
-        QAST_ASSOC,   QAST_SEQ,  QAST_TEMPL_CALL,
+        QAST_TEREXPR, QAST_CALL, QAST_LIST, QAST_ASSOC, QAST_SEQ, QAST_TEMPL_CALL,
     };
 
-    bool special_case =
-        std::any_of(n->GetItems().begin(), n->GetItems().end(), [&](auto x) {
-          return extra_seperation.contains(x->GetKind()) ||
-                 x->IsStmtExpr(QAST_FUNCTION);
-        });
+    bool special_case = std::any_of(n->GetItems().begin(), n->GetItems().end(), [&](auto x) {
+      return extra_seperation.contains(x->GetKind()) || x->Is(QAST_LAMBDA);
+    });
 
     size_t break_at{};
 
     if (special_case) {
       break_at = 1;
     } else {
-      break_at = argc <= wrap_threshold
-                     ? wrap_threshold
-                     : static_cast<size_t>(std::ceil(std::sqrt(argc)));
+      break_at = argc <= wrap_threshold ? wrap_threshold : static_cast<size_t>(std::ceil(std::sqrt(argc)));
     }
 
     if (break_at == 1) {
@@ -109,12 +102,10 @@ void CambrianFormatter::Visit(FlowPtr<List> n) {
       m_line << "[";
 
       bool is_assoc_map =
-          std::all_of(n->GetItems().begin(), n->GetItems().end(),
-                      [](auto x) { return x->Is(QAST_ASSOC); });
+          std::all_of(n->GetItems().begin(), n->GetItems().end(), [](auto x) { return x->Is(QAST_ASSOC); });
 
       { /* Write list items */
-        size_t the_indent =
-            is_assoc_map ? m_indent + m_tabSize : m_line.Length();
+        size_t the_indent = is_assoc_map ? m_indent + m_tabSize : m_line.Length();
         std::swap(m_indent, the_indent);
 
         for (size_t i = 0; i < n->GetItems().size(); i++) {
@@ -146,60 +137,56 @@ void CambrianFormatter::Visit(FlowPtr<List> n) {
 void CambrianFormatter::Visit(FlowPtr<Assoc> node) {
   PrintMultilineComments(node);
 
-  const std::function<void(FlowPtr<Assoc>, bool)> format =
-      [&](const FlowPtr<Assoc>& n, bool use_braces) {
-        bool is_value_map = false;
-        if (n->GetValue()->Is(QAST_LIST)) {
-          auto* list = n->GetValue()->As<List>();
-          is_value_map =
-              list->GetItems().empty() ||
-              std::all_of(list->GetItems().begin(), list->GetItems().end(),
-                          [](auto x) { return x->Is(QAST_ASSOC); });
-        }
+  const std::function<void(FlowPtr<Assoc>, bool)> format = [&](const FlowPtr<Assoc>& n, bool use_braces) {
+    bool is_value_map = false;
+    if (n->GetValue()->Is(QAST_LIST)) {
+      auto* list = n->GetValue()->As<List>();
+      is_value_map = list->GetItems().empty() || std::all_of(list->GetItems().begin(), list->GetItems().end(),
+                                                             [](auto x) { return x->Is(QAST_ASSOC); });
+    }
 
-        if (use_braces) {
-          m_line << "{" << std::endl;
-          m_indent += m_tabSize;
+    if (use_braces) {
+      m_line << "{" << std::endl;
+      m_indent += m_tabSize;
+      m_line << GetIndent();
+    }
+
+    n->GetKey().Accept(*this);
+    m_line << ": ";
+
+    if (is_value_map) {
+      auto* list = n->GetValue()->As<List>();
+
+      if (list->GetItems().empty()) {
+        m_line << "{}";
+      } else {
+        m_line << "{" << std::endl;
+        m_indent += m_tabSize;
+
+        for (auto it = list->GetItems().begin(); it != list->GetItems().end(); ++it) {
           m_line << GetIndent();
-        }
 
-        n->GetKey().Accept(*this);
-        m_line << ": ";
+          format(it->As<Assoc>(), false);
 
-        if (is_value_map) {
-          auto* list = n->GetValue()->As<List>();
-
-          if (list->GetItems().empty()) {
-            m_line << "{}";
-          } else {
-            m_line << "{" << std::endl;
-            m_indent += m_tabSize;
-
-            for (auto it = list->GetItems().begin();
-                 it != list->GetItems().end(); ++it) {
-              m_line << GetIndent();
-
-              format(it->As<Assoc>(), false);
-
-              if (it != list->GetItems().end() - 1) {
-                m_line << ",";
-              }
-
-              m_line << std::endl;
-            }
-
-            m_indent -= m_tabSize;
-            m_line << GetIndent() << "}";
+          if (it != list->GetItems().end() - 1) {
+            m_line << ",";
           }
-        } else {
-          n->GetValue().Accept(*this);
+
+          m_line << std::endl;
         }
 
-        if (use_braces) {
-          m_indent -= m_tabSize;
-          m_line << std::endl << GetIndent() << "}";
-        }
-      };
+        m_indent -= m_tabSize;
+        m_line << GetIndent() << "}";
+      }
+    } else {
+      n->GetValue().Accept(*this);
+    }
+
+    if (use_braces) {
+      m_indent -= m_tabSize;
+      m_line << std::endl << GetIndent() << "}";
+    }
+  };
 
   format(node, true);
 }
