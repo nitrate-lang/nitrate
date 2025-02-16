@@ -10,5 +10,10 @@
   "coverage-gutters.remotePathResolve": [
     "/app",
     "/home/wesjo/Documents/Projects/nitrate"
-  ]
+  ],
+  "files.exclude": {
+    "build": true,
+    "coverage": true,
+    "default.profraw": true
+  }
 }
