@@ -45,7 +45,8 @@ NCC_EXPORT ncc::LibraryRC<LexerLibrarySetup> ncc::lex::LexerLibrary;
 NCC_EXPORT auto LexerLibrarySetup::Init() -> bool {
   Log << Runtime << Debug << "libnitrate-lexer initializing...";
 
-  if (!ncc::CoreLibrary.InitRC()) {
+  if (!ncc::CoreLibrary.InitRC()) [[unlikely]] {
+    Log << Runtime << Error << "libnitrate-lexer failed init: libnitrate-core failed to initialize";
     return false;
   }
 
@@ -66,8 +67,8 @@ NCC_EXPORT auto LexerLibrarySetup::GetVersionId() -> std::string_view { return _
 
 std::string ncc::lex::Formatter(std::string_view msg, Sev sev) {
   if (sev <= ncc::Debug) {
-    return "\x1b[0m\x1b[37;1m[\x1b[0m\x1b[34;1mLexer\x1b[0m\x1b[37;1m]: debug:\x1b[0m " + std::string(msg);
+    return "\x1b[37;1m[\x1b[0m\x1b[34;1mLexer\x1b[0m\x1b[37;1m]: debug:\x1b[0m " + std::string(msg);
   }
 
-  return "\x1b[0m\x1b[37;1m[\x1b[0m\x1b[34;1mLexer\x1b[0m\x1b[37;1m]:\x1b[0m " + std::string(msg);
+  return "\x1b[37;1m[\x1b[0m\x1b[34;1mLexer\x1b[0m\x1b[37;1m]:\x1b[0m " + std::string(msg);
 }

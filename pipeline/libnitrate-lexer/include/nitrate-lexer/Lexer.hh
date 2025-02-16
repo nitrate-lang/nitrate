@@ -49,6 +49,7 @@ namespace ncc::lex {
 
   public:
     Tokenizer(std::istream &source_file, std::shared_ptr<Environment> env);
+    Tokenizer(Tokenizer &&) noexcept;
     ~Tokenizer() override;
 
     auto GetSourceWindow(Point start, Point end,

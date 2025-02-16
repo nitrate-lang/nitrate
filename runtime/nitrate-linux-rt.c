@@ -66,8 +66,7 @@ EXPORT_API _NLR_uword_t _NLR_malloc(_NLR_uword_t size) {  // NOLINT
 
   size += sizeof(_NLR_uword_t);
 
-  map = (uint8_t*)syscall(SYS_mmap, NULL, size, PROT_READ | PROT_WRITE,
-                          MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
+  map = (uint8_t*)syscall(SYS_mmap, NULL, size, PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
 
   if (map == MAP_FAILED) {
     return 0;
@@ -96,7 +95,7 @@ EXPORT_API void _NLR_free(_NLR_uword_t ptr) {  // NOLINT
 }
 
 EXPORT_API _NLR_uword_t _NLR_signal_oom(_NLR_uword_t req_size) {  // NOLINT
-  (void)req_size;  // Nothing to do here
+  (void)req_size;                                                 // Nothing to do here
 
   return 0;
 }
@@ -138,8 +137,7 @@ EXPORT_API void _start(void) {  // NOLINT
   while (symbol != _NLR_symbols_end) {
     if (symbol->m_constructor != NULL) {
       if (symbol->m_constructor(symbol->m_spot) != 0) {
-        _NLR_panic(
-            (_NLR_uword_t) "[nlr/init]: global object construction failed");
+        _NLR_panic((_NLR_uword_t) "[nlr/init]: global object construction failed");
       }
     }
     symbol++;
@@ -151,8 +149,7 @@ EXPORT_API void _start(void) {  // NOLINT
   while (symbol-- != _NLR_symbols_start) {
     if (symbol->m_destructor != NULL) {
       if (symbol->m_destructor(symbol->m_spot) != 0) {
-        _NLR_panic(
-            (_NLR_uword_t) "[nlr/init]: global object destruction failed");
+        _NLR_panic((_NLR_uword_t) "[nlr/init]: global object destruction failed");
       }
     }
   }

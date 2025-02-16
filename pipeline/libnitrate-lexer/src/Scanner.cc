@@ -122,11 +122,8 @@ auto IScanner::End(Token) -> Location {
 }
 
 auto IScanner::StartLine(Token t) -> uint32_t { return Start(t).GetRow(); }
-
 auto IScanner::StartColumn(Token t) -> uint32_t { return Start(t).GetCol(); }
-
 auto IScanner::EndLine(Token t) -> uint32_t { return End(t).GetRow(); }
-
 auto IScanner::EndColumn(Token t) -> uint32_t { return End(t).GetCol(); }
 
 auto IScanner::GetLocation(LocationID id) -> Location {

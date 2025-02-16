@@ -562,11 +562,7 @@ public:
             return false;
           }
 
-          if (!kHexDigitsTable[i]) [[unlikely]] {
-            Log << InvalidHexDigit << LogSource() << "Unexpected '" << i << "' in hexadecimal literal '0x" << buf
-                << "'";
-            return false;
-          }
+          qcore_assert(kHexDigitsTable[i]);
 
           x = (x << 4) + kNibbleTable[i];
         }
@@ -657,9 +653,8 @@ public:
         break;
       }
 
-      case Double: {
+      case Double:
         __builtin_unreachable();
-      }
     }
 
     if (x == 0) {
@@ -1257,6 +1252,8 @@ auto Tokenizer::GetNext() -> Token {
 
 Tokenizer::Tokenizer(std::istream &source_file, std::shared_ptr<Environment> env)
     : IScanner(std::move(env)), m_impl(new Impl(source_file, [&]() { SetFailBit(); })) {}
+
+Tokenizer::Tokenizer(Tokenizer &&o) noexcept : IScanner(o.m_env), m_impl(std::move(o.m_impl)) {}
 
 Tokenizer::~Tokenizer() = default;
 
