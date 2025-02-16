@@ -10,9 +10,7 @@ using namespace ncc::parse;
 
 TEST(AST, Encoder) {
   auto env = std::make_shared<ncc::Environment>();
-  auto original = Parser::FromString<ncc::lex::Tokenizer>(
-                      test::vector::SOURCE_SAMPLE_01, env)
-                      ->Parse();
+  auto original = Parser::FromString<ncc::lex::Tokenizer>(test::vector::SOURCE_SAMPLE_01, env)->Parse();
   ASSERT_TRUE(original.Check());
 
   auto serialized = original.Get()->Serialize();

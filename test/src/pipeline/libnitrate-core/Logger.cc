@@ -16,39 +16,36 @@ struct LogOutput {
   Sev m_level;
 };
 
-#define TEST_RAW_LOG(__LEVEL)                                                 \
-  TEST(Core, Log_Mono_##__LEVEL) {                                            \
-    if (auto lib_rc = CoreLibrary.GetRC()) {                                  \
-      LogOutput log_output;                                                   \
-      auto subid =                                                            \
-          Log.Subscribe([&](const std::string& msg, Sev sev, const ECBase&) { \
-            log_output.m_text = msg;                                          \
-            log_output.m_level = sev;                                         \
-          });                                                                 \
-                                                                              \
-      Log << __LEVEL << LogContent;                                           \
-                                                                              \
-      Log.Unsubscribe(subid);                                                 \
-                                                                              \
-      ASSERT_EQ(log_output.m_text, LogContent);                               \
-      ASSERT_EQ(log_output.m_level, __LEVEL);                                 \
-    }                                                                         \
+#define TEST_RAW_LOG(__LEVEL)                                                          \
+  TEST(Core, Log_Mono_##__LEVEL) {                                                     \
+    if (auto lib_rc = CoreLibrary.GetRC()) {                                           \
+      LogOutput log_output;                                                            \
+      auto subid = Log.Subscribe([&](const std::string& msg, Sev sev, const ECBase&) { \
+        log_output.m_text = msg;                                                       \
+        log_output.m_level = sev;                                                      \
+      });                                                                              \
+                                                                                       \
+      Log << __LEVEL << LogContent;                                                    \
+                                                                                       \
+      Log.Unsubscribe(subid);                                                          \
+                                                                                       \
+      ASSERT_EQ(log_output.m_text, LogContent);                                        \
+      ASSERT_EQ(log_output.m_level, __LEVEL);                                          \
+    }                                                                                  \
   }
 
-#define TEST_ANSI_LOG(__LEVEL, __INPUT_STRING, __OUTPUT_STRING)    \
-  TEST(Core, Log_Ansi_##__LEVEL) {                                 \
-    if (auto lib_rc = CoreLibrary.GetRC()) {                       \
-      std::string log_output;                                      \
-      auto subid = Log.Subscribe(                                  \
-          [&](const std::string& msg, Sev sev, const ECBase& ec) { \
-            log_output = ec.Format(msg, sev);                      \
-          });                                                      \
-                                                                   \
-      Log << __LEVEL << __INPUT_STRING;                            \
-      Log.Unsubscribe(subid);                                      \
-                                                                   \
-      EXPECT_EQ(log_output, __OUTPUT_STRING);                      \
-    }                                                              \
+#define TEST_ANSI_LOG(__LEVEL, __INPUT_STRING, __OUTPUT_STRING)                                                        \
+  TEST(Core, Log_Ansi_##__LEVEL) {                                                                                     \
+    if (auto lib_rc = CoreLibrary.GetRC()) {                                                                           \
+      std::string log_output;                                                                                          \
+      auto subid =                                                                                                     \
+          Log.Subscribe([&](const std::string& msg, Sev sev, const ECBase& ec) { log_output = ec.Format(msg, sev); }); \
+                                                                                                                       \
+      Log << __LEVEL << __INPUT_STRING;                                                                                \
+      Log.Unsubscribe(subid);                                                                                          \
+                                                                                                                       \
+      EXPECT_EQ(log_output, __OUTPUT_STRING);                                                                          \
+    }                                                                                                                  \
   }
 
 TEST_RAW_LOG(Trace)
@@ -61,33 +58,23 @@ TEST_RAW_LOG(Critical)
 TEST_RAW_LOG(Alert)
 TEST_RAW_LOG(Emergency)
 
-TEST_ANSI_LOG(Trace, "Message!",
-              "\x1b[1mtrace:\x1b[0m \x1b[37;1mMessage!\x1b[0m")
-TEST_ANSI_LOG(Debug, "Message!",
-              "\x1b[1mdebug:\x1b[0m \x1b[37;1mMessage!\x1b[0m")
-TEST_ANSI_LOG(Info, "Message!",
-              "\x1b[37;1minfo:\x1b[0m \x1b[37;1mMessage!\x1b[0m")
-TEST_ANSI_LOG(Notice, "Message!",
-              "\x1b[37;1mnotice:\x1b[0m \x1b[37;1mMessage!\x1b[0m")
-TEST_ANSI_LOG(Warning, "Message!",
-              "\x1b[35;1mwarning:\x1b[0m \x1b[37;1mMessage!\x1b[0m")
-TEST_ANSI_LOG(Error, "Message!",
-              "\x1b[31;1merror:\x1b[0m \x1b[37;1mMessage!\x1b[0m")
-TEST_ANSI_LOG(Critical, "Message!",
-              "\x1b[31;1;4mcritical:\x1b[0m \x1b[37;1mMessage!\x1b[0m")
-TEST_ANSI_LOG(Alert, "Message!",
-              "\x1b[31;1;4malert:\x1b[0m \x1b[37;1mMessage!\x1b[0m")
-TEST_ANSI_LOG(Emergency, "Message!",
-              "\x1b[31;1;4memergency:\x1b[0m \x1b[37;1mMessage!\x1b[0m")
+TEST_ANSI_LOG(Trace, "Message!", "\x1b[1mtrace:\x1b[0m \x1b[37;1mMessage!\x1b[0m")
+TEST_ANSI_LOG(Debug, "Message!", "\x1b[1mdebug:\x1b[0m \x1b[37;1mMessage!\x1b[0m")
+TEST_ANSI_LOG(Info, "Message!", "\x1b[37;1minfo:\x1b[0m \x1b[37;1mMessage!\x1b[0m")
+TEST_ANSI_LOG(Notice, "Message!", "\x1b[37;1mnotice:\x1b[0m \x1b[37;1mMessage!\x1b[0m")
+TEST_ANSI_LOG(Warning, "Message!", "\x1b[35;1mwarning:\x1b[0m \x1b[37;1mMessage!\x1b[0m")
+TEST_ANSI_LOG(Error, "Message!", "\x1b[31;1merror:\x1b[0m \x1b[37;1mMessage!\x1b[0m")
+TEST_ANSI_LOG(Critical, "Message!", "\x1b[31;1;4mcritical:\x1b[0m \x1b[37;1mMessage!\x1b[0m")
+TEST_ANSI_LOG(Alert, "Message!", "\x1b[31;1;4malert:\x1b[0m \x1b[37;1mMessage!\x1b[0m")
+TEST_ANSI_LOG(Emergency, "Message!", "\x1b[31;1;4memergency:\x1b[0m \x1b[37;1mMessage!\x1b[0m")
 
 TEST(Core, Log_Unsubscribe_Okay) {
   if (auto lib_rc = CoreLibrary.GetRC()) {
     LogOutput log_output;
-    auto subid =
-        Log.Subscribe([&](const std::string& msg, Sev sev, const ECBase&) {
-          log_output.m_text = msg;
-          log_output.m_level = sev;
-        });
+    auto subid = Log.Subscribe([&](const std::string& msg, Sev sev, const ECBase&) {
+      log_output.m_text = msg;
+      log_output.m_level = sev;
+    });
 
     Log << Info << LogContent;
 
@@ -103,11 +90,10 @@ TEST(Core, Log_Ubsubscribe_Invalid) {
     Log.Unsubscribe(6969);  // Invalid filter id
 
     LogOutput log_output;
-    auto subid =
-        Log.Subscribe([&](const std::string& msg, Sev sev, const ECBase&) {
-          log_output.m_text = msg;
-          log_output.m_level = sev;
-        });
+    auto subid = Log.Subscribe([&](const std::string& msg, Sev sev, const ECBase&) {
+      log_output.m_text = msg;
+      log_output.m_level = sev;
+    });
 
     Log << Info << LogContent;
 
@@ -121,9 +107,7 @@ TEST(Core, Log_Ubsubscribe_Invalid) {
 TEST(Core, Log_Unsubscribe_all) {
   if (auto lib_rc = CoreLibrary.GetRC()) {
     std::vector<LogOutput> log_outputs;
-    auto sub_func = [&](const std::string& msg, Sev sev, const ECBase&) {
-      log_outputs.push_back({msg, sev});
-    };
+    auto sub_func = [&](const std::string& msg, Sev sev, const ECBase&) { log_outputs.push_back({msg, sev}); };
 
     Log.Subscribe(sub_func);
     auto subid_2 = Log.Subscribe(sub_func);
@@ -153,16 +137,11 @@ TEST(Core, Log_AddFilter) {
   if (auto lib_rc = CoreLibrary.GetRC()) {
     Log.ClearFilters();
 
-    auto filter_id =
-        Log.AddFilter([](const std::string&, Sev level, const ECBase&) {
-          return level != Debug;
-        });
+    auto filter_id = Log.AddFilter([](const std::string&, Sev level, const ECBase&) { return level != Debug; });
 
     std::vector<LogOutput> log_outputs;
     auto subid =
-        Log.Subscribe([&](const std::string& msg, Sev sev, const ECBase&) {
-          log_outputs.push_back({msg, sev});
-        });
+        Log.Subscribe([&](const std::string& msg, Sev sev, const ECBase&) { log_outputs.push_back({msg, sev}); });
 
     Log << Warning << LogContent;
     ASSERT_EQ(log_outputs.size(), 1);
@@ -191,16 +170,11 @@ TEST(Core, Log_RemoveFilter) {
 
     Log.RemoveFilter(1111);  // Invalid filter id
 
-    auto filter_id =
-        Log.AddFilter([](const std::string&, Sev level, const ECBase&) {
-          return level != Debug;
-        });
+    auto filter_id = Log.AddFilter([](const std::string&, Sev level, const ECBase&) { return level != Debug; });
 
     std::vector<LogOutput> log_outputs;
     auto subid =
-        Log.Subscribe([&](const std::string& msg, Sev sev, const ECBase&) {
-          log_outputs.push_back({msg, sev});
-        });
+        Log.Subscribe([&](const std::string& msg, Sev sev, const ECBase&) { log_outputs.push_back({msg, sev}); });
 
     Log << Warning << LogContent;
     ASSERT_EQ(log_outputs.size(), 1);
@@ -240,9 +214,7 @@ TEST(Core, Log_EC_ToJson) {
 
   if (auto lib_rc = CoreLibrary.GetRC()) {
     std::string json_output;
-    auto subid = Log.Subscribe([&](const std::string&, Sev, const ECBase& ec) {
-      json_output = ec.AsJson();
-    });
+    auto subid = Log.Subscribe([&](const std::string&, Sev, const ECBase& ec) { json_output = ec.AsJson(); });
 
     Log << TestError << Info << LogContent;
 
@@ -250,7 +222,7 @@ TEST(Core, Log_EC_ToJson) {
 
     ASSERT_EQ(
         json_output,
-        R"({"flagname":"-Wcore-internal","nice_name":"Core library internal compiler diagnostics","details":"Diagnostic messages produced for reasons primarily of interest to compiler developers. These diagnostics are generally independent of the code under translation and are often useful internal compiler optimization.","tags":["nitrate-core","pipeline"],"fixes":[],"examples":[],"dev_notes":[],"user_notes":[]})");
+        R"({"flagname":"-Wcore-internal","nice_name":"Core library internal compiler diagnostics","details":"Diagnostic messages produced for reasons primarily of interest to compiler developers. These diagnostics are generally independent of the code under translation and are often useful internal compiler optimization.","tags":["nitrate-core","pipeline"],"fixes":["This is not a fix, just a not so useful message...","another fix message"],"examples":["When you run the test suite this error is emitted","Another example of how this error can be triggered"],"dev_notes":["Devs are gods, they don't need notes","Another note for the devs"],"user_notes":["Users are mere mortals, but they won't bother to read this anyway","Another note for the users"]})");
   }
 }
 
@@ -561,11 +533,10 @@ TEST(Core, Log_EC_ParseECJson_01) {
        }},
   };
 
-  bool passed = std::all_of(
-      test_vectors.begin(), test_vectors.end(), [](const auto& test_vector) {
-        auto ec = ECBase::ParseJsonECConfig(test_vector.first);
-        return ec == test_vector.second;
-      });
+  bool passed = std::all_of(test_vectors.begin(), test_vectors.end(), [](const auto& test_vector) {
+    auto ec = ECBase::ParseJsonECConfig(test_vector.first);
+    return ec == test_vector.second;
+  });
 
   ASSERT_TRUE(passed);
 }
