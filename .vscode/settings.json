@@ -1,0 +1,14 @@
+{
+  "coverage-gutters.coverageFileNames": [
+    "coverage/libnitrate-core.so.dat",
+    "coverage/libnitrate-lexer.so.dat",
+    "coverage/libnitrate-seq.so.dat",
+    "coverage/libnitrate-parser.so.dat",
+    "coverage/libnitrate-ir.so.dat",
+    "coverage/libnitrate-emit.so.dat",
+  ],
+  "coverage-gutters.remotePathResolve": [
+    "/app",
+    "/home/wesjo/Documents/Projects/nitrate"
+  ]
+}
