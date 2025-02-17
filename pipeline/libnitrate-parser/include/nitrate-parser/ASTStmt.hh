@@ -31,8 +31,8 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __NITRATE_AST_ASTSTMT_H__
-#define __NITRATE_AST_ASTSTMT_H__
+#ifndef __NITRATE_AST_STMT_H__
+#define __NITRATE_AST_STMT_H__
 
 #include <nitrate-parser/ASTBase.hh>
 #include <nitrate-parser/ASTData.hh>

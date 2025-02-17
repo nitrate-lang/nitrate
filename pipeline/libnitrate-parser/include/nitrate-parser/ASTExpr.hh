@@ -31,8 +31,8 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __NITRATE_AST_ASTEXPR_H__
-#define __NITRATE_AST_ASTEXPR_H__
+#ifndef __NITRATE_AST_EXPR_H__
+#define __NITRATE_AST_EXPR_H__
 
 #include <nitrate-lexer/Enums.hh>
 #include <nitrate-parser/ASTBase.hh>

@@ -31,8 +31,8 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __NITRATE_CODE_WRITER_H__
-#define __NITRATE_CODE_WRITER_H__
+#ifndef __NITRATE_AST_PRINTER_H__
+#define __NITRATE_AST_PRINTER_H__
 
 #include <memory>
 #include <nitrate-core/Macro.hh>

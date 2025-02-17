@@ -31,8 +31,8 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __NITRATE_AST_ASTBASE_H__
-#define __NITRATE_AST_ASTBASE_H__
+#ifndef __NITRATE_AST_BASE_H__
+#define __NITRATE_AST_BASE_H__
 
 #include <array>
 #include <mutex>

@@ -31,19 +31,34 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __NITRATE_AST_NODES_FWD_H__
-#define __NITRATE_AST_NODES_FWD_H__
+#ifndef __NITRATE_AST_PROTOBUF_FWD_H__
+#define __NITRATE_AST_PROTOBUF_FWD_H__
 
-namespace ncc::parse {
+namespace nitrate::parser::SyntaxTree {  // NOLINT
   class Base;
-  class Stmt;
-  class Type;
-  class Expr;
-  class ExprStmt;
+  class Root;
+  class Binary;
+  class Unary;
+  class Ternary;
+  class Integer;
+  class Float;
+  class String;
+  class Character;
+  class Boolean;
+  class Null;
+  class Undefined;
+  class Call;
+  class List;
+  class Assoc;
+  class Index;
+  class Slice;
+  class FString;
+  class Identifier;
+  class Sequence;
+  class PostUnary;
   class LambdaExpr;
-  class NamedTy;
-  class InferTy;
-  class TemplateType;
+  class TemplateCall;
+  class RefTy;
   class U1;
   class U8;
   class U16;
@@ -62,49 +77,44 @@ namespace ncc::parse {
   class VoidTy;
   class PtrTy;
   class OpaqueTy;
-  class TupleTy;
   class ArrayTy;
-  class RefTy;
+  class TupleTy;
   class FuncTy;
-  class Unary;
-  class Binary;
-  class PostUnary;
-  class Ternary;
-  class Integer;
-  class Float;
-  class Boolean;
-  class String;
-  class Character;
-  class Null;
-  class Undefined;
-  class Call;
-  class TemplateCall;
-  class List;
-  class Assoc;
-  class Index;
-  class Slice;
-  class FString;
-  class Identifier;
-  class Sequence;
+  class NamedTy;
+  class InferTy;
+  class TemplateType;
+  class Typedef;
+  class Struct;
+  class Enum;
+  class Function;
+  class Scope;
+  class Export;
   class Block;
   class Variable;
   class Assembly;
+  class Return;
+  class ReturnIf;
+  class Break;
+  class Continue;
   class If;
   class While;
   class For;
   class Foreach;
-  class Break;
-  class Continue;
-  class Return;
-  class ReturnIf;
   class Case;
   class Switch;
-  class Typedef;
-  class Function;
-  class Struct;
-  class Enum;
-  class Scope;
-  class Export;
-}  // namespace ncc::parse
+  class ExprStmt;
+  class Expr;
+  class Stmt;
+  class Type;
+  class SourceLocationRange;
+  class UserComment;
+}  // namespace nitrate::parser::SyntaxTree
+
+namespace google::protobuf {
+  class Arena;
+
+  template <typename T>
+  class RepeatedPtrField;
+}  // namespace google::protobuf
 
 #endif

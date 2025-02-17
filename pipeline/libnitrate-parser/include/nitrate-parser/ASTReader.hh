@@ -31,21 +31,22 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __NITRATE_AST_READER_H__
-#define __NITRATE_AST_READER_H__
+#ifndef __NITRATE_AST_DESERIALIZER_H__
+#define __NITRATE_AST_DESERIALIZER_H__
 
 #include <memory>
-#include <nitrate-core/Allocate.hh>
+#include <nitrate-core/AllocateFwd.hh>
 #include <nitrate-core/Macro.hh>
 #include <nitrate-core/NullableFlowPtr.hh>
-#include <nitrate-lexer/Scanner.hh>
+#include <nitrate-lexer/ScannerFwd.hh>
 #include <nitrate-parser/AST.hh>
-#include <nitrate-parser/ASTBase.hh>
-#include <nitrate-parser/ASTWriter.hh>
+#include <nitrate-parser/ProtobufFwd.hh>
 #include <nitrate-parser/Utility.hh>
 #include <optional>
 
 namespace ncc::parse {
+  using namespace nitrate::parser;
+
   using ReaderSourceManager = std::optional<std::reference_wrapper<lex::IScanner>>;
 
   class NCC_EXPORT AstReader final {

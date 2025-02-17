@@ -38,8 +38,7 @@
 #include <memory>
 #include <nitrate-core/EnvironmentFwd.hh>
 #include <nitrate-core/Logger.hh>
-#include <nitrate-lexer/Scanner.hh>
-#include <nitrate-parser/AST.hh>
+#include <nitrate-lexer/ScannerFwd.hh>
 #include <nitrate-parser/Utility.hh>
 #include <sstream>
 

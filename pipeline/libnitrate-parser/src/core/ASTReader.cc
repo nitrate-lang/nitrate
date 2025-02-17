@@ -39,6 +39,7 @@
 #include <memory>
 #include <nitrate-core/Logger.hh>
 #include <nitrate-core/Macro.hh>
+#include <nitrate-lexer/Scanner.hh>
 #include <nitrate-parser/AST.hh>
 #include <nitrate-parser/ASTBase.hh>
 #include <nitrate-parser/ASTExpr.hh>

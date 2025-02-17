@@ -31,8 +31,8 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __NITRATE_AST_AST_H__
-#define __NITRATE_AST_AST_H__
+#ifndef __NITRATE_AST_KIND_H__
+#define __NITRATE_AST_KIND_H__
 
 #include <cstdint>
 

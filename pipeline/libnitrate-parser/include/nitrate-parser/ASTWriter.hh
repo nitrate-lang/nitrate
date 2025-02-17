@@ -31,101 +31,17 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __NITRATE_AST_WRITER_H__
-#define __NITRATE_AST_WRITER_H__
+#ifndef __NITRATE_AST_SERIALIZER_H__
+#define __NITRATE_AST_SERIALIZER_H__
 
 #include <functional>
 #include <nitrate-core/Macro.hh>
-#include <nitrate-lexer/Scanner.hh>
-#include <nitrate-lexer/Token.hh>
+#include <nitrate-lexer/ScannerFwd.hh>
 #include <nitrate-parser/ASTVisitor.hh>
-#include <ostream>
-
-namespace nitrate::parser::SyntaxTree {  // NOLINT
-  class Base;
-  class Root;
-  class Binary;
-  class Unary;
-  class Ternary;
-  class Integer;
-  class Float;
-  class String;
-  class Character;
-  class Boolean;
-  class Null;
-  class Undefined;
-  class Call;
-  class List;
-  class Assoc;
-  class Index;
-  class Slice;
-  class FString;
-  class Identifier;
-  class Sequence;
-  class PostUnary;
-  class LambdaExpr;
-  class TemplateCall;
-  class RefTy;
-  class U1;
-  class U8;
-  class U16;
-  class U32;
-  class U64;
-  class U128;
-  class I8;
-  class I16;
-  class I32;
-  class I64;
-  class I128;
-  class F16;
-  class F32;
-  class F64;
-  class F128;
-  class VoidTy;
-  class PtrTy;
-  class OpaqueTy;
-  class ArrayTy;
-  class TupleTy;
-  class FuncTy;
-  class NamedTy;
-  class InferTy;
-  class TemplateType;
-  class Typedef;
-  class Struct;
-  class Enum;
-  class Function;
-  class Scope;
-  class Export;
-  class Block;
-  class Variable;
-  class Assembly;
-  class Return;
-  class ReturnIf;
-  class Break;
-  class Continue;
-  class If;
-  class While;
-  class For;
-  class Foreach;
-  class Case;
-  class Switch;
-  class ExprStmt;
-  class Expr;
-  class Stmt;
-  class Type;
-  class SourceLocationRange;
-  class UserComment;
-}  // namespace nitrate::parser::SyntaxTree
-
-namespace google::protobuf {
-  class Arena;
-
-  template <typename T>
-  class RepeatedPtrField;
-}  // namespace google::protobuf
+#include <nitrate-parser/ProtobufFwd.hh>
 
 namespace ncc::parse {
-  using namespace nitrate::parser;  // NOLINT
+  using namespace nitrate::parser;
 
   using WriterSourceProvider = std::optional<std::reference_wrapper<lex::IScanner>>;
 

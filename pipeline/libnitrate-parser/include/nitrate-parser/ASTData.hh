@@ -31,13 +31,12 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __NITRATE_AST_ASTDATA_H__
-#define __NITRATE_AST_ASTDATA_H__
+#ifndef __NITRATE_AST_STRUCTURAL_DATA_H__
+#define __NITRATE_AST_STRUCTURAL_DATA_H__
 
 #include <memory>
 #include <nitrate-core/Allocate.hh>
 #include <nitrate-core/FlowPtr.hh>
-#include <nitrate-core/Macro.hh>
 #include <nitrate-core/NullableFlowPtr.hh>
 #include <nitrate-core/String.hh>
 #include <nitrate-parser/ASTFwd.hh>
