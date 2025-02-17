@@ -33,6 +33,7 @@
 
 #include <array>
 #include <boost/bimap.hpp>
+#include <boost/multiprecision/cpp_dec_float.hpp>
 #include <boost/unordered_map.hpp>
 #include <cctype>
 #include <charconv>
@@ -48,9 +49,8 @@
 #include <nitrate-core/String.hh>
 #include <nitrate-lexer/Lexer.hh>
 #include <nitrate-lexer/Token.hh>
-#include <queue>
-#include <ranges>
 #include <sstream>
+#include <stack>
 #include <string>
 #include <string_view>
 #include <utility>
@@ -338,9 +338,7 @@ constexpr auto kCharMap = []() constexpr {
 
 /// https://stackoverflow.com/questions/1031645/how-to-detect-utf-8-in-plain-c
 static auto IsUtf8(const char *string) -> bool {
-  if (string == nullptr) {
-    return false;
-  }
+  qcore_assert(string != nullptr);
 
   const auto *bytes = (const unsigned char *)string;
   while (*bytes != 0U) {
@@ -395,7 +393,7 @@ class Tokenizer::Impl {
 public:
   std::string m_buf;
 
-  std::queue<char> m_fifo;
+  std::stack<char> m_rewind;
 
   uint32_t m_offset = 0;
   uint32_t m_line = 0;
@@ -426,7 +424,7 @@ public:
   }
 
   [[gnu::noinline]] void ResetAutomaton() {
-    m_fifo = {};
+    m_rewind = {};
     m_buf.clear();
   }
 
@@ -457,14 +455,14 @@ public:
   auto NextCharIf(uint8_t cmp) -> bool {
     uint8_t c;
 
-    if (!m_fifo.empty()) {
-      c = m_fifo.front();
+    if (!m_rewind.empty()) {
+      c = m_rewind.top();
 
       if (c != cmp) {
         return false;
       }
 
-      m_fifo.pop();
+      m_rewind.pop();
     } else {
       if (m_getc_buffer_pos == kGetcBufferSize) [[unlikely]] {
         RefillCharacterBuffer();
@@ -489,9 +487,9 @@ public:
   auto NextChar() -> uint8_t {
     uint8_t c;
 
-    if (!m_fifo.empty()) {
-      c = m_fifo.front();
-      m_fifo.pop();
+    if (!m_rewind.empty()) {
+      c = m_rewind.top();
+      m_rewind.pop();
     } else {
       if (m_getc_buffer_pos == kGetcBufferSize) [[unlikely]] {
         RefillCharacterBuffer();
@@ -510,8 +508,8 @@ public:
   auto PeekChar() -> uint8_t {
     uint8_t c;
 
-    if (!m_fifo.empty()) {
-      c = m_fifo.front();
+    if (!m_rewind.empty()) {
+      c = m_rewind.top();
     } else {
       if (m_getc_buffer_pos == kGetcBufferSize) [[unlikely]] {
         RefillCharacterBuffer();
@@ -523,49 +521,43 @@ public:
     return c;
   }
 
+  static bool ValidateFloat(std::string_view buf) {
+    long double _ = 0;
+    return std::from_chars(buf.data(), buf.data() + buf.size(), _).ptr == buf.data() + buf.size();
+  }
+
   auto CanonicalizeFloat(std::string &buf) const -> bool {
-    auto e_pos = buf.find('e');
+    const auto e_pos = buf.find('e');
     if (e_pos == std::string::npos) [[likely]] {
-      return true;
+      return ValidateFloat(buf);
     }
 
-    long double mantissa = 0;
+    qcore_assert(e_pos != 0 && e_pos != buf.size() - 1);
 
-    if (std::from_chars(buf.data(), buf.data() + e_pos, mantissa).ec != std::errc()) [[unlikely]] {
+    const std::string_view number = buf;
+    const std::string_view mantissa_view = number.substr(0, e_pos);
+    const std::string_view exponent_view = number.substr(e_pos + 1);
+
+    if (!ValidateFloat(mantissa_view)) [[unlikely]] {
       Log << InvalidMantissa << LogSource() << "Invalid mantissa in floating point literal";
       return false;
     }
 
-    long double exponent = 0;
-    if (std::from_chars(buf.data() + e_pos + 1, buf.data() + buf.size(), exponent).ec != std::errc()) [[unlikely]] {
+    if (!ValidateFloat(exponent_view)) [[unlikely]] {
       Log << InvalidExponent << LogSource() << "Invalid exponent in floating point literal";
       return false;
     }
 
-    long double float_value = mantissa * std::pow(10.0, exponent);
+    const boost::multiprecision::cpp_dec_float_100 mantissa(mantissa_view);
+    const boost::multiprecision::cpp_dec_float_100 exponent(exponent_view);
+    const boost::multiprecision::cpp_dec_float_100 float_value = mantissa * boost::multiprecision::pow(10.0, exponent);
 
-    static_assert(kFloatingPointDigits >= 1, "Floating point precision must be at least 1");
+    buf = float_value.str(kFloatingPointDigits, std::ios_base::fixed);
 
-    std::array<char, kFloatingPointDigits + 2> buffer;
-    if (std::snprintf(buffer.data(), buffer.size(), "%.*Lf", static_cast<int>(kFloatingPointDigits), float_value) < 0)
-        [[unlikely]] {
-      Log << InvalidNumber << LogSource() << "Failed to serialize floating point literal";
-      return false;
+    const auto dot_pos = buf.find('.');
+    while (buf.size() >= dot_pos + 3 && buf.back() == '0') {
+      buf.pop_back();
     }
-
-    std::string str(buffer.data());
-
-    if (str.find('.') != std::string::npos) {
-      while (!str.empty() && str.back() == '0') {
-        str.pop_back();
-      }
-
-      if (!str.empty() && str.back() == '.') {
-        str.pop_back();
-      }
-    }
-
-    buf = std::move(str);
 
     return true;
   }
@@ -713,7 +705,7 @@ public:
       c = NextChar();
     }
 
-    m_fifo.push(c);
+    m_rewind.push(c);
 
     { /* Determine if it's a keyword */
       auto it = KEYWORDS_MAP.find(m_buf);
@@ -884,7 +876,7 @@ public:
   }
 
   void ParseIntegerUnwind(uint8_t c, NumberKind kind, std::string &buf) {
-    std::vector<uint8_t> q;
+    m_rewind.push(c);
 
     switch (kind) {
       case DecNum:
@@ -892,7 +884,7 @@ public:
         while (!buf.empty()) {
           auto ch = buf.back();
           if (!kDigitsTable[ch]) {
-            q.push_back(ch);
+            m_rewind.push(ch);
             buf.pop_back();
           } else {
             break;
@@ -911,7 +903,7 @@ public:
         while (!buf.empty()) {
           auto ch = buf.back();
           if (ch != '0' && ch != '1') {
-            q.push_back(ch);
+            m_rewind.push(ch);
             buf.pop_back();
           } else {
             break;
@@ -925,7 +917,7 @@ public:
         while (!buf.empty()) {
           auto ch = buf.back();
           if (!kOctalDigitsTable[ch]) {
-            q.push_back(ch);
+            m_rewind.push(ch);
             buf.pop_back();
           } else {
             break;
@@ -939,7 +931,7 @@ public:
         while (!buf.empty()) {
           auto ch = buf.back();
           if (!kDigitsTable[ch]) {
-            q.push_back(ch);
+            m_rewind.push(ch);
             buf.pop_back();
           } else {
             break;
@@ -949,12 +941,6 @@ public:
         break;
       }
     }
-
-    for (auto it : std::ranges::reverse_view(q)) {
-      m_fifo.push(it);
-    }
-
-    m_fifo.push(c);
   }
 
   auto ParseInteger(uint8_t c, LocationID start_pos) -> Token {
@@ -987,7 +973,7 @@ public:
 
       switch (kind) {
         case DecNum: {
-          if (c == '.') {
+          if (c == '.' || c == 'e' || c == 'E' || c == '-' || c == '+') {
             m_buf += c;
             kind = Double;
             c = NextChar();
@@ -1034,8 +1020,11 @@ public:
       return Token::EndOfFile();
     }
 
-    if (kind == DecNum) {
-      kind = std::any_of(m_buf.begin(), m_buf.end(), [](auto c) { return c == 'e' || c == 'E'; }) ? Double : DecNum;
+    if (kind == DecNum || kind == Double) {
+      kind =
+          std::any_of(m_buf.begin(), m_buf.end(), [](auto c) { return c == 'e' || c == 'E' || c == '.' || c == '-'; })
+              ? Double
+              : DecNum;
     }
 
     if (kind == Double) {
@@ -1177,7 +1166,7 @@ public:
       return Token::EndOfFile();
     }
 
-    m_fifo.push(m_buf.back());
+    m_rewind.push(m_buf.back());
 
     return {Oper, OPERATORS_MAP.find(m_buf.substr(0, m_buf.size() - 1))->second, start_pos};
   }
