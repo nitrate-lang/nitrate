@@ -208,6 +208,32 @@ static constexpr auto kIdentifierCharTable = []() {
   return tab;
 }();
 
+static constexpr auto kMacroCallCharTable = []() {
+  std::array<bool, 256> tab = {};
+
+  for (uint8_t c = 'a'; c <= 'z'; ++c) {
+    tab[c] = true;
+  }
+
+  for (uint8_t c = 'A'; c <= 'Z'; ++c) {
+    tab[c] = true;
+  }
+
+  for (uint8_t c = '0'; c <= '9'; ++c) {
+    tab[c] = true;
+  }
+
+  tab['_'] = true;
+  tab[':'] = true;
+
+  /* Support UTF-8 */
+  for (uint8_t c = 0x80; c < 0xff; c++) {
+    tab[c] = true;
+  }
+
+  return tab;
+}();
+
 static constexpr auto kNumberKindMap = []() {
   std::array<NumberKind, std::numeric_limits<uint16_t>::max() + 1> map = {};
   map.fill(DecNum);
@@ -676,8 +702,10 @@ public:
   }
 
   auto ParseIdentifier(uint8_t c, LocationID start_pos) -> Token {
-    if (c == 'f' && PeekChar() == '"') {
-      return {KeyW, __FString, start_pos};
+    if (c == 'f') {
+      if (auto peekc = PeekChar(); peekc == '"' || peekc == '\'') {
+        return {KeyW, __FString, start_pos};
+      }
     }
 
     while (kIdentifierCharTable[c]) {
@@ -701,20 +729,11 @@ public:
       }
     }
 
-    /* For compiler internal debugging */
-    qcore_assert(m_buf != "__builtin_lexer_crash", "The source code invoked a compiler panic API.");
-
-    if (m_buf == "__builtin_lexer_abort") {
-      Log << Debug << UserRequest << LogSource() << "The source code requested lexical truncation";
-      return Token::EndOfFile();
-    }
-
     if (!IsUtf8(m_buf.c_str())) [[unlikely]] {
       Log << InvalidUTF8 << LogSource() << "Invalid UTF-8 sequence in identifier";
       return Token::EndOfFile();
     }
 
-    /* Return the identifier */
     return {Name, string(std::move(m_buf)), start_pos};
   };
 
@@ -865,6 +884,8 @@ public:
   }
 
   void ParseIntegerUnwind(uint8_t c, NumberKind kind, std::string &buf) {
+    qcore_assert(!buf.empty());
+
     std::vector<uint8_t> q;
 
     switch (kind) {
@@ -884,16 +905,7 @@ public:
       }
 
       case HexNum: {
-        while (!buf.empty()) {
-          auto ch = buf.back();
-          if (!kHexDigitsTable[ch]) {
-            q.push_back(ch);
-            buf.pop_back();
-          } else {
-            break;
-          }
-        }
-
+        qcore_assert(kHexDigitsTable[buf.back()]);
         break;
       }
 
@@ -1086,13 +1098,17 @@ public:
     while (true) {
       auto c = PeekChar();
 
-      if (!kIdentifierCharTable[c]) {
+      if (!kMacroCallCharTable[c]) {
         break;
       }
 
       m_buf += c;
-
       NextChar();
+    }
+
+    if (!IsUtf8(m_buf.c_str())) [[unlikely]] {
+      Log << InvalidUTF8 << LogSource() << "Invalid UTF-8 sequence in macro";
+      return Token::EndOfFile();
     }
 
     return {Macr, string(std::move(m_buf)), start_pos};
