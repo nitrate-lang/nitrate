@@ -43,13 +43,13 @@ auto Parser::PImpl::RecurseForeachNames() -> std::optional<std::pair<string, str
       if (auto name_b = RecurseName(); !name_b.empty()) [[likely]] {
         return std::make_pair(name_a, name_b);
       } else {
-        Log << SyntaxError << current() << "Expected identifier in foreach statement";
+        Log << SyntaxError << Current() << "Expected identifier in foreach statement";
       }
     } else {
       return std::make_pair("", name_a);
     }
   } else {
-    Log << SyntaxError << current() << "Expected identifier in foreach statement";
+    Log << SyntaxError << Current() << "Expected identifier in foreach statement";
   }
 
   return std::nullopt;
@@ -85,17 +85,17 @@ auto Parser::PImpl::RecurseForeach() -> FlowPtr<Stmt> {
     if (NextIf(OpIn)) [[likely]] {
       auto iter_expr = RecurseForeachExpr(foreach_has_paren);
       if (foreach_has_paren && !NextIf(PuncRPar)) {
-        Log << SyntaxError << current() << "Expected ')' in foreach statement";
+        Log << SyntaxError << Current() << "Expected ')' in foreach statement";
       }
 
       auto body = RecurseForeachBody();
 
       return CreateNode<Foreach>(index_name, value_name, iter_expr, body)();
     } else {
-      Log << SyntaxError << current() << "Expected 'in' keyword in foreach statement";
+      Log << SyntaxError << Current() << "Expected 'in' keyword in foreach statement";
     }
   } else {
-    Log << SyntaxError << current() << "Expected identifier pair in foreach statement";
+    Log << SyntaxError << Current() << "Expected identifier pair in foreach statement";
   }
 
   return MockStmt(QAST_FOREACH);

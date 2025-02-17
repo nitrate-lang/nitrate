@@ -357,7 +357,7 @@ auto Sequencer::GetLocationFallback(ncc::lex::LocationID id) -> std::optional<nc
   return m_scanner.GetLocation(id);
 }
 
-SequencerPImpl::SequencerPImpl(std::shared_ptr<ncc::Environment> env)
+SequencerPImpl::SequencerPImpl(std::shared_ptr<ncc::IEnvironment> env)
     : m_random(0),
       m_fetch_module(FileSystemFetchModule),
       m_captures({}),
@@ -375,7 +375,7 @@ SequencerPImpl::~SequencerPImpl() { lua_close(m_L); }
 Sequencer::Sequencer(std::istream &file, std::shared_ptr<SequencerPImpl> shared)
     : ncc::lex::IScanner(shared->m_env), m_scanner(file, m_env), m_shared(std::move(shared)) {}
 
-Sequencer::Sequencer(std::istream &file, std::shared_ptr<ncc::Environment> env)
+Sequencer::Sequencer(std::istream &file, std::shared_ptr<ncc::IEnvironment> env)
     : ncc::lex::IScanner(std::move(env)), m_scanner(file, m_env), m_shared(std::make_shared<SequencerPImpl>(m_env)) {
   AttachAPIFunctions(*this);
   LoadSecureLibs(*this);

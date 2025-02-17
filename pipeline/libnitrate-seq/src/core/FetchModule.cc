@@ -40,6 +40,7 @@
 #include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <nitrate-core/IEnvironment.hh>
 #include <nitrate-parser/CodeWriter.hh>
 #include <nitrate-parser/Context.hh>
 #include <nitrate-seq/Sequencer.hh>

@@ -53,6 +53,10 @@ namespace ncc::parse {
     bool m_failed = false;
     std::shared_ptr<void> m_lifetime;
 
+    lex::Token Next() { return m_rd.Next(); }
+    lex::Token Peek() { return m_rd.Peek(); }
+    lex::Token Current() { return m_rd.Current(); }
+
     /****************************************************************************
      * @brief
      *  Primary language constructs

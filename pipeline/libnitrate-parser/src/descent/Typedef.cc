@@ -45,13 +45,13 @@ auto Parser::PImpl::RecurseTypedef() -> FlowPtr<Stmt> {
       if (NextIf(PuncSemi)) [[likely]] {
         return CreateNode<Typedef>(type_name, the_type)();
       } else {
-        Log << SyntaxError << current() << "Expected ';' in typedef declaration";
+        Log << SyntaxError << Current() << "Expected ';' in typedef declaration";
       }
     } else {
-      Log << SyntaxError << current() << "Expected '=' in typedef declaration";
+      Log << SyntaxError << Current() << "Expected '=' in typedef declaration";
     }
   } else {
-    Log << SyntaxError << current() << "Expected name in typedef declaration";
+    Log << SyntaxError << Current() << "Expected name in typedef declaration";
   }
 
   return MockStmt(QAST_TYPEDEF);

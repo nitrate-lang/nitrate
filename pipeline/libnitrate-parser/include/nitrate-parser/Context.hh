@@ -36,7 +36,7 @@
 
 #include <boost/shared_ptr.hpp>
 #include <memory>
-#include <nitrate-core/IEnvironment.hh>
+#include <nitrate-core/EnvironmentFwd.hh>
 #include <nitrate-core/Logger.hh>
 #include <nitrate-lexer/Scanner.hh>
 #include <nitrate-parser/AST.hh>

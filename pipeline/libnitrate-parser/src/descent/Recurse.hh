@@ -45,10 +45,6 @@
 namespace ncc::parse {
   using namespace ec;
 
-#define next() m_rd.Next()
-#define peek() m_rd.Peek()
-#define current() m_rd.Current()
-
   template <auto tok>
   static inline auto NextIfImpl(ncc::lex::IScanner &m_rd) -> std::optional<ncc::lex::Token> {
     auto t = m_rd.Peek();

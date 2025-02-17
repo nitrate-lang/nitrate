@@ -38,7 +38,7 @@ using namespace ncc::lex;
 using namespace ncc::parse;
 
 auto Parser::PImpl::RecurseThrow() -> FlowPtr<Stmt> {
-  Log << SyntaxError << current() << "Throw is not yet implemented";
+  Log << SyntaxError << Current() << "Throw is not yet implemented";
 
   return MockStmt();
 }

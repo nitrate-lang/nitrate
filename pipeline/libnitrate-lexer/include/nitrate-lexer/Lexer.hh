@@ -34,9 +34,8 @@
 #ifndef __NITRATE_LEXER_LEX_HH__
 #define __NITRATE_LEXER_LEX_HH__
 
-#include <boost/bimap.hpp>
 #include <memory>
-#include <nitrate-core/IEnvironment.hh>
+#include <nitrate-core/EnvironmentFwd.hh>
 #include <nitrate-core/Macro.hh>
 #include <nitrate-lexer/Scanner.hh>
 

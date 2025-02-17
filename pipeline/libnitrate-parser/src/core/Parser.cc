@@ -57,18 +57,18 @@ auto Parser::PImpl::RecurseName() -> string {
   std::string name;
 
   while (state != Exit) {
-    last = peek();
+    last = Peek();
 
     switch (state) {
       case Start: {
         if (last.Is<PuncScope>()) {
           name += "::";
           state = RequireName;
-          next();
+          Next();
         } else if (last.Is(Name)) {
           name += last.GetString();
           state = RequireScopeOrEnd;
-          next();
+          Next();
         } else {
           /* No identifier to parse */
           state = Exit;
@@ -80,12 +80,12 @@ auto Parser::PImpl::RecurseName() -> string {
         if (last.Is(Name)) {
           name += last.GetString();
           state = RequireScopeOrEnd;
-          next();
+          Next();
         } else {
           Log << SyntaxError << last << "Expected identifier after '::'";
           name.clear();
           state = Exit;
-          next();  // Prevent infinite loops elsewhere
+          Next();  // Prevent infinite loops elsewhere
         }
         break;
       }
@@ -94,7 +94,7 @@ auto Parser::PImpl::RecurseName() -> string {
         if (last.Is<PuncScope>()) {
           name += "::";
           state = RequireName;
-          next();
+          Next();
         } else {
           state = Exit;
         }
@@ -111,11 +111,11 @@ auto Parser::PImpl::RecurseName() -> string {
 }
 
 auto Parser::PImpl::RecurseBlock(bool expect_braces, bool single_stmt, SafetyMode safety) -> FlowPtr<Stmt> {
-  if (expect_braces && !next().Is<PuncLCur>()) {
-    Log << SyntaxError << current() << "Expected '{'";
+  if (expect_braces && !Next().Is<PuncLCur>()) {
+    Log << SyntaxError << Current() << "Expected '{'";
   }
 
-  auto block_start = current().GetStart();
+  auto block_start = Current().GetStart();
   BlockItems statements;
 
   auto block_comments = m_rd.CommentBuffer();
@@ -132,7 +132,7 @@ auto Parser::PImpl::RecurseBlock(bool expect_braces, bool single_stmt, SafetyMod
 
       if (!should_break && NextIf(EofF)) {
         if (expect_braces) {
-          Log << SyntaxError << current() << "Expected '}'";
+          Log << SyntaxError << Current() << "Expected '}'";
         }
 
         should_break = true;
@@ -146,7 +146,7 @@ auto Parser::PImpl::RecurseBlock(bool expect_braces, bool single_stmt, SafetyMod
       }
     }
 
-    if (!peek().Is(KeyW)) {
+    if (!Peek().Is(KeyW)) {
       auto comments = m_rd.CommentBuffer();
       m_rd.ClearCommentBuffer();
 
@@ -155,7 +155,7 @@ auto Parser::PImpl::RecurseBlock(bool expect_braces, bool single_stmt, SafetyMod
       });
 
       if (!NextIf(PuncSemi)) {
-        Log << SyntaxError << current() << "Expected ';' after statement expression";
+        Log << SyntaxError << Current() << "Expected ';' after statement expression";
       }
 
       auto stmt = CreateNode<ExprStmt>(expr)();
@@ -163,7 +163,7 @@ auto Parser::PImpl::RecurseBlock(bool expect_braces, bool single_stmt, SafetyMod
 
       statements.push_back(BindComments(stmt, comments));
     } else {
-      auto tok = next();
+      auto tok = Next();
       auto loc_start = tok.GetStart();
       NullableFlowPtr<Stmt> r;
 
@@ -192,7 +192,7 @@ auto Parser::PImpl::RecurseBlock(bool expect_braces, bool single_stmt, SafetyMod
         }
 
         case Import: {
-          Log << SyntaxError << current() << "Unexpected 'import' in block context";
+          Log << SyntaxError << Current() << "Unexpected 'import' in block context";
           break;
         }
 
@@ -226,7 +226,7 @@ auto Parser::PImpl::RecurseBlock(bool expect_braces, bool single_stmt, SafetyMod
         }
 
         case Static: {
-          Log << SyntaxError << current()
+          Log << SyntaxError << Current()
               << "Static variables are not yet "
                  "supported";
           break;
@@ -258,7 +258,7 @@ auto Parser::PImpl::RecurseBlock(bool expect_braces, bool single_stmt, SafetyMod
         }
 
         case Opaque: {
-          Log << SyntaxError << current() << "Unexpected 'opaque' in block context";
+          Log << SyntaxError << Current() << "Unexpected 'opaque' in block context";
           break;
         }
 
@@ -270,7 +270,7 @@ auto Parser::PImpl::RecurseBlock(bool expect_braces, bool single_stmt, SafetyMod
         case __FString: {
           r = CreateNode<ExprStmt>(RecurseFstring())();
           if (!NextIf(PuncSemi)) {
-            Log << SyntaxError << current() << "Expected ';' after f-string expression";
+            Log << SyntaxError << Current() << "Expected ';' after f-string expression";
           }
           break;
         }
@@ -281,7 +281,7 @@ auto Parser::PImpl::RecurseBlock(bool expect_braces, bool single_stmt, SafetyMod
         }
 
         case Unsafe: {
-          if (peek().Is<PuncLCur>()) {
+          if (Peek().Is<PuncLCur>()) {
             r = RecurseBlock(true, false, SafetyMode::Unsafe);
           } else {
             r = RecurseBlock(false, true, SafetyMode::Unsafe);
@@ -291,7 +291,7 @@ auto Parser::PImpl::RecurseBlock(bool expect_braces, bool single_stmt, SafetyMod
         }
 
         case Safe: {
-          if (peek().Is<PuncLCur>()) {
+          if (Peek().Is<PuncLCur>()) {
             r = RecurseBlock(true, false, SafetyMode::Safe);
           } else {
             r = RecurseBlock(false, true, SafetyMode::Safe);
@@ -301,7 +301,7 @@ auto Parser::PImpl::RecurseBlock(bool expect_braces, bool single_stmt, SafetyMod
         }
 
         case Promise: {
-          Log << SyntaxError << current() << "Unexpected 'promise' in block context";
+          Log << SyntaxError << Current() << "Unexpected 'promise' in block context";
           break;
         }
 
@@ -311,7 +311,7 @@ auto Parser::PImpl::RecurseBlock(bool expect_braces, bool single_stmt, SafetyMod
         }
 
         case Else: {
-          Log << SyntaxError << current() << "Unexpected 'else' in block context";
+          Log << SyntaxError << Current() << "Unexpected 'else' in block context";
           break;
         }
 
@@ -326,7 +326,7 @@ auto Parser::PImpl::RecurseBlock(bool expect_braces, bool single_stmt, SafetyMod
         }
 
         case Do: {
-          Log << SyntaxError << current() << "Unexpected 'do' in block context";
+          Log << SyntaxError << Current() << "Unexpected 'do' in block context";
           break;
         }
 
@@ -338,7 +338,7 @@ auto Parser::PImpl::RecurseBlock(bool expect_braces, bool single_stmt, SafetyMod
         case Keyword::Break: {
           r = CreateNode<Break>()();
           if (!NextIf(PuncSemi)) {
-            Log << SyntaxError << current() << "Expected ';' after 'break' statement";
+            Log << SyntaxError << Current() << "Expected ';' after 'break' statement";
           }
 
           break;
@@ -347,7 +347,7 @@ auto Parser::PImpl::RecurseBlock(bool expect_braces, bool single_stmt, SafetyMod
         case Keyword::Continue: {
           r = CreateNode<Continue>()();
           if (!NextIf(PuncSemi)) {
-            Log << SyntaxError << current() << "Expected ';' after 'continue' statement";
+            Log << SyntaxError << Current() << "Expected ';' after 'continue' statement";
           }
           break;
         }
@@ -373,7 +373,7 @@ auto Parser::PImpl::RecurseBlock(bool expect_braces, bool single_stmt, SafetyMod
         }
 
         case Catch: {
-          Log << SyntaxError << current() << "Unexpected 'catch' in block context";
+          Log << SyntaxError << Current() << "Unexpected 'catch' in block context";
           break;
         }
 
@@ -383,7 +383,7 @@ auto Parser::PImpl::RecurseBlock(bool expect_braces, bool single_stmt, SafetyMod
         }
 
         case Async: {
-          Log << SyntaxError << current() << "Unexpected 'async' in block context";
+          Log << SyntaxError << Current() << "Unexpected 'async' in block context";
           break;
         }
 
@@ -400,7 +400,7 @@ auto Parser::PImpl::RecurseBlock(bool expect_braces, bool single_stmt, SafetyMod
         case Undef: {
           r = CreateNode<ExprStmt>(CreateNode<Undefined>()())();
           if (!NextIf(PuncSemi)) {
-            Log << SyntaxError << current() << "Expected ';' after 'undef' statement";
+            Log << SyntaxError << Current() << "Expected ';' after 'undef' statement";
           }
           break;
         }
@@ -408,7 +408,7 @@ auto Parser::PImpl::RecurseBlock(bool expect_braces, bool single_stmt, SafetyMod
         case Keyword::Null: {
           r = CreateNode<ExprStmt>(CreateNode<Null>()())();
           if (!NextIf(PuncSemi)) {
-            Log << SyntaxError << current() << "Expected ';' after 'null' statement";
+            Log << SyntaxError << Current() << "Expected ';' after 'null' statement";
           }
           break;
         }
@@ -416,7 +416,7 @@ auto Parser::PImpl::RecurseBlock(bool expect_braces, bool single_stmt, SafetyMod
         case True: {
           r = CreateNode<ExprStmt>(CreateNode<Boolean>(true)())();
           if (!NextIf(PuncSemi)) {
-            Log << SyntaxError << current() << "Expected ';' after 'true' statement";
+            Log << SyntaxError << Current() << "Expected ';' after 'true' statement";
           }
           break;
         }
@@ -424,7 +424,7 @@ auto Parser::PImpl::RecurseBlock(bool expect_braces, bool single_stmt, SafetyMod
         case False: {
           r = CreateNode<ExprStmt>(CreateNode<Boolean>(false)())();
           if (!NextIf(PuncSemi)) {
-            Log << SyntaxError << current() << "Expected ';' after 'false' statement";
+            Log << SyntaxError << Current() << "Expected ';' after 'false' statement";
           }
           break;
         }
@@ -439,7 +439,7 @@ auto Parser::PImpl::RecurseBlock(bool expect_braces, bool single_stmt, SafetyMod
   }
 }
 
-Parser::Parser(ncc::lex::IScanner &lexer, std::shared_ptr<ncc::Environment> env, std::shared_ptr<void> lifetime)
+Parser::Parser(ncc::lex::IScanner &lexer, std::shared_ptr<ncc::IEnvironment> env, std::shared_ptr<void> lifetime)
     : m_impl(std::make_unique<Parser::PImpl>(lexer, std::move(env), std::move(lifetime))) {}
 
 Parser::~Parser() = default;

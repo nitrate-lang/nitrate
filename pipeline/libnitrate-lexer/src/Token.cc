@@ -33,6 +33,7 @@
 
 #include <nitrate-core/Logger.hh>
 #include <nitrate-core/Macro.hh>
+#include <nitrate-lexer/Grammar.hh>
 #include <nitrate-lexer/Lexer.hh>
 #include <nitrate-lexer/Token.hh>
 #include <nlohmann/json.hpp>
@@ -317,7 +318,7 @@ NCC_EXPORT auto ncc::lex::operator<<(std::ostream &os, Token tok) -> std::ostrea
     nlohmann::json j;
     j["type"] = (int)tok.GetKind();
 
-    if (tok.GetStart().has_value()) {
+    if (tok.GetStart().HasValue()) {
       j["pos"] = tok.GetStart().GetId();
     } else {
       j["pos"] = nullptr;

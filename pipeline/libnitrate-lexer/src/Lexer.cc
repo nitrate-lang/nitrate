@@ -47,6 +47,7 @@
 #include <nitrate-core/Logger.hh>
 #include <nitrate-core/Macro.hh>
 #include <nitrate-core/String.hh>
+#include <nitrate-lexer/Grammar.hh>
 #include <nitrate-lexer/Lexer.hh>
 #include <nitrate-lexer/Token.hh>
 #include <sstream>

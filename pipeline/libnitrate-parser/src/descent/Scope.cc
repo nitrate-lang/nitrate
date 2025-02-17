@@ -47,7 +47,7 @@ auto Parser::PImpl::RecurseScopeDeps() -> std::optional<ScopeDeps> {
   if (NextIf(PuncLBrk)) [[likely]] {
     while (true) {
       if (NextIf(EofF)) [[unlikely]] {
-        Log << SyntaxError << current() << "Unexpected EOF in scope dependencies";
+        Log << SyntaxError << Current() << "Unexpected EOF in scope dependencies";
         break;
       }
 
@@ -58,13 +58,13 @@ auto Parser::PImpl::RecurseScopeDeps() -> std::optional<ScopeDeps> {
       if (auto dependency_name = RecurseName(); !dependency_name.empty()) {
         dependencies.push_back(dependency_name);
       } else {
-        Log << SyntaxError << next() << "Expected dependency name";
+        Log << SyntaxError << Next() << "Expected dependency name";
       }
 
       NextIf(PuncComa);
     }
   } else {
-    Log << SyntaxError << current() << "Expected '[' at start of scope dependencies";
+    Log << SyntaxError << Current() << "Expected '[' at start of scope dependencies";
   }
 
   return std::nullopt;
@@ -90,7 +90,7 @@ auto Parser::PImpl::RecurseScope() -> FlowPtr<Stmt> {
 
     return CreateNode<Scope>(scope_name, scope_block, dependencies.value())();
   } else {
-    Log << SyntaxError << current() << "Expected scope dependencies";
+    Log << SyntaxError << Current() << "Expected scope dependencies";
   }
 
   return MockStmt(QAST_SCOPE);

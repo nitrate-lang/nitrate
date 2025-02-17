@@ -52,7 +52,7 @@ auto Parser::PImpl::RecurseExportAttributes() -> std::optional<ExpressionList> {
 
   while (true) {
     if (NextIf(EofF)) [[unlikely]] {
-      Log << SyntaxError << current() << "Encountered EOF while parsing export attributes";
+      Log << SyntaxError << Current() << "Encountered EOF while parsing export attributes";
       break;
     }
 
@@ -74,7 +74,7 @@ auto Parser::PImpl::RecurseExportAttributes() -> std::optional<ExpressionList> {
 }
 
 auto Parser::PImpl::RecurseExportBody() -> FlowPtr<Stmt> {
-  if (peek().Is<PuncLCur>()) {
+  if (Peek().Is<PuncLCur>()) {
     return RecurseBlock(true, false, SafetyMode::Unknown);
   }
 
@@ -90,7 +90,7 @@ auto Parser::PImpl::RecurseExport(Vis vis) -> FlowPtr<Stmt> {
     return CreateNode<Export>(export_body, export_abi, vis, export_attributes.value())();
   }
 
-  Log << SyntaxError << current() << "Malformed export attributes";
+  Log << SyntaxError << Current() << "Malformed export attributes";
 
   return MockStmt(QAST_EXPORT);
 }

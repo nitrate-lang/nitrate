@@ -47,20 +47,20 @@ auto Parser::PImpl::RecurseForInitExpr() -> NullableFlowPtr<Stmt> {
       return vars[0];
     }
 
-    Log << SyntaxError << current() << "Expected exactly one variable in for loop";
+    Log << SyntaxError << Current() << "Expected exactly one variable in for loop";
 
   } else if (NextIf(Var)) {
     if (auto vars = RecurseVariable(VariableType::Var); vars.size() == 1) {
       return vars[0];
     }
 
-    Log << SyntaxError << current() << "Expected exactly one variable in for loop";
+    Log << SyntaxError << Current() << "Expected exactly one variable in for loop";
   } else if (NextIf(Const)) {
     if (auto vars = RecurseVariable(VariableType::Const); vars.size() == 1) {
       return vars[0];
     }
 
-    Log << SyntaxError << current() << "Expected exactly one variable in for loop";
+    Log << SyntaxError << Current() << "Expected exactly one variable in for loop";
 
   } else {
     return CreateNode<ExprStmt>(RecurseExpr({
@@ -81,7 +81,7 @@ auto Parser::PImpl::RecurseForCondition() -> NullableFlowPtr<Expr> {
   });
 
   if (!NextIf(PuncSemi)) {
-    Log << SyntaxError << current() << "Expected semicolon after condition expression";
+    Log << SyntaxError << Current() << "Expected semicolon after condition expression";
   }
 
   return condition;
@@ -89,7 +89,7 @@ auto Parser::PImpl::RecurseForCondition() -> NullableFlowPtr<Expr> {
 
 auto Parser::PImpl::RecurseForStepExpr(bool has_paren) -> NullableFlowPtr<Expr> {
   if (has_paren) {
-    if (peek().Is<PuncRPar>()) {
+    if (Peek().Is<PuncRPar>()) {
       return std::nullopt;
     }
 
@@ -97,7 +97,7 @@ auto Parser::PImpl::RecurseForStepExpr(bool has_paren) -> NullableFlowPtr<Expr> 
         Token(Punc, PuncRPar),
     });
   }
-  if (peek().Is<OpArrow>() || peek().Is<PuncLCur>()) {
+  if (Peek().Is<OpArrow>() || Peek().Is<PuncLCur>()) {
     return std::nullopt;
   }
 
@@ -122,7 +122,7 @@ auto Parser::PImpl::RecurseFor() -> FlowPtr<Stmt> {
   auto for_step = RecurseForStepExpr(for_with_paren);
 
   if (for_with_paren && !NextIf(PuncRPar)) {
-    Log << SyntaxError << current() << "Expected closing parenthesis in for statement";
+    Log << SyntaxError << Current() << "Expected closing parenthesis in for statement";
   }
 
   auto for_body = RecurseForBody();

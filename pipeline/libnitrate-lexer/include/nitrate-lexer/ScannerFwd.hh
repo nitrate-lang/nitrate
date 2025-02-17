@@ -31,34 +31,12 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <descent/Recurse.hh>
+#ifndef __NITRATE_LEXER_SCANNER_FWD_HH__
+#define __NITRATE_LEXER_SCANNER_FWD_HH__
 
-using namespace ncc;
-using namespace ncc::lex;
-using namespace ncc::parse;
+namespace ncc::lex {
+  class IScanner;
+  class Tokenizer;
+}  // namespace ncc::lex
 
-auto Parser::PImpl::RecurseWhileCond() -> FlowPtr<Expr> {
-  if (auto cur = Peek(); cur.Is<OpArrow>() || cur.Is<PuncLCur>()) {
-    return CreateNode<Boolean>(true)();
-  }
-
-  return RecurseExpr({
-      Token(Punc, PuncLCur),
-      Token(Oper, OpArrow),
-  });
-}
-
-auto Parser::PImpl::RecurseWhileBody() -> FlowPtr<Stmt> {
-  if (NextIf(OpArrow)) {
-    return RecurseBlock(false, true, SafetyMode::Unknown);
-  }
-
-  return RecurseBlock(true, false, SafetyMode::Unknown);
-}
-
-auto Parser::PImpl::RecurseWhile() -> FlowPtr<Stmt> {
-  auto cond = RecurseWhileCond();
-  auto body = RecurseWhileBody();
-
-  return CreateNode<While>(cond, body)();
-}
+#endif

@@ -65,7 +65,7 @@ auto Parser::PImpl::RecurseFunctionParameter() -> std::optional<FuncParam> {
     return FuncParam{param_name, param_type, param_value};
   }
 
-  Log << SyntaxError << next() << "Expected a parameter name before ':'";
+  Log << SyntaxError << Next() << "Expected a parameter name before ':'";
 
   return std::nullopt;
 }
@@ -79,7 +79,7 @@ auto Parser::PImpl::RecurseTemplateParameters() -> std::optional<TemplateParamet
 
   while (true) {
     if (NextIf(EofF)) [[unlikely]] {
-      Log << SyntaxError << current() << "Unexpected EOF in template parameters";
+      Log << SyntaxError << Current() << "Unexpected EOF in template parameters";
       return params;
     }
 
@@ -92,7 +92,7 @@ auto Parser::PImpl::RecurseTemplateParameters() -> std::optional<TemplateParamet
 
       params.emplace_back(param_name, param_type, param_value);
     } else {
-      Log << SyntaxError << next() << "Expected a template parameter";
+      Log << SyntaxError << Next() << "Expected a template parameter";
     }
 
     NextIf(PuncComa);
@@ -105,7 +105,7 @@ auto Parser::PImpl::RecurseFunctionParameters() -> std::pair<FuncParams, bool> {
   std::pair<FuncParams, bool> parameters;
 
   if (!NextIf(PuncLPar)) [[unlikely]] {
-    Log << SyntaxError << current() << "Expected '(' after function name";
+    Log << SyntaxError << Current() << "Expected '(' after function name";
 
     return parameters;
   }
@@ -114,7 +114,7 @@ auto Parser::PImpl::RecurseFunctionParameters() -> std::pair<FuncParams, bool> {
 
   while (true) {
     if (NextIf(EofF)) [[unlikely]] {
-      Log << SyntaxError << current() << "Unexpected EOF in function parameters";
+      Log << SyntaxError << Current() << "Unexpected EOF in function parameters";
 
       return parameters;
     }
@@ -126,8 +126,8 @@ auto Parser::PImpl::RecurseFunctionParameters() -> std::pair<FuncParams, bool> {
     if (NextIf(OpEllipsis)) {
       is_variadic = true;
 
-      if (!peek().Is<PuncRPar>()) {
-        Log << SyntaxError << current() << "Expected ')' after variadic parameter";
+      if (!Peek().Is<PuncRPar>()) {
+        Log << SyntaxError << Current() << "Expected ')' after variadic parameter";
       }
       continue;
     }
@@ -136,7 +136,7 @@ auto Parser::PImpl::RecurseFunctionParameters() -> std::pair<FuncParams, bool> {
       auto [param_name, param_type, param_value] = parameter.value();
       parameters.first.emplace_back(param_name, param_type, param_value);
     } else {
-      Log << SyntaxError << next() << "Expected a function parameter";
+      Log << SyntaxError << Next() << "Expected a function parameter";
     }
 
     NextIf(PuncComa);
@@ -186,7 +186,7 @@ auto Parser::PImpl::RecurseFunctionCapture() -> std::optional<std::pair<string, 
     return {{name, is_ref}};
   }
 
-  Log << SyntaxError << next() << "Expected a capture name";
+  Log << SyntaxError << Next() << "Expected a capture name";
 
   return std::nullopt;
 }
@@ -199,7 +199,7 @@ auto Parser::PImpl::RecurseFunctionAmbigouis() -> std::tuple<ExpressionList, FnC
     End,
   } state = State::Ground;
 
-  auto start_pos = current();
+  auto start_pos = Current();
   ExpressionList attributes;
   FnCaptures captures;
   string function_name;
@@ -213,7 +213,7 @@ auto Parser::PImpl::RecurseFunctionAmbigouis() -> std::tuple<ExpressionList, FnC
 
   while (state != State::End) {
     if (NextIf(EofF)) [[unlikely]] {
-      Log << SyntaxError << current() << "Unexpected EOF in function attributes";
+      Log << SyntaxError << Current() << "Unexpected EOF in function attributes";
       break;
     }
 
@@ -238,7 +238,7 @@ auto Parser::PImpl::RecurseFunctionAmbigouis() -> std::tuple<ExpressionList, FnC
           }
         } else if (NextIf(PuncLBrk)) {
           if (already_parsed_attributes && already_parsed_captures) {
-            Log << SyntaxError << current() << "Unexpected '[' after function attributes and captures";
+            Log << SyntaxError << Current() << "Unexpected '[' after function attributes and captures";
           } else if (already_parsed_attributes && !already_parsed_captures) {
             state = State::CaptureSection;
           } else if (!already_parsed_attributes && already_parsed_captures) {
@@ -246,7 +246,7 @@ auto Parser::PImpl::RecurseFunctionAmbigouis() -> std::tuple<ExpressionList, FnC
           } else {
             qcore_assert(!already_parsed_attributes && !already_parsed_captures);
 
-            auto tok = peek();
+            auto tok = Peek();
 
             /* No attribute expression may begin with '&' */
             if (tok.Is<OpBitAnd>()) {
@@ -257,10 +257,10 @@ auto Parser::PImpl::RecurseFunctionAmbigouis() -> std::tuple<ExpressionList, FnC
               state = State::AttributesSection;
             }
           }
-        } else if (auto tok = peek(); tok.Is<PuncLPar>() || tok.Is<OpLT>()) {
+        } else if (auto tok = Peek(); tok.Is<PuncLPar>() || tok.Is<OpLT>()) {
           state = State::End; /* Begin parsing parameters or template options */
         } else {
-          Log << SyntaxError << next() << "Unexpected token in function declaration";
+          Log << SyntaxError << Next() << "Unexpected token in function declaration";
         }
 
         break;
@@ -271,7 +271,7 @@ auto Parser::PImpl::RecurseFunctionAmbigouis() -> std::tuple<ExpressionList, FnC
 
         while (true) {
           if (NextIf(EofF)) [[unlikely]] {
-            Log << SyntaxError << current() << "Unexpected EOF in function attributes";
+            Log << SyntaxError << Current() << "Unexpected EOF in function attributes";
             break;
           }
 
@@ -298,7 +298,7 @@ auto Parser::PImpl::RecurseFunctionAmbigouis() -> std::tuple<ExpressionList, FnC
 
         while (true) {
           if (NextIf(EofF)) [[unlikely]] {
-            Log << SyntaxError << current() << "Unexpected EOF in function captures";
+            Log << SyntaxError << Current() << "Unexpected EOF in function captures";
             break;
           }
 
@@ -349,7 +349,7 @@ auto Parser::PImpl::RecurseFunctionBody(bool parse_declaration_only) -> Nullable
 }
 
 auto Parser::PImpl::RecurseFunction(bool parse_declaration_only) -> FlowPtr<Stmt> {
-  auto start_pos = current().GetStart();
+  auto start_pos = Current().GetStart();
 
   auto [function_attributes, function_captures, function_purity, function_name] = RecurseFunctionAmbigouis();
   auto function_template_parameters = RecurseTemplateParameters();

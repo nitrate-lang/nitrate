@@ -31,34 +31,56 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <descent/Recurse.hh>
+#ifndef __NITRATE_LEXER_LOCATION_HH__
+#define __NITRATE_LEXER_LOCATION_HH__
 
-using namespace ncc;
-using namespace ncc::lex;
-using namespace ncc::parse;
+#include <cstdint>
+#include <nitrate-core/String.hh>
+#include <nitrate-lexer/ScannerFwd.hh>
 
-auto Parser::PImpl::RecurseWhileCond() -> FlowPtr<Expr> {
-  if (auto cur = Peek(); cur.Is<OpArrow>() || cur.Is<PuncLCur>()) {
-    return CreateNode<Boolean>(true)();
-  }
+namespace ncc::lex {
+  constexpr size_t kLexEof = UINT32_MAX;
 
-  return RecurseExpr({
-      Token(Punc, PuncLCur),
-      Token(Oper, OpArrow),
-  });
-}
+  class Location {
+    uint32_t m_offset = kLexEof, m_line = kLexEof, m_column = kLexEof;
+    string m_filename;
 
-auto Parser::PImpl::RecurseWhileBody() -> FlowPtr<Stmt> {
-  if (NextIf(OpArrow)) {
-    return RecurseBlock(false, true, SafetyMode::Unknown);
-  }
+  public:
+    constexpr Location() = default;
+    constexpr Location(uint32_t offset, uint32_t line, uint32_t column, string filename)
+        : m_offset(offset), m_line(line), m_column(column), m_filename(filename) {}
 
-  return RecurseBlock(true, false, SafetyMode::Unknown);
-}
+    static constexpr auto EndOfFile() { return Location(kLexEof, kLexEof, kLexEof, ""); }
 
-auto Parser::PImpl::RecurseWhile() -> FlowPtr<Stmt> {
-  auto cond = RecurseWhileCond();
-  auto body = RecurseWhileBody();
+    [[nodiscard]] constexpr auto GetOffset() const { return m_offset; }
+    [[nodiscard]] constexpr auto GetRow() const { return m_line; }
+    [[nodiscard]] constexpr auto GetCol() const { return m_column; }
+    [[nodiscard]] constexpr auto GetFilename() const -> string { return m_filename; }
 
-  return CreateNode<While>(cond, body)();
-}
+    bool operator==(const Location &rhs) const {
+      return m_offset == rhs.m_offset && m_line == rhs.m_line && m_column == rhs.m_column &&
+             m_filename == rhs.m_filename;
+    }
+  } __attribute__((packed));
+
+  class LocationID {
+  public:
+    using Counter = uint32_t;
+
+    constexpr explicit LocationID(Counter id = 0) : m_id(id) {}
+
+    auto Get(IScanner &l) const -> Location;
+    [[nodiscard]] constexpr auto GetId() const -> Counter { return m_id; }
+
+    [[nodiscard]] constexpr auto operator==(const LocationID &rhs) const -> bool { return m_id == rhs.m_id; }
+    [[nodiscard]] constexpr auto operator<(const LocationID &rhs) const -> bool { return m_id < rhs.m_id; }
+    [[nodiscard]] constexpr auto HasValue() const -> bool { return m_id != 0; }
+
+  private:
+    Counter m_id;
+  } __attribute__((packed));
+
+  using LocationRange = std::pair<LocationID, LocationID>;
+}  // namespace ncc::lex
+
+#endif

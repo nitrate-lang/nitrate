@@ -31,34 +31,48 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <descent/Recurse.hh>
+#ifndef __NITRATE_LEXER_TOKEN_DATA_HH__
+#define __NITRATE_LEXER_TOKEN_DATA_HH__
 
-using namespace ncc;
-using namespace ncc::lex;
-using namespace ncc::parse;
+#include <nitrate-core/String.hh>
+#include <nitrate-lexer/Enums.hh>
 
-auto Parser::PImpl::RecurseWhileCond() -> FlowPtr<Expr> {
-  if (auto cur = Peek(); cur.Is<OpArrow>() || cur.Is<PuncLCur>()) {
-    return CreateNode<Boolean>(true)();
-  }
+namespace ncc::lex {
+  union TokenData {
+    Punctor m_punc;
+    Operator m_op;
+    Keyword m_key;
+    string m_str;
 
-  return RecurseExpr({
-      Token(Punc, PuncLCur),
-      Token(Oper, OpArrow),
-  });
-}
+    constexpr TokenData(Punctor punc) : m_punc(punc) {}
+    constexpr TokenData(Operator op) : m_op(op) {}
+    constexpr TokenData(Keyword key) : m_key(key) {}
+    constexpr TokenData(string str) : m_str(str) {}
 
-auto Parser::PImpl::RecurseWhileBody() -> FlowPtr<Stmt> {
-  if (NextIf(OpArrow)) {
-    return RecurseBlock(false, true, SafetyMode::Unknown);
-  }
+    static constexpr TokenData GetDefault(TokenType ty) {
+      switch (ty) {
+        case EofF:
+          return Operator();
+        case Punc:
+          return Punctor();
+        case Oper:
+          return Operator();
+        case KeyW:
+          return Keyword();
+        case IntL:
+        case NumL:
+        case Text:
+        case Name:
+        case Char:
+        case MacB:
+        case Macr:
+        case Note:
+          return string();
+      }
+    }
+  } __attribute__((packed));
 
-  return RecurseBlock(true, false, SafetyMode::Unknown);
-}
+  string to_string(TokenType, TokenData);  // NOLINT(readability-identifier-naming)
+}  // namespace ncc::lex
 
-auto Parser::PImpl::RecurseWhile() -> FlowPtr<Stmt> {
-  auto cond = RecurseWhileCond();
-  auto body = RecurseWhileBody();
-
-  return CreateNode<While>(cond, body)();
-}
+#endif

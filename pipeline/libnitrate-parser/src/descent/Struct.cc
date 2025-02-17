@@ -46,7 +46,7 @@ auto Parser::PImpl::RecurseStructAttributes() -> ExpressionList {
 
   while (true) {
     if (NextIf(EofF)) [[unlikely]] {
-      Log << SyntaxError << current() << "Encountered EOF while parsing struct attributes";
+      Log << SyntaxError << Current() << "Encountered EOF while parsing struct attributes";
       break;
     }
 
@@ -79,7 +79,7 @@ auto Parser::PImpl::RecurseStructTerms() -> StructNames {
   if (enclosed) {
     while (true) {
       if (NextIf(EofF)) [[unlikely]] {
-        Log << SyntaxError << current() << "Encountered EOF while parsing struct attributes";
+        Log << SyntaxError << Current() << "Encountered EOF while parsing struct attributes";
         break;
       } else if (NextIf(PuncRBrk)) {
         break;
@@ -88,7 +88,7 @@ auto Parser::PImpl::RecurseStructTerms() -> StructNames {
       if (auto name = RecurseName(); !name.empty()) {
         names.push_back(name);
       } else {
-        Log << SyntaxError << next() << "Expected identifier in struct terms";
+        Log << SyntaxError << Next() << "Expected identifier in struct terms";
         break;
       }
 
@@ -100,20 +100,20 @@ auto Parser::PImpl::RecurseStructTerms() -> StructNames {
         break;
       }
 
-      Log << SyntaxError << next() << "Expected ',' or ']' in struct terms";
+      Log << SyntaxError << Next() << "Expected ',' or ']' in struct terms";
       break;
     }
   } else {
     while (true) {
       if (NextIf(EofF)) [[unlikely]] {
-        Log << SyntaxError << current() << "Encountered EOF while parsing struct attributes";
+        Log << SyntaxError << Current() << "Encountered EOF while parsing struct attributes";
         break;
       }
 
       if (auto name = RecurseName(); !name.empty()) [[likely]] {
         names.push_back(name);
       } else {
-        Log << SyntaxError << next() << "Expected identifier in struct terms";
+        Log << SyntaxError << Next() << "Expected identifier in struct terms";
         break;
       }
 
@@ -148,10 +148,10 @@ void Parser::PImpl::RecurseStructField(Vis vis, bool is_static, StructFields &fi
 
       fields.push_back(std::move(field));
     } else {
-      Log << SyntaxError << current() << "Expected ':' after field name in struct";
+      Log << SyntaxError << Current() << "Expected ':' after field name in struct";
     }
   } else {
-    Log << SyntaxError << next() << "Expected field name in struct";
+    Log << SyntaxError << Next() << "Expected field name in struct";
   }
 }
 
@@ -192,14 +192,14 @@ auto Parser::PImpl::RecurseStructBody() -> Parser::PImpl::StructContent {
   }
 
   if (!NextIf(PuncLCur)) [[unlikely]] {
-    Log << SyntaxError << current() << "Expected '{' to start struct body";
+    Log << SyntaxError << Current() << "Expected '{' to start struct body";
 
     return body;
   }
 
   while (true) {
     if (NextIf(EofF)) {
-      Log << SyntaxError << current() << "Encountered EOF while parsing struct body";
+      Log << SyntaxError << Current() << "Encountered EOF while parsing struct body";
       break;
     }
 
@@ -214,7 +214,7 @@ auto Parser::PImpl::RecurseStructBody() -> Parser::PImpl::StructContent {
 }
 
 auto Parser::PImpl::RecurseStruct(CompositeType struct_type) -> FlowPtr<Stmt> {
-  auto start_pos = current().GetStart();
+  auto start_pos = Current().GetStart();
   auto struct_attributes = RecurseStructAttributes();
   auto struct_name = RecurseName();
   auto struct_template_params = RecurseTemplateParameters();

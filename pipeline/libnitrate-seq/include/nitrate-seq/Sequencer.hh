@@ -37,7 +37,7 @@
 #include <cstdint>
 #include <functional>
 #include <memory>
-#include <nitrate-core/IEnvironment.hh>
+#include <nitrate-core/EnvironmentFwd.hh>
 #include <nitrate-core/Macro.hh>
 #include <nitrate-lexer/Lexer.hh>
 #include <optional>

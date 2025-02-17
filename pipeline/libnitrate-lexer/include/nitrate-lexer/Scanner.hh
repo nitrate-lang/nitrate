@@ -35,12 +35,16 @@
 #define __NITRATE_LEXER_SCANNER_HH__
 
 #include <memory>
-#include <nitrate-core/IEnvironment.hh>
+#include <nitrate-core/EnvironmentFwd.hh>
 #include <nitrate-core/Macro.hh>
 #include <nitrate-core/Testing.hh>
 #include <nitrate-lexer/Token.hh>
 
 namespace ncc::lex {
+  namespace detail {
+    struct ScannerEOF final {};
+  }  // namespace detail
+
   class ISourceFile {
   public:
     virtual ~ISourceFile() = default;

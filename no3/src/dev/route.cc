@@ -44,6 +44,7 @@
 #include <fstream>
 #include <iostream>
 #include <memory>
+#include <nitrate-core/Environment.hh>
 #include <nitrate-core/Init.hh>
 #include <nitrate-core/Logger.hh>
 #include <nitrate-emit/Classes.hh>

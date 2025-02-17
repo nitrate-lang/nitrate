@@ -46,7 +46,7 @@ auto Parser::PImpl::RecurseVariableAttributes() -> std::optional<ExpressionList>
 
   while (true) {
     if (NextIf(EofF)) [[unlikely]] {
-      Log << SyntaxError << current() << "Encountered EOF while parsing variable attribute";
+      Log << SyntaxError << Current() << "Encountered EOF while parsing variable attribute";
       break;
     }
 
@@ -96,12 +96,12 @@ auto Parser::PImpl::RecurseVariableInstance(VariableType decl_type) -> NullableF
                                   symbol_attributes_opt.value())();
     }
 
-    Log << SyntaxError << current() << "Expected variable name";
+    Log << SyntaxError << Current() << "Expected variable name";
 
     return std::nullopt;
   }
 
-  Log << SyntaxError << current() << "Malformed variable attributes";
+  Log << SyntaxError << Current() << "Malformed variable attributes";
 
   return MockStmt(QAST_VAR);
 }
@@ -111,14 +111,14 @@ auto Parser::PImpl::RecurseVariable(VariableType decl_type) -> std::vector<FlowP
 
   while (true) {
     if (NextIf(EofF)) [[unlikely]] {
-      Log << SyntaxError << current() << "Unexpected EOF in variable declaration";
+      Log << SyntaxError << Current() << "Unexpected EOF in variable declaration";
       break;
     }
 
     if (auto variable_opt = RecurseVariableInstance(decl_type)) {
       variables.push_back(variable_opt.value());
     } else {
-      Log << SyntaxError << current() << "Failed to parse variable declaration";
+      Log << SyntaxError << Current() << "Failed to parse variable declaration";
       break;
     }
 
@@ -127,7 +127,7 @@ auto Parser::PImpl::RecurseVariable(VariableType decl_type) -> std::vector<FlowP
     }
 
     if (!NextIf(PuncComa)) {
-      Log << SyntaxError << current() << "Expected comma or semicolon after variable declaration";
+      Log << SyntaxError << Current() << "Expected comma or semicolon after variable declaration";
       break;
     }
   }

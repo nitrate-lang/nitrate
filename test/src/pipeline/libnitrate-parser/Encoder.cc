@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 
+#include <nitrate-core/Environment.hh>
 #include <nitrate-lexer/Lexer.hh>
 #include <nitrate-parser/ASTReader.hh>
 #include <nitrate-parser/ASTWriter.hh>

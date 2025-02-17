@@ -35,7 +35,6 @@
 #define __NITRATE_LEXER_LIB_H__
 
 #include <nitrate-core/Init.hh>
-#include <nitrate-lexer/Scanner.hh>
 
 namespace ncc::lex {
   struct LexerLibrarySetup {
@@ -47,4 +46,4 @@ namespace ncc::lex {
   extern LibraryRC<LexerLibrarySetup> LexerLibrary;
 }  // namespace ncc::lex
 
-#endif  // __NITRATE_LEXER_LIB_H__
+#endif
