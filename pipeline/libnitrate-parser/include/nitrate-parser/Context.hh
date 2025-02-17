@@ -36,7 +36,7 @@
 
 #include <boost/shared_ptr.hpp>
 #include <memory>
-#include <nitrate-core/Environment.hh>
+#include <nitrate-core/IEnvironment.hh>
 #include <nitrate-core/Logger.hh>
 #include <nitrate-lexer/Scanner.hh>
 #include <nitrate-parser/AST.hh>
@@ -47,10 +47,10 @@ namespace ncc::parse {
     class PImpl;
     std::unique_ptr<PImpl> m_impl;
 
-    Parser(lex::IScanner &lexer, std::shared_ptr<Environment> env, std::shared_ptr<void> lifetime);
+    Parser(lex::IScanner &lexer, std::shared_ptr<IEnvironment> env, std::shared_ptr<void> lifetime);
 
   public:
-    static auto Create(lex::IScanner &lexer, std::shared_ptr<Environment> env,
+    static auto Create(lex::IScanner &lexer, std::shared_ptr<IEnvironment> env,
                        std::shared_ptr<void> lifetime = nullptr) {
       return boost::shared_ptr<Parser>(new Parser(lexer, std::move(env), std::move(lifetime)));
     }
@@ -63,7 +63,7 @@ namespace ncc::parse {
     auto GetLexer() -> lex::IScanner &;
 
     template <typename Scanner>
-    static auto FromString(std::string_view str, std::shared_ptr<Environment> env) {
+    static auto FromString(std::string_view str, std::shared_ptr<IEnvironment> env) {
       auto state = std::make_shared<std::pair<std::stringstream, std::unique_ptr<Scanner>>>(
           std::stringstream(std::string(str)), nullptr);
       state->second = std::make_unique<Scanner>(state->first, env);
@@ -72,7 +72,7 @@ namespace ncc::parse {
     }
 
     template <typename Scanner>
-    static auto FromStream(std::istream &stream, std::shared_ptr<Environment> env) {
+    static auto FromStream(std::istream &stream, std::shared_ptr<IEnvironment> env) {
       auto lexer = std::make_shared<Scanner>(stream, env);
       return Create(lexer, env, lexer);
     }

@@ -36,7 +36,7 @@
 
 #include <boost/shared_ptr.hpp>
 #include <memory>
-#include <nitrate-core/Environment.hh>
+#include <nitrate-core/IEnvironment.hh>
 #include <nitrate-core/Logger.hh>
 #include <nitrate-lexer/Scanner.hh>
 #include <nitrate-parser/AST.hh>
@@ -47,9 +47,9 @@ namespace ncc::parse {
   class Parser::PImpl final {
     friend class Parser;
 
-    std::shared_ptr<ncc::Environment> m_env;
-    std::unique_ptr<ncc::IMemory> m_allocator;
-    ncc::lex::IScanner &m_rd;
+    std::shared_ptr<IEnvironment> m_env;
+    std::unique_ptr<IMemory> m_allocator;
+    lex::IScanner &m_rd;
     bool m_failed = false;
     std::shared_ptr<void> m_lifetime;
 
@@ -78,7 +78,7 @@ namespace ncc::parse {
     auto RecurseThrow() -> FlowPtr<Stmt>;
     auto RecurseAwait() -> FlowPtr<Stmt>;
     auto RecurseBlock(bool expect_braces, bool single_stmt, SafetyMode safety) -> FlowPtr<Stmt>;
-    auto RecurseExpr(const std::set<ncc::lex::Token> &terminators) -> FlowPtr<Expr>;
+    auto RecurseExpr(const std::set<lex::Token> &terminators) -> FlowPtr<Expr>;
     auto RecurseExprPrimary(bool is_type) -> NullableFlowPtr<Expr>;
     auto RecurseExprKeyword(lex::Keyword key) -> NullableFlowPtr<Expr>;
     auto RecurseExprPunctor(lex::Punctor punc) -> NullableFlowPtr<Expr>;
@@ -172,9 +172,9 @@ namespace ncc::parse {
     auto RecurseWhileBody() -> FlowPtr<Stmt>;
 
   public:
-    PImpl(lex::IScanner &lexer, std::shared_ptr<Environment> env, std::shared_ptr<void> lifetime)
+    PImpl(lex::IScanner &lexer, std::shared_ptr<IEnvironment> env, std::shared_ptr<void> lifetime)
         : m_env(std::move(env)),
-          m_allocator(std::make_unique<ncc::DynamicArena>()),
+          m_allocator(std::make_unique<DynamicArena>()),
           m_rd(lexer),
           m_lifetime(std::move(lifetime)) {}
     ~PImpl() = default;

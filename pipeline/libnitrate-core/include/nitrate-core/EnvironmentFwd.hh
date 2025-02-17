@@ -31,38 +31,12 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __NITRATE_CORE_ENV_H__
-#define __NITRATE_CORE_ENV_H__
-
-#include <nitrate-core/Allocate.hh>
-#include <nitrate-core/IEnvironment.hh>
-#include <nitrate-core/String.hh>
-#include <optional>
-#include <ranges>
-#include <unordered_map>
+#ifndef __NITRATE_CORE_ENV_FWD_H__
+#define __NITRATE_CORE_ENV_FWD_H__
 
 namespace ncc {
-  class NCC_EXPORT Environment final : public IEnvironment {
-    std::unordered_map<string, string> m_data;
-
-    void SetupDefaultKeys();
-
-  public:
-    Environment() { SetupDefaultKeys(); }
-    ~Environment() override = default;
-
-    Environment(const Environment &) = delete;
-    Environment(Environment &&) = delete;
-    Environment &operator=(const Environment &) = delete;
-    Environment &operator=(Environment &&) = delete;
-
-    auto Contains(std::string_view key) -> bool override;
-    auto Get(string key) -> std::optional<string> override;
-    void Set(string key, std::optional<string> value) override;
-
-    auto GetKeys() const { return m_data | std::ranges::views::keys; }
-  };
-
+  class IEnvironment;
+  class Environment;
 }  // namespace ncc
 
-#endif  // __NITRATE_CORE_ENV_H__
+#endif

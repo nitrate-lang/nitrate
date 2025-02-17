@@ -1251,7 +1251,7 @@ auto Tokenizer::GetNext() -> Token {
   return token;
 }
 
-Tokenizer::Tokenizer(std::istream &source_file, std::shared_ptr<Environment> env)
+Tokenizer::Tokenizer(std::istream &source_file, std::shared_ptr<IEnvironment> env)
     : IScanner(std::move(env)), m_impl(new Impl(source_file, [&]() { SetFailBit(); })) {}
 
 Tokenizer::Tokenizer(Tokenizer &&o) noexcept : IScanner(o.m_env), m_impl(std::move(o.m_impl)) {}

@@ -34,10 +34,8 @@
 #ifndef __NITRATE_LEXER_SCANNER_HH__
 #define __NITRATE_LEXER_SCANNER_HH__
 
-#include <cstdint>
-#include <deque>
 #include <memory>
-#include <nitrate-core/Environment.hh>
+#include <nitrate-core/IEnvironment.hh>
 #include <nitrate-core/Macro.hh>
 #include <nitrate-core/Testing.hh>
 #include <nitrate-lexer/Token.hh>
@@ -60,17 +58,11 @@ namespace ncc::lex {
   class NCC_EXPORT IScanner {
     friend class TestAttorney;
 
-    std::deque<Token> m_ready;
-    std::vector<Token> m_comments;
-    std::vector<Location> m_location_interned;
-    Token m_current;
-    bool m_skip = false, m_ebit = false, m_eof = false;
-
-    class Impl;
-    friend class Impl;
+    class PImpl;
+    std::unique_ptr<PImpl> m_impl;
 
   protected:
-    std::shared_ptr<Environment> m_env;
+    std::shared_ptr<IEnvironment> m_env;
 
     virtual auto GetNext() -> Token = 0;
 
@@ -79,24 +71,20 @@ namespace ncc::lex {
      * @note The internal map is checked first, it the ID is not found, this
      *       method is called.
      */
-    virtual auto GetLocationFallback(LocationID) -> std::optional<Location> { return std::nullopt; };
+    virtual auto GetLocationFallback(LocationID) -> std::optional<Location>;
 
   public:
-    IScanner(std::shared_ptr<Environment> env);
+    IScanner(std::shared_ptr<IEnvironment> env);
     virtual ~IScanner();
 
     /** Check if the VTQ model is empty. */
-    [[nodiscard]] auto IsEof() const -> bool { return m_eof; }
+    [[nodiscard]] auto IsEof() const -> bool;
 
     /** Check if the error bit is set. */
-    [[nodiscard]] virtual auto HasError() const -> bool { return m_ebit; }
+    [[nodiscard]] virtual auto HasError() const -> bool;
 
     /** Set the lexer error bit */
-    virtual auto SetFailBit(bool fail = true) -> bool {
-      auto old = m_ebit;
-      m_ebit = fail;
-      return old;
-    }
+    virtual auto SetFailBit(bool fail = true) -> bool;
 
     /**
      * Consumes the next token in the VTQ model. If comments are disabled,
@@ -117,7 +105,7 @@ namespace ncc::lex {
      * @return The next token from the deque.
      * @note This method is reentrant and thread safe.
      */
-    auto Peek() -> Token;
+    [[nodiscard]] auto Peek() -> Token;
 
     /**
      * Inserts a token into the front of the VTQ model.
@@ -128,11 +116,8 @@ namespace ncc::lex {
      */
     auto Insert(Token tok) -> void;
 
-    /**
-     * Return the last token emitted by either `Next` or `Peek`.
-     * @return The last token emitted.
-     */
-    [[nodiscard]] auto Current() -> Token { return m_current; }
+    /** @brief Return the last token emitted by either `Next` or `Peek`. */
+    [[nodiscard]] auto Current() -> Token;
 
     /** @brief Get the source location at the start of the token. */
     [[nodiscard]] auto Start(Token t) -> Location;
@@ -156,12 +141,12 @@ namespace ncc::lex {
     [[nodiscard]] auto GetLocation(LocationID id) -> Location;
 
     /** @brief Get the comment buffer. */
-    [[nodiscard]] auto CommentBuffer() -> const std::vector<Token>& { return m_comments; }
+    [[nodiscard]] auto CommentBuffer() -> const std::vector<Token>&;
 
     /** @brief Clear the comment buffer. */
-    auto ClearCommentBuffer() -> void { m_comments.clear(); }
+    auto ClearCommentBuffer() -> void;
 
-    [[nodiscard]] auto GetSkipCommentsState() const -> bool { return m_skip; }
+    [[nodiscard]] auto GetSkipCommentsState() const -> bool;
     auto SkipCommentsState(bool skip) -> bool;
 
     struct Point {
@@ -171,13 +156,10 @@ namespace ncc::lex {
     virtual auto GetSourceWindow(Point start, Point end,
                                  char fillchar = ' ') -> std::optional<std::vector<std::string>> = 0;
 
-    [[nodiscard]] auto GetEnvironment() const -> std::shared_ptr<Environment>;
+    [[nodiscard]] auto GetEnvironment() const -> std::shared_ptr<IEnvironment>;
 
     /** Create a new LocationID from a Location */
-    NCC_FORCE_INLINE auto InternLocation(Location loc) -> LocationID {
-      m_location_interned.push_back(loc);
-      return LocationID(m_location_interned.size() - 1);
-    }
+    auto InternLocation(Location loc) -> LocationID;
   };
 }  // namespace ncc::lex
 

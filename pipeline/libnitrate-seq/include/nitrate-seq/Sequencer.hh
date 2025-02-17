@@ -37,7 +37,7 @@
 #include <cstdint>
 #include <functional>
 #include <memory>
-#include <nitrate-core/Environment.hh>
+#include <nitrate-core/IEnvironment.hh>
 #include <nitrate-core/Macro.hh>
 #include <nitrate-lexer/Lexer.hh>
 #include <optional>
@@ -106,7 +106,7 @@ namespace ncc::seq {
     Sequencer(std::istream& file, std::shared_ptr<SequencerPImpl> shared);
 
   public:
-    Sequencer(std::istream& file, std::shared_ptr<Environment> env);
+    Sequencer(std::istream& file, std::shared_ptr<IEnvironment> env);
     ~Sequencer() override;
 
     [[nodiscard]] auto HasError() const -> bool override;
