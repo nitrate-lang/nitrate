@@ -36,7 +36,8 @@
 
 #include <cassert>
 #include <nitrate-core/FlowPtr.hh>
-#include <nitrate-parser/ASTCommon.hh>
+#include <nitrate-parser/AST.hh>
+#include <nitrate-parser/ASTFwd.hh>
 
 namespace ncc::parse {
   class ASTVisitor {

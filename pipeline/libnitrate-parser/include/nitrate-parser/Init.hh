@@ -44,6 +44,10 @@ namespace ncc::parse {
   };
 
   extern LibraryRC<ParseLibrarySetup> ParseLibrary;
+
+  enum SyntaxVersion : uint8_t {
+    NITRATE_1_0,
+  };
 }  // namespace ncc::parse
 
 #endif  // __NITRATE_AST_LIB_H__

@@ -36,9 +36,9 @@
 
 #include <memory>
 #include <nitrate-core/Macro.hh>
-#include <nitrate-lexer/Token.hh>
+#include <nitrate-lexer/TokenData.hh>
 #include <nitrate-parser/ASTVisitor.hh>
-#include <ostream>
+#include <nitrate-parser/Init.hh>
 
 namespace ncc::parse {
   class ICodeWriter : public ASTVisitor {

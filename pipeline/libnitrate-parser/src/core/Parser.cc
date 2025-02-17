@@ -39,6 +39,7 @@
 #include <nitrate-core/Macro.hh>
 #include <nitrate-parser/AST.hh>
 #include <nitrate-parser/ASTWriter.hh>
+#include <nitrate-parser/Algorithm.hh>
 #include <nitrate-parser/Context.hh>
 
 using namespace ncc;

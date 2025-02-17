@@ -31,72 +31,77 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <lsp/lang/format/Formatter.hh>
-#include <unordered_set>
+#ifndef __NITRATE_AST_ALGORITHM_H__
+#define __NITRATE_AST_ALGORITHM_H__
 
-using namespace no3::lsp::fmt;
-using namespace ncc::parse;
+#include <functional>
+#include <nitrate-parser/ASTBase.hh>
 
-void CambrianFormatter::Visit(FlowPtr<Block> n) {
-  PrintLineComments(n);
-
-  bool is_root_block = !m_did_root;
-  m_did_root = true;
-
-  switch (n->GetSafety()) {
-    case SafetyMode::Safe: {
-      m_line << "safe ";
-      break;
-    }
-
-    case SafetyMode::Unsafe: {
-      m_line << "unsafe ";
-      break;
-    }
-
-    case SafetyMode::Unknown: {
-      break;
-    }
-  }
-
-  static const std::unordered_set<ASTNodeKind> extra_seperation = {
-      QAST_STRUCT,     QAST_ENUM, QAST_FUNCTION, QAST_SCOPE, QAST_EXPORT,  QAST_BLOCK,
-
-      QAST_INLINE_ASM, QAST_IF,   QAST_WHILE,    QAST_FOR,   QAST_FOREACH, QAST_SWITCH,
+namespace ncc::parse {
+  enum IterMode : uint8_t {
+    dfs_pre,
+    dfs_post,
+    bfs_pre,
+    bfs_post,
+    children,
   };
 
-  if (!is_root_block && n->GetStatements().empty()) {
-    m_line << "{}";
-    return;
-  }
+  enum class IterOp : uint8_t {
+    Proceed,
+    Abort,
+    SkipChildren,
+  };
 
-  if (!is_root_block) {
-    m_line << "{" << std::endl;
-    m_indent += m_tabSize;
-  }
+  using IterCallback = std::function<IterOp(NullableFlowPtr<Base>, FlowPtr<Base>)>;
 
-  auto items = n->GetStatements();
+  namespace detail {
+    void DfsPreImpl(const FlowPtr<Base> &base, const IterCallback &cb);
+    void DfsPostImpl(const FlowPtr<Base> &base, const IterCallback &cb);
+    void BfsPreImpl(const FlowPtr<Base> &base, const IterCallback &cb);
+    void BfsPostImpl(const FlowPtr<Base> &base, const IterCallback &cb);
+    void IterChildren(const FlowPtr<Base> &base, const IterCallback &cb);
+  }  // namespace detail
 
-  for (auto it = items.begin(); it != items.end(); ++it) {
-    auto item = *it;
-
-    m_line << GetIndent();
-    item.Accept(*this);
-    m_line << std::endl;
-
-    bool is_last_item = it == items.end() - 1;
-
-    bool is_next_item_different = (it + 1 != items.end() && (*std::next(it))->GetKind() != item->GetKind());
-
-    bool extra_newline = !is_last_item && (is_next_item_different || extra_seperation.contains(item->GetKind()));
-
-    if (extra_newline) {
-      m_line << std::endl;
+  template <IterMode mode, typename T>
+  void iterate(FlowPtr<T> root, const IterCallback &cb) {  // NOLINT
+    if constexpr (mode == dfs_pre) {
+      return detail::DfsPreImpl(root, cb);
+    } else if constexpr (mode == dfs_post) {
+      return detail::DfsPostImpl(root, cb);
+    } else if constexpr (mode == bfs_pre) {
+      return detail::BfsPreImpl(root, cb);
+    } else if constexpr (mode == bfs_post) {
+      return detail::BfsPostImpl(root, cb);
+    } else if constexpr (mode == children) {
+      return detail::IterChildren(root, cb);
+    } else {
+      static_assert(mode != mode, "Invalid iteration mode.");
     }
   }
 
-  if (!is_root_block) {
-    m_indent -= m_tabSize;
-    m_line << GetIndent() << "}";
+  template <auto mode = dfs_pre>
+  void for_each(FlowPtr<Base> v,  // NOLINT
+                const std::function<void(ASTNodeKind, FlowPtr<Base>)> &f) {
+    iterate<mode>(v, [&](auto, const FlowPtr<Base> &c) -> IterOp {
+      f(c->GetKind(), c);
+
+      return IterOp::Proceed;
+    });
   }
-}
+
+  template <typename T, auto mode = dfs_pre>
+  void for_each(FlowPtr<Base> v,  // NOLINT
+                std::function<void(FlowPtr<T>)> f) {
+    iterate<mode>(v, [&](auto, FlowPtr<Base> c) -> IterOp {
+      if (c->GetKind() != Base::GetTypeCode<T>()) {
+        return IterOp::Proceed;
+      }
+
+      f(c.As<T>());
+
+      return IterOp::Proceed;
+    });
+  }
+}  // namespace ncc::parse
+
+#endif

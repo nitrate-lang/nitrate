@@ -39,7 +39,6 @@
 #include <nitrate-core/Macro.hh>
 #include <nitrate-lexer/Scanner.hh>
 #include <nitrate-parser/AST.hh>
-#include <nitrate-parser/ASTCommon.hh>
 #include <nitrate-parser/Context.hh>
 
 namespace ncc::parse {
@@ -68,7 +67,10 @@ namespace ncc::parse {
 #define NextIf(tok) NextIfImpl<tok>(m_rd)
 
   static inline auto BindComments(auto node, auto comments) {
-    node->SetComments(std::move(comments));
+    std::vector<string> comments_strs(comments.size());
+    std::transform(comments.begin(), comments.end(), comments_strs.begin(),
+                   [](const auto &c) { return c.GetString(); });
+    node->SetComments(std::move(comments_strs));
     return node;
   }
 

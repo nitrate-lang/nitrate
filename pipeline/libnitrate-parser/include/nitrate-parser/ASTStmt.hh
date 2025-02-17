@@ -35,6 +35,7 @@
 #define __NITRATE_AST_ASTSTMT_H__
 
 #include <nitrate-parser/ASTBase.hh>
+#include <nitrate-parser/ASTData.hh>
 #include <span>
 
 namespace ncc::parse {
@@ -47,6 +48,12 @@ namespace ncc::parse {
     [[nodiscard]] constexpr auto GetExpr() const { return m_expr; }
 
     constexpr void SetExpr(auto expr) { m_expr = std::move(expr); }
+  };
+
+  enum class SafetyMode : uint8_t {
+    Unknown = 0,
+    Safe = 1,
+    Unsafe = 2,
   };
 
   class Block final : public Stmt {
@@ -62,6 +69,8 @@ namespace ncc::parse {
     constexpr void SetStatements(auto items) { m_items = items; }
     constexpr void SetSafety(auto safety) { m_safety = safety; }
   };
+
+  enum class VariableType : uint8_t { Const, Var, Let };
 
   class Variable final : public Stmt {
     std::span<FlowPtr<Expr>> m_attributes;
@@ -382,6 +391,8 @@ namespace ncc::parse {
     constexpr void SetVariadic(auto variadic) { m_variadic = variadic; }
   };
 
+  enum class CompositeType : uint8_t { Region, Struct, Group, Class, Union };
+
   class Struct final : public Stmt {
     std::optional<std::span<TemplateParameter>> m_template_parameters;
     std::span<FlowPtr<Expr>> m_attributes;
@@ -426,7 +437,7 @@ namespace ncc::parse {
     constexpr void SetStaticMethods(auto static_methods) { m_static_methods = static_methods; }
   };
 
-  constexpr auto Stmt::IsExprStmt(npar_ty_t type) const -> bool {
+  constexpr auto Stmt::IsExprStmt(ASTNodeKind type) const -> bool {
     return Is(QAST_ESTMT) && As<ExprStmt>()->GetExpr()->Is(type);
   }
 }  // namespace ncc::parse

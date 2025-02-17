@@ -35,6 +35,7 @@
 #define __NITRATE_AST_ASTTYPE_H__
 
 #include <nitrate-parser/ASTBase.hh>
+#include <nitrate-parser/ASTData.hh>
 #include <span>
 
 namespace ncc::parse {

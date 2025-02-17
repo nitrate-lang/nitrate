@@ -56,7 +56,7 @@ void CambrianFormatter::Visit(FlowPtr<List> n) {
     n->GetItems().front().Accept(*this);
     m_line << "; " << argc << "]";
   } else {
-    static const std::unordered_set<npar_ty_t> extra_seperation = {
+    static const std::unordered_set<ASTNodeKind> extra_seperation = {
         QAST_TEREXPR, QAST_CALL, QAST_LIST, QAST_ASSOC, QAST_SEQ, QAST_TEMPL_CALL,
     };
 

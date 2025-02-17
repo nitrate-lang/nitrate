@@ -36,13 +36,15 @@
 #include <nitrate-lexer/Scanner.hh>
 #include <nitrate-parser/AST.hh>
 #include <nitrate-parser/ASTBase.hh>
+#include <nitrate-parser/ASTExpr.hh>
+#include <nitrate-parser/ASTStmt.hh>
+#include <nitrate-parser/ASTType.hh>
 #include <nitrate-parser/ASTVisitor.hh>
 #include <nitrate-parser/ASTWriter.hh>
+#include <nitrate-parser/Algorithm.hh>
 #include <queue>
 #include <ranges>
 #include <stack>
-
-#include "nitrate-core/Assert.hh"
 
 using namespace ncc;
 using namespace ncc::parse;

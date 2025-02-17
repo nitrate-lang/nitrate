@@ -37,7 +37,9 @@
 #include <nitrate-core/Logger.hh>
 #include <nitrate-core/Macro.hh>
 #include <nitrate-parser/AST.hh>
+#include <nitrate-parser/ASTData.hh>
 #include <nitrate-parser/ASTWriter.hh>
+#include <nitrate-parser/Algorithm.hh>
 #include <sstream>
 
 using namespace ncc;
@@ -164,22 +166,6 @@ auto Base::RecursiveChildCount() -> size_t {
   return count;
 }
 
-void Base::SetComments(std::span<const lex::Token> comment_tokens) {
-  auto old = ExtensionDataStore.Get(m_data);
-
-  {
-    std::vector<string> comments;
-    comments.reserve(comment_tokens.size());
-    for (const auto &token : comment_tokens) {
-      comments.push_back(token.GetString());
-    }
-
-    old.AddComments(std::move(comments));
-  }
-
-  ExtensionDataStore.Set(m_data, std::move(old));
-}
-
 void Base::SetComments(std::span<const string> comments) {
   auto old = ExtensionDataStore.Get(m_data);
   old.AddComments(comments);
@@ -201,14 +187,14 @@ NCC_EXPORT auto Type::IsPtrTo(const Type *type) const -> bool {
   return item->Is(type->GetKind());
 }
 
-auto Parser::PImpl::MockStmt(std::optional<npar_ty_t>) -> FlowPtr<Stmt> {
+auto Parser::PImpl::MockStmt(std::optional<ASTNodeKind>) -> FlowPtr<Stmt> {
   auto node = CreateNode<Stmt>(QAST_BASE)();
   node->SetOffset(m_rd.Current().GetStart());
 
   return node;
 }
 
-auto Parser::PImpl::MockExpr(std::optional<npar_ty_t>) -> FlowPtr<Expr> {
+auto Parser::PImpl::MockExpr(std::optional<ASTNodeKind>) -> FlowPtr<Expr> {
   auto node = CreateNode<Expr>(QAST_BASE)();
   node->SetOffset(m_rd.Current().GetStart());
 

@@ -34,109 +34,109 @@
 #ifndef __NITRATE_AST_AST_H__
 #define __NITRATE_AST_AST_H__
 
-#include <functional>
-#include <nitrate-parser/ASTBase.hh>
-#include <nitrate-parser/ASTExpr.hh>
-#include <nitrate-parser/ASTStmt.hh>
-#include <nitrate-parser/ASTType.hh>
+#include <cstdint>
 
 namespace ncc::parse {
-  /* This function takes template variadic arguments and forwards them into
-   * the constructor of type T. If compiled with debugging, the source location
-   * of the original call site is saved for the purposes of data-flow analysis
-   * and AST debugging.
-   */
-  template <typename T, typename... Args>
-  constexpr static inline auto CreateNode(Args &&...args) {
-    return [&](std::source_location origin = std::source_location::current()) {
-      FlowPtr<T> new_obj = MakeFlowPtr<T>(new (Arena<T>().allocate(1)) T(std::forward<Args>(args)...));  // NOLINT
+  enum ASTNodeKind : uint8_t {
+    /*****************************************************************************
+     * Base
+     ****************************************************************************/
 
-      new_obj.SetTracking(origin);
+    QAST_BASE = 0, /* Polymorphic base node */
 
-      return new_obj;
-    };
-  }
-}  // namespace ncc::parse
+    /*****************************************************************************
+     * Expressions
+     ****************************************************************************/
 
-namespace ncc::parse {
-  enum IterMode : uint8_t {
-    dfs_pre,
-    dfs_post,
-    bfs_pre,
-    bfs_post,
-    children,
-  };
+    QAST_BINEXPR = 1,     /* Binary expression */
+    QAST_UNEXPR = 2,      /* Unary expression */
+    QAST_POST_UNEXPR = 3, /* Post-unary expression */
+    QAST_TEREXPR = 4,     /* Ternary expression */
+    QAST_INT = 5,         /* Integer literal */
+    QAST_FLOAT = 6,       /* Floating-point literal */
+    QAST_STRING = 7,      /* String literal */
+    QAST_CHAR = 8,        /* Character literal */
+    QAST_BOOL = 9,        /* Boolean literal */
+    QAST_NULL = 10,       /* Null literal */
+    QAST_UNDEF = 11,      /* Undefined expression */
+    QAST_CALL = 12,       /* Function call */
+    QAST_LIST = 13,       /* List expression */
+    QAST_ASSOC = 14,      /* Associative pair */
+    QAST_INDEX = 15,      /* Index access */
+    QAST_SLICE = 16,      /* Slice access */
+    QAST_FSTRING = 17,    /* Formatted string */
+    QAST_IDENT = 18,      /* Identifier */
+    QAST_SEQ = 19,        /* Sequence point */
+    QAST_LAMBDA = 20,     /* Lambda expression */
+    QAST_TEMPL_CALL = 21, /* Template call */
 
-  enum class IterOp : uint8_t {
-    Proceed,
-    Abort,
-    SkipChildren,
-  };
+    QAST__EXPR_FIRST = QAST_BINEXPR,
+    QAST__EXPR_LAST = QAST_TEMPL_CALL,
 
-  using IterCallback = std::function<IterOp(NullableFlowPtr<Base>, FlowPtr<Base>)>;
+    /*****************************************************************************
+     * Types
+     ****************************************************************************/
 
-  namespace detail {
-    void DfsPreImpl(const FlowPtr<Base> &base, const IterCallback &cb);
-    void DfsPostImpl(const FlowPtr<Base> &base, const IterCallback &cb);
-    void BfsPreImpl(const FlowPtr<Base> &base, const IterCallback &cb);
-    void BfsPostImpl(const FlowPtr<Base> &base, const IterCallback &cb);
-    void IterChildren(const FlowPtr<Base> &base, const IterCallback &cb);
-  }  // namespace detail
+    QAST_U1 = 30,       /* 1-bit unsigned integer (boolean) */
+    QAST_U8 = 31,       /* 8-bit unsigned integer */
+    QAST_U16 = 32,      /* 16-bit unsigned integer */
+    QAST_U32 = 33,      /* 32-bit unsigned integer */
+    QAST_U64 = 34,      /* 64-bit unsigned integer */
+    QAST_U128 = 35,     /* 128-bit unsigned integer */
+    QAST_I8 = 36,       /* 8-bit signed integer */
+    QAST_I16 = 37,      /* 16-bit signed integer */
+    QAST_I32 = 38,      /* 32-bit signed integer */
+    QAST_I64 = 39,      /* 64-bit signed integer */
+    QAST_I128 = 40,     /* 128-bit signed integer */
+    QAST_F16 = 41,      /* 16-bit floating-point number */
+    QAST_F32 = 42,      /* 32-bit floating-point number */
+    QAST_F64 = 43,      /* 64-bit floating-point number */
+    QAST_F128 = 44,     /* 128-bit floating-point number */
+    QAST_VOID = 45,     /* Void type */
+    QAST_INFER = 46,    /* Inferred type */
+    QAST_OPAQUE = 47,   /* Opaque named type */
+    QAST_NAMED = 48,    /* Unresolved type name */
+    QAST_REF = 49,      /* Reference type */
+    QAST_PTR = 50,      /* Raw pointer type */
+    QAST_ARRAY = 51,    /* Basic array type */
+    QAST_TUPLE = 52,    /* Tuple type */
+    QAST_TEMPLATE = 53, /* Template type */
+    QAST_FUNCTOR = 54,  /* Function type */
 
-  template <IterMode mode, typename T>
-  void iterate(FlowPtr<T> root, const IterCallback &cb) {  // NOLINT
-    if constexpr (mode == dfs_pre) {
-      return detail::DfsPreImpl(root, cb);
-    } else if constexpr (mode == dfs_post) {
-      return detail::DfsPostImpl(root, cb);
-    } else if constexpr (mode == bfs_pre) {
-      return detail::BfsPreImpl(root, cb);
-    } else if constexpr (mode == bfs_post) {
-      return detail::BfsPostImpl(root, cb);
-    } else if constexpr (mode == children) {
-      return detail::IterChildren(root, cb);
-    } else {
-      static_assert(mode != mode, "Invalid iteration mode.");
-    }
-  }
+    QAST__TYPE_FIRST = QAST_U1,
+    QAST__TYPE_LAST = QAST_FUNCTOR,
 
-  template <auto mode = dfs_pre>
-  void for_each(FlowPtr<Base> v,  // NOLINT
-                const std::function<void(npar_ty_t, FlowPtr<Base>)> &f) {
-    iterate<mode>(v, [&](auto, const FlowPtr<Base> &c) -> IterOp {
-      f(c->GetKind(), c);
+    /*****************************************************************************
+     * Statements
+     ****************************************************************************/
 
-      return IterOp::Proceed;
-    });
-  }
+    QAST_IF = 60,         /* If statement */
+    QAST_RETIF = 61,      /* Return-if statement */
+    QAST_SWITCH = 62,     /* Switch statement */
+    QAST_CASE = 63,       /* Case statement */
+    QAST_RETURN = 64,     /* Return statement */
+    QAST_BREAK = 65,      /* Break statement */
+    QAST_CONTINUE = 66,   /* Continue statement */
+    QAST_WHILE = 67,      /* While statement */
+    QAST_FOR = 68,        /* For statement */
+    QAST_FOREACH = 69,    /* Foreach statement */
+    QAST_INLINE_ASM = 70, /* Inline assembly statement */
+    QAST_ESTMT = 71,      /* Expression-statement adapter */
+    QAST_TYPEDEF = 80,    /* Type alias declaration */
+    QAST_STRUCT = 81,     /* Struct definition */
+    QAST_ENUM = 83,       /* Enum definition */
+    QAST_SCOPE = 84,      /* Namespace scope */
+    QAST_BLOCK = 85,      /* Block statement */
+    QAST_EXPORT = 86,     /* Export statement */
+    QAST_VAR = 87,        /* Variable declaration */
+    QAST_FUNCTION = 88,   /* Function definition */
 
-  template <typename T, auto mode = dfs_pre>
-  void for_each(FlowPtr<Base> v,  // NOLINT
-                std::function<void(FlowPtr<T>)> f) {
-    iterate<mode>(v, [&](auto, FlowPtr<Base> c) -> IterOp {
-      if (c->GetKind() != Base::GetTypeCode<T>()) {
-        return IterOp::Proceed;
-      }
+    QAST__STMT_FIRST = QAST_IF,
+    QAST__STMT_LAST = QAST_FUNCTION,
 
-      f(c.As<T>());
-
-      return IterOp::Proceed;
-    });
-  }
-
-  class NCC_EXPORT ASTRoot final {
-    FlowPtr<Base> m_base;
-    bool m_failed;
-    std::shared_ptr<void> m_allocator;
-
-  public:
-    constexpr ASTRoot(auto base, auto allocator, auto failed)
-        : m_base(std::move(base)), m_failed(failed), m_allocator(std::move(allocator)) {}
-
-    auto Get() -> FlowPtr<Base> & { return m_base; }
-    [[nodiscard]] auto Get() const -> FlowPtr<Base> { return m_base; }
-
-    [[nodiscard]] auto Check() const -> bool;
+    QAST__FIRST = QAST_BASE,
+    QAST__LAST = QAST_FUNCTION,
+    QAST__RANGE = QAST__LAST - QAST__FIRST,
   };
 }  // namespace ncc::parse
 

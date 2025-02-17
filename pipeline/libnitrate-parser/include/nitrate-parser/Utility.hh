@@ -31,72 +31,46 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <lsp/lang/format/Formatter.hh>
-#include <unordered_set>
+#ifndef __NITRATE_AST_UTILITY_H__
+#define __NITRATE_AST_UTILITY_H__
 
-using namespace no3::lsp::fmt;
-using namespace ncc::parse;
+#include <memory>
+#include <nitrate-core/FlowPtr.hh>
+#include <nitrate-core/Macro.hh>
+#include <nitrate-parser/ASTFwd.hh>
+#include <source_location>
 
-void CambrianFormatter::Visit(FlowPtr<Block> n) {
-  PrintLineComments(n);
+namespace ncc::parse {
+  /* This function takes template variadic arguments and forwards them into
+   * the constructor of type T. If compiled with debugging, the source location
+   * of the original call site is saved for the purposes of data-flow analysis
+   * and AST debugging.
+   */
+  template <typename T, typename... Args>
+  constexpr static inline auto CreateNode(Args&&... args) {
+    return [&](std::source_location origin = std::source_location::current()) {
+      FlowPtr<T> new_obj = MakeFlowPtr<T>(new (Arena<T>().allocate(1)) T(std::forward<Args>(args)...));  // NOLINT
 
-  bool is_root_block = !m_did_root;
-  m_did_root = true;
+      new_obj.SetTracking(origin);
 
-  switch (n->GetSafety()) {
-    case SafetyMode::Safe: {
-      m_line << "safe ";
-      break;
-    }
-
-    case SafetyMode::Unsafe: {
-      m_line << "unsafe ";
-      break;
-    }
-
-    case SafetyMode::Unknown: {
-      break;
-    }
+      return new_obj;
+    };
   }
 
-  static const std::unordered_set<ASTNodeKind> extra_seperation = {
-      QAST_STRUCT,     QAST_ENUM, QAST_FUNCTION, QAST_SCOPE, QAST_EXPORT,  QAST_BLOCK,
+  class NCC_EXPORT ASTRoot final {
+    FlowPtr<Base> m_base;
+    bool m_failed;
+    std::shared_ptr<void> m_allocator;
 
-      QAST_INLINE_ASM, QAST_IF,   QAST_WHILE,    QAST_FOR,   QAST_FOREACH, QAST_SWITCH,
+  public:
+    constexpr ASTRoot(auto base, auto allocator, auto failed)
+        : m_base(std::move(base)), m_failed(failed), m_allocator(std::move(allocator)) {}
+
+    auto Get() -> FlowPtr<Base>& { return m_base; }
+    [[nodiscard]] auto Get() const -> FlowPtr<Base> { return m_base; }
+
+    [[nodiscard]] auto Check() const -> bool;
   };
+}  // namespace ncc::parse
 
-  if (!is_root_block && n->GetStatements().empty()) {
-    m_line << "{}";
-    return;
-  }
-
-  if (!is_root_block) {
-    m_line << "{" << std::endl;
-    m_indent += m_tabSize;
-  }
-
-  auto items = n->GetStatements();
-
-  for (auto it = items.begin(); it != items.end(); ++it) {
-    auto item = *it;
-
-    m_line << GetIndent();
-    item.Accept(*this);
-    m_line << std::endl;
-
-    bool is_last_item = it == items.end() - 1;
-
-    bool is_next_item_different = (it + 1 != items.end() && (*std::next(it))->GetKind() != item->GetKind());
-
-    bool extra_newline = !is_last_item && (is_next_item_different || extra_seperation.contains(item->GetKind()));
-
-    if (extra_newline) {
-      m_line << std::endl;
-    }
-  }
-
-  if (!is_root_block) {
-    m_indent -= m_tabSize;
-    m_line << GetIndent() << "}";
-  }
-}
+#endif

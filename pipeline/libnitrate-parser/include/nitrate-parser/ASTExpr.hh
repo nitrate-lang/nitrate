@@ -34,8 +34,9 @@
 #ifndef __NITRATE_AST_ASTEXPR_H__
 #define __NITRATE_AST_ASTEXPR_H__
 
+#include <nitrate-lexer/Enums.hh>
 #include <nitrate-parser/ASTBase.hh>
-#include <nitrate-parser/ASTCommon.hh>
+#include <nitrate-parser/ASTData.hh>
 #include <span>
 
 namespace ncc::parse {

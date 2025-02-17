@@ -31,72 +31,80 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <lsp/lang/format/Formatter.hh>
-#include <unordered_set>
+#ifndef __NITRATE_AST_AST_FWD_H__
+#define __NITRATE_AST_AST_FWD_H__
 
-using namespace no3::lsp::fmt;
-using namespace ncc::parse;
+namespace ncc::parse {
+  class Base;
+  class Stmt;
+  class Type;
+  class Expr;
+  class ExprStmt;
+  class LambdaExpr;
+  class NamedTy;
+  class InferTy;
+  class TemplateType;
+  class U1;
+  class U8;
+  class U16;
+  class U32;
+  class U64;
+  class U128;
+  class I8;
+  class I16;
+  class I32;
+  class I64;
+  class I128;
+  class F16;
+  class F32;
+  class F64;
+  class F128;
+  class VoidTy;
+  class PtrTy;
+  class OpaqueTy;
+  class TupleTy;
+  class ArrayTy;
+  class RefTy;
+  class FuncTy;
+  class Unary;
+  class Binary;
+  class PostUnary;
+  class Ternary;
+  class Integer;
+  class Float;
+  class Boolean;
+  class String;
+  class Character;
+  class Null;
+  class Undefined;
+  class Call;
+  class TemplateCall;
+  class List;
+  class Assoc;
+  class Index;
+  class Slice;
+  class FString;
+  class Identifier;
+  class Sequence;
+  class Block;
+  class Variable;
+  class Assembly;
+  class If;
+  class While;
+  class For;
+  class Foreach;
+  class Break;
+  class Continue;
+  class Return;
+  class ReturnIf;
+  class Case;
+  class Switch;
+  class Typedef;
+  class Function;
+  class Struct;
+  class Enum;
+  class Scope;
+  class Export;
+}  // namespace ncc::parse
 
-void CambrianFormatter::Visit(FlowPtr<Block> n) {
-  PrintLineComments(n);
-
-  bool is_root_block = !m_did_root;
-  m_did_root = true;
-
-  switch (n->GetSafety()) {
-    case SafetyMode::Safe: {
-      m_line << "safe ";
-      break;
-    }
-
-    case SafetyMode::Unsafe: {
-      m_line << "unsafe ";
-      break;
-    }
-
-    case SafetyMode::Unknown: {
-      break;
-    }
-  }
-
-  static const std::unordered_set<ASTNodeKind> extra_seperation = {
-      QAST_STRUCT,     QAST_ENUM, QAST_FUNCTION, QAST_SCOPE, QAST_EXPORT,  QAST_BLOCK,
-
-      QAST_INLINE_ASM, QAST_IF,   QAST_WHILE,    QAST_FOR,   QAST_FOREACH, QAST_SWITCH,
-  };
-
-  if (!is_root_block && n->GetStatements().empty()) {
-    m_line << "{}";
-    return;
-  }
-
-  if (!is_root_block) {
-    m_line << "{" << std::endl;
-    m_indent += m_tabSize;
-  }
-
-  auto items = n->GetStatements();
-
-  for (auto it = items.begin(); it != items.end(); ++it) {
-    auto item = *it;
-
-    m_line << GetIndent();
-    item.Accept(*this);
-    m_line << std::endl;
-
-    bool is_last_item = it == items.end() - 1;
-
-    bool is_next_item_different = (it + 1 != items.end() && (*std::next(it))->GetKind() != item->GetKind());
-
-    bool extra_newline = !is_last_item && (is_next_item_different || extra_seperation.contains(item->GetKind()));
-
-    if (extra_newline) {
-      m_line << std::endl;
-    }
-  }
-
-  if (!is_root_block) {
-    m_indent -= m_tabSize;
-    m_line << GetIndent() << "}";
-  }
-}
+#endif

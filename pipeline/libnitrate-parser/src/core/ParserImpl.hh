@@ -40,6 +40,9 @@
 #include <nitrate-core/Logger.hh>
 #include <nitrate-lexer/Scanner.hh>
 #include <nitrate-parser/AST.hh>
+#include <nitrate-parser/ASTExpr.hh>
+#include <nitrate-parser/ASTStmt.hh>
+#include <nitrate-parser/ASTType.hh>
 #include <nitrate-parser/Context.hh>
 #include <set>
 
@@ -93,8 +96,8 @@ namespace ncc::parse {
      *  Helper functions
      ****************************************************************************/
 
-    auto MockStmt(std::optional<npar_ty_t> expected = std::nullopt) -> FlowPtr<Stmt>;
-    auto MockExpr(std::optional<npar_ty_t> expected = std::nullopt) -> FlowPtr<Expr>;
+    auto MockStmt(std::optional<ASTNodeKind> expected = std::nullopt) -> FlowPtr<Stmt>;
+    auto MockExpr(std::optional<ASTNodeKind> expected = std::nullopt) -> FlowPtr<Expr>;
     auto MockType() -> FlowPtr<Type>;
 
     auto RecurseName() -> string;

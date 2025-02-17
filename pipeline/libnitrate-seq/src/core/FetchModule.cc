@@ -41,6 +41,8 @@
 #include <fstream>
 #include <iostream>
 #include <nitrate-core/IEnvironment.hh>
+#include <nitrate-parser/ASTStmt.hh>
+#include <nitrate-parser/Algorithm.hh>
 #include <nitrate-parser/CodeWriter.hh>
 #include <nitrate-parser/Context.hh>
 #include <nitrate-seq/Sequencer.hh>

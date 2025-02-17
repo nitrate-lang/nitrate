@@ -33,6 +33,9 @@
 
 #include <nitrate-core/Logger.hh>
 #include <nitrate-parser/AST.hh>
+#include <nitrate-parser/ASTExpr.hh>
+#include <nitrate-parser/ASTStmt.hh>
+#include <nitrate-parser/ASTType.hh>
 #include <nitrate-parser/CodeWriter.hh>
 
 using namespace ncc::lex;

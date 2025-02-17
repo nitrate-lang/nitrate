@@ -40,8 +40,7 @@
 #include <nitrate-core/Macro.hh>
 #include <nitrate-core/NullableFlowPtr.hh>
 #include <nitrate-core/String.hh>
-#include <nitrate-parser/ASTCommon.hh>
-#include <nitrate-parser/ASTVisitor.hh>
+#include <nitrate-parser/ASTFwd.hh>
 #include <variant>
 #include <vector>
 
@@ -75,6 +74,20 @@ namespace ncc::parse {
 };  // namespace ncc::parse
 
 namespace ncc::parse {
+  enum class Purity : uint8_t {
+    Impure,
+    Impure_TSafe,
+    Pure,
+    Quasi,
+    Retro,
+  };
+
+  enum class Vis : uint8_t {
+    Pub = 0,
+    Sec = 1,
+    Pro = 2,
+  };
+
   using ExpressionList = std::vector<FlowPtr<Expr>, Arena<FlowPtr<Expr>>>;
   using TupleTyItems = std::vector<FlowPtr<Type>, Arena<FlowPtr<Type>>>;
   using CallArg = std::pair<string, FlowPtr<Expr>>;

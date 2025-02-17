@@ -41,8 +41,10 @@
 #include <nitrate-core/Macro.hh>
 #include <nitrate-parser/AST.hh>
 #include <nitrate-parser/ASTBase.hh>
-#include <nitrate-parser/ASTCommon.hh>
+#include <nitrate-parser/ASTExpr.hh>
 #include <nitrate-parser/ASTReader.hh>
+#include <nitrate-parser/ASTStmt.hh>
+#include <nitrate-parser/ASTType.hh>
 
 static constexpr size_t kRecursionLimit = 100000;
 

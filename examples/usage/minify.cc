@@ -1,4 +1,5 @@
 #include <nitrate-core/Environment.hh>
+#include <nitrate-parser/ASTBase.hh>
 #include <nitrate-parser/CodeWriter.hh>
 #include <nitrate-parser/Context.hh>
 #include <nitrate-seq/Sequencer.hh>

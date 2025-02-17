@@ -3,6 +3,11 @@
 #include <lsp/lang/FmtInterface.hh>
 #include <nitrate-core/String.hh>
 #include <nitrate-lexer/Grammar.hh>
+#include <nitrate-parser/ASTExpr.hh>
+#include <nitrate-parser/ASTFwd.hh>
+#include <nitrate-parser/ASTStmt.hh>
+#include <nitrate-parser/ASTType.hh>
+#include <nitrate-parser/ASTVisitor.hh>
 #include <sstream>
 
 namespace no3::lsp::fmt {
