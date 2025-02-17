@@ -5,7 +5,7 @@
 #include <nitrate-lexer/Init.hh>
 #include <nitrate-lexer/Lexer.hh>
 
-static inline std::pair<std::vector<ncc::lex::Token>, ncc::lex::Tokenizer> LexString(const std::string& text) {
+static inline std::pair<std::vector<ncc::lex::Token>, ncc::lex::Tokenizer> LexString(std::string_view text) {
   auto env = std::make_shared<ncc::Environment>();
   boost::iostreams::stream<boost::iostreams::array_source> ss(text.data(), text.size());
   ncc::lex::Tokenizer tokenizer(ss, env);
@@ -21,7 +21,6 @@ static inline std::pair<std::vector<ncc::lex::Token>, ncc::lex::Tokenizer> LexSt
   TEST(Lexer, Parse_##__DOMAIN##_##__GROUP##_##__TEST_NUMBER) {  \
     if (auto lib_rc = ncc::lex::LexerLibrary.GetRC()) {          \
       std::vector<ncc::lex::Token> expected = __VA_ARGS__;       \
-      auto actual = LexString(__TEXT).first;                     \
-      EXPECT_EQ(expected, actual);                               \
+      EXPECT_EQ(expected, LexString(__TEXT).first);              \
     }                                                            \
   }

@@ -107,7 +107,7 @@ TEST_CASE(Integer, Dec, 96, "146155_054_5", {1461550545})
 TEST_CASE(Integer, Dec, 97, "140695_152_6", {1406951526})
 TEST_CASE(Integer, Dec, 98, "130201_609_9", {1302016099})
 TEST_CASE(Integer, Dec, 99, "123064_674_0", {1230646740})
-TEST_CASE(Integer, Dec, 100, "114249_191_7", {1142491917})
+TEST_CASE(Integer, Dec, 100, "114249_191_\n7", {1142491917})
 
 ///=============================================================================
 /// EXPLICIT DECIMAL LITERALS
@@ -211,8 +211,8 @@ TEST_CASE(Integer, ExpDec, 95, "0d151613_312_8", {1516133128})
 TEST_CASE(Integer, ExpDec, 96, "0d146155_054_5", {1461550545})
 TEST_CASE(Integer, ExpDec, 97, "0d140695_152_6", {1406951526})
 TEST_CASE(Integer, ExpDec, 98, "0d130201_609_9", {1302016099})
-TEST_CASE(Integer, ExpDec, 99, "0d123064_674_0", {1230646740})
-TEST_CASE(Integer, ExpDec, 100, "0d114249_191_7", {1142491917})
+TEST_CASE(Integer, ExpDec, 99, "0dff", {})
+TEST_CASE(Integer, ExpDec, 100, "0d114249_191_\n7", {1142491917})
 
 ///=============================================================================
 /// HEXADECIMAL LITERALS
@@ -317,7 +317,7 @@ TEST_CASE(Integer, Hex, 96, "0x571_d7dd_1", {0x571d7dd1})
 TEST_CASE(Integer, Hex, 97, "0x53d_c606_6", {0x53dc6066})
 TEST_CASE(Integer, Hex, 98, "0x4d9_b306_3", {0x4d9b3063})
 TEST_CASE(Integer, Hex, 99, "0x495_a2dd_4", {0x495a2dd4})
-TEST_CASE(Integer, Hex, 100, "0x4419_0b0_d", {0x44190b0d})
+TEST_CASE(Integer, Hex, 100, "0x4419_0b0_\nd", {0x44190b0d})
 
 ///=============================================================================
 /// OCTAL LITERALS
@@ -421,8 +421,8 @@ TEST_CASE(Integer, Oct, 95, "0o13_2274554_10", {0x5a5e5b08})
 TEST_CASE(Integer, Oct, 96, "0o12_7072767_21", {0x571d7dd1})
 TEST_CASE(Integer, Oct, 97, "0o12_3670601_46", {0x53dc6066})
 TEST_CASE(Integer, Oct, 98, "0o11_5466301_43", {0x4d9b3063})
-TEST_CASE(Integer, Oct, 99, "0o11_1264267_24", {0x495a2dd4})
-TEST_CASE(Integer, Oct, 100, "0o1_04062054_15", {0x44190b0d})
+TEST_CASE(Integer, Oct, 99, "0off", {})
+TEST_CASE(Integer, Oct, 100, "0o1_04062054_\n15", {0x44190b0d})
 
 ///=============================================================================
 /// BINARY LITERALS
@@ -530,5 +530,5 @@ TEST_CASE(Integer, Bin, 95, "0b101_1010_0101111001011_01100_001000", {0b10110100
 TEST_CASE(Integer, Bin, 96, "0b101_0111_0001110101111_10111_010001", {0b1010111000111010111110111010001})
 TEST_CASE(Integer, Bin, 97, "0b101_0011_1101110001100_00001_100110", {0b1010011110111000110000001100110})
 TEST_CASE(Integer, Bin, 98, "0b100_1101_1001101100110_00001_100011", {0b1001101100110110011000001100011})
-TEST_CASE(Integer, Bin, 99, "0b100_1001_0101101000101_10111_010100", {0b1001001010110100010110111010100})
-TEST_CASE(Integer, Bin, 100, "0b100_0100_0001100100001_01100_001101", {0b1000100000110010000101100001101})
+TEST_CASE(Integer, Bin, 99, "0bff", {})
+TEST_CASE(Integer, Bin, 100, "0b100_0100_0001100100001_01100_\n001101", {0b1000100000110010000101100001101})

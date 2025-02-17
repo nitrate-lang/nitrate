@@ -884,8 +884,6 @@ public:
   }
 
   void ParseIntegerUnwind(uint8_t c, NumberKind kind, std::string &buf) {
-    qcore_assert(!buf.empty());
-
     std::vector<uint8_t> q;
 
     switch (kind) {
@@ -905,7 +903,7 @@ public:
       }
 
       case HexNum: {
-        qcore_assert(kHexDigitsTable[buf.back()]);
+        qcore_assert(!buf.empty() && kHexDigitsTable[buf.back()]);
         break;
       }
 
@@ -1031,6 +1029,10 @@ public:
     } while (is_lexing);
 
     ParseIntegerUnwind(c, kind, m_buf);
+    if (m_buf.empty()) {
+      Log << InvalidNumber << LogSource() << "Invalid number literal";
+      return Token::EndOfFile();
+    }
 
     if (kind == DecNum) {
       kind = std::any_of(m_buf.begin(), m_buf.end(), [](auto c) { return c == 'e' || c == 'E'; }) ? Double : DecNum;
@@ -1213,22 +1215,19 @@ auto Tokenizer::GetNext() -> Token {
   Token token;
 
   switch (state) {
-    case LexState::Identifier: {
+    case LexState::Identifier:
       token = impl.ParseIdentifier(c, start_pos);
       break;
-    }
 
-    case LexState::String: {
+    case LexState::String:
       token = impl.ParseString(c, start_pos);
       break;
-    }
 
-    case LexState::Integer: {
+    case LexState::Integer:
       token = impl.ParseInteger(c, start_pos);
       break;
-    }
 
-    case LexState::CommentStart: {
+    case LexState::CommentStart:
       if (impl.NextCharIf('/')) {
         token = impl.ParseCommentSingleLine(start_pos);
         break;
@@ -1241,9 +1240,8 @@ auto Tokenizer::GetNext() -> Token {
 
       token = impl.ParseOther('/', start_pos);
       break;
-    }
 
-    case LexState::MacroStart: {
+    case LexState::MacroStart:
       if (impl.NextCharIf('(')) {
         token = impl.ParseBlockMacro(start_pos);
         break;
@@ -1251,12 +1249,10 @@ auto Tokenizer::GetNext() -> Token {
 
       token = impl.ParseSingleLineMacro(start_pos);
       break;
-    }
 
-    case LexState::Other: {
+    case LexState::Other:
       token = impl.ParseOther(c, start_pos);
       break;
-    }
   }
 
   if (token.Is(EofF)) [[unlikely]] {

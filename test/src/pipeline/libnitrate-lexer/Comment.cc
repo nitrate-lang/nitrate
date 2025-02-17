@@ -46,3 +46,4 @@ TEST_CASE(Comment, MultiLine, 3, "/* foo /* bar /* baz */ */ car */", {Token(Not
 TEST_CASE(Comment, MultiLine, 4, "/*/*/*/*/**/*//**//**/*/*/*/", {Token(Note, "/*/*/*/**/*//**//**/*/*/")})
 TEST_CASE(Comment, MultiLine, 5, "/* hehe 🔥🍉*/", {Token(Note, " hehe 🔥🍉")})
 TEST_CASE(Comment, MultiLine, 6, "/*\xed\xa0\x80\xed*/", {Token(Note, "\xed\xa0\x80\xed")})
+TEST_CASE(Comment, MultiLine, 7, "/* //foo// * */", {Token(Note, " //foo// * ")})
