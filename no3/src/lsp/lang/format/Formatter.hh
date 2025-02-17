@@ -2,6 +2,7 @@
 
 #include <lsp/lang/FmtInterface.hh>
 #include <nitrate-core/String.hh>
+#include <nitrate-lexer/Grammar.hh>
 #include <sstream>
 
 namespace no3::lsp::fmt {

@@ -3,6 +3,7 @@
 #include <boost/iostreams/device/array.hpp>
 #include <boost/iostreams/stream.hpp>
 #include <nitrate-core/Environment.hh>
+#include <nitrate-lexer/Grammar.hh>
 #include <nitrate-lexer/Init.hh>
 #include <nitrate-lexer/Lexer.hh>
 

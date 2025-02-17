@@ -35,6 +35,7 @@
 #include <nitrate-core/Macro.hh>
 #include <nitrate-ir/IR/Nodes.hh>
 #include <nitrate-ir/IRWriter.hh>
+#include <nitrate-lexer/Grammar.hh>
 #include <nitrate-lexer/Scanner.hh>
 #include <variant>
 

@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 
 #include <array>
+#include <nitrate-lexer/Grammar.hh>
 #include <nitrate-lexer/Token.hh>
 #include <sstream>
 
