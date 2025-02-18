@@ -42,10 +42,9 @@ auto Parser::PImpl::RecurseReturn() -> FlowPtr<Stmt> {
     return CreateNode<Return>(std::nullopt)();
   }
 
-  auto return_value = NextIf<Name>("void") ? std::nullopt
-                                           : std::make_optional(RecurseExpr({
-                                                 Token(Punc, PuncSemi),
-                                             }));
+  auto return_value = RecurseExpr({
+      Token(Punc, PuncSemi),
+  });
 
   if (!NextIf<PuncSemi>()) [[unlikely]] {
     Log << SyntaxError << Current() << "Expected ';' after the return statement.";
