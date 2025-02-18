@@ -85,20 +85,18 @@ void CambrianFormatter::Visit(FlowPtr<Unary> n) {
 
   PrintMultilineComments(n);
 
-  m_line << "(" << n->GetOp();
+  m_line << n->GetOp();
   if (word_ops.contains(n->GetOp())) {
     m_line << " ";
   }
   n->GetRHS().Accept(*this);
-  m_line << ")";
 }
 
 void CambrianFormatter::Visit(FlowPtr<PostUnary> n) {
   PrintMultilineComments(n);
 
-  m_line << "(";
   n->GetLHS().Accept(*this);
-  m_line << n->GetOp() << ")";
+  m_line << n->GetOp();
 }
 
 void CambrianFormatter::Visit(FlowPtr<Binary> n) {
@@ -109,22 +107,18 @@ void CambrianFormatter::Visit(FlowPtr<Binary> n) {
     m_line << ".";
     n->GetRHS().Accept(*this);
   } else {
-    m_line << "(";
     n->GetLHS().Accept(*this);
     m_line << " " << n->GetOp() << " ";
     n->GetRHS().Accept(*this);
-    m_line << ")";
   }
 }
 
 void CambrianFormatter::Visit(FlowPtr<Ternary> n) {
   PrintMultilineComments(n);
 
-  m_line << "(";
   n->GetCond().Accept(*this);
   m_line << " ? ";
   n->GetLHS().Accept(*this);
   m_line << " : ";
   n->GetRHS().Accept(*this);
-  m_line << ")";
 }
