@@ -271,6 +271,28 @@ static constexpr auto kHexDigitsTable = []() {
   return map;
 }();
 
+static constexpr auto kHexDigitsTableExceptE = []() {
+  std::array<bool, 256> map = {};
+  map.fill(false);
+
+  for (uint8_t c = '0'; c <= '9'; ++c) {
+    map[c] = true;
+  }
+
+  for (uint8_t c = 'a'; c <= 'f'; ++c) {
+    map[c] = true;
+  }
+
+  for (uint8_t c = 'A'; c <= 'F'; ++c) {
+    map[c] = true;
+  }
+
+  map['e'] = false;
+  map['E'] = false;
+
+  return map;
+}();
+
 static constexpr auto kOctalDigitsTable = []() {
   std::array<bool, 256> map = {};
   map.fill(false);
@@ -522,7 +544,11 @@ public:
     return c;
   }
 
-  static bool ValidateFloat(std::string_view buf) {
+  static bool CheckFloat(std::string_view buf) {
+    if (buf.starts_with("+")) {
+      buf.remove_prefix(1);
+    }
+
     long double _ = 0;
     return std::from_chars(buf.data(), buf.data() + buf.size(), _).ptr == buf.data() + buf.size();
   }
@@ -530,21 +556,21 @@ public:
   auto CanonicalizeFloat(std::string &buf) const -> bool {
     const auto e_pos = buf.find('e');
     if (e_pos == std::string::npos) [[likely]] {
-      return ValidateFloat(buf);
+      return CheckFloat(buf);
     }
 
     qcore_assert(e_pos != 0 && e_pos != buf.size() - 1);
 
     const std::string_view number = buf;
-    const std::string_view mantissa_view = number.substr(0, e_pos);
-    const std::string_view exponent_view = number.substr(e_pos + 1);
+    std::string_view mantissa_view = number.substr(0, e_pos);
+    std::string_view exponent_view = number.substr(e_pos + 1);
 
-    if (!ValidateFloat(mantissa_view)) [[unlikely]] {
+    if (!CheckFloat(mantissa_view)) [[unlikely]] {
       Log << InvalidMantissa << LogSource() << "Invalid mantissa in floating point literal";
       return false;
     }
 
-    if (!ValidateFloat(exponent_view)) [[unlikely]] {
+    if (!CheckFloat(exponent_view)) [[unlikely]] {
       Log << InvalidExponent << LogSource() << "Invalid exponent in floating point literal";
       return false;
     }
@@ -966,7 +992,8 @@ public:
         }
       }
 
-      if (kHexDigitsTable[c]) [[likely]] {
+      /* 'e' and 'E' can be ambigouos between floats and hex literals */
+      if ((kind == HexNum && kHexDigitsTable[c]) || kHexDigitsTableExceptE[c]) [[likely]] {
         m_buf += c;
         c = NextChar();
         continue;
@@ -974,7 +1001,7 @@ public:
 
       switch (kind) {
         case DecNum: {
-          if (c == '.' || c == 'e' || c == 'E' || c == '-' || c == '+') {
+          if (c == '.' || c == 'e' || c == 'E') {
             m_buf += c;
             kind = Double;
             c = NextChar();
@@ -991,16 +1018,13 @@ public:
             break;
           }
 
-          if (c == '-') {
+          if (c == 'e' || c == 'E' || c == '-' || c == '+') {
             m_buf += c;
-            c = NextChar();
-          } else if (c == '+') {
-            // ignored
             c = NextChar();
           } else if (c == '.') {
             m_buf += c;
-            end_of_float = true;
             c = NextChar();
+            end_of_float = true;
           } else {
             is_lexing = false;
           }

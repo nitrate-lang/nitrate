@@ -54,7 +54,7 @@ void CambrianFormatter::Visit(FlowPtr<parse::Scope> n) {
   }
 
   m_line << " ";
-  WrapStmtBody(n->GetBody(), 50, true);
+  n->GetBody().Accept(*this);
 }
 
 void CambrianFormatter::Visit(FlowPtr<Export> n) {
