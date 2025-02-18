@@ -73,8 +73,6 @@ namespace ncc::lex {
 
     constexpr static auto EndOfFile() { return TokenBase(); }
 
-    [[nodiscard]] constexpr bool Is(TokenType val) const { return m_type == val; }
-
     constexpr auto operator==(const TokenBase &rhs) const -> bool {
       if (m_type != rhs.m_type) {
         return false;
@@ -100,6 +98,8 @@ namespace ncc::lex {
       }
     }
 
+    [[nodiscard]] constexpr bool Is(TokenType val) const { return m_type == val; }
+
     template <auto V>
     [[nodiscard]] constexpr bool Is() const {
       if constexpr (std::is_same_v<decltype(V), Keyword>) {
@@ -112,6 +112,13 @@ namespace ncc::lex {
     }
 
     [[nodiscard]] constexpr auto AsString() const { return to_string(m_type, m_v); }
+
+    template <auto V>
+    [[nodiscard]] constexpr bool Is(string value) const {
+      static_assert(V == IntL || V == NumL || V == Text || V == Name || V == Char || V == MacB || V == Macr ||
+                    V == Note);
+      return m_type == V && AsString() == value;
+    }
 
     [[nodiscard]] constexpr auto GetString() const {
       qcore_assert(m_type == IntL || m_type == NumL || m_type == Text || m_type == Name || m_type == Char ||

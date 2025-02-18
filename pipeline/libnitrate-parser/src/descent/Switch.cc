@@ -38,7 +38,7 @@ using namespace ncc::lex;
 using namespace ncc::parse;
 
 auto Parser::PImpl::RecurseSwitchCaseBody() -> FlowPtr<Stmt> {
-  if (!NextIf(OpArrow)) {
+  if (!NextIf<OpArrow>()) {
     Log << SyntaxError << Current() << "Expected '=>' in switch case.";
   }
 
@@ -70,12 +70,12 @@ auto Parser::PImpl::RecurseSwitchBody() -> std::optional<std::pair<SwitchCases, 
   NullableFlowPtr<Stmt> default_case;
 
   while (true) {
-    if (NextIf(EofF)) [[unlikely]] {
+    if (NextIf<EofF>()) [[unlikely]] {
       Log << SyntaxError << Current() << "Unexpected EOF in switch statement.";
       break;
     }
 
-    if (NextIf(PuncRCur)) {
+    if (NextIf<PuncRCur>()) {
       return {{cases, default_case}};
     }
 
@@ -90,7 +90,7 @@ auto Parser::PImpl::RecurseSwitchBody() -> std::optional<std::pair<SwitchCases, 
       cases.push_back(stmt.As<Case>());
     }
 
-    NextIf(PuncComa) || NextIf(PuncSemi);
+    NextIf<PuncComa>() || NextIf<PuncSemi>();
   }
 
   return std::nullopt;
@@ -101,7 +101,7 @@ auto Parser::PImpl::RecurseSwitch() -> FlowPtr<Stmt> {
       Token(Punc, PuncLCur),
   });
 
-  if (NextIf(PuncLCur)) [[likely]] {
+  if (NextIf<PuncLCur>()) [[likely]] {
     if (auto switch_body = RecurseSwitchBody()) [[likely]] {
       auto [switch_cases, switch_default] = switch_body.value();
 

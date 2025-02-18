@@ -38,7 +38,7 @@ using namespace ncc::lex;
 using namespace ncc::parse;
 
 auto Parser::PImpl::RecurseAbiName() -> string {
-  auto tok = NextIf(Text);
+  auto tok = NextIf<Text>();
 
   return tok ? tok->GetString() : "";
 }
@@ -46,17 +46,17 @@ auto Parser::PImpl::RecurseAbiName() -> string {
 auto Parser::PImpl::RecurseExportAttributes() -> std::optional<ExpressionList> {
   ExpressionList attributes;
 
-  if (!NextIf(PuncLBrk)) {
+  if (!NextIf<PuncLBrk>()) {
     return attributes;
   }
 
   while (true) {
-    if (NextIf(EofF)) [[unlikely]] {
+    if (NextIf<EofF>()) [[unlikely]] {
       Log << SyntaxError << Current() << "Encountered EOF while parsing export attributes";
       break;
     }
 
-    if (NextIf(PuncRBrk)) {
+    if (NextIf<PuncRBrk>()) {
       return attributes;
     }
 
@@ -67,7 +67,7 @@ auto Parser::PImpl::RecurseExportAttributes() -> std::optional<ExpressionList> {
 
     attributes.push_back(attribute);
 
-    NextIf(PuncComa);
+    NextIf<PuncComa>();
   }
 
   return std::nullopt;

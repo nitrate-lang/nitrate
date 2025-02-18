@@ -38,7 +38,7 @@ using namespace ncc::lex;
 using namespace ncc::parse;
 
 auto Parser::PImpl::RecurseFunctionParameterType() -> FlowPtr<parse::Type> {
-  if (NextIf(PuncColn)) {
+  if (NextIf<PuncColn>()) {
     return RecurseType();
   }
 
@@ -46,7 +46,7 @@ auto Parser::PImpl::RecurseFunctionParameterType() -> FlowPtr<parse::Type> {
 }
 
 auto Parser::PImpl::RecurseFunctionParameterValue() -> NullableFlowPtr<Expr> {
-  if (NextIf(OpSet)) {
+  if (NextIf<OpSet>()) {
     return RecurseExpr({
         Token(Punc, PuncComa),
         Token(Punc, PuncRPar),
@@ -71,19 +71,19 @@ auto Parser::PImpl::RecurseFunctionParameter() -> std::optional<FuncParam> {
 }
 
 auto Parser::PImpl::RecurseTemplateParameters() -> std::optional<TemplateParameters> {
-  if (!NextIf(OpLT)) {
+  if (!NextIf<OpLT>()) {
     return std::nullopt;
   }
 
   TemplateParameters params;
 
   while (true) {
-    if (NextIf(EofF)) [[unlikely]] {
+    if (NextIf<EofF>()) [[unlikely]] {
       Log << SyntaxError << Current() << "Unexpected EOF in template parameters";
       return params;
     }
 
-    if (NextIf(OpGT)) {
+    if (NextIf<OpGT>()) {
       break;
     }
 
@@ -95,7 +95,7 @@ auto Parser::PImpl::RecurseTemplateParameters() -> std::optional<TemplateParamet
       Log << SyntaxError << Next() << "Expected a template parameter";
     }
 
-    NextIf(PuncComa);
+    NextIf<PuncComa>();
   }
 
   return params;
@@ -104,7 +104,7 @@ auto Parser::PImpl::RecurseTemplateParameters() -> std::optional<TemplateParamet
 auto Parser::PImpl::RecurseFunctionParameters() -> std::pair<FuncParams, bool> {
   std::pair<FuncParams, bool> parameters;
 
-  if (!NextIf(PuncLPar)) [[unlikely]] {
+  if (!NextIf<PuncLPar>()) [[unlikely]] {
     Log << SyntaxError << Current() << "Expected '(' after function name";
 
     return parameters;
@@ -113,17 +113,17 @@ auto Parser::PImpl::RecurseFunctionParameters() -> std::pair<FuncParams, bool> {
   bool is_variadic = false;
 
   while (true) {
-    if (NextIf(EofF)) [[unlikely]] {
+    if (NextIf<EofF>()) [[unlikely]] {
       Log << SyntaxError << Current() << "Unexpected EOF in function parameters";
 
       return parameters;
     }
 
-    if (NextIf(PuncRPar)) {
+    if (NextIf<PuncRPar>()) {
       break;
     }
 
-    if (NextIf(OpEllipsis)) {
+    if (NextIf<OpEllipsis>()) {
       is_variadic = true;
 
       if (!Peek().Is<PuncRPar>()) {
@@ -139,7 +139,7 @@ auto Parser::PImpl::RecurseFunctionParameters() -> std::pair<FuncParams, bool> {
       Log << SyntaxError << Next() << "Expected a function parameter";
     }
 
-    NextIf(PuncComa);
+    NextIf<PuncComa>();
   }
 
   parameters.second = is_variadic;
@@ -180,7 +180,7 @@ auto Parser::PImpl::GetPuritySpecifier(Token start_pos, bool is_thread_safe, boo
 }
 
 auto Parser::PImpl::RecurseFunctionCapture() -> std::optional<std::pair<string, bool>> {
-  bool is_ref = NextIf(OpBitAnd).has_value();
+  bool is_ref = NextIf<OpBitAnd>().has_value();
 
   if (auto name = RecurseName(); !name.empty()) {
     return {{name, is_ref}};
@@ -212,7 +212,7 @@ auto Parser::PImpl::RecurseFunctionAmbigouis() -> std::tuple<ExpressionList, FnC
   bool already_parsed_captures = false;
 
   while (state != State::End) {
-    if (NextIf(EofF)) [[unlikely]] {
+    if (NextIf<EofF>()) [[unlikely]] {
       Log << SyntaxError << Current() << "Unexpected EOF in function attributes";
       break;
     }
@@ -236,7 +236,7 @@ auto Parser::PImpl::RecurseFunctionAmbigouis() -> std::tuple<ExpressionList, FnC
             function_name = some_word;
             state = State::End;
           }
-        } else if (NextIf(PuncLBrk)) {
+        } else if (NextIf<PuncLBrk>()) {
           if (already_parsed_attributes && already_parsed_captures) {
             Log << SyntaxError << Current() << "Unexpected '[' after function attributes and captures";
           } else if (already_parsed_attributes && !already_parsed_captures) {
@@ -270,12 +270,12 @@ auto Parser::PImpl::RecurseFunctionAmbigouis() -> std::tuple<ExpressionList, FnC
         already_parsed_attributes = true;
 
         while (true) {
-          if (NextIf(EofF)) [[unlikely]] {
+          if (NextIf<EofF>()) [[unlikely]] {
             Log << SyntaxError << Current() << "Unexpected EOF in function attributes";
             break;
           }
 
-          if (NextIf(PuncRBrk)) {
+          if (NextIf<PuncRBrk>()) {
             state = State::Ground;
             break;
           }
@@ -287,7 +287,7 @@ auto Parser::PImpl::RecurseFunctionAmbigouis() -> std::tuple<ExpressionList, FnC
 
           attributes.push_back(attribute);
 
-          NextIf(PuncComa);
+          NextIf<PuncComa>();
         }
 
         break;
@@ -297,12 +297,12 @@ auto Parser::PImpl::RecurseFunctionAmbigouis() -> std::tuple<ExpressionList, FnC
         already_parsed_captures = true;
 
         while (true) {
-          if (NextIf(EofF)) [[unlikely]] {
+          if (NextIf<EofF>()) [[unlikely]] {
             Log << SyntaxError << Current() << "Unexpected EOF in function captures";
             break;
           }
 
-          if (NextIf(PuncRBrk)) {
+          if (NextIf<PuncRBrk>()) {
             state = State::Ground;
             break;
           }
@@ -311,7 +311,7 @@ auto Parser::PImpl::RecurseFunctionAmbigouis() -> std::tuple<ExpressionList, FnC
             captures.emplace_back(capture->first, capture->second);
           }
 
-          NextIf(PuncComa);
+          NextIf<PuncComa>();
         }
 
         break;
@@ -329,7 +329,7 @@ auto Parser::PImpl::RecurseFunctionAmbigouis() -> std::tuple<ExpressionList, FnC
 }
 
 auto Parser::PImpl::RecurseFunctionReturnType() -> FlowPtr<parse::Type> {
-  if (NextIf(PuncColn)) {
+  if (NextIf<PuncColn>()) {
     return RecurseType();
   }
 
@@ -337,11 +337,11 @@ auto Parser::PImpl::RecurseFunctionReturnType() -> FlowPtr<parse::Type> {
 }
 
 auto Parser::PImpl::RecurseFunctionBody(bool parse_declaration_only) -> NullableFlowPtr<Stmt> {
-  if (parse_declaration_only || NextIf(PuncSemi)) {
+  if (parse_declaration_only || NextIf<PuncSemi>()) {
     return std::nullopt;
   }
 
-  if (NextIf(OpArrow)) {
+  if (NextIf<OpArrow>()) {
     return RecurseBlock(false, true, SafetyMode::Unknown);
   }
 

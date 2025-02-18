@@ -1871,7 +1871,7 @@ SyntaxTree::Export *AstWriter::From(const FlowPtr<Export> &in) {
     root->set_allocated_##__node_name(message);                  \
     root->CheckInitialized();                                    \
     if (m_plaintext_mode) {                                      \
-      m_os << root->Utf8DebugString();                           \
+      m_os << root->ShortDebugString();                          \
     } else {                                                     \
       if (!root->SerializeToOstream(&m_os)) [[unlikely]] {       \
         qcore_panic("Failed to serialize protobuf message");     \

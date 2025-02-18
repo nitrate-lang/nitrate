@@ -39,10 +39,10 @@ using namespace ncc::parse;
 
 auto Parser::PImpl::RecurseTypedef() -> FlowPtr<Stmt> {
   if (auto type_name = RecurseName(); !type_name.empty()) [[likely]] {
-    if (NextIf(OpSet)) [[likely]] {
+    if (NextIf<OpSet>()) [[likely]] {
       auto the_type = RecurseType();
 
-      if (NextIf(PuncSemi)) [[likely]] {
+      if (NextIf<PuncSemi>()) [[likely]] {
         return CreateNode<Typedef>(type_name, the_type)();
       } else {
         Log << SyntaxError << Current() << "Expected ';' in typedef declaration";

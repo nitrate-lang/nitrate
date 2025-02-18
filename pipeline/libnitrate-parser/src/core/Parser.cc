@@ -124,14 +124,14 @@ auto Parser::PImpl::RecurseBlock(bool expect_braces, bool single_stmt, SafetyMod
 
   while (true) {
     /* Ignore extra semicolons */
-    if (NextIf(PuncSemi)) {
+    if (NextIf<PuncSemi>()) {
       continue;
     }
 
     { /* Detect exit conditon */
-      bool should_break = (expect_braces && NextIf(PuncRCur)) || (single_stmt && statements.size() == 1);
+      bool should_break = (expect_braces && NextIf<PuncRCur>()) || (single_stmt && statements.size() == 1);
 
-      if (!should_break && NextIf(EofF)) {
+      if (!should_break && NextIf<EofF>()) {
         if (expect_braces) {
           Log << SyntaxError << Current() << "Expected '}'";
         }
@@ -155,7 +155,7 @@ auto Parser::PImpl::RecurseBlock(bool expect_braces, bool single_stmt, SafetyMod
           Token(Punc, PuncSemi),
       });
 
-      if (!NextIf(PuncSemi)) {
+      if (!NextIf<PuncSemi>()) {
         Log << SyntaxError << Current() << "Expected ';' after statement expression";
       }
 
@@ -270,7 +270,7 @@ auto Parser::PImpl::RecurseBlock(bool expect_braces, bool single_stmt, SafetyMod
 
         case __FString: {
           r = CreateNode<ExprStmt>(RecurseFstring())();
-          if (!NextIf(PuncSemi)) {
+          if (!NextIf<PuncSemi>()) {
             Log << SyntaxError << Current() << "Expected ';' after f-string expression";
           }
           break;
@@ -338,7 +338,7 @@ auto Parser::PImpl::RecurseBlock(bool expect_braces, bool single_stmt, SafetyMod
 
         case Keyword::Break: {
           r = CreateNode<Break>()();
-          if (!NextIf(PuncSemi)) {
+          if (!NextIf<PuncSemi>()) {
             Log << SyntaxError << Current() << "Expected ';' after 'break' statement";
           }
 
@@ -347,7 +347,7 @@ auto Parser::PImpl::RecurseBlock(bool expect_braces, bool single_stmt, SafetyMod
 
         case Keyword::Continue: {
           r = CreateNode<Continue>()();
-          if (!NextIf(PuncSemi)) {
+          if (!NextIf<PuncSemi>()) {
             Log << SyntaxError << Current() << "Expected ';' after 'continue' statement";
           }
           break;
@@ -400,7 +400,7 @@ auto Parser::PImpl::RecurseBlock(bool expect_braces, bool single_stmt, SafetyMod
 
         case Undef: {
           r = CreateNode<ExprStmt>(CreateNode<Undefined>()())();
-          if (!NextIf(PuncSemi)) {
+          if (!NextIf<PuncSemi>()) {
             Log << SyntaxError << Current() << "Expected ';' after 'undef' statement";
           }
           break;
@@ -408,7 +408,7 @@ auto Parser::PImpl::RecurseBlock(bool expect_braces, bool single_stmt, SafetyMod
 
         case Keyword::Null: {
           r = CreateNode<ExprStmt>(CreateNode<Null>()())();
-          if (!NextIf(PuncSemi)) {
+          if (!NextIf<PuncSemi>()) {
             Log << SyntaxError << Current() << "Expected ';' after 'null' statement";
           }
           break;
@@ -416,7 +416,7 @@ auto Parser::PImpl::RecurseBlock(bool expect_braces, bool single_stmt, SafetyMod
 
         case True: {
           r = CreateNode<ExprStmt>(CreateNode<Boolean>(true)())();
-          if (!NextIf(PuncSemi)) {
+          if (!NextIf<PuncSemi>()) {
             Log << SyntaxError << Current() << "Expected ';' after 'true' statement";
           }
           break;
@@ -424,7 +424,7 @@ auto Parser::PImpl::RecurseBlock(bool expect_braces, bool single_stmt, SafetyMod
 
         case False: {
           r = CreateNode<ExprStmt>(CreateNode<Boolean>(false)())();
-          if (!NextIf(PuncSemi)) {
+          if (!NextIf<PuncSemi>()) {
             Log << SyntaxError << Current() << "Expected ';' after 'false' statement";
           }
           break;
