@@ -41,15 +41,18 @@
 #include <source_location>
 
 namespace ncc::parse {
+  template <typename T>
+  struct Arena;
+
   /* This function takes template variadic arguments and forwards them into
    * the constructor of type T. If compiled with debugging, the source location
    * of the original call site is saved for the purposes of data-flow analysis
    * and AST debugging.
    */
-  template <typename T, typename... Args>
+  template <typename T, typename Allocator = ncc::parse::Arena<T>, typename... Args>
   constexpr static inline auto CreateNode(Args&&... args) {
     return [&](std::source_location origin = std::source_location::current()) {
-      FlowPtr<T> new_obj = MakeFlowPtr<T>(new (Arena<T>().allocate(1)) T(std::forward<Args>(args)...));  // NOLINT
+      FlowPtr<T> new_obj = MakeFlowPtr<T>(new (Allocator().allocate(1)) T(std::forward<Args>(args)...));  // NOLINT
 
       new_obj.SetTracking(origin);
 
