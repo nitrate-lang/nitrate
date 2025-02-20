@@ -8,12 +8,15 @@
 #include <nitrate-parser/Algorithm.hh>
 #include <nitrate-parser/CodeWriter.hh>
 #include <nitrate-parser/Context.hh>
+#include <nitrate-parser/Init.hh>
 #include <nitrate-parser/Utility.hh>
 
 using namespace ncc;
 using namespace ncc::parse;
 
 int main() {
+  auto _ = ParseLibrary.GetRC();
+
   auto env = std::make_shared<Environment>();
   auto scanner = lex::Tokenizer(std::cin, env);
 

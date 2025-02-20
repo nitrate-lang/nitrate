@@ -65,7 +65,7 @@ namespace ncc::parse {
       void PutInteger(std::string_view num);
       void PutFloat(std::string_view num);
       void PutString(std::string_view str);
-      void PutCharacter(std::string_view ch);
+      void PutCharacter(uint8_t ch);
       void PutMacroBlock(std::string_view macro);
       void PutMacroCall(std::string_view macro);
       void PutComment(std::string_view note);

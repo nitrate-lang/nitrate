@@ -121,6 +121,8 @@ namespace ncc::lex {
     OpEllipsis,    /* '...':        Ellipsis operator */
     OpArrow,       /* '=>':         Arrow operator */
     OpTernary,     /* '?':          Ternary operator */
+    Op_First = OpPlus,
+    Op_Last = OpTernary,
   };
 
   enum Keyword : uint8_t {
