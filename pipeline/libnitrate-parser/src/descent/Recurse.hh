@@ -177,7 +177,6 @@ namespace ncc::parse {
     auto RecurseFunctionCapture() -> std::optional<std::pair<string, bool>>;
     auto RecurseFunctionAmbigouis() -> std::tuple<ExpressionList, FnCaptures, Purity, string>;
 
-    auto RecurseIfThen() -> FlowPtr<Stmt>;
     auto RecurseIfElse() -> NullableFlowPtr<Stmt>;
 
     auto RecurseScopeDeps() -> std::optional<ScopeDeps>;
