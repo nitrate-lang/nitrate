@@ -37,6 +37,14 @@ TEST(Core, Arena_Allocate_CustomAlignment) {
   }
 }
 
+TEST(Core, Arena_Allocate_Align_Zero) {
+  if (auto lib_rc = ncc::CoreLibrary.GetRC()) {
+    auto arena = std::make_unique<ncc::DynamicArena>();
+
+    EXPECT_EQ(arena->Alloc(10, 0), nullptr);
+  }
+}
+
 TEST(Core, Arena_Allocate_Large) {
   constexpr auto kSize = 10'000'000;
 

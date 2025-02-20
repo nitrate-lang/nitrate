@@ -44,6 +44,7 @@
 #include <fstream>
 #include <iostream>
 #include <memory>
+#include <nitrate-core/Environment.hh>
 #include <nitrate-core/Init.hh>
 #include <nitrate-core/Logger.hh>
 #include <nitrate-emit/Classes.hh>
@@ -123,9 +124,7 @@ namespace no3::benchmark {
       total_tokens += LexerBenchmarkRound(env);
       auto end = std::chrono::high_resolution_clock::now();
 
-      double nanoseconds =
-          std::chrono::duration_cast<std::chrono::nanoseconds>(end - start)
-              .count();
+      double nanoseconds = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
       times.push_back(nanoseconds);
 
       LOG(INFO) << "Round " << i << ": " << nanoseconds << "ns";
@@ -147,10 +146,8 @@ namespace no3::benchmark {
     if (total_tokens > 0) {
       auto stats = CalculateStatistic(times);
       LOG(INFO) << "  Round time mean: " << stats.m_mean << "ns" << std::endl;
-      LOG(INFO) << "  Round time variance: " << stats.m_variance << "ns"
-                << std::endl;
-      LOG(INFO) << "  Round time standard deviation: " << stats.m_stddev << "ns"
-                << std::endl;
+      LOG(INFO) << "  Round time variance: " << stats.m_variance << "ns" << std::endl;
+      LOG(INFO) << "  Round time standard deviation: " << stats.m_stddev << "ns" << std::endl;
 
       std::vector<double> time_per_token;
       time_per_token.reserve(times.size());
@@ -159,12 +156,9 @@ namespace no3::benchmark {
       }
 
       stats = CalculateStatistic(time_per_token);
-      LOG(INFO) << "  Per-token time mean: " << stats.m_mean << "ns"
-                << std::endl;
-      LOG(INFO) << "  Per-token time variance: " << stats.m_variance << "ns"
-                << std::endl;
-      LOG(INFO) << "  Per-token time standard deviation: " << stats.m_stddev
-                << "ns" << std::endl;
+      LOG(INFO) << "  Per-token time mean: " << stats.m_mean << "ns" << std::endl;
+      LOG(INFO) << "  Per-token time variance: " << stats.m_variance << "ns" << std::endl;
+      LOG(INFO) << "  Per-token time standard deviation: " << stats.m_stddev << "ns" << std::endl;
 
       const double input_size_mbit = (LexicalBenchmarkSource.size() / 1e6) * 8;
 
@@ -176,19 +170,15 @@ namespace no3::benchmark {
 
       stats = CalculateStatistic(round_throughputs);
 
-      LOG(INFO) << "  Throughput mean: " << stats.m_mean << " mbps"
-                << std::endl;
-      LOG(INFO) << "  Throughput variance: " << stats.m_variance << " mbps"
-                << std::endl;
-      LOG(INFO) << "  Throughput standard deviation: " << stats.m_stddev
-                << " mbps" << std::endl;
+      LOG(INFO) << "  Throughput mean: " << stats.m_mean << " mbps" << std::endl;
+      LOG(INFO) << "  Throughput variance: " << stats.m_variance << " mbps" << std::endl;
+      LOG(INFO) << "  Throughput standard deviation: " << stats.m_stddev << " mbps" << std::endl;
     }
 
     return 0;
   }
 
-  static auto SequencerBenchmarkRound(std::shared_ptr<Environment> &env)
-      -> size_t {
+  static auto SequencerBenchmarkRound(std::shared_ptr<Environment> &env) -> size_t {
     std::stringstream source(LexicalBenchmarkSource);
     Sequencer tokenizer(source, env);
 
@@ -214,9 +204,7 @@ namespace no3::benchmark {
       total_tokens += SequencerBenchmarkRound(env);
       auto end = std::chrono::high_resolution_clock::now();
 
-      double nanoseconds =
-          std::chrono::duration_cast<std::chrono::nanoseconds>(end - start)
-              .count();
+      double nanoseconds = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
       times.push_back(nanoseconds);
 
       LOG(INFO) << "Round " << i << ": " << nanoseconds << "ns";
@@ -238,10 +226,8 @@ namespace no3::benchmark {
     if (total_tokens > 0) {
       auto stats = CalculateStatistic(times);
       LOG(INFO) << "  Round time mean: " << stats.m_mean << "ns" << std::endl;
-      LOG(INFO) << "  Round time variance: " << stats.m_variance << "ns"
-                << std::endl;
-      LOG(INFO) << "  Round time standard deviation: " << stats.m_stddev << "ns"
-                << std::endl;
+      LOG(INFO) << "  Round time variance: " << stats.m_variance << "ns" << std::endl;
+      LOG(INFO) << "  Round time standard deviation: " << stats.m_stddev << "ns" << std::endl;
 
       std::vector<double> time_per_token;
       time_per_token.reserve(times.size());
@@ -250,12 +236,9 @@ namespace no3::benchmark {
       }
 
       stats = CalculateStatistic(time_per_token);
-      LOG(INFO) << "  Per-token time mean: " << stats.m_mean << "ns"
-                << std::endl;
-      LOG(INFO) << "  Per-token time variance: " << stats.m_variance << "ns"
-                << std::endl;
-      LOG(INFO) << "  Per-token time standard deviation: " << stats.m_stddev
-                << "ns" << std::endl;
+      LOG(INFO) << "  Per-token time mean: " << stats.m_mean << "ns" << std::endl;
+      LOG(INFO) << "  Per-token time variance: " << stats.m_variance << "ns" << std::endl;
+      LOG(INFO) << "  Per-token time standard deviation: " << stats.m_stddev << "ns" << std::endl;
 
       const double input_size_mbit = (LexicalBenchmarkSource.size() / 1e6) * 8;
 
@@ -267,12 +250,9 @@ namespace no3::benchmark {
 
       stats = CalculateStatistic(round_throughputs);
 
-      LOG(INFO) << "  Throughput mean: " << stats.m_mean << " mbps"
-                << std::endl;
-      LOG(INFO) << "  Throughput variance: " << stats.m_variance << " mbps"
-                << std::endl;
-      LOG(INFO) << "  Throughput standard deviation: " << stats.m_stddev
-                << " mbps" << std::endl;
+      LOG(INFO) << "  Throughput mean: " << stats.m_mean << " mbps" << std::endl;
+      LOG(INFO) << "  Throughput variance: " << stats.m_variance << " mbps" << std::endl;
+      LOG(INFO) << "  Throughput standard deviation: " << stats.m_stddev << " mbps" << std::endl;
     }
 
     return 0;
@@ -300,9 +280,7 @@ namespace no3::benchmark {
       ParserBenchmarkRound(env);
       auto end = std::chrono::high_resolution_clock::now();
 
-      double nanoseconds =
-          std::chrono::duration_cast<std::chrono::nanoseconds>(end - start)
-              .count();
+      double nanoseconds = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
       times.push_back(nanoseconds);
 
       LOG(INFO) << "Round " << i << ": " << nanoseconds << "ns";
@@ -329,30 +307,17 @@ namespace no3::benchmark {
       }
       auto stats = CalculateStatistic(round_throughputs);
 
-      LOG(INFO) << "  Throughput mean: " << stats.m_mean << " mbps"
-                << std::endl;
-      LOG(INFO) << "  Throughput variance: " << stats.m_variance << " mbps"
-                << std::endl;
-      LOG(INFO) << "  Throughput standard deviation: " << stats.m_stddev
-                << " mbps" << std::endl;
+      LOG(INFO) << "  Throughput mean: " << stats.m_mean << " mbps" << std::endl;
+      LOG(INFO) << "  Throughput variance: " << stats.m_variance << " mbps" << std::endl;
+      LOG(INFO) << "  Throughput standard deviation: " << stats.m_stddev << " mbps" << std::endl;
     }
 
     return 0;
   }
 
-  enum class Benchmark {
-    LEXER,
-    SEQUENCER,
-    PARSER,
-    NITRATE_IR,
-    LLVM_IR,
-    LLVM_CODEGEN,
-    C11_CODEGEN,
-    PIPELINE
-  };
+  enum class Benchmark { LEXER, SEQUENCER, PARSER, NITRATE_IR, LLVM_IR, LLVM_CODEGEN, C11_CODEGEN, PIPELINE };
 
-  static auto DoBenchmark(std::shared_ptr<Environment> &env,
-                          Benchmark bench_type) -> int {
+  static auto DoBenchmark(std::shared_ptr<Environment> &env, Benchmark bench_type) -> int {
     int r = -1;
 
     switch (bench_type) {
@@ -401,8 +366,7 @@ namespace no3::benchmark {
   }
 }  // namespace no3::benchmark
 
-static auto DoParse(std::shared_ptr<Environment> &env,
-                    const std::string &source, std::ostream &output,
+static auto DoParse(std::shared_ptr<Environment> &env, const std::string &source, std::ostream &output,
                     bool verbose) -> int {
   std::fstream file(source, std::ios::in);
   if (!file.is_open()) {
@@ -417,16 +381,15 @@ static auto DoParse(std::shared_ptr<Environment> &env,
 
   auto ast = parser->Parse();
 
-  WriterSourceProvider rd =
-      verbose ? WriterSourceProvider(scanner) : std::nullopt;
+  WriterSourceProvider rd = verbose ? WriterSourceProvider(scanner) : std::nullopt;
 
   output << ast.Get()->DebugString(rd);
 
   return 0;
 }
 
-static auto DoNr(std::shared_ptr<Environment> &env, const std::string &source,
-                 std::ostream &output, const std::string &opts) -> int {
+static auto DoNr(std::shared_ptr<Environment> &env, const std::string &source, std::ostream &output,
+                 const std::string &opts) -> int {
   if (!opts.empty()) {
     LOG(ERROR) << "Options are not implemented yet";
   }
@@ -454,10 +417,8 @@ static auto DoNr(std::shared_ptr<Environment> &env, const std::string &source,
   return 0;
 }
 
-static auto DoCodegen(std::shared_ptr<Environment> &env,
-                      const std::string &source, const std::string &output,
-                      const std::string &opts,
-                      const std::string &target) -> int {
+static auto DoCodegen(std::shared_ptr<Environment> &env, const std::string &source, const std::string &output,
+                      const std::string &opts, const std::string &target) -> int {
   if (!opts.empty()) {
     LOG(ERROR) << "Options are not implemented yet";
   }
@@ -531,15 +492,7 @@ static auto DoDevTest() -> int {
 
 namespace no3::router {
   auto RunDevMode(const ArgumentParser &parser,
-                  const std::unordered_map<std::string_view,
-                                           std::unique_ptr<ArgumentParser>>
-                      &subparsers) -> int {
-    ncc::Log += [&](auto msg, auto sev, const auto &ec) {
-      if (core::GetDebugMode() || sev > Debug) {
-        std::cerr << ec.Format(msg, sev).c_str() << std::endl;
-      }
-    };
-
+                  const std::unordered_map<std::string_view, std::unique_ptr<ArgumentParser>> &subparsers) -> int {
     ncc::EnableSync = false;
 
     std::shared_ptr<Environment> env = std::make_shared<Environment>();
@@ -571,15 +524,14 @@ namespace no3::router {
 
       auto bench_name = bench_parser.Get<std::string>("--name");
 
-      static const std::unordered_map<std::string, Benchmark> name_map = {
-          {"lexer", Benchmark::LEXER},
-          {"sequencer", Benchmark::SEQUENCER},
-          {"parser", Benchmark::PARSER},
-          {"nitrate-ir", Benchmark::NITRATE_IR},
-          {"llvm-ir", Benchmark::LLVM_IR},
-          {"llvm-codegen", Benchmark::LLVM_CODEGEN},
-          {"c11-codegen", Benchmark::C11_CODEGEN},
-          {"pipeline", Benchmark::PIPELINE}};
+      static const std::unordered_map<std::string, Benchmark> name_map = {{"lexer", Benchmark::LEXER},
+                                                                          {"sequencer", Benchmark::SEQUENCER},
+                                                                          {"parser", Benchmark::PARSER},
+                                                                          {"nitrate-ir", Benchmark::NITRATE_IR},
+                                                                          {"llvm-ir", Benchmark::LLVM_IR},
+                                                                          {"llvm-codegen", Benchmark::LLVM_CODEGEN},
+                                                                          {"c11-codegen", Benchmark::C11_CODEGEN},
+                                                                          {"pipeline", Benchmark::PIPELINE}};
 
       if (!name_map.contains(bench_name)) {
         LOG(ERROR) << "Unknown benchmark specified" << std::endl;
@@ -605,9 +557,8 @@ namespace no3::router {
       auto source = parse_parser.Get<std::string>("source");
       auto output = parse_parser.Get<std::string>("--output");
 
-      auto out = output.empty()
-                     ? std::make_unique<std::ostream>(std::cout.rdbuf())
-                     : std::make_unique<std::ofstream>(output);
+      auto out =
+          output.empty() ? std::make_unique<std::ostream>(std::cout.rdbuf()) : std::make_unique<std::ofstream>(output);
 
       return DoParse(env, source, *out, verbose);
     }
@@ -621,9 +572,8 @@ namespace no3::router {
       auto output = nr_parser.Get<std::string>("--output");
       auto opts = nr_parser.Get<std::string>("--opts");
 
-      auto out = output.empty()
-                     ? std::make_unique<std::ostream>(std::cout.rdbuf())
-                     : std::make_unique<std::ofstream>(output);
+      auto out =
+          output.empty() ? std::make_unique<std::ostream>(std::cout.rdbuf()) : std::make_unique<std::ofstream>(output);
 
       return DoNr(env, source, *out, opts);
     }

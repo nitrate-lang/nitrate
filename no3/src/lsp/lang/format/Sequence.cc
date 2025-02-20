@@ -41,8 +41,7 @@ void CambrianFormatter::Visit(FlowPtr<Sequence> n) {
 
   m_line << "(";
   IterateExceptLast(
-      n->GetItems().begin(), n->GetItems().end(),
-      [&](auto item, size_t) { item.Accept(*this); },
+      n->GetItems().begin(), n->GetItems().end(), [&](auto item, size_t) { item.Accept(*this); },
       [&](let) { m_line << ", "; });
   m_line << ")";
 }

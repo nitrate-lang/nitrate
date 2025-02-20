@@ -502,7 +502,7 @@ using namespace ncc;
 
 //     if ((is_integer_lit && is_integer_ty) || (is_float_lit && is_float_ty)) {
 //       if (is_integer_lit) {
-//         static const std::unordered_map<npar_ty_t, uint8_t>
+//         static const std::unordered_map<ASTNodeKind, uint8_t>
 //             integer_lit_suffixes = {
 //                 {QAST_U1, 1},   {QAST_U8, 8},   {QAST_U16, 16},
 //                 {QAST_U32, 32}, {QAST_U64, 64}, {QAST_U128, 128},
@@ -522,7 +522,7 @@ using namespace ncc;
 //               boost::multiprecision::cpp_int(N->get_value()), it->second);
 //         }
 //       } else {
-//         static const std::unordered_map<npar_ty_t, uint8_t>
+//         static const std::unordered_map<ASTNodeKind, uint8_t>
 //             float_lit_suffixes = {{
 //                 {QAST_F16, 16},
 //                 {QAST_F32, 32},

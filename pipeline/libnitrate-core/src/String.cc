@@ -43,8 +43,6 @@ using namespace ncc;
 
 class IStorage {
 public:
-  virtual ~IStorage() = default;
-
   [[nodiscard]] virtual auto Get(uint64_t id) -> CStringView = 0;
   [[nodiscard]] virtual auto FromString(std::string_view str) -> uint64_t = 0;
   [[nodiscard]] virtual auto FromString(std::string&& str) -> uint64_t = 0;
@@ -76,6 +74,8 @@ public:
     }
   }
 };
+
+#if MEMORY_OVER_SPEED == 1
 
 class MemoryConservedStorage final : public IStorage {
   std::vector<std::vector<char>> m_data;
@@ -171,6 +171,8 @@ public:
   }
 };
 
+#else
+
 class FastStorage final : public IStorage {
   std::vector<std::vector<char>> m_data;
   std::vector<std::string> m_buffered;
@@ -212,7 +214,7 @@ public:
     m_data.push_back({'\0'});
   }
 
-  ~FastStorage() override { Reset(); }
+  ~FastStorage() { Reset(); }
 
   [[nodiscard]] auto Get(uint64_t id) -> CStringView override {
     ConditionalLockGuard lock(m_lock);
@@ -299,6 +301,8 @@ public:
   }
 };
 
+#endif
+
 #if MEMORY_OVER_SPEED == 1
 static MemoryConservedStorage GlobalStorage;
 #else
@@ -316,17 +320,10 @@ auto String::Get() const -> CStringView {
 }
 
 auto String::operator==(const String& o) const -> bool { return GlobalStorage.CompareEq(m_id, o.m_id); }
-
 auto String::operator<(const String& o) const -> bool { return GlobalStorage.CompareLt(m_id, o.m_id); }
-
 auto String::operator<=(const String& o) const -> bool { return GlobalStorage.CompareLe(m_id, o.m_id); }
-
 auto String::operator>(const String& o) const -> bool { return GlobalStorage.CompareGt(m_id, o.m_id); }
-
 auto String::operator>=(const String& o) const -> bool { return GlobalStorage.CompareGe(m_id, o.m_id); }
-
 auto StringMemory::FromString(std::string_view str) -> uint64_t { return GlobalStorage.FromString(str); }
-
 auto StringMemory::FromString(std::string&& str) -> uint64_t { return GlobalStorage.FromString(std::move(str)); }
-
 void StringMemory::Reset() { GlobalStorage.Reset(); }

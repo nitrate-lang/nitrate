@@ -31,6 +31,8 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
+#include <core/PImpl.hh>
+#include <nitrate-lexer/Grammar.hh>
 #include <nitrate-seq/Sequencer.hh>
 
 extern "C" {

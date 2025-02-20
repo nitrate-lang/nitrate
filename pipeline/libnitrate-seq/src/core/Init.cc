@@ -31,6 +31,7 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
+#include <core/EC.hh>
 #include <nitrate-core/Init.hh>
 #include <nitrate-core/Logger.hh>
 #include <nitrate-core/Macro.hh>
@@ -42,28 +43,30 @@ using namespace ncc::seq;
 NCC_EXPORT ncc::LibraryRC<SeqLibrarySetup> ncc::seq::SeqLibrary;
 
 NCC_EXPORT auto SeqLibrarySetup::Init() -> bool {
-  Log << Debug << "Initializing Nitrate Sequencer Library";
+  Log << ec::SeqLog << Debug << "libnitrate-seq initializing...";
 
   if (!ncc::CoreLibrary.InitRC()) {
+    Log << ec::SeqLog << "libnitrate-seq init failed: libnitrate-core failed to initialize";
     return false;
   }
 
   if (!ncc::lex::LexerLibrary.InitRC()) {
+    Log << ec::SeqLog << "libnitrate-seq init failed: libnitrate-lexer failed to initialize";
     return false;
   }
 
-  Log << Debug << "Nitrate Sequencer Library initialized";
+  Log << ec::SeqLog << Debug << "libnitrate-seq initialized";
 
   return true;
 }
 
 NCC_EXPORT void SeqLibrarySetup::Deinit() {
-  Log << Debug << "Deinitializing Nitrate Sequencer Library";
+  Log << ec::SeqLog << Debug << "libnitrate-seq deinitializing...";
 
   ncc::lex::LexerLibrary.DeinitRC();
   ncc::CoreLibrary.DeinitRC();
 
-  Log << Debug << "Nitrate Sequencer Library deinitialized";
+  Log << ec::SeqLog << Debug << "libnitrate-seq deinitialized";
 }
 
 NCC_EXPORT auto SeqLibrarySetup::GetVersionId() -> std::string_view { return __TARGET_VERSION; }

@@ -40,42 +40,42 @@ using namespace ncc::parse;
 auto Parser::PImpl::RecurseScopeDeps() -> std::optional<ScopeDeps> {
   ScopeDeps dependencies;
 
-  if (!NextIf(PuncColn)) {
+  if (!NextIf<PuncColn>()) {
     return dependencies;
   }
 
-  if (NextIf(PuncLBrk)) [[likely]] {
+  if (NextIf<PuncLBrk>()) [[likely]] {
     while (true) {
-      if (NextIf(EofF)) [[unlikely]] {
-        Log << SyntaxError << current() << "Unexpected EOF in scope dependencies";
+      if (NextIf<EofF>()) [[unlikely]] {
+        Log << SyntaxError << Current() << "Unexpected EOF in scope dependencies";
         break;
       }
 
-      if (NextIf(PuncRBrk)) {
+      if (NextIf<PuncRBrk>()) {
         return dependencies;
       }
 
       if (auto dependency_name = RecurseName(); !dependency_name.empty()) {
         dependencies.push_back(dependency_name);
       } else {
-        Log << SyntaxError << next() << "Expected dependency name";
+        Log << SyntaxError << Next() << "Expected dependency name";
       }
 
-      NextIf(PuncComa);
+      NextIf<PuncComa>();
     }
   } else {
-    Log << SyntaxError << current() << "Expected '[' at start of scope dependencies";
+    Log << SyntaxError << Current() << "Expected '[' at start of scope dependencies";
   }
 
   return std::nullopt;
 }
 
 auto Parser::PImpl::RecurseScopeBlock() -> FlowPtr<Stmt> {
-  if (NextIf(PuncSemi)) {
+  if (NextIf<PuncSemi>()) {
     return CreateNode<Block>(BlockItems(), SafetyMode::Unknown)();
   }
 
-  if (NextIf(OpArrow)) {
+  if (NextIf<OpArrow>()) {
     return RecurseBlock(false, true, SafetyMode::Unknown);
   }
 
@@ -90,7 +90,7 @@ auto Parser::PImpl::RecurseScope() -> FlowPtr<Stmt> {
 
     return CreateNode<Scope>(scope_name, scope_block, dependencies.value())();
   } else {
-    Log << SyntaxError << current() << "Expected scope dependencies";
+    Log << SyntaxError << Current() << "Expected scope dependencies";
   }
 
   return MockStmt(QAST_SCOPE);

@@ -36,8 +36,7 @@
 #include <conf/Validate.hh>
 #include <core/Logger.hh>
 
-static auto GetConfig(
-    const std::filesystem::path &base) -> std::optional<no3::conf::Config> {
+static auto GetConfig(const std::filesystem::path &base) -> std::optional<no3::conf::Config> {
   if (std::filesystem::exists(base / "no3.yaml")) {
     auto c = no3::conf::YamlConfigParser().Parsef(base / "no3.yaml");
 
@@ -59,8 +58,7 @@ static auto GetConfig(
   return std::nullopt;
 }
 
-static auto RecursveSubpackages(const std::filesystem::path &base,
-                                bool verbose) -> bool {
+static auto RecursveSubpackages(const std::filesystem::path &base, bool verbose) -> bool {
   auto c = GetConfig(base);
 
   if (!c) {
@@ -76,8 +74,7 @@ static auto RecursveSubpackages(const std::filesystem::path &base,
   return true;
 }
 
-auto no3::clean::CleanPackageSource(const std::string &package_src,
-                                    bool verbose) -> bool {
+auto no3::clean::CleanPackageSource(const std::string &package_src, bool verbose) -> bool {
   std::filesystem::path package_src_path(package_src);
 
   if (!std::filesystem::exists(package_src_path)) {

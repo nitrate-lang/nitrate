@@ -31,17 +31,15 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __NITRATE_AST_ASTDATA_H__
-#define __NITRATE_AST_ASTDATA_H__
+#ifndef __NITRATE_AST_STRUCTURAL_DATA_H__
+#define __NITRATE_AST_STRUCTURAL_DATA_H__
 
 #include <memory>
 #include <nitrate-core/Allocate.hh>
 #include <nitrate-core/FlowPtr.hh>
-#include <nitrate-core/Macro.hh>
 #include <nitrate-core/NullableFlowPtr.hh>
 #include <nitrate-core/String.hh>
-#include <nitrate-parser/ASTCommon.hh>
-#include <nitrate-parser/ASTVisitor.hh>
+#include <nitrate-parser/ASTFwd.hh>
 #include <variant>
 #include <vector>
 
@@ -75,6 +73,20 @@ namespace ncc::parse {
 };  // namespace ncc::parse
 
 namespace ncc::parse {
+  enum class Purity : uint8_t {
+    Impure,
+    Impure_TSafe,
+    Pure,
+    Quasi,
+    Retro,
+  };
+
+  enum class Vis : uint8_t {
+    Pub = 0,
+    Sec = 1,
+    Pro = 2,
+  };
+
   using ExpressionList = std::vector<FlowPtr<Expr>, Arena<FlowPtr<Expr>>>;
   using TupleTyItems = std::vector<FlowPtr<Type>, Arena<FlowPtr<Type>>>;
   using CallArg = std::pair<string, FlowPtr<Expr>>;

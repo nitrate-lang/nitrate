@@ -39,10 +39,11 @@
 #include <memory>
 #include <nitrate-core/Init.hh>
 #include <nitrate-core/Logger.hh>
+#include <nitrate-lexer/Grammar.hh>
 #include <nitrate-lexer/Scanner.hh>
+#include <nitrate-parser/ASTBase.hh>
 #include <nitrate-parser/ASTWriter.hh>
 #include <nitrate-parser/Context.hh>
-#include <unordered_set>
 #include <utility>
 
 using namespace ncc::lex;

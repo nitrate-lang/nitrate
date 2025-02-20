@@ -38,7 +38,7 @@ using namespace ncc::lex;
 using namespace ncc::parse;
 
 auto Parser::PImpl::RecurseEnumType() -> NullableFlowPtr<parse::Type> {
-  if (NextIf(PuncColn)) {
+  if (NextIf<PuncColn>()) {
     return RecurseType();
   }
 
@@ -48,11 +48,11 @@ auto Parser::PImpl::RecurseEnumType() -> NullableFlowPtr<parse::Type> {
 auto Parser::PImpl::RecurseEnumItem() -> std::optional<EnumItem> {
   auto member_name = RecurseName();
   if (member_name.empty()) {
-    Log << SyntaxError << current() << "Enum member name cannot be empty.";
+    Log << SyntaxError << Current() << "Enum member name cannot be empty.";
     return std::nullopt;
   }
 
-  if (NextIf(OpSet)) {
+  if (NextIf<OpSet>()) {
     auto member_value = RecurseExpr({
         Token(Punc, PuncSemi),
         Token(Punc, PuncComa),
@@ -68,30 +68,30 @@ auto Parser::PImpl::RecurseEnumItem() -> std::optional<EnumItem> {
 auto Parser::PImpl::RecurseEnumItems() -> std::optional<EnumItems> {
   EnumItems items;
 
-  if (NextIf(PuncSemi)) {
+  if (NextIf<PuncSemi>()) {
     return items;
   }
 
-  if (NextIf(PuncLCur)) {
+  if (NextIf<PuncLCur>()) {
     while (true) {
-      if (NextIf(EofF)) [[unlikely]] {
-        Log << SyntaxError << current() << "Unexpected EOF encountered while parsing enum fields.";
+      if (NextIf<EofF>()) [[unlikely]] {
+        Log << SyntaxError << Current() << "Unexpected EOF encountered while parsing enum fields.";
         break;
       }
 
-      if (NextIf(PuncRCur)) {
+      if (NextIf<PuncRCur>()) {
         return items;
       }
 
       if (auto enum_member = RecurseEnumItem()) {
         items.push_back(enum_member.value());
       } else {
-        Log << SyntaxError << current() << "Failed to parse enum field.";
+        Log << SyntaxError << Current() << "Failed to parse enum field.";
       }
 
-      NextIf(PuncComa) || NextIf(PuncSemi);
+      NextIf<PuncComa>() || NextIf<PuncSemi>();
     }
-  } else if (NextIf(OpArrow)) {
+  } else if (NextIf<OpArrow>()) {
     if (auto item = RecurseEnumItem()) {
       items.push_back(item.value());
       return items;

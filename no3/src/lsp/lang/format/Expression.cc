@@ -38,21 +38,18 @@ using namespace no3::lsp::fmt;
 using namespace ncc::parse;
 using namespace ncc::lex;
 
-void CambrianFormatter::WrapStmtBody(FlowPtr<parse::Stmt> n,
-                                     size_t size_threshold,
-                                     bool use_arrow_if_wrapped) {
+void CambrianFormatter::WrapStmtBody(FlowPtr<parse::Stmt> n, size_t size_threshold, bool use_arrow_if_wrapped) {
   if (n->Is(QAST_BLOCK)) {
     auto block = n.As<Block>();
-    bool single_stmt = block->GetItems().size() == 1;
-    bool few_children =
-        single_stmt && block->RecursiveChildCount() <= size_threshold;
+    bool single_stmt = block->GetStatements().size() == 1;
+    bool few_children = single_stmt && block->RecursiveChildCount() <= size_threshold;
 
     if (single_stmt && few_children) {
       if (use_arrow_if_wrapped) {
         m_line << "=> ";
       }
 
-      block->GetItems().front().Accept(*this);
+      block->GetStatements().front().Accept(*this);
       return;
     }
   }
@@ -76,40 +73,30 @@ void CambrianFormatter::Visit(FlowPtr<ExprStmt> n) {
   m_line << ";";
 }
 
-void CambrianFormatter::Visit(FlowPtr<StmtExpr> n) {
+void CambrianFormatter::Visit(FlowPtr<LambdaExpr> n) {
   PrintMultilineComments(n);
 
-  n->GetStmt().Accept(*this);
-}
-
-void CambrianFormatter::Visit(FlowPtr<TypeExpr> n) {
-  PrintMultilineComments(n);
-
-  m_line << "type ";
-  n->GetType().Accept(*this);
+  n->GetFunc().Accept(*this);
 }
 
 void CambrianFormatter::Visit(FlowPtr<Unary> n) {
-  static const std::unordered_set<Operator> word_ops = {
-      OpAs,        OpBitcastAs, OpIn,     OpOut,     OpSizeof,
-      OpBitsizeof, OpAlignof,   OpTypeof, OpComptime};
+  static const std::unordered_set<Operator> word_ops = {OpAs,        OpBitcastAs, OpIn,     OpOut,     OpSizeof,
+                                                        OpBitsizeof, OpAlignof,   OpTypeof, OpComptime};
 
   PrintMultilineComments(n);
 
-  m_line << "(" << n->GetOp();
+  m_line << n->GetOp();
   if (word_ops.contains(n->GetOp())) {
     m_line << " ";
   }
   n->GetRHS().Accept(*this);
-  m_line << ")";
 }
 
 void CambrianFormatter::Visit(FlowPtr<PostUnary> n) {
   PrintMultilineComments(n);
 
-  m_line << "(";
   n->GetLHS().Accept(*this);
-  m_line << n->GetOp() << ")";
+  m_line << n->GetOp();
 }
 
 void CambrianFormatter::Visit(FlowPtr<Binary> n) {
@@ -120,22 +107,18 @@ void CambrianFormatter::Visit(FlowPtr<Binary> n) {
     m_line << ".";
     n->GetRHS().Accept(*this);
   } else {
-    m_line << "(";
     n->GetLHS().Accept(*this);
     m_line << " " << n->GetOp() << " ";
     n->GetRHS().Accept(*this);
-    m_line << ")";
   }
 }
 
 void CambrianFormatter::Visit(FlowPtr<Ternary> n) {
   PrintMultilineComments(n);
 
-  m_line << "(";
   n->GetCond().Accept(*this);
   m_line << " ? ";
   n->GetLHS().Accept(*this);
   m_line << " : ";
   n->GetRHS().Accept(*this);
-  m_line << ")";
 }

@@ -38,7 +38,7 @@ using namespace ncc::lex;
 using namespace ncc::parse;
 
 auto Parser::PImpl::RecurseAbiName() -> string {
-  auto tok = NextIf(Text);
+  auto tok = NextIf<Text>();
 
   return tok ? tok->GetString() : "";
 }
@@ -46,17 +46,17 @@ auto Parser::PImpl::RecurseAbiName() -> string {
 auto Parser::PImpl::RecurseExportAttributes() -> std::optional<ExpressionList> {
   ExpressionList attributes;
 
-  if (!NextIf(PuncLBrk)) {
+  if (!NextIf<PuncLBrk>()) {
     return attributes;
   }
 
   while (true) {
-    if (NextIf(EofF)) [[unlikely]] {
-      Log << SyntaxError << current() << "Encountered EOF while parsing export attributes";
+    if (NextIf<EofF>()) [[unlikely]] {
+      Log << SyntaxError << Current() << "Encountered EOF while parsing export attributes";
       break;
     }
 
-    if (NextIf(PuncRBrk)) {
+    if (NextIf<PuncRBrk>()) {
       return attributes;
     }
 
@@ -67,14 +67,14 @@ auto Parser::PImpl::RecurseExportAttributes() -> std::optional<ExpressionList> {
 
     attributes.push_back(attribute);
 
-    NextIf(PuncComa);
+    NextIf<PuncComa>();
   }
 
   return std::nullopt;
 }
 
 auto Parser::PImpl::RecurseExportBody() -> FlowPtr<Stmt> {
-  if (peek().Is<PuncLCur>()) {
+  if (Peek().Is<PuncLCur>()) {
     return RecurseBlock(true, false, SafetyMode::Unknown);
   }
 
@@ -90,7 +90,7 @@ auto Parser::PImpl::RecurseExport(Vis vis) -> FlowPtr<Stmt> {
     return CreateNode<Export>(export_body, export_abi, vis, export_attributes.value())();
   }
 
-  Log << SyntaxError << current() << "Malformed export attributes";
+  Log << SyntaxError << Current() << "Malformed export attributes";
 
   return MockStmt(QAST_EXPORT);
 }

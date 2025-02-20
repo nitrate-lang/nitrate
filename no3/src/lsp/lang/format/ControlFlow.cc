@@ -81,8 +81,6 @@ void CambrianFormatter::Visit(FlowPtr<parse::If> n) {
     m_line << " else ";
     n->GetElse().value().Accept(*this);
   }
-
-  m_line << ";";
 }
 
 void CambrianFormatter::Visit(FlowPtr<parse::Break> n) {

@@ -45,7 +45,7 @@ void CambrianFormatter::Visit(FlowPtr<parse::Enum> n) {
     n->GetType().value().Accept(*this);
   }
 
-  if (n->GetItems().empty()) {
+  if (n->GetFields().empty()) {
     m_line << ";";
     return;
   }
@@ -53,7 +53,7 @@ void CambrianFormatter::Visit(FlowPtr<parse::Enum> n) {
   m_line << " {" << std::endl;
   m_indent += m_tabSize;
 
-  for (auto& it : n->GetItems()) {
+  for (auto& it : n->GetFields()) {
     m_line << GetIndent();
     m_line << it.first;
     if (it.second) {

@@ -425,3 +425,8 @@ TEST_CASE(Operator, Permute, 297, R"(===>>=--)", {OpEq, OpArrow, OpGE, OpDec});
 TEST_CASE(Operator, Permute, 298, R"(^^=<=>>>=!=)", {OpLogicXorSet, OpLE, OpROTRSet, OpNE});
 TEST_CASE(Operator, Permute, 299, R"(<=<<<||=<)", {OpLE, OpROTL, OpLogicOrSet, OpLT});
 TEST_CASE(Operator, Permute, 300, R"(++&&=-=+=)", {OpInc, OpLogicAndSet, OpMinusSet, OpPlusSet});
+
+///=============================================================================
+/// LEXICAL GARBAGE
+TEST_CASE(Operator, Garbage, 0, R"($)", {});
+TEST_CASE(Operator, Garbage, 1, R"(`)", {});

@@ -39,19 +39,19 @@ using namespace ncc::parse;
 
 auto Parser::PImpl::RecurseTypedef() -> FlowPtr<Stmt> {
   if (auto type_name = RecurseName(); !type_name.empty()) [[likely]] {
-    if (NextIf(OpSet)) [[likely]] {
+    if (NextIf<OpSet>()) [[likely]] {
       auto the_type = RecurseType();
 
-      if (NextIf(PuncSemi)) [[likely]] {
+      if (NextIf<PuncSemi>()) [[likely]] {
         return CreateNode<Typedef>(type_name, the_type)();
       } else {
-        Log << SyntaxError << current() << "Expected ';' in typedef declaration";
+        Log << SyntaxError << Current() << "Expected ';' in typedef declaration";
       }
     } else {
-      Log << SyntaxError << current() << "Expected '=' in typedef declaration";
+      Log << SyntaxError << Current() << "Expected '=' in typedef declaration";
     }
   } else {
-    Log << SyntaxError << current() << "Expected name in typedef declaration";
+    Log << SyntaxError << Current() << "Expected name in typedef declaration";
   }
 
   return MockStmt(QAST_TYPEDEF);

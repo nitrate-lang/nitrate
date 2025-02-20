@@ -86,8 +86,7 @@ void srv::DoFormatting(const RequestMessage& req, ResponseMessage& resp) {
   }
 
   if (!req.GetJSON()["options"]["insertSpaces"].get<bool>()) {
-    resp.Error(LSPStatus::InvalidParams,
-               "options.insertSpaces is not a boolean");
+    resp.Error(LSPStatus::InvalidParams, "options.insertSpaces is not a boolean");
     return;
   }
 
@@ -115,9 +114,7 @@ void srv::DoFormatting(const RequestMessage& req, ResponseMessage& resp) {
   }
 
   std::stringstream formatted_ss;
-  if (!lsp::fmt::FormatterFactory::Create(lsp::fmt::Styleguide::Cambrian,
-                                          formatted_ss)
-           ->Format(ast.Get())) {
+  if (!lsp::fmt::FormatterFactory::Create(lsp::fmt::Styleguide::Cambrian, formatted_ss)->Format(ast.Get())) {
     resp.Error(LSPStatus::InternalError, "Failed to format document");
     return;
   }

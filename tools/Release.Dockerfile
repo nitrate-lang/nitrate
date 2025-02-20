@@ -25,7 +25,7 @@ RUN echo "cmake --build /app/.build/release -j`nproc` || exit 1" >> /opt/build.s
 RUN echo "mkdir -p /app/build" >> /opt/build.sh
 RUN echo "rm -rf /app/build/*" >> /opt/build.sh
 RUN echo "cmake --install /app/.build/release || exit 1" >> /opt/build.sh
-RUN echo "chmod -R 777 /app/build/ || exit 1" >> /opt/build.sh
+RUN echo "chmod -R uo+rw /app/build/ || exit 1" >> /opt/build.sh
 RUN chmod +x /opt/build.sh
 
 WORKDIR /app

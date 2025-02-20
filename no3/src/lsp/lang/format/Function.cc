@@ -44,8 +44,7 @@ void CambrianFormatter::Visit(FlowPtr<Function> n) {
   if (!n->GetAttributes().empty()) {
     m_line << " [";
     IterateExceptLast(
-        n->GetAttributes().begin(), n->GetAttributes().end(),
-        [&](auto attr, size_t) { attr.Accept(*this); },
+        n->GetAttributes().begin(), n->GetAttributes().end(), [&](auto attr, size_t) { attr.Accept(*this); },
         [&](let) { m_line << ", "; });
     m_line << "]";
   }
@@ -95,8 +94,7 @@ void CambrianFormatter::Visit(FlowPtr<Function> n) {
   if (n->GetTemplateParams()) {
     m_line << "<";
     IterateExceptLast(
-        n->GetTemplateParams().value().begin(),
-        n->GetTemplateParams().value().end(),
+        n->GetTemplateParams().value().begin(), n->GetTemplateParams().value().end(),
         [&](auto param, size_t) {
           m_line << std::get<0>(param);
 
@@ -157,7 +155,7 @@ void CambrianFormatter::Visit(FlowPtr<Function> n) {
     m_line << ";";
   } else {
     m_line << " ";
-    WrapStmtBody(n->GetBody().value(), 10, true);
+    WrapStmtBody(n->GetBody().value(), 4, true);
   }
 }
 
@@ -169,8 +167,7 @@ void CambrianFormatter::Visit(FlowPtr<FuncTy> n) {
   if (!n->GetAttributes().empty()) {
     m_line << "[";
     IterateExceptLast(
-        n->GetAttributes().begin(), n->GetAttributes().end(),
-        [&](auto attr, size_t) { attr.Accept(*this); },
+        n->GetAttributes().begin(), n->GetAttributes().end(), [&](auto attr, size_t) { attr.Accept(*this); },
         [&](let) { m_line << ", "; });
     m_line << "] ";
   }

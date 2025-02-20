@@ -63,8 +63,8 @@ auto DownloadGitRepo(const std::string &url, const std::string &dest) -> bool {
   return true;
 }
 
-auto no3::install::InstallFromUrl(std::string url, const std::string &dest,
-                                  std::string &package_name, bool overwrite) -> bool {
+auto no3::install::InstallFromUrl(std::string url, const std::string &dest, std::string &package_name,
+                                  bool overwrite) -> bool {
   enum class FetchType {
     GIT,
     UNKNOWN,
@@ -78,8 +78,7 @@ auto no3::install::InstallFromUrl(std::string url, const std::string &dest,
     url = url.substr(0, url.size() - 4);
   }
   if (url.find('/') == std::string::npos) {
-    std::cerr << "Excpected URL pattern like: 'https://example.com/package'"
-              << "\n";
+    std::cerr << "Excpected URL pattern like: 'https://example.com/package'" << "\n";
     return false;
   }
 

@@ -39,7 +39,7 @@ using namespace ncc::parse;
 void CambrianFormatter::Visit(FlowPtr<Variable> n) {
   PrintLineComments(n);
 
-  switch (n->GetDeclType()) {
+  switch (n->GetVariableKind()) {
     case VariableType::Let: {
       m_line << "let ";
       break;
@@ -59,8 +59,7 @@ void CambrianFormatter::Visit(FlowPtr<Variable> n) {
   if (!n->GetAttributes().empty()) {
     m_line << "[";
     IterateExceptLast(
-        n->GetAttributes().begin(), n->GetAttributes().end(),
-        [&](auto attr, size_t) { attr.Accept(*this); },
+        n->GetAttributes().begin(), n->GetAttributes().end(), [&](auto attr, size_t) { attr.Accept(*this); },
         [&](let) { m_line << ", "; });
     m_line << "] ";
   }
@@ -72,9 +71,9 @@ void CambrianFormatter::Visit(FlowPtr<Variable> n) {
     n->GetType().value().Accept(*this);
   }
 
-  if (n->GetValue()) {
+  if (n->GetInitializer()) {
     m_line << " = ";
-    n->GetValue().value().Accept(*this);
+    n->GetInitializer().value().Accept(*this);
   }
 
   m_line << ";";

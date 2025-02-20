@@ -51,18 +51,14 @@ namespace no3::conf {
 
   class ConfigSerializerException : public std::runtime_error {
   public:
-    ConfigSerializerException(const std::string &message)
-        : std::runtime_error(message) {}
+    ConfigSerializerException(const std::string &message) : std::runtime_error(message) {}
   };
 
   struct ConfigValue {
     std::variant<std::vector<std::string>, std::string, int64_t, bool> m_value;
 
     ConfigValue() = default;
-    ConfigValue(
-        std::variant<std::vector<std::string>, std::string, int64_t, bool>
-            value)
-        : m_value(std::move(value)) {}
+    ConfigValue(std::variant<std::vector<std::string>, std::string, int64_t, bool> value) : m_value(std::move(value)) {}
 
     template <typename T>
     [[nodiscard]] [[nodiscard]] auto As() const -> T {
@@ -74,9 +70,7 @@ namespace no3::conf {
       return std::holds_alternative<T>(m_value);
     }
 
-    auto operator==(const ConfigValue &value) const -> bool {
-      return m_value == value.m_value;
-    }
+    auto operator==(const ConfigValue &value) const -> bool { return m_value == value.m_value; }
   };
 
   struct ConfigGroup {
@@ -92,12 +86,9 @@ namespace no3::conf {
      * @note If the target is not supported, the function throws
      * ConfigSerializerException.
      */
-    auto Dump(ConfigItemSerializationTarget target =
-                         ConfigItemSerializationTarget::JSON) const -> std::string;
+    auto Dump(ConfigItemSerializationTarget target = ConfigItemSerializationTarget::JSON) const -> std::string;
 
-    auto operator[](const std::string &key) const -> ConfigValue {
-      return m_items.at(key);
-    }
+    auto operator[](const std::string &key) const -> ConfigValue { return m_items.at(key); }
 
     template <typename T>
     void Set(const std::string &key, T value) {
@@ -114,9 +105,7 @@ namespace no3::conf {
       return has<T>(key) && m_items.at(key).As<T>() == value;
     }
 
-    auto operator==(const ConfigGroup &grp) const -> bool {
-      return m_items == grp.m_items;
-    }
+    auto operator==(const ConfigGroup &grp) const -> bool { return m_items == grp.m_items; }
   };
 
   struct Config {
@@ -124,8 +113,7 @@ namespace no3::conf {
     int m_version;
 
     Config() : m_version(0) {}
-    Config(ConfigGroup grp, int version = 0)
-        : m_root(std::move(grp)), m_version(version) {}
+    Config(ConfigGroup grp, int version = 0) : m_root(std::move(grp)), m_version(version) {}
 
     /**
      * @brief Dump the configuration to a string
@@ -135,12 +123,9 @@ namespace no3::conf {
      * @note If the target is not supported, the function throws
      * ConfigSerializerException.
      */
-    auto Dump(ConfigItemSerializationTarget target =
-                         ConfigItemSerializationTarget::JSON) const -> std::string;
+    auto Dump(ConfigItemSerializationTarget target = ConfigItemSerializationTarget::JSON) const -> std::string;
 
-    auto operator==(const Config &cfg) const -> bool {
-      return m_version == cfg.m_version && m_root == cfg.m_root;
-    }
+    auto operator==(const Config &cfg) const -> bool { return m_version == cfg.m_version && m_root == cfg.m_root; }
 
     auto operator[](const std::string &key) const -> ConfigValue { return m_root[key]; }
 

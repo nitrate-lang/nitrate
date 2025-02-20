@@ -31,10 +31,11 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __NITRATE_AST_ASTTYPE_H__
-#define __NITRATE_AST_ASTTYPE_H__
+#ifndef __NITRATE_AST_TYPE_H__
+#define __NITRATE_AST_TYPE_H__
 
 #include <nitrate-parser/ASTBase.hh>
+#include <nitrate-parser/ASTData.hh>
 #include <span>
 
 namespace ncc::parse {

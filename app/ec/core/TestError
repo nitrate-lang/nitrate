@@ -6,8 +6,20 @@
     "nitrate-core",
     "pipeline"
   ],
-  "fixes": [],
-  "examples": [],
-  "dev_notes": [],
-  "user_notes": []
+  "fixes": [
+    "This is not a fix, just a not so useful message...",
+    "another fix message"
+  ],
+  "examples": [
+    "When you run the test suite this error is emitted",
+    "Another example of how this error can be triggered"
+  ],
+  "dev_notes": [
+    "Devs are gods, they don't need notes",
+    "Another note for the devs"
+  ],
+  "user_notes": [
+    "Users are mere mortals, but they won't bother to read this anyway",
+    "Another note for the users"
+  ]
 }

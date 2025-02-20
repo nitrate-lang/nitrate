@@ -32,11 +32,12 @@ message CallArgument {
 }
 
 enum FunctionPurity {
-  Impure = 0;
-  Impure_TSafe = 1;
-  Pure = 2;
-  Quasi = 3;
-  Retro = 4;
+  Purity_Unspecified = 0;
+  Purity_Impure = 1;
+  Purity_Impure_TSafe = 2;
+  Purity_Pure = 3;
+  Purity_Quasi = 4;
+  Purity_Retro = 5;
 }
 
 message FunctionParameter {
@@ -46,9 +47,10 @@ message FunctionParameter {
 }
 
 enum Vis {
-  Public = 0;
-  Private = 1;
-  Protected = 2;
+  Vis_Unspecified = 0;
+  Vis_Private = 1;
+  Vis_Public = 2;
+  Vis_Protected = 3;
 }
 
 message TemplateParameters {
@@ -312,77 +314,70 @@ message FuncTy {
 }
 
 ///===--------------------------------------------------------------------===///
-
 enum Operator {
-  Plus = 0;         /* '+':    Addition operator */
-  Minus = 1;        /* '-':    Subtraction operator */
-  Times = 2;        /* '*':    Multiplication operator */
-  Slash = 3;        /* '/':    Division operator */
-  Percent = 4;      /* '%':    Modulus operator */
-  BitAnd = 5;       /* '&':    Bitwise AND operator */
-  BitOr = 6;        /* '|':    Bitwise OR operator */
-  BitXor = 7;       /* '^':    Bitwise XOR operator */
-  BitNot = 8;       /* '~':    Bitwise NOT operator */
-  LShift = 9;       /* '<<':   Left shift operator */
-  RShift = 10;      /* '>>':   Right shift operator */
-  ROTL = 11;        /* '<<<':  Rotate left operator */
-  ROTR = 12;        /* '>>>':  Rotate right operator */
-  LogicAnd = 13;    /* '&&':   Logical AND operator */
-  LogicOr = 14;     /* '||':   Logical OR operator */
-  LogicXor = 15;    /* '^^':   Logical XOR operator */
-  LogicNot = 16;    /* '!':    Logical NOT operator */
-  LT = 17;          /* '<':    Less than operator */
-  GT = 18;          /* '>':    Greater than operator */
-  LE = 19;          /* '<=':   Less than or equal to operator */
-  GE = 20;          /* '>=':   Greater than or equal to operator */
-  Eq = 21;          /* '==':   Equal to operator */
-  NE = 22;          /* '!=':   Not equal to operator */
-  Set = 23;         /* '=':    Assignment operator */
-  PlusSet = 24;     /* '+=':   Addition assignment operator */
-  MinusSet = 25;    /* '-=':   Subtraction assignment operator */
-  TimesSet = 26;    /* '*=':   Multiplication assignment operator */
-  SlashSet = 27;    /* '/=':   Division assignment operator */
-  PercentSet = 28;  /* '%=':   Modulus assignment operator */
-  BitAndSet = 29;   /* '&=':   Bitwise AND assignment operator */
-  BitOrSet = 30;    /* '|=':   Bitwise OR assignment operator */
-  BitXorSet = 31;   /* '^=':   Bitwise XOR assignment operator */
-  LogicAndSet = 32; /* '&&=':  Logical AND assignment operator */
-  LogicOrSet = 33;  /* '||=':  Logical OR assignment operator */
-  LogicXorSet = 34; /* '^^=':  Logical XOR assignment operator */
-  LShiftSet = 35;   /* '<<=':  Left shift assignment operator */
-  RShiftSet = 36;   /* '>>=':  Right shift assignment operator */
-  ROTLSet = 37;     /* '<<<=': Rotate left assignment operator */
-  ROTRSet = 38;     /* '>>>=': Rotate right assignment operator */
-  Inc = 39;         /* '++':   Increment operator */
-  Dec = 40;         /* '--':   Decrement operator */
-  As = 41;          /* 'as':   Type cast operator */
-  BitcastAs = 42;   /* 'bitcast_as': Bitcast operator */
-  In = 43;          /* 'in':         Generic membership operator */
-  Out = 44;         /* 'out':        Output operator */
-  Sizeof = 45;      /* 'sizeof':     Size of operator */
-  Bitsizeof = 46;   /* 'bitsizeof':  Bit size of operator */
-  Alignof = 47;     /* 'alignof':    Alignment of operator */
-  Typeof = 48;      /* 'typeof':     Type of operator */
-  Comptime = 49;    /* 'comptime':   Compile-time operator */
-  Dot = 50;         /* '.':          Dot operator */
-  Range = 51;       /* '..':         Range operator */
-  Ellipsis = 52;    /* '...':        Ellipsis operator */
-  Arrow = 53;       /* '=>':         Arrow operator */
-  Question = 54;    /* '?':          Question operator */
-};
-
-message StmtExpr {
-  optional SourceLocationRange location = 1;
-  repeated UserComment comments = 2;
-
-  required Stmt statement = 4;
+  Op_Unspecified = 0;  /* Unspecified operator */
+  Op_Plus = 1;         /* '+':    Addition operator */
+  Op_Minus = 2;        /* '-':    Subtraction operator */
+  Op_Times = 3;        /* '*':    Multiplication operator */
+  Op_Slash = 4;        /* '/':    Division operator */
+  Op_Percent = 5;      /* '%':    Modulus operator */
+  Op_BitAnd = 6;       /* '&':    Bitwise AND operator */
+  Op_BitOr = 7;        /* '|':    Bitwise OR operator */
+  Op_BitXor = 8;       /* '^':    Bitwise XOR operator */
+  Op_BitNot = 9;       /* '~':    Bitwise NOT operator */
+  Op_LShift = 10;      /* '<<':   Left shift operator */
+  Op_RShift = 11;      /* '>>':   Right shift operator */
+  Op_ROTL = 12;        /* '<<<':  Rotate left operator */
+  Op_ROTR = 13;        /* '>>>':  Rotate right operator */
+  Op_LogicAnd = 14;    /* '&&':   Logical AND operator */
+  Op_LogicOr = 15;     /* '||':   Logical OR operator */
+  Op_LogicXor = 16;    /* '^^':   Logical XOR operator */
+  Op_LogicNot = 17;    /* '!':    Logical NOT operator */
+  Op_LT = 18;          /* '<':    Less than operator */
+  Op_GT = 19;          /* '>':    Greater than operator */
+  Op_LE = 20;          /* '<=':   Less than or equal to operator */
+  Op_GE = 21;          /* '>=':   Greater than or equal to operator */
+  Op_Eq = 22;          /* '==':   Equal to operator */
+  Op_NE = 23;          /* '!=':   Not equal to operator */
+  Op_Set = 24;         /* '=':    Assignment operator */
+  Op_PlusSet = 25;     /* '+=':   Addition assignment operator */
+  Op_MinusSet = 26;    /* '-=':   Subtraction assignment operator */
+  Op_TimesSet = 27;    /* '*=':   Multiplication assignment operator */
+  Op_SlashSet = 28;    /* '/=':   Division assignment operator */
+  Op_PercentSet = 29;  /* '%=':   Modulus assignment operator */
+  Op_BitAndSet = 30;   /* '&=':   Bitwise AND assignment operator */
+  Op_BitOrSet = 31;    /* '|=':   Bitwise OR assignment operator */
+  Op_BitXorSet = 32;   /* '^=':   Bitwise XOR assignment operator */
+  Op_LogicAndSet = 33; /* '&&=':  Logical AND assignment operator */
+  Op_LogicOrSet = 34;  /* '||=':  Logical OR assignment operator */
+  Op_LogicXorSet = 35; /* '^^=':  Logical XOR assignment operator */
+  Op_LShiftSet = 36;   /* '<<=':  Left shift assignment operator */
+  Op_RShiftSet = 37;   /* '>>=':  Right shift assignment operator */
+  Op_ROTLSet = 38;     /* '<<<=': Rotate left assignment operator */
+  Op_ROTRSet = 39;     /* '>>>=': Rotate right assignment operator */
+  Op_Inc = 40;         /* '++':   Increment operator */
+  Op_Dec = 41;         /* '--':   Decrement operator */
+  Op_As = 42;          /* 'as':   Type cast operator */
+  Op_BitcastAs = 43;   /* 'bitcast_as': Bitcast operator */
+  Op_In = 44;          /* 'in':         Generic membership operator */
+  Op_Out = 45;         /* 'out':        Output operator */
+  Op_Sizeof = 46;      /* 'sizeof':     Size of operator */
+  Op_Bitsizeof = 47;   /* 'bitsizeof':  Bit size of operator */
+  Op_Alignof = 48;     /* 'alignof':    Alignment of operator */
+  Op_Typeof = 49;      /* 'typeof':     Type of operator */
+  Op_Comptime = 50;    /* 'comptime':   Compile-time operator */
+  Op_Dot = 51;         /* '.':          Dot operator */
+  Op_Range = 52;       /* '..':         Range operator */
+  Op_Ellipsis = 53;    /* '...':        Ellipsis operator */
+  Op_Arrow = 54;       /* '=>':         Arrow operator */
+  Op_Question = 55;    /* '?':          Question operator */
 }
 
-message TypeExpr {
+message LambdaExpr {
   optional SourceLocationRange location = 1;
   repeated UserComment comments = 2;
 
-  required Type type = 4;
+  required Stmt function = 4;
 }
 
 message Unary {
@@ -556,8 +551,8 @@ message ExprStmt {
 }
 
 message Block {
-  enum SafetyMode {
-    Unspecified = 0;
+  enum Safety {
+    None = 0;
     Safe = 1;
     Unsafe = 2;
   }
@@ -565,15 +560,16 @@ message Block {
   optional SourceLocationRange location = 1;
   repeated UserComment comments = 2;
 
-  required SafetyMode guarantor = 4;
+  required Safety safety = 4;
   repeated Stmt statements = 5;
 }
 
 message Variable {
   enum VariableKind {
-    Const = 0;
-    Var = 1;
-    Let = 2;
+    Unspecified = 0;
+    Const = 1;
+    Var = 2;
+    Let = 3;
   }
 
   optional SourceLocationRange location = 1;
@@ -738,11 +734,12 @@ message Function {
 
 message Struct {
   enum AggregateKind {
-    Region_ = 0;
-    Struct_ = 1;
-    Group_ = 2;
-    Class_ = 3;
-    Union_ = 4;
+    Unspecified = 0;
+    Region_ = 1;
+    Struct_ = 2;
+    Group_ = 3;
+    Class_ = 4;
+    Union_ = 5;
   }
 
   message Field {
@@ -774,8 +771,7 @@ message Struct {
 message Expr {
   oneof node {
     Base base = 1;
-    StmtExpr stmt_expr = 2;
-    TypeExpr type_expr = 3;
+    LambdaExpr lambda_expr = 2;
     Unary unary = 4;
     Binary binary = 5;
     PostUnary post_unary = 6;
@@ -796,6 +792,32 @@ message Expr {
     FString fstring = 21;
     Identifier identifier = 22;
     Sequence sequence = 23;
+
+    NamedTy named = 24;
+    InferTy infer = 25;
+    TemplateType template = 26;
+    U1 u1 = 27;
+    U8 u8 = 28;
+    U16 u16 = 29;
+    U32 u32 = 30;
+    U64 u64 = 31;
+    U128 u128 = 32;
+    I8 i8 = 33;
+    I16 i16 = 34;
+    I32 i32 = 35;
+    I64 i64 = 36;
+    I128 i128 = 37;
+    F16 f16 = 38;
+    F32 f32 = 39;
+    F64 f64 = 40;
+    F128 f128 = 41;
+    VoidTy void = 42;
+    PtrTy ptr = 43;
+    OpaqueTy opaque = 44;
+    TupleTy tuple = 45;
+    ArrayTy array = 46;
+    RefTy ref = 47;
+    FuncTy func = 48;
   }
 }
 
@@ -859,8 +881,7 @@ message Type {
 message Root {
   oneof node {
     Base base = 1;
-    StmtExpr stmt_expr = 2;
-    TypeExpr type_expr = 3;
+    LambdaExpr lambda_expr = 2;
     Unary unary = 4;
     Binary binary = 5;
     PostUnary post_unary = 6;

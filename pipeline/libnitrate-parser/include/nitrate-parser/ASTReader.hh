@@ -31,18 +31,22 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __NITRATE_AST_READER_H__
-#define __NITRATE_AST_READER_H__
+#ifndef __NITRATE_AST_DESERIALIZER_H__
+#define __NITRATE_AST_DESERIALIZER_H__
 
 #include <memory>
+#include <nitrate-core/AllocateFwd.hh>
 #include <nitrate-core/Macro.hh>
 #include <nitrate-core/NullableFlowPtr.hh>
-#include <nitrate-lexer/Scanner.hh>
+#include <nitrate-lexer/ScannerFwd.hh>
 #include <nitrate-parser/AST.hh>
-#include <nitrate-parser/ASTWriter.hh>
+#include <nitrate-parser/ProtobufFwd.hh>
+#include <nitrate-parser/Utility.hh>
 #include <optional>
 
 namespace ncc::parse {
+  using namespace nitrate::parser;
+
   using ReaderSourceManager = std::optional<std::reference_wrapper<lex::IScanner>>;
 
   class NCC_EXPORT AstReader final {
@@ -65,8 +69,7 @@ namespace ncc::parse {
     auto Unmarshal(const SyntaxTree::Type &in) -> Result<Type>;
     auto Unmarshal(const SyntaxTree::Base &in) -> Result<Base>;
     auto Unmarshal(const SyntaxTree::ExprStmt &in) -> Result<ExprStmt>;
-    auto Unmarshal(const SyntaxTree::StmtExpr &in) -> Result<StmtExpr>;
-    auto Unmarshal(const SyntaxTree::TypeExpr &in) -> Result<TypeExpr>;
+    auto Unmarshal(const SyntaxTree::LambdaExpr &in) -> Result<LambdaExpr>;
     auto Unmarshal(const SyntaxTree::NamedTy &in) -> Result<NamedTy>;
     auto Unmarshal(const SyntaxTree::InferTy &in) -> Result<InferTy>;
     auto Unmarshal(const SyntaxTree::TemplateType &in) -> Result<TemplateType>;

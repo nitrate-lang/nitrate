@@ -49,12 +49,10 @@ namespace no3::core {
 
   public:
     MyLogSink() : m_out(std::make_unique<std::ostream>(std::cerr.rdbuf())) {}
-    void send(google::LogSeverity severity, const char*,
-              const char* base_filename, int line, const struct tm* tm,
+    void send(google::LogSeverity severity, const char*, const char* base_filename, int line, const struct tm* tm,
               const char* message, std::size_t message_len) override;
 
-    auto RedirectToStream(
-        std::unique_ptr<std::ostream> new_stream) -> std::unique_ptr<std::ostream>;
+    auto RedirectToStream(std::unique_ptr<std::ostream> new_stream) -> std::unique_ptr<std::ostream>;
   };
 }  // namespace no3::core
 

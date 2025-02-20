@@ -36,8 +36,12 @@
 #include <nitrate-lexer/Scanner.hh>
 #include <nitrate-parser/AST.hh>
 #include <nitrate-parser/ASTBase.hh>
+#include <nitrate-parser/ASTExpr.hh>
+#include <nitrate-parser/ASTStmt.hh>
+#include <nitrate-parser/ASTType.hh>
 #include <nitrate-parser/ASTVisitor.hh>
 #include <nitrate-parser/ASTWriter.hh>
+#include <nitrate-parser/Algorithm.hh>
 #include <queue>
 #include <ranges>
 #include <stack>
@@ -74,8 +78,7 @@ class IterVisitor : public ASTVisitor {
 
   void Visit(FlowPtr<Base>) override {}
   void Visit(FlowPtr<ExprStmt> n) override { Add(n->GetExpr()); }
-  void Visit(FlowPtr<StmtExpr> n) override { Add(n->GetStmt()); }
-  void Visit(FlowPtr<TypeExpr> n) override { Add(n->GetType()); }
+  void Visit(FlowPtr<LambdaExpr> n) override { Add(n->GetFunc()); }
   void Visit(FlowPtr<NamedTy> n) override { AddTypesuffix(n); }
   void Visit(FlowPtr<InferTy> n) override { AddTypesuffix(n); }
 
@@ -199,9 +202,8 @@ class IterVisitor : public ASTVisitor {
     std::for_each(n->GetItems().begin(), n->GetItems().end(), [&](auto arg) {
       if (std::holds_alternative<FlowPtr<Expr>>(arg)) {
         Add(std::get<FlowPtr<Expr>>(arg));
-      } else if (std::holds_alternative<string>(arg)) {
       } else {
-        qcore_implement();
+        qcore_assert(std::holds_alternative<string>(arg));
       }
     });
   }
@@ -213,18 +215,18 @@ class IterVisitor : public ASTVisitor {
   }
 
   void Visit(FlowPtr<Block> n) override {
-    std::for_each(n->GetItems().begin(), n->GetItems().end(), [&](auto item) { Add(item); });
+    std::for_each(n->GetStatements().begin(), n->GetStatements().end(), [&](auto item) { Add(item); });
   }
 
   void Visit(FlowPtr<Variable> n) override {
     std::for_each(n->GetAttributes().begin(), n->GetAttributes().end(), [&](auto attr) { Add(attr); });
 
     Add(n->GetType());
-    Add(n->GetValue());
+    Add(n->GetInitializer());
   }
 
   void Visit(FlowPtr<Assembly> n) override {
-    std::for_each(n->GetArgs().begin(), n->GetArgs().end(), [&](auto arg) { Add(arg); });
+    std::for_each(n->GetArguments().begin(), n->GetArguments().end(), [&](auto arg) { Add(arg); });
   }
 
   void Visit(FlowPtr<If> n) override {
@@ -316,13 +318,13 @@ class IterVisitor : public ASTVisitor {
   void Visit(FlowPtr<Enum> n) override {
     Add(n->GetType());
 
-    std::for_each(n->GetItems().begin(), n->GetItems().end(), [&](auto item) { Add(item.second); });
+    std::for_each(n->GetFields().begin(), n->GetFields().end(), [&](auto item) { Add(item.second); });
   }
 
   void Visit(FlowPtr<Scope> n) override { Add(n->GetBody()); }
 
   void Visit(FlowPtr<Export> n) override {
-    std::for_each(n->GetAttrs().begin(), n->GetAttrs().end(), [&](auto attr) { Add(attr); });
+    std::for_each(n->GetAttributes().begin(), n->GetAttributes().end(), [&](auto attr) { Add(attr); });
 
     Add(n->GetBody());
   }

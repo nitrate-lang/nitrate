@@ -73,8 +73,7 @@ static auto JsonEscapeString(const std::string &str) -> std::string {
   return ss.str();
 }
 
-auto no3::conf::ConfigGroup::Dump(
-    no3::conf::ConfigItemSerializationTarget target) const -> std::string {
+auto no3::conf::ConfigGroup::Dump(no3::conf::ConfigItemSerializationTarget target) const -> std::string {
   std::stringstream ss;
 
   if (target == ConfigItemSerializationTarget::JSON) {
@@ -144,8 +143,7 @@ auto no3::conf::ConfigGroup::Dump(
   return ss.str();
 }
 
-auto no3::conf::Config::Dump(
-    no3::conf::ConfigItemSerializationTarget target) const -> std::string {
+auto no3::conf::Config::Dump(no3::conf::ConfigItemSerializationTarget target) const -> std::string {
   std::stringstream ss;
 
   ss << m_root.Dump(target);
@@ -153,16 +151,14 @@ auto no3::conf::Config::Dump(
   return ss.str();
 }
 
-auto no3::conf::IParser::Parsef(
-    const std::string &path) -> std::optional<no3::conf::Config> {
+auto no3::conf::IParser::Parsef(const std::string &path) -> std::optional<no3::conf::Config> {
   try {
     std::ifstream file(path);
     if (!file.is_open()) {
       return std::nullopt;
     }
 
-    std::string data((std::istreambuf_iterator<char>(file)),
-                     std::istreambuf_iterator<char>());
+    std::string data((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
     return Parse(data);
   } catch (...) {
     return std::nullopt;

@@ -31,21 +31,56 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __NITRATE_SEQ_EC_H__
-#define __NITRATE_SEQ_EC_H__
+#ifndef __NITRATE_LEXER_LOCATION_HH__
+#define __NITRATE_LEXER_LOCATION_HH__
 
-#include <nitrate-core/Logger.hh>
+#include <cstdint>
+#include <nitrate-core/String.hh>
+#include <nitrate-lexer/ScannerFwd.hh>
 
-namespace ncc::seq::ec {
-  auto Formatter(std::string_view msg, Sev sev) -> std::string;
+namespace ncc::lex {
+  constexpr size_t kLexEof = UINT32_MAX;
 
-  NCC_EC_GROUP(SeqEG);
+  class Location {
+    uint32_t m_offset = kLexEof, m_line = kLexEof, m_column = kLexEof;
+    string m_filename;
 
-#define EXPAND(path) "$NCC_CONF/ec/seq/" path
+  public:
+    constexpr Location() = default;
+    constexpr Location(uint32_t offset, uint32_t line, uint32_t column, string filename)
+        : m_offset(offset), m_line(line), m_column(column), m_filename(filename) {}
 
-  NCC_EC_EX(SeqEG, SeqError, Formatter, EXPAND("SeqError"));
+    static constexpr auto EndOfFile() { return Location(kLexEof, kLexEof, kLexEof, ""); }
 
-#undef EXPAND
-}  // namespace ncc::seq::ec
+    [[nodiscard]] constexpr auto GetOffset() const { return m_offset; }
+    [[nodiscard]] constexpr auto GetRow() const { return m_line; }
+    [[nodiscard]] constexpr auto GetCol() const { return m_column; }
+    [[nodiscard]] constexpr auto GetFilename() const -> string { return m_filename; }
+
+    bool operator==(const Location &rhs) const {
+      return m_offset == rhs.m_offset && m_line == rhs.m_line && m_column == rhs.m_column &&
+             m_filename == rhs.m_filename;
+    }
+  } __attribute__((packed));
+
+  class LocationID {
+  public:
+    using Counter = uint32_t;
+
+    constexpr explicit LocationID(Counter id = 0) : m_id(id) {}
+
+    auto Get(IScanner &l) const -> Location;
+    [[nodiscard]] constexpr auto GetId() const -> Counter { return m_id; }
+
+    [[nodiscard]] constexpr auto operator==(const LocationID &rhs) const -> bool { return m_id == rhs.m_id; }
+    [[nodiscard]] constexpr auto operator<(const LocationID &rhs) const -> bool { return m_id < rhs.m_id; }
+    [[nodiscard]] constexpr auto HasValue() const -> bool { return m_id != 0; }
+
+  private:
+    Counter m_id;
+  } __attribute__((packed));
+
+  using LocationRange = std::pair<LocationID, LocationID>;
+}  // namespace ncc::lex
 
 #endif

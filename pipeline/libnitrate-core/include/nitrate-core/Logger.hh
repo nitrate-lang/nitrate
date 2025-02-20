@@ -48,16 +48,53 @@
 
 namespace ncc {
   enum Sev : uint8_t {
-    Trace,    /* Low-value, high-volume debug info (malloc, free, ...)*/
-    Debug,    /* High-value, mid-volume debug info (init, major API calls, ...) */
-    Info,     /* Examples: upcoming feature notice, did you know about...? */
-    Notice,   /* Examples: Bad design choice, suboptimal code, ... */
-    Warning,  /* Example: Design likely to cause problems, horrible code, ... */
-    Error,    /* Example: Missing semicolon after statement */
-    Critical, /* Example: Arena opened with 4 KB capacity, but 8 KB requested */
-    Alert,    /* Example: Input pointer is not correctly aligned */
-    Emergency /* Example: Segmentation fault */
+    Trace = 0,     /* Low-value, high-volume debug info (malloc, free, ...)*/
+    Debug = 1,     /* High-value, mid-volume debug info (init, major API calls, ...) */
+    Info = 2,      /* Examples: upcoming feature notice, did you know about...? */
+    Notice = 3,    /* Examples: Bad design choice, suboptimal code, ... */
+    Warning = 4,   /* Example: Design likely to cause problems, horrible code, ... */
+    Error = 5,     /* Example: Missing semicolon after statement */
+    Critical = 6,  /* Example: Arena opened with 4 KB capacity, but 8 KB requested */
+    Alert = 7,     /* Example: Input pointer is not correctly aligned */
+    Emergency = 8, /* Example: Segmentation fault */
+    Sev_MaxValue = Emergency
   };
+
+  static inline std::string_view ToString(Sev sev) {
+    switch (sev) {
+      case Sev::Trace:
+        return "trace";
+
+      case Sev::Debug:
+        return "debug";
+
+      case Sev::Info:
+        return "info";
+
+      case Sev::Notice:
+        return "notice";
+
+      case Sev::Warning:
+        return "warning";
+
+      case Sev::Error:
+        return "error";
+
+      case Sev::Critical:
+        return "critical";
+
+      case Sev::Alert:
+        return "alert";
+
+      case Sev::Emergency:
+        return "emergency";
+    }
+  }
+
+  static inline std::ostream &operator<<(std::ostream &os, Sev sev) {
+    os << ToString(sev);
+    return os;
+  }
 
   using EC = std::uint64_t;
 

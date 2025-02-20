@@ -30,3 +30,10 @@ TEST_CASE(Identifier, Unicode, 5, "+שלום_עולם+", {Token(OpPlus), Token("
 TEST_CASE(Identifier, Mixed, 0, "2a", {Token(2UL), Token("a")});
 TEST_CASE(Identifier, Mixed, 1, "a2", {Token("a2")});
 TEST_CASE(Identifier, Mixed, 2, "_2a", {Token("_2a")});
+
+///============================================================================///
+/// OTHER STUFF
+TEST_CASE(Identifier, Invalid, 0, "2", {Token(2UL)});
+TEST_CASE(Identifier, Invalid, 1, "f'abc'", {__FString, Token(Text, "abc")});
+TEST_CASE(Identifier, Invalid, 2, "f\"abc\"", {__FString, Token(Text, "abc")});
+TEST_CASE(Identifier, Invalid, 3, "abc\x45\x89\xd0", {});

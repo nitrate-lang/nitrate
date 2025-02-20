@@ -70,11 +70,9 @@ namespace no3::ansi {
 
     RESET = FG_DEFAULT | BG_DEFAULT,
 
-    COLOR_MASK = FG_BLACK | FG_RED | FG_GREEN | FG_YELLOW | FG_BLUE |
-                 FG_PURPLE | FG_CYAN | FG_WHITE | FG_DEFAULT,
+    COLOR_MASK = FG_BLACK | FG_RED | FG_GREEN | FG_YELLOW | FG_BLUE | FG_PURPLE | FG_CYAN | FG_WHITE | FG_DEFAULT,
     ATTRIBUTE_MASK = BOLD | UNDERLINE | ILTALIC | STRIKE,
-    BG_COLOR_MASK = BG_BLACK | BG_RED | BG_GREEN | BG_YELLOW | BG_BLUE |
-                    BG_PURPLE | BG_CYAN | BG_WHITE | BG_DEFAULT
+    BG_COLOR_MASK = BG_BLACK | BG_RED | BG_GREEN | BG_YELLOW | BG_BLUE | BG_PURPLE | BG_CYAN | BG_WHITE | BG_DEFAULT
   };
 
   class AnsiOut final {
@@ -106,16 +104,13 @@ namespace no3::ansi {
     return out.Write(msg);
   }
 
-  static inline void operator<<(AnsiOut &out,
-                                std::ostream &(*var)(std::ostream &)) {
+  static inline void operator<<(AnsiOut &out, std::ostream &(*var)(std::ostream &)) {
     if (var == static_cast<std::ostream &(*)(std::ostream &)>(std::endl)) {
       out.Newline();
     }
   }
 
-  static inline void operator|=(AnsiOut &out, uint32_t style) {
-    out.SetStyle(style);
-  }
+  static inline void operator|=(AnsiOut &out, uint32_t style) { out.SetStyle(style); }
 
   auto IsUsingColors() -> bool;
 }  // namespace no3::ansi

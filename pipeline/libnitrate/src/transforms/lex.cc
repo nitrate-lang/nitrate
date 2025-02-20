@@ -60,62 +60,62 @@ auto ImplUseJson(IScanner *l, std::ostream &o) -> bool {
       }
 
       case KeyW: { /* Keyword */
-        o << "[2," << CreateJsonString(tok.GetString()) << "," << sl << "," << sc << "," << el << "," << ec << "],";
+        o << "[2," << CreateJsonString(tok.AsString()) << "," << sl << "," << sc << "," << el << "," << ec << "],";
         break;
       }
 
       case Oper: { /* Operator */
-        o << "[3," << CreateJsonString(tok.GetString()) << "," << sl << "," << sc << "," << el << "," << ec << "],";
+        o << "[3," << CreateJsonString(tok.AsString()) << "," << sl << "," << sc << "," << el << "," << ec << "],";
         break;
       }
 
       case Punc: { /* Punctuation */
-        o << "[4," << CreateJsonString(tok.GetString()) << "," << sl << "," << sc << "," << el << "," << ec << "],";
+        o << "[4," << CreateJsonString(tok.AsString()) << "," << sl << "," << sc << "," << el << "," << ec << "],";
         break;
       }
 
       case Name: { /* Identifier */
-        o << "[5," << CreateJsonString(tok.GetString()) << "," << sl << "," << sc << "," << el << "," << ec << "],";
+        o << "[5," << CreateJsonString(tok.AsString()) << "," << sl << "," << sc << "," << el << "," << ec << "],";
         break;
       }
 
       case IntL: { /* Integer literal */
         /// We assume that int's are not allowed to contain NULL bytes and
-        o << "[6," << CreateJsonString(tok.GetString()) << "," << sl << "," << sc << "," << el << "," << ec << "],";
+        o << "[6," << CreateJsonString(tok.AsString()) << "," << sl << "," << sc << "," << el << "," << ec << "],";
         break;
       }
 
       case NumL: { /* Floating-point literal */
         /// We assume that int's are not allowed to contain NULL bytes and
-        o << "[7," << CreateJsonString(tok.GetString()) << "," << sl << "," << sc << "," << el << "," << ec << "],";
+        o << "[7," << CreateJsonString(tok.AsString()) << "," << sl << "," << sc << "," << el << "," << ec << "],";
         break;
       }
 
       case Text: { /* String literal */
-        o << "[8," << CreateJsonString(tok.GetString()) << "," << sl << "," << sc << "," << el << "," << ec << "],";
+        o << "[8," << CreateJsonString(tok.AsString()) << "," << sl << "," << sc << "," << el << "," << ec << "],";
         break;
       }
 
       case Char: { /* Character literal */
 
-        o << "[9," << CreateJsonString(tok.GetString()) << "," << sl << "," << sc << "," << el << "," << ec << "],";
+        o << "[9," << CreateJsonString(tok.AsString()) << "," << sl << "," << sc << "," << el << "," << ec << "],";
         break;
       }
 
       case MacB: { /* Macro block */
         /// We assume that int's are not allowed to contain NULL bytes and
-        o << "[10," << CreateJsonString(tok.GetString()) << "," << sl << "," << sc << "," << el << "," << ec << "],";
+        o << "[10," << CreateJsonString(tok.AsString()) << "," << sl << "," << sc << "," << el << "," << ec << "],";
         break;
       }
 
       case Macr: { /* Macro call */
         /// We assume that int's are not allowed to contain NULL bytes and
-        o << "[11," << CreateJsonString(tok.GetString()) << "," << sl << "," << sc << "," << el << "," << ec << "],";
+        o << "[11," << CreateJsonString(tok.AsString()) << "," << sl << "," << sc << "," << el << "," << ec << "],";
         break;
       }
 
       case Note: { /* Comment */
-        o << "[12," << CreateJsonString(tok.GetString()) << "," << sl << "," << sc << "," << el << "," << ec << "],";
+        o << "[12," << CreateJsonString(tok.AsString()) << "," << sl << "," << sc << "," << el << "," << ec << "],";
         break;
       }
     }
@@ -168,57 +168,57 @@ auto ImplUseMsgpack(IScanner *l, std::ostream &o) -> bool {
       }
 
       case KeyW: { /* Keyword */
-        MsgpackWriteTok(o, 3, tok.GetString(), sl, sc, el, ec);
+        MsgpackWriteTok(o, 3, tok.AsString(), sl, sc, el, ec);
         break;
       }
 
       case Oper: { /* Operator */
-        MsgpackWriteTok(o, 4, tok.GetString(), sl, sc, el, ec);
+        MsgpackWriteTok(o, 4, tok.AsString(), sl, sc, el, ec);
         break;
       }
 
       case Punc: { /* Punctuation */
-        MsgpackWriteTok(o, 5, tok.GetString(), sl, sc, el, ec);
+        MsgpackWriteTok(o, 5, tok.AsString(), sl, sc, el, ec);
         break;
       }
 
       case Name: { /* Identifier */
-        MsgpackWriteTok(o, 6, tok.GetString(), sl, sc, el, ec);
+        MsgpackWriteTok(o, 6, tok.AsString(), sl, sc, el, ec);
         break;
       }
 
       case IntL: { /* Integer literal */
-        MsgpackWriteTok(o, 7, tok.GetString(), sl, sc, el, ec);
+        MsgpackWriteTok(o, 7, tok.AsString(), sl, sc, el, ec);
         break;
       }
 
       case NumL: { /* Floating-point literal */
-        MsgpackWriteTok(o, 8, tok.GetString(), sl, sc, el, ec);
+        MsgpackWriteTok(o, 8, tok.AsString(), sl, sc, el, ec);
         break;
       }
 
       case Text: { /* String literal */
-        MsgpackWriteTok(o, 9, tok.GetString(), sl, sc, el, ec);
+        MsgpackWriteTok(o, 9, tok.AsString(), sl, sc, el, ec);
         break;
       }
 
       case Char: { /* Character literal */
-        MsgpackWriteTok(o, 10, tok.GetString(), sl, sc, el, ec);
+        MsgpackWriteTok(o, 10, tok.AsString(), sl, sc, el, ec);
         break;
       }
 
       case MacB: { /* Macro block */
-        MsgpackWriteTok(o, 11, tok.GetString(), sl, sc, el, ec);
+        MsgpackWriteTok(o, 11, tok.AsString(), sl, sc, el, ec);
         break;
       }
 
       case Macr: { /* Macro call */
-        MsgpackWriteTok(o, 12, tok.GetString(), sl, sc, el, ec);
+        MsgpackWriteTok(o, 12, tok.AsString(), sl, sc, el, ec);
         break;
       }
 
       case Note: { /* Comment */
-        MsgpackWriteTok(o, 13, tok.GetString(), sl, sc, el, ec);
+        MsgpackWriteTok(o, 13, tok.AsString(), sl, sc, el, ec);
         break;
       }
     }

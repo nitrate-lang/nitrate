@@ -15,6 +15,10 @@ string(SUBSTRING ${SHA256SUMS} 0 32 SHA256SUMS)
 set(__TARGET_VERSION "\"QPREP_${SHA256SUMS}\"")
 message(STATUS "libnitrate-seq VersionId: ${__TARGET_VERSION}")
 
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+  set(__TARGET_VERSION "\"undefined\"")
+endif()
+
 #===================== BUILD LUA ======================
 add_custom_target(
   nitratelua
@@ -26,13 +30,7 @@ set(LIB_NITRATELUA ${CMAKE_CURRENT_SOURCE_DIR}/third_party/lua/liblua.a)
 message(STATUS "libnitrate-seq: Building with Lua: ${LIB_NITRATELUA}")
 
 #================== SET BUILD FLAGS ==================
-if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-return-type-c-linkage -D__TARGET_VERSION=\\\"undefined\\\"")
-elseif(CMAKE_BUILD_TYPE STREQUAL "Release")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-return-type-c-linkage -D__TARGET_VERSION=\\\"${__TARGET_VERSION}\\\"")
-else()
-  message(FATAL_ERROR "Invalid build type: ${CMAKE_BUILD_TYPE}")
-endif()
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D__TARGET_VERSION=\\\"${__TARGET_VERSION}\\\"")
 
 file(GLOB_RECURSE CXX_SOURCES "src/*.cc")
 
@@ -40,9 +38,10 @@ add_library(nitrate-seq ${CXX_SOURCES})
 target_include_directories(nitrate-seq PUBLIC src "include"
   ${CMAKE_CURRENT_SOURCE_DIR}/../libnitrate-core/include
   ${CMAKE_CURRENT_SOURCE_DIR}/../libnitrate-lexer/include
+  ${CMAKE_CURRENT_SOURCE_DIR}/../libnitrate-parser/include
   ${CMAKE_CURRENT_SOURCE_DIR}/../libnitrate-seq/third_party)
-target_link_libraries(nitrate-seq PUBLIC nitrate-core nitrate-lexer ${LIB_NITRATELUA})
-add_dependencies(nitrate-seq nitrate-core nitrate-lexer nitratelua)
+target_link_libraries(nitrate-seq PUBLIC nitrate-core nitrate-lexer nitrate-parser ${LIB_NITRATELUA})
+add_dependencies(nitrate-seq nitrate-core nitrate-lexer nitrate-parser nitratelua)
 
 install(TARGETS nitrate-seq DESTINATION lib)
 install(DIRECTORY include/ DESTINATION "include")

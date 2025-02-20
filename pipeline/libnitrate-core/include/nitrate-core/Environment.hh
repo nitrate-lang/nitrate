@@ -35,21 +35,13 @@
 #define __NITRATE_CORE_ENV_H__
 
 #include <nitrate-core/Allocate.hh>
+#include <nitrate-core/IEnvironment.hh>
 #include <nitrate-core/String.hh>
 #include <optional>
 #include <ranges>
 #include <unordered_map>
 
 namespace ncc {
-  class IEnvironment {
-  public:
-    virtual ~IEnvironment() = default;
-
-    virtual auto Contains(std::string_view key) -> bool = 0;
-    virtual auto Get(string key) -> std::optional<string> = 0;
-    virtual void Set(string key, std::optional<string> value) = 0;
-  };
-
   class NCC_EXPORT Environment final : public IEnvironment {
     std::unordered_map<string, string> m_data;
 

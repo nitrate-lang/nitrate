@@ -33,6 +33,7 @@
 
 #include <algorithm>
 #include <fstream>
+#include <nitrate-core/Assert.hh>
 #include <nitrate-core/Logger.hh>
 
 using namespace ncc;
@@ -40,56 +41,13 @@ using namespace ncc;
 NCC_EXPORT thread_local LoggerContext ncc::Log;
 
 NCC_EXPORT auto ncc::Formatter(std::string_view msg, Sev sev) -> std::string {
+  std::array<std::string_view, Sev_MaxValue + 1> ansi_prefixes = {
+      "\x1b[1mtrace:\x1b[0m ",         "\x1b[1mdebug:\x1b[0m ",      "\x1b[37;1minfo:\x1b[0m ",
+      "\x1b[37;1mnotice:\x1b[0m ",     "\x1b[35;1mwarning:\x1b[0m ", "\x1b[31;1merror:\x1b[0m ",
+      "\x1b[31;1;4mcritical:\x1b[0m ", "\x1b[31;1;4malert:\x1b[0m ", "\x1b[31;1;4memergency:\x1b[0m "};
+
   std::stringstream ss;
-
-  switch (sev) {
-    case Trace: {
-      ss << "\x1b[1mtrace:\x1b[0m ";
-      break;
-    }
-
-    case Debug: {
-      ss << "\x1b[1mdebug:\x1b[0m ";
-      break;
-    }
-
-    case Info: {
-      ss << "\x1b[37;1minfo:\x1b[0m ";
-      break;
-    }
-
-    case Notice: {
-      ss << "\x1b[37;1mnotice:\x1b[0m ";
-      break;
-    }
-
-    case Warning: {
-      ss << "\x1b[35;1mwarning:\x1b[0m ";
-      break;
-    }
-
-    case Sev::Error: {
-      ss << "\x1b[31;1merror:\x1b[0m ";
-      break;
-    }
-
-    case Critical: {
-      ss << "\x1b[31;1;4mcritical:\x1b[0m ";
-      break;
-    }
-
-    case Alert: {
-      ss << "\x1b[31;1;4malert:\x1b[0m ";
-      break;
-    }
-
-    case Emergency: {
-      ss << "\x1b[31;1;4memergency:\x1b[0m ";
-      break;
-    }
-  }
-
-  ss << "\x1b[37;1m" << msg << "\x1b[0m";
+  ss << ansi_prefixes[sev] << "\x1b[37;1m" << msg << "\x1b[0m";
 
   return ss.str();
 }
@@ -144,7 +102,7 @@ static std::optional<std::string> GetRealPath(std::string_view in_path) {
   std::string path((in_path));
 
   if (auto index = path.find("$NCC_CONF"); index != std::string::npos) {
-    const char *ncc_conf = std::getenv("NCC_CONF");
+    const char *ncc_conf = std::getenv("NCC_CONF");  // NOLINT(concurrency-mt-unsafe)
     if (ncc_conf == nullptr) {
       return std::nullopt;
     }

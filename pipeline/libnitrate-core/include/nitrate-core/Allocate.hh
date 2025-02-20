@@ -59,8 +59,7 @@ namespace ncc {
 
   class DynamicArena final : public IMemory {
     class PImpl;
-    PImpl *m_arena;
-    bool m_owned;
+    PImpl *m_pimpl;
 
   public:
     DynamicArena();
@@ -68,15 +67,13 @@ namespace ncc {
     ~DynamicArena() override;
 
     DynamicArena(DynamicArena &&o) noexcept {
-      m_arena = o.m_arena;
-      o.m_owned = false;
-      m_owned = true;
+      m_pimpl = o.m_pimpl;
+      o.m_pimpl = nullptr;
     }
 
     auto operator=(DynamicArena &&o) noexcept -> DynamicArena & {
-      m_arena = o.m_arena;
-      o.m_owned = false;
-      m_owned = true;
+      m_pimpl = o.m_pimpl;
+      o.m_pimpl = nullptr;
       return *this;
     }
 

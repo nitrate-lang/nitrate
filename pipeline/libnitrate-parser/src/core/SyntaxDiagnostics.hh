@@ -41,11 +41,7 @@ namespace ncc::parse::ec {
 
   NCC_EC_GROUP(ParseEG);
 
-#define EXPAND(path) "$NCC_CONF/ec/parse/" path
-
-  NCC_EC_EX(ParseEG, SyntaxError, Formatter, EXPAND("SyntaxError"));
-
-#undef EXPAND
+  NCC_EC_EX(ParseEG, SyntaxError, Formatter, "$NCC_CONF/ec/parse/SyntaxError");
 }  // namespace ncc::parse::ec
 
 #endif

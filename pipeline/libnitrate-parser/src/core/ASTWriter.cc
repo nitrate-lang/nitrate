@@ -37,6 +37,9 @@
 #include <nitrate-core/Macro.hh>
 #include <nitrate-lexer/Scanner.hh>
 #include <nitrate-parser/AST.hh>
+#include <nitrate-parser/ASTExpr.hh>
+#include <nitrate-parser/ASTStmt.hh>
+#include <nitrate-parser/ASTType.hh>
 #include <nitrate-parser/ASTWriter.hh>
 #include <variant>
 
@@ -51,201 +54,201 @@ static SyntaxTree::Operator FromOperator(ncc::lex::Operator op) {
 
   switch (op) {
     case LexOp::OpPlus:
-      return SyntaxTree::Plus;
+      return SyntaxTree::Op_Plus;
 
     case LexOp::OpMinus:
-      return SyntaxTree::Minus;
+      return SyntaxTree::Op_Minus;
 
     case LexOp::OpTimes:
-      return SyntaxTree::Times;
+      return SyntaxTree::Op_Times;
 
     case LexOp::OpSlash:
-      return SyntaxTree::Slash;
+      return SyntaxTree::Op_Slash;
 
     case LexOp::OpPercent:
-      return SyntaxTree::Percent;
+      return SyntaxTree::Op_Percent;
 
     case LexOp::OpBitAnd:
-      return SyntaxTree::BitAnd;
+      return SyntaxTree::Op_BitAnd;
 
     case LexOp::OpBitOr:
-      return SyntaxTree::BitOr;
+      return SyntaxTree::Op_BitOr;
 
     case LexOp::OpBitXor:
-      return SyntaxTree::BitXor;
+      return SyntaxTree::Op_BitXor;
 
     case LexOp::OpBitNot:
-      return SyntaxTree::BitNot;
+      return SyntaxTree::Op_BitNot;
 
     case LexOp::OpLShift:
-      return SyntaxTree::LShift;
+      return SyntaxTree::Op_LShift;
 
     case LexOp::OpRShift:
-      return SyntaxTree::RShift;
+      return SyntaxTree::Op_RShift;
 
     case LexOp::OpROTL:
-      return SyntaxTree::ROTL;
+      return SyntaxTree::Op_ROTL;
 
     case LexOp::OpROTR:
-      return SyntaxTree::ROTR;
+      return SyntaxTree::Op_ROTR;
 
     case LexOp::OpLogicAnd:
-      return SyntaxTree::LogicAnd;
+      return SyntaxTree::Op_LogicAnd;
 
     case LexOp::OpLogicOr:
-      return SyntaxTree::LogicOr;
+      return SyntaxTree::Op_LogicOr;
 
     case LexOp::OpLogicXor:
-      return SyntaxTree::LogicXor;
+      return SyntaxTree::Op_LogicXor;
 
     case LexOp::OpLogicNot:
-      return SyntaxTree::LogicNot;
+      return SyntaxTree::Op_LogicNot;
 
     case LexOp::OpLT:
-      return SyntaxTree::LT;
+      return SyntaxTree::Op_LT;
 
     case LexOp::OpGT:
-      return SyntaxTree::GT;
+      return SyntaxTree::Op_GT;
 
     case LexOp::OpLE:
-      return SyntaxTree::LE;
+      return SyntaxTree::Op_LE;
 
     case LexOp::OpGE:
-      return SyntaxTree::GE;
+      return SyntaxTree::Op_GE;
 
     case LexOp::OpEq:
-      return SyntaxTree::Eq;
+      return SyntaxTree::Op_Eq;
 
     case LexOp::OpNE:
-      return SyntaxTree::NE;
+      return SyntaxTree::Op_NE;
 
     case LexOp::OpSet:
-      return SyntaxTree::Set;
+      return SyntaxTree::Op_Set;
 
     case LexOp::OpPlusSet:
-      return SyntaxTree::PlusSet;
+      return SyntaxTree::Op_PlusSet;
 
     case LexOp::OpMinusSet:
-      return SyntaxTree::MinusSet;
+      return SyntaxTree::Op_MinusSet;
 
     case LexOp::OpTimesSet:
-      return SyntaxTree::TimesSet;
+      return SyntaxTree::Op_TimesSet;
 
     case LexOp::OpSlashSet:
-      return SyntaxTree::SlashSet;
+      return SyntaxTree::Op_SlashSet;
 
     case LexOp::OpPercentSet:
-      return SyntaxTree::PercentSet;
+      return SyntaxTree::Op_PercentSet;
 
     case LexOp::OpBitAndSet:
-      return SyntaxTree::BitAndSet;
+      return SyntaxTree::Op_BitAndSet;
 
     case LexOp::OpBitOrSet:
-      return SyntaxTree::BitOrSet;
+      return SyntaxTree::Op_BitOrSet;
 
     case LexOp::OpBitXorSet:
-      return SyntaxTree::BitXorSet;
+      return SyntaxTree::Op_BitXorSet;
 
     case LexOp::OpLogicAndSet:
-      return SyntaxTree::LogicAndSet;
+      return SyntaxTree::Op_LogicAndSet;
 
     case LexOp::OpLogicOrSet:
-      return SyntaxTree::LogicOrSet;
+      return SyntaxTree::Op_LogicOrSet;
 
     case LexOp::OpLogicXorSet:
-      return SyntaxTree::LogicXorSet;
+      return SyntaxTree::Op_LogicXorSet;
 
     case LexOp::OpLShiftSet:
-      return SyntaxTree::LShiftSet;
+      return SyntaxTree::Op_LShiftSet;
 
     case LexOp::OpRShiftSet:
-      return SyntaxTree::RShiftSet;
+      return SyntaxTree::Op_RShiftSet;
 
     case LexOp::OpROTLSet:
-      return SyntaxTree::ROTLSet;
+      return SyntaxTree::Op_ROTLSet;
 
     case LexOp::OpROTRSet:
-      return SyntaxTree::ROTRSet;
+      return SyntaxTree::Op_ROTRSet;
 
     case LexOp::OpInc:
-      return SyntaxTree::Inc;
+      return SyntaxTree::Op_Inc;
 
     case LexOp::OpDec:
-      return SyntaxTree::Dec;
+      return SyntaxTree::Op_Dec;
 
     case LexOp::OpAs:
-      return SyntaxTree::As;
+      return SyntaxTree::Op_As;
 
     case LexOp::OpBitcastAs:
-      return SyntaxTree::BitcastAs;
+      return SyntaxTree::Op_BitcastAs;
 
     case LexOp::OpIn:
-      return SyntaxTree::In;
+      return SyntaxTree::Op_In;
 
     case LexOp::OpOut:
-      return SyntaxTree::Out;
+      return SyntaxTree::Op_Out;
 
     case LexOp::OpSizeof:
-      return SyntaxTree::Sizeof;
+      return SyntaxTree::Op_Sizeof;
 
     case LexOp::OpBitsizeof:
-      return SyntaxTree::Bitsizeof;
+      return SyntaxTree::Op_Bitsizeof;
 
     case LexOp::OpAlignof:
-      return SyntaxTree::Alignof;
+      return SyntaxTree::Op_Alignof;
 
     case LexOp::OpTypeof:
-      return SyntaxTree::Typeof;
+      return SyntaxTree::Op_Typeof;
 
     case LexOp::OpComptime:
-      return SyntaxTree::Comptime;
+      return SyntaxTree::Op_Comptime;
 
     case LexOp::OpDot:
-      return SyntaxTree::Dot;
+      return SyntaxTree::Op_Dot;
 
     case LexOp::OpRange:
-      return SyntaxTree::Range;
+      return SyntaxTree::Op_Range;
 
     case LexOp::OpEllipsis:
-      return SyntaxTree::Ellipsis;
+      return SyntaxTree::Op_Ellipsis;
 
     case LexOp::OpArrow:
-      return SyntaxTree::Arrow;
+      return SyntaxTree::Op_Arrow;
 
     case LexOp::OpTernary:
-      return SyntaxTree::Question;
+      return SyntaxTree::Op_Question;
   }
 }
 
 static SyntaxTree::Vis FromVisibility(ncc::parse::Vis vis) {
   switch (vis) {
     case ncc::parse::Vis::Pub:
-      return SyntaxTree::Public;
+      return SyntaxTree::Vis_Public;
 
     case ncc::parse::Vis::Pro:
-      return SyntaxTree::Protected;
+      return SyntaxTree::Vis_Protected;
 
     case ncc::parse::Vis::Sec:
-      return SyntaxTree::Private;
+      return SyntaxTree::Vis_Private;
   }
 }
 
 static SyntaxTree::FunctionPurity FromPurity(ncc::parse::Purity purity) {
   switch (purity) {
     case ncc::parse::Purity::Impure:
-      return SyntaxTree::Impure;
+      return SyntaxTree::Purity_Impure;
 
     case ncc::parse::Purity::Impure_TSafe:
-      return SyntaxTree::Impure_TSafe;
+      return SyntaxTree::Purity_Impure_TSafe;
 
     case ncc::parse::Purity::Pure:
-      return SyntaxTree::Pure;
+      return SyntaxTree::Purity_Pure;
 
     case ncc::parse::Purity::Quasi:
-      return SyntaxTree::Quasi;
+      return SyntaxTree::Purity_Quasi;
 
     case ncc::parse::Purity::Retro:
-      return SyntaxTree::Retro;
+      return SyntaxTree::Purity_Retro;
   }
 }
 
@@ -419,18 +422,138 @@ SyntaxTree::Expr *AstWriter::From(const FlowPtr<Expr> &in) {
       break;
     }
 
-    case QAST_SEXPR: {
-      message->set_allocated_stmt_expr(From(in.As<StmtExpr>()));
-      break;
-    }
-
-    case QAST_TEXPR: {
-      message->set_allocated_type_expr(From(in.As<TypeExpr>()));
+    case QAST_LAMBDA: {
+      message->set_allocated_lambda_expr(From(in.As<LambdaExpr>()));
       break;
     }
 
     case QAST_TEMPL_CALL: {
       message->set_allocated_template_call(From(in.As<TemplateCall>()));
+      break;
+    }
+
+    case QAST_U1: {
+      message->set_allocated_u1(From(in.As<U1>()));
+      break;
+    }
+
+    case QAST_U8: {
+      message->set_allocated_u8(From(in.As<U8>()));
+      break;
+    }
+
+    case QAST_U16: {
+      message->set_allocated_u16(From(in.As<U16>()));
+      break;
+    }
+
+    case QAST_U32: {
+      message->set_allocated_u32(From(in.As<U32>()));
+      break;
+    }
+
+    case QAST_U64: {
+      message->set_allocated_u64(From(in.As<U64>()));
+      break;
+    }
+
+    case QAST_U128: {
+      message->set_allocated_u128(From(in.As<U128>()));
+      break;
+    }
+
+    case QAST_I8: {
+      message->set_allocated_i8(From(in.As<I8>()));
+      break;
+    }
+
+    case QAST_I16: {
+      message->set_allocated_i16(From(in.As<I16>()));
+      break;
+    }
+
+    case QAST_I32: {
+      message->set_allocated_i32(From(in.As<I32>()));
+      break;
+    }
+
+    case QAST_I64: {
+      message->set_allocated_i64(From(in.As<I64>()));
+      break;
+    }
+
+    case QAST_I128: {
+      message->set_allocated_i128(From(in.As<I128>()));
+      break;
+    }
+
+    case QAST_F16: {
+      message->set_allocated_f16(From(in.As<F16>()));
+      break;
+    }
+
+    case QAST_F32: {
+      message->set_allocated_f32(From(in.As<F32>()));
+      break;
+    }
+
+    case QAST_F64: {
+      message->set_allocated_f64(From(in.As<F64>()));
+      break;
+    }
+
+    case QAST_F128: {
+      message->set_allocated_f128(From(in.As<F128>()));
+      break;
+    }
+
+    case QAST_VOID: {
+      message->set_allocated_void_(From(in.As<VoidTy>()));
+      break;
+    }
+
+    case QAST_INFER: {
+      message->set_allocated_infer(From(in.As<InferTy>()));
+      break;
+    }
+
+    case QAST_OPAQUE: {
+      message->set_allocated_opaque(From(in.As<OpaqueTy>()));
+      break;
+    }
+
+    case QAST_NAMED: {
+      message->set_allocated_named(From(in.As<NamedTy>()));
+      break;
+    }
+
+    case QAST_REF: {
+      message->set_allocated_ref(From(in.As<RefTy>()));
+      break;
+    }
+
+    case QAST_PTR: {
+      message->set_allocated_ptr(From(in.As<PtrTy>()));
+      break;
+    }
+
+    case QAST_ARRAY: {
+      message->set_allocated_array(From(in.As<ArrayTy>()));
+      break;
+    }
+
+    case QAST_TUPLE: {
+      message->set_allocated_tuple(From(in.As<TupleTy>()));
+      break;
+    }
+
+    case QAST_TEMPLATE: {
+      message->set_allocated_template_(From(in.As<TemplateType>()));
+      break;
+    }
+
+    case QAST_FUNCTOR: {
+      message->set_allocated_func(From(in.As<FuncTy>()));
       break;
     }
 
@@ -718,20 +841,11 @@ SyntaxTree::ExprStmt *AstWriter::From(const FlowPtr<ExprStmt> &in) {
   return message;
 }
 
-SyntaxTree::StmtExpr *AstWriter::From(const FlowPtr<StmtExpr> &in) {
-  auto *message = Pool::CreateMessage<SyntaxTree::StmtExpr>(m_arena);
+SyntaxTree::LambdaExpr *AstWriter::From(const FlowPtr<LambdaExpr> &in) {
+  auto *message = Pool::CreateMessage<SyntaxTree::LambdaExpr>(m_arena);
 
   message->set_allocated_location(FromSource(in));
-  message->set_allocated_statement(From(in->GetStmt()));
-
-  return message;
-}
-
-SyntaxTree::TypeExpr *AstWriter::From(const FlowPtr<TypeExpr> &in) {
-  auto *message = Pool::CreateMessage<SyntaxTree::TypeExpr>(m_arena);
-
-  message->set_allocated_location(FromSource(in));
-  message->set_allocated_type(From(in->GetType()));
+  message->set_allocated_function(From(in->GetFunc()));
 
   return message;
 }
@@ -1277,23 +1391,23 @@ SyntaxTree::Block *AstWriter::From(const FlowPtr<Block> &in) {
 
   switch (in->GetSafety()) {
     case SafetyMode::Unknown: {
-      message->set_guarantor(SyntaxTree::Block_SafetyMode_Unspecified);
+      message->set_safety(SyntaxTree::Block_Safety_None);
       break;
     }
 
     case SafetyMode::Safe: {
-      message->set_guarantor(SyntaxTree::Block_SafetyMode_Safe);
+      message->set_safety(SyntaxTree::Block_Safety_Safe);
       break;
     }
 
     case SafetyMode::Unsafe: {
-      message->set_guarantor(SyntaxTree::Block_SafetyMode_Unsafe);
+      message->set_safety(SyntaxTree::Block_Safety_Unsafe);
       break;
     }
   }
 
   { /* Add all statements */
-    const auto &items = in->GetItems();
+    const auto &items = in->GetStatements();
 
     message->mutable_statements()->Reserve(items.size());
     std::for_each(items.begin(), items.end(),
@@ -1311,11 +1425,11 @@ SyntaxTree::Variable *AstWriter::From(const FlowPtr<Variable> &in) {
   if (in->GetType().has_value()) {
     message->set_allocated_type(From(in->GetType().value()));
   }
-  if (in->GetValue().has_value()) {
-    message->set_allocated_initial_value(From(in->GetValue().value()));
+  if (in->GetInitializer().has_value()) {
+    message->set_allocated_initial_value(From(in->GetInitializer().value()));
   }
 
-  switch (in->GetDeclType()) {
+  switch (in->GetVariableKind()) {
     case VariableType::Var:
       message->set_kind(SyntaxTree::Variable_VariableKind_Var);
       break;
@@ -1347,7 +1461,7 @@ SyntaxTree::Assembly *AstWriter::From(const FlowPtr<Assembly> &in) {
   message->set_code(in->GetCode().Get());
 
   { /* Add all arguments */
-    const auto &items = in->GetArgs();
+    const auto &items = in->GetArguments();
 
     message->mutable_arguments()->Reserve(items.size());
     std::for_each(items.begin(), items.end(),
@@ -1407,8 +1521,8 @@ SyntaxTree::Foreach *AstWriter::From(const FlowPtr<Foreach> &in) {
   auto *message = Pool::CreateMessage<SyntaxTree::Foreach>(m_arena);
 
   message->set_allocated_location(FromSource(in));
-  message->set_index_name(in->GetIdxIdentifier().Get());
-  message->set_value_name(in->GetValIdentifier().Get());
+  message->set_index_name(in->GetIndex().Get());
+  message->set_value_name(in->GetValue().Get());
   message->set_allocated_expression(From(in->GetExpr()));
   message->set_allocated_body(From(in->GetBody()));
 
@@ -1693,7 +1807,7 @@ SyntaxTree::Enum *AstWriter::From(const FlowPtr<Enum> &in) {
   }
 
   { /* Add all elements */
-    const auto &items = in->GetItems();
+    const auto &items = in->GetFields();
 
     message->mutable_items()->Reserve(items.size());
     std::for_each(items.begin(), items.end(), [&](auto item) {
@@ -1737,7 +1851,7 @@ SyntaxTree::Export *AstWriter::From(const FlowPtr<Export> &in) {
   message->set_visibility(FromVisibility(in->GetVis()));
 
   { /* Add all attributes */
-    const auto &items = in->GetAttrs();
+    const auto &items = in->GetAttributes();
 
     message->mutable_attributes()->Reserve(items.size());
     std::for_each(items.begin(), items.end(),
@@ -1767,8 +1881,7 @@ SyntaxTree::Export *AstWriter::From(const FlowPtr<Export> &in) {
 
 void AstWriter::Visit(FlowPtr<Base> n) { SEND(From(n), base); }
 void AstWriter::Visit(FlowPtr<ExprStmt> n) { SEND(From(n), expr); }
-void AstWriter::Visit(FlowPtr<StmtExpr> n) { SEND(From(n), stmt_expr); }
-void AstWriter::Visit(FlowPtr<TypeExpr> n) { SEND(From(n), type_expr); }
+void AstWriter::Visit(FlowPtr<LambdaExpr> n) { SEND(From(n), lambda_expr); }
 void AstWriter::Visit(FlowPtr<NamedTy> n) { SEND(From(n), named); }
 void AstWriter::Visit(FlowPtr<InferTy> n) { SEND(From(n), infer); }
 void AstWriter::Visit(FlowPtr<TemplateType> n) { SEND(From(n), template_); }

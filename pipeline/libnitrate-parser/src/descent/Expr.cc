@@ -33,6 +33,7 @@
 
 #include <charconv>
 #include <descent/Recurse.hh>
+#include <nitrate-lexer/Grammar.hh>
 #include <nitrate-lexer/Lexer.hh>
 #include <stack>
 #include <utility>
@@ -51,17 +52,17 @@ auto Parser::PImpl::RecurseCallArguments(const std::set<lex::Token> &terminators
   string argument_name;
 
   while (true) {
-    if (NextIf(EofF)) [[unlikely]] {
-      Log << SyntaxError << current() << "Unexpected end of file while parsing call expression";
+    if (NextIf<EofF>()) [[unlikely]] {
+      Log << SyntaxError << Current() << "Unexpected end of file while parsing call expression";
       return call_args;
     }
 
-    if (terminators.contains(peek())) {
+    if (terminators.contains(Peek())) {
       break;
     }
 
-    auto some_identifier = NextIf(Name);
-    auto next_is_colon = some_identifier && NextIf(PuncColn).has_value();
+    auto some_identifier = NextIf<Name>();
+    auto next_is_colon = some_identifier && NextIf<PuncColn>().has_value();
 
     if (some_identifier && next_is_colon) {
       argument_name = some_identifier->GetString();
@@ -75,9 +76,7 @@ auto Parser::PImpl::RecurseCallArguments(const std::set<lex::Token> &terminators
 
     if (type_by_default) {
       auto argument_value = RecurseType();
-      auto type_expr = CreateNode<TypeExpr>(argument_value)();
-
-      call_args.emplace_back(argument_name, type_expr);
+      call_args.emplace_back(argument_name, argument_value);
     } else {
       std::set<Token> terminators_copy(terminators);
       terminators_copy.insert(Token(Punc, PuncComa));
@@ -85,7 +84,7 @@ auto Parser::PImpl::RecurseCallArguments(const std::set<lex::Token> &terminators
       call_args.emplace_back(argument_name, argument_value);
     }
 
-    NextIf(PuncComa);
+    NextIf<PuncComa>();
   }
 
   return call_args;
@@ -94,7 +93,7 @@ auto Parser::PImpl::RecurseCallArguments(const std::set<lex::Token> &terminators
 auto Parser::PImpl::RecurseFstring() -> FlowPtr<Expr> {
   FStringItems items;
 
-  if (auto tok = NextIf(Text)) {
+  if (auto tok = NextIf<Text>()) {
     size_t state = 0;
     size_t w_beg = 0;
     size_t w_end{};
@@ -141,12 +140,12 @@ auto Parser::PImpl::RecurseFstring() -> FlowPtr<Expr> {
     }
 
     if (state != 0) {
-      Log << SyntaxError << current() << "F-string expression has mismatched braces";
+      Log << SyntaxError << Current() << "F-string expression has mismatched braces";
     }
 
     return CreateNode<FString>(std::move(items))();
   }
-  Log << SyntaxError << current() << "Expected a string literal token for F-string expression";
+  Log << SyntaxError << Current() << "Expected a string literal token for F-string expression";
   return MockExpr(QAST_FSTRING);
 }
 
@@ -208,7 +207,7 @@ static NCC_FORCE_INLINE auto UnwindStack(std::stack<Frame> &stack, FlowPtr<Expr>
 }
 
 auto Parser::PImpl::RecurseExpr(const std::set<Token> &terminators) -> FlowPtr<Expr> {
-  auto source_offset = peek().GetStart();
+  auto source_offset = Peek().GetStart();
 
   std::stack<Frame> stack;
   Boolean start_node(false);
@@ -218,7 +217,7 @@ auto Parser::PImpl::RecurseExpr(const std::set<Token> &terminators) -> FlowPtr<E
    * Parse pre-unary operators
    ****************************************/
   std::stack<std::pair<Operator, LocationID>> pre_unary_ops;
-  while (auto tok = NextIf(Oper)) {
+  while (auto tok = NextIf<Oper>()) {
     pre_unary_ops.emplace(tok->GetOperator(), tok->GetStart());
   }
 
@@ -238,7 +237,7 @@ auto Parser::PImpl::RecurseExpr(const std::set<Token> &terminators) -> FlowPtr<E
     }
 
     while (!stack.empty() && spinning) {
-      auto tok = peek();
+      auto tok = Peek();
 
       if (terminators.contains(tok)) {
         break;
@@ -251,7 +250,7 @@ auto Parser::PImpl::RecurseExpr(const std::set<Token> &terminators) -> FlowPtr<E
           auto op_precedence = GetOperatorPrecedence(op, op_type);
 
           if (op_precedence >= stack.top().m_minPrecedence) {
-            next();
+            Next();
 
             /****************************************
              * Handle post-unary operators
@@ -271,11 +270,11 @@ auto Parser::PImpl::RecurseExpr(const std::set<Token> &terminators) -> FlowPtr<E
               /****************************************
                * Parse pre-unary operators
                ****************************************/
-              while (auto tok_op = NextIf(Oper)) {
+              while (auto tok_op = NextIf<Oper>()) {
                 pre_unary_ops.emplace(tok_op->GetOperator(), tok_op->GetStart());
               }
             } else {
-              NextIf(lex::Type);
+              NextIf<lex::Type>();
             }
 
             /****************************************
@@ -296,14 +295,14 @@ auto Parser::PImpl::RecurseExpr(const std::set<Token> &terminators) -> FlowPtr<E
               }
 
               if (stack.size() + 1 > kMaxRecursionDepth) {
-                Log << SyntaxError << current() << "Recursion depth exceeds maximum limit";
+                Log << SyntaxError << Current() << "Recursion depth exceeds maximum limit";
                 return MockExpr();
               }
 
               stack.emplace(left_side, source_offset, next_min_precedence, FrameType::Binary, op);
               left_side = right_side.value();
             } else {
-              Log << SyntaxError << current() << "Failed to parse right-hand side of binary expression";
+              Log << SyntaxError << Current() << "Failed to parse right-hand side of binary expression";
             }
           } else {
             left_side = UnwindStack(stack, left_side, 0);
@@ -321,49 +320,49 @@ auto Parser::PImpl::RecurseExpr(const std::set<Token> &terminators) -> FlowPtr<E
 
           left_side = UnwindStack(stack, left_side, suffix_op_precedence);
 
-          if (NextIf(PuncLPar)) {
+          if (NextIf<PuncLPar>()) {
             auto arguments = RecurseCallArguments({Token(Punc, PuncRPar)}, false);
-            if (!NextIf(PuncRPar)) {
-              Log << SyntaxError << current() << "Expected ')' to close the function call";
+            if (!NextIf<PuncRPar>()) {
+              Log << SyntaxError << Current() << "Expected ')' to close the function call";
             }
 
             left_side = CreateNode<Call>(left_side, arguments)();
             left_side->SetOffset(source_offset);
-          } else if (NextIf(PuncLBrk)) {
+          } else if (NextIf<PuncLBrk>()) {
             auto first = RecurseExpr({
                 Token(Punc, PuncRBrk),
                 Token(Punc, PuncColn),
             });
 
-            if (NextIf(PuncColn)) {
+            if (NextIf<PuncColn>()) {
               auto second = RecurseExpr({Token(Punc, PuncRBrk)});
-              if (!NextIf(PuncRBrk)) {
-                Log << SyntaxError << current() << "Expected ']' to close the slice";
+              if (!NextIf<PuncRBrk>()) {
+                Log << SyntaxError << Current() << "Expected ']' to close the slice";
               }
 
               left_side = CreateNode<Slice>(left_side, first, second)();
               left_side->SetOffset(source_offset);
             } else {
-              if (!NextIf(PuncRBrk)) {
-                Log << SyntaxError << current() << "Expected ']' to close the index expression";
+              if (!NextIf<PuncRBrk>()) {
+                Log << SyntaxError << Current() << "Expected ']' to close the index expression";
               }
 
               left_side = CreateNode<Index>(left_side, first)();
               left_side->SetOffset(source_offset);
             }
-          } else if (NextIf(PuncLCur)) {
+          } else if (NextIf<PuncLCur>()) {
             auto template_arguments = RecurseCallArguments({Token(Punc, PuncRCur)}, true);
-            if (!NextIf(PuncRCur)) {
-              Log << SyntaxError << current() << "Expected '}' to close the template arguments";
+            if (!NextIf<PuncRCur>()) {
+              Log << SyntaxError << Current() << "Expected '}' to close the template arguments";
             }
 
-            if (!NextIf(PuncLPar)) {
-              Log << SyntaxError << current() << "Expected '(' to open the call arguments";
+            if (!NextIf<PuncLPar>()) {
+              Log << SyntaxError << Current() << "Expected '(' to open the call arguments";
             }
 
             auto call_arguments = RecurseCallArguments({Token(Punc, PuncRPar)}, false);
-            if (!NextIf(PuncRPar)) {
-              Log << SyntaxError << current() << "Expected ')' to close the call arguments";
+            if (!NextIf<PuncRPar>()) {
+              Log << SyntaxError << Current() << "Expected ')' to close the call arguments";
             }
 
             left_side = CreateNode<TemplateCall>(left_side, std::move(call_arguments), std::move(template_arguments))();
@@ -393,7 +392,7 @@ auto Parser::PImpl::RecurseExpr(const std::set<Token> &terminators) -> FlowPtr<E
 
     return UnwindStack(stack, left_side, 0);
   }
-  Log << SyntaxError << current() << "Expected an expression";
+  Log << SyntaxError << Current() << "Expected an expression";
 
   return MockExpr();
 }
@@ -403,11 +402,11 @@ auto Parser::PImpl::RecurseExprKeyword(lex::Keyword key) -> NullableFlowPtr<Expr
 
   switch (key) {
     case Keyword::Type: {
-      auto start_pos = current().GetStart();
+      auto start_pos = Current().GetStart();
       auto type = RecurseType();
       type->SetOffset(start_pos);
 
-      e = CreateNode<TypeExpr>(type)();
+      e = type;
       break;
     }
 
@@ -417,19 +416,19 @@ auto Parser::PImpl::RecurseExprKeyword(lex::Keyword key) -> NullableFlowPtr<Expr
     }
 
     case Fn: {
-      auto start_pos = current().GetStart();
+      auto start_pos = Current().GetStart();
       auto function = RecurseFunction(false);
       function->SetOffset(start_pos);
 
-      FlowPtr<Expr> expr = CreateNode<StmtExpr>(function)();
+      auto expr = CreateNode<LambdaExpr>(function)();
 
-      if (NextIf(PuncLPar)) {
+      if (NextIf<PuncLPar>()) {
         auto args = RecurseCallArguments({Token(Punc, PuncRPar)}, false);
 
-        if (NextIf(PuncRPar)) {
+        if (NextIf<PuncRPar>()) {
           e = CreateNode<Call>(expr, args)();
         } else {
-          Log << SyntaxError << current() << "Expected ')' to close the function call";
+          Log << SyntaxError << Current() << "Expected ')' to close the function call";
           e = MockExpr(QAST_CALL);
         }
       } else {
@@ -460,7 +459,7 @@ auto Parser::PImpl::RecurseExprKeyword(lex::Keyword key) -> NullableFlowPtr<Expr
     }
 
     default: {
-      Log << SyntaxError << current() << "Unexpected '" << key << "' in expression context";
+      Log << SyntaxError << Current() << "Unexpected '" << key << "' in expression context";
       break;
     }
   }
@@ -477,15 +476,15 @@ auto Parser::PImpl::RecurseExprPunctor(lex::Punctor punc) -> NullableFlowPtr<Exp
           Token(Punc, PuncRPar),
       });
 
-      if (!NextIf(PuncRPar)) {
-        Log << SyntaxError << current() << "Expected ')' to close the expression";
+      if (!NextIf<PuncRPar>()) {
+        Log << SyntaxError << Current() << "Expected ')' to close the expression";
       }
 
       break;
     }
 
     case PuncRPar: {
-      Log << SyntaxError << current() << "Unexpected right parenthesis in expression";
+      Log << SyntaxError << Current() << "Unexpected right parenthesis in expression";
       break;
     }
 
@@ -493,12 +492,12 @@ auto Parser::PImpl::RecurseExprPunctor(lex::Punctor punc) -> NullableFlowPtr<Exp
       ExpressionList items;
 
       while (true) {
-        if (NextIf(EofF)) [[unlikely]] {
-          Log << SyntaxError << current() << "Unexpected end of file while parsing expression";
+        if (NextIf<EofF>()) [[unlikely]] {
+          Log << SyntaxError << Current() << "Unexpected end of file while parsing expression";
           break;
         }
 
-        if (NextIf(PuncRBrk)) {
+        if (NextIf<PuncRBrk>()) {
           break;
         }
 
@@ -508,9 +507,9 @@ auto Parser::PImpl::RecurseExprPunctor(lex::Punctor punc) -> NullableFlowPtr<Exp
             Token(Punc, PuncSemi),
         });
 
-        if (NextIf(PuncSemi)) {
-          if (auto count_tok = NextIf(IntL)) {
-            auto item_repeat_str = current().GetString();
+        if (NextIf<PuncSemi>()) {
+          if (auto count_tok = NextIf<IntL>()) {
+            auto item_repeat_str = count_tok->GetString();
             size_t item_repeat_count = 0;
 
             if (std::from_chars(item_repeat_str.c_str(), item_repeat_str.c_str() + item_repeat_str.size(),
@@ -521,16 +520,16 @@ auto Parser::PImpl::RecurseExprPunctor(lex::Punctor punc) -> NullableFlowPtr<Exp
                   items.push_back(expr);
                 }
               } else {
-                Log << SyntaxError << current() << "Compressed list size exceeds maximum limit";
+                Log << SyntaxError << Current() << "Compressed list size exceeds maximum limit";
               }
 
             } else {
-              Log << SyntaxError << current()
+              Log << SyntaxError << Current()
                   << "Expected an integer literal for the compressed "
                      "list size";
             }
           } else {
-            Log << SyntaxError << current()
+            Log << SyntaxError << Current()
                 << "Expected an integer literal for the compressed list "
                    "size";
           }
@@ -538,7 +537,7 @@ auto Parser::PImpl::RecurseExprPunctor(lex::Punctor punc) -> NullableFlowPtr<Exp
           items.push_back(expr);
         }
 
-        NextIf(PuncComa);
+        NextIf<PuncComa>();
       }
 
       e = CreateNode<List>(items)();
@@ -546,7 +545,7 @@ auto Parser::PImpl::RecurseExprPunctor(lex::Punctor punc) -> NullableFlowPtr<Exp
     }
 
     case PuncRBrk: {
-      Log << SyntaxError << current() << "Unexpected right bracket in expression";
+      Log << SyntaxError << Current() << "Unexpected right bracket in expression";
       break;
     }
 
@@ -555,22 +554,22 @@ auto Parser::PImpl::RecurseExprPunctor(lex::Punctor punc) -> NullableFlowPtr<Exp
       std::vector<FlowPtr<Assoc>> items;
 
       while (true) {
-        if (NextIf(EofF)) [[unlikely]] {
-          Log << SyntaxError << current() << "Unexpected end of file while parsing dictionary";
+        if (NextIf<EofF>()) [[unlikely]] {
+          Log << SyntaxError << Current() << "Unexpected end of file while parsing dictionary";
           break;
         }
 
-        if (NextIf(PuncRCur)) {
+        if (NextIf<PuncRCur>()) {
           break;
         }
 
-        auto start_pos = peek().GetStart();
+        auto start_pos = Peek().GetStart();
         auto key = RecurseExpr({
             Token(Punc, PuncColn),
         });
 
-        if (!NextIf(PuncColn)) {
-          Log << SyntaxError << current() << "Expected colon after key in dictionary";
+        if (!NextIf<PuncColn>()) {
+          Log << SyntaxError << Current() << "Expected colon after key in dictionary";
           break;
         }
 
@@ -579,7 +578,7 @@ auto Parser::PImpl::RecurseExprPunctor(lex::Punctor punc) -> NullableFlowPtr<Exp
             Token(Punc, PuncComa),
         });
 
-        NextIf(PuncComa);
+        NextIf<PuncComa>();
 
         auto assoc = CreateNode<Assoc>(key, value)();
         assoc->SetOffset(start_pos);
@@ -598,22 +597,22 @@ auto Parser::PImpl::RecurseExprPunctor(lex::Punctor punc) -> NullableFlowPtr<Exp
     }
 
     case PuncRCur: {
-      Log << SyntaxError << current() << "Unexpected right curly brace in expression";
+      Log << SyntaxError << Current() << "Unexpected right curly brace in expression";
       break;
     }
 
     case PuncComa: {
-      Log << SyntaxError << current() << "Unexpected comma in expression context";
+      Log << SyntaxError << Current() << "Unexpected comma in expression context";
       break;
     }
 
     case PuncColn: {
-      Log << SyntaxError << current() << "Unexpected colon in expression context";
+      Log << SyntaxError << Current() << "Unexpected colon in expression context";
       break;
     }
 
     case PuncSemi: {
-      Log << SyntaxError << current() << "Unexpected semicolon in expression context";
+      Log << SyntaxError << Current() << "Unexpected semicolon in expression context";
       break;
     }
 
@@ -628,19 +627,16 @@ auto Parser::PImpl::RecurseExprPunctor(lex::Punctor punc) -> NullableFlowPtr<Exp
 }
 
 auto Parser::PImpl::RecurseExprTypeSuffix(FlowPtr<Expr> base) -> FlowPtr<Expr> {
-  auto tok = current();
+  auto tok = Current();
 
   auto suffix = RecurseType();
   suffix->SetOffset(tok.GetStart());
 
-  auto texpr = CreateNode<TypeExpr>(suffix)();
-  texpr->SetOffset(tok.GetStart());
-
-  return CreateNode<Binary>(base, OpAs, texpr)();
+  return CreateNode<Binary>(base, OpAs, suffix)();
 }
 
 auto Parser::PImpl::RecurseExprPrimary(bool is_type) -> NullableFlowPtr<Expr> {
-  auto start_pos = peek().GetStart();
+  auto start_pos = Peek().GetStart();
 
   NullableFlowPtr<Expr> e;
 
@@ -651,12 +647,9 @@ auto Parser::PImpl::RecurseExprPrimary(bool is_type) -> NullableFlowPtr<Expr> {
     auto type = RecurseType();
     type->SetOffset(start_pos);
 
-    auto texpr = CreateNode<TypeExpr>(type)();
-    texpr->SetOffset(start_pos);
-
-    e = BindComments(texpr, comments);
+    e = BindComments(type, comments);
   } else {
-    auto tok = peek();
+    auto tok = Peek();
 
     auto comments = m_rd.CommentBuffer();
     m_rd.ClearCommentBuffer();
@@ -667,7 +660,7 @@ auto Parser::PImpl::RecurseExprPrimary(bool is_type) -> NullableFlowPtr<Expr> {
       }
 
       case KeyW: {
-        next();
+        Next();
         if ((e = RecurseExprKeyword(tok.GetKeyword())).has_value()) {
           e.value()->SetOffset(start_pos);
         }
@@ -676,12 +669,12 @@ auto Parser::PImpl::RecurseExprPrimary(bool is_type) -> NullableFlowPtr<Expr> {
       }
 
       case Oper: {
-        Log << SyntaxError << next() << "Unexpected operator in expression";
+        Log << SyntaxError << Next() << "Unexpected operator in expression";
         break;
       }
 
       case Punc: {
-        next();
+        Next();
 
         if ((e = RecurseExprPunctor(tok.GetPunctor())).has_value()) {
           e.value()->SetOffset(start_pos);
@@ -699,12 +692,12 @@ auto Parser::PImpl::RecurseExprPrimary(bool is_type) -> NullableFlowPtr<Expr> {
       }
 
       case IntL: {
-        next();
+        Next();
 
         auto integer = CreateNode<Integer>(tok.GetString())();
         integer->SetOffset(start_pos);
 
-        if (peek().Is(Name)) {
+        if (Peek().Is(Name)) {
           auto casted = RecurseExprTypeSuffix(integer);
           casted->SetOffset(start_pos);
 
@@ -717,12 +710,12 @@ auto Parser::PImpl::RecurseExprPrimary(bool is_type) -> NullableFlowPtr<Expr> {
       }
 
       case NumL: {
-        next();
+        Next();
 
         auto decimal = CreateNode<Float>(tok.GetString())();
         decimal->SetOffset(start_pos);
 
-        if (peek().Is(Name)) {
+        if (Peek().Is(Name)) {
           auto casted = RecurseExprTypeSuffix(decimal);
           casted->SetOffset(start_pos);
 
@@ -735,12 +728,12 @@ auto Parser::PImpl::RecurseExprPrimary(bool is_type) -> NullableFlowPtr<Expr> {
       }
 
       case Text: {
-        next();
+        Next();
 
         auto string = CreateNode<String>(tok.GetString())();
         string->SetOffset(start_pos);
 
-        if (peek().Is(Name)) {
+        if (Peek().Is(Name)) {
           auto casted = RecurseExprTypeSuffix(string);
           casted->SetOffset(start_pos);
 
@@ -753,7 +746,7 @@ auto Parser::PImpl::RecurseExprPrimary(bool is_type) -> NullableFlowPtr<Expr> {
       }
 
       case Char: {
-        next();
+        Next();
 
         auto str_data = tok.GetString();
         if (str_data.size() != 1) [[unlikely]] {
@@ -764,7 +757,7 @@ auto Parser::PImpl::RecurseExprPrimary(bool is_type) -> NullableFlowPtr<Expr> {
         auto character = CreateNode<Character>(str_data.at(0))();
         character->SetOffset(start_pos);
 
-        if (peek().Is(Name)) {
+        if (Peek().Is(Name)) {
           auto casted = RecurseExprTypeSuffix(character);
           casted->SetOffset(start_pos);
 
@@ -777,17 +770,17 @@ auto Parser::PImpl::RecurseExprPrimary(bool is_type) -> NullableFlowPtr<Expr> {
       }
 
       case MacB: {
-        Log << SyntaxError << next() << "Unexpected macro block in expression";
+        Log << SyntaxError << Next() << "Unexpected macro block in expression";
         break;
       }
 
       case Macr: {
-        Log << SyntaxError << next() << "Unexpected macro call in expression";
+        Log << SyntaxError << Next() << "Unexpected macro call in expression";
         break;
       }
 
       case Note: {
-        Log << SyntaxError << next() << "Unexpected comment in expression";
+        Log << SyntaxError << Next() << "Unexpected comment in expression";
         break;
       }
     }

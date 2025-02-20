@@ -31,30 +31,22 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __NITRATE_AST_ASTEXPR_H__
-#define __NITRATE_AST_ASTEXPR_H__
+#ifndef __NITRATE_AST_EXPR_H__
+#define __NITRATE_AST_EXPR_H__
 
+#include <nitrate-lexer/Enums.hh>
 #include <nitrate-parser/ASTBase.hh>
-#include <nitrate-parser/ASTCommon.hh>
+#include <nitrate-parser/ASTData.hh>
 #include <span>
 
 namespace ncc::parse {
-  class StmtExpr final : public Expr {
-    FlowPtr<Stmt> m_stmt;
+  class LambdaExpr final : public Expr {
+    FlowPtr<Stmt> m_func;
 
   public:
-    constexpr StmtExpr(auto stmt) : Expr(QAST_SEXPR), m_stmt(std::move(stmt)) {}
+    constexpr LambdaExpr(auto func) : Expr(QAST_LAMBDA), m_func(std::move(func)) {}
 
-    [[nodiscard]] constexpr auto GetStmt() const { return m_stmt; }
-  };
-
-  class TypeExpr final : public Expr {
-    FlowPtr<Type> m_type;
-
-  public:
-    constexpr TypeExpr(auto type) : Expr(QAST_TEXPR), m_type(std::move(type)) {}
-
-    [[nodiscard]] constexpr auto GetType() const { return m_type; }
+    [[nodiscard]] constexpr auto GetFunc() const { return m_func; }
   };
 
   class Unary final : public Expr {
@@ -250,10 +242,6 @@ namespace ncc::parse {
 
     [[nodiscard]] constexpr auto GetItems() const { return m_items; }
   };
-
-  constexpr auto Expr::IsStmtExpr(npar_ty_t type) const -> bool {
-    return Is(QAST_SEXPR) && As<StmtExpr>()->GetStmt()->Is(type);
-  }
 }  // namespace ncc::parse
 
 #endif

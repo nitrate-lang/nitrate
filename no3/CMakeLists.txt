@@ -14,6 +14,10 @@ string(SUBSTRING ${SHA256SUMS} 0 32 SHA256SUMS)
 set(__TARGET_VERSION "\"NO3_${SHA256SUMS}\"")
 message(STATUS "no3 VersionId: ${__TARGET_VERSION}")
 
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+  set(__TARGET_VERSION "\"undefined\"")
+endif()
+
 find_library(libglog libglog.a REQUIRED)
 find_library(libgflags libgflags.a REQUIRED)
 find_library(libyaml_cpp libyaml-cpp.a REQUIRED)
@@ -21,13 +25,7 @@ find_library(libgit2 git2 REQUIRED)
 find_library(libboost_streams boost_iostreams REQUIRED)
 
 #================== SET BUILD FLAGS ==================
-if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D__TARGET_VERSION=\\\"undefined\\\" -Wno-error=overlength-strings")
-elseif(CMAKE_BUILD_TYPE STREQUAL "Release")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D__TARGET_VERSION=\\\"${__TARGET_VERSION}\\\" -Wno-error=overlength-strings")
-else()
-  message(FATAL_ERROR "Invalid build type: ${CMAKE_BUILD_TYPE}")
-endif()
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D__TARGET_VERSION=\\\"${__TARGET_VERSION}\\\" -Wno-error=overlength-strings")
 
 file(GLOB_RECURSE NO3_CXX_SOURCES "src/*.cc")
 

@@ -31,14 +31,14 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <nitrate-seq/EC.hh>
+#include <core/EC.hh>
 
 using namespace ncc;
 using namespace ncc::seq;
 
 NCC_EXPORT auto ncc::seq::ec::Formatter(std::string_view msg, Sev sev) -> std::string {
   std::stringstream ss;
-  ss << "[\x1b[0m\x1b[37;1mMeta\x1b[0m\x1b[37;1m]: ";
+  ss << "\x1b[0m\x1b[37;1m[\x1b[0m\x1b[32;1mMeta \x1b[0m\x1b[37;1m]: ";
 
   switch (sev) {
     case Trace: {

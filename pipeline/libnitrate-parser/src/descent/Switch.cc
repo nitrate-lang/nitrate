@@ -38,11 +38,11 @@ using namespace ncc::lex;
 using namespace ncc::parse;
 
 auto Parser::PImpl::RecurseSwitchCaseBody() -> FlowPtr<Stmt> {
-  if (!NextIf(OpArrow)) {
-    Log << SyntaxError << current() << "Expected '=>' in switch case.";
+  if (!NextIf<OpArrow>()) {
+    Log << SyntaxError << Current() << "Expected '=>' in switch case.";
   }
 
-  if (peek().Is<PuncLCur>()) {
+  if (Peek().Is<PuncLCur>()) {
     return RecurseBlock(true, false, SafetyMode::Unknown);
   }
 
@@ -70,12 +70,12 @@ auto Parser::PImpl::RecurseSwitchBody() -> std::optional<std::pair<SwitchCases, 
   NullableFlowPtr<Stmt> default_case;
 
   while (true) {
-    if (NextIf(EofF)) [[unlikely]] {
-      Log << SyntaxError << current() << "Unexpected EOF in switch statement.";
+    if (NextIf<EofF>()) [[unlikely]] {
+      Log << SyntaxError << Current() << "Unexpected EOF in switch statement.";
       break;
     }
 
-    if (NextIf(PuncRCur)) {
+    if (NextIf<PuncRCur>()) {
       return {{cases, default_case}};
     }
 
@@ -84,13 +84,13 @@ auto Parser::PImpl::RecurseSwitchBody() -> std::optional<std::pair<SwitchCases, 
       if (!default_case) [[likely]] {
         default_case = stmt;
       } else {
-        Log << SyntaxError << current() << "Duplicate default case in switch.";
+        Log << SyntaxError << Current() << "Duplicate default case in switch.";
       }
     } else {
       cases.push_back(stmt.As<Case>());
     }
 
-    NextIf(PuncComa) || NextIf(PuncSemi);
+    NextIf<PuncComa>() || NextIf<PuncSemi>();
   }
 
   return std::nullopt;
@@ -101,16 +101,16 @@ auto Parser::PImpl::RecurseSwitch() -> FlowPtr<Stmt> {
       Token(Punc, PuncLCur),
   });
 
-  if (NextIf(PuncLCur)) [[likely]] {
+  if (NextIf<PuncLCur>()) [[likely]] {
     if (auto switch_body = RecurseSwitchBody()) [[likely]] {
       auto [switch_cases, switch_default] = switch_body.value();
 
       return CreateNode<Switch>(switch_cond, switch_cases, switch_default)();
     } else {
-      Log << SyntaxError << current() << "Switch statement body is malformed.";
+      Log << SyntaxError << Current() << "Switch statement body is malformed.";
     }
   } else {
-    Log << SyntaxError << current() << "Expected '{' after switch condition.";
+    Log << SyntaxError << Current() << "Expected '{' after switch condition.";
   }
 
   return MockStmt(QAST_SWITCH);

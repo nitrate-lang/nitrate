@@ -33,6 +33,7 @@
 
 #include <array>
 #include <boost/bimap.hpp>
+#include <boost/multiprecision/cpp_dec_float.hpp>
 #include <boost/unordered_map.hpp>
 #include <cctype>
 #include <charconv>
@@ -46,15 +47,17 @@
 #include <nitrate-core/Logger.hh>
 #include <nitrate-core/Macro.hh>
 #include <nitrate-core/String.hh>
+#include <nitrate-lexer/Grammar.hh>
 #include <nitrate-lexer/Lexer.hh>
 #include <nitrate-lexer/Token.hh>
-#include <queue>
-#include <ranges>
 #include <sstream>
+#include <stack>
 #include <string>
 #include <string_view>
 #include <utility>
 #include <vector>
+
+#include "EC.hh"
 
 using namespace ncc;
 using namespace ncc::lex;
@@ -206,6 +209,32 @@ static constexpr auto kIdentifierCharTable = []() {
   return tab;
 }();
 
+static constexpr auto kMacroCallCharTable = []() {
+  std::array<bool, 256> tab = {};
+
+  for (uint8_t c = 'a'; c <= 'z'; ++c) {
+    tab[c] = true;
+  }
+
+  for (uint8_t c = 'A'; c <= 'Z'; ++c) {
+    tab[c] = true;
+  }
+
+  for (uint8_t c = '0'; c <= '9'; ++c) {
+    tab[c] = true;
+  }
+
+  tab['_'] = true;
+  tab[':'] = true;
+
+  /* Support UTF-8 */
+  for (uint8_t c = 0x80; c < 0xff; c++) {
+    tab[c] = true;
+  }
+
+  return tab;
+}();
+
 static constexpr auto kNumberKindMap = []() {
   std::array<NumberKind, std::numeric_limits<uint16_t>::max() + 1> map = {};
   map.fill(DecNum);
@@ -238,6 +267,28 @@ static constexpr auto kHexDigitsTable = []() {
   for (uint8_t c = 'A'; c <= 'F'; ++c) {
     map[c] = true;
   }
+
+  return map;
+}();
+
+static constexpr auto kHexDigitsTableExceptE = []() {
+  std::array<bool, 256> map = {};
+  map.fill(false);
+
+  for (uint8_t c = '0'; c <= '9'; ++c) {
+    map[c] = true;
+  }
+
+  for (uint8_t c = 'a'; c <= 'f'; ++c) {
+    map[c] = true;
+  }
+
+  for (uint8_t c = 'A'; c <= 'F'; ++c) {
+    map[c] = true;
+  }
+
+  map['e'] = false;
+  map['E'] = false;
 
   return map;
 }();
@@ -310,9 +361,7 @@ constexpr auto kCharMap = []() constexpr {
 
 /// https://stackoverflow.com/questions/1031645/how-to-detect-utf-8-in-plain-c
 static auto IsUtf8(const char *string) -> bool {
-  if (string == nullptr) {
-    return false;
-  }
+  qcore_assert(string != nullptr);
 
   const auto *bytes = (const unsigned char *)string;
   while (*bytes != 0U) {
@@ -361,41 +410,13 @@ static auto IsUtf8(const char *string) -> bool {
 
 ///============================================================================///
 
-static std::string LexerECFormatter(std::string_view msg, Sev sev) {
-  if (sev <= ncc::Debug) {
-    return "\x1b[37;1m[\x1b[0m\x1b[34;1mLexer\x1b[0m\x1b[37;1m]: debug: " + std::string(msg) + "\x1b[0m";
-  }
-
-  return "\x1b[37;1m[\x1b[0m\x1b[34;1mLexer\x1b[0m\x1b[37;1m]: " + std::string(msg) + "\x1b[0m";
-}
-
-NCC_EC_GROUP(Lexer);
-
-NCC_EC_EX(Lexer, UserRequest, LexerECFormatter);
-NCC_EC_EX(Lexer, UnexpectedEOF, LexerECFormatter);
-
-NCC_EC_EX(Lexer, LiteralOutOfRange, LexerECFormatter);
-NCC_EC_EX(Lexer, InvalidNumber, LexerECFormatter);
-NCC_EC_EX(Lexer, InvalidMantissa, LexerECFormatter);
-NCC_EC_EX(Lexer, InvalidExponent, LexerECFormatter);
-
-NCC_EC_EX(Lexer, InvalidHexDigit, LexerECFormatter);
-NCC_EC_EX(Lexer, InvalidDecimalDigit, LexerECFormatter);
-NCC_EC_EX(Lexer, InvalidOctalDigit, LexerECFormatter);
-NCC_EC_EX(Lexer, InvalidBinaryDigit, LexerECFormatter);
-
-NCC_EC_EX(Lexer, MissingUnicodeBrace, LexerECFormatter);
-NCC_EC_EX(Lexer, InvalidUnicodeCodepoint, LexerECFormatter);
-NCC_EC_EX(Lexer, LexicalGarbage, LexerECFormatter);
-NCC_EC_EX(Lexer, InvalidUTF8, LexerECFormatter);
-
 // We use this layer of indirection to ensure that the compiler can have full
 // optimization capabilities as if the functions has static linkage.
 class Tokenizer::Impl {
 public:
   std::string m_buf;
 
-  std::queue<char> m_fifo;
+  std::stack<char> m_rewind;
 
   uint32_t m_offset = 0;
   uint32_t m_line = 0;
@@ -426,7 +447,7 @@ public:
   }
 
   [[gnu::noinline]] void ResetAutomaton() {
-    m_fifo = {};
+    m_rewind = {};
     m_buf.clear();
   }
 
@@ -457,14 +478,14 @@ public:
   auto NextCharIf(uint8_t cmp) -> bool {
     uint8_t c;
 
-    if (!m_fifo.empty()) {
-      c = m_fifo.front();
+    if (!m_rewind.empty()) {
+      c = m_rewind.top();
 
       if (c != cmp) {
         return false;
       }
 
-      m_fifo.pop();
+      m_rewind.pop();
     } else {
       if (m_getc_buffer_pos == kGetcBufferSize) [[unlikely]] {
         RefillCharacterBuffer();
@@ -489,9 +510,9 @@ public:
   auto NextChar() -> uint8_t {
     uint8_t c;
 
-    if (!m_fifo.empty()) {
-      c = m_fifo.front();
-      m_fifo.pop();
+    if (!m_rewind.empty()) {
+      c = m_rewind.top();
+      m_rewind.pop();
     } else {
       if (m_getc_buffer_pos == kGetcBufferSize) [[unlikely]] {
         RefillCharacterBuffer();
@@ -510,8 +531,8 @@ public:
   auto PeekChar() -> uint8_t {
     uint8_t c;
 
-    if (!m_fifo.empty()) {
-      c = m_fifo.front();
+    if (!m_rewind.empty()) {
+      c = m_rewind.top();
     } else {
       if (m_getc_buffer_pos == kGetcBufferSize) [[unlikely]] {
         RefillCharacterBuffer();
@@ -523,49 +544,47 @@ public:
     return c;
   }
 
-  auto CanonicalizeFloat(std::string &buf) const -> bool {
-    auto e_pos = buf.find('e');
-    if (e_pos == std::string::npos) [[likely]] {
-      return true;
+  static bool CheckFloat(std::string_view buf) {
+    if (buf.starts_with("+")) {
+      buf.remove_prefix(1);
     }
 
-    long double mantissa = 0;
+    long double _ = 0;
+    return std::from_chars(buf.data(), buf.data() + buf.size(), _).ptr == buf.data() + buf.size();
+  }
 
-    if (std::from_chars(buf.data(), buf.data() + e_pos, mantissa).ec != std::errc()) [[unlikely]] {
+  auto CanonicalizeFloat(std::string &buf) const -> bool {
+    const auto e_pos = buf.find('e');
+    if (e_pos == std::string::npos) [[likely]] {
+      return CheckFloat(buf);
+    }
+
+    qcore_assert(e_pos != 0 && e_pos != buf.size() - 1);
+
+    const std::string_view number = buf;
+    std::string_view mantissa_view = number.substr(0, e_pos);
+    std::string_view exponent_view = number.substr(e_pos + 1);
+
+    if (!CheckFloat(mantissa_view)) [[unlikely]] {
       Log << InvalidMantissa << LogSource() << "Invalid mantissa in floating point literal";
       return false;
     }
 
-    long double exponent = 0;
-    if (std::from_chars(buf.data() + e_pos + 1, buf.data() + buf.size(), exponent).ec != std::errc()) [[unlikely]] {
+    if (!CheckFloat(exponent_view)) [[unlikely]] {
       Log << InvalidExponent << LogSource() << "Invalid exponent in floating point literal";
       return false;
     }
 
-    long double float_value = mantissa * std::pow(10.0, exponent);
+    const boost::multiprecision::cpp_dec_float_100 mantissa(mantissa_view);
+    const boost::multiprecision::cpp_dec_float_100 exponent(exponent_view);
+    const boost::multiprecision::cpp_dec_float_100 float_value = mantissa * boost::multiprecision::pow(10.0, exponent);
 
-    static_assert(kFloatingPointDigits >= 1, "Floating point precision must be at least 1");
+    buf = float_value.str(kFloatingPointDigits, std::ios_base::fixed);
 
-    std::array<char, kFloatingPointDigits + 2> buffer;
-    if (std::snprintf(buffer.data(), buffer.size(), "%.*Lf", static_cast<int>(kFloatingPointDigits), float_value) < 0)
-        [[unlikely]] {
-      Log << InvalidNumber << LogSource() << "Failed to serialize floating point literal";
-      return false;
+    const auto dot_pos = buf.find('.');
+    while (buf.size() >= dot_pos + 3 && buf.back() == '0') {
+      buf.pop_back();
     }
-
-    std::string str(buffer.data());
-
-    if (str.find('.') != std::string::npos) {
-      while (!str.empty() && str.back() == '0') {
-        str.pop_back();
-      }
-
-      if (!str.empty() && str.back() == '.') {
-        str.pop_back();
-      }
-    }
-
-    buf = std::move(str);
 
     return true;
   }
@@ -588,11 +607,7 @@ public:
             return false;
           }
 
-          if (!kHexDigitsTable[i]) [[unlikely]] {
-            Log << InvalidHexDigit << LogSource() << "Unexpected '" << i << "' in hexadecimal literal '0x" << buf
-                << "'";
-            return false;
-          }
+          qcore_assert(kHexDigitsTable[i]);
 
           x = (x << 4) + kNibbleTable[i];
         }
@@ -683,9 +698,8 @@ public:
         break;
       }
 
-      case Double: {
+      case Double:
         __builtin_unreachable();
-      }
     }
 
     if (x == 0) {
@@ -707,8 +721,10 @@ public:
   }
 
   auto ParseIdentifier(uint8_t c, LocationID start_pos) -> Token {
-    if (c == 'f' && PeekChar() == '"') {
-      return {KeyW, __FString, start_pos};
+    if (c == 'f') {
+      if (auto peekc = PeekChar(); peekc == '"' || peekc == '\'') {
+        return {KeyW, __FString, start_pos};
+      }
     }
 
     while (kIdentifierCharTable[c]) {
@@ -716,7 +732,7 @@ public:
       c = NextChar();
     }
 
-    m_fifo.push(c);
+    m_rewind.push(c);
 
     { /* Determine if it's a keyword */
       auto it = KEYWORDS_MAP.find(m_buf);
@@ -732,20 +748,11 @@ public:
       }
     }
 
-    /* For compiler internal debugging */
-    qcore_assert(m_buf != "__builtin_lexer_crash", "The source code invoked a compiler panic API.");
-
-    if (m_buf == "__builtin_lexer_abort") {
-      Log << Debug << UserRequest << LogSource() << "The source code requested lexical truncation";
-      return Token::EndOfFile();
-    }
-
     if (!IsUtf8(m_buf.c_str())) [[unlikely]] {
       Log << InvalidUTF8 << LogSource() << "Invalid UTF-8 sequence in identifier";
       return Token::EndOfFile();
     }
 
-    /* Return the identifier */
     return {Name, string(std::move(m_buf)), start_pos};
   };
 
@@ -882,6 +889,7 @@ public:
 
       /* Check for a multi-part string */
       if (c == quote) {
+        NextChar();
         c = NextChar();
         continue;
       }
@@ -895,7 +903,7 @@ public:
   }
 
   void ParseIntegerUnwind(uint8_t c, NumberKind kind, std::string &buf) {
-    std::vector<uint8_t> q;
+    m_rewind.push(c);
 
     switch (kind) {
       case DecNum:
@@ -903,7 +911,7 @@ public:
         while (!buf.empty()) {
           auto ch = buf.back();
           if (!kDigitsTable[ch]) {
-            q.push_back(ch);
+            m_rewind.push(ch);
             buf.pop_back();
           } else {
             break;
@@ -914,16 +922,7 @@ public:
       }
 
       case HexNum: {
-        while (!buf.empty()) {
-          auto ch = buf.back();
-          if (!kHexDigitsTable[ch]) {
-            q.push_back(ch);
-            buf.pop_back();
-          } else {
-            break;
-          }
-        }
-
+        qcore_assert(!buf.empty() && kHexDigitsTable[buf.back()]);
         break;
       }
 
@@ -931,7 +930,7 @@ public:
         while (!buf.empty()) {
           auto ch = buf.back();
           if (ch != '0' && ch != '1') {
-            q.push_back(ch);
+            m_rewind.push(ch);
             buf.pop_back();
           } else {
             break;
@@ -945,7 +944,7 @@ public:
         while (!buf.empty()) {
           auto ch = buf.back();
           if (!kOctalDigitsTable[ch]) {
-            q.push_back(ch);
+            m_rewind.push(ch);
             buf.pop_back();
           } else {
             break;
@@ -957,35 +956,18 @@ public:
 
       case Double: {
         while (!buf.empty()) {
-          bool do_break = false;
-          switch (auto ch = buf.back()) {
-            case '.':
-            case 'e':
-            case 'E': {
-              q.push_back(ch);
-              buf.pop_back();
-              break;
-            }
-
-            default: {
-              do_break = true;
-              break;
-            }
-          }
-
-          if (do_break) {
+          auto ch = buf.back();
+          if (!kDigitsTable[ch]) {
+            m_rewind.push(ch);
+            buf.pop_back();
+          } else {
             break;
           }
         }
+
         break;
       }
     }
-
-    for (auto it : std::ranges::reverse_view(q)) {
-      m_fifo.push(it);
-    }
-
-    m_fifo.push(c);
   }
 
   auto ParseInteger(uint8_t c, LocationID start_pos) -> Token {
@@ -1010,7 +992,8 @@ public:
         }
       }
 
-      if (kHexDigitsTable[c]) [[likely]] {
+      /* 'e' and 'E' can be ambigouos between floats and hex literals */
+      if ((kind == HexNum && kHexDigitsTable[c]) || kHexDigitsTableExceptE[c]) [[likely]] {
         m_buf += c;
         c = NextChar();
         continue;
@@ -1018,7 +1001,7 @@ public:
 
       switch (kind) {
         case DecNum: {
-          if (c == '.') {
+          if (c == '.' || c == 'e' || c == 'E') {
             m_buf += c;
             kind = Double;
             c = NextChar();
@@ -1035,16 +1018,13 @@ public:
             break;
           }
 
-          if (c == '-') {
+          if (c == 'e' || c == 'E' || c == '-' || c == '+') {
             m_buf += c;
-            c = NextChar();
-          } else if (c == '+') {
-            // ignored
             c = NextChar();
           } else if (c == '.') {
             m_buf += c;
-            end_of_float = true;
             c = NextChar();
+            end_of_float = true;
           } else {
             is_lexing = false;
           }
@@ -1060,9 +1040,16 @@ public:
     } while (is_lexing);
 
     ParseIntegerUnwind(c, kind, m_buf);
+    if (m_buf.empty()) {
+      Log << InvalidNumber << LogSource() << "Invalid number literal";
+      return Token::EndOfFile();
+    }
 
-    if (kind == DecNum) {
-      kind = std::any_of(m_buf.begin(), m_buf.end(), [](auto c) { return c == 'e' || c == 'E'; }) ? Double : DecNum;
+    if (kind == DecNum || kind == Double) {
+      kind =
+          std::any_of(m_buf.begin(), m_buf.end(), [](auto c) { return c == 'e' || c == 'E' || c == '.' || c == '-'; })
+              ? Double
+              : DecNum;
     }
 
     if (kind == Double) {
@@ -1127,13 +1114,17 @@ public:
     while (true) {
       auto c = PeekChar();
 
-      if (!kIdentifierCharTable[c]) {
+      if (!kMacroCallCharTable[c]) {
         break;
       }
 
       m_buf += c;
-
       NextChar();
+    }
+
+    if (!IsUtf8(m_buf.c_str())) [[unlikely]] {
+      Log << InvalidUTF8 << LogSource() << "Invalid UTF-8 sequence in macro";
+      return Token::EndOfFile();
     }
 
     return {Macr, string(std::move(m_buf)), start_pos};
@@ -1200,7 +1191,7 @@ public:
       return Token::EndOfFile();
     }
 
-    m_fifo.push(m_buf.back());
+    m_rewind.push(m_buf.back());
 
     return {Oper, OPERATORS_MAP.find(m_buf.substr(0, m_buf.size() - 1))->second, start_pos};
   }
@@ -1238,22 +1229,19 @@ auto Tokenizer::GetNext() -> Token {
   Token token;
 
   switch (state) {
-    case LexState::Identifier: {
+    case LexState::Identifier:
       token = impl.ParseIdentifier(c, start_pos);
       break;
-    }
 
-    case LexState::String: {
+    case LexState::String:
       token = impl.ParseString(c, start_pos);
       break;
-    }
 
-    case LexState::Integer: {
+    case LexState::Integer:
       token = impl.ParseInteger(c, start_pos);
       break;
-    }
 
-    case LexState::CommentStart: {
+    case LexState::CommentStart:
       if (impl.NextCharIf('/')) {
         token = impl.ParseCommentSingleLine(start_pos);
         break;
@@ -1266,9 +1254,8 @@ auto Tokenizer::GetNext() -> Token {
 
       token = impl.ParseOther('/', start_pos);
       break;
-    }
 
-    case LexState::MacroStart: {
+    case LexState::MacroStart:
       if (impl.NextCharIf('(')) {
         token = impl.ParseBlockMacro(start_pos);
         break;
@@ -1276,12 +1263,10 @@ auto Tokenizer::GetNext() -> Token {
 
       token = impl.ParseSingleLineMacro(start_pos);
       break;
-    }
 
-    case LexState::Other: {
+    case LexState::Other:
       token = impl.ParseOther(c, start_pos);
       break;
-    }
   }
 
   if (token.Is(EofF)) [[unlikely]] {
@@ -1291,8 +1276,10 @@ auto Tokenizer::GetNext() -> Token {
   return token;
 }
 
-Tokenizer::Tokenizer(std::istream &source_file, std::shared_ptr<Environment> env)
+Tokenizer::Tokenizer(std::istream &source_file, std::shared_ptr<IEnvironment> env)
     : IScanner(std::move(env)), m_impl(new Impl(source_file, [&]() { SetFailBit(); })) {}
+
+Tokenizer::Tokenizer(Tokenizer &&o) noexcept : IScanner(o.m_env), m_impl(std::move(o.m_impl)) {}
 
 Tokenizer::~Tokenizer() = default;
 

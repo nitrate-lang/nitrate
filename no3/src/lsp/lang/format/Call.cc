@@ -45,15 +45,13 @@ void CambrianFormatter::Visit(FlowPtr<Call> n) {
 
   size_t argc = n->GetArgs().size();
 
-  bool any_named = std::any_of(n->GetArgs().begin(), n->GetArgs().end(),
-                               [](const CallArg& arg) {
-                                 auto name = arg.first;
-                                 return std::isdigit(name.at(0)) == 0;
-                               });
+  bool any_named = std::any_of(n->GetArgs().begin(), n->GetArgs().end(), [](const CallArg& arg) {
+    auto name = arg.first;
+    return std::isdigit(name.at(0)) == 0;
+  });
 
-  bool any_lambdas = std::any_of(
-      n->GetArgs().begin(), n->GetArgs().end(),
-      [](auto arg) { return std::get<1>(arg)->IsStmtExpr(QAST_FUNCTION); });
+  bool any_lambdas =
+      std::any_of(n->GetArgs().begin(), n->GetArgs().end(), [](auto arg) { return std::get<1>(arg)->Is(QAST_LAMBDA); });
 
   bool is_wrapping = argc >= wrap_threshold || any_named || any_lambdas;
 
@@ -120,11 +118,7 @@ void CambrianFormatter::Visit(FlowPtr<TemplateCall> n) {
           m_line << name << ": ";
         }
 
-        if (value->Is(QAST_TEXPR)) {
-          value->template As<TypeExpr>()->GetType().Accept(*this);
-        } else {
-          value.Accept(*this);
-        }
+        value.Accept(*this);
       },
       [&](let) { m_line << ", "; });
   m_line << "}";

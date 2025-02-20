@@ -33,6 +33,7 @@
 
 #include <nitrate-core/Logger.hh>
 #include <nitrate-core/Macro.hh>
+#include <nitrate-lexer/Grammar.hh>
 #include <nitrate-lexer/Lexer.hh>
 #include <nitrate-lexer/Token.hh>
 #include <nlohmann/json.hpp>
@@ -240,71 +241,43 @@ NCC_EXPORT auto ncc::lex::GetOperatorAssociativity(Operator op, OpMode type) -> 
 }
 
 NCC_EXPORT auto ncc::lex::to_string(TokenType ty, TokenData v) -> ncc::string {
-  string r;
-
   switch (ty) {
-    case EofF: {
-      r = "";
-      break;
-    }
+    case EofF:
+      return "";
 
-    case KeyW: {
-      r = ncc::lex::kw_repr(v.m_key);
-      break;
-    }
+    case KeyW:
+      return ncc::lex::kw_repr(v.m_key);
 
-    case Oper: {
-      r = ncc::lex::op_repr(v.m_op);
-      break;
-    }
+    case Oper:
+      return ncc::lex::op_repr(v.m_op);
 
-    case Punc: {
-      r = ncc::lex::punct_repr(v.m_punc);
-      break;
-    }
+    case Punc:
+      return ncc::lex::punct_repr(v.m_punc);
 
-    case Name: {
-      r = v.m_str;
-      break;
-    }
+    case Name:
+      return v.m_str;
 
-    case IntL: {
-      r = v.m_str;
-      break;
-    }
+    case IntL:
+      return v.m_str;
 
-    case NumL: {
-      r = v.m_str;
-      break;
-    }
+    case NumL:
+      return v.m_str;
 
-    case Text: {
-      r = v.m_str;
-      break;
-    }
+    case Text:
+      return v.m_str;
 
-    case Char: {
-      r = v.m_str;
-      break;
-    }
+    case Char:
+      return v.m_str;
 
-    case MacB: {
-      r = v.m_str;
-      break;
-    }
+    case MacB:
+      return v.m_str;
 
-    case Macr: {
-      r = v.m_str;
-      break;
-    }
+    case Macr:
+      return v.m_str;
 
-    case Note: {
-      r = v.m_str;
-      break;
-    }
+    case Note:
+      return v.m_str;
   }
-
-  return r;
 }
 
 NCC_EXPORT auto LocationID::Get(IScanner &l) const -> Location { return l.GetLocation(LocationID(m_id)); }
@@ -345,7 +318,7 @@ NCC_EXPORT auto ncc::lex::operator<<(std::ostream &os, Token tok) -> std::ostrea
     nlohmann::json j;
     j["type"] = (int)tok.GetKind();
 
-    if (tok.GetStart().has_value()) {
+    if (tok.GetStart().HasValue()) {
       j["pos"] = tok.GetStart().GetId();
     } else {
       j["pos"] = nullptr;

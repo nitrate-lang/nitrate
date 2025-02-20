@@ -31,18 +31,18 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __NITRATE_AST_ASTBASE_H__
-#define __NITRATE_AST_ASTBASE_H__
+#ifndef __NITRATE_AST_BASE_H__
+#define __NITRATE_AST_BASE_H__
 
 #include <array>
-#include <iostream>
-#include <nitrate-core/Logger.hh>
+#include <mutex>
+#include <nitrate-core/FlowPtr.hh>
 #include <nitrate-core/Macro.hh>
-#include <nitrate-lexer/Scanner.hh>
-#include <nitrate-lexer/Token.hh>
-#include <nitrate-parser/ASTCommon.hh>
-#include <nitrate-parser/ASTData.hh>
-#include <nitrate-parser/ASTWriter.hh>
+#include <nitrate-core/NullableFlowPtr.hh>
+#include <nitrate-lexer/Location.hh>
+#include <nitrate-lexer/ScannerFwd.hh>
+#include <nitrate-parser/AST.hh>
+#include <nitrate-parser/ASTVisitor.hh>
 #include <type_traits>
 #include <utility>
 
@@ -60,26 +60,26 @@ namespace ncc::parse {
     [[nodiscard]] constexpr auto Key() const { return m_key; }
   } __attribute__((packed));
 
-  class ASTExtensionPackage {
-    friend class ASTExtension;
-
-    lex::LocationID m_begin;
-    lex::LocationID m_end;
-    std::vector<string> m_comments;
-
-    ASTExtensionPackage(lex::LocationID begin, lex::LocationID end) : m_begin(begin), m_end(end) {}
-
-  public:
-    [[nodiscard]] auto Begin() const { return m_begin; }
-    [[nodiscard]] auto End() const { return m_end; }
-    [[nodiscard]] auto Comments() const -> std::span<const string> { return m_comments; }
-
-    void AddComments(std::span<const string> comments) {
-      m_comments.insert(m_comments.end(), comments.begin(), comments.end());
-    }
-  };
-
   class NCC_EXPORT ASTExtension {
+    class ASTExtensionPackage {
+      friend class ASTExtension;
+
+      lex::LocationID m_begin;
+      lex::LocationID m_end;
+      std::vector<string> m_comments;
+
+      ASTExtensionPackage(lex::LocationID begin, lex::LocationID end) : m_begin(begin), m_end(end) {}
+
+    public:
+      [[nodiscard]] auto Begin() const { return m_begin; }
+      [[nodiscard]] auto End() const { return m_end; }
+      [[nodiscard]] auto Comments() const -> std::span<const string> { return m_comments; }
+
+      void AddComments(std::span<const string> comments) {
+        m_comments.insert(m_comments.end(), comments.begin(), comments.end());
+      }
+    };
+
     std::vector<ASTExtensionPackage> m_pairs;
     std::mutex m_mutex;
 
@@ -105,24 +105,24 @@ namespace ncc::parse {
 
   class NCC_EXPORT Base {
   private:
-    npar_ty_t m_node_type : 7;
+    ASTNodeKind m_node_type : 7;
     bool m_mock : 1;
     ASTExtensionKey m_data;
 
   public:
-    constexpr Base(npar_ty_t ty, bool mock = false) : m_node_type(ty), m_mock(mock) {}
+    constexpr Base(ASTNodeKind ty, bool mock = false) : m_node_type(ty), m_mock(mock) {}
 
-    constexpr Base(npar_ty_t ty, bool mock, lex::LocationID begin, lex::LocationID end)
+    constexpr Base(ASTNodeKind ty, bool mock, lex::LocationID begin, lex::LocationID end)
         : m_node_type(ty), m_mock(mock), m_data(ExtensionDataStore.Add(begin, end)) {}
 
     ///======================================================================
     /// Efficient LLVM-Style reflection
 
-    static constexpr auto GetKindSize(npar_ty_t kind) -> uint32_t;
-    static constexpr auto GetKindName(npar_ty_t type) -> std::string_view;
+    static constexpr auto GetKindSize(ASTNodeKind kind) -> uint32_t;
+    static constexpr auto GetKindName(ASTNodeKind type) -> std::string_view;
 
     template <typename T>
-    static constexpr auto GetTypeCode() -> npar_ty_t {
+    static constexpr auto GetTypeCode() -> ASTNodeKind {
       using namespace ncc::parse;
 
       if constexpr (std::is_same_v<T, Base>) {
@@ -169,10 +169,8 @@ namespace ncc::parse {
         return QAST_SEQ;
       } else if constexpr (std::is_same_v<T, PostUnary>) {
         return QAST_POST_UNEXPR;
-      } else if constexpr (std::is_same_v<T, StmtExpr>) {
-        return QAST_SEXPR;
-      } else if constexpr (std::is_same_v<T, TypeExpr>) {
-        return QAST_TEXPR;
+      } else if constexpr (std::is_same_v<T, LambdaExpr>) {
+        return QAST_LAMBDA;
       } else if constexpr (std::is_same_v<T, TemplateCall>) {
         return QAST_TEMPL_CALL;
       } else if constexpr (std::is_same_v<T, RefTy>) {
@@ -268,7 +266,7 @@ namespace ncc::parse {
       }
     }
 
-    [[nodiscard]] constexpr auto GetKind() const -> npar_ty_t { return m_node_type; }
+    [[nodiscard]] constexpr auto GetKind() const -> ASTNodeKind { return m_node_type; }
     [[nodiscard]] constexpr auto GetKindName() const { return GetKindName(m_node_type); }
 
     [[nodiscard]] constexpr auto IsType() const -> bool {
@@ -291,7 +289,7 @@ namespace ncc::parse {
       return Base::GetTypeCode<T>() == GetKind();
     }
 
-    [[nodiscard]] constexpr bool Is(npar_ty_t type) const { return type == GetKind(); }
+    [[nodiscard]] constexpr bool Is(ASTNodeKind type) const { return type == GetKind(); }
     [[nodiscard]] constexpr auto IsMock() const -> bool { return m_mock; }
 
     [[nodiscard]] auto IsEq(FlowPtr<Base> o) const -> bool;
@@ -337,9 +335,8 @@ namespace ncc::parse {
     ///======================================================================
     /// Serialization
 
-    void DebugString(std::ostream &os, WriterSourceProvider rd = std::nullopt) const;
-
-    [[nodiscard]] std::string DebugString(WriterSourceProvider rd = std::nullopt) const;
+    void DebugString(std::ostream &os, std::optional<std::reference_wrapper<lex::IScanner>> rd = std::nullopt) const;
+    [[nodiscard]] std::string DebugString(std::optional<std::reference_wrapper<lex::IScanner>> rd = std::nullopt) const;
 
     void Serialize(std::ostream &os) const;
     [[nodiscard]] std::string Serialize() const;
@@ -380,7 +377,6 @@ namespace ncc::parse {
 
     constexpr void SetLoc(lex::LocationID begin, lex::LocationID end) { m_data = ExtensionDataStore.Add(begin, end); }
 
-    void SetComments(std::span<const lex::Token> comment_tokens);
     void SetComments(std::span<const string> comments);
   } __attribute__((packed));
 
@@ -390,7 +386,7 @@ namespace ncc::parse {
 
   namespace detail {
     constexpr static auto kGetKindNames = []() {
-      std::array<std::string_view, QAST_COUNT> r;
+      std::array<std::string_view, QAST__RANGE + 1> r;
       r.fill("");
 
       r[QAST_BASE] = "Node";
@@ -413,8 +409,7 @@ namespace ncc::parse {
       r[QAST_IDENT] = "Ident";
       r[QAST_SEQ] = "Sequence";
       r[QAST_POST_UNEXPR] = "PostUnexpr";
-      r[QAST_SEXPR] = "StmtExpr";
-      r[QAST_TEXPR] = "TypeExpr";
+      r[QAST_LAMBDA] = "LambdaExpr";
       r[QAST_TEMPL_CALL] = "TemplateCall";
       r[QAST_REF] = "Ref";
       r[QAST_U1] = "U1";
@@ -466,20 +461,25 @@ namespace ncc::parse {
     }();
   }  // namespace detail
 
-  constexpr auto Base::GetKindName(npar_ty_t type) -> std::string_view { return detail::kGetKindNames[type]; }
+  constexpr auto Base::GetKindName(ASTNodeKind type) -> std::string_view { return detail::kGetKindNames[type]; }
 
   class Stmt : public Base {
   public:
-    constexpr Stmt(npar_ty_t ty) : Base(ty){};
+    constexpr Stmt(ASTNodeKind ty) : Base(ty){};
 
-    [[nodiscard]] constexpr auto IsExprStmt(npar_ty_t type) const -> bool;
+    [[nodiscard]] constexpr auto IsExprStmt(ASTNodeKind type) const -> bool;
   };
 
-  class Type : public Base {
+  class Expr : public Base {
+  public:
+    constexpr Expr(ASTNodeKind ty) : Base(ty) {}
+  };
+
+  class Type : public Expr {
     NullableFlowPtr<Expr> m_range_begin, m_range_end, m_width;
 
   public:
-    constexpr Type(npar_ty_t ty) : Base(ty) {}
+    constexpr Type(ASTNodeKind ty) : Expr(ty) {}
 
     [[nodiscard]] constexpr auto IsPrimitive() const -> bool {
       switch (GetKind()) {
@@ -527,18 +527,10 @@ namespace ncc::parse {
     [[nodiscard]] constexpr auto GetRangeEnd() const { return m_range_end; }
 
     constexpr void SetRangeBegin(NullableFlowPtr<Expr> start) { m_range_begin = std::move(start); }
-
     constexpr void SetRangeEnd(NullableFlowPtr<Expr> end) { m_range_end = std::move(end); }
-
     constexpr void SetWidth(NullableFlowPtr<Expr> width) { m_width = std::move(width); }
   };
 
-  class Expr : public Base {
-  public:
-    constexpr Expr(npar_ty_t ty) : Base(ty) {}
-
-    [[nodiscard]] constexpr auto IsStmtExpr(npar_ty_t type) const -> bool;
-  };
 }  // namespace ncc::parse
 
 #endif

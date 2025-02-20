@@ -2,6 +2,12 @@
 
 #include <lsp/lang/FmtInterface.hh>
 #include <nitrate-core/String.hh>
+#include <nitrate-lexer/Grammar.hh>
+#include <nitrate-parser/ASTExpr.hh>
+#include <nitrate-parser/ASTFwd.hh>
+#include <nitrate-parser/ASTStmt.hh>
+#include <nitrate-parser/ASTType.hh>
+#include <nitrate-parser/ASTVisitor.hh>
 #include <sstream>
 
 namespace no3::lsp::fmt {
@@ -10,8 +16,7 @@ namespace no3::lsp::fmt {
   template <typename T>
   using FlowPtr = ncc::FlowPtr<T>;
 
-  class NCC_EXPORT CambrianFormatter final : public parse::ASTVisitor,
-                                             public ICodeFormatter {
+  class NCC_EXPORT CambrianFormatter final : public parse::ASTVisitor, public ICodeFormatter {
     class LineWriter final {
       std::stringstream m_line_buffer;
       std::ostream& m_file;
@@ -66,12 +71,10 @@ namespace no3::lsp::fmt {
 
     void FormatTypeMetadata(const FlowPtr<parse::Type>& n);
 
-    void WrapStmtBody(FlowPtr<parse::Stmt> n, size_t size_threshold,
-                      bool use_arrow_if_wrapped);
+    void WrapStmtBody(FlowPtr<parse::Stmt> n, size_t size_threshold, bool use_arrow_if_wrapped);
 
     template <typename IterBegin, typename IterEnd>
-    void IterateExceptLast(IterBegin beg, IterEnd end, auto body,
-                           auto if_not_last) {
+    void IterateExceptLast(IterBegin beg, IterEnd end, auto body, auto if_not_last) {
       size_t i = 0;
       for (auto it = beg; it != end; ++it, ++i) {
         body(*it, i);
@@ -94,8 +97,7 @@ namespace no3::lsp::fmt {
 
     void Visit(FlowPtr<parse::Base> n) override;
     void Visit(FlowPtr<parse::ExprStmt> n) override;
-    void Visit(FlowPtr<parse::StmtExpr> n) override;
-    void Visit(FlowPtr<parse::TypeExpr> n) override;
+    void Visit(FlowPtr<parse::LambdaExpr> n) override;
     void Visit(FlowPtr<parse::NamedTy> n) override;
     void Visit(FlowPtr<parse::InferTy> n) override;
     void Visit(FlowPtr<parse::TemplateType> n) override;
@@ -162,8 +164,7 @@ namespace no3::lsp::fmt {
     void Visit(FlowPtr<parse::Export> n) override;
 
   public:
-    CambrianFormatter(std::ostream& out, size_t the_tab_size = 2)
-        : m_line(out), m_tabSize(the_tab_size) {
+    CambrianFormatter(std::ostream& out, size_t the_tab_size = 2) : m_line(out), m_tabSize(the_tab_size) {
       ResetAutomaton();
       (void)m_tabSize;
     }

@@ -68,9 +68,8 @@ namespace no3::init {
     auto WriteConfig() -> bool;
 
   public:
-    Package(auto output, auto name, auto license, auto author, auto email,
-            auto url, auto version, auto description, PackageType type,
-            auto verbose, auto force)
+    Package(auto output, auto name, auto license, auto author, auto email, auto url, auto version, auto description,
+            PackageType type, auto verbose, auto force)
         : m_output(std::move(output)),
           m_name(std::move(name)),
           m_license(std::move(license)),

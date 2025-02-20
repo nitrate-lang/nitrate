@@ -41,51 +41,39 @@ void CambrianFormatter::Visit(FlowPtr<TemplateType> n) {
   PrintMultilineComments(n);
 
   bool is_optional =
-      n->GetTemplate()->GetKind() == QAST_NAMED &&
-      n->GetTemplate()->As<NamedTy>()->GetName() == "__builtin_result";
+      n->GetTemplate()->GetKind() == QAST_NAMED && n->GetTemplate()->As<NamedTy>()->GetName() == "__builtin_result";
 
   bool is_vector =
-      n->GetTemplate()->GetKind() == QAST_NAMED &&
-      n->GetTemplate()->As<NamedTy>()->GetName() == "__builtin_vec";
+      n->GetTemplate()->GetKind() == QAST_NAMED && n->GetTemplate()->As<NamedTy>()->GetName() == "__builtin_vec";
 
-  bool is_map = n->GetTemplate()->GetKind() == QAST_NAMED &&
-                n->GetTemplate()->As<NamedTy>()->GetName() == "__builtin_umap";
+  bool is_map =
+      n->GetTemplate()->GetKind() == QAST_NAMED && n->GetTemplate()->As<NamedTy>()->GetName() == "__builtin_umap";
 
-  bool is_set = n->GetTemplate()->GetKind() == QAST_NAMED &&
-                n->GetTemplate()->As<NamedTy>()->GetName() == "__builtin_uset";
+  bool is_set =
+      n->GetTemplate()->GetKind() == QAST_NAMED && n->GetTemplate()->As<NamedTy>()->GetName() == "__builtin_uset";
 
-  bool is_comptime =
-      n->GetTemplate()->GetKind() == QAST_NAMED &&
-      n->GetTemplate()->As<NamedTy>()->GetName() == "__builtin_meta" &&
-      n->GetArgs().size() == 1 &&
-      n->GetArgs().front().second->Is(QAST_UNEXPR) &&
-      n->GetArgs().front().second.template As<Unary>()->GetOp() == OpComptime;
-
-  const auto print_without_type_keyword = [&](auto node) {
-    if (node->Is(QAST_TEXPR)) {
-      node->template As<TypeExpr>()->GetType().Accept(*this);
-    } else {
-      node->Accept(*this);
-    }
-  };
+  bool is_comptime = n->GetTemplate()->GetKind() == QAST_NAMED &&
+                     n->GetTemplate()->As<NamedTy>()->GetName() == "__builtin_meta" && n->GetArgs().size() == 1 &&
+                     n->GetArgs().front().second->Is(QAST_UNEXPR) &&
+                     n->GetArgs().front().second.template As<Unary>()->GetOp() == OpComptime;
 
   size_t argc = n->GetArgs().size();
   if (is_optional && argc == 1) {
-    print_without_type_keyword(n->GetArgs().front().second);
+    n->GetArgs().front().second->Accept(*this);
     m_line << "?";
   } else if (is_vector && argc == 1) {
     m_line << "[";
-    print_without_type_keyword(n->GetArgs().front().second);
+    n->GetArgs().front().second->Accept(*this);
     m_line << "]";
   } else if (is_map && argc == 2) {
     m_line << "[";
-    print_without_type_keyword(n->GetArgs().front().second);
+    n->GetArgs().front().second->Accept(*this);
     m_line << "->";
-    print_without_type_keyword(n->GetArgs().back().second);
+    n->GetArgs().back().second->Accept(*this);
     m_line << "]";
   } else if (is_set && argc == 1) {
     m_line << "{";
-    print_without_type_keyword(n->GetArgs().front().second);
+    n->GetArgs().front().second->Accept(*this);
     m_line << "}";
   } else if (is_comptime) {
     m_line << "comptime(";
@@ -102,7 +90,7 @@ void CambrianFormatter::Visit(FlowPtr<TemplateType> n) {
             m_line << arg.first << ": ";
           }
 
-          print_without_type_keyword(arg.second);
+          arg.second->Accept(*this);
         },
         [&](let) { m_line << ", "; });
     m_line << ">";

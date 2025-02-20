@@ -34,9 +34,8 @@
 #ifndef __NITRATE_LEXER_LEX_HH__
 #define __NITRATE_LEXER_LEX_HH__
 
-#include <boost/bimap.hpp>
 #include <memory>
-#include <nitrate-core/Environment.hh>
+#include <nitrate-core/EnvironmentFwd.hh>
 #include <nitrate-core/Macro.hh>
 #include <nitrate-lexer/Scanner.hh>
 
@@ -48,7 +47,8 @@ namespace ncc::lex {
     auto GetNext() -> Token override;
 
   public:
-    Tokenizer(std::istream &source_file, std::shared_ptr<Environment> env);
+    Tokenizer(std::istream &source_file, std::shared_ptr<IEnvironment> env);
+    Tokenizer(Tokenizer &&) noexcept;
     ~Tokenizer() override;
 
     auto GetSourceWindow(Point start, Point end,

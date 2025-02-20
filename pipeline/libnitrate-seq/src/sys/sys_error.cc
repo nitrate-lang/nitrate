@@ -31,6 +31,8 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
+#include <core/EC.hh>
+#include <core/PImpl.hh>
 #include <nitrate-seq/Sequencer.hh>
 
 extern "C" {
@@ -49,7 +51,7 @@ auto Sequencer::SysError() -> int {
     ss << lua_tostring(lua, i) << " ";
   }
 
-  ncc::Log << Error << ec::SeqError << ss.str();
+  Log << ec::SeqLog << Error << ec::SeqLog << ss.str();
 
   return 0;
 }

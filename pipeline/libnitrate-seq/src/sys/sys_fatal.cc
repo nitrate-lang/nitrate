@@ -31,6 +31,8 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
+#include <core/EC.hh>
+#include <core/PImpl.hh>
 #include <nitrate-seq/Sequencer.hh>
 
 extern "C" {
@@ -49,7 +51,7 @@ auto Sequencer::SysFatal() -> int {
     ss << lua_tostring(lua, i) << " ";
   }
 
-  ncc::Log << Critical << ec::SeqError << ss.str();
+  Log << ec::SeqLog << Critical << ec::SeqLog << ss.str();
 
-  throw StopException();
+  throw lex::detail::ScannerEOF();
 }

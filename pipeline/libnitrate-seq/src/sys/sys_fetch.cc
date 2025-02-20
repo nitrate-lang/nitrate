@@ -31,6 +31,7 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
+#include <core/PImpl.hh>
 #include <nitrate-seq/Sequencer.hh>
 
 extern "C" {
@@ -51,7 +52,7 @@ auto Sequencer::SysFetch() -> int {
     return luaL_error(lua, "expected string, got %s", lua_typename(lua, lua_type(lua, 1)));
   }
 
-  if (auto data = FetchModuleData(lua_tostring(lua, 1))) {
+  if (auto data = FetchModuleData(*this, lua_tostring(lua, 1))) {
     lua_pushstring(lua, data->c_str());
     return 1;
   }
