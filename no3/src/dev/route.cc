@@ -47,6 +47,7 @@
 #include <nitrate-core/Environment.hh>
 #include <nitrate-core/Init.hh>
 #include <nitrate-core/Logger.hh>
+#include <nitrate-core/SmartLock.hh>
 #include <nitrate-emit/Classes.hh>
 #include <nitrate-ir/ABI/Name.hh>
 #include <nitrate-ir/IR.hh>

@@ -56,7 +56,7 @@ namespace ncc::parse {
     constexpr Arena(const Arena<U> &) {}
 
     [[nodiscard]] T *allocate(std::size_t n) {  // NOLINT
-      return static_cast<T *>(MainAllocator->Alloc(sizeof(T) * n));
+      return static_cast<T *>(MainAllocator->Allocate(sizeof(T) * n, alignof(T)));
     }
 
     void deallocate(T *, std::size_t) {}  // NOLINT

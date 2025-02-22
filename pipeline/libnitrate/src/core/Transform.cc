@@ -99,15 +99,15 @@ static auto ParseOptions(const char *const *options) -> std::optional<std::vecto
   return opts;
 }
 
-static auto NitDispatchRequest(std::istream &in, std::ostream &out, const char *transform, let opts_set,
+static auto NitDispatchRequest(std::istream &in, std::ostream &out, const char *transform, const auto &opts_set,
                                const std::shared_ptr<ncc::Environment> &env) -> bool {
   if (!DISPATCH_FUNCS.contains(transform)) {
     Log << "Unknown transform name in options: " << transform;
     return false;
   }
 
-  let transform_func = DISPATCH_FUNCS.at(transform);
-  let is_success = transform_func(in, out, opts_set, env);
+  auto transform_func = DISPATCH_FUNCS.at(transform);
+  auto is_success = transform_func(in, out, opts_set, env);
 
   out.flush();
 
@@ -142,12 +142,11 @@ static auto NitPipelineStream(std::istream &in, std::ostream &out, nitrate::Diag
 
   bool status = false;
 
-  if (let options = ParseOptions(c_options)) {
+  if (const auto &options = ParseOptions(c_options)) {
     if (!options->empty()) {
       std::unordered_set opts_set(options->begin() + 1, options->end());
-      let name = options->at(0).c_str();
 
-      status = NitDispatchRequest(in, out, name, opts_set, env);
+      status = NitDispatchRequest(in, out, options->at(0).c_str(), opts_set, env);
     } /* No options provided */
   } /* Failed to parse options */
 

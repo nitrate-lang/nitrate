@@ -46,8 +46,8 @@ void Environment::SetupDefaultKeys() {
   m_data["this.job"] = boost::uuids::to_string(boost::uuids::random_generator()());
 
   /* Set the compiler start time */
-  let now = std::chrono::system_clock::now();
-  let ms = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch());
+  auto now = std::chrono::system_clock::now();
+  auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch());
 
   m_data["this.created_at"] = std::to_string(ms.count());
 }

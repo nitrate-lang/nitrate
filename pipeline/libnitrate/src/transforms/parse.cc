@@ -355,9 +355,9 @@ CREATE_TRANSFORM(nit::parse) {
   DeserializerAdapterLexer lexer(source, env);
   auto parser = Parser::Create(lexer, env);
 
-  let root = parser->Parse();
+  auto root = parser->Parse();
 
   output << root.Get()->Serialize();
 
-  return true;
+  return root.Check();
 }
