@@ -36,6 +36,7 @@
 #include <nitrate-core/Assert.hh>
 #include <nitrate-core/Init.hh>
 #include <nitrate-core/Macro.hh>
+#include <nitrate-core/SmartLock.hh>
 #include <nitrate-core/String.hh>
 #include <sparsehash/dense_hash_map>
 
@@ -52,27 +53,6 @@ public:
   [[nodiscard]] virtual auto CompareGt(uint64_t a, uint64_t b) -> bool = 0;
   [[nodiscard]] virtual auto CompareGe(uint64_t a, uint64_t b) -> bool = 0;
   virtual void Reset() = 0;
-};
-
-template <typename T>
-class ConditionalLockGuard {
-  T& m_mutex;
-  bool m_enabled;
-
-public:
-  ConditionalLockGuard(T& mutex) : m_mutex(mutex) {
-    m_enabled = EnableSync;
-
-    if (m_enabled) {
-      m_mutex.lock();
-    }
-  }
-
-  ~ConditionalLockGuard() {
-    if (m_enabled) {
-      m_mutex.unlock();
-    }
-  }
 };
 
 #if MEMORY_OVER_SPEED == 1
@@ -107,7 +87,7 @@ public:
   ~MemoryConservedStorage() override { Reset(); }
 
   [[nodiscard]] auto Get(uint64_t id) -> CStringView override {
-    ConditionalLockGuard lock(m_lock);
+    SmartLock lock(m_lock);
 
     return id < m_data.size() ? FromVec(m_data[id]) : CStringView();
   }
@@ -117,7 +97,7 @@ public:
       return 0;
     }
 
-    ConditionalLockGuard lock(m_lock);
+    SmartLock lock(m_lock);
 
     uint64_t id;
     if (auto it = m_map.find(str); it != m_map.end()) {
@@ -136,7 +116,7 @@ public:
       return 0;
     }
 
-    ConditionalLockGuard lock(m_lock);
+    SmartLock lock(m_lock);
 
     uint64_t id;
     if (auto it = m_map.find(str); it != m_map.end()) {
@@ -161,7 +141,7 @@ public:
   [[nodiscard]] auto CompareGe(uint64_t a, uint64_t b) -> bool override { return a >= b; }
 
   void Reset() override {
-    ConditionalLockGuard lock(m_lock);
+    SmartLock lock(m_lock);
 
     m_map.clear();
     m_data.clear();
@@ -217,7 +197,7 @@ public:
   ~FastStorage() { Reset(); }
 
   [[nodiscard]] auto Get(uint64_t id) -> CStringView override {
-    ConditionalLockGuard lock(m_lock);
+    SmartLock lock(m_lock);
 
     if (!IsValidId(id)) [[unlikely]] {
       return {};
@@ -227,21 +207,21 @@ public:
   }
 
   auto FromString(std::string_view str) -> uint64_t override {
-    ConditionalLockGuard lock(m_lock);
+    SmartLock lock(m_lock);
     m_buffered.emplace_back(str);
 
     return m_data.size() + m_buffered.size() - 1;
   }
 
   auto FromString(std::string&& str) -> uint64_t override {
-    ConditionalLockGuard lock(m_lock);
+    SmartLock lock(m_lock);
     m_buffered.emplace_back(std::move(str));
 
     return m_data.size() + m_buffered.size() - 1;
   }
 
   [[nodiscard]] auto CompareEq(uint64_t a, uint64_t b) -> bool override {
-    ConditionalLockGuard lock(m_lock);
+    SmartLock lock(m_lock);
 
     if (!IsValidId(a) || !IsValidId(b)) [[unlikely]] {
       return false;
@@ -251,7 +231,7 @@ public:
   }
 
   [[nodiscard]] auto CompareLt(uint64_t a, uint64_t b) -> bool override {
-    ConditionalLockGuard lock(m_lock);
+    SmartLock lock(m_lock);
 
     if (!IsValidId(a) || !IsValidId(b)) [[unlikely]] {
       return false;
@@ -261,7 +241,7 @@ public:
   }
 
   [[nodiscard]] auto CompareLe(uint64_t a, uint64_t b) -> bool override {
-    ConditionalLockGuard lock(m_lock);
+    SmartLock lock(m_lock);
 
     if (!IsValidId(a) || !IsValidId(b)) [[unlikely]] {
       return false;
@@ -271,7 +251,7 @@ public:
   }
 
   [[nodiscard]] auto CompareGt(uint64_t a, uint64_t b) -> bool override {
-    ConditionalLockGuard lock(m_lock);
+    SmartLock lock(m_lock);
 
     if (!IsValidId(a) || !IsValidId(b)) [[unlikely]] {
       return false;
@@ -281,7 +261,7 @@ public:
   }
 
   [[nodiscard]] auto CompareGe(uint64_t a, uint64_t b) -> bool override {
-    ConditionalLockGuard lock(m_lock);
+    SmartLock lock(m_lock);
 
     if (!IsValidId(a) || !IsValidId(b)) [[unlikely]] {
       return false;
@@ -291,7 +271,7 @@ public:
   }
 
   void Reset() override {
-    ConditionalLockGuard lock(m_lock);
+    SmartLock lock(m_lock);
 
     m_data.clear();
     m_buffered.clear();

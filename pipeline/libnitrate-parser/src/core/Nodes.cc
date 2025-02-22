@@ -36,6 +36,7 @@
 #include <nitrate-core/Init.hh>
 #include <nitrate-core/Logger.hh>
 #include <nitrate-core/Macro.hh>
+#include <nitrate-core/SmartLock.hh>
 #include <nitrate-parser/AST.hh>
 #include <nitrate-parser/ASTData.hh>
 #include <nitrate-parser/ASTWriter.hh>
@@ -50,51 +51,23 @@ NCC_EXPORT thread_local std::unique_ptr<ncc::IMemory> parse::MainAllocator = std
 NCC_EXPORT ASTExtension parse::ExtensionDataStore;
 
 auto ASTExtension::Add(lex::LocationID begin, lex::LocationID end) -> ASTExtensionKey {
-  bool sync = EnableSync;
-
-  if (sync) {
-    m_mutex.lock();
-  }
+  SmartLock lock(m_mutex);
 
   m_pairs.push_back({begin, end});
 
-  auto r = ASTExtensionKey(m_pairs.size() - 1);
-
-  if (sync) {
-    m_mutex.unlock();
-  }
-
-  return r;
+  return {m_pairs.size() - 1};
 }
 
 auto ASTExtension::Get(ASTExtensionKey loc) -> const ASTExtensionPackage & {
-  bool sync = EnableSync;
+  SmartLock lock(m_mutex);
 
-  if (sync) {
-    m_mutex.lock();
-  }
-
-  const auto &r = m_pairs.at(loc.Key());
-
-  if (sync) {
-    m_mutex.unlock();
-  }
-
-  return r;
+  return m_pairs.at(loc.Key());
 }
 
 void ASTExtension::Set(ASTExtensionKey id, ASTExtensionPackage &&data) {
-  bool sync = EnableSync;
-
-  if (sync) {
-    m_mutex.lock();
-  }
+  SmartLock lock(m_mutex);
 
   m_pairs.at(id.Key()) = std::move(data);
-
-  if (sync) {
-    m_mutex.unlock();
-  }
 }
 
 NCC_EXPORT auto parse::operator<<(std::ostream &os, const ASTExtensionKey &idx) -> std::ostream & {
@@ -107,25 +80,26 @@ NCC_EXPORT auto parse::operator<<(std::ostream &os, const ASTExtensionKey &idx) 
 std::string Base::DebugString(WriterSourceProvider rd) const {
   std::stringstream ss;
   AstWriter writer(ss, rd, true);
-  this->Accept(writer);
+
+  const_cast<Base *>(this)->Accept(writer);
 
   return ss.str();
 }
 
 void Base::DebugString(std::ostream &os, WriterSourceProvider rd) const {
   AstWriter writer(os, rd, true);
-  this->Accept(writer);
+  const_cast<Base *>(this)->Accept(writer);
 }
 
 void Base::Serialize(std::ostream &os) const {
   AstWriter writer(os);
-  this->Accept(writer);
+  const_cast<Base *>(this)->Accept(writer);
 }
 
 std::string Base::Serialize() const {
   std::stringstream ss;
   AstWriter writer(ss);
-  this->Accept(writer);
+  const_cast<Base *>(this)->Accept(writer);
 
   return ss.str();
 }
@@ -144,7 +118,7 @@ auto Base::IsEq(FlowPtr<Base> o) const -> bool {
   AstWriter writer1(ss1);
   AstWriter writer2(ss2);
 
-  this->Accept(writer1);
+  const_cast<Base *>(this)->Accept(writer1);
   o.Accept(writer2);
 
   return ss1.str() == ss2.str();
@@ -153,7 +127,7 @@ auto Base::IsEq(FlowPtr<Base> o) const -> bool {
 auto Base::Hash64() const -> uint64_t {
   std::stringstream ss;
   AstWriter writer(ss);
-  this->Accept(writer);
+  const_cast<Base *>(this)->Accept(writer);
 
   return std::hash<std::string>{}(ss.str());
 }

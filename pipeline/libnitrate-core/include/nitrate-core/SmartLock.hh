@@ -31,43 +31,35 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <nitrate-core/Init.hh>
-#include <nitrate-core/Logger.hh>
-#include <nitrate-core/Macro.hh>
-#include <nitrate-core/SmartLock.hh>
-#include <nitrate-core/String.hh>
+#ifndef __NITRATE_CORE_SMART_LOCK_H__
+#define __NITRATE_CORE_SMART_LOCK_H__
 
-using namespace ncc;
+#include <atomic>
 
-NCC_EXPORT LibraryRC<CoreLibrarySetup> ncc::CoreLibrary;
-NCC_EXPORT std::atomic<bool> ncc::EnableSync = true;
+namespace ncc {
+  /* Enable to make the libraries thread-safe. */
+  extern std::atomic<bool> EnableSync;
 
-NCC_EXPORT auto CoreLibrarySetup::Init() -> bool {
-  // Nothing to do here for now.
+  template <typename T>
+  class SmartLock {
+    T &m_mutex;
+    bool m_enable_sync;
 
-  Log << Debug << "Initialized Nitrate Core Library";
+  public:
+    SmartLock(T &mutex) noexcept : m_mutex(mutex), m_enable_sync(EnableSync.load()) {
+      if (m_enable_sync) {
+        m_mutex.lock();
+      }
+    }
 
-  return true;
-}
+    ~SmartLock() noexcept {
+      if (m_enable_sync) {
+        m_mutex.unlock();
+      }
+    }
 
-NCC_EXPORT void CoreLibrarySetup::Deinit() {
-  Log << Debug << "Deinitialing Nitrate Core Library...";
+    [[nodiscard]] bool IsEnabled() const noexcept { return m_enable_sync; }
+  };
+}  // namespace ncc
 
-  StringMemory::Reset();
-}
-
-NCC_EXPORT auto CoreLibrarySetup::GetVersionId() -> std::string_view { return __TARGET_VERSION; }
-
-#define BOOST_NO_EXCEPTIONS
-#include <boost/throw_exception.hpp>
-#include <iostream>
-
-[[maybe_unused]] NCC_EXPORT void boost::throw_exception(std::exception const& m, boost::source_location const&) {
-  std::cerr << "boost::throw_exception: " << m.what();
-  std::terminate();
-}
-
-[[maybe_unused]] NCC_EXPORT void boost::throw_exception(std::exception const& m) {
-  std::cerr << "boost::throw_exception: " << m.what();
-  std::terminate();
-}
+#endif

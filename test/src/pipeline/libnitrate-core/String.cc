@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 
 #include <nitrate-core/Init.hh>
+#include <nitrate-core/SmartLock.hh>
 #include <nitrate-core/String.hh>
 
 // Some not-empty string content.

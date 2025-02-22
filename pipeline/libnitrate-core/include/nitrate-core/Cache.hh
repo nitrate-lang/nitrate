@@ -39,6 +39,7 @@
 #include <functional>
 #include <mutex>
 #include <nitrate-core/Init.hh>
+#include <nitrate-core/SmartLock.hh>
 #include <string>
 
 namespace ncc {
@@ -68,67 +69,29 @@ namespace ncc {
           m_write([](const ResourceKey &, Value) { return false; }) {}
 
     auto Has(const ResourceKey &key) -> bool override {
-      bool sync = EnableSync;
+      SmartLock lock(m_mutex);
 
-      if (sync) {
-        m_mutex.lock();
-      }
-
-      auto r = m_has(key);
-
-      if (sync) {
-        m_mutex.unlock();
-      }
-
-      return r;
+      return m_has(key);
     }
 
     auto Read(const ResourceKey &key, Value &value) -> bool override {
-      bool sync = EnableSync;
+      SmartLock lock(m_mutex);
 
-      if (sync) {
-        m_mutex.lock();
-      }
-
-      auto r = m_read(key, value);
-
-      if (sync) {
-        m_mutex.unlock();
-      }
-
-      return r;
+      return m_read(key, value);
     }
 
     auto Write(const ResourceKey &key, const Value &value) -> bool override {
-      bool sync = EnableSync;
+      SmartLock lock(m_mutex);
 
-      if (sync) {
-        m_mutex.lock();
-      }
-
-      auto r = m_write(key, value);
-
-      if (sync) {
-        m_mutex.unlock();
-      }
-
-      return r;
+      return m_write(key, value);
     }
 
     void Bind(has_t has, read_t read, write_t write) {
-      bool sync = EnableSync;
-
-      if (sync) {
-        m_mutex.lock();
-      }
+      SmartLock lock(m_mutex);
 
       m_has = std::move(has);
       m_read = std::move(read);
       m_write = std::move(write);
-
-      if (sync) {
-        m_mutex.unlock();
-      }
     }
 
   private:
