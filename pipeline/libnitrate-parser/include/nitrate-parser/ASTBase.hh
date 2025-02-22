@@ -302,7 +302,11 @@ namespace ncc::parse {
     /// Visitation
 
     constexpr void Accept(ASTVisitor &v) { v.Dispatch(MakeFlowPtr(this)); }
-    constexpr void Accept(ASTVisitor &v) const { v.Dispatch(MakeFlowPtr(const_cast<Base *>(this))); }
+
+    template <typename Visitor>
+    constexpr void Accept(Visitor &&v) {
+      v.Dispatch(MakeFlowPtr(this));
+    }
 
     ///======================================================================
     /// Debug-mode checked type casting

@@ -209,6 +209,11 @@ namespace ncc {
       constexpr void Accept(Vistor &v) {
         v.Dispatch(*this);
       }
+
+      template <class Vistor>
+      constexpr void Accept(Vistor &&v) {
+        v.Dispatch(*this);
+      }
     };
   }  // namespace flowptr_detail
 
