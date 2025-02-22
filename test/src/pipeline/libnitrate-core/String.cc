@@ -7,23 +7,12 @@
 // Some not-empty string content.
 static const char* StringContent = "Hello, World!";
 
-class NCC_CREATE_TEST_ATTORNEY() {
-public:
-  static ncc::string FromID(uint64_t id) {
-    ncc::string str;
-    str.m_id = id;
-    return str;
-  }
-};
-
 TEST(Core, String_Construct_From_Raw_CString) {
   if (auto lib_rc = ncc::CoreLibrary.GetRC()) {
     ncc::string str_a(StringContent);
-    EXPECT_NE(str_a.GetId(), 0);
     EXPECT_EQ(str_a.Get(), std::string_view(StringContent));
 
     ncc::string str_b("");
-    EXPECT_EQ(str_b.GetId(), 0);
     EXPECT_TRUE(str_b.Get().empty());
   }
 }
@@ -31,11 +20,9 @@ TEST(Core, String_Construct_From_Raw_CString) {
 TEST(Core, String_Construct_From_StdStringView) {
   if (auto lib_rc = ncc::CoreLibrary.GetRC()) {
     ncc::string str_a = std::string_view(StringContent);
-    EXPECT_NE(str_a.GetId(), 0);
     EXPECT_EQ(str_a.Get(), std::string_view(StringContent));
 
     ncc::string str_b = std::string_view();
-    EXPECT_EQ(str_b.GetId(), 0);
     EXPECT_TRUE(str_b.Get().empty());
   }
 }
@@ -43,11 +30,9 @@ TEST(Core, String_Construct_From_StdStringView) {
 TEST(Core, String_Construct_From_StdString) {
   if (auto lib_rc = ncc::CoreLibrary.GetRC()) {
     ncc::string str_a = std::string(StringContent);
-    EXPECT_NE(str_a.GetId(), 0);
     EXPECT_EQ(str_a.Get(), std::string_view(StringContent));
 
     ncc::string str_b = std::string();
-    EXPECT_EQ(str_b.GetId(), 0);
     EXPECT_TRUE(str_b.Get().empty());
   }
 }
@@ -56,80 +41,12 @@ TEST(Core, String_Construct_Moved_StdString) {
   if (auto lib_rc = ncc::CoreLibrary.GetRC()) {
     auto input_str = std::string(StringContent);
     ncc::string str_a(std::move(input_str));
-    EXPECT_NE(str_a.GetId(), 0);
     EXPECT_EQ(str_a.Get(), std::string_view(StringContent));
 
     input_str.clear();
     ncc::string str_b = std::move(input_str);
-    EXPECT_EQ(str_b.GetId(), 0);
     EXPECT_TRUE(str_b.Get().empty());
   }
-}
-
-TEST(Core, String_LHS_Invalid_Compare) {
-  if (auto lib_rc = ncc::CoreLibrary.GetRC()) {
-    ncc::string a = ncc::TestAttorney::FromID(3333);
-    ncc::string b = StringContent;
-
-    EXPECT_NE(a, ncc::string(StringContent));
-    EXPECT_NE(a, ncc::string());
-    EXPECT_NE(a, a);
-
-    EXPECT_NE(a, b);
-    EXPECT_FALSE(a < b);
-    EXPECT_FALSE(a <= b);
-    EXPECT_FALSE(a > b);
-    EXPECT_FALSE(a >= b);
-  }
-}
-
-TEST(Core, String_RHS_Invalid_Compare) {
-  if (auto lib_rc = ncc::CoreLibrary.GetRC()) {
-    ncc::string a = StringContent;
-    ncc::string b = ncc::TestAttorney::FromID(5555);
-
-    EXPECT_NE(b, ncc::string(StringContent));
-    EXPECT_NE(b, ncc::string());
-    EXPECT_NE(b, b);
-
-    EXPECT_NE(a, b);
-    EXPECT_FALSE(a < b);
-    EXPECT_FALSE(a <= b);
-    EXPECT_FALSE(a > b);
-    EXPECT_FALSE(a >= b);
-  }
-}
-
-TEST(Core, String_Invalid_Compare) {
-  if (auto lib_rc = ncc::CoreLibrary.GetRC()) {
-    ncc::string a = ncc::TestAttorney::FromID(3333);
-    ncc::string b = ncc::TestAttorney::FromID(5555);
-
-    EXPECT_NE(a, ncc::string(StringContent));
-    EXPECT_NE(a, ncc::string());
-    EXPECT_NE(a, a);
-
-    EXPECT_NE(b, ncc::string(StringContent));
-    EXPECT_NE(b, ncc::string());
-    EXPECT_NE(b, b);
-
-    EXPECT_NE(a, b);
-    EXPECT_FALSE(a < b);
-    EXPECT_FALSE(a <= b);
-    EXPECT_FALSE(a > b);
-    EXPECT_FALSE(a >= b);
-  }
-}
-
-TEST(Core, String_Use_After_Library_Deinit) {
-  ncc::string str;
-
-  if (auto lib_rc = ncc::CoreLibrary.GetRC()) {
-    str = StringContent;
-  } /* The content of ncc::string is now undefined.
-       Usage of the original object is still valid. */
-
-  EXPECT_NE(str.Get(), std::string_view(StringContent));
 }
 
 TEST(Core, String_Eq) {

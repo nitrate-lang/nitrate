@@ -55,7 +55,7 @@ auto Parser::PImpl::RecurseScopeDeps() -> std::optional<ScopeDeps> {
         return dependencies;
       }
 
-      if (auto dependency_name = RecurseName(); !dependency_name.empty()) {
+      if (auto dependency_name = RecurseName(); !dependency_name->empty()) {
         dependencies.push_back(dependency_name);
       } else {
         Log << SyntaxError << Next() << "Expected dependency name";

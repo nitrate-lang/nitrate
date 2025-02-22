@@ -31,12 +31,9 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <cstring>
 #include <mutex>
 #include <nitrate-core/Allocate.hh>
 #include <nitrate-core/Assert.hh>
-#include <nitrate-core/Init.hh>
-#include <nitrate-core/Logger.hh>
 #include <nitrate-core/Macro.hh>
 #include <nitrate-core/SmartLock.hh>
 #include <vector>

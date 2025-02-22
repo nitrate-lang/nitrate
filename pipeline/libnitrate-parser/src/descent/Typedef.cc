@@ -38,7 +38,7 @@ using namespace ncc::lex;
 using namespace ncc::parse;
 
 auto Parser::PImpl::RecurseTypedef() -> FlowPtr<Stmt> {
-  if (auto type_name = RecurseName(); !type_name.empty()) [[likely]] {
+  if (auto type_name = RecurseName(); !type_name->empty()) [[likely]] {
     if (NextIf<OpSet>()) [[likely]] {
       auto the_type = RecurseType();
 

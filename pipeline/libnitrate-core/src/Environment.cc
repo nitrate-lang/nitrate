@@ -58,7 +58,7 @@ auto Environment::Get(string key) -> std::optional<string> {
   if (key == "this.keys") {
     std::stringstream keys;
     for (auto const &[k, _] : m_data) {
-      keys << k.size() << " " << k;
+      keys << k->size() << " " << k;
     }
 
     return keys.str();

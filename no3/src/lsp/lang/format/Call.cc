@@ -47,7 +47,7 @@ void CambrianFormatter::Visit(FlowPtr<Call> n) {
 
   bool any_named = std::any_of(n->GetArgs().begin(), n->GetArgs().end(), [](const CallArg& arg) {
     auto name = arg.first;
-    return std::isdigit(name.at(0)) == 0;
+    return std::isdigit(name->at(0)) == 0;
   });
 
   bool any_lambdas =
@@ -65,7 +65,7 @@ void CambrianFormatter::Visit(FlowPtr<Call> n) {
       auto name = std::get<0>(arg);
       auto value = std::get<1>(arg);
 
-      if (std::isdigit(name.at(0)) == 0) {
+      if (std::isdigit(name->at(0)) == 0) {
         m_line << name << ": ";
       }
 
@@ -90,7 +90,7 @@ void CambrianFormatter::Visit(FlowPtr<Call> n) {
           auto name = std::get<0>(arg);
           auto value = std::get<1>(arg);
 
-          if (!std::isdigit(name.at(0))) {
+          if (!std::isdigit(name->at(0))) {
             m_line << name << ": ";
           }
 
@@ -112,7 +112,7 @@ void CambrianFormatter::Visit(FlowPtr<TemplateCall> n) {
       [&](auto arg, size_t) {
         auto name = std::get<0>(arg);
         auto value = std::get<1>(arg);
-        bool should_print_name = !std::isdigit(name.at(0));
+        bool should_print_name = !std::isdigit(name->at(0));
 
         if (should_print_name) {
           m_line << name << ": ";
@@ -130,7 +130,7 @@ void CambrianFormatter::Visit(FlowPtr<TemplateCall> n) {
         auto name = std::get<0>(arg);
         auto value = std::get<1>(arg);
 
-        if (!std::isdigit(name.at(0))) {
+        if (!std::isdigit(name->at(0))) {
           m_line << name << ": ";
         }
 

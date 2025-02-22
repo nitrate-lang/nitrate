@@ -272,7 +272,7 @@ auto Sequencer::HandleImportDirective(Sequencer &self) -> bool {
 auto Sequencer::HandleMacroBlock(Sequencer &self, Token macro) -> bool {
   qcore_assert(macro.GetKind() == MacB);
 
-  if (auto result_data = ExecuteLua(self, macro.GetString().c_str())) [[likely]] {
+  if (auto result_data = ExecuteLua(self, macro.GetString()->c_str())) [[likely]] {
     SequenceSource(self, result_data.value());
     return true;
   }

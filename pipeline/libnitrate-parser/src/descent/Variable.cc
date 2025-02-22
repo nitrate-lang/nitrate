@@ -88,7 +88,7 @@ auto Parser::PImpl::RecurseVariableValue() -> NullableFlowPtr<Expr> {
 
 auto Parser::PImpl::RecurseVariableInstance(VariableType decl_type) -> NullableFlowPtr<Stmt> {
   if (auto symbol_attributes_opt = RecurseVariableAttributes()) {
-    if (auto variable_name = RecurseName(); !variable_name.empty()) {
+    if (auto variable_name = RecurseName(); !variable_name->empty()) {
       auto variable_type = RecurseVariableType();
       auto variable_initial = RecurseVariableValue();
 
