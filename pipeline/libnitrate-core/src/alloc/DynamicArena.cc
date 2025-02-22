@@ -81,10 +81,6 @@ public:
     uint8_t *start;
     Segment *b;
 
-    if (alignment == 0) [[unlikely]] {
-      return nullptr;
-    }
-
     SmartLock lock(m_mutex);
 
     /* If the requested size plus the alignment is greater than the primary
@@ -158,8 +154,16 @@ public:
 
 DynamicArena::DynamicArena() { m_pimpl = new PImpl(); }
 DynamicArena::~DynamicArena() { delete m_pimpl; }
-auto DynamicArena::Allocate(size_t size, size_t alignment) -> void * { return m_pimpl->Allocate(size, alignment); }
-void DynamicArena::Free(void *) {}
 auto DynamicArena::GetSpaceUsed() const -> size_t { return m_pimpl->GetSpaceUsed(); }
 auto DynamicArena::GetSpaceManaged() const -> size_t { return m_pimpl->GetSpaceManaged(); }
 void DynamicArena::Reset() { m_pimpl->Reset(); }
+
+void *DynamicArena::do_allocate(size_t bytes, size_t alignment) { return m_pimpl->Allocate(bytes, alignment); }
+
+void DynamicArena::do_deallocate(void *p, size_t bytes, size_t alignment) {
+  (void)p;
+  (void)bytes;
+  (void)alignment;
+}
+
+bool DynamicArena::do_is_equal(const memory_resource &other) const noexcept { return this == &other; }

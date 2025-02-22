@@ -34,11 +34,13 @@
 #include <google/protobuf/stubs/common.h>
 
 #include <core/SyntaxDiagnostics.hh>
+#include <memory>
 #include <nitrate-core/Init.hh>
 #include <nitrate-core/Logger.hh>
 #include <nitrate-core/Macro.hh>
 #include <nitrate-lexer/Init.hh>
 #include <nitrate-parser/ASTBase.hh>
+#include <nitrate-parser/ASTData.hh>
 #include <nitrate-parser/Init.hh>
 
 using namespace ncc::parse;
@@ -71,6 +73,7 @@ NCC_EXPORT void ParseLibrarySetup::Deinit() {
   Log << Runtime << Debug << "libnitrate-parser: deinitializing...";
 
   ExtensionDataStore.Reset();
+  parse::MainAllocator = std::make_unique<DynamicArena>();
 
   ncc::lex::LexerLibrary.DeinitRC();
   ncc::CoreLibrary.DeinitRC();
