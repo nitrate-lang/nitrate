@@ -42,6 +42,7 @@
 #include <nitrate-lexer/Enums.hh>
 #include <nitrate-parser/ASTFwd.hh>
 #include <source_location>
+#include <variant>
 
 namespace ncc::parse {
   class ASTFactory final {
@@ -140,21 +141,21 @@ namespace ncc::parse {
 
     /**
      * @brief Construct a new float expression object
-     * @param value The value of the float expression
+     * @param x The value of the float expression
      * @return FlowPtr<Float> A pointer to the newly created float expression object
      * @note This function is thread-safe
      */
-    [[gnu::pure, nodiscard]] auto CreateFloat(double value,
+    [[gnu::pure, nodiscard]] auto CreateFloat(double x,
                                               SourceLocation dbgsrc = SourceLocation::current()) -> FlowPtr<Float>;
 
     /**
      * @brief Construct a new float expression object
-     * @param value The value of the float expression
+     * @param x The value of the float expression
      * @return FlowPtr<Float> A pointer to the newly created float expression object, or std::nullopt if the value is
      * not a valid float
      * @note This function is thread-safe
      */
-    [[gnu::pure, nodiscard]] auto CreateFloat(string value, SourceLocation dbgsrc = SourceLocation::current())
+    [[gnu::pure, nodiscard]] auto CreateFloat(string x, SourceLocation dbgsrc = SourceLocation::current())
         -> std::optional<FlowPtr<Float>>;
 
     /**
@@ -168,16 +169,16 @@ namespace ncc::parse {
 
     /**
      * @brief Construct a new string expression object
-     * @param contents The value of the string expression
+     * @param x The value of the string expression
      * @return FlowPtr<String> A pointer to the newly created string expression object
      * @note This function is thread-safe
      */
     template <typename CharType>
-    [[gnu::pure, nodiscard]] auto CreateString(std::span<CharType> contents,
+    [[gnu::pure, nodiscard]] auto CreateString(std::span<CharType> x,
                                                SourceLocation dbgsrc = SourceLocation::current()) -> FlowPtr<String> {
       static_assert(sizeof(CharType) == 1, "CharType must be 1 byte in size");
 
-      return CreateString(string(contents.begin(), contents.end()), dbgsrc);
+      return CreateString(string(x.begin(), x.end()), dbgsrc);
     }
 
     /**
@@ -213,8 +214,38 @@ namespace ncc::parse {
     [[gnu::pure, nodiscard]] auto CreateUndefined(SourceLocation dbgsrc = SourceLocation::current())
         -> FlowPtr<Undefined>;
 
-    /// TODO: Add support for creating a new call expression object
-    [[gnu::pure, nodiscard]] auto CreateCall(SourceLocation dbgsrc = SourceLocation::current()) -> FlowPtr<Call>;
+    /** @brief Construct a new call expression object
+     * @param callee The callee of the call expression
+     * @param named_args The named arguments of the call expression. Positional arguments indexes start at 0, while
+     * named arguments are indexed by their name.
+     * @return FlowPtr<Call> A pointer to the newly created call expression object
+     *
+     * @note Checking is done to ensure that the specified arguments do not conflict.
+     * @note This function is thread-safe
+     */
+    [[gnu::pure, nodiscard]] auto CreateCall(
+        FlowPtr<Expr> callee, const std::unordered_map<std::variant<string, size_t>, FlowPtr<Expr>>& named_args,
+        SourceLocation dbgsrc = SourceLocation::current()) -> std::optional<FlowPtr<Call>>;
+
+    /**
+     * @brief Construct a new call expression object
+     * @param pos_args The positional arguments of the call expression
+     * @param callee The callee of the call expression
+     * @return FlowPtr<Call> A pointer to the newly created call expression object
+     * @note This function is thread-safe
+     */
+    [[gnu::pure, nodiscard]] auto CreateCall(const std::vector<FlowPtr<Expr>>& pos_args, FlowPtr<Expr> callee,
+                                             SourceLocation dbgsrc = SourceLocation::current()) -> FlowPtr<Call>;
+
+    /**
+     * @brief Construct a new call expression object
+     * @param pos_args The positional arguments of the call expression
+     * @param callee The callee of the call expression
+     * @return FlowPtr<Call> A pointer to the newly created call expression object
+     * @note This function is thread-safe
+     */
+    [[gnu::pure, nodiscard]] auto CreateCall(std::span<FlowPtr<Expr>> pos_args, FlowPtr<Expr> callee,
+                                             SourceLocation dbgsrc = SourceLocation::current()) -> FlowPtr<Call>;
 
     /**
      * @brief Construct a new list expression object
@@ -265,8 +296,34 @@ namespace ncc::parse {
     [[gnu::pure, nodiscard]] auto CreateSlice(FlowPtr<Expr> base, FlowPtr<Expr> start, FlowPtr<Expr> end,
                                               SourceLocation dbgsrc = SourceLocation::current()) -> FlowPtr<Slice>;
 
-    /// TODO: Add support for creating a new fstring expression object
-    [[gnu::pure, nodiscard]] auto CreateFString(SourceLocation dbgsrc = SourceLocation::current()) -> FlowPtr<FString>;
+    /**
+     * @brief Construct a new format string expression object
+     * @param x Plaintext string context
+     * @return FlowPtr<FString> A pointer to the newly created format string expression object
+     * @note This function is thread-safe
+     */
+    [[gnu::pure, nodiscard]] auto CreateFormatString(string x, SourceLocation dbgsrc = SourceLocation::current())
+        -> FlowPtr<FString>;
+
+    /**
+     * @brief Construct a new format string expression object
+     * @param parts The parts of the format string expression
+     * @return FlowPtr<FString> A pointer to the newly created format string expression object
+     * @note This function is thread-safe
+     */
+    [[gnu::pure, nodiscard]] auto CreateFormatString(std::span<std::variant<FlowPtr<Expr>, string>> parts,
+                                                     SourceLocation dbgsrc = SourceLocation::current())
+        -> FlowPtr<FString>;
+
+    /**
+     * @brief Construct a new format string expression object
+     * @param parts The parts of the format string expression
+     * @return FlowPtr<FString> A pointer to the newly created format string expression object
+     * @note This function is thread-safe
+     */
+    [[gnu::pure, nodiscard]] auto CreateFormatString(const std::vector<std::variant<FlowPtr<Expr>, string>>& parts,
+                                                     SourceLocation dbgsrc = SourceLocation::current())
+        -> FlowPtr<FString>;
 
     /**
      * @brief Construct a new identifier expression object
@@ -723,9 +780,23 @@ namespace ncc::parse {
       return ASTFactory(m).CreateUndefined(dbgsrc);
     }
 
-    [[gnu::pure, nodiscard]] static inline auto CreateCall(IMemory& m,
+    [[gnu::pure, nodiscard]] static inline auto CreateCall(
+        IMemory& m, FlowPtr<Expr> callee,
+        const std::unordered_map<std::variant<string, size_t>, FlowPtr<Expr>>& named_args,
+        SourceLocation dbgsrc = SourceLocation::current()) {
+      return ASTFactory(m).CreateCall(std::move(callee), named_args, dbgsrc);
+    }
+
+    [[gnu::pure, nodiscard]] static inline auto CreateCall(IMemory& m, const std::vector<FlowPtr<Expr>>& pos_args,
+                                                           FlowPtr<Expr> callee,
                                                            SourceLocation dbgsrc = SourceLocation::current()) {
-      return ASTFactory(m).CreateCall(dbgsrc);
+      return ASTFactory(m).CreateCall(pos_args, std::move(callee), dbgsrc);
+    }
+
+    [[gnu::pure, nodiscard]] static inline auto CreateCall(IMemory& m, std::span<FlowPtr<Expr>> pos_args,
+                                                           FlowPtr<Expr> callee,
+                                                           SourceLocation dbgsrc = SourceLocation::current()) {
+      return ASTFactory(m).CreateCall(pos_args, std::move(callee), dbgsrc);
     }
 
     [[gnu::pure, nodiscard]] static inline auto CreateList(IMemory& m, std::span<FlowPtr<Expr>> ele,
@@ -754,9 +825,21 @@ namespace ncc::parse {
       return ASTFactory(m).CreateSlice(std::move(base), std::move(start), std::move(end), dbgsrc);
     }
 
-    [[gnu::pure, nodiscard]] static inline auto CreateFString(IMemory& m,
-                                                              SourceLocation dbgsrc = SourceLocation::current()) {
-      return ASTFactory(m).CreateFString(dbgsrc);
+    [[gnu::pure, nodiscard]] static inline auto CreateFormatString(IMemory& m, string x,
+                                                                   SourceLocation dbgsrc = SourceLocation::current()) {
+      return ASTFactory(m).CreateFormatString(x, dbgsrc);
+    }
+
+    [[gnu::pure, nodiscard]] static inline auto CreateFormatString(IMemory& m,
+                                                                   std::span<std::variant<FlowPtr<Expr>, string>> parts,
+                                                                   SourceLocation dbgsrc = SourceLocation::current()) {
+      return ASTFactory(m).CreateFormatString(parts, dbgsrc);
+    }
+
+    [[gnu::pure, nodiscard]] static inline auto CreateFormatString(
+        IMemory& m, const std::vector<std::variant<FlowPtr<Expr>, string>>& parts,
+        SourceLocation dbgsrc = SourceLocation::current()) {
+      return ASTFactory(m).CreateFormatString(parts, dbgsrc);
     }
 
     [[gnu::pure, nodiscard]] static inline auto CreateIdentifier(IMemory& m, string name,
@@ -997,3 +1080,13 @@ namespace ncc::parse {
 }  // namespace ncc::parse
 
 #endif
+
+#include <nitrate-core/Allocate.hh>
+#include <nitrate-parser/ASTExpr.hh>
+
+void Example() {
+  auto m = ncc::DynamicArena();
+  auto b = ncc::parse::ASTFactory(m);
+
+  auto f = b.CreateFormatString({b.CreateString(""), std::string(""), b.CreateInteger(0)});
+}
