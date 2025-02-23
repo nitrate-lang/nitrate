@@ -40,12 +40,13 @@
 #include <nitrate-core/NullableFlowPtr.hh>
 #include <nitrate-core/String.hh>
 #include <nitrate-lexer/Enums.hh>
+#include <nitrate-parser/AST.hh>
 #include <nitrate-parser/ASTFwd.hh>
 #include <source_location>
 #include <variant>
 
 namespace ncc::parse {
-  class ASTFactory final {
+  class NCC_EXPORT ASTFactory final {
     using SourceLocation = std::source_location;
 
     IMemory& m_pool;
@@ -54,15 +55,8 @@ namespace ncc::parse {
     constexpr ASTFactory(IMemory& pool) : m_pool(pool) {}
     constexpr ~ASTFactory() = default;
 
-    ///=========================================================================
-    /// COMMON BASE CLASSES
-
-    /**
-     * @brief Construct a new node object
-     * @return FlowPtr<Base> A pointer to the newly created base object
-     * @note This function is thread-safe
-     */
-    [[gnu::pure, nodiscard]] auto CreateBase(SourceLocation dbgsrc = SourceLocation::current()) -> FlowPtr<Base>;
+    [[gnu::pure, nodiscard]] auto CreateMockInstance(
+        ASTNodeKind kind, SourceLocation dbgsrc = SourceLocation::current()) -> FlowPtr<Expr>;
 
     ///=========================================================================
     /// EXPRESSIONS
@@ -224,7 +218,7 @@ namespace ncc::parse {
      * @note This function is thread-safe
      */
     [[gnu::pure, nodiscard]] auto CreateCall(
-        FlowPtr<Expr> callee, const std::unordered_map<std::variant<string, size_t>, FlowPtr<Expr>>& named_args,
+        FlowPtr<Expr> callee, const std::unordered_map<std::variant<string, size_t>, FlowPtr<Expr>>& named_args = {},
         SourceLocation dbgsrc = SourceLocation::current()) -> std::optional<FlowPtr<Call>>;
 
     /**
@@ -253,7 +247,7 @@ namespace ncc::parse {
      * @return FlowPtr<List> A pointer to the newly created list expression object
      * @note This function is thread-safe
      */
-    [[gnu::pure, nodiscard]] auto CreateList(std::span<FlowPtr<Expr>> ele,
+    [[gnu::pure, nodiscard]] auto CreateList(std::span<FlowPtr<Expr>> ele = {},
                                              SourceLocation dbgsrc = SourceLocation::current()) -> FlowPtr<List>;
 
     /**
@@ -272,8 +266,8 @@ namespace ncc::parse {
      * @return FlowPtr<Assoc> A pointer to the newly created association expression object
      * @note This function is thread-safe
      */
-    [[gnu::pure, nodiscard]] auto CreateAssoc(FlowPtr<Expr> key, FlowPtr<Expr> x,
-                                              SourceLocation dbgsrc = SourceLocation::current()) -> FlowPtr<Assoc>;
+    [[gnu::pure, nodiscard]] auto CreateAssociation(
+        FlowPtr<Expr> key, FlowPtr<Expr> x, SourceLocation dbgsrc = SourceLocation::current()) -> FlowPtr<Assoc>;
 
     /**
      * @brief Construct a new index expression object
@@ -311,7 +305,7 @@ namespace ncc::parse {
      * @return FlowPtr<FString> A pointer to the newly created format string expression object
      * @note This function is thread-safe
      */
-    [[gnu::pure, nodiscard]] auto CreateFormatString(std::span<std::variant<FlowPtr<Expr>, string>> parts,
+    [[gnu::pure, nodiscard]] auto CreateFormatString(std::span<std::variant<FlowPtr<Expr>, string>> parts = {},
                                                      SourceLocation dbgsrc = SourceLocation::current())
         -> FlowPtr<FString>;
 
@@ -341,7 +335,7 @@ namespace ncc::parse {
      * @note This function is thread-safe
      */
     [[gnu::pure, nodiscard]] auto CreateSequence(
-        std::span<FlowPtr<Expr>> ele, SourceLocation dbgsrc = SourceLocation::current()) -> FlowPtr<Sequence>;
+        std::span<FlowPtr<Expr>> ele = {}, SourceLocation dbgsrc = SourceLocation::current()) -> FlowPtr<Sequence>;
 
     /**
      * @brief Construct a new sequence expression object
@@ -351,10 +345,6 @@ namespace ncc::parse {
      */
     [[gnu::pure, nodiscard]] auto CreateSequence(
         const std::vector<FlowPtr<Expr>>& ele, SourceLocation dbgsrc = SourceLocation::current()) -> FlowPtr<Sequence>;
-
-    /// TODO: Add support for creating a new lambda expression object
-    [[gnu::pure, nodiscard]] auto CreateLambdaExpr(SourceLocation dbgsrc = SourceLocation::current())
-        -> FlowPtr<LambdaExpr>;
 
     /// TODO: Add support for creating a new template expression object
     [[gnu::pure, nodiscard]] auto CreateTemplateCall(SourceLocation dbgsrc = SourceLocation::current())
@@ -373,10 +363,11 @@ namespace ncc::parse {
      * @return FlowPtr<RefTy> A pointer to the newly created reference type object
      * @note This function is thread-safe
      */
-    [[gnu::pure, nodiscard]] auto CreateRefTy(FlowPtr<Type> to, bool volatil = false,
-                                              NullableFlowPtr<Expr> bits = nullptr, NullableFlowPtr<Expr> min = nullptr,
-                                              NullableFlowPtr<Expr> max = nullptr,
-                                              SourceLocation dbgsrc = SourceLocation::current()) -> FlowPtr<RefTy>;
+    [[gnu::pure, nodiscard]] auto CreateReference(FlowPtr<Type> to, bool volatil = false,
+                                                  NullableFlowPtr<Expr> bits = nullptr,
+                                                  NullableFlowPtr<Expr> min = nullptr,
+                                                  NullableFlowPtr<Expr> max = nullptr,
+                                                  SourceLocation dbgsrc = SourceLocation::current()) -> FlowPtr<RefTy>;
 
     /**
      * @brief Construct a new 1-bit unsigned integer type object
@@ -566,9 +557,9 @@ namespace ncc::parse {
      * @return FlowPtr<VoidTy> A pointer to the newly created void type object
      * @note This function is thread-safe
      */
-    [[gnu::pure, nodiscard]] auto CreateVoidTy(NullableFlowPtr<Expr> bits = nullptr,
-                                               NullableFlowPtr<Expr> min = nullptr, NullableFlowPtr<Expr> max = nullptr,
-                                               SourceLocation dbgsrc = SourceLocation::current()) -> FlowPtr<VoidTy>;
+    [[gnu::pure, nodiscard]] auto CreateVoid(NullableFlowPtr<Expr> bits = nullptr, NullableFlowPtr<Expr> min = nullptr,
+                                             NullableFlowPtr<Expr> max = nullptr,
+                                             SourceLocation dbgsrc = SourceLocation::current()) -> FlowPtr<VoidTy>;
 
     /**
      * @brief Construct a new pointer type object
@@ -580,10 +571,11 @@ namespace ncc::parse {
      * @return FlowPtr<PtrTy> A pointer to the newly created pointer type object
      * @note This function is thread-safe
      */
-    [[gnu::pure, nodiscard]] auto CreatePtrTy(FlowPtr<Type> to, bool volatil = false,
-                                              NullableFlowPtr<Expr> bits = nullptr, NullableFlowPtr<Expr> min = nullptr,
-                                              NullableFlowPtr<Expr> max = nullptr,
-                                              SourceLocation dbgsrc = SourceLocation::current()) -> FlowPtr<PtrTy>;
+    [[gnu::pure, nodiscard]] auto CreatePointer(FlowPtr<Type> to, bool volatil = false,
+                                                NullableFlowPtr<Expr> bits = nullptr,
+                                                NullableFlowPtr<Expr> min = nullptr,
+                                                NullableFlowPtr<Expr> max = nullptr,
+                                                SourceLocation dbgsrc = SourceLocation::current()) -> FlowPtr<PtrTy>;
 
     /**
      * @brief Construct a new opaque type object
@@ -594,9 +586,9 @@ namespace ncc::parse {
      * @return FlowPtr<OpaqueTy> A pointer to the newly created opaque type object
      * @note This function is thread-safe
      */
-    [[gnu::pure, nodiscard]] auto CreateOpaqueTy(
-        string name, NullableFlowPtr<Expr> bits = nullptr, NullableFlowPtr<Expr> min = nullptr,
-        NullableFlowPtr<Expr> max = nullptr, SourceLocation dbgsrc = SourceLocation::current()) -> FlowPtr<OpaqueTy>;
+    [[gnu::pure, nodiscard]] auto CreateOpaque(string name, NullableFlowPtr<Expr> bits = nullptr,
+                                               NullableFlowPtr<Expr> min = nullptr, NullableFlowPtr<Expr> max = nullptr,
+                                               SourceLocation dbgsrc = SourceLocation::current()) -> FlowPtr<OpaqueTy>;
 
     /**
      * @brief Construct a new array type object
@@ -608,11 +600,10 @@ namespace ncc::parse {
      * @return FlowPtr<ArrayTy> A pointer to the newly created array type object
      * @note This function is thread-safe
      */
-    [[gnu::pure, nodiscard]] auto CreateArrayTy(FlowPtr<Type> element_type, FlowPtr<Expr> element_count,
-                                                NullableFlowPtr<Expr> bits = nullptr,
-                                                NullableFlowPtr<Expr> min = nullptr,
-                                                NullableFlowPtr<Expr> max = nullptr,
-                                                SourceLocation dbgsrc = SourceLocation::current()) -> FlowPtr<ArrayTy>;
+    [[gnu::pure, nodiscard]] auto CreateArray(FlowPtr<Type> element_type, FlowPtr<Expr> element_count,
+                                              NullableFlowPtr<Expr> bits = nullptr, NullableFlowPtr<Expr> min = nullptr,
+                                              NullableFlowPtr<Expr> max = nullptr,
+                                              SourceLocation dbgsrc = SourceLocation::current()) -> FlowPtr<ArrayTy>;
 
     /**
      * @brief Construct a new tuple type object
@@ -623,10 +614,9 @@ namespace ncc::parse {
      * @return FlowPtr<TupleTy> A pointer to the newly created tuple type object
      * @note This function is thread-safe
      */
-    [[gnu::pure, nodiscard]] auto CreateTupleTy(std::span<FlowPtr<Type>> ele, NullableFlowPtr<Expr> bits = nullptr,
-                                                NullableFlowPtr<Expr> min = nullptr,
-                                                NullableFlowPtr<Expr> max = nullptr,
-                                                SourceLocation dbgsrc = SourceLocation::current()) -> FlowPtr<TupleTy>;
+    [[gnu::pure, nodiscard]] auto CreateTuple(std::span<FlowPtr<Type>> ele = {}, NullableFlowPtr<Expr> bits = nullptr,
+                                              NullableFlowPtr<Expr> min = nullptr, NullableFlowPtr<Expr> max = nullptr,
+                                              SourceLocation dbgsrc = SourceLocation::current()) -> FlowPtr<TupleTy>;
 
     /**
      * @brief Construct a new tuple type object
@@ -637,14 +627,13 @@ namespace ncc::parse {
      * @return FlowPtr<TupleTy> A pointer to the newly created tuple type object
      * @note This function is thread-safe
      */
-    [[gnu::pure, nodiscard]] auto CreateTupleTy(const std::vector<FlowPtr<Type>>& ele,
-                                                NullableFlowPtr<Expr> bits = nullptr,
-                                                NullableFlowPtr<Expr> min = nullptr,
-                                                NullableFlowPtr<Expr> max = nullptr,
-                                                SourceLocation dbgsrc = SourceLocation::current()) -> FlowPtr<TupleTy>;
+    [[gnu::pure, nodiscard]] auto CreateTuple(const std::vector<FlowPtr<Type>>& ele,
+                                              NullableFlowPtr<Expr> bits = nullptr, NullableFlowPtr<Expr> min = nullptr,
+                                              NullableFlowPtr<Expr> max = nullptr,
+                                              SourceLocation dbgsrc = SourceLocation::current()) -> FlowPtr<TupleTy>;
 
     /// TODO: Add support for creating a new function type object
-    [[gnu::pure, nodiscard]] auto CreateFuncTy(SourceLocation dbgsrc = SourceLocation::current()) -> FlowPtr<FuncTy>;
+    [[gnu::pure, nodiscard]] auto CreateFunc(SourceLocation dbgsrc = SourceLocation::current()) -> FlowPtr<FuncTy>;
 
     /**
      * @brief Construct a new unresolved named type object
@@ -655,10 +644,9 @@ namespace ncc::parse {
      * @return FlowPtr<NamedTy> A pointer to the newly created named type object
      * @note This function is thread-safe
      */
-    [[gnu::pure, nodiscard]] auto CreateNamedTy(string name, NullableFlowPtr<Expr> bits = nullptr,
-                                                NullableFlowPtr<Expr> min = nullptr,
-                                                NullableFlowPtr<Expr> max = nullptr,
-                                                SourceLocation dbgsrc = SourceLocation::current()) -> FlowPtr<NamedTy>;
+    [[gnu::pure, nodiscard]] auto CreateNamed(string name, NullableFlowPtr<Expr> bits = nullptr,
+                                              NullableFlowPtr<Expr> min = nullptr, NullableFlowPtr<Expr> max = nullptr,
+                                              SourceLocation dbgsrc = SourceLocation::current()) -> FlowPtr<NamedTy>;
 
     /**
      * @brief Construct a new inferred type object
@@ -668,10 +656,9 @@ namespace ncc::parse {
      * @return FlowPtr<InferTy> A pointer to the newly created inferred type object
      * @note This function is thread-safe
      */
-    [[gnu::pure, nodiscard]] auto CreateInferTy(NullableFlowPtr<Expr> bits = nullptr,
-                                                NullableFlowPtr<Expr> min = nullptr,
-                                                NullableFlowPtr<Expr> max = nullptr,
-                                                SourceLocation dbgsrc = SourceLocation::current()) -> FlowPtr<InferTy>;
+    [[gnu::pure, nodiscard]] auto CreateUnknownType(
+        NullableFlowPtr<Expr> bits = nullptr, NullableFlowPtr<Expr> min = nullptr, NullableFlowPtr<Expr> max = nullptr,
+        SourceLocation dbgsrc = SourceLocation::current()) -> FlowPtr<InferTy>;
 
     /// TODO: Add support for creating a new template type object
     [[gnu::pure, nodiscard]] auto CreateTemplateType(SourceLocation dbgsrc = SourceLocation::current())
@@ -702,9 +689,8 @@ namespace ncc::parse {
     ///=========================================================================
     /// STATIC FACTORY FUNCTIONS
 
-    [[gnu::pure, nodiscard]] static inline auto CreateBase(IMemory& m,
-                                                           SourceLocation dbgsrc = SourceLocation::current()) {
-      return ASTFactory(m).CreateBase(dbgsrc);
+    [[gnu::pure, nodiscard]] static inline auto CreateMockInstance(IMemory& m, ASTNodeKind kind) -> FlowPtr<Expr> {
+      return ASTFactory(m).CreateMockInstance(kind);
     }
 
     [[gnu::pure, nodiscard]] static inline auto CreateBinary(IMemory& m, FlowPtr<Expr> lhs, lex::Operator op,
@@ -781,7 +767,7 @@ namespace ncc::parse {
 
     [[gnu::pure, nodiscard]] static inline auto CreateCall(
         IMemory& m, FlowPtr<Expr> callee,
-        const std::unordered_map<std::variant<string, size_t>, FlowPtr<Expr>>& named_args,
+        const std::unordered_map<std::variant<string, size_t>, FlowPtr<Expr>>& named_args = {},
         SourceLocation dbgsrc = SourceLocation::current()) {
       return ASTFactory(m).CreateCall(std::move(callee), named_args, dbgsrc);
     }
@@ -798,7 +784,7 @@ namespace ncc::parse {
       return ASTFactory(m).CreateCall(pos_args, std::move(callee), dbgsrc);
     }
 
-    [[gnu::pure, nodiscard]] static inline auto CreateList(IMemory& m, std::span<FlowPtr<Expr>> ele,
+    [[gnu::pure, nodiscard]] static inline auto CreateList(IMemory& m, std::span<FlowPtr<Expr>> ele = {},
                                                            SourceLocation dbgsrc = SourceLocation::current()) {
       return ASTFactory(m).CreateList(ele, dbgsrc);
     }
@@ -808,9 +794,9 @@ namespace ncc::parse {
       return ASTFactory(m).CreateList(ele, dbgsrc);
     }
 
-    [[gnu::pure, nodiscard]] static inline auto CreateAssoc(IMemory& m, FlowPtr<Expr> key, FlowPtr<Expr> x,
-                                                            SourceLocation dbgsrc = SourceLocation::current()) {
-      return ASTFactory(m).CreateAssoc(std::move(key), std::move(x), dbgsrc);
+    [[gnu::pure, nodiscard]] static inline auto CreateAssociation(IMemory& m, FlowPtr<Expr> key, FlowPtr<Expr> x,
+                                                                  SourceLocation dbgsrc = SourceLocation::current()) {
+      return ASTFactory(m).CreateAssociation(std::move(key), std::move(x), dbgsrc);
     }
 
     [[gnu::pure, nodiscard]] static inline auto CreateIndex(IMemory& m, FlowPtr<Expr> base, FlowPtr<Expr> index,
@@ -829,9 +815,9 @@ namespace ncc::parse {
       return ASTFactory(m).CreateFormatString(x, dbgsrc);
     }
 
-    [[gnu::pure, nodiscard]] static inline auto CreateFormatString(IMemory& m,
-                                                                   std::span<std::variant<FlowPtr<Expr>, string>> parts,
-                                                                   SourceLocation dbgsrc = SourceLocation::current()) {
+    [[gnu::pure, nodiscard]] static inline auto CreateFormatString(
+        IMemory& m, std::span<std::variant<FlowPtr<Expr>, string>> parts = {},
+        SourceLocation dbgsrc = SourceLocation::current()) {
       return ASTFactory(m).CreateFormatString(parts, dbgsrc);
     }
 
@@ -846,7 +832,7 @@ namespace ncc::parse {
       return ASTFactory(m).CreateIdentifier(name, dbgsrc);
     }
 
-    [[gnu::pure, nodiscard]] static inline auto CreateSequence(IMemory& m, std::span<FlowPtr<Expr>> ele,
+    [[gnu::pure, nodiscard]] static inline auto CreateSequence(IMemory& m, std::span<FlowPtr<Expr>> ele = {},
                                                                SourceLocation dbgsrc = SourceLocation::current()) {
       return ASTFactory(m).CreateSequence(ele, dbgsrc);
     }
@@ -856,22 +842,18 @@ namespace ncc::parse {
       return ASTFactory(m).CreateSequence(ele, dbgsrc);
     }
 
-    [[gnu::pure, nodiscard]] static inline auto CreateLambdaExpr(IMemory& m,
-                                                                 SourceLocation dbgsrc = SourceLocation::current()) {
-      return ASTFactory(m).CreateLambdaExpr(dbgsrc);
-    }
-
     [[gnu::pure, nodiscard]] static inline auto CreateTemplateCall(IMemory& m,
                                                                    SourceLocation dbgsrc = SourceLocation::current()) {
       return ASTFactory(m).CreateTemplateCall(dbgsrc);
     }
 
-    [[gnu::pure, nodiscard]] static inline auto CreateRefTy(IMemory& m, FlowPtr<Type> to, bool volatil = false,
-                                                            NullableFlowPtr<Expr> bits = nullptr,
-                                                            NullableFlowPtr<Expr> min = nullptr,
-                                                            NullableFlowPtr<Expr> max = nullptr,
-                                                            SourceLocation dbgsrc = SourceLocation::current()) {
-      return ASTFactory(m).CreateRefTy(std::move(to), volatil, std::move(bits), std::move(min), std::move(max), dbgsrc);
+    [[gnu::pure, nodiscard]] static inline auto CreateReference(IMemory& m, FlowPtr<Type> to, bool volatil = false,
+                                                                NullableFlowPtr<Expr> bits = nullptr,
+                                                                NullableFlowPtr<Expr> min = nullptr,
+                                                                NullableFlowPtr<Expr> max = nullptr,
+                                                                SourceLocation dbgsrc = SourceLocation::current()) {
+      return ASTFactory(m).CreateReference(std::move(to), volatil, std::move(bits), std::move(min), std::move(max),
+                                           dbgsrc);
     }
 
     [[gnu::pure, nodiscard]] static inline auto CreateU1(IMemory& m, NullableFlowPtr<Expr> bits = nullptr,
@@ -979,73 +961,74 @@ namespace ncc::parse {
       return ASTFactory(m).CreateF128(std::move(bits), std::move(min), std::move(max), dbgsrc);
     }
 
-    [[gnu::pure, nodiscard]] static inline auto CreateVoidTy(IMemory& m, NullableFlowPtr<Expr> bits = nullptr,
+    [[gnu::pure, nodiscard]] static inline auto CreateVoid(IMemory& m, NullableFlowPtr<Expr> bits = nullptr,
+                                                           NullableFlowPtr<Expr> min = nullptr,
+                                                           NullableFlowPtr<Expr> max = nullptr,
+                                                           SourceLocation dbgsrc = SourceLocation::current()) {
+      return ASTFactory(m).CreateVoid(std::move(bits), std::move(min), std::move(max), dbgsrc);
+    }
+
+    [[gnu::pure, nodiscard]] static inline auto CreatePointer(IMemory& m, FlowPtr<Type> to, bool volatil = false,
+                                                              NullableFlowPtr<Expr> bits = nullptr,
+                                                              NullableFlowPtr<Expr> min = nullptr,
+                                                              NullableFlowPtr<Expr> max = nullptr,
+                                                              SourceLocation dbgsrc = SourceLocation::current()) {
+      return ASTFactory(m).CreatePointer(std::move(to), volatil, std::move(bits), std::move(min), std::move(max),
+                                         dbgsrc);
+    }
+
+    [[gnu::pure, nodiscard]] static inline auto CreateOpaque(IMemory& m, string name,
+                                                             NullableFlowPtr<Expr> bits = nullptr,
                                                              NullableFlowPtr<Expr> min = nullptr,
                                                              NullableFlowPtr<Expr> max = nullptr,
                                                              SourceLocation dbgsrc = SourceLocation::current()) {
-      return ASTFactory(m).CreateVoidTy(std::move(bits), std::move(min), std::move(max), dbgsrc);
+      return ASTFactory(m).CreateOpaque(name, std::move(bits), std::move(min), std::move(max), dbgsrc);
     }
 
-    [[gnu::pure, nodiscard]] static inline auto CreatePtrTy(IMemory& m, FlowPtr<Type> to, bool volatil = false,
+    [[gnu::pure, nodiscard]] static inline auto CreateArray(IMemory& m, FlowPtr<Type> element_type,
+                                                            FlowPtr<Expr> element_count,
                                                             NullableFlowPtr<Expr> bits = nullptr,
                                                             NullableFlowPtr<Expr> min = nullptr,
                                                             NullableFlowPtr<Expr> max = nullptr,
                                                             SourceLocation dbgsrc = SourceLocation::current()) {
-      return ASTFactory(m).CreatePtrTy(std::move(to), volatil, std::move(bits), std::move(min), std::move(max), dbgsrc);
+      return ASTFactory(m).CreateArray(std::move(element_type), std::move(element_count), std::move(bits),
+                                       std::move(min), std::move(max), dbgsrc);
     }
 
-    [[gnu::pure, nodiscard]] static inline auto CreateOpaqueTy(IMemory& m, string name,
-                                                               NullableFlowPtr<Expr> bits = nullptr,
-                                                               NullableFlowPtr<Expr> min = nullptr,
-                                                               NullableFlowPtr<Expr> max = nullptr,
-                                                               SourceLocation dbgsrc = SourceLocation::current()) {
-      return ASTFactory(m).CreateOpaqueTy(name, std::move(bits), std::move(min), std::move(max), dbgsrc);
+    [[gnu::pure, nodiscard]] static inline auto CreateTuple(IMemory& m, std::span<FlowPtr<Type>> ele = {},
+                                                            NullableFlowPtr<Expr> bits = nullptr,
+                                                            NullableFlowPtr<Expr> min = nullptr,
+                                                            NullableFlowPtr<Expr> max = nullptr,
+                                                            SourceLocation dbgsrc = SourceLocation::current()) {
+      return ASTFactory(m).CreateTuple(ele, std::move(bits), std::move(min), std::move(max), dbgsrc);
     }
 
-    [[gnu::pure, nodiscard]] static inline auto CreateArrayTy(IMemory& m, FlowPtr<Type> element_type,
-                                                              FlowPtr<Expr> element_count,
-                                                              NullableFlowPtr<Expr> bits = nullptr,
-                                                              NullableFlowPtr<Expr> min = nullptr,
-                                                              NullableFlowPtr<Expr> max = nullptr,
-                                                              SourceLocation dbgsrc = SourceLocation::current()) {
-      return ASTFactory(m).CreateArrayTy(std::move(element_type), std::move(element_count), std::move(bits),
-                                         std::move(min), std::move(max), dbgsrc);
+    [[gnu::pure, nodiscard]] static inline auto CreateTuple(IMemory& m, const std::vector<FlowPtr<Type>>& ele,
+                                                            NullableFlowPtr<Expr> bits = nullptr,
+                                                            NullableFlowPtr<Expr> min = nullptr,
+                                                            NullableFlowPtr<Expr> max = nullptr,
+                                                            SourceLocation dbgsrc = SourceLocation::current()) {
+      return ASTFactory(m).CreateTuple(ele, std::move(bits), std::move(min), std::move(max), dbgsrc);
     }
 
-    [[gnu::pure, nodiscard]] static inline auto CreateTupleTy(IMemory& m, std::span<FlowPtr<Type>> ele,
-                                                              NullableFlowPtr<Expr> bits = nullptr,
-                                                              NullableFlowPtr<Expr> min = nullptr,
-                                                              NullableFlowPtr<Expr> max = nullptr,
-                                                              SourceLocation dbgsrc = SourceLocation::current()) {
-      return ASTFactory(m).CreateTupleTy(ele, std::move(bits), std::move(min), std::move(max), dbgsrc);
+    [[gnu::pure, nodiscard]] static inline auto CreateFunc(IMemory& m,
+                                                           SourceLocation dbgsrc = SourceLocation::current()) {
+      return ASTFactory(m).CreateFunc(dbgsrc);
     }
 
-    [[gnu::pure, nodiscard]] static inline auto CreateTupleTy(IMemory& m, const std::vector<FlowPtr<Type>>& ele,
-                                                              NullableFlowPtr<Expr> bits = nullptr,
-                                                              NullableFlowPtr<Expr> min = nullptr,
-                                                              NullableFlowPtr<Expr> max = nullptr,
-                                                              SourceLocation dbgsrc = SourceLocation::current()) {
-      return ASTFactory(m).CreateTupleTy(ele, std::move(bits), std::move(min), std::move(max), dbgsrc);
+    [[gnu::pure, nodiscard]] static inline auto CreateNamed(IMemory& m, string name,
+                                                            NullableFlowPtr<Expr> bits = nullptr,
+                                                            NullableFlowPtr<Expr> min = nullptr,
+                                                            NullableFlowPtr<Expr> max = nullptr,
+                                                            SourceLocation dbgsrc = SourceLocation::current()) {
+      return ASTFactory(m).CreateNamed(name, std::move(bits), std::move(min), std::move(max), dbgsrc);
     }
 
-    [[gnu::pure, nodiscard]] static inline auto CreateFuncTy(IMemory& m,
-                                                             SourceLocation dbgsrc = SourceLocation::current()) {
-      return ASTFactory(m).CreateFuncTy(dbgsrc);
-    }
-
-    [[gnu::pure, nodiscard]] static inline auto CreateNamedTy(IMemory& m, string name,
-                                                              NullableFlowPtr<Expr> bits = nullptr,
-                                                              NullableFlowPtr<Expr> min = nullptr,
-                                                              NullableFlowPtr<Expr> max = nullptr,
-                                                              SourceLocation dbgsrc = SourceLocation::current()) {
-      return ASTFactory(m).CreateNamedTy(name, std::move(bits), std::move(min), std::move(max), dbgsrc);
-    }
-
-    [[gnu::pure, nodiscard]] static inline auto CreateInferTy(IMemory& m, NullableFlowPtr<Expr> bits = nullptr,
-                                                              NullableFlowPtr<Expr> min = nullptr,
-                                                              NullableFlowPtr<Expr> max = nullptr,
-                                                              SourceLocation dbgsrc = SourceLocation::current()) {
-      return ASTFactory(m).CreateInferTy(std::move(bits), std::move(min), std::move(max), dbgsrc);
+    [[gnu::pure, nodiscard]] static inline auto CreateUnknownType(IMemory& m, NullableFlowPtr<Expr> bits = nullptr,
+                                                                  NullableFlowPtr<Expr> min = nullptr,
+                                                                  NullableFlowPtr<Expr> max = nullptr,
+                                                                  SourceLocation dbgsrc = SourceLocation::current()) {
+      return ASTFactory(m).CreateUnknownType(std::move(bits), std::move(min), std::move(max), dbgsrc);
     }
 
     [[gnu::pure, nodiscard]] static inline auto CreateTemplateType(IMemory& m,
@@ -1078,13 +1061,3 @@ namespace ncc::parse {
 }  // namespace ncc::parse
 
 #endif
-
-#include <nitrate-core/Allocate.hh>
-#include <nitrate-parser/ASTExpr.hh>
-
-void Example() {
-  auto m = ncc::DynamicArena();
-  auto b = ncc::parse::ASTFactory(m);
-
-  auto f = b.CreateFormatString({b.CreateString(""), std::string(""), b.CreateInteger(0)});
-}

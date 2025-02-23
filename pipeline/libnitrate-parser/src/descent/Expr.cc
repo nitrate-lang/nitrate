@@ -420,19 +420,17 @@ auto Parser::PImpl::RecurseExprKeyword(lex::Keyword key) -> NullableFlowPtr<Expr
       auto function = RecurseFunction(false);
       function->SetOffset(start_pos);
 
-      auto expr = CreateNode<LambdaExpr>(function)();
-
       if (NextIf<PuncLPar>()) {
         auto args = RecurseCallArguments({Token(Punc, PuncRPar)}, false);
 
         if (NextIf<PuncRPar>()) {
-          e = CreateNode<Call>(expr, args)();
+          e = CreateNode<Call>(function, args)();
         } else {
           Log << SyntaxError << Current() << "Expected ')' to close the function call";
           e = MockExpr(QAST_CALL);
         }
       } else {
-        e = expr;
+        e = function;
       }
 
       break;

@@ -51,7 +51,8 @@ static inline auto GetStrerror() {
   constexpr size_t kMaxMessageSize = 256;
 
   std::array<char, kMaxMessageSize> buf;
-  strerror_r(errno, buf.data(), buf.size());
+  buf.fill(0);
+  strerror_r(errno, buf.data(), buf.size() - 1);
   return std::string(buf.data());
 }
 

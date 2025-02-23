@@ -21,11 +21,6 @@ message UserComment {
   required string comment = 1;
 }
 
-message Base {
-  optional SourceLocationRange location = 1;
-  repeated UserComment comments = 2;
-}
-
 message CallArgument {
   required string name = 1;
   required Expr value = 2;
@@ -371,13 +366,6 @@ enum Operator {
   Op_Ellipsis = 53;    /* '...':        Ellipsis operator */
   Op_Arrow = 54;       /* '=>':         Arrow operator */
   Op_Question = 55;    /* '?':          Question operator */
-}
-
-message LambdaExpr {
-  optional SourceLocationRange location = 1;
-  repeated UserComment comments = 2;
-
-  required Expr function = 4;
 }
 
 message Unary {
@@ -763,8 +751,6 @@ message Struct {
 
 message Type {
   oneof node {
-    Base base = 1;
-
     U1 u1 = 80;
     U8 u8 = 81;
     U16 u16 = 82;
@@ -795,9 +781,6 @@ message Type {
 
 message Expr {
   oneof node {
-    Base base = 1;
-
-    LambdaExpr lambda_expr = 10;
     Unary unary = 11;
     Binary binary = 12;
     PostUnary post_unary = 13;

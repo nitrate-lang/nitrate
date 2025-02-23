@@ -395,7 +395,7 @@ static NCC_FORCE_INLINE std::optional<parse::Purity> FromPurity(SyntaxTree::Func
   }
 }
 
-void AstReader::UnmarshalLocationLocation(const SyntaxTree::SourceLocationRange &in, const FlowPtr<Base> &out) {
+void AstReader::UnmarshalLocationLocation(const SyntaxTree::SourceLocationRange &in, const FlowPtr<Expr> &out) {
   if (!m_rd.has_value()) {
     return;
   }
@@ -426,7 +426,7 @@ void AstReader::UnmarshalLocationLocation(const SyntaxTree::SourceLocationRange 
 
 void AstReader::UnmarshalCodeComment(
     const ::google::protobuf::RepeatedPtrField< ::nitrate::parser::SyntaxTree::UserComment> &in,
-    const FlowPtr<Base> &out) {
+    const FlowPtr<Expr> &out) {
   std::vector<string> comments;
   comments.reserve(in.size());
 
@@ -439,14 +439,6 @@ void AstReader::UnmarshalCodeComment(
 
 auto AstReader::Unmarshal(const SyntaxTree::Expr &in) -> Result<Expr> {
   switch (in.node_case()) {
-    case SyntaxTree::Expr::kBase: {
-      return CreateNode<Expr>(QAST_BASE)();
-    }
-
-    case SyntaxTree::Expr::kLambdaExpr: {
-      return Unmarshal(in.lambda_expr());
-    }
-
     case SyntaxTree::Expr::kUnary: {
       return Unmarshal(in.unary());
     }
@@ -711,10 +703,6 @@ auto AstReader::Unmarshal(const SyntaxTree::Expr &in) -> Result<Expr> {
 
 auto AstReader::Unmarshal(const SyntaxTree::Type &in) -> Result<Type> {
   switch (in.node_case()) {
-    case SyntaxTree::Type::kBase: {
-      return CreateNode<Type>(QAST_BASE)();
-    }
-
     case SyntaxTree::Type::kNamed: {
       return Unmarshal(in.named());
     }
@@ -819,28 +807,6 @@ auto AstReader::Unmarshal(const SyntaxTree::Type &in) -> Result<Type> {
       return std::nullopt;
     }
   }
-}
-
-auto AstReader::Unmarshal(const SyntaxTree::Base &in) -> Result<Base> {
-  auto object = CreateNode<Base>(QAST_BASE)();
-
-  UnmarshalLocationLocation(in.location(), object);
-  UnmarshalCodeComment(in.comments(), object);
-
-  return object;
-}
-
-auto AstReader::Unmarshal(const SyntaxTree::LambdaExpr &in) -> Result<LambdaExpr> {
-  auto func = Unmarshal(in.function());
-  if (!func.has_value()) [[unlikely]] {
-    return std::nullopt;
-  }
-
-  auto object = CreateNode<LambdaExpr>(func.value())();
-  UnmarshalLocationLocation(in.location(), object);
-  UnmarshalCodeComment(in.comments(), object);
-
-  return object;
 }
 
 auto AstReader::Unmarshal(const SyntaxTree::NamedTy &in) -> Result<NamedTy> {

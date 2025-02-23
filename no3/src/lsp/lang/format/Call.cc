@@ -50,8 +50,8 @@ void CambrianFormatter::Visit(FlowPtr<Call> n) {
     return std::isdigit(name->at(0)) == 0;
   });
 
-  bool any_lambdas =
-      std::any_of(n->GetArgs().begin(), n->GetArgs().end(), [](auto arg) { return std::get<1>(arg)->Is(QAST_LAMBDA); });
+  bool any_lambdas = std::any_of(n->GetArgs().begin(), n->GetArgs().end(),
+                                 [](auto arg) { return std::get<1>(arg)->Is(QAST_FUNCTION); });
 
   bool is_wrapping = argc >= wrap_threshold || any_named || any_lambdas;
 

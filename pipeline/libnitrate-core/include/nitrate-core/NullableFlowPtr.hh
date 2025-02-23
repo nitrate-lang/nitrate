@@ -149,6 +149,12 @@ namespace ncc {
       constexpr Pointee *value_or(U &&default_value) const {  // NOLINT
         return has_value() ? value().get() : std::forward<U>(default_value);
       }
+
+      ///=========================================================================
+      /// Data-Flow tracking
+
+      [[nodiscard]] constexpr auto Trace() const -> const Tracking & { return m_ptr.Trace(); }
+      constexpr void SetTracking(auto tracking) { m_ptr.SetTracking(std::move(tracking)); }
     };
 
     static_assert(sizeof(FlowPtr<int>) == sizeof(NullableFlowPtr<int>));

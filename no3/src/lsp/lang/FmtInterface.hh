@@ -8,7 +8,7 @@ namespace no3::lsp::fmt {
   class ICodeFormatter {
   public:
     virtual ~ICodeFormatter() = default;
-    virtual auto Format(ncc::FlowPtr<ncc::parse::Base> root) -> bool = 0;
+    virtual auto Format(ncc::FlowPtr<ncc::parse::Expr> root) -> bool = 0;
   };
 
 }  // namespace no3::lsp::fmt

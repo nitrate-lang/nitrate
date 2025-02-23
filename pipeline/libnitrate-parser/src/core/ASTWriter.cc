@@ -287,7 +287,7 @@ void AstWriter::SetTypeMetadata(auto *message, const FlowPtr<Type> &in) {
   }
 }
 
-SyntaxTree::SourceLocationRange *AstWriter::FromSource(const FlowPtr<Base> &in) {
+SyntaxTree::SourceLocationRange *AstWriter::FromSource(const FlowPtr<Expr> &in) {
   if (!m_rd.has_value()) {
     return nullptr;
   }
@@ -329,11 +329,6 @@ SyntaxTree::Expr *AstWriter::From(const FlowPtr<Expr> &in) {
   auto *message = Pool::CreateMessage<SyntaxTree::Expr>(m_arena);
 
   switch (in->GetKind()) {
-    case QAST_BASE: {
-      message->set_allocated_base(From(in.As<Base>()));
-      break;
-    }
-
     case QAST_BINEXPR: {
       message->set_allocated_binary(From(in.As<Binary>()));
       break;
@@ -426,11 +421,6 @@ SyntaxTree::Expr *AstWriter::From(const FlowPtr<Expr> &in) {
 
     case QAST_SEQ: {
       message->set_allocated_sequence(From(in.As<Sequence>()));
-      break;
-    }
-
-    case QAST_LAMBDA: {
-      message->set_allocated_lambda_expr(From(in.As<LambdaExpr>()));
       break;
     }
 
@@ -667,11 +657,6 @@ SyntaxTree::Type *AstWriter::From(const FlowPtr<Type> &in) {
   auto *message = Pool::CreateMessage<SyntaxTree::Type>(m_arena);
 
   switch (in->GetKind()) {
-    case QAST_BASE: {
-      message->set_allocated_base(From(in.As<Base>()));
-      break;
-    }
-
     case QAST_U1: {
       message->set_allocated_u1(From(in.As<U1>()));
       break;
@@ -801,23 +786,6 @@ SyntaxTree::Type *AstWriter::From(const FlowPtr<Type> &in) {
       qcore_panicf("Unknown type kind %s", std::string(in->GetKindName()).c_str());
     }
   }
-
-  return message;
-}
-
-SyntaxTree::Base *AstWriter::From(const FlowPtr<Base> &in) {
-  auto *message = Pool::CreateMessage<SyntaxTree::Base>(m_arena);
-
-  message->set_allocated_location(FromSource(in));
-
-  return message;
-}
-
-SyntaxTree::LambdaExpr *AstWriter::From(const FlowPtr<LambdaExpr> &in) {
-  auto *message = Pool::CreateMessage<SyntaxTree::LambdaExpr>(m_arena);
-
-  message->set_allocated_location(FromSource(in));
-  message->set_allocated_function(From(in->GetFunc()));
 
   return message;
 }
@@ -1851,8 +1819,6 @@ SyntaxTree::Export *AstWriter::From(const FlowPtr<Export> &in) {
     }                                                            \
   }
 
-void AstWriter::Visit(FlowPtr<Base> n) { SEND(From(n), base); }
-void AstWriter::Visit(FlowPtr<LambdaExpr> n) { SEND(From(n), lambda_expr); }
 void AstWriter::Visit(FlowPtr<NamedTy> n) { SEND(From(n), named); }
 void AstWriter::Visit(FlowPtr<InferTy> n) { SEND(From(n), infer); }
 void AstWriter::Visit(FlowPtr<TemplateType> n) { SEND(From(n), template_); }

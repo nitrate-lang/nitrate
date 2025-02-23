@@ -34,7 +34,7 @@ static auto CalculateStatistic(const std::vector<T> &data) -> Statistic<T> {
   return {total, mean, variance, std::sqrt(variance)};
 }
 
-static size_t BenchEncode(const Base *root) {
+static size_t BenchEncode(const Expr *root) {
   std::stringstream ss;
   AstWriter writer(ss);
   root->Accept(writer);
@@ -42,7 +42,7 @@ static size_t BenchEncode(const Base *root) {
   return ss.str().size();
 }
 
-static void DoBenchmark(const Base *root) {
+static void DoBenchmark(const Expr *root) {
   constexpr size_t kNumIterations = 128;
   size_t encoded_size = 0;
 
@@ -57,9 +57,7 @@ static void DoBenchmark(const Base *root) {
     encoded_size = BenchEncode(root);
     auto end = std::chrono::high_resolution_clock::now();
 
-    double nanoseconds =
-        std::chrono::duration_cast<std::chrono::nanoseconds>(end - start)
-            .count();
+    double nanoseconds = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
 
     times.push_back(nanoseconds);
   }
@@ -71,10 +69,8 @@ static void DoBenchmark(const Base *root) {
   std::cout << "  Encoded size: " << encoded_size << " bytes" << std::endl;
   std::cout << "  Total time: " << stats.m_total << "ns" << std::endl;
   std::cout << "  Round time mean: " << stats.m_mean << "ns" << std::endl;
-  std::cout << "  Round time variance: " << stats.m_variance << "ns"
-            << std::endl;
-  std::cout << "  Round time standard deviation: " << stats.m_stddev << "ns"
-            << std::endl;
+  std::cout << "  Round time variance: " << stats.m_variance << "ns" << std::endl;
+  std::cout << "  Round time standard deviation: " << stats.m_stddev << "ns" << std::endl;
 }
 
 int main(int argc, char *argv[]) {

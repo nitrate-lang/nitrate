@@ -68,10 +68,6 @@ void CodeWriter_v1_0::PutTypeStuff(const FlowPtr<Type>& n) {
   }
 }
 
-void CodeWriter_v1_0::Visit(FlowPtr<Base>) {}
-
-void CodeWriter_v1_0::Visit(FlowPtr<LambdaExpr> n) { n->GetFunc()->Accept(*this); }
-
 void CodeWriter_v1_0::Visit(FlowPtr<NamedTy> n) {
   PutIdentifier(n->GetName());
   PutTypeStuff(n);

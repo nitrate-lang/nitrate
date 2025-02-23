@@ -94,14 +94,14 @@ using namespace ncc;
 
 // static std::optional<ir::Expr *> nrgen_one(NRBuilder &b, PState &s, IReport
 // *G,
-//                                            FlowPtr<ncc::parse::Base> node);
+//                                            FlowPtr<ncc::parse::Expr> node);
 // static BResult nrgen_any(NRBuilder &b, PState &s, IReport *G,
-//                          FlowPtr<ncc::parse::Base> node);
+//                          FlowPtr<ncc::parse::Expr> node);
 
 // #define next_one(n) nrgen_one(b, s, G, n)
 // #define next_any(n) nrgen_any(b, s, G, n)
 
-// NCC_EXPORT std::unique_ptr<IRModule> ir::nr_lower(ncc::parse::Base *base,
+// NCC_EXPORT std::unique_ptr<IRModule> ir::nr_lower(ncc::parse::Expr *base,
 //                                                   const char *name,
 //                                                   bool diagnostics) {
 //   if (!base) {
@@ -1942,10 +1942,6 @@ using namespace ncc;
 //   std::optional<ir::Expr *> out;
 
 //   switch (n->GetKind()) {
-//     case QAST_BASE: {
-//       break;
-//     }
-
 //     case QAST_BINEXPR:
 //       out = nrgen_binexpr(b, s, G, n.as<ncc::parse::Binary>());
 //       break;
@@ -2242,7 +2238,7 @@ using namespace ncc;
 //   return out;
 // }
 
-NCC_EXPORT auto ir::NrLower(ncc::parse::Base *, const char *, bool) -> std::unique_ptr<IRModule> {
+NCC_EXPORT auto ir::NrLower(ncc::parse::Expr *, const char *, bool) -> std::unique_ptr<IRModule> {
   Log << "Not implemented";
   return nullptr;
 }

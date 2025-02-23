@@ -52,14 +52,14 @@ namespace ncc::parse {
     SkipChildren,
   };
 
-  using IterCallback = std::function<IterOp(NullableFlowPtr<Base>, FlowPtr<Base>)>;
+  using IterCallback = std::function<IterOp(NullableFlowPtr<Expr>, FlowPtr<Expr>)>;
 
   namespace detail {
-    void DfsPreImpl(const FlowPtr<Base> &base, const IterCallback &cb);
-    void DfsPostImpl(const FlowPtr<Base> &base, const IterCallback &cb);
-    void BfsPreImpl(const FlowPtr<Base> &base, const IterCallback &cb);
-    void BfsPostImpl(const FlowPtr<Base> &base, const IterCallback &cb);
-    void IterChildren(const FlowPtr<Base> &base, const IterCallback &cb);
+    void DfsPreImpl(const FlowPtr<Expr> &base, const IterCallback &cb);
+    void DfsPostImpl(const FlowPtr<Expr> &base, const IterCallback &cb);
+    void BfsPreImpl(const FlowPtr<Expr> &base, const IterCallback &cb);
+    void BfsPostImpl(const FlowPtr<Expr> &base, const IterCallback &cb);
+    void IterChildren(const FlowPtr<Expr> &base, const IterCallback &cb);
   }  // namespace detail
 
   template <IterMode mode, typename T>
@@ -80,9 +80,9 @@ namespace ncc::parse {
   }
 
   template <auto mode = dfs_pre>
-  void for_each(FlowPtr<Base> v,  // NOLINT
-                const std::function<void(ASTNodeKind, FlowPtr<Base>)> &f) {
-    iterate<mode>(v, [&](auto, const FlowPtr<Base> &c) -> IterOp {
+  void for_each(FlowPtr<Expr> v,  // NOLINT
+                const std::function<void(ASTNodeKind, FlowPtr<Expr>)> &f) {
+    iterate<mode>(v, [&](auto, const FlowPtr<Expr> &c) -> IterOp {
       f(c->GetKind(), c);
 
       return IterOp::Proceed;
@@ -90,10 +90,10 @@ namespace ncc::parse {
   }
 
   template <typename T, auto mode = dfs_pre>
-  void for_each(FlowPtr<Base> v,  // NOLINT
+  void for_each(FlowPtr<Expr> v,  // NOLINT
                 std::function<void(FlowPtr<T>)> f) {
-    iterate<mode>(v, [&](auto, FlowPtr<Base> c) -> IterOp {
-      if (c->GetKind() != Base::GetTypeCode<T>()) {
+    iterate<mode>(v, [&](auto, FlowPtr<Expr> c) -> IterOp {
+      if (c->GetKind() != Expr::GetTypeCode<T>()) {
         return IterOp::Proceed;
       }
 

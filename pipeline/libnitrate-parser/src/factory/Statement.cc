@@ -31,49 +31,101 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __NITRATE_AST_UTILITY_H__
-#define __NITRATE_AST_UTILITY_H__
+#include <nitrate-parser/ASTFactory.hh>
 
-#include <memory>
-#include <nitrate-core/FlowPtr.hh>
-#include <nitrate-core/Macro.hh>
-#include <nitrate-parser/ASTFwd.hh>
-#include <source_location>
+using namespace ncc::parse;
 
-namespace ncc::parse {
-  template <typename T>
-  struct Arena;
+auto ASTFactory::CreateTypedef() -> FlowPtr<Typedef> {
+  /// TODO: Implement
+  qcore_implement();
+}
 
-  /* This function takes template variadic arguments and forwards them into
-   * the constructor of type T. If compiled with debugging, the source location
-   * of the original call site is saved for the purposes of data-flow analysis
-   * and AST debugging.
-   */
-  template <typename T, typename Allocator = ncc::parse::Arena<T>, typename... Args>
-  constexpr static inline auto CreateNode(Args&&... args) {
-    return [&](std::source_location origin = std::source_location::current()) {
-      FlowPtr<T> new_obj = MakeFlowPtr<T>(new (Allocator().allocate(1)) T(std::forward<Args>(args)...));  // NOLINT
+auto ASTFactory::CreateStruct() -> FlowPtr<Struct> {
+  /// TODO: Implement
+  qcore_implement();
+}
 
-      new_obj.SetTracking(origin);
+auto ASTFactory::CreateEnum() -> FlowPtr<Enum> {
+  /// TODO: Implement
+  qcore_implement();
+}
 
-      return new_obj;
-    };
-  }
+auto ASTFactory::CreateFunction() -> FlowPtr<Function> {
+  /// TODO: Implement
+  qcore_implement();
+}
 
-  class NCC_EXPORT ASTRoot final {
-    FlowPtr<Expr> m_base;
-    bool m_failed;
-    std::shared_ptr<void> m_allocator;
+auto ASTFactory::CreateScope() -> FlowPtr<Scope> {
+  /// TODO: Implement
+  qcore_implement();
+}
 
-  public:
-    constexpr ASTRoot(auto base, auto allocator, auto failed)
-        : m_base(std::move(base)), m_failed(failed), m_allocator(std::move(allocator)) {}
+auto ASTFactory::CreateExport() -> FlowPtr<Export> {
+  /// TODO: Implement
+  qcore_implement();
+}
 
-    auto Get() -> FlowPtr<Expr>& { return m_base; }
-    [[nodiscard]] auto Get() const -> FlowPtr<Expr> { return m_base; }
+auto ASTFactory::CreateBlock() -> FlowPtr<Block> {
+  /// TODO: Implement
+  qcore_implement();
+}
 
-    [[nodiscard]] auto Check() const -> bool;
-  };
-}  // namespace ncc::parse
+auto ASTFactory::CreateVariable() -> FlowPtr<Variable> {
+  /// TODO: Implement
+  qcore_implement();
+}
 
-#endif
+auto ASTFactory::CreateAssembly() -> FlowPtr<Assembly> {
+  /// TODO: Implement
+  qcore_implement();
+}
+
+auto ASTFactory::CreateReturn() -> FlowPtr<Return> {
+  /// TODO: Implement
+  qcore_implement();
+}
+
+auto ASTFactory::CreateReturnIf() -> FlowPtr<ReturnIf> {
+  /// TODO: Implement
+  qcore_implement();
+}
+
+auto ASTFactory::CreateBreak() -> FlowPtr<Break> {
+  /// TODO: Implement
+  qcore_implement();
+}
+
+auto ASTFactory::CreateContinue() -> FlowPtr<Continue> {
+  /// TODO: Implement
+  qcore_implement();
+}
+
+auto ASTFactory::CreateIf() -> FlowPtr<If> {
+  /// TODO: Implement
+  qcore_implement();
+}
+
+auto ASTFactory::CreateWhile() -> FlowPtr<While> {
+  /// TODO: Implement
+  qcore_implement();
+}
+
+auto ASTFactory::CreateFor() -> FlowPtr<For> {
+  /// TODO: Implement
+  qcore_implement();
+}
+
+auto ASTFactory::CreateForeach() -> FlowPtr<Foreach> {
+  /// TODO: Implement
+  qcore_implement();
+}
+
+auto ASTFactory::CreateCase() -> FlowPtr<Case> {
+  /// TODO: Implement
+  qcore_implement();
+}
+
+auto ASTFactory::CreateSwitch() -> FlowPtr<Switch> {
+  /// TODO: Implement
+  qcore_implement();
+}

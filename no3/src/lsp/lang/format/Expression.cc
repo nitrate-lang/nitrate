@@ -38,21 +38,6 @@ using namespace no3::lsp::fmt;
 using namespace ncc::parse;
 using namespace ncc::lex;
 
-void CambrianFormatter::Visit(FlowPtr<Base> n) {
-  PrintMultilineComments(n);
-
-  /** This node symbolizes a placeholder value in the event of an error. */
-  m_failed = true;
-
-  m_line << "/* !!! */";
-}
-
-void CambrianFormatter::Visit(FlowPtr<LambdaExpr> n) {
-  PrintMultilineComments(n);
-
-  n->GetFunc().Accept(*this);
-}
-
 void CambrianFormatter::Visit(FlowPtr<Unary> n) {
   static const std::unordered_set<Operator> word_ops = {OpAs,        OpBitcastAs, OpIn,     OpOut,     OpSizeof,
                                                         OpBitsizeof, OpAlignof,   OpTypeof, OpComptime};

@@ -35,7 +35,6 @@
 #define __NITRATE_AST_NODES_FWD_H__
 
 namespace ncc::parse {
-  class Base;
   class Expr;
   class Type;
   class Binary;
@@ -57,7 +56,6 @@ namespace ncc::parse {
   class Identifier;
   class Sequence;
   class PostUnary;
-  class LambdaExpr;
   class TemplateCall;
   class RefTy;
   class U1;

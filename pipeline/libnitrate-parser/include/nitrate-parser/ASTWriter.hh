@@ -52,11 +52,9 @@ namespace ncc::parse {
     bool m_plaintext_mode;
 
     void SetTypeMetadata(auto *message, const FlowPtr<Type> &in);
-    SyntaxTree::SourceLocationRange *FromSource(const FlowPtr<Base> &in);
+    SyntaxTree::SourceLocationRange *FromSource(const FlowPtr<Expr> &in);
     SyntaxTree::Expr *From(const FlowPtr<Expr> &in);
     SyntaxTree::Type *From(const FlowPtr<Type> &in);
-    SyntaxTree::Base *From(const FlowPtr<Base> &in);
-    SyntaxTree::LambdaExpr *From(const FlowPtr<LambdaExpr> &in);
     SyntaxTree::NamedTy *From(const FlowPtr<NamedTy> &in);
     SyntaxTree::InferTy *From(const FlowPtr<InferTy> &in);
     SyntaxTree::TemplateType *From(const FlowPtr<TemplateType> &in);
@@ -123,8 +121,6 @@ namespace ncc::parse {
     SyntaxTree::Export *From(const FlowPtr<Export> &in);
 
   protected:
-    void Visit(FlowPtr<Base> n) override;
-    void Visit(FlowPtr<LambdaExpr> n) override;
     void Visit(FlowPtr<NamedTy> n) override;
     void Visit(FlowPtr<InferTy> n) override;
     void Visit(FlowPtr<TemplateType> n) override;

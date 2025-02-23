@@ -139,8 +139,8 @@ namespace ncc::parse {
      *  Helper functions
      ****************************************************************************/
 
-    auto MockExpr(std::optional<ASTNodeKind> expected = std::nullopt) -> FlowPtr<Expr>;
-    auto MockType() -> FlowPtr<Type>;
+    auto MockExpr(std::optional<ASTNodeKind> kind_opt = std::nullopt) -> FlowPtr<Expr>;
+    auto MockType(std::optional<ASTNodeKind> kind_opt = std::nullopt) -> FlowPtr<Type>;
 
     auto RecurseName() -> string;
 

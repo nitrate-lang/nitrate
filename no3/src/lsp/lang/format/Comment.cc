@@ -36,7 +36,7 @@
 using namespace no3::lsp::fmt;
 using namespace ncc::parse;
 
-void CambrianFormatter::PrintLineComments(const FlowPtr<parse::Base>& n) {
+void CambrianFormatter::PrintLineComments(const FlowPtr<parse::Expr>& n) {
   auto comments = n->Comments();
   auto m_line_size = m_line.Length();
 
@@ -52,7 +52,7 @@ void CambrianFormatter::PrintLineComments(const FlowPtr<parse::Base>& n) {
   }
 }
 
-void CambrianFormatter::PrintMultilineComments(const FlowPtr<parse::Base>& n) {
+void CambrianFormatter::PrintMultilineComments(const FlowPtr<parse::Expr>& n) {
   auto comments = n->Comments();
   if (!comments.empty()) {
     for (auto comment : comments) {

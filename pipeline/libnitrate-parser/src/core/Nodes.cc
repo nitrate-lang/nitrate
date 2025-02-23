@@ -39,9 +39,13 @@
 #include <nitrate-core/SmartLock.hh>
 #include <nitrate-parser/AST.hh>
 #include <nitrate-parser/ASTData.hh>
+#include <nitrate-parser/ASTFactory.hh>
 #include <nitrate-parser/ASTWriter.hh>
 #include <nitrate-parser/Algorithm.hh>
+#include <optional>
 #include <sstream>
+
+#include "nitrate-parser/ASTStmt.hh"
 
 using namespace ncc;
 using namespace ncc::parse;
@@ -77,34 +81,34 @@ NCC_EXPORT auto parse::operator<<(std::ostream &os, const ASTExtensionKey &idx) 
 
 ///=============================================================================
 
-std::string Base::DebugString(WriterSourceProvider rd) const {
+std::string Expr::DebugString(WriterSourceProvider rd) const {
   std::stringstream ss;
   AstWriter writer(ss, rd, true);
 
-  const_cast<Base *>(this)->Accept(writer);
+  const_cast<Expr *>(this)->Accept(writer);
 
   return ss.str();
 }
 
-void Base::DebugString(std::ostream &os, WriterSourceProvider rd) const {
+void Expr::DebugString(std::ostream &os, WriterSourceProvider rd) const {
   AstWriter writer(os, rd, true);
-  const_cast<Base *>(this)->Accept(writer);
+  const_cast<Expr *>(this)->Accept(writer);
 }
 
-void Base::Serialize(std::ostream &os) const {
+void Expr::Serialize(std::ostream &os) const {
   AstWriter writer(os);
-  const_cast<Base *>(this)->Accept(writer);
+  const_cast<Expr *>(this)->Accept(writer);
 }
 
-std::string Base::Serialize() const {
+std::string Expr::Serialize() const {
   std::stringstream ss;
   AstWriter writer(ss);
-  const_cast<Base *>(this)->Accept(writer);
+  const_cast<Expr *>(this)->Accept(writer);
 
   return ss.str();
 }
 
-auto Base::IsEq(FlowPtr<Base> o) const -> bool {
+auto Expr::IsEq(FlowPtr<Expr> o) const -> bool {
   if (this == o.get()) {
     return true;
   }
@@ -118,21 +122,21 @@ auto Base::IsEq(FlowPtr<Base> o) const -> bool {
   AstWriter writer1(ss1);
   AstWriter writer2(ss2);
 
-  const_cast<Base *>(this)->Accept(writer1);
+  const_cast<Expr *>(this)->Accept(writer1);
   o.Accept(writer2);
 
   return ss1.str() == ss2.str();
 }
 
-auto Base::Hash64() const -> uint64_t {
+auto Expr::Hash64() const -> uint64_t {
   std::stringstream ss;
   AstWriter writer(ss);
-  const_cast<Base *>(this)->Accept(writer);
+  const_cast<Expr *>(this)->Accept(writer);
 
   return std::hash<std::string>{}(ss.str());
 }
 
-auto Base::RecursiveChildCount() -> size_t {
+auto Expr::RecursiveChildCount() -> size_t {
   size_t count = 0;
 
   for_each(this, [&](auto, auto) { count++; });
@@ -140,7 +144,7 @@ auto Base::RecursiveChildCount() -> size_t {
   return count;
 }
 
-void Base::SetComments(std::span<const string> comments) {
+void Expr::SetComments(std::span<const string> comments) {
   auto old = ExtensionDataStore.Get(m_data);
   old.AddComments(comments);
   ExtensionDataStore.Set(m_data, std::move(old));
@@ -148,29 +152,18 @@ void Base::SetComments(std::span<const string> comments) {
 
 ///=============================================================================
 
-NCC_EXPORT auto Type::IsPtrTo(const Type *type) const -> bool {
-  if (!IsPointer()) {
-    return false;
-  }
-
-  auto item = As<PtrTy>()->GetItem();
-  while (item->Is<RefTy>()) {
-    item = item->As<RefTy>()->GetItem();
-  }
-
-  return item->Is(type->GetKind());
-}
-
-auto Parser::PImpl::MockExpr(std::optional<ASTNodeKind>) -> FlowPtr<Expr> {
-  auto node = CreateNode<Expr>(QAST_BASE)();
+auto Parser::PImpl::MockExpr(std::optional<ASTNodeKind> kind_opt) -> FlowPtr<Expr> {
+  auto node = ASTFactory::CreateMockInstance(*MainAllocator, kind_opt.value_or(QAST_VOID));
   node->SetOffset(m_rd.Current().GetStart());
 
   return node;
 }
 
-auto Parser::PImpl::MockType() -> FlowPtr<Type> {
-  auto node = CreateNode<Type>(QAST_BASE)();
+auto Parser::PImpl::MockType(std::optional<ASTNodeKind> kind_opt) -> FlowPtr<Type> {
+  qcore_assert(!kind_opt.has_value() || (kind_opt.value() >= QAST__TYPE_FIRST && kind_opt.value() <= QAST__TYPE_LAST));
+
+  auto node = ASTFactory::CreateMockInstance(*MainAllocator, kind_opt.value_or(QAST_VOID));
   node->SetOffset(m_rd.Current().GetStart());
 
-  return node;
+  return node->As<Type>();
 }
