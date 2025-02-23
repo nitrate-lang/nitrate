@@ -437,282 +437,6 @@ void AstReader::UnmarshalCodeComment(
   out->SetComments(comments);
 }
 
-auto AstReader::Unmarshal(const SyntaxTree::Root &in) -> Result<Base> {
-  switch (in.node_case()) {
-    case SyntaxTree::Root::kBase: {
-      return Unmarshal(in.base());
-    }
-
-    case SyntaxTree::Root::kLambdaExpr: {
-      return Unmarshal(in.lambda_expr());
-    }
-
-    case SyntaxTree::Root::kUnary: {
-      return Unmarshal(in.unary());
-    }
-
-    case SyntaxTree::Root::kBinary: {
-      return Unmarshal(in.binary());
-    }
-
-    case SyntaxTree::Root::kPostUnary: {
-      return Unmarshal(in.post_unary());
-    }
-
-    case SyntaxTree::Root::kTernary: {
-      return Unmarshal(in.ternary());
-    }
-
-    case SyntaxTree::Root::kInteger: {
-      return Unmarshal(in.integer());
-    }
-
-    case SyntaxTree::Root::kFloat: {
-      return Unmarshal(in.float_());
-    }
-
-    case SyntaxTree::Root::kBoolean: {
-      return Unmarshal(in.boolean());
-    }
-
-    case SyntaxTree::Root::kString: {
-      return Unmarshal(in.string());
-    }
-
-    case SyntaxTree::Root::kCharacter: {
-      return Unmarshal(in.character());
-    }
-
-    case SyntaxTree::Root::kNull: {
-      return Unmarshal(in.null());
-    }
-
-    case SyntaxTree::Root::kUndefined: {
-      return Unmarshal(in.undefined());
-    }
-
-    case SyntaxTree::Root::kCall: {
-      return Unmarshal(in.call());
-    }
-
-    case SyntaxTree::Root::kTemplateCall: {
-      return Unmarshal(in.template_call());
-    }
-
-    case SyntaxTree::Root::kList: {
-      return Unmarshal(in.list());
-    }
-
-    case SyntaxTree::Root::kAssoc: {
-      return Unmarshal(in.assoc());
-    }
-
-    case SyntaxTree::Root::kIndex: {
-      return Unmarshal(in.index());
-    }
-
-    case SyntaxTree::Root::kSlice: {
-      return Unmarshal(in.slice());
-    }
-
-    case SyntaxTree::Root::kFstring: {
-      return Unmarshal(in.fstring());
-    }
-
-    case SyntaxTree::Root::kIdentifier: {
-      return Unmarshal(in.identifier());
-    }
-
-    case SyntaxTree::Root::kSequence: {
-      return Unmarshal(in.sequence());
-    }
-
-    case SyntaxTree::Root::kExpr: {
-      return Unmarshal(in.expr());
-    }
-
-    case SyntaxTree::Root::kBlock: {
-      return Unmarshal(in.block());
-    }
-
-    case SyntaxTree::Root::kVariable: {
-      return Unmarshal(in.variable());
-    }
-
-    case SyntaxTree::Root::kAssembly: {
-      return Unmarshal(in.assembly());
-    }
-
-    case SyntaxTree::Root::kIf: {
-      return Unmarshal(in.if_());
-    }
-
-    case SyntaxTree::Root::kWhile: {
-      return Unmarshal(in.while_());
-    }
-
-    case SyntaxTree::Root::kFor: {
-      return Unmarshal(in.for_());
-    }
-
-    case SyntaxTree::Root::kForeach: {
-      return Unmarshal(in.foreach ());
-    }
-
-    case SyntaxTree::Root::kBreak: {
-      return Unmarshal(in.break_());
-    }
-
-    case SyntaxTree::Root::kContinue: {
-      return Unmarshal(in.continue_());
-    }
-
-    case SyntaxTree::Root::kReturn: {
-      return Unmarshal(in.return_());
-    }
-
-    case SyntaxTree::Root::kReturnIf: {
-      return Unmarshal(in.return_if());
-    }
-
-    case SyntaxTree::Root::kCase: {
-      return Unmarshal(in.case_());
-    }
-
-    case SyntaxTree::Root::kSwitch: {
-      return Unmarshal(in.switch_());
-    }
-
-    case SyntaxTree::Root::kExport: {
-      return Unmarshal(in.export_());
-    }
-
-    case SyntaxTree::Root::kScope: {
-      return Unmarshal(in.scope());
-    }
-
-    case SyntaxTree::Root::kTypedef: {
-      return Unmarshal(in.typedef_());
-    }
-
-    case SyntaxTree::Root::kEnum: {
-      return Unmarshal(in.enum_());
-    }
-
-    case SyntaxTree::Root::kFunction: {
-      return Unmarshal(in.function());
-    }
-
-    case SyntaxTree::Root::kStruct: {
-      return Unmarshal(in.struct_());
-    }
-
-    case SyntaxTree::Root::kNamed: {
-      return Unmarshal(in.named());
-    }
-
-    case SyntaxTree::Root::kInfer: {
-      return Unmarshal(in.infer());
-    }
-
-    case SyntaxTree::Root::kTemplate: {
-      return Unmarshal(in.template_());
-    }
-
-    case SyntaxTree::Root::kU1: {
-      return Unmarshal(in.u1());
-    }
-
-    case SyntaxTree::Root::kU8: {
-      return Unmarshal(in.u8());
-    }
-
-    case SyntaxTree::Root::kU16: {
-      return Unmarshal(in.u16());
-    }
-
-    case SyntaxTree::Root::kU32: {
-      return Unmarshal(in.u32());
-    }
-
-    case SyntaxTree::Root::kU64: {
-      return Unmarshal(in.u64());
-    }
-
-    case SyntaxTree::Root::kU128: {
-      return Unmarshal(in.u128());
-    }
-
-    case SyntaxTree::Root::kI8: {
-      return Unmarshal(in.i8());
-    }
-
-    case SyntaxTree::Root::kI16: {
-      return Unmarshal(in.i16());
-    }
-
-    case SyntaxTree::Root::kI32: {
-      return Unmarshal(in.i32());
-    }
-
-    case SyntaxTree::Root::kI64: {
-      return Unmarshal(in.i64());
-    }
-
-    case SyntaxTree::Root::kI128: {
-      return Unmarshal(in.i128());
-    }
-
-    case SyntaxTree::Root::kF16: {
-      return Unmarshal(in.f16());
-    }
-
-    case SyntaxTree::Root::kF32: {
-      return Unmarshal(in.f32());
-    }
-
-    case SyntaxTree::Root::kF64: {
-      return Unmarshal(in.f64());
-    }
-
-    case SyntaxTree::Root::kF128: {
-      return Unmarshal(in.f128());
-    }
-
-    case SyntaxTree::Root::kVoid: {
-      return Unmarshal(in.void_());
-    }
-
-    case SyntaxTree::Root::kPtr: {
-      return Unmarshal(in.ptr());
-    }
-
-    case SyntaxTree::Root::kOpaque: {
-      return Unmarshal(in.opaque());
-    }
-
-    case SyntaxTree::Root::kTuple: {
-      return Unmarshal(in.tuple());
-    }
-
-    case SyntaxTree::Root::kArray: {
-      return Unmarshal(in.array());
-    }
-
-    case SyntaxTree::Root::kRef: {
-      return Unmarshal(in.ref());
-    }
-
-    case SyntaxTree::Root::kFunc: {
-      return Unmarshal(in.func());
-    }
-
-    case SyntaxTree::Root::NODE_NOT_SET: {
-      return std::nullopt;
-    }
-  }
-}
-
 auto AstReader::Unmarshal(const SyntaxTree::Expr &in) -> Result<Expr> {
   switch (in.node_case()) {
     case SyntaxTree::Expr::kBase: {
@@ -801,6 +525,82 @@ auto AstReader::Unmarshal(const SyntaxTree::Expr &in) -> Result<Expr> {
 
     case SyntaxTree::Expr::kSequence: {
       return Unmarshal(in.sequence());
+    }
+
+    case SyntaxTree::Expr::kBlock: {
+      return Unmarshal(in.block());
+    }
+
+    case SyntaxTree::Expr::kVariable: {
+      return Unmarshal(in.variable());
+    }
+
+    case SyntaxTree::Expr::kAssembly: {
+      return Unmarshal(in.assembly());
+    }
+
+    case SyntaxTree::Expr::kIf: {
+      return Unmarshal(in.if_());
+    }
+
+    case SyntaxTree::Expr::kWhile: {
+      return Unmarshal(in.while_());
+    }
+
+    case SyntaxTree::Expr::kFor: {
+      return Unmarshal(in.for_());
+    }
+
+    case SyntaxTree::Expr::kForeach: {
+      return Unmarshal(in.foreach ());
+    }
+
+    case SyntaxTree::Expr::kBreak: {
+      return Unmarshal(in.break_());
+    }
+
+    case SyntaxTree::Expr::kContinue: {
+      return Unmarshal(in.continue_());
+    }
+
+    case SyntaxTree::Expr::kReturn: {
+      return Unmarshal(in.return_());
+    }
+
+    case SyntaxTree::Expr::kReturnIf: {
+      return Unmarshal(in.return_if());
+    }
+
+    case SyntaxTree::Expr::kCase: {
+      return Unmarshal(in.case_());
+    }
+
+    case SyntaxTree::Expr::kSwitch: {
+      return Unmarshal(in.switch_());
+    }
+
+    case SyntaxTree::Expr::kExport: {
+      return Unmarshal(in.export_());
+    }
+
+    case SyntaxTree::Expr::kScope: {
+      return Unmarshal(in.scope());
+    }
+
+    case SyntaxTree::Expr::kTypedef: {
+      return Unmarshal(in.typedef_());
+    }
+
+    case SyntaxTree::Expr::kEnum: {
+      return Unmarshal(in.enum_());
+    }
+
+    case SyntaxTree::Expr::kFunction: {
+      return Unmarshal(in.function());
+    }
+
+    case SyntaxTree::Expr::kStruct: {
+      return Unmarshal(in.struct_());
     }
 
     case SyntaxTree::Expr::kNamed: {
@@ -904,98 +704,6 @@ auto AstReader::Unmarshal(const SyntaxTree::Expr &in) -> Result<Expr> {
     }
 
     case SyntaxTree::Expr::NODE_NOT_SET: {
-      return std::nullopt;
-    }
-  }
-}
-
-auto AstReader::Unmarshal(const SyntaxTree::Stmt &in) -> Result<Stmt> {
-  switch (in.node_case()) {
-    case SyntaxTree::Stmt::kExprStmt: {
-      return Unmarshal(in.expr_stmt());
-    }
-
-    case SyntaxTree::Stmt::kBase: {
-      return CreateNode<Stmt>(QAST_BASE)();
-    }
-
-    case SyntaxTree::Stmt::kBlock: {
-      return Unmarshal(in.block());
-    }
-
-    case SyntaxTree::Stmt::kVariable: {
-      return Unmarshal(in.variable());
-    }
-
-    case SyntaxTree::Stmt::kAssembly: {
-      return Unmarshal(in.assembly());
-    }
-
-    case SyntaxTree::Stmt::kIf: {
-      return Unmarshal(in.if_());
-    }
-
-    case SyntaxTree::Stmt::kWhile: {
-      return Unmarshal(in.while_());
-    }
-
-    case SyntaxTree::Stmt::kFor: {
-      return Unmarshal(in.for_());
-    }
-
-    case SyntaxTree::Stmt::kForeach: {
-      return Unmarshal(in.foreach ());
-    }
-
-    case SyntaxTree::Stmt::kBreak: {
-      return Unmarshal(in.break_());
-    }
-
-    case SyntaxTree::Stmt::kContinue: {
-      return Unmarshal(in.continue_());
-    }
-
-    case SyntaxTree::Stmt::kReturn: {
-      return Unmarshal(in.return_());
-    }
-
-    case SyntaxTree::Stmt::kReturnIf: {
-      return Unmarshal(in.return_if());
-    }
-
-    case SyntaxTree::Stmt::kCase: {
-      return Unmarshal(in.case_());
-    }
-
-    case SyntaxTree::Stmt::kSwitch: {
-      return Unmarshal(in.switch_());
-    }
-
-    case SyntaxTree::Stmt::kExport: {
-      return Unmarshal(in.export_());
-    }
-
-    case SyntaxTree::Stmt::kScope: {
-      return Unmarshal(in.scope());
-    }
-
-    case SyntaxTree::Stmt::kTypedef: {
-      return Unmarshal(in.typedef_());
-    }
-
-    case SyntaxTree::Stmt::kEnum: {
-      return Unmarshal(in.enum_());
-    }
-
-    case SyntaxTree::Stmt::kFunction: {
-      return Unmarshal(in.function());
-    }
-
-    case SyntaxTree::Stmt::kStruct: {
-      return Unmarshal(in.struct_());
-    }
-
-    case SyntaxTree::Stmt::NODE_NOT_SET: {
       return std::nullopt;
     }
   }
@@ -1116,19 +824,6 @@ auto AstReader::Unmarshal(const SyntaxTree::Type &in) -> Result<Type> {
 auto AstReader::Unmarshal(const SyntaxTree::Base &in) -> Result<Base> {
   auto object = CreateNode<Base>(QAST_BASE)();
 
-  UnmarshalLocationLocation(in.location(), object);
-  UnmarshalCodeComment(in.comments(), object);
-
-  return object;
-}
-
-auto AstReader::Unmarshal(const SyntaxTree::ExprStmt &in) -> Result<ExprStmt> {
-  auto expression = Unmarshal(in.expression());
-  if (!expression.has_value()) [[unlikely]] {
-    return std::nullopt;
-  }
-
-  auto object = CreateNode<ExprStmt>(expression.value())();
   UnmarshalLocationLocation(in.location(), object);
   UnmarshalCodeComment(in.comments(), object);
 
@@ -2821,7 +2516,7 @@ AstReader::AstReader(std::string_view protobuf_data, ReaderSourceManager source_
   google::protobuf::io::CodedInputStream input((const uint8_t *)protobuf_data.data(), protobuf_data.size());
   input.SetRecursionLimit(kRecursionLimit);
 
-  SyntaxTree::Root root;
+  SyntaxTree::Expr root;
   if (!root.ParseFromCodedStream(&input)) [[unlikely]] {
     return;
   }

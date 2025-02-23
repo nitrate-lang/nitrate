@@ -37,7 +37,7 @@ using namespace ncc;
 using namespace ncc::lex;
 using namespace ncc::parse;
 
-auto Parser::PImpl::RecurseReturn() -> FlowPtr<Stmt> {
+auto Parser::PImpl::RecurseReturn() -> FlowPtr<Expr> {
   if (NextIf<PuncSemi>()) {
     return CreateNode<Return>(std::nullopt)();
   }
@@ -53,7 +53,7 @@ auto Parser::PImpl::RecurseReturn() -> FlowPtr<Stmt> {
   return CreateNode<Return>(return_value)();
 }
 
-auto Parser::PImpl::RecurseRetif() -> FlowPtr<Stmt> {
+auto Parser::PImpl::RecurseRetif() -> FlowPtr<Expr> {
   auto return_if = RecurseExpr({
       Token(Punc, PuncComa),
   });
@@ -70,6 +70,6 @@ auto Parser::PImpl::RecurseRetif() -> FlowPtr<Stmt> {
     return CreateNode<ReturnIf>(return_if, return_value)();
   } else {
     Log << SyntaxError << Current() << "Expected ',' after the retif condition.";
-    return MockStmt(QAST_RETIF);
+    return MockExpr(QAST_RETIF);
   }
 }

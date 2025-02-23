@@ -9,10 +9,8 @@ TEST_CASE(Stmt_Return, Void, 1, R"( ret /* */ ;; )", block{safety : None stateme
 TEST_CASE(Stmt_Return, Void, 2, R"( ret void; )",
           block{safety : None statements{return {value{identifier{name : "void"}}}}});
 TEST_CASE(Stmt_Return, Void, 3, R"( ret  )", nullptr);
-TEST_CASE(Stmt_Return, Void, 4, R"( return; )",
-          block{safety : None statements{expr_stmt{expression{identifier{name : "return"}}}}});
-TEST_CASE(Stmt_Return, Void, 5, R"( return /* */ ;; )",
-          block{safety : None statements{expr_stmt{expression{identifier{name : "return"}}}}});
+TEST_CASE(Stmt_Return, Void, 4, R"( return; )", block{safety : None statements{identifier{name : "return"}}});
+TEST_CASE(Stmt_Return, Void, 5, R"( return /* */ ;; )", block{safety : None statements{identifier{name : "return"}}});
 TEST_CASE(Stmt_Return, Void, 6, R"( return void; )", nullptr);
 TEST_CASE(Stmt_Return, Void, 7, R"( return  )", nullptr);
 

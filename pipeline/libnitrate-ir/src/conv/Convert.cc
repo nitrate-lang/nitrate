@@ -2190,10 +2190,6 @@ using namespace ncc;
 //       out = nrgen_switch(b, s, G, n.as<ncc::parse::Switch>());
 //       break;
 
-//     case QAST_ESTMT:
-//       out = nrgen_expr_stmt(b, s, G, n.as<ncc::parse::ExprStmt>());
-//       break;
-
 //     default: {
 //       break;
 //     }

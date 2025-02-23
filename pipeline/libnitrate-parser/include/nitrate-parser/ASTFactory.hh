@@ -698,7 +698,6 @@ namespace ncc::parse {
     [[gnu::pure, nodiscard]] auto CreateForeach() -> FlowPtr<Foreach>;
     [[gnu::pure, nodiscard]] auto CreateCase() -> FlowPtr<Case>;
     [[gnu::pure, nodiscard]] auto CreateSwitch() -> FlowPtr<Switch>;
-    [[gnu::pure, nodiscard]] auto CreateExprStmt() -> FlowPtr<ExprStmt>;
 
     ///=========================================================================
     /// STATIC FACTORY FUNCTIONS
@@ -1075,7 +1074,6 @@ namespace ncc::parse {
     [[gnu::pure, nodiscard]] static inline auto CreateForeach(IMemory& m) { return ASTFactory(m).CreateForeach(); }
     [[gnu::pure, nodiscard]] static inline auto CreateCase(IMemory& m) { return ASTFactory(m).CreateCase(); }
     [[gnu::pure, nodiscard]] static inline auto CreateSwitch(IMemory& m) { return ASTFactory(m).CreateSwitch(); }
-    [[gnu::pure, nodiscard]] static inline auto CreateExprStmt(IMemory& m) { return ASTFactory(m).CreateExprStmt(); }
   };
 }  // namespace ncc::parse
 

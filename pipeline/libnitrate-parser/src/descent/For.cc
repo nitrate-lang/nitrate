@@ -37,7 +37,7 @@ using namespace ncc;
 using namespace ncc::lex;
 using namespace ncc::parse;
 
-auto Parser::PImpl::RecurseForInitExpr() -> NullableFlowPtr<Stmt> {
+auto Parser::PImpl::RecurseForInitExpr() -> NullableFlowPtr<Expr> {
   if (NextIf<PuncSemi>()) {
     return std::nullopt;
   }
@@ -63,9 +63,9 @@ auto Parser::PImpl::RecurseForInitExpr() -> NullableFlowPtr<Stmt> {
     Log << SyntaxError << Current() << "Expected exactly one variable in for loop";
 
   } else {
-    return CreateNode<ExprStmt>(RecurseExpr({
+    return RecurseExpr({
         Token(Punc, PuncSemi),
-    }))();
+    });
   }
 
   return std::nullopt;
@@ -107,7 +107,7 @@ auto Parser::PImpl::RecurseForStepExpr(bool has_paren) -> NullableFlowPtr<Expr> 
   });
 }
 
-auto Parser::PImpl::RecurseForBody() -> FlowPtr<Stmt> {
+auto Parser::PImpl::RecurseForBody() -> FlowPtr<Expr> {
   if (NextIf<OpArrow>()) {
     return RecurseBlock(false, true, SafetyMode::Unknown);
   }
@@ -115,7 +115,7 @@ auto Parser::PImpl::RecurseForBody() -> FlowPtr<Stmt> {
   return RecurseBlock(true, false, SafetyMode::Unknown);
 }
 
-auto Parser::PImpl::RecurseFor() -> FlowPtr<Stmt> {
+auto Parser::PImpl::RecurseFor() -> FlowPtr<Expr> {
   bool for_with_paren = NextIf<PuncLPar>().has_value();
   auto for_init = RecurseForInitExpr();
   auto for_cond = RecurseForCondition();

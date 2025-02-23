@@ -37,7 +37,7 @@ using namespace ncc;
 using namespace ncc::lex;
 using namespace ncc::parse;
 
-auto Parser::PImpl::RecurseSwitchCaseBody() -> FlowPtr<Stmt> {
+auto Parser::PImpl::RecurseSwitchCaseBody() -> FlowPtr<Expr> {
   if (!NextIf<OpArrow>()) {
     Log << SyntaxError << Current() << "Expected '=>' in switch case.";
   }
@@ -49,7 +49,7 @@ auto Parser::PImpl::RecurseSwitchCaseBody() -> FlowPtr<Stmt> {
   return RecurseBlock(false, true, SafetyMode::Unknown);
 }
 
-auto Parser::PImpl::RecurseSwitchCase() -> std::pair<FlowPtr<Stmt>, bool> {
+auto Parser::PImpl::RecurseSwitchCase() -> std::pair<FlowPtr<Expr>, bool> {
   auto cond = RecurseExpr({
       Token(Oper, OpArrow),
       Token(Punc, PuncLCur),
@@ -65,9 +65,9 @@ auto Parser::PImpl::RecurseSwitchCase() -> std::pair<FlowPtr<Stmt>, bool> {
   return {CreateNode<Case>(cond, body)(), false};
 }
 
-auto Parser::PImpl::RecurseSwitchBody() -> std::optional<std::pair<SwitchCases, NullableFlowPtr<Stmt>>> {
+auto Parser::PImpl::RecurseSwitchBody() -> std::optional<std::pair<SwitchCases, NullableFlowPtr<Expr>>> {
   SwitchCases cases;
-  NullableFlowPtr<Stmt> default_case;
+  NullableFlowPtr<Expr> default_case;
 
   while (true) {
     if (NextIf<EofF>()) [[unlikely]] {
@@ -96,7 +96,7 @@ auto Parser::PImpl::RecurseSwitchBody() -> std::optional<std::pair<SwitchCases, 
   return std::nullopt;
 }
 
-auto Parser::PImpl::RecurseSwitch() -> FlowPtr<Stmt> {
+auto Parser::PImpl::RecurseSwitch() -> FlowPtr<Expr> {
   auto switch_cond = RecurseExpr({
       Token(Punc, PuncLCur),
   });
@@ -113,5 +113,5 @@ auto Parser::PImpl::RecurseSwitch() -> FlowPtr<Stmt> {
     Log << SyntaxError << Current() << "Expected '{' after switch condition.";
   }
 
-  return MockStmt(QAST_SWITCH);
+  return MockExpr(QAST_SWITCH);
 }

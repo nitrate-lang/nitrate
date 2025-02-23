@@ -71,8 +71,6 @@ namespace no3::lsp::fmt {
 
     void FormatTypeMetadata(const FlowPtr<parse::Type>& n);
 
-    void WrapStmtBody(FlowPtr<parse::Stmt> n, size_t size_threshold, bool use_arrow_if_wrapped);
-
     template <typename IterBegin, typename IterEnd>
     void IterateExceptLast(IterBegin beg, IterEnd end, auto body, auto if_not_last) {
       size_t i = 0;
@@ -96,7 +94,6 @@ namespace no3::lsp::fmt {
     void PrintMultilineComments(const FlowPtr<parse::Base>& n);
 
     void Visit(FlowPtr<parse::Base> n) override;
-    void Visit(FlowPtr<parse::ExprStmt> n) override;
     void Visit(FlowPtr<parse::LambdaExpr> n) override;
     void Visit(FlowPtr<parse::NamedTy> n) override;
     void Visit(FlowPtr<parse::InferTy> n) override;

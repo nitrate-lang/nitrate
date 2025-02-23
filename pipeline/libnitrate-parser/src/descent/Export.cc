@@ -73,7 +73,7 @@ auto Parser::PImpl::RecurseExportAttributes() -> std::optional<ExpressionList> {
   return std::nullopt;
 }
 
-auto Parser::PImpl::RecurseExportBody() -> FlowPtr<Stmt> {
+auto Parser::PImpl::RecurseExportBody() -> FlowPtr<Expr> {
   if (Peek().Is<PuncLCur>()) {
     return RecurseBlock(true, false, SafetyMode::Unknown);
   }
@@ -81,7 +81,7 @@ auto Parser::PImpl::RecurseExportBody() -> FlowPtr<Stmt> {
   return RecurseBlock(false, true, SafetyMode::Unknown);
 }
 
-auto Parser::PImpl::RecurseExport(Vis vis) -> FlowPtr<Stmt> {
+auto Parser::PImpl::RecurseExport(Vis vis) -> FlowPtr<Expr> {
   auto export_abi = RecurseAbiName();
 
   if (auto export_attributes = RecurseExportAttributes()) {
@@ -92,5 +92,5 @@ auto Parser::PImpl::RecurseExport(Vis vis) -> FlowPtr<Stmt> {
 
   Log << SyntaxError << Current() << "Malformed export attributes";
 
-  return MockStmt(QAST_EXPORT);
+  return MockExpr(QAST_EXPORT);
 }

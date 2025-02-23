@@ -121,15 +121,14 @@ namespace ncc::parse {
     QAST_FOR = 68,        /* For statement */
     QAST_FOREACH = 69,    /* Foreach statement */
     QAST_INLINE_ASM = 70, /* Inline assembly statement */
-    QAST_ESTMT = 71,      /* Expression-statement adapter */
-    QAST_TYPEDEF = 80,    /* Type alias declaration */
-    QAST_STRUCT = 81,     /* Struct definition */
-    QAST_ENUM = 83,       /* Enum definition */
-    QAST_SCOPE = 84,      /* Namespace scope */
-    QAST_BLOCK = 85,      /* Block statement */
-    QAST_EXPORT = 86,     /* Export statement */
-    QAST_VAR = 87,        /* Variable declaration */
-    QAST_FUNCTION = 88,   /* Function definition */
+    QAST_TYPEDEF = 71,    /* Type alias declaration */
+    QAST_STRUCT = 72,     /* Struct definition */
+    QAST_ENUM = 73,       /* Enum definition */
+    QAST_SCOPE = 74,      /* Namespace scope */
+    QAST_BLOCK = 75,      /* Block statement */
+    QAST_EXPORT = 76,     /* Export statement */
+    QAST_VAR = 77,        /* Variable declaration */
+    QAST_FUNCTION = 78,   /* Function definition */
 
     QAST__STMT_FIRST = QAST_IF,
     QAST__STMT_LAST = QAST_FUNCTION,

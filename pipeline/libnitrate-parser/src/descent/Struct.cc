@@ -213,7 +213,7 @@ auto Parser::PImpl::RecurseStructBody() -> Parser::PImpl::StructContent {
   return body;
 }
 
-auto Parser::PImpl::RecurseStruct(CompositeType struct_type) -> FlowPtr<Stmt> {
+auto Parser::PImpl::RecurseStruct(CompositeType struct_type) -> FlowPtr<Expr> {
   auto start_pos = Current().GetStart();
   auto struct_attributes = RecurseStructAttributes();
   auto struct_name = RecurseName();

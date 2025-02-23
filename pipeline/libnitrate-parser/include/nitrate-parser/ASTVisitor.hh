@@ -45,7 +45,6 @@ namespace ncc::parse {
     virtual ~ASTVisitor() = default;
 
     virtual void Visit(FlowPtr<Base> n) = 0;
-    virtual void Visit(FlowPtr<ExprStmt> n) = 0;
     virtual void Visit(FlowPtr<LambdaExpr> n) = 0;
     virtual void Visit(FlowPtr<NamedTy> n) = 0;
     virtual void Visit(FlowPtr<InferTy> n) = 0;
@@ -377,10 +376,6 @@ namespace ncc::parse {
         }
         case QAST_SWITCH: {
           Visit(n.template As<Switch>());
-          break;
-        }
-        case QAST_ESTMT: {
-          Visit(n.template As<ExprStmt>());
           break;
         }
       }

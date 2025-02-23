@@ -155,7 +155,7 @@ void CambrianFormatter::Visit(FlowPtr<Function> n) {
     m_line << ";";
   } else {
     m_line << " ";
-    WrapStmtBody(n->GetBody().value(), 4, true);
+    n->GetBody().value()->Accept(*this);
   }
 }
 

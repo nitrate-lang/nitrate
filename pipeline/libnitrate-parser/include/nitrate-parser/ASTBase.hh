@@ -127,8 +127,6 @@ namespace ncc::parse {
 
       if constexpr (std::is_same_v<T, Base>) {
         return QAST_BASE;
-      } else if constexpr (std::is_same_v<T, Stmt>) {
-        return QAST_BASE;
       } else if constexpr (std::is_same_v<T, Type>) {
         return QAST_BASE;
       } else if constexpr (std::is_same_v<T, Binary>) {
@@ -261,8 +259,6 @@ namespace ncc::parse {
         return QAST_CASE;
       } else if constexpr (std::is_same_v<T, Switch>) {
         return QAST_SWITCH;
-      } else if constexpr (std::is_same_v<T, ExprStmt>) {
-        return QAST_ESTMT;
       }
     }
 
@@ -459,20 +455,12 @@ namespace ncc::parse {
       r[QAST_FOREACH] = "Foreach";
       r[QAST_CASE] = "Case";
       r[QAST_SWITCH] = "Switch";
-      r[QAST_ESTMT] = "ExprStmt";
 
       return r;
     }();
   }  // namespace detail
 
   constexpr auto Base::GetKindName(ASTNodeKind type) -> std::string_view { return detail::kGetKindNames[type]; }
-
-  class Stmt : public Base {
-  public:
-    constexpr Stmt(ASTNodeKind ty) : Base(ty){};
-
-    [[nodiscard]] constexpr auto IsExprStmt(ASTNodeKind type) const -> bool;
-  };
 
   class Expr : public Base {
   public:
@@ -534,7 +522,6 @@ namespace ncc::parse {
     constexpr void SetRangeEnd(NullableFlowPtr<Expr> end) { m_range_end = std::move(end); }
     constexpr void SetWidth(NullableFlowPtr<Expr> width) { m_width = std::move(width); }
   };
-
 }  // namespace ncc::parse
 
 #endif

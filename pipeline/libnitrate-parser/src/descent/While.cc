@@ -48,7 +48,7 @@ auto Parser::PImpl::RecurseWhileCond() -> FlowPtr<Expr> {
   });
 }
 
-auto Parser::PImpl::RecurseWhileBody() -> FlowPtr<Stmt> {
+auto Parser::PImpl::RecurseWhileBody() -> FlowPtr<Expr> {
   if (NextIf<OpArrow>()) {
     return RecurseBlock(false, true, SafetyMode::Unknown);
   }
@@ -56,7 +56,7 @@ auto Parser::PImpl::RecurseWhileBody() -> FlowPtr<Stmt> {
   return RecurseBlock(true, false, SafetyMode::Unknown);
 }
 
-auto Parser::PImpl::RecurseWhile() -> FlowPtr<Stmt> {
+auto Parser::PImpl::RecurseWhile() -> FlowPtr<Expr> {
   auto cond = RecurseWhileCond();
   auto body = RecurseWhileBody();
 

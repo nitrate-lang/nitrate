@@ -41,7 +41,7 @@
 
 namespace ncc::parse {
   class LambdaExpr final : public Expr {
-    FlowPtr<Stmt> m_func;
+    FlowPtr<Expr> m_func;
 
   public:
     constexpr LambdaExpr(auto func) : Expr(QAST_LAMBDA), m_func(std::move(func)) {}

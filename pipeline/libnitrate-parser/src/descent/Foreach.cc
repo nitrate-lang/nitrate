@@ -68,7 +68,7 @@ auto Parser::PImpl::RecurseForeachExpr(bool has_paren) -> FlowPtr<Expr> {
   });
 }
 
-auto Parser::PImpl::RecurseForeachBody() -> FlowPtr<Stmt> {
+auto Parser::PImpl::RecurseForeachBody() -> FlowPtr<Expr> {
   if (NextIf<OpArrow>()) {
     return RecurseBlock(false, true, SafetyMode::Unknown);
   }
@@ -76,7 +76,7 @@ auto Parser::PImpl::RecurseForeachBody() -> FlowPtr<Stmt> {
   return RecurseBlock(true, false, SafetyMode::Unknown);
 }
 
-auto Parser::PImpl::RecurseForeach() -> FlowPtr<Stmt> {
+auto Parser::PImpl::RecurseForeach() -> FlowPtr<Expr> {
   bool foreach_has_paren = NextIf<PuncLPar>().has_value();
 
   if (auto iter_names = RecurseForeachNames()) {
@@ -98,5 +98,5 @@ auto Parser::PImpl::RecurseForeach() -> FlowPtr<Stmt> {
     Log << SyntaxError << Current() << "Expected identifier pair in foreach statement";
   }
 
-  return MockStmt(QAST_FOREACH);
+  return MockExpr(QAST_FOREACH);
 }

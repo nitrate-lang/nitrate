@@ -41,7 +41,7 @@ void CambrianFormatter::Visit(FlowPtr<Case> n) {
 
   n->GetCond().Accept(*this);
   m_line << " => ";
-  WrapStmtBody(n->GetBody(), 10, false);
+  n->GetBody()->Accept(*this);
 }
 
 void CambrianFormatter::Visit(FlowPtr<parse::Switch> n) {
@@ -61,7 +61,7 @@ void CambrianFormatter::Visit(FlowPtr<parse::Switch> n) {
   if (n->GetDefault()) {
     m_line << GetIndent();
     m_line << "_ => ";
-    WrapStmtBody(n->GetDefault().value(), 10, false);
+    n->GetDefault().value()->Accept(*this);
     m_line << std::endl;
   }
 

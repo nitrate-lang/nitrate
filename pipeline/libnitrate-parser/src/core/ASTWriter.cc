@@ -43,6 +43,8 @@
 #include <nitrate-parser/ASTWriter.hh>
 #include <variant>
 
+#include "nitrate-parser/ASTFwd.hh"
+
 using namespace ncc::parse;
 using namespace google;
 using namespace nitrate::parser::SyntaxTree;
@@ -422,8 +424,108 @@ SyntaxTree::Expr *AstWriter::From(const FlowPtr<Expr> &in) {
       break;
     }
 
+    case QAST_SEQ: {
+      message->set_allocated_sequence(From(in.As<Sequence>()));
+      break;
+    }
+
     case QAST_LAMBDA: {
       message->set_allocated_lambda_expr(From(in.As<LambdaExpr>()));
+      break;
+    }
+
+    case QAST_IF: {
+      message->set_allocated_if_(From(in.As<If>()));
+      break;
+    }
+
+    case QAST_RETIF: {
+      message->set_allocated_return_if(From(in.As<ReturnIf>()));
+      break;
+    }
+
+    case QAST_SWITCH: {
+      message->set_allocated_switch_(From(in.As<Switch>()));
+      break;
+    }
+
+    case QAST_CASE: {
+      message->set_allocated_case_(From(in.As<Case>()));
+      break;
+    }
+
+    case QAST_RETURN: {
+      message->set_allocated_return_(From(in.As<Return>()));
+      break;
+    }
+
+    case QAST_BREAK: {
+      message->set_allocated_break_(From(in.As<Break>()));
+      break;
+    }
+
+    case QAST_CONTINUE: {
+      message->set_allocated_continue_(From(in.As<Continue>()));
+      break;
+    }
+
+    case QAST_WHILE: {
+      message->set_allocated_while_(From(in.As<While>()));
+      break;
+    }
+
+    case QAST_FOR: {
+      message->set_allocated_for_(From(in.As<For>()));
+      break;
+    }
+
+    case QAST_FOREACH: {
+      message->set_allocated_foreach(From(in.As<Foreach>()));
+      break;
+    }
+
+    case QAST_INLINE_ASM: {
+      message->set_allocated_assembly(From(in.As<Assembly>()));
+      break;
+    }
+
+    case QAST_TYPEDEF: {
+      message->set_allocated_typedef_(From(in.As<Typedef>()));
+      break;
+    }
+
+    case QAST_STRUCT: {
+      message->set_allocated_struct_(From(in.As<Struct>()));
+      break;
+    }
+
+    case QAST_ENUM: {
+      message->set_allocated_enum_(From(in.As<Enum>()));
+      break;
+    }
+
+    case QAST_SCOPE: {
+      message->set_allocated_scope(From(in.As<Scope>()));
+      break;
+    }
+
+    case QAST_BLOCK: {
+      message->set_allocated_block(From(in.As<Block>()));
+      break;
+    }
+
+    case QAST_EXPORT: {
+      message->set_allocated_export_(From(in.As<Export>()));
+      break;
+    }
+
+    case QAST_VAR: {
+      message->set_allocated_variable(From(in.As<Variable>()));
+      break;
+    }
+
+    case QAST_FUNCTION: {
+      message->set_allocated_function(From(in.As<Function>()));
       break;
     }
 
@@ -555,127 +657,6 @@ SyntaxTree::Expr *AstWriter::From(const FlowPtr<Expr> &in) {
     case QAST_FUNCTOR: {
       message->set_allocated_func(From(in.As<FuncTy>()));
       break;
-    }
-
-    default: {
-      qcore_panic("Unknown expression kind");
-    }
-  }
-
-  return message;
-}
-
-SyntaxTree::Stmt *AstWriter::From(const FlowPtr<Stmt> &in) {
-  auto *message = Pool::CreateMessage<SyntaxTree::Stmt>(m_arena);
-
-  switch (in->GetKind()) {
-    case QAST_BASE: {
-      message->set_allocated_base(From(in.As<Base>()));
-      break;
-    }
-
-    case QAST_IF: {
-      message->set_allocated_if_(From(in.As<If>()));
-      break;
-    }
-
-    case QAST_RETIF: {
-      message->set_allocated_return_if(From(in.As<ReturnIf>()));
-      break;
-    }
-
-    case QAST_SWITCH: {
-      message->set_allocated_switch_(From(in.As<Switch>()));
-      break;
-    }
-
-    case QAST_CASE: {
-      message->set_allocated_case_(From(in.As<Case>()));
-      break;
-    }
-
-    case QAST_RETURN: {
-      message->set_allocated_return_(From(in.As<Return>()));
-      break;
-    }
-
-    case QAST_BREAK: {
-      message->set_allocated_break_(From(in.As<Break>()));
-      break;
-    }
-
-    case QAST_CONTINUE: {
-      message->set_allocated_continue_(From(in.As<Continue>()));
-      break;
-    }
-
-    case QAST_WHILE: {
-      message->set_allocated_while_(From(in.As<While>()));
-      break;
-    }
-
-    case QAST_FOR: {
-      message->set_allocated_for_(From(in.As<For>()));
-      break;
-    }
-
-    case QAST_FOREACH: {
-      message->set_allocated_foreach(From(in.As<Foreach>()));
-      break;
-    }
-
-    case QAST_INLINE_ASM: {
-      message->set_allocated_assembly(From(in.As<Assembly>()));
-      break;
-    }
-
-    case QAST_ESTMT: {
-      message->set_allocated_expr_stmt(From(in.As<ExprStmt>()));
-      break;
-    }
-
-    case QAST_TYPEDEF: {
-      message->set_allocated_typedef_(From(in.As<Typedef>()));
-      break;
-    }
-
-    case QAST_STRUCT: {
-      message->set_allocated_struct_(From(in.As<Struct>()));
-      break;
-    }
-
-    case QAST_ENUM: {
-      message->set_allocated_enum_(From(in.As<Enum>()));
-      break;
-    }
-
-    case QAST_SCOPE: {
-      message->set_allocated_scope(From(in.As<Scope>()));
-      break;
-    }
-
-    case QAST_BLOCK: {
-      message->set_allocated_block(From(in.As<Block>()));
-      break;
-    }
-
-    case QAST_EXPORT: {
-      message->set_allocated_export_(From(in.As<Export>()));
-      break;
-    }
-
-    case QAST_VAR: {
-      message->set_allocated_variable(From(in.As<Variable>()));
-      break;
-    }
-
-    case QAST_FUNCTION: {
-      message->set_allocated_function(From(in.As<Function>()));
-      break;
-    }
-
-    default: {
-      qcore_panic("Unknown statement kind");
     }
   }
 
@@ -817,7 +798,7 @@ SyntaxTree::Type *AstWriter::From(const FlowPtr<Type> &in) {
     }
 
     default: {
-      qcore_panic("Unknown type kind");
+      qcore_panicf("Unknown type kind %s", std::string(in->GetKindName()).c_str());
     }
   }
 
@@ -828,15 +809,6 @@ SyntaxTree::Base *AstWriter::From(const FlowPtr<Base> &in) {
   auto *message = Pool::CreateMessage<SyntaxTree::Base>(m_arena);
 
   message->set_allocated_location(FromSource(in));
-
-  return message;
-}
-
-SyntaxTree::ExprStmt *AstWriter::From(const FlowPtr<ExprStmt> &in) {
-  auto *message = Pool::CreateMessage<SyntaxTree::ExprStmt>(m_arena);
-
-  message->set_allocated_location(FromSource(in));
-  message->set_allocated_expression(From(in->GetExpr()));
 
   return message;
 }
@@ -1867,7 +1839,7 @@ SyntaxTree::Export *AstWriter::From(const FlowPtr<Export> &in) {
   {                                                              \
     auto *message = From(n);                                     \
     message->CheckInitialized();                                 \
-    auto *root = Pool::CreateMessage<SyntaxTree::Root>(m_arena); \
+    auto *root = Pool::CreateMessage<SyntaxTree::Expr>(m_arena); \
     root->set_allocated_##__node_name(message);                  \
     root->CheckInitialized();                                    \
     if (m_plaintext_mode) {                                      \
@@ -1880,7 +1852,6 @@ SyntaxTree::Export *AstWriter::From(const FlowPtr<Export> &in) {
   }
 
 void AstWriter::Visit(FlowPtr<Base> n) { SEND(From(n), base); }
-void AstWriter::Visit(FlowPtr<ExprStmt> n) { SEND(From(n), expr); }
 void AstWriter::Visit(FlowPtr<LambdaExpr> n) { SEND(From(n), lambda_expr); }
 void AstWriter::Visit(FlowPtr<NamedTy> n) { SEND(From(n), named); }
 void AstWriter::Visit(FlowPtr<InferTy> n) { SEND(From(n), infer); }

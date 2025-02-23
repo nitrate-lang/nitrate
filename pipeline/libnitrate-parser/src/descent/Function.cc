@@ -336,7 +336,7 @@ auto Parser::PImpl::RecurseFunctionReturnType() -> FlowPtr<parse::Type> {
   return CreateNode<InferTy>()();
 }
 
-auto Parser::PImpl::RecurseFunctionBody(bool parse_declaration_only) -> NullableFlowPtr<Stmt> {
+auto Parser::PImpl::RecurseFunctionBody(bool parse_declaration_only) -> NullableFlowPtr<Expr> {
   if (parse_declaration_only || NextIf<PuncSemi>()) {
     return std::nullopt;
   }
@@ -348,7 +348,7 @@ auto Parser::PImpl::RecurseFunctionBody(bool parse_declaration_only) -> Nullable
   return RecurseBlock(true, false, SafetyMode::Unknown);
 }
 
-auto Parser::PImpl::RecurseFunction(bool parse_declaration_only) -> FlowPtr<Stmt> {
+auto Parser::PImpl::RecurseFunction(bool parse_declaration_only) -> FlowPtr<Expr> {
   auto start_pos = Current().GetStart();
 
   auto [function_attributes, function_captures, function_purity, function_name] = RecurseFunctionAmbigouis();

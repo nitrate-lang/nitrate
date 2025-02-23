@@ -97,7 +97,7 @@ namespace ncc::parse {
   using TemplateParameter = std::tuple<string, FlowPtr<Type>, NullableFlowPtr<Expr>>;
   using TemplateParameters = std::vector<TemplateParameter, Arena<TemplateParameter>>;
 
-  using BlockItems = std::vector<FlowPtr<Stmt>, Arena<FlowPtr<Stmt>>>;
+  using BlockItems = std::vector<FlowPtr<Expr>, Arena<FlowPtr<Expr>>>;
   using ScopeDeps = std::vector<string, Arena<string>>;
 
   using SwitchCases = std::vector<FlowPtr<Case>, Arena<FlowPtr<Case>>>;
@@ -124,9 +124,9 @@ namespace ncc::parse {
 
   struct StructFunction {
     Vis m_vis;
-    FlowPtr<Stmt> m_func;
+    FlowPtr<Expr> m_func;
 
-    StructFunction(Vis vis, FlowPtr<Stmt> func) : m_vis(vis), m_func(std::move(func)) {}
+    StructFunction(Vis vis, FlowPtr<Expr> func) : m_vis(vis), m_func(std::move(func)) {}
   };
 
   using StructFields = std::vector<StructField, Arena<StructField>>;

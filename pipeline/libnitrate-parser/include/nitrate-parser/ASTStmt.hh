@@ -39,29 +39,18 @@
 #include <span>
 
 namespace ncc::parse {
-  class ExprStmt final : public Stmt {
-    FlowPtr<Expr> m_expr;
-
-  public:
-    constexpr ExprStmt(auto expr) : Stmt(QAST_ESTMT), m_expr(std::move(expr)) {}
-
-    [[nodiscard]] constexpr auto GetExpr() const { return m_expr; }
-
-    constexpr void SetExpr(auto expr) { m_expr = std::move(expr); }
-  };
-
   enum class SafetyMode : uint8_t {
     Unknown = 0,
     Safe = 1,
     Unsafe = 2,
   };
 
-  class Block final : public Stmt {
-    std::span<FlowPtr<Stmt>> m_items;
+  class Block final : public Expr {
+    std::span<FlowPtr<Expr>> m_items;
     SafetyMode m_safety;
 
   public:
-    constexpr Block(auto items, auto safety) : Stmt(QAST_BLOCK), m_items(items), m_safety(safety) {}
+    constexpr Block(auto items, auto safety) : Expr(QAST_BLOCK), m_items(items), m_safety(safety) {}
 
     [[nodiscard]] constexpr auto GetStatements() const { return m_items; }
     [[nodiscard]] constexpr auto GetSafety() const { return m_safety; }
@@ -72,7 +61,7 @@ namespace ncc::parse {
 
   enum class VariableType : uint8_t { Const, Var, Let };
 
-  class Variable final : public Stmt {
+  class Variable final : public Expr {
     std::span<FlowPtr<Expr>> m_attributes;
     NullableFlowPtr<Type> m_type;
     NullableFlowPtr<Expr> m_value;
@@ -81,7 +70,7 @@ namespace ncc::parse {
 
   public:
     constexpr Variable(auto name, auto type, auto value, auto decl_type, auto attributes)
-        : Stmt(QAST_VAR),
+        : Expr(QAST_VAR),
           m_attributes(attributes),
           m_type(std::move(type)),
           m_value(std::move(value)),
@@ -101,12 +90,12 @@ namespace ncc::parse {
     constexpr void SetAttributes(auto attributes) { m_attributes = attributes; }
   };
 
-  class Assembly final : public Stmt {
+  class Assembly final : public Expr {
     std::span<FlowPtr<Expr>> m_args;
     string m_code;
 
   public:
-    constexpr Assembly(auto code, auto args) : Stmt(QAST_INLINE_ASM), m_args(args), m_code(code) {}
+    constexpr Assembly(auto code, auto args) : Expr(QAST_INLINE_ASM), m_args(args), m_code(code) {}
 
     [[nodiscard]] constexpr auto GetCode() const { return m_code; }
     [[nodiscard]] constexpr auto GetArguments() const { return m_args; }
@@ -115,14 +104,14 @@ namespace ncc::parse {
     constexpr void SetArguments(auto args) { m_args = args; }
   };
 
-  class If final : public Stmt {
+  class If final : public Expr {
     FlowPtr<Expr> m_cond;
-    FlowPtr<Stmt> m_then;
-    NullableFlowPtr<Stmt> m_else;
+    FlowPtr<Expr> m_then;
+    NullableFlowPtr<Expr> m_else;
 
   public:
     constexpr If(auto cond, auto then, auto ele)
-        : Stmt(QAST_IF), m_cond(std::move(cond)), m_then(std::move(then)), m_else(std::move(ele)) {}
+        : Expr(QAST_IF), m_cond(std::move(cond)), m_then(std::move(then)), m_else(std::move(ele)) {}
 
     [[nodiscard]] constexpr auto GetCond() const { return m_cond; }
     [[nodiscard]] constexpr auto GetThen() const { return m_then; }
@@ -133,12 +122,12 @@ namespace ncc::parse {
     constexpr void SetElse(auto ele) { m_else = std::move(ele); }
   };
 
-  class While final : public Stmt {
+  class While final : public Expr {
     FlowPtr<Expr> m_cond;
-    FlowPtr<Stmt> m_body;
+    FlowPtr<Expr> m_body;
 
   public:
-    constexpr While(auto cond, auto body) : Stmt(QAST_WHILE), m_cond(std::move(cond)), m_body(std::move(body)) {}
+    constexpr While(auto cond, auto body) : Expr(QAST_WHILE), m_cond(std::move(cond)), m_body(std::move(body)) {}
 
     [[nodiscard]] constexpr auto GetCond() const { return m_cond; }
     [[nodiscard]] constexpr auto GetBody() const { return m_body; }
@@ -147,14 +136,14 @@ namespace ncc::parse {
     constexpr void SetBody(auto body) { m_body = std::move(body); }
   };
 
-  class For final : public Stmt {
-    NullableFlowPtr<Stmt> m_init;
+  class For final : public Expr {
+    NullableFlowPtr<Expr> m_init;
     NullableFlowPtr<Expr> m_cond, m_step;
-    FlowPtr<Stmt> m_body;
+    FlowPtr<Expr> m_body;
 
   public:
     constexpr For(auto init, auto cond, auto step, auto body)
-        : Stmt(QAST_FOR),
+        : Expr(QAST_FOR),
           m_init(std::move(init)),
           m_cond(std::move(cond)),
           m_step(std::move(step)),
@@ -171,14 +160,14 @@ namespace ncc::parse {
     constexpr void SetBody(auto body) { m_body = std::move(body); }
   };
 
-  class Foreach final : public Stmt {
+  class Foreach final : public Expr {
     FlowPtr<Expr> m_expr;
-    FlowPtr<Stmt> m_body;
+    FlowPtr<Expr> m_body;
     string m_idx_ident, m_val_ident;
 
   public:
     constexpr Foreach(auto idx_ident, auto val_ident, auto expr, auto body)
-        : Stmt(QAST_FOREACH),
+        : Expr(QAST_FOREACH),
           m_expr(std::move(expr)),
           m_body(std::move(body)),
           m_idx_ident(idx_ident),
@@ -195,32 +184,32 @@ namespace ncc::parse {
     constexpr void SetBody(auto body) { m_body = std::move(body); }
   };
 
-  class Break final : public Stmt {
+  class Break final : public Expr {
   public:
-    constexpr Break() : Stmt(QAST_BREAK){};
+    constexpr Break() : Expr(QAST_BREAK){};
   };
 
-  class Continue final : public Stmt {
+  class Continue final : public Expr {
   public:
-    constexpr Continue() : Stmt(QAST_CONTINUE){};
+    constexpr Continue() : Expr(QAST_CONTINUE){};
   };
 
-  class Return final : public Stmt {
+  class Return final : public Expr {
     NullableFlowPtr<Expr> m_value;
 
   public:
-    constexpr Return(auto value) : Stmt(QAST_RETURN), m_value(std::move(value)) {}
+    constexpr Return(auto value) : Expr(QAST_RETURN), m_value(std::move(value)) {}
 
     [[nodiscard]] constexpr auto GetValue() const { return m_value; }
 
     constexpr void SetValue(auto value) { m_value = std::move(value); }
   };
 
-  class ReturnIf final : public Stmt {
+  class ReturnIf final : public Expr {
     FlowPtr<Expr> m_cond, m_value;
 
   public:
-    constexpr ReturnIf(auto cond, auto value) : Stmt(QAST_RETIF), m_cond(std::move(cond)), m_value(std::move(value)) {}
+    constexpr ReturnIf(auto cond, auto value) : Expr(QAST_RETIF), m_cond(std::move(cond)), m_value(std::move(value)) {}
 
     [[nodiscard]] constexpr auto GetCond() const { return m_cond; }
     [[nodiscard]] constexpr auto GetValue() const { return m_value; }
@@ -229,12 +218,12 @@ namespace ncc::parse {
     constexpr void SetValue(auto value) { m_value = std::move(value); }
   };
 
-  class Case final : public Stmt {
+  class Case final : public Expr {
     FlowPtr<Expr> m_cond;
-    FlowPtr<Stmt> m_body;
+    FlowPtr<Expr> m_body;
 
   public:
-    constexpr Case(auto cond, auto body) : Stmt(QAST_CASE), m_cond(std::move(cond)), m_body(std::move(body)) {}
+    constexpr Case(auto cond, auto body) : Expr(QAST_CASE), m_cond(std::move(cond)), m_body(std::move(body)) {}
 
     [[nodiscard]] constexpr auto GetCond() const { return m_cond; }
     [[nodiscard]] constexpr auto GetBody() const { return m_body; }
@@ -243,14 +232,14 @@ namespace ncc::parse {
     constexpr void SetBody(auto body) { m_body = std::move(body); }
   };
 
-  class Switch final : public Stmt {
+  class Switch final : public Expr {
     std::span<FlowPtr<Case>> m_cases;
     FlowPtr<Expr> m_cond;
-    NullableFlowPtr<Stmt> m_default;
+    NullableFlowPtr<Expr> m_default;
 
   public:
     constexpr Switch(auto cond, auto cases, auto def)
-        : Stmt(QAST_SWITCH), m_cases(cases), m_cond(std::move(cond)), m_default(std::move(def)) {}
+        : Expr(QAST_SWITCH), m_cases(cases), m_cond(std::move(cond)), m_default(std::move(def)) {}
 
     [[nodiscard]] constexpr auto GetCond() const { return m_cond; }
     [[nodiscard]] constexpr auto GetCases() const { return m_cases; }
@@ -261,15 +250,15 @@ namespace ncc::parse {
     constexpr void SetDefault(auto def) { m_default = std::move(def); }
   };
 
-  class Export final : public Stmt {
+  class Export final : public Expr {
     std::span<FlowPtr<Expr>> m_attrs;
-    FlowPtr<Stmt> m_body;
+    FlowPtr<Expr> m_body;
     string m_abi_name;
     Vis m_vis;
 
   public:
     constexpr Export(auto content, auto abi_name, auto vis, auto attrs)
-        : Stmt(QAST_EXPORT), m_attrs(attrs), m_body(std::move(content)), m_abi_name(abi_name), m_vis(vis) {}
+        : Expr(QAST_EXPORT), m_attrs(attrs), m_body(std::move(content)), m_abi_name(abi_name), m_vis(vis) {}
 
     [[nodiscard]] constexpr auto GetAbiName() const { return m_abi_name; }
     [[nodiscard]] constexpr auto GetBody() const { return m_body; }
@@ -282,14 +271,14 @@ namespace ncc::parse {
     constexpr void SetAttributes(auto attrs) { m_attrs = attrs; }
   };
 
-  class Scope final : public Stmt {
+  class Scope final : public Expr {
     std::span<string> m_deps;
-    FlowPtr<Stmt> m_body;
+    FlowPtr<Expr> m_body;
     string m_name;
 
   public:
     constexpr Scope(auto name, auto body, auto deps)
-        : Stmt(QAST_SCOPE), m_deps(deps), m_body(std::move(body)), m_name(name) {}
+        : Expr(QAST_SCOPE), m_deps(deps), m_body(std::move(body)), m_name(name) {}
 
     [[nodiscard]] constexpr auto GetName() const { return m_name; }
     [[nodiscard]] constexpr auto GetBody() const { return m_body; }
@@ -300,12 +289,12 @@ namespace ncc::parse {
     constexpr void SetDeps(auto deps) { m_deps = deps; }
   };
 
-  class Typedef final : public Stmt {
+  class Typedef final : public Expr {
     FlowPtr<Type> m_type;
     string m_name;
 
   public:
-    constexpr Typedef(auto name, auto type) : Stmt(QAST_TYPEDEF), m_type(std::move(type)), m_name(name) {}
+    constexpr Typedef(auto name, auto type) : Expr(QAST_TYPEDEF), m_type(std::move(type)), m_name(name) {}
 
     [[nodiscard]] constexpr auto GetName() const { return m_name; }
     [[nodiscard]] constexpr auto GetType() const { return m_type; }
@@ -314,14 +303,14 @@ namespace ncc::parse {
     constexpr void SetType(auto type) { m_type = std::move(type); }
   };
 
-  class Enum final : public Stmt {
+  class Enum final : public Expr {
     std::span<EnumItem> m_items;
     NullableFlowPtr<Type> m_type;
     string m_name;
 
   public:
     constexpr Enum(auto name, auto type, auto items)
-        : Stmt(QAST_ENUM), m_items(items), m_type(std::move(type)), m_name(name) {}
+        : Expr(QAST_ENUM), m_items(items), m_type(std::move(type)), m_name(name) {}
 
     [[nodiscard]] constexpr auto GetName() const { return m_name; }
     [[nodiscard]] constexpr auto GetFields() const { return m_items; }
@@ -332,14 +321,14 @@ namespace ncc::parse {
     constexpr void SetType(auto type) { m_type = std::move(type); }
   };
 
-  class Function final : public Stmt {
+  class Function final : public Expr {
     std::optional<std::span<TemplateParameter>> m_template_parameters;
     std::span<FlowPtr<Expr>> m_attributes;
     std::span<std::pair<string, bool>> m_captures;
     std::span<FuncParam> m_params;
     FlowPtr<Type> m_return;
     NullableFlowPtr<Expr> m_precond, m_postcond;
-    NullableFlowPtr<Stmt> m_body;
+    NullableFlowPtr<Expr> m_body;
     string m_name;
     Purity m_purity;
     bool m_variadic;
@@ -347,7 +336,7 @@ namespace ncc::parse {
   public:
     constexpr Function(auto attributes, auto purity, auto captures, auto name, auto params, auto fn_params,
                        auto variadic, auto return_type, auto precond, auto postcond, auto body)
-        : Stmt(QAST_FUNCTION),
+        : Expr(QAST_FUNCTION),
           m_attributes(attributes),
           m_captures(captures),
           m_params(fn_params),
@@ -393,7 +382,7 @@ namespace ncc::parse {
 
   enum class CompositeType : uint8_t { Region, Struct, Group, Class, Union };
 
-  class Struct final : public Stmt {
+  class Struct final : public Expr {
     std::optional<std::span<TemplateParameter>> m_template_parameters;
     std::span<FlowPtr<Expr>> m_attributes;
     std::span<string> m_names;
@@ -405,7 +394,7 @@ namespace ncc::parse {
   public:
     constexpr Struct(auto comp_type, auto attributes, auto name, auto params, auto names, auto fields, auto methods,
                      auto static_methods)
-        : Stmt(QAST_STRUCT),
+        : Expr(QAST_STRUCT),
           m_attributes(attributes),
           m_names(names),
           m_fields(fields),
@@ -436,10 +425,6 @@ namespace ncc::parse {
     constexpr void SetMethods(auto methods) { m_methods = methods; }
     constexpr void SetStaticMethods(auto static_methods) { m_static_methods = static_methods; }
   };
-
-  constexpr auto Stmt::IsExprStmt(ASTNodeKind type) const -> bool {
-    return Is(QAST_ESTMT) && As<ExprStmt>()->GetExpr()->Is(type);
-  }
 }  // namespace ncc::parse
 
 #endif

@@ -101,7 +101,7 @@ auto Parser::PImpl::RecurseEnumItems() -> std::optional<EnumItems> {
   return std::nullopt;
 }
 
-auto Parser::PImpl::RecurseEnum() -> FlowPtr<Stmt> {
+auto Parser::PImpl::RecurseEnum() -> FlowPtr<Expr> {
   auto name = RecurseName();
   auto type = RecurseEnumType();
 
@@ -109,5 +109,5 @@ auto Parser::PImpl::RecurseEnum() -> FlowPtr<Stmt> {
     return CreateNode<Enum>(name, type, items.value())();
   }
 
-  return MockStmt(QAST_ENUM);
+  return MockExpr(QAST_ENUM);
 }

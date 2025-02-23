@@ -86,7 +86,7 @@ auto Parser::PImpl::RecurseVariableValue() -> NullableFlowPtr<Expr> {
   return std::nullopt;
 }
 
-auto Parser::PImpl::RecurseVariableInstance(VariableType decl_type) -> NullableFlowPtr<Stmt> {
+auto Parser::PImpl::RecurseVariableInstance(VariableType decl_type) -> NullableFlowPtr<Expr> {
   if (auto symbol_attributes_opt = RecurseVariableAttributes()) {
     if (auto variable_name = RecurseName(); !variable_name->empty()) {
       auto variable_type = RecurseVariableType();
@@ -103,11 +103,11 @@ auto Parser::PImpl::RecurseVariableInstance(VariableType decl_type) -> NullableF
 
   Log << SyntaxError << Current() << "Malformed variable attributes";
 
-  return MockStmt(QAST_VAR);
+  return MockExpr(QAST_VAR);
 }
 
-auto Parser::PImpl::RecurseVariable(VariableType decl_type) -> std::vector<FlowPtr<Stmt>> {
-  std::vector<FlowPtr<Stmt>> variables;
+auto Parser::PImpl::RecurseVariable(VariableType decl_type) -> std::vector<FlowPtr<Expr>> {
+  std::vector<FlowPtr<Expr>> variables;
 
   while (true) {
     if (NextIf<EofF>()) [[unlikely]] {
@@ -132,5 +132,5 @@ auto Parser::PImpl::RecurseVariable(VariableType decl_type) -> std::vector<FlowP
     }
   }
 
-  return {MockStmt(QAST_VAR)};
+  return {MockExpr(QAST_VAR)};
 }

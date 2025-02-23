@@ -77,5 +77,5 @@ void CambrianFormatter::Visit(FlowPtr<Export> n) {
 
   m_line << " ";
 
-  WrapStmtBody(n->GetBody(), -1, false);
+  n->GetBody()->Accept(*this);
 }

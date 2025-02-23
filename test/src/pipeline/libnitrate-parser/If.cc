@@ -38,7 +38,7 @@ TEST_CASE(Stmt_If, WithElse, 0, R"( if 10 {} else {} )", block{
       if {condition{integer{number : "10"}} true_branch{block{safety : None}} false_branch{block{safety : None}}}}
 });
 
-TEST_CASE(Stmt_If, WithElse, 1, R"( if 10 {} else {1+1;} )", block{safety:None statements{if{condition{integer{number:"10"}}true_branch{block{safety:None}}false_branch{block{safety:None statements{expr_stmt{expression{binary{operator: Op_Plus left{integer{number:"1"}}right{integer{number:"1"}}}}}}}}}}});
+TEST_CASE(Stmt_If, WithElse, 1, R"( if 10 {} else {1+1;} )", block{safety:None statements{if{condition{integer{number:"10"}}true_branch{block{safety:None}}false_branch{block{safety:None statements{binary{operator: Op_Plus left{integer{number:"1"}}right{integer{number:"1"}}}}}}}}});
 
 TEST_CASE(Stmt_If, WithElse, 2, R"( if 10 {} else if 20 {} )", block{
   safety : Nonestatements{if {condition{integer{number : "10"}} true_branch{

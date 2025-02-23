@@ -102,9 +102,7 @@ namespace nitrate::parser::SyntaxTree {  // NOLINT
   class Foreach;
   class Case;
   class Switch;
-  class ExprStmt;
   class Expr;
-  class Stmt;
   class Type;
   class SourceLocationRange;
   class UserComment;

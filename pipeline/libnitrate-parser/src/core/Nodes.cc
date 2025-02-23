@@ -161,13 +161,6 @@ NCC_EXPORT auto Type::IsPtrTo(const Type *type) const -> bool {
   return item->Is(type->GetKind());
 }
 
-auto Parser::PImpl::MockStmt(std::optional<ASTNodeKind>) -> FlowPtr<Stmt> {
-  auto node = CreateNode<Stmt>(QAST_BASE)();
-  node->SetOffset(m_rd.Current().GetStart());
-
-  return node;
-}
-
 auto Parser::PImpl::MockExpr(std::optional<ASTNodeKind>) -> FlowPtr<Expr> {
   auto node = CreateNode<Expr>(QAST_BASE)();
   node->SetOffset(m_rd.Current().GetStart());

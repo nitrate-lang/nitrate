@@ -64,11 +64,8 @@ namespace ncc::parse {
         const FlowPtr<Base> &out);
 
     auto Unmarshal(const SyntaxTree::Expr &in) -> Result<Expr>;
-    auto Unmarshal(const SyntaxTree::Root &in) -> Result<Base>;
-    auto Unmarshal(const SyntaxTree::Stmt &in) -> Result<Stmt>;
     auto Unmarshal(const SyntaxTree::Type &in) -> Result<Type>;
     auto Unmarshal(const SyntaxTree::Base &in) -> Result<Base>;
-    auto Unmarshal(const SyntaxTree::ExprStmt &in) -> Result<ExprStmt>;
     auto Unmarshal(const SyntaxTree::LambdaExpr &in) -> Result<LambdaExpr>;
     auto Unmarshal(const SyntaxTree::NamedTy &in) -> Result<NamedTy>;
     auto Unmarshal(const SyntaxTree::InferTy &in) -> Result<InferTy>;

@@ -37,7 +37,6 @@
 namespace ncc::parse {
   class Base;
   class Expr;
-  class Stmt;
   class Type;
   class Binary;
   class Unary;
@@ -104,7 +103,6 @@ namespace ncc::parse {
   class Foreach;
   class Case;
   class Switch;
-  class ExprStmt;
 }  // namespace ncc::parse
 
 #endif

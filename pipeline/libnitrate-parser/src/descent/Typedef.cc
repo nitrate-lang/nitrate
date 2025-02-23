@@ -37,7 +37,7 @@ using namespace ncc;
 using namespace ncc::lex;
 using namespace ncc::parse;
 
-auto Parser::PImpl::RecurseTypedef() -> FlowPtr<Stmt> {
+auto Parser::PImpl::RecurseTypedef() -> FlowPtr<Expr> {
   if (auto type_name = RecurseName(); !type_name->empty()) [[likely]] {
     if (NextIf<OpSet>()) [[likely]] {
       auto the_type = RecurseType();
@@ -54,5 +54,5 @@ auto Parser::PImpl::RecurseTypedef() -> FlowPtr<Stmt> {
     Log << SyntaxError << Current() << "Expected name in typedef declaration";
   }
 
-  return MockStmt(QAST_TYPEDEF);
+  return MockExpr(QAST_TYPEDEF);
 }

@@ -74,7 +74,6 @@ namespace ncc::parse {
 
     protected:
       void Visit(FlowPtr<Base> n) override;
-      void Visit(FlowPtr<ExprStmt> n) override;
       void Visit(FlowPtr<LambdaExpr> n) override;
       void Visit(FlowPtr<NamedTy> n) override;
       void Visit(FlowPtr<InferTy> n) override;

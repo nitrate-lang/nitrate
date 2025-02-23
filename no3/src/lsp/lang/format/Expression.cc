@@ -38,28 +38,6 @@ using namespace no3::lsp::fmt;
 using namespace ncc::parse;
 using namespace ncc::lex;
 
-void CambrianFormatter::WrapStmtBody(FlowPtr<parse::Stmt> n, size_t size_threshold, bool use_arrow_if_wrapped) {
-  (void)size_threshold;
-  (void)use_arrow_if_wrapped;
-
-  // if (n->Is(QAST_BLOCK)) {
-  //   auto block = n.As<Block>();
-  //   bool single_stmt = block->GetStatements().size() == 1;
-  //   bool few_children = single_stmt && block->RecursiveChildCount() <= size_threshold;
-
-  //   if (single_stmt && few_children) {
-  //     if (use_arrow_if_wrapped) {
-  //       m_line << "=> ";
-  //     }
-
-  //     block->GetStatements().front().Accept(*this);
-  //     return;
-  //   }
-  // }
-
-  n.Accept(*this);
-}
-
 void CambrianFormatter::Visit(FlowPtr<Base> n) {
   PrintMultilineComments(n);
 
@@ -67,13 +45,6 @@ void CambrianFormatter::Visit(FlowPtr<Base> n) {
   m_failed = true;
 
   m_line << "/* !!! */";
-}
-
-void CambrianFormatter::Visit(FlowPtr<ExprStmt> n) {
-  PrintLineComments(n);
-
-  n->GetExpr().Accept(*this);
-  m_line << ";";
 }
 
 void CambrianFormatter::Visit(FlowPtr<LambdaExpr> n) {
