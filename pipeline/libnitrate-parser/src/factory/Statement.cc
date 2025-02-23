@@ -35,97 +35,97 @@
 
 using namespace ncc::parse;
 
-auto ASTFactory::CreateTypedef() -> FlowPtr<Typedef> {
+auto ASTFactory::CreateTypedef(SourceLocation origin) -> FlowPtr<Typedef> {
   /// TODO: Implement
   qcore_implement();
 }
 
-auto ASTFactory::CreateStruct() -> FlowPtr<Struct> {
+auto ASTFactory::CreateStruct(SourceLocation origin) -> FlowPtr<Struct> {
   /// TODO: Implement
   qcore_implement();
 }
 
-auto ASTFactory::CreateEnum() -> FlowPtr<Enum> {
+auto ASTFactory::CreateEnum(SourceLocation origin) -> FlowPtr<Enum> {
   /// TODO: Implement
   qcore_implement();
 }
 
-auto ASTFactory::CreateFunction() -> FlowPtr<Function> {
+auto ASTFactory::CreateFunction(SourceLocation origin) -> FlowPtr<Function> {
   /// TODO: Implement
   qcore_implement();
 }
 
-auto ASTFactory::CreateScope() -> FlowPtr<Scope> {
+auto ASTFactory::CreateScope(SourceLocation origin) -> FlowPtr<Scope> {
   /// TODO: Implement
   qcore_implement();
 }
 
-auto ASTFactory::CreateExport() -> FlowPtr<Export> {
+auto ASTFactory::CreateExport(SourceLocation origin) -> FlowPtr<Export> {
   /// TODO: Implement
   qcore_implement();
 }
 
-auto ASTFactory::CreateBlock() -> FlowPtr<Block> {
+auto ASTFactory::CreateBlock(SourceLocation origin) -> FlowPtr<Block> {
   /// TODO: Implement
   qcore_implement();
 }
 
-auto ASTFactory::CreateVariable() -> FlowPtr<Variable> {
+auto ASTFactory::CreateVariable(SourceLocation origin) -> FlowPtr<Variable> {
   /// TODO: Implement
   qcore_implement();
 }
 
-auto ASTFactory::CreateAssembly() -> FlowPtr<Assembly> {
+auto ASTFactory::CreateAssembly(SourceLocation origin) -> FlowPtr<Assembly> {
   /// TODO: Implement
   qcore_implement();
 }
 
-auto ASTFactory::CreateReturn() -> FlowPtr<Return> {
+auto ASTFactory::CreateReturn(SourceLocation origin) -> FlowPtr<Return> {
   /// TODO: Implement
   qcore_implement();
 }
 
-auto ASTFactory::CreateReturnIf() -> FlowPtr<ReturnIf> {
+auto ASTFactory::CreateReturnIf(SourceLocation origin) -> FlowPtr<ReturnIf> {
   /// TODO: Implement
   qcore_implement();
 }
 
-auto ASTFactory::CreateBreak() -> FlowPtr<Break> {
+auto ASTFactory::CreateBreak(SourceLocation origin) -> FlowPtr<Break> {
   /// TODO: Implement
   qcore_implement();
 }
 
-auto ASTFactory::CreateContinue() -> FlowPtr<Continue> {
+auto ASTFactory::CreateContinue(SourceLocation origin) -> FlowPtr<Continue> {
   /// TODO: Implement
   qcore_implement();
 }
 
-auto ASTFactory::CreateIf() -> FlowPtr<If> {
+auto ASTFactory::CreateIf(SourceLocation origin) -> FlowPtr<If> {
   /// TODO: Implement
   qcore_implement();
 }
 
-auto ASTFactory::CreateWhile() -> FlowPtr<While> {
+auto ASTFactory::CreateWhile(SourceLocation origin) -> FlowPtr<While> {
   /// TODO: Implement
   qcore_implement();
 }
 
-auto ASTFactory::CreateFor() -> FlowPtr<For> {
+auto ASTFactory::CreateFor(SourceLocation origin) -> FlowPtr<For> {
   /// TODO: Implement
   qcore_implement();
 }
 
-auto ASTFactory::CreateForeach() -> FlowPtr<Foreach> {
+auto ASTFactory::CreateForeach(SourceLocation origin) -> FlowPtr<Foreach> {
   /// TODO: Implement
   qcore_implement();
 }
 
-auto ASTFactory::CreateCase() -> FlowPtr<Case> {
+auto ASTFactory::CreateCase(SourceLocation origin) -> FlowPtr<Case> {
   /// TODO: Implement
   qcore_implement();
 }
 
-auto ASTFactory::CreateSwitch() -> FlowPtr<Switch> {
+auto ASTFactory::CreateSwitch(SourceLocation origin) -> FlowPtr<Switch> {
   /// TODO: Implement
   qcore_implement();
 }

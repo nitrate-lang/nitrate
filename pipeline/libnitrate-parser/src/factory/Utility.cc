@@ -38,11 +38,11 @@
 
 using namespace ncc::parse;
 
-auto ASTFactory::CreateMockInstance(ASTNodeKind kind, SourceLocation dbgsrc) -> FlowPtr<Expr> {
+auto ASTFactory::CreateMockInstance(ASTNodeKind kind, SourceLocation origin) -> FlowPtr<Expr> {
   NullableFlowPtr<Expr> r;
 
-#define SIMPLE_EXPR() CreateMockInstance(QAST_NULL, dbgsrc)
-#define SIMPLE_TYPE() CreateMockInstance(QAST_VOID, dbgsrc)->As<Type>()
+#define SIMPLE_EXPR() CreateMockInstance(QAST_NULL, origin)
+#define SIMPLE_TYPE() CreateMockInstance(QAST_VOID, origin)->As<Type>()
 
   switch (kind) {
     case QAST_BINEXPR: {
@@ -141,7 +141,7 @@ auto ASTFactory::CreateMockInstance(ASTNodeKind kind, SourceLocation dbgsrc) -> 
     }
 
     case QAST_TEMPL_CALL: {
-      r = CreateTemplateCall();
+      r = CreateTemplateCall(SIMPLE_EXPR());
       break;
     }
 
@@ -261,12 +261,12 @@ auto ASTFactory::CreateMockInstance(ASTNodeKind kind, SourceLocation dbgsrc) -> 
     }
 
     case QAST_TEMPLATE: {
-      r = CreateTemplateType();
+      r = CreateTemplateType(SIMPLE_TYPE());
       break;
     }
 
     case QAST_FUNCTOR: {
-      r = CreateFunc();
+      r = CreateFunc(SIMPLE_TYPE());
       break;
     }
 
@@ -370,7 +370,7 @@ auto ASTFactory::CreateMockInstance(ASTNodeKind kind, SourceLocation dbgsrc) -> 
 #undef SIMPLE_EXPR
 
   r.value()->SetMock(true);
-  r.SetTracking(dbgsrc);
+  r.SetTracking(origin);
 
   return r.value();
 }

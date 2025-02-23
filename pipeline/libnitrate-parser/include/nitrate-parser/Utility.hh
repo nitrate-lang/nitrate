@@ -37,6 +37,7 @@
 #include <memory>
 #include <nitrate-core/FlowPtr.hh>
 #include <nitrate-core/Macro.hh>
+#include <nitrate-parser/ASTData.hh>
 #include <nitrate-parser/ASTFwd.hh>
 #include <source_location>
 
@@ -49,10 +50,10 @@ namespace ncc::parse {
    * of the original call site is saved for the purposes of data-flow analysis
    * and AST debugging.
    */
-  template <typename T, typename Allocator = ncc::parse::Arena<T>, typename... Args>
+  template <typename T, typename... Args>
   constexpr static inline auto CreateNode(Args&&... args) {
-    return [&](std::source_location origin = std::source_location::current()) {
-      FlowPtr<T> new_obj = MakeFlowPtr<T>(new (Allocator().allocate(1)) T(std::forward<Args>(args)...));  // NOLINT
+    return [&](IMemory& pool = *MainAllocator, std::source_location origin = std::source_location::current()) {
+      FlowPtr<T> new_obj = MakeFlowPtr<T>(new (pool.allocate(sizeof(T), alignof(T))) T(std::forward<Args>(args)...));
 
       new_obj.SetTracking(origin);
 

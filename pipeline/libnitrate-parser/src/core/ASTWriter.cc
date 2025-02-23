@@ -1030,6 +1030,7 @@ SyntaxTree::RefTy *AstWriter::From(const FlowPtr<RefTy> &in) {
 
   message->set_allocated_location(FromSource(in));
   message->set_allocated_pointee(From(in->GetItem()));
+  message->set_volatile_(in->IsVolatile());
   SetTypeMetadata(message, in);
 
   return message;

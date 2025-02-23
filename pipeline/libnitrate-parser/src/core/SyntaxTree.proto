@@ -291,6 +291,7 @@ message RefTy {
   optional Expr maximum = 6;
 
   required Type pointee = 7;
+  required bool volatile = 8;
 }
 
 message FuncTy {

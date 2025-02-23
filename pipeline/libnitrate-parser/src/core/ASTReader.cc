@@ -1495,7 +1495,7 @@ auto AstReader::Unmarshal(const SyntaxTree::RefTy &in) -> Result<RefTy> {
     return std::nullopt;
   }
 
-  auto type = CreateNode<RefTy>(pointee.value())();
+  auto type = CreateNode<RefTy>(pointee.value(), in.volatile_())();
   type->SetWidth(bit_width);
   type->SetRangeBegin(minimum);
   type->SetRangeEnd(maximum);

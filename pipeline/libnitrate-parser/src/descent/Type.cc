@@ -220,7 +220,7 @@ auto Parser::PImpl::RecurseTypeByOperator(Operator op) -> FlowPtr<parse::Type> {
     case OpBitAnd: {
       auto start = Current().GetStart();
       auto refee = RecurseType();
-      auto ref_ty = CreateNode<RefTy>(refee)();
+      auto ref_ty = CreateNode<RefTy>(refee, false)();
 
       ref_ty->SetOffset(start);
 
