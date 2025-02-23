@@ -45,6 +45,7 @@
 #include <nitrate-parser/ASTFwd.hh>
 #include <nitrate-parser/ASTStmt.hh>
 #include <source_location>
+#include <utility>
 #include <variant>
 
 namespace ncc::parse {
@@ -64,7 +65,7 @@ namespace ncc::parse {
 
     template <typename T>
     constexpr auto AllocateArray(auto size) -> std::span<T> {
-      const auto bytes_needed = sizeof(T) * size;
+      const auto bytes_needed = sizeof(T);
       auto* buffer = static_cast<T*>(m_pool.allocate(bytes_needed, alignof(T)));
       return std::span<T>(buffer, size);
     }
@@ -79,112 +80,37 @@ namespace ncc::parse {
     ///=========================================================================
     /// EXPRESSIONS
 
-    /**
-     * @brief Construct a new binary expression object
-     * @param lhs The left-hand side of the binary expression
-     * @param op The operator of the binary expression
-     * @param rhs The right-hand side of the binary expression
-     * @return FlowPtr<Binary> A pointer to the newly created binary expression object
-     * @note This function is thread-safe
-     */
     [[gnu::pure, nodiscard]] auto CreateBinary(FlowPtr<Expr> lhs, lex::Operator op, FlowPtr<Expr> rhs,
                                                SourceLocation origin = SourceLocation::current()) -> FlowPtr<Binary>;
 
-    /**
-     * @brief Construct a new unary expression object
-     * @param op The operator of the unary expression
-     * @param rhs The right-hand side of the unary expression
-     * @return FlowPtr<Unary> A pointer to the newly created unary expression object
-     * @note This function is thread-safe
-     */
     [[gnu::pure, nodiscard]] auto CreateUnary(lex::Operator op, FlowPtr<Expr> rhs,
                                               SourceLocation origin = SourceLocation::current()) -> FlowPtr<Unary>;
 
-    /**
-     * @brief Construct a new post-unary expression object
-     * @param lhs The left-hand side of the post-unary expression
-     * @param op The operator of the post-unary expression
-     * @return FlowPtr<PostUnary> A pointer to the newly created post-unary expression object
-     * @note This function is thread-safe
-     */
     [[gnu::pure, nodiscard]] auto CreatePostUnary(
         FlowPtr<Expr> lhs, lex::Operator op, SourceLocation origin = SourceLocation::current()) -> FlowPtr<PostUnary>;
 
-    /**
-     * @brief Construct a new ternary expression object
-     * @param condition The condition of the ternary expression
-     * @param then The 'then' branch of the ternary expression
-     * @param ele The 'else' branch of the ternary expression
-     * @return FlowPtr<Ternary> A pointer to the newly created ternary expression object
-     * @note This function is thread-safe
-     */
     [[gnu::pure, nodiscard]] auto CreateTernary(FlowPtr<Expr> condition, FlowPtr<Expr> then, FlowPtr<Expr> ele,
                                                 SourceLocation origin = SourceLocation::current()) -> FlowPtr<Ternary>;
 
-    /**
-     * @brief Construct a new integer expression object
-     * @param x The value of the integer expression
-     * @return FlowPtr<Integer> A pointer to the newly created integer expression object
-     * @note This function is thread-safe
-     */
     [[gnu::pure, nodiscard]] auto CreateInteger(const boost::multiprecision::uint128_type& x,
                                                 SourceLocation origin = SourceLocation::current()) -> FlowPtr<Integer>;
 
-    /**
-     * @brief Construct a new integer expression object
-     * @param x The value of the integer expression
-     * @return FlowPtr<Integer> A pointer to the newly created integer expression object, or std::nullopt if the value
-     * is not a valid integer in range
-     * @note This function is thread-safe
-     */
     [[gnu::pure, nodiscard]] auto CreateInteger(string x, SourceLocation origin = SourceLocation::current())
         -> std::optional<FlowPtr<Integer>>;
 
-    /**
-     * @brief Construct a new integer expression object
-     * @param x The value of the integer expression
-     * @return FlowPtr<Integer> A pointer to the newly created integer expression object, or std::nullopt if the value
-     * is not a valid integer in range
-     * @note This function is thread-safe
-     */
     [[gnu::pure, nodiscard]] auto CreateInteger(const boost::multiprecision::cpp_int& x,
                                                 SourceLocation origin = SourceLocation::current())
         -> std::optional<FlowPtr<Integer>>;
 
-    /**
-     * @brief Construct a new float expression object
-     * @param x The value of the float expression
-     * @return FlowPtr<Float> A pointer to the newly created float expression object
-     * @note This function is thread-safe
-     */
     [[gnu::pure, nodiscard]] auto CreateFloat(double x,
                                               SourceLocation origin = SourceLocation::current()) -> FlowPtr<Float>;
 
-    /**
-     * @brief Construct a new float expression object
-     * @param x The value of the float expression
-     * @return FlowPtr<Float> A pointer to the newly created float expression object, or std::nullopt if the value is
-     * not a valid float
-     * @note This function is thread-safe
-     */
     [[gnu::pure, nodiscard]] auto CreateFloat(string x, SourceLocation origin = SourceLocation::current())
         -> std::optional<FlowPtr<Float>>;
 
-    /**
-     * @brief Construct a new string expression object
-     * @param x The value of the string expression
-     * @return FlowPtr<String> A pointer to the newly created string expression object
-     * @note This function is thread-safe
-     */
     [[gnu::pure, nodiscard]] auto CreateString(string x,
                                                SourceLocation origin = SourceLocation::current()) -> FlowPtr<String>;
 
-    /**
-     * @brief Construct a new string expression object
-     * @param x The value of the string expression
-     * @return FlowPtr<String> A pointer to the newly created string expression object
-     * @note This function is thread-safe
-     */
     template <typename CharType>
     [[gnu::pure, nodiscard]] auto CreateString(std::span<CharType> x,
                                                SourceLocation origin = SourceLocation::current()) -> FlowPtr<String> {
@@ -193,213 +119,72 @@ namespace ncc::parse {
       return CreateString(string(x.begin(), x.end()), origin);
     }
 
-    /**
-     * @brief Construct a new character expression object
-     * @param x The value of the character expression
-     * @return FlowPtr<Character> A pointer to the newly created character expression object
-     * @note This function is thread-safe
-     */
     [[gnu::pure, nodiscard]] auto CreateCharacter(char8_t x, SourceLocation origin = SourceLocation::current())
         -> FlowPtr<Character>;
 
-    /**
-     * @brief Construct a new boolean expression object
-     * @param x The value of the boolean expression
-     * @return FlowPtr<Boolean> A pointer to the newly created boolean expression object
-     * @note This function is thread-safe
-     */
     [[gnu::pure, nodiscard]] auto CreateBoolean(bool x,
                                                 SourceLocation origin = SourceLocation::current()) -> FlowPtr<Boolean>;
 
-    /**
-     * @brief Construct a new null expression object
-     * @return FlowPtr<Null> A pointer to the newly created null expression object
-     * @note This function is thread-safe
-     */
     [[gnu::pure, nodiscard]] auto CreateNull(SourceLocation origin = SourceLocation::current()) -> FlowPtr<Null>;
 
-    /**
-     * @brief Construct a new undefined expression object
-     * @return FlowPtr<Undefined> A pointer to the newly created undefined expression object
-     * @note This function is thread-safe
-     */
     [[gnu::pure, nodiscard]] auto CreateUndefined(SourceLocation origin = SourceLocation::current())
         -> FlowPtr<Undefined>;
 
-    /** @brief Construct a new call expression object
-     * @param callee The callee of the call expression
-     * @param named_args The named arguments of the call expression. Positional arguments indexes start at 0, while
-     * named arguments are indexed by their name.
-     * @return FlowPtr<Call> A pointer to the newly created call expression object
-     *
-     * @note Checking is done to ensure that the specified arguments do not conflict.
-     * @note This function is thread-safe
-     */
     [[gnu::pure, nodiscard]] auto CreateCall(
         FlowPtr<Expr> callee, const std::unordered_map<std::variant<string, size_t>, FlowPtr<Expr>>& named_args = {},
         SourceLocation origin = SourceLocation::current()) -> std::optional<FlowPtr<Call>>;
 
-    /**
-     * @brief Construct a new call expression object
-     * @param pos_args The positional arguments of the call expression
-     * @param callee The callee of the call expression
-     * @return FlowPtr<Call> A pointer to the newly created call expression object
-     * @note This function is thread-safe
-     */
     [[gnu::pure, nodiscard]] auto CreateCall(const std::vector<FlowPtr<Expr>>& pos_args, FlowPtr<Expr> callee,
                                              SourceLocation origin = SourceLocation::current()) -> FlowPtr<Call>;
 
-    /**
-     * @brief Construct a new call expression object
-     * @param pos_args The positional arguments of the call expression
-     * @param callee The callee of the call expression
-     * @return FlowPtr<Call> A pointer to the newly created call expression object
-     * @note This function is thread-safe
-     */
     [[gnu::pure, nodiscard]] auto CreateCall(std::span<const FlowPtr<Expr>> pos_args, FlowPtr<Expr> callee,
                                              SourceLocation origin = SourceLocation::current()) -> FlowPtr<Call>;
 
-    /**
-     * @brief Construct a new list expression object
-     * @param ele The elements of the list expression
-     * @return FlowPtr<List> A pointer to the newly created list expression object
-     * @note This function is thread-safe
-     */
     [[gnu::pure, nodiscard]] auto CreateList(std::span<const FlowPtr<Expr>> ele = {},
                                              SourceLocation origin = SourceLocation::current()) -> FlowPtr<List>;
 
-    /**
-     * @brief Construct a new list expression object
-     * @param ele The elements of the list expression
-     * @return FlowPtr<List> A pointer to the newly created list expression object
-     * @note This function is thread-safe
-     */
     [[gnu::pure, nodiscard]] auto CreateList(const std::vector<FlowPtr<Expr>>& ele,
                                              SourceLocation origin = SourceLocation::current()) -> FlowPtr<List>;
 
-    /**
-     * @brief Construct a new association expression object
-     * @param key The key of the association expression
-     * @param value The value of the association expression
-     * @return FlowPtr<Assoc> A pointer to the newly created association expression object
-     * @note This function is thread-safe
-     */
     [[gnu::pure, nodiscard]] auto CreateAssociation(
         FlowPtr<Expr> key, FlowPtr<Expr> value, SourceLocation origin = SourceLocation::current()) -> FlowPtr<Assoc>;
 
-    /**
-     * @brief Construct a new index expression object
-     * @param base The base of the index expression
-     * @param index The index of the index expression
-     * @return FlowPtr<Index> A pointer to the newly created index expression object
-     * @note This function is thread-safe
-     */
     [[gnu::pure, nodiscard]] auto CreateIndex(FlowPtr<Expr> base, FlowPtr<Expr> index,
                                               SourceLocation origin = SourceLocation::current()) -> FlowPtr<Index>;
 
-    /**
-     * @brief Construct a new slice expression object
-     * @param base The base of the slice expression
-     * @param start The start of the slice expression
-     * @param end The end of the slice expression
-     * @return FlowPtr<Slice> A pointer to the newly created slice expression object
-     * @note This function is thread-safe
-     */
     [[gnu::pure, nodiscard]] auto CreateSlice(FlowPtr<Expr> base, FlowPtr<Expr> start, FlowPtr<Expr> end,
                                               SourceLocation origin = SourceLocation::current()) -> FlowPtr<Slice>;
 
-    /**
-     * @brief Construct a new format string expression object
-     * @param x Plaintext string context
-     * @return FlowPtr<FString> A pointer to the newly created format string expression object
-     * @note This function is thread-safe
-     */
     [[gnu::pure, nodiscard]] auto CreateFormatString(string x, SourceLocation origin = SourceLocation::current())
         -> FlowPtr<FString>;
 
-    /**
-     * @brief Construct a new format string expression object
-     * @param parts The parts of the format string expression
-     * @return FlowPtr<FString> A pointer to the newly created format string expression object
-     * @note This function is thread-safe
-     */
-    [[gnu::pure, nodiscard]] auto CreateFormatString(std::span<const std::variant<FlowPtr<Expr>, string>> parts = {},
+    [[gnu::pure, nodiscard]] auto CreateFormatString(std::span<const std::variant<string, FlowPtr<Expr>>> parts = {},
                                                      SourceLocation origin = SourceLocation::current())
         -> FlowPtr<FString>;
 
-    /**
-     * @brief Construct a new format string expression object
-     * @param parts The parts of the format string expression
-     * @return FlowPtr<FString> A pointer to the newly created format string expression object
-     * @note This function is thread-safe
-     */
-    [[gnu::pure, nodiscard]] auto CreateFormatString(const std::vector<std::variant<FlowPtr<Expr>, string>>& parts,
+    [[gnu::pure, nodiscard]] auto CreateFormatString(const std::vector<std::variant<string, FlowPtr<Expr>>>& parts,
                                                      SourceLocation origin = SourceLocation::current())
         -> FlowPtr<FString>;
 
-    /**
-     * @brief Construct a new identifier expression object
-     * @param name The name of the identifier expression
-     * @return FlowPtr<Identifier> A pointer to the newly created identifier expression object
-     * @note This function is thread-safe
-     */
     [[gnu::pure, nodiscard]] auto CreateIdentifier(string name, SourceLocation origin = SourceLocation::current())
         -> FlowPtr<Identifier>;
 
-    /**
-     * @brief Construct a new sequence expression object
-     * @param ele The elements of the sequence expression
-     * @return FlowPtr<Sequence> A pointer to the newly created sequence expression object
-     * @note This function is thread-safe
-     */
     [[gnu::pure, nodiscard]] auto CreateSequence(std::span<const FlowPtr<Expr>> ele = {},
                                                  SourceLocation origin = SourceLocation::current())
         -> FlowPtr<Sequence>;
 
-    /**
-     * @brief Construct a new sequence expression object
-     * @param ele The elements of the sequence expression
-     * @return FlowPtr<Sequence> A pointer to the newly created sequence expression object
-     * @note This function is thread-safe
-     */
     [[gnu::pure, nodiscard]] auto CreateSequence(
         const std::vector<FlowPtr<Expr>>& ele, SourceLocation origin = SourceLocation::current()) -> FlowPtr<Sequence>;
 
-    /**
-     * @brief Construct a new template call expression object
-     * @param callee The callee of the template call expression
-     * @param template_args The template arguments of the template call expression. Positional arguments indexes start
-     * at 0, while named arguments are indexed by their name.
-     * @param named_args The named arguments of the template call expression. Positional arguments indexes start at 0,
-     * while named arguments are indexed by their name.
-     * @return FlowPtr<Call> A pointer to the newly created template call expression object
-     * @note This function is thread-safe
-     */
     [[gnu::pure, nodiscard]] auto CreateTemplateCall(
         FlowPtr<Expr> callee, const std::unordered_map<std::variant<string, size_t>, FlowPtr<Expr>>& template_args = {},
         const std::unordered_map<std::variant<string, size_t>, FlowPtr<Expr>>& named_args = {},
         SourceLocation origin = SourceLocation::current()) -> std::optional<FlowPtr<Call>>;
 
-    /**
-     * @brief Construct a new template call expression object
-     * @param template_args The template arguments of the template call expression
-     * @param pos_args The positional arguments of the template call expression
-     * @param callee The callee of the template call expression
-     * @return FlowPtr<Call> A pointer to the newly created template call expression object
-     * @note This function is thread-safe
-     */
     [[gnu::pure, nodiscard]] auto CreateTemplateCall(
         const std::vector<FlowPtr<Expr>>& template_args, const std::vector<FlowPtr<Expr>>& pos_args,
         FlowPtr<Expr> callee, SourceLocation origin = SourceLocation::current()) -> FlowPtr<Call>;
 
-    /**
-     * @brief Construct a new template call expression object
-     * @param template_args The template arguments of the template call expression
-     * @param pos_args The positional arguments of the template call expression
-     * @param callee The callee of the template call expression
-     * @return FlowPtr<Call> A pointer to the newly created template call expression object
-     * @note This function is thread-safe
-     */
     [[gnu::pure, nodiscard]] auto CreateTemplateCall(
         std::span<const FlowPtr<Expr>> template_args, std::span<const FlowPtr<Expr>> pos_args, FlowPtr<Expr> callee,
         SourceLocation origin = SourceLocation::current()) -> FlowPtr<Call>;
@@ -407,281 +192,96 @@ namespace ncc::parse {
     ///=========================================================================
     /// TYPES
 
-    /**
-     * @brief Construct a new reference type object
-     * @param to The type that this reference points to
-     * @param volatil Whether or not this reference is volatile
-     * @param bits The bits of this reference type itself
-     * @param min The minimum value that this reference can hold
-     * @param max The maximum value that this reference can hold
-     * @return FlowPtr<RefTy> A pointer to the newly created reference type object
-     * @note This function is thread-safe
-     */
     [[gnu::pure, nodiscard]] auto CreateReference(FlowPtr<Type> to, bool volatil = false,
                                                   NullableFlowPtr<Expr> bits = nullptr,
                                                   NullableFlowPtr<Expr> min = nullptr,
                                                   NullableFlowPtr<Expr> max = nullptr,
                                                   SourceLocation origin = SourceLocation::current()) -> FlowPtr<RefTy>;
 
-    /**
-     * @brief Construct a new 1-bit unsigned integer type object
-     * @param bits The bits of this type
-     * @param min The minimum value that this type can hold
-     * @param max The maximum value that this type can hold
-     * @return FlowPtr<U1> A pointer to the newly created 1-bit unsigned integer type object
-     * @note This function is thread-safe
-     */
     [[gnu::pure, nodiscard]] auto CreateU1(NullableFlowPtr<Expr> bits = nullptr, NullableFlowPtr<Expr> min = nullptr,
                                            NullableFlowPtr<Expr> max = nullptr,
                                            SourceLocation origin = SourceLocation::current()) -> FlowPtr<U1>;
 
-    /**
-     * @brief Construct a new 8-bit unsigned integer type object
-     * @param bits The bits of this type
-     * @param min The minimum value that this type can hold
-     * @param max The maximum value that this type can hold
-     * @return FlowPtr<U8> A pointer to the newly created 8-bit unsigned integer type object
-     * @note This function is thread-safe
-     */
     [[gnu::pure, nodiscard]] auto CreateU8(NullableFlowPtr<Expr> bits = nullptr, NullableFlowPtr<Expr> min = nullptr,
                                            NullableFlowPtr<Expr> max = nullptr,
                                            SourceLocation origin = SourceLocation::current()) -> FlowPtr<U8>;
 
-    /**
-     * @brief Construct a new 16-bit unsigned integer type object
-     * @param bits The bits of this type
-     * @param min The minimum value that this type can hold
-     * @param max The maximum value that this type can hold
-     * @return FlowPtr<U16> A pointer to the newly created 16-bit unsigned integer type object
-     * @note This function is thread-safe
-     */
     [[gnu::pure, nodiscard]] auto CreateU16(NullableFlowPtr<Expr> bits = nullptr, NullableFlowPtr<Expr> min = nullptr,
                                             NullableFlowPtr<Expr> max = nullptr,
                                             SourceLocation origin = SourceLocation::current()) -> FlowPtr<U16>;
 
-    /**
-     * @brief Construct a new 32-bit unsigned integer type object
-     * @param bits The bits of this type
-     * @param min The minimum value that this type can hold
-     * @param max The maximum value that this type can hold
-     * @return FlowPtr<U32> A pointer to the newly created 32-bit unsigned integer type object
-     * @note This function is thread-safe
-     */
     [[gnu::pure, nodiscard]] auto CreateU32(NullableFlowPtr<Expr> bits = nullptr, NullableFlowPtr<Expr> min = nullptr,
                                             NullableFlowPtr<Expr> max = nullptr,
                                             SourceLocation origin = SourceLocation::current()) -> FlowPtr<U32>;
 
-    /**
-     * @brief Construct a new 64-bit unsigned integer type object
-     * @param bits The bits of this type
-     * @param min The minimum value that this type can hold
-     * @param max The maximum value that this type can hold
-     * @return FlowPtr<U64> A pointer to the newly created 64-bit unsigned integer type object
-     * @note This function is thread-safe
-     */
     [[gnu::pure, nodiscard]] auto CreateU64(NullableFlowPtr<Expr> bits = nullptr, NullableFlowPtr<Expr> min = nullptr,
                                             NullableFlowPtr<Expr> max = nullptr,
                                             SourceLocation origin = SourceLocation::current()) -> FlowPtr<U64>;
 
-    /**
-     * @brief Construct a new 128-bit unsigned integer type object
-     * @param bits The bits of this type
-     * @param min The minimum value that this type can hold
-     * @param max The maximum value that this type can hold
-     * @return FlowPtr<U128> A pointer to the newly created 128-bit unsigned integer type object
-     * @note This function is thread-safe
-     */
     [[gnu::pure, nodiscard]] auto CreateU128(NullableFlowPtr<Expr> bits = nullptr, NullableFlowPtr<Expr> min = nullptr,
                                              NullableFlowPtr<Expr> max = nullptr,
                                              SourceLocation origin = SourceLocation::current()) -> FlowPtr<U128>;
 
-    /**
-     * @brief Construct a new 8-bit signed integer type object
-     * @param bits The bits of this type
-     * @param min The minimum value that this type can hold
-     * @param max The maximum value that this type can hold
-     * @return FlowPtr<I1> A pointer to the newly created 8-bit signed integer type object
-     * @note This function is thread-safe
-     */
     [[gnu::pure, nodiscard]] auto CreateI8(NullableFlowPtr<Expr> bits = nullptr, NullableFlowPtr<Expr> min = nullptr,
                                            NullableFlowPtr<Expr> max = nullptr,
                                            SourceLocation origin = SourceLocation::current()) -> FlowPtr<I8>;
 
-    /**
-     * @brief Construct a new 16-bit signed integer type object
-     * @param bits The bits of this type
-     * @param min The minimum value that this type can hold
-     * @param max The maximum value that this type can hold
-     * @return FlowPtr<I16> A pointer to the newly created 16-bit signed integer type object
-     * @note This function is thread-safe
-     */
     [[gnu::pure, nodiscard]] auto CreateI16(NullableFlowPtr<Expr> bits = nullptr, NullableFlowPtr<Expr> min = nullptr,
                                             NullableFlowPtr<Expr> max = nullptr,
                                             SourceLocation origin = SourceLocation::current()) -> FlowPtr<I16>;
 
-    /**
-     * @brief Construct a new 32-bit signed integer type object
-     * @param bits The bits of this type
-     * @param min The minimum value that this type can hold
-     * @param max The maximum value that this type can hold
-     * @return FlowPtr<I32> A pointer to the newly created 32-bit signed integer type object
-     * @note This function is thread-safe
-     */
     [[gnu::pure, nodiscard]] auto CreateI32(NullableFlowPtr<Expr> bits = nullptr, NullableFlowPtr<Expr> min = nullptr,
                                             NullableFlowPtr<Expr> max = nullptr,
                                             SourceLocation origin = SourceLocation::current()) -> FlowPtr<I32>;
 
-    /**
-     * @brief Construct a new 64-bit signed integer type object
-     * @param bits The bits of this type
-     * @param min The minimum value that this type can hold
-     * @param max The maximum value that this type can hold
-     * @return FlowPtr<I64> A pointer to the newly created 64-bit signed integer type object
-     * @note This function is thread-safe
-     */
     [[gnu::pure, nodiscard]] auto CreateI64(NullableFlowPtr<Expr> bits = nullptr, NullableFlowPtr<Expr> min = nullptr,
                                             NullableFlowPtr<Expr> max = nullptr,
                                             SourceLocation origin = SourceLocation::current()) -> FlowPtr<I64>;
 
-    /**
-     * @brief Construct a new 128-bit signed integer type object
-     * @param bits The bits of this type
-     * @param min The minimum value that this type can hold
-     * @param max The maximum value that this type can hold
-     * @return FlowPtr<I128> A pointer to the newly created 128-bit signed integer type object
-     * @note This function is thread-safe
-     */
     [[gnu::pure, nodiscard]] auto CreateI128(NullableFlowPtr<Expr> bits = nullptr, NullableFlowPtr<Expr> min = nullptr,
                                              NullableFlowPtr<Expr> max = nullptr,
                                              SourceLocation origin = SourceLocation::current()) -> FlowPtr<I128>;
 
-    /**
-     * @brief Construct a new 16-bit floating-point type object
-     * @param bits The bits of this type
-     * @param min The minimum value that this type can hold
-     * @param max The maximum value that this type can hold
-     * @return FlowPtr<F16> A pointer to the newly created 16-bit floating-point type object
-     * @note This function is thread-safe
-     */
     [[gnu::pure, nodiscard]] auto CreateF16(NullableFlowPtr<Expr> bits = nullptr, NullableFlowPtr<Expr> min = nullptr,
                                             NullableFlowPtr<Expr> max = nullptr,
                                             SourceLocation origin = SourceLocation::current()) -> FlowPtr<F16>;
 
-    /**
-     * @brief Construct a new 32-bit floating-point type object
-     * @param bits The bits of this type
-     * @param min The minimum value that this type can hold
-     * @param max The maximum value that this type can hold
-     * @return FlowPtr<F32> A pointer to the newly created 32-bit floating-point type object
-     * @note This function is thread-safe
-     */
     [[gnu::pure, nodiscard]] auto CreateF32(NullableFlowPtr<Expr> bits = nullptr, NullableFlowPtr<Expr> min = nullptr,
                                             NullableFlowPtr<Expr> max = nullptr,
                                             SourceLocation origin = SourceLocation::current()) -> FlowPtr<F32>;
 
-    /**
-     * @brief Construct a new 64-bit floating-point type object
-     * @param bits The bits of this type
-     * @param min The minimum value that this type can hold
-     * @param max The maximum value that this type can hold
-     * @return FlowPtr<F64> A pointer to the newly created 64-bit floating-point type object
-     * @note This function is thread-safe
-     */
     [[gnu::pure, nodiscard]] auto CreateF64(NullableFlowPtr<Expr> bits = nullptr, NullableFlowPtr<Expr> min = nullptr,
                                             NullableFlowPtr<Expr> max = nullptr,
                                             SourceLocation origin = SourceLocation::current()) -> FlowPtr<F64>;
 
-    /**
-     * @brief Construct a new 128-bit floating-point type object
-     * @param bits The bits of this type
-     * @param min The minimum value that this type can hold
-     * @param max The maximum value that this type can hold
-     * @return FlowPtr<F128> A pointer to the newly created 128-bit floating-point type object
-     * @note This function is thread-safe
-     */
     [[gnu::pure, nodiscard]] auto CreateF128(NullableFlowPtr<Expr> bits = nullptr, NullableFlowPtr<Expr> min = nullptr,
                                              NullableFlowPtr<Expr> max = nullptr,
                                              SourceLocation origin = SourceLocation::current()) -> FlowPtr<F128>;
 
-    /**
-     * @brief Construct a new void type object
-     * @param bits The bits of this type
-     * @param min The minimum value that this type can hold
-     * @param max The maximum value that this type can hold
-     * @return FlowPtr<VoidTy> A pointer to the newly created void type object
-     * @note This function is thread-safe
-     */
     [[gnu::pure, nodiscard]] auto CreateVoid(NullableFlowPtr<Expr> bits = nullptr, NullableFlowPtr<Expr> min = nullptr,
                                              NullableFlowPtr<Expr> max = nullptr,
                                              SourceLocation origin = SourceLocation::current()) -> FlowPtr<VoidTy>;
 
-    /**
-     * @brief Construct a new pointer type object
-     * @param to The type that this pointer points to
-     * @param volatil Whether or not this pointer is volatile
-     * @param bits The bits of this pointer type itself
-     * @param min The minimum value that this pointer can hold
-     * @param max The maximum value that this pointer can hold
-     * @return FlowPtr<PtrTy> A pointer to the newly created pointer type object
-     * @note This function is thread-safe
-     */
     [[gnu::pure, nodiscard]] auto CreatePointer(FlowPtr<Type> to, bool volatil = false,
                                                 NullableFlowPtr<Expr> bits = nullptr,
                                                 NullableFlowPtr<Expr> min = nullptr,
                                                 NullableFlowPtr<Expr> max = nullptr,
                                                 SourceLocation origin = SourceLocation::current()) -> FlowPtr<PtrTy>;
 
-    /**
-     * @brief Construct a new opaque type object
-     * @param name The name of this opaque type
-     * @param bits The bits of this type
-     * @param min The minimum value that this type can hold
-     * @param max The maximum value that this type can hold
-     * @return FlowPtr<OpaqueTy> A pointer to the newly created opaque type object
-     * @note This function is thread-safe
-     */
     [[gnu::pure, nodiscard]] auto CreateOpaque(string name, NullableFlowPtr<Expr> bits = nullptr,
                                                NullableFlowPtr<Expr> min = nullptr, NullableFlowPtr<Expr> max = nullptr,
                                                SourceLocation origin = SourceLocation::current()) -> FlowPtr<OpaqueTy>;
 
-    /**
-     * @brief Construct a new array type object
-     * @param element_type The type of the elements in this array
-     * @param element_count The number of elements in this array
-     * @param bits The bits of this type
-     * @param min The minimum value that this type can hold
-     * @param max The maximum value that this type can hold
-     * @return FlowPtr<ArrayTy> A pointer to the newly created array type object
-     * @note This function is thread-safe
-     */
     [[gnu::pure, nodiscard]] auto CreateArray(FlowPtr<Type> element_type, FlowPtr<Expr> element_count,
                                               NullableFlowPtr<Expr> bits = nullptr, NullableFlowPtr<Expr> min = nullptr,
                                               NullableFlowPtr<Expr> max = nullptr,
                                               SourceLocation origin = SourceLocation::current()) -> FlowPtr<ArrayTy>;
 
-    /**
-     * @brief Construct a new tuple type object
-     * @param ele The types of the elements in this tuple
-     * @param bits The bits of this type
-     * @param min The minimum value that this type can hold
-     * @param max The maximum value that this type can hold
-     * @return FlowPtr<TupleTy> A pointer to the newly created tuple type object
-     * @note This function is thread-safe
-     */
     [[gnu::pure, nodiscard]] auto CreateTuple(std::span<const FlowPtr<Type>> ele = {},
                                               NullableFlowPtr<Expr> bits = nullptr, NullableFlowPtr<Expr> min = nullptr,
                                               NullableFlowPtr<Expr> max = nullptr,
                                               SourceLocation origin = SourceLocation::current()) -> FlowPtr<TupleTy>;
 
-    /**
-     * @brief Construct a new tuple type object
-     * @param ele The types of the elements in this tuple
-     * @param bits The bits of this type
-     * @param min The minimum value that this type can hold
-     * @param max The maximum value that this type can hold
-     * @return FlowPtr<TupleTy> A pointer to the newly created tuple type object
-     * @note This function is thread-safe
-     */
     [[gnu::pure, nodiscard]] auto CreateTuple(const std::vector<FlowPtr<Type>>& ele,
                                               NullableFlowPtr<Expr> bits = nullptr, NullableFlowPtr<Expr> min = nullptr,
                                               NullableFlowPtr<Expr> max = nullptr,
@@ -703,72 +303,24 @@ namespace ncc::parse {
         NullableFlowPtr<Expr> bits = nullptr, NullableFlowPtr<Expr> min = nullptr, NullableFlowPtr<Expr> max = nullptr,
         SourceLocation origin = SourceLocation::current()) -> std::optional<FlowPtr<FuncTy>>;
 
-    /**
-     * @brief Construct a new unresolved named type object
-     * @param name The name of this named type
-     * @param bits The bits of this type
-     * @param min The minimum value that this type can hold
-     * @param max The maximum value that this type can hold
-     * @return FlowPtr<NamedTy> A pointer to the newly created named type object
-     * @note This function is thread-safe
-     */
     [[gnu::pure, nodiscard]] auto CreateNamed(string name, NullableFlowPtr<Expr> bits = nullptr,
                                               NullableFlowPtr<Expr> min = nullptr, NullableFlowPtr<Expr> max = nullptr,
                                               SourceLocation origin = SourceLocation::current()) -> FlowPtr<NamedTy>;
 
-    /**
-     * @brief Construct a new inferred type object
-     * @param bits The bits of this type
-     * @param min The minimum value that this type can hold
-     * @param max The maximum value that this type can hold
-     * @return FlowPtr<InferTy> A pointer to the newly created inferred type object
-     * @note This function is thread-safe
-     */
     [[gnu::pure, nodiscard]] auto CreateUnknownType(
         NullableFlowPtr<Expr> bits = nullptr, NullableFlowPtr<Expr> min = nullptr, NullableFlowPtr<Expr> max = nullptr,
         SourceLocation origin = SourceLocation::current()) -> FlowPtr<InferTy>;
 
-    /**
-     * @brief Construct a new template type object
-     * @param base The base type of this template type
-     * @param named_args The named arguments of the template type. Positional arguments indexes start at 0, while named
-     * arguments are indexed by their name.
-     * @param bits The bits of this template type
-     * @param min The minimum value that this template type can hold
-     * @param max The maximum value that this template type can hold
-     * @return FlowPtr<TemplateType> A pointer to the newly created template type object
-     * @note This function is thread-safe
-     */
     [[gnu::pure, nodiscard]] auto CreateTemplateType(
         FlowPtr<Type> base, const std::unordered_map<std::variant<string, size_t>, FlowPtr<Expr>>& named_args = {},
         NullableFlowPtr<Expr> bits = nullptr, NullableFlowPtr<Expr> min = nullptr, NullableFlowPtr<Expr> max = nullptr,
         SourceLocation origin = SourceLocation::current()) -> std::optional<FlowPtr<TemplateType>>;
 
-    /**
-     * @brief Construct a new template type object
-     * @param pos_args The positional arguments of the template type
-     * @param base The base type of this template type
-     * @param bits The bits of this template type
-     * @param min The minimum value that this template type can hold
-     * @param max The maximum value that this template type can hold
-     * @return FlowPtr<TemplateType> A pointer to the newly created template type object
-     * @note This function is thread-safe
-     */
     [[gnu::pure, nodiscard]] auto CreateTemplateType(
         const std::vector<FlowPtr<Expr>>& pos_args, FlowPtr<Type> base, NullableFlowPtr<Expr> bits = nullptr,
         NullableFlowPtr<Expr> min = nullptr, NullableFlowPtr<Expr> max = nullptr,
         SourceLocation origin = SourceLocation::current()) -> FlowPtr<TemplateType>;
 
-    /**
-     * @brief Construct a new template type object
-     * @param pos_args The positional arguments of the template type
-     * @param base The base type of this template type
-     * @param bits The bits of this template type
-     * @param min The minimum value that this template type can hold
-     * @param max The maximum value that this template type can hold
-     * @return FlowPtr<TemplateType> A pointer to the newly created template type object
-     * @note This function is thread-safe
-     */
     [[gnu::pure, nodiscard]] auto CreateTemplateType(
         std::span<const FlowPtr<Expr>> pos_args, FlowPtr<Type> base, NullableFlowPtr<Expr> bits = nullptr,
         NullableFlowPtr<Expr> min = nullptr, NullableFlowPtr<Expr> max = nullptr,
@@ -777,177 +329,90 @@ namespace ncc::parse {
     ///=========================================================================
     /// STATEMENTS
 
-    /**
-     * @brief Construct a new typedef statement object
-     * @param name The name of the typedef statement
-     * @param base The base type of the typedef statement
-     * @return FlowPtr<Typedef> A pointer to the newly created typedef statement object
-     * @note This function is thread-safe
-     */
     [[gnu::pure, nodiscard]] auto CreateTypedef(string name, FlowPtr<Type> base,
                                                 SourceLocation origin = SourceLocation::current()) -> FlowPtr<Typedef>;
 
     /// TODO: Finish declaration
     [[gnu::pure, nodiscard]] auto CreateStruct(SourceLocation origin = SourceLocation::current()) -> FlowPtr<Struct>;
 
-    /// TODO: Finish declaration
-    [[gnu::pure, nodiscard]] auto CreateEnum(SourceLocation origin = SourceLocation::current()) -> FlowPtr<Enum>;
+    struct FactoryEnumItem {
+      string m_name;
+      NullableFlowPtr<Expr> m_value;
 
-    /// TODO: Finish declaration
-    [[gnu::pure, nodiscard]] auto CreateFunction(SourceLocation origin = SourceLocation::current())
-        -> FlowPtr<Function>;
+      FactoryEnumItem(string name, NullableFlowPtr<Expr> value = nullptr) : m_name(name), m_value(std::move(value)) {}
+    };
 
-    /// TODO: Finish declaration
-    [[gnu::pure, nodiscard]] auto CreateScope(SourceLocation origin = SourceLocation::current()) -> FlowPtr<Scope>;
+    [[gnu::pure, nodiscard]] auto CreateEnum(string name, NullableFlowPtr<Type> ele_ty = nullptr,
+                                             const std::vector<FactoryEnumItem>& ele = {},
+                                             SourceLocation origin = SourceLocation::current()) -> FlowPtr<Enum>;
 
-    /// TODO: Finish declaration
-    [[gnu::pure, nodiscard]] auto CreateExport(SourceLocation origin = SourceLocation::current()) -> FlowPtr<Export>;
+    [[gnu::pure, nodiscard]] auto CreateFunction(
+        string name, NullableFlowPtr<Type> ret_ty = nullptr, const std::vector<FactoryFunctionParameter>& params = {},
+        bool variadic = false, NullableFlowPtr<Expr> body = nullptr, Purity purity = Purity::Impure,
+        const std::vector<FlowPtr<Expr>>& attributes = {}, NullableFlowPtr<Expr> precond = nullptr,
+        NullableFlowPtr<Expr> postcond = nullptr, const std::vector<std::pair<string, bool>>& captures = {},
+        const std::optional<std::span<TemplateParameter>>& template_parameters = std::nullopt,
+        SourceLocation origin = SourceLocation::current()) -> std::optional<FlowPtr<Function>>;
 
-    /**
-     * @brief Construct a new block statement object
-     * @param items The items of the block statement
-     * @param safety The safety mode of the block statement
-     * @return FlowPtr<Block> A pointer to the newly created block statement object
-     * @note This function is thread-safe
-     */
+    [[gnu::pure, nodiscard]] auto CreateAnonymousFunction(
+        Purity purity = Purity::Impure, const std::vector<std::pair<string, bool>>& captures = {},
+        NullableFlowPtr<Type> ret_ty = nullptr, const std::vector<FactoryFunctionParameter>& params = {},
+        bool variadic = false, NullableFlowPtr<Expr> body = nullptr, const std::vector<FlowPtr<Expr>>& attributes = {},
+        NullableFlowPtr<Expr> precond = nullptr, NullableFlowPtr<Expr> postcond = nullptr,
+        SourceLocation origin = SourceLocation::current()) -> std::optional<FlowPtr<Function>>;
+
+    [[gnu::pure, nodiscard]] auto CreateScope(string name, FlowPtr<Expr> body, const std::vector<string>& tags = {},
+                                              SourceLocation origin = SourceLocation::current()) -> FlowPtr<Scope>;
+
+    [[gnu::pure, nodiscard]] auto CreateExport(FlowPtr<Expr> symbol, Vis vis = Vis::Pub, string abi = "",
+                                               const std::vector<FlowPtr<Expr>>& attributes = {},
+                                               SourceLocation origin = SourceLocation::current()) -> FlowPtr<Export>;
+
     [[gnu::pure, nodiscard]] auto CreateBlock(std::span<const FlowPtr<Expr>> items = {},
                                               SafetyMode safety = SafetyMode::Unknown,
                                               SourceLocation origin = SourceLocation::current()) -> FlowPtr<Block>;
 
-    /**
-     * @brief Construct a new block statement object
-     * @param items The items of the block statement
-     * @param safety The safety mode of the block statement
-     * @return FlowPtr<Block> A pointer to the newly created block statement object
-     * @note This function is thread-safe
-     */
     [[gnu::pure, nodiscard]] auto CreateBlock(const std::vector<FlowPtr<Expr>>& items,
                                               SafetyMode safety = SafetyMode::Unknown,
                                               SourceLocation origin = SourceLocation::current()) -> FlowPtr<Block>;
 
-    /**
-     * @brief Construct a new variable statement object
-     * @param name The name of the variable statement
-     * @param type The type of the variable statement
-     * @param init The initial value of the variable statement
-     * @param attributes The attributes of the variable statement
-     * @return FlowPtr<Variable> A pointer to the newly created variable statement object
-     * @note This function is thread-safe
-     */
     [[gnu::pure, nodiscard]] auto CreateVariable(
         VariableType variant, string name, NullableFlowPtr<Type> type = nullptr, NullableFlowPtr<Expr> init = nullptr,
         const std::vector<FlowPtr<Expr>>& attributes = {},
         SourceLocation origin = SourceLocation::current()) -> FlowPtr<Variable>;
 
-    /**
-     * @brief Construct a new inline assembly statement object
-     * @param asm_code The assembly code of the inline assembly statement
-     * @return FlowPtr<Assembly> A pointer to the newly created inline assembly statement object
-     * @note This function is thread-safe
-     */
     [[gnu::pure, nodiscard]] auto CreateAssembly(string asm_code, SourceLocation origin = SourceLocation::current())
         -> FlowPtr<Assembly>;
 
-    /**
-     * @brief Construct a new return statement object
-     * @param value The value of the return statement
-     * @return FlowPtr<Return> A pointer to the newly created return statement object
-     * @note This function is thread-safe
-     */
     [[gnu::pure, nodiscard]] auto CreateReturn(NullableFlowPtr<Expr> value = nullptr,
                                                SourceLocation origin = SourceLocation::current()) -> FlowPtr<Return>;
 
-    /**
-     * @brief Construct a new return-if statement object
-     * @param cond The condition of the return-if statement
-     * @param value The value of the return-if statement
-     * @return FlowPtr<ReturnIf> A pointer to the newly created return-if statement object
-     * @note This function is thread-safe
-     */
     [[gnu::pure, nodiscard]] auto CreateReturnIf(FlowPtr<Expr> cond, NullableFlowPtr<Expr> value = nullptr,
                                                  SourceLocation origin = SourceLocation::current())
         -> FlowPtr<ReturnIf>;
 
-    /**
-     * @brief Construct a new break statement object
-     * @return FlowPtr<Break> A pointer to the newly created break statement object
-     * @note This function is thread-safe
-     */
     [[gnu::pure, nodiscard]] auto CreateBreak(SourceLocation origin = SourceLocation::current()) -> FlowPtr<Break>;
 
-    /**
-     * @brief Construct a new continue statement object
-     * @return FlowPtr<Continue> A pointer to the newly created continue statement object
-     * @note This function is thread-safe
-     */
     [[gnu::pure, nodiscard]] auto CreateContinue(SourceLocation origin = SourceLocation::current())
         -> FlowPtr<Continue>;
 
-    /**
-     * @brief Construct a new if statement object
-     * @param cond The condition of the if statement
-     * @param then The then block of the if statement
-     * @param ele The else block of the if statement
-     * @return FlowPtr<If> A pointer to the newly created if statement object
-     * @note This function is thread-safe
-     */
     [[gnu::pure, nodiscard]] auto CreateIf(FlowPtr<Expr> cond, FlowPtr<Expr> then, NullableFlowPtr<Expr> ele = nullptr,
                                            SourceLocation origin = SourceLocation::current()) -> FlowPtr<If>;
 
-    /**
-     * @brief Construct a new while statement object
-     * @param cond The condition of the while statement
-     * @param body The body of the while statement
-     * @return FlowPtr<While> A pointer to the newly created while statement object
-     * @note This function is thread-safe
-     */
     [[gnu::pure, nodiscard]] auto CreateWhile(FlowPtr<Expr> cond, FlowPtr<Expr> body,
                                               SourceLocation origin = SourceLocation::current()) -> FlowPtr<While>;
 
-    /**
-     * @brief Construct a new for statement object
-     * @param init The initialization of the for statement
-     * @param step The step of the for statement
-     * @param cond The condition of the for statement
-     * @param body The body of the for statement
-     * @return FlowPtr<For> A pointer to the newly created for statement object
-     * @note This function is thread-safe
-     */
     [[gnu::pure, nodiscard]] auto CreateFor(NullableFlowPtr<Expr> init, NullableFlowPtr<Expr> step,
                                             NullableFlowPtr<Expr> cond, FlowPtr<Expr> body,
                                             SourceLocation origin = SourceLocation::current()) -> FlowPtr<For>;
 
-    /**
-     * @brief Construct a new foreach statement object
-     * @param key_name The name of the key of the foreach statement
-     * @param val_name The name of the value of the foreach statement
-     * @param iterable The iterable of the foreach statement
-     * @param body The body of the foreach statement
-     * @return FlowPtr<Foreach> A pointer to the newly created foreach statement object
-     * @note This function is thread-safe
-     */
     [[gnu::pure, nodiscard]] auto CreateForeach(string key_name, string val_name, FlowPtr<Expr> iterable,
                                                 FlowPtr<Expr> body,
                                                 SourceLocation origin = SourceLocation::current()) -> FlowPtr<Foreach>;
 
-    /**
-     * @brief Construct a new case statement object
-     * @param match The match of the case statement
-     * @param body The body of the case statement
-     * @return FlowPtr<Case> A pointer to the newly created case statement object
-     * @note This function is thread-safe
-     */
     [[gnu::pure, nodiscard]] auto CreateCase(FlowPtr<Expr> match, FlowPtr<Expr> body,
                                              SourceLocation origin = SourceLocation::current()) -> FlowPtr<Case>;
 
-    /**
-     * @brief Construct a new switch statement object
-     * @param match The match of the switch statement
-     * @param defaul The default case of the switch statement
-     * @param cases The cases of the switch statement
-     * @return FlowPtr<Switch> A pointer to the newly created switch statement object
-     * @note This function is thread-safe
-     */
     [[gnu::pure, nodiscard]] auto CreateSwitch(FlowPtr<Expr> match, NullableFlowPtr<Expr> defaul = nullptr,
                                                const std::vector<FlowPtr<Case>>& cases = {},
                                                SourceLocation origin = SourceLocation::current()) -> FlowPtr<Switch>;
@@ -1082,13 +547,13 @@ namespace ncc::parse {
     }
 
     [[gnu::pure, nodiscard]] static inline auto CreateFormatString(
-        IMemory& m, std::span<const std::variant<FlowPtr<Expr>, string>> parts = {},
+        IMemory& m, std::span<const std::variant<string, FlowPtr<Expr>>> parts = {},
         SourceLocation origin = SourceLocation::current()) {
       return ASTFactory(m).CreateFormatString(parts, origin);
     }
 
     [[gnu::pure, nodiscard]] static inline auto CreateFormatString(
-        IMemory& m, const std::vector<std::variant<FlowPtr<Expr>, string>>& parts,
+        IMemory& m, const std::vector<std::variant<string, FlowPtr<Expr>>>& parts,
         SourceLocation origin = SourceLocation::current()) {
       return ASTFactory(m).CreateFormatString(parts, origin);
     }
@@ -1359,24 +824,48 @@ namespace ncc::parse {
       return ASTFactory(m).CreateStruct(origin);
     }
 
-    [[gnu::pure, nodiscard]] static inline auto CreateEnum(IMemory& m,
+    [[gnu::pure, nodiscard]] static inline auto CreateEnum(IMemory& m, string name,
+                                                           NullableFlowPtr<Type> ele_ty = nullptr,
+                                                           const std::vector<FactoryEnumItem>& ele = {},
                                                            SourceLocation origin = SourceLocation::current()) {
-      return ASTFactory(m).CreateEnum(origin);
+      return ASTFactory(m).CreateEnum(name, std::move(ele_ty), ele, origin);
     }
 
-    [[gnu::pure, nodiscard]] static inline auto CreateFunction(IMemory& m,
-                                                               SourceLocation origin = SourceLocation::current()) {
-      return ASTFactory(m).CreateFunction(origin);
+    [[gnu::pure, nodiscard]] static inline auto CreateFunction(
+        IMemory& m, string name, NullableFlowPtr<Type> ret_ty = nullptr,
+        const std::vector<FactoryFunctionParameter>& params = {}, bool variadic = false,
+        NullableFlowPtr<Expr> body = nullptr, Purity purity = Purity::Impure,
+        const std::vector<FlowPtr<Expr>>& attributes = {}, NullableFlowPtr<Expr> precond = nullptr,
+        NullableFlowPtr<Expr> postcond = nullptr, const std::vector<std::pair<string, bool>>& captures = {},
+        const std::optional<std::span<TemplateParameter>>& template_parameters = std::nullopt,
+        SourceLocation origin = SourceLocation::current()) {
+      return ASTFactory(m).CreateFunction(name, std::move(ret_ty), params, variadic, std::move(body), purity,
+                                          attributes, std::move(precond), std::move(postcond), captures,
+                                          template_parameters, origin);
     }
 
-    [[gnu::pure, nodiscard]] static inline auto CreateScope(IMemory& m,
+    [[gnu::pure, nodiscard]] static inline auto CreateAnonymousFunction(
+        IMemory& m, Purity purity = Purity::Impure, const std::vector<std::pair<string, bool>>& captures = {},
+        NullableFlowPtr<Type> ret_ty = nullptr, const std::vector<FactoryFunctionParameter>& params = {},
+        bool variadic = false, NullableFlowPtr<Expr> body = nullptr, const std::vector<FlowPtr<Expr>>& attributes = {},
+        NullableFlowPtr<Expr> precond = nullptr, NullableFlowPtr<Expr> postcond = nullptr,
+        SourceLocation origin = SourceLocation::current()) {
+      return ASTFactory(m).CreateAnonymousFunction(purity, captures, std::move(ret_ty), params, variadic,
+                                                   std::move(body), attributes, std::move(precond), std::move(postcond),
+                                                   origin);
+    }
+
+    [[gnu::pure, nodiscard]] static inline auto CreateScope(IMemory& m, string name, FlowPtr<Expr> body,
+                                                            const std::vector<string>& tags = {},
                                                             SourceLocation origin = SourceLocation::current()) {
-      return ASTFactory(m).CreateScope(origin);
+      return ASTFactory(m).CreateScope(name, std::move(body), tags, origin);
     }
 
-    [[gnu::pure, nodiscard]] static inline auto CreateExport(IMemory& m,
+    [[gnu::pure, nodiscard]] static inline auto CreateExport(IMemory& m, FlowPtr<Expr> symbol, Vis vis = Vis::Pub,
+                                                             string abi = "",
+                                                             const std::vector<FlowPtr<Expr>>& attributes = {},
                                                              SourceLocation origin = SourceLocation::current()) {
-      return ASTFactory(m).CreateExport(origin);
+      return ASTFactory(m).CreateExport(std::move(symbol), vis, abi, attributes, origin);
     }
 
     [[gnu::pure, nodiscard]] static inline auto CreateBlock(IMemory& m, std::span<const FlowPtr<Expr>> items = {},

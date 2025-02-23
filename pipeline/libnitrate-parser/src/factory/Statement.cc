@@ -46,24 +46,51 @@ auto ASTFactory::CreateStruct(SourceLocation origin) -> FlowPtr<Struct> {
   qcore_implement();
 }
 
-auto ASTFactory::CreateEnum(SourceLocation origin) -> FlowPtr<Enum> {
+auto ASTFactory::CreateEnum(string name, NullableFlowPtr<Type> ele_ty, const std::vector<FactoryEnumItem>& ele,
+                            SourceLocation origin) -> FlowPtr<Enum> {
+  auto ele_copy = AllocateArray<EnumItem>(ele.size());
+  for (size_t i = 0; i < ele.size(); ++i) {
+    ele_copy[i] = {ele[i].m_name, ele[i].m_value};
+  }
+
+  return CreateInstance<Enum>(name, ele_ty, ele_copy)(m_pool, origin);
+}
+
+auto ASTFactory::CreateFunction(string name, NullableFlowPtr<Type> ret_ty,
+                                const std::vector<FactoryFunctionParameter>& params, bool variadic,
+                                NullableFlowPtr<Expr> body, Purity purity, const std::vector<FlowPtr<Expr>>& attributes,
+                                NullableFlowPtr<Expr> precond, NullableFlowPtr<Expr> postcond,
+                                const std::vector<std::pair<string, bool>>& captures,
+                                const std::optional<std::span<TemplateParameter>>& template_parameters,
+                                SourceLocation origin) -> std::optional<FlowPtr<Function>> {
   /// TODO: Implement
   qcore_implement();
 }
 
-auto ASTFactory::CreateFunction(SourceLocation origin) -> FlowPtr<Function> {
+auto ASTFactory::CreateAnonymousFunction(Purity purity, const std::vector<std::pair<string, bool>>& captures,
+                                         NullableFlowPtr<Type> ret_ty,
+                                         const std::vector<FactoryFunctionParameter>& params, bool variadic,
+                                         NullableFlowPtr<Expr> body, const std::vector<FlowPtr<Expr>>& attributes,
+                                         NullableFlowPtr<Expr> precond, NullableFlowPtr<Expr> postcond,
+                                         SourceLocation origin) -> std::optional<FlowPtr<Function>> {
   /// TODO: Implement
   qcore_implement();
 }
 
-auto ASTFactory::CreateScope(SourceLocation origin) -> FlowPtr<Scope> {
-  /// TODO: Implement
-  qcore_implement();
+auto ASTFactory::CreateScope(string name, FlowPtr<Expr> body, const std::vector<string>& tags,
+                             SourceLocation origin) -> FlowPtr<Scope> {
+  auto tags_copy = AllocateArray<string>(tags.size());
+  std::copy(tags.begin(), tags.end(), tags_copy.begin());
+
+  return CreateInstance<Scope>(name, body, tags_copy)(m_pool, origin);
 }
 
-auto ASTFactory::CreateExport(SourceLocation origin) -> FlowPtr<Export> {
-  /// TODO: Implement
-  qcore_implement();
+auto ASTFactory::CreateExport(FlowPtr<Expr> symbol, Vis vis, string abi, const std::vector<FlowPtr<Expr>>& attributes,
+                              SourceLocation origin) -> FlowPtr<Export> {
+  auto attributes_copy = AllocateArray<FlowPtr<Expr>>(attributes.size());
+  std::copy(attributes.begin(), attributes.end(), attributes_copy.begin());
+
+  return CreateInstance<Export>(symbol, abi, vis, attributes_copy)(m_pool, origin);
 }
 
 auto ASTFactory::CreateBlock(std::span<const FlowPtr<Expr>> items, SafetyMode safety,
