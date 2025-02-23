@@ -58,7 +58,7 @@ auto Parser::PImpl::RecurseRetif() -> FlowPtr<Expr> {
       Token(Punc, PuncComa),
   });
 
-  if (NextIf<PuncComa>()) [[likely]] {
+  if (NextIf<PuncComa>()) {
     auto return_value = RecurseExpr({
         Token(Punc, PuncSemi),
     });
@@ -68,8 +68,11 @@ auto Parser::PImpl::RecurseRetif() -> FlowPtr<Expr> {
     }
 
     return CreateNode<ReturnIf>(return_if, return_value)();
-  } else {
-    Log << SyntaxError << Current() << "Expected ',' after the retif condition.";
-    return MockExpr(QAST_RETIF);
   }
+
+  if (!NextIf<PuncSemi>()) [[unlikely]] {
+    Log << SyntaxError << Current() << "Expected ';' after the retif value.";
+  }
+
+  return CreateNode<ReturnIf>(return_if, std::nullopt)();
 }

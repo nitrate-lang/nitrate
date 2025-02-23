@@ -32,12 +32,13 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <nitrate-parser/ASTFactory.hh>
+#include <nitrate-parser/ASTStmt.hh>
+#include <nitrate-parser/ASTType.hh>
 
 using namespace ncc::parse;
 
-auto ASTFactory::CreateTypedef(SourceLocation origin) -> FlowPtr<Typedef> {
-  /// TODO: Implement
-  qcore_implement();
+auto ASTFactory::CreateTypedef(string name, FlowPtr<Type> base, SourceLocation origin) -> FlowPtr<Typedef> {
+  return CreateInstance<Typedef>(name, base)(m_pool, origin);
 }
 
 auto ASTFactory::CreateStruct(SourceLocation origin) -> FlowPtr<Struct> {
@@ -65,67 +66,80 @@ auto ASTFactory::CreateExport(SourceLocation origin) -> FlowPtr<Export> {
   qcore_implement();
 }
 
-auto ASTFactory::CreateBlock(SourceLocation origin) -> FlowPtr<Block> {
-  /// TODO: Implement
-  qcore_implement();
+auto ASTFactory::CreateBlock(std::span<const FlowPtr<Expr>> items, SafetyMode safety,
+                             SourceLocation origin) -> FlowPtr<Block> {
+  auto items_copy = AllocateArray<FlowPtr<Expr>>(items.size());
+  std::copy(items.begin(), items.end(), items_copy.begin());
+
+  return CreateInstance<Block>(items_copy, safety)(m_pool, origin);
 }
 
-auto ASTFactory::CreateVariable(SourceLocation origin) -> FlowPtr<Variable> {
-  /// TODO: Implement
-  qcore_implement();
+auto ASTFactory::CreateBlock(const std::vector<FlowPtr<Expr>>& items, SafetyMode safety,
+                             SourceLocation origin) -> FlowPtr<Block> {
+  return CreateBlock(std::span(items.data(), items.size()), safety, origin);
 }
 
-auto ASTFactory::CreateAssembly(SourceLocation origin) -> FlowPtr<Assembly> {
-  /// TODO: Implement
-  qcore_implement();
+auto ASTFactory::CreateVariable(VariableType variant, string name, NullableFlowPtr<Type> type,
+                                NullableFlowPtr<Expr> init, const std::vector<FlowPtr<Expr>>& attributes,
+                                SourceLocation origin) -> FlowPtr<Variable> {
+  auto attributes_copy = AllocateArray<FlowPtr<Expr>>(attributes.size());
+  std::copy(attributes.begin(), attributes.end(), attributes_copy.begin());
+
+  if (!type.has_value()) {
+    type = CreateUnknownType(nullptr, nullptr, nullptr, origin);
+  }
+
+  return CreateInstance<Variable>(name, type.value(), init, variant, attributes_copy)(m_pool, origin);
 }
 
-auto ASTFactory::CreateReturn(SourceLocation origin) -> FlowPtr<Return> {
-  /// TODO: Implement
-  qcore_implement();
+auto ASTFactory::CreateAssembly(string asm_code, SourceLocation origin) -> FlowPtr<Assembly> {
+  return CreateInstance<Assembly>(asm_code, std::span<FlowPtr<Expr>>())(m_pool, origin);
 }
 
-auto ASTFactory::CreateReturnIf(SourceLocation origin) -> FlowPtr<ReturnIf> {
-  /// TODO: Implement
-  qcore_implement();
+auto ASTFactory::CreateReturn(NullableFlowPtr<Expr> value, SourceLocation origin) -> FlowPtr<Return> {
+  return CreateInstance<Return>(value)(m_pool, origin);
+}
+
+auto ASTFactory::CreateReturnIf(FlowPtr<Expr> cond, NullableFlowPtr<Expr> value,
+                                SourceLocation origin) -> FlowPtr<ReturnIf> {
+  return CreateInstance<ReturnIf>(cond, value)(m_pool, origin);
 }
 
 auto ASTFactory::CreateBreak(SourceLocation origin) -> FlowPtr<Break> {
-  /// TODO: Implement
-  qcore_implement();
+  return CreateInstance<Break>()(m_pool, origin);
 }
 
 auto ASTFactory::CreateContinue(SourceLocation origin) -> FlowPtr<Continue> {
-  /// TODO: Implement
-  qcore_implement();
+  return CreateInstance<Continue>()(m_pool, origin);
 }
 
-auto ASTFactory::CreateIf(SourceLocation origin) -> FlowPtr<If> {
-  /// TODO: Implement
-  qcore_implement();
+auto ASTFactory::CreateIf(FlowPtr<Expr> cond, FlowPtr<Expr> then, NullableFlowPtr<Expr> ele,
+                          SourceLocation origin) -> FlowPtr<If> {
+  return CreateInstance<If>(cond, then, ele)(m_pool, origin);
 }
 
-auto ASTFactory::CreateWhile(SourceLocation origin) -> FlowPtr<While> {
-  /// TODO: Implement
-  qcore_implement();
+auto ASTFactory::CreateWhile(FlowPtr<Expr> cond, FlowPtr<Expr> body, SourceLocation origin) -> FlowPtr<While> {
+  return CreateInstance<While>(cond, body)(m_pool, origin);
 }
 
-auto ASTFactory::CreateFor(SourceLocation origin) -> FlowPtr<For> {
-  /// TODO: Implement
-  qcore_implement();
+auto ASTFactory::CreateFor(NullableFlowPtr<Expr> init, NullableFlowPtr<Expr> step, NullableFlowPtr<Expr> cond,
+                           FlowPtr<Expr> body, SourceLocation origin) -> FlowPtr<For> {
+  return CreateInstance<For>(init, step, cond, body)(m_pool, origin);
 }
 
-auto ASTFactory::CreateForeach(SourceLocation origin) -> FlowPtr<Foreach> {
-  /// TODO: Implement
-  qcore_implement();
+auto ASTFactory::CreateForeach(string key_name, string val_name, FlowPtr<Expr> iterable, FlowPtr<Expr> body,
+                               SourceLocation origin) -> FlowPtr<Foreach> {
+  return CreateInstance<Foreach>(key_name, val_name, iterable, body)(m_pool, origin);
 }
 
-auto ASTFactory::CreateCase(SourceLocation origin) -> FlowPtr<Case> {
-  /// TODO: Implement
-  qcore_implement();
+auto ASTFactory::CreateCase(FlowPtr<Expr> match, FlowPtr<Expr> body, SourceLocation origin) -> FlowPtr<Case> {
+  return CreateInstance<Case>(match, body)(m_pool, origin);
 }
 
-auto ASTFactory::CreateSwitch(SourceLocation origin) -> FlowPtr<Switch> {
-  /// TODO: Implement
-  qcore_implement();
+auto ASTFactory::CreateSwitch(FlowPtr<Expr> match, NullableFlowPtr<Expr> defaul,
+                              const std::vector<FlowPtr<Case>>& cases, SourceLocation origin) -> FlowPtr<Switch> {
+  auto cases_copy = AllocateArray<FlowPtr<Case>>(cases.size());
+  std::copy(cases.begin(), cases.end(), cases_copy.begin());
+
+  return CreateInstance<Switch>(match, cases_copy, defaul)(m_pool, origin);
 }

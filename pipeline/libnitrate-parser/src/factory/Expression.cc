@@ -31,30 +31,27 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
+#include <nitrate-parser/ASTExpr.hh>
 #include <nitrate-parser/ASTFactory.hh>
 
 using namespace ncc::parse;
 
 auto ASTFactory::CreateBinary(FlowPtr<Expr> lhs, lex::Operator op, FlowPtr<Expr> rhs,
                               SourceLocation origin) -> FlowPtr<Binary> {
-  /// TODO: Implement
-  qcore_implement();
+  return CreateInstance<Binary>(lhs, op, rhs)(m_pool, origin);
 }
 
 auto ASTFactory::CreateUnary(lex::Operator op, FlowPtr<Expr> rhs, SourceLocation origin) -> FlowPtr<Unary> {
-  /// TODO: Implement
-  qcore_implement();
+  return CreateInstance<Unary>(op, rhs)(m_pool, origin);
 }
 
 auto ASTFactory::CreatePostUnary(FlowPtr<Expr> lhs, lex::Operator op, SourceLocation origin) -> FlowPtr<PostUnary> {
-  /// TODO: Implement
-  qcore_implement();
+  return CreateInstance<PostUnary>(lhs, op)(m_pool, origin);
 }
 
 auto ASTFactory::CreateTernary(FlowPtr<Expr> condition, FlowPtr<Expr> then, FlowPtr<Expr> ele,
                                SourceLocation origin) -> FlowPtr<Ternary> {
-  /// TODO: Implement
-  qcore_implement();
+  return CreateInstance<Ternary>(condition, then, ele)(m_pool, origin);
 }
 
 auto ASTFactory::CreateInteger(const boost::multiprecision::uint128_type& x,
@@ -85,28 +82,21 @@ auto ASTFactory::CreateFloat(string x, SourceLocation origin) -> std::optional<F
 }
 
 auto ASTFactory::CreateString(string x, SourceLocation origin) -> FlowPtr<String> {
-  /// TODO: Implement
-  qcore_implement();
+  return CreateInstance<String>(x)(m_pool, origin);
 }
 
 auto ASTFactory::CreateCharacter(char8_t x, SourceLocation origin) -> FlowPtr<Character> {
-  /// TODO: Implement
-  qcore_implement();
+  return CreateInstance<Character>(x)(m_pool, origin);
 }
 
 auto ASTFactory::CreateBoolean(bool x, SourceLocation origin) -> FlowPtr<Boolean> {
-  /// TODO: Implement
-  qcore_implement();
+  return CreateInstance<Boolean>(x)(m_pool, origin);
 }
 
-auto ASTFactory::CreateNull(SourceLocation origin) -> FlowPtr<Null> {
-  /// TODO: Implement
-  qcore_implement();
-}
+auto ASTFactory::CreateNull(SourceLocation origin) -> FlowPtr<Null> { return CreateInstance<Null>()(m_pool, origin); }
 
 auto ASTFactory::CreateUndefined(SourceLocation origin) -> FlowPtr<Undefined> {
-  /// TODO: Implement
-  qcore_implement();
+  return CreateInstance<Undefined>()(m_pool, origin);
 }
 
 auto ASTFactory::CreateCall(FlowPtr<Expr> callee,
@@ -138,20 +128,17 @@ auto ASTFactory::CreateList(const std::vector<FlowPtr<Expr>>& ele, SourceLocatio
   qcore_implement();
 }
 
-auto ASTFactory::CreateAssociation(FlowPtr<Expr> key, FlowPtr<Expr> x, SourceLocation origin) -> FlowPtr<Assoc> {
-  /// TODO: Implement
-  qcore_implement();
+auto ASTFactory::CreateAssociation(FlowPtr<Expr> key, FlowPtr<Expr> value, SourceLocation origin) -> FlowPtr<Assoc> {
+  return CreateInstance<Assoc>(key, value)(m_pool, origin);
 }
 
 auto ASTFactory::CreateIndex(FlowPtr<Expr> base, FlowPtr<Expr> index, SourceLocation origin) -> FlowPtr<Index> {
-  /// TODO: Implement
-  qcore_implement();
+  return CreateInstance<Index>(base, index)(m_pool, origin);
 }
 
 auto ASTFactory::CreateSlice(FlowPtr<Expr> base, FlowPtr<Expr> start, FlowPtr<Expr> end,
                              SourceLocation origin) -> FlowPtr<Slice> {
-  /// TODO: Implement
-  qcore_implement();
+  return CreateInstance<Slice>(base, start, end)(m_pool, origin);
 }
 
 auto ASTFactory::CreateFormatString(string x, SourceLocation origin) -> FlowPtr<FString> {
@@ -172,8 +159,7 @@ auto ASTFactory::CreateFormatString(const std::vector<std::variant<FlowPtr<Expr>
 }
 
 auto ASTFactory::CreateIdentifier(string name, SourceLocation origin) -> FlowPtr<Identifier> {
-  /// TODO: Implement
-  qcore_implement();
+  return CreateInstance<Identifier>(name)(m_pool, origin);
 }
 
 auto ASTFactory::CreateSequence(std::span<const FlowPtr<Expr>> ele, SourceLocation origin) -> FlowPtr<Sequence> {

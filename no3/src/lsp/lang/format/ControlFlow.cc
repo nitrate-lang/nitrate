@@ -64,8 +64,10 @@ void CambrianFormatter::Visit(FlowPtr<ReturnIf> n) {
 
   m_line << "retif ";
   n->GetCond().Accept(*this);
-  m_line << ", ";
-  n->GetValue().Accept(*this);
+  if (n->GetValue().has_value()) {
+    m_line << ", ";
+    n->GetValue().value().Accept(*this);
+  }
   m_line << ";";
 }
 

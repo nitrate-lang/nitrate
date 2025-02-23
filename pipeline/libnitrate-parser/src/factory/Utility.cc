@@ -271,22 +271,22 @@ auto ASTFactory::CreateMockInstance(ASTNodeKind kind, SourceLocation origin) -> 
     }
 
     case QAST_IF: {
-      r = CreateIf();
+      r = CreateIf(SIMPLE_EXPR(), SIMPLE_EXPR());
       break;
     }
 
     case QAST_RETIF: {
-      r = CreateReturnIf();
+      r = CreateReturnIf(SIMPLE_EXPR());
       break;
     }
 
     case QAST_SWITCH: {
-      r = CreateSwitch();
+      r = CreateSwitch(SIMPLE_EXPR());
       break;
     }
 
     case QAST_CASE: {
-      r = CreateCase();
+      r = CreateCase(SIMPLE_EXPR(), SIMPLE_EXPR());
       break;
     }
 
@@ -306,27 +306,27 @@ auto ASTFactory::CreateMockInstance(ASTNodeKind kind, SourceLocation origin) -> 
     }
 
     case QAST_WHILE: {
-      r = CreateWhile();
+      r = CreateWhile(SIMPLE_EXPR(), SIMPLE_EXPR());
       break;
     }
 
     case QAST_FOR: {
-      r = CreateFor();
+      r = CreateFor(nullptr, nullptr, nullptr, SIMPLE_EXPR());
       break;
     }
 
     case QAST_FOREACH: {
-      r = CreateForeach();
+      r = CreateForeach("_", "_", SIMPLE_EXPR(), SIMPLE_EXPR());
       break;
     }
 
     case QAST_INLINE_ASM: {
-      r = CreateAssembly();
+      r = CreateAssembly("");
       break;
     }
 
     case QAST_TYPEDEF: {
-      r = CreateTypedef();
+      r = CreateTypedef("_", SIMPLE_TYPE());
       break;
     }
 
@@ -356,7 +356,7 @@ auto ASTFactory::CreateMockInstance(ASTNodeKind kind, SourceLocation origin) -> 
     }
 
     case QAST_VAR: {
-      r = CreateVariable();
+      r = CreateVariable(VariableType::Var, "_");
       break;
     }
 

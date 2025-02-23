@@ -68,7 +68,7 @@ void CambrianFormatter::Visit(FlowPtr<Variable> n) {
 
   if (n->GetType()) {
     m_line << ": ";
-    n->GetType().value().Accept(*this);
+    n->GetType().Accept(*this);
   }
 
   if (n->GetInitializer()) {

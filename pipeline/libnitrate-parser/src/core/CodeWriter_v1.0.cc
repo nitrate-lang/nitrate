@@ -406,8 +406,10 @@ void CodeWriter_v1_0::Visit(FlowPtr<Return> n) {
 void CodeWriter_v1_0::Visit(FlowPtr<ReturnIf> n) {
   PutKeyword(lex::Retif);
   n->GetCond()->Accept(*this);
-  PutPunctor(PuncComa);
-  n->GetValue()->Accept(*this);
+  if (n->GetValue()) {
+    PutPunctor(PuncComa);
+    n->GetValue().value()->Accept(*this);
+  }
   PutPunctor(PuncSemi);
 }
 

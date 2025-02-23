@@ -67,12 +67,12 @@ auto Parser::PImpl::RecurseVariableAttributes() -> std::optional<ExpressionList>
   return std::nullopt;
 }
 
-auto Parser::PImpl::RecurseVariableType() -> NullableFlowPtr<parse::Type> {
+auto Parser::PImpl::RecurseVariableType() -> FlowPtr<parse::Type> {
   if (NextIf<PuncColn>()) {
     return RecurseType();
   }
 
-  return std::nullopt;
+  return CreateNode<InferTy>()();
 }
 
 auto Parser::PImpl::RecurseVariableValue() -> NullableFlowPtr<Expr> {

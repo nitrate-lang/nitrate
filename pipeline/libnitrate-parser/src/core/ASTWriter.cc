@@ -1363,9 +1363,7 @@ SyntaxTree::Variable *AstWriter::From(const FlowPtr<Variable> &in) {
 
   message->set_allocated_location(FromSource(in));
   message->set_name(in->GetName().Get());
-  if (in->GetType().has_value()) {
-    message->set_allocated_type(From(in->GetType().value()));
-  }
+  message->set_allocated_type(From(in->GetType()));
   if (in->GetInitializer().has_value()) {
     message->set_allocated_initial_value(From(in->GetInitializer().value()));
   }
@@ -1502,7 +1500,9 @@ SyntaxTree::ReturnIf *AstWriter::From(const FlowPtr<ReturnIf> &in) {
 
   message->set_allocated_location(FromSource(in));
   message->set_allocated_condition(From(in->GetCond()));
-  message->set_allocated_value(From(in->GetValue()));
+  if (in->GetValue().has_value()) {
+    message->set_allocated_value(From(in->GetValue().value()));
+  }
 
   return message;
 }

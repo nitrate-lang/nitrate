@@ -1958,7 +1958,7 @@ auto AstReader::Unmarshal(const SyntaxTree::Block &in) -> Result<Block> {
 
 auto AstReader::Unmarshal(const SyntaxTree::Variable &in) -> Result<Variable> {
   auto type = Unmarshal(in.type());
-  if (in.has_type() && !type.has_value()) [[unlikely]] {
+  if (!type.has_value()) [[unlikely]] {
     return std::nullopt;
   }
 
@@ -1984,7 +1984,7 @@ auto AstReader::Unmarshal(const SyntaxTree::Variable &in) -> Result<Variable> {
     return std::nullopt;
   }
 
-  auto object = CreateNode<Variable>(in.name(), type, value, varkind.value(), attributes)();
+  auto object = CreateNode<Variable>(in.name(), type.value(), value, varkind.value(), attributes)();
   UnmarshalLocationLocation(in.location(), object);
   UnmarshalCodeComment(in.comments(), object);
 
@@ -2134,11 +2134,11 @@ auto AstReader::Unmarshal(const SyntaxTree::ReturnIf &in) -> Result<ReturnIf> {
   }
 
   auto value = Unmarshal(in.value());
-  if (!value.has_value()) [[unlikely]] {
+  if (in.has_value() && !value.has_value()) [[unlikely]] {
     return std::nullopt;
   }
 
-  auto object = CreateNode<ReturnIf>(condition.value(), value.value())();
+  auto object = CreateNode<ReturnIf>(condition.value(), value)();
   UnmarshalLocationLocation(in.location(), object);
   UnmarshalCodeComment(in.comments(), object);
 

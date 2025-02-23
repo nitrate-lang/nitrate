@@ -63,7 +63,7 @@ namespace ncc::parse {
 
   class Variable final : public Expr {
     std::span<FlowPtr<Expr>> m_attributes;
-    NullableFlowPtr<Type> m_type;
+    FlowPtr<Type> m_type;
     NullableFlowPtr<Expr> m_value;
     VariableType m_decl_type;
     string m_name;
@@ -105,8 +105,7 @@ namespace ncc::parse {
   };
 
   class If final : public Expr {
-    FlowPtr<Expr> m_cond;
-    FlowPtr<Expr> m_then;
+    FlowPtr<Expr> m_cond, m_then;
     NullableFlowPtr<Expr> m_else;
 
   public:
@@ -123,8 +122,7 @@ namespace ncc::parse {
   };
 
   class While final : public Expr {
-    FlowPtr<Expr> m_cond;
-    FlowPtr<Expr> m_body;
+    FlowPtr<Expr> m_cond, m_body;
 
   public:
     constexpr While(auto cond, auto body) : Expr(QAST_WHILE), m_cond(std::move(cond)), m_body(std::move(body)) {}
@@ -137,8 +135,7 @@ namespace ncc::parse {
   };
 
   class For final : public Expr {
-    NullableFlowPtr<Expr> m_init;
-    NullableFlowPtr<Expr> m_cond, m_step;
+    NullableFlowPtr<Expr> m_init, m_cond, m_step;
     FlowPtr<Expr> m_body;
 
   public:
@@ -161,8 +158,7 @@ namespace ncc::parse {
   };
 
   class Foreach final : public Expr {
-    FlowPtr<Expr> m_expr;
-    FlowPtr<Expr> m_body;
+    FlowPtr<Expr> m_expr, m_body;
     string m_idx_ident, m_val_ident;
 
   public:
@@ -206,7 +202,8 @@ namespace ncc::parse {
   };
 
   class ReturnIf final : public Expr {
-    FlowPtr<Expr> m_cond, m_value;
+    FlowPtr<Expr> m_cond;
+    NullableFlowPtr<Expr> m_value;
 
   public:
     constexpr ReturnIf(auto cond, auto value) : Expr(QAST_RETIF), m_cond(std::move(cond)), m_value(std::move(value)) {}
@@ -219,8 +216,7 @@ namespace ncc::parse {
   };
 
   class Case final : public Expr {
-    FlowPtr<Expr> m_cond;
-    FlowPtr<Expr> m_body;
+    FlowPtr<Expr> m_cond, m_body;
 
   public:
     constexpr Case(auto cond, auto body) : Expr(QAST_CASE), m_cond(std::move(cond)), m_body(std::move(body)) {}

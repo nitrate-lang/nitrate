@@ -212,7 +212,7 @@ namespace ncc::parse {
     auto RecurseTypeByName(string name) -> FlowPtr<Type>;
 
     auto RecurseVariableAttributes() -> std::optional<ExpressionList>;
-    auto RecurseVariableType() -> NullableFlowPtr<Type>;
+    auto RecurseVariableType() -> FlowPtr<Type>;
     auto RecurseVariableValue() -> NullableFlowPtr<Expr>;
     auto RecurseVariableInstance(VariableType decl_type) -> NullableFlowPtr<Expr>;
 

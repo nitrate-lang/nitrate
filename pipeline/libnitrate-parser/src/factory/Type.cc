@@ -278,7 +278,7 @@ auto ASTFactory::CreateTuple(std::span<const FlowPtr<Type>> ele, NullableFlowPtr
 auto ASTFactory::CreateTuple(const std::vector<FlowPtr<Type>>& ele, NullableFlowPtr<Expr> bits,
                              NullableFlowPtr<Expr> min, NullableFlowPtr<Expr> max,
                              SourceLocation origin) -> FlowPtr<TupleTy> {
-  return CreateTuple(std::span<const FlowPtr<Type>>(ele), std::move(bits), std::move(min), std::move(max), origin);
+  return CreateTuple(std::span(ele), std::move(bits), std::move(min), std::move(max), origin);
 }
 
 auto ASTFactory::CreateFunc(FlowPtr<Type> ret_ty, const std::vector<FactoryFunctionParameter>& params, bool variadic,
@@ -385,8 +385,8 @@ auto ASTFactory::CreateTemplateType(FlowPtr<Type> base,
 auto ASTFactory::CreateTemplateType(const std::vector<FlowPtr<Expr>>& pos_args, FlowPtr<Type> base,
                                     NullableFlowPtr<Expr> bits, NullableFlowPtr<Expr> min, NullableFlowPtr<Expr> max,
                                     SourceLocation origin) -> FlowPtr<TemplateType> {
-  return CreateTemplateType(std::span<const FlowPtr<Expr>>(pos_args), std::move(base), std::move(bits), std::move(min),
-                            std::move(max), origin);
+  return CreateTemplateType(std::span(pos_args), std::move(base), std::move(bits), std::move(min), std::move(max),
+                            origin);
 }
 
 auto ASTFactory::CreateTemplateType(std::span<const FlowPtr<Expr>> pos_args, FlowPtr<Type> base,

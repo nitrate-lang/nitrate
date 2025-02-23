@@ -631,7 +631,7 @@ message ReturnIf {
   repeated UserComment comments = 2;
 
   required Expr condition = 4;
-  required Expr value = 5;
+  optional Expr value = 5;
 }
 
 message Case {

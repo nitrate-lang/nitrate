@@ -4,7 +4,8 @@
 
 ///===================================================================================================
 /// PARSE RETURN-IF MISING RETURN VALUE
-TEST_CASE(Stmt_ReturnIf, NoValue, 0, R"( retif 10; )", nullptr);
+TEST_CASE(Stmt_ReturnIf, NoValue, 0, R"( retif 10; )",
+          block{safety : None statements{return_if{condition{integer{number : "10"}}}}});
 TEST_CASE(Stmt_ReturnIf, NoValue, 1, R"( retif 10, ; )", nullptr);
 TEST_CASE(Stmt_ReturnIf, NoValue, 2, R"( retif 10 )", nullptr);
 TEST_CASE(Stmt_ReturnIf, NoValue, 3, R"( retif 10, )", nullptr);
