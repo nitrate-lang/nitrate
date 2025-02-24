@@ -179,15 +179,15 @@ namespace ncc::parse {
     [[gnu::pure, nodiscard]] auto CreateTemplateCall(
         FlowPtr<Expr> callee, const std::unordered_map<std::variant<string, size_t>, FlowPtr<Expr>>& template_args = {},
         const std::unordered_map<std::variant<string, size_t>, FlowPtr<Expr>>& named_args = {},
-        SourceLocation origin = SourceLocation::current()) -> std::optional<FlowPtr<Call>>;
+        SourceLocation origin = SourceLocation::current()) -> std::optional<FlowPtr<TemplateCall>>;
 
     [[gnu::pure, nodiscard]] auto CreateTemplateCall(
         const std::vector<FlowPtr<Expr>>& template_args, const std::vector<FlowPtr<Expr>>& pos_args,
-        FlowPtr<Expr> callee, SourceLocation origin = SourceLocation::current()) -> FlowPtr<Call>;
+        FlowPtr<Expr> callee, SourceLocation origin = SourceLocation::current()) -> FlowPtr<TemplateCall>;
 
     [[gnu::pure, nodiscard]] auto CreateTemplateCall(
         std::span<const FlowPtr<Expr>> template_args, std::span<const FlowPtr<Expr>> pos_args, FlowPtr<Expr> callee,
-        SourceLocation origin = SourceLocation::current()) -> FlowPtr<Call>;
+        SourceLocation origin = SourceLocation::current()) -> FlowPtr<TemplateCall>;
 
     ///=========================================================================
     /// TYPES

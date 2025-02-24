@@ -37,6 +37,7 @@
 #include <nitrate-parser/ASTFactory.hh>
 #include <sstream>
 #include <string>
+#include <unordered_set>
 
 using namespace ncc::parse;
 
@@ -124,8 +125,31 @@ auto ASTFactory::CreateUndefined(SourceLocation origin) -> FlowPtr<Undefined> {
 auto ASTFactory::CreateCall(FlowPtr<Expr> callee,
                             const std::unordered_map<std::variant<string, size_t>, FlowPtr<Expr>>& named_args,
                             SourceLocation origin) -> std::optional<FlowPtr<Call>> {
-  /// TODO: Implement
-  qcore_implement();
+  auto args_copy = AllocateArray<CallArg>(named_args.size());
+
+  {
+    std::unordered_set<string> unique_indices;
+    size_t i = 0;
+
+    for (const auto& [key, value] : named_args) {
+      const string key_string =
+          std::holds_alternative<size_t>(key) ? string(std::to_string(std::get<size_t>(key))) : std::get<string>(key);
+
+      // Check for duplicate indices
+      if (unique_indices.contains(key_string)) {
+        return std::nullopt;
+      }
+
+      unique_indices.insert(key_string);
+
+      args_copy[i].first = key_string;
+      args_copy[i].second = value;
+
+      i++;
+    }
+  }
+
+  return CreateInstance<Call>(callee, args_copy)(m_pool, origin);
 }
 
 auto ASTFactory::CreateCall(const std::vector<FlowPtr<Expr>>& pos_args, FlowPtr<Expr> callee,
@@ -205,20 +229,75 @@ auto ASTFactory::CreateSequence(const std::vector<FlowPtr<Expr>>& ele, SourceLoc
 auto ASTFactory::CreateTemplateCall(
     FlowPtr<Expr> callee, const std::unordered_map<std::variant<string, size_t>, FlowPtr<Expr>>& template_args,
     const std::unordered_map<std::variant<string, size_t>, FlowPtr<Expr>>& named_args,
-    SourceLocation origin) -> std::optional<FlowPtr<Call>> {
-  /// TODO: Implement
-  qcore_implement();
+    SourceLocation origin) -> std::optional<FlowPtr<TemplateCall>> {
+  auto template_args_copy = AllocateArray<CallArg>(template_args.size());
+  auto args_copy = AllocateArray<CallArg>(named_args.size());
+
+  {
+    std::unordered_set<string> unique_indices;
+    size_t i = 0;
+
+    for (const auto& [key, value] : named_args) {
+      const string key_string =
+          std::holds_alternative<size_t>(key) ? string(std::to_string(std::get<size_t>(key))) : std::get<string>(key);
+
+      // Check for duplicate indices
+      if (unique_indices.contains(key_string)) {
+        return std::nullopt;
+      }
+
+      unique_indices.insert(key_string);
+
+      args_copy[i].first = key_string;
+      args_copy[i].second = value;
+
+      i++;
+    }
+
+    unique_indices.clear();
+    i = 0;
+
+    for (const auto& [key, value] : template_args) {
+      const string key_string =
+          std::holds_alternative<size_t>(key) ? string(std::to_string(std::get<size_t>(key))) : std::get<string>(key);
+
+      // Check for duplicate indices
+      if (unique_indices.contains(key_string)) {
+        return std::nullopt;
+      }
+
+      unique_indices.insert(key_string);
+
+      template_args_copy[i].first = key_string;
+      template_args_copy[i].second = value;
+
+      i++;
+    }
+  }
+
+  return CreateInstance<TemplateCall>(callee, args_copy, template_args_copy)(m_pool, origin);
 }
 
 auto ASTFactory::CreateTemplateCall(const std::vector<FlowPtr<Expr>>& template_args,
                                     const std::vector<FlowPtr<Expr>>& pos_args, FlowPtr<Expr> callee,
-                                    SourceLocation origin) -> FlowPtr<Call> {
+                                    SourceLocation origin) -> FlowPtr<TemplateCall> {
   return CreateTemplateCall(std::span(template_args), std::span(pos_args), std::move(callee), origin);
 }
 
 auto ASTFactory::CreateTemplateCall(std::span<const FlowPtr<Expr>> template_args,
                                     std::span<const FlowPtr<Expr>> pos_args, FlowPtr<Expr> callee,
-                                    SourceLocation origin) -> FlowPtr<Call> {
-  /// TODO: Implement
-  qcore_implement();
+                                    SourceLocation origin) -> FlowPtr<TemplateCall> {
+  auto template_args_copy = AllocateArray<CallArg>(template_args.size());
+  for (size_t i = 0; i < template_args.size(); ++i) {
+    template_args_copy[i].first = std::to_string(i);
+    template_args_copy[i].second = template_args[i];
+  }
+
+  auto pos_args_copy = AllocateArray<CallArg>(pos_args.size());
+  for (size_t i = 0; i < pos_args.size(); ++i) {
+    pos_args_copy[i].first = std::to_string(i);
+    pos_args_copy[i].second = pos_args[i];
+  }
+
+  return CreateInstance<TemplateCall>(callee, pos_args_copy, template_args_copy)(m_pool, origin);
 }
