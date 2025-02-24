@@ -43,10 +43,10 @@ auto Parser::PImpl::RecurseSwitchCaseBody() -> FlowPtr<Expr> {
   }
 
   if (Peek().Is<PuncLCur>()) {
-    return RecurseBlock(true, false, SafetyMode::Unknown);
+    return RecurseBlock(true, false, BlockMode::Unknown);
   }
 
-  return RecurseBlock(false, true, SafetyMode::Unknown);
+  return RecurseBlock(false, true, BlockMode::Unknown);
 }
 
 auto Parser::PImpl::RecurseSwitchCase() -> std::pair<FlowPtr<Expr>, bool> {
@@ -62,11 +62,11 @@ auto Parser::PImpl::RecurseSwitchCase() -> std::pair<FlowPtr<Expr>, bool> {
     return {body, true};
   }
 
-  return {CreateNode<Case>(cond, body)(), false};
+  return {m_fac.CreateCase(cond, body), false};
 }
 
-auto Parser::PImpl::RecurseSwitchBody() -> std::optional<std::pair<SwitchCases, NullableFlowPtr<Expr>>> {
-  SwitchCases cases;
+auto Parser::PImpl::RecurseSwitchBody() -> std::optional<std::pair<std::vector<FlowPtr<Case>>, NullableFlowPtr<Expr>>> {
+  std::vector<FlowPtr<Case>> cases;
   NullableFlowPtr<Expr> default_case;
 
   while (true) {
@@ -105,7 +105,7 @@ auto Parser::PImpl::RecurseSwitch() -> FlowPtr<Expr> {
     if (auto switch_body = RecurseSwitchBody()) [[likely]] {
       auto [switch_cases, switch_default] = switch_body.value();
 
-      return CreateNode<Switch>(switch_cond, switch_cases, switch_default)();
+      return m_fac.CreateSwitch(switch_cond, switch_default, switch_cases);
     } else {
       Log << SyntaxError << Current() << "Switch statement body is malformed.";
     }

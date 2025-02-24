@@ -72,7 +72,7 @@ auto Parser::PImpl::RecurseVariableType() -> FlowPtr<parse::Type> {
     return RecurseType();
   }
 
-  return CreateNode<InferTy>()();
+  return m_fac.CreateUnknownType();
 }
 
 auto Parser::PImpl::RecurseVariableValue() -> NullableFlowPtr<Expr> {
@@ -92,8 +92,8 @@ auto Parser::PImpl::RecurseVariableInstance(VariableType decl_type) -> NullableF
       auto variable_type = RecurseVariableType();
       auto variable_initial = RecurseVariableValue();
 
-      return CreateNode<Variable>(variable_name, variable_type, variable_initial, decl_type,
-                                  symbol_attributes_opt.value())();
+      return m_fac.CreateVariable(decl_type, variable_name, symbol_attributes_opt.value(), variable_type,
+                                  variable_initial);
     }
 
     Log << SyntaxError << Current() << "Expected variable name";

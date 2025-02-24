@@ -91,7 +91,7 @@ auto Parser::PImpl::RecurseCallArguments(const std::set<lex::Token> &terminators
 }
 
 auto Parser::PImpl::RecurseFstring() -> FlowPtr<Expr> {
-  FStringItems items;
+  std::vector<std::variant<string, FlowPtr<Expr>>> items;
 
   if (auto tok = NextIf<Text>()) {
     size_t state = 0;
@@ -143,7 +143,7 @@ auto Parser::PImpl::RecurseFstring() -> FlowPtr<Expr> {
       Log << SyntaxError << Current() << "F-string expression has mismatched braces";
     }
 
-    return CreateNode<FString>(std::move(items))();
+    return m_fac.CreateFormatString(items);
   }
   Log << SyntaxError << Current() << "Expected a string literal token for F-string expression";
   return MockExpr(QAST_FSTRING);
@@ -232,7 +232,7 @@ auto Parser::PImpl::RecurseExpr(const std::set<Token> &terminators) -> FlowPtr<E
       auto [Op, Offset] = pre_unary_ops.top();
       pre_unary_ops.pop();
 
-      left_side = CreateNode<Unary>(Op, left_side)();
+      left_side = m_fac.CreateUnary(Op, left_side);
       left_side->SetOffset(Offset);
     }
 
@@ -256,7 +256,7 @@ auto Parser::PImpl::RecurseExpr(const std::set<Token> &terminators) -> FlowPtr<E
              * Handle post-unary operators
              ****************************************/
             if (op_type == OpMode::PostUnary) {
-              left_side = CreateNode<PostUnary>(left_side, op)();
+              left_side = m_fac.CreatePostUnary(left_side, op);
               left_side->SetOffset(source_offset);
 
               continue;
@@ -288,7 +288,7 @@ auto Parser::PImpl::RecurseExpr(const std::set<Token> &terminators) -> FlowPtr<E
                 auto [op, Offset] = pre_unary_ops.top();
                 pre_unary_ops.pop();
 
-                auto pre_unary_expr = CreateNode<Unary>(op, right_side.value())();
+                auto pre_unary_expr = m_fac.CreateUnary(op, right_side.value());
                 pre_unary_expr->SetOffset(Offset);
 
                 right_side = pre_unary_expr;
@@ -326,7 +326,7 @@ auto Parser::PImpl::RecurseExpr(const std::set<Token> &terminators) -> FlowPtr<E
               Log << SyntaxError << Current() << "Expected ')' to close the function call";
             }
 
-            left_side = CreateNode<Call>(left_side, arguments)();
+            left_side = m_fac.CreateCall(arguments, left_side);
             left_side->SetOffset(source_offset);
           } else if (NextIf<PuncLBrk>()) {
             auto first = RecurseExpr({
@@ -340,14 +340,14 @@ auto Parser::PImpl::RecurseExpr(const std::set<Token> &terminators) -> FlowPtr<E
                 Log << SyntaxError << Current() << "Expected ']' to close the slice";
               }
 
-              left_side = CreateNode<Slice>(left_side, first, second)();
+              left_side = m_fac.CreateSlice(left_side, first, second);
               left_side->SetOffset(source_offset);
             } else {
               if (!NextIf<PuncRBrk>()) {
                 Log << SyntaxError << Current() << "Expected ']' to close the index expression";
               }
 
-              left_side = CreateNode<Index>(left_side, first)();
+              left_side = m_fac.CreateIndex(left_side, first);
               left_side->SetOffset(source_offset);
             }
           } else if (NextIf<PuncLCur>()) {
@@ -365,7 +365,7 @@ auto Parser::PImpl::RecurseExpr(const std::set<Token> &terminators) -> FlowPtr<E
               Log << SyntaxError << Current() << "Expected ')' to close the call arguments";
             }
 
-            left_side = CreateNode<TemplateCall>(left_side, std::move(call_arguments), std::move(template_arguments))();
+            left_side = m_fac.CreateTemplateCall(std::move(template_arguments), std::move(call_arguments), left_side);
             left_side->SetOffset(source_offset);
           } else {  // Not part of the expression
             spinning = false;
@@ -424,7 +424,7 @@ auto Parser::PImpl::RecurseExprKeyword(lex::Keyword key) -> NullableFlowPtr<Expr
         auto args = RecurseCallArguments({Token(Punc, PuncRPar)}, false);
 
         if (NextIf<PuncRPar>()) {
-          e = CreateNode<Call>(function, args)();
+          e = m_fac.CreateCall(args, function);
         } else {
           Log << SyntaxError << Current() << "Expected ')' to close the function call";
           e = MockExpr(QAST_CALL);
@@ -437,22 +437,22 @@ auto Parser::PImpl::RecurseExprKeyword(lex::Keyword key) -> NullableFlowPtr<Expr
     }
 
     case Undef: {
-      e = CreateNode<Undefined>()();
+      e = m_fac.CreateUndefined();
       break;
     }
 
     case Keyword::Null: {
-      e = CreateNode<Null>()();
+      e = m_fac.CreateNull();
       break;
     }
 
     case True: {
-      e = CreateNode<Boolean>(true)();
+      e = m_fac.CreateBoolean(true);
       break;
     }
 
     case False: {
-      e = CreateNode<Boolean>(false)();
+      e = m_fac.CreateBoolean(false);
       break;
     }
 
@@ -538,7 +538,7 @@ auto Parser::PImpl::RecurseExprPunctor(lex::Punctor punc) -> NullableFlowPtr<Exp
         NextIf<PuncComa>();
       }
 
-      e = CreateNode<List>(items)();
+      e = m_fac.CreateList(items);
       break;
     }
 
@@ -578,7 +578,7 @@ auto Parser::PImpl::RecurseExprPunctor(lex::Punctor punc) -> NullableFlowPtr<Exp
 
         NextIf<PuncComa>();
 
-        auto assoc = CreateNode<Assoc>(key, value)();
+        auto assoc = m_fac.CreateAssociation(key, value);
         assoc->SetOffset(start_pos);
 
         items.push_back(assoc);
@@ -588,7 +588,7 @@ auto Parser::PImpl::RecurseExprPunctor(lex::Punctor punc) -> NullableFlowPtr<Exp
         e = items[0];
       } else {
         ExpressionList items_copy(items.begin(), items.end());
-        e = CreateNode<List>(items_copy)();
+        e = m_fac.CreateList(items_copy);
       }
 
       break;
@@ -615,8 +615,7 @@ auto Parser::PImpl::RecurseExprPunctor(lex::Punctor punc) -> NullableFlowPtr<Exp
     }
 
     case PuncScope: {
-      auto name = "::" + std::string(RecurseName());
-      e = CreateNode<Identifier>(name)();
+      e = m_fac.CreateIdentifier("::" + *RecurseName());
       break;
     }
   }
@@ -630,7 +629,7 @@ auto Parser::PImpl::RecurseExprTypeSuffix(FlowPtr<Expr> base) -> FlowPtr<Expr> {
   auto suffix = RecurseType();
   suffix->SetOffset(tok.GetStart());
 
-  return CreateNode<Binary>(base, OpAs, suffix)();
+  return m_fac.CreateBinary(base, OpAs, suffix);
 }
 
 auto Parser::PImpl::RecurseExprPrimary(bool is_type) -> NullableFlowPtr<Expr> {
@@ -682,7 +681,7 @@ auto Parser::PImpl::RecurseExprPrimary(bool is_type) -> NullableFlowPtr<Expr> {
       }
 
       case Name: {
-        auto identifier = CreateNode<Identifier>(RecurseName())();
+        auto identifier = m_fac.CreateIdentifier(RecurseName());
         identifier->SetOffset(start_pos);
 
         e = identifier;
@@ -728,7 +727,7 @@ auto Parser::PImpl::RecurseExprPrimary(bool is_type) -> NullableFlowPtr<Expr> {
       case Text: {
         Next();
 
-        auto string = CreateNode<String>(tok.GetString())();
+        auto string = m_fac.CreateString(tok.GetString());
         string->SetOffset(start_pos);
 
         if (Peek().Is(Name)) {
@@ -752,7 +751,7 @@ auto Parser::PImpl::RecurseExprPrimary(bool is_type) -> NullableFlowPtr<Expr> {
           break;
         }
 
-        auto character = CreateNode<Character>(str_data->at(0))();
+        auto character = m_fac.CreateCharacter(str_data->at(0));
         character->SetOffset(start_pos);
 
         if (Peek().Is(Name)) {

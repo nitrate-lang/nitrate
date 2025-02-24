@@ -1331,17 +1331,17 @@ SyntaxTree::Block *AstWriter::From(const FlowPtr<Block> &in) {
   message->set_allocated_location(FromSource(in));
 
   switch (in->GetSafety()) {
-    case SafetyMode::Unknown: {
+    case BlockMode::Unknown: {
       message->set_safety(SyntaxTree::Block_Safety_None);
       break;
     }
 
-    case SafetyMode::Safe: {
+    case BlockMode::Safe: {
       message->set_safety(SyntaxTree::Block_Safety_Safe);
       break;
     }
 
-    case SafetyMode::Unsafe: {
+    case BlockMode::Unsafe: {
       message->set_safety(SyntaxTree::Block_Safety_Unsafe);
       break;
     }

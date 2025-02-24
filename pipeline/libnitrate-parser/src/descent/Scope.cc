@@ -37,8 +37,8 @@ using namespace ncc;
 using namespace ncc::lex;
 using namespace ncc::parse;
 
-auto Parser::PImpl::RecurseScopeDeps() -> std::optional<ScopeDeps> {
-  ScopeDeps dependencies;
+auto Parser::PImpl::RecurseScopeDeps() -> std::optional<std::vector<string>> {
+  std::vector<string> dependencies;
 
   if (!NextIf<PuncColn>()) {
     return dependencies;
@@ -72,14 +72,10 @@ auto Parser::PImpl::RecurseScopeDeps() -> std::optional<ScopeDeps> {
 
 auto Parser::PImpl::RecurseScopeBlock() -> FlowPtr<Expr> {
   if (NextIf<PuncSemi>()) {
-    return CreateNode<Block>(BlockItems(), SafetyMode::Unknown)();
+    return m_fac.CreateBlock();
   }
 
-  if (NextIf<OpArrow>()) {
-    return RecurseBlock(false, true, SafetyMode::Unknown);
-  }
-
-  return RecurseBlock(true, false, SafetyMode::Unknown);
+  return RecurseBlock(true, false, BlockMode::Unknown);
 }
 
 auto Parser::PImpl::RecurseScope() -> FlowPtr<Expr> {
@@ -88,7 +84,7 @@ auto Parser::PImpl::RecurseScope() -> FlowPtr<Expr> {
   if (auto dependencies = RecurseScopeDeps()) [[likely]] {
     auto scope_block = RecurseScopeBlock();
 
-    return CreateNode<Scope>(scope_name, scope_block, dependencies.value())();
+    return m_fac.CreateScope(scope_name, scope_block, dependencies.value());
   } else {
     Log << SyntaxError << Current() << "Expected scope dependencies";
   }

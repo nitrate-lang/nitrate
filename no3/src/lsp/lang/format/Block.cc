@@ -44,17 +44,17 @@ void CambrianFormatter::Visit(FlowPtr<Block> n) {
   m_did_root = true;
 
   switch (n->GetSafety()) {
-    case SafetyMode::Safe: {
+    case BlockMode::Safe: {
       m_line << "safe ";
       break;
     }
 
-    case SafetyMode::Unsafe: {
+    case BlockMode::Unsafe: {
       m_line << "unsafe ";
       break;
     }
 
-    case SafetyMode::Unknown: {
+    case BlockMode::Unknown: {
       break;
     }
   }

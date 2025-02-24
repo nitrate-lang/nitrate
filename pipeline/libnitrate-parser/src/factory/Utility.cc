@@ -266,7 +266,7 @@ auto ASTFactory::CreateMockInstance(ASTNodeKind kind, SourceLocation origin) -> 
     }
 
     case QAST_FUNCTOR: {
-      r = CreateFunc(SIMPLE_TYPE());
+      r = CreateFunctionType(SIMPLE_TYPE());
       break;
     }
 
@@ -336,12 +336,12 @@ auto ASTFactory::CreateMockInstance(ASTNodeKind kind, SourceLocation origin) -> 
     }
 
     case QAST_ENUM: {
-      r = CreateEnum();
+      r = CreateEnum("");
       break;
     }
 
     case QAST_SCOPE: {
-      r = CreateScope();
+      r = CreateScope("_", SIMPLE_EXPR());
       break;
     }
 
@@ -351,7 +351,7 @@ auto ASTFactory::CreateMockInstance(ASTNodeKind kind, SourceLocation origin) -> 
     }
 
     case QAST_EXPORT: {
-      r = CreateExport();
+      r = CreateExport(SIMPLE_EXPR());
       break;
     }
 
@@ -361,7 +361,7 @@ auto ASTFactory::CreateMockInstance(ASTNodeKind kind, SourceLocation origin) -> 
     }
 
     case QAST_FUNCTION: {
-      r = CreateFunction();
+      r = CreateFunction("");
       break;
     }
   }

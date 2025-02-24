@@ -43,18 +43,16 @@ auto Parser::PImpl::RecurseIfElse() -> NullableFlowPtr<Expr> {
       return RecurseIf();
     }
 
-    return RecurseBlock(true, false, SafetyMode::Unknown);
+    return RecurseBlock(true, false, BlockMode::Unknown);
   }
 
   return std::nullopt;
 }
 
 auto Parser::PImpl::RecurseIf() -> FlowPtr<Expr> {
-  auto cond = RecurseExpr({
-      Token(Punc, PuncLCur),
-  });
-  auto then = RecurseBlock(true, false, SafetyMode::Unknown);
+  auto cond = RecurseExpr({Token(Punc, PuncLCur)});
+  auto then = RecurseBlock(true, false, BlockMode::Unknown);
   auto ele = RecurseIfElse();
 
-  return CreateNode<If>(cond, then, ele)();
+  return m_fac.CreateIf(cond, then, ele);
 }

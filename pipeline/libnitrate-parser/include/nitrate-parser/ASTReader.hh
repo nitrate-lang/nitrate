@@ -40,6 +40,7 @@
 #include <nitrate-core/NullableFlowPtr.hh>
 #include <nitrate-lexer/ScannerFwd.hh>
 #include <nitrate-parser/AST.hh>
+#include <nitrate-parser/ASTFactory.hh>
 #include <nitrate-parser/ProtobufFwd.hh>
 #include <nitrate-parser/Utility.hh>
 #include <optional>
@@ -56,6 +57,7 @@ namespace ncc::parse {
     Result<Expr> m_root;
     ReaderSourceManager m_rd;
     std::unique_ptr<IMemory> m_mm;
+    ASTFactory m_fac;
 
     void UnmarshalLocationLocation(const SyntaxTree::SourceLocationRange &in, const FlowPtr<Expr> &out);
 

@@ -45,7 +45,7 @@ auto Parser::PImpl::RecurseEnumType() -> NullableFlowPtr<parse::Type> {
   return std::nullopt;
 }
 
-auto Parser::PImpl::RecurseEnumItem() -> std::optional<EnumItem> {
+auto Parser::PImpl::RecurseEnumItem() -> std::optional<std::pair<string, NullableFlowPtr<Expr>>> {
   auto member_name = RecurseName();
   if (member_name->empty()) {
     Log << SyntaxError << Current() << "Enum member name cannot be empty.";
@@ -59,14 +59,14 @@ auto Parser::PImpl::RecurseEnumItem() -> std::optional<EnumItem> {
         Token(Punc, PuncRCur),
     });
 
-    return EnumItem(member_name, member_value);
+    return std::pair<string, NullableFlowPtr<Expr>>(member_name, member_value);
   }
 
-  return EnumItem(member_name, std::nullopt);
+  return std::pair<string, NullableFlowPtr<Expr>>(member_name, std::nullopt);
 }
 
-auto Parser::PImpl::RecurseEnumItems() -> std::optional<EnumItems> {
-  EnumItems items;
+auto Parser::PImpl::RecurseEnumItems() -> std::optional<std::vector<std::pair<string, NullableFlowPtr<Expr>>>> {
+  std::vector<std::pair<string, NullableFlowPtr<Expr>>> items;
 
   if (NextIf<PuncSemi>()) {
     return items;
@@ -106,7 +106,7 @@ auto Parser::PImpl::RecurseEnum() -> FlowPtr<Expr> {
   auto type = RecurseEnumType();
 
   if (auto items = RecurseEnumItems()) {
-    return CreateNode<Enum>(name, type, items.value())();
+    return m_fac.CreateEnum(name, items.value(), type);
   }
 
   return MockExpr(QAST_ENUM);

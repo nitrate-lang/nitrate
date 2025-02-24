@@ -99,10 +99,8 @@ auto Parser::PImpl::RecurseTypeSuffix(FlowPtr<Type> base) -> FlowPtr<parse::Type
       Token(Punc, PuncRPar), Token(Punc, PuncRBrk), Token(Punc, PuncLCur), Token(Punc, PuncRCur), Token(Punc, PuncComa),
       Token(Punc, PuncColn), Token(Punc, PuncSemi), Token(Oper, OpSet),    Token(Oper, OpMinus),  Token(Oper, OpGT)};
 
-  auto template_arguments = RecurseTypeTemplateArguments();
-
-  if (template_arguments.has_value()) {
-    auto templ = CreateNode<TemplateType>(base, template_arguments.value())();
+  if (auto template_arguments = RecurseTypeTemplateArguments()) {
+    auto templ = m_fac.CreateTemplateType(template_arguments.value(), base);
     templ->SetOffset(base->Begin());
 
     base = templ;
@@ -130,7 +128,7 @@ auto Parser::PImpl::RecurseTypeSuffix(FlowPtr<Type> base) -> FlowPtr<parse::Type
 
   if (NextIf<OpTernary>()) {
     auto args = CallArgs{{"0", base}};
-    auto opt_type = CreateNode<TemplateType>(CreateNode<NamedTy>("__builtin_result")(), args)();
+    auto opt_type = m_fac.CreateTemplateType(args, m_fac.CreateNamed("__builtin_result"));
 
     opt_type->SetOffset(Current().GetStart());
 
@@ -150,12 +148,15 @@ auto Parser::PImpl::RecurseFunctionType() -> FlowPtr<parse::Type> {
 
   FlowPtr<Function> fn_def = fn.As<Function>();
 
-  auto func_ty = CreateNode<FuncTy>(fn_def->GetReturn(), fn_def->GetParams(), fn_def->IsVariadic(), fn_def->GetPurity(),
-                                    fn_def->GetAttributes())();
+  auto func_ty = m_fac.CreateFunctionType(fn_def->GetReturn(), fn_def->GetParams(), fn_def->IsVariadic(),
+                                          fn_def->GetPurity(), fn_def->GetAttributes());
+  if (!func_ty.has_value()) {
+    func_ty = m_fac.CreateMockInstance(QAST_FUNCTOR)->As<FuncTy>();
+  }
 
-  func_ty->SetOffset(fn->Begin());
+  func_ty.value()->SetOffset(fn->Begin());
 
-  return func_ty;
+  return func_ty.value();
 }
 
 auto Parser::PImpl::RecurseOpaqueType() -> FlowPtr<parse::Type> {
@@ -166,7 +167,7 @@ auto Parser::PImpl::RecurseOpaqueType() -> FlowPtr<parse::Type> {
 
   if (auto name = RecurseName(); !name->empty()) {
     if (NextIf<PuncRPar>()) {
-      auto opaque = CreateNode<OpaqueTy>(name)();
+      auto opaque = m_fac.CreateOpaque(name);
       opaque->SetOffset(Current().GetStart());
 
       return opaque;
@@ -210,7 +211,7 @@ auto Parser::PImpl::RecurseTypeByOperator(Operator op) -> FlowPtr<parse::Type> {
     case OpTimes: {
       auto start = Current().GetStart();
       auto pointee = RecurseType();
-      auto ptr_ty = CreateNode<PtrTy>(pointee, false)();
+      auto ptr_ty = m_fac.CreatePointer(pointee);
 
       ptr_ty->SetOffset(start);
 
@@ -220,7 +221,7 @@ auto Parser::PImpl::RecurseTypeByOperator(Operator op) -> FlowPtr<parse::Type> {
     case OpBitAnd: {
       auto start = Current().GetStart();
       auto refee = RecurseType();
-      auto ref_ty = CreateNode<RefTy>(refee, false)();
+      auto ref_ty = m_fac.CreateReference(refee);
 
       ref_ty->SetOffset(start);
 
@@ -228,7 +229,7 @@ auto Parser::PImpl::RecurseTypeByOperator(Operator op) -> FlowPtr<parse::Type> {
     }
 
     case OpTernary: {
-      auto infer = CreateNode<InferTy>()();
+      auto infer = m_fac.CreateUnknownType();
 
       infer->SetOffset(Current().GetStart());
 
@@ -241,16 +242,16 @@ auto Parser::PImpl::RecurseTypeByOperator(Operator op) -> FlowPtr<parse::Type> {
         return MockType();
       }
 
-      auto comptime_expr = CreateNode<Unary>(OpComptime, RecurseExpr({
+      auto comptime_expr = m_fac.CreateUnary(OpComptime, RecurseExpr({
                                                              Token(Punc, PuncRPar),
-                                                         }))();
+                                                         }));
 
       if (!NextIf<PuncRPar>()) {
         Log << SyntaxError << Current() << "Expected ')' after 'comptime('";
       }
 
       auto args = CallArgs{{"0", comptime_expr}};
-      return CreateNode<TemplateType>(CreateNode<NamedTy>("__builtin_meta")(), std::move(args))();
+      return m_fac.CreateTemplateType(std::move(args), m_fac.CreateNamed("__builtin_meta"));
     }
 
     default: {
@@ -267,7 +268,7 @@ auto Parser::PImpl::RecurseArrayOrVector() -> FlowPtr<parse::Type> {
 
   if (NextIf<PuncRBrk>()) {
     auto args = CallArgs{{"0", first}};
-    auto vector = CreateNode<TemplateType>(CreateNode<NamedTy>("__builtin_vec")(), args)();
+    auto vector = m_fac.CreateTemplateType(args, m_fac.CreateNamed("__builtin_vec"));
 
     vector->SetOffset(start);
 
@@ -286,7 +287,7 @@ auto Parser::PImpl::RecurseArrayOrVector() -> FlowPtr<parse::Type> {
     Log << SyntaxError << Current() << "Expected ']' after array size";
   }
 
-  auto array = CreateNode<ArrayTy>(first, size)();
+  auto array = m_fac.CreateArray(first, size);
   array->SetOffset(start);
 
   return array;
@@ -302,7 +303,7 @@ auto Parser::PImpl::RecurseSetType() -> FlowPtr<parse::Type> {
   }
 
   auto args = CallArgs{{"0", set_type}};
-  auto set = CreateNode<TemplateType>(CreateNode<NamedTy>("__builtin_uset")(), args)();
+  auto set = m_fac.CreateTemplateType(args, m_fac.CreateNamed("__builtin_uset"));
 
   set->SetOffset(start);
 
@@ -310,7 +311,7 @@ auto Parser::PImpl::RecurseSetType() -> FlowPtr<parse::Type> {
 }
 
 auto Parser::PImpl::RecurseTupleType() -> FlowPtr<parse::Type> {
-  TupleTyItems items;
+  std::vector<FlowPtr<Type>> items;
 
   auto start = Current().GetStart();
 
@@ -330,7 +331,7 @@ auto Parser::PImpl::RecurseTupleType() -> FlowPtr<parse::Type> {
     NextIf<PuncComa>();
   }
 
-  auto tuple = CreateNode<TupleTy>(items)();
+  auto tuple = m_fac.CreateTuple(items);
   tuple->SetOffset(start);
 
   return tuple;
@@ -368,39 +369,39 @@ auto Parser::PImpl::RecurseTypeByName(string name) -> FlowPtr<parse::Type> {
   NullableFlowPtr<Type> type;
 
   if (name == "u1") {
-    type = CreateNode<U1>()();
+    type = m_fac.CreateU1();
   } else if (name == "u8") {
-    type = CreateNode<U8>()();
+    type = m_fac.CreateU8();
   } else if (name == "u16") {
-    type = CreateNode<U16>()();
+    type = m_fac.CreateU16();
   } else if (name == "u32") {
-    type = CreateNode<U32>()();
+    type = m_fac.CreateU32();
   } else if (name == "u64") {
-    type = CreateNode<U64>()();
+    type = m_fac.CreateU64();
   } else if (name == "u128") {
-    type = CreateNode<U128>()();
+    type = m_fac.CreateU128();
   } else if (name == "i8") {
-    type = CreateNode<I8>()();
+    type = m_fac.CreateI8();
   } else if (name == "i16") {
-    type = CreateNode<I16>()();
+    type = m_fac.CreateI16();
   } else if (name == "i32") {
-    type = CreateNode<I32>()();
+    type = m_fac.CreateI32();
   } else if (name == "i64") {
-    type = CreateNode<I64>()();
+    type = m_fac.CreateI64();
   } else if (name == "i128") {
-    type = CreateNode<I128>()();
+    type = m_fac.CreateI128();
   } else if (name == "f16") {
-    type = CreateNode<F16>()();
+    type = m_fac.CreateF16();
   } else if (name == "f32") {
-    type = CreateNode<F32>()();
+    type = m_fac.CreateF32();
   } else if (name == "f64") {
-    type = CreateNode<F64>()();
+    type = m_fac.CreateF64();
   } else if (name == "f128") {
-    type = CreateNode<F128>()();
+    type = m_fac.CreateF128();
   } else if (name == "void") {
-    type = CreateNode<VoidTy>()();
+    type = m_fac.CreateVoid();
   } else {
-    type = CreateNode<NamedTy>(name)();
+    type = m_fac.CreateNamed(name);
   }
 
   if (!type.has_value()) {

@@ -42,6 +42,7 @@
 #include <nitrate-lexer/Scanner.hh>
 #include <nitrate-parser/AST.hh>
 #include <nitrate-parser/ASTExpr.hh>
+#include <nitrate-parser/ASTFactory.hh>
 #include <nitrate-parser/ASTStmt.hh>
 #include <nitrate-parser/ASTType.hh>
 #include <nitrate-parser/Context.hh>
@@ -55,9 +56,10 @@ namespace ncc::parse {
 
     std::shared_ptr<IEnvironment> m_env;
     std::unique_ptr<IMemory> m_allocator;
+    ASTFactory m_fac;
     lex::IScanner &m_rd;
-    bool m_failed = false;
     std::shared_ptr<void> m_lifetime;
+    bool m_failed = false;
 
     lex::Token Next() { return m_rd.Next(); }
     lex::Token Peek() { return m_rd.Peek(); }
@@ -117,7 +119,7 @@ namespace ncc::parse {
     auto RecurseType() -> FlowPtr<Type>;
     auto RecurseTypedef() -> FlowPtr<Expr>;
     auto RecurseReturn() -> FlowPtr<Expr>;
-    auto RecurseRetif() -> FlowPtr<Expr>;
+    auto RecurseReturnIf() -> FlowPtr<Expr>;
     auto RecurseIf() -> FlowPtr<Expr>;
     auto RecurseWhile() -> FlowPtr<Expr>;
     auto RecurseFor() -> FlowPtr<Expr>;
@@ -127,7 +129,7 @@ namespace ncc::parse {
     auto RecurseTry() -> FlowPtr<Expr>;
     auto RecurseThrow() -> FlowPtr<Expr>;
     auto RecurseAwait() -> FlowPtr<Expr>;
-    auto RecurseBlock(bool expect_braces, bool single_stmt, SafetyMode safety) -> FlowPtr<Expr>;
+    auto RecurseBlock(bool expect_braces, bool single_stmt, BlockMode safety) -> FlowPtr<Expr>;
     auto RecurseExpr(const std::set<lex::Token> &terminators) -> FlowPtr<Expr>;
     auto RecurseExprPrimary(bool is_type) -> NullableFlowPtr<Expr>;
     auto RecurseExprKeyword(lex::Keyword key) -> NullableFlowPtr<Expr>;
@@ -145,8 +147,8 @@ namespace ncc::parse {
     auto RecurseName() -> string;
 
     auto RecurseEnumType() -> NullableFlowPtr<Type>;
-    auto RecurseEnumItem() -> std::optional<EnumItem>;
-    auto RecurseEnumItems() -> std::optional<EnumItems>;
+    auto RecurseEnumItem() -> std::optional<std::pair<string, NullableFlowPtr<Expr>>>;
+    auto RecurseEnumItems() -> std::optional<std::vector<std::pair<string, NullableFlowPtr<Expr>>>>;
 
     auto RecurseAbiName() -> string;
     auto RecurseExportAttributes() -> std::optional<ExpressionList>;
@@ -158,7 +160,6 @@ namespace ncc::parse {
     auto RecurseForInitExpr() -> NullableFlowPtr<Expr>;
     auto RecurseForCondition() -> NullableFlowPtr<Expr>;
     auto RecurseForStepExpr(bool has_paren) -> NullableFlowPtr<Expr>;
-    auto RecurseForBody() -> FlowPtr<Expr>;
 
     auto RecurseForeachNames() -> std::optional<std::pair<string, string>>;
     auto RecurseForeachExpr(bool has_paren) -> FlowPtr<Expr>;
@@ -168,7 +169,8 @@ namespace ncc::parse {
     auto RecurseFunctionParameterValue() -> NullableFlowPtr<Expr>;
     auto RecurseFunctionParameter() -> std::optional<FuncParam>;
     auto RecurseTemplateParameters() -> std::optional<TemplateParameters>;
-    auto RecurseFunctionParameters() -> std::pair<FuncParams, bool>;
+    auto RecurseFunctionParameters()
+        -> std::pair<std::vector<std::tuple<string, FlowPtr<Type>, NullableFlowPtr<Expr>>>, bool>;
     auto RecurseFunctionBody(bool parse_declaration_only) -> NullableFlowPtr<Expr>;
     auto RecurseFunctionReturnType() -> FlowPtr<Type>;
     static auto GetPuritySpecifier(lex::Token start_pos, bool is_thread_safe, bool is_pure, bool is_impure,
@@ -178,7 +180,7 @@ namespace ncc::parse {
 
     auto RecurseIfElse() -> NullableFlowPtr<Expr>;
 
-    auto RecurseScopeDeps() -> std::optional<ScopeDeps>;
+    auto RecurseScopeDeps() -> std::optional<std::vector<string>>;
     auto RecurseScopeBlock() -> FlowPtr<Expr>;
 
     struct StructContent {
@@ -195,7 +197,7 @@ namespace ncc::parse {
 
     auto RecurseSwitchCaseBody() -> FlowPtr<Expr>;
     auto RecurseSwitchCase() -> std::pair<FlowPtr<Expr>, bool>;
-    auto RecurseSwitchBody() -> std::optional<std::pair<SwitchCases, NullableFlowPtr<Expr>>>;
+    auto RecurseSwitchBody() -> std::optional<std::pair<std::vector<FlowPtr<Case>>, NullableFlowPtr<Expr>>>;
 
     auto RecurseTypeRangeStart() -> NullableFlowPtr<Expr>;
     auto RecurseTypeRangeEnd() -> NullableFlowPtr<Expr>;
@@ -217,12 +219,12 @@ namespace ncc::parse {
     auto RecurseVariableInstance(VariableType decl_type) -> NullableFlowPtr<Expr>;
 
     auto RecurseWhileCond() -> FlowPtr<Expr>;
-    auto RecurseWhileBody() -> FlowPtr<Expr>;
 
   public:
     PImpl(lex::IScanner &lexer, std::shared_ptr<IEnvironment> env, std::shared_ptr<void> lifetime)
         : m_env(std::move(env)),
           m_allocator(std::make_unique<DynamicArena>()),
+          m_fac(*m_allocator),
           m_rd(lexer),
           m_lifetime(std::move(lifetime)) {}
     ~PImpl() = default;

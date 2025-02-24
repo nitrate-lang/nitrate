@@ -43,7 +43,7 @@ auto Parser::PImpl::RecurseTypedef() -> FlowPtr<Expr> {
       auto the_type = RecurseType();
 
       if (NextIf<PuncSemi>()) [[likely]] {
-        return CreateNode<Typedef>(type_name, the_type)();
+        return m_fac.CreateTypedef(type_name, the_type);
       } else {
         Log << SyntaxError << Current() << "Expected ';' in typedef declaration";
       }

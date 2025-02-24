@@ -39,7 +39,7 @@
 #include <span>
 
 namespace ncc::parse {
-  enum class SafetyMode : uint8_t {
+  enum class BlockMode : uint8_t {
     Unknown = 0,
     Safe = 1,
     Unsafe = 2,
@@ -47,7 +47,7 @@ namespace ncc::parse {
 
   class Block final : public Expr {
     std::span<FlowPtr<Expr>> m_items;
-    SafetyMode m_safety;
+    BlockMode m_safety;
 
   public:
     constexpr Block(auto items, auto safety) : Expr(QAST_BLOCK), m_items(items), m_safety(safety) {}
@@ -300,7 +300,7 @@ namespace ncc::parse {
   };
 
   class Enum final : public Expr {
-    std::span<EnumItem> m_items;
+    std::span<std::pair<string, NullableFlowPtr<Expr>>> m_items;
     NullableFlowPtr<Type> m_type;
     string m_name;
 

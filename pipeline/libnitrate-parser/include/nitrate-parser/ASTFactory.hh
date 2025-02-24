@@ -74,8 +74,37 @@ namespace ncc::parse {
     constexpr ASTFactory(IMemory& pool) : m_pool(pool) {}
     constexpr ~ASTFactory() = default;
 
+    ///=========================================================================
+    /// FACTORY TYPES
+
+    struct FactoryFunctionParameter {
+      std::variant<size_t, string> m_name;
+      FlowPtr<Type> m_type;
+      NullableFlowPtr<Expr> m_default_value;
+
+      FactoryFunctionParameter(string name, FlowPtr<Type> type, NullableFlowPtr<Expr> default_value = nullptr)
+          : m_name(name), m_type(std::move(type)), m_default_value(std::move(default_value)) {}
+
+      FactoryFunctionParameter(size_t pos, FlowPtr<Type> type, NullableFlowPtr<Expr> default_value = nullptr)
+          : m_name(pos), m_type(std::move(type)), m_default_value(std::move(default_value)) {}
+    };
+
+    struct FactoryEnumItem {
+      string m_name;
+      NullableFlowPtr<Expr> m_value;
+
+      FactoryEnumItem(string name, NullableFlowPtr<Expr> value = nullptr) : m_name(name), m_value(std::move(value)) {}
+    };
+
+    ///=========================================================================
+
     [[gnu::pure, nodiscard]] auto CreateMockInstance(
         ASTNodeKind kind, SourceLocation origin = SourceLocation::current()) -> FlowPtr<Expr>;
+
+    [[gnu::pure, nodiscard]] static inline auto CreateMockInstance(IMemory& m, ASTNodeKind kind,
+                                                                   SourceLocation origin = SourceLocation::current()) {
+      return ASTFactory(m).CreateMockInstance(kind, origin);
+    }
 
     ///=========================================================================
     /// EXPRESSIONS
@@ -140,6 +169,10 @@ namespace ncc::parse {
     [[gnu::pure, nodiscard]] auto CreateCall(std::span<const FlowPtr<Expr>> pos_args, FlowPtr<Expr> callee,
                                              SourceLocation origin = SourceLocation::current()) -> FlowPtr<Call>;
 
+    [[gnu::pure, nodiscard]] auto CreateCall(std::span<const std::pair<string, FlowPtr<Expr>>> arguments,
+                                             FlowPtr<Expr> callee,
+                                             SourceLocation origin = SourceLocation::current()) -> FlowPtr<Call>;
+
     [[gnu::pure, nodiscard]] auto CreateList(std::span<const FlowPtr<Expr>> ele = {},
                                              SourceLocation origin = SourceLocation::current()) -> FlowPtr<List>;
 
@@ -187,6 +220,11 @@ namespace ncc::parse {
 
     [[gnu::pure, nodiscard]] auto CreateTemplateCall(
         std::span<const FlowPtr<Expr>> template_args, std::span<const FlowPtr<Expr>> pos_args, FlowPtr<Expr> callee,
+        SourceLocation origin = SourceLocation::current()) -> FlowPtr<TemplateCall>;
+
+    [[gnu::pure, nodiscard]] auto CreateTemplateCall(
+        std::span<const std::pair<string, FlowPtr<Expr>>> template_args,
+        std::span<const std::pair<string, FlowPtr<Expr>>> args, FlowPtr<Expr> callee,
         SourceLocation origin = SourceLocation::current()) -> FlowPtr<TemplateCall>;
 
     ///=========================================================================
@@ -287,19 +325,15 @@ namespace ncc::parse {
                                               NullableFlowPtr<Expr> max = nullptr,
                                               SourceLocation origin = SourceLocation::current()) -> FlowPtr<TupleTy>;
 
-    struct FactoryFunctionParameter {
-      std::variant<size_t, string> m_name;
-      FlowPtr<Type> m_type;
-      NullableFlowPtr<Expr> m_default_value;
-
-      FactoryFunctionParameter(std::variant<size_t, string> name, FlowPtr<Type> type,
-                               NullableFlowPtr<Expr> default_value = nullptr)
-          : m_name(name), m_type(std::move(type)), m_default_value(std::move(default_value)) {}
-    };
-
-    [[gnu::pure, nodiscard]] auto CreateFunc(
-        FlowPtr<Type> ret_ty, const std::vector<FactoryFunctionParameter>& params = {}, bool variadic = false,
+    [[gnu::pure, nodiscard]] auto CreateFunctionType(
+        FlowPtr<Type> ret_ty, const std::vector<FactoryFunctionParameter>& params, bool variadic = false,
         Purity purity = Purity::Impure, std::vector<FlowPtr<Expr>> attributes = {},
+        NullableFlowPtr<Expr> bits = nullptr, NullableFlowPtr<Expr> min = nullptr, NullableFlowPtr<Expr> max = nullptr,
+        SourceLocation origin = SourceLocation::current()) -> std::optional<FlowPtr<FuncTy>>;
+
+    [[gnu::pure, nodiscard]] auto CreateFunctionType(
+        FlowPtr<Type> ret_ty, std::span<const FuncParam> params = {}, bool variadic = false,
+        Purity purity = Purity::Impure, std::span<const FlowPtr<Expr>> attributes = {},
         NullableFlowPtr<Expr> bits = nullptr, NullableFlowPtr<Expr> min = nullptr, NullableFlowPtr<Expr> max = nullptr,
         SourceLocation origin = SourceLocation::current()) -> std::optional<FlowPtr<FuncTy>>;
 
@@ -326,6 +360,11 @@ namespace ncc::parse {
         NullableFlowPtr<Expr> min = nullptr, NullableFlowPtr<Expr> max = nullptr,
         SourceLocation origin = SourceLocation::current()) -> FlowPtr<TemplateType>;
 
+    [[gnu::pure, nodiscard]] auto CreateTemplateType(
+        std::span<const std::pair<string, FlowPtr<Expr>>> named_args, FlowPtr<Type> base,
+        NullableFlowPtr<Expr> bits = nullptr, NullableFlowPtr<Expr> min = nullptr, NullableFlowPtr<Expr> max = nullptr,
+        SourceLocation origin = SourceLocation::current()) -> FlowPtr<TemplateType>;
+
     ///=========================================================================
     /// STATEMENTS
 
@@ -335,15 +374,13 @@ namespace ncc::parse {
     /// TODO: Finish declaration
     [[gnu::pure, nodiscard]] auto CreateStruct(SourceLocation origin = SourceLocation::current()) -> FlowPtr<Struct>;
 
-    struct FactoryEnumItem {
-      string m_name;
-      NullableFlowPtr<Expr> m_value;
+    [[gnu::pure, nodiscard]] auto CreateEnum(string name, const std::vector<FactoryEnumItem>& ele,
+                                             NullableFlowPtr<Type> ele_ty = nullptr,
+                                             SourceLocation origin = SourceLocation::current()) -> FlowPtr<Enum>;
 
-      FactoryEnumItem(string name, NullableFlowPtr<Expr> value = nullptr) : m_name(name), m_value(std::move(value)) {}
-    };
-
-    [[gnu::pure, nodiscard]] auto CreateEnum(string name, NullableFlowPtr<Type> ele_ty = nullptr,
-                                             const std::vector<FactoryEnumItem>& ele = {},
+    [[gnu::pure, nodiscard]] auto CreateEnum(string name,
+                                             std::span<const std::pair<string, NullableFlowPtr<Expr>>> ele = {},
+                                             NullableFlowPtr<Type> ele_ty = nullptr,
                                              SourceLocation origin = SourceLocation::current()) -> FlowPtr<Enum>;
 
     [[gnu::pure, nodiscard]] auto CreateFunction(
@@ -354,6 +391,15 @@ namespace ncc::parse {
         const std::optional<std::span<TemplateParameter>>& template_parameters = std::nullopt,
         SourceLocation origin = SourceLocation::current()) -> std::optional<FlowPtr<Function>>;
 
+    [[gnu::pure, nodiscard]] auto CreateFunction(
+        NullableFlowPtr<Type> ret_ty, string name,
+        std::span<const std::tuple<string, FlowPtr<Type>, NullableFlowPtr<Expr>>> params, bool variadic,
+        NullableFlowPtr<Expr> body, Purity purity, std::span<const FlowPtr<Expr>> attributes,
+        NullableFlowPtr<Expr> precond, NullableFlowPtr<Expr> postcond,
+        std::span<const std::pair<string, bool>> captures,
+        std::optional<std::span<const TemplateParameter>> template_parameters,
+        SourceLocation origin = SourceLocation::current()) -> std::optional<FlowPtr<Function>>;
+
     [[gnu::pure, nodiscard]] auto CreateAnonymousFunction(
         Purity purity = Purity::Impure, const std::vector<std::pair<string, bool>>& captures = {},
         NullableFlowPtr<Type> ret_ty = nullptr, const std::vector<FactoryFunctionParameter>& params = {},
@@ -361,24 +407,36 @@ namespace ncc::parse {
         NullableFlowPtr<Expr> precond = nullptr, NullableFlowPtr<Expr> postcond = nullptr,
         SourceLocation origin = SourceLocation::current()) -> std::optional<FlowPtr<Function>>;
 
-    [[gnu::pure, nodiscard]] auto CreateScope(string name, FlowPtr<Expr> body, const std::vector<string>& tags = {},
+    [[gnu::pure, nodiscard]] auto CreateScope(string name, FlowPtr<Expr> body, const std::vector<string>& tags,
                                               SourceLocation origin = SourceLocation::current()) -> FlowPtr<Scope>;
 
-    [[gnu::pure, nodiscard]] auto CreateExport(FlowPtr<Expr> symbol, Vis vis = Vis::Pub, string abi = "",
-                                               const std::vector<FlowPtr<Expr>>& attributes = {},
+    [[gnu::pure, nodiscard]] auto CreateScope(string name, FlowPtr<Expr> body, std::span<const string> tags = {},
+                                              SourceLocation origin = SourceLocation::current()) -> FlowPtr<Scope>;
+
+    [[gnu::pure, nodiscard]] auto CreateExport(FlowPtr<Expr> symbol, const std::vector<FlowPtr<Expr>>& attributes,
+                                               Vis vis = Vis::Pub, string abi = "",
+                                               SourceLocation origin = SourceLocation::current()) -> FlowPtr<Export>;
+
+    [[gnu::pure, nodiscard]] auto CreateExport(FlowPtr<Expr> symbol, std::span<const FlowPtr<Expr>> attributes = {},
+                                               Vis vis = Vis::Pub, string abi = "",
                                                SourceLocation origin = SourceLocation::current()) -> FlowPtr<Export>;
 
     [[gnu::pure, nodiscard]] auto CreateBlock(std::span<const FlowPtr<Expr>> items = {},
-                                              SafetyMode safety = SafetyMode::Unknown,
+                                              BlockMode safety = BlockMode::Unknown,
                                               SourceLocation origin = SourceLocation::current()) -> FlowPtr<Block>;
 
     [[gnu::pure, nodiscard]] auto CreateBlock(const std::vector<FlowPtr<Expr>>& items,
-                                              SafetyMode safety = SafetyMode::Unknown,
+                                              BlockMode safety = BlockMode::Unknown,
                                               SourceLocation origin = SourceLocation::current()) -> FlowPtr<Block>;
 
     [[gnu::pure, nodiscard]] auto CreateVariable(
-        VariableType variant, string name, NullableFlowPtr<Type> type = nullptr, NullableFlowPtr<Expr> init = nullptr,
-        const std::vector<FlowPtr<Expr>>& attributes = {},
+        VariableType variant, string name, const std::vector<FlowPtr<Expr>>& attributes,
+        NullableFlowPtr<Type> type = nullptr, NullableFlowPtr<Expr> init = nullptr,
+        SourceLocation origin = SourceLocation::current()) -> FlowPtr<Variable>;
+
+    [[gnu::pure, nodiscard]] auto CreateVariable(
+        VariableType variant, string name, std::span<const FlowPtr<Expr>> attributes = {},
+        NullableFlowPtr<Type> type = nullptr, NullableFlowPtr<Expr> init = nullptr,
         SourceLocation origin = SourceLocation::current()) -> FlowPtr<Variable>;
 
     [[gnu::pure, nodiscard]] auto CreateAssembly(string asm_code, SourceLocation origin = SourceLocation::current())
@@ -402,8 +460,8 @@ namespace ncc::parse {
     [[gnu::pure, nodiscard]] auto CreateWhile(FlowPtr<Expr> cond, FlowPtr<Expr> body,
                                               SourceLocation origin = SourceLocation::current()) -> FlowPtr<While>;
 
-    [[gnu::pure, nodiscard]] auto CreateFor(NullableFlowPtr<Expr> init, NullableFlowPtr<Expr> step,
-                                            NullableFlowPtr<Expr> cond, FlowPtr<Expr> body,
+    [[gnu::pure, nodiscard]] auto CreateFor(NullableFlowPtr<Expr> init, NullableFlowPtr<Expr> cond,
+                                            NullableFlowPtr<Expr> step, FlowPtr<Expr> body,
                                             SourceLocation origin = SourceLocation::current()) -> FlowPtr<For>;
 
     [[gnu::pure, nodiscard]] auto CreateForeach(string key_name, string val_name, FlowPtr<Expr> iterable,
@@ -413,542 +471,13 @@ namespace ncc::parse {
     [[gnu::pure, nodiscard]] auto CreateCase(FlowPtr<Expr> match, FlowPtr<Expr> body,
                                              SourceLocation origin = SourceLocation::current()) -> FlowPtr<Case>;
 
-    [[gnu::pure, nodiscard]] auto CreateSwitch(FlowPtr<Expr> match, NullableFlowPtr<Expr> defaul = nullptr,
-                                               const std::vector<FlowPtr<Case>>& cases = {},
+    [[gnu::pure, nodiscard]] auto CreateSwitch(FlowPtr<Expr> match, NullableFlowPtr<Expr> defaul,
+                                               const std::vector<FlowPtr<Case>>& cases,
                                                SourceLocation origin = SourceLocation::current()) -> FlowPtr<Switch>;
 
-    ///=========================================================================
-    /// STATIC FACTORY FUNCTIONS
-
-    [[gnu::pure, nodiscard]] static inline auto CreateMockInstance(IMemory& m, ASTNodeKind kind) -> FlowPtr<Expr> {
-      return ASTFactory(m).CreateMockInstance(kind);
-    }
-
-    [[gnu::pure, nodiscard]] static inline auto CreateBinary(IMemory& m, FlowPtr<Expr> lhs, lex::Operator op,
-                                                             FlowPtr<Expr> rhs,
-                                                             SourceLocation origin = SourceLocation::current()) {
-      return ASTFactory(m).CreateBinary(std::move(lhs), op, std::move(rhs), origin);
-    }
-
-    [[gnu::pure, nodiscard]] static inline auto CreateUnary(IMemory& m, lex::Operator op, FlowPtr<Expr> rhs,
-                                                            SourceLocation origin = SourceLocation::current()) {
-      return ASTFactory(m).CreateUnary(op, std::move(rhs), origin);
-    }
-
-    [[gnu::pure, nodiscard]] static inline auto CreatePostUnary(IMemory& m, FlowPtr<Expr> lhs, lex::Operator op,
-                                                                SourceLocation origin = SourceLocation::current()) {
-      return ASTFactory(m).CreatePostUnary(std::move(lhs), op, origin);
-    }
-
-    [[gnu::pure, nodiscard]] static inline auto CreateTernary(IMemory& m, FlowPtr<Expr> condition, FlowPtr<Expr> then,
-                                                              FlowPtr<Expr> ele,
-                                                              SourceLocation origin = SourceLocation::current()) {
-      return ASTFactory(m).CreateTernary(std::move(condition), std::move(then), std::move(ele), origin);
-    }
-
-    [[gnu::pure, nodiscard]] static inline auto CreateInteger(IMemory& m, const boost::multiprecision::uint128_type& x,
-                                                              SourceLocation origin = SourceLocation::current()) {
-      return ASTFactory(m).CreateInteger(x, origin);
-    }
-
-    [[gnu::pure, nodiscard]] static inline auto CreateInteger(IMemory& m, string x,
-                                                              SourceLocation origin = SourceLocation::current()) {
-      return ASTFactory(m).CreateInteger(x, origin);
-    }
-
-    [[gnu::pure, nodiscard]] static inline auto CreateInteger(IMemory& m, const boost::multiprecision::cpp_int& x,
-                                                              SourceLocation origin = SourceLocation::current()) {
-      return ASTFactory(m).CreateInteger(x, origin);
-    }
-
-    [[gnu::pure, nodiscard]] static inline auto CreateFloat(IMemory& m, double x,
-                                                            SourceLocation origin = SourceLocation::current()) {
-      return ASTFactory(m).CreateFloat(x, origin);
-    }
-
-    [[gnu::pure, nodiscard]] static inline auto CreateFloat(IMemory& m, string x,
-                                                            SourceLocation origin = SourceLocation::current()) {
-      return ASTFactory(m).CreateFloat(x, origin);
-    }
-
-    [[gnu::pure, nodiscard]] static inline auto CreateString(IMemory& m, string x,
-                                                             SourceLocation origin = SourceLocation::current()) {
-      return ASTFactory(m).CreateString(x, origin);
-    }
-
-    [[gnu::pure, nodiscard]] static inline auto CreateCharacter(IMemory& m, char8_t x,
-                                                                SourceLocation origin = SourceLocation::current()) {
-      return ASTFactory(m).CreateCharacter(x, origin);
-    }
-
-    [[gnu::pure, nodiscard]] static inline auto CreateBoolean(IMemory& m, bool x,
-                                                              SourceLocation origin = SourceLocation::current()) {
-      return ASTFactory(m).CreateBoolean(x, origin);
-    }
-
-    [[gnu::pure, nodiscard]] static inline auto CreateNull(IMemory& m,
-                                                           SourceLocation origin = SourceLocation::current()) {
-      return ASTFactory(m).CreateNull(origin);
-    }
-
-    [[gnu::pure, nodiscard]] static inline auto CreateUndefined(IMemory& m,
-                                                                SourceLocation origin = SourceLocation::current()) {
-      return ASTFactory(m).CreateUndefined(origin);
-    }
-
-    [[gnu::pure, nodiscard]] static inline auto CreateCall(
-        IMemory& m, FlowPtr<Expr> callee,
-        const std::unordered_map<std::variant<string, size_t>, FlowPtr<Expr>>& named_args = {},
-        SourceLocation origin = SourceLocation::current()) {
-      return ASTFactory(m).CreateCall(std::move(callee), named_args, origin);
-    }
-
-    [[gnu::pure, nodiscard]] static inline auto CreateCall(IMemory& m, const std::vector<FlowPtr<Expr>>& pos_args,
-                                                           FlowPtr<Expr> callee,
-                                                           SourceLocation origin = SourceLocation::current()) {
-      return ASTFactory(m).CreateCall(pos_args, std::move(callee), origin);
-    }
-
-    [[gnu::pure, nodiscard]] static inline auto CreateCall(IMemory& m, std::span<const FlowPtr<Expr>> pos_args,
-                                                           FlowPtr<Expr> callee,
-                                                           SourceLocation origin = SourceLocation::current()) {
-      return ASTFactory(m).CreateCall(pos_args, std::move(callee), origin);
-    }
-
-    [[gnu::pure, nodiscard]] static inline auto CreateList(IMemory& m, std::span<const FlowPtr<Expr>> ele = {},
-                                                           SourceLocation origin = SourceLocation::current()) {
-      return ASTFactory(m).CreateList(ele, origin);
-    }
-
-    [[gnu::pure, nodiscard]] static inline auto CreateList(IMemory& m, const std::vector<FlowPtr<Expr>>& ele,
-                                                           SourceLocation origin = SourceLocation::current()) {
-      return ASTFactory(m).CreateList(ele, origin);
-    }
-
-    [[gnu::pure, nodiscard]] static inline auto CreateAssociation(IMemory& m, FlowPtr<Expr> key, FlowPtr<Expr> value,
-                                                                  SourceLocation origin = SourceLocation::current()) {
-      return ASTFactory(m).CreateAssociation(std::move(key), std::move(value), origin);
-    }
-
-    [[gnu::pure, nodiscard]] static inline auto CreateIndex(IMemory& m, FlowPtr<Expr> base, FlowPtr<Expr> index,
-                                                            SourceLocation origin = SourceLocation::current()) {
-      return ASTFactory(m).CreateIndex(std::move(base), std::move(index), origin);
-    }
-
-    [[gnu::pure, nodiscard]] static inline auto CreateSlice(IMemory& m, FlowPtr<Expr> base, FlowPtr<Expr> start,
-                                                            FlowPtr<Expr> end,
-                                                            SourceLocation origin = SourceLocation::current()) {
-      return ASTFactory(m).CreateSlice(std::move(base), std::move(start), std::move(end), origin);
-    }
-
-    [[gnu::pure, nodiscard]] static inline auto CreateFormatString(IMemory& m, string x,
-                                                                   SourceLocation origin = SourceLocation::current()) {
-      return ASTFactory(m).CreateFormatString(x, origin);
-    }
-
-    [[gnu::pure, nodiscard]] static inline auto CreateFormatString(
-        IMemory& m, std::span<const std::variant<string, FlowPtr<Expr>>> parts = {},
-        SourceLocation origin = SourceLocation::current()) {
-      return ASTFactory(m).CreateFormatString(parts, origin);
-    }
-
-    [[gnu::pure, nodiscard]] static inline auto CreateFormatString(
-        IMemory& m, const std::vector<std::variant<string, FlowPtr<Expr>>>& parts,
-        SourceLocation origin = SourceLocation::current()) {
-      return ASTFactory(m).CreateFormatString(parts, origin);
-    }
-
-    [[gnu::pure, nodiscard]] static inline auto CreateIdentifier(IMemory& m, string name,
-                                                                 SourceLocation origin = SourceLocation::current()) {
-      return ASTFactory(m).CreateIdentifier(name, origin);
-    }
-
-    [[gnu::pure, nodiscard]] static inline auto CreateSequence(IMemory& m, std::span<const FlowPtr<Expr>> ele = {},
-                                                               SourceLocation origin = SourceLocation::current()) {
-      return ASTFactory(m).CreateSequence(ele, origin);
-    }
-
-    [[gnu::pure, nodiscard]] static inline auto CreateSequence(IMemory& m, const std::vector<FlowPtr<Expr>>& ele,
-                                                               SourceLocation origin = SourceLocation::current()) {
-      return ASTFactory(m).CreateSequence(ele, origin);
-    }
-
-    [[gnu::pure, nodiscard]] static inline auto CreateTemplateCall(
-        IMemory& m, FlowPtr<Expr> callee,
-        const std::unordered_map<std::variant<string, size_t>, FlowPtr<Expr>>& template_args = {},
-        const std::unordered_map<std::variant<string, size_t>, FlowPtr<Expr>>& named_args = {},
-        SourceLocation origin = SourceLocation::current()) {
-      return ASTFactory(m).CreateTemplateCall(std::move(callee), template_args, named_args, origin);
-    }
-
-    [[gnu::pure, nodiscard]] static inline auto CreateTemplateCall(IMemory& m,
-                                                                   std::span<const FlowPtr<Expr>> template_args,
-                                                                   std::span<const FlowPtr<Expr>> pos_args,
-                                                                   FlowPtr<Expr> callee,
-                                                                   SourceLocation origin = SourceLocation::current()) {
-      return ASTFactory(m).CreateTemplateCall(template_args, pos_args, std::move(callee), origin);
-    }
-
-    [[gnu::pure, nodiscard]] static inline auto CreateTemplateCall(IMemory& m,
-                                                                   const std::vector<FlowPtr<Expr>>& template_args,
-                                                                   const std::vector<FlowPtr<Expr>>& pos_args,
-                                                                   FlowPtr<Expr> callee,
-                                                                   SourceLocation origin = SourceLocation::current()) {
-      return ASTFactory(m).CreateTemplateCall(template_args, pos_args, std::move(callee), origin);
-    }
-
-    [[gnu::pure, nodiscard]] static inline auto CreateReference(IMemory& m, FlowPtr<Type> to, bool volatil = false,
-                                                                NullableFlowPtr<Expr> bits = nullptr,
-                                                                NullableFlowPtr<Expr> min = nullptr,
-                                                                NullableFlowPtr<Expr> max = nullptr,
-                                                                SourceLocation origin = SourceLocation::current()) {
-      return ASTFactory(m).CreateReference(std::move(to), volatil, std::move(bits), std::move(min), std::move(max),
-                                           origin);
-    }
-
-    [[gnu::pure, nodiscard]] static inline auto CreateU1(IMemory& m, NullableFlowPtr<Expr> bits = nullptr,
-                                                         NullableFlowPtr<Expr> min = nullptr,
-                                                         NullableFlowPtr<Expr> max = nullptr,
-                                                         SourceLocation origin = SourceLocation::current()) {
-      return ASTFactory(m).CreateU1(std::move(bits), std::move(min), std::move(max), origin);
-    }
-
-    [[gnu::pure, nodiscard]] static inline auto CreateU8(IMemory& m, NullableFlowPtr<Expr> bits = nullptr,
-                                                         NullableFlowPtr<Expr> min = nullptr,
-                                                         NullableFlowPtr<Expr> max = nullptr,
-                                                         SourceLocation origin = SourceLocation::current()) {
-      return ASTFactory(m).CreateU8(std::move(bits), std::move(min), std::move(max), origin);
-    }
-
-    [[gnu::pure, nodiscard]] static inline auto CreateU16(IMemory& m, NullableFlowPtr<Expr> bits = nullptr,
-                                                          NullableFlowPtr<Expr> min = nullptr,
-                                                          NullableFlowPtr<Expr> max = nullptr,
-                                                          SourceLocation origin = SourceLocation::current()) {
-      return ASTFactory(m).CreateU16(std::move(bits), std::move(min), std::move(max), origin);
-    }
-
-    [[gnu::pure, nodiscard]] static inline auto CreateU32(IMemory& m, NullableFlowPtr<Expr> bits = nullptr,
-                                                          NullableFlowPtr<Expr> min = nullptr,
-                                                          NullableFlowPtr<Expr> max = nullptr,
-                                                          SourceLocation origin = SourceLocation::current()) {
-      return ASTFactory(m).CreateU32(std::move(bits), std::move(min), std::move(max), origin);
-    }
-
-    [[gnu::pure, nodiscard]] static inline auto CreateU64(IMemory& m, NullableFlowPtr<Expr> bits = nullptr,
-                                                          NullableFlowPtr<Expr> min = nullptr,
-                                                          NullableFlowPtr<Expr> max = nullptr,
-                                                          SourceLocation origin = SourceLocation::current()) {
-      return ASTFactory(m).CreateU64(std::move(bits), std::move(min), std::move(max), origin);
-    }
-
-    [[gnu::pure, nodiscard]] static inline auto CreateU128(IMemory& m, NullableFlowPtr<Expr> bits = nullptr,
-                                                           NullableFlowPtr<Expr> min = nullptr,
-                                                           NullableFlowPtr<Expr> max = nullptr,
-                                                           SourceLocation origin = SourceLocation::current()) {
-      return ASTFactory(m).CreateU128(std::move(bits), std::move(min), std::move(max), origin);
-    }
-
-    [[gnu::pure, nodiscard]] static inline auto CreateI8(IMemory& m, NullableFlowPtr<Expr> bits = nullptr,
-                                                         NullableFlowPtr<Expr> min = nullptr,
-                                                         NullableFlowPtr<Expr> max = nullptr,
-                                                         SourceLocation origin = SourceLocation::current()) {
-      return ASTFactory(m).CreateI8(std::move(bits), std::move(min), std::move(max), origin);
-    }
-
-    [[gnu::pure, nodiscard]] static inline auto CreateI16(IMemory& m, NullableFlowPtr<Expr> bits = nullptr,
-                                                          NullableFlowPtr<Expr> min = nullptr,
-                                                          NullableFlowPtr<Expr> max = nullptr,
-                                                          SourceLocation origin = SourceLocation::current()) {
-      return ASTFactory(m).CreateI16(std::move(bits), std::move(min), std::move(max), origin);
-    }
-
-    [[gnu::pure, nodiscard]] static inline auto CreateI32(IMemory& m, NullableFlowPtr<Expr> bits = nullptr,
-                                                          NullableFlowPtr<Expr> min = nullptr,
-                                                          NullableFlowPtr<Expr> max = nullptr,
-                                                          SourceLocation origin = SourceLocation::current()) {
-      return ASTFactory(m).CreateI32(std::move(bits), std::move(min), std::move(max), origin);
-    }
-
-    [[gnu::pure, nodiscard]] static inline auto CreateI64(IMemory& m, NullableFlowPtr<Expr> bits = nullptr,
-                                                          NullableFlowPtr<Expr> min = nullptr,
-                                                          NullableFlowPtr<Expr> max = nullptr,
-                                                          SourceLocation origin = SourceLocation::current()) {
-      return ASTFactory(m).CreateI64(std::move(bits), std::move(min), std::move(max), origin);
-    }
-
-    [[gnu::pure, nodiscard]] static inline auto CreateI128(IMemory& m, NullableFlowPtr<Expr> bits = nullptr,
-                                                           NullableFlowPtr<Expr> min = nullptr,
-                                                           NullableFlowPtr<Expr> max = nullptr,
-                                                           SourceLocation origin = SourceLocation::current()) {
-      return ASTFactory(m).CreateI128(std::move(bits), std::move(min), std::move(max), origin);
-    }
-
-    [[gnu::pure, nodiscard]] static inline auto CreateF16(IMemory& m, NullableFlowPtr<Expr> bits = nullptr,
-                                                          NullableFlowPtr<Expr> min = nullptr,
-                                                          NullableFlowPtr<Expr> max = nullptr,
-                                                          SourceLocation origin = SourceLocation::current()) {
-      return ASTFactory(m).CreateF16(std::move(bits), std::move(min), std::move(max), origin);
-    }
-
-    [[gnu::pure, nodiscard]] static inline auto CreateF32(IMemory& m, NullableFlowPtr<Expr> bits = nullptr,
-                                                          NullableFlowPtr<Expr> min = nullptr,
-                                                          NullableFlowPtr<Expr> max = nullptr,
-                                                          SourceLocation origin = SourceLocation::current()) {
-      return ASTFactory(m).CreateF32(std::move(bits), std::move(min), std::move(max), origin);
-    }
-
-    [[gnu::pure, nodiscard]] static inline auto CreateF64(IMemory& m, NullableFlowPtr<Expr> bits = nullptr,
-                                                          NullableFlowPtr<Expr> min = nullptr,
-                                                          NullableFlowPtr<Expr> max = nullptr,
-                                                          SourceLocation origin = SourceLocation::current()) {
-      return ASTFactory(m).CreateF64(std::move(bits), std::move(min), std::move(max), origin);
-    }
-
-    [[gnu::pure, nodiscard]] static inline auto CreateF128(IMemory& m, NullableFlowPtr<Expr> bits = nullptr,
-                                                           NullableFlowPtr<Expr> min = nullptr,
-                                                           NullableFlowPtr<Expr> max = nullptr,
-                                                           SourceLocation origin = SourceLocation::current()) {
-      return ASTFactory(m).CreateF128(std::move(bits), std::move(min), std::move(max), origin);
-    }
-
-    [[gnu::pure, nodiscard]] static inline auto CreateVoid(IMemory& m, NullableFlowPtr<Expr> bits = nullptr,
-                                                           NullableFlowPtr<Expr> min = nullptr,
-                                                           NullableFlowPtr<Expr> max = nullptr,
-                                                           SourceLocation origin = SourceLocation::current()) {
-      return ASTFactory(m).CreateVoid(std::move(bits), std::move(min), std::move(max), origin);
-    }
-
-    [[gnu::pure, nodiscard]] static inline auto CreatePointer(IMemory& m, FlowPtr<Type> to, bool volatil = false,
-                                                              NullableFlowPtr<Expr> bits = nullptr,
-                                                              NullableFlowPtr<Expr> min = nullptr,
-                                                              NullableFlowPtr<Expr> max = nullptr,
-                                                              SourceLocation origin = SourceLocation::current()) {
-      return ASTFactory(m).CreatePointer(std::move(to), volatil, std::move(bits), std::move(min), std::move(max),
-                                         origin);
-    }
-
-    [[gnu::pure, nodiscard]] static inline auto CreateOpaque(IMemory& m, string name,
-                                                             NullableFlowPtr<Expr> bits = nullptr,
-                                                             NullableFlowPtr<Expr> min = nullptr,
-                                                             NullableFlowPtr<Expr> max = nullptr,
-                                                             SourceLocation origin = SourceLocation::current()) {
-      return ASTFactory(m).CreateOpaque(name, std::move(bits), std::move(min), std::move(max), origin);
-    }
-
-    [[gnu::pure, nodiscard]] static inline auto CreateArray(IMemory& m, FlowPtr<Type> element_type,
-                                                            FlowPtr<Expr> element_count,
-                                                            NullableFlowPtr<Expr> bits = nullptr,
-                                                            NullableFlowPtr<Expr> min = nullptr,
-                                                            NullableFlowPtr<Expr> max = nullptr,
-                                                            SourceLocation origin = SourceLocation::current()) {
-      return ASTFactory(m).CreateArray(std::move(element_type), std::move(element_count), std::move(bits),
-                                       std::move(min), std::move(max), origin);
-    }
-
-    [[gnu::pure, nodiscard]] static inline auto CreateTuple(IMemory& m, std::span<const FlowPtr<Type>> ele = {},
-                                                            NullableFlowPtr<Expr> bits = nullptr,
-                                                            NullableFlowPtr<Expr> min = nullptr,
-                                                            NullableFlowPtr<Expr> max = nullptr,
-                                                            SourceLocation origin = SourceLocation::current()) {
-      return ASTFactory(m).CreateTuple(ele, std::move(bits), std::move(min), std::move(max), origin);
-    }
-
-    [[gnu::pure, nodiscard]] static inline auto CreateTuple(IMemory& m, const std::vector<FlowPtr<Type>>& ele,
-                                                            NullableFlowPtr<Expr> bits = nullptr,
-                                                            NullableFlowPtr<Expr> min = nullptr,
-                                                            NullableFlowPtr<Expr> max = nullptr,
-                                                            SourceLocation origin = SourceLocation::current()) {
-      return ASTFactory(m).CreateTuple(ele, std::move(bits), std::move(min), std::move(max), origin);
-    }
-
-    [[gnu::pure, nodiscard]] static inline auto CreateFunc(
-        IMemory& m, FlowPtr<Type> ret_ty, const std::vector<FactoryFunctionParameter>& params = {},
-        bool variadic = false, Purity purity = Purity::Impure, std::vector<FlowPtr<Expr>> attributes = {},
-        NullableFlowPtr<Expr> bits = nullptr, NullableFlowPtr<Expr> min = nullptr, NullableFlowPtr<Expr> max = nullptr,
-        SourceLocation origin = SourceLocation::current()) {
-      return ASTFactory(m).CreateFunc(std::move(ret_ty), params, variadic, purity, std::move(attributes),
-                                      std::move(bits), std::move(min), std::move(max), origin);
-    }
-
-    [[gnu::pure, nodiscard]] static inline auto CreateNamed(IMemory& m, string name,
-                                                            NullableFlowPtr<Expr> bits = nullptr,
-                                                            NullableFlowPtr<Expr> min = nullptr,
-                                                            NullableFlowPtr<Expr> max = nullptr,
-                                                            SourceLocation origin = SourceLocation::current()) {
-      return ASTFactory(m).CreateNamed(name, std::move(bits), std::move(min), std::move(max), origin);
-    }
-
-    [[gnu::pure, nodiscard]] static inline auto CreateUnknownType(IMemory& m, NullableFlowPtr<Expr> bits = nullptr,
-                                                                  NullableFlowPtr<Expr> min = nullptr,
-                                                                  NullableFlowPtr<Expr> max = nullptr,
-                                                                  SourceLocation origin = SourceLocation::current()) {
-      return ASTFactory(m).CreateUnknownType(std::move(bits), std::move(min), std::move(max), origin);
-    }
-
-    [[gnu::pure, nodiscard]] static inline auto CreateTemplateType(
-        IMemory& m, FlowPtr<Type> base,
-        const std::unordered_map<std::variant<string, size_t>, FlowPtr<Expr>>& named_args,
-        NullableFlowPtr<Expr> bits = nullptr, NullableFlowPtr<Expr> min = nullptr, NullableFlowPtr<Expr> max = nullptr,
-        SourceLocation origin = SourceLocation::current()) {
-      return ASTFactory(m).CreateTemplateType(std::move(base), named_args, std::move(bits), std::move(min),
-                                              std::move(max), origin);
-    }
-
-    [[gnu::pure, nodiscard]] static inline auto CreateTemplateType(
-        IMemory& m, const std::vector<FlowPtr<Expr>>& pos_args, FlowPtr<Type> base,
-        NullableFlowPtr<Expr> bits = nullptr, NullableFlowPtr<Expr> min = nullptr, NullableFlowPtr<Expr> max = nullptr,
-        SourceLocation origin = SourceLocation::current()) {
-      return ASTFactory(m).CreateTemplateType(pos_args, std::move(base), std::move(bits), std::move(min),
-                                              std::move(max), origin);
-    }
-
-    [[gnu::pure, nodiscard]] static inline auto CreateTemplateType(IMemory& m, std::span<const FlowPtr<Expr>> pos_args,
-                                                                   FlowPtr<Type> base,
-                                                                   NullableFlowPtr<Expr> bits = nullptr,
-                                                                   NullableFlowPtr<Expr> min = nullptr,
-                                                                   NullableFlowPtr<Expr> max = nullptr,
-                                                                   SourceLocation origin = SourceLocation::current()) {
-      return ASTFactory(m).CreateTemplateType(pos_args, std::move(base), std::move(bits), std::move(min),
-                                              std::move(max), origin);
-    }
-
-    ///=========================================================================
-    /// STATEMENTS
-    [[gnu::pure, nodiscard]] static inline auto CreateTypedef(IMemory& m, string name, FlowPtr<Type> base,
-                                                              SourceLocation origin = SourceLocation::current()) {
-      return ASTFactory(m).CreateTypedef(name, std::move(base), origin);
-    }
-
-    [[gnu::pure, nodiscard]] static inline auto CreateStruct(IMemory& m,
-                                                             SourceLocation origin = SourceLocation::current()) {
-      return ASTFactory(m).CreateStruct(origin);
-    }
-
-    [[gnu::pure, nodiscard]] static inline auto CreateEnum(IMemory& m, string name,
-                                                           NullableFlowPtr<Type> ele_ty = nullptr,
-                                                           const std::vector<FactoryEnumItem>& ele = {},
-                                                           SourceLocation origin = SourceLocation::current()) {
-      return ASTFactory(m).CreateEnum(name, std::move(ele_ty), ele, origin);
-    }
-
-    [[gnu::pure, nodiscard]] static inline auto CreateFunction(
-        IMemory& m, string name, NullableFlowPtr<Type> ret_ty = nullptr,
-        const std::vector<FactoryFunctionParameter>& params = {}, bool variadic = false,
-        NullableFlowPtr<Expr> body = nullptr, Purity purity = Purity::Impure,
-        const std::vector<FlowPtr<Expr>>& attributes = {}, NullableFlowPtr<Expr> precond = nullptr,
-        NullableFlowPtr<Expr> postcond = nullptr, const std::vector<std::pair<string, bool>>& captures = {},
-        const std::optional<std::span<TemplateParameter>>& template_parameters = std::nullopt,
-        SourceLocation origin = SourceLocation::current()) {
-      return ASTFactory(m).CreateFunction(name, std::move(ret_ty), params, variadic, std::move(body), purity,
-                                          attributes, std::move(precond), std::move(postcond), captures,
-                                          template_parameters, origin);
-    }
-
-    [[gnu::pure, nodiscard]] static inline auto CreateAnonymousFunction(
-        IMemory& m, Purity purity = Purity::Impure, const std::vector<std::pair<string, bool>>& captures = {},
-        NullableFlowPtr<Type> ret_ty = nullptr, const std::vector<FactoryFunctionParameter>& params = {},
-        bool variadic = false, NullableFlowPtr<Expr> body = nullptr, const std::vector<FlowPtr<Expr>>& attributes = {},
-        NullableFlowPtr<Expr> precond = nullptr, NullableFlowPtr<Expr> postcond = nullptr,
-        SourceLocation origin = SourceLocation::current()) {
-      return ASTFactory(m).CreateAnonymousFunction(purity, captures, std::move(ret_ty), params, variadic,
-                                                   std::move(body), attributes, std::move(precond), std::move(postcond),
-                                                   origin);
-    }
-
-    [[gnu::pure, nodiscard]] static inline auto CreateScope(IMemory& m, string name, FlowPtr<Expr> body,
-                                                            const std::vector<string>& tags = {},
-                                                            SourceLocation origin = SourceLocation::current()) {
-      return ASTFactory(m).CreateScope(name, std::move(body), tags, origin);
-    }
-
-    [[gnu::pure, nodiscard]] static inline auto CreateExport(IMemory& m, FlowPtr<Expr> symbol, Vis vis = Vis::Pub,
-                                                             string abi = "",
-                                                             const std::vector<FlowPtr<Expr>>& attributes = {},
-                                                             SourceLocation origin = SourceLocation::current()) {
-      return ASTFactory(m).CreateExport(std::move(symbol), vis, abi, attributes, origin);
-    }
-
-    [[gnu::pure, nodiscard]] static inline auto CreateBlock(IMemory& m, std::span<const FlowPtr<Expr>> items = {},
-                                                            SafetyMode safety = SafetyMode::Unknown,
-                                                            SourceLocation origin = SourceLocation::current()) {
-      return ASTFactory(m).CreateBlock(items, safety, origin);
-    }
-
-    [[gnu::pure, nodiscard]] static inline auto CreateBlock(IMemory& m, const std::vector<FlowPtr<Expr>>& items,
-                                                            SafetyMode safety = SafetyMode::Unknown,
-                                                            SourceLocation origin = SourceLocation::current()) {
-      return ASTFactory(m).CreateBlock(items, safety, origin);
-    }
-
-    [[gnu::pure, nodiscard]] static inline auto CreateVariable(IMemory& m, VariableType variant, string name,
-                                                               NullableFlowPtr<Type> type = nullptr,
-                                                               NullableFlowPtr<Expr> init = nullptr,
-                                                               const std::vector<FlowPtr<Expr>>& attributes = {},
-                                                               SourceLocation origin = SourceLocation::current()) {
-      return ASTFactory(m).CreateVariable(variant, name, std::move(type), std::move(init), attributes, origin);
-    }
-
-    [[gnu::pure, nodiscard]] static inline auto CreateAssembly(IMemory& m, string asm_code,
-                                                               SourceLocation origin = SourceLocation::current()) {
-      return ASTFactory(m).CreateAssembly(asm_code, origin);
-    }
-
-    [[gnu::pure, nodiscard]] static inline auto CreateReturn(IMemory& m, NullableFlowPtr<Expr> value = nullptr,
-                                                             SourceLocation origin = SourceLocation::current()) {
-      return ASTFactory(m).CreateReturn(std::move(value), origin);
-    }
-
-    [[gnu::pure, nodiscard]] static inline auto CreateReturnIf(IMemory& m, FlowPtr<Expr> cond,
-                                                               NullableFlowPtr<Expr> value = nullptr,
-                                                               SourceLocation origin = SourceLocation::current()) {
-      return ASTFactory(m).CreateReturnIf(std::move(cond), std::move(value), origin);
-    }
-
-    [[gnu::pure, nodiscard]] static inline auto CreateBreak(IMemory& m,
-                                                            SourceLocation origin = SourceLocation::current()) {
-      return ASTFactory(m).CreateBreak(origin);
-    }
-
-    [[gnu::pure, nodiscard]] static inline auto CreateContinue(IMemory& m,
-                                                               SourceLocation origin = SourceLocation::current()) {
-      return ASTFactory(m).CreateContinue(origin);
-    }
-
-    [[gnu::pure, nodiscard]] static inline auto CreateIf(IMemory& m, FlowPtr<Expr> cond, FlowPtr<Expr> then,
-                                                         NullableFlowPtr<Expr> ele = nullptr,
-                                                         SourceLocation origin = SourceLocation::current()) {
-      return ASTFactory(m).CreateIf(std::move(cond), std::move(then), std::move(ele), origin);
-    }
-
-    [[gnu::pure, nodiscard]] static inline auto CreateWhile(IMemory& m, FlowPtr<Expr> cond, FlowPtr<Expr> body,
-                                                            SourceLocation origin = SourceLocation::current()) {
-      return ASTFactory(m).CreateWhile(std::move(cond), std::move(body), origin);
-    }
-
-    [[gnu::pure, nodiscard]] static inline auto CreateFor(IMemory& m, NullableFlowPtr<Expr> init,
-                                                          NullableFlowPtr<Expr> step, NullableFlowPtr<Expr> cond,
-                                                          FlowPtr<Expr> body,
-                                                          SourceLocation origin = SourceLocation::current()) {
-      return ASTFactory(m).CreateFor(std::move(init), std::move(step), std::move(cond), std::move(body), origin);
-    }
-
-    [[gnu::pure, nodiscard]] static inline auto CreateForeach(IMemory& m, string key_name, string val_name,
-                                                              FlowPtr<Expr> iterable, FlowPtr<Expr> body,
-                                                              SourceLocation origin = SourceLocation::current()) {
-      return ASTFactory(m).CreateForeach(key_name, val_name, std::move(iterable), std::move(body), origin);
-    }
-
-    [[gnu::pure, nodiscard]] static inline auto CreateCase(IMemory& m, FlowPtr<Expr> match, FlowPtr<Expr> body,
-                                                           SourceLocation origin = SourceLocation::current()) {
-      return ASTFactory(m).CreateCase(std::move(match), std::move(body), origin);
-    }
-
-    [[gnu::pure, nodiscard]] static inline auto CreateSwitch(IMemory& m, FlowPtr<Expr> match,
-                                                             NullableFlowPtr<Expr> defaul = nullptr,
-                                                             const std::vector<FlowPtr<Case>>& cases = {},
-                                                             SourceLocation origin = SourceLocation::current()) {
-      return ASTFactory(m).CreateSwitch(std::move(match), std::move(defaul), cases, origin);
-    }
+    [[gnu::pure, nodiscard]] auto CreateSwitch(FlowPtr<Expr> match, NullableFlowPtr<Expr> defaul = nullptr,
+                                               std::span<const FlowPtr<Case>> cases = {},
+                                               SourceLocation origin = SourceLocation::current()) -> FlowPtr<Switch>;
   };
 }  // namespace ncc::parse
 

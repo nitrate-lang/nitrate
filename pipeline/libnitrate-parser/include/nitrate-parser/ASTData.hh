@@ -88,21 +88,11 @@ namespace ncc::parse {
   };
 
   using ExpressionList = std::vector<FlowPtr<Expr>, Arena<FlowPtr<Expr>>>;
-  using TupleTyItems = std::vector<FlowPtr<Type>, Arena<FlowPtr<Type>>>;
   using CallArg = std::pair<string, FlowPtr<Expr>>;
   using CallArgs = std::vector<CallArg, Arena<CallArg>>;
-  using FStringItem = std::variant<string, FlowPtr<Expr>>;
-  using FStringItems = std::vector<FStringItem, Arena<FStringItem>>;
 
   using TemplateParameter = std::tuple<string, FlowPtr<Type>, NullableFlowPtr<Expr>>;
   using TemplateParameters = std::vector<TemplateParameter, Arena<TemplateParameter>>;
-
-  using BlockItems = std::vector<FlowPtr<Expr>, Arena<FlowPtr<Expr>>>;
-  using ScopeDeps = std::vector<string, Arena<string>>;
-
-  using SwitchCases = std::vector<FlowPtr<Case>, Arena<FlowPtr<Case>>>;
-  using EnumItem = std::pair<string, NullableFlowPtr<Expr>>;
-  using EnumItems = std::vector<EnumItem, Arena<EnumItem>>;
 
   class StructField {
     string m_name;

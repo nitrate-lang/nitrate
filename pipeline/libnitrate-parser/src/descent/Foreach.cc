@@ -70,10 +70,10 @@ auto Parser::PImpl::RecurseForeachExpr(bool has_paren) -> FlowPtr<Expr> {
 
 auto Parser::PImpl::RecurseForeachBody() -> FlowPtr<Expr> {
   if (NextIf<OpArrow>()) {
-    return RecurseBlock(false, true, SafetyMode::Unknown);
+    return RecurseBlock(false, true, BlockMode::Unknown);
   }
 
-  return RecurseBlock(true, false, SafetyMode::Unknown);
+  return RecurseBlock(true, false, BlockMode::Unknown);
 }
 
 auto Parser::PImpl::RecurseForeach() -> FlowPtr<Expr> {
@@ -90,7 +90,7 @@ auto Parser::PImpl::RecurseForeach() -> FlowPtr<Expr> {
 
       auto body = RecurseForeachBody();
 
-      return CreateNode<Foreach>(index_name, value_name, iter_expr, body)();
+      return m_fac.CreateForeach(index_name, value_name, iter_expr, body);
     } else {
       Log << SyntaxError << Current() << "Expected 'in' keyword in foreach statement";
     }

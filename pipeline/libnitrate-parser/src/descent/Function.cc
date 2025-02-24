@@ -33,6 +33,8 @@
 
 #include <descent/Recurse.hh>
 
+#include "nitrate-parser/AST.hh"
+
 using namespace ncc;
 using namespace ncc::lex;
 using namespace ncc::parse;
@@ -42,7 +44,7 @@ auto Parser::PImpl::RecurseFunctionParameterType() -> FlowPtr<parse::Type> {
     return RecurseType();
   }
 
-  return CreateNode<InferTy>()();
+  return m_fac.CreateUnknownType();
 }
 
 auto Parser::PImpl::RecurseFunctionParameterValue() -> NullableFlowPtr<Expr> {
@@ -101,8 +103,9 @@ auto Parser::PImpl::RecurseTemplateParameters() -> std::optional<TemplateParamet
   return params;
 }
 
-auto Parser::PImpl::RecurseFunctionParameters() -> std::pair<FuncParams, bool> {
-  std::pair<FuncParams, bool> parameters;
+auto Parser::PImpl::RecurseFunctionParameters()
+    -> std::pair<std::vector<std::tuple<string, FlowPtr<Type>, NullableFlowPtr<Expr>>>, bool> {
+  std::pair<std::vector<std::tuple<string, FlowPtr<Type>, NullableFlowPtr<Expr>>>, bool> parameters;
 
   if (!NextIf<PuncLPar>()) [[unlikely]] {
     Log << SyntaxError << Current() << "Expected '(' after function name";
@@ -231,7 +234,7 @@ auto Parser::PImpl::RecurseFunctionAmbigouis() -> std::tuple<ExpressionList, FnC
           } else if (some_word == "retro") {
             is_retro = true;
           } else if (some_word == "foreign" || some_word == "inline") {
-            attributes.push_back(CreateNode<Identifier>(some_word)());
+            attributes.push_back(m_fac.CreateIdentifier(some_word));
           } else {
             function_name = some_word;
             state = State::End;
@@ -333,7 +336,7 @@ auto Parser::PImpl::RecurseFunctionReturnType() -> FlowPtr<parse::Type> {
     return RecurseType();
   }
 
-  return CreateNode<InferTy>()();
+  return m_fac.CreateUnknownType();
 }
 
 auto Parser::PImpl::RecurseFunctionBody(bool parse_declaration_only) -> NullableFlowPtr<Expr> {
@@ -342,10 +345,10 @@ auto Parser::PImpl::RecurseFunctionBody(bool parse_declaration_only) -> Nullable
   }
 
   if (NextIf<OpArrow>()) {
-    return RecurseBlock(false, true, SafetyMode::Unknown);
+    return RecurseBlock(false, true, BlockMode::Unknown);
   }
 
-  return RecurseBlock(true, false, SafetyMode::Unknown);
+  return RecurseBlock(true, false, BlockMode::Unknown);
 }
 
 auto Parser::PImpl::RecurseFunction(bool parse_declaration_only) -> FlowPtr<Expr> {
@@ -357,11 +360,14 @@ auto Parser::PImpl::RecurseFunction(bool parse_declaration_only) -> FlowPtr<Expr
   auto function_return_type = RecurseFunctionReturnType();
   auto function_body = RecurseFunctionBody(parse_declaration_only);
 
-  auto function =
-      CreateNode<Function>(function_attributes, function_purity, function_captures, function_name,
-                           function_template_parameters, function_parameters.first, function_parameters.second,
-                           function_return_type, std::nullopt, std::nullopt, function_body)();
-  function->SetOffset(start_pos);
+  auto function = m_fac.CreateFunction(function_return_type, function_name, function_parameters.first,
+                                       function_parameters.second, function_body, function_purity, function_attributes,
+                                       std::nullopt, std::nullopt, function_captures, function_template_parameters);
+  if (!function.has_value()) [[unlikely]] {
+    function = m_fac.CreateMockInstance(QAST_FUNCTION)->As<Function>();
+  }
 
-  return function;
+  function.value()->SetOffset(start_pos);
+
+  return function.value();
 }

@@ -281,10 +281,10 @@ auto ASTFactory::CreateTuple(const std::vector<FlowPtr<Type>>& ele, NullableFlow
   return CreateTuple(std::span(ele), std::move(bits), std::move(min), std::move(max), origin);
 }
 
-auto ASTFactory::CreateFunc(FlowPtr<Type> ret_ty, const std::vector<FactoryFunctionParameter>& params, bool variadic,
-                            Purity purity, std::vector<FlowPtr<Expr>> attributes, NullableFlowPtr<Expr> bits,
-                            NullableFlowPtr<Expr> min, NullableFlowPtr<Expr> max,
-                            SourceLocation origin) -> std::optional<FlowPtr<FuncTy>> {
+auto ASTFactory::CreateFunctionType(FlowPtr<Type> ret_ty, const std::vector<FactoryFunctionParameter>& params,
+                                    bool variadic, Purity purity, std::vector<FlowPtr<Expr>> attributes,
+                                    NullableFlowPtr<Expr> bits, NullableFlowPtr<Expr> min, NullableFlowPtr<Expr> max,
+                                    SourceLocation origin) -> std::optional<FlowPtr<FuncTy>> {
   auto params_copy = AllocateArray<FuncParam>(params.size());
 
   {
@@ -320,6 +320,21 @@ auto ASTFactory::CreateFunc(FlowPtr<Type> ret_ty, const std::vector<FactoryFunct
   node->SetRangeEnd(std::move(max));
 
   return node;
+}
+
+auto ASTFactory::CreateFunctionType(FlowPtr<Type> ret_ty, std::span<const FuncParam> params, bool variadic,
+                                    Purity purity, std::span<const FlowPtr<Expr>> attributes,
+                                    NullableFlowPtr<Expr> bits, NullableFlowPtr<Expr> min, NullableFlowPtr<Expr> max,
+                                    SourceLocation origin) -> std::optional<FlowPtr<FuncTy>> {
+  std::vector<FactoryFunctionParameter> params_copy;
+  params_copy.reserve(params.size());
+  for (const auto& [name, type, default_] : params) {
+    params_copy.emplace_back(name, type, default_);
+  }
+
+  return CreateFunctionType(std::move(ret_ty), params_copy, variadic, purity,
+                            std::vector<FlowPtr<Expr>>(attributes.begin(), attributes.end()), std::move(bits),
+                            std::move(min), std::move(max), origin);
 }
 
 auto ASTFactory::CreateNamed(string name, NullableFlowPtr<Expr> bits, NullableFlowPtr<Expr> min,
@@ -397,6 +412,21 @@ auto ASTFactory::CreateTemplateType(std::span<const FlowPtr<Expr>> pos_args, Flo
     args_copy[i].first = std::to_string(i);
     args_copy[i].second = pos_args[i];
   }
+
+  auto node = CreateInstance<TemplateType>(base, args_copy)(m_pool, origin);
+
+  node->SetWidth(std::move(bits));
+  node->SetRangeBegin(std::move(min));
+  node->SetRangeEnd(std::move(max));
+
+  return node;
+}
+
+auto ASTFactory::CreateTemplateType(std::span<const std::pair<string, FlowPtr<Expr>>> named_args, FlowPtr<Type> base,
+                                    NullableFlowPtr<Expr> bits, NullableFlowPtr<Expr> min, NullableFlowPtr<Expr> max,
+                                    SourceLocation origin) -> FlowPtr<TemplateType> {
+  auto args_copy = AllocateArray<CallArg>(named_args.size());
+  std::copy(named_args.begin(), named_args.end(), args_copy.begin());
 
   auto node = CreateInstance<TemplateType>(base, args_copy)(m_pool, origin);
 

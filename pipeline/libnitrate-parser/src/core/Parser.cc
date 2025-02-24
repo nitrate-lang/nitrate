@@ -111,13 +111,13 @@ auto Parser::PImpl::RecurseName() -> string {
   return name;
 }
 
-auto Parser::PImpl::RecurseBlock(bool expect_braces, bool single_stmt, SafetyMode safety) -> FlowPtr<Expr> {
+auto Parser::PImpl::RecurseBlock(bool expect_braces, bool single_stmt, BlockMode safety) -> FlowPtr<Expr> {
   if (expect_braces && !Next().Is<PuncLCur>()) {
     Log << SyntaxError << Current() << "Expected '{'";
   }
 
   auto block_start = Current().GetStart();
-  BlockItems statements;
+  std::vector<FlowPtr<Expr>> statements;
 
   auto block_comments = m_rd.CommentBuffer();
   m_rd.ClearCommentBuffer();
@@ -140,7 +140,7 @@ auto Parser::PImpl::RecurseBlock(bool expect_braces, bool single_stmt, SafetyMod
       }
 
       if (should_break) {
-        auto block = CreateNode<Block>(statements, safety)();
+        auto block = m_fac.CreateBlock(statements, safety);
         block->SetOffset(block_start);
 
         return BindComments(block, block_comments);
@@ -280,9 +280,9 @@ auto Parser::PImpl::RecurseBlock(bool expect_braces, bool single_stmt, SafetyMod
 
         case Unsafe: {
           if (Peek().Is<PuncLCur>()) {
-            r = RecurseBlock(true, false, SafetyMode::Unsafe);
+            r = RecurseBlock(true, false, BlockMode::Unsafe);
           } else {
-            r = RecurseBlock(false, true, SafetyMode::Unsafe);
+            r = RecurseBlock(false, true, BlockMode::Unsafe);
           }
 
           break;
@@ -290,9 +290,9 @@ auto Parser::PImpl::RecurseBlock(bool expect_braces, bool single_stmt, SafetyMod
 
         case Safe: {
           if (Peek().Is<PuncLCur>()) {
-            r = RecurseBlock(true, false, SafetyMode::Safe);
+            r = RecurseBlock(true, false, BlockMode::Safe);
           } else {
-            r = RecurseBlock(false, true, SafetyMode::Safe);
+            r = RecurseBlock(false, true, BlockMode::Safe);
           }
 
           break;
@@ -334,7 +334,7 @@ auto Parser::PImpl::RecurseBlock(bool expect_braces, bool single_stmt, SafetyMod
         }
 
         case Keyword::Break: {
-          r = CreateNode<Break>()();
+          r = m_fac.CreateBreak();
           if (!NextIf<PuncSemi>()) {
             Log << SyntaxError << Current() << "Expected ';' after 'break' statement";
           }
@@ -343,7 +343,7 @@ auto Parser::PImpl::RecurseBlock(bool expect_braces, bool single_stmt, SafetyMod
         }
 
         case Keyword::Continue: {
-          r = CreateNode<Continue>()();
+          r = m_fac.CreateContinue();
           if (!NextIf<PuncSemi>()) {
             Log << SyntaxError << Current() << "Expected ';' after 'continue' statement";
           }
@@ -356,7 +356,7 @@ auto Parser::PImpl::RecurseBlock(bool expect_braces, bool single_stmt, SafetyMod
         }
 
         case Retif: {
-          r = RecurseRetif();
+          r = RecurseReturnIf();
           break;
         }
 
@@ -396,7 +396,7 @@ auto Parser::PImpl::RecurseBlock(bool expect_braces, bool single_stmt, SafetyMod
         }
 
         case Undef: {
-          r = CreateNode<Undefined>()();
+          r = m_fac.CreateUndefined();
           if (!NextIf<PuncSemi>()) {
             Log << SyntaxError << Current() << "Expected ';' after 'undef' statement";
           }
@@ -404,7 +404,7 @@ auto Parser::PImpl::RecurseBlock(bool expect_braces, bool single_stmt, SafetyMod
         }
 
         case Keyword::Null: {
-          r = CreateNode<Null>()();
+          r = m_fac.CreateNull();
           if (!NextIf<PuncSemi>()) {
             Log << SyntaxError << Current() << "Expected ';' after 'null' statement";
           }
@@ -412,7 +412,7 @@ auto Parser::PImpl::RecurseBlock(bool expect_braces, bool single_stmt, SafetyMod
         }
 
         case True: {
-          r = CreateNode<Boolean>(true)();
+          r = m_fac.CreateBoolean(true);
           if (!NextIf<PuncSemi>()) {
             Log << SyntaxError << Current() << "Expected ';' after 'true' statement";
           }
@@ -420,7 +420,7 @@ auto Parser::PImpl::RecurseBlock(bool expect_braces, bool single_stmt, SafetyMod
         }
 
         case False: {
-          r = CreateNode<Boolean>(false)();
+          r = m_fac.CreateBoolean(false);
           if (!NextIf<PuncSemi>()) {
             Log << SyntaxError << Current() << "Expected ';' after 'false' statement";
           }
@@ -470,7 +470,7 @@ auto Parser::Parse() -> ASTRoot {
             std::swap(MainAllocator, m_impl->m_allocator);
 
             /* Recursive descent parsing */
-            auto node = m_impl->RecurseBlock(false, false, SafetyMode::Unknown);
+            auto node = m_impl->RecurseBlock(false, false, BlockMode::Unknown);
 
             std::swap(MainAllocator, m_impl->m_allocator);
 

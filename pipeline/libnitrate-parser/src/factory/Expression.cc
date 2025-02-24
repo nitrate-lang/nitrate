@@ -168,6 +168,14 @@ auto ASTFactory::CreateCall(std::span<const FlowPtr<Expr>> pos_args, FlowPtr<Exp
   return CreateInstance<Call>(callee, pos_args_copy)(m_pool, origin);
 }
 
+auto ASTFactory::CreateCall(std::span<const std::pair<string, FlowPtr<Expr>>> arguments, FlowPtr<Expr> callee,
+                            SourceLocation origin) -> FlowPtr<Call> {
+  auto args_copy = AllocateArray<CallArg>(arguments.size());
+  std::copy(arguments.begin(), arguments.end(), args_copy.begin());
+
+  return CreateInstance<Call>(callee, args_copy)(m_pool, origin);
+}
+
 auto ASTFactory::CreateList(std::span<const FlowPtr<Expr>> ele, SourceLocation origin) -> FlowPtr<List> {
   auto ele_copy = AllocateArray<FlowPtr<Expr>>(ele.size());
   std::copy(ele.begin(), ele.end(), ele_copy.begin());
@@ -300,4 +308,16 @@ auto ASTFactory::CreateTemplateCall(std::span<const FlowPtr<Expr>> template_args
   }
 
   return CreateInstance<TemplateCall>(callee, pos_args_copy, template_args_copy)(m_pool, origin);
+}
+
+auto ASTFactory::CreateTemplateCall(std::span<const std::pair<string, FlowPtr<Expr>>> template_args,
+                                    std::span<const std::pair<string, FlowPtr<Expr>>> args, FlowPtr<Expr> callee,
+                                    SourceLocation origin) -> FlowPtr<TemplateCall> {
+  auto template_args_copy = AllocateArray<CallArg>(template_args.size());
+  std::copy(template_args.begin(), template_args.end(), template_args_copy.begin());
+
+  auto args_copy = AllocateArray<CallArg>(args.size());
+  std::copy(args.begin(), args.end(), args_copy.begin());
+
+  return CreateInstance<TemplateCall>(callee, args_copy, template_args_copy)(m_pool, origin);
 }
