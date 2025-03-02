@@ -58,13 +58,13 @@ namespace ncc::parse {
     ASTFactory m_fac;
 
     void UnmarshalLocationLocation(const SyntaxTree::SourceLocationRange &in, const FlowPtr<Expr> &out);
-
     void UnmarshalCodeComment(
         const ::google::protobuf::RepeatedPtrField<::nitrate::parser::SyntaxTree::UserComment> &in,
         const FlowPtr<Expr> &out);
 
     auto Unmarshal(const SyntaxTree::Expr &in) -> Result<Expr>;
     auto Unmarshal(const SyntaxTree::Type &in) -> Result<Type>;
+    auto Unmarshal(const SyntaxTree::Type &in, bool is_set) -> Result<Type>;
     auto Unmarshal(const SyntaxTree::NamedTy &in) -> Result<NamedTy>;
     auto Unmarshal(const SyntaxTree::InferTy &in) -> Result<InferTy>;
     auto Unmarshal(const SyntaxTree::TemplateType &in) -> Result<TemplateType>;

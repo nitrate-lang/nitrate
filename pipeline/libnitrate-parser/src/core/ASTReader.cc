@@ -807,6 +807,14 @@ auto AstReader::Unmarshal(const SyntaxTree::Type &in) -> Result<Type> {
   }
 }
 
+auto AstReader::Unmarshal(const SyntaxTree::Type &in, bool is_set) -> Result<Type> {
+  if (is_set) {
+    return Unmarshal(in);
+  }
+
+  return m_fac.CreateUnknownType();
+}
+
 auto AstReader::Unmarshal(const SyntaxTree::NamedTy &in) -> Result<NamedTy> {
   auto bit_width = Unmarshal(in.bit_width());
   if (in.has_bit_width() && !bit_width.has_value()) [[unlikely]] {
@@ -1451,7 +1459,7 @@ auto AstReader::Unmarshal(const SyntaxTree::FuncTy &in) -> Result<FuncTy> {
     return std::nullopt;
   }
 
-  auto return_type = Unmarshal(in.return_type());
+  auto return_type = Unmarshal(in.return_type(), in.has_return_type());
   if (!return_type.has_value()) [[unlikely]] {
     return std::nullopt;
   }
@@ -1460,7 +1468,7 @@ auto AstReader::Unmarshal(const SyntaxTree::FuncTy &in) -> Result<FuncTy> {
   parameters.reserve(in.parameters_size());
 
   for (const auto &param : in.parameters()) {
-    auto type = Unmarshal(param.type());
+    auto type = Unmarshal(param.type(), param.has_type());
     if (!type.has_value()) [[unlikely]] {
       return std::nullopt;
     }
@@ -1877,7 +1885,7 @@ auto AstReader::Unmarshal(const SyntaxTree::Block &in) -> Result<Block> {
 }
 
 auto AstReader::Unmarshal(const SyntaxTree::Variable &in) -> Result<Variable> {
-  auto type = Unmarshal(in.type());
+  auto type = Unmarshal(in.type(), in.has_type());
   if (!type.has_value()) [[unlikely]] {
     return std::nullopt;
   }
@@ -2144,7 +2152,7 @@ auto AstReader::Unmarshal(const SyntaxTree::Function &in) -> Result<Function> {
     template_parameters = std::vector<TemplateParameter>();
 
     for (const auto &param : in.template_parameters().parameters()) {
-      auto type = Unmarshal(param.type());
+      auto type = Unmarshal(param.type(), param.has_type());
       if (!type.has_value()) [[unlikely]] {
         return std::nullopt;
       }
@@ -2168,7 +2176,7 @@ auto AstReader::Unmarshal(const SyntaxTree::Function &in) -> Result<Function> {
   parameters.reserve(in.parameters_size());
 
   for (const auto &param : in.parameters()) {
-    auto type = Unmarshal(param.type());
+    auto type = Unmarshal(param.type(), param.has_type());
     if (!type.has_value()) [[unlikely]] {
       return std::nullopt;
     }
@@ -2196,7 +2204,7 @@ auto AstReader::Unmarshal(const SyntaxTree::Function &in) -> Result<Function> {
     return std::nullopt;
   }
 
-  auto return_type = Unmarshal(in.return_type());
+  auto return_type = Unmarshal(in.return_type(), in.has_return_type());
   if (!return_type.has_value()) [[unlikely]] {
     return std::nullopt;
   }
@@ -2243,7 +2251,7 @@ auto AstReader::Unmarshal(const SyntaxTree::Struct &in) -> Result<Struct> {
   for (const auto &field : in.fields()) {
     auto is_static = field.is_static();
 
-    auto type = Unmarshal(field.type());
+    auto type = Unmarshal(field.type(), field.has_type());
     if (!type.has_value()) [[unlikely]] {
       return std::nullopt;
     }
@@ -2300,7 +2308,7 @@ auto AstReader::Unmarshal(const SyntaxTree::Struct &in) -> Result<Struct> {
     template_parameters = std::vector<TemplateParameter>();
 
     for (const auto &param : in.template_parameters().parameters()) {
-      auto type = Unmarshal(param.type());
+      auto type = Unmarshal(param.type(), param.has_type());
       if (!type.has_value()) [[unlikely]] {
         return std::nullopt;
       }

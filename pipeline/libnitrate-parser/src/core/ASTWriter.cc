@@ -43,13 +43,16 @@
 #include <nitrate-parser/ASTWriter.hh>
 #include <variant>
 
-#include "nitrate-parser/ASTFwd.hh"
-
 using namespace ncc::parse;
 using namespace google;
 using namespace nitrate::parser::SyntaxTree;
 
 using Pool = google::protobuf::Arena;
+
+static bool IsCompressable(const ncc::FlowPtr<ncc::parse::Type> &in) {
+  return in->Is(QAST_INFER) && in->GetWidth() == nullptr && in->GetRangeBegin() == nullptr &&
+         in->GetRangeEnd() == nullptr;
+}
 
 static SyntaxTree::Operator FromOperator(ncc::lex::Operator op) {
   using LexOp = ncc::lex::Operator;
@@ -1040,7 +1043,9 @@ SyntaxTree::FuncTy *AstWriter::From(const FlowPtr<FuncTy> &in) {
   auto *message = Pool::CreateMessage<SyntaxTree::FuncTy>(m_arena);
 
   message->set_allocated_location(FromSource(in));
-  message->set_allocated_return_type(From(in->GetReturn()));
+  if (!IsCompressable(in->GetReturn())) {
+    message->set_allocated_return_type(From(in->GetReturn()));
+  }
   message->set_variadic(in->IsVariadic());
   message->set_purity(FromPurity(in->GetPurity()));
   SetTypeMetadata(message, in);
@@ -1054,7 +1059,9 @@ SyntaxTree::FuncTy *AstWriter::From(const FlowPtr<FuncTy> &in) {
       auto *parameter = Pool::CreateMessage<SyntaxTree::FunctionParameter>(m_arena);
       const auto &[name, type, default_] = param;
       parameter->set_name(name.Get());
-      parameter->set_allocated_type(From(type));
+      if (!IsCompressable(type)) {
+        parameter->set_allocated_type(From(type));
+      }
       if (default_.has_value()) {
         parameter->set_allocated_default_value(From(default_.value()));
       }
@@ -1363,7 +1370,9 @@ SyntaxTree::Variable *AstWriter::From(const FlowPtr<Variable> &in) {
 
   message->set_allocated_location(FromSource(in));
   message->set_name(in->GetName().Get());
-  message->set_allocated_type(From(in->GetType()));
+  if (!IsCompressable(in->GetType())) {
+    message->set_allocated_type(From(in->GetType()));
+  }
   if (in->GetInitializer().has_value()) {
     message->set_allocated_initial_value(From(in->GetInitializer().value()));
   }
@@ -1551,7 +1560,9 @@ SyntaxTree::Function *AstWriter::From(const FlowPtr<Function> &in) {
   auto *message = Pool::CreateMessage<SyntaxTree::Function>(m_arena);
 
   message->set_allocated_location(FromSource(in));
-  message->set_allocated_return_type(From(in->GetReturn()));
+  if (!IsCompressable(in->GetReturn())) {
+    message->set_allocated_return_type(From(in->GetReturn()));
+  }
   message->set_name(in->GetName().Get());
   message->set_purity(FromPurity(in->GetPurity()));
   message->set_variadic(in->IsVariadic());
@@ -1598,7 +1609,9 @@ SyntaxTree::Function *AstWriter::From(const FlowPtr<Function> &in) {
       auto *parameter = Pool::CreateMessage<SyntaxTree::TemplateParameters::TemplateParameter>(m_arena);
       const auto &[name, type, default_] = param;
       parameter->set_name(name.Get());
-      parameter->set_allocated_type(From(type));
+      if (!IsCompressable(type)) {
+        parameter->set_allocated_type(From(type));
+      }
       if (default_.has_value()) {
         parameter->set_allocated_default_value(From(default_.value()));
       }
@@ -1616,7 +1629,9 @@ SyntaxTree::Function *AstWriter::From(const FlowPtr<Function> &in) {
       auto *parameter = Pool::CreateMessage<SyntaxTree::FunctionParameter>(m_arena);
       const auto &[name, type, default_] = param;
       parameter->set_name(name.Get());
-      parameter->set_allocated_type(From(type));
+      if (!IsCompressable(type)) {
+        parameter->set_allocated_type(From(type));
+      }
       if (default_.has_value()) {
         parameter->set_allocated_default_value(From(default_.value()));
       }
@@ -1636,7 +1651,9 @@ SyntaxTree::Function *AstWriter::From(const FlowPtr<Function> &in) {
       const auto &param_default = std::get<2>(item);
 
       parameter->set_name(param_name.Get());
-      parameter->set_allocated_type(From(param_type));
+      if (!IsCompressable(param_type)) {
+        parameter->set_allocated_type(From(param_type));
+      }
       if (param_default.has_value()) {
         parameter->set_allocated_default_value(From(param_default.value()));
       }
@@ -1666,7 +1683,9 @@ SyntaxTree::Struct *AstWriter::From(const FlowPtr<Struct> &in) {
       const auto &param_default = std::get<2>(item);
 
       parameter->set_name(param_name.Get());
-      parameter->set_allocated_type(From(param_type));
+      if (!IsCompressable(param_type)) {
+        parameter->set_allocated_type(From(param_type));
+      }
       if (param_default.has_value()) {
         parameter->set_allocated_default_value(From(param_default.value()));
       }
@@ -1697,7 +1716,9 @@ SyntaxTree::Struct *AstWriter::From(const FlowPtr<Struct> &in) {
     std::for_each(items.begin(), items.end(), [&](auto item) {
       auto *field = Pool::CreateMessage<SyntaxTree::Struct_Field>(m_arena);
       field->set_name(item.GetName().Get());
-      field->set_allocated_type(From(item.GetType()));
+      if (!IsCompressable(item.GetType())) {
+        field->set_allocated_type(From(item.GetType()));
+      }
       field->set_visibility(FromVisibility(item.GetVis()));
       field->set_is_static(item.IsStatic());
       if (item.GetValue().has_value()) {

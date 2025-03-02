@@ -37,7 +37,7 @@ enum FunctionPurity {
 
 message FunctionParameter {
   required string name = 1;
-  required Type type = 2;
+  optional Type type = 2;
   optional Expr default_value = 3;
 }
 
@@ -51,7 +51,7 @@ enum Vis {
 message TemplateParameters {
   message TemplateParameter {
     required string name = 1;
-    required Type type = 2;
+    optional Type type = 2;
     optional Expr default_value = 3;
   }
 
@@ -306,7 +306,7 @@ message FuncTy {
   repeated FunctionParameter parameters = 8;
   required bool variadic = 9;
   required FunctionPurity purity = 10;
-  required Type return_type = 11;
+  optional Type return_type = 11;
 }
 
 ///===--------------------------------------------------------------------===///
@@ -703,7 +703,7 @@ message Function {
 
   required string name = 4;
   required FunctionPurity purity = 5;
-  required Type return_type = 6;
+  optional Type return_type = 6;
   optional TemplateParameters template_parameters = 7;
   repeated FunctionParameter parameters = 8;
   required bool variadic = 9;
@@ -727,7 +727,7 @@ message Struct {
   message Field {
     required string name = 1;
     optional Expr default_value = 3;
-    required Type type = 2;
+    optional Type type = 2;
     required Vis visibility = 4;
     required bool is_static = 5;
   }
