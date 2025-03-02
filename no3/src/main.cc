@@ -60,6 +60,8 @@
 #include <string_view>
 #include <vector>
 
+#include "nitrate-core/Assert.hh"
+
 using namespace no3;
 using argparse::ArgumentParser;
 

@@ -42,13 +42,17 @@
 #include <nitrate-parser/ASTFactory.hh>
 #include <nitrate-parser/ASTWriter.hh>
 #include <nitrate-parser/Algorithm.hh>
-#include <optional>
 #include <sstream>
 
 using namespace ncc;
 using namespace ncc::parse;
 
 NCC_EXPORT ASTExtension parse::ExtensionDataStore;
+
+NCC_EXPORT std::ostream &parse::operator<<(std::ostream &os, ASTNodeKind kind) {
+  os << Expr::GetKindName(kind);
+  return os;
+}
 
 auto ASTExtension::Add(lex::LocationID begin, lex::LocationID end) -> ASTExtensionKey {
   SmartLock lock(m_mutex);

@@ -35,6 +35,7 @@
 #define __NITRATE_AST_KIND_H__
 
 #include <cstdint>
+#include <iosfwd>
 
 namespace ncc::parse {
   enum ASTNodeKind : uint8_t {
@@ -131,6 +132,8 @@ namespace ncc::parse {
     QAST__LAST = QAST_FUNCTION,
     QAST__RANGE = QAST__LAST - QAST__FIRST,
   };
+
+  std::ostream& operator<<(std::ostream& os, ASTNodeKind kind);
 }  // namespace ncc::parse
 
 #endif

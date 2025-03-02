@@ -175,6 +175,6 @@ type _22 = (T, U, V): [0:1]: 2;
 type _23 = T<x: i32, i32>: [0:1]: 2;
 type _24 = fn[[
   align(16)
-]]  quasi(x: i32 = 0, x, ...): void: [0:1]: 2;
+]]  quasi(x: i32 = 0, y, ...): void: [0:1]: 2;
 )SOURCE";
 };

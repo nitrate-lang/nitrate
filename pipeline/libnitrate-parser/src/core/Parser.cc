@@ -474,7 +474,7 @@ auto GeneralParser::Parse() -> ASTRoot {
     ParserSetCurrentScanner(&m_impl->m_rd);
 
     { /* Subscribe to events emitted by the parser */
-      auto sub_id = Log.Subscribe([&](auto, auto, const auto &ec) {
+      auto sub_id = Log.Subscribe([this](auto, auto, const auto &ec) {
         if (ec.GetKind() == SyntaxError.GetKind()) {
           m_impl->m_failed = true;
         }
@@ -486,21 +486,14 @@ auto GeneralParser::Parse() -> ASTRoot {
 
         { /* Recursive descent parsing */
           auto node = m_impl->RecurseBlock(false, false, BlockMode::Unknown);
-
           if (m_impl->m_rd.HasError()) {
             Log << SyntaxError << "Some lexical errors have occurred";
           }
 
-          m_impl->m_failed |= [](FlowPtr<Expr> node) {
-            bool contains_any_mock_nodes = false;
-            iterate<dfs_pre>(std::move(node), [&](auto, auto c) {
-              contains_any_mock_nodes |= !c || c->IsMock();
-
-              return contains_any_mock_nodes ? IterOp::Abort : IterOp::Proceed;
-            });
-
-            return contains_any_mock_nodes;
-          }(node);
+          for_each<dfs_pre>(node, [&](auto c) {
+            m_impl->m_failed |= !c || c->IsMock();
+            return m_impl->m_failed ? IterOp::Abort : IterOp::Proceed;
+          });
 
           ast = ASTRoot(node, !m_impl->m_failed);
         }

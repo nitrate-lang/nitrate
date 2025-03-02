@@ -14,7 +14,7 @@ using namespace ncc::parse;
 TEST(AST, Encoder) {
   if (auto lib_rc = ncc::parse::ParseLibrary.GetRC()) {
     auto subid = ncc::Log.Subscribe([](const std::string &msg, ncc::Sev sev, const ncc::ECBase &ec) {
-      std::cout << ec.Format(msg, sev) << std::endl;
+      std::cout << "Error:" << ec.Format(msg, sev) << std::endl;
     });
 
     auto my_pool = ncc::DynamicArena();
