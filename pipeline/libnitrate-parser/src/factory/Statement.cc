@@ -34,6 +34,7 @@
 #include <nitrate-parser/ASTFactory.hh>
 #include <nitrate-parser/ASTStmt.hh>
 #include <nitrate-parser/ASTType.hh>
+#include <variant>
 
 using namespace ncc::parse;
 
@@ -41,9 +42,34 @@ auto ASTFactory::CreateTypedef(string name, FlowPtr<Type> base, SourceLocation o
   return CreateInstance<Typedef>(name, base)(m_pool, origin);
 }
 
-auto ASTFactory::CreateStruct(SourceLocation origin) -> FlowPtr<Struct> {
-  /// TODO: Implement
-  qcore_implement();
+auto ASTFactory::CreateStruct(CompositeType comp_type, string name,
+                              const std::optional<std::vector<TemplateParameter>>& tparams,
+                              const std::vector<StructField>& fields, const std::vector<StructFunction>& methods,
+                              const std::vector<StructFunction>& static_methods, const std::vector<string>& constraints,
+                              const std::vector<FlowPtr<Expr>>& attributes, SourceLocation origin) -> FlowPtr<Struct> {
+  auto fields_copy = AllocateArray<StructField>(fields.size());
+  std::copy(fields.begin(), fields.end(), fields_copy.begin());
+
+  auto methods_copy = AllocateArray<StructFunction>(methods.size());
+  std::copy(methods.begin(), methods.end(), methods_copy.begin());
+
+  auto static_methods_copy = AllocateArray<StructFunction>(static_methods.size());
+  std::copy(static_methods.begin(), static_methods.end(), static_methods_copy.begin());
+
+  auto attributes_copy = AllocateArray<FlowPtr<Expr>>(attributes.size());
+  std::copy(attributes.begin(), attributes.end(), attributes_copy.begin());
+
+  auto constraints_copy = AllocateArray<string>(constraints.size());
+  std::copy(constraints.begin(), constraints.end(), constraints_copy.begin());
+
+  auto tparams_copy =
+      std::make_optional(tparams ? AllocateArray<TemplateParameter>(tparams->size()) : std::span<TemplateParameter>());
+  if (tparams) {
+    std::copy(tparams->begin(), tparams->end(), tparams_copy->begin());
+  }
+
+  return CreateInstance<Struct>(comp_type, attributes_copy, name, tparams_copy, constraints_copy, fields_copy,
+                                methods_copy, static_methods_copy)(m_pool, origin);
 }
 
 auto ASTFactory::CreateEnum(string name, const std::vector<FactoryEnumItem>& ele, NullableFlowPtr<Type> ele_ty,
@@ -71,21 +97,36 @@ auto ASTFactory::CreateFunction(string name, NullableFlowPtr<Type> ret_ty,
                                 NullableFlowPtr<Expr> body, Purity purity, const std::vector<FlowPtr<Expr>>& attributes,
                                 NullableFlowPtr<Expr> precond, NullableFlowPtr<Expr> postcond,
                                 const std::vector<std::pair<string, bool>>& captures,
-                                const std::optional<std::span<TemplateParameter>>& template_parameters,
+                                const std::optional<std::vector<TemplateParameter>>& template_parameters,
                                 SourceLocation origin) -> std::optional<FlowPtr<Function>> {
-  /// TODO: Implement
-  qcore_implement();
-}
+  auto params_copy = AllocateArray<std::tuple<string, FlowPtr<Type>, NullableFlowPtr<Expr>>>(params.size());
+  for (size_t i = 0; i < params.size(); ++i) {
+    auto the_name = std::holds_alternative<string>(params[i].m_name)
+                        ? std::get<string>(params[i].m_name)
+                        : string(std::to_string(std::get<size_t>(params[i].m_name)));
 
-auto ASTFactory::CreateFunction(NullableFlowPtr<Type> ret_ty, string name,
-                                std::span<const std::tuple<string, FlowPtr<Type>, NullableFlowPtr<Expr>>> params,
-                                bool variadic, NullableFlowPtr<Expr> body, Purity purity,
-                                std::span<const FlowPtr<Expr>> attributes, NullableFlowPtr<Expr> precond,
-                                NullableFlowPtr<Expr> postcond, std::span<const std::pair<string, bool>> captures,
-                                std::optional<std::span<const TemplateParameter>> template_parameters,
-                                SourceLocation origin) -> std::optional<FlowPtr<Function>> {
-  /// TODO: Implement
-  qcore_implement();
+    params_copy[i] = {the_name, params[i].m_type, params[i].m_default_value};
+  }
+
+  auto attributes_copy = AllocateArray<FlowPtr<Expr>>(attributes.size());
+  std::copy(attributes.begin(), attributes.end(), attributes_copy.begin());
+
+  auto captures_copy = AllocateArray<std::pair<string, bool>>(captures.size());
+  std::copy(captures.begin(), captures.end(), captures_copy.begin());
+
+  if (!ret_ty.has_value()) {
+    ret_ty = CreateUnknownType(nullptr, nullptr, nullptr, origin);
+  }
+
+  auto template_parameters_copy =
+      std::make_optional(template_parameters ? AllocateArray<TemplateParameter>(template_parameters->size())
+                                             : std::span<TemplateParameter>());
+  if (template_parameters) {
+    std::copy(template_parameters->begin(), template_parameters->end(), template_parameters_copy->begin());
+  }
+
+  return CreateInstance<Function>(attributes_copy, purity, captures_copy, name, template_parameters_copy, params_copy,
+                                  variadic, ret_ty.value(), precond, postcond, body)(m_pool, origin);
 }
 
 auto ASTFactory::CreateAnonymousFunction(Purity purity, const std::vector<std::pair<string, bool>>& captures,
@@ -94,8 +135,8 @@ auto ASTFactory::CreateAnonymousFunction(Purity purity, const std::vector<std::p
                                          NullableFlowPtr<Expr> body, const std::vector<FlowPtr<Expr>>& attributes,
                                          NullableFlowPtr<Expr> precond, NullableFlowPtr<Expr> postcond,
                                          SourceLocation origin) -> std::optional<FlowPtr<Function>> {
-  /// TODO: Implement
-  qcore_implement();
+  return CreateFunction("", std::move(ret_ty), params, variadic, std::move(body), purity, attributes,
+                        std::move(precond), std::move(postcond), captures, std::nullopt, origin);
 }
 
 auto ASTFactory::CreateScope(string name, FlowPtr<Expr> body, const std::vector<string>& tags,

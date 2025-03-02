@@ -135,10 +135,12 @@ enum hello2 {
   C = 2,
 }
 
-scope nested => pub "abi" [attr1, attr2] fn DaBlock<a:i32=0,oo:i8>(a=20,...) {
-  let var1: u32 = 0;
-  let var2 = 0;
-  let var2: u8;
+scope nested {
+  pub "abi" [attr1, attr2] fn DaBlock<a:i32=0,oo:i8>(a=20,...) {
+    let var1: u32 = 0;
+    let var2 = 0;
+    let var2: u8;
+  }
 }
 
 ################################################################################

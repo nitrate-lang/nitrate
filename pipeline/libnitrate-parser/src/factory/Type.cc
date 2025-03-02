@@ -33,7 +33,6 @@
 
 #include <nitrate-parser/ASTFactory.hh>
 #include <nitrate-parser/ASTType.hh>
-#include <nitrate-parser/Utility.hh>
 #include <unordered_set>
 #include <variant>
 #include <vector>
@@ -289,9 +288,8 @@ auto ASTFactory::CreateFunctionType(FlowPtr<Type> ret_ty, const std::vector<Fact
 
   {
     std::unordered_set<string> unique_indices;
-    size_t i = 0;
 
-    for (const auto& [key, value, default_] : params) {
+    for (size_t i = 0; const auto& [key, value, default_] : params) {
       const string key_string =
           std::holds_alternative<size_t>(key) ? string(std::to_string(std::get<size_t>(key))) : std::get<string>(key);
 
@@ -326,15 +324,36 @@ auto ASTFactory::CreateFunctionType(FlowPtr<Type> ret_ty, std::span<const FuncPa
                                     Purity purity, std::span<const FlowPtr<Expr>> attributes,
                                     NullableFlowPtr<Expr> bits, NullableFlowPtr<Expr> min, NullableFlowPtr<Expr> max,
                                     SourceLocation origin) -> std::optional<FlowPtr<FuncTy>> {
-  std::vector<FactoryFunctionParameter> params_copy;
-  params_copy.reserve(params.size());
-  for (const auto& [name, type, default_] : params) {
-    params_copy.emplace_back(name, type, default_);
+  auto params_copy = AllocateArray<FuncParam>(params.size());
+
+  {
+    std::unordered_set<string> unique_indices;
+
+    for (size_t i = 0; const auto& [name, value, default_] : params) {
+      if (unique_indices.contains(name)) {
+        return std::nullopt;
+      }
+
+      unique_indices.insert(name);
+
+      std::get<0>(params_copy[i]) = name;
+      std::get<1>(params_copy[i]) = value;
+      std::get<2>(params_copy[i]) = default_;
+
+      i++;
+    }
   }
 
-  return CreateFunctionType(std::move(ret_ty), params_copy, variadic, purity,
-                            std::vector<FlowPtr<Expr>>(attributes.begin(), attributes.end()), std::move(bits),
-                            std::move(min), std::move(max), origin);
+  auto attributes_copy = AllocateArray<FlowPtr<Expr>>(attributes.size());
+  std::copy(attributes.begin(), attributes.end(), attributes_copy.begin());
+
+  auto node = CreateInstance<FuncTy>(ret_ty, params_copy, variadic, purity, attributes_copy)(m_pool, origin);
+
+  node->SetWidth(std::move(bits));
+  node->SetRangeBegin(std::move(min));
+  node->SetRangeEnd(std::move(max));
+
+  return node;
 }
 
 auto ASTFactory::CreateNamed(string name, NullableFlowPtr<Expr> bits, NullableFlowPtr<Expr> min,

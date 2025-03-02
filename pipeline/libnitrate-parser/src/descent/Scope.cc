@@ -46,7 +46,7 @@ auto Parser::PImpl::RecurseScopeDeps() -> std::optional<std::vector<string>> {
 
   if (NextIf<PuncLBrk>()) [[likely]] {
     while (true) {
-      if (NextIf<EofF>()) [[unlikely]] {
+      if (Current().Is(EofF)) [[unlikely]] {
         Log << SyntaxError << Current() << "Unexpected EOF in scope dependencies";
         break;
       }
@@ -55,7 +55,7 @@ auto Parser::PImpl::RecurseScopeDeps() -> std::optional<std::vector<string>> {
         return dependencies;
       }
 
-      if (auto dependency_name = RecurseName(); !dependency_name->empty()) {
+      if (auto dependency_name = RecurseName()) {
         dependencies.push_back(dependency_name);
       } else {
         Log << SyntaxError << Next() << "Expected dependency name";
@@ -89,5 +89,5 @@ auto Parser::PImpl::RecurseScope() -> FlowPtr<Expr> {
     Log << SyntaxError << Current() << "Expected scope dependencies";
   }
 
-  return MockExpr(QAST_SCOPE);
+  return m_fac.CreateMockInstance<Expr>(QAST_SCOPE);
 }

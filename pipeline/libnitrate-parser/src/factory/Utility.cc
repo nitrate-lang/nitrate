@@ -42,7 +42,7 @@ auto ASTFactory::CreateMockInstance(ASTNodeKind kind, SourceLocation origin) -> 
   NullableFlowPtr<Expr> r;
 
 #define SIMPLE_EXPR() CreateMockInstance(QAST_NULL, origin)
-#define SIMPLE_TYPE() CreateMockInstance(QAST_VOID, origin)->As<Type>()
+#define SIMPLE_TYPE() CreateMockInstance<Type>(QAST_VOID, origin)
 
   switch (kind) {
     case QAST_BINEXPR: {

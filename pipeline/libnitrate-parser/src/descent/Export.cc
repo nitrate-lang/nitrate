@@ -43,15 +43,15 @@ auto Parser::PImpl::RecurseAbiName() -> string {
   return tok ? tok->GetString() : "";
 }
 
-auto Parser::PImpl::RecurseExportAttributes() -> std::optional<ExpressionList> {
-  ExpressionList attributes;
+auto Parser::PImpl::RecurseExportAttributes() -> std::optional<std::vector<FlowPtr<Expr>>> {
+  std::vector<FlowPtr<Expr>> attributes;
 
   if (!NextIf<PuncLBrk>()) {
     return attributes;
   }
 
   while (true) {
-    if (NextIf<EofF>()) [[unlikely]] {
+    if (Current().Is(EofF)) [[unlikely]] {
       Log << SyntaxError << Current() << "Encountered EOF while parsing export attributes";
       break;
     }
@@ -92,5 +92,5 @@ auto Parser::PImpl::RecurseExport(Vis vis) -> FlowPtr<Expr> {
 
   Log << SyntaxError << Current() << "Malformed export attributes";
 
-  return MockExpr(QAST_EXPORT);
+  return m_fac.CreateMockInstance<Expr>(QAST_EXPORT);
 }

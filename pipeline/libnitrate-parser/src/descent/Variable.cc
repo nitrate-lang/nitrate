@@ -37,15 +37,15 @@ using namespace ncc;
 using namespace ncc::lex;
 using namespace ncc::parse;
 
-auto Parser::PImpl::RecurseVariableAttributes() -> std::optional<ExpressionList> {
-  ExpressionList attributes;
+auto Parser::PImpl::RecurseVariableAttributes() -> std::optional<std::vector<FlowPtr<Expr>>> {
+  std::vector<FlowPtr<Expr>> attributes;
 
   if (!NextIf<PuncLBrk>()) {
     return attributes;
   }
 
   while (true) {
-    if (NextIf<EofF>()) [[unlikely]] {
+    if (Current().Is(EofF)) [[unlikely]] {
       Log << SyntaxError << Current() << "Encountered EOF while parsing variable attribute";
       break;
     }
@@ -88,7 +88,7 @@ auto Parser::PImpl::RecurseVariableValue() -> NullableFlowPtr<Expr> {
 
 auto Parser::PImpl::RecurseVariableInstance(VariableType decl_type) -> NullableFlowPtr<Expr> {
   if (auto symbol_attributes_opt = RecurseVariableAttributes()) {
-    if (auto variable_name = RecurseName(); !variable_name->empty()) {
+    if (auto variable_name = RecurseName()) {
       auto variable_type = RecurseVariableType();
       auto variable_initial = RecurseVariableValue();
 
@@ -103,14 +103,14 @@ auto Parser::PImpl::RecurseVariableInstance(VariableType decl_type) -> NullableF
 
   Log << SyntaxError << Current() << "Malformed variable attributes";
 
-  return MockExpr(QAST_VAR);
+  return m_fac.CreateMockInstance<Expr>(QAST_VAR);
 }
 
 auto Parser::PImpl::RecurseVariable(VariableType decl_type) -> std::vector<FlowPtr<Expr>> {
   std::vector<FlowPtr<Expr>> variables;
 
   while (true) {
-    if (NextIf<EofF>()) [[unlikely]] {
+    if (Current().Is(EofF)) [[unlikely]] {
       Log << SyntaxError << Current() << "Unexpected EOF in variable declaration";
       break;
     }
@@ -132,5 +132,5 @@ auto Parser::PImpl::RecurseVariable(VariableType decl_type) -> std::vector<FlowP
     }
   }
 
-  return {MockExpr(QAST_VAR)};
+  return {m_fac.CreateMockInstance<Expr>(QAST_VAR)};
 }

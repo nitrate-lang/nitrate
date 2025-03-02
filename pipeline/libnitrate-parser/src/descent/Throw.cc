@@ -40,5 +40,5 @@ using namespace ncc::parse;
 auto Parser::PImpl::RecurseThrow() -> FlowPtr<Expr> {
   Log << SyntaxError << Current() << "Throw is not yet implemented";
 
-  return MockExpr();
+  return m_fac.CreateMockInstance<Expr>(QAST_VOID);
 }

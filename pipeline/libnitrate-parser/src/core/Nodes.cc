@@ -45,12 +45,8 @@
 #include <optional>
 #include <sstream>
 
-#include "nitrate-parser/ASTStmt.hh"
-
 using namespace ncc;
 using namespace ncc::parse;
-
-NCC_EXPORT thread_local std::unique_ptr<ncc::IMemory> parse::MainAllocator = std::make_unique<ncc::DynamicArena>();
 
 NCC_EXPORT ASTExtension parse::ExtensionDataStore;
 
@@ -148,22 +144,4 @@ void Expr::SetComments(std::span<const string> comments) {
   auto old = ExtensionDataStore.Get(m_data);
   old.AddComments(comments);
   ExtensionDataStore.Set(m_data, std::move(old));
-}
-
-///=============================================================================
-
-auto Parser::PImpl::MockExpr(std::optional<ASTNodeKind> kind_opt) -> FlowPtr<Expr> {
-  auto node = ASTFactory::CreateMockInstance(*MainAllocator, kind_opt.value_or(QAST_VOID));
-  node->SetOffset(m_rd.Current().GetStart());
-
-  return node;
-}
-
-auto Parser::PImpl::MockType(std::optional<ASTNodeKind> kind_opt) -> FlowPtr<Type> {
-  qcore_assert(!kind_opt.has_value() || (kind_opt.value() >= QAST__TYPE_FIRST && kind_opt.value() <= QAST__TYPE_LAST));
-
-  auto node = ASTFactory::CreateMockInstance(*MainAllocator, kind_opt.value_or(QAST_VOID));
-  node->SetOffset(m_rd.Current().GetStart());
-
-  return node->As<Type>();
 }

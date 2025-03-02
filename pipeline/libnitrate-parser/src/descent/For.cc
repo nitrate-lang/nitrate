@@ -49,6 +49,8 @@ auto Parser::PImpl::RecurseForInitExpr() -> NullableFlowPtr<Expr> {
     });
   }
 
+  Next();
+
   std::vector<FlowPtr<Expr>> variables;
 
   switch (var_kind.GetKeyword()) {

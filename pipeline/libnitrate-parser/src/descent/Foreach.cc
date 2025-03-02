@@ -38,9 +38,9 @@ using namespace ncc::lex;
 using namespace ncc::parse;
 
 auto Parser::PImpl::RecurseForeachNames() -> std::optional<std::pair<string, string>> {
-  if (auto name_a = RecurseName(); !name_a->empty()) [[likely]] {
+  if (auto name_a = RecurseName()) [[likely]] {
     if (NextIf<PuncComa>()) {
-      if (auto name_b = RecurseName(); !name_b->empty()) [[likely]] {
+      if (auto name_b = RecurseName()) [[likely]] {
         return std::make_pair(name_a, name_b);
       } else {
         Log << SyntaxError << Current() << "Expected identifier in foreach statement";
@@ -98,5 +98,5 @@ auto Parser::PImpl::RecurseForeach() -> FlowPtr<Expr> {
     Log << SyntaxError << Current() << "Expected identifier pair in foreach statement";
   }
 
-  return MockExpr(QAST_FOREACH);
+  return m_fac.CreateMockInstance<Expr>(QAST_FOREACH);
 }

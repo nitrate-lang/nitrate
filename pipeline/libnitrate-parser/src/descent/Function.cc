@@ -33,8 +33,6 @@
 
 #include <descent/Recurse.hh>
 
-#include "nitrate-parser/AST.hh"
-
 using namespace ncc;
 using namespace ncc::lex;
 using namespace ncc::parse;
@@ -60,7 +58,7 @@ auto Parser::PImpl::RecurseFunctionParameterValue() -> NullableFlowPtr<Expr> {
 }
 
 auto Parser::PImpl::RecurseFunctionParameter() -> std::optional<FuncParam> {
-  if (auto param_name = RecurseName(); !param_name->empty()) [[likely]] {
+  if (auto param_name = RecurseName()) [[likely]] {
     auto param_type = RecurseFunctionParameterType();
     auto param_value = RecurseFunctionParameterValue();
 
@@ -72,15 +70,15 @@ auto Parser::PImpl::RecurseFunctionParameter() -> std::optional<FuncParam> {
   return std::nullopt;
 }
 
-auto Parser::PImpl::RecurseTemplateParameters() -> std::optional<TemplateParameters> {
+auto Parser::PImpl::RecurseTemplateParameters() -> std::optional<std::vector<TemplateParameter>> {
   if (!NextIf<OpLT>()) {
     return std::nullopt;
   }
 
-  TemplateParameters params;
+  std::vector<TemplateParameter> params;
 
   while (true) {
-    if (NextIf<EofF>()) [[unlikely]] {
+    if (Current().Is(EofF)) [[unlikely]] {
       Log << SyntaxError << Current() << "Unexpected EOF in template parameters";
       return params;
     }
@@ -103,9 +101,8 @@ auto Parser::PImpl::RecurseTemplateParameters() -> std::optional<TemplateParamet
   return params;
 }
 
-auto Parser::PImpl::RecurseFunctionParameters()
-    -> std::pair<std::vector<std::tuple<string, FlowPtr<Type>, NullableFlowPtr<Expr>>>, bool> {
-  std::pair<std::vector<std::tuple<string, FlowPtr<Type>, NullableFlowPtr<Expr>>>, bool> parameters;
+auto Parser::PImpl::RecurseFunctionParameters() -> std::pair<std::vector<ASTFactory::FactoryFunctionParameter>, bool> {
+  std::pair<std::vector<ASTFactory::FactoryFunctionParameter>, bool> parameters;
 
   if (!NextIf<PuncLPar>()) [[unlikely]] {
     Log << SyntaxError << Current() << "Expected '(' after function name";
@@ -116,7 +113,7 @@ auto Parser::PImpl::RecurseFunctionParameters()
   bool is_variadic = false;
 
   while (true) {
-    if (NextIf<EofF>()) [[unlikely]] {
+    if (Current().Is(EofF)) [[unlikely]] {
       Log << SyntaxError << Current() << "Unexpected EOF in function parameters";
 
       return parameters;
@@ -185,7 +182,7 @@ auto Parser::PImpl::GetPuritySpecifier(Token start_pos, bool is_thread_safe, boo
 auto Parser::PImpl::RecurseFunctionCapture() -> std::optional<std::pair<string, bool>> {
   bool is_ref = NextIf<OpBitAnd>().has_value();
 
-  if (auto name = RecurseName(); !name->empty()) {
+  if (auto name = RecurseName()) {
     return {{name, is_ref}};
   }
 
@@ -194,7 +191,8 @@ auto Parser::PImpl::RecurseFunctionCapture() -> std::optional<std::pair<string, 
   return std::nullopt;
 }
 
-auto Parser::PImpl::RecurseFunctionAmbigouis() -> std::tuple<ExpressionList, FnCaptures, Purity, string> {
+auto Parser::PImpl::RecurseFunctionAmbigouis()
+    -> std::tuple<std::vector<FlowPtr<Expr>>, std::vector<std::pair<string, bool>>, Purity, string> {
   enum class State : uint8_t {
     Ground,
     AttributesSection,
@@ -203,8 +201,8 @@ auto Parser::PImpl::RecurseFunctionAmbigouis() -> std::tuple<ExpressionList, FnC
   } state = State::Ground;
 
   auto start_pos = Current();
-  ExpressionList attributes;
-  FnCaptures captures;
+  std::vector<FlowPtr<Expr>> attributes;
+  std::vector<std::pair<string, bool>> captures;
   string function_name;
   bool is_thread_safe = false;
   bool is_pure = false;
@@ -215,14 +213,14 @@ auto Parser::PImpl::RecurseFunctionAmbigouis() -> std::tuple<ExpressionList, FnC
   bool already_parsed_captures = false;
 
   while (state != State::End) {
-    if (NextIf<EofF>()) [[unlikely]] {
+    if (Current().Is(EofF)) [[unlikely]] {
       Log << SyntaxError << Current() << "Unexpected EOF in function attributes";
       break;
     }
 
     switch (state) {
       case State::Ground: {
-        if (auto some_word = RecurseName(); !some_word->empty()) {
+        if (auto some_word = RecurseName()) {
           if (some_word == "pure") {
             is_pure = true;
           } else if (some_word == "impure") {
@@ -273,7 +271,7 @@ auto Parser::PImpl::RecurseFunctionAmbigouis() -> std::tuple<ExpressionList, FnC
         already_parsed_attributes = true;
 
         while (true) {
-          if (NextIf<EofF>()) [[unlikely]] {
+          if (Current().Is(EofF)) [[unlikely]] {
             Log << SyntaxError << Current() << "Unexpected EOF in function attributes";
             break;
           }
@@ -300,7 +298,7 @@ auto Parser::PImpl::RecurseFunctionAmbigouis() -> std::tuple<ExpressionList, FnC
         already_parsed_captures = true;
 
         while (true) {
-          if (NextIf<EofF>()) [[unlikely]] {
+          if (Current().Is(EofF)) [[unlikely]] {
             Log << SyntaxError << Current() << "Unexpected EOF in function captures";
             break;
           }
@@ -360,11 +358,11 @@ auto Parser::PImpl::RecurseFunction(bool parse_declaration_only) -> FlowPtr<Expr
   auto function_return_type = RecurseFunctionReturnType();
   auto function_body = RecurseFunctionBody(parse_declaration_only);
 
-  auto function = m_fac.CreateFunction(function_return_type, function_name, function_parameters.first,
+  auto function = m_fac.CreateFunction(function_name, function_return_type, function_parameters.first,
                                        function_parameters.second, function_body, function_purity, function_attributes,
                                        std::nullopt, std::nullopt, function_captures, function_template_parameters);
   if (!function.has_value()) [[unlikely]] {
-    function = m_fac.CreateMockInstance(QAST_FUNCTION)->As<Function>();
+    function = m_fac.CreateMockInstance<Function>(QAST_FUNCTION);
   }
 
   function.value()->SetOffset(start_pos);

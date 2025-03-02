@@ -73,7 +73,6 @@ NCC_EXPORT void ParseLibrarySetup::Deinit() {
   Log << Runtime << Debug << "libnitrate-parser: deinitializing...";
 
   ExtensionDataStore.Reset();
-  parse::MainAllocator = std::make_unique<DynamicArena>();
 
   ncc::lex::LexerLibrary.DeinitRC();
   ncc::CoreLibrary.DeinitRC();

@@ -46,13 +46,14 @@ using namespace ncc::lex;
 using namespace ncc::parse;
 using namespace ncc;
 
-auto Parser::PImpl::RecurseCallArguments(const std::set<lex::Token> &terminators, bool type_by_default) -> CallArgs {
-  CallArgs call_args;
+auto Parser::PImpl::RecurseCallArguments(const std::set<lex::Token> &terminators,
+                                         bool type_by_default) -> std::vector<CallArg> {
+  std::vector<CallArg> call_args;
   size_t positional_index = 0;
   string argument_name;
 
   while (true) {
-    if (NextIf<EofF>()) [[unlikely]] {
+    if (Current().Is(EofF)) [[unlikely]] {
       Log << SyntaxError << Current() << "Unexpected end of file while parsing call expression";
       return call_args;
     }
@@ -146,7 +147,7 @@ auto Parser::PImpl::RecurseFstring() -> FlowPtr<Expr> {
     return m_fac.CreateFormatString(items);
   }
   Log << SyntaxError << Current() << "Expected a string literal token for F-string expression";
-  return MockExpr(QAST_FSTRING);
+  return m_fac.CreateMockInstance<Expr>(QAST_FSTRING);
 }
 
 static auto IsPostUnaryOp(Operator o) -> bool { return o == OpInc || o == OpDec; }
@@ -169,7 +170,7 @@ struct Frame {
       : m_base(std::move(base)), m_minPrecedence(min_precedence), m_start_pos(start_pos), m_type(type), m_op(op) {}
 };
 
-static NCC_FORCE_INLINE auto UnwindStack(std::stack<Frame> &stack, FlowPtr<Expr> base,
+static NCC_FORCE_INLINE auto UnwindStack(ASTFactory &fac, std::stack<Frame> &stack, FlowPtr<Expr> base,
                                          short min_precedence) -> FlowPtr<Expr> {
   while (!stack.empty()) {
     auto frame = stack.top();
@@ -184,17 +185,17 @@ static NCC_FORCE_INLINE auto UnwindStack(std::stack<Frame> &stack, FlowPtr<Expr>
       }
 
       case FrameType::PreUnary: {
-        base = CreateNode<Unary>(frame.m_op, base)();
+        base = fac.CreateUnary(frame.m_op, base);
         break;
       }
 
       case FrameType::PostUnary: {
-        base = CreateNode<PostUnary>(base, frame.m_op)();
+        base = fac.CreatePostUnary(base, frame.m_op);
         break;
       }
 
       case FrameType::Binary: {
-        base = CreateNode<Binary>(frame.m_base, frame.m_op, base)();
+        base = fac.CreateBinary(frame.m_base, frame.m_op, base);
         break;
       }
     }
@@ -296,7 +297,7 @@ auto Parser::PImpl::RecurseExpr(const std::set<Token> &terminators) -> FlowPtr<E
 
               if (stack.size() + 1 > kMaxRecursionDepth) {
                 Log << SyntaxError << Current() << "Recursion depth exceeds maximum limit";
-                return MockExpr();
+                return m_fac.CreateMockInstance<Expr>(QAST_VOID);
               }
 
               stack.emplace(left_side, source_offset, next_min_precedence, FrameType::Binary, op);
@@ -305,7 +306,7 @@ auto Parser::PImpl::RecurseExpr(const std::set<Token> &terminators) -> FlowPtr<E
               Log << SyntaxError << Current() << "Failed to parse right-hand side of binary expression";
             }
           } else {
-            left_side = UnwindStack(stack, left_side, 0);
+            left_side = UnwindStack(m_fac, stack, left_side, 0);
 
             continue;
           }
@@ -318,7 +319,7 @@ auto Parser::PImpl::RecurseExpr(const std::set<Token> &terminators) -> FlowPtr<E
           // precedence as the dot operator (member access)
           static auto suffix_op_precedence = GetOperatorPrecedence(OpDot, OpMode::Binary);
 
-          left_side = UnwindStack(stack, left_side, suffix_op_precedence);
+          left_side = UnwindStack(m_fac, stack, left_side, suffix_op_precedence);
 
           if (NextIf<PuncLPar>()) {
             auto arguments = RecurseCallArguments({Token(Punc, PuncRPar)}, false);
@@ -390,11 +391,11 @@ auto Parser::PImpl::RecurseExpr(const std::set<Token> &terminators) -> FlowPtr<E
       }
     }
 
-    return UnwindStack(stack, left_side, 0);
+    return UnwindStack(m_fac, stack, left_side, 0);
   }
   Log << SyntaxError << Current() << "Expected an expression";
 
-  return MockExpr();
+  return m_fac.CreateMockInstance<Expr>(QAST_VOID);
 }
 
 auto Parser::PImpl::RecurseExprKeyword(lex::Keyword key) -> NullableFlowPtr<Expr> {
@@ -427,7 +428,7 @@ auto Parser::PImpl::RecurseExprKeyword(lex::Keyword key) -> NullableFlowPtr<Expr
           e = m_fac.CreateCall(args, function);
         } else {
           Log << SyntaxError << Current() << "Expected ')' to close the function call";
-          e = MockExpr(QAST_CALL);
+          e = m_fac.CreateMockInstance<Expr>(QAST_CALL);
         }
       } else {
         e = function;
@@ -487,10 +488,10 @@ auto Parser::PImpl::RecurseExprPunctor(lex::Punctor punc) -> NullableFlowPtr<Exp
     }
 
     case PuncLBrk: {
-      ExpressionList items;
+      std::vector<FlowPtr<Expr>> items;
 
       while (true) {
-        if (NextIf<EofF>()) [[unlikely]] {
+        if (Current().Is(EofF)) [[unlikely]] {
           Log << SyntaxError << Current() << "Unexpected end of file while parsing expression";
           break;
         }
@@ -548,11 +549,11 @@ auto Parser::PImpl::RecurseExprPunctor(lex::Punctor punc) -> NullableFlowPtr<Exp
     }
 
     case PuncLCur: {
-      // ExpressionList items;
+      // std::vector<FlowPtr<Expr>> items;
       std::vector<FlowPtr<Assoc>> items;
 
       while (true) {
-        if (NextIf<EofF>()) [[unlikely]] {
+        if (Current().Is(EofF)) [[unlikely]] {
           Log << SyntaxError << Current() << "Unexpected end of file while parsing dictionary";
           break;
         }
@@ -587,7 +588,7 @@ auto Parser::PImpl::RecurseExprPunctor(lex::Punctor punc) -> NullableFlowPtr<Exp
       if (items.size() == 1) {
         e = items[0];
       } else {
-        ExpressionList items_copy(items.begin(), items.end());
+        std::vector<FlowPtr<Expr>> items_copy(items.begin(), items.end());
         e = m_fac.CreateList(items_copy);
       }
 
@@ -629,7 +630,7 @@ auto Parser::PImpl::RecurseExprTypeSuffix(FlowPtr<Expr> base) -> FlowPtr<Expr> {
   auto suffix = RecurseType();
   suffix->SetOffset(tok.GetStart());
 
-  return m_fac.CreateBinary(base, OpAs, suffix);
+  return m_fac.CreateBinary(std::move(base), OpAs, suffix);
 }
 
 auto Parser::PImpl::RecurseExprPrimary(bool is_type) -> NullableFlowPtr<Expr> {
@@ -691,7 +692,7 @@ auto Parser::PImpl::RecurseExprPrimary(bool is_type) -> NullableFlowPtr<Expr> {
       case IntL: {
         Next();
 
-        auto integer = CreateNode<Integer>(tok.GetString())();
+        auto integer = m_fac.CreateInteger(tok.GetString()).value_or(m_fac.CreateMockInstance<Integer>(QAST_INT));
         integer->SetOffset(start_pos);
 
         if (Peek().Is(Name)) {
@@ -709,7 +710,7 @@ auto Parser::PImpl::RecurseExprPrimary(bool is_type) -> NullableFlowPtr<Expr> {
       case NumL: {
         Next();
 
-        auto decimal = CreateNode<Float>(tok.GetString())();
+        auto decimal = m_fac.CreateFloat(tok.GetString()).value_or(m_fac.CreateMockInstance<Float>(QAST_FLOAT));
         decimal->SetOffset(start_pos);
 
         if (Peek().Is(Name)) {

@@ -141,9 +141,6 @@ namespace ncc::parse {
      *  Helper functions
      ****************************************************************************/
 
-    auto MockExpr(std::optional<ASTNodeKind> kind_opt = std::nullopt) -> FlowPtr<Expr>;
-    auto MockType(std::optional<ASTNodeKind> kind_opt = std::nullopt) -> FlowPtr<Type>;
-
     auto RecurseName() -> string;
 
     auto RecurseEnumType() -> NullableFlowPtr<Type>;
@@ -151,10 +148,10 @@ namespace ncc::parse {
     auto RecurseEnumItems() -> std::optional<std::vector<std::pair<string, NullableFlowPtr<Expr>>>>;
 
     auto RecurseAbiName() -> string;
-    auto RecurseExportAttributes() -> std::optional<ExpressionList>;
+    auto RecurseExportAttributes() -> std::optional<std::vector<FlowPtr<Expr>>>;
     auto RecurseExportBody() -> FlowPtr<Expr>;
 
-    auto RecurseCallArguments(const std::set<lex::Token> &terminators, bool type_by_default) -> CallArgs;
+    auto RecurseCallArguments(const std::set<lex::Token> &terminators, bool type_by_default) -> std::vector<CallArg>;
     auto RecurseFstring() -> FlowPtr<Expr>;
 
     auto RecurseForInitExpr() -> NullableFlowPtr<Expr>;
@@ -168,15 +165,15 @@ namespace ncc::parse {
     auto RecurseFunctionParameterType() -> FlowPtr<Type>;
     auto RecurseFunctionParameterValue() -> NullableFlowPtr<Expr>;
     auto RecurseFunctionParameter() -> std::optional<FuncParam>;
-    auto RecurseTemplateParameters() -> std::optional<TemplateParameters>;
-    auto RecurseFunctionParameters()
-        -> std::pair<std::vector<std::tuple<string, FlowPtr<Type>, NullableFlowPtr<Expr>>>, bool>;
+    auto RecurseTemplateParameters() -> std::optional<std::vector<TemplateParameter>>;
+    auto RecurseFunctionParameters() -> std::pair<std::vector<ASTFactory::FactoryFunctionParameter>, bool>;
     auto RecurseFunctionBody(bool parse_declaration_only) -> NullableFlowPtr<Expr>;
     auto RecurseFunctionReturnType() -> FlowPtr<Type>;
     static auto GetPuritySpecifier(lex::Token start_pos, bool is_thread_safe, bool is_pure, bool is_impure,
                                    bool is_quasi, bool is_retro) -> Purity;
     auto RecurseFunctionCapture() -> std::optional<std::pair<string, bool>>;
-    auto RecurseFunctionAmbigouis() -> std::tuple<ExpressionList, FnCaptures, Purity, string>;
+    auto RecurseFunctionAmbigouis()
+        -> std::tuple<std::vector<FlowPtr<Expr>>, std::vector<std::pair<string, bool>>, Purity, string>;
 
     auto RecurseIfElse() -> NullableFlowPtr<Expr>;
 
@@ -184,14 +181,14 @@ namespace ncc::parse {
     auto RecurseScopeBlock() -> FlowPtr<Expr>;
 
     struct StructContent {
-      StructFields m_fields;
-      StructMethods m_methods;
-      StructStaticMethods m_static_methods;
+      std::vector<StructField> m_fields;
+      std::vector<StructFunction> m_methods;
+      std::vector<StructFunction> m_static_methods;
     };
-    auto RecurseStructAttributes() -> ExpressionList;
-    auto RecurseStructTerms() -> StructNames;
+    auto RecurseStructAttributes() -> std::vector<FlowPtr<Expr>>;
+    auto RecurseStructTerms() -> std::vector<string>;
     auto RecurseStructFieldDefaultValue() -> NullableFlowPtr<Expr>;
-    void RecurseStructField(Vis vis, bool is_static, StructFields &fields);
+    void RecurseStructField(Vis vis, bool is_static, std::vector<StructField> &fields);
     void RecurseStructMethodOrField(StructContent &body);
     auto RecurseStructBody() -> StructContent;
 
@@ -201,7 +198,7 @@ namespace ncc::parse {
 
     auto RecurseTypeRangeStart() -> NullableFlowPtr<Expr>;
     auto RecurseTypeRangeEnd() -> NullableFlowPtr<Expr>;
-    auto RecurseTypeTemplateArguments() -> std::optional<CallArgs>;
+    auto RecurseTypeTemplateArguments() -> std::optional<std::vector<CallArg>>;
     auto RecurseTypeSuffix(FlowPtr<Type> base) -> FlowPtr<Type>;
     auto RecurseFunctionType() -> FlowPtr<Type>;
     auto RecurseOpaqueType() -> FlowPtr<Type>;
@@ -213,7 +210,7 @@ namespace ncc::parse {
     auto RecurseTypeByPunctuation(lex::Punctor punc) -> FlowPtr<Type>;
     auto RecurseTypeByName(string name) -> FlowPtr<Type>;
 
-    auto RecurseVariableAttributes() -> std::optional<ExpressionList>;
+    auto RecurseVariableAttributes() -> std::optional<std::vector<FlowPtr<Expr>>>;
     auto RecurseVariableType() -> FlowPtr<Type>;
     auto RecurseVariableValue() -> NullableFlowPtr<Expr>;
     auto RecurseVariableInstance(VariableType decl_type) -> NullableFlowPtr<Expr>;

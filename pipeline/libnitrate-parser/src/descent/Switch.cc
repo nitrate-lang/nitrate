@@ -70,7 +70,7 @@ auto Parser::PImpl::RecurseSwitchBody() -> std::optional<std::pair<std::vector<F
   NullableFlowPtr<Expr> default_case;
 
   while (true) {
-    if (NextIf<EofF>()) [[unlikely]] {
+    if (Current().Is(EofF)) [[unlikely]] {
       Log << SyntaxError << Current() << "Unexpected EOF in switch statement.";
       break;
     }
@@ -113,5 +113,5 @@ auto Parser::PImpl::RecurseSwitch() -> FlowPtr<Expr> {
     Log << SyntaxError << Current() << "Expected '{' after switch condition.";
   }
 
-  return MockExpr(QAST_SWITCH);
+  return m_fac.CreateMockInstance<Expr>(QAST_SWITCH);
 }

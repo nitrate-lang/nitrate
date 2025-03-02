@@ -131,7 +131,7 @@ auto Parser::PImpl::RecurseBlock(bool expect_braces, bool single_stmt, BlockMode
     { /* Detect exit conditon */
       bool should_break = (expect_braces && NextIf<PuncRCur>()) || (single_stmt && statements.size() == 1);
 
-      if (!should_break && NextIf<EofF>()) {
+      if (!should_break && Current().Is(EofF)) {
         if (expect_braces) {
           Log << SyntaxError << Current() << "Expected '}'";
         }
@@ -465,23 +465,18 @@ auto Parser::Parse() -> ASTRoot {
         auto old_state = m_impl->m_rd.GetSkipCommentsState();
         m_impl->m_rd.SkipCommentsState(true);
 
-        {   /* Parse the input */
-          { /* Swap in an arena allocator */
-            std::swap(MainAllocator, m_impl->m_allocator);
+        { /* Parse the input */
 
-            /* Recursive descent parsing */
-            auto node = m_impl->RecurseBlock(false, false, BlockMode::Unknown);
+          /* Recursive descent parsing */
+          auto node = m_impl->RecurseBlock(false, false, BlockMode::Unknown);
 
-            std::swap(MainAllocator, m_impl->m_allocator);
-
-            if (m_impl->m_rd.HasError()) {
-              Log << SyntaxError << "Some lexical errors have occurred";
-            }
-
-            ast = ASTRoot(node, std::move(m_impl->m_allocator), m_impl->m_failed);
+          if (m_impl->m_rd.HasError()) {
+            Log << SyntaxError << "Some lexical errors have occurred";
           }
 
-          /* Recreate the thread-local allocator */
+          ast = ASTRoot(node, std::move(m_impl->m_allocator), m_impl->m_failed);
+
+          /* Recreate the allocator */
           m_impl->m_allocator = std::make_unique<ncc::DynamicArena>();
         }
 
