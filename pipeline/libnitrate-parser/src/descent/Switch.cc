@@ -71,7 +71,7 @@ auto GeneralParser::PImpl::RecurseSwitchBody()
   NullableFlowPtr<Expr> default_case;
 
   while (true) {
-    if (Current().Is(EofF)) [[unlikely]] {
+    if (m_rd.IsEof()) [[unlikely]] {
       Log << SyntaxError << Current() << "Unexpected EOF in switch statement.";
       break;
     }

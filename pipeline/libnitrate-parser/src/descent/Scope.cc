@@ -46,7 +46,7 @@ auto GeneralParser::PImpl::RecurseScopeDeps() -> std::optional<std::vector<strin
 
   if (NextIf<PuncLBrk>()) [[likely]] {
     while (true) {
-      if (Current().Is(EofF)) [[unlikely]] {
+      if (m_rd.IsEof()) [[unlikely]] {
         Log << SyntaxError << Current() << "Unexpected EOF in scope dependencies";
         break;
       }

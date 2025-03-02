@@ -78,7 +78,7 @@ auto GeneralParser::PImpl::RecurseTemplateParameters() -> std::optional<std::vec
   std::vector<TemplateParameter> params;
 
   while (true) {
-    if (Current().Is(EofF)) [[unlikely]] {
+    if (m_rd.IsEof()) [[unlikely]] {
       Log << SyntaxError << Current() << "Unexpected EOF in template parameters";
       return params;
     }
@@ -114,7 +114,7 @@ auto GeneralParser::PImpl::RecurseFunctionParameters()
   bool is_variadic = false;
 
   while (true) {
-    if (Current().Is(EofF)) [[unlikely]] {
+    if (m_rd.IsEof()) [[unlikely]] {
       Log << SyntaxError << Current() << "Unexpected EOF in function parameters";
 
       return parameters;
@@ -214,7 +214,7 @@ auto GeneralParser::PImpl::RecurseFunctionAmbigouis()
   bool already_parsed_captures = false;
 
   while (state != State::End) {
-    if (Current().Is(EofF)) [[unlikely]] {
+    if (m_rd.IsEof()) [[unlikely]] {
       Log << SyntaxError << Current() << "Unexpected EOF in function attributes";
       break;
     }
@@ -272,7 +272,7 @@ auto GeneralParser::PImpl::RecurseFunctionAmbigouis()
         already_parsed_attributes = true;
 
         while (true) {
-          if (Current().Is(EofF)) [[unlikely]] {
+          if (m_rd.IsEof()) [[unlikely]] {
             Log << SyntaxError << Current() << "Unexpected EOF in function attributes";
             break;
           }
@@ -299,7 +299,7 @@ auto GeneralParser::PImpl::RecurseFunctionAmbigouis()
         already_parsed_captures = true;
 
         while (true) {
-          if (Current().Is(EofF)) [[unlikely]] {
+          if (m_rd.IsEof()) [[unlikely]] {
             Log << SyntaxError << Current() << "Unexpected EOF in function captures";
             break;
           }

@@ -45,7 +45,7 @@ auto GeneralParser::PImpl::RecurseVariableAttributes() -> std::optional<std::vec
   }
 
   while (true) {
-    if (Current().Is(EofF)) [[unlikely]] {
+    if (m_rd.IsEof()) [[unlikely]] {
       Log << SyntaxError << Current() << "Encountered EOF while parsing variable attribute";
       break;
     }
@@ -110,7 +110,7 @@ auto GeneralParser::PImpl::RecurseVariable(VariableType decl_type) -> std::vecto
   std::vector<FlowPtr<Expr>> variables;
 
   while (true) {
-    if (Current().Is(EofF)) [[unlikely]] {
+    if (m_rd.IsEof()) [[unlikely]] {
       Log << SyntaxError << Current() << "Unexpected EOF in variable declaration";
       break;
     }

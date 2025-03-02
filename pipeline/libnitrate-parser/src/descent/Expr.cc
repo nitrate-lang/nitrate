@@ -53,7 +53,7 @@ auto GeneralParser::PImpl::RecurseCallArguments(const std::set<lex::Token> &term
   string argument_name;
 
   while (true) {
-    if (Current().Is(EofF)) [[unlikely]] {
+    if (m_rd.IsEof()) [[unlikely]] {
       Log << SyntaxError << Current() << "Unexpected end of file while parsing call expression";
       return call_args;
     }
@@ -494,7 +494,7 @@ auto GeneralParser::PImpl::RecurseExprPunctor(lex::Punctor punc) -> NullableFlow
       std::vector<FlowPtr<Expr>> items;
 
       while (true) {
-        if (Current().Is(EofF)) [[unlikely]] {
+        if (m_rd.IsEof()) [[unlikely]] {
           Log << SyntaxError << Current() << "Unexpected end of file while parsing expression";
           break;
         }
@@ -556,7 +556,7 @@ auto GeneralParser::PImpl::RecurseExprPunctor(lex::Punctor punc) -> NullableFlow
       std::vector<FlowPtr<Assoc>> items;
 
       while (true) {
-        if (Current().Is(EofF)) [[unlikely]] {
+        if (m_rd.IsEof()) [[unlikely]] {
           Log << SyntaxError << Current() << "Unexpected end of file while parsing dictionary";
           break;
         }

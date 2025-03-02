@@ -45,7 +45,7 @@ auto GeneralParser::PImpl::RecurseStructAttributes() -> std::vector<FlowPtr<Expr
   }
 
   while (true) {
-    if (Current().Is(EofF)) [[unlikely]] {
+    if (m_rd.IsEof()) [[unlikely]] {
       Log << SyntaxError << Current() << "Encountered EOF while parsing struct attributes";
       break;
     }
@@ -78,7 +78,7 @@ auto GeneralParser::PImpl::RecurseStructTerms() -> std::vector<string> {
 
   if (enclosed) {
     while (true) {
-      if (Current().Is(EofF)) [[unlikely]] {
+      if (m_rd.IsEof()) [[unlikely]] {
         Log << SyntaxError << Current() << "Encountered EOF while parsing struct attributes";
         break;
       } else if (NextIf<PuncRBrk>()) {
@@ -105,7 +105,7 @@ auto GeneralParser::PImpl::RecurseStructTerms() -> std::vector<string> {
     }
   } else {
     while (true) {
-      if (Current().Is(EofF)) [[unlikely]] {
+      if (m_rd.IsEof()) [[unlikely]] {
         Log << SyntaxError << Current() << "Encountered EOF while parsing struct attributes";
         break;
       }
@@ -198,7 +198,7 @@ auto GeneralParser::PImpl::RecurseStructBody() -> GeneralParser::PImpl::StructCo
   }
 
   while (true) {
-    if (Current().Is(EofF)) {
+    if (m_rd.IsEof()) {
       Log << SyntaxError << Current() << "Encountered EOF while parsing struct body";
       break;
     }

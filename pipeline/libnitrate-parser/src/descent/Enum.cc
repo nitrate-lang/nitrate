@@ -74,7 +74,7 @@ auto GeneralParser::PImpl::RecurseEnumItems() -> std::optional<std::vector<std::
 
   if (NextIf<PuncLCur>()) {
     while (true) {
-      if (Current().Is(EofF)) [[unlikely]] {
+      if (m_rd.IsEof()) [[unlikely]] {
         Log << SyntaxError << Current() << "Unexpected EOF encountered while parsing enum fields.";
         break;
       }

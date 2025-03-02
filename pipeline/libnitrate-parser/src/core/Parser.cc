@@ -133,7 +133,7 @@ auto GeneralParser::PImpl::RecurseBlock(bool expect_braces, bool single_stmt, Bl
     { /* Detect exit conditon */
       bool should_break = (expect_braces && NextIf<PuncRCur>()) || (single_stmt && statements.size() == 1);
 
-      if (!should_break && Current().Is(EofF)) {
+      if (!should_break && m_rd.IsEof()) {
         if (expect_braces) {
           Log << SyntaxError << Current() << "Expected '}'";
         }

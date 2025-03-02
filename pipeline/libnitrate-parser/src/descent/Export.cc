@@ -51,7 +51,7 @@ auto GeneralParser::PImpl::RecurseExportAttributes() -> std::optional<std::vecto
   }
 
   while (true) {
-    if (Current().Is(EofF)) [[unlikely]] {
+    if (m_rd.IsEof()) [[unlikely]] {
       Log << SyntaxError << Current() << "Encountered EOF while parsing export attributes";
       break;
     }

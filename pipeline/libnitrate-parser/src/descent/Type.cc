@@ -316,7 +316,7 @@ auto GeneralParser::PImpl::RecurseTupleType() -> FlowPtr<parse::Type> {
   auto start = Current().GetStart();
 
   while (true) {
-    if (Current().Is(EofF)) {
+    if (m_rd.IsEof()) {
       Log << SyntaxError << Current() << "Unexpected EOF in tuple type";
       return m_fac.CreateMockInstance<VoidTy>();
     }
