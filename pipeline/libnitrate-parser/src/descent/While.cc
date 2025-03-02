@@ -37,7 +37,7 @@ using namespace ncc;
 using namespace ncc::lex;
 using namespace ncc::parse;
 
-auto Parser::PImpl::RecurseWhileCond() -> FlowPtr<Expr> {
+auto GeneralParser::PImpl::RecurseWhileCond() -> FlowPtr<Expr> {
   if (Peek().Is<PuncLCur>()) {
     return m_fac.CreateBoolean(true);
   }
@@ -45,7 +45,7 @@ auto Parser::PImpl::RecurseWhileCond() -> FlowPtr<Expr> {
   return RecurseExpr({Token(Punc, PuncLCur)});
 }
 
-auto Parser::PImpl::RecurseWhile() -> FlowPtr<Expr> {
+auto GeneralParser::PImpl::RecurseWhile() -> FlowPtr<Expr> {
   auto cond = RecurseWhileCond();
   auto body = RecurseBlock(true, false, BlockMode::Unknown);
 

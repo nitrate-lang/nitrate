@@ -17,12 +17,13 @@ TEST(AST, Encoder) {
       std::cout << ec.Format(msg, sev) << std::endl;
     });
 
+    auto my_pool = ncc::DynamicArena();
     auto env = std::make_shared<ncc::Environment>();
-    auto original = Parser::FromString<ncc::lex::Tokenizer>(test::vector::SOURCE_SAMPLE_01, env)->Parse();
+    auto original = GeneralParser::ParseString<ncc::lex::Tokenizer>(test::vector::SOURCE_SAMPLE_01, env, my_pool);
     EXPECT_TRUE(original.Check());
 
     auto serialized = original.Get()->Serialize();
-    auto decoded = AstReader(serialized).Get();
+    auto decoded = AstReader(serialized, std::nullopt, my_pool).Get();
     ASSERT_TRUE(decoded.has_value());
 
     EXPECT_TRUE(original.Get()->IsEq(decoded.value().Get()));

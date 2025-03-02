@@ -37,7 +37,7 @@ using namespace ncc;
 using namespace ncc::lex;
 using namespace ncc::parse;
 
-auto Parser::PImpl::RecurseTypeRangeStart() -> NullableFlowPtr<Expr> {
+auto GeneralParser::PImpl::RecurseTypeRangeStart() -> NullableFlowPtr<Expr> {
   if (NextIf<PuncColn>()) {
     return std::nullopt;
   }
@@ -53,7 +53,7 @@ auto Parser::PImpl::RecurseTypeRangeStart() -> NullableFlowPtr<Expr> {
   return min_value;
 }
 
-auto Parser::PImpl::RecurseTypeRangeEnd() -> NullableFlowPtr<Expr> {
+auto GeneralParser::PImpl::RecurseTypeRangeEnd() -> NullableFlowPtr<Expr> {
   if (NextIf<PuncRBrk>()) {
     return std::nullopt;
   }
@@ -69,7 +69,7 @@ auto Parser::PImpl::RecurseTypeRangeEnd() -> NullableFlowPtr<Expr> {
   return max_val;
 }
 
-auto Parser::PImpl::RecurseTypeTemplateArguments() -> std::optional<std::vector<CallArg>> {
+auto GeneralParser::PImpl::RecurseTypeTemplateArguments() -> std::optional<std::vector<CallArg>> {
   if (!NextIf<OpLT>()) {
     return std::nullopt;
   }
@@ -94,7 +94,7 @@ auto Parser::PImpl::RecurseTypeTemplateArguments() -> std::optional<std::vector<
   return args;
 }
 
-auto Parser::PImpl::RecurseTypeSuffix(FlowPtr<Type> base) -> FlowPtr<parse::Type> {
+auto GeneralParser::PImpl::RecurseTypeSuffix(FlowPtr<Type> base) -> FlowPtr<parse::Type> {
   static auto bit_width_terminaters = {
       Token(Punc, PuncRPar), Token(Punc, PuncRBrk), Token(Punc, PuncLCur), Token(Punc, PuncRCur), Token(Punc, PuncComa),
       Token(Punc, PuncColn), Token(Punc, PuncSemi), Token(Oper, OpSet),    Token(Oper, OpMinus),  Token(Oper, OpGT)};
@@ -138,7 +138,7 @@ auto Parser::PImpl::RecurseTypeSuffix(FlowPtr<Type> base) -> FlowPtr<parse::Type
   return base;
 }
 
-auto Parser::PImpl::RecurseFunctionType() -> FlowPtr<parse::Type> {
+auto GeneralParser::PImpl::RecurseFunctionType() -> FlowPtr<parse::Type> {
   auto fn = RecurseFunction(true);
 
   if (!fn->Is<Function>() || !fn->As<Function>()->IsDeclaration()) {
@@ -159,7 +159,7 @@ auto Parser::PImpl::RecurseFunctionType() -> FlowPtr<parse::Type> {
   return func_ty.value();
 }
 
-auto Parser::PImpl::RecurseOpaqueType() -> FlowPtr<parse::Type> {
+auto GeneralParser::PImpl::RecurseOpaqueType() -> FlowPtr<parse::Type> {
   if (!NextIf<PuncLPar>()) {
     Log << SyntaxError << Current() << "Expected '(' after 'opaque'";
     return m_fac.CreateMockInstance<Type>(QAST_VOID);
@@ -181,7 +181,7 @@ auto Parser::PImpl::RecurseOpaqueType() -> FlowPtr<parse::Type> {
   return m_fac.CreateMockInstance<Type>(QAST_VOID);
 }
 
-auto Parser::PImpl::RecurseTypeByKeyword(Keyword key) -> FlowPtr<parse::Type> {
+auto GeneralParser::PImpl::RecurseTypeByKeyword(Keyword key) -> FlowPtr<parse::Type> {
   Next();
 
   switch (key) {
@@ -204,7 +204,7 @@ auto Parser::PImpl::RecurseTypeByKeyword(Keyword key) -> FlowPtr<parse::Type> {
   }
 }
 
-auto Parser::PImpl::RecurseTypeByOperator(Operator op) -> FlowPtr<parse::Type> {
+auto GeneralParser::PImpl::RecurseTypeByOperator(Operator op) -> FlowPtr<parse::Type> {
   Next();
 
   switch (op) {
@@ -261,7 +261,7 @@ auto Parser::PImpl::RecurseTypeByOperator(Operator op) -> FlowPtr<parse::Type> {
   }
 }
 
-auto Parser::PImpl::RecurseArrayOrVector() -> FlowPtr<parse::Type> {
+auto GeneralParser::PImpl::RecurseArrayOrVector() -> FlowPtr<parse::Type> {
   auto start = Current().GetStart();
 
   auto first = RecurseType();
@@ -293,7 +293,7 @@ auto Parser::PImpl::RecurseArrayOrVector() -> FlowPtr<parse::Type> {
   return array;
 }
 
-auto Parser::PImpl::RecurseSetType() -> FlowPtr<parse::Type> {
+auto GeneralParser::PImpl::RecurseSetType() -> FlowPtr<parse::Type> {
   auto start = Current().GetStart();
 
   auto set_type = RecurseType();
@@ -310,7 +310,7 @@ auto Parser::PImpl::RecurseSetType() -> FlowPtr<parse::Type> {
   return set;
 }
 
-auto Parser::PImpl::RecurseTupleType() -> FlowPtr<parse::Type> {
+auto GeneralParser::PImpl::RecurseTupleType() -> FlowPtr<parse::Type> {
   std::vector<FlowPtr<Type>> items;
 
   auto start = Current().GetStart();
@@ -337,7 +337,7 @@ auto Parser::PImpl::RecurseTupleType() -> FlowPtr<parse::Type> {
   return tuple;
 }
 
-auto Parser::PImpl::RecurseTypeByPunctuation(Punctor punc) -> FlowPtr<parse::Type> {
+auto GeneralParser::PImpl::RecurseTypeByPunctuation(Punctor punc) -> FlowPtr<parse::Type> {
   switch (punc) {
     case PuncLBrk: {
       Next();
@@ -365,7 +365,7 @@ auto Parser::PImpl::RecurseTypeByPunctuation(Punctor punc) -> FlowPtr<parse::Typ
   }
 }
 
-auto Parser::PImpl::RecurseTypeByName(string name) -> FlowPtr<parse::Type> {
+auto GeneralParser::PImpl::RecurseTypeByName(string name) -> FlowPtr<parse::Type> {
   NullableFlowPtr<Type> type;
 
   if (name == "u1") {
@@ -414,7 +414,7 @@ auto Parser::PImpl::RecurseTypeByName(string name) -> FlowPtr<parse::Type> {
   return type.value();
 }
 
-auto Parser::PImpl::RecurseType() -> FlowPtr<parse::Type> {
+auto GeneralParser::PImpl::RecurseType() -> FlowPtr<parse::Type> {
   auto comments = m_rd.CommentBuffer();
   m_rd.ClearCommentBuffer();
 

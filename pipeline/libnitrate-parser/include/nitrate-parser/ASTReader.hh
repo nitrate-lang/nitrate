@@ -34,7 +34,6 @@
 #ifndef __NITRATE_AST_DESERIALIZER_H__
 #define __NITRATE_AST_DESERIALIZER_H__
 
-#include <memory>
 #include <nitrate-core/AllocateFwd.hh>
 #include <nitrate-core/Macro.hh>
 #include <nitrate-core/NullableFlowPtr.hh>
@@ -56,7 +55,7 @@ namespace ncc::parse {
 
     Result<Expr> m_root;
     ReaderSourceManager m_rd;
-    std::unique_ptr<IMemory> m_mm;
+    std::pmr::memory_resource &m_mm;
     ASTFactory m_fac;
 
     void UnmarshalLocationLocation(const SyntaxTree::SourceLocationRange &in, const FlowPtr<Expr> &out);
@@ -133,7 +132,8 @@ namespace ncc::parse {
     auto Unmarshal(const SyntaxTree::Export &in) -> Result<Export>;
 
   public:
-    AstReader(std::string_view protobuf_data, ReaderSourceManager source_manager = std::nullopt);
+    AstReader(std::string_view protobuf_data, ReaderSourceManager source_manager = std::nullopt,
+              std::pmr::memory_resource &pool = *std::pmr::get_default_resource());
     ~AstReader() = default;
 
     auto Get() -> std::optional<ASTRoot>;

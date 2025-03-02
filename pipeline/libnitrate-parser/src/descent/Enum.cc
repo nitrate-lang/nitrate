@@ -37,7 +37,7 @@ using namespace ncc;
 using namespace ncc::lex;
 using namespace ncc::parse;
 
-auto Parser::PImpl::RecurseEnumType() -> NullableFlowPtr<parse::Type> {
+auto GeneralParser::PImpl::RecurseEnumType() -> NullableFlowPtr<parse::Type> {
   if (NextIf<PuncColn>()) {
     return RecurseType();
   }
@@ -45,7 +45,7 @@ auto Parser::PImpl::RecurseEnumType() -> NullableFlowPtr<parse::Type> {
   return std::nullopt;
 }
 
-auto Parser::PImpl::RecurseEnumItem() -> std::optional<std::pair<string, NullableFlowPtr<Expr>>> {
+auto GeneralParser::PImpl::RecurseEnumItem() -> std::optional<std::pair<string, NullableFlowPtr<Expr>>> {
   if (auto member_name = RecurseName()) {
     if (NextIf<OpSet>()) {
       auto member_value = RecurseExpr({
@@ -65,7 +65,7 @@ auto Parser::PImpl::RecurseEnumItem() -> std::optional<std::pair<string, Nullabl
   return std::nullopt;
 }
 
-auto Parser::PImpl::RecurseEnumItems() -> std::optional<std::vector<std::pair<string, NullableFlowPtr<Expr>>>> {
+auto GeneralParser::PImpl::RecurseEnumItems() -> std::optional<std::vector<std::pair<string, NullableFlowPtr<Expr>>>> {
   std::vector<std::pair<string, NullableFlowPtr<Expr>>> items;
 
   if (NextIf<PuncSemi>()) {
@@ -101,7 +101,7 @@ auto Parser::PImpl::RecurseEnumItems() -> std::optional<std::vector<std::pair<st
   return std::nullopt;
 }
 
-auto Parser::PImpl::RecurseEnum() -> FlowPtr<Expr> {
+auto GeneralParser::PImpl::RecurseEnum() -> FlowPtr<Expr> {
   auto name = RecurseName();
   auto type = RecurseEnumType();
 

@@ -263,7 +263,7 @@ namespace no3::benchmark {
     std::stringstream source(LexicalBenchmarkSource);
     Tokenizer tokenizer(source, env);
 
-    auto ast = Parser::Create(tokenizer, env)->Parse();
+    auto ast = GeneralParser::Create(tokenizer, env)->Parse();
     if (!ast.Check()) {
       LOG(ERROR) << "Failed to parse benchmark source";
     }
@@ -378,7 +378,7 @@ static auto DoParse(std::shared_ptr<Environment> &env, const std::string &source
   Sequencer scanner(file, env);
   scanner.SetFetchFunc(FileSystemFetchModule);
 
-  auto parser = Parser::Create(scanner, env);
+  auto parser = GeneralParser::Create(scanner, env);
 
   auto ast = parser->Parse();
 
@@ -404,7 +404,7 @@ static auto DoNr(std::shared_ptr<Environment> &env, const std::string &source, s
   Sequencer scanner(file, env);
   scanner.SetFetchFunc(FileSystemFetchModule);
 
-  auto parser = Parser::Create(scanner, env);
+  auto parser = GeneralParser::Create(scanner, env);
 
   auto ast = parser->Parse();
 
@@ -433,7 +433,7 @@ static auto DoCodegen(std::shared_ptr<Environment> &env, const std::string &sour
   Sequencer scanner(file, env);
   scanner.SetFetchFunc(FileSystemFetchModule);
 
-  auto parser = Parser::Create(scanner, env);
+  auto parser = GeneralParser::Create(scanner, env);
 
   auto ast = parser->Parse();
 

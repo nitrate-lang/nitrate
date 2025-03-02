@@ -353,7 +353,7 @@ CREATE_TRANSFORM(nit::parse) {
   (void)opts;
 
   DeserializerAdapterLexer lexer(source, env);
-  auto parser = Parser::Create(lexer, env);
+  auto parser = GeneralParser::Create(lexer, env);
 
   auto root = parser->Parse();
 

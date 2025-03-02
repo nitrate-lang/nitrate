@@ -35,7 +35,6 @@
 #include <google/protobuf/io/coded_stream.h>
 
 #include <boost/multiprecision/cpp_int.hpp>
-#include <memory>
 #include <nitrate-core/Logger.hh>
 #include <nitrate-core/Macro.hh>
 #include <nitrate-lexer/Scanner.hh>
@@ -2402,8 +2401,9 @@ auto AstReader::Unmarshal(const SyntaxTree::Export &in) -> Result<Export> {
   return object;
 }
 
-AstReader::AstReader(std::string_view protobuf_data, ReaderSourceManager source_manager)
-    : m_rd(source_manager), m_mm(std::make_unique<DynamicArena>()), m_fac(*m_mm) {
+AstReader::AstReader(std::string_view protobuf_data, ReaderSourceManager source_manager,
+                     std::pmr::memory_resource &pool)
+    : m_rd(source_manager), m_mm(pool), m_fac(m_mm) {
   google::protobuf::io::CodedInputStream input((const uint8_t *)protobuf_data.data(), protobuf_data.size());
   input.SetRecursionLimit(kRecursionLimit);
 
@@ -2420,5 +2420,5 @@ auto AstReader::Get() -> std::optional<ASTRoot> {
     return std::nullopt;
   }
 
-  return ASTRoot(m_root.value(), std::move(m_mm), false);
+  return ASTRoot(m_root.value(), false);
 }

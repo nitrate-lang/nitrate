@@ -18,7 +18,8 @@ namespace detail {
     auto env = std::make_shared<ncc::Environment>();
     boost::iostreams::stream<boost::iostreams::array_source> ss(text.data(), text.size());
     auto tokenizer = ncc::seq::Sequencer(ss, env);
-    auto ast = ncc::parse::Parser::Create(tokenizer, env)->Parse();
+    auto my_pool = ncc::DynamicArena();
+    auto ast = ncc::parse::GeneralParser::Create(tokenizer, env, my_pool)->Parse();
     if (!ast.Check()) {
       return std::nullopt;
     }

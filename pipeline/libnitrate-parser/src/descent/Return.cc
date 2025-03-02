@@ -37,7 +37,7 @@ using namespace ncc;
 using namespace ncc::lex;
 using namespace ncc::parse;
 
-auto Parser::PImpl::RecurseReturn() -> FlowPtr<Expr> {
+auto GeneralParser::PImpl::RecurseReturn() -> FlowPtr<Expr> {
   if (NextIf<PuncSemi>()) {
     return m_fac.CreateReturn();
   }
@@ -53,7 +53,7 @@ auto Parser::PImpl::RecurseReturn() -> FlowPtr<Expr> {
   return m_fac.CreateReturn(return_value);
 }
 
-auto Parser::PImpl::RecurseReturnIf() -> FlowPtr<Expr> {
+auto GeneralParser::PImpl::RecurseReturnIf() -> FlowPtr<Expr> {
   auto return_if = RecurseExpr({
       Token(Punc, PuncComa),
   });

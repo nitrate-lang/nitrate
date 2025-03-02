@@ -37,7 +37,7 @@ using namespace ncc;
 using namespace ncc::lex;
 using namespace ncc::parse;
 
-auto Parser::PImpl::RecurseSwitchCaseBody() -> FlowPtr<Expr> {
+auto GeneralParser::PImpl::RecurseSwitchCaseBody() -> FlowPtr<Expr> {
   if (!NextIf<OpArrow>()) {
     Log << SyntaxError << Current() << "Expected '=>' in switch case.";
   }
@@ -49,7 +49,7 @@ auto Parser::PImpl::RecurseSwitchCaseBody() -> FlowPtr<Expr> {
   return RecurseBlock(false, true, BlockMode::Unknown);
 }
 
-auto Parser::PImpl::RecurseSwitchCase() -> std::pair<FlowPtr<Expr>, bool> {
+auto GeneralParser::PImpl::RecurseSwitchCase() -> std::pair<FlowPtr<Expr>, bool> {
   auto cond = RecurseExpr({
       Token(Oper, OpArrow),
       Token(Punc, PuncLCur),
@@ -65,7 +65,8 @@ auto Parser::PImpl::RecurseSwitchCase() -> std::pair<FlowPtr<Expr>, bool> {
   return {m_fac.CreateCase(cond, body), false};
 }
 
-auto Parser::PImpl::RecurseSwitchBody() -> std::optional<std::pair<std::vector<FlowPtr<Case>>, NullableFlowPtr<Expr>>> {
+auto GeneralParser::PImpl::RecurseSwitchBody()
+    -> std::optional<std::pair<std::vector<FlowPtr<Case>>, NullableFlowPtr<Expr>>> {
   std::vector<FlowPtr<Case>> cases;
   NullableFlowPtr<Expr> default_case;
 
@@ -96,7 +97,7 @@ auto Parser::PImpl::RecurseSwitchBody() -> std::optional<std::pair<std::vector<F
   return std::nullopt;
 }
 
-auto Parser::PImpl::RecurseSwitch() -> FlowPtr<Expr> {
+auto GeneralParser::PImpl::RecurseSwitch() -> FlowPtr<Expr> {
   auto switch_cond = RecurseExpr({
       Token(Punc, PuncLCur),
   });

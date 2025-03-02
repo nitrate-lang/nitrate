@@ -9,7 +9,7 @@ using namespace ncc;
 int main() {
   auto env = std::make_shared<Environment>();
   auto scanner = seq::Sequencer(std::cin, env);
-  auto parser = parse::Parser::Create(scanner, env);
+  auto parser = parse::GeneralParser::Create(scanner, env);
   auto ast_maybe = parser->Parse();
   if (!ast_maybe.Check()) {
     return 1;

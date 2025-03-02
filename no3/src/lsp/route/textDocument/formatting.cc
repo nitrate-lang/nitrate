@@ -106,7 +106,7 @@ void srv::DoFormatting(const RequestMessage& req, ResponseMessage& resp) {
 
   auto env = std::make_shared<ncc::Environment>();
   auto l = Sequencer(ss, env);
-  auto parser = ncc::parse::Parser::Create(l, env);
+  auto parser = ncc::parse::GeneralParser::Create(l, env);
   auto ast = parser->Parse();
 
   if (l.HasError() || !ast.Check()) {

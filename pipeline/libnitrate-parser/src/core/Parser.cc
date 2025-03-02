@@ -46,7 +46,9 @@ using namespace ncc;
 using namespace ncc::parse;
 using namespace ncc::lex;
 
-auto Parser::PImpl::RecurseName() -> string {
+void ParserSetCurrentScanner(IScanner *scanner);
+
+auto GeneralParser::PImpl::RecurseName() -> string {
   enum State {
     Start,
     RequireName,
@@ -111,7 +113,7 @@ auto Parser::PImpl::RecurseName() -> string {
   return name;
 }
 
-auto Parser::PImpl::RecurseBlock(bool expect_braces, bool single_stmt, BlockMode safety) -> FlowPtr<Expr> {
+auto GeneralParser::PImpl::RecurseBlock(bool expect_braces, bool single_stmt, BlockMode safety) -> FlowPtr<Expr> {
   if (expect_braces && !Next().Is<PuncLCur>()) {
     Log << SyntaxError << Current() << "Expected '{'";
   }
@@ -437,18 +439,35 @@ auto Parser::PImpl::RecurseBlock(bool expect_braces, bool single_stmt, BlockMode
   }
 }
 
-Parser::Parser(ncc::lex::IScanner &lexer, std::shared_ptr<ncc::IEnvironment> env, std::shared_ptr<void> lifetime)
-    : m_impl(std::make_unique<Parser::PImpl>(lexer, std::move(env), std::move(lifetime))) {}
+GeneralParser::GeneralParser(ncc::lex::IScanner &lexer, std::shared_ptr<ncc::IEnvironment> env,
+                             std::pmr::memory_resource &pool)
+    : m_impl(std::make_unique<GeneralParser::PImpl>(lexer, std::move(env), pool)) {}
 
-Parser::~Parser() = default;
+GeneralParser::~GeneralParser() = default;
 
-void ParserSetCurrentScanner(IScanner *scanner);
+GeneralParser::GeneralParser(GeneralParser &&o) noexcept : m_impl(std::exchange(o.m_impl, nullptr)) {}
 
-void Parser::SetFailBit() { m_impl->m_failed = true; }
+auto GeneralParser::operator=(GeneralParser &&o) noexcept -> GeneralParser & {
+  if (this != &o) {
+    m_impl = std::exchange(o.m_impl, nullptr);
+  }
 
-auto Parser::GetLexer() -> lex::IScanner & { return m_impl->m_rd; }
+  return *this;
+}
 
-auto Parser::Parse() -> ASTRoot {
+auto GeneralParser::GetLexer() -> lex::IScanner & {
+  if (!m_impl) {
+    qcore_panic("GeneralParser::GetLexer() called on moved-from object");
+  }
+
+  return m_impl->m_rd;
+}
+
+auto GeneralParser::Parse() -> ASTRoot {
+  if (!m_impl) {
+    qcore_panic("GeneralParser::Parse() called on moved-from object");
+  }
+
   std::optional<ASTRoot> ast;
 
   { /* Assign the current context to thread-local global state */
@@ -457,7 +476,7 @@ auto Parser::Parse() -> ASTRoot {
     { /* Subscribe to events emitted by the parser */
       auto sub_id = Log.Subscribe([&](auto, auto, const auto &ec) {
         if (ec.GetKind() == SyntaxError.GetKind()) {
-          SetFailBit();
+          m_impl->m_failed = true;
         }
       });
 
@@ -465,19 +484,25 @@ auto Parser::Parse() -> ASTRoot {
         auto old_state = m_impl->m_rd.GetSkipCommentsState();
         m_impl->m_rd.SkipCommentsState(true);
 
-        { /* Parse the input */
-
-          /* Recursive descent parsing */
+        { /* Recursive descent parsing */
           auto node = m_impl->RecurseBlock(false, false, BlockMode::Unknown);
 
           if (m_impl->m_rd.HasError()) {
             Log << SyntaxError << "Some lexical errors have occurred";
           }
 
-          ast = ASTRoot(node, std::move(m_impl->m_allocator), m_impl->m_failed);
+          m_impl->m_failed |= [](FlowPtr<Expr> node) {
+            bool contains_any_mock_nodes = false;
+            iterate<dfs_pre>(std::move(node), [&](auto, auto c) {
+              contains_any_mock_nodes |= !c || c->IsMock();
 
-          /* Recreate the allocator */
-          m_impl->m_allocator = std::make_unique<ncc::DynamicArena>();
+              return contains_any_mock_nodes ? IterOp::Abort : IterOp::Proceed;
+            });
+
+            return contains_any_mock_nodes;
+          }(node);
+
+          ast = ASTRoot(node, !m_impl->m_failed);
         }
 
         m_impl->m_rd.SkipCommentsState(old_state);
@@ -492,17 +517,4 @@ auto Parser::Parse() -> ASTRoot {
   return ast.value();
 }
 
-auto ASTRoot::Check() const -> bool {
-  if (m_failed) {
-    return false;
-  }
-
-  bool failed = false;
-  iterate<dfs_pre>(m_base, [&](auto, auto c) {
-    failed |= !c || c->IsMock();
-
-    return failed ? IterOp::Abort : IterOp::Proceed;
-  });
-
-  return !failed;
-}
+auto ASTRoot::Check() const -> bool { return m_success; }

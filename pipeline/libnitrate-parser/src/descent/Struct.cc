@@ -37,7 +37,7 @@ using namespace ncc;
 using namespace ncc::lex;
 using namespace ncc::parse;
 
-auto Parser::PImpl::RecurseStructAttributes() -> std::vector<FlowPtr<Expr>> {
+auto GeneralParser::PImpl::RecurseStructAttributes() -> std::vector<FlowPtr<Expr>> {
   std::vector<FlowPtr<Expr>> attributes;
 
   if (!NextIf<PuncLBrk>()) {
@@ -67,7 +67,7 @@ auto Parser::PImpl::RecurseStructAttributes() -> std::vector<FlowPtr<Expr>> {
   return attributes;
 }
 
-auto Parser::PImpl::RecurseStructTerms() -> std::vector<string> {
+auto GeneralParser::PImpl::RecurseStructTerms() -> std::vector<string> {
   std::vector<string> names;
 
   if (!NextIf<PuncColn>()) {
@@ -126,7 +126,7 @@ auto Parser::PImpl::RecurseStructTerms() -> std::vector<string> {
   return names;
 }
 
-auto Parser::PImpl::RecurseStructFieldDefaultValue() -> NullableFlowPtr<Expr> {
+auto GeneralParser::PImpl::RecurseStructFieldDefaultValue() -> NullableFlowPtr<Expr> {
   if (NextIf<OpSet>()) {
     return RecurseExpr({
         Token(Punc, PuncComa),
@@ -138,7 +138,7 @@ auto Parser::PImpl::RecurseStructFieldDefaultValue() -> NullableFlowPtr<Expr> {
   return std::nullopt;
 }
 
-void Parser::PImpl::RecurseStructField(Vis vis, bool is_static, std::vector<StructField> &fields) {
+void GeneralParser::PImpl::RecurseStructField(Vis vis, bool is_static, std::vector<StructField> &fields) {
   if (auto field_name = RecurseName()) {
     if (NextIf<PuncColn>()) {
       auto field_type = RecurseType();
@@ -155,7 +155,7 @@ void Parser::PImpl::RecurseStructField(Vis vis, bool is_static, std::vector<Stru
   }
 }
 
-void Parser::PImpl::RecurseStructMethodOrField(StructContent &body) {
+void GeneralParser::PImpl::RecurseStructMethodOrField(StructContent &body) {
   Vis vis = Vis::Sec;
 
   /* Parse visibility of member */
@@ -184,7 +184,7 @@ void Parser::PImpl::RecurseStructMethodOrField(StructContent &body) {
   NextIf<PuncComa>() || NextIf<PuncSemi>();
 }
 
-auto Parser::PImpl::RecurseStructBody() -> Parser::PImpl::StructContent {
+auto GeneralParser::PImpl::RecurseStructBody() -> GeneralParser::PImpl::StructContent {
   StructContent body;
 
   if (NextIf<PuncSemi>()) {
@@ -213,7 +213,7 @@ auto Parser::PImpl::RecurseStructBody() -> Parser::PImpl::StructContent {
   return body;
 }
 
-auto Parser::PImpl::RecurseStruct(CompositeType struct_type) -> FlowPtr<Expr> {
+auto GeneralParser::PImpl::RecurseStruct(CompositeType struct_type) -> FlowPtr<Expr> {
   auto start_pos = Current().GetStart();
   auto struct_attributes = RecurseStructAttributes();
   auto struct_name = RecurseName();

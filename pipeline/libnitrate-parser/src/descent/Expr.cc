@@ -46,8 +46,8 @@ using namespace ncc::lex;
 using namespace ncc::parse;
 using namespace ncc;
 
-auto Parser::PImpl::RecurseCallArguments(const std::set<lex::Token> &terminators,
-                                         bool type_by_default) -> std::vector<CallArg> {
+auto GeneralParser::PImpl::RecurseCallArguments(const std::set<lex::Token> &terminators,
+                                                bool type_by_default) -> std::vector<CallArg> {
   std::vector<CallArg> call_args;
   size_t positional_index = 0;
   string argument_name;
@@ -91,7 +91,7 @@ auto Parser::PImpl::RecurseCallArguments(const std::set<lex::Token> &terminators
   return call_args;
 }
 
-auto Parser::PImpl::RecurseFstring() -> FlowPtr<Expr> {
+auto GeneralParser::PImpl::RecurseFstring() -> FlowPtr<Expr> {
   std::vector<std::variant<string, FlowPtr<Expr>>> items;
 
   if (auto tok = NextIf<Text>()) {
@@ -118,7 +118,10 @@ auto Parser::PImpl::RecurseFstring() -> FlowPtr<Expr> {
           buf.clear();
         }
 
-        auto subnode = Parser::FromString<Tokenizer>(fstring_raw.substr(w_beg, w_end - w_beg), m_env)
+        auto source = fstring_raw.substr(w_beg, w_end - w_beg);
+        auto in_src = boost::iostreams::stream<boost::iostreams::array_source>(source.data(), source.size());
+        auto scanner = Tokenizer(in_src, m_env);
+        auto subnode = GeneralParser::Create(scanner, m_env, m_pool)
                            ->m_impl->RecurseExpr({
                                Token(Punc, PuncRCur),
                            });
@@ -207,7 +210,7 @@ static NCC_FORCE_INLINE auto UnwindStack(ASTFactory &fac, std::stack<Frame> &sta
   return base;
 }
 
-auto Parser::PImpl::RecurseExpr(const std::set<Token> &terminators) -> FlowPtr<Expr> {
+auto GeneralParser::PImpl::RecurseExpr(const std::set<Token> &terminators) -> FlowPtr<Expr> {
   auto source_offset = Peek().GetStart();
 
   std::stack<Frame> stack;
@@ -398,7 +401,7 @@ auto Parser::PImpl::RecurseExpr(const std::set<Token> &terminators) -> FlowPtr<E
   return m_fac.CreateMockInstance<Expr>(QAST_VOID);
 }
 
-auto Parser::PImpl::RecurseExprKeyword(lex::Keyword key) -> NullableFlowPtr<Expr> {
+auto GeneralParser::PImpl::RecurseExprKeyword(lex::Keyword key) -> NullableFlowPtr<Expr> {
   NullableFlowPtr<Expr> e;
 
   switch (key) {
@@ -466,7 +469,7 @@ auto Parser::PImpl::RecurseExprKeyword(lex::Keyword key) -> NullableFlowPtr<Expr
   return e;
 }
 
-auto Parser::PImpl::RecurseExprPunctor(lex::Punctor punc) -> NullableFlowPtr<Expr> {
+auto GeneralParser::PImpl::RecurseExprPunctor(lex::Punctor punc) -> NullableFlowPtr<Expr> {
   NullableFlowPtr<Expr> e;
 
   switch (punc) {
@@ -624,7 +627,7 @@ auto Parser::PImpl::RecurseExprPunctor(lex::Punctor punc) -> NullableFlowPtr<Exp
   return e;
 }
 
-auto Parser::PImpl::RecurseExprTypeSuffix(FlowPtr<Expr> base) -> FlowPtr<Expr> {
+auto GeneralParser::PImpl::RecurseExprTypeSuffix(FlowPtr<Expr> base) -> FlowPtr<Expr> {
   auto tok = Current();
 
   auto suffix = RecurseType();
@@ -633,7 +636,7 @@ auto Parser::PImpl::RecurseExprTypeSuffix(FlowPtr<Expr> base) -> FlowPtr<Expr> {
   return m_fac.CreateBinary(std::move(base), OpAs, suffix);
 }
 
-auto Parser::PImpl::RecurseExprPrimary(bool is_type) -> NullableFlowPtr<Expr> {
+auto GeneralParser::PImpl::RecurseExprPrimary(bool is_type) -> NullableFlowPtr<Expr> {
   auto start_pos = Peek().GetStart();
 
   NullableFlowPtr<Expr> e;

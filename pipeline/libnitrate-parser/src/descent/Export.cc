@@ -37,13 +37,13 @@ using namespace ncc;
 using namespace ncc::lex;
 using namespace ncc::parse;
 
-auto Parser::PImpl::RecurseAbiName() -> string {
+auto GeneralParser::PImpl::RecurseAbiName() -> string {
   auto tok = NextIf<Text>();
 
   return tok ? tok->GetString() : "";
 }
 
-auto Parser::PImpl::RecurseExportAttributes() -> std::optional<std::vector<FlowPtr<Expr>>> {
+auto GeneralParser::PImpl::RecurseExportAttributes() -> std::optional<std::vector<FlowPtr<Expr>>> {
   std::vector<FlowPtr<Expr>> attributes;
 
   if (!NextIf<PuncLBrk>()) {
@@ -73,7 +73,7 @@ auto Parser::PImpl::RecurseExportAttributes() -> std::optional<std::vector<FlowP
   return std::nullopt;
 }
 
-auto Parser::PImpl::RecurseExportBody() -> FlowPtr<Expr> {
+auto GeneralParser::PImpl::RecurseExportBody() -> FlowPtr<Expr> {
   if (Peek().Is<PuncLCur>()) {
     return RecurseBlock(true, false, BlockMode::Unknown);
   }
@@ -81,7 +81,7 @@ auto Parser::PImpl::RecurseExportBody() -> FlowPtr<Expr> {
   return RecurseBlock(false, true, BlockMode::Unknown);
 }
 
-auto Parser::PImpl::RecurseExport(Vis vis) -> FlowPtr<Expr> {
+auto GeneralParser::PImpl::RecurseExport(Vis vis) -> FlowPtr<Expr> {
   auto export_abi = RecurseAbiName();
 
   if (auto export_attributes = RecurseExportAttributes()) {

@@ -37,7 +37,7 @@ using namespace ncc;
 using namespace ncc::lex;
 using namespace ncc::parse;
 
-auto Parser::PImpl::RecurseForeachNames() -> std::optional<std::pair<string, string>> {
+auto GeneralParser::PImpl::RecurseForeachNames() -> std::optional<std::pair<string, string>> {
   if (auto name_a = RecurseName()) [[likely]] {
     if (NextIf<PuncComa>()) {
       if (auto name_b = RecurseName()) [[likely]] {
@@ -55,7 +55,7 @@ auto Parser::PImpl::RecurseForeachNames() -> std::optional<std::pair<string, str
   return std::nullopt;
 }
 
-auto Parser::PImpl::RecurseForeachExpr(bool has_paren) -> FlowPtr<Expr> {
+auto GeneralParser::PImpl::RecurseForeachExpr(bool has_paren) -> FlowPtr<Expr> {
   if (has_paren) {
     return RecurseExpr({
         Token(Punc, PuncRPar),
@@ -68,7 +68,7 @@ auto Parser::PImpl::RecurseForeachExpr(bool has_paren) -> FlowPtr<Expr> {
   });
 }
 
-auto Parser::PImpl::RecurseForeachBody() -> FlowPtr<Expr> {
+auto GeneralParser::PImpl::RecurseForeachBody() -> FlowPtr<Expr> {
   if (NextIf<OpArrow>()) {
     return RecurseBlock(false, true, BlockMode::Unknown);
   }
@@ -76,7 +76,7 @@ auto Parser::PImpl::RecurseForeachBody() -> FlowPtr<Expr> {
   return RecurseBlock(true, false, BlockMode::Unknown);
 }
 
-auto Parser::PImpl::RecurseForeach() -> FlowPtr<Expr> {
+auto GeneralParser::PImpl::RecurseForeach() -> FlowPtr<Expr> {
   bool foreach_has_paren = NextIf<PuncLPar>().has_value();
 
   if (auto iter_names = RecurseForeachNames()) {

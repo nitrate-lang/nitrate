@@ -37,6 +37,7 @@
 #include <boost/shared_ptr.hpp>
 #include <core/SyntaxDiagnostics.hh>
 #include <memory>
+#include <memory_resource>
 #include <nitrate-core/IEnvironment.hh>
 #include <nitrate-core/Logger.hh>
 #include <nitrate-lexer/Scanner.hh>
@@ -51,14 +52,13 @@
 namespace ncc::parse {
   using namespace ec;
 
-  class Parser::PImpl final {
-    friend class Parser;
+  class GeneralParser::PImpl final {
+    friend class GeneralParser;
 
     std::shared_ptr<IEnvironment> m_env;
-    std::unique_ptr<IMemory> m_allocator;
+    std::pmr::memory_resource &m_pool;
     ASTFactory m_fac;
     lex::IScanner &m_rd;
-    std::shared_ptr<void> m_lifetime;
     bool m_failed = false;
 
     lex::Token Next() { return m_rd.Next(); }
@@ -218,12 +218,8 @@ namespace ncc::parse {
     auto RecurseWhileCond() -> FlowPtr<Expr>;
 
   public:
-    PImpl(lex::IScanner &lexer, std::shared_ptr<IEnvironment> env, std::shared_ptr<void> lifetime)
-        : m_env(std::move(env)),
-          m_allocator(std::make_unique<DynamicArena>()),
-          m_fac(*m_allocator),
-          m_rd(lexer),
-          m_lifetime(std::move(lifetime)) {}
+    PImpl(lex::IScanner &lexer, std::shared_ptr<IEnvironment> env, std::pmr::memory_resource &pool)
+        : m_env(std::move(env)), m_pool(pool), m_fac(m_pool), m_rd(lexer) {}
     ~PImpl() = default;
   };
 }  // namespace ncc::parse

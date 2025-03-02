@@ -37,7 +37,7 @@ using namespace ncc;
 using namespace ncc::lex;
 using namespace ncc::parse;
 
-auto Parser::PImpl::RecurseVariableAttributes() -> std::optional<std::vector<FlowPtr<Expr>>> {
+auto GeneralParser::PImpl::RecurseVariableAttributes() -> std::optional<std::vector<FlowPtr<Expr>>> {
   std::vector<FlowPtr<Expr>> attributes;
 
   if (!NextIf<PuncLBrk>()) {
@@ -67,7 +67,7 @@ auto Parser::PImpl::RecurseVariableAttributes() -> std::optional<std::vector<Flo
   return std::nullopt;
 }
 
-auto Parser::PImpl::RecurseVariableType() -> FlowPtr<parse::Type> {
+auto GeneralParser::PImpl::RecurseVariableType() -> FlowPtr<parse::Type> {
   if (NextIf<PuncColn>()) {
     return RecurseType();
   }
@@ -75,7 +75,7 @@ auto Parser::PImpl::RecurseVariableType() -> FlowPtr<parse::Type> {
   return m_fac.CreateUnknownType();
 }
 
-auto Parser::PImpl::RecurseVariableValue() -> NullableFlowPtr<Expr> {
+auto GeneralParser::PImpl::RecurseVariableValue() -> NullableFlowPtr<Expr> {
   if (NextIf<OpSet>()) {
     return RecurseExpr({
         Token(Punc, PuncComa),
@@ -86,7 +86,7 @@ auto Parser::PImpl::RecurseVariableValue() -> NullableFlowPtr<Expr> {
   return std::nullopt;
 }
 
-auto Parser::PImpl::RecurseVariableInstance(VariableType decl_type) -> NullableFlowPtr<Expr> {
+auto GeneralParser::PImpl::RecurseVariableInstance(VariableType decl_type) -> NullableFlowPtr<Expr> {
   if (auto symbol_attributes_opt = RecurseVariableAttributes()) {
     if (auto variable_name = RecurseName()) {
       auto variable_type = RecurseVariableType();
@@ -106,7 +106,7 @@ auto Parser::PImpl::RecurseVariableInstance(VariableType decl_type) -> NullableF
   return m_fac.CreateMockInstance<Expr>(QAST_VAR);
 }
 
-auto Parser::PImpl::RecurseVariable(VariableType decl_type) -> std::vector<FlowPtr<Expr>> {
+auto GeneralParser::PImpl::RecurseVariable(VariableType decl_type) -> std::vector<FlowPtr<Expr>> {
   std::vector<FlowPtr<Expr>> variables;
 
   while (true) {
