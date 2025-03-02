@@ -155,6 +155,24 @@ auto GeneralParser::PImpl::RecurseFstring() -> FlowPtr<Expr> {
 
 static auto IsPostUnaryOp(Operator o) -> bool { return o == OpInc || o == OpDec; }
 
+static auto IsOnlyUnaryOp(Operator o) -> bool {
+  switch (o) {
+    case OpBitNot:
+    case OpLogicNot:
+    case OpInc:
+    case OpDec:
+    case OpSizeof:
+    case OpBitsizeof:
+    case OpAlignof:
+    case OpTypeof:
+    case OpComptime:
+      return true;
+
+    default:
+      return false;
+  }
+}
+
 enum class FrameType : uint8_t {
   Start,
   PreUnary,
@@ -249,9 +267,9 @@ auto GeneralParser::PImpl::RecurseExpr(const std::set<Token> &terminators) -> Fl
 
       switch (tok.GetKind()) {
         case Oper: {
-          auto op = tok.GetOperator();
-          auto op_type = IsPostUnaryOp(op) ? OpMode::PostUnary : OpMode::Binary;
-          auto op_precedence = GetOperatorPrecedence(op, op_type);
+          const auto op = tok.GetOperator();
+          const auto op_type = IsPostUnaryOp(op) ? OpMode::PostUnary : OpMode::Binary;
+          const auto op_precedence = GetOperatorPrecedence(op, op_type);
 
           if (op_precedence >= stack.top().m_minPrecedence) {
             Next();
@@ -309,6 +327,10 @@ auto GeneralParser::PImpl::RecurseExpr(const std::set<Token> &terminators) -> Fl
               Log << SyntaxError << Current() << "Failed to parse right-hand side of binary expression";
             }
           } else {
+            if (IsOnlyUnaryOp(op)) {
+              spinning = false;
+            }
+
             left_side = UnwindStack(m_fac, stack, left_side, 0);
 
             continue;
