@@ -40,5 +40,5 @@ using namespace ncc::parse;
 auto GeneralParser::PImpl::RecurseAssembly() -> FlowPtr<Expr> {
   Log << SyntaxError << Current() << "Inline assembly is not yet implemented";
 
-  return m_fac.CreateMockInstance<Expr>(QAST_INLINE_ASM);
+  return m_fac.CreateMockInstance<Assembly>();
 }

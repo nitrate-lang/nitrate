@@ -89,5 +89,5 @@ auto GeneralParser::PImpl::RecurseScope() -> FlowPtr<Expr> {
     Log << SyntaxError << Current() << "Expected scope dependencies";
   }
 
-  return m_fac.CreateMockInstance<Expr>(QAST_SCOPE);
+  return m_fac.CreateMockInstance<Scope>();
 }

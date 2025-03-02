@@ -109,5 +109,5 @@ auto GeneralParser::PImpl::RecurseEnum() -> FlowPtr<Expr> {
     return m_fac.CreateEnum(name, items.value(), type);
   }
 
-  return m_fac.CreateMockInstance<Expr>(QAST_ENUM);
+  return m_fac.CreateMockInstance<Enum>();
 }

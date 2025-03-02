@@ -114,5 +114,5 @@ auto GeneralParser::PImpl::RecurseSwitch() -> FlowPtr<Expr> {
     Log << SyntaxError << Current() << "Expected '{' after switch condition.";
   }
 
-  return m_fac.CreateMockInstance<Expr>(QAST_SWITCH);
+  return m_fac.CreateMockInstance<Switch>();
 }

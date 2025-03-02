@@ -101,14 +101,16 @@ namespace ncc::parse {
 
     ///=========================================================================
 
-    template <typename NodeClass = Expr>
-    [[gnu::pure, nodiscard]] auto CreateMockInstance(
-        ASTNodeKind kind, SourceLocation origin = SourceLocation::current()) -> FlowPtr<NodeClass> {
+    template <typename NodeClass>
+    [[gnu::pure, nodiscard]] auto CreateMockInstance(ASTNodeKind kind = Expr::GetTypeCode<NodeClass>(),
+                                                     SourceLocation origin = SourceLocation::current())
+        -> FlowPtr<NodeClass> {
       return CreateMockInstance(kind, origin).As<NodeClass>();
     }
 
-    template <typename NodeClass = Expr>
-    [[gnu::pure, nodiscard]] static inline auto CreateMockInstance(IMemory& m, ASTNodeKind kind,
+    template <typename NodeClass>
+    [[gnu::pure, nodiscard]] static inline auto CreateMockInstance(IMemory& m,
+                                                                   ASTNodeKind kind = Expr::GetTypeCode<NodeClass>(),
                                                                    SourceLocation origin = SourceLocation::current()) {
       return ASTFactory(m).CreateMockInstance(kind, origin).As<NodeClass>();
     }

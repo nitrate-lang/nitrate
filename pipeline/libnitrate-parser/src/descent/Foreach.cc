@@ -98,5 +98,5 @@ auto GeneralParser::PImpl::RecurseForeach() -> FlowPtr<Expr> {
     Log << SyntaxError << Current() << "Expected identifier pair in foreach statement";
   }
 
-  return m_fac.CreateMockInstance<Expr>(QAST_FOREACH);
+  return m_fac.CreateMockInstance<Foreach>();
 }

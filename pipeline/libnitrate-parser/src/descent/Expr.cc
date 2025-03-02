@@ -150,7 +150,7 @@ auto GeneralParser::PImpl::RecurseFstring() -> FlowPtr<Expr> {
     return m_fac.CreateFormatString(items);
   }
   Log << SyntaxError << Current() << "Expected a string literal token for F-string expression";
-  return m_fac.CreateMockInstance<Expr>(QAST_FSTRING);
+  return m_fac.CreateMockInstance<FString>();
 }
 
 static auto IsPostUnaryOp(Operator o) -> bool { return o == OpInc || o == OpDec; }
@@ -300,7 +300,7 @@ auto GeneralParser::PImpl::RecurseExpr(const std::set<Token> &terminators) -> Fl
 
               if (stack.size() + 1 > kMaxRecursionDepth) {
                 Log << SyntaxError << Current() << "Recursion depth exceeds maximum limit";
-                return m_fac.CreateMockInstance<Expr>(QAST_VOID);
+                return m_fac.CreateMockInstance<VoidTy>();
               }
 
               stack.emplace(left_side, source_offset, next_min_precedence, FrameType::Binary, op);
@@ -398,7 +398,7 @@ auto GeneralParser::PImpl::RecurseExpr(const std::set<Token> &terminators) -> Fl
   }
   Log << SyntaxError << Current() << "Expected an expression";
 
-  return m_fac.CreateMockInstance<Expr>(QAST_VOID);
+  return m_fac.CreateMockInstance<VoidTy>();
 }
 
 auto GeneralParser::PImpl::RecurseExprKeyword(lex::Keyword key) -> NullableFlowPtr<Expr> {
@@ -431,7 +431,7 @@ auto GeneralParser::PImpl::RecurseExprKeyword(lex::Keyword key) -> NullableFlowP
           e = m_fac.CreateCall(args, function);
         } else {
           Log << SyntaxError << Current() << "Expected ')' to close the function call";
-          e = m_fac.CreateMockInstance<Expr>(QAST_CALL);
+          e = m_fac.CreateMockInstance<Call>();
         }
       } else {
         e = function;
@@ -695,7 +695,7 @@ auto GeneralParser::PImpl::RecurseExprPrimary(bool is_type) -> NullableFlowPtr<E
       case IntL: {
         Next();
 
-        auto integer = m_fac.CreateInteger(tok.GetString()).value_or(m_fac.CreateMockInstance<Integer>(QAST_INT));
+        auto integer = m_fac.CreateInteger(tok.GetString()).value_or(m_fac.CreateMockInstance<Integer>());
         integer->SetOffset(start_pos);
 
         if (Peek().Is(Name)) {
@@ -713,7 +713,7 @@ auto GeneralParser::PImpl::RecurseExprPrimary(bool is_type) -> NullableFlowPtr<E
       case NumL: {
         Next();
 
-        auto decimal = m_fac.CreateFloat(tok.GetString()).value_or(m_fac.CreateMockInstance<Float>(QAST_FLOAT));
+        auto decimal = m_fac.CreateFloat(tok.GetString()).value_or(m_fac.CreateMockInstance<Float>());
         decimal->SetOffset(start_pos);
 
         if (Peek().Is(Name)) {

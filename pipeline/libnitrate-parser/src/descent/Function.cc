@@ -363,7 +363,7 @@ auto GeneralParser::PImpl::RecurseFunction(bool parse_declaration_only) -> FlowP
                                        function_parameters.second, function_body, function_purity, function_attributes,
                                        std::nullopt, std::nullopt, function_captures, function_template_parameters);
   if (!function.has_value()) [[unlikely]] {
-    function = m_fac.CreateMockInstance<Function>(QAST_FUNCTION);
+    function = m_fac.CreateMockInstance<Function>();
   }
 
   function.value()->SetOffset(start_pos);

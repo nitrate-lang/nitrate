@@ -92,5 +92,5 @@ auto GeneralParser::PImpl::RecurseExport(Vis vis) -> FlowPtr<Expr> {
 
   Log << SyntaxError << Current() << "Malformed export attributes";
 
-  return m_fac.CreateMockInstance<Expr>(QAST_EXPORT);
+  return m_fac.CreateMockInstance<Export>();
 }

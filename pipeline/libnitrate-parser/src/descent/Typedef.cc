@@ -54,5 +54,5 @@ auto GeneralParser::PImpl::RecurseTypedef() -> FlowPtr<Expr> {
     Log << SyntaxError << Current() << "Expected name in typedef declaration";
   }
 
-  return m_fac.CreateMockInstance<Expr>(QAST_TYPEDEF);
+  return m_fac.CreateMockInstance<Typedef>();
 }

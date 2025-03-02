@@ -103,7 +103,7 @@ auto GeneralParser::PImpl::RecurseVariableInstance(VariableType decl_type) -> Nu
 
   Log << SyntaxError << Current() << "Malformed variable attributes";
 
-  return m_fac.CreateMockInstance<Expr>(QAST_VAR);
+  return m_fac.CreateMockInstance<Variable>();
 }
 
 auto GeneralParser::PImpl::RecurseVariable(VariableType decl_type) -> std::vector<FlowPtr<Expr>> {
@@ -132,5 +132,5 @@ auto GeneralParser::PImpl::RecurseVariable(VariableType decl_type) -> std::vecto
     }
   }
 
-  return {m_fac.CreateMockInstance<Expr>(QAST_VAR)};
+  return {m_fac.CreateMockInstance<Variable>()};
 }

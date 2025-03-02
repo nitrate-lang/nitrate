@@ -143,7 +143,7 @@ auto GeneralParser::PImpl::RecurseFunctionType() -> FlowPtr<parse::Type> {
 
   if (!fn->Is<Function>() || !fn->As<Function>()->IsDeclaration()) {
     Log << SyntaxError << Current() << "Expected a function declaration but got something else";
-    return m_fac.CreateMockInstance<Type>(QAST_VOID);
+    return m_fac.CreateMockInstance<VoidTy>();
   }
 
   FlowPtr<Function> fn_def = fn.As<Function>();
@@ -151,7 +151,7 @@ auto GeneralParser::PImpl::RecurseFunctionType() -> FlowPtr<parse::Type> {
   auto func_ty = m_fac.CreateFunctionType(fn_def->GetReturn(), fn_def->GetParams(), fn_def->IsVariadic(),
                                           fn_def->GetPurity(), fn_def->GetAttributes());
   if (!func_ty.has_value()) {
-    func_ty = m_fac.CreateMockInstance<FuncTy>(QAST_FUNCTOR);
+    func_ty = m_fac.CreateMockInstance<FuncTy>();
   }
 
   func_ty.value()->SetOffset(fn->Begin());
@@ -162,7 +162,7 @@ auto GeneralParser::PImpl::RecurseFunctionType() -> FlowPtr<parse::Type> {
 auto GeneralParser::PImpl::RecurseOpaqueType() -> FlowPtr<parse::Type> {
   if (!NextIf<PuncLPar>()) {
     Log << SyntaxError << Current() << "Expected '(' after 'opaque'";
-    return m_fac.CreateMockInstance<Type>(QAST_VOID);
+    return m_fac.CreateMockInstance<VoidTy>();
   }
 
   if (auto name = RecurseName()) {
@@ -178,7 +178,7 @@ auto GeneralParser::PImpl::RecurseOpaqueType() -> FlowPtr<parse::Type> {
     Log << SyntaxError << Current() << "Expected a name after 'opaque('";
   }
 
-  return m_fac.CreateMockInstance<Type>(QAST_VOID);
+  return m_fac.CreateMockInstance<VoidTy>();
 }
 
 auto GeneralParser::PImpl::RecurseTypeByKeyword(Keyword key) -> FlowPtr<parse::Type> {
@@ -199,7 +199,7 @@ auto GeneralParser::PImpl::RecurseTypeByKeyword(Keyword key) -> FlowPtr<parse::T
 
     default: {
       Log << SyntaxError << Current() << "Unexpected '" << key << "' is type context";
-      return m_fac.CreateMockInstance<Type>(QAST_VOID);
+      return m_fac.CreateMockInstance<VoidTy>();
     }
   }
 }
@@ -239,7 +239,7 @@ auto GeneralParser::PImpl::RecurseTypeByOperator(Operator op) -> FlowPtr<parse::
     case OpComptime: {
       if (!NextIf<PuncLPar>()) {
         Log << SyntaxError << Current() << "Expected '(' after 'comptime'";
-        return m_fac.CreateMockInstance<Type>(QAST_VOID);
+        return m_fac.CreateMockInstance<VoidTy>();
       }
 
       auto comptime_expr = m_fac.CreateUnary(OpComptime, RecurseExpr({
@@ -256,7 +256,7 @@ auto GeneralParser::PImpl::RecurseTypeByOperator(Operator op) -> FlowPtr<parse::
 
     default: {
       Log << SyntaxError << Current() << "Unexpected operator '" << op << "' in type context";
-      return m_fac.CreateMockInstance<Type>(QAST_VOID);
+      return m_fac.CreateMockInstance<VoidTy>();
     }
   }
 }
@@ -318,7 +318,7 @@ auto GeneralParser::PImpl::RecurseTupleType() -> FlowPtr<parse::Type> {
   while (true) {
     if (Current().Is(EofF)) {
       Log << SyntaxError << Current() << "Unexpected EOF in tuple type";
-      return m_fac.CreateMockInstance<Type>(QAST_VOID);
+      return m_fac.CreateMockInstance<VoidTy>();
     }
 
     if (NextIf<PuncRPar>()) {
@@ -360,7 +360,7 @@ auto GeneralParser::PImpl::RecurseTypeByPunctuation(Punctor punc) -> FlowPtr<par
 
     default: {
       Log << SyntaxError << Next() << "Punctuation is not valid in this context";
-      return m_fac.CreateMockInstance<Type>(QAST_VOID);
+      return m_fac.CreateMockInstance<VoidTy>();
     }
   }
 }
@@ -406,7 +406,7 @@ auto GeneralParser::PImpl::RecurseTypeByName(string name) -> FlowPtr<parse::Type
 
   if (!type.has_value()) {
     Log << SyntaxError << Current() << "Unknown type name: " << name;
-    return m_fac.CreateMockInstance<Type>(QAST_VOID);
+    return m_fac.CreateMockInstance<VoidTy>();
   }
 
   type.value()->SetOffset(Current().GetStart());
@@ -448,7 +448,7 @@ auto GeneralParser::PImpl::RecurseType() -> FlowPtr<parse::Type> {
     default: {
       Log << SyntaxError << Next() << "Expected a type";
 
-      auto type = m_fac.CreateMockInstance<Type>(QAST_VOID);
+      auto type = m_fac.CreateMockInstance<VoidTy>();
       r = RecurseTypeSuffix(type);
       break;
     }
