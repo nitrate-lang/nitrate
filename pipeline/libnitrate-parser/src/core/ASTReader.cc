@@ -2403,7 +2403,7 @@ auto AstReader::Unmarshal(const SyntaxTree::Export &in) -> Result<Export> {
 
 AstReader::AstReader(std::string_view protobuf_data, std::pmr::memory_resource &pool,
                      ReaderSourceManager source_manager)
-    : m_rd(source_manager), m_mm(pool), m_fac(m_mm) {
+    : m_rd(source_manager), m_fac(pool) {
   google::protobuf::io::CodedInputStream input((const uint8_t *)protobuf_data.data(), protobuf_data.size());
   input.SetRecursionLimit(kRecursionLimit);
 
@@ -2415,10 +2415,10 @@ AstReader::AstReader(std::string_view protobuf_data, std::pmr::memory_resource &
   m_root = Unmarshal(root);
 }
 
-auto AstReader::Get() -> std::optional<ASTRoot> {
+auto AstReader::Get() -> NullableFlowPtr<Expr> {
   if (!m_root.has_value()) [[unlikely]] {
     return std::nullopt;
   }
 
-  return ASTRoot(m_root.value(), false);
+  return m_root.value();
 }

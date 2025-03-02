@@ -79,7 +79,7 @@ NCC_EXPORT auto parse::operator<<(std::ostream &os, const ASTExtensionKey &idx) 
 
 std::string Expr::DebugString(WriterSourceProvider rd) const {
   std::stringstream ss;
-  AstWriter writer(ss, rd, true);
+  AstWriter writer(ss, true, rd);
 
   const_cast<Expr *>(this)->Accept(writer);
 
@@ -87,7 +87,7 @@ std::string Expr::DebugString(WriterSourceProvider rd) const {
 }
 
 void Expr::DebugString(std::ostream &os, WriterSourceProvider rd) const {
-  AstWriter writer(os, rd, true);
+  AstWriter writer(os, true, rd);
   const_cast<Expr *>(this)->Accept(writer);
 }
 
@@ -135,7 +135,7 @@ auto Expr::Hash64() const -> uint64_t {
 auto Expr::RecursiveChildCount() -> size_t {
   size_t count = 0;
 
-  for_each(this, [&](auto, auto) { count++; });
+  for_each(this, [&](auto) { count++; });
 
   return count;
 }

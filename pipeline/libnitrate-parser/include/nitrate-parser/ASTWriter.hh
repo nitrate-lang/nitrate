@@ -187,7 +187,7 @@ namespace ncc::parse {
     void Visit(FlowPtr<Export> n) override;
 
   public:
-    AstWriter(std::ostream &os, WriterSourceProvider rd = std::nullopt, bool plaintext_mode = false);
+    AstWriter(std::ostream &os, bool plaintext_mode = false, WriterSourceProvider rd = std::nullopt);
     ~AstWriter() override;
   };
 }  // namespace ncc::parse

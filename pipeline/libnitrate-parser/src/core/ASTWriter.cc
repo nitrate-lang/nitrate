@@ -1885,7 +1885,7 @@ void AstWriter::Visit(FlowPtr<Enum> n) { SEND(From(n), enum_); }
 void AstWriter::Visit(FlowPtr<Scope> n) { SEND(From(n), scope); }
 void AstWriter::Visit(FlowPtr<Export> n) { SEND(From(n), export_); }
 
-AstWriter::AstWriter(std::ostream &os, WriterSourceProvider rd, bool plaintext_mode)
+AstWriter::AstWriter(std::ostream &os, bool plaintext_mode, WriterSourceProvider rd)
     : m_arena(new google::protobuf::Arena), m_os(os), m_rd(rd), m_plaintext_mode(plaintext_mode) {}
 
 AstWriter::~AstWriter() { delete m_arena; }

@@ -51,7 +51,7 @@ namespace ncc::parse {
   public:
     constexpr ASTRoot(auto base, auto success) : m_base(std::move(base)), m_success(success) {}
 
-    auto Get() -> FlowPtr<Expr> & { return m_base; }
+    [[nodiscard]] auto Get() -> FlowPtr<Expr> & { return m_base; }
     [[nodiscard]] auto Get() const -> FlowPtr<Expr> { return m_base; }
     [[nodiscard]] auto Check() const -> bool;
   };

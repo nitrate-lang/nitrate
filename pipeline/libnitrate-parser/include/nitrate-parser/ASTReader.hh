@@ -55,7 +55,6 @@ namespace ncc::parse {
 
     Result<Expr> m_root;
     ReaderSourceManager m_rd;
-    std::pmr::memory_resource &m_mm;
     ASTFactory m_fac;
 
     void UnmarshalLocationLocation(const SyntaxTree::SourceLocationRange &in, const FlowPtr<Expr> &out);
@@ -136,7 +135,7 @@ namespace ncc::parse {
               ReaderSourceManager source_manager = std::nullopt);
     ~AstReader() = default;
 
-    auto Get() -> std::optional<ASTRoot>;
+    auto Get() -> NullableFlowPtr<Expr>;
   };
 }  // namespace ncc::parse
 

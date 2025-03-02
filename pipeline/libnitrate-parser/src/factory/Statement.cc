@@ -229,7 +229,7 @@ auto ASTFactory::CreateWhile(FlowPtr<Expr> cond, FlowPtr<Expr> body, SourceLocat
 
 auto ASTFactory::CreateFor(NullableFlowPtr<Expr> init, NullableFlowPtr<Expr> cond, NullableFlowPtr<Expr> step,
                            FlowPtr<Expr> body, SourceLocation origin) -> FlowPtr<For> {
-  return CreateInstance<For>(init, step, cond, body)(m_pool, origin);
+  return CreateInstance<For>(init, cond, step, body)(m_pool, origin);
 }
 
 auto ASTFactory::CreateForeach(string key_name, string val_name, FlowPtr<Expr> iterable, FlowPtr<Expr> body,

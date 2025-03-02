@@ -26,7 +26,7 @@ TEST(AST, Encoder) {
     auto decoded = AstReader(serialized, my_pool, std::nullopt).Get();
     ASSERT_TRUE(decoded.has_value());
 
-    EXPECT_TRUE(original.Get()->IsEq(decoded.value().Get()));
+    EXPECT_TRUE(original.Get()->IsEq(decoded.value()));
     EXPECT_TRUE(serialized.size() > 100);
 
     ncc::Log.Unsubscribe(subid);
