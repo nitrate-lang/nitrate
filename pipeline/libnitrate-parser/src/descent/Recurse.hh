@@ -210,7 +210,7 @@ namespace ncc::parse {
     auto RecurseTypeByPunctuation(lex::Punctor punc) -> FlowPtr<Type>;
     auto RecurseTypeByName(string name) -> FlowPtr<Type>;
 
-    auto RecurseVariableAttributes() -> std::optional<std::vector<FlowPtr<Expr>>>;
+    auto RecurseVariableAttributes() -> std::vector<FlowPtr<Expr>>;
     auto RecurseVariableType() -> FlowPtr<Type>;
     auto RecurseVariableValue() -> NullableFlowPtr<Expr>;
     auto RecurseVariableInstance(VariableType decl_type) -> NullableFlowPtr<Expr>;

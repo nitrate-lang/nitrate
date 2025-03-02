@@ -61,8 +61,7 @@ namespace ncc::parse {
     std::unique_ptr<PImpl> m_impl;
 
   public:
-    GeneralParser(lex::IScanner &lexer, std::shared_ptr<IEnvironment> env,
-                  std::pmr::memory_resource &pool = *std::pmr::get_default_resource());
+    GeneralParser(lex::IScanner &lexer, std::shared_ptr<IEnvironment> env, std::pmr::memory_resource &pool);
     GeneralParser(const GeneralParser &) = delete;
     GeneralParser(GeneralParser &&o) noexcept;
     ~GeneralParser();
@@ -73,22 +72,20 @@ namespace ncc::parse {
     [[nodiscard]] auto Parse() -> ASTRoot;
     [[nodiscard]] auto GetLexer() -> lex::IScanner &;
 
-    static auto Create(lex::IScanner &lexer, std::shared_ptr<IEnvironment> env,
-                       std::pmr::memory_resource &pool = *std::pmr::get_default_resource()) {
+    static auto Create(lex::IScanner &lexer, std::shared_ptr<IEnvironment> env, std::pmr::memory_resource &pool) {
       return std::make_unique<GeneralParser>(lexer, std::move(env), pool);
     }
 
     template <typename Scanner>
     static auto ParseString(std::string_view source, std::shared_ptr<IEnvironment> env,
-                            std::pmr::memory_resource &pool = *std::pmr::get_default_resource()) {
+                            std::pmr::memory_resource &pool) {
       auto in_src = boost::iostreams::stream<boost::iostreams::array_source>(source.data(), source.size());
       auto scanner = Scanner(in_src, env);
       return Create(scanner, env, pool)->Parse();
     }
 
     template <typename Scanner>
-    static auto ParseStream(std::istream &stream, std::shared_ptr<IEnvironment> env,
-                            std::pmr::memory_resource &pool = *std::pmr::get_default_resource()) {
+    static auto ParseStream(std::istream &stream, std::shared_ptr<IEnvironment> env, std::pmr::memory_resource &pool) {
       auto scanner = Scanner(stream, env);
       return Create(scanner, env, pool)->Parse();
     }

@@ -263,7 +263,8 @@ namespace no3::benchmark {
     std::stringstream source(LexicalBenchmarkSource);
     Tokenizer tokenizer(source, env);
 
-    auto ast = GeneralParser::Create(tokenizer, env)->Parse();
+    auto pool = DynamicArena();
+    auto ast = GeneralParser::Create(tokenizer, env, pool)->Parse();
     if (!ast.Check()) {
       LOG(ERROR) << "Failed to parse benchmark source";
     }
@@ -378,7 +379,8 @@ static auto DoParse(std::shared_ptr<Environment> &env, const std::string &source
   Sequencer scanner(file, env);
   scanner.SetFetchFunc(FileSystemFetchModule);
 
-  auto parser = GeneralParser::Create(scanner, env);
+  auto pool = DynamicArena();
+  auto parser = GeneralParser::Create(scanner, env, pool);
 
   auto ast = parser->Parse();
 
@@ -404,7 +406,8 @@ static auto DoNr(std::shared_ptr<Environment> &env, const std::string &source, s
   Sequencer scanner(file, env);
   scanner.SetFetchFunc(FileSystemFetchModule);
 
-  auto parser = GeneralParser::Create(scanner, env);
+  auto pool = DynamicArena();
+  auto parser = GeneralParser::Create(scanner, env, pool);
 
   auto ast = parser->Parse();
 
@@ -433,7 +436,8 @@ static auto DoCodegen(std::shared_ptr<Environment> &env, const std::string &sour
   Sequencer scanner(file, env);
   scanner.SetFetchFunc(FileSystemFetchModule);
 
-  auto parser = GeneralParser::Create(scanner, env);
+  auto pool = DynamicArena();
+  auto parser = GeneralParser::Create(scanner, env, pool);
 
   auto ast = parser->Parse();
 

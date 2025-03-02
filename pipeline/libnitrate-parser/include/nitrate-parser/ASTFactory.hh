@@ -136,6 +136,9 @@ namespace ncc::parse {
     [[gnu::pure, nodiscard]] auto CreateInteger(string x, SourceLocation origin = SourceLocation::current())
         -> std::optional<FlowPtr<Integer>>;
 
+    [[gnu::pure, nodiscard]] auto CreateIntegerUnchecked(string x, SourceLocation origin = SourceLocation::current())
+        -> FlowPtr<Integer>;
+
     [[gnu::pure, nodiscard]] auto CreateInteger(const boost::multiprecision::cpp_int& x,
                                                 SourceLocation origin = SourceLocation::current())
         -> std::optional<FlowPtr<Integer>>;
@@ -145,6 +148,9 @@ namespace ncc::parse {
 
     [[gnu::pure, nodiscard]] auto CreateFloat(string x, SourceLocation origin = SourceLocation::current())
         -> std::optional<FlowPtr<Float>>;
+
+    [[gnu::pure, nodiscard]] auto CreateFloatUnchecked(string x, SourceLocation origin = SourceLocation::current())
+        -> FlowPtr<Float>;
 
     [[gnu::pure, nodiscard]] auto CreateString(string x,
                                                SourceLocation origin = SourceLocation::current()) -> FlowPtr<String>;

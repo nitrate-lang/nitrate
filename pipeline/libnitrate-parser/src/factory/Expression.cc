@@ -35,7 +35,6 @@
 #include <charconv>
 #include <nitrate-parser/ASTExpr.hh>
 #include <nitrate-parser/ASTFactory.hh>
-#include <sstream>
 #include <string>
 #include <unordered_set>
 
@@ -68,20 +67,24 @@ auto ASTFactory::CreateInteger(const boost::multiprecision::uint128_type& x,
 static const boost::multiprecision::cpp_int MAX_UINT128("340282366920938463463374607431768211455");
 
 auto ASTFactory::CreateInteger(string x, SourceLocation origin) -> std::optional<FlowPtr<Integer>> {
-  if (!std::all_of(x->begin(), x->end(), ::isdigit)) {
+  if (!std::all_of(x->begin(), x->end(), ::isdigit)) [[unlikely]] {
     return std::nullopt;
   }
 
-  if (boost::multiprecision::cpp_int(*x) <= MAX_UINT128) {
+  if (boost::multiprecision::cpp_int(*x) <= MAX_UINT128) [[likely]] {
     return CreateInstance<Integer>(x)(m_pool, origin);
   }
 
   return std::nullopt;
 }
 
+auto ASTFactory::CreateIntegerUnchecked(string x, SourceLocation origin) -> FlowPtr<Integer> {
+  return CreateInstance<Integer>(x)(m_pool, origin);
+}
+
 auto ASTFactory::CreateInteger(const boost::multiprecision::cpp_int& x,
                                SourceLocation origin) -> std::optional<FlowPtr<Integer>> {
-  if (x <= MAX_UINT128) {
+  if (x <= MAX_UINT128) [[likely]] {
     return CreateInstance<Integer>(x.str())(m_pool, origin);
   }
 
@@ -95,13 +98,17 @@ auto ASTFactory::CreateFloat(double x, SourceLocation origin) -> FlowPtr<Float> 
 }
 
 auto ASTFactory::CreateFloat(string x, SourceLocation origin) -> std::optional<FlowPtr<Float>> {
-  double f;
-  if (auto res = std::from_chars(x->data(), x->data() + x->size(), f);
-      res.ec == std::errc() && res.ptr == x->data() + x->size()) {
-    return CreateFloat(f, origin);
+  long double f;
+  if (auto res = std::from_chars(x->data(), x->data() + x->size(), f, std::chars_format::fixed);
+      res.ec == std::errc() && res.ptr == x->data() + x->size()) [[likely]] {
+    return CreateInstance<Float>(x)(m_pool, origin);
   }
 
   return std::nullopt;
+}
+
+auto ASTFactory::CreateFloatUnchecked(string x, SourceLocation origin) -> FlowPtr<Float> {
+  return CreateInstance<Float>(x)(m_pool, origin);
 }
 
 auto ASTFactory::CreateString(string x, SourceLocation origin) -> FlowPtr<String> {

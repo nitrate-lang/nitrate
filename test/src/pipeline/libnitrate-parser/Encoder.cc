@@ -23,7 +23,7 @@ TEST(AST, Encoder) {
     EXPECT_TRUE(original.Check());
 
     auto serialized = original.Get()->Serialize();
-    auto decoded = AstReader(serialized, std::nullopt, my_pool).Get();
+    auto decoded = AstReader(serialized, my_pool, std::nullopt).Get();
     ASSERT_TRUE(decoded.has_value());
 
     EXPECT_TRUE(original.Get()->IsEq(decoded.value().Get()));

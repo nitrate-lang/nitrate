@@ -695,7 +695,7 @@ auto GeneralParser::PImpl::RecurseExprPrimary(bool is_type) -> NullableFlowPtr<E
       case IntL: {
         Next();
 
-        auto integer = m_fac.CreateInteger(tok.GetString()).value_or(m_fac.CreateMockInstance<Integer>());
+        auto integer = m_fac.CreateIntegerUnchecked(tok.GetString());
         integer->SetOffset(start_pos);
 
         if (Peek().Is(Name)) {
@@ -713,7 +713,7 @@ auto GeneralParser::PImpl::RecurseExprPrimary(bool is_type) -> NullableFlowPtr<E
       case NumL: {
         Next();
 
-        auto decimal = m_fac.CreateFloat(tok.GetString()).value_or(m_fac.CreateMockInstance<Float>());
+        auto decimal = m_fac.CreateFloatUnchecked(tok.GetString());
         decimal->SetOffset(start_pos);
 
         if (Peek().Is(Name)) {

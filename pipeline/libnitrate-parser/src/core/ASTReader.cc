@@ -2401,8 +2401,8 @@ auto AstReader::Unmarshal(const SyntaxTree::Export &in) -> Result<Export> {
   return object;
 }
 
-AstReader::AstReader(std::string_view protobuf_data, ReaderSourceManager source_manager,
-                     std::pmr::memory_resource &pool)
+AstReader::AstReader(std::string_view protobuf_data, std::pmr::memory_resource &pool,
+                     ReaderSourceManager source_manager)
     : m_rd(source_manager), m_mm(pool), m_fac(m_mm) {
   google::protobuf::io::CodedInputStream input((const uint8_t *)protobuf_data.data(), protobuf_data.size());
   input.SetRecursionLimit(kRecursionLimit);

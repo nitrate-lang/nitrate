@@ -37,7 +37,7 @@ using namespace ncc;
 using namespace ncc::lex;
 using namespace ncc::parse;
 
-auto GeneralParser::PImpl::RecurseVariableAttributes() -> std::optional<std::vector<FlowPtr<Expr>>> {
+auto GeneralParser::PImpl::RecurseVariableAttributes() -> std::vector<FlowPtr<Expr>> {
   std::vector<FlowPtr<Expr>> attributes;
 
   if (!NextIf<PuncLBrk>()) {
@@ -47,7 +47,7 @@ auto GeneralParser::PImpl::RecurseVariableAttributes() -> std::optional<std::vec
   while (true) {
     if (m_rd.IsEof()) [[unlikely]] {
       Log << SyntaxError << Current() << "Encountered EOF while parsing variable attribute";
-      break;
+      return attributes;
     }
 
     if (NextIf<PuncRBrk>()) {
@@ -63,8 +63,6 @@ auto GeneralParser::PImpl::RecurseVariableAttributes() -> std::optional<std::vec
 
     NextIf<PuncComa>();
   }
-
-  return std::nullopt;
 }
 
 auto GeneralParser::PImpl::RecurseVariableType() -> FlowPtr<parse::Type> {
@@ -87,23 +85,17 @@ auto GeneralParser::PImpl::RecurseVariableValue() -> NullableFlowPtr<Expr> {
 }
 
 auto GeneralParser::PImpl::RecurseVariableInstance(VariableType decl_type) -> NullableFlowPtr<Expr> {
-  if (auto symbol_attributes_opt = RecurseVariableAttributes()) {
-    if (auto variable_name = RecurseName()) {
-      auto variable_type = RecurseVariableType();
-      auto variable_initial = RecurseVariableValue();
+  auto symbol_attributes_opt = RecurseVariableAttributes();
+  if (auto variable_name = RecurseName()) {
+    auto variable_type = RecurseVariableType();
+    auto variable_initial = RecurseVariableValue();
 
-      return m_fac.CreateVariable(decl_type, variable_name, symbol_attributes_opt.value(), variable_type,
-                                  variable_initial);
-    }
-
-    Log << SyntaxError << Current() << "Expected variable name";
-
-    return std::nullopt;
+    return m_fac.CreateVariable(decl_type, variable_name, symbol_attributes_opt, variable_type, variable_initial);
   }
 
-  Log << SyntaxError << Current() << "Malformed variable attributes";
+  Log << SyntaxError << Current() << "Expected variable name";
 
-  return m_fac.CreateMockInstance<Variable>();
+  return std::nullopt;
 }
 
 auto GeneralParser::PImpl::RecurseVariable(VariableType decl_type) -> std::vector<FlowPtr<Expr>> {
