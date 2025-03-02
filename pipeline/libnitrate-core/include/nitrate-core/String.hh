@@ -50,27 +50,34 @@ namespace ncc {
     const std::string *m_p;
 
     static void ResetInstances();
-    [[nodiscard]] [[gnu::pure]] static auto CreateInstance(std::string_view str) -> const std::string &;
-    [[nodiscard]] [[gnu::pure]] static auto CreateInstance(std::string &&str) -> const std::string &;
+    [[nodiscard, gnu::pure]] static auto CreateInstance(std::string_view str) -> const std::string &;
+    [[nodiscard, gnu::pure]] static auto CreateInstance(std::string &&str) -> const std::string &;
 
   public:
     constexpr explicit String() : m_p(&DefaultEmptyString) {}
     constexpr String(std::string_view str) : m_p(&CreateInstance(str)) {}
     constexpr String(std::string &&str) : m_p(&CreateInstance(std::move(str))) {}
     constexpr String(const std::string &str) : m_p(&CreateInstance(str)) {}
-    constexpr String(const char *str) : String(std::string_view(str)) {}
+    constexpr String(const char *str) : m_p(&CreateInstance(std::string_view(str))) {}
+    constexpr String(const String &str) = default;
+    constexpr String(String &&str) noexcept = default;
+    constexpr ~String() = default;
 
-    [[nodiscard]] [[gnu::pure]] constexpr auto Get() const -> const std::string & { return *m_p; };
-    [[nodiscard]] [[gnu::pure]] constexpr auto operator==(const String &o) const -> bool { return Get() == o.Get(); }
-    [[nodiscard]] [[gnu::pure]] constexpr auto operator!=(const String &o) const -> bool { return Get() != o.Get(); }
-    [[nodiscard]] [[gnu::pure]] constexpr auto operator<(const String &o) const -> bool { return Get() < o.Get(); }
-    [[nodiscard]] [[gnu::pure]] constexpr auto operator<=(const String &o) const -> bool { return Get() <= o.Get(); }
-    [[nodiscard]] [[gnu::pure]] constexpr auto operator>(const String &o) const -> bool { return Get() > o.Get(); }
-    [[nodiscard]] [[gnu::pure]] constexpr auto operator>=(const String &o) const -> bool { return Get() >= o.Get(); }
-    [[nodiscard]] [[gnu::pure]] constexpr auto operator*() const { return Get(); }
-    [[nodiscard]] [[gnu::pure]] constexpr auto operator->() const { return &Get(); }
-    [[nodiscard]] [[gnu::pure]] constexpr operator const std::string &() const { return Get(); }
-    [[nodiscard]] [[gnu::pure]] constexpr operator std::string_view() const { return Get(); }
+    constexpr auto operator=(const String &str) -> String & = default;
+    constexpr auto operator=(String &&str) noexcept -> String & = default;
+
+    [[nodiscard, gnu::pure]] constexpr auto Get() const -> const std::string & { return *m_p; };
+    [[nodiscard, gnu::pure]] constexpr auto operator==(const String &o) const -> bool { return Get() == o.Get(); }
+    [[nodiscard, gnu::pure]] constexpr auto operator!=(const String &o) const -> bool { return Get() != o.Get(); }
+    [[nodiscard, gnu::pure]] constexpr auto operator<(const String &o) const -> bool { return Get() < o.Get(); }
+    [[nodiscard, gnu::pure]] constexpr auto operator<=(const String &o) const -> bool { return Get() <= o.Get(); }
+    [[nodiscard, gnu::pure]] constexpr auto operator>(const String &o) const -> bool { return Get() > o.Get(); }
+    [[nodiscard, gnu::pure]] constexpr auto operator>=(const String &o) const -> bool { return Get() >= o.Get(); }
+    [[nodiscard, gnu::pure]] constexpr auto operator*() const { return Get(); }
+    [[nodiscard, gnu::pure]] constexpr auto operator->() const { return &Get(); }
+    [[nodiscard, gnu::pure]] constexpr operator const std::string &() const { return Get(); }
+    [[nodiscard, gnu::pure]] constexpr operator std::string_view() const { return Get(); }
+    [[nodiscard, gnu::pure]] constexpr operator bool() const { return !Get().empty(); }
   };
 
   static_assert(sizeof(String) == sizeof(uintptr_t));
@@ -83,7 +90,9 @@ namespace ncc {
 namespace std {
   template <>
   struct hash<ncc::String> {
-    auto operator()(const ncc::String &str) const -> size_t { return std::hash<std::string_view>{}(str.Get()); }
+    [[nodiscard, gnu::const]] constexpr auto operator()(const ncc::String &str) const -> size_t {
+      return std::hash<std::string_view>{}(str);
+    }
   };
 }  // namespace std
 

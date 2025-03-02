@@ -44,35 +44,6 @@
 #include <vector>
 
 namespace ncc::parse {
-  extern thread_local std::unique_ptr<ncc::IMemory> MainAllocator;
-
-  template <class T>
-  struct Arena {
-    using value_type = T;
-
-    Arena() = default;
-
-    template <class U>
-    constexpr Arena(const Arena<U> &) {}
-
-    [[nodiscard]] T *allocate(std::size_t n) {  // NOLINT
-      return static_cast<T *>(MainAllocator->allocate(sizeof(T) * n, alignof(T)));
-    }
-
-    void deallocate(T *, std::size_t) {}  // NOLINT
-  };
-
-  template <class T, class U>
-  auto operator==(const Arena<T> &, const Arena<U> &) -> bool {
-    return true;
-  }
-  template <class T, class U>
-  auto operator!=(const Arena<T> &, const Arena<U> &) -> bool {
-    return false;
-  }
-};  // namespace ncc::parse
-
-namespace ncc::parse {
   enum class Purity : uint8_t {
     Impure,
     Impure_TSafe,
@@ -87,12 +58,9 @@ namespace ncc::parse {
     Pro = 2,
   };
 
-  using ExpressionList = std::vector<FlowPtr<Expr>, Arena<FlowPtr<Expr>>>;
   using CallArg = std::pair<string, FlowPtr<Expr>>;
-  using CallArgs = std::vector<CallArg, Arena<CallArg>>;
-
   using TemplateParameter = std::tuple<string, FlowPtr<Type>, NullableFlowPtr<Expr>>;
-  using TemplateParameters = std::vector<TemplateParameter, Arena<TemplateParameter>>;
+  using FuncParam = std::tuple<string, FlowPtr<Type>, NullableFlowPtr<Expr>>;
 
   class StructField {
     string m_name;
@@ -119,15 +87,6 @@ namespace ncc::parse {
     StructFunction(Vis vis, FlowPtr<Expr> func) : m_vis(vis), m_func(std::move(func)) {}
   };
 
-  using StructFields = std::vector<StructField, Arena<StructField>>;
-  using StructMethods = std::vector<StructFunction, Arena<StructFunction>>;
-  using StructStaticMethods = std::vector<StructFunction, Arena<StructFunction>>;
-  using StructNames = std::vector<string, Arena<string>>;
-
-  using FuncParam = std::tuple<string, FlowPtr<Type>, NullableFlowPtr<Expr>>;
-  using FuncParams = std::vector<FuncParam, Arena<FuncParam>>;
-
-  using FnCaptures = std::vector<std::pair<string, bool>, Arena<std::pair<string, bool>>>;
 }  // namespace ncc::parse
 
 #endif

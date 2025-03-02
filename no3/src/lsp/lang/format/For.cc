@@ -71,10 +71,10 @@ void CambrianFormatter::Visit(FlowPtr<parse::Foreach> n) {
   PrintLineComments(n);
 
   m_line << "foreach (";
-  if (n->GetIndex()->empty()) {
-    m_line << n->GetValue();
-  } else {
+  if (n->GetIndex()) {
     m_line << n->GetIndex() << ", " << n->GetValue();
+  } else {
+    m_line << n->GetValue();
   }
 
   m_line << " in ";

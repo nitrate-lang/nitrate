@@ -107,6 +107,8 @@ auto String::CreateInstance(std::string_view str) -> const std::string& {
   FastMap[std::string_view(*ptr)] = ptr;
 #endif
 
+  qcore_assert(ptr != nullptr);
+
   return *ptr;
 }
 
@@ -129,6 +131,8 @@ auto String::CreateInstance(std::string&& str) -> const std::string& {
 #if MEMORY_OVER_SPEED == 1
   FastMap[std::string_view(*ptr)] = ptr;
 #endif
+
+  qcore_assert(ptr != nullptr);
 
   return *ptr;
 }

@@ -9,7 +9,6 @@
 #include <nitrate-parser/CodeWriter.hh>
 #include <nitrate-parser/Context.hh>
 #include <nitrate-parser/Init.hh>
-#include <nitrate-parser/Utility.hh>
 
 using namespace ncc;
 using namespace ncc::parse;
@@ -30,15 +29,9 @@ int main() {
     function->SetBody(nullptr);
   });
 
-  /// FIXME: Fix this
   for_each<Variable>(ast_root.Get(), [](auto node) {
     auto variable = node.template As<Variable>();
-
-    {
-      auto attributes = ExpressionList(variable->GetAttributes().begin(), variable->GetAttributes().end());
-      attributes.push_back(CreateNode<Identifier>("extern")());
-      variable->SetAttributes(attributes);
-    }
+    /// FIXME: TODO: Fix this
 
     variable->SetInitializer(nullptr);
   });

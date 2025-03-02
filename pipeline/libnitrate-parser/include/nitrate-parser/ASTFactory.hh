@@ -65,10 +65,13 @@ namespace ncc::parse {
 
     template <typename T>
     constexpr auto AllocateArray(auto size) -> std::span<T> {
-      const auto bytes_needed = sizeof(T);
+      const auto bytes_needed = sizeof(T) * size;
       auto* buffer = static_cast<T*>(m_pool.allocate(bytes_needed, alignof(T)));
       return std::span<T>(buffer, size);
     }
+
+    [[gnu::pure, nodiscard]] auto CreateMockInstance(
+        ASTNodeKind kind, SourceLocation origin = SourceLocation::current()) -> FlowPtr<Expr>;
 
   public:
     constexpr ASTFactory(IMemory& pool) : m_pool(pool) {}
@@ -98,12 +101,16 @@ namespace ncc::parse {
 
     ///=========================================================================
 
+    template <typename NodeClass = Expr>
     [[gnu::pure, nodiscard]] auto CreateMockInstance(
-        ASTNodeKind kind, SourceLocation origin = SourceLocation::current()) -> FlowPtr<Expr>;
+        ASTNodeKind kind, SourceLocation origin = SourceLocation::current()) -> FlowPtr<NodeClass> {
+      return CreateMockInstance(kind, origin).As<NodeClass>();
+    }
 
+    template <typename NodeClass = Expr>
     [[gnu::pure, nodiscard]] static inline auto CreateMockInstance(IMemory& m, ASTNodeKind kind,
                                                                    SourceLocation origin = SourceLocation::current()) {
-      return ASTFactory(m).CreateMockInstance(kind, origin);
+      return ASTFactory(m).CreateMockInstance(kind, origin).As<NodeClass>();
     }
 
     ///=========================================================================
@@ -371,8 +378,13 @@ namespace ncc::parse {
     [[gnu::pure, nodiscard]] auto CreateTypedef(string name, FlowPtr<Type> base,
                                                 SourceLocation origin = SourceLocation::current()) -> FlowPtr<Typedef>;
 
-    /// TODO: Finish declaration
-    [[gnu::pure, nodiscard]] auto CreateStruct(SourceLocation origin = SourceLocation::current()) -> FlowPtr<Struct>;
+    [[gnu::pure, nodiscard]] auto CreateStruct(
+        CompositeType comp_type = CompositeType::Class, string name = "",
+        const std::optional<std::vector<TemplateParameter>>& tparams = std::nullopt,
+        const std::vector<StructField>& fields = {}, const std::vector<StructFunction>& methods = {},
+        const std::vector<StructFunction>& static_methods = {}, const std::vector<string>& constraints = {},
+        const std::vector<FlowPtr<Expr>>& attributes = {},
+        SourceLocation origin = SourceLocation::current()) -> FlowPtr<Struct>;
 
     [[gnu::pure, nodiscard]] auto CreateEnum(string name, const std::vector<FactoryEnumItem>& ele,
                                              NullableFlowPtr<Type> ele_ty = nullptr,
@@ -388,16 +400,7 @@ namespace ncc::parse {
         bool variadic = false, NullableFlowPtr<Expr> body = nullptr, Purity purity = Purity::Impure,
         const std::vector<FlowPtr<Expr>>& attributes = {}, NullableFlowPtr<Expr> precond = nullptr,
         NullableFlowPtr<Expr> postcond = nullptr, const std::vector<std::pair<string, bool>>& captures = {},
-        const std::optional<std::span<TemplateParameter>>& template_parameters = std::nullopt,
-        SourceLocation origin = SourceLocation::current()) -> std::optional<FlowPtr<Function>>;
-
-    [[gnu::pure, nodiscard]] auto CreateFunction(
-        NullableFlowPtr<Type> ret_ty, string name,
-        std::span<const std::tuple<string, FlowPtr<Type>, NullableFlowPtr<Expr>>> params, bool variadic,
-        NullableFlowPtr<Expr> body, Purity purity, std::span<const FlowPtr<Expr>> attributes,
-        NullableFlowPtr<Expr> precond, NullableFlowPtr<Expr> postcond,
-        std::span<const std::pair<string, bool>> captures,
-        std::optional<std::span<const TemplateParameter>> template_parameters,
+        const std::optional<std::vector<TemplateParameter>>& template_parameters = std::nullopt,
         SourceLocation origin = SourceLocation::current()) -> std::optional<FlowPtr<Function>>;
 
     [[gnu::pure, nodiscard]] auto CreateAnonymousFunction(

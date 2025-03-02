@@ -41,8 +41,8 @@
 #include <nitrate-lexer/ScannerFwd.hh>
 #include <nitrate-parser/AST.hh>
 #include <nitrate-parser/ASTFactory.hh>
+#include <nitrate-parser/Context.hh>
 #include <nitrate-parser/ProtobufFwd.hh>
-#include <nitrate-parser/Utility.hh>
 #include <optional>
 
 namespace ncc::parse {

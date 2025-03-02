@@ -35,7 +35,6 @@
 #include <google/protobuf/io/coded_stream.h>
 
 #include <boost/multiprecision/cpp_int.hpp>
-#include <charconv>
 #include <memory>
 #include <nitrate-core/Logger.hh>
 #include <nitrate-core/Macro.hh>
@@ -47,7 +46,7 @@
 #include <nitrate-parser/ASTStmt.hh>
 #include <nitrate-parser/ASTType.hh>
 
-static constexpr size_t kRecursionLimit = 100000;
+static constexpr int kRecursionLimit = INT_MAX;
 
 using namespace ncc;
 using namespace ncc::lex;
@@ -878,7 +877,7 @@ auto AstReader::Unmarshal(const SyntaxTree::TemplateType &in) -> Result<Template
     return std::nullopt;
   }
 
-  CallArgs args;
+  std::vector<CallArg> args;
   args.reserve(in.arguments_size());
 
   for (const auto &arg : in.arguments()) {
@@ -1458,7 +1457,7 @@ auto AstReader::Unmarshal(const SyntaxTree::FuncTy &in) -> Result<FuncTy> {
     return std::nullopt;
   }
 
-  FuncParams parameters;
+  std::vector<FuncParam> parameters;
   parameters.reserve(in.parameters_size());
 
   for (const auto &param : in.parameters()) {
@@ -1475,7 +1474,7 @@ auto AstReader::Unmarshal(const SyntaxTree::FuncTy &in) -> Result<FuncTy> {
     parameters.emplace_back(param.name(), type.value(), default_value);
   }
 
-  ExpressionList attributes;
+  std::vector<FlowPtr<Expr>> attributes;
   attributes.reserve(in.attributes_size());
 
   for (const auto &attr : in.attributes()) {
@@ -1686,7 +1685,7 @@ auto AstReader::Unmarshal(const SyntaxTree::TemplateCall &in) -> Result<Template
     return std::nullopt;
   }
 
-  CallArgs arguments;
+  std::vector<CallArg> arguments;
   arguments.reserve(in.arguments_size());
 
   for (const auto &arg : in.arguments()) {
@@ -1698,7 +1697,7 @@ auto AstReader::Unmarshal(const SyntaxTree::TemplateCall &in) -> Result<Template
     arguments.emplace_back(arg.name(), value.value());
   }
 
-  CallArgs parameters;
+  std::vector<CallArg> parameters;
   parameters.reserve(in.template_arguments_size());
 
   for (const auto &param : in.template_arguments()) {
@@ -1718,7 +1717,7 @@ auto AstReader::Unmarshal(const SyntaxTree::TemplateCall &in) -> Result<Template
 }
 
 auto AstReader::Unmarshal(const SyntaxTree::List &in) -> Result<List> {
-  ExpressionList items;
+  std::vector<FlowPtr<Expr>> items;
   items.reserve(in.elements_size());
 
   for (const auto &expr : in.elements()) {
@@ -1839,7 +1838,7 @@ auto AstReader::Unmarshal(const SyntaxTree::Identifier &in) -> Result<Identifier
 }
 
 auto AstReader::Unmarshal(const SyntaxTree::Sequence &in) -> Result<Sequence> {
-  ExpressionList items;
+  std::vector<FlowPtr<Expr>> items;
   items.reserve(in.elements_size());
 
   for (const auto &expr : in.elements()) {
@@ -1889,7 +1888,7 @@ auto AstReader::Unmarshal(const SyntaxTree::Variable &in) -> Result<Variable> {
     return std::nullopt;
   }
 
-  ExpressionList attributes;
+  std::vector<FlowPtr<Expr>> attributes;
   attributes.reserve(in.attributes_size());
 
   for (const auto &attr : in.attributes()) {
@@ -1914,7 +1913,7 @@ auto AstReader::Unmarshal(const SyntaxTree::Variable &in) -> Result<Variable> {
 }
 
 auto AstReader::Unmarshal(const SyntaxTree::Assembly &in) -> Result<Assembly> {
-  ExpressionList arguments;
+  std::vector<FlowPtr<Expr>> arguments;
   arguments.reserve(in.arguments_size());
 
   for (const auto &arg : in.arguments()) {
@@ -2129,7 +2128,7 @@ auto AstReader::Unmarshal(const SyntaxTree::Typedef &in) -> Result<Typedef> {
 }
 
 auto AstReader::Unmarshal(const SyntaxTree::Function &in) -> Result<Function> {
-  ExpressionList attributes;
+  std::vector<FlowPtr<Expr>> attributes;
   attributes.reserve(in.attributes_size());
 
   for (const auto &attr : in.attributes()) {
@@ -2141,9 +2140,9 @@ auto AstReader::Unmarshal(const SyntaxTree::Function &in) -> Result<Function> {
     attributes.push_back(attribute.value());
   }
 
-  std::optional<TemplateParameters> template_parameters;
+  std::optional<std::vector<TemplateParameter>> template_parameters;
   if (in.has_template_parameters()) {
-    template_parameters = TemplateParameters();
+    template_parameters = std::vector<TemplateParameter>();
 
     for (const auto &param : in.template_parameters().parameters()) {
       auto type = Unmarshal(param.type());
@@ -2160,13 +2159,13 @@ auto AstReader::Unmarshal(const SyntaxTree::Function &in) -> Result<Function> {
     }
   }
 
-  FnCaptures captures;
+  std::vector<std::pair<string, bool>> captures;
   captures.reserve(in.captures_size());
   for (const auto &cap : in.captures()) {
     captures.emplace_back(cap.name(), cap.is_reference());
   }
 
-  FuncParams parameters;
+  std::vector<ASTFactory::FactoryFunctionParameter> parameters;
   parameters.reserve(in.parameters_size());
 
   for (const auto &param : in.parameters()) {
@@ -2208,16 +2207,20 @@ auto AstReader::Unmarshal(const SyntaxTree::Function &in) -> Result<Function> {
     return std::nullopt;
   }
 
-  auto object = CreateNode<Function>(attributes, op.value(), captures, in.name(), template_parameters, parameters,
-                                     in.variadic(), return_type.value(), precondition, postcondition, block)();
-  UnmarshalLocationLocation(in.location(), object);
-  UnmarshalCodeComment(in.comments(), object);
+  auto object = m_fac.CreateFunction(in.name(), return_type.value(), parameters, in.variadic(), block, op.value(),
+                                     attributes, precondition, postcondition, captures, template_parameters);
+  if (!object.has_value()) [[unlikely]] {
+    return std::nullopt;
+  }
+
+  UnmarshalLocationLocation(in.location(), object.value());
+  UnmarshalCodeComment(in.comments(), object.value());
 
   return object;
 }
 
 auto AstReader::Unmarshal(const SyntaxTree::Struct &in) -> Result<Struct> {
-  ExpressionList attributes;
+  std::vector<FlowPtr<Expr>> attributes;
   attributes.reserve(in.attributes_size());
 
   for (const auto &attr : in.attributes()) {
@@ -2229,13 +2232,13 @@ auto AstReader::Unmarshal(const SyntaxTree::Struct &in) -> Result<Struct> {
     attributes.push_back(attribute.value());
   }
 
-  StructNames names;
+  std::vector<string> names;
   names.reserve(in.names_size());
   for (const auto &name : in.names()) {
     names.emplace_back(name);
   }
 
-  StructFields fields;
+  std::vector<StructField> fields;
   fields.reserve(in.fields_size());
 
   for (const auto &field : in.fields()) {
@@ -2259,7 +2262,7 @@ auto AstReader::Unmarshal(const SyntaxTree::Struct &in) -> Result<Struct> {
     fields.emplace_back(vis.value(), is_static, field.name(), type.value(), value);
   }
 
-  StructMethods methods;
+  std::vector<StructFunction> methods;
   methods.reserve(in.methods_size());
 
   for (const auto &method : in.methods()) {
@@ -2276,7 +2279,7 @@ auto AstReader::Unmarshal(const SyntaxTree::Struct &in) -> Result<Struct> {
     methods.emplace_back(vis.value(), func.value());
   }
 
-  StructMethods static_methods;
+  std::vector<StructFunction> static_methods;
   static_methods.reserve(in.static_methods_size());
 
   for (const auto &method : in.static_methods()) {
@@ -2293,9 +2296,9 @@ auto AstReader::Unmarshal(const SyntaxTree::Struct &in) -> Result<Struct> {
     static_methods.emplace_back(vis.value(), func.value());
   }
 
-  std::optional<TemplateParameters> template_parameters;
+  std::optional<std::vector<TemplateParameter>> template_parameters;
   if (in.has_template_parameters()) {
-    template_parameters = TemplateParameters();
+    template_parameters = std::vector<TemplateParameter>();
 
     for (const auto &param : in.template_parameters().parameters()) {
       auto type = Unmarshal(param.type());
@@ -2317,8 +2320,8 @@ auto AstReader::Unmarshal(const SyntaxTree::Struct &in) -> Result<Struct> {
     return std::nullopt;
   }
 
-  auto object = CreateNode<Struct>(comptype.value(), attributes, in.name(), template_parameters, names, fields, methods,
-                                   static_methods)();
+  auto object = m_fac.CreateStruct(comptype.value(), in.name(), template_parameters, fields, methods, static_methods,
+                                   names, attributes);
   UnmarshalLocationLocation(in.location(), object);
   UnmarshalCodeComment(in.comments(), object);
 
@@ -2375,7 +2378,7 @@ auto AstReader::Unmarshal(const SyntaxTree::Export &in) -> Result<Export> {
     return std::nullopt;
   }
 
-  ExpressionList attributes;
+  std::vector<FlowPtr<Expr>> attributes;
   attributes.reserve(in.attributes_size());
 
   for (const auto &attr : in.attributes()) {
@@ -2409,9 +2412,7 @@ AstReader::AstReader(std::string_view protobuf_data, ReaderSourceManager source_
     return;
   }
 
-  std::swap(MainAllocator, m_mm);
   m_root = Unmarshal(root);
-  std::swap(MainAllocator, m_mm);
 }
 
 auto AstReader::Get() -> std::optional<ASTRoot> {

@@ -37,12 +37,28 @@
 #include <boost/shared_ptr.hpp>
 #include <memory>
 #include <nitrate-core/EnvironmentFwd.hh>
+#include <nitrate-core/FlowPtr.hh>
 #include <nitrate-core/Logger.hh>
 #include <nitrate-lexer/ScannerFwd.hh>
-#include <nitrate-parser/Utility.hh>
+#include <nitrate-parser/ASTFwd.hh>
 #include <sstream>
 
 namespace ncc::parse {
+  class NCC_EXPORT ASTRoot final {
+    FlowPtr<Expr> m_base;
+    bool m_failed;
+    std::shared_ptr<void> m_allocator;
+
+  public:
+    constexpr ASTRoot(auto base, auto allocator, auto failed)
+        : m_base(std::move(base)), m_failed(failed), m_allocator(std::move(allocator)) {}
+
+    auto Get() -> FlowPtr<Expr> & { return m_base; }
+    [[nodiscard]] auto Get() const -> FlowPtr<Expr> { return m_base; }
+
+    [[nodiscard]] auto Check() const -> bool;
+  };
+
   class NCC_EXPORT Parser final {
     class PImpl;
     std::unique_ptr<PImpl> m_impl;

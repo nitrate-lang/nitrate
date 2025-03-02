@@ -46,7 +46,7 @@ namespace ncc {
     bool m_enable_sync;
 
   public:
-    SmartLock(T &mutex) noexcept : m_mutex(mutex), m_enable_sync(EnableSync.load(std::memory_order_relaxed)) {
+    SmartLock(T &m) noexcept : m_mutex(m), m_enable_sync(EnableSync.load(std::memory_order_relaxed)) {
       if (m_enable_sync) {
         m_mutex.lock();
       }
