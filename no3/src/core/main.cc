@@ -32,21 +32,20 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <git2/global.h>
-#include <glog/logging.h>
 #include <lsp/nitrated.h>
 #include <nitrate-emit/Code.h>
 #include <nitrate-emit/Lib.h>
 
-#include <argparse.hpp>
 #include <atomic>
 #include <clean/Cleanup.hh>
-#include <core/ANSI.hh>
 #include <core/Config.hh>
-#include <core/Logger.hh>
+#include <core/argparse.hpp>
+#include <core/termcolor.hh>
 #include <fstream>
 #include <init/Package.hh>
 #include <install/Install.hh>
 #include <iostream>
+#include <memory>
 #include <nitrate-core/Init.hh>
 #include <nitrate-core/Logger.hh>
 #include <nitrate-emit/Classes.hh>
@@ -60,18 +59,15 @@
 #include <string_view>
 #include <vector>
 
-#include "nitrate-core/Assert.hh"
-
+using namespace ncc;
 using namespace no3;
 using argparse::ArgumentParser;
 
-static core::MyLogSink GGoogleLogSink;
+static std::unique_ptr<std::ostream> GlobalOutputStream = std::make_unique<std::ostream>(std::cerr.rdbuf());
 
 namespace no3::router {
   static auto RunInitMode(const ArgumentParser &parser) -> int {
     using namespace init;
-
-    core::SetDebugMode(parser["--verbose"] == true);
 
     PackageBuilder builder = PackageBuilder()
                                  .Output(parser.Get<std::string>("--output"))
@@ -99,15 +95,13 @@ namespace no3::router {
   static auto RunBuildMode(const ArgumentParser &parser) -> int {
     (void)parser;
 
-    LOG(ERROR) << "The build subcommand is not implemented yet";
+    Log << "The build subcommand is not implemented yet";
     /// TODO: Implement
 
     return 1;
   }
 
   static auto RunCleanMode(const ArgumentParser &parser) -> int {
-    core::SetDebugMode(parser["--verbose"] == true);
-
     if (clean::CleanPackageSource(parser.Get<std::string>("package-src"), parser["--verbose"] == true)) {
       return 0;
     }
@@ -117,7 +111,7 @@ namespace no3::router {
   static auto RunUpdateMode(const ArgumentParser &parser) -> int {
     (void)parser;
 
-    LOG(ERROR) << "The update subcommand is not implemented yet";
+    Log << "The update subcommand is not implemented yet";
     /// TODO: Implement
 
     return 1;
@@ -126,7 +120,7 @@ namespace no3::router {
   static auto RunInstallMode(const ArgumentParser &parser) -> int {
     (void)parser;
 
-    LOG(ERROR) << "The install subcommand is not implemented yet";
+    Log << "The install subcommand is not implemented yet";
     /// TODO: Implement
 
     return 1;
@@ -135,7 +129,7 @@ namespace no3::router {
   static auto RunDocMode(const ArgumentParser &parser) -> int {
     (void)parser;
 
-    LOG(ERROR) << "The doc subcommand is not implemented yet";
+    Log << "The doc subcommand is not implemented yet";
     /// TODO: Implement
 
     return 1;
@@ -144,7 +138,7 @@ namespace no3::router {
   static auto RunFormatMode(const ArgumentParser &parser) -> int {
     (void)parser;
 
-    LOG(ERROR) << "The format subcommand is not implemented yet";
+    Log << "The format subcommand is not implemented yet";
     /// TODO: Implement
 
     return 1;
@@ -153,7 +147,7 @@ namespace no3::router {
   static auto RunListMode(const ArgumentParser &parser) -> int {
     (void)parser;
 
-    LOG(ERROR) << "The list subcommand is not implemented yet";
+    Log << "The list subcommand is not implemented yet";
     /// TODO: Implement
 
     return 1;
@@ -162,15 +156,13 @@ namespace no3::router {
   static auto RunTestMode(const ArgumentParser &parser) -> int {
     (void)parser;
 
-    LOG(ERROR) << "The test subcommand is not implemented yet";
+    Log << "The test subcommand is not implemented yet";
     /// TODO: Implement
 
     return 1;
   }
 
   static auto RunLspMode(const ArgumentParser &parser) -> int {
-    core::SetDebugMode(parser["--verbose"] == true);
-
     std::vector<std::string> args;
     args.emplace_back("nitrated");
 
@@ -202,22 +194,21 @@ namespace no3::router {
       }
     }
 
-    auto log_file = std::make_unique<std::fstream>(parser.Get<std::string>("--log"), std::ios::app);
-
+    const auto log_filepath = parser.Get<std::string>("--log");
+    auto log_file = std::make_unique<std::fstream>(log_filepath, std::ios::app);
     if (!log_file->is_open()) {
-      LOG(ERROR) << "Failed to open log file";
+      Log << "Failed to open log file";
       return -2;
     }
 
-    auto old_stream = GGoogleLogSink.RedirectToStream(std::move(log_file));
+    std::unique_ptr<std::ostream> log_stream = std::make_unique<std::ostream>(log_file->rdbuf());
 
-    /// TODO: Handle log stream redirect
+    std::swap(GlobalOutputStream, log_stream);
 
-    LOG(INFO) << "Invoking LSP: \"" << inner_command << "\"";
-
+    Log << Info << "Invoking LSP: \"" << inner_command << "\"";
     int ret = NitratedMain(args.size(), c_args.data());
 
-    GGoogleLogSink.RedirectToStream(std::move(old_stream));
+    std::swap(GlobalOutputStream, log_stream);
 
     return ret;
   }
@@ -244,9 +235,6 @@ namespace no3::argparse_setup {
 
 extern "C" __attribute__((visibility("default"))) auto No3Command(int argc, char **argv) -> int {
   using namespace argparse_setup;
-
-  core::SetColorMode(ansi::IsUsingColors());
-  core::SetDebugMode(false);
 
   { /* Parse arguments */
     std::vector<std::string> args(argv, argv + argc);
@@ -326,77 +314,52 @@ extern "C" __attribute__((visibility("default"))) auto No3Init() -> bool {
     return true;
   }
 
-  { /* Configure Google logger */
-    FLAGS_stderrthreshold = google::FATAL;
-    google::InitGoogleLogging("no3");
-    google::InstallFailureSignalHandler();
-
-    google::AddLogSink(&GGoogleLogSink);
-  }
-
   { /* Initialize compiler pipeline libraries */
     if (!ncc::CoreLibrary.InitRC()) {
-      LOG(ERROR) << "Failed to initialize NITRATE-CORE library";
+      Log << "Failed to initialize NITRATE-CORE library";
       return false;
     }
 
     ncc::Log.Subscribe([](auto msg, auto sev, const auto &ec) {
       using namespace ncc;
 
-      if (sev > Debug || core::GetDebugMode()) {
-        switch (sev) {
-          case Trace:
-          case Debug:
-          case Info:
-          case Notice: {
-            LOG(INFO) << ec.Format(msg, sev);
-            break;
-          }
+      bool is_debug_mode = false;  /// FIXME: Get this state from somewhere
 
-          case Warning: {
-            LOG(WARNING) << ec.Format(msg, sev);
-            break;
-          }
-
-          case Error:
-          case Critical:
-          case Alert:
-          case Emergency: {
-            LOG(ERROR) << ec.Format(msg, sev);
-            break;
-          }
-        }
+      if (sev <= Debug && !is_debug_mode) {
+        return;
       }
+
+      *GlobalOutputStream << ec.Format(msg, sev) << std::endl;
     });
 
     if (!ncc::lex::LexerLibrary.InitRC()) {
-      LOG(ERROR) << "Failed to initialize NITRATE-LEX library";
+      Log << "Failed to initialize NITRATE-LEX library";
       return false;
     }
 
     if (!ncc::seq::SeqLibrary.InitRC()) {
-      LOG(ERROR) << "Failed to initialize NITRATE-PREP library";
+      Log << "Failed to initialize NITRATE-PREP library";
       return false;
     }
 
     if (!ncc::parse::ParseLibrary.InitRC()) {
-      LOG(ERROR) << "Failed to initialize NITRATE-PARSE library";
+      Log << "Failed to initialize NITRATE-PARSE library";
       return false;
     }
 
     if (!ncc::ir::IRLibrary.InitRC()) {
-      LOG(ERROR) << "Failed to initialize NITRATE-IR library";
+      Log << "Failed to initialize NITRATE-IR library";
       return false;
     }
 
     if (!QcodeLibInit()) {
-      LOG(ERROR) << "Failed to initialize NITRATE-CODE library";
+      Log << "Failed to initialize NITRATE-CODE library";
       return false;
     }
   }
 
   if (git_libgit2_init() <= 0) {
-    LOG(ERROR) << "Failed to initialize libgit2";
+    Log << "Failed to initialize libgit2";
     return false;
   }
 

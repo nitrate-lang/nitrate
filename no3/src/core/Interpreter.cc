@@ -34,7 +34,7 @@
 #include <nitrate-emit/Code.h>
 #include <nitrate-emit/Lib.h>
 
-#include <argparse.hpp>
+#include <core/argparse.hpp>
 #include <cstdint>
 #include <memory>
 #include <nitrate-core/Init.hh>

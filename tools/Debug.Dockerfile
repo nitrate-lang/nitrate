@@ -6,7 +6,7 @@ FROM ubuntu:24.04
 ######################### Install dependencies #########################
 RUN apt clean
 RUN apt update --fix-missing && apt upgrade -y
-RUN apt install -y  libboost-all-dev libssl-dev libgoogle-glog-dev   \
+RUN apt install -y  libboost-all-dev libssl-dev                      \
   libyaml-cpp-dev rapidjson-dev libreadline-dev libzstd-dev          \
   libpolly-18-dev llvm-18 nlohmann-json3-dev libsparsehash-dev       \
   libgit2-dev libgtest-dev libprotobuf-dev protobuf-compiler

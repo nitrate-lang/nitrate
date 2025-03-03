@@ -1,13 +1,14 @@
 #pragma once
 
-#include <glog/logging.h>
-
 #include <cstddef>
 #include <memory>
+#include <nitrate-core/Logger.hh>
 #include <optional>
 #include <string>
 #include <unordered_map>
 #include <utility>
+
+using namespace ncc;
 
 class SyncFSFile {
   std::shared_ptr<std::string> m_content;
@@ -25,8 +26,7 @@ public:
     }
 
     if (offset + length > m_content->size()) {
-      LOG(ERROR) << "Invalid replace operation: offset=" << offset << ", length=" << length
-                 << ", size=" << m_content->size();
+      Log << "Invalid replace operation: offset=" << offset << ", length=" << length << ", size=" << m_content->size();
       return false;
     }
 

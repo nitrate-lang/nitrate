@@ -17,7 +17,6 @@ parts:
       - -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF -DBUILD_TESTING=OFF -DSTRIP_OUTPUT=ON -DCMAKE_CXX_COMPILER=/usr/bin/clang++ -DCMAKE_C_COMPILER=/usr/bin/clang
     source: .
     build-packages:
-      - libgoogle-glog-dev
       - libsparsehash-dev
       - libprotobuf-dev
       - protobuf-compiler

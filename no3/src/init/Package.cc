@@ -35,14 +35,17 @@
 #include <git2/config.h>
 #include <git2/repository.h>
 
+#include <array>
 #include <conf/SPDX.hh>
-#include <core/Logger.hh>
 #include <fstream>
 #include <init/Package.hh>
+#include <nitrate-core/Logger.hh>
+#include <optional>
 #include <random>
 #include <regex>
 #include <sstream>
 
+using namespace ncc;
 using namespace no3::init;
 
 class GitConfig final {
@@ -112,13 +115,13 @@ static auto CreatePackageRepository(const char *path, PackageType type) -> bool 
 
   GitRepository repo(path);
   if (!repo.DidInit()) {
-    LOG(ERROR) << "Failed to initialize git repository";
+    Log << "Failed to initialize git repository";
     return false;
   }
 
   auto config = repo.GetConfig();
   if (!config) {
-    LOG(ERROR) << "Failed to retrieve git configuration";
+    Log << "Failed to retrieve git configuration";
     return false;
   }
 
@@ -126,7 +129,7 @@ static auto CreatePackageRepository(const char *path, PackageType type) -> bool 
                    config->SetString("no3.type", kPackageTypes[static_cast<int>(type)]);
 
   if (!config_ok) {
-    LOG(ERROR) << "Failed to set git configuration";
+    Log << "Failed to set git configuration";
     return false;
   }
 
@@ -160,7 +163,7 @@ auto no3::init::Package::ValidateLicense(const std::string &license) -> bool {
 auto no3::init::Package::WriteGitIgnore() -> bool {
   std::ofstream gitignore((m_output / m_name / ".gitignore").string());
   if (!gitignore.is_open()) {
-    LOG(ERROR) << "Failed to create .gitignore file";
+    Log << "Failed to create .gitignore file";
     return false;
   }
 
@@ -175,13 +178,13 @@ auto no3::init::Package::WriteGitIgnore() -> bool {
 
 auto no3::init::Package::WriteMain() -> bool {
   if (!std::filesystem::create_directories(m_output / m_name / "src")) {
-    LOG(ERROR) << "Failed to create package directories";
+    Log << "Failed to create package directories";
     return false;
   }
 
   std::ofstream main((m_output / m_name / "src/main.n").string());
   if (!main.is_open()) {
-    LOG(ERROR) << "Failed to create main.q file";
+    Log << "Failed to create main.q file";
     return false;
   }
 
@@ -200,7 +203,7 @@ pub "std" fn main(args: [str]): i32 {
 auto no3::init::Package::WriteReadme() -> bool {
   std::ofstream readme((m_output / m_name / "README.md").string());
   if (!readme.is_open()) {
-    LOG(ERROR) << "Failed to create README file";
+    Log << "Failed to create README file";
     return false;
   }
 
@@ -287,7 +290,7 @@ auto no3::init::Package::WriteConfig() -> bool {
 
   std::ofstream config_file((m_output / m_name / "no3.yaml").string());
   if (!config_file.is_open()) {
-    LOG(ERROR) << "Failed to create package configuration file";
+    Log << "Failed to create package configuration file";
     return false;
   }
 
@@ -299,13 +302,13 @@ auto no3::init::Package::WriteConfig() -> bool {
 auto no3::init::Package::CreatePackage() -> bool {
   switch (m_type) {
     case PackageType::PROGRAM:
-      LOG(INFO) << "Creating program package";
+      Log << Info << "Creating program package";
       break;
     case PackageType::STATICLIB:
-      LOG(INFO) << "Creating static library package";
+      Log << Info << "Creating static library package";
       break;
     case PackageType::SHAREDLIB:
-      LOG(INFO) << "Creating shared library package";
+      Log << Info << "Creating shared library package";
       break;
   }
 
@@ -315,52 +318,52 @@ auto no3::init::Package::CreatePackage() -> bool {
     }
 
     if (!CreatePackageRepository((m_output / m_name).c_str(), m_type)) {
-      LOG(ERROR) << "Failed to create git repository";
+      Log << "Failed to create git repository";
       return false;
     }
 
     switch (m_type) {
       case PackageType::PROGRAM:
-        LOG(INFO) << "Program package created";
+        Log << Info << "Program package created";
         break;
       case PackageType::STATICLIB:
-        LOG(INFO) << "Static library package created";
+        Log << Info << "Static library package created";
         break;
       case PackageType::SHAREDLIB:
-        LOG(INFO) << "Shared library package created";
+        Log << Info << "Shared library package created";
         break;
     }
 
     return true;
   } catch (const std::exception &e) {
-    LOG(ERROR) << "Failed to create program package: " << e.what();
+    Log << "Failed to create program package: " << e.what();
     return false;
   }
 }
 
 auto no3::init::Package::Create() -> bool {
   if (!ValidateName(m_name)) {
-    LOG(ERROR) << "Invalid package name: " << m_name;
+    Log << "Invalid package name: " << m_name;
     return false;
   }
 
   if (!ValidateVersion(m_version)) {
-    LOG(ERROR) << "Invalid package version: " << m_version;
+    Log << "Invalid package version: " << m_version;
     return false;
   }
 
   if (!m_email.empty() && !ValidateEmail(m_email)) {
-    LOG(ERROR) << "Invalid package email: " << m_email;
+    Log << "Invalid package email: " << m_email;
     return false;
   }
 
   if (!m_url.empty() && !ValidateUrl(m_url)) {
-    LOG(ERROR) << "Invalid package url: " << m_url;
+    Log << "Invalid package url: " << m_url;
     return false;
   }
 
   if (!m_license.empty() && !ValidateLicense(m_license)) {
-    LOG(ERROR) << "Invalid package SPDX license identifier: " << m_license;
+    Log << "Invalid package SPDX license identifier: " << m_license;
     return false;
   }
 
@@ -369,17 +372,17 @@ auto no3::init::Package::Create() -> bool {
       if (m_force) {
         std::filesystem::remove_all(m_output / m_name);
       } else {
-        LOG(ERROR) << "Package already exists: " << m_output / m_name;
+        Log << "Package already exists: " << m_output / m_name;
         return false;
       }
     }
 
     if (!std::filesystem::create_directories(m_output / m_name)) {
-      LOG(ERROR) << "Failed to create package directory: " << m_output / m_name;
+      Log << "Failed to create package directory: " << m_output / m_name;
       return false;
     }
   } catch (const std::exception &e) {
-    LOG(ERROR) << "Failed to check package existence: " << e.what();
+    Log << "Failed to check package existence: " << e.what();
     return false;
   }
 

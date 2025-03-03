@@ -5,54 +5,54 @@ using namespace no3::lsp;
 
 void srv::DoDidOpen(const NotificationMessage& notif) {
   if (!notif.GetJSON().contains("textDocument")) {
-    LOG(ERROR) << "Missing textDocument member";
+    Log << "Missing textDocument member";
     return;
   }
 
   if (!notif.GetJSON()["textDocument"].is_object()) {
-    LOG(ERROR) << "textDocument is not an object";
+    Log << "textDocument is not an object";
     return;
   }
 
   auto text_document = notif.GetJSON()["textDocument"];
 
   if (!text_document.contains("uri")) {
-    LOG(ERROR) << "Missing uri member";
+    Log << "Missing uri member";
     return;
   }
 
   if (!text_document["uri"].is_string()) {
-    LOG(ERROR) << "uri member is not a string";
+    Log << "uri member is not a string";
     return;
   }
 
   if (!text_document.contains("languageId")) {
-    LOG(ERROR) << "Missing languageId member";
+    Log << "Missing languageId member";
     return;
   }
 
   if (!text_document["languageId"].is_string()) {
-    LOG(ERROR) << "languageId member is not a string";
+    Log << "languageId member is not a string";
     return;
   }
 
   if (!text_document.contains("version")) {
-    LOG(ERROR) << "Missing version member";
+    Log << "Missing version member";
     return;
   }
 
   if (!text_document["version"].is_number_integer()) {
-    LOG(ERROR) << "version member is not an integer";
+    Log << "version member is not an integer";
     return;
   }
 
   if (!text_document.contains("text")) {
-    LOG(ERROR) << "Missing text member";
+    Log << "Missing text member";
     return;
   }
 
   if (!text_document["text"].is_string()) {
-    LOG(ERROR) << "text member is not a string";
+    Log << "text member is not a string";
     return;
   }
 
@@ -68,7 +68,7 @@ void srv::DoDidOpen(const NotificationMessage& notif) {
   auto file = file_opt.value();
 
   if (!file->Replace(0, -1, text)) {
-    LOG(ERROR) << "Failed to replace code";
+    Log << "Failed to replace code";
     return;
   }
 }

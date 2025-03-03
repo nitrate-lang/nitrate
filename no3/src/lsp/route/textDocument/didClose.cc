@@ -5,24 +5,24 @@ using namespace no3::lsp;
 
 void srv::DoDidClose(const NotificationMessage& notif) {
   if (!notif.GetJSON().contains("textDocument")) {
-    LOG(ERROR) << "Missing textDocument member";
+    Log << "Missing textDocument member";
     return;
   }
 
   if (!notif.GetJSON()["textDocument"].is_object()) {
-    LOG(ERROR) << "textDocument is not an object";
+    Log << "textDocument is not an object";
     return;
   }
 
   auto text_document = notif.GetJSON()["textDocument"];
 
   if (!text_document.contains("uri")) {
-    LOG(ERROR) << "Missing uri member";
+    Log << "Missing uri member";
     return;
   }
 
   if (!text_document["uri"].is_string()) {
-    LOG(ERROR) << "uri member is not a string";
+    Log << "uri member is not a string";
     return;
   }
 

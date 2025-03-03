@@ -2,7 +2,10 @@
 #include <lsp/core/Server.hh>
 #include <lsp/core/ThreadPool.hh>
 #include <mutex>
+#include <nitrate-core/Logger.hh>
 #include <stop_token>
+
+using namespace ncc;
 
 void ThreadPool::Start() {
   uint32_t num_threads = std::jthread::hardware_concurrency();  // Max # of threads the system
@@ -13,7 +16,7 @@ void ThreadPool::Start() {
     num_threads = 2;
   }
 
-  LOG(INFO) << "Starting thread pool with " << num_threads << " threads";
+  Log << Info << "Starting thread pool with " << num_threads << " threads";
 
   for (uint32_t ii = 0; ii < num_threads; ++ii) {
     m_threads.emplace_back([this](const std::stop_token& st) { ThreadLoop(st); });

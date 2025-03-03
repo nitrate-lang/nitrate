@@ -4,10 +4,13 @@
 #include <fstream>
 #include <lsp/core/Server.hh>
 #include <lsp/core/SyncFS.hh>
+#include <nitrate-core/Logger.hh>
 
-SyncFS::SyncFS() { LOG(INFO) << "Creating mirrored file system abstraction"; }
+using namespace ncc;
 
-SyncFS::~SyncFS() { LOG(INFO) << "Destroying mirrored file system abstraction"; }
+SyncFS::SyncFS() { Log << Info << "Creating mirrored file system abstraction"; }
+
+SyncFS::~SyncFS() { Log << Info << "Destroying mirrored file system abstraction"; }
 
 auto SyncFS::The() -> SyncFS& {
   static SyncFS instance;
@@ -59,15 +62,15 @@ auto SyncFS::Open(std::string path) -> std::optional<std::shared_ptr<SyncFSFile>
   }
 
   if (!std::filesystem::exists(path)) {
-    LOG(ERROR) << "File not found: " << path;
+    Log << "File not found: " << path;
     return std::nullopt;
   }
 
-  LOG(INFO) << "Reading file...: " << path;
+  Log << Info << "Reading file...: " << path;
 
   std::ifstream file(path);
   if (!file.is_open()) {
-    LOG(ERROR) << "Failed to open file: " << path;
+    Log << "Failed to open file: " << path;
     return std::nullopt;
   }
 

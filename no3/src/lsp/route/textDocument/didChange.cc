@@ -1,9 +1,11 @@
 #include <lsp/core/Server.hh>
 #include <lsp/core/SyncFS.hh>
 #include <lsp/route/RoutesList.hh>
+#include <nitrate-core/Logger.hh>
 #include <nitrate-core/Macro.hh>
 #include <string>
 
+using namespace ncc;
 using namespace no3::lsp;
 
 using DocVersion = int64_t;
@@ -12,34 +14,34 @@ void srv::DoDidChange(const NotificationMessage& notif) {
   using namespace nlohmann;
 
   if (!notif.GetJSON().contains("textDocument")) {
-    LOG(ERROR) << "Missing textDocument field in didChange notification";
+    Log << "Missing textDocument field in didChange notification";
     return;
   }
 
   if (!notif.GetJSON()["textDocument"].is_object()) {
-    LOG(ERROR) << "textDocument field in didChange notification is not an object";
+    Log << "textDocument field in didChange notification is not an object";
     return;
   }
 
   let text_document = notif.GetJSON()["textDocument"];
 
   if (!text_document.contains("uri")) {
-    LOG(ERROR) << "Missing uri field in textDocument object";
+    Log << "Missing uri field in textDocument object";
     return;
   }
 
   if (!text_document["uri"].is_string()) {
-    LOG(ERROR) << "uri field in textDocument object is not a string";
+    Log << "uri field in textDocument object is not a string";
     return;
   }
 
   if (!text_document.contains("version")) {
-    LOG(ERROR) << "Missing version field in textDocument object";
+    Log << "Missing version field in textDocument object";
     return;
   }
 
   if (!text_document["version"].is_number_integer()) {
-    LOG(ERROR) << "version field in textDocument object is not an int64";
+    Log << "version field in textDocument object is not an int64";
     return;
   }
 
@@ -47,12 +49,12 @@ void srv::DoDidChange(const NotificationMessage& notif) {
   let version = text_document["version"].get<int64_t>();
 
   if (!notif.GetJSON().contains("contentChanges")) {
-    LOG(ERROR) << "Missing contentChanges field in didChange notification";
+    Log << "Missing contentChanges field in didChange notification";
     return;
   }
 
   if (!notif.GetJSON()["contentChanges"].is_array()) {
-    LOG(ERROR) << "contentChanges field in didChange notification is not an array";
+    Log << "contentChanges field in didChange notification is not an array";
     return;
   }
 
@@ -67,17 +69,17 @@ void srv::DoDidChange(const NotificationMessage& notif) {
 
   for (let content_change : content_changes) {
     if (!content_change.is_object()) {
-      LOG(ERROR) << "contentChange in contentChanges array is not an object";
+      Log << "contentChange in contentChanges array is not an object";
       return;
     }
 
     if (!content_change.contains("text")) {
-      LOG(ERROR) << "Missing text field in contentChange object";
+      Log << "Missing text field in contentChange object";
       return;
     }
 
     if (!content_change["text"].is_string()) {
-      LOG(ERROR) << "text field in contentChange object is not a string";
+      Log << "text field in contentChange object is not a string";
       return;
     }
   }
@@ -89,8 +91,8 @@ void srv::DoDidChange(const NotificationMessage& notif) {
     std::lock_guard<std::mutex> lock(mutex);
 
     if (latest[uri] >= version) {
-      LOG(INFO) << "Discarding outdated document " << uri << " version " << version << " (latest is " << latest[uri]
-                << ")";
+      Log << Info << "Discarding outdated document " << uri << " version " << version << " (latest is " << latest[uri]
+          << ")";
       return;
     }
 

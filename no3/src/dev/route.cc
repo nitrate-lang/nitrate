@@ -31,16 +31,14 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <glog/logging.h>
 #include <lsp/nitrated.h>
 #include <nitrate-emit/Code.h>
 #include <nitrate-emit/Lib.h>
 
-#include <argparse.hpp>
 #include <clean/Cleanup.hh>
-#include <core/ANSI.hh>
 #include <core/Config.hh>
-#include <core/Logger.hh>
+#include <core/argparse.hpp>
+#include <core/termcolor.hh>
 #include <fstream>
 #include <iostream>
 #include <memory>
@@ -65,7 +63,6 @@
 
 using namespace argparse;
 using namespace no3;
-
 using namespace ncc;
 using namespace ncc::lex;
 using namespace ncc::seq;
@@ -117,8 +114,8 @@ namespace no3::benchmark {
     size_t total_tokens = 0;
     std::vector<double> times;
 
-    LOG(INFO) << "Starting lexer benchmark" << std::endl;
-    LOG(INFO) << "  Rounds: " << rounds << std::endl;
+    Log << Info << "Starting lexer benchmark";
+    Log << Info << "  Rounds: " << rounds;
 
     for (size_t i = 0; i < rounds; i++) {
       auto start = std::chrono::high_resolution_clock::now();
@@ -128,27 +125,27 @@ namespace no3::benchmark {
       double nanoseconds = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
       times.push_back(nanoseconds);
 
-      LOG(INFO) << "Round " << i << ": " << nanoseconds << "ns";
+      Log << Info << "Round " << i << ": " << nanoseconds << "ns";
     }
 
-    LOG(INFO) << "Lexer benchmark completed" << std::endl;
+    Log << Info << "Lexer benchmark completed";
 
     double total_time = 0.0;
     for (auto time : times) {
       total_time += time;
     }
 
-    LOG(INFO) << "Lexer benchmark results:" << std::endl;
-    LOG(INFO) << "  Total tokens: " << total_tokens << std::endl;
-    LOG(INFO) << "  Tokens per round: " << (total_tokens / rounds) << std::endl;
-    LOG(INFO) << "  Rounds: " << rounds << std::endl;
-    LOG(INFO) << "  Total time: " << total_time << "ns" << std::endl;
+    Log << Info << "Lexer benchmark results:";
+    Log << Info << "  Total tokens: " << total_tokens;
+    Log << Info << "  Tokens per round: " << (total_tokens / rounds);
+    Log << Info << "  Rounds: " << rounds;
+    Log << Info << "  Total time: " << total_time << "ns";
 
     if (total_tokens > 0) {
       auto stats = CalculateStatistic(times);
-      LOG(INFO) << "  Round time mean: " << stats.m_mean << "ns" << std::endl;
-      LOG(INFO) << "  Round time variance: " << stats.m_variance << "ns" << std::endl;
-      LOG(INFO) << "  Round time standard deviation: " << stats.m_stddev << "ns" << std::endl;
+      Log << Info << "  Round time mean: " << stats.m_mean << "ns";
+      Log << Info << "  Round time variance: " << stats.m_variance << "ns";
+      Log << Info << "  Round time standard deviation: " << stats.m_stddev << "ns";
 
       std::vector<double> time_per_token;
       time_per_token.reserve(times.size());
@@ -157,9 +154,9 @@ namespace no3::benchmark {
       }
 
       stats = CalculateStatistic(time_per_token);
-      LOG(INFO) << "  Per-token time mean: " << stats.m_mean << "ns" << std::endl;
-      LOG(INFO) << "  Per-token time variance: " << stats.m_variance << "ns" << std::endl;
-      LOG(INFO) << "  Per-token time standard deviation: " << stats.m_stddev << "ns" << std::endl;
+      Log << Info << "  Per-token time mean: " << stats.m_mean << "ns";
+      Log << Info << "  Per-token time variance: " << stats.m_variance << "ns";
+      Log << Info << "  Per-token time standard deviation: " << stats.m_stddev << "ns";
 
       const double input_size_mbit = (LexicalBenchmarkSource.size() / 1e6) * 8;
 
@@ -171,9 +168,9 @@ namespace no3::benchmark {
 
       stats = CalculateStatistic(round_throughputs);
 
-      LOG(INFO) << "  Throughput mean: " << stats.m_mean << " mbps" << std::endl;
-      LOG(INFO) << "  Throughput variance: " << stats.m_variance << " mbps" << std::endl;
-      LOG(INFO) << "  Throughput standard deviation: " << stats.m_stddev << " mbps" << std::endl;
+      Log << Info << "  Throughput mean: " << stats.m_mean << " mbps";
+      Log << Info << "  Throughput variance: " << stats.m_variance << " mbps";
+      Log << Info << "  Throughput standard deviation: " << stats.m_stddev << " mbps";
     }
 
     return 0;
@@ -197,8 +194,8 @@ namespace no3::benchmark {
     size_t total_tokens = 0;
     std::vector<double> times;
 
-    LOG(INFO) << "Starting sequencer benchmark" << std::endl;
-    LOG(INFO) << "  Rounds: " << rounds << std::endl;
+    Log << Info << "Starting sequencer benchmark";
+    Log << Info << "  Rounds: " << rounds;
 
     for (size_t i = 0; i < rounds; i++) {
       auto start = std::chrono::high_resolution_clock::now();
@@ -208,27 +205,27 @@ namespace no3::benchmark {
       double nanoseconds = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
       times.push_back(nanoseconds);
 
-      LOG(INFO) << "Round " << i << ": " << nanoseconds << "ns";
+      Log << Info << "Round " << i << ": " << nanoseconds << "ns";
     }
 
-    LOG(INFO) << "Sequencer benchmark completed" << std::endl;
+    Log << Info << "Sequencer benchmark completed";
 
     double total_time = 0.0;
     for (auto time : times) {
       total_time += time;
     }
 
-    LOG(INFO) << "Sequencer benchmark results:" << std::endl;
-    LOG(INFO) << "  Total tokens: " << total_tokens << std::endl;
-    LOG(INFO) << "  Tokens per round: " << (total_tokens / rounds) << std::endl;
-    LOG(INFO) << "  Rounds: " << rounds << std::endl;
-    LOG(INFO) << "  Total time: " << total_time << "ns" << std::endl;
+    Log << Info << "Sequencer benchmark results:";
+    Log << Info << "  Total tokens: " << total_tokens;
+    Log << Info << "  Tokens per round: " << (total_tokens / rounds);
+    Log << Info << "  Rounds: " << rounds;
+    Log << Info << "  Total time: " << total_time << "ns";
 
     if (total_tokens > 0) {
       auto stats = CalculateStatistic(times);
-      LOG(INFO) << "  Round time mean: " << stats.m_mean << "ns" << std::endl;
-      LOG(INFO) << "  Round time variance: " << stats.m_variance << "ns" << std::endl;
-      LOG(INFO) << "  Round time standard deviation: " << stats.m_stddev << "ns" << std::endl;
+      Log << Info << "  Round time mean: " << stats.m_mean << "ns";
+      Log << Info << "  Round time variance: " << stats.m_variance << "ns";
+      Log << Info << "  Round time standard deviation: " << stats.m_stddev << "ns";
 
       std::vector<double> time_per_token;
       time_per_token.reserve(times.size());
@@ -237,9 +234,9 @@ namespace no3::benchmark {
       }
 
       stats = CalculateStatistic(time_per_token);
-      LOG(INFO) << "  Per-token time mean: " << stats.m_mean << "ns" << std::endl;
-      LOG(INFO) << "  Per-token time variance: " << stats.m_variance << "ns" << std::endl;
-      LOG(INFO) << "  Per-token time standard deviation: " << stats.m_stddev << "ns" << std::endl;
+      Log << Info << "  Per-token time mean: " << stats.m_mean << "ns";
+      Log << Info << "  Per-token time variance: " << stats.m_variance << "ns";
+      Log << Info << "  Per-token time standard deviation: " << stats.m_stddev << "ns";
 
       const double input_size_mbit = (LexicalBenchmarkSource.size() / 1e6) * 8;
 
@@ -251,9 +248,9 @@ namespace no3::benchmark {
 
       stats = CalculateStatistic(round_throughputs);
 
-      LOG(INFO) << "  Throughput mean: " << stats.m_mean << " mbps" << std::endl;
-      LOG(INFO) << "  Throughput variance: " << stats.m_variance << " mbps" << std::endl;
-      LOG(INFO) << "  Throughput standard deviation: " << stats.m_stddev << " mbps" << std::endl;
+      Log << Info << "  Throughput mean: " << stats.m_mean << " mbps";
+      Log << Info << "  Throughput variance: " << stats.m_variance << " mbps";
+      Log << Info << "  Throughput standard deviation: " << stats.m_stddev << " mbps";
     }
 
     return 0;
@@ -266,7 +263,7 @@ namespace no3::benchmark {
     auto pool = DynamicArena();
     auto ast = GeneralParser::Create(tokenizer, env, pool)->Parse();
     if (!ast.Check()) {
-      LOG(ERROR) << "Failed to parse benchmark source";
+      Log << "Failed to parse benchmark source";
     }
   }
 
@@ -274,8 +271,8 @@ namespace no3::benchmark {
     size_t rounds = 128;
     std::vector<double> times;
 
-    LOG(INFO) << "Starting parser benchmark" << std::endl;
-    LOG(INFO) << "  Rounds: " << rounds << std::endl;
+    Log << Info << "Starting parser benchmark";
+    Log << Info << "  Rounds: " << rounds;
 
     for (size_t i = 0; i < rounds; i++) {
       auto start = std::chrono::high_resolution_clock::now();
@@ -285,19 +282,19 @@ namespace no3::benchmark {
       double nanoseconds = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
       times.push_back(nanoseconds);
 
-      LOG(INFO) << "Round " << i << ": " << nanoseconds << "ns";
+      Log << Info << "Round " << i << ": " << nanoseconds << "ns";
     }
 
-    LOG(INFO) << "Parser benchmark completed" << std::endl;
+    Log << Info << "Parser benchmark completed";
 
     double total_time = 0.0;
     for (auto time : times) {
       total_time += time;
     }
 
-    LOG(INFO) << "Parser benchmark results:" << std::endl;
-    LOG(INFO) << "  Rounds: " << rounds << std::endl;
-    LOG(INFO) << "  Total time: " << total_time << "ns" << std::endl;
+    Log << Info << "Parser benchmark results:";
+    Log << Info << "  Rounds: " << rounds;
+    Log << Info << "  Total time: " << total_time << "ns";
 
     {
       const double input_size_mbit = (LexicalBenchmarkSource.size() / 1e6) * 8;
@@ -309,9 +306,9 @@ namespace no3::benchmark {
       }
       auto stats = CalculateStatistic(round_throughputs);
 
-      LOG(INFO) << "  Throughput mean: " << stats.m_mean << " mbps" << std::endl;
-      LOG(INFO) << "  Throughput variance: " << stats.m_variance << " mbps" << std::endl;
-      LOG(INFO) << "  Throughput standard deviation: " << stats.m_stddev << " mbps" << std::endl;
+      Log << Info << "  Throughput mean: " << stats.m_mean << " mbps";
+      Log << Info << "  Throughput variance: " << stats.m_variance << " mbps";
+      Log << Info << "  Throughput standard deviation: " << stats.m_stddev << " mbps";
     }
 
     return 0;
@@ -372,7 +369,7 @@ static auto DoParse(std::shared_ptr<Environment> &env, const std::string &source
                     bool verbose) -> int {
   std::fstream file(source, std::ios::in);
   if (!file.is_open()) {
-    LOG(ERROR) << "Failed to open source file: " << source;
+    Log << "Failed to open source file: " << source;
     return 1;
   }
 
@@ -394,12 +391,12 @@ static auto DoParse(std::shared_ptr<Environment> &env, const std::string &source
 static auto DoNr(std::shared_ptr<Environment> &env, const std::string &source, std::ostream &output,
                  const std::string &opts) -> int {
   if (!opts.empty()) {
-    LOG(ERROR) << "Options are not implemented yet";
+    Log << "Options are not implemented yet";
   }
 
   std::fstream file(source, std::ios::in);
   if (!file.is_open()) {
-    LOG(ERROR) << "Failed to open source file: " << source;
+    Log << "Failed to open source file: " << source;
     return 1;
   }
 
@@ -414,7 +411,7 @@ static auto DoNr(std::shared_ptr<Environment> &env, const std::string &source, s
   if (auto module = NrLower(ast.Get().get(), "module", true)) {
     NrWrite(module.get(), nullptr, output);
   } else {
-    LOG(ERROR) << "Failed to lower source file: " << source;
+    Log << "Failed to lower source file: " << source;
     return 1;
   }
 
@@ -424,12 +421,12 @@ static auto DoNr(std::shared_ptr<Environment> &env, const std::string &source, s
 static auto DoCodegen(std::shared_ptr<Environment> &env, const std::string &source, const std::string &output,
                       const std::string &opts, const std::string &target) -> int {
   if (!opts.empty()) {
-    LOG(ERROR) << "Options are not implemented yet";
+    Log << "Options are not implemented yet";
   }
 
   std::fstream file(source, std::ios::in);
   if (!file.is_open()) {
-    LOG(ERROR) << "Failed to open source file: " << source;
+    Log << "Failed to open source file: " << source;
     return 1;
   }
 
@@ -447,7 +444,7 @@ static auto DoCodegen(std::shared_ptr<Environment> &env, const std::string &sour
     FILE *out = use_tmpfile ? tmpfile() : fopen(output.c_str(), "wb");
 
     if (out == nullptr) {
-      LOG(ERROR) << "Failed to open output file: " << output;
+      Log << "Failed to open output file: " << output;
       return 1;
     }
 
@@ -461,28 +458,28 @@ static auto DoCodegen(std::shared_ptr<Environment> &env, const std::string &sour
     } else if (target == "obj") {
       ok = QcodeObj(module.get(), codegen_conf.Get(), stderr, out);
     } else {
-      LOG(ERROR) << "Unknown target specified: " << target;
+      Log << "Unknown target specified: " << target;
       return 1;
     }
 
     if (use_tmpfile) {
       rewind(out);
-      char buf[4096];
+      std::array<char, 4096> buf;
 
       while (feof(out) == 0) {
-        size_t len = fread(buf, 1, sizeof(buf), out);
-        fwrite(buf, 1, len, stdout);
+        size_t len = fread(buf.data(), 1, buf.size(), out);
+        fwrite(buf.data(), 1, len, stdout);
       }
     }
 
     fclose(out);
 
     if (!ok) {
-      LOG(ERROR) << "Failed to generate code for source file: " << source;
+      Log << "Failed to generate code for source file: " << source;
       return 1;
     }
   } else {
-    LOG(ERROR) << "Failed to lower source file: " << source;
+    Log << "Failed to lower source file: " << source;
     return 1;
   }
 
@@ -538,7 +535,6 @@ namespace no3::router {
       using namespace no3::benchmark;
 
       auto &bench_parser = *subparsers.at("bench");
-      core::SetDebugMode(bench_parser["--verbose"] == true);
 
       if (bench_parser["--list"] == true) {
         std::cout << "Available benchmarks:" << std::endl;
@@ -554,8 +550,8 @@ namespace no3::router {
       }
 
       if (!bench_parser.IsUsed("--name")) {
-        LOG(ERROR) << "No benchmark specified" << std::endl;
-        LOG(ERROR) << bench_parser;
+        Log << "No benchmark specified";
+        Log << bench_parser;
         return 1;
       }
 
@@ -571,8 +567,8 @@ namespace no3::router {
                                                                           {"pipeline", Benchmark::PIPELINE}};
 
       if (!name_map.contains(bench_name)) {
-        LOG(ERROR) << "Unknown benchmark specified" << std::endl;
-        LOG(ERROR) << bench_parser;
+        Log << "Unknown benchmark specified";
+        Log << bench_parser;
         return 1;
       }
 
@@ -581,15 +577,13 @@ namespace no3::router {
 
     if (parser.IsSubcommandUsed("test")) {
       auto &test_parser = *subparsers.at("test");
-      core::SetDebugMode(test_parser["--verbose"] == true);
-
       auto gtest_options = test_parser.Get<std::vector<std::string>>("--opt");
       for (auto &opt : gtest_options) {
         if (!opt.starts_with("--")) {
           opt.insert(0, "--");
         }
 
-        LOG(INFO) << "Adding gtest option: " << opt;
+        Log << Info << "Adding gtest option: " << opt;
       }
       gtest_options.insert(gtest_options.begin(), "no3");
 
@@ -599,7 +593,6 @@ namespace no3::router {
     if (parser.IsSubcommandUsed("parse")) {
       auto &parse_parser = *subparsers.at("parse");
       bool verbose = parse_parser["--verbose"] == true;
-      core::SetDebugMode(verbose);
 
       auto source = parse_parser.Get<std::string>("source");
       auto output = parse_parser.Get<std::string>("--output");
@@ -613,8 +606,6 @@ namespace no3::router {
     if (parser.IsSubcommandUsed("nr")) {
       auto &nr_parser = *subparsers.at("nr");
 
-      core::SetDebugMode(nr_parser["--verbose"] == true);
-
       auto source = nr_parser.Get<std::string>("source");
       auto output = nr_parser.Get<std::string>("--output");
       auto opts = nr_parser.Get<std::string>("--opts");
@@ -627,8 +618,6 @@ namespace no3::router {
 
     if (parser.IsSubcommandUsed("codegen")) {
       auto &nr_parser = *subparsers.at("codegen");
-
-      core::SetDebugMode(nr_parser["--verbose"] == true);
 
       auto source = nr_parser.Get<std::string>("source");
       auto output = nr_parser.Get<std::string>("--output");
@@ -646,7 +635,7 @@ namespace no3::router {
 
       auto demangled_name = ExpandSymbolName(mangled_name);
       if (!demangled_name) {
-        LOG(ERROR) << "Failed to demangle symbol" << std::endl;
+        Log << "Failed to demangle symbol";
         return 1;
       }
 

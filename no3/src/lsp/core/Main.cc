@@ -1,15 +1,15 @@
-#include <glog/logging.h>
-
-#include <argparse.hpp>
 #include <boost/assert/source_location.hpp>
 #include <boost/throw_exception.hpp>
+#include <core/argparse.hpp>
 #include <csignal>
 #include <filesystem>
 #include <lsp/core/Server.hh>
 #include <memory>
+#include <nitrate-core/Logger.hh>
 #include <nitrate-core/Macro.hh>
 #include <optional>
 
+using namespace ncc;
 using namespace no3::lsp;
 using namespace no3::lsp::srv;
 
@@ -39,7 +39,7 @@ extern "C" NCC_EXPORT auto NitratedMain(int argc, char** argv) -> int {
       }
     }
 
-    LOG(INFO) << "Starting nitrated: \"" << str << "\"";
+    Log << Info << "Starting nitrated: \"" << str << "\"";
   }
 
   argparse::ArgumentParser parser("nitrated", "1.0");
@@ -54,13 +54,13 @@ extern "C" NCC_EXPORT auto NitratedMain(int argc, char** argv) -> int {
       config = std::make_unique<Configuration>(Configuration::Defaults());
     } else {
       if (!std::filesystem::exists(config_file)) {
-        LOG(ERROR) << "Configuration file does not exist: " << config_file;
+        Log << "Configuration file does not exist: " << config_file;
         return 1;
       }
 
       auto config_opt = ParseConfig(config_file);
       if (!config_opt.has_value()) {
-        LOG(ERROR) << "Failed to parse configuration file: " << config_file;
+        Log << "Failed to parse configuration file: " << config_file;
         return 1;
       }
 
@@ -85,19 +85,19 @@ extern "C" NCC_EXPORT auto NitratedMain(int argc, char** argv) -> int {
 
     switch (connection_type) {
       case ConnectionType::Pipe:
-        LOG(INFO) << "Using pipe: " << connect_param;
+        Log << Info << "Using pipe: " << connect_param;
         break;
       case ConnectionType::Port:
-        LOG(INFO) << "Using port: " << connect_param;
+        Log << Info << "Using port: " << connect_param;
         break;
       case ConnectionType::Stdio:
-        LOG(INFO) << "Using standard I/O";
+        Log << Info << "Using standard I/O";
         break;
     }
 
     auto channel_opt = OpenConnection(connection_type, String(connect_param));
     if (!channel_opt) {
-      LOG(ERROR) << "Failed to open channel";
+      Log << "Failed to open channel";
       return 1;
     }
 

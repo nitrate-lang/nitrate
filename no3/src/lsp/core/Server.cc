@@ -1,5 +1,3 @@
-#include <glog/logging.h>
-
 #include <chrono>
 #include <functional>
 #include <lsp/core/LSP.hh>
@@ -7,11 +5,13 @@
 #include <lsp/route/RoutesList.hh>
 #include <memory>
 #include <mutex>
+#include <nitrate-core/Logger.hh>
 #include <shared_mutex>
 #include <stop_token>
 #include <utility>
 #include <variant>
 
+using namespace ncc;
 using namespace no3::lsp::srv;
 
 auto ServerContext::The() -> ServerContext& {
@@ -68,9 +68,9 @@ auto ServerContext::NextMessage(std::istream& in) -> std::optional<MessageObject
     if (header.starts_with("Content-Length: ")) {
       remaining_bytes = std::stoul(header.substr(16));
     } else if (header.starts_with("Content-Type: ")) {
-      LOG(WARNING) << "The Content-Type header is ignored";
+      Log << Warning << "The Content-Type header is ignored";
     } else {
-      LOG(WARNING) << "Discarding unrecognized header: " << header;
+      Log << Warning << "Discarding unrecognized header: " << header;
     }
   }
 
@@ -84,7 +84,7 @@ auto ServerContext::NextMessage(std::istream& in) -> std::optional<MessageObject
 
     while (remaining_bytes > 0) {
       if (!in.read(body.data() + bytes_read, remaining_bytes)) {
-        LOG(ERROR) << "Failed to read message body";
+        Log << "Failed to read message body";
         return std::nullopt;
       }
 
@@ -93,41 +93,41 @@ auto ServerContext::NextMessage(std::istream& in) -> std::optional<MessageObject
     }
   }
 
-  LOG(INFO) << "Received message: " << body;
+  Log << Info << "Received message: " << body;
 
   nlohmann::json doc = nlohmann::json::parse(body, nullptr, false);
   body.clear();
 
   if (doc.is_discarded()) {
-    LOG(ERROR) << "Failed to parse JSON: " << doc;
+    Log << "Failed to parse JSON: " << doc;
     return std::nullopt;
   }
 
   if (!doc.contains("jsonrpc")) [[unlikely]] {
-    LOG(ERROR) << "Request object is missing key \"jsonrpc\"";
+    Log << "Request object is missing key \"jsonrpc\"";
     return std::nullopt;
   }
 
   if (!doc["jsonrpc"].is_string()) [[unlikely]] {
-    LOG(ERROR) << "Request object key \"jsonrpc\" is not a string";
+    Log << "Request object key \"jsonrpc\" is not a string";
     return std::nullopt;
   }
 
   if (doc["jsonrpc"].get<std::string>() != std::string_view("2.0")) [[unlikely]] {
-    LOG(ERROR) << "Client is using unsupported LSP JSON-RPC version";
-    LOG(INFO) << "Client is using version: " << doc["jsonrpc"].get<std::string>();
-    LOG(INFO) << "Server only supports version: 2.0";
+    Log << "Client is using unsupported LSP JSON-RPC version";
+    Log << Info << "Client is using version: " << doc["jsonrpc"].get<std::string>();
+    Log << Info << "Server only supports version: 2.0";
 
     return std::nullopt;
   }
 
   if (!doc.contains("method")) [[unlikely]] {
-    LOG(ERROR) << "Request object is missing key \"method\"";
+    Log << "Request object is missing key \"method\"";
     return std::nullopt;
   }
 
   if (!doc["method"].is_string()) [[unlikely]] {
-    LOG(ERROR) << "Request object key \"method\" is not a string";
+    Log << "Request object key \"method\" is not a string";
     return std::nullopt;
   }
 
@@ -135,7 +135,7 @@ auto ServerContext::NextMessage(std::istream& in) -> std::optional<MessageObject
 
   if (doc.contains("params")) {
     if (!doc["params"].is_object() && !doc["params"].is_array()) [[unlikely]] {
-      LOG(ERROR) << "Method parameters is not an object or array";
+      Log << "Method parameters is not an object or array";
       return std::nullopt;
     }
 
@@ -150,7 +150,7 @@ auto ServerContext::NextMessage(std::istream& in) -> std::optional<MessageObject
     message = MessageObject(NotificationMessage(String(doc["method"].get<std::string>()), std::move(params)));
   } else {
     if (!doc["id"].is_string() && !doc["id"].is_number()) [[unlikely]] {
-      LOG(ERROR) << "Request object key \"id\" is not a string or int";
+      Log << "Request object key \"id\" is not a string or int";
       return std::nullopt;
     }
 
@@ -202,17 +202,17 @@ void ServerContext::RegisterHandlers() {
 }
 
 void ServerContext::DoRequest(const RequestMessage& req, std::ostream& out) {
-  LOG(INFO) << "Handling request: \"" << req.GetMethod() << "\"";
+  Log << Info << "Handling request: \"" << req.GetMethod() << "\"";
 
   auto sub_response = ResponseMessage::FromRequest(req);
 
   auto it = m_request_handlers.find(req.GetMethod());
   if (it == m_request_handlers.end()) {
     if (req.GetMethod()->starts_with("$/")) {
-      LOG(INFO) << "Ignoring request: " << req.GetMethod();
+      Log << Info << "Ignoring request: " << req.GetMethod();
       return;
     }
-    LOG(WARNING) << "No request handler for method: " << req.GetMethod();
+    Log << Warning << "No request handler for method: " << req.GetMethod();
     return;
   }
 
@@ -257,16 +257,16 @@ void ServerContext::DoRequest(const RequestMessage& req, std::ostream& out) {
 }
 
 void ServerContext::DoNotification(const NotificationMessage& notif) {
-  LOG(INFO) << "Handling notification: \"" << notif.Method() << "\"";
+  Log << Info << "Handling notification: \"" << notif.Method() << "\"";
 
   auto it = m_notification_handlers.find(notif.Method());
   if (it == m_notification_handlers.end()) {
     if (notif.Method()->starts_with("$/")) {
-      LOG(INFO) << "Ignoring notification: " << notif.Method();
+      Log << Info << "Ignoring notification: " << notif.Method();
       return;
     }
 
-    LOG(WARNING) << "No notify handler for method: " << notif.Method();
+    Log << Warning << "No notify handler for method: " << notif.Method();
     return;
   }
 

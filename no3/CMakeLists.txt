@@ -14,7 +14,6 @@ if(CMAKE_BUILD_TYPE STREQUAL "Debug")
   set(__TARGET_VERSION "\"undefined\"")
 endif()
 
-find_library(libglog libglog.a REQUIRED)
 find_library(libgflags libgflags.a REQUIRED)
 find_library(libyaml_cpp libyaml-cpp.a REQUIRED)
 find_library(libgit2 git2 REQUIRED)
@@ -41,7 +40,6 @@ target_link_libraries(no3 PUBLIC
   nitrate-seq
   nitrate-core
   ${libyaml_cpp}
-  ${libglog}
   ${libgflags}
   ${libgit2}
   unwind
@@ -73,7 +71,6 @@ if(BUILD_SHARED_LIBS STREQUAL "OFF")
     nitrate-seq
     nitrate-core
     ${libyaml_cpp}
-    ${libglog}
     ${libgflags}
     ${libgit2}
     unwind

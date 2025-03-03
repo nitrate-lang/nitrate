@@ -14,12 +14,13 @@
 #include <nitrate-core/Assert.hh>
 #include <nitrate-core/Logger.hh>
 
+using namespace ncc;
 using namespace no3::lsp;
 
 static auto ConnectUnixSocket(const auto& path) -> std::optional<int> {
   int sockfd = socket(AF_UNIX, SOCK_STREAM, 0);
   if (sockfd == -1) {
-    LOG(ERROR) << "Failed to create socket: " << GetStrerror();
+    Log << "Failed to create socket: " << GetStrerror();
     return std::nullopt;
   }
 
@@ -29,7 +30,7 @@ static auto ConnectUnixSocket(const auto& path) -> std::optional<int> {
   strncpy(addr.sun_path, std::string(path).c_str(), sizeof(addr.sun_path) - 1);
 
   if (connect(sockfd, (struct sockaddr*)&addr, sizeof(addr)) == -1) {
-    LOG(ERROR) << "Failed to connect to socket: " << GetStrerror();
+    Log << "Failed to connect to socket: " << GetStrerror();
     return std::nullopt;
   }
 
@@ -39,7 +40,7 @@ static auto ConnectUnixSocket(const auto& path) -> std::optional<int> {
 static auto ConnectToPipe(const auto& path) -> std::optional<srv::Connection> {
   auto conn = ConnectUnixSocket(path);
   if (!conn) {
-    LOG(ERROR) << "Failed to connect to UNIX socket " << path;
+    Log << "Failed to connect to UNIX socket " << path;
     return std::nullopt;
   }
 
@@ -51,13 +52,13 @@ static auto ConnectToPipe(const auto& path) -> std::optional<srv::Connection> {
       conn.value(), boost::iostreams::close_handle);
 
   if (!in_stream->is_open() || !out_stream->is_open()) {
-    LOG(ERROR) << "Failed to open stdio streams";
+    Log << "Failed to open stdio streams";
     return std::nullopt;
   }
 
   auto stream = std::make_pair(std::move(in_stream), std::move(out_stream));
 
-  LOG(INFO) << "Connected to UNIX socket " << path;
+  Log << Info << "Connected to UNIX socket " << path;
 
   return stream;
 }
@@ -65,7 +66,7 @@ static auto ConnectToPipe(const auto& path) -> std::optional<srv::Connection> {
 static auto GetTcpClient(const auto& host, uint16_t port) -> std::optional<int> {
   int fd = socket(AF_INET, SOCK_STREAM, 0);
   if (fd == -1) {
-    LOG(ERROR) << "Failed to create socket: " << GetStrerror();
+    Log << "Failed to create socket: " << GetStrerror();
     return std::nullopt;
   }
 
@@ -79,28 +80,28 @@ static auto GetTcpClient(const auto& host, uint16_t port) -> std::optional<int> 
   addr.m_in.sin_addr.s_addr = inet_addr(std::string(host).c_str());
 
   if (bind(fd, &addr.m_addr, sizeof(addr.m_addr)) == -1) {
-    LOG(ERROR) << "Failed to bind socket: " << GetStrerror();
+    Log << "Failed to bind socket: " << GetStrerror();
     return std::nullopt;
   }
 
-  LOG(INFO) << "Bound to TCP port " << port;
-  LOG(INFO) << "Waiting for connection";
+  Log << Info << "Bound to TCP port " << port;
+  Log << Info << "Waiting for connection";
 
   if (listen(fd, 1) == -1) {
-    LOG(ERROR) << "Failed to listen on socket: " << GetStrerror();
+    Log << "Failed to listen on socket: " << GetStrerror();
     return std::nullopt;
   }
 
   int client_fd = accept(fd, nullptr, nullptr);
   if (client_fd == -1) {
-    LOG(ERROR) << "Failed to accept connection: " << GetStrerror();
+    Log << "Failed to accept connection: " << GetStrerror();
     return std::nullopt;
   }
 
-  LOG(INFO) << "Accepted connection from client";
+  Log << Info << "Accepted connection from client";
 
   if (close(fd) == -1) {
-    LOG(ERROR) << "Failed to close listening socket: " << GetStrerror();
+    Log << "Failed to close listening socket: " << GetStrerror();
     return std::nullopt;
   }
 
@@ -110,7 +111,7 @@ static auto GetTcpClient(const auto& host, uint16_t port) -> std::optional<int> 
 static auto ConnectToTcpPort(uint16_t tcp_port) -> std::optional<srv::Connection> {
   auto conn = GetTcpClient("127.0.0.1", tcp_port);
   if (!conn) {
-    LOG(ERROR) << "Failed to connect to TCP port " << tcp_port;
+    Log << "Failed to connect to TCP port " << tcp_port;
     return std::nullopt;
   }
 
@@ -122,19 +123,19 @@ static auto ConnectToTcpPort(uint16_t tcp_port) -> std::optional<srv::Connection
       conn.value(), boost::iostreams::close_handle);
 
   if (!in_stream->is_open() || !out_stream->is_open()) {
-    LOG(ERROR) << "Failed to open stdio streams";
+    Log << "Failed to open stdio streams";
     return std::nullopt;
   }
 
   auto stream = std::make_pair(std::move(in_stream), std::move(out_stream));
 
-  LOG(INFO) << "Connected to TCP port " << tcp_port;
+  Log << Info << "Connected to TCP port " << tcp_port;
 
   return stream;
 }
 
 static auto ConnectToStdio() -> std::optional<srv::Connection> {
-  LOG(INFO) << "Connecting to stdio";
+  Log << Info << "Connecting to stdio";
 
   auto in_stream = std::make_unique<boost::iostreams::stream<boost::iostreams::file_descriptor>>(
       STDIN_FILENO, boost::iostreams::never_close_handle);
@@ -143,13 +144,13 @@ static auto ConnectToStdio() -> std::optional<srv::Connection> {
       STDOUT_FILENO, boost::iostreams::never_close_handle);
 
   if (!in_stream->is_open() || !out_stream->is_open()) {
-    LOG(ERROR) << "Failed to open stdio streams";
+    Log << "Failed to open stdio streams";
     return std::nullopt;
   }
 
   auto stream = std::make_pair(std::move(in_stream), std::move(out_stream));
 
-  LOG(INFO) << "Connected to stdio";
+  Log << Info << "Connected to stdio";
 
   return stream;
 }
@@ -165,12 +166,12 @@ auto srv::OpenConnection(srv::ConnectionType type, const String& target) -> std:
 
       std::from_chars_result res = std::from_chars(target->c_str(), target->c_str() + target->size(), port);
       if (res.ec != std::errc()) {
-        LOG(ERROR) << "Invalid port number: " << target;
+        Log << "Invalid port number: " << target;
         return std::nullopt;
       }
 
       if (port < 0 || port > UINT16_MAX) {
-        LOG(ERROR) << "Port number is out of the range of valid TCP ports";
+        Log << "Port number is out of the range of valid TCP ports";
         return std::nullopt;
       }
 

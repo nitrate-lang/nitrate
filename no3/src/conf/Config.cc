@@ -32,8 +32,10 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <conf/Parser.hh>
-#include <core/Logger.hh>
 #include <fstream>
+#include <nitrate-core/Logger.hh>
+
+using namespace ncc;
 
 static auto JsonEscapeString(const std::string &str) -> std::string {
   std::stringstream ss;
@@ -137,7 +139,7 @@ auto no3::conf::ConfigGroup::Dump(no3::conf::ConfigItemSerializationTarget targe
       }
     }
   } else {
-    LOG(FATAL) << "Unsupported serialization target";
+    Log << "Unsupported serialization target";
   }
 
   return ss.str();

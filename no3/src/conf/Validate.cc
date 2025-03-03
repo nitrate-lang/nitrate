@@ -33,7 +33,9 @@
 
 #include <conf/SPDX.hh>
 #include <conf/Validate.hh>
-#include <core/Logger.hh>
+#include <nitrate-core/Logger.hh>
+
+using namespace ncc;
 
 enum class KeyName : uint8_t {
   NAME,
@@ -123,178 +125,176 @@ auto IsUtf8(const char *string) -> bool {
 }
 
 auto no3::conf::ValidateConfig(const no3::conf::Config &config, const std::filesystem::path &base) -> bool {
-  using namespace no3::core;
-
   auto keys = config.Keys();
 
   for (const auto &key : keys) {
     if (!KeyMap.contains(key)) {
-      LOG(ERROR) << "Invalid key in configuration: " << key;
+      Log << "Invalid key in configuration: " << key;
       return false;
     }
 
     switch (KeyMap[key]) {
       case KeyName::NAME:
         if (!config[key].Is<std::string>()) {
-          LOG(ERROR) << "Invalid value type for key 'name' in configuration";
+          Log << "Invalid value type for key 'name' in configuration";
           return false;
         }
         if (!IsUtf8(config[key].As<std::string>().c_str())) {
-          LOG(ERROR) << "Invalid value for key 'name' in configuration: must be UTF-8";
+          Log << "Invalid value for key 'name' in configuration: must be UTF-8";
           return false;
         }
         break;
       case KeyName::VERSION:
         if (!config[key].Is<int64_t>()) {
-          LOG(ERROR) << "Invalid value type for key 'version' in configuration";
+          Log << "Invalid value type for key 'version' in configuration";
           return false;
         }
         if (config[key].As<int64_t>() != 1) {
-          LOG(ERROR) << "This version of the NO3 system only supports version 1";
+          Log << "This version of the NO3 system only supports version 1";
           return false;
         }
         break;
       case KeyName::DESCRIPTION:
         if (!config[key].Is<std::string>()) {
-          LOG(ERROR) << "Invalid value type for key 'description' in configuration";
+          Log << "Invalid value type for key 'description' in configuration";
           return false;
         }
         if (!IsUtf8(config[key].As<std::string>().c_str())) {
-          LOG(ERROR) << "Invalid value for key 'description' in "
-                        "configuration: must be UTF-8";
+          Log << "Invalid value for key 'description' in "
+                 "configuration: must be UTF-8";
           return false;
         }
         break;
       case KeyName::AUTHORS:
         if (!config[key].Is<std::vector<std::string>>()) {
-          LOG(ERROR) << "Invalid value type for key 'authors' in configuration";
+          Log << "Invalid value type for key 'authors' in configuration";
           return false;
         }
         for (const auto &author : config[key].As<std::vector<std::string>>()) {
           if (!IsUtf8(author.c_str())) {
-            LOG(ERROR) << "Invalid value for key 'authors' in "
-                          "configuration: must be UTF-8";
+            Log << "Invalid value for key 'authors' in "
+                   "configuration: must be UTF-8";
             return false;
           }
         }
         break;
       case KeyName::EMAILS:
         if (!config[key].Is<std::vector<std::string>>()) {
-          LOG(ERROR) << "Invalid value type for key 'emails' in configuration";
+          Log << "Invalid value type for key 'emails' in configuration";
           return false;
         }
         for (const auto &email : config[key].As<std::vector<std::string>>()) {
           if (!IsUtf8(email.c_str())) {
-            LOG(ERROR) << "Invalid value for key 'emails' in "
-                          "configuration: must be UTF-8";
+            Log << "Invalid value for key 'emails' in "
+                   "configuration: must be UTF-8";
             return false;
           }
         }
         break;
       case KeyName::URL:
         if (!config[key].Is<std::string>()) {
-          LOG(ERROR) << "Invalid value type for key 'url' in configuration";
+          Log << "Invalid value type for key 'url' in configuration";
           return false;
         }
         if (!IsUtf8(config[key].As<std::string>().c_str())) {
-          LOG(ERROR) << "Invalid value for key 'url' in configuration: must be UTF-8";
+          Log << "Invalid value for key 'url' in configuration: must be UTF-8";
           return false;
         }
         break;
       case KeyName::LICENSES:
         if (!config[key].Is<std::vector<std::string>>()) {
-          LOG(ERROR) << "Invalid value type for key 'licenses' in configuration";
+          Log << "Invalid value type for key 'licenses' in configuration";
           return false;
         }
         for (const auto &license : config[key].As<std::vector<std::string>>()) {
           if (!no3::conf::SPDX_IDENTIFIERS.contains(license)) {
-            LOG(ERROR) << "Invalid license in configuration: " << license;
+            Log << "Invalid license in configuration: " << license;
             return false;
           }
         }
         break;
       case KeyName::SOURCES:
         if (!config[key].Is<std::vector<std::string>>()) {
-          LOG(ERROR) << "Invalid value type for key 'sources' in configuration";
+          Log << "Invalid value type for key 'sources' in configuration";
           return false;
         }
         for (const auto &source : config[key].As<std::vector<std::string>>()) {
           if (!std::filesystem::exists(base / source)) {
-            LOG(ERROR) << "Source does not exist: " << source;
+            Log << "Source does not exist: " << source;
             return false;
           }
         }
         break;
       case KeyName::TARGET:
         if (!config[key].Is<std::string>()) {
-          LOG(ERROR) << "Invalid value type for key 'target' in configuration";
+          Log << "Invalid value type for key 'target' in configuration";
           return false;
         }
         if (!TargetValidValues.contains(config[key].As<std::string>())) {
-          LOG(ERROR) << "Invalid value for key 'target' in configuration: must be one "
-                        "of 'sharedlib', 'staticlib', or 'executable'";
+          Log << "Invalid value for key 'target' in configuration: must be one "
+                 "of 'sharedlib', 'staticlib', or 'executable'";
           return false;
         }
         break;
       case KeyName::TRIPLE:
         if (!config[key].Is<std::string>()) {
-          LOG(ERROR) << "Invalid value type for key 'triple' in configuration";
+          Log << "Invalid value type for key 'triple' in configuration";
           return false;
         }
         if (!IsUtf8(config[key].As<std::string>().c_str())) {
-          LOG(ERROR) << "Invalid value for key 'triple' in "
-                        "configuration: must be UTF-8";
+          Log << "Invalid value for key 'triple' in "
+                 "configuration: must be UTF-8";
           return false;
         }
         break;
       case KeyName::CPU:
         if (!config[key].Is<std::string>()) {
-          LOG(ERROR) << "Invalid value type for key 'cpu' in configuration";
+          Log << "Invalid value type for key 'cpu' in configuration";
           return false;
         }
         if (!IsUtf8(config[key].As<std::string>().c_str())) {
-          LOG(ERROR) << "Invalid value for key 'cpu' in configuration: must be UTF-8";
+          Log << "Invalid value for key 'cpu' in configuration: must be UTF-8";
           return false;
         }
         break;
       case KeyName::CFLAGS:
         if (!config[key].Is<std::vector<std::string>>()) {
-          LOG(ERROR) << "Invalid value type for key 'cflags' in configuration";
+          Log << "Invalid value type for key 'cflags' in configuration";
           return false;
         }
         break;
       case KeyName::LFLAGS:
         if (!config[key].Is<std::vector<std::string>>()) {
-          LOG(ERROR) << "Invalid value type for key 'lflags' in configuration";
+          Log << "Invalid value type for key 'lflags' in configuration";
           return false;
         }
         break;
       case KeyName::NOLINK:
         if (!config[key].Is<bool>()) {
-          LOG(ERROR) << "Invalid value type for key 'nolink' in configuration";
+          Log << "Invalid value type for key 'nolink' in configuration";
           return false;
         }
         break;
       case KeyName::PACKAGES:
         if (!config[key].Is<std::vector<std::string>>()) {
-          LOG(ERROR) << "Invalid value type for key 'packages' in configuration";
+          Log << "Invalid value type for key 'packages' in configuration";
           return false;
         }
         for (const auto &source : config[key].As<std::vector<std::string>>()) {
           if (!std::filesystem::exists(base / source) || !std::filesystem::is_directory(base / source)) {
-            LOG(ERROR) << "Dependency does not exist: " << source;
+            Log << "Dependency does not exist: " << source;
             return false;
           }
         }
         break;
       default:
-        LOG(ERROR) << "Invalid key in configuration: " << key;
+        Log << "Invalid key in configuration: " << key;
         return false;
     }
   }
 
   if (!std::all_of(RequiredKeys.begin(), RequiredKeys.end(), [&keys](const auto &key) { return keys.contains(key); })) {
-    LOG(ERROR) << "Missing required key in configuration";
+    Log << "Missing required key in configuration";
     return false;
   }
 

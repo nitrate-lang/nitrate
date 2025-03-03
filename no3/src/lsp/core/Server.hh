@@ -1,7 +1,5 @@
 #pragma once
 
-#include <glog/logging.h>
-
 #include <filesystem>
 #include <functional>
 #include <iostream>
@@ -9,6 +7,7 @@
 #include <lsp/core/LSP.hh>
 #include <lsp/core/ThreadPool.hh>
 #include <memory>
+#include <nitrate-core/Logger.hh>
 #include <optional>
 #include <shared_mutex>
 #include <utility>

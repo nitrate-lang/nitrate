@@ -34,19 +34,21 @@
 #include <clean/Cleanup.hh>
 #include <conf/Parser.hh>
 #include <conf/Validate.hh>
-#include <core/Logger.hh>
+#include <nitrate-core/Logger.hh>
+
+using namespace ncc;
 
 static auto GetConfig(const std::filesystem::path &base) -> std::optional<no3::conf::Config> {
   if (std::filesystem::exists(base / "no3.yaml")) {
     auto c = no3::conf::YamlConfigParser().Parsef(base / "no3.yaml");
 
     if (!c) {
-      LOG(ERROR) << "Failed to parse configuration file: " << base / "no3.yaml";
+      Log << "Failed to parse configuration file: " << base / "no3.yaml";
       return std::nullopt;
     }
 
     if (!no3::conf::ValidateConfig(*c, base)) {
-      LOG(ERROR) << "Failed to validate configuration";
+      Log << "Failed to validate configuration";
       return std::nullopt;
     }
 
@@ -54,7 +56,7 @@ static auto GetConfig(const std::filesystem::path &base) -> std::optional<no3::c
 
     return c;
   }
-  LOG(ERROR) << "No configuration file found in package source directory";
+  Log << "No configuration file found in package source directory";
   return std::nullopt;
 }
 
@@ -78,17 +80,17 @@ auto no3::clean::CleanPackageSource(const std::string &package_src, bool verbose
   std::filesystem::path package_src_path(package_src);
 
   if (!std::filesystem::exists(package_src_path)) {
-    LOG(ERROR) << "Package source path does not exist: " << package_src;
+    Log << "Package source path does not exist: " << package_src;
     return false;
   }
 
   if (!std::filesystem::is_directory(package_src_path)) {
-    LOG(ERROR) << "Package source path is not a directory: " << package_src;
+    Log << "Package source path is not a directory: " << package_src;
     return false;
   }
 
   if (verbose) {
-    LOG(INFO) << "Cleaning package source recursively";
+    Log << Info << "Cleaning package source recursively";
   }
 
   // std::filesystem::path cache_dir = package_src_path / ".no3" / "cache";
@@ -96,7 +98,7 @@ auto no3::clean::CleanPackageSource(const std::string &package_src, bool verbose
 
   // if (std::filesystem::exists(cache_dir)) {
   //   if (verbose)
-  //     LOG(INFO) << "Removing cache directory: " << cache_dir <<
+  //     Log << Info << "Removing cache directory: " << cache_dir <<
   //     std::endl;
 
   //   std::filesystem::remove_all(cache_dir);
@@ -104,7 +106,7 @@ auto no3::clean::CleanPackageSource(const std::string &package_src, bool verbose
 
   // if (std::filesystem::exists(build_dir)) {
   //   if (verbose)
-  //     LOG(INFO) << "Removing build directory: " << build_dir <<
+  //     Log << Info << "Removing build directory: " << build_dir <<
   //     std::endl;
   //   std::filesystem::remove_all(build_dir);
   // }
@@ -113,7 +115,7 @@ auto no3::clean::CleanPackageSource(const std::string &package_src, bool verbose
 
   if (std::filesystem::exists(no3_dir)) {
     if (verbose) {
-      LOG(INFO) << "Removing .no3 directory: " << no3_dir;
+      Log << Info << "Removing .no3 directory: " << no3_dir;
     }
 
     std::filesystem::remove_all(no3_dir);
@@ -121,18 +123,18 @@ auto no3::clean::CleanPackageSource(const std::string &package_src, bool verbose
 
   auto conf = GetConfig(package_src_path);
   if (!conf) {
-    LOG(ERROR) << "Failed to get configuration";
+    Log << "Failed to get configuration";
     return false;
   }
 
   auto name = conf.value()["name"].As<std::string>();
   std::string tmp;
 
-#define RMFILE(_file)                                                      \
-  tmp = _file;                                                             \
-  if (std::filesystem::is_regular_file(package_src_path / tmp)) {          \
-    if (verbose) LOG(INFO) << "Removing file: " << package_src_path / tmp; \
-    std::filesystem::remove(package_src_path / tmp);                       \
+#define RMFILE(_file)                                                        \
+  tmp = _file;                                                               \
+  if (std::filesystem::is_regular_file(package_src_path / tmp)) {            \
+    if (verbose) Log << Info << "Removing file: " << package_src_path / tmp; \
+    std::filesystem::remove(package_src_path / tmp);                         \
   }
 
   RMFILE(name);
@@ -148,7 +150,7 @@ auto no3::clean::CleanPackageSource(const std::string &package_src, bool verbose
   RecursveSubpackages(package_src_path, verbose);
 
   if (verbose) {
-    LOG(INFO) << "Package " << package_src << " cleaned";
+    Log << Info << "Package " << package_src << " cleaned";
   }
 
   return true;
