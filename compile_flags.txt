@@ -11,7 +11,8 @@
 -I./pipeline/libnitrate-emit/src
 -I./pipeline/libnitrate/include
 -I./pipeline/libnitrate/src
--I./no3/src
+-I./no3/lib/include
+-I./no3/lib/src
 -I./test/src
 -I/usr/lib/llvm-18/include
 -D__NITRATE_IMPL__

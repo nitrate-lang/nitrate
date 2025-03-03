@@ -63,7 +63,7 @@ using namespace ncc;
 using namespace no3;
 using argparse::ArgumentParser;
 
-static std::unique_ptr<std::ostream> GlobalOutputStream = std::make_unique<std::ostream>(std::cerr.rdbuf());
+std::unique_ptr<std::ostream> GlobalOutputStream = std::make_unique<std::ostream>(std::cerr.rdbuf());
 
 namespace no3::router {
   static auto RunInitMode(const ArgumentParser &parser) -> int {
@@ -367,14 +367,3 @@ extern "C" __attribute__((visibility("default"))) auto No3Init() -> bool {
 
   return true;
 }
-
-#ifdef NO3_MAIN
-int main(int argc, char *argv[]) {
-  if (!No3Init()) {
-    std::cerr << "Failed to initialize no3\n";
-    return 1;
-  }
-
-  return No3Command(argc, argv);
-}
-#endif

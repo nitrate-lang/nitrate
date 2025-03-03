@@ -31,47 +31,69 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <nitrate-core/Init.hh>
-#include <nitrate-core/Logger.hh>
-#include <nitrate-core/Macro.hh>
-#include <nitrate-core/SmartLock.hh>
-#include <nitrate-core/String.hh>
+#ifndef NO3_INTERPRETER_HH
+#define NO3_INTERPRETER_HH
 
-using namespace ncc;
-
-NCC_EXPORT LibraryRC<CoreLibrarySetup> ncc::CoreLibrary;
-NCC_EXPORT std::atomic<bool> ncc::EnableSync = true;
-
-NCC_EXPORT auto CoreLibrarySetup::Init() -> bool {
-  // Nothing to do here for now.
-
-  Log << Debug << "Initialized Nitrate Core Library";
-
-  return true;
-}
-
-NCC_EXPORT void CoreLibrarySetup::Deinit() {
-  Log << Debug << "Deinitialing Nitrate Core Library...";
-
-  Log.UnsubscribeAll();
-  Log.ClearFilters();
-  Log.Enable();
-
-  String::ResetInstances();
-}
-
-NCC_EXPORT auto CoreLibrarySetup::GetVersionId() -> std::string_view { return __TARGET_VERSION; }
-
-#define BOOST_NO_EXCEPTIONS
-#include <boost/throw_exception.hpp>
+#include <functional>
 #include <iostream>
+#include <memory>
+#include <string>
+#include <string_view>
+#include <vector>
 
-[[maybe_unused]] NCC_EXPORT void boost::throw_exception(std::exception const& m, boost::source_location const&) {
-  std::cerr << "boost::throw_exception: " << m.what();
-  std::terminate();
-}
+namespace no3 {
+  namespace detail {
+    using LibraryDeinitializationCallback = std::function<void()>;
 
-[[maybe_unused]] NCC_EXPORT void boost::throw_exception(std::exception const& m) {
-  std::cerr << "boost::throw_exception: " << m.what();
-  std::terminate();
-}
+    class RCInitializationContext final {
+      friend class No3LibraryInitialization;
+
+      LibraryDeinitializationCallback m_on_deinit;
+      bool m_active;
+
+      RCInitializationContext(LibraryDeinitializationCallback on_deinit) noexcept;
+
+    public:
+      RCInitializationContext(const RCInitializationContext& o) noexcept;
+      RCInitializationContext(RCInitializationContext&& o) noexcept;
+      RCInitializationContext& operator=(const RCInitializationContext& o) noexcept;
+      RCInitializationContext& operator=(RCInitializationContext&& o) noexcept;
+      ~RCInitializationContext() noexcept;
+    };
+  }  // namespace detail
+
+  /**
+   * @brief Acquire RC access to this library.
+   *
+   * @param on_deinit A callback to be called when the library is deinitialized.
+   *
+   * @note Initialization is reference counted, therefore this library
+   * will be deinitialized automatically when the returned handle is dropped.
+   *
+   * @return A handle keeping the library initialized, or nullptr if initialization failed.
+   */
+  std::unique_ptr<detail::RCInitializationContext> OpenLibrary(
+      std::ostream& init_log = std::cerr, detail::LibraryDeinitializationCallback on_deinit = nullptr) noexcept;
+
+  class Interpreter {
+    class PImpl;
+    std::unique_ptr<PImpl> m_impl;
+
+  public:
+    using OutputHandler = std::function<void(std::string_view)>;
+
+    Interpreter(OutputHandler output_handler = [](std::string_view buffer) {
+      std::cout.write(buffer.data(), buffer.size());
+    }) noexcept;
+    Interpreter(const Interpreter&) = delete;
+    Interpreter(Interpreter&&) noexcept;
+    Interpreter& operator=(const Interpreter&) = delete;
+    Interpreter& operator=(Interpreter&&) noexcept;
+    ~Interpreter() noexcept;
+
+    bool Execute(std::string command) noexcept;
+    bool Execute(const std::vector<std::string_view>& command) noexcept;
+  };
+}  // namespace no3
+
+#endif

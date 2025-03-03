@@ -20,6 +20,7 @@ parts:
       - libsparsehash-dev
       - libprotobuf-dev
       - protobuf-compiler
+      - libunwind-dev
       - libyaml-cpp-dev
       - libgtest-dev
       - rapidjson-dev
