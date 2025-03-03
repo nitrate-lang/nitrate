@@ -7,7 +7,7 @@
 namespace nitrate::testing {
   NCC_EXPORT bool RunTestSuite(const std::vector<std::string>& args) {
     if (getenv("NCC_CONF") == nullptr) {  // NOLINT(concurrency-mt-unsafe)
-      ncc::Log << "NCC_CONF environment variable not set. Please set it to the path application data directory.";
+      ncc::Log << "NCC_CONF environment variable not set. Please set it to the path of the application data directory.";
       return false;
     }
 
