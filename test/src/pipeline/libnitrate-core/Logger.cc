@@ -19,6 +19,7 @@ struct LogOutput {
 #define TEST_RAW_LOG(__LEVEL)                                                          \
   TEST(Core, Log_Mono_##__LEVEL) {                                                     \
     if (auto lib_rc = CoreLibrary.GetRC()) {                                           \
+      Log.SuspendAll();                                                                \
       LogOutput log_output;                                                            \
       auto subid = Log.Subscribe([&](const std::string& msg, Sev sev, const ECBase&) { \
         log_output.m_text = msg;                                                       \
@@ -28,6 +29,7 @@ struct LogOutput {
       Log << __LEVEL << LogContent;                                                    \
                                                                                        \
       Log.Unsubscribe(subid);                                                          \
+      Log.ResumeAll();                                                                 \
                                                                                        \
       ASSERT_EQ(log_output.m_text, LogContent);                                        \
       ASSERT_EQ(log_output.m_level, __LEVEL);                                          \
@@ -37,12 +39,14 @@ struct LogOutput {
 #define TEST_ANSI_LOG(__LEVEL, __INPUT_STRING, __OUTPUT_STRING)                                                        \
   TEST(Core, Log_Ansi_##__LEVEL) {                                                                                     \
     if (auto lib_rc = CoreLibrary.GetRC()) {                                                                           \
+      Log.SuspendAll();                                                                                                \
       std::string log_output;                                                                                          \
       auto subid =                                                                                                     \
           Log.Subscribe([&](const std::string& msg, Sev sev, const ECBase& ec) { log_output = ec.Format(msg, sev); }); \
                                                                                                                        \
       Log << __LEVEL << __INPUT_STRING;                                                                                \
       Log.Unsubscribe(subid);                                                                                          \
+      Log.ResumeAll();                                                                                                 \
                                                                                                                        \
       EXPECT_EQ(log_output, __OUTPUT_STRING);                                                                          \
     }                                                                                                                  \
@@ -58,18 +62,19 @@ TEST_RAW_LOG(Critical)
 TEST_RAW_LOG(Alert)
 TEST_RAW_LOG(Emergency)
 
-TEST_ANSI_LOG(Trace, "Message!", "\x1b[1mtrace:\x1b[0m \x1b[37;1mMessage!\x1b[0m")
-TEST_ANSI_LOG(Debug, "Message!", "\x1b[1mdebug:\x1b[0m \x1b[37;1mMessage!\x1b[0m")
-TEST_ANSI_LOG(Info, "Message!", "\x1b[37;1minfo:\x1b[0m \x1b[37;1mMessage!\x1b[0m")
-TEST_ANSI_LOG(Notice, "Message!", "\x1b[37;1mnotice:\x1b[0m \x1b[37;1mMessage!\x1b[0m")
-TEST_ANSI_LOG(Warning, "Message!", "\x1b[35;1mwarning:\x1b[0m \x1b[37;1mMessage!\x1b[0m")
-TEST_ANSI_LOG(Error, "Message!", "\x1b[31;1merror:\x1b[0m \x1b[37;1mMessage!\x1b[0m")
-TEST_ANSI_LOG(Critical, "Message!", "\x1b[31;1;4mcritical:\x1b[0m \x1b[37;1mMessage!\x1b[0m")
-TEST_ANSI_LOG(Alert, "Message!", "\x1b[31;1;4malert:\x1b[0m \x1b[37;1mMessage!\x1b[0m")
-TEST_ANSI_LOG(Emergency, "Message!", "\x1b[31;1;4memergency:\x1b[0m \x1b[37;1mMessage!\x1b[0m")
+TEST_ANSI_LOG(Trace, "Hello, World!", "\x1b[1mtrace:\x1b[0m \x1b[37;1mHello, World!\x1b[0m")
+TEST_ANSI_LOG(Debug, "Hello, World!", "\x1b[1mdebug:\x1b[0m \x1b[37;1mHello, World!\x1b[0m")
+TEST_ANSI_LOG(Info, "Hello, World!", "\x1b[37;1minfo:\x1b[0m \x1b[37;1mHello, World!\x1b[0m")
+TEST_ANSI_LOG(Notice, "Hello, World!", "\x1b[37;1mnotice:\x1b[0m \x1b[37;1mHello, World!\x1b[0m")
+TEST_ANSI_LOG(Warning, "Hello, World!", "\x1b[35;1mwarning:\x1b[0m \x1b[37;1mHello, World!\x1b[0m")
+TEST_ANSI_LOG(Error, "Hello, World!", "\x1b[31;1merror:\x1b[0m \x1b[37;1mHello, World!\x1b[0m")
+TEST_ANSI_LOG(Critical, "Hello, World!", "\x1b[31;1;4mcritical:\x1b[0m \x1b[37;1mHello, World!\x1b[0m")
+TEST_ANSI_LOG(Alert, "Hello, World!", "\x1b[31;1;4malert:\x1b[0m \x1b[37;1mHello, World!\x1b[0m")
+TEST_ANSI_LOG(Emergency, "Hello, World!", "\x1b[31;1;4memergency:\x1b[0m \x1b[37;1mHello, World!\x1b[0m")
 
 TEST(Core, Log_Unsubscribe_Okay) {
   if (auto lib_rc = CoreLibrary.GetRC()) {
+    Log.SuspendAll();
     LogOutput log_output;
     auto subid = Log.Subscribe([&](const std::string& msg, Sev sev, const ECBase&) {
       log_output.m_text = msg;
@@ -79,6 +84,7 @@ TEST(Core, Log_Unsubscribe_Okay) {
     Log << Info << LogContent;
 
     Log.Unsubscribe(subid);
+    Log.ResumeAll();
 
     ASSERT_EQ(log_output.m_text, LogContent);
     ASSERT_EQ(log_output.m_level, Info);
@@ -87,6 +93,7 @@ TEST(Core, Log_Unsubscribe_Okay) {
 
 TEST(Core, Log_Ubsubscribe_Invalid) {
   if (auto lib_rc = CoreLibrary.GetRC()) {
+    Log.SuspendAll();
     Log.Unsubscribe(6969);  // Invalid filter id
 
     LogOutput log_output;
@@ -98,6 +105,7 @@ TEST(Core, Log_Ubsubscribe_Invalid) {
     Log << Info << LogContent;
 
     Log.Unsubscribe(subid);
+    Log.ResumeAll();
 
     ASSERT_EQ(log_output.m_text, LogContent);
     ASSERT_EQ(log_output.m_level, Info);
@@ -205,7 +213,7 @@ NCC_EC_GROUP(Test_Core);
 NCC_EC_EX(Test_Core, TestError, Formatter, "$NCC_CONF/ec/core/TestError")
 
 TEST(Core, Log_EC_ToJson) {
-  if (std::getenv  // NOLINT
+  if (std::getenv  // NOLINT(concurrency-mt-unsafe)
       ("NCC_CONF") == nullptr) {
     qcore_panic(
         "NCC_CONF environment variable not set. Set it prior to running "

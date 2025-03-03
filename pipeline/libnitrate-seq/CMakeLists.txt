@@ -1,11 +1,6 @@
 cmake_minimum_required(VERSION 3.15)
 project(libnitrate-seq CXX)
 
-#================== CONFIGURE BUILD ==================
-set(CMAKE_CXX_STANDARD 20)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_EXTENSIONS ON)
-
 #================== CALCULATE BUILD ID ==================
 execute_process(COMMAND find ${CMAKE_CURRENT_SOURCE_DIR} -type f -name "*.*" -exec sha256sum {} \; COMMAND sha256sum
   OUTPUT_VARIABLE SHA256SUMS OUTPUT_STRIP_TRAILING_WHITESPACE)

@@ -136,7 +136,7 @@ void ECBase::Finalize() {
 }
 
 auto LoggerContext::Subscribe(LogCallback cb) -> size_t {
-  m_subscribers.push_back(std::move(cb));
+  m_subscribers.emplace_back(std::move(cb), true);
   return m_subscribers.size() - 1;
 }
 
@@ -147,6 +147,30 @@ void LoggerContext::Unsubscribe(size_t idx) {
 }
 
 void LoggerContext::UnsubscribeAll() { m_subscribers.clear(); }
+
+void LoggerContext::Suspend(size_t idx) {
+  if (idx < m_subscribers.size()) {
+    m_subscribers[idx].second = false;
+  }
+}
+
+void LoggerContext::SuspendAll() {
+  for (auto &sub : m_subscribers) {
+    sub.second = false;
+  }
+}
+
+void LoggerContext::Resume(size_t idx) {
+  if (idx < m_subscribers.size()) {
+    m_subscribers[idx].second = true;
+  }
+}
+
+void LoggerContext::ResumeAll() {
+  for (auto &sub : m_subscribers) {
+    sub.second = true;
+  }
+}
 
 auto LoggerContext::AddFilter(LogFilterFunc filter) -> size_t {
   m_filters.push_back(filter);
@@ -167,8 +191,10 @@ void LoggerContext::Publish(const std::string &msg, Sev sev, const ECBase &ec) c
                 std::all_of(m_filters.begin(), m_filters.end(), [&](const auto &f) { return f(msg, sev, ec); });
 
     if (emit) {
-      for (const auto &sub : m_subscribers) {
-        sub(msg, sev, ec);
+      for (const auto &[callback, is_enabled] : m_subscribers) {
+        if (is_enabled) {
+          callback(msg, sev, ec);
+        }
       }
     }
   }

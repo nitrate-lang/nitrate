@@ -1,6 +1,10 @@
 cmake_minimum_required(VERSION 3.15)
 project(nitrate-compiler-suite CXX)
 
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS ON)
+
 option(MEMORY_OVER_SPEED "Optimize for low memory usage over speed" OFF)
 option(COVERAGE "Enable code coverage" OFF)
 option(STRIP_OUTPUT "Strip symbols from output" OFF)
@@ -88,5 +92,7 @@ endif()
 
 if(BUILD_TESTING)
   add_subdirectory(examples)
-  add_subdirectory(test)
 endif()
+
+add_subdirectory(test)
+target_link_libraries(no3 PUBLIC nitrate-testing)

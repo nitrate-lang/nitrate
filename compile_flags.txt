@@ -14,7 +14,6 @@
 -I./no3/src
 -I./test/src
 -I/usr/lib/llvm-18/include
--I.build/debug/_deps/googletest-src/googletest/include
 -D__NITRATE_IMPL__
 -DLLVM_SUUPORT_ALL_TARGETS
 -Wall

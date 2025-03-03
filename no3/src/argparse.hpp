@@ -115,11 +115,11 @@ namespace argparse {
         out << "{";
         const auto size = val.size();
         if (size > 1) {
-          out << repr(*val.begin());
+          out << Repr(*val.begin());
           std::for_each(std::next(val.begin()),
                         std::next(val.begin(), static_cast<typename T::iterator::difference_type>(
                                                    std::min<std::size_t>(size, kReprMaxContainerSize) - 1)),
-                        [&out](const auto &v) { out << " " << repr(v); });
+                        [&out](const auto &v) { out << " " << Repr(v); });
           if (size <= kReprMaxContainerSize) {
             out << " ";
           } else {
@@ -127,7 +127,7 @@ namespace argparse {
           }
         }
         if (size > 0) {
-          out << repr(*std::prev(val.end()));
+          out << Repr(*std::prev(val.end()));
         }
         out << "}";
         return out.str();
@@ -1423,7 +1423,7 @@ namespace argparse {
     [[nodiscard]] [[nodiscard]] auto Get() const -> T {
       if (!m_values.empty()) {
         if constexpr (details::kIsContainer<T>) {
-          return any_cast_container<T>(m_values);
+          return AnyCastContainer<T>(m_values);
         } else {
           return std::any_cast<T>(m_values.front());
         }
@@ -1433,7 +1433,7 @@ namespace argparse {
       }
       if constexpr (details::kIsContainer<T>) {
         if (!m_accepts_optional_like_value) {
-          return any_cast_container<T>(m_values);
+          return AnyCastContainer<T>(m_values);
         }
       }
 
@@ -1454,7 +1454,7 @@ namespace argparse {
         return std::nullopt;
       }
       if constexpr (details::kIsContainer<T>) {
-        return any_cast_container<T>(m_values);
+        return AnyCastContainer<T>(m_values);
       }
       return std::any_cast<T>(m_values.front());
     }

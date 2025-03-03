@@ -443,6 +443,7 @@ namespace no3::argparse_setup {
     auto test = std::make_unique<ArgumentParser>("test", "1.0", default_arguments::help);
 
     test->AddArgument("-v", "--verbose").Help("print verbose output").DefaultValue(false).ImplicitValue(true);
+    test->AddArgument("--opt").DefaultValue(std::vector<std::string>()).Append().Help("options for gtest");
 
     subparsers["test"] = std::move(test);
 

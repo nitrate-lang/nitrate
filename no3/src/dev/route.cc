@@ -489,10 +489,42 @@ static auto DoCodegen(std::shared_ptr<Environment> &env, const std::string &sour
   return 0;
 }
 
-static auto DoDevTest() -> int {
-  /// TODO: Implement testing
-  LOG(ERROR) << "The integrated test suite is not implemented yet";
-  return 1;
+namespace nitrate::testing {
+  bool RunTestSuite(const std::vector<std::string> &args);
+}
+
+static auto DoDevTest(const std::vector<std::string> &args) -> int {
+  std::cout << "┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓\n";
+  std::cout << "┃  \x1b[31;1m .-----------------.\x1b[0m    \x1b[32;1m.----------------.\x1b[0m     "
+               "\x1b[34;1m.----------------.\x1b[0m     ┃\n";
+  std::cout << "┃  \x1b[31;1m| .--------------. |\x1b[0m   \x1b[32;1m| .--------------. |\x1b[0m   \x1b[34;1m| "
+               ".--------------. |\x1b[0m    ┃\n";
+  std::cout << "┃  \x1b[31;1m| | ____  _____  | |\x1b[0m   \x1b[32;1m| |     ____     | |\x1b[0m   \x1b[34;1m| |    "
+               "______    | |\x1b[0m    ┃\n";
+  std::cout << "┃  \x1b[31;1m| ||_   _|_   _| | |\x1b[0m   \x1b[32;1m| |   .'    `.   | |\x1b[0m   \x1b[34;1m| |   / "
+               "____ `.  | |\x1b[0m    ┃\n";
+  std::cout << "┃  \x1b[31;1m| |  |   \\ | |   | |\x1b[0m   \x1b[32;1m| |  /  .--.  \\  | |\x1b[0m   \x1b[34;1m| |   "
+               "`'  __) |  | |\x1b[0m    ┃\n";
+  std::cout << "┃  \x1b[31;1m| |  | |\\ \\| |   | |\x1b[0m   \x1b[32;1m| |  | |    | |  | |\x1b[0m   \x1b[34;1m| |   _ "
+               " |__ '.  | |\x1b[0m    ┃\n";
+  std::cout << "┃  \x1b[31;1m| | _| |_\\   |_  | |\x1b[0m   \x1b[32;1m| |  \\  `--'  /  | |\x1b[0m   \x1b[34;1m| |  | "
+               "\\____) |  | |\x1b[0m    ┃\n";
+  std::cout << "┃  \x1b[31;1m| ||_____|\\____| | |\x1b[0m   \x1b[32;1m| |   `.____.'   | |\x1b[0m   \x1b[34;1m| |   "
+               "\\______.'  | |\x1b[0m    ┃\n";
+  std::cout << "┃  \x1b[31;1m| |              | |\x1b[0m   \x1b[32;1m| |              | |\x1b[0m   \x1b[34;1m| |       "
+               "       | |\x1b[0m    ┃\n";
+  std::cout << "┃  \x1b[31;1m| '--------------' |\x1b[0m   \x1b[32;1m| '--------------' |\x1b[0m   \x1b[34;1m| "
+               "'--------------' |\x1b[0m    ┃\n";
+  std::cout << "┃  \x1b[31;1m '----------------'\x1b[0m     \x1b[32;1m'----------------'\x1b[0m     "
+               "\x1b[34;1m'----------------'\x1b[0m     ┃\n";
+  std::cout << "┃                                                                        ┃\n";
+  std::cout << "┃ * Nitrate toolchain - The official toolchain for the Nitrate language. ┃\n";
+  std::cout << "┃ * Project URL: \x1b[36;4mhttps://github.com/Kracken256/nitrate\x1b[0m                   ┃\n";
+  std::cout << "┃ * Copyright (C) 2025 Wesley Jones                                      ┃\n";
+  std::cout << "┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛\n";
+  std::cout << "                                                                          \n";
+
+  return nitrate::testing::RunTestSuite(args) ? 0 : 1;
 }
 
 namespace no3::router {
@@ -551,7 +583,17 @@ namespace no3::router {
       auto &test_parser = *subparsers.at("test");
       core::SetDebugMode(test_parser["--verbose"] == true);
 
-      return DoDevTest();
+      auto gtest_options = test_parser.Get<std::vector<std::string>>("--opt");
+      for (auto &opt : gtest_options) {
+        if (!opt.starts_with("--")) {
+          opt.insert(0, "--");
+        }
+
+        LOG(INFO) << "Adding gtest option: " << opt;
+      }
+      gtest_options.insert(gtest_options.begin(), "no3");
+
+      return DoDevTest(gtest_options);
     }
 
     if (parser.IsSubcommandUsed("parse")) {

@@ -232,7 +232,7 @@ namespace ncc {
   NCC_EC_FILTER(TraceFilter, msg, sev, ec);
 
   class NCC_EXPORT LoggerContext final {
-    std::vector<LogCallback> m_subscribers;
+    std::vector<std::pair<LogCallback, bool>> m_subscribers;
     std::vector<LogFilterFunc> m_filters;
     bool m_enabled = true;
 
@@ -243,6 +243,11 @@ namespace ncc {
     auto Subscribe(LogCallback cb) -> size_t;
     void Unsubscribe(size_t idx);
     void UnsubscribeAll();
+
+    void Suspend(size_t idx);
+    void SuspendAll();
+    void Resume(size_t idx);
+    void ResumeAll();
 
     auto AddFilter(LogFilterFunc filter) -> size_t;
     void RemoveFilter(size_t idx);
