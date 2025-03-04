@@ -58,3 +58,4 @@ pipeline/libnitrate-parser/src/core/SyntaxTree.pb.cc
 pipeline/libnitrate-parser/src/core/SyntaxTree.pb.h
 default.profraw
 coverage/
+package-example/
