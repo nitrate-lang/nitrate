@@ -139,7 +139,7 @@ static void PanicRenderReport(const std::vector<std::string> &lines) {
   std::setlocale(LC_ALL, "");  // NOLINT
 
   { /* Print shockwave */
-    std::cout << "\n\n";
+    std::cerr << "\n\n";
     std::cerr << "▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚"
                  "▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚\n";
     std::cerr << "▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚"

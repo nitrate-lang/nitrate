@@ -74,8 +74,6 @@ namespace no3 {
   std::unique_ptr<detail::RCInitializationContext> OpenLibrary(
       std::ostream& init_log = std::cerr, detail::LibraryDeinitializationCallback on_deinit = nullptr) noexcept;
 
-  extern std::unique_ptr<std::ostream> GlobalOutputStream;
-
   class Interpreter {
     class PImpl;
     std::unique_ptr<PImpl> m_impl;

@@ -70,14 +70,13 @@ NCC_EXPORT auto CoreLibrarySetup::BuildId() -> ncc::BuildId {
 
 #define BOOST_NO_EXCEPTIONS
 #include <boost/throw_exception.hpp>
-#include <iostream>
 
 [[maybe_unused]] NCC_EXPORT void boost::throw_exception(std::exception const& m, boost::source_location const&) {
-  std::cerr << "boost::throw_exception: " << m.what();
+  Log << "boost::throw_exception: " << m.what();
   std::terminate();
 }
 
 [[maybe_unused]] NCC_EXPORT void boost::throw_exception(std::exception const& m) {
-  std::cerr << "boost::throw_exception: " << m.what();
+  Log << "boost::throw_exception: " << m.what();
   std::terminate();
 }

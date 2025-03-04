@@ -39,6 +39,7 @@
 #include <atomic>
 #include <iostream>
 #include <nitrate-core/Init.hh>
+#include <nitrate-core/Logger.hh>
 #include <nitrate-core/Macro.hh>
 
 static std::atomic<size_t> QcodeLibRefCount = 0;
@@ -53,7 +54,7 @@ static auto InitializeLLVM() -> bool {
 
   /* Check if LLVM is initialized */
   if (llvm::TargetRegistry::targets().empty()) {
-    std::cerr << "error: LLVM initialization failed" << std::endl;
+    ncc::Log << "LLVM initialization failed";
     return false;
   }
 #else
