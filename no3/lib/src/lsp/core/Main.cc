@@ -5,6 +5,7 @@
 #include <filesystem>
 #include <lsp/core/Server.hh>
 #include <memory>
+#include <nitrate-core/LogOStream.hh>
 #include <nitrate-core/Logger.hh>
 #include <nitrate-core/Macro.hh>
 #include <optional>
@@ -42,7 +43,7 @@ extern "C" NCC_EXPORT auto NitratedMain(int argc, char** argv) -> int {
     Log << Info << "Starting nitrated: \"" << str << "\"";
   }
 
-  argparse::ArgumentParser parser("nitrated", "1.0");
+  argparse::ArgumentParser parser(ncc::clog, "nitrated", "1.0");
   CreateParser(parser);
 
   parser.ParseArgs(args);

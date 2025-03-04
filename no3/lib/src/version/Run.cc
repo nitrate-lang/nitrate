@@ -44,6 +44,7 @@
 #include <iostream>
 #include <memory>
 #include <nitrate-core/Init.hh>
+#include <nitrate-core/LogOStream.hh>
 #include <nitrate-ir/Init.hh>
 #include <nitrate-lexer/Init.hh>
 #include <nitrate-parser/Init.hh>
@@ -82,7 +83,8 @@ static const std::string NITRATE_GAMMA_OPTIMIZER = "NitrateGammaOptimizer";
 static const std::string NITRATE_LLVM = "NitrateLLVM";
 
 static std::unique_ptr<argparse::ArgumentParser> CreateArgumentParser() {
-  auto program = std::make_unique<argparse::ArgumentParser>("version");
+  auto program =
+      std::make_unique<argparse::ArgumentParser>(ncc::clog, "version", "1.0", argparse::default_arguments::help, false);
 
   program->AddArgument("--of", "-O")
       .Help("The software component to include version info for")
@@ -123,8 +125,6 @@ static std::optional<std::vector<SoftwareComponent>> GetSoftwareComponents(const
       {NITRATE_LLVM, SoftwareComponent::NitrateLLVM},
   };
 
-  std::vector<SoftwareComponent> components;
-
   std::vector<std::string> params;
   try {
     if (program.IsUsed("--of")) {
@@ -136,6 +136,7 @@ static std::optional<std::vector<SoftwareComponent>> GetSoftwareComponents(const
     // This catch block is a workaround.
   }
 
+  std::vector<SoftwareComponent> components;
   if (!params.empty()) {
     for (const auto& of : params) {
       auto it = component_map.find(of);
@@ -499,6 +500,10 @@ bool no3::Interpreter::PImpl::CommandVersion(ConstArguments, const MutArguments&
     Log << e.what();
     Log << Raw << *program;
     return false;
+  }
+
+  if (program->Get<bool>("--help")) {
+    return true;
   }
 
   const auto minify = program->Get<bool>("--minify");

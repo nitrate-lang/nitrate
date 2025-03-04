@@ -178,7 +178,7 @@ bool Interpreter::PImpl::Perform(const std::vector<std::string>& command) {
 
 ncc::Sev GetMinimumLogLevel();
 
-Interpreter::Interpreter(OutputHandler output_handler) noexcept : m_impl(std::make_unique<PImpl>()) {
+NCC_EXPORT Interpreter::Interpreter(OutputHandler output_handler) noexcept : m_impl(std::make_unique<PImpl>()) {
   Log.Subscribe([&](auto msg, auto sev, const auto& ec) {
     if (sev < GetMinimumLogLevel()) {
       return;
@@ -189,9 +189,9 @@ Interpreter::Interpreter(OutputHandler output_handler) noexcept : m_impl(std::ma
   });
 }
 
-Interpreter::Interpreter(Interpreter&& o) noexcept : m_impl(std::move(o.m_impl)) { o.m_impl = nullptr; }
+NCC_EXPORT Interpreter::Interpreter(Interpreter&& o) noexcept : m_impl(std::move(o.m_impl)) { o.m_impl = nullptr; }
 
-Interpreter& Interpreter::operator=(Interpreter&& o) noexcept {
+NCC_EXPORT Interpreter& Interpreter::operator=(Interpreter&& o) noexcept {
   if (this != &o) {
     m_impl = std::move(o.m_impl);
     o.m_impl = nullptr;
@@ -199,9 +199,9 @@ Interpreter& Interpreter::operator=(Interpreter&& o) noexcept {
   return *this;
 }
 
-Interpreter::~Interpreter() noexcept = default;
+NCC_EXPORT Interpreter::~Interpreter() noexcept = default;
 
-bool Interpreter::Execute(const std::vector<std::string>& command) noexcept {
+NCC_EXPORT bool Interpreter::Execute(const std::vector<std::string>& command) noexcept {
   if (!m_impl) {
     return false;
   }

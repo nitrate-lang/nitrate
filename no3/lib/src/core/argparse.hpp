@@ -1502,9 +1502,8 @@ namespace argparse {
 
   class ArgumentParser {
   public:
-    explicit ArgumentParser(std::string program_name = {}, std::string version = "1.0",
-                            default_arguments add_args = default_arguments::all, bool exit_on_default_arguments = true,
-                            std::ostream &os = std::cout)
+    explicit ArgumentParser(std::ostream &os, std::string program_name = {}, std::string version = "1.0",
+                            default_arguments add_args = default_arguments::all, bool exit_on_default_arguments = true)
         : m_program_name(std::move(program_name)),
           m_version(std::move(version)),
           m_exit_on_default_arguments(exit_on_default_arguments),
@@ -2076,15 +2075,6 @@ namespace argparse {
       }
 
       return stream.str();
-    }
-
-    // Printing the one and only help message
-    // I've stuck with a simple message format, nothing fancy.
-    [[deprecated("Use cout << program; instead.  See also help().")]] [[nodiscard]] auto PrintHelp() const
-        -> std::string {
-      auto out = Help();
-      std::cout << out.rdbuf();
-      return out.str();
     }
 
     void AddSubparser(ArgumentParser &parser) {
