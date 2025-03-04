@@ -41,6 +41,10 @@ using namespace ncc;
 NCC_EXPORT thread_local LoggerContext ncc::Log;
 
 NCC_EXPORT auto ncc::Formatter(std::string_view msg, Sev sev) -> std::string {
+  if (sev == Sev::Raw) {
+    return std::string(msg);
+  }
+
   std::array<std::string_view, Sev_MaxValue + 1> ansi_prefixes = {
       "\x1b[1mtrace:\x1b[0m ",         "\x1b[1mdebug:\x1b[0m ",      "\x1b[37;1minfo:\x1b[0m ",
       "\x1b[37;1mnotice:\x1b[0m ",     "\x1b[35;1mwarning:\x1b[0m ", "\x1b[31;1merror:\x1b[0m ",

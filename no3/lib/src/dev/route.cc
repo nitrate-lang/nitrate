@@ -643,8 +643,8 @@ namespace no3::router {
       return 0;
     }
 
-    std::cerr << "Unknown subcommand for dev" << std::endl;
-    std::cerr << parser;
+    Log << "Unknown subcommand for dev";
+    Log << Raw << parser;
 
     return 1;
   }

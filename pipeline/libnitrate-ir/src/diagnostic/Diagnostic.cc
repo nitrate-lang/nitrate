@@ -237,7 +237,8 @@ NCC_EXPORT std::string ec::Formatter(std::string_view msg, Sev sev) {
   { /* Print message flagname */
     switch (sev) {
       case Sev::Trace:
-      case Sev::Debug: {
+      case Sev::Debug:
+      case Sev::Raw: {
         ss << "\x1b[1mdebug:\x1b[0m \x1b[1m" << flagname << "\x1b[0m\n";
         break;
       }

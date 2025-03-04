@@ -55,6 +55,7 @@
 #include <nitrate-parser/Init.hh>
 #include <nitrate-seq/Init.hh>
 #include <nitrate-seq/Sequencer.hh>
+#include <no3/Interpreter.hh>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -63,7 +64,7 @@ using namespace ncc;
 using namespace no3;
 using argparse::ArgumentParser;
 
-std::unique_ptr<std::ostream> GlobalOutputStream = std::make_unique<std::ostream>(std::cerr.rdbuf());
+NCC_EXPORT std::unique_ptr<std::ostream> no3::GlobalOutputStream = std::make_unique<std::ostream>(std::cerr.rdbuf());
 
 namespace no3::router {
   static auto RunInitMode(const ArgumentParser &parser) -> int {
@@ -306,64 +307,4 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.)"
     std::cerr << Program;
     return 1;
   }
-}
-
-extern "C" __attribute__((visibility("default"))) auto No3Init() -> bool {
-  static std::atomic<bool> is_initialized = false;
-  if (is_initialized) {
-    return true;
-  }
-
-  { /* Initialize compiler pipeline libraries */
-    if (!ncc::CoreLibrary.InitRC()) {
-      Log << "Failed to initialize NITRATE-CORE library";
-      return false;
-    }
-
-    ncc::Log.Subscribe([](auto msg, auto sev, const auto &ec) {
-      using namespace ncc;
-
-      bool is_debug_mode = false;  /// FIXME: Get this state from somewhere
-
-      if (sev <= Debug && !is_debug_mode) {
-        return;
-      }
-
-      *GlobalOutputStream << ec.Format(msg, sev) << std::endl;
-    });
-
-    if (!ncc::lex::LexerLibrary.InitRC()) {
-      Log << "Failed to initialize NITRATE-LEX library";
-      return false;
-    }
-
-    if (!ncc::seq::SeqLibrary.InitRC()) {
-      Log << "Failed to initialize NITRATE-PREP library";
-      return false;
-    }
-
-    if (!ncc::parse::ParseLibrary.InitRC()) {
-      Log << "Failed to initialize NITRATE-PARSE library";
-      return false;
-    }
-
-    if (!ncc::ir::IRLibrary.InitRC()) {
-      Log << "Failed to initialize NITRATE-IR library";
-      return false;
-    }
-
-    if (!QcodeLibInit()) {
-      Log << "Failed to initialize NITRATE-CODE library";
-      return false;
-    }
-  }
-
-  if (git_libgit2_init() <= 0) {
-    Log << "Failed to initialize libgit2";
-    return false;
-  }
-
-  is_initialized = true;
-
-  return true;
 }

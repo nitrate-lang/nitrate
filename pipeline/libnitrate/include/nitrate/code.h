@@ -41,9 +41,6 @@
 extern "C" {
 #endif
 
-/// @brief Diagnostic callback function prototype.
-using NitDiagFunc = void (*)(const char *, void *);
-
 /******************************************************************************
  * @brief Generic Nitrate Toolchain tranformation function.                   *
  *                                                                            *
@@ -51,8 +48,6 @@ using NitDiagFunc = void (*)(const char *, void *);
  *                                                                            *
  * @param in      Transform input                                             *
  * @param out     Transform output                                            *
- * @param diag    Diagnostic callback function, or `NULL` to discard          *
- * @param opaque  Context to pass to the diagnostic callback                  *
  * @param options NULL-terminated array of options, or `NULL` for empty       *
  *                                                                            *
  * @return `true` if the transformation was successful, `false` otherwise.    *
@@ -81,13 +76,9 @@ using NitDiagFunc = void (*)(const char *, void *);
  ******************************************************************************
  * @note This function is an ideal target for fuzz based testing              *
  *****************************************************************************/
-auto NitPipeline(FILE *in, FILE *out, NitDiagFunc diag, void *opaque, const char *const options[]) -> bool;
+auto NitPipeline(FILE *in, FILE *out, const char *const options[]) -> bool;
 
 /******************************************************************************/
-
-static inline void NitDiagStdout(const char *message, void *) { fprintf(stdout, "%s", message); }
-
-static inline void NitDiagStderr(const char *message, void *) { fprintf(stderr, "%s", message); }
 
 #ifdef __cplusplus
 }

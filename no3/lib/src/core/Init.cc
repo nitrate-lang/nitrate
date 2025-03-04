@@ -56,8 +56,6 @@ static std::mutex RCInitializationContextMutex;
 static bool PerformInitialize(std::ostream& log);
 static void PerformDeinitialize();
 
-extern std::unique_ptr<std::ostream> GlobalOutputStream;
-
 NCC_EXPORT RCInitializationContext::RCInitializationContext(LibraryDeinitializationCallback on_deinit) noexcept
     : m_on_deinit(std::move(on_deinit)), m_active(true) {}
 
@@ -128,11 +126,11 @@ NCC_EXPORT std::unique_ptr<detail::RCInitializationContext> no3::OpenLibrary(
 
 ///===================================================================================================
 
-static ncc::Sev GetMinimumLogLevel() {
+ncc::Sev GetMinimumLogLevel() {
   static const std::unordered_map<std::string, ncc::Sev> map = {
-      {"TRACE", ncc::Trace},       {"DEBUG", ncc::Debug},     {"INFO", ncc::Info},
-      {"NOTICE", ncc::Notice},     {"WARNING", ncc::Warning}, {"ERROR", ncc::Error},
-      {"CRITICAL", ncc::Critical}, {"ALERT", ncc::Alert},     {"EMERGENCY", ncc::Emergency},
+      {"TRACE", ncc::Trace},         {"DEBUG", ncc::Debug}, {"INFO", ncc::Info},         {"NOTICE", ncc::Notice},
+      {"WARNING", ncc::Warning},     {"ERROR", ncc::Error}, {"CRITICAL", ncc::Critical}, {"ALERT", ncc::Alert},
+      {"EMERGENCY", ncc::Emergency}, {"RAW", ncc::Raw},
   };
 
   constexpr auto kDefaultLevel = ncc::Info;
@@ -162,7 +160,7 @@ static bool PerformInitialize(std::ostream& log) {
     return false;
   }
 
-  Log.Subscribe([](auto msg, auto sev, const auto& ec) {
+  auto log_subid = Log.Subscribe([](auto msg, auto sev, const auto& ec) {
     using namespace ncc;
 
     if (sev < GetMinimumLogLevel()) {
@@ -171,6 +169,8 @@ static bool PerformInitialize(std::ostream& log) {
 
     *GlobalOutputStream << ec.Format(msg, sev) << std::endl;
   });
+
+  std::shared_ptr<void> unsub(nullptr, [&](...) { Log.Unsubscribe(log_subid); });
 
   if (!lex::LexerLibrary.InitRC()) {
     log << "Failed to initialize libnitrate-lexer library" << std::endl;
@@ -211,6 +211,18 @@ static void PerformDeinitialize() {
   using namespace ncc;
 
   std::lock_guard<std::mutex> lock(RCInitializationContextMutex);
+
+  auto log_subid = Log.Subscribe([](auto msg, auto sev, const auto& ec) {
+    using namespace ncc;
+
+    if (sev < GetMinimumLogLevel()) {
+      return;
+    }
+
+    *GlobalOutputStream << ec.Format(msg, sev) << std::endl;
+  });
+
+  std::shared_ptr<void> unsub(nullptr, [&](...) { Log.Unsubscribe(log_subid); });
 
   git_libgit2_shutdown();
 

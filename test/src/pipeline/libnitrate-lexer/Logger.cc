@@ -50,3 +50,4 @@ TEST_ANSI_LOG(Error, "Message!", "\x1B[37;1m[\x1b[0m\x1B[34;1mLexer\x1b[0m\x1B[3
 TEST_ANSI_LOG(Critical, "Message!", "\x1B[37;1m[\x1b[0m\x1B[34;1mLexer\x1b[0m\x1B[37;1m]:\x1b[0m Message!")
 TEST_ANSI_LOG(Alert, "Message!", "\x1B[37;1m[\x1b[0m\x1B[34;1mLexer\x1b[0m\x1B[37;1m]:\x1b[0m Message!")
 TEST_ANSI_LOG(Emergency, "Message!", "\x1B[37;1m[\x1b[0m\x1B[34;1mLexer\x1b[0m\x1B[37;1m]:\x1b[0m Message!")
+TEST_ANSI_LOG(Raw, "Message!", "Message!")

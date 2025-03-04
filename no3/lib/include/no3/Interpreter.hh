@@ -37,7 +37,6 @@
 #include <functional>
 #include <iostream>
 #include <memory>
-#include <string>
 #include <string_view>
 #include <vector>
 
@@ -75,6 +74,8 @@ namespace no3 {
   std::unique_ptr<detail::RCInitializationContext> OpenLibrary(
       std::ostream& init_log = std::cerr, detail::LibraryDeinitializationCallback on_deinit = nullptr) noexcept;
 
+  extern std::unique_ptr<std::ostream> GlobalOutputStream;
+
   class Interpreter {
     class PImpl;
     std::unique_ptr<PImpl> m_impl;
@@ -86,12 +87,11 @@ namespace no3 {
       std::cout.write(buffer.data(), buffer.size());
     }) noexcept;
     Interpreter(const Interpreter&) = delete;
-    Interpreter(Interpreter&&) noexcept;
+    Interpreter(Interpreter&& o) noexcept;
     Interpreter& operator=(const Interpreter&) = delete;
-    Interpreter& operator=(Interpreter&&) noexcept;
+    Interpreter& operator=(Interpreter&& o) noexcept;
     ~Interpreter() noexcept;
 
-    bool Execute(std::string command) noexcept;
     bool Execute(const std::vector<std::string_view>& command) noexcept;
   };
 }  // namespace no3
