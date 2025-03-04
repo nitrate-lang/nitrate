@@ -158,10 +158,10 @@ void Interpreter::PImpl::SetupCommands() {
   m_commands["update"] = m_commands["u"] = CommandUpdate;
 }
 
-bool Interpreter::PImpl::Perform(const std::vector<std::string_view>& command) {
+bool Interpreter::PImpl::Perform(const std::vector<std::string>& command) {
   if (command.size() >= 2) {
     if (auto it = m_commands.find(command[1]); it != m_commands.end()) {
-      return it->second(command, MutArguments(command.begin() + 2, command.end()));
+      return it->second(command, MutArguments(command.begin() + 1, command.end()));
     }
     Log << Error << "Command not found: " << command[1];
 
@@ -200,7 +200,7 @@ Interpreter& Interpreter::operator=(Interpreter&& o) noexcept {
 
 Interpreter::~Interpreter() noexcept = default;
 
-bool Interpreter::Execute(const std::vector<std::string_view>& command) noexcept {
+bool Interpreter::Execute(const std::vector<std::string>& command) noexcept {
   if (!m_impl) {
     return false;
   }

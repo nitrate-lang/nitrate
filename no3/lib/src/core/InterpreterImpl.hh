@@ -34,18 +34,18 @@
 #pragma once
 
 #include <core/termcolor.hh>
-#include <list>
 #include <memory>
 #include <nitrate-core/Logger.hh>
 #include <no3/Interpreter.hh>
+#include <vector>
 
 class no3::Interpreter::PImpl {
-  using ConstArguments = std::span<const std::string_view>;
-  using MutArguments = std::list<std::string_view>;
+  using ConstArguments = std::span<const std::string>;
+  using MutArguments = std::vector<std::string>;
   using CommandFunction = std::function<bool(ConstArguments full_argv, MutArguments argv)>;
 
   std::unique_ptr<detail::RCInitializationContext> m_init_rc = OpenLibrary();
-  std::unordered_map<std::string_view, CommandFunction> m_commands;
+  std::unordered_map<std::string, CommandFunction> m_commands;
 
   static bool CommandBuild(ConstArguments full_argv, MutArguments argv);
   static bool CommandClean(ConstArguments full_argv, MutArguments argv);
@@ -68,5 +68,5 @@ class no3::Interpreter::PImpl {
 public:
   PImpl() noexcept { SetupCommands(); }
 
-  bool Perform(const std::vector<std::string_view>& command);
+  bool Perform(const std::vector<std::string>& command);
 };

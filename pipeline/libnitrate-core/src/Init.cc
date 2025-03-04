@@ -62,6 +62,10 @@ NCC_EXPORT void CoreLibrarySetup::Deinit() {
 
 NCC_EXPORT auto CoreLibrarySetup::GetVersionId() -> std::string_view { return __TARGET_VERSION; }
 
+NCC_EXPORT auto CoreLibrarySetup::GetSemVersion() -> std::array<uint32_t, 3> {
+  return {__TARGET_MAJOR_VERSION, __TARGET_MINOR_VERSION, __TARGET_PATCH_VERSION};
+}
+
 #define BOOST_NO_EXCEPTIONS
 #include <boost/throw_exception.hpp>
 #include <iostream>

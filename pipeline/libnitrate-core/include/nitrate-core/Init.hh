@@ -148,6 +148,11 @@ namespace ncc {
       return version_string;
     }
 
+    auto GetMajorVersion() -> uint32_t { return Impl::GetSemVersion()[0]; }
+    auto GetMinorVersion() -> uint32_t { return Impl::GetSemVersion()[1]; }
+    auto GetPatchVersion() -> uint32_t { return Impl::GetSemVersion()[2]; }
+    auto GetSemVersion() -> std::array<uint32_t, 3> { return Impl::GetSemVersion(); }
+
     auto GetRC() -> std::optional<LibraryRCAutoClose> {
       if (!InitRC()) {
         return std::nullopt;
@@ -161,6 +166,7 @@ namespace ncc {
     static auto Init() -> bool;
     static void Deinit();
     static auto GetVersionId() -> std::string_view;
+    static auto GetSemVersion() -> std::array<uint32_t, 3>;
   };
 
   extern LibraryRC<CoreLibrarySetup> CoreLibrary;

@@ -92,7 +92,7 @@ namespace no3 {
     Interpreter& operator=(Interpreter&& o) noexcept;
     ~Interpreter() noexcept;
 
-    bool Execute(const std::vector<std::string_view>& command) noexcept;
+    bool Execute(const std::vector<std::string>& command) noexcept;
   };
 }  // namespace no3
 

@@ -65,6 +65,10 @@ NCC_EXPORT void LexerLibrarySetup::Deinit() {
 
 NCC_EXPORT auto LexerLibrarySetup::GetVersionId() -> std::string_view { return __TARGET_VERSION; }
 
+NCC_EXPORT auto LexerLibrarySetup::GetSemVersion() -> std::array<uint32_t, 3> {
+  return {__TARGET_MAJOR_VERSION, __TARGET_MINOR_VERSION, __TARGET_PATCH_VERSION};
+}
+
 std::string ncc::lex::Formatter(std::string_view msg, Sev sev) {
   if (sev == Raw) {
     return std::string(msg);

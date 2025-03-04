@@ -25,4 +25,7 @@
 -Wno-error=unused-parameter
 -Wno-overlength-strings
 -D__TARGET_VERSION="?"
+-D__TARGET_MAJOR_VERSION=0
+-D__TARGET_MINOR_VERSION=0
+-D__TARGET_PATCH_VERSION=0
 -fno-rtti
