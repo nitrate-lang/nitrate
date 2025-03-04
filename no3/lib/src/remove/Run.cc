@@ -31,66 +31,17 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <yaml-cpp/yaml.h>
-
-#include <conf/Parser.hh>
-#include <nitrate-core/Logger.hh>
+#include <core/InterpreterImpl.hh>
 
 using namespace ncc;
 
-auto no3::conf::YamlConfigParser::Parse(const std::string &content) -> std::optional<no3::conf::Config> {
-  YAML::Node config;
+bool no3::Interpreter::PImpl::CommandRemove(ConstArguments full_argv, MutArguments argv) {
+  (void)full_argv;
+  (void)argv;
 
-  try {
-    config = YAML::Load(content);
-  } catch (YAML::ParserException &e) {
-    Log << "Failed to parse YAML configuration: " << e.what();
-    return std::nullopt;
-  }
+  /// TODO: Implement package removal
 
-  if (!config.IsMap()) {
-    Log << "Invalid YAML configuration: root element must be a map";
-    return std::nullopt;
-  }
+  Log << "Package removal is not implemented yet.";
 
-  ConfigGroup grp;
-
-  for (auto it = config.begin(); it != config.end(); ++it) {
-    if (it->second.IsScalar()) {
-      try {
-        auto i = it->second.as<int64_t>();
-        grp.Set(it->first.as<std::string>(), i);
-      } catch (YAML::TypedBadConversion<int64_t> &e) {
-        try {
-          bool b = it->second.as<bool>();
-          grp.Set(it->first.as<std::string>(), b);
-        } catch (YAML::TypedBadConversion<bool> &e) {
-          grp.Set(it->first.as<std::string>(), it->second.as<std::string>());
-        }
-      }
-    } else if (it->second.IsSequence()) {
-      std::vector<std::string> v;
-
-      for (auto it2 = it->second.begin(); it2 != it->second.end(); ++it2) {
-        if (it2->IsScalar()) {
-          v.push_back(it2->as<std::string>());
-        } else {
-          Log << "Invalid YAML configuration: unsupported value type";
-          return std::nullopt;
-        }
-      }
-
-      grp.Set(it->first.as<std::string>(), v);
-    } else {
-      Log << "Invalid YAML configuration: unsupported value type";
-      return std::nullopt;
-    }
-  }
-
-  if (!grp.Has<int64_t>("version")) {
-    Log << "Invalid YAML configuration: missing 'version' key";
-    return std::nullopt;
-  }
-
-  return Config(grp, grp["version"].As<int64_t>());
+  return true;
 }

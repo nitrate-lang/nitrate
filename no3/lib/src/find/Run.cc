@@ -31,93 +31,17 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <git2.h>
-#include <git2/clone.h>
-#include <git2/types.h>
+#include <core/InterpreterImpl.hh>
 
-#include <filesystem>
-#include <install/Install.hh>
-#include <iostream>
-#include <regex>
+using namespace ncc;
 
-static auto ValidatePackageName(const std::string &package_name) -> bool {
-  static std::regex package_name_regex("^[a-zA-Z0-9_-]+$");
-  return std::regex_match(package_name, package_name_regex);
-}
+bool no3::Interpreter::PImpl::CommandFind(ConstArguments full_argv, MutArguments argv) {
+  (void)full_argv;
+  (void)argv;
 
-auto DownloadGitRepo(const std::string &url, const std::string &dest) -> bool {
-  std::cout << "Downloading package from: " << url << "\n";
+  /// TODO: Implement package search
 
-  /// TODO: Test if it works with git submodules
-
-  git_repository *repo = nullptr;
-  if (git_clone(&repo, url.c_str(), dest.c_str(), nullptr) != 0) {
-    std::cerr << "Failed to download package" << "\n";
-    return false;
-  }
-
-  git_repository_free(repo);
-
-  std::cerr << "Successfully downloaded package" << "\n";
+  Log << "Package search is not implemented yet.";
 
   return true;
-}
-
-auto no3::install::InstallFromUrl(std::string url, const std::string &dest, std::string &package_name,
-                                  bool overwrite) -> bool {
-  enum class FetchType {
-    GIT,
-    UNKNOWN,
-  } fetch_type = FetchType::GIT;  // Assume git for now
-
-  /*=========== PROCESS URL ===========*/
-  if (url.ends_with("/")) {
-    url = url.substr(0, url.size() - 1);
-  }
-  if (url.ends_with(".git")) {
-    url = url.substr(0, url.size() - 4);
-  }
-  if (url.find('/') == std::string::npos) {
-    std::cerr << "Excpected URL pattern like: 'https://example.com/package'" << "\n";
-    return false;
-  }
-
-  package_name = url.substr(url.find_last_of('/') + 1);
-  if (!ValidatePackageName(package_name)) {
-    std::cerr << "Invalid package name: " << package_name << "\n";
-    return false;
-  }
-
-  std::filesystem::path package_path = dest + "/" + package_name;
-
-  try {
-    bool exists = std::filesystem::exists(package_path);
-    if (!overwrite && exists) {
-      std::cerr << "Package already exists: " << package_name << "\n";
-      return false;
-    }
-    if (exists) {
-      std::filesystem::remove_all(package_path);
-    }
-  } catch (std::filesystem::filesystem_error &e) {
-    std::cerr << e.what() << "\n";
-    std::cerr << "Failed to install package: " << package_name << "\n";
-    return false;
-  }
-
-  /*=========== FETCH PACKAGE ===========*/
-
-  switch (fetch_type) {
-    case FetchType::GIT:
-      if (!DownloadGitRepo(url, package_path.string())) {
-        std::cerr << "Failed to fetch package: " << package_name << "\n";
-        return false;
-      }
-      return true;
-
-    default:
-      std::cerr << "Unable to fetch package: " << package_name << "\n";
-      std::cerr << "Unknown repository type" << "\n";
-      return false;
-  }
 }

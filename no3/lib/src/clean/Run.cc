@@ -31,48 +31,17 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __NO3_CONF_PARSER_HH__
-#define __NO3_CONF_PARSER_HH__
+#include <core/InterpreterImpl.hh>
 
-#include <conf/Config.hh>
-#include <optional>
-#include <string>
+using namespace ncc;
 
-namespace no3::conf {
-  class IParser {
-  public:
-    virtual ~IParser() = default;
+bool no3::Interpreter::PImpl::CommandClean(ConstArguments full_argv, MutArguments argv) {
+  (void)full_argv;
+  (void)argv;
 
-    /**
-     * @brief Parse NO3 package configuration file
-     *
-     * @param filepath Configuration filepath
-     * @return std::optional<Config> Configuration object
-     * @note If any error occurs, the function returns an empty optional.
-     */
-    auto Parsef(const std::string &filepath) -> std::optional<Config>;
+  /// TODO: Implement package cleaning
 
-    /**
-     * @brief Parse NO3 package configuration content
-     *
-     * @param data Configuration file content
-     * @return std::optional<Config> Configuration object
-     * @note If any error occurs, the function returns an empty optional.
-     */
-    virtual auto Parse(const std::string &content) -> std::optional<Config> = 0;
-  };
+  Log << "Package cleaning is not implemented yet.";
 
-  class YamlConfigParser : public IParser {
-  public:
-    /**
-     * @brief Parse NO3 package configuration content
-     *
-     * @param data Configuration file content
-     * @return std::optional<Config> Configuration object
-     * @note If any error occurs, the function returns an empty optional.
-     */
-    auto Parse(const std::string &content) -> std::optional<Config> override;
-  };
-}  // namespace no3::conf
-
-#endif  // __NO3_CONF_PARSER_HH__
+  return true;
+}

@@ -31,7 +31,7 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <conf/SPDX.hh>
+#include <core/SPDX.hh>
 
 const std::unordered_set<std::string_view> no3::conf::SPDX_IDENTIFIERS = {
     "0BSD",

@@ -31,15 +31,17 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __NO3_CONF_VALIDATE_HH__
-#define __NO3_CONF_VALIDATE_HH__
+#include <core/InterpreterImpl.hh>
 
-#include <conf/Parser.hh>
-#include <filesystem>
+using namespace ncc;
 
-namespace no3::conf {
-  auto ValidateConfig(const Config &config, const std::filesystem::path &base) -> bool;
-  void PopulateConfig(Config &config);
-}  // namespace no3::conf
+bool no3::Interpreter::PImpl::CommandFormat(ConstArguments full_argv, MutArguments argv) {
+  (void)full_argv;
+  (void)argv;
 
-#endif  // __NO3_CONF_VALIDATE_HH__
+  /// TODO: Implement package formatting
+
+  Log << "Package formatting is not implemented yet.";
+
+  return true;
+}

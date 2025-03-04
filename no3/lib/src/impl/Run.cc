@@ -31,13 +31,17 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __NO3_CLEAN_CLEANUP_HH__
-#define __NO3_CLEAN_CLEANUP_HH__
+#include <core/InterpreterImpl.hh>
 
-#include <string>
+using namespace ncc;
 
-namespace no3::clean {
-  auto CleanPackageSource(const std::string &package_src, bool verbose = false) -> bool;
+bool no3::Interpreter::PImpl::CommandImpl(ConstArguments full_argv, MutArguments argv) {
+  (void)full_argv;
+  (void)argv;
+
+  /// TODO: Implement low level commands
+
+  Log << "Low level commands are not implemented yet.";
+
+  return true;
 }
-
-#endif  // __NO3_CLEAN_CLEANUP_HH__

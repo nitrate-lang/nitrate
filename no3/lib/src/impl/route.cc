@@ -35,7 +35,6 @@
 #include <nitrate-emit/Code.h>
 #include <nitrate-emit/Lib.h>
 
-#include <clean/Cleanup.hh>
 #include <core/Config.hh>
 #include <core/argparse.hpp>
 #include <core/termcolor.hh>
@@ -62,7 +61,6 @@
 #include <unordered_map>
 
 using namespace argparse;
-using namespace no3;
 using namespace ncc;
 using namespace ncc::lex;
 using namespace ncc::seq;

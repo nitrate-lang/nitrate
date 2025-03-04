@@ -31,29 +31,19 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
+#include <core/InterpreterImpl.hh>
 #include <core/termcolor.hh>
 #include <memory>
 #include <nitrate-core/Logger.hh>
 #include <no3/Interpreter.hh>
 #include <vector>
 
-namespace nitrate::testing {
-  bool RunTestSuite(const std::vector<std::string>& args);
-}
-
 using namespace no3;
 using namespace ncc;
 
-class Interpreter::PImpl {
-  using ArgumentSlice = std::vector<std::string_view>;
-  using CommandFunction = std::function<bool(std::span<const std::string_view> full_argv, ArgumentSlice argv)>;
-
-  std::unique_ptr<detail::RCInitializationContext> m_init_rc = OpenLibrary();
-  std::unordered_map<std::string_view, CommandFunction> m_commands;
-
-  static bool CommandHelp(std::span<const std::string_view>, ArgumentSlice) {
-    std::string_view message =
-        R"(╭──────────────────────────────────────────────────────────────────────╮
+bool Interpreter::PImpl::CommandHelp(ConstArguments, const MutArguments&) {
+  std::string_view message =
+      R"(╭──────────────────────────────────────────────────────────────────────╮
 │   .-----------------.    .----------------.     .----------------.   │
 │  | .--------------. |   | .--------------. |   | .--------------. |  │
 │  | | ____  _____  | |   | |     ____     | |   | |    ______    | |  │
@@ -116,65 +106,74 @@ class Interpreter::PImpl {
 │            │ Get help: https://nitrate.dev/docs/no3/update           │
 ╰────────────┴─────────────────────────────────────────────────────────╯)";
 
-    Log << Raw << message;
+  Log << Raw << message;
 
-    return true;
-  }
+  return true;
+}
 
-  static bool CommandBuild(std::span<const std::string_view> full_argv, ArgumentSlice argv) { return true; }
-  static bool CommandClean(std::span<const std::string_view> full_argv, ArgumentSlice argv) { return true; }
-  static bool CommandImpl(std::span<const std::string_view> full_argv, ArgumentSlice argv) { return true; }
-  static bool CommandDoc(std::span<const std::string_view> full_argv, ArgumentSlice argv) { return true; }
-  static bool CommandFormat(std::span<const std::string_view> full_argv, ArgumentSlice argv) { return true; }
-  static bool CommandInit(std::span<const std::string_view> full_argv, ArgumentSlice argv) { return true; }
-  static bool CommandInstall(std::span<const std::string_view> full_argv, ArgumentSlice argv) { return true; }
-  static bool CommandFind(std::span<const std::string_view> full_argv, ArgumentSlice argv) { return true; }
-  static bool CommandRemove(std::span<const std::string_view> full_argv, ArgumentSlice argv) { return true; }
-  static bool CommandLSP(std::span<const std::string_view> full_argv, ArgumentSlice argv) { return true; }
-  static bool CommandLicense(std::span<const std::string_view> full_argv, ArgumentSlice argv) { return true; }
-  static bool CommandTest(std::span<const std::string_view> full_argv, ArgumentSlice argv) { return true; }
-  static bool CommandVersion(std::span<const std::string_view> full_argv, ArgumentSlice argv) { return true; }
-  static bool CommandUpdate(std::span<const std::string_view> full_argv, ArgumentSlice argv) { return true; }
+bool Interpreter::PImpl::CommandLSP(ConstArguments, const MutArguments& argv) {
+  (void)argv;
 
-  void SetupCommands() {
-    m_commands["build"] = m_commands["b"] = CommandBuild;
-    m_commands["clean"] = m_commands["c"] = CommandClean;
-    m_commands["doc"] = m_commands["d"] = CommandDoc;
-    m_commands["find"] = m_commands["f"] = CommandFind;
-    m_commands["format"] = m_commands["m"] = m_commands["fmt"] = CommandFormat;
-    m_commands["help"] = m_commands["-h"] = m_commands["h"] = m_commands["--help"] = CommandHelp;
-    m_commands["impl"] = m_commands["w"] = CommandImpl;
-    m_commands["init"] = m_commands["i"] = CommandInit;
-    m_commands["install"] = m_commands["a"] = CommandInstall;
-    m_commands["lsp"] = m_commands["x"] = CommandLSP;
-    m_commands["license"] = CommandLicense;
-    m_commands["remove"] = m_commands["r"] = CommandRemove;
-    m_commands["test"] = m_commands["t"] = CommandTest;
-    m_commands["version"] = CommandVersion;
-    m_commands["update"] = m_commands["u"] = CommandUpdate;
-  }
+  Log << "Not implemented";
+  return false;
+}
 
-public:
-  PImpl() noexcept { SetupCommands(); }
-
-  bool Perform(const std::vector<std::string_view>& command) {
-    if (command.size() >= 2) {
-      if (auto it = m_commands.find(command[1]); it != m_commands.end()) {
-        ArgumentSlice argv(command.begin() + 2, command.end());
-        return it->second(command, argv);
-      }
-      Log << Error << "Command not found: " << command[1];
-
-      CommandHelp({}, {});
-    } else {
-      Log << Error << "No command provided.";
-
-      CommandHelp({}, {});
-    }
-
+bool Interpreter::PImpl::CommandLicense(ConstArguments, const MutArguments& argv) {
+  if (!argv.empty()) {
+    Log << "Command 'license' does not take any arguments.";
     return false;
   }
-};
+
+  Log << Raw << R"(Nitrate Compiler Suite
+Copyright (C) 2024 Wesley C. Jones
+
+This software is free to use, modify, and share under the terms 
+of the GNU Lesser General Public License version 2.1 or later.
+
+It comes with no guarantees — it might work great, or not at all. 
+There's no warranty for how well it works or whether it fits any 
+particular purpose.
+
+For full license details, see the included license file or visit 
+<http://www.gnu.org/licenses/>.)";
+
+  return true;
+}
+
+void Interpreter::PImpl::SetupCommands() {
+  m_commands["build"] = m_commands["b"] = CommandBuild;
+  m_commands["clean"] = m_commands["c"] = CommandClean;
+  m_commands["doc"] = m_commands["d"] = CommandDoc;
+  m_commands["find"] = m_commands["f"] = CommandFind;
+  m_commands["format"] = m_commands["m"] = m_commands["fmt"] = CommandFormat;
+  m_commands["help"] = m_commands["-h"] = m_commands["h"] = m_commands["--help"] = CommandHelp;
+  m_commands["impl"] = m_commands["w"] = CommandImpl;
+  m_commands["init"] = m_commands["i"] = CommandInit;
+  m_commands["install"] = m_commands["a"] = CommandInstall;
+  m_commands["lsp"] = m_commands["x"] = CommandLSP;
+  m_commands["license"] = CommandLicense;
+  m_commands["remove"] = m_commands["r"] = CommandRemove;
+  m_commands["test"] = m_commands["t"] = CommandTest;
+  m_commands["version"] = CommandVersion;
+  m_commands["update"] = m_commands["u"] = CommandUpdate;
+}
+
+bool Interpreter::PImpl::Perform(const std::vector<std::string_view>& command) {
+  if (command.size() >= 2) {
+    if (auto it = m_commands.find(command[1]); it != m_commands.end()) {
+      return it->second(command, MutArguments(command.begin() + 2, command.end()));
+    }
+    Log << Error << "Command not found: " << command[1];
+
+    CommandHelp({}, {});
+  } else {
+    Log << Error << "No command provided.";
+
+    CommandHelp({}, {});
+  }
+
+  return false;
+}
 
 ncc::Sev GetMinimumLogLevel();
 

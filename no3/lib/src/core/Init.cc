@@ -126,6 +126,8 @@ NCC_EXPORT std::unique_ptr<detail::RCInitializationContext> no3::OpenLibrary(
 
 ///===================================================================================================
 
+NCC_EXPORT std::unique_ptr<std::ostream> no3::GlobalOutputStream = std::make_unique<std::ostream>(std::cerr.rdbuf());
+
 ncc::Sev GetMinimumLogLevel() {
   static const std::unordered_map<std::string, ncc::Sev> map = {
       {"TRACE", ncc::Trace},         {"DEBUG", ncc::Debug}, {"INFO", ncc::Info},         {"NOTICE", ncc::Notice},
