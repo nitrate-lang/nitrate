@@ -60,10 +60,12 @@ NCC_EXPORT void CoreLibrarySetup::Deinit() {
   String::ResetInstances();
 }
 
-NCC_EXPORT auto CoreLibrarySetup::GetVersionId() -> std::string_view { return __TARGET_VERSION; }
-
 NCC_EXPORT auto CoreLibrarySetup::GetSemVersion() -> std::array<uint32_t, 3> {
   return {__TARGET_MAJOR_VERSION, __TARGET_MINOR_VERSION, __TARGET_PATCH_VERSION};
+}
+
+NCC_EXPORT auto CoreLibrarySetup::BuildId() -> ncc::BuildId {
+  return {__TARGET_COMMIT_HASH, __TARGET_COMMIT_DATE, __TARGET_COMMIT_BRANCH};
 }
 
 #define BOOST_NO_EXCEPTIONS

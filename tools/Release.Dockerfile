@@ -11,11 +11,14 @@ RUN apt install -y  libboost-all-dev libssl-dev libunwind-dev        \
   libpolly-18-dev llvm-18 nlohmann-json3-dev libsparsehash-dev       \
   libgit2-dev libgtest-dev libprotobuf-dev protobuf-compiler
 
-RUN apt install -y cmake make clang
+RUN apt install -y cmake make clang git
 
 ############################ Install clang #############################
 RUN update-alternatives --install /usr/bin/cc cc /usr/bin/clang 100
 RUN update-alternatives --install /usr/bin/c++ c++ /usr/bin/clang++ 100
+
+######################### Set the safe directory ########################
+RUN git config --global --add safe.directory /app
 
 ########################## Make the build script #######################
 RUN echo "#!/bin/sh" > /opt/build.sh

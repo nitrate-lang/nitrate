@@ -69,8 +69,10 @@ NCC_EXPORT void SeqLibrarySetup::Deinit() {
   Log << ec::SeqLog << Debug << "libnitrate-seq deinitialized";
 }
 
-NCC_EXPORT auto SeqLibrarySetup::GetVersionId() -> std::string_view { return __TARGET_VERSION; }
-
 NCC_EXPORT auto SeqLibrarySetup::GetSemVersion() -> std::array<uint32_t, 3> {
   return {__TARGET_MAJOR_VERSION, __TARGET_MINOR_VERSION, __TARGET_PATCH_VERSION};
+}
+
+NCC_EXPORT auto SeqLibrarySetup::BuildId() -> ncc::BuildId {
+  return {__TARGET_COMMIT_HASH, __TARGET_COMMIT_DATE, __TARGET_COMMIT_BRANCH};
 }

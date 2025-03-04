@@ -31,10 +31,12 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
+#include <boost/predef.h>
 #include <nitrate-emit/Lib.h>
 
 #include <core/InterpreterImpl.hh>
 #include <core/argparse.hpp>
+#include <fstream>
 #include <iostream>
 #include <memory>
 #include <nitrate-core/Assert.hh>
@@ -44,6 +46,7 @@
 #include <nitrate-parser/Init.hh>
 #include <nitrate-seq/Init.hh>
 #include <nlohmann/json.hpp>
+#include <utility>
 
 using namespace ncc;
 
@@ -139,7 +142,57 @@ static std::optional<std::vector<SoftwareComponent>> GetSoftwareComponents(const
 
 static nlohmann::ordered_json GetSystemInfo() {
   nlohmann::ordered_json info;
-  /// TODO: Implement system info
+
+#if defined(BOOST_OS_LINUX) || defined(BOOST_OS_MACOS) || defined(BOOST_OS_UNIX)
+  std::fstream proc_version("/proc/version", std::ios::in);
+  if (proc_version.is_open()) {
+    std::string line;
+    std::getline(proc_version, line);
+    proc_version.close();
+    info["linux"]["proc"]["version"] = line;
+  }
+
+  std::fstream proc_cpuinfo("/proc/cpuinfo", std::ios::in);
+  if (proc_cpuinfo.is_open()) {
+    info["linux"]["proc"]["cpuinfo"] = std::string(std::istreambuf_iterator<char>(proc_cpuinfo), {});
+    proc_cpuinfo.close();
+  }
+
+  std::fstream proc_meminfo("/proc/meminfo", std::ios::in);
+  if (proc_meminfo.is_open()) {
+    info["linux"]["proc"]["meminfo"] = std::string(std::istreambuf_iterator<char>(proc_meminfo), {});
+    proc_meminfo.close();
+  }
+
+  std::fstream proc_uptime("/proc/uptime", std::ios::in);
+  if (proc_uptime.is_open()) {
+    std::string line;
+    std::getline(proc_uptime, line);
+    proc_uptime.close();
+    info["linux"]["proc"]["uptime"] = line;
+  }
+
+  std::fstream proc_loadavg("/proc/loadavg", std::ios::in);
+  if (proc_loadavg.is_open()) {
+    std::string line;
+    std::getline(proc_loadavg, line);
+    proc_loadavg.close();
+    info["linux"]["proc"]["loadavg"] = line;
+  }
+
+  std::fstream proc_stat("/proc/stat", std::ios::in);
+  if (proc_stat.is_open()) {
+    info["linux"]["proc"]["stat"] = std::string(std::istreambuf_iterator<char>(proc_stat), {});
+    proc_stat.close();
+  }
+
+  std::fstream proc_diskstats("/proc/diskstats", std::ios::in);
+  if (proc_diskstats.is_open()) {
+    info["linux"]["proc"]["diskstats"] = std::string(std::istreambuf_iterator<char>(proc_diskstats), {});
+    proc_diskstats.close();
+  }
+
+#endif
 
   return info;
 }
@@ -195,190 +248,176 @@ bool no3::Interpreter::PImpl::CommandVersion(ConstArguments, const MutArguments&
 }
 
 struct ComponentManifest {
-  std::string m_component_name;
-  std::string m_license;
-  std::string m_description;
-  std::vector<std::string> m_dependencies;
-  std::string m_tag;
+  std::string_view m_component_name;
+  std::string_view m_license;
+  std::string_view m_description;
+  std::vector<std::string_view> m_dependencies;
   std::array<uint32_t, 3> m_version = {0, 0, 0};
-  std::optional<std::string> m_commit;
-  std::optional<std::string> m_branch;
+  std::string_view m_commit;
+  std::string_view m_build_date;
+  std::string_view m_branch;
+
+  ComponentManifest(std::string_view component_name, std::string_view license, std::string_view description,
+                    std::vector<std::string_view> dependencies, std::array<uint32_t, 3> version,
+                    std::string_view commit, std::string_view build_date, std::string_view branch)
+      : m_component_name(component_name),
+        m_license(license),
+        m_description(description),
+        m_dependencies(std::move(dependencies)),
+        m_version(version),
+        m_commit(commit),
+        m_build_date(build_date),
+        m_branch(branch) {}
 };
 
 static ComponentManifest GetComponentManifestForNitrateCore() {
-  ComponentManifest r;
-  r.m_component_name = NITRATE_CORE;
-  r.m_license = "LGPL-2.1+";
-  r.m_description = "The Nitrate Core Library";
-  r.m_dependencies = {};
-  r.m_tag = CoreLibrary.GetVersion();
-  r.m_version = {CoreLibrary.GetMajorVersion(), CoreLibrary.GetMinorVersion(), CoreLibrary.GetPatchVersion()};
+  const auto& lib = CoreLibrary;
 
-  return r;
+  return {NITRATE_CORE,        "LGPL-2.1+",         "The Nitrate Core Library", {},
+          lib.GetSemVersion(), lib.GetCommitHash(), lib.GetCompileDate(),       lib.GetBranch()};
 }
 
 static ComponentManifest GetComponentManifestForNitrateLexer() {
-  ComponentManifest r;
-  r.m_component_name = NITRATE_LEXER;
-  r.m_license = "LGPL-2.1+";
-  r.m_description = "The Nitrate Lexer Library";
-  r.m_dependencies = {NITRATE_CORE};
-  r.m_tag = lex::LexerLibrary.GetVersion();
+  const auto& lib = lex::LexerLibrary;
 
-  return r;
+  return {NITRATE_LEXER,       "LGPL-2.1+",         "The Nitrate Lexer Library", {NITRATE_CORE},
+          lib.GetSemVersion(), lib.GetCommitHash(), lib.GetCompileDate(),        lib.GetBranch()};
 }
 
 static ComponentManifest GetComponentManifestForNitrateSequencer() {
-  ComponentManifest r;
-  r.m_component_name = NITRATE_SEQUENCER;
-  r.m_license = "LGPL-2.1+";
-  r.m_description = "The Nitrate Sequencer (Preprocessor) Library";
-  r.m_dependencies = {NITRATE_CORE, NITRATE_LEXER};
-  r.m_tag = seq::SeqLibrary.GetVersion();
+  const auto& lib = seq::SeqLibrary;
 
-  return r;
+  return {NITRATE_SEQUENCER,
+          "LGPL-2.1+",
+          "The Nitrate Sequencer (Preprocessor) Library",
+          {NITRATE_CORE, NITRATE_LEXER},
+          lib.GetSemVersion(),
+          lib.GetCommitHash(),
+          lib.GetCompileDate(),
+          lib.GetBranch()};
 }
 
 static ComponentManifest GetComponentManifestForNitrateParser() {
-  ComponentManifest r;
-  r.m_component_name = NITRATE_PARSER;
-  r.m_license = "LGPL-2.1+";
-  r.m_description = "The Nitrate Parser Library";
-  r.m_dependencies = {NITRATE_CORE, NITRATE_LEXER};
-  r.m_tag = parse::ParseLibrary.GetVersion();
+  const auto& lib = parse::ParseLibrary;
 
-  return r;
+  return {NITRATE_PARSER,      "LGPL-2.1+",         "The Nitrate Parser Library", {NITRATE_CORE, NITRATE_LEXER},
+          lib.GetSemVersion(), lib.GetCommitHash(), lib.GetCompileDate(),         lib.GetBranch()};
 }
 
 static ComponentManifest GetComponentManifestForNitrateIRAlpha() {
-  ComponentManifest r;
-  r.m_component_name = NITRATE_IR_ALPHA;
-  r.m_license = "LGPL-2.1+";
-  r.m_description = "The Nitrate Alpha Intermediate Representation Library";
-  r.m_dependencies = {NITRATE_CORE, NITRATE_PARSER};
-
-  return r;
+  return {NITRATE_IR_ALPHA,
+          "LGPL-2.1+",
+          "The Nitrate Alpha Intermediate Representation Library",
+          {NITRATE_CORE, NITRATE_PARSER},
+          {0, 0, 0},
+          "",
+          "",
+          ""};
 }
 
 static ComponentManifest GetComponentManifestForNitrateAlphaOptimizer() {
-  ComponentManifest r;
-  r.m_component_name = NITRATE_ALPHA_OPTIMIZER;
-  r.m_license = "LGPL-2.1+";
-  r.m_description = "The Nitrate Alpha Intermediate Representation Optimizer Library";
-  r.m_dependencies = {NITRATE_CORE, NITRATE_IR_ALPHA};
-
-  return r;
+  return {NITRATE_ALPHA_OPTIMIZER,
+          "LGPL-2.1+",
+          "The Nitrate Alpha Intermediate Representation Optimizer Library",
+          {NITRATE_CORE, NITRATE_IR_ALPHA},
+          {0, 0, 0},
+          "",
+          "",
+          ""};
 }
 
 static ComponentManifest GetComponentManifestForNitrateIRBeta() {
-  ComponentManifest r;
-  r.m_component_name = NITRATE_IR_BETA;
-  r.m_license = "LGPL-2.1+";
-  r.m_description = "The Nitrate Beta Intermediate Representation Library";
-  r.m_dependencies = {NITRATE_CORE, NITRATE_IR_ALPHA};
-
-  return r;
+  return {NITRATE_IR_BETA,
+          "LGPL-2.1+",
+          "The Nitrate Beta Intermediate Representation Library",
+          {NITRATE_CORE, NITRATE_IR_ALPHA},
+          {0, 0, 0},
+          "",
+          "",
+          ""};
 }
 
 static ComponentManifest GetComponentManifestForNitrateBetaOptimizer() {
-  ComponentManifest r;
-  r.m_component_name = NITRATE_BETA_OPTIMIZER;
-  r.m_license = "LGPL-2.1+";
-  r.m_description = "The Nitrate Beta Intermediate Representation Optimizer Library";
-  r.m_dependencies = {NITRATE_CORE, NITRATE_IR_BETA};
-
-  return r;
+  return {NITRATE_BETA_OPTIMIZER,
+          "LGPL-2.1+",
+          "The Nitrate Beta Intermediate Representation Optimizer Library",
+          {NITRATE_CORE, NITRATE_IR_BETA},
+          {0, 0, 0},
+          "",
+          "",
+          ""};
 }
 
 static ComponentManifest GetComponentManifestForNitrateIRGamma() {
-  ComponentManifest r;
-  r.m_component_name = NITRATE_IR_GAMMA;
-  r.m_license = "LGPL-2.1+";
-  r.m_description = "The Nitrate Gamma Intermediate Representation Library";
-  r.m_dependencies = {NITRATE_CORE, NITRATE_IR_BETA};
-
-  return r;
+  return {NITRATE_IR_GAMMA,
+          "LGPL-2.1+",
+          "The Nitrate Gamma Intermediate Representation Library",
+          {NITRATE_CORE, NITRATE_IR_BETA},
+          {0, 0, 0},
+          "",
+          "",
+          ""};
 }
 
 static ComponentManifest GetComponentManifestForNitrateGammaOptimizer() {
-  ComponentManifest r;
-  r.m_component_name = NITRATE_GAMMA_OPTIMIZER;
-  r.m_license = "LGPL-2.1+";
-  r.m_description = "The Nitrate Gamma Intermediate Representation Optimizer Library";
-  r.m_dependencies = {NITRATE_CORE, NITRATE_IR_GAMMA};
-
-  return r;
+  return {NITRATE_GAMMA_OPTIMIZER,
+          "LGPL-2.1+",
+          "The Nitrate Gamma Intermediate Representation Optimizer Library",
+          {NITRATE_CORE, NITRATE_IR_GAMMA},
+          {0, 0, 0},
+          "",
+          "",
+          ""};
 }
 
 static ComponentManifest GetComponentManifestForNitrateLLVM() {
-  ComponentManifest r;
-  r.m_component_name = NITRATE_LLVM;
-  r.m_license = "LGPL-2.1+";
-  r.m_description = "The Nitrate LLVM Backend Library";
-  r.m_dependencies = {NITRATE_CORE, NITRATE_IR_GAMMA};
-
-  return r;
+  return {NITRATE_LLVM,
+          "LGPL-2.1+",
+          "The Nitrate LLVM Codegen and Linking Library",
+          {NITRATE_CORE, NITRATE_IR_GAMMA},
+          {0, 0, 0},
+          "",
+          "",
+          ""};
 }
 
 static nlohmann::ordered_json GetComponentManifest(SoftwareComponent component) {
-  ComponentManifest manifest;
+  ComponentManifest manifest = [component]() {
+    switch (component) {
+      case SoftwareComponent::NitrateCore:
+        return GetComponentManifestForNitrateCore();
 
-  switch (component) {
-    case SoftwareComponent::NitrateCore: {
-      manifest = GetComponentManifestForNitrateCore();
-      break;
-    }
+      case SoftwareComponent::NitrateLexer:
+        return GetComponentManifestForNitrateLexer();
 
-    case SoftwareComponent::NitrateLexer: {
-      manifest = GetComponentManifestForNitrateLexer();
-      break;
-    }
+      case SoftwareComponent::NitrateSequencer:
+        return GetComponentManifestForNitrateSequencer();
 
-    case SoftwareComponent::NitrateSequencer: {
-      manifest = GetComponentManifestForNitrateSequencer();
-      break;
-    }
+      case SoftwareComponent::NitrateParser:
+        return GetComponentManifestForNitrateParser();
 
-    case SoftwareComponent::NitrateParser: {
-      manifest = GetComponentManifestForNitrateParser();
-      break;
-    }
+      case SoftwareComponent::NitrateIRAlpha:
+        return GetComponentManifestForNitrateIRAlpha();
 
-    case SoftwareComponent::NitrateIRAlpha: {
-      manifest = GetComponentManifestForNitrateIRAlpha();
-      break;
-    }
+      case SoftwareComponent::NitrateAlphaOptimizer:
+        return GetComponentManifestForNitrateAlphaOptimizer();
 
-    case SoftwareComponent::NitrateAlphaOptimizer: {
-      manifest = GetComponentManifestForNitrateAlphaOptimizer();
-      break;
-    }
+      case SoftwareComponent::NitrateIRBeta:
+        return GetComponentManifestForNitrateIRBeta();
 
-    case SoftwareComponent::NitrateIRBeta: {
-      manifest = GetComponentManifestForNitrateIRBeta();
-      break;
-    }
+      case SoftwareComponent::NitrateBetaOptimizer:
+        return GetComponentManifestForNitrateBetaOptimizer();
 
-    case SoftwareComponent::NitrateBetaOptimizer: {
-      manifest = GetComponentManifestForNitrateBetaOptimizer();
-      break;
-    }
+      case SoftwareComponent::NitrateIRGamma:
+        return GetComponentManifestForNitrateIRGamma();
 
-    case SoftwareComponent::NitrateIRGamma: {
-      manifest = GetComponentManifestForNitrateIRGamma();
-      break;
-    }
+      case SoftwareComponent::NitrateGammaOptimizer:
+        return GetComponentManifestForNitrateGammaOptimizer();
 
-    case SoftwareComponent::NitrateGammaOptimizer: {
-      manifest = GetComponentManifestForNitrateGammaOptimizer();
-      break;
+      case SoftwareComponent::NitrateLLVM:
+        return GetComponentManifestForNitrateLLVM();
     }
-
-    case SoftwareComponent::NitrateLLVM: {
-      manifest = GetComponentManifestForNitrateLLVM();
-      break;
-    }
-  }
+  }();
 
   nlohmann::ordered_json j;
   j["component_name"] = manifest.m_component_name;
@@ -388,18 +427,13 @@ static nlohmann::ordered_json GetComponentManifest(SoftwareComponent component) 
       {"major", manifest.m_version[0]},
       {"minor", manifest.m_version[1]},
       {"patch", manifest.m_version[2]},
-      {"tag", manifest.m_tag},
   };
-  if (manifest.m_commit) {
-    j["build"]["commit"] = *manifest.m_commit;
-  } else {
-    j["build"]["commit"] = nullptr;
-  }
-  if (manifest.m_branch) {
-    j["build"]["branch"] = *manifest.m_branch;
-  } else {
-    j["build"]["branch"] = nullptr;
-  }
+  j["build"] = {
+      {"commit", manifest.m_commit},
+      {"date", manifest.m_build_date},
+      {"branch", manifest.m_branch},
+  };
+
   j["dependencies"] = nlohmann::ordered_json::array();
   for (const auto& dependency : manifest.m_dependencies) {
     j["dependencies"].push_back(dependency);

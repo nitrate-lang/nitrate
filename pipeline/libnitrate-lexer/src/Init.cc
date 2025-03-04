@@ -63,10 +63,12 @@ NCC_EXPORT void LexerLibrarySetup::Deinit() {
   Log << Runtime << Debug << "libnitrate-lexer deinitialized";
 }
 
-NCC_EXPORT auto LexerLibrarySetup::GetVersionId() -> std::string_view { return __TARGET_VERSION; }
-
 NCC_EXPORT auto LexerLibrarySetup::GetSemVersion() -> std::array<uint32_t, 3> {
   return {__TARGET_MAJOR_VERSION, __TARGET_MINOR_VERSION, __TARGET_PATCH_VERSION};
+}
+
+NCC_EXPORT auto LexerLibrarySetup::BuildId() -> ncc::BuildId {
+  return {__TARGET_COMMIT_HASH, __TARGET_COMMIT_DATE, __TARGET_COMMIT_BRANCH};
 }
 
 std::string ncc::lex::Formatter(std::string_view msg, Sev sev) {

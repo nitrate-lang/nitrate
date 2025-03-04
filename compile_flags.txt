@@ -24,8 +24,11 @@
 -Wno-unused-parameter
 -Wno-error=unused-parameter
 -Wno-overlength-strings
--D__TARGET_VERSION="?"
+-fno-rtti
+
 -D__TARGET_MAJOR_VERSION=0
 -D__TARGET_MINOR_VERSION=0
 -D__TARGET_PATCH_VERSION=0
--fno-rtti
+-D__TARGET_COMMIT_HASH="00000000"
+-D__TARGET_COMMIT_DATE="2025-03-04T02:48:38+00:00"
+-D__TARGET_COMMIT_BRANCH="main"

@@ -13,5 +13,3 @@ TEST(Core, Init_Init) {
     EXPECT_FALSE(ncc::CoreLibrary.IsInitialized());
   }
 }
-
-TEST(Core, Init_Version) { EXPECT_FALSE(ncc::CoreLibrary.GetVersion().empty()); }

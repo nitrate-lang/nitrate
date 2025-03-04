@@ -19,5 +19,3 @@ TEST(Lexer, Init_Init) {
     EXPECT_FALSE(LexerLibrary.IsInitialized());
   }
 }
-
-TEST(Lexer, Init_Version) { EXPECT_FALSE(LexerLibrary.GetVersion().empty()); }

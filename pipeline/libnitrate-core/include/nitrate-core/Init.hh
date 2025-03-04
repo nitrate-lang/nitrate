@@ -37,7 +37,6 @@
 #include <functional>
 #include <mutex>
 #include <optional>
-#include <string>
 #include <string_view>
 
 namespace ncc {
@@ -69,7 +68,7 @@ namespace ncc {
   template <typename Impl>
   class LibraryRC final {
     size_t m_ref_count{};
-    std::recursive_mutex m_ref_count_mutex;
+    mutable std::recursive_mutex m_ref_count_mutex;
 
   public:
     LibraryRC() = default;
@@ -95,63 +94,19 @@ namespace ncc {
       }
     }
 
-    auto IsInitialized() -> bool {
+    auto IsInitialized() const -> bool {
       std::lock_guard<std::recursive_mutex> lock(m_ref_count_mutex);
 
       return m_ref_count > 0;
     }
 
-    auto GetVersion() -> std::string_view {
-      static std::string version_string =
-
-          std::string("[") + std::string(Impl::GetVersionId()) +
-          std::string(
-              "] ["
-
-#if defined(__x86_64__) || defined(__amd64__) || defined(__amd64) || defined(_M_X64) || defined(_M_AMD64)
-              "x86_64-"
-#elif defined(__i386__) || defined(__i386) || defined(_M_IX86)
-              "x86-"
-#elif defined(__aarch64__)
-              "aarch64-"
-#elif defined(__arm__)
-              "arm-"
-#else
-              "unknown-"
-#endif
-
-#if defined(__linux__)
-              "linux-"
-#elif defined(__APPLE__)
-              "macos-"
-#elif defined(_WIN32)
-              "win32-"
-#else
-              "unknown-"
-#endif
-
-#if defined(__clang__)
-              "clang] "
-#elif defined(__GNUC__)
-              "gnu] "
-#else
-              "unknown] "
-#endif
-
-#if NDEBUG
-              "[release]"
-#else
-              "[debug]"
-#endif
-          );
-
-      return version_string;
-    }
-
-    auto GetMajorVersion() -> uint32_t { return Impl::GetSemVersion()[0]; }
-    auto GetMinorVersion() -> uint32_t { return Impl::GetSemVersion()[1]; }
-    auto GetPatchVersion() -> uint32_t { return Impl::GetSemVersion()[2]; }
-    auto GetSemVersion() -> std::array<uint32_t, 3> { return Impl::GetSemVersion(); }
+    auto GetMajorVersion() const -> uint32_t { return Impl::GetSemVersion()[0]; }
+    auto GetMinorVersion() const -> uint32_t { return Impl::GetSemVersion()[1]; }
+    auto GetPatchVersion() const -> uint32_t { return Impl::GetSemVersion()[2]; }
+    auto GetSemVersion() const -> std::array<uint32_t, 3> { return Impl::GetSemVersion(); }
+    auto GetCommitHash() const -> std::string_view { return Impl::BuildId().m_commit; }
+    auto GetCompileDate() const -> std::string_view { return Impl::BuildId().m_iso8601; }
+    auto GetBranch() const -> std::string_view { return Impl::BuildId().m_branch; }
 
     auto GetRC() -> std::optional<LibraryRCAutoClose> {
       if (!InitRC()) {
@@ -162,11 +117,17 @@ namespace ncc {
     }
   };
 
+  struct BuildId final {
+    std::string_view m_commit;
+    std::string_view m_iso8601;
+    std::string_view m_branch;
+  };
+
   struct CoreLibrarySetup final {
     static auto Init() -> bool;
     static void Deinit();
-    static auto GetVersionId() -> std::string_view;
     static auto GetSemVersion() -> std::array<uint32_t, 3>;
+    static auto BuildId() -> BuildId;
   };
 
   extern LibraryRC<CoreLibrarySetup> CoreLibrary;
