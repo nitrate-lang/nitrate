@@ -83,10 +83,10 @@ bool Interpreter::PImpl::CommandHelp(ConstArguments, const MutArguments&) {
 │ w, impl    │ Low-level toolchain commands for maintainers            │
 │            │ Not documented / Subject to change                      │
 ├────────────┼─────────────────────────────────────────────────────────┤
-│ i, init    │ Create a new package from a template                    │
+│ p, init    │ Create a new package from a template                    │
 │            │ Get help: https://nitrate.dev/docs/no3/init             │
 ├────────────┼─────────────────────────────────────────────────────────┤
-│ a, install │ Install a local or remote package                       │
+│ i, install │ Install a local or remote package                       │
 │            │ Get help: https://nitrate.dev/docs/no3/install          │
 ├────────────┼─────────────────────────────────────────────────────────┤
 │ x, lsp     │ Spawn a Language Server Protocol (LSP) server           │
@@ -149,8 +149,8 @@ void Interpreter::PImpl::SetupCommands() {
   m_commands["format"] = m_commands["m"] = m_commands["fmt"] = CommandFormat;
   m_commands["help"] = m_commands["-h"] = m_commands["h"] = m_commands["--help"] = CommandHelp;
   m_commands["impl"] = m_commands["w"] = CommandImpl;
-  m_commands["init"] = m_commands["i"] = CommandInit;
-  m_commands["install"] = m_commands["a"] = CommandInstall;
+  m_commands["init"] = m_commands["p"] = CommandInit;
+  m_commands["install"] = m_commands["i"] = CommandInstall;
   m_commands["lsp"] = m_commands["x"] = CommandLSP;
   m_commands["license"] = CommandLicense;
   m_commands["remove"] = m_commands["r"] = CommandRemove;
