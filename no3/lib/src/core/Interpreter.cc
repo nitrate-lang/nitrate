@@ -101,6 +101,7 @@ bool Interpreter::PImpl::CommandHelp(ConstArguments, const MutArguments&) {
 │            │ Get help: https://nitrate.dev/docs/no3/test             │
 ├────────────┼─────────────────────────────────────────────────────────┤
 │ version    │ Print software version information                      │
+│ --version  │ Get help: https://nitrate.dev/docs/no3/version          │
 ├────────────┼─────────────────────────────────────────────────────────┤
 │ u, update  │ Update packages, dependencies, and the toolchain        │
 │            │ Get help: https://nitrate.dev/docs/no3/update           │
@@ -154,7 +155,7 @@ void Interpreter::PImpl::SetupCommands() {
   m_commands["license"] = CommandLicense;
   m_commands["remove"] = m_commands["r"] = CommandRemove;
   m_commands["test"] = m_commands["t"] = CommandTest;
-  m_commands["version"] = CommandVersion;
+  m_commands["version"] = m_commands["--version"] = CommandVersion;
   m_commands["update"] = m_commands["u"] = CommandUpdate;
 }
 
