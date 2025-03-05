@@ -185,14 +185,64 @@ static std::optional<nlohmann::json> ParsePackageNitrateConfig(const std::filesy
   return std::nullopt;
 }
 
-#define rule(__expr, __explanation)                               \
-  if (!(__expr)) [[unlikely]] {                                   \
-    Log << "Package configuration is invalid: " << __explanation; \
-    return false;                                                 \
+#define schema_assert(__expr)                                               \
+  if (!(__expr)) [[unlikely]] {                                             \
+    Log << "Invalid configuration:" << " schema_assert(" << #__expr << ")"; \
+    return false;                                                           \
   }
 
 static bool ValidateMetadata(const nlohmann::json& json) {
-  /// TODO: Validate metadata
+  schema_assert(json.is_object());
+  schema_assert(json.contains("name"));
+  schema_assert(json["name"].is_string());
+  schema_assert(json.contains("description"));
+  schema_assert(json["description"].is_string());
+  schema_assert(json.contains("license"));
+  schema_assert(json["license"].is_string());
+  schema_assert(json.contains("category"));
+  schema_assert(json["category"].is_string());
+  schema_assert([&]() {
+    auto v = json["category"].get<std::string>();
+    schema_assert(v == "azide-lib" || v == "basic-lib" || v == "dynamic-executable" || v == "static-executable" ||
+                  v == "comptime_utility");
+    return true;
+  }());
+
+  schema_assert(json.contains("version"));
+  schema_assert(json["version"].is_object());
+  schema_assert(json["version"].contains("major"));
+  schema_assert(json["version"]["major"].is_number_unsigned());
+  schema_assert(json["version"].contains("minor"));
+  schema_assert(json["version"]["minor"].is_number_unsigned());
+  schema_assert(json["version"].contains("patch"));
+  schema_assert(json["version"]["patch"].is_number_unsigned());
+
+  if (json.contains("aliases")) {
+    schema_assert(json["aliases"].is_array());
+    schema_assert(std::all_of(json["aliases"].begin(), json["aliases"].end(), [](const auto& alias) {
+      schema_assert(alias.is_string());
+      return true;
+    }));
+  }
+
+  if (json.contains("contacts")) {
+    schema_assert(json["contacts"].is_array());
+    schema_assert(std::all_of(json["contacts"].begin(), json["contacts"].end(), [](const auto& contact) {
+      schema_assert(contact.is_object());
+      schema_assert(contact.contains("name"));
+      schema_assert(contact["name"].is_string());
+      schema_assert(contact.contains("email"));
+      schema_assert(contact["email"].is_string());
+      schema_assert(contact.contains("roles"));
+      schema_assert(contact["roles"].is_array());
+      schema_assert(std::all_of(contact["roles"].begin(), contact["roles"].end(), [](const auto& role) {
+        schema_assert(role.is_string());
+        schema_assert(role == "owner" || role == "contributor" || role == "maintainer" || role == "support");
+        return true;
+      }));
+      return true;
+    }));
+  }
 
   return true;
 }
@@ -210,22 +260,21 @@ static bool ValidateOwnership(const nlohmann::json& json) {
 }
 
 static bool ValidatePackageConfig(const nlohmann::json& json) {
-  rule(json.is_object(), "Root of package configuration must be an object");
-  rule(json.contains("format"), "Package configuration must contain a \"format\" field");
-  rule(json["format"].is_number_unsigned(), "Package configuration \"format\" field must be an unsigned integer");
-  rule(json["format"].get<unsigned>() == 1,
-       "Package configuration is in an unsupported format. The expected format version is 1");
-  rule(json.contains("metadata"), "Package configuration must contain a \"metadata\" field");
-  rule(json.contains("build"), "Package configuration must contain a \"build\" field");
-  rule(json.contains("ownership"), "Package configuration must contain an \"ownership\" field");
-  rule(ValidateMetadata(json["metadata"]), "Invalid metadata");
-  rule(ValidateBuild(json["build"]), "Invalid build");
-  rule(ValidateOwnership(json["ownership"]), "Invalid ownership");
+  schema_assert(json.is_object());
+  schema_assert(json.contains("format"));
+  schema_assert(json["format"].is_number_unsigned());
+  schema_assert(json["format"].get<unsigned>() == 1);
+  schema_assert(json.contains("metadata"));
+  schema_assert(json.contains("build"));
+  schema_assert(json.contains("ownership"));
+  schema_assert(ValidateMetadata(json["metadata"]));
+  schema_assert(ValidateBuild(json["build"]));
+  schema_assert(ValidateOwnership(json["ownership"]));
 
   return true;
 }
 
-#undef rule
+#undef schema_assert
 
 static void AssignDefaults(nlohmann::json& json) {
   /// TODO: Assign defaults to json
