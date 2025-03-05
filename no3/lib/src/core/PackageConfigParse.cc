@@ -123,7 +123,6 @@ static std::optional<nlohmann::ordered_json> ParsePackageProtobufConfig(const st
   return ConfigProtobufToJson(package);
 }
 
-/// TODO: Convert protobuf to json
 static std::optional<nlohmann::ordered_json> ParsePackageNitrateConfig(const std::filesystem::path& config_file) {
   /// TODO: Parse Nitrate package configuration
   (void)config_file;

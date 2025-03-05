@@ -36,7 +36,6 @@
 
 #include <nitrate-core/Macro.hh>
 #include <streambuf>
-#include <string>
 
 namespace ncc {
   class NCC_EXPORT LogOStream : public std::streambuf {
@@ -54,9 +53,6 @@ namespace ncc {
     int_type overflow(int_type c) override;
     auto xsputn(const char *s, std::streamsize count) -> std::streamsize override;
     int sync() override;
-
-  private:
-    std::string m_buffer;
   };
 
   extern thread_local std::ostream clog;  // NOLINT(readability-identifier-naming)

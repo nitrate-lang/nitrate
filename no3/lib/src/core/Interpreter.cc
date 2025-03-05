@@ -106,7 +106,8 @@ bool Interpreter::PImpl::CommandHelp(ConstArguments, const MutArguments&) {
 ├────────────┼─────────────────────────────────────────────────────────┤
 │ u, update  │ Update packages, dependencies, and the toolchain        │
 │            │ Get help: https://nitrate.dev/docs/no3/update           │
-╰────────────┴─────────────────────────────────────────────────────────╯)";
+╰────────────┴─────────────────────────────────────────────────────────╯
+)";
 
   Log << Raw << message;
 
@@ -137,7 +138,8 @@ There's no warranty for how well it works or whether it fits any
 particular purpose.
 
 For full license details, see the included license file or visit 
-<http://www.gnu.org/licenses/>.)";
+<http://www.gnu.org/licenses/>.
+)";
 
   return true;
 }
@@ -189,7 +191,6 @@ NCC_EXPORT Interpreter::Interpreter(OutputHandler output_handler) noexcept : m_i
     }
 
     output_handler(ec.Format(msg, sev));
-    output_handler("\n");
   });
 }
 

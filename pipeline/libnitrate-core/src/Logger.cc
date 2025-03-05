@@ -51,7 +51,7 @@ NCC_EXPORT auto ncc::Formatter(std::string_view msg, Sev sev) -> std::string {
       "\x1b[31;1;4mcritical:\x1b[0m ", "\x1b[31;1;4malert:\x1b[0m ", "\x1b[31;1;4memergency:\x1b[0m "};
 
   std::stringstream ss;
-  ss << ansi_prefixes[sev] << msg;
+  ss << ansi_prefixes[sev] << msg << "\n";
 
   return ss.str();
 }

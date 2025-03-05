@@ -48,7 +48,7 @@ NCC_EXPORT auto ncc::seq::ec::Formatter(std::string_view msg, Sev sev) -> std::s
 
   std::stringstream ss;
 
-  ss << "\x1b[0m\x1b[37;1m[\x1b[0m\x1b[32;1mMeta \x1b[0m\x1b[37;1m]: " << ANSI_PREFIXES[sev] << msg;
+  ss << "\x1b[0m\x1b[37;1m[\x1b[0m\x1b[32;1mMeta \x1b[0m\x1b[37;1m]: " << ANSI_PREFIXES[sev] << msg << "\n";
 
   return ss.str();
 }

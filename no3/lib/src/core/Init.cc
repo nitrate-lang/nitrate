@@ -168,7 +168,7 @@ static bool PerformInitialize(std::ostream& log) {
       return;
     }
 
-    std::cerr << ec.Format(msg, sev) << std::endl;
+    std::cerr << ec.Format(msg, sev);
   });
 
   std::shared_ptr<void> unsub(nullptr, [&](...) { Log.Unsubscribe(log_subid); });
@@ -222,7 +222,7 @@ static void PerformDeinitialize() {
       return;
     }
 
-    std::cerr << ec.Format(msg, sev) << std::endl;
+    std::cerr << ec.Format(msg, sev);
   });
 
   std::shared_ptr<void> unsub(nullptr, [&](...) { Log.Unsubscribe(log_subid); });

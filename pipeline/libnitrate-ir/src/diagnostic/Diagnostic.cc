@@ -353,5 +353,7 @@ NCC_EXPORT std::string ec::Formatter(std::string_view msg, Sev sev) {
     }
   }
 
+  ss << "\n";
+
   return ss.str();
 }

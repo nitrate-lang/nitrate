@@ -77,8 +77,8 @@ std::string ncc::lex::Formatter(std::string_view msg, Sev sev) {
   }
 
   if (sev <= ncc::Debug) {
-    return "\x1b[37;1m[\x1b[0m\x1b[34;1mLexer\x1b[0m\x1b[37;1m]: debug:\x1b[0m " + std::string(msg);
+    return "\x1b[37;1m[\x1b[0m\x1b[34;1mLexer\x1b[0m\x1b[37;1m]: debug:\x1b[0m " + std::string(msg) + "\n";
   }
 
-  return "\x1b[37;1m[\x1b[0m\x1b[34;1mLexer\x1b[0m\x1b[37;1m]:\x1b[0m " + std::string(msg);
+  return "\x1b[37;1m[\x1b[0m\x1b[34;1mLexer\x1b[0m\x1b[37;1m]:\x1b[0m " + std::string(msg) + "\n";
 }

@@ -42,32 +42,14 @@ static LogOStream LogStreamBuffer;
 NCC_EXPORT thread_local std::ostream ncc::clog(&LogStreamBuffer);
 
 std::streambuf::int_type LogOStream::overflow(int_type c) {
-  if (c == '\n') {
-    Log << Raw << m_buffer;
-    m_buffer.clear();
-  } else {
-    m_buffer.push_back(c);
-  }
-
+  Log << Raw << (char)c;
   return c;
 }
 
 auto LogOStream::xsputn(const char *s, std::streamsize count) -> std::streamsize {
-  m_buffer.append(s, count);
-
-  for (size_t pos = m_buffer.find('\n'); pos != std::string::npos; pos = m_buffer.find('\n', pos)) {
-    Log << Raw << m_buffer.substr(0, pos);
-    m_buffer.erase(0, pos + 1);
-  }
+  Log << Raw << std::string_view(s, count);
 
   return count;
 }
 
-int LogOStream::sync() {
-  if (!m_buffer.empty()) {
-    Log << Raw << m_buffer;
-    m_buffer.clear();
-  }
-
-  return 0;
-}
+int LogOStream::sync() { return 0; }

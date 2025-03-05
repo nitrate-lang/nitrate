@@ -498,7 +498,7 @@ bool no3::Interpreter::PImpl::CommandVersion(ConstArguments, const MutArguments&
     program->ParseArgs(argv);
   } catch (const std::exception& e) {
     Log << e.what();
-    Log << Raw << *program;
+    Log << Raw << *program << "\n";
     return false;
   }
 
@@ -511,22 +511,22 @@ bool no3::Interpreter::PImpl::CommandVersion(ConstArguments, const MutArguments&
   const auto json_mode = program->Get<bool>("--json");
   const auto components = GetSoftwareComponents(*program);
   if (!components) {
-    Log << Raw << *program;
+    Log << Raw << *program << "\n";
     return false;
   }
 
   if (!json_mode && (system_info || minify)) {
     Log << "The --system-info and --minify options are only valid when using --json";
-    Log << Raw << *program;
+    Log << Raw << *program << "\n";
     return false;
   }
 
   const auto version_array = GetSoftwareVersionArray(*components);
 
   if (json_mode) {
-    Log << Raw << GetVersionUsingJson(minify, system_info, version_array);
+    Log << Raw << GetVersionUsingJson(minify, system_info, version_array) << "\n";
   } else {
-    Log << Raw << GetVersionUsingBrief(version_array);
+    Log << Raw << GetVersionUsingBrief(version_array) << "\n";
   }
 
   return true;

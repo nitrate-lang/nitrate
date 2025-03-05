@@ -483,8 +483,6 @@ namespace no3::package {
       j["blockchain"].push_back(std::move(bc_json));
     }
 
-    /// TODO: Convert protobuf to json
-
     return j;
   }
 
