@@ -31,7 +31,7 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <core/PackageConfiguration.hh>
+#include <core/PackageConfig.hh>
 #include <core/argparse.hpp>
 #include <filesystem>
 #include <impl/Subcommands.hh>
@@ -77,7 +77,7 @@ bool no3::cmd_impl::subcommands::CommandImplConfigParse(ConstArguments, const Mu
     return false;
   }
 
-  if (auto config = no3::package::PackageConfiguration::ParsePackage(package_dir)) {
+  if (auto config = no3::package::PackageConfig::ParsePackage(package_dir)) {
     bool minify = program->Get<bool>("--minify");
     clog << config->Json().dump(minify ? -1 : 2);
     return true;

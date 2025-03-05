@@ -5,11 +5,10 @@ syntax = "proto2";
 
 package nitrate.no3.package;
 
-message Package {
-  required uint32 format = 1;
-  required Metadata metadata = 2;
-  required BuildConfig build = 3;
-  repeated OwnershipChainLink ownership = 4;
+message SemVersion {
+  required uint32 major = 1;
+  required uint32 minor = 2;
+  required uint32 patch = 3;
 }
 
 message UUID {
@@ -17,7 +16,7 @@ message UUID {
   required uint64 lo = 2;
 }
 
-message Metadata {
+message Package {
   enum Category {
     UNSPECIFIED = 0;
     AZIDE_LIBRARY = 1;
@@ -25,12 +24,6 @@ message Metadata {
     DYNAMIC_EXECUTABLE = 3;
     STATIC_EXECUTABLE = 4;
     COMPTIME_UTILITY = 5;
-  }
-
-  message SemVersion {
-    required uint32 major = 1;
-    required uint32 minor = 2;
-    required uint32 patch = 3;
   }
 
   message ProjectContact {
@@ -48,16 +41,11 @@ message Metadata {
     repeated ContactRole roles = 4;
   }
 
-  required string v_name = 1;
-  required string v_description = 2;
-  required string v_spdx_license = 3;
-  required Category category = 4;
-  required SemVersion v_version = 5;
-  repeated string v_aliases = 6;
-  repeated ProjectContact v_contacts = 7;
-}
+  message Dependency {
+    required UUID uuid = 1;
+    required SemVersion version = 2;
+  }
 
-message BuildConfig {
   message Platforms {
     repeated string allow = 1;
     repeated string deny = 2;
@@ -73,18 +61,27 @@ message BuildConfig {
     optional SystemRequirements system_requirements = 1;
   }
 
-  optional Platforms platforms = 1;
-  repeated string dependencies = 2;
-  optional OptimizationOptions optimization = 3;
+  required SemVersion format = 1;
+  required string name = 2;
+  required string description = 3;
+  required string spdx_license = 4;
+  required Category category = 5;
+  required SemVersion version = 6;
+  repeated string aliases = 7;
+  repeated ProjectContact contacts = 8;
+  required Platforms platforms = 9;
+  repeated Dependency dependencies = 10;
+  required OptimizationOptions optimization = 11;
+  repeated BlockchainLink blockchain = 12;
 }
 
-message OwnershipChainLink {
+message BlockchainLink {
   enum LinkCategory {
     UNSPECIFIED = 0;
     ECOSYSTEM_ROOT = 1;
     ECOSYSTEM_DOMAIN = 2;
     USER_ACCOUNT = 3;
-    TOP_PACKAGE = 4;
+    PACKAGE = 4;
     SUB_PACKAGE = 5;
   }
 

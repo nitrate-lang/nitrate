@@ -38,17 +38,17 @@
 #include <optional>
 
 namespace no3::package {
-  class PackageConfiguration {
-    nlohmann::json m_raw;
-    mutable std::optional<nlohmann::json> m_full;
+  class PackageConfig {
+    nlohmann::ordered_json m_raw;
+    mutable std::optional<nlohmann::ordered_json> m_full;
 
-    PackageConfiguration(nlohmann::json raw) : m_raw(std::move(raw)) {}
+    PackageConfig(nlohmann::ordered_json raw) : m_raw(std::move(raw)) {}
 
   public:
-    ~PackageConfiguration() = default;
+    ~PackageConfig() = default;
 
-    static std::optional<PackageConfiguration> ParsePackage(const std::filesystem::path& package_dir);
+    static std::optional<PackageConfig> ParsePackage(const std::filesystem::path& package_dir);
 
-    [[nodiscard]] const nlohmann::json& Json(bool defaults = true) const;
+    [[nodiscard]] const nlohmann::ordered_json& Json(bool defaults = true) const;
   };
 }  // namespace no3::package
