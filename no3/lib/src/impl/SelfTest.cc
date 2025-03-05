@@ -31,12 +31,13 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#pragma once
+#include <core/argparse.hpp>
+#include <impl/Subcommands.hh>
 
-#include <core/InterpreterImpl.hh>
+namespace nitrate::testing {
+  bool RunTestSuite(const std::vector<std::string>& args);
+}  // namespace nitrate::testing
 
-namespace no3::cmd_impl::subcommands {
-  bool CommandImplHelp(ConstArguments full_argv, const MutArguments& argv);
-  bool CommandImplConfigParse(ConstArguments full_argv, const MutArguments& argv);
-  bool CommandImplSelfTest(ConstArguments full_argv, const MutArguments& argv);
-}  // namespace no3::cmd_impl::subcommands
+bool no3::cmd_impl::subcommands::CommandImplSelfTest(ConstArguments, const MutArguments& argv) {
+  return nitrate::testing::RunTestSuite(argv);
+}

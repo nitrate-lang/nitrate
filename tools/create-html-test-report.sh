@@ -13,4 +13,4 @@ if [ -z "$1" ]; then
 fi
 EXECUTABLE=$1
 
-$EXECUTABLE dev test --opt="gtest_color=yes" --opt="gtest_brief=0" --opt="gtest_repeat=5"|ansi2html
+$EXECUTABLE impl self-test --opt="gtest_color=yes" --opt="gtest_brief=0" --opt="gtest_repeat=5"|ansi2html

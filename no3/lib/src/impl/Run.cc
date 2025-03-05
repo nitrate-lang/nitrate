@@ -42,11 +42,12 @@ static const auto IMPL_SUBCOMMANDS = []() {
 
   m["help"] = m["--help"] = m["-h"] = cmd_impl::subcommands::CommandImplHelp;
   m["config-parse"] = cmd_impl::subcommands::CommandImplConfigParse;
+  m["self-test"] = cmd_impl::subcommands::CommandImplSelfTest;
 
   return m;
 }();
 
-bool no3::cmd_impl::subcommands::CommandImplHelp(ConstArguments, const MutArguments& argv) {
+bool no3::cmd_impl::subcommands::CommandImplHelp(ConstArguments, const MutArguments&) {
   std::string_view message =
       R"(╭───────────────┬──────────────────────────────────────────────────────────────╮
 │ Subcommand    │ Brief description of the subcommand                          │
@@ -56,9 +57,12 @@ bool no3::cmd_impl::subcommands::CommandImplHelp(ConstArguments, const MutArgume
 ├───────────────┼──────────────────────────────────────────────────────────────┤
 │ config-parse  │ Package configuration file parsing and validation            │
 │               │ Get help: https://nitrate.dev/docs/no3/impl/config-parse     │
+├───────────────┼──────────────────────────────────────────────────────────────┤
+│ self-test     │ Run internal test suite                                      │
+│               │ Get help: https://nitrate.dev/docs/no3/impl/self-test        │
 ╰───────────────┴──────────────────────────────────────────────────────────────╯)";
 
-  Log << Raw << message;
+  Log << Raw << message << "\n";
 
   return true;
 }
