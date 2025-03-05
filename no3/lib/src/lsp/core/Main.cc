@@ -28,7 +28,7 @@ static constexpr void CreateParser(argparse::ArgumentParser& parser) {
   group.AddArgument("--stdio").DefaultValue(false).ImplicitValue(true).Help("Use standard I/O");
 }
 
-extern "C" NCC_EXPORT auto NitratedMain(int argc, char** argv) -> int {
+extern "C" auto NitratedMain(int argc, char** argv) -> int {
   std::vector<std::string> args(argv, argv + argc);
 
   {

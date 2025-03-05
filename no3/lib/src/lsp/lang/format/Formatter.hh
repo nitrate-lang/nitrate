@@ -16,7 +16,7 @@ namespace no3::lsp::fmt {
   template <typename T>
   using FlowPtr = ncc::FlowPtr<T>;
 
-  class NCC_EXPORT CambrianFormatter final : public parse::ASTVisitor, public ICodeFormatter {
+  class CambrianFormatter final : public parse::ASTVisitor, public ICodeFormatter {
     class LineWriter final {
       std::stringstream m_line_buffer;
       std::ostream& m_file;

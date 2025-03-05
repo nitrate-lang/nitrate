@@ -18,7 +18,7 @@ add_custom_command(
   COMMENT "Compiling ${PROTOBUF_SOURCE}"
   VERBATIM
 )
-add_custom_target(no3-tool-package-compile-proto DEPENDS ${PROTOBUF_SOURCE_CC} ${PROTOBUF_SOURCE_H})
+add_custom_target(nitrate-tool-package-compile-proto DEPENDS ${PROTOBUF_SOURCE_CC} ${PROTOBUF_SOURCE_H})
 
 #================== FIND SOURCES ==================
 file(GLOB_RECURSE CXX_SOURCES "src/*.cc")
@@ -28,9 +28,9 @@ set(CXX_SOURCES ${CXX_SOURCES} ${PROTOBUF_SOURCE_CC})
 #================== SET BUILD FLAGS ==================
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-error=overlength-strings")
 
+add_library(nitrate-tool ${CXX_SOURCES})
 
-add_library(no3-tool ${CXX_SOURCES})
-target_include_directories(no3-tool PUBLIC
+target_include_directories(nitrate-tool PUBLIC
   "src"
   "${CMAKE_SOURCE_DIR}/libnitrate-core/include"
   "${CMAKE_SOURCE_DIR}/libnitrate-lexer/include"
@@ -40,7 +40,9 @@ target_include_directories(no3-tool PUBLIC
   "${CMAKE_SOURCE_DIR}/libnitrate-emit/include"
   "${CMAKE_SOURCE_DIR}/no3/lib/include"
 )
-target_link_libraries(no3-tool PUBLIC
+
+target_link_libraries(nitrate-tool PUBLIC
+  "nitrate-testing"
   "nitrate-emit"
   "nitrate-ir"
   "nitrate-parser"
@@ -52,15 +54,16 @@ target_link_libraries(no3-tool PUBLIC
   "${libgit2}"
   "${libboost_streams}"
 )
-add_dependencies(no3-tool
+add_dependencies(nitrate-tool
+  nitrate-testing
   nitrate-emit
   nitrate-ir
   nitrate-parser
   nitrate-lexer
   nitrate-seq
   nitrate-core
-  no3-tool-package-compile-proto
+  nitrate-tool-package-compile-proto
 )
 
-install(TARGETS no3-tool DESTINATION lib)
+install(TARGETS nitrate-tool DESTINATION lib)
 install(DIRECTORY include/ DESTINATION include)

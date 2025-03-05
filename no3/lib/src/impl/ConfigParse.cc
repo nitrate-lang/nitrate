@@ -114,7 +114,5 @@ bool no3::cmd_impl::subcommands::CommandImplConfigParse(ConstArguments, const Mu
     return false;
   }
 
-  Log << "Failed to parse package configuration: " << package_dir;
-
   return false;
 }

@@ -1,14 +1,10 @@
 cmake_minimum_required(VERSION 3.14)
 project(nitrate-test CXX)
 
-if(BUILD_TESTING)
-  file(GLOB_RECURSE TEST_SOURCES "src/*.cc")
-else()
-  set(TEST_SOURCES "src/Run.cc")
-endif()
+file(GLOB_RECURSE TEST_SOURCES "src/*.cc")
 
-add_library(nitrate-testing ${TEST_SOURCES})
-target_link_libraries(nitrate-testing
+add_library(nitrate-testing SHARED ${TEST_SOURCES})
+target_link_libraries(nitrate-testing PUBLIC
   nitrate
   nitrate-emit
   nitrate-ir
@@ -32,6 +28,7 @@ add_dependencies(nitrate-testing
   nitrate-parser
   nitrate-lexer
   nitrate-seq
-  nitrate-core)
+  nitrate-core
+)
 
 install(TARGETS nitrate-testing DESTINATION lib)

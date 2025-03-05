@@ -122,7 +122,7 @@ bool Interpreter::PImpl::CommandLSP(ConstArguments, const MutArguments& argv) {
 }
 
 bool Interpreter::PImpl::CommandLicense(ConstArguments, const MutArguments& argv) {
-  if (!argv.empty()) {
+  if (argv.size() != 1) {
     Log << "Command 'license' does not take any arguments.";
     return false;
   }
@@ -170,13 +170,11 @@ bool Interpreter::PImpl::Perform(const std::vector<std::string>& command) {
 
       return ok;
     }
-    Log << Error << "Command not found: " << command[1];
-
-    CommandHelp({}, {});
+    Log << "command not found: \"" << command[1] << "\". run \"" << command[0] << " help\" for a list of commands.";
+  } else if (command.size() == 1) {
+    Log << "no command provided. run \"" << command[0] << " help\" for a list of commands.";
   } else {
-    Log << Error << "No command provided.";
-
-    CommandHelp({}, {});
+    Log << "no command provided. use \"help\" for a list of commands.";
   }
 
   return false;

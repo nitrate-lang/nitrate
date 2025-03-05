@@ -71,15 +71,14 @@ bool no3::Interpreter::PImpl::CommandImpl(ConstArguments full_argv, MutArguments
   using namespace no3::cmd_impl::subcommands;
 
   if (argv.size() < 2) {
-    Log << "missing subcommand";
-    CommandImplHelp(full_argv, argv);
+    Log << "missing subcommand. run \"" << full_argv[0] << " impl help\" for a list of subcommands.";
     return false;
   }
 
   auto it = IMPL_SUBCOMMANDS.find(argv[1]);
   if (it == IMPL_SUBCOMMANDS.end()) {
-    Log << "unknown subcommand: " << argv[1];
-    CommandImplHelp(full_argv, argv);
+    Log << "unknown subcommand: \"" << argv[1] << "\". run \"" << full_argv[0]
+        << " impl help\" for a list of subcommands.";
     return false;
   }
 

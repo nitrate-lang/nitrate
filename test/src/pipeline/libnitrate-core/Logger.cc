@@ -158,7 +158,7 @@ TEST(Core, Log_AddFilter) {
     EXPECT_EQ(log_outputs.back().m_text, LogContent);
     EXPECT_EQ(log_outputs.back().m_level, Warning);
 
-    Log << Error << LogContent;
+    Log << LogContent;
     ASSERT_EQ(log_outputs.size(), 2);
     EXPECT_EQ(log_outputs.back().m_text, LogContent);
     EXPECT_EQ(log_outputs.back().m_level, Error);
@@ -193,7 +193,7 @@ TEST(Core, Log_RemoveFilter) {
 
     Log.RemoveFilter(6969);  // Invalid filter id
 
-    Log << Error << LogContent;
+    Log << LogContent;
     ASSERT_EQ(log_outputs.size(), 2);
     EXPECT_EQ(log_outputs.back().m_text, LogContent);
     EXPECT_EQ(log_outputs.back().m_level, Error);

@@ -14,7 +14,7 @@ parts:
   nitrate:
     plugin: cmake
     cmake-parameters:
-      - -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF -DBUILD_TESTING=OFF -DSTRIP_OUTPUT=ON -DCMAKE_CXX_COMPILER=/usr/bin/clang++ -DCMAKE_C_COMPILER=/usr/bin/clang
+      - -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=ON -DBUILD_TESTING=OFF -DSTRIP_OUTPUT=ON -DCMAKE_CXX_COMPILER=/usr/bin/clang++ -DCMAKE_C_COMPILER=/usr/bin/clang
     source: .
     build-packages:
       - libsparsehash-dev
@@ -33,6 +33,7 @@ parts:
       - llvm-18-dev
       - libpolly-18-dev
       - clang
+      - git
     build-attributes:
       - enable-patchelf
     stage-packages:
@@ -44,8 +45,6 @@ parts:
       snapcraftctl stage
       rm -rf $SNAPCRAFT_PART_INSTALL/usr/include
       rm -rf $SNAPCRAFT_PART_INSTALL/usr/share/doc
-      rm $SNAPCRAFT_PART_INSTALL/usr/lib/libnitrate*
-      rm $SNAPCRAFT_PART_INSTALL/usr/lib/libno3-cli.a
       rm $SNAPCRAFT_PART_INSTALL/usr/lib/x86_64-linux-gnu/libunwind-coredump.so.0.0.0
       rm $SNAPCRAFT_PART_INSTALL/usr/lib/x86_64-linux-gnu/libunwind-ptrace.so.0.0.0
       rm $SNAPCRAFT_PART_INSTALL/usr/lib/x86_64-linux-gnu/libunwind-x86_64.so.8.0.1
