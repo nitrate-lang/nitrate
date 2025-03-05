@@ -33,43 +33,9 @@
 
 #pragma once
 
-#include <core/termcolor.hh>
-#include <memory>
-#include <nitrate-core/Logger.hh>
-#include <no3/Interpreter.hh>
-#include <vector>
+#include <core/InterpreterImpl.hh>
 
-namespace no3 {
-  using ConstArguments = std::span<const std::string>;
-  using MutArguments = std::vector<std::string>;
-  using CommandFunction = std::function<bool(ConstArguments full_argv, MutArguments argv)>;
-
-  class Interpreter::PImpl {
-    std::unique_ptr<detail::RCInitializationContext> m_init_rc = OpenLibrary();
-    std::unordered_map<std::string, CommandFunction> m_commands;
-
-    static bool CommandBuild(ConstArguments full_argv, MutArguments argv);
-    static bool CommandClean(ConstArguments full_argv, MutArguments argv);
-    static bool CommandImpl(ConstArguments full_argv, MutArguments argv);
-    static bool CommandDoc(ConstArguments full_argv, MutArguments argv);
-    static bool CommandFormat(ConstArguments full_argv, MutArguments argv);
-    static bool CommandHelp(ConstArguments full_argv, const MutArguments& argv);
-    static bool CommandInit(ConstArguments full_argv, MutArguments argv);
-    static bool CommandInstall(ConstArguments full_argv, MutArguments argv);
-    static bool CommandFind(ConstArguments full_argv, MutArguments argv);
-    static bool CommandRemove(ConstArguments full_argv, MutArguments argv);
-    static bool CommandLSP(ConstArguments full_argv, const MutArguments& argv);
-    static bool CommandLicense(ConstArguments full_argv, const MutArguments& argv);
-    static bool CommandTest(ConstArguments full_argv, MutArguments argv);
-    static bool CommandVersion(ConstArguments full_argv, const MutArguments& argv);
-    static bool CommandUpdate(ConstArguments full_argv, MutArguments argv);
-
-    void SetupCommands();
-
-  public:
-    PImpl() noexcept { SetupCommands(); }
-
-    bool Perform(const std::vector<std::string>& command);
-  };
-
-}  // namespace no3
+namespace no3::cmd_impl::subcommands {
+  bool CommandImplHelp(ConstArguments full_argv, const MutArguments& argv);
+  bool CommandImplConfigParse(ConstArguments full_argv, const MutArguments& argv);
+}  // namespace no3::cmd_impl::subcommands

@@ -1,0 +1,112 @@
+// Contents: Nitrate package manifest format
+// Author: Wesley Jones
+
+syntax = "proto2";
+
+package nitrate.no3.package;
+
+message Package {
+  required uint32 format = 1;
+  required Metadata metadata = 2;
+  required BuildConfig build = 3;
+  repeated OwnershipChainLink ownership = 4;
+}
+
+message UUID {
+  required uint64 hi = 1;
+  required uint64 lo = 2;
+}
+
+message Metadata {
+  enum Category {
+    UNSPECIFIED = 0;
+    AZIDE_LIBRARY = 1;
+    BASIC_LIBRARY = 2;
+    DYNAMIC_EXECUTABLE = 3;
+    STATIC_EXECUTABLE = 4;
+    COMPTIME_UTILITY = 5;
+  }
+
+  message SemVersion {
+    required uint32 major = 1;
+    required uint32 minor = 2;
+    required uint32 patch = 3;
+  }
+
+  message ProjectContact {
+    enum ContactRole {
+      UNSPECIFIED = 0;
+      OWNER = 1;
+      CONTRIBUTOR = 2;
+      MAINTAINER = 3;
+      SUPPORT = 4;
+    }
+
+    required string name = 1;
+    required string email = 2;
+    optional string phone = 3;
+    repeated ContactRole roles = 4;
+  }
+
+  required string v_name = 1;
+  required string v_description = 2;
+  required string v_spdx_license = 3;
+  required Category category = 4;
+  required SemVersion v_version = 5;
+  repeated string v_aliases = 6;
+  repeated ProjectContact v_contacts = 7;
+}
+
+message BuildConfig {
+  message Platforms {
+    repeated string allow = 1;
+    repeated string deny = 2;
+  }
+
+  message OptimizationOptions {
+    message SystemRequirements {
+      optional uint64 min_free_cores = 1;
+      optional uint64 min_free_memory = 2;
+      optional uint64 min_free_storage = 3;
+    }
+
+    optional SystemRequirements system_requirements = 1;
+  }
+
+  optional Platforms platforms = 1;
+  repeated string dependencies = 2;
+  optional OptimizationOptions optimization = 3;
+}
+
+message OwnershipChainLink {
+  enum LinkCategory {
+    UNSPECIFIED = 0;
+    ECOSYSTEM_ROOT = 1;
+    ECOSYSTEM_DOMAIN = 2;
+    USER_ACCOUNT = 3;
+    TOP_PACKAGE = 4;
+    SUB_PACKAGE = 5;
+  }
+
+  message PublicKey {
+    enum Type {
+      UNSPECIFIED = 0;
+      ED25519 = 1;
+    }
+
+    required Type type = 1;
+    required bytes value = 2;
+  }
+
+  message Signature {
+    enum Type {
+      UNSPECIFIED = 0;
+      ED25519 = 1;
+    }
+  }
+
+  required UUID uuid = 1;
+  required LinkCategory category = 2;
+  required PublicKey pubkey = 3;
+  required Signature signature = 4;
+}

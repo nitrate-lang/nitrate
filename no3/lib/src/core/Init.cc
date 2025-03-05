@@ -31,6 +31,7 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
+#include <core/PackageConfigFormat.pb.h>
 #include <git2/global.h>
 #include <nitrate-emit/Lib.h>
 
@@ -201,6 +202,8 @@ static bool PerformInitialize(std::ostream& log) {
     log << "Failed to initialize libgit2" << std::endl;
     return false;
   }
+
+  GOOGLE_PROTOBUF_VERIFY_VERSION;
 
   Log << Debug << "Initialized Nitrate Toolchain";
 

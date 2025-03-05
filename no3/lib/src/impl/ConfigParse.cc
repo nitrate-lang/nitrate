@@ -31,45 +31,59 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#pragma once
-
-#include <core/termcolor.hh>
-#include <memory>
+#include <core/PackageConfiguration.hh>
+#include <core/argparse.hpp>
+#include <filesystem>
+#include <impl/Subcommands.hh>
+#include <nitrate-core/LogOStream.hh>
 #include <nitrate-core/Logger.hh>
-#include <no3/Interpreter.hh>
-#include <vector>
 
-namespace no3 {
-  using ConstArguments = std::span<const std::string>;
-  using MutArguments = std::vector<std::string>;
-  using CommandFunction = std::function<bool(ConstArguments full_argv, MutArguments argv)>;
+using namespace ncc;
+using namespace no3::cmd_impl;
 
-  class Interpreter::PImpl {
-    std::unique_ptr<detail::RCInitializationContext> m_init_rc = OpenLibrary();
-    std::unordered_map<std::string, CommandFunction> m_commands;
+static std::unique_ptr<argparse::ArgumentParser> CreateArgumentParser() {
+  auto program = std::make_unique<argparse::ArgumentParser>(ncc::clog, "config-parse", "1.0",
+                                                            argparse::default_arguments::help, false);
 
-    static bool CommandBuild(ConstArguments full_argv, MutArguments argv);
-    static bool CommandClean(ConstArguments full_argv, MutArguments argv);
-    static bool CommandImpl(ConstArguments full_argv, MutArguments argv);
-    static bool CommandDoc(ConstArguments full_argv, MutArguments argv);
-    static bool CommandFormat(ConstArguments full_argv, MutArguments argv);
-    static bool CommandHelp(ConstArguments full_argv, const MutArguments& argv);
-    static bool CommandInit(ConstArguments full_argv, MutArguments argv);
-    static bool CommandInstall(ConstArguments full_argv, MutArguments argv);
-    static bool CommandFind(ConstArguments full_argv, MutArguments argv);
-    static bool CommandRemove(ConstArguments full_argv, MutArguments argv);
-    static bool CommandLSP(ConstArguments full_argv, const MutArguments& argv);
-    static bool CommandLicense(ConstArguments full_argv, const MutArguments& argv);
-    static bool CommandTest(ConstArguments full_argv, MutArguments argv);
-    static bool CommandVersion(ConstArguments full_argv, const MutArguments& argv);
-    static bool CommandUpdate(ConstArguments full_argv, MutArguments argv);
+  program->AddArgument("package").Help("The package to parse the configuration for").Required();
+  program->AddArgument("--minify", "-C").Help("Minify the output JSON").ImplicitValue(true).DefaultValue(false);
 
-    void SetupCommands();
+  return program;
+}
 
-  public:
-    PImpl() noexcept { SetupCommands(); }
+bool no3::cmd_impl::subcommands::CommandImplConfigParse(ConstArguments, const MutArguments& argv) {
+  auto program = CreateArgumentParser();
 
-    bool Perform(const std::vector<std::string>& command);
-  };
+  try {
+    program->ParseArgs(argv);
+  } catch (const std::exception& e) {
+    if (program->Get<bool>("--help")) {
+      return true;
+    }
 
-}  // namespace no3
+    Log << e.what();
+    Log << Raw << *program;
+    return false;
+  }
+
+  if (program->Get<bool>("--help")) {
+    return true;
+  }
+
+  auto package_dir = program->Get<std::string>("package");
+
+  if (!std::filesystem::exists(package_dir)) {
+    Log << "The package does not exist: " << package_dir;
+    return false;
+  }
+
+  if (auto config = no3::package::PackageConfiguration::ParsePackage(package_dir)) {
+    bool minify = program->Get<bool>("--minify");
+    clog << config->Json().dump(minify ? -1 : 2);
+    return true;
+  }
+
+  Log << "Failed to parse package configuration: " << package_dir;
+
+  return false;
+}

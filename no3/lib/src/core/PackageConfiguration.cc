@@ -31,6 +31,8 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
+#include <core/PackageConfigFormat.pb.h>
+
 #include <core/PackageConfiguration.hh>
 #include <fstream>
 #include <nitrate-core/Assert.hh>
@@ -43,13 +45,11 @@ using ConfigFormat = std::string_view;
 using ConfigFormatPair = std::pair<ConfigFormat, std::filesystem::path>;
 
 static constexpr ConfigFormat kConfigJSON = "JSON";
-static constexpr ConfigFormat kConfigTOML = "TOML";
-static constexpr ConfigFormat kConfigYAML = "YAML";
+static constexpr ConfigFormat kConfigPROTOBUF = "PROTOBUF";
 static constexpr ConfigFormat kConfigNITRATE = "NITRATE";
 
 static std::optional<nlohmann::json> ParsePackageJsonConfig(const std::filesystem::path& config_file);
-static std::optional<nlohmann::json> ParsePackageTomlConfig(const std::filesystem::path& config_file);
-static std::optional<nlohmann::json> ParsePackageYamlConfig(const std::filesystem::path& config_file);
+static std::optional<nlohmann::json> ParsePackageProtobufConfig(const std::filesystem::path& config_file);
 static std::optional<nlohmann::json> ParsePackageNitrateConfig(const std::filesystem::path& config_file);
 static bool ValidatePackageConfig(const nlohmann::json& json);
 static void AssignDefaults(nlohmann::json& json);
@@ -61,17 +61,16 @@ static bool TestIsReadable(const std::filesystem::path& path) {
 
 static std::optional<ConfigFormatPair> LocatePackageConfigFile(const std::filesystem::path& package_dir) {
   const std::vector<ConfigFormatPair> config_format_precedence = {
-      {kConfigJSON, package_dir / "package.json"},
-      {kConfigTOML, package_dir / "package.toml"},
-      {kConfigYAML, package_dir / "package.yaml"},
-      {kConfigNITRATE, package_dir / "package.n"},
+      {kConfigJSON, package_dir / "no3.json"},
+      {kConfigPROTOBUF, package_dir / "no3.pb"},
+      {kConfigNITRATE, package_dir / "no3.n"},
   };
 
   for (const auto& [format, path] : config_format_precedence) {
     Log << Debug << "Searching for \"" << format << "\" package configuration file in " << package_dir;
 
     if (TestIsReadable(path)) {
-      Log << Info << "Found \"" << format << "\" package configuration file in " << package_dir;
+      Log << Debug << "Found \"" << format << "\" package configuration file in " << package_dir;
       return {{format, path}};
     }
   }
@@ -86,12 +85,8 @@ static std::optional<nlohmann::json> ParsePackageConfig(const std::filesystem::p
     return ParsePackageJsonConfig(config_file);
   }
 
-  if (format == kConfigTOML) {
-    return ParsePackageTomlConfig(config_file);
-  }
-
-  if (format == kConfigYAML) {
-    return ParsePackageYamlConfig(config_file);
+  if (format == kConfigPROTOBUF) {
+    return ParsePackageProtobufConfig(config_file);
   }
 
   if (format == kConfigNITRATE) {
@@ -111,7 +106,7 @@ std::optional<PackageConfiguration> PackageConfiguration::ParsePackage(const std
 
   const auto config_file = package_config->second;
 
-  Log << Info << "Using " << config_file << " as package configuration file";
+  Log << Debug << "Using " << config_file << " as package configuration file";
 
   auto json = ParsePackageConfig(config_file, package_config->first);
   if (!json.has_value()) {
@@ -120,11 +115,10 @@ std::optional<PackageConfiguration> PackageConfiguration::ParsePackage(const std
   }
 
   if (!ValidatePackageConfig(json.value())) {
-    Log << "Invalid package configuration file: " << config_file;
     return std::nullopt;
   }
 
-  Log << Info << "Successfully parsed \"" << package_config->first << "\" package configuration file: " << config_file;
+  Log << Debug << "Successfully parsed \"" << package_config->first << "\" package configuration file: " << config_file;
 
   return PackageConfiguration(std::move(*json));
 }
@@ -160,13 +154,29 @@ static std::optional<nlohmann::json> ParsePackageJsonConfig(const std::filesyste
   return json;
 }
 
-static std::optional<nlohmann::json> ParsePackageTomlConfig(const std::filesystem::path& config_file) {
-  /// TODO: Parse TOML package configuration
-  return std::nullopt;
-}
+static std::optional<nlohmann::json> ParsePackageProtobufConfig(const std::filesystem::path& config_file) {
+  using namespace nitrate::no3::package;
 
-static std::optional<nlohmann::json> ParsePackageYamlConfig(const std::filesystem::path& config_file) {
-  /// TODO: Parse YAML package configuration
+  Package package;
+
+  {
+    std::ifstream file(config_file, std::ios::in | std::ios::binary);
+    if (!file.is_open()) {
+      Log << "Failed to open PROTOBUF package configuration file: " << config_file;
+      return std::nullopt;
+    }
+
+    if (!package.ParseFromIstream(&file)) {
+      Log << "Failed to parse PROTOBUF package configuration file: " << config_file;
+      return std::nullopt;
+    }
+  }
+
+  // I think that the following line is not necessary, but ?
+  package.CheckInitialized();
+
+  /// TODO: Convert protobuf to json
+
   return std::nullopt;
 }
 
@@ -175,10 +185,47 @@ static std::optional<nlohmann::json> ParsePackageNitrateConfig(const std::filesy
   return std::nullopt;
 }
 
-static bool ValidatePackageConfig(const nlohmann::json& json) {
-  /// TODO: Validate json
+#define rule(__expr, __explanation)                               \
+  if (!(__expr)) [[unlikely]] {                                   \
+    Log << "Package configuration is invalid: " << __explanation; \
+    return false;                                                 \
+  }
+
+static bool ValidateMetadata(const nlohmann::json& json) {
+  /// TODO: Validate metadata
+
   return true;
 }
+
+static bool ValidateBuild(const nlohmann::json& json) {
+  /// TODO: Validate build
+
+  return true;
+}
+
+static bool ValidateOwnership(const nlohmann::json& json) {
+  /// TODO: Validate ownership
+
+  return true;
+}
+
+static bool ValidatePackageConfig(const nlohmann::json& json) {
+  rule(json.is_object(), "Root of package configuration must be an object");
+  rule(json.contains("format"), "Package configuration must contain a \"format\" field");
+  rule(json["format"].is_number_unsigned(), "Package configuration \"format\" field must be an unsigned integer");
+  rule(json["format"].get<unsigned>() == 1,
+       "Package configuration is in an unsupported format. The expected format version is 1");
+  rule(json.contains("metadata"), "Package configuration must contain a \"metadata\" field");
+  rule(json.contains("build"), "Package configuration must contain a \"build\" field");
+  rule(json.contains("ownership"), "Package configuration must contain an \"ownership\" field");
+  rule(ValidateMetadata(json["metadata"]), "Invalid metadata");
+  rule(ValidateBuild(json["build"]), "Invalid build");
+  rule(ValidateOwnership(json["ownership"]), "Invalid ownership");
+
+  return true;
+}
+
+#undef rule
 
 static void AssignDefaults(nlohmann::json& json) {
   /// TODO: Assign defaults to json

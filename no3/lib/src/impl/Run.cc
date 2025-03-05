@@ -32,16 +32,54 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <core/InterpreterImpl.hh>
+#include <impl/Subcommands.hh>
 
 using namespace ncc;
+using namespace no3;
 
-bool no3::Interpreter::PImpl::CommandImpl(ConstArguments full_argv, MutArguments argv) {
-  (void)full_argv;
-  (void)argv;
+static const auto IMPL_SUBCOMMANDS = []() {
+  std::unordered_map<std::string_view, CommandFunction> m;
 
-  /// TODO: Implement low level commands
+  m["help"] = m["--help"] = m["-h"] = cmd_impl::subcommands::CommandImplHelp;
+  m["config-parse"] = cmd_impl::subcommands::CommandImplConfigParse;
 
-  Log << "Low level commands are not implemented yet.";
+  return m;
+}();
+
+bool no3::cmd_impl::subcommands::CommandImplHelp(ConstArguments, const MutArguments& argv) {
+  std::string_view message =
+      R"(╭───────────────┬──────────────────────────────────────────────────────────────╮
+│ Subcommand    │ Brief description of the subcommand                          │
+├───────────────┼──────────────────────────────────────────────────────────────┤
+│ help, --help  │ Display this help message                                    │
+│ -h            │ Get help: https://nitrate.dev/docs/no3/impl                  │
+├───────────────┼──────────────────────────────────────────────────────────────┤
+│ config-parse  │ Package configuration file parsing and validation            │
+│               │ Get help: https://nitrate.dev/docs/no3/impl/config-parse     │
+╰───────────────┴──────────────────────────────────────────────────────────────╯)";
+
+  Log << Raw << message;
 
   return true;
+}
+
+bool no3::Interpreter::PImpl::CommandImpl(ConstArguments full_argv, MutArguments argv) {
+  using namespace no3::cmd_impl::subcommands;
+
+  if (argv.size() < 2) {
+    Log << "missing subcommand";
+    CommandImplHelp(full_argv, argv);
+    return false;
+  }
+
+  auto it = IMPL_SUBCOMMANDS.find(argv[1]);
+  if (it == IMPL_SUBCOMMANDS.end()) {
+    Log << "unknown subcommand: " << argv[1];
+    CommandImplHelp(full_argv, argv);
+    return false;
+  }
+
+  argv.erase(argv.begin(), argv.begin() + 1);
+
+  return it->second(full_argv, argv);
 }

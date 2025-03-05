@@ -34,6 +34,7 @@
 #include <core/InterpreterImpl.hh>
 #include <core/termcolor.hh>
 #include <memory>
+#include <nitrate-core/LogOStream.hh>
 #include <nitrate-core/Logger.hh>
 #include <no3/Interpreter.hh>
 #include <vector>
@@ -162,7 +163,10 @@ void Interpreter::PImpl::SetupCommands() {
 bool Interpreter::PImpl::Perform(const std::vector<std::string>& command) {
   if (command.size() >= 2) {
     if (auto it = m_commands.find(command[1]); it != m_commands.end()) {
-      return it->second(command, MutArguments(command.begin() + 1, command.end()));
+      auto ok = it->second(command, MutArguments(command.begin() + 1, command.end()));
+      clog.flush();
+
+      return ok;
     }
     Log << Error << "Command not found: " << command[1];
 

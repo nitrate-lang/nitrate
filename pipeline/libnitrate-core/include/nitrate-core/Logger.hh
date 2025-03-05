@@ -235,14 +235,16 @@ namespace ncc {
 
   NCC_EC_FILTER(TraceFilter, msg, sev, ec);
 
-  class NCC_EXPORT LoggerContext final {
+  class NCC_EXPORT LoggerContext final : public std::ostream {
     std::vector<std::pair<LogCallback, bool>> m_subscribers;
     std::vector<LogFilterFunc> m_filters;
     bool m_enabled = true;
 
   public:
     LoggerContext() = default;
-    ~LoggerContext() = default;
+    LoggerContext(const LoggerContext &o)
+        : m_subscribers(o.m_subscribers), m_filters(o.m_filters), m_enabled(o.m_enabled) {}
+    ~LoggerContext() override = default;
 
     auto Subscribe(LogCallback cb) -> size_t;
     void Unsubscribe(size_t idx);
