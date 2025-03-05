@@ -32,6 +32,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <core/PackageConfigFormat.pb.h>
+#include <google/protobuf/util/json_util.h>
 
 #include <core/PackageConfig.hh>
 #include <fstream>
@@ -50,7 +51,9 @@ static constexpr ConfigFormat kConfigNITRATE = "NITRATE";
 
 namespace no3::package {
   bool ValidatePackageConfig(const nlohmann::ordered_json& json);
-}
+  nitrate::no3::package::Package* ConfigJsonToProtobuf(google::protobuf::Arena& mm, const nlohmann::ordered_json& json);
+  std::optional<nlohmann::ordered_json> ConfigProtobufToJson(const nitrate::no3::package::Package& protobuf);
+}  // namespace no3::package
 
 static bool TestIsReadable(const std::filesystem::path& path) {
   std::ifstream file(path);
@@ -117,11 +120,10 @@ static std::optional<nlohmann::ordered_json> ParsePackageProtobufConfig(const st
   // I think that the following line is not necessary, but ?
   package.CheckInitialized();
 
-  /// TODO: Convert protobuf to json
-
-  return std::nullopt;
+  return ConfigProtobufToJson(package);
 }
 
+/// TODO: Convert protobuf to json
 static std::optional<nlohmann::ordered_json> ParsePackageNitrateConfig(const std::filesystem::path& config_file) {
   /// TODO: Parse Nitrate package configuration
   (void)config_file;
@@ -163,6 +165,34 @@ static void AssignDefaults(nlohmann::ordered_json& json) {
   }
 
   return m_raw;
+}
+
+[[nodiscard]] const std::string& PackageConfig::Protobuf(bool defaults) const {
+  google::protobuf::Arena mm;
+
+  if (defaults) {
+    if (!m_protobuf_full.has_value()) {
+      auto* protobuf = ConfigJsonToProtobuf(mm, Json(true));
+      if (protobuf == nullptr) {
+        qcore_panic("Failed to convert JSON package configuration to PROTOBUF");
+      }
+
+      m_protobuf_full = protobuf->SerializeAsString();
+    }
+
+    return m_protobuf_full.value();
+  }
+
+  if (!m_protobuf_raw.has_value()) {
+    auto* protobuf = ConfigJsonToProtobuf(mm, Json(false));
+    if (protobuf == nullptr) {
+      qcore_panic("Failed to convert JSON package configuration to PROTOBUF");
+    }
+
+    m_protobuf_raw = protobuf->SerializeAsString();
+  }
+
+  return m_protobuf_raw.value();
 }
 
 std::optional<PackageConfig> PackageConfig::ParsePackage(const std::filesystem::path& package_dir) {

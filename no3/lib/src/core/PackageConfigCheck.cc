@@ -195,23 +195,23 @@ static bool ValidateBuildOptimization(const nlohmann::ordered_json& json) {
     schema_assert(ValidateBuildOptimizationSwitch(json["release"]["switch"]));
   }
 
-  {  // key ["optimization"]["system-requirements"]
-    schema_assert(json.contains("system-requirements"));
-    schema_assert(json["system-requirements"].is_object());
+  {  // key ["optimization"]["requirements"]
+    schema_assert(json.contains("requirements"));
+    schema_assert(json["requirements"].is_object());
 
-    {  // key ["optimization"]["system-requirements"]["min-free-cores"]
-      schema_assert(json["system-requirements"].contains("min-free-cores"));
-      schema_assert(json["system-requirements"]["min-free-cores"].is_number_unsigned());
+    {  // key ["optimization"]["requirements"]["min-free-cores"]
+      schema_assert(json["requirements"].contains("min-free-cores"));
+      schema_assert(json["requirements"]["min-free-cores"].is_number_unsigned());
     }
 
-    {  // key ["optimization"]["system-requirements"]["min-free-memory"]
-      schema_assert(json["system-requirements"].contains("min-free-memory"));
-      schema_assert(json["system-requirements"]["min-free-memory"].is_number_unsigned());
+    {  // key ["optimization"]["requirements"]["min-free-memory"]
+      schema_assert(json["requirements"].contains("min-free-memory"));
+      schema_assert(json["requirements"]["min-free-memory"].is_number_unsigned());
     }
 
-    {  // key ["optimization"]["system-requirements"]["min-free-storage"]
-      schema_assert(json["system-requirements"].contains("min-free-storage"));
-      schema_assert(json["system-requirements"]["min-free-storage"].is_number_unsigned());
+    {  // key ["optimization"]["requirements"]["min-free-storage"]
+      schema_assert(json["requirements"].contains("min-free-storage"));
+      schema_assert(json["requirements"]["min-free-storage"].is_number_unsigned());
     }
   }
 
@@ -288,7 +288,7 @@ namespace no3::package {
       schema_assert([&]() {
         auto v = json["category"].get<std::string>();
         schema_assert(v == "azide-lib" || v == "basic-lib" || v == "dynamic-executable" || v == "static-executable" ||
-                      v == "comptime_utility");
+                      v == "comptime-utility");
         return true;
       }());
     }

@@ -5,18 +5,18 @@ syntax = "proto2";
 
 package nitrate.no3.package;
 
-message SemVersion {
-  required uint32 major = 1;
-  required uint32 minor = 2;
-  required uint32 patch = 3;
-}
-
-message UUID {
-  required uint64 hi = 1;
-  required uint64 lo = 2;
-}
-
 message Package {
+  message SemVersion {
+    required uint32 major = 1;
+    required uint32 minor = 2;
+    required uint32 patch = 3;
+  }
+
+  message UUID {
+    required uint64 hi = 1;
+    required uint64 lo = 2;
+  }
+
   enum Category {
     UNSPECIFIED = 0;
     AZIDE_LIBRARY = 1;
@@ -26,8 +26,8 @@ message Package {
     COMPTIME_UTILITY = 5;
   }
 
-  message ProjectContact {
-    enum ContactRole {
+  message Contact {
+    enum Role {
       UNSPECIFIED = 0;
       OWNER = 1;
       CONTRIBUTOR = 2;
@@ -38,7 +38,7 @@ message Package {
     required string name = 1;
     required string email = 2;
     optional string phone = 3;
-    repeated ContactRole roles = 4;
+    repeated Role roles = 4;
   }
 
   message Dependency {
@@ -53,57 +53,84 @@ message Package {
 
   message OptimizationOptions {
     message SystemRequirements {
-      optional uint64 min_free_cores = 1;
-      optional uint64 min_free_memory = 2;
-      optional uint64 min_free_storage = 3;
+      required uint64 min_free_cores = 1;
+      required uint64 min_free_memory = 2;
+      required uint64 min_free_storage = 3;
     }
 
-    optional SystemRequirements system_requirements = 1;
+    message Switch {
+      repeated string alpha = 1;
+      repeated string beta = 2;
+      repeated string gamma = 3;
+      repeated string llvm = 4;
+      repeated string lto = 5;
+      repeated string runtime = 6;
+    }
+
+    message Rapid {
+      required Switch switch = 1;
+    }
+
+    message Debug {
+      required Switch switch = 1;
+    }
+
+    message Release {
+      required Switch switch = 1;
+    }
+
+    required Rapid rapid = 1;
+    required Debug debug = 2;
+    required Release release = 3;
+    required SystemRequirements requirements = 4;
+  }
+
+  message BlockchainLink {
+    enum LinkCategory {
+      UNSPECIFIED = 0;
+      ECOSYSTEM_ROOT = 1;
+      ECOSYSTEM_DOMAIN = 2;
+      USER_ACCOUNT = 3;
+      PACKAGE = 4;
+      SUB_PACKAGE = 5;
+    }
+
+    message PublicKey {
+      enum Type {
+        UNSPECIFIED = 0;
+        ED25519 = 1;
+      }
+
+      required Type type = 1;
+      required bytes value = 2;
+    }
+
+    message Signature {
+      enum Type {
+        UNSPECIFIED = 0;
+        ED25519 = 1;
+      }
+
+      required Type type = 1;
+      required bytes value = 2;
+    }
+
+    required UUID uuid = 1;
+    required LinkCategory category = 2;
+    required PublicKey pubkey = 3;
+    required Signature signature = 4;
   }
 
   required SemVersion format = 1;
   required string name = 2;
   required string description = 3;
-  required string spdx_license = 4;
+  required string license = 4;
   required Category category = 5;
   required SemVersion version = 6;
   repeated string aliases = 7;
-  repeated ProjectContact contacts = 8;
+  repeated Contact contacts = 8;
   required Platforms platforms = 9;
   repeated Dependency dependencies = 10;
   required OptimizationOptions optimization = 11;
   repeated BlockchainLink blockchain = 12;
-}
-
-message BlockchainLink {
-  enum LinkCategory {
-    UNSPECIFIED = 0;
-    ECOSYSTEM_ROOT = 1;
-    ECOSYSTEM_DOMAIN = 2;
-    USER_ACCOUNT = 3;
-    PACKAGE = 4;
-    SUB_PACKAGE = 5;
-  }
-
-  message PublicKey {
-    enum Type {
-      UNSPECIFIED = 0;
-      ED25519 = 1;
-    }
-
-    required Type type = 1;
-    required bytes value = 2;
-  }
-
-  message Signature {
-    enum Type {
-      UNSPECIFIED = 0;
-      ED25519 = 1;
-    }
-  }
-
-  required UUID uuid = 1;
-  required LinkCategory category = 2;
-  required PublicKey pubkey = 3;
-  required Signature signature = 4;
 }

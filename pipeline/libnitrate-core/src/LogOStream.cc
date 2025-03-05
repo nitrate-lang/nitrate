@@ -64,8 +64,10 @@ auto LogOStream::xsputn(const char *s, std::streamsize count) -> std::streamsize
 }
 
 int LogOStream::sync() {
-  Log << Raw << m_buffer;
-  m_buffer.clear();
+  if (!m_buffer.empty()) {
+    Log << Raw << m_buffer;
+    m_buffer.clear();
+  }
 
   return 0;
 }

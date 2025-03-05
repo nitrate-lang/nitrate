@@ -41,6 +41,7 @@ namespace no3::package {
   class PackageConfig {
     nlohmann::ordered_json m_raw;
     mutable std::optional<nlohmann::ordered_json> m_full;
+    mutable std::optional<std::string> m_protobuf_raw, m_protobuf_full;
 
     PackageConfig(nlohmann::ordered_json raw) : m_raw(std::move(raw)) {}
 
@@ -50,5 +51,6 @@ namespace no3::package {
     static std::optional<PackageConfig> ParsePackage(const std::filesystem::path& package_dir);
 
     [[nodiscard]] const nlohmann::ordered_json& Json(bool defaults = true) const;
+    [[nodiscard]] const std::string& Protobuf(bool defaults = true) const;
   };
 }  // namespace no3::package
