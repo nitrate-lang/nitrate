@@ -368,6 +368,11 @@ namespace no3::package {
       }
     }
 
+    {  // key ["optimization"]
+      schema_assert(json.contains("optimization"));
+      schema_assert(ValidateBuildOptimization(json["optimization"]));
+    }
+
     {  // key ["dependencies"]
       schema_assert(json.contains("dependencies"));
       schema_assert(json["dependencies"].is_array());
@@ -387,11 +392,6 @@ namespace no3::package {
 
         return true;
       }));
-    }
-
-    {  // key ["optimization"]
-      schema_assert(json.contains("optimization"));
-      schema_assert(ValidateBuildOptimization(json["optimization"]));
     }
 
     {  // key ["blockchain"]

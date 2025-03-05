@@ -32,12 +32,59 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <core/InterpreterImpl.hh>
+#include <core/argparse.hpp>
+#include <nitrate-core/LogOStream.hh>
 
 using namespace ncc;
 
-bool no3::Interpreter::PImpl::CommandInit(ConstArguments full_argv, MutArguments argv) {
-  (void)full_argv;
-  (void)argv;
+static void SetPackageInitCategoryOptions(argparse::ArgumentParser& program) {
+  auto& exclusion = program.AddMutuallyExclusiveGroup(true);
+
+  exclusion.AddArgument("--lib")
+      .Help("Initialize a new Nitrate library project.")
+      .ImplicitValue(true)
+      .DefaultValue(false);
+
+  exclusion.AddArgument("--exe")
+      .Help("Initialize a new Nitrate executable project.")
+      .ImplicitValue(true)
+      .DefaultValue(false);
+
+  exclusion.AddArgument("--comptime")
+      .Help("Initialize a new Nitrate comptime project.")
+      .ImplicitValue(true)
+      .DefaultValue(false);
+}
+
+static std::unique_ptr<argparse::ArgumentParser> CreateArgumentParser(bool& did_default) {
+  auto program = std::make_unique<argparse::ArgumentParser>(ncc::clog, did_default, "impl", "1.0",
+                                                            argparse::default_arguments::help);
+
+  SetPackageInitCategoryOptions(*program);
+
+  program->AddArgument("package-name").Help("The name of the package to initialize.").Nargs(1);
+
+  return program;
+}
+
+bool no3::Interpreter::PImpl::CommandInit(ConstArguments, const MutArguments& argv) {
+  bool did_default = false;
+  auto program = CreateArgumentParser(did_default);
+
+  try {
+    program->ParseArgs(argv);
+  } catch (const std::runtime_error& e) {
+    if (did_default) {
+      return true;
+    }
+
+    Log << e.what();
+    return false;
+  }
+
+  if (did_default) {
+    return true;
+  }
 
   /// TODO: Implement package initialization
 

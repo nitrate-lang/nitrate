@@ -1502,19 +1502,15 @@ namespace argparse {
 
   class ArgumentParser {
   public:
-    explicit ArgumentParser(std::ostream &os, std::string program_name = {}, std::string version = "1.0",
-                            default_arguments add_args = default_arguments::all, bool exit_on_default_arguments = true)
-        : m_program_name(std::move(program_name)),
-          m_version(std::move(version)),
-          m_exit_on_default_arguments(exit_on_default_arguments),
-          m_parser_path(m_program_name) {
+    explicit ArgumentParser(std::ostream &os, bool &did_default, std::string program_name = {},
+                            std::string version = "1.0", default_arguments add_args = default_arguments::all)
+        : m_program_name(std::move(program_name)), m_version(std::move(version)), m_parser_path(m_program_name) {
+      did_default = false;
       if ((add_args & default_arguments::help) == default_arguments::help) {
         AddArgument("-h", "--help")
             .Action([&](const auto & /*unused*/) {
               os << Help().str();
-              if (m_exit_on_default_arguments) {
-                std::exit(0);
-              }
+              did_default = true;
             })
             .DefaultValue(false)
             .Help("shows help message and exits")
@@ -1525,9 +1521,7 @@ namespace argparse {
         AddArgument("-v", "--version")
             .Action([&](const auto & /*unused*/) {
               os << m_version << std::endl;
-              if (m_exit_on_default_arguments) {
-                std::exit(0);
-              }
+              did_default = true;
             })
             .DefaultValue(false)
             .Help("prints version information and exits")
@@ -2364,7 +2358,6 @@ namespace argparse {
     std::string m_version;
     std::string m_description;
     std::string m_epilog;
-    bool m_exit_on_default_arguments = true;
     std::string m_prefix_chars{"-"};
     std::string m_assign_chars{"="};
     bool m_is_parsed = false;

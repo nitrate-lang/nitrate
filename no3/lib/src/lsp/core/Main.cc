@@ -43,10 +43,15 @@ extern "C" auto NitratedMain(int argc, char** argv) -> int {
     Log << Info << "Starting nitrated: \"" << str << "\"";
   }
 
-  argparse::ArgumentParser parser(ncc::clog, "nitrated", "1.0");
+  bool did_default = false;
+  argparse::ArgumentParser parser(ncc::clog, did_default, "nitrated", "1.0");
   CreateParser(parser);
 
   parser.ParseArgs(args);
+
+  if (did_default) {
+    return 0;
+  }
 
   std::unique_ptr<Configuration> config;
   { /* Setup config */

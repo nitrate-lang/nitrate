@@ -42,9 +42,9 @@
 using namespace ncc;
 using namespace no3::cmd_impl;
 
-static std::unique_ptr<argparse::ArgumentParser> CreateArgumentParser() {
-  auto program = std::make_unique<argparse::ArgumentParser>(ncc::clog, "config-parse", "1.0",
-                                                            argparse::default_arguments::help, false);
+static std::unique_ptr<argparse::ArgumentParser> CreateArgumentParser(bool& did_default) {
+  auto program = std::make_unique<argparse::ArgumentParser>(ncc::clog, did_default, "config-parse", "1.0",
+                                                            argparse::default_arguments::help);
 
   program->AddArgument("--minify", "-C").Help("Minify the output JSON").ImplicitValue(true).DefaultValue(false);
 
@@ -63,16 +63,21 @@ static std::unique_ptr<argparse::ArgumentParser> CreateArgumentParser() {
 }
 
 bool no3::cmd_impl::subcommands::CommandImplConfigParse(ConstArguments, const MutArguments& argv) {
-  const auto program = CreateArgumentParser();
+  bool did_default;
+  const auto program = CreateArgumentParser(did_default);
 
   try {
     program->ParseArgs(argv);
   } catch (const std::exception& e) {
+    if (did_default) {
+      return true;
+    }
+
     Log << e.what();
     return false;
   }
 
-  if (program->Get<bool>("--help")) {
+  if (did_default) {
     return true;
   }
 

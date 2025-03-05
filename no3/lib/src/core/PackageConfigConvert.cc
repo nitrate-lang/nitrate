@@ -307,22 +307,6 @@ namespace no3::package {
       package->set_allocated_platforms(platforms);
     }
 
-    {  // Set ['dependencies']
-      for (const auto& dependency : json["dependencies"]) {
-        uint32_t major = dependency["version"]["major"];
-        uint32_t minor = dependency["version"]["minor"];
-        uint32_t patch = dependency["version"]["patch"];
-        auto* ver = CreateSemVersion(mm, major, minor, patch);
-
-        auto* dep = Pool::CreateMessage<Package::Dependency>(&mm);
-        auto* uuid = CreateUUID(mm, dependency["uuid"]);
-        dep->set_allocated_uuid(uuid);
-        dep->set_allocated_version(ver);
-
-        package->add_dependencies()->CopyFrom(*dep);
-      }
-    }
-
     {  // Set ['optimization']
       auto* rapid_profile = CreateOptimizationSwitch(mm, json["optimization"]["rapid"]["switch"]);
       auto* debug_profile = CreateOptimizationSwitch(mm, json["optimization"]["debug"]["switch"]);
@@ -345,6 +329,22 @@ namespace no3::package {
       opt_options->set_allocated_requirements(system_req);
 
       package->set_allocated_optimization(opt_options);
+    }
+
+    {  // Set ['dependencies']
+      for (const auto& dependency : json["dependencies"]) {
+        uint32_t major = dependency["version"]["major"];
+        uint32_t minor = dependency["version"]["minor"];
+        uint32_t patch = dependency["version"]["patch"];
+        auto* ver = CreateSemVersion(mm, major, minor, patch);
+
+        auto* dep = Pool::CreateMessage<Package::Dependency>(&mm);
+        auto* uuid = CreateUUID(mm, dependency["uuid"]);
+        dep->set_allocated_uuid(uuid);
+        dep->set_allocated_version(ver);
+
+        package->add_dependencies()->CopyFrom(*dep);
+      }
     }
 
     {  // Set ['blockchain']

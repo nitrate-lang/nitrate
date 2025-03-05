@@ -82,9 +82,9 @@ static const std::string NITRATE_IR_GAMMA = "IRGamma";
 static const std::string NITRATE_IR_GAMMA_OPT = "IRGammaOpt";
 static const std::string NITRATE_CODEGEN = "Codegen";
 
-static std::unique_ptr<argparse::ArgumentParser> CreateArgumentParser() {
-  auto program =
-      std::make_unique<argparse::ArgumentParser>(ncc::clog, "version", "1.0", argparse::default_arguments::help, false);
+static std::unique_ptr<argparse::ArgumentParser> CreateArgumentParser(bool& did_default) {
+  auto program = std::make_unique<argparse::ArgumentParser>(ncc::clog, did_default, "version", "1.0",
+                                                            argparse::default_arguments::help);
 
   program->AddArgument("--of", "-O")
       .Help("The software component to include version info for")
@@ -500,17 +500,20 @@ static std::string GetVersionUsingBrief(const nlohmann::ordered_json& version_ar
 }
 
 bool no3::Interpreter::PImpl::CommandVersion(ConstArguments, const MutArguments& argv) {
-  auto program = CreateArgumentParser();
+  bool did_default;
+  auto program = CreateArgumentParser(did_default);
 
   try {
     program->ParseArgs(argv);
   } catch (const std::exception& e) {
+    if (did_default) {
+      return true;
+    }
     Log << e.what();
-    Log << Raw << *program << "\n";
     return false;
   }
 
-  if (program->Get<bool>("--help")) {
+  if (did_default) {
     return true;
   }
 
@@ -525,7 +528,6 @@ bool no3::Interpreter::PImpl::CommandVersion(ConstArguments, const MutArguments&
 
   if (!json_mode && (system_info || minify)) {
     Log << "The --system-info and --minify options are only valid when using --json";
-    Log << Raw << *program << "\n";
     return false;
   }
 
