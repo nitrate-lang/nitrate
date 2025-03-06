@@ -43,15 +43,46 @@
 using namespace ncc;
 using namespace no3::package;
 
+static bool CreateDirectories(const std::filesystem::path& path) {
+  Log << Trace << "Creating directories at: " << path;
+
+  auto dirs_exists = OMNI_CATCH(std::filesystem::exists(path));
+  if (!dirs_exists.has_value()) {
+    Log << "Failed to check if the directories exist: " << path;
+    return false;
+  }
+
+  if (std::any_cast<bool>(*dirs_exists)) {
+    Log << Trace << "The directories already exist: " << path;
+    return true;
+  }
+
+  auto dirs_created = OMNI_CATCH(std::filesystem::create_directories(path));
+  if (!dirs_created.has_value() || !std::any_cast<bool>(*dirs_created)) {
+    Log << "Failed to create directories at: " << path;
+    return false;
+  }
+
+  Log << Trace << "Successfully created directories at: " << path;
+
+  return true;
+}
+
 static bool CreateLocalFile(const std::filesystem::path& path, std::string_view init) {
   Log << Trace << "Creating a local file at: " << path;
 
-  if (OMNI_CATCH(false, std::filesystem::exists(path))) {
+  auto file_exists = OMNI_CATCH(std::filesystem::exists(path));
+  if (!file_exists.has_value()) {
+    Log << "Failed to check if the file exists: " << path;
+    return false;
+  }
+
+  if (std::any_cast<bool>(*file_exists)) {
     Log << Warning << "The file already exists: " << path;
     return false;
   }
 
-  if (OMNI_CATCH(false, std::filesystem::create_directories(path.parent_path()))) {
+  if (!CreateDirectories(path.parent_path())) {
     Log << "Failed to create the parent directory: " << path.parent_path();
     return false;
   }
@@ -73,16 +104,6 @@ static bool CreateLocalFile(const std::filesystem::path& path, std::string_view 
 
 static bool InitPackageDirectoryStructure(const std::filesystem::path& package_path, const InitOptions& options) {
   Log << Trace << "Initializing a the default package files at: " << package_path;
-
-  if (!OMNI_CATCH(false, std::filesystem::create_directories(package_path / "src"))) {
-    Log << "Failed to create the source directory: " << package_path / "src";
-    return false;
-  }
-
-  if (!OMNI_CATCH(false, std::filesystem::create_directories(package_path / "docs"))) {
-    Log << "Failed to create the documentation directory: " << package_path / "docs";
-    return false;
-  }
 
   if (!CreateLocalFile(package_path / "docs" / ".gitkeep", GenerateGitKeep())) {
     Log << "Failed to create the .gitkeep file: " << package_path / "docs" / ".gitkeep";
@@ -155,9 +176,21 @@ static bool InitPackageDirectoryStructure(const std::filesystem::path& package_p
 }
 
 static bool InitPackageDefaultConfigure(git_repository& repo) {
+  git_config* config = nullptr;
+  if (git_repository_config(&config, &repo) != 0) {
+    Log << "git_repository_config(): Failed to get the repository configuration.";
+    return false;
+  }
+
+  if (git_config_set_string(config, "no3.package.name", "no3-package") != 0) {
+    Log << "git_config_set_string(): Failed to set the package name.";
+    return false;
+  }
+
+  git_config_free(config);
+
   /// TODO: Implement this function.
   return true;
-  return false;
 }
 
 static bool InitPackageRepository(const std::filesystem::path& package_path) {
@@ -187,7 +220,13 @@ static bool InitPackageRepository(const std::filesystem::path& package_path) {
 bool no3::package::InitPackageUsingDefaults(const std::filesystem::path& package_path, const InitOptions& options) {
   Log << Trace << "Initializing a new package at: " << package_path;
 
-  if (OMNI_CATCH(false, std::filesystem::exists(package_path))) {
+  auto package_path_exists = OMNI_CATCH(std::filesystem::exists(package_path));
+  if (!package_path_exists.has_value()) {
+    Log << Error << "Failed to check if the package directory exists: " << package_path;
+    return false;
+  }
+
+  if (std::any_cast<bool>(*package_path_exists)) {
     Log << Warning << "The package directory already exists: " << package_path;
     return false;
   }

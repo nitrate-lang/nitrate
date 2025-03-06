@@ -33,7 +33,7 @@ static std::filesystem::path GetUserDirectory() {
     return {home};
   }
 
-  return OMNI_CATCH("/tmp", std::filesystem::current_path());
+  return std::filesystem::current_path();
 }
 
 int main(int argc, char* argv[]) {

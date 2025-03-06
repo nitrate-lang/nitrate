@@ -31,24 +31,19 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __NITRATE_CORE_CATCH_ALL_H__
-#define __NITRATE_CORE_CATCH_ALL_H__
+// This translation unit must be compiled with exceptions enabled.
 
-#include <any>
-#include <functional>
-#include <optional>
+#include <nitrate-core/CatchAll.hh>
+#include <nitrate-core/Macro.hh>
 
-namespace ncc {
-  std::optional<std::any> CatchAll(const std::function<std::any()>& expr);
+#ifndef NCC_CATCH_ALL_ENABLED_EXCEPTIONS
+#error "This file requires exceptions to be enabled."
+#endif
 
-/**
- * @brief An ingenious macro to call into exception-prone code and catch all
- * possible exceptions. If an exception is thrown, the return value will be
- * std::nullopt. Otherwise, the return value will be std::optional<std::any>.
- *
- * @note This function may be called from code compiled with the -fno-exceptions
- */
-#define OMNI_CATCH(...) CatchAll([&]() -> std::any { return __VA_ARGS__; })
-}  // namespace ncc
-
-#endif  // __NITRATE_CORE_CATCH_ALL_H__
+NCC_EXPORT std::optional<std::any> ncc::CatchAll(const std::function<std::any()> &expr) {
+  try {
+    return expr();
+  } catch (...) {
+    return std::nullopt;
+  }
+}

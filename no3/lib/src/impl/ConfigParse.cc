@@ -100,7 +100,13 @@ bool no3::cmd_impl::subcommands::CommandImplConfigParse(ConstArguments, const Mu
     return false;
   }
 
-  if (!OMNI_CATCH(false, std::filesystem::exists(package_dir))) {
+  auto package_dir_exists = OMNI_CATCH(std::filesystem::exists(package_dir));
+  if (!package_dir_exists.has_value()) {
+    Log << "Failed to check if the package exists: " << package_dir;
+    return false;
+  }
+
+  if (!std::any_cast<bool>(*package_dir_exists)) {
     Log << "The package does not exist: " << package_dir;
     return false;
   }

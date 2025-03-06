@@ -26,7 +26,7 @@ remove(CXX_SOURCES "${PROTOBUF_SOURCE_CC}")
 set(CXX_SOURCES ${CXX_SOURCES} ${PROTOBUF_SOURCE_CC})
 
 #================== SET BUILD FLAGS ==================
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-error=overlength-strings")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-exceptions -Wno-error=overlength-strings")
 
 add_library(nitrate-tool ${CXX_SOURCES})
 
@@ -53,6 +53,7 @@ target_link_libraries(nitrate-tool PUBLIC
   "${libyaml_cpp}"
   "${libgit2}"
   "${libboost_streams}"
+  "boost_filesystem"
 )
 add_dependencies(nitrate-tool
   nitrate-testing

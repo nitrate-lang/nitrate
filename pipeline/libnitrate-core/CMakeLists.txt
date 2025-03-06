@@ -16,6 +16,8 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D__TARGET_COMMIT_DATE=\\\"${__TARGET_CO
 
 file(GLOB_RECURSE CXX_SOURCES "src/*.cc")
 
+set_source_files_properties(src/CatchAll.cc PROPERTIES COMPILE_FLAGS "-fexceptions -DNCC_CATCH_ALL_ENABLED_EXCEPTIONS")
+
 add_library(nitrate-core ${CXX_SOURCES})
 target_include_directories(nitrate-core PUBLIC src "include")
 target_link_libraries(nitrate-core PUBLIC unwind)

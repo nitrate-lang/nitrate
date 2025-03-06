@@ -124,7 +124,13 @@ static std::optional<std::filesystem::path> GetNewPackagePath(const std::filesys
 
     Log << Trace << "Checking if the package directory already exists: " << canidate;
 
-    if (OMNI_CATCH(false, std::filesystem::exists(canidate))) {
+    auto status = OMNI_CATCH(std::filesystem::exists(canidate));
+    if (!status.has_value()) {
+      Log << Error << "Failed to check if the package directory exists: " << canidate;
+      return std::nullopt;
+    }
+
+    if (std::any_cast<bool>(*status)) {
       Log << Warning << "The package directory already exists: " << canidate << ". Trying again with a suffix.";
       attempts++;
       continue;
@@ -271,10 +277,17 @@ bool no3::Interpreter::PImpl::CommandInit(ConstArguments, const MutArguments& ar
     return false;
   }
 
-  if (!OMNI_CATCH(false, std::filesystem::exists(package_output))) {
+  auto package_output_exists = OMNI_CATCH(std::filesystem::exists(package_output));
+  if (!package_output_exists.has_value()) {
+    Log << Error << "Failed to check if the output directory exists: " << package_output;
+    return false;
+  }
+
+  if (!std::any_cast<bool>(*package_output_exists)) {
     Log << Trace << "Creating the output directory because it does not exist.";
 
-    if (!OMNI_CATCH(false, std::filesystem::create_directories(package_output))) {
+    auto package_output_created = OMNI_CATCH(std::filesystem::create_directories(package_output));
+    if (!package_output_created.has_value() || !std::any_cast<bool>(*package_output_created)) {
       Log << "Failed to create the output directory: " << package_output;
       return false;
     }
