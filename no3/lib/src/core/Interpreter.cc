@@ -182,27 +182,68 @@ bool Interpreter::PImpl::Perform(const std::vector<std::string>& command) {
 
 ncc::Sev GetMinimumLogLevel();
 
-NCC_EXPORT Interpreter::Interpreter(OutputHandler output_handler) noexcept : m_impl(std::make_unique<PImpl>()) {
-  Log.Subscribe([&](auto msg, auto sev, const auto& ec) {
+NCC_EXPORT Interpreter::Interpreter(OutputHandler output_handler) noexcept {
+  // We need to suspend all log subscribers to prevent external loggers from
+  // interfering with the interpreter's output collection.
+
+  // Collect all suspended log subscriber IDs so we can resume them when
+  // the interpreter is destroyed.
+  std::vector<LogSubscriberID> log_suspend_ids;
+  for (const auto& sub : Log.SubscribersList()) {
+    if (sub.IsSuspended()) {
+      log_suspend_ids.push_back(sub.ID());
+    }
+  }
+
+  Log.SuspendAll();
+
+  // All writes to this thread's log stream will be redirected to the output
+  // handler. The implication is any code outside the interpreter
+  // (running on the same thread) might garble the interpreter's output.
+
+  // We are permitted to use the ncc::Log global logger even prior to
+  // core library initialization.
+
+  // We attach the subscriber to the global logger, prior to initializing
+  // to ensure that initialization messages are captured in the interpreter's
+  // output.
+  const auto log_sub_id = Log.Subscribe([&](auto msg, auto sev, const auto& ec) {
     if (sev < GetMinimumLogLevel()) {
       return;
     }
 
     output_handler(ec.Format(msg, sev));
   });
+
+  // The PImpl constructor will automatically initialize all required
+  // runtime libraries.
+  m_impl = std::make_unique<PImpl>();
+
+  m_impl->m_log_sub_id = log_sub_id;
+  m_impl->m_log_suspend_ids = std::move(log_suspend_ids);
 }
 
-NCC_EXPORT Interpreter::Interpreter(Interpreter&& o) noexcept : m_impl(std::move(o.m_impl)) { o.m_impl = nullptr; }
+NCC_EXPORT Interpreter::~Interpreter() noexcept {
+  if (m_impl) {
+    auto sub_id = m_impl->m_log_sub_id;
+    auto suspend_ids = std::move(m_impl->m_log_suspend_ids);
 
-NCC_EXPORT Interpreter& Interpreter::operator=(Interpreter&& o) noexcept {
-  if (this != &o) {
-    m_impl = std::move(o.m_impl);
-    o.m_impl = nullptr;
+    // This will destroy the interpreter's runtime environment
+    // and decrement the reference count of libraries opened
+    // during construction, thereby potentially deinitalizing
+    // them.
+    m_impl.reset();
+
+    Log.Unsubscribe(sub_id);
+
+    // Resume all log subscribers that were active before the interpreter
+    // was created. If any if these subscriptions were removed externally
+    // Log.Resume will simply ignore them.
+    for (auto id : suspend_ids) {
+      Log.Resume(id);
+    }
   }
-  return *this;
 }
-
-NCC_EXPORT Interpreter::~Interpreter() noexcept = default;
 
 NCC_EXPORT bool Interpreter::Execute(const std::vector<std::string>& command) noexcept {
   if (!m_impl) {

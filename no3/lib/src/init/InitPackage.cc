@@ -31,49 +31,47 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#pragma once
-
-#include <core/termcolor.hh>
-#include <memory>
+#include <core/PackageConfig.hh>
+#include <init/InitPackage.hh>
 #include <nitrate-core/Logger.hh>
-#include <no3/Interpreter.hh>
-#include <vector>
 
-namespace no3 {
-  using ConstArguments = std::span<const std::string>;
-  using MutArguments = std::vector<std::string>;
-  using CommandFunction = std::function<bool(ConstArguments full_argv, MutArguments argv)>;
+using namespace ncc;
 
-  class Interpreter::PImpl {
-    friend class Interpreter;
+static bool InitPackageDirectoryStructure(const std::filesystem::path& package_path) {
+  /// TODO: Implement this function.
+  return false;
+}
 
-    std::unique_ptr<detail::RCInitializationContext> m_init_rc = OpenLibrary();
-    std::unordered_map<std::string, CommandFunction> m_commands;
-    size_t m_log_sub_id = 0;
-    std::vector<size_t> m_log_suspend_ids;
+static bool InitPackageDefaultConfigure(const std::filesystem::path& package_path) {
+  /// TODO: Implement this function.
+  return false;
+}
 
-    static bool CommandBuild(ConstArguments full_argv, MutArguments argv);
-    static bool CommandClean(ConstArguments full_argv, MutArguments argv);
-    static bool CommandImpl(ConstArguments full_argv, MutArguments argv);
-    static bool CommandDoc(ConstArguments full_argv, MutArguments argv);
-    static bool CommandFormat(ConstArguments full_argv, MutArguments argv);
-    static bool CommandHelp(ConstArguments full_argv, const MutArguments& argv);
-    static bool CommandInit(ConstArguments full_argv, const MutArguments& argv);
-    static bool CommandInstall(ConstArguments full_argv, MutArguments argv);
-    static bool CommandFind(ConstArguments full_argv, MutArguments argv);
-    static bool CommandRemove(ConstArguments full_argv, MutArguments argv);
-    static bool CommandLSP(ConstArguments full_argv, const MutArguments& argv);
-    static bool CommandLicense(ConstArguments full_argv, const MutArguments& argv);
-    static bool CommandTest(ConstArguments full_argv, MutArguments argv);
-    static bool CommandVersion(ConstArguments full_argv, const MutArguments& argv);
-    static bool CommandUpdate(ConstArguments full_argv, MutArguments argv);
+static bool InitPackageRepository(const std::filesystem::path& package_path) {
+  /// TODO: Implement this function.
 
-    void SetupCommands();
+  return false;
+}
 
-  public:
-    PImpl() noexcept { SetupCommands(); }
+bool no3::package::InitPackageUsingDefaults(const std::filesystem::path& package_path, const InitOptions& options) {
+  Log << Trace << "Initializing a default constructed package at: " << package_path;
 
-    bool Perform(const std::vector<std::string>& command);
-  };
+  if (!InitPackageDirectoryStructure(package_path)) {
+    Log << Trace << "Failed to initialize a default package directory structure: " << package_path;
+    return false;
+  }
 
-}  // namespace no3
+  if (!InitPackageRepository(package_path)) {
+    Log << Trace << "Failed to initialize a default package repository: " << package_path;
+    return false;
+  }
+
+  if (!InitPackageDefaultConfigure(package_path)) {
+    Log << Trace << "Failed to initialize a default package configuration: " << package_path;
+    return false;
+  }
+
+  Log << Trace << "Successfully initialized a default package at: " << package_path;
+
+  return true;
+}

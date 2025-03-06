@@ -121,16 +121,15 @@ message Package {
     required Signature signature = 4;
   }
 
-  required SemVersion format = 1;
-  required string name = 2;
-  required string description = 3;
-  required string license = 4;
-  required Category category = 5;
-  required SemVersion version = 6;
-  repeated string aliases = 7;
-  repeated Contact contacts = 8;
-  required Platforms platforms = 9;
-  repeated Dependency dependencies = 10;
-  required OptimizationOptions optimization = 11;
-  repeated BlockchainLink blockchain = 12;
+  required SemVersion format = 10;
+  required string name = 20;
+  required string description = 30;
+  required string license = 40;
+  required Category category = 50;
+  required SemVersion version = 60;
+  repeated Contact contacts = 80;
+  required Platforms platforms = 90;
+  repeated Dependency dependencies = 100;
+  required OptimizationOptions optimization = 110;
+  repeated BlockchainLink blockchain = 120;
 }

@@ -85,9 +85,9 @@ namespace no3 {
       std::cout.write(buffer.data(), buffer.size());
     }) noexcept;
     Interpreter(const Interpreter&) = delete;
-    Interpreter(Interpreter&& o) noexcept;
+    Interpreter(Interpreter&& o) noexcept = default;
     Interpreter& operator=(const Interpreter&) = delete;
-    Interpreter& operator=(Interpreter&& o) noexcept;
+    Interpreter& operator=(Interpreter&& o) noexcept = default;
     ~Interpreter() noexcept;
 
     bool Execute(const std::vector<std::string>& command) noexcept;

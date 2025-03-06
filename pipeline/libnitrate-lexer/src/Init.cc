@@ -43,24 +43,24 @@ using namespace ncc::lex;
 NCC_EXPORT ncc::LibraryRC<LexerLibrarySetup> ncc::lex::LexerLibrary;
 
 NCC_EXPORT auto LexerLibrarySetup::Init() -> bool {
-  Log << Runtime << Debug << "libnitrate-lexer initializing...";
+  Log << Runtime << Trace << "libnitrate-lexer initializing...";
 
   if (!ncc::CoreLibrary.InitRC()) [[unlikely]] {
     Log << Runtime << Error << "libnitrate-lexer failed init: libnitrate-core failed to initialize";
     return false;
   }
 
-  Log << Runtime << Debug << "libnitrate-lexer initialized";
+  Log << Runtime << Trace << "libnitrate-lexer initialized";
 
   return true;
 }
 
 NCC_EXPORT void LexerLibrarySetup::Deinit() {
-  Log << Runtime << Debug << "libnitrate-lexer deinitializing...";
+  Log << Runtime << Trace << "libnitrate-lexer deinitializing...";
 
   ncc::CoreLibrary.DeinitRC();
 
-  Log << Runtime << Debug << "libnitrate-lexer deinitialized";
+  Log << Runtime << Trace << "libnitrate-lexer deinitialized";
 }
 
 NCC_EXPORT auto LexerLibrarySetup::GetSemVersion() -> std::array<uint32_t, 3> {

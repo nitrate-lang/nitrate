@@ -45,17 +45,15 @@ NCC_EXPORT std::atomic<bool> ncc::EnableSync = true;
 NCC_EXPORT auto CoreLibrarySetup::Init() -> bool {
   // Nothing to do here for now.
 
-  Log << Debug << "Initialized Nitrate Core Library";
+  Log << Trace << "Initialized Nitrate Core Library";
 
   return true;
 }
 
 NCC_EXPORT void CoreLibrarySetup::Deinit() {
-  Log << Debug << "Deinitialing Nitrate Core Library...";
+  Log << Trace << "Deinitializing Nitrate Core Library...";
 
-  Log.UnsubscribeAll();
-  Log.ClearFilters();
-  Log.Enable();
+  Log.Reset();
 
   String::ResetInstances();
 }

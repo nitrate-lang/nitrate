@@ -32,8 +32,12 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <core/SPDX.hh>
+#include <functional>
+#include <nitrate-core/Assert.hh>
+#include <unordered_set>
+#include <vector>
 
-const std::unordered_set<std::string_view> no3::conf::SPDX_IDENTIFIERS = {
+static const std::unordered_set<std::string_view> SPDX_IDENTIFIERS = {
     "0BSD",
     "3D-Slicer-1.0",
     "AAL",
@@ -707,3 +711,52 @@ const std::unordered_set<std::string_view> no3::conf::SPDX_IDENTIFIERS = {
     "ZPL-2.0",
     "ZPL-2.1",
 };
+
+static size_t Levenstein(std::string_view a, std::string_view b) {
+  /// BY: https://chatgpt.com/share/67c8cc55-73dc-8001-b7ca-7da50b9d5410
+
+  size_t m = a.size();
+  size_t n = b.size();
+  std::vector<std::vector<size_t>> memo(m + 1, std::vector<size_t>(n + 1, -1));
+
+  std::function<size_t(size_t, size_t)> dp = [&](size_t i, size_t j) -> size_t {
+    if (memo[i][j] != static_cast<size_t>(-1)) {
+      return memo[i][j];
+    }
+
+    if (i == m) {
+      return memo[i][j] = n - j;
+    }
+
+    if (j == n) {
+      return memo[i][j] = m - i;
+    }
+
+    if (a[i] == b[j]) {
+      return memo[i][j] = dp(i + 1, j + 1);
+    }
+
+    return memo[i][j] = 1 + std::min({dp(i, j + 1), dp(i + 1, j), dp(i + 1, j + 1)});
+  };
+
+  return dp(0, 0);
+}
+
+std::string_view no3::constants::FindClosestSPDXLicense(std::string_view query) {
+  size_t minv = -1;
+  std::string_view mini;
+
+  qcore_assert(!SPDX_IDENTIFIERS.empty());
+
+  for (const auto& spdx : SPDX_IDENTIFIERS) {
+    size_t const dist = Levenstein(spdx, query);
+    if (dist < minv) {
+      minv = dist;
+      mini = spdx;
+    }
+  }
+
+  return mini;
+}
+
+bool no3::constants::IsExactSPDXLicenseMatch(std::string_view query) { return SPDX_IDENTIFIERS.contains(query); }

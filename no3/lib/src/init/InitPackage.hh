@@ -1,3 +1,4 @@
+
 ////////////////////////////////////////////////////////////////////////////////
 ///                                                                          ///
 ///     .-----------------.    .----------------.     .----------------.     ///
@@ -33,47 +34,19 @@
 
 #pragma once
 
-#include <core/termcolor.hh>
-#include <memory>
-#include <nitrate-core/Logger.hh>
-#include <no3/Interpreter.hh>
-#include <vector>
+#include <filesystem>
+#include <string>
 
-namespace no3 {
-  using ConstArguments = std::span<const std::string>;
-  using MutArguments = std::vector<std::string>;
-  using CommandFunction = std::function<bool(ConstArguments full_argv, MutArguments argv)>;
+namespace no3::package {
+  enum class PackageCategory { Library, StandardLibrary, Executable, Comptime };
 
-  class Interpreter::PImpl {
-    friend class Interpreter;
-
-    std::unique_ptr<detail::RCInitializationContext> m_init_rc = OpenLibrary();
-    std::unordered_map<std::string, CommandFunction> m_commands;
-    size_t m_log_sub_id = 0;
-    std::vector<size_t> m_log_suspend_ids;
-
-    static bool CommandBuild(ConstArguments full_argv, MutArguments argv);
-    static bool CommandClean(ConstArguments full_argv, MutArguments argv);
-    static bool CommandImpl(ConstArguments full_argv, MutArguments argv);
-    static bool CommandDoc(ConstArguments full_argv, MutArguments argv);
-    static bool CommandFormat(ConstArguments full_argv, MutArguments argv);
-    static bool CommandHelp(ConstArguments full_argv, const MutArguments& argv);
-    static bool CommandInit(ConstArguments full_argv, const MutArguments& argv);
-    static bool CommandInstall(ConstArguments full_argv, MutArguments argv);
-    static bool CommandFind(ConstArguments full_argv, MutArguments argv);
-    static bool CommandRemove(ConstArguments full_argv, MutArguments argv);
-    static bool CommandLSP(ConstArguments full_argv, const MutArguments& argv);
-    static bool CommandLicense(ConstArguments full_argv, const MutArguments& argv);
-    static bool CommandTest(ConstArguments full_argv, MutArguments argv);
-    static bool CommandVersion(ConstArguments full_argv, const MutArguments& argv);
-    static bool CommandUpdate(ConstArguments full_argv, MutArguments argv);
-
-    void SetupCommands();
-
-  public:
-    PImpl() noexcept { SetupCommands(); }
-
-    bool Perform(const std::vector<std::string>& command);
+  struct InitOptions {
+    std::string m_package_name;
+    std::string m_package_description;
+    std::string m_package_license;
+    std::string m_package_version;
+    PackageCategory m_package_category;
   };
 
-}  // namespace no3
+  bool InitPackageUsingDefaults(const std::filesystem::path& package_path, const InitOptions& options);
+}  // namespace no3::package

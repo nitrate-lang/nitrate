@@ -35,10 +35,10 @@
 #define __NO3_CONF_SPDX_HH__
 
 #include <string_view>
-#include <unordered_set>
 
-namespace no3::conf {
-  extern const std::unordered_set<std::string_view> SPDX_IDENTIFIERS;
-}  // namespace no3::conf
+namespace no3::constants {
+  bool IsExactSPDXLicenseMatch(std::string_view query);
+  std::string_view FindClosestSPDXLicense(std::string_view query);
+}  // namespace no3::constants
 
 #endif  // __NO3_CONF_SPDX_HH__

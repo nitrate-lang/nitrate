@@ -277,12 +277,6 @@ namespace no3::package {
       package->set_allocated_version(ver);
     }
 
-    {  // Set ['aliases']
-      for (const auto& alias : json["aliases"]) {
-        package->add_aliases(alias);
-      }
-    }
-
     {  // Set ['contacts']
       for (const auto& contact : json["contacts"]) {
         auto* contact_message = Pool::CreateMessage<Package::Contact>(&mm);
@@ -378,10 +372,6 @@ namespace no3::package {
     j["version"]["major"] = protobuf.version().major();
     j["version"]["minor"] = protobuf.version().minor();
     j["version"]["patch"] = protobuf.version().patch();
-
-    for (const auto& alias : protobuf.aliases()) {
-      j["aliases"].push_back(alias);
-    }
 
     for (const auto& contact : protobuf.contacts()) {
       nlohmann::ordered_json contact_json;

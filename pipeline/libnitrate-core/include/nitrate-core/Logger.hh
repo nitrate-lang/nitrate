@@ -228,43 +228,57 @@ namespace ncc {
     }
   };
 
-  using LogFilterFunc = bool (*)(const std::string &, Sev, const ECBase &);
-
-#define NCC_EC_FILTER(__name, __msg, __sev, __ec) \
-  static inline auto __name(const std::string &__msg, Sev __sev, const ECBase &__ec) -> bool
-
-  NCC_EC_FILTER(TraceFilter, msg, sev, ec);
+  using LogSubscriberID = size_t;
 
   class NCC_EXPORT LoggerContext final : public std::ostream {
-    std::vector<std::pair<LogCallback, bool>> m_subscribers;
-    std::vector<LogFilterFunc> m_filters;
+  public:
+    class Subscriber {
+      friend class LoggerContext;
+
+      LogCallback m_cb;
+      LogSubscriberID m_id;
+      bool m_suspended;
+
+    public:
+      Subscriber(LogCallback cb, LogSubscriberID id, bool suspended)
+          : m_cb(std::move(cb)), m_id(id), m_suspended(suspended) {}
+
+      [[nodiscard]] auto ID() const -> LogSubscriberID { return m_id; }
+      [[nodiscard]] auto Callback() const -> const LogCallback & { return m_cb; }
+      [[nodiscard]] bool IsSuspended() const { return m_suspended; }
+    };
+
+  private:
+    std::vector<Subscriber> m_subs;
+    LogSubscriberID m_sub_id_ctr = 0;
     bool m_enabled = true;
 
   public:
     LoggerContext() = default;
-    LoggerContext(const LoggerContext &o)
-        : m_subscribers(o.m_subscribers), m_filters(o.m_filters), m_enabled(o.m_enabled) {}
+    LoggerContext(const LoggerContext &o) : m_subs(o.m_subs), m_enabled(o.m_enabled) {}
     ~LoggerContext() override = default;
 
-    auto Subscribe(LogCallback cb) -> size_t;
-    void Unsubscribe(size_t idx);
+    auto Subscribe(LogCallback cb) -> LogSubscriberID;
+    void Unsubscribe(LogSubscriberID id);
     void UnsubscribeAll();
+    const auto &SubscribersList() const { return m_subs; }
 
-    void Suspend(size_t idx);
+    void Suspend(LogSubscriberID id);
     void SuspendAll();
-    void Resume(size_t idx);
+    void Resume(LogSubscriberID id);
     void ResumeAll();
 
-    auto AddFilter(LogFilterFunc filter) -> size_t;
-    void RemoveFilter(size_t idx);
-    void ClearFilters();
-
-    void operator+=(LogFilterFunc filter) { AddFilter(filter); }
-    void operator+=(LogCallback cb) { Subscribe(std::move(cb)); }
+    LogSubscriberID operator+=(LogCallback cb) { return Subscribe(std::move(cb)); }
 
     void Enable() { m_enabled = true; }
     void Disable() { m_enabled = false; }
     [[nodiscard]] auto Enabled() const -> bool { return m_enabled; }
+
+    void Reset() {
+      m_subs.clear();
+      m_enabled = true;
+      m_sub_id_ctr = 0;
+    }
 
     void Publish(const std::string &msg, Sev sev, const ECBase &ec) const;
   };
@@ -282,6 +296,7 @@ namespace ncc {
     return std::move(stream);
   };
 
+  /** This logger may be used prior to nitrate-core initialization */
   extern thread_local LoggerContext Log;
 }  // namespace ncc
 

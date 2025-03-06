@@ -32,11 +32,71 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <core/PackageConfig.hh>
+#include <core/SPDX.hh>
 #include <nitrate-core/Assert.hh>
 #include <nitrate-core/Logger.hh>
+#include <regex>
 
 using namespace ncc;
 using namespace no3::package;
+
+std::string PackageConfig::PackageNameRegex =
+    R"(^@([a-z]+-)?([a-zA-Z0-9]+|[a-zA-Z0-9][a-zA-Z0-9-]+[a-zA-Z0-9])\/([a-zA-Z0-9][a-zA-Z0-9-]{1,30}[a-zA-Z0-9])(:\d+)?$)";
+
+static const std::regex PACKAGE_NAME_PATTERN(PackageConfig::PackageNameRegex);
+
+static const std::regex SEMVER_PATTERN(R"MAGIC(^\d+\.\d+\.\d+$)MAGIC");
+
+bool PackageConfig::ValidatePackageName(const std::string& package_name, bool maybe_standard_lib) {
+  Log << Trace << "Validating package name format: \"" << package_name << "\"";
+
+  if (!std::regex_match(package_name, PACKAGE_NAME_PATTERN)) {
+    Log << Trace << "Package name failed format validation [regex mismatch]: \"" << package_name << "\"";
+    return false;
+  }
+
+  // I couldn't find a way to do this with a regex, so I'm doing it manually.
+  if (package_name.find("--") != std::string::npos) {
+    Log << Trace << "Package name failed format validation [double hyphen]: \"" << package_name << "\"";
+    return false;
+  }
+
+  // Only standard library packages are allowed to omit their Git provider prefix.
+  const auto package_username = package_name.substr(1, package_name.find('/') - 1);
+  if (maybe_standard_lib && package_username.find('-') == std::string::npos) {
+    Log << Trace << "Package name failed format validation [missing Git provider prefix]: \"" << package_name << "\"";
+    return false;
+  }
+
+  Log << Trace << "Package name passed format validation: \"" << package_name << "\"";
+
+  return true;
+}
+
+bool PackageConfig::ValidatePackageLicense(const std::string& license) {
+  Log << Trace << "Validating package license: \"" << license << "\"";
+
+  if (!constants::IsExactSPDXLicenseMatch(license)) {
+    Log << Trace << "Failed to find match in SPDX license table: \"" << license << "\"";
+    return false;
+  }
+
+  Log << Trace << "Package license passed SPDX validation: \"" << license << "\"";
+
+  return true;
+}
+
+bool PackageConfig::ValidatePackageVersion(const std::string& version) {
+  Log << Trace << "Validating package version: \"" << version << "\"";
+  if (!std::regex_match(version, SEMVER_PATTERN)) {
+    Log << Trace << "Package version failed format validation [regex mismatch]: \"" << version << "\"";
+    return false;
+  }
+
+  Log << Trace << "Package version passed format validation: \"" << version << "\"";
+
+  return true;
+}
 
 #define schema_assert(__expr)                                               \
   if (!(__expr)) [[unlikely]] {                                             \
@@ -296,15 +356,6 @@ namespace no3::package {
     {  // key ["version"]
       schema_assert(json.contains("version"));
       schema_assert(ValidateSemVersion(json["version"]));
-    }
-
-    {  // key ["aliases"]
-      schema_assert(json.contains("aliases"));
-      schema_assert(json["aliases"].is_array());
-      schema_assert(std::all_of(json["aliases"].begin(), json["aliases"].end(), [](const auto& alias) {
-        schema_assert(alias.is_string());
-        return true;
-      }));
     }
 
     {  // key ["contacts"]

@@ -161,18 +161,6 @@ static bool PerformInitialize(std::ostream& log) {
     return false;
   }
 
-  auto log_subid = Log.Subscribe([](auto msg, auto sev, const auto& ec) {
-    using namespace ncc;
-
-    if (sev < GetMinimumLogLevel()) {
-      return;
-    }
-
-    std::cerr << ec.Format(msg, sev);
-  });
-
-  std::shared_ptr<void> unsub(nullptr, [&](...) { Log.Unsubscribe(log_subid); });
-
   if (!lex::LexerLibrary.InitRC()) {
     log << "Failed to initialize libnitrate-lexer library" << std::endl;
     return false;
@@ -205,7 +193,7 @@ static bool PerformInitialize(std::ostream& log) {
 
   GOOGLE_PROTOBUF_VERIFY_VERSION;
 
-  Log << Debug << "Initialized Nitrate Toolchain";
+  Log << Trace << "Initialized Nitrate Toolchain";
 
   return true;
 }
@@ -214,18 +202,6 @@ static void PerformDeinitialize() {
   using namespace ncc;
 
   std::lock_guard<std::mutex> lock(RCInitializationContextMutex);
-
-  auto log_subid = Log.Subscribe([](auto msg, auto sev, const auto& ec) {
-    using namespace ncc;
-
-    if (sev < GetMinimumLogLevel()) {
-      return;
-    }
-
-    std::cerr << ec.Format(msg, sev);
-  });
-
-  std::shared_ptr<void> unsub(nullptr, [&](...) { Log.Unsubscribe(log_subid); });
 
   git_libgit2_shutdown();
 

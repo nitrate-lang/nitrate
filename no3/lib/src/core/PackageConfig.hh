@@ -52,5 +52,11 @@ namespace no3::package {
 
     [[nodiscard]] const nlohmann::ordered_json& Json(bool defaults = true) const;
     [[nodiscard]] const std::string& Protobuf(bool defaults = true) const;
+
+    static std::string PackageNameRegex;
+
+    [[nodiscard]] static bool ValidatePackageName(const std::string& package_name, bool maybe_standard_lib = false);
+    [[nodiscard]] static bool ValidatePackageLicense(const std::string& license);
+    [[nodiscard]] static bool ValidatePackageVersion(const std::string& version);
   };
 }  // namespace no3::package
