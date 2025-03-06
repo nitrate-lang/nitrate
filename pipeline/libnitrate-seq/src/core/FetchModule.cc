@@ -80,7 +80,8 @@ static std::vector<path> GetResourceSearchPaths() {
   the_path = env_path.substr(start, end);
   paths.emplace_back(exists(the_path) ? absolute(the_path) : path(the_path));
 
-  std::remove_if(paths.begin(), paths.end(), [](const auto &path) { return !exists(path) || !is_directory(path); });
+  (void)std::remove_if(paths.begin(), paths.end(),
+                       [](const auto &path) { return !exists(path) || !is_directory(path); });
 
   return paths;
 }
