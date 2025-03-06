@@ -145,7 +145,7 @@ static std::optional<std::filesystem::path> GetNewPackagePath(const std::filesys
 
 static void DisplayHelp() {
   std::string_view help =
-      R"(Usage: impl [--help] [[--lib]|[--standard-lib]|[--exe]] [--brief VAR] [--license VAR] [--version VAR] [--output VAR] package-name
+      R"(Usage: impl [--help] [[--lib]|[--standard-lib]|[--exe]] [--license VAR] [--version VAR] [--output VAR] package-name
 
 Positional arguments:
   package-name    The name of the package to initialize. [required]
@@ -155,7 +155,6 @@ Optional arguments:
   --lib           Initialize a new Nitrate library package.
   --standard-lib  Initialize a new Nitrate offical standard library component package.
   --exe           Initialize a new Nitrate executable package.
-  -b, --brief     A description of the package. [nargs=0..1] [default: "No description was provided by the package creator."]
   -l, --license   The package SPDX license identifier. [nargs=0..1] [default: "MIT"]
   -v, --version   Initial Semantic Version of the package. [nargs=0..1] [default: "0.1.0"]
   -o, --output    The directory to create the package folder in. [nargs=0..1] [default: "."]
@@ -164,10 +163,9 @@ Optional arguments:
   Log << Raw << help;
 }
 
-static bool GetCheckedArguments(const argh::parser& cmdl, std::string& package_name, std::string& package_description,
-                                std::string& package_license, std::string& package_version, std::string& package_output,
+static bool GetCheckedArguments(const argh::parser& cmdl, std::string& package_name, std::string& package_license,
+                                std::string& package_version, std::string& package_output,
                                 PackageCategory& package_category) {
-  cmdl({"-b", "--brief"}) >> package_description;
   cmdl({"-l", "--license"}) >> package_license;
   cmdl({"-v", "--version"}) >> package_version;
   cmdl({"-o", "--output"}) >> package_output;
@@ -203,10 +201,6 @@ static bool GetCheckedArguments(const argh::parser& cmdl, std::string& package_n
     return false;
   }
 
-  if (package_description.empty()) {
-    package_description = "No description was provided by the package creator.";
-  }
-
   if (package_license.empty()) {
     package_license = "MIT";
   }
@@ -224,7 +218,7 @@ static bool GetCheckedArguments(const argh::parser& cmdl, std::string& package_n
 
 bool no3::Interpreter::PImpl::CommandInit(ConstArguments, const MutArguments& argv) {
   argh::parser cmdl;
-  cmdl.add_params({"help", "brief", "b", "license", "l", "version", "v", "output", "o"});
+  cmdl.add_params({"help", "license", "l", "version", "v", "output", "o"});
 
   Log << Trace << "Parsing command line arguments for package initialization.";
   cmdl.parse(argv, argh::parser::SINGLE_DASH_IS_MULTIFLAG);
@@ -235,19 +229,16 @@ bool no3::Interpreter::PImpl::CommandInit(ConstArguments, const MutArguments& ar
   }
 
   std::string package_name;
-  std::string package_description;
   std::string package_license;
   std::string package_version;
   std::string package_output;
   PackageCategory package_category{};
 
-  if (!GetCheckedArguments(cmdl, package_name, package_description, package_license, package_version, package_output,
-                           package_category)) {
+  if (!GetCheckedArguments(cmdl, package_name, package_license, package_version, package_output, package_category)) {
     return false;
   }
 
   Log << Trace << R"(args["package-name"] = ")" << package_name << "\"";
-  Log << Trace << R"(args["brief"] = ")" << package_description << "\"";
   Log << Trace << R"(args["license"] = ")" << package_license << "\"";
   Log << Trace << R"(args["version"] = ")" << package_version << "\"";
   Log << Trace << R"(args["output"] = ")" << package_output << "\"";
@@ -298,7 +289,7 @@ bool no3::Interpreter::PImpl::CommandInit(ConstArguments, const MutArguments& ar
 
   InitOptions options;
   options.m_package_name = package_name;
-  options.m_package_description = package_description;
+  options.m_package_description = "No description was provided by the package creator.";
   options.m_package_license = constants::FindClosestSPDXLicense(package_license);  // convert to proper letter case
   options.m_package_version = package_version;
   options.m_package_category = package_category;

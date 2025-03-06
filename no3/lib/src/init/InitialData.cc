@@ -440,9 +440,9 @@ nitrate install https://github.com/{{gh_username}}/{{project_name}}
 
 ## Technology
 
-| Tech Name        | Tech Description                |
-| ---------------- | ------------------------------- |
-| Nitrate Language | Powerhouse of great programming |
+| Tech Name        | URL                  |
+| ---------------- | -------------------- |
+| Nitrate Language | https://nitrate.dev/ |
 
 ## Contributing
 
