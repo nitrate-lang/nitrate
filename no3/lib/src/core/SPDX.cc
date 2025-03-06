@@ -31,6 +31,7 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
+#include <algorithm>
 #include <core/SPDX.hh>
 #include <functional>
 #include <nitrate-core/Assert.hh>
