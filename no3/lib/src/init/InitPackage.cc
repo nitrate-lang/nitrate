@@ -145,7 +145,7 @@ static bool InitPackageDirectoryStructure(const std::filesystem::path& package_p
     return false;
   }
 
-  if (!CreateLocalFile(package_path / "CONTRIBUTING.md", GenerateContributingPolicy(package_path))) {
+  if (!CreateLocalFile(package_path / "CONTRIBUTING.md", GenerateContributingPolicy(options))) {
     Log << "Failed to create the CONTRIBUTING.md file: " << package_path / "CONTRIBUTING.md";
     return false;
   }

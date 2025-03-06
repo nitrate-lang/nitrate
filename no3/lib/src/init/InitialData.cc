@@ -35,6 +35,7 @@
 #include <init/InitPackage.hh>
 #include <optional>
 #include <regex>
+#include <sstream>
 #include <string>
 
 static const std::string_view DEFAULT_DOCKER_IGNORE = R"(.no3/
@@ -274,6 +275,19 @@ static std::optional<std::string> GetGithubUsername(const std::string& name) {
   return std::nullopt;
 }
 
+static std::string BeutifyName(std::string name) {
+  std::replace(name.begin(), name.end(), '-', ' ');
+
+  // capitalize each word
+  for (size_t i = 0; i < name.size(); i++) {
+    if (i == 0 || name[i - 1] == ' ') {
+      name[i] = std::toupper(name[i]);
+    }
+  }
+
+  return name;
+}
+
 static std::string GetPackageName(const std::string& name) { return name.substr(name.find('/') + 1); }
 
 std::string no3::package::GenerateSecurityPolicy(const std::string& package_name) {
@@ -281,13 +295,14 @@ std::string no3::package::GenerateSecurityPolicy(const std::string& package_name
 
   const auto github_username = GetGithubUsername(package_name);
   const auto name = GetPackageName(package_name);
+  const auto nice_name = BeutifyName(name);
 
   std::string content;
 
   content +=
       R"(# Reporting Security Issues
 
-The ("{{project_name}}") team and community take security bugs in ("{{project_name}}") seriously.
+The ("{{project_name_nice}}") team and community take security bugs in ("{{project_name_nice}}") seriously.
 We appreciate your efforts to disclose your findings responsibly and will make
 every effort to acknowledge your contributions. Pursuant thereto, and contingent
 on the notability of the issue and the availability of monetary resources, we
@@ -305,28 +320,130 @@ tab to report a security issue.
 
   content +=
 
-      R"(The ("{{project_name}}") team will send a response indicating the next steps in handling
+      R"(The ("{{project_name_nice}}") team will send a response indicating the next steps in handling
 your report. After the initial reply to your report, the security team will keep
 you informed of the progress toward a fix and full announcement and may ask for
 additional information or guidance.
 
 Report security bugs in third-party modules to the person or team maintaining the module.
 
-Thank you for keeping the ("{{project_name}}") project and its community safe.
+Thank you for keeping the ("{{project_name_nice}}") project and its community safe.
 
 ---
-*This security policy is auto-generated for the ("{{project_name}}") project.*
+*This security policy is auto-generated for the ("{{project_name_nice}}") project.*
 )";
 
   content = std::regex_replace(content, std::regex(R"(\{\{gh_username\}\})"), github_username.value());
+  content = std::regex_replace(content, std::regex(R"(\{\{project_name_nice\}\})"), nice_name);
   content = std::regex_replace(content, std::regex(R"(\{\{project_name\}\})"), name);
 
   return content;
 }
 
+static std::string URLEncode(std::string text) {
+  std::stringstream ss;
+
+  for (const auto& c : text) {
+    if ((std::isalnum(c) != 0) || c == '-' || c == '_' || c == '.' || c == '~') {
+      ss << c;
+    } else {
+      ss << '%' << std::hex << std::setw(2) << std::setfill('0') << static_cast<int>(c);
+    }
+  }
+
+  return ss.str();
+}
+
+static std::string ShieldsIOEscapeContent(std::string text) {
+  text = std::regex_replace(text, std::regex("-"), "--");
+  return URLEncode(text);
+}
+
 std::string no3::package::GenerateReadme(const InitOptions& options) {
-  /// TODO: Generate a README.md file.
-  return "";
+  const auto gh_username = GetGithubUsername(options.m_package_name);
+  const auto name = GetPackageName(options.m_package_name);
+  const auto nice_name = BeutifyName(name);
+  const auto shields_io_license = ShieldsIOEscapeContent(options.m_package_license);
+  const auto spdx_license = options.m_package_license;
+  const auto project_description = options.m_package_description;
+  const auto project_category = [&]() {
+    switch (options.m_package_category) {
+      case PackageCategory::Library:
+        return "library";
+      case PackageCategory::StandardLibrary:
+        return "stdlib";
+      case PackageCategory::Executable:
+        return "exe";
+      case PackageCategory::Comptime:
+        return "comptime";
+    }
+  }();
+
+  std::string content;
+
+  content += R"(# {{project_name_nice}}
+
+![](https://img.shields.io/badge/license-{{project_escaped_spdx_license}}-b3e32d.svg)
+![](https://img.shields.io/badge/package_kind-{{project_category}}-cyan.svg)
+![](https://img.shields.io/badge/cmake_integration-true-purple.svg)
+
+## Overview
+
+{{project_description}}
+
+## Table of Contents
+
+- [{{project_name_nice}}](#{{project_name}})
+  - [Overview](#overview)
+  - [Table of Contents](#table-of-contents)
+  - [Installation](#installation)
+  - [Features](#features)
+  - [Technology](#technology)
+  - [Contributing](#contributing)
+  - [License](#license)
+
+## Installation
+
+```bash
+# Change the working directory to your package
+cd <your_project>
+
+# Install this package as a dependency
+nitrate install https://github.com/{{gh_username}}/{{project_name}}
+```
+
+## Features
+
+| Feature Name | Feature Description                  |
+| ------------ | ------------------------------------ |
+| Feature A    | Providing better handling of issue A |
+| Feature B    | Providing better handling of issue B |
+| Feature C    | Providing better handling of issue C |
+
+## Technology
+
+| Tech Name        | Tech Description                |
+| ---------------- | ------------------------------- |
+| Nitrate Language | Powerhouse of great programming |
+
+## Contributing
+
+Contributions are welcome! Please submit a pull request or open an issue if you have suggestions.
+
+## License
+
+This project is licensed under the **{{project_spdx_license}}** license. See the [LICENSE](LICENSE) file for more information.
+)";
+
+  content = std::regex_replace(content, std::regex(R"(\{\{gh_username\}\})"), gh_username.value());
+  content = std::regex_replace(content, std::regex(R"(\{\{project_name\}\})"), name);
+  content = std::regex_replace(content, std::regex(R"(\{\{project_name_nice\}\})"), nice_name);
+  content = std::regex_replace(content, std::regex(R"(\{\{project_escaped_spdx_license\}\})"), shields_io_license);
+  content = std::regex_replace(content, std::regex(R"(\{\{project_spdx_license\}\})"), spdx_license);
+  content = std::regex_replace(content, std::regex(R"(\{\{project_description\}\})"), project_description);
+  content = std::regex_replace(content, std::regex(R"(\{\{project_category\}\})"), project_category);
+
+  return content;
 }
 
 std::string no3::package::GenerateLicense(const std::string& spdx_license) {
@@ -334,9 +451,30 @@ std::string no3::package::GenerateLicense(const std::string& spdx_license) {
   return "";
 }
 
-std::string no3::package::GenerateContributingPolicy(const std::string& spdx_license) {
-  /// TODO: Generate a contributing policy.
-  return "";
+std::string no3::package::GenerateContributingPolicy(const InitOptions& options) {
+  const auto nice_name = BeutifyName(GetPackageName(options.m_package_name));
+
+  std::string content;
+
+  content += R"(# Contributing to the ("{{project_name_nice}}") Project
+  **LEGAL NOTICE**
+
+1. Regarding Your contributions and the legality thereof, all intellectual property 
+   delivered to the ("Maintainers") of this ("{{project_name_nice}}") project is 
+   required to be usable by the ("Maintainers") for any purpose reasonably 
+   foreseeable and/or expected by a software project maintainer. 
+
+2. To decline compliance with clause 1, conspicuously state these declinations at 
+least once per submission that does not comply with clause 1.
+
+In summary, this means granting the project maintainers an eternal, worldwide, nonexclusive,
+revocable license to use Your content to interact with You and the project's community. 
+The actual ownership of Your submissions is not affected by this clause.
+)";
+
+  content = std::regex_replace(content, std::regex(R"(\{\{project_name_nice\}\})"), nice_name);
+
+  return content;
 }
 
 std::string no3::package::GenerateCMakeListsTxt() {
