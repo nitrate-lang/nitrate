@@ -36,6 +36,7 @@
 #include <filesystem>
 #include <fstream>
 #include <impl/Subcommands.hh>
+#include <nitrate-core/CatchAll.hh>
 #include <nitrate-core/LogOStream.hh>
 #include <nitrate-core/Logger.hh>
 
@@ -86,7 +87,7 @@ bool no3::cmd_impl::subcommands::CommandImplConfigParse(ConstArguments, const Mu
   const auto output_file = program->Get<std::string>("--output");
   const auto package_dir = program->Get<std::string>("package");
 
-  if (!std::filesystem::exists(package_dir)) {
+  if (!OMNI_CATCH(false, std::filesystem::exists(package_dir))) {
     Log << "The package does not exist: " << package_dir;
     return false;
   }

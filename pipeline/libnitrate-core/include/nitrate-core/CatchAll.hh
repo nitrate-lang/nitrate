@@ -1,4 +1,3 @@
-
 ////////////////////////////////////////////////////////////////////////////////
 ///                                                                          ///
 ///     .-----------------.    .----------------.     .----------------.     ///
@@ -32,33 +31,16 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#pragma once
+#ifndef __NITRATE_CORE_CATCH_ALL_H__
+#define __NITRATE_CORE_CATCH_ALL_H__
 
-#include <filesystem>
-#include <string>
+#define OMNI_CATCH(__error_value, ...) \
+  [&]() -> decltype(__VA_ARGS__) {     \
+    try {                              \
+      return __VA_ARGS__;              \
+    } catch (...) {                    \
+      return __error_value;            \
+    }                                  \
+  }()
 
-namespace no3::package {
-  enum class PackageCategory { Library, StandardLibrary, Executable, Comptime };
-
-  struct InitOptions {
-    std::string m_package_name;
-    std::string m_package_description;
-    std::string m_package_license;
-    std::string m_package_version;
-    PackageCategory m_package_category;
-  };
-
-  bool InitPackageUsingDefaults(const std::filesystem::path& package_path, const InitOptions& options);
-
-  std::string GenerateReadme(const InitOptions& options);
-  std::string GenerateLicense(const std::string& spdx_license);
-  std::string GenerateSecurityPolicy();
-  std::string GenerateContributingPolicy(const std::string& spdx_license);
-  std::string GenerateCodeOfConduct();
-  std::string GenerateGitKeep();
-  std::string GenerateGitIgnore();
-  std::string GenerateDockerIgnore();
-  std::string GenerateDefaultLibrarySource();
-  std::string GenerateDefaultMainSource();
-  std::string GenerateCMakeListsTxt();
-}  // namespace no3::package
+#endif  // __NITRATE_CORE_CATCH_ALL_H__

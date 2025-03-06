@@ -2,6 +2,7 @@
 #include <readline/readline.h>
 
 #include <filesystem>
+#include <nitrate-core/CatchAll.hh>
 #include <no3/Interpreter.hh>
 
 static std::vector<std::string> SplitCommand(const std::string& command) {
@@ -32,7 +33,7 @@ static std::filesystem::path GetUserDirectory() {
     return {home};
   }
 
-  return std::filesystem::current_path();
+  return OMNI_CATCH("/tmp", std::filesystem::current_path());
 }
 
 int main(int argc, char* argv[]) {

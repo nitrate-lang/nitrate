@@ -35,7 +35,9 @@
 #include <core/PackageConfig.hh>
 #include <core/SPDX.hh>
 #include <core/argparse.hpp>
+#include <filesystem>
 #include <init/InitPackage.hh>
+#include <nitrate-core/CatchAll.hh>
 #include <nitrate-core/LogOStream.hh>
 #include <sstream>
 
@@ -182,9 +184,32 @@ static void DisplayPoliteVersionRejection(const std::string&) {
   Log << Info << "For more information on Semantic Versioning, visit https://semver.org/";
 }
 
-static std::filesystem::path GetNewPackagePath(const std::string& directory, const std::string& package_name) {
-  /// TODO: Implement this function.
-  return std::filesystem::path(directory) / package_name;
+static std::optional<std::filesystem::path> GetNewPackagePath(const std::filesystem::path& directory,
+                                                              const std::string& name) {
+  std::string just_name = name.substr(name.find('/') + 1);
+  size_t attempts = 0;
+
+  while (true) {
+    if (attempts > 0xffff) {
+      Log << Trace << "Refuses to generate a unique package directory name after " << attempts << " attempts.";
+      return std::nullopt;
+    }
+
+    const auto folder_name = (attempts == 0 ? just_name : just_name + "-" + std::to_string(attempts));
+    auto canidate = directory / folder_name;
+
+    Log << Trace << "Checking if the package directory already exists: " << canidate;
+
+    if (OMNI_CATCH(false, std::filesystem::exists(canidate))) {
+      Log << Warning << "The package directory already exists: " << canidate << ". Trying again with a suffix.";
+      attempts++;
+      continue;
+    }
+
+    Log << Trace << "The package directory does not exist: " << canidate;
+
+    return canidate;
+  }
 }
 
 bool no3::Interpreter::PImpl::CommandInit(ConstArguments, const MutArguments& argv) {
@@ -237,15 +262,22 @@ bool no3::Interpreter::PImpl::CommandInit(ConstArguments, const MutArguments& ar
     return false;
   }
 
-  if (!std::filesystem::exists(package_output)) {
+  if (!OMNI_CATCH(false, std::filesystem::exists(package_output))) {
     Log << Trace << "Creating the output directory because it does not exist.";
-    if (!std::filesystem::create_directories(package_output)) {
-      Log << Error << "Failed to create the output directory: " << package_output;
+
+    if (!OMNI_CATCH(false, std::filesystem::create_directories(package_output))) {
+      Log << "Failed to create the output directory: " << package_output;
       return false;
     }
+
+    Log << Trace << "Successfully created the output directory: " << package_output;
   }
 
   const auto package_path = GetNewPackagePath(package_output, package_name);
+  if (!package_path) {
+    Log << "Failed to generate a unique package directory name.";
+    return false;
+  }
 
   InitOptions options;
   options.m_package_name = package_name;
@@ -254,12 +286,13 @@ bool no3::Interpreter::PImpl::CommandInit(ConstArguments, const MutArguments& ar
   options.m_package_version = package_version;
   options.m_package_category = package_category;
 
-  if (!InitPackageUsingDefaults(package_path, options)) {
-    Log << "Failed to initialize the package at: " << package_path;
+  Log << Info << "Initializing the package at: " << package_path.value();
+  if (!InitPackageUsingDefaults(package_path.value(), options)) {
+    Log << "Failed to initialize the package at: " << package_path.value();
     return false;
   }
 
-  Log << "Successfully initialized the package at: " << package_path;
+  Log << Info << "Successfully initialized the package at: " << package_path.value();
 
   return true;
 }
