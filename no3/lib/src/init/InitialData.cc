@@ -34,6 +34,7 @@
 
 #include <core/SPDX.hh>
 #include <init/InitPackage.hh>
+#include <nitrate-core/Assert.hh>
 #include <optional>
 #include <regex>
 #include <sstream>
@@ -318,6 +319,8 @@ may offer a reward for the responsible disclosure of security vulnerabilities.
 tab to report a security issue.
 
 )";
+
+    content = std::regex_replace(content, std::regex(R"(\{\{gh_username\}\})"), github_username.value());
   }
 
   content +=
@@ -335,7 +338,6 @@ Thank you for keeping the ("{{project_name_nice}}") project and its community sa
 *This security policy is auto-generated for the ("{{project_name_nice}}") project.*
 )";
 
-  content = std::regex_replace(content, std::regex(R"(\{\{gh_username\}\})"), github_username.value());
   content = std::regex_replace(content, std::regex(R"(\{\{project_name_nice\}\})"), nice_name);
   content = std::regex_replace(content, std::regex(R"(\{\{project_name\}\})"), name);
 
@@ -406,31 +408,39 @@ std::string no3::package::GenerateReadme(const InitOptions& options) {
 
 )";
 
-  switch (options.m_package_category) {
-    case PackageCategory::Library:
-    case PackageCategory::StandardLibrary: {
-      content += R"(```bash
+  if (gh_username.has_value()) {
+    switch (options.m_package_category) {
+      case PackageCategory::Library:
+      case PackageCategory::StandardLibrary: {
+        content += R"(```bash
 # Change the working directory to your package
 cd <your_project>
 
 # Install this package as a dependency
 nitrate install https://github.com/{{gh_username}}/{{project_name}}
-```
+```)";
+        break;
+      }
 
-)";
-      break;
+      case PackageCategory::Executable: {
+        content += R"(```bash
+nitrate install https://github.com/{{gh_username}}/{{project_name}}
+```)";
+      }
     }
 
-    case PackageCategory::Executable: {
-      content += R"(```bash
-nitrate install https://github.com/{{gh_username}}/{{project_name}}
-```
-
-)";
+    content = std::regex_replace(content, std::regex(R"(\{\{gh_username\}\})"), gh_username.value());
+  } else {
+    if (options.m_package_category == PackageCategory::StandardLibrary) {
+      content += R"(This package should be installed by default with the Nitrate toolchain.)";
+    } else {
+      content += R"(TODO: Write instructions on how to install this package.)";
     }
   }
 
-  content += R"(## Features
+  content += R"(
+
+## Features
 
 | Feature Name | Feature Description                  |
 | ------------ | ------------------------------------ |
@@ -453,7 +463,6 @@ Contributions are welcome! Please submit a pull request or open an issue if you 
 This project is licensed under the **{{project_spdx_license}}** license. See the [LICENSE](LICENSE) file for more information.
 )";
 
-  content = std::regex_replace(content, std::regex(R"(\{\{gh_username\}\})"), gh_username.value());
   content = std::regex_replace(content, std::regex(R"(\{\{project_name\}\})"), name);
   content = std::regex_replace(content, std::regex(R"(\{\{project_name_nice\}\})"), nice_name);
   content = std::regex_replace(content, std::regex(R"(\{\{project_escaped_spdx_license\}\})"), shields_io_license);

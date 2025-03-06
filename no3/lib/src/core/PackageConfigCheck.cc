@@ -63,7 +63,7 @@ bool PackageConfig::ValidatePackageName(const std::string& package_name, bool ma
 
   // Only standard library packages are allowed to omit their Git provider prefix.
   const auto package_username = package_name.substr(1, package_name.find('/') - 1);
-  if (maybe_standard_lib && package_username.find('-') == std::string::npos) {
+  if (!maybe_standard_lib && package_username.find('-') == std::string::npos) {
     Log << Trace << "Package name failed format validation [missing Git provider prefix]: \"" << package_name << "\"";
     return false;
   }
