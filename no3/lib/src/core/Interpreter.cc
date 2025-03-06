@@ -207,12 +207,12 @@ NCC_EXPORT Interpreter::Interpreter(OutputHandler output_handler) noexcept {
   // We attach the subscriber to the global logger, prior to initializing
   // to ensure that initialization messages are captured in the interpreter's
   // output.
-  const auto log_sub_id = Log.Subscribe([&](auto msg, auto sev, const auto& ec) {
-    if (sev < GetMinimumLogLevel()) {
+  const auto log_sub_id = Log.Subscribe([&](const LogMessage& m) {
+    if (m.m_sev < GetMinimumLogLevel()) {
       return;
     }
 
-    output_handler(ec.Format(msg, sev));
+    output_handler(m.m_by.Format(m.m_message, m.m_sev));
   });
 
   // The PImpl constructor will automatically initialize all required

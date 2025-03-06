@@ -16,24 +16,24 @@ struct LogOutput {
   Sev m_level;
 };
 
-#define TEST_RAW_LOG(__LEVEL)                                                          \
-  TEST(Core, Log_Mono_##__LEVEL) {                                                     \
-    if (auto lib_rc = CoreLibrary.GetRC()) {                                           \
-      Log.SuspendAll();                                                                \
-      LogOutput log_output;                                                            \
-      auto subid = Log.Subscribe([&](const std::string& msg, Sev sev, const ECBase&) { \
-        log_output.m_text = msg;                                                       \
-        log_output.m_level = sev;                                                      \
-      });                                                                              \
-                                                                                       \
-      Log << __LEVEL << LogContent;                                                    \
-                                                                                       \
-      Log.Unsubscribe(subid);                                                          \
-      Log.ResumeAll();                                                                 \
-                                                                                       \
-      ASSERT_EQ(log_output.m_text, LogContent);                                        \
-      ASSERT_EQ(log_output.m_level, __LEVEL);                                          \
-    }                                                                                  \
+#define TEST_RAW_LOG(__LEVEL)                                    \
+  TEST(Core, Log_Mono_##__LEVEL) {                               \
+    if (auto lib_rc = CoreLibrary.GetRC()) {                     \
+      Log.SuspendAll();                                          \
+      LogOutput log_output;                                      \
+      auto subid = Log.Subscribe([&](const ncc::LogMessage& m) { \
+        log_output.m_text = m.m_message;                         \
+        log_output.m_level = m.m_sev;                            \
+      });                                                        \
+                                                                 \
+      Log << __LEVEL << LogContent;                              \
+                                                                 \
+      Log.Unsubscribe(subid);                                    \
+      Log.ResumeAll();                                           \
+                                                                 \
+      ASSERT_EQ(log_output.m_text, LogContent);                  \
+      ASSERT_EQ(log_output.m_level, __LEVEL);                    \
+    }                                                            \
   }
 
 #define TEST_ANSI_LOG(__LEVEL, __INPUT_STRING, __OUTPUT_STRING)                                                        \
@@ -41,8 +41,7 @@ struct LogOutput {
     if (auto lib_rc = CoreLibrary.GetRC()) {                                                                           \
       Log.SuspendAll();                                                                                                \
       std::string log_output;                                                                                          \
-      auto subid =                                                                                                     \
-          Log.Subscribe([&](const std::string& msg, Sev sev, const ECBase& ec) { log_output = ec.Format(msg, sev); }); \
+      auto subid = Log.Subscribe([&](const ncc::LogMessage& m) { log_output = m.m_by.Format(m.m_message, m.m_sev); }); \
                                                                                                                        \
       Log << __LEVEL << __INPUT_STRING;                                                                                \
       Log.Unsubscribe(subid);                                                                                          \
@@ -78,9 +77,9 @@ TEST(Core, Log_Unsubscribe_Okay) {
   if (auto lib_rc = CoreLibrary.GetRC()) {
     Log.SuspendAll();
     LogOutput log_output;
-    auto subid = Log.Subscribe([&](const std::string& msg, Sev sev, const ECBase&) {
-      log_output.m_text = msg;
-      log_output.m_level = sev;
+    auto subid = Log.Subscribe([&](const ncc::LogMessage& m) {
+      log_output.m_text = m.m_message;
+      log_output.m_level = m.m_sev;
     });
 
     Log << Info << LogContent;
@@ -99,9 +98,9 @@ TEST(Core, Log_Ubsubscribe_Invalid) {
     Log.Unsubscribe(6969);  // Invalid filter id
 
     LogOutput log_output;
-    auto subid = Log.Subscribe([&](const std::string& msg, Sev sev, const ECBase&) {
-      log_output.m_text = msg;
-      log_output.m_level = sev;
+    auto subid = Log.Subscribe([&](const ncc::LogMessage& m) {
+      log_output.m_text = m.m_message;
+      log_output.m_level = m.m_sev;
     });
 
     Log << Info << LogContent;
@@ -117,7 +116,7 @@ TEST(Core, Log_Ubsubscribe_Invalid) {
 TEST(Core, Log_Unsubscribe_all) {
   if (auto lib_rc = CoreLibrary.GetRC()) {
     std::vector<LogOutput> log_outputs;
-    auto sub_func = [&](const std::string& msg, Sev sev, const ECBase&) { log_outputs.push_back({msg, sev}); };
+    auto sub_func = [&](const ncc::LogMessage& m) { log_outputs.push_back({m.m_message, m.m_sev}); };
 
     Log.Subscribe(sub_func);
     auto subid_2 = Log.Subscribe(sub_func);
@@ -156,7 +155,7 @@ TEST(Core, Log_EC_ToJson) {
 
   if (auto lib_rc = CoreLibrary.GetRC()) {
     std::string json_output;
-    auto subid = Log.Subscribe([&](const std::string&, Sev, const ECBase& ec) { json_output = ec.AsJson(); });
+    auto subid = Log.Subscribe([&](const ncc::LogMessage& m) { json_output = m.m_by.AsJson(); });
 
     Log << TestError << Info << LogContent;
 

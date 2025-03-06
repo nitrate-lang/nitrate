@@ -31,4 +31,10 @@ add_dependencies(nitrate-testing
   nitrate-core
 )
 
+add_executable(nitrate-test main.cc)
+target_link_libraries(nitrate-test nitrate-testing)
+add_dependencies(nitrate-test nitrate-testing)
+add_test(NAME nitrate-test COMMAND nitrate-test)
+
 install(TARGETS nitrate-testing DESTINATION lib)
+install(TARGETS nitrate-test DESTINATION bin)
