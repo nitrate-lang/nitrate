@@ -175,24 +175,6 @@ static bool InitPackageDirectoryStructure(const std::filesystem::path& package_p
   return true;
 }
 
-static bool InitPackageDefaultConfigure(git_repository& repo) {
-  git_config* config = nullptr;
-  if (git_repository_config(&config, &repo) != 0) {
-    Log << "git_repository_config(): Failed to get the repository configuration.";
-    return false;
-  }
-
-  if (git_config_set_string(config, "no3.package.name", "no3-package") != 0) {
-    Log << "git_config_set_string(): Failed to set the package name.";
-    return false;
-  }
-
-  git_config_free(config);
-
-  /// TODO: Implement this function.
-  return true;
-}
-
 static bool InitPackageRepository(const std::filesystem::path& package_path) {
   Log << Trace << "Initializing a git repository in: " << package_path;
 
@@ -202,15 +184,9 @@ static bool InitPackageRepository(const std::filesystem::path& package_path) {
     return false;
   }
 
-  Log << Trace << "Successfully initialized a git repository in: " << package_path;
-
-  if (!InitPackageDefaultConfigure(*repo)) {
-    git_repository_free(repo);
-    Log << "Failed to configure the default git repository settings.";
-    return false;
-  }
-
   git_repository_free(repo);
+
+  Log << Trace << "Successfully initialized a git repository in: " << package_path;
 
   Log << Trace << "Successfully created package repository in: " << package_path;
 

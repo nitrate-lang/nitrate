@@ -31,6 +31,7 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
+#include <any>
 #include <core/InterpreterImpl.hh>
 #include <core/PackageConfig.hh>
 #include <core/SPDX.hh>
@@ -120,7 +121,7 @@ static std::optional<std::filesystem::path> GetNewPackagePath(const std::filesys
     }
 
     const auto folder_name = (attempts == 0 ? just_name : just_name + "-" + std::to_string(attempts));
-    auto canidate = directory / folder_name;
+    const std::filesystem::path canidate = directory / folder_name;
 
     Log << Trace << "Checking if the package directory already exists: " << canidate;
 
@@ -138,7 +139,8 @@ static std::optional<std::filesystem::path> GetNewPackagePath(const std::filesys
 
     Log << Trace << "The package directory does not exist: " << canidate;
 
-    return canidate;
+    return std::any_cast<std::filesystem::path>(
+        OMNI_CATCH(std::filesystem::absolute(canidate).lexically_normal()).value_or(canidate));
   }
 }
 
@@ -311,6 +313,11 @@ bool no3::Interpreter::PImpl::CommandInit(ConstArguments, const MutArguments& ar
   Log << Info << "Initializing the package at: " << package_path.value();
   if (!InitPackageUsingDefaults(package_path.value(), options)) {
     Log << "Failed to initialize the package at: " << package_path.value();
+    auto removed = OMNI_CATCH(std::filesystem::remove_all(package_path.value()));
+    if (!removed.has_value() || !std::any_cast<bool>(*removed)) {
+      Log << Error << "Failed to remove the package directory: " << package_path.value();
+    }
+
     return false;
   }
 
