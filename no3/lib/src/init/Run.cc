@@ -157,7 +157,7 @@ Optional arguments:
   --exe           Initialize a new Nitrate executable package. 
   --comptime      Initialize a new Nitrate comptime package. 
   -b, --brief     A description of the package. [nargs=0..1] [default: "No description was provided by the package creator."]
-  -l, --license   The package SPDX license identifier. [nargs=0..1] [default: "LGPL-2.1+"]
+  -l, --license   The package SPDX license identifier. [nargs=0..1] [default: "MIT"]
   -v, --version   Initial Semantic Version of the package. [nargs=0..1] [default: "0.1.0"]
   -o, --output    The directory to create the package folder in. [nargs=0..1] [default: "."]
 )";
@@ -214,7 +214,7 @@ static bool GetCheckedArguments(const argh::parser& cmdl, std::string& package_n
   }
 
   if (package_license.empty()) {
-    package_license = "LGPL-2.1+";
+    package_license = "MIT";
   }
 
   if (package_version.empty()) {

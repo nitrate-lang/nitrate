@@ -26,6 +26,7 @@ parts:
       - rapidjson-dev
       - nlohmann-json3-dev
       - libboost-all-dev
+      - libcurlpp-dev
       - libgit2-dev
       - libssl-dev
       - libreadline-dev
@@ -41,6 +42,7 @@ parts:
       - libunwind8
       - libprotobuf32t64
       - libboost-iostreams1.83.0
+      - libcurlpp0t64
     override-stage: |
       snapcraftctl stage
       rm -rf $SNAPCRAFT_PART_INSTALL/usr/include

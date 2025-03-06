@@ -32,6 +32,7 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
+#include <core/SPDX.hh>
 #include <init/InitPackage.hh>
 #include <optional>
 #include <regex>
@@ -340,7 +341,7 @@ Thank you for keeping the ("{{project_name_nice}}") project and its community sa
   return content;
 }
 
-static std::string URLEncode(std::string text) {
+static std::string URLEncode(std::string_view text) {
   std::stringstream ss;
 
   for (const auto& c : text) {
@@ -366,7 +367,7 @@ std::string no3::package::GenerateReadme(const InitOptions& options) {
   const auto shields_io_license = ShieldsIOEscapeContent(options.m_package_license);
   const auto spdx_license = options.m_package_license;
   const auto project_description = options.m_package_description;
-  const auto project_category = [&]() {
+  const auto* project_category = [&]() {
     switch (options.m_package_category) {
       case PackageCategory::Library:
         return "library";
@@ -446,11 +447,6 @@ This project is licensed under the **{{project_spdx_license}}** license. See the
   return content;
 }
 
-std::string no3::package::GenerateLicense(const std::string& spdx_license) {
-  /// TODO: Generate a license file.
-  return "";
-}
-
 std::string no3::package::GenerateContributingPolicy(const InitOptions& options) {
   const auto nice_name = BeutifyName(GetPackageName(options.m_package_name));
 
@@ -480,4 +476,8 @@ The actual ownership of Your submissions is not affected by this clause.
 std::string no3::package::GenerateCMakeListsTxt() {
   /// TODO: Generate a CMakeLists.txt file.
   return "";
+}
+
+std::string no3::package::GenerateLicense(const std::string& spdx_license) {
+  return constants::GetSPDXLicenseText(spdx_license).value_or("");
 }

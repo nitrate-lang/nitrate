@@ -36,6 +36,7 @@
 #include <nitrate-emit/Lib.h>
 
 #include <atomic>
+#include <curlpp/cURLpp.hpp>
 #include <iostream>
 #include <memory>
 #include <nitrate-core/Init.hh>
@@ -186,6 +187,8 @@ static bool PerformInitialize(std::ostream& log) {
     return false;
   }
 
+  curlpp::initialize(CURL_GLOBAL_ALL);
+
   if (git_libgit2_init() <= 0) {
     log << "Failed to initialize libgit2" << std::endl;
     return false;
@@ -204,7 +207,7 @@ static void PerformDeinitialize() {
   std::lock_guard<std::mutex> lock(RCInitializationContextMutex);
 
   git_libgit2_shutdown();
-
+  // curlpp is not refcounted - curlpp::terminate();
   QcodeLibDeinit();
   ir::IRLibrary.DeinitRC();
   parse::ParseLibrary.DeinitRC();

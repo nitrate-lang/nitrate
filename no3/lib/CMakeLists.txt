@@ -1,9 +1,12 @@
 cmake_minimum_required(VERSION 3.15)
-project(libno3 CXX)
+project(libnitrate-tool CXX)
 
 find_library(libyaml_cpp libyaml-cpp.a REQUIRED)
 find_library(libgit2 git2 REQUIRED)
 find_library(libboost_streams boost_iostreams REQUIRED)
+find_library(libcurlpp curlpp REQUIRED)
+find_library(libboost_filesystem boost_filesystem REQUIRED)
+find_library(libunwind unwind REQUIRED)
 
 #================== COMPILE PROTOBUF ==================
 set(PROTOBUF_SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/src/core/PackageConfigFormat.proto)
@@ -27,6 +30,7 @@ set(CXX_SOURCES ${CXX_SOURCES} ${PROTOBUF_SOURCE_CC})
 
 #================== SET BUILD FLAGS ==================
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-exceptions -Wno-error=overlength-strings")
+set_source_files_properties(src/core/SPDX-API.cc PROPERTIES COMPILE_FLAGS "-frtti -fexceptions")
 
 add_library(nitrate-tool ${CXX_SOURCES})
 
@@ -49,11 +53,12 @@ target_link_libraries(nitrate-tool PUBLIC
   "nitrate-lexer"
   "nitrate-seq"
   "nitrate-core"
-  "unwind"
+  "${libunwind}"
   "${libyaml_cpp}"
   "${libgit2}"
   "${libboost_streams}"
-  "boost_filesystem"
+  "${libcurlpp}"
+  "${libboost_filesystem}"
 )
 add_dependencies(nitrate-tool
   nitrate-testing
