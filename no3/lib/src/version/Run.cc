@@ -38,11 +38,10 @@
 #include <boost/uuid/uuid.hpp>
 #include <boost/uuid/uuid_io.hpp>
 #include <core/InterpreterImpl.hh>
-#include <core/argparse.hpp>
+#include <core/argh.hh>
 #include <fstream>
 #include <iomanip>
 #include <iostream>
-#include <memory>
 #include <nitrate-core/Init.hh>
 #include <nitrate-core/LogOStream.hh>
 #include <nitrate-ir/Init.hh>
@@ -81,82 +80,6 @@ static const std::string NITRATE_IR_BETA_OPT = "IRBetaOpt";
 static const std::string NITRATE_IR_GAMMA = "IRGamma";
 static const std::string NITRATE_IR_GAMMA_OPT = "IRGammaOpt";
 static const std::string NITRATE_CODEGEN = "Codegen";
-
-static std::unique_ptr<argparse::ArgumentParser> CreateArgumentParser(bool& did_default) {
-  auto program = std::make_unique<argparse::ArgumentParser>(ncc::clog, did_default, "version", "1.0",
-                                                            argparse::default_arguments::help);
-
-  program->AddArgument("--of", "-O")
-      .Help("The software component to include version info for")
-      .Choices(NITRATE_CORE, NITRATE_LEXER, NITRATE_SEQUENCER, NITRATE_PARSER, NITRATE_IR_ALPHA, NITRATE_IR_ALPHA_OPT,
-               NITRATE_IR_BETA, NITRATE_IR_BETA_OPT, NITRATE_IR_GAMMA, NITRATE_IR_GAMMA_OPT, NITRATE_CODEGEN)
-      .Append();
-
-  program->AddArgument("--system-info", "-S")
-      .Help("Include information about the local system")
-      .ImplicitValue(true)
-      .DefaultValue(false);
-
-  program->AddArgument("--minify", "-C").Help("Minify the output").ImplicitValue(true).DefaultValue(false);
-
-  auto& exclude_group = program->AddMutuallyExclusiveGroup(false);
-  exclude_group.AddArgument("--brief", "-B")
-      .Help("Short human-readable output")
-      .ImplicitValue(true)
-      .DefaultValue(false);
-  exclude_group.AddArgument("--json", "-J").Help("Output in JSON format").ImplicitValue(true).DefaultValue(false);
-
-  return program;
-}
-
-static std::optional<std::vector<SoftwareComponent>> GetSoftwareComponents(const argparse::ArgumentParser& program) {
-  static const std::unordered_map<std::string_view, SoftwareComponent> component_map = {
-      {NITRATE_CORE, SoftwareComponent::Core},           {NITRATE_LEXER, SoftwareComponent::Lexer},
-      {NITRATE_SEQUENCER, SoftwareComponent::Sequencer}, {NITRATE_PARSER, SoftwareComponent::Parser},
-      {NITRATE_IR_ALPHA, SoftwareComponent::IRAlpha},    {NITRATE_IR_ALPHA_OPT, SoftwareComponent::AlphaOptimizer},
-      {NITRATE_IR_BETA, SoftwareComponent::IRBeta},      {NITRATE_IR_BETA_OPT, SoftwareComponent::BetaOptimizer},
-      {NITRATE_IR_GAMMA, SoftwareComponent::IRGamma},    {NITRATE_IR_GAMMA_OPT, SoftwareComponent::GammaOptimizer},
-      {NITRATE_CODEGEN, SoftwareComponent::Codegen},
-  };
-
-  std::vector<std::string> params;
-  try {
-    if (program.IsUsed("--of")) {
-      params = program.Get<std::vector<std::string>>("--of");
-    }
-  } catch (std::bad_any_cast&) {
-    // I can't figure out the dynamic typing bug in ArgParser/my code.
-    // If a single --of is provided with no value, it causes a type error.
-    // This catch block is a workaround.
-  }
-
-  std::vector<SoftwareComponent> components;
-  if (!params.empty()) {
-    for (const auto& of : params) {
-      auto it = component_map.find(of);
-      if (it == component_map.end()) {
-        Log << "Unknown software component: " << of;
-        return std::nullopt;
-      }
-
-      components.push_back(it->second);
-    }
-  } else {
-    components.push_back(SoftwareComponent::Core);
-    components.push_back(SoftwareComponent::Lexer);
-    components.push_back(SoftwareComponent::Sequencer);
-    components.push_back(SoftwareComponent::Parser);
-    components.push_back(SoftwareComponent::IRAlpha);
-    components.push_back(SoftwareComponent::AlphaOptimizer);
-    components.push_back(SoftwareComponent::IRBeta);
-    components.push_back(SoftwareComponent::BetaOptimizer);
-    components.push_back(SoftwareComponent::IRGamma);
-    components.push_back(SoftwareComponent::GammaOptimizer);
-    components.push_back(SoftwareComponent::Codegen);
-  }
-
-  return components;
-}
 
 struct ComponentManifest {
   std::string_view m_component_name;
@@ -499,41 +422,95 @@ static std::string GetVersionUsingBrief(const nlohmann::ordered_json& version_ar
   return brief_log.str();
 }
 
-bool no3::Interpreter::PImpl::CommandVersion(ConstArguments, const MutArguments& argv) {
-  bool did_default;
-  auto program = CreateArgumentParser(did_default);
+static void DisplayHelp() {
+  std::string_view message = R"(Usage: version [--help] [--of VAR]... [--system-info] [--minify] [[--brief]|[--json]]
 
-  try {
-    program->ParseArgs(argv);
-  } catch (const std::exception& e) {
-    if (did_default) {
-      return true;
+Optional arguments:
+  -h, --help         shows help message and exits 
+  -O, --of           The software component to include version info for [may be repeated]
+  -S, --system-info  Include information about the local system 
+  -C, --minify       Minify the output 
+  -B, --brief        Short human-readable output 
+  -J, --json         Output in JSON format
+)";
+
+  Log << Raw << message;
+}
+
+static std::optional<std::vector<SoftwareComponent>> GetSoftwareComponents(const argh::parser& program) {
+  static const std::unordered_map<std::string_view, SoftwareComponent> component_map = {
+      {NITRATE_CORE, SoftwareComponent::Core},           {NITRATE_LEXER, SoftwareComponent::Lexer},
+      {NITRATE_SEQUENCER, SoftwareComponent::Sequencer}, {NITRATE_PARSER, SoftwareComponent::Parser},
+      {NITRATE_IR_ALPHA, SoftwareComponent::IRAlpha},    {NITRATE_IR_ALPHA_OPT, SoftwareComponent::AlphaOptimizer},
+      {NITRATE_IR_BETA, SoftwareComponent::IRBeta},      {NITRATE_IR_BETA_OPT, SoftwareComponent::BetaOptimizer},
+      {NITRATE_IR_GAMMA, SoftwareComponent::IRGamma},    {NITRATE_IR_GAMMA_OPT, SoftwareComponent::GammaOptimizer},
+      {NITRATE_CODEGEN, SoftwareComponent::Codegen},
+  };
+
+  std::vector<SoftwareComponent> components;
+  for (const auto& [_, value] : program.params({"O", "of"})) {
+    for (const auto& component_name : value) {
+      auto map_it = component_map.find(component_name);
+      if (map_it == component_map.end()) {
+        Log << "Unknown software component: " << component_name;
+        return std::nullopt;
+      }
+
+      components.push_back(map_it->second);
     }
-    Log << e.what();
-    return false;
   }
 
-  if (did_default) {
+  if (components.empty()) {
+    components.push_back(SoftwareComponent::Core);
+    components.push_back(SoftwareComponent::Lexer);
+    components.push_back(SoftwareComponent::Sequencer);
+    components.push_back(SoftwareComponent::Parser);
+    components.push_back(SoftwareComponent::IRAlpha);
+    components.push_back(SoftwareComponent::AlphaOptimizer);
+    components.push_back(SoftwareComponent::IRBeta);
+    components.push_back(SoftwareComponent::BetaOptimizer);
+    components.push_back(SoftwareComponent::IRGamma);
+    components.push_back(SoftwareComponent::GammaOptimizer);
+    components.push_back(SoftwareComponent::Codegen);
+  }
+
+  return components;
+}
+
+bool no3::Interpreter::PImpl::CommandVersion(ConstArguments, const MutArguments& argv) {
+  argh::parser cmdl;
+  cmdl.add_params({"help", "of", "system-info", "minify", "brief", "json"});
+  cmdl.parse(argv, argh::parser::SINGLE_DASH_IS_MULTIFLAG);
+
+  if (cmdl[{"-h", "--help"}]) {
+    DisplayHelp();
     return true;
   }
 
-  const auto minify = program->Get<bool>("--minify");
-  const auto system_info = program->Get<bool>("--system-info");
-  const auto json_mode = program->Get<bool>("--json");
-  const auto components = GetSoftwareComponents(*program);
+  bool system_info = cmdl[{"-S", "--system-info"}];
+  bool minify = cmdl[{"-C", "--minify"}];
+  bool brief = cmdl[{"-B", "--brief"}];
+  bool json = cmdl[{"-J", "--json"}];
+
+  const auto components = GetSoftwareComponents(cmdl);
   if (!components) {
-    Log << Raw << *program << "\n";
+    DisplayHelp();
     return false;
   }
 
-  if (!json_mode && (system_info || minify)) {
+  if (!json && (system_info || minify)) {
     Log << "The --system-info and --minify options are only valid when using --json";
+    return false;
+  }
+
+  if (brief && json) {
+    Log << "The --brief and --json options are mutually exclusive";
     return false;
   }
 
   const auto version_array = GetSoftwareVersionArray(*components);
 
-  if (json_mode) {
+  if (json) {
     Log << Raw << GetVersionUsingJson(minify, system_info, version_array) << "\n";
   } else {
     Log << Raw << GetVersionUsingBrief(version_array) << "\n";
