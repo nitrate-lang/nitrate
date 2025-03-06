@@ -52,13 +52,13 @@ static bool CreateDirectories(const std::filesystem::path& path) {
     return false;
   }
 
-  if (std::any_cast<bool>(*dirs_exists)) {
+  if (*dirs_exists) {
     Log << Trace << "The directories already exist: " << path;
     return true;
   }
 
-  auto dirs_created = OMNI_CATCH(std::filesystem::create_directories(path));
-  if (!dirs_created.has_value() || !std::any_cast<bool>(*dirs_created)) {
+  auto dirs_created = OMNI_CATCH(std::filesystem::create_directories(path)).value_or(false);
+  if (!dirs_created) {
     Log << "Failed to create directories at: " << path;
     return false;
   }
@@ -77,7 +77,7 @@ static bool CreateLocalFile(const std::filesystem::path& path, std::string_view 
     return false;
   }
 
-  if (std::any_cast<bool>(*file_exists)) {
+  if (*file_exists) {
     Log << Warning << "The file already exists: " << path;
     return false;
   }
@@ -202,7 +202,7 @@ bool no3::package::InitPackageUsingDefaults(const std::filesystem::path& package
     return false;
   }
 
-  if (std::any_cast<bool>(*package_path_exists)) {
+  if (*package_path_exists) {
     Log << Warning << "The package directory already exists: " << package_path;
     return false;
   }

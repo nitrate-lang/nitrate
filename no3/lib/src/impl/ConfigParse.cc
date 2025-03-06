@@ -106,7 +106,7 @@ bool no3::cmd_impl::subcommands::CommandImplConfigParse(ConstArguments, const Mu
     return false;
   }
 
-  if (!std::any_cast<bool>(*package_dir_exists)) {
+  if (!package_dir_exists.value()) {
     Log << "The package does not exist: " << package_dir;
     return false;
   }

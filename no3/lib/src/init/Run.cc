@@ -131,7 +131,7 @@ static std::optional<std::filesystem::path> GetNewPackagePath(const std::filesys
       return std::nullopt;
     }
 
-    if (std::any_cast<bool>(*status)) {
+    if (*status) {
       Log << Warning << "The package directory already exists: " << canidate << ". Trying again with a suffix.";
       attempts++;
       continue;
@@ -139,8 +139,7 @@ static std::optional<std::filesystem::path> GetNewPackagePath(const std::filesys
 
     Log << Trace << "The package directory does not exist: " << canidate;
 
-    return std::any_cast<std::filesystem::path>(
-        OMNI_CATCH(std::filesystem::absolute(canidate).lexically_normal()).value_or(canidate));
+    return OMNI_CATCH(std::filesystem::absolute(canidate).lexically_normal()).value_or(canidate);
   }
 }
 
@@ -285,11 +284,11 @@ bool no3::Interpreter::PImpl::CommandInit(ConstArguments, const MutArguments& ar
     return false;
   }
 
-  if (!std::any_cast<bool>(*package_output_exists)) {
+  if (!*package_output_exists) {
     Log << Trace << "Creating the output directory because it does not exist.";
 
-    auto package_output_created = OMNI_CATCH(std::filesystem::create_directories(package_output));
-    if (!package_output_created.has_value() || !std::any_cast<bool>(*package_output_created)) {
+    auto package_output_created = OMNI_CATCH(std::filesystem::create_directories(package_output)).value_or(false);
+    if (!package_output_created) {
       Log << "Failed to create the output directory: " << package_output;
       return false;
     }
@@ -313,8 +312,8 @@ bool no3::Interpreter::PImpl::CommandInit(ConstArguments, const MutArguments& ar
   Log << Info << "Initializing the package at: " << package_path.value();
   if (!InitPackageUsingDefaults(package_path.value(), options)) {
     Log << "Failed to initialize the package at: " << package_path.value();
-    auto removed = OMNI_CATCH(std::filesystem::remove_all(package_path.value()));
-    if (!removed.has_value() || !std::any_cast<bool>(*removed)) {
+    auto removed = OMNI_CATCH(std::filesystem::remove_all(package_path.value())).value_or(0);
+    if (removed == 0) {
       Log << Error << "Failed to remove the package directory: " << package_path.value();
     }
 

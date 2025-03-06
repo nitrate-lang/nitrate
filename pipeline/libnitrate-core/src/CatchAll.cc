@@ -40,7 +40,7 @@
 #error "This file requires exceptions to be enabled."
 #endif
 
-NCC_EXPORT std::optional<std::any> ncc::CatchAll(const std::function<std::any()> &expr) {
+NCC_EXPORT std::optional<std::any> ncc::detail::CatchAll(const std::function<std::any()> &expr) {
   try {
     return expr();
   } catch (...) {
