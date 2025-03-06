@@ -32,7 +32,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <core/PackageConfig.hh>
-#include <core/argparse.hpp>
+#include <core/argh.hh>
 #include <filesystem>
 #include <fstream>
 #include <impl/Subcommands.hh>
@@ -43,49 +43,62 @@
 using namespace ncc;
 using namespace no3::cmd_impl;
 
-static std::unique_ptr<argparse::ArgumentParser> CreateArgumentParser(bool& did_default) {
-  auto program = std::make_unique<argparse::ArgumentParser>(ncc::clog, did_default, "config-parse", "1.0",
-                                                            argparse::default_arguments::help);
+static void DisplayHelp() {
+  std::string_view message = R"(Usage: config-parse [--help] [--minify] [--to VAR] [--output VAR] package
 
-  program->AddArgument("--minify", "-C").Help("Minify the output JSON").ImplicitValue(true).DefaultValue(false);
+Positional arguments:
+  package       The package to parse the configuration for [required]
 
-  program->AddArgument("--to", "-t")
-      .Help("Translate the configuration to another format")
-      .Choices("json", "protobuf")
-      .DefaultValue("json");
+Optional arguments:
+  -h, --help    shows help message and exits 
+  -C, --minify  Minify the output JSON 
+  -t, --to      Translate the configuration to another format [nargs=0..1] [default: "json"]
+  -o, --output  The output file to write the configuration to [nargs=0..1] [default: "-"]
+)";
 
-  program->AddArgument("--output", "-o")
-      .Help("The output file to write the configuration to")
-      .DefaultValue(std::string("-"));
-
-  program->AddArgument("package").Help("The package to parse the configuration for").Required();
-
-  return program;
+  Log << Raw << message;
 }
 
 bool no3::cmd_impl::subcommands::CommandImplConfigParse(ConstArguments, const MutArguments& argv) {
-  bool did_default;
-  const auto program = CreateArgumentParser(did_default);
+  argh::parser cmdl;
+  cmdl.add_params({"help", "minify", "C", "to", "t", "output", "o"});
+  cmdl.parse(argv, argh::parser::SINGLE_DASH_IS_MULTIFLAG);
 
-  try {
-    program->ParseArgs(argv);
-  } catch (const std::exception& e) {
-    if (did_default) {
-      return true;
-    }
-
-    Log << e.what();
-    return false;
-  }
-
-  if (did_default) {
+  if (cmdl[{"-h", "--help"}]) {
+    DisplayHelp();
     return true;
   }
 
-  const auto minify = program->Get<bool>("--minify");
-  const auto to_format = program->Get<std::string>("--to");
-  const auto output_file = program->Get<std::string>("--output");
-  const auto package_dir = program->Get<std::string>("package");
+  std::string to_format;
+  std::string output_file;
+  std::string package_dir;
+  cmdl({"-t", "--to"}) >> to_format;
+  cmdl({"-o", "--output"}) >> output_file;
+  cmdl(1) >> package_dir;
+  const bool minify = cmdl[{"-C", "--minify"}];
+
+  if (package_dir.empty()) {
+    Log << "package: 1 argument(s) expected. 0 provided.";
+    return false;
+  }
+
+  if (to_format.empty()) {
+    to_format = "json";
+  }
+
+  if (output_file.empty()) {
+    output_file = "-";
+  }
+
+  if (to_format != "json" && to_format != "protobuf") {
+    Log << "to: invalid choice: " << to_format << " (choose from 'json', 'protobuf')";
+    return false;
+  }
+
+  if (minify && to_format != "json") {
+    Log << "minify: option only valid for JSON output";
+    return false;
+  }
 
   if (!OMNI_CATCH(false, std::filesystem::exists(package_dir))) {
     Log << "The package does not exist: " << package_dir;
