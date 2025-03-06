@@ -145,17 +145,16 @@ static std::optional<std::filesystem::path> GetNewPackagePath(const std::filesys
 
 static void DisplayHelp() {
   std::string_view help =
-      R"(Usage: impl [--help] [[--lib]|[--standard-lib]|[--exe]|[--comptime]] [--brief VAR] [--license VAR] [--version VAR] [--output VAR] package-name
+      R"(Usage: impl [--help] [[--lib]|[--standard-lib]|[--exe]] [--brief VAR] [--license VAR] [--version VAR] [--output VAR] package-name
 
 Positional arguments:
   package-name    The name of the package to initialize. [required]
 
 Optional arguments:
-  -h, --help      shows help message and exits 
-  --lib           Initialize a new Nitrate library package. 
-  --standard-lib  Initialize a new Nitrate offical standard library component package. 
-  --exe           Initialize a new Nitrate executable package. 
-  --comptime      Initialize a new Nitrate comptime package. 
+  -h, --help      shows help message and exits
+  --lib           Initialize a new Nitrate library package.
+  --standard-lib  Initialize a new Nitrate offical standard library component package.
+  --exe           Initialize a new Nitrate executable package.
   -b, --brief     A description of the package. [nargs=0..1] [default: "No description was provided by the package creator."]
   -l, --license   The package SPDX license identifier. [nargs=0..1] [default: "MIT"]
   -v, --version   Initial Semantic Version of the package. [nargs=0..1] [default: "0.1.0"]
@@ -176,7 +175,6 @@ static bool GetCheckedArguments(const argh::parser& cmdl, std::string& package_n
   const bool said_lib = cmdl[{"--lib"}];
   const bool said_stdlib = cmdl[{"--standard-lib"}];
   const bool said_exe = cmdl[{"--exe"}];
-  const bool said_comptime = cmdl[{"--comptime"}];
   package_category = [&]() {
     if (said_lib) {
       return PackageCategory::Library;
@@ -186,11 +184,7 @@ static bool GetCheckedArguments(const argh::parser& cmdl, std::string& package_n
       return PackageCategory::StandardLibrary;
     }
 
-    if (said_exe) {
-      return PackageCategory::Executable;
-    }
-
-    return PackageCategory::Comptime;
+    return PackageCategory::Executable;
   }();
 
   if (package_name.empty()) {
@@ -198,14 +192,14 @@ static bool GetCheckedArguments(const argh::parser& cmdl, std::string& package_n
     return false;
   }
 
-  int type_sum = (int)said_lib + (int)said_stdlib + (int)said_exe + (int)said_comptime;
+  int type_sum = (int)said_lib + (int)said_stdlib + (int)said_exe;
   if (type_sum == 0) {
-    Log << "One of '--exe', '--lib', '--comptime', '--standard-lib' is required.";
+    Log << "One of '--exe', '--lib', '--standard-lib' is required.";
     return false;
   }
 
   if (type_sum != 1) {
-    Log << "Arguments '--exe', '--lib', '--comptime', '--standard-lib' are mutually exclusive.";
+    Log << "Arguments '--exe', '--lib', '--standard-lib' are mutually exclusive.";
     return false;
   }
 
@@ -305,7 +299,7 @@ bool no3::Interpreter::PImpl::CommandInit(ConstArguments, const MutArguments& ar
   InitOptions options;
   options.m_package_name = package_name;
   options.m_package_description = package_description;
-  options.m_package_license = package_license;
+  options.m_package_license = constants::FindClosestSPDXLicense(package_license);  // convert to proper letter case
   options.m_package_version = package_version;
   options.m_package_category = package_category;
 

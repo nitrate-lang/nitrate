@@ -62,7 +62,7 @@ bool Interpreter::PImpl::CommandHelp(ConstArguments, const MutArguments&) {
 │ * Copyright (C) 2025 Wesley Jones                                    │
 ├────────────┬─────────────────────────────────────────────────────────┤
 │ Subcommand │ Brief description of the subcommand                     │
-├────────────┼─────────────────────────────────────────────────────────┤ 
+├────────────┼─────────────────────────────────────────────────────────┤
 │ b, build   │ Compile a local or remote package from source           │
 │            │ Get help: https://nitrate.dev/docs/no3/build            │
 ├────────────┼─────────────────────────────────────────────────────────┤
@@ -130,14 +130,14 @@ bool Interpreter::PImpl::CommandLicense(ConstArguments, const MutArguments& argv
   Log << Raw << R"(Nitrate Compiler Suite
 Copyright (C) 2024 Wesley C. Jones
 
-This software is free to use, modify, and share under the terms 
+This software is free to use, modify, and share under the terms
 of the GNU Lesser General Public License version 2.1 or later.
 
-It comes with no guarantees — it might work great, or not at all. 
-There's no warranty for how well it works or whether it fits any 
+It comes with no guarantees — it might work great, or not at all.
+There's no warranty for how well it works or whether it fits any
 particular purpose.
 
-For full license details, see the included license file or visit 
+For full license details, see the included license file or visit
 <http://www.gnu.org/licenses/>.
 )";
 

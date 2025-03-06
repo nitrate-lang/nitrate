@@ -53,7 +53,6 @@ static const auto PACKAGE_CATEGORY_MAP = MakeBimap<std::string_view, Package::Ca
     {"basic-lib", Package::BASIC_LIBRARY},
     {"dynamic-executable", Package::DYNAMIC_EXECUTABLE},
     {"static-executable", Package::STATIC_EXECUTABLE},
-    {"comptime-utility", Package::COMPTIME_UTILITY},
 });
 
 static const auto PACKAGE_CONTACT_ROLE_MAP = MakeBimap<std::string_view, Package::Contact::Role>({

@@ -61,6 +61,6 @@ This is the implementation of a language server for the Nitrate programming lang
 
 ## Building
 
-- The language server is built automatically when building the Nitrate toolchain. 
-  Use the build tool provided in the root of the repository. 
+- The language server is built automatically when building the Nitrate toolchain.
+  Use the build tool provided in the root of the repository.
 - Instructions for standalone building are not documented.

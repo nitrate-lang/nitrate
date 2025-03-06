@@ -36,7 +36,7 @@ Nitrate is *only* offically distributed via the SNAP store. Otherworldly methods
 ### Unix-like Systems
 
 To install Nitrate, you may download the latest stable release via the SNAP store:
-  
+
 ```bash
 sudo snap install nitrate
 ```

@@ -1,7 +1,7 @@
 @use "v1.0";
 
 union no_default_construct<T: solid> {
-  v: T = undef, 
+  v: T = undef,
   raw: [u8; sizeof<T>],
 
   pub fn new(v: T = undef) => this.v = v;
@@ -13,7 +13,7 @@ union no_default_construct<T: solid> {
   meta {
     @inherit_semantics(T, overwrite: false);
 
-    @assert(sizeof<T> > 0, 
+    @assert(sizeof<T> > 0,
         "T must have a size greater than 0");
     @assert(bit_sizeof<T> == 8 * sizeof<T>,
         "T must have a size that is a multiple of 8."
@@ -59,7 +59,7 @@ union QResult<T> {
     @assert(bit_sizeof<T> == 8 * sizeof<T>,
         "T must have a size that is a multiple of 8."
         "Bitfields are not supported.");
-    
+
     switch @build_type() {
         case "release":
             @inherit_semantics(T, overwrite: false);
@@ -74,7 +74,7 @@ union QResult<T> {
                 }
             });
             brk;
-          
+
     }
   }
 };

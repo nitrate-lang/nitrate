@@ -1,0 +1,191 @@
+{
+  "format": {
+    "major": 1,
+    "minor": 0,
+    "patch": 0
+  },
+  "name": "@gh-Kracken256/tesing",
+  "description": "A core library by Kracken256",
+  "license": "MIT",
+  "category": "azide-lib",
+  "version": {
+    "major": 1,
+    "minor": 0,
+    "patch": 0
+  },
+  "contacts": [
+    {
+      "name": "Kracken256",
+      "email": "dev+corelib@nitrate.dev",
+      "roles": [
+        "owner",
+        "maintainer"
+      ]
+    },
+    {
+      "name": "friend",
+      "email": "friend@gmail.com",
+      "phone": "+1234567890",
+      "roles": [
+        "maintainer"
+      ]
+    }
+  ],
+  "platforms": {
+    "allow": [
+      "posix-*"
+    ],
+    "deny": [
+      "*"
+    ]
+  },
+  "optimization": {
+    "rapid": {
+      "switch": {
+        "alpha": [
+          "-O0"
+        ],
+        "beta": [
+          "-O0"
+        ],
+        "gamma": [
+          "-O0"
+        ],
+        "llvm": [
+          "-O1"
+        ],
+        "lto": [
+          "-O0"
+        ],
+        "runtime": [
+          "-O0"
+        ]
+      }
+    },
+    "debug": {
+      "switch": {
+        "alpha": [
+          "-O2"
+        ],
+        "beta": [
+          "-O2"
+        ],
+        "gamma": [
+          "-O2"
+        ],
+        "llvm": [
+          "-O3"
+        ],
+        "lto": [
+          "-O0"
+        ],
+        "runtime": [
+          "-O1"
+        ]
+      }
+    },
+    "release": {
+      "switch": {
+        "alpha": [
+          "-O3"
+        ],
+        "beta": [
+          "-O3"
+        ],
+        "gamma": [
+          "-O3"
+        ],
+        "llvm": [
+          "-O3"
+        ],
+        "lto": [
+          "-O3"
+        ],
+        "runtime": [
+          "-O3"
+        ]
+      }
+    },
+    "requirements": {
+      "min-free-cores": 2,
+      "min-free-memory": 4000000000,
+      "min-free-storage": 32000000000
+    }
+  },
+  "dependencies": [
+    {
+      "uuid": "02b6a9a6-e985-4596-b672-c71a33ad2c25",
+      "version": {
+        "major": 1,
+        "minor": 0,
+        "patch": 0
+      }
+    },
+    {
+      "uuid": "62da5a1d-fe8c-4182-a3f2-ed7aa11cd130",
+      "version": {
+        "major": 1,
+        "minor": 0,
+        "patch": 0
+      }
+    },
+    {
+      "uuid": "dde6b4e3-b158-41dd-a5b1-4ca9579cac2a",
+      "version": {
+        "major": 1,
+        "minor": 0,
+        "patch": 0
+      }
+    }
+  ],
+  "blockchain": [
+    {
+      "category": "package",
+      "uuid": "9f6ac6bd-9aa4-4ef2-810d-fac41e50e567",
+      "pubkey": {
+        "type": "ed25519",
+        "value": "7e595052958934bf62800308fc09d8466bbd91e6dcbe7b29ad5da7c21891c155"
+      },
+      "signature": {
+        "type": "ed25519",
+        "value": "914630f74d5555faea3c65ea95af02ebd556822892485066f6f92e7a806b7bd1070de55e46ba9ad955512cdd263f10daf7d5110a94878031c9912bac175c5217"
+      }
+    },
+    {
+      "category": "user-account",
+      "uuid": "c9904931-797e-4c76-a717-c512fb752bbd",
+      "pubkey": {
+        "type": "ed25519",
+        "value": "5977593e8ff9ca03d66169c14e3cc200b13ac7ff4c55a0918dce66490d6ba123"
+      },
+      "signature": {
+        "type": "ed25519",
+        "value": "4ffb79f7c182b3bf5fcc9db3c9c23b094e39aea790f977b6eff718f3799a986f6d2a99fe9cf1561ff5aa27400e605b2463fff1158d25f42e4e349dd3b54e41f9"
+      }
+    },
+    {
+      "category": "eco-domain",
+      "uuid": "35bd86d2-5c57-4d70-9fca-08db1371d1cc",
+      "pubkey": {
+        "type": "ed25519",
+        "value": "149a2989920d73351bfb63becd8a796bd83126a5c85bc51d8cc79759b3ed7251"
+      },
+      "signature": {
+        "type": "ed25519",
+        "value": "e3c553c4b24d55018d1790da4e122c9b2cd525bb2f49b0b4f84bb17e055b5d5e01802b11577ca8589202c1756e3f1b06b1ba130ddee7981325221615af90d018"
+      }
+    },
+    {
+      "category": "eco-root",
+      "uuid": "47211b53-29ac-45e8-b232-5a7366521645",
+      "pubkey": {
+        "type": "ed25519",
+        "value": "e89546b55a9306585b56e1c2d38fc871d87fa9362d379f8cf269c61b6bd388ba"
+      },
+      "signature": {
+        "type": "ed25519",
+        "value": "4dea49d5e4e379fed3d683d6d3763c0519076d37a15a0f439a3253d57da8342b8f34031dcd3dd0f112825bee5efa251f89c5144674c1e3bb8e542d0884998655"
+      }
+    }
+  ]
+}

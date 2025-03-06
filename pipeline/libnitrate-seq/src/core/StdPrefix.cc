@@ -307,7 +307,7 @@ end
     while i < #data do
       local c = data:sub(i, i)
       i = i + 1
-      
+
       if c:match("%d") then
         key_length_buffer = key_length_buffer .. c
       else

@@ -303,7 +303,7 @@ std::string no3::package::GenerateSecurityPolicy(const std::string& package_name
   content +=
       R"(# Reporting Security Issues
 
-The ("{{project_name_nice}}") project team and community take security bugs in 
+The ("{{project_name_nice}}") project team and community take security bugs in
 the ("{{project_name_nice}}") project seriously.
 We appreciate your efforts to disclose your findings responsibly and will make
 every effort to acknowledge your contributions. Pursuant thereto, and contingent
@@ -376,8 +376,6 @@ std::string no3::package::GenerateReadme(const InitOptions& options) {
         return "stdlib";
       case PackageCategory::Executable:
         return "exe";
-      case PackageCategory::Comptime:
-        return "comptime";
     }
   }();
 
@@ -406,7 +404,12 @@ std::string no3::package::GenerateReadme(const InitOptions& options) {
 
 ## Installation
 
-```bash
+)";
+
+  switch (options.m_package_category) {
+    case PackageCategory::Library:
+    case PackageCategory::StandardLibrary: {
+      content += R"(```bash
 # Change the working directory to your package
 cd <your_project>
 
@@ -414,7 +417,20 @@ cd <your_project>
 nitrate install https://github.com/{{gh_username}}/{{project_name}}
 ```
 
-## Features
+)";
+      break;
+    }
+
+    case PackageCategory::Executable: {
+      content += R"(```bash
+nitrate install https://github.com/{{gh_username}}/{{project_name}}
+```
+
+)";
+    }
+  }
+
+  content += R"(## Features
 
 | Feature Name | Feature Description                  |
 | ------------ | ------------------------------------ |
@@ -457,16 +473,16 @@ std::string no3::package::GenerateContributingPolicy(const InitOptions& options)
 
 **LEGAL NOTICE**
 
-1. Regarding Your contributions and the legality thereof, all intellectual property 
-   delivered to the ("Maintainers") of this ("{{project_name_nice}}") project is 
-   required to be usable by the ("Maintainers") for any purpose reasonably 
-   foreseeable and/or expected by a software project maintainer. 
+1. Regarding Your contributions and the legality thereof, all intellectual property
+   delivered to the ("Maintainers") of this ("{{project_name_nice}}") project is
+   required to be usable by the ("Maintainers") for any purpose reasonably
+   foreseeable and/or expected by a software project maintainer.
 
-2. To decline compliance with clause 1, conspicuously state these declinations at 
+2. To decline compliance with clause 1, conspicuously state these declinations at
 least once per submission that does not comply with clause 1.
 
 In summary, this means granting the project maintainers an eternal, worldwide, nonexclusive,
-revocable license to use Your content to interact with You and the project's community. 
+revocable license to use Your content to interact with You and the project's community.
 The actual ownership of Your submissions is not affected by this clause.
 )";
 

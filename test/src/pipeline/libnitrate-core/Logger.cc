@@ -176,7 +176,7 @@ TEST(Core, Log_EC_ParseECJson_01) {
       {R"([])", std::nullopt},
 
       /* Missing "flagname" field */
-      {R"({ 
+      {R"({
             "nice_name": "",
             "details": "",
             "tags": [],
@@ -188,7 +188,7 @@ TEST(Core, Log_EC_ParseECJson_01) {
        std::nullopt},
 
       /* Wrong type for "flagname" field */
-      {R"({ 
+      {R"({
             "flagname": 123,
             "nice_name": "",
             "details": "",
@@ -201,7 +201,7 @@ TEST(Core, Log_EC_ParseECJson_01) {
        std::nullopt},
 
       /* Missing "nice_name" field */
-      {R"({ 
+      {R"({
             "flagname": "",
             "details": "",
             "tags": [],
@@ -213,7 +213,7 @@ TEST(Core, Log_EC_ParseECJson_01) {
        std::nullopt},
 
       /* Wrong type for "nice_name" field */
-      {R"({ 
+      {R"({
             "flagname": "",
             "nice_name": 123,
             "details": "",
@@ -226,7 +226,7 @@ TEST(Core, Log_EC_ParseECJson_01) {
        std::nullopt},
 
       /* Missing "details" field */
-      {R"({ 
+      {R"({
             "flagname": "",
             "nice_name": "",
             "tags": [],
@@ -238,7 +238,7 @@ TEST(Core, Log_EC_ParseECJson_01) {
        std::nullopt},
 
       /* Wrong type for "details" field */
-      {R"({ 
+      {R"({
             "flagname": "",
             "nice_name": "",
             "details": 123,

@@ -426,11 +426,11 @@ static void DisplayHelp() {
   std::string_view message = R"(Usage: version [--help] [--of VAR]... [--system-info] [--minify] [[--brief]|[--json]]
 
 Optional arguments:
-  -h, --help         shows help message and exits 
+  -h, --help         shows help message and exits
   -O, --of           The software component to include version info for [may be repeated]
-  -S, --system-info  Include information about the local system 
-  -C, --minify       Minify the output 
-  -B, --brief        Short human-readable output 
+  -S, --system-info  Include information about the local system
+  -C, --minify       Minify the output
+  -B, --brief        Short human-readable output
   -J, --json         Output in JSON format
 )";
 

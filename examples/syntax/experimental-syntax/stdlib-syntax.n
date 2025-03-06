@@ -43,7 +43,7 @@ scope std {
           } else {
             sum += writer(c);
           }
-          
+
           break;
         }
         default: { sum += writer(c); }
@@ -65,7 +65,7 @@ scope std {
 
 fn main() {
   {
-    let f = std::fetch("file:///log.txt", std::FileMode::Write); 
+    let f = std::fetch("file:///log.txt", std::FileMode::Write);
     std::debugn("We are debugging!", writer: f.get_writer());
   }
 

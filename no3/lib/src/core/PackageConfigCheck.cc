@@ -347,8 +347,7 @@ namespace no3::package {
       schema_assert(json["category"].is_string());
       schema_assert([&]() {
         auto v = json["category"].get<std::string>();
-        schema_assert(v == "azide-lib" || v == "basic-lib" || v == "dynamic-executable" || v == "static-executable" ||
-                      v == "comptime-utility");
+        schema_assert(v == "azide-lib" || v == "basic-lib" || v == "dynamic-executable" || v == "static-executable");
         return true;
       }());
     }

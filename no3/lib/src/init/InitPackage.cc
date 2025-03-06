@@ -120,7 +120,6 @@ static bool InitPackageDirectoryStructure(const std::filesystem::path& package_p
       break;
     }
 
-    case no3::package::PackageCategory::Comptime:
     case no3::package::PackageCategory::Executable: {
       if (!CreateLocalFile(package_path / "src" / "main.n", GenerateDefaultMainSource())) {
         Log << "Failed to create the main.n file: " << package_path / "src" / "main.n";

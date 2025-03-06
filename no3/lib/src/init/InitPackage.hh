@@ -38,7 +38,7 @@
 #include <string>
 
 namespace no3::package {
-  enum class PackageCategory { Library, StandardLibrary, Executable, Comptime };
+  enum class PackageCategory { Library, StandardLibrary, Executable };
 
   struct InitOptions {
     std::string m_package_name;

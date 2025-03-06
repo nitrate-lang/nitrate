@@ -9,4 +9,4 @@ Unless otherwise specified, all the utilities in this library are thread-safe an
 3. **Shared Variable Map**: An in memory key-value store that allows for storing and retrieving variables by name. This is used primarily for storing and retrieving configuration variables such as compiler flags.
 4. **Error Reporting**: A simple error reporting system that allows for reporting of message with a severity level. The messages are dispatched to a callback function in real-time.
 5. **Macros**: Basic macros like for for library symbol exports.
-6. **Cache**: Simple cache implementation that allows for storing and retrieving data by key. 
+6. **Cache**: Simple cache implementation that allows for storing and retrieving data by key.

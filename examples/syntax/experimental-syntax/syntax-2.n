@@ -31,7 +31,7 @@ scope Simulator {
 
     group Mat<<A>x<<B>> {
         data: [[f32; B as ct_number]; A as ct_number],
-        
+
         require {
             A > 0,
             B > 0,
@@ -155,8 +155,8 @@ scope Simulator {
         let i: usize = 0;
         const fps = 60;
         const max_iter = 1000;
-        
-        const rot: Mat4x4 = [   
+
+        const rot: Mat4x4 = [
             [1.0, 0.0, 0.0, 0.0],
             [0.0, cos(PI / 4), -sin(PI / 4), 0.0],
             [0.0, sin(PI / 4), cos(PI / 4), 0.0],
@@ -194,4 +194,4 @@ fn main(): i32 {
 
 group Terrain {
 
-} : 
+} :

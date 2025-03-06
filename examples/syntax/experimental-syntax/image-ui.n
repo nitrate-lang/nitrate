@@ -6,7 +6,7 @@ fn main(): i32 {
 	var catPic: PngImage = ImageLoader<PngImage>::load("C:\Users\Me\Pictures\mycat.png");  ~> Load cat image
 	var window: UIScreen = 																  ~> Create GUI Window
 				Window::create(
-				bg: "#adadadad", fg: "#04040404", 
+				bg: "#adadadad", fg: "#04040404",
 				fontFamily: "Poppins", fontSize: 12,
 				fps: "40+ADP"
 				);
