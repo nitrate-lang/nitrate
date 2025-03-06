@@ -35,7 +35,6 @@
 #pragma once
 
 #include <filesystem>
-#include <optional>
 #include <string>
 
 namespace no3::package {

@@ -31,6 +31,9 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
+#include <git2.h>
+#include <git2/types.h>
+
 #include <core/PackageConfig.hh>
 #include <fstream>
 #include <init/InitPackage.hh>
@@ -69,7 +72,7 @@ static bool CreateLocalFile(const std::filesystem::path& path, std::string_view 
 }
 
 static bool InitPackageDirectoryStructure(const std::filesystem::path& package_path, const InitOptions& options) {
-  Log << Trace << "Initializing a default package directory structure at: " << package_path;
+  Log << Trace << "Initializing a the default package files at: " << package_path;
 
   if (!OMNI_CATCH(false, std::filesystem::create_directories(package_path / "src"))) {
     Log << "Failed to create the source directory: " << package_path / "src";
@@ -146,24 +149,43 @@ static bool InitPackageDirectoryStructure(const std::filesystem::path& package_p
     return false;
   }
 
-  Log << Trace << "Successfully initialized a default package directory structure at: " << package_path;
+  Log << Trace << "Successfully initialized the package directory structure at: " << package_path;
 
   return true;
 }
 
-static bool InitPackageDefaultConfigure(const std::filesystem::path& package_path) {
+static bool InitPackageDefaultConfigure(git_repository& repo) {
   /// TODO: Implement this function.
+  return true;
   return false;
 }
 
 static bool InitPackageRepository(const std::filesystem::path& package_path) {
-  /// TODO: Implement this function.
+  Log << Trace << "Initializing a git repository in: " << package_path;
 
-  return false;
+  git_repository* repo = nullptr;
+  if (git_repository_init(&repo, package_path.c_str(), 0) != 0) {
+    Log << "git_repository_init(): Failed to initialize a git repository in: " << package_path;
+    return false;
+  }
+
+  Log << Trace << "Successfully initialized a git repository in: " << package_path;
+
+  if (!InitPackageDefaultConfigure(*repo)) {
+    git_repository_free(repo);
+    Log << "Failed to configure the default git repository settings.";
+    return false;
+  }
+
+  git_repository_free(repo);
+
+  Log << Trace << "Successfully created package repository in: " << package_path;
+
+  return true;
 }
 
 bool no3::package::InitPackageUsingDefaults(const std::filesystem::path& package_path, const InitOptions& options) {
-  Log << Trace << "Initializing a default constructed package at: " << package_path;
+  Log << Trace << "Initializing a new package at: " << package_path;
 
   if (OMNI_CATCH(false, std::filesystem::exists(package_path))) {
     Log << Warning << "The package directory already exists: " << package_path;
@@ -171,21 +193,16 @@ bool no3::package::InitPackageUsingDefaults(const std::filesystem::path& package
   }
 
   if (!InitPackageDirectoryStructure(package_path, options)) {
-    Log << Trace << "Failed to initialize a default package directory structure: " << package_path;
+    Log << Trace << "Failed to initialize the package directory structure: " << package_path;
     return false;
   }
 
   if (!InitPackageRepository(package_path)) {
-    Log << Trace << "Failed to initialize a default package repository: " << package_path;
+    Log << Trace << "Failed to initialize the package repository: " << package_path;
     return false;
   }
 
-  if (!InitPackageDefaultConfigure(package_path)) {
-    Log << Trace << "Failed to initialize a default package configuration: " << package_path;
-    return false;
-  }
-
-  Log << Trace << "Successfully initialized a default package at: " << package_path;
+  Log << Trace << "Successfully initialized package contents at: " << package_path;
 
   return true;
 }
