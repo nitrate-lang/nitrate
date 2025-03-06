@@ -34,47 +34,60 @@
 #ifndef __NITRATE_AST_PARSER_H__
 #define __NITRATE_AST_PARSER_H__
 
-#include <boost/shared_ptr.hpp>
+#include <boost/iostreams/device/array.hpp>
+#include <boost/iostreams/stream.hpp>
 #include <memory>
+#include <memory_resource>
 #include <nitrate-core/EnvironmentFwd.hh>
-#include <nitrate-core/Logger.hh>
+#include <nitrate-core/FlowPtr.hh>
 #include <nitrate-lexer/ScannerFwd.hh>
-#include <nitrate-parser/Utility.hh>
-#include <sstream>
+#include <nitrate-parser/ASTFwd.hh>
 
 namespace ncc::parse {
-  class NCC_EXPORT Parser final {
+  class NCC_EXPORT ASTRoot final {
+    FlowPtr<Expr> m_base;
+    bool m_success;
+
+  public:
+    constexpr ASTRoot(auto base, auto success) : m_base(std::move(base)), m_success(success) {}
+
+    [[nodiscard]] auto Get() -> FlowPtr<Expr> & { return m_base; }
+    [[nodiscard]] auto Get() const -> FlowPtr<Expr> { return m_base; }
+    [[nodiscard]] auto Check() const -> bool;
+  };
+
+  class NCC_EXPORT GeneralParser final {
     class PImpl;
     std::unique_ptr<PImpl> m_impl;
 
-    Parser(lex::IScanner &lexer, std::shared_ptr<IEnvironment> env, std::shared_ptr<void> lifetime);
-
   public:
-    static auto Create(lex::IScanner &lexer, std::shared_ptr<IEnvironment> env,
-                       std::shared_ptr<void> lifetime = nullptr) {
-      return boost::shared_ptr<Parser>(new Parser(lexer, std::move(env), std::move(lifetime)));
-    }
+    GeneralParser(lex::IScanner &lexer, std::shared_ptr<IEnvironment> env, std::pmr::memory_resource &pool);
+    GeneralParser(const GeneralParser &) = delete;
+    GeneralParser(GeneralParser &&o) noexcept;
+    ~GeneralParser();
 
-    ~Parser();
+    auto operator=(const GeneralParser &) -> GeneralParser & = delete;
+    auto operator=(GeneralParser &&o) noexcept -> GeneralParser &;
 
-    auto Parse() -> ASTRoot;
+    [[nodiscard]] auto Parse() -> ASTRoot;
+    [[nodiscard]] auto GetLexer() -> lex::IScanner &;
 
-    void SetFailBit();
-    auto GetLexer() -> lex::IScanner &;
-
-    template <typename Scanner>
-    static auto FromString(std::string_view str, std::shared_ptr<IEnvironment> env) {
-      auto state = std::make_shared<std::pair<std::stringstream, std::unique_ptr<Scanner>>>(
-          std::stringstream(std::string(str)), nullptr);
-      state->second = std::make_unique<Scanner>(state->first, env);
-
-      return Create(*state->second, env, state);
+    static auto Create(lex::IScanner &lexer, std::shared_ptr<IEnvironment> env, std::pmr::memory_resource &pool) {
+      return std::make_unique<GeneralParser>(lexer, std::move(env), pool);
     }
 
     template <typename Scanner>
-    static auto FromStream(std::istream &stream, std::shared_ptr<IEnvironment> env) {
-      auto lexer = std::make_shared<Scanner>(stream, env);
-      return Create(lexer, env, lexer);
+    static auto ParseString(std::string_view source, std::shared_ptr<IEnvironment> env,
+                            std::pmr::memory_resource &pool) {
+      auto in_src = boost::iostreams::stream<boost::iostreams::array_source>(source.data(), source.size());
+      auto scanner = Scanner(in_src, env);
+      return Create(scanner, env, pool)->Parse();
+    }
+
+    template <typename Scanner>
+    static auto ParseStream(std::istream &stream, std::shared_ptr<IEnvironment> env, std::pmr::memory_resource &pool) {
+      auto scanner = Scanner(stream, env);
+      return Create(scanner, env, pool)->Parse();
     }
   };
 }  // namespace ncc::parse

@@ -142,37 +142,6 @@ namespace ncc::lex {
       {"?", OpTernary},
   });
 
-  inline static const auto LEXICAL_OPERATORS_CONFIG = detail::MakeBimap<Operator, detail::OpConfig>({
-      {OpPlus, {detail::Both, true}},          {OpMinus, {detail::Both, true}},
-      {OpTimes, {detail::Both, true}},         {OpSlash, {detail::Binary, true}},
-      {OpPercent, {detail::Binary, true}},     {OpBitAnd, {detail::Both, true}},
-      {OpBitOr, {detail::Binary, true}},       {OpBitXor, {detail::Binary, true}},
-      {OpBitNot, {detail::Unary, true}},       {OpLShift, {detail::Binary, true}},
-      {OpRShift, {detail::Binary, true}},      {OpROTL, {detail::Binary, true}},
-      {OpROTR, {detail::Binary, true}},        {OpLogicAnd, {detail::Binary, true}},
-      {OpLogicOr, {detail::Binary, true}},     {OpLogicXor, {detail::Binary, true}},
-      {OpLogicNot, {detail::Unary, true}},     {OpLT, {detail::Binary, true}},
-      {OpGT, {detail::Binary, true}},          {OpLE, {detail::Binary, true}},
-      {OpGE, {detail::Binary, true}},          {OpEq, {detail::Binary, true}},
-      {OpNE, {detail::Binary, true}},          {OpSet, {detail::Binary, true}},
-      {OpPlusSet, {detail::Binary, true}},     {OpMinusSet, {detail::Binary, true}},
-      {OpTimesSet, {detail::Binary, true}},    {OpSlashSet, {detail::Binary, true}},
-      {OpPercentSet, {detail::Binary, true}},  {OpBitAndSet, {detail::Binary, true}},
-      {OpBitOrSet, {detail::Binary, true}},    {OpBitXorSet, {detail::Binary, true}},
-      {OpLogicAndSet, {detail::Binary, true}}, {OpLogicOrSet, {detail::Binary, true}},
-      {OpLogicXorSet, {detail::Binary, true}}, {OpLShiftSet, {detail::Binary, true}},
-      {OpRShiftSet, {detail::Binary, true}},   {OpROTLSet, {detail::Binary, true}},
-      {OpROTRSet, {detail::Binary, true}},     {OpInc, {detail::Unary, true}},
-      {OpDec, {detail::Unary, true}},          {OpAs, {detail::Binary, true}},
-      {OpBitcastAs, {detail::Binary, false}},  {OpIn, {detail::Both, false}},
-      {OpOut, {detail::Both, false}},          {OpSizeof, {detail::Unary, false}},
-      {OpBitsizeof, {detail::Unary, false}},   {OpAlignof, {detail::Unary, false}},
-      {OpTypeof, {detail::Unary, false}},      {OpComptime, {detail::Unary, false}},
-      {OpDot, {detail::Binary, false}},        {OpRange, {detail::Binary, true}},
-      {OpEllipsis, {detail::Unary, false}},    {OpArrow, {detail::Binary, false}},
-      {OpTernary, {detail::Ternary, false}},
-  });
-
   inline static const auto LEXICAL_PUNCTORS = detail::MakeBimap<std::string, Punctor>({
       {"(", PuncLPar},
       {")", PuncRPar},

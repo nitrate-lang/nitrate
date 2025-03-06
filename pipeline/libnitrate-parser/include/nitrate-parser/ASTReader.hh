@@ -34,14 +34,14 @@
 #ifndef __NITRATE_AST_DESERIALIZER_H__
 #define __NITRATE_AST_DESERIALIZER_H__
 
-#include <memory>
 #include <nitrate-core/AllocateFwd.hh>
 #include <nitrate-core/Macro.hh>
 #include <nitrate-core/NullableFlowPtr.hh>
 #include <nitrate-lexer/ScannerFwd.hh>
 #include <nitrate-parser/AST.hh>
+#include <nitrate-parser/ASTFactory.hh>
+#include <nitrate-parser/Context.hh>
 #include <nitrate-parser/ProtobufFwd.hh>
-#include <nitrate-parser/Utility.hh>
 #include <optional>
 
 namespace ncc::parse {
@@ -53,23 +53,18 @@ namespace ncc::parse {
     template <typename T>
     using Result = NullableFlowPtr<T>;
 
-    Result<Base> m_root;
+    Result<Expr> m_root;
     ReaderSourceManager m_rd;
-    std::unique_ptr<IMemory> m_mm;
+    ASTFactory m_fac;
 
-    void UnmarshalLocationLocation(const SyntaxTree::SourceLocationRange &in, const FlowPtr<Base> &out);
-
+    void UnmarshalLocationLocation(const SyntaxTree::SourceLocationRange &in, const FlowPtr<Expr> &out);
     void UnmarshalCodeComment(
         const ::google::protobuf::RepeatedPtrField<::nitrate::parser::SyntaxTree::UserComment> &in,
-        const FlowPtr<Base> &out);
+        const FlowPtr<Expr> &out);
 
     auto Unmarshal(const SyntaxTree::Expr &in) -> Result<Expr>;
-    auto Unmarshal(const SyntaxTree::Root &in) -> Result<Base>;
-    auto Unmarshal(const SyntaxTree::Stmt &in) -> Result<Stmt>;
     auto Unmarshal(const SyntaxTree::Type &in) -> Result<Type>;
-    auto Unmarshal(const SyntaxTree::Base &in) -> Result<Base>;
-    auto Unmarshal(const SyntaxTree::ExprStmt &in) -> Result<ExprStmt>;
-    auto Unmarshal(const SyntaxTree::LambdaExpr &in) -> Result<LambdaExpr>;
+    auto Unmarshal(const SyntaxTree::Type &in, bool is_set) -> Result<Type>;
     auto Unmarshal(const SyntaxTree::NamedTy &in) -> Result<NamedTy>;
     auto Unmarshal(const SyntaxTree::InferTy &in) -> Result<InferTy>;
     auto Unmarshal(const SyntaxTree::TemplateType &in) -> Result<TemplateType>;
@@ -136,10 +131,11 @@ namespace ncc::parse {
     auto Unmarshal(const SyntaxTree::Export &in) -> Result<Export>;
 
   public:
-    AstReader(std::string_view protobuf_data, ReaderSourceManager source_manager = std::nullopt);
+    AstReader(std::string_view protobuf_data, std::pmr::memory_resource &pool,
+              ReaderSourceManager source_manager = std::nullopt);
     ~AstReader() = default;
 
-    auto Get() -> std::optional<ASTRoot>;
+    auto Get() -> NullableFlowPtr<Expr>;
   };
 }  // namespace ncc::parse
 

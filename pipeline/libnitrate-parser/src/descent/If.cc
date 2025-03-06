@@ -37,37 +37,22 @@ using namespace ncc;
 using namespace ncc::lex;
 using namespace ncc::parse;
 
-auto Parser::PImpl::RecurseIfThen() -> FlowPtr<Stmt> {
-  if (NextIf<OpArrow>()) {
-    return RecurseBlock(false, true, SafetyMode::Unknown);
-  }
-
-  return RecurseBlock(true, false, SafetyMode::Unknown);
-}
-
-auto Parser::PImpl::RecurseIfElse() -> NullableFlowPtr<Stmt> {
+auto GeneralParser::PImpl::RecurseIfElse() -> NullableFlowPtr<Expr> {
   if (NextIf<Else>()) {
-    if (NextIf<OpArrow>()) {
-      return RecurseBlock(false, true, SafetyMode::Unknown);
-    }
-
     if (NextIf<Keyword::If>()) {
       return RecurseIf();
     }
 
-    return RecurseBlock(true, false, SafetyMode::Unknown);
+    return RecurseBlock(true, false, BlockMode::Unknown);
   }
 
   return std::nullopt;
 }
 
-auto Parser::PImpl::RecurseIf() -> FlowPtr<Stmt> {
-  auto cond = RecurseExpr({
-      Token(Punc, PuncLCur),
-      Token(Oper, OpArrow),
-  });
-  auto then = RecurseIfThen();
+auto GeneralParser::PImpl::RecurseIf() -> FlowPtr<Expr> {
+  auto cond = RecurseExpr({Token(Punc, PuncLCur)});
+  auto then = RecurseBlock(true, false, BlockMode::Unknown);
   auto ele = RecurseIfElse();
 
-  return CreateNode<If>(cond, then, ele)();
+  return m_fac.CreateIf(cond, then, ele);
 }

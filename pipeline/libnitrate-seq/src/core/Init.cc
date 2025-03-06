@@ -43,7 +43,7 @@ using namespace ncc::seq;
 NCC_EXPORT ncc::LibraryRC<SeqLibrarySetup> ncc::seq::SeqLibrary;
 
 NCC_EXPORT auto SeqLibrarySetup::Init() -> bool {
-  Log << ec::SeqLog << Debug << "libnitrate-seq initializing...";
+  Log << ec::SeqLog << Trace << "libnitrate-seq initializing...";
 
   if (!ncc::CoreLibrary.InitRC()) {
     Log << ec::SeqLog << "libnitrate-seq init failed: libnitrate-core failed to initialize";
@@ -55,18 +55,24 @@ NCC_EXPORT auto SeqLibrarySetup::Init() -> bool {
     return false;
   }
 
-  Log << ec::SeqLog << Debug << "libnitrate-seq initialized";
+  Log << ec::SeqLog << Trace << "libnitrate-seq initialized";
 
   return true;
 }
 
 NCC_EXPORT void SeqLibrarySetup::Deinit() {
-  Log << ec::SeqLog << Debug << "libnitrate-seq deinitializing...";
+  Log << ec::SeqLog << Trace << "libnitrate-seq deinitializing...";
 
   ncc::lex::LexerLibrary.DeinitRC();
   ncc::CoreLibrary.DeinitRC();
 
-  Log << ec::SeqLog << Debug << "libnitrate-seq deinitialized";
+  Log << ec::SeqLog << Trace << "libnitrate-seq deinitialized";
 }
 
-NCC_EXPORT auto SeqLibrarySetup::GetVersionId() -> std::string_view { return __TARGET_VERSION; }
+NCC_EXPORT auto SeqLibrarySetup::GetSemVersion() -> std::array<uint32_t, 3> {
+  return {__TARGET_MAJOR_VERSION, __TARGET_MINOR_VERSION, __TARGET_PATCH_VERSION};
+}
+
+NCC_EXPORT auto SeqLibrarySetup::BuildId() -> ncc::BuildId {
+  return {__TARGET_COMMIT_HASH, __TARGET_COMMIT_DATE, __TARGET_COMMIT_BRANCH};
+}

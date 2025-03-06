@@ -31,13 +31,11 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <cstring>
 #include <mutex>
 #include <nitrate-core/Allocate.hh>
 #include <nitrate-core/Assert.hh>
-#include <nitrate-core/Init.hh>
-#include <nitrate-core/Logger.hh>
 #include <nitrate-core/Macro.hh>
+#include <nitrate-core/SmartLock.hh>
 #include <vector>
 
 using namespace ncc;
@@ -56,7 +54,7 @@ struct Segment {
 
 class ncc::DynamicArena::PImpl final {
   std::vector<Segment> m_bases;
-  std::mutex m_mutex;
+  mutable std::mutex m_mutex;
 
   void AllocRegion(size_t size) {
     auto *base = new uint8_t[size];
@@ -76,22 +74,14 @@ public:
     }
   }
 
-  auto Alloc(size_t size, size_t alignment) -> void * {
+  auto Allocate(size_t size, size_t alignment) -> void * {
     /* Sizeof 0 is permitted as long the the returned address isn't read from or
      * written to. */
 
     uint8_t *start;
     Segment *b;
-    bool sync;
 
-    if (alignment == 0) [[unlikely]] {
-      return nullptr;
-    }
-
-    sync = EnableSync;
-    if (sync) {
-      m_mutex.lock();
-    }
+    SmartLock lock(m_mutex);
 
     /* If the requested size plus the alignment is greater than the primary
      * segment size, then allocate a new segment to store the payload. */
@@ -117,20 +107,63 @@ public:
 
     b->m_offset = start + size;
 
-    if (sync) {
-      m_mutex.unlock();
-    }
-
     /* Ensure that the returned space is within the bounds of the current
      * segment. */
     qcore_assert((start + size) <= b->m_base + b->m_size);
 
     return start;
   }
+
+  auto GetSpaceUsed() const -> size_t {
+    SmartLock lock(m_mutex);
+
+    size_t total = 0;
+    for (const auto &base : m_bases) {
+      total += base.m_offset - base.m_base;
+    }
+
+    return total;
+  }
+
+  auto GetSpaceManaged() const -> size_t {
+    SmartLock lock(m_mutex);
+
+    size_t total = 0;
+    for (const auto &base : m_bases) {
+      total += base.m_size;
+    }
+
+    total += m_bases.capacity() * sizeof(Segment);
+    total += sizeof(*this);
+
+    return total;
+  }
+
+  auto Reset() -> void {
+    SmartLock lock(m_mutex);
+
+    for (auto &base : m_bases) {
+      delete[] base.m_base;
+    }
+
+    m_bases.clear();
+
+    AllocRegion(kPrimarySegmentSize);
+  }
 };
 
-NCC_EXPORT DynamicArena::DynamicArena() { m_pimpl = new PImpl(); }
+DynamicArena::DynamicArena() { m_pimpl = new PImpl(); }
+DynamicArena::~DynamicArena() { delete m_pimpl; }
+auto DynamicArena::GetSpaceUsed() const -> size_t { return m_pimpl->GetSpaceUsed(); }
+auto DynamicArena::GetSpaceManaged() const -> size_t { return m_pimpl->GetSpaceManaged(); }
+void DynamicArena::Reset() { m_pimpl->Reset(); }
 
-NCC_EXPORT DynamicArena::~DynamicArena() { delete m_pimpl; }
+void *DynamicArena::do_allocate(size_t bytes, size_t alignment) { return m_pimpl->Allocate(bytes, alignment); }
 
-NCC_EXPORT auto DynamicArena::Alloc(size_t size, size_t alignment) -> void * { return m_pimpl->Alloc(size, alignment); }
+void DynamicArena::do_deallocate(void *p, size_t bytes, size_t alignment) {
+  (void)p;
+  (void)bytes;
+  (void)alignment;
+}
+
+bool DynamicArena::do_is_equal(const memory_resource &other) const noexcept { return this == &other; }

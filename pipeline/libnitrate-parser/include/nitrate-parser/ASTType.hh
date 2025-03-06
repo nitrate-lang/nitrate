@@ -146,14 +146,13 @@ namespace ncc::parse {
 
   class PtrTy : public Type {
     FlowPtr<Type> m_item;
-    bool m_is_volatile;
+    bool m_volatil;
 
   public:
-    constexpr PtrTy(auto item, auto is_volatile)
-        : Type(QAST_PTR), m_item(std::move(item)), m_is_volatile(is_volatile) {}
+    constexpr PtrTy(auto item, auto volatil) : Type(QAST_PTR), m_item(std::move(item)), m_volatil(volatil) {}
 
     [[nodiscard]] constexpr auto GetItem() const { return m_item; }
-    [[nodiscard]] constexpr auto IsVolatile() const -> bool { return m_is_volatile; }
+    [[nodiscard]] constexpr auto IsVolatile() const -> bool { return m_volatil; }
   };
 
   class OpaqueTy : public Type {
@@ -187,11 +186,13 @@ namespace ncc::parse {
 
   class RefTy : public Type {
     FlowPtr<Type> m_item;
+    bool m_volatil;
 
   public:
-    constexpr RefTy(auto item) : Type(QAST_REF), m_item(std::move(item)) {}
+    constexpr RefTy(auto item, bool volatil) : Type(QAST_REF), m_item(std::move(item)), m_volatil(volatil) {}
 
     [[nodiscard]] constexpr auto GetItem() const { return m_item; }
+    [[nodiscard]] constexpr auto IsVolatile() const { return m_volatil; }
   };
 
   class FuncTy : public Type {

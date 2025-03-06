@@ -65,13 +65,14 @@ CREATE_TRANSFORM(nit::nr) {
 
   std::string source_str(std::istreambuf_iterator<char>(source), {});
 
-  auto root = ncc::parse::AstReader(source_str).Get();
+  auto pool = DynamicArena();
+  auto root = ncc::parse::AstReader(source_str, pool).Get();
   if (!root.has_value()) {
     Log << "Failed to parse input.";
     return false;
   }
 
-  if (auto module = NrLower(root.value().Get().get(), nullptr, true)) {
+  if (auto module = NrLower(root.value().get(), nullptr, true)) {
     switch (out_mode) {
       case OutMode::JSON: {
         auto writter = IRJsonWriter(output);

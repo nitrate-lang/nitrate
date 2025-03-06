@@ -135,10 +135,12 @@ enum hello2 {
   C = 2,
 }
 
-scope nested => pub "abi" [attr1, attr2] fn DaBlock<a:i32=0,oo:i8>(a=20,...) {
-  let var1: u32 = 0;
-  let var2 = 0;
-  let var2: u8;
+scope nested {
+  pub "abi" [attr1, attr2] fn DaBlock<a:i32=0,oo:i8>(a=20,...) {
+    let var1: u32 = 0;
+    let var2 = 0;
+    let var2: u8;
+  }
 }
 
 ################################################################################
@@ -173,6 +175,6 @@ type _22 = (T, U, V): [0:1]: 2;
 type _23 = T<x: i32, i32>: [0:1]: 2;
 type _24 = fn[[
   align(16)
-]]  quasi(x: i32 = 0, x, ...): void: [0:1]: 2;
+]]  quasi(x: i32 = 0, y, ...): void: [0:1]: 2;
 )SOURCE";
 };

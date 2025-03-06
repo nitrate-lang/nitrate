@@ -21,11 +21,6 @@ message UserComment {
   required string comment = 1;
 }
 
-message Base {
-  optional SourceLocationRange location = 1;
-  repeated UserComment comments = 2;
-}
-
 message CallArgument {
   required string name = 1;
   required Expr value = 2;
@@ -42,7 +37,7 @@ enum FunctionPurity {
 
 message FunctionParameter {
   required string name = 1;
-  required Type type = 2;
+  optional Type type = 2;
   optional Expr default_value = 3;
 }
 
@@ -56,7 +51,7 @@ enum Vis {
 message TemplateParameters {
   message TemplateParameter {
     required string name = 1;
-    required Type type = 2;
+    optional Type type = 2;
     optional Expr default_value = 3;
   }
 
@@ -296,6 +291,7 @@ message RefTy {
   optional Expr maximum = 6;
 
   required Type pointee = 7;
+  required bool volatile = 8;
 }
 
 message FuncTy {
@@ -310,7 +306,7 @@ message FuncTy {
   repeated FunctionParameter parameters = 8;
   required bool variadic = 9;
   required FunctionPurity purity = 10;
-  required Type return_type = 11;
+  optional Type return_type = 11;
 }
 
 ///===--------------------------------------------------------------------===///
@@ -371,13 +367,6 @@ enum Operator {
   Op_Ellipsis = 53;    /* '...':        Ellipsis operator */
   Op_Arrow = 54;       /* '=>':         Arrow operator */
   Op_Question = 55;    /* '?':          Question operator */
-}
-
-message LambdaExpr {
-  optional SourceLocationRange location = 1;
-  repeated UserComment comments = 2;
-
-  required Stmt function = 4;
 }
 
 message Unary {
@@ -543,13 +532,6 @@ message Sequence {
 
 ///===--------------------------------------------------------------------===///
 
-message ExprStmt {
-  optional SourceLocationRange location = 1;
-  repeated UserComment comments = 2;
-
-  required Expr expression = 4;
-}
-
 message Block {
   enum Safety {
     None = 0;
@@ -561,7 +543,7 @@ message Block {
   repeated UserComment comments = 2;
 
   required Safety safety = 4;
-  repeated Stmt statements = 5;
+  repeated Expr statements = 5;
 }
 
 message Variable {
@@ -595,8 +577,8 @@ message If {
   repeated UserComment comments = 2;
 
   required Expr condition = 4;
-  required Stmt true_branch = 5;
-  optional Stmt false_branch = 6;
+  required Expr true_branch = 5;
+  optional Expr false_branch = 6;
 }
 
 message While {
@@ -604,17 +586,17 @@ message While {
   repeated UserComment comments = 2;
 
   required Expr condition = 4;
-  required Stmt body = 5;
+  required Expr body = 5;
 }
 
 message For {
   optional SourceLocationRange location = 1;
   repeated UserComment comments = 2;
 
-  optional Stmt init = 4;
+  optional Expr init = 4;
   optional Expr condition = 5;
   optional Expr step = 6;
-  required Stmt body = 7;
+  required Expr body = 7;
 }
 
 message Foreach {
@@ -624,7 +606,7 @@ message Foreach {
   required string index_name = 4;
   required string value_name = 5;
   required Expr expression = 6;
-  required Stmt body = 7;
+  required Expr body = 7;
 }
 
 message Break {
@@ -649,7 +631,7 @@ message ReturnIf {
   repeated UserComment comments = 2;
 
   required Expr condition = 4;
-  required Expr value = 5;
+  optional Expr value = 5;
 }
 
 message Case {
@@ -657,7 +639,7 @@ message Case {
   repeated UserComment comments = 2;
 
   required Expr condition = 4;
-  required Stmt body = 5;
+  required Expr body = 5;
 }
 
 message Switch {
@@ -666,7 +648,7 @@ message Switch {
 
   required Expr condition = 4;
   repeated Case cases = 5;
-  optional Stmt default = 6;
+  optional Expr default = 6;
 }
 
 message Export {
@@ -676,7 +658,7 @@ message Export {
   required Vis visibility = 4;
   required string abi_name = 5;
   repeated Expr attributes = 6;
-  required Stmt body = 7;
+  required Expr body = 7;
 }
 
 message Scope {
@@ -685,7 +667,7 @@ message Scope {
 
   required string name = 4;
   repeated string dependencies = 5;
-  required Stmt body = 6;
+  required Expr body = 6;
 }
 
 message Typedef {
@@ -721,7 +703,7 @@ message Function {
 
   required string name = 4;
   required FunctionPurity purity = 5;
-  required Type return_type = 6;
+  optional Type return_type = 6;
   optional TemplateParameters template_parameters = 7;
   repeated FunctionParameter parameters = 8;
   required bool variadic = 9;
@@ -729,7 +711,7 @@ message Function {
   optional Expr precondition = 11;
   optional Expr postcondition = 12;
   repeated Expr attributes = 13;
-  optional Stmt body = 14;
+  optional Expr body = 14;
 }
 
 message Struct {
@@ -745,13 +727,13 @@ message Struct {
   message Field {
     required string name = 1;
     optional Expr default_value = 3;
-    required Type type = 2;
+    optional Type type = 2;
     required Vis visibility = 4;
     required bool is_static = 5;
   }
 
   message Method {
-    required Stmt func = 1;
+    required Expr func = 1;
     required Vis visibility = 2;
   }
 
@@ -768,184 +750,103 @@ message Struct {
   repeated Method static_methods = 11;
 }
 
-message Expr {
-  oneof node {
-    Base base = 1;
-    LambdaExpr lambda_expr = 2;
-    Unary unary = 4;
-    Binary binary = 5;
-    PostUnary post_unary = 6;
-    Ternary ternary = 7;
-    Integer integer = 8;
-    Float float = 9;
-    Boolean boolean = 10;
-    String string = 11;
-    Character character = 12;
-    Null null = 13;
-    Undefined undefined = 14;
-    Call call = 15;
-    TemplateCall template_call = 16;
-    List list = 17;
-    Assoc assoc = 18;
-    Index index = 19;
-    Slice slice = 20;
-    FString fstring = 21;
-    Identifier identifier = 22;
-    Sequence sequence = 23;
-
-    NamedTy named = 24;
-    InferTy infer = 25;
-    TemplateType template = 26;
-    U1 u1 = 27;
-    U8 u8 = 28;
-    U16 u16 = 29;
-    U32 u32 = 30;
-    U64 u64 = 31;
-    U128 u128 = 32;
-    I8 i8 = 33;
-    I16 i16 = 34;
-    I32 i32 = 35;
-    I64 i64 = 36;
-    I128 i128 = 37;
-    F16 f16 = 38;
-    F32 f32 = 39;
-    F64 f64 = 40;
-    F128 f128 = 41;
-    VoidTy void = 42;
-    PtrTy ptr = 43;
-    OpaqueTy opaque = 44;
-    TupleTy tuple = 45;
-    ArrayTy array = 46;
-    RefTy ref = 47;
-    FuncTy func = 48;
-  }
-}
-
-message Stmt {
-  oneof node {
-    Base base = 1;
-    ExprStmt expr_stmt = 2;
-    Block block = 3;
-    Variable variable = 4;
-    Assembly assembly = 5;
-    If if = 6;
-    While while = 7;
-    For for = 8;
-    Foreach foreach = 9;
-    Break break = 10;
-    Continue continue = 11;
-    Return return = 12;
-    ReturnIf return_if = 13;
-    Case case = 14;
-    Switch switch = 15;
-    Export export = 16;
-    Scope scope = 17;
-    Typedef typedef = 18;
-    Enum enum = 19;
-    Function function = 20;
-    Struct struct = 21;
-  }
-}
-
 message Type {
   oneof node {
-    Base base = 1;
-    NamedTy named = 2;
-    InferTy infer = 3;
-    TemplateType template = 4;
-    U1 u1 = 5;
-    U8 u8 = 6;
-    U16 u16 = 7;
-    U32 u32 = 8;
-    U64 u64 = 9;
-    U128 u128 = 10;
-    I8 i8 = 11;
-    I16 i16 = 12;
-    I32 i32 = 13;
-    I64 i64 = 14;
-    I128 i128 = 15;
-    F16 f16 = 16;
-    F32 f32 = 17;
-    F64 f64 = 18;
-    F128 f128 = 19;
-    VoidTy void = 20;
-    PtrTy ptr = 21;
-    OpaqueTy opaque = 22;
-    TupleTy tuple = 23;
-    ArrayTy array = 24;
-    RefTy ref = 25;
-    FuncTy func = 26;
+    U1 u1 = 80;
+    U8 u8 = 81;
+    U16 u16 = 82;
+    U32 u32 = 83;
+    U64 u64 = 84;
+    U128 u128 = 85;
+    I8 i8 = 86;
+    I16 i16 = 87;
+    I32 i32 = 88;
+    I64 i64 = 89;
+    I128 i128 = 90;
+    F16 f16 = 91;
+    F32 f32 = 92;
+    F64 f64 = 93;
+    F128 f128 = 94;
+    VoidTy void = 95;
+    InferTy infer = 96;
+    OpaqueTy opaque = 97;
+    PtrTy ptr = 98;
+    RefTy ref = 99;
+    ArrayTy array = 100;
+    TupleTy tuple = 101;
+    FuncTy func = 102;
+    TemplateType template = 103;
+    NamedTy named = 104;
   }
 }
 
-message Root {
+message Expr {
   oneof node {
-    Base base = 1;
-    LambdaExpr lambda_expr = 2;
-    Unary unary = 4;
-    Binary binary = 5;
-    PostUnary post_unary = 6;
-    Ternary ternary = 7;
-    Integer integer = 8;
-    Float float = 9;
-    Boolean boolean = 10;
-    String string = 11;
-    Character character = 12;
-    Null null = 13;
-    Undefined undefined = 14;
-    Call call = 15;
-    TemplateCall template_call = 16;
-    List list = 17;
-    Assoc assoc = 18;
-    Index index = 19;
-    Slice slice = 20;
-    FString fstring = 21;
-    Identifier identifier = 22;
-    Sequence sequence = 23;
-    ExprStmt expr = 25;
-    Block block = 26;
-    Variable variable = 27;
-    Assembly assembly = 28;
-    If if = 29;
-    While while = 30;
-    For for = 31;
-    Foreach foreach = 32;
-    Break break = 33;
-    Continue continue = 34;
-    Return return = 35;
-    ReturnIf return_if = 36;
-    Case case = 37;
-    Switch switch = 38;
-    Export export = 39;
-    Scope scope = 40;
-    Typedef typedef = 41;
-    Enum enum = 42;
-    Function function = 43;
-    Struct struct = 44;
-    NamedTy named = 45;
-    InferTy infer = 46;
-    TemplateType template = 47;
-    U1 u1 = 48;
-    U8 u8 = 49;
-    U16 u16 = 50;
-    U32 u32 = 51;
-    U64 u64 = 52;
-    U128 u128 = 53;
-    I8 i8 = 54;
-    I16 i16 = 55;
-    I32 i32 = 56;
-    I64 i64 = 57;
-    I128 i128 = 58;
-    F16 f16 = 59;
-    F32 f32 = 60;
-    F64 f64 = 61;
-    F128 f128 = 62;
-    VoidTy void = 63;
-    PtrTy ptr = 64;
-    OpaqueTy opaque = 65;
-    TupleTy tuple = 66;
-    ArrayTy array = 67;
-    RefTy ref = 68;
-    FuncTy func = 69;
+    Unary unary = 11;
+    Binary binary = 12;
+    PostUnary post_unary = 13;
+    Ternary ternary = 14;
+    Integer integer = 15;
+    Float float = 16;
+    Boolean boolean = 17;
+    String string = 18;
+    Character character = 19;
+    Null null = 20;
+    Undefined undefined = 21;
+    Call call = 22;
+    TemplateCall template_call = 23;
+    List list = 24;
+    Assoc assoc = 25;
+    Index index = 26;
+    Slice slice = 27;
+    FString fstring = 28;
+    Identifier identifier = 29;
+    Sequence sequence = 30;
+
+    Block block = 50;
+    Variable variable = 51;
+    Assembly assembly = 52;
+    If if = 53;
+    While while = 54;
+    For for = 55;
+    Foreach foreach = 56;
+    Break break = 57;
+    Continue continue = 58;
+    Return return = 59;
+    ReturnIf return_if = 60;
+    Case case = 61;
+    Switch switch = 62;
+    Export export = 63;
+    Scope scope = 64;
+    Typedef typedef = 65;
+    Enum enum = 66;
+    Function function = 67;
+    Struct struct = 68;
+
+    U1 u1 = 80;
+    U8 u8 = 81;
+    U16 u16 = 82;
+    U32 u32 = 83;
+    U64 u64 = 84;
+    U128 u128 = 85;
+    I8 i8 = 86;
+    I16 i16 = 87;
+    I32 i32 = 88;
+    I64 i64 = 89;
+    I128 i128 = 90;
+    F16 f16 = 91;
+    F32 f32 = 92;
+    F64 f64 = 93;
+    F128 f128 = 94;
+    VoidTy void = 95;
+    InferTy infer = 96;
+    OpaqueTy opaque = 97;
+    PtrTy ptr = 98;
+    RefTy ref = 99;
+    ArrayTy array = 100;
+    TupleTy tuple = 101;
+    FuncTy func = 102;
+    TemplateType template = 103;
+    NamedTy named = 104;
   }
 }

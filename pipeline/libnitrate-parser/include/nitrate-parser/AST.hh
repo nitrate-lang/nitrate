@@ -35,109 +35,105 @@
 #define __NITRATE_AST_KIND_H__
 
 #include <cstdint>
+#include <iosfwd>
 
 namespace ncc::parse {
   enum ASTNodeKind : uint8_t {
     /*****************************************************************************
-     * Base
-     ****************************************************************************/
-
-    QAST_BASE = 0, /* Polymorphic base node */
-
-    /*****************************************************************************
      * Expressions
      ****************************************************************************/
-
-    QAST_BINEXPR = 1,     /* Binary expression */
-    QAST_UNEXPR = 2,      /* Unary expression */
-    QAST_POST_UNEXPR = 3, /* Post-unary expression */
-    QAST_TEREXPR = 4,     /* Ternary expression */
-    QAST_INT = 5,         /* Integer literal */
-    QAST_FLOAT = 6,       /* Floating-point literal */
-    QAST_STRING = 7,      /* String literal */
-    QAST_CHAR = 8,        /* Character literal */
-    QAST_BOOL = 9,        /* Boolean literal */
-    QAST_NULL = 10,       /* Null literal */
-    QAST_UNDEF = 11,      /* Undefined expression */
-    QAST_CALL = 12,       /* Function call */
-    QAST_LIST = 13,       /* List expression */
-    QAST_ASSOC = 14,      /* Associative pair */
-    QAST_INDEX = 15,      /* Index access */
-    QAST_SLICE = 16,      /* Slice access */
-    QAST_FSTRING = 17,    /* Formatted string */
-    QAST_IDENT = 18,      /* Identifier */
-    QAST_SEQ = 19,        /* Sequence point */
-    QAST_LAMBDA = 20,     /* Lambda expression */
-    QAST_TEMPL_CALL = 21, /* Template call */
-
-    QAST__EXPR_FIRST = QAST_BINEXPR,
-    QAST__EXPR_LAST = QAST_TEMPL_CALL,
+    QAST_BINEXPR,     /* Binary expression */
+    QAST_UNEXPR,      /* Unary expression */
+    QAST_POST_UNEXPR, /* Post-unary expression */
+    QAST_TEREXPR,     /* Ternary expression */
+    QAST_INT,         /* Integer literal */
+    QAST_FLOAT,       /* Floating-point literal */
+    QAST_STRING,      /* String literal */
+    QAST_CHAR,        /* Character literal */
+    QAST_BOOL,        /* Boolean literal */
+    QAST_NULL,        /* Null literal */
+    QAST_UNDEF,       /* Undefined expression */
+    QAST_CALL,        /* Function call */
+    QAST_LIST,        /* List expression */
+    QAST_ASSOC,       /* Associative pair */
+    QAST_INDEX,       /* Index access */
+    QAST_SLICE,       /* Slice access */
+    QAST_FSTRING,     /* Formatted string */
+    QAST_IDENT,       /* Identifier */
+    QAST_SEQ,         /* Sequence point */
+    QAST_TEMPL_CALL,  /* Template call */
 
     /*****************************************************************************
      * Types
      ****************************************************************************/
 
-    QAST_U1 = 30,       /* 1-bit unsigned integer (boolean) */
-    QAST_U8 = 31,       /* 8-bit unsigned integer */
-    QAST_U16 = 32,      /* 16-bit unsigned integer */
-    QAST_U32 = 33,      /* 32-bit unsigned integer */
-    QAST_U64 = 34,      /* 64-bit unsigned integer */
-    QAST_U128 = 35,     /* 128-bit unsigned integer */
-    QAST_I8 = 36,       /* 8-bit signed integer */
-    QAST_I16 = 37,      /* 16-bit signed integer */
-    QAST_I32 = 38,      /* 32-bit signed integer */
-    QAST_I64 = 39,      /* 64-bit signed integer */
-    QAST_I128 = 40,     /* 128-bit signed integer */
-    QAST_F16 = 41,      /* 16-bit floating-point number */
-    QAST_F32 = 42,      /* 32-bit floating-point number */
-    QAST_F64 = 43,      /* 64-bit floating-point number */
-    QAST_F128 = 44,     /* 128-bit floating-point number */
-    QAST_VOID = 45,     /* Void type */
-    QAST_INFER = 46,    /* Inferred type */
-    QAST_OPAQUE = 47,   /* Opaque named type */
-    QAST_NAMED = 48,    /* Unresolved type name */
-    QAST_REF = 49,      /* Reference type */
-    QAST_PTR = 50,      /* Raw pointer type */
-    QAST_ARRAY = 51,    /* Basic array type */
-    QAST_TUPLE = 52,    /* Tuple type */
-    QAST_TEMPLATE = 53, /* Template type */
-    QAST_FUNCTOR = 54,  /* Function type */
-
-    QAST__TYPE_FIRST = QAST_U1,
-    QAST__TYPE_LAST = QAST_FUNCTOR,
+    QAST_U1,       /* 1-bit unsigned integer (boolean) */
+    QAST_U8,       /* 8-bit unsigned integer */
+    QAST_U16,      /* 16-bit unsigned integer */
+    QAST_U32,      /* 32-bit unsigned integer */
+    QAST_U64,      /* 64-bit unsigned integer */
+    QAST_U128,     /* 128-bit unsigned integer */
+    QAST_I8,       /* 8-bit signed integer */
+    QAST_I16,      /* 16-bit signed integer */
+    QAST_I32,      /* 32-bit signed integer */
+    QAST_I64,      /* 64-bit signed integer */
+    QAST_I128,     /* 128-bit signed integer */
+    QAST_F16,      /* 16-bit floating-point number */
+    QAST_F32,      /* 32-bit floating-point number */
+    QAST_F64,      /* 64-bit floating-point number */
+    QAST_F128,     /* 128-bit floating-point number */
+    QAST_VOID,     /* Void type */
+    QAST_INFER,    /* Inferred type */
+    QAST_OPAQUE,   /* Opaque named type */
+    QAST_NAMED,    /* Unresolved type name */
+    QAST_REF,      /* Reference type */
+    QAST_PTR,      /* Raw pointer type */
+    QAST_ARRAY,    /* Basic array type */
+    QAST_TUPLE,    /* Tuple type */
+    QAST_TEMPLATE, /* Template type */
+    QAST_FUNCTOR,  /* Function type */
 
     /*****************************************************************************
      * Statements
      ****************************************************************************/
 
-    QAST_IF = 60,         /* If statement */
-    QAST_RETIF = 61,      /* Return-if statement */
-    QAST_SWITCH = 62,     /* Switch statement */
-    QAST_CASE = 63,       /* Case statement */
-    QAST_RETURN = 64,     /* Return statement */
-    QAST_BREAK = 65,      /* Break statement */
-    QAST_CONTINUE = 66,   /* Continue statement */
-    QAST_WHILE = 67,      /* While statement */
-    QAST_FOR = 68,        /* For statement */
-    QAST_FOREACH = 69,    /* Foreach statement */
-    QAST_INLINE_ASM = 70, /* Inline assembly statement */
-    QAST_ESTMT = 71,      /* Expression-statement adapter */
-    QAST_TYPEDEF = 80,    /* Type alias declaration */
-    QAST_STRUCT = 81,     /* Struct definition */
-    QAST_ENUM = 83,       /* Enum definition */
-    QAST_SCOPE = 84,      /* Namespace scope */
-    QAST_BLOCK = 85,      /* Block statement */
-    QAST_EXPORT = 86,     /* Export statement */
-    QAST_VAR = 87,        /* Variable declaration */
-    QAST_FUNCTION = 88,   /* Function definition */
+    QAST_IF,         /* If statement */
+    QAST_RETIF,      /* Return-if statement */
+    QAST_SWITCH,     /* Switch statement */
+    QAST_CASE,       /* Case statement */
+    QAST_RETURN,     /* Return statement */
+    QAST_BREAK,      /* Break statement */
+    QAST_CONTINUE,   /* Continue statement */
+    QAST_WHILE,      /* While statement */
+    QAST_FOR,        /* For statement */
+    QAST_FOREACH,    /* Foreach statement */
+    QAST_INLINE_ASM, /* Inline assembly statement */
+    QAST_TYPEDEF,    /* Type alias declaration */
+    QAST_STRUCT,     /* Struct definition */
+    QAST_ENUM,       /* Enum definition */
+    QAST_SCOPE,      /* Namespace scope */
+    QAST_BLOCK,      /* Block statement */
+    QAST_EXPORT,     /* Export statement */
+    QAST_VAR,        /* Variable declaration */
+    QAST_FUNCTION,   /* Function definition */
+
+    ///======================================================================
+
+    QAST__TYPE_FIRST = QAST_U1,
+    QAST__TYPE_LAST = QAST_FUNCTOR,
 
     QAST__STMT_FIRST = QAST_IF,
     QAST__STMT_LAST = QAST_FUNCTION,
 
-    QAST__FIRST = QAST_BASE,
+    QAST__EXPR_FIRST = QAST_BINEXPR,
+    QAST__EXPR_LAST = QAST_FUNCTION,
+
+    QAST__FIRST = QAST_BINEXPR,
     QAST__LAST = QAST_FUNCTION,
     QAST__RANGE = QAST__LAST - QAST__FIRST,
   };
+
+  std::ostream& operator<<(std::ostream& os, ASTNodeKind kind);
 }  // namespace ncc::parse
 
 #endif

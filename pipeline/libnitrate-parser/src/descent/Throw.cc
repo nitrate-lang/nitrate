@@ -37,8 +37,8 @@ using namespace ncc;
 using namespace ncc::lex;
 using namespace ncc::parse;
 
-auto Parser::PImpl::RecurseThrow() -> FlowPtr<Stmt> {
+auto GeneralParser::PImpl::RecurseThrow() -> FlowPtr<Expr> {
   Log << SyntaxError << Current() << "Throw is not yet implemented";
 
-  return MockStmt();
+  return m_fac.CreateMockInstance<VoidTy>();
 }

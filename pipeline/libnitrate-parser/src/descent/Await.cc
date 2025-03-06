@@ -37,8 +37,8 @@ using namespace ncc;
 using namespace ncc::lex;
 using namespace ncc::parse;
 
-auto Parser::PImpl::RecurseAwait() -> FlowPtr<Stmt> {
+auto GeneralParser::PImpl::RecurseAwait() -> FlowPtr<Expr> {
   Log << SyntaxError << Current() << "Await is not yet implemented";
 
-  return MockStmt();
+  return m_fac.CreateMockInstance<VoidTy>();
 }

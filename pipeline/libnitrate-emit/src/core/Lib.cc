@@ -39,6 +39,7 @@
 #include <atomic>
 #include <iostream>
 #include <nitrate-core/Init.hh>
+#include <nitrate-core/Logger.hh>
 #include <nitrate-core/Macro.hh>
 
 static std::atomic<size_t> QcodeLibRefCount = 0;
@@ -53,7 +54,7 @@ static auto InitializeLLVM() -> bool {
 
   /* Check if LLVM is initialized */
   if (llvm::TargetRegistry::targets().empty()) {
-    std::cerr << "error: LLVM initialization failed" << std::endl;
+    ncc::Log << "LLVM initialization failed";
     return false;
   }
 #else
@@ -95,53 +96,6 @@ extern "C" NCC_EXPORT void QcodeLibDeinit() {
   DoDeinit();
 
   ncc::CoreLibrary.DeinitRC();
-}
-
-extern "C" NCC_EXPORT auto QcodeLibVersion() -> const char* {
-  static const char* version_string =
-
-      "[" __TARGET_VERSION
-      "] ["
-
-#if defined(__x86_64__) || defined(__amd64__) || defined(__amd64) || defined(_M_X64) || defined(_M_AMD64)
-      "x86_64-"
-#elif defined(__i386__) || defined(__i386) || defined(_M_IX86)
-      "x86-"
-#elif defined(__aarch64__)
-      "aarch64-"
-#elif defined(__arm__)
-      "arm-"
-#else
-      "unknown-"
-#endif
-
-#if defined(__linux__)
-      "linux-"
-#elif defined(__APPLE__)
-      "macos-"
-#elif defined(_WIN32)
-      "win32-"
-#else
-      "unknown-"
-#endif
-
-#if defined(__clang__)
-      "clang] "
-#elif defined(__GNUC__)
-      "gnu] "
-#else
-      "unknown] "
-#endif
-
-#if NDEBUG
-      "[release]"
-#else
-      "[debug]"
-#endif
-
-      ;
-
-  return version_string;
 }
 
 extern "C" NCC_EXPORT auto QcodeStrerror() -> const char* { return ""; }

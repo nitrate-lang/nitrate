@@ -34,8 +34,10 @@
 #ifndef __NITRATE_CORE_MEMORY_FWD_H__
 #define __NITRATE_CORE_MEMORY_FWD_H__
 
+#include <memory_resource>
+
 namespace ncc {
-  class IMemory;
+  using IMemory = std::pmr::memory_resource;
   class DynamicArena;
 }  // namespace ncc
 

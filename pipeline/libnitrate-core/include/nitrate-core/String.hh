@@ -43,100 +43,44 @@
 #include <string_view>
 
 namespace ncc {
-  class StringMemory;
-  class String;
-
-  class CStringView final : public std::string_view {
-  public:
-    constexpr CStringView() : std::string_view("") {}
-    constexpr CStringView(const char *begin, size_t len) : std::string_view(begin, len - 1) {
-      qcore_assert(begin[len - 1] == '\0');
-    }
-
-    ~CStringView() = default;
-
-    [[nodiscard]]
-    auto c_str() const  // NOLINT
-        -> const char * {
-      return data();
-    }
-
-    [[nodiscard]] constexpr operator const char *() const { return c_str(); }
-  };
-
-  class NCC_EXPORT StringMemory {
-    NCC_TESTING_ACCESSIBLE();
-
-    friend class String;
-
-    static auto FromString(std::string_view str) -> uint64_t;
-    static auto FromString(std::string &&str) -> uint64_t;
-
-  public:
-    StringMemory() = delete;
-    static void Reset();
-  };
-
   class NCC_EXPORT __attribute__((packed)) String {
-    NCC_TESTING_ACCESSIBLE();
+    static std::string DefaultEmptyString;
+    friend struct CoreLibrarySetup;
 
-    uint64_t m_id : 40;
+    const std::string *m_p;
+
+    static void ResetInstances();
+    [[nodiscard, gnu::pure]] static auto CreateInstance(std::string_view str) -> const std::string &;
+    [[nodiscard, gnu::pure]] static auto CreateInstance(std::string &&str) -> const std::string &;
 
   public:
-    constexpr explicit String() : m_id(0) {}
+    constexpr explicit String() : m_p(&DefaultEmptyString) {}
+    constexpr String(std::string_view str) : m_p(&CreateInstance(str)) {}
+    constexpr String(std::string &&str) : m_p(&CreateInstance(std::move(str))) {}
+    constexpr String(const std::string &str) : m_p(&CreateInstance(str)) {}
+    constexpr String(const char *str) : m_p(&CreateInstance(std::string_view(str))) {}
+    constexpr String(const String &str) = default;
+    constexpr String(String &&str) noexcept = default;
+    constexpr ~String() = default;
 
-    constexpr NCC_FORCE_INLINE String(std::string_view str) : m_id(str.empty() ? 0 : StringMemory::FromString(str)) {}
+    constexpr auto operator=(const String &str) -> String & = default;
+    constexpr auto operator=(String &&str) noexcept -> String & = default;
 
-    constexpr NCC_FORCE_INLINE String(std::string &&str)
-        : m_id(str.empty() ? 0 : StringMemory::FromString(std::move(str))) {}
-
-    constexpr NCC_FORCE_INLINE String(const std::string &str) : m_id(str.empty() ? 0 : StringMemory::FromString(str)) {}
-
-    constexpr NCC_FORCE_INLINE String(const char *str)
-        : m_id(str[0] == 0 ? 0 : StringMemory::FromString(std::string_view(str))) {}
-
-    [[nodiscard]] auto Get() const -> CStringView;
-
-    auto operator==(const String &o) const -> bool;
-    auto operator<(const String &o) const -> bool;
-    auto operator<=(const String &o) const -> bool;
-    auto operator>(const String &o) const -> bool;
-    auto operator>=(const String &o) const -> bool;
-
-    constexpr auto operator*() const { return Get(); }
-    auto operator->() const { return Get().c_str(); }
-    constexpr operator CStringView() const { return Get(); }
-
-    [[nodiscard]] size_t size() const {  // NOLINT
-      return Get().size();
-    }
-
-    [[nodiscard]] bool empty() const {  // NOLINT
-      return Get().empty();
-    }
-
-    [[nodiscard]] auto c_str() const {  // NOLINT
-      return Get().c_str();
-    }
-
-    [[nodiscard]] auto data() const {  // NOLINT
-      return Get().data();
-    }
-
-    [[nodiscard]] auto at(size_t i) const {  // NOLINT
-      return Get().at(i);
-    }
-
-    [[nodiscard]] auto ends_with(std::string_view end) const {  // NOLINT
-      return Get().ends_with(end);
-    }
-
-    [[nodiscard]] auto starts_with(std::string_view start) const {  // NOLINT
-      return Get().starts_with(start);
-    }
-
-    [[nodiscard]] constexpr auto GetId() const { return m_id; }
+    [[nodiscard, gnu::pure]] constexpr auto Get() const -> const std::string & { return *m_p; };
+    [[nodiscard, gnu::pure]] constexpr auto operator==(const String &o) const -> bool { return Get() == o.Get(); }
+    [[nodiscard, gnu::pure]] constexpr auto operator!=(const String &o) const -> bool { return Get() != o.Get(); }
+    [[nodiscard, gnu::pure]] constexpr auto operator<(const String &o) const -> bool { return Get() < o.Get(); }
+    [[nodiscard, gnu::pure]] constexpr auto operator<=(const String &o) const -> bool { return Get() <= o.Get(); }
+    [[nodiscard, gnu::pure]] constexpr auto operator>(const String &o) const -> bool { return Get() > o.Get(); }
+    [[nodiscard, gnu::pure]] constexpr auto operator>=(const String &o) const -> bool { return Get() >= o.Get(); }
+    [[nodiscard, gnu::pure]] constexpr auto operator*() const { return Get(); }
+    [[nodiscard, gnu::pure]] constexpr auto operator->() const { return &Get(); }
+    [[nodiscard, gnu::pure]] constexpr operator const std::string &() const { return Get(); }
+    [[nodiscard, gnu::pure]] constexpr operator std::string_view() const { return Get(); }
+    [[nodiscard, gnu::pure]] constexpr operator bool() const { return !Get().empty(); }
   };
+
+  static_assert(sizeof(String) == sizeof(uintptr_t));
 
   using string = String;
 
@@ -146,7 +90,9 @@ namespace ncc {
 namespace std {
   template <>
   struct hash<ncc::String> {
-    auto operator()(const ncc::String &str) const -> size_t { return std::hash<std::string_view>{}(str.Get()); }
+    [[nodiscard, gnu::const]] constexpr auto operator()(const ncc::String &str) const -> size_t {
+      return std::hash<std::string_view>{}(str);
+    }
   };
 }  // namespace std
 

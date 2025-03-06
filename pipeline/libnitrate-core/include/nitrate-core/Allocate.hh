@@ -35,41 +35,20 @@
 #define __NITRATE_CORE_MEMORY_H__
 
 #include <cstddef>
+#include <memory_resource>
+#include <nitrate-core/AllocateFwd.hh>
+#include <nitrate-core/Macro.hh>
 
 namespace ncc {
-  class IMemory {
-  public:
-    virtual ~IMemory() = default;
-
-    /**
-     * @brief Allocates a block of memory.
-     *  @param size The size of the block to allocate. Values of 0 are permitted
-     *  as long as the returned address isn't read from or written to.
-     *  @param align The alignment of the block to allocate. A Value of 0 will
-     * return nullptr.
-     *  @return A pointer to the allocated block of memory. If the allocation
-     * fails, a panic will occur. The returned address is guaranteed to be
-     * aligned to the specified alignment except when the alignment is 0.
-     * @note nullptr is only returned when the alignment is 0.
-     */
-    virtual auto Alloc(size_t size, size_t align = kDefaultAlignment) -> void * = 0;
-
-    static constexpr size_t kDefaultAlignment = 16;
-  };
-
-  class DynamicArena final : public IMemory {
+  class NCC_EXPORT DynamicArena final : public IMemory {
     class PImpl;
     PImpl *m_pimpl;
 
   public:
     DynamicArena();
     DynamicArena(const DynamicArena &) = delete;
+    DynamicArena(DynamicArena &&o) noexcept : m_pimpl(o.m_pimpl) { o.m_pimpl = nullptr; }
     ~DynamicArena() override;
-
-    DynamicArena(DynamicArena &&o) noexcept {
-      m_pimpl = o.m_pimpl;
-      o.m_pimpl = nullptr;
-    }
 
     auto operator=(DynamicArena &&o) noexcept -> DynamicArena & {
       m_pimpl = o.m_pimpl;
@@ -77,7 +56,12 @@ namespace ncc {
       return *this;
     }
 
-    auto Alloc(size_t size, size_t align = kDefaultAlignment) -> void * override;
+    void do_deallocate(void *p, size_t bytes, size_t alignment) override;
+    [[nodiscard]] auto do_allocate(size_t bytes, size_t alignment) -> void * override;
+    [[nodiscard]] bool do_is_equal(const memory_resource &other) const noexcept override;
+    [[nodiscard]] auto GetSpaceUsed() const -> size_t;
+    [[nodiscard]] auto GetSpaceManaged() const -> size_t;
+    void Reset();
   };
 }  // namespace ncc
 

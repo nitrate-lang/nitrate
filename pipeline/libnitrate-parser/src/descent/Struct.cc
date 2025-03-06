@@ -37,15 +37,15 @@ using namespace ncc;
 using namespace ncc::lex;
 using namespace ncc::parse;
 
-auto Parser::PImpl::RecurseStructAttributes() -> ExpressionList {
-  ExpressionList attributes;
+auto GeneralParser::PImpl::RecurseStructAttributes() -> std::vector<FlowPtr<Expr>> {
+  std::vector<FlowPtr<Expr>> attributes;
 
   if (!NextIf<PuncLBrk>()) {
     return attributes;
   }
 
   while (true) {
-    if (NextIf<EofF>()) [[unlikely]] {
+    if (m_rd.IsEof()) [[unlikely]] {
       Log << SyntaxError << Current() << "Encountered EOF while parsing struct attributes";
       break;
     }
@@ -67,8 +67,8 @@ auto Parser::PImpl::RecurseStructAttributes() -> ExpressionList {
   return attributes;
 }
 
-auto Parser::PImpl::RecurseStructTerms() -> StructNames {
-  StructNames names;
+auto GeneralParser::PImpl::RecurseStructTerms() -> std::vector<string> {
+  std::vector<string> names;
 
   if (!NextIf<PuncColn>()) {
     return names;
@@ -78,14 +78,14 @@ auto Parser::PImpl::RecurseStructTerms() -> StructNames {
 
   if (enclosed) {
     while (true) {
-      if (NextIf<EofF>()) [[unlikely]] {
+      if (m_rd.IsEof()) [[unlikely]] {
         Log << SyntaxError << Current() << "Encountered EOF while parsing struct attributes";
         break;
       } else if (NextIf<PuncRBrk>()) {
         break;
       }
 
-      if (auto name = RecurseName(); !name.empty()) {
+      if (auto name = RecurseName()) {
         names.push_back(name);
       } else {
         Log << SyntaxError << Next() << "Expected identifier in struct terms";
@@ -105,12 +105,12 @@ auto Parser::PImpl::RecurseStructTerms() -> StructNames {
     }
   } else {
     while (true) {
-      if (NextIf<EofF>()) [[unlikely]] {
+      if (m_rd.IsEof()) [[unlikely]] {
         Log << SyntaxError << Current() << "Encountered EOF while parsing struct attributes";
         break;
       }
 
-      if (auto name = RecurseName(); !name.empty()) [[likely]] {
+      if (auto name = RecurseName()) [[likely]] {
         names.push_back(name);
       } else {
         Log << SyntaxError << Next() << "Expected identifier in struct terms";
@@ -126,7 +126,7 @@ auto Parser::PImpl::RecurseStructTerms() -> StructNames {
   return names;
 }
 
-auto Parser::PImpl::RecurseStructFieldDefaultValue() -> NullableFlowPtr<Expr> {
+auto GeneralParser::PImpl::RecurseStructFieldDefaultValue() -> NullableFlowPtr<Expr> {
   if (NextIf<OpSet>()) {
     return RecurseExpr({
         Token(Punc, PuncComa),
@@ -138,8 +138,8 @@ auto Parser::PImpl::RecurseStructFieldDefaultValue() -> NullableFlowPtr<Expr> {
   return std::nullopt;
 }
 
-void Parser::PImpl::RecurseStructField(Vis vis, bool is_static, StructFields &fields) {
-  if (auto field_name = RecurseName(); !field_name.empty()) {
+void GeneralParser::PImpl::RecurseStructField(Vis vis, bool is_static, std::vector<StructField> &fields) {
+  if (auto field_name = RecurseName()) {
     if (NextIf<PuncColn>()) {
       auto field_type = RecurseType();
       auto default_value = RecurseStructFieldDefaultValue();
@@ -155,7 +155,7 @@ void Parser::PImpl::RecurseStructField(Vis vis, bool is_static, StructFields &fi
   }
 }
 
-void Parser::PImpl::RecurseStructMethodOrField(StructContent &body) {
+void GeneralParser::PImpl::RecurseStructMethodOrField(StructContent &body) {
   Vis vis = Vis::Sec;
 
   /* Parse visibility of member */
@@ -184,7 +184,7 @@ void Parser::PImpl::RecurseStructMethodOrField(StructContent &body) {
   NextIf<PuncComa>() || NextIf<PuncSemi>();
 }
 
-auto Parser::PImpl::RecurseStructBody() -> Parser::PImpl::StructContent {
+auto GeneralParser::PImpl::RecurseStructBody() -> GeneralParser::PImpl::StructContent {
   StructContent body;
 
   if (NextIf<PuncSemi>()) {
@@ -198,7 +198,7 @@ auto Parser::PImpl::RecurseStructBody() -> Parser::PImpl::StructContent {
   }
 
   while (true) {
-    if (NextIf<EofF>()) {
+    if (m_rd.IsEof()) {
       Log << SyntaxError << Current() << "Encountered EOF while parsing struct body";
       break;
     }
@@ -213,7 +213,7 @@ auto Parser::PImpl::RecurseStructBody() -> Parser::PImpl::StructContent {
   return body;
 }
 
-auto Parser::PImpl::RecurseStruct(CompositeType struct_type) -> FlowPtr<Stmt> {
+auto GeneralParser::PImpl::RecurseStruct(CompositeType struct_type) -> FlowPtr<Expr> {
   auto start_pos = Current().GetStart();
   auto struct_attributes = RecurseStructAttributes();
   auto struct_name = RecurseName();
@@ -221,8 +221,8 @@ auto Parser::PImpl::RecurseStruct(CompositeType struct_type) -> FlowPtr<Stmt> {
   auto struct_terms = RecurseStructTerms();
   auto [struct_fields, struct_methods, struct_static_methods] = RecurseStructBody();
 
-  auto struct_defintion = CreateNode<Struct>(struct_type, struct_attributes, struct_name, struct_template_params,
-                                             struct_terms, struct_fields, struct_methods, struct_static_methods)();
+  auto struct_defintion = m_fac.CreateStruct(struct_type, struct_name, struct_template_params, struct_fields,
+                                             struct_methods, struct_static_methods, struct_terms, struct_attributes);
   struct_defintion->SetOffset(start_pos);
 
   return struct_defintion;

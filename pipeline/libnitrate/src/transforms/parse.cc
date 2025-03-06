@@ -353,11 +353,12 @@ CREATE_TRANSFORM(nit::parse) {
   (void)opts;
 
   DeserializerAdapterLexer lexer(source, env);
-  auto parser = Parser::Create(lexer, env);
+  auto pool = ncc::DynamicArena();
+  auto parser = GeneralParser::Create(lexer, env, pool);
 
-  let root = parser->Parse();
+  auto root = parser->Parse();
 
   output << root.Get()->Serialize();
 
-  return true;
+  return root.Check();
 }

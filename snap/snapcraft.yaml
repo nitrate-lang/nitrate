@@ -1,6 +1,6 @@
 name: nitrate
 base: core24
-version: '0.0.0'
+version: "0.0.0"
 summary: Nitrate Package and Build System
 description: |
   Nitrate is a comprehensive tool to install, create, compile, analyze, recompose, and
@@ -14,45 +14,45 @@ parts:
   nitrate:
     plugin: cmake
     cmake-parameters:
-      - -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=OFF -DBUILD_TESTING=OFF -DSTRIP_OUTPUT=ON -DCMAKE_CXX_COMPILER=/usr/bin/clang++ -DCMAKE_C_COMPILER=/usr/bin/clang
+      - -DCMAKE_INSTALL_PREFIX=/usr -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=ON -DBUILD_TESTING=OFF -DSTRIP_OUTPUT=ON -DCMAKE_CXX_COMPILER=/usr/bin/clang++ -DCMAKE_C_COMPILER=/usr/bin/clang
     source: .
     build-packages:
-     - libgoogle-glog-dev
-     - libsparsehash-dev
-     - libprotobuf-dev
-     - protobuf-compiler
-     - libyaml-cpp-dev
-     - rapidjson-dev
-     - nlohmann-json3-dev
-     - libboost-all-dev
-     - libgit2-dev
-     - libssl-dev
-     - libreadline-dev
-     - libzstd-dev
-     - llvm-18-dev
-     - libpolly-18-dev
-     - clang
+      - libsparsehash-dev
+      - libprotobuf-dev
+      - protobuf-compiler
+      - libunwind-dev
+      - libyaml-cpp-dev
+      - libgtest-dev
+      - rapidjson-dev
+      - nlohmann-json3-dev
+      - libboost-all-dev
+      - libgit2-dev
+      - libssl-dev
+      - libreadline-dev
+      - libzstd-dev
+      - llvm-18-dev
+      - libpolly-18-dev
+      - clang
+      - git
     build-attributes:
-     - enable-patchelf
+      - enable-patchelf
     stage-packages:
       - libgit2-1.7
       - libunwind8
       - libprotobuf32t64
       - libboost-iostreams1.83.0
     override-stage: |
-        snapcraftctl stage
-        rm -rf $SNAPCRAFT_PART_INSTALL/usr/include
-        rm -rf $SNAPCRAFT_PART_INSTALL/usr/share/doc
-        rm $SNAPCRAFT_PART_INSTALL/usr/lib/libnitrate*
-        rm $SNAPCRAFT_PART_INSTALL/usr/lib/libno3-cli.a
-        rm $SNAPCRAFT_PART_INSTALL/usr/lib/x86_64-linux-gnu/libunwind-coredump.so.0.0.0
-        rm $SNAPCRAFT_PART_INSTALL/usr/lib/x86_64-linux-gnu/libunwind-ptrace.so.0.0.0
-        rm $SNAPCRAFT_PART_INSTALL/usr/lib/x86_64-linux-gnu/libunwind-x86_64.so.8.0.1
+      snapcraftctl stage
+      rm -rf $SNAPCRAFT_PART_INSTALL/usr/include
+      rm -rf $SNAPCRAFT_PART_INSTALL/usr/share/doc
+      rm $SNAPCRAFT_PART_INSTALL/usr/lib/x86_64-linux-gnu/libunwind-coredump.so.0.0.0
+      rm $SNAPCRAFT_PART_INSTALL/usr/lib/x86_64-linux-gnu/libunwind-ptrace.so.0.0.0
+      rm $SNAPCRAFT_PART_INSTALL/usr/lib/x86_64-linux-gnu/libunwind-x86_64.so.8.0.1
 
 apps:
   nitrate:
     command: usr/bin/no3
-    plugs: 
+    plugs:
       # Allow access to the network for fetching packages and LSP TCP server
       - network
       - network-bind

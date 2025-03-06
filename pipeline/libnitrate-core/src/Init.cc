@@ -34,6 +34,7 @@
 #include <nitrate-core/Init.hh>
 #include <nitrate-core/Logger.hh>
 #include <nitrate-core/Macro.hh>
+#include <nitrate-core/SmartLock.hh>
 #include <nitrate-core/String.hh>
 
 using namespace ncc;
@@ -44,29 +45,36 @@ NCC_EXPORT std::atomic<bool> ncc::EnableSync = true;
 NCC_EXPORT auto CoreLibrarySetup::Init() -> bool {
   // Nothing to do here for now.
 
-  Log << Debug << "Initialized Nitrate Core Library";
+  Log << Trace << "Initialized Nitrate Core Library";
 
   return true;
 }
 
 NCC_EXPORT void CoreLibrarySetup::Deinit() {
-  Log << Debug << "Deinitialing Nitrate Core Library...";
+  Log << Trace << "Deinitializing Nitrate Core Library...";
 
-  StringMemory::Reset();
+  Log.Reset();
+
+  String::ResetInstances();
 }
 
-NCC_EXPORT auto CoreLibrarySetup::GetVersionId() -> std::string_view { return __TARGET_VERSION; }
+NCC_EXPORT auto CoreLibrarySetup::GetSemVersion() -> std::array<uint32_t, 3> {
+  return {__TARGET_MAJOR_VERSION, __TARGET_MINOR_VERSION, __TARGET_PATCH_VERSION};
+}
+
+NCC_EXPORT auto CoreLibrarySetup::BuildId() -> ncc::BuildId {
+  return {__TARGET_COMMIT_HASH, __TARGET_COMMIT_DATE, __TARGET_COMMIT_BRANCH};
+}
 
 #define BOOST_NO_EXCEPTIONS
 #include <boost/throw_exception.hpp>
-#include <iostream>
 
 [[maybe_unused]] NCC_EXPORT void boost::throw_exception(std::exception const& m, boost::source_location const&) {
-  std::cerr << "boost::throw_exception: " << m.what();
+  Log << "boost::throw_exception: " << m.what();
   std::terminate();
 }
 
 [[maybe_unused]] NCC_EXPORT void boost::throw_exception(std::exception const& m) {
-  std::cerr << "boost::throw_exception: " << m.what();
+  Log << "boost::throw_exception: " << m.what();
   std::terminate();
 }

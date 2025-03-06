@@ -36,8 +36,10 @@
 #include <nitrate-core/Init.hh>
 #include <nitrate-core/Logger.hh>
 #include <nitrate-core/Macro.hh>
+#include <nitrate-core/SmartLock.hh>
 #include <nitrate-parser/AST.hh>
 #include <nitrate-parser/ASTData.hh>
+#include <nitrate-parser/ASTFactory.hh>
 #include <nitrate-parser/ASTWriter.hh>
 #include <nitrate-parser/Algorithm.hh>
 #include <sstream>
@@ -45,56 +47,31 @@
 using namespace ncc;
 using namespace ncc::parse;
 
-NCC_EXPORT thread_local std::unique_ptr<ncc::IMemory> parse::MainAllocator = std::make_unique<ncc::DynamicArena>();
-
 NCC_EXPORT ASTExtension parse::ExtensionDataStore;
 
-auto ASTExtension::Add(lex::LocationID begin, lex::LocationID end) -> ASTExtensionKey {
-  bool sync = EnableSync;
+NCC_EXPORT std::ostream &parse::operator<<(std::ostream &os, ASTNodeKind kind) {
+  os << Expr::GetKindName(kind);
+  return os;
+}
 
-  if (sync) {
-    m_mutex.lock();
-  }
+auto ASTExtension::Add(lex::LocationID begin, lex::LocationID end) -> ASTExtensionKey {
+  SmartLock lock(m_mutex);
 
   m_pairs.push_back({begin, end});
 
-  auto r = ASTExtensionKey(m_pairs.size() - 1);
-
-  if (sync) {
-    m_mutex.unlock();
-  }
-
-  return r;
+  return {m_pairs.size() - 1};
 }
 
 auto ASTExtension::Get(ASTExtensionKey loc) -> const ASTExtensionPackage & {
-  bool sync = EnableSync;
+  SmartLock lock(m_mutex);
 
-  if (sync) {
-    m_mutex.lock();
-  }
-
-  const auto &r = m_pairs.at(loc.Key());
-
-  if (sync) {
-    m_mutex.unlock();
-  }
-
-  return r;
+  return m_pairs.at(loc.Key());
 }
 
 void ASTExtension::Set(ASTExtensionKey id, ASTExtensionPackage &&data) {
-  bool sync = EnableSync;
-
-  if (sync) {
-    m_mutex.lock();
-  }
+  SmartLock lock(m_mutex);
 
   m_pairs.at(id.Key()) = std::move(data);
-
-  if (sync) {
-    m_mutex.unlock();
-  }
 }
 
 NCC_EXPORT auto parse::operator<<(std::ostream &os, const ASTExtensionKey &idx) -> std::ostream & {
@@ -104,33 +81,34 @@ NCC_EXPORT auto parse::operator<<(std::ostream &os, const ASTExtensionKey &idx) 
 
 ///=============================================================================
 
-std::string Base::DebugString(WriterSourceProvider rd) const {
+std::string Expr::DebugString(WriterSourceProvider rd) const {
   std::stringstream ss;
-  AstWriter writer(ss, rd, true);
-  this->Accept(writer);
+  AstWriter writer(ss, true, rd);
+
+  const_cast<Expr *>(this)->Accept(writer);
 
   return ss.str();
 }
 
-void Base::DebugString(std::ostream &os, WriterSourceProvider rd) const {
-  AstWriter writer(os, rd, true);
-  this->Accept(writer);
+void Expr::DebugString(std::ostream &os, WriterSourceProvider rd) const {
+  AstWriter writer(os, true, rd);
+  const_cast<Expr *>(this)->Accept(writer);
 }
 
-void Base::Serialize(std::ostream &os) const {
+void Expr::Serialize(std::ostream &os) const {
   AstWriter writer(os);
-  this->Accept(writer);
+  const_cast<Expr *>(this)->Accept(writer);
 }
 
-std::string Base::Serialize() const {
+std::string Expr::Serialize() const {
   std::stringstream ss;
   AstWriter writer(ss);
-  this->Accept(writer);
+  const_cast<Expr *>(this)->Accept(writer);
 
   return ss.str();
 }
 
-auto Base::IsEq(FlowPtr<Base> o) const -> bool {
+auto Expr::IsEq(FlowPtr<Expr> o) const -> bool {
   if (this == o.get()) {
     return true;
   }
@@ -144,66 +122,30 @@ auto Base::IsEq(FlowPtr<Base> o) const -> bool {
   AstWriter writer1(ss1);
   AstWriter writer2(ss2);
 
-  this->Accept(writer1);
+  const_cast<Expr *>(this)->Accept(writer1);
   o.Accept(writer2);
 
   return ss1.str() == ss2.str();
 }
 
-auto Base::Hash64() const -> uint64_t {
+auto Expr::Hash64() const -> uint64_t {
   std::stringstream ss;
   AstWriter writer(ss);
-  this->Accept(writer);
+  const_cast<Expr *>(this)->Accept(writer);
 
   return std::hash<std::string>{}(ss.str());
 }
 
-auto Base::RecursiveChildCount() -> size_t {
+auto Expr::RecursiveChildCount() -> size_t {
   size_t count = 0;
 
-  for_each(this, [&](auto, auto) { count++; });
+  for_each(this, [&](auto) { count++; });
 
   return count;
 }
 
-void Base::SetComments(std::span<const string> comments) {
+void Expr::SetComments(std::span<const string> comments) {
   auto old = ExtensionDataStore.Get(m_data);
   old.AddComments(comments);
   ExtensionDataStore.Set(m_data, std::move(old));
-}
-
-///=============================================================================
-
-NCC_EXPORT auto Type::IsPtrTo(const Type *type) const -> bool {
-  if (!IsPointer()) {
-    return false;
-  }
-
-  auto item = As<PtrTy>()->GetItem();
-  while (item->Is<RefTy>()) {
-    item = item->As<RefTy>()->GetItem();
-  }
-
-  return item->Is(type->GetKind());
-}
-
-auto Parser::PImpl::MockStmt(std::optional<ASTNodeKind>) -> FlowPtr<Stmt> {
-  auto node = CreateNode<Stmt>(QAST_BASE)();
-  node->SetOffset(m_rd.Current().GetStart());
-
-  return node;
-}
-
-auto Parser::PImpl::MockExpr(std::optional<ASTNodeKind>) -> FlowPtr<Expr> {
-  auto node = CreateNode<Expr>(QAST_BASE)();
-  node->SetOffset(m_rd.Current().GetStart());
-
-  return node;
-}
-
-auto Parser::PImpl::MockType() -> FlowPtr<Type> {
-  auto node = CreateNode<Type>(QAST_BASE)();
-  node->SetOffset(m_rd.Current().GetStart());
-
-  return node;
 }

@@ -80,7 +80,8 @@ static std::vector<path> GetResourceSearchPaths() {
   the_path = env_path.substr(start, end);
   paths.emplace_back(exists(the_path) ? absolute(the_path) : path(the_path));
 
-  std::remove_if(paths.begin(), paths.end(), [](const auto &path) { return !exists(path) || !is_directory(path); });
+  (void)std::remove_if(paths.begin(), paths.end(),
+                       [](const auto &path) { return !exists(path) || !is_directory(path); });
 
   return paths;
 }
@@ -140,7 +141,8 @@ auto Sequencer::RenderTranslationUnitSource(Sequencer &self, std::string_view so
       return std::nullopt;
     }
 
-    const auto ast_root = Parser::Create(*sub_scanner, self.m_env)->Parse();
+    auto pool = DynamicArena();
+    const auto ast_root = GeneralParser::Create(*sub_scanner, self.m_env, pool)->Parse();
     if (!ast_root.Check()) [[unlikely]] {
       Log << SeqLog << "Failed to parse translation unit";
       return std::nullopt;

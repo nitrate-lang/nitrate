@@ -1,6 +1,10 @@
 cmake_minimum_required(VERSION 3.15)
 project(nitrate-compiler-suite CXX)
 
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS ON)
+
 option(MEMORY_OVER_SPEED "Optimize for low memory usage over speed" OFF)
 option(COVERAGE "Enable code coverage" OFF)
 option(STRIP_OUTPUT "Strip symbols from output" OFF)
@@ -36,7 +40,7 @@ if(STRIP_OUTPUT STREQUAL "ON")
 endif()
 
 # Inject the optimization intent
-if(MEMORY_OVER_SPEED)
+if(MEMORY_OVER_SPEED STREQUAL "ON")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DMEMORY_OVER_SPEED=1")
 else()
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DMEMORY_OVER_SPEED=0")
@@ -57,7 +61,23 @@ if(COVERAGE STREQUAL "ON")
   set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fprofile-instr-generate -fcoverage-mapping")
 endif()
 
+if(CMAKE_BUILD_TYPE STREQUAL "Release")
+  execute_process(COMMAND git -C ${CMAKE_SOURCE_DIR} log --pretty=format:%ci -n1
+    OUTPUT_VARIABLE __TARGET_COMMIT_DATE COMMAND_ERROR_IS_FATAL ANY)
+  execute_process(COMMAND date -u -d ${__TARGET_COMMIT_DATE} --iso-8601=seconds
+    OUTPUT_VARIABLE __TARGET_COMMIT_DATE OUTPUT_STRIP_TRAILING_WHITESPACE COMMAND_ERROR_IS_FATAL ANY)
+  execute_process(COMMAND git -C ${CMAKE_SOURCE_DIR} rev-parse --short=16 HEAD
+    OUTPUT_VARIABLE __TARGET_COMMIT_HASH OUTPUT_STRIP_TRAILING_WHITESPACE COMMAND_ERROR_IS_FATAL ANY)
+  execute_process(COMMAND git -C ${CMAKE_SOURCE_DIR} rev-parse --abbrev-ref HEAD
+    OUTPUT_VARIABLE __TARGET_COMMIT_BRANCH OUTPUT_STRIP_TRAILING_WHITESPACE COMMAND_ERROR_IS_FATAL ANY)
+else()
+  set(__TARGET_COMMIT_DATE "1970-01-01T00:00:00-00:00")
+  set(__TARGET_COMMIT_HASH "0000000000000000")
+  set(__TARGET_COMMIT_BRANCH "unknown")
+endif()
+
 add_subdirectory(pipeline)
+add_subdirectory(test)
 add_subdirectory(no3)
 
 if(CMAKE_BUILD_TYPE STREQUAL "Release" AND BUILD_SHARED_LIBS)
@@ -88,5 +108,4 @@ endif()
 
 if(BUILD_TESTING)
   add_subdirectory(examples)
-  add_subdirectory(test)
 endif()

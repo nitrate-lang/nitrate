@@ -48,16 +48,17 @@
 
 namespace ncc {
   enum Sev : uint8_t {
-    Trace = 0,     /* Low-value, high-volume debug info (malloc, free, ...)*/
-    Debug = 1,     /* High-value, mid-volume debug info (init, major API calls, ...) */
-    Info = 2,      /* Examples: upcoming feature notice, did you know about...? */
-    Notice = 3,    /* Examples: Bad design choice, suboptimal code, ... */
-    Warning = 4,   /* Example: Design likely to cause problems, horrible code, ... */
-    Error = 5,     /* Example: Missing semicolon after statement */
-    Critical = 6,  /* Example: Arena opened with 4 KB capacity, but 8 KB requested */
-    Alert = 7,     /* Example: Input pointer is not correctly aligned */
-    Emergency = 8, /* Example: Segmentation fault */
-    Sev_MaxValue = Emergency
+    Trace,     /* Low-value, high-volume debug info (malloc, free, ...)*/
+    Debug,     /* High-value, mid-volume debug info (init, major API calls, ...) */
+    Info,      /* Examples: upcoming feature notice, did you know about...? */
+    Notice,    /* Examples: Bad design choice, suboptimal code, ... */
+    Warning,   /* Example: Design likely to cause problems, horrible code, ... */
+    Error,     /* Example: Missing semicolon after statement */
+    Critical,  /* Example: Arena opened with 4 KB capacity, but 8 KB requested */
+    Alert,     /* Example: Input pointer is not correctly aligned */
+    Emergency, /* Example: Segmentation fault */
+    Raw,       /* Raw output, no formatting */
+    Sev_MaxValue = Raw
   };
 
   static inline std::string_view ToString(Sev sev) {
@@ -88,6 +89,9 @@ namespace ncc {
 
       case Sev::Emergency:
         return "emergency";
+
+      case Sev::Raw:
+        return "raw";
     }
   }
 
@@ -224,36 +228,57 @@ namespace ncc {
     }
   };
 
-  using LogFilterFunc = bool (*)(const std::string &, Sev, const ECBase &);
+  using LogSubscriberID = size_t;
 
-#define NCC_EC_FILTER(__name, __msg, __sev, __ec) \
-  static inline auto __name(const std::string &__msg, Sev __sev, const ECBase &__ec) -> bool
+  class NCC_EXPORT LoggerContext final : public std::ostream {
+  public:
+    class Subscriber {
+      friend class LoggerContext;
 
-  NCC_EC_FILTER(TraceFilter, msg, sev, ec);
+      LogCallback m_cb;
+      LogSubscriberID m_id;
+      bool m_suspended;
 
-  class NCC_EXPORT LoggerContext final {
-    std::vector<LogCallback> m_subscribers;
-    std::vector<LogFilterFunc> m_filters;
+    public:
+      Subscriber(LogCallback cb, LogSubscriberID id, bool suspended)
+          : m_cb(std::move(cb)), m_id(id), m_suspended(suspended) {}
+
+      [[nodiscard]] auto ID() const -> LogSubscriberID { return m_id; }
+      [[nodiscard]] auto Callback() const -> const LogCallback & { return m_cb; }
+      [[nodiscard]] bool IsSuspended() const { return m_suspended; }
+    };
+
+  private:
+    std::vector<Subscriber> m_subs;
+    LogSubscriberID m_sub_id_ctr = 0;
     bool m_enabled = true;
 
   public:
     LoggerContext() = default;
-    ~LoggerContext() = default;
+    LoggerContext(const LoggerContext &o) : m_subs(o.m_subs), m_enabled(o.m_enabled) {}
+    ~LoggerContext() override = default;
 
-    auto Subscribe(LogCallback cb) -> size_t;
-    void Unsubscribe(size_t idx);
+    auto Subscribe(LogCallback cb) -> LogSubscriberID;
+    void Unsubscribe(LogSubscriberID id);
     void UnsubscribeAll();
+    const auto &SubscribersList() const { return m_subs; }
 
-    auto AddFilter(LogFilterFunc filter) -> size_t;
-    void RemoveFilter(size_t idx);
-    void ClearFilters();
+    void Suspend(LogSubscriberID id);
+    void SuspendAll();
+    void Resume(LogSubscriberID id);
+    void ResumeAll();
 
-    void operator+=(LogFilterFunc filter) { AddFilter(filter); }
-    void operator+=(LogCallback cb) { Subscribe(std::move(cb)); }
+    LogSubscriberID operator+=(LogCallback cb) { return Subscribe(std::move(cb)); }
 
     void Enable() { m_enabled = true; }
     void Disable() { m_enabled = false; }
     [[nodiscard]] auto Enabled() const -> bool { return m_enabled; }
+
+    void Reset() {
+      m_subs.clear();
+      m_enabled = true;
+      m_sub_id_ctr = 0;
+    }
 
     void Publish(const std::string &msg, Sev sev, const ECBase &ec) const;
   };
@@ -271,6 +296,7 @@ namespace ncc {
     return std::move(stream);
   };
 
+  /** This logger may be used prior to nitrate-core initialization */
   extern thread_local LoggerContext Log;
 }  // namespace ncc
 

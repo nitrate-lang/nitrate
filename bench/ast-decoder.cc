@@ -55,9 +55,7 @@ static void DoBenchmark(const std::string &serialied_ast) {
     BenchEncode(serialied_ast);
     auto end = std::chrono::high_resolution_clock::now();
 
-    double nanoseconds =
-        std::chrono::duration_cast<std::chrono::nanoseconds>(end - start)
-            .count();
+    double nanoseconds = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
 
     times.push_back(nanoseconds);
   }
@@ -68,10 +66,8 @@ static void DoBenchmark(const std::string &serialied_ast) {
   std::cout << "  Rounds: " << kNumIterations << std::endl;
   std::cout << "  Total time: " << stats.m_total << "ns" << std::endl;
   std::cout << "  Round time mean: " << stats.m_mean << "ns" << std::endl;
-  std::cout << "  Round time variance: " << stats.m_variance << "ns"
-            << std::endl;
-  std::cout << "  Round time standard deviation: " << stats.m_stddev << "ns"
-            << std::endl;
+  std::cout << "  Round time variance: " << stats.m_variance << "ns" << std::endl;
+  std::cout << "  Round time standard deviation: " << stats.m_stddev << "ns" << std::endl;
 }
 
 int main(int argc, char *argv[]) {
@@ -91,7 +87,7 @@ int main(int argc, char *argv[]) {
 
   auto environment = std::make_shared<Environment>();
   auto scanner = Tokenizer(input_stream, environment);
-  auto parser = Parser::Create(scanner, environment)->Parse();
+  auto parser = GeneralParser::Create(scanner, environment)->Parse();
   if (!parser.Check()) {
     std::cerr << "Failed to parse input file: " << input_file << std::endl;
     return 1;

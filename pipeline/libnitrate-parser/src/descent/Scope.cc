@@ -37,8 +37,8 @@ using namespace ncc;
 using namespace ncc::lex;
 using namespace ncc::parse;
 
-auto Parser::PImpl::RecurseScopeDeps() -> std::optional<ScopeDeps> {
-  ScopeDeps dependencies;
+auto GeneralParser::PImpl::RecurseScopeDeps() -> std::optional<std::vector<string>> {
+  std::vector<string> dependencies;
 
   if (!NextIf<PuncColn>()) {
     return dependencies;
@@ -46,7 +46,7 @@ auto Parser::PImpl::RecurseScopeDeps() -> std::optional<ScopeDeps> {
 
   if (NextIf<PuncLBrk>()) [[likely]] {
     while (true) {
-      if (NextIf<EofF>()) [[unlikely]] {
+      if (m_rd.IsEof()) [[unlikely]] {
         Log << SyntaxError << Current() << "Unexpected EOF in scope dependencies";
         break;
       }
@@ -55,7 +55,7 @@ auto Parser::PImpl::RecurseScopeDeps() -> std::optional<ScopeDeps> {
         return dependencies;
       }
 
-      if (auto dependency_name = RecurseName(); !dependency_name.empty()) {
+      if (auto dependency_name = RecurseName()) {
         dependencies.push_back(dependency_name);
       } else {
         Log << SyntaxError << Next() << "Expected dependency name";
@@ -70,28 +70,24 @@ auto Parser::PImpl::RecurseScopeDeps() -> std::optional<ScopeDeps> {
   return std::nullopt;
 }
 
-auto Parser::PImpl::RecurseScopeBlock() -> FlowPtr<Stmt> {
+auto GeneralParser::PImpl::RecurseScopeBlock() -> FlowPtr<Expr> {
   if (NextIf<PuncSemi>()) {
-    return CreateNode<Block>(BlockItems(), SafetyMode::Unknown)();
+    return m_fac.CreateBlock();
   }
 
-  if (NextIf<OpArrow>()) {
-    return RecurseBlock(false, true, SafetyMode::Unknown);
-  }
-
-  return RecurseBlock(true, false, SafetyMode::Unknown);
+  return RecurseBlock(true, false, BlockMode::Unknown);
 }
 
-auto Parser::PImpl::RecurseScope() -> FlowPtr<Stmt> {
+auto GeneralParser::PImpl::RecurseScope() -> FlowPtr<Expr> {
   auto scope_name = RecurseName();
 
   if (auto dependencies = RecurseScopeDeps()) [[likely]] {
     auto scope_block = RecurseScopeBlock();
 
-    return CreateNode<Scope>(scope_name, scope_block, dependencies.value())();
+    return m_fac.CreateScope(scope_name, scope_block, dependencies.value());
   } else {
     Log << SyntaxError << Current() << "Expected scope dependencies";
   }
 
-  return MockStmt(QAST_SCOPE);
+  return m_fac.CreateMockInstance<Scope>();
 }

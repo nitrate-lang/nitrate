@@ -37,19 +37,19 @@ using namespace ncc;
 using namespace ncc::lex;
 using namespace ncc::parse;
 
-auto Parser::PImpl::RecurseSwitchCaseBody() -> FlowPtr<Stmt> {
+auto GeneralParser::PImpl::RecurseSwitchCaseBody() -> FlowPtr<Expr> {
   if (!NextIf<OpArrow>()) {
     Log << SyntaxError << Current() << "Expected '=>' in switch case.";
   }
 
   if (Peek().Is<PuncLCur>()) {
-    return RecurseBlock(true, false, SafetyMode::Unknown);
+    return RecurseBlock(true, false, BlockMode::Unknown);
   }
 
-  return RecurseBlock(false, true, SafetyMode::Unknown);
+  return RecurseBlock(false, true, BlockMode::Unknown);
 }
 
-auto Parser::PImpl::RecurseSwitchCase() -> std::pair<FlowPtr<Stmt>, bool> {
+auto GeneralParser::PImpl::RecurseSwitchCase() -> std::pair<FlowPtr<Expr>, bool> {
   auto cond = RecurseExpr({
       Token(Oper, OpArrow),
       Token(Punc, PuncLCur),
@@ -62,15 +62,16 @@ auto Parser::PImpl::RecurseSwitchCase() -> std::pair<FlowPtr<Stmt>, bool> {
     return {body, true};
   }
 
-  return {CreateNode<Case>(cond, body)(), false};
+  return {m_fac.CreateCase(cond, body), false};
 }
 
-auto Parser::PImpl::RecurseSwitchBody() -> std::optional<std::pair<SwitchCases, NullableFlowPtr<Stmt>>> {
-  SwitchCases cases;
-  NullableFlowPtr<Stmt> default_case;
+auto GeneralParser::PImpl::RecurseSwitchBody()
+    -> std::optional<std::pair<std::vector<FlowPtr<Case>>, NullableFlowPtr<Expr>>> {
+  std::vector<FlowPtr<Case>> cases;
+  NullableFlowPtr<Expr> default_case;
 
   while (true) {
-    if (NextIf<EofF>()) [[unlikely]] {
+    if (m_rd.IsEof()) [[unlikely]] {
       Log << SyntaxError << Current() << "Unexpected EOF in switch statement.";
       break;
     }
@@ -96,7 +97,7 @@ auto Parser::PImpl::RecurseSwitchBody() -> std::optional<std::pair<SwitchCases, 
   return std::nullopt;
 }
 
-auto Parser::PImpl::RecurseSwitch() -> FlowPtr<Stmt> {
+auto GeneralParser::PImpl::RecurseSwitch() -> FlowPtr<Expr> {
   auto switch_cond = RecurseExpr({
       Token(Punc, PuncLCur),
   });
@@ -105,7 +106,7 @@ auto Parser::PImpl::RecurseSwitch() -> FlowPtr<Stmt> {
     if (auto switch_body = RecurseSwitchBody()) [[likely]] {
       auto [switch_cases, switch_default] = switch_body.value();
 
-      return CreateNode<Switch>(switch_cond, switch_cases, switch_default)();
+      return m_fac.CreateSwitch(switch_cond, switch_default, switch_cases);
     } else {
       Log << SyntaxError << Current() << "Switch statement body is malformed.";
     }
@@ -113,5 +114,5 @@ auto Parser::PImpl::RecurseSwitch() -> FlowPtr<Stmt> {
     Log << SyntaxError << Current() << "Expected '{' after switch condition.";
   }
 
-  return MockStmt(QAST_SWITCH);
+  return m_fac.CreateMockInstance<Switch>();
 }

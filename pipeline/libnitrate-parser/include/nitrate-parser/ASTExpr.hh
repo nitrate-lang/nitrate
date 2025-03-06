@@ -40,15 +40,6 @@
 #include <span>
 
 namespace ncc::parse {
-  class LambdaExpr final : public Expr {
-    FlowPtr<Stmt> m_func;
-
-  public:
-    constexpr LambdaExpr(auto func) : Expr(QAST_LAMBDA), m_func(std::move(func)) {}
-
-    [[nodiscard]] constexpr auto GetFunc() const { return m_func; }
-  };
-
   class Unary final : public Expr {
     FlowPtr<Expr> m_rhs;
     lex::Operator m_op;

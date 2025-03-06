@@ -41,12 +41,13 @@ static const ncc::ECBase& LexerCaptureECImpl() {
     }                                                                                                                 \
   }
 
-TEST_ANSI_LOG(Trace, "Message!", "\x1B[37;1m[\x1b[0m\x1B[34;1mLexer\x1b[0m\x1B[37;1m]: debug:\x1b[0m Message!")
-TEST_ANSI_LOG(Debug, "Message!", "\x1B[37;1m[\x1b[0m\x1B[34;1mLexer\x1b[0m\x1B[37;1m]: debug:\x1b[0m Message!")
-TEST_ANSI_LOG(Info, "Message!", "\x1B[37;1m[\x1b[0m\x1B[34;1mLexer\x1b[0m\x1B[37;1m]:\x1b[0m Message!")
-TEST_ANSI_LOG(Notice, "Message!", "\x1B[37;1m[\x1b[0m\x1B[34;1mLexer\x1b[0m\x1B[37;1m]:\x1b[0m Message!")
-TEST_ANSI_LOG(Warning, "Message!", "\x1B[37;1m[\x1b[0m\x1B[34;1mLexer\x1b[0m\x1B[37;1m]:\x1b[0m Message!")
-TEST_ANSI_LOG(Error, "Message!", "\x1B[37;1m[\x1b[0m\x1B[34;1mLexer\x1b[0m\x1B[37;1m]:\x1b[0m Message!")
-TEST_ANSI_LOG(Critical, "Message!", "\x1B[37;1m[\x1b[0m\x1B[34;1mLexer\x1b[0m\x1B[37;1m]:\x1b[0m Message!")
-TEST_ANSI_LOG(Alert, "Message!", "\x1B[37;1m[\x1b[0m\x1B[34;1mLexer\x1b[0m\x1B[37;1m]:\x1b[0m Message!")
-TEST_ANSI_LOG(Emergency, "Message!", "\x1B[37;1m[\x1b[0m\x1B[34;1mLexer\x1b[0m\x1B[37;1m]:\x1b[0m Message!")
+TEST_ANSI_LOG(Trace, "Message!", "\x1B[37;1m[\x1b[0m\x1B[34;1mLexer\x1b[0m\x1B[37;1m]: debug:\x1b[0m Message!\n")
+TEST_ANSI_LOG(Debug, "Message!", "\x1B[37;1m[\x1b[0m\x1B[34;1mLexer\x1b[0m\x1B[37;1m]: debug:\x1b[0m Message!\n")
+TEST_ANSI_LOG(Info, "Message!", "\x1B[37;1m[\x1b[0m\x1B[34;1mLexer\x1b[0m\x1B[37;1m]:\x1b[0m Message!\n")
+TEST_ANSI_LOG(Notice, "Message!", "\x1B[37;1m[\x1b[0m\x1B[34;1mLexer\x1b[0m\x1B[37;1m]:\x1b[0m Message!\n")
+TEST_ANSI_LOG(Warning, "Message!", "\x1B[37;1m[\x1b[0m\x1B[34;1mLexer\x1b[0m\x1B[37;1m]:\x1b[0m Message!\n")
+TEST_ANSI_LOG(Error, "Message!", "\x1B[37;1m[\x1b[0m\x1B[34;1mLexer\x1b[0m\x1B[37;1m]:\x1b[0m Message!\n")
+TEST_ANSI_LOG(Critical, "Message!", "\x1B[37;1m[\x1b[0m\x1B[34;1mLexer\x1b[0m\x1B[37;1m]:\x1b[0m Message!\n")
+TEST_ANSI_LOG(Alert, "Message!", "\x1B[37;1m[\x1b[0m\x1B[34;1mLexer\x1b[0m\x1B[37;1m]:\x1b[0m Message!\n")
+TEST_ANSI_LOG(Emergency, "Message!", "\x1B[37;1m[\x1b[0m\x1B[34;1mLexer\x1b[0m\x1B[37;1m]:\x1b[0m Message!\n")
+TEST_ANSI_LOG(Raw, "Message!", "Message!")

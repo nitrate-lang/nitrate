@@ -35,19 +35,24 @@
 #include <fstream>
 #include <nitrate-core/Assert.hh>
 #include <nitrate-core/Logger.hh>
+#include <vector>
 
 using namespace ncc;
 
 NCC_EXPORT thread_local LoggerContext ncc::Log;
 
 NCC_EXPORT auto ncc::Formatter(std::string_view msg, Sev sev) -> std::string {
+  if (sev == Sev::Raw) {
+    return std::string(msg);
+  }
+
   std::array<std::string_view, Sev_MaxValue + 1> ansi_prefixes = {
       "\x1b[1mtrace:\x1b[0m ",         "\x1b[1mdebug:\x1b[0m ",      "\x1b[37;1minfo:\x1b[0m ",
       "\x1b[37;1mnotice:\x1b[0m ",     "\x1b[35;1mwarning:\x1b[0m ", "\x1b[31;1merror:\x1b[0m ",
       "\x1b[31;1;4mcritical:\x1b[0m ", "\x1b[31;1;4malert:\x1b[0m ", "\x1b[31;1;4memergency:\x1b[0m "};
 
   std::stringstream ss;
-  ss << ansi_prefixes[sev] << "\x1b[37;1m" << msg << "\x1b[0m";
+  ss << ansi_prefixes[sev] << msg << "\n";
 
   return ss.str();
 }
@@ -135,40 +140,51 @@ void ECBase::Finalize() {
   m_json = oss.str();
 }
 
-auto LoggerContext::Subscribe(LogCallback cb) -> size_t {
-  m_subscribers.push_back(std::move(cb));
-  return m_subscribers.size() - 1;
+auto LoggerContext::Subscribe(LogCallback cb) -> LogSubscriberID {
+  auto new_sub_id = m_sub_id_ctr++;
+  m_subs.emplace_back(std::move(cb), new_sub_id, false);
+  return new_sub_id;
 }
 
-void LoggerContext::Unsubscribe(size_t idx) {
-  if (idx < m_subscribers.size()) {
-    m_subscribers.erase(m_subscribers.begin() + idx);
+void LoggerContext::Unsubscribe(LogSubscriberID id) {
+  std::erase_if(m_subs, [id](const auto &sub) { return sub.ID() == id; });
+}
+
+void LoggerContext::UnsubscribeAll() { m_subs.clear(); }
+
+void LoggerContext::Suspend(LogSubscriberID id) {
+  auto it = std::find_if(m_subs.begin(), m_subs.end(), [id](const auto &sub) { return sub.ID() == id; });
+
+  if (it != m_subs.end()) {
+    it->m_suspended = true;
   }
 }
 
-void LoggerContext::UnsubscribeAll() { m_subscribers.clear(); }
-
-auto LoggerContext::AddFilter(LogFilterFunc filter) -> size_t {
-  m_filters.push_back(filter);
-  return m_filters.size() - 1;
-}
-
-void LoggerContext::RemoveFilter(size_t idx) {
-  if (idx < m_filters.size()) {
-    m_filters.erase(m_filters.begin() + idx);
+void LoggerContext::SuspendAll() {
+  for (auto &sub : m_subs) {
+    sub.m_suspended = true;
   }
 }
 
-void LoggerContext::ClearFilters() { m_filters.clear(); }
+void LoggerContext::Resume(LogSubscriberID id) {
+  auto it = std::find_if(m_subs.begin(), m_subs.end(), [id](const auto &sub) { return sub.ID() == id; });
+
+  if (it != m_subs.end()) {
+    it->m_suspended = false;
+  }
+}
+
+void LoggerContext::ResumeAll() {
+  for (auto &sub : m_subs) {
+    sub.m_suspended = false;
+  }
+}
 
 void LoggerContext::Publish(const std::string &msg, Sev sev, const ECBase &ec) const {
   if (m_enabled) {
-    bool emit = m_filters.empty() ||
-                std::all_of(m_filters.begin(), m_filters.end(), [&](const auto &f) { return f(msg, sev, ec); });
-
-    if (emit) {
-      for (const auto &sub : m_subscribers) {
-        sub(msg, sev, ec);
+    for (const auto &subscription : m_subs) {
+      if (!subscription.IsSuspended()) {
+        subscription.m_cb(msg, sev, ec);
       }
     }
   }

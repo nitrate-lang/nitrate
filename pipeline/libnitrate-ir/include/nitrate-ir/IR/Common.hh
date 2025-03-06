@@ -63,7 +63,7 @@ namespace ncc::ir {
     constexpr Arena(const Arena<U> &) {}
 
     [[nodiscard]] T *allocate(std::size_t n) {  // NOLINT
-      return static_cast<T *>(NrAllocator->Alloc(sizeof(T) * n));
+      return static_cast<T *>(NrAllocator->allocate(sizeof(T) * n, alignof(T)));
     }
 
     void deallocate(T *, std::size_t) {};  // NOLINT

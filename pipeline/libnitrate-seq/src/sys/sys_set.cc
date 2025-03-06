@@ -31,6 +31,7 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
+#include <algorithm>
 #include <core/PImpl.hh>
 #include <nitrate-core/IEnvironment.hh>
 #include <nitrate-seq/Sequencer.hh>

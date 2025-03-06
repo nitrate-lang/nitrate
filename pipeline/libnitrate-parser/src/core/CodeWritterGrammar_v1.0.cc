@@ -340,7 +340,7 @@ void CodeWriter_v1_0::PutIdentifier(std::string_view name) {
     }
 
     case IntL: {
-      bool was_it_hex = m_ldata.m_str.Get().starts_with("0x");
+      bool was_it_hex = m_ldata.m_str->starts_with("0x");
       if (was_it_hex) {
         if (std::isxdigit(name.front()) == 0) {
           m_os << name;

@@ -68,28 +68,24 @@ namespace nitrate {
     auto GetFunctor() -> std::function<T()> { return m_func; }
   };
 
-  static inline void DefaultDiagnostic(std::string_view message) { std::cerr << message << std::endl; }
-
-  auto Pipeline(std::istream &in, std::ostream &out, std::vector<std::string> options,
-                std::optional<DiagnosticFunc> diag = DefaultDiagnostic) -> LazyResult<bool>;
+  auto Pipeline(std::istream &in, std::ostream &out, std::vector<std::string> options) -> LazyResult<bool>;
 
   template <typename T>
-  static inline auto Pipeline(const T &in, std::string &out, std::vector<std::string> options,
-                              std::optional<DiagnosticFunc> diag = DefaultDiagnostic) -> LazyResult<bool> {
+  static inline auto Pipeline(const T &in, std::string &out, std::vector<std::string> options) -> LazyResult<bool> {
     std::stringstream out_stream;
     std::stringstream in_stream(in);
-    auto unit = Pipeline(in_stream, out_stream, std::move(options), diag);
+    auto unit = Pipeline(in_stream, out_stream, std::move(options));
     unit.Wait();
     out.assign(out_stream.str());
 
     return unit;
   }
 
-  static inline auto Pipeline(std::string_view in, std::string &out, std::vector<std::string> options,
-                              std::optional<DiagnosticFunc> diag = DefaultDiagnostic) -> LazyResult<bool> {
+  static inline auto Pipeline(std::string_view in, std::string &out,
+                              std::vector<std::string> options) -> LazyResult<bool> {
     std::stringstream out_stream;
     std::stringstream in_stream((std::string(in)));
-    auto unit = Pipeline(in_stream, out_stream, std::move(options), diag);
+    auto unit = Pipeline(in_stream, out_stream, std::move(options));
     unit.Wait();
     out.assign(out_stream.str());
 
@@ -98,14 +94,12 @@ namespace nitrate {
 
   using ChainOptions = std::vector<std::vector<std::string>>;
 
-  auto Chain(std::istream &in, std::ostream &out, ChainOptions operations,
-             std::optional<DiagnosticFunc> diag = DefaultDiagnostic, bool select = false) -> LazyResult<bool>;
+  auto Chain(std::istream &in, std::ostream &out, ChainOptions operations, bool select = false) -> LazyResult<bool>;
 
-  static inline auto Chain(const auto &in, std::string &out, ChainOptions operations,
-                           std::optional<DiagnosticFunc> diag = DefaultDiagnostic) -> LazyResult<bool> {
+  static inline auto Chain(const auto &in, std::string &out, ChainOptions operations) -> LazyResult<bool> {
     std::stringstream out_stream;
     std::stringstream in_stream(in);
-    auto unit = Chain(in_stream, out_stream, std::move(operations), diag, false);
+    auto unit = Chain(in_stream, out_stream, std::move(operations), false);
     unit.Wait();
 
     out.assign(out_stream.str());
@@ -113,11 +107,10 @@ namespace nitrate {
     return unit;
   }
 
-  static inline auto Chain(std::string_view in, std::string &out, ChainOptions operations,
-                           std::optional<DiagnosticFunc> diag = DefaultDiagnostic) -> LazyResult<bool> {
+  static inline auto Chain(std::string_view in, std::string &out, ChainOptions operations) -> LazyResult<bool> {
     std::stringstream out_stream;
     std::stringstream in_stream((std::string(in)));
-    auto unit = Chain(in_stream, out_stream, std::move(operations), diag, false);
+    auto unit = Chain(in_stream, out_stream, std::move(operations), false);
     unit.Wait();
 
     out.assign(out_stream.str());

@@ -44,9 +44,6 @@ namespace ncc::parse {
   public:
     virtual ~ASTVisitor() = default;
 
-    virtual void Visit(FlowPtr<Base> n) = 0;
-    virtual void Visit(FlowPtr<ExprStmt> n) = 0;
-    virtual void Visit(FlowPtr<LambdaExpr> n) = 0;
     virtual void Visit(FlowPtr<NamedTy> n) = 0;
     virtual void Visit(FlowPtr<InferTy> n) = 0;
     virtual void Visit(FlowPtr<TemplateType> n) = 0;
@@ -115,10 +112,6 @@ namespace ncc::parse {
     template <typename T>
     void Dispatch(FlowPtr<T> n) {
       switch (n->GetKind()) {
-        case QAST_BASE: {
-          Visit(n.template As<Base>());
-          break;
-        }
         case QAST_BINEXPR: {
           Visit(n.template As<Binary>());
           break;
@@ -193,10 +186,6 @@ namespace ncc::parse {
         }
         case QAST_POST_UNEXPR: {
           Visit(n.template As<PostUnary>());
-          break;
-        }
-        case QAST_LAMBDA: {
-          Visit(n.template As<LambdaExpr>());
           break;
         }
         case QAST_TEMPL_CALL: {
@@ -377,10 +366,6 @@ namespace ncc::parse {
         }
         case QAST_SWITCH: {
           Visit(n.template As<Switch>());
-          break;
-        }
-        case QAST_ESTMT: {
-          Visit(n.template As<ExprStmt>());
           break;
         }
       }

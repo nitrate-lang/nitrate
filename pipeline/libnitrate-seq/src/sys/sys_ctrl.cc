@@ -55,7 +55,7 @@ auto Sequencer::SysCtrl() -> int {
 
   auto id = lua_tointeger(lua, 1);
 
-  Log << ec::SeqLog << Debug << "sys_ctrl: " << id << " not implemented";
+  Log << ec::SeqLog << "sys_ctrl: " << id << " not implemented";
 
   lua_pushnil(lua);
 

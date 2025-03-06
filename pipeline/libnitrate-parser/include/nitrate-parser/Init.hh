@@ -40,7 +40,8 @@ namespace ncc::parse {
   struct ParseLibrarySetup {
     static auto Init() -> bool;
     static void Deinit();
-    static auto GetVersionId() -> std::string_view;
+    static auto GetSemVersion() -> std::array<uint32_t, 3>;
+    static auto BuildId() -> BuildId;
   };
 
   extern LibraryRC<ParseLibrarySetup> ParseLibrary;

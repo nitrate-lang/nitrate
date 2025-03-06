@@ -37,9 +37,9 @@ using namespace ncc;
 using namespace ncc::lex;
 using namespace ncc::parse;
 
-auto Parser::PImpl::RecurseReturn() -> FlowPtr<Stmt> {
+auto GeneralParser::PImpl::RecurseReturn() -> FlowPtr<Expr> {
   if (NextIf<PuncSemi>()) {
-    return CreateNode<Return>(std::nullopt)();
+    return m_fac.CreateReturn();
   }
 
   auto return_value = RecurseExpr({
@@ -50,15 +50,15 @@ auto Parser::PImpl::RecurseReturn() -> FlowPtr<Stmt> {
     Log << SyntaxError << Current() << "Expected ';' after the return statement.";
   }
 
-  return CreateNode<Return>(return_value)();
+  return m_fac.CreateReturn(return_value);
 }
 
-auto Parser::PImpl::RecurseRetif() -> FlowPtr<Stmt> {
+auto GeneralParser::PImpl::RecurseReturnIf() -> FlowPtr<Expr> {
   auto return_if = RecurseExpr({
       Token(Punc, PuncComa),
   });
 
-  if (NextIf<PuncComa>()) [[likely]] {
+  if (NextIf<PuncComa>()) {
     auto return_value = RecurseExpr({
         Token(Punc, PuncSemi),
     });
@@ -67,9 +67,12 @@ auto Parser::PImpl::RecurseRetif() -> FlowPtr<Stmt> {
       Log << SyntaxError << Current() << "Expected ';' after the retif value.";
     }
 
-    return CreateNode<ReturnIf>(return_if, return_value)();
-  } else {
-    Log << SyntaxError << Current() << "Expected ',' after the retif condition.";
-    return MockStmt(QAST_RETIF);
+    return m_fac.CreateReturnIf(return_if, return_value);
   }
+
+  if (!NextIf<PuncSemi>()) [[unlikely]] {
+    Log << SyntaxError << Current() << "Expected ';' after the retif value.";
+  }
+
+  return m_fac.CreateReturnIf(return_if);
 }

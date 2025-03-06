@@ -46,7 +46,9 @@ using namespace ncc;
 using namespace ncc::parse;
 using namespace ncc::lex;
 
-auto Parser::PImpl::RecurseName() -> string {
+void ParserSetCurrentScanner(IScanner *scanner);
+
+auto GeneralParser::PImpl::RecurseName() -> string {
   enum State {
     Start,
     RequireName,
@@ -111,13 +113,13 @@ auto Parser::PImpl::RecurseName() -> string {
   return name;
 }
 
-auto Parser::PImpl::RecurseBlock(bool expect_braces, bool single_stmt, SafetyMode safety) -> FlowPtr<Stmt> {
+auto GeneralParser::PImpl::RecurseBlock(bool expect_braces, bool single_stmt, BlockMode safety) -> FlowPtr<Expr> {
   if (expect_braces && !Next().Is<PuncLCur>()) {
     Log << SyntaxError << Current() << "Expected '{'";
   }
 
   auto block_start = Current().GetStart();
-  BlockItems statements;
+  std::vector<FlowPtr<Expr>> statements;
 
   auto block_comments = m_rd.CommentBuffer();
   m_rd.ClearCommentBuffer();
@@ -131,7 +133,7 @@ auto Parser::PImpl::RecurseBlock(bool expect_braces, bool single_stmt, SafetyMod
     { /* Detect exit conditon */
       bool should_break = (expect_braces && NextIf<PuncRCur>()) || (single_stmt && statements.size() == 1);
 
-      if (!should_break && NextIf<EofF>()) {
+      if (!should_break && m_rd.IsEof()) {
         if (expect_braces) {
           Log << SyntaxError << Current() << "Expected '}'";
         }
@@ -140,7 +142,7 @@ auto Parser::PImpl::RecurseBlock(bool expect_braces, bool single_stmt, SafetyMod
       }
 
       if (should_break) {
-        auto block = CreateNode<Block>(statements, safety)();
+        auto block = m_fac.CreateBlock(statements, safety);
         block->SetOffset(block_start);
 
         return BindComments(block, block_comments);
@@ -159,14 +161,11 @@ auto Parser::PImpl::RecurseBlock(bool expect_braces, bool single_stmt, SafetyMod
         Log << SyntaxError << Current() << "Expected ';' after statement expression";
       }
 
-      auto stmt = CreateNode<ExprStmt>(expr)();
-      stmt->SetOffset(expr->Begin());
-
-      statements.push_back(BindComments(stmt, comments));
+      statements.push_back(BindComments(expr, comments));
     } else {
       auto tok = Next();
       auto loc_start = tok.GetStart();
-      NullableFlowPtr<Stmt> r;
+      NullableFlowPtr<Expr> r;
 
       auto comments = m_rd.CommentBuffer();
       m_rd.ClearCommentBuffer();
@@ -269,7 +268,7 @@ auto Parser::PImpl::RecurseBlock(bool expect_braces, bool single_stmt, SafetyMod
         }
 
         case __FString: {
-          r = CreateNode<ExprStmt>(RecurseFstring())();
+          r = RecurseFstring();
           if (!NextIf<PuncSemi>()) {
             Log << SyntaxError << Current() << "Expected ';' after f-string expression";
           }
@@ -283,9 +282,9 @@ auto Parser::PImpl::RecurseBlock(bool expect_braces, bool single_stmt, SafetyMod
 
         case Unsafe: {
           if (Peek().Is<PuncLCur>()) {
-            r = RecurseBlock(true, false, SafetyMode::Unsafe);
+            r = RecurseBlock(true, false, BlockMode::Unsafe);
           } else {
-            r = RecurseBlock(false, true, SafetyMode::Unsafe);
+            r = RecurseBlock(false, true, BlockMode::Unsafe);
           }
 
           break;
@@ -293,9 +292,9 @@ auto Parser::PImpl::RecurseBlock(bool expect_braces, bool single_stmt, SafetyMod
 
         case Safe: {
           if (Peek().Is<PuncLCur>()) {
-            r = RecurseBlock(true, false, SafetyMode::Safe);
+            r = RecurseBlock(true, false, BlockMode::Safe);
           } else {
-            r = RecurseBlock(false, true, SafetyMode::Safe);
+            r = RecurseBlock(false, true, BlockMode::Safe);
           }
 
           break;
@@ -337,7 +336,7 @@ auto Parser::PImpl::RecurseBlock(bool expect_braces, bool single_stmt, SafetyMod
         }
 
         case Keyword::Break: {
-          r = CreateNode<Break>()();
+          r = m_fac.CreateBreak();
           if (!NextIf<PuncSemi>()) {
             Log << SyntaxError << Current() << "Expected ';' after 'break' statement";
           }
@@ -346,7 +345,7 @@ auto Parser::PImpl::RecurseBlock(bool expect_braces, bool single_stmt, SafetyMod
         }
 
         case Keyword::Continue: {
-          r = CreateNode<Continue>()();
+          r = m_fac.CreateContinue();
           if (!NextIf<PuncSemi>()) {
             Log << SyntaxError << Current() << "Expected ';' after 'continue' statement";
           }
@@ -359,7 +358,7 @@ auto Parser::PImpl::RecurseBlock(bool expect_braces, bool single_stmt, SafetyMod
         }
 
         case Retif: {
-          r = RecurseRetif();
+          r = RecurseReturnIf();
           break;
         }
 
@@ -399,7 +398,7 @@ auto Parser::PImpl::RecurseBlock(bool expect_braces, bool single_stmt, SafetyMod
         }
 
         case Undef: {
-          r = CreateNode<ExprStmt>(CreateNode<Undefined>()())();
+          r = m_fac.CreateUndefined();
           if (!NextIf<PuncSemi>()) {
             Log << SyntaxError << Current() << "Expected ';' after 'undef' statement";
           }
@@ -407,7 +406,7 @@ auto Parser::PImpl::RecurseBlock(bool expect_braces, bool single_stmt, SafetyMod
         }
 
         case Keyword::Null: {
-          r = CreateNode<ExprStmt>(CreateNode<Null>()())();
+          r = m_fac.CreateNull();
           if (!NextIf<PuncSemi>()) {
             Log << SyntaxError << Current() << "Expected ';' after 'null' statement";
           }
@@ -415,7 +414,7 @@ auto Parser::PImpl::RecurseBlock(bool expect_braces, bool single_stmt, SafetyMod
         }
 
         case True: {
-          r = CreateNode<ExprStmt>(CreateNode<Boolean>(true)())();
+          r = m_fac.CreateBoolean(true);
           if (!NextIf<PuncSemi>()) {
             Log << SyntaxError << Current() << "Expected ';' after 'true' statement";
           }
@@ -423,7 +422,7 @@ auto Parser::PImpl::RecurseBlock(bool expect_braces, bool single_stmt, SafetyMod
         }
 
         case False: {
-          r = CreateNode<ExprStmt>(CreateNode<Boolean>(false)())();
+          r = m_fac.CreateBoolean(false);
           if (!NextIf<PuncSemi>()) {
             Log << SyntaxError << Current() << "Expected ';' after 'false' statement";
           }
@@ -440,27 +439,44 @@ auto Parser::PImpl::RecurseBlock(bool expect_braces, bool single_stmt, SafetyMod
   }
 }
 
-Parser::Parser(ncc::lex::IScanner &lexer, std::shared_ptr<ncc::IEnvironment> env, std::shared_ptr<void> lifetime)
-    : m_impl(std::make_unique<Parser::PImpl>(lexer, std::move(env), std::move(lifetime))) {}
+GeneralParser::GeneralParser(ncc::lex::IScanner &lexer, std::shared_ptr<ncc::IEnvironment> env,
+                             std::pmr::memory_resource &pool)
+    : m_impl(std::make_unique<GeneralParser::PImpl>(lexer, std::move(env), pool)) {}
 
-Parser::~Parser() = default;
+GeneralParser::~GeneralParser() = default;
 
-void ParserSetCurrentScanner(IScanner *scanner);
+GeneralParser::GeneralParser(GeneralParser &&o) noexcept : m_impl(std::exchange(o.m_impl, nullptr)) {}
 
-void Parser::SetFailBit() { m_impl->m_failed = true; }
+auto GeneralParser::operator=(GeneralParser &&o) noexcept -> GeneralParser & {
+  if (this != &o) {
+    m_impl = std::exchange(o.m_impl, nullptr);
+  }
 
-auto Parser::GetLexer() -> lex::IScanner & { return m_impl->m_rd; }
+  return *this;
+}
 
-auto Parser::Parse() -> ASTRoot {
+auto GeneralParser::GetLexer() -> lex::IScanner & {
+  if (!m_impl) {
+    qcore_panic("GeneralParser::GetLexer() called on moved-from object");
+  }
+
+  return m_impl->m_rd;
+}
+
+auto GeneralParser::Parse() -> ASTRoot {
+  if (!m_impl) {
+    qcore_panic("GeneralParser::Parse() called on moved-from object");
+  }
+
   std::optional<ASTRoot> ast;
 
   { /* Assign the current context to thread-local global state */
     ParserSetCurrentScanner(&m_impl->m_rd);
 
     { /* Subscribe to events emitted by the parser */
-      auto sub_id = Log.Subscribe([&](auto, auto, const auto &ec) {
+      auto sub_id = Log.Subscribe([this](auto, auto, const auto &ec) {
         if (ec.GetKind() == SyntaxError.GetKind()) {
-          SetFailBit();
+          m_impl->m_failed = true;
         }
       });
 
@@ -468,24 +484,18 @@ auto Parser::Parse() -> ASTRoot {
         auto old_state = m_impl->m_rd.GetSkipCommentsState();
         m_impl->m_rd.SkipCommentsState(true);
 
-        {   /* Parse the input */
-          { /* Swap in an arena allocator */
-            std::swap(MainAllocator, m_impl->m_allocator);
-
-            /* Recursive descent parsing */
-            auto node = m_impl->RecurseBlock(false, false, SafetyMode::Unknown);
-
-            std::swap(MainAllocator, m_impl->m_allocator);
-
-            if (m_impl->m_rd.HasError()) {
-              Log << SyntaxError << "Some lexical errors have occurred";
-            }
-
-            ast = ASTRoot(node, std::move(m_impl->m_allocator), m_impl->m_failed);
+        { /* Recursive descent parsing */
+          auto node = m_impl->RecurseBlock(false, false, BlockMode::Unknown);
+          if (m_impl->m_rd.HasError()) {
+            Log << SyntaxError << "Some lexical errors have occurred";
           }
 
-          /* Recreate the thread-local allocator */
-          m_impl->m_allocator = std::make_unique<ncc::DynamicArena>();
+          for_each<dfs_pre>(node, [&](auto c) {
+            m_impl->m_failed |= !c || c->IsMock();
+            return m_impl->m_failed ? IterOp::Abort : IterOp::Proceed;
+          });
+
+          ast = ASTRoot(node, !m_impl->m_failed);
         }
 
         m_impl->m_rd.SkipCommentsState(old_state);
@@ -500,17 +510,4 @@ auto Parser::Parse() -> ASTRoot {
   return ast.value();
 }
 
-auto ASTRoot::Check() const -> bool {
-  if (m_failed) {
-    return false;
-  }
-
-  bool failed = false;
-  iterate<dfs_pre>(m_base, [&](auto, auto c) {
-    failed |= !c || c->IsMock();
-
-    return failed ? IterOp::Abort : IterOp::Proceed;
-  });
-
-  return !failed;
-}
+auto ASTRoot::Check() const -> bool { return m_success; }

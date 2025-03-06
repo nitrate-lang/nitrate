@@ -43,32 +43,42 @@ using namespace ncc::lex;
 NCC_EXPORT ncc::LibraryRC<LexerLibrarySetup> ncc::lex::LexerLibrary;
 
 NCC_EXPORT auto LexerLibrarySetup::Init() -> bool {
-  Log << Runtime << Debug << "libnitrate-lexer initializing...";
+  Log << Runtime << Trace << "libnitrate-lexer initializing...";
 
   if (!ncc::CoreLibrary.InitRC()) [[unlikely]] {
     Log << Runtime << Error << "libnitrate-lexer failed init: libnitrate-core failed to initialize";
     return false;
   }
 
-  Log << Runtime << Debug << "libnitrate-lexer initialized";
+  Log << Runtime << Trace << "libnitrate-lexer initialized";
 
   return true;
 }
 
 NCC_EXPORT void LexerLibrarySetup::Deinit() {
-  Log << Runtime << Debug << "libnitrate-lexer deinitializing...";
+  Log << Runtime << Trace << "libnitrate-lexer deinitializing...";
 
   ncc::CoreLibrary.DeinitRC();
 
-  Log << Runtime << Debug << "libnitrate-lexer deinitialized";
+  Log << Runtime << Trace << "libnitrate-lexer deinitialized";
 }
 
-NCC_EXPORT auto LexerLibrarySetup::GetVersionId() -> std::string_view { return __TARGET_VERSION; }
+NCC_EXPORT auto LexerLibrarySetup::GetSemVersion() -> std::array<uint32_t, 3> {
+  return {__TARGET_MAJOR_VERSION, __TARGET_MINOR_VERSION, __TARGET_PATCH_VERSION};
+}
+
+NCC_EXPORT auto LexerLibrarySetup::BuildId() -> ncc::BuildId {
+  return {__TARGET_COMMIT_HASH, __TARGET_COMMIT_DATE, __TARGET_COMMIT_BRANCH};
+}
 
 std::string ncc::lex::Formatter(std::string_view msg, Sev sev) {
-  if (sev <= ncc::Debug) {
-    return "\x1b[37;1m[\x1b[0m\x1b[34;1mLexer\x1b[0m\x1b[37;1m]: debug:\x1b[0m " + std::string(msg);
+  if (sev == Raw) {
+    return std::string(msg);
   }
 
-  return "\x1b[37;1m[\x1b[0m\x1b[34;1mLexer\x1b[0m\x1b[37;1m]:\x1b[0m " + std::string(msg);
+  if (sev <= ncc::Debug) {
+    return "\x1b[37;1m[\x1b[0m\x1b[34;1mLexer\x1b[0m\x1b[37;1m]: debug:\x1b[0m " + std::string(msg) + "\n";
+  }
+
+  return "\x1b[37;1m[\x1b[0m\x1b[34;1mLexer\x1b[0m\x1b[37;1m]:\x1b[0m " + std::string(msg) + "\n";
 }

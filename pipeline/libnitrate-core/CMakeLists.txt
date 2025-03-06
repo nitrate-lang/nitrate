@@ -1,28 +1,22 @@
 cmake_minimum_required(VERSION 3.15)
 project(libnitrate-core CXX)
 
-#================== CONFIGURE BUILD ==================
-set(CMAKE_CXX_STANDARD 20)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_EXTENSIONS ON)
-
-#================== CALCULATE BUILD ID ==================
-execute_process(COMMAND find ${CMAKE_CURRENT_SOURCE_DIR} -type f -name "*.*" -exec sha256sum {} \; COMMAND sha256sum
-  OUTPUT_VARIABLE SHA256SUMS OUTPUT_STRIP_TRAILING_WHITESPACE)
-string(REGEX REPLACE " .*" "" SHA256SUMS ${SHA256SUMS})
-string(TOUPPER ${SHA256SUMS} SHA256SUMS)
-string(SUBSTRING ${SHA256SUMS} 0 32 SHA256SUMS)
-set(__TARGET_VERSION "\"QCORE_${SHA256SUMS}\"")
-message(STATUS "libnitrate-core VersionId: ${__TARGET_VERSION}")
-
-if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-  set(__TARGET_VERSION "\"undefined\"")
-endif()
+set(__TARGET_MAJOR_VERSION 0)
+set(__TARGET_MINOR_VERSION 0)
+set(__TARGET_PATCH_VERSION 0)
 
 #================== SET BUILD FLAGS ==================
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-exceptions -D__TARGET_VERSION=\\\"${__TARGET_VERSION}\\\"")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-exceptions")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D__TARGET_MAJOR_VERSION=${__TARGET_MAJOR_VERSION}")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D__TARGET_MINOR_VERSION=${__TARGET_MINOR_VERSION}")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D__TARGET_PATCH_VERSION=${__TARGET_PATCH_VERSION}")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D__TARGET_COMMIT_HASH=\\\"${__TARGET_COMMIT_HASH}\\\"")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D__TARGET_COMMIT_BRANCH=\\\"${__TARGET_COMMIT_BRANCH}\\\"")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D__TARGET_COMMIT_DATE=\\\"${__TARGET_COMMIT_DATE}\\\"")
 
 file(GLOB_RECURSE CXX_SOURCES "src/*.cc")
+
+set_source_files_properties(src/CatchAll.cc PROPERTIES COMPILE_FLAGS "-fexceptions -DNCC_CATCH_ALL_ENABLED_EXCEPTIONS")
 
 add_library(nitrate-core ${CXX_SOURCES})
 target_include_directories(nitrate-core PUBLIC src "include")

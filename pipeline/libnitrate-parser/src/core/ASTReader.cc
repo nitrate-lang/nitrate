@@ -35,8 +35,6 @@
 #include <google/protobuf/io/coded_stream.h>
 
 #include <boost/multiprecision/cpp_int.hpp>
-#include <charconv>
-#include <memory>
 #include <nitrate-core/Logger.hh>
 #include <nitrate-core/Macro.hh>
 #include <nitrate-lexer/Scanner.hh>
@@ -47,25 +45,25 @@
 #include <nitrate-parser/ASTStmt.hh>
 #include <nitrate-parser/ASTType.hh>
 
-static constexpr size_t kRecursionLimit = 100000;
+static constexpr int kRecursionLimit = INT_MAX;
 
 using namespace ncc;
 using namespace ncc::lex;
 using namespace ncc::parse;
 using namespace nitrate::parser;
 
-static NCC_FORCE_INLINE parse::SafetyMode FromSafetyMode(SyntaxTree::Block_Safety mode) noexcept {
+static NCC_FORCE_INLINE parse::BlockMode FromBlockMode(SyntaxTree::Block_Safety mode) noexcept {
   switch (mode) {
     case SyntaxTree::Block_Safety_Safe: {
-      return parse::SafetyMode::Safe;
+      return parse::BlockMode::Safe;
     }
 
     case SyntaxTree::Block_Safety_Unsafe: {
-      return parse::SafetyMode::Unsafe;
+      return parse::BlockMode::Unsafe;
     }
 
     case SyntaxTree::Block_Safety_None: {
-      return parse::SafetyMode::Unknown;
+      return parse::BlockMode::Unknown;
     }
   }
 }
@@ -395,7 +393,7 @@ static NCC_FORCE_INLINE std::optional<parse::Purity> FromPurity(SyntaxTree::Func
   }
 }
 
-void AstReader::UnmarshalLocationLocation(const SyntaxTree::SourceLocationRange &in, const FlowPtr<Base> &out) {
+void AstReader::UnmarshalLocationLocation(const SyntaxTree::SourceLocationRange &in, const FlowPtr<Expr> &out) {
   if (!m_rd.has_value()) {
     return;
   }
@@ -425,8 +423,8 @@ void AstReader::UnmarshalLocationLocation(const SyntaxTree::SourceLocationRange 
 }
 
 void AstReader::UnmarshalCodeComment(
-    const ::google::protobuf::RepeatedPtrField< ::nitrate::parser::SyntaxTree::UserComment> &in,
-    const FlowPtr<Base> &out) {
+    const ::google::protobuf::RepeatedPtrField<::nitrate::parser::SyntaxTree::UserComment> &in,
+    const FlowPtr<Expr> &out) {
   std::vector<string> comments;
   comments.reserve(in.size());
 
@@ -437,292 +435,8 @@ void AstReader::UnmarshalCodeComment(
   out->SetComments(comments);
 }
 
-auto AstReader::Unmarshal(const SyntaxTree::Root &in) -> Result<Base> {
-  switch (in.node_case()) {
-    case SyntaxTree::Root::kBase: {
-      return Unmarshal(in.base());
-    }
-
-    case SyntaxTree::Root::kLambdaExpr: {
-      return Unmarshal(in.lambda_expr());
-    }
-
-    case SyntaxTree::Root::kUnary: {
-      return Unmarshal(in.unary());
-    }
-
-    case SyntaxTree::Root::kBinary: {
-      return Unmarshal(in.binary());
-    }
-
-    case SyntaxTree::Root::kPostUnary: {
-      return Unmarshal(in.post_unary());
-    }
-
-    case SyntaxTree::Root::kTernary: {
-      return Unmarshal(in.ternary());
-    }
-
-    case SyntaxTree::Root::kInteger: {
-      return Unmarshal(in.integer());
-    }
-
-    case SyntaxTree::Root::kFloat: {
-      return Unmarshal(in.float_());
-    }
-
-    case SyntaxTree::Root::kBoolean: {
-      return Unmarshal(in.boolean());
-    }
-
-    case SyntaxTree::Root::kString: {
-      return Unmarshal(in.string());
-    }
-
-    case SyntaxTree::Root::kCharacter: {
-      return Unmarshal(in.character());
-    }
-
-    case SyntaxTree::Root::kNull: {
-      return Unmarshal(in.null());
-    }
-
-    case SyntaxTree::Root::kUndefined: {
-      return Unmarshal(in.undefined());
-    }
-
-    case SyntaxTree::Root::kCall: {
-      return Unmarshal(in.call());
-    }
-
-    case SyntaxTree::Root::kTemplateCall: {
-      return Unmarshal(in.template_call());
-    }
-
-    case SyntaxTree::Root::kList: {
-      return Unmarshal(in.list());
-    }
-
-    case SyntaxTree::Root::kAssoc: {
-      return Unmarshal(in.assoc());
-    }
-
-    case SyntaxTree::Root::kIndex: {
-      return Unmarshal(in.index());
-    }
-
-    case SyntaxTree::Root::kSlice: {
-      return Unmarshal(in.slice());
-    }
-
-    case SyntaxTree::Root::kFstring: {
-      return Unmarshal(in.fstring());
-    }
-
-    case SyntaxTree::Root::kIdentifier: {
-      return Unmarshal(in.identifier());
-    }
-
-    case SyntaxTree::Root::kSequence: {
-      return Unmarshal(in.sequence());
-    }
-
-    case SyntaxTree::Root::kExpr: {
-      return Unmarshal(in.expr());
-    }
-
-    case SyntaxTree::Root::kBlock: {
-      return Unmarshal(in.block());
-    }
-
-    case SyntaxTree::Root::kVariable: {
-      return Unmarshal(in.variable());
-    }
-
-    case SyntaxTree::Root::kAssembly: {
-      return Unmarshal(in.assembly());
-    }
-
-    case SyntaxTree::Root::kIf: {
-      return Unmarshal(in.if_());
-    }
-
-    case SyntaxTree::Root::kWhile: {
-      return Unmarshal(in.while_());
-    }
-
-    case SyntaxTree::Root::kFor: {
-      return Unmarshal(in.for_());
-    }
-
-    case SyntaxTree::Root::kForeach: {
-      return Unmarshal(in.foreach ());
-    }
-
-    case SyntaxTree::Root::kBreak: {
-      return Unmarshal(in.break_());
-    }
-
-    case SyntaxTree::Root::kContinue: {
-      return Unmarshal(in.continue_());
-    }
-
-    case SyntaxTree::Root::kReturn: {
-      return Unmarshal(in.return_());
-    }
-
-    case SyntaxTree::Root::kReturnIf: {
-      return Unmarshal(in.return_if());
-    }
-
-    case SyntaxTree::Root::kCase: {
-      return Unmarshal(in.case_());
-    }
-
-    case SyntaxTree::Root::kSwitch: {
-      return Unmarshal(in.switch_());
-    }
-
-    case SyntaxTree::Root::kExport: {
-      return Unmarshal(in.export_());
-    }
-
-    case SyntaxTree::Root::kScope: {
-      return Unmarshal(in.scope());
-    }
-
-    case SyntaxTree::Root::kTypedef: {
-      return Unmarshal(in.typedef_());
-    }
-
-    case SyntaxTree::Root::kEnum: {
-      return Unmarshal(in.enum_());
-    }
-
-    case SyntaxTree::Root::kFunction: {
-      return Unmarshal(in.function());
-    }
-
-    case SyntaxTree::Root::kStruct: {
-      return Unmarshal(in.struct_());
-    }
-
-    case SyntaxTree::Root::kNamed: {
-      return Unmarshal(in.named());
-    }
-
-    case SyntaxTree::Root::kInfer: {
-      return Unmarshal(in.infer());
-    }
-
-    case SyntaxTree::Root::kTemplate: {
-      return Unmarshal(in.template_());
-    }
-
-    case SyntaxTree::Root::kU1: {
-      return Unmarshal(in.u1());
-    }
-
-    case SyntaxTree::Root::kU8: {
-      return Unmarshal(in.u8());
-    }
-
-    case SyntaxTree::Root::kU16: {
-      return Unmarshal(in.u16());
-    }
-
-    case SyntaxTree::Root::kU32: {
-      return Unmarshal(in.u32());
-    }
-
-    case SyntaxTree::Root::kU64: {
-      return Unmarshal(in.u64());
-    }
-
-    case SyntaxTree::Root::kU128: {
-      return Unmarshal(in.u128());
-    }
-
-    case SyntaxTree::Root::kI8: {
-      return Unmarshal(in.i8());
-    }
-
-    case SyntaxTree::Root::kI16: {
-      return Unmarshal(in.i16());
-    }
-
-    case SyntaxTree::Root::kI32: {
-      return Unmarshal(in.i32());
-    }
-
-    case SyntaxTree::Root::kI64: {
-      return Unmarshal(in.i64());
-    }
-
-    case SyntaxTree::Root::kI128: {
-      return Unmarshal(in.i128());
-    }
-
-    case SyntaxTree::Root::kF16: {
-      return Unmarshal(in.f16());
-    }
-
-    case SyntaxTree::Root::kF32: {
-      return Unmarshal(in.f32());
-    }
-
-    case SyntaxTree::Root::kF64: {
-      return Unmarshal(in.f64());
-    }
-
-    case SyntaxTree::Root::kF128: {
-      return Unmarshal(in.f128());
-    }
-
-    case SyntaxTree::Root::kVoid: {
-      return Unmarshal(in.void_());
-    }
-
-    case SyntaxTree::Root::kPtr: {
-      return Unmarshal(in.ptr());
-    }
-
-    case SyntaxTree::Root::kOpaque: {
-      return Unmarshal(in.opaque());
-    }
-
-    case SyntaxTree::Root::kTuple: {
-      return Unmarshal(in.tuple());
-    }
-
-    case SyntaxTree::Root::kArray: {
-      return Unmarshal(in.array());
-    }
-
-    case SyntaxTree::Root::kRef: {
-      return Unmarshal(in.ref());
-    }
-
-    case SyntaxTree::Root::kFunc: {
-      return Unmarshal(in.func());
-    }
-
-    case SyntaxTree::Root::NODE_NOT_SET: {
-      return std::nullopt;
-    }
-  }
-}
-
 auto AstReader::Unmarshal(const SyntaxTree::Expr &in) -> Result<Expr> {
   switch (in.node_case()) {
-    case SyntaxTree::Expr::kBase: {
-      return CreateNode<Expr>(QAST_BASE)();
-    }
-
-    case SyntaxTree::Expr::kLambdaExpr: {
-      return Unmarshal(in.lambda_expr());
-    }
-
     case SyntaxTree::Expr::kUnary: {
       return Unmarshal(in.unary());
     }
@@ -801,6 +515,82 @@ auto AstReader::Unmarshal(const SyntaxTree::Expr &in) -> Result<Expr> {
 
     case SyntaxTree::Expr::kSequence: {
       return Unmarshal(in.sequence());
+    }
+
+    case SyntaxTree::Expr::kBlock: {
+      return Unmarshal(in.block());
+    }
+
+    case SyntaxTree::Expr::kVariable: {
+      return Unmarshal(in.variable());
+    }
+
+    case SyntaxTree::Expr::kAssembly: {
+      return Unmarshal(in.assembly());
+    }
+
+    case SyntaxTree::Expr::kIf: {
+      return Unmarshal(in.if_());
+    }
+
+    case SyntaxTree::Expr::kWhile: {
+      return Unmarshal(in.while_());
+    }
+
+    case SyntaxTree::Expr::kFor: {
+      return Unmarshal(in.for_());
+    }
+
+    case SyntaxTree::Expr::kForeach: {
+      return Unmarshal(in.foreach ());
+    }
+
+    case SyntaxTree::Expr::kBreak: {
+      return Unmarshal(in.break_());
+    }
+
+    case SyntaxTree::Expr::kContinue: {
+      return Unmarshal(in.continue_());
+    }
+
+    case SyntaxTree::Expr::kReturn: {
+      return Unmarshal(in.return_());
+    }
+
+    case SyntaxTree::Expr::kReturnIf: {
+      return Unmarshal(in.return_if());
+    }
+
+    case SyntaxTree::Expr::kCase: {
+      return Unmarshal(in.case_());
+    }
+
+    case SyntaxTree::Expr::kSwitch: {
+      return Unmarshal(in.switch_());
+    }
+
+    case SyntaxTree::Expr::kExport: {
+      return Unmarshal(in.export_());
+    }
+
+    case SyntaxTree::Expr::kScope: {
+      return Unmarshal(in.scope());
+    }
+
+    case SyntaxTree::Expr::kTypedef: {
+      return Unmarshal(in.typedef_());
+    }
+
+    case SyntaxTree::Expr::kEnum: {
+      return Unmarshal(in.enum_());
+    }
+
+    case SyntaxTree::Expr::kFunction: {
+      return Unmarshal(in.function());
+    }
+
+    case SyntaxTree::Expr::kStruct: {
+      return Unmarshal(in.struct_());
     }
 
     case SyntaxTree::Expr::kNamed: {
@@ -909,104 +699,8 @@ auto AstReader::Unmarshal(const SyntaxTree::Expr &in) -> Result<Expr> {
   }
 }
 
-auto AstReader::Unmarshal(const SyntaxTree::Stmt &in) -> Result<Stmt> {
-  switch (in.node_case()) {
-    case SyntaxTree::Stmt::kExprStmt: {
-      return Unmarshal(in.expr_stmt());
-    }
-
-    case SyntaxTree::Stmt::kBase: {
-      return CreateNode<Stmt>(QAST_BASE)();
-    }
-
-    case SyntaxTree::Stmt::kBlock: {
-      return Unmarshal(in.block());
-    }
-
-    case SyntaxTree::Stmt::kVariable: {
-      return Unmarshal(in.variable());
-    }
-
-    case SyntaxTree::Stmt::kAssembly: {
-      return Unmarshal(in.assembly());
-    }
-
-    case SyntaxTree::Stmt::kIf: {
-      return Unmarshal(in.if_());
-    }
-
-    case SyntaxTree::Stmt::kWhile: {
-      return Unmarshal(in.while_());
-    }
-
-    case SyntaxTree::Stmt::kFor: {
-      return Unmarshal(in.for_());
-    }
-
-    case SyntaxTree::Stmt::kForeach: {
-      return Unmarshal(in.foreach ());
-    }
-
-    case SyntaxTree::Stmt::kBreak: {
-      return Unmarshal(in.break_());
-    }
-
-    case SyntaxTree::Stmt::kContinue: {
-      return Unmarshal(in.continue_());
-    }
-
-    case SyntaxTree::Stmt::kReturn: {
-      return Unmarshal(in.return_());
-    }
-
-    case SyntaxTree::Stmt::kReturnIf: {
-      return Unmarshal(in.return_if());
-    }
-
-    case SyntaxTree::Stmt::kCase: {
-      return Unmarshal(in.case_());
-    }
-
-    case SyntaxTree::Stmt::kSwitch: {
-      return Unmarshal(in.switch_());
-    }
-
-    case SyntaxTree::Stmt::kExport: {
-      return Unmarshal(in.export_());
-    }
-
-    case SyntaxTree::Stmt::kScope: {
-      return Unmarshal(in.scope());
-    }
-
-    case SyntaxTree::Stmt::kTypedef: {
-      return Unmarshal(in.typedef_());
-    }
-
-    case SyntaxTree::Stmt::kEnum: {
-      return Unmarshal(in.enum_());
-    }
-
-    case SyntaxTree::Stmt::kFunction: {
-      return Unmarshal(in.function());
-    }
-
-    case SyntaxTree::Stmt::kStruct: {
-      return Unmarshal(in.struct_());
-    }
-
-    case SyntaxTree::Stmt::NODE_NOT_SET: {
-      return std::nullopt;
-    }
-  }
-}
-
 auto AstReader::Unmarshal(const SyntaxTree::Type &in) -> Result<Type> {
   switch (in.node_case()) {
-    case SyntaxTree::Type::kBase: {
-      return CreateNode<Type>(QAST_BASE)();
-    }
-
     case SyntaxTree::Type::kNamed: {
       return Unmarshal(in.named());
     }
@@ -1113,39 +807,12 @@ auto AstReader::Unmarshal(const SyntaxTree::Type &in) -> Result<Type> {
   }
 }
 
-auto AstReader::Unmarshal(const SyntaxTree::Base &in) -> Result<Base> {
-  auto object = CreateNode<Base>(QAST_BASE)();
-
-  UnmarshalLocationLocation(in.location(), object);
-  UnmarshalCodeComment(in.comments(), object);
-
-  return object;
-}
-
-auto AstReader::Unmarshal(const SyntaxTree::ExprStmt &in) -> Result<ExprStmt> {
-  auto expression = Unmarshal(in.expression());
-  if (!expression.has_value()) [[unlikely]] {
-    return std::nullopt;
+auto AstReader::Unmarshal(const SyntaxTree::Type &in, bool is_set) -> Result<Type> {
+  if (is_set) {
+    return Unmarshal(in);
   }
 
-  auto object = CreateNode<ExprStmt>(expression.value())();
-  UnmarshalLocationLocation(in.location(), object);
-  UnmarshalCodeComment(in.comments(), object);
-
-  return object;
-}
-
-auto AstReader::Unmarshal(const SyntaxTree::LambdaExpr &in) -> Result<LambdaExpr> {
-  auto func = Unmarshal(in.function());
-  if (!func.has_value()) [[unlikely]] {
-    return std::nullopt;
-  }
-
-  auto object = CreateNode<LambdaExpr>(func.value())();
-  UnmarshalLocationLocation(in.location(), object);
-  UnmarshalCodeComment(in.comments(), object);
-
-  return object;
+  return m_fac.CreateUnknownType();
 }
 
 auto AstReader::Unmarshal(const SyntaxTree::NamedTy &in) -> Result<NamedTy> {
@@ -1164,10 +831,7 @@ auto AstReader::Unmarshal(const SyntaxTree::NamedTy &in) -> Result<NamedTy> {
     return std::nullopt;
   }
 
-  auto type = CreateNode<NamedTy>(in.name())();
-  type->SetWidth(bit_width);
-  type->SetRangeBegin(minimum);
-  type->SetRangeEnd(maximum);
+  auto type = m_fac.CreateNamed(in.name(), bit_width, minimum, maximum);
 
   UnmarshalLocationLocation(in.location(), type);
   UnmarshalCodeComment(in.comments(), type);
@@ -1191,10 +855,7 @@ auto AstReader::Unmarshal(const SyntaxTree::InferTy &in) -> Result<InferTy> {
     return std::nullopt;
   }
 
-  auto type = CreateNode<InferTy>()();
-  type->SetWidth(bit_width);
-  type->SetRangeBegin(minimum);
-  type->SetRangeEnd(maximum);
+  auto type = m_fac.CreateUnknownType(bit_width, minimum, maximum);
 
   UnmarshalLocationLocation(in.location(), type);
   UnmarshalCodeComment(in.comments(), type);
@@ -1223,7 +884,7 @@ auto AstReader::Unmarshal(const SyntaxTree::TemplateType &in) -> Result<Template
     return std::nullopt;
   }
 
-  CallArgs args;
+  std::vector<CallArg> args;
   args.reserve(in.arguments_size());
 
   for (const auto &arg : in.arguments()) {
@@ -1235,7 +896,7 @@ auto AstReader::Unmarshal(const SyntaxTree::TemplateType &in) -> Result<Template
     args.emplace_back(arg.name(), argument.value());
   }
 
-  auto type = CreateNode<TemplateType>(base.value(), args)();
+  auto type = m_fac.CreateTemplateType(args, base.value());
   type->SetWidth(bit_width);
   type->SetRangeBegin(minimum);
   type->SetRangeEnd(maximum);
@@ -1262,10 +923,7 @@ auto AstReader::Unmarshal(const SyntaxTree::U1 &in) -> Result<U1> {
     return std::nullopt;
   }
 
-  auto type = CreateNode<U1>()();
-  type->SetWidth(bit_width);
-  type->SetRangeBegin(minimum);
-  type->SetRangeEnd(maximum);
+  auto type = m_fac.CreateU1(bit_width, minimum, maximum);
 
   UnmarshalLocationLocation(in.location(), type);
   UnmarshalCodeComment(in.comments(), type);
@@ -1289,10 +947,7 @@ auto AstReader::Unmarshal(const SyntaxTree::U8 &in) -> Result<U8> {
     return std::nullopt;
   }
 
-  auto type = CreateNode<U8>()();
-  type->SetWidth(bit_width);
-  type->SetRangeBegin(minimum);
-  type->SetRangeEnd(maximum);
+  auto type = m_fac.CreateU8(bit_width, minimum, maximum);
 
   UnmarshalLocationLocation(in.location(), type);
   UnmarshalCodeComment(in.comments(), type);
@@ -1316,10 +971,7 @@ auto AstReader::Unmarshal(const SyntaxTree::U16 &in) -> Result<U16> {
     return std::nullopt;
   }
 
-  auto type = CreateNode<U16>()();
-  type->SetWidth(bit_width);
-  type->SetRangeBegin(minimum);
-  type->SetRangeEnd(maximum);
+  auto type = m_fac.CreateU16(bit_width, minimum, maximum);
 
   UnmarshalLocationLocation(in.location(), type);
   UnmarshalCodeComment(in.comments(), type);
@@ -1343,10 +995,7 @@ auto AstReader::Unmarshal(const SyntaxTree::U32 &in) -> Result<U32> {
     return std::nullopt;
   }
 
-  auto type = CreateNode<U32>()();
-  type->SetWidth(bit_width);
-  type->SetRangeBegin(minimum);
-  type->SetRangeEnd(maximum);
+  auto type = m_fac.CreateU32(bit_width, minimum, maximum);
 
   UnmarshalLocationLocation(in.location(), type);
   UnmarshalCodeComment(in.comments(), type);
@@ -1370,10 +1019,7 @@ auto AstReader::Unmarshal(const SyntaxTree::U64 &in) -> Result<U64> {
     return std::nullopt;
   }
 
-  auto type = CreateNode<U64>()();
-  type->SetWidth(bit_width);
-  type->SetRangeBegin(minimum);
-  type->SetRangeEnd(maximum);
+  auto type = m_fac.CreateU64(bit_width, minimum, maximum);
 
   UnmarshalLocationLocation(in.location(), type);
   UnmarshalCodeComment(in.comments(), type);
@@ -1397,10 +1043,7 @@ auto AstReader::Unmarshal(const SyntaxTree::U128 &in) -> Result<U128> {
     return std::nullopt;
   }
 
-  auto type = CreateNode<U128>()();
-  type->SetWidth(bit_width);
-  type->SetRangeBegin(minimum);
-  type->SetRangeEnd(maximum);
+  auto type = m_fac.CreateU128(bit_width, minimum, maximum);
 
   UnmarshalLocationLocation(in.location(), type);
   UnmarshalCodeComment(in.comments(), type);
@@ -1424,10 +1067,7 @@ auto AstReader::Unmarshal(const SyntaxTree::I8 &in) -> Result<I8> {
     return std::nullopt;
   }
 
-  auto type = CreateNode<I8>()();
-  type->SetWidth(bit_width);
-  type->SetRangeBegin(minimum);
-  type->SetRangeEnd(maximum);
+  auto type = m_fac.CreateI8(bit_width, minimum, maximum);
 
   UnmarshalLocationLocation(in.location(), type);
   UnmarshalCodeComment(in.comments(), type);
@@ -1451,10 +1091,7 @@ auto AstReader::Unmarshal(const SyntaxTree::I16 &in) -> Result<I16> {
     return std::nullopt;
   }
 
-  auto type = CreateNode<I16>()();
-  type->SetWidth(bit_width);
-  type->SetRangeBegin(minimum);
-  type->SetRangeEnd(maximum);
+  auto type = m_fac.CreateI16(bit_width, minimum, maximum);
 
   UnmarshalLocationLocation(in.location(), type);
   UnmarshalCodeComment(in.comments(), type);
@@ -1478,10 +1115,7 @@ auto AstReader::Unmarshal(const SyntaxTree::I32 &in) -> Result<I32> {
     return std::nullopt;
   }
 
-  auto type = CreateNode<I32>()();
-  type->SetWidth(bit_width);
-  type->SetRangeBegin(minimum);
-  type->SetRangeEnd(maximum);
+  auto type = m_fac.CreateI32(bit_width, minimum, maximum);
 
   UnmarshalLocationLocation(in.location(), type);
   UnmarshalCodeComment(in.comments(), type);
@@ -1505,10 +1139,7 @@ auto AstReader::Unmarshal(const SyntaxTree::I64 &in) -> Result<I64> {
     return std::nullopt;
   }
 
-  auto type = CreateNode<I64>()();
-  type->SetWidth(bit_width);
-  type->SetRangeBegin(minimum);
-  type->SetRangeEnd(maximum);
+  auto type = m_fac.CreateI64(bit_width, minimum, maximum);
 
   UnmarshalLocationLocation(in.location(), type);
   UnmarshalCodeComment(in.comments(), type);
@@ -1532,10 +1163,7 @@ auto AstReader::Unmarshal(const SyntaxTree::I128 &in) -> Result<I128> {
     return std::nullopt;
   }
 
-  auto type = CreateNode<I128>()();
-  type->SetWidth(bit_width);
-  type->SetRangeBegin(minimum);
-  type->SetRangeEnd(maximum);
+  auto type = m_fac.CreateI128(bit_width, minimum, maximum);
 
   UnmarshalLocationLocation(in.location(), type);
   UnmarshalCodeComment(in.comments(), type);
@@ -1559,10 +1187,7 @@ auto AstReader::Unmarshal(const SyntaxTree::F16 &in) -> Result<F16> {
     return std::nullopt;
   }
 
-  auto type = CreateNode<F16>()();
-  type->SetWidth(bit_width);
-  type->SetRangeBegin(minimum);
-  type->SetRangeEnd(maximum);
+  auto type = m_fac.CreateF16(bit_width, minimum, maximum);
 
   UnmarshalLocationLocation(in.location(), type);
   UnmarshalCodeComment(in.comments(), type);
@@ -1586,10 +1211,7 @@ auto AstReader::Unmarshal(const SyntaxTree::F32 &in) -> Result<F32> {
     return std::nullopt;
   }
 
-  auto type = CreateNode<F32>()();
-  type->SetWidth(bit_width);
-  type->SetRangeBegin(minimum);
-  type->SetRangeEnd(maximum);
+  auto type = m_fac.CreateF32(bit_width, minimum, maximum);
 
   UnmarshalLocationLocation(in.location(), type);
   UnmarshalCodeComment(in.comments(), type);
@@ -1613,10 +1235,7 @@ auto AstReader::Unmarshal(const SyntaxTree::F64 &in) -> Result<F64> {
     return std::nullopt;
   }
 
-  auto type = CreateNode<F64>()();
-  type->SetWidth(bit_width);
-  type->SetRangeBegin(minimum);
-  type->SetRangeEnd(maximum);
+  auto type = m_fac.CreateF64(bit_width, minimum, maximum);
 
   UnmarshalLocationLocation(in.location(), type);
   UnmarshalCodeComment(in.comments(), type);
@@ -1640,10 +1259,7 @@ auto AstReader::Unmarshal(const SyntaxTree::F128 &in) -> Result<F128> {
     return std::nullopt;
   }
 
-  auto type = CreateNode<F128>()();
-  type->SetWidth(bit_width);
-  type->SetRangeBegin(minimum);
-  type->SetRangeEnd(maximum);
+  auto type = m_fac.CreateF128(bit_width, minimum, maximum);
 
   UnmarshalLocationLocation(in.location(), type);
   UnmarshalCodeComment(in.comments(), type);
@@ -1667,10 +1283,7 @@ auto AstReader::Unmarshal(const SyntaxTree::VoidTy &in) -> Result<VoidTy> {
     return std::nullopt;
   }
 
-  auto type = CreateNode<VoidTy>()();
-  type->SetWidth(bit_width);
-  type->SetRangeBegin(minimum);
-  type->SetRangeEnd(maximum);
+  auto type = m_fac.CreateVoid(bit_width, minimum, maximum);
 
   UnmarshalLocationLocation(in.location(), type);
   UnmarshalCodeComment(in.comments(), type);
@@ -1699,10 +1312,7 @@ auto AstReader::Unmarshal(const SyntaxTree::PtrTy &in) -> Result<PtrTy> {
     return std::nullopt;
   }
 
-  auto type = CreateNode<PtrTy>(pointee.value(), in.volatile_())();
-  type->SetWidth(bit_width);
-  type->SetRangeBegin(minimum);
-  type->SetRangeEnd(maximum);
+  auto type = m_fac.CreatePointer(pointee.value(), in.volatile_(), bit_width, minimum, maximum);
 
   UnmarshalLocationLocation(in.location(), type);
   UnmarshalCodeComment(in.comments(), type);
@@ -1726,10 +1336,7 @@ auto AstReader::Unmarshal(const SyntaxTree::OpaqueTy &in) -> Result<OpaqueTy> {
     return std::nullopt;
   }
 
-  auto type = CreateNode<OpaqueTy>(in.name())();
-  type->SetWidth(bit_width);
-  type->SetRangeBegin(minimum);
-  type->SetRangeEnd(maximum);
+  auto type = m_fac.CreateOpaque(in.name(), bit_width, minimum, maximum);
 
   UnmarshalLocationLocation(in.location(), type);
   UnmarshalCodeComment(in.comments(), type);
@@ -1753,7 +1360,7 @@ auto AstReader::Unmarshal(const SyntaxTree::TupleTy &in) -> Result<TupleTy> {
     return std::nullopt;
   }
 
-  TupleTyItems items;
+  std::vector<FlowPtr<Type>> items;
   items.reserve(in.elements_size());
 
   for (const auto &element : in.elements()) {
@@ -1765,10 +1372,7 @@ auto AstReader::Unmarshal(const SyntaxTree::TupleTy &in) -> Result<TupleTy> {
     items.push_back(item.value());
   }
 
-  auto type = CreateNode<TupleTy>(items)();
-  type->SetWidth(bit_width);
-  type->SetRangeBegin(minimum);
-  type->SetRangeEnd(maximum);
+  auto type = m_fac.CreateTuple(items, bit_width, minimum, maximum);
 
   UnmarshalLocationLocation(in.location(), type);
   UnmarshalCodeComment(in.comments(), type);
@@ -1802,10 +1406,7 @@ auto AstReader::Unmarshal(const SyntaxTree::ArrayTy &in) -> Result<ArrayTy> {
     return std::nullopt;
   }
 
-  auto type = CreateNode<ArrayTy>(element_type.value(), element_count.value())();
-  type->SetWidth(bit_width);
-  type->SetRangeBegin(minimum);
-  type->SetRangeEnd(maximum);
+  auto type = m_fac.CreateArray(element_type.value(), element_count.value(), bit_width, minimum, maximum);
 
   UnmarshalLocationLocation(in.location(), type);
   UnmarshalCodeComment(in.comments(), type);
@@ -1834,10 +1435,7 @@ auto AstReader::Unmarshal(const SyntaxTree::RefTy &in) -> Result<RefTy> {
     return std::nullopt;
   }
 
-  auto type = CreateNode<RefTy>(pointee.value())();
-  type->SetWidth(bit_width);
-  type->SetRangeBegin(minimum);
-  type->SetRangeEnd(maximum);
+  auto type = m_fac.CreateReference(pointee.value(), in.volatile_(), bit_width, minimum, maximum);
 
   UnmarshalLocationLocation(in.location(), type);
   UnmarshalCodeComment(in.comments(), type);
@@ -1861,16 +1459,16 @@ auto AstReader::Unmarshal(const SyntaxTree::FuncTy &in) -> Result<FuncTy> {
     return std::nullopt;
   }
 
-  auto return_type = Unmarshal(in.return_type());
+  auto return_type = Unmarshal(in.return_type(), in.has_return_type());
   if (!return_type.has_value()) [[unlikely]] {
     return std::nullopt;
   }
 
-  FuncParams parameters;
+  std::vector<FuncParam> parameters;
   parameters.reserve(in.parameters_size());
 
   for (const auto &param : in.parameters()) {
-    auto type = Unmarshal(param.type());
+    auto type = Unmarshal(param.type(), param.has_type());
     if (!type.has_value()) [[unlikely]] {
       return std::nullopt;
     }
@@ -1883,7 +1481,7 @@ auto AstReader::Unmarshal(const SyntaxTree::FuncTy &in) -> Result<FuncTy> {
     parameters.emplace_back(param.name(), type.value(), default_value);
   }
 
-  ExpressionList attributes;
+  std::vector<FlowPtr<Expr>> attributes;
   attributes.reserve(in.attributes_size());
 
   for (const auto &attr : in.attributes()) {
@@ -1900,13 +1498,14 @@ auto AstReader::Unmarshal(const SyntaxTree::FuncTy &in) -> Result<FuncTy> {
     return std::nullopt;
   }
 
-  auto type = CreateNode<FuncTy>(return_type.value(), parameters, in.variadic(), purity.value(), attributes)();
-  type->SetWidth(bit_width);
-  type->SetRangeBegin(minimum);
-  type->SetRangeEnd(maximum);
+  auto type = m_fac.CreateFunctionType(return_type.value(), parameters, in.variadic(), purity.value(), attributes,
+                                       bit_width, minimum, maximum);
+  if (!type.has_value()) [[unlikely]] {
+    return std::nullopt;
+  }
 
-  UnmarshalLocationLocation(in.location(), type);
-  UnmarshalCodeComment(in.comments(), type);
+  UnmarshalLocationLocation(in.location(), type.value());
+  UnmarshalCodeComment(in.comments(), type.value());
 
   return type;
 }
@@ -1922,7 +1521,7 @@ auto AstReader::Unmarshal(const SyntaxTree::Unary &in) -> Result<Unary> {
     return std::nullopt;
   }
 
-  auto object = CreateNode<Unary>(op.value(), operand.value())();
+  auto object = m_fac.CreateUnary(op.value(), operand.value());
   UnmarshalLocationLocation(in.location(), object);
   UnmarshalCodeComment(in.comments(), object);
 
@@ -1945,7 +1544,7 @@ auto AstReader::Unmarshal(const SyntaxTree::Binary &in) -> Result<Binary> {
     return std::nullopt;
   }
 
-  auto object = CreateNode<Binary>(lhs.value(), op.value(), rhs.value())();
+  auto object = m_fac.CreateBinary(lhs.value(), op.value(), rhs.value());
   UnmarshalLocationLocation(in.location(), object);
   UnmarshalCodeComment(in.comments(), object);
 
@@ -1963,7 +1562,7 @@ auto AstReader::Unmarshal(const SyntaxTree::PostUnary &in) -> Result<PostUnary> 
     return std::nullopt;
   }
 
-  auto object = CreateNode<PostUnary>(operand.value(), op.value())();
+  auto object = m_fac.CreatePostUnary(operand.value(), op.value());
   UnmarshalLocationLocation(in.location(), object);
   UnmarshalCodeComment(in.comments(), object);
 
@@ -1986,7 +1585,7 @@ auto AstReader::Unmarshal(const SyntaxTree::Ternary &in) -> Result<Ternary> {
     return std::nullopt;
   }
 
-  auto object = CreateNode<Ternary>(condition.value(), true_expr.value(), false_expr.value())();
+  auto object = m_fac.CreateTernary(condition.value(), true_expr.value(), false_expr.value());
   UnmarshalLocationLocation(in.location(), object);
   UnmarshalCodeComment(in.comments(), object);
 
@@ -1994,41 +1593,31 @@ auto AstReader::Unmarshal(const SyntaxTree::Ternary &in) -> Result<Ternary> {
 }
 
 auto AstReader::Unmarshal(const SyntaxTree::Integer &in) -> Result<Integer> {
-  bool lexically_valid = std::all_of(in.number().begin(), in.number().end(), [](char c) { return std::isdigit(c); });
-  if (!lexically_valid) [[unlikely]] {
+  auto object = m_fac.CreateInteger(in.number());
+  if (!object.has_value()) [[unlikely]] {
     return std::nullopt;
   }
 
-  /* Do range checking */
-  boost::multiprecision::cpp_int value(in.number());
-  if (value < 0 || value > boost::multiprecision::cpp_int("340282366920938463463374607431768211455")) [[unlikely]] {
-    return std::nullopt;
-  }
+  UnmarshalLocationLocation(in.location(), object.value());
+  UnmarshalCodeComment(in.comments(), object.value());
 
-  auto object = CreateNode<Integer>(in.number())();
-  UnmarshalLocationLocation(in.location(), object);
-  UnmarshalCodeComment(in.comments(), object);
-
-  return object;
+  return object.value();
 }
 
 auto AstReader::Unmarshal(const SyntaxTree::Float &in) -> Result<Float> {
-  long double f = 0.0;
-
-  /* Verify float format  */
-  if (std::from_chars(in.number().data(), in.number().data() + in.number().size(), f).ec != std::errc()) [[unlikely]] {
+  auto object = m_fac.CreateFloat(in.number());
+  if (!object.has_value()) [[unlikely]] {
     return std::nullopt;
   }
 
-  auto object = CreateNode<Float>(in.number())();
-  UnmarshalLocationLocation(in.location(), object);
-  UnmarshalCodeComment(in.comments(), object);
+  UnmarshalLocationLocation(in.location(), object.value());
+  UnmarshalCodeComment(in.comments(), object.value());
 
   return object;
 }
 
 auto AstReader::Unmarshal(const SyntaxTree::Boolean &in) -> Result<Boolean> {
-  auto object = CreateNode<Boolean>(in.value())();
+  auto object = m_fac.CreateBoolean(in.value());
   UnmarshalLocationLocation(in.location(), object);
   UnmarshalCodeComment(in.comments(), object);
 
@@ -2036,7 +1625,7 @@ auto AstReader::Unmarshal(const SyntaxTree::Boolean &in) -> Result<Boolean> {
 }
 
 auto AstReader::Unmarshal(const SyntaxTree::String &in) -> Result<String> {
-  auto object = CreateNode<String>(in.text())();
+  auto object = m_fac.CreateString(in.text());
   UnmarshalLocationLocation(in.location(), object);
   UnmarshalCodeComment(in.comments(), object);
 
@@ -2049,7 +1638,7 @@ auto AstReader::Unmarshal(const SyntaxTree::Character &in) -> Result<Character> 
     return std::nullopt;
   }
 
-  auto object = CreateNode<Character>(value)();
+  auto object = m_fac.CreateCharacter(value);
   UnmarshalLocationLocation(in.location(), object);
   UnmarshalCodeComment(in.comments(), object);
 
@@ -2057,7 +1646,7 @@ auto AstReader::Unmarshal(const SyntaxTree::Character &in) -> Result<Character> 
 }
 
 auto AstReader::Unmarshal(const SyntaxTree::Null &in) -> Result<Null> {
-  auto object = CreateNode<Null>()();
+  auto object = m_fac.CreateNull();
   UnmarshalLocationLocation(in.location(), object);
   UnmarshalCodeComment(in.comments(), object);
 
@@ -2065,7 +1654,7 @@ auto AstReader::Unmarshal(const SyntaxTree::Null &in) -> Result<Null> {
 }
 
 auto AstReader::Unmarshal(const SyntaxTree::Undefined &in) -> Result<Undefined> {
-  auto object = CreateNode<Undefined>()();
+  auto object = m_fac.CreateUndefined();
   UnmarshalLocationLocation(in.location(), object);
   UnmarshalCodeComment(in.comments(), object);
 
@@ -2078,7 +1667,7 @@ auto AstReader::Unmarshal(const SyntaxTree::Call &in) -> Result<Call> {
     return std::nullopt;
   }
 
-  CallArgs arguments;
+  std::vector<std::pair<string, FlowPtr<Expr>>> arguments;
   arguments.reserve(in.arguments_size());
 
   for (const auto &arg : in.arguments()) {
@@ -2090,7 +1679,7 @@ auto AstReader::Unmarshal(const SyntaxTree::Call &in) -> Result<Call> {
     arguments.emplace_back(arg.name(), value.value());
   }
 
-  auto object = CreateNode<Call>(callee.value(), arguments)();
+  auto object = m_fac.CreateCall(arguments, callee.value());
   UnmarshalLocationLocation(in.location(), object);
   UnmarshalCodeComment(in.comments(), object);
 
@@ -2103,7 +1692,7 @@ auto AstReader::Unmarshal(const SyntaxTree::TemplateCall &in) -> Result<Template
     return std::nullopt;
   }
 
-  CallArgs arguments;
+  std::vector<CallArg> arguments;
   arguments.reserve(in.arguments_size());
 
   for (const auto &arg : in.arguments()) {
@@ -2115,7 +1704,7 @@ auto AstReader::Unmarshal(const SyntaxTree::TemplateCall &in) -> Result<Template
     arguments.emplace_back(arg.name(), value.value());
   }
 
-  CallArgs parameters;
+  std::vector<CallArg> parameters;
   parameters.reserve(in.template_arguments_size());
 
   for (const auto &param : in.template_arguments()) {
@@ -2127,7 +1716,7 @@ auto AstReader::Unmarshal(const SyntaxTree::TemplateCall &in) -> Result<Template
     parameters.emplace_back(param.name(), value.value());
   }
 
-  auto object = CreateNode<TemplateCall>(callee.value(), arguments, parameters)();
+  auto object = m_fac.CreateTemplateCall(arguments, parameters, callee.value());
   UnmarshalLocationLocation(in.location(), object);
   UnmarshalCodeComment(in.comments(), object);
 
@@ -2135,7 +1724,7 @@ auto AstReader::Unmarshal(const SyntaxTree::TemplateCall &in) -> Result<Template
 }
 
 auto AstReader::Unmarshal(const SyntaxTree::List &in) -> Result<List> {
-  ExpressionList items;
+  std::vector<FlowPtr<Expr>> items;
   items.reserve(in.elements_size());
 
   for (const auto &expr : in.elements()) {
@@ -2147,7 +1736,7 @@ auto AstReader::Unmarshal(const SyntaxTree::List &in) -> Result<List> {
     items.push_back(expression.value());
   }
 
-  auto object = CreateNode<List>(items)();
+  auto object = m_fac.CreateList(items);
   UnmarshalLocationLocation(in.location(), object);
   UnmarshalCodeComment(in.comments(), object);
 
@@ -2165,7 +1754,7 @@ auto AstReader::Unmarshal(const SyntaxTree::Assoc &in) -> Result<Assoc> {
     return std::nullopt;
   }
 
-  auto object = CreateNode<Assoc>(key.value(), value.value())();
+  auto object = m_fac.CreateAssociation(key.value(), value.value());
   UnmarshalLocationLocation(in.location(), object);
   UnmarshalCodeComment(in.comments(), object);
 
@@ -2183,7 +1772,7 @@ auto AstReader::Unmarshal(const SyntaxTree::Index &in) -> Result<Index> {
     return std::nullopt;
   }
 
-  auto object = CreateNode<Index>(base.value(), index.value())();
+  auto object = m_fac.CreateIndex(base.value(), index.value());
   UnmarshalLocationLocation(in.location(), object);
   UnmarshalCodeComment(in.comments(), object);
 
@@ -2206,7 +1795,7 @@ auto AstReader::Unmarshal(const SyntaxTree::Slice &in) -> Result<Slice> {
     return std::nullopt;
   }
 
-  auto object = CreateNode<Slice>(base.value(), start.value(), end.value())();
+  auto object = m_fac.CreateSlice(base.value(), start.value(), end.value());
   UnmarshalLocationLocation(in.location(), object);
   UnmarshalCodeComment(in.comments(), object);
 
@@ -2214,7 +1803,7 @@ auto AstReader::Unmarshal(const SyntaxTree::Slice &in) -> Result<Slice> {
 }
 
 auto AstReader::Unmarshal(const SyntaxTree::FString &in) -> Result<FString> {
-  FStringItems items;
+  std::vector<std::variant<string, FlowPtr<Expr>>> items;
   items.reserve(in.elements_size());
 
   for (const auto &expr : in.elements()) {
@@ -2240,7 +1829,7 @@ auto AstReader::Unmarshal(const SyntaxTree::FString &in) -> Result<FString> {
     }
   }
 
-  auto object = CreateNode<FString>(items)();
+  auto object = m_fac.CreateFormatString(items);
   UnmarshalLocationLocation(in.location(), object);
   UnmarshalCodeComment(in.comments(), object);
 
@@ -2248,7 +1837,7 @@ auto AstReader::Unmarshal(const SyntaxTree::FString &in) -> Result<FString> {
 }
 
 auto AstReader::Unmarshal(const SyntaxTree::Identifier &in) -> Result<Identifier> {
-  auto object = CreateNode<Identifier>(in.name())();
+  auto object = m_fac.CreateIdentifier(in.name());
   UnmarshalLocationLocation(in.location(), object);
   UnmarshalCodeComment(in.comments(), object);
 
@@ -2256,7 +1845,7 @@ auto AstReader::Unmarshal(const SyntaxTree::Identifier &in) -> Result<Identifier
 }
 
 auto AstReader::Unmarshal(const SyntaxTree::Sequence &in) -> Result<Sequence> {
-  ExpressionList items;
+  std::vector<FlowPtr<Expr>> items;
   items.reserve(in.elements_size());
 
   for (const auto &expr : in.elements()) {
@@ -2268,7 +1857,7 @@ auto AstReader::Unmarshal(const SyntaxTree::Sequence &in) -> Result<Sequence> {
     items.push_back(expression.value());
   }
 
-  auto object = CreateNode<Sequence>(items)();
+  auto object = m_fac.CreateSequence(items);
   UnmarshalLocationLocation(in.location(), object);
   UnmarshalCodeComment(in.comments(), object);
 
@@ -2276,7 +1865,7 @@ auto AstReader::Unmarshal(const SyntaxTree::Sequence &in) -> Result<Sequence> {
 }
 
 auto AstReader::Unmarshal(const SyntaxTree::Block &in) -> Result<Block> {
-  BlockItems items;
+  std::vector<FlowPtr<Expr>> items;
   items.reserve(in.statements_size());
 
   for (const auto &stmt : in.statements()) {
@@ -2288,7 +1877,7 @@ auto AstReader::Unmarshal(const SyntaxTree::Block &in) -> Result<Block> {
     items.push_back(statement.value());
   }
 
-  auto object = CreateNode<Block>(items, FromSafetyMode(in.safety()))();
+  auto object = m_fac.CreateBlock(items, FromBlockMode(in.safety()));
   UnmarshalLocationLocation(in.location(), object);
   UnmarshalCodeComment(in.comments(), object);
 
@@ -2296,8 +1885,8 @@ auto AstReader::Unmarshal(const SyntaxTree::Block &in) -> Result<Block> {
 }
 
 auto AstReader::Unmarshal(const SyntaxTree::Variable &in) -> Result<Variable> {
-  auto type = Unmarshal(in.type());
-  if (in.has_type() && !type.has_value()) [[unlikely]] {
+  auto type = Unmarshal(in.type(), in.has_type());
+  if (!type.has_value()) [[unlikely]] {
     return std::nullopt;
   }
 
@@ -2306,7 +1895,7 @@ auto AstReader::Unmarshal(const SyntaxTree::Variable &in) -> Result<Variable> {
     return std::nullopt;
   }
 
-  ExpressionList attributes;
+  std::vector<FlowPtr<Expr>> attributes;
   attributes.reserve(in.attributes_size());
 
   for (const auto &attr : in.attributes()) {
@@ -2323,7 +1912,7 @@ auto AstReader::Unmarshal(const SyntaxTree::Variable &in) -> Result<Variable> {
     return std::nullopt;
   }
 
-  auto object = CreateNode<Variable>(in.name(), type, value, varkind.value(), attributes)();
+  auto object = m_fac.CreateVariable(varkind.value(), in.name(), attributes, type.value(), value);
   UnmarshalLocationLocation(in.location(), object);
   UnmarshalCodeComment(in.comments(), object);
 
@@ -2331,7 +1920,7 @@ auto AstReader::Unmarshal(const SyntaxTree::Variable &in) -> Result<Variable> {
 }
 
 auto AstReader::Unmarshal(const SyntaxTree::Assembly &in) -> Result<Assembly> {
-  ExpressionList arguments;
+  std::vector<FlowPtr<Expr>> arguments;
   arguments.reserve(in.arguments_size());
 
   for (const auto &arg : in.arguments()) {
@@ -2343,7 +1932,7 @@ auto AstReader::Unmarshal(const SyntaxTree::Assembly &in) -> Result<Assembly> {
     arguments.push_back(value.value());
   }
 
-  auto object = CreateNode<Assembly>(in.code(), arguments)();
+  auto object = m_fac.CreateAssembly(in.code());
   UnmarshalLocationLocation(in.location(), object);
   UnmarshalCodeComment(in.comments(), object);
 
@@ -2366,7 +1955,7 @@ auto AstReader::Unmarshal(const SyntaxTree::If &in) -> Result<If> {
     return std::nullopt;
   }
 
-  auto object = CreateNode<If>(condition.value(), then_block.value(), else_block)();
+  auto object = m_fac.CreateIf(condition.value(), then_block.value(), else_block);
   UnmarshalLocationLocation(in.location(), object);
   UnmarshalCodeComment(in.comments(), object);
 
@@ -2384,7 +1973,7 @@ auto AstReader::Unmarshal(const SyntaxTree::While &in) -> Result<While> {
     return std::nullopt;
   }
 
-  auto object = CreateNode<While>(condition.value(), block.value())();
+  auto object = m_fac.CreateWhile(condition.value(), block.value());
   UnmarshalLocationLocation(in.location(), object);
   UnmarshalCodeComment(in.comments(), object);
 
@@ -2412,7 +2001,7 @@ auto AstReader::Unmarshal(const SyntaxTree::For &in) -> Result<For> {
     return std::nullopt;
   }
 
-  auto object = CreateNode<For>(init, condition, update, block.value())();
+  auto object = m_fac.CreateFor(init, condition, update, block.value());
   UnmarshalLocationLocation(in.location(), object);
   UnmarshalCodeComment(in.comments(), object);
 
@@ -2430,7 +2019,7 @@ auto AstReader::Unmarshal(const SyntaxTree::Foreach &in) -> Result<Foreach> {
     return std::nullopt;
   }
 
-  auto object = CreateNode<Foreach>(in.index_name(), in.value_name(), expression.value(), block.value())();
+  auto object = m_fac.CreateForeach(in.index_name(), in.value_name(), expression.value(), block.value());
   UnmarshalLocationLocation(in.location(), object);
   UnmarshalCodeComment(in.comments(), object);
 
@@ -2438,7 +2027,7 @@ auto AstReader::Unmarshal(const SyntaxTree::Foreach &in) -> Result<Foreach> {
 }
 
 auto AstReader::Unmarshal(const SyntaxTree::Break &in) -> Result<Break> {
-  auto object = CreateNode<Break>()();
+  auto object = m_fac.CreateBreak();
   UnmarshalLocationLocation(in.location(), object);
   UnmarshalCodeComment(in.comments(), object);
 
@@ -2446,7 +2035,7 @@ auto AstReader::Unmarshal(const SyntaxTree::Break &in) -> Result<Break> {
 }
 
 auto AstReader::Unmarshal(const SyntaxTree::Continue &in) -> Result<Continue> {
-  auto object = CreateNode<Continue>()();
+  auto object = m_fac.CreateContinue();
   UnmarshalLocationLocation(in.location(), object);
   UnmarshalCodeComment(in.comments(), object);
 
@@ -2459,7 +2048,7 @@ auto AstReader::Unmarshal(const SyntaxTree::Return &in) -> Result<Return> {
     return std::nullopt;
   }
 
-  auto object = CreateNode<Return>(value)();
+  auto object = m_fac.CreateReturn(value);
   UnmarshalLocationLocation(in.location(), object);
   UnmarshalCodeComment(in.comments(), object);
 
@@ -2473,11 +2062,11 @@ auto AstReader::Unmarshal(const SyntaxTree::ReturnIf &in) -> Result<ReturnIf> {
   }
 
   auto value = Unmarshal(in.value());
-  if (!value.has_value()) [[unlikely]] {
+  if (in.has_value() && !value.has_value()) [[unlikely]] {
     return std::nullopt;
   }
 
-  auto object = CreateNode<ReturnIf>(condition.value(), value.value())();
+  auto object = m_fac.CreateReturnIf(condition.value(), value);
   UnmarshalLocationLocation(in.location(), object);
   UnmarshalCodeComment(in.comments(), object);
 
@@ -2495,7 +2084,7 @@ auto AstReader::Unmarshal(const SyntaxTree::Case &in) -> Result<Case> {
     return std::nullopt;
   }
 
-  auto object = CreateNode<Case>(condition.value(), block.value())();
+  auto object = m_fac.CreateCase(condition.value(), block.value());
   UnmarshalLocationLocation(in.location(), object);
   UnmarshalCodeComment(in.comments(), object);
 
@@ -2508,7 +2097,7 @@ auto AstReader::Unmarshal(const SyntaxTree::Switch &in) -> Result<Switch> {
     return std::nullopt;
   }
 
-  SwitchCases cases;
+  std::vector<FlowPtr<Case>> cases;
   cases.reserve(in.cases_size());
 
   for (const auto &c : in.cases()) {
@@ -2525,7 +2114,7 @@ auto AstReader::Unmarshal(const SyntaxTree::Switch &in) -> Result<Switch> {
     return std::nullopt;
   }
 
-  auto object = CreateNode<Switch>(condition.value(), cases, default_case)();
+  auto object = m_fac.CreateSwitch(condition.value(), default_case, cases);
   UnmarshalLocationLocation(in.location(), object);
   UnmarshalCodeComment(in.comments(), object);
 
@@ -2538,7 +2127,7 @@ auto AstReader::Unmarshal(const SyntaxTree::Typedef &in) -> Result<Typedef> {
     return std::nullopt;
   }
 
-  auto object = CreateNode<Typedef>(in.name(), type.value())();
+  auto object = m_fac.CreateTypedef(in.name(), type.value());
   UnmarshalLocationLocation(in.location(), object);
   UnmarshalCodeComment(in.comments(), object);
 
@@ -2546,7 +2135,7 @@ auto AstReader::Unmarshal(const SyntaxTree::Typedef &in) -> Result<Typedef> {
 }
 
 auto AstReader::Unmarshal(const SyntaxTree::Function &in) -> Result<Function> {
-  ExpressionList attributes;
+  std::vector<FlowPtr<Expr>> attributes;
   attributes.reserve(in.attributes_size());
 
   for (const auto &attr : in.attributes()) {
@@ -2558,12 +2147,12 @@ auto AstReader::Unmarshal(const SyntaxTree::Function &in) -> Result<Function> {
     attributes.push_back(attribute.value());
   }
 
-  std::optional<TemplateParameters> template_parameters;
+  std::optional<std::vector<TemplateParameter>> template_parameters;
   if (in.has_template_parameters()) {
-    template_parameters = TemplateParameters();
+    template_parameters = std::vector<TemplateParameter>();
 
     for (const auto &param : in.template_parameters().parameters()) {
-      auto type = Unmarshal(param.type());
+      auto type = Unmarshal(param.type(), param.has_type());
       if (!type.has_value()) [[unlikely]] {
         return std::nullopt;
       }
@@ -2577,17 +2166,17 @@ auto AstReader::Unmarshal(const SyntaxTree::Function &in) -> Result<Function> {
     }
   }
 
-  FnCaptures captures;
+  std::vector<std::pair<string, bool>> captures;
   captures.reserve(in.captures_size());
   for (const auto &cap : in.captures()) {
     captures.emplace_back(cap.name(), cap.is_reference());
   }
 
-  FuncParams parameters;
+  std::vector<ASTFactory::FactoryFunctionParameter> parameters;
   parameters.reserve(in.parameters_size());
 
   for (const auto &param : in.parameters()) {
-    auto type = Unmarshal(param.type());
+    auto type = Unmarshal(param.type(), param.has_type());
     if (!type.has_value()) [[unlikely]] {
       return std::nullopt;
     }
@@ -2615,7 +2204,7 @@ auto AstReader::Unmarshal(const SyntaxTree::Function &in) -> Result<Function> {
     return std::nullopt;
   }
 
-  auto return_type = Unmarshal(in.return_type());
+  auto return_type = Unmarshal(in.return_type(), in.has_return_type());
   if (!return_type.has_value()) [[unlikely]] {
     return std::nullopt;
   }
@@ -2625,16 +2214,20 @@ auto AstReader::Unmarshal(const SyntaxTree::Function &in) -> Result<Function> {
     return std::nullopt;
   }
 
-  auto object = CreateNode<Function>(attributes, op.value(), captures, in.name(), template_parameters, parameters,
-                                     in.variadic(), return_type.value(), precondition, postcondition, block)();
-  UnmarshalLocationLocation(in.location(), object);
-  UnmarshalCodeComment(in.comments(), object);
+  auto object = m_fac.CreateFunction(in.name(), return_type.value(), parameters, in.variadic(), block, op.value(),
+                                     attributes, precondition, postcondition, captures, template_parameters);
+  if (!object.has_value()) [[unlikely]] {
+    return std::nullopt;
+  }
+
+  UnmarshalLocationLocation(in.location(), object.value());
+  UnmarshalCodeComment(in.comments(), object.value());
 
   return object;
 }
 
 auto AstReader::Unmarshal(const SyntaxTree::Struct &in) -> Result<Struct> {
-  ExpressionList attributes;
+  std::vector<FlowPtr<Expr>> attributes;
   attributes.reserve(in.attributes_size());
 
   for (const auto &attr : in.attributes()) {
@@ -2646,19 +2239,19 @@ auto AstReader::Unmarshal(const SyntaxTree::Struct &in) -> Result<Struct> {
     attributes.push_back(attribute.value());
   }
 
-  StructNames names;
+  std::vector<string> names;
   names.reserve(in.names_size());
   for (const auto &name : in.names()) {
     names.emplace_back(name);
   }
 
-  StructFields fields;
+  std::vector<StructField> fields;
   fields.reserve(in.fields_size());
 
   for (const auto &field : in.fields()) {
     auto is_static = field.is_static();
 
-    auto type = Unmarshal(field.type());
+    auto type = Unmarshal(field.type(), field.has_type());
     if (!type.has_value()) [[unlikely]] {
       return std::nullopt;
     }
@@ -2676,7 +2269,7 @@ auto AstReader::Unmarshal(const SyntaxTree::Struct &in) -> Result<Struct> {
     fields.emplace_back(vis.value(), is_static, field.name(), type.value(), value);
   }
 
-  StructMethods methods;
+  std::vector<StructFunction> methods;
   methods.reserve(in.methods_size());
 
   for (const auto &method : in.methods()) {
@@ -2693,7 +2286,7 @@ auto AstReader::Unmarshal(const SyntaxTree::Struct &in) -> Result<Struct> {
     methods.emplace_back(vis.value(), func.value());
   }
 
-  StructMethods static_methods;
+  std::vector<StructFunction> static_methods;
   static_methods.reserve(in.static_methods_size());
 
   for (const auto &method : in.static_methods()) {
@@ -2710,12 +2303,12 @@ auto AstReader::Unmarshal(const SyntaxTree::Struct &in) -> Result<Struct> {
     static_methods.emplace_back(vis.value(), func.value());
   }
 
-  std::optional<TemplateParameters> template_parameters;
+  std::optional<std::vector<TemplateParameter>> template_parameters;
   if (in.has_template_parameters()) {
-    template_parameters = TemplateParameters();
+    template_parameters = std::vector<TemplateParameter>();
 
     for (const auto &param : in.template_parameters().parameters()) {
-      auto type = Unmarshal(param.type());
+      auto type = Unmarshal(param.type(), param.has_type());
       if (!type.has_value()) [[unlikely]] {
         return std::nullopt;
       }
@@ -2734,8 +2327,8 @@ auto AstReader::Unmarshal(const SyntaxTree::Struct &in) -> Result<Struct> {
     return std::nullopt;
   }
 
-  auto object = CreateNode<Struct>(comptype.value(), attributes, in.name(), template_parameters, names, fields, methods,
-                                   static_methods)();
+  auto object = m_fac.CreateStruct(comptype.value(), in.name(), template_parameters, fields, methods, static_methods,
+                                   names, attributes);
   UnmarshalLocationLocation(in.location(), object);
   UnmarshalCodeComment(in.comments(), object);
 
@@ -2748,7 +2341,7 @@ auto AstReader::Unmarshal(const SyntaxTree::Enum &in) -> Result<Enum> {
     return std::nullopt;
   }
 
-  EnumItems items;
+  std::vector<std::pair<string, NullableFlowPtr<Expr>>> items;
   items.reserve(in.items_size());
 
   for (const auto &item : in.items()) {
@@ -2760,7 +2353,7 @@ auto AstReader::Unmarshal(const SyntaxTree::Enum &in) -> Result<Enum> {
     items.emplace_back(item.name(), value);
   }
 
-  auto object = CreateNode<Enum>(in.name(), base_type, items)();
+  auto object = m_fac.CreateEnum(in.name(), items, base_type);
   UnmarshalLocationLocation(in.location(), object);
   UnmarshalCodeComment(in.comments(), object);
 
@@ -2773,13 +2366,13 @@ auto AstReader::Unmarshal(const SyntaxTree::Scope &in) -> Result<Scope> {
     return std::nullopt;
   }
 
-  ScopeDeps dependencies;
+  std::vector<string> dependencies;
   dependencies.reserve(in.dependencies_size());
   for (const auto &dep : in.dependencies()) {
     dependencies.emplace_back(dep);
   }
 
-  auto object = CreateNode<Scope>(in.name(), block.value(), dependencies)();
+  auto object = m_fac.CreateScope(in.name(), block.value(), dependencies);
   UnmarshalLocationLocation(in.location(), object);
   UnmarshalCodeComment(in.comments(), object);
 
@@ -2792,7 +2385,7 @@ auto AstReader::Unmarshal(const SyntaxTree::Export &in) -> Result<Export> {
     return std::nullopt;
   }
 
-  ExpressionList attributes;
+  std::vector<FlowPtr<Expr>> attributes;
   attributes.reserve(in.attributes_size());
 
   for (const auto &attr : in.attributes()) {
@@ -2809,32 +2402,31 @@ auto AstReader::Unmarshal(const SyntaxTree::Export &in) -> Result<Export> {
     return std::nullopt;
   }
 
-  auto object = CreateNode<Export>(block.value(), in.abi_name(), vis.value(), attributes)();
+  auto object = m_fac.CreateExport(block.value(), attributes, vis.value(), in.abi_name());
   UnmarshalLocationLocation(in.location(), object);
   UnmarshalCodeComment(in.comments(), object);
 
   return object;
 }
 
-AstReader::AstReader(std::string_view protobuf_data, ReaderSourceManager source_manager)
-    : m_rd(source_manager), m_mm(std::make_unique<DynamicArena>()) {
+AstReader::AstReader(std::string_view protobuf_data, std::pmr::memory_resource &pool,
+                     ReaderSourceManager source_manager)
+    : m_rd(source_manager), m_fac(pool) {
   google::protobuf::io::CodedInputStream input((const uint8_t *)protobuf_data.data(), protobuf_data.size());
   input.SetRecursionLimit(kRecursionLimit);
 
-  SyntaxTree::Root root;
+  SyntaxTree::Expr root;
   if (!root.ParseFromCodedStream(&input)) [[unlikely]] {
     return;
   }
 
-  std::swap(MainAllocator, m_mm);
   m_root = Unmarshal(root);
-  std::swap(MainAllocator, m_mm);
 }
 
-auto AstReader::Get() -> std::optional<ASTRoot> {
+auto AstReader::Get() -> NullableFlowPtr<Expr> {
   if (!m_root.has_value()) [[unlikely]] {
     return std::nullopt;
   }
 
-  return ASTRoot(m_root.value(), std::move(m_mm), false);
+  return m_root.value();
 }

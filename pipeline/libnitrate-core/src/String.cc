@@ -31,299 +31,118 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <boost/unordered_map.hpp>
 #include <mutex>
 #include <nitrate-core/Assert.hh>
-#include <nitrate-core/Init.hh>
-#include <nitrate-core/Macro.hh>
+#include <nitrate-core/SmartLock.hh>
 #include <nitrate-core/String.hh>
 #include <sparsehash/dense_hash_map>
 
 using namespace ncc;
 
-class IStorage {
-public:
-  [[nodiscard]] virtual auto Get(uint64_t id) -> CStringView = 0;
-  [[nodiscard]] virtual auto FromString(std::string_view str) -> uint64_t = 0;
-  [[nodiscard]] virtual auto FromString(std::string&& str) -> uint64_t = 0;
-  [[nodiscard]] virtual auto CompareEq(uint64_t a, uint64_t b) -> bool = 0;
-  [[nodiscard]] virtual auto CompareLt(uint64_t a, uint64_t b) -> bool = 0;
-  [[nodiscard]] virtual auto CompareLe(uint64_t a, uint64_t b) -> bool = 0;
-  [[nodiscard]] virtual auto CompareGt(uint64_t a, uint64_t b) -> bool = 0;
-  [[nodiscard]] virtual auto CompareGe(uint64_t a, uint64_t b) -> bool = 0;
-  virtual void Reset() = 0;
-};
+/** Optimized for very fast append. NonLinearContainer preserves reference integery unlike std::vector */
+template <typename T, auto BufferSize>
+class NonLinearContainer final {
+  static_assert(BufferSize > 0);
 
-template <typename T>
-class ConditionalLockGuard {
-  T& m_mutex;
-  bool m_enabled;
+  std::vector<std::vector<T>> m_data;
+  size_t m_back_size = 0;
+
+  void AddChunk() { m_data.emplace_back().resize(BufferSize); }
 
 public:
-  ConditionalLockGuard(T& mutex) : m_mutex(mutex) {
-    m_enabled = EnableSync;
-
-    if (m_enabled) {
-      m_mutex.lock();
-    }
+  NonLinearContainer() {
+    m_data.reserve(BufferSize);
+    AddChunk();
   }
 
-  ~ConditionalLockGuard() {
-    if (m_enabled) {
-      m_mutex.unlock();
+  T& Append(T&& value) {
+    if (m_back_size != BufferSize) [[likely]] {
+      return m_data.back()[m_back_size++] = std::move(value);
     }
+
+    AddChunk();
+    m_back_size = 1;
+    return m_data.back().front() = std::move(value);
+  }
+
+  void Clear() {
+    m_data.clear();
+    m_data.shrink_to_fit();
+
+    AddChunk();
+    m_back_size = 0;
   }
 };
+
+static std::mutex StringLock;
+static NonLinearContainer<std::string, 1024> Strings;
 
 #if MEMORY_OVER_SPEED == 1
-
-class MemoryConservedStorage final : public IStorage {
-  std::vector<std::vector<char>> m_data;
-  google::dense_hash_map<std::string_view, uint64_t> m_map;
-  std::mutex m_lock;
-
-  static NCC_FORCE_INLINE constexpr auto FromStr(std::string_view str) -> std::vector<char> {
-    std::vector<char> vec(str.size() + 1);
-    std::copy(str.begin(), str.end(), vec.begin());
-    vec.back() = '\0';
-    return vec;
-  }
-
-  static NCC_FORCE_INLINE constexpr auto FromVec(const std::vector<char>& vec) {
-    return CStringView(vec.data(), vec.size());
-  }
-
-public:
-  MemoryConservedStorage() {
-    constexpr size_t kInitSize = 4096;
-
-    m_map.set_empty_key("");
-    m_data.reserve(kInitSize);
-
-    // Insert the empty string for index 0
-    m_data.emplace_back(FromStr(""));
-  }
-
-  ~MemoryConservedStorage() override { Reset(); }
-
-  [[nodiscard]] auto Get(uint64_t id) -> CStringView override {
-    ConditionalLockGuard lock(m_lock);
-
-    return id < m_data.size() ? FromVec(m_data[id]) : CStringView();
-  }
-
-  auto FromString(std::string_view str) -> uint64_t override {
-    if (str.empty()) {
-      return 0;
-    }
-
-    ConditionalLockGuard lock(m_lock);
-
-    uint64_t id;
-    if (auto it = m_map.find(str); it != m_map.end()) {
-      id = it->second;
-    } else {
-      id = m_data.size();
-      m_data.emplace_back(FromStr(str));
-      m_map[FromVec(m_data.back())] = id;
-    }
-
-    return id;
-  }
-
-  auto FromString(std::string&& str) -> uint64_t override {
-    if (str.empty()) {
-      return 0;
-    }
-
-    ConditionalLockGuard lock(m_lock);
-
-    uint64_t id;
-    if (auto it = m_map.find(str); it != m_map.end()) {
-      id = it->second;
-    } else {
-      id = m_data.size();
-      m_data.emplace_back(FromStr(std::move(str)));
-      m_map[FromVec(m_data.back())] = id;
-    }
-
-    return id;
-  }
-
-  [[nodiscard]] auto CompareEq(uint64_t a, uint64_t b) -> bool override { return a == b; }
-
-  [[nodiscard]] auto CompareLt(uint64_t a, uint64_t b) -> bool override { return a < b; }
-
-  [[nodiscard]] auto CompareLe(uint64_t a, uint64_t b) -> bool override { return a <= b; }
-
-  [[nodiscard]] auto CompareGt(uint64_t a, uint64_t b) -> bool override { return a > b; }
-
-  [[nodiscard]] auto CompareGe(uint64_t a, uint64_t b) -> bool override { return a >= b; }
-
-  void Reset() override {
-    ConditionalLockGuard lock(m_lock);
-
-    m_map.clear();
-    m_data.clear();
-
-    // Insert the empty string for index 0
-    m_data.emplace_back(FromStr(""));
-  }
-};
-
-#else
-
-class FastStorage final : public IStorage {
-  std::vector<std::vector<char>> m_data;
-  std::vector<std::string> m_buffered;
-  std::mutex m_lock;
-
-  [[nodiscard]] auto NCC_FORCE_INLINE IsValidId(uint64_t id) const -> bool {
-    return id < m_data.size() + m_buffered.size();
-  }
-
-  NCC_FORCE_INLINE auto GetUnchecked(uint64_t id) -> CStringView {
-    assert(id < m_data.size() + m_buffered.size());
-
-    if (id >= m_data.size()) {
-      FlushBuffered();
-    }
-
-    const auto& vec = m_data[id];
-    return {vec.data(), vec.size()};
-  }
-
-  void FlushBuffered() {
-    for (const auto& str : m_buffered) {
-      std::vector<char> vec(str.size() + 1);
-      std::memcpy(vec.data(), str.c_str(), str.size() + 1);
-      m_data.emplace_back(std::move(vec));
-    }
-
-    m_buffered.clear();
-  }
-
-public:
-  FastStorage() {
-    constexpr size_t kInitSize = 4096;
-
-    m_data.reserve(kInitSize);
-    m_buffered.reserve(kInitSize);
-
-    // Insert the empty string for index 0
-    m_data.push_back({'\0'});
-  }
-
-  ~FastStorage() { Reset(); }
-
-  [[nodiscard]] auto Get(uint64_t id) -> CStringView override {
-    ConditionalLockGuard lock(m_lock);
-
-    if (!IsValidId(id)) [[unlikely]] {
-      return {};
-    }
-
-    return GetUnchecked(id);
-  }
-
-  auto FromString(std::string_view str) -> uint64_t override {
-    ConditionalLockGuard lock(m_lock);
-    m_buffered.emplace_back(str);
-
-    return m_data.size() + m_buffered.size() - 1;
-  }
-
-  auto FromString(std::string&& str) -> uint64_t override {
-    ConditionalLockGuard lock(m_lock);
-    m_buffered.emplace_back(std::move(str));
-
-    return m_data.size() + m_buffered.size() - 1;
-  }
-
-  [[nodiscard]] auto CompareEq(uint64_t a, uint64_t b) -> bool override {
-    ConditionalLockGuard lock(m_lock);
-
-    if (!IsValidId(a) || !IsValidId(b)) [[unlikely]] {
-      return false;
-    }
-
-    return GetUnchecked(a) == GetUnchecked(b);
-  }
-
-  [[nodiscard]] auto CompareLt(uint64_t a, uint64_t b) -> bool override {
-    ConditionalLockGuard lock(m_lock);
-
-    if (!IsValidId(a) || !IsValidId(b)) [[unlikely]] {
-      return false;
-    }
-
-    return GetUnchecked(a) < GetUnchecked(b);
-  }
-
-  [[nodiscard]] auto CompareLe(uint64_t a, uint64_t b) -> bool override {
-    ConditionalLockGuard lock(m_lock);
-
-    if (!IsValidId(a) || !IsValidId(b)) [[unlikely]] {
-      return false;
-    }
-
-    return GetUnchecked(a) <= GetUnchecked(b);
-  }
-
-  [[nodiscard]] auto CompareGt(uint64_t a, uint64_t b) -> bool override {
-    ConditionalLockGuard lock(m_lock);
-
-    if (!IsValidId(a) || !IsValidId(b)) [[unlikely]] {
-      return false;
-    }
-
-    return GetUnchecked(a) > GetUnchecked(b);
-  }
-
-  [[nodiscard]] auto CompareGe(uint64_t a, uint64_t b) -> bool override {
-    ConditionalLockGuard lock(m_lock);
-
-    if (!IsValidId(a) || !IsValidId(b)) [[unlikely]] {
-      return false;
-    }
-
-    return GetUnchecked(a) >= GetUnchecked(b);
-  }
-
-  void Reset() override {
-    ConditionalLockGuard lock(m_lock);
-
-    m_data.clear();
-    m_buffered.clear();
-
-    // Insert the empty string for index 0
-    m_data.push_back({'\0'});
-  }
-};
-
+static google::dense_hash_map<std::string_view, const std::string*> FastMap = [] {
+  google::dense_hash_map<std::string_view, const std::string*> map;
+  map.set_empty_key("");
+  return map;
+}();
 #endif
+
+std::string ncc::string::DefaultEmptyString;
+
+auto String::CreateInstance(std::string_view str) -> const std::string& {
+  if (str.empty()) {
+    return DefaultEmptyString;
+  }
+
+  SmartLock lock(StringLock);
 
 #if MEMORY_OVER_SPEED == 1
-static MemoryConservedStorage GlobalStorage;
-#else
-static FastStorage GlobalStorage;
+  /* Search for existing key, thereby deduplicating elements */
+  if (auto it = FastMap.find(str); it != FastMap.end()) {
+    return *it->second;
+  }
 #endif
 
-///=============================================================================
+  const std::string* ptr = &Strings.Append(std::string(str));
 
-auto String::Get() const -> CStringView {
-  if (m_id == 0) {
-    return {};
-  }
+#if MEMORY_OVER_SPEED == 1
+  FastMap[std::string_view(*ptr)] = ptr;
+#endif
 
-  return GlobalStorage.Get(m_id);
+  qcore_assert(ptr != nullptr);
+
+  return *ptr;
 }
 
-auto String::operator==(const String& o) const -> bool { return GlobalStorage.CompareEq(m_id, o.m_id); }
-auto String::operator<(const String& o) const -> bool { return GlobalStorage.CompareLt(m_id, o.m_id); }
-auto String::operator<=(const String& o) const -> bool { return GlobalStorage.CompareLe(m_id, o.m_id); }
-auto String::operator>(const String& o) const -> bool { return GlobalStorage.CompareGt(m_id, o.m_id); }
-auto String::operator>=(const String& o) const -> bool { return GlobalStorage.CompareGe(m_id, o.m_id); }
-auto StringMemory::FromString(std::string_view str) -> uint64_t { return GlobalStorage.FromString(str); }
-auto StringMemory::FromString(std::string&& str) -> uint64_t { return GlobalStorage.FromString(std::move(str)); }
-void StringMemory::Reset() { GlobalStorage.Reset(); }
+auto String::CreateInstance(std::string&& str) -> const std::string& {
+  if (str.empty()) {
+    return DefaultEmptyString;
+  }
+
+  SmartLock lock(StringLock);
+
+#if MEMORY_OVER_SPEED == 1
+  /* Search for existing key, thereby deduplicating elements */
+  if (auto it = FastMap.find(str); it != FastMap.end()) {
+    return *it->second;
+  }
+#endif
+
+  const std::string* ptr = &Strings.Append(std::move(str));
+
+#if MEMORY_OVER_SPEED == 1
+  FastMap[std::string_view(*ptr)] = ptr;
+#endif
+
+  qcore_assert(ptr != nullptr);
+
+  return *ptr;
+}
+
+void String::ResetInstances() {
+  SmartLock lock(StringLock);
+
+  Strings.Clear();
+
+#if MEMORY_OVER_SPEED == 1
+  FastMap.clear();
+#endif
+}

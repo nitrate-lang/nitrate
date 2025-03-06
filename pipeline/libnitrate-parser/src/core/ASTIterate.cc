@@ -31,6 +31,7 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
+#include <algorithm>
 #include <nitrate-core/Logger.hh>
 #include <nitrate-core/Macro.hh>
 #include <nitrate-lexer/Scanner.hh>
@@ -50,7 +51,7 @@ using namespace ncc;
 using namespace ncc::parse;
 
 class IterVisitor : public ASTVisitor {
-  std::vector<FlowPtr<Base>>& m_sub;
+  std::vector<FlowPtr<Expr>>& m_sub;
 
   template <class T>
   constexpr void Add(FlowPtr<T> n) {
@@ -76,9 +77,6 @@ class IterVisitor : public ASTVisitor {
     Add(n->GetRangeEnd());
   }
 
-  void Visit(FlowPtr<Base>) override {}
-  void Visit(FlowPtr<ExprStmt> n) override { Add(n->GetExpr()); }
-  void Visit(FlowPtr<LambdaExpr> n) override { Add(n->GetFunc()); }
   void Visit(FlowPtr<NamedTy> n) override { AddTypesuffix(n); }
   void Visit(FlowPtr<InferTy> n) override { AddTypesuffix(n); }
 
@@ -330,10 +328,10 @@ class IterVisitor : public ASTVisitor {
   }
 
 public:
-  IterVisitor(std::vector<FlowPtr<Base>>& children) : m_sub(children) {}
+  IterVisitor(std::vector<FlowPtr<Expr>>& children) : m_sub(children) {}
 };
 
-static NCC_FORCE_INLINE void GetChildrenSorted(FlowPtr<Base> base, std::vector<FlowPtr<Base>>& children) {
+static NCC_FORCE_INLINE void GetChildrenSorted(FlowPtr<Expr> base, std::vector<FlowPtr<Expr>>& children) {
   children.clear();
 
   if (!base) [[unlikely]] {
@@ -344,10 +342,10 @@ static NCC_FORCE_INLINE void GetChildrenSorted(FlowPtr<Base> base, std::vector<F
   base.Accept(v);
 }
 
-NCC_EXPORT void detail::DfsPreImpl(const FlowPtr<Base>& base, const IterCallback& cb) {
-  auto syncfn = [](const FlowPtr<Base>& n, const IterCallback& cb) {
-    std::stack<std::pair<NullableFlowPtr<Base>, FlowPtr<Base>>> s;
-    std::vector<FlowPtr<Base>> children;
+NCC_EXPORT void detail::DfsPreImpl(const FlowPtr<Expr>& base, const IterCallback& cb) {
+  auto syncfn = [](const FlowPtr<Expr>& n, const IterCallback& cb) {
+    std::stack<std::pair<NullableFlowPtr<Expr>, FlowPtr<Expr>>> s;
+    std::vector<FlowPtr<Expr>> children;
 
     s.emplace(nullptr, n);
 
@@ -383,10 +381,10 @@ NCC_EXPORT void detail::DfsPreImpl(const FlowPtr<Base>& base, const IterCallback
   syncfn(base, cb);
 }
 
-NCC_EXPORT void detail::DfsPostImpl(const FlowPtr<Base>& base, const IterCallback& cb) {
-  auto syncfn = [](const FlowPtr<Base>& n, const IterCallback& cb) {
-    std::stack<std::pair<NullableFlowPtr<Base>, FlowPtr<Base>>> s;
-    std::vector<FlowPtr<Base>> children;
+NCC_EXPORT void detail::DfsPostImpl(const FlowPtr<Expr>& base, const IterCallback& cb) {
+  auto syncfn = [](const FlowPtr<Expr>& n, const IterCallback& cb) {
+    std::stack<std::pair<NullableFlowPtr<Expr>, FlowPtr<Expr>>> s;
+    std::vector<FlowPtr<Expr>> children;
 
     s.emplace(nullptr, n);
 
@@ -418,10 +416,10 @@ NCC_EXPORT void detail::DfsPostImpl(const FlowPtr<Base>& base, const IterCallbac
   cb(nullptr, base);
 }
 
-NCC_EXPORT void detail::BfsPreImpl(const FlowPtr<Base>& base, const IterCallback& cb) {
-  auto syncfn = [](const FlowPtr<Base>& n, const IterCallback& cb) {
-    std::queue<std::pair<NullableFlowPtr<Base>, FlowPtr<Base>>> s;
-    std::vector<FlowPtr<Base>> children;
+NCC_EXPORT void detail::BfsPreImpl(const FlowPtr<Expr>& base, const IterCallback& cb) {
+  auto syncfn = [](const FlowPtr<Expr>& n, const IterCallback& cb) {
+    std::queue<std::pair<NullableFlowPtr<Expr>, FlowPtr<Expr>>> s;
+    std::vector<FlowPtr<Expr>> children;
 
     s.emplace(nullptr, n);
 
@@ -457,10 +455,10 @@ NCC_EXPORT void detail::BfsPreImpl(const FlowPtr<Base>& base, const IterCallback
   syncfn(base, cb);
 }
 
-NCC_EXPORT void detail::BfsPostImpl(const FlowPtr<Base>& base, const IterCallback& cb) {
-  auto syncfn = [](const FlowPtr<Base>& n, const IterCallback& cb) {
-    std::queue<std::pair<NullableFlowPtr<Base>, FlowPtr<Base>>> s;
-    std::vector<FlowPtr<Base>> children;
+NCC_EXPORT void detail::BfsPostImpl(const FlowPtr<Expr>& base, const IterCallback& cb) {
+  auto syncfn = [](const FlowPtr<Expr>& n, const IterCallback& cb) {
+    std::queue<std::pair<NullableFlowPtr<Expr>, FlowPtr<Expr>>> s;
+    std::vector<FlowPtr<Expr>> children;
 
     s.emplace(nullptr, n);
 
@@ -491,12 +489,12 @@ NCC_EXPORT void detail::BfsPostImpl(const FlowPtr<Base>& base, const IterCallbac
   syncfn(base, cb);
 }
 
-NCC_EXPORT void detail::IterChildren(const FlowPtr<Base>& base, const IterCallback& cb) {
-  auto syncfn = [](const FlowPtr<Base>& n, const IterCallback& cb) {
-    std::vector<FlowPtr<Base>> children;
+NCC_EXPORT void detail::IterChildren(const FlowPtr<Expr>& base, const IterCallback& cb) {
+  auto syncfn = [](const FlowPtr<Expr>& n, const IterCallback& cb) {
+    std::vector<FlowPtr<Expr>> children;
     GetChildrenSorted(n, children);
 
-    for (const FlowPtr<Base>& child : children) {
+    for (const FlowPtr<Expr>& child : children) {
       switch (cb(n, child)) {
         case IterOp::Proceed: {
           break;

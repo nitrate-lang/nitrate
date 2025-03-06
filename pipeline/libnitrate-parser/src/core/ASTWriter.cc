@@ -49,6 +49,11 @@ using namespace nitrate::parser::SyntaxTree;
 
 using Pool = google::protobuf::Arena;
 
+static bool IsCompressable(const ncc::FlowPtr<ncc::parse::Type> &in) {
+  return in->Is(QAST_INFER) && in->GetWidth() == nullptr && in->GetRangeBegin() == nullptr &&
+         in->GetRangeEnd() == nullptr;
+}
+
 static SyntaxTree::Operator FromOperator(ncc::lex::Operator op) {
   using LexOp = ncc::lex::Operator;
 
@@ -285,7 +290,7 @@ void AstWriter::SetTypeMetadata(auto *message, const FlowPtr<Type> &in) {
   }
 }
 
-SyntaxTree::SourceLocationRange *AstWriter::FromSource(const FlowPtr<Base> &in) {
+SyntaxTree::SourceLocationRange *AstWriter::FromSource(const FlowPtr<Expr> &in) {
   if (!m_rd.has_value()) {
     return nullptr;
   }
@@ -327,11 +332,6 @@ SyntaxTree::Expr *AstWriter::From(const FlowPtr<Expr> &in) {
   auto *message = Pool::CreateMessage<SyntaxTree::Expr>(m_arena);
 
   switch (in->GetKind()) {
-    case QAST_BASE: {
-      message->set_allocated_base(From(in.As<Base>()));
-      break;
-    }
-
     case QAST_BINEXPR: {
       message->set_allocated_binary(From(in.As<Binary>()));
       break;
@@ -422,8 +422,103 @@ SyntaxTree::Expr *AstWriter::From(const FlowPtr<Expr> &in) {
       break;
     }
 
-    case QAST_LAMBDA: {
-      message->set_allocated_lambda_expr(From(in.As<LambdaExpr>()));
+    case QAST_SEQ: {
+      message->set_allocated_sequence(From(in.As<Sequence>()));
+      break;
+    }
+
+    case QAST_IF: {
+      message->set_allocated_if_(From(in.As<If>()));
+      break;
+    }
+
+    case QAST_RETIF: {
+      message->set_allocated_return_if(From(in.As<ReturnIf>()));
+      break;
+    }
+
+    case QAST_SWITCH: {
+      message->set_allocated_switch_(From(in.As<Switch>()));
+      break;
+    }
+
+    case QAST_CASE: {
+      message->set_allocated_case_(From(in.As<Case>()));
+      break;
+    }
+
+    case QAST_RETURN: {
+      message->set_allocated_return_(From(in.As<Return>()));
+      break;
+    }
+
+    case QAST_BREAK: {
+      message->set_allocated_break_(From(in.As<Break>()));
+      break;
+    }
+
+    case QAST_CONTINUE: {
+      message->set_allocated_continue_(From(in.As<Continue>()));
+      break;
+    }
+
+    case QAST_WHILE: {
+      message->set_allocated_while_(From(in.As<While>()));
+      break;
+    }
+
+    case QAST_FOR: {
+      message->set_allocated_for_(From(in.As<For>()));
+      break;
+    }
+
+    case QAST_FOREACH: {
+      message->set_allocated_foreach(From(in.As<Foreach>()));
+      break;
+    }
+
+    case QAST_INLINE_ASM: {
+      message->set_allocated_assembly(From(in.As<Assembly>()));
+      break;
+    }
+
+    case QAST_TYPEDEF: {
+      message->set_allocated_typedef_(From(in.As<Typedef>()));
+      break;
+    }
+
+    case QAST_STRUCT: {
+      message->set_allocated_struct_(From(in.As<Struct>()));
+      break;
+    }
+
+    case QAST_ENUM: {
+      message->set_allocated_enum_(From(in.As<Enum>()));
+      break;
+    }
+
+    case QAST_SCOPE: {
+      message->set_allocated_scope(From(in.As<Scope>()));
+      break;
+    }
+
+    case QAST_BLOCK: {
+      message->set_allocated_block(From(in.As<Block>()));
+      break;
+    }
+
+    case QAST_EXPORT: {
+      message->set_allocated_export_(From(in.As<Export>()));
+      break;
+    }
+
+    case QAST_VAR: {
+      message->set_allocated_variable(From(in.As<Variable>()));
+      break;
+    }
+
+    case QAST_FUNCTION: {
+      message->set_allocated_function(From(in.As<Function>()));
       break;
     }
 
@@ -556,127 +651,6 @@ SyntaxTree::Expr *AstWriter::From(const FlowPtr<Expr> &in) {
       message->set_allocated_func(From(in.As<FuncTy>()));
       break;
     }
-
-    default: {
-      qcore_panic("Unknown expression kind");
-    }
-  }
-
-  return message;
-}
-
-SyntaxTree::Stmt *AstWriter::From(const FlowPtr<Stmt> &in) {
-  auto *message = Pool::CreateMessage<SyntaxTree::Stmt>(m_arena);
-
-  switch (in->GetKind()) {
-    case QAST_BASE: {
-      message->set_allocated_base(From(in.As<Base>()));
-      break;
-    }
-
-    case QAST_IF: {
-      message->set_allocated_if_(From(in.As<If>()));
-      break;
-    }
-
-    case QAST_RETIF: {
-      message->set_allocated_return_if(From(in.As<ReturnIf>()));
-      break;
-    }
-
-    case QAST_SWITCH: {
-      message->set_allocated_switch_(From(in.As<Switch>()));
-      break;
-    }
-
-    case QAST_CASE: {
-      message->set_allocated_case_(From(in.As<Case>()));
-      break;
-    }
-
-    case QAST_RETURN: {
-      message->set_allocated_return_(From(in.As<Return>()));
-      break;
-    }
-
-    case QAST_BREAK: {
-      message->set_allocated_break_(From(in.As<Break>()));
-      break;
-    }
-
-    case QAST_CONTINUE: {
-      message->set_allocated_continue_(From(in.As<Continue>()));
-      break;
-    }
-
-    case QAST_WHILE: {
-      message->set_allocated_while_(From(in.As<While>()));
-      break;
-    }
-
-    case QAST_FOR: {
-      message->set_allocated_for_(From(in.As<For>()));
-      break;
-    }
-
-    case QAST_FOREACH: {
-      message->set_allocated_foreach(From(in.As<Foreach>()));
-      break;
-    }
-
-    case QAST_INLINE_ASM: {
-      message->set_allocated_assembly(From(in.As<Assembly>()));
-      break;
-    }
-
-    case QAST_ESTMT: {
-      message->set_allocated_expr_stmt(From(in.As<ExprStmt>()));
-      break;
-    }
-
-    case QAST_TYPEDEF: {
-      message->set_allocated_typedef_(From(in.As<Typedef>()));
-      break;
-    }
-
-    case QAST_STRUCT: {
-      message->set_allocated_struct_(From(in.As<Struct>()));
-      break;
-    }
-
-    case QAST_ENUM: {
-      message->set_allocated_enum_(From(in.As<Enum>()));
-      break;
-    }
-
-    case QAST_SCOPE: {
-      message->set_allocated_scope(From(in.As<Scope>()));
-      break;
-    }
-
-    case QAST_BLOCK: {
-      message->set_allocated_block(From(in.As<Block>()));
-      break;
-    }
-
-    case QAST_EXPORT: {
-      message->set_allocated_export_(From(in.As<Export>()));
-      break;
-    }
-
-    case QAST_VAR: {
-      message->set_allocated_variable(From(in.As<Variable>()));
-      break;
-    }
-
-    case QAST_FUNCTION: {
-      message->set_allocated_function(From(in.As<Function>()));
-      break;
-    }
-
-    default: {
-      qcore_panic("Unknown statement kind");
-    }
   }
 
   return message;
@@ -686,11 +660,6 @@ SyntaxTree::Type *AstWriter::From(const FlowPtr<Type> &in) {
   auto *message = Pool::CreateMessage<SyntaxTree::Type>(m_arena);
 
   switch (in->GetKind()) {
-    case QAST_BASE: {
-      message->set_allocated_base(From(in.As<Base>()));
-      break;
-    }
-
     case QAST_U1: {
       message->set_allocated_u1(From(in.As<U1>()));
       break;
@@ -817,35 +786,9 @@ SyntaxTree::Type *AstWriter::From(const FlowPtr<Type> &in) {
     }
 
     default: {
-      qcore_panic("Unknown type kind");
+      qcore_panicf("Unknown type kind %s", std::string(in->GetKindName()).c_str());
     }
   }
-
-  return message;
-}
-
-SyntaxTree::Base *AstWriter::From(const FlowPtr<Base> &in) {
-  auto *message = Pool::CreateMessage<SyntaxTree::Base>(m_arena);
-
-  message->set_allocated_location(FromSource(in));
-
-  return message;
-}
-
-SyntaxTree::ExprStmt *AstWriter::From(const FlowPtr<ExprStmt> &in) {
-  auto *message = Pool::CreateMessage<SyntaxTree::ExprStmt>(m_arena);
-
-  message->set_allocated_location(FromSource(in));
-  message->set_allocated_expression(From(in->GetExpr()));
-
-  return message;
-}
-
-SyntaxTree::LambdaExpr *AstWriter::From(const FlowPtr<LambdaExpr> &in) {
-  auto *message = Pool::CreateMessage<SyntaxTree::LambdaExpr>(m_arena);
-
-  message->set_allocated_location(FromSource(in));
-  message->set_allocated_function(From(in->GetFunc()));
 
   return message;
 }
@@ -1090,6 +1033,7 @@ SyntaxTree::RefTy *AstWriter::From(const FlowPtr<RefTy> &in) {
 
   message->set_allocated_location(FromSource(in));
   message->set_allocated_pointee(From(in->GetItem()));
+  message->set_volatile_(in->IsVolatile());
   SetTypeMetadata(message, in);
 
   return message;
@@ -1099,7 +1043,9 @@ SyntaxTree::FuncTy *AstWriter::From(const FlowPtr<FuncTy> &in) {
   auto *message = Pool::CreateMessage<SyntaxTree::FuncTy>(m_arena);
 
   message->set_allocated_location(FromSource(in));
-  message->set_allocated_return_type(From(in->GetReturn()));
+  if (!IsCompressable(in->GetReturn())) {
+    message->set_allocated_return_type(From(in->GetReturn()));
+  }
   message->set_variadic(in->IsVariadic());
   message->set_purity(FromPurity(in->GetPurity()));
   SetTypeMetadata(message, in);
@@ -1113,7 +1059,9 @@ SyntaxTree::FuncTy *AstWriter::From(const FlowPtr<FuncTy> &in) {
       auto *parameter = Pool::CreateMessage<SyntaxTree::FunctionParameter>(m_arena);
       const auto &[name, type, default_] = param;
       parameter->set_name(name.Get());
-      parameter->set_allocated_type(From(type));
+      if (!IsCompressable(type)) {
+        parameter->set_allocated_type(From(type));
+      }
       if (default_.has_value()) {
         parameter->set_allocated_default_value(From(default_.value()));
       }
@@ -1390,17 +1338,17 @@ SyntaxTree::Block *AstWriter::From(const FlowPtr<Block> &in) {
   message->set_allocated_location(FromSource(in));
 
   switch (in->GetSafety()) {
-    case SafetyMode::Unknown: {
+    case BlockMode::Unknown: {
       message->set_safety(SyntaxTree::Block_Safety_None);
       break;
     }
 
-    case SafetyMode::Safe: {
+    case BlockMode::Safe: {
       message->set_safety(SyntaxTree::Block_Safety_Safe);
       break;
     }
 
-    case SafetyMode::Unsafe: {
+    case BlockMode::Unsafe: {
       message->set_safety(SyntaxTree::Block_Safety_Unsafe);
       break;
     }
@@ -1422,8 +1370,8 @@ SyntaxTree::Variable *AstWriter::From(const FlowPtr<Variable> &in) {
 
   message->set_allocated_location(FromSource(in));
   message->set_name(in->GetName().Get());
-  if (in->GetType().has_value()) {
-    message->set_allocated_type(From(in->GetType().value()));
+  if (!IsCompressable(in->GetType())) {
+    message->set_allocated_type(From(in->GetType()));
   }
   if (in->GetInitializer().has_value()) {
     message->set_allocated_initial_value(From(in->GetInitializer().value()));
@@ -1561,7 +1509,9 @@ SyntaxTree::ReturnIf *AstWriter::From(const FlowPtr<ReturnIf> &in) {
 
   message->set_allocated_location(FromSource(in));
   message->set_allocated_condition(From(in->GetCond()));
-  message->set_allocated_value(From(in->GetValue()));
+  if (in->GetValue().has_value()) {
+    message->set_allocated_value(From(in->GetValue().value()));
+  }
 
   return message;
 }
@@ -1610,7 +1560,9 @@ SyntaxTree::Function *AstWriter::From(const FlowPtr<Function> &in) {
   auto *message = Pool::CreateMessage<SyntaxTree::Function>(m_arena);
 
   message->set_allocated_location(FromSource(in));
-  message->set_allocated_return_type(From(in->GetReturn()));
+  if (!IsCompressable(in->GetReturn())) {
+    message->set_allocated_return_type(From(in->GetReturn()));
+  }
   message->set_name(in->GetName().Get());
   message->set_purity(FromPurity(in->GetPurity()));
   message->set_variadic(in->IsVariadic());
@@ -1657,7 +1609,9 @@ SyntaxTree::Function *AstWriter::From(const FlowPtr<Function> &in) {
       auto *parameter = Pool::CreateMessage<SyntaxTree::TemplateParameters::TemplateParameter>(m_arena);
       const auto &[name, type, default_] = param;
       parameter->set_name(name.Get());
-      parameter->set_allocated_type(From(type));
+      if (!IsCompressable(type)) {
+        parameter->set_allocated_type(From(type));
+      }
       if (default_.has_value()) {
         parameter->set_allocated_default_value(From(default_.value()));
       }
@@ -1675,7 +1629,9 @@ SyntaxTree::Function *AstWriter::From(const FlowPtr<Function> &in) {
       auto *parameter = Pool::CreateMessage<SyntaxTree::FunctionParameter>(m_arena);
       const auto &[name, type, default_] = param;
       parameter->set_name(name.Get());
-      parameter->set_allocated_type(From(type));
+      if (!IsCompressable(type)) {
+        parameter->set_allocated_type(From(type));
+      }
       if (default_.has_value()) {
         parameter->set_allocated_default_value(From(default_.value()));
       }
@@ -1695,7 +1651,9 @@ SyntaxTree::Function *AstWriter::From(const FlowPtr<Function> &in) {
       const auto &param_default = std::get<2>(item);
 
       parameter->set_name(param_name.Get());
-      parameter->set_allocated_type(From(param_type));
+      if (!IsCompressable(param_type)) {
+        parameter->set_allocated_type(From(param_type));
+      }
       if (param_default.has_value()) {
         parameter->set_allocated_default_value(From(param_default.value()));
       }
@@ -1725,7 +1683,9 @@ SyntaxTree::Struct *AstWriter::From(const FlowPtr<Struct> &in) {
       const auto &param_default = std::get<2>(item);
 
       parameter->set_name(param_name.Get());
-      parameter->set_allocated_type(From(param_type));
+      if (!IsCompressable(param_type)) {
+        parameter->set_allocated_type(From(param_type));
+      }
       if (param_default.has_value()) {
         parameter->set_allocated_default_value(From(param_default.value()));
       }
@@ -1756,7 +1716,9 @@ SyntaxTree::Struct *AstWriter::From(const FlowPtr<Struct> &in) {
     std::for_each(items.begin(), items.end(), [&](auto item) {
       auto *field = Pool::CreateMessage<SyntaxTree::Struct_Field>(m_arena);
       field->set_name(item.GetName().Get());
-      field->set_allocated_type(From(item.GetType()));
+      if (!IsCompressable(item.GetType())) {
+        field->set_allocated_type(From(item.GetType()));
+      }
       field->set_visibility(FromVisibility(item.GetVis()));
       field->set_is_static(item.IsStatic());
       if (item.GetValue().has_value()) {
@@ -1867,7 +1829,7 @@ SyntaxTree::Export *AstWriter::From(const FlowPtr<Export> &in) {
   {                                                              \
     auto *message = From(n);                                     \
     message->CheckInitialized();                                 \
-    auto *root = Pool::CreateMessage<SyntaxTree::Root>(m_arena); \
+    auto *root = Pool::CreateMessage<SyntaxTree::Expr>(m_arena); \
     root->set_allocated_##__node_name(message);                  \
     root->CheckInitialized();                                    \
     if (m_plaintext_mode) {                                      \
@@ -1879,9 +1841,6 @@ SyntaxTree::Export *AstWriter::From(const FlowPtr<Export> &in) {
     }                                                            \
   }
 
-void AstWriter::Visit(FlowPtr<Base> n) { SEND(From(n), base); }
-void AstWriter::Visit(FlowPtr<ExprStmt> n) { SEND(From(n), expr); }
-void AstWriter::Visit(FlowPtr<LambdaExpr> n) { SEND(From(n), lambda_expr); }
 void AstWriter::Visit(FlowPtr<NamedTy> n) { SEND(From(n), named); }
 void AstWriter::Visit(FlowPtr<InferTy> n) { SEND(From(n), infer); }
 void AstWriter::Visit(FlowPtr<TemplateType> n) { SEND(From(n), template_); }
@@ -1947,7 +1906,7 @@ void AstWriter::Visit(FlowPtr<Enum> n) { SEND(From(n), enum_); }
 void AstWriter::Visit(FlowPtr<Scope> n) { SEND(From(n), scope); }
 void AstWriter::Visit(FlowPtr<Export> n) { SEND(From(n), export_); }
 
-AstWriter::AstWriter(std::ostream &os, WriterSourceProvider rd, bool plaintext_mode)
+AstWriter::AstWriter(std::ostream &os, bool plaintext_mode, WriterSourceProvider rd)
     : m_arena(new google::protobuf::Arena), m_os(os), m_rd(rd), m_plaintext_mode(plaintext_mode) {}
 
 AstWriter::~AstWriter() { delete m_arena; }

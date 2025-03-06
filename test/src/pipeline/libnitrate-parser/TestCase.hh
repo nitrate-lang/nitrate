@@ -11,13 +11,15 @@
 #include <nitrate-parser/ASTType.hh>
 #include <nitrate-parser/Context.hh>
 #include <nitrate-parser/Init.hh>
+#include <nitrate-seq/Sequencer.hh>
 
 namespace detail {
   static inline std::optional<std::string> ParseString(std::string_view text) {
     auto env = std::make_shared<ncc::Environment>();
     boost::iostreams::stream<boost::iostreams::array_source> ss(text.data(), text.size());
-    ncc::lex::Tokenizer tokenizer(ss, env);
-    auto ast = ncc::parse::Parser::Create(tokenizer, env)->Parse();
+    auto tokenizer = ncc::seq::Sequencer(ss, env);
+    auto my_pool = ncc::DynamicArena();
+    auto ast = ncc::parse::GeneralParser::Create(tokenizer, env, my_pool)->Parse();
     if (!ast.Check()) {
       return std::nullopt;
     }

@@ -37,41 +37,53 @@ using namespace ncc;
 using namespace ncc::lex;
 using namespace ncc::parse;
 
-auto Parser::PImpl::RecurseForInitExpr() -> NullableFlowPtr<Stmt> {
+auto GeneralParser::PImpl::RecurseForInitExpr() -> NullableFlowPtr<Expr> {
   if (NextIf<PuncSemi>()) {
     return std::nullopt;
   }
 
-  if (NextIf<Let>()) {
-    if (auto vars = RecurseVariable(VariableType::Let); vars.size() == 1) {
-      return vars[0];
-    }
-
-    Log << SyntaxError << Current() << "Expected exactly one variable in for loop";
-
-  } else if (NextIf<Var>()) {
-    if (auto vars = RecurseVariable(VariableType::Var); vars.size() == 1) {
-      return vars[0];
-    }
-
-    Log << SyntaxError << Current() << "Expected exactly one variable in for loop";
-  } else if (NextIf<Const>()) {
-    if (auto vars = RecurseVariable(VariableType::Const); vars.size() == 1) {
-      return vars[0];
-    }
-
-    Log << SyntaxError << Current() << "Expected exactly one variable in for loop";
-
-  } else {
-    return CreateNode<ExprStmt>(RecurseExpr({
+  auto var_kind = Peek();
+  if (!var_kind.Is<Let>() && !var_kind.Is<Var>() && !var_kind.Is<Const>()) {
+    return RecurseExpr({
         Token(Punc, PuncSemi),
-    }))();
+    });
   }
+
+  Next();
+
+  std::vector<FlowPtr<Expr>> variables;
+
+  switch (var_kind.GetKeyword()) {
+    case Keyword::Let: {
+      variables = RecurseVariable(VariableType::Let);
+      break;
+    }
+
+    case Keyword::Var: {
+      variables = RecurseVariable(VariableType::Var);
+      break;
+    }
+
+    case Keyword::Const: {
+      variables = RecurseVariable(VariableType::Const);
+      break;
+    }
+
+    default: {
+      break;
+    }
+  }
+
+  if (variables.size() == 1) {
+    return variables[0];
+  }
+
+  Log << SyntaxError << Current() << "Expected exactly one variable in for loop";
 
   return std::nullopt;
 }
 
-auto Parser::PImpl::RecurseForCondition() -> NullableFlowPtr<Expr> {
+auto GeneralParser::PImpl::RecurseForCondition() -> NullableFlowPtr<Expr> {
   if (NextIf<PuncSemi>()) {
     return std::nullopt;
   }
@@ -87,7 +99,7 @@ auto Parser::PImpl::RecurseForCondition() -> NullableFlowPtr<Expr> {
   return condition;
 }
 
-auto Parser::PImpl::RecurseForStepExpr(bool has_paren) -> NullableFlowPtr<Expr> {
+auto GeneralParser::PImpl::RecurseForStepExpr(bool has_paren) -> NullableFlowPtr<Expr> {
   if (has_paren) {
     if (Peek().Is<PuncRPar>()) {
       return std::nullopt;
@@ -97,25 +109,15 @@ auto Parser::PImpl::RecurseForStepExpr(bool has_paren) -> NullableFlowPtr<Expr> 
         Token(Punc, PuncRPar),
     });
   }
-  if (Peek().Is<OpArrow>() || Peek().Is<PuncLCur>()) {
+
+  if (Peek().Is<PuncLCur>()) {
     return std::nullopt;
   }
 
-  return RecurseExpr({
-      Token(Punc, PuncLCur),
-      Token(Oper, OpArrow),
-  });
+  return RecurseExpr({Token(Punc, PuncLCur)});
 }
 
-auto Parser::PImpl::RecurseForBody() -> FlowPtr<Stmt> {
-  if (NextIf<OpArrow>()) {
-    return RecurseBlock(false, true, SafetyMode::Unknown);
-  }
-
-  return RecurseBlock(true, false, SafetyMode::Unknown);
-}
-
-auto Parser::PImpl::RecurseFor() -> FlowPtr<Stmt> {
+auto GeneralParser::PImpl::RecurseFor() -> FlowPtr<Expr> {
   bool for_with_paren = NextIf<PuncLPar>().has_value();
   auto for_init = RecurseForInitExpr();
   auto for_cond = RecurseForCondition();
@@ -125,7 +127,7 @@ auto Parser::PImpl::RecurseFor() -> FlowPtr<Stmt> {
     Log << SyntaxError << Current() << "Expected closing parenthesis in for statement";
   }
 
-  auto for_body = RecurseForBody();
+  auto for_body = RecurseBlock(true, false, BlockMode::Unknown);
 
-  return CreateNode<For>(for_init, for_cond, for_step, for_body)();
+  return m_fac.CreateFor(for_init, for_cond, for_step, for_body);
 }

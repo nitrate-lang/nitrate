@@ -39,6 +39,7 @@
 #include <nitrate-core/Macro.hh>
 #include <nitrate-lexer/Init.hh>
 #include <nitrate-parser/ASTBase.hh>
+#include <nitrate-parser/ASTData.hh>
 #include <nitrate-parser/Init.hh>
 
 using namespace ncc::parse;
@@ -50,7 +51,7 @@ NCC_EC_EX(ec::ParseEG, Runtime, ec::Formatter);
 NCC_EXPORT auto ParseLibrarySetup::Init() -> bool {
   GOOGLE_PROTOBUF_VERIFY_VERSION;
 
-  Log << Runtime << Debug << "libnitrate-parser: initializing...";
+  Log << Runtime << Trace << "libnitrate-parser: initializing...";
 
   if (!ncc::CoreLibrary.InitRC()) {
     Log << Runtime << "libnitrate-parser init failed: libnitrate-core failed to initialize";
@@ -62,20 +63,26 @@ NCC_EXPORT auto ParseLibrarySetup::Init() -> bool {
     return false;
   }
 
-  Log << Runtime << Debug << "libnitrate-parser: initialized";
+  Log << Runtime << Trace << "libnitrate-parser: initialized";
 
   return true;
 }
 
 NCC_EXPORT void ParseLibrarySetup::Deinit() {
-  Log << Runtime << Debug << "libnitrate-parser: deinitializing...";
+  Log << Runtime << Trace << "libnitrate-parser: deinitializing...";
 
   ExtensionDataStore.Reset();
 
   ncc::lex::LexerLibrary.DeinitRC();
   ncc::CoreLibrary.DeinitRC();
 
-  Log << Runtime << Debug << "libnitrate-parser: deinitialized";
+  Log << Runtime << Trace << "libnitrate-parser: deinitialized";
 }
 
-NCC_EXPORT auto ParseLibrarySetup::GetVersionId() -> std::string_view { return __TARGET_VERSION; }
+NCC_EXPORT auto ParseLibrarySetup::GetSemVersion() -> std::array<uint32_t, 3> {
+  return {__TARGET_MAJOR_VERSION, __TARGET_MINOR_VERSION, __TARGET_PATCH_VERSION};
+}
+
+NCC_EXPORT auto ParseLibrarySetup::BuildId() -> ncc::BuildId {
+  return {__TARGET_COMMIT_HASH, __TARGET_COMMIT_DATE, __TARGET_COMMIT_BRANCH};
+}
