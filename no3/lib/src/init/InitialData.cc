@@ -32,8 +32,9 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <filesystem>
 #include <init/InitPackage.hh>
+#include <regex>
+#include <string>
 
 static const std::string_view DEFAULT_DOCKER_IGNORE = R"(.no3/
 .git/
@@ -264,27 +265,80 @@ std::string no3::package::GenerateDefaultLibrarySource() { return std::string(DE
 std::string no3::package::GenerateDefaultMainSource() { return std::string(DEFAULT_MAIN_N); }
 std::string no3::package::GenerateCodeOfConduct() { return std::string(DEFAULT_CODE_OF_CONDUCT_MD); }
 
+static std::optional<std::string> GetGithubUsername(const std::string& name) {
+  if (name.starts_with("@gh-")) {
+    return name.substr(4, name.find('/') - 4);
+  }
+
+  return std::nullopt;
+}
+
+static std::string GetPackageName(const std::string& name) { return name.substr(name.find('/') + 1); }
+
+std::string no3::package::GenerateSecurityPolicy(const std::string& package_name) {
+  // Note this security policy contains a bug bounty clause.
+
+  const auto github_username = GetGithubUsername(package_name);
+  const auto name = GetPackageName(package_name);
+
+  std::string content;
+
+  content +=
+      R"(# Reporting Security Issues
+
+The {{project_name}} team and community take security bugs in {{project_name}} seriously.
+We appreciate your efforts to disclose your findings responsibly and will make
+every effort to acknowledge your contributions. Pursuant thereto, and contingent
+on the notability of the issue and the availability of monetary resources, we
+may offer a reward for the responsible disclosure of security vulnerabilities.
+
+)";
+
+  if (github_username.has_value()) {
+    content += R"(Please use the GitHub Security Advisory
+["Report a Vulnerability"](https://github.com/{{gh_username}}/{{project_name}}/security/advisories/new)
+tab to report a security issue.
+
+)";
+  }
+
+  content +=
+
+      R"(The {{project_name}} team will send a response indicating the next steps in handling
+your report. After the initial reply to your report, the security team will keep
+you informed of the progress toward a fix and full announcement and may ask for
+additional information or guidance.
+
+Report security bugs in third-party modules to the person or team maintaining the module.
+
+Thank you for keeping the {{project_name}} project and its community safe.
+
+---
+*This security policy is auto-generated for the {{project_name}} project.*
+)";
+
+  content = std::regex_replace(content, std::regex(R"(\{\{gh_username\}\})"), github_username.value());
+  content = std::regex_replace(content, std::regex(R"(\{\{project_name\}\})"), name);
+
+  return content;
+}
+
 std::string no3::package::GenerateReadme(const InitOptions& options) {
-  /// TODO:
+  /// TODO: Generate a README.md file.
   return "";
 }
 
 std::string no3::package::GenerateLicense(const std::string& spdx_license) {
-  /// TODO:
-  return "";
-}
-
-std::string no3::package::GenerateSecurityPolicy() {
-  /// TODO:
+  /// TODO: Generate a license file.
   return "";
 }
 
 std::string no3::package::GenerateContributingPolicy(const std::string& spdx_license) {
-  /// TODO:
+  /// TODO: Generate a contributing policy.
   return "";
 }
 
 std::string no3::package::GenerateCMakeListsTxt() {
-  /// TODO:
+  /// TODO: Generate a CMakeLists.txt file.
   return "";
 }

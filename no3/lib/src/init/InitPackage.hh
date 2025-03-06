@@ -35,6 +35,7 @@
 #pragma once
 
 #include <filesystem>
+#include <optional>
 #include <string>
 
 namespace no3::package {
@@ -52,7 +53,7 @@ namespace no3::package {
 
   std::string GenerateReadme(const InitOptions& options);
   std::string GenerateLicense(const std::string& spdx_license);
-  std::string GenerateSecurityPolicy();
+  std::string GenerateSecurityPolicy(const std::string& package_name);
   std::string GenerateContributingPolicy(const std::string& spdx_license);
   std::string GenerateCodeOfConduct();
   std::string GenerateGitKeep();

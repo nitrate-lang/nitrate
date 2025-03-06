@@ -126,7 +126,7 @@ static bool InitPackageDirectoryStructure(const std::filesystem::path& package_p
     return false;
   }
 
-  if (!CreateLocalFile(package_path / "SECURITY.md", GenerateSecurityPolicy())) {
+  if (!CreateLocalFile(package_path / "SECURITY.md", GenerateSecurityPolicy(options.m_package_name))) {
     Log << "Failed to create the SECURITY.md file: " << package_path / "SECURITY.md";
     return false;
   }
