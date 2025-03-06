@@ -34,7 +34,7 @@
 #include <core/InterpreterImpl.hh>
 #include <core/PackageConfig.hh>
 #include <core/SPDX.hh>
-#include <core/argparse.hpp>
+#include <core/argh.hh>
 #include <filesystem>
 #include <init/InitPackage.hh>
 #include <nitrate-core/CatchAll.hh>
@@ -43,82 +43,6 @@
 
 using namespace ncc;
 using namespace no3::package;
-
-static void SetPackageInitCategoryOptions(argparse::ArgumentParser& program) {
-  auto& exclusion = program.AddMutuallyExclusiveGroup(true);
-
-  exclusion.AddArgument("--lib")
-      .Help("Initialize a new Nitrate library package.")
-      .ImplicitValue(true)
-      .DefaultValue(false);
-
-  exclusion.AddArgument("--standard-lib")
-      .Help("Initialize a new Nitrate offical standard library component package.")
-      .ImplicitValue(true)
-      .DefaultValue(false);
-
-  exclusion.AddArgument("--exe")
-      .Help("Initialize a new Nitrate executable package.")
-      .ImplicitValue(true)
-      .DefaultValue(false);
-
-  exclusion.AddArgument("--comptime")
-      .Help("Initialize a new Nitrate comptime package.")
-      .ImplicitValue(true)
-      .DefaultValue(false);
-}
-
-static void SetPackageMetadataOptions(argparse::ArgumentParser& program) {
-  constexpr std::string_view kDefaultPackageDescription = "No description was provided by the package creator.";
-
-  program.AddArgument("--brief", "-b")
-      .Help("A description of the package.")
-      .DefaultValue(std::string(kDefaultPackageDescription));
-
-  program.AddArgument("--license", "-l")
-      .Help("The package SPDX license identifier.")
-      .DefaultValue(std::string("LGPL-2.1+"));
-
-  program.AddArgument("--version", "-v")
-      .Help("Initial Semantic Version of the package.")
-      .DefaultValue(std::string("0.1.0"));
-}
-
-static std::unique_ptr<argparse::ArgumentParser> CreateArgumentParser(bool& did_default) {
-  auto program = std::make_unique<argparse::ArgumentParser>(ncc::clog, did_default, "impl", "1.0",
-                                                            argparse::default_arguments::help);
-
-  SetPackageInitCategoryOptions(*program);
-  SetPackageMetadataOptions(*program);
-
-  program->AddArgument("--output", "-o")
-      .Help("The directory to create the package folder in.")
-      .DefaultValue(std::string("."));
-
-  program->AddArgument("package-name").Help("The name of the package to initialize.").Required();
-
-  return program;
-}
-
-static PackageCategory GetPackageCategory(const argparse::ArgumentParser& program) {
-  if (program.Get<bool>("--lib")) {
-    return PackageCategory::Library;
-  }
-
-  if (program.Get<bool>("--standard-lib")) {
-    return PackageCategory::StandardLibrary;
-  }
-
-  if (program.Get<bool>("--exe")) {
-    return PackageCategory::Executable;
-  }
-
-  if (program.Get<bool>("--comptime")) {
-    return PackageCategory::Comptime;
-  }
-
-  return PackageCategory::Library;
-}
 
 static void DisplayPoliteNameRejection(const std::string& package_name) {
   Log << "Sorry, the specified package name is not acceptable.";
@@ -212,37 +136,122 @@ static std::optional<std::filesystem::path> GetNewPackagePath(const std::filesys
   }
 }
 
-bool no3::Interpreter::PImpl::CommandInit(ConstArguments, const MutArguments& argv) {
-  bool did_default = false;
-  auto program = CreateArgumentParser(did_default);
+static void DisplayHelp() {
+  std::string_view help =
+      R"(Usage: impl [--help] [[--lib]|[--standard-lib]|[--exe]|[--comptime]] [--brief VAR] [--license VAR] [--version VAR] [--output VAR] package-name
 
-  Log << Trace << "Parsing command line arguments for package initialization.";
+Positional arguments:
+  package-name    The name of the package to initialize. [required]
 
-  try {
-    program->ParseArgs(argv);
-  } catch (const std::runtime_error& e) {
-    if (did_default) {
-      Log << Trace << "Default action necessitates early return.";
-      return true;
+Optional arguments:
+  -h, --help      shows help message and exits 
+  --lib           Initialize a new Nitrate library package. 
+  --standard-lib  Initialize a new Nitrate offical standard library component package. 
+  --exe           Initialize a new Nitrate executable package. 
+  --comptime      Initialize a new Nitrate comptime package. 
+  -b, --brief     A description of the package. [nargs=0..1] [default: "No description was provided by the package creator."]
+  -l, --license   The package SPDX license identifier. [nargs=0..1] [default: "LGPL-2.1+"]
+  -v, --version   Initial Semantic Version of the package. [nargs=0..1] [default: "0.1.0"]
+  -o, --output    The directory to create the package folder in. [nargs=0..1] [default: "."]
+)";
+
+  Log << Raw << help;
+}
+
+static bool GetCheckedArguments(const argh::parser& cmdl, std::string& package_name, std::string& package_description,
+                                std::string& package_license, std::string& package_version, std::string& package_output,
+                                PackageCategory& package_category) {
+  cmdl({"-b", "--brief"}) >> package_description;
+  cmdl({"-l", "--license"}) >> package_license;
+  cmdl({"-v", "--version"}) >> package_version;
+  cmdl({"-o", "--output"}) >> package_output;
+  cmdl(1) >> package_name;
+  const bool said_lib = cmdl[{"--lib"}];
+  const bool said_stdlib = cmdl[{"--standard-lib"}];
+  const bool said_exe = cmdl[{"--exe"}];
+  const bool said_comptime = cmdl[{"--comptime"}];
+  package_category = [&]() {
+    if (said_lib) {
+      return PackageCategory::Library;
     }
 
-    Log << e.what();
+    if (said_stdlib) {
+      return PackageCategory::StandardLibrary;
+    }
+
+    if (said_exe) {
+      return PackageCategory::Executable;
+    }
+
+    return PackageCategory::Comptime;
+  }();
+
+  if (package_name.empty()) {
+    Log << "package-name: 1 argument(s) expected. 0 provided.";
     return false;
   }
 
-  if (did_default) {
-    Log << Trace << "Default action necessitates early return.";
+  int type_sum = (int)said_lib + (int)said_stdlib + (int)said_exe + (int)said_comptime;
+  if (type_sum == 0) {
+    Log << "One of '--exe', '--lib', '--comptime', '--standard-lib' is required.";
+    return false;
+  }
+
+  if (type_sum != 1) {
+    Log << "Arguments '--exe', '--lib', '--comptime', '--standard-lib' are mutually exclusive.";
+    return false;
+  }
+
+  if (package_description.empty()) {
+    package_description = "No description was provided by the package creator.";
+  }
+
+  if (package_license.empty()) {
+    package_license = "LGPL-2.1+";
+  }
+
+  if (package_version.empty()) {
+    package_version = "0.1.0";
+  }
+
+  if (package_output.empty()) {
+    package_output = ".";
+  }
+
+  return true;
+}
+
+bool no3::Interpreter::PImpl::CommandInit(ConstArguments, const MutArguments& argv) {
+  argh::parser cmdl;
+  cmdl.add_params({"help", "brief", "b", "license", "l", "version", "v", "output", "o"});
+
+  Log << Trace << "Parsing command line arguments for package initialization.";
+  cmdl.parse(argv, argh::parser::SINGLE_DASH_IS_MULTIFLAG);
+
+  if (cmdl[{"-h", "--help"}]) {
+    DisplayHelp();
     return true;
   }
 
-  Log << Trace << "Finished parsing command line arguments for package initialization.";
+  std::string package_name;
+  std::string package_description;
+  std::string package_license;
+  std::string package_version;
+  std::string package_output;
+  PackageCategory package_category{};
 
-  const auto package_name = program->Get<std::string>("package-name");
-  const auto package_description = program->Get<std::string>("--brief");
-  const auto package_license = program->Get<std::string>("--license");
-  const auto package_version = program->Get<std::string>("--version");
-  const auto package_category = GetPackageCategory(*program);
-  const auto package_output = program->Get<std::string>("--output");
+  if (!GetCheckedArguments(cmdl, package_name, package_description, package_license, package_version, package_output,
+                           package_category)) {
+    return false;
+  }
+
+  Log << Trace << R"(args["package-name"] = ")" << package_name << "\"";
+  Log << Trace << R"(args["brief"] = ")" << package_description << "\"";
+  Log << Trace << R"(args["license"] = ")" << package_license << "\"";
+  Log << Trace << R"(args["version"] = ")" << package_version << "\"";
+  Log << Trace << R"(args["output"] = ")" << package_output << "\"";
+
+  Log << Trace << "Finished parsing command line arguments for package initialization.";
 
   if (!PackageConfig::ValidatePackageVersion(package_version)) {
     DisplayPoliteVersionRejection(package_version);
