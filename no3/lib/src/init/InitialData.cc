@@ -287,7 +287,7 @@ std::string no3::package::GenerateSecurityPolicy(const std::string& package_name
   content +=
       R"(# Reporting Security Issues
 
-The {{project_name}} team and community take security bugs in {{project_name}} seriously.
+The ("{{project_name}}") team and community take security bugs in ("{{project_name}}") seriously.
 We appreciate your efforts to disclose your findings responsibly and will make
 every effort to acknowledge your contributions. Pursuant thereto, and contingent
 on the notability of the issue and the availability of monetary resources, we
@@ -305,17 +305,17 @@ tab to report a security issue.
 
   content +=
 
-      R"(The {{project_name}} team will send a response indicating the next steps in handling
+      R"(The ("{{project_name}}") team will send a response indicating the next steps in handling
 your report. After the initial reply to your report, the security team will keep
 you informed of the progress toward a fix and full announcement and may ask for
 additional information or guidance.
 
 Report security bugs in third-party modules to the person or team maintaining the module.
 
-Thank you for keeping the {{project_name}} project and its community safe.
+Thank you for keeping the ("{{project_name}}") project and its community safe.
 
 ---
-*This security policy is auto-generated for the {{project_name}} project.*
+*This security policy is auto-generated for the ("{{project_name}}") project.*
 )";
 
   content = std::regex_replace(content, std::regex(R"(\{\{gh_username\}\})"), github_username.value());
