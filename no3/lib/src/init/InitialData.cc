@@ -303,7 +303,8 @@ std::string no3::package::GenerateSecurityPolicy(const std::string& package_name
   content +=
       R"(# Reporting Security Issues
 
-The ("{{project_name_nice}}") team and community take security bugs in ("{{project_name_nice}}") seriously.
+The ("{{project_name_nice}}") project team and community take security bugs in 
+the ("{{project_name_nice}}") project seriously.
 We appreciate your efforts to disclose your findings responsibly and will make
 every effort to acknowledge your contributions. Pursuant thereto, and contingent
 on the notability of the issue and the availability of monetary resources, we
@@ -321,7 +322,7 @@ tab to report a security issue.
 
   content +=
 
-      R"(The ("{{project_name_nice}}") team will send a response indicating the next steps in handling
+      R"(The ("{{project_name_nice}}") project team will send a response indicating the next steps in handling
 your report. After the initial reply to your report, the security team will keep
 you informed of the progress toward a fix and full announcement and may ask for
 additional information or guidance.
@@ -453,7 +454,8 @@ std::string no3::package::GenerateContributingPolicy(const InitOptions& options)
   std::string content;
 
   content += R"(# Contributing to the ("{{project_name_nice}}") Project
-  **LEGAL NOTICE**
+
+**LEGAL NOTICE**
 
 1. Regarding Your contributions and the legality thereof, all intellectual property 
    delivered to the ("Maintainers") of this ("{{project_name_nice}}") project is 
