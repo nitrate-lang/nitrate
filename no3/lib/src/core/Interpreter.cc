@@ -84,7 +84,7 @@ bool Interpreter::PImpl::CommandHelp(ConstArguments, const MutArguments&) {
 │ w, impl    │ Low-level toolchain commands for maintainers            │
 │            │ Not documented / Subject to change                      │
 ├────────────┼─────────────────────────────────────────────────────────┤
-│ p, init    │ Create a new package from a template                    │
+│ n, init    │ Create a new package from a template                    │
 │            │ Get help: https://nitrate.dev/docs/no3/init             │
 ├────────────┼─────────────────────────────────────────────────────────┤
 │ i, install │ Install a local or remote package                       │
@@ -152,7 +152,7 @@ void Interpreter::PImpl::SetupCommands() {
   m_commands["format"] = m_commands["m"] = m_commands["fmt"] = CommandFormat;
   m_commands["help"] = m_commands["-h"] = m_commands["h"] = m_commands["--help"] = CommandHelp;
   m_commands["impl"] = m_commands["w"] = CommandImpl;
-  m_commands["init"] = m_commands["p"] = CommandInit;
+  m_commands["init"] = m_commands["n"] = CommandInit;
   m_commands["install"] = m_commands["i"] = CommandInstall;
   m_commands["lsp"] = m_commands["x"] = CommandLSP;
   m_commands["license"] = CommandLicense;
