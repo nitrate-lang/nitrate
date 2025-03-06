@@ -42,6 +42,7 @@ parts:
       - libunwind8
       - libprotobuf32t64
       - libboost-iostreams1.83.0
+      - libboost-filesystem1.83.0
       - libcurlpp0t64
     override-stage: |
       snapcraftctl stage
