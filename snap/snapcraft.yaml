@@ -48,9 +48,6 @@ parts:
       snapcraftctl stage
       rm -rf $SNAPCRAFT_PART_INSTALL/usr/include
       rm -rf $SNAPCRAFT_PART_INSTALL/usr/share/doc
-      rm $SNAPCRAFT_PART_INSTALL/usr/lib/x86_64-linux-gnu/libunwind-coredump.so.0.0.0
-      rm $SNAPCRAFT_PART_INSTALL/usr/lib/x86_64-linux-gnu/libunwind-ptrace.so.0.0.0
-      rm $SNAPCRAFT_PART_INSTALL/usr/lib/x86_64-linux-gnu/libunwind-x86_64.so.8.0.1
 
 apps:
   nitrate:
