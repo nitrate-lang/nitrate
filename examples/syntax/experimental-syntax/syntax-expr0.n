@@ -24,12 +24,12 @@ pub scope orbit::codex::json::detail {
             res << '"';                         ~> If quote is set, append a double quote (")
 
         @opt("lin2vec");                        ~> Linear processing to vector transformation.
-        @opt("rcache-dyvec");                   ~> Runtime caching of data-blocks with inter-thread 
+        @opt("rcache-dyvec");                   ~> Runtime caching of data-blocks with inter-thread
                                                 ~> optimizations and block-entropy switching.
-        @optmtif(s.pred() > k,                  ~> Specialization for multi-threaded apps where the 
+        @optmtif(s.pred() > k,                  ~> Specialization for multi-threaded apps where the
                 "k={miner,aco,triple}");        ~> predicated stream size exceeds a constant kappa.
                                                 ~> The optimizer will mine the quasi-optimal value
-                                                ~> for kappa using Ant-Colony-Optimizations on a 
+                                                ~> for kappa using Ant-Colony-Optimizations on a
                                                 ~> per-target-triple basis.
         foreach (!c in s) {                     ~> Iterate over the stream
             if (c !in mapper) res << c;         ~> If the character is not special, append it as is

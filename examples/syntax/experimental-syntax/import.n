@@ -24,7 +24,7 @@
   n.ilog('Processing import of module: ', module);
 
   module = string.gsub(module, '::', '/');
-  module = string.format('http://localhost:%d/api/v1/fetch?job=%s&name=%s.qh', 
+  module = string.format('http://localhost:%d/api/v1/fetch?job=%s&name=%s.qh',
     10,
     10,
     module);

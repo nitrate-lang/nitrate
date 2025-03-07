@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.15)
-project(no3-app CXX)
+project(nitrate-tool-app CXX)
 
 add_executable(no3 src/main.cc)
 

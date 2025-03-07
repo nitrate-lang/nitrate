@@ -10,7 +10,7 @@ int main() {
       @(n.info("Hello from the preprocessor!"))
       @(n.warn("This is a warning!"))
       @(n.error("This is an error!"))
-      
+
       ret @(return n.starttime());
     }
   )";

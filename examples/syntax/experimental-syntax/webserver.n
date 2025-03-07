@@ -14,18 +14,18 @@ fn main() {
     let srv = HttpServerBuilder()
             .bind("0.0.0.0", 8443)          ~> Bind to 0.0.0.0:8443
             .certs<SnakeOil>(discard: true) ~> Generate SSL certificates
-            .build<Perf>();                 ~> Optimize the HTTP server for performance 
+            .build<Perf>();                 ~> Optimize the HTTP server for performance
                                             ~> (yep, it's that easy! Configure threads
                                             ~> and other settings with the builder)
 
-    srv.get("/hello", fn (req, res) {    
+    srv.get("/hello", fn (req, res) {
         res.send(m("# Hello, World!").html());      ~> Convert markdown to HTML (done at compile-time)
     });
 
     srv.get("/api/v1/user/:id", fn (req, res) {
         res.send(m(f"**User ID**: {req.param("id")}").html());
     });
-    
+
     srv.post("/echo", fn (req, res) {
         res.send(req.body());
     });

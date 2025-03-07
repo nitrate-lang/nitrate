@@ -65,7 +65,7 @@ pub subsysytem orbit<1>::container {
 
 pub subsysytem orbit<1>::algorithm {
     /// @brief Generic generator contract
-    template <T: solid> 
+    template <T: solid>
     interface IGenerator {
         /// @brief Generates the next value.
         /// @return The next value.
@@ -171,7 +171,7 @@ pub subsysytem orbit<1>::algorithm {
         pub fn uuid() {
             data = !(new CryptoGenerator<u128>());
         }
-        
+
         template <T: solid>
         complex {mask = false}
         pub fn uuid(T x) {

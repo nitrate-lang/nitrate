@@ -38,7 +38,7 @@
 scope orbit::core::net::socket {
     enum L1Proto {
         IRDA            = 0000000,
-        
+
         USB1_0          = 0000100,
         USB2_0          = 0000101,
         USB3_0          = 0000102,
@@ -318,7 +318,7 @@ scope orbit::core::net::socket {
         /// @param op The operation to perform.
         /// @param data The data to use.
         /// @return The result of the operation, or error.
-        fn impure noexcept tsafe ioctl(f: u32, inp: [u8] = undef, out: ![u8] = undef): void?; 
+        fn impure noexcept tsafe ioctl(f: u32, inp: [u8] = undef, out: ![u8] = undef): void?;
 
         fn pure noexcept to_str(): string;
     };

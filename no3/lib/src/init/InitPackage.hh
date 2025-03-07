@@ -38,7 +38,7 @@
 #include <string>
 
 namespace no3::package {
-  enum class PackageCategory { Library, StandardLibrary, Executable, Comptime };
+  enum class PackageCategory { Library, StandardLibrary, Executable };
 
   struct InitOptions {
     std::string m_package_name;
@@ -53,7 +53,7 @@ namespace no3::package {
   std::string GenerateReadme(const InitOptions& options);
   std::string GenerateLicense(const std::string& spdx_license);
   std::string GenerateSecurityPolicy(const std::string& package_name);
-  std::string GenerateContributingPolicy(const std::string& spdx_license);
+  std::string GenerateContributingPolicy(const InitOptions& options);
   std::string GenerateCodeOfConduct();
   std::string GenerateGitKeep();
   std::string GenerateGitIgnore();

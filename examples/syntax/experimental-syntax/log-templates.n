@@ -50,10 +50,10 @@ group ExprTemplate {
   }
 }
 
-pub generic <T: solidtype, M: std::allocator_t = std::alloc<T>> 
+pub generic <T: solidtype, M: std::allocator_t = std::alloc<T>>
 group std::btree {
   //
-} with [typeid_as('e3f850c4-5885-4b46-8083-3d75219f3070', 
+} with [typeid_as('e3f850c4-5885-4b46-8083-3d75219f3070',
                   std::btree<T, M>::to_port_brepr()),
                   auto];
 

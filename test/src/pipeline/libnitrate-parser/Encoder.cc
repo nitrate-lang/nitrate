@@ -13,10 +13,6 @@ using namespace ncc::parse;
 
 TEST(AST, Encoder) {
   if (auto lib_rc = ncc::parse::ParseLibrary.GetRC()) {
-    auto subid = ncc::Log.Subscribe([](const std::string &msg, ncc::Sev sev, const ncc::ECBase &ec) {
-      std::cout << "Error:" << ec.Format(msg, sev);
-    });
-
     auto my_pool = ncc::DynamicArena();
     auto env = std::make_shared<ncc::Environment>();
     auto original = GeneralParser::ParseString<ncc::lex::Tokenizer>(test::vector::SOURCE_SAMPLE_01, env, my_pool);
@@ -28,7 +24,5 @@ TEST(AST, Encoder) {
 
     EXPECT_TRUE(original.Get()->IsEq(decoded.value()));
     EXPECT_TRUE(serialized.size() > 100);
-
-    ncc::Log.Unsubscribe(subid);
   }
 }

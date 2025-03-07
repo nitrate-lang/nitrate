@@ -62,7 +62,7 @@ bool Interpreter::PImpl::CommandHelp(ConstArguments, const MutArguments&) {
 │ * Copyright (C) 2025 Wesley Jones                                    │
 ├────────────┬─────────────────────────────────────────────────────────┤
 │ Subcommand │ Brief description of the subcommand                     │
-├────────────┼─────────────────────────────────────────────────────────┤ 
+├────────────┼─────────────────────────────────────────────────────────┤
 │ b, build   │ Compile a local or remote package from source           │
 │            │ Get help: https://nitrate.dev/docs/no3/build            │
 ├────────────┼─────────────────────────────────────────────────────────┤
@@ -84,7 +84,7 @@ bool Interpreter::PImpl::CommandHelp(ConstArguments, const MutArguments&) {
 │ w, impl    │ Low-level toolchain commands for maintainers            │
 │            │ Not documented / Subject to change                      │
 ├────────────┼─────────────────────────────────────────────────────────┤
-│ p, init    │ Create a new package from a template                    │
+│ n, init    │ Create a new package from a template                    │
 │            │ Get help: https://nitrate.dev/docs/no3/init             │
 ├────────────┼─────────────────────────────────────────────────────────┤
 │ i, install │ Install a local or remote package                       │
@@ -130,14 +130,14 @@ bool Interpreter::PImpl::CommandLicense(ConstArguments, const MutArguments& argv
   Log << Raw << R"(Nitrate Compiler Suite
 Copyright (C) 2024 Wesley C. Jones
 
-This software is free to use, modify, and share under the terms 
+This software is free to use, modify, and share under the terms
 of the GNU Lesser General Public License version 2.1 or later.
 
-It comes with no guarantees — it might work great, or not at all. 
-There's no warranty for how well it works or whether it fits any 
+It comes with no guarantees — it might work great, or not at all.
+There's no warranty for how well it works or whether it fits any
 particular purpose.
 
-For full license details, see the included license file or visit 
+For full license details, see the included license file or visit
 <http://www.gnu.org/licenses/>.
 )";
 
@@ -152,7 +152,7 @@ void Interpreter::PImpl::SetupCommands() {
   m_commands["format"] = m_commands["m"] = m_commands["fmt"] = CommandFormat;
   m_commands["help"] = m_commands["-h"] = m_commands["h"] = m_commands["--help"] = CommandHelp;
   m_commands["impl"] = m_commands["w"] = CommandImpl;
-  m_commands["init"] = m_commands["p"] = CommandInit;
+  m_commands["init"] = m_commands["n"] = CommandInit;
   m_commands["install"] = m_commands["i"] = CommandInstall;
   m_commands["lsp"] = m_commands["x"] = CommandLSP;
   m_commands["license"] = CommandLicense;
@@ -207,12 +207,12 @@ NCC_EXPORT Interpreter::Interpreter(OutputHandler output_handler) noexcept {
   // We attach the subscriber to the global logger, prior to initializing
   // to ensure that initialization messages are captured in the interpreter's
   // output.
-  const auto log_sub_id = Log.Subscribe([&](auto msg, auto sev, const auto& ec) {
-    if (sev < GetMinimumLogLevel()) {
+  const auto log_sub_id = Log.Subscribe([&](const LogMessage& m) {
+    if (m.m_sev < GetMinimumLogLevel()) {
       return;
     }
 
-    output_handler(ec.Format(msg, sev));
+    output_handler(m.m_by.Format(m.m_message, m.m_sev));
   });
 
   // The PImpl constructor will automatically initialize all required

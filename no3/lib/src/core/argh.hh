@@ -98,8 +98,9 @@ namespace argh {
 
     parser(const std::vector<std::string>& argv, int mode = PREFER_FLAG_FOR_UNREG_OPTION) {
       std::vector<const char*> cstrs;
-      cstrs.reserve(argv.size());
-      for (auto const& str : argv) cstrs.push_back(str.c_str());
+      cstrs.resize(argv.size() + 1);
+      for (auto i = 0u; i < argv.size(); ++i) cstrs[i] = argv[i].c_str();
+      cstrs[argv.size()] = nullptr;
       parse(cstrs.data(), mode);
     }
 
@@ -191,8 +192,9 @@ namespace argh {
 
   inline void parser::parse(const std::vector<std::string>& argv, int mode) {
     std::vector<const char*> cstrs;
-    cstrs.reserve(argv.size());
-    for (auto const& str : argv) cstrs.push_back(str.c_str());
+    cstrs.resize(argv.size() + 1);
+    for (auto i = 0u; i < argv.size(); ++i) cstrs[i] = argv[i].c_str();
+    cstrs[argv.size()] = nullptr;
     parse(cstrs.data(), mode);
   }
 

@@ -38,11 +38,11 @@ jobs:
     - name: Install dependencies
       run: |
         sudo apt install -y cmake make clang
-        sudo apt install -y libboost-all-dev libssl-dev libunwind-dev                          \
+        sudo apt install -y libboost-all-dev libssl-dev libunwind-dev libcurlpp-dev            \
                             libyaml-cpp-dev rapidjson-dev libreadline-dev libzstd-dev          \
                             libpolly-18-dev llvm-18 nlohmann-json3-dev libsparsehash-dev       \
                             libgit2-dev libgtest-dev libprotobuf-dev protobuf-compiler
-                            
+
       shell: bash
 
     - name: Set reusable strings
@@ -67,5 +67,6 @@ jobs:
       working-directory: ${{ steps.strings.outputs.build-output-dir }}
       run: |
         sudo sysctl -w vm.mmap_rnd_bits=28 # Disable ASLR for sanitizers
+        export NCC_CONF=${{ github.workspace }}/app
         ctest --build-config ${{ matrix.build_type }} --rerun-failed --output-on-failure
       shell: bash

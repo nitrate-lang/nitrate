@@ -1,8 +1,8 @@
 GNU Lesser General Public License
 =================================
 
-_Version 2.1, February 1999_  
-_Copyright © 1991, 1999 Free Software Foundation, Inc._  
+_Version 2.1, February 1999_
+_Copyright © 1991, 1999 Free Software Foundation, Inc._
 _51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA_
 
 Everyone is permitted to copy and distribute verbatim copies
@@ -176,7 +176,7 @@ the facility, other than as an argument passed when the facility
 is invoked, then you must make a good faith effort to ensure that,
 in the event an application does not supply such function or
 table, the facility still operates, and performs whatever part of
-its purpose remains meaningful.  
+its purpose remains meaningful.
 (For example, a function in a library to compute square roots has
 a purpose that is entirely well-defined independent of the
 application.  Therefore, Subsection 2d requires that any

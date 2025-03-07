@@ -22,7 +22,7 @@ group datum_t {
 
 fn quasi get_data(): std::vecfs<datum_t>? {
   const src_uri = @std::env_param("SOURCE_URI");
-  
+
   var conn = sysio::open(src_uri, "r") catch (e) {
     e.save();
     ret null;
@@ -41,11 +41,11 @@ fn quasi get_data(): std::vecfs<datum_t>? {
     retz any_obj.has("mass", "number"), null;
     retz any_obj.has("sex", "bool"), null;
     retz any_obj.has("income", "number"), null;
-    
+
     let x: datum_t;
     x.age_years = any_obj["age"].as_number();
     x.mass = any_obj["mass"].as_number();
-    x.sex = any_obj["sex"].as_bool() 
+    x.sex = any_obj["sex"].as_bool()
             ? sex_t::male : sex_t::female;
     x.income = any_obj["income"].as_number();
     ret x;
@@ -70,8 +70,8 @@ fn train_model(): bool {
   ]);
 
   model.emit_progress(fn [endpoint] (data) {
-    sysio::post_http(endpoint, 
-                     bind_param: {"id": data.ver}, 
+    sysio::post_http(endpoint,
+                     bind_param: {"id": data.ver},
                      body: data.to_str()) catch (e) {
       eprintn(e);
       continue;
@@ -92,7 +92,7 @@ fn train_model(): bool {
     eprint("Unable to save your neural network");
     ret false;
   };
-  
+
   ret true;
 }
 

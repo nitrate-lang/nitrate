@@ -474,8 +474,8 @@ auto GeneralParser::Parse() -> ASTRoot {
     ParserSetCurrentScanner(&m_impl->m_rd);
 
     { /* Subscribe to events emitted by the parser */
-      auto sub_id = Log.Subscribe([this](auto, auto, const auto &ec) {
-        if (ec.GetKind() == SyntaxError.GetKind()) {
+      auto sub_id = Log.Subscribe([this](const LogMessage &m) {
+        if (m.m_by.GetKind() == SyntaxError.GetKind()) {
           m_impl->m_failed = true;
         }
       });

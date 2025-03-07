@@ -31,18 +31,78 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __NO3_CONF_SPDX_HH__
-#define __NO3_CONF_SPDX_HH__
-
+#include <core/SPDX.hh>
+#include <curlpp/Easy.hpp>
+#include <curlpp/Options.hpp>
+#include <nitrate-core/CatchAll.hh>
+#include <nitrate-core/Logger.hh>
+#include <nlohmann/json.hpp>
 #include <optional>
-#include <string_view>
-#include <unordered_map>
+#include <string>
 
-namespace no3::constants {
-  extern const std::unordered_map<std::string_view, std::string_view> SPDX_IDENTIFIERS;
-  bool IsExactSPDXLicenseMatch(std::string query);
-  std::string_view FindClosestSPDXLicense(std::string query);
-  std::optional<std::string> GetSPDXLicenseText(std::string query);
-}  // namespace no3::constants
+using namespace ncc;
 
-#endif  // __NO3_CONF_SPDX_HH__
+static std::string GetAPIEndpoint(const std::string& spdx_id) {
+  return "https://scancode-licensedb.aboutcode.org/" + spdx_id + ".json";
+}
+
+std::optional<std::string> no3::constants::GetSPDXLicenseText(std::string query) {
+  std::transform(query.begin(), query.end(), query.begin(), ::tolower);
+
+  Log << Trace << "Preparing to retrieve SPDX license text for SPDX license identifier: " << query;
+  Log << Trace << "Checking if SPDX license identifier is an exact match: " << query;
+
+  if (!IsExactSPDXLicenseMatch(query)) {
+    Log << Trace << "Failed to retrieve SPDX license text because identifier is not an exact match: " << query;
+    return std::nullopt;
+  }
+
+  const auto fallible_request = OMNI_CATCH([&] {
+    curlpp::Easy request;
+    std::string response;
+
+    request.setOpt(curlpp::options::Url(GetAPIEndpoint(query)));
+    request.setOpt(curlpp::options::HttpHeader({"User-Agent: nitrate:init/1.0"}));
+    request.setOpt(curlpp::options::WriteFunction([&response](const char* data, size_t size, size_t nmemb) {
+      response.append(data, size * nmemb);
+      return size * nmemb;
+    }));
+
+    request.perform();
+
+    return response;
+  }());
+
+  if (!fallible_request) {
+    Log << "The LICENSE file content couldn't be fetched because an API call to \"" << GetAPIEndpoint(query)
+        << "\" failed do to a network error.";
+    return std::nullopt;
+  }
+
+  Log << Trace << "Parsing response from API for SPDX license text: " << query;
+
+  nlohmann::json json = nlohmann::json::parse(*fallible_request, nullptr, false);
+  if (json.is_discarded()) {
+    Log << "Failed to parse JSON response from scancode-licensedb.aboutcode.org for SPDX license text: " << query;
+    return std::nullopt;
+  }
+
+  Log << Trace
+      << "Successfully parsed JSON response from scancode-licensedb.aboutcode.org for SPDX license text: " << query;
+
+  if (!json.contains("text")) {
+    Log << Trace << "API response did not contain JSON key 'text'";
+    Log << Trace << "API response JSON: " << json.dump();
+    return std::nullopt;
+  }
+
+  if (!json["text"].is_string()) {
+    Log << Trace << "API response JSON key 'text'";
+    Log << Trace << "API response JSON: " << json.dump();
+    return std::nullopt;
+  }
+
+  Log << Trace << "Successfully retrieved SPDX license text for SPDX license identifier: " << query;
+
+  return json["text"].get<std::string>() + "\n";
+}

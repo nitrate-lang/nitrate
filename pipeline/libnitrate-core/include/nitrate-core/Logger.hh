@@ -198,7 +198,13 @@ namespace ncc {
 
   ///=========================================================================///
 
-  using LogCallback = std::function<void(const std::string &, Sev, const ECBase &)>;
+  struct LogMessage {
+    const std::string &m_message;
+    Sev m_sev;
+    const ECBase &m_by;
+  };
+
+  using LogCallback = std::function<void(const LogMessage &)>;
 
   class LogStream final {
     std::stringstream m_ss;
@@ -212,7 +218,7 @@ namespace ncc {
 
     ~LogStream() {
       if (m_recv) {
-        m_recv(m_ss.str(), m_severity, m_ec != nullptr ? *m_ec : UnknownEC);
+        m_recv(LogMessage{m_ss.str(), m_severity, m_ec != nullptr ? *m_ec : UnknownEC});
       }
     }
 
@@ -284,7 +290,7 @@ namespace ncc {
   };
 
   auto operator<<(LoggerContext log, const auto &value) -> LogStream {
-    LogStream stream([log](auto msg, auto sev, const auto &ec) { log.Publish(msg, sev, ec); });
+    LogStream stream([log](const LogMessage &m) { log.Publish(m.m_message, m.m_sev, m.m_by); });
 
     stream.Write(value);
 

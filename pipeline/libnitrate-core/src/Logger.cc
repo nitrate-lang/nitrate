@@ -184,7 +184,7 @@ void LoggerContext::Publish(const std::string &msg, Sev sev, const ECBase &ec) c
   if (m_enabled) {
     for (const auto &subscription : m_subs) {
       if (!subscription.IsSuspended()) {
-        subscription.m_cb(msg, sev, ec);
+        subscription.m_cb({msg, sev, ec});
       }
     }
   }

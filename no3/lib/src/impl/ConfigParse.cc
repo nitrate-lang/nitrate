@@ -50,8 +50,8 @@ Positional arguments:
   package       The package to parse the configuration for [required]
 
 Optional arguments:
-  -h, --help    shows help message and exits 
-  -C, --minify  Minify the output JSON 
+  -h, --help    shows help message and exits
+  -C, --minify  Minify the output JSON
   -t, --to      Translate the configuration to another format [nargs=0..1] [default: "json"]
   -o, --output  The output file to write the configuration to [nargs=0..1] [default: "-"]
 )";

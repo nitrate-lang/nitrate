@@ -23,7 +23,6 @@ message Package {
     BASIC_LIBRARY = 2;
     DYNAMIC_EXECUTABLE = 3;
     STATIC_EXECUTABLE = 4;
-    COMPTIME_UTILITY = 5;
   }
 
   message Contact {
