@@ -38,6 +38,8 @@
 #include <optional>
 
 namespace no3::package {
+  enum class PackageCategory { Executable, Library, StandardLibrary };
+
   class PackageConfig {
     nlohmann::ordered_json m_raw;
     mutable std::optional<nlohmann::ordered_json> m_full;
@@ -58,5 +60,11 @@ namespace no3::package {
     [[nodiscard]] static bool ValidatePackageName(const std::string& package_name, bool maybe_standard_lib = false);
     [[nodiscard]] static bool ValidatePackageLicense(const std::string& license);
     [[nodiscard]] static bool ValidatePackageVersion(const std::string& version);
+
+    [[nodiscard]] static nlohmann::ordered_json CreateInitialConfiguration(const std::string& name,
+                                                                           const std::string& description,
+                                                                           const std::string& license,
+                                                                           const std::string& version,
+                                                                           PackageCategory category);
   };
 }  // namespace no3::package

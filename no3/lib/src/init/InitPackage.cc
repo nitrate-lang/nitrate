@@ -169,6 +169,18 @@ static bool InitPackageDirectoryStructure(const std::filesystem::path& package_p
     return false;
   }
 
+  {
+    auto initial_config = PackageConfig::CreateInitialConfiguration(
+                              options.m_package_name, options.m_package_description, options.m_package_license,
+                              options.m_package_version, options.m_package_category)
+                              .dump(2);
+
+    if (!CreateLocalFile(package_path / "no3.json", initial_config)) {
+      Log << "Failed to create the no3.json file: " << package_path / "no3.json";
+      return false;
+    }
+  }
+
   Log << Trace << "Successfully initialized the package directory structure at: " << package_path;
 
   return true;
@@ -186,13 +198,12 @@ static bool InitPackageRepository(const std::filesystem::path& package_path) {
   git_repository_free(repo);
 
   Log << Trace << "Successfully initialized a git repository in: " << package_path;
-
   Log << Trace << "Successfully created package repository in: " << package_path;
 
   return true;
 }
 
-bool no3::package::InitPackageUsingDefaults(const std::filesystem::path& package_path, const InitOptions& options) {
+bool no3::package::CreatePackage(const std::filesystem::path& package_path, const InitOptions& options) {
   Log << Trace << "Initializing a new package at: " << package_path;
 
   auto package_path_exists = OMNI_CATCH(std::filesystem::exists(package_path));

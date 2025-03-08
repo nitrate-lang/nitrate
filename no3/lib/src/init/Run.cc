@@ -414,7 +414,7 @@ bool no3::Interpreter::PImpl::CommandInit(ConstArguments, const MutArguments& ar
   options.m_package_category = package_category;
 
   Log << Info << "Initializing the package at: " << package_path.value();
-  if (!InitPackageUsingDefaults(package_path.value(), options)) {
+  if (!CreatePackage(package_path.value(), options)) {
     Log << "Failed to initialize the package at: " << package_path.value();
     auto removed = OMNI_CATCH(std::filesystem::remove_all(package_path.value())).value_or(0);
     if (removed == 0) {

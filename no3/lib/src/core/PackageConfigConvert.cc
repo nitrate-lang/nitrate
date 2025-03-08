@@ -49,10 +49,9 @@ auto MakeBimap(std::initializer_list<typename boost::bimap<L, R>::value_type> li
 }
 
 static const auto PACKAGE_CATEGORY_MAP = MakeBimap<std::string_view, Package::Category>({
-    {"azide-lib", Package::AZIDE_LIBRARY},
-    {"basic-lib", Package::BASIC_LIBRARY},
-    {"dynamic-executable", Package::DYNAMIC_EXECUTABLE},
-    {"static-executable", Package::STATIC_EXECUTABLE},
+    {"app", Package::APPLICATION},
+    {"lib", Package::LIBRARY},
+    {"std", Package::STANDARD_LIBRARY},
 });
 
 static const auto PACKAGE_CONTACT_ROLE_MAP = MakeBimap<std::string_view, Package::Contact::Role>({
@@ -471,6 +470,88 @@ namespace no3::package {
 
       j["blockchain"].push_back(std::move(bc_json));
     }
+
+    return j;
+  }
+
+  static std::tuple<size_t, size_t, size_t> SplitSemVer(const std::string& version) {
+    size_t major = 0;
+    size_t minor = 0;
+    size_t patch = 0;
+
+    std::stringstream ss(version);
+    ss >> major;
+    ss.ignore(1);
+    ss >> minor;
+    ss.ignore(1);
+    ss >> patch;
+
+    return {major, minor, patch};
+  }
+
+  nlohmann::ordered_json PackageConfig::CreateInitialConfiguration(const std::string& name,
+                                                                   const std::string& description,
+                                                                   const std::string& license,
+                                                                   const std::string& version,
+                                                                   PackageCategory category) {
+    nlohmann::ordered_json j;
+
+    j["format"]["major"] = 1;
+    j["format"]["minor"] = 0;
+    j["format"]["patch"] = 0;
+
+    j["name"] = name;
+
+    j["description"] = description;
+
+    j["license"] = license;
+
+    j["category"] = [&]() {
+      switch (category) {
+        case no3::package::PackageCategory::Executable:
+          return "app";
+        case no3::package::PackageCategory::Library:
+          return "lib";
+        case no3::package::PackageCategory::StandardLibrary:
+          return "std";
+      }
+    }();
+
+    {
+      auto [major, minor, patch] = SplitSemVer(version);
+      j["version"]["major"] = major;
+      j["version"]["minor"] = minor;
+      j["version"]["patch"] = patch;
+    }
+
+    j["contacts"] = nlohmann::json::array();
+
+    j["platforms"]["allow"] = {"*"};
+    j["platforms"]["deny"] = {"*"};
+
+    j["optimization"]["rapid"]["switch"] = {
+        {"alpha", {"-O0"}}, {"beta", {"-O0"}}, {"gamma", {"-O0"}},
+        {"llvm", {"-O1"}},  {"lto", {"-O0"}},  {"runtime", {"-O0"}},
+    };
+
+    j["optimization"]["debug"]["switch"] = {
+        {"alpha", {"-O2"}}, {"beta", {"-O2"}}, {"gamma", {"-O2"}},
+        {"llvm", {"-O3"}},  {"lto", {"-O0"}},  {"runtime", {"-O1"}},
+    };
+
+    j["optimization"]["release"]["switch"] = {
+        {"alpha", {"-O3"}}, {"beta", {"-O3"}}, {"gamma", {"-O3"}},
+        {"llvm", {"-O3"}},  {"lto", {"-O3"}},  {"runtime", {"-O3"}},
+    };
+
+    j["optimization"]["requirements"] = {
+        {"min-free-cores", 1},
+        {"min-free-memory", 1048576},
+        {"min-free-storage", 1048576},
+    };
+
+    j["dependencies"] = nlohmann::json::array();
+    j["blockchain"] = nlohmann::json::array();
 
     return j;
   }

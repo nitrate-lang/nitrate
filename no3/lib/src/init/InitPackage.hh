@@ -34,12 +34,11 @@
 
 #pragma once
 
+#include <core/PackageConfig.hh>
 #include <filesystem>
 #include <string>
 
 namespace no3::package {
-  enum class PackageCategory { Library, StandardLibrary, Executable };
-
   struct InitOptions {
     std::string m_package_name;
     std::string m_package_description;
@@ -48,7 +47,7 @@ namespace no3::package {
     PackageCategory m_package_category;
   };
 
-  bool InitPackageUsingDefaults(const std::filesystem::path& package_path, const InitOptions& options);
+  bool CreatePackage(const std::filesystem::path& package_path, const InitOptions& options);
 
   std::string GenerateReadme(const InitOptions& options);
   std::string GenerateLicense(const std::string& spdx_license);
