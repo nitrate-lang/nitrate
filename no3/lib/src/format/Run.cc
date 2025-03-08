@@ -45,6 +45,11 @@ using namespace no3::package;
 
 enum class FormatMode { Standard, Minify, Deflate };
 
+static bool ValidateConfiguration(const nlohmann::json& j);
+static void AssignDefaultConfigurationSettings(nlohmann::json& j);
+static bool FormatFile(const std::filesystem::path& src, const std::filesystem::path& dst, const nlohmann::json& config,
+                       FormatMode mode);
+
 struct FormatOptions {
   FormatMode m_mode;
   std::filesystem::path& m_source_path;
@@ -333,32 +338,43 @@ static std::optional<std::unordered_map<std::filesystem::path, std::filesystem::
     Log << Trace << "Output file exists: " << options.m_output_path;
   }
 
-  if (options.m_config_path.empty() && *is_directory) {
-    if (SafeCheckFileExists(options.m_source_path / "format.json")) {
-      options.m_config_path = options.m_source_path / "format.json";
-      Log << Trace << "Using the format configuration file in the source directory: " << options.m_config_path;
+  {  // Check for default configuration file in the source directory
+    if (*is_directory && options.m_config_path.empty()) {
+      if (SafeCheckFileExists(options.m_source_path / "format.json")) {
+        options.m_config_path = options.m_source_path / "format.json";
+        Log << Trace << "Using the format configuration file in the source directory: " << options.m_config_path;
+      }
     }
   }
 
-  if (!options.m_config_path.empty()) {
-    if (!SafeCheckFileExists(options.m_config_path)) {
-      Log << "The configuration file does not exist: " << options.m_config_path;
-      return std::nullopt;
-    }
+  {  // Ensure the configuration file is a file and load it
+    if (!options.m_config_path.empty()) {
+      if (!SafeCheckFileExists(options.m_config_path)) {
+        Log << "The configuration file does not exist: " << options.m_config_path;
+        return std::nullopt;
+      }
 
-    Log << Trace << "Configuration file exists: " << options.m_config_path;
-    if (!OMNI_CATCH(std::filesystem::is_regular_file(options.m_config_path)).value_or(false)) {
-      Log << "The configuration file is not a regular file: " << options.m_config_path;
-      return std::nullopt;
-    }
+      Log << Trace << "Configuration file exists: " << options.m_config_path;
+      if (!OMNI_CATCH(std::filesystem::is_regular_file(options.m_config_path)).value_or(false)) {
+        Log << "The configuration file is not a regular file: " << options.m_config_path;
+        return std::nullopt;
+      }
 
-    Log << Trace << "Configuration file is a regular file: " << options.m_config_path;
-    if (!LoadConfigurationFile(options.m_config_path, options.m_config)) {
-      Log << "Failed to load the configuration file: " << options.m_config_path;
-      return std::nullopt;
-    }
+      Log << Trace << "Configuration file is a regular file: " << options.m_config_path;
+      if (!LoadConfigurationFile(options.m_config_path, options.m_config)) {
+        Log << "Failed to load the configuration file: " << options.m_config_path;
+        return std::nullopt;
+      }
 
-    Log << Trace << "Successfully loaded the configuration file: " << options.m_config_path;
+      Log << Trace << "Loaded the configuration file: " << options.m_config_path;
+      if (!ValidateConfiguration(options.m_config)) {
+        Log << "The JSON format configuration file is invalid: " << options.m_config_path;
+        return std::nullopt;
+      }
+
+      Log << Trace << "The JSON format configuration file is valid: " << options.m_config_path;
+      AssignDefaultConfigurationSettings(options.m_config);
+    }
   }
 
   std::unordered_map<std::filesystem::path, std::filesystem::path> paths;
@@ -392,18 +408,6 @@ static std::optional<std::unordered_map<std::filesystem::path, std::filesystem::
   }
 
   return paths;
-}
-
-static bool FormatFile(const std::filesystem::path& src, const std::filesystem::path& dst, const nlohmann::json& config,
-                       FormatMode mode) {
-  (void)src;
-  (void)dst;
-  (void)config;
-  (void)mode;
-
-  /// TODO: Implement file formatting
-
-  return false;
 }
 
 bool no3::Interpreter::PImpl::CommandFormat(ConstArguments, const MutArguments& argv) {
@@ -466,4 +470,123 @@ bool no3::Interpreter::PImpl::CommandFormat(ConstArguments, const MutArguments& 
   }
 
   return failure_count == 0;
+}
+
+#define schema_assert(__expr)                                               \
+  if (!(__expr)) [[unlikely]] {                                             \
+    Log << "Invalid configuration:" << " schema_assert(" << #__expr << ")"; \
+    return false;                                                           \
+  }
+
+static bool ValidateConfiguration(const nlohmann::json& j) {
+  schema_assert(j.is_object());
+
+  schema_assert(j.contains("version"));
+  schema_assert(j["version"].is_object());
+  schema_assert(j["version"].contains("major"));
+  schema_assert(j["version"]["major"].is_number_unsigned());
+  schema_assert(j["version"].contains("minor"));
+  schema_assert(j["version"]["minor"].is_number_unsigned());
+
+  auto major = j["version"]["major"].get<size_t>();
+  auto minor = j["version"]["minor"].get<size_t>();
+
+  schema_assert(major == 1);
+  schema_assert(minor == 0);
+
+  for (const auto& [key, value] : j.items()) {
+    schema_assert(key == "version" || key == "whitespace" || key == "comments");
+
+    if (key == "version") {
+      continue;
+    }
+
+    if (key == "whitespace") {
+      schema_assert(j["whitespace"].is_object());
+
+      for (const auto& [key, value] : j["whitespace"].items()) {
+        schema_assert(key == "indentation");
+
+        if (key == "indentation") {
+          schema_assert(j["whitespace"]["indentation"].is_object());
+          schema_assert(j["whitespace"]["indentation"].contains("size"));
+          schema_assert(j["whitespace"]["indentation"]["size"].is_number_unsigned());
+          schema_assert(j["whitespace"]["indentation"].contains("byte"));
+          schema_assert(j["whitespace"]["indentation"]["byte"].is_string());
+          continue;
+        }
+      }
+
+      continue;
+    }
+
+    if (key == "comments") {
+      schema_assert(j["comments"].is_object());
+      for (const auto& [key, value] : j["comments"].items()) {
+        schema_assert(key == "line" || key == "block");
+
+        if (key == "line") {
+          schema_assert(j["comments"]["line"].is_object());
+          for (const auto& [key, value] : j["comments"]["line"].items()) {
+            schema_assert(key == "start" || key == "end" || key == "convert-to-block");
+
+            if (key == "start") {
+              schema_assert(j["comments"]["line"]["start"].is_string());
+            } else if (key == "end") {
+              schema_assert(j["comments"]["line"]["end"].is_string());
+            } else if (key == "convert-to-block") {
+              schema_assert(j["comments"]["line"]["convert-to-block"].is_boolean());
+            }
+          }
+          continue;
+        }
+
+        if (key == "block") {
+          schema_assert(j["comments"]["block"].is_object());
+          for (const auto& [key, value] : j["comments"]["block"].items()) {
+            schema_assert(key == "start" || key == "end" || key == "convert-to-line");
+
+            if (key == "start") {
+              schema_assert(j["comments"]["block"]["start"].is_string());
+            } else if (key == "end") {
+              schema_assert(j["comments"]["block"]["end"].is_string());
+            } else if (key == "convert-to-line") {
+              schema_assert(j["comments"]["block"]["convert-to-line"].is_boolean());
+            }
+          }
+
+          continue;
+        }
+      }
+    }
+  }
+
+  return true;
+}
+
+#undef schema_assert
+
+static void AssignDefaultConfigurationSettings(nlohmann::json& j) {
+  j["whitespace"]["indentation"]["size"] = 2;
+  j["whitespace"]["indentation"]["byte"] = " ";
+
+  j["comments"]["line"]["start"] = "//";
+  j["comments"]["line"]["end"] = "";
+  j["comments"]["line"]["convert-to-block"] = true;
+
+  j["comments"]["block"]["start"] = "/*";
+  j["comments"]["block"]["end"] = "*/";
+  j["comments"]["block"]["convert-to-line"] = false;
+}
+
+static bool FormatFile(const std::filesystem::path& src, const std::filesystem::path& dst, const nlohmann::json& config,
+                       FormatMode mode) {
+  (void)src;
+  (void)dst;
+  (void)config;
+  (void)mode;
+
+  /// TODO: Implement file formatting
+
+  return false;
 }
