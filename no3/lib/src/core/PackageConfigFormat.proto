@@ -19,10 +19,9 @@ message Package {
 
   enum Category {
     UNSPECIFIED = 0;
-    AZIDE_LIBRARY = 1;
-    BASIC_LIBRARY = 2;
-    DYNAMIC_EXECUTABLE = 3;
-    STATIC_EXECUTABLE = 4;
+    APPLICATION = 1;
+    LIBRARY = 2;
+    STANDARD_LIBRARY = 3;
   }
 
   message Contact {

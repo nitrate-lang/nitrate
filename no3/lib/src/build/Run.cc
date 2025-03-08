@@ -43,5 +43,5 @@ bool no3::Interpreter::PImpl::CommandBuild(ConstArguments full_argv, MutArgument
 
   Log << "Package building is not implemented yet.";
 
-  return true;
+  return false;
 }

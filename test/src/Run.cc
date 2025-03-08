@@ -1,14 +1,13 @@
 #include <gtest/gtest.h>
 
+#include <nitrate-core/Logger.hh>
 #include <nitrate-core/Macro.hh>
-
-#include "nitrate-core/Logger.hh"
 
 namespace nitrate::testing {
   NCC_EXPORT bool RunTestSuite(const std::vector<std::string>& args) {
     if (getenv("NCC_CONF") == nullptr) {  // NOLINT(concurrency-mt-unsafe)
-      ncc::Log << "NCC_CONF environment variable not set. Please set it to the path of the application data directory.";
-      return false;
+      ncc::Log << ncc::Warning << "NCC_CONF environment variable is not set. Some tests may not run.";
+      ncc::Log << ncc::Notice << "Set the NCC_CONF environment variable to the path of the application data directory.";
     }
 
     auto args_copy = args;

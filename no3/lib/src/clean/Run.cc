@@ -35,13 +35,72 @@
 
 using namespace ncc;
 
-bool no3::Interpreter::PImpl::CommandClean(ConstArguments full_argv, MutArguments argv) {
-  (void)full_argv;
+bool no3::Interpreter::PImpl::CommandClean(ConstArguments, MutArguments argv) {
   (void)argv;
+
+  /**
+   * .no3
+   * ├── cache
+   * │   ├── metadata
+   * │   │   ├── dependency-info.db
+   * │   │   └── package-index.db
+   * │   ├── optimization
+   * │   │   ├── alpha-conv
+   * │   │   ├── beta-conv
+   * │   │   ├── gamma-conv
+   * │   │   ├── llvm-conv
+   * │   │   ├── ptree-conv
+   * │   │   └── this.db
+   * │   └── translation
+   * │       ├── alpha-conv
+   * │       ├── beta-conv
+   * │       ├── gamma-conv
+   * │       ├── llvm-conv
+   * │       ├── ptree-conv
+   * │       └── this.db
+   * ├── emit
+   * │   ├── debug
+   * │   ├── rapid
+   * │   └── release
+   * └── unit
+   */
+
+  /**
+   * Instead of complex command line options, support the execution of Lua scripts
+   * to perform predicate-based cache eviction. This will allow users to define
+   * their own cache eviction policies. The default will be to evict all package cache
+   * entries for simplicity.
+
+  BEGIN SAMPLE SCRIPT
+    local no3 = {}
+    no3.clean = {}
+
+    no3.clean.evict_if = function(cache_name, object)
+    if cache_name == "translation" then
+      return true
+    end
+
+    local size = object.size()
+    local last_used = object.last_used().timestamp()
+
+    local size_limit = 65535
+    local max_unused_age = os.time() - (60 * 60 * 24 * 3) -- 3 days
+
+    return size > size_limit or last_used < max_unused_age
+    end
+
+    no3.clean.evict_if("test", {
+    size = function()
+      print("size-of")
+      return 65536
+    end
+    })
+  END SAMPLE SCRIPT
+  */
 
   /// TODO: Implement package cleaning
 
   Log << "Package cleaning is not implemented yet.";
 
-  return true;
+  return false;
 }

@@ -148,9 +148,8 @@ NCC_EC_EX(Test_Core, TestError, Formatter, "$NCC_CONF/ec/core/TestError")
 TEST(Core, Log_EC_ToJson) {
   if (std::getenv  // NOLINT(concurrency-mt-unsafe)
       ("NCC_CONF") == nullptr) {
-    qcore_panic(
-        "NCC_CONF environment variable not set. Set it prior to running "
-        "the tests.");
+    FAIL() << "NCC_CONF environment variable is not set.";
+    return;
   }
 
   if (auto lib_rc = CoreLibrary.GetRC()) {

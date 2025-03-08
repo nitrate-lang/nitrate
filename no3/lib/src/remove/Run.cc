@@ -43,5 +43,5 @@ bool no3::Interpreter::PImpl::CommandRemove(ConstArguments full_argv, MutArgumen
 
   Log << "Package removal is not implemented yet.";
 
-  return true;
+  return false;
 }

@@ -43,5 +43,5 @@ bool no3::Interpreter::PImpl::CommandTest(ConstArguments full_argv, MutArguments
 
   Log << "Package testing is not implemented yet.";
 
-  return true;
+  return false;
 }

@@ -43,5 +43,5 @@ bool no3::Interpreter::PImpl::CommandUpdate(ConstArguments full_argv, MutArgumen
 
   Log << "Package updating is not implemented yet.";
 
-  return true;
+  return false;
 }
