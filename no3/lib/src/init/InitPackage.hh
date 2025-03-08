@@ -59,5 +59,5 @@ namespace no3::package {
   std::string GenerateDockerIgnore();
   std::string GenerateDefaultLibrarySource();
   std::string GenerateDefaultMainSource();
-  std::string GenerateCMakeListsTxt();
+  std::string GenerateCMakeListsTxt(const std::string& package_name);
 }  // namespace no3::package

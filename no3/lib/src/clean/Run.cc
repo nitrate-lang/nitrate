@@ -43,5 +43,5 @@ bool no3::Interpreter::PImpl::CommandClean(ConstArguments full_argv, MutArgument
 
   Log << "Package cleaning is not implemented yet.";
 
-  return true;
+  return false;
 }

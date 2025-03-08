@@ -164,7 +164,7 @@ static bool InitPackageDirectoryStructure(const std::filesystem::path& package_p
     return false;
   }
 
-  if (!CreateLocalFile(package_path / "CMakeLists.txt", GenerateCMakeListsTxt())) {
+  if (!CreateLocalFile(package_path / "CMakeLists.txt", GenerateCMakeListsTxt(options.m_package_name))) {
     Log << "Failed to create the CMakeLists.txt file: " << package_path / "CMakeLists.txt";
     return false;
   }

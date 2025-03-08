@@ -43,5 +43,5 @@ bool no3::Interpreter::PImpl::CommandDoc(ConstArguments full_argv, MutArguments 
 
   Log << "Package documentation generation is not implemented yet.";
 
-  return true;
+  return false;
 }

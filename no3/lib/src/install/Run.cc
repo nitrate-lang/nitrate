@@ -43,5 +43,5 @@ bool no3::Interpreter::PImpl::CommandInstall(ConstArguments full_argv, MutArgume
 
   Log << "Package installation is not implemented yet.";
 
-  return true;
+  return false;
 }

@@ -43,5 +43,5 @@ bool no3::Interpreter::PImpl::CommandFormat(ConstArguments full_argv, MutArgumen
 
   Log << "Package formatting is not implemented yet.";
 
-  return true;
+  return false;
 }
