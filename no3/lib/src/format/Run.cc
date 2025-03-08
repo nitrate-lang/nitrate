@@ -125,7 +125,7 @@ Optional arguments:
             m_mode = FormatMode::Standard;
 
             if (m_std++ > 0) {
-              Log << Error << "The --std argument was provided more than once.";
+              Log << "The --std argument was provided more than once.";
               m_too_many_args = true;
             }
 
@@ -137,7 +137,7 @@ Optional arguments:
             m_mode = FormatMode::Minify;
 
             if (m_minify++ > 0) {
-              Log << Error << "The --minify argument was provided more than once.";
+              Log << "The --minify argument was provided more than once.";
               m_too_many_args = true;
             }
 
@@ -149,7 +149,7 @@ Optional arguments:
             m_mode = FormatMode::Deflate;
 
             if (m_deflate++ > 0) {
-              Log << Error << "The --deflate argument was provided more than once.";
+              Log << "The --deflate argument was provided more than once.";
               m_too_many_args = true;
             }
 
@@ -159,7 +159,7 @@ Optional arguments:
           case 'c': {
             Log << Trace << "Parsing command line argument: --config";
             if (!m_config_path.empty()) {
-              Log << Error << "The --config argument was provided more than once.";
+              Log << "The --config argument was provided more than once.";
               m_too_many_args = true;
               break;
             }
@@ -171,7 +171,7 @@ Optional arguments:
           case 'o': {
             Log << Trace << "Parsing command line argument: --output";
             if (!m_output_path.empty()) {
-              Log << Error << "The --output argument was provided more than once.";
+              Log << "The --output argument was provided more than once.";
               m_too_many_args = true;
               break;
             }
@@ -394,6 +394,18 @@ static std::optional<std::unordered_map<std::filesystem::path, std::filesystem::
   return paths;
 }
 
+static bool FormatFile(const std::filesystem::path& src, const std::filesystem::path& dst, const nlohmann::json& config,
+                       FormatMode mode) {
+  (void)src;
+  (void)dst;
+  (void)config;
+  (void)mode;
+
+  /// TODO: Implement file formatting
+
+  return false;
+}
+
 bool no3::Interpreter::PImpl::CommandFormat(ConstArguments, const MutArguments& argv) {
   Log << Trace << "Executing the " << std::source_location::current().function_name();
 
@@ -418,14 +430,40 @@ bool no3::Interpreter::PImpl::CommandFormat(ConstArguments, const MutArguments& 
   Log << Trace << "options[\"config\"] = " << options.m_config_path;
   Log << Trace << "options[\"mode\"] = " << static_cast<int>(options.m_mode);
 
-  if (!SecondaryArgumentCheck(options)) {
+  auto mapping_opt = SecondaryArgumentCheck(options);
+  if (!mapping_opt) {
     Log << Trace << "Failed secondary argument sanity check.";
     return false;
   }
 
-  /// TODO: Implement package formatting
+  if (mapping_opt.value().empty()) {
+    Log << Warning << "No source files found to format.";
+    return true;
+  }
 
-  Log << "Package formatting is not implemented yet.";
+  Log << Debug << "Formatting " << mapping_opt.value().size() << " source file(s).";
 
-  return false;
+  size_t success_count = 0;
+  size_t failure_count = 0;
+  for (const auto& [src_file, dst_file] : mapping_opt.value()) {
+    Log << Info << "Applying format " << src_file << " => " << dst_file;
+    if (!FormatFile(src_file, dst_file, options.m_config, options.m_mode)) {
+      Log << "Unable to format file: " << src_file;
+      failure_count++;
+      continue;
+    }
+    Log << Trace << "Successfully formatted source file: " << src_file;
+
+    success_count++;
+  }
+
+  if (failure_count > 0) {
+    Log << Warning << "Unable to format " << failure_count << " source file(s).";
+  }
+
+  if (success_count > 0) {
+    Log << Info << "Successfully formatted " << success_count << " source file(s).";
+  }
+
+  return failure_count == 0;
 }

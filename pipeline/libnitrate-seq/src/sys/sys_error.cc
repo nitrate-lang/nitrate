@@ -51,7 +51,7 @@ auto Sequencer::SysError() -> int {
     ss << lua_tostring(lua, i) << " ";
   }
 
-  Log << ec::SeqLog << Error << ec::SeqLog << ss.str();
+  Log << ec::SeqLog << ss.str();
 
   return 0;
 }

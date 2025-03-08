@@ -46,7 +46,7 @@ NCC_EXPORT auto LexerLibrarySetup::Init() -> bool {
   Log << Runtime << Trace << "libnitrate-lexer initializing...";
 
   if (!ncc::CoreLibrary.InitRC()) [[unlikely]] {
-    Log << Runtime << Error << "libnitrate-lexer failed init: libnitrate-core failed to initialize";
+    Log << Runtime << "libnitrate-lexer failed init: libnitrate-core failed to initialize";
     return false;
   }
 

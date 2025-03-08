@@ -112,7 +112,7 @@ Optional arguments:
           case 'l': {
             Log << Trace << "Parsing command line argument: --license";
             if (!m_license.empty()) {
-              Log << Error << "The --license argument was provided more than once.";
+              Log << "The --license argument was provided more than once.";
               m_too_many_args = true;
               break;
             }
@@ -124,7 +124,7 @@ Optional arguments:
           case 'o': {
             Log << Trace << "Parsing command line argument: --output";
             if (!m_output.empty()) {
-              Log << Error << "The --output argument was provided more than once.";
+              Log << "The --output argument was provided more than once.";
               m_too_many_args = true;
               break;
             }
@@ -138,7 +138,7 @@ Optional arguments:
             m_category = PackageCategory::Library;
 
             if (m_lib++ > 0) {
-              Log << Error << "The --lib argument was provided more than once.";
+              Log << "The --lib argument was provided more than once.";
               m_too_many_args = true;
             }
 
@@ -150,7 +150,7 @@ Optional arguments:
             m_category = PackageCategory::StandardLibrary;
 
             if (m_standard_lib++ > 0) {
-              Log << Error << "The --standard-lib argument was provided more than once.";
+              Log << "The --standard-lib argument was provided more than once.";
               m_too_many_args = true;
             }
 
@@ -162,7 +162,7 @@ Optional arguments:
             m_category = PackageCategory::Executable;
 
             if (m_exe++ > 0) {
-              Log << Error << "The --exe argument was provided more than once.";
+              Log << "The --exe argument was provided more than once.";
               m_too_many_args = true;
             }
 
@@ -324,7 +324,7 @@ static std::optional<std::filesystem::path> GetNewPackagePath(const std::filesys
 
     auto status = OMNI_CATCH(std::filesystem::exists(canidate));
     if (!status.has_value()) {
-      Log << Error << "Failed to check if the package directory exists: " << canidate;
+      Log << "Failed to check if the package directory exists: " << canidate;
       return std::nullopt;
     }
 
@@ -382,7 +382,7 @@ bool no3::Interpreter::PImpl::CommandInit(ConstArguments, const MutArguments& ar
 
   auto package_output_exists = OMNI_CATCH(std::filesystem::exists(package_output));
   if (!package_output_exists.has_value()) {
-    Log << Error << "Failed to check if the output directory exists: " << package_output;
+    Log << "Failed to check if the output directory exists: " << package_output;
     return false;
   }
 
@@ -416,7 +416,7 @@ bool no3::Interpreter::PImpl::CommandInit(ConstArguments, const MutArguments& ar
     Log << "Failed to initialize the package at: " << package_path.value();
     auto removed = OMNI_CATCH(std::filesystem::remove_all(package_path.value())).value_or(0);
     if (removed == 0) {
-      Log << Error << "Failed to remove the package directory: " << package_path.value();
+      Log << "Failed to remove the package directory: " << package_path.value();
     }
 
     return false;
