@@ -40,7 +40,7 @@
 #include <nitrate-core/Macro.hh>
 
 namespace ncc {
-  class NCC_EXPORT DynamicArena final : public IMemory {
+  class NCC_EXPORT DynamicArena final : public std::pmr::memory_resource {
     class PImpl;
     PImpl *m_pimpl;
 

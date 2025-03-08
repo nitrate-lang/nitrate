@@ -52,11 +52,11 @@ namespace ncc::parse {
   class NCC_EXPORT ASTFactory final {
     using SourceLocation = std::source_location;
 
-    IMemory& m_pool;
+    std::pmr::memory_resource& m_pool;
 
     template <typename T, typename... Args>
     constexpr static inline auto CreateInstance(Args&&... args) {
-      return [&](IMemory& pool, SourceLocation origin) {
+      return [&](std::pmr::memory_resource& pool, SourceLocation origin) {
         FlowPtr<T> obj = MakeFlowPtr<T>(new (pool.allocate(sizeof(T), alignof(T))) T(std::forward<Args>(args)...));
         obj.SetTracking(origin);
         return obj;
@@ -74,7 +74,7 @@ namespace ncc::parse {
         ASTNodeKind kind, SourceLocation origin = SourceLocation::current()) -> FlowPtr<Expr>;
 
   public:
-    constexpr ASTFactory(IMemory& pool) : m_pool(pool) {}
+    constexpr ASTFactory(std::pmr::memory_resource& pool) : m_pool(pool) {}
     constexpr ~ASTFactory() = default;
 
     ///=========================================================================
@@ -109,7 +109,7 @@ namespace ncc::parse {
     }
 
     template <typename NodeClass>
-    [[gnu::pure, nodiscard]] static inline auto CreateMockInstance(IMemory& m,
+    [[gnu::pure, nodiscard]] static inline auto CreateMockInstance(std::pmr::memory_resource& m,
                                                                    ASTNodeKind kind = Expr::GetTypeCode<NodeClass>(),
                                                                    SourceLocation origin = SourceLocation::current()) {
       return ASTFactory(m).CreateMockInstance(kind, origin).As<NodeClass>();
