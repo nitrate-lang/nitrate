@@ -66,6 +66,9 @@ namespace ncc::parse {
     template <typename T>
     constexpr auto AllocateArray(auto size) -> std::span<T> {
       const auto bytes_needed = sizeof(T) * size;
+      if (bytes_needed == 0) {
+        return {};
+      }
       auto* buffer = static_cast<T*>(m_pool.allocate(bytes_needed, alignof(T)));
       return std::span<T>(buffer, size);
     }
