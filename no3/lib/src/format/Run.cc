@@ -36,7 +36,12 @@
 #include <core/PackageConfig.hh>
 #include <filesystem>
 #include <fstream>
+#include <nitrate-core/Allocate.hh>
 #include <nitrate-core/CatchAll.hh>
+#include <nitrate-core/Environment.hh>
+#include <nitrate-lexer/Lexer.hh>
+#include <nitrate-parser/CodeWriter.hh>
+#include <nitrate-parser/Context.hh>
 #include <unordered_map>
 
 using namespace ncc;
@@ -581,10 +586,56 @@ static void AssignDefaultConfigurationSettings(nlohmann::json& j) {
 
 static bool FormatFile(const std::filesystem::path& src, const std::filesystem::path& dst, const nlohmann::json& config,
                        FormatMode mode) {
-  (void)src;
+  std::ifstream src_file(src, std::ios::binary);
+  if (!src_file.is_open()) {
+    Log << "Failed to open the source file: " << src;
+    return false;
+  }
+
+  bool quiet_parser = false;
+  auto pool = ncc::DynamicArena();
+  std::optional<FlowPtr<ncc::parse::Expr>> ptree_root;
+
+  { /* Perform source code parsing */
+    auto reenable_log = std::shared_ptr<void>(nullptr, [](auto) { Log.Enable(); });
+    if (quiet_parser) {
+      Log.Disable();
+    }
+
+    auto unit_env = std::make_shared<ncc::Environment>();
+    auto tokenizer = ncc::lex::Tokenizer(src_file, unit_env);
+    auto parser = ncc::parse::GeneralParser(tokenizer, unit_env, pool);
+    auto ast_result = parser.Parse();
+
+    Log << Trace << "The parser used " << pool.GetSpaceUsed() << " bytes of memory.";
+    Log << Trace << "The parser reserved " << pool.GetSpaceManaged() << " bytes of memory.";
+
+    if (ast_result.Check()) {
+      ptree_root = ast_result.Get();
+    } else {
+      Log << "Failed to parse the source file: " << src;
+      return false;
+    }
+  }
+
+  qcore_assert(ptree_root.has_value());
+
   (void)dst;
   (void)config;
-  (void)mode;
+
+  switch (mode) {
+    case FormatMode::Standard: {
+      break;
+    }
+
+    case FormatMode::Minify: {
+      break;
+    }
+
+    case FormatMode::Deflate: {
+      break;
+    }
+  }
 
   /// TODO: Implement file formatting
 
