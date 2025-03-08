@@ -51,7 +51,7 @@
 namespace ncc::ir {
   using uint128_t = boost::multiprecision::uint128_t;
 
-  extern thread_local std::unique_ptr<ncc::std::pmr::memory_resource> NrAllocator;
+  extern thread_local std::unique_ptr<std::pmr::memory_resource> NrAllocator;
 
   template <class T>
   struct Arena {

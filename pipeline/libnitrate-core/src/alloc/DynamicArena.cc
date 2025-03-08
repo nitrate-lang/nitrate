@@ -53,6 +53,8 @@ struct Segment {
 };
 
 class ncc::DynamicArena::PImpl final {
+  friend class DynamicArena;
+
   std::vector<Segment> m_bases;
   mutable std::mutex m_mutex;
 
@@ -167,3 +169,65 @@ void DynamicArena::do_deallocate(void *p, size_t bytes, size_t alignment) {
 }
 
 bool DynamicArena::do_is_equal(const memory_resource &other) const noexcept { return this == &other; }
+
+auto DynamicArena::begin() -> Iterator {
+  auto &bases = m_pimpl->m_bases;
+  qcore_assert(!bases.empty());
+  return {this, 0, bases.front().m_base, bases.front().m_offset};
+}
+
+auto DynamicArena::end() -> Iterator {
+  auto &bases = m_pimpl->m_bases;
+  qcore_assert(!bases.empty());
+  return {this, bases.size() - 1, bases.back().m_offset, bases.back().m_offset};
+}
+
+auto DynamicArena::cbegin() const -> ConstIterator {
+  auto &bases = m_pimpl->m_bases;
+  qcore_assert(!bases.empty());
+  return {this, 0, bases.front().m_base, bases.front().m_offset};
+}
+
+auto DynamicArena::cend() const -> ConstIterator {
+  auto &bases = m_pimpl->m_bases;
+  qcore_assert(!bases.empty());
+  return {this, bases.size() - 1, bases.back().m_offset, bases.back().m_offset};
+}
+
+auto DynamicArena::Iterator::operator++() -> Iterator & {
+  if (m_chunk_pos == m_chunk_end) {
+    m_chunk_index++;
+    qcore_assert(m_arena->m_pimpl->m_bases.size() > m_chunk_index);
+    m_chunk_pos = m_arena->m_pimpl->m_bases[m_chunk_index].m_base;
+    m_chunk_end = m_arena->m_pimpl->m_bases[m_chunk_index].m_offset;
+  } else {
+    m_chunk_pos++;
+  }
+
+  return *this;
+}
+
+auto DynamicArena::Iterator::operator*() const -> uint8_t & { return *m_chunk_pos; }
+
+auto DynamicArena::Iterator::operator==(const Iterator &o) const -> bool {
+  return m_arena == o.m_arena && m_chunk_index == o.m_chunk_index && m_chunk_pos == o.m_chunk_pos;
+}
+
+auto DynamicArena::ConstIterator::operator++() -> ConstIterator & {
+  if (m_chunk_pos == m_chunk_end) {
+    m_chunk_index++;
+    qcore_assert(m_arena->m_pimpl->m_bases.size() > m_chunk_index);
+    m_chunk_pos = m_arena->m_pimpl->m_bases[m_chunk_index].m_base;
+    m_chunk_end = m_arena->m_pimpl->m_bases[m_chunk_index].m_offset;
+  } else {
+    m_chunk_pos++;
+  }
+
+  return *this;
+}
+
+auto DynamicArena::ConstIterator::operator*() const -> const uint8_t & { return *m_chunk_pos; }
+
+auto DynamicArena::ConstIterator::operator==(const ConstIterator &o) const -> bool {
+  return m_arena == o.m_arena && m_chunk_index == o.m_chunk_index && m_chunk_pos == o.m_chunk_pos;
+}

@@ -45,6 +45,38 @@ namespace ncc {
     PImpl *m_pimpl;
 
   public:
+    class NCC_EXPORT Iterator {
+      friend class DynamicArena;
+
+      DynamicArena *m_arena;
+      size_t m_chunk_index;
+      uint8_t *m_chunk_pos, *m_chunk_end;
+
+      Iterator(DynamicArena *arena, size_t chunk_index, uint8_t *chunk_pos, uint8_t *chunk_end)
+          : m_arena(arena), m_chunk_index(chunk_index), m_chunk_pos(chunk_pos), m_chunk_end(chunk_end) {}
+
+    public:
+      Iterator &operator++();
+      [[nodiscard]] auto operator*() const -> uint8_t &;
+      [[nodiscard]] auto operator==(const Iterator &o) const -> bool;
+    };
+
+    class NCC_EXPORT ConstIterator {
+      friend class DynamicArena;
+
+      const DynamicArena *m_arena;
+      size_t m_chunk_index;
+      const uint8_t *m_chunk_pos, *m_chunk_end;
+
+      ConstIterator(const DynamicArena *arena, size_t chunk_index, const uint8_t *chunk_pos, const uint8_t *chunk_end)
+          : m_arena(arena), m_chunk_index(chunk_index), m_chunk_pos(chunk_pos), m_chunk_end(chunk_end) {}
+
+    public:
+      ConstIterator &operator++();
+      [[nodiscard]] auto operator*() const -> const uint8_t &;
+      [[nodiscard]] auto operator==(const ConstIterator &o) const -> bool;
+    };
+
     DynamicArena();
     DynamicArena(const DynamicArena &) = delete;
     DynamicArena(DynamicArena &&o) noexcept : m_pimpl(o.m_pimpl) { o.m_pimpl = nullptr; }
@@ -62,6 +94,11 @@ namespace ncc {
     [[nodiscard]] auto GetSpaceUsed() const -> size_t;
     [[nodiscard]] auto GetSpaceManaged() const -> size_t;
     void Reset();
+
+    [[nodiscard]] auto begin() -> Iterator;              // NOLINT(readability-identifier-naming)
+    [[nodiscard]] auto end() -> Iterator;                // NOLINT(readability-identifier-naming)
+    [[nodiscard]] auto cbegin() const -> ConstIterator;  // NOLINT(readability-identifier-naming)
+    [[nodiscard]] auto cend() const -> ConstIterator;    // NOLINT(readability-identifier-naming)
   };
 }  // namespace ncc
 
