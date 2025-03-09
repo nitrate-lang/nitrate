@@ -135,6 +135,7 @@ namespace ncc::parse {
     auto RecurseExprKeyword(lex::Keyword key) -> NullableFlowPtr<Expr>;
     auto RecurseExprPunctor(lex::Punctor punc) -> NullableFlowPtr<Expr>;
     auto RecurseExprTypeSuffix(FlowPtr<Expr> base) -> FlowPtr<Expr>;
+    auto RecurseEscapeBlock() -> void;
 
     /****************************************************************************
      * @brief

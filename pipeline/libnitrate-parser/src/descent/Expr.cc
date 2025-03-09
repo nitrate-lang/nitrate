@@ -482,6 +482,11 @@ auto GeneralParser::PImpl::RecurseExprKeyword(lex::Keyword key) -> NullableFlowP
       break;
     }
 
+    case EscapeBlock: {
+      RecurseEscapeBlock();  // We discard the block
+      break;
+    }
+
     default: {
       Log << SyntaxError << Current() << "Unexpected '" << key << "' in expression context";
       break;
