@@ -36,12 +36,16 @@
 #include <core/PackageConfig.hh>
 #include <filesystem>
 #include <fstream>
+#include <memory>
 #include <nitrate-core/Allocate.hh>
 #include <nitrate-core/CatchAll.hh>
 #include <nitrate-core/Environment.hh>
 #include <nitrate-lexer/Lexer.hh>
+#include <nitrate-parser/ASTBase.hh>
 #include <nitrate-parser/CodeWriter.hh>
 #include <nitrate-parser/Context.hh>
+#include <random>
+#include <sstream>
 #include <unordered_map>
 
 using namespace ncc;
@@ -620,24 +624,104 @@ static bool FormatFile(const std::filesystem::path& src, const std::filesystem::
 
   qcore_assert(ptree_root.has_value());
 
-  (void)dst;
+  std::unique_ptr<std::ofstream> dst_file_ptr;
+  std::filesystem::path temporary_path;
+
+  if (src == dst) {
+    std::string random_string;
+
+    {
+      static std::random_device rd;
+      static std::mutex mutex;
+
+      std::lock_guard lock(mutex);
+      random_string = [&]() {
+        std::string str;
+        for (size_t i = 0; i < 16; i++) {
+          str.push_back("0123456789abcdef"[rd() % 16]);
+        }
+        return str;
+      }();
+    }
+
+    temporary_path = dst.string() + ".fmt." + random_string + ".tmp";
+    if (SafeCheckFileExists(temporary_path)) {
+      Log << "The temporary file already exists: " << temporary_path;
+      return false;
+    }
+
+    dst_file_ptr = std::make_unique<std::ofstream>(temporary_path, std::ios::binary | std::ios::trunc);
+    if (!dst_file_ptr->is_open()) {
+      Log << "Failed to open the temporary file: " << temporary_path;
+      return false;
+    }
+  } else {
+    dst_file_ptr = std::make_unique<std::ofstream>(dst, std::ios::binary | std::ios::trunc);
+    if (!dst_file_ptr->is_open()) {
+      Log << "Failed to open the destination file: " << dst;
+      return false;
+    }
+  }
+
   (void)config;
+
+  bool okay = false;
 
   switch (mode) {
     case FormatMode::Standard: {
+      /// TODO: Implement file formatting
+      Log << "Standard formatting mode is not yet implemented.";
       break;
     }
 
     case FormatMode::Minify: {
+      Log << Debug << "Format configuration is unused for code minification.";
+      auto writer = parse::CodeWriterFactory::Create(*dst_file_ptr);
+      ptree_root.value().Accept(*writer);
+      okay = true;
       break;
     }
 
     case FormatMode::Deflate: {
+      /**
+       * 1. $M = code_minify(source_code)
+       * 2. $C = raw_deflate($M)
+       * 3. $D = "@(n.emit(n.raw_inflate(n.source_slice(44))))" + $C
+       * 4. return $D
+       */
+
+      std::unique_ptr<std::stringstream> minified;
+      std::unique_ptr<std::stringstream> deflated;
+
+      { /* Perform code minification */
+        minified = std::make_unique<std::stringstream>();
+        auto writer = parse::CodeWriterFactory::Create(*minified);
+        ptree_root.value().Accept(*writer);
+      }
+
+      { /* Perform raw deflate */
+        deflated = std::make_unique<std::stringstream>();
+
+        /// TODO: Apply raw deflate to the minified code
+        Log << "Deflate formatting mode is not yet implemented.";
+
+        minified.reset();
+      }
+
+      *dst_file_ptr << "@(n.emit(n.raw_inflate(n.source_slice(44))))" << deflated->rdbuf();
+
       break;
     }
   }
 
-  /// TODO: Implement file formatting
+  if (src == dst) {
+    Log << Trace << "Moving temporary file to the source file: " << temporary_path;
+    if (!OMNI_CATCH(std::filesystem::rename(temporary_path, dst))) {
+      Log << "Failed to move the temporary file to the source file: " << temporary_path << " => " << dst;
+      return false;
+    }
+    Log << Trace << "Successfully moved the temporary file to the source file: " << temporary_path << " => " << dst;
+  }
 
-  return false;
+  return okay;
 }
