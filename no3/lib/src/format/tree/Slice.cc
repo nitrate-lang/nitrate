@@ -31,51 +31,32 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <lsp/lang/format/Formatter.hh>
+#include <format/tree/Visitor.hh>
 
-using namespace no3::lsp::fmt;
+using namespace ncc;
 using namespace ncc::parse;
+using namespace no3::format;
 
-void CambrianFormatter::Visit(FlowPtr<parse::Scope> n) {
-  PrintLineComments(n);
+void CambrianFormatter::Visit(FlowPtr<Slice> n) {
+  PrintMultilineComments(n);
 
-  m_line << "scope ";
-
-  if (n->GetName()) {
-    m_line << n->GetName();
+  n->GetBase().Accept(*this);
+  m_line << "[";
+  if (n->GetStart()) {
+    n->GetStart().Accept(*this);
   }
-
-  if (!n->GetDeps().empty()) {
-    m_line << ": [";
-    IterateExceptLast(
-        n->GetDeps().begin(), n->GetDeps().end(), [&](auto dep, size_t) { m_line << dep; },
-        [&](let) { m_line << ", "; });
-    m_line << "]";
+  m_line << ":";
+  if (n->GetEnd()) {
+    n->GetEnd().Accept(*this);
   }
-
-  m_line << " ";
-  n->GetBody().Accept(*this);
+  m_line << "]";
 }
 
-void CambrianFormatter::Visit(FlowPtr<Export> n) {
-  PrintLineComments(n);
+void CambrianFormatter::Visit(FlowPtr<Index> n) {
+  PrintMultilineComments(n);
 
-  m_line << n->GetVis();
-
-  if (n->GetAbiName()) {
-    m_line << " ";
-    EscapeStringLiteral(n->GetAbiName());
-  }
-
-  if (!n->GetAttributes().empty()) {
-    m_line << " [";
-    IterateExceptLast(
-        n->GetAttributes().begin(), n->GetAttributes().end(), [&](auto attr, size_t) { attr.Accept(*this); },
-        [&](let) { m_line << ", "; });
-    m_line << "]";
-  }
-
-  m_line << " ";
-
-  n->GetBody()->Accept(*this);
+  n->GetBase().Accept(*this);
+  m_line << "[";
+  n->GetIndex().Accept(*this);
+  m_line << "]";
 }

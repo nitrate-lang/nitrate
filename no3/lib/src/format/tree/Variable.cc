@@ -31,88 +31,51 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <lsp/lang/format/Formatter.hh>
+#include <format/tree/Visitor.hh>
 
-using namespace no3::lsp::fmt;
+using namespace ncc;
 using namespace ncc::parse;
+using namespace no3::format;
 
-void CambrianFormatter::WriteFloatLiteralChunk(std::string_view float_str) {
-  constexpr size_t kInsertSepEvery = 10;
+void CambrianFormatter::Visit(FlowPtr<Variable> n) {
+  PrintLineComments(n);
 
-  bool already_write_type_suffix = false;
-
-  for (size_t i = 0; i < float_str.size(); i++) {
-    bool underscore = false;
-
-    if (!already_write_type_suffix && i != 0 && (i % (kInsertSepEvery)) == 0) {
-      underscore = true;
-    } else if (!already_write_type_suffix && (std::isdigit(float_str[i]) == 0) && float_str[i] != '.') {
-      already_write_type_suffix = true;
-      underscore = true;
+  switch (n->GetVariableKind()) {
+    case VariableType::Let: {
+      m_line << "let ";
+      break;
     }
 
-    if (underscore) {
-      m_line << "_";
+    case VariableType::Const: {
+      m_line << "const ";
+      break;
     }
 
-    m_line << float_str[i];
-  }
-}
-
-void CambrianFormatter::WriteFloatLiteral(std::string_view float_str) {
-  constexpr size_t kMaxChunkSize = 50;
-
-  if (float_str.empty()) {
-    m_line << "";
-  }
-
-  size_t chunks_n = float_str.size() / kMaxChunkSize;
-  size_t rem = float_str.size() % kMaxChunkSize;
-
-  size_t m_line_size = m_line.Length();
-
-  for (size_t i = 0; i < chunks_n; i++) {
-    WriteFloatLiteralChunk(float_str.substr(i * kMaxChunkSize, kMaxChunkSize));
-
-    if (rem > 0 || i < chunks_n - 1) {
-      m_line << "_ \\" << std::endl;
-      if (m_line_size != 0U) {
-        m_line << std::string(m_line_size, ' ');
-      }
+    case VariableType::Var: {
+      m_line << "var ";
+      break;
     }
   }
 
-  if (rem > 0) {
-    WriteFloatLiteralChunk(float_str.substr(chunks_n * kMaxChunkSize, rem));
+  if (!n->GetAttributes().empty()) {
+    m_line << "[";
+    IterateExceptLast(
+        n->GetAttributes().begin(), n->GetAttributes().end(), [&](auto attr, size_t) { attr.Accept(*this); },
+        [&](let) { m_line << ", "; });
+    m_line << "] ";
   }
-}
 
-void CambrianFormatter::Visit(FlowPtr<Float> n) {
-  PrintMultilineComments(n);
+  m_line << n->GetName();
 
-  WriteFloatLiteral(n->GetValue());
-}
+  if (n->GetType()) {
+    m_line << ": ";
+    n->GetType().Accept(*this);
+  }
 
-void CambrianFormatter::Visit(FlowPtr<Integer> n) {
-  PrintMultilineComments(n);
+  if (n->GetInitializer()) {
+    m_line << " = ";
+    n->GetInitializer().value().Accept(*this);
+  }
 
-  WriteFloatLiteral(n->GetValue());
-}
-
-void CambrianFormatter::Visit(FlowPtr<Boolean> n) {
-  PrintMultilineComments(n);
-
-  m_line << (n->GetValue() ? "true" : "false");
-}
-
-void CambrianFormatter::Visit(FlowPtr<parse::Null> n) {
-  PrintMultilineComments(n);
-
-  m_line << "null";
-}
-
-void CambrianFormatter::Visit(FlowPtr<Undefined> n) {
-  PrintMultilineComments(n);
-
-  m_line << "undef";
+  m_line << ";";
 }

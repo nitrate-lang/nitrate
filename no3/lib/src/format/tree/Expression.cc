@@ -31,50 +31,54 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <lsp/lang/format/Formatter.hh>
+#include <format/tree/Visitor.hh>
+#include <unordered_set>
 
-using namespace no3::lsp::fmt;
+using namespace ncc;
+using namespace ncc::lex;
 using namespace ncc::parse;
+using namespace no3::format;
 
-void CambrianFormatter::Visit(FlowPtr<Variable> n) {
-  PrintLineComments(n);
+void CambrianFormatter::Visit(FlowPtr<Unary> n) {
+  static const std::unordered_set<Operator> word_ops = {OpAs,        OpBitcastAs, OpIn,     OpOut,     OpSizeof,
+                                                        OpBitsizeof, OpAlignof,   OpTypeof, OpComptime};
 
-  switch (n->GetVariableKind()) {
-    case VariableType::Let: {
-      m_line << "let ";
-      break;
-    }
+  PrintMultilineComments(n);
 
-    case VariableType::Const: {
-      m_line << "const ";
-      break;
-    }
-
-    case VariableType::Var: {
-      m_line << "var ";
-      break;
-    }
+  m_line << n->GetOp();
+  if (word_ops.contains(n->GetOp())) {
+    m_line << " ";
   }
+  n->GetRHS().Accept(*this);
+}
 
-  if (!n->GetAttributes().empty()) {
-    m_line << "[";
-    IterateExceptLast(
-        n->GetAttributes().begin(), n->GetAttributes().end(), [&](auto attr, size_t) { attr.Accept(*this); },
-        [&](let) { m_line << ", "; });
-    m_line << "] ";
+void CambrianFormatter::Visit(FlowPtr<PostUnary> n) {
+  PrintMultilineComments(n);
+
+  n->GetLHS().Accept(*this);
+  m_line << n->GetOp();
+}
+
+void CambrianFormatter::Visit(FlowPtr<Binary> n) {
+  PrintMultilineComments(n);
+
+  if (n->GetOp() == OpDot) {
+    n->GetLHS().Accept(*this);
+    m_line << ".";
+    n->GetRHS().Accept(*this);
+  } else {
+    n->GetLHS().Accept(*this);
+    m_line << " " << n->GetOp() << " ";
+    n->GetRHS().Accept(*this);
   }
+}
 
-  m_line << n->GetName();
+void CambrianFormatter::Visit(FlowPtr<Ternary> n) {
+  PrintMultilineComments(n);
 
-  if (n->GetType()) {
-    m_line << ": ";
-    n->GetType().Accept(*this);
-  }
-
-  if (n->GetInitializer()) {
-    m_line << " = ";
-    n->GetInitializer().value().Accept(*this);
-  }
-
-  m_line << ";";
+  n->GetCond().Accept(*this);
+  m_line << " ? ";
+  n->GetLHS().Accept(*this);
+  m_line << " : ";
+  n->GetRHS().Accept(*this);
 }

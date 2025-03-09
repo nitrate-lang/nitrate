@@ -31,40 +31,73 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <lsp/lang/format/Formatter.hh>
+#include <format/tree/Visitor.hh>
+#include <unordered_set>
 
-using namespace no3::lsp::fmt;
+using namespace ncc;
 using namespace ncc::parse;
+using namespace no3::format;
 
-void CambrianFormatter::Visit(FlowPtr<Case> n) {
+void CambrianFormatter::Visit(FlowPtr<Block> n) {
   PrintLineComments(n);
 
-  n->GetCond().Accept(*this);
-  m_line << " => ";
-  n->GetBody()->Accept(*this);
-}
+  bool is_root_block = !m_did_root;
+  m_did_root = true;
 
-void CambrianFormatter::Visit(FlowPtr<parse::Switch> n) {
-  PrintLineComments(n);
+  switch (n->GetSafety()) {
+    case BlockMode::Safe: {
+      m_line << "safe ";
+      break;
+    }
 
-  m_line << "switch ";
-  n->GetCond().Accept(*this);
-  m_line << " {" << std::endl;
-  m_indent += m_tabSize;
+    case BlockMode::Unsafe: {
+      m_line << "unsafe ";
+      break;
+    }
 
-  for (auto c : n->GetCases()) {
-    m_line << GetIndent();
-    c.Accept(*this);
-    m_line << std::endl;
+    case BlockMode::Unknown: {
+      break;
+    }
   }
 
-  if (n->GetDefault()) {
-    m_line << GetIndent();
-    m_line << "_ => ";
-    n->GetDefault().value()->Accept(*this);
-    m_line << std::endl;
+  static const std::unordered_set<ASTNodeKind> extra_seperation = {
+      QAST_STRUCT,     QAST_ENUM, QAST_FUNCTION, QAST_SCOPE, QAST_EXPORT,  QAST_BLOCK,
+
+      QAST_INLINE_ASM, QAST_IF,   QAST_WHILE,    QAST_FOR,   QAST_FOREACH, QAST_SWITCH,
+  };
+
+  if (!is_root_block && n->GetStatements().empty()) {
+    m_line << "{}";
+    return;
   }
 
-  m_indent -= m_tabSize;
-  m_line << GetIndent() << "}";
+  if (!is_root_block) {
+    m_line << "{" << std::endl;
+    m_indent += m_tabSize;
+  }
+
+  auto items = n->GetStatements();
+
+  for (auto it = items.begin(); it != items.end(); ++it) {
+    auto item = *it;
+
+    m_line << GetIndent();
+    item.Accept(*this);
+    m_line << std::endl;
+
+    bool is_last_item = it == items.end() - 1;
+
+    bool is_next_item_different = (it + 1 != items.end() && (*std::next(it))->GetKind() != item->GetKind());
+
+    bool extra_newline = !is_last_item && (is_next_item_different || extra_seperation.contains(item->GetKind()));
+
+    if (extra_newline) {
+      m_line << std::endl;
+    }
+  }
+
+  if (!is_root_block) {
+    m_indent -= m_tabSize;
+    m_line << GetIndent() << "}";
+  }
 }

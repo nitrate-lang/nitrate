@@ -31,15 +31,48 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <lsp/lang/format/Formatter.hh>
+#include <format/tree/Visitor.hh>
 
-using namespace no3::lsp::fmt;
+using namespace no3::format;
+
 using namespace ncc::parse;
+using namespace ncc::lex;
 
-void CambrianFormatter::Visit(FlowPtr<Typedef> n) {
-  PrintLineComments(n);
+auto CambrianFormatter::LineWriter::operator<<(std::ostream& (*func)(std::ostream&)) -> CambrianFormatter::LineWriter& {
+  qcore_assert(func == static_cast<std::ostream& (*)(std::ostream&)>(std::endl));
 
-  m_line << "type " << n->GetName() << " = ";
-  n->GetType().Accept(*this);
-  m_line << ";";
+  m_file << m_line_buffer.str() << "\n";
+  Reset();
+
+  return *this;
+}
+
+auto CambrianFormatter::LineWriter::operator<<(Operator op) -> CambrianFormatter::LineWriter& {
+  m_line_buffer << op;
+  return *this;
+}
+
+auto CambrianFormatter::LineWriter::operator<<(Vis v) -> CambrianFormatter::LineWriter& {
+  switch (v) {
+    case Vis::Sec: {
+      m_line_buffer << "sec";
+      break;
+    }
+
+    case Vis::Pro: {
+      m_line_buffer << "pro";
+      break;
+    }
+
+    case Vis::Pub: {
+      m_line_buffer << "pub";
+      break;
+    }
+  }
+  return *this;
+}
+
+auto CambrianFormatter::LineWriter::operator<<(ncc::string str) -> LineWriter& {
+  m_line_buffer << str.Get();
+  return *this;
 }

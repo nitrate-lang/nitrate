@@ -31,57 +31,52 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <lsp/lang/format/Formatter.hh>
+#include <format/tree/Visitor.hh>
 
-using namespace no3::lsp::fmt;
+using namespace ncc;
 using namespace ncc::parse;
+using namespace no3::format;
 
-void CambrianFormatter::Visit(FlowPtr<parse::For> n) {
+void CambrianFormatter::Visit(FlowPtr<parse::Scope> n) {
   PrintLineComments(n);
 
-  m_line << "for (";
+  m_line << "scope ";
 
-  if (n->GetInit().has_value()) {
-    n->GetInit().value().Accept(*this);
-    if (!n->GetInit().value()->IsStmt()) {
-      m_line << ";";
-    }
-  } else {
-    m_line << ";";
+  if (n->GetName()) {
+    m_line << n->GetName();
   }
 
-  if (n->GetCond().has_value()) {
-    m_line << " ";
-    n->GetCond().value().Accept(*this);
-  }
-  m_line << ";";
-
-  if (n->GetStep().has_value()) {
-    m_line << " ";
-    n->GetStep().value().Accept(*this);
+  if (!n->GetDeps().empty()) {
+    m_line << ": [";
+    IterateExceptLast(
+        n->GetDeps().begin(), n->GetDeps().end(), [&](auto dep, size_t) { m_line << dep; },
+        [&](let) { m_line << ", "; });
+    m_line << "]";
   }
 
-  m_line << ") ";
+  m_line << " ";
   n->GetBody().Accept(*this);
-
-  m_line << ";";
 }
 
-void CambrianFormatter::Visit(FlowPtr<parse::Foreach> n) {
+void CambrianFormatter::Visit(FlowPtr<Export> n) {
   PrintLineComments(n);
 
-  m_line << "foreach (";
-  if (n->GetIndex()) {
-    m_line << n->GetIndex() << ", " << n->GetValue();
-  } else {
-    m_line << n->GetValue();
+  m_line << n->GetVis();
+
+  if (n->GetAbiName()) {
+    m_line << " ";
+    EscapeStringLiteral(n->GetAbiName());
   }
 
-  m_line << " in ";
-  n->GetExpr().Accept(*this);
-  m_line << ") ";
+  if (!n->GetAttributes().empty()) {
+    m_line << " [";
+    IterateExceptLast(
+        n->GetAttributes().begin(), n->GetAttributes().end(), [&](auto attr, size_t) { attr.Accept(*this); },
+        [&](let) { m_line << ", "; });
+    m_line << "]";
+  }
 
-  n->GetBody().Accept(*this);
+  m_line << " ";
 
-  m_line << ";";
+  n->GetBody()->Accept(*this);
 }

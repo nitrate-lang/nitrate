@@ -31,31 +31,35 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <lsp/lang/format/Formatter.hh>
+#include <format/tree/Visitor.hh>
 
-using namespace no3::lsp::fmt;
+using namespace ncc;
 using namespace ncc::parse;
+using namespace no3::format;
 
-void CambrianFormatter::Visit(FlowPtr<Slice> n) {
-  PrintMultilineComments(n);
+void CambrianFormatter::PrintLineComments(const FlowPtr<parse::Expr>& n) {
+  auto comments = n->Comments();
+  auto m_line_size = m_line.Length();
 
-  n->GetBase().Accept(*this);
-  m_line << "[";
-  if (n->GetStart()) {
-    n->GetStart().Accept(*this);
+  if (!comments.empty()) {
+    for (auto comment : comments) {
+      m_line << "#";
+      m_line << comment << std::endl;
+
+      if (m_line_size != 0U) {
+        m_line << std::string(m_line_size, ' ');
+      }
+    }
   }
-  m_line << ":";
-  if (n->GetEnd()) {
-    n->GetEnd().Accept(*this);
-  }
-  m_line << "]";
 }
 
-void CambrianFormatter::Visit(FlowPtr<Index> n) {
-  PrintMultilineComments(n);
-
-  n->GetBase().Accept(*this);
-  m_line << "[";
-  n->GetIndex().Accept(*this);
-  m_line << "]";
+void CambrianFormatter::PrintMultilineComments(const FlowPtr<parse::Expr>& n) {
+  auto comments = n->Comments();
+  if (!comments.empty()) {
+    for (auto comment : comments) {
+      m_line << "/*";
+      m_line << comment;
+      m_line << "*/ ";
+    }
+  }
 }

@@ -31,10 +31,11 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <lsp/lang/format/Formatter.hh>
+#include <format/tree/Visitor.hh>
 
-using namespace no3::lsp::fmt;
+using namespace ncc;
 using namespace ncc::parse;
+using namespace no3::format;
 
 auto CambrianFormatter::EscapeCharLiteral(char ch) const -> std::string {
   if ((std::isspace(ch) == 0) && (std::isprint(ch) == 0)) {

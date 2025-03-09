@@ -31,38 +31,16 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <lsp/lang/format/Formatter.hh>
+#include <format/tree/Visitor.hh>
 
-using namespace no3::lsp::fmt;
+using namespace ncc;
 using namespace ncc::parse;
+using namespace no3::format;
 
-void CambrianFormatter::Visit(FlowPtr<parse::Enum> n) {
+void CambrianFormatter::Visit(FlowPtr<Typedef> n) {
   PrintLineComments(n);
 
-  m_line << "enum " << n->GetName();
-  if (n->GetType()) {
-    m_line << ": ";
-    n->GetType().value().Accept(*this);
-  }
-
-  if (n->GetFields().empty()) {
-    m_line << ";";
-    return;
-  }
-
-  m_line << " {" << std::endl;
-  m_indent += m_tabSize;
-
-  for (auto& it : n->GetFields()) {
-    m_line << GetIndent();
-    m_line << it.first;
-    if (it.second) {
-      m_line << " = ";
-      it.second.value().Accept(*this);
-    }
-    m_line << "," << std::endl;
-  }
-
-  m_indent -= m_tabSize;
-  m_line << GetIndent() << "}";
+  m_line << "type " << n->GetName() << " = ";
+  n->GetType().Accept(*this);
+  m_line << ";";
 }

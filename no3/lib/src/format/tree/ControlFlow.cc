@@ -31,70 +31,69 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <lsp/lang/format/Formatter.hh>
+#include <format/tree/Visitor.hh>
 
-using namespace no3::lsp::fmt;
+using namespace ncc;
 using namespace ncc::parse;
-using namespace ncc::lex;
+using namespace no3::format;
 
-void CambrianFormatter::Visit(FlowPtr<TemplateType> n) {
-  PrintMultilineComments(n);
+void CambrianFormatter::Visit(FlowPtr<parse::While> n) {
+  PrintLineComments(n);
 
-  bool is_optional =
-      n->GetTemplate()->GetKind() == QAST_NAMED && n->GetTemplate()->As<NamedTy>()->GetName() == "__builtin_result";
+  m_line << "while ";
+  n->GetCond().Accept(*this);
+  m_line << " ";
+  n->GetBody().Accept(*this);
 
-  bool is_vector =
-      n->GetTemplate()->GetKind() == QAST_NAMED && n->GetTemplate()->As<NamedTy>()->GetName() == "__builtin_vec";
+  m_line << ";";
+}
 
-  bool is_map =
-      n->GetTemplate()->GetKind() == QAST_NAMED && n->GetTemplate()->As<NamedTy>()->GetName() == "__builtin_umap";
+void CambrianFormatter::Visit(FlowPtr<parse::Return> n) {
+  PrintLineComments(n);
 
-  bool is_set =
-      n->GetTemplate()->GetKind() == QAST_NAMED && n->GetTemplate()->As<NamedTy>()->GetName() == "__builtin_uset";
-
-  bool is_comptime = n->GetTemplate()->GetKind() == QAST_NAMED &&
-                     n->GetTemplate()->As<NamedTy>()->GetName() == "__builtin_meta" && n->GetArgs().size() == 1 &&
-                     n->GetArgs().front().second->Is(QAST_UNEXPR) &&
-                     n->GetArgs().front().second.template As<Unary>()->GetOp() == OpComptime;
-
-  size_t argc = n->GetArgs().size();
-  if (is_optional && argc == 1) {
-    n->GetArgs().front().second->Accept(*this);
-    m_line << "?";
-  } else if (is_vector && argc == 1) {
-    m_line << "[";
-    n->GetArgs().front().second->Accept(*this);
-    m_line << "]";
-  } else if (is_map && argc == 2) {
-    m_line << "[";
-    n->GetArgs().front().second->Accept(*this);
-    m_line << "->";
-    n->GetArgs().back().second->Accept(*this);
-    m_line << "]";
-  } else if (is_set && argc == 1) {
-    m_line << "{";
-    n->GetArgs().front().second->Accept(*this);
-    m_line << "}";
-  } else if (is_comptime) {
-    m_line << "comptime(";
-    n->GetArgs().front().second.template As<Unary>()->GetRHS().Accept(*this);
-    m_line << ")";
+  if (n->GetValue().has_value()) {
+    m_line << "ret ";
+    n->GetValue().value().Accept(*this);
+    m_line << ";";
   } else {
-    n->GetTemplate().Accept(*this);
-
-    m_line << "<";
-    IterateExceptLast(
-        n->GetArgs().begin(), n->GetArgs().end(),
-        [&](auto arg, size_t) {
-          if (!std::isdigit(arg.first->at(0))) {
-            m_line << arg.first << ": ";
-          }
-
-          arg.second->Accept(*this);
-        },
-        [&](let) { m_line << ", "; });
-    m_line << ">";
+    m_line << "ret;";
   }
+}
 
-  FormatTypeMetadata(n);
+void CambrianFormatter::Visit(FlowPtr<ReturnIf> n) {
+  PrintLineComments(n);
+
+  m_line << "retif ";
+  n->GetCond().Accept(*this);
+  if (n->GetValue().has_value()) {
+    m_line << ", ";
+    n->GetValue().value().Accept(*this);
+  }
+  m_line << ";";
+}
+
+void CambrianFormatter::Visit(FlowPtr<parse::If> n) {
+  PrintLineComments(n);
+
+  m_line << "if ";
+  n->GetCond().Accept(*this);
+  m_line << " ";
+  n->GetThen().Accept(*this);
+
+  if (n->GetElse()) {
+    m_line << " else ";
+    n->GetElse().value().Accept(*this);
+  }
+}
+
+void CambrianFormatter::Visit(FlowPtr<parse::Break> n) {
+  PrintLineComments(n);
+
+  m_line << "break;";
+}
+
+void CambrianFormatter::Visit(FlowPtr<parse::Continue> n) {
+  PrintLineComments(n);
+
+  m_line << "continue;";
 }

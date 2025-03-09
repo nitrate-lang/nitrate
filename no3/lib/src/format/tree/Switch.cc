@@ -31,68 +31,41 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <lsp/lang/format/Formatter.hh>
+#include <format/tree/Visitor.hh>
 
-using namespace no3::lsp::fmt;
+using namespace ncc;
 using namespace ncc::parse;
+using namespace no3::format;
 
-void CambrianFormatter::Visit(FlowPtr<parse::While> n) {
+void CambrianFormatter::Visit(FlowPtr<Case> n) {
   PrintLineComments(n);
 
-  m_line << "while ";
   n->GetCond().Accept(*this);
-  m_line << " ";
-  n->GetBody().Accept(*this);
-
-  m_line << ";";
+  m_line << " => ";
+  n->GetBody()->Accept(*this);
 }
 
-void CambrianFormatter::Visit(FlowPtr<parse::Return> n) {
+void CambrianFormatter::Visit(FlowPtr<parse::Switch> n) {
   PrintLineComments(n);
 
-  if (n->GetValue().has_value()) {
-    m_line << "ret ";
-    n->GetValue().value().Accept(*this);
-    m_line << ";";
-  } else {
-    m_line << "ret;";
-  }
-}
-
-void CambrianFormatter::Visit(FlowPtr<ReturnIf> n) {
-  PrintLineComments(n);
-
-  m_line << "retif ";
+  m_line << "switch ";
   n->GetCond().Accept(*this);
-  if (n->GetValue().has_value()) {
-    m_line << ", ";
-    n->GetValue().value().Accept(*this);
+  m_line << " {" << std::endl;
+  m_indent += m_tabSize;
+
+  for (auto c : n->GetCases()) {
+    m_line << GetIndent();
+    c.Accept(*this);
+    m_line << std::endl;
   }
-  m_line << ";";
-}
 
-void CambrianFormatter::Visit(FlowPtr<parse::If> n) {
-  PrintLineComments(n);
-
-  m_line << "if ";
-  n->GetCond().Accept(*this);
-  m_line << " ";
-  n->GetThen().Accept(*this);
-
-  if (n->GetElse()) {
-    m_line << " else ";
-    n->GetElse().value().Accept(*this);
+  if (n->GetDefault()) {
+    m_line << GetIndent();
+    m_line << "_ => ";
+    n->GetDefault().value()->Accept(*this);
+    m_line << std::endl;
   }
-}
 
-void CambrianFormatter::Visit(FlowPtr<parse::Break> n) {
-  PrintLineComments(n);
-
-  m_line << "break;";
-}
-
-void CambrianFormatter::Visit(FlowPtr<parse::Continue> n) {
-  PrintLineComments(n);
-
-  m_line << "continue;";
+  m_indent -= m_tabSize;
+  m_line << GetIndent() << "}";
 }

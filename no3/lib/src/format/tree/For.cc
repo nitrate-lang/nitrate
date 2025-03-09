@@ -31,53 +31,58 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <lsp/lang/format/Formatter.hh>
-#include <unordered_set>
+#include <format/tree/Visitor.hh>
 
-using namespace no3::lsp::fmt;
+using namespace ncc;
 using namespace ncc::parse;
-using namespace ncc::lex;
+using namespace no3::format;
 
-void CambrianFormatter::Visit(FlowPtr<Unary> n) {
-  static const std::unordered_set<Operator> word_ops = {OpAs,        OpBitcastAs, OpIn,     OpOut,     OpSizeof,
-                                                        OpBitsizeof, OpAlignof,   OpTypeof, OpComptime};
+void CambrianFormatter::Visit(FlowPtr<parse::For> n) {
+  PrintLineComments(n);
 
-  PrintMultilineComments(n);
+  m_line << "for (";
 
-  m_line << n->GetOp();
-  if (word_ops.contains(n->GetOp())) {
-    m_line << " ";
-  }
-  n->GetRHS().Accept(*this);
-}
-
-void CambrianFormatter::Visit(FlowPtr<PostUnary> n) {
-  PrintMultilineComments(n);
-
-  n->GetLHS().Accept(*this);
-  m_line << n->GetOp();
-}
-
-void CambrianFormatter::Visit(FlowPtr<Binary> n) {
-  PrintMultilineComments(n);
-
-  if (n->GetOp() == OpDot) {
-    n->GetLHS().Accept(*this);
-    m_line << ".";
-    n->GetRHS().Accept(*this);
+  if (n->GetInit().has_value()) {
+    n->GetInit().value().Accept(*this);
+    if (!n->GetInit().value()->IsStmt()) {
+      m_line << ";";
+    }
   } else {
-    n->GetLHS().Accept(*this);
-    m_line << " " << n->GetOp() << " ";
-    n->GetRHS().Accept(*this);
+    m_line << ";";
   }
+
+  if (n->GetCond().has_value()) {
+    m_line << " ";
+    n->GetCond().value().Accept(*this);
+  }
+  m_line << ";";
+
+  if (n->GetStep().has_value()) {
+    m_line << " ";
+    n->GetStep().value().Accept(*this);
+  }
+
+  m_line << ") ";
+  n->GetBody().Accept(*this);
+
+  m_line << ";";
 }
 
-void CambrianFormatter::Visit(FlowPtr<Ternary> n) {
-  PrintMultilineComments(n);
+void CambrianFormatter::Visit(FlowPtr<parse::Foreach> n) {
+  PrintLineComments(n);
 
-  n->GetCond().Accept(*this);
-  m_line << " ? ";
-  n->GetLHS().Accept(*this);
-  m_line << " : ";
-  n->GetRHS().Accept(*this);
+  m_line << "foreach (";
+  if (n->GetIndex()) {
+    m_line << n->GetIndex() << ", " << n->GetValue();
+  } else {
+    m_line << n->GetValue();
+  }
+
+  m_line << " in ";
+  n->GetExpr().Accept(*this);
+  m_line << ") ";
+
+  n->GetBody().Accept(*this);
+
+  m_line << ";";
 }
