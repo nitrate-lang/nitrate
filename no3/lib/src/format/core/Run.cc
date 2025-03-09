@@ -681,7 +681,7 @@ static bool FormatFile(const std::filesystem::path& src, const std::filesystem::
       }();
     }
 
-    temporary_path = dst.string() + ".fmt." + random_string + ".tmp";
+    temporary_path = dst.string() + "." + random_string + ".fmt.no3.tmp";
     if (SafeCheckFileExists(temporary_path)) {
       Log << "The temporary file already exists: " << temporary_path;
       return false;
