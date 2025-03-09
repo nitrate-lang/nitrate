@@ -31,6 +31,8 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
+#include <libdeflate.h>
+
 #include <core/GetOpt.hh>
 #include <core/InterpreterImpl.hh>
 #include <core/PackageConfig.hh>
@@ -588,6 +590,40 @@ static void AssignDefaultConfigurationSettings(nlohmann::json& j) {
   j["comments"]["block"]["convert-to-line"] = false;
 }
 
+static bool DeflateStreams(std::istream& in, std::ostream& out) {
+  constexpr int kCompressionLevel = 9;
+  constexpr size_t kBufferSize = 32 * 1024 * 1024;  // 32 MiB
+
+  libdeflate_compressor* compressor = libdeflate_alloc_compressor(kCompressionLevel);
+  if (compressor == nullptr) {
+    Log << "Failed to allocate the raw deflate compressor.";
+    return false;
+  }
+
+  std::vector<uint8_t> input_buffer(kBufferSize);
+  std::vector<uint8_t> output_buffer(kBufferSize);
+
+  while (in.good()) {
+    in.read(reinterpret_cast<char*>(input_buffer.data()), input_buffer.size());
+    if (in.gcount() == 0) {
+      break;
+    }
+
+    size_t compressed_size = libdeflate_deflate_compress(compressor, input_buffer.data(), in.gcount(),
+                                                         output_buffer.data(), output_buffer.size());
+    if (compressed_size == 0) {
+      Log << "Failed to compress the input data.";
+      return false;
+    }
+
+    out.write(reinterpret_cast<const char*>(output_buffer.data()), compressed_size);
+  }
+
+  libdeflate_free_compressor(compressor);
+
+  return true;
+}
+
 static bool FormatFile(const std::filesystem::path& src, const std::filesystem::path& dst, const nlohmann::json& config,
                        FormatMode mode) {
   std::ifstream src_file(src, std::ios::binary);
@@ -701,26 +737,38 @@ static bool FormatFile(const std::filesystem::path& src, const std::filesystem::
 
       { /* Perform raw deflate */
         deflated = std::make_unique<std::stringstream>();
-
-        /// TODO: Apply raw deflate to the minified code
-        Log << "Deflate formatting mode is not yet implemented.";
+        if (!DeflateStreams(*minified, *deflated)) {
+          Log << "Failed to deflate the minified source code.";
+          break;
+        }
 
         minified.reset();
       }
 
       *dst_file_ptr << "@(n.emit(n.raw_inflate(n.source_slice(44))))" << deflated->rdbuf();
 
+      okay = true;
+
       break;
     }
   }
 
   if (src == dst) {
-    Log << Trace << "Moving temporary file to the source file: " << temporary_path;
-    if (!OMNI_CATCH(std::filesystem::rename(temporary_path, dst))) {
-      Log << "Failed to move the temporary file to the source file: " << temporary_path << " => " << dst;
-      return false;
+    if (okay) {
+      Log << Trace << "Moving temporary file to the source file: " << temporary_path;
+      if (!OMNI_CATCH(std::filesystem::rename(temporary_path, dst))) {
+        Log << "Failed to move the temporary file to the source file: " << temporary_path << " => " << dst;
+        return false;
+      }
+      Log << Trace << "Successfully moved the temporary file to the source file: " << temporary_path << " => " << dst;
+    } else {
+      Log << Trace << "Removing temporary file: " << temporary_path;
+      if (!OMNI_CATCH(std::filesystem::remove(temporary_path)).value_or(false)) {
+        Log << "Failed to remove the temporary file: " << temporary_path;
+        return false;
+      }
+      Log << Trace << "Successfully removed the temporary file: " << temporary_path;
     }
-    Log << Trace << "Successfully moved the temporary file to the source file: " << temporary_path << " => " << dst;
   }
 
   return okay;

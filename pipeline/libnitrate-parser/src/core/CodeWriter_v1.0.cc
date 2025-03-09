@@ -314,17 +314,22 @@ void CodeWriter_v1_0::Visit(FlowPtr<Sequence> n) {
 }
 
 void CodeWriter_v1_0::Visit(FlowPtr<Block> n) {
+  bool use_braces = m_did_root;
+
   if (!m_did_root) {
     m_did_root = true;
+  }
 
-    for (const auto& stmt : n->GetStatements()) {
-      stmt->Accept(*this);
-    }
-  } else {
+  if (use_braces) [[likely]] {
     PutPunctor(PuncLCur);
-    for (const auto& stmt : n->GetStatements()) {
-      stmt->Accept(*this);
-    }
+  }
+
+  for (const auto& stmt : n->GetStatements()) {
+    stmt->Accept(*this);
+    PutPunctor(PuncSemi);
+  }
+
+  if (use_braces) [[likely]] {
     PutPunctor(PuncRCur);
   }
 }
@@ -385,22 +390,15 @@ void CodeWriter_v1_0::Visit(FlowPtr<Foreach> n) {
   (void)n;
 }
 
-void CodeWriter_v1_0::Visit(FlowPtr<Break>) {
-  PutKeyword(lex::Break);
-  PutPunctor(PuncSemi);
-}
+void CodeWriter_v1_0::Visit(FlowPtr<Break>) { PutKeyword(lex::Break); }
 
-void CodeWriter_v1_0::Visit(FlowPtr<Continue>) {
-  PutKeyword(lex::Continue);
-  PutPunctor(PuncSemi);
-}
+void CodeWriter_v1_0::Visit(FlowPtr<Continue>) { PutKeyword(lex::Continue); }
 
 void CodeWriter_v1_0::Visit(FlowPtr<Return> n) {
   PutKeyword(lex::Return);
   if (n->GetValue()) {
     n->GetValue().value()->Accept(*this);
   }
-  PutPunctor(PuncSemi);
 }
 
 void CodeWriter_v1_0::Visit(FlowPtr<ReturnIf> n) {
@@ -410,7 +408,6 @@ void CodeWriter_v1_0::Visit(FlowPtr<ReturnIf> n) {
     PutPunctor(PuncComa);
     n->GetValue().value()->Accept(*this);
   }
-  PutPunctor(PuncSemi);
 }
 
 void CodeWriter_v1_0::Visit(FlowPtr<Case> n) {
@@ -430,7 +427,6 @@ void CodeWriter_v1_0::Visit(FlowPtr<Typedef> n) {
   PutIdentifier(n->GetName());
   PutOperator(OpSet);
   n->GetType()->Accept(*this);
-  PutPunctor(PuncSemi);
 }
 
 void CodeWriter_v1_0::Visit(FlowPtr<Function> n) {
