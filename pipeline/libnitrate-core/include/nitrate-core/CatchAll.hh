@@ -39,17 +39,19 @@
 #include <optional>
 
 namespace ncc::detail {
-  std::optional<std::any> CatchAll(const std::function<std::any()>& expr);
+  [[nodiscard]] std::optional<std::any> CatchAllAny(const std::function<std::any()>& expr);
+  [[nodiscard]] bool CatchAllVoid(const std::function<void()>& expr);
 
-  template <typename T>
-  std::optional<T> CatchAll(const std::function<std::any()>& expr) {
-    auto result = CatchAll(expr);
-    if (!result.has_value()) {
-      return std::nullopt;
-    }
-
-    return std::any_cast<T>(*result);
+  template <typename T, typename = std::enable_if_t<!std::is_same_v<T, void>>>
+  static inline std::optional<T> CatchAll(const std::function<std::any()>& expr) {
+    auto result = CatchAllAny(expr);
+    return result.has_value() ? std::make_optional(std::any_cast<T>(*result)) : std::nullopt;
   }
+
+  template <typename T, typename = std::enable_if_t<std::is_same_v<T, void>>>
+  static inline bool CatchAll(const std::function<void()>& expr) {
+    return CatchAllVoid(expr);
+  };
 }  // namespace ncc::detail
 
 /**
@@ -59,6 +61,6 @@ namespace ncc::detail {
  *
  * @note This function may be called from code compiled with the -fno-exceptions
  */
-#define OMNI_CATCH(...) ncc::detail::CatchAll<decltype(__VA_ARGS__)>([&]() -> std::any { return __VA_ARGS__; })
+#define OMNI_CATCH(...) ncc::detail::CatchAll<decltype(__VA_ARGS__)>([&]() { return __VA_ARGS__; })
 
 #endif  // __NITRATE_CORE_CATCH_ALL_H__
