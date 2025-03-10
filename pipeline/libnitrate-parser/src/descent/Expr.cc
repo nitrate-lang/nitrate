@@ -92,66 +92,70 @@ auto GeneralParser::PImpl::RecurseCallArguments(const std::set<lex::Token> &term
   return call_args;
 }
 
-auto GeneralParser::PImpl::RecurseFstring() -> FlowPtr<Expr> {
-  std::vector<std::variant<string, FlowPtr<Expr>>> items;
+auto GeneralParser::PImpl::ParseFStringExpression(std::string_view source) -> FlowPtr<Expr> {
+  std::vector<std::variant<string, FlowPtr<Expr>>> sections;
+  std::string buf;
+  size_t rank = 0;
+  bool in_escape = false;
 
-  if (auto tok = NextIf<Text>()) {
-    size_t state = 0;
-    size_t w_beg = 0;
-    size_t w_end{};
-    auto fstring_raw = tok->GetString().Get();
+  buf.reserve(source.size());
 
-    std::string buf;
-    buf.reserve(fstring_raw.size());
-
-    for (size_t i = 0; i < fstring_raw.size(); i++) {
-      auto ch = fstring_raw[i];
-
-      if (ch == '{' && state == 0) {
-        w_beg = i + 1;
-        state = 1;
-      } else if (ch == '}' && state == 1) {
-        w_end = i + 1;
-        state = 0;
-
-        if (!buf.empty()) {
-          items.emplace_back(string(std::move(buf)));
-          buf.clear();
-        }
-
-        auto source = fstring_raw.substr(w_beg, w_end - w_beg);
-        auto in_src = boost::iostreams::stream<boost::iostreams::array_source>(source.data(), source.size());
-        auto scanner = Tokenizer(in_src, m_env);
-        auto subnode = GeneralParser::Create(scanner, m_env, m_pool)
-                           ->m_impl->RecurseExpr({
-                               Token(Punc, PuncRCur),
-                           });
-
-        items.emplace_back(subnode);
-      } else if (ch == '{') {
-        buf += ch;
-        state = 0;
-      } else if (ch == '}') {
-        buf += ch;
-        state = 0;
-      } else if (state == 0) {
-        buf += ch;
+  for (char ch : source) {
+    if (ch == '{') {
+      if (!in_escape && !buf.empty()) {
+        sections.emplace_back(string(std::move(buf)));
+        buf.clear();
       }
+
+      rank++;
+      in_escape = true;
+    } else if (ch == '}') {
+      rank--;
     }
 
-    if (!buf.empty()) {
-      items.emplace_back(string(std::move(buf)));
+    buf.push_back(ch);
+
+    if (rank == 0 && in_escape) [[unlikely]] {
+      in_escape = false;
+
+      qcore_assert(buf.starts_with("{"));
+      qcore_assert(buf.ends_with("}"));
+
+      auto buf_view = buf.substr(1, buf.size() - 1);
+
+      auto in_src = boost::iostreams::stream<boost::iostreams::array_source>(buf_view.data(), buf_view.size());
+      auto scanner = Tokenizer(in_src, m_env);
+      auto subnode = GeneralParser::Create(scanner, m_env, m_pool)
+                         ->m_impl->RecurseExpr({
+                             Token(Punc, PuncRCur),
+                         });
+
+      sections.emplace_back(subnode);
+
       buf.clear();
     }
-
-    if (state != 0) {
-      Log << SyntaxError << Current() << "F-string expression has mismatched braces";
-    }
-
-    return m_fac.CreateFormatString(items);
   }
-  Log << SyntaxError << Current() << "Expected a string literal token for F-string expression";
-  return m_fac.CreateMockInstance<FString>();
+
+  if (!buf.empty()) {
+    sections.emplace_back(string(std::move(buf)));
+    buf.clear();
+  }
+
+  if (rank != 0) [[unlikely]] {
+    Log << SyntaxError << Current() << "F-string expression has mismatched braces";
+  }
+
+  return m_fac.CreateFormatString(sections);
+}
+
+auto GeneralParser::PImpl::RecurseFstring() -> FlowPtr<Expr> {
+  const auto fstring_raw_text = NextIf<Text>();
+  if (!fstring_raw_text) [[unlikely]] {
+    Log << SyntaxError << Current() << "Expected a string literal token for F-string expression";
+    return m_fac.CreateMockInstance<FString>();
+  }
+
+  return ParseFStringExpression(fstring_raw_text->GetString());
 }
 
 static auto IsPostUnaryOp(Operator o) -> bool { return o == OpInc || o == OpDec; }
