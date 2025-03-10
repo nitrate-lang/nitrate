@@ -170,6 +170,7 @@ namespace ncc::lex {
     True,        /* 'true' */
     False,       /* 'false' */
     EscapeBlock, /* 'escape_block' */
+    UnitAssert,  /* 'unit_assert' */
   };
 }  // namespace ncc::lex
 

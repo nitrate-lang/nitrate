@@ -433,6 +433,11 @@ auto GeneralParser::PImpl::RecurseBlock(bool expect_braces, bool single_stmt, Bl
           RecurseEscapeBlock();  // We discard the block
           break;
         }
+
+        case UnitAssert: {
+          r = RecurseUnitAssert();
+          break;
+        }
       }
 
       if (r.has_value()) {

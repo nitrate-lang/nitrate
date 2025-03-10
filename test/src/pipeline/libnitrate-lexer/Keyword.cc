@@ -50,6 +50,7 @@ TEST_CASE(Keyword, Parse, 40, "null", {Null})
 TEST_CASE(Keyword, Parse, 41, "true", {True})
 TEST_CASE(Keyword, Parse, 42, "false", {False})
 TEST_CASE(Keyword, Parse, 43, "escape_block", {EscapeBlock})
+TEST_CASE(Keyword, Parse, 44, "unit_assert", {UnitAssert})
 
 ///============================================================================///
 /// ADJACENT TO INTEGERS
@@ -97,6 +98,7 @@ TEST_CASE(Keyword, NextToInt, 40, "'abc'null'hello'", {Token(Text, "abc"), Null,
 TEST_CASE(Keyword, NextToInt, 41, "'abc'true'hello'", {Token(Text, "abc"), True, Token(Text, "hello")})
 TEST_CASE(Keyword, NextToInt, 42, "'abc'false'hello'", {Token(Text, "abc"), False, Token(Text, "hello")})
 TEST_CASE(Keyword, NextToInt, 43, "'abc'escape_block'hello'", {Token(Text, "abc"), EscapeBlock, Token(Text, "hello")})
+TEST_CASE(Keyword, NextToInt, 44, "'abc'unit_assert'hello'", {Token(Text, "abc"), UnitAssert, Token(Text, "hello")})
 
 ///============================================================================///
 /// ADJACENT TO PUNCTUATION
@@ -144,3 +146,4 @@ TEST_CASE(Keyword, NextToPunc, 40, "+null:", {OpPlus, Null, PuncColn})
 TEST_CASE(Keyword, NextToPunc, 41, "+true:", {OpPlus, True, PuncColn})
 TEST_CASE(Keyword, NextToPunc, 42, "+false:", {OpPlus, False, PuncColn})
 TEST_CASE(Keyword, NextToPunc, 43, "+escape_block:", {OpPlus, EscapeBlock, PuncColn})
+TEST_CASE(Keyword, NextToPunc, 44, "+unit_assert:", {OpPlus, UnitAssert, PuncColn})
