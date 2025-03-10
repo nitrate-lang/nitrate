@@ -38,18 +38,18 @@
 
 namespace ncc::lex {
   enum TokenType : uint8_t {
-    EofF = 1, /* End of file */
-    KeyW,     /* Keyword */
-    Oper,     /* Operator */
-    Punc,     /* Punctuation */
-    Name,     /* Identifier */
-    IntL,     /* Integer literal */
-    NumL,     /* Floating-point literal */
-    Text,     /* String literal */
-    Char,     /* Character literal */
-    MacB,     /* Macro block */
-    Macr,     /* Macro call */
-    Note,     /* Comment */
+    EofF, /* End of file */
+    KeyW, /* Keyword */
+    Oper, /* Operator */
+    Punc, /* Punctuation */
+    Name, /* Identifier */
+    IntL, /* Integer literal */
+    NumL, /* Floating-point literal */
+    Text, /* String literal */
+    Char, /* Character literal */
+    MacB, /* Macro block */
+    Macr, /* Macro call */
+    Note, /* Comment */
   };
 
   enum Punctor : uint8_t {
