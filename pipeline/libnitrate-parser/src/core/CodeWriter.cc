@@ -1244,9 +1244,15 @@ namespace ncc::parse {
     void Visit(FlowPtr<Foreach> n) override {
       PrintLeading(n);
 
-      /// TODO: Implement code writer
-      qcore_implement();
-      (void)n;
+      PutKeyword(lex::Foreach);
+      if (!n->GetIndex()->empty()) {
+        PutIdentifier(n->GetIndex());
+        PutPunctor(PuncComa);
+      }
+      PutIdentifier(n->GetValue());
+      PutOperator(OpIn);
+      n->GetExpr()->Accept(*this);
+      n->GetBody()->Accept(*this);
 
       PrintTrailing(n);
     }
@@ -1364,9 +1370,28 @@ namespace ncc::parse {
     void Visit(FlowPtr<Scope> n) override {
       PrintLeading(n);
 
-      /// TODO: Implement code writer
-      qcore_implement();
-      (void)n;
+      PutKeyword(lex::Scope);
+      if (n->GetName()) {
+        PutIdentifier(n->GetName());
+      }
+
+      if (!n->GetDeps().empty()) {
+        if (n->GetName()) {
+          PutPunctor(PuncColn);
+        }
+
+        PutPunctor(PuncLBrk);
+        for (auto it = n->GetDeps().begin(); it != n->GetDeps().end(); ++it) {
+          if (it != n->GetDeps().begin()) {
+            PutPunctor(PuncComa);
+          }
+
+          PutIdentifier(*it);
+        }
+        PutPunctor(PuncRBrk);
+      }
+
+      n->GetBody()->Accept(*this);
 
       PrintTrailing(n);
     }

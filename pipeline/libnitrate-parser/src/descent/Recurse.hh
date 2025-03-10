@@ -179,7 +179,7 @@ namespace ncc::parse {
     [[nodiscard]] auto RecurseFunctionAmbigouis()
         -> std::tuple<std::vector<FlowPtr<Expr>>, std::vector<std::pair<string, bool>>, Purity, string>;
     [[nodiscard]] auto RecurseIfElse() -> NullableFlowPtr<Expr>;
-    [[nodiscard]] auto RecurseScopeDeps() -> std::optional<std::vector<string>>;
+    [[nodiscard]] auto RecurseScopeDeps() -> std::vector<string>;
     [[nodiscard]] auto RecurseScopeBlock() -> FlowPtr<Expr>;
     [[nodiscard]] [[nodiscard]] auto RecurseStructAttributes() -> std::vector<FlowPtr<Expr>>;
     [[nodiscard]] auto RecurseStructTerms() -> std::vector<string>;
