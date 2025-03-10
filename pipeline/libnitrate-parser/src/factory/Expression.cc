@@ -230,17 +230,6 @@ auto ASTFactory::CreateIdentifier(string name, SourceLocation origin) -> FlowPtr
   return CreateInstance<Identifier>(name)(m_pool, origin);
 }
 
-auto ASTFactory::CreateSequence(std::span<const FlowPtr<Expr>> ele, SourceLocation origin) -> FlowPtr<Sequence> {
-  auto ele_copy = AllocateArray<FlowPtr<Expr>>(ele.size());
-  std::copy(ele.begin(), ele.end(), ele_copy.begin());
-
-  return CreateInstance<Sequence>(ele_copy)(m_pool, origin);
-}
-
-auto ASTFactory::CreateSequence(const std::vector<FlowPtr<Expr>>& ele, SourceLocation origin) -> FlowPtr<Sequence> {
-  return CreateSequence(std::span(ele), origin);
-}
-
 auto ASTFactory::CreateTemplateCall(
     FlowPtr<Expr> callee, const std::unordered_map<std::variant<string, size_t>, FlowPtr<Expr>>& template_args,
     const std::unordered_map<std::variant<string, size_t>, FlowPtr<Expr>>& named_args,

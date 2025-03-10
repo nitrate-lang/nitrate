@@ -208,10 +208,6 @@ class IterVisitor : public ASTVisitor {
 
   void Visit(FlowPtr<Identifier>) override {}
 
-  void Visit(FlowPtr<Sequence> n) override {
-    std::for_each(n->GetItems().begin(), n->GetItems().end(), [&](auto item) { Add(item); });
-  }
-
   void Visit(FlowPtr<Block> n) override {
     std::for_each(n->GetStatements().begin(), n->GetStatements().end(), [&](auto item) { Add(item); });
   }

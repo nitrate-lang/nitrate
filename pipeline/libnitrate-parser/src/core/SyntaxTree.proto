@@ -523,13 +523,6 @@ message Identifier {
   required string name = 4;
 }
 
-message Sequence {
-  optional SourceLocationRange location = 1;
-  repeated UserComment comments = 2;
-
-  repeated Expr elements = 4;
-}
-
 ///===--------------------------------------------------------------------===///
 
 message Block {
@@ -801,7 +794,6 @@ message Expr {
     Slice slice = 27;
     FString fstring = 28;
     Identifier identifier = 29;
-    Sequence sequence = 30;
 
     Block block = 50;
     Variable variable = 51;

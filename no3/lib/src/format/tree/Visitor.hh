@@ -125,7 +125,6 @@ namespace no3::format {
     void Visit(ncc::FlowPtr<ncc::parse::Slice> n) override;
     void Visit(ncc::FlowPtr<ncc::parse::FString> n) override;
     void Visit(ncc::FlowPtr<ncc::parse::Identifier> n) override;
-    void Visit(ncc::FlowPtr<ncc::parse::Sequence> n) override;
     void Visit(ncc::FlowPtr<ncc::parse::Block> n) override;
     void Visit(ncc::FlowPtr<ncc::parse::Variable> n) override;
     void Visit(ncc::FlowPtr<ncc::parse::Assembly> n) override;

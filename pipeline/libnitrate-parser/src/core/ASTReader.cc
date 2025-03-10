@@ -513,10 +513,6 @@ auto AstReader::Unmarshal(const SyntaxTree::Expr &in) -> Result<Expr> {
       return Unmarshal(in.identifier());
     }
 
-    case SyntaxTree::Expr::kSequence: {
-      return Unmarshal(in.sequence());
-    }
-
     case SyntaxTree::Expr::kBlock: {
       return Unmarshal(in.block());
     }
@@ -1838,26 +1834,6 @@ auto AstReader::Unmarshal(const SyntaxTree::FString &in) -> Result<FString> {
 
 auto AstReader::Unmarshal(const SyntaxTree::Identifier &in) -> Result<Identifier> {
   auto object = m_fac.CreateIdentifier(in.name());
-  UnmarshalLocationLocation(in.location(), object);
-  UnmarshalCodeComment(in.comments(), object);
-
-  return object;
-}
-
-auto AstReader::Unmarshal(const SyntaxTree::Sequence &in) -> Result<Sequence> {
-  std::vector<FlowPtr<Expr>> items;
-  items.reserve(in.elements_size());
-
-  for (const auto &expr : in.elements()) {
-    auto expression = Unmarshal(expr);
-    if (!expression.has_value()) [[unlikely]] {
-      return std::nullopt;
-    }
-
-    items.push_back(expression.value());
-  }
-
-  auto object = m_fac.CreateSequence(items);
   UnmarshalLocationLocation(in.location(), object);
   UnmarshalCodeComment(in.comments(), object);
 

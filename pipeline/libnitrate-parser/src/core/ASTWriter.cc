@@ -422,11 +422,6 @@ SyntaxTree::Expr *AstWriter::From(const FlowPtr<Expr> &in) {
       break;
     }
 
-    case QAST_SEQ: {
-      message->set_allocated_sequence(From(in.As<Sequence>()));
-      break;
-    }
-
     case QAST_IF: {
       message->set_allocated_if_(From(in.As<If>()));
       break;
@@ -1316,22 +1311,6 @@ SyntaxTree::Identifier *AstWriter::From(const FlowPtr<Identifier> &in) {
   return message;
 }
 
-SyntaxTree::Sequence *AstWriter::From(const FlowPtr<Sequence> &in) {
-  auto *message = Pool::CreateMessage<SyntaxTree::Sequence>(m_arena);
-
-  message->set_allocated_location(FromSource(in));
-
-  { /* Add all elements */
-    const auto &items = in->GetItems();
-
-    message->mutable_elements()->Reserve(items.size());
-    std::for_each(items.begin(), items.end(),
-                  [&](auto item) { message->mutable_elements()->AddAllocated(From(item)); });
-  }
-
-  return message;
-}
-
 SyntaxTree::Block *AstWriter::From(const FlowPtr<Block> &in) {
   auto *message = Pool::CreateMessage<SyntaxTree::Block>(m_arena);
 
@@ -1885,7 +1864,6 @@ void AstWriter::Visit(FlowPtr<Index> n) { SEND(From(n), index); }
 void AstWriter::Visit(FlowPtr<Slice> n) { SEND(From(n), slice); }
 void AstWriter::Visit(FlowPtr<FString> n) { SEND(From(n), fstring); }
 void AstWriter::Visit(FlowPtr<Identifier> n) { SEND(From(n), identifier); }
-void AstWriter::Visit(FlowPtr<Sequence> n) { SEND(From(n), sequence); }
 void AstWriter::Visit(FlowPtr<Block> n) { SEND(From(n), block); }
 void AstWriter::Visit(FlowPtr<Variable> n) { SEND(From(n), variable); }
 void AstWriter::Visit(FlowPtr<Assembly> n) { SEND(From(n), assembly); }

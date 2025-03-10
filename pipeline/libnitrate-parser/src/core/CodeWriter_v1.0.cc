@@ -250,9 +250,25 @@ void CodeWriter_v1_0::Visit(FlowPtr<PostUnary> n) {
 }
 
 void CodeWriter_v1_0::Visit(FlowPtr<Ternary> n) {
-  /// TODO: Implement code writer
-  qcore_implement();
-  (void)n;
+  PutPunctor(PuncLPar);
+
+  PutPunctor(PuncLPar);
+  n->GetCond()->Accept(*this);
+  PutPunctor(PuncRPar);
+
+  PutOperator(OpTernary);
+
+  PutPunctor(PuncLPar);
+  n->GetLHS()->Accept(*this);
+  PutPunctor(PuncRPar);
+
+  PutPunctor(PuncColn);
+
+  PutPunctor(PuncLPar);
+  n->GetRHS()->Accept(*this);
+  PutPunctor(PuncRPar);
+
+  PutPunctor(PuncRPar);
 }
 
 void CodeWriter_v1_0::Visit(FlowPtr<Integer> n) { PutInteger(n->GetValue()); }
@@ -264,39 +280,89 @@ void CodeWriter_v1_0::Visit(FlowPtr<Null>) { PutKeyword(lex::Null); }
 void CodeWriter_v1_0::Visit(FlowPtr<Undefined>) { PutKeyword(Undef); }
 
 void CodeWriter_v1_0::Visit(FlowPtr<Call> n) {
-  /// TODO: Implement code writer
-  qcore_implement();
-  (void)n;
+  n->GetFunc()->Accept(*this);
+  PutPunctor(PuncLPar);
+  for (auto it = n->GetArgs().begin(); it != n->GetArgs().end(); ++it) {
+    if (it != n->GetArgs().begin()) {
+      PutPunctor(PuncComa);
+    }
+
+    if (IsNamedParameter(it->first)) {
+      PutIdentifier(it->first);
+      PutPunctor(PuncColn);
+    }
+
+    it->second->Accept(*this);
+  }
+  PutPunctor(PuncRPar);
 }
 
 void CodeWriter_v1_0::Visit(FlowPtr<TemplateCall> n) {
-  /// TODO: Implement code writer
-  qcore_implement();
-  (void)n;
+  n->GetFunc()->Accept(*this);
+  PutOperator(OpLT);
+  for (auto it = n->GetTemplateArgs().begin(); it != n->GetTemplateArgs().end(); ++it) {
+    if (it != n->GetTemplateArgs().begin()) {
+      PutPunctor(PuncComa);
+    }
+
+    if (IsNamedParameter(it->first)) {
+      PutIdentifier(it->first);
+      PutPunctor(PuncColn);
+    }
+
+    it->second->Accept(*this);
+  }
+  PutOperator(OpGT);
+  PutPunctor(PuncLPar);
+  for (auto it = n->GetArgs().begin(); it != n->GetArgs().end(); ++it) {
+    if (it != n->GetArgs().begin()) {
+      PutPunctor(PuncComa);
+    }
+
+    if (IsNamedParameter(it->first)) {
+      PutIdentifier(it->first);
+      PutPunctor(PuncColn);
+    }
+
+    it->second->Accept(*this);
+  }
+  PutPunctor(PuncRPar);
 }
 
 void CodeWriter_v1_0::Visit(FlowPtr<List> n) {
-  /// TODO: Implement code writer
-  qcore_implement();
-  (void)n;
+  PutPunctor(PuncLBrk);
+  for (auto it = n->GetItems().begin(); it != n->GetItems().end(); ++it) {
+    if (it != n->GetItems().begin()) {
+      PutPunctor(PuncComa);
+    }
+
+    (*it)->Accept(*this);
+  }
+  PutPunctor(PuncRBrk);
 }
 
 void CodeWriter_v1_0::Visit(FlowPtr<Assoc> n) {
-  /// TODO: Implement code writer
-  qcore_implement();
-  (void)n;
+  PutPunctor(PuncLCur);
+  n->GetKey()->Accept(*this);
+  PutPunctor(PuncColn);
+  n->GetValue()->Accept(*this);
+  PutPunctor(PuncRCur);
 }
 
 void CodeWriter_v1_0::Visit(FlowPtr<Index> n) {
-  /// TODO: Implement code writer
-  qcore_implement();
-  (void)n;
+  n->GetBase()->Accept(*this);
+  PutPunctor(PuncLBrk);
+  n->GetIndex()->Accept(*this);
+  PutPunctor(PuncRBrk);
 }
 
 void CodeWriter_v1_0::Visit(FlowPtr<Slice> n) {
-  /// TODO: Implement code writer
-  qcore_implement();
-  (void)n;
+  n->GetBase()->Accept(*this);
+  PutPunctor(PuncLBrk);
+  n->GetStart()->Accept(*this);
+  PutPunctor(PuncColn);
+  n->GetEnd()->Accept(*this);
+  PutPunctor(PuncRBrk);
 }
 
 void CodeWriter_v1_0::Visit(FlowPtr<FString> n) {
@@ -306,12 +372,6 @@ void CodeWriter_v1_0::Visit(FlowPtr<FString> n) {
 }
 
 void CodeWriter_v1_0::Visit(FlowPtr<Identifier> n) { PutIdentifier(n->GetName()); }
-
-void CodeWriter_v1_0::Visit(FlowPtr<Sequence> n) {
-  /// TODO: Implement code writer
-  qcore_implement();
-  (void)n;
-}
 
 void CodeWriter_v1_0::Visit(FlowPtr<Block> n) {
   bool use_braces = m_did_root;

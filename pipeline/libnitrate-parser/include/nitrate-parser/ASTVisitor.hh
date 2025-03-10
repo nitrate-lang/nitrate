@@ -88,7 +88,6 @@ namespace ncc::parse {
     virtual void Visit(FlowPtr<Slice> n) = 0;
     virtual void Visit(FlowPtr<FString> n) = 0;
     virtual void Visit(FlowPtr<Identifier> n) = 0;
-    virtual void Visit(FlowPtr<Sequence> n) = 0;
     virtual void Visit(FlowPtr<Block> n) = 0;
     virtual void Visit(FlowPtr<Variable> n) = 0;
     virtual void Visit(FlowPtr<Assembly> n) = 0;
@@ -178,10 +177,6 @@ namespace ncc::parse {
         }
         case QAST_IDENT: {
           Visit(n.template As<Identifier>());
-          break;
-        }
-        case QAST_SEQ: {
-          Visit(n.template As<Sequence>());
           break;
         }
         case QAST_POST_UNEXPR: {

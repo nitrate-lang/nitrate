@@ -60,7 +60,6 @@ namespace ncc::parse {
     QAST_SLICE,       /* Slice access */
     QAST_FSTRING,     /* Formatted string */
     QAST_IDENT,       /* Identifier */
-    QAST_SEQ,         /* Sequence point */
     QAST_TEMPL_CALL,  /* Template call */
 
     /*****************************************************************************

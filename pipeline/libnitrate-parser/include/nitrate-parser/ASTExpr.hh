@@ -224,15 +224,6 @@ namespace ncc::parse {
 
     [[nodiscard]] constexpr auto GetName() const { return m_name; }
   };
-
-  class Sequence final : public Expr {
-    std::span<FlowPtr<Expr>> m_items;
-
-  public:
-    constexpr Sequence(auto items) : Expr(QAST_SEQ), m_items(items) {}
-
-    [[nodiscard]] constexpr auto GetItems() const { return m_items; }
-  };
 }  // namespace ncc::parse
 
 #endif

@@ -117,7 +117,6 @@ namespace ncc::parse {
       void Visit(FlowPtr<Slice> n) override;
       void Visit(FlowPtr<FString> n) override;
       void Visit(FlowPtr<Identifier> n) override;
-      void Visit(FlowPtr<Sequence> n) override;
       void Visit(FlowPtr<Block> n) override;
       void Visit(FlowPtr<Variable> n) override;
       void Visit(FlowPtr<Assembly> n) override;

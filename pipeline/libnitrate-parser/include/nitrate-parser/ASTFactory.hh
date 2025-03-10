@@ -220,13 +220,6 @@ namespace ncc::parse {
     [[gnu::pure, nodiscard]] auto CreateIdentifier(string name, SourceLocation origin = SourceLocation::current())
         -> FlowPtr<Identifier>;
 
-    [[gnu::pure, nodiscard]] auto CreateSequence(std::span<const FlowPtr<Expr>> ele = {},
-                                                 SourceLocation origin = SourceLocation::current())
-        -> FlowPtr<Sequence>;
-
-    [[gnu::pure, nodiscard]] auto CreateSequence(
-        const std::vector<FlowPtr<Expr>>& ele, SourceLocation origin = SourceLocation::current()) -> FlowPtr<Sequence>;
-
     [[gnu::pure, nodiscard]] auto CreateTemplateCall(
         FlowPtr<Expr> callee, const std::unordered_map<std::variant<string, size_t>, FlowPtr<Expr>>& template_args = {},
         const std::unordered_map<std::variant<string, size_t>, FlowPtr<Expr>>& named_args = {},

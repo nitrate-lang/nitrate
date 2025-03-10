@@ -135,11 +135,6 @@ auto ASTFactory::CreateMockInstance(ASTNodeKind kind, SourceLocation origin) -> 
       break;
     }
 
-    case QAST_SEQ: {
-      r = CreateSequence();
-      break;
-    }
-
     case QAST_TEMPL_CALL: {
       r = CreateTemplateCall(SIMPLE_EXPR());
       break;

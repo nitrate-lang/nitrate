@@ -109,7 +109,6 @@ namespace ncc::parse {
     auto Unmarshal(const SyntaxTree::Slice &in) -> Result<Slice>;
     auto Unmarshal(const SyntaxTree::FString &in) -> Result<FString>;
     auto Unmarshal(const SyntaxTree::Identifier &in) -> Result<Identifier>;
-    auto Unmarshal(const SyntaxTree::Sequence &in) -> Result<Sequence>;
     auto Unmarshal(const SyntaxTree::Block &in) -> Result<Block>;
     auto Unmarshal(const SyntaxTree::Variable &in) -> Result<Variable>;
     auto Unmarshal(const SyntaxTree::Assembly &in) -> Result<Assembly>;
