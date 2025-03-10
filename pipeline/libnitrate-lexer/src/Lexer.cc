@@ -1200,74 +1200,83 @@ public:
 auto Tokenizer::GetNext() -> Token {
   Impl &impl = *m_impl;
   impl.m_buf.clear();
-  impl.m_parsing = false;
-
   uint8_t c;
-  do {
-    c = impl.NextChar();
-  } while (kWhitespaceTable[c]);
 
-  impl.m_parsing = true;
+  {  // Skip whitespace
+    impl.m_parsing = false;
 
-  auto start_pos = InternLocation(Location(impl.m_offset, impl.m_line, impl.m_column, impl.m_filename));
+    do {
+      c = impl.NextChar();
+    } while (kWhitespaceTable[c]);
 
-  LexState state;
-  if (kIdentiferStartTable[c]) {
-    state = LexState::Identifier;
-  } else if (c == '/') {
-    state = LexState::CommentStart;
-  } else if (kDigitsTable[c]) {
-    state = LexState::Integer;
-  } else if (c == '"' || c == '\'') {
-    state = LexState::String;
-  } else if (c == '@') {
-    state = LexState::MacroStart;
-  } else {
-    state = LexState::Other;
+    impl.m_parsing = true;
   }
 
-  Token token;
+  const auto start_pos = InternLocation(Location(impl.m_offset, impl.m_line, impl.m_column, impl.m_filename));
 
-  switch (state) {
-    case LexState::Identifier:
-      token = impl.ParseIdentifier(c, start_pos);
-      break;
+  const auto state = [c]() {
+    if (kIdentiferStartTable[c]) {
+      return LexState::Identifier;
+    }
 
-    case LexState::String:
-      token = impl.ParseString(c, start_pos);
-      break;
+    if (c == '/') {
+      return LexState::CommentStart;
+    }
 
-    case LexState::Integer:
-      token = impl.ParseInteger(c, start_pos);
-      break;
+    if (kDigitsTable[c]) {
+      return LexState::Integer;
+    }
 
-    case LexState::CommentStart:
-      if (impl.NextCharIf('/')) {
-        token = impl.ParseCommentSingleLine(start_pos);
-        break;
+    if (c == '"' || c == '\'') {
+      return LexState::String;
+    }
+
+    if (c == '@') {
+      return LexState::MacroStart;
+    }
+
+    return LexState::Other;
+  }();
+
+  const auto token = [&]() {
+    switch (state) {
+      case LexState::Identifier: {
+        return impl.ParseIdentifier(c, start_pos);
       }
 
-      if (impl.NextCharIf('*')) {
-        token = impl.ParseCommentMultiLine(start_pos);
-        break;
+      case LexState::String: {
+        return impl.ParseString(c, start_pos);
       }
 
-      token = impl.ParseOther('/', start_pos);
-      break;
-
-    case LexState::MacroStart:
-      if (impl.NextCharIf('(')) {
-        token = impl.ParseBlockMacro(start_pos);
-        break;
+      case LexState::Integer: {
+        return impl.ParseInteger(c, start_pos);
       }
 
-      token = impl.ParseSingleLineMacro(start_pos);
-      break;
+      case LexState::CommentStart: {
+        if (impl.NextCharIf('/')) {
+          return impl.ParseCommentSingleLine(start_pos);
+        }
 
-    case LexState::Other:
-      token = impl.ParseOther(c, start_pos);
-      break;
-  }
+        if (impl.NextCharIf('*')) {
+          return impl.ParseCommentMultiLine(start_pos);
+        }
+
+        return impl.ParseOther('/', start_pos);
+      }
+
+      case LexState::MacroStart: {
+        if (impl.NextCharIf('(')) {
+          return impl.ParseBlockMacro(start_pos);
+        }
+
+        return impl.ParseSingleLineMacro(start_pos);
+      }
+
+      case LexState::Other: {
+        return impl.ParseOther(c, start_pos);
+      }
+    }
+  }();
 
   if (token.Is(EofF)) [[unlikely]] {
     SetFailBit();
