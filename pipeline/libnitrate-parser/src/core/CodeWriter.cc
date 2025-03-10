@@ -47,11 +47,11 @@ using namespace ncc::parse;
 namespace ncc::parse {
   class CodeWriter final : public ICodeWriter {
     std::ostream& m_os;
-    lex::TokenType m_last{};
-    lex::TokenData m_ldata;
+    TokenType m_last{};
+    TokenData m_ldata;
     bool m_did_root{};
 
-    static constexpr auto kNumberOfOperators = lex::Op_Last - lex::Op_First + 1;
+    static constexpr auto kNumberOfOperators = Op_Last - Op_First + 1;
 
     /// FIXME: Optimize this lookup table to minimize redundant whitespace
     static constexpr std::array<char, (kNumberOfOperators * kNumberOfOperators) + 1> kOpOnOpAction = {
@@ -126,7 +126,7 @@ namespace ncc::parse {
         "                                                       " /* OpTernary */
     };
 
-    static bool IsWordOperator(lex::Operator op) {
+    static bool IsWordOperator(Operator op) {
       switch (op) {
         case OpAs:
         case OpBitcastAs:
@@ -219,7 +219,7 @@ namespace ncc::parse {
 
     static bool IsNamedParameter(std::string_view name) { return std::isdigit(name.at(0)) == 0; }
 
-    void PutKeyword(lex::Keyword kw) {
+    void PutKeyword(Keyword kw) {
       switch (m_last) {
         case KeyW:
         case Name:
@@ -254,7 +254,7 @@ namespace ncc::parse {
       m_ldata = kw;
     }
 
-    void PutOperator(lex::Operator op) {
+    void PutOperator(Operator op) {
       switch (m_last) {
         case KeyW:
         case Name:
@@ -301,7 +301,7 @@ namespace ncc::parse {
       m_ldata = op;
     }
 
-    void PutPunctor(lex::Punctor punc) {
+    void PutPunctor(Punctor punc) {
       switch (m_last) {
         case Oper: {
           m_os << punc;
@@ -1145,13 +1145,13 @@ namespace ncc::parse {
 
       switch (n->GetVariableKind()) {
         case VariableType::Var:
-          PutKeyword(lex::Var);
+          PutKeyword(Var);
           break;
         case VariableType::Let:
-          PutKeyword(lex::Let);
+          PutKeyword(Let);
           break;
         case VariableType::Const:
-          PutKeyword(lex::Const);
+          PutKeyword(Const);
           break;
       }
 
@@ -1399,9 +1399,39 @@ namespace ncc::parse {
     void Visit(FlowPtr<Export> n) override {
       PrintLeading(n);
 
-      /// TODO: Implement code writer
-      qcore_implement();
-      (void)n;
+      switch (n->GetVis()) {
+        case Vis::Pub:
+          PutKeyword(lex::Pub);
+          break;
+        case Vis::Sec:
+          PutKeyword(Sec);
+          break;
+        case Vis::Pro:
+          PutKeyword(Pro);
+          break;
+      }
+
+      if (n->GetAbiName()) {
+        PutString(n->GetAbiName());
+      }
+
+      if (!n->GetAttributes().empty()) {
+        PutPunctor(PuncLBrk);
+        for (auto it = n->GetAttributes().begin(); it != n->GetAttributes().end(); ++it) {
+          if (it != n->GetAttributes().begin()) {
+            PutPunctor(PuncComa);
+          }
+
+          it->Accept(*this);
+        }
+        PutPunctor(PuncRBrk);
+      }
+
+      if (n->GetBody()->Is(QAST_BLOCK) && n->GetBody()->As<Block>()->GetStatements().size() == 1) {
+        n->GetBody()->As<Block>()->GetStatements().front()->Accept(*this);
+      } else {
+        n->GetBody()->Accept(*this);
+      }
 
       PrintTrailing(n);
     }
