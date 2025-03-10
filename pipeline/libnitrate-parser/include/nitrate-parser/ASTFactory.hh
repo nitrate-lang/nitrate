@@ -400,14 +400,13 @@ namespace ncc::parse {
         string name, NullableFlowPtr<Type> ret_ty = nullptr, const std::vector<FactoryFunctionParameter>& params = {},
         bool variadic = false, NullableFlowPtr<Expr> body = nullptr, const std::vector<FlowPtr<Expr>>& attributes = {},
         NullableFlowPtr<Expr> precond = nullptr, NullableFlowPtr<Expr> postcond = nullptr,
-        const std::vector<std::pair<string, bool>>& captures = {},
+
         const std::optional<std::vector<TemplateParameter>>& template_parameters = std::nullopt,
         SourceLocation origin = SourceLocation::current()) -> std::optional<FlowPtr<Function>>;
 
     [[gnu::pure, nodiscard]] auto CreateAnonymousFunction(
-        const std::vector<std::pair<string, bool>>& captures = {}, NullableFlowPtr<Type> ret_ty = nullptr,
-        const std::vector<FactoryFunctionParameter>& params = {}, bool variadic = false,
-        NullableFlowPtr<Expr> body = nullptr, const std::vector<FlowPtr<Expr>>& attributes = {},
+        NullableFlowPtr<Type> ret_ty = nullptr, const std::vector<FactoryFunctionParameter>& params = {},
+        bool variadic = false, NullableFlowPtr<Expr> body = nullptr, const std::vector<FlowPtr<Expr>>& attributes = {},
         NullableFlowPtr<Expr> precond = nullptr, NullableFlowPtr<Expr> postcond = nullptr,
         SourceLocation origin = SourceLocation::current()) -> std::optional<FlowPtr<Function>>;
 

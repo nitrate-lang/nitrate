@@ -272,53 +272,53 @@ scope orbit::core::net::socket {
         /// @brief Send data over the socket.
         /// @param data The data to send.
         /// @return The number of bytes sent, or error.
-        fn impure noexcept tsafe send(data: [u8]): usize?;
+        fn impure noexcept send(data: [u8]): usize?;
 
         /// @brief Receive data from the socket.
         /// @param data The buffer to receive data into.
         /// @return The number of bytes received, or error.
-        fn impure noexcept tsafe recv(data: [u8]): usize?;
+        fn impure noexcept recv(data: [u8]): usize?;
 
         /// @brief Peek at data from the socket.
         /// @param data The buffer to receive data into.
         /// @return The number of bytes peeked, or error.
-        fn impure noexcept tsafe peek(data: [u8]): usize?;
+        fn impure noexcept peek(data: [u8]): usize?;
 
         /// @brief Bind the socket to an address.
         /// @param addr The fully-qualified address to bind to.
         /// @return Void or error.
-        fn impure noexcept tsafe bind(addr: string): void?;
+        fn impure noexcept bind(addr: string): void?;
 
         /// @brief Connect the socket to an address.
         /// @param addr The fully-qualified address to connect to.
         /// @return Void or error.
-        fn impure noexcept tsafe connect(addr: string): void?;
+        fn impure noexcept connect(addr: string): void?;
 
         /// @brief Listen for incoming connections.
         /// @param backlog The maximum number of pending connections.
         /// @return Void or error.
-        fn impure noexcept tsafe listen(backlog: usize): void?;
+        fn impure noexcept listen(backlog: usize): void?;
 
         /// @brief Accept an incoming connection.
         /// @return A new socket, or error.
-        fn impure noexcept tsafe accept(): Socket?;
+        fn impure noexcept accept(): Socket?;
 
         /// @brief Set a socket option.
         /// @param name The name of the option.
         /// @param value The value to set.
         /// @return Void or error.
-        fn impure noexcept tsafe opt(name: string, value: [u8]): void?;
+        fn impure noexcept opt(name: string, value: [u8]): void?;
 
         /// @brief Get a socket option.
         /// @param name The name of the option.
         /// @return The value of the option, or error.
-        // fn impure noexcept tsafe opt(name: string): [u8]?;
+        // fn impure noexcept opt(name: string): [u8]?;
 
         /// @brief Perform a generic operation on the socket.
         /// @param op The operation to perform.
         /// @param data The data to use.
         /// @return The result of the operation, or error.
-        fn impure noexcept tsafe ioctl(f: u32, inp: [u8] = undef, out: ![u8] = undef): void?;
+        fn impure noexcept ioctl(f: u32, inp: [u8] = undef, out: ![u8] = undef): void?;
 
         fn pure noexcept to_str(): string;
     };

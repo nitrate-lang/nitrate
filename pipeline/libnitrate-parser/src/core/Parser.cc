@@ -280,6 +280,16 @@ auto GeneralParser::PImpl::RecurseBlock(bool expect_braces, bool single_stmt, Bl
           break;
         }
 
+        case Safe: {
+          if (Peek().Is<PuncLCur>()) {
+            r = RecurseBlock(true, false, BlockMode::Safe);
+          } else {
+            r = RecurseBlock(false, true, BlockMode::Safe);
+          }
+
+          break;
+        }
+
         case Unsafe: {
           if (Peek().Is<PuncLCur>()) {
             r = RecurseBlock(true, false, BlockMode::Unsafe);
@@ -290,13 +300,33 @@ auto GeneralParser::PImpl::RecurseBlock(bool expect_braces, bool single_stmt, Bl
           break;
         }
 
-        case Safe: {
-          if (Peek().Is<PuncLCur>()) {
-            r = RecurseBlock(true, false, BlockMode::Safe);
-          } else {
-            r = RecurseBlock(false, true, BlockMode::Safe);
-          }
+        case Pure: {
+          Log << SyntaxError << Current() << "Unexpected 'pure' in block context";
+          break;
+        }
 
+        case Impure: {
+          Log << SyntaxError << Current() << "Unexpected 'impure' in block context";
+          break;
+        }
+
+        case Quasi: {
+          Log << SyntaxError << Current() << "Unexpected 'quasi' in block context";
+          break;
+        }
+
+        case Retro: {
+          Log << SyntaxError << Current() << "Unexpected 'retro' in block context";
+          break;
+        }
+
+        case Inline: {
+          Log << SyntaxError << Current() << "Unexpected 'inline' in block context";
+          break;
+        }
+
+        case Foreign: {
+          Log << SyntaxError << Current() << "Unexpected 'foreign' in block context";
           break;
         }
 

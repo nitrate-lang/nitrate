@@ -1531,19 +1531,6 @@ SyntaxTree::Function *AstWriter::From(const FlowPtr<Function> &in) {
                   [&](auto item) { message->mutable_attributes()->AddAllocated(From(item)); });
   }
 
-  { /* Add all captures */
-    const auto &items = in->GetCaptures();
-
-    message->mutable_captures()->Reserve(items.size());
-    std::for_each(items.begin(), items.end(), [&](auto item) {
-      auto *capture = Pool::CreateMessage<SyntaxTree::Function_Capture>(m_arena);
-      capture->set_name(item.first.Get());
-      capture->set_is_reference(item.second);
-
-      message->mutable_captures()->AddAllocated(capture);
-    });
-  }
-
   /* Add all template parameters */
   if (in->GetTemplateParams().has_value()) {
     auto params = in->GetTemplateParams().value();

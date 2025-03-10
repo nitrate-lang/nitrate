@@ -320,7 +320,6 @@ namespace ncc::parse {
   class Function final : public Expr {
     std::optional<std::span<TemplateParameter>> m_template_parameters;
     std::span<FlowPtr<Expr>> m_attributes;
-    std::span<std::pair<string, bool>> m_captures;
     std::span<FuncParam> m_params;
     FlowPtr<Type> m_return;
     NullableFlowPtr<Expr> m_precond, m_postcond;
@@ -329,11 +328,10 @@ namespace ncc::parse {
     bool m_variadic;
 
   public:
-    constexpr Function(auto attributes, auto captures, auto name, auto params, auto fn_params, auto variadic,
-                       auto return_type, auto precond, auto postcond, auto body)
+    constexpr Function(auto attributes, auto name, auto params, auto fn_params, auto variadic, auto return_type,
+                       auto precond, auto postcond, auto body)
         : Expr(QAST_FUNCTION),
           m_attributes(attributes),
-          m_captures(captures),
           m_params(fn_params),
           m_return(std::move(return_type)),
           m_precond(std::move(precond)),
@@ -348,7 +346,6 @@ namespace ncc::parse {
 
     [[nodiscard, gnu::pure]] constexpr auto GetName() const { return m_name; }
     [[nodiscard, gnu::pure]] constexpr auto GetAttributes() const { return m_attributes; }
-    [[nodiscard, gnu::pure]] constexpr auto GetCaptures() const { return m_captures; }
     [[nodiscard, gnu::pure]] constexpr auto GetTemplateParams() const { return m_template_parameters; }
     [[nodiscard, gnu::pure]] constexpr auto GetParams() const { return m_params; }
     [[nodiscard, gnu::pure]] constexpr auto GetReturn() const { return m_return; }
@@ -364,7 +361,6 @@ namespace ncc::parse {
 
     constexpr void SetName(auto name) { m_name = name; }
     constexpr void SetAttributes(auto attributes) { m_attributes = attributes; }
-    constexpr void SetCaptures(auto captures) { m_captures = captures; }
     constexpr void SetTemplateParams(auto params) { m_template_parameters = params; }
     constexpr void SetParams(auto params) { m_params = params; }
     constexpr void SetReturn(auto return_type) { m_return = std::move(return_type); }

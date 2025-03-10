@@ -2087,12 +2087,6 @@ auto AstReader::Unmarshal(const SyntaxTree::Function &in) -> Result<Function> {
     }
   }
 
-  std::vector<std::pair<string, bool>> captures;
-  captures.reserve(in.captures_size());
-  for (const auto &cap : in.captures()) {
-    captures.emplace_back(cap.name(), cap.is_reference());
-  }
-
   std::vector<ASTFactory::FactoryFunctionParameter> parameters;
   parameters.reserve(in.parameters_size());
 
@@ -2131,7 +2125,7 @@ auto AstReader::Unmarshal(const SyntaxTree::Function &in) -> Result<Function> {
   }
 
   auto object = m_fac.CreateFunction(in.name(), return_type.value(), parameters, in.variadic(), block, attributes,
-                                     precondition, postcondition, captures, template_parameters);
+                                     precondition, postcondition, template_parameters);
   if (!object.has_value()) [[unlikely]] {
     return std::nullopt;
   }

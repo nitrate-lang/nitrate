@@ -669,11 +669,6 @@ message Enum {
 }
 
 message Function {
-  message Capture {
-    required string name = 1;
-    required bool is_reference = 2;
-  }
-
   optional SourceLocationRange location = 1;
   repeated UserComment comments = 2;
 
@@ -682,7 +677,6 @@ message Function {
   optional TemplateParameters template_parameters = 7;
   repeated FunctionParameter parameters = 8;
   required bool variadic = 9;
-  repeated Capture captures = 10;
   optional Expr precondition = 11;
   optional Expr postcondition = 12;
   repeated Expr attributes = 13;

@@ -32,6 +32,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <descent/Recurse.hh>
+#include <unordered_set>
 
 using namespace ncc;
 using namespace ncc::lex;
@@ -148,137 +149,66 @@ auto GeneralParser::PImpl::RecurseFunctionParameters()
   return parameters;
 }
 
-auto GeneralParser::PImpl::RecurseFunctionCapture() -> std::optional<std::pair<string, bool>> {
-  bool is_ref = NextIf<OpBitAnd>().has_value();
-
-  if (auto name = RecurseName()) {
-    return {{name, is_ref}};
-  }
-
-  Log << SyntaxError << Next() << "Expected a capture name";
-
-  return std::nullopt;
-}
-
-auto GeneralParser::PImpl::RecurseFunctionAmbigouis()
-    -> std::tuple<std::vector<FlowPtr<Expr>>, std::vector<std::pair<string, bool>>, string> {
-  enum class State : uint8_t {
-    Ground,
-    AttributesSection,
-    CaptureSection,
-    End,
-  } state = State::Ground;
+auto GeneralParser::PImpl::RecurseFunctionAttributes() -> std::vector<FlowPtr<Expr>> {
+  static const std::unordered_set<Keyword> reserved_words = {
+      Pure, Impure, Quasi, Retro, Inline, Foreign,
+  };
 
   std::vector<FlowPtr<Expr>> attributes;
-  std::vector<std::pair<string, bool>> captures;
-  string function_name;
-  bool already_parsed_attributes = false;
-  bool already_parsed_captures = false;
 
-  while (state != State::End) {
-    if (m_rd.IsEof()) [[unlikely]] {
-      Log << SyntaxError << Current() << "Unexpected EOF in function attributes";
+  while (true) {  // Parse some free-standing attributes
+    auto tok = Peek();
+    if (!tok.Is(KeyW)) {
       break;
     }
 
-    switch (state) {
-      case State::Ground: {
-        if (auto some_word = RecurseName()) {
-          if (some_word == "pure" || some_word == "impure" || some_word == "tsafe" || some_word == "quasi" ||
-              some_word == "retro" || some_word == "inline" || some_word == "foreign") {
-            attributes.push_back(m_fac.CreateIdentifier(some_word));
-          } else {
-            function_name = some_word;
-            state = State::End;
-          }
-        } else if (NextIf<PuncLBrk>()) {
-          if (already_parsed_attributes && already_parsed_captures) {
-            Log << SyntaxError << Current() << "Unexpected '[' after function attributes and captures";
-          } else if (already_parsed_attributes && !already_parsed_captures) {
-            state = State::CaptureSection;
-          } else if (!already_parsed_attributes && already_parsed_captures) {
-            state = State::AttributesSection;
-          } else {
-            qcore_assert(!already_parsed_attributes && !already_parsed_captures);
+    if (!reserved_words.contains(tok.GetKeyword())) {
+      break;
+    }
 
-            auto tok = Peek();
+    Next();
+    attributes.emplace_back(m_fac.CreateIdentifier(tok.AsString()));
+  }
 
-            /* No attribute expression may begin with '&' */
-            if (tok.Is<OpBitAnd>()) {
-              state = State::CaptureSection;
-            } else if (tok.Is(Name)) {
-              state = State::CaptureSection;
-            } else { /* Ambiguous edge case */
-              state = State::AttributesSection;
-            }
-          }
-        } else if (auto tok = Peek(); tok.Is<PuncLPar>() || tok.Is<OpLT>()) {
-          state = State::End; /* Begin parsing parameters or template options */
-        } else {
-          Log << SyntaxError << Next() << "Unexpected token in function declaration";
-        }
+  if (NextIf<PuncLBrk>()) {
+    while (true) {
+      if (m_rd.IsEof()) [[unlikely]] {
+        Log << SyntaxError << Current() << "Unexpected EOF in function attributes";
+        return attributes;
+      }
 
+      if (NextIf<PuncRBrk>()) {
         break;
       }
 
-      case State::AttributesSection: {
-        already_parsed_attributes = true;
-
-        while (true) {
-          if (m_rd.IsEof()) [[unlikely]] {
-            Log << SyntaxError << Current() << "Unexpected EOF in function attributes";
-            break;
-          }
-
-          if (NextIf<PuncRBrk>()) {
-            state = State::Ground;
-            break;
-          }
-
-          auto attribute = RecurseExpr({
-              Token(Punc, PuncComa),
-              Token(Punc, PuncRBrk),
-          });
-
-          attributes.push_back(attribute);
-
-          NextIf<PuncComa>();
-        }
-
-        break;
+      if (auto tok = Peek(); tok.Is(KeyW) && reserved_words.contains(tok.GetKeyword())) {
+        Next();
+        attributes.emplace_back(m_fac.CreateIdentifier(tok.AsString()));
+      } else {
+        auto expr = RecurseExpr({Token(Punc, PuncComa), Token(Punc, PuncRBrk)});
+        attributes.emplace_back(expr);
       }
 
-      case State::CaptureSection: {
-        already_parsed_captures = true;
-
-        while (true) {
-          if (m_rd.IsEof()) [[unlikely]] {
-            Log << SyntaxError << Current() << "Unexpected EOF in function captures";
-            break;
-          }
-
-          if (NextIf<PuncRBrk>()) {
-            state = State::Ground;
-            break;
-          }
-
-          if (auto capture = RecurseFunctionCapture()) {
-            captures.emplace_back(capture->first, capture->second);
-          }
-
-          NextIf<PuncComa>();
-        }
-
-        break;
-      }
-
-      case State::End: {
-        break;
-      }
+      NextIf<PuncComa>();
     }
   }
 
-  return {attributes, captures, function_name};
+  while (true) {  // Parse some free-standing attributes
+    auto tok = Peek();
+    if (!tok.Is(KeyW)) {
+      break;
+    }
+
+    if (!reserved_words.contains(tok.GetKeyword())) {
+      break;
+    }
+
+    Next();
+
+    attributes.emplace_back(m_fac.CreateIdentifier(tok.AsString()));
+  }
+
+  return attributes;
 }
 
 auto GeneralParser::PImpl::RecurseFunctionReturnType() -> FlowPtr<parse::Type> {
@@ -304,7 +234,8 @@ auto GeneralParser::PImpl::RecurseFunctionBody(bool parse_declaration_only) -> N
 auto GeneralParser::PImpl::RecurseFunction(bool parse_declaration_only) -> FlowPtr<Expr> {
   auto start_pos = Current().GetStart();
 
-  auto [function_attributes, function_captures, function_name] = RecurseFunctionAmbigouis();
+  auto function_attributes = RecurseFunctionAttributes();
+  auto function_name = RecurseName();
   auto function_template_parameters = RecurseTemplateParameters();
   auto function_parameters = RecurseFunctionParameters();
   auto function_return_type = RecurseFunctionReturnType();
@@ -312,7 +243,7 @@ auto GeneralParser::PImpl::RecurseFunction(bool parse_declaration_only) -> FlowP
 
   auto function = m_fac.CreateFunction(function_name, function_return_type, function_parameters.first,
                                        function_parameters.second, function_body, function_attributes, std::nullopt,
-                                       std::nullopt, function_captures, function_template_parameters);
+                                       std::nullopt, function_template_parameters);
   if (!function.has_value()) [[unlikely]] {
     function = m_fac.CreateMockInstance<Function>();
   }

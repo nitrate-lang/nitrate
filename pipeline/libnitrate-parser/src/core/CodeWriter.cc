@@ -1409,22 +1409,6 @@ namespace ncc::parse {
         PutPunctor(PuncRBrk);
       }
 
-      if (!n->GetCaptures().empty()) {
-        PutPunctor(PuncLBrk);
-        for (auto it = n->GetCaptures().begin(); it != n->GetCaptures().end(); ++it) {
-          if (it != n->GetCaptures().begin()) {
-            PutPunctor(PuncComa);
-          }
-
-          if (it->second) {
-            PutOperator(OpBitAnd);
-          }
-
-          PutIdentifier(it->first);
-        }
-        PutPunctor(PuncRBrk);
-      }
-
       if (n->GetName()) {
         PutIdentifier(n->GetName());
       }

@@ -145,8 +145,14 @@ namespace ncc::lex {
     Enum,        /* 'enum' */
     __FString,   /* '__fstring' */
     Fn,          /* 'fn' */
-    Unsafe,      /* 'unsafe' */
     Safe,        /* 'safe' */
+    Unsafe,      /* 'unsafe' */
+    Pure,        /* 'pure' */
+    Impure,      /* 'impure' */
+    Quasi,       /* 'quasi' */
+    Retro,       /* 'retro' */
+    Inline,      /* 'inline' */
+    Foreign,     /* 'foreign' */
     Promise,     /* 'promise' */
     If,          /* 'if' */
     Else,        /* 'else' */

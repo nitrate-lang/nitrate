@@ -50,20 +50,6 @@ void CambrianFormatter::Visit(FlowPtr<Function> n) {
     m_line << "]";
   }
 
-  if (!n->GetCaptures().empty()) {
-    m_line << " [";
-    IterateExceptLast(
-        n->GetCaptures().begin(), n->GetCaptures().end(),
-        [&](auto cap, size_t) {
-          if (cap.second) {
-            m_line << "&";
-          }
-          m_line << cap.first;
-        },
-        [&](let) { m_line << ", "; });
-    m_line << "]";
-  }
-
   m_line << " " << n->GetName();
 
   if (n->GetTemplateParams()) {

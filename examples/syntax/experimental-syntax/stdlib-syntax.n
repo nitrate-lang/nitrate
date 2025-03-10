@@ -12,7 +12,7 @@ scope std {
   ///            stack traces and function pointers in non-production builds.
   /// @note This function is typesafe and is not subject to format-string
   ///       vulnerabilities.
-  pub generic <N> fn tsafe debugn(s: string = "", args: [any; N] = [];
+  pub generic <N> fn debugn(s: string = "", args: [any; N] = [];
                                   writer: std::WriterFn = std::ewrite,
                                   trace: bool = true,
                                   ansi: AnsiMode = AnsiMode::Auto): usize {
