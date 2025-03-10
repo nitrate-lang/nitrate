@@ -151,7 +151,7 @@ auto GeneralParser::PImpl::RecurseFunctionParameters()
 
 auto GeneralParser::PImpl::RecurseFunctionAttributes() -> std::vector<FlowPtr<Expr>> {
   static const std::unordered_set<Keyword> reserved_words = {
-      Pure, Impure, Quasi, Retro, Inline, Foreign,
+      Pure, Impure, Quasi, Retro, Inline, Foreign, Safe, Unsafe,
   };
 
   std::vector<FlowPtr<Expr>> attributes;
