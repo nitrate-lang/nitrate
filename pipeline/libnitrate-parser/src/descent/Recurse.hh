@@ -150,14 +150,14 @@ namespace ncc::parse {
     };
 
     [[nodiscard]] auto RecurseName() -> string;
-    [[nodiscard]] auto RecurseEnumType() -> NullableFlowPtr<Type>;
-    [[nodiscard]] auto RecurseEnumItem() -> std::optional<std::pair<string, NullableFlowPtr<Expr>>>;
-    [[nodiscard]] auto RecurseEnumItems() -> std::optional<std::vector<std::pair<string, NullableFlowPtr<Expr>>>>;
+    [[nodiscard]] auto RecurseEnumField() -> std::pair<string, NullableFlowPtr<Expr>>;
+    [[nodiscard]] auto RecurseEnumFields() -> std::vector<std::pair<string, NullableFlowPtr<Expr>>>;
     [[nodiscard]] auto RecurseAbiName() -> string;
-    [[nodiscard]] auto RecurseExportAttributes() -> std::optional<std::vector<FlowPtr<Expr>>>;
+    [[nodiscard]] auto RecurseExportAttributes() -> std::vector<FlowPtr<Expr>>;
     [[nodiscard]] auto RecurseExportBody() -> FlowPtr<Expr>;
     [[nodiscard]] auto RecurseCallArguments(const std::set<lex::Token> &terminators,
                                             bool type_by_default) -> std::vector<CallArg>;
+    [[nodiscard]] auto ParseFStringExpression(std::string_view source) -> FlowPtr<Expr>;
     [[nodiscard]] auto RecurseFstring() -> FlowPtr<Expr>;
     [[nodiscard]] auto RecurseForInitExpr() -> NullableFlowPtr<Expr>;
     [[nodiscard]] auto RecurseForCondition() -> NullableFlowPtr<Expr>;

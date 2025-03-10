@@ -1356,9 +1356,24 @@ namespace ncc::parse {
     void Visit(FlowPtr<Enum> n) override {
       PrintLeading(n);
 
-      /// TODO: Implement code writer
-      qcore_implement();
-      (void)n;
+      PutKeyword(lex::Enum);
+      if (n->GetName()) {
+        PutIdentifier(n->GetName());
+      }
+      if (n->GetType()) {
+        PutPunctor(PuncColn);
+        n->GetType().value()->Accept(*this);
+      }
+      PutPunctor(PuncLCur);
+      for (const auto& [field, expr] : n->GetFields()) {
+        PutIdentifier(field);
+        if (expr) {
+          PutOperator(OpSet);
+          expr.value()->Accept(*this);
+        }
+        PutPunctor(PuncComa);
+      }
+      PutPunctor(PuncRCur);
 
       PrintTrailing(n);
     }

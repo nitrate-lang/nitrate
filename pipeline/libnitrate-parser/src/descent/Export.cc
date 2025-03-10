@@ -39,11 +39,10 @@ using namespace ncc::parse;
 
 auto GeneralParser::PImpl::RecurseAbiName() -> string {
   auto tok = NextIf<Text>();
-
   return tok ? tok->GetString() : "";
 }
 
-auto GeneralParser::PImpl::RecurseExportAttributes() -> std::optional<std::vector<FlowPtr<Expr>>> {
+auto GeneralParser::PImpl::RecurseExportAttributes() -> std::vector<FlowPtr<Expr>> {
   std::vector<FlowPtr<Expr>> attributes;
 
   if (!NextIf<PuncLBrk>()) {
@@ -53,7 +52,7 @@ auto GeneralParser::PImpl::RecurseExportAttributes() -> std::optional<std::vecto
   while (true) {
     if (m_rd.IsEof()) [[unlikely]] {
       Log << SyntaxError << Current() << "Encountered EOF while parsing export attributes";
-      break;
+      return attributes;
     }
 
     if (NextIf<PuncRBrk>()) {
@@ -69,8 +68,6 @@ auto GeneralParser::PImpl::RecurseExportAttributes() -> std::optional<std::vecto
 
     NextIf<PuncComa>();
   }
-
-  return std::nullopt;
 }
 
 auto GeneralParser::PImpl::RecurseExportBody() -> FlowPtr<Expr> {
@@ -83,14 +80,8 @@ auto GeneralParser::PImpl::RecurseExportBody() -> FlowPtr<Expr> {
 
 auto GeneralParser::PImpl::RecurseExport(Vis vis) -> FlowPtr<Expr> {
   auto export_abi = RecurseAbiName();
+  auto export_attributes = RecurseExportAttributes();
+  auto export_body = RecurseExportBody();
 
-  if (auto export_attributes = RecurseExportAttributes()) {
-    auto export_body = RecurseExportBody();
-
-    return m_fac.CreateExport(export_body, export_attributes.value(), vis, export_abi);
-  }
-
-  Log << SyntaxError << Current() << "Malformed export attributes";
-
-  return m_fac.CreateMockInstance<Export>();
+  return m_fac.CreateExport(export_body, export_attributes, vis, export_abi);
 }
