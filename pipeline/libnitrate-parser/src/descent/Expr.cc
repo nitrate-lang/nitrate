@@ -35,6 +35,7 @@
 #include <descent/Recurse.hh>
 #include <nitrate-lexer/Grammar.hh>
 #include <nitrate-lexer/Lexer.hh>
+#include <nitrate-parser/ASTBase.hh>
 #include <stack>
 #include <utility>
 
@@ -504,6 +505,8 @@ auto GeneralParser::PImpl::RecurseExprPunctor(lex::Punctor punc) -> NullableFlow
       e = RecurseExpr({
           Token(Punc, PuncRPar),
       });
+      auto depth = e.value()->GetParenthesisDepth();
+      e.value()->SetParenthesisDepth(depth + 1);
 
       if (!NextIf<PuncRPar>()) {
         Log << SyntaxError << Current() << "Expected ')' to close the expression";
