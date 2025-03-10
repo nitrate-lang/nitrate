@@ -419,7 +419,7 @@ void AstReader::UnmarshalLocationLocation(const SyntaxTree::SourceLocationRange 
     end_loc = m_rd->get().InternLocation(Location(offset, line, column, filename));
   }
 
-  out->SetLoc(start_loc, end_loc);
+  out->SetSourcePosition(start_loc, end_loc);
 }
 
 void AstReader::UnmarshalCodeComment(

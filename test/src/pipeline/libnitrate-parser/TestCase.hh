@@ -24,7 +24,7 @@ namespace detail {
       return std::nullopt;
     }
 
-    return ast.Get()->DebugString();
+    return ast.Get()->PrettyPrint();
   }
 
   static inline auto NormalizeInput(std::string_view text) {

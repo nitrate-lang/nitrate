@@ -150,23 +150,22 @@ NCC_EXPORT std::ostream &parse::operator<<(std::ostream &os, ASTNodeKind kind) {
 
 ///=============================================================================
 
-std::string Expr::DebugString(WriterSourceProvider rd) const {
+auto Expr::PrettyPrint(OptionalSourceProvider rd) const -> std::string {
   std::stringstream ss;
-  AstWriter writer(ss, true, rd);
-
-  const_cast<Expr *>(this)->Accept(writer);
-
+  PrettyPrint(ss, rd);
   return ss.str();
 }
 
-void Expr::DebugString(std::ostream &os, WriterSourceProvider rd) const {
+auto Expr::PrettyPrint(std::ostream &os, OptionalSourceProvider rd) const -> std::ostream & {
   AstWriter writer(os, true, rd);
   const_cast<Expr *>(this)->Accept(writer);
+  return os;
 }
 
-void Expr::Serialize(std::ostream &os) const {
+auto Expr::Serialize(std::ostream &os) const -> std::ostream & {
   AstWriter writer(os);
   const_cast<Expr *>(this)->Accept(writer);
+  return os;
 }
 
 std::string Expr::Serialize() const {
@@ -177,7 +176,7 @@ std::string Expr::Serialize() const {
   return ss.str();
 }
 
-auto Expr::IsEq(FlowPtr<Expr> o) const -> bool {
+auto Expr::IsEq(const FlowPtr<Expr> &o) const -> bool {
   if (this == o.get()) {
     return true;
   }
@@ -192,7 +191,7 @@ auto Expr::IsEq(FlowPtr<Expr> o) const -> bool {
   AstWriter writer2(ss2);
 
   const_cast<Expr *>(this)->Accept(writer1);
-  o.Accept(writer2);
+  o->Accept(writer2);
 
   return ss1.str() == ss2.str();
 }
@@ -213,4 +212,34 @@ auto Expr::RecursiveChildCount() -> size_t {
   return count;
 }
 
+auto Expr::SourceBegin() const -> lex::LocationID {
+  return m_data.IsNull() ? lex::LocationID() : m_data.GetSourceLocationBound().first;
+}
+
+auto Expr::SourceBegin(lex::IScanner &rd) const -> lex::Location { return SourceBegin().Get(rd); }
+
+auto Expr::SourceEnd() const -> lex::LocationID {
+  return m_data.IsNull() ? lex::LocationID() : m_data.GetSourceLocationBound().second;
+}
+
+auto Expr::SourceEnd(lex::IScanner &rd) const -> lex::Location { return SourceEnd().Get(rd); }
+
+auto Expr::GetSourcePosition() const -> std::pair<lex::LocationID, lex::LocationID> {
+  return {SourceBegin(), SourceEnd()};
+}
+
+auto Expr::Comments() const -> std::span<const string> {
+  return m_data.IsNull() ? std::span<const string>() : m_data.GetComments();
+}
+
+auto Expr::GetParenthesisDepth() const -> size_t { return m_data.GetParenthesisDepth(); }
+
+void Expr::SetSourcePosition(lex::LocationID begin, lex::LocationID end) { m_data.SetSourceLocationBound(begin, end); }
+
 void Expr::SetComments(std::span<const string> comments) { m_data.SetComments(comments); }
+
+void Expr::SetOffset(lex::LocationID pos) { m_data.SetSourceLocationBound(pos, SourceEnd()); }
+
+void Expr::SetParenthesisDepth(size_t depth) { m_data.SetParenthesisDepth(depth); }
+
+void Expr::SetMock(bool mock) { m_mock = mock; }

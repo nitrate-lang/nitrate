@@ -33,6 +33,7 @@
 
 #include <core/SyntaxTree.pb.h>
 
+#include <functional>
 #include <nitrate-core/Logger.hh>
 #include <nitrate-core/Macro.hh>
 #include <nitrate-lexer/Scanner.hh>
@@ -295,7 +296,7 @@ SyntaxTree::SourceLocationRange *AstWriter::FromSource(const FlowPtr<Expr> &in) 
     return nullptr;
   }
 
-  const auto &pos = in->GetPos();
+  const auto &pos = in->GetSourcePosition();
   auto start_pos = m_rd->get().GetLocation(pos.first);
   auto end_pos = m_rd->get().GetLocation(pos.second);
 
@@ -1884,7 +1885,7 @@ void AstWriter::Visit(FlowPtr<Enum> n) { SEND(From(n), enum_); }
 void AstWriter::Visit(FlowPtr<Scope> n) { SEND(From(n), scope); }
 void AstWriter::Visit(FlowPtr<Export> n) { SEND(From(n), export_); }
 
-AstWriter::AstWriter(std::ostream &os, bool plaintext_mode, WriterSourceProvider rd)
+AstWriter::AstWriter(std::ostream &os, bool plaintext_mode, OptionalSourceProvider rd)
     : m_arena(new google::protobuf::Arena), m_os(os), m_rd(rd), m_plaintext_mode(plaintext_mode) {}
 
 AstWriter::~AstWriter() { delete m_arena; }

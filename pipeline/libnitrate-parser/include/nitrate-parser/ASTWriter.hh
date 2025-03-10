@@ -34,21 +34,19 @@
 #ifndef __NITRATE_AST_SERIALIZER_H__
 #define __NITRATE_AST_SERIALIZER_H__
 
-#include <functional>
 #include <nitrate-core/Macro.hh>
 #include <nitrate-lexer/ScannerFwd.hh>
+#include <nitrate-parser/ASTBase.hh>
 #include <nitrate-parser/ASTVisitor.hh>
 #include <nitrate-parser/ProtobufFwd.hh>
 
 namespace ncc::parse {
   using namespace nitrate::parser;
 
-  using WriterSourceProvider = std::optional<std::reference_wrapper<lex::IScanner>>;
-
   class NCC_EXPORT AstWriter : public ASTVisitor {
     google::protobuf::Arena *m_arena;
     std::ostream &m_os;
-    WriterSourceProvider m_rd;
+    OptionalSourceProvider m_rd;
     bool m_plaintext_mode;
 
     void SetTypeMetadata(auto *message, const FlowPtr<Type> &in);
@@ -185,7 +183,7 @@ namespace ncc::parse {
     void Visit(FlowPtr<Export> n) override;
 
   public:
-    AstWriter(std::ostream &os, bool plaintext_mode = false, WriterSourceProvider rd = std::nullopt);
+    AstWriter(std::ostream &os, bool plaintext_mode = false, OptionalSourceProvider rd = std::nullopt);
     ~AstWriter() override;
   };
 }  // namespace ncc::parse
