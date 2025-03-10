@@ -39,6 +39,8 @@
 #include <nitrate-parser/ASTExpr.hh>
 #include <nitrate-parser/ASTStmt.hh>
 #include <nitrate-parser/ASTType.hh>
+#include <sstream>
+#include <variant>
 
 using namespace ncc;
 using namespace ncc::lex;
@@ -884,9 +886,52 @@ namespace ncc::parse {
     void Visit(FlowPtr<FuncTy> n) override {
       PrintLeading(n);
 
-      /// TODO: Implement code writer
-      qcore_implement();
-      (void)n;
+      PutKeyword(lex::Fn);
+
+      if (!n->GetAttributes().empty()) {
+        PutPunctor(PuncLBrk);
+        for (auto it = n->GetAttributes().begin(); it != n->GetAttributes().end(); ++it) {
+          if (it != n->GetAttributes().begin()) {
+            PutPunctor(PuncComa);
+          }
+
+          it->Accept(*this);
+        }
+        PutPunctor(PuncRBrk);
+      }
+
+      PutPunctor(PuncLPar);
+      for (auto it = n->GetParams().begin(); it != n->GetParams().end(); ++it) {
+        if (it != n->GetParams().begin()) {
+          PutPunctor(PuncComa);
+        }
+
+        const auto& [pname, ptype, pdefault] = *it;
+        PutIdentifier(pname);
+
+        if (!ptype->Is(QAST_INFER)) {
+          PutPunctor(PuncColn);
+          ptype->Accept(*this);
+        }
+
+        if (pdefault) {
+          PutOperator(OpSet);
+          pdefault.value()->Accept(*this);
+        }
+      }
+      if (n->IsVariadic()) {
+        if (!n->GetParams().empty()) {
+          PutPunctor(PuncComa);
+        }
+
+        PutOperator(OpEllipsis);
+      }
+      PutPunctor(PuncRPar);
+
+      if (!n->GetReturn()->Is(QAST_INFER)) {
+        PutPunctor(PuncColn);
+        n->GetReturn()->Accept(*this);
+      }
 
       PrintTrailing(n);
     }
@@ -1096,9 +1141,24 @@ namespace ncc::parse {
     void Visit(FlowPtr<FString> n) override {
       PrintLeading(n);
 
-      /// TODO: Implement code writer
-      qcore_implement();
-      (void)n;
+      PutIdentifier("f");
+
+      {  // Create fstring body
+        std::stringstream ss;
+        for (const auto& part : n->GetItems()) {
+          if (std::holds_alternative<string>(part)) {
+            ss << std::get<string>(part);
+          } else {
+            ss << "{";
+            CodeWriter writer(ss);
+            auto sub_expression = std::get<FlowPtr<Expr>>(part);
+            sub_expression->Accept(writer);
+            ss << "}";
+          }
+        }
+
+        PutString(ss.str());
+      }
 
       PrintTrailing(n);
     }
@@ -1336,9 +1396,105 @@ namespace ncc::parse {
     void Visit(FlowPtr<Function> n) override {
       PrintLeading(n);
 
-      /// TODO: Implement code writer
-      qcore_implement();
-      (void)n;
+      PutKeyword(lex::Fn);
+      if (!n->GetAttributes().empty()) {
+        PutPunctor(PuncLBrk);
+        for (auto it = n->GetAttributes().begin(); it != n->GetAttributes().end(); ++it) {
+          if (it != n->GetAttributes().begin()) {
+            PutPunctor(PuncComa);
+          }
+
+          it->Accept(*this);
+        }
+        PutPunctor(PuncRBrk);
+      }
+
+      if (!n->GetCaptures().empty()) {
+        PutPunctor(PuncLBrk);
+        for (auto it = n->GetCaptures().begin(); it != n->GetCaptures().end(); ++it) {
+          if (it != n->GetCaptures().begin()) {
+            PutPunctor(PuncComa);
+          }
+
+          if (it->second) {
+            PutOperator(OpBitAnd);
+          }
+
+          PutIdentifier(it->first);
+        }
+        PutPunctor(PuncRBrk);
+      }
+
+      if (n->GetName()) {
+        PutIdentifier(n->GetName());
+      }
+
+      if (n->GetTemplateParams()) {
+        PutOperator(OpLT);
+        for (auto it = n->GetTemplateParams().value().begin(); it != n->GetTemplateParams().value().end(); ++it) {
+          if (it != n->GetTemplateParams().value().begin()) {
+            PutPunctor(PuncComa);
+          }
+
+          const auto& [pname, ptype, pdefault] = *it;
+          PutIdentifier(pname);
+
+          if (!ptype->Is(QAST_INFER)) {
+            PutPunctor(PuncColn);
+            ptype->Accept(*this);
+          }
+
+          if (pdefault) {
+            PutOperator(OpSet);
+            pdefault.value()->Accept(*this);
+          }
+        }
+        PutOperator(OpGT);
+      }
+
+      PutPunctor(PuncLPar);
+      for (auto it = n->GetParams().begin(); it != n->GetParams().end(); ++it) {
+        if (it != n->GetParams().begin()) {
+          PutPunctor(PuncComa);
+        }
+
+        const auto& [pname, ptype, pdefault] = *it;
+        PutIdentifier(pname);
+
+        if (!ptype->Is(QAST_INFER)) {
+          PutPunctor(PuncColn);
+          ptype->Accept(*this);
+        }
+
+        if (pdefault) {
+          PutOperator(OpSet);
+          pdefault.value()->Accept(*this);
+        }
+      }
+      if (n->IsVariadic()) {
+        if (!n->GetParams().empty()) {
+          PutPunctor(PuncComa);
+        }
+
+        PutOperator(OpEllipsis);
+      }
+      PutPunctor(PuncRPar);
+
+      if (!n->GetReturn()->Is(QAST_INFER)) {
+        PutPunctor(PuncColn);
+        n->GetReturn()->Accept(*this);
+      }
+
+      if (n->GetBody()) {
+        const auto body = n->GetBody().value();
+
+        if (body->Is(QAST_BLOCK) && body->As<Block>()->GetStatements().size() == 1) {
+          PutOperator(OpArrow);
+          body->As<Block>()->GetStatements().front()->Accept(*this);
+        } else {
+          body->Accept(*this);
+        }
+      }
 
       PrintTrailing(n);
     }
