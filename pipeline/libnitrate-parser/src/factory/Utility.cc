@@ -135,6 +135,11 @@ auto ASTFactory::CreateMockInstance(ASTNodeKind kind, SourceLocation origin) -> 
       break;
     }
 
+    case QAST_IMPORT: {
+      r = CreateImport("", SIMPLE_EXPR());
+      break;
+    }
+
     case QAST_U1: {
       r = CreateU1();
       break;

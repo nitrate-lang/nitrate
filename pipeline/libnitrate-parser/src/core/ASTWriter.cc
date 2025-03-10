@@ -499,6 +499,11 @@ SyntaxTree::Expr *AstWriter::From(const FlowPtr<Expr> &in) {
       break;
     }
 
+    case QAST_IMPORT: {
+      message->set_allocated_import(From(in.As<Import>()));
+      break;
+    }
+
     case QAST_U1: {
       message->set_allocated_u1(From(in.As<U1>()));
       break;
@@ -1199,6 +1204,16 @@ SyntaxTree::TemplateCall *AstWriter::From(const FlowPtr<TemplateCall> &in) {
   return message;
 }
 
+SyntaxTree::Import *AstWriter::From(const FlowPtr<Import> &in) {
+  auto *message = Pool::CreateMessage<SyntaxTree::Import>(m_arena);
+
+  message->set_allocated_location(FromSource(in));
+  message->set_name(in->GetName().Get());
+  message->set_allocated_subtree(From(in->GetSubtree()));
+
+  return message;
+}
+
 SyntaxTree::List *AstWriter::From(const FlowPtr<List> &in) {
   auto *message = Pool::CreateMessage<SyntaxTree::List>(m_arena);
 
@@ -1810,6 +1825,7 @@ void AstWriter::Visit(FlowPtr<Null> n) { SEND(From(n), null); }
 void AstWriter::Visit(FlowPtr<Undefined> n) { SEND(From(n), undefined); }
 void AstWriter::Visit(FlowPtr<Call> n) { SEND(From(n), call); }
 void AstWriter::Visit(FlowPtr<TemplateCall> n) { SEND(From(n), template_call); }
+void AstWriter::Visit(FlowPtr<Import> n) { SEND(From(n), import); }
 void AstWriter::Visit(FlowPtr<List> n) { SEND(From(n), list); }
 void AstWriter::Visit(FlowPtr<Assoc> n) { SEND(From(n), assoc); }
 void AstWriter::Visit(FlowPtr<Index> n) { SEND(From(n), index); }

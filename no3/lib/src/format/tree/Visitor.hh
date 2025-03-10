@@ -118,6 +118,7 @@ namespace no3::format {
     void Visit(ncc::FlowPtr<ncc::parse::Undefined> n) override;
     void Visit(ncc::FlowPtr<ncc::parse::Call> n) override;
     void Visit(ncc::FlowPtr<ncc::parse::TemplateCall> n) override;
+    void Visit(ncc::FlowPtr<ncc::parse::Import> n) override;
     void Visit(ncc::FlowPtr<ncc::parse::List> n) override;
     void Visit(ncc::FlowPtr<ncc::parse::Assoc> n) override;
     void Visit(ncc::FlowPtr<ncc::parse::Index> n) override;

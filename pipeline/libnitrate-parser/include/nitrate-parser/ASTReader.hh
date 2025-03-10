@@ -102,6 +102,7 @@ namespace ncc::parse {
     auto Unmarshal(const SyntaxTree::Undefined &in) -> Result<Undefined>;
     auto Unmarshal(const SyntaxTree::Call &in) -> Result<Call>;
     auto Unmarshal(const SyntaxTree::TemplateCall &in) -> Result<TemplateCall>;
+    auto Unmarshal(const SyntaxTree::Import &in) -> Result<Import>;
     auto Unmarshal(const SyntaxTree::List &in) -> Result<List>;
     auto Unmarshal(const SyntaxTree::Assoc &in) -> Result<Assoc>;
     auto Unmarshal(const SyntaxTree::Index &in) -> Result<Index>;

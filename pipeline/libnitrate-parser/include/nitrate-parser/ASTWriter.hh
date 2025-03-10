@@ -90,6 +90,7 @@ namespace ncc::parse {
     SyntaxTree::Undefined *From(const FlowPtr<Undefined> &in);
     SyntaxTree::Call *From(const FlowPtr<Call> &in);
     SyntaxTree::TemplateCall *From(const FlowPtr<TemplateCall> &in);
+    SyntaxTree::Import *From(const FlowPtr<Import> &in);
     SyntaxTree::List *From(const FlowPtr<List> &in);
     SyntaxTree::Assoc *From(const FlowPtr<Assoc> &in);
     SyntaxTree::Index *From(const FlowPtr<Index> &in);
@@ -154,6 +155,7 @@ namespace ncc::parse {
     void Visit(FlowPtr<Undefined> n) override;
     void Visit(FlowPtr<Call> n) override;
     void Visit(FlowPtr<TemplateCall> n) override;
+    void Visit(FlowPtr<Import> n) override;
     void Visit(FlowPtr<List> n) override;
     void Visit(FlowPtr<Assoc> n) override;
     void Visit(FlowPtr<Index> n) override;

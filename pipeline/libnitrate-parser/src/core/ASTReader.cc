@@ -457,6 +457,10 @@ auto AstReader::Unmarshal(const SyntaxTree::Expr &in) -> Result<Expr> {
       return Unmarshal(in.template_call());
     }
 
+    case SyntaxTree::Expr::kImport: {
+      return Unmarshal(in.import());
+    }
+
     case SyntaxTree::Expr::kList: {
       return Unmarshal(in.list());
     }
@@ -1658,6 +1662,19 @@ auto AstReader::Unmarshal(const SyntaxTree::TemplateCall &in) -> Result<Template
   }
 
   auto object = m_fac.CreateTemplateCall(arguments, parameters, callee.value());
+  UnmarshalLocationLocation(in.location(), object);
+  UnmarshalCodeComment(in.comments(), object);
+
+  return object;
+}
+
+auto AstReader::Unmarshal(const SyntaxTree::Import &in) -> Result<Import> {
+  auto subtree = Unmarshal(in.subtree());
+  if (!subtree.has_value()) [[unlikely]] {
+    return std::nullopt;
+  }
+
+  auto object = m_fac.CreateImport(in.name(), subtree.value());
   UnmarshalLocationLocation(in.location(), object);
   UnmarshalCodeComment(in.comments(), object);
 

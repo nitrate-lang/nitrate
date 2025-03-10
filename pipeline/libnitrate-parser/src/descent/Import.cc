@@ -31,76 +31,27 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __NITRATE_AST_NODES_FWD_H__
-#define __NITRATE_AST_NODES_FWD_H__
+#include <descent/Recurse.hh>
 
-namespace ncc::parse {
-  class Expr;
-  class Type;
-  class Binary;
-  class Unary;
-  class Ternary;
-  class Integer;
-  class Float;
-  class String;
-  class Character;
-  class Boolean;
-  class Null;
-  class Undefined;
-  class Call;
-  class List;
-  class Assoc;
-  class Index;
-  class Slice;
-  class FString;
-  class Identifier;
-  class Sequence;
-  class TemplateCall;
-  class Import;
-  class RefTy;
-  class U1;
-  class U8;
-  class U16;
-  class U32;
-  class U64;
-  class U128;
-  class I8;
-  class I16;
-  class I32;
-  class I64;
-  class I128;
-  class F16;
-  class F32;
-  class F64;
-  class F128;
-  class VoidTy;
-  class PtrTy;
-  class OpaqueTy;
-  class ArrayTy;
-  class TupleTy;
-  class FuncTy;
-  class NamedTy;
-  class InferTy;
-  class TemplateType;
-  class Typedef;
-  class Struct;
-  class Enum;
-  class Function;
-  class Scope;
-  class Export;
-  class Block;
-  class Variable;
-  class Assembly;
-  class Return;
-  class ReturnIf;
-  class Break;
-  class Continue;
-  class If;
-  class While;
-  class For;
-  class Foreach;
-  class Case;
-  class Switch;
-}  // namespace ncc::parse
+using namespace ncc;
+using namespace ncc::lex;
+using namespace ncc::parse;
 
-#endif
+auto GeneralParser::PImpl::RecurseImport() -> FlowPtr<Expr> {
+  const auto import_name = [&]() {
+    if (auto tok = NextIf<Text>()) {
+      return tok->GetString();
+    }
+
+    auto name = RecurseName();
+    if (!name) [[unlikely]] {
+      Log << SyntaxError << Current() << "Expected import name";
+    }
+
+    return name;
+  }();
+
+  Log << SyntaxError << Current() << "Import is not yet implemented";
+
+  return m_fac.CreateMockInstance<VoidTy>();
+}

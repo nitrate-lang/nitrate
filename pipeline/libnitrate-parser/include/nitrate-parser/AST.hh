@@ -60,6 +60,7 @@ namespace ncc::parse {
     QAST_FSTRING,    /* Formatted string */
     QAST_IDENT,      /* Identifier */
     QAST_TEMPL_CALL, /* Template call */
+    QAST_IMPORT,     /* Import expression */
 
     /*****************************************************************************
      * Types

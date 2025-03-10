@@ -191,8 +191,8 @@ auto GeneralParser::PImpl::RecurseBlock(bool expect_braces, bool single_stmt, Bl
           break;
         }
 
-        case Import: {
-          Log << SyntaxError << Current() << "Unexpected 'import' in block context";
+        case lex::Import: {
+          r = RecurseImport();
           break;
         }
 

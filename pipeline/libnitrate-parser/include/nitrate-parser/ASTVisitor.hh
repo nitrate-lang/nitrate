@@ -81,6 +81,7 @@ namespace ncc::parse {
     virtual void Visit(FlowPtr<Undefined> n) = 0;
     virtual void Visit(FlowPtr<Call> n) = 0;
     virtual void Visit(FlowPtr<TemplateCall> n) = 0;
+    virtual void Visit(FlowPtr<Import> n) = 0;
     virtual void Visit(FlowPtr<List> n) = 0;
     virtual void Visit(FlowPtr<Assoc> n) = 0;
     virtual void Visit(FlowPtr<Index> n) = 0;
@@ -180,6 +181,10 @@ namespace ncc::parse {
         }
         case QAST_TEMPL_CALL: {
           Visit(n.template As<TemplateCall>());
+          break;
+        }
+        case QAST_IMPORT: {
+          Visit(n.template As<Import>());
           break;
         }
         case QAST_REF: {

@@ -1086,6 +1086,15 @@ namespace ncc::parse {
       PrintTrailing(n);
     }
 
+    void Visit(FlowPtr<Import> n) override {
+      PrintLeading(n);
+
+      PutKeyword(lex::Import);
+      PutString(n->GetName());
+
+      PrintTrailing(n);
+    }
+
     void Visit(FlowPtr<List> n) override {
       PrintLeading(n);
 

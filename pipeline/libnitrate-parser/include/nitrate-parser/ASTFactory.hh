@@ -235,6 +235,9 @@ namespace ncc::parse {
         std::span<const std::pair<string, FlowPtr<Expr>>> args, FlowPtr<Expr> callee,
         SourceLocation origin = SourceLocation::current()) -> FlowPtr<TemplateCall>;
 
+    [[gnu::pure, nodiscard]] auto CreateImport(string name, FlowPtr<Expr> subtree,
+                                               SourceLocation origin = SourceLocation::current()) -> FlowPtr<Import>;
+
     ///=========================================================================
     /// TYPES
 

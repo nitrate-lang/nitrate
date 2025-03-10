@@ -174,6 +174,8 @@ class IterVisitor : public ASTVisitor {
     std::for_each(n->GetArgs().begin(), n->GetArgs().end(), [&](auto arg) { Add(arg.second); });
   }
 
+  void Visit(FlowPtr<Import> n) override { Add(n->GetSubtree()); }
+
   void Visit(FlowPtr<List> n) override {
     std::for_each(n->GetItems().begin(), n->GetItems().end(), [&](auto item) { Add(item); });
   }

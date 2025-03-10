@@ -129,6 +129,7 @@ namespace ncc::parse {
     [[nodiscard]] auto RecurseTry() -> FlowPtr<Expr>;
     [[nodiscard]] auto RecurseThrow() -> FlowPtr<Expr>;
     [[nodiscard]] auto RecurseAwait() -> FlowPtr<Expr>;
+    [[nodiscard]] auto RecurseImport() -> FlowPtr<Expr>;
     [[nodiscard]] auto RecurseBlock(bool expect_braces, bool single_stmt, BlockMode safety) -> FlowPtr<Expr>;
     [[nodiscard]] auto RecurseExpr(const std::set<lex::Token> &terminators) -> FlowPtr<Expr>;
     [[nodiscard]] auto RecurseExprPrimary(bool is_type) -> NullableFlowPtr<Expr>;

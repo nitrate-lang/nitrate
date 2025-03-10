@@ -138,6 +138,8 @@ namespace ncc::parse {
         return QAST_IDENT;
       } else if constexpr (std::is_same_v<T, TemplateCall>) {
         return QAST_TEMPL_CALL;
+      } else if constexpr (std::is_same_v<T, Import>) {
+        return QAST_IMPORT;
       } else if constexpr (std::is_same_v<T, RefTy>) {
         return QAST_REF;
       } else if constexpr (std::is_same_v<T, U1>) {
@@ -358,6 +360,7 @@ namespace ncc::parse {
       r[QAST_FSTRING] = "Fstring";
       r[QAST_IDENT] = "Ident";
       r[QAST_TEMPL_CALL] = "TemplateCall";
+      r[QAST_IMPORT] = "Import";
       r[QAST_REF] = "Ref";
       r[QAST_U1] = "U1";
       r[QAST_U8] = "U8";

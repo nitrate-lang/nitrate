@@ -453,6 +453,14 @@ message TemplateCall {
   repeated CallArgument arguments = 6;
 }
 
+message Import {
+  optional SourceLocationRange location = 1;
+  repeated UserComment comments = 2;
+
+  required string name = 4;
+  required Expr subtree = 5;
+}
+
 message List {
   optional SourceLocationRange location = 1;
   repeated UserComment comments = 2;
@@ -763,12 +771,13 @@ message Expr {
     Undefined undefined = 21;
     Call call = 22;
     TemplateCall template_call = 23;
-    List list = 24;
-    Assoc assoc = 25;
-    Index index = 26;
-    Slice slice = 27;
-    FString fstring = 28;
-    Identifier identifier = 29;
+    Import import = 24;
+    List list = 25;
+    Assoc assoc = 26;
+    Index index = 27;
+    Slice slice = 28;
+    FString fstring = 29;
+    Identifier identifier = 30;
 
     Block block = 50;
     Variable variable = 51;

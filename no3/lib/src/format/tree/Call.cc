@@ -140,3 +140,9 @@ void CambrianFormatter::Visit(FlowPtr<TemplateCall> n) {
       [&](let) { m_line << ", "; });
   m_line << ")";
 }
+
+void CambrianFormatter::Visit(FlowPtr<Import> n) {
+  PrintMultilineComments(n);
+
+  m_line << "import " << n->GetName();
+}

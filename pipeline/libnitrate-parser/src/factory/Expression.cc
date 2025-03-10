@@ -314,3 +314,7 @@ auto ASTFactory::CreateTemplateCall(std::span<const std::pair<string, FlowPtr<Ex
 
   return CreateInstance<TemplateCall>(callee, args_copy, template_args_copy)(m_pool, origin);
 }
+
+auto ASTFactory::CreateImport(string name, FlowPtr<Expr> subtree, SourceLocation origin) -> FlowPtr<Import> {
+  return CreateInstance<Import>(name, subtree)(m_pool, origin);
+}
