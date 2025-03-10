@@ -38,6 +38,7 @@
 #include <nitrate-core/Macro.hh>
 #include <nitrate-core/SmartLock.hh>
 #include <nitrate-parser/AST.hh>
+#include <nitrate-parser/ASTBase.hh>
 #include <nitrate-parser/ASTData.hh>
 #include <nitrate-parser/ASTFactory.hh>
 #include <nitrate-parser/ASTWriter.hh>
@@ -47,35 +48,103 @@
 using namespace ncc;
 using namespace ncc::parse;
 
-NCC_EXPORT ASTExtension parse::ExtensionDataStore;
+struct ASTExtensionPackage {
+  std::vector<string> m_comments;
+  lex::LocationID m_source_begin;
+  lex::LocationID m_source_end;
+  size_t m_parenthesis_depth = 0;
+};
 
-NCC_EXPORT std::ostream &parse::operator<<(std::ostream &os, ASTNodeKind kind) {
-  os << Expr::GetKindName(kind);
+static std::vector<ASTExtensionPackage> GExtensionPackages;
+static std::mutex GExtensionPackagesLock;
+
+void ASTExtension::ResetStorage() {
+  SmartLock lock(GExtensionPackagesLock);
+  GExtensionPackages.clear();
+}
+
+void ASTExtension::LazyInitialize() {
+  if (IsNull()) {
+    m_key = GExtensionPackages.size();
+    GExtensionPackages.emplace_back();
+  }
+}
+
+void ASTExtension::SetSourceLocationBound(lex::LocationID begin, lex::LocationID end) {
+  if (!begin.HasValue() && !end.HasValue()) {
+    return;
+  }
+
+  LazyInitialize();
+
+  SmartLock lock(GExtensionPackagesLock);
+
+  auto &pkg = GExtensionPackages.at(m_key);
+  pkg.m_source_begin = begin;
+  pkg.m_source_end = end;
+}
+
+void ASTExtension::SetComments(std::span<const string> comments) {
+  if (comments.empty()) {
+    return;
+  }
+
+  LazyInitialize();
+
+  SmartLock lock(GExtensionPackagesLock);
+
+  auto &pkg = GExtensionPackages.at(m_key);
+  pkg.m_comments.clear();
+  pkg.m_comments.insert(pkg.m_comments.end(), comments.begin(), comments.end());
+}
+
+auto ASTExtension::SetParenthesisDepth(size_t depth) -> void {
+  if (depth == 0) {
+    return;
+  }
+
+  LazyInitialize();
+
+  SmartLock lock(GExtensionPackagesLock);
+
+  auto &pkg = GExtensionPackages.at(m_key);
+  pkg.m_parenthesis_depth = depth;
+}
+
+auto ASTExtension::GetSourceLocationBound() const -> std::pair<lex::LocationID, lex::LocationID> {
+  if (IsNull()) {
+    return {lex::LocationID(), lex::LocationID()};
+  }
+
+  SmartLock lock(GExtensionPackagesLock);
+  return {GExtensionPackages.at(m_key).m_source_begin, GExtensionPackages.at(m_key).m_source_end};
+}
+
+auto ASTExtension::GetComments() const -> std::span<const string> {
+  if (IsNull()) {
+    return {};
+  }
+
+  SmartLock lock(GExtensionPackagesLock);
+  return GExtensionPackages.at(m_key).m_comments;
+}
+
+auto ASTExtension::GetParenthesisDepth() const -> size_t {
+  if (IsNull()) {
+    return 0;
+  }
+
+  SmartLock lock(GExtensionPackagesLock);
+  return GExtensionPackages.at(m_key).m_parenthesis_depth;
+}
+
+NCC_EXPORT auto parse::operator<<(std::ostream &os, const ASTExtension &idx) -> std::ostream & {
+  os << "${L:" << idx.Key() << "}";
   return os;
 }
 
-auto ASTExtension::Add(lex::LocationID begin, lex::LocationID end) -> ASTExtensionKey {
-  SmartLock lock(m_mutex);
-
-  m_pairs.push_back({begin, end});
-
-  return {m_pairs.size() - 1};
-}
-
-auto ASTExtension::Get(ASTExtensionKey loc) -> const ASTExtensionPackage & {
-  SmartLock lock(m_mutex);
-
-  return m_pairs.at(loc.Key());
-}
-
-void ASTExtension::Set(ASTExtensionKey id, ASTExtensionPackage &&data) {
-  SmartLock lock(m_mutex);
-
-  m_pairs.at(id.Key()) = std::move(data);
-}
-
-NCC_EXPORT auto parse::operator<<(std::ostream &os, const ASTExtensionKey &idx) -> std::ostream & {
-  os << "${L:" << idx.Key() << "}";
+NCC_EXPORT std::ostream &parse::operator<<(std::ostream &os, ASTNodeKind kind) {
+  os << Expr::GetKindName(kind);
   return os;
 }
 
@@ -144,8 +213,4 @@ auto Expr::RecursiveChildCount() -> size_t {
   return count;
 }
 
-void Expr::SetComments(std::span<const string> comments) {
-  auto old = ExtensionDataStore.Get(m_data);
-  old.AddComments(comments);
-  ExtensionDataStore.Set(m_data, std::move(old));
-}
+void Expr::SetComments(std::span<const string> comments) { m_data.SetComments(comments); }

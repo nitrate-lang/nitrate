@@ -395,9 +395,40 @@ void CodeWriter_v1_0::Visit(FlowPtr<Block> n) {
 }
 
 void CodeWriter_v1_0::Visit(FlowPtr<Variable> n) {
-  /// TODO: Implement code writer
-  qcore_implement();
-  (void)n;
+  switch (n->GetVariableKind()) {
+    case VariableType::Var:
+      PutKeyword(lex::Var);
+      break;
+    case VariableType::Let:
+      PutKeyword(lex::Let);
+      break;
+    case VariableType::Const:
+      PutKeyword(lex::Const);
+      break;
+  }
+
+  if (!n->GetAttributes().empty()) {
+    PutPunctor(PuncLBrk);
+    for (auto it = n->GetAttributes().begin(); it != n->GetAttributes().end(); ++it) {
+      if (it != n->GetAttributes().begin()) {
+        PutPunctor(PuncComa);
+      }
+
+      it->Accept(*this);
+    }
+    PutPunctor(PuncRBrk);
+  }
+
+  PutIdentifier(n->GetName());
+  if (!n->GetType()->Is(QAST_INFER)) {
+    PutPunctor(PuncColn);
+    n->GetType()->Accept(*this);
+  }
+
+  if (n->GetInitializer()) {
+    PutOperator(OpSet);
+    n->GetInitializer().value()->Accept(*this);
+  }
 }
 
 void CodeWriter_v1_0::Visit(FlowPtr<Assembly> n) {
@@ -471,15 +502,24 @@ void CodeWriter_v1_0::Visit(FlowPtr<ReturnIf> n) {
 }
 
 void CodeWriter_v1_0::Visit(FlowPtr<Case> n) {
-  /// TODO: Implement code writer
-  qcore_implement();
-  (void)n;
+  n->GetCond()->Accept(*this);
+  PutOperator(OpArrow);
+  n->GetBody()->Accept(*this);
 }
 
 void CodeWriter_v1_0::Visit(FlowPtr<Switch> n) {
-  /// TODO: Implement code writer
-  qcore_implement();
-  (void)n;
+  PutKeyword(lex::Switch);
+  n->GetCond()->Accept(*this);
+  PutPunctor(PuncLCur);
+  for (const auto& c : n->GetCases()) {
+    c->Accept(*this);
+  }
+  if (n->GetDefault()) {
+    PutIdentifier("_");
+    PutOperator(OpArrow);
+    n->GetDefault().value()->Accept(*this);
+  }
+  PutPunctor(PuncRCur);
 }
 
 void CodeWriter_v1_0::Visit(FlowPtr<Typedef> n) {

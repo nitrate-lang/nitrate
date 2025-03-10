@@ -35,7 +35,6 @@
 #define __NITRATE_AST_BASE_H__
 
 #include <array>
-#include <mutex>
 #include <nitrate-core/FlowPtr.hh>
 #include <nitrate-core/Macro.hh>
 #include <nitrate-core/NullableFlowPtr.hh>
@@ -47,72 +46,43 @@
 #include <utility>
 
 namespace ncc::parse {
-  class ASTExtensionKey {
-    friend class ASTExtension;
+  class NCC_EXPORT ASTExtension {
     uint64_t m_key : 56 = 0;
 
-    constexpr ASTExtensionKey(uint64_t key) : m_key(key) {}
+    constexpr ASTExtension(uint64_t key) : m_key(key) {}
+    void LazyInitialize();
 
   public:
-    constexpr ASTExtensionKey() = default;
+    constexpr ASTExtension() = default;
+
+    static void ResetStorage();
+
+    void SetSourceLocationBound(lex::LocationID begin, lex::LocationID end);
+    void SetComments(std::span<const string> comments);
+    void SetParenthesisDepth(size_t depth);
+
+    [[nodiscard]] auto GetSourceLocationBound() const -> std::pair<lex::LocationID, lex::LocationID>;
+    [[nodiscard]] auto GetComments() const -> std::span<const string>;
+    [[nodiscard]] auto GetParenthesisDepth() const -> size_t;
 
     [[nodiscard]] constexpr auto IsNull() const -> bool { return m_key == 0; }
     [[nodiscard]] constexpr auto Key() const { return m_key; }
   } __attribute__((packed));
 
-  class NCC_EXPORT ASTExtension {
-    class ASTExtensionPackage {
-      friend class ASTExtension;
-
-      lex::LocationID m_begin;
-      lex::LocationID m_end;
-      std::vector<string> m_comments;
-
-      ASTExtensionPackage(lex::LocationID begin, lex::LocationID end) : m_begin(begin), m_end(end) {}
-
-    public:
-      [[nodiscard]] auto Begin() const { return m_begin; }
-      [[nodiscard]] auto End() const { return m_end; }
-      [[nodiscard]] auto Comments() const -> std::span<const string> { return m_comments; }
-
-      void AddComments(std::span<const string> comments) {
-        m_comments.insert(m_comments.end(), comments.begin(), comments.end());
-      }
-    };
-
-    std::vector<ASTExtensionPackage> m_pairs;
-    std::mutex m_mutex;
-
-  public:
-    ASTExtension() { Reset(); }
-
-    void Reset() {
-      m_pairs.clear();
-      m_pairs.shrink_to_fit();
-      m_pairs.reserve(4096);
-
-      m_pairs.push_back({lex::LocationID(), lex::LocationID()});
-    }
-
-    auto Add(lex::LocationID begin, lex::LocationID end) -> ASTExtensionKey;
-    auto Get(ASTExtensionKey loc) -> const ASTExtensionPackage &;
-    void Set(ASTExtensionKey id, ASTExtensionPackage &&data);
-  };
-
-  auto operator<<(std::ostream &os, const ASTExtensionKey &idx) -> std::ostream &;
-
-  extern ASTExtension ExtensionDataStore;
+  auto operator<<(std::ostream &os, const ASTExtension &idx) -> std::ostream &;
 
   class NCC_EXPORT Expr {
   private:
     ASTNodeKind m_node_type : 7;
     bool m_mock : 1;
-    ASTExtensionKey m_data;
+    ASTExtension m_data;
 
   protected:
     constexpr Expr(ASTNodeKind ty, bool mock = false) : m_node_type(ty), m_mock(mock) {}
     constexpr Expr(ASTNodeKind ty, bool mock, lex::LocationID begin, lex::LocationID end)
-        : m_node_type(ty), m_mock(mock), m_data(ExtensionDataStore.Add(begin, end)) {}
+        : m_node_type(ty), m_mock(mock) {
+      m_data.SetSourceLocationBound(begin, end);
+    }
 
   public:
     ///======================================================================
@@ -342,37 +312,27 @@ namespace ncc::parse {
     ///======================================================================
     /// AST Extension Data
 
-    [[nodiscard]] constexpr auto Begin() const {
-      if (m_data.IsNull()) {
-        return lex::LocationID();
-      }
-
-      return ExtensionDataStore.Get(m_data).Begin();
+    [[nodiscard]] constexpr auto SourceBegin() const {
+      return m_data.IsNull() ? lex::LocationID() : m_data.GetSourceLocationBound().first;
     }
-    [[nodiscard]] constexpr auto Begin(lex::IScanner &rd) const { return Begin().Get(rd); }
-    [[nodiscard]] constexpr auto End() const {
-      if (m_data.IsNull()) {
-        return lex::LocationID();
-      }
-
-      return ExtensionDataStore.Get(m_data).End();
+    [[nodiscard]] constexpr auto SourceBegin(lex::IScanner &rd) const { return SourceBegin().Get(rd); }
+    [[nodiscard]] constexpr auto SourceEnd() const {
+      return m_data.IsNull() ? lex::LocationID() : m_data.GetSourceLocationBound().second;
     }
-    [[nodiscard]] constexpr auto End(lex::IScanner &rd) const { return End().Get(rd); }
-    [[nodiscard]] constexpr auto GetPos() const { return std::pair<lex::LocationID, lex::LocationID>(Begin(), End()); }
+    [[nodiscard]] constexpr auto SourceEnd(lex::IScanner &rd) const { return SourceEnd().Get(rd); }
+    [[nodiscard]] constexpr auto GetPos() const {
+      return std::pair<lex::LocationID, lex::LocationID>(SourceBegin(), SourceEnd());
+    }
 
     [[nodiscard]] constexpr auto Comments() const {
-      if (m_data.IsNull()) {
-        return std::span<const string>();
-      }
-
-      return ExtensionDataStore.Get(m_data).Comments();
+      return m_data.IsNull() ? std::span<const string>() : m_data.GetComments();
     }
 
     ///======================================================================
     /// Setters
 
-    constexpr void SetOffset(lex::LocationID pos) { m_data = ExtensionDataStore.Add(pos, End()); }
-    constexpr void SetLoc(lex::LocationID begin, lex::LocationID end) { m_data = ExtensionDataStore.Add(begin, end); }
+    constexpr void SetOffset(lex::LocationID pos) { m_data.SetSourceLocationBound(pos, SourceEnd()); }
+    constexpr void SetLoc(lex::LocationID begin, lex::LocationID end) { m_data.SetSourceLocationBound(begin, end); }
     void SetComments(std::span<const string> comments);
   } __attribute__((packed));
 

@@ -101,7 +101,7 @@ auto GeneralParser::PImpl::RecurseTypeSuffix(FlowPtr<Type> base) -> FlowPtr<pars
 
   if (auto template_arguments = RecurseTypeTemplateArguments()) {
     auto templ = m_fac.CreateTemplateType(template_arguments.value(), base);
-    templ->SetOffset(base->Begin());
+    templ->SetOffset(base->SourceBegin());
 
     base = templ;
   }
@@ -155,7 +155,7 @@ auto GeneralParser::PImpl::RecurseFunctionType() -> FlowPtr<parse::Type> {
     func_ty = m_fac.CreateMockInstance<FuncTy>();
   }
 
-  func_ty.value()->SetOffset(fn->Begin());
+  func_ty.value()->SetOffset(fn->SourceBegin());
 
   return func_ty.value();
 }

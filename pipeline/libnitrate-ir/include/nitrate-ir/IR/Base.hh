@@ -63,7 +63,7 @@ namespace ncc::ir {
     auto ExprGetCloneImpl(Expr *self) -> Expr *;
   };  // namespace detail
 
-  using SrcLoc = parse::ASTExtensionKey;
+  using SrcLoc = parse::ASTExtension;
 
   template <class A>
   class GenericExpr {
@@ -80,7 +80,7 @@ namespace ncc::ir {
     constexpr GenericExpr(nr_ty_t ty, lex::LocationID begin = lex::LocationID(),
                           lex::LocationID end = lex::LocationID())
         : m_node_type(ty) {
-      m_loc = parse::ExtensionDataStore.Add(begin, end);
+      m_loc.SetSourceLocationBound(begin, end);
     }
 
     static constexpr auto GetKindSize(nr_ty_t type) -> uint32_t;
@@ -226,18 +226,16 @@ namespace ncc::ir {
 
     [[nodiscard]] constexpr auto GetName() const -> std::string_view;
 
-    [[nodiscard]] constexpr auto Begin() const { return parse::ExtensionDataStore.Get(m_loc).Begin(); }
+    [[nodiscard]] constexpr auto Begin() const { return m_loc.GetSourceLocationBound().first; }
     constexpr auto Begin(lex::IScanner &rd) const { return Begin().Get(rd); }
 
-    [[nodiscard]] constexpr auto End() const { return parse::ExtensionDataStore.Get(m_loc).End(); }
+    [[nodiscard]] constexpr auto End() const { return m_loc.GetSourceLocationBound().second; }
     constexpr auto End(lex::IScanner &rd) const { return End().Get(rd); }
 
     [[nodiscard]] constexpr auto GetLoc() const { return m_loc; }
     constexpr void SetLoc(SrcLoc loc) { m_loc = loc; }
 
-    constexpr void SetLoc(lex::LocationID begin, lex::LocationID end) {
-      m_loc = parse::ExtensionDataStore.Add(begin, end);
-    }
+    constexpr void SetLoc(lex::LocationID begin, lex::LocationID end) { m_loc.SetSourceLocationBound(begin, end); }
 
     auto GetType() -> std::optional<FlowPtr<Type>> { return detail::ExprGetType(reinterpret_cast<Expr *>(this)); }
 
