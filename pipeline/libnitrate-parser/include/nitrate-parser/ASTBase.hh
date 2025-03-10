@@ -328,12 +328,15 @@ namespace ncc::parse {
       return m_data.IsNull() ? std::span<const string>() : m_data.GetComments();
     }
 
+    [[nodiscard]] constexpr auto GetParenthesisDepth() const { return m_data.GetParenthesisDepth(); }
+
     ///======================================================================
     /// Setters
 
     constexpr void SetOffset(lex::LocationID pos) { m_data.SetSourceLocationBound(pos, SourceEnd()); }
     constexpr void SetLoc(lex::LocationID begin, lex::LocationID end) { m_data.SetSourceLocationBound(begin, end); }
     void SetComments(std::span<const string> comments);
+    void SetParenthesisDepth(size_t depth) { m_data.SetParenthesisDepth(depth); }
   } __attribute__((packed));
 
   static_assert(sizeof(Expr) == 8);

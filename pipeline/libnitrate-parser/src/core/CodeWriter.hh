@@ -31,25 +31,11 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __NITRATE_AST_PRINTER_H__
-#define __NITRATE_AST_PRINTER_H__
+#ifndef __NITRATE_AST_CODE_WRITER_V1_0_H__
+#define __NITRATE_AST_CODE_WRITER_V1_0_H__
 
-#include <memory>
-#include <nitrate-core/Macro.hh>
-#include <nitrate-lexer/TokenData.hh>
-#include <nitrate-parser/ASTVisitor.hh>
-#include <nitrate-parser/Init.hh>
+#include <nitrate-parser/CodeWriter.hh>
 
-namespace ncc::parse {
-  class ICodeWriter : public ASTVisitor {
-  public:
-    ~ICodeWriter() override = default;
-  };
-
-  class NCC_EXPORT CodeWriterFactory final {
-  public:
-    static std::unique_ptr<ICodeWriter> Create(std::ostream &os, SyntaxVersion ver = SyntaxVersion::NITRATE_1_0);
-  };
-}  // namespace ncc::parse
+namespace ncc::parse {}  // namespace ncc::parse
 
 #endif
