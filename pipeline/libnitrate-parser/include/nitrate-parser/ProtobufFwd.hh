@@ -55,7 +55,6 @@ namespace nitrate::parser::SyntaxTree {  // NOLINT
   class FString;
   class Identifier;
   class Sequence;
-  class PostUnary;
   class TemplateCall;
   class RefTy;
   class Unspecified;

@@ -71,7 +71,6 @@ namespace ncc::parse {
     virtual void Visit(FlowPtr<FuncTy> n) = 0;
     virtual void Visit(FlowPtr<Unary> n) = 0;
     virtual void Visit(FlowPtr<Binary> n) = 0;
-    virtual void Visit(FlowPtr<PostUnary> n) = 0;
     virtual void Visit(FlowPtr<Ternary> n) = 0;
     virtual void Visit(FlowPtr<Integer> n) = 0;
     virtual void Visit(FlowPtr<Float> n) = 0;
@@ -177,10 +176,6 @@ namespace ncc::parse {
         }
         case QAST_IDENT: {
           Visit(n.template As<Identifier>());
-          break;
-        }
-        case QAST_POST_UNEXPR: {
-          Visit(n.template As<PostUnary>());
           break;
         }
         case QAST_TEMPL_CALL: {

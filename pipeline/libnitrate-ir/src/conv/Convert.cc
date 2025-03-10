@@ -587,28 +587,6 @@ using namespace ncc;
 //   return E;
 // }
 
-// static EResult nrgen_post_unexpr(NRBuilder &b, PState &s, IReport *G,
-//                                  FlowPtr<ncc::parse::PostUnary> n)
-//                                  {
-//   auto lhs = next_one(n->Getlhs());
-//   if (!lhs.has_value()) {
-//     G->report(CompilerError, IC::Error,
-//               "Failed to lower LHS of post-unary expression", n->Getpos());
-
-//     return std::nullopt;
-//   }
-
-//   auto E = nrgen_lower_unary(b, s, G, lhs.value(), n->Getop(), true);
-//   if (!E.has_value()) {
-//     G->report(CompilerError, IC::Error, "Failed to lower post-unary
-//     expression",
-//               n->Getpos());
-//     return std::nullopt;
-//   }
-
-//   return E;
-// }
-
 // static EResult nrgen_terexpr(NRBuilder &b, PState &s, IReport *G,
 //                              FlowPtr<ncc::parse::Ternary> n) {
 //   auto cond = next_one(n->Getcond());
@@ -2013,10 +1991,6 @@ using namespace ncc;
 //     case QAST_SEQ:
 //       out = nrgen_seq_point(b, s, G, n.as<ncc::parse::Sequence>());
 //       break;
-
-//     case QAST_POST_UNEXPR:
-//       out = nrgen_post_unexpr(b, s, G,
-//       n.as<ncc::parse::PostUnary>()); break;
 
 //     case QAST_SEXPR:
 //       out = nrgen_stmt_expr(b, s, G, n.as<ncc::parse::StmtExpr>());

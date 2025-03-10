@@ -136,8 +136,6 @@ namespace ncc::parse {
         return QAST_FSTRING;
       } else if constexpr (std::is_same_v<T, Identifier>) {
         return QAST_IDENT;
-      } else if constexpr (std::is_same_v<T, PostUnary>) {
-        return QAST_POST_UNEXPR;
       } else if constexpr (std::is_same_v<T, TemplateCall>) {
         return QAST_TEMPL_CALL;
       } else if constexpr (std::is_same_v<T, RefTy>) {
@@ -359,7 +357,6 @@ namespace ncc::parse {
       r[QAST_SLICE] = "Slice";
       r[QAST_FSTRING] = "Fstring";
       r[QAST_IDENT] = "Ident";
-      r[QAST_POST_UNEXPR] = "PostUnexpr";
       r[QAST_TEMPL_CALL] = "TemplateCall";
       r[QAST_REF] = "Ref";
       r[QAST_U1] = "U1";

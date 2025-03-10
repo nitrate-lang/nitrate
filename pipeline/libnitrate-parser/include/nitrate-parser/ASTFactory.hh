@@ -124,11 +124,8 @@ namespace ncc::parse {
     [[gnu::pure, nodiscard]] auto CreateBinary(FlowPtr<Expr> lhs, lex::Operator op, FlowPtr<Expr> rhs,
                                                SourceLocation origin = SourceLocation::current()) -> FlowPtr<Binary>;
 
-    [[gnu::pure, nodiscard]] auto CreateUnary(lex::Operator op, FlowPtr<Expr> rhs,
+    [[gnu::pure, nodiscard]] auto CreateUnary(lex::Operator op, FlowPtr<Expr> rhs, bool is_postfix = false,
                                               SourceLocation origin = SourceLocation::current()) -> FlowPtr<Unary>;
-
-    [[gnu::pure, nodiscard]] auto CreatePostUnary(
-        FlowPtr<Expr> lhs, lex::Operator op, SourceLocation origin = SourceLocation::current()) -> FlowPtr<PostUnary>;
 
     [[gnu::pure, nodiscard]] auto CreateTernary(FlowPtr<Expr> condition, FlowPtr<Expr> then, FlowPtr<Expr> ele,
                                                 SourceLocation origin = SourceLocation::current()) -> FlowPtr<Ternary>;

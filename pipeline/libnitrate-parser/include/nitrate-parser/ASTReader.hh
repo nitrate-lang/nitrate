@@ -92,7 +92,6 @@ namespace ncc::parse {
     auto Unmarshal(const SyntaxTree::FuncTy &in) -> Result<FuncTy>;
     auto Unmarshal(const SyntaxTree::Unary &in) -> Result<Unary>;
     auto Unmarshal(const SyntaxTree::Binary &in) -> Result<Binary>;
-    auto Unmarshal(const SyntaxTree::PostUnary &in) -> Result<PostUnary>;
     auto Unmarshal(const SyntaxTree::Ternary &in) -> Result<Ternary>;
     auto Unmarshal(const SyntaxTree::Integer &in) -> Result<Integer>;
     auto Unmarshal(const SyntaxTree::Float &in) -> Result<Float>;

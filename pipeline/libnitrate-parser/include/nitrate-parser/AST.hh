@@ -42,25 +42,24 @@ namespace ncc::parse {
     /*****************************************************************************
      * Expressions
      ****************************************************************************/
-    QAST_BINEXPR,     /* Binary expression */
-    QAST_UNEXPR,      /* Unary expression */
-    QAST_POST_UNEXPR, /* Post-unary expression */
-    QAST_TEREXPR,     /* Ternary expression */
-    QAST_INT,         /* Integer literal */
-    QAST_FLOAT,       /* Floating-point literal */
-    QAST_STRING,      /* String literal */
-    QAST_CHAR,        /* Character literal */
-    QAST_BOOL,        /* Boolean literal */
-    QAST_NULL,        /* Null literal */
-    QAST_UNDEF,       /* Undefined expression */
-    QAST_CALL,        /* Function call */
-    QAST_LIST,        /* List expression */
-    QAST_ASSOC,       /* Associative pair */
-    QAST_INDEX,       /* Index access */
-    QAST_SLICE,       /* Slice access */
-    QAST_FSTRING,     /* Formatted string */
-    QAST_IDENT,       /* Identifier */
-    QAST_TEMPL_CALL,  /* Template call */
+    QAST_BINEXPR,    /* Binary expression */
+    QAST_UNEXPR,     /* Unary expression */
+    QAST_TEREXPR,    /* Ternary expression */
+    QAST_INT,        /* Integer literal */
+    QAST_FLOAT,      /* Floating-point literal */
+    QAST_STRING,     /* String literal */
+    QAST_CHAR,       /* Character literal */
+    QAST_BOOL,       /* Boolean literal */
+    QAST_NULL,       /* Null literal */
+    QAST_UNDEF,      /* Undefined expression */
+    QAST_CALL,       /* Function call */
+    QAST_LIST,       /* List expression */
+    QAST_ASSOC,      /* Associative pair */
+    QAST_INDEX,      /* Index access */
+    QAST_SLICE,      /* Slice access */
+    QAST_FSTRING,    /* Formatted string */
+    QAST_IDENT,      /* Identifier */
+    QAST_TEMPL_CALL, /* Template call */
 
     /*****************************************************************************
      * Types

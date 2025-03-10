@@ -445,10 +445,6 @@ auto AstReader::Unmarshal(const SyntaxTree::Expr &in) -> Result<Expr> {
       return Unmarshal(in.binary());
     }
 
-    case SyntaxTree::Expr::kPostUnary: {
-      return Unmarshal(in.post_unary());
-    }
-
     case SyntaxTree::Expr::kTernary: {
       return Unmarshal(in.ternary());
     }
@@ -1517,7 +1513,7 @@ auto AstReader::Unmarshal(const SyntaxTree::Unary &in) -> Result<Unary> {
     return std::nullopt;
   }
 
-  auto object = m_fac.CreateUnary(op.value(), operand.value());
+  auto object = m_fac.CreateUnary(op.value(), operand.value(), in.is_postfix());
   UnmarshalLocationLocation(in.location(), object);
   UnmarshalCodeComment(in.comments(), object);
 
@@ -1541,24 +1537,6 @@ auto AstReader::Unmarshal(const SyntaxTree::Binary &in) -> Result<Binary> {
   }
 
   auto object = m_fac.CreateBinary(lhs.value(), op.value(), rhs.value());
-  UnmarshalLocationLocation(in.location(), object);
-  UnmarshalCodeComment(in.comments(), object);
-
-  return object;
-}
-
-auto AstReader::Unmarshal(const SyntaxTree::PostUnary &in) -> Result<PostUnary> {
-  auto operand = Unmarshal(in.operand());
-  if (!operand.has_value()) [[unlikely]] {
-    return std::nullopt;
-  }
-
-  auto op = FromOperator(in.operator_());
-  if (!op.has_value()) [[unlikely]] {
-    return std::nullopt;
-  }
-
-  auto object = m_fac.CreatePostUnary(operand.value(), op.value());
   UnmarshalLocationLocation(in.location(), object);
   UnmarshalCodeComment(in.comments(), object);
 

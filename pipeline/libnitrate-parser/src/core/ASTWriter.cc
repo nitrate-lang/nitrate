@@ -343,11 +343,6 @@ SyntaxTree::Expr *AstWriter::From(const FlowPtr<Expr> &in) {
       break;
     }
 
-    case QAST_POST_UNEXPR: {
-      message->set_allocated_post_unary(From(in.As<PostUnary>()));
-      break;
-    }
-
     case QAST_TEREXPR: {
       message->set_allocated_ternary(From(in.As<Ternary>()));
       break;
@@ -1082,6 +1077,7 @@ SyntaxTree::Unary *AstWriter::From(const FlowPtr<Unary> &in) {
   message->set_allocated_location(FromSource(in));
   message->set_operator_(FromOperator(in->GetOp()));
   message->set_allocated_operand(From(in->GetRHS()));
+  message->set_is_postfix(in->IsPostfix());
 
   return message;
 }
@@ -1093,16 +1089,6 @@ SyntaxTree::Binary *AstWriter::From(const FlowPtr<Binary> &in) {
   message->set_operator_(FromOperator(in->GetOp()));
   message->set_allocated_left(From(in->GetLHS()));
   message->set_allocated_right(From(in->GetRHS()));
-
-  return message;
-}
-
-SyntaxTree::PostUnary *AstWriter::From(const FlowPtr<PostUnary> &in) {
-  auto *message = Pool::CreateMessage<SyntaxTree::PostUnary>(m_arena);
-
-  message->set_allocated_location(FromSource(in));
-  message->set_operator_(FromOperator(in->GetOp()));
-  message->set_allocated_operand(From(in->GetLHS()));
 
   return message;
 }
@@ -1848,7 +1834,6 @@ void AstWriter::Visit(FlowPtr<RefTy> n) { SEND(From(n), ref); }
 void AstWriter::Visit(FlowPtr<FuncTy> n) { SEND(From(n), func); }
 void AstWriter::Visit(FlowPtr<Unary> n) { SEND(From(n), unary); }
 void AstWriter::Visit(FlowPtr<Binary> n) { SEND(From(n), binary); }
-void AstWriter::Visit(FlowPtr<PostUnary> n) { SEND(From(n), post_unary); }
 void AstWriter::Visit(FlowPtr<Ternary> n) { SEND(From(n), ternary); }
 void AstWriter::Visit(FlowPtr<Integer> n) { SEND(From(n), integer); }
 void AstWriter::Visit(FlowPtr<Float> n) { SEND(From(n), float_); }

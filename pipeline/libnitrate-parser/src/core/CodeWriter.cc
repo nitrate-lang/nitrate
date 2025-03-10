@@ -894,8 +894,13 @@ namespace ncc::parse {
     void Visit(FlowPtr<Unary> n) override {
       PrintLeading(n);
 
-      PutOperator(n->GetOp());
-      n->GetRHS()->Accept(*this);
+      if (n->IsPostfix()) {
+        n->GetRHS()->Accept(*this);
+        PutOperator(n->GetOp());
+      } else {
+        PutOperator(n->GetOp());
+        n->GetRHS()->Accept(*this);
+      }
 
       PrintTrailing(n);
     }
@@ -906,15 +911,6 @@ namespace ncc::parse {
       n->GetLHS()->Accept(*this);
       PutOperator(n->GetOp());
       n->GetRHS()->Accept(*this);
-
-      PrintTrailing(n);
-    }
-
-    void Visit(FlowPtr<PostUnary> n) override {
-      PrintLeading(n);
-
-      n->GetLHS()->Accept(*this);
-      PutOperator(n->GetOp());
 
       PrintTrailing(n);
     }

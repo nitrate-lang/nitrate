@@ -43,12 +43,15 @@ namespace ncc::parse {
   class Unary final : public Expr {
     FlowPtr<Expr> m_rhs;
     lex::Operator m_op;
+    bool m_is_postfix;
 
   public:
-    constexpr Unary(auto op, auto rhs) : Expr(QAST_UNEXPR), m_rhs(std::move(rhs)), m_op(op) {}
+    constexpr Unary(auto op, auto rhs, bool is_postfix)
+        : Expr(QAST_UNEXPR), m_rhs(std::move(rhs)), m_op(op), m_is_postfix(is_postfix) {}
 
     [[nodiscard, gnu::pure]] constexpr auto GetRHS() const { return m_rhs; }
     [[nodiscard, gnu::pure]] constexpr auto GetOp() const { return m_op; }
+    [[nodiscard, gnu::pure]] constexpr auto IsPostfix() const { return m_is_postfix; }
   };
 
   class Binary final : public Expr {
@@ -61,17 +64,6 @@ namespace ncc::parse {
 
     [[nodiscard, gnu::pure]] constexpr auto GetLHS() const { return m_lhs; }
     [[nodiscard, gnu::pure]] constexpr auto GetRHS() const { return m_rhs; }
-    [[nodiscard, gnu::pure]] constexpr auto GetOp() const { return m_op; }
-  };
-
-  class PostUnary final : public Expr {
-    FlowPtr<Expr> m_lhs;
-    lex::Operator m_op;
-
-  public:
-    constexpr PostUnary(auto lhs, auto op) : Expr(QAST_POST_UNEXPR), m_lhs(std::move(lhs)), m_op(op) {}
-
-    [[nodiscard, gnu::pure]] constexpr auto GetLHS() const { return m_lhs; }
     [[nodiscard, gnu::pure]] constexpr auto GetOp() const { return m_op; }
   };
 

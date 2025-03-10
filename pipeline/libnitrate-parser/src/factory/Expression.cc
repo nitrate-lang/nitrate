@@ -45,12 +45,9 @@ auto ASTFactory::CreateBinary(FlowPtr<Expr> lhs, lex::Operator op, FlowPtr<Expr>
   return CreateInstance<Binary>(lhs, op, rhs)(m_pool, origin);
 }
 
-auto ASTFactory::CreateUnary(lex::Operator op, FlowPtr<Expr> rhs, SourceLocation origin) -> FlowPtr<Unary> {
-  return CreateInstance<Unary>(op, rhs)(m_pool, origin);
-}
-
-auto ASTFactory::CreatePostUnary(FlowPtr<Expr> lhs, lex::Operator op, SourceLocation origin) -> FlowPtr<PostUnary> {
-  return CreateInstance<PostUnary>(lhs, op)(m_pool, origin);
+auto ASTFactory::CreateUnary(lex::Operator op, FlowPtr<Expr> rhs, bool is_postfix,
+                             SourceLocation origin) -> FlowPtr<Unary> {
+  return CreateInstance<Unary>(op, rhs, is_postfix)(m_pool, origin);
 }
 
 auto ASTFactory::CreateTernary(FlowPtr<Expr> condition, FlowPtr<Expr> then, FlowPtr<Expr> ele,

@@ -375,6 +375,7 @@ message Unary {
 
   required Operator operator = 4;
   required Expr operand = 5;
+  required bool is_postfix = 6;
 }
 
 message Binary {
@@ -384,14 +385,6 @@ message Binary {
   required Operator operator = 4;
   required Expr left = 5;
   required Expr right = 6;
-}
-
-message PostUnary {
-  optional SourceLocationRange location = 1;
-  repeated UserComment comments = 2;
-
-  required Operator operator = 4;
-  required Expr operand = 5;
 }
 
 message Ternary {
@@ -777,7 +770,6 @@ message Expr {
   oneof node {
     Unary unary = 11;
     Binary binary = 12;
-    PostUnary post_unary = 13;
     Ternary ternary = 14;
     Integer integer = 15;
     Float float = 16;

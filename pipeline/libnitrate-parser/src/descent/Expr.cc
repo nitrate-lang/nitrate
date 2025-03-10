@@ -212,7 +212,7 @@ static NCC_FORCE_INLINE auto UnwindStack(ASTFactory &fac, std::stack<Frame> &sta
       }
 
       case FrameType::PostUnary: {
-        base = fac.CreatePostUnary(base, frame.m_op);
+        base = fac.CreateUnary(frame.m_op, base, true);
         break;
       }
 
@@ -279,7 +279,7 @@ auto GeneralParser::PImpl::RecurseExpr(const std::set<Token> &terminators) -> Fl
              * Handle post-unary operators
              ****************************************/
             if (op_type == OpMode::PostUnary) {
-              left_side = m_fac.CreatePostUnary(left_side, op);
+              left_side = m_fac.CreateUnary(op, left_side, true);
               left_side->SetOffset(source_offset);
 
               continue;

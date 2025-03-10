@@ -55,11 +55,6 @@ auto ASTFactory::CreateMockInstance(ASTNodeKind kind, SourceLocation origin) -> 
       break;
     }
 
-    case QAST_POST_UNEXPR: {
-      r = CreatePostUnary(SIMPLE_EXPR(), lex::OpPlus);
-      break;
-    }
-
     case QAST_TEREXPR: {
       r = CreateTernary(SIMPLE_EXPR(), SIMPLE_EXPR(), SIMPLE_EXPR());
       break;
