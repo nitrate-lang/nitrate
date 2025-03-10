@@ -173,11 +173,9 @@ namespace ncc::parse {
         -> std::pair<std::vector<ASTFactory::FactoryFunctionParameter>, bool>;
     [[nodiscard]] auto RecurseFunctionBody(bool parse_declaration_only) -> NullableFlowPtr<Expr>;
     [[nodiscard]] auto RecurseFunctionReturnType() -> FlowPtr<Type>;
-    [[nodiscard]] static auto GetPuritySpecifier(lex::Token start_pos, bool is_thread_safe, bool is_pure,
-                                                 bool is_impure, bool is_quasi, bool is_retro) -> Purity;
     [[nodiscard]] auto RecurseFunctionCapture() -> std::optional<std::pair<string, bool>>;
     [[nodiscard]] auto RecurseFunctionAmbigouis()
-        -> std::tuple<std::vector<FlowPtr<Expr>>, std::vector<std::pair<string, bool>>, Purity, string>;
+        -> std::tuple<std::vector<FlowPtr<Expr>>, std::vector<std::pair<string, bool>>, string>;
     [[nodiscard]] auto RecurseIfElse() -> NullableFlowPtr<Expr>;
     [[nodiscard]] auto RecurseScopeDeps() -> std::vector<string>;
     [[nodiscard]] auto RecurseScopeBlock() -> FlowPtr<Expr>;

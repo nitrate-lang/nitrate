@@ -335,14 +335,14 @@ namespace ncc::parse {
 
     [[gnu::pure, nodiscard]] auto CreateFunctionType(
         FlowPtr<Type> ret_ty, const std::vector<FactoryFunctionParameter>& params, bool variadic = false,
-        Purity purity = Purity::Impure, std::vector<FlowPtr<Expr>> attributes = {},
-        NullableFlowPtr<Expr> bits = nullptr, NullableFlowPtr<Expr> min = nullptr, NullableFlowPtr<Expr> max = nullptr,
+        std::vector<FlowPtr<Expr>> attributes = {}, NullableFlowPtr<Expr> bits = nullptr,
+        NullableFlowPtr<Expr> min = nullptr, NullableFlowPtr<Expr> max = nullptr,
         SourceLocation origin = SourceLocation::current()) -> std::optional<FlowPtr<FuncTy>>;
 
     [[gnu::pure, nodiscard]] auto CreateFunctionType(
         FlowPtr<Type> ret_ty, std::span<const FuncParam> params = {}, bool variadic = false,
-        Purity purity = Purity::Impure, std::span<const FlowPtr<Expr>> attributes = {},
-        NullableFlowPtr<Expr> bits = nullptr, NullableFlowPtr<Expr> min = nullptr, NullableFlowPtr<Expr> max = nullptr,
+        std::span<const FlowPtr<Expr>> attributes = {}, NullableFlowPtr<Expr> bits = nullptr,
+        NullableFlowPtr<Expr> min = nullptr, NullableFlowPtr<Expr> max = nullptr,
         SourceLocation origin = SourceLocation::current()) -> std::optional<FlowPtr<FuncTy>>;
 
     [[gnu::pure, nodiscard]] auto CreateNamed(string name, NullableFlowPtr<Expr> bits = nullptr,
@@ -398,16 +398,16 @@ namespace ncc::parse {
 
     [[gnu::pure, nodiscard]] auto CreateFunction(
         string name, NullableFlowPtr<Type> ret_ty = nullptr, const std::vector<FactoryFunctionParameter>& params = {},
-        bool variadic = false, NullableFlowPtr<Expr> body = nullptr, Purity purity = Purity::Impure,
-        const std::vector<FlowPtr<Expr>>& attributes = {}, NullableFlowPtr<Expr> precond = nullptr,
-        NullableFlowPtr<Expr> postcond = nullptr, const std::vector<std::pair<string, bool>>& captures = {},
+        bool variadic = false, NullableFlowPtr<Expr> body = nullptr, const std::vector<FlowPtr<Expr>>& attributes = {},
+        NullableFlowPtr<Expr> precond = nullptr, NullableFlowPtr<Expr> postcond = nullptr,
+        const std::vector<std::pair<string, bool>>& captures = {},
         const std::optional<std::vector<TemplateParameter>>& template_parameters = std::nullopt,
         SourceLocation origin = SourceLocation::current()) -> std::optional<FlowPtr<Function>>;
 
     [[gnu::pure, nodiscard]] auto CreateAnonymousFunction(
-        Purity purity = Purity::Impure, const std::vector<std::pair<string, bool>>& captures = {},
-        NullableFlowPtr<Type> ret_ty = nullptr, const std::vector<FactoryFunctionParameter>& params = {},
-        bool variadic = false, NullableFlowPtr<Expr> body = nullptr, const std::vector<FlowPtr<Expr>>& attributes = {},
+        const std::vector<std::pair<string, bool>>& captures = {}, NullableFlowPtr<Type> ret_ty = nullptr,
+        const std::vector<FactoryFunctionParameter>& params = {}, bool variadic = false,
+        NullableFlowPtr<Expr> body = nullptr, const std::vector<FlowPtr<Expr>>& attributes = {},
         NullableFlowPtr<Expr> precond = nullptr, NullableFlowPtr<Expr> postcond = nullptr,
         SourceLocation origin = SourceLocation::current()) -> std::optional<FlowPtr<Function>>;
 

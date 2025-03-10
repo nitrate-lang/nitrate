@@ -1429,7 +1429,7 @@ namespace ncc::parse {
         PutIdentifier(n->GetName());
       }
 
-      if (n->GetTemplateParams()) {
+      if (n->GetTemplateParams().has_value()) {
         PutOperator(OpLT);
         for (auto it = n->GetTemplateParams().value().begin(); it != n->GetTemplateParams().value().end(); ++it) {
           if (it != n->GetTemplateParams().value().begin()) {

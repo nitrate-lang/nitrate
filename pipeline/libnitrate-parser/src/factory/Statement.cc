@@ -94,7 +94,7 @@ auto ASTFactory::CreateEnum(string name, std::span<const std::pair<string, Nulla
 
 auto ASTFactory::CreateFunction(string name, NullableFlowPtr<Type> ret_ty,
                                 const std::vector<FactoryFunctionParameter>& params, bool variadic,
-                                NullableFlowPtr<Expr> body, Purity purity, const std::vector<FlowPtr<Expr>>& attributes,
+                                NullableFlowPtr<Expr> body, const std::vector<FlowPtr<Expr>>& attributes,
                                 NullableFlowPtr<Expr> precond, NullableFlowPtr<Expr> postcond,
                                 const std::vector<std::pair<string, bool>>& captures,
                                 const std::optional<std::vector<TemplateParameter>>& template_parameters,
@@ -119,24 +119,24 @@ auto ASTFactory::CreateFunction(string name, NullableFlowPtr<Type> ret_ty,
   }
 
   auto template_parameters_copy =
-      std::make_optional(template_parameters ? AllocateArray<TemplateParameter>(template_parameters->size())
-                                             : std::span<TemplateParameter>());
+      template_parameters ? std::make_optional(AllocateArray<TemplateParameter>(template_parameters->size()))
+                          : std::nullopt;
   if (template_parameters) {
     std::copy(template_parameters->begin(), template_parameters->end(), template_parameters_copy->begin());
   }
 
-  return CreateInstance<Function>(attributes_copy, purity, captures_copy, name, template_parameters_copy, params_copy,
-                                  variadic, ret_ty.value(), precond, postcond, body)(m_pool, origin);
+  return CreateInstance<Function>(attributes_copy, captures_copy, name, template_parameters_copy, params_copy, variadic,
+                                  ret_ty.value(), precond, postcond, body)(m_pool, origin);
 }
 
-auto ASTFactory::CreateAnonymousFunction(Purity purity, const std::vector<std::pair<string, bool>>& captures,
+auto ASTFactory::CreateAnonymousFunction(const std::vector<std::pair<string, bool>>& captures,
                                          NullableFlowPtr<Type> ret_ty,
                                          const std::vector<FactoryFunctionParameter>& params, bool variadic,
                                          NullableFlowPtr<Expr> body, const std::vector<FlowPtr<Expr>>& attributes,
                                          NullableFlowPtr<Expr> precond, NullableFlowPtr<Expr> postcond,
                                          SourceLocation origin) -> std::optional<FlowPtr<Function>> {
-  return CreateFunction("", std::move(ret_ty), params, variadic, std::move(body), purity, attributes,
-                        std::move(precond), std::move(postcond), captures, std::nullopt, origin);
+  return CreateFunction("", std::move(ret_ty), params, variadic, std::move(body), attributes, std::move(precond),
+                        std::move(postcond), captures, std::nullopt, origin);
 }
 
 auto ASTFactory::CreateScope(string name, FlowPtr<Expr> body, const std::vector<string>& tags,

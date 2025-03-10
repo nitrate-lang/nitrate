@@ -326,12 +326,11 @@ namespace ncc::parse {
     NullableFlowPtr<Expr> m_precond, m_postcond;
     NullableFlowPtr<Expr> m_body;
     string m_name;
-    Purity m_purity;
     bool m_variadic;
 
   public:
-    constexpr Function(auto attributes, auto purity, auto captures, auto name, auto params, auto fn_params,
-                       auto variadic, auto return_type, auto precond, auto postcond, auto body)
+    constexpr Function(auto attributes, auto captures, auto name, auto params, auto fn_params, auto variadic,
+                       auto return_type, auto precond, auto postcond, auto body)
         : Expr(QAST_FUNCTION),
           m_attributes(attributes),
           m_captures(captures),
@@ -341,7 +340,6 @@ namespace ncc::parse {
           m_postcond(std::move(postcond)),
           m_body(std::move(body)),
           m_name(name),
-          m_purity(purity),
           m_variadic(variadic) {
       if (params.has_value()) {
         m_template_parameters = params.value();
@@ -350,7 +348,6 @@ namespace ncc::parse {
 
     [[nodiscard, gnu::pure]] constexpr auto GetName() const { return m_name; }
     [[nodiscard, gnu::pure]] constexpr auto GetAttributes() const { return m_attributes; }
-    [[nodiscard, gnu::pure]] constexpr auto GetPurity() const { return m_purity; }
     [[nodiscard, gnu::pure]] constexpr auto GetCaptures() const { return m_captures; }
     [[nodiscard, gnu::pure]] constexpr auto GetTemplateParams() const { return m_template_parameters; }
     [[nodiscard, gnu::pure]] constexpr auto GetParams() const { return m_params; }
@@ -367,7 +364,6 @@ namespace ncc::parse {
 
     constexpr void SetName(auto name) { m_name = name; }
     constexpr void SetAttributes(auto attributes) { m_attributes = attributes; }
-    constexpr void SetPurity(auto purity) { m_purity = purity; }
     constexpr void SetCaptures(auto captures) { m_captures = captures; }
     constexpr void SetTemplateParams(auto params) { m_template_parameters = params; }
     constexpr void SetParams(auto params) { m_params = params; }

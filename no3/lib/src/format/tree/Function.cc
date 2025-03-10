@@ -50,32 +50,6 @@ void CambrianFormatter::Visit(FlowPtr<Function> n) {
     m_line << "]";
   }
 
-  switch (n->GetPurity()) {
-    case Purity::Impure: {
-      break;
-    }
-
-    case Purity::Impure_TSafe: {
-      m_line << " tsafe";
-      break;
-    }
-
-    case Purity::Pure: {
-      m_line << " pure";
-      break;
-    }
-
-    case Purity::Quasi: {
-      m_line << " quasi";
-      break;
-    }
-
-    case Purity::Retro: {
-      m_line << " retro";
-      break;
-    }
-  }
-
   if (!n->GetCaptures().empty()) {
     m_line << " [";
     IterateExceptLast(
@@ -171,32 +145,6 @@ void CambrianFormatter::Visit(FlowPtr<FuncTy> n) {
         n->GetAttributes().begin(), n->GetAttributes().end(), [&](auto attr, size_t) { attr.Accept(*this); },
         [&](let) { m_line << ", "; });
     m_line << "] ";
-  }
-
-  switch (n->GetPurity()) {
-    case Purity::Impure: {
-      break;
-    }
-
-    case Purity::Impure_TSafe: {
-      m_line << " tsafe";
-      break;
-    }
-
-    case Purity::Pure: {
-      m_line << " pure";
-      break;
-    }
-
-    case Purity::Quasi: {
-      m_line << " quasi";
-      break;
-    }
-
-    case Purity::Retro: {
-      m_line << " retro";
-      break;
-    }
   }
 
   m_line << "(";

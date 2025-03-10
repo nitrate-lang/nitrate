@@ -148,8 +148,8 @@ auto GeneralParser::PImpl::RecurseFunctionType() -> FlowPtr<parse::Type> {
 
   FlowPtr<Function> fn_def = fn.As<Function>();
 
-  auto func_ty = m_fac.CreateFunctionType(fn_def->GetReturn(), fn_def->GetParams(), fn_def->IsVariadic(),
-                                          fn_def->GetPurity(), fn_def->GetAttributes());
+  auto func_ty =
+      m_fac.CreateFunctionType(fn_def->GetReturn(), fn_def->GetParams(), fn_def->IsVariadic(), fn_def->GetAttributes());
   if (!func_ty.has_value()) {
     Log << SyntaxError << Current() << "Function type specification is incorrect";
     func_ty = m_fac.CreateMockInstance<FuncTy>();

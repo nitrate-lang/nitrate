@@ -148,38 +148,6 @@ auto GeneralParser::PImpl::RecurseFunctionParameters()
   return parameters;
 }
 
-auto GeneralParser::PImpl::GetPuritySpecifier(Token start_pos, bool is_thread_safe, bool is_pure, bool is_impure,
-                                              bool is_quasi, bool is_retro) -> Purity {
-  /* Ensure that there is no duplication of purity specifiers */
-  if ((static_cast<int>(is_impure) + static_cast<int>(is_pure) + static_cast<int>(is_quasi) +
-       static_cast<int>(is_retro)) > 1) {
-    Log << SyntaxError << start_pos << "Conflicting purity specifiers";
-
-    return Purity::Impure;
-  }
-
-  /** Thread safety does not conflict with purity.
-   *  Purity implies thread safety.
-   */
-  if (is_pure) {
-    return Purity::Pure;
-  }
-
-  if (is_quasi) {
-    return Purity::Quasi;
-  }
-
-  if (is_retro) {
-    return Purity::Retro;
-  }
-
-  if (is_thread_safe) {
-    return Purity::Impure_TSafe;
-  }
-
-  return Purity::Impure;
-}
-
 auto GeneralParser::PImpl::RecurseFunctionCapture() -> std::optional<std::pair<string, bool>> {
   bool is_ref = NextIf<OpBitAnd>().has_value();
 
@@ -193,7 +161,7 @@ auto GeneralParser::PImpl::RecurseFunctionCapture() -> std::optional<std::pair<s
 }
 
 auto GeneralParser::PImpl::RecurseFunctionAmbigouis()
-    -> std::tuple<std::vector<FlowPtr<Expr>>, std::vector<std::pair<string, bool>>, Purity, string> {
+    -> std::tuple<std::vector<FlowPtr<Expr>>, std::vector<std::pair<string, bool>>, string> {
   enum class State : uint8_t {
     Ground,
     AttributesSection,
@@ -201,15 +169,9 @@ auto GeneralParser::PImpl::RecurseFunctionAmbigouis()
     End,
   } state = State::Ground;
 
-  auto start_pos = Current();
   std::vector<FlowPtr<Expr>> attributes;
   std::vector<std::pair<string, bool>> captures;
   string function_name;
-  bool is_thread_safe = false;
-  bool is_pure = false;
-  bool is_impure = false;
-  bool is_quasi = false;
-  bool is_retro = false;
   bool already_parsed_attributes = false;
   bool already_parsed_captures = false;
 
@@ -222,17 +184,8 @@ auto GeneralParser::PImpl::RecurseFunctionAmbigouis()
     switch (state) {
       case State::Ground: {
         if (auto some_word = RecurseName()) {
-          if (some_word == "pure") {
-            is_pure = true;
-          } else if (some_word == "impure") {
-            is_impure = true;
-          } else if (some_word == "tsafe") {
-            is_thread_safe = true;
-          } else if (some_word == "quasi") {
-            is_quasi = true;
-          } else if (some_word == "retro") {
-            is_retro = true;
-          } else if (some_word == "foreign" || some_word == "inline") {
+          if (some_word == "pure" || some_word == "impure" || some_word == "tsafe" || some_word == "quasi" ||
+              some_word == "retro" || some_word == "inline" || some_word == "foreign") {
             attributes.push_back(m_fac.CreateIdentifier(some_word));
           } else {
             function_name = some_word;
@@ -325,9 +278,7 @@ auto GeneralParser::PImpl::RecurseFunctionAmbigouis()
     }
   }
 
-  auto purity = GetPuritySpecifier(start_pos, is_thread_safe, is_pure, is_impure, is_quasi, is_retro);
-
-  return {attributes, captures, purity, function_name};
+  return {attributes, captures, function_name};
 }
 
 auto GeneralParser::PImpl::RecurseFunctionReturnType() -> FlowPtr<parse::Type> {
@@ -353,15 +304,15 @@ auto GeneralParser::PImpl::RecurseFunctionBody(bool parse_declaration_only) -> N
 auto GeneralParser::PImpl::RecurseFunction(bool parse_declaration_only) -> FlowPtr<Expr> {
   auto start_pos = Current().GetStart();
 
-  auto [function_attributes, function_captures, function_purity, function_name] = RecurseFunctionAmbigouis();
+  auto [function_attributes, function_captures, function_name] = RecurseFunctionAmbigouis();
   auto function_template_parameters = RecurseTemplateParameters();
   auto function_parameters = RecurseFunctionParameters();
   auto function_return_type = RecurseFunctionReturnType();
   auto function_body = RecurseFunctionBody(parse_declaration_only);
 
   auto function = m_fac.CreateFunction(function_name, function_return_type, function_parameters.first,
-                                       function_parameters.second, function_body, function_purity, function_attributes,
-                                       std::nullopt, std::nullopt, function_captures, function_template_parameters);
+                                       function_parameters.second, function_body, function_attributes, std::nullopt,
+                                       std::nullopt, function_captures, function_template_parameters);
   if (!function.has_value()) [[unlikely]] {
     function = m_fac.CreateMockInstance<Function>();
   }

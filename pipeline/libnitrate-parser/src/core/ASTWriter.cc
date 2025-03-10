@@ -239,25 +239,6 @@ static SyntaxTree::Vis FromVisibility(ncc::parse::Vis vis) {
   }
 }
 
-static SyntaxTree::FunctionPurity FromPurity(ncc::parse::Purity purity) {
-  switch (purity) {
-    case ncc::parse::Purity::Impure:
-      return SyntaxTree::Purity_Impure;
-
-    case ncc::parse::Purity::Impure_TSafe:
-      return SyntaxTree::Purity_Impure_TSafe;
-
-    case ncc::parse::Purity::Pure:
-      return SyntaxTree::Purity_Pure;
-
-    case ncc::parse::Purity::Quasi:
-      return SyntaxTree::Purity_Quasi;
-
-    case ncc::parse::Purity::Retro:
-      return SyntaxTree::Purity_Retro;
-  }
-}
-
 static SyntaxTree::Struct_AggregateKind FromStructKind(ncc::parse::CompositeType type) {
   switch (type) {
     case ncc::parse::CompositeType::Struct:
@@ -1038,7 +1019,6 @@ SyntaxTree::FuncTy *AstWriter::From(const FlowPtr<FuncTy> &in) {
     message->set_allocated_return_type(From(in->GetReturn()));
   }
   message->set_variadic(in->IsVariadic());
-  message->set_purity(FromPurity(in->GetPurity()));
   SetTypeMetadata(message, in);
 
   { /* Add all parameters */
@@ -1530,7 +1510,6 @@ SyntaxTree::Function *AstWriter::From(const FlowPtr<Function> &in) {
     message->set_allocated_return_type(From(in->GetReturn()));
   }
   message->set_name(in->GetName().Get());
-  message->set_purity(FromPurity(in->GetPurity()));
   message->set_variadic(in->IsVariadic());
   if (in->GetPrecond().has_value()) {
     message->set_allocated_precondition(From(in->GetPrecond().value()));

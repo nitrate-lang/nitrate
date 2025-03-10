@@ -44,14 +44,6 @@
 #include <vector>
 
 namespace ncc::parse {
-  enum class Purity : uint8_t {
-    Impure,
-    Impure_TSafe,
-    Pure,
-    Quasi,
-    Retro,
-  };
-
   enum class Vis : uint8_t {
     Pub = 0,
     Sec = 1,

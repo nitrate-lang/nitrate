@@ -365,34 +365,6 @@ static NCC_FORCE_INLINE std::optional<parse::CompositeType> FromCompType(SyntaxT
   }
 }
 
-static NCC_FORCE_INLINE std::optional<parse::Purity> FromPurity(SyntaxTree::FunctionPurity purity) {
-  switch (purity) {
-    case SyntaxTree::Purity_Unspecified: {
-      return std::nullopt;
-    }
-
-    case SyntaxTree::Purity_Pure: {
-      return Purity::Pure;
-    }
-
-    case SyntaxTree::Purity_Impure: {
-      return Purity::Impure;
-    }
-
-    case SyntaxTree::Purity_Impure_TSafe: {
-      return Purity::Impure_TSafe;
-    }
-
-    case SyntaxTree::Purity_Quasi: {
-      return Purity::Quasi;
-    }
-
-    case SyntaxTree::Purity_Retro: {
-      return Purity::Retro;
-    }
-  }
-}
-
 void AstReader::UnmarshalLocationLocation(const SyntaxTree::SourceLocationRange &in, const FlowPtr<Expr> &out) {
   if (!m_rd.has_value()) {
     return;
@@ -1485,13 +1457,8 @@ auto AstReader::Unmarshal(const SyntaxTree::FuncTy &in) -> Result<FuncTy> {
     attributes.push_back(attribute.value());
   }
 
-  auto purity = FromPurity(in.purity());
-  if (!purity.has_value()) [[unlikely]] {
-    return std::nullopt;
-  }
-
-  auto type = m_fac.CreateFunctionType(return_type.value(), parameters, in.variadic(), purity.value(), attributes,
-                                       bit_width, minimum, maximum);
+  auto type =
+      m_fac.CreateFunctionType(return_type.value(), parameters, in.variadic(), attributes, bit_width, minimum, maximum);
   if (!type.has_value()) [[unlikely]] {
     return std::nullopt;
   }
@@ -2163,13 +2130,8 @@ auto AstReader::Unmarshal(const SyntaxTree::Function &in) -> Result<Function> {
     return std::nullopt;
   }
 
-  auto op = FromPurity(in.purity());
-  if (!op.has_value()) [[unlikely]] {
-    return std::nullopt;
-  }
-
-  auto object = m_fac.CreateFunction(in.name(), return_type.value(), parameters, in.variadic(), block, op.value(),
-                                     attributes, precondition, postcondition, captures, template_parameters);
+  auto object = m_fac.CreateFunction(in.name(), return_type.value(), parameters, in.variadic(), block, attributes,
+                                     precondition, postcondition, captures, template_parameters);
   if (!object.has_value()) [[unlikely]] {
     return std::nullopt;
   }

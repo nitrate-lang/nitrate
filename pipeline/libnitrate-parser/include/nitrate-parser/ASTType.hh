@@ -199,20 +199,17 @@ namespace ncc::parse {
     std::span<FlowPtr<Expr>> m_attributes;
     std::span<FuncParam> m_params;
     FlowPtr<Type> m_return;
-    Purity m_purity;
     bool m_variadic;
 
   public:
-    constexpr FuncTy(auto return_type, auto parameters, auto variadic, auto purity, auto attributes)
+    constexpr FuncTy(auto return_type, auto parameters, auto variadic, auto attributes)
         : Type(QAST_FUNCTOR),
           m_attributes(attributes),
           m_params(parameters),
           m_return(std::move(return_type)),
-          m_purity(purity),
           m_variadic(variadic) {}
 
     [[nodiscard, gnu::pure]] constexpr auto GetReturn() const { return m_return; }
-    [[nodiscard, gnu::pure]] constexpr auto GetPurity() const { return m_purity; }
     [[nodiscard, gnu::pure]] constexpr auto GetParams() const { return m_params; }
     [[nodiscard, gnu::pure]] constexpr auto IsVariadic() const { return m_variadic; }
     [[nodiscard, gnu::pure]] constexpr auto GetAttributes() const { return m_attributes; }
