@@ -42,6 +42,8 @@
 #include <sstream>
 #include <variant>
 
+#include "nitrate-lexer/Enums.hh"
+
 using namespace ncc;
 using namespace ncc::lex;
 using namespace ncc::parse;
@@ -1090,7 +1092,22 @@ namespace ncc::parse {
       PrintLeading(n);
 
       PutKeyword(lex::Import);
-      PutString(n->GetName());
+
+      switch (n->GetMode()) {
+        case ImportMode::Code: {
+          PutString(n->GetName());
+          break;
+        }
+
+        case ImportMode::String: {
+          PutPunctor(PuncLPar);
+          PutString(n->GetName());
+          PutPunctor(PuncComa);
+          PutString("string");
+          PutPunctor(PuncRPar);
+          break;
+        }
+      }
 
       PrintTrailing(n);
     }

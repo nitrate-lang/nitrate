@@ -46,8 +46,6 @@ using namespace ncc;
 using namespace ncc::parse;
 using namespace ncc::lex;
 
-void ParserSetCurrentScanner(IScanner *scanner);
-
 auto GeneralParser::PImpl::RecurseName() -> string {
   enum State {
     Start,
@@ -511,7 +509,8 @@ auto GeneralParser::Parse() -> ASTRoot {
   std::optional<ASTRoot> ast;
 
   { /* Assign the current context to thread-local global state */
-    ParserSetCurrentScanner(&m_impl->m_rd);
+    auto *rd_ptr = &m_impl->m_rd;
+    ParserSwapScanner(rd_ptr);
 
     { /* Subscribe to events emitted by the parser */
       auto sub_id = Log.Subscribe([this](const LogMessage &m) {
@@ -544,7 +543,7 @@ auto GeneralParser::Parse() -> ASTRoot {
       Log.Unsubscribe(sub_id);
     }
 
-    ParserSetCurrentScanner(nullptr);
+    ParserSwapScanner(rd_ptr);
   }
 
   return ast.value();

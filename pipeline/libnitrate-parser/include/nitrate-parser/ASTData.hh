@@ -50,6 +50,11 @@ namespace ncc::parse {
     Pro = 2,
   };
 
+  enum class ImportMode : uint8_t {
+    Code,
+    String,
+  };
+
   using CallArg = std::pair<string, FlowPtr<Expr>>;
   using TemplateParameter = std::tuple<string, FlowPtr<Type>, NullableFlowPtr<Expr>>;
   using FuncParam = std::tuple<string, FlowPtr<Type>, NullableFlowPtr<Expr>>;

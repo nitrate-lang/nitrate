@@ -38,6 +38,8 @@
 #include <nitrate-lexer/Lexer.hh>
 #include <nitrate-parser/Package.hh>
 
+#include "nitrate-lexer/Scanner.hh"
+
 using namespace ncc;
 using namespace ncc::lex;
 using namespace ncc::parse;
@@ -116,75 +118,93 @@ auto GeneralParser::PImpl::RecurseImportName() -> std::pair<string, ImportMode> 
 
 [[nodiscard]] auto GeneralParser::PImpl::RecurseImportRegularFile(string import_file,
                                                                   ImportMode import_mode) -> FlowPtr<Expr> {
-  import_file = OMNI_CATCH(std::filesystem::absolute(*import_file)).value_or(*import_file).lexically_normal().string();
+  auto abs_import_path = OMNI_CATCH(std::filesystem::absolute(*import_file)).value_or(*import_file).lexically_normal();
 
-  const auto exists = OMNI_CATCH(std::filesystem::exists(*import_file));
+  Log << Trace << "RecurseImport: Importing regular file: " << abs_import_path;
+
+  const auto exists = OMNI_CATCH(std::filesystem::exists(abs_import_path));
   if (!exists) {
-    Log << ParserSignal << Current() << "Could not check if file exists: " << *import_file;
+    Log << ParserSignal << Current() << "Could not check if file exists: " << abs_import_path;
     return m_fac.CreateMockInstance<Import>();
   }
 
   if (!*exists) {
-    Log << ParserSignal << Current() << "File not found: " << *import_file;
+    Log << ParserSignal << Current() << "File not found: " << abs_import_path;
     return m_fac.CreateMockInstance<Import>();
   }
 
-  auto is_regular_file = OMNI_CATCH(std::filesystem::is_regular_file(*import_file));
+  auto is_regular_file = OMNI_CATCH(std::filesystem::is_regular_file(abs_import_path));
   if (!is_regular_file) {
-    Log << ParserSignal << Current() << "Could not check if file is regular: " << *import_file;
+    Log << ParserSignal << Current() << "Could not check if file is regular: " << abs_import_path;
     return m_fac.CreateMockInstance<Import>();
   }
 
   if (!*is_regular_file) {
-    Log << ParserSignal << Current() << "File is not regular: " << *import_file;
+    Log << ParserSignal << Current() << "File is not regular: " << abs_import_path;
     return m_fac.CreateMockInstance<Import>();
   }
 
-  std::ifstream file(*import_file, std::ios::binary);
+  Log << Trace << "RecurseImport: Reading regular file: " << abs_import_path;
+
+  std::ifstream file(abs_import_path, std::ios::binary);
   if (!file.is_open()) {
-    Log << ParserSignal << Current() << "Failed to open file: " << *import_file;
+    Log << ParserSignal << Current() << "Failed to open file: " << abs_import_path;
     return m_fac.CreateMockInstance<Import>();
   }
 
   auto content = OMNI_CATCH(std::string((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>()));
   if (!content.has_value()) {
-    Log << ParserSignal << Error << Current() << "Failed to read file: " << *import_file;
+    Log << ParserSignal << Error << Current() << "Failed to read file: " << abs_import_path;
     return m_fac.CreateMockInstance<Import>();
   }
 
   if (content->empty()) {
-    Log << ParserSignal << Warning << Current() << "File is empty: " << *import_file;
-    return m_fac.CreateMockInstance<Import>();
+    Log << ParserSignal << Warning << Current() << "File is empty: " << abs_import_path;
   }
+
+  Log << Trace << "RecurseImport: Got file (" << content.value().size() << " bytes): " << abs_import_path;
 
   switch (import_mode) {
     case ImportMode::Code: {
-      if (m_rd.Current().GetStart().Get(m_rd).GetFilename() == *import_file) {
+      Log << Trace << "RecurseImport: Import as code: " << abs_import_path;
+
+      if (m_rd.Current().GetStart().Get(m_rd).GetFilename() == abs_import_path.string()) {
         Log << ParserSignal << Current() << "Detected circular import: " << *import_file;
         return m_fac.CreateMockInstance<Import>();
       }
 
       auto in_src = boost::iostreams::stream<boost::iostreams::array_source>(content->data(), content->size());
       auto scanner = Tokenizer(in_src, m_env);
+      scanner.SetCurrentFilename(abs_import_path.string());
+      scanner.SkipCommentsState(true);
+
+      lex::IScanner *scanner_ptr = &scanner;
+      ParserSwapScanner(scanner_ptr);
+
+      Log << Trace << "RecurseImport: Creating subparser for: " << abs_import_path;
       auto subparser = GeneralParser(scanner, m_env, m_pool);
       subparser.m_impl->m_recursion_depth = m_recursion_depth;
       auto subtree = subparser.m_impl->RecurseBlock(false, false, BlockMode::Unknown);
 
-      return m_fac.CreateImport(import_file, std::move(subtree));
+      ParserSwapScanner(scanner_ptr);
+
+      return m_fac.CreateImport(import_file, import_mode, std::move(subtree));
     }
 
     case ImportMode::String: {
-      return m_fac.CreateString(content.value());
+      Log << Trace << "RecurseImport: Import as string literal: " << abs_import_path;
+      auto literal = m_fac.CreateString(content.value());
+      return m_fac.CreateImport(import_file, import_mode, std::move(literal));
     }
   }
-
-  return m_fac.CreateMockInstance<Import>();
 }
 
 [[nodiscard]] auto GeneralParser::PImpl::RecurseImportPackage(string import_name,
                                                               ImportMode import_mode) -> FlowPtr<Expr> {
   /// TODO: FIXME: Implement scanner elsewhere; Remove this line
   static const thread_local auto pkgs = FindPackages({"/tmp/test"});
+
+  Log << Trace << "RecurseImport: Importing package: " << import_name;
 
   auto pkg_it =
       std::find_if(pkgs.begin(), pkgs.end(), [&](const auto &pkg) { return pkg.PackageName() == import_name; });
@@ -214,17 +234,17 @@ auto GeneralParser::PImpl::RecurseImportName() -> std::pair<string, ImportMode> 
 
   switch (import_mode) {
     case ImportMode::Code: {
+      Log << Trace << "RecurseImport: Import as code: " << import_name;
       /// TODO: Implement code import
-      break;
+      return m_fac.CreateMockInstance<Import>();
     }
 
     case ImportMode::String: {
+      Log << Trace << "RecurseImport: Import as string literal: " << import_name;
       /// TODO: Implement string import
-      break;
+      return m_fac.CreateMockInstance<Import>();
     }
   }
-
-  return m_fac.CreateMockInstance<Import>();
 }
 
 auto GeneralParser::PImpl::RecurseImport() -> FlowPtr<Expr> {
@@ -239,7 +259,7 @@ auto GeneralParser::PImpl::RecurseImport() -> FlowPtr<Expr> {
   const auto [import_name, import_mode] = RecurseImportName();
 
   const bool is_regular_file =
-      import_name->find("/") == std::string::npos || import_name->find("\\") == std::string::npos;
+      import_name->find("/") != std::string::npos || import_name->find("\\") != std::string::npos;
 
   if (is_regular_file) {
     return RecurseImportRegularFile(import_name, import_mode);

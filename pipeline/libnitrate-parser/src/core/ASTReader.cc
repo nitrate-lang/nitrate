@@ -45,6 +45,8 @@
 #include <nitrate-parser/ASTStmt.hh>
 #include <nitrate-parser/ASTType.hh>
 
+#include "nitrate-parser/ASTData.hh"
+
 static constexpr int kRecursionLimit = INT_MAX;
 
 using namespace ncc;
@@ -361,6 +363,22 @@ static NCC_FORCE_INLINE std::optional<parse::CompositeType> FromCompType(SyntaxT
 
     case SyntaxTree::Struct_AggregateKind_Region_: {
       return CompositeType::Region;
+    }
+  }
+}
+
+static NCC_FORCE_INLINE std::optional<parse::ImportMode> FromImportMode(SyntaxTree::Import_Mode m) {
+  switch (m) {
+    case SyntaxTree::Import_Mode_Unspecified: {
+      return std::nullopt;
+    }
+
+    case SyntaxTree::Import_Mode_Code: {
+      return ImportMode::Code;
+    }
+
+    case SyntaxTree::Import_Mode_String: {
+      return ImportMode::String;
     }
   }
 }
@@ -1674,7 +1692,12 @@ auto AstReader::Unmarshal(const SyntaxTree::Import &in) -> Result<Import> {
     return std::nullopt;
   }
 
-  auto object = m_fac.CreateImport(in.name(), subtree.value());
+  auto mode = FromImportMode(in.mode());
+  if (!mode.has_value()) [[unlikely]] {
+    return std::nullopt;
+  }
+
+  auto object = m_fac.CreateImport(in.name(), mode.value(), subtree.value());
   UnmarshalLocationLocation(in.location(), object);
   UnmarshalCodeComment(in.comments(), object);
 

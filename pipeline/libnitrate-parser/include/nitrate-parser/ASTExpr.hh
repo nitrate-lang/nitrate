@@ -161,12 +161,15 @@ namespace ncc::parse {
   class Import final : public Expr {
     FlowPtr<Expr> m_subtree;
     string m_name;
+    ImportMode m_mode;
 
   public:
-    constexpr Import(auto name, auto subtree) : Expr(QAST_IMPORT), m_subtree(std::move(subtree)), m_name(name) {}
+    constexpr Import(auto name, auto mode, auto subtree)
+        : Expr(QAST_IMPORT), m_subtree(std::move(subtree)), m_name(name), m_mode(mode) {}
 
     [[nodiscard, gnu::pure]] constexpr auto GetSubtree() const { return m_subtree; }
     [[nodiscard, gnu::pure]] constexpr auto GetName() const { return m_name; }
+    [[nodiscard, gnu::pure]] constexpr auto GetMode() const { return m_mode; }
   };
 
   class List final : public Expr {

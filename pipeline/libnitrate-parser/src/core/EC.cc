@@ -32,6 +32,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <core/SyntaxDiagnostics.hh>
+#include <descent/Recurse.hh>
 #include <nitrate-lexer/Scanner.hh>
 #include <nlohmann/json.hpp>
 #include <sstream>
@@ -41,7 +42,7 @@ using namespace ncc::lex;
 
 static thread_local IScanner *GCurrentScanner = nullptr;
 
-void ParserSetCurrentScanner(IScanner *scanner) { GCurrentScanner = scanner; }
+void ncc::parse::ParserSwapScanner(lex::IScanner *&value) { std::swap(value, GCurrentScanner); }
 
 static std::optional<Token> ParseJsonToken(const nlohmann::json &j) {
   if (!j.is_object()) {

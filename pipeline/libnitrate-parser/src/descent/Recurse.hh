@@ -151,11 +151,6 @@ namespace ncc::parse {
       std::vector<StructFunction> m_static_methods;
     };
 
-    enum class ImportMode : uint8_t {
-      Code,
-      String,
-    };
-
     [[nodiscard]] auto RecurseName() -> string;
     [[nodiscard]] auto RecurseEnumField() -> std::pair<string, NullableFlowPtr<Expr>>;
     [[nodiscard]] auto RecurseEnumFields() -> std::vector<std::pair<string, NullableFlowPtr<Expr>>>;
@@ -221,6 +216,8 @@ namespace ncc::parse {
         : m_env(std::move(env)), m_pool(pool), m_fac(m_pool), m_rd(lexer) {}
     ~PImpl() = default;
   };
+
+  void ParserSwapScanner(lex::IScanner *&value);
 }  // namespace ncc::parse
 
 #endif  // __NITRATE_AST_PIMPL_H__

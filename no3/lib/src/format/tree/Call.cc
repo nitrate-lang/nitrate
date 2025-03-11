@@ -144,5 +144,15 @@ void CambrianFormatter::Visit(FlowPtr<TemplateCall> n) {
 void CambrianFormatter::Visit(FlowPtr<Import> n) {
   PrintMultilineComments(n);
 
-  m_line << "import " << n->GetName();
+  switch (n->GetMode()) {
+    case ImportMode::Code: {
+      m_line << "import " << n->GetName();
+      break;
+    }
+
+    case ImportMode::String: {
+      m_line << "import(" << n->GetName() << ", \"string\")";
+      break;
+    }
+  }
 }

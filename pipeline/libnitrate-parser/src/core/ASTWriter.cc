@@ -258,6 +258,16 @@ static SyntaxTree::Struct_AggregateKind FromStructKind(ncc::parse::CompositeType
   }
 }
 
+static SyntaxTree::Import_Mode FromImportMode(ncc::parse::ImportMode mode) {
+  switch (mode) {
+    case ncc::parse::ImportMode::Code:
+      return SyntaxTree::Import_Mode_Code;
+
+    case ncc::parse::ImportMode::String:
+      return SyntaxTree::Import_Mode_String;
+  }
+}
+
 void AstWriter::SetTypeMetadata(auto *message, const FlowPtr<Type> &in) {
   if (in->GetWidth().has_value()) [[unlikely]] {
     message->set_allocated_bit_width(From(in->GetWidth().value()));
@@ -1209,6 +1219,7 @@ SyntaxTree::Import *AstWriter::From(const FlowPtr<Import> &in) {
 
   message->set_allocated_location(FromSource(in));
   message->set_name(in->GetName().Get());
+  message->set_mode(FromImportMode(in->GetMode()));
   message->set_allocated_subtree(From(in->GetSubtree()));
 
   return message;

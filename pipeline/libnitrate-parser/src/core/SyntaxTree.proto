@@ -454,11 +454,18 @@ message TemplateCall {
 }
 
 message Import {
+  enum Mode {
+    Unspecified = 0;
+    Code = 1;
+    String = 2;
+  }
+
   optional SourceLocationRange location = 1;
   repeated UserComment comments = 2;
 
   required string name = 4;
   required Expr subtree = 5;
+  required Mode mode = 6;
 }
 
 message List {

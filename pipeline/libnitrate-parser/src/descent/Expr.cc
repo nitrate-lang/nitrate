@@ -492,6 +492,11 @@ auto GeneralParser::PImpl::RecurseExprKeyword(lex::Keyword key) -> NullableFlowP
       break;
     }
 
+    case lex::Import: {
+      e = RecurseImport();
+      break;
+    }
+
     default: {
       Log << ParserSignal << Current() << "Unexpected '" << key << "' in expression context";
       break;
