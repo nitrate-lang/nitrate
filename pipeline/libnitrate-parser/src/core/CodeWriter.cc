@@ -664,7 +664,7 @@ namespace ncc::parse {
           PutPunctor(PuncComa);
         }
 
-        const auto [pname, pval] = *it;
+        auto [pname, pval] = *it;
         if (IsNamedParameter(pname)) {
           PutIdentifier(pname);
           PutPunctor(PuncColn);
@@ -908,7 +908,7 @@ namespace ncc::parse {
           PutPunctor(PuncComa);
         }
 
-        const auto& [pname, ptype, pdefault] = *it;
+        auto [pname, ptype, pdefault] = *it;
         PutIdentifier(pname);
 
         if (!ptype->Is(QAST_INFER)) {
@@ -1210,7 +1210,7 @@ namespace ncc::parse {
         PutPunctor(PuncLCur);
       }
 
-      for (const auto& stmt : n->GetStatements()) {
+      for (auto& stmt : n->GetStatements()) {
         stmt->Accept(*this);
         PutPunctor(PuncSemi);
       }
@@ -1395,7 +1395,7 @@ namespace ncc::parse {
       PutKeyword(lex::Switch);
       n->GetCond()->Accept(*this);
       PutPunctor(PuncLCur);
-      for (const auto& c : n->GetCases()) {
+      for (auto& c : n->GetCases()) {
         c->Accept(*this);
       }
       if (n->GetDefault()) {
@@ -1446,7 +1446,7 @@ namespace ncc::parse {
             PutPunctor(PuncComa);
           }
 
-          const auto& [pname, ptype, pdefault] = *it;
+          auto& [pname, ptype, pdefault] = *it;
           PutIdentifier(pname);
 
           if (!ptype->Is(QAST_INFER)) {
@@ -1468,7 +1468,7 @@ namespace ncc::parse {
           PutPunctor(PuncComa);
         }
 
-        const auto& [pname, ptype, pdefault] = *it;
+        auto& [pname, ptype, pdefault] = *it;
         PutIdentifier(pname);
 
         if (!ptype->Is(QAST_INFER)) {
@@ -1496,7 +1496,7 @@ namespace ncc::parse {
       }
 
       if (n->GetBody()) {
-        const auto body = n->GetBody().value();
+        auto body = n->GetBody().value();
 
         if (body->Is(QAST_BLOCK) && body->As<Block>()->GetStatements().size() == 1) {
           PutOperator(OpArrow);
@@ -1531,7 +1531,7 @@ namespace ncc::parse {
         n->GetType().value()->Accept(*this);
       }
       PutPunctor(PuncLCur);
-      for (const auto& [field, expr] : n->GetFields()) {
+      for (auto& [field, expr] : n->GetFields()) {
         PutIdentifier(field);
         if (expr) {
           PutOperator(OpSet);

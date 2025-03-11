@@ -282,7 +282,7 @@ void AstWriter::SetTypeMetadata(auto *message, const FlowPtr<Type> &in) {
   }
 }
 
-SyntaxTree::SourceLocationRange *AstWriter::FromSource(const FlowPtr<Expr> &in) {
+SyntaxTree::SourceLocationRange *AstWriter::FromSource(FlowPtr<Expr> in) {
   if (!m_rd.has_value()) {
     return nullptr;
   }
@@ -320,7 +320,7 @@ SyntaxTree::SourceLocationRange *AstWriter::FromSource(const FlowPtr<Expr> &in) 
   return message;
 }
 
-SyntaxTree::Expr *AstWriter::From(const FlowPtr<Expr> &in) {
+SyntaxTree::Expr *AstWriter::From(FlowPtr<Expr> in) {
   auto *message = Pool::CreateMessage<SyntaxTree::Expr>(m_arena);
 
   switch (in->GetKind()) {
@@ -643,7 +643,7 @@ SyntaxTree::Expr *AstWriter::From(const FlowPtr<Expr> &in) {
   return message;
 }
 
-SyntaxTree::Type *AstWriter::From(const FlowPtr<Type> &in) {
+SyntaxTree::Type *AstWriter::From(FlowPtr<Type> in) {
   auto *message = Pool::CreateMessage<SyntaxTree::Type>(m_arena);
 
   switch (in->GetKind()) {
@@ -780,7 +780,7 @@ SyntaxTree::Type *AstWriter::From(const FlowPtr<Type> &in) {
   return message;
 }
 
-SyntaxTree::NamedTy *AstWriter::From(const FlowPtr<NamedTy> &in) {
+SyntaxTree::NamedTy *AstWriter::From(FlowPtr<NamedTy> in) {
   auto *message = Pool::CreateMessage<SyntaxTree::NamedTy>(m_arena);
 
   message->set_allocated_location(FromSource(in));
@@ -790,7 +790,7 @@ SyntaxTree::NamedTy *AstWriter::From(const FlowPtr<NamedTy> &in) {
   return message;
 }
 
-SyntaxTree::InferTy *AstWriter::From(const FlowPtr<InferTy> &in) {
+SyntaxTree::InferTy *AstWriter::From(FlowPtr<InferTy> in) {
   auto *message = Pool::CreateMessage<SyntaxTree::InferTy>(m_arena);
 
   message->set_allocated_location(FromSource(in));
@@ -799,7 +799,7 @@ SyntaxTree::InferTy *AstWriter::From(const FlowPtr<InferTy> &in) {
   return message;
 }
 
-SyntaxTree::TemplateType *AstWriter::From(const FlowPtr<TemplateType> &in) {
+SyntaxTree::TemplateType *AstWriter::From(FlowPtr<TemplateType> in) {
   auto *message = Pool::CreateMessage<SyntaxTree::TemplateType>(m_arena);
 
   message->set_allocated_location(FromSource(in));
@@ -822,7 +822,7 @@ SyntaxTree::TemplateType *AstWriter::From(const FlowPtr<TemplateType> &in) {
   return message;
 }
 
-SyntaxTree::U1 *AstWriter::From(const FlowPtr<U1> &in) {
+SyntaxTree::U1 *AstWriter::From(FlowPtr<U1> in) {
   auto *message = Pool::CreateMessage<SyntaxTree::U1>(m_arena);
 
   message->set_allocated_location(FromSource(in));
@@ -831,7 +831,7 @@ SyntaxTree::U1 *AstWriter::From(const FlowPtr<U1> &in) {
   return message;
 }
 
-SyntaxTree::U8 *AstWriter::From(const FlowPtr<U8> &in) {
+SyntaxTree::U8 *AstWriter::From(FlowPtr<U8> in) {
   auto *message = Pool::CreateMessage<SyntaxTree::U8>(m_arena);
 
   message->set_allocated_location(FromSource(in));
@@ -840,7 +840,7 @@ SyntaxTree::U8 *AstWriter::From(const FlowPtr<U8> &in) {
   return message;
 }
 
-SyntaxTree::U16 *AstWriter::From(const FlowPtr<U16> &in) {
+SyntaxTree::U16 *AstWriter::From(FlowPtr<U16> in) {
   auto *message = Pool::CreateMessage<SyntaxTree::U16>(m_arena);
 
   message->set_allocated_location(FromSource(in));
@@ -849,7 +849,7 @@ SyntaxTree::U16 *AstWriter::From(const FlowPtr<U16> &in) {
   return message;
 }
 
-SyntaxTree::U32 *AstWriter::From(const FlowPtr<U32> &in) {
+SyntaxTree::U32 *AstWriter::From(FlowPtr<U32> in) {
   auto *message = Pool::CreateMessage<SyntaxTree::U32>(m_arena);
 
   message->set_allocated_location(FromSource(in));
@@ -858,7 +858,7 @@ SyntaxTree::U32 *AstWriter::From(const FlowPtr<U32> &in) {
   return message;
 }
 
-SyntaxTree::U64 *AstWriter::From(const FlowPtr<U64> &in) {
+SyntaxTree::U64 *AstWriter::From(FlowPtr<U64> in) {
   auto *message = Pool::CreateMessage<SyntaxTree::U64>(m_arena);
 
   message->set_allocated_location(FromSource(in));
@@ -867,7 +867,7 @@ SyntaxTree::U64 *AstWriter::From(const FlowPtr<U64> &in) {
   return message;
 }
 
-SyntaxTree::U128 *AstWriter::From(const FlowPtr<U128> &in) {
+SyntaxTree::U128 *AstWriter::From(FlowPtr<U128> in) {
   auto *message = Pool::CreateMessage<SyntaxTree::U128>(m_arena);
 
   message->set_allocated_location(FromSource(in));
@@ -876,7 +876,7 @@ SyntaxTree::U128 *AstWriter::From(const FlowPtr<U128> &in) {
   return message;
 }
 
-SyntaxTree::I8 *AstWriter::From(const FlowPtr<I8> &in) {
+SyntaxTree::I8 *AstWriter::From(FlowPtr<I8> in) {
   auto *message = Pool::CreateMessage<SyntaxTree::I8>(m_arena);
 
   message->set_allocated_location(FromSource(in));
@@ -885,7 +885,7 @@ SyntaxTree::I8 *AstWriter::From(const FlowPtr<I8> &in) {
   return message;
 }
 
-SyntaxTree::I16 *AstWriter::From(const FlowPtr<I16> &in) {
+SyntaxTree::I16 *AstWriter::From(FlowPtr<I16> in) {
   auto *message = Pool::CreateMessage<SyntaxTree::I16>(m_arena);
 
   message->set_allocated_location(FromSource(in));
@@ -894,7 +894,7 @@ SyntaxTree::I16 *AstWriter::From(const FlowPtr<I16> &in) {
   return message;
 }
 
-SyntaxTree::I32 *AstWriter::From(const FlowPtr<I32> &in) {
+SyntaxTree::I32 *AstWriter::From(FlowPtr<I32> in) {
   auto *message = Pool::CreateMessage<SyntaxTree::I32>(m_arena);
 
   message->set_allocated_location(FromSource(in));
@@ -903,7 +903,7 @@ SyntaxTree::I32 *AstWriter::From(const FlowPtr<I32> &in) {
   return message;
 }
 
-SyntaxTree::I64 *AstWriter::From(const FlowPtr<I64> &in) {
+SyntaxTree::I64 *AstWriter::From(FlowPtr<I64> in) {
   auto *message = Pool::CreateMessage<SyntaxTree::I64>(m_arena);
 
   message->set_allocated_location(FromSource(in));
@@ -912,7 +912,7 @@ SyntaxTree::I64 *AstWriter::From(const FlowPtr<I64> &in) {
   return message;
 }
 
-SyntaxTree::I128 *AstWriter::From(const FlowPtr<I128> &in) {
+SyntaxTree::I128 *AstWriter::From(FlowPtr<I128> in) {
   auto *message = Pool::CreateMessage<SyntaxTree::I128>(m_arena);
 
   message->set_allocated_location(FromSource(in));
@@ -921,7 +921,7 @@ SyntaxTree::I128 *AstWriter::From(const FlowPtr<I128> &in) {
   return message;
 }
 
-SyntaxTree::F16 *AstWriter::From(const FlowPtr<F16> &in) {
+SyntaxTree::F16 *AstWriter::From(FlowPtr<F16> in) {
   auto *message = Pool::CreateMessage<SyntaxTree::F16>(m_arena);
 
   message->set_allocated_location(FromSource(in));
@@ -930,7 +930,7 @@ SyntaxTree::F16 *AstWriter::From(const FlowPtr<F16> &in) {
   return message;
 }
 
-SyntaxTree::F32 *AstWriter::From(const FlowPtr<F32> &in) {
+SyntaxTree::F32 *AstWriter::From(FlowPtr<F32> in) {
   auto *message = Pool::CreateMessage<SyntaxTree::F32>(m_arena);
 
   message->set_allocated_location(FromSource(in));
@@ -939,7 +939,7 @@ SyntaxTree::F32 *AstWriter::From(const FlowPtr<F32> &in) {
   return message;
 }
 
-SyntaxTree::F64 *AstWriter::From(const FlowPtr<F64> &in) {
+SyntaxTree::F64 *AstWriter::From(FlowPtr<F64> in) {
   auto *message = Pool::CreateMessage<SyntaxTree::F64>(m_arena);
 
   message->set_allocated_location(FromSource(in));
@@ -948,7 +948,7 @@ SyntaxTree::F64 *AstWriter::From(const FlowPtr<F64> &in) {
   return message;
 }
 
-SyntaxTree::F128 *AstWriter::From(const FlowPtr<F128> &in) {
+SyntaxTree::F128 *AstWriter::From(FlowPtr<F128> in) {
   auto *message = Pool::CreateMessage<SyntaxTree::F128>(m_arena);
 
   message->set_allocated_location(FromSource(in));
@@ -957,7 +957,7 @@ SyntaxTree::F128 *AstWriter::From(const FlowPtr<F128> &in) {
   return message;
 }
 
-SyntaxTree::VoidTy *AstWriter::From(const FlowPtr<VoidTy> &in) {
+SyntaxTree::VoidTy *AstWriter::From(FlowPtr<VoidTy> in) {
   auto *message = Pool::CreateMessage<SyntaxTree::VoidTy>(m_arena);
 
   message->set_allocated_location(FromSource(in));
@@ -966,7 +966,7 @@ SyntaxTree::VoidTy *AstWriter::From(const FlowPtr<VoidTy> &in) {
   return message;
 }
 
-SyntaxTree::PtrTy *AstWriter::From(const FlowPtr<PtrTy> &in) {
+SyntaxTree::PtrTy *AstWriter::From(FlowPtr<PtrTy> in) {
   auto *message = Pool::CreateMessage<SyntaxTree::PtrTy>(m_arena);
 
   message->set_allocated_location(FromSource(in));
@@ -977,7 +977,7 @@ SyntaxTree::PtrTy *AstWriter::From(const FlowPtr<PtrTy> &in) {
   return message;
 }
 
-SyntaxTree::OpaqueTy *AstWriter::From(const FlowPtr<OpaqueTy> &in) {
+SyntaxTree::OpaqueTy *AstWriter::From(FlowPtr<OpaqueTy> in) {
   auto *message = Pool::CreateMessage<SyntaxTree::OpaqueTy>(m_arena);
 
   message->set_allocated_location(FromSource(in));
@@ -987,7 +987,7 @@ SyntaxTree::OpaqueTy *AstWriter::From(const FlowPtr<OpaqueTy> &in) {
   return message;
 }
 
-SyntaxTree::TupleTy *AstWriter::From(const FlowPtr<TupleTy> &in) {
+SyntaxTree::TupleTy *AstWriter::From(FlowPtr<TupleTy> in) {
   auto *message = Pool::CreateMessage<SyntaxTree::TupleTy>(m_arena);
 
   message->set_allocated_location(FromSource(in));
@@ -1004,7 +1004,7 @@ SyntaxTree::TupleTy *AstWriter::From(const FlowPtr<TupleTy> &in) {
   return message;
 }
 
-SyntaxTree::ArrayTy *AstWriter::From(const FlowPtr<ArrayTy> &in) {
+SyntaxTree::ArrayTy *AstWriter::From(FlowPtr<ArrayTy> in) {
   auto *message = Pool::CreateMessage<SyntaxTree::ArrayTy>(m_arena);
 
   message->set_allocated_location(FromSource(in));
@@ -1015,7 +1015,7 @@ SyntaxTree::ArrayTy *AstWriter::From(const FlowPtr<ArrayTy> &in) {
   return message;
 }
 
-SyntaxTree::RefTy *AstWriter::From(const FlowPtr<RefTy> &in) {
+SyntaxTree::RefTy *AstWriter::From(FlowPtr<RefTy> in) {
   auto *message = Pool::CreateMessage<SyntaxTree::RefTy>(m_arena);
 
   message->set_allocated_location(FromSource(in));
@@ -1026,7 +1026,7 @@ SyntaxTree::RefTy *AstWriter::From(const FlowPtr<RefTy> &in) {
   return message;
 }
 
-SyntaxTree::FuncTy *AstWriter::From(const FlowPtr<FuncTy> &in) {
+SyntaxTree::FuncTy *AstWriter::From(FlowPtr<FuncTy> in) {
   auto *message = Pool::CreateMessage<SyntaxTree::FuncTy>(m_arena);
 
   message->set_allocated_location(FromSource(in));
@@ -1066,7 +1066,7 @@ SyntaxTree::FuncTy *AstWriter::From(const FlowPtr<FuncTy> &in) {
   return message;
 }
 
-SyntaxTree::Unary *AstWriter::From(const FlowPtr<Unary> &in) {
+SyntaxTree::Unary *AstWriter::From(FlowPtr<Unary> in) {
   auto *message = Pool::CreateMessage<SyntaxTree::Unary>(m_arena);
 
   message->set_allocated_location(FromSource(in));
@@ -1077,7 +1077,7 @@ SyntaxTree::Unary *AstWriter::From(const FlowPtr<Unary> &in) {
   return message;
 }
 
-SyntaxTree::Binary *AstWriter::From(const FlowPtr<Binary> &in) {
+SyntaxTree::Binary *AstWriter::From(FlowPtr<Binary> in) {
   auto *message = Pool::CreateMessage<SyntaxTree::Binary>(m_arena);
 
   message->set_allocated_location(FromSource(in));
@@ -1088,7 +1088,7 @@ SyntaxTree::Binary *AstWriter::From(const FlowPtr<Binary> &in) {
   return message;
 }
 
-SyntaxTree::Ternary *AstWriter::From(const FlowPtr<Ternary> &in) {
+SyntaxTree::Ternary *AstWriter::From(FlowPtr<Ternary> in) {
   auto *message = Pool::CreateMessage<SyntaxTree::Ternary>(m_arena);
 
   message->set_allocated_location(FromSource(in));
@@ -1099,7 +1099,7 @@ SyntaxTree::Ternary *AstWriter::From(const FlowPtr<Ternary> &in) {
   return message;
 }
 
-SyntaxTree::Integer *AstWriter::From(const FlowPtr<Integer> &in) {
+SyntaxTree::Integer *AstWriter::From(FlowPtr<Integer> in) {
   auto *message = Pool::CreateMessage<SyntaxTree::Integer>(m_arena);
 
   message->set_allocated_location(FromSource(in));
@@ -1108,7 +1108,7 @@ SyntaxTree::Integer *AstWriter::From(const FlowPtr<Integer> &in) {
   return message;
 }
 
-SyntaxTree::Float *AstWriter::From(const FlowPtr<Float> &in) {
+SyntaxTree::Float *AstWriter::From(FlowPtr<Float> in) {
   auto *message = Pool::CreateMessage<SyntaxTree::Float>(m_arena);
 
   message->set_allocated_location(FromSource(in));
@@ -1117,7 +1117,7 @@ SyntaxTree::Float *AstWriter::From(const FlowPtr<Float> &in) {
   return message;
 }
 
-SyntaxTree::Boolean *AstWriter::From(const FlowPtr<Boolean> &in) {
+SyntaxTree::Boolean *AstWriter::From(FlowPtr<Boolean> in) {
   auto *message = Pool::CreateMessage<SyntaxTree::Boolean>(m_arena);
 
   message->set_allocated_location(FromSource(in));
@@ -1126,7 +1126,7 @@ SyntaxTree::Boolean *AstWriter::From(const FlowPtr<Boolean> &in) {
   return message;
 }
 
-SyntaxTree::String *AstWriter::From(const FlowPtr<String> &in) {
+SyntaxTree::String *AstWriter::From(FlowPtr<String> in) {
   auto *message = Pool::CreateMessage<SyntaxTree::String>(m_arena);
 
   message->set_allocated_location(FromSource(in));
@@ -1135,7 +1135,7 @@ SyntaxTree::String *AstWriter::From(const FlowPtr<String> &in) {
   return message;
 }
 
-SyntaxTree::Character *AstWriter::From(const FlowPtr<Character> &in) {
+SyntaxTree::Character *AstWriter::From(FlowPtr<Character> in) {
   auto *message = Pool::CreateMessage<SyntaxTree::Character>(m_arena);
 
   message->set_allocated_location(FromSource(in));
@@ -1144,7 +1144,7 @@ SyntaxTree::Character *AstWriter::From(const FlowPtr<Character> &in) {
   return message;
 }
 
-SyntaxTree::Null *AstWriter::From(const FlowPtr<Null> &in) {
+SyntaxTree::Null *AstWriter::From(FlowPtr<Null> in) {
   auto *message = Pool::CreateMessage<SyntaxTree::Null>(m_arena);
 
   message->set_allocated_location(FromSource(in));
@@ -1152,7 +1152,7 @@ SyntaxTree::Null *AstWriter::From(const FlowPtr<Null> &in) {
   return message;
 }
 
-SyntaxTree::Undefined *AstWriter::From(const FlowPtr<Undefined> &in) {
+SyntaxTree::Undefined *AstWriter::From(FlowPtr<Undefined> in) {
   auto *message = Pool::CreateMessage<SyntaxTree::Undefined>(m_arena);
 
   message->set_allocated_location(FromSource(in));
@@ -1160,7 +1160,7 @@ SyntaxTree::Undefined *AstWriter::From(const FlowPtr<Undefined> &in) {
   return message;
 }
 
-SyntaxTree::Call *AstWriter::From(const FlowPtr<Call> &in) {
+SyntaxTree::Call *AstWriter::From(FlowPtr<Call> in) {
   auto *message = Pool::CreateMessage<SyntaxTree::Call>(m_arena);
 
   message->set_allocated_location(FromSource(in));
@@ -1181,7 +1181,7 @@ SyntaxTree::Call *AstWriter::From(const FlowPtr<Call> &in) {
   return message;
 }
 
-SyntaxTree::TemplateCall *AstWriter::From(const FlowPtr<TemplateCall> &in) {
+SyntaxTree::TemplateCall *AstWriter::From(FlowPtr<TemplateCall> in) {
   auto *message = Pool::CreateMessage<SyntaxTree::TemplateCall>(m_arena);
 
   message->set_allocated_location(FromSource(in));
@@ -1214,7 +1214,7 @@ SyntaxTree::TemplateCall *AstWriter::From(const FlowPtr<TemplateCall> &in) {
   return message;
 }
 
-SyntaxTree::Import *AstWriter::From(const FlowPtr<Import> &in) {
+SyntaxTree::Import *AstWriter::From(FlowPtr<Import> in) {
   auto *message = Pool::CreateMessage<SyntaxTree::Import>(m_arena);
 
   message->set_allocated_location(FromSource(in));
@@ -1225,7 +1225,7 @@ SyntaxTree::Import *AstWriter::From(const FlowPtr<Import> &in) {
   return message;
 }
 
-SyntaxTree::List *AstWriter::From(const FlowPtr<List> &in) {
+SyntaxTree::List *AstWriter::From(FlowPtr<List> in) {
   auto *message = Pool::CreateMessage<SyntaxTree::List>(m_arena);
 
   message->set_allocated_location(FromSource(in));
@@ -1241,7 +1241,7 @@ SyntaxTree::List *AstWriter::From(const FlowPtr<List> &in) {
   return message;
 }
 
-SyntaxTree::Assoc *AstWriter::From(const FlowPtr<Assoc> &in) {
+SyntaxTree::Assoc *AstWriter::From(FlowPtr<Assoc> in) {
   auto *message = Pool::CreateMessage<SyntaxTree::Assoc>(m_arena);
 
   message->set_allocated_location(FromSource(in));
@@ -1251,7 +1251,7 @@ SyntaxTree::Assoc *AstWriter::From(const FlowPtr<Assoc> &in) {
   return message;
 }
 
-SyntaxTree::Index *AstWriter::From(const FlowPtr<Index> &in) {
+SyntaxTree::Index *AstWriter::From(FlowPtr<Index> in) {
   auto *message = Pool::CreateMessage<SyntaxTree::Index>(m_arena);
 
   message->set_allocated_location(FromSource(in));
@@ -1261,7 +1261,7 @@ SyntaxTree::Index *AstWriter::From(const FlowPtr<Index> &in) {
   return message;
 }
 
-SyntaxTree::Slice *AstWriter::From(const FlowPtr<Slice> &in) {
+SyntaxTree::Slice *AstWriter::From(FlowPtr<Slice> in) {
   auto *message = Pool::CreateMessage<SyntaxTree::Slice>(m_arena);
 
   message->set_allocated_location(FromSource(in));
@@ -1272,7 +1272,7 @@ SyntaxTree::Slice *AstWriter::From(const FlowPtr<Slice> &in) {
   return message;
 }
 
-SyntaxTree::FString *AstWriter::From(const FlowPtr<FString> &in) {
+SyntaxTree::FString *AstWriter::From(FlowPtr<FString> in) {
   auto *message = Pool::CreateMessage<SyntaxTree::FString>(m_arena);
 
   message->set_allocated_location(FromSource(in));
@@ -1295,7 +1295,7 @@ SyntaxTree::FString *AstWriter::From(const FlowPtr<FString> &in) {
   return message;
 }
 
-SyntaxTree::Identifier *AstWriter::From(const FlowPtr<Identifier> &in) {
+SyntaxTree::Identifier *AstWriter::From(FlowPtr<Identifier> in) {
   auto *message = Pool::CreateMessage<SyntaxTree::Identifier>(m_arena);
 
   message->set_allocated_location(FromSource(in));
@@ -1304,7 +1304,7 @@ SyntaxTree::Identifier *AstWriter::From(const FlowPtr<Identifier> &in) {
   return message;
 }
 
-SyntaxTree::Block *AstWriter::From(const FlowPtr<Block> &in) {
+SyntaxTree::Block *AstWriter::From(FlowPtr<Block> in) {
   auto *message = Pool::CreateMessage<SyntaxTree::Block>(m_arena);
 
   message->set_allocated_location(FromSource(in));
@@ -1337,7 +1337,7 @@ SyntaxTree::Block *AstWriter::From(const FlowPtr<Block> &in) {
   return message;
 }
 
-SyntaxTree::Variable *AstWriter::From(const FlowPtr<Variable> &in) {
+SyntaxTree::Variable *AstWriter::From(FlowPtr<Variable> in) {
   auto *message = Pool::CreateMessage<SyntaxTree::Variable>(m_arena);
 
   message->set_allocated_location(FromSource(in));
@@ -1374,7 +1374,7 @@ SyntaxTree::Variable *AstWriter::From(const FlowPtr<Variable> &in) {
   return message;
 }
 
-SyntaxTree::Assembly *AstWriter::From(const FlowPtr<Assembly> &in) {
+SyntaxTree::Assembly *AstWriter::From(FlowPtr<Assembly> in) {
   auto *message = Pool::CreateMessage<SyntaxTree::Assembly>(m_arena);
 
   message->set_allocated_location(FromSource(in));
@@ -1391,7 +1391,7 @@ SyntaxTree::Assembly *AstWriter::From(const FlowPtr<Assembly> &in) {
   return message;
 }
 
-SyntaxTree::If *AstWriter::From(const FlowPtr<If> &in) {
+SyntaxTree::If *AstWriter::From(FlowPtr<If> in) {
   auto *message = Pool::CreateMessage<SyntaxTree::If>(m_arena);
 
   message->set_allocated_location(FromSource(in));
@@ -1405,7 +1405,7 @@ SyntaxTree::If *AstWriter::From(const FlowPtr<If> &in) {
   return message;
 }
 
-SyntaxTree::While *AstWriter::From(const FlowPtr<While> &in) {
+SyntaxTree::While *AstWriter::From(FlowPtr<While> in) {
   auto *message = Pool::CreateMessage<SyntaxTree::While>(m_arena);
 
   message->set_allocated_location(FromSource(in));
@@ -1415,7 +1415,7 @@ SyntaxTree::While *AstWriter::From(const FlowPtr<While> &in) {
   return message;
 }
 
-SyntaxTree::For *AstWriter::From(const FlowPtr<For> &in) {
+SyntaxTree::For *AstWriter::From(FlowPtr<For> in) {
   auto *message = Pool::CreateMessage<SyntaxTree::For>(m_arena);
 
   message->set_allocated_location(FromSource(in));
@@ -1437,7 +1437,7 @@ SyntaxTree::For *AstWriter::From(const FlowPtr<For> &in) {
   return message;
 }
 
-SyntaxTree::Foreach *AstWriter::From(const FlowPtr<Foreach> &in) {
+SyntaxTree::Foreach *AstWriter::From(FlowPtr<Foreach> in) {
   auto *message = Pool::CreateMessage<SyntaxTree::Foreach>(m_arena);
 
   message->set_allocated_location(FromSource(in));
@@ -1449,7 +1449,7 @@ SyntaxTree::Foreach *AstWriter::From(const FlowPtr<Foreach> &in) {
   return message;
 }
 
-SyntaxTree::Break *AstWriter::From(const FlowPtr<Break> &in) {
+SyntaxTree::Break *AstWriter::From(FlowPtr<Break> in) {
   auto *message = Pool::CreateMessage<SyntaxTree::Break>(m_arena);
 
   message->set_allocated_location(FromSource(in));
@@ -1457,7 +1457,7 @@ SyntaxTree::Break *AstWriter::From(const FlowPtr<Break> &in) {
   return message;
 }
 
-SyntaxTree::Continue *AstWriter::From(const FlowPtr<Continue> &in) {
+SyntaxTree::Continue *AstWriter::From(FlowPtr<Continue> in) {
   auto *message = Pool::CreateMessage<SyntaxTree::Continue>(m_arena);
 
   message->set_allocated_location(FromSource(in));
@@ -1465,7 +1465,7 @@ SyntaxTree::Continue *AstWriter::From(const FlowPtr<Continue> &in) {
   return message;
 }
 
-SyntaxTree::Return *AstWriter::From(const FlowPtr<Return> &in) {
+SyntaxTree::Return *AstWriter::From(FlowPtr<Return> in) {
   auto *message = Pool::CreateMessage<SyntaxTree::Return>(m_arena);
 
   message->set_allocated_location(FromSource(in));
@@ -1476,7 +1476,7 @@ SyntaxTree::Return *AstWriter::From(const FlowPtr<Return> &in) {
   return message;
 }
 
-SyntaxTree::ReturnIf *AstWriter::From(const FlowPtr<ReturnIf> &in) {
+SyntaxTree::ReturnIf *AstWriter::From(FlowPtr<ReturnIf> in) {
   auto *message = Pool::CreateMessage<SyntaxTree::ReturnIf>(m_arena);
 
   message->set_allocated_location(FromSource(in));
@@ -1488,7 +1488,7 @@ SyntaxTree::ReturnIf *AstWriter::From(const FlowPtr<ReturnIf> &in) {
   return message;
 }
 
-SyntaxTree::Case *AstWriter::From(const FlowPtr<Case> &in) {
+SyntaxTree::Case *AstWriter::From(FlowPtr<Case> in) {
   auto *message = Pool::CreateMessage<SyntaxTree::Case>(m_arena);
 
   message->set_allocated_location(FromSource(in));
@@ -1498,7 +1498,7 @@ SyntaxTree::Case *AstWriter::From(const FlowPtr<Case> &in) {
   return message;
 }
 
-SyntaxTree::Switch *AstWriter::From(const FlowPtr<Switch> &in) {
+SyntaxTree::Switch *AstWriter::From(FlowPtr<Switch> in) {
   auto *message = Pool::CreateMessage<SyntaxTree::Switch>(m_arena);
 
   message->set_allocated_location(FromSource(in));
@@ -1518,7 +1518,7 @@ SyntaxTree::Switch *AstWriter::From(const FlowPtr<Switch> &in) {
   return message;
 }
 
-SyntaxTree::Typedef *AstWriter::From(const FlowPtr<Typedef> &in) {
+SyntaxTree::Typedef *AstWriter::From(FlowPtr<Typedef> in) {
   auto *message = Pool::CreateMessage<SyntaxTree::Typedef>(m_arena);
 
   message->set_allocated_location(FromSource(in));
@@ -1528,7 +1528,7 @@ SyntaxTree::Typedef *AstWriter::From(const FlowPtr<Typedef> &in) {
   return message;
 }
 
-SyntaxTree::Function *AstWriter::From(const FlowPtr<Function> &in) {
+SyntaxTree::Function *AstWriter::From(FlowPtr<Function> in) {
   auto *message = Pool::CreateMessage<SyntaxTree::Function>(m_arena);
 
   message->set_allocated_location(FromSource(in));
@@ -1623,7 +1623,7 @@ SyntaxTree::Function *AstWriter::From(const FlowPtr<Function> &in) {
   return message;
 }
 
-SyntaxTree::Struct *AstWriter::From(const FlowPtr<Struct> &in) {
+SyntaxTree::Struct *AstWriter::From(FlowPtr<Struct> in) {
   auto *message = Pool::CreateMessage<SyntaxTree::Struct>(m_arena);
 
   message->set_allocated_location(FromSource(in));
@@ -1716,7 +1716,7 @@ SyntaxTree::Struct *AstWriter::From(const FlowPtr<Struct> &in) {
   return message;
 }
 
-SyntaxTree::Enum *AstWriter::From(const FlowPtr<Enum> &in) {
+SyntaxTree::Enum *AstWriter::From(FlowPtr<Enum> in) {
   auto *message = Pool::CreateMessage<SyntaxTree::Enum>(m_arena);
 
   message->set_allocated_location(FromSource(in));
@@ -1743,7 +1743,7 @@ SyntaxTree::Enum *AstWriter::From(const FlowPtr<Enum> &in) {
   return message;
 }
 
-SyntaxTree::Scope *AstWriter::From(const FlowPtr<Scope> &in) {
+SyntaxTree::Scope *AstWriter::From(FlowPtr<Scope> in) {
   auto *message = Pool::CreateMessage<SyntaxTree::Scope>(m_arena);
 
   message->set_allocated_location(FromSource(in));
@@ -1762,7 +1762,7 @@ SyntaxTree::Scope *AstWriter::From(const FlowPtr<Scope> &in) {
   return message;
 }
 
-SyntaxTree::Export *AstWriter::From(const FlowPtr<Export> &in) {
+SyntaxTree::Export *AstWriter::From(FlowPtr<Export> in) {
   auto *message = Pool::CreateMessage<SyntaxTree::Export>(m_arena);
 
   message->set_allocated_location(FromSource(in));

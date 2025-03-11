@@ -54,6 +54,13 @@ namespace ncc::parse {
 
     std::pmr::memory_resource& m_pool;
 
+    [[gnu::pure, nodiscard]] auto CreateMockInstance(
+        ASTNodeKind kind, SourceLocation origin = SourceLocation::current()) -> FlowPtr<Expr>;
+
+  public:
+    constexpr ASTFactory(std::pmr::memory_resource& pool) : m_pool(pool) {}
+    constexpr ~ASTFactory() = default;
+
     template <typename T, typename... Args>
     constexpr static inline auto CreateInstance(Args&&... args) {
       return [&](std::pmr::memory_resource& pool, SourceLocation origin) {
@@ -72,13 +79,6 @@ namespace ncc::parse {
       auto* buffer = static_cast<T*>(m_pool.allocate(bytes_needed, alignof(T)));
       return std::span<T>(buffer, size);
     }
-
-    [[gnu::pure, nodiscard]] auto CreateMockInstance(
-        ASTNodeKind kind, SourceLocation origin = SourceLocation::current()) -> FlowPtr<Expr>;
-
-  public:
-    constexpr ASTFactory(std::pmr::memory_resource& pool) : m_pool(pool) {}
-    constexpr ~ASTFactory() = default;
 
     ///=========================================================================
     /// FACTORY TYPES

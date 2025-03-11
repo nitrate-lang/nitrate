@@ -46,7 +46,7 @@ void CambrianFormatter::Visit(FlowPtr<Function> n) {
     m_line << " [";
     IterateExceptLast(
         n->GetAttributes().begin(), n->GetAttributes().end(), [&](auto attr, size_t) { attr.Accept(*this); },
-        [&](let) { m_line << ", "; });
+        [&](auto) { m_line << ", "; });
     m_line << "]";
   }
 
@@ -59,7 +59,7 @@ void CambrianFormatter::Visit(FlowPtr<Function> n) {
         [&](auto param, size_t) {
           m_line << std::get<0>(param);
 
-          if (let type = std::get<1>(param)) {
+          if (auto type = std::get<1>(param)) {
             if (type->GetKind() != QAST_INFER) {
               m_line << ": ";
               type->Accept(*this);
@@ -71,7 +71,7 @@ void CambrianFormatter::Visit(FlowPtr<Function> n) {
             val.value().Accept(*this);
           }
         },
-        [&](let) { m_line << ", "; });
+        [&](auto) { m_line << ", "; });
     m_line << ">";
   }
 
@@ -81,7 +81,7 @@ void CambrianFormatter::Visit(FlowPtr<Function> n) {
       [&](auto param, size_t) {
         m_line << std::get<0>(param);
 
-        if (let type = std::get<1>(param)) {
+        if (auto type = std::get<1>(param)) {
           if (type->GetKind() != QAST_INFER) {
             m_line << ": ";
             type->Accept(*this);
@@ -93,7 +93,7 @@ void CambrianFormatter::Visit(FlowPtr<Function> n) {
           def.value().Accept(*this);
         }
       },
-      [&](let) { m_line << ", "; });
+      [&](auto) { m_line << ", "; });
 
   if (n->IsVariadic()) {
     if (!n->GetParams().empty()) {
@@ -129,7 +129,7 @@ void CambrianFormatter::Visit(FlowPtr<FuncTy> n) {
     m_line << "[";
     IterateExceptLast(
         n->GetAttributes().begin(), n->GetAttributes().end(), [&](auto attr, size_t) { attr.Accept(*this); },
-        [&](let) { m_line << ", "; });
+        [&](auto) { m_line << ", "; });
     m_line << "] ";
   }
 
@@ -149,7 +149,7 @@ void CambrianFormatter::Visit(FlowPtr<FuncTy> n) {
           def.value().Accept(*this);
         }
       },
-      [&](let) { m_line << ", "; });
+      [&](auto) { m_line << ", "; });
   if (n->IsVariadic()) {
     if (!n->GetParams().empty()) {
       m_line << ", ";

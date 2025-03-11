@@ -383,7 +383,7 @@ static NCC_FORCE_INLINE std::optional<parse::ImportMode> FromImportMode(SyntaxTr
   }
 }
 
-void AstReader::UnmarshalLocationLocation(const SyntaxTree::SourceLocationRange &in, const FlowPtr<Expr> &out) {
+void AstReader::UnmarshalLocationLocation(const SyntaxTree::SourceLocationRange &in, FlowPtr<Expr> out) {
   if (!m_rd.has_value()) {
     return;
   }
@@ -413,8 +413,7 @@ void AstReader::UnmarshalLocationLocation(const SyntaxTree::SourceLocationRange 
 }
 
 void AstReader::UnmarshalCodeComment(
-    const ::google::protobuf::RepeatedPtrField<::nitrate::parser::SyntaxTree::UserComment> &in,
-    const FlowPtr<Expr> &out) {
+    const ::google::protobuf::RepeatedPtrField<::nitrate::parser::SyntaxTree::UserComment> &in, FlowPtr<Expr> out) {
   std::vector<string> comments;
   comments.reserve(in.size());
 

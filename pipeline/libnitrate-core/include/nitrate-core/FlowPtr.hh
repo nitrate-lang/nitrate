@@ -165,8 +165,12 @@ namespace ncc {
       ///=========================================================================
       /// Accessors
 
-      constexpr auto operator->() const { return m_s.m_ref; }
-      [[nodiscard]] constexpr auto get() const {  // NOLINT
+      constexpr auto operator->() -> Pointee * { return m_s.m_ref; }
+      constexpr auto operator->() const -> const Pointee * { return m_s.m_ref; }
+      [[nodiscard]] constexpr auto get() -> Pointee * {  // NOLINT
+        return m_s.m_ref;
+      }
+      [[nodiscard]] constexpr auto get() const -> const Pointee * {  // NOLINT
         return m_s.m_ref;
       }
       constexpr operator bool() const { return m_s.m_ref != nullptr; }
@@ -175,13 +179,24 @@ namespace ncc {
       /// Casting
 
       template <class U>
-      constexpr operator FlowPtr<U>() const {
+      constexpr operator FlowPtr<const U>() const {
+        static_assert(std::is_convertible_v<const Pointee *, const U *>, "Cannot convert Pointee* to U*");
+        return FlowPtr<const U>(static_cast<const U *>(get()), Trace());
+      }
+
+      template <class U>
+      constexpr operator FlowPtr<U>() {
         static_assert(std::is_convertible_v<Pointee *, U *>, "Cannot convert Pointee* to U*");
         return FlowPtr<U>(static_cast<U *>(get()), Trace());
       }
 
       template <class U>
       constexpr auto As() const {
+        return FlowPtr<const U>(reinterpret_cast<const U *>(get()), Trace());
+      }
+
+      template <class U>
+      constexpr auto As() {
         return FlowPtr<U>(reinterpret_cast<U *>(get()), Trace());
       }
 
@@ -230,7 +245,7 @@ namespace std {
   template <class Pointee, class Tracking>
   struct hash<ncc::FlowPtr<Pointee, Tracking>> {
     auto operator()(const ncc::FlowPtr<Pointee, Tracking> &ptr) const -> size_t {
-      return std::hash<Pointee *>()(ptr.get());
+      return std::hash<const Pointee *>()(ptr.get());
     }
   };
 }  // namespace std
