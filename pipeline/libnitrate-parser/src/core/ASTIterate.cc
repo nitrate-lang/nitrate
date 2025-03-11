@@ -55,7 +55,7 @@ class IterVisitor : public ASTVisitor {
 
   template <class T>
   constexpr void Add(FlowPtr<T> n) {
-    if (n == nullptr) {
+    if (n == nullptr || n->IsDiscarded()) {
       return;
     }
 
@@ -64,7 +64,7 @@ class IterVisitor : public ASTVisitor {
 
   template <class T>
   constexpr void Add(NullableFlowPtr<T> n) {
-    if (!n.has_value() || n == nullptr) {
+    if (!n.has_value() || n == nullptr || n.value()->IsDiscarded()) {
       return;
     }
 

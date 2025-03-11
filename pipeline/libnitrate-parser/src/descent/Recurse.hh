@@ -116,7 +116,7 @@ namespace ncc::parse {
     [[nodiscard]] auto RecurseEnum() -> FlowPtr<Expr>;
     [[nodiscard]] auto RecurseStruct(CompositeType type) -> FlowPtr<Expr>;
     [[nodiscard]] auto RecurseScope() -> FlowPtr<Expr>;
-    [[nodiscard]] auto RecurseFunction(bool parse_declaration_only) -> FlowPtr<Expr>;
+    [[nodiscard]] auto RecurseFunction(bool parse_declaration_only) -> FlowPtr<Function>;
     [[nodiscard]] auto RecurseType() -> FlowPtr<Type>;
     [[nodiscard]] auto RecurseTypedef() -> FlowPtr<Expr>;
     [[nodiscard]] auto RecurseReturn() -> FlowPtr<Expr>;
@@ -131,7 +131,7 @@ namespace ncc::parse {
     [[nodiscard]] auto RecurseThrow() -> FlowPtr<Expr>;
     [[nodiscard]] auto RecurseAwait() -> FlowPtr<Expr>;
     [[nodiscard]] auto RecurseImport() -> FlowPtr<Expr>;
-    [[nodiscard]] auto RecurseBlock(bool expect_braces, bool single_stmt, BlockMode safety) -> FlowPtr<Expr>;
+    [[nodiscard]] auto RecurseBlock(bool expect_braces, bool single_stmt, BlockMode safety) -> FlowPtr<Block>;
     [[nodiscard]] auto RecurseExpr(const std::set<lex::Token> &terminators) -> FlowPtr<Expr>;
     [[nodiscard]] auto RecurseExprPrimary(bool is_type) -> NullableFlowPtr<Expr>;
     [[nodiscard]] auto RecurseExprKeyword(lex::Keyword key) -> NullableFlowPtr<Expr>;
@@ -156,7 +156,7 @@ namespace ncc::parse {
     [[nodiscard]] auto RecurseEnumFields() -> std::vector<std::pair<string, NullableFlowPtr<Expr>>>;
     [[nodiscard]] auto RecurseAbiName() -> string;
     [[nodiscard]] auto RecurseExportAttributes() -> std::vector<FlowPtr<Expr>>;
-    [[nodiscard]] auto RecurseExportBody() -> FlowPtr<Expr>;
+    [[nodiscard]] auto RecurseExportBody() -> FlowPtr<Block>;
     [[nodiscard]] auto RecurseCallArguments(const std::set<lex::Token> &terminators,
                                             bool type_by_default) -> std::vector<CallArg>;
     [[nodiscard]] auto ParseFStringExpression(std::string_view source) -> FlowPtr<Expr>;

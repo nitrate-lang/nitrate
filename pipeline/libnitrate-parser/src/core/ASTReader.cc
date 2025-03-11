@@ -426,6 +426,12 @@ void AstReader::UnmarshalCodeComment(
 
 auto AstReader::Unmarshal(const SyntaxTree::Expr &in) -> Result<Expr> {
   switch (in.node_case()) {
+    case SyntaxTree::Expr::kDiscarded: {
+      auto to_discard = m_fac.CreateUndefined();
+      to_discard->Discard();
+      return to_discard;
+    }
+
     case SyntaxTree::Expr::kUnary: {
       return Unmarshal(in.unary());
     }
@@ -686,6 +692,12 @@ auto AstReader::Unmarshal(const SyntaxTree::Expr &in) -> Result<Expr> {
 
 auto AstReader::Unmarshal(const SyntaxTree::Type &in) -> Result<Type> {
   switch (in.node_case()) {
+    case SyntaxTree::Type::kDiscarded: {
+      auto to_discard = m_fac.CreateVoid();
+      to_discard->Discard();
+      return to_discard;
+    }
+
     case SyntaxTree::Type::kNamed: {
       return Unmarshal(in.named());
     }

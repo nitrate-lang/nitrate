@@ -111,7 +111,7 @@ auto GeneralParser::PImpl::RecurseName() -> string {
   return name;
 }
 
-auto GeneralParser::PImpl::RecurseBlock(bool expect_braces, bool single_stmt, BlockMode safety) -> FlowPtr<Expr> {
+auto GeneralParser::PImpl::RecurseBlock(bool expect_braces, bool single_stmt, BlockMode safety) -> FlowPtr<Block> {
   if (expect_braces && !Next().Is<PuncLCur>()) {
     Log << ParserSignal << Current() << "Expected '{'";
   }

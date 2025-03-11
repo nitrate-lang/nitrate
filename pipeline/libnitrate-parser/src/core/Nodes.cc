@@ -205,11 +205,15 @@ auto Expr::Hash64() const -> uint64_t {
 }
 
 auto Expr::RecursiveChildCount() -> size_t {
+  if (IsDiscarded()) {
+    return 0;
+  }
+
   size_t count = 0;
 
   for_each(this, [&](auto) { count++; });
 
-  return count;
+  return count - 1;
 }
 
 auto Expr::SourceBegin() const -> lex::LocationID {

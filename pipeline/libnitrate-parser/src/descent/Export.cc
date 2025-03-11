@@ -70,7 +70,7 @@ auto GeneralParser::PImpl::RecurseExportAttributes() -> std::vector<FlowPtr<Expr
   }
 }
 
-auto GeneralParser::PImpl::RecurseExportBody() -> FlowPtr<Expr> {
+auto GeneralParser::PImpl::RecurseExportBody() -> FlowPtr<Block> {
   if (Peek().Is<PuncLCur>()) {
     return RecurseBlock(true, false, BlockMode::Unknown);
   }

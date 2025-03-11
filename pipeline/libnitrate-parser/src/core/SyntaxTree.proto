@@ -51,6 +51,11 @@ message TemplateParameters {
 
 ///===--------------------------------------------------------------------===///
 
+message Discarded {
+  optional SourceLocationRange location = 1;
+  repeated UserComment comments = 2;
+}
+
 message NamedTy {
   optional SourceLocationRange location = 1;
   repeated UserComment comments = 2;
@@ -464,8 +469,8 @@ message Import {
   repeated UserComment comments = 2;
 
   required string name = 4;
-  required Expr subtree = 5;
-  required Mode mode = 6;
+  required Mode mode = 5;
+  required Expr subtree = 6;
 }
 
 message List {
@@ -649,7 +654,7 @@ message Export {
   required Vis visibility = 4;
   required string abi_name = 5;
   repeated Expr attributes = 6;
-  required Expr body = 7;
+  required Block body = 7;
 }
 
 message Scope {
@@ -717,7 +722,7 @@ message Struct {
   }
 
   message Method {
-    required Expr func = 1;
+    required Function func = 1;
     required Vis visibility = 2;
   }
 
@@ -736,6 +741,8 @@ message Struct {
 
 message Type {
   oneof node {
+    Discarded discarded = 1;
+
     U1 u1 = 80;
     U8 u8 = 81;
     U16 u16 = 82;
@@ -766,6 +773,8 @@ message Type {
 
 message Expr {
   oneof node {
+    Discarded discarded = 1;
+
     Unary unary = 11;
     Binary binary = 12;
     Ternary ternary = 14;

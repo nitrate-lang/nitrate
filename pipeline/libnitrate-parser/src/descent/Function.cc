@@ -231,7 +231,7 @@ auto GeneralParser::PImpl::RecurseFunctionBody(bool parse_declaration_only) -> N
   return RecurseBlock(true, false, BlockMode::Unknown);
 }
 
-auto GeneralParser::PImpl::RecurseFunction(bool parse_declaration_only) -> FlowPtr<Expr> {
+auto GeneralParser::PImpl::RecurseFunction(bool parse_declaration_only) -> FlowPtr<Function> {
   auto start_pos = Current().GetStart();
 
   auto function_attributes = RecurseFunctionAttributes();

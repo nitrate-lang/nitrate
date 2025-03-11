@@ -37,12 +37,204 @@
 #include <nitrate-core/CatchAll.hh>
 #include <nitrate-lexer/Lexer.hh>
 #include <nitrate-lexer/Scanner.hh>
+#include <nitrate-parser/AST.hh>
+#include <nitrate-parser/ASTFactory.hh>
+#include <nitrate-parser/ASTVisitor.hh>
 #include <nitrate-parser/Algorithm.hh>
 #include <nitrate-parser/Package.hh>
+#include <stack>
 
 using namespace ncc;
 using namespace ncc::lex;
 using namespace ncc::parse;
+
+namespace ncc::parse::import {
+  class ImportSubgraphVisitor : public ASTVisitor {
+    std::stack<Vis> m_vis_stack;
+    ASTFactory &m_fac;
+
+    void Visit(FlowPtr<NamedTy> n) override { n->Discard(); };
+    void Visit(FlowPtr<InferTy> n) override { n->Discard(); };
+    void Visit(FlowPtr<TemplateType> n) override { n->Discard(); };
+    void Visit(FlowPtr<U1> n) override { n->Discard(); };
+    void Visit(FlowPtr<U8> n) override { n->Discard(); };
+    void Visit(FlowPtr<U16> n) override { n->Discard(); };
+    void Visit(FlowPtr<U32> n) override { n->Discard(); };
+    void Visit(FlowPtr<U64> n) override { n->Discard(); };
+    void Visit(FlowPtr<U128> n) override { n->Discard(); };
+    void Visit(FlowPtr<I8> n) override { n->Discard(); };
+    void Visit(FlowPtr<I16> n) override { n->Discard(); };
+    void Visit(FlowPtr<I32> n) override { n->Discard(); };
+    void Visit(FlowPtr<I64> n) override { n->Discard(); };
+    void Visit(FlowPtr<I128> n) override { n->Discard(); };
+    void Visit(FlowPtr<F16> n) override { n->Discard(); };
+    void Visit(FlowPtr<F32> n) override { n->Discard(); };
+    void Visit(FlowPtr<F64> n) override { n->Discard(); };
+    void Visit(FlowPtr<F128> n) override { n->Discard(); };
+    void Visit(FlowPtr<VoidTy> n) override { n->Discard(); };
+    void Visit(FlowPtr<PtrTy> n) override { n->Discard(); };
+    void Visit(FlowPtr<OpaqueTy> n) override { n->Discard(); };
+    void Visit(FlowPtr<TupleTy> n) override { n->Discard(); };
+    void Visit(FlowPtr<ArrayTy> n) override { n->Discard(); };
+    void Visit(FlowPtr<RefTy> n) override { n->Discard(); };
+    void Visit(FlowPtr<FuncTy> n) override { n->Discard(); };
+    void Visit(FlowPtr<Unary> n) override { n->Discard(); };
+    void Visit(FlowPtr<Binary> n) override { n->Discard(); };
+    void Visit(FlowPtr<Ternary> n) override { n->Discard(); };
+    void Visit(FlowPtr<Integer> n) override { n->Discard(); };
+    void Visit(FlowPtr<Float> n) override { n->Discard(); };
+    void Visit(FlowPtr<Boolean> n) override { n->Discard(); };
+    void Visit(FlowPtr<String> n) override { n->Discard(); };
+    void Visit(FlowPtr<Character> n) override { n->Discard(); };
+    void Visit(FlowPtr<Null> n) override { n->Discard(); };
+    void Visit(FlowPtr<Undefined> n) override { n->Discard(); };
+    void Visit(FlowPtr<Call> n) override { n->Discard(); };
+    void Visit(FlowPtr<TemplateCall> n) override { n->Discard(); };
+    void Visit(FlowPtr<Import> n) override { n->Discard(); };
+    void Visit(FlowPtr<List> n) override { n->Discard(); };
+    void Visit(FlowPtr<Assoc> n) override { n->Discard(); };
+    void Visit(FlowPtr<Index> n) override { n->Discard(); };
+    void Visit(FlowPtr<Slice> n) override { n->Discard(); };
+    void Visit(FlowPtr<FString> n) override { n->Discard(); };
+    void Visit(FlowPtr<Identifier> n) override { n->Discard(); };
+    void Visit(FlowPtr<Assembly> n) override { n->Discard(); };
+    void Visit(FlowPtr<If> n) override { n->Discard(); };
+    void Visit(FlowPtr<While> n) override { n->Discard(); };
+    void Visit(FlowPtr<For> n) override { n->Discard(); };
+    void Visit(FlowPtr<Foreach> n) override { n->Discard(); };
+    void Visit(FlowPtr<Break> n) override { n->Discard(); };
+    void Visit(FlowPtr<Continue> n) override { n->Discard(); };
+    void Visit(FlowPtr<Return> n) override { n->Discard(); };
+    void Visit(FlowPtr<ReturnIf> n) override { n->Discard(); };
+    void Visit(FlowPtr<Case> n) override { n->Discard(); };
+    void Visit(FlowPtr<Switch> n) override { n->Discard(); };
+
+    ///=========================================================================
+
+    void Visit(FlowPtr<Block> n) override {
+      for (auto &stmt : n->GetStatements()) {
+        switch (stmt->GetKind()) {
+          case QAST_BLOCK:
+          case QAST_SCOPE:
+          case QAST_EXPORT:
+          case QAST_IMPORT: {
+            stmt->Accept(*this);
+            break;
+          }
+
+          case QAST_TYPEDEF:
+          case QAST_STRUCT:
+          case QAST_ENUM:
+          case QAST_VAR:
+          case QAST_FUNCTION: {
+            auto vis = m_vis_stack.top();
+
+            switch (vis) {
+              case Vis::Pub: {
+                stmt->Accept(*this);
+                break;
+              }
+
+              case Vis::Sec: {
+                stmt->Discard();
+                break;
+              }
+
+              case Vis::Pro: {
+                /// TODO: Implement protected visibility
+                Log << ParserSignal << "Protected visibility not implemented";
+                break;
+              }
+            }
+
+            break;
+          }
+
+          default: {
+            stmt->Discard();
+            break;
+          }
+        }
+      }
+
+      if (n->RecursiveChildCount() == 0) {
+        n->Discard();
+      }
+    }
+
+    void Visit(FlowPtr<Variable> n) override {
+      // Prevent multiple definitions of the same global variable
+      // by setting a linkage attribute on all imported variables to
+      // extern. Also require all global variables to have explicit
+      // type specifications.
+
+      if (!n->GetType()) {
+        Log << ParserSignal << "Global variable '" << n->GetName() << "' must have a type specification";
+        return;
+      }
+
+      auto extern_linkage = m_fac
+                                .CreateCall(m_fac.CreateIdentifier("linkage"),
+                                            {
+                                                {0U, m_fac.CreateString("extern")},
+                                            })
+                                .value();
+
+      auto orig_attributes = n->GetAttributes();
+      auto orig_attributes_size = orig_attributes.size();
+
+      auto attributes = m_fac.AllocateArray<FlowPtr<Expr>>(orig_attributes_size + 1);
+      std::copy(orig_attributes.begin(), orig_attributes.end(), attributes.begin());
+      attributes[orig_attributes_size] = extern_linkage;
+
+      n->SetAttributes(attributes);
+      n->SetInitializer(std::nullopt);
+    }
+
+    void Visit(FlowPtr<Typedef>) override {}
+
+    void Visit(FlowPtr<Function> n) override {
+      // Prevent multiple definitions of the same function
+      // by removing the body of all imported functions, thereby
+      // turning them into declarations.
+
+      n->SetBody(std::nullopt);
+      qcore_assert(n->IsDeclaration());
+    }
+
+    void Visit(FlowPtr<Struct> n) override {
+      for (auto &field : n->GetMethods()) {
+        field.m_func->SetBody(std::nullopt);
+      }
+      for (auto &field : n->GetStaticMethods()) {
+        field.m_func->SetBody(std::nullopt);
+      }
+    }
+
+    void Visit(FlowPtr<Enum>) override {}
+
+    void Visit(FlowPtr<Scope> n) override {
+      n->GetBody()->Accept(*this);
+
+      if (n->RecursiveChildCount() == 0) {
+        n->Discard();
+      }
+    }
+
+    void Visit(FlowPtr<Export> n) override {
+      m_vis_stack.push(n->GetVis());
+      n->GetBody()->Accept(*this);
+      m_vis_stack.pop();
+
+      if (n->RecursiveChildCount() == 0) {
+        n->Discard();
+      }
+    }
+
+  public:
+    ImportSubgraphVisitor(ASTFactory &fac) : m_fac(fac) { m_vis_stack.push(Vis::Sec); }
+  };
+}  // namespace ncc::parse::import
 
 auto GeneralParser::PImpl::RecurseImportName() -> std::pair<string, ImportMode> {
   if (NextIf<PuncLPar>()) {
@@ -116,43 +308,6 @@ auto GeneralParser::PImpl::RecurseImportName() -> std::pair<string, ImportMode> 
   return {name, ImportMode::Code};
 }
 
-void GeneralParser::PImpl::PrepareImportSubgraph(const FlowPtr<Expr> &root) {
-  for_each<Function>(root, [](const FlowPtr<Function> &node) {
-    // Prevent multiple definitions of the same function
-    // by removing the body of all imported functions, thereby
-    // turning them into declarations.
-    node->SetBody(std::nullopt);
-  });
-
-  for_each<Variable>(root, [this](const FlowPtr<Variable> &node) {
-    // Prevent multiple definitions of the same global variable
-    // by setting a linkage attribute on all imported variables to
-    // extern. Also require all global variables to have explicit
-    // type specifications.
-
-    if (!node->GetType()) {
-      Log << ParserSignal << node->SourceBegin().Get(m_rd).GetFilename() << ": '" << node->GetName()
-          << "': Global variable must have an explicit type";
-      return;
-    }
-
-    auto extern_linkage = m_fac
-                              .CreateCall(m_fac.CreateIdentifier("linkage"),
-                                          {
-                                              {0U, m_fac.CreateString("extern")},
-                                          })
-                              .value();
-
-    std::vector<FlowPtr<Expr>> attributes(node->GetAttributes().begin(), node->GetAttributes().end());
-    attributes.push_back(extern_linkage);
-
-    node->SetAttributes(std::move(attributes));
-    node->SetInitializer(std::nullopt);
-  });
-
-  /// TODO: Implement this function
-}
-
 auto GeneralParser::PImpl::RecurseImportRegularFile(string import_file, ImportMode import_mode) -> FlowPtr<Expr> {
   auto abs_import_path = OMNI_CATCH(std::filesystem::absolute(*import_file)).value_or(*import_file).lexically_normal();
 
@@ -222,9 +377,10 @@ auto GeneralParser::PImpl::RecurseImportRegularFile(string import_file, ImportMo
       subparser.m_impl->m_recursion_depth = m_recursion_depth;
       auto subtree = subparser.m_impl->RecurseBlock(false, false, BlockMode::Unknown);
 
-      ParserSwapScanner(scanner_ptr);
+      import::ImportSubgraphVisitor subgraph_visitor(m_fac);
+      subtree->Accept(subgraph_visitor);
 
-      PrepareImportSubgraph(subtree);
+      ParserSwapScanner(scanner_ptr);
 
       return m_fac.CreateImport(import_file, import_mode, std::move(subtree));
     }

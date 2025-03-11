@@ -111,6 +111,11 @@ namespace ncc::parse {
     template <typename T>
     void Dispatch(FlowPtr<T> n) {
       switch (n->GetKind()) {
+        case QAST_DISCARDED: {
+          // This node is to be ignored.
+          break;
+        }
+
         case QAST_BINEXPR: {
           Visit(n.template As<Binary>());
           break;

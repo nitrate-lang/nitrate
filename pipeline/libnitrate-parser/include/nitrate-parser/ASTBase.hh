@@ -97,6 +97,7 @@ namespace ncc::parse {
     [[nodiscard, gnu::pure]] constexpr auto GetKindName() const -> std::string_view { return GetKindName(m_node_type); }
     [[nodiscard, gnu::pure]] constexpr auto Is(ASTNodeKind type) const -> bool { return type == GetKind(); }
     [[nodiscard, gnu::pure]] constexpr auto IsMock() const -> bool { return m_mock; }
+    [[nodiscard, gnu::pure]] constexpr auto IsDiscarded() const -> bool { return Is(QAST_DISCARDED); }
 
     template <typename T>
     [[nodiscard, gnu::const]] static constexpr auto GetTypeCode() -> ASTNodeKind {
@@ -331,6 +332,7 @@ namespace ncc::parse {
     void SetOffset(lex::LocationID pos);
     void SetParenthesisDepth(size_t depth);
     void SetMock(bool mock);
+    void Discard() { m_node_type = QAST_DISCARDED; };
   } __attribute__((packed));
 
   static_assert(sizeof(Expr) == 8);

@@ -324,6 +324,11 @@ SyntaxTree::Expr *AstWriter::From(FlowPtr<Expr> in) {
   auto *message = Pool::CreateMessage<SyntaxTree::Expr>(m_arena);
 
   switch (in->GetKind()) {
+    case QAST_DISCARDED: {
+      message->set_allocated_discarded(Pool::CreateMessage<SyntaxTree::Discarded>(m_arena));
+      break;
+    }
+
     case QAST_BINEXPR: {
       message->set_allocated_binary(From(in.As<Binary>()));
       break;
@@ -997,8 +1002,13 @@ SyntaxTree::TupleTy *AstWriter::From(FlowPtr<TupleTy> in) {
     const auto &items = in->GetItems();
 
     message->mutable_elements()->Reserve(items.size());
-    std::for_each(items.begin(), items.end(),
-                  [&](auto item) { message->mutable_elements()->AddAllocated(From(item)); });
+    std::for_each(items.begin(), items.end(), [&](auto item) {
+      if (item->IsDiscarded()) {
+        return;
+      }
+
+      message->mutable_elements()->AddAllocated(From(item));
+    });
   }
 
   return message;
@@ -1059,8 +1069,13 @@ SyntaxTree::FuncTy *AstWriter::From(FlowPtr<FuncTy> in) {
   { /* Add all attributes */
     const auto &attrs = in->GetAttributes();
     message->mutable_attributes()->Reserve(attrs.size());
-    std::for_each(attrs.begin(), attrs.end(),
-                  [&](auto attr) { message->mutable_attributes()->AddAllocated(From(attr)); });
+    std::for_each(attrs.begin(), attrs.end(), [&](auto item) {
+      if (item->IsDiscarded()) {
+        return;
+      }
+
+      message->mutable_attributes()->AddAllocated(From(item));
+    });
   }
 
   return message;
@@ -1234,8 +1249,13 @@ SyntaxTree::List *AstWriter::From(FlowPtr<List> in) {
     const auto &items = in->GetItems();
 
     message->mutable_elements()->Reserve(items.size());
-    std::for_each(items.begin(), items.end(),
-                  [&](auto item) { message->mutable_elements()->AddAllocated(From(item)); });
+    std::for_each(items.begin(), items.end(), [&](auto item) {
+      if (item->IsDiscarded()) {
+        return;
+      }
+
+      message->mutable_elements()->AddAllocated(From(item));
+    });
   }
 
   return message;
@@ -1281,10 +1301,17 @@ SyntaxTree::FString *AstWriter::From(FlowPtr<FString> in) {
     const auto &items = in->GetItems();
     message->mutable_elements()->Reserve(items.size());
     std::for_each(items.begin(), items.end(), [&](auto item) {
-      auto *element = Pool::CreateMessage<SyntaxTree::FString::FStringTerm>(m_arena);
+      SyntaxTree::FString_FStringTerm *element = nullptr;
+
       if (std::holds_alternative<FlowPtr<Expr>>(item)) {
+        if (std::get<FlowPtr<Expr>>(item)->IsDiscarded()) {
+          return;
+        }
+
+        element = Pool::CreateMessage<SyntaxTree::FString::FStringTerm>(m_arena);
         element->set_allocated_expr(From(std::get<FlowPtr<Expr>>(item)));
       } else {
+        element = Pool::CreateMessage<SyntaxTree::FString::FStringTerm>(m_arena);
         element->set_text(std::get<ncc::String>(item).Get());
       }
 
@@ -1330,8 +1357,13 @@ SyntaxTree::Block *AstWriter::From(FlowPtr<Block> in) {
     const auto &items = in->GetStatements();
 
     message->mutable_statements()->Reserve(items.size());
-    std::for_each(items.begin(), items.end(),
-                  [&](auto item) { message->mutable_statements()->AddAllocated(From(item)); });
+    std::for_each(items.begin(), items.end(), [&](auto item) {
+      if (item->IsDiscarded()) {
+        return;
+      }
+
+      message->mutable_statements()->AddAllocated(From(item));
+    });
   }
 
   return message;
@@ -1367,8 +1399,13 @@ SyntaxTree::Variable *AstWriter::From(FlowPtr<Variable> in) {
     const auto &items = in->GetAttributes();
 
     message->mutable_attributes()->Reserve(items.size());
-    std::for_each(items.begin(), items.end(),
-                  [&](auto item) { message->mutable_attributes()->AddAllocated(From(item)); });
+    std::for_each(items.begin(), items.end(), [&](auto item) {
+      if (item->IsDiscarded()) {
+        return;
+      }
+
+      message->mutable_attributes()->AddAllocated(From(item));
+    });
   }
 
   return message;
@@ -1384,8 +1421,13 @@ SyntaxTree::Assembly *AstWriter::From(FlowPtr<Assembly> in) {
     const auto &items = in->GetArguments();
 
     message->mutable_arguments()->Reserve(items.size());
-    std::for_each(items.begin(), items.end(),
-                  [&](auto item) { message->mutable_arguments()->AddAllocated(From(item)); });
+    std::for_each(items.begin(), items.end(), [&](auto item) {
+      if (item->IsDiscarded()) {
+        return;
+      }
+
+      message->mutable_arguments()->AddAllocated(From(item));
+    });
   }
 
   return message;
@@ -1508,7 +1550,13 @@ SyntaxTree::Switch *AstWriter::From(FlowPtr<Switch> in) {
     const auto &items = in->GetCases();
 
     message->mutable_cases()->Reserve(items.size());
-    std::for_each(items.begin(), items.end(), [&](auto item) { message->mutable_cases()->AddAllocated(From(item)); });
+    std::for_each(items.begin(), items.end(), [&](auto item) {
+      if (item->IsDiscarded()) {
+        return;
+      }
+
+      message->mutable_cases()->AddAllocated(From(item));
+    });
   }
 
   if (in->GetDefault().has_value()) {
@@ -1553,8 +1601,13 @@ SyntaxTree::Function *AstWriter::From(FlowPtr<Function> in) {
     const auto &items = in->GetAttributes();
 
     message->mutable_attributes()->Reserve(items.size());
-    std::for_each(items.begin(), items.end(),
-                  [&](auto item) { message->mutable_attributes()->AddAllocated(From(item)); });
+    std::for_each(items.begin(), items.end(), [&](auto item) {
+      if (item->IsDiscarded()) {
+        return;
+      }
+
+      message->mutable_attributes()->AddAllocated(From(item));
+    });
   }
 
   /* Add all template parameters */
@@ -1663,8 +1716,13 @@ SyntaxTree::Struct *AstWriter::From(FlowPtr<Struct> in) {
     const auto &items = in->GetAttributes();
 
     message->mutable_attributes()->Reserve(items.size());
-    std::for_each(items.begin(), items.end(),
-                  [&](auto item) { message->mutable_attributes()->AddAllocated(From(item)); });
+    std::for_each(items.begin(), items.end(), [&](auto item) {
+      if (item->IsDiscarded()) {
+        return;
+      }
+
+      message->mutable_attributes()->AddAllocated(From(item));
+    });
   }
 
   { /* Add all fields */
@@ -1774,8 +1832,13 @@ SyntaxTree::Export *AstWriter::From(FlowPtr<Export> in) {
     const auto &items = in->GetAttributes();
 
     message->mutable_attributes()->Reserve(items.size());
-    std::for_each(items.begin(), items.end(),
-                  [&](auto item) { message->mutable_attributes()->AddAllocated(From(item)); });
+    std::for_each(items.begin(), items.end(), [&](auto item) {
+      if (item->IsDiscarded()) {
+        return;
+      }
+
+      message->mutable_attributes()->AddAllocated(From(item));
+    });
   }
 
   return message;

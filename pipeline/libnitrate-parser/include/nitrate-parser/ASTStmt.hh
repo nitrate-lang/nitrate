@@ -278,7 +278,7 @@ namespace ncc::parse {
 
   class Export final : public Expr {
     std::span<FlowPtr<Expr>> m_attrs;
-    FlowPtr<Expr> m_body;
+    FlowPtr<Block> m_body;
     string m_abi_name;
     Vis m_vis;
 

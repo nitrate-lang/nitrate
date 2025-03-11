@@ -39,6 +39,8 @@
 
 namespace ncc::parse {
   enum ASTNodeKind : uint8_t {
+    QAST_DISCARDED, /* Deleted node */
+
     /*****************************************************************************
      * Expressions
      ****************************************************************************/
@@ -124,10 +126,10 @@ namespace ncc::parse {
     QAST__STMT_FIRST = QAST_IF,
     QAST__STMT_LAST = QAST_FUNCTION,
 
-    QAST__EXPR_FIRST = QAST_BINEXPR,
+    QAST__EXPR_FIRST = QAST_DISCARDED,
     QAST__EXPR_LAST = QAST_FUNCTION,
 
-    QAST__FIRST = QAST_BINEXPR,
+    QAST__FIRST = QAST_DISCARDED,
     QAST__LAST = QAST_FUNCTION,
     QAST__RANGE = QAST__LAST - QAST__FIRST,
   };

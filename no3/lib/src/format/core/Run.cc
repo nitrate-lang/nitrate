@@ -704,6 +704,9 @@ static bool FormatFile(const std::filesystem::path& src, const std::filesystem::
 
   bool okay = false;
 
+  /// TODO: Remove this ling
+  Log << Info << ptree_root.value()->PrettyPrint();
+
   switch (mode) {
     case FormatMode::Standard: {
       /// TODO: Implement file formatting

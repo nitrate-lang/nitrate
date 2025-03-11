@@ -419,11 +419,11 @@ namespace ncc::parse {
     [[gnu::pure, nodiscard]] auto CreateScope(string name, FlowPtr<Expr> body, std::span<const string> tags = {},
                                               SourceLocation origin = SourceLocation::current()) -> FlowPtr<Scope>;
 
-    [[gnu::pure, nodiscard]] auto CreateExport(FlowPtr<Expr> symbol, const std::vector<FlowPtr<Expr>>& attributes,
+    [[gnu::pure, nodiscard]] auto CreateExport(FlowPtr<Block> symbol, const std::vector<FlowPtr<Expr>>& attributes,
                                                Vis vis = Vis::Pub, string abi = "",
                                                SourceLocation origin = SourceLocation::current()) -> FlowPtr<Export>;
 
-    [[gnu::pure, nodiscard]] auto CreateExport(FlowPtr<Expr> symbol, std::span<const FlowPtr<Expr>> attributes = {},
+    [[gnu::pure, nodiscard]] auto CreateExport(FlowPtr<Block> symbol, std::span<const FlowPtr<Expr>> attributes = {},
                                                Vis vis = Vis::Pub, string abi = "",
                                                SourceLocation origin = SourceLocation::current()) -> FlowPtr<Export>;
 

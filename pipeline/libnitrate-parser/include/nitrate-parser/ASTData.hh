@@ -79,9 +79,9 @@ namespace ncc::parse {
 
   struct StructFunction {
     Vis m_vis;
-    FlowPtr<Expr> m_func;
+    FlowPtr<Function> m_func;
 
-    StructFunction(Vis vis, FlowPtr<Expr> func) : m_vis(vis), m_func(std::move(func)) {}
+    StructFunction(Vis vis, FlowPtr<Function> func) : m_vis(vis), m_func(std::move(func)) {}
   };
 
 }  // namespace ncc::parse

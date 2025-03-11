@@ -147,12 +147,12 @@ auto ASTFactory::CreateScope(string name, FlowPtr<Expr> body, std::span<const st
   return CreateInstance<Scope>(name, body, tags_copy)(m_pool, origin);
 }
 
-auto ASTFactory::CreateExport(FlowPtr<Expr> symbol, const std::vector<FlowPtr<Expr>>& attributes, Vis vis, string abi,
+auto ASTFactory::CreateExport(FlowPtr<Block> symbol, const std::vector<FlowPtr<Expr>>& attributes, Vis vis, string abi,
                               SourceLocation origin) -> FlowPtr<Export> {
   return CreateExport(std::move(symbol), std::span(attributes), vis, abi, origin);
 }
 
-auto ASTFactory::CreateExport(FlowPtr<Expr> symbol, std::span<const FlowPtr<Expr>> attributes, Vis vis, string abi,
+auto ASTFactory::CreateExport(FlowPtr<Block> symbol, std::span<const FlowPtr<Expr>> attributes, Vis vis, string abi,
                               SourceLocation origin) -> FlowPtr<Export> {
   auto attributes_copy = AllocateArray<FlowPtr<Expr>>(attributes.size());
   std::copy(attributes.begin(), attributes.end(), attributes_copy.begin());

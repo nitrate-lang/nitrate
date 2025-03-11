@@ -148,6 +148,9 @@ namespace ncc::parse {
     constexpr Undefined() : Expr(QAST_UNDEF) {}
   };
 
+  static_assert(sizeof(Undefined) == sizeof(Expr),
+                "The undefined node is used internally to represent that a node is deleted.");
+
   class Call final : public Expr {
     FlowPtr<Expr> m_func;
     std::span<CallArg> m_args;
