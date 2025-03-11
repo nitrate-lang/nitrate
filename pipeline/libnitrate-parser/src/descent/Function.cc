@@ -66,7 +66,7 @@ auto GeneralParser::PImpl::RecurseFunctionParameter() -> std::optional<FuncParam
     return FuncParam{param_name, param_type, param_value};
   }
 
-  Log << SyntaxError << Next() << "Expected a parameter name before ':'";
+  Log << ParserSignal << Next() << "Expected a parameter name before ':'";
 
   return std::nullopt;
 }
@@ -80,7 +80,7 @@ auto GeneralParser::PImpl::RecurseTemplateParameters() -> std::optional<std::vec
 
   while (true) {
     if (m_rd.IsEof()) [[unlikely]] {
-      Log << SyntaxError << Current() << "Unexpected EOF in template parameters";
+      Log << ParserSignal << Current() << "Unexpected EOF in template parameters";
       return params;
     }
 
@@ -93,7 +93,7 @@ auto GeneralParser::PImpl::RecurseTemplateParameters() -> std::optional<std::vec
 
       params.emplace_back(param_name, param_type, param_value);
     } else {
-      Log << SyntaxError << Next() << "Expected a template parameter";
+      Log << ParserSignal << Next() << "Expected a template parameter";
     }
 
     NextIf<PuncComa>();
@@ -107,7 +107,7 @@ auto GeneralParser::PImpl::RecurseFunctionParameters()
   std::pair<std::vector<ASTFactory::FactoryFunctionParameter>, bool> parameters;
 
   if (!NextIf<PuncLPar>()) [[unlikely]] {
-    Log << SyntaxError << Current() << "Expected '(' after function name";
+    Log << ParserSignal << Current() << "Expected '(' after function name";
 
     return parameters;
   }
@@ -116,7 +116,7 @@ auto GeneralParser::PImpl::RecurseFunctionParameters()
 
   while (true) {
     if (m_rd.IsEof()) [[unlikely]] {
-      Log << SyntaxError << Current() << "Unexpected EOF in function parameters";
+      Log << ParserSignal << Current() << "Unexpected EOF in function parameters";
 
       return parameters;
     }
@@ -129,7 +129,7 @@ auto GeneralParser::PImpl::RecurseFunctionParameters()
       is_variadic = true;
 
       if (!Peek().Is<PuncRPar>()) {
-        Log << SyntaxError << Current() << "Expected ')' after variadic parameter";
+        Log << ParserSignal << Current() << "Expected ')' after variadic parameter";
       }
       continue;
     }
@@ -138,7 +138,7 @@ auto GeneralParser::PImpl::RecurseFunctionParameters()
       auto [param_name, param_type, param_value] = parameter.value();
       parameters.first.emplace_back(param_name, param_type, param_value);
     } else {
-      Log << SyntaxError << Next() << "Expected a function parameter";
+      Log << ParserSignal << Next() << "Expected a function parameter";
     }
 
     NextIf<PuncComa>();
@@ -173,7 +173,7 @@ auto GeneralParser::PImpl::RecurseFunctionAttributes() -> std::vector<FlowPtr<Ex
   if (NextIf<PuncLBrk>()) {
     while (true) {
       if (m_rd.IsEof()) [[unlikely]] {
-        Log << SyntaxError << Current() << "Unexpected EOF in function attributes";
+        Log << ParserSignal << Current() << "Unexpected EOF in function attributes";
         return attributes;
       }
 

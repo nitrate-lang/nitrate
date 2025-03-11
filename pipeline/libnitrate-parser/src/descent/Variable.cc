@@ -46,7 +46,7 @@ auto GeneralParser::PImpl::RecurseVariableAttributes() -> std::vector<FlowPtr<Ex
 
   while (true) {
     if (m_rd.IsEof()) [[unlikely]] {
-      Log << SyntaxError << Current() << "Encountered EOF while parsing variable attribute";
+      Log << ParserSignal << Current() << "Encountered EOF while parsing variable attribute";
       return attributes;
     }
 
@@ -93,7 +93,7 @@ auto GeneralParser::PImpl::RecurseVariableInstance(VariableType decl_type) -> Nu
     return m_fac.CreateVariable(decl_type, variable_name, symbol_attributes_opt, variable_type, variable_initial);
   }
 
-  Log << SyntaxError << Current() << "Expected variable name";
+  Log << ParserSignal << Current() << "Expected variable name";
 
   return std::nullopt;
 }
@@ -103,14 +103,14 @@ auto GeneralParser::PImpl::RecurseVariable(VariableType decl_type) -> std::vecto
 
   while (true) {
     if (m_rd.IsEof()) [[unlikely]] {
-      Log << SyntaxError << Current() << "Unexpected EOF in variable declaration";
+      Log << ParserSignal << Current() << "Unexpected EOF in variable declaration";
       break;
     }
 
     if (auto variable_opt = RecurseVariableInstance(decl_type)) {
       variables.push_back(variable_opt.value());
     } else {
-      Log << SyntaxError << Current() << "Failed to parse variable declaration";
+      Log << ParserSignal << Current() << "Failed to parse variable declaration";
       break;
     }
 
@@ -119,7 +119,7 @@ auto GeneralParser::PImpl::RecurseVariable(VariableType decl_type) -> std::vecto
     }
 
     if (!NextIf<PuncComa>()) {
-      Log << SyntaxError << Current() << "Expected comma or semicolon after variable declaration";
+      Log << ParserSignal << Current() << "Expected comma or semicolon after variable declaration";
       break;
     }
   }

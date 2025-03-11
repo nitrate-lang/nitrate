@@ -85,7 +85,7 @@ auto GeneralParser::PImpl::RecurseName() -> string {
           state = RequireScopeOrEnd;
           Next();
         } else {
-          Log << SyntaxError << last << "Expected identifier after '::'";
+          Log << ParserSignal << last << "Expected identifier after '::'";
           name.clear();
           state = Exit;
           Next();  // Prevent infinite loops elsewhere
@@ -115,7 +115,7 @@ auto GeneralParser::PImpl::RecurseName() -> string {
 
 auto GeneralParser::PImpl::RecurseBlock(bool expect_braces, bool single_stmt, BlockMode safety) -> FlowPtr<Expr> {
   if (expect_braces && !Next().Is<PuncLCur>()) {
-    Log << SyntaxError << Current() << "Expected '{'";
+    Log << ParserSignal << Current() << "Expected '{'";
   }
 
   auto block_start = Current().GetStart();
@@ -135,7 +135,7 @@ auto GeneralParser::PImpl::RecurseBlock(bool expect_braces, bool single_stmt, Bl
 
       if (!should_break && m_rd.IsEof()) {
         if (expect_braces) {
-          Log << SyntaxError << Current() << "Expected '}'";
+          Log << ParserSignal << Current() << "Expected '}'";
         }
 
         should_break = true;
@@ -158,7 +158,7 @@ auto GeneralParser::PImpl::RecurseBlock(bool expect_braces, bool single_stmt, Bl
       });
 
       if (!NextIf<PuncSemi>()) {
-        Log << SyntaxError << Current() << "Expected ';' after statement expression";
+        Log << ParserSignal << Current() << "Expected ';' after statement expression";
       }
 
       statements.push_back(BindComments(expr, comments));
@@ -226,7 +226,7 @@ auto GeneralParser::PImpl::RecurseBlock(bool expect_braces, bool single_stmt, Bl
         }
 
         case Static: {
-          Log << SyntaxError << Current()
+          Log << ParserSignal << Current()
               << "Static variables are not yet "
                  "supported";
           break;
@@ -258,7 +258,7 @@ auto GeneralParser::PImpl::RecurseBlock(bool expect_braces, bool single_stmt, Bl
         }
 
         case Opaque: {
-          Log << SyntaxError << Current() << "Unexpected 'opaque' in block context";
+          Log << ParserSignal << Current() << "Unexpected 'opaque' in block context";
           break;
         }
 
@@ -270,7 +270,7 @@ auto GeneralParser::PImpl::RecurseBlock(bool expect_braces, bool single_stmt, Bl
         case __FString: {
           r = RecurseFstring();
           if (!NextIf<PuncSemi>()) {
-            Log << SyntaxError << Current() << "Expected ';' after f-string expression";
+            Log << ParserSignal << Current() << "Expected ';' after f-string expression";
           }
           break;
         }
@@ -301,37 +301,37 @@ auto GeneralParser::PImpl::RecurseBlock(bool expect_braces, bool single_stmt, Bl
         }
 
         case Pure: {
-          Log << SyntaxError << Current() << "Unexpected 'pure' in block context";
+          Log << ParserSignal << Current() << "Unexpected 'pure' in block context";
           break;
         }
 
         case Impure: {
-          Log << SyntaxError << Current() << "Unexpected 'impure' in block context";
+          Log << ParserSignal << Current() << "Unexpected 'impure' in block context";
           break;
         }
 
         case Quasi: {
-          Log << SyntaxError << Current() << "Unexpected 'quasi' in block context";
+          Log << ParserSignal << Current() << "Unexpected 'quasi' in block context";
           break;
         }
 
         case Retro: {
-          Log << SyntaxError << Current() << "Unexpected 'retro' in block context";
+          Log << ParserSignal << Current() << "Unexpected 'retro' in block context";
           break;
         }
 
         case Inline: {
-          Log << SyntaxError << Current() << "Unexpected 'inline' in block context";
+          Log << ParserSignal << Current() << "Unexpected 'inline' in block context";
           break;
         }
 
         case Foreign: {
-          Log << SyntaxError << Current() << "Unexpected 'foreign' in block context";
+          Log << ParserSignal << Current() << "Unexpected 'foreign' in block context";
           break;
         }
 
         case Promise: {
-          Log << SyntaxError << Current() << "Unexpected 'promise' in block context";
+          Log << ParserSignal << Current() << "Unexpected 'promise' in block context";
           break;
         }
 
@@ -341,7 +341,7 @@ auto GeneralParser::PImpl::RecurseBlock(bool expect_braces, bool single_stmt, Bl
         }
 
         case Else: {
-          Log << SyntaxError << Current() << "Unexpected 'else' in block context";
+          Log << ParserSignal << Current() << "Unexpected 'else' in block context";
           break;
         }
 
@@ -356,7 +356,7 @@ auto GeneralParser::PImpl::RecurseBlock(bool expect_braces, bool single_stmt, Bl
         }
 
         case Do: {
-          Log << SyntaxError << Current() << "Unexpected 'do' in block context";
+          Log << ParserSignal << Current() << "Unexpected 'do' in block context";
           break;
         }
 
@@ -368,7 +368,7 @@ auto GeneralParser::PImpl::RecurseBlock(bool expect_braces, bool single_stmt, Bl
         case Keyword::Break: {
           r = m_fac.CreateBreak();
           if (!NextIf<PuncSemi>()) {
-            Log << SyntaxError << Current() << "Expected ';' after 'break' statement";
+            Log << ParserSignal << Current() << "Expected ';' after 'break' statement";
           }
 
           break;
@@ -377,7 +377,7 @@ auto GeneralParser::PImpl::RecurseBlock(bool expect_braces, bool single_stmt, Bl
         case Keyword::Continue: {
           r = m_fac.CreateContinue();
           if (!NextIf<PuncSemi>()) {
-            Log << SyntaxError << Current() << "Expected ';' after 'continue' statement";
+            Log << ParserSignal << Current() << "Expected ';' after 'continue' statement";
           }
           break;
         }
@@ -403,7 +403,7 @@ auto GeneralParser::PImpl::RecurseBlock(bool expect_braces, bool single_stmt, Bl
         }
 
         case Catch: {
-          Log << SyntaxError << Current() << "Unexpected 'catch' in block context";
+          Log << ParserSignal << Current() << "Unexpected 'catch' in block context";
           break;
         }
 
@@ -413,7 +413,7 @@ auto GeneralParser::PImpl::RecurseBlock(bool expect_braces, bool single_stmt, Bl
         }
 
         case Async: {
-          Log << SyntaxError << Current() << "Unexpected 'async' in block context";
+          Log << ParserSignal << Current() << "Unexpected 'async' in block context";
           break;
         }
 
@@ -430,7 +430,7 @@ auto GeneralParser::PImpl::RecurseBlock(bool expect_braces, bool single_stmt, Bl
         case Undef: {
           r = m_fac.CreateUndefined();
           if (!NextIf<PuncSemi>()) {
-            Log << SyntaxError << Current() << "Expected ';' after 'undef' statement";
+            Log << ParserSignal << Current() << "Expected ';' after 'undef' statement";
           }
           break;
         }
@@ -438,7 +438,7 @@ auto GeneralParser::PImpl::RecurseBlock(bool expect_braces, bool single_stmt, Bl
         case Keyword::Null: {
           r = m_fac.CreateNull();
           if (!NextIf<PuncSemi>()) {
-            Log << SyntaxError << Current() << "Expected ';' after 'null' statement";
+            Log << ParserSignal << Current() << "Expected ';' after 'null' statement";
           }
           break;
         }
@@ -446,7 +446,7 @@ auto GeneralParser::PImpl::RecurseBlock(bool expect_braces, bool single_stmt, Bl
         case True: {
           r = m_fac.CreateBoolean(true);
           if (!NextIf<PuncSemi>()) {
-            Log << SyntaxError << Current() << "Expected ';' after 'true' statement";
+            Log << ParserSignal << Current() << "Expected ';' after 'true' statement";
           }
           break;
         }
@@ -454,7 +454,7 @@ auto GeneralParser::PImpl::RecurseBlock(bool expect_braces, bool single_stmt, Bl
         case False: {
           r = m_fac.CreateBoolean(false);
           if (!NextIf<PuncSemi>()) {
-            Log << SyntaxError << Current() << "Expected ';' after 'false' statement";
+            Log << ParserSignal << Current() << "Expected ';' after 'false' statement";
           }
           break;
         }
@@ -515,7 +515,7 @@ auto GeneralParser::Parse() -> ASTRoot {
 
     { /* Subscribe to events emitted by the parser */
       auto sub_id = Log.Subscribe([this](const LogMessage &m) {
-        if (m.m_sev >= Error && m.m_by.GetKind() == SyntaxError.GetKind()) {
+        if (m.m_sev >= Error && m.m_by.GetKind() == ParserSignal.GetKind()) {
           m_impl->m_failed = true;
         }
       });
@@ -527,7 +527,7 @@ auto GeneralParser::Parse() -> ASTRoot {
         { /* Recursive descent parsing */
           auto node = m_impl->RecurseBlock(false, false, BlockMode::Unknown);
           if (m_impl->m_rd.HasError()) {
-            Log << SyntaxError << "Some lexical errors have occurred";
+            Log << ParserSignal << "Some lexical errors have occurred";
           }
 
           for_each<dfs_pre>(node, [&](auto c) {

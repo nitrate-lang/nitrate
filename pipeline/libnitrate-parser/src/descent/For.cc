@@ -78,7 +78,7 @@ auto GeneralParser::PImpl::RecurseForInitExpr() -> NullableFlowPtr<Expr> {
     return variables[0];
   }
 
-  Log << SyntaxError << Current() << "Expected exactly one variable in for loop";
+  Log << ParserSignal << Current() << "Expected exactly one variable in for loop";
 
   return std::nullopt;
 }
@@ -93,7 +93,7 @@ auto GeneralParser::PImpl::RecurseForCondition() -> NullableFlowPtr<Expr> {
   });
 
   if (!NextIf<PuncSemi>()) {
-    Log << SyntaxError << Current() << "Expected semicolon after condition expression";
+    Log << ParserSignal << Current() << "Expected semicolon after condition expression";
   }
 
   return condition;
@@ -124,7 +124,7 @@ auto GeneralParser::PImpl::RecurseFor() -> FlowPtr<Expr> {
   auto for_step = RecurseForStepExpr(for_with_paren);
 
   if (for_with_paren && !NextIf<PuncRPar>()) {
-    Log << SyntaxError << Current() << "Expected closing parenthesis in for statement";
+    Log << ParserSignal << Current() << "Expected closing parenthesis in for statement";
   }
 
   auto for_body = RecurseBlock(true, false, BlockMode::Unknown);

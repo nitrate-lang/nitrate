@@ -39,22 +39,22 @@ using namespace ncc::parse;
 
 auto GeneralParser::PImpl::RecurseEscapeBlock() -> void {
   if (!NextIf<PuncLPar>()) {
-    Log << SyntaxError << Current() << "Expected '(' to open the escape block annotation";
+    Log << ParserSignal << Current() << "Expected '(' to open the escape block annotation";
     return;
   }
 
   if (!NextIf<Text>()) {
-    Log << SyntaxError << Current() << "Expected a string literal token for escape block annotation";
+    Log << ParserSignal << Current() << "Expected a string literal token for escape block annotation";
     return;
   }
 
   if (!NextIf<PuncRPar>()) {
-    Log << SyntaxError << Current() << "Expected ')' to close the escape block annotation";
+    Log << ParserSignal << Current() << "Expected ')' to close the escape block annotation";
     return;
   }
 
   if (!NextIf<PuncLCur>()) {
-    Log << SyntaxError << Current() << "Expected '{' to open the escape block";
+    Log << ParserSignal << Current() << "Expected '{' to open the escape block";
     return;
   }
 
@@ -62,7 +62,7 @@ auto GeneralParser::PImpl::RecurseEscapeBlock() -> void {
 
   while (depth > 0) {
     if (m_rd.IsEof()) {
-      Log << SyntaxError << Current() << "Unexpected end of file while parsing 'escape_block'";
+      Log << ParserSignal << Current() << "Unexpected end of file while parsing 'escape_block'";
       return;
     }
 

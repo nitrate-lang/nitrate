@@ -41,7 +41,7 @@ namespace ncc::parse::ec {
 
   NCC_EC_GROUP(ParseEG);
 
-  NCC_EC_EX(ParseEG, SyntaxError, Formatter, "$NCC_CONF/ec/parse/SyntaxError");
+  NCC_EC_EX(ParseEG, ParserSignal, Formatter, "$NCC_CONF/ec/parse/ParserSignal");
 }  // namespace ncc::parse::ec
 
 #endif

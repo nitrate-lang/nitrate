@@ -51,7 +51,7 @@ auto GeneralParser::PImpl::RecurseExportAttributes() -> std::vector<FlowPtr<Expr
 
   while (true) {
     if (m_rd.IsEof()) [[unlikely]] {
-      Log << SyntaxError << Current() << "Encountered EOF while parsing export attributes";
+      Log << ParserSignal << Current() << "Encountered EOF while parsing export attributes";
       return attributes;
     }
 

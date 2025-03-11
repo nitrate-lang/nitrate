@@ -46,7 +46,7 @@ auto GeneralParser::PImpl::RecurseScopeDeps() -> std::vector<string> {
 
   while (true) {
     if (m_rd.IsEof()) [[unlikely]] {
-      Log << SyntaxError << Current() << "Unexpected EOF in scope dependencies";
+      Log << ParserSignal << Current() << "Unexpected EOF in scope dependencies";
       return dependencies;
     }
 
@@ -57,7 +57,7 @@ auto GeneralParser::PImpl::RecurseScopeDeps() -> std::vector<string> {
     if (auto dependency_name = RecurseName()) {
       dependencies.push_back(dependency_name);
     } else {
-      Log << SyntaxError << Next() << "Expected dependency name";
+      Log << ParserSignal << Next() << "Expected dependency name";
     }
 
     NextIf<PuncComa>();
@@ -79,7 +79,7 @@ auto GeneralParser::PImpl::RecurseScope() -> FlowPtr<Expr> {
 
   bool is_colon_required = !dependencies.empty() && !scope_name->empty();
   if (!has_colon && is_colon_required) [[unlikely]] {
-    Log << SyntaxError << Current() << "Expected ':' after scope name";
+    Log << ParserSignal << Current() << "Expected ':' after scope name";
   }
 
   auto scope_block = RecurseScopeBlock();

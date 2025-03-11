@@ -39,7 +39,7 @@ using namespace ncc::parse;
 
 auto GeneralParser::PImpl::RecurseSwitchCaseBody() -> FlowPtr<Expr> {
   if (!NextIf<OpArrow>()) {
-    Log << SyntaxError << Current() << "Expected '=>' in switch case.";
+    Log << ParserSignal << Current() << "Expected '=>' in switch case.";
   }
 
   if (Peek().Is<PuncLCur>()) {
@@ -72,7 +72,7 @@ auto GeneralParser::PImpl::RecurseSwitchBody()
 
   while (true) {
     if (m_rd.IsEof()) [[unlikely]] {
-      Log << SyntaxError << Current() << "Unexpected EOF in switch statement.";
+      Log << ParserSignal << Current() << "Unexpected EOF in switch statement.";
       break;
     }
 
@@ -85,7 +85,7 @@ auto GeneralParser::PImpl::RecurseSwitchBody()
       if (!default_case) [[likely]] {
         default_case = stmt;
       } else {
-        Log << SyntaxError << Current() << "Duplicate default case in switch.";
+        Log << ParserSignal << Current() << "Duplicate default case in switch.";
       }
     } else {
       cases.push_back(stmt.As<Case>());
@@ -108,10 +108,10 @@ auto GeneralParser::PImpl::RecurseSwitch() -> FlowPtr<Expr> {
 
       return m_fac.CreateSwitch(switch_cond, switch_default, switch_cases);
     } else {
-      Log << SyntaxError << Current() << "Switch statement body is malformed.";
+      Log << ParserSignal << Current() << "Switch statement body is malformed.";
     }
   } else {
-    Log << SyntaxError << Current() << "Expected '{' after switch condition.";
+    Log << ParserSignal << Current() << "Expected '{' after switch condition.";
   }
 
   return m_fac.CreateMockInstance<Switch>();

@@ -45,7 +45,7 @@ auto GeneralParser::PImpl::RecurseImportName() -> std::pair<string, ImportMode> 
     auto arguments = RecurseCallArguments({Token(Punc, PuncRPar)}, false);
 
     if (!NextIf<PuncRPar>()) {
-      Log << SyntaxError << Current() << "Expected ')' to close the import call";
+      Log << ParserSignal << Current() << "Expected ')' to close the import call";
     }
 
     string import_name;
@@ -54,12 +54,12 @@ auto GeneralParser::PImpl::RecurseImportName() -> std::pair<string, ImportMode> 
     for (const auto &arg : arguments) {
       if (arg.first == "src" || arg.first == "0") {
         if (import_name) {
-          Log << SyntaxError << Current() << "Duplicate argument: 'src' in call to import";
+          Log << ParserSignal << Current() << "Duplicate argument: 'src' in call to import";
         }
 
         auto pvalue = arg.second;
         if (!pvalue->Is(QAST_STRING)) {
-          Log << SyntaxError << Current() << "Expected string literal for import source";
+          Log << ParserSignal << Current() << "Expected string literal for import source";
           continue;
         }
 
@@ -69,12 +69,12 @@ auto GeneralParser::PImpl::RecurseImportName() -> std::pair<string, ImportMode> 
 
       if (arg.first == "mode" || arg.first == "1") {
         if (import_mode) {
-          Log << SyntaxError << Current() << "Duplicate argument: 'mode' in call to import";
+          Log << ParserSignal << Current() << "Duplicate argument: 'mode' in call to import";
         }
 
         auto pvalue = arg.second;
         if (!pvalue->Is(QAST_STRING)) {
-          Log << SyntaxError << Current() << "Expected string literal for import mode";
+          Log << ParserSignal << Current() << "Expected string literal for import mode";
           continue;
         }
 
@@ -86,17 +86,17 @@ auto GeneralParser::PImpl::RecurseImportName() -> std::pair<string, ImportMode> 
         } else if (mode == "raw") {
           import_mode = ImportMode::Raw;
         } else {
-          Log << SyntaxError << Current() << "Invalid import mode: " << mode;
+          Log << ParserSignal << Current() << "Invalid import mode: " << mode;
         }
 
         continue;
       }
 
-      Log << SyntaxError << Current() << "Unexpected argument: " << arg.first;
+      Log << ParserSignal << Current() << "Unexpected argument: " << arg.first;
     }
 
     if (!import_name) [[unlikely]] {
-      Log << SyntaxError << Current() << "parameter 'src': missing positional argument 0 in call to import";
+      Log << ParserSignal << Current() << "parameter 'src': missing positional argument 0 in call to import";
     }
 
     return {import_name, import_mode.value_or(ImportMode::Code)};
@@ -108,7 +108,7 @@ auto GeneralParser::PImpl::RecurseImportName() -> std::pair<string, ImportMode> 
 
   auto name = RecurseName();
   if (!name) [[unlikely]] {
-    Log << SyntaxError << Current() << "Expected import name";
+    Log << ParserSignal << Current() << "Expected import name";
   }
 
   return {name, ImportMode::Code};
@@ -118,25 +118,25 @@ auto GeneralParser::PImpl::RecurseImportName() -> std::pair<string, ImportMode> 
                                                                   ImportMode import_mode) -> FlowPtr<Expr> {
   const auto exists = OMNI_CATCH(std::filesystem::exists(*import_file));
   if (!exists) {
-    Log << SyntaxError << Current() << "Could not check if file exists: " << *import_file;
+    Log << ParserSignal << Current() << "Could not check if file exists: " << *import_file;
     return m_fac.CreateMockInstance<Import>();
   }
 
   if (!*exists) {
-    Log << SyntaxError << Current() << "File not found: " << *import_file;
+    Log << ParserSignal << Current() << "File not found: " << *import_file;
     return m_fac.CreateMockInstance<Import>();
   }
 
   std::ifstream file(*import_file, std::ios::binary);
   if (!file.is_open()) {
-    Log << SyntaxError << Current() << "Failed to open file: " << *import_file;
+    Log << ParserSignal << Current() << "Failed to open file: " << *import_file;
     return m_fac.CreateMockInstance<Import>();
   }
 
   std::string content((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
 
   if (content.empty()) {
-    Log << SyntaxError << Warning << Current() << "File is empty: " << *import_file;
+    Log << ParserSignal << Warning << Current() << "File is empty: " << *import_file;
     return m_fac.CreateMockInstance<Import>();
   }
 
@@ -172,13 +172,13 @@ auto GeneralParser::PImpl::RecurseImportName() -> std::pair<string, ImportMode> 
       std::find_if(pkgs.begin(), pkgs.end(), [&](const auto &pkg) { return pkg.PackageName() == import_name; });
 
   if (pkg_it == pkgs.end()) [[unlikely]] {
-    Log << SyntaxError << Current() << "Package not found: " << import_name;
+    Log << ParserSignal << Current() << "Package not found: " << import_name;
     return m_fac.CreateMockInstance<Import>();
   }
 
   const auto &files = pkg_it->Read();
   if (!files.has_value()) [[unlikely]] {
-    Log << SyntaxError << Current() << "Failed to read package: " << import_name;
+    Log << ParserSignal << Current() << "Failed to read package: " << import_name;
     return m_fac.CreateMockInstance<Import>();
   }
 

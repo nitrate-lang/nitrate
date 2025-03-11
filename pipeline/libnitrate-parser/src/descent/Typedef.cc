@@ -45,13 +45,13 @@ auto GeneralParser::PImpl::RecurseTypedef() -> FlowPtr<Expr> {
       if (NextIf<PuncSemi>()) [[likely]] {
         return m_fac.CreateTypedef(type_name, the_type);
       } else {
-        Log << SyntaxError << Current() << "Expected ';' in typedef declaration";
+        Log << ParserSignal << Current() << "Expected ';' in typedef declaration";
       }
     } else {
-      Log << SyntaxError << Current() << "Expected '=' in typedef declaration";
+      Log << ParserSignal << Current() << "Expected '=' in typedef declaration";
     }
   } else {
-    Log << SyntaxError << Current() << "Expected name in typedef declaration";
+    Log << ParserSignal << Current() << "Expected name in typedef declaration";
   }
 
   return m_fac.CreateMockInstance<Typedef>();

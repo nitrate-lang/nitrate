@@ -39,26 +39,26 @@ using namespace ncc::parse;
 
 auto GeneralParser::PImpl::RecurseUnitAssert() -> FlowPtr<Expr> {
   if (!NextIf<PuncLPar>()) [[unlikely]] {
-    Log << SyntaxError << Current() << "Expected '(' to open the 'unit_assert' annotation";
+    Log << ParserSignal << Current() << "Expected '(' to open the 'unit_assert' annotation";
   }
 
   string annotation;
   if (auto annotation_token = NextIf<Text>()) [[likely]] {
     annotation = annotation_token->GetString();
   } else {
-    Log << SyntaxError << Current() << "Expected a string literal for the 'unit_assert' annotation";
+    Log << ParserSignal << Current() << "Expected a string literal for the 'unit_assert' annotation";
   }
 
   if (!NextIf<PuncRPar>()) [[unlikely]] {
-    Log << SyntaxError << Current() << "Expected ')' to close the 'unit_assert' annotation";
+    Log << ParserSignal << Current() << "Expected ')' to close the 'unit_assert' annotation";
   }
 
   if (!NextIf<PuncColn>()) [[unlikely]] {
-    Log << SyntaxError << Current() << "Expected ':' before return type in 'unit_assert' block";
+    Log << ParserSignal << Current() << "Expected ':' before return type in 'unit_assert' block";
   }
 
   if (!NextIf<Name>("bool")) [[unlikely]] {
-    Log << SyntaxError << Current() << "Expected 'bool' as the return type in 'unit_assert' block";
+    Log << ParserSignal << Current() << "Expected 'bool' as the return type in 'unit_assert' block";
   }
 
   auto test_body = RecurseBlock(true, false, BlockMode::Unknown);

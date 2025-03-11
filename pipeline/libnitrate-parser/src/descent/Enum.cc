@@ -40,7 +40,7 @@ using namespace ncc::parse;
 auto GeneralParser::PImpl::RecurseEnumField() -> std::pair<string, NullableFlowPtr<Expr>> {
   auto member_name = RecurseName();
   if (!member_name) {
-    Log << SyntaxError << Current() << "Enum member name cannot be empty.";
+    Log << ParserSignal << Current() << "Enum member name cannot be empty.";
     return {"", std::nullopt};
   }
 
@@ -65,13 +65,13 @@ auto GeneralParser::PImpl::RecurseEnumFields() -> std::vector<std::pair<string, 
   }
 
   if (!NextIf<PuncLCur>()) {
-    Log << SyntaxError << Current() << "Expected '{' to start enum fields.";
+    Log << ParserSignal << Current() << "Expected '{' to start enum fields.";
     return items;
   }
 
   while (true) {
     if (m_rd.IsEof()) [[unlikely]] {
-      Log << SyntaxError << Current() << "Unexpected EOF encountered while parsing enum fields.";
+      Log << ParserSignal << Current() << "Unexpected EOF encountered while parsing enum fields.";
       return items;
     }
 
@@ -89,7 +89,7 @@ auto GeneralParser::PImpl::RecurseEnumFields() -> std::vector<std::pair<string, 
       continue;
     }
 
-    Log << SyntaxError << Next() << "Expected ',' or ';' after enum field.";
+    Log << ParserSignal << Next() << "Expected ',' or ';' after enum field.";
   }
 }
 
