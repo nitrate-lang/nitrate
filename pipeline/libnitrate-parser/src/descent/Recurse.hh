@@ -150,6 +150,12 @@ namespace ncc::parse {
       std::vector<StructFunction> m_static_methods;
     };
 
+    enum class ImportMode {
+      Code,
+      String,
+      Raw,
+    };
+
     [[nodiscard]] auto RecurseName() -> string;
     [[nodiscard]] auto RecurseEnumField() -> std::pair<string, NullableFlowPtr<Expr>>;
     [[nodiscard]] auto RecurseEnumFields() -> std::vector<std::pair<string, NullableFlowPtr<Expr>>>;
@@ -206,6 +212,9 @@ namespace ncc::parse {
     [[nodiscard]] auto RecurseVariableValue() -> NullableFlowPtr<Expr>;
     [[nodiscard]] auto RecurseVariableInstance(VariableType decl_type) -> NullableFlowPtr<Expr>;
     [[nodiscard]] auto RecurseWhileCond() -> FlowPtr<Expr>;
+    [[nodiscard]] auto RecurseImportName() -> std::pair<string, ImportMode>;
+    [[nodiscard]] auto RecurseImportRegularFile(string import_file, ImportMode import_mode) -> FlowPtr<Expr>;
+    [[nodiscard]] auto RecurseImportPackage(string import_name, ImportMode import_mode) -> FlowPtr<Expr>;
 
   public:
     PImpl(lex::IScanner &lexer, std::shared_ptr<IEnvironment> env, std::pmr::memory_resource &pool)
