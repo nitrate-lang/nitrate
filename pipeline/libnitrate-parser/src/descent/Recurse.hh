@@ -60,6 +60,7 @@ namespace ncc::parse {
     ASTFactory m_fac;
     lex::IScanner &m_rd;
     bool m_failed = false;
+    size_t m_recursion_depth = 0;
 
     lex::Token Next() { return m_rd.Next(); }
     lex::Token Peek() { return m_rd.Peek(); }
@@ -150,10 +151,9 @@ namespace ncc::parse {
       std::vector<StructFunction> m_static_methods;
     };
 
-    enum class ImportMode {
+    enum class ImportMode : uint8_t {
       Code,
       String,
-      Raw,
     };
 
     [[nodiscard]] auto RecurseName() -> string;

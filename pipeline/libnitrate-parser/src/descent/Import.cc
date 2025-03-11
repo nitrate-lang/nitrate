@@ -33,7 +33,9 @@
 
 #include <descent/Recurse.hh>
 #include <fstream>
+#include <memory>
 #include <nitrate-core/CatchAll.hh>
+#include <nitrate-lexer/Lexer.hh>
 #include <nitrate-parser/Package.hh>
 
 using namespace ncc;
@@ -83,8 +85,6 @@ auto GeneralParser::PImpl::RecurseImportName() -> std::pair<string, ImportMode> 
           import_mode = ImportMode::Code;
         } else if (mode == "string") {
           import_mode = ImportMode::String;
-        } else if (mode == "raw") {
-          import_mode = ImportMode::Raw;
         } else {
           Log << ParserSignal << Current() << "Invalid import mode: " << mode;
         }
@@ -116,6 +116,8 @@ auto GeneralParser::PImpl::RecurseImportName() -> std::pair<string, ImportMode> 
 
 [[nodiscard]] auto GeneralParser::PImpl::RecurseImportRegularFile(string import_file,
                                                                   ImportMode import_mode) -> FlowPtr<Expr> {
+  import_file = OMNI_CATCH(std::filesystem::absolute(*import_file)).value_or(*import_file).lexically_normal().string();
+
   const auto exists = OMNI_CATCH(std::filesystem::exists(*import_file));
   if (!exists) {
     Log << ParserSignal << Current() << "Could not check if file exists: " << *import_file;
@@ -127,36 +129,52 @@ auto GeneralParser::PImpl::RecurseImportName() -> std::pair<string, ImportMode> 
     return m_fac.CreateMockInstance<Import>();
   }
 
+  auto is_regular_file = OMNI_CATCH(std::filesystem::is_regular_file(*import_file));
+  if (!is_regular_file) {
+    Log << ParserSignal << Current() << "Could not check if file is regular: " << *import_file;
+    return m_fac.CreateMockInstance<Import>();
+  }
+
+  if (!*is_regular_file) {
+    Log << ParserSignal << Current() << "File is not regular: " << *import_file;
+    return m_fac.CreateMockInstance<Import>();
+  }
+
   std::ifstream file(*import_file, std::ios::binary);
   if (!file.is_open()) {
     Log << ParserSignal << Current() << "Failed to open file: " << *import_file;
     return m_fac.CreateMockInstance<Import>();
   }
 
-  std::string content((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
+  auto content = OMNI_CATCH(std::string((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>()));
+  if (!content.has_value()) {
+    Log << ParserSignal << Error << Current() << "Failed to read file: " << *import_file;
+    return m_fac.CreateMockInstance<Import>();
+  }
 
-  if (content.empty()) {
+  if (content->empty()) {
     Log << ParserSignal << Warning << Current() << "File is empty: " << *import_file;
     return m_fac.CreateMockInstance<Import>();
   }
 
-  /// TODO: Implement regular file import
-  (void)import_file;
-
   switch (import_mode) {
     case ImportMode::Code: {
-      /// TODO: Implement code import
-      break;
+      if (m_rd.Current().GetStart().Get(m_rd).GetFilename() == *import_file) {
+        Log << ParserSignal << Current() << "Detected circular import: " << *import_file;
+        return m_fac.CreateMockInstance<Import>();
+      }
+
+      auto in_src = boost::iostreams::stream<boost::iostreams::array_source>(content->data(), content->size());
+      auto scanner = Tokenizer(in_src, m_env);
+      auto subparser = GeneralParser(scanner, m_env, m_pool);
+      subparser.m_impl->m_recursion_depth = m_recursion_depth;
+      auto subtree = subparser.m_impl->RecurseBlock(false, false, BlockMode::Unknown);
+
+      return m_fac.CreateImport(import_file, std::move(subtree));
     }
 
     case ImportMode::String: {
-      /// TODO: Implement string import
-      break;
-    }
-
-    case ImportMode::Raw: {
-      /// TODO: Implement raw import
-      break;
+      return m_fac.CreateString(content.value());
     }
   }
 
@@ -204,17 +222,20 @@ auto GeneralParser::PImpl::RecurseImportName() -> std::pair<string, ImportMode> 
       /// TODO: Implement string import
       break;
     }
-
-    case ImportMode::Raw: {
-      /// TODO: Implement raw import
-      break;
-    }
   }
 
   return m_fac.CreateMockInstance<Import>();
 }
 
 auto GeneralParser::PImpl::RecurseImport() -> FlowPtr<Expr> {
+  constexpr size_t kMaxRecursionDepth = 256;
+
+  if (m_recursion_depth++ > kMaxRecursionDepth) {
+    Log << ParserSignal << "Maximum import recursion depth reached: " << kMaxRecursionDepth;
+    return m_fac.CreateMockInstance<Import>();
+  }
+  auto deferred_auto_dec = std::shared_ptr<void>(nullptr, [&](auto) { --m_recursion_depth; });
+
   const auto [import_name, import_mode] = RecurseImportName();
 
   const bool is_regular_file =
