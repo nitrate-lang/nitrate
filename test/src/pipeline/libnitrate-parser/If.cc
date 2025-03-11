@@ -27,31 +27,26 @@ TEST_CASE(Stmt_If, IllElse, 2, R"( if 10 {} => { )", nullptr);
 ///===================================================================================================
 /// PARSE IF MISSING ELSE BLOCK
 TEST_CASE(Stmt_If, NoElse, 0, R"( if 10 {} )",
-          block{safety : None statements{if {condition{integer{number : "10"}} true_branch{block{safety : None}}}}});
+          block{statements{if {condition{integer{number : "10"}} true_branch{block{}}}}});
 TEST_CASE(Stmt_If, NoElse, 1, R"( if 10 {} ; )",
-          block{safety : None statements{if {condition{integer{number : "10"}} true_branch{block{safety : None}}}}});
+          block{statements{if {condition{integer{number : "10"}} true_branch{block{}}}}});
 
 ///===================================================================================================
 /// PARSE IF STATEMENT CHAIN
-TEST_CASE(Stmt_If, WithElse, 0, R"( if 10 {} else {} )", block{
-  safety : Nonestatements{
-      if {condition{integer{number : "10"}} true_branch{block{safety : None}} false_branch{block{safety : None}}}}
-});
+TEST_CASE(Stmt_If, WithElse, 0, R"( if 10 {} else {} )",
+          block{statements{if {condition{integer{number : "10"}} true_branch{block{}} false_branch{block{}}}}});
 
-TEST_CASE(Stmt_If, WithElse, 1, R"( if 10 {} else {1+1;} )", block{safety:None statements{if{condition{integer{number:"10"}}true_branch{block{safety:None}}false_branch{block{safety:None statements{binary{operator: Op_Plus left{integer{number:"1"}}right{integer{number:"1"}}}}}}}}});
+TEST_CASE(Stmt_If, WithElse, 1, R"( if 10 {} else {1+1;} )", block{statements{if{condition{integer{number:"10"}}true_branch{block{}}false_branch{block{ statements{binary{operator: Op_Plus left{integer{number:"1"}}right{integer{number:"1"}}}}}}}}});
 
-TEST_CASE(Stmt_If, WithElse, 2, R"( if 10 {} else if 20 {} )", block{
-  safety : Nonestatements{if {condition{integer{number : "10"}} true_branch{
-      block{safety : None}} false_branch{if {condition{integer{number : "20"}} true_branch{block{safety : None}}}}}}
-});
+TEST_CASE(Stmt_If, WithElse, 2, R"( if 10 {} else if 20 {} )",
+          block{statements{if {condition{integer{number : "10"}} true_branch{block{}} false_branch{
+              if {condition{integer{number : "20"}} true_branch{block{}}}}}}});
 
-TEST_CASE(Stmt_If, WithElse, 3, R"( if 10 {} else if 20 {} else {} )", block{
-  safety : None statements{if {condition{integer{number : "10"}} true_branch{block{safety : None}} false_branch{
-      if {condition{integer{number : "20"}} true_branch{block{safety : None}} false_branch{block{safety : None}}}}}}
-});
+TEST_CASE(Stmt_If, WithElse, 3, R"( if 10 {} else if 20 {} else {} )",
+          block{statements{if {condition{integer{number : "10"}} true_branch{block{}} false_branch{
+              if {condition{integer{number : "20"}} true_branch{block{}} false_branch{block{}}}}}}});
 
-TEST_CASE(Stmt_If, WithElse, 4, R"( if 10 {} else if 20 {} else if 30 {} )", block{
-  safety : None statements{if {condition{integer{number : "10"}} true_branch{
-      block{safety : None}} false_branch{if {condition{integer{number : "20"}} true_branch{
-      block{safety : None}} false_branch{if {condition{integer{number : "30"}} true_branch{block{safety : None}}}}}}}}
-});
+TEST_CASE(Stmt_If, WithElse, 4, R"( if 10 {} else if 20 {} else if 30 {} )",
+          block{statements{if {condition{integer{number : "10"}} true_branch{block{}} false_branch{
+              if {condition{integer{number : "20"}} true_branch{block{}} false_branch{
+                  if {condition{integer{number : "30"}} true_branch{block{}}}}}}}}});

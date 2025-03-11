@@ -10,7 +10,7 @@ message SourceLocationRange {
     required uint32 line = 1;
     required uint32 column = 2;
     required uint32 offset = 3;
-    optional string file = 4;
+    optional string file = 4 [default = ""];
   }
 
   optional SourceLocation start = 1;
@@ -33,10 +33,9 @@ message FunctionParameter {
 }
 
 enum Vis {
-  Vis_Unspecified = 0;
+  Vis_Public = 0;
   Vis_Private = 1;
-  Vis_Public = 2;
-  Vis_Protected = 3;
+  Vis_Protected = 2;
 }
 
 message TemplateParameters {
@@ -240,8 +239,20 @@ message PtrTy {
   optional Expr minimum = 5;
   optional Expr maximum = 6;
 
-  required Type pointee = 7;
-  required bool volatile = 8;
+  optional bool volatile = 7 [default = false];
+  required Type pointee = 8;
+}
+
+message RefTy {
+  optional SourceLocationRange location = 1;
+  repeated UserComment comments = 2;
+
+  optional Expr bit_width = 4;
+  optional Expr minimum = 5;
+  optional Expr maximum = 6;
+
+  optional bool volatile = 7 [default = false];
+  required Type pointee = 8;
 }
 
 message OpaqueTy {
@@ -278,18 +289,6 @@ message ArrayTy {
   required Expr element_count = 8;
 }
 
-message RefTy {
-  optional SourceLocationRange location = 1;
-  repeated UserComment comments = 2;
-
-  optional Expr bit_width = 4;
-  optional Expr minimum = 5;
-  optional Expr maximum = 6;
-
-  required Type pointee = 7;
-  required bool volatile = 8;
-}
-
 message FuncTy {
   optional SourceLocationRange location = 1;
   repeated UserComment comments = 2;
@@ -300,7 +299,7 @@ message FuncTy {
 
   repeated Expr attributes = 7;
   repeated FunctionParameter parameters = 8;
-  required bool variadic = 9;
+  optional bool variadic = 9 [default = false];
   optional Type return_type = 11;
 }
 
@@ -370,7 +369,7 @@ message Unary {
 
   required Operator operator = 4;
   required Expr operand = 5;
-  required bool is_postfix = 6;
+  optional bool is_postfix = 6 [default = false];
 }
 
 message Binary {
@@ -469,7 +468,7 @@ message Import {
   repeated UserComment comments = 2;
 
   required string name = 4;
-  required Mode mode = 5;
+  optional Mode mode = 5 [default = Code];
   required Expr subtree = 6;
 }
 
@@ -530,7 +529,7 @@ message Identifier {
 
 message Block {
   enum Safety {
-    None = 0;
+    Unspecified = 0;
     Safe = 1;
     Unsafe = 2;
   }
@@ -538,7 +537,7 @@ message Block {
   optional SourceLocationRange location = 1;
   repeated UserComment comments = 2;
 
-  required Safety safety = 4;
+  optional Safety safety = 4;
   repeated Expr statements = 5;
 }
 
@@ -599,7 +598,7 @@ message Foreach {
   optional SourceLocationRange location = 1;
   repeated UserComment comments = 2;
 
-  required string index_name = 4;
+  optional string index_name = 4 [default = ""];
   required string value_name = 5;
   required Expr expression = 6;
   required Expr body = 7;
@@ -651,8 +650,8 @@ message Export {
   optional SourceLocationRange location = 1;
   repeated UserComment comments = 2;
 
-  required Vis visibility = 4;
-  required string abi_name = 5;
+  optional Vis visibility = 4 [default = Vis_Public];
+  optional string abi_name = 5 [default = ""];
   repeated Expr attributes = 6;
   required Block body = 7;
 }
@@ -696,7 +695,7 @@ message Function {
   optional Type return_type = 6;
   optional TemplateParameters template_parameters = 7;
   repeated FunctionParameter parameters = 8;
-  required bool variadic = 9;
+  optional bool variadic = 9 [default = false];
   optional Expr precondition = 11;
   optional Expr postcondition = 12;
   repeated Expr attributes = 13;
@@ -717,13 +716,13 @@ message Struct {
     required string name = 1;
     optional Expr default_value = 3;
     optional Type type = 2;
-    required Vis visibility = 4;
-    required bool is_static = 5;
+    optional Vis visibility = 4 [default = Vis_Private];
+    optional bool is_static = 5 [default = false];
   }
 
   message Method {
-    required Function func = 1;
-    required Vis visibility = 2;
+    optional Vis visibility = 1 [default = Vis_Private];
+    required Function func = 2;
   }
 
   optional SourceLocationRange location = 1;

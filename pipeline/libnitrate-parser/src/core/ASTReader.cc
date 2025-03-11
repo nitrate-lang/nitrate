@@ -45,8 +45,6 @@
 #include <nitrate-parser/ASTStmt.hh>
 #include <nitrate-parser/ASTType.hh>
 
-#include "nitrate-parser/ASTData.hh"
-
 static constexpr int kRecursionLimit = INT_MAX;
 
 using namespace ncc;
@@ -54,18 +52,18 @@ using namespace ncc::lex;
 using namespace ncc::parse;
 using namespace nitrate::parser;
 
-static NCC_FORCE_INLINE parse::BlockMode FromBlockMode(SyntaxTree::Block_Safety mode) noexcept {
+static NCC_FORCE_INLINE std::optional<parse::BlockMode> FromBlockMode(SyntaxTree::Block_Safety mode) noexcept {
   switch (mode) {
+    case SyntaxTree::Block_Safety_Unspecified: {
+      return std::nullopt;
+    }
+
     case SyntaxTree::Block_Safety_Safe: {
       return parse::BlockMode::Safe;
     }
 
     case SyntaxTree::Block_Safety_Unsafe: {
       return parse::BlockMode::Unsafe;
-    }
-
-    case SyntaxTree::Block_Safety_None: {
-      return parse::BlockMode::Unknown;
     }
   }
 }
@@ -319,12 +317,8 @@ static NCC_FORCE_INLINE std::optional<Operator> FromOperator(SyntaxTree::Operato
   }
 }
 
-static NCC_FORCE_INLINE std::optional<parse::Vis> FromVisibility(SyntaxTree::Vis vis) {
+static NCC_FORCE_INLINE parse::Vis FromVisibility(SyntaxTree::Vis vis) {
   switch (vis) {
-    case SyntaxTree::Vis_Unspecified: {
-      return std::nullopt;
-    }
-
     case SyntaxTree::Vis_Public: {
       return Vis::Pub;
     }
@@ -1849,7 +1843,12 @@ auto AstReader::Unmarshal(const SyntaxTree::Block &in) -> Result<Block> {
     items.push_back(statement.value());
   }
 
-  auto object = m_fac.CreateBlock(items, FromBlockMode(in.safety()));
+  auto mode = in.has_safety() ? FromBlockMode(in.safety()) : BlockMode::Unknown;
+  if (!mode.has_value()) [[unlikely]] {
+    return std::nullopt;
+  }
+
+  auto object = m_fac.CreateBlock(items, mode.value());
   UnmarshalLocationLocation(in.location(), object);
   UnmarshalCodeComment(in.comments(), object);
 
@@ -2222,12 +2221,7 @@ auto AstReader::Unmarshal(const SyntaxTree::Struct &in) -> Result<Struct> {
       return std::nullopt;
     }
 
-    auto vis = FromVisibility(field.visibility());
-    if (!vis.has_value()) [[unlikely]] {
-      return std::nullopt;
-    }
-
-    fields.emplace_back(vis.value(), is_static, field.name(), type.value(), value);
+    fields.emplace_back(FromVisibility(field.visibility()), is_static, field.name(), type.value(), value);
   }
 
   std::vector<StructFunction> methods;
@@ -2239,12 +2233,7 @@ auto AstReader::Unmarshal(const SyntaxTree::Struct &in) -> Result<Struct> {
       return std::nullopt;
     }
 
-    auto vis = FromVisibility(method.visibility());
-    if (!vis.has_value()) [[unlikely]] {
-      return std::nullopt;
-    }
-
-    methods.emplace_back(vis.value(), func.value());
+    methods.emplace_back(FromVisibility(method.visibility()), func.value());
   }
 
   std::vector<StructFunction> static_methods;
@@ -2256,12 +2245,7 @@ auto AstReader::Unmarshal(const SyntaxTree::Struct &in) -> Result<Struct> {
       return std::nullopt;
     }
 
-    auto vis = FromVisibility(method.visibility());
-    if (!vis.has_value()) [[unlikely]] {
-      return std::nullopt;
-    }
-
-    static_methods.emplace_back(vis.value(), func.value());
+    static_methods.emplace_back(FromVisibility(method.visibility()), func.value());
   }
 
   std::optional<std::vector<TemplateParameter>> template_parameters;
@@ -2358,12 +2342,7 @@ auto AstReader::Unmarshal(const SyntaxTree::Export &in) -> Result<Export> {
     attributes.push_back(attribute.value());
   }
 
-  auto vis = FromVisibility(in.visibility());
-  if (!vis.has_value()) [[unlikely]] {
-    return std::nullopt;
-  }
-
-  auto object = m_fac.CreateExport(block.value(), attributes, vis.value(), in.abi_name());
+  auto object = m_fac.CreateExport(block.value(), attributes, FromVisibility(in.visibility()), in.abi_name());
   UnmarshalLocationLocation(in.location(), object);
   UnmarshalCodeComment(in.comments(), object);
 

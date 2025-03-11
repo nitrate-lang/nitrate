@@ -90,7 +90,6 @@ namespace ncc::parse::import {
     void Visit(FlowPtr<Undefined> n) override { n->Discard(); };
     void Visit(FlowPtr<Call> n) override { n->Discard(); };
     void Visit(FlowPtr<TemplateCall> n) override { n->Discard(); };
-    void Visit(FlowPtr<Import> n) override { n->Discard(); };
     void Visit(FlowPtr<List> n) override { n->Discard(); };
     void Visit(FlowPtr<Assoc> n) override { n->Discard(); };
     void Visit(FlowPtr<Index> n) override { n->Discard(); };
@@ -111,13 +110,19 @@ namespace ncc::parse::import {
 
     ///=========================================================================
 
+    void Visit(FlowPtr<Import> n) override {
+      n->GetSubtree()->Accept(*this);
+      if (n->RecursiveChildCount() == 0) {
+        n->Discard();
+      }
+    };
+
     void Visit(FlowPtr<Block> n) override {
       for (auto &stmt : n->GetStatements()) {
         switch (stmt->GetKind()) {
           case QAST_BLOCK:
           case QAST_SCOPE:
-          case QAST_EXPORT:
-          case QAST_IMPORT: {
+          case QAST_EXPORT: {
             stmt->Accept(*this);
             break;
           }
@@ -126,7 +131,8 @@ namespace ncc::parse::import {
           case QAST_STRUCT:
           case QAST_ENUM:
           case QAST_VAR:
-          case QAST_FUNCTION: {
+          case QAST_FUNCTION:
+          case QAST_IMPORT: {
             auto vis = m_vis_stack.top();
 
             switch (vis) {
@@ -203,11 +209,12 @@ namespace ncc::parse::import {
     }
 
     void Visit(FlowPtr<Struct> n) override {
-      for (auto &field : n->GetMethods()) {
-        field.m_func->SetBody(std::nullopt);
+      for (auto &method : n->GetMethods()) {
+        method.m_func->SetBody(std::nullopt);
       }
-      for (auto &field : n->GetStaticMethods()) {
-        field.m_func->SetBody(std::nullopt);
+
+      for (auto &method : n->GetStaticMethods()) {
+        method.m_func->SetBody(std::nullopt);
       }
     }
 

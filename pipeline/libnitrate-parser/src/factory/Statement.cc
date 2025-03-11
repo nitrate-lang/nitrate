@@ -62,8 +62,7 @@ auto ASTFactory::CreateStruct(CompositeType comp_type, string name,
   auto constraints_copy = AllocateArray<string>(constraints.size());
   std::copy(constraints.begin(), constraints.end(), constraints_copy.begin());
 
-  auto tparams_copy =
-      std::make_optional(tparams ? AllocateArray<TemplateParameter>(tparams->size()) : std::span<TemplateParameter>());
+  auto tparams_copy = tparams ? std::make_optional(AllocateArray<TemplateParameter>(tparams->size())) : std::nullopt;
   if (tparams) {
     std::copy(tparams->begin(), tparams->end(), tparams_copy->begin());
   }

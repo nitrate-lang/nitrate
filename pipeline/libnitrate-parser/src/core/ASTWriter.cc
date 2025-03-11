@@ -976,7 +976,9 @@ SyntaxTree::PtrTy *AstWriter::From(FlowPtr<PtrTy> in) {
 
   message->set_allocated_location(FromSource(in));
   message->set_allocated_pointee(From(in->GetItem()));
-  message->set_volatile_(in->IsVolatile());
+  if (in->IsVolatile()) {
+    message->set_volatile_(in->IsVolatile());
+  }
   SetTypeMetadata(message, in);
 
   return message;
@@ -1030,7 +1032,9 @@ SyntaxTree::RefTy *AstWriter::From(FlowPtr<RefTy> in) {
 
   message->set_allocated_location(FromSource(in));
   message->set_allocated_pointee(From(in->GetItem()));
-  message->set_volatile_(in->IsVolatile());
+  if (in->IsVolatile()) {
+    message->set_volatile_(in->IsVolatile());
+  }
   SetTypeMetadata(message, in);
 
   return message;
@@ -1043,7 +1047,9 @@ SyntaxTree::FuncTy *AstWriter::From(FlowPtr<FuncTy> in) {
   if (!IsCompressable(in->GetReturn())) {
     message->set_allocated_return_type(From(in->GetReturn()));
   }
-  message->set_variadic(in->IsVariadic());
+  if (in->IsVariadic()) {
+    message->set_variadic(in->IsVariadic());
+  }
   SetTypeMetadata(message, in);
 
   { /* Add all parameters */
@@ -1087,7 +1093,9 @@ SyntaxTree::Unary *AstWriter::From(FlowPtr<Unary> in) {
   message->set_allocated_location(FromSource(in));
   message->set_operator_(FromOperator(in->GetOp()));
   message->set_allocated_operand(From(in->GetRHS()));
-  message->set_is_postfix(in->IsPostfix());
+  if (in->IsPostfix()) {
+    message->set_is_postfix(in->IsPostfix());
+  }
 
   return message;
 }
@@ -1234,8 +1242,11 @@ SyntaxTree::Import *AstWriter::From(FlowPtr<Import> in) {
 
   message->set_allocated_location(FromSource(in));
   message->set_name(in->GetName().Get());
-  message->set_mode(FromImportMode(in->GetMode()));
   message->set_allocated_subtree(From(in->GetSubtree()));
+
+  if (in->GetMode() != ncc::parse::ImportMode::Code) {
+    message->set_mode(FromImportMode(in->GetMode()));
+  }
 
   return message;
 }
@@ -1338,7 +1349,6 @@ SyntaxTree::Block *AstWriter::From(FlowPtr<Block> in) {
 
   switch (in->GetSafety()) {
     case BlockMode::Unknown: {
-      message->set_safety(SyntaxTree::Block_Safety_None);
       break;
     }
 
@@ -1483,7 +1493,9 @@ SyntaxTree::Foreach *AstWriter::From(FlowPtr<Foreach> in) {
   auto *message = Pool::CreateMessage<SyntaxTree::Foreach>(m_arena);
 
   message->set_allocated_location(FromSource(in));
-  message->set_index_name(in->GetIndex().Get());
+  if (in->GetIndex()) {
+    message->set_index_name(in->GetIndex().Get());
+  }
   message->set_value_name(in->GetValue().Get());
   message->set_allocated_expression(From(in->GetExpr()));
   message->set_allocated_body(From(in->GetBody()));
@@ -1584,7 +1596,9 @@ SyntaxTree::Function *AstWriter::From(FlowPtr<Function> in) {
     message->set_allocated_return_type(From(in->GetReturn()));
   }
   message->set_name(in->GetName().Get());
-  message->set_variadic(in->IsVariadic());
+  if (in->IsVariadic()) {
+    message->set_variadic(in->IsVariadic());
+  }
   if (in->GetPrecond().has_value()) {
     message->set_allocated_precondition(From(in->GetPrecond().value()));
   }
@@ -1735,8 +1749,12 @@ SyntaxTree::Struct *AstWriter::From(FlowPtr<Struct> in) {
       if (!IsCompressable(item.GetType())) {
         field->set_allocated_type(From(item.GetType()));
       }
-      field->set_visibility(FromVisibility(item.GetVis()));
-      field->set_is_static(item.IsStatic());
+      if (item.GetVis() != Vis::Sec) {
+        field->set_visibility(FromVisibility(item.GetVis()));
+      }
+      if (item.IsStatic()) {
+        field->set_is_static(true);
+      }
       if (item.GetValue().has_value()) {
         field->set_allocated_default_value(From(item.GetValue().value()));
       }
@@ -1751,8 +1769,11 @@ SyntaxTree::Struct *AstWriter::From(FlowPtr<Struct> in) {
     message->mutable_methods()->Reserve(items.size());
     std::for_each(items.begin(), items.end(), [&](auto item) {
       auto *method = Pool::CreateMessage<SyntaxTree::Struct_Method>(m_arena);
-      method->set_visibility(FromVisibility(item.m_vis));
       method->set_allocated_func(From(item.m_func));
+
+      if (item.m_vis != Vis::Sec) {
+        method->set_visibility(FromVisibility(item.m_vis));
+      }
 
       message->mutable_methods()->AddAllocated(method);
     });
@@ -1764,7 +1785,9 @@ SyntaxTree::Struct *AstWriter::From(FlowPtr<Struct> in) {
     message->mutable_static_methods()->Reserve(items.size());
     std::for_each(items.begin(), items.end(), [&](auto item) {
       auto *method = Pool::CreateMessage<SyntaxTree::Struct_Method>(m_arena);
-      method->set_visibility(FromVisibility(item.m_vis));
+      if (item.m_vis != Vis::Sec) {
+        method->set_visibility(FromVisibility(item.m_vis));
+      }
       method->set_allocated_func(From(item.m_func));
 
       message->mutable_static_methods()->AddAllocated(method);
@@ -1824,9 +1847,14 @@ SyntaxTree::Export *AstWriter::From(FlowPtr<Export> in) {
   auto *message = Pool::CreateMessage<SyntaxTree::Export>(m_arena);
 
   message->set_allocated_location(FromSource(in));
-  message->set_abi_name(in->GetAbiName().Get());
+  if (in->GetAbiName()) {
+    message->set_abi_name(in->GetAbiName().Get());
+  }
+  if (in->GetVis() != Vis::Pub) {
+    message->set_visibility(FromVisibility(in->GetVis()));
+  }
+
   message->set_allocated_body(From(in->GetBody()));
-  message->set_visibility(FromVisibility(in->GetVis()));
 
   { /* Add all attributes */
     const auto &items = in->GetAttributes();
