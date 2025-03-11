@@ -142,7 +142,7 @@ auto Sequencer::RenderTranslationUnitSource(Sequencer &self, std::string_view so
     }
 
     auto pool = DynamicArena();
-    const auto ast_root = GeneralParser::Create(*sub_scanner, self.m_env, pool)->Parse();
+    const auto ast_root = GeneralParser(*sub_scanner, self.m_env, pool).Parse();
     if (!ast_root.Check()) [[unlikely]] {
       Log << SeqLog << "Failed to parse translation unit";
       return std::nullopt;

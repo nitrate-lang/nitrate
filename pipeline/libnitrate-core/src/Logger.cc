@@ -42,17 +42,17 @@ using namespace ncc;
 NCC_EXPORT thread_local LoggerContext ncc::Log;
 
 NCC_EXPORT auto ncc::Formatter(std::string_view msg, Sev sev) -> std::string {
-  if (sev == Sev::Raw) {
-    return std::string(msg);
-  }
-
-  std::array<std::string_view, Sev_MaxValue + 1> ansi_prefixes = {
+  constexpr std::array<std::string_view, Sev_MaxValue + 1> kAnsiPrefixes = {
       "\x1b[1mtrace:\x1b[0m ",         "\x1b[1mdebug:\x1b[0m ",      "\x1b[37;1minfo:\x1b[0m ",
       "\x1b[37;1mnotice:\x1b[0m ",     "\x1b[35;1mwarning:\x1b[0m ", "\x1b[31;1merror:\x1b[0m ",
       "\x1b[31;1;4mcritical:\x1b[0m ", "\x1b[31;1;4malert:\x1b[0m ", "\x1b[31;1;4memergency:\x1b[0m "};
 
+  if (sev == Sev::Raw) {
+    return std::string(msg);
+  }
+
   std::stringstream ss;
-  ss << ansi_prefixes[sev] << msg << "\n";
+  ss << kAnsiPrefixes[sev] << msg << "\n";
 
   return ss.str();
 }

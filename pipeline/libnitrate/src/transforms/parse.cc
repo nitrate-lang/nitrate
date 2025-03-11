@@ -354,9 +354,9 @@ CREATE_TRANSFORM(nit::parse) {
 
   DeserializerAdapterLexer lexer(source, env);
   auto pool = ncc::DynamicArena();
-  auto parser = GeneralParser::Create(lexer, env, pool);
+  auto parser = GeneralParser(lexer, env, pool);
 
-  auto root = parser->Parse();
+  auto root = parser.Parse();
 
   output << root.Get()->Serialize();
 
