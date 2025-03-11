@@ -84,18 +84,18 @@ auto GeneralParser::PImpl::RecurseVariableValue() -> NullableFlowPtr<Expr> {
   return std::nullopt;
 }
 
-auto GeneralParser::PImpl::RecurseVariableInstance(VariableType decl_type) -> NullableFlowPtr<Expr> {
+auto GeneralParser::PImpl::RecurseVariableInstance(VariableType decl_type) -> FlowPtr<Expr> {
   auto symbol_attributes_opt = RecurseVariableAttributes();
-  if (auto variable_name = RecurseName()) {
-    auto variable_type = RecurseVariableType();
-    auto variable_initial = RecurseVariableValue();
-
-    return m_fac.CreateVariable(decl_type, variable_name, symbol_attributes_opt, variable_type, variable_initial);
+  auto variable_name = RecurseName();
+  if (!variable_name) {
+    Log << ParserSignal << Next() << "No variable name found in variable declaration";
+    return m_fac.CreateMockInstance<Variable>();
   }
 
-  Log << ParserSignal << Current() << "Expected variable name";
+  auto variable_type = RecurseVariableType();
+  auto variable_initial = RecurseVariableValue();
 
-  return std::nullopt;
+  return m_fac.CreateVariable(decl_type, variable_name, symbol_attributes_opt, variable_type, variable_initial);
 }
 
 auto GeneralParser::PImpl::RecurseVariable(VariableType decl_type) -> std::vector<FlowPtr<Expr>> {
@@ -107,21 +107,15 @@ auto GeneralParser::PImpl::RecurseVariable(VariableType decl_type) -> std::vecto
       break;
     }
 
-    if (auto variable_opt = RecurseVariableInstance(decl_type)) {
-      variables.push_back(variable_opt.value());
-    } else {
-      Log << ParserSignal << Current() << "Failed to parse variable declaration";
-      break;
-    }
+    auto variable_opt = RecurseVariableInstance(decl_type);
+    variables.push_back(variable_opt);
 
-    if (NextIf<PuncSemi>()) {
+    if (NextIf<PuncSemi>() || NextIf<PuncComa>()) {
       return variables;
     }
 
-    if (!NextIf<PuncComa>()) {
-      Log << ParserSignal << Current() << "Expected comma or semicolon after variable declaration";
-      break;
-    }
+    Log << ParserSignal << Next() << "Expected comma or semicolon after variable declaration";
+    break;
   }
 
   return {m_fac.CreateMockInstance<Variable>()};

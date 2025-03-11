@@ -205,7 +205,7 @@ namespace ncc::parse {
     [[nodiscard]] auto RecurseVariableAttributes() -> std::vector<FlowPtr<Expr>>;
     [[nodiscard]] auto RecurseVariableType() -> FlowPtr<Type>;
     [[nodiscard]] auto RecurseVariableValue() -> NullableFlowPtr<Expr>;
-    [[nodiscard]] auto RecurseVariableInstance(VariableType decl_type) -> NullableFlowPtr<Expr>;
+    [[nodiscard]] auto RecurseVariableInstance(VariableType decl_type) -> FlowPtr<Expr>;
     [[nodiscard]] auto RecurseWhileCond() -> FlowPtr<Expr>;
     [[nodiscard]] auto RecurseImportName() -> std::pair<string, ImportMode>;
     [[nodiscard]] auto RecurseImportRegularFile(string import_file, ImportMode import_mode) -> FlowPtr<Expr>;
