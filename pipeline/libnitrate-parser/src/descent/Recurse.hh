@@ -210,6 +210,7 @@ namespace ncc::parse {
     [[nodiscard]] auto RecurseImportName() -> std::pair<string, ImportMode>;
     [[nodiscard]] auto RecurseImportRegularFile(string import_file, ImportMode import_mode) -> FlowPtr<Expr>;
     [[nodiscard]] auto RecurseImportPackage(string import_name, ImportMode import_mode) -> FlowPtr<Expr>;
+    void PrepareImportSubgraph(const FlowPtr<Expr> &root);
 
   public:
     PImpl(lex::IScanner &lexer, std::shared_ptr<IEnvironment> env, std::pmr::memory_resource &pool)

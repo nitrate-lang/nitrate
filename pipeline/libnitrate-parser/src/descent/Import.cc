@@ -36,9 +36,9 @@
 #include <memory>
 #include <nitrate-core/CatchAll.hh>
 #include <nitrate-lexer/Lexer.hh>
+#include <nitrate-lexer/Scanner.hh>
+#include <nitrate-parser/Algorithm.hh>
 #include <nitrate-parser/Package.hh>
-
-#include "nitrate-lexer/Scanner.hh"
 
 using namespace ncc;
 using namespace ncc::lex;
@@ -116,8 +116,44 @@ auto GeneralParser::PImpl::RecurseImportName() -> std::pair<string, ImportMode> 
   return {name, ImportMode::Code};
 }
 
-[[nodiscard]] auto GeneralParser::PImpl::RecurseImportRegularFile(string import_file,
-                                                                  ImportMode import_mode) -> FlowPtr<Expr> {
+void GeneralParser::PImpl::PrepareImportSubgraph(const FlowPtr<Expr> &root) {
+  for_each<Function>(root, [](const FlowPtr<Function> &node) {
+    // Prevent multiple definitions of the same function
+    // by removing the body of all imported functions, thereby
+    // turning them into declarations.
+    node->SetBody(std::nullopt);
+  });
+
+  for_each<Variable>(root, [this](const FlowPtr<Variable> &node) {
+    // Prevent multiple definitions of the same global variable
+    // by setting a linkage attribute on all imported variables to
+    // extern. Also require all global variables to have explicit
+    // type specifications.
+
+    if (!node->GetType()) {
+      Log << ParserSignal << node->SourceBegin().Get(m_rd).GetFilename() << ": '" << node->GetName()
+          << "': Global variable must have an explicit type";
+      return;
+    }
+
+    auto extern_linkage = m_fac
+                              .CreateCall(m_fac.CreateIdentifier("linkage"),
+                                          {
+                                              {0U, m_fac.CreateString("extern")},
+                                          })
+                              .value();
+
+    std::vector<FlowPtr<Expr>> attributes(node->GetAttributes().begin(), node->GetAttributes().end());
+    attributes.push_back(extern_linkage);
+
+    node->SetAttributes(std::move(attributes));
+    node->SetInitializer(std::nullopt);
+  });
+
+  /// TODO: Implement this function
+}
+
+auto GeneralParser::PImpl::RecurseImportRegularFile(string import_file, ImportMode import_mode) -> FlowPtr<Expr> {
   auto abs_import_path = OMNI_CATCH(std::filesystem::absolute(*import_file)).value_or(*import_file).lexically_normal();
 
   Log << Trace << "RecurseImport: Importing regular file: " << abs_import_path;
@@ -187,6 +223,8 @@ auto GeneralParser::PImpl::RecurseImportName() -> std::pair<string, ImportMode> 
       auto subtree = subparser.m_impl->RecurseBlock(false, false, BlockMode::Unknown);
 
       ParserSwapScanner(scanner_ptr);
+
+      PrepareImportSubgraph(subtree);
 
       return m_fac.CreateImport(import_file, import_mode, std::move(subtree));
     }
