@@ -38,7 +38,7 @@ using namespace ncc::lex;
 using namespace ncc::parse;
 
 auto GeneralParser::PImpl::RecurseAssembly() -> FlowPtr<Expr> {
-  Log << SyntaxError << Current() << "Inline assembly is not yet implemented";
+  Log << ParserSignal << Current() << "Inline assembly is not yet implemented";
 
   return m_fac.CreateMockInstance<Assembly>();
 }

@@ -46,7 +46,7 @@ auto GeneralParser::PImpl::RecurseVariableAttributes() -> std::vector<FlowPtr<Ex
 
   while (true) {
     if (m_rd.IsEof()) [[unlikely]] {
-      Log << SyntaxError << Current() << "Encountered EOF while parsing variable attribute";
+      Log << ParserSignal << Current() << "Encountered EOF while parsing variable attribute";
       return attributes;
     }
 
@@ -84,18 +84,18 @@ auto GeneralParser::PImpl::RecurseVariableValue() -> NullableFlowPtr<Expr> {
   return std::nullopt;
 }
 
-auto GeneralParser::PImpl::RecurseVariableInstance(VariableType decl_type) -> NullableFlowPtr<Expr> {
+auto GeneralParser::PImpl::RecurseVariableInstance(VariableType decl_type) -> FlowPtr<Expr> {
   auto symbol_attributes_opt = RecurseVariableAttributes();
-  if (auto variable_name = RecurseName()) {
-    auto variable_type = RecurseVariableType();
-    auto variable_initial = RecurseVariableValue();
-
-    return m_fac.CreateVariable(decl_type, variable_name, symbol_attributes_opt, variable_type, variable_initial);
+  auto variable_name = RecurseName();
+  if (!variable_name) {
+    Log << ParserSignal << Next() << "No variable name found in variable declaration";
+    return m_fac.CreateMockInstance<Variable>();
   }
 
-  Log << SyntaxError << Current() << "Expected variable name";
+  auto variable_type = RecurseVariableType();
+  auto variable_initial = RecurseVariableValue();
 
-  return std::nullopt;
+  return m_fac.CreateVariable(decl_type, variable_name, symbol_attributes_opt, variable_type, variable_initial);
 }
 
 auto GeneralParser::PImpl::RecurseVariable(VariableType decl_type) -> std::vector<FlowPtr<Expr>> {
@@ -103,25 +103,19 @@ auto GeneralParser::PImpl::RecurseVariable(VariableType decl_type) -> std::vecto
 
   while (true) {
     if (m_rd.IsEof()) [[unlikely]] {
-      Log << SyntaxError << Current() << "Unexpected EOF in variable declaration";
+      Log << ParserSignal << Current() << "Unexpected EOF in variable declaration";
       break;
     }
 
-    if (auto variable_opt = RecurseVariableInstance(decl_type)) {
-      variables.push_back(variable_opt.value());
-    } else {
-      Log << SyntaxError << Current() << "Failed to parse variable declaration";
-      break;
-    }
+    auto variable_opt = RecurseVariableInstance(decl_type);
+    variables.push_back(variable_opt);
 
-    if (NextIf<PuncSemi>()) {
+    if (NextIf<PuncSemi>() || NextIf<PuncComa>()) {
       return variables;
     }
 
-    if (!NextIf<PuncComa>()) {
-      Log << SyntaxError << Current() << "Expected comma or semicolon after variable declaration";
-      break;
-    }
+    Log << ParserSignal << Next() << "Expected comma or semicolon after variable declaration";
+    break;
   }
 
   return {m_fac.CreateMockInstance<Variable>()};

@@ -208,7 +208,7 @@ bool no3::package::CreatePackage(const std::filesystem::path& package_path, cons
 
   auto package_path_exists = OMNI_CATCH(std::filesystem::exists(package_path));
   if (!package_path_exists.has_value()) {
-    Log << Error << "Failed to check if the package directory exists: " << package_path;
+    Log << "Failed to check if the package directory exists: " << package_path;
     return false;
   }
 

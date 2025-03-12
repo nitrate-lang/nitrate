@@ -71,7 +71,6 @@ namespace ncc::parse {
     virtual void Visit(FlowPtr<FuncTy> n) = 0;
     virtual void Visit(FlowPtr<Unary> n) = 0;
     virtual void Visit(FlowPtr<Binary> n) = 0;
-    virtual void Visit(FlowPtr<PostUnary> n) = 0;
     virtual void Visit(FlowPtr<Ternary> n) = 0;
     virtual void Visit(FlowPtr<Integer> n) = 0;
     virtual void Visit(FlowPtr<Float> n) = 0;
@@ -82,13 +81,13 @@ namespace ncc::parse {
     virtual void Visit(FlowPtr<Undefined> n) = 0;
     virtual void Visit(FlowPtr<Call> n) = 0;
     virtual void Visit(FlowPtr<TemplateCall> n) = 0;
+    virtual void Visit(FlowPtr<Import> n) = 0;
     virtual void Visit(FlowPtr<List> n) = 0;
     virtual void Visit(FlowPtr<Assoc> n) = 0;
     virtual void Visit(FlowPtr<Index> n) = 0;
     virtual void Visit(FlowPtr<Slice> n) = 0;
     virtual void Visit(FlowPtr<FString> n) = 0;
     virtual void Visit(FlowPtr<Identifier> n) = 0;
-    virtual void Visit(FlowPtr<Sequence> n) = 0;
     virtual void Visit(FlowPtr<Block> n) = 0;
     virtual void Visit(FlowPtr<Variable> n) = 0;
     virtual void Visit(FlowPtr<Assembly> n) = 0;
@@ -112,6 +111,11 @@ namespace ncc::parse {
     template <typename T>
     void Dispatch(FlowPtr<T> n) {
       switch (n->GetKind()) {
+        case QAST_DISCARDED: {
+          // This node is to be ignored.
+          break;
+        }
+
         case QAST_BINEXPR: {
           Visit(n.template As<Binary>());
           break;
@@ -180,16 +184,12 @@ namespace ncc::parse {
           Visit(n.template As<Identifier>());
           break;
         }
-        case QAST_SEQ: {
-          Visit(n.template As<Sequence>());
-          break;
-        }
-        case QAST_POST_UNEXPR: {
-          Visit(n.template As<PostUnary>());
-          break;
-        }
         case QAST_TEMPL_CALL: {
           Visit(n.template As<TemplateCall>());
+          break;
+        }
+        case QAST_IMPORT: {
+          Visit(n.template As<Import>());
           break;
         }
         case QAST_REF: {

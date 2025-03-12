@@ -38,18 +38,18 @@
 
 namespace ncc::lex {
   enum TokenType : uint8_t {
-    EofF = 1, /* End of file */
-    KeyW,     /* Keyword */
-    Oper,     /* Operator */
-    Punc,     /* Punctuation */
-    Name,     /* Identifier */
-    IntL,     /* Integer literal */
-    NumL,     /* Floating-point literal */
-    Text,     /* String literal */
-    Char,     /* Character literal */
-    MacB,     /* Macro block */
-    Macr,     /* Macro call */
-    Note,     /* Comment */
+    EofF, /* End of file */
+    KeyW, /* Keyword */
+    Oper, /* Operator */
+    Punc, /* Punctuation */
+    Name, /* Identifier */
+    IntL, /* Integer literal */
+    NumL, /* Floating-point literal */
+    Text, /* String literal */
+    Char, /* Character literal */
+    MacB, /* Macro block */
+    Macr, /* Macro call */
+    Note, /* Comment */
   };
 
   enum Punctor : uint8_t {
@@ -126,49 +126,57 @@ namespace ncc::lex {
   };
 
   enum Keyword : uint8_t {
-    Scope,     /* 'scope' */
-    Pub,       /* 'pub' */
-    Sec,       /* 'sec' */
-    Pro,       /* 'pro' */
-    Import,    /* 'import' */
-    Type,      /* 'type' */
-    Let,       /* 'let' */
-    Var,       /* 'var' */
-    Const,     /* 'const' */
-    Static,    /* 'static' */
-    Struct,    /* 'struct' */
-    Region,    /* 'region' */
-    Group,     /* 'group' */
-    Class,     /* 'class' */
-    Union,     /* 'union' */
-    Opaque,    /* 'opaque' */
-    Enum,      /* 'enum' */
-    __FString, /* '__fstring' */
-    Fn,        /* 'fn' */
-    Unsafe,    /* 'unsafe' */
-    Safe,      /* 'safe' */
-    Promise,   /* 'promise' */
-    If,        /* 'if' */
-    Else,      /* 'else' */
-    For,       /* 'for' */
-    While,     /* 'while' */
-    Do,        /* 'do' */
-    Switch,    /* 'switch' */
-    Break,     /* 'break' */
-    Continue,  /* 'continue' */
-    Return,    /* 'ret' */
-    Retif,     /* 'retif' */
-    Foreach,   /* 'foreach' */
-    Try,       /* 'try' */
-    Catch,     /* 'catch' */
-    Throw,     /* 'throw' */
-    Async,     /* 'async' */
-    Await,     /* 'await' */
-    __Asm__,   /* '__asm__' */
-    Undef,     /* 'undef' */
-    Null,      /* 'null' */
-    True,      /* 'true' */
-    False,     /* 'false' */
+    Scope,       /* 'scope' */
+    Pub,         /* 'pub' */
+    Sec,         /* 'sec' */
+    Pro,         /* 'pro' */
+    Import,      /* 'import' */
+    Type,        /* 'type' */
+    Let,         /* 'let' */
+    Var,         /* 'var' */
+    Const,       /* 'const' */
+    Static,      /* 'static' */
+    Struct,      /* 'struct' */
+    Region,      /* 'region' */
+    Group,       /* 'group' */
+    Class,       /* 'class' */
+    Union,       /* 'union' */
+    Opaque,      /* 'opaque' */
+    Enum,        /* 'enum' */
+    __FString,   /* '__fstring' */
+    Fn,          /* 'fn' */
+    Safe,        /* 'safe' */
+    Unsafe,      /* 'unsafe' */
+    Pure,        /* 'pure' */
+    Impure,      /* 'impure' */
+    Quasi,       /* 'quasi' */
+    Retro,       /* 'retro' */
+    Inline,      /* 'inline' */
+    Foreign,     /* 'foreign' */
+    Promise,     /* 'promise' */
+    If,          /* 'if' */
+    Else,        /* 'else' */
+    For,         /* 'for' */
+    While,       /* 'while' */
+    Do,          /* 'do' */
+    Switch,      /* 'switch' */
+    Break,       /* 'break' */
+    Continue,    /* 'continue' */
+    Return,      /* 'ret' */
+    Retif,       /* 'retif' */
+    Foreach,     /* 'foreach' */
+    Try,         /* 'try' */
+    Catch,       /* 'catch' */
+    Throw,       /* 'throw' */
+    Async,       /* 'async' */
+    Await,       /* 'await' */
+    __Asm__,     /* '__asm__' */
+    Undef,       /* 'undef' */
+    Null,        /* 'null' */
+    True,        /* 'true' */
+    False,       /* 'false' */
+    EscapeBlock, /* 'escape_block' */
+    UnitAssert,  /* 'unit_assert' */
   };
 }  // namespace ncc::lex
 

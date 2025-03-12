@@ -55,8 +55,8 @@ namespace ncc::parse {
   class FString;
   class Identifier;
   class Sequence;
-  class PostUnary;
   class TemplateCall;
+  class Import;
   class RefTy;
   class U1;
   class U8;

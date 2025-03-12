@@ -27,6 +27,7 @@ parts:
       - nlohmann-json3-dev
       - libboost-all-dev
       - libcurlpp-dev
+      - libdeflate-dev
       - libgit2-dev
       - libssl-dev
       - libreadline-dev
@@ -44,6 +45,7 @@ parts:
       - libboost-iostreams1.83.0
       - libboost-filesystem1.83.0
       - libcurlpp0t64
+      - libdeflate0
     override-stage: |
       snapcraftctl stage
       rm -rf $SNAPCRAFT_PART_INSTALL/usr/include
@@ -52,10 +54,4 @@ parts:
 apps:
   nitrate:
     command: usr/bin/no3
-    plugs:
-      # Allow access to the network for fetching packages and LSP TCP server
-      - network
-      - network-bind
-      # Files and directories access
-      - home
-      - removable-media
+    

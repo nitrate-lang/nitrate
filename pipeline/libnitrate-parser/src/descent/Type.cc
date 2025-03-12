@@ -47,7 +47,7 @@ auto GeneralParser::PImpl::RecurseTypeRangeStart() -> NullableFlowPtr<Expr> {
   });
 
   if (!NextIf<PuncColn>()) {
-    Log << SyntaxError << Current() << "Expected ':' after range start";
+    Log << ParserSignal << Current() << "Expected ':' after range start";
   }
 
   return min_value;
@@ -63,7 +63,7 @@ auto GeneralParser::PImpl::RecurseTypeRangeEnd() -> NullableFlowPtr<Expr> {
   });
 
   if (!NextIf<PuncRBrk>()) {
-    Log << SyntaxError << Current() << "Expected ']' after range";
+    Log << ParserSignal << Current() << "Expected ']' after range";
   }
 
   return max_val;
@@ -88,7 +88,7 @@ auto GeneralParser::PImpl::RecurseTypeTemplateArguments() -> std::optional<std::
   } else if (NextIf<OpROTR>()) {
     m_rd.Insert(Token(Oper, OpRShift));
   } else {
-    Log << SyntaxError << Current() << "Expected '>' after template arguments";
+    Log << ParserSignal << Current() << "Expected '>' after template arguments";
   }
 
   return args;
@@ -101,7 +101,7 @@ auto GeneralParser::PImpl::RecurseTypeSuffix(FlowPtr<Type> base) -> FlowPtr<pars
 
   if (auto template_arguments = RecurseTypeTemplateArguments()) {
     auto templ = m_fac.CreateTemplateType(template_arguments.value(), base);
-    templ->SetOffset(base->Begin());
+    templ->SetOffset(base->SourceBegin());
 
     base = templ;
   }
@@ -142,27 +142,27 @@ auto GeneralParser::PImpl::RecurseFunctionType() -> FlowPtr<parse::Type> {
   auto fn = RecurseFunction(true);
 
   if (!fn->Is<Function>() || !fn->As<Function>()->IsDeclaration()) {
-    Log << SyntaxError << Current() << "Expected a function declaration but got something else";
+    Log << ParserSignal << Current() << "Expected a function declaration but got something else";
     return m_fac.CreateMockInstance<VoidTy>();
   }
 
   FlowPtr<Function> fn_def = fn.As<Function>();
 
-  auto func_ty = m_fac.CreateFunctionType(fn_def->GetReturn(), fn_def->GetParams(), fn_def->IsVariadic(),
-                                          fn_def->GetPurity(), fn_def->GetAttributes());
+  auto func_ty =
+      m_fac.CreateFunctionType(fn_def->GetReturn(), fn_def->GetParams(), fn_def->IsVariadic(), fn_def->GetAttributes());
   if (!func_ty.has_value()) {
-    Log << SyntaxError << Current() << "Function type specification is incorrect";
+    Log << ParserSignal << Current() << "Function type specification is incorrect";
     func_ty = m_fac.CreateMockInstance<FuncTy>();
   }
 
-  func_ty.value()->SetOffset(fn->Begin());
+  func_ty.value()->SetOffset(fn->SourceBegin());
 
   return func_ty.value();
 }
 
 auto GeneralParser::PImpl::RecurseOpaqueType() -> FlowPtr<parse::Type> {
   if (!NextIf<PuncLPar>()) {
-    Log << SyntaxError << Current() << "Expected '(' after 'opaque'";
+    Log << ParserSignal << Current() << "Expected '(' after 'opaque'";
     return m_fac.CreateMockInstance<VoidTy>();
   }
 
@@ -174,9 +174,9 @@ auto GeneralParser::PImpl::RecurseOpaqueType() -> FlowPtr<parse::Type> {
       return opaque;
     }
 
-    Log << SyntaxError << Current() << "Expected ')' after 'opaque(name'";
+    Log << ParserSignal << Current() << "Expected ')' after 'opaque(name'";
   } else {
-    Log << SyntaxError << Current() << "Expected a name after 'opaque('";
+    Log << ParserSignal << Current() << "Expected a name after 'opaque('";
   }
 
   return m_fac.CreateMockInstance<VoidTy>();
@@ -199,7 +199,7 @@ auto GeneralParser::PImpl::RecurseTypeByKeyword(Keyword key) -> FlowPtr<parse::T
     }
 
     default: {
-      Log << SyntaxError << Current() << "Unexpected '" << key << "' is type context";
+      Log << ParserSignal << Current() << "Unexpected '" << key << "' is type context";
       return m_fac.CreateMockInstance<VoidTy>();
     }
   }
@@ -239,7 +239,7 @@ auto GeneralParser::PImpl::RecurseTypeByOperator(Operator op) -> FlowPtr<parse::
 
     case OpComptime: {
       if (!NextIf<PuncLPar>()) {
-        Log << SyntaxError << Current() << "Expected '(' after 'comptime'";
+        Log << ParserSignal << Current() << "Expected '(' after 'comptime'";
         return m_fac.CreateMockInstance<VoidTy>();
       }
 
@@ -248,7 +248,7 @@ auto GeneralParser::PImpl::RecurseTypeByOperator(Operator op) -> FlowPtr<parse::
                                                          }));
 
       if (!NextIf<PuncRPar>()) {
-        Log << SyntaxError << Current() << "Expected ')' after 'comptime('";
+        Log << ParserSignal << Current() << "Expected ')' after 'comptime('";
       }
 
       auto args = std::vector<CallArg>{{"0", comptime_expr}};
@@ -256,7 +256,7 @@ auto GeneralParser::PImpl::RecurseTypeByOperator(Operator op) -> FlowPtr<parse::
     }
 
     default: {
-      Log << SyntaxError << Current() << "Unexpected operator '" << op << "' in type context";
+      Log << ParserSignal << Current() << "Unexpected operator '" << op << "' in type context";
       return m_fac.CreateMockInstance<VoidTy>();
     }
   }
@@ -277,7 +277,7 @@ auto GeneralParser::PImpl::RecurseArrayOrVector() -> FlowPtr<parse::Type> {
   }
 
   if (!NextIf<PuncSemi>()) {
-    Log << SyntaxError << Current() << "Expected ';' separator in array type before size";
+    Log << ParserSignal << Current() << "Expected ';' separator in array type before size";
   }
 
   auto size = RecurseExpr({
@@ -285,7 +285,7 @@ auto GeneralParser::PImpl::RecurseArrayOrVector() -> FlowPtr<parse::Type> {
   });
 
   if (!NextIf<PuncRBrk>()) {
-    Log << SyntaxError << Current() << "Expected ']' after array size";
+    Log << ParserSignal << Current() << "Expected ']' after array size";
   }
 
   auto array = m_fac.CreateArray(first, size);
@@ -300,7 +300,7 @@ auto GeneralParser::PImpl::RecurseSetType() -> FlowPtr<parse::Type> {
   auto set_type = RecurseType();
 
   if (!NextIf<PuncRCur>()) {
-    Log << SyntaxError << Current() << "Expected '}' after set type";
+    Log << ParserSignal << Current() << "Expected '}' after set type";
   }
 
   auto args = std::vector<CallArg>{{"0", set_type}};
@@ -318,7 +318,7 @@ auto GeneralParser::PImpl::RecurseTupleType() -> FlowPtr<parse::Type> {
 
   while (true) {
     if (m_rd.IsEof()) {
-      Log << SyntaxError << Current() << "Unexpected EOF in tuple type";
+      Log << ParserSignal << Current() << "Unexpected EOF in tuple type";
       return m_fac.CreateMockInstance<VoidTy>();
     }
 
@@ -360,7 +360,7 @@ auto GeneralParser::PImpl::RecurseTypeByPunctuation(Punctor punc) -> FlowPtr<par
     }
 
     default: {
-      Log << SyntaxError << Next() << "Punctuation is not valid in this context";
+      Log << ParserSignal << Next() << "Punctuation is not valid in this context";
       return m_fac.CreateMockInstance<VoidTy>();
     }
   }
@@ -406,7 +406,7 @@ auto GeneralParser::PImpl::RecurseTypeByName(string name) -> FlowPtr<parse::Type
   }
 
   if (!type.has_value()) {
-    Log << SyntaxError << Current() << "Unknown type name: " << name;
+    Log << ParserSignal << Current() << "Unknown type name: " << name;
     return m_fac.CreateMockInstance<VoidTy>();
   }
 
@@ -447,7 +447,7 @@ auto GeneralParser::PImpl::RecurseType() -> FlowPtr<parse::Type> {
     }
 
     default: {
-      Log << SyntaxError << Next() << "Expected a type";
+      Log << ParserSignal << Next() << "Expected a type";
 
       auto type = m_fac.CreateMockInstance<VoidTy>();
       r = RecurseTypeSuffix(type);

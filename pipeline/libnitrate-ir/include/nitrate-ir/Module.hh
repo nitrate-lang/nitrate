@@ -70,7 +70,7 @@ namespace ncc::ir {
     string m_module_name{};
     bool m_diagnostics_enabled{};
 
-    std::unique_ptr<ncc::IMemory> m_ir_data;
+    std::unique_ptr<std::pmr::memory_resource> m_ir_data;
 
   public:
     IRModule(string module_name = "module");

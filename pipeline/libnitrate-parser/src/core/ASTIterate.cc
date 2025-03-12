@@ -55,7 +55,7 @@ class IterVisitor : public ASTVisitor {
 
   template <class T>
   constexpr void Add(FlowPtr<T> n) {
-    if (n == nullptr) {
+    if (n == nullptr || n->IsDiscarded()) {
       return;
     }
 
@@ -64,7 +64,7 @@ class IterVisitor : public ASTVisitor {
 
   template <class T>
   constexpr void Add(NullableFlowPtr<T> n) {
-    if (!n.has_value() || n == nullptr) {
+    if (!n.has_value() || n == nullptr || n.value()->IsDiscarded()) {
       return;
     }
 
@@ -148,8 +148,6 @@ class IterVisitor : public ASTVisitor {
     Add(n->GetRHS());
   }
 
-  void Visit(FlowPtr<PostUnary> n) override { Add(n->GetLHS()); }
-
   void Visit(FlowPtr<Ternary> n) override {
     Add(n->GetCond());
     Add(n->GetLHS());
@@ -175,6 +173,8 @@ class IterVisitor : public ASTVisitor {
 
     std::for_each(n->GetArgs().begin(), n->GetArgs().end(), [&](auto arg) { Add(arg.second); });
   }
+
+  void Visit(FlowPtr<Import> n) override { Add(n->GetSubtree()); }
 
   void Visit(FlowPtr<List> n) override {
     std::for_each(n->GetItems().begin(), n->GetItems().end(), [&](auto item) { Add(item); });
@@ -207,10 +207,6 @@ class IterVisitor : public ASTVisitor {
   }
 
   void Visit(FlowPtr<Identifier>) override {}
-
-  void Visit(FlowPtr<Sequence> n) override {
-    std::for_each(n->GetItems().begin(), n->GetItems().end(), [&](auto item) { Add(item); });
-  }
 
   void Visit(FlowPtr<Block> n) override {
     std::for_each(n->GetStatements().begin(), n->GetStatements().end(), [&](auto item) { Add(item); });

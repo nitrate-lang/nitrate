@@ -71,7 +71,7 @@ NCC_EXPORT auto ParseLibrarySetup::Init() -> bool {
 NCC_EXPORT void ParseLibrarySetup::Deinit() {
   Log << Runtime << Trace << "libnitrate-parser: deinitializing...";
 
-  ExtensionDataStore.Reset();
+  ASTExtension::ResetStorage();
 
   ncc::lex::LexerLibrary.DeinitRC();
   ncc::CoreLibrary.DeinitRC();

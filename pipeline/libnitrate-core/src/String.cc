@@ -31,6 +31,8 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
+#define DEFAULT_INTERNING 1
+
 #include <mutex>
 #include <nitrate-core/Assert.hh>
 #include <nitrate-core/SmartLock.hh>
@@ -74,10 +76,14 @@ public:
   }
 };
 
+#if MEMORY_OVER_SPEED == 1 || DEFAULT_INTERNING == 1
+#define __IS_INTERNING
+#endif
+
 static std::mutex StringLock;
 static NonLinearContainer<std::string, 1024> Strings;
 
-#if MEMORY_OVER_SPEED == 1
+#ifdef __IS_INTERNING
 static google::dense_hash_map<std::string_view, const std::string*> FastMap = [] {
   google::dense_hash_map<std::string_view, const std::string*> map;
   map.set_empty_key("");
@@ -94,7 +100,7 @@ auto String::CreateInstance(std::string_view str) -> const std::string& {
 
   SmartLock lock(StringLock);
 
-#if MEMORY_OVER_SPEED == 1
+#ifdef __IS_INTERNING
   /* Search for existing key, thereby deduplicating elements */
   if (auto it = FastMap.find(str); it != FastMap.end()) {
     return *it->second;
@@ -103,7 +109,7 @@ auto String::CreateInstance(std::string_view str) -> const std::string& {
 
   const std::string* ptr = &Strings.Append(std::string(str));
 
-#if MEMORY_OVER_SPEED == 1
+#ifdef __IS_INTERNING
   FastMap[std::string_view(*ptr)] = ptr;
 #endif
 
@@ -119,7 +125,7 @@ auto String::CreateInstance(std::string&& str) -> const std::string& {
 
   SmartLock lock(StringLock);
 
-#if MEMORY_OVER_SPEED == 1
+#ifdef __IS_INTERNING
   /* Search for existing key, thereby deduplicating elements */
   if (auto it = FastMap.find(str); it != FastMap.end()) {
     return *it->second;
@@ -128,7 +134,7 @@ auto String::CreateInstance(std::string&& str) -> const std::string& {
 
   const std::string* ptr = &Strings.Append(std::move(str));
 
-#if MEMORY_OVER_SPEED == 1
+#ifdef __IS_INTERNING
   FastMap[std::string_view(*ptr)] = ptr;
 #endif
 
@@ -142,7 +148,7 @@ void String::ResetInstances() {
 
   Strings.Clear();
 
-#if MEMORY_OVER_SPEED == 1
+#ifdef __IS_INTERNING
   FastMap.clear();
 #endif
 }

@@ -52,11 +52,18 @@ namespace ncc::parse {
   class NCC_EXPORT ASTFactory final {
     using SourceLocation = std::source_location;
 
-    IMemory& m_pool;
+    std::pmr::memory_resource& m_pool;
+
+    [[gnu::pure, nodiscard]] auto CreateMockInstance(
+        ASTNodeKind kind, SourceLocation origin = SourceLocation::current()) -> FlowPtr<Expr>;
+
+  public:
+    constexpr ASTFactory(std::pmr::memory_resource& pool) : m_pool(pool) {}
+    constexpr ~ASTFactory() = default;
 
     template <typename T, typename... Args>
     constexpr static inline auto CreateInstance(Args&&... args) {
-      return [&](IMemory& pool, SourceLocation origin) {
+      return [&](std::pmr::memory_resource& pool, SourceLocation origin) {
         FlowPtr<T> obj = MakeFlowPtr<T>(new (pool.allocate(sizeof(T), alignof(T))) T(std::forward<Args>(args)...));
         obj.SetTracking(origin);
         return obj;
@@ -66,16 +73,12 @@ namespace ncc::parse {
     template <typename T>
     constexpr auto AllocateArray(auto size) -> std::span<T> {
       const auto bytes_needed = sizeof(T) * size;
+      if (bytes_needed == 0) {
+        return {};
+      }
       auto* buffer = static_cast<T*>(m_pool.allocate(bytes_needed, alignof(T)));
       return std::span<T>(buffer, size);
     }
-
-    [[gnu::pure, nodiscard]] auto CreateMockInstance(
-        ASTNodeKind kind, SourceLocation origin = SourceLocation::current()) -> FlowPtr<Expr>;
-
-  public:
-    constexpr ASTFactory(IMemory& pool) : m_pool(pool) {}
-    constexpr ~ASTFactory() = default;
 
     ///=========================================================================
     /// FACTORY TYPES
@@ -109,7 +112,7 @@ namespace ncc::parse {
     }
 
     template <typename NodeClass>
-    [[gnu::pure, nodiscard]] static inline auto CreateMockInstance(IMemory& m,
+    [[gnu::pure, nodiscard]] static inline auto CreateMockInstance(std::pmr::memory_resource& m,
                                                                    ASTNodeKind kind = Expr::GetTypeCode<NodeClass>(),
                                                                    SourceLocation origin = SourceLocation::current()) {
       return ASTFactory(m).CreateMockInstance(kind, origin).As<NodeClass>();
@@ -121,11 +124,8 @@ namespace ncc::parse {
     [[gnu::pure, nodiscard]] auto CreateBinary(FlowPtr<Expr> lhs, lex::Operator op, FlowPtr<Expr> rhs,
                                                SourceLocation origin = SourceLocation::current()) -> FlowPtr<Binary>;
 
-    [[gnu::pure, nodiscard]] auto CreateUnary(lex::Operator op, FlowPtr<Expr> rhs,
+    [[gnu::pure, nodiscard]] auto CreateUnary(lex::Operator op, FlowPtr<Expr> rhs, bool is_postfix = false,
                                               SourceLocation origin = SourceLocation::current()) -> FlowPtr<Unary>;
-
-    [[gnu::pure, nodiscard]] auto CreatePostUnary(
-        FlowPtr<Expr> lhs, lex::Operator op, SourceLocation origin = SourceLocation::current()) -> FlowPtr<PostUnary>;
 
     [[gnu::pure, nodiscard]] auto CreateTernary(FlowPtr<Expr> condition, FlowPtr<Expr> then, FlowPtr<Expr> ele,
                                                 SourceLocation origin = SourceLocation::current()) -> FlowPtr<Ternary>;
@@ -217,13 +217,6 @@ namespace ncc::parse {
     [[gnu::pure, nodiscard]] auto CreateIdentifier(string name, SourceLocation origin = SourceLocation::current())
         -> FlowPtr<Identifier>;
 
-    [[gnu::pure, nodiscard]] auto CreateSequence(std::span<const FlowPtr<Expr>> ele = {},
-                                                 SourceLocation origin = SourceLocation::current())
-        -> FlowPtr<Sequence>;
-
-    [[gnu::pure, nodiscard]] auto CreateSequence(
-        const std::vector<FlowPtr<Expr>>& ele, SourceLocation origin = SourceLocation::current()) -> FlowPtr<Sequence>;
-
     [[gnu::pure, nodiscard]] auto CreateTemplateCall(
         FlowPtr<Expr> callee, const std::unordered_map<std::variant<string, size_t>, FlowPtr<Expr>>& template_args = {},
         const std::unordered_map<std::variant<string, size_t>, FlowPtr<Expr>>& named_args = {},
@@ -241,6 +234,9 @@ namespace ncc::parse {
         std::span<const std::pair<string, FlowPtr<Expr>>> template_args,
         std::span<const std::pair<string, FlowPtr<Expr>>> args, FlowPtr<Expr> callee,
         SourceLocation origin = SourceLocation::current()) -> FlowPtr<TemplateCall>;
+
+    [[gnu::pure, nodiscard]] auto CreateImport(string name, ImportMode mode, FlowPtr<Expr> subtree,
+                                               SourceLocation origin = SourceLocation::current()) -> FlowPtr<Import>;
 
     ///=========================================================================
     /// TYPES
@@ -342,14 +338,14 @@ namespace ncc::parse {
 
     [[gnu::pure, nodiscard]] auto CreateFunctionType(
         FlowPtr<Type> ret_ty, const std::vector<FactoryFunctionParameter>& params, bool variadic = false,
-        Purity purity = Purity::Impure, std::vector<FlowPtr<Expr>> attributes = {},
-        NullableFlowPtr<Expr> bits = nullptr, NullableFlowPtr<Expr> min = nullptr, NullableFlowPtr<Expr> max = nullptr,
+        std::vector<FlowPtr<Expr>> attributes = {}, NullableFlowPtr<Expr> bits = nullptr,
+        NullableFlowPtr<Expr> min = nullptr, NullableFlowPtr<Expr> max = nullptr,
         SourceLocation origin = SourceLocation::current()) -> std::optional<FlowPtr<FuncTy>>;
 
     [[gnu::pure, nodiscard]] auto CreateFunctionType(
         FlowPtr<Type> ret_ty, std::span<const FuncParam> params = {}, bool variadic = false,
-        Purity purity = Purity::Impure, std::span<const FlowPtr<Expr>> attributes = {},
-        NullableFlowPtr<Expr> bits = nullptr, NullableFlowPtr<Expr> min = nullptr, NullableFlowPtr<Expr> max = nullptr,
+        std::span<const FlowPtr<Expr>> attributes = {}, NullableFlowPtr<Expr> bits = nullptr,
+        NullableFlowPtr<Expr> min = nullptr, NullableFlowPtr<Expr> max = nullptr,
         SourceLocation origin = SourceLocation::current()) -> std::optional<FlowPtr<FuncTy>>;
 
     [[gnu::pure, nodiscard]] auto CreateNamed(string name, NullableFlowPtr<Expr> bits = nullptr,
@@ -405,14 +401,13 @@ namespace ncc::parse {
 
     [[gnu::pure, nodiscard]] auto CreateFunction(
         string name, NullableFlowPtr<Type> ret_ty = nullptr, const std::vector<FactoryFunctionParameter>& params = {},
-        bool variadic = false, NullableFlowPtr<Expr> body = nullptr, Purity purity = Purity::Impure,
-        const std::vector<FlowPtr<Expr>>& attributes = {}, NullableFlowPtr<Expr> precond = nullptr,
-        NullableFlowPtr<Expr> postcond = nullptr, const std::vector<std::pair<string, bool>>& captures = {},
+        bool variadic = false, NullableFlowPtr<Expr> body = nullptr, const std::vector<FlowPtr<Expr>>& attributes = {},
+        NullableFlowPtr<Expr> precond = nullptr, NullableFlowPtr<Expr> postcond = nullptr,
+
         const std::optional<std::vector<TemplateParameter>>& template_parameters = std::nullopt,
         SourceLocation origin = SourceLocation::current()) -> std::optional<FlowPtr<Function>>;
 
     [[gnu::pure, nodiscard]] auto CreateAnonymousFunction(
-        Purity purity = Purity::Impure, const std::vector<std::pair<string, bool>>& captures = {},
         NullableFlowPtr<Type> ret_ty = nullptr, const std::vector<FactoryFunctionParameter>& params = {},
         bool variadic = false, NullableFlowPtr<Expr> body = nullptr, const std::vector<FlowPtr<Expr>>& attributes = {},
         NullableFlowPtr<Expr> precond = nullptr, NullableFlowPtr<Expr> postcond = nullptr,
@@ -424,11 +419,11 @@ namespace ncc::parse {
     [[gnu::pure, nodiscard]] auto CreateScope(string name, FlowPtr<Expr> body, std::span<const string> tags = {},
                                               SourceLocation origin = SourceLocation::current()) -> FlowPtr<Scope>;
 
-    [[gnu::pure, nodiscard]] auto CreateExport(FlowPtr<Expr> symbol, const std::vector<FlowPtr<Expr>>& attributes,
+    [[gnu::pure, nodiscard]] auto CreateExport(FlowPtr<Block> symbol, const std::vector<FlowPtr<Expr>>& attributes,
                                                Vis vis = Vis::Pub, string abi = "",
                                                SourceLocation origin = SourceLocation::current()) -> FlowPtr<Export>;
 
-    [[gnu::pure, nodiscard]] auto CreateExport(FlowPtr<Expr> symbol, std::span<const FlowPtr<Expr>> attributes = {},
+    [[gnu::pure, nodiscard]] auto CreateExport(FlowPtr<Block> symbol, std::span<const FlowPtr<Expr>> attributes = {},
                                                Vis vis = Vis::Pub, string abi = "",
                                                SourceLocation origin = SourceLocation::current()) -> FlowPtr<Export>;
 

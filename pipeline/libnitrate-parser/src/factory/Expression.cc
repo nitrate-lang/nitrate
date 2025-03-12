@@ -45,12 +45,9 @@ auto ASTFactory::CreateBinary(FlowPtr<Expr> lhs, lex::Operator op, FlowPtr<Expr>
   return CreateInstance<Binary>(lhs, op, rhs)(m_pool, origin);
 }
 
-auto ASTFactory::CreateUnary(lex::Operator op, FlowPtr<Expr> rhs, SourceLocation origin) -> FlowPtr<Unary> {
-  return CreateInstance<Unary>(op, rhs)(m_pool, origin);
-}
-
-auto ASTFactory::CreatePostUnary(FlowPtr<Expr> lhs, lex::Operator op, SourceLocation origin) -> FlowPtr<PostUnary> {
-  return CreateInstance<PostUnary>(lhs, op)(m_pool, origin);
+auto ASTFactory::CreateUnary(lex::Operator op, FlowPtr<Expr> rhs, bool is_postfix,
+                             SourceLocation origin) -> FlowPtr<Unary> {
+  return CreateInstance<Unary>(op, rhs, is_postfix)(m_pool, origin);
 }
 
 auto ASTFactory::CreateTernary(FlowPtr<Expr> condition, FlowPtr<Expr> then, FlowPtr<Expr> ele,
@@ -230,17 +227,6 @@ auto ASTFactory::CreateIdentifier(string name, SourceLocation origin) -> FlowPtr
   return CreateInstance<Identifier>(name)(m_pool, origin);
 }
 
-auto ASTFactory::CreateSequence(std::span<const FlowPtr<Expr>> ele, SourceLocation origin) -> FlowPtr<Sequence> {
-  auto ele_copy = AllocateArray<FlowPtr<Expr>>(ele.size());
-  std::copy(ele.begin(), ele.end(), ele_copy.begin());
-
-  return CreateInstance<Sequence>(ele_copy)(m_pool, origin);
-}
-
-auto ASTFactory::CreateSequence(const std::vector<FlowPtr<Expr>>& ele, SourceLocation origin) -> FlowPtr<Sequence> {
-  return CreateSequence(std::span(ele), origin);
-}
-
 auto ASTFactory::CreateTemplateCall(
     FlowPtr<Expr> callee, const std::unordered_map<std::variant<string, size_t>, FlowPtr<Expr>>& template_args,
     const std::unordered_map<std::variant<string, size_t>, FlowPtr<Expr>>& named_args,
@@ -327,4 +313,9 @@ auto ASTFactory::CreateTemplateCall(std::span<const std::pair<string, FlowPtr<Ex
   std::copy(args.begin(), args.end(), args_copy.begin());
 
   return CreateInstance<TemplateCall>(callee, args_copy, template_args_copy)(m_pool, origin);
+}
+
+auto ASTFactory::CreateImport(string name, ImportMode mode, FlowPtr<Expr> subtree,
+                              SourceLocation origin) -> FlowPtr<Import> {
+  return CreateInstance<Import>(name, mode, subtree)(m_pool, origin);
 }

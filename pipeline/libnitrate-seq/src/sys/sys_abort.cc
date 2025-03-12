@@ -51,7 +51,7 @@ auto Sequencer::SysAbort() -> int32_t {
     ss << lua_tostring(lua, i) << " ";
   }
 
-  Log << ec::SeqLog << Error << ec::SeqLog << ss.str();
+  Log << ec::SeqLog << ss.str();
 
   throw lex::detail::ScannerEOF();
 }

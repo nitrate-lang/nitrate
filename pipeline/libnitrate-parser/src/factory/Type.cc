@@ -281,8 +281,8 @@ auto ASTFactory::CreateTuple(const std::vector<FlowPtr<Type>>& ele, NullableFlow
 }
 
 auto ASTFactory::CreateFunctionType(FlowPtr<Type> ret_ty, const std::vector<FactoryFunctionParameter>& params,
-                                    bool variadic, Purity purity, std::vector<FlowPtr<Expr>> attributes,
-                                    NullableFlowPtr<Expr> bits, NullableFlowPtr<Expr> min, NullableFlowPtr<Expr> max,
+                                    bool variadic, std::vector<FlowPtr<Expr>> attributes, NullableFlowPtr<Expr> bits,
+                                    NullableFlowPtr<Expr> min, NullableFlowPtr<Expr> max,
                                     SourceLocation origin) -> std::optional<FlowPtr<FuncTy>> {
   auto params_copy = AllocateArray<FuncParam>(params.size());
 
@@ -311,7 +311,7 @@ auto ASTFactory::CreateFunctionType(FlowPtr<Type> ret_ty, const std::vector<Fact
   auto attributes_copy = AllocateArray<FlowPtr<Expr>>(attributes.size());
   std::copy(attributes.begin(), attributes.end(), attributes_copy.begin());
 
-  auto node = CreateInstance<FuncTy>(ret_ty, params_copy, variadic, purity, attributes_copy)(m_pool, origin);
+  auto node = CreateInstance<FuncTy>(ret_ty, params_copy, variadic, attributes_copy)(m_pool, origin);
 
   node->SetWidth(std::move(bits));
   node->SetRangeBegin(std::move(min));
@@ -321,8 +321,8 @@ auto ASTFactory::CreateFunctionType(FlowPtr<Type> ret_ty, const std::vector<Fact
 }
 
 auto ASTFactory::CreateFunctionType(FlowPtr<Type> ret_ty, std::span<const FuncParam> params, bool variadic,
-                                    Purity purity, std::span<const FlowPtr<Expr>> attributes,
-                                    NullableFlowPtr<Expr> bits, NullableFlowPtr<Expr> min, NullableFlowPtr<Expr> max,
+                                    std::span<const FlowPtr<Expr>> attributes, NullableFlowPtr<Expr> bits,
+                                    NullableFlowPtr<Expr> min, NullableFlowPtr<Expr> max,
                                     SourceLocation origin) -> std::optional<FlowPtr<FuncTy>> {
   auto params_copy = AllocateArray<FuncParam>(params.size());
 
@@ -347,7 +347,7 @@ auto ASTFactory::CreateFunctionType(FlowPtr<Type> ret_ty, std::span<const FuncPa
   auto attributes_copy = AllocateArray<FlowPtr<Expr>>(attributes.size());
   std::copy(attributes.begin(), attributes.end(), attributes_copy.begin());
 
-  auto node = CreateInstance<FuncTy>(ret_ty, params_copy, variadic, purity, attributes_copy)(m_pool, origin);
+  auto node = CreateInstance<FuncTy>(ret_ty, params_copy, variadic, attributes_copy)(m_pool, origin);
 
   node->SetWidth(std::move(bits));
   node->SetRangeBegin(std::move(min));

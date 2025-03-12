@@ -46,7 +46,7 @@
 using namespace ncc;
 using namespace ncc::ir;
 
-thread_local std::unique_ptr<ncc::IMemory> ncc::ir::NrAllocator = std::make_unique<ncc::DynamicArena>();
+thread_local std::unique_ptr<std::pmr::memory_resource> ncc::ir::NrAllocator = std::make_unique<ncc::DynamicArena>();
 
 struct PtrState {
   FlowPtr<Type> m_pointee;

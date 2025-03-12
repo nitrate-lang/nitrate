@@ -47,7 +47,7 @@ auto GeneralParser::PImpl::RecurseReturn() -> FlowPtr<Expr> {
   });
 
   if (!NextIf<PuncSemi>()) [[unlikely]] {
-    Log << SyntaxError << Current() << "Expected ';' after the return statement.";
+    Log << ParserSignal << Current() << "Expected ';' after the return statement.";
   }
 
   return m_fac.CreateReturn(return_value);
@@ -64,14 +64,14 @@ auto GeneralParser::PImpl::RecurseReturnIf() -> FlowPtr<Expr> {
     });
 
     if (!NextIf<PuncSemi>()) [[unlikely]] {
-      Log << SyntaxError << Current() << "Expected ';' after the retif value.";
+      Log << ParserSignal << Current() << "Expected ';' after the retif value.";
     }
 
     return m_fac.CreateReturnIf(return_if, return_value);
   }
 
   if (!NextIf<PuncSemi>()) [[unlikely]] {
-    Log << SyntaxError << Current() << "Expected ';' after the retif value.";
+    Log << ParserSignal << Current() << "Expected ';' after the retif value.";
   }
 
   return m_fac.CreateReturnIf(return_if);

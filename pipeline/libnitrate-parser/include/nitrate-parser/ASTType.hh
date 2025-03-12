@@ -45,7 +45,7 @@ namespace ncc::parse {
   public:
     constexpr NamedTy(auto name) : Type(QAST_NAMED), m_name(name) {}
 
-    [[nodiscard]] constexpr auto GetName() const { return m_name; }
+    [[nodiscard, gnu::pure]] constexpr auto GetName() const { return m_name; }
   };
 
   class InferTy : public Type {
@@ -60,8 +60,8 @@ namespace ncc::parse {
   public:
     constexpr TemplateType(auto templ, auto args) : Type(QAST_TEMPLATE), m_template(std::move(templ)), m_args(args) {}
 
-    [[nodiscard]] constexpr auto GetTemplate() const { return m_template; }
-    [[nodiscard]] constexpr auto GetArgs() const { return m_args; }
+    [[nodiscard, gnu::pure]] constexpr auto GetTemplate() const { return m_template; }
+    [[nodiscard, gnu::pure]] constexpr auto GetArgs() const { return m_args; }
   };
 
   class U1 : public Type {
@@ -151,8 +151,8 @@ namespace ncc::parse {
   public:
     constexpr PtrTy(auto item, auto volatil) : Type(QAST_PTR), m_item(std::move(item)), m_volatil(volatil) {}
 
-    [[nodiscard]] constexpr auto GetItem() const { return m_item; }
-    [[nodiscard]] constexpr auto IsVolatile() const -> bool { return m_volatil; }
+    [[nodiscard, gnu::pure]] constexpr auto GetItem() const { return m_item; }
+    [[nodiscard, gnu::pure]] constexpr auto IsVolatile() const -> bool { return m_volatil; }
   };
 
   class OpaqueTy : public Type {
@@ -161,7 +161,7 @@ namespace ncc::parse {
   public:
     constexpr OpaqueTy(auto name) : Type(QAST_OPAQUE), m_name(name) {}
 
-    [[nodiscard]] constexpr auto GetName() const { return m_name; }
+    [[nodiscard, gnu::pure]] constexpr auto GetName() const { return m_name; }
   };
 
   class TupleTy : public Type {
@@ -170,7 +170,7 @@ namespace ncc::parse {
   public:
     constexpr TupleTy(auto items) : Type(QAST_TUPLE), m_items(items) {}
 
-    [[nodiscard]] constexpr auto GetItems() const { return m_items; }
+    [[nodiscard, gnu::pure]] constexpr auto GetItems() const { return m_items; }
   };
 
   class ArrayTy : public Type {
@@ -180,8 +180,8 @@ namespace ncc::parse {
   public:
     constexpr ArrayTy(auto item, auto size) : Type(QAST_ARRAY), m_item(std::move(item)), m_size(std::move(size)) {}
 
-    [[nodiscard]] constexpr auto GetItem() const { return m_item; }
-    [[nodiscard]] constexpr auto GetSize() const { return m_size; }
+    [[nodiscard, gnu::pure]] constexpr auto GetItem() const { return m_item; }
+    [[nodiscard, gnu::pure]] constexpr auto GetSize() const { return m_size; }
   };
 
   class RefTy : public Type {
@@ -191,31 +191,28 @@ namespace ncc::parse {
   public:
     constexpr RefTy(auto item, bool volatil) : Type(QAST_REF), m_item(std::move(item)), m_volatil(volatil) {}
 
-    [[nodiscard]] constexpr auto GetItem() const { return m_item; }
-    [[nodiscard]] constexpr auto IsVolatile() const { return m_volatil; }
+    [[nodiscard, gnu::pure]] constexpr auto GetItem() const { return m_item; }
+    [[nodiscard, gnu::pure]] constexpr auto IsVolatile() const { return m_volatil; }
   };
 
   class FuncTy : public Type {
     std::span<FlowPtr<Expr>> m_attributes;
     std::span<FuncParam> m_params;
     FlowPtr<Type> m_return;
-    Purity m_purity;
     bool m_variadic;
 
   public:
-    constexpr FuncTy(auto return_type, auto parameters, auto variadic, auto purity, auto attributes)
+    constexpr FuncTy(auto return_type, auto parameters, auto variadic, auto attributes)
         : Type(QAST_FUNCTOR),
           m_attributes(attributes),
           m_params(parameters),
           m_return(std::move(return_type)),
-          m_purity(purity),
           m_variadic(variadic) {}
 
-    [[nodiscard]] constexpr auto GetReturn() const { return m_return; }
-    [[nodiscard]] constexpr auto GetPurity() const { return m_purity; }
-    [[nodiscard]] constexpr auto GetParams() const { return m_params; }
-    [[nodiscard]] constexpr auto IsVariadic() const { return m_variadic; }
-    [[nodiscard]] constexpr auto GetAttributes() const { return m_attributes; }
+    [[nodiscard, gnu::pure]] constexpr auto GetReturn() const { return m_return; }
+    [[nodiscard, gnu::pure]] constexpr auto GetParams() const { return m_params; }
+    [[nodiscard, gnu::pure]] constexpr auto IsVariadic() const { return m_variadic; }
+    [[nodiscard, gnu::pure]] constexpr auto GetAttributes() const { return m_attributes; }
   };
 }  // namespace ncc::parse
 

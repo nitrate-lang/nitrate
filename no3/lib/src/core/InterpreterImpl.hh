@@ -56,7 +56,7 @@ namespace no3 {
     static bool CommandClean(ConstArguments full_argv, MutArguments argv);
     static bool CommandImpl(ConstArguments full_argv, MutArguments argv);
     static bool CommandDoc(ConstArguments full_argv, MutArguments argv);
-    static bool CommandFormat(ConstArguments full_argv, MutArguments argv);
+    static bool CommandFormat(ConstArguments full_argv, const MutArguments& argv);
     static bool CommandHelp(ConstArguments full_argv, const MutArguments& argv);
     static bool CommandInit(ConstArguments full_argv, const MutArguments& argv);
     static bool CommandInstall(ConstArguments full_argv, MutArguments argv);

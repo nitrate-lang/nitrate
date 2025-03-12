@@ -19,12 +19,12 @@ namespace detail {
     boost::iostreams::stream<boost::iostreams::array_source> ss(text.data(), text.size());
     auto tokenizer = ncc::seq::Sequencer(ss, env);
     auto my_pool = ncc::DynamicArena();
-    auto ast = ncc::parse::GeneralParser::Create(tokenizer, env, my_pool)->Parse();
+    auto ast = ncc::parse::GeneralParser(tokenizer, env, my_pool).Parse();
     if (!ast.Check()) {
       return std::nullopt;
     }
 
-    return ast.Get()->DebugString();
+    return ast.Get()->PrettyPrint();
   }
 
   static inline auto NormalizeInput(std::string_view text) {

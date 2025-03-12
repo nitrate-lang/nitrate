@@ -10,7 +10,7 @@ message SourceLocationRange {
     required uint32 line = 1;
     required uint32 column = 2;
     required uint32 offset = 3;
-    optional string file = 4;
+    optional string file = 4 [default = ""];
   }
 
   optional SourceLocation start = 1;
@@ -26,15 +26,6 @@ message CallArgument {
   required Expr value = 2;
 }
 
-enum FunctionPurity {
-  Purity_Unspecified = 0;
-  Purity_Impure = 1;
-  Purity_Impure_TSafe = 2;
-  Purity_Pure = 3;
-  Purity_Quasi = 4;
-  Purity_Retro = 5;
-}
-
 message FunctionParameter {
   required string name = 1;
   optional Type type = 2;
@@ -42,10 +33,9 @@ message FunctionParameter {
 }
 
 enum Vis {
-  Vis_Unspecified = 0;
+  Vis_Public = 0;
   Vis_Private = 1;
-  Vis_Public = 2;
-  Vis_Protected = 3;
+  Vis_Protected = 2;
 }
 
 message TemplateParameters {
@@ -59,6 +49,11 @@ message TemplateParameters {
 }
 
 ///===--------------------------------------------------------------------===///
+
+message Discarded {
+  optional SourceLocationRange location = 1;
+  repeated UserComment comments = 2;
+}
 
 message NamedTy {
   optional SourceLocationRange location = 1;
@@ -244,8 +239,20 @@ message PtrTy {
   optional Expr minimum = 5;
   optional Expr maximum = 6;
 
-  required Type pointee = 7;
-  required bool volatile = 8;
+  optional bool volatile = 7 [default = false];
+  required Type pointee = 8;
+}
+
+message RefTy {
+  optional SourceLocationRange location = 1;
+  repeated UserComment comments = 2;
+
+  optional Expr bit_width = 4;
+  optional Expr minimum = 5;
+  optional Expr maximum = 6;
+
+  optional bool volatile = 7 [default = false];
+  required Type pointee = 8;
 }
 
 message OpaqueTy {
@@ -282,18 +289,6 @@ message ArrayTy {
   required Expr element_count = 8;
 }
 
-message RefTy {
-  optional SourceLocationRange location = 1;
-  repeated UserComment comments = 2;
-
-  optional Expr bit_width = 4;
-  optional Expr minimum = 5;
-  optional Expr maximum = 6;
-
-  required Type pointee = 7;
-  required bool volatile = 8;
-}
-
 message FuncTy {
   optional SourceLocationRange location = 1;
   repeated UserComment comments = 2;
@@ -304,8 +299,7 @@ message FuncTy {
 
   repeated Expr attributes = 7;
   repeated FunctionParameter parameters = 8;
-  required bool variadic = 9;
-  required FunctionPurity purity = 10;
+  optional bool variadic = 9 [default = false];
   optional Type return_type = 11;
 }
 
@@ -375,6 +369,7 @@ message Unary {
 
   required Operator operator = 4;
   required Expr operand = 5;
+  optional bool is_postfix = 6 [default = false];
 }
 
 message Binary {
@@ -384,14 +379,6 @@ message Binary {
   required Operator operator = 4;
   required Expr left = 5;
   required Expr right = 6;
-}
-
-message PostUnary {
-  optional SourceLocationRange location = 1;
-  repeated UserComment comments = 2;
-
-  required Operator operator = 4;
-  required Expr operand = 5;
 }
 
 message Ternary {
@@ -470,6 +457,21 @@ message TemplateCall {
   repeated CallArgument arguments = 6;
 }
 
+message Import {
+  enum Mode {
+    Unspecified = 0;
+    Code = 1;
+    String = 2;
+  }
+
+  optional SourceLocationRange location = 1;
+  repeated UserComment comments = 2;
+
+  required string name = 4;
+  optional Mode mode = 5 [default = Code];
+  required Expr subtree = 6;
+}
+
 message List {
   optional SourceLocationRange location = 1;
   repeated UserComment comments = 2;
@@ -523,18 +525,11 @@ message Identifier {
   required string name = 4;
 }
 
-message Sequence {
-  optional SourceLocationRange location = 1;
-  repeated UserComment comments = 2;
-
-  repeated Expr elements = 4;
-}
-
 ///===--------------------------------------------------------------------===///
 
 message Block {
   enum Safety {
-    None = 0;
+    Unspecified = 0;
     Safe = 1;
     Unsafe = 2;
   }
@@ -542,7 +537,7 @@ message Block {
   optional SourceLocationRange location = 1;
   repeated UserComment comments = 2;
 
-  required Safety safety = 4;
+  optional Safety safety = 4;
   repeated Expr statements = 5;
 }
 
@@ -603,7 +598,7 @@ message Foreach {
   optional SourceLocationRange location = 1;
   repeated UserComment comments = 2;
 
-  required string index_name = 4;
+  optional string index_name = 4 [default = ""];
   required string value_name = 5;
   required Expr expression = 6;
   required Expr body = 7;
@@ -655,10 +650,10 @@ message Export {
   optional SourceLocationRange location = 1;
   repeated UserComment comments = 2;
 
-  required Vis visibility = 4;
-  required string abi_name = 5;
+  optional Vis visibility = 4 [default = Vis_Public];
+  optional string abi_name = 5 [default = ""];
   repeated Expr attributes = 6;
-  required Expr body = 7;
+  required Block body = 7;
 }
 
 message Scope {
@@ -693,21 +688,14 @@ message Enum {
 }
 
 message Function {
-  message Capture {
-    required string name = 1;
-    required bool is_reference = 2;
-  }
-
   optional SourceLocationRange location = 1;
   repeated UserComment comments = 2;
 
   required string name = 4;
-  required FunctionPurity purity = 5;
   optional Type return_type = 6;
   optional TemplateParameters template_parameters = 7;
   repeated FunctionParameter parameters = 8;
-  required bool variadic = 9;
-  repeated Capture captures = 10;
+  optional bool variadic = 9 [default = false];
   optional Expr precondition = 11;
   optional Expr postcondition = 12;
   repeated Expr attributes = 13;
@@ -728,13 +716,13 @@ message Struct {
     required string name = 1;
     optional Expr default_value = 3;
     optional Type type = 2;
-    required Vis visibility = 4;
-    required bool is_static = 5;
+    optional Vis visibility = 4 [default = Vis_Private];
+    optional bool is_static = 5 [default = false];
   }
 
   message Method {
-    required Expr func = 1;
-    required Vis visibility = 2;
+    optional Vis visibility = 1 [default = Vis_Private];
+    required Function func = 2;
   }
 
   optional SourceLocationRange location = 1;
@@ -752,6 +740,8 @@ message Struct {
 
 message Type {
   oneof node {
+    Discarded discarded = 1;
+
     U1 u1 = 80;
     U8 u8 = 81;
     U16 u16 = 82;
@@ -782,9 +772,10 @@ message Type {
 
 message Expr {
   oneof node {
+    Discarded discarded = 1;
+
     Unary unary = 11;
     Binary binary = 12;
-    PostUnary post_unary = 13;
     Ternary ternary = 14;
     Integer integer = 15;
     Float float = 16;
@@ -795,13 +786,13 @@ message Expr {
     Undefined undefined = 21;
     Call call = 22;
     TemplateCall template_call = 23;
-    List list = 24;
-    Assoc assoc = 25;
-    Index index = 26;
-    Slice slice = 27;
-    FString fstring = 28;
-    Identifier identifier = 29;
-    Sequence sequence = 30;
+    Import import = 24;
+    List list = 25;
+    Assoc assoc = 26;
+    Index index = 27;
+    Slice slice = 28;
+    FString fstring = 29;
+    Identifier identifier = 30;
 
     Block block = 50;
     Variable variable = 51;

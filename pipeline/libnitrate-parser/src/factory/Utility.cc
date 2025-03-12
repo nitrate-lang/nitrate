@@ -31,6 +31,7 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
+#include <nitrate-parser/AST.hh>
 #include <nitrate-parser/ASTExpr.hh>
 #include <nitrate-parser/ASTFactory.hh>
 #include <nitrate-parser/ASTStmt.hh>
@@ -45,6 +46,13 @@ auto ASTFactory::CreateMockInstance(ASTNodeKind kind, SourceLocation origin) -> 
 #define SIMPLE_TYPE() CreateMockInstance<Type>(QAST_VOID, origin)
 
   switch (kind) {
+    case QAST_DISCARDED: {
+      // Create some node to avoid a panic
+      r = CreateUndefined();
+      r.value()->Discard();
+      break;
+    }
+
     case QAST_BINEXPR: {
       r = CreateBinary(SIMPLE_EXPR(), lex::OpPlus, SIMPLE_EXPR());
       break;
@@ -52,11 +60,6 @@ auto ASTFactory::CreateMockInstance(ASTNodeKind kind, SourceLocation origin) -> 
 
     case QAST_UNEXPR: {
       r = CreateUnary(lex::OpPlus, SIMPLE_EXPR());
-      break;
-    }
-
-    case QAST_POST_UNEXPR: {
-      r = CreatePostUnary(SIMPLE_EXPR(), lex::OpPlus);
       break;
     }
 
@@ -135,13 +138,13 @@ auto ASTFactory::CreateMockInstance(ASTNodeKind kind, SourceLocation origin) -> 
       break;
     }
 
-    case QAST_SEQ: {
-      r = CreateSequence();
+    case QAST_TEMPL_CALL: {
+      r = CreateTemplateCall(SIMPLE_EXPR());
       break;
     }
 
-    case QAST_TEMPL_CALL: {
-      r = CreateTemplateCall(SIMPLE_EXPR());
+    case QAST_IMPORT: {
+      r = CreateImport("", ImportMode::Code, SIMPLE_EXPR());
       break;
     }
 
@@ -351,7 +354,7 @@ auto ASTFactory::CreateMockInstance(ASTNodeKind kind, SourceLocation origin) -> 
     }
 
     case QAST_EXPORT: {
-      r = CreateExport(SIMPLE_EXPR());
+      r = CreateExport(CreateMockInstance<Block>());
       break;
     }
 

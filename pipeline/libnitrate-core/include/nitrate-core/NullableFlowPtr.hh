@@ -111,9 +111,20 @@ namespace ncc {
       /// Casting
 
       template <class U>
+      constexpr operator NullableFlowPtr<const U>() const {
+        static_assert(std::is_convertible_v<const Pointee *, const U *>, "Cannot convert Pointee* to U*");
+        return NullableFlowPtr<const U>(static_cast<const U *>(m_ptr.get()), m_ptr.Trace());
+      }
+
+      template <class U>
       constexpr operator NullableFlowPtr<U>() {
         static_assert(std::is_convertible_v<Pointee *, U *>, "Cannot convert Pointee* to U*");
         return NullableFlowPtr<U>(static_cast<U *>(m_ptr.get()), m_ptr.Trace());
+      }
+
+      template <class U>
+      constexpr auto As() const {
+        return NullableFlowPtr<const U>(reinterpret_cast<const U *>(m_ptr.get()), m_ptr.Trace());
       }
 
       template <class U>
@@ -174,7 +185,7 @@ namespace std {
   template <class Pointee, class Tracking>
   struct hash<ncc::NullableFlowPtr<Pointee, Tracking>> {
     auto operator()(const ncc::NullableFlowPtr<Pointee, Tracking> &ptr) const -> size_t {
-      return std::hash<Pointee *>()(ptr.value_or(nullptr));
+      return std::hash<const Pointee *>()(ptr.value_or(nullptr));
     }
   };
 }  // namespace std

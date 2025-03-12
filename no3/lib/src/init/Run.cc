@@ -31,8 +31,7 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <getopt.h>
-
+#include <core/GetOpt.hh>
 #include <core/InterpreterImpl.hh>
 #include <core/PackageConfig.hh>
 #include <core/SPDX.hh>
@@ -44,9 +43,10 @@
 #include <sstream>
 
 using namespace ncc;
+using namespace no3::core;
 using namespace no3::package;
 
-class CLIInputState {
+class RunCommandArgumentParser {
   bool m_help = false;
   size_t m_lib = 0;
   size_t m_standard_lib = 0;
@@ -91,10 +91,8 @@ Optional arguments:
     std::vector<char*> argv(args.size());
     std::transform(args.begin(), args.end(), argv.begin(), [](auto& str) { return str.data(); });
 
-    static std::mutex getopt_lock;
-
-    {  // Lock the mutex to prevent multiple threads from calling getopt_long at the same time.
-      std::lock_guard<std::mutex> lock(getopt_lock);
+    {
+      std::lock_guard lock(GET_OPT);
 
       Log << Trace << "Starting to parse command line arguments";
 
@@ -102,8 +100,8 @@ Optional arguments:
       int option_index = 0;
 
       opterr = 0;
-      while ((c = getopt_long  // NOLINT(concurrency-mt-unsafe)
-              (args.size(), argv.data(), kShortOptions, kLongOptions.data(), &option_index)) != -1) {
+      while ((c = GET_OPT.getopt_long(args.size(), argv.data(), kShortOptions, kLongOptions.data(), &option_index)) !=
+             -1) {
         switch (c) {
           case 'h': {
             Log << Trace << "Parsing command line argument: --help";
@@ -114,7 +112,7 @@ Optional arguments:
           case 'l': {
             Log << Trace << "Parsing command line argument: --license";
             if (!m_license.empty()) {
-              Log << Error << "The --license argument was provided more than once.";
+              Log << "The --license argument was provided more than once.";
               m_too_many_args = true;
               break;
             }
@@ -126,7 +124,7 @@ Optional arguments:
           case 'o': {
             Log << Trace << "Parsing command line argument: --output";
             if (!m_output.empty()) {
-              Log << Error << "The --output argument was provided more than once.";
+              Log << "The --output argument was provided more than once.";
               m_too_many_args = true;
               break;
             }
@@ -140,7 +138,7 @@ Optional arguments:
             m_category = PackageCategory::Library;
 
             if (m_lib++ > 0) {
-              Log << Error << "The --lib argument was provided more than once.";
+              Log << "The --lib argument was provided more than once.";
               m_too_many_args = true;
             }
 
@@ -152,7 +150,7 @@ Optional arguments:
             m_category = PackageCategory::StandardLibrary;
 
             if (m_standard_lib++ > 0) {
-              Log << Error << "The --standard-lib argument was provided more than once.";
+              Log << "The --standard-lib argument was provided more than once.";
               m_too_many_args = true;
             }
 
@@ -164,7 +162,7 @@ Optional arguments:
             m_category = PackageCategory::Executable;
 
             if (m_exe++ > 0) {
-              Log << Error << "The --exe argument was provided more than once.";
+              Log << "The --exe argument was provided more than once.";
               m_too_many_args = true;
             }
 
@@ -198,7 +196,7 @@ Optional arguments:
       if ((size_t)optind == args.size() - 1) {
         Log << Trace << "Parsing command line argument: package-name";
         m_package_name = args[optind];
-      } else {
+      } else if ((size_t)optind < args.size()) {
         m_too_many_args = true;
       }
 
@@ -231,7 +229,7 @@ Optional arguments:
   }
 
 public:
-  CLIInputState(const std::vector<std::string>& args, bool& is_valid, bool& performed_action) {
+  RunCommandArgumentParser(const std::vector<std::string>& args, bool& is_valid, bool& performed_action) {
     is_valid = false;
     performed_action = false;
 
@@ -326,7 +324,7 @@ static std::optional<std::filesystem::path> GetNewPackagePath(const std::filesys
 
     auto status = OMNI_CATCH(std::filesystem::exists(canidate));
     if (!status.has_value()) {
-      Log << Error << "Failed to check if the package directory exists: " << canidate;
+      Log << "Failed to check if the package directory exists: " << canidate;
       return std::nullopt;
     }
 
@@ -347,7 +345,7 @@ bool no3::Interpreter::PImpl::CommandInit(ConstArguments, const MutArguments& ar
 
   bool is_valid = false;
   bool performed_action = false;
-  CLIInputState state(argv, is_valid, performed_action);
+  RunCommandArgumentParser state(argv, is_valid, performed_action);
 
   if (!is_valid) {
     Log << Trace << "Failed to parse command line arguments.";
@@ -384,7 +382,7 @@ bool no3::Interpreter::PImpl::CommandInit(ConstArguments, const MutArguments& ar
 
   auto package_output_exists = OMNI_CATCH(std::filesystem::exists(package_output));
   if (!package_output_exists.has_value()) {
-    Log << Error << "Failed to check if the output directory exists: " << package_output;
+    Log << "Failed to check if the output directory exists: " << package_output;
     return false;
   }
 
@@ -418,7 +416,7 @@ bool no3::Interpreter::PImpl::CommandInit(ConstArguments, const MutArguments& ar
     Log << "Failed to initialize the package at: " << package_path.value();
     auto removed = OMNI_CATCH(std::filesystem::remove_all(package_path.value())).value_or(0);
     if (removed == 0) {
-      Log << Error << "Failed to remove the package directory: " << package_path.value();
+      Log << "Failed to remove the package directory: " << package_path.value();
     }
 
     return false;

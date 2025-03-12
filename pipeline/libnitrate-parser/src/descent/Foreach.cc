@@ -43,13 +43,13 @@ auto GeneralParser::PImpl::RecurseForeachNames() -> std::optional<std::pair<stri
       if (auto name_b = RecurseName()) [[likely]] {
         return std::make_pair(name_a, name_b);
       } else {
-        Log << SyntaxError << Current() << "Expected identifier in foreach statement";
+        Log << ParserSignal << Current() << "Expected identifier in foreach statement";
       }
     } else {
       return std::make_pair("", name_a);
     }
   } else {
-    Log << SyntaxError << Current() << "Expected identifier in foreach statement";
+    Log << ParserSignal << Current() << "Expected identifier in foreach statement";
   }
 
   return std::nullopt;
@@ -85,17 +85,17 @@ auto GeneralParser::PImpl::RecurseForeach() -> FlowPtr<Expr> {
     if (NextIf<OpIn>()) [[likely]] {
       auto iter_expr = RecurseForeachExpr(foreach_has_paren);
       if (foreach_has_paren && !NextIf<PuncRPar>()) {
-        Log << SyntaxError << Current() << "Expected ')' in foreach statement";
+        Log << ParserSignal << Current() << "Expected ')' in foreach statement";
       }
 
       auto body = RecurseForeachBody();
 
       return m_fac.CreateForeach(index_name, value_name, iter_expr, body);
     } else {
-      Log << SyntaxError << Current() << "Expected 'in' keyword in foreach statement";
+      Log << ParserSignal << Current() << "Expected 'in' keyword in foreach statement";
     }
   } else {
-    Log << SyntaxError << Current() << "Expected identifier pair in foreach statement";
+    Log << ParserSignal << Current() << "Expected identifier pair in foreach statement";
   }
 
   return m_fac.CreateMockInstance<Foreach>();

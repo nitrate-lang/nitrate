@@ -46,7 +46,7 @@ auto GeneralParser::PImpl::RecurseStructAttributes() -> std::vector<FlowPtr<Expr
 
   while (true) {
     if (m_rd.IsEof()) [[unlikely]] {
-      Log << SyntaxError << Current() << "Encountered EOF while parsing struct attributes";
+      Log << ParserSignal << Current() << "Encountered EOF while parsing struct attributes";
       break;
     }
 
@@ -79,7 +79,7 @@ auto GeneralParser::PImpl::RecurseStructTerms() -> std::vector<string> {
   if (enclosed) {
     while (true) {
       if (m_rd.IsEof()) [[unlikely]] {
-        Log << SyntaxError << Current() << "Encountered EOF while parsing struct attributes";
+        Log << ParserSignal << Current() << "Encountered EOF while parsing struct attributes";
         break;
       } else if (NextIf<PuncRBrk>()) {
         break;
@@ -88,7 +88,7 @@ auto GeneralParser::PImpl::RecurseStructTerms() -> std::vector<string> {
       if (auto name = RecurseName()) {
         names.push_back(name);
       } else {
-        Log << SyntaxError << Next() << "Expected identifier in struct terms";
+        Log << ParserSignal << Next() << "Expected identifier in struct terms";
         break;
       }
 
@@ -100,20 +100,20 @@ auto GeneralParser::PImpl::RecurseStructTerms() -> std::vector<string> {
         break;
       }
 
-      Log << SyntaxError << Next() << "Expected ',' or ']' in struct terms";
+      Log << ParserSignal << Next() << "Expected ',' or ']' in struct terms";
       break;
     }
   } else {
     while (true) {
       if (m_rd.IsEof()) [[unlikely]] {
-        Log << SyntaxError << Current() << "Encountered EOF while parsing struct attributes";
+        Log << ParserSignal << Current() << "Encountered EOF while parsing struct attributes";
         break;
       }
 
       if (auto name = RecurseName()) [[likely]] {
         names.push_back(name);
       } else {
-        Log << SyntaxError << Next() << "Expected identifier in struct terms";
+        Log << ParserSignal << Next() << "Expected identifier in struct terms";
         break;
       }
 
@@ -148,10 +148,10 @@ void GeneralParser::PImpl::RecurseStructField(Vis vis, bool is_static, std::vect
 
       fields.push_back(std::move(field));
     } else {
-      Log << SyntaxError << Current() << "Expected ':' after field name in struct";
+      Log << ParserSignal << Current() << "Expected ':' after field name in struct";
     }
   } else {
-    Log << SyntaxError << Next() << "Expected field name in struct";
+    Log << ParserSignal << Next() << "Expected field name in struct";
   }
 }
 
@@ -192,14 +192,14 @@ auto GeneralParser::PImpl::RecurseStructBody() -> GeneralParser::PImpl::StructCo
   }
 
   if (!NextIf<PuncLCur>()) [[unlikely]] {
-    Log << SyntaxError << Current() << "Expected '{' to start struct body";
+    Log << ParserSignal << Current() << "Expected '{' to start struct body";
 
     return body;
   }
 
   while (true) {
     if (m_rd.IsEof()) {
-      Log << SyntaxError << Current() << "Encountered EOF while parsing struct body";
+      Log << ParserSignal << Current() << "Encountered EOF while parsing struct body";
       break;
     }
 

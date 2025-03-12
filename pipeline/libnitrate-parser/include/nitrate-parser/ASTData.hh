@@ -44,18 +44,15 @@
 #include <vector>
 
 namespace ncc::parse {
-  enum class Purity : uint8_t {
-    Impure,
-    Impure_TSafe,
-    Pure,
-    Quasi,
-    Retro,
-  };
-
   enum class Vis : uint8_t {
     Pub = 0,
     Sec = 1,
     Pro = 2,
+  };
+
+  enum class ImportMode : uint8_t {
+    Code,
+    String,
   };
 
   using CallArg = std::pair<string, FlowPtr<Expr>>;
@@ -82,9 +79,9 @@ namespace ncc::parse {
 
   struct StructFunction {
     Vis m_vis;
-    FlowPtr<Expr> m_func;
+    FlowPtr<Function> m_func;
 
-    StructFunction(Vis vis, FlowPtr<Expr> func) : m_vis(vis), m_func(std::move(func)) {}
+    StructFunction(Vis vis, FlowPtr<Function> func) : m_vis(vis), m_func(std::move(func)) {}
   };
 
 }  // namespace ncc::parse

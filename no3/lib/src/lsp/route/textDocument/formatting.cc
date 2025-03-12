@@ -1,8 +1,8 @@
 #include <cctype>
 #include <cstdint>
+#include <format/tree/Visitor.hh>
 #include <lsp/core/Server.hh>
 #include <lsp/core/SyncFS.hh>
-#include <lsp/lang/Format.hh>
 #include <lsp/route/RoutesList.hh>
 #include <memory>
 #include <nitrate-core/Environment.hh>
@@ -107,21 +107,23 @@ void srv::DoFormatting(const RequestMessage& req, ResponseMessage& resp) {
   auto env = std::make_shared<ncc::Environment>();
   auto l = Sequencer(ss, env);
   auto pool = ncc::DynamicArena();
-  auto parser = ncc::parse::GeneralParser::Create(l, env, pool);
-  auto ast = parser->Parse();
+  auto parser = ncc::parse::GeneralParser(l, env, pool);
+  auto ast = parser.Parse();
 
   if (l.HasError() || !ast.Check()) {
     return;
   }
 
   std::stringstream formatted_ss;
-  if (!lsp::fmt::FormatterFactory::Create(lsp::fmt::Styleguide::Cambrian, formatted_ss)->Format(ast.Get())) {
+  auto formatter = no3::format::CambrianFormatter(formatted_ss);
+  ast.Get()->Accept(formatter);
+
+  if (formatter.HasErrors()) {
     resp.Error(LSPStatus::InternalError, "Failed to format document");
     return;
   }
 
   auto formatted = formatted_ss.str();
-
   file->Replace(0, -1, formatted);
 
   ///==========================================================

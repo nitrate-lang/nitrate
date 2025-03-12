@@ -7,6 +7,7 @@ find_library(libboost_streams boost_iostreams REQUIRED)
 find_library(libcurlpp curlpp REQUIRED)
 find_library(libboost_filesystem boost_filesystem REQUIRED)
 find_library(libunwind unwind REQUIRED)
+find_library(libdeflate deflate REQUIRED)
 
 #================== COMPILE PROTOBUF ==================
 set(PROTOBUF_SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/src/core/PackageConfigFormat.proto)
@@ -59,6 +60,7 @@ target_link_libraries(nitrate-tool PUBLIC
   "${libboost_streams}"
   "${libcurlpp}"
   "${libboost_filesystem}"
+  "${libdeflate}"
 )
 add_dependencies(nitrate-tool
   nitrate-testing

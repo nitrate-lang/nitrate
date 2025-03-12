@@ -37,37 +37,31 @@ using namespace ncc;
 using namespace ncc::lex;
 using namespace ncc::parse;
 
-auto GeneralParser::PImpl::RecurseScopeDeps() -> std::optional<std::vector<string>> {
+auto GeneralParser::PImpl::RecurseScopeDeps() -> std::vector<string> {
   std::vector<string> dependencies;
 
-  if (!NextIf<PuncColn>()) {
+  if (!NextIf<PuncLBrk>()) {
     return dependencies;
   }
 
-  if (NextIf<PuncLBrk>()) [[likely]] {
-    while (true) {
-      if (m_rd.IsEof()) [[unlikely]] {
-        Log << SyntaxError << Current() << "Unexpected EOF in scope dependencies";
-        break;
-      }
-
-      if (NextIf<PuncRBrk>()) {
-        return dependencies;
-      }
-
-      if (auto dependency_name = RecurseName()) {
-        dependencies.push_back(dependency_name);
-      } else {
-        Log << SyntaxError << Next() << "Expected dependency name";
-      }
-
-      NextIf<PuncComa>();
+  while (true) {
+    if (m_rd.IsEof()) [[unlikely]] {
+      Log << ParserSignal << Current() << "Unexpected EOF in scope dependencies";
+      return dependencies;
     }
-  } else {
-    Log << SyntaxError << Current() << "Expected '[' at start of scope dependencies";
-  }
 
-  return std::nullopt;
+    if (NextIf<PuncRBrk>()) {
+      return dependencies;
+    }
+
+    if (auto dependency_name = RecurseName()) {
+      dependencies.push_back(dependency_name);
+    } else {
+      Log << ParserSignal << Next() << "Expected dependency name";
+    }
+
+    NextIf<PuncComa>();
+  }
 }
 
 auto GeneralParser::PImpl::RecurseScopeBlock() -> FlowPtr<Expr> {
@@ -80,14 +74,15 @@ auto GeneralParser::PImpl::RecurseScopeBlock() -> FlowPtr<Expr> {
 
 auto GeneralParser::PImpl::RecurseScope() -> FlowPtr<Expr> {
   auto scope_name = RecurseName();
+  bool has_colon = NextIf<PuncColn>().has_value();
+  auto dependencies = RecurseScopeDeps();
 
-  if (auto dependencies = RecurseScopeDeps()) [[likely]] {
-    auto scope_block = RecurseScopeBlock();
-
-    return m_fac.CreateScope(scope_name, scope_block, dependencies.value());
-  } else {
-    Log << SyntaxError << Current() << "Expected scope dependencies";
+  bool is_colon_required = !dependencies.empty() && !scope_name->empty();
+  if (!has_colon && is_colon_required) [[unlikely]] {
+    Log << ParserSignal << Current() << "Expected ':' after scope name";
   }
 
-  return m_fac.CreateMockInstance<Scope>();
+  auto scope_block = RecurseScopeBlock();
+
+  return m_fac.CreateScope(scope_name, scope_block, dependencies);
 }
