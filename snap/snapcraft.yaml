@@ -54,10 +54,4 @@ parts:
 apps:
   nitrate:
     command: usr/bin/no3
-    plugs:
-      # Allow access to the network for fetching packages and LSP TCP server
-      - network
-      - network-bind
-      # Files and directories access
-      - home
-      - removable-media
+    
