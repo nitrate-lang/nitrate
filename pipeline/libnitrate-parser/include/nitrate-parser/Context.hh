@@ -61,7 +61,8 @@ namespace ncc::parse {
     std::unique_ptr<PImpl> m_impl;
 
   public:
-    GeneralParser(lex::IScanner &lexer, std::shared_ptr<IEnvironment> env, std::pmr::memory_resource &pool);
+    GeneralParser(lex::IScanner &lexer, std::vector<std::string> qualified_package_name,
+                  std::shared_ptr<IEnvironment> env, std::pmr::memory_resource &pool);
     GeneralParser(const GeneralParser &) = delete;
     GeneralParser(GeneralParser &&o) noexcept;
     ~GeneralParser();
@@ -73,11 +74,11 @@ namespace ncc::parse {
     [[nodiscard]] auto GetLexer() -> lex::IScanner &;
 
     template <typename Scanner>
-    static auto ParseString(std::string_view source, std::shared_ptr<IEnvironment> env,
-                            std::pmr::memory_resource &pool) {
+    static auto ParseString(std::string_view source, std::vector<std::string> qualified_package_name,
+                            std::shared_ptr<IEnvironment> env, std::pmr::memory_resource &pool) {
       auto in_src = boost::iostreams::stream<boost::iostreams::array_source>(source.data(), source.size());
       auto scanner = Scanner(in_src, env);
-      return GeneralParser(scanner, env, pool).Parse();
+      return GeneralParser(scanner, qualified_package_name, env, pool).Parse();
     }
   };
 }  // namespace ncc::parse

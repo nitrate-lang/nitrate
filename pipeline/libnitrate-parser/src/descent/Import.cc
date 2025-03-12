@@ -55,6 +55,8 @@ namespace ncc::parse::import {
   class ImportSubgraphVisitor : public ASTVisitor {
     std::stack<Vis> m_vis_stack;
     ASTFactory &m_fac;
+    const std::vector<std::string> &m_package_importer;
+    const std::vector<std::string> &m_package_importee;
 
     void Visit(FlowPtr<NamedTy> n) override { n->Discard(); };
     void Visit(FlowPtr<InferTy> n) override { n->Discard(); };
@@ -151,6 +153,9 @@ namespace ncc::parse::import {
 
               case Vis::Pro: {
                 /// TODO: Implement protected visibility
+
+                (void)m_package_importee;
+                (void)m_package_importer;
                 Log << ParserSignal << "Protected visibility not implemented";
                 break;
               }
@@ -242,7 +247,11 @@ namespace ncc::parse::import {
     }
 
   public:
-    ImportSubgraphVisitor(ASTFactory &fac) : m_fac(fac) { m_vis_stack.push(Vis::Sec); }
+    ImportSubgraphVisitor(ASTFactory &fac, const std::vector<std::string> &package_importer,
+                          const std::vector<std::string> &package_importee)
+        : m_fac(fac), m_package_importer(package_importer), m_package_importee(package_importee) {
+      m_vis_stack.push(Vis::Sec);
+    }
   };
 }  // namespace ncc::parse::import
 
@@ -374,6 +383,9 @@ auto GeneralParser::PImpl::RecurseImportRegularFile(string import_file, ImportMo
         return m_fac.CreateMockInstance<Import>();
       }
 
+      // The destination file has no package name
+      std::vector<std::string> import_dst;
+
       auto in_src = boost::iostreams::stream<boost::iostreams::array_source>(content->data(), content->size());
       auto scanner = Tokenizer(in_src, m_env);
       scanner.SetCurrentFilename(abs_import_path.string());
@@ -384,11 +396,11 @@ auto GeneralParser::PImpl::RecurseImportRegularFile(string import_file, ImportMo
 
       Log << Trace << "RecurseImport: Creating subparser for: " << abs_import_path;
 
-      auto subparser = GeneralParser(scanner, m_env, m_pool);
+      auto subparser = GeneralParser(scanner, {}, m_env, m_pool);
       subparser.m_impl->m_recursion_depth = m_recursion_depth;
       auto subtree = subparser.m_impl->RecurseBlock(false, false, BlockMode::Unknown);
 
-      import::ImportSubgraphVisitor subgraph_visitor(m_fac);
+      import::ImportSubgraphVisitor subgraph_visitor(m_fac, PackageNameChunks(), import_dst);
       subtree->Accept(subgraph_visitor);
 
       ParserSwapScanner(scanner_ptr);
@@ -445,6 +457,9 @@ auto GeneralParser::PImpl::RecurseImportRegularFile(string import_file, ImportMo
 
   std::vector<FlowPtr<Expr>> blocks;
 
+  std::string import_dst;  /// FIXME: Get our current package name
+  const auto qualified_import_name = SplitPackageName(import_name);
+
   for (const auto &name : sorted_keys) {
     const auto &content_getter = files->at(name);
     const auto &file_content = content_getter.Get();
@@ -467,7 +482,7 @@ auto GeneralParser::PImpl::RecurseImportRegularFile(string import_file, ImportMo
     ParserSwapScanner(scanner_ptr);
 
     Log << Trace << "RecurseImport: Creating subparser for: " << name;
-    auto subparser = GeneralParser(scanner, m_env, m_pool);
+    auto subparser = GeneralParser(scanner, qualified_import_name, m_env, m_pool);
 
     // Preserve the recursion depth for the subparser
     subparser.m_impl->m_recursion_depth = m_recursion_depth;
@@ -478,7 +493,7 @@ auto GeneralParser::PImpl::RecurseImportRegularFile(string import_file, ImportMo
     // Prepare the subgraph by stripping out unnecessary nodes and
     // transforming definitions into declarations as needed
     // to create the external interface of the package
-    import::ImportSubgraphVisitor subgraph_visitor(m_fac);
+    import::ImportSubgraphVisitor subgraph_visitor(m_fac, PackageNameChunks(), SplitPackageName(import_name));
     subtree->Accept(subgraph_visitor);
 
     // Restore the thread_local content for the diagnostics subsystem

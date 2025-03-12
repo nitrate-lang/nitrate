@@ -19,7 +19,7 @@ int main() {
   auto env = std::make_shared<Environment>();
   auto scanner = lex::Tokenizer(std::cin, env);
   auto pool = DynamicArena();
-  const auto ast_root = GeneralParser(scanner, env, pool).Parse();
+  const auto ast_root = GeneralParser(scanner, {}, env, pool).Parse();
   if (!ast_root.Check()) {
     return 1;
   }

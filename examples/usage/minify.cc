@@ -10,7 +10,7 @@ int main() {
   auto env = std::make_shared<Environment>();
   auto scanner = seq::Sequencer(std::cin, env);
   auto pool = DynamicArena();
-  auto parser = parse::GeneralParser(scanner, env, pool);
+  auto parser = parse::GeneralParser(scanner, {}, env, pool);
   auto ast_maybe = parser.Parse();
   if (!ast_maybe.Check()) {
     return 1;

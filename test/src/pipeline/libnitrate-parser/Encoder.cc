@@ -15,7 +15,7 @@ TEST(AST, Encoder) {
   if (auto lib_rc = ncc::parse::ParseLibrary.GetRC()) {
     auto my_pool = ncc::DynamicArena();
     auto env = std::make_shared<ncc::Environment>();
-    auto original = GeneralParser::ParseString<ncc::lex::Tokenizer>(test::vector::SOURCE_SAMPLE_01, env, my_pool);
+    auto original = GeneralParser::ParseString<ncc::lex::Tokenizer>(test::vector::SOURCE_SAMPLE_01, {}, env, my_pool);
     EXPECT_TRUE(original.Check());
 
     auto serialized = original.Get()->Serialize();

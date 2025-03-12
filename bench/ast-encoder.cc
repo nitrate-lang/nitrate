@@ -90,7 +90,7 @@ int main(int argc, char *argv[]) {
 
   auto environment = std::make_shared<Environment>();
   auto scanner = Tokenizer(input_stream, environment);
-  auto parser = GeneralParser(scanner, environment).Parse();
+  auto parser = GeneralParser(scanner, {}, environment).Parse();
   if (!parser.Check()) {
     std::cerr << "Failed to parse input file: " << input_file << std::endl;
     return 1;

@@ -55,12 +55,13 @@ namespace ncc::parse {
   class GeneralParser::PImpl final {
     friend class GeneralParser;
 
+    const std::vector<std::string> m_current_package_name_split;
     std::shared_ptr<IEnvironment> m_env;
     std::pmr::memory_resource &m_pool;
     ASTFactory m_fac;
     lex::IScanner &m_rd;
-    bool m_failed = false;
     size_t m_recursion_depth = 0;
+    bool m_failed = false;
 
     lex::Token Next() { return m_rd.Next(); }
     lex::Token Peek() { return m_rd.Peek(); }
@@ -105,6 +106,8 @@ namespace ncc::parse {
       node->SetComments(std::move(comments_strs));
       return node;
     }
+
+    [[nodiscard]] auto PackageNameChunks() -> const std::vector<std::string> & { return m_current_package_name_split; }
 
     /****************************************************************************
      * @brief
@@ -212,9 +215,33 @@ namespace ncc::parse {
     [[nodiscard]] auto RecurseImportPackage(string import_name) -> FlowPtr<Expr>;
     void PrepareImportSubgraph(const FlowPtr<Expr> &root);
 
+    static inline std::vector<std::string> SplitPackageName(const std::string &package_name) {
+      std::vector<std::string> parts;
+      std::string package_view(package_name);
+
+      while (!package_view.empty()) {
+        auto pos = package_view.find_first_of("::");
+        if (pos == std::string_view::npos) {
+          parts.push_back(package_view);
+          break;
+        }
+
+        parts.push_back(package_view.substr(0, pos));
+        package_view.erase(0, pos + 2);
+      }
+
+      return parts;
+    }
+
   public:
-    PImpl(lex::IScanner &lexer, std::shared_ptr<IEnvironment> env, std::pmr::memory_resource &pool)
-        : m_env(std::move(env)), m_pool(pool), m_fac(m_pool), m_rd(lexer) {}
+    PImpl(lex::IScanner &lexer, std::vector<std::string> qualified_package_name, std::shared_ptr<IEnvironment> env,
+          std::pmr::memory_resource &pool)
+        : m_current_package_name_split(std::move(qualified_package_name)),
+          m_env(std::move(env)),
+          m_pool(pool),
+          m_fac(m_pool),
+          m_rd(lexer) {}
+
     ~PImpl() = default;
   };
 
