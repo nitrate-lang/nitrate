@@ -48,6 +48,9 @@ using namespace ncc;
 using namespace ncc::lex;
 using namespace ncc::parse;
 
+/// TODO: FIXME: Implement scanner elsewhere; Remove this line
+static const thread_local auto PKGS = FindPackages({"/tmp/test"});
+
 namespace ncc::parse::import {
   class ImportSubgraphVisitor : public ASTVisitor {
     std::stack<Vis> m_vis_stack;
@@ -380,6 +383,7 @@ auto GeneralParser::PImpl::RecurseImportRegularFile(string import_file, ImportMo
       ParserSwapScanner(scanner_ptr);
 
       Log << Trace << "RecurseImport: Creating subparser for: " << abs_import_path;
+
       auto subparser = GeneralParser(scanner, m_env, m_pool);
       subparser.m_impl->m_recursion_depth = m_recursion_depth;
       auto subtree = subparser.m_impl->RecurseBlock(false, false, BlockMode::Unknown);
@@ -389,32 +393,36 @@ auto GeneralParser::PImpl::RecurseImportRegularFile(string import_file, ImportMo
 
       ParserSwapScanner(scanner_ptr);
 
-      return m_fac.CreateImport(import_file, import_mode, std::move(subtree));
+      auto import_node = m_fac.CreateImport(import_file, import_mode, std::move(subtree));
+
+      return import_node;
     }
 
     case ImportMode::String: {
       Log << Trace << "RecurseImport: Import as string literal: " << abs_import_path;
+
       auto literal = m_fac.CreateString(content.value());
-      return m_fac.CreateImport(import_file, import_mode, std::move(literal));
+      auto import_node = m_fac.CreateImport(import_file, import_mode, std::move(literal));
+
+      return import_node;
     }
   }
 }
 
-[[nodiscard]] auto GeneralParser::PImpl::RecurseImportPackage(string import_name,
-                                                              ImportMode import_mode) -> FlowPtr<Expr> {
-  /// TODO: FIXME: Implement scanner elsewhere; Remove this line
-  static const thread_local auto pkgs = FindPackages({"/tmp/test"});
-
+[[nodiscard]] auto GeneralParser::PImpl::RecurseImportPackage(string import_name) -> FlowPtr<Expr> {
   Log << Trace << "RecurseImport: Importing package: " << import_name;
 
+  // Find the package by import name
   auto pkg_it =
-      std::find_if(pkgs.begin(), pkgs.end(), [&](const auto &pkg) { return pkg.PackageName() == import_name; });
+      std::find_if(PKGS.begin(), PKGS.end(), [&](const auto &pkg) { return pkg.PackageName() == import_name; });
 
-  if (pkg_it == pkgs.end()) [[unlikely]] {
+  // If the package is not found, return a mock import node
+  if (pkg_it == PKGS.end()) [[unlikely]] {
     Log << ParserSignal << Current() << "Package not found: " << import_name;
     return m_fac.CreateMockInstance<Import>();
   }
 
+  // Lazy load the package content with caching
   const auto &files = pkg_it->Read();
   if (!files.has_value()) [[unlikely]] {
     Log << ParserSignal << Current() << "Failed to read package: " << import_name;
@@ -423,29 +431,69 @@ auto GeneralParser::PImpl::RecurseImportRegularFile(string import_file, ImportMo
 
   Log << Debug << "RecurseImport: Got package: " << import_name;
 
-  for (const auto &[path, content_getter] : files.value()) {
-    const auto &content = content_getter.Get();
-    if (!content.has_value()) [[unlikely]] {
-      Log << Error << "RecurseImport: Failed to read package chunk: " << path;
+  // Produce a sorted deterministic order of the files in the package
+  const auto sorted_keys = [&]() {
+    std::vector<std::filesystem::path> keys;
+    for (const auto &[path, _] : files.value()) {
+      keys.push_back(path);
+    }
+    std::sort(keys.begin(), keys.end());
+    return keys;
+  }();
+
+  Log << Trace << "RecurseImport: Import as code: " << import_name;
+
+  std::vector<FlowPtr<Expr>> blocks;
+
+  for (const auto &name : sorted_keys) {
+    const auto &content_getter = files->at(name);
+    const auto &file_content = content_getter.Get();
+    if (!file_content.has_value()) [[unlikely]] {
+      Log << "RecurseImport: Failed to read package chunk: " << name;
       return m_fac.CreateMockInstance<Import>();
     }
 
-    Log << Trace << "RecurseImport: Got package chunk (" << content.value().size() << " bytes): " << path;
+    Log << Trace << "RecurseImport: Putting package chunk (" << file_content->size() << " bytes): " << name;
+
+    // Construct a readonly stream from the file content string reference
+    auto in_src = boost::iostreams::stream<boost::iostreams::array_source>(file_content->data(), file_content->size());
+
+    // Create a sub-lexer for this package file
+    auto scanner = Tokenizer(in_src, m_env);
+    scanner.SetCurrentFilename(name.string());
+
+    // Update the thread_local content for the diagnostics subsystem
+    lex::IScanner *scanner_ptr = &scanner;
+    ParserSwapScanner(scanner_ptr);
+
+    Log << Trace << "RecurseImport: Creating subparser for: " << name;
+    auto subparser = GeneralParser(scanner, m_env, m_pool);
+
+    // Preserve the recursion depth for the subparser
+    subparser.m_impl->m_recursion_depth = m_recursion_depth;
+
+    // Perform the parsing of the package file
+    auto subtree = subparser.m_impl->RecurseBlock(false, false, BlockMode::Unknown);
+
+    // Prepare the subgraph by stripping out unnecessary nodes and
+    // transforming definitions into declarations as needed
+    // to create the external interface of the package
+    import::ImportSubgraphVisitor subgraph_visitor(m_fac);
+    subtree->Accept(subgraph_visitor);
+
+    // Restore the thread_local content for the diagnostics subsystem
+    ParserSwapScanner(scanner_ptr);
+
+    // Create block for each package file
+    blocks.push_back(std::move(subtree));
   }
 
-  switch (import_mode) {
-    case ImportMode::Code: {
-      Log << Trace << "RecurseImport: Import as code: " << import_name;
-      /// TODO: Implement code import
-      return m_fac.CreateMockInstance<Import>();
-    }
+  // The returned block is a block of blocks
+  // The order the nodes appear is unspecified but deterministic
+  auto block = m_fac.CreateBlock(blocks);
+  auto import_node = m_fac.CreateImport(import_name, ImportMode::Code, std::move(block));
 
-    case ImportMode::String: {
-      Log << Trace << "RecurseImport: Import as string literal: " << import_name;
-      /// TODO: Implement string import
-      return m_fac.CreateMockInstance<Import>();
-    }
-  }
+  return import_node;
 }
 
 auto GeneralParser::PImpl::RecurseImport() -> FlowPtr<Expr> {
@@ -455,10 +503,10 @@ auto GeneralParser::PImpl::RecurseImport() -> FlowPtr<Expr> {
     Log << ParserSignal << "Maximum import recursion depth reached: " << kMaxRecursionDepth;
     return m_fac.CreateMockInstance<Import>();
   }
+
   auto deferred_auto_dec = std::shared_ptr<void>(nullptr, [&](auto) { --m_recursion_depth; });
 
   const auto [import_name, import_mode] = RecurseImportName();
-
   const bool is_regular_file =
       import_name->find("/") != std::string::npos || import_name->find("\\") != std::string::npos;
 
@@ -466,5 +514,11 @@ auto GeneralParser::PImpl::RecurseImport() -> FlowPtr<Expr> {
     return RecurseImportRegularFile(import_name, import_mode);
   }
 
-  return RecurseImportPackage(import_name, import_mode);
+  if (!is_regular_file && import_mode == ImportMode::Code) {
+    return RecurseImportPackage(import_name);
+  }
+
+  Log << ParserSignal << Current() << "Can not import package content as a string literal";
+
+  return m_fac.CreateMockInstance<Import>();
 }

@@ -159,6 +159,15 @@ auto Package::CompileDirectory(std::filesystem::path folder_path) -> LazyLoader 
         continue;
       }
 
+      {  // Skip non source files
+        auto ext = entry.path().extension().string();
+        std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
+        if (ext != ".nit" && ext != ".n") {
+          Log << Trace << "Package: Skipping non-Nitrate file: " << entry.path();
+          continue;
+        }
+      }
+
       auto loader = CompileFile(entry.path());
       const auto &maybe_content = loader.Get();
       if (!maybe_content.has_value()) [[unlikely]] {
@@ -170,9 +179,9 @@ auto Package::CompileDirectory(std::filesystem::path folder_path) -> LazyLoader 
     }
 
     for (const auto &[path, content] : files) {
-      Log << Debug << "Package: Read file (" << path;
+      Log << Debug << "Package: Found file (" << path;
     }
-    Log << Trace << "Package: Read " << files.size() << " file(s) from directory: " << path.string();
+    Log << Trace << "Package: Found " << files.size() << " file(s) from directory: " << path.string();
 
     return files;
   });
