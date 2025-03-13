@@ -48,9 +48,6 @@ using namespace ncc;
 using namespace ncc::lex;
 using namespace ncc::parse;
 
-/// TODO: FIXME: Implement scanner elsewhere; Remove this line
-static const thread_local auto PKGS = FindPackages({"/tmp/test"});
-
 namespace ncc::parse::import {
   class ImportSubgraphVisitor : public ASTVisitor {
     std::stack<Vis> m_vis_stack;
@@ -401,7 +398,8 @@ auto GeneralParser::PImpl::RecurseImportRegularFile(const std::filesystem::path 
       subparser.m_impl->m_recursion_depth = m_recursion_depth;
       auto subtree = subparser.m_impl->RecurseBlock(false, false, BlockMode::Unknown);
 
-      import::ImportSubgraphVisitor subgraph_visitor(m_fac, PackageNameChunks(), {});
+      const auto &importer_name = m_import_config.GetThisPackageNameChain();
+      import::ImportSubgraphVisitor subgraph_visitor(m_fac, importer_name, {});
       subtree->Accept(subgraph_visitor);
 
       ParserSwapScanner(scanner_ptr);
@@ -426,11 +424,12 @@ auto GeneralParser::PImpl::RecurseImportRegularFile(const std::filesystem::path 
   Log << Trace << "RecurseImport: Importing package: " << import_name;
 
   // Find the package by import name
+  const auto &pkgs = m_import_config.GetPackages();
   auto pkg_it =
-      std::find_if(PKGS.begin(), PKGS.end(), [&](const auto &pkg) { return pkg.PackageName() == import_name; });
+      std::find_if(pkgs.begin(), pkgs.end(), [&](const auto &pkg) { return pkg.PackageName() == import_name; });
 
   // If the package is not found, return a mock import node
-  if (pkg_it == PKGS.end()) [[unlikely]] {
+  if (pkg_it == pkgs.end()) [[unlikely]] {
     Log << ParserSignal << Current() << "Package not found: " << import_name;
     return m_fac.CreateMockInstance<Import>();
   }
@@ -492,7 +491,8 @@ auto GeneralParser::PImpl::RecurseImportRegularFile(const std::filesystem::path 
     // Prepare the subgraph by stripping out unnecessary nodes and
     // transforming definitions into declarations as needed
     // to create the external interface of the package
-    import::ImportSubgraphVisitor subgraph_visitor(m_fac, PackageNameChunks(), import_name.GetChain());
+    const auto &importer_name = m_import_config.GetThisPackageNameChain();
+    import::ImportSubgraphVisitor subgraph_visitor(m_fac, importer_name, import_name.GetChain());
     subtree->Accept(subgraph_visitor);
 
     // Restore the thread_local content for the diagnostics subsystem

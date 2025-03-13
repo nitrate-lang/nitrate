@@ -36,13 +36,13 @@
 
 #include <boost/iostreams/device/array.hpp>
 #include <boost/iostreams/stream.hpp>
-#include <filesystem>
 #include <memory>
 #include <memory_resource>
 #include <nitrate-core/EnvironmentFwd.hh>
 #include <nitrate-core/FlowPtr.hh>
 #include <nitrate-lexer/ScannerFwd.hh>
 #include <nitrate-parser/ASTFwd.hh>
+#include <nitrate-parser/ImportConfig.hh>
 #include <nitrate-parser/Package.hh>
 
 namespace ncc::parse {
@@ -56,25 +56,6 @@ namespace ncc::parse {
     [[nodiscard]] auto Get() -> FlowPtr<Expr> & { return m_base; }
     [[nodiscard]] auto Get() const -> FlowPtr<Expr> { return m_base; }
     [[nodiscard]] auto Check() const -> bool;
-  };
-
-  class ImportConfig final {
-    class PImpl;
-    std::unique_ptr<PImpl> m_impl;
-
-  public:
-    static auto GetDefault() -> ImportConfig;
-
-    ImportConfig(const ImportName &package_name, const std::vector<std::filesystem::path> &package_search_paths = {});
-    ImportConfig(const ImportConfig &);
-    ImportConfig(ImportConfig &&) noexcept;
-    ~ImportConfig();
-    auto operator=(const ImportConfig &) -> ImportConfig &;
-    auto operator=(ImportConfig &&) noexcept -> ImportConfig &;
-
-    [[nodiscard]] auto GetPackageNameChain() const -> const std::vector<std::string_view> &;
-    [[nodiscard]] auto GetPackageName() const -> const ImportName &;
-    [[nodiscard]] auto GetPackagePath() const -> const std::vector<std::filesystem::path> &;
   };
 
   class NCC_EXPORT GeneralParser final {

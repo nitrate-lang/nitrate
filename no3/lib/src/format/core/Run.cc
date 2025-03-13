@@ -59,7 +59,7 @@ enum class FormatMode { Standard, Minify, Deflate };
 static bool ValidateConfiguration(const nlohmann::json& j);
 static void AssignDefaultConfigurationSettings(nlohmann::json& j);
 static bool FormatFile(const std::filesystem::path& src, const std::filesystem::path& dst, const nlohmann::json& config,
-                       FormatMode mode);
+                       FormatMode mode, const ncc::parse::ImportConfig& import_config);
 
 struct FormatOptions {
   FormatMode m_mode;
@@ -458,11 +458,14 @@ bool no3::Interpreter::PImpl::CommandFormat(ConstArguments, const MutArguments& 
 
   Log << Debug << "Formatting " << mapping_opt.value().size() << " source file(s).";
 
+  /// FIXME: Implement the import configuration
+  ncc::parse::ImportConfig import_config = ncc::parse::ImportConfig::GetDefault();
+
   size_t success_count = 0;
   size_t failure_count = 0;
   for (const auto& [src_file, dst_file] : mapping_opt.value()) {
     Log << Info << "Applying format " << src_file << " => " << dst_file;
-    if (!FormatFile(src_file, dst_file, options.m_config, options.m_mode)) {
+    if (!FormatFile(src_file, dst_file, options.m_config, options.m_mode, import_config)) {
       Log << "Unable to format file: " << src_file;
       failure_count++;
       continue;
@@ -625,7 +628,7 @@ static bool DeflateStreams(std::istream& in, std::ostream& out) {
 }
 
 static bool FormatFile(const std::filesystem::path& src, const std::filesystem::path& dst, const nlohmann::json& config,
-                       FormatMode mode) {
+                       FormatMode mode, const ncc::parse::ImportConfig& import_config) {
   std::ifstream src_file(src, std::ios::binary);
   if (!src_file.is_open()) {
     Log << "Failed to open the source file: " << src;
@@ -646,8 +649,7 @@ static bool FormatFile(const std::filesystem::path& src, const std::filesystem::
     auto tokenizer = ncc::lex::Tokenizer(src_file, unit_env);
     tokenizer.SetCurrentFilename(src.string());
 
-    /// FIXME: Get the import profile
-    auto parser = ncc::parse::GeneralParser(tokenizer, unit_env, pool);
+    auto parser = ncc::parse::GeneralParser(tokenizer, unit_env, pool, import_config);
     auto ast_result = parser.Parse();
 
     Log << Trace << "The parser used " << pool.GetSpaceUsed() << " bytes of memory.";

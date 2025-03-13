@@ -31,74 +31,32 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <nitrate-core/Logger.hh>
-#include <nitrate-parser/ImportConfig.hh>
+#ifndef __NITRATE_AST_IMPORT_CONFIG_H__
+#define __NITRATE_AST_IMPORT_CONFIG_H__
 
-using namespace ncc::parse;
+#include <nitrate-parser/Package.hh>
 
-class ImportConfig::PImpl {
-public:
-  ImportName m_package_name;
-  std::vector<std::filesystem::path> m_package_search_path;
-  std::vector<std::string_view> m_package_name_chain;
-  std::unordered_set<Package> m_packages;
+namespace ncc::parse {
+  class ImportConfig final {
+    class PImpl;
+    std::unique_ptr<PImpl> m_impl;
 
-  PImpl(ImportName package_name, std::vector<std::filesystem::path> package_search_path)
-      : m_package_name(std::move(package_name)), m_package_search_path(std::move(package_search_path)) {
-    if (m_package_name.IsValid()) {
-      m_package_name_chain = m_package_name.GetChain();
-    }
+  public:
+    static auto GetDefault() -> ImportConfig;
 
-    m_packages = FindPackages(m_package_search_path);
-  }
-};
+    ImportConfig(const ImportName &this_package_name,
+                 const std::vector<std::filesystem::path> &package_search_paths = {});
+    ImportConfig(const ImportConfig &);
+    ImportConfig(ImportConfig &&) noexcept;
+    ~ImportConfig();
+    auto operator=(const ImportConfig &) -> ImportConfig &;
+    auto operator=(ImportConfig &&) noexcept -> ImportConfig &;
 
-ImportConfig::ImportConfig(const ImportName &package_name,
-                           const std::vector<std::filesystem::path> &package_search_path)
-    : m_impl(std::make_unique<PImpl>(package_name, package_search_path)) {}
+    [[nodiscard]] auto GetThisPackageNameChain() const -> const std::vector<std::string_view> &;
+    [[nodiscard]] auto GetThisPackageName() const -> const ImportName &;
+    [[nodiscard]] auto GetSearchPaths() const -> const std::vector<std::filesystem::path> &;
+    [[nodiscard]] auto GetPackages() const -> const std::unordered_set<Package> &;
+  };
+}  // namespace ncc::parse
 
-ImportConfig::ImportConfig(const ImportConfig &other) : m_impl(std::make_unique<PImpl>(*other.m_impl)) {}
-
-ImportConfig::ImportConfig(ImportConfig &&other) noexcept : m_impl(std::move(other.m_impl)) {}
-
-ImportConfig::~ImportConfig() = default;
-
-auto ImportConfig::operator=(const ImportConfig &other) -> ImportConfig & {
-  if (this != &other) {
-    m_impl = std::make_unique<PImpl>(*other.m_impl);
-  }
-  return *this;
-}
-
-auto ImportConfig::operator=(ImportConfig &&other) noexcept -> ImportConfig & {
-  if (this != &other) {
-    m_impl = std::move(other.m_impl);
-  }
-  return *this;
-}
-
-auto ImportConfig::GetThisPackageNameChain() const -> const std::vector<std::string_view> & {
-  qcore_assert(m_impl != nullptr);
-  return m_impl->m_package_name_chain;
-}
-
-auto ImportConfig::GetSearchPaths() const -> const std::vector<std::filesystem::path> & {
-  qcore_assert(m_impl != nullptr);
-  return m_impl->m_package_search_path;
-}
-
-auto ImportConfig::GetThisPackageName() const -> const ImportName & {
-  qcore_assert(m_impl != nullptr);
-  return m_impl->m_package_name;
-}
-
-auto ImportConfig::GetPackages() const -> const std::unordered_set<Package> & {
-  qcore_assert(m_impl != nullptr);
-  return m_impl->m_packages;
-}
-
-auto ImportConfig::GetDefault() -> ImportConfig {
-  ImportName name;
-  ImportConfig config(name, {});
-  return config;
-}
+#endif  // __NITRATE_AST_PARSER_H__

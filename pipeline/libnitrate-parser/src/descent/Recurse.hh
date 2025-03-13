@@ -108,10 +108,6 @@ namespace ncc::parse {
       return node;
     }
 
-    [[nodiscard]] auto PackageNameChunks() -> const std::vector<std::string_view> & {
-      return m_import_config.GetPackageNameChain();
-    }
-
     /****************************************************************************
      * @brief
      *  Primary language constructs
