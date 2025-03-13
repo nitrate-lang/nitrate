@@ -64,24 +64,47 @@ IScanner::IScanner(std::shared_ptr<IEnvironment> env) : m_impl(std::make_unique<
 
 IScanner::~IScanner() = default;
 
-auto IScanner::IsEof() const -> bool { return m_impl->m_eof; }
+auto IScanner::IsEof() const -> bool {
+  qcore_assert(m_impl != nullptr);
+  return m_impl->m_eof;
+}
 
-auto IScanner::HasError() const -> bool { return m_impl->m_ebit; }
+auto IScanner::HasError() const -> bool {
+  qcore_assert(m_impl != nullptr);
+  return m_impl->m_ebit;
+}
 
 auto IScanner::SetFailBit(bool fail) -> bool {
+  qcore_assert(m_impl != nullptr);
+
   auto old = m_impl->m_ebit;
   m_impl->m_ebit = fail;
   return old;
 }
 
-[[nodiscard]] auto IScanner::Current() -> Token { return m_impl->m_current; }
-[[nodiscard]] auto IScanner::CommentBuffer() -> const std::vector<Token> & { return m_impl->m_comments; }
+[[nodiscard]] auto IScanner::Current() -> Token {
+  qcore_assert(m_impl != nullptr);
+  return m_impl->m_current;
+}
 
-auto IScanner::ClearCommentBuffer() -> void { m_impl->m_comments.clear(); }
+[[nodiscard]] auto IScanner::CommentBuffer() -> const std::vector<Token> & {
+  qcore_assert(m_impl != nullptr);
+  return m_impl->m_comments;
+}
 
-[[nodiscard]] auto IScanner::GetSkipCommentsState() const -> bool { return m_impl->m_skip; }
+auto IScanner::ClearCommentBuffer() -> void {
+  qcore_assert(m_impl != nullptr);
+  m_impl->m_comments.clear();
+}
+
+[[nodiscard]] auto IScanner::GetSkipCommentsState() const -> bool {
+  qcore_assert(m_impl != nullptr);
+  return m_impl->m_skip;
+}
 
 auto IScanner::Next() -> Token {
+  qcore_assert(m_impl != nullptr);
+
   Token tok;
   PImpl &m = *m_impl;
 
@@ -113,6 +136,8 @@ auto IScanner::Next() -> Token {
 }
 
 auto IScanner::Peek() -> Token {
+  qcore_assert(m_impl != nullptr);
+
   Token tok;
   PImpl &m = *m_impl;
 
@@ -144,6 +169,8 @@ auto IScanner::Peek() -> Token {
 }
 
 auto IScanner::Insert(Token tok) -> void {
+  qcore_assert(m_impl != nullptr);
+
   PImpl &m = *m_impl;
   m.m_ready.push_front(tok);
   m.m_current = tok;
@@ -162,6 +189,8 @@ auto IScanner::EndLine(Token t) -> uint32_t { return End(t).GetRow(); }
 auto IScanner::EndColumn(Token t) -> uint32_t { return End(t).GetCol(); }
 
 auto IScanner::GetLocation(LocationID id) -> Location {
+  qcore_assert(m_impl != nullptr);
+
   PImpl &m = *m_impl;
 
   if (id.GetId() < m.m_location_interned.size()) {
@@ -172,6 +201,8 @@ auto IScanner::GetLocation(LocationID id) -> Location {
 }
 
 auto IScanner::SkipCommentsState(bool skip) -> bool {
+  qcore_assert(m_impl != nullptr);
+
   PImpl &m = *m_impl;
 
   auto old = m.m_skip;
@@ -182,6 +213,8 @@ auto IScanner::SkipCommentsState(bool skip) -> bool {
 auto IScanner::GetEnvironment() const -> std::shared_ptr<IEnvironment> { return m_env; }
 
 auto IScanner::InternLocation(Location loc) -> LocationID {
+  qcore_assert(m_impl != nullptr);
+
   PImpl &m = *m_impl;
 
   m.m_location_interned.push_back(loc);
