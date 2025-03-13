@@ -227,8 +227,8 @@ auto Package::CompileFile(std::filesystem::path file_path) -> LazyLoader {
   return load;
 }
 
-auto ncc::parse::FindPackages(const std::unordered_set<std::filesystem::path> &paths,
-                              const std::function<bool(const std::filesystem::path &)> &predicate)
+NCC_EXPORT auto ncc::parse::FindPackages(const std::unordered_set<std::filesystem::path> &paths,
+                                         const std::function<bool(const std::filesystem::path &)> &predicate)
     -> std::unordered_set<Package> {
   std::map<std::filesystem::path, bool> is_package_cache;
   std::unordered_set<Package> packages;
