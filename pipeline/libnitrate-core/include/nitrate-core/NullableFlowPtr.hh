@@ -123,7 +123,7 @@ namespace ncc {
       }
 
       template <class U>
-      constexpr auto As() const {
+      [[nodiscard]] constexpr auto As() const {
         return NullableFlowPtr<const U>(reinterpret_cast<const U *>(m_ptr.get()), m_ptr.Trace());
       }
 
@@ -135,12 +135,12 @@ namespace ncc {
       ///=========================================================================
       /// Accessors
 
-      [[nodiscard]] constexpr bool has_value() const {  // NOLINT
+      [[nodiscard]] constexpr auto has_value() const -> bool {  // NOLINT(readability-identifier-naming)
         return m_ptr != nullptr;
       }
       constexpr operator bool() const { return has_value(); }
 
-      constexpr FlowPtr<Pointee, Tracking> &value() {  // NOLINT
+      constexpr auto value() -> FlowPtr<Pointee, Tracking> & {  // NOLINT(readability-identifier-naming)
         if (!has_value()) [[unlikely]] {
           qcore_panicf("Attempted to dereference a nullptr. this=%p", this);
         }
@@ -148,7 +148,7 @@ namespace ncc {
         return m_ptr;
       }
 
-      constexpr const FlowPtr<Pointee, Tracking> &value() const {  // NOLINT
+      [[nodiscard]] constexpr auto value() const -> const FlowPtr<Pointee, Tracking> & {  // NOLINT(readability-identifier-naming)
         if (!has_value()) [[unlikely]] {
           qcore_panicf("Attempted to dereference a nullptr. this=%p", this);
         }
@@ -157,7 +157,7 @@ namespace ncc {
       }
 
       template <class U>
-      constexpr Pointee *value_or(U &&default_value) const {  // NOLINT
+      constexpr auto value_or(U &&default_value) const -> Pointee * {  // NOLINT(readability-identifier-naming)
         return has_value() ? value().get() : std::forward<U>(default_value);
       }
 

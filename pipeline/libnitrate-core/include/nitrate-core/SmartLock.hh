@@ -58,7 +58,7 @@ namespace ncc {
       }
     }
 
-    [[nodiscard]] bool IsEnabled() const noexcept { return m_enable_sync; }
+    [[nodiscard]] auto IsEnabled() const noexcept -> bool { return m_enable_sync; }
   };
 }  // namespace ncc
 

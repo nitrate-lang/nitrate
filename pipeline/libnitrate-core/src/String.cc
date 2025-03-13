@@ -57,7 +57,7 @@ public:
     AddChunk();
   }
 
-  T& Append(T&& value) {
+  auto Append(T&& value) -> T& {
     if (m_back_size != BufferSize) [[likely]] {
       return m_data.back()[m_back_size++] = std::move(value);
     }
