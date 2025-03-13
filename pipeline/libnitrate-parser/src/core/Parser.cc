@@ -38,6 +38,8 @@
 #include <nitrate-core/Logger.hh>
 #include <nitrate-core/Macro.hh>
 #include <nitrate-parser/AST.hh>
+#include <nitrate-parser/ASTExpr.hh>
+#include <nitrate-parser/ASTType.hh>
 #include <nitrate-parser/ASTWriter.hh>
 #include <nitrate-parser/Algorithm.hh>
 #include <nitrate-parser/Context.hh>

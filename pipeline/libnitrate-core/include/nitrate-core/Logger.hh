@@ -261,7 +261,7 @@ namespace ncc {
 
   public:
     LoggerContext() = default;
-    LoggerContext(const LoggerContext &o) : m_subs(o.m_subs), m_enabled(o.m_enabled) {}
+    LoggerContext(LoggerContext &&o) noexcept : m_subs(std::move(o.m_subs)), m_enabled(o.m_enabled) {}
     ~LoggerContext() override = default;
 
     auto Subscribe(LogCallback cb) -> LogSubscriberID;
@@ -289,8 +289,8 @@ namespace ncc {
     void Publish(const std::string &msg, Sev sev, const ECBase &ec) const;
   };
 
-  auto operator<<(LoggerContext log, const auto &value) -> LogStream {
-    LogStream stream([log](const LogMessage &m) { log.Publish(m.m_message, m.m_sev, m.m_by); });
+  auto operator<<(LoggerContext &log, const auto &value) -> LogStream {
+    LogStream stream([&log](const LogMessage &m) { log.Publish(m.m_message, m.m_sev, m.m_by); });
 
     stream.Write(value);
 

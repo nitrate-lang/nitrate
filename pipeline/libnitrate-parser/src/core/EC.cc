@@ -128,6 +128,7 @@ NCC_EXPORT auto ncc::parse::ec::Formatter(std::string_view msg, Sev sev) -> std:
     auto start_line = token_start.GetRow();
     auto start_col = token_start.GetCol();
     auto end_line = token_end.GetRow();
+    auto end_col = token_end.GetCol();
 
     std::stringstream ss;
     ss << "\x1b[0m\x1b[37;1m[\x1b[0m\x1b[31;1mParse\x1b[0m\x1b[37;1m]: " << sev << ":\x1b[0m ";
@@ -142,14 +143,9 @@ NCC_EXPORT auto ncc::parse::ec::Formatter(std::string_view msg, Sev sev) -> std:
     ss << "\x1b[37;1m" << message << "\x1b[0m";
 
     if (start_line != kLexEof) {
-      IScanner::Point start_pos(start_line == 0 ? 0 : start_line - 1, 0);
-      IScanner::Point end_pos;
-
-      if (end_line != kLexEof) {
-        end_pos = IScanner::Point(end_line, -1);
-      } else {
-        end_pos = IScanner::Point(start_line + 1, -1);
-      }
+      const auto start_pos = IScanner::Point(start_line, 0);
+      const auto end_pos =
+          IScanner::Point(end_line == kLexEof ? start_line : end_line, end_col == kLexEof ? INT_MAX : end_col);
 
       if (auto window = rd->GetSourceWindow(start_pos, end_pos, ' ')) {
         ss << "\n";

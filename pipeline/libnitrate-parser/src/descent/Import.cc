@@ -38,7 +38,10 @@
 #include <nitrate-lexer/Lexer.hh>
 #include <nitrate-lexer/Scanner.hh>
 #include <nitrate-parser/AST.hh>
+#include <nitrate-parser/ASTExpr.hh>
 #include <nitrate-parser/ASTFactory.hh>
+#include <nitrate-parser/ASTStmt.hh>
+#include <nitrate-parser/ASTType.hh>
 #include <nitrate-parser/ASTVisitor.hh>
 #include <nitrate-parser/Algorithm.hh>
 #include <nitrate-parser/Package.hh>
