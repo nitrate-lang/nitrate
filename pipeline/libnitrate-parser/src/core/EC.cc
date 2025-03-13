@@ -146,7 +146,7 @@ NCC_EXPORT auto ncc::parse::ec::Formatter(std::string_view msg, Sev sev) -> std:
       IScanner::Point end_pos;
 
       if (end_line != kLexEof) {
-        end_pos = IScanner::Point(end_line + 1, -1);
+        end_pos = IScanner::Point(end_line, -1);
       } else {
         end_pos = IScanner::Point(start_line + 1, -1);
       }
