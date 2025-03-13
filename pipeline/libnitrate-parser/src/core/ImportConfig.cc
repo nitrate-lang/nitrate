@@ -32,51 +32,67 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <nitrate-core/Logger.hh>
-#include <nitrate-parser/Package.hh>
+#include <nitrate-parser/Context.hh>
+
+#include "nitrate-parser/Package.hh"
 
 using namespace ncc::parse;
 
-bool ImportName::Validate(const std::string &name) {
-  /// TODO: Validate the import name
-  (void)name;
-  return true;
-}
+class ImportConfig::PImpl {
+public:
+  ImportName m_package_name;
+  std::vector<std::filesystem::path> m_package_search_path;
+  std::vector<std::string_view> m_package_name_chain;
 
-ImportName::ImportName(std::string name) {
-  if (Validate(name)) {
-    m_name = std::move(name);
-    return;
-  }
-
-  Log << Trace << "ImportName: Not valid: " << name;
-}
-
-auto ImportName::GetChain() const -> std::vector<std::string_view> {
-  std::vector<std::string_view> chain;
-  std::string_view name = *m_name;
-
-  while (!name.empty()) {
-    auto pos = name.find_first_of("::");
-    if (pos == std::string_view::npos) {
-      chain.push_back(name);
-      break;
+  PImpl(ImportName package_name, std::vector<std::filesystem::path> package_search_path)
+      : m_package_name(std::move(package_name)), m_package_search_path(std::move(package_search_path)) {
+    if (m_package_name.IsValid()) {
+      m_package_name_chain = m_package_name.GetChain();
     }
-
-    chain.push_back(name.substr(0, pos));
-    name.remove_prefix(pos + 2);
   }
+};
 
-  Log << Trace << "ImportName: \"" << *m_name << "\" -> " << chain.size() << " parts";
+ImportConfig::ImportConfig(const ImportName &package_name,
+                           const std::vector<std::filesystem::path> &package_search_path)
+    : m_impl(std::make_unique<PImpl>(package_name, package_search_path)) {}
 
-  return chain;
+ImportConfig::ImportConfig(const ImportConfig &other) : m_impl(std::make_unique<PImpl>(*other.m_impl)) {}
+
+ImportConfig::ImportConfig(ImportConfig &&other) noexcept : m_impl(std::move(other.m_impl)) {}
+
+ImportConfig::~ImportConfig() = default;
+
+auto ImportConfig::operator=(const ImportConfig &other) -> ImportConfig & {
+  if (this != &other) {
+    m_impl = std::make_unique<PImpl>(*other.m_impl);
+  }
+  return *this;
 }
 
-std::ostream &ncc::parse::operator<<(std::ostream &os, const ImportName &name) {
-  if (name.IsValid()) {
-    os << name.GetName();
-  } else {
-    os << "<invalid>";
+auto ImportConfig::operator=(ImportConfig &&other) noexcept -> ImportConfig & {
+  if (this != &other) {
+    m_impl = std::move(other.m_impl);
   }
+  return *this;
+}
 
-  return os;
+auto ImportConfig::GetPackageNameChain() const -> const std::vector<std::string_view> & {
+  qcore_assert(m_impl != nullptr);
+  return m_impl->m_package_name_chain;
+}
+
+auto ImportConfig::GetPackagePath() const -> const std::vector<std::filesystem::path> & {
+  qcore_assert(m_impl != nullptr);
+  return m_impl->m_package_search_path;
+}
+
+auto ImportConfig::GetPackageName() const -> const ImportName & {
+  qcore_assert(m_impl != nullptr);
+  return m_impl->m_package_name;
+}
+
+auto ImportConfig::GetDefault() -> ImportConfig {
+  ImportName name;
+  ImportConfig config(name, {});
+  return config;
 }

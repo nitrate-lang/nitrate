@@ -65,15 +65,15 @@ namespace ncc::parse {
   public:
     static auto GetDefault() -> ImportConfig;
 
-    ImportConfig(const ImportName &package_name, const std::vector<std::filesystem::path> &package_path);
+    ImportConfig(const ImportName &package_name, const std::vector<std::filesystem::path> &package_search_paths = {});
     ImportConfig(const ImportConfig &);
     ImportConfig(ImportConfig &&) noexcept;
     ~ImportConfig();
     auto operator=(const ImportConfig &) -> ImportConfig &;
     auto operator=(ImportConfig &&) noexcept -> ImportConfig &;
 
-    [[nodiscard]] auto GetPackageName() const -> const ImportName &;
     [[nodiscard]] auto GetPackageNameChain() const -> const std::vector<std::string_view> &;
+    [[nodiscard]] auto GetPackageName() const -> const ImportName &;
     [[nodiscard]] auto GetPackagePath() const -> const std::vector<std::filesystem::path> &;
   };
 

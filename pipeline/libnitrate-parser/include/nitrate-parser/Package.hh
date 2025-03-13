@@ -50,6 +50,7 @@ namespace ncc::parse {
     static bool Validate(const std::string &name);
 
   public:
+    ImportName() = default;
     ImportName(std::string name);
 
     bool operator==(const ImportName &other) const = default;
