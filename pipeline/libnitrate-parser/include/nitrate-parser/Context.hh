@@ -36,12 +36,14 @@
 
 #include <boost/iostreams/device/array.hpp>
 #include <boost/iostreams/stream.hpp>
+#include <filesystem>
 #include <memory>
 #include <memory_resource>
 #include <nitrate-core/EnvironmentFwd.hh>
 #include <nitrate-core/FlowPtr.hh>
 #include <nitrate-lexer/ScannerFwd.hh>
 #include <nitrate-parser/ASTFwd.hh>
+#include <nitrate-parser/Package.hh>
 
 namespace ncc::parse {
   class NCC_EXPORT ASTRoot final {
@@ -56,13 +58,32 @@ namespace ncc::parse {
     [[nodiscard]] auto Check() const -> bool;
   };
 
+  class ImportConfig final {
+    class PImpl;
+    std::unique_ptr<PImpl> m_impl;
+
+  public:
+    static auto GetDefault() -> ImportConfig;
+
+    ImportConfig(const ImportName &package_name, const std::vector<std::filesystem::path> &package_path);
+    ImportConfig(const ImportConfig &);
+    ImportConfig(ImportConfig &&) noexcept;
+    ~ImportConfig();
+    auto operator=(const ImportConfig &) -> ImportConfig &;
+    auto operator=(ImportConfig &&) noexcept -> ImportConfig &;
+
+    [[nodiscard]] auto GetPackageName() const -> const ImportName &;
+    [[nodiscard]] auto GetPackageNameChain() const -> const std::vector<std::string_view> &;
+    [[nodiscard]] auto GetPackagePath() const -> const std::vector<std::filesystem::path> &;
+  };
+
   class NCC_EXPORT GeneralParser final {
     class PImpl;
     std::unique_ptr<PImpl> m_impl;
 
   public:
-    GeneralParser(lex::IScanner &lexer, std::vector<std::string> qualified_package_name,
-                  std::shared_ptr<IEnvironment> env, std::pmr::memory_resource &pool);
+    GeneralParser(lex::IScanner &lexer, std::shared_ptr<IEnvironment> env, std::pmr::memory_resource &pool,
+                  const std::optional<ImportConfig> &import_config = std::nullopt);
     GeneralParser(const GeneralParser &) = delete;
     GeneralParser(GeneralParser &&o) noexcept;
     ~GeneralParser();
@@ -74,11 +95,11 @@ namespace ncc::parse {
     [[nodiscard]] auto GetLexer() -> lex::IScanner &;
 
     template <typename Scanner>
-    static auto ParseString(std::string_view source, std::vector<std::string> qualified_package_name,
-                            std::shared_ptr<IEnvironment> env, std::pmr::memory_resource &pool) {
+    static auto ParseString(std::string_view source, std::shared_ptr<IEnvironment> env, std::pmr::memory_resource &pool,
+                            const std::optional<ImportConfig> &import_config = std::nullopt) {
       auto in_src = boost::iostreams::stream<boost::iostreams::array_source>(source.data(), source.size());
       auto scanner = Scanner(in_src, env);
-      return GeneralParser(scanner, qualified_package_name, env, pool).Parse();
+      return GeneralParser(scanner, env, pool, import_config).Parse();
     }
   };
 }  // namespace ncc::parse

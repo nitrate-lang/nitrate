@@ -645,7 +645,9 @@ static bool FormatFile(const std::filesystem::path& src, const std::filesystem::
     auto unit_env = std::make_shared<ncc::Environment>();
     auto tokenizer = ncc::lex::Tokenizer(src_file, unit_env);
     tokenizer.SetCurrentFilename(src.string());
-    auto parser = ncc::parse::GeneralParser(tokenizer, {}, unit_env, pool);
+
+    /// FIXME: Get the import profile
+    auto parser = ncc::parse::GeneralParser(tokenizer, unit_env, pool);
     auto ast_result = parser.Parse();
 
     Log << Trace << "The parser used " << pool.GetSpaceUsed() << " bytes of memory.";

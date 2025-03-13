@@ -47,6 +47,7 @@
 #include <nitrate-parser/ASTStmt.hh>
 #include <nitrate-parser/ASTType.hh>
 #include <nitrate-parser/Context.hh>
+#include <nitrate-parser/Package.hh>
 #include <set>
 
 namespace ncc::parse {
@@ -55,7 +56,7 @@ namespace ncc::parse {
   class GeneralParser::PImpl final {
     friend class GeneralParser;
 
-    const std::vector<std::string> m_current_package_name_split;
+    ImportConfig m_import_config;
     std::shared_ptr<IEnvironment> m_env;
     std::pmr::memory_resource &m_pool;
     ASTFactory m_fac;
@@ -107,7 +108,9 @@ namespace ncc::parse {
       return node;
     }
 
-    [[nodiscard]] auto PackageNameChunks() -> const std::vector<std::string> & { return m_current_package_name_split; }
+    [[nodiscard]] auto PackageNameChunks() -> const std::vector<std::string_view> & {
+      return m_import_config.GetPackageNameChain();
+    }
 
     /****************************************************************************
      * @brief
@@ -211,8 +214,9 @@ namespace ncc::parse {
     [[nodiscard]] auto RecurseVariableInstance(VariableType decl_type) -> FlowPtr<Expr>;
     [[nodiscard]] auto RecurseWhileCond() -> FlowPtr<Expr>;
     [[nodiscard]] auto RecurseImportName() -> std::pair<string, ImportMode>;
-    [[nodiscard]] auto RecurseImportRegularFile(string import_file, ImportMode import_mode) -> FlowPtr<Expr>;
-    [[nodiscard]] auto RecurseImportPackage(string import_name) -> FlowPtr<Expr>;
+    [[nodiscard]] auto RecurseImportRegularFile(const std::filesystem::path &import_file,
+                                                ImportMode import_mode) -> FlowPtr<Expr>;
+    [[nodiscard]] auto RecurseImportPackage(const ImportName &import_name) -> FlowPtr<Expr>;
     void PrepareImportSubgraph(const FlowPtr<Expr> &root);
 
     static inline std::vector<std::string> SplitPackageName(const std::string &package_name) {
@@ -234,13 +238,9 @@ namespace ncc::parse {
     }
 
   public:
-    PImpl(lex::IScanner &lexer, std::vector<std::string> qualified_package_name, std::shared_ptr<IEnvironment> env,
+    PImpl(lex::IScanner &lexer, ImportConfig import_config, std::shared_ptr<IEnvironment> env,
           std::pmr::memory_resource &pool)
-        : m_current_package_name_split(std::move(qualified_package_name)),
-          m_env(std::move(env)),
-          m_pool(pool),
-          m_fac(m_pool),
-          m_rd(lexer) {}
+        : m_import_config(std::move(import_config)), m_env(std::move(env)), m_pool(pool), m_fac(m_pool), m_rd(lexer) {}
 
     ~PImpl() = default;
   };

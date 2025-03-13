@@ -99,13 +99,13 @@ static auto IsDirectory(const std::filesystem::path &path) -> bool {
 
 class Package::PImpl {
 public:
-  string m_pkg_name;
+  ImportName m_pkg_name;
   LazyLoader m_loader;
 
-  PImpl(string name, LazyLoader loader) : m_pkg_name(name), m_loader(std::move(loader)) {}
+  PImpl(ImportName name, LazyLoader loader) : m_pkg_name(std::move(name)), m_loader(std::move(loader)) {}
 };
 
-Package::Package(string name, LazyLoader loader) : m_impl(std::make_shared<PImpl>(name, std::move(loader))) {}
+Package::Package(ImportName name, LazyLoader loader) : m_impl(std::make_shared<PImpl>(name, std::move(loader))) {}
 
 Package::Package(const Package &other) = default;
 
@@ -139,7 +139,7 @@ bool Package::operator==(const Package &other) const {
   return m_impl->m_pkg_name == other.m_impl->m_pkg_name;
 }
 
-auto Package::PackageName() const -> string { return m_impl ? m_impl->m_pkg_name : ""; }
+auto Package::PackageName() const -> ImportName { return m_impl ? m_impl->m_pkg_name : ImportName{""}; }
 
 auto Package::Read() const -> const std::optional<PackageContents> & {
   qcore_assert(m_impl != nullptr);

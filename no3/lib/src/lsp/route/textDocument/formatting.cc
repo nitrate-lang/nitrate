@@ -108,8 +108,8 @@ void srv::DoFormatting(const RequestMessage& req, ResponseMessage& resp) {
   auto l = Sequencer(ss, env);
   auto pool = ncc::DynamicArena();
 
-  /// FIXME: Get package name
-  auto parser = ncc::parse::GeneralParser(l, {}, env, pool);
+  /// FIXME: Get the import profile
+  auto parser = ncc::parse::GeneralParser(l, env, pool);
   auto ast = parser.Parse();
 
   if (l.HasError() || !ast.Check()) {

@@ -477,9 +477,10 @@ auto GeneralParser::PImpl::RecurseBlock(bool expect_braces, bool single_stmt, Bl
   }
 }
 
-GeneralParser::GeneralParser(ncc::lex::IScanner &lexer, std::vector<std::string> qualified_package_name,
-                             std::shared_ptr<ncc::IEnvironment> env, std::pmr::memory_resource &pool)
-    : m_impl(std::make_unique<GeneralParser::PImpl>(lexer, std::move(qualified_package_name), std::move(env), pool)) {}
+GeneralParser::GeneralParser(ncc::lex::IScanner &lexer, std::shared_ptr<ncc::IEnvironment> env,
+                             std::pmr::memory_resource &pool, const std::optional<ImportConfig> &import_config)
+    : m_impl(std::make_unique<GeneralParser::PImpl>(lexer, import_config.value_or(ImportConfig::GetDefault()),
+                                                    std::move(env), pool)) {}
 
 GeneralParser::~GeneralParser() = default;
 
