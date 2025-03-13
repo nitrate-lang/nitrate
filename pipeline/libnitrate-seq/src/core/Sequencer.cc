@@ -362,8 +362,8 @@ SequencerPImpl::SequencerPImpl(std::shared_ptr<ncc::IEnvironment> env)
       m_fetch_module(FileSystemFetchModule),
       m_captures({}),
       m_env(std::move(env)),
-      m_L(luaL_newstate()),
-      m_depth(0) {
+      m_L(luaL_newstate())
+      {
   if (m_L == nullptr) {
     Log << Emergency << SeqLog << "Failed to create Lua state";
     qcore_panic("Failed to create LUA context");

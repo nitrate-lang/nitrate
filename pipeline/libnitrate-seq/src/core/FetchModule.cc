@@ -41,10 +41,6 @@
 #include <fstream>
 #include <iostream>
 #include <nitrate-core/IEnvironment.hh>
-#include <nitrate-parser/ASTStmt.hh>
-#include <nitrate-parser/Algorithm.hh>
-#include <nitrate-parser/CodeWriter.hh>
-#include <nitrate-parser/Context.hh>
 #include <nitrate-seq/Sequencer.hh>
 #include <sstream>
 
@@ -54,7 +50,7 @@ using namespace ncc::seq::ec;
 using namespace std::literals;
 using namespace std::filesystem;
 
-static std::string ReadEnvironmentVariable(const char *name) {
+static auto ReadEnvironmentVariable(const char *name) -> std::string {
   const char *value = std::getenv(name); /* NOLINT(concurrency-mt-unsafe) */
   if (value == nullptr) {
     return "";
@@ -63,7 +59,7 @@ static std::string ReadEnvironmentVariable(const char *name) {
   return value;
 }
 
-static std::vector<path> GetResourceSearchPaths() {
+static auto GetResourceSearchPaths() -> std::vector<path> {
   std::string env_path(ReadEnvironmentVariable("NCC_SEARCH_PATH"));
 
   std::vector<path> paths;
@@ -86,7 +82,8 @@ static std::vector<path> GetResourceSearchPaths() {
   return paths;
 }
 
-static std::optional<path> FindResource(const std::string &resource_name, const std::vector<path> &search_paths) {
+static auto FindResource(const std::string &resource_name,
+                         const std::vector<path> &search_paths) -> std::optional<path> {
   for (const auto &path : search_paths) {
     Log << SeqLog << Debug << "Searching for resource '" << resource_name << "' in " << path;
 
@@ -128,46 +125,6 @@ NCC_EXPORT auto ncc::seq::FileSystemFetchModule(std::string_view path) -> std::o
   return std::nullopt;
 }
 
-auto Sequencer::RenderTranslationUnitSource(Sequencer &self, std::string_view source) -> std::optional<std::string> {
-  std::stringstream output;
-
-  {
-    using namespace ncc::parse;
-
-    auto istream = boost::iostreams::stream<boost::iostreams::array_source>(source.data(), source.size());
-    auto sub_scanner = CreateChild(self, istream);
-    if (!sub_scanner) [[unlikely]] { /* Default to returning the whole TU */
-      Log << SeqLog << "Failed to create child scanner";
-      return std::nullopt;
-    }
-
-    auto pool = DynamicArena();
-    const auto ast_root = GeneralParser(*sub_scanner, self.m_env, pool).Parse();
-    if (!ast_root.Check()) [[unlikely]] {
-      Log << SeqLog << "Failed to parse translation unit";
-      return std::nullopt;
-    }
-
-    /// TODO: Replace definitions with declarations
-
-    for_each<Function>(ast_root.Get(), [](auto node) {
-      auto function = node.template As<Function>();
-      function->SetBody(nullptr);
-    });
-
-    /// FIXME: Fix this
-    for_each<Variable>(ast_root.Get(), [](auto node) {
-      auto variable = node.template As<Variable>();
-      variable->SetInitializer(nullptr);
-    });
-
-    auto writer = CodeWriterFactory::Create(output);
-    ast_root.Get()->Accept(*writer);
-  }
-
-  return output.str();
-}
-
 auto Sequencer::FetchModuleData(Sequencer &self, std::string_view raw_module_name) -> std::optional<std::string> {
   auto module_name = std::string(raw_module_name);
 
@@ -186,7 +143,7 @@ auto Sequencer::FetchModuleData(Sequencer &self, std::string_view raw_module_nam
   Log << SeqLog << Debug << "Importing module: '" << module_name << "'...";
 
   if (const auto module_content = self.m_shared->m_fetch_module(module_uri)) {
-    return RenderTranslationUnitSource(self, module_content.value());
+    return module_content.value();
   }
 
   Log << SeqLog << "Import not found: '" << module_name << "'";
