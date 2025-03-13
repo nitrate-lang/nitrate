@@ -46,6 +46,7 @@
 #include <nitrate-parser/ASTBase.hh>
 #include <nitrate-parser/CodeWriter.hh>
 #include <nitrate-parser/Context.hh>
+#include <nitrate-parser/Package.hh>
 #include <random>
 #include <sstream>
 #include <unordered_map>
@@ -59,7 +60,7 @@ enum class FormatMode { Standard, Minify, Deflate };
 static bool ValidateConfiguration(const nlohmann::json& j);
 static void AssignDefaultConfigurationSettings(nlohmann::json& j);
 static bool FormatFile(const std::filesystem::path& src, const std::filesystem::path& dst, const nlohmann::json& config,
-                       FormatMode mode);
+                       FormatMode mode, const ncc::parse::ImportConfig& import_config);
 
 struct FormatOptions {
   FormatMode m_mode;
@@ -314,8 +315,9 @@ static bool LoadConfigurationFile(const std::filesystem::path& path, nlohmann::j
   return true;
 }
 
-static std::optional<std::unordered_map<std::filesystem::path, std::filesystem::path>> SecondaryArgumentCheck(
-    FormatOptions& options) {
+static auto SecondaryArgumentCheck(FormatOptions& options)
+    -> std::optional<
+        std::pair<std::unordered_map<std::filesystem::path, std::filesystem::path>, std::optional<parse::ImportName>>> {
   {  // Check if the source file exists and absolutize it
     if (!SafeCheckFileExists(options.m_source_path)) {
       Log << "The source file does not exist: " << options.m_source_path;
@@ -389,6 +391,7 @@ static std::optional<std::unordered_map<std::filesystem::path, std::filesystem::
   }
 
   std::unordered_map<std::filesystem::path, std::filesystem::path> paths;
+  std::optional<parse::ImportName> import_name;
   if (is_directory.value()) {
     Log << Trace << "Source path is a directory: " << options.m_source_path;
 
@@ -396,6 +399,10 @@ static std::optional<std::unordered_map<std::filesystem::path, std::filesystem::
     if (!contents.has_value()) {
       Log << "Failed to get the contents of the source directory: " << options.m_source_path;
       return std::nullopt;
+    }
+
+    if (auto pkg_opt = PackageConfig::ParsePackage(options.m_source_path)) {
+      import_name = pkg_opt.value().ImportName();
     }
 
     Log << Trace << "Found " << contents.value().size() << " files in the source directory.";
@@ -418,7 +425,7 @@ static std::optional<std::unordered_map<std::filesystem::path, std::filesystem::
     Log << Trace << "Mapping [" << dst << "] = " << src;
   }
 
-  return paths;
+  return {{paths, import_name}};
 }
 
 bool no3::Interpreter::PImpl::CommandFormat(ConstArguments, const MutArguments& argv) {
@@ -445,24 +452,35 @@ bool no3::Interpreter::PImpl::CommandFormat(ConstArguments, const MutArguments& 
   Log << Trace << "options[\"config\"] = " << options.m_config_path;
   Log << Trace << "options[\"mode\"] = " << static_cast<int>(options.m_mode);
 
-  auto mapping_opt = SecondaryArgumentCheck(options);
-  if (!mapping_opt) {
+  auto result = SecondaryArgumentCheck(options);
+  if (!result.has_value()) {
     Log << Trace << "Failed secondary argument sanity check.";
     return false;
   }
 
-  if (mapping_opt.value().empty()) {
+  const auto& [mapping_opt, this_import_name_opt] = result.value();
+
+  if (mapping_opt.empty()) {
     Log << Warning << "No source files found to format.";
     return true;
   }
 
-  Log << Debug << "Formatting " << mapping_opt.value().size() << " source file(s).";
+  Log << Debug << "Formatting " << mapping_opt.size() << " source file(s).";
+
+  /// FIXME: Implement the import configuration
+  ncc::parse::ImportConfig import_config = ncc::parse::ImportConfig::GetDefault();
+  if (this_import_name_opt.has_value()) {
+    import_config.SetThisPackageName(this_import_name_opt.value());
+  }
 
   size_t success_count = 0;
   size_t failure_count = 0;
-  for (const auto& [src_file, dst_file] : mapping_opt.value()) {
+  for (const auto& [src_file, dst_file] : mapping_opt) {
+    import_config.ClearFilesToNotImport();
+    import_config.AddFileToNotImport(src_file);
+
     Log << Info << "Applying format " << src_file << " => " << dst_file;
-    if (!FormatFile(src_file, dst_file, options.m_config, options.m_mode)) {
+    if (!FormatFile(src_file, dst_file, options.m_config, options.m_mode, import_config)) {
       Log << "Unable to format file: " << src_file;
       failure_count++;
       continue;
@@ -625,7 +643,7 @@ static bool DeflateStreams(std::istream& in, std::ostream& out) {
 }
 
 static bool FormatFile(const std::filesystem::path& src, const std::filesystem::path& dst, const nlohmann::json& config,
-                       FormatMode mode) {
+                       FormatMode mode, const ncc::parse::ImportConfig& import_config) {
   std::ifstream src_file(src, std::ios::binary);
   if (!src_file.is_open()) {
     Log << "Failed to open the source file: " << src;
@@ -645,7 +663,8 @@ static bool FormatFile(const std::filesystem::path& src, const std::filesystem::
     auto unit_env = std::make_shared<ncc::Environment>();
     auto tokenizer = ncc::lex::Tokenizer(src_file, unit_env);
     tokenizer.SetCurrentFilename(src.string());
-    auto parser = ncc::parse::GeneralParser(tokenizer, unit_env, pool);
+
+    auto parser = ncc::parse::GeneralParser(tokenizer, unit_env, pool, import_config);
     auto ast_result = parser.Parse();
 
     Log << Trace << "The parser used " << pool.GetSpaceUsed() << " bytes of memory.";

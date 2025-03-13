@@ -79,6 +79,8 @@ namespace ncc::lex {
 
   public:
     IScanner(std::shared_ptr<IEnvironment> env);
+    IScanner(const IScanner&) = delete;
+    IScanner(IScanner&&) = default;
     virtual ~IScanner();
 
     /** Check if the VTQ model is empty. */

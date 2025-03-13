@@ -107,6 +107,8 @@ void srv::DoFormatting(const RequestMessage& req, ResponseMessage& resp) {
   auto env = std::make_shared<ncc::Environment>();
   auto l = Sequencer(ss, env);
   auto pool = ncc::DynamicArena();
+
+  /// FIXME: Get the import profile
   auto parser = ncc::parse::GeneralParser(l, env, pool);
   auto ast = parser.Parse();
 

@@ -32,6 +32,8 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <descent/Recurse.hh>
+#include <nitrate-parser/ASTStmt.hh>
+#include <nitrate-parser/ASTExpr.hh>
 
 using namespace ncc;
 using namespace ncc::lex;

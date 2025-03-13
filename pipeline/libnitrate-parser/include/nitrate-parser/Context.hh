@@ -42,6 +42,8 @@
 #include <nitrate-core/FlowPtr.hh>
 #include <nitrate-lexer/ScannerFwd.hh>
 #include <nitrate-parser/ASTFwd.hh>
+#include <nitrate-parser/ImportConfig.hh>
+#include <nitrate-parser/Package.hh>
 
 namespace ncc::parse {
   class NCC_EXPORT ASTRoot final {
@@ -61,7 +63,8 @@ namespace ncc::parse {
     std::unique_ptr<PImpl> m_impl;
 
   public:
-    GeneralParser(lex::IScanner &lexer, std::shared_ptr<IEnvironment> env, std::pmr::memory_resource &pool);
+    GeneralParser(lex::IScanner &lexer, std::shared_ptr<IEnvironment> env, std::pmr::memory_resource &pool,
+                  const std::optional<ImportConfig> &import_config = std::nullopt);
     GeneralParser(const GeneralParser &) = delete;
     GeneralParser(GeneralParser &&o) noexcept;
     ~GeneralParser();
@@ -73,11 +76,11 @@ namespace ncc::parse {
     [[nodiscard]] auto GetLexer() -> lex::IScanner &;
 
     template <typename Scanner>
-    static auto ParseString(std::string_view source, std::shared_ptr<IEnvironment> env,
-                            std::pmr::memory_resource &pool) {
+    static auto ParseString(std::string_view source, std::shared_ptr<IEnvironment> env, std::pmr::memory_resource &pool,
+                            const std::optional<ImportConfig> &import_config = std::nullopt) {
       auto in_src = boost::iostreams::stream<boost::iostreams::array_source>(source.data(), source.size());
       auto scanner = Scanner(in_src, env);
-      return GeneralParser(scanner, env, pool).Parse();
+      return GeneralParser(scanner, env, pool, import_config).Parse();
     }
   };
 }  // namespace ncc::parse

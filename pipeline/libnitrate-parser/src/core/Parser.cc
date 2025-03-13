@@ -38,6 +38,8 @@
 #include <nitrate-core/Logger.hh>
 #include <nitrate-core/Macro.hh>
 #include <nitrate-parser/AST.hh>
+#include <nitrate-parser/ASTExpr.hh>
+#include <nitrate-parser/ASTType.hh>
 #include <nitrate-parser/ASTWriter.hh>
 #include <nitrate-parser/Algorithm.hh>
 #include <nitrate-parser/Context.hh>
@@ -478,8 +480,9 @@ auto GeneralParser::PImpl::RecurseBlock(bool expect_braces, bool single_stmt, Bl
 }
 
 GeneralParser::GeneralParser(ncc::lex::IScanner &lexer, std::shared_ptr<ncc::IEnvironment> env,
-                             std::pmr::memory_resource &pool)
-    : m_impl(std::make_unique<GeneralParser::PImpl>(lexer, std::move(env), pool)) {}
+                             std::pmr::memory_resource &pool, const std::optional<ImportConfig> &import_config)
+    : m_impl(std::make_unique<GeneralParser::PImpl>(lexer, import_config.value_or(ImportConfig::GetDefault()),
+                                                    std::move(env), pool)) {}
 
 GeneralParser::~GeneralParser() = default;
 

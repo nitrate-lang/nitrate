@@ -52,8 +52,14 @@ namespace no3::package {
 
     static std::optional<PackageConfig> ParsePackage(const std::filesystem::path& package_dir);
 
-    [[nodiscard]] const nlohmann::ordered_json& Json(bool defaults = true) const;
-    [[nodiscard]] const std::string& Protobuf(bool defaults = true) const;
+    [[nodiscard]] auto Json(bool defaults = true) const -> const nlohmann::ordered_json&;
+    [[nodiscard]] auto Protobuf(bool defaults = true) const -> const std::string&;
+
+    [[nodiscard]] auto PackageName() const { return Json()["name"].get<std::string>(); }
+    [[nodiscard]] auto ImportName() const {
+      auto pkg_name = PackageName();
+      return pkg_name.substr(pkg_name.find('/') + 1);
+    }
 
     static std::string PackageNameRegex;
 

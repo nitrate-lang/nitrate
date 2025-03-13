@@ -31,58 +31,43 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <descent/Recurse.hh>
-#include <nitrate-parser/ASTStmt.hh>
+#ifndef __NITRATE_AST_IMPORT_CONFIG_H__
+#define __NITRATE_AST_IMPORT_CONFIG_H__
 
-using namespace ncc;
-using namespace ncc::lex;
-using namespace ncc::parse;
+#include <nitrate-parser/Package.hh>
+#include <unordered_set>
 
-auto GeneralParser::PImpl::RecurseAbiName() -> string {
-  auto tok = NextIf<Text>();
-  return tok ? tok->GetString() : "";
-}
+namespace ncc::parse {
+  class NCC_EXPORT ImportConfig final {
+    class PImpl;
+    std::unique_ptr<PImpl> m_impl;
 
-auto GeneralParser::PImpl::RecurseExportAttributes() -> std::vector<FlowPtr<Expr>> {
-  std::vector<FlowPtr<Expr>> attributes;
+  public:
+    static auto GetDefault() -> ImportConfig;
 
-  if (!NextIf<PuncLBrk>()) {
-    return attributes;
-  }
+    ImportConfig(const ImportName &this_package_name,
+                 const std::unordered_set<std::filesystem::path> &package_search_paths = {},
+                 const std::unordered_set<std::filesystem::path> &files_to_not_import = {});
+    ImportConfig(const ImportConfig &);
+    ImportConfig(ImportConfig &&) noexcept;
+    ~ImportConfig();
+    auto operator=(const ImportConfig &) -> ImportConfig &;
+    auto operator=(ImportConfig &&) noexcept -> ImportConfig &;
 
-  while (true) {
-    if (m_rd.IsEof()) [[unlikely]] {
-      Log << ParserSignal << Current() << "Encountered EOF while parsing export attributes";
-      return attributes;
-    }
+    [[nodiscard]] auto GetThisPackageNameChain() const -> const std::vector<std::string_view> &;
+    [[nodiscard]] auto GetThisPackageName() const -> const ImportName &;
+    [[nodiscard]] auto GetSearchPaths() const -> const std::unordered_set<std::filesystem::path> &;
+    [[nodiscard]] auto GetPackages() const -> const std::unordered_set<Package> &;
+    [[nodiscard]] auto GetFilesToNotImport() const -> const std::unordered_set<std::filesystem::path> &;
 
-    if (NextIf<PuncRBrk>()) {
-      return attributes;
-    }
+    auto SetThisPackageName(const ImportName &this_package_name) -> void;
+    auto SetSearchPaths(const std::unordered_set<std::filesystem::path> &package_search_paths) -> void;
+    auto ClearSearchPaths() -> void;
+    auto AddSearchPath(const std::filesystem::path &package_search_path) -> void;
+    auto AddFileToNotImport(const std::filesystem::path &file) -> void;
+    auto SetFilesToNotImport(const std::unordered_set<std::filesystem::path> &files_to_not_import) -> void;
+    auto ClearFilesToNotImport() -> void;
+  };
+}  // namespace ncc::parse
 
-    auto attribute = RecurseExpr({
-        Token(Punc, PuncComa),
-        Token(Punc, PuncRBrk),
-    });
-
-    attributes.push_back(attribute);
-
-    NextIf<PuncComa>();
-  }
-}
-
-auto GeneralParser::PImpl::RecurseExportBody() -> FlowPtr<Block> {
-  if (Peek().Is<PuncLCur>()) {
-    return RecurseBlock(true, false, BlockMode::Unknown);
-  }
-
-  return RecurseBlock(false, true, BlockMode::Unknown);
-}
-
-auto GeneralParser::PImpl::RecurseExport(Vis vis) -> FlowPtr<Expr> {
-  auto export_abi = RecurseAbiName();
-  auto export_attributes = RecurseExportAttributes();
-  auto export_body = RecurseExportBody();
-
-  return m_fac.CreateExport(export_body, export_attributes, vis, export_abi);
-}
+#endif  // __NITRATE_AST_PARSER_H__

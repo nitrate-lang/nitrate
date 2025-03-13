@@ -36,6 +36,8 @@
 #include <nitrate-lexer/Grammar.hh>
 #include <nitrate-lexer/Lexer.hh>
 #include <nitrate-parser/ASTBase.hh>
+#include <nitrate-parser/ASTExpr.hh>
+#include <nitrate-parser/ASTType.hh>
 #include <stack>
 #include <utility>
 
@@ -125,7 +127,7 @@ auto GeneralParser::PImpl::ParseFStringExpression(std::string_view source) -> Fl
 
       auto in_src = boost::iostreams::stream<boost::iostreams::array_source>(buf_view.data(), buf_view.size());
       auto scanner = Tokenizer(in_src, m_env);
-      auto subnode = GeneralParser(scanner, m_env, m_pool)
+      auto subnode = GeneralParser(scanner, m_env, m_pool, m_import_config)
                          .m_impl->RecurseExpr({
                              Token(Punc, PuncRCur),
                          });

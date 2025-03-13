@@ -51,7 +51,6 @@ static bool IsNitratePackage(const std::filesystem::path &path) {
                               OMNI_CATCH(std::filesystem::is_regular_file(path / "no3.nit")).value_or(false);
 
   if (!has_json_config && !has_nit_config) {
-    Log << Trace << "Package: IsPackage: No configuration file found in: " << path;
     return false;
   }
 
@@ -99,13 +98,13 @@ static auto IsDirectory(const std::filesystem::path &path) -> bool {
 
 class Package::PImpl {
 public:
-  string m_pkg_name;
+  ImportName m_pkg_name;
   LazyLoader m_loader;
 
-  PImpl(string name, LazyLoader loader) : m_pkg_name(name), m_loader(std::move(loader)) {}
+  PImpl(ImportName name, LazyLoader loader) : m_pkg_name(std::move(name)), m_loader(std::move(loader)) {}
 };
 
-Package::Package(string name, LazyLoader loader) : m_impl(std::make_shared<PImpl>(name, std::move(loader))) {}
+Package::Package(ImportName name, LazyLoader loader) : m_impl(std::make_shared<PImpl>(name, std::move(loader))) {}
 
 Package::Package(const Package &other) = default;
 
@@ -139,7 +138,7 @@ bool Package::operator==(const Package &other) const {
   return m_impl->m_pkg_name == other.m_impl->m_pkg_name;
 }
 
-auto Package::PackageName() const -> string { return m_impl ? m_impl->m_pkg_name : ""; }
+auto Package::PackageName() const -> ImportName { return m_impl ? m_impl->m_pkg_name : ImportName{""}; }
 
 auto Package::Read() const -> const std::optional<PackageContents> & {
   qcore_assert(m_impl != nullptr);
@@ -153,10 +152,31 @@ auto Package::CompileDirectory(std::filesystem::path folder_path) -> LazyLoader 
     PackageContents files;
 
     auto dir_it = OMNI_CATCH(std::filesystem::recursive_directory_iterator(path));
-    for (const auto &entry : *dir_it) {
+    if (!dir_it.has_value()) {
+      Log << Error << "Package: Failed to create recursive directory iterator: " << path.string();
+      return std::nullopt;
+    }
+
+    auto it = *dir_it;
+    while (it != std::filesystem::recursive_directory_iterator()) {
+      auto entry = *it;
+      if (!OMNI_CATCH(++it, 0)) {
+        Log << Debug << "Package: Failed to increment iterator: " << entry.path() << " (skipping)";
+        continue;
+      }
+
       if (OMNI_CATCH(std::filesystem::is_directory(entry.path())).value_or(false)) {
         Log << Trace << "Package: Skipping directory: " << entry.path();
         continue;
+      }
+
+      {  // Skip non source files
+        auto ext = entry.path().extension().string();
+        std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
+        if (ext != ".nit" && ext != ".n") {
+          Log << Trace << "Package: Skipping non-Nitrate file: " << entry.path();
+          continue;
+        }
       }
 
       auto loader = CompileFile(entry.path());
@@ -170,9 +190,9 @@ auto Package::CompileDirectory(std::filesystem::path folder_path) -> LazyLoader 
     }
 
     for (const auto &[path, content] : files) {
-      Log << Debug << "Package: Read file (" << path;
+      Log << Debug << "Package: Found file (" << path;
     }
-    Log << Trace << "Package: Read " << files.size() << " file(s) from directory: " << path.string();
+    Log << Trace << "Package: Found " << files.size() << " file(s) from directory: " << path.string();
 
     return files;
   });
@@ -207,13 +227,18 @@ auto Package::CompileFile(std::filesystem::path file_path) -> LazyLoader {
   return load;
 }
 
-auto ncc::parse::FindPackages(const std::vector<std::filesystem::path> &paths,
-                              const std::function<bool(const std::filesystem::path &)> &predicate)
+NCC_EXPORT auto ncc::parse::FindPackages(const std::unordered_set<std::filesystem::path> &paths,
+                                         const std::function<bool(const std::filesystem::path &)> &predicate)
     -> std::unordered_set<Package> {
   std::map<std::filesystem::path, bool> is_package_cache;
   std::unordered_set<Package> packages;
 
   for (auto path : paths) {
+    if (!OMNI_CATCH(std::filesystem::exists(path)).value_or(false)) {
+      ncc::Log << Debug << "Package: Path does not exist: " << path;
+      continue;
+    }
+
     auto path_abs = OMNI_CATCH(std::filesystem::absolute(path));
     if (!path_abs.has_value()) {
       ncc::Log << "Package: Failed to get absolute path: " << path;
@@ -228,7 +253,14 @@ auto ncc::parse::FindPackages(const std::vector<std::filesystem::path> &paths,
       continue;
     }
 
-    for (const auto &subpath : *recursive_it) {
+    auto it = *recursive_it;
+    while (it != std::filesystem::recursive_directory_iterator()) {
+      auto subpath = *it;
+      if (!OMNI_CATCH(++it, 0)) {
+        Log << Debug << "Package: Failed to increment iterator: " << subpath << " (skipping)";
+        continue;
+      }
+
       if (!IsDirectory(subpath.path())) {
         continue;
       }
@@ -236,7 +268,6 @@ auto ncc::parse::FindPackages(const std::vector<std::filesystem::path> &paths,
       const bool is_pkg = IsNitratePackage(subpath);
       is_package_cache[subpath.path()] = is_pkg;
       if (!is_pkg) {
-        Log << Trace << "Package: Skipping non-package directory: " << subpath;
         continue;
       }
 

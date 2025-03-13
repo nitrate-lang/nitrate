@@ -44,6 +44,29 @@
 #include <unordered_set>
 
 namespace ncc::parse {
+  class NCC_EXPORT ImportName final {
+    mutable std::optional<std::string> m_name;
+    mutable std::optional<std::vector<std::string_view>> m_chain;
+
+    static bool Validate(const std::string &name);
+
+  public:
+    ImportName() = default;
+    ImportName(std::string name);
+
+    bool operator==(const ImportName &other) const = default;
+    auto operator<=>(const ImportName &other) const = default;
+    auto operator*() const -> const std::string & { return GetName(); }
+    auto operator->() const -> const std::string * { return &GetName(); }
+    auto operator!() const -> bool { return !IsValid(); }
+
+    [[nodiscard]] auto GetName() const -> const std::string & { return m_name.value(); }
+    [[nodiscard]] auto IsValid() const -> bool { return m_name.has_value(); }
+    [[nodiscard]] auto GetChain() const -> const std::vector<std::string_view> &;
+  };
+
+  std::ostream &operator<<(std::ostream &os, const ImportName &name);
+
   class NCC_EXPORT Package final {
     class PImpl;
     mutable std::shared_ptr<PImpl> m_impl;
@@ -75,7 +98,7 @@ namespace ncc::parse {
     };
     using LazyLoader = LazyEval<std::optional<PackageContents>>;
 
-    Package(string name, LazyLoader loader);
+    Package(ImportName name, LazyLoader loader);
     Package(const Package &other);
     Package &operator=(const Package &other);
     Package(Package &&other) noexcept;
@@ -84,14 +107,14 @@ namespace ncc::parse {
 
     bool operator==(const Package &other) const;
 
-    [[nodiscard]] auto PackageName() const -> string;
+    [[nodiscard]] auto PackageName() const -> ImportName;
     [[nodiscard]] auto Read() const -> const std::optional<PackageContents> &;
 
     static auto CompileDirectory(std::filesystem::path folder_path) -> LazyLoader;
     static auto CompileFile(std::filesystem::path file_path) -> LazyLoader;
   };
 
-  auto FindPackages(const std::vector<std::filesystem::path> &paths,
+  auto FindPackages(const std::unordered_set<std::filesystem::path> &paths,
                     const std::function<bool(const std::filesystem::path &)> &predicate = nullptr)
       -> std::unordered_set<Package>;
 }  // namespace ncc::parse
@@ -100,7 +123,7 @@ namespace std {
   template <>
   struct hash<ncc::parse::Package> {
     auto operator()(const ncc::parse::Package &pkg) const -> size_t {
-      return std::hash<std::string>{}(pkg.PackageName());
+      return std::hash<std::string>{}(pkg.PackageName().GetName());
     }
   };
 }  // namespace std

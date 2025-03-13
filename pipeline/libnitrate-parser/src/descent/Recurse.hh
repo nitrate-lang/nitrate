@@ -42,11 +42,9 @@
 #include <nitrate-core/Logger.hh>
 #include <nitrate-lexer/Scanner.hh>
 #include <nitrate-parser/AST.hh>
-#include <nitrate-parser/ASTExpr.hh>
 #include <nitrate-parser/ASTFactory.hh>
-#include <nitrate-parser/ASTStmt.hh>
-#include <nitrate-parser/ASTType.hh>
 #include <nitrate-parser/Context.hh>
+#include <nitrate-parser/Package.hh>
 #include <set>
 
 namespace ncc::parse {
@@ -55,12 +53,21 @@ namespace ncc::parse {
   class GeneralParser::PImpl final {
     friend class GeneralParser;
 
+    std::unordered_set<std::filesystem::path> m_imported_files;
+    ImportConfig m_import_config;
     std::shared_ptr<IEnvironment> m_env;
     std::pmr::memory_resource &m_pool;
     ASTFactory m_fac;
     lex::IScanner &m_rd;
-    bool m_failed = false;
     size_t m_recursion_depth = 0;
+    bool m_failed = false;
+
+    auto CreateSubParser(lex::IScanner &scanner, std::pmr::memory_resource &pool) -> GeneralParser {
+      auto sub_parser = GeneralParser(scanner, m_env, pool, m_import_config);
+      sub_parser.m_impl->m_recursion_depth = m_recursion_depth;
+      sub_parser.m_impl->m_imported_files = m_imported_files;
+      return sub_parser;
+    }
 
     lex::Token Next() { return m_rd.Next(); }
     lex::Token Peek() { return m_rd.Peek(); }
@@ -208,13 +215,34 @@ namespace ncc::parse {
     [[nodiscard]] auto RecurseVariableInstance(VariableType decl_type) -> FlowPtr<Expr>;
     [[nodiscard]] auto RecurseWhileCond() -> FlowPtr<Expr>;
     [[nodiscard]] auto RecurseImportName() -> std::pair<string, ImportMode>;
-    [[nodiscard]] auto RecurseImportRegularFile(string import_file, ImportMode import_mode) -> FlowPtr<Expr>;
-    [[nodiscard]] auto RecurseImportPackage(string import_name, ImportMode import_mode) -> FlowPtr<Expr>;
+    [[nodiscard]] auto RecurseImportRegularFile(const std::filesystem::path &import_file,
+                                                ImportMode import_mode) -> FlowPtr<Expr>;
+    [[nodiscard]] auto RecurseImportPackage(const ImportName &import_name) -> FlowPtr<Expr>;
     void PrepareImportSubgraph(const FlowPtr<Expr> &root);
 
+    static inline std::vector<std::string> SplitPackageName(const std::string &package_name) {
+      std::vector<std::string> parts;
+      std::string package_view(package_name);
+
+      while (!package_view.empty()) {
+        auto pos = package_view.find_first_of("::");
+        if (pos == std::string_view::npos) {
+          parts.push_back(package_view);
+          break;
+        }
+
+        parts.push_back(package_view.substr(0, pos));
+        package_view.erase(0, pos + 2);
+      }
+
+      return parts;
+    }
+
   public:
-    PImpl(lex::IScanner &lexer, std::shared_ptr<IEnvironment> env, std::pmr::memory_resource &pool)
-        : m_env(std::move(env)), m_pool(pool), m_fac(m_pool), m_rd(lexer) {}
+    PImpl(lex::IScanner &lexer, ImportConfig import_config, std::shared_ptr<IEnvironment> env,
+          std::pmr::memory_resource &pool)
+        : m_import_config(std::move(import_config)), m_env(std::move(env)), m_pool(pool), m_fac(m_pool), m_rd(lexer) {}
+
     ~PImpl() = default;
   };
 

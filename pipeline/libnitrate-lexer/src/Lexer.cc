@@ -1295,7 +1295,7 @@ Tokenizer::~Tokenizer() = default;
 auto Tokenizer::GetSourceWindow(Point start, Point end, char fillchar) -> std::optional<std::vector<std::string>> {
   Impl &impl = *m_impl;
 
-  if (start.m_x > end.m_x || (start.m_x == end.m_x && start.m_y > end.m_y)) {
+  if (start.m_y > end.m_y || (start.m_y == end.m_y && start.m_x > end.m_x)) {
     Log << "Invalid source window range";
     return std::nullopt;
   }

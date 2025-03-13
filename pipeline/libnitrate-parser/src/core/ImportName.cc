@@ -31,58 +31,59 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <descent/Recurse.hh>
-#include <nitrate-parser/ASTStmt.hh>
+#include <nitrate-core/Logger.hh>
+#include <nitrate-parser/Package.hh>
 
-using namespace ncc;
-using namespace ncc::lex;
 using namespace ncc::parse;
 
-auto GeneralParser::PImpl::RecurseAbiName() -> string {
-  auto tok = NextIf<Text>();
-  return tok ? tok->GetString() : "";
+bool ImportName::Validate(const std::string &name) {
+  /// TODO: Validate the import name
+  (void)name;
+  return true;
 }
 
-auto GeneralParser::PImpl::RecurseExportAttributes() -> std::vector<FlowPtr<Expr>> {
-  std::vector<FlowPtr<Expr>> attributes;
-
-  if (!NextIf<PuncLBrk>()) {
-    return attributes;
+ImportName::ImportName(std::string name) {
+  if (Validate(name)) {
+    m_name = std::move(name);
+    return;
   }
 
-  while (true) {
-    if (m_rd.IsEof()) [[unlikely]] {
-      Log << ParserSignal << Current() << "Encountered EOF while parsing export attributes";
-      return attributes;
+  Log << Trace << "ImportName: Not valid: " << name;
+}
+
+auto ImportName::GetChain() const -> const std::vector<std::string_view> & {
+  if (!m_chain.has_value()) [[unlikely]] {
+    if (!m_name.has_value()) {
+      m_chain = {};
+      return m_chain.value();
     }
 
-    if (NextIf<PuncRBrk>()) {
-      return attributes;
+    std::vector<std::string_view> chain;
+    std::string_view name = *m_name;
+
+    while (!name.empty()) {
+      auto pos = name.find_first_of("::");
+      if (pos == std::string_view::npos) {
+        chain.push_back(name);
+        break;
+      }
+
+      chain.push_back(name.substr(0, pos));
+      name.remove_prefix(pos + 2);
     }
 
-    auto attribute = RecurseExpr({
-        Token(Punc, PuncComa),
-        Token(Punc, PuncRBrk),
-    });
-
-    attributes.push_back(attribute);
-
-    NextIf<PuncComa>();
-  }
-}
-
-auto GeneralParser::PImpl::RecurseExportBody() -> FlowPtr<Block> {
-  if (Peek().Is<PuncLCur>()) {
-    return RecurseBlock(true, false, BlockMode::Unknown);
+    m_chain = std::move(chain);
   }
 
-  return RecurseBlock(false, true, BlockMode::Unknown);
+  return m_chain.value();
 }
 
-auto GeneralParser::PImpl::RecurseExport(Vis vis) -> FlowPtr<Expr> {
-  auto export_abi = RecurseAbiName();
-  auto export_attributes = RecurseExportAttributes();
-  auto export_body = RecurseExportBody();
+std::ostream &ncc::parse::operator<<(std::ostream &os, const ImportName &name) {
+  if (name.IsValid()) {
+    os << name.GetName();
+  } else {
+    os << "<invalid>";
+  }
 
-  return m_fac.CreateExport(export_body, export_attributes, vis, export_abi);
+  return os;
 }
