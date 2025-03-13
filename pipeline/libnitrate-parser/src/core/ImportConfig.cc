@@ -41,15 +41,13 @@ public:
   ImportName m_package_name;
   std::vector<std::filesystem::path> m_package_search_path;
   std::vector<std::string_view> m_package_name_chain;
-  std::unordered_set<Package> m_packages;
+  mutable std::optional<std::unordered_set<Package>> m_packages;
 
   PImpl(ImportName package_name, std::vector<std::filesystem::path> package_search_path)
       : m_package_name(std::move(package_name)), m_package_search_path(std::move(package_search_path)) {
     if (m_package_name.IsValid()) {
       m_package_name_chain = m_package_name.GetChain();
     }
-
-    m_packages = FindPackages(m_package_search_path);
   }
 };
 
@@ -94,11 +92,36 @@ auto ImportConfig::GetThisPackageName() const -> const ImportName & {
 
 auto ImportConfig::GetPackages() const -> const std::unordered_set<Package> & {
   qcore_assert(m_impl != nullptr);
-  return m_impl->m_packages;
+  if (!m_impl->m_packages.has_value()) {
+    m_impl->m_packages = FindPackages(m_impl->m_package_search_path);
+  }
+
+  return m_impl->m_packages.value();
+}
+
+static std::optional<std::vector<std::filesystem::path>> GetSearchPathFromEnv() {
+  const char *env = std::getenv("NCC_PACKAGE_PATH");
+  if (env == nullptr) {
+    return std::nullopt;
+  }
+
+  std::vector<std::filesystem::path> paths;
+  std::string_view env_str(env);
+  std::string_view::size_type start = 0;
+  std::string_view::size_type end = env_str.find_first_of(':');
+  while (end != std::string_view::npos) {
+    paths.emplace_back(env_str.substr(start, end - start));
+    start = end + 1;
+    end = env_str.find_first_of(':', start);
+  }
+  paths.emplace_back(env_str.substr(start));
+
+  return paths;
 }
 
 auto ImportConfig::GetDefault() -> ImportConfig {
-  ImportName name;
-  ImportConfig config(name, {});
+  ImportName name{};  // empty name
+  auto paths = GetSearchPathFromEnv();
+  ImportConfig config(name, paths.value_or(std::vector<std::filesystem::path>{}));
   return config;
 }

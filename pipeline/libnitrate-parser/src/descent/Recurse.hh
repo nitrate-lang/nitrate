@@ -56,6 +56,7 @@ namespace ncc::parse {
   class GeneralParser::PImpl final {
     friend class GeneralParser;
 
+    std::unordered_set<string> m_imported_packages;
     ImportConfig m_import_config;
     std::shared_ptr<IEnvironment> m_env;
     std::pmr::memory_resource &m_pool;
@@ -63,6 +64,13 @@ namespace ncc::parse {
     lex::IScanner &m_rd;
     size_t m_recursion_depth = 0;
     bool m_failed = false;
+
+    auto CreateSubParser(lex::IScanner &scanner, std::pmr::memory_resource &pool) -> GeneralParser {
+      auto sub_parser = GeneralParser(scanner, m_env, pool, m_import_config);
+      sub_parser.m_impl->m_recursion_depth = m_recursion_depth;
+      sub_parser.m_impl->m_imported_packages = m_imported_packages;
+      return sub_parser;
+    }
 
     lex::Token Next() { return m_rd.Next(); }
     lex::Token Peek() { return m_rd.Peek(); }

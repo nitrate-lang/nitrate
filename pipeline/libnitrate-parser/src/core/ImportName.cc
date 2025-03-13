@@ -66,8 +66,6 @@ auto ImportName::GetChain() const -> std::vector<std::string_view> {
     name.remove_prefix(pos + 2);
   }
 
-  Log << Trace << "ImportName: \"" << *m_name << "\" -> " << chain.size() << " parts";
-
   return chain;
 }
 

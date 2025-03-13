@@ -394,8 +394,7 @@ auto GeneralParser::PImpl::RecurseImportRegularFile(const std::filesystem::path 
 
       Log << Trace << "RecurseImport: Creating subparser for: " << abs_import_path;
 
-      auto subparser = GeneralParser(scanner, m_env, m_pool, m_import_config);
-      subparser.m_impl->m_recursion_depth = m_recursion_depth;
+      auto subparser = CreateSubParser(scanner, m_pool);
       auto subtree = subparser.m_impl->RecurseBlock(false, false, BlockMode::Unknown);
 
       const auto &importer_name = m_import_config.GetThisPackageNameChain();
@@ -480,12 +479,7 @@ auto GeneralParser::PImpl::RecurseImportRegularFile(const std::filesystem::path 
     ParserSwapScanner(scanner_ptr);
 
     Log << Trace << "RecurseImport: Creating subparser for: " << name;
-    auto subparser = GeneralParser(scanner, m_env, m_pool, m_import_config);
-
-    // Preserve the recursion depth for the subparser
-    subparser.m_impl->m_recursion_depth = m_recursion_depth;
-
-    // Perform the parsing of the package file
+    auto subparser = CreateSubParser(scanner, m_pool);
     auto subtree = subparser.m_impl->RecurseBlock(false, false, BlockMode::Unknown);
 
     // Prepare the subgraph by stripping out unnecessary nodes and
@@ -523,6 +517,15 @@ auto GeneralParser::PImpl::RecurseImport() -> FlowPtr<Expr> {
   const auto [import_name_precheck, import_mode] = RecurseImportName();
   const bool is_regular_file =
       import_name_precheck->find("/") != std::string::npos || import_name_precheck->find("\\") != std::string::npos;
+
+  { /* Try to prevent infinite import recursion */
+    if (m_imported_packages.contains(*import_name_precheck)) {
+      Log << ParserSignal << Current() << "Detected circular import: " << import_name_precheck;
+      return m_fac.CreateMockInstance<Import>();
+    }
+
+    m_imported_packages.insert(*import_name_precheck);
+  }
 
   if (is_regular_file) {
     return RecurseImportRegularFile(*import_name_precheck, import_mode);

@@ -37,7 +37,7 @@
 #include <nitrate-parser/Package.hh>
 
 namespace ncc::parse {
-  class ImportConfig final {
+  class NCC_EXPORT ImportConfig final {
     class PImpl;
     std::unique_ptr<PImpl> m_impl;
 
