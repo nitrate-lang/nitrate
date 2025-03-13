@@ -53,7 +53,7 @@ namespace ncc::parse {
   class GeneralParser::PImpl final {
     friend class GeneralParser;
 
-    std::unordered_set<string> m_imported_packages;
+    std::unordered_set<std::filesystem::path> m_imported_files;
     ImportConfig m_import_config;
     std::shared_ptr<IEnvironment> m_env;
     std::pmr::memory_resource &m_pool;
@@ -65,7 +65,7 @@ namespace ncc::parse {
     auto CreateSubParser(lex::IScanner &scanner, std::pmr::memory_resource &pool) -> GeneralParser {
       auto sub_parser = GeneralParser(scanner, m_env, pool, m_import_config);
       sub_parser.m_impl->m_recursion_depth = m_recursion_depth;
-      sub_parser.m_impl->m_imported_packages = m_imported_packages;
+      sub_parser.m_impl->m_imported_files = m_imported_files;
       return sub_parser;
     }
 

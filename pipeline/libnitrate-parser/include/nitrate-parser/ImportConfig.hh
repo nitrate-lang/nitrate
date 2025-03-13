@@ -35,6 +35,7 @@
 #define __NITRATE_AST_IMPORT_CONFIG_H__
 
 #include <nitrate-parser/Package.hh>
+#include <unordered_set>
 
 namespace ncc::parse {
   class NCC_EXPORT ImportConfig final {
@@ -45,7 +46,8 @@ namespace ncc::parse {
     static auto GetDefault() -> ImportConfig;
 
     ImportConfig(const ImportName &this_package_name,
-                 const std::vector<std::filesystem::path> &package_search_paths = {});
+                 const std::unordered_set<std::filesystem::path> &package_search_paths = {},
+                 const std::unordered_set<std::filesystem::path> &files_to_not_import = {});
     ImportConfig(const ImportConfig &);
     ImportConfig(ImportConfig &&) noexcept;
     ~ImportConfig();
@@ -54,8 +56,17 @@ namespace ncc::parse {
 
     [[nodiscard]] auto GetThisPackageNameChain() const -> const std::vector<std::string_view> &;
     [[nodiscard]] auto GetThisPackageName() const -> const ImportName &;
-    [[nodiscard]] auto GetSearchPaths() const -> const std::vector<std::filesystem::path> &;
+    [[nodiscard]] auto GetSearchPaths() const -> const std::unordered_set<std::filesystem::path> &;
     [[nodiscard]] auto GetPackages() const -> const std::unordered_set<Package> &;
+    [[nodiscard]] auto GetFilesToNotImport() const -> const std::unordered_set<std::filesystem::path> &;
+
+    auto SetThisPackageName(const ImportName &this_package_name) -> void;
+    auto SetSearchPaths(const std::unordered_set<std::filesystem::path> &package_search_paths) -> void;
+    auto ClearSearchPaths() -> void;
+    auto AddSearchPath(const std::filesystem::path &package_search_path) -> void;
+    auto AddFileToNotImport(const std::filesystem::path &file) -> void;
+    auto SetFilesToNotImport(const std::unordered_set<std::filesystem::path> &files_to_not_import) -> void;
+    auto ClearFilesToNotImport() -> void;
   };
 }  // namespace ncc::parse
 

@@ -33,18 +33,23 @@
 
 #include <nitrate-core/Logger.hh>
 #include <nitrate-parser/ImportConfig.hh>
+#include <unordered_set>
 
 using namespace ncc::parse;
 
 class ImportConfig::PImpl {
 public:
   ImportName m_package_name;
-  std::vector<std::filesystem::path> m_package_search_path;
+  std::unordered_set<std::filesystem::path> m_package_search_path;
+  std::unordered_set<std::filesystem::path> m_files_to_not_import;
   std::vector<std::string_view> m_package_name_chain;
   mutable std::optional<std::unordered_set<Package>> m_packages;
 
-  PImpl(ImportName package_name, std::vector<std::filesystem::path> package_search_path)
-      : m_package_name(std::move(package_name)), m_package_search_path(std::move(package_search_path)) {
+  PImpl(ImportName package_name, std::unordered_set<std::filesystem::path> package_search_path,
+        std::unordered_set<std::filesystem::path> files_to_not_import)
+      : m_package_name(std::move(package_name)),
+        m_package_search_path(std::move(package_search_path)),
+        m_files_to_not_import(std::move(files_to_not_import)) {
     if (m_package_name.IsValid()) {
       m_package_name_chain = m_package_name.GetChain();
     }
@@ -52,8 +57,9 @@ public:
 };
 
 ImportConfig::ImportConfig(const ImportName &package_name,
-                           const std::vector<std::filesystem::path> &package_search_path)
-    : m_impl(std::make_unique<PImpl>(package_name, package_search_path)) {}
+                           const std::unordered_set<std::filesystem::path> &package_search_path,
+                           const std::unordered_set<std::filesystem::path> &files_to_not_import)
+    : m_impl(std::make_unique<PImpl>(package_name, package_search_path, files_to_not_import)) {}
 
 ImportConfig::ImportConfig(const ImportConfig &other) : m_impl(std::make_unique<PImpl>(*other.m_impl)) {}
 
@@ -80,7 +86,7 @@ auto ImportConfig::GetThisPackageNameChain() const -> const std::vector<std::str
   return m_impl->m_package_name_chain;
 }
 
-auto ImportConfig::GetSearchPaths() const -> const std::vector<std::filesystem::path> & {
+auto ImportConfig::GetSearchPaths() const -> const std::unordered_set<std::filesystem::path> & {
   qcore_assert(m_impl != nullptr);
   return m_impl->m_package_search_path;
 }
@@ -99,29 +105,73 @@ auto ImportConfig::GetPackages() const -> const std::unordered_set<Package> & {
   return m_impl->m_packages.value();
 }
 
-static std::optional<std::vector<std::filesystem::path>> GetSearchPathFromEnv() {
+auto ImportConfig::GetFilesToNotImport() const -> const std::unordered_set<std::filesystem::path> & {
+  qcore_assert(m_impl != nullptr);
+  return m_impl->m_files_to_not_import;
+}
+
+///=============================================================================
+
+auto ImportConfig::SetThisPackageName(const ImportName &this_package_name) -> void {
+  qcore_assert(m_impl != nullptr);
+  m_impl->m_package_name = this_package_name;
+}
+
+auto ImportConfig::SetSearchPaths(const std::unordered_set<std::filesystem::path> &package_search_paths) -> void {
+  qcore_assert(m_impl != nullptr);
+  m_impl->m_package_search_path = package_search_paths;
+}
+
+auto ImportConfig::AddSearchPath(const std::filesystem::path &package_search_path) -> void {
+  qcore_assert(m_impl != nullptr);
+  m_impl->m_package_search_path.insert(package_search_path);
+}
+
+auto ImportConfig::ClearSearchPaths() -> void {
+  qcore_assert(m_impl != nullptr);
+  m_impl->m_package_search_path.clear();
+}
+
+auto ImportConfig::AddFileToNotImport(const std::filesystem::path &file) -> void {
+  qcore_assert(m_impl != nullptr);
+  m_impl->m_files_to_not_import.insert(file);
+}
+
+auto ImportConfig::SetFilesToNotImport(const std::unordered_set<std::filesystem::path> &files_to_not_import) -> void {
+  qcore_assert(m_impl != nullptr);
+  m_impl->m_files_to_not_import = files_to_not_import;
+}
+
+auto ImportConfig::ClearFilesToNotImport() -> void {
+  qcore_assert(m_impl != nullptr);
+  m_impl->m_files_to_not_import.clear();
+}
+
+///=============================================================================
+
+static std::optional<std::unordered_set<std::filesystem::path>> GetSearchPathFromEnv() {
   const char *env = std::getenv("NCC_PACKAGE_PATH");
   if (env == nullptr) {
     return std::nullopt;
   }
 
-  std::vector<std::filesystem::path> paths;
+  std::unordered_set<std::filesystem::path> paths;
   std::string_view env_str(env);
   std::string_view::size_type start = 0;
   std::string_view::size_type end = env_str.find_first_of(':');
   while (end != std::string_view::npos) {
-    paths.emplace_back(env_str.substr(start, end - start));
+    paths.emplace(env_str.substr(start, end - start));
     start = end + 1;
     end = env_str.find_first_of(':', start);
   }
-  paths.emplace_back(env_str.substr(start));
+  paths.emplace(env_str.substr(start));
 
   return paths;
 }
 
 auto ImportConfig::GetDefault() -> ImportConfig {
-  ImportName name{};  // empty name
+  ImportName name("");  // empty name
   auto paths = GetSearchPathFromEnv();
-  ImportConfig config(name, paths.value_or(std::vector<std::filesystem::path>{}));
+  ImportConfig config(name, paths.value_or(std::unordered_set<std::filesystem::path>{}));
   return config;
 }

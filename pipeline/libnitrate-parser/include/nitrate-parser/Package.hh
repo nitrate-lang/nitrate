@@ -46,6 +46,7 @@
 namespace ncc::parse {
   class NCC_EXPORT ImportName final {
     mutable std::optional<std::string> m_name;
+    mutable std::optional<std::vector<std::string_view>> m_chain;
 
     static bool Validate(const std::string &name);
 
@@ -61,8 +62,7 @@ namespace ncc::parse {
 
     [[nodiscard]] auto GetName() const -> const std::string & { return m_name.value(); }
     [[nodiscard]] auto IsValid() const -> bool { return m_name.has_value(); }
-
-    [[nodiscard]] auto GetChain() const -> std::vector<std::string_view>;
+    [[nodiscard]] auto GetChain() const -> const std::vector<std::string_view> &;
   };
 
   std::ostream &operator<<(std::ostream &os, const ImportName &name);
@@ -114,7 +114,7 @@ namespace ncc::parse {
     static auto CompileFile(std::filesystem::path file_path) -> LazyLoader;
   };
 
-  auto FindPackages(const std::vector<std::filesystem::path> &paths,
+  auto FindPackages(const std::unordered_set<std::filesystem::path> &paths,
                     const std::function<bool(const std::filesystem::path &)> &predicate = nullptr)
       -> std::unordered_set<Package>;
 }  // namespace ncc::parse

@@ -51,22 +51,31 @@ ImportName::ImportName(std::string name) {
   Log << Trace << "ImportName: Not valid: " << name;
 }
 
-auto ImportName::GetChain() const -> std::vector<std::string_view> {
-  std::vector<std::string_view> chain;
-  std::string_view name = *m_name;
-
-  while (!name.empty()) {
-    auto pos = name.find_first_of("::");
-    if (pos == std::string_view::npos) {
-      chain.push_back(name);
-      break;
+auto ImportName::GetChain() const -> const std::vector<std::string_view> & {
+  if (!m_chain.has_value()) [[unlikely]] {
+    if (!m_name.has_value()) {
+      m_chain = {};
+      return m_chain.value();
     }
 
-    chain.push_back(name.substr(0, pos));
-    name.remove_prefix(pos + 2);
+    std::vector<std::string_view> chain;
+    std::string_view name = *m_name;
+
+    while (!name.empty()) {
+      auto pos = name.find_first_of("::");
+      if (pos == std::string_view::npos) {
+        chain.push_back(name);
+        break;
+      }
+
+      chain.push_back(name.substr(0, pos));
+      name.remove_prefix(pos + 2);
+    }
+
+    m_chain = std::move(chain);
   }
 
-  return chain;
+  return m_chain.value();
 }
 
 std::ostream &ncc::parse::operator<<(std::ostream &os, const ImportName &name) {
