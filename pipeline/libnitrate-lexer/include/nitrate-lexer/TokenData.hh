@@ -49,7 +49,7 @@ namespace ncc::lex {
     constexpr TokenData(Keyword key) : m_key(key) {}
     constexpr TokenData(string str) : m_str(str) {}
 
-    static constexpr TokenData GetDefault(TokenType ty) {
+    static constexpr auto GetDefault(TokenType ty) -> TokenData {
       switch (ty) {
         case EofF:
           return Operator();
@@ -72,7 +72,7 @@ namespace ncc::lex {
     }
   } __attribute__((packed));
 
-  string to_string(TokenType, TokenData);  // NOLINT(readability-identifier-naming)
+  auto to_string(TokenType, TokenData) -> string;  // NOLINT(readability-identifier-naming)
 }  // namespace ncc::lex
 
 #endif
