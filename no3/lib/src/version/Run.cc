@@ -32,7 +32,6 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <boost/predef.h>
-#include <nitrate-emit/Lib.h>
 
 #include <boost/uuid/name_generator_sha1.hpp>
 #include <boost/uuid/uuid.hpp>
@@ -44,7 +43,6 @@
 #include <iostream>
 #include <nitrate-core/Init.hh>
 #include <nitrate-core/LogOStream.hh>
-#include <nitrate-ir/Init.hh>
 #include <nitrate-lexer/Init.hh>
 #include <nitrate-parser/Init.hh>
 #include <nitrate-seq/Init.hh>

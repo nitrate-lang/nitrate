@@ -33,7 +33,6 @@
 
 #include <core/PackageConfigFormat.pb.h>
 #include <git2/global.h>
-#include <nitrate-emit/Lib.h>
 
 #include <atomic>
 #include <curlpp/cURLpp.hpp>
@@ -42,7 +41,6 @@
 #include <nitrate-core/Init.hh>
 #include <nitrate-core/Logger.hh>
 #include <nitrate-core/Macro.hh>
-#include <nitrate-ir/Init.hh>
 #include <nitrate-lexer/Init.hh>
 #include <nitrate-parser/Init.hh>
 #include <nitrate-seq/Init.hh>
@@ -177,16 +175,6 @@ static bool PerformInitialize(std::ostream& log) {
     return false;
   }
 
-  if (!ir::IRLibrary.InitRC()) {
-    log << "Failed to initialize libnitrate-ir library" << std::endl;
-    return false;
-  }
-
-  if (!QcodeLibInit()) {
-    log << "Failed to initialize libnitrate-emit library" << std::endl;
-    return false;
-  }
-
   curlpp::initialize(CURL_GLOBAL_ALL);
 
   if (git_libgit2_init() <= 0) {
@@ -208,8 +196,6 @@ static void PerformDeinitialize() {
 
   git_libgit2_shutdown();
   // curlpp is not refcounted - curlpp::terminate();
-  QcodeLibDeinit();
-  ir::IRLibrary.DeinitRC();
   parse::ParseLibrary.DeinitRC();
   seq::SeqLibrary.DeinitRC();
   lex::LexerLibrary.DeinitRC();

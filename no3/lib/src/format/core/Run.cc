@@ -467,10 +467,9 @@ bool no3::Interpreter::PImpl::CommandFormat(ConstArguments, const MutArguments& 
 
   Log << Debug << "Formatting " << mapping_opt.size() << " source file(s).";
 
-  /// FIXME: Implement the import configuration
   ncc::parse::ImportConfig import_config = ncc::parse::ImportConfig::GetDefault();
   if (this_import_name_opt.has_value()) {
-    import_config.SetThisPackageName(this_import_name_opt.value());
+    import_config.SetThisImportName(this_import_name_opt.value());
   }
 
   size_t success_count = 0;

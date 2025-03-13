@@ -6,8 +6,8 @@ file(GLOB_RECURSE TEST_SOURCES "src/*.cc")
 add_library(nitrate-testing SHARED ${TEST_SOURCES})
 target_link_libraries(nitrate-testing PUBLIC
   nitrate
-  nitrate-emit
-  nitrate-ir
+  # nitrate-emit
+  # nitrate-ir
   nitrate-parser
   nitrate-lexer
   nitrate-seq
@@ -19,12 +19,13 @@ target_include_directories(nitrate-testing PRIVATE
   ${CMAKE_SOURCE_DIR}/libnitrate-lexer/include
   ${CMAKE_SOURCE_DIR}/libnitrate-seq/include
   ${CMAKE_SOURCE_DIR}/libnitrate-parser/include
-  ${CMAKE_SOURCE_DIR}/libnitrate-ir/include
-  ${CMAKE_SOURCE_DIR}/libnitrate-emit/include)
+  # ${CMAKE_SOURCE_DIR}/libnitrate-ir/include
+  # ${CMAKE_SOURCE_DIR}/libnitrate-emit/include
+)
 add_dependencies(nitrate-testing
   nitrate
-  nitrate-emit
-  nitrate-ir
+  # nitrate-emit
+  # nitrate-ir
   nitrate-parser
   nitrate-lexer
   nitrate-seq

@@ -31,13 +31,11 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <nitrate-emit/Lib.h>
 #include <nitrate/code.h>
 
 #include <atomic>
 #include <nitrate-core/Init.hh>
 #include <nitrate-core/Macro.hh>
-#include <nitrate-ir/Init.hh>
 #include <nitrate-lexer/Init.hh>
 #include <nitrate-parser/Init.hh>
 #include <nitrate-seq/Init.hh>
@@ -65,14 +63,6 @@ auto NitLibInit() -> bool {
     return false;
   }
 
-  if (!ncc::ir::IRLibrary.InitRC()) {
-    return false;
-  }
-
-  if (!QcodeLibInit()) {
-    return false;
-  }
-
   return true;
 }
 
@@ -81,8 +71,6 @@ void NitDeinit() {
     return;
   }
 
-  QcodeLibDeinit();
-  ncc::ir::IRLibrary.DeinitRC();
   ncc::parse::ParseLibrary.DeinitRC();
   ncc::seq::SeqLibrary.DeinitRC();
   ncc::lex::LexerLibrary.DeinitRC();
