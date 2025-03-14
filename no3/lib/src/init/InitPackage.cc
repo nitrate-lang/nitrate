@@ -43,7 +43,7 @@
 using namespace ncc;
 using namespace no3::package;
 
-static bool CreateDirectories(const std::filesystem::path& path) {
+static auto CreateDirectories(const std::filesystem::path& path) -> bool {
   Log << Trace << "Creating directories at: " << path;
 
   auto dirs_exists = OMNI_CATCH(std::filesystem::exists(path));
@@ -68,7 +68,7 @@ static bool CreateDirectories(const std::filesystem::path& path) {
   return true;
 }
 
-static bool CreateLocalFile(const std::filesystem::path& path, std::string_view init) {
+static auto CreateLocalFile(const std::filesystem::path& path, std::string_view init) -> bool {
   Log << Trace << "Creating a local file at: " << path;
 
   auto file_exists = OMNI_CATCH(std::filesystem::exists(path));
@@ -102,7 +102,7 @@ static bool CreateLocalFile(const std::filesystem::path& path, std::string_view 
   return true;
 }
 
-static bool InitPackageDirectoryStructure(const std::filesystem::path& package_path, const InitOptions& options) {
+static auto InitPackageDirectoryStructure(const std::filesystem::path& package_path, const InitOptions& options) -> bool {
   Log << Trace << "Initializing a the default package files at: " << package_path;
 
   if (!CreateLocalFile(package_path / "docs" / ".gitkeep", GenerateGitKeep())) {
@@ -186,7 +186,7 @@ static bool InitPackageDirectoryStructure(const std::filesystem::path& package_p
   return true;
 }
 
-static bool InitPackageRepository(const std::filesystem::path& package_path) {
+static auto InitPackageRepository(const std::filesystem::path& package_path) -> bool {
   Log << Trace << "Initializing a git repository in: " << package_path;
 
   git_repository* repo = nullptr;
@@ -203,7 +203,7 @@ static bool InitPackageRepository(const std::filesystem::path& package_path) {
   return true;
 }
 
-bool no3::package::CreatePackage(const std::filesystem::path& package_path, const InitOptions& options) {
+auto no3::package::CreatePackage(const std::filesystem::path& package_path, const InitOptions& options) -> bool {
   Log << Trace << "Initializing a new package at: " << package_path;
 
   auto package_path_exists = OMNI_CATCH(std::filesystem::exists(package_path));

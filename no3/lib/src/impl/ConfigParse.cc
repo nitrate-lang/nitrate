@@ -59,7 +59,7 @@ Optional arguments:
   Log << Raw << message;
 }
 
-bool no3::cmd_impl::subcommands::CommandImplConfigParse(ConstArguments, const MutArguments& argv) {
+auto no3::cmd_impl::subcommands::CommandImplConfigParse(ConstArguments, const MutArguments& argv) -> bool {
   argh::parser cmdl;
   cmdl.add_params({"help", "minify", "C", "to", "t", "output", "o"});
   cmdl.parse(argv, argh::parser::SINGLE_DASH_IS_MULTIFLAG);

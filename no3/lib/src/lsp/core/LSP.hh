@@ -113,11 +113,11 @@ namespace no3::lsp::protocol {
     [[nodiscard]] constexpr auto GetInt() const { return std::stoll(m_data); }
     [[nodiscard]] auto GetString() const { return m_data; }
 
-    [[nodiscard]] constexpr bool operator==(const MessageId& o) const {
+    [[nodiscard]] constexpr auto operator==(const MessageId& o) const -> bool {
       return m_kind == o.m_kind && m_data == o.m_data;
     }
 
-    [[nodiscard]] constexpr bool operator<(const MessageId& o) const {
+    [[nodiscard]] constexpr auto operator<(const MessageId& o) const -> bool {
       if (m_kind != o.m_kind) {
         return m_kind < o.m_kind;
       }
@@ -135,11 +135,11 @@ namespace no3::lsp::protocol {
     RequestMessage(auto id, auto method, auto params)
         : m_params(std::move(params)), m_method(std::move(method)), m_id(std::move(id)) {}
 
-    [[nodiscard]] constexpr bool operator==(const RequestMessage& o) const {
+    [[nodiscard]] constexpr auto operator==(const RequestMessage& o) const -> bool {
       return m_id == o.m_id && m_method == o.m_method && m_params == o.m_params;
     }
 
-    [[nodiscard]] constexpr size_t GetHash() const {
+    [[nodiscard]] constexpr auto GetHash() const -> size_t {
       /// FIXME: Fix the hash function
       return std::hash<String>{}(m_method);
     }
@@ -157,11 +157,11 @@ namespace no3::lsp::protocol {
     NotificationMessage(String method, nlohmann::json params)
         : m_method(std::move(method)), m_params(std::move(params)) {}
 
-    [[nodiscard]] constexpr bool operator==(const NotificationMessage& o) const {
+    [[nodiscard]] constexpr auto operator==(const NotificationMessage& o) const -> bool {
       return m_method == o.m_method && m_params == o.m_params;
     }
 
-    [[nodiscard]] constexpr size_t GetHash() const {
+    [[nodiscard]] constexpr auto GetHash() const -> size_t {
       /// FIXME: Fix the hash function
       return std::hash<String>{}(m_method);
     }
@@ -178,7 +178,7 @@ namespace no3::lsp::protocol {
     ResponseError(auto code, auto message, auto data)
         : m_data(std::move(data)), m_message(std::move(message)), m_code(code) {}
 
-    [[nodiscard]] constexpr bool operator==(const ResponseError& o) const {
+    [[nodiscard]] constexpr auto operator==(const ResponseError& o) const -> bool {
       return m_code == o.m_code && m_message == o.m_message && m_data == o.m_data;
     }
   };
@@ -203,11 +203,11 @@ namespace no3::lsp::protocol {
       }
     }
 
-    [[nodiscard]] constexpr bool operator==(const ResponseMessage& o) const {
+    [[nodiscard]] constexpr auto operator==(const ResponseMessage& o) const -> bool {
       return m_id == o.m_id && m_result == o.m_result && m_error == o.m_error;
     }
 
-    [[nodiscard]] size_t GetHash() const {
+    [[nodiscard]] auto GetHash() const -> size_t {
       /// FIXME: Fix the hash function
       return std::hash<String>{}(m_id.GetString());
     }

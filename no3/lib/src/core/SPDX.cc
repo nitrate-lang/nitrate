@@ -41,7 +41,7 @@
 
 using namespace ncc;
 
-static size_t Levenstein(std::string_view a, std::string_view b) {
+static auto Levenstein(std::string_view a, std::string_view b) -> size_t {
   /// BY: https://chatgpt.com/share/67c8cc55-73dc-8001-b7ca-7da50b9d5410
 
   size_t m = a.size();
@@ -71,7 +71,7 @@ static size_t Levenstein(std::string_view a, std::string_view b) {
   return dp(0, 0);
 }
 
-std::string_view no3::constants::FindClosestSPDXLicense(std::string query) {
+auto no3::constants::FindClosestSPDXLicense(std::string query) -> std::string_view {
   size_t minv = -1;
   std::string_view mini;
 
@@ -90,7 +90,7 @@ std::string_view no3::constants::FindClosestSPDXLicense(std::string query) {
   return mini;
 }
 
-bool no3::constants::IsExactSPDXLicenseMatch(std::string query) {
+auto no3::constants::IsExactSPDXLicenseMatch(std::string query) -> bool {
   std::transform(query.begin(), query.end(), query.begin(), ::tolower);
   return SPDX_IDENTIFIERS.contains(query);
 }

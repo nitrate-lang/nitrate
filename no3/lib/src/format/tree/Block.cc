@@ -72,7 +72,7 @@ void CambrianFormatter::Visit(FlowPtr<Block> n) {
   }
 
   if (!is_root_block) {
-    m_line << "{" << std::endl;
+    m_line << "{" << '\n';
     m_indent += m_tabSize;
   }
 
@@ -83,7 +83,7 @@ void CambrianFormatter::Visit(FlowPtr<Block> n) {
 
     m_line << GetIndent();
     item.Accept(*this);
-    m_line << std::endl;
+    m_line << '\n';
 
     bool is_last_item = it == items.end() - 1;
 
@@ -92,7 +92,7 @@ void CambrianFormatter::Visit(FlowPtr<Block> n) {
     bool extra_newline = !is_last_item && (is_next_item_different || extra_seperation.contains(item->GetKind()));
 
     if (extra_newline) {
-      m_line << std::endl;
+      m_line << '\n';
     }
   }
 

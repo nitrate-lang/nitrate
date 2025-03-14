@@ -57,10 +57,10 @@ using namespace no3::package;
 
 enum class FormatMode { Standard, Minify, Deflate };
 
-static bool ValidateConfiguration(const nlohmann::json& j);
+static auto ValidateConfiguration(const nlohmann::json& j) -> bool;
 static void AssignDefaultConfigurationSettings(nlohmann::json& j);
-static bool FormatFile(const std::filesystem::path& src, const std::filesystem::path& dst, const nlohmann::json& config,
-                       FormatMode mode, const ncc::parse::ImportConfig& import_config);
+static auto FormatFile(const std::filesystem::path& src, const std::filesystem::path& dst, const nlohmann::json& config,
+                       FormatMode mode, const ncc::parse::ImportConfig& import_config) -> bool;
 
 struct FormatOptions {
   FormatMode m_mode;
@@ -227,7 +227,7 @@ Optional arguments:
     }
   }
 
-  [[nodiscard]] bool Check() const {
+  [[nodiscard]] auto Check() const -> bool {
     bool okay = true;
 
     if (m_too_many_args) {
@@ -268,10 +268,10 @@ public:
     is_valid = Check();
   }
 
-  [[nodiscard]] FormatOptions GetOptions() { return {m_mode, m_source_path, m_output_path, m_config_path}; }
+  [[nodiscard]] auto GetOptions() -> FormatOptions { return {m_mode, m_source_path, m_output_path, m_config_path}; }
 };
 
-static bool SafeCheckFileExists(const std::string& path) {
+static auto SafeCheckFileExists(const std::string& path) -> bool {
   if (auto exists = OMNI_CATCH(std::filesystem::exists(path))) {
     return *exists;
   }
@@ -280,8 +280,8 @@ static bool SafeCheckFileExists(const std::string& path) {
   return false;
 }
 
-static std::optional<std::vector<std::filesystem::path>> GetRecursiveDirectoryContents(
-    const std::filesystem::path& path) {
+static auto GetRecursiveDirectoryContents(
+    const std::filesystem::path& path) -> std::optional<std::vector<std::filesystem::path>> {
   return OMNI_CATCH([&]() -> std::vector<std::filesystem::path> {
     std::vector<std::filesystem::path> paths;  // Might mem leak if exception is thrown
     for (const auto& entry : std::filesystem::recursive_directory_iterator(path)) {
@@ -294,7 +294,7 @@ static std::optional<std::vector<std::filesystem::path>> GetRecursiveDirectoryCo
   }());
 }
 
-static bool LoadConfigurationFile(const std::filesystem::path& path, nlohmann::json& config) {
+static auto LoadConfigurationFile(const std::filesystem::path& path, nlohmann::json& config) -> bool {
   std::ifstream config_file(path);
   if (!config_file.is_open()) {
     Log << "Failed to open the JSON format configuration file: " << path;
@@ -428,7 +428,7 @@ static auto SecondaryArgumentCheck(FormatOptions& options)
   return {{paths, import_name}};
 }
 
-bool no3::Interpreter::PImpl::CommandFormat(ConstArguments, const MutArguments& argv) {
+auto no3::Interpreter::PImpl::CommandFormat(ConstArguments, const MutArguments& argv) -> bool {
   Log << Trace << "Executing the " << std::source_location::current().function_name();
 
   bool is_valid = false;
@@ -506,7 +506,7 @@ bool no3::Interpreter::PImpl::CommandFormat(ConstArguments, const MutArguments& 
     return false;                                                           \
   }
 
-static bool ValidateConfiguration(const nlohmann::json& j) {
+static auto ValidateConfiguration(const nlohmann::json& j) -> bool {
   schema_assert(j.is_object());
 
   schema_assert(j.contains("version"));
@@ -607,7 +607,7 @@ static void AssignDefaultConfigurationSettings(nlohmann::json& j) {
   j["comments"]["block"]["convert-to-line"] = false;
 }
 
-static bool DeflateStreams(std::istream& in, std::ostream& out) {
+static auto DeflateStreams(std::istream& in, std::ostream& out) -> bool {
   constexpr int kCompressionLevel = 9;
   constexpr size_t kBufferSize = 32 * 1024 * 1024;  // 32 MiB
 
@@ -641,8 +641,8 @@ static bool DeflateStreams(std::istream& in, std::ostream& out) {
   return true;
 }
 
-static bool FormatFile(const std::filesystem::path& src, const std::filesystem::path& dst, const nlohmann::json& config,
-                       FormatMode mode, const ncc::parse::ImportConfig& import_config) {
+static auto FormatFile(const std::filesystem::path& src, const std::filesystem::path& dst, const nlohmann::json& config,
+                       FormatMode mode, const ncc::parse::ImportConfig& import_config) -> bool {
   std::ifstream src_file(src, std::ios::binary);
   if (!src_file.is_open()) {
     Log << "Failed to open the source file: " << src;

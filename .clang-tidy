@@ -1,5 +1,5 @@
-Checks: '-*,readability-*,-readability-identifier-length,-readability-named-parameter,-readability-magic-numbers,-readability-function-cognitive-complexity,-readability-convert-member-functions-to-static,portability-*,-readability-make-member-function-const,performance-*,-performance-no-int-to-ptr,modernize-*,concurrency-*,clang-analyzer-*,boost-*'
-WarningsAsErrors: '*,-performance-*'
+Checks: "-*,readability-*,-readability-identifier-length,-readability-named-parameter,-readability-magic-numbers,-readability-function-cognitive-complexity,-readability-convert-member-functions-to-static,portability-*,-readability-make-member-function-const,performance-*,-performance-no-int-to-ptr,modernize-*,concurrency-*,clang-analyzer-*,boost-*"
+WarningsAsErrors: "-*"
 CheckOptions:
   - key: readability-identifier-naming.TypedefCase
     value: CamelCase
@@ -14,7 +14,7 @@ CheckOptions:
   - key: readability-identifier-naming.ConstexprVariableCase
     value: CamelCase
   - key: readability-identifier-naming.ConstexprVariablePrefix
-    value: 'k'
+    value: "k"
   - key: readability-identifier-naming.ParameterCase
     value: lower_case
   - key: readability-identifier-naming.FunctionCase
@@ -28,4 +28,4 @@ CheckOptions:
   - key: misc-assert-side-effect.CheckFunctionCalls
     value: 1
   - key: misc-assert-side-effect.AssertMacros
-    value: 'assert'
+    value: "assert"

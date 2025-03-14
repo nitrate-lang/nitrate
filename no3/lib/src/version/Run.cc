@@ -102,21 +102,21 @@ struct ComponentManifest {
         m_branch(branch) {}
 };
 
-static ComponentManifest GetComponentManifestForCore() {
+static auto GetComponentManifestForCore() -> ComponentManifest {
   const auto& lib = CoreLibrary;
 
   return {NITRATE_CORE,        "LGPL-2.1+",         "The Nitrate Core Library", {},
           lib.GetSemVersion(), lib.GetCommitHash(), lib.GetCompileDate(),       lib.GetBranch()};
 }
 
-static ComponentManifest GetComponentManifestForLexer() {
+static auto GetComponentManifestForLexer() -> ComponentManifest {
   const auto& lib = lex::LexerLibrary;
 
   return {NITRATE_LEXER,       "LGPL-2.1+",         "The Nitrate Lexer Library", {NITRATE_CORE},
           lib.GetSemVersion(), lib.GetCommitHash(), lib.GetCompileDate(),        lib.GetBranch()};
 }
 
-static ComponentManifest GetComponentManifestForSequencer() {
+static auto GetComponentManifestForSequencer() -> ComponentManifest {
   const auto& lib = seq::SeqLibrary;
 
   return {NITRATE_SEQUENCER,
@@ -129,14 +129,14 @@ static ComponentManifest GetComponentManifestForSequencer() {
           lib.GetBranch()};
 }
 
-static ComponentManifest GetComponentManifestForParser() {
+static auto GetComponentManifestForParser() -> ComponentManifest {
   const auto& lib = parse::ParseLibrary;
 
   return {NITRATE_PARSER,      "LGPL-2.1+",         "The Nitrate Parser Library", {NITRATE_CORE, NITRATE_LEXER},
           lib.GetSemVersion(), lib.GetCommitHash(), lib.GetCompileDate(),         lib.GetBranch()};
 }
 
-static ComponentManifest GetComponentManifestForIRAlpha() {
+static auto GetComponentManifestForIRAlpha() -> ComponentManifest {
   return {NITRATE_IR_ALPHA,
           "LGPL-2.1+",
           "The Nitrate Alpha Intermediate Representation Library",
@@ -147,7 +147,7 @@ static ComponentManifest GetComponentManifestForIRAlpha() {
           ""};
 }
 
-static ComponentManifest GetComponentManifestForAlphaOptimizer() {
+static auto GetComponentManifestForAlphaOptimizer() -> ComponentManifest {
   return {NITRATE_IR_ALPHA_OPT,
           "LGPL-2.1+",
           "The Nitrate Alpha Intermediate Representation Optimizer Library",
@@ -158,7 +158,7 @@ static ComponentManifest GetComponentManifestForAlphaOptimizer() {
           ""};
 }
 
-static ComponentManifest GetComponentManifestForIRBeta() {
+static auto GetComponentManifestForIRBeta() -> ComponentManifest {
   return {NITRATE_IR_BETA,
           "LGPL-2.1+",
           "The Nitrate Beta Intermediate Representation Library",
@@ -169,7 +169,7 @@ static ComponentManifest GetComponentManifestForIRBeta() {
           ""};
 }
 
-static ComponentManifest GetComponentManifestForBetaOptimizer() {
+static auto GetComponentManifestForBetaOptimizer() -> ComponentManifest {
   return {NITRATE_IR_BETA_OPT,
           "LGPL-2.1+",
           "The Nitrate Beta Intermediate Representation Optimizer Library",
@@ -180,7 +180,7 @@ static ComponentManifest GetComponentManifestForBetaOptimizer() {
           ""};
 }
 
-static ComponentManifest GetComponentManifestForIRGamma() {
+static auto GetComponentManifestForIRGamma() -> ComponentManifest {
   return {NITRATE_IR_GAMMA,
           "LGPL-2.1+",
           "The Nitrate Gamma Intermediate Representation Library",
@@ -191,7 +191,7 @@ static ComponentManifest GetComponentManifestForIRGamma() {
           ""};
 }
 
-static ComponentManifest GetComponentManifestForGammaOptimizer() {
+static auto GetComponentManifestForGammaOptimizer() -> ComponentManifest {
   return {NITRATE_IR_GAMMA_OPT,
           "LGPL-2.1+",
           "The Nitrate Gamma Intermediate Representation Optimizer Library",
@@ -202,7 +202,7 @@ static ComponentManifest GetComponentManifestForGammaOptimizer() {
           ""};
 }
 
-static ComponentManifest GetComponentManifestForCodegen() {
+static auto GetComponentManifestForCodegen() -> ComponentManifest {
   return {NITRATE_CODEGEN,
           "LGPL-2.1+",
           "The Nitrate Codegen and Linking Library",
@@ -213,7 +213,7 @@ static ComponentManifest GetComponentManifestForCodegen() {
           ""};
 }
 
-static nlohmann::ordered_json GetComponentManifest(SoftwareComponent component) {
+static auto GetComponentManifest(SoftwareComponent component) -> nlohmann::ordered_json {
   ComponentManifest manifest = [component]() {
     switch (component) {
       case SoftwareComponent::Core:
@@ -274,7 +274,7 @@ static nlohmann::ordered_json GetComponentManifest(SoftwareComponent component) 
   return j;
 }
 
-static nlohmann::ordered_json GetSoftwareVersionArray(const std::vector<SoftwareComponent>& components) {
+static auto GetSoftwareVersionArray(const std::vector<SoftwareComponent>& components) -> nlohmann::ordered_json {
   nlohmann::ordered_json j = nlohmann::ordered_json::array();
 
   for (const auto& component : components) {
@@ -284,7 +284,7 @@ static nlohmann::ordered_json GetSoftwareVersionArray(const std::vector<Software
   return j;
 }
 
-static std::string GetSoftwareHash() {
+static auto GetSoftwareHash() -> std::string {
   constexpr boost::uuids::uuid kDnsNamespaceUuid = {0x85, 0xa2, 0xbc, 0x03, 0xde, 0x86, 0x49, 0x48,
                                                     0xb1, 0x6e, 0x5c, 0x63, 0x72, 0x8f, 0x38, 0x61};
 
@@ -309,7 +309,7 @@ static std::string GetSoftwareHash() {
   return boost::uuids::to_string(uuid);
 }
 
-static nlohmann::ordered_json GetSystemInfo() {
+static auto GetSystemInfo() -> nlohmann::ordered_json {
   nlohmann::ordered_json info;
 
 #if defined(BOOST_OS_LINUX) || defined(BOOST_OS_MACOS) || defined(BOOST_OS_UNIX)
@@ -366,7 +366,7 @@ static nlohmann::ordered_json GetSystemInfo() {
   return info;
 }
 
-static std::string GetVersionUsingJson(bool minify, bool system_info, const nlohmann::ordered_json& version_array) {
+static auto GetVersionUsingJson(bool minify, bool system_info, const nlohmann::ordered_json& version_array) -> std::string {
   nlohmann::ordered_json j;
 
   const auto microseconds_since_epoch =
@@ -388,7 +388,7 @@ static std::string GetVersionUsingJson(bool minify, bool system_info, const nloh
   return j.dump(minify ? -1 : 2);
 }
 
-static std::string GetVersionUsingBrief(const nlohmann::ordered_json& version_array) {
+static auto GetVersionUsingBrief(const nlohmann::ordered_json& version_array) -> std::string {
   std::stringstream brief_log;
 
   brief_log << "╭──────────────────────────────────────────────────────────────────────────────╮\n";
@@ -435,7 +435,7 @@ Optional arguments:
   Log << Raw << message;
 }
 
-static std::optional<std::vector<SoftwareComponent>> GetSoftwareComponents(const argh::parser& program) {
+static auto GetSoftwareComponents(const argh::parser& program) -> std::optional<std::vector<SoftwareComponent>> {
   static const std::unordered_map<std::string_view, SoftwareComponent> component_map = {
       {NITRATE_CORE, SoftwareComponent::Core},           {NITRATE_LEXER, SoftwareComponent::Lexer},
       {NITRATE_SEQUENCER, SoftwareComponent::Sequencer}, {NITRATE_PARSER, SoftwareComponent::Parser},
@@ -475,7 +475,7 @@ static std::optional<std::vector<SoftwareComponent>> GetSoftwareComponents(const
   return components;
 }
 
-bool no3::Interpreter::PImpl::CommandVersion(ConstArguments, const MutArguments& argv) {
+auto no3::Interpreter::PImpl::CommandVersion(ConstArguments, const MutArguments& argv) -> bool {
   argh::parser cmdl;
   cmdl.add_params({"help", "of", "system-info", "minify", "brief", "json"});
   cmdl.parse(argv, argh::parser::SINGLE_DASH_IS_MULTIFLAG);

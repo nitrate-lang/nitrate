@@ -44,7 +44,7 @@ void CambrianFormatter::PrintLineComments(const FlowPtr<parse::Expr>& n) {
   if (!comments.empty()) {
     for (auto comment : comments) {
       m_line << "#";
-      m_line << comment << std::endl;
+      m_line << comment << '\n';
 
       if (m_line_size != 0U) {
         m_line << std::string(m_line_size, ' ');

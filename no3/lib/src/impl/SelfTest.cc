@@ -34,9 +34,9 @@
 #include <impl/Subcommands.hh>
 
 namespace nitrate::testing {
-  bool RunTestSuite(const std::vector<std::string>& args);
+  auto RunTestSuite(const std::vector<std::string>& args) -> bool;
 }  // namespace nitrate::testing
 
-bool no3::cmd_impl::subcommands::CommandImplSelfTest(ConstArguments, const MutArguments& argv) {
+auto no3::cmd_impl::subcommands::CommandImplSelfTest(ConstArguments, const MutArguments& argv) -> bool {
   return nitrate::testing::RunTestSuite(argv);
 }

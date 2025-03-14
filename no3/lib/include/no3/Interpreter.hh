@@ -48,15 +48,15 @@ namespace no3 {
       friend class No3LibraryInitialization;
 
       LibraryDeinitializationCallback m_on_deinit;
-      bool m_active;
+      bool m_active{true};
 
       RCInitializationContext(LibraryDeinitializationCallback on_deinit) noexcept;
 
     public:
       RCInitializationContext(const RCInitializationContext& o) noexcept;
       RCInitializationContext(RCInitializationContext&& o) noexcept;
-      RCInitializationContext& operator=(const RCInitializationContext& o) noexcept;
-      RCInitializationContext& operator=(RCInitializationContext&& o) noexcept;
+      auto operator=(const RCInitializationContext& o) noexcept -> RCInitializationContext&;
+      auto operator=(RCInitializationContext&& o) noexcept -> RCInitializationContext&;
       ~RCInitializationContext() noexcept;
     };
   }  // namespace detail
@@ -71,8 +71,8 @@ namespace no3 {
    *
    * @return A handle keeping the library initialized, or nullptr if initialization failed.
    */
-  std::unique_ptr<detail::RCInitializationContext> OpenLibrary(
-      std::ostream& init_log = std::cerr, detail::LibraryDeinitializationCallback on_deinit = nullptr) noexcept;
+  auto OpenLibrary(
+      std::ostream& init_log = std::cerr, detail::LibraryDeinitializationCallback on_deinit = nullptr) noexcept -> std::unique_ptr<detail::RCInitializationContext>;
 
   class Interpreter {
     class PImpl;
@@ -86,11 +86,11 @@ namespace no3 {
     }) noexcept;
     Interpreter(const Interpreter&) = delete;
     Interpreter(Interpreter&& o) noexcept = default;
-    Interpreter& operator=(const Interpreter&) = delete;
-    Interpreter& operator=(Interpreter&& o) noexcept = default;
+    auto operator=(const Interpreter&) -> Interpreter& = delete;
+    auto operator=(Interpreter&& o) noexcept -> Interpreter& = default;
     ~Interpreter() noexcept;
 
-    bool Execute(const std::vector<std::string>& command) noexcept;
+    auto Execute(const std::vector<std::string>& command) noexcept -> bool;
   };
 }  // namespace no3
 
