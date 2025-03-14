@@ -48,7 +48,7 @@ namespace ncc::seq {
     std::list<MethodType> m_captures;
     std::shared_ptr<IEnvironment> m_env;
     lua_State* m_L;
-    size_t m_depth;
+    size_t m_depth{0};
 
     SequencerPImpl(std::shared_ptr<IEnvironment> env);
     ~SequencerPImpl();

@@ -82,8 +82,8 @@ if(CMAKE_BUILD_TYPE STREQUAL "Release" AND BUILD_SHARED_LIBS)
     nitrate-lexer
     nitrate-seq
     nitrate-parser
-    nitrate-ir
-    nitrate-emit
+    # nitrate-ir
+    # nitrate-emit
     nitrate)
     target_compile_options(${lib} PRIVATE -flto)
     target_link_options(${lib} PRIVATE -flto)
@@ -95,8 +95,8 @@ if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     nitrate-lexer
     nitrate-seq
     nitrate-parser
-    nitrate-ir
-    nitrate-emit
+    # nitrate-ir
+    # nitrate-emit
     nitrate)
     target_compile_options(${lib} PRIVATE -fsanitize=address,undefined,fuzzer)
     target_link_options(${lib} PRIVATE -fsanitize=address,undefined,fuzzer)

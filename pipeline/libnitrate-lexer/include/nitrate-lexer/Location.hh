@@ -57,7 +57,7 @@ namespace ncc::lex {
     [[nodiscard]] constexpr auto GetCol() const { return m_column; }
     [[nodiscard]] constexpr auto GetFilename() const -> string { return m_filename; }
 
-    bool operator==(const Location &rhs) const {
+    auto operator==(const Location &rhs) const -> bool {
       return m_offset == rhs.m_offset && m_line == rhs.m_line && m_column == rhs.m_column &&
              m_filename == rhs.m_filename;
     }

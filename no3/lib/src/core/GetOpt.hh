@@ -47,9 +47,9 @@ namespace no3::core {
     void lock() const noexcept { m_mutex.lock(); }       // NOLINT(readability-identifier-naming)
     void unlock() const noexcept { m_mutex.unlock(); };  // NOLINT(readability-identifier-naming)
 
-    int getopt_long  // NOLINT(readability-identifier-naming)
+    auto getopt_long  // NOLINT(readability-identifier-naming)
         (int argc, char *const *argv, const char *shortopts, const struct option *longopts,
-         int *longind) const noexcept {
+         int *longind) const noexcept -> int {
       return ::getopt_long(argc, argv, shortopts, longopts, longind);  // NOLINT(concurrency-mt-unsafe)
     }
 

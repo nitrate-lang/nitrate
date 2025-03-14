@@ -56,7 +56,7 @@ namespace ncc {
           : m_arena(arena), m_chunk_index(chunk_index), m_chunk_pos(chunk_pos), m_chunk_end(chunk_end) {}
 
     public:
-      Iterator &operator++();
+      auto operator++() -> Iterator &;
       [[nodiscard]] auto operator*() const -> uint8_t &;
       [[nodiscard]] auto operator==(const Iterator &o) const -> bool;
     };
@@ -72,7 +72,7 @@ namespace ncc {
           : m_arena(arena), m_chunk_index(chunk_index), m_chunk_pos(chunk_pos), m_chunk_end(chunk_end) {}
 
     public:
-      ConstIterator &operator++();
+      auto operator++() -> ConstIterator &;
       [[nodiscard]] auto operator*() const -> const uint8_t &;
       [[nodiscard]] auto operator==(const ConstIterator &o) const -> bool;
     };
@@ -90,7 +90,7 @@ namespace ncc {
 
     void do_deallocate(void *p, size_t bytes, size_t alignment) override;
     [[nodiscard]] auto do_allocate(size_t bytes, size_t alignment) -> void * override;
-    [[nodiscard]] bool do_is_equal(const memory_resource &other) const noexcept override;
+    [[nodiscard]] auto do_is_equal(const memory_resource &other) const noexcept -> bool override;
     [[nodiscard]] auto GetSpaceUsed() const -> size_t;
     [[nodiscard]] auto GetSpaceManaged() const -> size_t;
     void Reset();

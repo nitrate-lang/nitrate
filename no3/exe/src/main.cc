@@ -6,7 +6,7 @@
 #include <nitrate-core/CatchAll.hh>
 #include <no3/Interpreter.hh>
 
-static std::vector<std::string> SplitCommand(const std::string& command) {
+static auto SplitCommand(const std::string& command) -> std::vector<std::string> {
   std::vector<std::string> args;
   std::string arg;
   bool in_quote = false;
@@ -28,8 +28,8 @@ static std::vector<std::string> SplitCommand(const std::string& command) {
   return args;
 }
 
-static std::filesystem::path GetUserDirectory() {
-  const char* home = getenv("HOME");
+static auto GetUserDirectory() -> std::filesystem::path {
+  const char* home = getenv("HOME");  // NOLINT(concurrency-mt-unsafe)
   if (home != nullptr) {
     return {home};
   }
@@ -54,7 +54,7 @@ static void IncreaseStackLimit() {
   }
 }
 
-int main(int argc, char* argv[]) {
+auto main(int argc, char* argv[]) -> int {
   IncreaseStackLimit();
 
   std::vector<std::string> args(argv, argv + argc);
@@ -66,7 +66,7 @@ int main(int argc, char* argv[]) {
     while (true) {
       char* line = readline("no3> ");
       if (line == nullptr) {
-        std::cout << "Exiting..." << std::endl;
+        std::cout << "Exiting..." << '\n';
         break;
       }
 
@@ -80,7 +80,7 @@ int main(int argc, char* argv[]) {
       add_history(input.c_str());
 
       if (input == "exit") {
-        std::cout << "Exiting..." << std::endl;
+        std::cout << "Exiting..." << '\n';
         break;
       }
 

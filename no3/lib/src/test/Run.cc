@@ -35,7 +35,7 @@
 
 using namespace ncc;
 
-bool no3::Interpreter::PImpl::CommandTest(ConstArguments full_argv, MutArguments argv) {
+auto no3::Interpreter::PImpl::CommandTest(ConstArguments full_argv, const MutArguments& argv) -> bool {
   (void)full_argv;
   (void)argv;
 

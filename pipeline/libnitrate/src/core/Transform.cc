@@ -31,8 +31,6 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <nitrate-emit/Lib.h>
-
 #include <cerrno>
 #include <core/Transform.hh>
 #include <cstdarg>
@@ -43,7 +41,6 @@
 #include <nitrate-core/Environment.hh>
 #include <nitrate-core/Init.hh>
 #include <nitrate-core/Macro.hh>
-#include <nitrate-ir/Init.hh>
 #include <nitrate-lexer/Init.hh>
 #include <nitrate-parser/Init.hh>
 #include <nitrate-seq/Init.hh>
@@ -57,7 +54,7 @@
 using namespace ncc;
 
 static const std::unordered_map<std::string_view, nit::TransformFunc> DISPATCH_FUNCS = {
-    {"echo", nit::echo}, {"lex", nit::lex}, {"seq", nit::seq}, {"parse", nit::parse}, {"ir", nit::nr}};
+    {"echo", nit::echo}, {"lex", nit::lex}, {"seq", nit::seq}, {"parse", nit::parse}};
 
 ///============================================================================///
 

@@ -41,7 +41,7 @@ using namespace ncc;
 static LogOStream LogStreamBuffer;
 NCC_EXPORT thread_local std::ostream ncc::clog(&LogStreamBuffer);
 
-std::streambuf::int_type LogOStream::overflow(int_type c) {
+auto LogOStream::overflow(int_type c) -> std::streambuf::int_type {
   Log << Raw << (char)c;
   return c;
 }
@@ -52,4 +52,4 @@ auto LogOStream::xsputn(const char *s, std::streamsize count) -> std::streamsize
   return count;
 }
 
-int LogOStream::sync() { return 0; }
+auto LogOStream::sync() -> int { return 0; }

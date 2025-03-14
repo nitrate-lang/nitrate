@@ -32,8 +32,8 @@
 *.app
 
 # Cmake
-.build/
-build/
+/.build/
+/build/
 no3/example-project
 
 .no3/

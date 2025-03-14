@@ -39,17 +39,17 @@
 #include <optional>
 
 namespace ncc::detail {
-  [[nodiscard]] std::optional<std::any> CatchAllAny(const std::function<std::any()>& expr);
-  [[nodiscard]] bool CatchAllVoid(const std::function<void()>& expr);
+  [[nodiscard]] auto CatchAllAny(const std::function<std::any()>& expr) -> std::optional<std::any>;
+  [[nodiscard]] auto CatchAllVoid(const std::function<void()>& expr) -> bool;
 
-  template <typename T, typename = std::enable_if_t<!std::is_same_v<T, void>>>
-  static inline std::optional<T> CatchAll(const std::function<std::any()>& expr) {
+  template <typename T>
+  static inline auto CatchAll(const std::function<std::any()>& expr) -> std::optional<T> requires (!std::is_same_v<T, void>) {
     auto result = CatchAllAny(expr);
     return result.has_value() ? std::make_optional(std::any_cast<T>(*result)) : std::nullopt;
   }
 
-  template <typename T, typename = std::enable_if_t<std::is_same_v<T, void>>>
-  static inline bool CatchAll(const std::function<void()>& expr) {
+  template <typename T>
+  static inline auto CatchAll(const std::function<void()>& expr) -> bool requires (std::is_same_v<T, void>) {
     return CatchAllVoid(expr);
   };
 }  // namespace ncc::detail

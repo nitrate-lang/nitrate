@@ -134,7 +134,7 @@ namespace ncc::parse {
     QAST__RANGE = QAST__LAST - QAST__FIRST,
   };
 
-  std::ostream& operator<<(std::ostream& os, ASTNodeKind kind);
+  auto operator<<(std::ostream& os, ASTNodeKind kind) -> std::ostream&;
 }  // namespace ncc::parse
 
 #endif

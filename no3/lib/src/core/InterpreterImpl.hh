@@ -52,28 +52,28 @@ namespace no3 {
     size_t m_log_sub_id = 0;
     std::vector<size_t> m_log_suspend_ids;
 
-    static bool CommandBuild(ConstArguments full_argv, MutArguments argv);
-    static bool CommandClean(ConstArguments full_argv, MutArguments argv);
-    static bool CommandImpl(ConstArguments full_argv, MutArguments argv);
-    static bool CommandDoc(ConstArguments full_argv, MutArguments argv);
-    static bool CommandFormat(ConstArguments full_argv, const MutArguments& argv);
-    static bool CommandHelp(ConstArguments full_argv, const MutArguments& argv);
-    static bool CommandInit(ConstArguments full_argv, const MutArguments& argv);
-    static bool CommandInstall(ConstArguments full_argv, MutArguments argv);
-    static bool CommandFind(ConstArguments full_argv, MutArguments argv);
-    static bool CommandRemove(ConstArguments full_argv, MutArguments argv);
-    static bool CommandLSP(ConstArguments full_argv, const MutArguments& argv);
-    static bool CommandLicense(ConstArguments full_argv, const MutArguments& argv);
-    static bool CommandTest(ConstArguments full_argv, MutArguments argv);
-    static bool CommandVersion(ConstArguments full_argv, const MutArguments& argv);
-    static bool CommandUpdate(ConstArguments full_argv, MutArguments argv);
+    static auto CommandBuild(ConstArguments full_argv, const MutArguments& argv) -> bool;
+    static auto CommandClean(ConstArguments full_argv, const MutArguments& argv) -> bool;
+    static auto CommandImpl(ConstArguments full_argv, MutArguments argv) -> bool;
+    static auto CommandDoc(ConstArguments full_argv, const MutArguments& argv) -> bool;
+    static auto CommandFormat(ConstArguments full_argv, const MutArguments& argv) -> bool;
+    static auto CommandHelp(ConstArguments full_argv, const MutArguments& argv) -> bool;
+    static auto CommandInit(ConstArguments full_argv, const MutArguments& argv) -> bool;
+    static auto CommandInstall(ConstArguments full_argv, const MutArguments& argv) -> bool;
+    static auto CommandFind(ConstArguments full_argv, const MutArguments& argv) -> bool;
+    static auto CommandRemove(ConstArguments full_argv, const MutArguments& argv) -> bool;
+    static auto CommandLSP(ConstArguments full_argv, const MutArguments& argv) -> bool;
+    static auto CommandLicense(ConstArguments full_argv, const MutArguments& argv) -> bool;
+    static auto CommandTest(ConstArguments full_argv, const MutArguments& argv) -> bool;
+    static auto CommandVersion(ConstArguments full_argv, const MutArguments& argv) -> bool;
+    static auto CommandUpdate(ConstArguments full_argv, const MutArguments& argv) -> bool;
 
     void SetupCommands();
 
   public:
     PImpl() noexcept { SetupCommands(); }
 
-    bool Perform(const std::vector<std::string>& command);
+    auto Perform(const std::vector<std::string>& command) -> bool;
   };
 
 }  // namespace no3

@@ -84,11 +84,11 @@ void CambrianFormatter::Visit(FlowPtr<parse::Struct> n) {
       }
 
       if (i != attrs.size() - 1 && (i + 1) % break_at == 0) {
-        m_line << std::endl << std::string(m_line_size, ' ');
+        m_line << '\n' << std::string(m_line_size, ' ');
       }
     }
 
-    m_line << "]" << std::endl << std::string(m_line_size, ' ');
+    m_line << "]" << '\n' << std::string(m_line_size, ' ');
   }
 
   m_line << n->GetName();
@@ -129,7 +129,7 @@ void CambrianFormatter::Visit(FlowPtr<parse::Struct> n) {
       }
 
       if (i != names.size() - 1 && (i + 1) % break_at == 0) {
-        m_line << std::endl << std::string(m_line_size, ' ');
+        m_line << '\n' << std::string(m_line_size, ' ');
       }
     }
 
@@ -143,7 +143,7 @@ void CambrianFormatter::Visit(FlowPtr<parse::Struct> n) {
     return;
   }
 
-  m_line << " {" << std::endl;
+  m_line << " {" << '\n';
   m_indent += m_tabSize;
 
   auto fields_count = n->GetFields();
@@ -161,27 +161,27 @@ void CambrianFormatter::Visit(FlowPtr<parse::Struct> n) {
       field.GetValue().value().Accept(*this);
     }
 
-    m_line << "," << std::endl;
+    m_line << "," << '\n';
   });
 
   if (!fields_count.empty() && !methods_count.empty()) {
-    m_line << std::endl;
+    m_line << '\n';
   }
 
   std::for_each(n->GetMethods().begin(), n->GetMethods().end(), [&](auto method) {
     m_line << GetIndent() << method.m_vis << " ";
     method.m_func.Accept(*this);
-    m_line << std::endl;
+    m_line << '\n';
   });
 
   if (!static_methods_count.empty() && (!fields_count.empty() || !methods_count.empty())) {
-    m_line << std::endl;
+    m_line << '\n';
   }
 
   std::for_each(n->GetStaticMethods().begin(), n->GetStaticMethods().end(), [&](auto method) {
     m_line << GetIndent() << method.m_vis << " static ";
     method.m_func.Accept(*this);
-    m_line << std::endl;
+    m_line << '\n';
   });
 
   m_indent -= m_tabSize;
@@ -204,7 +204,7 @@ void CambrianFormatter::Visit(FlowPtr<TupleTy> n) {
 
   for (size_t i = 0; i < items.size(); i++) {
     if (i != 0 && i % break_at == 0) {
-      m_line << std::endl << std::string(m_line_size, ' ');
+      m_line << '\n' << std::string(m_line_size, ' ');
     }
 
     auto item = items[i];

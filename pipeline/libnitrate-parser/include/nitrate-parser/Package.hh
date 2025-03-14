@@ -48,13 +48,13 @@ namespace ncc::parse {
     mutable std::optional<std::string> m_name;
     mutable std::optional<std::vector<std::string_view>> m_chain;
 
-    static bool Validate(const std::string &name);
+    static auto Validate(const std::string &name) -> bool;
 
   public:
     ImportName() = default;
     ImportName(std::string name);
 
-    bool operator==(const ImportName &other) const = default;
+    auto operator==(const ImportName &other) const -> bool = default;
     auto operator<=>(const ImportName &other) const = default;
     auto operator*() const -> const std::string & { return GetName(); }
     auto operator->() const -> const std::string * { return &GetName(); }
@@ -65,7 +65,7 @@ namespace ncc::parse {
     [[nodiscard]] auto GetChain() const -> const std::vector<std::string_view> &;
   };
 
-  std::ostream &operator<<(std::ostream &os, const ImportName &name);
+  auto operator<<(std::ostream &os, const ImportName &name) -> std::ostream &;
 
   class NCC_EXPORT Package final {
     class PImpl;
@@ -92,20 +92,20 @@ namespace ncc::parse {
     struct PackageContents : public std::unordered_map<std::filesystem::path, LazyEval<std::optional<std::string>>> {
       PackageContents() = default;
       PackageContents(const PackageContents &other) = delete;
-      PackageContents &operator=(const PackageContents &other) = delete;
+      auto operator=(const PackageContents &other) -> PackageContents & = delete;
       PackageContents(PackageContents &&other) noexcept = default;
-      PackageContents &operator=(PackageContents &&other) noexcept = default;
+      auto operator=(PackageContents &&other) noexcept -> PackageContents & = default;
     };
     using LazyLoader = LazyEval<std::optional<PackageContents>>;
 
     Package(ImportName name, LazyLoader loader);
     Package(const Package &other);
-    Package &operator=(const Package &other);
+    auto operator=(const Package &other) -> Package &;
     Package(Package &&other) noexcept;
-    Package &operator=(Package &&other) noexcept;
+    auto operator=(Package &&other) noexcept -> Package &;
     ~Package();
 
-    bool operator==(const Package &other) const;
+    auto operator==(const Package &other) const -> bool;
 
     [[nodiscard]] auto PackageName() const -> ImportName;
     [[nodiscard]] auto Read() const -> const std::optional<PackageContents> &;

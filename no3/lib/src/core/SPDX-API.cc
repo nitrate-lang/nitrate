@@ -42,11 +42,11 @@
 
 using namespace ncc;
 
-static std::string GetAPIEndpoint(const std::string& spdx_id) {
+static auto GetAPIEndpoint(const std::string& spdx_id) -> std::string {
   return "https://scancode-licensedb.aboutcode.org/" + spdx_id + ".json";
 }
 
-std::optional<std::string> no3::constants::GetSPDXLicenseText(std::string query) {
+auto no3::constants::GetSPDXLicenseText(const std::string& query) -> std::optional<std::string> {
   std::transform(query.begin(), query.end(), query.begin(), ::tolower);
 
   Log << Trace << "Preparing to retrieve SPDX license text for SPDX license identifier: " << query;

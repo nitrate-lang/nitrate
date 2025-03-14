@@ -50,20 +50,20 @@ void CambrianFormatter::Visit(FlowPtr<parse::Switch> n) {
 
   m_line << "switch ";
   n->GetCond().Accept(*this);
-  m_line << " {" << std::endl;
+  m_line << " {" << '\n';
   m_indent += m_tabSize;
 
   for (auto c : n->GetCases()) {
     m_line << GetIndent();
     c.Accept(*this);
-    m_line << std::endl;
+    m_line << '\n';
   }
 
   if (n->GetDefault()) {
     m_line << GetIndent();
     m_line << "_ => ";
     n->GetDefault().value()->Accept(*this);
-    m_line << std::endl;
+    m_line << '\n';
   }
 
   m_indent -= m_tabSize;

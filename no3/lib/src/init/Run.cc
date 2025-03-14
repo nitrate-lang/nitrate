@@ -204,7 +204,7 @@ Optional arguments:
     }
   }
 
-  [[nodiscard]] bool Check() const {
+  [[nodiscard]] auto Check() const -> bool {
     bool okay = true;
 
     if (m_too_many_args) {
@@ -245,10 +245,10 @@ public:
     is_valid = Check();
   }
 
-  [[nodiscard]] const auto& GetPackageName() const { return m_package_name; }
-  [[nodiscard]] const auto& GetLicense() const { return m_license; }
-  [[nodiscard]] const auto& GetOutput() const { return m_output; }
-  [[nodiscard]] const auto& GetCategory() const { return m_category; }
+  [[nodiscard]] auto GetPackageName() const -> const auto& { return m_package_name; }
+  [[nodiscard]] auto GetLicense() const -> const auto& { return m_license; }
+  [[nodiscard]] auto GetOutput() const -> const auto& { return m_output; }
+  [[nodiscard]] auto GetCategory() const -> const auto& { return m_category; }
 };
 
 static void DisplayPoliteNameRejection(const std::string& package_name) {
@@ -306,8 +306,8 @@ static void DisplayPoliteLicenseRejection(const std::string& package_license) {
   Log << Info << "For a complete list of valid SPDX license identifiers, visit https://spdx.org/licenses/";
 }
 
-static std::optional<std::filesystem::path> GetNewPackagePath(const std::filesystem::path& directory,
-                                                              const std::string& name) {
+static auto GetNewPackagePath(const std::filesystem::path& directory,
+                                                              const std::string& name) -> std::optional<std::filesystem::path> {
   std::string just_name = name.substr(name.find('/') + 1);
   size_t attempts = 0;
 
@@ -340,7 +340,7 @@ static std::optional<std::filesystem::path> GetNewPackagePath(const std::filesys
   }
 }
 
-bool no3::Interpreter::PImpl::CommandInit(ConstArguments, const MutArguments& argv) {
+auto no3::Interpreter::PImpl::CommandInit(ConstArguments, const MutArguments& argv) -> bool {
   Log << Trace << "Executing the " << std::source_location::current().function_name();
 
   bool is_valid = false;

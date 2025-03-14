@@ -24,7 +24,7 @@ using namespace no3::lsp::srv;
 //   group.AddArgument("--stdio").DefaultValue(false).ImplicitValue(true).Help("Use standard I/O");
 // }
 
-int NitratedMain(int argc, char** argv) {
+auto NitratedMain(int argc, char** argv) -> int {
   /// TODO: Implement Nitrate LSP
   (void)argc;
   (void)argv;

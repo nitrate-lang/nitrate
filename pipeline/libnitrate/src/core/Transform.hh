@@ -51,6 +51,4 @@ namespace nit {
   CREATE_TRANSFORM(lex);
   CREATE_TRANSFORM(seq);
   CREATE_TRANSFORM(parse);
-  CREATE_TRANSFORM(nr);
-
 }  // namespace nit

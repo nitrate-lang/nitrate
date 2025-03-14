@@ -136,7 +136,7 @@ static void PanicRenderReport(const std::vector<std::string> &lines) {
   static std::mutex panic_mutex;
   std::lock_guard<std::mutex> lock(panic_mutex);
 
-  std::setlocale(LC_ALL, "");  // NOLINT
+  std::setlocale(LC_ALL, "");  // NOLINT(concurrency-mt-unsafe)
 
   { /* Print shockwave */
     std::cerr << "\n\n";

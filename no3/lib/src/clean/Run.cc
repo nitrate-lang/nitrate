@@ -35,7 +35,7 @@
 
 using namespace ncc;
 
-bool no3::Interpreter::PImpl::CommandClean(ConstArguments, MutArguments argv) {
+auto no3::Interpreter::PImpl::CommandClean(ConstArguments, const MutArguments& argv) -> bool {
   (void)argv;
 
   /**

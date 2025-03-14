@@ -49,57 +49,57 @@ auto MakeBimap(std::initializer_list<typename boost::bimap<L, R>::value_type> li
 }
 
 static const auto PACKAGE_CATEGORY_MAP = MakeBimap<std::string_view, Package::Category>({
-    {"app", Package::APPLICATION},
-    {"lib", Package::LIBRARY},
-    {"std", Package::STANDARD_LIBRARY},
+    {"app", Package::kApplication},
+    {"lib", Package::kLibrary},
+    {"std", Package::kStandardLibrary},
 });
 
 static const auto PACKAGE_CONTACT_ROLE_MAP = MakeBimap<std::string_view, Package::Contact::Role>({
-    {"owner", Package::Contact::OWNER},
-    {"contributor", Package::Contact::CONTRIBUTOR},
-    {"maintainer", Package::Contact::MAINTAINER},
-    {"support", Package::Contact::SUPPORT},
+    {"owner", Package::Contact::kOwner},
+    {"contributor", Package::Contact::kContributor},
+    {"maintainer", Package::Contact::kMaintainer},
+    {"support", Package::Contact::kSupport},
 });
 
 static const auto BLOCKCHAIN_CATEGORY_MAP = MakeBimap<std::string_view, Package::BlockchainLink::LinkCategory>({
-    {"eco-root", Package::BlockchainLink::ECOSYSTEM_ROOT},
-    {"eco-domain", Package::BlockchainLink::ECOSYSTEM_DOMAIN},
-    {"user-account", Package::BlockchainLink::USER_ACCOUNT},
-    {"package", Package::BlockchainLink::PACKAGE},
-    {"subpackage", Package::BlockchainLink::SUB_PACKAGE},
+    {"eco-root", Package::BlockchainLink::kEcosystemRoot},
+    {"eco-domain", Package::BlockchainLink::kEcosystemDomain},
+    {"user-account", Package::BlockchainLink::kUserAccount},
+    {"package", Package::BlockchainLink::kPackage},
+    {"subpackage", Package::BlockchainLink::kSubPackage},
 });
 
 static const auto BLOCKCHAIN_PKEY_KIND_MAP = MakeBimap<std::string_view, Package::BlockchainLink::PublicKey::Type>({
-    {"ed25519", Package::BlockchainLink::PublicKey::ED25519},
+    {"ed25519", Package::BlockchainLink::PublicKey::kED25519},
 });
 
 static const auto BLOCKCHAIN_SIG_KIND_MAP = MakeBimap<std::string_view, Package::BlockchainLink::Signature::Type>({
-    {"ed25519", Package::BlockchainLink::Signature::ED25519},
+    {"ed25519", Package::BlockchainLink::Signature::kED25519},
 });
 
-static Package::SemVersion* CreateSemVersion(Pool& mm, uint32_t major, uint32_t minor, uint32_t patch) {
+static auto CreateSemVersion(Pool& mm, uint32_t major, uint32_t minor, uint32_t patch) -> Package::SemVersion* {
   auto* sem_version = Pool::CreateMessage<Package::SemVersion>(&mm);
-  sem_version->set_major(major);
-  sem_version->set_minor(minor);
-  sem_version->set_patch(patch);
+  sem_version->SetMajor(major);
+  sem_version->SetMinor(minor);
+  sem_version->SetPatch(patch);
   return sem_version;
 }
 
-static Package::Platforms* CreatePlatforms(Pool& mm, const nlohmann::ordered_json& json) {
+static auto CreatePlatforms(Pool& mm, const nlohmann::ordered_json& json) -> Package::Platforms* {
   auto* platforms = Pool::CreateMessage<Package::Platforms>(&mm);
 
   for (const auto& platform : json["allow"]) {
-    platforms->add_allow(platform);
+    platforms->AddAllow(platform);
   }
 
   for (const auto& platform : json["deny"]) {
-    platforms->add_deny(platform);
+    platforms->AddDeny(platform);
   }
 
   return platforms;
 }
 
-static Package::UUID* CreateUUID(Pool& mm, std::string uuid) {
+static auto CreateUUID(Pool& mm, std::string uuid) -> Package::UUID* {
   std::array<uint8_t, 16> uuid_bytes;
   uint64_t hi = 0;
   uint64_t lo = 0;
@@ -120,57 +120,57 @@ static Package::UUID* CreateUUID(Pool& mm, std::string uuid) {
   }
 
   auto* uuid_message = Pool::CreateMessage<Package::UUID>(&mm);
-  uuid_message->set_hi(hi);
-  uuid_message->set_lo(lo);
+  uuid_message->SetHi(hi);
+  uuid_message->SetLo(lo);
 
   return uuid_message;
 }
 
-static Package::OptimizationOptions::Switch* CreateOptimizationSwitch(Pool& mm, const nlohmann::ordered_json& json) {
+static auto CreateOptimizationSwitch(Pool& mm, const nlohmann::ordered_json& json) -> Package::OptimizationOptions::Switch* {
   auto* opt_switch = Pool::CreateMessage<Package::OptimizationOptions::Switch>(&mm);
 
   for (const auto& alpha_opt : json["alpha"]) {
-    opt_switch->add_alpha(alpha_opt);
+    opt_switch->AddAlpha(alpha_opt);
   }
 
   for (const auto& beta_opt : json["beta"]) {
-    opt_switch->add_beta(beta_opt);
+    opt_switch->AddBeta(beta_opt);
   }
 
   for (const auto& gamma_opt : json["gamma"]) {
-    opt_switch->add_gamma(gamma_opt);
+    opt_switch->AddGamma(gamma_opt);
   }
 
   for (const auto& llvm_opt : json["llvm"]) {
-    opt_switch->add_llvm(llvm_opt);
+    opt_switch->AddLlvm(llvm_opt);
   }
 
   for (const auto& lto : json["lto"]) {
-    opt_switch->add_lto(lto);
+    opt_switch->AddLto(lto);
   }
 
   for (const auto& runtime_opt : json["runtime"]) {
-    opt_switch->add_runtime(runtime_opt);
+    opt_switch->AddRuntime(runtime_opt);
   }
 
   return opt_switch;
 }
 
-static Package::OptimizationOptions::SystemRequirements* CreateSystemRequirements(Pool& mm,
-                                                                                  const nlohmann::ordered_json& json) {
+static auto CreateSystemRequirements(Pool& mm,
+                                                                                  const nlohmann::ordered_json& json) -> Package::OptimizationOptions::SystemRequirements* {
   auto* sys_req = Pool::CreateMessage<Package::OptimizationOptions::SystemRequirements>(&mm);
 
-  sys_req->set_min_free_cores(json["min-free-cores"]);
-  sys_req->set_min_free_memory(json["min-free-memory"]);
-  sys_req->set_min_free_storage(json["min-free-storage"]);
+  sys_req->SetMinFreeCores(json["min-free-cores"]);
+  sys_req->SetMinFreeMemory(json["min-free-memory"]);
+  sys_req->SetMinFreeStorage(json["min-free-storage"]);
 
   return sys_req;
 }
 
-static Package::BlockchainLink::PublicKey* CreatePublicKey(Pool& mm, const nlohmann::ordered_json& json) {
+static auto CreatePublicKey(Pool& mm, const nlohmann::ordered_json& json) -> Package::BlockchainLink::PublicKey* {
   auto* public_key = Pool::CreateMessage<Package::BlockchainLink::PublicKey>(&mm);
 
-  public_key->set_type(BLOCKCHAIN_PKEY_KIND_MAP.left.at(json["type"].get<std::string>()));
+  public_key->SetType(BLOCKCHAIN_PKEY_KIND_MAP.left.at(json["type"].get<std::string>()));
 
   std::vector<uint8_t> key_bytes;
   const auto& key_str = json["value"].get<std::string>();
@@ -183,10 +183,10 @@ static Package::BlockchainLink::PublicKey* CreatePublicKey(Pool& mm, const nlohm
   return public_key;
 }
 
-static Package::BlockchainLink::Signature* CreateSignature(Pool& mm, const nlohmann::ordered_json& json) {
+static auto CreateSignature(Pool& mm, const nlohmann::ordered_json& json) -> Package::BlockchainLink::Signature* {
   auto* signature = Pool::CreateMessage<Package::BlockchainLink::Signature>(&mm);
 
-  signature->set_type(BLOCKCHAIN_SIG_KIND_MAP.left.at(json["type"].get<std::string>()));
+  signature->SetType(BLOCKCHAIN_SIG_KIND_MAP.left.at(json["type"].get<std::string>()));
 
   std::vector<uint8_t> sig_bytes;
   const auto& sig_str = json["value"].get<std::string>();
@@ -199,18 +199,18 @@ static Package::BlockchainLink::Signature* CreateSignature(Pool& mm, const nlohm
   return signature;
 }
 
-static Package::BlockchainLink* CreateBlockchainLink(Pool& mm, const nlohmann::ordered_json& json) {
+static auto CreateBlockchainLink(Pool& mm, const nlohmann::ordered_json& json) -> Package::BlockchainLink* {
   auto* bc = Pool::CreateMessage<Package::BlockchainLink>(&mm);
 
-  bc->set_category(BLOCKCHAIN_CATEGORY_MAP.left.at(json["category"].get<std::string>()));
-  bc->set_allocated_uuid(CreateUUID(mm, json["uuid"]));
-  bc->set_allocated_pubkey(CreatePublicKey(mm, json["pubkey"]));
-  bc->set_allocated_signature(CreateSignature(mm, json["signature"]));
+  bc->SetCategory(BLOCKCHAIN_CATEGORY_MAP.left.at(json["category"].get<std::string>()));
+  bc->SetAllocatedUuid(CreateUUID(mm, json["uuid"]));
+  bc->SetAllocatedPubkey(CreatePublicKey(mm, json["pubkey"]));
+  bc->SetAllocatedSignature(CreateSignature(mm, json["signature"]));
 
   return bc;
 }
 
-static std::string UUIDFromQWords(uint64_t hi, uint64_t lo) {
+static auto UUIDFromQWords(uint64_t hi, uint64_t lo) -> std::string {
   std::stringstream ss;
 
   ss << std::setw(8) << std::setfill('0') << std::hex << ((hi >> 32) & 0xFFFFFFFF);
@@ -226,7 +226,7 @@ static std::string UUIDFromQWords(uint64_t hi, uint64_t lo) {
   return ss.str();
 }
 
-static std::string EncodeLowercaseHex(const std::string& data) {
+static auto EncodeLowercaseHex(const std::string& data) -> std::string {
   std::stringstream ss;
   ss << std::hex << std::setfill('0');
   for (char i : data) {
@@ -237,8 +237,8 @@ static std::string EncodeLowercaseHex(const std::string& data) {
 }
 
 namespace no3::package {
-  nitrate::no3::package::Package* ConfigJsonToProtobuf(google::protobuf::Arena& mm,
-                                                       const nlohmann::ordered_json& json) {
+  auto ConfigJsonToProtobuf(google::protobuf::Arena& mm,
+                                                       const nlohmann::ordered_json& json) -> nitrate::no3::package::Package* {
     auto* package = Pool::CreateMessage<Package>(&mm);
 
     {  // Set ['format']
@@ -247,7 +247,7 @@ namespace no3::package {
       uint32_t patch = json["format"]["patch"];
 
       auto* fmt_ver = CreateSemVersion(mm, major, minor, patch);
-      package->set_allocated_format(fmt_ver);
+      package->SetAllocatedFormat(fmt_ver);
     }
 
     {  // Set ['name']
@@ -263,7 +263,7 @@ namespace no3::package {
     }
 
     {  // Set ['category']
-      package->set_category(PACKAGE_CATEGORY_MAP.left.at(json["category"].get<std::string>()));
+      package->SetCategory(PACKAGE_CATEGORY_MAP.left.at(json["category"].get<std::string>()));
     }
 
     {  // Set ['version']
@@ -272,7 +272,7 @@ namespace no3::package {
       uint32_t patch = json["version"]["patch"];
 
       auto* ver = CreateSemVersion(mm, major, minor, patch);
-      package->set_allocated_version(ver);
+      package->SetAllocatedVersion(ver);
     }
 
     {  // Set ['contacts']
@@ -287,16 +287,16 @@ namespace no3::package {
         }
 
         for (const auto& role : contact["roles"]) {
-          contact_message->add_roles(PACKAGE_CONTACT_ROLE_MAP.left.at(role.get<std::string>()));
+          contact_message->AddRoles(PACKAGE_CONTACT_ROLE_MAP.left.at(role.get<std::string>()));
         }
 
-        package->add_contacts()->CopyFrom(*contact_message);
+        package->AddContacts()->CopyFrom(*contact_message);
       }
     }
 
     {  // Set ['platforms']
       auto* platforms = CreatePlatforms(mm, json["platforms"]);
-      package->set_allocated_platforms(platforms);
+      package->SetAllocatedPlatforms(platforms);
     }
 
     {  // Set ['optimization']
@@ -306,21 +306,21 @@ namespace no3::package {
       auto* system_req = CreateSystemRequirements(mm, json["optimization"]["requirements"]);
 
       auto* rapid_conf = Pool::CreateMessage<Package::OptimizationOptions::Rapid>(&mm);
-      rapid_conf->set_allocated_switch_(rapid_profile);
+      rapid_conf->SetAllocatedSwitch(rapid_profile);
 
       auto* debug_conf = Pool::CreateMessage<Package::OptimizationOptions::Debug>(&mm);
-      debug_conf->set_allocated_switch_(debug_profile);
+      debug_conf->SetAllocatedSwitch(debug_profile);
 
       auto* release_conf = Pool::CreateMessage<Package::OptimizationOptions::Release>(&mm);
-      release_conf->set_allocated_switch_(release_profile);
+      release_conf->SetAllocatedSwitch(release_profile);
 
       auto* opt_options = Pool::CreateMessage<Package::OptimizationOptions>(&mm);
-      opt_options->set_allocated_rapid(rapid_conf);
-      opt_options->set_allocated_debug(debug_conf);
-      opt_options->set_allocated_release(release_conf);
-      opt_options->set_allocated_requirements(system_req);
+      opt_options->SetAllocatedRapid(rapid_conf);
+      opt_options->SetAllocatedDebug(debug_conf);
+      opt_options->SetAllocatedRelease(release_conf);
+      opt_options->SetAllocatedRequirements(system_req);
 
-      package->set_allocated_optimization(opt_options);
+      package->SetAllocatedOptimization(opt_options);
     }
 
     {  // Set ['dependencies']
@@ -332,17 +332,17 @@ namespace no3::package {
 
         auto* dep = Pool::CreateMessage<Package::Dependency>(&mm);
         auto* uuid = CreateUUID(mm, dependency["uuid"]);
-        dep->set_allocated_uuid(uuid);
-        dep->set_allocated_version(ver);
+        dep->SetAllocatedUuid(uuid);
+        dep->SetAllocatedVersion(ver);
 
-        package->add_dependencies()->CopyFrom(*dep);
+        package->AddDependencies()->CopyFrom(*dep);
       }
     }
 
     {  // Set ['blockchain']
       for (const auto& blockchain : json["blockchain"]) {
         auto* bc = CreateBlockchainLink(mm, blockchain);
-        package->add_blockchain()->CopyFrom(*bc);
+        package->AddBlockchain()->CopyFrom(*bc);
       }
     }
 
@@ -351,36 +351,36 @@ namespace no3::package {
     return package;
   }
 
-  std::optional<nlohmann::ordered_json> ConfigProtobufToJson(const nitrate::no3::package::Package& protobuf) {
+  auto ConfigProtobufToJson(const nitrate::no3::package::Package& protobuf) -> std::optional<nlohmann::ordered_json> {
     nlohmann::ordered_json j;
 
-    j["format"]["major"] = protobuf.format().major();
-    j["format"]["minor"] = protobuf.format().minor();
-    j["format"]["patch"] = protobuf.format().patch();
-    j["name"] = protobuf.name();
-    j["description"] = protobuf.description();
-    j["license"] = protobuf.license();
+    j["format"]["major"] = protobuf.Format().Major();
+    j["format"]["minor"] = protobuf.Format().Minor();
+    j["format"]["patch"] = protobuf.Format().Patch();
+    j["name"] = protobuf.Name();
+    j["description"] = protobuf.Description();
+    j["license"] = protobuf.License();
 
-    if (PACKAGE_CATEGORY_MAP.right.count(protobuf.category()) == 0) {
-      Log << "Unknown package category: " << protobuf.category();
+    if (PACKAGE_CATEGORY_MAP.right.count(protobuf.Category()) == 0) {
+      Log << "Unknown package category: " << protobuf.Category();
       return std::nullopt;
     }
-    j["category"] = PACKAGE_CATEGORY_MAP.right.at(protobuf.category());
+    j["category"] = PACKAGE_CATEGORY_MAP.right.at(protobuf.Category());
 
-    j["version"]["major"] = protobuf.version().major();
-    j["version"]["minor"] = protobuf.version().minor();
-    j["version"]["patch"] = protobuf.version().patch();
+    j["version"]["major"] = protobuf.Version().Major();
+    j["version"]["minor"] = protobuf.Version().Minor();
+    j["version"]["patch"] = protobuf.Version().Patch();
 
-    for (const auto& contact : protobuf.contacts()) {
+    for (const auto& contact : protobuf.Contacts()) {
       nlohmann::ordered_json contact_json;
-      contact_json["name"] = contact.name();
-      contact_json["email"] = contact.email();
+      contact_json["name"] = contact.Name();
+      contact_json["email"] = contact.Email();
 
-      if (contact.has_phone()) {
-        contact_json["phone"] = contact.phone();
+      if (contact.HasPhone()) {
+        contact_json["phone"] = contact.Phone();
       }
 
-      for (auto role : contact.roles()) {
+      for (auto role : contact.Roles()) {
         auto r = static_cast<Package::Contact::Role>(role);
         if (PACKAGE_CONTACT_ROLE_MAP.right.count(r) == 0) {
           Log << "Unknown contact role: " << role;
@@ -393,79 +393,79 @@ namespace no3::package {
     }
 
     nlohmann::ordered_json platforms_json;
-    for (const auto& platform : protobuf.platforms().allow()) {
+    for (const auto& platform : protobuf.Platforms().Allow()) {
       platforms_json["allow"].push_back(platform);
     }
-    for (const auto& platform : protobuf.platforms().deny()) {
+    for (const auto& platform : protobuf.Platforms().Deny()) {
       platforms_json["deny"].push_back(platform);
     }
     j["platforms"] = std::move(platforms_json);
 
-    for (const auto& dependency : protobuf.dependencies()) {
+    for (const auto& dependency : protobuf.Dependencies()) {
       nlohmann::ordered_json dep_json;
-      dep_json["uuid"] = UUIDFromQWords(dependency.uuid().hi(), dependency.uuid().lo());
-      dep_json["version"]["major"] = dependency.version().major();
-      dep_json["version"]["minor"] = dependency.version().minor();
-      dep_json["version"]["patch"] = dependency.version().patch();
+      dep_json["uuid"] = UUIDFromQWords(dependency.Uuid().Hi(), dependency.Uuid().Lo());
+      dep_json["version"]["major"] = dependency.Version().Major();
+      dep_json["version"]["minor"] = dependency.Version().Minor();
+      dep_json["version"]["patch"] = dependency.Version().Patch();
       j["dependencies"].push_back(std::move(dep_json));
     }
 
     nlohmann::ordered_json optimization_json;
-    optimization_json["rapid"]["switch"]["alpha"] = protobuf.optimization().rapid().switch_().alpha();
-    optimization_json["rapid"]["switch"]["beta"] = protobuf.optimization().rapid().switch_().beta();
-    optimization_json["rapid"]["switch"]["gamma"] = protobuf.optimization().rapid().switch_().gamma();
-    optimization_json["rapid"]["switch"]["llvm"] = protobuf.optimization().rapid().switch_().llvm();
-    optimization_json["rapid"]["switch"]["lto"] = protobuf.optimization().rapid().switch_().lto();
-    optimization_json["rapid"]["switch"]["runtime"] = protobuf.optimization().rapid().switch_().runtime();
+    optimization_json["rapid"]["switch"]["alpha"] = protobuf.Optimization().Rapid().Switch().Alpha();
+    optimization_json["rapid"]["switch"]["beta"] = protobuf.Optimization().Rapid().Switch().Beta();
+    optimization_json["rapid"]["switch"]["gamma"] = protobuf.Optimization().Rapid().Switch().Gamma();
+    optimization_json["rapid"]["switch"]["llvm"] = protobuf.Optimization().Rapid().Switch().Llvm();
+    optimization_json["rapid"]["switch"]["lto"] = protobuf.Optimization().Rapid().Switch().Lto();
+    optimization_json["rapid"]["switch"]["runtime"] = protobuf.Optimization().Rapid().Switch().Runtime();
 
-    optimization_json["debug"]["switch"]["alpha"] = protobuf.optimization().debug().switch_().alpha();
-    optimization_json["debug"]["switch"]["beta"] = protobuf.optimization().debug().switch_().beta();
-    optimization_json["debug"]["switch"]["gamma"] = protobuf.optimization().debug().switch_().gamma();
-    optimization_json["debug"]["switch"]["llvm"] = protobuf.optimization().debug().switch_().llvm();
-    optimization_json["debug"]["switch"]["lto"] = protobuf.optimization().debug().switch_().lto();
-    optimization_json["debug"]["switch"]["runtime"] = protobuf.optimization().debug().switch_().runtime();
+    optimization_json["debug"]["switch"]["alpha"] = protobuf.Optimization().Debug().Switch().Alpha();
+    optimization_json["debug"]["switch"]["beta"] = protobuf.Optimization().Debug().Switch().Beta();
+    optimization_json["debug"]["switch"]["gamma"] = protobuf.Optimization().Debug().Switch().Gamma();
+    optimization_json["debug"]["switch"]["llvm"] = protobuf.Optimization().Debug().Switch().Llvm();
+    optimization_json["debug"]["switch"]["lto"] = protobuf.Optimization().Debug().Switch().Lto();
+    optimization_json["debug"]["switch"]["runtime"] = protobuf.Optimization().Debug().Switch().Runtime();
 
-    optimization_json["release"]["switch"]["alpha"] = protobuf.optimization().release().switch_().alpha();
-    optimization_json["release"]["switch"]["beta"] = protobuf.optimization().release().switch_().beta();
-    optimization_json["release"]["switch"]["gamma"] = protobuf.optimization().release().switch_().gamma();
-    optimization_json["release"]["switch"]["llvm"] = protobuf.optimization().release().switch_().llvm();
-    optimization_json["release"]["switch"]["lto"] = protobuf.optimization().release().switch_().lto();
-    optimization_json["release"]["switch"]["runtime"] = protobuf.optimization().release().switch_().runtime();
+    optimization_json["release"]["switch"]["alpha"] = protobuf.Optimization().Release().Switch().Alpha();
+    optimization_json["release"]["switch"]["beta"] = protobuf.Optimization().Release().Switch().Beta();
+    optimization_json["release"]["switch"]["gamma"] = protobuf.Optimization().Release().Switch().Gamma();
+    optimization_json["release"]["switch"]["llvm"] = protobuf.Optimization().Release().Switch().Llvm();
+    optimization_json["release"]["switch"]["lto"] = protobuf.Optimization().Release().Switch().Lto();
+    optimization_json["release"]["switch"]["runtime"] = protobuf.Optimization().Release().Switch().Runtime();
 
-    optimization_json["requirements"]["min-free-cores"] = protobuf.optimization().requirements().min_free_cores();
-    optimization_json["requirements"]["min-free-memory"] = protobuf.optimization().requirements().min_free_memory();
-    optimization_json["requirements"]["min-free-storage"] = protobuf.optimization().requirements().min_free_storage();
+    optimization_json["requirements"]["min-free-cores"] = protobuf.Optimization().Requirements().MinFreeCores();
+    optimization_json["requirements"]["min-free-memory"] = protobuf.Optimization().Requirements().MinFreeMemory();
+    optimization_json["requirements"]["min-free-storage"] = protobuf.Optimization().Requirements().MinFreeStorage();
 
     j["optimization"] = std::move(optimization_json);
 
-    for (const auto& blockchain : protobuf.blockchain()) {
-      if (BLOCKCHAIN_CATEGORY_MAP.right.count(blockchain.category()) == 0) {
-        Log << "Unknown blockchain category: " << blockchain.category();
+    for (const auto& blockchain : protobuf.Blockchain()) {
+      if (BLOCKCHAIN_CATEGORY_MAP.right.count(blockchain.Category()) == 0) {
+        Log << "Unknown blockchain category: " << blockchain.Category();
         return std::nullopt;
       }
 
-      if (BLOCKCHAIN_PKEY_KIND_MAP.right.count(blockchain.pubkey().type()) == 0) {
-        Log << "Unknown blockchain public key type: " << blockchain.pubkey().type();
+      if (BLOCKCHAIN_PKEY_KIND_MAP.right.count(blockchain.Pubkey().Type()) == 0) {
+        Log << "Unknown blockchain public key type: " << blockchain.Pubkey().Type();
         return std::nullopt;
       }
 
-      if (BLOCKCHAIN_SIG_KIND_MAP.right.count(blockchain.signature().type()) == 0) {
-        Log << "Unknown blockchain signature type: " << blockchain.signature().type();
+      if (BLOCKCHAIN_SIG_KIND_MAP.right.count(blockchain.Signature().Type()) == 0) {
+        Log << "Unknown blockchain signature type: " << blockchain.Signature().Type();
         return std::nullopt;
       }
 
       nlohmann::ordered_json bc_json;
-      bc_json["category"] = BLOCKCHAIN_CATEGORY_MAP.right.at(blockchain.category());
-      bc_json["uuid"] = UUIDFromQWords(blockchain.uuid().hi(), blockchain.uuid().lo());
+      bc_json["category"] = BLOCKCHAIN_CATEGORY_MAP.right.at(blockchain.Category());
+      bc_json["uuid"] = UUIDFromQWords(blockchain.Uuid().Hi(), blockchain.Uuid().Lo());
 
       nlohmann::ordered_json pubkey_json;
-      pubkey_json["type"] = BLOCKCHAIN_PKEY_KIND_MAP.right.at(blockchain.pubkey().type());
-      pubkey_json["value"] = EncodeLowercaseHex(blockchain.pubkey().value());
+      pubkey_json["type"] = BLOCKCHAIN_PKEY_KIND_MAP.right.at(blockchain.Pubkey().Type());
+      pubkey_json["value"] = EncodeLowercaseHex(blockchain.Pubkey().Value());
       bc_json["pubkey"] = std::move(pubkey_json);
 
       nlohmann::ordered_json sig_json;
-      sig_json["type"] = BLOCKCHAIN_SIG_KIND_MAP.right.at(blockchain.signature().type());
-      sig_json["value"] = EncodeLowercaseHex(blockchain.signature().value());
+      sig_json["type"] = BLOCKCHAIN_SIG_KIND_MAP.right.at(blockchain.Signature().Type());
+      sig_json["value"] = EncodeLowercaseHex(blockchain.Signature().Value());
       bc_json["signature"] = std::move(sig_json);
 
       j["blockchain"].push_back(std::move(bc_json));
@@ -474,7 +474,7 @@ namespace no3::package {
     return j;
   }
 
-  static std::tuple<size_t, size_t, size_t> SplitSemVer(const std::string& version) {
+  static auto SplitSemVer(const std::string& version) -> std::tuple<size_t, size_t, size_t> {
     size_t major = 0;
     size_t minor = 0;
     size_t patch = 0;
@@ -489,11 +489,11 @@ namespace no3::package {
     return {major, minor, patch};
   }
 
-  nlohmann::ordered_json PackageConfig::CreateInitialConfiguration(const std::string& name,
+  auto PackageConfig::CreateInitialConfiguration(const std::string& name,
                                                                    const std::string& description,
                                                                    const std::string& license,
                                                                    const std::string& version,
-                                                                   PackageCategory category) {
+                                                                   PackageCategory category) -> nlohmann::ordered_json {
     nlohmann::ordered_json j;
 
     j["format"]["major"] = 1;

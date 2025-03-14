@@ -51,7 +51,7 @@ void CambrianFormatter::Visit(ncc::FlowPtr<ncc::parse::Enum> n) {
     return;
   }
 
-  m_line << " {" << std::endl;
+  m_line << " {" << '\n';
   m_indent += m_tabSize;
 
   for (auto& it : n->GetFields()) {
@@ -61,7 +61,7 @@ void CambrianFormatter::Visit(ncc::FlowPtr<ncc::parse::Enum> n) {
       m_line << " = ";
       it.second.value().Accept(*this);
     }
-    m_line << "," << std::endl;
+    m_line << "," << '\n';
   }
 
   m_indent -= m_tabSize;

@@ -167,10 +167,10 @@ namespace ncc {
 
       constexpr auto operator->() -> Pointee * { return m_s.m_ref; }
       constexpr auto operator->() const -> const Pointee * { return m_s.m_ref; }
-      [[nodiscard]] constexpr auto get() -> Pointee * {  // NOLINT
+      [[nodiscard]] constexpr auto get() -> Pointee * {  // NOLINT(readability-identifier-naming)
         return m_s.m_ref;
       }
-      [[nodiscard]] constexpr auto get() const -> const Pointee * {  // NOLINT
+      [[nodiscard]] constexpr auto get() const -> const Pointee * {  // NOLINT(readability-identifier-naming)
         return m_s.m_ref;
       }
       constexpr operator bool() const { return m_s.m_ref != nullptr; }
@@ -191,7 +191,8 @@ namespace ncc {
       }
 
       template <class U>
-      constexpr auto As() const {
+      [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] constexpr auto As()
+          const {
         return FlowPtr<const U>(reinterpret_cast<const U *>(get()), Trace());
       }
 

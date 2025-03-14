@@ -48,7 +48,7 @@ namespace ncc::parse {
 
   class NCC_EXPORT CodeWriterFactory final {
   public:
-    static std::unique_ptr<ICodeWriter> Create(std::ostream &os, SyntaxVersion ver = SyntaxVersion::NITRATE_1_0);
+    static auto Create(std::ostream &os, SyntaxVersion ver = SyntaxVersion::NITRATE_1_0) -> std::unique_ptr<ICodeWriter>;
   };
 }  // namespace ncc::parse
 
