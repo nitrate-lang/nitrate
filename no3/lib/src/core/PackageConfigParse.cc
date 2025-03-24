@@ -50,17 +50,17 @@ static constexpr ConfigFormat kConfigPROTOBUF = "PROTOBUF";
 static constexpr ConfigFormat kConfigNITRATE = "NITRATE";
 
 namespace no3::package {
-  auto ValidatePackageConfig(const nlohmann::ordered_json& json) -> bool;
-  auto ConfigJsonToProtobuf(google::protobuf::Arena& mm, const nlohmann::ordered_json& json) -> nitrate::no3::package::Package*;
+  bool ValidatePackageConfig(const nlohmann::ordered_json& json);
+  nitrate::no3::package::Package* ConfigJsonToProtobuf(google::protobuf::Arena& mm, const nlohmann::ordered_json& json);
   std::optional<nlohmann::ordered_json> ConfigProtobufToJson(const nitrate::no3::package::Package& protobuf);
 }  // namespace no3::package
 
-static auto TestIsReadable(const std::filesystem::path& path) -> bool {
+static bool TestIsReadable(const std::filesystem::path& path) {
   std::ifstream file(path);
   return file.good();
 }
 
-static auto LocatePackageConfigFile(const std::filesystem::path& package_dir) -> std::optional<ConfigFormatPair> {
+static std::optional<ConfigFormatPair> LocatePackageConfigFile(const std::filesystem::path& package_dir) {
   const std::vector<ConfigFormatPair> config_format_precedence = {
       {kConfigJSON, package_dir / "no3.json"},
       {kConfigPROTOBUF, package_dir / "no3.pb"},
@@ -153,7 +153,7 @@ static void AssignDefaults(nlohmann::ordered_json& json) {
   (void)json;
 }
 
-[[nodiscard]] const nlohmann::ordered_jsonauto PackageConfig::Json(bool defaults) const -> & {
+[[nodiscard]] const nlohmann::ordered_json& PackageConfig::Json(bool defaults) const {
   if (defaults) {
     if (!m_full.has_value()) {
       m_full = m_raw;
@@ -166,7 +166,7 @@ static void AssignDefaults(nlohmann::ordered_json& json) {
   return m_raw;
 }
 
-[[nodiscard]] auto PackageConfig::Protobuf(bool defaults) const -> const std::string& {
+[[nodiscard]] const std::string& PackageConfig::Protobuf(bool defaults) const {
   google::protobuf::Arena mm;
 
   if (defaults) {
@@ -194,7 +194,7 @@ static void AssignDefaults(nlohmann::ordered_json& json) {
   return m_protobuf_raw.value();
 }
 
-auto PackageConfig::ParsePackage(const std::filesystem::path& package_dir) -> std::optional<PackageConfig> {
+std::optional<PackageConfig> PackageConfig::ParsePackage(const std::filesystem::path& package_dir) {
   const auto package_config = LocatePackageConfigFile(package_dir);
   if (!package_config.has_value()) {
     Log << "No known package configuration was found in " << package_dir;
