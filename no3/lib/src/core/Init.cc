@@ -33,7 +33,6 @@
 
 #include <core/PackageConfigFormat.pb.h>
 #include <git2/global.h>
-#include <nitrate-emit/Lib.h>
 
 #include <atomic>
 #include <curlpp/cURLpp.hpp>
@@ -42,7 +41,6 @@
 #include <nitrate-core/Init.hh>
 #include <nitrate-core/Logger.hh>
 #include <nitrate-core/Macro.hh>
-#include <nitrate-ir/Init.hh>
 #include <nitrate-lexer/Init.hh>
 #include <nitrate-parser/Init.hh>
 #include <nitrate-seq/Init.hh>
@@ -55,11 +53,11 @@ using namespace no3::detail;
 static std::atomic<size_t> RCInitializationContextCounter = 0;
 static std::mutex RCInitializationContextMutex;
 
-static bool PerformInitialize(std::ostream& log);
+static auto PerformInitialize(std::ostream& log) -> bool;
 static void PerformDeinitialize();
 
 NCC_EXPORT RCInitializationContext::RCInitializationContext(LibraryDeinitializationCallback on_deinit) noexcept
-    : m_on_deinit(std::move(on_deinit)), m_active(true) {}
+    : m_on_deinit(std::move(on_deinit)) {}
 
 NCC_EXPORT RCInitializationContext::RCInitializationContext(const RCInitializationContext& o) noexcept
     : m_on_deinit(o.m_on_deinit), m_active(o.m_active) {
@@ -74,7 +72,7 @@ NCC_EXPORT RCInitializationContext::RCInitializationContext(RCInitializationCont
   o.m_active = false;
 }
 
-NCC_EXPORT RCInitializationContext& RCInitializationContext::operator=(const RCInitializationContext& o) noexcept {
+NCC_EXPORT auto RCInitializationContext::operator=(const RCInitializationContext& o) noexcept -> RCInitializationContext& {
   m_active = o.m_active;
   m_on_deinit = o.m_on_deinit;
   if (m_active) {  // Dont increment RC for moved-from instances
@@ -84,7 +82,7 @@ NCC_EXPORT RCInitializationContext& RCInitializationContext::operator=(const RCI
   return *this;
 }
 
-NCC_EXPORT RCInitializationContext& RCInitializationContext::operator=(RCInitializationContext&& o) noexcept {
+NCC_EXPORT auto RCInitializationContext::operator=(RCInitializationContext&& o) noexcept -> RCInitializationContext& {
   // RC count is preserved
   m_active = o.m_active;
   m_on_deinit = o.m_on_deinit;
@@ -128,7 +126,7 @@ NCC_EXPORT std::unique_ptr<detail::RCInitializationContext> no3::OpenLibrary(
 
 ///===================================================================================================
 
-ncc::Sev GetMinimumLogLevel() {
+auto GetMinimumLogLevel() -> ncc::Sev {
   static const std::unordered_map<std::string, ncc::Sev> map = {
       {"TRACE", ncc::Trace},         {"DEBUG", ncc::Debug}, {"INFO", ncc::Info},         {"NOTICE", ncc::Notice},
       {"WARNING", ncc::Warning},     {"ERROR", ncc::Error}, {"CRITICAL", ncc::Critical}, {"ALERT", ncc::Alert},
@@ -151,7 +149,7 @@ ncc::Sev GetMinimumLogLevel() {
   return kDefaultLevel;
 }
 
-static bool PerformInitialize(std::ostream& log) {
+static auto PerformInitialize(std::ostream& log) -> bool {
   using namespace ncc;
 
   std::lock_guard<std::mutex> lock(RCInitializationContextMutex);
@@ -177,16 +175,6 @@ static bool PerformInitialize(std::ostream& log) {
     return false;
   }
 
-  if (!ir::IRLibrary.InitRC()) {
-    log << "Failed to initialize libnitrate-ir library" << std::endl;
-    return false;
-  }
-
-  if (!QcodeLibInit()) {
-    log << "Failed to initialize libnitrate-emit library" << std::endl;
-    return false;
-  }
-
   curlpp::initialize(CURL_GLOBAL_ALL);
 
   if (git_libgit2_init() <= 0) {
@@ -208,8 +196,6 @@ static void PerformDeinitialize() {
 
   git_libgit2_shutdown();
   // curlpp is not refcounted - curlpp::terminate();
-  QcodeLibDeinit();
-  ir::IRLibrary.DeinitRC();
   parse::ParseLibrary.DeinitRC();
   seq::SeqLibrary.DeinitRC();
   lex::LexerLibrary.DeinitRC();

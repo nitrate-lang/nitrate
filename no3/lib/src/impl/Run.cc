@@ -47,7 +47,7 @@ static const auto IMPL_SUBCOMMANDS = []() {
   return m;
 }();
 
-bool no3::cmd_impl::subcommands::CommandImplHelp(ConstArguments, const MutArguments&) {
+auto no3::cmd_impl::subcommands::CommandImplHelp(ConstArguments, const MutArguments&) -> bool {
   std::string_view message =
       R"(╭───────────────┬──────────────────────────────────────────────────────────────╮
 │ Subcommand    │ Brief description of the subcommand                          │
@@ -67,7 +67,7 @@ bool no3::cmd_impl::subcommands::CommandImplHelp(ConstArguments, const MutArgume
   return true;
 }
 
-bool no3::Interpreter::PImpl::CommandImpl(ConstArguments full_argv, MutArguments argv) {
+auto no3::Interpreter::PImpl::CommandImpl(ConstArguments full_argv, MutArguments argv) -> bool {
   using namespace no3::cmd_impl::subcommands;
 
   if (argv.size() < 2) {

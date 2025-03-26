@@ -103,7 +103,7 @@ void ECBase::GetJsonRepresentation(std::ostream &os) const {
   os << "]}";
 }
 
-static std::optional<std::string> GetRealPath(std::string_view in_path) {
+static auto GetRealPath(std::string_view in_path) -> std::optional<std::string> {
   std::string path((in_path));
 
   if (auto index = path.find("$NCC_CONF"); index != std::string::npos) {

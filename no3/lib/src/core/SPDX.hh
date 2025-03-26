@@ -40,9 +40,9 @@
 
 namespace no3::constants {
   extern const std::unordered_map<std::string_view, std::string_view> SPDX_IDENTIFIERS;
-  bool IsExactSPDXLicenseMatch(std::string query);
-  std::string_view FindClosestSPDXLicense(std::string query);
-  std::optional<std::string> GetSPDXLicenseText(std::string query);
+  auto IsExactSPDXLicenseMatch(std::string query) -> bool;
+  auto FindClosestSPDXLicense(std::string query) -> std::string_view;
+  auto GetSPDXLicenseText(const std::string& query) -> std::optional<std::string>;
 }  // namespace no3::constants
 
 #endif  // __NO3_CONF_SPDX_HH__

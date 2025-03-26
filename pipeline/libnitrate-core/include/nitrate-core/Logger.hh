@@ -61,7 +61,7 @@ namespace ncc {
     Sev_MaxValue = Raw
   };
 
-  static inline std::string_view ToString(Sev sev) {
+  static inline auto ToString(Sev sev) -> std::string_view {
     switch (sev) {
       case Sev::Trace:
         return "trace";
@@ -95,7 +95,7 @@ namespace ncc {
     }
   }
 
-  static inline std::ostream &operator<<(std::ostream &os, Sev sev) {
+  static inline auto operator<<(std::ostream &os, Sev sev) -> std::ostream & {
     os << ToString(sev);
     return os;
   }
@@ -119,7 +119,7 @@ namespace ncc {
     std::vector<std::string> m_tags, m_fixes, m_examples, m_dev_notes, m_notes;
     std::string m_flagname, m_nice_name, m_details;
 
-    bool operator==(const ECDetails &rhs) const {
+    auto operator==(const ECDetails &rhs) const -> bool {
       return m_flagname == rhs.m_flagname && m_nice_name == rhs.m_nice_name && m_details == rhs.m_details &&
              m_tags == rhs.m_tags && m_fixes == rhs.m_fixes && m_examples == rhs.m_examples &&
              m_dev_notes == rhs.m_dev_notes && m_notes == rhs.m_notes;
@@ -251,7 +251,7 @@ namespace ncc {
 
       [[nodiscard]] auto ID() const -> LogSubscriberID { return m_id; }
       [[nodiscard]] auto Callback() const -> const LogCallback & { return m_cb; }
-      [[nodiscard]] bool IsSuspended() const { return m_suspended; }
+      [[nodiscard]] auto IsSuspended() const -> bool { return m_suspended; }
     };
 
   private:
@@ -267,14 +267,14 @@ namespace ncc {
     auto Subscribe(LogCallback cb) -> LogSubscriberID;
     void Unsubscribe(LogSubscriberID id);
     void UnsubscribeAll();
-    const auto &SubscribersList() const { return m_subs; }
+    auto SubscribersList() const -> const auto & { return m_subs; }
 
     void Suspend(LogSubscriberID id);
     void SuspendAll();
     void Resume(LogSubscriberID id);
     void ResumeAll();
 
-    LogSubscriberID operator+=(LogCallback cb) { return Subscribe(std::move(cb)); }
+    auto operator+=(LogCallback cb) -> LogSubscriberID { return Subscribe(std::move(cb)); }
 
     void Enable() { m_enabled = true; }
     void Disable() { m_enabled = false; }

@@ -429,7 +429,7 @@ auto GeneralParser::PImpl::RecurseImportRegularFile(const std::filesystem::path 
       auto subtree = subparser.m_impl->RecurseBlock(false, false, BlockMode::Unknown);
 
       ImportName importee_name;
-      import::ImportSubgraphVisitor subgraph_visitor(m_fac, m_import_config.GetThisPackageName(), importee_name);
+      import::ImportSubgraphVisitor subgraph_visitor(m_fac, m_import_config.GetThisImportName(), importee_name);
       subtree->Accept(subgraph_visitor);
 
       ParserSwapScanner(scanner_ptr);
@@ -530,7 +530,7 @@ auto GeneralParser::PImpl::RecurseImportRegularFile(const std::filesystem::path 
     // Prepare the subgraph by stripping out unnecessary nodes and
     // transforming definitions into declarations as needed
     // to create the external interface of the package
-    import::ImportSubgraphVisitor subgraph_visitor(m_fac, m_import_config.GetThisPackageName(), import_name);
+    import::ImportSubgraphVisitor subgraph_visitor(m_fac, m_import_config.GetThisImportName(), import_name);
     subtree->Accept(subgraph_visitor);
 
     // Restore the thread_local content for the diagnostics subsystem

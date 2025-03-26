@@ -63,20 +63,20 @@ namespace ncc::seq {
     ///=========================================================================
     /// Preprocessor API route handlers
 
-    [[nodiscard]] int32_t SysNext();
-    [[nodiscard]] int32_t SysPeek();
-    [[nodiscard]] int32_t SysEmit();
-    [[nodiscard]] int32_t SysDebug();
-    [[nodiscard]] int32_t SysInfo();
-    [[nodiscard]] int32_t SysWarn();
-    [[nodiscard]] int32_t SysError();
-    [[nodiscard]] int32_t SysAbort();
-    [[nodiscard]] int32_t SysFatal();
-    [[nodiscard]] int32_t SysGet();
-    [[nodiscard]] int32_t SysSet();
-    [[nodiscard]] int32_t SysCtrl();
-    [[nodiscard]] int32_t SysFetch();
-    [[nodiscard]] int32_t SysRandom();
+    [[nodiscard]] auto SysNext() -> int32_t;
+    [[nodiscard]] auto SysPeek() -> int32_t;
+    [[nodiscard]] auto SysEmit() -> int32_t;
+    [[nodiscard]] auto SysDebug() -> int32_t;
+    [[nodiscard]] auto SysInfo() -> int32_t;
+    [[nodiscard]] auto SysWarn() -> int32_t;
+    [[nodiscard]] auto SysError() -> int32_t;
+    [[nodiscard]] auto SysAbort() -> int32_t;
+    [[nodiscard]] auto SysFatal() -> int32_t;
+    [[nodiscard]] auto SysGet() -> int32_t;
+    [[nodiscard]] auto SysSet() -> int32_t;
+    [[nodiscard]] auto SysCtrl() -> int32_t;
+    [[nodiscard]] auto SysFetch() -> int32_t;
+    [[nodiscard]] auto SysRandom() -> int32_t;
 
     ///=========================================================================
     /// Helper functions to configure the LUA interpreter
@@ -95,7 +95,6 @@ namespace ncc::seq {
     static auto HandleImportDirective(Sequencer& self) -> bool;
     static auto HandleMacroBlock(Sequencer& self, lex::Token macro) -> bool;
     static auto HandleMacroStatement(Sequencer& self, lex::Token macro) -> bool;
-    static auto RenderTranslationUnitSource(Sequencer& self, std::string_view source) -> std::optional<std::string>;
 
     ///=========================================================================
     /// IScanner overrides

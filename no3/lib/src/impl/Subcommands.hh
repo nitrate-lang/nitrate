@@ -36,7 +36,7 @@
 #include <core/InterpreterImpl.hh>
 
 namespace no3::cmd_impl::subcommands {
-  bool CommandImplHelp(ConstArguments full_argv, const MutArguments& argv);
-  bool CommandImplConfigParse(ConstArguments full_argv, const MutArguments& argv);
-  bool CommandImplSelfTest(ConstArguments full_argv, const MutArguments& argv);
+  auto CommandImplHelp(ConstArguments full_argv, const MutArguments& argv) -> bool;
+  auto CommandImplConfigParse(ConstArguments full_argv, const MutArguments& argv) -> bool;
+  auto CommandImplSelfTest(ConstArguments full_argv, const MutArguments& argv) -> bool;
 }  // namespace no3::cmd_impl::subcommands

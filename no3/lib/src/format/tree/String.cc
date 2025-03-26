@@ -149,7 +149,7 @@ void CambrianFormatter::EscapeStringLiteral(std::string_view str, bool put_quote
       }
 
       if (rem > 0 || i < chunks_n - 1) {
-        m_line << " \\" << std::endl;
+        m_line << " \\" << '\n';
       }
     }
   }

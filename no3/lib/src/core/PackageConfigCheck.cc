@@ -47,7 +47,7 @@ static const std::regex PACKAGE_NAME_PATTERN(PackageConfig::PackageNameRegex);
 
 static const std::regex SEMVER_PATTERN(R"MAGIC(^\d+\.\d+\.\d+$)MAGIC");
 
-bool PackageConfig::ValidatePackageName(const std::string& package_name, bool maybe_standard_lib) {
+auto PackageConfig::ValidatePackageName(const std::string& package_name, bool maybe_standard_lib) -> bool {
   Log << Trace << "Validating package name format: \"" << package_name << "\"";
 
   if (!std::regex_match(package_name, PACKAGE_NAME_PATTERN)) {
@@ -73,7 +73,7 @@ bool PackageConfig::ValidatePackageName(const std::string& package_name, bool ma
   return true;
 }
 
-bool PackageConfig::ValidatePackageLicense(const std::string& license) {
+auto PackageConfig::ValidatePackageLicense(const std::string& license) -> bool {
   Log << Trace << "Validating package license: \"" << license << "\"";
 
   if (!constants::IsExactSPDXLicenseMatch(license)) {
@@ -86,7 +86,7 @@ bool PackageConfig::ValidatePackageLicense(const std::string& license) {
   return true;
 }
 
-bool PackageConfig::ValidatePackageVersion(const std::string& version) {
+auto PackageConfig::ValidatePackageVersion(const std::string& version) -> bool {
   Log << Trace << "Validating package version: \"" << version << "\"";
   if (!std::regex_match(version, SEMVER_PATTERN)) {
     Log << Trace << "Package version failed format validation [regex mismatch]: \"" << version << "\"";
@@ -104,7 +104,7 @@ bool PackageConfig::ValidatePackageVersion(const std::string& version) {
     return false;                                                           \
   }
 
-static bool ValidateUUID(const std::string& uuid) {
+static auto ValidateUUID(const std::string& uuid) -> bool {
   schema_assert(uuid.size() == 36);
   schema_assert(uuid[8] == '-');
   schema_assert(uuid[13] == '-');
@@ -116,13 +116,13 @@ static bool ValidateUUID(const std::string& uuid) {
   return true;
 }
 
-static bool ValidateEd25519PublicKey(const std::string& value) {
+static auto ValidateEd25519PublicKey(const std::string& value) -> bool {
   schema_assert(value.size() == 64);
   schema_assert(std::all_of(value.begin(), value.end(), [](char c) { return std::isxdigit(c); }));
   return true;
 }
 
-static bool ValidateKeyPair(const nlohmann::ordered_json& json) {
+static auto ValidateKeyPair(const nlohmann::ordered_json& json) -> bool {
   schema_assert(json.is_object());
 
   schema_assert(json.contains("type"));
@@ -142,13 +142,13 @@ static bool ValidateKeyPair(const nlohmann::ordered_json& json) {
   return true;
 }
 
-static bool ValidateEd25519Signature(const std::string& value) {
+static auto ValidateEd25519Signature(const std::string& value) -> bool {
   schema_assert(value.size() == 128);
   schema_assert(std::all_of(value.begin(), value.end(), [](char c) { return std::isxdigit(c); }));
   return true;
 }
 
-static bool ValidateSignatureJson(const nlohmann::ordered_json& json) {
+static auto ValidateSignatureJson(const nlohmann::ordered_json& json) -> bool {
   schema_assert(json.is_object());
 
   schema_assert(json.contains("type"));
@@ -166,7 +166,7 @@ static bool ValidateSignatureJson(const nlohmann::ordered_json& json) {
   return true;
 }
 
-static bool ValidateSemVersion(const nlohmann::ordered_json& json) {
+static auto ValidateSemVersion(const nlohmann::ordered_json& json) -> bool {
   schema_assert(json.is_object());
 
   schema_assert(json.contains("major"));
@@ -183,7 +183,7 @@ static bool ValidateSemVersion(const nlohmann::ordered_json& json) {
   return true;
 }
 
-static bool ValidateBuildOptimizationSwitch(const nlohmann::ordered_json& json) {
+static auto ValidateBuildOptimizationSwitch(const nlohmann::ordered_json& json) -> bool {
   schema_assert(json.is_object());
 
   schema_assert(json.contains("alpha"));
@@ -231,7 +231,7 @@ static bool ValidateBuildOptimizationSwitch(const nlohmann::ordered_json& json) 
   return true;
 }
 
-static bool ValidateBuildOptimization(const nlohmann::ordered_json& json) {
+static auto ValidateBuildOptimization(const nlohmann::ordered_json& json) -> bool {
   schema_assert(json.is_object());
 
   {  // key ["optimization"]["rapid"]
@@ -278,7 +278,7 @@ static bool ValidateBuildOptimization(const nlohmann::ordered_json& json) {
   return true;
 }
 
-static bool ValidateBlockchain(const nlohmann::ordered_json& json) {
+static auto ValidateBlockchain(const nlohmann::ordered_json& json) -> bool {
   schema_assert(json.is_array());
 
   schema_assert(std::all_of(json.begin(), json.end(), [](const auto& blockchain_item) {
@@ -318,7 +318,7 @@ static bool ValidateBlockchain(const nlohmann::ordered_json& json) {
 }
 
 namespace no3::package {
-  bool ValidatePackageConfig(const nlohmann::ordered_json& json) {
+  auto ValidatePackageConfig(const nlohmann::ordered_json& json) -> bool {
     schema_assert(json.is_object());
 
     {  // key ["format"]

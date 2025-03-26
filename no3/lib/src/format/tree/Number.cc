@@ -76,7 +76,7 @@ void CambrianFormatter::WriteFloatLiteral(std::string_view float_str) {
     WriteFloatLiteralChunk(float_str.substr(i * kMaxChunkSize, kMaxChunkSize));
 
     if (rem > 0 || i < chunks_n - 1) {
-      m_line << "_ \\" << std::endl;
+      m_line << "_ \\" << '\n';
       if (m_line_size != 0U) {
         m_line << std::string(m_line_size, ' ');
       }

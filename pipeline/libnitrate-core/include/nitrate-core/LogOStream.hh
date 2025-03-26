@@ -44,15 +44,15 @@ namespace ncc {
     ~LogOStream() override = default;
 
     LogOStream(const LogOStream &) = delete;
-    LogOStream &operator=(const LogOStream &) = delete;
+    auto operator=(const LogOStream &) -> LogOStream & = delete;
 
     LogOStream(LogOStream &&) = delete;
-    LogOStream &operator=(LogOStream &&) = delete;
+    auto operator=(LogOStream &&) -> LogOStream & = delete;
 
   protected:
-    int_type overflow(int_type c) override;
+    auto overflow(int_type c) -> int_type override;
     auto xsputn(const char *s, std::streamsize count) -> std::streamsize override;
-    int sync() override;
+    auto sync() -> int override;
   };
 
   extern thread_local std::ostream clog;  // NOLINT(readability-identifier-naming)

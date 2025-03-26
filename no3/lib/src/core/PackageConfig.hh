@@ -50,7 +50,7 @@ namespace no3::package {
   public:
     ~PackageConfig() = default;
 
-    static std::optional<PackageConfig> ParsePackage(const std::filesystem::path& package_dir);
+    static auto ParsePackage(const std::filesystem::path& package_dir) -> std::optional<PackageConfig>;
 
     [[nodiscard]] auto Json(bool defaults = true) const -> const nlohmann::ordered_json&;
     [[nodiscard]] auto Protobuf(bool defaults = true) const -> const std::string&;
@@ -63,14 +63,14 @@ namespace no3::package {
 
     static std::string PackageNameRegex;
 
-    [[nodiscard]] static bool ValidatePackageName(const std::string& package_name, bool maybe_standard_lib = false);
-    [[nodiscard]] static bool ValidatePackageLicense(const std::string& license);
-    [[nodiscard]] static bool ValidatePackageVersion(const std::string& version);
+    [[nodiscard]] static auto ValidatePackageName(const std::string& package_name, bool maybe_standard_lib = false) -> bool;
+    [[nodiscard]] static auto ValidatePackageLicense(const std::string& license) -> bool;
+    [[nodiscard]] static auto ValidatePackageVersion(const std::string& version) -> bool;
 
-    [[nodiscard]] static nlohmann::ordered_json CreateInitialConfiguration(const std::string& name,
+    [[nodiscard]] static auto CreateInitialConfiguration(const std::string& name,
                                                                            const std::string& description,
                                                                            const std::string& license,
                                                                            const std::string& version,
-                                                                           PackageCategory category);
+                                                                           PackageCategory category) -> nlohmann::ordered_json;
   };
 }  // namespace no3::package

@@ -160,7 +160,7 @@ auto DynamicArena::GetSpaceUsed() const -> size_t { return m_pimpl->GetSpaceUsed
 auto DynamicArena::GetSpaceManaged() const -> size_t { return m_pimpl->GetSpaceManaged(); }
 void DynamicArena::Reset() { m_pimpl->Reset(); }
 
-void *DynamicArena::do_allocate(size_t bytes, size_t alignment) {
+auto DynamicArena::do_allocate(size_t bytes, size_t alignment) -> void * {
   auto *ptr = m_pimpl->Allocate(bytes, alignment);
   memset(ptr, 0xff, bytes);
   return ptr;
@@ -172,7 +172,7 @@ void DynamicArena::do_deallocate(void *p, size_t bytes, size_t alignment) {
   (void)alignment;
 }
 
-bool DynamicArena::do_is_equal(const memory_resource &other) const noexcept { return this == &other; }
+auto DynamicArena::do_is_equal(const memory_resource &other) const noexcept -> bool { return this == &other; }
 
 auto DynamicArena::begin() -> Iterator {
   auto &bases = m_pimpl->m_bases;

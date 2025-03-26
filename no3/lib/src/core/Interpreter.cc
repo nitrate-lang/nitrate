@@ -42,7 +42,7 @@
 using namespace no3;
 using namespace ncc;
 
-bool Interpreter::PImpl::CommandHelp(ConstArguments, const MutArguments&) {
+auto Interpreter::PImpl::CommandHelp(ConstArguments, const MutArguments&) -> bool {
   std::string_view message =
       R"(╭──────────────────────────────────────────────────────────────────────╮
 │   .-----------------.    .----------------.     .----------------.   │
@@ -114,14 +114,14 @@ bool Interpreter::PImpl::CommandHelp(ConstArguments, const MutArguments&) {
   return true;
 }
 
-bool Interpreter::PImpl::CommandLSP(ConstArguments, const MutArguments& argv) {
+auto Interpreter::PImpl::CommandLSP(ConstArguments, const MutArguments& argv) -> bool {
   (void)argv;
 
   Log << "Not implemented";
   return false;
 }
 
-bool Interpreter::PImpl::CommandLicense(ConstArguments, const MutArguments& argv) {
+auto Interpreter::PImpl::CommandLicense(ConstArguments, const MutArguments& argv) -> bool {
   if (argv.size() != 1) {
     Log << "Command 'license' does not take any arguments.";
     return false;
@@ -162,7 +162,7 @@ void Interpreter::PImpl::SetupCommands() {
   m_commands["update"] = m_commands["u"] = CommandUpdate;
 }
 
-bool Interpreter::PImpl::Perform(const std::vector<std::string>& command) {
+auto Interpreter::PImpl::Perform(const std::vector<std::string>& command) -> bool {
   if (command.size() >= 2) {
     if (auto it = m_commands.find(command[1]); it != m_commands.end()) {
       auto ok = it->second(command, MutArguments(command.begin() + 1, command.end()));
@@ -180,7 +180,7 @@ bool Interpreter::PImpl::Perform(const std::vector<std::string>& command) {
   return false;
 }
 
-ncc::Sev GetMinimumLogLevel();
+auto GetMinimumLogLevel() -> ncc::Sev;
 
 NCC_EXPORT Interpreter::Interpreter(OutputHandler output_handler) noexcept {
   // We need to suspend all log subscribers to prevent external loggers from
@@ -245,7 +245,7 @@ NCC_EXPORT Interpreter::~Interpreter() noexcept {
   }
 }
 
-NCC_EXPORT bool Interpreter::Execute(const std::vector<std::string>& command) noexcept {
+NCC_EXPORT auto Interpreter::Execute(const std::vector<std::string>& command) noexcept -> bool {
   if (!m_impl) {
     return false;
   }

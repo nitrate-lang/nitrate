@@ -77,7 +77,7 @@ void CambrianFormatter::Visit(FlowPtr<Call> n) {
       }
 
       if (it != n->GetArgs().end() - 1) {
-        m_line << std::endl << GetIndent();
+        m_line << '\n' << GetIndent();
       }
     }
 

@@ -76,7 +76,7 @@ void CambrianFormatter::Visit(FlowPtr<List> n) {
     if (break_at == 1) {
       m_line << "[";
 
-      m_line << std::endl;
+      m_line << '\n';
 
       { /* Write list items */
         size_t the_indent = m_indent + m_tabSize;
@@ -92,7 +92,7 @@ void CambrianFormatter::Visit(FlowPtr<List> n) {
             m_line << ",";
           }
 
-          m_line << std::endl;
+          m_line << '\n';
         }
 
         std::swap(m_indent, the_indent);
@@ -121,7 +121,7 @@ void CambrianFormatter::Visit(FlowPtr<List> n) {
           bool is_break = !is_last && i != 0 && (i + 1) % break_at == 0;
 
           if (is_break) {
-            m_line << std::endl << GetIndent();
+            m_line << '\n' << GetIndent();
           } else if (!is_last) {
             m_line << " ";
           }
@@ -147,7 +147,7 @@ void CambrianFormatter::Visit(FlowPtr<Assoc> node) {
     }
 
     if (use_braces) {
-      m_line << "{" << std::endl;
+      m_line << "{" << '\n';
       m_indent += m_tabSize;
       m_line << GetIndent();
     }
@@ -161,7 +161,7 @@ void CambrianFormatter::Visit(FlowPtr<Assoc> node) {
       if (list->GetItems().empty()) {
         m_line << "{}";
       } else {
-        m_line << "{" << std::endl;
+        m_line << "{" << '\n';
         m_indent += m_tabSize;
 
         for (auto it = list->GetItems().begin(); it != list->GetItems().end(); ++it) {
@@ -173,7 +173,7 @@ void CambrianFormatter::Visit(FlowPtr<Assoc> node) {
             m_line << ",";
           }
 
-          m_line << std::endl;
+          m_line << '\n';
         }
 
         m_indent -= m_tabSize;
@@ -185,7 +185,7 @@ void CambrianFormatter::Visit(FlowPtr<Assoc> node) {
 
     if (use_braces) {
       m_indent -= m_tabSize;
-      m_line << std::endl << GetIndent() << "}";
+      m_line << '\n' << GetIndent() << "}";
     }
   };
 

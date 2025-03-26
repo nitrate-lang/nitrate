@@ -53,8 +53,8 @@ namespace ncc {
 
     Environment(const Environment &) = delete;
     Environment(Environment &&) = delete;
-    Environment &operator=(const Environment &) = delete;
-    Environment &operator=(Environment &&) = delete;
+    auto operator=(const Environment &) -> Environment & = delete;
+    auto operator=(Environment &&) -> Environment & = delete;
 
     auto Contains(std::string_view key) -> bool override;
     auto Get(string key) -> std::optional<string> override;

@@ -262,14 +262,14 @@ pub fn main(args: [str]): i32 {
 }
 )";
 
-std::string no3::package::GenerateGitKeep() { return std::string(DEFAULT_GIT_KEEP); }
-std::string no3::package::GenerateGitIgnore() { return std::string(DEFAULT_GIT_IGNORE); }
-std::string no3::package::GenerateDockerIgnore() { return std::string(DEFAULT_DOCKER_IGNORE); }
-std::string no3::package::GenerateDefaultLibrarySource() { return std::string(DEFAULT_LIB_N); }
-std::string no3::package::GenerateDefaultMainSource() { return std::string(DEFAULT_MAIN_N); }
-std::string no3::package::GenerateCodeOfConduct() { return std::string(DEFAULT_CODE_OF_CONDUCT_MD); }
+auto no3::package::GenerateGitKeep() -> std::string { return std::string(DEFAULT_GIT_KEEP); }
+auto no3::package::GenerateGitIgnore() -> std::string { return std::string(DEFAULT_GIT_IGNORE); }
+auto no3::package::GenerateDockerIgnore() -> std::string { return std::string(DEFAULT_DOCKER_IGNORE); }
+auto no3::package::GenerateDefaultLibrarySource() -> std::string { return std::string(DEFAULT_LIB_N); }
+auto no3::package::GenerateDefaultMainSource() -> std::string { return std::string(DEFAULT_MAIN_N); }
+auto no3::package::GenerateCodeOfConduct() -> std::string { return std::string(DEFAULT_CODE_OF_CONDUCT_MD); }
 
-static std::optional<std::string> GetGithubUsername(const std::string& name) {
+static auto GetGithubUsername(const std::string& name) -> std::optional<std::string> {
   if (name.starts_with("@gh-")) {
     return name.substr(4, name.find('/') - 4);
   }
@@ -277,7 +277,7 @@ static std::optional<std::string> GetGithubUsername(const std::string& name) {
   return std::nullopt;
 }
 
-static std::string BeutifyName(std::string name) {
+static auto BeutifyName(std::string name) -> std::string {
   std::replace(name.begin(), name.end(), '-', ' ');
 
   // capitalize each word
@@ -290,9 +290,9 @@ static std::string BeutifyName(std::string name) {
   return name;
 }
 
-static std::string GetPackageName(const std::string& name) { return name.substr(name.find('/') + 1); }
+static auto GetPackageName(const std::string& name) -> std::string { return name.substr(name.find('/') + 1); }
 
-std::string no3::package::GenerateSecurityPolicy(const std::string& package_name) {
+auto no3::package::GenerateSecurityPolicy(const std::string& package_name) -> std::string {
   // Note this security policy contains a bug bounty clause.
 
   const auto github_username = GetGithubUsername(package_name);
@@ -344,7 +344,7 @@ Thank you for keeping the ("{{project_name_nice}}") project and its community sa
   return content;
 }
 
-static std::string URLEncode(std::string_view text) {
+static auto URLEncode(std::string_view text) -> std::string {
   std::stringstream ss;
 
   for (const auto& c : text) {
@@ -358,12 +358,12 @@ static std::string URLEncode(std::string_view text) {
   return ss.str();
 }
 
-static std::string ShieldsIOEscapeContent(std::string text) {
+static auto ShieldsIOEscapeContent(std::string text) -> std::string {
   text = std::regex_replace(text, std::regex("-"), "--");
   return URLEncode(text);
 }
 
-std::string no3::package::GenerateReadme(const InitOptions& options) {
+auto no3::package::GenerateReadme(const InitOptions& options) -> std::string {
   const auto gh_username = GetGithubUsername(options.m_package_name);
   const auto name = GetPackageName(options.m_package_name);
   const auto nice_name = BeutifyName(name);
@@ -473,7 +473,7 @@ This project is licensed under the **{{project_spdx_license}}** license. See the
   return content;
 }
 
-std::string no3::package::GenerateContributingPolicy(const InitOptions& options) {
+auto no3::package::GenerateContributingPolicy(const InitOptions& options) -> std::string {
   const auto nice_name = BeutifyName(GetPackageName(options.m_package_name));
 
   std::string content;
@@ -500,7 +500,7 @@ The actual ownership of Your submissions is not affected by this clause.
   return content;
 }
 
-std::string no3::package::GenerateCMakeListsTxt(const std::string& package_name) {
+auto no3::package::GenerateCMakeListsTxt(const std::string& package_name) -> std::string {
   const auto project_name = GetPackageName(package_name);
 
   std::string content;
@@ -542,6 +542,6 @@ add_custom_target(
   return content;
 }
 
-std::string no3::package::GenerateLicense(const std::string& spdx_license) {
+auto no3::package::GenerateLicense(const std::string& spdx_license) -> std::string {
   return constants::GetSPDXLicenseText(spdx_license).value_or("");
 }

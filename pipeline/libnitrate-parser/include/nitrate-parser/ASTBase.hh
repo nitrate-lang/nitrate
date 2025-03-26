@@ -266,12 +266,12 @@ namespace ncc::parse {
     /// Debug-mode checked type casting
 
     template <typename T>
-    [[nodiscard, gnu::const]] constexpr T *As() {
+    [[nodiscard, gnu::const]] constexpr auto As() -> T * {
       return SafeCastAs<T>(this);
     }
 
     template <typename T>
-    [[nodiscard, gnu::const]] constexpr const T *As() const {
+    [[nodiscard, gnu::const]] constexpr auto As() const -> const T * {
       return SafeCastAs<T>(const_cast<Expr *>(this));
     }
 

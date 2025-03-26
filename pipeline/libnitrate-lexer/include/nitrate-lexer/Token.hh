@@ -98,10 +98,10 @@ namespace ncc::lex {
       }
     }
 
-    [[nodiscard]] constexpr bool Is(TokenType val) const { return m_type == val; }
+    [[nodiscard]] constexpr auto Is(TokenType val) const -> bool { return m_type == val; }
 
     template <auto V>
-    [[nodiscard]] constexpr bool Is() const {
+    [[nodiscard]] constexpr auto Is() const -> bool {
       if constexpr (std::is_same_v<decltype(V), Keyword>) {
         return m_type == KeyW && m_v.m_key == V;
       } else if constexpr (std::is_same_v<decltype(V), Punctor>) {
@@ -114,7 +114,7 @@ namespace ncc::lex {
     [[nodiscard]] constexpr auto AsString() const { return to_string(m_type, m_v); }
 
     template <auto V>
-    [[nodiscard]] constexpr bool Is(string value) const {
+    [[nodiscard]] constexpr auto Is(string value) const -> bool {
       static_assert(V == IntL || V == NumL || V == Text || V == Name || V == Char || V == MacB || V == Macr ||
                     V == Note);
       return m_type == V && AsString() == value;

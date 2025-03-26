@@ -47,17 +47,17 @@ namespace no3::package {
     PackageCategory m_package_category;
   };
 
-  bool CreatePackage(const std::filesystem::path& package_path, const InitOptions& options);
+  auto CreatePackage(const std::filesystem::path& package_path, const InitOptions& options) -> bool;
 
-  std::string GenerateReadme(const InitOptions& options);
-  std::string GenerateLicense(const std::string& spdx_license);
-  std::string GenerateSecurityPolicy(const std::string& package_name);
-  std::string GenerateContributingPolicy(const InitOptions& options);
-  std::string GenerateCodeOfConduct();
-  std::string GenerateGitKeep();
-  std::string GenerateGitIgnore();
-  std::string GenerateDockerIgnore();
-  std::string GenerateDefaultLibrarySource();
-  std::string GenerateDefaultMainSource();
-  std::string GenerateCMakeListsTxt(const std::string& package_name);
+  auto GenerateReadme(const InitOptions& options) -> std::string;
+  auto GenerateLicense(const std::string& spdx_license) -> std::string;
+  auto GenerateSecurityPolicy(const std::string& package_name) -> std::string;
+  auto GenerateContributingPolicy(const InitOptions& options) -> std::string;
+  auto GenerateCodeOfConduct() -> std::string;
+  auto GenerateGitKeep() -> std::string;
+  auto GenerateGitIgnore() -> std::string;
+  auto GenerateDockerIgnore() -> std::string;
+  auto GenerateDefaultLibrarySource() -> std::string;
+  auto GenerateDefaultMainSource() -> std::string;
+  auto GenerateCMakeListsTxt(const std::string& package_name) -> std::string;
 }  // namespace no3::package

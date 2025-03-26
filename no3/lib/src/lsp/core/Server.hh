@@ -29,7 +29,7 @@ namespace no3::lsp::srv {
 
   using Connection = std::pair<std::unique_ptr<std::istream>, std::unique_ptr<std::ostream>>;
 
-  enum class ConnectionType { Pipe, Port, Stdio };
+  enum class ConnectionType : uint8_t { Pipe, Port, Stdio };
 
   auto OpenConnection(ConnectionType type, const String& target) -> std::optional<Connection>;
 

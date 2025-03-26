@@ -48,8 +48,8 @@ target_include_directories(nitrate-tool PUBLIC
 
 target_link_libraries(nitrate-tool PUBLIC
   "nitrate-testing"
-  "nitrate-emit"
-  "nitrate-ir"
+  # "nitrate-emit"
+  # "nitrate-ir"
   "nitrate-parser"
   "nitrate-lexer"
   "nitrate-seq"
@@ -64,8 +64,8 @@ target_link_libraries(nitrate-tool PUBLIC
 )
 add_dependencies(nitrate-tool
   nitrate-testing
-  nitrate-emit
-  nitrate-ir
+  # nitrate-emit
+  # nitrate-ir
   nitrate-parser
   nitrate-lexer
   nitrate-seq
