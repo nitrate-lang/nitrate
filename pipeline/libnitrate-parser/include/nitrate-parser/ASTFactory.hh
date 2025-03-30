@@ -127,9 +127,6 @@ namespace ncc::parse {
     [[gnu::pure, nodiscard]] auto CreateUnary(lex::Operator op, FlowPtr<Expr> rhs, bool is_postfix = false,
                                               SourceLocation origin = SourceLocation::current()) -> FlowPtr<Unary>;
 
-    [[gnu::pure, nodiscard]] auto CreateTernary(FlowPtr<Expr> condition, FlowPtr<Expr> then, FlowPtr<Expr> ele,
-                                                SourceLocation origin = SourceLocation::current()) -> FlowPtr<Ternary>;
-
     [[gnu::pure, nodiscard]] auto CreateInteger(const boost::multiprecision::uint128_type& x,
                                                 SourceLocation origin = SourceLocation::current()) -> FlowPtr<Integer>;
 

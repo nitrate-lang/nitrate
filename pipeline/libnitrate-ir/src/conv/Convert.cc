@@ -156,7 +156,7 @@ using namespace ncc;
 
 // static bool check_is_foreign_function(auto n) {
 //   return std::any_of(n.begin(), n.end(), [](FlowPtr<ncc::parse::Expr> attr) {
-//     return attr->is(QAST_IDENT) &&
+//     return attr->is(AST_IDENT) &&
 //            attr->As<ncc::parse::Identifier>()->GetName() == "foreign";
 //   });
 // }
@@ -490,7 +490,7 @@ using namespace ncc;
 // static EResult nrgen_binexpr(NRBuilder &b, PState &s, IReport *G,
 //                              FlowPtr<ncc::parse::Binary> n) {
 //   if (n->Getlhs() && n->Getrhs() && n->Getop() == lex::OpAs &&
-//       n->Getrhs()->is(QAST_TEXPR)) {
+//       n->Getrhs()->is(AST_TEXPR)) {
 //     FlowPtr<ncc::parse::Type> type =
 //         n->Getrhs()->As<ncc::parse::TypeExpr>()->GetKind();
 
@@ -585,33 +585,6 @@ using namespace ncc;
 //   }
 
 //   return E;
-// }
-
-// static EResult nrgen_terexpr(NRBuilder &b, PState &s, IReport *G,
-//                              FlowPtr<ncc::parse::Ternary> n) {
-//   auto cond = next_one(n->Getcond());
-//   if (!cond.has_value()) {
-//     G->report(CompilerError, IC::Error,
-//               "Failed to lower condition of ternery expression",
-//               n->Getpos());
-//     return std::nullopt;
-//   }
-
-//   auto lhs = next_one(n->Getlhs());
-//   if (!lhs.has_value()) {
-//     G->report(CompilerError, IC::Error,
-//               "Failed to lower LHS of ternery expression", n->Getpos());
-//     return std::nullopt;
-//   }
-
-//   auto rhs = next_one(n->Getrhs());
-//   if (!rhs.has_value()) {
-//     G->report(CompilerError, IC::Error,
-//               "Failed to lower RHS of ternery expression", n->Getpos());
-//     return std::nullopt;
-//   }
-
-//   return create<If>(cond.value(), lhs.value(), rhs.value());
 // }
 
 // static EResult nrgen_int(NRBuilder &b, PState &, IReport *G,
@@ -1400,7 +1373,7 @@ using namespace ncc;
 
 //     { /* Function body */
 
-//       if (!n->Getbody().value()->is(QAST_BLOCK)) {
+//       if (!n->Getbody().value()->is(AST_BLOCK)) {
 //         return std::nullopt;
 //       }
 
@@ -1541,7 +1514,7 @@ using namespace ncc;
 
 // static BResult nrgen_scope(NRBuilder &b, PState &s, IReport *G,
 //                            FlowPtr<ncc::parse::Scope> n) {
-//   if (!n->Getbody()->is(QAST_BLOCK)) {
+//   if (!n->Getbody()->is(AST_BLOCK)) {
 //     return std::nullopt;
 //   }
 
@@ -1592,7 +1565,7 @@ using namespace ncc;
 //     return std::nullopt;
 //   }
 
-//   if (!n->Getbody()->is(QAST_BLOCK)) {
+//   if (!n->Getbody()->is(AST_BLOCK)) {
 //     return std::nullopt;
 //   }
 
@@ -1642,7 +1615,7 @@ using namespace ncc;
 //       return std::nullopt;
 //     }
 
-//     if ((*it)->GetKind() == QAST_BLOCK) {
+//     if ((*it)->GetKind() == AST_BLOCK) {
 //       /* Reduce unneeded nesting in the IR */
 //       qcore_assert(item->size() == 1);
 //       Seq *inner = item.at(0)->As<Seq>();
@@ -1928,10 +1901,6 @@ using namespace ncc;
 //       out = nrgen_unexpr(b, s, G, n.as<ncc::parse::Unary>());
 //       break;
 
-//     case QAST_TEREXPR:
-//       out = nrgen_terexpr(b, s, G, n.as<ncc::parse::Ternary>());
-//       break;
-
 //     case AST_eINT:
 //       out = nrgen_int(b, s, G, n.as<ncc::parse::Integer>());
 //       break;
@@ -1964,47 +1933,47 @@ using namespace ncc;
 //       out = nrgen_call(b, s, G, n.as<ncc::parse::Call>());
 //       break;
 
-//     case QAST_LIST:
+//     case AST_LIST:
 //       out = nrgen_list(b, s, G, n.as<ncc::parse::List>());
 //       break;
 
-//     case QAST_ASSOC:
+//     case AST_ASSOC:
 //       out = nrgen_assoc(b, s, G, n.as<ncc::parse::Assoc>());
 //       break;
 
-//     case QAST_INDEX:
+//     case AST_INDEX:
 //       out = nrgen_index(b, s, G, n.as<ncc::parse::Index>());
 //       break;
 
-//     case QAST_SLICE:
+//     case AST_SLICE:
 //       out = nrgen_slice(b, s, G, n.as<ncc::parse::Slice>());
 //       break;
 
-//     case QAST_FSTRING:
+//     case AST_FSTRING:
 //       out = nrgen_fstring(b, s, G, n.as<ncc::parse::FString>());
 //       break;
 
-//     case QAST_IDENT:
+//     case AST_IDENT:
 //       out = nrgen_ident(b, s, G, n.as<ncc::parse::Identifier>());
 //       break;
 
-//     case QAST_SEQ:
+//     case AST_SEQ:
 //       out = nrgen_seq_point(b, s, G, n.as<ncc::parse::Sequence>());
 //       break;
 
-//     case QAST_SEXPR:
+//     case AST_SEXPR:
 //       out = nrgen_stmt_expr(b, s, G, n.as<ncc::parse::StmtExpr>());
 //       break;
 
-//     case QAST_TEXPR:
+//     case AST_TEXPR:
 //       out = nrgen_type_expr(b, s, G, n.as<ncc::parse::TypeExpr>());
 //       break;
 
-//     case QAST_TEMPL_CALL:
+//     case AST_TEMPL_CALL:
 //       out = nrgen_templ_call(b, s, G, n.as<ncc::parse::TemplateCall>());
 //       break;
 
-//     case QAST_REF:
+//     case AST_REF:
 //       out = nrgen_ref_ty(b, s, G, n.as<ncc::parse::RefTy>());
 //       break;
 
@@ -2068,95 +2037,95 @@ using namespace ncc;
 //       out = nrgen_f128_ty(b, s, G, n.as<ncc::parse::F128>());
 //       break;
 
-//     case QAST_VOID:
+//     case AST_VOID:
 //       out = nrgen_void_ty(b, s, G, n.as<ncc::parse::VoidTy>());
 //       break;
 
-//     case QAST_PTR:
+//     case AST_PTR:
 //       out = nrgen_ptr_ty(b, s, G, n.as<ncc::parse::PtrTy>());
 //       break;
 
-//     case QAST_OPAQUE:
+//     case AST_OPAQUE:
 //       out = nrgen_opaque_ty(b, s, G, n.as<ncc::parse::OpaqueTy>());
 //       break;
 
-//     case QAST_ARRAY:
+//     case AST_ARRAY:
 //       out = nrgen_array_ty(b, s, G, n.as<ncc::parse::ArrayTy>());
 //       break;
 
-//     case QAST_TUPLE:
+//     case AST_TUPLE:
 //       out = nrgen_tuple_ty(b, s, G, n.as<ncc::parse::TupleTy>());
 //       break;
 
-//     case QAST_FUNCTOR:
+//     case AST_FUNCTOR:
 //       out = nrgen_fn_ty(b, s, G, n.as<ncc::parse::FuncTy>());
 //       break;
 
-//     case QAST_NAMED:
+//     case AST_NAMED:
 //       out = nrgen_unres_ty(b, s, G, n.as<ncc::parse::NamedTy>());
 //       break;
 
-//     case QAST_INFER:
+//     case AST_INFER:
 //       out = nrgen_infer_ty(b, s, G, n.as<ncc::parse::InferTy>());
 //       break;
 
-//     case QAST_TEMPLATE:
+//     case AST_TEMPLATE:
 //       out = nrgen_templ_ty(b, s, G, n.as<ncc::parse::TemplateType>());
 //       break;
 
-//     case QAST_FUNCTION:
+//     case AST_FUNCTION:
 //       out = nrgen_fn(b, s, G, n.as<ncc::parse::Function>());
 //       break;
 
-//     case QAST_BLOCK:
+//     case AST_BLOCK:
 //       out = nrgen_block(b, s, G, n.as<ncc::parse::Block>(), true);
 //       break;
 
-//     case QAST_VAR:
+//     case AST_VAR:
 //       out = nrgen_var(b, s, G, n.as<ncc::parse::Variable>());
 //       break;
 
-//     case QAST_INLINE_ASM:
+//     case AST_INLINE_ASM:
 //       out = nrgen_inline_asm(b, s, G, n.as<ncc::parse::Assembly>());
 //       break;
 
-//     case QAST_RETURN:
+//     case AST_RETURN:
 //       out = nrgen_return(b, s, G, n.as<ncc::parse::Return>());
 //       break;
 
-//     case QAST_RETIF:
+//     case AST_RETIF:
 //       out = nrgen_retif(b, s, G, n.as<ncc::parse::ReturnIf>());
 //       break;
 
-//     case QAST_BREAK:
+//     case AST_BREAK:
 //       out = nrgen_break(b, s, G, n.as<ncc::parse::Break>());
 //       break;
 
-//     case QAST_CONTINUE:
+//     case AST_CONTINUE:
 //       out = nrgen_continue(b, s, G, n.as<ncc::parse::Continue>());
 //       break;
 
-//     case QAST_IF:
+//     case AST_IF:
 //       out = nrgen_if(b, s, G, n.as<ncc::parse::If>());
 //       break;
 
-//     case QAST_WHILE:
+//     case AST_WHILE:
 //       out = nrgen_while(b, s, G, n.as<ncc::parse::While>());
 //       break;
 
-//     case QAST_FOR:
+//     case AST_FOR:
 //       out = nrgen_for(b, s, G, n.as<ncc::parse::For>());
 //       break;
 
-//     case QAST_FOREACH:
+//     case AST_FOREACH:
 //       out = nrgen_foreach(b, s, G, n.as<ncc::parse::Foreach>());
 //       break;
 
-//     case QAST_CASE:
+//     case AST_CASE:
 //       out = nrgen_case(b, s, G, n.as<ncc::parse::Case>());
 //       break;
 
-//     case QAST_SWITCH:
+//     case AST_SWITCH:
 //       out = nrgen_switch(b, s, G, n.as<ncc::parse::Switch>());
 //       break;
 
@@ -2179,23 +2148,23 @@ using namespace ncc;
 //   BResult out;
 
 //   switch (n->GetKind()) {
-//     case QAST_TYPEDEF:
+//     case AST_TYPEDEF:
 //       out = nrgen_typedef(b, s, G, n.as<ncc::parse::Typedef>());
 //       break;
 
-//     case QAST_ENUM:
+//     case AST_ENUM:
 //       out = nrgen_enum(b, s, G, n.as<ncc::parse::Enum>());
 //       break;
 
-//     case QAST_STRUCT:
+//     case AST_STRUCT:
 //       out = nrgen_struct(b, s, G, n.as<ncc::parse::Struct>());
 //       break;
 
-//     case QAST_SCOPE:
+//     case AST_SCOPE:
 //       out = nrgen_scope(b, s, G, n.as<ncc::parse::Scope>());
 //       break;
 
-//     case QAST_EXPORT:
+//     case AST_EXPORT:
 //       out = nrgen_export(b, s, G, n.as<ncc::parse::Export>());
 //       break;
 

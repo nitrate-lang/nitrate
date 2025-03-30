@@ -434,10 +434,6 @@ auto AstReader::Unmarshal(const SyntaxTree::Expr &in) -> Result<Expr> {
       return Unmarshal(in.binary());
     }
 
-    case SyntaxTree::Expr::kTernary: {
-      return Unmarshal(in.ternary());
-    }
-
     case SyntaxTree::Expr::kInteger: {
       return Unmarshal(in.integer());
     }
@@ -1531,29 +1527,6 @@ auto AstReader::Unmarshal(const SyntaxTree::Binary &in) -> Result<Binary> {
   }
 
   auto object = m_fac.CreateBinary(lhs.value(), op.value(), rhs.value());
-  UnmarshalLocationLocation(in.location(), object);
-  UnmarshalCodeComment(in.comments(), object);
-
-  return object;
-}
-
-auto AstReader::Unmarshal(const SyntaxTree::Ternary &in) -> Result<Ternary> {
-  auto condition = Unmarshal(in.condition());
-  if (!condition.has_value()) [[unlikely]] {
-    return std::nullopt;
-  }
-
-  auto true_expr = Unmarshal(in.true_branch());
-  if (!true_expr.has_value()) [[unlikely]] {
-    return std::nullopt;
-  }
-
-  auto false_expr = Unmarshal(in.false_branch());
-  if (!false_expr.has_value()) [[unlikely]] {
-    return std::nullopt;
-  }
-
-  auto object = m_fac.CreateTernary(condition.value(), true_expr.value(), false_expr.value());
   UnmarshalLocationLocation(in.location(), object);
   UnmarshalCodeComment(in.comments(), object);
 

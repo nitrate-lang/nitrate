@@ -61,9 +61,9 @@ void CambrianFormatter::Visit(FlowPtr<Block> n) {
   }
 
   static const std::unordered_set<ASTNodeKind> extra_seperation = {
-      QAST_STRUCT,     QAST_ENUM, QAST_FUNCTION, QAST_SCOPE, QAST_EXPORT,  QAST_BLOCK,
+      AST_STRUCT,     AST_ENUM, AST_FUNCTION, AST_SCOPE, AST_EXPORT,  AST_BLOCK,
 
-      QAST_INLINE_ASM, QAST_IF,   QAST_WHILE,    QAST_FOR,   QAST_FOREACH, QAST_SWITCH,
+      AST_INLINE_ASM, AST_IF,   AST_WHILE,    AST_FOR,   AST_FOREACH, AST_SWITCH,
   };
 
   if (!is_root_block && n->GetStatements().empty()) {

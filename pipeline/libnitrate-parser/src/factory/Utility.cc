@@ -43,10 +43,10 @@ auto ASTFactory::CreateMockInstance(ASTNodeKind kind, SourceLocation origin) -> 
   NullableFlowPtr<Expr> r;
 
 #define SIMPLE_EXPR() CreateMockInstance(AST_eNULL, origin)
-#define SIMPLE_TYPE() CreateMockInstance<Type>(QAST_VOID, origin)
+#define SIMPLE_TYPE() CreateMockInstance<Type>(AST_VOID, origin)
 
   switch (kind) {
-    case QAST_DISCARDED: {
+    case AST_DISCARDED: {
       // Create some node to avoid a panic
       r = CreateUndefined();
       r.value()->Discard();
@@ -60,11 +60,6 @@ auto ASTFactory::CreateMockInstance(ASTNodeKind kind, SourceLocation origin) -> 
 
     case AST_eUNARY: {
       r = CreateUnary(lex::OpPlus, SIMPLE_EXPR());
-      break;
-    }
-
-    case QAST_TEREXPR: {
-      r = CreateTernary(SIMPLE_EXPR(), SIMPLE_EXPR(), SIMPLE_EXPR());
       break;
     }
 
@@ -108,42 +103,42 @@ auto ASTFactory::CreateMockInstance(ASTNodeKind kind, SourceLocation origin) -> 
       break;
     }
 
-    case QAST_LIST: {
+    case AST_LIST: {
       r = CreateList();
       break;
     }
 
-    case QAST_ASSOC: {
+    case AST_ASSOC: {
       r = CreateAssociation(SIMPLE_EXPR(), SIMPLE_EXPR());
       break;
     }
 
-    case QAST_INDEX: {
+    case AST_INDEX: {
       r = CreateIndex(SIMPLE_EXPR(), SIMPLE_EXPR());
       break;
     }
 
-    case QAST_SLICE: {
+    case AST_SLICE: {
       r = CreateSlice(SIMPLE_EXPR(), SIMPLE_EXPR(), SIMPLE_EXPR());
       break;
     }
 
-    case QAST_FSTRING: {
+    case AST_FSTRING: {
       r = CreateFormatString();
       break;
     }
 
-    case QAST_IDENT: {
+    case AST_IDENT: {
       r = CreateIdentifier("_");
       break;
     }
 
-    case QAST_TEMPL_CALL: {
+    case AST_TEMPL_CALL: {
       r = CreateTemplateCall(SIMPLE_EXPR());
       break;
     }
 
-    case QAST_IMPORT: {
+    case AST_IMPORT: {
       r = CreateImport("", ImportMode::Code, SIMPLE_EXPR());
       break;
     }
@@ -223,147 +218,147 @@ auto ASTFactory::CreateMockInstance(ASTNodeKind kind, SourceLocation origin) -> 
       break;
     }
 
-    case QAST_VOID: {
+    case AST_VOID: {
       r = CreateVoid();
       break;
     }
 
-    case QAST_INFER: {
+    case AST_INFER: {
       r = CreateUnknownType();
       break;
     }
 
-    case QAST_OPAQUE: {
+    case AST_OPAQUE: {
       r = CreateOpaque("_");
       break;
     }
 
-    case QAST_NAMED: {
+    case AST_NAMED: {
       r = CreateNamed("_");
       break;
     }
 
-    case QAST_REF: {
+    case AST_REF: {
       r = CreateReference(SIMPLE_TYPE());
       break;
     }
 
-    case QAST_PTR: {
+    case AST_PTR: {
       r = CreatePointer(SIMPLE_TYPE());
       break;
     }
 
-    case QAST_ARRAY: {
+    case AST_ARRAY: {
       r = CreateArray(SIMPLE_TYPE(), SIMPLE_EXPR());
       break;
     }
 
-    case QAST_TUPLE: {
+    case AST_TUPLE: {
       r = CreateTuple();
       break;
     }
 
-    case QAST_TEMPLATE: {
+    case AST_TEMPLATE: {
       r = CreateTemplateType(SIMPLE_TYPE());
       break;
     }
 
-    case QAST_FUNCTOR: {
+    case AST_FUNCTOR: {
       r = CreateFunctionType(SIMPLE_TYPE());
       break;
     }
 
-    case QAST_IF: {
+    case AST_IF: {
       r = CreateIf(SIMPLE_EXPR(), SIMPLE_EXPR());
       break;
     }
 
-    case QAST_RETIF: {
+    case AST_RETIF: {
       r = CreateReturnIf(SIMPLE_EXPR());
       break;
     }
 
-    case QAST_SWITCH: {
+    case AST_SWITCH: {
       r = CreateSwitch(SIMPLE_EXPR());
       break;
     }
 
-    case QAST_CASE: {
+    case AST_CASE: {
       r = CreateCase(SIMPLE_EXPR(), SIMPLE_EXPR());
       break;
     }
 
-    case QAST_RETURN: {
+    case AST_RETURN: {
       r = CreateReturn();
       break;
     }
 
-    case QAST_BREAK: {
+    case AST_BREAK: {
       r = CreateBreak();
       break;
     }
 
-    case QAST_CONTINUE: {
+    case AST_CONTINUE: {
       r = CreateContinue();
       break;
     }
 
-    case QAST_WHILE: {
+    case AST_WHILE: {
       r = CreateWhile(SIMPLE_EXPR(), SIMPLE_EXPR());
       break;
     }
 
-    case QAST_FOR: {
+    case AST_FOR: {
       r = CreateFor(nullptr, nullptr, nullptr, SIMPLE_EXPR());
       break;
     }
 
-    case QAST_FOREACH: {
+    case AST_FOREACH: {
       r = CreateForeach("_", "_", SIMPLE_EXPR(), SIMPLE_EXPR());
       break;
     }
 
-    case QAST_INLINE_ASM: {
+    case AST_INLINE_ASM: {
       r = CreateAssembly("");
       break;
     }
 
-    case QAST_TYPEDEF: {
+    case AST_TYPEDEF: {
       r = CreateTypedef("_", SIMPLE_TYPE());
       break;
     }
 
-    case QAST_STRUCT: {
+    case AST_STRUCT: {
       r = CreateStruct();
       break;
     }
 
-    case QAST_ENUM: {
+    case AST_ENUM: {
       r = CreateEnum("");
       break;
     }
 
-    case QAST_SCOPE: {
+    case AST_SCOPE: {
       r = CreateScope("_", SIMPLE_EXPR());
       break;
     }
 
-    case QAST_BLOCK: {
+    case AST_BLOCK: {
       r = CreateBlock();
       break;
     }
 
-    case QAST_EXPORT: {
+    case AST_EXPORT: {
       r = CreateExport(CreateMockInstance<Block>());
       break;
     }
 
-    case QAST_VAR: {
+    case AST_VAR: {
       r = CreateVariable(VariableType::Var, "_");
       break;
     }
 
-    case QAST_FUNCTION: {
+    case AST_FUNCTION: {
       r = CreateFunction("");
       break;
     }

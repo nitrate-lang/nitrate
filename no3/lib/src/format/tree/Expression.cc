@@ -70,13 +70,3 @@ void CambrianFormatter::Visit(FlowPtr<Binary> n) {
     n->GetRHS().Accept(*this);
   }
 }
-
-void CambrianFormatter::Visit(FlowPtr<Ternary> n) {
-  PrintMultilineComments(n);
-
-  n->GetCond().Accept(*this);
-  m_line << " ? ";
-  n->GetLHS().Accept(*this);
-  m_line << " : ";
-  n->GetRHS().Accept(*this);
-}

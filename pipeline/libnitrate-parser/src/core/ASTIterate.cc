@@ -148,12 +148,6 @@ class IterVisitor : public ASTVisitor {
     Add(n->GetRHS());
   }
 
-  void Visit(FlowPtr<Ternary> n) override {
-    Add(n->GetCond());
-    Add(n->GetLHS());
-    Add(n->GetRHS());
-  }
-
   void Visit(FlowPtr<Integer>) override {}
   void Visit(FlowPtr<Float>) override {}
   void Visit(FlowPtr<Boolean>) override {}

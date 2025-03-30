@@ -108,7 +108,6 @@ namespace no3::format {
     void Visit(ncc::FlowPtr<ncc::parse::FuncTy> n) override;
     void Visit(ncc::FlowPtr<ncc::parse::Unary> n) override;
     void Visit(ncc::FlowPtr<ncc::parse::Binary> n) override;
-    void Visit(ncc::FlowPtr<ncc::parse::Ternary> n) override;
     void Visit(ncc::FlowPtr<ncc::parse::Integer> n) override;
     void Visit(ncc::FlowPtr<ncc::parse::Float> n) override;
     void Visit(ncc::FlowPtr<ncc::parse::Boolean> n) override;

@@ -39,7 +39,6 @@ namespace nitrate::parser::SyntaxTree {  // NOLINT
   class Root;
   class Binary;
   class Unary;
-  class Ternary;
   class Integer;
   class Float;
   class String;

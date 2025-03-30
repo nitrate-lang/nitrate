@@ -58,7 +58,7 @@ auto GeneralParser::PImpl::RecurseSwitchCase() -> std::pair<FlowPtr<Expr>, bool>
   });
   auto body = RecurseSwitchCaseBody();
 
-  auto is_the_default_case = cond->Is(QAST_IDENT) && cond->As<Identifier>()->GetName() == "_";
+  auto is_the_default_case = cond->Is(AST_IDENT) && cond->As<Identifier>()->GetName() == "_";
 
   if (is_the_default_case) {
     return {body, true};

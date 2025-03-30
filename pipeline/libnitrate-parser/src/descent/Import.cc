@@ -85,7 +85,6 @@ namespace ncc::parse::import {
     void Visit(FlowPtr<FuncTy> n) override { n->Discard(); };
     void Visit(FlowPtr<Unary> n) override { n->Discard(); };
     void Visit(FlowPtr<Binary> n) override { n->Discard(); };
-    void Visit(FlowPtr<Ternary> n) override { n->Discard(); };
     void Visit(FlowPtr<Integer> n) override { n->Discard(); };
     void Visit(FlowPtr<Float> n) override { n->Discard(); };
     void Visit(FlowPtr<Boolean> n) override { n->Discard(); };
@@ -125,19 +124,19 @@ namespace ncc::parse::import {
     void Visit(FlowPtr<Block> n) override {
       for (auto &stmt : n->GetStatements()) {
         switch (stmt->GetKind()) {
-          case QAST_BLOCK:
-          case QAST_SCOPE:
-          case QAST_EXPORT: {
+          case AST_BLOCK:
+          case AST_SCOPE:
+          case AST_EXPORT: {
             stmt->Accept(*this);
             break;
           }
 
-          case QAST_TYPEDEF:
-          case QAST_STRUCT:
-          case QAST_ENUM:
-          case QAST_VAR:
-          case QAST_FUNCTION:
-          case QAST_IMPORT: {
+          case AST_TYPEDEF:
+          case AST_STRUCT:
+          case AST_ENUM:
+          case AST_VAR:
+          case AST_FUNCTION:
+          case AST_IMPORT: {
             auto vis = m_vis_stack.top();
 
             switch (vis) {
@@ -196,7 +195,7 @@ namespace ncc::parse::import {
 
             const auto &call = attr->As<Call>();
 
-            if (!call->GetFunc()->Is(QAST_IDENT) || call->GetFunc()->As<Identifier>()->GetName() != "linkage") {
+            if (!call->GetFunc()->Is(AST_IDENT) || call->GetFunc()->As<Identifier>()->GetName() != "linkage") {
               return false;
             }
 

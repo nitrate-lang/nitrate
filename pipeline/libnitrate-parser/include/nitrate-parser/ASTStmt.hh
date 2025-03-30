@@ -50,7 +50,7 @@ namespace ncc::parse {
     BlockMode m_safety;
 
   public:
-    constexpr Block(auto items, auto safety) : Expr(QAST_BLOCK), m_items(items), m_safety(safety) {}
+    constexpr Block(auto items, auto safety) : Expr(AST_BLOCK), m_items(items), m_safety(safety) {}
 
     [[nodiscard, gnu::pure]] constexpr auto GetStatements() { return m_items; }
     [[nodiscard, gnu::pure]] constexpr auto GetStatements() const { return m_items; }
@@ -72,7 +72,7 @@ namespace ncc::parse {
 
   public:
     constexpr Variable(auto name, auto type, auto value, auto decl_type, auto attributes)
-        : Expr(QAST_VAR),
+        : Expr(AST_VAR),
           m_attributes(attributes),
           m_type(std::move(type)),
           m_value(std::move(value)),
@@ -102,7 +102,7 @@ namespace ncc::parse {
     string m_code;
 
   public:
-    constexpr Assembly(auto code, auto args) : Expr(QAST_INLINE_ASM), m_args(args), m_code(code) {}
+    constexpr Assembly(auto code, auto args) : Expr(AST_INLINE_ASM), m_args(args), m_code(code) {}
 
     [[nodiscard, gnu::pure]] constexpr auto GetCode() const { return m_code; }
     [[nodiscard, gnu::pure]] constexpr auto GetCode() { return m_code; }
@@ -119,7 +119,7 @@ namespace ncc::parse {
 
   public:
     constexpr If(auto cond, auto then, auto ele)
-        : Expr(QAST_IF), m_cond(std::move(cond)), m_then(std::move(then)), m_else(std::move(ele)) {}
+        : Expr(AST_IF), m_cond(std::move(cond)), m_then(std::move(then)), m_else(std::move(ele)) {}
 
     [[nodiscard, gnu::pure]] constexpr auto GetCond() const { return m_cond; }
     [[nodiscard, gnu::pure]] constexpr auto GetCond() { return m_cond; }
@@ -137,7 +137,7 @@ namespace ncc::parse {
     FlowPtr<Expr> m_cond, m_body;
 
   public:
-    constexpr While(auto cond, auto body) : Expr(QAST_WHILE), m_cond(std::move(cond)), m_body(std::move(body)) {}
+    constexpr While(auto cond, auto body) : Expr(AST_WHILE), m_cond(std::move(cond)), m_body(std::move(body)) {}
 
     [[nodiscard, gnu::pure]] constexpr auto GetCond() const { return m_cond; }
     [[nodiscard, gnu::pure]] constexpr auto GetCond() { return m_cond; }
@@ -154,7 +154,7 @@ namespace ncc::parse {
 
   public:
     constexpr For(auto init, auto cond, auto step, auto body)
-        : Expr(QAST_FOR),
+        : Expr(AST_FOR),
           m_init(std::move(init)),
           m_cond(std::move(cond)),
           m_step(std::move(step)),
@@ -181,7 +181,7 @@ namespace ncc::parse {
 
   public:
     constexpr Foreach(auto idx_ident, auto val_ident, auto expr, auto body)
-        : Expr(QAST_FOREACH),
+        : Expr(AST_FOREACH),
           m_expr(std::move(expr)),
           m_body(std::move(body)),
           m_idx_ident(idx_ident),
@@ -204,19 +204,19 @@ namespace ncc::parse {
 
   class Break final : public Expr {
   public:
-    constexpr Break() : Expr(QAST_BREAK){};
+    constexpr Break() : Expr(AST_BREAK){};
   };
 
   class Continue final : public Expr {
   public:
-    constexpr Continue() : Expr(QAST_CONTINUE){};
+    constexpr Continue() : Expr(AST_CONTINUE){};
   };
 
   class Return final : public Expr {
     NullableFlowPtr<Expr> m_value;
 
   public:
-    constexpr Return(auto value) : Expr(QAST_RETURN), m_value(std::move(value)) {}
+    constexpr Return(auto value) : Expr(AST_RETURN), m_value(std::move(value)) {}
 
     [[nodiscard, gnu::pure]] constexpr auto GetValue() const { return m_value; }
     [[nodiscard, gnu::pure]] constexpr auto GetValue() { return m_value; }
@@ -229,7 +229,7 @@ namespace ncc::parse {
     NullableFlowPtr<Expr> m_value;
 
   public:
-    constexpr ReturnIf(auto cond, auto value) : Expr(QAST_RETIF), m_cond(std::move(cond)), m_value(std::move(value)) {}
+    constexpr ReturnIf(auto cond, auto value) : Expr(AST_RETIF), m_cond(std::move(cond)), m_value(std::move(value)) {}
 
     [[nodiscard, gnu::pure]] constexpr auto GetCond() const { return m_cond; }
     [[nodiscard, gnu::pure]] constexpr auto GetCond() { return m_cond; }
@@ -244,7 +244,7 @@ namespace ncc::parse {
     FlowPtr<Expr> m_cond, m_body;
 
   public:
-    constexpr Case(auto cond, auto body) : Expr(QAST_CASE), m_cond(std::move(cond)), m_body(std::move(body)) {}
+    constexpr Case(auto cond, auto body) : Expr(AST_CASE), m_cond(std::move(cond)), m_body(std::move(body)) {}
 
     [[nodiscard, gnu::pure]] constexpr auto GetCond() const { return m_cond; }
     [[nodiscard, gnu::pure]] constexpr auto GetCond() { return m_cond; }
@@ -262,7 +262,7 @@ namespace ncc::parse {
 
   public:
     constexpr Switch(auto cond, auto cases, auto def)
-        : Expr(QAST_SWITCH), m_cases(cases), m_cond(std::move(cond)), m_default(std::move(def)) {}
+        : Expr(AST_SWITCH), m_cases(cases), m_cond(std::move(cond)), m_default(std::move(def)) {}
 
     [[nodiscard, gnu::pure]] constexpr auto GetCond() const { return m_cond; }
     [[nodiscard, gnu::pure]] constexpr auto GetCond() { return m_cond; }
@@ -284,7 +284,7 @@ namespace ncc::parse {
 
   public:
     constexpr Export(auto content, auto abi_name, auto vis, auto attrs)
-        : Expr(QAST_EXPORT), m_attrs(attrs), m_body(std::move(content)), m_abi_name(abi_name), m_vis(vis) {}
+        : Expr(AST_EXPORT), m_attrs(attrs), m_body(std::move(content)), m_abi_name(abi_name), m_vis(vis) {}
 
     [[nodiscard, gnu::pure]] constexpr auto GetAbiName() const { return m_abi_name; }
     [[nodiscard, gnu::pure]] constexpr auto GetAbiName() { return m_abi_name; }
@@ -308,7 +308,7 @@ namespace ncc::parse {
 
   public:
     constexpr Scope(auto name, auto body, auto deps)
-        : Expr(QAST_SCOPE), m_deps(deps), m_body(std::move(body)), m_name(name) {}
+        : Expr(AST_SCOPE), m_deps(deps), m_body(std::move(body)), m_name(name) {}
 
     [[nodiscard, gnu::pure]] constexpr auto GetName() const { return m_name; }
     [[nodiscard, gnu::pure]] constexpr auto GetName() { return m_name; }
@@ -327,7 +327,7 @@ namespace ncc::parse {
     string m_name;
 
   public:
-    constexpr Typedef(auto name, auto type) : Expr(QAST_TYPEDEF), m_type(std::move(type)), m_name(name) {}
+    constexpr Typedef(auto name, auto type) : Expr(AST_TYPEDEF), m_type(std::move(type)), m_name(name) {}
 
     [[nodiscard, gnu::pure]] constexpr auto GetName() const { return m_name; }
     [[nodiscard, gnu::pure]] constexpr auto GetName() { return m_name; }
@@ -345,7 +345,7 @@ namespace ncc::parse {
 
   public:
     constexpr Enum(auto name, auto type, auto items)
-        : Expr(QAST_ENUM), m_items(items), m_type(std::move(type)), m_name(name) {}
+        : Expr(AST_ENUM), m_items(items), m_type(std::move(type)), m_name(name) {}
 
     [[nodiscard, gnu::pure]] constexpr auto GetName() const { return m_name; }
     [[nodiscard, gnu::pure]] constexpr auto GetName() { return m_name; }
@@ -371,7 +371,7 @@ namespace ncc::parse {
   public:
     constexpr Function(auto attributes, auto name, auto params, auto fn_params, auto variadic, auto return_type,
                        auto body)
-        : Expr(QAST_FUNCTION),
+        : Expr(AST_FUNCTION),
           m_attributes(attributes),
           m_params(fn_params),
           m_return(std::move(return_type)),
@@ -424,7 +424,7 @@ namespace ncc::parse {
 
   public:
     constexpr Struct(auto comp_type, auto attributes, auto name, auto params, auto names, auto fields, auto methods)
-        : Expr(QAST_STRUCT),
+        : Expr(AST_STRUCT),
           m_attributes(attributes),
           m_names(names),
           m_fields(fields),

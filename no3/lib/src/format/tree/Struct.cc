@@ -98,7 +98,7 @@ void CambrianFormatter::Visit(FlowPtr<parse::Struct> n) {
         n->GetTemplateParams().value().begin(), n->GetTemplateParams().value().end(),
         [&](auto param, size_t) {
           m_line << std::get<0>(param);
-          if (auto type = std::get<1>(param); type->GetKind() != QAST_INFER) {
+          if (auto type = std::get<1>(param); type->GetKind() != AST_INFER) {
             m_line << ": ";
             type.Accept(*this);
           }

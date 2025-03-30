@@ -39,7 +39,6 @@ namespace ncc::parse {
   class Type;
   class Binary;
   class Unary;
-  class Ternary;
   class Integer;
   class Float;
   class String;

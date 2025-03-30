@@ -60,7 +60,7 @@ void CambrianFormatter::Visit(FlowPtr<Function> n) {
           m_line << std::get<0>(param);
 
           if (auto type = std::get<1>(param)) {
-            if (type->GetKind() != QAST_INFER) {
+            if (type->GetKind() != AST_INFER) {
               m_line << ": ";
               type->Accept(*this);
             }
@@ -82,7 +82,7 @@ void CambrianFormatter::Visit(FlowPtr<Function> n) {
         m_line << std::get<0>(param);
 
         if (auto type = std::get<1>(param)) {
-          if (type->GetKind() != QAST_INFER) {
+          if (type->GetKind() != AST_INFER) {
             m_line << ": ";
             type->Accept(*this);
           }
@@ -106,7 +106,7 @@ void CambrianFormatter::Visit(FlowPtr<Function> n) {
   { /* Return type */
     auto return_type = n->GetReturn();
 
-    if (!return_type->Is(QAST_INFER)) {
+    if (!return_type->Is(AST_INFER)) {
       m_line << ": ";
       return_type.Accept(*this);
     }
@@ -139,7 +139,7 @@ void CambrianFormatter::Visit(FlowPtr<FuncTy> n) {
       [&](auto param, size_t) {
         m_line << std::get<0>(param);
 
-        if (auto type = std::get<1>(param); type->GetKind() != QAST_INFER) {
+        if (auto type = std::get<1>(param); type->GetKind() != AST_INFER) {
           m_line << ": ";
           type.Accept(*this);
         }

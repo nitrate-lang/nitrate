@@ -381,15 +381,6 @@ message Binary {
   required Expr right = 6;
 }
 
-message Ternary {
-  optional SourceLocationRange location = 1;
-  repeated UserComment comments = 2;
-
-  required Expr condition = 4;
-  required Expr true_branch = 5;
-  required Expr false_branch = 6;
-}
-
 message Integer {
   optional SourceLocationRange location = 1;
   repeated UserComment comments = 2;
@@ -773,7 +764,6 @@ message Expr {
 
     Unary unary = 11;
     Binary binary = 12;
-    Ternary ternary = 14;
     Integer integer = 15;
     Float float = 16;
     Boolean boolean = 17;

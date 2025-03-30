@@ -50,11 +50,6 @@ auto ASTFactory::CreateUnary(lex::Operator op, FlowPtr<Expr> rhs, bool is_postfi
   return CreateInstance<Unary>(op, rhs, is_postfix)(m_pool, origin);
 }
 
-auto ASTFactory::CreateTernary(FlowPtr<Expr> condition, FlowPtr<Expr> then, FlowPtr<Expr> ele,
-                               SourceLocation origin) -> FlowPtr<Ternary> {
-  return CreateInstance<Ternary>(condition, then, ele)(m_pool, origin);
-}
-
 auto ASTFactory::CreateInteger(const boost::multiprecision::uint128_type& x,
                                SourceLocation origin) -> FlowPtr<Integer> {
   auto int_str = boost::multiprecision::uint128_t(x).str();

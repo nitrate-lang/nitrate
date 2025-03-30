@@ -911,7 +911,7 @@ namespace ncc::parse {
         auto [pname, ptype, pdefault] = *it;
         PutIdentifier(pname);
 
-        if (!ptype->Is(QAST_INFER)) {
+        if (!ptype->Is(AST_INFER)) {
           PutPunctor(PuncColn);
           ptype->Accept(*this);
         }
@@ -930,7 +930,7 @@ namespace ncc::parse {
       }
       PutPunctor(PuncRPar);
 
-      if (!n->GetReturn()->Is(QAST_INFER)) {
+      if (!n->GetReturn()->Is(AST_INFER)) {
         PutPunctor(PuncColn);
         n->GetReturn()->Accept(*this);
       }
@@ -957,18 +957,6 @@ namespace ncc::parse {
 
       n->GetLHS()->Accept(*this);
       PutOperator(n->GetOp());
-      n->GetRHS()->Accept(*this);
-
-      PrintTrailing(n);
-    }
-
-    void Visit(FlowPtr<Ternary> n) override {
-      PrintLeading(n);
-
-      n->GetCond()->Accept(*this);
-      PutOperator(OpTernary);
-      n->GetLHS()->Accept(*this);
-      PutPunctor(PuncColn);
       n->GetRHS()->Accept(*this);
 
       PrintTrailing(n);
@@ -1250,7 +1238,7 @@ namespace ncc::parse {
       }
 
       PutIdentifier(n->GetName());
-      if (!n->GetType()->Is(QAST_INFER)) {
+      if (!n->GetType()->Is(AST_INFER)) {
         PutPunctor(PuncColn);
         n->GetType()->Accept(*this);
       }
@@ -1449,7 +1437,7 @@ namespace ncc::parse {
           auto& [pname, ptype, pdefault] = *it;
           PutIdentifier(pname);
 
-          if (!ptype->Is(QAST_INFER)) {
+          if (!ptype->Is(AST_INFER)) {
             PutPunctor(PuncColn);
             ptype->Accept(*this);
           }
@@ -1471,7 +1459,7 @@ namespace ncc::parse {
         auto& [pname, ptype, pdefault] = *it;
         PutIdentifier(pname);
 
-        if (!ptype->Is(QAST_INFER)) {
+        if (!ptype->Is(AST_INFER)) {
           PutPunctor(PuncColn);
           ptype->Accept(*this);
         }
@@ -1490,7 +1478,7 @@ namespace ncc::parse {
       }
       PutPunctor(PuncRPar);
 
-      if (!n->GetReturn()->Is(QAST_INFER)) {
+      if (!n->GetReturn()->Is(AST_INFER)) {
         PutPunctor(PuncColn);
         n->GetReturn()->Accept(*this);
       }
@@ -1498,7 +1486,7 @@ namespace ncc::parse {
       if (n->GetBody()) {
         auto body = n->GetBody().value();
 
-        if (body->Is(QAST_BLOCK) && body->As<Block>()->GetStatements().size() == 1) {
+        if (body->Is(AST_BLOCK) && body->As<Block>()->GetStatements().size() == 1) {
           PutOperator(OpArrow);
           body->As<Block>()->GetStatements().front()->Accept(*this);
         } else {
@@ -1546,7 +1534,7 @@ namespace ncc::parse {
           auto& [pname, ptype, pdefault] = *it;
           PutIdentifier(pname);
 
-          if (!ptype->Is(QAST_INFER)) {
+          if (!ptype->Is(AST_INFER)) {
             PutPunctor(PuncColn);
             ptype->Accept(*this);
           }
@@ -1664,7 +1652,7 @@ namespace ncc::parse {
         PutPunctor(PuncRBrk);
       }
 
-      if (n->GetBody()->Is(QAST_BLOCK) && n->GetBody()->As<Block>()->GetStatements().size() == 1) {
+      if (n->GetBody()->Is(AST_BLOCK) && n->GetBody()->As<Block>()->GetStatements().size() == 1) {
         n->GetBody()->As<Block>()->GetStatements().front()->Accept(*this);
       } else {
         n->GetBody()->Accept(*this);

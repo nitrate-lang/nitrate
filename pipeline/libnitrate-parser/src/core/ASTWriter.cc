@@ -51,7 +51,7 @@ using namespace nitrate::parser::SyntaxTree;
 using Pool = google::protobuf::Arena;
 
 static bool IsCompressable(const ncc::FlowPtr<ncc::parse::Type> &in) {
-  return in->Is(QAST_INFER) && in->GetWidth() == nullptr && in->GetRangeBegin() == nullptr &&
+  return in->Is(AST_INFER) && in->GetWidth() == nullptr && in->GetRangeBegin() == nullptr &&
          in->GetRangeEnd() == nullptr;
 }
 
@@ -324,7 +324,7 @@ SyntaxTree::Expr *AstWriter::From(FlowPtr<Expr> in) {
   auto *message = Pool::CreateMessage<SyntaxTree::Expr>(m_arena);
 
   switch (in->GetKind()) {
-    case QAST_DISCARDED: {
+    case AST_DISCARDED: {
       message->set_allocated_discarded(Pool::CreateMessage<SyntaxTree::Discarded>(m_arena));
       break;
     }
@@ -336,11 +336,6 @@ SyntaxTree::Expr *AstWriter::From(FlowPtr<Expr> in) {
 
     case AST_eUNARY: {
       message->set_allocated_unary(From(in.As<Unary>()));
-      break;
-    }
-
-    case QAST_TEREXPR: {
-      message->set_allocated_ternary(From(in.As<Ternary>()));
       break;
     }
 
@@ -384,137 +379,137 @@ SyntaxTree::Expr *AstWriter::From(FlowPtr<Expr> in) {
       break;
     }
 
-    case QAST_LIST: {
+    case AST_LIST: {
       message->set_allocated_list(From(in.As<List>()));
       break;
     }
 
-    case QAST_ASSOC: {
+    case AST_ASSOC: {
       message->set_allocated_assoc(From(in.As<Assoc>()));
       break;
     }
 
-    case QAST_INDEX: {
+    case AST_INDEX: {
       message->set_allocated_index(From(in.As<Index>()));
       break;
     }
 
-    case QAST_SLICE: {
+    case AST_SLICE: {
       message->set_allocated_slice(From(in.As<Slice>()));
       break;
     }
 
-    case QAST_FSTRING: {
+    case AST_FSTRING: {
       message->set_allocated_fstring(From(in.As<FString>()));
       break;
     }
 
-    case QAST_IDENT: {
+    case AST_IDENT: {
       message->set_allocated_identifier(From(in.As<Identifier>()));
       break;
     }
 
-    case QAST_IF: {
+    case AST_IF: {
       message->set_allocated_if_(From(in.As<If>()));
       break;
     }
 
-    case QAST_RETIF: {
+    case AST_RETIF: {
       message->set_allocated_return_if(From(in.As<ReturnIf>()));
       break;
     }
 
-    case QAST_SWITCH: {
+    case AST_SWITCH: {
       message->set_allocated_switch_(From(in.As<Switch>()));
       break;
     }
 
-    case QAST_CASE: {
+    case AST_CASE: {
       message->set_allocated_case_(From(in.As<Case>()));
       break;
     }
 
-    case QAST_RETURN: {
+    case AST_RETURN: {
       message->set_allocated_return_(From(in.As<Return>()));
       break;
     }
 
-    case QAST_BREAK: {
+    case AST_BREAK: {
       message->set_allocated_break_(From(in.As<Break>()));
       break;
     }
 
-    case QAST_CONTINUE: {
+    case AST_CONTINUE: {
       message->set_allocated_continue_(From(in.As<Continue>()));
       break;
     }
 
-    case QAST_WHILE: {
+    case AST_WHILE: {
       message->set_allocated_while_(From(in.As<While>()));
       break;
     }
 
-    case QAST_FOR: {
+    case AST_FOR: {
       message->set_allocated_for_(From(in.As<For>()));
       break;
     }
 
-    case QAST_FOREACH: {
+    case AST_FOREACH: {
       message->set_allocated_foreach(From(in.As<Foreach>()));
       break;
     }
 
-    case QAST_INLINE_ASM: {
+    case AST_INLINE_ASM: {
       message->set_allocated_assembly(From(in.As<Assembly>()));
       break;
     }
 
-    case QAST_TYPEDEF: {
+    case AST_TYPEDEF: {
       message->set_allocated_typedef_(From(in.As<Typedef>()));
       break;
     }
 
-    case QAST_STRUCT: {
+    case AST_STRUCT: {
       message->set_allocated_struct_(From(in.As<Struct>()));
       break;
     }
 
-    case QAST_ENUM: {
+    case AST_ENUM: {
       message->set_allocated_enum_(From(in.As<Enum>()));
       break;
     }
 
-    case QAST_SCOPE: {
+    case AST_SCOPE: {
       message->set_allocated_scope(From(in.As<Scope>()));
       break;
     }
 
-    case QAST_BLOCK: {
+    case AST_BLOCK: {
       message->set_allocated_block(From(in.As<Block>()));
       break;
     }
 
-    case QAST_EXPORT: {
+    case AST_EXPORT: {
       message->set_allocated_export_(From(in.As<Export>()));
       break;
     }
 
-    case QAST_VAR: {
+    case AST_VAR: {
       message->set_allocated_variable(From(in.As<Variable>()));
       break;
     }
 
-    case QAST_FUNCTION: {
+    case AST_FUNCTION: {
       message->set_allocated_function(From(in.As<Function>()));
       break;
     }
 
-    case QAST_TEMPL_CALL: {
+    case AST_TEMPL_CALL: {
       message->set_allocated_template_call(From(in.As<TemplateCall>()));
       break;
     }
 
-    case QAST_IMPORT: {
+    case AST_IMPORT: {
       message->set_allocated_import(From(in.As<Import>()));
       break;
     }
@@ -594,52 +589,52 @@ SyntaxTree::Expr *AstWriter::From(FlowPtr<Expr> in) {
       break;
     }
 
-    case QAST_VOID: {
+    case AST_VOID: {
       message->set_allocated_void_(From(in.As<VoidTy>()));
       break;
     }
 
-    case QAST_INFER: {
+    case AST_INFER: {
       message->set_allocated_infer(From(in.As<InferTy>()));
       break;
     }
 
-    case QAST_OPAQUE: {
+    case AST_OPAQUE: {
       message->set_allocated_opaque(From(in.As<OpaqueTy>()));
       break;
     }
 
-    case QAST_NAMED: {
+    case AST_NAMED: {
       message->set_allocated_named(From(in.As<NamedTy>()));
       break;
     }
 
-    case QAST_REF: {
+    case AST_REF: {
       message->set_allocated_ref(From(in.As<RefTy>()));
       break;
     }
 
-    case QAST_PTR: {
+    case AST_PTR: {
       message->set_allocated_ptr(From(in.As<PtrTy>()));
       break;
     }
 
-    case QAST_ARRAY: {
+    case AST_ARRAY: {
       message->set_allocated_array(From(in.As<ArrayTy>()));
       break;
     }
 
-    case QAST_TUPLE: {
+    case AST_TUPLE: {
       message->set_allocated_tuple(From(in.As<TupleTy>()));
       break;
     }
 
-    case QAST_TEMPLATE: {
+    case AST_TEMPLATE: {
       message->set_allocated_template_(From(in.As<TemplateType>()));
       break;
     }
 
-    case QAST_FUNCTOR: {
+    case AST_FUNCTOR: {
       message->set_allocated_func(From(in.As<FuncTy>()));
       break;
     }
@@ -727,52 +722,52 @@ SyntaxTree::Type *AstWriter::From(FlowPtr<Type> in) {
       break;
     }
 
-    case QAST_VOID: {
+    case AST_VOID: {
       message->set_allocated_void_(From(in.As<VoidTy>()));
       break;
     }
 
-    case QAST_INFER: {
+    case AST_INFER: {
       message->set_allocated_infer(From(in.As<InferTy>()));
       break;
     }
 
-    case QAST_OPAQUE: {
+    case AST_OPAQUE: {
       message->set_allocated_opaque(From(in.As<OpaqueTy>()));
       break;
     }
 
-    case QAST_NAMED: {
+    case AST_NAMED: {
       message->set_allocated_named(From(in.As<NamedTy>()));
       break;
     }
 
-    case QAST_REF: {
+    case AST_REF: {
       message->set_allocated_ref(From(in.As<RefTy>()));
       break;
     }
 
-    case QAST_PTR: {
+    case AST_PTR: {
       message->set_allocated_ptr(From(in.As<PtrTy>()));
       break;
     }
 
-    case QAST_ARRAY: {
+    case AST_ARRAY: {
       message->set_allocated_array(From(in.As<ArrayTy>()));
       break;
     }
 
-    case QAST_TUPLE: {
+    case AST_TUPLE: {
       message->set_allocated_tuple(From(in.As<TupleTy>()));
       break;
     }
 
-    case QAST_TEMPLATE: {
+    case AST_TEMPLATE: {
       message->set_allocated_template_(From(in.As<TemplateType>()));
       break;
     }
 
-    case QAST_FUNCTOR: {
+    case AST_FUNCTOR: {
       message->set_allocated_func(From(in.As<FuncTy>()));
       break;
     }
@@ -1107,17 +1102,6 @@ SyntaxTree::Binary *AstWriter::From(FlowPtr<Binary> in) {
   message->set_operator_(FromOperator(in->GetOp()));
   message->set_allocated_left(From(in->GetLHS()));
   message->set_allocated_right(From(in->GetRHS()));
-
-  return message;
-}
-
-SyntaxTree::Ternary *AstWriter::From(FlowPtr<Ternary> in) {
-  auto *message = Pool::CreateMessage<SyntaxTree::Ternary>(m_arena);
-
-  message->set_allocated_location(FromSource(in));
-  message->set_allocated_condition(From(in->GetCond()));
-  message->set_allocated_true_branch(From(in->GetLHS()));
-  message->set_allocated_false_branch(From(in->GetRHS()));
 
   return message;
 }
@@ -1895,7 +1879,6 @@ void AstWriter::Visit(FlowPtr<RefTy> n) { SEND(From(n), ref); }
 void AstWriter::Visit(FlowPtr<FuncTy> n) { SEND(From(n), func); }
 void AstWriter::Visit(FlowPtr<Unary> n) { SEND(From(n), unary); }
 void AstWriter::Visit(FlowPtr<Binary> n) { SEND(From(n), binary); }
-void AstWriter::Visit(FlowPtr<Ternary> n) { SEND(From(n), ternary); }
 void AstWriter::Visit(FlowPtr<Integer> n) { SEND(From(n), integer); }
 void AstWriter::Visit(FlowPtr<Float> n) { SEND(From(n), float_); }
 void AstWriter::Visit(FlowPtr<Boolean> n) { SEND(From(n), boolean); }

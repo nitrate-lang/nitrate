@@ -80,7 +80,6 @@ namespace ncc::parse {
     SyntaxTree::FuncTy *From(FlowPtr<FuncTy> in);
     SyntaxTree::Unary *From(FlowPtr<Unary> in);
     SyntaxTree::Binary *From(FlowPtr<Binary> in);
-    SyntaxTree::Ternary *From(FlowPtr<Ternary> in);
     SyntaxTree::Integer *From(FlowPtr<Integer> in);
     SyntaxTree::Float *From(FlowPtr<Float> in);
     SyntaxTree::Boolean *From(FlowPtr<Boolean> in);
@@ -145,7 +144,6 @@ namespace ncc::parse {
     void Visit(FlowPtr<FuncTy> n) override;
     void Visit(FlowPtr<Unary> n) override;
     void Visit(FlowPtr<Binary> n) override;
-    void Visit(FlowPtr<Ternary> n) override;
     void Visit(FlowPtr<Integer> n) override;
     void Visit(FlowPtr<Float> n) override;
     void Visit(FlowPtr<Boolean> n) override;
