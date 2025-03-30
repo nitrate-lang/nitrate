@@ -38,58 +38,58 @@ using namespace ncc;
 using namespace ncc::lex;
 using namespace ncc::parse;
 
-auto GeneralParser::Context::RecurseForeachNames() -> std::optional<std::pair<string, string>> {
-  if (auto name_a = RecurseName()) [[likely]] {
-    if (NextIf<PuncComa>()) {
-      if (auto name_b = RecurseName()) [[likely]] {
+static auto RecurseForeachNames(GeneralParser::Context& m) -> std::optional<std::pair<string, string>> {
+  if (auto name_a = m.RecurseName()) [[likely]] {
+    if (m.NextIf<PuncComa>()) {
+      if (auto name_b = m.RecurseName()) [[likely]] {
         return std::make_pair(name_a, name_b);
       } else {
-        Log << ParserSignal << Current() << "Expected identifier in foreach statement";
+        Log << ParserSignal << m.Current() << "Expected identifier in foreach statement";
       }
     } else {
       return std::make_pair("", name_a);
     }
   } else {
-    Log << ParserSignal << Current() << "Expected identifier in foreach statement";
+    Log << ParserSignal << m.Current() << "Expected identifier in foreach statement";
   }
 
   return std::nullopt;
 }
 
-auto GeneralParser::Context::RecurseForeachExpr(bool has_paren) -> FlowPtr<Expr> {
+static auto RecurseForeachExpr(GeneralParser::Context& m, bool has_paren) -> FlowPtr<Expr> {
   if (has_paren) {
-    return RecurseExpr({
+    return m.RecurseExpr({
         Token(Punc, PuncRPar),
     });
   }
 
-  return RecurseExpr({
+  return m.RecurseExpr({
       Token(Punc, PuncLCur),
       Token(Oper, OpArrow),
   });
 }
 
-auto GeneralParser::Context::RecurseForeachBody() -> FlowPtr<Expr> {
-  if (NextIf<OpArrow>()) {
-    return RecurseBlock(false, true, BlockMode::Unknown);
+static auto RecurseForeachBody(GeneralParser::Context& m) -> FlowPtr<Expr> {
+  if (m.NextIf<OpArrow>()) {
+    return m.RecurseBlock(false, true, BlockMode::Unknown);
   }
 
-  return RecurseBlock(true, false, BlockMode::Unknown);
+  return m.RecurseBlock(true, false, BlockMode::Unknown);
 }
 
 auto GeneralParser::Context::RecurseForeach() -> FlowPtr<Expr> {
   bool foreach_has_paren = NextIf<PuncLPar>().has_value();
 
-  if (auto iter_names = RecurseForeachNames()) {
+  if (auto iter_names = RecurseForeachNames(m)) {
     auto [index_name, value_name] = iter_names.value();
 
     if (NextIf<OpIn>()) [[likely]] {
-      auto iter_expr = RecurseForeachExpr(foreach_has_paren);
+      auto iter_expr = RecurseForeachExpr(m, foreach_has_paren);
       if (foreach_has_paren && !NextIf<PuncRPar>()) {
         Log << ParserSignal << Current() << "Expected ')' in foreach statement";
       }
 
-      auto body = RecurseForeachBody();
+      auto body = RecurseForeachBody(m);
 
       return CreateForeach(index_name, value_name, iter_expr, body);
     } else {

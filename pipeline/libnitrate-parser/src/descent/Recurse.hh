@@ -88,12 +88,6 @@ namespace ncc::parse {
     [[nodiscard]] auto RecurseExprPunctor(lex::Punctor punc) -> NullableFlowPtr<Expr>;
     [[nodiscard]] auto RecurseExprTypeSuffix(FlowPtr<Expr> base) -> FlowPtr<Expr>;
     [[nodiscard]] auto RecurseFstring() -> FlowPtr<Expr>;
-    [[nodiscard]] auto RecurseForInitExpr() -> NullableFlowPtr<Expr>;
-    [[nodiscard]] auto RecurseForCondition() -> NullableFlowPtr<Expr>;
-    [[nodiscard]] auto RecurseForStepExpr(bool has_paren) -> NullableFlowPtr<Expr>;
-    [[nodiscard]] auto RecurseForeachNames() -> std::optional<std::pair<string, string>>;
-    [[nodiscard]] auto RecurseForeachExpr(bool has_paren) -> FlowPtr<Expr>;
-    [[nodiscard]] auto RecurseForeachBody() -> FlowPtr<Expr>;
     [[nodiscard]] auto RecurseFunctionParameterType() -> FlowPtr<Type>;
     [[nodiscard]] auto RecurseFunctionParameterValue() -> NullableFlowPtr<Expr>;
     [[nodiscard]] auto RecurseFunctionParameter() -> std::optional<FuncParam>;

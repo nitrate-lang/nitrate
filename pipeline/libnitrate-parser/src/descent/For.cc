@@ -38,35 +38,35 @@ using namespace ncc;
 using namespace ncc::lex;
 using namespace ncc::parse;
 
-auto GeneralParser::Context::RecurseForInitExpr() -> NullableFlowPtr<Expr> {
-  if (NextIf<PuncSemi>()) {
+static auto RecurseForInitExpr(GeneralParser::Context& m) -> NullableFlowPtr<Expr> {
+  if (m.NextIf<PuncSemi>()) {
     return std::nullopt;
   }
 
-  auto var_kind = Peek();
+  auto var_kind = m.Peek();
   if (!var_kind.Is<Let>() && !var_kind.Is<Var>() && !var_kind.Is<Const>()) {
-    return RecurseExpr({
+    return m.RecurseExpr({
         Token(Punc, PuncSemi),
     });
   }
 
-  Next();
+  m.Next();
 
   std::vector<FlowPtr<Expr>> variables;
 
   switch (var_kind.GetKeyword()) {
     case Keyword::Let: {
-      variables = RecurseVariable(VariableType::Let);
+      variables = m.RecurseVariable(VariableType::Let);
       break;
     }
 
     case Keyword::Var: {
-      variables = RecurseVariable(VariableType::Var);
+      variables = m.RecurseVariable(VariableType::Var);
       break;
     }
 
     case Keyword::Const: {
-      variables = RecurseVariable(VariableType::Const);
+      variables = m.RecurseVariable(VariableType::Const);
       break;
     }
 
@@ -79,50 +79,50 @@ auto GeneralParser::Context::RecurseForInitExpr() -> NullableFlowPtr<Expr> {
     return variables[0];
   }
 
-  Log << ParserSignal << Current() << "Expected exactly one variable in for loop";
+  Log << ParserSignal << m.Current() << "Expected exactly one variable in for loop";
 
   return std::nullopt;
 }
 
-auto GeneralParser::Context::RecurseForCondition() -> NullableFlowPtr<Expr> {
-  if (NextIf<PuncSemi>()) {
+static auto RecurseForCondition(GeneralParser::Context& m) -> NullableFlowPtr<Expr> {
+  if (m.NextIf<PuncSemi>()) {
     return std::nullopt;
   }
 
-  auto condition = RecurseExpr({
+  auto condition = m.RecurseExpr({
       Token(Punc, PuncSemi),
   });
 
-  if (!NextIf<PuncSemi>()) {
-    Log << ParserSignal << Current() << "Expected semicolon after condition expression";
+  if (!m.NextIf<PuncSemi>()) {
+    Log << ParserSignal << m.Current() << "Expected semicolon after condition expression";
   }
 
   return condition;
 }
 
-auto GeneralParser::Context::RecurseForStepExpr(bool has_paren) -> NullableFlowPtr<Expr> {
+static auto RecurseForStepExpr(GeneralParser::Context& m, bool has_paren) -> NullableFlowPtr<Expr> {
   if (has_paren) {
-    if (Peek().Is<PuncRPar>()) {
+    if (m.Peek().Is<PuncRPar>()) {
       return std::nullopt;
     }
 
-    return RecurseExpr({
+    return m.RecurseExpr({
         Token(Punc, PuncRPar),
     });
   }
 
-  if (Peek().Is<PuncLCur>()) {
+  if (m.Peek().Is<PuncLCur>()) {
     return std::nullopt;
   }
 
-  return RecurseExpr({Token(Punc, PuncLCur)});
+  return m.RecurseExpr({Token(Punc, PuncLCur)});
 }
 
 auto GeneralParser::Context::RecurseFor() -> FlowPtr<Expr> {
   bool for_with_paren = NextIf<PuncLPar>().has_value();
-  auto for_init = RecurseForInitExpr();
-  auto for_cond = RecurseForCondition();
-  auto for_step = RecurseForStepExpr(for_with_paren);
+  auto for_init = RecurseForInitExpr(m);
+  auto for_cond = RecurseForCondition(m);
+  auto for_step = RecurseForStepExpr(m, for_with_paren);
 
   if (for_with_paren && !NextIf<PuncRPar>()) {
     Log << ParserSignal << Current() << "Expected closing parenthesis in for statement";
