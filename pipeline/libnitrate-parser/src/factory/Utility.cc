@@ -42,7 +42,7 @@ using namespace ncc::parse;
 auto ASTFactory::CreateMockInstance(ASTNodeKind kind, SourceLocation origin) -> FlowPtr<Expr> {
   NullableFlowPtr<Expr> r;
 
-#define SIMPLE_EXPR() CreateMockInstance(QAST_NULL, origin)
+#define SIMPLE_EXPR() CreateMockInstance(AST_eNULL, origin)
 #define SIMPLE_TYPE() CreateMockInstance<Type>(QAST_VOID, origin)
 
   switch (kind) {
@@ -53,12 +53,12 @@ auto ASTFactory::CreateMockInstance(ASTNodeKind kind, SourceLocation origin) -> 
       break;
     }
 
-    case QAST_BINEXPR: {
+    case AST_eBIN: {
       r = CreateBinary(SIMPLE_EXPR(), lex::OpPlus, SIMPLE_EXPR());
       break;
     }
 
-    case QAST_UNEXPR: {
+    case AST_eUNARY: {
       r = CreateUnary(lex::OpPlus, SIMPLE_EXPR());
       break;
     }
@@ -68,42 +68,42 @@ auto ASTFactory::CreateMockInstance(ASTNodeKind kind, SourceLocation origin) -> 
       break;
     }
 
-    case QAST_INT: {
+    case AST_eINT: {
       r = CreateInteger(0);
       break;
     }
 
-    case QAST_FLOAT: {
+    case AST_eFLOAT: {
       r = CreateFloat(0.0);
       break;
     }
 
-    case QAST_STRING: {
+    case AST_eSTRING: {
       r = CreateString("");
       break;
     }
 
-    case QAST_CHAR: {
+    case AST_eCHAR: {
       r = CreateCharacter(0);
       break;
     }
 
-    case QAST_BOOL: {
+    case AST_eBOOL: {
       r = CreateBoolean(false);
       break;
     }
 
-    case QAST_NULL: {
+    case AST_eNULL: {
       r = CreateNull();
       break;
     }
 
-    case QAST_UNDEF: {
+    case AST_eUNDEF: {
       r = CreateUndefined();
       break;
     }
 
-    case QAST_CALL: {
+    case AST_eCALL: {
       r = CreateCall(SIMPLE_EXPR(), {});
       break;
     }
@@ -148,77 +148,77 @@ auto ASTFactory::CreateMockInstance(ASTNodeKind kind, SourceLocation origin) -> 
       break;
     }
 
-    case QAST_U1: {
+    case AST_tU1: {
       r = CreateU1();
       break;
     }
 
-    case QAST_U8: {
+    case AST_tU8: {
       r = CreateU8();
       break;
     }
 
-    case QAST_U16: {
+    case AST_tU16: {
       r = CreateU16();
       break;
     }
 
-    case QAST_U32: {
+    case AST_tU32: {
       r = CreateU32();
       break;
     }
 
-    case QAST_U64: {
+    case AST_tU64: {
       r = CreateU64();
       break;
     }
 
-    case QAST_U128: {
+    case AST_tU128: {
       r = CreateU128();
       break;
     }
 
-    case QAST_I8: {
+    case AST_tI8: {
       r = CreateI8();
       break;
     }
 
-    case QAST_I16: {
+    case AST_tI16: {
       r = CreateI16();
       break;
     }
 
-    case QAST_I32: {
+    case AST_tI32: {
       r = CreateI32();
       break;
     }
 
-    case QAST_I64: {
+    case AST_tI64: {
       r = CreateI64();
       break;
     }
 
-    case QAST_I128: {
+    case AST_tI128: {
       r = CreateI128();
       break;
     }
 
-    case QAST_F16: {
+    case AST_tF16: {
       r = CreateF16();
       break;
     }
 
-    case QAST_F32: {
+    case AST_tF32: {
       r = CreateF32();
       break;
     }
 
-    case QAST_F64: {
+    case AST_tF64: {
       r = CreateF64();
       break;
     }
 
-    case QAST_F128: {
+    case AST_tF128: {
       r = CreateF128();
       break;
     }

@@ -190,7 +190,7 @@ namespace ncc::parse::import {
 
       bool is_extern =
           std::find_if(n->GetAttributes().begin(), n->GetAttributes().end(), [](const FlowPtr<Expr> &attr) {
-            if (!attr->Is(QAST_CALL)) {
+            if (!attr->Is(AST_eCALL)) {
               return false;
             }
 
@@ -200,7 +200,7 @@ namespace ncc::parse::import {
               return false;
             }
 
-            if (call->GetArgs().size() != 1 || !call->GetArgs()[0].second->Is(QAST_STRING)) {
+            if (call->GetArgs().size() != 1 || !call->GetArgs()[0].second->Is(AST_eSTRING)) {
               return false;
             }
 
@@ -291,7 +291,7 @@ auto GeneralParser::PImpl::RecurseImportName() -> std::pair<string, ImportMode> 
         }
 
         auto pvalue = arg.second;
-        if (!pvalue->Is(QAST_STRING)) {
+        if (!pvalue->Is(AST_eSTRING)) {
           Log << ParserSignal << Current() << "Expected string literal for import source";
           continue;
         }
@@ -306,7 +306,7 @@ auto GeneralParser::PImpl::RecurseImportName() -> std::pair<string, ImportMode> 
         }
 
         auto pvalue = arg.second;
-        if (!pvalue->Is(QAST_STRING)) {
+        if (!pvalue->Is(AST_eSTRING)) {
           Log << ParserSignal << Current() << "Expected string literal for import mode";
           continue;
         }

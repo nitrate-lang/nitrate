@@ -104,27 +104,27 @@ namespace ncc::parse {
       using namespace ncc::parse;
 
       if constexpr (std::is_same_v<T, Binary>) {
-        return QAST_BINEXPR;
+        return AST_eBIN;
       } else if constexpr (std::is_same_v<T, Unary>) {
-        return QAST_UNEXPR;
+        return AST_eUNARY;
       } else if constexpr (std::is_same_v<T, Ternary>) {
         return QAST_TEREXPR;
       } else if constexpr (std::is_same_v<T, Integer>) {
-        return QAST_INT;
+        return AST_eINT;
       } else if constexpr (std::is_same_v<T, Float>) {
-        return QAST_FLOAT;
+        return AST_eFLOAT;
       } else if constexpr (std::is_same_v<T, String>) {
-        return QAST_STRING;
+        return AST_eSTRING;
       } else if constexpr (std::is_same_v<T, Character>) {
-        return QAST_CHAR;
+        return AST_eCHAR;
       } else if constexpr (std::is_same_v<T, Boolean>) {
-        return QAST_BOOL;
+        return AST_eBOOL;
       } else if constexpr (std::is_same_v<T, Null>) {
-        return QAST_NULL;
+        return AST_eNULL;
       } else if constexpr (std::is_same_v<T, Undefined>) {
-        return QAST_UNDEF;
+        return AST_eUNDEF;
       } else if constexpr (std::is_same_v<T, Call>) {
-        return QAST_CALL;
+        return AST_eCALL;
       } else if constexpr (std::is_same_v<T, List>) {
         return QAST_LIST;
       } else if constexpr (std::is_same_v<T, Assoc>) {
@@ -144,35 +144,35 @@ namespace ncc::parse {
       } else if constexpr (std::is_same_v<T, RefTy>) {
         return QAST_REF;
       } else if constexpr (std::is_same_v<T, U1>) {
-        return QAST_U1;
+        return AST_tU1;
       } else if constexpr (std::is_same_v<T, U8>) {
-        return QAST_U8;
+        return AST_tU8;
       } else if constexpr (std::is_same_v<T, U16>) {
-        return QAST_U16;
+        return AST_tU16;
       } else if constexpr (std::is_same_v<T, U32>) {
-        return QAST_U32;
+        return AST_tU32;
       } else if constexpr (std::is_same_v<T, U64>) {
-        return QAST_U64;
+        return AST_tU64;
       } else if constexpr (std::is_same_v<T, U128>) {
-        return QAST_U128;
+        return AST_tU128;
       } else if constexpr (std::is_same_v<T, I8>) {
-        return QAST_I8;
+        return AST_tI8;
       } else if constexpr (std::is_same_v<T, I16>) {
-        return QAST_I16;
+        return AST_tI16;
       } else if constexpr (std::is_same_v<T, I32>) {
-        return QAST_I32;
+        return AST_tI32;
       } else if constexpr (std::is_same_v<T, I64>) {
-        return QAST_I64;
+        return AST_tI64;
       } else if constexpr (std::is_same_v<T, I128>) {
-        return QAST_I128;
+        return AST_tI128;
       } else if constexpr (std::is_same_v<T, F16>) {
-        return QAST_F16;
+        return AST_tF16;
       } else if constexpr (std::is_same_v<T, F32>) {
-        return QAST_F32;
+        return AST_tF32;
       } else if constexpr (std::is_same_v<T, F64>) {
-        return QAST_F64;
+        return AST_tF64;
       } else if constexpr (std::is_same_v<T, F128>) {
-        return QAST_F128;
+        return AST_tF128;
       } else if constexpr (std::is_same_v<T, VoidTy>) {
         return QAST_VOID;
       } else if constexpr (std::is_same_v<T, PtrTy>) {
@@ -344,17 +344,17 @@ namespace ncc::parse {
       std::array<std::string_view, QAST__RANGE + 1> r;
       r.fill("");
 
-      r[QAST_BINEXPR] = "Binexpr";
-      r[QAST_UNEXPR] = "Unexpr";
+      r[AST_eBIN] = "Binexpr";
+      r[AST_eUNARY] = "Unexpr";
       r[QAST_TEREXPR] = "Terexpr";
-      r[QAST_INT] = "Int";
-      r[QAST_FLOAT] = "Float";
-      r[QAST_STRING] = "String";
-      r[QAST_CHAR] = "Char";
-      r[QAST_BOOL] = "Bool";
-      r[QAST_NULL] = "Null";
-      r[QAST_UNDEF] = "Undef";
-      r[QAST_CALL] = "Call";
+      r[AST_eINT] = "Int";
+      r[AST_eFLOAT] = "Float";
+      r[AST_eSTRING] = "String";
+      r[AST_eCHAR] = "Char";
+      r[AST_eBOOL] = "Bool";
+      r[AST_eNULL] = "Null";
+      r[AST_eUNDEF] = "Undef";
+      r[AST_eCALL] = "Call";
       r[QAST_LIST] = "List";
       r[QAST_ASSOC] = "Assoc";
       r[QAST_INDEX] = "Index";
@@ -364,21 +364,21 @@ namespace ncc::parse {
       r[QAST_TEMPL_CALL] = "TemplateCall";
       r[QAST_IMPORT] = "Import";
       r[QAST_REF] = "Ref";
-      r[QAST_U1] = "U1";
-      r[QAST_U8] = "U8";
-      r[QAST_U16] = "U16";
-      r[QAST_U32] = "U32";
-      r[QAST_U64] = "U64";
-      r[QAST_U128] = "U128";
-      r[QAST_I8] = "I8";
-      r[QAST_I16] = "I16";
-      r[QAST_I32] = "I32";
-      r[QAST_I64] = "I64";
-      r[QAST_I128] = "I128";
-      r[QAST_F16] = "F16";
-      r[QAST_F32] = "F32";
-      r[QAST_F64] = "F64";
-      r[QAST_F128] = "F128";
+      r[AST_tU1] = "U1";
+      r[AST_tU8] = "U8";
+      r[AST_tU16] = "U16";
+      r[AST_tU32] = "U32";
+      r[AST_tU64] = "U64";
+      r[AST_tU128] = "U128";
+      r[AST_tI8] = "I8";
+      r[AST_tI16] = "I16";
+      r[AST_tI32] = "I32";
+      r[AST_tI64] = "I64";
+      r[AST_tI128] = "I128";
+      r[AST_tF16] = "F16";
+      r[AST_tF32] = "F32";
+      r[AST_tF64] = "F64";
+      r[AST_tF128] = "F128";
       r[QAST_VOID] = "Void";
       r[QAST_PTR] = "Ptr";
       r[QAST_OPAQUE] = "Opaque";
@@ -423,21 +423,21 @@ namespace ncc::parse {
   public:
     [[nodiscard]] constexpr auto IsPrimitive() const -> bool {
       switch (GetKind()) {
-        case QAST_U1:
-        case QAST_U8:
-        case QAST_U16:
-        case QAST_U32:
-        case QAST_U64:
-        case QAST_U128:
-        case QAST_I8:
-        case QAST_I16:
-        case QAST_I32:
-        case QAST_I64:
-        case QAST_I128:
-        case QAST_F16:
-        case QAST_F32:
-        case QAST_F64:
-        case QAST_F128:
+        case AST_tU1:
+        case AST_tU8:
+        case AST_tU16:
+        case AST_tU32:
+        case AST_tU64:
+        case AST_tU128:
+        case AST_tI8:
+        case AST_tI16:
+        case AST_tI32:
+        case AST_tI64:
+        case AST_tI128:
+        case AST_tF16:
+        case AST_tF32:
+        case AST_tF64:
+        case AST_tF128:
         case QAST_VOID:
           return true;
         default:
@@ -451,22 +451,22 @@ namespace ncc::parse {
     [[nodiscard, gnu::pure]] constexpr auto IsFunction() const -> bool { return GetKind() == QAST_FUNCTOR; }
     [[nodiscard, gnu::pure]] constexpr auto IsComposite() const -> bool { return IsArray() || IsTuple(); }
     [[nodiscard, gnu::pure]] constexpr auto IsVoid() const -> bool { return GetKind() == QAST_VOID; }
-    [[nodiscard, gnu::pure]] constexpr auto IsBool() const -> bool { return GetKind() == QAST_U1; }
+    [[nodiscard, gnu::pure]] constexpr auto IsBool() const -> bool { return GetKind() == AST_tU1; }
     [[nodiscard, gnu::pure]] constexpr auto IsRef() const -> bool { return GetKind() == QAST_REF; }
     [[nodiscard, gnu::pure]] constexpr auto IsNumeric() const -> bool {
-      return GetKind() >= QAST_U1 && GetKind() <= QAST_F128;
+      return GetKind() >= AST_tU1 && GetKind() <= AST_tF128;
     }
     [[nodiscard, gnu::pure]] constexpr auto IsIntegral() const -> bool {
-      return GetKind() >= QAST_U1 && GetKind() <= QAST_I128;
+      return GetKind() >= AST_tU1 && GetKind() <= AST_tI128;
     }
     [[nodiscard, gnu::pure]] constexpr auto IsFloatingPoint() const -> bool {
-      return GetKind() >= QAST_F16 && GetKind() <= QAST_F128;
+      return GetKind() >= AST_tF16 && GetKind() <= AST_tF128;
     }
     [[nodiscard, gnu::pure]] constexpr auto IsSigned() const -> bool {
-      return GetKind() >= QAST_I8 && GetKind() <= QAST_I128;
+      return GetKind() >= AST_tI8 && GetKind() <= AST_tI128;
     }
     [[nodiscard, gnu::pure]] constexpr auto IsUnsigned() const -> bool {
-      return GetKind() >= QAST_U1 && GetKind() <= QAST_U128;
+      return GetKind() >= AST_tU1 && GetKind() <= AST_tU128;
     }
 
     [[nodiscard, gnu::pure]] constexpr auto GetWidth() const { return m_width; }

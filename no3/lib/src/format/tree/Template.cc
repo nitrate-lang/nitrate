@@ -55,7 +55,7 @@ void CambrianFormatter::Visit(FlowPtr<TemplateType> n) {
 
   bool is_comptime = n->GetTemplate()->GetKind() == QAST_NAMED &&
                      n->GetTemplate()->As<NamedTy>()->GetName() == "__builtin_meta" && n->GetArgs().size() == 1 &&
-                     n->GetArgs().front().second->Is(QAST_UNEXPR) &&
+                     n->GetArgs().front().second->Is(AST_eUNARY) &&
                      n->GetArgs().front().second.template As<Unary>()->GetOp() == OpComptime;
 
   size_t argc = n->GetArgs().size();

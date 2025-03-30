@@ -44,17 +44,17 @@ namespace ncc::parse {
     /*****************************************************************************
      * Expressions
      ****************************************************************************/
-    QAST_BINEXPR,    /* Binary expression */
-    QAST_UNEXPR,     /* Unary expression */
+    AST_eBIN,        /* Binary expression */
+    AST_eUNARY,      /* Unary expression */
     QAST_TEREXPR,    /* Ternary expression */
-    QAST_INT,        /* Integer literal */
-    QAST_FLOAT,      /* Floating-point literal */
-    QAST_STRING,     /* String literal */
-    QAST_CHAR,       /* Character literal */
-    QAST_BOOL,       /* Boolean literal */
-    QAST_NULL,       /* Null literal */
-    QAST_UNDEF,      /* Undefined expression */
-    QAST_CALL,       /* Function call */
+    AST_eINT,        /* Integer literal */
+    AST_eFLOAT,      /* Floating-point literal */
+    AST_eSTRING,     /* String literal */
+    AST_eCHAR,       /* Character literal */
+    AST_eBOOL,       /* Boolean literal */
+    AST_eNULL,       /* Null literal */
+    AST_eUNDEF,      /* Undefined expression */
+    AST_eCALL,       /* Function call */
     QAST_LIST,       /* List expression */
     QAST_ASSOC,      /* Associative pair */
     QAST_INDEX,      /* Index access */
@@ -68,21 +68,21 @@ namespace ncc::parse {
      * Types
      ****************************************************************************/
 
-    QAST_U1,       /* 1-bit unsigned integer (boolean) */
-    QAST_U8,       /* 8-bit unsigned integer */
-    QAST_U16,      /* 16-bit unsigned integer */
-    QAST_U32,      /* 32-bit unsigned integer */
-    QAST_U64,      /* 64-bit unsigned integer */
-    QAST_U128,     /* 128-bit unsigned integer */
-    QAST_I8,       /* 8-bit signed integer */
-    QAST_I16,      /* 16-bit signed integer */
-    QAST_I32,      /* 32-bit signed integer */
-    QAST_I64,      /* 64-bit signed integer */
-    QAST_I128,     /* 128-bit signed integer */
-    QAST_F16,      /* 16-bit floating-point number */
-    QAST_F32,      /* 32-bit floating-point number */
-    QAST_F64,      /* 64-bit floating-point number */
-    QAST_F128,     /* 128-bit floating-point number */
+    AST_tU1,       /* 1-bit unsigned integer (boolean) */
+    AST_tU8,       /* 8-bit unsigned integer */
+    AST_tU16,      /* 16-bit unsigned integer */
+    AST_tU32,      /* 32-bit unsigned integer */
+    AST_tU64,      /* 64-bit unsigned integer */
+    AST_tU128,     /* 128-bit unsigned integer */
+    AST_tI8,       /* 8-bit signed integer */
+    AST_tI16,      /* 16-bit signed integer */
+    AST_tI32,      /* 32-bit signed integer */
+    AST_tI64,      /* 64-bit signed integer */
+    AST_tI128,     /* 128-bit signed integer */
+    AST_tF16,      /* 16-bit floating-point number */
+    AST_tF32,      /* 32-bit floating-point number */
+    AST_tF64,      /* 64-bit floating-point number */
+    AST_tF128,     /* 128-bit floating-point number */
     QAST_VOID,     /* Void type */
     QAST_INFER,    /* Inferred type */
     QAST_OPAQUE,   /* Opaque named type */
@@ -120,7 +120,7 @@ namespace ncc::parse {
 
     ///======================================================================
 
-    QAST__TYPE_FIRST = QAST_U1,
+    QAST__TYPE_FIRST = AST_tU1,
     QAST__TYPE_LAST = QAST_FUNCTOR,
 
     QAST__STMT_FIRST = QAST_IF,

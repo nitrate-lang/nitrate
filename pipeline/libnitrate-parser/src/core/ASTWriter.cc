@@ -329,12 +329,12 @@ SyntaxTree::Expr *AstWriter::From(FlowPtr<Expr> in) {
       break;
     }
 
-    case QAST_BINEXPR: {
+    case AST_eBIN: {
       message->set_allocated_binary(From(in.As<Binary>()));
       break;
     }
 
-    case QAST_UNEXPR: {
+    case AST_eUNARY: {
       message->set_allocated_unary(From(in.As<Unary>()));
       break;
     }
@@ -344,42 +344,42 @@ SyntaxTree::Expr *AstWriter::From(FlowPtr<Expr> in) {
       break;
     }
 
-    case QAST_INT: {
+    case AST_eINT: {
       message->set_allocated_integer(From(in.As<Integer>()));
       break;
     }
 
-    case QAST_FLOAT: {
+    case AST_eFLOAT: {
       message->set_allocated_float_(From(in.As<Float>()));
       break;
     }
 
-    case QAST_STRING: {
+    case AST_eSTRING: {
       message->set_allocated_string(From(in.As<String>()));
       break;
     }
 
-    case QAST_CHAR: {
+    case AST_eCHAR: {
       message->set_allocated_character(From(in.As<Character>()));
       break;
     }
 
-    case QAST_BOOL: {
+    case AST_eBOOL: {
       message->set_allocated_boolean(From(in.As<Boolean>()));
       break;
     }
 
-    case QAST_NULL: {
+    case AST_eNULL: {
       message->set_allocated_null(From(in.As<Null>()));
       break;
     }
 
-    case QAST_UNDEF: {
+    case AST_eUNDEF: {
       message->set_allocated_undefined(From(in.As<Undefined>()));
       break;
     }
 
-    case QAST_CALL: {
+    case AST_eCALL: {
       message->set_allocated_call(From(in.As<Call>()));
       break;
     }
@@ -519,77 +519,77 @@ SyntaxTree::Expr *AstWriter::From(FlowPtr<Expr> in) {
       break;
     }
 
-    case QAST_U1: {
+    case AST_tU1: {
       message->set_allocated_u1(From(in.As<U1>()));
       break;
     }
 
-    case QAST_U8: {
+    case AST_tU8: {
       message->set_allocated_u8(From(in.As<U8>()));
       break;
     }
 
-    case QAST_U16: {
+    case AST_tU16: {
       message->set_allocated_u16(From(in.As<U16>()));
       break;
     }
 
-    case QAST_U32: {
+    case AST_tU32: {
       message->set_allocated_u32(From(in.As<U32>()));
       break;
     }
 
-    case QAST_U64: {
+    case AST_tU64: {
       message->set_allocated_u64(From(in.As<U64>()));
       break;
     }
 
-    case QAST_U128: {
+    case AST_tU128: {
       message->set_allocated_u128(From(in.As<U128>()));
       break;
     }
 
-    case QAST_I8: {
+    case AST_tI8: {
       message->set_allocated_i8(From(in.As<I8>()));
       break;
     }
 
-    case QAST_I16: {
+    case AST_tI16: {
       message->set_allocated_i16(From(in.As<I16>()));
       break;
     }
 
-    case QAST_I32: {
+    case AST_tI32: {
       message->set_allocated_i32(From(in.As<I32>()));
       break;
     }
 
-    case QAST_I64: {
+    case AST_tI64: {
       message->set_allocated_i64(From(in.As<I64>()));
       break;
     }
 
-    case QAST_I128: {
+    case AST_tI128: {
       message->set_allocated_i128(From(in.As<I128>()));
       break;
     }
 
-    case QAST_F16: {
+    case AST_tF16: {
       message->set_allocated_f16(From(in.As<F16>()));
       break;
     }
 
-    case QAST_F32: {
+    case AST_tF32: {
       message->set_allocated_f32(From(in.As<F32>()));
       break;
     }
 
-    case QAST_F64: {
+    case AST_tF64: {
       message->set_allocated_f64(From(in.As<F64>()));
       break;
     }
 
-    case QAST_F128: {
+    case AST_tF128: {
       message->set_allocated_f128(From(in.As<F128>()));
       break;
     }
@@ -652,77 +652,77 @@ SyntaxTree::Type *AstWriter::From(FlowPtr<Type> in) {
   auto *message = Pool::CreateMessage<SyntaxTree::Type>(m_arena);
 
   switch (in->GetKind()) {
-    case QAST_U1: {
+    case AST_tU1: {
       message->set_allocated_u1(From(in.As<U1>()));
       break;
     }
 
-    case QAST_U8: {
+    case AST_tU8: {
       message->set_allocated_u8(From(in.As<U8>()));
       break;
     }
 
-    case QAST_U16: {
+    case AST_tU16: {
       message->set_allocated_u16(From(in.As<U16>()));
       break;
     }
 
-    case QAST_U32: {
+    case AST_tU32: {
       message->set_allocated_u32(From(in.As<U32>()));
       break;
     }
 
-    case QAST_U64: {
+    case AST_tU64: {
       message->set_allocated_u64(From(in.As<U64>()));
       break;
     }
 
-    case QAST_U128: {
+    case AST_tU128: {
       message->set_allocated_u128(From(in.As<U128>()));
       break;
     }
 
-    case QAST_I8: {
+    case AST_tI8: {
       message->set_allocated_i8(From(in.As<I8>()));
       break;
     }
 
-    case QAST_I16: {
+    case AST_tI16: {
       message->set_allocated_i16(From(in.As<I16>()));
       break;
     }
 
-    case QAST_I32: {
+    case AST_tI32: {
       message->set_allocated_i32(From(in.As<I32>()));
       break;
     }
 
-    case QAST_I64: {
+    case AST_tI64: {
       message->set_allocated_i64(From(in.As<I64>()));
       break;
     }
 
-    case QAST_I128: {
+    case AST_tI128: {
       message->set_allocated_i128(From(in.As<I128>()));
       break;
     }
 
-    case QAST_F16: {
+    case AST_tF16: {
       message->set_allocated_f16(From(in.As<F16>()));
       break;
     }
 
-    case QAST_F32: {
+    case AST_tF32: {
       message->set_allocated_f32(From(in.As<F32>()));
       break;
     }
 
-    case QAST_F64: {
+    case AST_tF64: {
       message->set_allocated_f64(From(in.As<F64>()));
       break;
     }
 
-    case QAST_F128: {
+    case AST_tF128: {
       message->set_allocated_f128(From(in.As<F128>()));
       break;
     }

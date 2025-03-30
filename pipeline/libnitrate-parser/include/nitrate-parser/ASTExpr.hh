@@ -47,7 +47,7 @@ namespace ncc::parse {
 
   public:
     constexpr Unary(auto op, auto rhs, bool is_postfix)
-        : Expr(QAST_UNEXPR), m_rhs(std::move(rhs)), m_op(op), m_is_postfix(is_postfix) {}
+        : Expr(AST_eUNARY), m_rhs(std::move(rhs)), m_op(op), m_is_postfix(is_postfix) {}
 
     [[nodiscard, gnu::pure]] constexpr auto GetRHS() const { return m_rhs; }
     [[nodiscard, gnu::pure]] constexpr auto GetRHS() { return m_rhs; }
@@ -63,7 +63,7 @@ namespace ncc::parse {
 
   public:
     constexpr Binary(auto lhs, auto op, auto rhs)
-        : Expr(QAST_BINEXPR), m_lhs(std::move(lhs)), m_rhs(std::move(rhs)), m_op(op) {}
+        : Expr(AST_eBIN), m_lhs(std::move(lhs)), m_rhs(std::move(rhs)), m_op(op) {}
 
     [[nodiscard, gnu::pure]] constexpr auto GetLHS() const { return m_lhs; }
     [[nodiscard, gnu::pure]] constexpr auto GetLHS() { return m_lhs; }
@@ -92,7 +92,7 @@ namespace ncc::parse {
     string m_value;
 
   public:
-    constexpr Integer(auto value) : Expr(QAST_INT), m_value(value) {}
+    constexpr Integer(auto value) : Expr(AST_eINT), m_value(value) {}
 
     [[nodiscard, gnu::pure]] constexpr auto GetValue() const { return m_value; }
     [[nodiscard, gnu::pure]] constexpr auto GetValue() { return m_value; }
@@ -102,7 +102,7 @@ namespace ncc::parse {
     string m_value;
 
   public:
-    constexpr Float(auto value) : Expr(QAST_FLOAT), m_value(value) {}
+    constexpr Float(auto value) : Expr(AST_eFLOAT), m_value(value) {}
 
     [[nodiscard, gnu::pure]] constexpr auto GetValue() const { return m_value; }
     [[nodiscard, gnu::pure]] constexpr auto GetValue() { return m_value; }
@@ -112,7 +112,7 @@ namespace ncc::parse {
     bool m_value;
 
   public:
-    constexpr Boolean(auto value) : Expr(QAST_BOOL), m_value(value) {}
+    constexpr Boolean(auto value) : Expr(AST_eBOOL), m_value(value) {}
 
     [[nodiscard, gnu::pure]] constexpr auto GetValue() const { return m_value; }
     [[nodiscard, gnu::pure]] constexpr auto GetValue() { return m_value; }
@@ -122,7 +122,7 @@ namespace ncc::parse {
     string m_value;
 
   public:
-    constexpr String(auto value) : Expr(QAST_STRING), m_value(value) {}
+    constexpr String(auto value) : Expr(AST_eSTRING), m_value(value) {}
 
     [[nodiscard, gnu::pure]] constexpr auto GetValue() const { return m_value; }
     [[nodiscard, gnu::pure]] constexpr auto GetValue() { return m_value; }
@@ -132,7 +132,7 @@ namespace ncc::parse {
     uint8_t m_value;
 
   public:
-    constexpr Character(auto value) : Expr(QAST_CHAR), m_value(value) {}
+    constexpr Character(auto value) : Expr(AST_eCHAR), m_value(value) {}
 
     [[nodiscard, gnu::pure]] constexpr auto GetValue() const { return m_value; }
     [[nodiscard, gnu::pure]] constexpr auto GetValue() { return m_value; }
@@ -140,12 +140,12 @@ namespace ncc::parse {
 
   class Null final : public Expr {
   public:
-    constexpr Null() : Expr(QAST_NULL) {}
+    constexpr Null() : Expr(AST_eNULL) {}
   };
 
   class Undefined final : public Expr {
   public:
-    constexpr Undefined() : Expr(QAST_UNDEF) {}
+    constexpr Undefined() : Expr(AST_eUNDEF) {}
   };
 
   static_assert(sizeof(Undefined) == sizeof(Expr),
@@ -156,7 +156,7 @@ namespace ncc::parse {
     std::span<CallArg> m_args;
 
   public:
-    constexpr Call(auto func, auto args) : Expr(QAST_CALL), m_func(std::move(func)), m_args(args) {}
+    constexpr Call(auto func, auto args) : Expr(AST_eCALL), m_func(std::move(func)), m_args(args) {}
 
     [[nodiscard, gnu::pure]] constexpr auto GetFunc() const { return m_func; }
     [[nodiscard, gnu::pure]] constexpr auto GetFunc() { return m_func; }

@@ -66,77 +66,77 @@ namespace ncc::parse {
 
   class U1 : public Type {
   public:
-    constexpr U1() : Type(QAST_U1){};
+    constexpr U1() : Type(AST_tU1){};
   };
 
   class U8 : public Type {
   public:
-    constexpr U8() : Type(QAST_U8){};
+    constexpr U8() : Type(AST_tU8){};
   };
 
   class U16 : public Type {
   public:
-    constexpr U16() : Type(QAST_U16){};
+    constexpr U16() : Type(AST_tU16){};
   };
 
   class U32 : public Type {
   public:
-    constexpr U32() : Type(QAST_U32){};
+    constexpr U32() : Type(AST_tU32){};
   };
 
   class U64 : public Type {
   public:
-    constexpr U64() : Type(QAST_U64){};
+    constexpr U64() : Type(AST_tU64){};
   };
 
   class U128 : public Type {
   public:
-    constexpr U128() : Type(QAST_U128){};
+    constexpr U128() : Type(AST_tU128){};
   };
 
   class I8 : public Type {
   public:
-    constexpr I8() : Type(QAST_I8){};
+    constexpr I8() : Type(AST_tI8){};
   };
 
   class I16 : public Type {
   public:
-    constexpr I16() : Type(QAST_I16){};
+    constexpr I16() : Type(AST_tI16){};
   };
 
   class I32 : public Type {
   public:
-    constexpr I32() : Type(QAST_I32){};
+    constexpr I32() : Type(AST_tI32){};
   };
 
   class I64 : public Type {
   public:
-    constexpr I64() : Type(QAST_I64){};
+    constexpr I64() : Type(AST_tI64){};
   };
 
   class I128 : public Type {
   public:
-    constexpr I128() : Type(QAST_I128){};
+    constexpr I128() : Type(AST_tI128){};
   };
 
   class F16 : public Type {
   public:
-    constexpr F16() : Type(QAST_F16){};
+    constexpr F16() : Type(AST_tF16){};
   };
 
   class F32 : public Type {
   public:
-    constexpr F32() : Type(QAST_F32){};
+    constexpr F32() : Type(AST_tF32){};
   };
 
   class F64 : public Type {
   public:
-    constexpr F64() : Type(QAST_F64){};
+    constexpr F64() : Type(AST_tF64){};
   };
 
   class F128 : public Type {
   public:
-    constexpr F128() : Type(QAST_F128){};
+    constexpr F128() : Type(AST_tF128){};
   };
 
   class VoidTy : public Type {

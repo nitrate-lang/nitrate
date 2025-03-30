@@ -116,11 +116,11 @@ namespace ncc::parse {
           break;
         }
 
-        case QAST_BINEXPR: {
+        case AST_eBIN: {
           Visit(n.template As<Binary>());
           break;
         }
-        case QAST_UNEXPR: {
+        case AST_eUNARY: {
           Visit(n.template As<Unary>());
           break;
         }
@@ -128,35 +128,35 @@ namespace ncc::parse {
           Visit(n.template As<Ternary>());
           break;
         }
-        case QAST_INT: {
+        case AST_eINT: {
           Visit(n.template As<Integer>());
           break;
         }
-        case QAST_FLOAT: {
+        case AST_eFLOAT: {
           Visit(n.template As<Float>());
           break;
         }
-        case QAST_STRING: {
+        case AST_eSTRING: {
           Visit(n.template As<String>());
           break;
         }
-        case QAST_CHAR: {
+        case AST_eCHAR: {
           Visit(n.template As<Character>());
           break;
         }
-        case QAST_BOOL: {
+        case AST_eBOOL: {
           Visit(n.template As<Boolean>());
           break;
         }
-        case QAST_NULL: {
+        case AST_eNULL: {
           Visit(n.template As<Null>());
           break;
         }
-        case QAST_UNDEF: {
+        case AST_eUNDEF: {
           Visit(n.template As<Undefined>());
           break;
         }
-        case QAST_CALL: {
+        case AST_eCALL: {
           Visit(n.template As<Call>());
           break;
         }
@@ -196,63 +196,63 @@ namespace ncc::parse {
           Visit(n.template As<RefTy>());
           break;
         }
-        case QAST_U1: {
+        case AST_tU1: {
           Visit(n.template As<U1>());
           break;
         }
-        case QAST_U8: {
+        case AST_tU8: {
           Visit(n.template As<U8>());
           break;
         }
-        case QAST_U16: {
+        case AST_tU16: {
           Visit(n.template As<U16>());
           break;
         }
-        case QAST_U32: {
+        case AST_tU32: {
           Visit(n.template As<U32>());
           break;
         }
-        case QAST_U64: {
+        case AST_tU64: {
           Visit(n.template As<U64>());
           break;
         }
-        case QAST_U128: {
+        case AST_tU128: {
           Visit(n.template As<U128>());
           break;
         }
-        case QAST_I8: {
+        case AST_tI8: {
           Visit(n.template As<I8>());
           break;
         }
-        case QAST_I16: {
+        case AST_tI16: {
           Visit(n.template As<I16>());
           break;
         }
-        case QAST_I32: {
+        case AST_tI32: {
           Visit(n.template As<I32>());
           break;
         }
-        case QAST_I64: {
+        case AST_tI64: {
           Visit(n.template As<I64>());
           break;
         }
-        case QAST_I128: {
+        case AST_tI128: {
           Visit(n.template As<I128>());
           break;
         }
-        case QAST_F16: {
+        case AST_tF16: {
           Visit(n.template As<F16>());
           break;
         }
-        case QAST_F32: {
+        case AST_tF32: {
           Visit(n.template As<F32>());
           break;
         }
-        case QAST_F64: {
+        case AST_tF64: {
           Visit(n.template As<F64>());
           break;
         }
-        case QAST_F128: {
+        case AST_tF128: {
           Visit(n.template As<F128>());
           break;
         }

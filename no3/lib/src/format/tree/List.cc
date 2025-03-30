@@ -58,7 +58,7 @@ void CambrianFormatter::Visit(FlowPtr<List> n) {
     m_line << "; " << argc << "]";
   } else {
     static const std::unordered_set<ASTNodeKind> extra_seperation = {
-        QAST_TEREXPR, QAST_CALL, QAST_LIST, QAST_ASSOC, QAST_TEMPL_CALL,
+        QAST_TEREXPR, AST_eCALL, QAST_LIST, QAST_ASSOC, QAST_TEMPL_CALL,
     };
 
     bool special_case = std::any_of(n->GetItems().begin(), n->GetItems().end(), [&](auto x) {
