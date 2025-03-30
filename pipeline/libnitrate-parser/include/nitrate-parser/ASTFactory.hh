@@ -444,10 +444,6 @@ namespace ncc::parse {
     [[gnu::pure, nodiscard]] auto CreateReturn(NullableFlowPtr<Expr> value = nullptr,
                                                SourceLocation origin = SourceLocation::current()) -> FlowPtr<Return>;
 
-    [[gnu::pure, nodiscard]] auto CreateReturnIf(FlowPtr<Expr> cond, NullableFlowPtr<Expr> value = nullptr,
-                                                 SourceLocation origin = SourceLocation::current())
-        -> FlowPtr<ReturnIf>;
-
     [[gnu::pure, nodiscard]] auto CreateBreak(SourceLocation origin = SourceLocation::current()) -> FlowPtr<Break>;
 
     [[gnu::pure, nodiscard]] auto CreateContinue(SourceLocation origin = SourceLocation::current())

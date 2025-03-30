@@ -273,11 +273,6 @@ auto ASTFactory::CreateMockInstance(ASTNodeKind kind, SourceLocation origin) -> 
       break;
     }
 
-    case AST_sRETIF: {
-      r = CreateReturnIf(SIMPLE_EXPR());
-      break;
-    }
-
     case AST_sSWITCH: {
       r = CreateSwitch(SIMPLE_EXPR());
       break;

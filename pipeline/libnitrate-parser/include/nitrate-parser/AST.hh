@@ -98,7 +98,6 @@ namespace ncc::parse {
      ****************************************************************************/
 
     AST_sIF,       /* If statement */
-    AST_sRETIF,    /* Return-if statement */
     AST_sSWITCH,   /* Switch statement */
     AST_sCASE,     /* Case statement */
     AST_sRET,      /* Return statement */

@@ -127,7 +127,6 @@ namespace ncc::parse {
     [[nodiscard]] auto RecurseType() -> FlowPtr<Type>;
     [[nodiscard]] auto RecurseTypedef() -> FlowPtr<Expr>;
     [[nodiscard]] auto RecurseReturn() -> FlowPtr<Expr>;
-    [[nodiscard]] auto RecurseReturnIf() -> FlowPtr<Expr>;
     [[nodiscard]] auto RecurseIf() -> FlowPtr<Expr>;
     [[nodiscard]] auto RecurseWhile() -> FlowPtr<Expr>;
     [[nodiscard]] auto RecurseFor() -> FlowPtr<Expr>;

@@ -108,7 +108,6 @@ namespace ncc::parse::import {
     void Visit(FlowPtr<Break> n) override { n->Discard(); };
     void Visit(FlowPtr<Continue> n) override { n->Discard(); };
     void Visit(FlowPtr<Return> n) override { n->Discard(); };
-    void Visit(FlowPtr<ReturnIf> n) override { n->Discard(); };
     void Visit(FlowPtr<Case> n) override { n->Discard(); };
     void Visit(FlowPtr<Switch> n) override { n->Discard(); };
 

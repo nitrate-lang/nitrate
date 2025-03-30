@@ -91,7 +91,6 @@ namespace ncc::parse {
   class Variable;
   class Assembly;
   class Return;
-  class ReturnIf;
   class Break;
   class Continue;
   class If;

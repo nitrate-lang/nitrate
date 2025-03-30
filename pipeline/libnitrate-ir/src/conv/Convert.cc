@@ -1698,23 +1698,6 @@ using namespace ncc;
 //   }
 // }
 
-// static EResult nrgen_retif(NRBuilder &b, PState &s, IReport *G,
-//                            FlowPtr<ncc::parse::ReturnIf> n) {
-//   auto cond = next_one(n->Getcond());
-//   if (!cond.has_value()) {
-//     return std::nullopt;
-//   }
-
-//   cond = create<Binary>(cond.value(), create<U1Ty>(), Op::CastAs);
-
-//   auto val = next_one(n->Getvalue());
-//   if (!val.has_value()) {
-//     return std::nullopt;
-//   }
-
-//   return create<If>(cond.value(), create<Ret>(val.value()), createIgn());
-// }
-
 // static EResult nrgen_break(NRBuilder &, PState &, IReport *,
 //                            FlowPtr<ncc::parse::Break>) {
 //   return create<Brk>();
@@ -2091,10 +2074,6 @@ using namespace ncc;
 
 //     case AST_sRET:
 //       out = nrgen_return(b, s, G, n.as<ncc::parse::Return>());
-//       break;
-
-//     case AST_sRETIF:
-//       out = nrgen_retif(b, s, G, n.as<ncc::parse::ReturnIf>());
 //       break;
 
 //     case AST_sBRK:

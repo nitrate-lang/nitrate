@@ -193,11 +193,6 @@ auto ASTFactory::CreateReturn(NullableFlowPtr<Expr> value, SourceLocation origin
   return CreateInstance<Return>(value)(m_pool, origin);
 }
 
-auto ASTFactory::CreateReturnIf(FlowPtr<Expr> cond, NullableFlowPtr<Expr> value,
-                                SourceLocation origin) -> FlowPtr<ReturnIf> {
-  return CreateInstance<ReturnIf>(cond, value)(m_pool, origin);
-}
-
 auto ASTFactory::CreateBreak(SourceLocation origin) -> FlowPtr<Break> {
   return CreateInstance<Break>()(m_pool, origin);
 }

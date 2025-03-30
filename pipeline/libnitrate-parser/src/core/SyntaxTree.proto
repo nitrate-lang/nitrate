@@ -612,14 +612,6 @@ message Return {
   optional Expr value = 4;
 }
 
-message ReturnIf {
-  optional SourceLocationRange location = 1;
-  repeated UserComment comments = 2;
-
-  required Expr condition = 4;
-  optional Expr value = 5;
-}
-
 message Case {
   optional SourceLocationRange location = 1;
   repeated UserComment comments = 2;
@@ -791,7 +783,6 @@ message Expr {
     Break break = 57;
     Continue continue = 58;
     Return return = 59;
-    ReturnIf return_if = 60;
     Case case = 61;
     Switch switch = 62;
     Export export = 63;

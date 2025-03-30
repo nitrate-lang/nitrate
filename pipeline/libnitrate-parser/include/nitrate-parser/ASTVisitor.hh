@@ -97,7 +97,6 @@ namespace ncc::parse {
     virtual void Visit(FlowPtr<Break> n) = 0;
     virtual void Visit(FlowPtr<Continue> n) = 0;
     virtual void Visit(FlowPtr<Return> n) = 0;
-    virtual void Visit(FlowPtr<ReturnIf> n) = 0;
     virtual void Visit(FlowPtr<Case> n) = 0;
     virtual void Visit(FlowPtr<Switch> n) = 0;
     virtual void Visit(FlowPtr<Typedef> n) = 0;
@@ -325,10 +324,6 @@ namespace ncc::parse {
         }
         case AST_sRET: {
           Visit(n.template As<Return>());
-          break;
-        }
-        case AST_sRETIF: {
-          Visit(n.template As<ReturnIf>());
           break;
         }
         case AST_sBRK: {

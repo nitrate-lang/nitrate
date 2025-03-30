@@ -163,7 +163,6 @@ namespace ncc::lex {
     Break,       /* 'break' */
     Continue,    /* 'continue' */
     Return,      /* 'ret' */
-    Retif,       /* 'retif' */
     Foreach,     /* 'foreach' */
     Try,         /* 'try' */
     Catch,       /* 'catch' */

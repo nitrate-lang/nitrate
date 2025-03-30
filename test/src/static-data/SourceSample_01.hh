@@ -18,8 +18,6 @@ if false {} else {};
 
 if false {} else if false {} else {};;
 
-retif true, 0;
-
 switch 0 {
   0 => 0;
   1 => 1;

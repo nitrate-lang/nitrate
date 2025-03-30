@@ -106,7 +106,6 @@ namespace ncc::parse {
     SyntaxTree::Break *From(FlowPtr<Break> in);
     SyntaxTree::Continue *From(FlowPtr<Continue> in);
     SyntaxTree::Return *From(FlowPtr<Return> in);
-    SyntaxTree::ReturnIf *From(FlowPtr<ReturnIf> in);
     SyntaxTree::Case *From(FlowPtr<Case> in);
     SyntaxTree::Switch *From(FlowPtr<Switch> in);
     SyntaxTree::Typedef *From(FlowPtr<Typedef> in);
@@ -170,7 +169,6 @@ namespace ncc::parse {
     void Visit(FlowPtr<Break> n) override;
     void Visit(FlowPtr<Continue> n) override;
     void Visit(FlowPtr<Return> n) override;
-    void Visit(FlowPtr<ReturnIf> n) override;
     void Visit(FlowPtr<Case> n) override;
     void Visit(FlowPtr<Switch> n) override;
     void Visit(FlowPtr<Typedef> n) override;

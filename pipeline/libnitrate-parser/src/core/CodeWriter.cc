@@ -1354,19 +1354,6 @@ namespace ncc::parse {
       PrintTrailing(n);
     }
 
-    void Visit(FlowPtr<ReturnIf> n) override {
-      PrintLeading(n);
-
-      PutKeyword(lex::Retif);
-      n->GetCond()->Accept(*this);
-      if (n->GetValue()) {
-        PutPunctor(PuncComa);
-        n->GetValue().value()->Accept(*this);
-      }
-
-      PrintTrailing(n);
-    }
-
     void Visit(FlowPtr<Case> n) override {
       PrintLeading(n);
 

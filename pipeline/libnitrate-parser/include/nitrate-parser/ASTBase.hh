@@ -209,8 +209,6 @@ namespace ncc::parse {
         return AST_sASM;
       } else if constexpr (std::is_same_v<T, Return>) {
         return AST_sRET;
-      } else if constexpr (std::is_same_v<T, ReturnIf>) {
-        return AST_sRETIF;
       } else if constexpr (std::is_same_v<T, Break>) {
         return AST_sBRK;
       } else if constexpr (std::is_same_v<T, Continue>) {
@@ -395,7 +393,6 @@ namespace ncc::parse {
       r[AST_sVAR] = "Let";
       r[AST_sASM] = "Assembly";
       r[AST_sRET] = "Return";
-      r[AST_sRETIF] = "Retif";
       r[AST_sBRK] = "Break";
       r[AST_sCONT] = "Continue";
       r[AST_sIF] = "If";

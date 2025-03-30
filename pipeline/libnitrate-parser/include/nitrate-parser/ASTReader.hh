@@ -117,7 +117,6 @@ namespace ncc::parse {
     auto Unmarshal(const SyntaxTree::Break &in) -> Result<Break>;
     auto Unmarshal(const SyntaxTree::Continue &in) -> Result<Continue>;
     auto Unmarshal(const SyntaxTree::Return &in) -> Result<Return>;
-    auto Unmarshal(const SyntaxTree::ReturnIf &in) -> Result<ReturnIf>;
     auto Unmarshal(const SyntaxTree::Case &in) -> Result<Case>;
     auto Unmarshal(const SyntaxTree::Switch &in) -> Result<Switch>;
     auto Unmarshal(const SyntaxTree::Typedef &in) -> Result<Typedef>;

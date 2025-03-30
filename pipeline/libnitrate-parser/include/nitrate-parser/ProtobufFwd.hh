@@ -92,7 +92,6 @@ namespace nitrate::parser::SyntaxTree {  // NOLINT
   class Variable;
   class Assembly;
   class Return;
-  class ReturnIf;
   class Break;
   class Continue;
   class If;

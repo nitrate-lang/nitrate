@@ -104,7 +104,6 @@ namespace ncc::lex {
       {"break", Break},
       {"continue", Continue},
       {"ret", Return},
-      {"retif", Retif},
       {"foreach", Foreach},
       {"try", Try},
       {"catch", Catch},

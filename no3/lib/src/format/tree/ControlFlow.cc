@@ -60,18 +60,6 @@ void CambrianFormatter::Visit(FlowPtr<parse::Return> n) {
   }
 }
 
-void CambrianFormatter::Visit(FlowPtr<ReturnIf> n) {
-  PrintLineComments(n);
-
-  m_line << "retif ";
-  n->GetCond().Accept(*this);
-  if (n->GetValue().has_value()) {
-    m_line << ", ";
-    n->GetValue().value().Accept(*this);
-  }
-  m_line << ";";
-}
-
 void CambrianFormatter::Visit(FlowPtr<parse::If> n) {
   PrintLineComments(n);
 

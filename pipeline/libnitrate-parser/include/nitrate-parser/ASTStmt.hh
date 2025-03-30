@@ -224,22 +224,6 @@ namespace ncc::parse {
     constexpr void SetValue(auto value) { m_value = std::move(value); }
   };
 
-  class ReturnIf final : public Expr {
-    FlowPtr<Expr> m_cond;
-    NullableFlowPtr<Expr> m_value;
-
-  public:
-    constexpr ReturnIf(auto cond, auto value) : Expr(AST_sRETIF), m_cond(std::move(cond)), m_value(std::move(value)) {}
-
-    [[nodiscard, gnu::pure]] constexpr auto GetCond() const { return m_cond; }
-    [[nodiscard, gnu::pure]] constexpr auto GetCond() { return m_cond; }
-    [[nodiscard, gnu::pure]] constexpr auto GetValue() const { return m_value; }
-    [[nodiscard, gnu::pure]] constexpr auto GetValue() { return m_value; }
-
-    constexpr void SetCond(auto cond) { m_cond = std::move(cond); }
-    constexpr void SetValue(auto value) { m_value = std::move(value); }
-  };
-
   class Case final : public Expr {
     FlowPtr<Expr> m_cond, m_body;
 

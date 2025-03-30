@@ -244,11 +244,6 @@ class IterVisitor : public ASTVisitor {
   void Visit(FlowPtr<Continue>) override {}
   void Visit(FlowPtr<Return> n) override { Add(n->GetValue()); }
 
-  void Visit(FlowPtr<ReturnIf> n) override {
-    Add(n->GetCond());
-    Add(n->GetValue());
-  }
-
   void Visit(FlowPtr<Case> n) override {
     Add(n->GetCond());
     Add(n->GetBody());

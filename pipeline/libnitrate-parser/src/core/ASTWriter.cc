@@ -414,11 +414,6 @@ SyntaxTree::Expr *AstWriter::From(FlowPtr<Expr> in) {
       break;
     }
 
-    case AST_sRETIF: {
-      message->set_allocated_return_if(From(in.As<ReturnIf>()));
-      break;
-    }
-
     case AST_sSWITCH: {
       message->set_allocated_switch_(From(in.As<Switch>()));
       break;
@@ -1514,18 +1509,6 @@ SyntaxTree::Return *AstWriter::From(FlowPtr<Return> in) {
   return message;
 }
 
-SyntaxTree::ReturnIf *AstWriter::From(FlowPtr<ReturnIf> in) {
-  auto *message = Pool::CreateMessage<SyntaxTree::ReturnIf>(m_arena);
-
-  message->set_allocated_location(FromSource(in));
-  message->set_allocated_condition(From(in->GetCond()));
-  if (in->GetValue().has_value()) {
-    message->set_allocated_value(From(in->GetValue().value()));
-  }
-
-  return message;
-}
-
 SyntaxTree::Case *AstWriter::From(FlowPtr<Case> in) {
   auto *message = Pool::CreateMessage<SyntaxTree::Case>(m_arena);
 
@@ -1905,7 +1888,6 @@ void AstWriter::Visit(FlowPtr<Foreach> n) { SEND(From(n), foreach); }
 void AstWriter::Visit(FlowPtr<Break> n) { SEND(From(n), break_); }
 void AstWriter::Visit(FlowPtr<Continue> n) { SEND(From(n), continue_); }
 void AstWriter::Visit(FlowPtr<Return> n) { SEND(From(n), return_); }
-void AstWriter::Visit(FlowPtr<ReturnIf> n) { SEND(From(n), return_if); }
 void AstWriter::Visit(FlowPtr<Case> n) { SEND(From(n), case_); }
 void AstWriter::Visit(FlowPtr<Switch> n) { SEND(From(n), switch_); }
 void AstWriter::Visit(FlowPtr<Typedef> n) { SEND(From(n), typedef_); }

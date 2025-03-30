@@ -387,11 +387,6 @@ auto GeneralParser::PImpl::RecurseBlock(bool expect_braces, bool single_stmt, Bl
           break;
         }
 
-        case Retif: {
-          r = RecurseReturnIf();
-          break;
-        }
-
         case Keyword::Foreach: {
           r = RecurseForeach();
           break;

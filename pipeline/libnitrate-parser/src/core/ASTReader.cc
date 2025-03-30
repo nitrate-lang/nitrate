@@ -538,10 +538,6 @@ auto AstReader::Unmarshal(const SyntaxTree::Expr &in) -> Result<Expr> {
       return Unmarshal(in.return_());
     }
 
-    case SyntaxTree::Expr::kReturnIf: {
-      return Unmarshal(in.return_if());
-    }
-
     case SyntaxTree::Expr::kCase: {
       return Unmarshal(in.case_());
     }
@@ -1993,24 +1989,6 @@ auto AstReader::Unmarshal(const SyntaxTree::Return &in) -> Result<Return> {
   }
 
   auto object = m_fac.CreateReturn(value);
-  UnmarshalLocationLocation(in.location(), object);
-  UnmarshalCodeComment(in.comments(), object);
-
-  return object;
-}
-
-auto AstReader::Unmarshal(const SyntaxTree::ReturnIf &in) -> Result<ReturnIf> {
-  auto condition = Unmarshal(in.condition());
-  if (!condition.has_value()) [[unlikely]] {
-    return std::nullopt;
-  }
-
-  auto value = Unmarshal(in.value());
-  if (in.has_value() && !value.has_value()) [[unlikely]] {
-    return std::nullopt;
-  }
-
-  auto object = m_fac.CreateReturnIf(condition.value(), value);
   UnmarshalLocationLocation(in.location(), object);
   UnmarshalCodeComment(in.comments(), object);
 
