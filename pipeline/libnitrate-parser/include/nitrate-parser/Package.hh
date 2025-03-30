@@ -45,10 +45,8 @@
 
 namespace ncc::parse {
   class NCC_EXPORT ImportName final {
-    mutable std::optional<std::string> m_name;
+    mutable std::string m_name;
     mutable std::optional<std::vector<std::string_view>> m_chain;
-
-    static auto Validate(const std::string &name) -> bool;
 
   public:
     ImportName() = default;
@@ -58,10 +56,8 @@ namespace ncc::parse {
     auto operator<=>(const ImportName &other) const = default;
     auto operator*() const -> const std::string & { return GetName(); }
     auto operator->() const -> const std::string * { return &GetName(); }
-    auto operator!() const -> bool { return !IsValid(); }
 
-    [[nodiscard]] auto GetName() const -> const std::string & { return m_name.value(); }
-    [[nodiscard]] auto IsValid() const -> bool { return m_name.has_value(); }
+    [[nodiscard]] auto GetName() const -> const std::string & { return m_name; }
     [[nodiscard]] auto GetChain() const -> const std::vector<std::string_view> &;
   };
 

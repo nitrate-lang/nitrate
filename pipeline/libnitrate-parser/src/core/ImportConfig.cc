@@ -50,9 +50,7 @@ public:
       : m_import_name(std::move(import_name)),
         m_package_search_path(std::move(package_search_path)),
         m_files_to_not_import(std::move(files_to_not_import)) {
-    if (m_import_name.IsValid()) {
-      m_import_name_chain = m_import_name.GetChain();
-    }
+    m_import_name_chain = m_import_name.GetChain();
   }
 };
 

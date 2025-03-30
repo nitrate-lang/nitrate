@@ -1539,9 +1539,52 @@ namespace ncc::parse {
         PutPunctor(PuncRBrk);
       }
 
-      /// TODO: Implement code writer
-      qcore_implement();
-      (void)n;
+      PutPunctor(PuncLCur);
+
+      for (auto& [is_static, vis, name, type, default_value] : n->GetFields()) {
+        if (is_static) {
+          PutKeyword(lex::Static);
+        }
+
+        switch (vis) {
+          case Vis::Pub:
+            PutKeyword(lex::Pub);
+            break;
+          case Vis::Sec:
+            PutKeyword(Sec);
+            break;
+          case Vis::Pro:
+            PutKeyword(Pro);
+            break;
+        }
+
+        PutIdentifier(name);
+        PutPunctor(PuncColn);
+        type->Accept(*this);
+        if (default_value) {
+          PutOperator(OpSet);
+          default_value.value()->Accept(*this);
+        }
+        PutPunctor(PuncSemi);
+      }
+
+      for (auto& [vis, method] : n->GetMethods()) {
+        switch (vis) {
+          case Vis::Pub:
+            PutKeyword(lex::Pub);
+            break;
+          case Vis::Sec:
+            PutKeyword(Sec);
+            break;
+          case Vis::Pro:
+            PutKeyword(Pro);
+            break;
+        }
+
+        method->Accept(*this);
+      }
+
+      PutPunctor(PuncRCur);
 
       PrintTrailing(n);
     }

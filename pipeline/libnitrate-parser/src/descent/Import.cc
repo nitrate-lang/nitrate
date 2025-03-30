@@ -561,11 +561,6 @@ auto GeneralParser::Context::RecurseImport() -> FlowPtr<Expr> {
 
   if (!is_regular_file && import_mode == ImportMode::Code) {
     ImportName checked_name(import_name_precheck);
-    if (!checked_name) {
-      Log << ParserSignal << Current() << "Invalid import name: " << import_name_precheck;
-      return m_fac.CreateMockInstance<Import>();
-    }
-
     return RecurseImportPackage(checked_name);
   }
 
