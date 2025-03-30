@@ -191,8 +191,8 @@ auto GeneralParser::Context::RecurseStruct(CompositeType struct_type) -> FlowPtr
   auto struct_terms = RecurseStructTerms();
   auto [struct_fields, struct_methods] = RecurseStructBody();
 
-  auto struct_defintion = m_fac.CreateStruct(struct_type, struct_name, struct_template_params, struct_fields,
-                                             struct_methods, struct_terms, struct_attributes);
+  auto struct_defintion = CreateStruct(struct_type, struct_name, struct_template_params, struct_fields, struct_methods,
+                                       struct_terms, struct_attributes);
   struct_defintion->SetOffset(start_pos);
 
   return struct_defintion;

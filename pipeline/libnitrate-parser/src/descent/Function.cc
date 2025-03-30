@@ -46,7 +46,7 @@ auto GeneralParser::Context::RecurseFunctionParameterType() -> FlowPtr<parse::Ty
     return RecurseType();
   }
 
-  return m_fac.CreateUnknownType();
+  return CreateUnknownType();
 }
 
 auto GeneralParser::Context::RecurseFunctionParameterValue() -> NullableFlowPtr<Expr> {
@@ -170,7 +170,7 @@ auto GeneralParser::Context::RecurseFunctionAttributes() -> std::vector<FlowPtr<
     }
 
     Next();
-    attributes.emplace_back(m_fac.CreateIdentifier(tok.AsString()));
+    attributes.emplace_back(CreateIdentifier(tok.AsString()));
   }
 
   if (NextIf<PuncLBrk>()) {
@@ -186,7 +186,7 @@ auto GeneralParser::Context::RecurseFunctionAttributes() -> std::vector<FlowPtr<
 
       if (auto tok = Peek(); tok.Is(KeyW) && reserved_words.contains(tok.GetKeyword())) {
         Next();
-        attributes.emplace_back(m_fac.CreateIdentifier(tok.AsString()));
+        attributes.emplace_back(CreateIdentifier(tok.AsString()));
       } else {
         auto expr = RecurseExpr({Token(Punc, PuncComa), Token(Punc, PuncRBrk)});
         attributes.emplace_back(expr);
@@ -208,7 +208,7 @@ auto GeneralParser::Context::RecurseFunctionAttributes() -> std::vector<FlowPtr<
 
     Next();
 
-    attributes.emplace_back(m_fac.CreateIdentifier(tok.AsString()));
+    attributes.emplace_back(CreateIdentifier(tok.AsString()));
   }
 
   return attributes;
@@ -219,7 +219,7 @@ auto GeneralParser::Context::RecurseFunctionReturnType() -> FlowPtr<parse::Type>
     return RecurseType();
   }
 
-  return m_fac.CreateUnknownType();
+  return CreateUnknownType();
 }
 
 auto GeneralParser::Context::RecurseFunctionBody(bool parse_declaration_only) -> NullableFlowPtr<Expr> {
@@ -245,10 +245,10 @@ auto GeneralParser::Context::RecurseFunction(bool parse_declaration_only) -> Flo
   auto function_body = RecurseFunctionBody(parse_declaration_only);
 
   auto function =
-      m_fac.CreateFunction(function_name, function_return_type, function_parameters.first, function_parameters.second,
-                           function_body, function_attributes, function_template_parameters);
+      CreateFunction(function_name, function_return_type, function_parameters.first, function_parameters.second,
+                     function_body, function_attributes, function_template_parameters);
   if (!function.has_value()) [[unlikely]] {
-    function = m_fac.CreateMockInstance<Function>();
+    function = CreateMockInstance<Function>();
   }
 
   function.value()->SetOffset(start_pos);

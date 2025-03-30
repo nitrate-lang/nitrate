@@ -175,14 +175,14 @@ auto GeneralParser::Context::ParseFStringExpression(std::string_view source) -> 
     Log << ParserSignal << Current() << "F-string expression has mismatched braces";
   }
 
-  return m_fac.CreateFormatString(sections);
+  return CreateFormatString(sections);
 }
 
 auto GeneralParser::Context::RecurseFstring() -> FlowPtr<Expr> {
   const auto fstring_raw_text = NextIf<Text>();
   if (!fstring_raw_text) [[unlikely]] {
     Log << ParserSignal << Current() << "Expected a string literal token for F-string expression";
-    return m_fac.CreateMockInstance<FString>();
+    return CreateMockInstance<FString>();
   }
 
   return ParseFStringExpression(fstring_raw_text->GetString());
@@ -289,7 +289,7 @@ auto GeneralParser::Context::RecurseExpr(const std::set<Token> &terminators) -> 
       auto [Op, Offset] = pre_unary_ops.top();
       pre_unary_ops.pop();
 
-      left_side = m_fac.CreateUnary(Op, left_side);
+      left_side = CreateUnary(Op, left_side);
       left_side->SetOffset(Offset);
     }
 
@@ -313,7 +313,7 @@ auto GeneralParser::Context::RecurseExpr(const std::set<Token> &terminators) -> 
              * Handle post-unary operators
              ****************************************/
             if (op_type == OpMode::PostUnary) {
-              left_side = m_fac.CreateUnary(op, left_side, true);
+              left_side = CreateUnary(op, left_side, true);
               left_side->SetOffset(source_offset);
 
               continue;
@@ -345,7 +345,7 @@ auto GeneralParser::Context::RecurseExpr(const std::set<Token> &terminators) -> 
                 auto [op, Offset] = pre_unary_ops.top();
                 pre_unary_ops.pop();
 
-                auto pre_unary_expr = m_fac.CreateUnary(op, right_side.value());
+                auto pre_unary_expr = CreateUnary(op, right_side.value());
                 pre_unary_expr->SetOffset(Offset);
 
                 right_side = pre_unary_expr;
@@ -353,7 +353,7 @@ auto GeneralParser::Context::RecurseExpr(const std::set<Token> &terminators) -> 
 
               if (stack.size() + 1 > kMaxRecursionDepth) {
                 Log << ParserSignal << Current() << "Recursion depth exceeds maximum limit";
-                return m_fac.CreateMockInstance<VoidTy>();
+                return CreateMockInstance<VoidTy>();
               }
 
               stack.emplace(left_side, source_offset, next_min_precedence, FrameType::Binary, op);
@@ -366,7 +366,7 @@ auto GeneralParser::Context::RecurseExpr(const std::set<Token> &terminators) -> 
               spinning = false;
             }
 
-            left_side = UnwindStack(m_fac, stack, left_side, 0);
+            left_side = UnwindStack(*this, stack, left_side, 0);
 
             continue;
           }
@@ -379,7 +379,7 @@ auto GeneralParser::Context::RecurseExpr(const std::set<Token> &terminators) -> 
           // precedence as the dot operator (member access)
           static auto suffix_op_precedence = GetOperatorPrecedence(OpDot, OpMode::Binary);
 
-          left_side = UnwindStack(m_fac, stack, left_side, suffix_op_precedence);
+          left_side = UnwindStack(*this, stack, left_side, suffix_op_precedence);
 
           if (NextIf<PuncLPar>()) {
             auto arguments = RecurseCallArguments({Token(Punc, PuncRPar)}, false);
@@ -387,7 +387,7 @@ auto GeneralParser::Context::RecurseExpr(const std::set<Token> &terminators) -> 
               Log << ParserSignal << Current() << "Expected ')' to close the function call";
             }
 
-            left_side = m_fac.CreateCall(arguments, left_side);
+            left_side = CreateCall(arguments, left_side);
             left_side->SetOffset(source_offset);
           } else if (NextIf<PuncLBrk>()) {
             auto first = RecurseExpr({
@@ -401,14 +401,14 @@ auto GeneralParser::Context::RecurseExpr(const std::set<Token> &terminators) -> 
                 Log << ParserSignal << Current() << "Expected ']' to close the slice";
               }
 
-              left_side = m_fac.CreateSlice(left_side, first, second);
+              left_side = CreateSlice(left_side, first, second);
               left_side->SetOffset(source_offset);
             } else {
               if (!NextIf<PuncRBrk>()) {
                 Log << ParserSignal << Current() << "Expected ']' to close the index expression";
               }
 
-              left_side = m_fac.CreateIndex(left_side, first);
+              left_side = CreateIndex(left_side, first);
               left_side->SetOffset(source_offset);
             }
           } else if (NextIf<PuncLCur>()) {
@@ -426,7 +426,7 @@ auto GeneralParser::Context::RecurseExpr(const std::set<Token> &terminators) -> 
               Log << ParserSignal << Current() << "Expected ')' to close the call arguments";
             }
 
-            left_side = m_fac.CreateTemplateCall(std::move(template_arguments), std::move(call_arguments), left_side);
+            left_side = CreateTemplateCall(std::move(template_arguments), std::move(call_arguments), left_side);
             left_side->SetOffset(source_offset);
           } else {  // Not part of the expression
             spinning = false;
@@ -451,11 +451,11 @@ auto GeneralParser::Context::RecurseExpr(const std::set<Token> &terminators) -> 
       }
     }
 
-    return UnwindStack(m_fac, stack, left_side, 0);
+    return UnwindStack(*this, stack, left_side, 0);
   }
   Log << ParserSignal << Current() << "Expected an expression";
 
-  return m_fac.CreateMockInstance<VoidTy>();
+  return CreateMockInstance<VoidTy>();
 }
 
 auto GeneralParser::Context::RecurseExprKeyword(lex::Keyword key) -> NullableFlowPtr<Expr> {
@@ -485,10 +485,10 @@ auto GeneralParser::Context::RecurseExprKeyword(lex::Keyword key) -> NullableFlo
         auto args = RecurseCallArguments({Token(Punc, PuncRPar)}, false);
 
         if (NextIf<PuncRPar>()) {
-          e = m_fac.CreateCall(args, function);
+          e = CreateCall(args, function);
         } else {
           Log << ParserSignal << Current() << "Expected ')' to close the function call";
-          e = m_fac.CreateMockInstance<Call>();
+          e = CreateMockInstance<Call>();
         }
       } else {
         e = function;
@@ -498,17 +498,17 @@ auto GeneralParser::Context::RecurseExprKeyword(lex::Keyword key) -> NullableFlo
     }
 
     case Keyword::Null: {
-      e = m_fac.CreateNull();
+      e = CreateNull();
       break;
     }
 
     case True: {
-      e = m_fac.CreateBoolean(true);
+      e = CreateBoolean(true);
       break;
     }
 
     case False: {
-      e = m_fac.CreateBoolean(false);
+      e = CreateBoolean(false);
       break;
     }
 
@@ -606,7 +606,7 @@ auto GeneralParser::Context::RecurseExprPunctor(lex::Punctor punc) -> NullableFl
         NextIf<PuncComa>();
       }
 
-      e = m_fac.CreateList(items);
+      e = CreateList(items);
       break;
     }
 
@@ -646,7 +646,7 @@ auto GeneralParser::Context::RecurseExprPunctor(lex::Punctor punc) -> NullableFl
 
         NextIf<PuncComa>();
 
-        auto assoc = m_fac.CreateAssociation(key, value);
+        auto assoc = CreateAssociation(key, value);
         assoc->SetOffset(start_pos);
 
         items.push_back(assoc);
@@ -656,7 +656,7 @@ auto GeneralParser::Context::RecurseExprPunctor(lex::Punctor punc) -> NullableFl
         e = items[0];
       } else {
         std::vector<FlowPtr<Expr>> items_copy(items.begin(), items.end());
-        e = m_fac.CreateList(items_copy);
+        e = CreateList(items_copy);
       }
 
       break;
@@ -683,7 +683,7 @@ auto GeneralParser::Context::RecurseExprPunctor(lex::Punctor punc) -> NullableFl
     }
 
     case PuncScope: {
-      e = m_fac.CreateIdentifier("::" + *RecurseName());
+      e = CreateIdentifier("::" + *RecurseName());
       break;
     }
   }
@@ -697,7 +697,7 @@ auto GeneralParser::Context::RecurseExprTypeSuffix(FlowPtr<Expr> base) -> FlowPt
   auto suffix = RecurseType();
   suffix->SetOffset(tok.GetStart());
 
-  return m_fac.CreateBinary(std::move(base), OpAs, suffix);
+  return CreateBinary(std::move(base), OpAs, suffix);
 }
 
 auto GeneralParser::Context::RecurseExprPrimary(bool is_type) -> NullableFlowPtr<Expr> {
@@ -749,7 +749,7 @@ auto GeneralParser::Context::RecurseExprPrimary(bool is_type) -> NullableFlowPtr
       }
 
       case Name: {
-        auto identifier = m_fac.CreateIdentifier(RecurseName());
+        auto identifier = CreateIdentifier(RecurseName());
         identifier->SetOffset(start_pos);
 
         e = identifier;
@@ -759,7 +759,7 @@ auto GeneralParser::Context::RecurseExprPrimary(bool is_type) -> NullableFlowPtr
       case IntL: {
         Next();
 
-        auto integer = m_fac.CreateIntegerUnchecked(tok.GetString());
+        auto integer = CreateIntegerUnchecked(tok.GetString());
         integer->SetOffset(start_pos);
 
         if (Peek().Is(Name)) {
@@ -777,7 +777,7 @@ auto GeneralParser::Context::RecurseExprPrimary(bool is_type) -> NullableFlowPtr
       case NumL: {
         Next();
 
-        auto decimal = m_fac.CreateFloatUnchecked(tok.GetString());
+        auto decimal = CreateFloatUnchecked(tok.GetString());
         decimal->SetOffset(start_pos);
 
         if (Peek().Is(Name)) {
@@ -795,7 +795,7 @@ auto GeneralParser::Context::RecurseExprPrimary(bool is_type) -> NullableFlowPtr
       case Text: {
         Next();
 
-        auto string = m_fac.CreateString(tok.GetString());
+        auto string = CreateString(tok.GetString());
         string->SetOffset(start_pos);
 
         if (Peek().Is(Name)) {
@@ -819,7 +819,7 @@ auto GeneralParser::Context::RecurseExprPrimary(bool is_type) -> NullableFlowPtr
           break;
         }
 
-        auto character = m_fac.CreateCharacter(str_data->at(0));
+        auto character = CreateCharacter(str_data->at(0));
         character->SetOffset(start_pos);
 
         if (Peek().Is(Name)) {

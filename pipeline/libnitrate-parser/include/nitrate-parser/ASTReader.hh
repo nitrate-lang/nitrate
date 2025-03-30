@@ -49,13 +49,12 @@ namespace ncc::parse {
 
   using ReaderSourceManager = std::optional<std::reference_wrapper<lex::IScanner>>;
 
-  class NCC_EXPORT AstReader final {
+  class NCC_EXPORT AstReader final : private ASTFactory {
     template <typename T>
     using Result = NullableFlowPtr<T>;
 
     Result<Expr> m_root;
     ReaderSourceManager m_rd;
-    ASTFactory m_fac;
 
     void UnmarshalLocationLocation(const SyntaxTree::SourceLocationRange &in, FlowPtr<Expr> out);
     void UnmarshalCodeComment(

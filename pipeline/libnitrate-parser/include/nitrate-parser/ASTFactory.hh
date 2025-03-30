@@ -49,7 +49,7 @@
 #include <variant>
 
 namespace ncc::parse {
-  class NCC_EXPORT ASTFactory final {
+  class NCC_EXPORT ASTFactory {
     using SourceLocation = std::source_location;
 
     std::pmr::memory_resource& m_pool;

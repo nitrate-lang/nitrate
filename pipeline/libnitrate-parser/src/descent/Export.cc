@@ -56,5 +56,5 @@ auto GeneralParser::Context::RecurseExport(Vis vis) -> FlowPtr<Expr> {
   auto export_attributes = RecurseAttributes("export");
   auto export_body = RecurseExportBody(m);
 
-  return m_fac.CreateExport(export_body, export_attributes, vis, export_abi);
+  return CreateExport(export_body, export_attributes, vis, export_abi);
 }

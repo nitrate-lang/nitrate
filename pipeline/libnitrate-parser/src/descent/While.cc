@@ -41,7 +41,7 @@ using namespace ncc::parse;
 
 auto GeneralParser::Context::RecurseWhileCond() -> FlowPtr<Expr> {
   if (Peek().Is<PuncLCur>()) {
-    return m_fac.CreateBoolean(true);
+    return CreateBoolean(true);
   }
 
   return RecurseExpr({Token(Punc, PuncLCur)});
@@ -51,5 +51,5 @@ auto GeneralParser::Context::RecurseWhile() -> FlowPtr<Expr> {
   auto cond = RecurseWhileCond();
   auto body = RecurseBlock(true, false, BlockMode::Unknown);
 
-  return m_fac.CreateWhile(cond, body);
+  return CreateWhile(cond, body);
 }

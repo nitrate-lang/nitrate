@@ -40,7 +40,7 @@ using namespace ncc::parse;
 
 auto GeneralParser::Context::RecurseReturn() -> FlowPtr<Expr> {
   if (NextIf<PuncSemi>()) {
-    return m_fac.CreateReturn();
+    return CreateReturn();
   }
 
   auto return_value = RecurseExpr({
@@ -51,5 +51,5 @@ auto GeneralParser::Context::RecurseReturn() -> FlowPtr<Expr> {
     Log << ParserSignal << Current() << "Expected ';' after the return statement.";
   }
 
-  return m_fac.CreateReturn(return_value);
+  return CreateReturn(return_value);
 }

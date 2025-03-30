@@ -102,7 +102,7 @@ auto GeneralParser::Context::RecurseTypeSuffix(FlowPtr<Type> base) -> FlowPtr<pa
       Token(Punc, PuncColn), Token(Punc, PuncSemi), Token(Oper, OpSet),    Token(Oper, OpMinus),  Token(Oper, OpGT)};
 
   if (auto template_arguments = RecurseTypeTemplateArguments()) {
-    auto templ = m_fac.CreateTemplateType(template_arguments.value(), base);
+    auto templ = CreateTemplateType(template_arguments.value(), base);
     templ->SetOffset(base->SourceBegin());
 
     base = templ;
@@ -130,7 +130,7 @@ auto GeneralParser::Context::RecurseTypeSuffix(FlowPtr<Type> base) -> FlowPtr<pa
 
   if (NextIf<OpTernary>()) {
     auto args = std::vector<CallArg>{{"0", base}};
-    auto opt_type = m_fac.CreateTemplateType(args, m_fac.CreateNamed("__builtin_result"));
+    auto opt_type = CreateTemplateType(args, CreateNamed("__builtin_result"));
 
     opt_type->SetOffset(Current().GetStart());
 
@@ -145,16 +145,16 @@ auto GeneralParser::Context::RecurseFunctionType() -> FlowPtr<parse::Type> {
 
   if (!fn->Is<Function>() || !fn->As<Function>()->IsDeclaration()) {
     Log << ParserSignal << Current() << "Expected a function declaration but got something else";
-    return m_fac.CreateMockInstance<VoidTy>();
+    return CreateMockInstance<VoidTy>();
   }
 
   FlowPtr<Function> fn_def = fn.As<Function>();
 
   auto func_ty =
-      m_fac.CreateFunctionType(fn_def->GetReturn(), fn_def->GetParams(), fn_def->IsVariadic(), fn_def->GetAttributes());
+      CreateFunctionType(fn_def->GetReturn(), fn_def->GetParams(), fn_def->IsVariadic(), fn_def->GetAttributes());
   if (!func_ty.has_value()) {
     Log << ParserSignal << Current() << "Function type specification is incorrect";
-    func_ty = m_fac.CreateMockInstance<FuncTy>();
+    func_ty = CreateMockInstance<FuncTy>();
   }
 
   func_ty.value()->SetOffset(fn->SourceBegin());
@@ -165,12 +165,12 @@ auto GeneralParser::Context::RecurseFunctionType() -> FlowPtr<parse::Type> {
 auto GeneralParser::Context::RecurseOpaqueType() -> FlowPtr<parse::Type> {
   if (!NextIf<PuncLPar>()) {
     Log << ParserSignal << Current() << "Expected '(' after 'opaque'";
-    return m_fac.CreateMockInstance<VoidTy>();
+    return CreateMockInstance<VoidTy>();
   }
 
   if (auto name = RecurseName()) {
     if (NextIf<PuncRPar>()) {
-      auto opaque = m_fac.CreateOpaque(name);
+      auto opaque = CreateOpaque(name);
       opaque->SetOffset(Current().GetStart());
 
       return opaque;
@@ -181,7 +181,7 @@ auto GeneralParser::Context::RecurseOpaqueType() -> FlowPtr<parse::Type> {
     Log << ParserSignal << Current() << "Expected a name after 'opaque('";
   }
 
-  return m_fac.CreateMockInstance<VoidTy>();
+  return CreateMockInstance<VoidTy>();
 }
 
 auto GeneralParser::Context::RecurseTypeByKeyword(Keyword key) -> FlowPtr<parse::Type> {
@@ -202,7 +202,7 @@ auto GeneralParser::Context::RecurseTypeByKeyword(Keyword key) -> FlowPtr<parse:
 
     default: {
       Log << ParserSignal << Current() << "Unexpected '" << key << "' is type context";
-      return m_fac.CreateMockInstance<VoidTy>();
+      return CreateMockInstance<VoidTy>();
     }
   }
 }
@@ -214,7 +214,7 @@ auto GeneralParser::Context::RecurseTypeByOperator(Operator op) -> FlowPtr<parse
     case OpTimes: {
       auto start = Current().GetStart();
       auto pointee = RecurseType();
-      auto ptr_ty = m_fac.CreatePointer(pointee);
+      auto ptr_ty = CreatePointer(pointee);
 
       ptr_ty->SetOffset(start);
 
@@ -224,7 +224,7 @@ auto GeneralParser::Context::RecurseTypeByOperator(Operator op) -> FlowPtr<parse
     case OpBitAnd: {
       auto start = Current().GetStart();
       auto refee = RecurseType();
-      auto ref_ty = m_fac.CreateReference(refee);
+      auto ref_ty = CreateReference(refee);
 
       ref_ty->SetOffset(start);
 
@@ -232,7 +232,7 @@ auto GeneralParser::Context::RecurseTypeByOperator(Operator op) -> FlowPtr<parse
     }
 
     case OpTernary: {
-      auto infer = m_fac.CreateUnknownType();
+      auto infer = CreateUnknownType();
 
       infer->SetOffset(Current().GetStart());
 
@@ -242,24 +242,24 @@ auto GeneralParser::Context::RecurseTypeByOperator(Operator op) -> FlowPtr<parse
     case OpComptime: {
       if (!NextIf<PuncLPar>()) {
         Log << ParserSignal << Current() << "Expected '(' after 'comptime'";
-        return m_fac.CreateMockInstance<VoidTy>();
+        return CreateMockInstance<VoidTy>();
       }
 
-      auto comptime_expr = m_fac.CreateUnary(OpComptime, RecurseExpr({
-                                                             Token(Punc, PuncRPar),
-                                                         }));
+      auto comptime_expr = CreateUnary(OpComptime, RecurseExpr({
+                                                       Token(Punc, PuncRPar),
+                                                   }));
 
       if (!NextIf<PuncRPar>()) {
         Log << ParserSignal << Current() << "Expected ')' after 'comptime('";
       }
 
       auto args = std::vector<CallArg>{{"0", comptime_expr}};
-      return m_fac.CreateTemplateType(std::move(args), m_fac.CreateNamed("__builtin_meta"));
+      return CreateTemplateType(std::move(args), CreateNamed("__builtin_meta"));
     }
 
     default: {
       Log << ParserSignal << Current() << "Unexpected operator '" << op << "' in type context";
-      return m_fac.CreateMockInstance<VoidTy>();
+      return CreateMockInstance<VoidTy>();
     }
   }
 }
@@ -271,7 +271,7 @@ auto GeneralParser::Context::RecurseArrayOrVector() -> FlowPtr<parse::Type> {
 
   if (NextIf<PuncRBrk>()) {
     auto args = std::vector<CallArg>{{"0", first}};
-    auto vector = m_fac.CreateTemplateType(args, m_fac.CreateNamed("__builtin_vec"));
+    auto vector = CreateTemplateType(args, CreateNamed("__builtin_vec"));
 
     vector->SetOffset(start);
 
@@ -290,7 +290,7 @@ auto GeneralParser::Context::RecurseArrayOrVector() -> FlowPtr<parse::Type> {
     Log << ParserSignal << Current() << "Expected ']' after array size";
   }
 
-  auto array = m_fac.CreateArray(first, size);
+  auto array = CreateArray(first, size);
   array->SetOffset(start);
 
   return array;
@@ -306,7 +306,7 @@ auto GeneralParser::Context::RecurseSetType() -> FlowPtr<parse::Type> {
   }
 
   auto args = std::vector<CallArg>{{"0", set_type}};
-  auto set = m_fac.CreateTemplateType(args, m_fac.CreateNamed("__builtin_uset"));
+  auto set = CreateTemplateType(args, CreateNamed("__builtin_uset"));
 
   set->SetOffset(start);
 
@@ -321,7 +321,7 @@ auto GeneralParser::Context::RecurseTupleType() -> FlowPtr<parse::Type> {
   while (true) {
     if (m_rd.IsEof()) {
       Log << ParserSignal << Current() << "Unexpected EOF in tuple type";
-      return m_fac.CreateMockInstance<VoidTy>();
+      return CreateMockInstance<VoidTy>();
     }
 
     if (NextIf<PuncRPar>()) {
@@ -334,7 +334,7 @@ auto GeneralParser::Context::RecurseTupleType() -> FlowPtr<parse::Type> {
     NextIf<PuncComa>();
   }
 
-  auto tuple = m_fac.CreateTuple(items);
+  auto tuple = CreateTuple(items);
   tuple->SetOffset(start);
 
   return tuple;
@@ -363,7 +363,7 @@ auto GeneralParser::Context::RecurseTypeByPunctuation(Punctor punc) -> FlowPtr<p
 
     default: {
       Log << ParserSignal << Next() << "Punctuation is not valid in this context";
-      return m_fac.CreateMockInstance<VoidTy>();
+      return CreateMockInstance<VoidTy>();
     }
   }
 }
@@ -372,44 +372,44 @@ auto GeneralParser::Context::RecurseTypeByName(string name) -> FlowPtr<parse::Ty
   NullableFlowPtr<Type> type;
 
   if (name == "u1") {
-    type = m_fac.CreateU1();
+    type = CreateU1();
   } else if (name == "u8") {
-    type = m_fac.CreateU8();
+    type = CreateU8();
   } else if (name == "u16") {
-    type = m_fac.CreateU16();
+    type = CreateU16();
   } else if (name == "u32") {
-    type = m_fac.CreateU32();
+    type = CreateU32();
   } else if (name == "u64") {
-    type = m_fac.CreateU64();
+    type = CreateU64();
   } else if (name == "u128") {
-    type = m_fac.CreateU128();
+    type = CreateU128();
   } else if (name == "i8") {
-    type = m_fac.CreateI8();
+    type = CreateI8();
   } else if (name == "i16") {
-    type = m_fac.CreateI16();
+    type = CreateI16();
   } else if (name == "i32") {
-    type = m_fac.CreateI32();
+    type = CreateI32();
   } else if (name == "i64") {
-    type = m_fac.CreateI64();
+    type = CreateI64();
   } else if (name == "i128") {
-    type = m_fac.CreateI128();
+    type = CreateI128();
   } else if (name == "f16") {
-    type = m_fac.CreateF16();
+    type = CreateF16();
   } else if (name == "f32") {
-    type = m_fac.CreateF32();
+    type = CreateF32();
   } else if (name == "f64") {
-    type = m_fac.CreateF64();
+    type = CreateF64();
   } else if (name == "f128") {
-    type = m_fac.CreateF128();
+    type = CreateF128();
   } else if (name == "void") {
-    type = m_fac.CreateVoid();
+    type = CreateVoid();
   } else {
-    type = m_fac.CreateNamed(name);
+    type = CreateNamed(name);
   }
 
   if (!type.has_value()) {
     Log << ParserSignal << Current() << "Unknown type name: " << name;
-    return m_fac.CreateMockInstance<VoidTy>();
+    return CreateMockInstance<VoidTy>();
   }
 
   type.value()->SetOffset(Current().GetStart());
@@ -451,7 +451,7 @@ auto GeneralParser::Context::RecurseType() -> FlowPtr<parse::Type> {
     default: {
       Log << ParserSignal << Next() << "Expected a type";
 
-      auto type = m_fac.CreateMockInstance<VoidTy>();
+      auto type = CreateMockInstance<VoidTy>();
       r = RecurseTypeSuffix(type);
       break;
     }

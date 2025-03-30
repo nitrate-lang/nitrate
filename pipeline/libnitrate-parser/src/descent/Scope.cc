@@ -67,7 +67,7 @@ auto GeneralParser::Context::RecurseScopeDeps() -> std::vector<string> {
 
 auto GeneralParser::Context::RecurseScopeBlock() -> FlowPtr<Expr> {
   if (NextIf<PuncSemi>()) {
-    return m_fac.CreateBlock();
+    return CreateBlock();
   }
 
   return RecurseBlock(true, false, BlockMode::Unknown);
@@ -85,5 +85,5 @@ auto GeneralParser::Context::RecurseScope() -> FlowPtr<Expr> {
 
   auto scope_block = RecurseScopeBlock();
 
-  return m_fac.CreateScope(scope_name, scope_block, dependencies);
+  return CreateScope(scope_name, scope_block, dependencies);
 }

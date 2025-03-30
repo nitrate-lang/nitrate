@@ -44,7 +44,7 @@ auto GeneralParser::Context::RecurseTypedef() -> FlowPtr<Expr> {
       auto the_type = RecurseType();
 
       if (NextIf<PuncSemi>()) [[likely]] {
-        return m_fac.CreateTypedef(type_name, the_type);
+        return CreateTypedef(type_name, the_type);
       } else {
         Log << ParserSignal << Current() << "Expected ';' in typedef declaration";
       }
@@ -55,5 +55,5 @@ auto GeneralParser::Context::RecurseTypedef() -> FlowPtr<Expr> {
     Log << ParserSignal << Current() << "Expected name in typedef declaration";
   }
 
-  return m_fac.CreateMockInstance<Typedef>();
+  return CreateMockInstance<Typedef>();
 }

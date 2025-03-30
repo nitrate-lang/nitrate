@@ -55,5 +55,5 @@ auto GeneralParser::Context::RecurseIf() -> FlowPtr<Expr> {
   auto then = RecurseBlock(true, false, BlockMode::Unknown);
   auto ele = RecurseIfElse();
 
-  return m_fac.CreateIf(cond, then, ele);
+  return CreateIf(cond, then, ele);
 }

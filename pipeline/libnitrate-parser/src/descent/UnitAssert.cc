@@ -69,15 +69,14 @@ auto GeneralParser::Context::RecurseUnitAssert() -> FlowPtr<Expr> {
   std::string unit_test_name = "__nitrate_unit_test_";
   unit_test_name += annotation;
 
-  auto ephermal_section_attribute = m_fac
-                                        .CreateCall(m_fac.CreateIdentifier("section"),
-                                                    {
-                                                        {0U, m_fac.CreateString(".azide.ephemeral")},
-                                                    })
+  auto ephermal_section_attribute = CreateCall(CreateIdentifier("section"),
+                                               {
+                                                   {0U, CreateString(".azide.ephemeral")},
+                                               })
                                         .value();
 
   auto unit_test_function =
-      *m_fac.CreateFunction(unit_test_name, m_fac.CreateU1(), {}, false, test_body, {ephermal_section_attribute});
+      *CreateFunction(unit_test_name, CreateU1(), {}, false, test_body, {ephermal_section_attribute});
 
   return unit_test_function;
 }

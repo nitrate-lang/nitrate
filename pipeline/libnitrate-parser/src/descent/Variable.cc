@@ -39,17 +39,17 @@ using namespace ncc;
 using namespace ncc::lex;
 using namespace ncc::parse;
 
-auto GeneralParser::Context::RecurseVariableType() -> FlowPtr<parse::Type> {
-  if (NextIf<PuncColn>()) {
-    return RecurseType();
+static auto RecurseVariableType(GeneralParser::Context& m) -> FlowPtr<parse::Type> {
+  if (m.NextIf<PuncColn>()) {
+    return m.RecurseType();
   }
 
-  return m_fac.CreateUnknownType();
+  return m.CreateUnknownType();
 }
 
-auto GeneralParser::Context::RecurseVariableValue() -> NullableFlowPtr<Expr> {
-  if (NextIf<OpSet>()) {
-    return RecurseExpr({
+static auto RecurseVariableValue(GeneralParser::Context& m) -> NullableFlowPtr<Expr> {
+  if (m.NextIf<OpSet>()) {
+    return m.RecurseExpr({
         Token(Punc, PuncComa),
         Token(Punc, PuncSemi),
     });
@@ -58,18 +58,18 @@ auto GeneralParser::Context::RecurseVariableValue() -> NullableFlowPtr<Expr> {
   return std::nullopt;
 }
 
-auto GeneralParser::Context::RecurseVariableInstance(VariableType decl_type) -> FlowPtr<Expr> {
-  auto symbol_attributes_opt = RecurseAttributes("variable");
-  auto variable_name = RecurseName();
+static auto RecurseVariableInstance(GeneralParser::Context& m, VariableType decl_type) -> FlowPtr<Expr> {
+  auto symbol_attributes_opt = m.RecurseAttributes("variable");
+  auto variable_name = m.RecurseName();
   if (!variable_name) {
-    Log << ParserSignal << Next() << "No variable name found in variable declaration";
-    return m_fac.CreateMockInstance<Variable>();
+    Log << ParserSignal << m.Next() << "No variable name found in variable declaration";
+    return m.CreateMockInstance<Variable>();
   }
 
-  auto variable_type = RecurseVariableType();
-  auto variable_initial = RecurseVariableValue();
+  auto variable_type = RecurseVariableType(m);
+  auto variable_initial = RecurseVariableValue(m);
 
-  return m_fac.CreateVariable(decl_type, variable_name, symbol_attributes_opt, variable_type, variable_initial);
+  return m.CreateVariable(decl_type, variable_name, symbol_attributes_opt, variable_type, variable_initial);
 }
 
 auto GeneralParser::Context::RecurseVariable(VariableType decl_type) -> std::vector<FlowPtr<Expr>> {
@@ -81,7 +81,7 @@ auto GeneralParser::Context::RecurseVariable(VariableType decl_type) -> std::vec
       break;
     }
 
-    auto variable_opt = RecurseVariableInstance(decl_type);
+    auto variable_opt = RecurseVariableInstance(m, decl_type);
     variables.push_back(variable_opt);
 
     if (NextIf<PuncSemi>() || NextIf<PuncComa>()) {
@@ -92,5 +92,5 @@ auto GeneralParser::Context::RecurseVariable(VariableType decl_type) -> std::vec
     break;
   }
 
-  return {m_fac.CreateMockInstance<Variable>()};
+  return {CreateMockInstance<Variable>()};
 }

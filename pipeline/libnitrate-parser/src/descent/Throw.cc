@@ -41,5 +41,5 @@ using namespace ncc::parse;
 auto GeneralParser::Context::RecurseThrow() -> FlowPtr<Expr> {
   Log << ParserSignal << Current() << "Throw is not yet implemented";
 
-  return m_fac.CreateMockInstance<VoidTy>();
+  return CreateMockInstance<VoidTy>();
 }

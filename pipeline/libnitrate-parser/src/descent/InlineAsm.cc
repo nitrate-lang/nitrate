@@ -41,5 +41,5 @@ using namespace ncc::parse;
 auto GeneralParser::Context::RecurseAssembly() -> FlowPtr<Expr> {
   Log << ParserSignal << Current() << "Inline assembly is not yet implemented";
 
-  return m_fac.CreateMockInstance<Assembly>();
+  return CreateMockInstance<Assembly>();
 }

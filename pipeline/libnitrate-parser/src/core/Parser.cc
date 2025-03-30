@@ -139,7 +139,7 @@ auto GeneralParser::Context::RecurseBlock(bool expect_braces, bool single_stmt, 
       }
 
       if (should_break) {
-        auto block = m_fac.CreateBlock(statements, safety);
+        auto block = CreateBlock(statements, safety);
         block->SetOffset(block_start);
 
         return block;
@@ -354,7 +354,7 @@ auto GeneralParser::Context::RecurseBlock(bool expect_braces, bool single_stmt, 
         }
 
         case Keyword::Break: {
-          r = m_fac.CreateBreak();
+          r = CreateBreak();
           if (!NextIf<PuncSemi>()) {
             Log << ParserSignal << Current() << "Expected ';' after 'break' statement";
           }
@@ -363,7 +363,7 @@ auto GeneralParser::Context::RecurseBlock(bool expect_braces, bool single_stmt, 
         }
 
         case Keyword::Continue: {
-          r = m_fac.CreateContinue();
+          r = CreateContinue();
           if (!NextIf<PuncSemi>()) {
             Log << ParserSignal << Current() << "Expected ';' after 'continue' statement";
           }
@@ -411,7 +411,7 @@ auto GeneralParser::Context::RecurseBlock(bool expect_braces, bool single_stmt, 
         }
 
         case Keyword::Null: {
-          r = m_fac.CreateNull();
+          r = CreateNull();
           if (!NextIf<PuncSemi>()) {
             Log << ParserSignal << Current() << "Expected ';' after 'null' statement";
           }
@@ -419,7 +419,7 @@ auto GeneralParser::Context::RecurseBlock(bool expect_braces, bool single_stmt, 
         }
 
         case True: {
-          r = m_fac.CreateBoolean(true);
+          r = CreateBoolean(true);
           if (!NextIf<PuncSemi>()) {
             Log << ParserSignal << Current() << "Expected ';' after 'true' statement";
           }
@@ -427,7 +427,7 @@ auto GeneralParser::Context::RecurseBlock(bool expect_braces, bool single_stmt, 
         }
 
         case False: {
-          r = m_fac.CreateBoolean(false);
+          r = CreateBoolean(false);
           if (!NextIf<PuncSemi>()) {
             Log << ParserSignal << Current() << "Expected ';' after 'false' statement";
           }

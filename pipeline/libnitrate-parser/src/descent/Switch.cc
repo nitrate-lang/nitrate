@@ -64,7 +64,7 @@ auto GeneralParser::Context::RecurseSwitchCase() -> std::pair<FlowPtr<Expr>, boo
     return {body, true};
   }
 
-  return {m_fac.CreateCase(cond, body), false};
+  return {CreateCase(cond, body), false};
 }
 
 auto GeneralParser::Context::RecurseSwitchBody()
@@ -108,7 +108,7 @@ auto GeneralParser::Context::RecurseSwitch() -> FlowPtr<Expr> {
     if (auto switch_body = RecurseSwitchBody()) [[likely]] {
       auto [switch_cases, switch_default] = switch_body.value();
 
-      return m_fac.CreateSwitch(switch_cond, switch_default, switch_cases);
+      return CreateSwitch(switch_cond, switch_default, switch_cases);
     } else {
       Log << ParserSignal << Current() << "Switch statement body is malformed.";
     }
@@ -116,5 +116,5 @@ auto GeneralParser::Context::RecurseSwitch() -> FlowPtr<Expr> {
     Log << ParserSignal << Current() << "Expected '{' after switch condition.";
   }
 
-  return m_fac.CreateMockInstance<Switch>();
+  return CreateMockInstance<Switch>();
 }

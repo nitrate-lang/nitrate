@@ -130,5 +130,5 @@ auto GeneralParser::Context::RecurseFor() -> FlowPtr<Expr> {
 
   auto for_body = RecurseBlock(true, false, BlockMode::Unknown);
 
-  return m_fac.CreateFor(for_init, for_cond, for_step, for_body);
+  return CreateFor(for_init, for_cond, for_step, for_body);
 }

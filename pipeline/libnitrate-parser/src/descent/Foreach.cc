@@ -91,7 +91,7 @@ auto GeneralParser::Context::RecurseForeach() -> FlowPtr<Expr> {
 
       auto body = RecurseForeachBody();
 
-      return m_fac.CreateForeach(index_name, value_name, iter_expr, body);
+      return CreateForeach(index_name, value_name, iter_expr, body);
     } else {
       Log << ParserSignal << Current() << "Expected 'in' keyword in foreach statement";
     }
@@ -99,5 +99,5 @@ auto GeneralParser::Context::RecurseForeach() -> FlowPtr<Expr> {
     Log << ParserSignal << Current() << "Expected identifier pair in foreach statement";
   }
 
-  return m_fac.CreateMockInstance<Foreach>();
+  return CreateMockInstance<Foreach>();
 }
