@@ -270,12 +270,12 @@ namespace ncc::parse::import {
   };
 }  // namespace ncc::parse::import
 
-auto GeneralParser::Context::RecurseImportName() -> std::pair<string, ImportMode> {
-  if (NextIf<PuncLPar>()) {
-    auto arguments = RecurseCallArguments({Token(Punc, PuncRPar)}, false);
+static auto RecurseImportName(GeneralParser::Context &m) -> std::pair<string, ImportMode> {
+  if (m.NextIf<PuncLPar>()) {
+    auto arguments = m.RecurseCallArguments({Token(Punc, PuncRPar)}, false);
 
-    if (!NextIf<PuncRPar>()) {
-      Log << ParserSignal << Current() << "Expected ')' to close the import call";
+    if (!m.NextIf<PuncRPar>()) {
+      Log << ParserSignal << m.Current() << "Expected ')' to close the import call";
     }
 
     string import_name;
@@ -284,78 +284,79 @@ auto GeneralParser::Context::RecurseImportName() -> std::pair<string, ImportMode
     for (const auto &arg : arguments) {
       if (arg.first == "src" || arg.first == "0") {
         if (import_name) {
-          Log << ParserSignal << Current() << "Duplicate argument: 'src' in call to import";
+          Log << ParserSignal << m.Current() << "Duplicate argument: 'src' in call to import";
         }
 
         auto pvalue = arg.second;
         if (!pvalue->Is(AST_eSTRING)) {
-          Log << ParserSignal << Current() << "Expected string literal for import source";
+          Log << ParserSignal << m.Current() << "Expected string literal for import source";
           continue;
         }
 
-        import_name = pvalue->As<String>()->GetValue();
+        import_name = pvalue->As<parse::String>()->GetValue();
         continue;
       }
 
       if (arg.first == "mode" || arg.first == "1") {
         if (import_mode) {
-          Log << ParserSignal << Current() << "Duplicate argument: 'mode' in call to import";
+          Log << ParserSignal << m.Current() << "Duplicate argument: 'mode' in call to import";
         }
 
         auto pvalue = arg.second;
         if (!pvalue->Is(AST_eSTRING)) {
-          Log << ParserSignal << Current() << "Expected string literal for import mode";
+          Log << ParserSignal << m.Current() << "Expected string literal for import mode";
           continue;
         }
 
-        auto mode = pvalue->As<String>()->GetValue();
+        auto mode = pvalue->As<parse::String>()->GetValue();
         if (mode == "code") {
           import_mode = ImportMode::Code;
         } else if (mode == "string") {
           import_mode = ImportMode::String;
         } else {
-          Log << ParserSignal << Current() << "Invalid import mode: " << mode;
+          Log << ParserSignal << m.Current() << "Invalid import mode: " << mode;
         }
 
         continue;
       }
 
-      Log << ParserSignal << Current() << "Unexpected argument: " << arg.first;
+      Log << ParserSignal << m.Current() << "Unexpected argument: " << arg.first;
     }
 
     if (!import_name) [[unlikely]] {
-      Log << ParserSignal << Current() << "parameter 'src': missing positional argument 0 in call to import";
+      Log << ParserSignal << m.Current() << "parameter 'src': missing positional argument 0 in call to import";
     }
 
     return {import_name, import_mode.value_or(ImportMode::Code)};
   }
 
-  if (auto tok = NextIf<Text>()) {
+  if (auto tok = m.NextIf<Text>()) {
     return {tok->GetString(), ImportMode::Code};
   }
 
-  auto name = RecurseName();
+  auto name = m.RecurseName();
   if (!name) [[unlikely]] {
-    Log << ParserSignal << Current() << "Expected import name";
+    Log << ParserSignal << m.Current() << "Expected import name";
   }
 
   return {name, ImportMode::Code};
 }
 
-auto GeneralParser::Context::RecurseImportRegularFile(const std::filesystem::path &import_file,
-                                                      ImportMode import_mode) -> FlowPtr<Expr> {
+static auto RecurseImportRegularFile(GeneralParser::Context &m, ImportedFilesSet &imported_files,
+                                     ImportConfig &import_config, const std::filesystem::path &import_file,
+                                     ImportMode import_mode) -> FlowPtr<Expr> {
   { /* Try to prevent infinite import recursion */
-    if (m_imported_files->contains(import_file)) {
-      Log << ParserSignal << Debug << Current() << "Detected circular import: " << import_file << " (skipping)";
-      return CreateImport(import_file.string(), import_mode, CreateBlock());
+    if (imported_files->contains(import_file)) {
+      Log << ParserSignal << Debug << m.Current() << "Detected circular import: " << import_file << " (skipping)";
+      return m.CreateImport(import_file.string(), import_mode, m.CreateBlock());
     }
 
-    if (m_import_config.GetFilesToNotImport().contains(import_file)) {
-      Log << ParserSignal << Debug << Current() << "Skipping file: " << import_file;
-      return CreateImport(import_file.string(), import_mode, CreateBlock());
+    if (import_config.GetFilesToNotImport().contains(import_file)) {
+      Log << ParserSignal << Debug << m.Current() << "Skipping file: " << import_file;
+      return m.CreateImport(import_file.string(), import_mode, m.CreateBlock());
     }
 
-    m_imported_files->insert(import_file);
+    imported_files->insert(import_file);
   }
 
   auto abs_import_path = OMNI_CATCH(std::filesystem::absolute(import_file)).value_or(import_file).lexically_normal();
@@ -364,42 +365,42 @@ auto GeneralParser::Context::RecurseImportRegularFile(const std::filesystem::pat
 
   const auto exists = OMNI_CATCH(std::filesystem::exists(abs_import_path));
   if (!exists) {
-    Log << ParserSignal << Current() << "Could not check if file exists: " << abs_import_path;
-    return CreateMockInstance<Import>();
+    Log << ParserSignal << m.Current() << "Could not check if file exists: " << abs_import_path;
+    return m.CreateMockInstance<parse::Import>();
   }
 
   if (!*exists) {
-    Log << ParserSignal << Current() << "File not found: " << abs_import_path;
-    return CreateMockInstance<Import>();
+    Log << ParserSignal << m.Current() << "File not found: " << abs_import_path;
+    return m.CreateMockInstance<parse::Import>();
   }
 
   auto is_regular_file = OMNI_CATCH(std::filesystem::is_regular_file(abs_import_path));
   if (!is_regular_file) {
-    Log << ParserSignal << Current() << "Could not check if file is regular: " << abs_import_path;
-    return CreateMockInstance<Import>();
+    Log << ParserSignal << m.Current() << "Could not check if file is regular: " << abs_import_path;
+    return m.CreateMockInstance<parse::Import>();
   }
 
   if (!*is_regular_file) {
-    Log << ParserSignal << Current() << "File is not regular: " << abs_import_path;
-    return CreateMockInstance<Import>();
+    Log << ParserSignal << m.Current() << "File is not regular: " << abs_import_path;
+    return m.CreateMockInstance<parse::Import>();
   }
 
   Log << Trace << "RecurseImport: Reading regular file: " << abs_import_path;
 
   std::ifstream file(abs_import_path, std::ios::binary);
   if (!file.is_open()) {
-    Log << ParserSignal << Current() << "Failed to open file: " << abs_import_path;
-    return CreateMockInstance<Import>();
+    Log << ParserSignal << m.Current() << "Failed to open file: " << abs_import_path;
+    return m.CreateMockInstance<parse::Import>();
   }
 
   auto content = OMNI_CATCH(std::string((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>()));
   if (!content.has_value()) {
-    Log << ParserSignal << Error << Current() << "Failed to read file: " << abs_import_path;
-    return CreateMockInstance<Import>();
+    Log << ParserSignal << Error << m.Current() << "Failed to read file: " << abs_import_path;
+    return m.CreateMockInstance<parse::Import>();
   }
 
   if (content->empty()) {
-    Log << ParserSignal << Warning << Current() << "File is empty: " << abs_import_path;
+    Log << ParserSignal << Warning << m.Current() << "File is empty: " << abs_import_path;
   }
 
   Log << Trace << "RecurseImport: Got file (" << content.value().size() << " bytes): " << abs_import_path;
@@ -409,7 +410,7 @@ auto GeneralParser::Context::RecurseImportRegularFile(const std::filesystem::pat
       Log << Trace << "RecurseImport: Import as code: " << abs_import_path;
 
       auto in_src = boost::iostreams::stream<boost::iostreams::array_source>(content->data(), content->size());
-      auto scanner = Tokenizer(in_src, m_env);
+      auto scanner = Tokenizer(in_src, m.GetEnvironment());
       scanner.SetCurrentFilename(abs_import_path.string());
       scanner.SkipCommentsState(true);
 
@@ -418,50 +419,50 @@ auto GeneralParser::Context::RecurseImportRegularFile(const std::filesystem::pat
 
       Log << Trace << "RecurseImport: Creating subparser for: " << abs_import_path;
 
-      auto subparser = CreateSubParser(scanner);
+      auto subparser = m.CreateSubParser(scanner);
       auto subtree = subparser.m_impl->RecurseBlock(false, false, BlockMode::Unknown);
 
       ImportName importee_name;
-      import::ImportSubgraphVisitor subgraph_visitor(*this, m_import_config.GetThisImportName(), importee_name);
+      import::ImportSubgraphVisitor subgraph_visitor(m, import_config.GetThisImportName(), importee_name);
       subtree->Accept(subgraph_visitor);
 
       ParserSwapScanner(scanner_ptr);
 
-      auto import_node = CreateImport(import_file.string(), import_mode, std::move(subtree));
-
+      auto import_node = m.CreateImport(import_file.string(), import_mode, std::move(subtree));
       return import_node;
     }
 
     case ImportMode::String: {
       Log << Trace << "RecurseImport: Import as string literal: " << abs_import_path;
 
-      auto literal = CreateString(content.value());
-      auto import_node = CreateImport(import_file.string(), import_mode, std::move(literal));
+      auto literal = m.CreateString(content.value());
+      auto import_node = m.CreateImport(import_file.string(), import_mode, std::move(literal));
 
       return import_node;
     }
   }
 }
 
-[[nodiscard]] auto GeneralParser::Context::RecurseImportPackage(const ImportName &import_name) -> FlowPtr<Expr> {
+static auto RecurseImportPackage(GeneralParser::Context &m, ImportedFilesSet &imported_files,
+                                 ImportConfig &import_config, const ImportName &import_name) -> FlowPtr<Expr> {
   Log << Trace << "RecurseImport: Importing package: " << import_name;
 
   // Find the package by import name
-  const auto &pkgs = m_import_config.GetPackages();
+  const auto &pkgs = import_config.GetPackages();
   auto pkg_it =
       std::find_if(pkgs.begin(), pkgs.end(), [&](const auto &pkg) { return pkg.PackageName() == import_name; });
 
   // If the package is not found, return a mock import node
   if (pkg_it == pkgs.end()) [[unlikely]] {
-    Log << ParserSignal << Current() << "Package not found: " << import_name;
-    return CreateMockInstance<Import>();
+    Log << ParserSignal << m.Current() << "Package not found: " << import_name;
+    return m.CreateMockInstance<parse::Import>();
   }
 
   // Lazy load the package content with caching
   const auto &files = pkg_it->Read();
   if (!files.has_value()) [[unlikely]] {
-    Log << ParserSignal << Current() << "Failed to read package: " << import_name;
-    return CreateMockInstance<Import>();
+    Log << ParserSignal << m.Current() << "Failed to read package: " << import_name;
+    return m.CreateMockInstance<parse::Import>();
   }
 
   Log << Debug << "RecurseImport: Got package: " << import_name;
@@ -482,24 +483,24 @@ auto GeneralParser::Context::RecurseImportRegularFile(const std::filesystem::pat
 
   for (const auto &file_name : sorted_keys) {
     { /* Try to prevent infinite import recursion */
-      if (m_imported_files->contains(file_name)) {
-        Log << ParserSignal << Debug << Current() << "Detected circular import: " << file_name << " (skipping)";
+      if (imported_files->contains(file_name)) {
+        Log << ParserSignal << Debug << m.Current() << "Detected circular import: " << file_name << " (skipping)";
         continue;
       }
 
-      if (m_import_config.GetFilesToNotImport().contains(file_name)) {
-        Log << ParserSignal << Debug << Current() << "Skipping file: " << file_name;
+      if (import_config.GetFilesToNotImport().contains(file_name)) {
+        Log << ParserSignal << Debug << m.Current() << "Skipping file: " << file_name;
         continue;
       }
 
-      m_imported_files->insert(file_name);
+      imported_files->insert(file_name);
     }
 
     const auto &content_getter = files->at(file_name);
     const auto &file_content = content_getter.Get();
     if (!file_content.has_value()) [[unlikely]] {
       Log << "RecurseImport: Failed to read package chunk: " << file_name;
-      return CreateMockInstance<Import>();
+      return m.CreateMockInstance<parse::Import>();
     }
 
     Log << Trace << "RecurseImport: Putting package chunk (" << file_content->size() << " bytes): " << file_name;
@@ -508,7 +509,7 @@ auto GeneralParser::Context::RecurseImportRegularFile(const std::filesystem::pat
     auto in_src = boost::iostreams::stream<boost::iostreams::array_source>(file_content->data(), file_content->size());
 
     // Create a sub-lexer for this package file
-    auto scanner = Tokenizer(in_src, m_env);
+    auto scanner = Tokenizer(in_src, m.GetEnvironment());
     scanner.SetCurrentFilename(file_name.string());
     scanner.SkipCommentsState(true);
 
@@ -517,13 +518,13 @@ auto GeneralParser::Context::RecurseImportRegularFile(const std::filesystem::pat
     ParserSwapScanner(scanner_ptr);
 
     Log << Trace << "RecurseImport: Creating subparser for: " << file_name;
-    auto subparser = CreateSubParser(scanner);
+    auto subparser = m.CreateSubParser(scanner);
     auto subtree = subparser.m_impl->RecurseBlock(false, false, BlockMode::Unknown);
 
     // Prepare the subgraph by stripping out unnecessary nodes and
     // transforming definitions into declarations as needed
     // to create the external interface of the package
-    import::ImportSubgraphVisitor subgraph_visitor(*this, m_import_config.GetThisImportName(), import_name);
+    import::ImportSubgraphVisitor subgraph_visitor(m, import_config.GetThisImportName(), import_name);
     subtree->Accept(subgraph_visitor);
 
     // Restore the thread_local content for the diagnostics subsystem
@@ -535,8 +536,8 @@ auto GeneralParser::Context::RecurseImportRegularFile(const std::filesystem::pat
 
   // The returned block is a block of blocks
   // The order the nodes appear is unspecified but deterministic
-  auto block = CreateBlock(blocks);
-  auto import_node = CreateImport(*import_name, ImportMode::Code, std::move(block));
+  auto block = m.CreateBlock(blocks);
+  auto import_node = m.CreateImport(*import_name, ImportMode::Code, std::move(block));
 
   return import_node;
 }
@@ -551,17 +552,17 @@ auto GeneralParser::Context::RecurseImport() -> FlowPtr<Expr> {
 
   auto deferred_auto_dec = std::shared_ptr<void>(nullptr, [&](auto) { --m_recursion_depth; });
 
-  const auto [import_name_precheck, import_mode] = RecurseImportName();
+  const auto [import_name_precheck, import_mode] = RecurseImportName(*this);
   const bool is_regular_file =
       import_name_precheck->find("/") != std::string::npos || import_name_precheck->find("\\") != std::string::npos;
 
   if (is_regular_file) {
-    return RecurseImportRegularFile(*import_name_precheck, import_mode);
+    return RecurseImportRegularFile(*this, m_imported_files, m_import_config, *import_name_precheck, import_mode);
   }
 
   if (!is_regular_file && import_mode == ImportMode::Code) {
     ImportName checked_name(import_name_precheck);
-    return RecurseImportPackage(checked_name);
+    return RecurseImportPackage(*this, m_imported_files, m_import_config, checked_name);
   }
 
   Log << ParserSignal << Current() << "Can not import package content as a string literal";

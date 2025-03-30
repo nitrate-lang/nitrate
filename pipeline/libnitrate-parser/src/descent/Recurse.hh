@@ -58,10 +58,12 @@ namespace ncc::parse {
     return node;
   }
 
+  using ImportedFilesSet = std::shared_ptr<std::unordered_set<std::filesystem::path>>;
+
   class GeneralParser::Context final : public ASTFactory {
     friend class GeneralParser;
 
-    std::shared_ptr<std::unordered_set<std::filesystem::path>> m_imported_files;
+    ImportedFilesSet m_imported_files;
     ImportConfig m_import_config;
     std::shared_ptr<IEnvironment> m_env;
     std::pmr::memory_resource &m_pool;
@@ -69,30 +71,6 @@ namespace ncc::parse {
     size_t m_recursion_depth = 0;
     bool m_failed = false;
     GeneralParser::Context &m = *this;  // NOLINT(readability-identifier-naming)
-
-    /****************************************************************************
-     * @brief
-     *  Helper functions
-     ****************************************************************************/
-
-    [[nodiscard]] auto ParseFStringExpression(std::string_view source) -> FlowPtr<Expr>;
-    [[nodiscard]] auto RecurseExprPrimary(bool is_type) -> NullableFlowPtr<Expr>;
-    [[nodiscard]] auto RecurseExprKeyword(lex::Keyword key) -> NullableFlowPtr<Expr>;
-    [[nodiscard]] auto RecurseExprPunctor(lex::Punctor punc) -> NullableFlowPtr<Expr>;
-    [[nodiscard]] auto RecurseExprTypeSuffix(FlowPtr<Expr> base) -> FlowPtr<Expr>;
-    [[nodiscard]] auto RecurseFstring() -> FlowPtr<Expr>;
-    [[nodiscard]] auto RecurseTemplateParameters() -> std::optional<std::vector<TemplateParameter>>;
-    [[nodiscard]] auto RecurseIfElse() -> NullableFlowPtr<Expr>;
-    [[nodiscard]] auto RecurseSwitchCaseBody() -> FlowPtr<Expr>;
-    [[nodiscard]] auto RecurseSwitchCase() -> std::pair<FlowPtr<Expr>, bool>;
-    [[nodiscard]] auto RecurseSwitchBody()
-        -> std::optional<std::pair<std::vector<FlowPtr<Case>>, NullableFlowPtr<Expr>>>;
-    [[nodiscard]] auto RecurseWhileCond() -> FlowPtr<Expr>;
-    [[nodiscard]] auto RecurseImportName() -> std::pair<string, ImportMode>;
-    [[nodiscard]] auto RecurseImportRegularFile(const std::filesystem::path &import_file,
-                                                ImportMode import_mode) -> FlowPtr<Expr>;
-    [[nodiscard]] auto RecurseImportPackage(const ImportName &import_name) -> FlowPtr<Expr>;
-    void PrepareImportSubgraph(const FlowPtr<Expr> &root);
 
   public:
     Context(lex::IScanner &lexer, ImportConfig import_config, std::shared_ptr<IEnvironment> env,
@@ -159,10 +137,12 @@ namespace ncc::parse {
     [[nodiscard]] auto GetScanner() const -> lex::IScanner & { return m_rd; }
     [[nodiscard]] auto GetEnvironment() const -> std::shared_ptr<IEnvironment> { return m_env; }
     [[nodiscard]] auto RecurseAttributes(string kind) -> std::vector<FlowPtr<Expr>>;
+    [[nodiscard]] auto RecurseTemplateParameters() -> std::optional<std::vector<TemplateParameter>>;
     [[nodiscard]] auto RecurseCallArguments(const std::set<lex::Token> &terminators,
                                             bool type_by_default) -> std::vector<CallArg>;
 
     [[nodiscard]] auto RecurseName() -> string;
+    [[nodiscard]] auto RecurseFString() -> FlowPtr<Expr>;
     [[nodiscard]] auto RecurseExport(Vis vis) -> FlowPtr<Expr>;
     [[nodiscard]] auto RecurseVariable(VariableType type) -> std::vector<FlowPtr<Expr>>;
     [[nodiscard]] auto RecurseEnum() -> FlowPtr<Expr>;

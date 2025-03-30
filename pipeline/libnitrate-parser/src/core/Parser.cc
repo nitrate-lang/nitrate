@@ -256,7 +256,7 @@ auto GeneralParser::Context::RecurseBlock(bool expect_braces, bool single_stmt, 
         }
 
         case __FString: {
-          r = RecurseFstring();
+          r = RecurseFString();
           if (!NextIf<PuncSemi>()) {
             Log << ParserSignal << Current() << "Expected ';' after f-string expression";
           }
