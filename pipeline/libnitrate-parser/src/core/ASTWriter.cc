@@ -1779,21 +1779,6 @@ SyntaxTree::Struct *AstWriter::From(FlowPtr<Struct> in) {
     });
   }
 
-  { /* Add all methods */
-    const auto &items = in->GetStaticMethods();
-
-    message->mutable_static_methods()->Reserve(items.size());
-    std::for_each(items.begin(), items.end(), [&](auto item) {
-      auto *method = Pool::CreateMessage<SyntaxTree::Struct_Method>(m_arena);
-      if (item.m_vis != Vis::Sec) {
-        method->set_visibility(FromVisibility(item.m_vis));
-      }
-      method->set_allocated_func(From(item.m_func));
-
-      message->mutable_static_methods()->AddAllocated(method);
-    });
-  }
-
   return message;
 }
 

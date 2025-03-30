@@ -2236,18 +2236,6 @@ auto AstReader::Unmarshal(const SyntaxTree::Struct &in) -> Result<Struct> {
     methods.emplace_back(FromVisibility(method.visibility()), func.value());
   }
 
-  std::vector<StructFunction> static_methods;
-  static_methods.reserve(in.static_methods_size());
-
-  for (const auto &method : in.static_methods()) {
-    auto func = Unmarshal(method.func());
-    if (!func.has_value()) [[unlikely]] {
-      return std::nullopt;
-    }
-
-    static_methods.emplace_back(FromVisibility(method.visibility()), func.value());
-  }
-
   std::optional<std::vector<TemplateParameter>> template_parameters;
   if (in.has_template_parameters()) {
     template_parameters = std::vector<TemplateParameter>();
@@ -2272,8 +2260,8 @@ auto AstReader::Unmarshal(const SyntaxTree::Struct &in) -> Result<Struct> {
     return std::nullopt;
   }
 
-  auto object = m_fac.CreateStruct(comptype.value(), in.name(), template_parameters, fields, methods, static_methods,
-                                   names, attributes);
+  auto object =
+      m_fac.CreateStruct(comptype.value(), in.name(), template_parameters, fields, methods, names, attributes);
   UnmarshalLocationLocation(in.location(), object);
   UnmarshalCodeComment(in.comments(), object);
 

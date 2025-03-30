@@ -136,7 +136,7 @@ void CambrianFormatter::Visit(FlowPtr<parse::Struct> n) {
     m_line << "]";
   }
 
-  bool is_empty = n->GetFields().empty() && n->GetMethods().empty() && n->GetStaticMethods().empty();
+  bool is_empty = n->GetFields().empty() && n->GetMethods().empty();
 
   if (is_empty) {
     m_line << ";";
@@ -148,7 +148,6 @@ void CambrianFormatter::Visit(FlowPtr<parse::Struct> n) {
 
   auto fields_count = n->GetFields();
   auto methods_count = n->GetMethods();
-  auto static_methods_count = n->GetStaticMethods();
 
   std::for_each(n->GetFields().begin(), n->GetFields().end(), [&](auto field) {
     m_line << GetIndent() << field.GetVis() << " ";
@@ -170,16 +169,6 @@ void CambrianFormatter::Visit(FlowPtr<parse::Struct> n) {
 
   std::for_each(n->GetMethods().begin(), n->GetMethods().end(), [&](auto method) {
     m_line << GetIndent() << method.m_vis << " ";
-    method.m_func.Accept(*this);
-    m_line << '\n';
-  });
-
-  if (!static_methods_count.empty() && (!fields_count.empty() || !methods_count.empty())) {
-    m_line << '\n';
-  }
-
-  std::for_each(n->GetStaticMethods().begin(), n->GetStaticMethods().end(), [&](auto method) {
-    m_line << GetIndent() << method.m_vis << " static ";
     method.m_func.Accept(*this);
     m_line << '\n';
   });

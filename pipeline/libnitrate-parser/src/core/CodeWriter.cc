@@ -1510,7 +1510,67 @@ namespace ncc::parse {
     }
 
     void Visit(FlowPtr<Struct> n) override {
+      static const std::unordered_map<CompositeType, lex::Keyword> kStructKeywords = {
+          {CompositeType::Struct, lex::Struct}, {CompositeType::Union, lex::Union},
+          {CompositeType::Class, lex::Class},   {CompositeType::Group, lex::Group},
+          {CompositeType::Region, lex::Region},
+      };
+
       PrintLeading(n);
+
+      PutKeyword(kStructKeywords.at(n->GetCompositeType()));
+
+      if (!n->GetAttributes().empty()) {
+        PutPunctor(PuncLBrk);
+        for (auto it = n->GetAttributes().begin(); it != n->GetAttributes().end(); ++it) {
+          if (it != n->GetAttributes().begin()) {
+            PutPunctor(PuncComa);
+          }
+
+          it->Accept(*this);
+        }
+        PutPunctor(PuncRBrk);
+      }
+
+      if (n->GetName()) {
+        PutIdentifier(n->GetName());
+      }
+
+      if (n->GetTemplateParams()) {
+        PutOperator(OpLT);
+        for (auto it = n->GetTemplateParams().value().begin(); it != n->GetTemplateParams().value().end(); ++it) {
+          if (it != n->GetTemplateParams().value().begin()) {
+            PutPunctor(PuncComa);
+          }
+
+          auto& [pname, ptype, pdefault] = *it;
+          PutIdentifier(pname);
+
+          if (!ptype->Is(QAST_INFER)) {
+            PutPunctor(PuncColn);
+            ptype->Accept(*this);
+          }
+
+          if (pdefault) {
+            PutOperator(OpSet);
+            pdefault.value()->Accept(*this);
+          }
+        }
+        PutOperator(OpGT);
+      }
+
+      if (!n->GetNames().empty()) {
+        PutPunctor(PuncColn);
+        PutPunctor(PuncLBrk);
+        for (auto it = n->GetNames().begin(); it != n->GetNames().end(); ++it) {
+          if (it != n->GetNames().begin()) {
+            PutPunctor(PuncComa);
+          }
+
+          PutIdentifier(*it);
+        }
+        PutPunctor(PuncRBrk);
+      }
 
       /// TODO: Implement code writer
       qcore_implement();

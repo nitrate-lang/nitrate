@@ -735,7 +735,6 @@ message Struct {
   repeated Expr attributes = 8;
   repeated Field fields = 9;
   repeated Method methods = 10;
-  repeated Method static_methods = 11;
 }
 
 message Type {

@@ -386,8 +386,7 @@ namespace ncc::parse {
         CompositeType comp_type = CompositeType::Class, string name = "",
         const std::optional<std::vector<TemplateParameter>>& tparams = std::nullopt,
         const std::vector<StructField>& fields = {}, const std::vector<StructFunction>& methods = {},
-        const std::vector<StructFunction>& static_methods = {}, const std::vector<string>& constraints = {},
-        const std::vector<FlowPtr<Expr>>& attributes = {},
+        const std::vector<string>& constraints = {}, const std::vector<FlowPtr<Expr>>& attributes = {},
         SourceLocation origin = SourceLocation::current()) -> FlowPtr<Struct>;
 
     [[gnu::pure, nodiscard]] auto CreateEnum(string name, const std::vector<FactoryEnumItem>& ele,

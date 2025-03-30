@@ -45,16 +45,13 @@ auto ASTFactory::CreateTypedef(string name, FlowPtr<Type> base, SourceLocation o
 auto ASTFactory::CreateStruct(CompositeType comp_type, string name,
                               const std::optional<std::vector<TemplateParameter>>& tparams,
                               const std::vector<StructField>& fields, const std::vector<StructFunction>& methods,
-                              const std::vector<StructFunction>& static_methods, const std::vector<string>& constraints,
-                              const std::vector<FlowPtr<Expr>>& attributes, SourceLocation origin) -> FlowPtr<Struct> {
+                              const std::vector<string>& constraints, const std::vector<FlowPtr<Expr>>& attributes,
+                              SourceLocation origin) -> FlowPtr<Struct> {
   auto fields_copy = AllocateArray<StructField>(fields.size());
   std::copy(fields.begin(), fields.end(), fields_copy.begin());
 
   auto methods_copy = AllocateArray<StructFunction>(methods.size());
   std::copy(methods.begin(), methods.end(), methods_copy.begin());
-
-  auto static_methods_copy = AllocateArray<StructFunction>(static_methods.size());
-  std::copy(static_methods.begin(), static_methods.end(), static_methods_copy.begin());
 
   auto attributes_copy = AllocateArray<FlowPtr<Expr>>(attributes.size());
   std::copy(attributes.begin(), attributes.end(), attributes_copy.begin());
@@ -68,7 +65,7 @@ auto ASTFactory::CreateStruct(CompositeType comp_type, string name,
   }
 
   return CreateInstance<Struct>(comp_type, attributes_copy, name, tparams_copy, constraints_copy, fields_copy,
-                                methods_copy, static_methods_copy)(m_pool, origin);
+                                methods_copy)(m_pool, origin);
 }
 
 auto ASTFactory::CreateEnum(string name, const std::vector<FactoryEnumItem>& ele, NullableFlowPtr<Type> ele_ty,

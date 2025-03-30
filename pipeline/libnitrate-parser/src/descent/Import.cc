@@ -243,10 +243,6 @@ namespace ncc::parse::import {
       for (auto &method : n->GetMethods()) {
         method.m_func->SetBody(std::nullopt);
       }
-
-      for (auto &method : n->GetStaticMethods()) {
-        method.m_func->SetBody(std::nullopt);
-      }
     }
 
     void Visit(FlowPtr<Enum>) override {}

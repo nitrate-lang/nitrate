@@ -430,19 +430,17 @@ namespace ncc::parse {
     std::span<FlowPtr<Expr>> m_attributes;
     std::span<string> m_names;
     std::span<StructField> m_fields;
-    std::span<StructFunction> m_methods, m_static_methods;
+    std::span<StructFunction> m_methods;
     CompositeType m_comp_type;
     string m_name;
 
   public:
-    constexpr Struct(auto comp_type, auto attributes, auto name, auto params, auto names, auto fields, auto methods,
-                     auto static_methods)
+    constexpr Struct(auto comp_type, auto attributes, auto name, auto params, auto names, auto fields, auto methods)
         : Expr(QAST_STRUCT),
           m_attributes(attributes),
           m_names(names),
           m_fields(fields),
           m_methods(methods),
-          m_static_methods(static_methods),
           m_comp_type(comp_type),
           m_name(name) {
       if (params.has_value()) {
@@ -464,8 +462,6 @@ namespace ncc::parse {
     [[nodiscard, gnu::pure]] constexpr auto GetFields() { return m_fields; }
     [[nodiscard, gnu::pure]] constexpr auto GetMethods() const { return m_methods; }
     [[nodiscard, gnu::pure]] constexpr auto GetMethods() { return m_methods; }
-    [[nodiscard, gnu::pure]] constexpr auto GetStaticMethods() const { return m_static_methods; }
-    [[nodiscard, gnu::pure]] constexpr auto GetStaticMethods() { return m_static_methods; }
 
     constexpr void SetName(auto name) { m_name = name; }
     constexpr void SetCompositeType(auto comp_type) { m_comp_type = comp_type; }
@@ -474,7 +470,6 @@ namespace ncc::parse {
     constexpr void SetNames(auto names) { m_names = names; }
     constexpr void SetFields(auto fields) { m_fields = fields; }
     constexpr void SetMethods(auto methods) { m_methods = methods; }
-    constexpr void SetStaticMethods(auto static_methods) { m_static_methods = static_methods; }
   };
 }  // namespace ncc::parse
 

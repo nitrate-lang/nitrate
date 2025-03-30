@@ -155,7 +155,6 @@ namespace ncc::parse {
     struct StructContent {
       std::vector<StructField> m_fields;
       std::vector<StructFunction> m_methods;
-      std::vector<StructFunction> m_static_methods;
     };
 
     [[nodiscard]] auto RecurseName() -> string;

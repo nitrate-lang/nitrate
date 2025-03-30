@@ -305,8 +305,6 @@ class IterVisitor : public ASTVisitor {
     });
 
     std::for_each(n->GetMethods().begin(), n->GetMethods().end(), [&](auto method) { Add(method.m_func); });
-
-    std::for_each(n->GetStaticMethods().begin(), n->GetStaticMethods().end(), [&](auto method) { Add(method.m_func); });
   }
 
   void Visit(FlowPtr<Enum> n) override {

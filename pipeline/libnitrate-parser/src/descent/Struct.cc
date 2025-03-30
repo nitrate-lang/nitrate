@@ -171,13 +171,12 @@ void GeneralParser::PImpl::RecurseStructMethodOrField(StructContent &body) {
   auto is_static_member = NextIf<Static>().has_value();
 
   if (NextIf<Fn>()) {
-    auto method = RecurseFunction(false);
-
     if (is_static_member) {
-      body.m_static_methods.emplace_back(vis, method);
-    } else {
-      body.m_methods.emplace_back(vis, method);
+      Log << ParserSignal << Current() << "Static member function is not allowed";
     }
+
+    auto method = RecurseFunction(false);
+    body.m_methods.emplace_back(vis, method);
   } else {
     RecurseStructField(vis, is_static_member, body.m_fields);
   }
@@ -220,10 +219,10 @@ auto GeneralParser::PImpl::RecurseStruct(CompositeType struct_type) -> FlowPtr<E
   auto struct_name = RecurseName();
   auto struct_template_params = RecurseTemplateParameters();
   auto struct_terms = RecurseStructTerms();
-  auto [struct_fields, struct_methods, struct_static_methods] = RecurseStructBody();
+  auto [struct_fields, struct_methods] = RecurseStructBody();
 
   auto struct_defintion = m_fac.CreateStruct(struct_type, struct_name, struct_template_params, struct_fields,
-                                             struct_methods, struct_static_methods, struct_terms, struct_attributes);
+                                             struct_methods, struct_terms, struct_attributes);
   struct_defintion->SetOffset(start_pos);
 
   return struct_defintion;
