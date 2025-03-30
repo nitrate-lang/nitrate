@@ -124,23 +124,23 @@ namespace ncc::parse {
       } else if constexpr (std::is_same_v<T, Call>) {
         return AST_eCALL;
       } else if constexpr (std::is_same_v<T, List>) {
-        return AST_LIST;
+        return AST_eLIST;
       } else if constexpr (std::is_same_v<T, Assoc>) {
-        return AST_ASSOC;
+        return AST_ePAIR;
       } else if constexpr (std::is_same_v<T, Index>) {
-        return AST_INDEX;
+        return AST_eINDEX;
       } else if constexpr (std::is_same_v<T, Slice>) {
-        return AST_SLICE;
+        return AST_eSLICE;
       } else if constexpr (std::is_same_v<T, FString>) {
-        return AST_FSTRING;
+        return AST_eFSTRING;
       } else if constexpr (std::is_same_v<T, Identifier>) {
-        return AST_IDENT;
+        return AST_eIDENT;
       } else if constexpr (std::is_same_v<T, TemplateCall>) {
-        return AST_TEMPL_CALL;
+        return AST_eTEMPLATE_CALL;
       } else if constexpr (std::is_same_v<T, Import>) {
-        return AST_IMPORT;
+        return AST_eIMPORT;
       } else if constexpr (std::is_same_v<T, RefTy>) {
-        return AST_REF;
+        return AST_tREF;
       } else if constexpr (std::is_same_v<T, U1>) {
         return AST_tU1;
       } else if constexpr (std::is_same_v<T, U8>) {
@@ -172,23 +172,23 @@ namespace ncc::parse {
       } else if constexpr (std::is_same_v<T, F128>) {
         return AST_tF128;
       } else if constexpr (std::is_same_v<T, VoidTy>) {
-        return AST_VOID;
+        return AST_tVOID;
       } else if constexpr (std::is_same_v<T, PtrTy>) {
-        return AST_PTR;
+        return AST_tPTR;
       } else if constexpr (std::is_same_v<T, OpaqueTy>) {
-        return AST_OPAQUE;
+        return AST_tOPAQUE;
       } else if constexpr (std::is_same_v<T, ArrayTy>) {
-        return AST_ARRAY;
+        return AST_tARRAY;
       } else if constexpr (std::is_same_v<T, TupleTy>) {
-        return AST_TUPLE;
+        return AST_tTUPLE;
       } else if constexpr (std::is_same_v<T, FuncTy>) {
-        return AST_FUNCTOR;
+        return AST_tFUNCTION;
       } else if constexpr (std::is_same_v<T, NamedTy>) {
-        return AST_NAMED;
+        return AST_tNAMED;
       } else if constexpr (std::is_same_v<T, InferTy>) {
-        return AST_INFER;
+        return AST_tINFER;
       } else if constexpr (std::is_same_v<T, TemplateType>) {
-        return AST_TEMPLATE;
+        return AST_tTEMPLATE;
       } else if constexpr (std::is_same_v<T, Typedef>) {
         return AST_TYPEDEF;
       } else if constexpr (std::is_same_v<T, Struct>) {
@@ -352,15 +352,15 @@ namespace ncc::parse {
       r[AST_eNULL] = "Null";
       r[AST_eUNDEF] = "Undef";
       r[AST_eCALL] = "Call";
-      r[AST_LIST] = "List";
-      r[AST_ASSOC] = "Assoc";
-      r[AST_INDEX] = "Index";
-      r[AST_SLICE] = "Slice";
-      r[AST_FSTRING] = "Fstring";
-      r[AST_IDENT] = "Ident";
-      r[AST_TEMPL_CALL] = "TemplateCall";
-      r[AST_IMPORT] = "Import";
-      r[AST_REF] = "Ref";
+      r[AST_eLIST] = "List";
+      r[AST_ePAIR] = "Assoc";
+      r[AST_eINDEX] = "Index";
+      r[AST_eSLICE] = "Slice";
+      r[AST_eFSTRING] = "Fstring";
+      r[AST_eIDENT] = "Ident";
+      r[AST_eTEMPLATE_CALL] = "TemplateCall";
+      r[AST_eIMPORT] = "Import";
+      r[AST_tREF] = "Ref";
       r[AST_tU1] = "U1";
       r[AST_tU8] = "U8";
       r[AST_tU16] = "U16";
@@ -376,15 +376,15 @@ namespace ncc::parse {
       r[AST_tF32] = "F32";
       r[AST_tF64] = "F64";
       r[AST_tF128] = "F128";
-      r[AST_VOID] = "Void";
-      r[AST_PTR] = "Ptr";
-      r[AST_OPAQUE] = "Opaque";
-      r[AST_ARRAY] = "Array";
-      r[AST_TUPLE] = "Tuple";
-      r[AST_FUNCTOR] = "FuncTy";
-      r[AST_NAMED] = "Unres";
-      r[AST_INFER] = "Infer";
-      r[AST_TEMPLATE] = "Templ";
+      r[AST_tVOID] = "Void";
+      r[AST_tPTR] = "Ptr";
+      r[AST_tOPAQUE] = "Opaque";
+      r[AST_tARRAY] = "Array";
+      r[AST_tTUPLE] = "Tuple";
+      r[AST_tFUNCTION] = "FuncTy";
+      r[AST_tNAMED] = "Unres";
+      r[AST_tINFER] = "Infer";
+      r[AST_tTEMPLATE] = "Templ";
       r[AST_TYPEDEF] = "Typedef";
       r[AST_STRUCT] = "Struct";
       r[AST_ENUM] = "Enum";
@@ -435,21 +435,21 @@ namespace ncc::parse {
         case AST_tF32:
         case AST_tF64:
         case AST_tF128:
-        case AST_VOID:
+        case AST_tVOID:
           return true;
         default:
           return false;
       }
     }
 
-    [[nodiscard, gnu::pure]] constexpr auto IsArray() const -> bool { return GetKind() == AST_ARRAY; };
-    [[nodiscard, gnu::pure]] constexpr auto IsTuple() const -> bool { return GetKind() == AST_TUPLE; }
-    [[nodiscard, gnu::pure]] constexpr auto IsPointer() const -> bool { return GetKind() == AST_PTR; }
-    [[nodiscard, gnu::pure]] constexpr auto IsFunction() const -> bool { return GetKind() == AST_FUNCTOR; }
+    [[nodiscard, gnu::pure]] constexpr auto IsArray() const -> bool { return GetKind() == AST_tARRAY; };
+    [[nodiscard, gnu::pure]] constexpr auto IsTuple() const -> bool { return GetKind() == AST_tTUPLE; }
+    [[nodiscard, gnu::pure]] constexpr auto IsPointer() const -> bool { return GetKind() == AST_tPTR; }
+    [[nodiscard, gnu::pure]] constexpr auto IsFunction() const -> bool { return GetKind() == AST_tFUNCTION; }
     [[nodiscard, gnu::pure]] constexpr auto IsComposite() const -> bool { return IsArray() || IsTuple(); }
-    [[nodiscard, gnu::pure]] constexpr auto IsVoid() const -> bool { return GetKind() == AST_VOID; }
+    [[nodiscard, gnu::pure]] constexpr auto IsVoid() const -> bool { return GetKind() == AST_tVOID; }
     [[nodiscard, gnu::pure]] constexpr auto IsBool() const -> bool { return GetKind() == AST_tU1; }
-    [[nodiscard, gnu::pure]] constexpr auto IsRef() const -> bool { return GetKind() == AST_REF; }
+    [[nodiscard, gnu::pure]] constexpr auto IsRef() const -> bool { return GetKind() == AST_tREF; }
     [[nodiscard, gnu::pure]] constexpr auto IsNumeric() const -> bool {
       return GetKind() >= AST_tU1 && GetKind() <= AST_tF128;
     }

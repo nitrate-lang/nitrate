@@ -42,18 +42,18 @@ void CambrianFormatter::Visit(FlowPtr<TemplateType> n) {
   PrintMultilineComments(n);
 
   bool is_optional =
-      n->GetTemplate()->GetKind() == AST_NAMED && n->GetTemplate()->As<NamedTy>()->GetName() == "__builtin_result";
+      n->GetTemplate()->GetKind() == AST_tNAMED && n->GetTemplate()->As<NamedTy>()->GetName() == "__builtin_result";
 
   bool is_vector =
-      n->GetTemplate()->GetKind() == AST_NAMED && n->GetTemplate()->As<NamedTy>()->GetName() == "__builtin_vec";
+      n->GetTemplate()->GetKind() == AST_tNAMED && n->GetTemplate()->As<NamedTy>()->GetName() == "__builtin_vec";
 
   bool is_map =
-      n->GetTemplate()->GetKind() == AST_NAMED && n->GetTemplate()->As<NamedTy>()->GetName() == "__builtin_umap";
+      n->GetTemplate()->GetKind() == AST_tNAMED && n->GetTemplate()->As<NamedTy>()->GetName() == "__builtin_umap";
 
   bool is_set =
-      n->GetTemplate()->GetKind() == AST_NAMED && n->GetTemplate()->As<NamedTy>()->GetName() == "__builtin_uset";
+      n->GetTemplate()->GetKind() == AST_tNAMED && n->GetTemplate()->As<NamedTy>()->GetName() == "__builtin_uset";
 
-  bool is_comptime = n->GetTemplate()->GetKind() == AST_NAMED &&
+  bool is_comptime = n->GetTemplate()->GetKind() == AST_tNAMED &&
                      n->GetTemplate()->As<NamedTy>()->GetName() == "__builtin_meta" && n->GetArgs().size() == 1 &&
                      n->GetArgs().front().second->Is(AST_eUNARY) &&
                      n->GetArgs().front().second.template As<Unary>()->GetOp() == OpComptime;

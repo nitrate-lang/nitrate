@@ -911,7 +911,7 @@ namespace ncc::parse {
         auto [pname, ptype, pdefault] = *it;
         PutIdentifier(pname);
 
-        if (!ptype->Is(AST_INFER)) {
+        if (!ptype->Is(AST_tINFER)) {
           PutPunctor(PuncColn);
           ptype->Accept(*this);
         }
@@ -930,7 +930,7 @@ namespace ncc::parse {
       }
       PutPunctor(PuncRPar);
 
-      if (!n->GetReturn()->Is(AST_INFER)) {
+      if (!n->GetReturn()->Is(AST_tINFER)) {
         PutPunctor(PuncColn);
         n->GetReturn()->Accept(*this);
       }
@@ -1238,7 +1238,7 @@ namespace ncc::parse {
       }
 
       PutIdentifier(n->GetName());
-      if (!n->GetType()->Is(AST_INFER)) {
+      if (!n->GetType()->Is(AST_tINFER)) {
         PutPunctor(PuncColn);
         n->GetType()->Accept(*this);
       }
@@ -1437,7 +1437,7 @@ namespace ncc::parse {
           auto& [pname, ptype, pdefault] = *it;
           PutIdentifier(pname);
 
-          if (!ptype->Is(AST_INFER)) {
+          if (!ptype->Is(AST_tINFER)) {
             PutPunctor(PuncColn);
             ptype->Accept(*this);
           }
@@ -1459,7 +1459,7 @@ namespace ncc::parse {
         auto& [pname, ptype, pdefault] = *it;
         PutIdentifier(pname);
 
-        if (!ptype->Is(AST_INFER)) {
+        if (!ptype->Is(AST_tINFER)) {
           PutPunctor(PuncColn);
           ptype->Accept(*this);
         }
@@ -1478,7 +1478,7 @@ namespace ncc::parse {
       }
       PutPunctor(PuncRPar);
 
-      if (!n->GetReturn()->Is(AST_INFER)) {
+      if (!n->GetReturn()->Is(AST_tINFER)) {
         PutPunctor(PuncColn);
         n->GetReturn()->Accept(*this);
       }
@@ -1534,7 +1534,7 @@ namespace ncc::parse {
           auto& [pname, ptype, pdefault] = *it;
           PutIdentifier(pname);
 
-          if (!ptype->Is(AST_INFER)) {
+          if (!ptype->Is(AST_tINFER)) {
             PutPunctor(PuncColn);
             ptype->Accept(*this);
           }

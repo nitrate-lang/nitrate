@@ -44,54 +44,54 @@ namespace ncc::parse {
     /*****************************************************************************
      * Expressions
      ****************************************************************************/
-    AST_eBIN,       /* Binary expression */
-    AST_eUNARY,     /* Unary expression */
-    AST_eINT,       /* Integer literal */
-    AST_eFLOAT,     /* Floating-point literal */
-    AST_eSTRING,    /* String literal */
-    AST_eCHAR,      /* Character literal */
-    AST_eBOOL,      /* Boolean literal */
-    AST_eNULL,      /* Null literal */
-    AST_eUNDEF,     /* Undefined expression */
-    AST_eCALL,      /* Function call */
-    AST_LIST,       /* List expression */
-    AST_ASSOC,      /* Associative pair */
-    AST_INDEX,      /* Index access */
-    AST_SLICE,      /* Slice access */
-    AST_FSTRING,    /* Formatted string */
-    AST_IDENT,      /* Identifier */
-    AST_TEMPL_CALL, /* Template call */
-    AST_IMPORT,     /* Import expression */
+    AST_eBIN,           /* Binary expression */
+    AST_eUNARY,         /* Unary expression */
+    AST_eINT,           /* Integer literal */
+    AST_eFLOAT,         /* Floating-point literal */
+    AST_eSTRING,        /* String literal */
+    AST_eCHAR,          /* Character literal */
+    AST_eBOOL,          /* Boolean literal */
+    AST_eNULL,          /* Null literal */
+    AST_eUNDEF,         /* Undefined expression */
+    AST_eCALL,          /* Function call */
+    AST_eLIST,          /* List expression */
+    AST_ePAIR,          /* Associative pair */
+    AST_eINDEX,         /* Index access */
+    AST_eSLICE,         /* Slice access */
+    AST_eFSTRING,       /* Formatted string */
+    AST_eIDENT,         /* Identifier */
+    AST_eTEMPLATE_CALL, /* Template call */
+    AST_eIMPORT,        /* Import expression */
 
     /*****************************************************************************
      * Types
      ****************************************************************************/
 
-    AST_tU1,      /* 1-bit unsigned integer (boolean) */
-    AST_tU8,      /* 8-bit unsigned integer */
-    AST_tU16,     /* 16-bit unsigned integer */
-    AST_tU32,     /* 32-bit unsigned integer */
-    AST_tU64,     /* 64-bit unsigned integer */
-    AST_tU128,    /* 128-bit unsigned integer */
-    AST_tI8,      /* 8-bit signed integer */
-    AST_tI16,     /* 16-bit signed integer */
-    AST_tI32,     /* 32-bit signed integer */
-    AST_tI64,     /* 64-bit signed integer */
-    AST_tI128,    /* 128-bit signed integer */
-    AST_tF16,     /* 16-bit floating-point number */
-    AST_tF32,     /* 32-bit floating-point number */
-    AST_tF64,     /* 64-bit floating-point number */
-    AST_tF128,    /* 128-bit floating-point number */
-    AST_VOID,     /* Void type */
-    AST_INFER,    /* Inferred type */
-    AST_OPAQUE,   /* Opaque named type */
-    AST_NAMED,    /* Unresolved type name */
-    AST_REF,      /* Reference type */
-    AST_PTR,      /* Raw pointer type */
-    AST_ARRAY,    /* Basic array type */
-    AST_TUPLE,    /* Tuple type */
-    AST_TEMPLATE, /* Template type */
-    AST_FUNCTOR,  /* Function type */
+    AST_tU1,       /* 1-bit unsigned integer (boolean) */
+    AST_tU8,       /* 8-bit unsigned integer */
+    AST_tU16,      /* 16-bit unsigned integer */
+    AST_tU32,      /* 32-bit unsigned integer */
+    AST_tU64,      /* 64-bit unsigned integer */
+    AST_tU128,     /* 128-bit unsigned integer */
+    AST_tI8,       /* 8-bit signed integer */
+    AST_tI16,      /* 16-bit signed integer */
+    AST_tI32,      /* 32-bit signed integer */
+    AST_tI64,      /* 64-bit signed integer */
+    AST_tI128,     /* 128-bit signed integer */
+    AST_tF16,      /* 16-bit floating-point number */
+    AST_tF32,      /* 32-bit floating-point number */
+    AST_tF64,      /* 64-bit floating-point number */
+    AST_tF128,     /* 128-bit floating-point number */
+    AST_tVOID,     /* Void type */
+    AST_tINFER,    /* Inferred type */
+    AST_tOPAQUE,   /* Opaque named type */
+    AST_tNAMED,    /* Unresolved type name */
+    AST_tREF,      /* Reference type */
+    AST_tPTR,      /* Raw pointer type */
+    AST_tARRAY,    /* Basic array type */
+    AST_tTUPLE,    /* Tuple type */
+    AST_tTEMPLATE, /* Template type */
+    AST_tFUNCTION, /* Function type */
 
     /*****************************************************************************
      * Statements
@@ -120,7 +120,7 @@ namespace ncc::parse {
     ///======================================================================
 
     AST__TYPE_FIRST = AST_tU1,
-    AST__TYPE_LAST = AST_FUNCTOR,
+    AST__TYPE_LAST = AST_tFUNCTION,
 
     AST__STMT_FIRST = AST_IF,
     AST__STMT_LAST = AST_FUNCTION,

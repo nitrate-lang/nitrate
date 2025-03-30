@@ -156,7 +156,7 @@ using namespace ncc;
 
 // static bool check_is_foreign_function(auto n) {
 //   return std::any_of(n.begin(), n.end(), [](FlowPtr<ncc::parse::Expr> attr) {
-//     return attr->is(AST_IDENT) &&
+//     return attr->is(AST_eIDENT) &&
 //            attr->As<ncc::parse::Identifier>()->GetName() == "foreign";
 //   });
 // }
@@ -1933,27 +1933,27 @@ using namespace ncc;
 //       out = nrgen_call(b, s, G, n.as<ncc::parse::Call>());
 //       break;
 
-//     case AST_LIST:
+//     case AST_eLIST:
 //       out = nrgen_list(b, s, G, n.as<ncc::parse::List>());
 //       break;
 
-//     case AST_ASSOC:
+//     case AST_ePAIR:
 //       out = nrgen_assoc(b, s, G, n.as<ncc::parse::Assoc>());
 //       break;
 
-//     case AST_INDEX:
+//     case AST_eINDEX:
 //       out = nrgen_index(b, s, G, n.as<ncc::parse::Index>());
 //       break;
 
-//     case AST_SLICE:
+//     case AST_eSLICE:
 //       out = nrgen_slice(b, s, G, n.as<ncc::parse::Slice>());
 //       break;
 
-//     case AST_FSTRING:
+//     case AST_eFSTRING:
 //       out = nrgen_fstring(b, s, G, n.as<ncc::parse::FString>());
 //       break;
 
-//     case AST_IDENT:
+//     case AST_eIDENT:
 //       out = nrgen_ident(b, s, G, n.as<ncc::parse::Identifier>());
 //       break;
 
@@ -1969,11 +1969,11 @@ using namespace ncc;
 //       out = nrgen_type_expr(b, s, G, n.as<ncc::parse::TypeExpr>());
 //       break;
 
-//     case AST_TEMPL_CALL:
+//     case AST_eTEMPLATE_CALL:
 //       out = nrgen_templ_call(b, s, G, n.as<ncc::parse::TemplateCall>());
 //       break;
 
-//     case AST_REF:
+//     case AST_tREF:
 //       out = nrgen_ref_ty(b, s, G, n.as<ncc::parse::RefTy>());
 //       break;
 
@@ -2037,39 +2037,39 @@ using namespace ncc;
 //       out = nrgen_f128_ty(b, s, G, n.as<ncc::parse::F128>());
 //       break;
 
-//     case AST_VOID:
+//     case AST_tVOID:
 //       out = nrgen_void_ty(b, s, G, n.as<ncc::parse::VoidTy>());
 //       break;
 
-//     case AST_PTR:
+//     case AST_tPTR:
 //       out = nrgen_ptr_ty(b, s, G, n.as<ncc::parse::PtrTy>());
 //       break;
 
-//     case AST_OPAQUE:
+//     case AST_tOPAQUE:
 //       out = nrgen_opaque_ty(b, s, G, n.as<ncc::parse::OpaqueTy>());
 //       break;
 
-//     case AST_ARRAY:
+//     case AST_tARRAY:
 //       out = nrgen_array_ty(b, s, G, n.as<ncc::parse::ArrayTy>());
 //       break;
 
-//     case AST_TUPLE:
+//     case AST_tTUPLE:
 //       out = nrgen_tuple_ty(b, s, G, n.as<ncc::parse::TupleTy>());
 //       break;
 
-//     case AST_FUNCTOR:
+//     case AST_tFUNCTION:
 //       out = nrgen_fn_ty(b, s, G, n.as<ncc::parse::FuncTy>());
 //       break;
 
-//     case AST_NAMED:
+//     case AST_tNAMED:
 //       out = nrgen_unres_ty(b, s, G, n.as<ncc::parse::NamedTy>());
 //       break;
 
-//     case AST_INFER:
+//     case AST_tINFER:
 //       out = nrgen_infer_ty(b, s, G, n.as<ncc::parse::InferTy>());
 //       break;
 
-//     case AST_TEMPLATE:
+//     case AST_tTEMPLATE:
 //       out = nrgen_templ_ty(b, s, G, n.as<ncc::parse::TemplateType>());
 //       break;
 

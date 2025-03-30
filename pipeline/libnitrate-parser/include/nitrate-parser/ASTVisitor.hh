@@ -155,39 +155,39 @@ namespace ncc::parse {
           Visit(n.template As<Call>());
           break;
         }
-        case AST_LIST: {
+        case AST_eLIST: {
           Visit(n.template As<List>());
           break;
         }
-        case AST_ASSOC: {
+        case AST_ePAIR: {
           Visit(n.template As<Assoc>());
           break;
         }
-        case AST_INDEX: {
+        case AST_eINDEX: {
           Visit(n.template As<Index>());
           break;
         }
-        case AST_SLICE: {
+        case AST_eSLICE: {
           Visit(n.template As<Slice>());
           break;
         }
-        case AST_FSTRING: {
+        case AST_eFSTRING: {
           Visit(n.template As<FString>());
           break;
         }
-        case AST_IDENT: {
+        case AST_eIDENT: {
           Visit(n.template As<Identifier>());
           break;
         }
-        case AST_TEMPL_CALL: {
+        case AST_eTEMPLATE_CALL: {
           Visit(n.template As<TemplateCall>());
           break;
         }
-        case AST_IMPORT: {
+        case AST_eIMPORT: {
           Visit(n.template As<Import>());
           break;
         }
-        case AST_REF: {
+        case AST_tREF: {
           Visit(n.template As<RefTy>());
           break;
         }
@@ -251,39 +251,39 @@ namespace ncc::parse {
           Visit(n.template As<F128>());
           break;
         }
-        case AST_VOID: {
+        case AST_tVOID: {
           Visit(n.template As<VoidTy>());
           break;
         }
-        case AST_PTR: {
+        case AST_tPTR: {
           Visit(n.template As<PtrTy>());
           break;
         }
-        case AST_OPAQUE: {
+        case AST_tOPAQUE: {
           Visit(n.template As<OpaqueTy>());
           break;
         }
-        case AST_ARRAY: {
+        case AST_tARRAY: {
           Visit(n.template As<ArrayTy>());
           break;
         }
-        case AST_TUPLE: {
+        case AST_tTUPLE: {
           Visit(n.template As<TupleTy>());
           break;
         }
-        case AST_FUNCTOR: {
+        case AST_tFUNCTION: {
           Visit(n.template As<FuncTy>());
           break;
         }
-        case AST_NAMED: {
+        case AST_tNAMED: {
           Visit(n.template As<NamedTy>());
           break;
         }
-        case AST_INFER: {
+        case AST_tINFER: {
           Visit(n.template As<InferTy>());
           break;
         }
-        case AST_TEMPLATE: {
+        case AST_tTEMPLATE: {
           Visit(n.template As<TemplateType>());
           break;
         }

@@ -51,7 +51,7 @@ using namespace nitrate::parser::SyntaxTree;
 using Pool = google::protobuf::Arena;
 
 static bool IsCompressable(const ncc::FlowPtr<ncc::parse::Type> &in) {
-  return in->Is(AST_INFER) && in->GetWidth() == nullptr && in->GetRangeBegin() == nullptr &&
+  return in->Is(AST_tINFER) && in->GetWidth() == nullptr && in->GetRangeBegin() == nullptr &&
          in->GetRangeEnd() == nullptr;
 }
 
@@ -379,32 +379,32 @@ SyntaxTree::Expr *AstWriter::From(FlowPtr<Expr> in) {
       break;
     }
 
-    case AST_LIST: {
+    case AST_eLIST: {
       message->set_allocated_list(From(in.As<List>()));
       break;
     }
 
-    case AST_ASSOC: {
+    case AST_ePAIR: {
       message->set_allocated_assoc(From(in.As<Assoc>()));
       break;
     }
 
-    case AST_INDEX: {
+    case AST_eINDEX: {
       message->set_allocated_index(From(in.As<Index>()));
       break;
     }
 
-    case AST_SLICE: {
+    case AST_eSLICE: {
       message->set_allocated_slice(From(in.As<Slice>()));
       break;
     }
 
-    case AST_FSTRING: {
+    case AST_eFSTRING: {
       message->set_allocated_fstring(From(in.As<FString>()));
       break;
     }
 
-    case AST_IDENT: {
+    case AST_eIDENT: {
       message->set_allocated_identifier(From(in.As<Identifier>()));
       break;
     }
@@ -504,12 +504,12 @@ SyntaxTree::Expr *AstWriter::From(FlowPtr<Expr> in) {
       break;
     }
 
-    case AST_TEMPL_CALL: {
+    case AST_eTEMPLATE_CALL: {
       message->set_allocated_template_call(From(in.As<TemplateCall>()));
       break;
     }
 
-    case AST_IMPORT: {
+    case AST_eIMPORT: {
       message->set_allocated_import(From(in.As<Import>()));
       break;
     }
@@ -589,52 +589,52 @@ SyntaxTree::Expr *AstWriter::From(FlowPtr<Expr> in) {
       break;
     }
 
-    case AST_VOID: {
+    case AST_tVOID: {
       message->set_allocated_void_(From(in.As<VoidTy>()));
       break;
     }
 
-    case AST_INFER: {
+    case AST_tINFER: {
       message->set_allocated_infer(From(in.As<InferTy>()));
       break;
     }
 
-    case AST_OPAQUE: {
+    case AST_tOPAQUE: {
       message->set_allocated_opaque(From(in.As<OpaqueTy>()));
       break;
     }
 
-    case AST_NAMED: {
+    case AST_tNAMED: {
       message->set_allocated_named(From(in.As<NamedTy>()));
       break;
     }
 
-    case AST_REF: {
+    case AST_tREF: {
       message->set_allocated_ref(From(in.As<RefTy>()));
       break;
     }
 
-    case AST_PTR: {
+    case AST_tPTR: {
       message->set_allocated_ptr(From(in.As<PtrTy>()));
       break;
     }
 
-    case AST_ARRAY: {
+    case AST_tARRAY: {
       message->set_allocated_array(From(in.As<ArrayTy>()));
       break;
     }
 
-    case AST_TUPLE: {
+    case AST_tTUPLE: {
       message->set_allocated_tuple(From(in.As<TupleTy>()));
       break;
     }
 
-    case AST_TEMPLATE: {
+    case AST_tTEMPLATE: {
       message->set_allocated_template_(From(in.As<TemplateType>()));
       break;
     }
 
-    case AST_FUNCTOR: {
+    case AST_tFUNCTION: {
       message->set_allocated_func(From(in.As<FuncTy>()));
       break;
     }
@@ -722,52 +722,52 @@ SyntaxTree::Type *AstWriter::From(FlowPtr<Type> in) {
       break;
     }
 
-    case AST_VOID: {
+    case AST_tVOID: {
       message->set_allocated_void_(From(in.As<VoidTy>()));
       break;
     }
 
-    case AST_INFER: {
+    case AST_tINFER: {
       message->set_allocated_infer(From(in.As<InferTy>()));
       break;
     }
 
-    case AST_OPAQUE: {
+    case AST_tOPAQUE: {
       message->set_allocated_opaque(From(in.As<OpaqueTy>()));
       break;
     }
 
-    case AST_NAMED: {
+    case AST_tNAMED: {
       message->set_allocated_named(From(in.As<NamedTy>()));
       break;
     }
 
-    case AST_REF: {
+    case AST_tREF: {
       message->set_allocated_ref(From(in.As<RefTy>()));
       break;
     }
 
-    case AST_PTR: {
+    case AST_tPTR: {
       message->set_allocated_ptr(From(in.As<PtrTy>()));
       break;
     }
 
-    case AST_ARRAY: {
+    case AST_tARRAY: {
       message->set_allocated_array(From(in.As<ArrayTy>()));
       break;
     }
 
-    case AST_TUPLE: {
+    case AST_tTUPLE: {
       message->set_allocated_tuple(From(in.As<TupleTy>()));
       break;
     }
 
-    case AST_TEMPLATE: {
+    case AST_tTEMPLATE: {
       message->set_allocated_template_(From(in.As<TemplateType>()));
       break;
     }
 
-    case AST_FUNCTOR: {
+    case AST_tFUNCTION: {
       message->set_allocated_func(From(in.As<FuncTy>()));
       break;
     }

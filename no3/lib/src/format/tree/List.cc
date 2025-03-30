@@ -59,9 +59,9 @@ void CambrianFormatter::Visit(FlowPtr<List> n) {
   } else {
     static const std::unordered_set<ASTNodeKind> extra_seperation = {
         AST_eCALL,
-        AST_LIST,
-        AST_ASSOC,
-        AST_TEMPL_CALL,
+        AST_eLIST,
+        AST_ePAIR,
+        AST_eTEMPLATE_CALL,
     };
 
     bool special_case = std::any_of(n->GetItems().begin(), n->GetItems().end(), [&](auto x) {
@@ -106,7 +106,7 @@ void CambrianFormatter::Visit(FlowPtr<List> n) {
       m_line << "[";
 
       bool is_assoc_map =
-          std::all_of(n->GetItems().begin(), n->GetItems().end(), [](auto x) { return x->Is(AST_ASSOC); });
+          std::all_of(n->GetItems().begin(), n->GetItems().end(), [](auto x) { return x->Is(AST_ePAIR); });
 
       { /* Write list items */
         size_t the_indent = is_assoc_map ? m_indent + m_tabSize : m_line.Length();
@@ -143,10 +143,10 @@ void CambrianFormatter::Visit(FlowPtr<Assoc> node) {
 
   const std::function<void(FlowPtr<Assoc>, bool)> format = [&](const FlowPtr<Assoc>& n, bool use_braces) {
     bool is_value_map = false;
-    if (n->GetValue()->Is(AST_LIST)) {
+    if (n->GetValue()->Is(AST_eLIST)) {
       auto* list = n->GetValue()->As<List>();
       is_value_map = list->GetItems().empty() || std::all_of(list->GetItems().begin(), list->GetItems().end(),
-                                                             [](auto x) { return x->Is(AST_ASSOC); });
+                                                             [](auto x) { return x->Is(AST_ePAIR); });
     }
 
     if (use_braces) {

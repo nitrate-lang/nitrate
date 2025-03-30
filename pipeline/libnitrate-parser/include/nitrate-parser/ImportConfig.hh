@@ -31,8 +31,8 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __NITRATE_AST_IMPORT_CONFIG_H__
-#define __NITRATE_AST_IMPORT_CONFIG_H__
+#ifndef __NITRATE_AST_eIMPORT_CONFIG_H__
+#define __NITRATE_AST_eIMPORT_CONFIG_H__
 
 #include <nitrate-parser/Package.hh>
 #include <unordered_set>

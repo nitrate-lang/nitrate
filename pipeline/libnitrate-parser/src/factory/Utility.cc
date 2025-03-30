@@ -43,7 +43,7 @@ auto ASTFactory::CreateMockInstance(ASTNodeKind kind, SourceLocation origin) -> 
   NullableFlowPtr<Expr> r;
 
 #define SIMPLE_EXPR() CreateMockInstance(AST_eNULL, origin)
-#define SIMPLE_TYPE() CreateMockInstance<Type>(AST_VOID, origin)
+#define SIMPLE_TYPE() CreateMockInstance<Type>(AST_tVOID, origin)
 
   switch (kind) {
     case AST_DISCARDED: {
@@ -103,42 +103,42 @@ auto ASTFactory::CreateMockInstance(ASTNodeKind kind, SourceLocation origin) -> 
       break;
     }
 
-    case AST_LIST: {
+    case AST_eLIST: {
       r = CreateList();
       break;
     }
 
-    case AST_ASSOC: {
+    case AST_ePAIR: {
       r = CreateAssociation(SIMPLE_EXPR(), SIMPLE_EXPR());
       break;
     }
 
-    case AST_INDEX: {
+    case AST_eINDEX: {
       r = CreateIndex(SIMPLE_EXPR(), SIMPLE_EXPR());
       break;
     }
 
-    case AST_SLICE: {
+    case AST_eSLICE: {
       r = CreateSlice(SIMPLE_EXPR(), SIMPLE_EXPR(), SIMPLE_EXPR());
       break;
     }
 
-    case AST_FSTRING: {
+    case AST_eFSTRING: {
       r = CreateFormatString();
       break;
     }
 
-    case AST_IDENT: {
+    case AST_eIDENT: {
       r = CreateIdentifier("_");
       break;
     }
 
-    case AST_TEMPL_CALL: {
+    case AST_eTEMPLATE_CALL: {
       r = CreateTemplateCall(SIMPLE_EXPR());
       break;
     }
 
-    case AST_IMPORT: {
+    case AST_eIMPORT: {
       r = CreateImport("", ImportMode::Code, SIMPLE_EXPR());
       break;
     }
@@ -218,52 +218,52 @@ auto ASTFactory::CreateMockInstance(ASTNodeKind kind, SourceLocation origin) -> 
       break;
     }
 
-    case AST_VOID: {
+    case AST_tVOID: {
       r = CreateVoid();
       break;
     }
 
-    case AST_INFER: {
+    case AST_tINFER: {
       r = CreateUnknownType();
       break;
     }
 
-    case AST_OPAQUE: {
+    case AST_tOPAQUE: {
       r = CreateOpaque("_");
       break;
     }
 
-    case AST_NAMED: {
+    case AST_tNAMED: {
       r = CreateNamed("_");
       break;
     }
 
-    case AST_REF: {
+    case AST_tREF: {
       r = CreateReference(SIMPLE_TYPE());
       break;
     }
 
-    case AST_PTR: {
+    case AST_tPTR: {
       r = CreatePointer(SIMPLE_TYPE());
       break;
     }
 
-    case AST_ARRAY: {
+    case AST_tARRAY: {
       r = CreateArray(SIMPLE_TYPE(), SIMPLE_EXPR());
       break;
     }
 
-    case AST_TUPLE: {
+    case AST_tTUPLE: {
       r = CreateTuple();
       break;
     }
 
-    case AST_TEMPLATE: {
+    case AST_tTEMPLATE: {
       r = CreateTemplateType(SIMPLE_TYPE());
       break;
     }
 
-    case AST_FUNCTOR: {
+    case AST_tFUNCTION: {
       r = CreateFunctionType(SIMPLE_TYPE());
       break;
     }

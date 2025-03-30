@@ -43,14 +43,14 @@ namespace ncc::parse {
     string m_name;
 
   public:
-    constexpr NamedTy(auto name) : Type(AST_NAMED), m_name(name) {}
+    constexpr NamedTy(auto name) : Type(AST_tNAMED), m_name(name) {}
 
     [[nodiscard, gnu::pure]] constexpr auto GetName() const { return m_name; }
   };
 
   class InferTy : public Type {
   public:
-    constexpr InferTy() : Type(AST_INFER) {}
+    constexpr InferTy() : Type(AST_tINFER) {}
   };
 
   class TemplateType : public Type {
@@ -58,7 +58,7 @@ namespace ncc::parse {
     std::span<CallArg> m_args;
 
   public:
-    constexpr TemplateType(auto templ, auto args) : Type(AST_TEMPLATE), m_template(std::move(templ)), m_args(args) {}
+    constexpr TemplateType(auto templ, auto args) : Type(AST_tTEMPLATE), m_template(std::move(templ)), m_args(args) {}
 
     [[nodiscard, gnu::pure]] constexpr auto GetTemplate() const { return m_template; }
     [[nodiscard, gnu::pure]] constexpr auto GetArgs() const { return m_args; }
@@ -141,7 +141,7 @@ namespace ncc::parse {
 
   class VoidTy : public Type {
   public:
-    constexpr VoidTy() : Type(AST_VOID) {}
+    constexpr VoidTy() : Type(AST_tVOID) {}
   };
 
   class PtrTy : public Type {
@@ -149,7 +149,7 @@ namespace ncc::parse {
     bool m_volatil;
 
   public:
-    constexpr PtrTy(auto item, auto volatil) : Type(AST_PTR), m_item(std::move(item)), m_volatil(volatil) {}
+    constexpr PtrTy(auto item, auto volatil) : Type(AST_tPTR), m_item(std::move(item)), m_volatil(volatil) {}
 
     [[nodiscard, gnu::pure]] constexpr auto GetItem() const { return m_item; }
     [[nodiscard, gnu::pure]] constexpr auto IsVolatile() const -> bool { return m_volatil; }
@@ -159,7 +159,7 @@ namespace ncc::parse {
     string m_name;
 
   public:
-    constexpr OpaqueTy(auto name) : Type(AST_OPAQUE), m_name(name) {}
+    constexpr OpaqueTy(auto name) : Type(AST_tOPAQUE), m_name(name) {}
 
     [[nodiscard, gnu::pure]] constexpr auto GetName() const { return m_name; }
   };
@@ -168,7 +168,7 @@ namespace ncc::parse {
     std::span<FlowPtr<Type>> m_items;
 
   public:
-    constexpr TupleTy(auto items) : Type(AST_TUPLE), m_items(items) {}
+    constexpr TupleTy(auto items) : Type(AST_tTUPLE), m_items(items) {}
 
     [[nodiscard, gnu::pure]] constexpr auto GetItems() const { return m_items; }
   };
@@ -178,7 +178,7 @@ namespace ncc::parse {
     FlowPtr<Expr> m_size;
 
   public:
-    constexpr ArrayTy(auto item, auto size) : Type(AST_ARRAY), m_item(std::move(item)), m_size(std::move(size)) {}
+    constexpr ArrayTy(auto item, auto size) : Type(AST_tARRAY), m_item(std::move(item)), m_size(std::move(size)) {}
 
     [[nodiscard, gnu::pure]] constexpr auto GetItem() const { return m_item; }
     [[nodiscard, gnu::pure]] constexpr auto GetSize() const { return m_size; }
@@ -189,7 +189,7 @@ namespace ncc::parse {
     bool m_volatil;
 
   public:
-    constexpr RefTy(auto item, bool volatil) : Type(AST_REF), m_item(std::move(item)), m_volatil(volatil) {}
+    constexpr RefTy(auto item, bool volatil) : Type(AST_tREF), m_item(std::move(item)), m_volatil(volatil) {}
 
     [[nodiscard, gnu::pure]] constexpr auto GetItem() const { return m_item; }
     [[nodiscard, gnu::pure]] constexpr auto IsVolatile() const { return m_volatil; }
@@ -203,7 +203,7 @@ namespace ncc::parse {
 
   public:
     constexpr FuncTy(auto return_type, auto parameters, auto variadic, auto attributes)
-        : Type(AST_FUNCTOR),
+        : Type(AST_tFUNCTION),
           m_attributes(attributes),
           m_params(parameters),
           m_return(std::move(return_type)),

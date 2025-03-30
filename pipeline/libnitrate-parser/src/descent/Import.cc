@@ -136,7 +136,7 @@ namespace ncc::parse::import {
           case AST_ENUM:
           case AST_VAR:
           case AST_FUNCTION:
-          case AST_IMPORT: {
+          case AST_eIMPORT: {
             auto vis = m_vis_stack.top();
 
             switch (vis) {
@@ -195,7 +195,7 @@ namespace ncc::parse::import {
 
             const auto &call = attr->As<Call>();
 
-            if (!call->GetFunc()->Is(AST_IDENT) || call->GetFunc()->As<Identifier>()->GetName() != "linkage") {
+            if (!call->GetFunc()->Is(AST_eIDENT) || call->GetFunc()->As<Identifier>()->GetName() != "linkage") {
               return false;
             }
 
