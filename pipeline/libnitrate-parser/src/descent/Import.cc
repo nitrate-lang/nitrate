@@ -345,7 +345,7 @@ auto GeneralParser::Context::RecurseImportName() -> std::pair<string, ImportMode
 auto GeneralParser::Context::RecurseImportRegularFile(const std::filesystem::path &import_file,
                                                       ImportMode import_mode) -> FlowPtr<Expr> {
   { /* Try to prevent infinite import recursion */
-    if (m_imported_files.contains(import_file)) {
+    if (m_imported_files->contains(import_file)) {
       Log << ParserSignal << Debug << Current() << "Detected circular import: " << import_file << " (skipping)";
       return CreateImport(import_file.string(), import_mode, CreateBlock());
     }
@@ -355,7 +355,7 @@ auto GeneralParser::Context::RecurseImportRegularFile(const std::filesystem::pat
       return CreateImport(import_file.string(), import_mode, CreateBlock());
     }
 
-    m_imported_files.insert(import_file);
+    m_imported_files->insert(import_file);
   }
 
   auto abs_import_path = OMNI_CATCH(std::filesystem::absolute(import_file)).value_or(import_file).lexically_normal();
@@ -418,7 +418,7 @@ auto GeneralParser::Context::RecurseImportRegularFile(const std::filesystem::pat
 
       Log << Trace << "RecurseImport: Creating subparser for: " << abs_import_path;
 
-      auto subparser = CreateSubParser(scanner, m_pool);
+      auto subparser = CreateSubParser(scanner);
       auto subtree = subparser.m_impl->RecurseBlock(false, false, BlockMode::Unknown);
 
       ImportName importee_name;
@@ -482,7 +482,7 @@ auto GeneralParser::Context::RecurseImportRegularFile(const std::filesystem::pat
 
   for (const auto &file_name : sorted_keys) {
     { /* Try to prevent infinite import recursion */
-      if (m_imported_files.contains(file_name)) {
+      if (m_imported_files->contains(file_name)) {
         Log << ParserSignal << Debug << Current() << "Detected circular import: " << file_name << " (skipping)";
         continue;
       }
@@ -492,7 +492,7 @@ auto GeneralParser::Context::RecurseImportRegularFile(const std::filesystem::pat
         continue;
       }
 
-      m_imported_files.insert(file_name);
+      m_imported_files->insert(file_name);
     }
 
     const auto &content_getter = files->at(file_name);
@@ -517,7 +517,7 @@ auto GeneralParser::Context::RecurseImportRegularFile(const std::filesystem::pat
     ParserSwapScanner(scanner_ptr);
 
     Log << Trace << "RecurseImport: Creating subparser for: " << file_name;
-    auto subparser = CreateSubParser(scanner, m_pool);
+    auto subparser = CreateSubParser(scanner);
     auto subtree = subparser.m_impl->RecurseBlock(false, false, BlockMode::Unknown);
 
     // Prepare the subgraph by stripping out unnecessary nodes and
