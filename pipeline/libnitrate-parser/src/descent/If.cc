@@ -38,7 +38,7 @@ using namespace ncc;
 using namespace ncc::lex;
 using namespace ncc::parse;
 
-auto GeneralParser::PImpl::RecurseIfElse() -> NullableFlowPtr<Expr> {
+auto GeneralParser::Context::RecurseIfElse() -> NullableFlowPtr<Expr> {
   if (NextIf<Else>()) {
     if (NextIf<Keyword::If>()) {
       return RecurseIf();
@@ -50,7 +50,7 @@ auto GeneralParser::PImpl::RecurseIfElse() -> NullableFlowPtr<Expr> {
   return std::nullopt;
 }
 
-auto GeneralParser::PImpl::RecurseIf() -> FlowPtr<Expr> {
+auto GeneralParser::Context::RecurseIf() -> FlowPtr<Expr> {
   auto cond = RecurseExpr({Token(Punc, PuncLCur)});
   auto then = RecurseBlock(true, false, BlockMode::Unknown);
   auto ele = RecurseIfElse();

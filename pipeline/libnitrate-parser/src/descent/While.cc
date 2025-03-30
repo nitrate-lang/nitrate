@@ -32,14 +32,14 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <descent/Recurse.hh>
-#include <nitrate-parser/ASTStmt.hh>
 #include <nitrate-parser/ASTExpr.hh>
+#include <nitrate-parser/ASTStmt.hh>
 
 using namespace ncc;
 using namespace ncc::lex;
 using namespace ncc::parse;
 
-auto GeneralParser::PImpl::RecurseWhileCond() -> FlowPtr<Expr> {
+auto GeneralParser::Context::RecurseWhileCond() -> FlowPtr<Expr> {
   if (Peek().Is<PuncLCur>()) {
     return m_fac.CreateBoolean(true);
   }
@@ -47,7 +47,7 @@ auto GeneralParser::PImpl::RecurseWhileCond() -> FlowPtr<Expr> {
   return RecurseExpr({Token(Punc, PuncLCur)});
 }
 
-auto GeneralParser::PImpl::RecurseWhile() -> FlowPtr<Expr> {
+auto GeneralParser::Context::RecurseWhile() -> FlowPtr<Expr> {
   auto cond = RecurseWhileCond();
   auto body = RecurseBlock(true, false, BlockMode::Unknown);
 

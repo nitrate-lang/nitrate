@@ -49,8 +49,36 @@ using namespace ncc::lex;
 using namespace ncc::parse;
 using namespace ncc;
 
-auto GeneralParser::PImpl::RecurseCallArguments(const std::set<lex::Token> &terminators,
-                                                bool type_by_default) -> std::vector<CallArg> {
+auto GeneralParser::Context::RecurseAttributes(string kind) -> std::vector<FlowPtr<Expr>> {
+  std::vector<FlowPtr<Expr>> attributes;
+
+  if (!NextIf<PuncLBrk>()) {
+    return attributes;
+  }
+
+  while (true) {
+    if (m_rd.IsEof()) [[unlikely]] {
+      Log << ParserSignal << Current() << "Encountered EOF while parsing " << kind << " attributes";
+      return attributes;
+    }
+
+    if (NextIf<PuncRBrk>()) {
+      return attributes;
+    }
+
+    auto attribute = RecurseExpr({
+        Token(Punc, PuncComa),
+        Token(Punc, PuncRBrk),
+    });
+
+    attributes.push_back(attribute);
+
+    NextIf<PuncComa>();
+  }
+}
+
+auto GeneralParser::Context::RecurseCallArguments(const std::set<lex::Token> &terminators,
+                                                  bool type_by_default) -> std::vector<CallArg> {
   std::vector<CallArg> call_args;
   size_t positional_index = 0;
   string argument_name;
@@ -94,7 +122,7 @@ auto GeneralParser::PImpl::RecurseCallArguments(const std::set<lex::Token> &term
   return call_args;
 }
 
-auto GeneralParser::PImpl::ParseFStringExpression(std::string_view source) -> FlowPtr<Expr> {
+auto GeneralParser::Context::ParseFStringExpression(std::string_view source) -> FlowPtr<Expr> {
   std::vector<std::variant<string, FlowPtr<Expr>>> sections;
   std::string buf;
   size_t rank = 0;
@@ -150,7 +178,7 @@ auto GeneralParser::PImpl::ParseFStringExpression(std::string_view source) -> Fl
   return m_fac.CreateFormatString(sections);
 }
 
-auto GeneralParser::PImpl::RecurseFstring() -> FlowPtr<Expr> {
+auto GeneralParser::Context::RecurseFstring() -> FlowPtr<Expr> {
   const auto fstring_raw_text = NextIf<Text>();
   if (!fstring_raw_text) [[unlikely]] {
     Log << ParserSignal << Current() << "Expected a string literal token for F-string expression";
@@ -235,7 +263,7 @@ static NCC_FORCE_INLINE auto UnwindStack(ASTFactory &fac, std::stack<Frame> &sta
   return base;
 }
 
-auto GeneralParser::PImpl::RecurseExpr(const std::set<Token> &terminators) -> FlowPtr<Expr> {
+auto GeneralParser::Context::RecurseExpr(const std::set<Token> &terminators) -> FlowPtr<Expr> {
   auto source_offset = Peek().GetStart();
 
   std::stack<Frame> stack;
@@ -430,7 +458,7 @@ auto GeneralParser::PImpl::RecurseExpr(const std::set<Token> &terminators) -> Fl
   return m_fac.CreateMockInstance<VoidTy>();
 }
 
-auto GeneralParser::PImpl::RecurseExprKeyword(lex::Keyword key) -> NullableFlowPtr<Expr> {
+auto GeneralParser::Context::RecurseExprKeyword(lex::Keyword key) -> NullableFlowPtr<Expr> {
   NullableFlowPtr<Expr> e;
 
   switch (key) {
@@ -508,7 +536,7 @@ auto GeneralParser::PImpl::RecurseExprKeyword(lex::Keyword key) -> NullableFlowP
   return e;
 }
 
-auto GeneralParser::PImpl::RecurseExprPunctor(lex::Punctor punc) -> NullableFlowPtr<Expr> {
+auto GeneralParser::Context::RecurseExprPunctor(lex::Punctor punc) -> NullableFlowPtr<Expr> {
   NullableFlowPtr<Expr> e;
 
   switch (punc) {
@@ -668,7 +696,7 @@ auto GeneralParser::PImpl::RecurseExprPunctor(lex::Punctor punc) -> NullableFlow
   return e;
 }
 
-auto GeneralParser::PImpl::RecurseExprTypeSuffix(FlowPtr<Expr> base) -> FlowPtr<Expr> {
+auto GeneralParser::Context::RecurseExprTypeSuffix(FlowPtr<Expr> base) -> FlowPtr<Expr> {
   auto tok = Current();
 
   auto suffix = RecurseType();
@@ -677,7 +705,7 @@ auto GeneralParser::PImpl::RecurseExprTypeSuffix(FlowPtr<Expr> base) -> FlowPtr<
   return m_fac.CreateBinary(std::move(base), OpAs, suffix);
 }
 
-auto GeneralParser::PImpl::RecurseExprPrimary(bool is_type) -> NullableFlowPtr<Expr> {
+auto GeneralParser::Context::RecurseExprPrimary(bool is_type) -> NullableFlowPtr<Expr> {
   auto start_pos = Peek().GetStart();
 
   NullableFlowPtr<Expr> e;

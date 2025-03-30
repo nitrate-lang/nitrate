@@ -39,35 +39,7 @@ using namespace ncc;
 using namespace ncc::lex;
 using namespace ncc::parse;
 
-auto GeneralParser::PImpl::RecurseVariableAttributes() -> std::vector<FlowPtr<Expr>> {
-  std::vector<FlowPtr<Expr>> attributes;
-
-  if (!NextIf<PuncLBrk>()) {
-    return attributes;
-  }
-
-  while (true) {
-    if (m_rd.IsEof()) [[unlikely]] {
-      Log << ParserSignal << Current() << "Encountered EOF while parsing variable attribute";
-      return attributes;
-    }
-
-    if (NextIf<PuncRBrk>()) {
-      return attributes;
-    }
-
-    auto attribute = RecurseExpr({
-        Token(Punc, PuncComa),
-        Token(Punc, PuncRBrk),
-    });
-
-    attributes.push_back(attribute);
-
-    NextIf<PuncComa>();
-  }
-}
-
-auto GeneralParser::PImpl::RecurseVariableType() -> FlowPtr<parse::Type> {
+auto GeneralParser::Context::RecurseVariableType() -> FlowPtr<parse::Type> {
   if (NextIf<PuncColn>()) {
     return RecurseType();
   }
@@ -75,7 +47,7 @@ auto GeneralParser::PImpl::RecurseVariableType() -> FlowPtr<parse::Type> {
   return m_fac.CreateUnknownType();
 }
 
-auto GeneralParser::PImpl::RecurseVariableValue() -> NullableFlowPtr<Expr> {
+auto GeneralParser::Context::RecurseVariableValue() -> NullableFlowPtr<Expr> {
   if (NextIf<OpSet>()) {
     return RecurseExpr({
         Token(Punc, PuncComa),
@@ -86,8 +58,8 @@ auto GeneralParser::PImpl::RecurseVariableValue() -> NullableFlowPtr<Expr> {
   return std::nullopt;
 }
 
-auto GeneralParser::PImpl::RecurseVariableInstance(VariableType decl_type) -> FlowPtr<Expr> {
-  auto symbol_attributes_opt = RecurseVariableAttributes();
+auto GeneralParser::Context::RecurseVariableInstance(VariableType decl_type) -> FlowPtr<Expr> {
+  auto symbol_attributes_opt = RecurseAttributes("variable");
   auto variable_name = RecurseName();
   if (!variable_name) {
     Log << ParserSignal << Next() << "No variable name found in variable declaration";
@@ -100,7 +72,7 @@ auto GeneralParser::PImpl::RecurseVariableInstance(VariableType decl_type) -> Fl
   return m_fac.CreateVariable(decl_type, variable_name, symbol_attributes_opt, variable_type, variable_initial);
 }
 
-auto GeneralParser::PImpl::RecurseVariable(VariableType decl_type) -> std::vector<FlowPtr<Expr>> {
+auto GeneralParser::Context::RecurseVariable(VariableType decl_type) -> std::vector<FlowPtr<Expr>> {
   std::vector<FlowPtr<Expr>> variables;
 
   while (true) {

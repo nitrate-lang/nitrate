@@ -38,7 +38,7 @@ using namespace ncc;
 using namespace ncc::lex;
 using namespace ncc::parse;
 
-auto GeneralParser::PImpl::RecurseThrow() -> FlowPtr<Expr> {
+auto GeneralParser::Context::RecurseThrow() -> FlowPtr<Expr> {
   Log << ParserSignal << Current() << "Throw is not yet implemented";
 
   return m_fac.CreateMockInstance<VoidTy>();

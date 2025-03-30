@@ -50,7 +50,15 @@
 namespace ncc::parse {
   using namespace ec;
 
-  class GeneralParser::PImpl final {
+  static inline auto BindComments(auto node, auto comments) {
+    std::vector<string> comments_strs(comments.size());
+    std::transform(comments.begin(), comments.end(), comments_strs.begin(),
+                   [](const auto &c) { return c.GetString(); });
+    node->SetComments(std::move(comments_strs));
+    return node;
+  }
+
+  class GeneralParser::Context final {
     friend class GeneralParser;
 
     std::unordered_set<std::filesystem::path> m_imported_files;
@@ -61,6 +69,88 @@ namespace ncc::parse {
     lex::IScanner &m_rd;
     size_t m_recursion_depth = 0;
     bool m_failed = false;
+    GeneralParser::Context &m = *this;  // NOLINT(readability-identifier-naming)
+
+    /****************************************************************************
+     * @brief
+     *  Helper functions
+     ****************************************************************************/
+
+    struct StructContent {
+      std::vector<StructField> m_fields;
+      std::vector<StructFunction> m_methods;
+    };
+
+    [[nodiscard]] auto RecurseAttributes(string kind) -> std::vector<FlowPtr<Expr>>;
+    [[nodiscard]] auto RecurseName() -> string;
+    [[nodiscard]] auto RecurseEnumField() -> std::pair<string, NullableFlowPtr<Expr>>;
+    [[nodiscard]] auto RecurseEnumFields() -> std::vector<std::pair<string, NullableFlowPtr<Expr>>>;
+    [[nodiscard]] auto RecurseCallArguments(const std::set<lex::Token> &terminators,
+                                            bool type_by_default) -> std::vector<CallArg>;
+    [[nodiscard]] auto ParseFStringExpression(std::string_view source) -> FlowPtr<Expr>;
+    [[nodiscard]] auto RecurseExprPrimary(bool is_type) -> NullableFlowPtr<Expr>;
+    [[nodiscard]] auto RecurseExprKeyword(lex::Keyword key) -> NullableFlowPtr<Expr>;
+    [[nodiscard]] auto RecurseExprPunctor(lex::Punctor punc) -> NullableFlowPtr<Expr>;
+    [[nodiscard]] auto RecurseExprTypeSuffix(FlowPtr<Expr> base) -> FlowPtr<Expr>;
+    [[nodiscard]] auto RecurseFstring() -> FlowPtr<Expr>;
+    [[nodiscard]] auto RecurseForInitExpr() -> NullableFlowPtr<Expr>;
+    [[nodiscard]] auto RecurseForCondition() -> NullableFlowPtr<Expr>;
+    [[nodiscard]] auto RecurseForStepExpr(bool has_paren) -> NullableFlowPtr<Expr>;
+    [[nodiscard]] auto RecurseForeachNames() -> std::optional<std::pair<string, string>>;
+    [[nodiscard]] auto RecurseForeachExpr(bool has_paren) -> FlowPtr<Expr>;
+    [[nodiscard]] auto RecurseForeachBody() -> FlowPtr<Expr>;
+    [[nodiscard]] auto RecurseFunctionParameterType() -> FlowPtr<Type>;
+    [[nodiscard]] auto RecurseFunctionParameterValue() -> NullableFlowPtr<Expr>;
+    [[nodiscard]] auto RecurseFunctionParameter() -> std::optional<FuncParam>;
+    [[nodiscard]] auto RecurseTemplateParameters() -> std::optional<std::vector<TemplateParameter>>;
+    [[nodiscard]] auto RecurseFunctionParameters()
+        -> std::pair<std::vector<ASTFactory::FactoryFunctionParameter>, bool>;
+    [[nodiscard]] auto RecurseFunctionBody(bool parse_declaration_only) -> NullableFlowPtr<Expr>;
+    [[nodiscard]] auto RecurseFunctionReturnType() -> FlowPtr<Type>;
+    [[nodiscard]] auto RecurseFunctionAttributes() -> std::vector<FlowPtr<Expr>>;
+    [[nodiscard]] auto RecurseIfElse() -> NullableFlowPtr<Expr>;
+    [[nodiscard]] auto RecurseScopeDeps() -> std::vector<string>;
+    [[nodiscard]] auto RecurseScopeBlock() -> FlowPtr<Expr>;
+    [[nodiscard]] auto RecurseStructTerms() -> std::vector<string>;
+    [[nodiscard]] auto RecurseStructFieldDefaultValue() -> NullableFlowPtr<Expr>;
+    void RecurseStructField(Vis vis, bool is_static, std::vector<StructField> &fields);
+    void RecurseStructMethodOrField(StructContent &body);
+    [[nodiscard]] auto RecurseStructBody() -> StructContent;
+    [[nodiscard]] auto RecurseSwitchCaseBody() -> FlowPtr<Expr>;
+    [[nodiscard]] auto RecurseSwitchCase() -> std::pair<FlowPtr<Expr>, bool>;
+    [[nodiscard]] auto RecurseSwitchBody()
+        -> std::optional<std::pair<std::vector<FlowPtr<Case>>, NullableFlowPtr<Expr>>>;
+    [[nodiscard]] auto RecurseTypeRangeStart() -> NullableFlowPtr<Expr>;
+    [[nodiscard]] auto RecurseTypeRangeEnd() -> NullableFlowPtr<Expr>;
+    [[nodiscard]] auto RecurseTypeTemplateArguments() -> std::optional<std::vector<CallArg>>;
+    [[nodiscard]] auto RecurseTypeSuffix(FlowPtr<Type> base) -> FlowPtr<Type>;
+    [[nodiscard]] auto RecurseFunctionType() -> FlowPtr<Type>;
+    [[nodiscard]] auto RecurseOpaqueType() -> FlowPtr<Type>;
+    [[nodiscard]] auto RecurseTypeByKeyword(lex::Keyword key) -> FlowPtr<Type>;
+    [[nodiscard]] auto RecurseTypeByOperator(lex::Operator op) -> FlowPtr<Type>;
+    [[nodiscard]] auto RecurseArrayOrVector() -> FlowPtr<Type>;
+    [[nodiscard]] auto RecurseSetType() -> FlowPtr<Type>;
+    [[nodiscard]] auto RecurseTupleType() -> FlowPtr<Type>;
+    [[nodiscard]] auto RecurseTypeByPunctuation(lex::Punctor punc) -> FlowPtr<Type>;
+    [[nodiscard]] auto RecurseTypeByName(string name) -> FlowPtr<Type>;
+    [[nodiscard]] auto RecurseVariableType() -> FlowPtr<Type>;
+    [[nodiscard]] auto RecurseVariableValue() -> NullableFlowPtr<Expr>;
+    [[nodiscard]] auto RecurseVariableInstance(VariableType decl_type) -> FlowPtr<Expr>;
+    [[nodiscard]] auto RecurseWhileCond() -> FlowPtr<Expr>;
+    [[nodiscard]] auto RecurseImportName() -> std::pair<string, ImportMode>;
+    [[nodiscard]] auto RecurseImportRegularFile(const std::filesystem::path &import_file,
+                                                ImportMode import_mode) -> FlowPtr<Expr>;
+    [[nodiscard]] auto RecurseImportPackage(const ImportName &import_name) -> FlowPtr<Expr>;
+    void PrepareImportSubgraph(const FlowPtr<Expr> &root);
+
+  public:
+    Context(lex::IScanner &lexer, ImportConfig import_config, std::shared_ptr<IEnvironment> env,
+            std::pmr::memory_resource &pool)
+        : m_import_config(std::move(import_config)), m_env(std::move(env)), m_pool(pool), m_fac(m_pool), m_rd(lexer) {}
+    Context(const Context &) = delete;
+    Context(Context &&o) noexcept = delete;
+
+    ~Context() = default;
 
     auto CreateSubParser(lex::IScanner &scanner, std::pmr::memory_resource &pool) -> GeneralParser {
       auto sub_parser = GeneralParser(scanner, m_env, pool, m_import_config);
@@ -105,14 +195,6 @@ namespace ncc::parse {
       }
     }
 
-    static inline auto BindComments(auto node, auto comments) {
-      std::vector<string> comments_strs(comments.size());
-      std::transform(comments.begin(), comments.end(), comments_strs.begin(),
-                     [](const auto &c) { return c.GetString(); });
-      node->SetComments(std::move(comments_strs));
-      return node;
-    }
-
     /****************************************************************************
      * @brief
      *  Primary language constructs
@@ -141,107 +223,6 @@ namespace ncc::parse {
     [[nodiscard]] auto RecurseExpr(const std::set<lex::Token> &terminators) -> FlowPtr<Expr>;
     auto RecurseEscapeBlock() -> void;
     [[nodiscard]] auto RecurseUnitAssert() -> FlowPtr<Expr>;
-
-    /****************************************************************************
-     * @brief
-     *  Helper functions
-     ****************************************************************************/
-
-    struct StructContent {
-      std::vector<StructField> m_fields;
-      std::vector<StructFunction> m_methods;
-    };
-
-    [[nodiscard]] auto RecurseName() -> string;
-    [[nodiscard]] auto RecurseEnumField() -> std::pair<string, NullableFlowPtr<Expr>>;
-    [[nodiscard]] auto RecurseEnumFields() -> std::vector<std::pair<string, NullableFlowPtr<Expr>>>;
-    [[nodiscard]] auto RecurseAbiName() -> string;
-    [[nodiscard]] auto RecurseExportAttributes() -> std::vector<FlowPtr<Expr>>;
-    [[nodiscard]] auto RecurseExportBody() -> FlowPtr<Block>;
-    [[nodiscard]] auto RecurseCallArguments(const std::set<lex::Token> &terminators,
-                                            bool type_by_default) -> std::vector<CallArg>;
-    [[nodiscard]] auto ParseFStringExpression(std::string_view source) -> FlowPtr<Expr>;
-    [[nodiscard]] auto RecurseExprPrimary(bool is_type) -> NullableFlowPtr<Expr>;
-    [[nodiscard]] auto RecurseExprKeyword(lex::Keyword key) -> NullableFlowPtr<Expr>;
-    [[nodiscard]] auto RecurseExprPunctor(lex::Punctor punc) -> NullableFlowPtr<Expr>;
-    [[nodiscard]] auto RecurseExprTypeSuffix(FlowPtr<Expr> base) -> FlowPtr<Expr>;
-    [[nodiscard]] auto RecurseFstring() -> FlowPtr<Expr>;
-    [[nodiscard]] auto RecurseForInitExpr() -> NullableFlowPtr<Expr>;
-    [[nodiscard]] auto RecurseForCondition() -> NullableFlowPtr<Expr>;
-    [[nodiscard]] auto RecurseForStepExpr(bool has_paren) -> NullableFlowPtr<Expr>;
-    [[nodiscard]] auto RecurseForeachNames() -> std::optional<std::pair<string, string>>;
-    [[nodiscard]] auto RecurseForeachExpr(bool has_paren) -> FlowPtr<Expr>;
-    [[nodiscard]] auto RecurseForeachBody() -> FlowPtr<Expr>;
-    [[nodiscard]] auto RecurseFunctionParameterType() -> FlowPtr<Type>;
-    [[nodiscard]] auto RecurseFunctionParameterValue() -> NullableFlowPtr<Expr>;
-    [[nodiscard]] auto RecurseFunctionParameter() -> std::optional<FuncParam>;
-    [[nodiscard]] auto RecurseTemplateParameters() -> std::optional<std::vector<TemplateParameter>>;
-    [[nodiscard]] auto RecurseFunctionParameters()
-        -> std::pair<std::vector<ASTFactory::FactoryFunctionParameter>, bool>;
-    [[nodiscard]] auto RecurseFunctionBody(bool parse_declaration_only) -> NullableFlowPtr<Expr>;
-    [[nodiscard]] auto RecurseFunctionReturnType() -> FlowPtr<Type>;
-    [[nodiscard]] auto RecurseFunctionAttributes() -> std::vector<FlowPtr<Expr>>;
-    [[nodiscard]] auto RecurseIfElse() -> NullableFlowPtr<Expr>;
-    [[nodiscard]] auto RecurseScopeDeps() -> std::vector<string>;
-    [[nodiscard]] auto RecurseScopeBlock() -> FlowPtr<Expr>;
-    [[nodiscard]] [[nodiscard]] auto RecurseStructAttributes() -> std::vector<FlowPtr<Expr>>;
-    [[nodiscard]] auto RecurseStructTerms() -> std::vector<string>;
-    [[nodiscard]] auto RecurseStructFieldDefaultValue() -> NullableFlowPtr<Expr>;
-    void RecurseStructField(Vis vis, bool is_static, std::vector<StructField> &fields);
-    void RecurseStructMethodOrField(StructContent &body);
-    [[nodiscard]] auto RecurseStructBody() -> StructContent;
-    [[nodiscard]] auto RecurseSwitchCaseBody() -> FlowPtr<Expr>;
-    [[nodiscard]] auto RecurseSwitchCase() -> std::pair<FlowPtr<Expr>, bool>;
-    [[nodiscard]] auto RecurseSwitchBody()
-        -> std::optional<std::pair<std::vector<FlowPtr<Case>>, NullableFlowPtr<Expr>>>;
-    [[nodiscard]] auto RecurseTypeRangeStart() -> NullableFlowPtr<Expr>;
-    [[nodiscard]] auto RecurseTypeRangeEnd() -> NullableFlowPtr<Expr>;
-    [[nodiscard]] auto RecurseTypeTemplateArguments() -> std::optional<std::vector<CallArg>>;
-    [[nodiscard]] auto RecurseTypeSuffix(FlowPtr<Type> base) -> FlowPtr<Type>;
-    [[nodiscard]] auto RecurseFunctionType() -> FlowPtr<Type>;
-    [[nodiscard]] auto RecurseOpaqueType() -> FlowPtr<Type>;
-    [[nodiscard]] auto RecurseTypeByKeyword(lex::Keyword key) -> FlowPtr<Type>;
-    [[nodiscard]] auto RecurseTypeByOperator(lex::Operator op) -> FlowPtr<Type>;
-    [[nodiscard]] auto RecurseArrayOrVector() -> FlowPtr<Type>;
-    [[nodiscard]] auto RecurseSetType() -> FlowPtr<Type>;
-    [[nodiscard]] auto RecurseTupleType() -> FlowPtr<Type>;
-    [[nodiscard]] auto RecurseTypeByPunctuation(lex::Punctor punc) -> FlowPtr<Type>;
-    [[nodiscard]] auto RecurseTypeByName(string name) -> FlowPtr<Type>;
-    [[nodiscard]] auto RecurseVariableAttributes() -> std::vector<FlowPtr<Expr>>;
-    [[nodiscard]] auto RecurseVariableType() -> FlowPtr<Type>;
-    [[nodiscard]] auto RecurseVariableValue() -> NullableFlowPtr<Expr>;
-    [[nodiscard]] auto RecurseVariableInstance(VariableType decl_type) -> FlowPtr<Expr>;
-    [[nodiscard]] auto RecurseWhileCond() -> FlowPtr<Expr>;
-    [[nodiscard]] auto RecurseImportName() -> std::pair<string, ImportMode>;
-    [[nodiscard]] auto RecurseImportRegularFile(const std::filesystem::path &import_file,
-                                                ImportMode import_mode) -> FlowPtr<Expr>;
-    [[nodiscard]] auto RecurseImportPackage(const ImportName &import_name) -> FlowPtr<Expr>;
-    void PrepareImportSubgraph(const FlowPtr<Expr> &root);
-
-    static inline std::vector<std::string> SplitPackageName(const std::string &package_name) {
-      std::vector<std::string> parts;
-      std::string package_view(package_name);
-
-      while (!package_view.empty()) {
-        auto pos = package_view.find_first_of("::");
-        if (pos == std::string_view::npos) {
-          parts.push_back(package_view);
-          break;
-        }
-
-        parts.push_back(package_view.substr(0, pos));
-        package_view.erase(0, pos + 2);
-      }
-
-      return parts;
-    }
-
-  public:
-    PImpl(lex::IScanner &lexer, ImportConfig import_config, std::shared_ptr<IEnvironment> env,
-          std::pmr::memory_resource &pool)
-        : m_import_config(std::move(import_config)), m_env(std::move(env)), m_pool(pool), m_fac(m_pool), m_rd(lexer) {}
-
-    ~PImpl() = default;
   };
 
   void ParserSwapScanner(lex::IScanner *&value);

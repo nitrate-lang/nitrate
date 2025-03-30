@@ -271,7 +271,7 @@ namespace ncc::parse::import {
   };
 }  // namespace ncc::parse::import
 
-auto GeneralParser::PImpl::RecurseImportName() -> std::pair<string, ImportMode> {
+auto GeneralParser::Context::RecurseImportName() -> std::pair<string, ImportMode> {
   if (NextIf<PuncLPar>()) {
     auto arguments = RecurseCallArguments({Token(Punc, PuncRPar)}, false);
 
@@ -343,8 +343,8 @@ auto GeneralParser::PImpl::RecurseImportName() -> std::pair<string, ImportMode> 
   return {name, ImportMode::Code};
 }
 
-auto GeneralParser::PImpl::RecurseImportRegularFile(const std::filesystem::path &import_file,
-                                                    ImportMode import_mode) -> FlowPtr<Expr> {
+auto GeneralParser::Context::RecurseImportRegularFile(const std::filesystem::path &import_file,
+                                                      ImportMode import_mode) -> FlowPtr<Expr> {
   { /* Try to prevent infinite import recursion */
     if (m_imported_files.contains(import_file)) {
       Log << ParserSignal << Debug << Current() << "Detected circular import: " << import_file << " (skipping)";
@@ -444,7 +444,7 @@ auto GeneralParser::PImpl::RecurseImportRegularFile(const std::filesystem::path 
   }
 }
 
-[[nodiscard]] auto GeneralParser::PImpl::RecurseImportPackage(const ImportName &import_name) -> FlowPtr<Expr> {
+[[nodiscard]] auto GeneralParser::Context::RecurseImportPackage(const ImportName &import_name) -> FlowPtr<Expr> {
   Log << Trace << "RecurseImport: Importing package: " << import_name;
 
   // Find the package by import name
@@ -542,7 +542,7 @@ auto GeneralParser::PImpl::RecurseImportRegularFile(const std::filesystem::path 
   return import_node;
 }
 
-auto GeneralParser::PImpl::RecurseImport() -> FlowPtr<Expr> {
+auto GeneralParser::Context::RecurseImport() -> FlowPtr<Expr> {
   constexpr size_t kMaxRecursionDepth = 256;
 
   if (m_recursion_depth++ > kMaxRecursionDepth) {

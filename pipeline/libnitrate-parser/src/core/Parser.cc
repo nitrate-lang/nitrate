@@ -48,7 +48,7 @@ using namespace ncc;
 using namespace ncc::parse;
 using namespace ncc::lex;
 
-auto GeneralParser::PImpl::RecurseName() -> string {
+auto GeneralParser::Context::RecurseName() -> string {
   enum State {
     Start,
     RequireName,
@@ -113,16 +113,13 @@ auto GeneralParser::PImpl::RecurseName() -> string {
   return name;
 }
 
-auto GeneralParser::PImpl::RecurseBlock(bool expect_braces, bool single_stmt, BlockMode safety) -> FlowPtr<Block> {
+auto GeneralParser::Context::RecurseBlock(bool expect_braces, bool single_stmt, BlockMode safety) -> FlowPtr<Block> {
   if (expect_braces && !Next().Is<PuncLCur>()) {
     Log << ParserSignal << Current() << "Expected '{'";
   }
 
   auto block_start = Current().GetStart();
   std::vector<FlowPtr<Expr>> statements;
-
-  auto block_comments = m_rd.CommentBuffer();
-  m_rd.ClearCommentBuffer();
 
   while (true) {
     /* Ignore extra semicolons */
@@ -145,14 +142,11 @@ auto GeneralParser::PImpl::RecurseBlock(bool expect_braces, bool single_stmt, Bl
         auto block = m_fac.CreateBlock(statements, safety);
         block->SetOffset(block_start);
 
-        return BindComments(block, block_comments);
+        return block;
       }
     }
 
     if (!Peek().Is(KeyW)) {
-      auto comments = m_rd.CommentBuffer();
-      m_rd.ClearCommentBuffer();
-
       auto expr = RecurseExpr({
           Token(Punc, PuncSemi),
       });
@@ -161,14 +155,11 @@ auto GeneralParser::PImpl::RecurseBlock(bool expect_braces, bool single_stmt, Bl
         Log << ParserSignal << Current() << "Expected ';' after statement expression";
       }
 
-      statements.push_back(BindComments(expr, comments));
+      statements.push_back(expr);
     } else {
       auto tok = Next();
       auto loc_start = tok.GetStart();
       NullableFlowPtr<Expr> r;
-
-      auto comments = m_rd.CommentBuffer();
-      m_rd.ClearCommentBuffer();
 
       switch (tok.GetKeyword()) {
         case Keyword::Scope: {
@@ -203,24 +194,21 @@ auto GeneralParser::PImpl::RecurseBlock(bool expect_braces, bool single_stmt, Bl
 
         case Let: {
           for (const auto &variable : RecurseVariable(VariableType::Let)) {
-            statements.push_back(BindComments(variable, comments));
-            comments.clear();
+            statements.push_back(variable);
           }
           break;
         }
 
         case Var: {
           for (const auto &variable : RecurseVariable(VariableType::Var)) {
-            statements.push_back(BindComments(variable, comments));
-            comments.clear();
+            statements.push_back(variable);
           }
           break;
         }
 
         case Const: {
           for (const auto &variable : RecurseVariable(VariableType::Const)) {
-            statements.push_back(BindComments(variable, comments));
-            comments.clear();
+            statements.push_back(variable);
           }
           break;
         }
@@ -467,7 +455,7 @@ auto GeneralParser::PImpl::RecurseBlock(bool expect_braces, bool single_stmt, Bl
 
       if (r.has_value()) {
         r.value()->SetOffset(loc_start);
-        r = BindComments(r.value(), comments);
+        r = r.value();
         statements.push_back(r.value());
       }
     }
@@ -476,8 +464,8 @@ auto GeneralParser::PImpl::RecurseBlock(bool expect_braces, bool single_stmt, Bl
 
 GeneralParser::GeneralParser(ncc::lex::IScanner &lexer, std::shared_ptr<ncc::IEnvironment> env,
                              std::pmr::memory_resource &pool, const std::optional<ImportConfig> &import_config)
-    : m_impl(std::make_unique<GeneralParser::PImpl>(lexer, import_config.value_or(ImportConfig::GetDefault()),
-                                                    std::move(env), pool)) {}
+    : m_impl(std::make_unique<GeneralParser::Context>(lexer, import_config.value_or(ImportConfig::GetDefault()),
+                                                      std::move(env), pool)) {}
 
 GeneralParser::~GeneralParser() = default;
 

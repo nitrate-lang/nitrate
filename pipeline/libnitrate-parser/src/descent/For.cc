@@ -38,7 +38,7 @@ using namespace ncc;
 using namespace ncc::lex;
 using namespace ncc::parse;
 
-auto GeneralParser::PImpl::RecurseForInitExpr() -> NullableFlowPtr<Expr> {
+auto GeneralParser::Context::RecurseForInitExpr() -> NullableFlowPtr<Expr> {
   if (NextIf<PuncSemi>()) {
     return std::nullopt;
   }
@@ -84,7 +84,7 @@ auto GeneralParser::PImpl::RecurseForInitExpr() -> NullableFlowPtr<Expr> {
   return std::nullopt;
 }
 
-auto GeneralParser::PImpl::RecurseForCondition() -> NullableFlowPtr<Expr> {
+auto GeneralParser::Context::RecurseForCondition() -> NullableFlowPtr<Expr> {
   if (NextIf<PuncSemi>()) {
     return std::nullopt;
   }
@@ -100,7 +100,7 @@ auto GeneralParser::PImpl::RecurseForCondition() -> NullableFlowPtr<Expr> {
   return condition;
 }
 
-auto GeneralParser::PImpl::RecurseForStepExpr(bool has_paren) -> NullableFlowPtr<Expr> {
+auto GeneralParser::Context::RecurseForStepExpr(bool has_paren) -> NullableFlowPtr<Expr> {
   if (has_paren) {
     if (Peek().Is<PuncRPar>()) {
       return std::nullopt;
@@ -118,7 +118,7 @@ auto GeneralParser::PImpl::RecurseForStepExpr(bool has_paren) -> NullableFlowPtr
   return RecurseExpr({Token(Punc, PuncLCur)});
 }
 
-auto GeneralParser::PImpl::RecurseFor() -> FlowPtr<Expr> {
+auto GeneralParser::Context::RecurseFor() -> FlowPtr<Expr> {
   bool for_with_paren = NextIf<PuncLPar>().has_value();
   auto for_init = RecurseForInitExpr();
   auto for_cond = RecurseForCondition();

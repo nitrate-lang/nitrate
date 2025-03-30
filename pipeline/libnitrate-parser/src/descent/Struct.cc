@@ -38,37 +38,7 @@ using namespace ncc;
 using namespace ncc::lex;
 using namespace ncc::parse;
 
-auto GeneralParser::PImpl::RecurseStructAttributes() -> std::vector<FlowPtr<Expr>> {
-  std::vector<FlowPtr<Expr>> attributes;
-
-  if (!NextIf<PuncLBrk>()) {
-    return attributes;
-  }
-
-  while (true) {
-    if (m_rd.IsEof()) [[unlikely]] {
-      Log << ParserSignal << Current() << "Encountered EOF while parsing struct attributes";
-      break;
-    }
-
-    if (NextIf<PuncRBrk>()) {
-      break;
-    }
-
-    auto attribute = RecurseExpr({
-        Token(Punc, PuncComa),
-        Token(Punc, PuncRBrk),
-    });
-
-    attributes.push_back(attribute);
-
-    NextIf<PuncComa>();
-  }
-
-  return attributes;
-}
-
-auto GeneralParser::PImpl::RecurseStructTerms() -> std::vector<string> {
+auto GeneralParser::Context::RecurseStructTerms() -> std::vector<string> {
   std::vector<string> names;
 
   if (!NextIf<PuncColn>()) {
@@ -127,7 +97,7 @@ auto GeneralParser::PImpl::RecurseStructTerms() -> std::vector<string> {
   return names;
 }
 
-auto GeneralParser::PImpl::RecurseStructFieldDefaultValue() -> NullableFlowPtr<Expr> {
+auto GeneralParser::Context::RecurseStructFieldDefaultValue() -> NullableFlowPtr<Expr> {
   if (NextIf<OpSet>()) {
     return RecurseExpr({
         Token(Punc, PuncComa),
@@ -139,7 +109,7 @@ auto GeneralParser::PImpl::RecurseStructFieldDefaultValue() -> NullableFlowPtr<E
   return std::nullopt;
 }
 
-void GeneralParser::PImpl::RecurseStructField(Vis vis, bool is_static, std::vector<StructField> &fields) {
+void GeneralParser::Context::RecurseStructField(Vis vis, bool is_static, std::vector<StructField> &fields) {
   if (auto field_name = RecurseName()) {
     if (NextIf<PuncColn>()) {
       auto field_type = RecurseType();
@@ -156,7 +126,7 @@ void GeneralParser::PImpl::RecurseStructField(Vis vis, bool is_static, std::vect
   }
 }
 
-void GeneralParser::PImpl::RecurseStructMethodOrField(StructContent &body) {
+void GeneralParser::Context::RecurseStructMethodOrField(StructContent &body) {
   Vis vis = Vis::Sec;
 
   /* Parse visibility of member */
@@ -184,7 +154,7 @@ void GeneralParser::PImpl::RecurseStructMethodOrField(StructContent &body) {
   NextIf<PuncComa>() || NextIf<PuncSemi>();
 }
 
-auto GeneralParser::PImpl::RecurseStructBody() -> GeneralParser::PImpl::StructContent {
+auto GeneralParser::Context::RecurseStructBody() -> GeneralParser::Context::StructContent {
   StructContent body;
 
   if (NextIf<PuncSemi>()) {
@@ -213,9 +183,9 @@ auto GeneralParser::PImpl::RecurseStructBody() -> GeneralParser::PImpl::StructCo
   return body;
 }
 
-auto GeneralParser::PImpl::RecurseStruct(CompositeType struct_type) -> FlowPtr<Expr> {
+auto GeneralParser::Context::RecurseStruct(CompositeType struct_type) -> FlowPtr<Expr> {
   auto start_pos = Current().GetStart();
-  auto struct_attributes = RecurseStructAttributes();
+  auto struct_attributes = RecurseAttributes("struct");
   auto struct_name = RecurseName();
   auto struct_template_params = RecurseTemplateParameters();
   auto struct_terms = RecurseStructTerms();

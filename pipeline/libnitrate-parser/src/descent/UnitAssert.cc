@@ -40,7 +40,7 @@ using namespace ncc;
 using namespace ncc::lex;
 using namespace ncc::parse;
 
-auto GeneralParser::PImpl::RecurseUnitAssert() -> FlowPtr<Expr> {
+auto GeneralParser::Context::RecurseUnitAssert() -> FlowPtr<Expr> {
   if (!NextIf<PuncLPar>()) [[unlikely]] {
     Log << ParserSignal << Current() << "Expected '(' to open the 'unit_assert' annotation";
   }

@@ -41,7 +41,7 @@ using namespace ncc;
 using namespace ncc::lex;
 using namespace ncc::parse;
 
-auto GeneralParser::PImpl::RecurseFunctionParameterType() -> FlowPtr<parse::Type> {
+auto GeneralParser::Context::RecurseFunctionParameterType() -> FlowPtr<parse::Type> {
   if (NextIf<PuncColn>()) {
     return RecurseType();
   }
@@ -49,7 +49,7 @@ auto GeneralParser::PImpl::RecurseFunctionParameterType() -> FlowPtr<parse::Type
   return m_fac.CreateUnknownType();
 }
 
-auto GeneralParser::PImpl::RecurseFunctionParameterValue() -> NullableFlowPtr<Expr> {
+auto GeneralParser::Context::RecurseFunctionParameterValue() -> NullableFlowPtr<Expr> {
   if (NextIf<OpSet>()) {
     return RecurseExpr({
         Token(Punc, PuncComa),
@@ -61,7 +61,7 @@ auto GeneralParser::PImpl::RecurseFunctionParameterValue() -> NullableFlowPtr<Ex
   return std::nullopt;
 }
 
-auto GeneralParser::PImpl::RecurseFunctionParameter() -> std::optional<FuncParam> {
+auto GeneralParser::Context::RecurseFunctionParameter() -> std::optional<FuncParam> {
   if (auto param_name = RecurseName()) [[likely]] {
     auto param_type = RecurseFunctionParameterType();
     auto param_value = RecurseFunctionParameterValue();
@@ -74,7 +74,7 @@ auto GeneralParser::PImpl::RecurseFunctionParameter() -> std::optional<FuncParam
   return std::nullopt;
 }
 
-auto GeneralParser::PImpl::RecurseTemplateParameters() -> std::optional<std::vector<TemplateParameter>> {
+auto GeneralParser::Context::RecurseTemplateParameters() -> std::optional<std::vector<TemplateParameter>> {
   if (!NextIf<OpLT>()) {
     return std::nullopt;
   }
@@ -105,7 +105,7 @@ auto GeneralParser::PImpl::RecurseTemplateParameters() -> std::optional<std::vec
   return params;
 }
 
-auto GeneralParser::PImpl::RecurseFunctionParameters()
+auto GeneralParser::Context::RecurseFunctionParameters()
     -> std::pair<std::vector<ASTFactory::FactoryFunctionParameter>, bool> {
   std::pair<std::vector<ASTFactory::FactoryFunctionParameter>, bool> parameters;
 
@@ -152,7 +152,7 @@ auto GeneralParser::PImpl::RecurseFunctionParameters()
   return parameters;
 }
 
-auto GeneralParser::PImpl::RecurseFunctionAttributes() -> std::vector<FlowPtr<Expr>> {
+auto GeneralParser::Context::RecurseFunctionAttributes() -> std::vector<FlowPtr<Expr>> {
   static const std::unordered_set<Keyword> reserved_words = {
       Pure, Impure, Quasi, Retro, Inline, Foreign, Safe, Unsafe,
   };
@@ -214,7 +214,7 @@ auto GeneralParser::PImpl::RecurseFunctionAttributes() -> std::vector<FlowPtr<Ex
   return attributes;
 }
 
-auto GeneralParser::PImpl::RecurseFunctionReturnType() -> FlowPtr<parse::Type> {
+auto GeneralParser::Context::RecurseFunctionReturnType() -> FlowPtr<parse::Type> {
   if (NextIf<PuncColn>()) {
     return RecurseType();
   }
@@ -222,7 +222,7 @@ auto GeneralParser::PImpl::RecurseFunctionReturnType() -> FlowPtr<parse::Type> {
   return m_fac.CreateUnknownType();
 }
 
-auto GeneralParser::PImpl::RecurseFunctionBody(bool parse_declaration_only) -> NullableFlowPtr<Expr> {
+auto GeneralParser::Context::RecurseFunctionBody(bool parse_declaration_only) -> NullableFlowPtr<Expr> {
   if (parse_declaration_only || NextIf<PuncSemi>()) {
     return std::nullopt;
   }
@@ -234,7 +234,7 @@ auto GeneralParser::PImpl::RecurseFunctionBody(bool parse_declaration_only) -> N
   return RecurseBlock(true, false, BlockMode::Unknown);
 }
 
-auto GeneralParser::PImpl::RecurseFunction(bool parse_declaration_only) -> FlowPtr<Function> {
+auto GeneralParser::Context::RecurseFunction(bool parse_declaration_only) -> FlowPtr<Function> {
   auto start_pos = Current().GetStart();
 
   auto function_attributes = RecurseFunctionAttributes();

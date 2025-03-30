@@ -37,7 +37,7 @@ using namespace ncc;
 using namespace ncc::lex;
 using namespace ncc::parse;
 
-auto GeneralParser::PImpl::RecurseEscapeBlock() -> void {
+auto GeneralParser::Context::RecurseEscapeBlock() -> void {
   if (!NextIf<PuncLPar>()) {
     Log << ParserSignal << Current() << "Expected '(' to open the escape block annotation";
     return;

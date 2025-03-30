@@ -38,7 +38,7 @@ using namespace ncc;
 using namespace ncc::lex;
 using namespace ncc::parse;
 
-auto GeneralParser::PImpl::RecurseEnumField() -> std::pair<string, NullableFlowPtr<Expr>> {
+auto GeneralParser::Context::RecurseEnumField() -> std::pair<string, NullableFlowPtr<Expr>> {
   auto member_name = RecurseName();
   if (!member_name) {
     Log << ParserSignal << Current() << "Enum member name cannot be empty.";
@@ -58,7 +58,7 @@ auto GeneralParser::PImpl::RecurseEnumField() -> std::pair<string, NullableFlowP
   return {member_name, std::nullopt};
 }
 
-auto GeneralParser::PImpl::RecurseEnumFields() -> std::vector<std::pair<string, NullableFlowPtr<Expr>>> {
+auto GeneralParser::Context::RecurseEnumFields() -> std::vector<std::pair<string, NullableFlowPtr<Expr>>> {
   std::vector<std::pair<string, NullableFlowPtr<Expr>>> items;
 
   if (NextIf<PuncSemi>()) {
@@ -94,7 +94,7 @@ auto GeneralParser::PImpl::RecurseEnumFields() -> std::vector<std::pair<string, 
   }
 }
 
-auto GeneralParser::PImpl::RecurseEnum() -> FlowPtr<Expr> {
+auto GeneralParser::Context::RecurseEnum() -> FlowPtr<Expr> {
   auto name = RecurseName();
   auto type = NextIf<PuncColn>() ? NullableFlowPtr<parse::Type>(RecurseType()) : std::nullopt;
   auto items = RecurseEnumFields();

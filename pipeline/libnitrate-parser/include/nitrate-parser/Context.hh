@@ -59,10 +59,9 @@ namespace ncc::parse {
   };
 
   class NCC_EXPORT GeneralParser final {
-    class PImpl;
-    std::unique_ptr<PImpl> m_impl;
-
   public:
+    class Context;
+
     GeneralParser(lex::IScanner &lexer, std::shared_ptr<IEnvironment> env, std::pmr::memory_resource &pool,
                   const std::optional<ImportConfig> &import_config = std::nullopt);
     GeneralParser(const GeneralParser &) = delete;
@@ -82,6 +81,9 @@ namespace ncc::parse {
       auto scanner = Scanner(in_src, env);
       return GeneralParser(scanner, env, pool, import_config).Parse();
     }
+
+  private:
+    std::unique_ptr<Context> m_impl;
   };
 }  // namespace ncc::parse
 
