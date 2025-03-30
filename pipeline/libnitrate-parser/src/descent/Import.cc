@@ -124,18 +124,18 @@ namespace ncc::parse::import {
     void Visit(FlowPtr<Block> n) override {
       for (auto &stmt : n->GetStatements()) {
         switch (stmt->GetKind()) {
-          case AST_BLOCK:
-          case AST_SCOPE:
-          case AST_EXPORT: {
+          case AST_sBLOCK:
+          case AST_sSCOPE:
+          case AST_sEXPORT: {
             stmt->Accept(*this);
             break;
           }
 
-          case AST_TYPEDEF:
-          case AST_STRUCT:
-          case AST_ENUM:
-          case AST_VAR:
-          case AST_FUNCTION:
+          case AST_sTYPEDEF:
+          case AST_sSTRUCT:
+          case AST_sENUM:
+          case AST_sVAR:
+          case AST_sFUNCTION:
           case AST_eIMPORT: {
             auto vis = m_vis_stack.top();
 

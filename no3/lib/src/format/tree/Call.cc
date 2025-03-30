@@ -52,7 +52,7 @@ void CambrianFormatter::Visit(FlowPtr<Call> n) {
   });
 
   bool any_lambdas = std::any_of(n->GetArgs().begin(), n->GetArgs().end(),
-                                 [](auto arg) { return std::get<1>(arg)->Is(AST_FUNCTION); });
+                                 [](auto arg) { return std::get<1>(arg)->Is(AST_sFUNCTION); });
 
   bool is_wrapping = argc >= wrap_threshold || any_named || any_lambdas;
 

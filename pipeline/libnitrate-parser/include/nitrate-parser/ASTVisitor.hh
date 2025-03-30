@@ -287,79 +287,79 @@ namespace ncc::parse {
           Visit(n.template As<TemplateType>());
           break;
         }
-        case AST_TYPEDEF: {
+        case AST_sTYPEDEF: {
           Visit(n.template As<Typedef>());
           break;
         }
-        case AST_STRUCT: {
+        case AST_sSTRUCT: {
           Visit(n.template As<Struct>());
           break;
         }
-        case AST_ENUM: {
+        case AST_sENUM: {
           Visit(n.template As<Enum>());
           break;
         }
-        case AST_FUNCTION: {
+        case AST_sFUNCTION: {
           Visit(n.template As<Function>());
           break;
         }
-        case AST_SCOPE: {
+        case AST_sSCOPE: {
           Visit(n.template As<Scope>());
           break;
         }
-        case AST_EXPORT: {
+        case AST_sEXPORT: {
           Visit(n.template As<Export>());
           break;
         }
-        case AST_BLOCK: {
+        case AST_sBLOCK: {
           Visit(n.template As<Block>());
           break;
         }
-        case AST_VAR: {
+        case AST_sVAR: {
           Visit(n.template As<Variable>());
           break;
         }
-        case AST_INLINE_ASM: {
+        case AST_sASM: {
           Visit(n.template As<Assembly>());
           break;
         }
-        case AST_RETURN: {
+        case AST_sRET: {
           Visit(n.template As<Return>());
           break;
         }
-        case AST_RETIF: {
+        case AST_sRETIF: {
           Visit(n.template As<ReturnIf>());
           break;
         }
-        case AST_BREAK: {
+        case AST_sBRK: {
           Visit(n.template As<Break>());
           break;
         }
-        case AST_CONTINUE: {
+        case AST_sCONT: {
           Visit(n.template As<Continue>());
           break;
         }
-        case AST_IF: {
+        case AST_sIF: {
           Visit(n.template As<If>());
           break;
         }
-        case AST_WHILE: {
+        case AST_sWHILE: {
           Visit(n.template As<While>());
           break;
         }
-        case AST_FOR: {
+        case AST_sFOR: {
           Visit(n.template As<For>());
           break;
         }
-        case AST_FOREACH: {
+        case AST_sFOREACH: {
           Visit(n.template As<Foreach>());
           break;
         }
-        case AST_CASE: {
+        case AST_sCASE: {
           Visit(n.template As<Case>());
           break;
         }
-        case AST_SWITCH: {
+        case AST_sSWITCH: {
           Visit(n.template As<Switch>());
           break;
         }

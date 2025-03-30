@@ -1373,7 +1373,7 @@ using namespace ncc;
 
 //     { /* Function body */
 
-//       if (!n->Getbody().value()->is(AST_BLOCK)) {
+//       if (!n->Getbody().value()->is(AST_sBLOCK)) {
 //         return std::nullopt;
 //       }
 
@@ -1514,7 +1514,7 @@ using namespace ncc;
 
 // static BResult nrgen_scope(NRBuilder &b, PState &s, IReport *G,
 //                            FlowPtr<ncc::parse::Scope> n) {
-//   if (!n->Getbody()->is(AST_BLOCK)) {
+//   if (!n->Getbody()->is(AST_sBLOCK)) {
 //     return std::nullopt;
 //   }
 
@@ -1565,7 +1565,7 @@ using namespace ncc;
 //     return std::nullopt;
 //   }
 
-//   if (!n->Getbody()->is(AST_BLOCK)) {
+//   if (!n->Getbody()->is(AST_sBLOCK)) {
 //     return std::nullopt;
 //   }
 
@@ -1615,7 +1615,7 @@ using namespace ncc;
 //       return std::nullopt;
 //     }
 
-//     if ((*it)->GetKind() == AST_BLOCK) {
+//     if ((*it)->GetKind() == AST_sBLOCK) {
 //       /* Reduce unneeded nesting in the IR */
 //       qcore_assert(item->size() == 1);
 //       Seq *inner = item.at(0)->As<Seq>();
@@ -2073,59 +2073,59 @@ using namespace ncc;
 //       out = nrgen_templ_ty(b, s, G, n.as<ncc::parse::TemplateType>());
 //       break;
 
-//     case AST_FUNCTION:
+//     case AST_sFUNCTION:
 //       out = nrgen_fn(b, s, G, n.as<ncc::parse::Function>());
 //       break;
 
-//     case AST_BLOCK:
+//     case AST_sBLOCK:
 //       out = nrgen_block(b, s, G, n.as<ncc::parse::Block>(), true);
 //       break;
 
-//     case AST_VAR:
+//     case AST_sVAR:
 //       out = nrgen_var(b, s, G, n.as<ncc::parse::Variable>());
 //       break;
 
-//     case AST_INLINE_ASM:
+//     case AST_sASM:
 //       out = nrgen_inline_asm(b, s, G, n.as<ncc::parse::Assembly>());
 //       break;
 
-//     case AST_RETURN:
+//     case AST_sRET:
 //       out = nrgen_return(b, s, G, n.as<ncc::parse::Return>());
 //       break;
 
-//     case AST_RETIF:
+//     case AST_sRETIF:
 //       out = nrgen_retif(b, s, G, n.as<ncc::parse::ReturnIf>());
 //       break;
 
-//     case AST_BREAK:
+//     case AST_sBRK:
 //       out = nrgen_break(b, s, G, n.as<ncc::parse::Break>());
 //       break;
 
-//     case AST_CONTINUE:
+//     case AST_sCONT:
 //       out = nrgen_continue(b, s, G, n.as<ncc::parse::Continue>());
 //       break;
 
-//     case AST_IF:
+//     case AST_sIF:
 //       out = nrgen_if(b, s, G, n.as<ncc::parse::If>());
 //       break;
 
-//     case AST_WHILE:
+//     case AST_sWHILE:
 //       out = nrgen_while(b, s, G, n.as<ncc::parse::While>());
 //       break;
 
-//     case AST_FOR:
+//     case AST_sFOR:
 //       out = nrgen_for(b, s, G, n.as<ncc::parse::For>());
 //       break;
 
-//     case AST_FOREACH:
+//     case AST_sFOREACH:
 //       out = nrgen_foreach(b, s, G, n.as<ncc::parse::Foreach>());
 //       break;
 
-//     case AST_CASE:
+//     case AST_sCASE:
 //       out = nrgen_case(b, s, G, n.as<ncc::parse::Case>());
 //       break;
 
-//     case AST_SWITCH:
+//     case AST_sSWITCH:
 //       out = nrgen_switch(b, s, G, n.as<ncc::parse::Switch>());
 //       break;
 
@@ -2148,23 +2148,23 @@ using namespace ncc;
 //   BResult out;
 
 //   switch (n->GetKind()) {
-//     case AST_TYPEDEF:
+//     case AST_sTYPEDEF:
 //       out = nrgen_typedef(b, s, G, n.as<ncc::parse::Typedef>());
 //       break;
 
-//     case AST_ENUM:
+//     case AST_sENUM:
 //       out = nrgen_enum(b, s, G, n.as<ncc::parse::Enum>());
 //       break;
 
-//     case AST_STRUCT:
+//     case AST_sSTRUCT:
 //       out = nrgen_struct(b, s, G, n.as<ncc::parse::Struct>());
 //       break;
 
-//     case AST_SCOPE:
+//     case AST_sSCOPE:
 //       out = nrgen_scope(b, s, G, n.as<ncc::parse::Scope>());
 //       break;
 
-//     case AST_EXPORT:
+//     case AST_sEXPORT:
 //       out = nrgen_export(b, s, G, n.as<ncc::parse::Export>());
 //       break;
 

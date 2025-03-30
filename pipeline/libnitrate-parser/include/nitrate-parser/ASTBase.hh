@@ -190,43 +190,43 @@ namespace ncc::parse {
       } else if constexpr (std::is_same_v<T, TemplateType>) {
         return AST_tTEMPLATE;
       } else if constexpr (std::is_same_v<T, Typedef>) {
-        return AST_TYPEDEF;
+        return AST_sTYPEDEF;
       } else if constexpr (std::is_same_v<T, Struct>) {
-        return AST_STRUCT;
+        return AST_sSTRUCT;
       } else if constexpr (std::is_same_v<T, Enum>) {
-        return AST_ENUM;
+        return AST_sENUM;
       } else if constexpr (std::is_same_v<T, Function>) {
-        return AST_FUNCTION;
+        return AST_sFUNCTION;
       } else if constexpr (std::is_same_v<T, Scope>) {
-        return AST_SCOPE;
+        return AST_sSCOPE;
       } else if constexpr (std::is_same_v<T, Export>) {
-        return AST_EXPORT;
+        return AST_sEXPORT;
       } else if constexpr (std::is_same_v<T, Block>) {
-        return AST_BLOCK;
+        return AST_sBLOCK;
       } else if constexpr (std::is_same_v<T, Variable>) {
-        return AST_VAR;
+        return AST_sVAR;
       } else if constexpr (std::is_same_v<T, Assembly>) {
-        return AST_INLINE_ASM;
+        return AST_sASM;
       } else if constexpr (std::is_same_v<T, Return>) {
-        return AST_RETURN;
+        return AST_sRET;
       } else if constexpr (std::is_same_v<T, ReturnIf>) {
-        return AST_RETIF;
+        return AST_sRETIF;
       } else if constexpr (std::is_same_v<T, Break>) {
-        return AST_BREAK;
+        return AST_sBRK;
       } else if constexpr (std::is_same_v<T, Continue>) {
-        return AST_CONTINUE;
+        return AST_sCONT;
       } else if constexpr (std::is_same_v<T, If>) {
-        return AST_IF;
+        return AST_sIF;
       } else if constexpr (std::is_same_v<T, While>) {
-        return AST_WHILE;
+        return AST_sWHILE;
       } else if constexpr (std::is_same_v<T, For>) {
-        return AST_FOR;
+        return AST_sFOR;
       } else if constexpr (std::is_same_v<T, Foreach>) {
-        return AST_FOREACH;
+        return AST_sFOREACH;
       } else if constexpr (std::is_same_v<T, Case>) {
-        return AST_CASE;
+        return AST_sCASE;
       } else if constexpr (std::is_same_v<T, Switch>) {
-        return AST_SWITCH;
+        return AST_sSWITCH;
       }
     }
 
@@ -385,25 +385,25 @@ namespace ncc::parse {
       r[AST_tNAMED] = "Unres";
       r[AST_tINFER] = "Infer";
       r[AST_tTEMPLATE] = "Templ";
-      r[AST_TYPEDEF] = "Typedef";
-      r[AST_STRUCT] = "Struct";
-      r[AST_ENUM] = "Enum";
-      r[AST_FUNCTION] = "Function";
-      r[AST_SCOPE] = "Scope";
-      r[AST_EXPORT] = "Export";
-      r[AST_BLOCK] = "Block";
-      r[AST_VAR] = "Let";
-      r[AST_INLINE_ASM] = "Assembly";
-      r[AST_RETURN] = "Return";
-      r[AST_RETIF] = "Retif";
-      r[AST_BREAK] = "Break";
-      r[AST_CONTINUE] = "Continue";
-      r[AST_IF] = "If";
-      r[AST_WHILE] = "While";
-      r[AST_FOR] = "For";
-      r[AST_FOREACH] = "Foreach";
-      r[AST_CASE] = "Case";
-      r[AST_SWITCH] = "Switch";
+      r[AST_sTYPEDEF] = "Typedef";
+      r[AST_sSTRUCT] = "Struct";
+      r[AST_sENUM] = "Enum";
+      r[AST_sFUNCTION] = "Function";
+      r[AST_sSCOPE] = "Scope";
+      r[AST_sEXPORT] = "Export";
+      r[AST_sBLOCK] = "Block";
+      r[AST_sVAR] = "Let";
+      r[AST_sASM] = "Assembly";
+      r[AST_sRET] = "Return";
+      r[AST_sRETIF] = "Retif";
+      r[AST_sBRK] = "Break";
+      r[AST_sCONT] = "Continue";
+      r[AST_sIF] = "If";
+      r[AST_sWHILE] = "While";
+      r[AST_sFOR] = "For";
+      r[AST_sFOREACH] = "Foreach";
+      r[AST_sCASE] = "Case";
+      r[AST_sSWITCH] = "Switch";
 
       return r;
     }();

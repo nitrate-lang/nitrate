@@ -97,39 +97,39 @@ namespace ncc::parse {
      * Statements
      ****************************************************************************/
 
-    AST_IF,         /* If statement */
-    AST_RETIF,      /* Return-if statement */
-    AST_SWITCH,     /* Switch statement */
-    AST_CASE,       /* Case statement */
-    AST_RETURN,     /* Return statement */
-    AST_BREAK,      /* Break statement */
-    AST_CONTINUE,   /* Continue statement */
-    AST_WHILE,      /* While statement */
-    AST_FOR,        /* For statement */
-    AST_FOREACH,    /* Foreach statement */
-    AST_INLINE_ASM, /* Inline assembly statement */
-    AST_TYPEDEF,    /* Type alias declaration */
-    AST_STRUCT,     /* Struct definition */
-    AST_ENUM,       /* Enum definition */
-    AST_SCOPE,      /* Namespace scope */
-    AST_BLOCK,      /* Block statement */
-    AST_EXPORT,     /* Export statement */
-    AST_VAR,        /* Variable declaration */
-    AST_FUNCTION,   /* Function definition */
+    AST_sIF,       /* If statement */
+    AST_sRETIF,    /* Return-if statement */
+    AST_sSWITCH,   /* Switch statement */
+    AST_sCASE,     /* Case statement */
+    AST_sRET,      /* Return statement */
+    AST_sBRK,      /* Break statement */
+    AST_sCONT,     /* Continue statement */
+    AST_sWHILE,    /* While statement */
+    AST_sFOR,      /* For statement */
+    AST_sFOREACH,  /* Foreach statement */
+    AST_sASM,      /* Inline assembly statement */
+    AST_sTYPEDEF,  /* Type alias declaration */
+    AST_sSTRUCT,   /* Struct definition */
+    AST_sENUM,     /* Enum definition */
+    AST_sSCOPE,    /* Namespace scope */
+    AST_sBLOCK,    /* Block statement */
+    AST_sEXPORT,   /* Export statement */
+    AST_sVAR,      /* Variable declaration */
+    AST_sFUNCTION, /* Function definition/declaration */
 
     ///======================================================================
 
     AST__TYPE_FIRST = AST_tU1,
     AST__TYPE_LAST = AST_tFUNCTION,
 
-    AST__STMT_FIRST = AST_IF,
-    AST__STMT_LAST = AST_FUNCTION,
+    AST__STMT_FIRST = AST_sIF,
+    AST__STMT_LAST = AST_sFUNCTION,
 
     AST__EXPR_FIRST = AST_DISCARDED,
-    AST__EXPR_LAST = AST_FUNCTION,
+    AST__EXPR_LAST = AST_sFUNCTION,
 
     AST__FIRST = AST_DISCARDED,
-    AST__LAST = AST_FUNCTION,
+    AST__LAST = AST_sFUNCTION,
     AST__RANGE = AST__LAST - AST__FIRST,
   };
 

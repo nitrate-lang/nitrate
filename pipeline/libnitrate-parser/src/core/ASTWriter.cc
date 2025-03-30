@@ -409,97 +409,97 @@ SyntaxTree::Expr *AstWriter::From(FlowPtr<Expr> in) {
       break;
     }
 
-    case AST_IF: {
+    case AST_sIF: {
       message->set_allocated_if_(From(in.As<If>()));
       break;
     }
 
-    case AST_RETIF: {
+    case AST_sRETIF: {
       message->set_allocated_return_if(From(in.As<ReturnIf>()));
       break;
     }
 
-    case AST_SWITCH: {
+    case AST_sSWITCH: {
       message->set_allocated_switch_(From(in.As<Switch>()));
       break;
     }
 
-    case AST_CASE: {
+    case AST_sCASE: {
       message->set_allocated_case_(From(in.As<Case>()));
       break;
     }
 
-    case AST_RETURN: {
+    case AST_sRET: {
       message->set_allocated_return_(From(in.As<Return>()));
       break;
     }
 
-    case AST_BREAK: {
+    case AST_sBRK: {
       message->set_allocated_break_(From(in.As<Break>()));
       break;
     }
 
-    case AST_CONTINUE: {
+    case AST_sCONT: {
       message->set_allocated_continue_(From(in.As<Continue>()));
       break;
     }
 
-    case AST_WHILE: {
+    case AST_sWHILE: {
       message->set_allocated_while_(From(in.As<While>()));
       break;
     }
 
-    case AST_FOR: {
+    case AST_sFOR: {
       message->set_allocated_for_(From(in.As<For>()));
       break;
     }
 
-    case AST_FOREACH: {
+    case AST_sFOREACH: {
       message->set_allocated_foreach(From(in.As<Foreach>()));
       break;
     }
 
-    case AST_INLINE_ASM: {
+    case AST_sASM: {
       message->set_allocated_assembly(From(in.As<Assembly>()));
       break;
     }
 
-    case AST_TYPEDEF: {
+    case AST_sTYPEDEF: {
       message->set_allocated_typedef_(From(in.As<Typedef>()));
       break;
     }
 
-    case AST_STRUCT: {
+    case AST_sSTRUCT: {
       message->set_allocated_struct_(From(in.As<Struct>()));
       break;
     }
 
-    case AST_ENUM: {
+    case AST_sENUM: {
       message->set_allocated_enum_(From(in.As<Enum>()));
       break;
     }
 
-    case AST_SCOPE: {
+    case AST_sSCOPE: {
       message->set_allocated_scope(From(in.As<Scope>()));
       break;
     }
 
-    case AST_BLOCK: {
+    case AST_sBLOCK: {
       message->set_allocated_block(From(in.As<Block>()));
       break;
     }
 
-    case AST_EXPORT: {
+    case AST_sEXPORT: {
       message->set_allocated_export_(From(in.As<Export>()));
       break;
     }
 
-    case AST_VAR: {
+    case AST_sVAR: {
       message->set_allocated_variable(From(in.As<Variable>()));
       break;
     }
 
-    case AST_FUNCTION: {
+    case AST_sFUNCTION: {
       message->set_allocated_function(From(in.As<Function>()));
       break;
     }

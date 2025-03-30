@@ -268,97 +268,97 @@ auto ASTFactory::CreateMockInstance(ASTNodeKind kind, SourceLocation origin) -> 
       break;
     }
 
-    case AST_IF: {
+    case AST_sIF: {
       r = CreateIf(SIMPLE_EXPR(), SIMPLE_EXPR());
       break;
     }
 
-    case AST_RETIF: {
+    case AST_sRETIF: {
       r = CreateReturnIf(SIMPLE_EXPR());
       break;
     }
 
-    case AST_SWITCH: {
+    case AST_sSWITCH: {
       r = CreateSwitch(SIMPLE_EXPR());
       break;
     }
 
-    case AST_CASE: {
+    case AST_sCASE: {
       r = CreateCase(SIMPLE_EXPR(), SIMPLE_EXPR());
       break;
     }
 
-    case AST_RETURN: {
+    case AST_sRET: {
       r = CreateReturn();
       break;
     }
 
-    case AST_BREAK: {
+    case AST_sBRK: {
       r = CreateBreak();
       break;
     }
 
-    case AST_CONTINUE: {
+    case AST_sCONT: {
       r = CreateContinue();
       break;
     }
 
-    case AST_WHILE: {
+    case AST_sWHILE: {
       r = CreateWhile(SIMPLE_EXPR(), SIMPLE_EXPR());
       break;
     }
 
-    case AST_FOR: {
+    case AST_sFOR: {
       r = CreateFor(nullptr, nullptr, nullptr, SIMPLE_EXPR());
       break;
     }
 
-    case AST_FOREACH: {
+    case AST_sFOREACH: {
       r = CreateForeach("_", "_", SIMPLE_EXPR(), SIMPLE_EXPR());
       break;
     }
 
-    case AST_INLINE_ASM: {
+    case AST_sASM: {
       r = CreateAssembly("");
       break;
     }
 
-    case AST_TYPEDEF: {
+    case AST_sTYPEDEF: {
       r = CreateTypedef("_", SIMPLE_TYPE());
       break;
     }
 
-    case AST_STRUCT: {
+    case AST_sSTRUCT: {
       r = CreateStruct();
       break;
     }
 
-    case AST_ENUM: {
+    case AST_sENUM: {
       r = CreateEnum("");
       break;
     }
 
-    case AST_SCOPE: {
+    case AST_sSCOPE: {
       r = CreateScope("_", SIMPLE_EXPR());
       break;
     }
 
-    case AST_BLOCK: {
+    case AST_sBLOCK: {
       r = CreateBlock();
       break;
     }
 
-    case AST_EXPORT: {
+    case AST_sEXPORT: {
       r = CreateExport(CreateMockInstance<Block>());
       break;
     }
 
-    case AST_VAR: {
+    case AST_sVAR: {
       r = CreateVariable(VariableType::Var, "_");
       break;
     }
 
-    case AST_FUNCTION: {
+    case AST_sFUNCTION: {
       r = CreateFunction("");
       break;
     }

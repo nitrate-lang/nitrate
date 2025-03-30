@@ -31,8 +31,8 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __NITRATE_AST_STRUCTURAL_DATA_H__
-#define __NITRATE_AST_STRUCTURAL_DATA_H__
+#ifndef __NITRATE_AST_sSTRUCTURAL_DATA_H__
+#define __NITRATE_AST_sSTRUCTURAL_DATA_H__
 
 #include <memory>
 #include <nitrate-core/Allocate.hh>

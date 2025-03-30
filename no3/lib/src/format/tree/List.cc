@@ -65,7 +65,7 @@ void CambrianFormatter::Visit(FlowPtr<List> n) {
     };
 
     bool special_case = std::any_of(n->GetItems().begin(), n->GetItems().end(), [&](auto x) {
-      return extra_seperation.contains(x->GetKind()) || x->Is(AST_FUNCTION);
+      return extra_seperation.contains(x->GetKind()) || x->Is(AST_sFUNCTION);
     });
 
     size_t break_at{};

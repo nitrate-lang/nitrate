@@ -1486,7 +1486,7 @@ namespace ncc::parse {
       if (n->GetBody()) {
         auto body = n->GetBody().value();
 
-        if (body->Is(AST_BLOCK) && body->As<Block>()->GetStatements().size() == 1) {
+        if (body->Is(AST_sBLOCK) && body->As<Block>()->GetStatements().size() == 1) {
           PutOperator(OpArrow);
           body->As<Block>()->GetStatements().front()->Accept(*this);
         } else {
@@ -1652,7 +1652,7 @@ namespace ncc::parse {
         PutPunctor(PuncRBrk);
       }
 
-      if (n->GetBody()->Is(AST_BLOCK) && n->GetBody()->As<Block>()->GetStatements().size() == 1) {
+      if (n->GetBody()->Is(AST_sBLOCK) && n->GetBody()->As<Block>()->GetStatements().size() == 1) {
         n->GetBody()->As<Block>()->GetStatements().front()->Accept(*this);
       } else {
         n->GetBody()->Accept(*this);
