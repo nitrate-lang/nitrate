@@ -48,7 +48,7 @@ auto ASTFactory::CreateMockInstance(ASTNodeKind kind, SourceLocation origin) -> 
   switch (kind) {
     case AST_DISCARDED: {
       // Create some node to avoid a panic
-      r = CreateUndefined();
+      r = CreateNull();
       r.value()->Discard();
       break;
     }
@@ -90,11 +90,6 @@ auto ASTFactory::CreateMockInstance(ASTNodeKind kind, SourceLocation origin) -> 
 
     case AST_eNULL: {
       r = CreateNull();
-      break;
-    }
-
-    case AST_eUNDEF: {
-      r = CreateUndefined();
       break;
     }
 

@@ -170,7 +170,6 @@ namespace ncc::lex {
     Async,       /* 'async' */
     Await,       /* 'await' */
     __Asm__,     /* '__asm__' */
-    Undef,       /* 'undef' */
     Null,        /* 'null' */
     True,        /* 'true' */
     False,       /* 'false' */

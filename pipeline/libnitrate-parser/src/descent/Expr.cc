@@ -497,11 +497,6 @@ auto GeneralParser::Context::RecurseExprKeyword(lex::Keyword key) -> NullableFlo
       break;
     }
 
-    case Undef: {
-      e = m_fac.CreateUndefined();
-      break;
-    }
-
     case Keyword::Null: {
       e = m_fac.CreateNull();
       break;

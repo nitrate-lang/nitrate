@@ -369,11 +369,6 @@ SyntaxTree::Expr *AstWriter::From(FlowPtr<Expr> in) {
       break;
     }
 
-    case AST_eUNDEF: {
-      message->set_allocated_undefined(From(in.As<Undefined>()));
-      break;
-    }
-
     case AST_eCALL: {
       message->set_allocated_call(From(in.As<Call>()));
       break;
@@ -1154,14 +1149,6 @@ SyntaxTree::Null *AstWriter::From(FlowPtr<Null> in) {
   return message;
 }
 
-SyntaxTree::Undefined *AstWriter::From(FlowPtr<Undefined> in) {
-  auto *message = Pool::CreateMessage<SyntaxTree::Undefined>(m_arena);
-
-  message->set_allocated_location(FromSource(in));
-
-  return message;
-}
-
 SyntaxTree::Call *AstWriter::From(FlowPtr<Call> in) {
   auto *message = Pool::CreateMessage<SyntaxTree::Call>(m_arena);
 
@@ -1868,7 +1855,6 @@ void AstWriter::Visit(FlowPtr<Boolean> n) { SEND(From(n), boolean); }
 void AstWriter::Visit(FlowPtr<String> n) { SEND(From(n), string); }
 void AstWriter::Visit(FlowPtr<Character> n) { SEND(From(n), character); }
 void AstWriter::Visit(FlowPtr<Null> n) { SEND(From(n), null); }
-void AstWriter::Visit(FlowPtr<Undefined> n) { SEND(From(n), undefined); }
 void AstWriter::Visit(FlowPtr<Call> n) { SEND(From(n), call); }
 void AstWriter::Visit(FlowPtr<TemplateCall> n) { SEND(From(n), template_call); }
 void AstWriter::Visit(FlowPtr<Import> n) { SEND(From(n), import); }

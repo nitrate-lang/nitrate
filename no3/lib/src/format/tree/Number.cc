@@ -111,9 +111,3 @@ void CambrianFormatter::Visit(FlowPtr<parse::Null> n) {
 
   m_line << "null";
 }
-
-void CambrianFormatter::Visit(FlowPtr<Undefined> n) {
-  PrintMultilineComments(n);
-
-  m_line << "undef";
-}

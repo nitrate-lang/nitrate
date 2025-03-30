@@ -421,7 +421,7 @@ void AstReader::UnmarshalCodeComment(
 auto AstReader::Unmarshal(const SyntaxTree::Expr &in) -> Result<Expr> {
   switch (in.node_case()) {
     case SyntaxTree::Expr::kDiscarded: {
-      auto to_discard = m_fac.CreateUndefined();
+      auto to_discard = m_fac.CreateNull();
       to_discard->Discard();
       return to_discard;
     }
@@ -456,10 +456,6 @@ auto AstReader::Unmarshal(const SyntaxTree::Expr &in) -> Result<Expr> {
 
     case SyntaxTree::Expr::kNull: {
       return Unmarshal(in.null());
-    }
-
-    case SyntaxTree::Expr::kUndefined: {
-      return Unmarshal(in.undefined());
     }
 
     case SyntaxTree::Expr::kCall: {
@@ -1584,14 +1580,6 @@ auto AstReader::Unmarshal(const SyntaxTree::Character &in) -> Result<Character> 
 
 auto AstReader::Unmarshal(const SyntaxTree::Null &in) -> Result<Null> {
   auto object = m_fac.CreateNull();
-  UnmarshalLocationLocation(in.location(), object);
-  UnmarshalCodeComment(in.comments(), object);
-
-  return object;
-}
-
-auto AstReader::Unmarshal(const SyntaxTree::Undefined &in) -> Result<Undefined> {
-  auto object = m_fac.CreateUndefined();
   UnmarshalLocationLocation(in.location(), object);
   UnmarshalCodeComment(in.comments(), object);
 

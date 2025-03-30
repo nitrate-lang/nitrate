@@ -119,8 +119,6 @@ namespace ncc::parse {
         return AST_eBOOL;
       } else if constexpr (std::is_same_v<T, Null>) {
         return AST_eNULL;
-      } else if constexpr (std::is_same_v<T, Undefined>) {
-        return AST_eUNDEF;
       } else if constexpr (std::is_same_v<T, Call>) {
         return AST_eCALL;
       } else if constexpr (std::is_same_v<T, List>) {
@@ -348,7 +346,6 @@ namespace ncc::parse {
       r[AST_eCHAR] = "Char";
       r[AST_eBOOL] = "Bool";
       r[AST_eNULL] = "Null";
-      r[AST_eUNDEF] = "Undef";
       r[AST_eCALL] = "Call";
       r[AST_eLIST] = "List";
       r[AST_ePAIR] = "Assoc";

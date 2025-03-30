@@ -426,11 +426,6 @@ message Null {
   repeated UserComment comments = 2;
 }
 
-message Undefined {
-  optional SourceLocationRange location = 1;
-  repeated UserComment comments = 2;
-}
-
 message Call {
   optional SourceLocationRange location = 1;
   repeated UserComment comments = 2;
@@ -762,7 +757,6 @@ message Expr {
     String string = 18;
     Character character = 19;
     Null null = 20;
-    Undefined undefined = 21;
     Call call = 22;
     TemplateCall template_call = 23;
     Import import = 24;

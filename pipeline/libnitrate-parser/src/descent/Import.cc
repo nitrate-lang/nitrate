@@ -91,7 +91,6 @@ namespace ncc::parse::import {
     void Visit(FlowPtr<String> n) override { n->Discard(); };
     void Visit(FlowPtr<Character> n) override { n->Discard(); };
     void Visit(FlowPtr<Null> n) override { n->Discard(); };
-    void Visit(FlowPtr<Undefined> n) override { n->Discard(); };
     void Visit(FlowPtr<Call> n) override { n->Discard(); };
     void Visit(FlowPtr<TemplateCall> n) override { n->Discard(); };
     void Visit(FlowPtr<List> n) override { n->Discard(); };

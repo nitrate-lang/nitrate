@@ -45,7 +45,6 @@ namespace nitrate::parser::SyntaxTree {  // NOLINT
   class Character;
   class Boolean;
   class Null;
-  class Undefined;
   class Call;
   class List;
   class Assoc;

@@ -410,14 +410,6 @@ auto GeneralParser::Context::RecurseBlock(bool expect_braces, bool single_stmt, 
           break;
         }
 
-        case Undef: {
-          r = m_fac.CreateUndefined();
-          if (!NextIf<PuncSemi>()) {
-            Log << ParserSignal << Current() << "Expected ';' after 'undef' statement";
-          }
-          break;
-        }
-
         case Keyword::Null: {
           r = m_fac.CreateNull();
           if (!NextIf<PuncSemi>()) {

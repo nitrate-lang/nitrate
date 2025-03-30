@@ -1010,14 +1010,6 @@ namespace ncc::parse {
       PrintTrailing(n);
     }
 
-    void Visit(FlowPtr<Undefined> n) override {
-      PrintLeading(n);
-
-      PutKeyword(Undef);
-
-      PrintTrailing(n);
-    }
-
     void Visit(FlowPtr<Call> n) override {
       PrintLeading(n);
 

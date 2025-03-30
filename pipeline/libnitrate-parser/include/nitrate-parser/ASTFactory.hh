@@ -168,9 +168,6 @@ namespace ncc::parse {
 
     [[gnu::pure, nodiscard]] auto CreateNull(SourceLocation origin = SourceLocation::current()) -> FlowPtr<Null>;
 
-    [[gnu::pure, nodiscard]] auto CreateUndefined(SourceLocation origin = SourceLocation::current())
-        -> FlowPtr<Undefined>;
-
     [[gnu::pure, nodiscard]] auto CreateCall(
         FlowPtr<Expr> callee, const std::unordered_map<std::variant<string, size_t>, FlowPtr<Expr>>& named_args = {},
         SourceLocation origin = SourceLocation::current()) -> std::optional<FlowPtr<Call>>;

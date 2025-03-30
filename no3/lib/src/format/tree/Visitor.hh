@@ -114,7 +114,6 @@ namespace no3::format {
     void Visit(ncc::FlowPtr<ncc::parse::String> n) override;
     void Visit(ncc::FlowPtr<ncc::parse::Character> n) override;
     void Visit(ncc::FlowPtr<ncc::parse::Null> n) override;
-    void Visit(ncc::FlowPtr<ncc::parse::Undefined> n) override;
     void Visit(ncc::FlowPtr<ncc::parse::Call> n) override;
     void Visit(ncc::FlowPtr<ncc::parse::TemplateCall> n) override;
     void Visit(ncc::FlowPtr<ncc::parse::Import> n) override;

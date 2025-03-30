@@ -644,12 +644,6 @@ using namespace ncc;
 //   return b.getUnknownNamedTy("__builtin_null");
 // }
 
-// static EResult nrgen_undef(NRBuilder &, PState &, IReport *G,
-//                            FlowPtr<ncc::parse::Undefined> n) {
-//   G->report(UnexpectedUndefLiteral, IC::Error, "", n->Getpos());
-//   return std::nullopt;
-// }
-
 // static EResult nrgen_call(NRBuilder &b, PState &s, IReport *G,
 //                           FlowPtr<ncc::parse::Call> n) {
 //   auto target = next_one(n->Getfunc());
@@ -1906,10 +1900,6 @@ using namespace ncc;
 
 //     case AST_eNULL:
 //       out = nrgen_null(b, s, G, n.as<ncc::parse::Null>());
-//       break;
-
-//     case AST_eUNDEF:
-//       out = nrgen_undef(b, s, G, n.as<ncc::parse::Undefined>());
 //       break;
 
 //     case AST_eCALL:
