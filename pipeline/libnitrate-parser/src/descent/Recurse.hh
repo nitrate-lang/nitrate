@@ -139,10 +139,6 @@ namespace ncc::parse {
     [[nodiscard]] auto RecurseImport() -> FlowPtr<Expr>;
     [[nodiscard]] auto RecurseBlock(bool expect_braces, bool single_stmt, BlockMode safety) -> FlowPtr<Block>;
     [[nodiscard]] auto RecurseExpr(const std::set<lex::Token> &terminators) -> FlowPtr<Expr>;
-    [[nodiscard]] auto RecurseExprPrimary(bool is_type) -> NullableFlowPtr<Expr>;
-    [[nodiscard]] auto RecurseExprKeyword(lex::Keyword key) -> NullableFlowPtr<Expr>;
-    [[nodiscard]] auto RecurseExprPunctor(lex::Punctor punc) -> NullableFlowPtr<Expr>;
-    [[nodiscard]] auto RecurseExprTypeSuffix(FlowPtr<Expr> base) -> FlowPtr<Expr>;
     auto RecurseEscapeBlock() -> void;
     [[nodiscard]] auto RecurseUnitAssert() -> FlowPtr<Expr>;
 
@@ -165,6 +161,10 @@ namespace ncc::parse {
     [[nodiscard]] auto RecurseCallArguments(const std::set<lex::Token> &terminators,
                                             bool type_by_default) -> std::vector<CallArg>;
     [[nodiscard]] auto ParseFStringExpression(std::string_view source) -> FlowPtr<Expr>;
+    [[nodiscard]] auto RecurseExprPrimary(bool is_type) -> NullableFlowPtr<Expr>;
+    [[nodiscard]] auto RecurseExprKeyword(lex::Keyword key) -> NullableFlowPtr<Expr>;
+    [[nodiscard]] auto RecurseExprPunctor(lex::Punctor punc) -> NullableFlowPtr<Expr>;
+    [[nodiscard]] auto RecurseExprTypeSuffix(FlowPtr<Expr> base) -> FlowPtr<Expr>;
     [[nodiscard]] auto RecurseFstring() -> FlowPtr<Expr>;
     [[nodiscard]] auto RecurseForInitExpr() -> NullableFlowPtr<Expr>;
     [[nodiscard]] auto RecurseForCondition() -> NullableFlowPtr<Expr>;
