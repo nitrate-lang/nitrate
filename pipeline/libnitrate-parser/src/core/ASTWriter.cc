@@ -1599,13 +1599,6 @@ SyntaxTree::Function *AstWriter::From(FlowPtr<Function> in) {
   if (in->IsVariadic()) {
     message->set_variadic(in->IsVariadic());
   }
-  if (in->GetPrecond().has_value()) {
-    message->set_allocated_precondition(From(in->GetPrecond().value()));
-  }
-
-  if (in->GetPostcond().has_value()) {
-    message->set_allocated_postcondition(From(in->GetPostcond().value()));
-  }
 
   if (in->GetBody().has_value()) {
     message->set_allocated_body(From(in->GetBody().value()));

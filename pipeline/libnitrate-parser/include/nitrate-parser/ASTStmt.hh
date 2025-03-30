@@ -364,20 +364,17 @@ namespace ncc::parse {
     std::span<FlowPtr<Expr>> m_attributes;
     std::span<FuncParam> m_params;
     FlowPtr<Type> m_return;
-    NullableFlowPtr<Expr> m_precond, m_postcond;
     NullableFlowPtr<Expr> m_body;
     string m_name;
     bool m_variadic;
 
   public:
     constexpr Function(auto attributes, auto name, auto params, auto fn_params, auto variadic, auto return_type,
-                       auto precond, auto postcond, auto body)
+                       auto body)
         : Expr(QAST_FUNCTION),
           m_attributes(attributes),
           m_params(fn_params),
           m_return(std::move(return_type)),
-          m_precond(std::move(precond)),
-          m_postcond(std::move(postcond)),
           m_body(std::move(body)),
           m_name(name),
           m_variadic(variadic) {
@@ -396,10 +393,6 @@ namespace ncc::parse {
     [[nodiscard, gnu::pure]] constexpr auto GetParams() { return m_params; }
     [[nodiscard, gnu::pure]] constexpr auto GetReturn() const { return m_return; }
     [[nodiscard, gnu::pure]] constexpr auto GetReturn() { return m_return; }
-    [[nodiscard, gnu::pure]] constexpr auto GetPrecond() const { return m_precond; }
-    [[nodiscard, gnu::pure]] constexpr auto GetPrecond() { return m_precond; }
-    [[nodiscard, gnu::pure]] constexpr auto GetPostcond() const { return m_postcond; }
-    [[nodiscard, gnu::pure]] constexpr auto GetPostcond() { return m_postcond; }
     [[nodiscard, gnu::pure]] constexpr auto GetBody() const { return m_body; }
     [[nodiscard, gnu::pure]] constexpr auto GetBody() { return m_body; }
     [[nodiscard, gnu::pure]] constexpr auto IsVariadic() const { return m_variadic; }
@@ -408,17 +401,12 @@ namespace ncc::parse {
     [[nodiscard, gnu::pure]] constexpr auto IsDeclaration() -> bool { return !m_body.has_value(); }
     [[nodiscard, gnu::pure]] constexpr auto IsDefinition() const -> bool { return m_body.has_value(); }
     [[nodiscard, gnu::pure]] constexpr auto IsDefinition() -> bool { return m_body.has_value(); }
-    [[nodiscard, gnu::pure]] constexpr auto HasContract() const -> bool {
-      return m_precond.has_value() || m_postcond.has_value();
-    }
 
     constexpr void SetName(auto name) { m_name = name; }
     constexpr void SetAttributes(auto attributes) { m_attributes = attributes; }
     constexpr void SetTemplateParams(auto params) { m_template_parameters = params; }
     constexpr void SetParams(auto params) { m_params = params; }
     constexpr void SetReturn(auto return_type) { m_return = std::move(return_type); }
-    constexpr void SetPrecond(auto precond) { m_precond = std::move(precond); }
-    constexpr void SetPostcond(auto postcond) { m_postcond = std::move(postcond); }
     constexpr void SetBody(auto body) { m_body = std::move(body); }
     constexpr void SetVariadic(auto variadic) { m_variadic = variadic; }
   };

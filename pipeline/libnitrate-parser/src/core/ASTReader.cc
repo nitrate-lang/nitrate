@@ -2154,16 +2154,6 @@ auto AstReader::Unmarshal(const SyntaxTree::Function &in) -> Result<Function> {
     parameters.emplace_back(param.name(), type.value(), default_value);
   }
 
-  auto precondition = Unmarshal(in.precondition());
-  if (in.has_precondition() && !precondition.has_value()) [[unlikely]] {
-    return std::nullopt;
-  }
-
-  auto postcondition = Unmarshal(in.postcondition());
-  if (in.has_postcondition() && !postcondition.has_value()) [[unlikely]] {
-    return std::nullopt;
-  }
-
   auto block = Unmarshal(in.body());
   if (in.has_body() && !block.has_value()) [[unlikely]] {
     return std::nullopt;
@@ -2175,7 +2165,7 @@ auto AstReader::Unmarshal(const SyntaxTree::Function &in) -> Result<Function> {
   }
 
   auto object = m_fac.CreateFunction(in.name(), return_type.value(), parameters, in.variadic(), block, attributes,
-                                     precondition, postcondition, template_parameters);
+                                     template_parameters);
   if (!object.has_value()) [[unlikely]] {
     return std::nullopt;
   }

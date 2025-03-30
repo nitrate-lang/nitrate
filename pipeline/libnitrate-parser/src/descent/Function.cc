@@ -244,9 +244,9 @@ auto GeneralParser::PImpl::RecurseFunction(bool parse_declaration_only) -> FlowP
   auto function_return_type = RecurseFunctionReturnType();
   auto function_body = RecurseFunctionBody(parse_declaration_only);
 
-  auto function = m_fac.CreateFunction(function_name, function_return_type, function_parameters.first,
-                                       function_parameters.second, function_body, function_attributes, std::nullopt,
-                                       std::nullopt, function_template_parameters);
+  auto function =
+      m_fac.CreateFunction(function_name, function_return_type, function_parameters.first, function_parameters.second,
+                           function_body, function_attributes, function_template_parameters);
   if (!function.has_value()) [[unlikely]] {
     function = m_fac.CreateMockInstance<Function>();
   }

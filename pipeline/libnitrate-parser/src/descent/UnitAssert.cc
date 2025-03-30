@@ -76,10 +76,8 @@ auto GeneralParser::PImpl::RecurseUnitAssert() -> FlowPtr<Expr> {
                                                     })
                                         .value();
 
-  auto unit_test_function = m_fac
-                                .CreateFunction(unit_test_name, m_fac.CreateU1(), {}, false, test_body,
-                                                {ephermal_section_attribute}, nullptr, nullptr, {}, {})
-                                .value();
+  auto unit_test_function =
+      *m_fac.CreateFunction(unit_test_name, m_fac.CreateU1(), {}, false, test_body, {ephermal_section_attribute});
 
   return unit_test_function;
 }

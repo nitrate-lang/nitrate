@@ -696,8 +696,6 @@ message Function {
   optional TemplateParameters template_parameters = 7;
   repeated FunctionParameter parameters = 8;
   optional bool variadic = 9 [default = false];
-  optional Expr precondition = 11;
-  optional Expr postcondition = 12;
   repeated Expr attributes = 13;
   optional Expr body = 14;
 }

@@ -284,8 +284,6 @@ class IterVisitor : public ASTVisitor {
     });
 
     Add(n->GetReturn());
-    Add(n->GetPrecond());
-    Add(n->GetPostcond());
     Add(n->GetBody());
   }
 

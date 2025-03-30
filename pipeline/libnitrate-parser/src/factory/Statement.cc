@@ -91,7 +91,6 @@ auto ASTFactory::CreateEnum(string name, std::span<const std::pair<string, Nulla
 auto ASTFactory::CreateFunction(string name, NullableFlowPtr<Type> ret_ty,
                                 const std::vector<FactoryFunctionParameter>& params, bool variadic,
                                 NullableFlowPtr<Expr> body, const std::vector<FlowPtr<Expr>>& attributes,
-                                NullableFlowPtr<Expr> precond, NullableFlowPtr<Expr> postcond,
                                 const std::optional<std::vector<TemplateParameter>>& template_parameters,
                                 SourceLocation origin) -> std::optional<FlowPtr<Function>> {
   auto params_copy = AllocateArray<std::tuple<string, FlowPtr<Type>, NullableFlowPtr<Expr>>>(params.size());
@@ -118,16 +117,14 @@ auto ASTFactory::CreateFunction(string name, NullableFlowPtr<Type> ret_ty,
   }
 
   return CreateInstance<Function>(attributes_copy, name, template_parameters_copy, params_copy, variadic,
-                                  ret_ty.value(), precond, postcond, body)(m_pool, origin);
+                                  ret_ty.value(), body)(m_pool, origin);
 }
 
 auto ASTFactory::CreateAnonymousFunction(NullableFlowPtr<Type> ret_ty,
                                          const std::vector<FactoryFunctionParameter>& params, bool variadic,
                                          NullableFlowPtr<Expr> body, const std::vector<FlowPtr<Expr>>& attributes,
-                                         NullableFlowPtr<Expr> precond, NullableFlowPtr<Expr> postcond,
                                          SourceLocation origin) -> std::optional<FlowPtr<Function>> {
-  return CreateFunction("", std::move(ret_ty), params, variadic, std::move(body), attributes, std::move(precond),
-                        std::move(postcond), std::nullopt, origin);
+  return CreateFunction("", std::move(ret_ty), params, variadic, std::move(body), attributes, std::nullopt, origin);
 }
 
 auto ASTFactory::CreateScope(string name, FlowPtr<Expr> body, const std::vector<string>& tags,

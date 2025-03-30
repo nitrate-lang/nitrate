@@ -401,15 +401,12 @@ namespace ncc::parse {
     [[gnu::pure, nodiscard]] auto CreateFunction(
         string name, NullableFlowPtr<Type> ret_ty = nullptr, const std::vector<FactoryFunctionParameter>& params = {},
         bool variadic = false, NullableFlowPtr<Expr> body = nullptr, const std::vector<FlowPtr<Expr>>& attributes = {},
-        NullableFlowPtr<Expr> precond = nullptr, NullableFlowPtr<Expr> postcond = nullptr,
-
         const std::optional<std::vector<TemplateParameter>>& template_parameters = std::nullopt,
         SourceLocation origin = SourceLocation::current()) -> std::optional<FlowPtr<Function>>;
 
     [[gnu::pure, nodiscard]] auto CreateAnonymousFunction(
         NullableFlowPtr<Type> ret_ty = nullptr, const std::vector<FactoryFunctionParameter>& params = {},
         bool variadic = false, NullableFlowPtr<Expr> body = nullptr, const std::vector<FlowPtr<Expr>>& attributes = {},
-        NullableFlowPtr<Expr> precond = nullptr, NullableFlowPtr<Expr> postcond = nullptr,
         SourceLocation origin = SourceLocation::current()) -> std::optional<FlowPtr<Function>>;
 
     [[gnu::pure, nodiscard]] auto CreateScope(string name, FlowPtr<Expr> body, const std::vector<string>& tags,
