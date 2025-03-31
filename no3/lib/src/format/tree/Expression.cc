@@ -39,7 +39,7 @@ using namespace ncc::lex;
 using namespace ncc::parse;
 using namespace no3::format;
 
-void CambrianFormatter::Visit(FlowPtr<Unary> n) {
+void QuasiCanonicalFormatter::Visit(FlowPtr<Unary> n) {
   static const std::unordered_set<Operator> word_ops = {OpAs,        OpBitcastAs, OpIn,     OpOut,     OpSizeof,
                                                         OpBitsizeof, OpAlignof,   OpTypeof, OpComptime};
 
@@ -57,7 +57,7 @@ void CambrianFormatter::Visit(FlowPtr<Unary> n) {
   }
 }
 
-void CambrianFormatter::Visit(FlowPtr<Binary> n) {
+void QuasiCanonicalFormatter::Visit(FlowPtr<Binary> n) {
   PrintMultilineComments(n);
 
   if (n->GetOp() == OpDot) {

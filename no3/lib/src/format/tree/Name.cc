@@ -37,7 +37,7 @@ using namespace ncc;
 using namespace ncc::parse;
 using namespace no3::format;
 
-void CambrianFormatter::Visit(FlowPtr<NamedTy> n) {
+void QuasiCanonicalFormatter::Visit(FlowPtr<NamedTy> n) {
   PrintMultilineComments(n);
 
   m_line << n->GetName();
@@ -45,7 +45,7 @@ void CambrianFormatter::Visit(FlowPtr<NamedTy> n) {
   FormatTypeMetadata(n);
 }
 
-void CambrianFormatter::Visit(FlowPtr<Identifier> n) {
+void QuasiCanonicalFormatter::Visit(FlowPtr<Identifier> n) {
   PrintMultilineComments(n);
 
   m_line << n->GetName();

@@ -37,7 +37,7 @@ using namespace ncc;
 using namespace ncc::parse;
 using namespace no3::format;
 
-auto CambrianFormatter::EscapeCharLiteral(char ch) const -> std::string {
+auto QuasiCanonicalFormatter::EscapeCharLiteral(char ch) const -> std::string {
   if ((std::isspace(ch) == 0) && (std::isprint(ch) == 0)) {
     const char* tab = "0123456789abcdef";
     uint8_t uch = ch;
@@ -71,7 +71,7 @@ auto CambrianFormatter::EscapeCharLiteral(char ch) const -> std::string {
   }
 }
 
-auto CambrianFormatter::EscapeStringLiteralChunk(std::string_view str) const -> std::string {
+auto QuasiCanonicalFormatter::EscapeStringLiteralChunk(std::string_view str) const -> std::string {
   std::stringstream ss;
 
   for (char ch : str) {
@@ -112,7 +112,7 @@ auto CambrianFormatter::EscapeStringLiteralChunk(std::string_view str) const -> 
   return ss.str();
 }
 
-void CambrianFormatter::EscapeStringLiteral(std::string_view str, bool put_quotes) {
+void QuasiCanonicalFormatter::EscapeStringLiteral(std::string_view str, bool put_quotes) {
   constexpr size_t kMaxChunkSize = 60;
 
   if (str.empty()) {
@@ -171,19 +171,19 @@ void CambrianFormatter::EscapeStringLiteral(std::string_view str, bool put_quote
   }
 }
 
-void CambrianFormatter::Visit(FlowPtr<parse::String> n) {
+void QuasiCanonicalFormatter::Visit(FlowPtr<parse::String> n) {
   PrintMultilineComments(n);
 
   EscapeStringLiteral(n->GetValue());
 }
 
-void CambrianFormatter::Visit(FlowPtr<Character> n) {
+void QuasiCanonicalFormatter::Visit(FlowPtr<Character> n) {
   PrintMultilineComments(n);
 
   m_line << EscapeCharLiteral(n->GetValue());
 }
 
-void CambrianFormatter::Visit(FlowPtr<FString> n) {
+void QuasiCanonicalFormatter::Visit(FlowPtr<FString> n) {
   PrintMultilineComments(n);
 
   m_line << "f\"";

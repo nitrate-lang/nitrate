@@ -38,7 +38,7 @@ using namespace ncc;
 using namespace ncc::parse;
 using namespace no3::format;
 
-void CambrianFormatter::Visit(FlowPtr<List> n) {
+void QuasiCanonicalFormatter::Visit(FlowPtr<List> n) {
   PrintMultilineComments(n);
 
   auto wrap_threshold = 8ULL;
@@ -138,7 +138,7 @@ void CambrianFormatter::Visit(FlowPtr<List> n) {
   }
 }
 
-void CambrianFormatter::Visit(FlowPtr<Assoc> node) {
+void QuasiCanonicalFormatter::Visit(FlowPtr<Assoc> node) {
   PrintMultilineComments(node);
 
   const std::function<void(FlowPtr<Assoc>, bool)> format = [&](const FlowPtr<Assoc>& n, bool use_braces) {

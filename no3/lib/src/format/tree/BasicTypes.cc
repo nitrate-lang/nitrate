@@ -37,7 +37,7 @@ using namespace ncc;
 using namespace ncc::parse;
 using namespace no3::format;
 
-void CambrianFormatter::Visit(FlowPtr<InferTy> n) {
+void QuasiCanonicalFormatter::Visit(FlowPtr<InferTy> n) {
   PrintMultilineComments(n);
 
   m_line << "?";
@@ -45,7 +45,7 @@ void CambrianFormatter::Visit(FlowPtr<InferTy> n) {
   FormatTypeMetadata(n);
 }
 
-void CambrianFormatter::Visit(FlowPtr<U1> n) {
+void QuasiCanonicalFormatter::Visit(FlowPtr<U1> n) {
   PrintMultilineComments(n);
 
   m_line << "u1";
@@ -53,7 +53,7 @@ void CambrianFormatter::Visit(FlowPtr<U1> n) {
   FormatTypeMetadata(n);
 }
 
-void CambrianFormatter::Visit(FlowPtr<U8> n) {
+void QuasiCanonicalFormatter::Visit(FlowPtr<U8> n) {
   PrintMultilineComments(n);
 
   m_line << "u8";
@@ -61,7 +61,7 @@ void CambrianFormatter::Visit(FlowPtr<U8> n) {
   FormatTypeMetadata(n);
 }
 
-void CambrianFormatter::Visit(FlowPtr<U16> n) {
+void QuasiCanonicalFormatter::Visit(FlowPtr<U16> n) {
   PrintMultilineComments(n);
 
   m_line << "u16";
@@ -69,7 +69,7 @@ void CambrianFormatter::Visit(FlowPtr<U16> n) {
   FormatTypeMetadata(n);
 }
 
-void CambrianFormatter::Visit(FlowPtr<U32> n) {
+void QuasiCanonicalFormatter::Visit(FlowPtr<U32> n) {
   PrintMultilineComments(n);
 
   m_line << "u32";
@@ -77,7 +77,7 @@ void CambrianFormatter::Visit(FlowPtr<U32> n) {
   FormatTypeMetadata(n);
 }
 
-void CambrianFormatter::Visit(FlowPtr<U64> n) {
+void QuasiCanonicalFormatter::Visit(FlowPtr<U64> n) {
   PrintMultilineComments(n);
 
   m_line << "u64";
@@ -85,7 +85,7 @@ void CambrianFormatter::Visit(FlowPtr<U64> n) {
   FormatTypeMetadata(n);
 }
 
-void CambrianFormatter::Visit(FlowPtr<U128> n) {
+void QuasiCanonicalFormatter::Visit(FlowPtr<U128> n) {
   PrintMultilineComments(n);
 
   m_line << "u128";
@@ -93,7 +93,7 @@ void CambrianFormatter::Visit(FlowPtr<U128> n) {
   FormatTypeMetadata(n);
 }
 
-void CambrianFormatter::Visit(FlowPtr<I8> n) {
+void QuasiCanonicalFormatter::Visit(FlowPtr<I8> n) {
   PrintMultilineComments(n);
 
   m_line << "i8";
@@ -101,7 +101,7 @@ void CambrianFormatter::Visit(FlowPtr<I8> n) {
   FormatTypeMetadata(n);
 }
 
-void CambrianFormatter::Visit(FlowPtr<I16> n) {
+void QuasiCanonicalFormatter::Visit(FlowPtr<I16> n) {
   PrintMultilineComments(n);
 
   m_line << "i16";
@@ -109,7 +109,7 @@ void CambrianFormatter::Visit(FlowPtr<I16> n) {
   FormatTypeMetadata(n);
 }
 
-void CambrianFormatter::Visit(FlowPtr<I32> n) {
+void QuasiCanonicalFormatter::Visit(FlowPtr<I32> n) {
   PrintMultilineComments(n);
 
   m_line << "i32";
@@ -117,7 +117,7 @@ void CambrianFormatter::Visit(FlowPtr<I32> n) {
   FormatTypeMetadata(n);
 }
 
-void CambrianFormatter::Visit(FlowPtr<I64> n) {
+void QuasiCanonicalFormatter::Visit(FlowPtr<I64> n) {
   PrintMultilineComments(n);
 
   m_line << "i64";
@@ -125,7 +125,7 @@ void CambrianFormatter::Visit(FlowPtr<I64> n) {
   FormatTypeMetadata(n);
 }
 
-void CambrianFormatter::Visit(FlowPtr<I128> n) {
+void QuasiCanonicalFormatter::Visit(FlowPtr<I128> n) {
   PrintMultilineComments(n);
 
   m_line << "i128";
@@ -133,7 +133,7 @@ void CambrianFormatter::Visit(FlowPtr<I128> n) {
   FormatTypeMetadata(n);
 }
 
-void CambrianFormatter::Visit(FlowPtr<F16> n) {
+void QuasiCanonicalFormatter::Visit(FlowPtr<F16> n) {
   PrintMultilineComments(n);
 
   m_line << "f16";
@@ -141,7 +141,7 @@ void CambrianFormatter::Visit(FlowPtr<F16> n) {
   FormatTypeMetadata(n);
 }
 
-void CambrianFormatter::Visit(FlowPtr<F32> n) {
+void QuasiCanonicalFormatter::Visit(FlowPtr<F32> n) {
   PrintMultilineComments(n);
 
   m_line << "f32";
@@ -149,7 +149,7 @@ void CambrianFormatter::Visit(FlowPtr<F32> n) {
   FormatTypeMetadata(n);
 }
 
-void CambrianFormatter::Visit(FlowPtr<F64> n) {
+void QuasiCanonicalFormatter::Visit(FlowPtr<F64> n) {
   PrintMultilineComments(n);
 
   m_line << "f64";
@@ -157,7 +157,7 @@ void CambrianFormatter::Visit(FlowPtr<F64> n) {
   FormatTypeMetadata(n);
 }
 
-void CambrianFormatter::Visit(FlowPtr<F128> n) {
+void QuasiCanonicalFormatter::Visit(FlowPtr<F128> n) {
   PrintMultilineComments(n);
 
   m_line << "f128";
@@ -165,7 +165,7 @@ void CambrianFormatter::Visit(FlowPtr<F128> n) {
   FormatTypeMetadata(n);
 }
 
-void CambrianFormatter::Visit(FlowPtr<VoidTy> n) {
+void QuasiCanonicalFormatter::Visit(FlowPtr<VoidTy> n) {
   PrintMultilineComments(n);
 
   m_line << "void";
@@ -173,7 +173,7 @@ void CambrianFormatter::Visit(FlowPtr<VoidTy> n) {
   FormatTypeMetadata(n);
 }
 
-void CambrianFormatter::Visit(FlowPtr<PtrTy> n) {
+void QuasiCanonicalFormatter::Visit(FlowPtr<PtrTy> n) {
   PrintMultilineComments(n);
 
   m_line << "*";
@@ -182,7 +182,7 @@ void CambrianFormatter::Visit(FlowPtr<PtrTy> n) {
   FormatTypeMetadata(n);
 }
 
-void CambrianFormatter::Visit(FlowPtr<RefTy> n) {
+void QuasiCanonicalFormatter::Visit(FlowPtr<RefTy> n) {
   PrintMultilineComments(n);
 
   m_line << "&";
@@ -191,7 +191,7 @@ void CambrianFormatter::Visit(FlowPtr<RefTy> n) {
   FormatTypeMetadata(n);
 }
 
-void CambrianFormatter::Visit(FlowPtr<OpaqueTy> n) {
+void QuasiCanonicalFormatter::Visit(FlowPtr<OpaqueTy> n) {
   PrintMultilineComments(n);
 
   m_line << "opaque(" << n->GetName() << ")";
@@ -199,7 +199,7 @@ void CambrianFormatter::Visit(FlowPtr<OpaqueTy> n) {
   FormatTypeMetadata(n);
 }
 
-void CambrianFormatter::Visit(FlowPtr<ArrayTy> n) {
+void QuasiCanonicalFormatter::Visit(FlowPtr<ArrayTy> n) {
   PrintMultilineComments(n);
 
   m_line << "[";
@@ -211,7 +211,7 @@ void CambrianFormatter::Visit(FlowPtr<ArrayTy> n) {
   FormatTypeMetadata(n);
 }
 
-void CambrianFormatter::FormatTypeMetadata(const FlowPtr<parse::Type>& n) {
+void QuasiCanonicalFormatter::FormatTypeMetadata(const FlowPtr<parse::Type>& n) {
   auto range_start = n->GetRangeBegin();
   auto range_end = n->GetRangeEnd();
 

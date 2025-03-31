@@ -37,7 +37,7 @@ using namespace ncc;
 using namespace ncc::parse;
 using namespace no3::format;
 
-void CambrianFormatter::Visit(FlowPtr<parse::For> n) {
+void QuasiCanonicalFormatter::Visit(FlowPtr<parse::For> n) {
   PrintLineComments(n);
 
   m_line << "for (";
@@ -68,7 +68,7 @@ void CambrianFormatter::Visit(FlowPtr<parse::For> n) {
   m_line << ";";
 }
 
-void CambrianFormatter::Visit(FlowPtr<parse::Foreach> n) {
+void QuasiCanonicalFormatter::Visit(FlowPtr<parse::Foreach> n) {
   PrintLineComments(n);
 
   m_line << "foreach (";

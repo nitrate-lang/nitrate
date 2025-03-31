@@ -38,7 +38,8 @@ using namespace no3::format;
 using namespace ncc::parse;
 using namespace ncc::lex;
 
-auto CambrianFormatter::LineWriter::operator<<(std::ostream& (*func)(std::ostream&)) -> CambrianFormatter::LineWriter& {
+auto QuasiCanonicalFormatter::LineWriter::operator<<(std::ostream& (*func)(std::ostream&))
+    -> QuasiCanonicalFormatter::LineWriter& {
   qcore_assert(func == static_cast<std::ostream& (*)(std::ostream&)>(std::endl));
 
   m_file << m_line_buffer.str() << "\n";
@@ -47,12 +48,12 @@ auto CambrianFormatter::LineWriter::operator<<(std::ostream& (*func)(std::ostrea
   return *this;
 }
 
-auto CambrianFormatter::LineWriter::operator<<(Operator op) -> CambrianFormatter::LineWriter& {
+auto QuasiCanonicalFormatter::LineWriter::operator<<(Operator op) -> QuasiCanonicalFormatter::LineWriter& {
   m_line_buffer << op;
   return *this;
 }
 
-auto CambrianFormatter::LineWriter::operator<<(Vis v) -> CambrianFormatter::LineWriter& {
+auto QuasiCanonicalFormatter::LineWriter::operator<<(Vis v) -> QuasiCanonicalFormatter::LineWriter& {
   switch (v) {
     case Vis::Sec: {
       m_line_buffer << "sec";
@@ -72,7 +73,7 @@ auto CambrianFormatter::LineWriter::operator<<(Vis v) -> CambrianFormatter::Line
   return *this;
 }
 
-auto CambrianFormatter::LineWriter::operator<<(ncc::string str) -> LineWriter& {
+auto QuasiCanonicalFormatter::LineWriter::operator<<(ncc::string str) -> LineWriter& {
   m_line_buffer << str.Get();
   return *this;
 }

@@ -37,7 +37,7 @@ using namespace ncc;
 using namespace ncc::parse;
 using namespace no3::format;
 
-void CambrianFormatter::Visit(FlowPtr<parse::Scope> n) {
+void QuasiCanonicalFormatter::Visit(FlowPtr<parse::Scope> n) {
   PrintLineComments(n);
 
   m_line << "scope ";
@@ -58,7 +58,7 @@ void CambrianFormatter::Visit(FlowPtr<parse::Scope> n) {
   n->GetBody().Accept(*this);
 }
 
-void CambrianFormatter::Visit(FlowPtr<Export> n) {
+void QuasiCanonicalFormatter::Visit(FlowPtr<Export> n) {
   PrintLineComments(n);
 
   m_line << n->GetVis();

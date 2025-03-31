@@ -37,7 +37,7 @@ using namespace ncc;
 using namespace ncc::parse;
 using namespace no3::format;
 
-void CambrianFormatter::Visit(ncc::FlowPtr<ncc::parse::Enum> n) {
+void QuasiCanonicalFormatter::Visit(ncc::FlowPtr<ncc::parse::Enum> n) {
   PrintLineComments(n);
 
   m_line << "enum " << n->GetName();

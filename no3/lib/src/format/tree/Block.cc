@@ -38,7 +38,7 @@ using namespace ncc;
 using namespace ncc::parse;
 using namespace no3::format;
 
-void CambrianFormatter::Visit(FlowPtr<Block> n) {
+void QuasiCanonicalFormatter::Visit(FlowPtr<Block> n) {
   PrintLineComments(n);
 
   bool is_root_block = !m_did_root;

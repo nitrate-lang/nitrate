@@ -37,7 +37,7 @@ using namespace ncc;
 using namespace ncc::parse;
 using namespace no3::format;
 
-void CambrianFormatter::Visit(FlowPtr<Call> n) {
+void QuasiCanonicalFormatter::Visit(FlowPtr<Call> n) {
   PrintMultilineComments(n);
 
   auto wrap_threshold = 8ULL;
@@ -102,7 +102,7 @@ void CambrianFormatter::Visit(FlowPtr<Call> n) {
   }
 }
 
-void CambrianFormatter::Visit(FlowPtr<TemplateCall> n) {
+void QuasiCanonicalFormatter::Visit(FlowPtr<TemplateCall> n) {
   PrintMultilineComments(n);
 
   n->GetFunc().Accept(*this);
@@ -141,7 +141,7 @@ void CambrianFormatter::Visit(FlowPtr<TemplateCall> n) {
   m_line << ")";
 }
 
-void CambrianFormatter::Visit(FlowPtr<Import> n) {
+void QuasiCanonicalFormatter::Visit(FlowPtr<Import> n) {
   PrintMultilineComments(n);
 
   switch (n->GetMode()) {

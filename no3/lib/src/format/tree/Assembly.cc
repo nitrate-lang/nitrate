@@ -37,7 +37,7 @@ using namespace ncc;
 using namespace ncc::parse;
 using namespace no3::format;
 
-void CambrianFormatter::Visit(FlowPtr<Assembly> n) {
+void QuasiCanonicalFormatter::Visit(FlowPtr<Assembly> n) {
   PrintLineComments(n);
 
   /* Support for inline assembly is not avaliable yet */

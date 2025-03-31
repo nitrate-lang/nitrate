@@ -117,7 +117,7 @@ void srv::DoFormatting(const RequestMessage& req, ResponseMessage& resp) {
   }
 
   std::stringstream formatted_ss;
-  auto formatter = no3::format::CambrianFormatter(formatted_ss);
+  auto formatter = no3::format::QuasiCanonicalFormatter(formatted_ss);
   ast.Get()->Accept(formatter);
 
   if (formatter.HasErrors()) {

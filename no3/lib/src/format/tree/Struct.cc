@@ -37,7 +37,7 @@ using namespace ncc;
 using namespace ncc::parse;
 using namespace no3::format;
 
-void CambrianFormatter::Visit(FlowPtr<parse::Struct> n) {
+void QuasiCanonicalFormatter::Visit(FlowPtr<parse::Struct> n) {
   PrintLineComments(n);
 
   switch (n->GetCompositeType()) {
@@ -177,7 +177,7 @@ void CambrianFormatter::Visit(FlowPtr<parse::Struct> n) {
   m_line << GetIndent() << "}";
 }
 
-void CambrianFormatter::Visit(FlowPtr<TupleTy> n) {
+void QuasiCanonicalFormatter::Visit(FlowPtr<TupleTy> n) {
   /* If the number of fields exceeds the threshold, arange fields into a
    * matrix of row size ceil(sqrt(n)). */
   PrintMultilineComments(n);

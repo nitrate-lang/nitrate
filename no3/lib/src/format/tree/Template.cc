@@ -38,7 +38,7 @@ using namespace ncc::parse;
 using namespace no3::format;
 using namespace ncc::lex;
 
-void CambrianFormatter::Visit(FlowPtr<TemplateType> n) {
+void QuasiCanonicalFormatter::Visit(FlowPtr<TemplateType> n) {
   PrintMultilineComments(n);
 
   bool is_optional =

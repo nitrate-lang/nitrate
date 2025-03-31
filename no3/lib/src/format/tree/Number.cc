@@ -37,7 +37,7 @@ using namespace ncc;
 using namespace ncc::parse;
 using namespace no3::format;
 
-void CambrianFormatter::WriteFloatLiteralChunk(std::string_view float_str) {
+void QuasiCanonicalFormatter::WriteFloatLiteralChunk(std::string_view float_str) {
   constexpr size_t kInsertSepEvery = 10;
 
   bool already_write_type_suffix = false;
@@ -60,7 +60,7 @@ void CambrianFormatter::WriteFloatLiteralChunk(std::string_view float_str) {
   }
 }
 
-void CambrianFormatter::WriteFloatLiteral(std::string_view float_str) {
+void QuasiCanonicalFormatter::WriteFloatLiteral(std::string_view float_str) {
   constexpr size_t kMaxChunkSize = 50;
 
   if (float_str.empty()) {
@@ -88,25 +88,25 @@ void CambrianFormatter::WriteFloatLiteral(std::string_view float_str) {
   }
 }
 
-void CambrianFormatter::Visit(FlowPtr<Float> n) {
+void QuasiCanonicalFormatter::Visit(FlowPtr<Float> n) {
   PrintMultilineComments(n);
 
   WriteFloatLiteral(n->GetValue());
 }
 
-void CambrianFormatter::Visit(FlowPtr<Integer> n) {
+void QuasiCanonicalFormatter::Visit(FlowPtr<Integer> n) {
   PrintMultilineComments(n);
 
   WriteFloatLiteral(n->GetValue());
 }
 
-void CambrianFormatter::Visit(FlowPtr<Boolean> n) {
+void QuasiCanonicalFormatter::Visit(FlowPtr<Boolean> n) {
   PrintMultilineComments(n);
 
   m_line << (n->GetValue() ? "true" : "false");
 }
 
-void CambrianFormatter::Visit(FlowPtr<parse::Null> n) {
+void QuasiCanonicalFormatter::Visit(FlowPtr<parse::Null> n) {
   PrintMultilineComments(n);
 
   m_line << "null";

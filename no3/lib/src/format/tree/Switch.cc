@@ -37,7 +37,7 @@ using namespace ncc;
 using namespace ncc::parse;
 using namespace no3::format;
 
-void CambrianFormatter::Visit(FlowPtr<Case> n) {
+void QuasiCanonicalFormatter::Visit(FlowPtr<Case> n) {
   PrintLineComments(n);
 
   n->GetCond().Accept(*this);
@@ -45,7 +45,7 @@ void CambrianFormatter::Visit(FlowPtr<Case> n) {
   n->GetBody()->Accept(*this);
 }
 
-void CambrianFormatter::Visit(FlowPtr<parse::Switch> n) {
+void QuasiCanonicalFormatter::Visit(FlowPtr<parse::Switch> n) {
   PrintLineComments(n);
 
   m_line << "switch ";

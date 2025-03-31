@@ -37,7 +37,7 @@ using namespace ncc;
 using namespace ncc::parse;
 using namespace no3::format;
 
-void CambrianFormatter::Visit(FlowPtr<Function> n) {
+void QuasiCanonicalFormatter::Visit(FlowPtr<Function> n) {
   PrintLineComments(n);
 
   m_line << "fn";
@@ -120,7 +120,7 @@ void CambrianFormatter::Visit(FlowPtr<Function> n) {
   }
 }
 
-void CambrianFormatter::Visit(FlowPtr<FuncTy> n) {
+void QuasiCanonicalFormatter::Visit(FlowPtr<FuncTy> n) {
   PrintMultilineComments(n);
 
   m_line << "fn";

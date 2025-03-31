@@ -37,7 +37,7 @@ using namespace ncc;
 using namespace ncc::parse;
 using namespace no3::format;
 
-void CambrianFormatter::Visit(FlowPtr<parse::While> n) {
+void QuasiCanonicalFormatter::Visit(FlowPtr<parse::While> n) {
   PrintLineComments(n);
 
   m_line << "while ";
@@ -48,7 +48,7 @@ void CambrianFormatter::Visit(FlowPtr<parse::While> n) {
   m_line << ";";
 }
 
-void CambrianFormatter::Visit(FlowPtr<parse::Return> n) {
+void QuasiCanonicalFormatter::Visit(FlowPtr<parse::Return> n) {
   PrintLineComments(n);
 
   if (n->GetValue().has_value()) {
@@ -60,7 +60,7 @@ void CambrianFormatter::Visit(FlowPtr<parse::Return> n) {
   }
 }
 
-void CambrianFormatter::Visit(FlowPtr<parse::If> n) {
+void QuasiCanonicalFormatter::Visit(FlowPtr<parse::If> n) {
   PrintLineComments(n);
 
   m_line << "if ";
@@ -74,13 +74,13 @@ void CambrianFormatter::Visit(FlowPtr<parse::If> n) {
   }
 }
 
-void CambrianFormatter::Visit(FlowPtr<parse::Break> n) {
+void QuasiCanonicalFormatter::Visit(FlowPtr<parse::Break> n) {
   PrintLineComments(n);
 
   m_line << "break;";
 }
 
-void CambrianFormatter::Visit(FlowPtr<parse::Continue> n) {
+void QuasiCanonicalFormatter::Visit(FlowPtr<parse::Continue> n) {
   PrintLineComments(n);
 
   m_line << "continue;";

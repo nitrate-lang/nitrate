@@ -37,7 +37,7 @@ using namespace ncc;
 using namespace ncc::parse;
 using namespace no3::format;
 
-void CambrianFormatter::Visit(FlowPtr<Slice> n) {
+void QuasiCanonicalFormatter::Visit(FlowPtr<Slice> n) {
   PrintMultilineComments(n);
 
   n->GetBase().Accept(*this);
@@ -52,7 +52,7 @@ void CambrianFormatter::Visit(FlowPtr<Slice> n) {
   m_line << "]";
 }
 
-void CambrianFormatter::Visit(FlowPtr<Index> n) {
+void QuasiCanonicalFormatter::Visit(FlowPtr<Index> n) {
   PrintMultilineComments(n);
 
   n->GetBase().Accept(*this);

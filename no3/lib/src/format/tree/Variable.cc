@@ -37,7 +37,7 @@ using namespace ncc;
 using namespace ncc::parse;
 using namespace no3::format;
 
-void CambrianFormatter::Visit(FlowPtr<Variable> n) {
+void QuasiCanonicalFormatter::Visit(FlowPtr<Variable> n) {
   PrintLineComments(n);
 
   switch (n->GetVariableKind()) {
