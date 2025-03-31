@@ -459,7 +459,6 @@ namespace ncc::parse {
           return true;
         }
 
-        /// TODO: Verify if this is correct
         return false;
       }();
 
