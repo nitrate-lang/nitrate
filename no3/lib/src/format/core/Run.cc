@@ -37,6 +37,7 @@
 #include <core/InterpreterImpl.hh>
 #include <core/PackageConfig.hh>
 #include <filesystem>
+#include <format/tree/Visitor.hh>
 #include <fstream>
 #include <memory>
 #include <nitrate-core/Allocate.hh>
@@ -724,8 +725,14 @@ static auto FormatFile(const std::filesystem::path& src, const std::filesystem::
 
   switch (mode) {
     case FormatMode::Standard: {
-      /// TODO: Implement file formatting
-      Log << "Standard formatting mode is not yet implemented.";
+      bool has_errors = false;
+      auto writer = no3::format::QuasiCanonicalFormatterFactory::Create(*dst_file_ptr, has_errors);
+      ptree_root.value().Accept(*writer);
+      okay = !has_errors;
+      if (has_errors) {
+        Log << "Failed to format the source file: " << src;
+      }
+
       break;
     }
 
