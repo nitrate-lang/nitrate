@@ -219,6 +219,14 @@ static auto RecurseFunctionReturnType(GeneralParser::Context& m) -> FlowPtr<pars
     return m.RecurseType();
   }
 
+  if (m.NextIf<OpMinus>()) {
+    if (!m.NextIf<OpGT>()) [[unlikely]] {
+      Log << ParserSignal << m.Current() << "Expected '->' after function return type";
+    }
+
+    return m.RecurseType();
+  }
+
   return m.CreateInferredType();
 }
 
