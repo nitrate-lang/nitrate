@@ -353,9 +353,9 @@ constexpr auto kCharMap = []() constexpr {
   map['f'] = '\f';
   map['r'] = '\r';
 
-  map['x'] = -1;
-  map['u'] = -1;
-  map['o'] = -1;
+  map['x'] = map['X'] = -1;
+  map['u'] = map['U'] = -1;
+  map['o'] = map['O'] = -1;
 
   return map;
 }();
@@ -803,6 +803,7 @@ public:
         }
 
         switch (c) {
+          case 'X':
           case 'x': {
             std::array hex = {NextChar(), NextChar()};
             if (!kHexDigitsTable[hex[0]] || !kHexDigitsTable[hex[1]]) {
@@ -819,6 +820,7 @@ public:
             break;
           }
 
+          case 'U':
           case 'u': {
             c = NextChar();
             if (c != '{') [[unlikely]] {
@@ -881,6 +883,7 @@ public:
             break;
           }
 
+          case 'O':
           case 'o': {
             std::array<uint8_t, 3> oct = {NextChar(), NextChar(), NextChar()};
             uint8_t val;
