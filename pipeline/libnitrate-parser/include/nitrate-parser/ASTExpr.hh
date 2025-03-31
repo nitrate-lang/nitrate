@@ -237,7 +237,9 @@ namespace ncc::parse {
     string m_name;
 
   public:
-    constexpr Identifier(auto name) : Expr(AST_eIDENT), m_name(name) {}
+    constexpr Identifier(auto name) : Expr(AST_eIDENT), m_name(name) {
+      qcore_assert(!m_name->empty(), "Identifier name cannot be empty");
+    }
 
     [[nodiscard, gnu::pure]] constexpr auto GetName() const { return m_name; }
     [[nodiscard, gnu::pure]] constexpr auto GetName() { return m_name; }
