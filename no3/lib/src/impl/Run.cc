@@ -43,6 +43,7 @@ static const auto IMPL_SUBCOMMANDS = []() {
   m["help"] = m["--help"] = m["-h"] = cmd_impl::subcommands::CommandImplHelp;
   m["config-parse"] = cmd_impl::subcommands::CommandImplConfigParse;
   m["self-test"] = cmd_impl::subcommands::CommandImplSelfTest;
+  m["parse"] = cmd_impl::subcommands::CommandImplParse;
 
   return m;
 }();
@@ -60,6 +61,9 @@ auto no3::cmd_impl::subcommands::CommandImplHelp(ConstArguments, const MutArgume
 ├───────────────┼──────────────────────────────────────────────────────────────┤
 │ self-test     │ Run internal test suite                                      │
 │               │ Get help: https://nitrate.dev/docs/no3/impl/self-test        │
+├───────────────┼──────────────────────────────────────────────────────────────┤
+│ parse         │ Parse a source file into a parse tree                        │
+│               │ Get help: https://nitrate.dev/docs/no3/impl/parse            │
 ╰───────────────┴──────────────────────────────────────────────────────────────╯)";
 
   Log << Raw << message << "\n";

@@ -39,4 +39,5 @@ namespace no3::cmd_impl::subcommands {
   auto CommandImplHelp(ConstArguments full_argv, const MutArguments& argv) -> bool;
   auto CommandImplConfigParse(ConstArguments full_argv, const MutArguments& argv) -> bool;
   auto CommandImplSelfTest(ConstArguments full_argv, const MutArguments& argv) -> bool;
+  auto CommandImplParse(ConstArguments full_argv, const MutArguments& argv) -> bool;
 }  // namespace no3::cmd_impl::subcommands
