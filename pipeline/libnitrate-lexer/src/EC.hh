@@ -59,6 +59,7 @@ namespace ncc::lex {
   NCC_EC_EX(Lexer, InvalidUnicodeCodepoint, Formatter);
   NCC_EC_EX(Lexer, LexicalGarbage, Formatter);
   NCC_EC_EX(Lexer, InvalidUTF8, Formatter);
+  NCC_EC_EX(Lexer, InvalidIdentifier, Formatter);
 }  // namespace ncc::lex
 
 #endif

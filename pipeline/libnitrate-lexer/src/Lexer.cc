@@ -77,6 +77,7 @@ enum NumberKind : uint8_t {
 
 enum class LexState : uint8_t {
   Identifier,
+  IdentifierEscaped,
   String,
   Integer,
   CommentStart,
@@ -756,6 +757,31 @@ public:
     return {Name, string(std::move(m_buf)), start_pos};
   };
 
+  auto ParseIdentifierEscaped(LocationID start_pos) -> Token {
+    uint8_t c;
+
+    while (true) {
+      c = NextChar();
+      if (c == '`') {
+        break;
+      }
+
+      m_buf += c;
+    }
+
+    if (m_buf.empty()) [[unlikely]] {
+      Log << InvalidIdentifier << LogSource() << "Empty identifier";
+      return Token::EndOfFile();
+    }
+
+    if (!IsUtf8(m_buf.c_str())) [[unlikely]] {
+      Log << InvalidUTF8 << LogSource() << "Invalid UTF-8 sequence in identifier";
+      return Token::EndOfFile();
+    }
+
+    return {Name, string(std::move(m_buf)), start_pos};
+  }
+
   auto ParseString(uint8_t c, LocationID start_pos) -> Token {
     auto quote = c;
     c = NextChar();
@@ -1215,16 +1241,16 @@ auto Tokenizer::GetNext() -> Token {
   const auto start_pos = InternLocation(Location(impl.m_offset, impl.m_line, impl.m_column, impl.m_filename));
 
   const auto state = [c]() {
+    if (kDigitsTable[c]) {
+      return LexState::Integer;
+    }
+
     if (kIdentiferStartTable[c]) {
       return LexState::Identifier;
     }
 
     if (c == '/') {
       return LexState::CommentStart;
-    }
-
-    if (kDigitsTable[c]) {
-      return LexState::Integer;
     }
 
     if (c == '"' || c == '\'') {
@@ -1235,6 +1261,10 @@ auto Tokenizer::GetNext() -> Token {
       return LexState::MacroStart;
     }
 
+    if (c == '`') {
+      return LexState::IdentifierEscaped;
+    }
+
     return LexState::Other;
   }();
 
@@ -1242,6 +1272,10 @@ auto Tokenizer::GetNext() -> Token {
     switch (state) {
       case LexState::Identifier: {
         return impl.ParseIdentifier(c, start_pos);
+      }
+
+      case LexState::IdentifierEscaped: {
+        return impl.ParseIdentifierEscaped(start_pos);
       }
 
       case LexState::String: {
