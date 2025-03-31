@@ -1,43 +1,45 @@
 {
   "name": "nitrate-lsp",
   "displayName": "Nitrate: Language Server",
-  "description": "The official Nitrate Language Server",
-  "author": "Wesley Jones",
-  "license": "LGPL-2.1-or-later",
+  "description": "Nitrate completion, navigation, and insights",
   "version": "1.0.1",
-  "icon": "./icons/icon-light.png",
-  "repository": {
-    "type": "git",
-    "repository": "https://github.com/Kracken256/nitrate/extensions/vscode/nitrate"
-  },
   "publisher": "nitrate",
-  "categories": [
-    "Programming Languages"
-  ],
-  "keywords": [
-    "multi-root ready"
-  ],
+  "license": "LGPL-2.1-or-later",
+  "icon": "./icons/icon-light.png",
+  "author": "Wesley Jones",
   "engines": {
     "vscode": "^1.75.0"
   },
+  "categories": [
+    "Programming Languages",
+    "Linters",
+    "Formatters"
+  ],
+  "keywords": [
+    "Nitrate",
+    "no3"
+  ],
   "activationEvents": [
     "onLanguage:nitrate"
   ],
-  "main": "./client/out/extension",
+  "main": "./out/extension",
   "scripts": {
     "vscode:prepublish": "npm run compile",
     "compile": "tsc -b",
-    "watch": "tsc -b -w",
-    "lint": "eslint ./client/src --ext .ts,.tsx",
-    "postinstall": "cd client && npm install && cd .."
+    "watch": "tsc -b -w"
+  },
+  "dependencies": {
+    "vscode-languageclient": "^9.0.1"
   },
   "devDependencies": {
-    "@types/mocha": "^10.0.6",
-    "@types/node": "^20",
-    "@typescript-eslint/eslint-plugin": "^7.1.0",
-    "@typescript-eslint/parser": "^7.1.0",
-    "eslint": "^8.57.0",
-    "mocha": "^10.8.2",
-    "typescript": "^5.6.2"
+    "@types/node": "^22.0.2",
+    "@types/vscode": "^1.75.0",
+    "@vscode/test-electron": "^2.4.1",
+    "@vscode/vsce": "^3.2.2",
+    "typescript": "^5.5.4"
+  },
+  "repository": {
+    "type": "git",
+    "repository": "https://github.com/nitrate-lang/nitrate/tree/main/extensions/vscode/nitrate-lsp"
   }
 }
