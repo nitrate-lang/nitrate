@@ -83,7 +83,11 @@ auto GeneralParser::Context::RecurseVariable(VariableType decl_type) -> std::vec
     auto variable = RecurseVariableInstance(m, decl_type);
     variables.push_back(variable);
 
-    if (NextIf<PuncSemi>() || NextIf<PuncComa>()) {
+    if (NextIf<PuncComa>()) {
+      continue;
+    }
+
+    if (NextIf<PuncSemi>()) {
       return variables;
     }
 
