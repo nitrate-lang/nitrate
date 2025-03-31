@@ -2,7 +2,7 @@
   "name": "nitrate-lsp",
   "displayName": "Nitrate: Language Server",
   "description": "Nitrate completion, navigation, and insights",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "publisher": "nitrate",
   "license": "LGPL-2.1-or-later",
   "icon": "./icons/icon-light.png",
@@ -28,10 +28,8 @@
     "compile": "tsc -b",
     "watch": "tsc -b -w"
   },
-  "dependencies": {
-    "vscode-languageclient": "^9.0.1"
-  },
   "devDependencies": {
+    "vscode-languageclient": "^9.0.1",
     "@types/node": "^22.0.2",
     "@types/vscode": "^1.75.0",
     "@vscode/test-electron": "^2.4.1",
