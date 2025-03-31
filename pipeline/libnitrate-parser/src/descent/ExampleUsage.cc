@@ -61,7 +61,7 @@ auto GeneralParser::Context::RecurseEscapeBlock() -> void {
   size_t depth = 1;
 
   while (depth > 0) {
-    if (m_rd.IsEof()) {
+    if (m.IsEof()) {
       Log << ParserSignal << Current() << "Unexpected end of file while parsing 'escape_block'";
       return;
     }

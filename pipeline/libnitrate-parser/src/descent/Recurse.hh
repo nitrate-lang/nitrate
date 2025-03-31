@@ -128,6 +128,16 @@ namespace ncc::parse {
       }
     }
 
+    template <auto tok>
+    auto IsNext() -> bool {
+      auto t = m_rd.Peek();
+      if constexpr (std::is_same_v<decltype(tok), ncc::lex::TokenType>) {
+        return t.Is(tok);
+      } else {
+        return t.Is<tok>();
+      }
+    }
+
     /****************************************************************************
      * @brief
      *  Language parsing functions
@@ -138,7 +148,7 @@ namespace ncc::parse {
     [[nodiscard]] auto GetEnvironment() const -> std::shared_ptr<IEnvironment> { return m_env; }
     [[nodiscard]] auto RecurseAttributes(string kind) -> std::vector<FlowPtr<Expr>>;
     [[nodiscard]] auto RecurseTemplateParameters() -> std::optional<std::vector<TemplateParameter>>;
-    [[nodiscard]] auto RecurseCallArguments(const std::set<lex::Token> &terminators,
+    [[nodiscard]] auto RecurseCallArguments(const std::set<lex::Token> &end,
                                             bool type_by_default) -> std::vector<CallArg>;
 
     [[nodiscard]] auto RecurseName() -> string;
@@ -162,8 +172,9 @@ namespace ncc::parse {
     [[nodiscard]] auto RecurseThrow() -> FlowPtr<Expr>;
     [[nodiscard]] auto RecurseAwait() -> FlowPtr<Expr>;
     [[nodiscard]] auto RecurseImport() -> FlowPtr<Expr>;
-    [[nodiscard]] auto RecurseBlock(bool expect_braces, bool single_stmt, BlockMode safety) -> FlowPtr<Block>;
-    [[nodiscard]] auto RecurseExpr(const std::set<lex::Token> &terminators) -> FlowPtr<Expr>;
+    [[nodiscard]] auto RecurseBlock(bool braces = true, bool single = false,
+                                    BlockMode safety = BlockMode::Unknown) -> FlowPtr<Block>;
+    [[nodiscard]] auto RecurseExpr(const std::set<lex::Token> &end) -> FlowPtr<Expr>;
     auto RecurseEscapeBlock() -> void;
     [[nodiscard]] auto RecurseUnitAssert() -> FlowPtr<Expr>;
   };

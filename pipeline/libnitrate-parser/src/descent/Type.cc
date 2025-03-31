@@ -232,7 +232,7 @@ static auto RecurseTypeByOperator(GeneralParser::Context& m, Operator op) -> Flo
     }
 
     case OpTernary: {
-      auto infer = m.CreateUnknownType();
+      auto infer = m.CreateInferredType();
       infer->SetOffset(m.Current().GetStart());
       return infer;
     }
@@ -415,9 +415,6 @@ static auto RecurseTypeByPunctuation(GeneralParser::Context& m, Punctor punc) ->
 auto GeneralParser::Context::RecurseType() -> FlowPtr<parse::Type> {
   auto& m = *this;
 
-  auto comments = m_rd.CommentBuffer();
-  m_rd.ClearCommentBuffer();
-
   std::optional<FlowPtr<Type>> r;
 
   switch (auto tok = Peek(); tok.GetKind()) {
@@ -449,7 +446,6 @@ auto GeneralParser::Context::RecurseType() -> FlowPtr<parse::Type> {
   }
 
   r = RecurseTypeSuffix(m, r.value());
-  r = BindComments(r.value(), comments);
 
   return r.value();
 }

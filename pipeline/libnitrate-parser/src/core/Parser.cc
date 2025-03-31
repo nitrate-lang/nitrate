@@ -113,8 +113,8 @@ auto GeneralParser::Context::RecurseName() -> string {
   return name;
 }
 
-auto GeneralParser::Context::RecurseBlock(bool expect_braces, bool single_stmt, BlockMode safety) -> FlowPtr<Block> {
-  if (expect_braces && !Next().Is<PuncLCur>()) {
+auto GeneralParser::Context::RecurseBlock(bool braces, bool single, BlockMode safety) -> FlowPtr<Block> {
+  if (braces && !Next().Is<PuncLCur>()) {
     Log << ParserSignal << Current() << "Expected '{'";
   }
 
@@ -128,10 +128,10 @@ auto GeneralParser::Context::RecurseBlock(bool expect_braces, bool single_stmt, 
     }
 
     { /* Detect exit conditon */
-      bool should_break = (expect_braces && NextIf<PuncRCur>()) || (single_stmt && statements.size() == 1);
+      bool should_break = (braces && NextIf<PuncRCur>()) || (single && statements.size() == 1);
 
-      if (!should_break && m_rd.IsEof()) {
-        if (expect_braces) {
+      if (!should_break && m.IsEof()) {
+        if (braces) {
           Log << ParserSignal << Current() << "Expected '}'";
         }
 

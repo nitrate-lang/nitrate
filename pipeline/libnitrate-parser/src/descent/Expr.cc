@@ -57,7 +57,7 @@ auto GeneralParser::Context::RecurseAttributes(string kind) -> std::vector<FlowP
   }
 
   while (true) {
-    if (m_rd.IsEof()) [[unlikely]] {
+    if (m.IsEof()) [[unlikely]] {
       Log << ParserSignal << Current() << "Encountered EOF while parsing " << kind << " attributes";
       return attributes;
     }
@@ -77,19 +77,19 @@ auto GeneralParser::Context::RecurseAttributes(string kind) -> std::vector<FlowP
   }
 }
 
-auto GeneralParser::Context::RecurseCallArguments(const std::set<lex::Token> &terminators,
+auto GeneralParser::Context::RecurseCallArguments(const std::set<lex::Token> &end,
                                                   bool type_by_default) -> std::vector<CallArg> {
   std::vector<CallArg> call_args;
   size_t positional_index = 0;
   string argument_name;
 
   while (true) {
-    if (m_rd.IsEof()) [[unlikely]] {
+    if (m.IsEof()) [[unlikely]] {
       Log << ParserSignal << Current() << "Unexpected end of file while parsing call expression";
       return call_args;
     }
 
-    if (terminators.contains(Peek())) {
+    if (end.contains(Peek())) {
       break;
     }
 
@@ -100,7 +100,7 @@ auto GeneralParser::Context::RecurseCallArguments(const std::set<lex::Token> &te
       argument_name = some_identifier->GetString();
     } else {
       if (some_identifier && !next_is_colon) {
-        m_rd.Insert(some_identifier.value());
+        m.GetScanner().Insert(some_identifier.value());
       }
 
       argument_name = string(std::to_string(positional_index++));
@@ -110,9 +110,9 @@ auto GeneralParser::Context::RecurseCallArguments(const std::set<lex::Token> &te
       auto argument_value = RecurseType();
       call_args.emplace_back(argument_name, argument_value);
     } else {
-      std::set<Token> terminators_copy(terminators);
-      terminators_copy.insert(Token(Punc, PuncComa));
-      auto argument_value = RecurseExpr(terminators_copy);
+      std::set<Token> end_copy(end);
+      end_copy.insert(Token(Punc, PuncComa));
+      auto argument_value = RecurseExpr(end_copy);
       call_args.emplace_back(argument_name, argument_value);
     }
 
@@ -650,7 +650,7 @@ static auto RecurseExprPrimary(GeneralParser::Context &m, bool is_type) -> Nulla
   return e;
 }
 
-auto GeneralParser::Context::RecurseExpr(const std::set<Token> &terminators) -> FlowPtr<Expr> {
+auto GeneralParser::Context::RecurseExpr(const std::set<Token> &end) -> FlowPtr<Expr> {
   auto source_offset = Peek().GetStart();
 
   std::stack<Frame> stack;
@@ -683,7 +683,7 @@ auto GeneralParser::Context::RecurseExpr(const std::set<Token> &terminators) -> 
     while (!stack.empty() && spinning) {
       auto tok = Peek();
 
-      if (terminators.contains(tok)) {
+      if (end.contains(tok)) {
         break;
       }
 

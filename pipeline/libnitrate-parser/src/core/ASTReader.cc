@@ -791,7 +791,7 @@ auto AstReader::Unmarshal(const SyntaxTree::Type &in, bool is_set) -> Result<Typ
     return Unmarshal(in);
   }
 
-  return CreateUnknownType();
+  return CreateInferredType();
 }
 
 auto AstReader::Unmarshal(const SyntaxTree::NamedTy &in) -> Result<NamedTy> {
@@ -834,7 +834,7 @@ auto AstReader::Unmarshal(const SyntaxTree::InferTy &in) -> Result<InferTy> {
     return std::nullopt;
   }
 
-  auto type = CreateUnknownType(bit_width, minimum, maximum);
+  auto type = CreateInferredType(bit_width, minimum, maximum);
 
   UnmarshalLocationLocation(in.location(), type);
   UnmarshalCodeComment(in.comments(), type);

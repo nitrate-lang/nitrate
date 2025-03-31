@@ -46,7 +46,7 @@ static auto RecurseFunctionParameterType(GeneralParser::Context& m) -> FlowPtr<p
     return m.RecurseType();
   }
 
-  return m.CreateUnknownType();
+  return m.CreateInferredType();
 }
 
 static auto RecurseFunctionParameterValue(GeneralParser::Context& m) -> NullableFlowPtr<Expr> {
@@ -82,7 +82,7 @@ auto GeneralParser::Context::RecurseTemplateParameters() -> std::optional<std::v
   std::vector<TemplateParameter> params;
 
   while (true) {
-    if (m_rd.IsEof()) [[unlikely]] {
+    if (m.IsEof()) [[unlikely]] {
       Log << ParserSignal << Current() << "Unexpected EOF in template parameters";
       return params;
     }
@@ -219,7 +219,7 @@ static auto RecurseFunctionReturnType(GeneralParser::Context& m) -> FlowPtr<pars
     return m.RecurseType();
   }
 
-  return m.CreateUnknownType();
+  return m.CreateInferredType();
 }
 
 static auto RecurseFunctionBody(GeneralParser::Context& m, bool parse_declaration_only) -> NullableFlowPtr<Expr> {

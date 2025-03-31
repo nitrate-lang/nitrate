@@ -219,7 +219,7 @@ auto ASTFactory::CreateMockInstance(ASTNodeKind kind, SourceLocation origin) -> 
     }
 
     case AST_tINFER: {
-      r = CreateUnknownType();
+      r = CreateInferredType();
       break;
     }
 

@@ -106,7 +106,7 @@ auto ASTFactory::CreateFunction(string name, NullableFlowPtr<Type> ret_ty,
   std::copy(attributes.begin(), attributes.end(), attributes_copy.begin());
 
   if (!ret_ty.has_value()) {
-    ret_ty = CreateUnknownType(nullptr, nullptr, nullptr, origin);
+    ret_ty = CreateInferredType(nullptr, nullptr, nullptr, origin);
   }
 
   auto template_parameters_copy =
@@ -179,7 +179,7 @@ auto ASTFactory::CreateVariable(VariableType variant, string name, std::span<con
   std::copy(attributes.begin(), attributes.end(), attributes_copy.begin());
 
   if (!type.has_value()) {
-    type = CreateUnknownType(nullptr, nullptr, nullptr, origin);
+    type = CreateInferredType(nullptr, nullptr, nullptr, origin);
   }
 
   return CreateInstance<Variable>(name, type.value(), init, variant, attributes_copy)(m_pool, origin);

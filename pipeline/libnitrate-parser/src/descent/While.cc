@@ -39,17 +39,20 @@ using namespace ncc;
 using namespace ncc::lex;
 using namespace ncc::parse;
 
-static auto RecurseWhileCond(GeneralParser::Context& m) -> FlowPtr<Expr> {
-  if (m.Peek().Is<PuncLCur>()) {
-    return m.CreateBoolean(true);
+static auto RecurseWhileLoopCondition(GeneralParser::Context& m) -> FlowPtr<Expr> {
+  if (auto optional_condition = !m.IsNext<PuncLCur>(); optional_condition) {
+    return m.RecurseExpr({
+        Token(PuncLCur),
+    });
   }
 
-  return m.RecurseExpr({Token(Punc, PuncLCur)});
+  return m.CreateBoolean(true);
 }
 
 auto GeneralParser::Context::RecurseWhile() -> FlowPtr<Expr> {
-  auto cond = RecurseWhileCond(*this);
-  auto body = RecurseBlock(true, false, BlockMode::Unknown);
+  auto while_condition = RecurseWhileLoopCondition(*this);
+  auto while_body = RecurseBlock();
+  auto while_loop = CreateWhile(while_condition, while_body);
 
-  return CreateWhile(cond, body);
+  return while_loop;
 }

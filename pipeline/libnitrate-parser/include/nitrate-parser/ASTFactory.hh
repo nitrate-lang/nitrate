@@ -346,7 +346,7 @@ namespace ncc::parse {
                                               NullableFlowPtr<Expr> min = nullptr, NullableFlowPtr<Expr> max = nullptr,
                                               SourceLocation origin = SourceLocation::current()) -> FlowPtr<NamedTy>;
 
-    [[gnu::pure, nodiscard]] auto CreateUnknownType(
+    [[gnu::pure, nodiscard]] auto CreateInferredType(
         NullableFlowPtr<Expr> bits = nullptr, NullableFlowPtr<Expr> min = nullptr, NullableFlowPtr<Expr> max = nullptr,
         SourceLocation origin = SourceLocation::current()) -> FlowPtr<InferTy>;
 
