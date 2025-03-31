@@ -50,9 +50,11 @@ using namespace no3::lsp;
 static auto ConnectUnixSocket(const std::filesystem::path& path) -> std::optional<int> {
   std::array<char, 256> err_buffer;
 
+  Log << Trace << "Creating UNIX socket connection to " << path;
   auto sockfd = socket(AF_UNIX, SOCK_STREAM, 0);
   if (sockfd == -1) {
-    Log << "Failed to create socket: " << strerror_r(errno, err_buffer.data(), err_buffer.size());
+    auto* error = strerror_r(errno, err_buffer.data(), err_buffer.size());
+    Log << "Failed to create socket: " << error;
     return std::nullopt;
   }
 
@@ -61,17 +63,21 @@ static auto ConnectUnixSocket(const std::filesystem::path& path) -> std::optiona
   addr.sun_family = AF_UNIX;
   strncpy(addr.sun_path, path.c_str(), sizeof(addr.sun_path) - 1);
 
+  Log << Trace << "Connecting to socket at " << addr.sun_path;
   if (connect(sockfd, (struct sockaddr*)&addr, sizeof(addr)) == -1) {
-    Log << "Failed to connect to socket: " << strerror_r(errno, err_buffer.data(), err_buffer.size());
+    auto* error = strerror_r(errno, err_buffer.data(), err_buffer.size());
+    Log << "Failed to connect to socket: " << error;
     close(sockfd);
     return std::nullopt;
   }
+
+  Log << Trace << "Connected to socket at " << addr.sun_path;
 
   return sockfd;
 }
 
 auto core::ConnectToPipe(const std::filesystem::path& path) -> std::optional<DuplexStream> {
-  Log << Trace << "Connecting to UNIX socket " << path;
+  Log << Trace << "Opening connection to " << path;
 
   auto conn = ConnectUnixSocket(path);
   if (!conn) {
@@ -80,9 +86,9 @@ auto core::ConnectToPipe(const std::filesystem::path& path) -> std::optional<Dup
   }
 
   Log << Trace << "Creating boost::iostreams::stream from raw file descriptor";
+
   auto stream = boost::iostreams::file_descriptor(conn.value(), boost::iostreams::close_handle);
   auto io_stream = std::make_unique<boost::iostreams::stream<boost::iostreams::file_descriptor>>(stream);
-
   if (!io_stream->is_open()) {
     Log << "Boost::iostreams::stream failed to open";
     return std::nullopt;

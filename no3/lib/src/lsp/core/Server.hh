@@ -33,57 +33,31 @@
 
 #pragma once
 
-#include <functional>
 #include <iostream>
 #include <lsp/core/LSP.hh>
 #include <lsp/core/ThreadPool.hh>
 #include <lsp/core/connect/Connection.hh>
 #include <optional>
-#include <queue>
-#include <shared_mutex>
-#include <utility>
 
 namespace no3::lsp::core {
   enum class ConnectionType : uint8_t { Pipe, Port, Stdio };
-  using RequestHandler = std::function<void(const message::RequestMessage&, message::ResponseMessage&)>;
-  using NotificationHandler = std::function<void(const message::NotificationMessage&)>;
 
   auto OpenConnection(ConnectionType type, const std::string& target) -> std::optional<DuplexStream>;
 
-  class ServerContext {
-    ThreadPool m_thread_pool;
-    std::unordered_map<std::string, RequestHandler> m_request_handlers;
-    std::unordered_map<std::string, NotificationHandler> m_notification_handlers;
-    std::queue<std::function<void()>> m_request_queue;
-    std::mutex m_request_queue_mutex;
-    std::shared_mutex m_task_mutex;
-    std::mutex m_io_mutex;
-
-    ServerContext() = default;
-
-    auto RegisterHandlers() -> void;
-    auto RequestQueueLoop(const std::stop_token& st) -> void;
-
-    auto NextMessage(std::istream& in) -> std::optional<message::MessageObject>;
-    auto Dispatch(message::MessageObject message, std::ostream& out) -> void;
-
-    auto DoRequest(const message::RequestMessage& request, std::ostream& out) -> void;
-    auto DoNotification(const message::NotificationMessage& notif) -> void;
+  class LSPServer {
+    class PImpl;
+    std::unique_ptr<PImpl> m_pimpl;
 
   public:
-    ServerContext(const ServerContext&) = delete;
-    ServerContext(ServerContext&&) = delete;
+    LSPServer(std::iostream& io);
+    ~LSPServer();
 
-    static auto The() -> ServerContext&;
+    enum class State { Suspended, Running, Exited };
 
-    [[noreturn]] void StartServer(DuplexStream& io);
-
-    void RegisterRequestHandler(std::string_view method, RequestHandler handler) {
-      m_request_handlers[std::string(method)] = std::move(handler);
-    }
-
-    void RegisterNotificationHandler(std::string_view method, NotificationHandler handler) {
-      m_notification_handlers[std::string(method)] = std::move(handler);
-    }
+    [[nodiscard]] auto Start() -> bool;
+    [[nodiscard]] auto Suspend() -> bool;
+    [[nodiscard]] auto Resume() -> bool;
+    [[nodiscard]] auto Stop() -> bool;
+    [[nodiscard]] auto GetState() const -> State;
   };
 }  // namespace no3::lsp::core

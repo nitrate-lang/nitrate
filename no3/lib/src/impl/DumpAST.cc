@@ -52,23 +52,23 @@ using namespace no3::cmd_impl;
 
 enum class OutputFormat { Text, Protobuf, Minify };
 
-struct Options {
-  std::filesystem::path& m_source_path;
-  std::filesystem::path& m_output_path;
-  OutputFormat m_output_format;
-  bool m_dump;
-  bool m_tracking;
-
-  Options(std::filesystem::path& source_path, std::filesystem::path& output_path, OutputFormat output_format, bool dump,
-          bool tracking)
-      : m_source_path(source_path),
-        m_output_path(output_path),
-        m_output_format(output_format),
-        m_dump(dump),
-        m_tracking(tracking) {}
-};
-
 class ImplParseCommandArgumentParser {
+  struct Options {
+    std::filesystem::path& m_source_path;
+    std::filesystem::path& m_output_path;
+    OutputFormat m_output_format;
+    bool m_dump;
+    bool m_tracking;
+
+    Options(std::filesystem::path& source_path, std::filesystem::path& output_path, OutputFormat output_format,
+            bool dump, bool tracking)
+        : m_source_path(source_path),
+          m_output_path(output_path),
+          m_output_format(output_format),
+          m_dump(dump),
+          m_tracking(tracking) {}
+  };
+
   bool m_help = false;
   size_t m_dump = 0;
   size_t m_tracking = 0;

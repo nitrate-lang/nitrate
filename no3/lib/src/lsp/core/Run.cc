@@ -31,107 +31,243 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <boost/assert/source_location.hpp>
-#include <boost/throw_exception.hpp>
+#include <core/GetOpt.hh>
 #include <core/InterpreterImpl.hh>
-#include <csignal>
 #include <lsp/core/Server.hh>
+#include <nitrate-core/Assert.hh>
 #include <nitrate-core/LogOStream.hh>
 #include <nitrate-core/Logger.hh>
 #include <nitrate-core/Macro.hh>
 
 using namespace ncc;
-using namespace no3;
+using namespace no3::core;
 using namespace no3::lsp;
 using namespace no3::lsp::core;
 
-// static constexpr void CreateParser(argparse::ArgumentParser& parser) {
-//   ///=================== BASIC CONFIGURATION ======================
+class LspCommandArgumentParser {
+  struct Options {
+    ConnectionType m_connection_mode;
+    std::string& m_connect_arg;
+    std::filesystem::path& m_log_file;
 
-//   parser.AddArgument("--config").DefaultValue(std::string("")).Help("Specify the configuration file");
+    Options(std::filesystem::path& log_file, std::string& connect_arg, ConnectionType connection_mode)
+        : m_connection_mode(connection_mode), m_connect_arg(connect_arg), m_log_file(log_file) {}
+  };
 
-//   ///=================== CONNECTION CONFIGURATION ======================
+  bool m_help = false;
+  size_t m_stdio = 0;
+  size_t m_pipe = 0;
+  size_t m_port = 0;
+  std::string m_connect_arg;
+  ConnectionType m_connection_mode = ConnectionType::Stdio;
+  std::filesystem::path m_log_file;
+  bool m_too_many_args = false;
 
-//   auto& group = parser.AddMutuallyExclusiveGroup();
+  void DisplayHelp() {
+    std::string_view help =
+        R"(Usage: lsp [--help] [[--pipe VAR]|[--port VAR]|[--stdio]] [--log VAR]
 
-//   group.AddArgument("--pipe").Help("Specify the pipe file to connect to");
-//   group.AddArgument("--port").Help("Specify the port to connect to");
-//   group.AddArgument("--stdio").DefaultValue(false).ImplicitValue(true).Help("Use standard I/O");
-// }
+Optional arguments:
+  -h, --help          shows this help message and exits
+  -s, --stdio         instruct LSP server to connect via stdin/stdout
+  -p, --port          instruct LSP server to listen on a TCP port
+  -u, --pipe          instruct LSP server to open a named pipe
+  -o, --log           log output file [default: "nitrate-lsp.log"]
+)";
 
-auto NitratedMain(int argc, char** argv) -> int {
-  /// TODO: Implement Nitrate LSP
-  (void)argc;
-  (void)argv;
-  Log << "Nitrate LSP is not implemented yet";
-  return 1;
+    Log << Raw << help;
+  }
 
-  // std::vector<std::string> args(argv, argv + argc);
+  void DoParse(std::vector<std::string> args) {
+    constexpr const char* kShortOptions = "hsp:u:o:";
+    constexpr std::array kLongOptions = {
+        option{"help", no_argument, nullptr, 'h'},       option{"stdio", no_argument, nullptr, 's'},
+        option{"port", required_argument, nullptr, 'p'}, option{"pipe", required_argument, nullptr, 'u'},
+        option{"log", required_argument, nullptr, 'o'},  option{nullptr, 0, nullptr, 0},
+    };
 
-  // {
-  //   std::string str;
-  //   for (auto it = args.begin(); it != args.end(); ++it) {
-  //     str += *it;
-  //     if (it + 1 != args.end()) {
-  //       str += " ";
-  //     }
-  //   }
+    std::vector<char*> argv(args.size());
+    std::transform(args.begin(), args.end(), argv.begin(), [](auto& str) { return str.data(); });
 
-  //   Log << Info << "Starting nitrated: \"" << str << "\"";
-  // }
+    {  // Lock the mutex to prevent multiple threads from calling getopt_long at the same time.
+      std::lock_guard lock(GET_OPT);
 
-  // bool did_default = false;
-  // argparse::ArgumentParser parser(ncc::clog, did_default, "nitrated", "1.0");
-  // CreateParser(parser);
+      Log << Trace << "Starting to parse command line arguments";
 
-  // parser.ParseArgs(args);
+      int c;
+      int option_index = 0;
 
-  // if (did_default) {
-  //   return 0;
-  // }
+      opterr = 0;
+      while ((c = GET_OPT.getopt_long(args.size(), argv.data(), kShortOptions, kLongOptions.data(), &option_index)) !=
+             -1) {
+        switch (c) {
+          case 'h': {
+            Log << Trace << "Parsing command line argument: --help";
+            m_help = true;
+            break;
+          }
 
-  // DuplexStream channel;
-  // { /* Setup connection */
-  //   std::string connect_param;
-  //   ConnectionType connection_type;
+          case 's': {
+            Log << Trace << "Parsing command line argument: --stdio, -s";
 
-  //   if (parser.IsUsed("--pipe")) {
-  //     connection_type = ConnectionType::Pipe;
-  //     connect_param = parser.Get<std::string>("--pipe");
-  //   } else if (parser.IsUsed("--port")) {
-  //     connection_type = ConnectionType::Port;
-  //     connect_param = parser.Get<std::string>("--port");
-  //   } else {
-  //     connection_type = ConnectionType::Stdio;
-  //   }
+            m_connection_mode = ConnectionType::Stdio;
+            if (m_stdio++ > 0) {
+              Log << "The -s, --stdio argument was provided more than once.";
+              m_too_many_args = true;
+            }
 
-  //   switch (connection_type) {
-  //     case ConnectionType::Pipe:
-  //       Log << Info << "Using pipe: " << connect_param;
-  //       break;
-  //     case ConnectionType::Port:
-  //       Log << Info << "Using port: " << connect_param;
-  //       break;
-  //     case ConnectionType::Stdio:
-  //       Log << Info << "Using standard I/O";
-  //       break;
-  //   }
+            break;
+          }
 
-  //   auto channel_opt = OpenDuplexStream(connection_type, String(connect_param));
-  //   if (!channel_opt) {
-  //     Log << "Failed to open channel";
-  //     return 1;
-  //   }
+          case 'p': {
+            Log << Trace << "Parsing command line argument: --port, -p";
 
-  //   channel = std::move(channel_opt.value());
-  // }
+            m_connection_mode = ConnectionType::Port;
+            m_connect_arg = optarg;
+            if (m_port++ > 0) {
+              Log << "The -p, --port argument was provided more than once.";
+              m_too_many_args = true;
+            }
 
-  // ServerContext::The().StartServer(channel);
+            break;
+          }
+
+          case 'u': {
+            Log << Trace << "Parsing command line argument: --pipe, -u";
+
+            m_connection_mode = ConnectionType::Pipe;
+            m_connect_arg = optarg;
+            if (m_pipe++ > 0) {
+              Log << "The -u, --pipe argument was provided more than once.";
+              m_too_many_args = true;
+            }
+
+            break;
+          }
+
+          case 'o': {
+            Log << Trace << "Parsing command line argument: --log, -o";
+            if (!m_log_file.empty()) {
+              Log << "The -o, --output argument was provided more than once.";
+              m_too_many_args = true;
+              break;
+            }
+
+            m_log_file = optarg;
+            break;
+          }
+
+          case '?': {
+            Log << "Unknown command line argument: -" << (char)optopt;
+            m_too_many_args = true;
+            break;
+          }
+
+          default: {
+            Log << "Unknown command line argument: -" << (char)c;
+            m_too_many_args = true;
+            break;
+          }
+        }
+      }
+
+      if ((size_t)optind < args.size()) {
+        m_too_many_args = true;
+      }
+
+      if (m_log_file.empty()) {
+        Log << Trace << "No log file path provided. Setting it to \"nitrate-lsp.log\"";
+        m_log_file = "nitrate-lsp.log";
+      }
+
+      Log << Trace << "Finished parsing command line arguments";
+    }
+  }
+
+  [[nodiscard]] auto Check() const -> bool {
+    bool okay = true;
+
+    if (m_too_many_args) {
+      Log << "Too many arguments provided.";
+      okay = false;
+    } else if (m_stdio + m_pipe + m_port > 1) {
+      Log << "Only one of --stdio, --pipe, or --port can be specified.";
+      okay = false;
+    }
+
+    return okay;
+  }
+
+public:
+  LspCommandArgumentParser(const std::vector<std::string>& args, bool& is_valid, bool& performed_action) {
+    is_valid = false;
+    performed_action = false;
+
+    DoParse(args);
+
+    if (m_help) {
+      DisplayHelp();
+      is_valid = true;
+      performed_action = true;
+      return;
+    }
+
+    is_valid = Check();
+  }
+
+  [[nodiscard]] auto GetOptions() -> Options { return {m_log_file, m_connect_arg, m_connection_mode}; }
+};
+
+static bool StartLSPServer(const std::filesystem::path& log_file, const ConnectionType& connection_mode,
+                           const std::string& connection_arg) {
+  auto lsp_io = OpenConnection(connection_mode, connection_arg);
+  if (!lsp_io.has_value()) {
+    Log << Error << "Failed to open connection for LSP server.";
+    return false;
+  }
+
+  auto server = LSPServer(*lsp_io.value());
+  if (!server.Start()) {
+    Log << Error << "Failed to start LSP server.";
+    return false;
+  }
+
+  Log << Info << "LSP server exited";
+
+  return true;
 }
 
-auto Interpreter::PImpl::CommandLSP(ConstArguments, const MutArguments& argv) -> bool {
-  (void)argv;
+auto no3::Interpreter::PImpl::CommandLSP(ConstArguments, const MutArguments& argv) -> bool {
+  bool is_valid = false;
+  bool performed_action = false;
 
-  Log << "Not implemented";
-  return false;
+  LspCommandArgumentParser state(argv, is_valid, performed_action);
+
+  if (!is_valid) {
+    Log << Trace << "Failed to parse command line arguments.";
+    return false;
+  }
+
+  if (performed_action) {
+    Log << Trace << "Performed built-in action.";
+    return true;
+  }
+
+  auto [connection_mode, connection_arg, log_file] = state.GetOptions();
+
+  switch (connection_mode) {
+    case ConnectionType::Stdio:
+      Log << Trace << R"(options["connect_mode"] = "stdio")";
+      break;
+    case ConnectionType::Pipe:
+      Log << Trace << R"(options["connect_mode"] = "pipe")";
+      break;
+    case ConnectionType::Port:
+      Log << Trace << R"(options["connect_mode"] = "tcp")";
+      break;
+  }
+  Log << Trace << "options[\"connect_arg\"] = " << connection_arg;
+  Log << Trace << "options[\"log\"] = " << log_file;
+
+  return StartLSPServer(log_file, connection_mode, connection_arg);
 }

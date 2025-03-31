@@ -47,69 +47,112 @@
 using namespace ncc;
 using namespace no3::lsp;
 
-static auto GetTcpClient(const auto& host, uint16_t port) -> std::optional<int> {
-  std::array<char, 256> err_buffer;
-
-  int fd = socket(AF_INET, SOCK_STREAM, 0);
-  if (fd == -1) {
-    Log << "Failed to create socket: " << strerror_r(errno, err_buffer.data(), err_buffer.size());
-    return std::nullopt;
-  }
-
-  union {
+static auto AcceptTcpClientConnection(const char* srv_host, uint16_t srv_port) -> std::optional<int> {
+  union SockAddrUnion {
     struct sockaddr_in m_in;
     struct sockaddr m_addr;
-  } addr;
+  };
 
-  addr.m_in.sin_family = AF_INET;
-  addr.m_in.sin_port = htons(port);
-  addr.m_in.sin_addr.s_addr = inet_addr(std::string(host).c_str());
+  std::array<char, 256> err_buffer;
+  int fd = -1;
+  int client_fd = -1;
 
-  if (bind(fd, &addr.m_addr, sizeof(addr.m_addr)) == -1) {
-    Log << "Failed to bind socket: " << strerror_r(errno, err_buffer.data(), err_buffer.size());
-    return std::nullopt;
+  {
+    Log << Trace << "Creating TCP AF_INET socket";
+
+    fd = socket(AF_INET, SOCK_STREAM, 0);
+    if (fd == -1) {
+      auto* error = strerror_r(errno, err_buffer.data(), err_buffer.size());
+      Log << "Failed to create socket: " << error;
+      return std::nullopt;
+    }
+
+    Log << Trace << "TCP socket created";
   }
 
-  Log << Info << "Bound to TCP port " << port;
-  Log << Info << "Waiting for connection";
+  {
+    SockAddrUnion addr = {
+        .m_in =
+            {
+                .sin_family = AF_INET,
+                .sin_port = htons(srv_port),
+                .sin_addr =
+                    {
+                        .s_addr = inet_addr(srv_host),
+                    },
+                .sin_zero = {0},
+            },
+    };
 
-  if (listen(fd, 1) == -1) {
-    Log << "Failed to listen on socket: " << strerror_r(errno, err_buffer.data(), err_buffer.size());
-    return std::nullopt;
+    Log << Trace << "Binding to TCP socket";
+
+    if (bind(fd, &addr.m_addr, sizeof(addr.m_addr)) == -1) {
+      auto* error = strerror_r(errno, err_buffer.data(), err_buffer.size());
+      Log << "Failed to bind socket: " << error;
+      return std::nullopt;
+    }
+
+    Log << Trace << "Socket bound to " << srv_host << ":" << srv_port;
   }
 
-  int client_fd = accept(fd, nullptr, nullptr);
-  if (client_fd == -1) {
-    Log << "Failed to accept connection: " << strerror_r(errno, err_buffer.data(), err_buffer.size());
-    return std::nullopt;
+  {
+    if (listen(fd, 1) == -1) {
+      auto* error = strerror_r(errno, err_buffer.data(), err_buffer.size());
+      Log << "Failed to listen on socket: " << error;
+      return std::nullopt;
+    }
+
+    Log << Trace << "Listening on TCP socket";
   }
 
-  Log << Info << "Accepted connection from client";
+  {
+    Log << Info << "Waiting for TCP connection on: " << srv_host << ":" << srv_port;
 
-  if (close(fd) == -1) {
-    Log << "Failed to close listening socket: " << strerror_r(errno, err_buffer.data(), err_buffer.size());
-    return std::nullopt;
+    client_fd = accept(fd, nullptr, nullptr);
+    if (client_fd == -1) {
+      auto* error = strerror_r(errno, err_buffer.data(), err_buffer.size());
+      Log << "Failed to accept connection: " << error;
+      return std::nullopt;
+    }
+
+    Log << Info << "Accepted connection from client";
   }
+
+  {
+    Log << Trace << "Closing listening socket";
+
+    if (close(fd) == -1) {
+      auto* error = strerror_r(errno, err_buffer.data(), err_buffer.size());
+      Log << "Failed to close listening socket: " << error;
+      return std::nullopt;
+    }
+
+    Log << Trace << "Listening socket closed";
+  }
+
+  Log << Trace << "Returning client socket: " << client_fd;
 
   return client_fd;
 }
 
 auto core::ConnectToTcpPort(uint16_t tcp_port) -> std::optional<DuplexStream> {
-  auto conn = GetTcpClient("127.0.0.1", tcp_port);
+  Log << Trace << "Creating temporary TCP server on port " << tcp_port;
+  auto conn = AcceptTcpClientConnection("0.0.0.0", tcp_port);
   if (!conn) {
-    Log << "Failed to connect to TCP port " << tcp_port;
+    Log << "Failed to accept a TCP client connection";
     return std::nullopt;
   }
 
+  Log << Trace << "Creating boost::iostreams::stream from raw file descriptor";
   auto source = boost::iostreams::file_descriptor(conn.value(), boost::iostreams::close_handle);
   auto io_stream = std::make_unique<boost::iostreams::stream<boost::iostreams::file_descriptor>>((source));
 
   if (!io_stream->is_open()) {
-    Log << "Failed to open stdio streams";
+    Log << "Failed to open TCP iostreams";
     return std::nullopt;
   }
 
-  Log << Info << "Connected to TCP port " << tcp_port;
+  Log << Trace << "Connected to a TCP client";
 
   return io_stream;
 }
