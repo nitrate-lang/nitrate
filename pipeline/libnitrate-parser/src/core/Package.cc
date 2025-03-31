@@ -174,7 +174,7 @@ auto Package::CompileDirectory(std::filesystem::path folder_path) -> LazyLoader 
       {  // Skip non source files
         auto ext = entry.path().extension().string();
         std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
-        if (ext != ".nit" && ext != ".n") {
+        if (ext != ".nit") {
           Log << Trace << "Package: Skipping non-Nitrate file: " << entry.path();
           continue;
         }

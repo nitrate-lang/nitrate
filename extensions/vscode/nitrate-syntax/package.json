@@ -22,7 +22,7 @@
           "nitrate"
         ],
         "extensions": [
-          ".n"
+          ".nit"
         ],
         "icon": {
           "light": "./icons/icon-light.png",
@@ -34,7 +34,7 @@
     "grammars": [
       {
         "language": "nitrate",
-        "scopeName": "source.n",
+        "scopeName": "source.nit",
         "path": "./syntaxes/nitrate.tmLanguage.json"
       }
     ]

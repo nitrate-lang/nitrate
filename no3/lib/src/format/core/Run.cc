@@ -409,7 +409,7 @@ static auto SecondaryArgumentCheck(FormatOptions& options)
     Log << Trace << "Found " << contents.value().size() << " files in the source directory.";
 
     for (const auto& path : contents.value()) {
-      if (path.extension() != ".n" && path.extension() != ".nit") {
+      if (path.extension() != ".nit") {
         Log << Trace << "Skipping non-source file: " << path;
         continue;
       }

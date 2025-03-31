@@ -38,6 +38,8 @@
 #include <string>
 #include <unordered_set>
 
+#include "nitrate-core/Assert.hh"
+
 using namespace ncc::parse;
 
 auto ASTFactory::CreateBinary(FlowPtr<Expr> lhs, lex::Operator op, FlowPtr<Expr> rhs,
@@ -215,6 +217,10 @@ auto ASTFactory::CreateFormatString(const std::vector<std::variant<string, FlowP
 }
 
 auto ASTFactory::CreateIdentifier(string name, SourceLocation origin) -> FlowPtr<Identifier> {
+  if (name->empty()) [[unlikely]] {
+    qcore_panic("Identifier name cannot be empty");
+  }
+
   return CreateInstance<Identifier>(name)(m_pool, origin);
 }
 

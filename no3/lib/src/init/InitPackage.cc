@@ -102,7 +102,8 @@ static auto CreateLocalFile(const std::filesystem::path& path, std::string_view 
   return true;
 }
 
-static auto InitPackageDirectoryStructure(const std::filesystem::path& package_path, const InitOptions& options) -> bool {
+static auto InitPackageDirectoryStructure(const std::filesystem::path& package_path,
+                                          const InitOptions& options) -> bool {
   Log << Trace << "Initializing a the default package files at: " << package_path;
 
   if (!CreateLocalFile(package_path / "docs" / ".gitkeep", GenerateGitKeep())) {
@@ -113,16 +114,16 @@ static auto InitPackageDirectoryStructure(const std::filesystem::path& package_p
   switch (options.m_package_category) {
     case no3::package::PackageCategory::Library:
     case no3::package::PackageCategory::StandardLibrary: {
-      if (!CreateLocalFile(package_path / "src" / "lib.n", GenerateDefaultLibrarySource())) {
-        Log << "Failed to create the lib.n file: " << package_path / "src" / "lib.n";
+      if (!CreateLocalFile(package_path / "src" / "lib.nit", GenerateDefaultLibrarySource())) {
+        Log << "Failed to create the lib.n file: " << package_path / "src" / "lib.nit";
         return false;
       }
       break;
     }
 
     case no3::package::PackageCategory::Executable: {
-      if (!CreateLocalFile(package_path / "src" / "main.n", GenerateDefaultMainSource())) {
-        Log << "Failed to create the main.n file: " << package_path / "src" / "main.n";
+      if (!CreateLocalFile(package_path / "src" / "main.nit", GenerateDefaultMainSource())) {
+        Log << "Failed to create the main.n file: " << package_path / "src" / "main.nit";
         return false;
       }
       break;

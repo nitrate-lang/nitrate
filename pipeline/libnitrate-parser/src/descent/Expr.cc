@@ -545,7 +545,13 @@ static auto RecurseExprPrimary(GeneralParser::Context &m, bool is_type) -> Nulla
       }
 
       case Name: {
-        auto identifier = m.CreateIdentifier(m.RecurseName());
+        auto name = m.RecurseName();
+        if (!name) [[unlikely]] {
+          Log << ParserSignal << m.Next() << "Expected a name in expression";
+          break;
+        }
+
+        auto identifier = m.CreateIdentifier(name);
         identifier->SetOffset(start_pos);
 
         e = identifier;
