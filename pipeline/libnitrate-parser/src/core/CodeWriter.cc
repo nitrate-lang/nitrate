@@ -1036,7 +1036,7 @@ namespace ncc::parse {
       PrintLeading(n);
 
       n->GetFunc()->Accept(*this);
-      PutOperator(OpLT);
+      PutPunctor(PuncLCur);
       for (auto it = n->GetTemplateArgs().begin(); it != n->GetTemplateArgs().end(); ++it) {
         if (it != n->GetTemplateArgs().begin()) {
           PutPunctor(PuncComa);
@@ -1049,7 +1049,7 @@ namespace ncc::parse {
 
         it->second->Accept(*this);
       }
-      PutOperator(OpGT);
+      PutPunctor(PuncRCur);
       PutPunctor(PuncLPar);
       for (auto it = n->GetArgs().begin(); it != n->GetArgs().end(); ++it) {
         if (it != n->GetArgs().begin()) {
@@ -1541,10 +1541,8 @@ namespace ncc::parse {
 
       PutPunctor(PuncLCur);
 
-      for (auto& [is_static, vis, name, type, default_value] : n->GetFields()) {
-        if (is_static) {
-          PutKeyword(lex::Static);
-        }
+      for (auto it = n->GetFields().begin(); it != n->GetFields().end(); ++it) {
+        auto& [is_static, vis, name, type, default_value] = *it;
 
         switch (vis) {
           case Vis::Pub:
@@ -1558,6 +1556,10 @@ namespace ncc::parse {
             break;
         }
 
+        if (is_static) {
+          PutKeyword(lex::Static);
+        }
+
         PutIdentifier(name);
         PutPunctor(PuncColn);
         type->Accept(*this);
@@ -1565,7 +1567,10 @@ namespace ncc::parse {
           PutOperator(OpSet);
           default_value.value()->Accept(*this);
         }
-        PutPunctor(PuncSemi);
+
+        if (std::next(it) != n->GetFields().end() || !n->GetMethods().empty()) {
+          PutPunctor(PuncComa);
+        }
       }
 
       for (auto& [vis, method] : n->GetMethods()) {
