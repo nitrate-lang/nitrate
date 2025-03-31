@@ -1329,7 +1329,7 @@ Tokenizer::~Tokenizer() = default;
 auto Tokenizer::GetSourceWindow(Point start, Point end, char fillchar) -> std::optional<std::vector<std::string>> {
   Impl &impl = *m_impl;
 
-  if (start.m_y > end.m_y || (start.m_y == end.m_y && start.m_x > end.m_x)) {
+  if (start.m_line > end.m_line || (start.m_line == end.m_line && start.m_col > end.m_col)) {
     Log << "Invalid source window range";
     return std::nullopt;
   }
@@ -1353,12 +1353,12 @@ auto Tokenizer::GetSourceWindow(Point start, Point end, char fillchar) -> std::o
       }
 
       bool is_begin = false;
-      if (line == start.m_x && column == start.m_y) [[unlikely]] {
+      if (line == start.m_col && column == start.m_line) [[unlikely]] {
         is_begin = true;
       } else {
         switch (ch) {
           case '\n': {
-            if (line == start.m_x && start.m_y == -1) [[unlikely]] {
+            if (line == start.m_col && start.m_line == -1) [[unlikely]] {
               is_begin = true;
             }
 
@@ -1379,15 +1379,15 @@ auto Tokenizer::GetSourceWindow(Point start, Point end, char fillchar) -> std::o
         std::string line_buf;
 
         do {
-          long current_line = lines.size() + start.m_x;
+          long current_line = lines.size() + start.m_col;
           long current_column = line_buf.size();
 
-          if (current_line == end.m_x && current_column == end.m_y) [[unlikely]] {
+          if (current_line == end.m_col && current_column == end.m_line) [[unlikely]] {
             spinning = false;
           } else {
             switch (ch) {
               case '\n': {
-                if (current_line == end.m_x && end.m_y == -1) [[unlikely]] {
+                if (current_line == end.m_col && end.m_line == -1) [[unlikely]] {
                   spinning = false;
                 }
 

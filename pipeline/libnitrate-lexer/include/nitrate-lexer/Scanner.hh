@@ -156,7 +156,9 @@ namespace ncc::lex {
     auto SkipCommentsState(bool skip) -> bool;
 
     struct Point {
-      long m_x = 0, m_y = 0;
+      long m_col = 0, m_line = 0;
+
+      Point(long line, long col) : m_col(col), m_line(line) {}
     };
 
     virtual auto GetSourceWindow(Point start, Point end,
