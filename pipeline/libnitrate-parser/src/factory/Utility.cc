@@ -357,7 +357,7 @@ auto ASTFactory::CreateMockInstance(ASTNodeKind kind, SourceLocation origin) -> 
 #undef SIMPLE_TYPE
 #undef SIMPLE_EXPR
 
-  r.value()->SetMock(true);
+  r.value()->SetMock();
   r.SetTracking(origin);
 
   return r.value();

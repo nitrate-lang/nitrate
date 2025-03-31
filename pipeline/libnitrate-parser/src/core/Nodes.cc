@@ -246,4 +246,7 @@ void Expr::SetOffset(lex::LocationID pos) { m_data.SetSourceLocationBound(pos, S
 
 void Expr::SetParenthesisDepth(size_t depth) { m_data.SetParenthesisDepth(depth); }
 
-void Expr::SetMock(bool mock) { m_mock = mock; }
+auto Expr::SetMock(bool mock) -> Expr & {
+  m_mock = mock;
+  return *this;
+}

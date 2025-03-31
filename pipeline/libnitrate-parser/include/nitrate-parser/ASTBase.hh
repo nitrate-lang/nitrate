@@ -325,7 +325,7 @@ namespace ncc::parse {
     void SetComments(std::span<const string> comments);
     void SetOffset(lex::LocationID pos);
     void SetParenthesisDepth(size_t depth);
-    void SetMock(bool mock);
+    auto SetMock(bool mock = true) -> Expr &;
     void Discard() { m_node_type = AST_DISCARDED; };
   } __attribute__((packed));
 

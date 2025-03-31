@@ -366,23 +366,23 @@ static auto RecurseImportRegularFile(GeneralParser::Context &m, ImportedFilesSet
   const auto exists = OMNI_CATCH(std::filesystem::exists(abs_import_path));
   if (!exists) {
     Log << ParserSignal << m.Current() << "Could not check if file exists: " << abs_import_path;
-    return m.CreateMockInstance<parse::Import>();
+    return &m.CreateImport(import_file.string(), import_mode, m.CreateBlock())->SetMock();
   }
 
   if (!*exists) {
     Log << ParserSignal << m.Current() << "File not found: " << abs_import_path;
-    return m.CreateMockInstance<parse::Import>();
+    return &m.CreateImport(import_file.string(), import_mode, m.CreateBlock())->SetMock();
   }
 
   auto is_regular_file = OMNI_CATCH(std::filesystem::is_regular_file(abs_import_path));
   if (!is_regular_file) {
     Log << ParserSignal << m.Current() << "Could not check if file is regular: " << abs_import_path;
-    return m.CreateMockInstance<parse::Import>();
+    return &m.CreateImport(import_file.string(), import_mode, m.CreateBlock())->SetMock();
   }
 
   if (!*is_regular_file) {
     Log << ParserSignal << m.Current() << "File is not regular: " << abs_import_path;
-    return m.CreateMockInstance<parse::Import>();
+    return &m.CreateImport(import_file.string(), import_mode, m.CreateBlock())->SetMock();
   }
 
   Log << Trace << "RecurseImport: Reading regular file: " << abs_import_path;
@@ -390,13 +390,13 @@ static auto RecurseImportRegularFile(GeneralParser::Context &m, ImportedFilesSet
   std::ifstream file(abs_import_path, std::ios::binary);
   if (!file.is_open()) {
     Log << ParserSignal << m.Current() << "Failed to open file: " << abs_import_path;
-    return m.CreateMockInstance<parse::Import>();
+    return &m.CreateImport(import_file.string(), import_mode, m.CreateBlock())->SetMock();
   }
 
   auto content = OMNI_CATCH(std::string((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>()));
   if (!content.has_value()) {
     Log << ParserSignal << Error << m.Current() << "Failed to read file: " << abs_import_path;
-    return m.CreateMockInstance<parse::Import>();
+    return &m.CreateImport(import_file.string(), import_mode, m.CreateBlock())->SetMock();
   }
 
   if (content->empty()) {
@@ -455,14 +455,14 @@ static auto RecurseImportPackage(GeneralParser::Context &m, ImportedFilesSet &im
   // If the package is not found, return a mock import node
   if (pkg_it == pkgs.end()) [[unlikely]] {
     Log << ParserSignal << m.Current() << "Package not found: " << import_name;
-    return m.CreateMockInstance<parse::Import>();
+    return &m.CreateImport(*import_name, ImportMode::Code, m.CreateBlock())->SetMock();
   }
 
   // Lazy load the package content with caching
   const auto &files = pkg_it->Read();
   if (!files.has_value()) [[unlikely]] {
     Log << ParserSignal << m.Current() << "Failed to read package: " << import_name;
-    return m.CreateMockInstance<parse::Import>();
+    return &m.CreateImport(*import_name, ImportMode::Code, m.CreateBlock())->SetMock();
   }
 
   Log << Debug << "RecurseImport: Got package: " << import_name;
@@ -500,7 +500,7 @@ static auto RecurseImportPackage(GeneralParser::Context &m, ImportedFilesSet &im
     const auto &file_content = content_getter.Get();
     if (!file_content.has_value()) [[unlikely]] {
       Log << "RecurseImport: Failed to read package chunk: " << file_name;
-      return m.CreateMockInstance<parse::Import>();
+      return &m.CreateImport(*import_name, ImportMode::Code, m.CreateBlock())->SetMock();
     }
 
     Log << Trace << "RecurseImport: Putting package chunk (" << file_content->size() << " bytes): " << file_name;
