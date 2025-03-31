@@ -43,7 +43,7 @@
 #include <string_view>
 
 namespace ncc {
-  class NCC_EXPORT __attribute__((packed)) String {
+  class NCC_EXPORT __attribute__((packed)) AutoString {
     static std::string DefaultEmptyString;
     friend struct CoreLibrarySetup;
 
@@ -54,25 +54,25 @@ namespace ncc {
     [[nodiscard, gnu::pure]] static auto CreateInstance(std::string &&str) -> const std::string &;
 
   public:
-    constexpr explicit String() : m_p(&DefaultEmptyString) {}
-    constexpr String(std::string_view str) : m_p(&CreateInstance(str)) {}
-    constexpr String(std::string &&str) : m_p(&CreateInstance(std::move(str))) {}
-    constexpr String(const std::string &str) : m_p(&CreateInstance(str)) {}
-    constexpr String(const char *str) : m_p(&CreateInstance(std::string_view(str))) {}
-    constexpr String(const String &str) = default;
-    constexpr String(String &&str) noexcept = default;
-    constexpr ~String() = default;
+    constexpr explicit AutoString() : m_p(&DefaultEmptyString) {}
+    constexpr AutoString(std::string_view str) : m_p(&CreateInstance(str)) {}
+    constexpr AutoString(std::string &&str) : m_p(&CreateInstance(std::move(str))) {}
+    constexpr AutoString(const std::string &str) : m_p(&CreateInstance(str)) {}
+    constexpr AutoString(const char *str) : m_p(&CreateInstance(std::string_view(str))) {}
+    constexpr AutoString(const AutoString &str) = default;
+    constexpr AutoString(AutoString &&str) noexcept = default;
+    constexpr ~AutoString() = default;
 
-    constexpr auto operator=(const String &str) -> String & = default;
-    constexpr auto operator=(String &&str) noexcept -> String & = default;
+    constexpr auto operator=(const AutoString &str) -> AutoString & = default;
+    constexpr auto operator=(AutoString &&str) noexcept -> AutoString & = default;
 
     [[nodiscard, gnu::pure]] constexpr auto Get() const -> const std::string & { return *m_p; };
-    [[nodiscard, gnu::pure]] constexpr auto operator==(const String &o) const -> bool { return Get() == o.Get(); }
-    [[nodiscard, gnu::pure]] constexpr auto operator!=(const String &o) const -> bool { return Get() != o.Get(); }
-    [[nodiscard, gnu::pure]] constexpr auto operator<(const String &o) const -> bool { return Get() < o.Get(); }
-    [[nodiscard, gnu::pure]] constexpr auto operator<=(const String &o) const -> bool { return Get() <= o.Get(); }
-    [[nodiscard, gnu::pure]] constexpr auto operator>(const String &o) const -> bool { return Get() > o.Get(); }
-    [[nodiscard, gnu::pure]] constexpr auto operator>=(const String &o) const -> bool { return Get() >= o.Get(); }
+    [[nodiscard, gnu::pure]] constexpr auto operator==(const AutoString &o) const -> bool { return Get() == o.Get(); }
+    [[nodiscard, gnu::pure]] constexpr auto operator!=(const AutoString &o) const -> bool { return Get() != o.Get(); }
+    [[nodiscard, gnu::pure]] constexpr auto operator<(const AutoString &o) const -> bool { return Get() < o.Get(); }
+    [[nodiscard, gnu::pure]] constexpr auto operator<=(const AutoString &o) const -> bool { return Get() <= o.Get(); }
+    [[nodiscard, gnu::pure]] constexpr auto operator>(const AutoString &o) const -> bool { return Get() > o.Get(); }
+    [[nodiscard, gnu::pure]] constexpr auto operator>=(const AutoString &o) const -> bool { return Get() >= o.Get(); }
     [[nodiscard, gnu::pure]] constexpr auto operator*() const { return Get(); }
     [[nodiscard, gnu::pure]] constexpr auto operator->() const { return &Get(); }
     [[nodiscard, gnu::pure]] constexpr operator const std::string &() const { return Get(); }
@@ -80,17 +80,17 @@ namespace ncc {
     [[nodiscard, gnu::pure]] constexpr operator bool() const { return !Get().empty(); }
   };
 
-  static_assert(sizeof(String) == sizeof(uintptr_t));
+  static_assert(sizeof(AutoString) == sizeof(uintptr_t));
 
-  using string = String;
+  using string = AutoString;
 
-  static inline auto operator<<(std::ostream &os, const String &str) -> std::ostream & { return os << str.Get(); }
+  static inline auto operator<<(std::ostream &os, const AutoString &str) -> std::ostream & { return os << str.Get(); }
 }  // namespace ncc
 
 namespace std {
   template <>
-  struct hash<ncc::String> {
-    [[nodiscard, gnu::const]] constexpr auto operator()(const ncc::String &str) const -> size_t {
+  struct hash<ncc::AutoString> {
+    [[nodiscard, gnu::const]] constexpr auto operator()(const ncc::AutoString &str) const -> size_t {
       return std::hash<std::string_view>{}(str);
     }
   };

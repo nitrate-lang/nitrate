@@ -55,7 +55,7 @@ NCC_EXPORT void CoreLibrarySetup::Deinit() {
 
   Log.Reset();
 
-  String::ResetInstances();
+  AutoString::ResetInstances();
 }
 
 NCC_EXPORT auto CoreLibrarySetup::GetSemVersion() -> std::array<uint32_t, 3> {

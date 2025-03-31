@@ -1289,7 +1289,7 @@ SyntaxTree::FString *AstWriter::From(FlowPtr<FString> in) {
         element->set_allocated_expr(From(std::get<FlowPtr<Expr>>(item)));
       } else {
         element = Pool::CreateMessage<SyntaxTree::FString::FStringTerm>(m_arena);
-        element->set_text(std::get<ncc::String>(item).Get());
+        element->set_text(std::get<string>(item).Get());
       }
 
       message->mutable_elements()->AddAllocated(element);
