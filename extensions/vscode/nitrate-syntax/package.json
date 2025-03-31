@@ -4,7 +4,7 @@
   "publisher": "nitrate",
   "description": "Nitrate syntax highlighting support",
   "icon": "./icons/icon-light.png",
-  "version": "2.2.0",
+  "version": "2.3.0",
   "repository": "https://github.com/Kracken256/nitrate/extensions/vscode/nitrate-syntax",
   "engines": {
     "vscode": "^1.92.0"
@@ -22,7 +22,8 @@
           "nitrate"
         ],
         "extensions": [
-          ".nit"
+          ".nit",
+          ".n"
         ],
         "icon": {
           "light": "./icons/icon-light.png",
@@ -35,7 +36,7 @@
       {
         "language": "nitrate",
         "scopeName": "source.nit",
-        "path": "./syntaxes/nitrate.tmLanguage.json"
+        "path": "./nitrate.tmLanguage.json"
       }
     ]
   }
