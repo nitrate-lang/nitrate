@@ -31,58 +31,14 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <format/tree/Visitor.hh>
+#include <format/tree/Formatter.hh>
 
-using namespace ncc;
-using namespace ncc::parse;
-using namespace no3::format;
+using namespace no3::format::details;
 
 void QuasiCanonicalFormatter::Visit(FlowPtr<parse::For> n) {
-  PrintLineComments(n);
-
-  m_line << "for (";
-
-  if (n->GetInit().has_value()) {
-    n->GetInit().value().Accept(*this);
-    if (!n->GetInit().value()->IsStmt()) {
-      m_line << ";";
-    }
-  } else {
-    m_line << ";";
-  }
-
-  if (n->GetCond().has_value()) {
-    m_line << " ";
-    n->GetCond().value().Accept(*this);
-  }
-  m_line << ";";
-
-  if (n->GetStep().has_value()) {
-    m_line << " ";
-    n->GetStep().value().Accept(*this);
-  }
-
-  m_line << ") ";
-  n->GetBody().Accept(*this);
-
-  m_line << ";";
+  /// TODO: Implement standard format
 }
 
 void QuasiCanonicalFormatter::Visit(FlowPtr<parse::Foreach> n) {
-  PrintLineComments(n);
-
-  m_line << "foreach (";
-  if (n->GetIndex()) {
-    m_line << n->GetIndex() << ", " << n->GetValue();
-  } else {
-    m_line << n->GetValue();
-  }
-
-  m_line << " in ";
-  n->GetExpr().Accept(*this);
-  m_line << ") ";
-
-  n->GetBody().Accept(*this);
-
-  m_line << ";";
+  /// TODO: Implement standard format
 }

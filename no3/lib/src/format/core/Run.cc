@@ -280,8 +280,8 @@ static auto SafeCheckFileExists(const std::string& path) -> bool {
   return false;
 }
 
-static auto GetRecursiveDirectoryContents(
-    const std::filesystem::path& path) -> std::optional<std::vector<std::filesystem::path>> {
+static auto GetRecursiveDirectoryContents(const std::filesystem::path& path)
+    -> std::optional<std::vector<std::filesystem::path>> {
   return OMNI_CATCH([&]() -> std::vector<std::filesystem::path> {
     std::vector<std::filesystem::path> paths;  // Might mem leak if exception is thrown
     for (const auto& entry : std::filesystem::recursive_directory_iterator(path)) {
@@ -721,9 +721,6 @@ static auto FormatFile(const std::filesystem::path& src, const std::filesystem::
   (void)config;
 
   bool okay = false;
-
-  /// TODO: Remove this ling
-  Log << Info << ptree_root.value()->PrettyPrint();
 
   switch (mode) {
     case FormatMode::Standard: {

@@ -31,39 +31,10 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <format/tree/Visitor.hh>
+#include <format/tree/Formatter.hh>
 
-using namespace ncc;
-using namespace ncc::parse;
-using namespace no3::format;
+using namespace no3::format::details;
 
 void QuasiCanonicalFormatter::Visit(ncc::FlowPtr<ncc::parse::Enum> n) {
-  PrintLineComments(n);
-
-  m_line << "enum " << n->GetName();
-  if (n->GetType()) {
-    m_line << ": ";
-    n->GetType().value().Accept(*this);
-  }
-
-  if (n->GetFields().empty()) {
-    m_line << ";";
-    return;
-  }
-
-  m_line << " {" << '\n';
-  m_indent += m_tabSize;
-
-  for (auto& it : n->GetFields()) {
-    m_line << GetIndent();
-    m_line << it.first;
-    if (it.second) {
-      m_line << " = ";
-      it.second.value().Accept(*this);
-    }
-    m_line << "," << '\n';
-  }
-
-  m_indent -= m_tabSize;
-  m_line << GetIndent() << "}";
+  /// TODO: Implement standard format
 }

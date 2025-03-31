@@ -31,52 +31,14 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <format/tree/Visitor.hh>
+#include <format/tree/Formatter.hh>
 
-using namespace ncc;
-using namespace ncc::parse;
-using namespace no3::format;
+using namespace no3::format::details;
 
 void QuasiCanonicalFormatter::Visit(FlowPtr<parse::Scope> n) {
-  PrintLineComments(n);
-
-  m_line << "scope ";
-
-  if (n->GetName()) {
-    m_line << n->GetName();
-  }
-
-  if (!n->GetDeps().empty()) {
-    m_line << ": [";
-    IterateExceptLast(
-        n->GetDeps().begin(), n->GetDeps().end(), [&](auto dep, size_t) { m_line << dep; },
-        [&](let) { m_line << ", "; });
-    m_line << "]";
-  }
-
-  m_line << " ";
-  n->GetBody().Accept(*this);
+  /// TODO: Implement standard format
 }
 
 void QuasiCanonicalFormatter::Visit(FlowPtr<Export> n) {
-  PrintLineComments(n);
-
-  m_line << n->GetVis();
-
-  if (n->GetAbiName()) {
-    m_line << " ";
-    EscapeStringLiteral(n->GetAbiName());
-  }
-
-  if (!n->GetAttributes().empty()) {
-    m_line << " [";
-    IterateExceptLast(
-        n->GetAttributes().begin(), n->GetAttributes().end(), [&](auto attr, size_t) { attr.Accept(*this); },
-        [&](let) { m_line << ", "; });
-    m_line << "]";
-  }
-
-  m_line << " ";
-
-  n->GetBody()->Accept(*this);
+  /// TODO: Implement standard format
 }

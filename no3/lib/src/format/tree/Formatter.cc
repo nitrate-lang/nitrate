@@ -31,35 +31,10 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
+#include <format/tree/Formatter.hh>
 #include <format/tree/Visitor.hh>
 
-using namespace ncc;
-using namespace ncc::parse;
-using namespace no3::format;
-
-void QuasiCanonicalFormatter::PrintLineComments(const FlowPtr<parse::Expr>& n) {
-  auto comments = n->Comments();
-  auto m_line_size = m_line.Length();
-
-  if (!comments.empty()) {
-    for (auto comment : comments) {
-      m_line << "#";
-      m_line << comment << '\n';
-
-      if (m_line_size != 0U) {
-        m_line << std::string(m_line_size, ' ');
-      }
-    }
-  }
-}
-
-void QuasiCanonicalFormatter::PrintMultilineComments(const FlowPtr<parse::Expr>& n) {
-  auto comments = n->Comments();
-  if (!comments.empty()) {
-    for (auto comment : comments) {
-      m_line << "/*";
-      m_line << comment;
-      m_line << "*/ ";
-    }
-  }
+auto no3::format::QuasiCanonicalFormatterFactory::Create(
+    std::ostream& out, bool& has_errors, const FormatterConfig& config) -> std::unique_ptr<ncc::parse::ASTVisitor> {
+  return std::make_unique<details::QuasiCanonicalFormatter>(out, has_errors, config);
 }

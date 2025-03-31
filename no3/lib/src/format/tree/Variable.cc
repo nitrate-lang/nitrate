@@ -31,51 +31,10 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <format/tree/Visitor.hh>
+#include <format/tree/Formatter.hh>
 
-using namespace ncc;
-using namespace ncc::parse;
-using namespace no3::format;
+using namespace no3::format::details;
 
 void QuasiCanonicalFormatter::Visit(FlowPtr<Variable> n) {
-  PrintLineComments(n);
-
-  switch (n->GetVariableKind()) {
-    case VariableType::Let: {
-      m_line << "let ";
-      break;
-    }
-
-    case VariableType::Const: {
-      m_line << "const ";
-      break;
-    }
-
-    case VariableType::Var: {
-      m_line << "var ";
-      break;
-    }
-  }
-
-  if (!n->GetAttributes().empty()) {
-    m_line << "[";
-    IterateExceptLast(
-        n->GetAttributes().begin(), n->GetAttributes().end(), [&](auto attr, size_t) { attr.Accept(*this); },
-        [&](let) { m_line << ", "; });
-    m_line << "] ";
-  }
-
-  m_line << n->GetName();
-
-  if (n->GetType()) {
-    m_line << ": ";
-    n->GetType().Accept(*this);
-  }
-
-  if (n->GetInitializer()) {
-    m_line << " = ";
-    n->GetInitializer().value().Accept(*this);
-  }
-
-  m_line << ";";
+  /// TODO: Implement standard format
 }

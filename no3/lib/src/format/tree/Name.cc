@@ -31,22 +31,14 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <format/tree/Visitor.hh>
+#include <format/tree/Formatter.hh>
 
-using namespace ncc;
-using namespace ncc::parse;
-using namespace no3::format;
+using namespace no3::format::details;
 
 void QuasiCanonicalFormatter::Visit(FlowPtr<NamedTy> n) {
-  PrintMultilineComments(n);
-
-  m_line << n->GetName();
-
-  FormatTypeMetadata(n);
+  /// TODO: Implement standard format
 }
 
 void QuasiCanonicalFormatter::Visit(FlowPtr<Identifier> n) {
-  PrintMultilineComments(n);
-
-  m_line << n->GetName();
+  /// TODO: Implement standard format
 }

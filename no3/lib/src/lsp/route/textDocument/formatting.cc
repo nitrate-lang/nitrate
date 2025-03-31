@@ -9,6 +9,7 @@
 #include <nitrate-core/Logger.hh>
 #include <nitrate-lexer/Scanner.hh>
 #include <nitrate-parser/AST.hh>
+#include <nitrate-parser/ASTExpr.hh>
 #include <nitrate-parser/Context.hh>
 #include <nitrate-seq/Sequencer.hh>
 #include <sstream>
@@ -117,10 +118,11 @@ void srv::DoFormatting(const RequestMessage& req, ResponseMessage& resp) {
   }
 
   std::stringstream formatted_ss;
-  auto formatter = no3::format::QuasiCanonicalFormatter(formatted_ss);
-  ast.Get()->Accept(formatter);
+  bool has_errors = false;
+  auto formatter = no3::format::QuasiCanonicalFormatterFactory::Create(formatted_ss, has_errors);
+  ast.Get()->Accept(*formatter);
 
-  if (formatter.HasErrors()) {
+  if (has_errors) {
     resp.Error(LSPStatus::InternalError, "Failed to format document");
     return;
   }

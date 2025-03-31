@@ -64,7 +64,8 @@ namespace no3::format {
 
   class QuasiCanonicalFormatterFactory {
   public:
-    static auto Create(std::ostream& out, const FormatterConfig& config = FormatterConfig::CanonicalSettings())
+    static auto Create(std::ostream& out, bool& has_errors,
+                       const FormatterConfig& config = FormatterConfig::CanonicalSettings())
         -> std::unique_ptr<ncc::parse::ASTVisitor>;
   };
 }  // namespace no3::format

@@ -31,83 +31,22 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <format/tree/Visitor.hh>
+#include <format/tree/Formatter.hh>
 
-using namespace ncc;
-using namespace ncc::parse;
-using namespace no3::format;
-
-void QuasiCanonicalFormatter::WriteFloatLiteralChunk(std::string_view float_str) {
-  constexpr size_t kInsertSepEvery = 10;
-
-  bool already_write_type_suffix = false;
-
-  for (size_t i = 0; i < float_str.size(); i++) {
-    bool underscore = false;
-
-    if (!already_write_type_suffix && i != 0 && (i % (kInsertSepEvery)) == 0) {
-      underscore = true;
-    } else if (!already_write_type_suffix && (std::isdigit(float_str[i]) == 0) && float_str[i] != '.') {
-      already_write_type_suffix = true;
-      underscore = true;
-    }
-
-    if (underscore) {
-      m_line << "_";
-    }
-
-    m_line << float_str[i];
-  }
-}
-
-void QuasiCanonicalFormatter::WriteFloatLiteral(std::string_view float_str) {
-  constexpr size_t kMaxChunkSize = 50;
-
-  if (float_str.empty()) {
-    m_line << "";
-  }
-
-  size_t chunks_n = float_str.size() / kMaxChunkSize;
-  size_t rem = float_str.size() % kMaxChunkSize;
-
-  size_t m_line_size = m_line.Length();
-
-  for (size_t i = 0; i < chunks_n; i++) {
-    WriteFloatLiteralChunk(float_str.substr(i * kMaxChunkSize, kMaxChunkSize));
-
-    if (rem > 0 || i < chunks_n - 1) {
-      m_line << "_ \\" << '\n';
-      if (m_line_size != 0U) {
-        m_line << std::string(m_line_size, ' ');
-      }
-    }
-  }
-
-  if (rem > 0) {
-    WriteFloatLiteralChunk(float_str.substr(chunks_n * kMaxChunkSize, rem));
-  }
-}
+using namespace no3::format::details;
 
 void QuasiCanonicalFormatter::Visit(FlowPtr<Float> n) {
-  PrintMultilineComments(n);
-
-  WriteFloatLiteral(n->GetValue());
+  /// TODO: Implement standard format
 }
 
 void QuasiCanonicalFormatter::Visit(FlowPtr<Integer> n) {
-  PrintMultilineComments(n);
-
-  WriteFloatLiteral(n->GetValue());
+  /// TODO: Implement standard format
 }
 
 void QuasiCanonicalFormatter::Visit(FlowPtr<Boolean> n) {
-  PrintMultilineComments(n);
-
-  m_line << (n->GetValue() ? "true" : "false");
+  /// TODO: Implement standard format
 }
 
 void QuasiCanonicalFormatter::Visit(FlowPtr<parse::Null> n) {
-  PrintMultilineComments(n);
-
-  m_line << "null";
+  /// TODO: Implement standard format
 }

@@ -31,57 +31,26 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <format/tree/Visitor.hh>
+#include <format/tree/Formatter.hh>
 
-using namespace ncc;
-using namespace ncc::parse;
-using namespace no3::format;
+using namespace no3::format::details;
 
 void QuasiCanonicalFormatter::Visit(FlowPtr<parse::While> n) {
-  PrintLineComments(n);
-
-  m_line << "while ";
-  n->GetCond().Accept(*this);
-  m_line << " ";
-  n->GetBody().Accept(*this);
-
-  m_line << ";";
+  /// TODO: Implement standard format
 }
 
 void QuasiCanonicalFormatter::Visit(FlowPtr<parse::Return> n) {
-  PrintLineComments(n);
-
-  if (n->GetValue().has_value()) {
-    m_line << "ret ";
-    n->GetValue().value().Accept(*this);
-    m_line << ";";
-  } else {
-    m_line << "ret;";
-  }
+  /// TODO: Implement standard format
 }
 
 void QuasiCanonicalFormatter::Visit(FlowPtr<parse::If> n) {
-  PrintLineComments(n);
-
-  m_line << "if ";
-  n->GetCond().Accept(*this);
-  m_line << " ";
-  n->GetThen().Accept(*this);
-
-  if (n->GetElse()) {
-    m_line << " else ";
-    n->GetElse().value().Accept(*this);
-  }
+  /// TODO: Implement standard format
 }
 
 void QuasiCanonicalFormatter::Visit(FlowPtr<parse::Break> n) {
-  PrintLineComments(n);
-
-  m_line << "break;";
+  /// TODO: Implement standard format
 }
 
 void QuasiCanonicalFormatter::Visit(FlowPtr<parse::Continue> n) {
-  PrintLineComments(n);
-
-  m_line << "continue;";
+  /// TODO: Implement standard format
 }

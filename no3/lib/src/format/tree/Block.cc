@@ -31,73 +31,11 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <format/tree/Visitor.hh>
+#include <format/tree/Formatter.hh>
 #include <unordered_set>
 
-using namespace ncc;
-using namespace ncc::parse;
-using namespace no3::format;
+using namespace no3::format::details;
 
 void QuasiCanonicalFormatter::Visit(FlowPtr<Block> n) {
-  PrintLineComments(n);
-
-  bool is_root_block = !m_did_root;
-  m_did_root = true;
-
-  switch (n->GetSafety()) {
-    case BlockMode::Safe: {
-      m_line << "safe ";
-      break;
-    }
-
-    case BlockMode::Unsafe: {
-      m_line << "unsafe ";
-      break;
-    }
-
-    case BlockMode::Unknown: {
-      break;
-    }
-  }
-
-  static const std::unordered_set<ASTNodeKind> extra_seperation = {
-      AST_sSTRUCT, AST_sENUM, AST_sFUNCTION, AST_sSCOPE, AST_sEXPORT,  AST_sBLOCK,
-
-      AST_sASM,    AST_sIF,   AST_sWHILE,    AST_sFOR,   AST_sFOREACH, AST_sSWITCH,
-  };
-
-  if (!is_root_block && n->GetStatements().empty()) {
-    m_line << "{}";
-    return;
-  }
-
-  if (!is_root_block) {
-    m_line << "{" << '\n';
-    m_indent += m_tabSize;
-  }
-
-  auto items = n->GetStatements();
-
-  for (auto it = items.begin(); it != items.end(); ++it) {
-    auto item = *it;
-
-    m_line << GetIndent();
-    item.Accept(*this);
-    m_line << '\n';
-
-    bool is_last_item = it == items.end() - 1;
-
-    bool is_next_item_different = (it + 1 != items.end() && (*std::next(it))->GetKind() != item->GetKind());
-
-    bool extra_newline = !is_last_item && (is_next_item_different || extra_seperation.contains(item->GetKind()));
-
-    if (extra_newline) {
-      m_line << '\n';
-    }
-  }
-
-  if (!is_root_block) {
-    m_indent -= m_tabSize;
-    m_line << GetIndent() << "}";
-  }
+  /// TODO: Implement standard format
 }

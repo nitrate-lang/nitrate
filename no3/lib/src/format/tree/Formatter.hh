@@ -49,6 +49,7 @@ namespace no3::format::details {
   class QuasiCanonicalFormatter final : public ASTVisitor {
     std::ostream& m_out;
     FormatterConfig m_profile;
+    bool& m_has_errors;
 
     void Visit(FlowPtr<NamedTy> n) override;
     void Visit(FlowPtr<InferTy> n) override;
@@ -112,7 +113,8 @@ namespace no3::format::details {
     void Visit(FlowPtr<Export> n) override;
 
   public:
-    QuasiCanonicalFormatter(std::ostream& out, FormatterConfig config) : m_out(out), m_profile(config) {}
-    ~QuasiCanonicalFormatter() override;
+    QuasiCanonicalFormatter(std::ostream& out, bool& has_errors, FormatterConfig config)
+        : m_out(out), m_profile(config), m_has_errors(has_errors) {}
+    ~QuasiCanonicalFormatter() override = default;
   };
 }  // namespace no3::format::details

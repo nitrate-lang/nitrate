@@ -31,16 +31,10 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <format/tree/Visitor.hh>
+#include <format/tree/Formatter.hh>
 
-using namespace ncc;
-using namespace ncc::parse;
-using namespace no3::format;
+using namespace no3::format::details;
 
 void QuasiCanonicalFormatter::Visit(FlowPtr<Typedef> n) {
-  PrintLineComments(n);
-
-  m_line << "type " << n->GetName() << " = ";
-  n->GetType().Accept(*this);
-  m_line << ";";
+  /// TODO: Implement standard format
 }
