@@ -20,7 +20,7 @@ using namespace ncc::lex;
 using namespace ncc::seq;
 using namespace no3::lsp;
 
-void srv::DoFormatting(const RequestMessage& req, ResponseMessage& resp) {
+void message::DoFormatting(const RequestMessage& req, ResponseMessage& resp) {
   struct Position {
     size_t m_line = 0;
     size_t m_character = 0;

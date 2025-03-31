@@ -31,10 +31,44 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <lsp/route/RoutesList.hh>
+#include <charconv>
+#include <cstdint>
+#include <cstring>
+#include <lsp/core/Server.hh>
+#include <lsp/core/connect/Connection.hh>
+#include <nitrate-core/Assert.hh>
+#include <nitrate-core/Logger.hh>
 
+using namespace ncc;
 using namespace no3::lsp;
 
-void message::DoInitialized(const NotificationMessage&) {
-  /// TODO: Setup state for the server
+/// TODO: Verify this code
+
+auto core::OpenConnection(ConnectionType type, const std::string& target) -> std::optional<DuplexStream> {
+  switch (type) {
+    case ConnectionType::Pipe: {
+      return ConnectToPipe(target);
+    }
+
+    case ConnectionType::Port: {
+      uint16_t port = 0;
+
+      std::from_chars_result res = std::from_chars(target.c_str(), target.c_str() + target.size(), port);
+      if (res.ec != std::errc()) {
+        Log << "Invalid port number: " << target;
+        return std::nullopt;
+      }
+
+      if (port < 0 || port > UINT16_MAX) {
+        Log << "Port number is out of the range of valid TCP ports";
+        return std::nullopt;
+      }
+
+      return ConnectToTcpPort(port);
+    }
+
+    case ConnectionType::Stdio: {
+      return ConnectToStdio();
+    }
+  }
 }

@@ -114,13 +114,6 @@ auto Interpreter::PImpl::CommandHelp(ConstArguments, const MutArguments&) -> boo
   return true;
 }
 
-auto Interpreter::PImpl::CommandLSP(ConstArguments, const MutArguments& argv) -> bool {
-  (void)argv;
-
-  Log << "Not implemented";
-  return false;
-}
-
 auto Interpreter::PImpl::CommandLicense(ConstArguments, const MutArguments& argv) -> bool {
   if (argv.size() != 1) {
     Log << "Command 'license' does not take any arguments.";

@@ -1,12 +1,45 @@
+////////////////////////////////////////////////////////////////////////////////
+///                                                                          ///
+///     .-----------------.    .----------------.     .----------------.     ///
+///    | .--------------. |   | .--------------. |   | .--------------. |    ///
+///    | | ____  _____  | |   | |     ____     | |   | |    ______    | |    ///
+///    | ||_   _|_   _| | |   | |   .'    `.   | |   | |   / ____ `.  | |    ///
+///    | |  |   \ | |   | |   | |  /  .--.  \  | |   | |   `'  __) |  | |    ///
+///    | |  | |\ \| |   | |   | |  | |    | |  | |   | |   _  |__ '.  | |    ///
+///    | | _| |_\   |_  | |   | |  \  `--'  /  | |   | |  | \____) |  | |    ///
+///    | ||_____|\____| | |   | |   `.____.'   | |   | |   \______.'  | |    ///
+///    | |              | |   | |              | |   | |              | |    ///
+///    | '--------------' |   | '--------------' |   | '--------------' |    ///
+///     '----------------'     '----------------'     '----------------'     ///
+///                                                                          ///
+///   * NITRATE TOOLCHAIN - The official toolchain for the Nitrate language. ///
+///   * Copyright (C) 2024 Wesley C. Jones                                   ///
+///                                                                          ///
+///   The Nitrate Toolchain is free software; you can redistribute it or     ///
+///   modify it under the terms of the GNU Lesser General Public             ///
+///   License as published by the Free Software Foundation; either           ///
+///   version 2.1 of the License, or (at your option) any later version.     ///
+///                                                                          ///
+///   The Nitrate Toolcain is distributed in the hope that it will be        ///
+///   useful, but WITHOUT ANY WARRANTY; without even the implied warranty of ///
+///   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU      ///
+///   Lesser General Public License for more details.                        ///
+///                                                                          ///
+///   You should have received a copy of the GNU Lesser General Public       ///
+///   License along with the Nitrate Toolchain; if not, see                  ///
+///   <https://www.gnu.org/licenses/>.                                       ///
+///                                                                          ///
+////////////////////////////////////////////////////////////////////////////////
+
 #pragma once
 
-#include <lsp/core/Common.hh>
+#include <boost/flyweight.hpp>
 #include <nlohmann/json.hpp>
 #include <optional>
 #include <utility>
 #include <variant>
 
-namespace no3::lsp::protocol {
+namespace no3::lsp::message {
   enum class LSPStatus {
     // Defined by JSON-RPC
     ParseError = -32700,
@@ -102,11 +135,11 @@ namespace no3::lsp::protocol {
   enum class MessageIdKind : uint8_t { String, Int };
 
   class MessageId final {
-    String m_data;
+    std::string m_data;
     MessageIdKind m_kind;
 
   public:
-    MessageId(String id) : m_data(std::move(id)), m_kind(MessageIdKind::String) {}
+    MessageId(std::string id) : m_data(std::move(id)), m_kind(MessageIdKind::String) {}
     MessageId(int64_t id) : m_data(std::to_string(id)), m_kind(MessageIdKind::Int) {}
 
     [[nodiscard]] constexpr auto GetKind() const { return m_kind; }
@@ -128,7 +161,7 @@ namespace no3::lsp::protocol {
 
   class RequestMessage final {
     nlohmann::json m_params;
-    String m_method;
+    std::string m_method;
     MessageId m_id;
 
   public:
@@ -141,7 +174,7 @@ namespace no3::lsp::protocol {
 
     [[nodiscard]] constexpr auto GetHash() const -> size_t {
       /// FIXME: Fix the hash function
-      return std::hash<String>{}(m_method);
+      return std::hash<std::string>{}(m_method);
     }
 
     [[nodiscard]] auto GetMID() const { return m_id; }
@@ -150,11 +183,11 @@ namespace no3::lsp::protocol {
   };
 
   class NotificationMessage final {
-    String m_method;
+    std::string m_method;
     nlohmann::json m_params;
 
   public:
-    NotificationMessage(String method, nlohmann::json params)
+    NotificationMessage(std::string method, nlohmann::json params)
         : m_method(std::move(method)), m_params(std::move(params)) {}
 
     [[nodiscard]] constexpr auto operator==(const NotificationMessage& o) const -> bool {
@@ -163,7 +196,7 @@ namespace no3::lsp::protocol {
 
     [[nodiscard]] constexpr auto GetHash() const -> size_t {
       /// FIXME: Fix the hash function
-      return std::hash<String>{}(m_method);
+      return std::hash<std::string>{}(m_method);
     }
 
     [[nodiscard]] auto Method() const { return m_method; }
@@ -172,7 +205,7 @@ namespace no3::lsp::protocol {
 
   struct ResponseError {
     std::optional<nlohmann::json> m_data;
-    String m_message;
+    std::string m_message;
     LSPStatus m_code;
 
     ResponseError(auto code, auto message, auto data)
@@ -209,7 +242,7 @@ namespace no3::lsp::protocol {
 
     [[nodiscard]] auto GetHash() const -> size_t {
       /// FIXME: Fix the hash function
-      return std::hash<String>{}(m_id.GetString());
+      return std::hash<std::string>{}(m_id.GetString());
     }
 
     [[nodiscard]] auto GetMID() const -> const MessageId& { return m_id; }
@@ -232,4 +265,4 @@ namespace no3::lsp::protocol {
   }
 
   using MessageObject = boost::flyweight<MessageVariant>;
-}  // namespace no3::lsp::protocol
+}  // namespace no3::lsp::message

@@ -31,10 +31,17 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <lsp/route/RoutesList.hh>
+#pragma once
 
-using namespace no3::lsp;
+#include <filesystem>
+#include <iostream>
+#include <memory>
+#include <optional>
 
-void message::DoInitialized(const NotificationMessage&) {
-  /// TODO: Setup state for the server
-}
+namespace no3::lsp::core {
+  using DuplexStream = std::unique_ptr<std::iostream>;
+
+  auto ConnectToPipe(const std::filesystem::path& path) -> std::optional<DuplexStream>;
+  auto ConnectToTcpPort(uint16_t tcp_port) -> std::optional<DuplexStream>;
+  auto ConnectToStdio() -> std::optional<DuplexStream>;
+}  // namespace no3::lsp::core

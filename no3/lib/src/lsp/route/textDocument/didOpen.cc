@@ -3,7 +3,7 @@
 
 using namespace no3::lsp;
 
-void srv::DoDidOpen(const NotificationMessage& notif) {
+void message::DoDidOpen(const NotificationMessage& notif) {
   if (!notif.GetJSON().contains("textDocument")) {
     Log << "Missing textDocument member";
     return;

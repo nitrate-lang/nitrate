@@ -10,7 +10,7 @@ using namespace no3::lsp;
 
 using DocVersion = int64_t;
 
-void srv::DoDidChange(const NotificationMessage& notif) {
+void message::DoDidChange(const NotificationMessage& notif) {
   using namespace nlohmann;
 
   if (!notif.GetJSON().contains("textDocument")) {
