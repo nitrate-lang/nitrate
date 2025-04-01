@@ -78,6 +78,15 @@ auto LSPServer::Start() -> bool {
 
   Log << Trace << "LSPServer: Start() called";
 
+  {
+    std::lock_guard lock(m_pimpl->m_state_mutex);
+    Log << Trace << "LSPServer: Start(): State::Suspended -> State::Running";
+    m_pimpl->m_state = State::Running;
+  }
+
+  constexpr size_t kMaxFailedRequestCount = 10;
+  size_t sucessive_failed_request_count = 0;
+
   while (true) {
     std::lock_guard lock(m_pimpl->m_state_mutex);
 
@@ -91,9 +100,21 @@ auto LSPServer::Start() -> bool {
       case State::Running: {
         auto request = m_pimpl->ReadRequest();
         if (!request.has_value()) {
+          sucessive_failed_request_count++;
           Log << "LSPServer: Start(): ReadRequest() failed";
+
+          if (sucessive_failed_request_count > kMaxFailedRequestCount) {
+            Log << "LSPServer: Start(): Too many successive invalid requests (max: " << kMaxFailedRequestCount
+                << "). Exiting.";
+            Log << Trace << "LSPServer: Start(): State::Running -> State::Exited";
+            m_pimpl->m_state = State::Exited;
+            break;
+          }
+
           break;
         }
+
+        sucessive_failed_request_count = 0;
 
         auto& scheduler = m_pimpl->m_request_scheduler;
         scheduler.Schedule(std::move(request.value()));
