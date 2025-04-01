@@ -56,7 +56,7 @@ public:
   ~ThreadPool() { Stop(); }
 
   void Start();
-  void QueueJob(const std::function<void(std::stop_token)>& job);
+  void Schedule(const std::function<void(std::stop_token)>& job);
   void Stop();
   auto Busy() -> bool;
 };

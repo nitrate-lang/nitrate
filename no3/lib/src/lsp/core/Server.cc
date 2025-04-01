@@ -33,6 +33,7 @@
 
 #include <lsp/core/LSP.hh>
 #include <lsp/core/Server.hh>
+#include <lsp/core/ThreadPool.hh>
 #include <lsp/route/RoutesList.hh>
 #include <nitrate-core/Assert.hh>
 #include <nitrate-core/Logger.hh>
@@ -42,39 +43,68 @@ using namespace no3::lsp::core;
 using namespace no3::lsp::message;
 
 class LSPServer::PImpl {
-public:
-  using RequestHandler = std::function<void(const message::RequestMessage&, message::ResponseMessage&)>;
-  using NotificationHandler = std::function<void(const message::NotificationMessage&)>;
+  class RequestScheduler {
+    std::optional<ThreadPool> m_thread_pool;
+    std::iostream& m_io;
+    std::mutex& m_io_lock;
+    std::atomic<bool> m_exit_requested = false;
 
+  public:
+    RequestScheduler(std::iostream& io, std::mutex& io_lock) : m_io(io), m_io_lock(io_lock) {}
+    ~RequestScheduler() = default;
+
+    [[nodiscard]] bool IsExitRequested() const { return m_exit_requested; }
+    void Schedule(RequestMessage request);
+  };
+
+public:
   State m_state = State::Suspended;
   std::mutex m_state_mutex;
-
   std::iostream& m_io;
   std::mutex m_io_mutex;
+  RequestScheduler m_request_scheduler;
 
-  PImpl(std::iostream& io) : m_io(io) {}
+  [[nodiscard]] auto ReadRequest() -> std::optional<RequestMessage>;
+
+  PImpl(std::iostream& io) : m_io(io), m_request_scheduler(io, m_io_mutex) {}
 };
 
-LSPServer::LSPServer(std::iostream& io) : m_pimpl(std::make_unique<PImpl>(io)) {
-  /// TODO: Implement
-}
+LSPServer::LSPServer(std::iostream& io) : m_pimpl(std::make_unique<PImpl>(io)) {}
 
 LSPServer::~LSPServer() = default;
 
 auto LSPServer::Start() -> bool {
   qcore_assert(m_pimpl != nullptr);
 
+  Log << Trace << "LSPServer: Start() called";
+
   while (true) {
     std::lock_guard lock(m_pimpl->m_state_mutex);
 
     switch (auto current_state = m_pimpl->m_state) {
       case State::Suspended: {
-        /// TODO:
+        // Minimize CPU usage while waiting for the server to be resumed
+        std::this_thread::sleep_for(std::chrono::milliseconds(32));
         break;
       }
 
       case State::Running: {
-        /// TODO: Implement server logic
+        auto request = m_pimpl->ReadRequest();
+        if (!request.has_value()) {
+          Log << "LSPServer: Start(): ReadRequest() failed";
+          break;
+        }
+
+        auto& scheduler = m_pimpl->m_request_scheduler;
+        scheduler.Schedule(std::move(request.value()));
+
+        if (scheduler.IsExitRequested()) {
+          Log << Trace << "LSPServer: Start(): Exit requested";
+          Log << Trace << "LSPServer: Start(): State::Running -> State::Exited";
+          m_pimpl->m_state = State::Exited;
+          break;
+        }
+
         break;
       }
 
@@ -89,17 +119,22 @@ auto LSPServer::Suspend() -> bool {
   qcore_assert(m_pimpl != nullptr);
   std::lock_guard lock(m_pimpl->m_state_mutex);
 
+  Log << Trace << "LSPServer: Suspend() called";
+
   switch (auto current_state = m_pimpl->m_state) {
     case State::Suspended: {
+      Log << Trace << "LSPServer: Suspend(): State::Suspended -> State::Suspended";
       return true;
     }
 
     case State::Running: {
+      Log << Trace << "LSPServer: Suspend(): State::Running -> State::Suspended";
       m_pimpl->m_state = State::Suspended;
       return true;
     }
 
     case State::Exited: {
+      Log << Trace << "LSPServer: Suspend(): State::Exited -> State::Exited";
       // Already exited, can not suspend
       return false;
     }
@@ -110,17 +145,22 @@ auto LSPServer::Resume() -> bool {
   qcore_assert(m_pimpl != nullptr);
   std::lock_guard lock(m_pimpl->m_state_mutex);
 
+  Log << Trace << "LSPServer: Resume() called";
+
   switch (auto current_state = m_pimpl->m_state) {
     case State::Suspended: {
+      Log << Trace << "LSPServer: Resume(): State::Suspended -> State::Running";
       m_pimpl->m_state = State::Running;
       return true;
     }
 
     case State::Running: {
+      Log << Trace << "LSPServer: Resume(): State::Running -> State::Running";
       return true;
     }
 
     case State::Exited: {
+      Log << Trace << "LSPServer: Resume(): State::Exited -> State::Exited";
       // Already exited, can not resume
       return false;
     }
@@ -131,18 +171,23 @@ auto LSPServer::Stop() -> bool {
   qcore_assert(m_pimpl != nullptr);
   std::lock_guard lock(m_pimpl->m_state_mutex);
 
+  Log << Trace << "LSPServer: Stop() called";
+
   switch (auto current_state = m_pimpl->m_state) {
     case State::Suspended: {
+      Log << Trace << "LSPServer: Stop(): State::Suspended -> State::Exited";
       m_pimpl->m_state = State::Exited;
       return true;
     }
 
     case State::Running: {
+      Log << Trace << "LSPServer: Stop(): State::Running -> State::Exited";
       m_pimpl->m_state = State::Exited;
       return true;
     }
 
     case State::Exited: {
+      Log << Trace << "LSPServer: Stop(): State::Exited -> State::Exited";
       return true;
     }
   }
@@ -153,4 +198,24 @@ auto LSPServer::GetState() const -> State {
   std::lock_guard lock(m_pimpl->m_state_mutex);
 
   return m_pimpl->m_state;
+}
+
+///======================================================================================================================
+
+auto LSPServer::PImpl::ReadRequest() -> std::optional<RequestMessage> {
+  /// TODO: Parse the request from the input stream
+  return std::nullopt;
+}
+
+void LSPServer::PImpl::RequestScheduler::Schedule(RequestMessage request) {
+  if (!m_thread_pool.has_value()) {
+    m_thread_pool.emplace();
+    m_thread_pool->Start();
+  }
+
+  (void)request;
+  (void)m_io;
+  (void)m_io_lock;
+
+  /// TODO: Handle the request
 }

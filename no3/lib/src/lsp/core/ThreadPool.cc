@@ -85,7 +85,7 @@ void ThreadPool::ThreadLoop(const std::stop_token& st) {
   }
 }
 
-void ThreadPool::QueueJob(const std::function<void(std::stop_token st)>& job) {
+void ThreadPool::Schedule(const std::function<void(std::stop_token st)>& job) {
   std::lock_guard<std::mutex> lock(m_queue_mutex);
   m_jobs.push(job);
 }

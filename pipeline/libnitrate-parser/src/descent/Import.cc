@@ -395,7 +395,7 @@ static auto RecurseImportRegularFile(GeneralParser::Context &m, ImportedFilesSet
 
   auto content = OMNI_CATCH(std::string((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>()));
   if (!content.has_value()) {
-    Log << ParserSignal << Error << m.Current() << "Failed to read file: " << abs_import_path;
+    Log << ParserSignal << m.Current() << "Failed to read file: " << abs_import_path;
     return &m.CreateImport(import_file.string(), import_mode, m.CreateBlock())->SetMock();
   }
 

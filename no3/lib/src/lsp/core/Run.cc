@@ -33,8 +33,12 @@
 
 #include <core/GetOpt.hh>
 #include <core/InterpreterImpl.hh>
+#include <fstream>
 #include <lsp/core/Server.hh>
+#include <lsp/core/connect/Connection.hh>
+#include <memory>
 #include <nitrate-core/Assert.hh>
+#include <nitrate-core/CatchAll.hh>
 #include <nitrate-core/LogOStream.hh>
 #include <nitrate-core/Logger.hh>
 #include <nitrate-core/Macro.hh>
@@ -220,15 +224,77 @@ public:
 
 static bool StartLSPServer(const std::filesystem::path& log_file, const ConnectionType& connection_mode,
                            const std::string& connection_arg) {
+  Log << Trace << "Opening connection for the LSP server IO";
   auto lsp_io = OpenConnection(connection_mode, connection_arg);
   if (!lsp_io.has_value()) {
-    Log << Error << "Failed to open connection for LSP server.";
+    Log << "Failed to open connection for LSP server.";
     return false;
   }
 
-  auto server = LSPServer(*lsp_io.value());
-  if (!server.Start()) {
-    Log << Error << "Failed to start LSP server.";
+  Log << Trace << "Connection opened successfully";
+
+  bool lsp_status = false;
+  std::unique_ptr<std::fstream> log_stream;
+
+  { /* Open log output file */
+    Log << Trace << "Opening log file: " << log_file;
+    log_stream = std::make_unique<std::fstream>(log_file, std::ios::out | std::ios::binary | std::ios::app);
+    if (!log_stream->is_open()) {
+      Log << "Failed to open log file: " << log_file;
+      return false;
+    }
+    Log << Trace << "Log file opened successfully";
+  }
+
+  auto file_logger = [&log_stream](const LogMessage& msg) {
+    auto message = msg.m_by.Format(msg.m_message, msg.m_sev);
+    log_stream->write(message.data(), message.size());
+    log_stream->flush();
+  };
+
+  { /* Run the LSP server */
+    if (connection_mode == ConnectionType::Stdio) {
+      Log << Info << "Starting LSP server with " << connection_mode << " connection";
+
+      // Save a copy of all current log subscriber callbacks
+      std::vector<LogSubscriberID> old_active_subscribers;
+      old_active_subscribers.reserve(Log.SubscribersList().size());
+      for (const auto& sub : Log.SubscribersList()) {
+        if (!sub.IsSuspended()) {
+          old_active_subscribers.push_back(sub.ID());
+        }
+      }
+
+      // Suspend all log subscribers to ensure nothing interferes with the LSP server stdout
+      // and stderr streams.
+      Log.SuspendAll();
+
+      {
+        auto file_logger_id = Log.Subscribe(file_logger);
+
+        Log << Info << "Starting LSP server with " << connection_mode << " connection";
+        lsp_status = LSPServer(*lsp_io.value()).Start();
+        Log << Info << "LSP server exited";
+        Log.Unsubscribe(file_logger_id);
+      }
+
+      for (const auto& sub : old_active_subscribers) {
+        Log.Resume(sub);
+      }
+    } else {
+      Log << Info << "Starting LSP server with " << connection_mode << " connection";
+      const auto file_logger_id = Log.Subscribe(file_logger);
+      Log << Info << "Starting LSP server with " << connection_mode << " connection";
+      lsp_status = LSPServer(*lsp_io.value()).Start();
+      Log << Info << "LSP server exited";
+      Log.Unsubscribe(file_logger_id);
+    }
+
+    log_stream = nullptr;
+  }
+
+  if (!lsp_status) {
+    Log << "Failed to start LSP server.";
     return false;
   }
 

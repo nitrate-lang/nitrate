@@ -36,14 +36,8 @@
 #include <iostream>
 #include <lsp/core/LSP.hh>
 #include <lsp/core/ThreadPool.hh>
-#include <lsp/core/connect/Connection.hh>
-#include <optional>
 
 namespace no3::lsp::core {
-  enum class ConnectionType : uint8_t { Pipe, Port, Stdio };
-
-  auto OpenConnection(ConnectionType type, const std::string& target) -> std::optional<DuplexStream>;
-
   class LSPServer {
     class PImpl;
     std::unique_ptr<PImpl> m_pimpl;

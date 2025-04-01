@@ -44,4 +44,18 @@ namespace no3::lsp::core {
   auto ConnectToPipe(const std::filesystem::path& path) -> std::optional<DuplexStream>;
   auto ConnectToTcpPort(uint16_t tcp_port) -> std::optional<DuplexStream>;
   auto ConnectToStdio() -> std::optional<DuplexStream>;
+
+  enum class ConnectionType : uint8_t { Pipe, Port, Stdio };
+  auto OpenConnection(ConnectionType type, const std::string& target) -> std::optional<DuplexStream>;
+
+  static inline std::ostream& operator<<(std::ostream& os, const ConnectionType& type) {
+    switch (type) {
+      case ConnectionType::Pipe:
+        return os << "Pipe";
+      case ConnectionType::Port:
+        return os << "Port";
+      case ConnectionType::Stdio:
+        return os << "Stdio";
+    }
+  }
 }  // namespace no3::lsp::core
