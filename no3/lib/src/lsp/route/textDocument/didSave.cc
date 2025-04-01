@@ -3,18 +3,20 @@
 
 using namespace no3::lsp;
 
-void rpc::DoDidSave(const NotifyMessage& notif) {
-  if (!notif.contains("textDocument")) {
+void rpc::NotifyTextDocumentDidSave(const NotifyMessage& notif) {
+  const auto& j = *notif;
+
+  if (!j.contains("textDocument")) {
     Log << "Missing textDocument member";
     return;
   }
 
-  if (!notif["textDocument"].is_object()) {
+  if (!j["textDocument"].is_object()) {
     Log << "textDocument is not an object";
     return;
   }
 
-  const auto& text_document = notif["textDocument"];
+  const auto& text_document = j["textDocument"];
 
   if (!text_document.contains("uri")) {
     Log << "Missing uri member";

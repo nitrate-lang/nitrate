@@ -42,20 +42,16 @@ namespace no3::lsp::message {
     std::string m_method;
     MessageSequenceID m_request_id;
 
-  protected:
-    void FinalizeImpl() override {
-      /// TODO:
-    }
-
   public:
     RequestMessage(std::string method, MessageSequenceID request_id, nlohmann::json params)
         : Message(MessageKind::Request, std::move(params)),
           m_method(std::move(method)),
           m_request_id(std::move(request_id)) {}
+    RequestMessage(const RequestMessage&) = delete;
     ~RequestMessage() override = default;
 
     [[nodiscard]] auto GetRequestID() const -> const MessageSequenceID& { return m_request_id; }
-    [[nodiscard]] auto GetParams() const -> const nlohmann::json& { return *this; }
+    [[nodiscard]] auto GetParams() const -> const nlohmann::json& { return **this; }
     [[nodiscard]] auto GetMethod() const -> std::string_view override { return m_method; }
 
     [[nodiscard]] auto GetResponseObject() const -> ResponseMessage { return {m_request_id}; }

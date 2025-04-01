@@ -10,20 +10,22 @@ using namespace no3::lsp;
 
 using DocVersion = int64_t;
 
-void rpc::DoDidChange(const NotifyMessage& notif) {
+void rpc::NotifyTextDocumentDidChange(const NotifyMessage& notif) {
   using namespace nlohmann;
 
-  if (!notif.contains("textDocument")) {
+  const auto& j = *notif;
+
+  if (!j.contains("textDocument")) {
     Log << "Missing textDocument field in didChange notification";
     return;
   }
 
-  if (!notif["textDocument"].is_object()) {
+  if (!j["textDocument"].is_object()) {
     Log << "textDocument field in didChange notification is not an object";
     return;
   }
 
-  let text_document = notif["textDocument"];
+  let text_document = j["textDocument"];
 
   if (!text_document.contains("uri")) {
     Log << "Missing uri field in textDocument object";
@@ -48,17 +50,17 @@ void rpc::DoDidChange(const NotifyMessage& notif) {
   let uri = text_document["uri"].get<std::string>();
   let version = text_document["version"].get<int64_t>();
 
-  if (!notif.contains("contentChanges")) {
+  if (!j.contains("contentChanges")) {
     Log << "Missing contentChanges field in didChange notification";
     return;
   }
 
-  if (!notif["contentChanges"].is_array()) {
+  if (!j["contentChanges"].is_array()) {
     Log << "contentChanges field in didChange notification is not an array";
     return;
   }
 
-  let content_changes = notif["contentChanges"];
+  let content_changes = j["contentChanges"];
 
   auto file_opt = SyncFS::The().Open(uri);
   if (!file_opt.has_value()) {

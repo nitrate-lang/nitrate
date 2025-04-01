@@ -35,8 +35,6 @@
 
 using namespace no3::lsp;
 
-void rpc::DoExit(const NotifyMessage&) {
+void rpc::NotifyExit(const NotifyMessage&) {
   /// FIXME: Ensure all threads are cleaned up
-
-  std::exit(0);  // NOLINT(concurrency-mt-unsafe)
 }

@@ -258,8 +258,8 @@ static bool StartLSPServer(const std::filesystem::path& log_file, const Connecti
 
       // Save a copy of all current log subscriber callbacks
       std::vector<LogSubscriberID> old_active_subscribers;
-      old_active_subscribers.reserve(Log.SubscribersList().size());
-      for (const auto& sub : Log.SubscribersList()) {
+      old_active_subscribers.reserve(Log->SubscribersList().size());
+      for (const auto& sub : Log->SubscribersList()) {
         if (!sub.IsSuspended()) {
           old_active_subscribers.push_back(sub.ID());
         }
@@ -267,27 +267,27 @@ static bool StartLSPServer(const std::filesystem::path& log_file, const Connecti
 
       // Suspend all log subscribers to ensure nothing interferes with the LSP server stdout
       // and stderr streams.
-      Log.SuspendAll();
+      Log->SuspendAll();
 
       {
-        auto file_logger_id = Log.Subscribe(file_logger);
+        auto file_logger_id = Log->Subscribe(file_logger);
 
         Log << Info << "Starting LSP server with " << connection_mode << " connection";
         lsp_status = LSPServer(*lsp_io.value()).Start();
         Log << Info << "LSP server exited";
-        Log.Unsubscribe(file_logger_id);
+        Log->Unsubscribe(file_logger_id);
       }
 
       for (const auto& sub : old_active_subscribers) {
-        Log.Resume(sub);
+        Log->Resume(sub);
       }
     } else {
       Log << Info << "Starting LSP server with " << connection_mode << " connection";
-      const auto file_logger_id = Log.Subscribe(file_logger);
+      const auto file_logger_id = Log->Subscribe(file_logger);
       Log << Info << "Starting LSP server with " << connection_mode << " connection";
       lsp_status = LSPServer(*lsp_io.value()).Start();
       Log << Info << "LSP server exited";
-      Log.Unsubscribe(file_logger_id);
+      Log->Unsubscribe(file_logger_id);
     }
 
     log_stream = nullptr;

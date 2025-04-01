@@ -36,19 +36,28 @@
 #include <istream>
 #include <lsp/core/ThreadPool.hh>
 #include <lsp/core/protocol/Message.hh>
+#include <lsp/core/protocol/Notification.hh>
+#include <lsp/core/protocol/Request.hh>
 
 namespace no3::lsp::core {
   auto LSPReadRequest(std::istream& in, std::mutex& in_lock) -> std::optional<std::unique_ptr<message::Message>>;
 
-  class RequestScheduler {
+  class LSPScheduler {
     std::optional<ThreadPool> m_thread_pool;
     std::iostream& m_io;
     std::mutex& m_io_lock;
     std::atomic<bool> m_exit_requested = false;
+    bool m_is_lsp_initialized = false;
+
+    static auto IsConcurrentRequest(const message::Message& message) -> bool;
+
+    void ExecuteRPC(const message::Message& message);
+    void ExecuteLSPRequest(const message::RequestMessage& message);
+    void ExecuteLSPNotification(const message::NotifyMessage& message);
 
   public:
-    RequestScheduler(std::iostream& io, std::mutex& io_lock) : m_io(io), m_io_lock(io_lock) {}
-    ~RequestScheduler() = default;
+    LSPScheduler(std::iostream& io, std::mutex& io_lock) : m_io(io), m_io_lock(io_lock) {}
+    ~LSPScheduler() = default;
 
     [[nodiscard]] bool IsExitRequested() const { return m_exit_requested; }
     void Schedule(std::unique_ptr<message::Message> request);

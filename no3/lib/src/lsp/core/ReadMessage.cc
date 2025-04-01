@@ -66,8 +66,6 @@ static auto ParseHttpHeader(std::istream& in,
                             bool& end_of_headers) -> std::optional<std::pair<std::string, std::string>> {
   end_of_headers = false;
 
-  Log << Trace << "LSPServer: ParseHttpHeader() called";
-
   std::string line;
   std::getline(in, line);
   if (!in) [[unlikely]] {
@@ -80,6 +78,7 @@ static auto ParseHttpHeader(std::istream& in,
   }
 
   if (line.empty()) [[unlikely]] {
+    Log << Trace << "LSPServer: ParseHttpHeader(): End of headers";
     end_of_headers = true;
     return std::nullopt;
   }
@@ -200,18 +199,18 @@ static auto ConvertRPCMessageToLSPMessage(nlohmann::json json_rpc) -> std::uniqu
   auto params = json_rpc.contains("params") ? std::move(json_rpc["params"]) : nlohmann::json{};
 
   if (bool is_notification = !json_rpc.contains("id")) {
-    Log << Trace << "LSPServer: ConvertRPCMessageToLSPMessage(): Notification message";
+    Log << Trace << "LSPServer: ConvertRPCMessageToLSPMessage(): LSP Notification message";
     return std::make_unique<NotifyMessage>(std::move(method), std::move(params));
   }
 
   auto id = std::move(json_rpc["id"]);
   if (id.is_number_integer()) {
-    Log << Trace << "LSPServer: ConvertRPCMessageToLSPMessage(): Request message";
+    Log << Trace << "LSPServer: ConvertRPCMessageToLSPMessage(): LSP Request message";
     return std::make_unique<RequestMessage>(std::move(method), id.get<int64_t>(), std::move(params));
   }
 
   if (id.is_string()) {
-    Log << Trace << "LSPServer: ConvertRPCMessageToLSPMessage(): Request message";
+    Log << Trace << "LSPServer: ConvertRPCMessageToLSPMessage(): LSP Request message";
     return std::make_unique<RequestMessage>(std::move(method), id.get<std::string>(), std::move(params));
   }
 

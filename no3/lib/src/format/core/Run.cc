@@ -655,9 +655,9 @@ static auto FormatFile(const std::filesystem::path& src, const std::filesystem::
   std::optional<FlowPtr<ncc::parse::Expr>> ptree_root;
 
   { /* Perform source code parsing */
-    auto reenable_log = std::shared_ptr<void>(nullptr, [](auto) { Log.Enable(); });
+    auto reenable_log = std::shared_ptr<void>(nullptr, [](auto) { Log->Enable(); });
     if (quiet_parser) {
-      Log.Disable();
+      Log->Disable();
     }
 
     auto unit_env = std::make_shared<ncc::Environment>();

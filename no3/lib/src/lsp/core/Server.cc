@@ -47,7 +47,7 @@ public:
   std::mutex m_state_mutex;
   std::iostream& m_io;
   std::mutex m_io_mutex;
-  RequestScheduler m_request_scheduler;
+  LSPScheduler m_request_scheduler;
 
   PImpl(std::iostream& io) : m_io(io), m_request_scheduler(io, m_io_mutex) {}
 };
@@ -58,8 +58,6 @@ LSPServer::~LSPServer() = default;
 
 auto LSPServer::Start() -> bool {
   qcore_assert(m_pimpl != nullptr);
-
-  Log << Trace << "LSPServer: Start() called";
 
   {
     std::lock_guard lock(m_pimpl->m_state_mutex);
@@ -123,8 +121,6 @@ auto LSPServer::Suspend() -> bool {
   qcore_assert(m_pimpl != nullptr);
   std::lock_guard lock(m_pimpl->m_state_mutex);
 
-  Log << Trace << "LSPServer: Suspend() called";
-
   switch (auto current_state = m_pimpl->m_state) {
     case State::Suspended: {
       Log << Trace << "LSPServer: Suspend(): State::Suspended -> State::Suspended";
@@ -149,8 +145,6 @@ auto LSPServer::Resume() -> bool {
   qcore_assert(m_pimpl != nullptr);
   std::lock_guard lock(m_pimpl->m_state_mutex);
 
-  Log << Trace << "LSPServer: Resume() called";
-
   switch (auto current_state = m_pimpl->m_state) {
     case State::Suspended: {
       Log << Trace << "LSPServer: Resume(): State::Suspended -> State::Running";
@@ -174,8 +168,6 @@ auto LSPServer::Resume() -> bool {
 auto LSPServer::Stop() -> bool {
   qcore_assert(m_pimpl != nullptr);
   std::lock_guard lock(m_pimpl->m_state_mutex);
-
-  Log << Trace << "LSPServer: Stop() called";
 
   switch (auto current_state = m_pimpl->m_state) {
     case State::Suspended: {

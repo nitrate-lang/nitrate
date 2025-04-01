@@ -35,4 +35,4 @@
 
 using namespace no3::lsp;
 
-void rpc::SetTrace(const NotifyMessage&) {}
+void rpc::NotifySetTrace(const NotifyMessage&) {}

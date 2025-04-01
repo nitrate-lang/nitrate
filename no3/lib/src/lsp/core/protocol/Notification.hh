@@ -40,16 +40,12 @@ namespace no3::lsp::message {
     std::string m_method;
     nlohmann::json m_params;
 
-  protected:
-    void FinalizeImpl() override {
-      /// TODO:
-    }
-
   public:
     NotifyMessage(std::string method, nlohmann::json params)
         : Message(MessageKind::Notification, std::move(params)),
           m_method(std::move(method)),
           m_params(std::move(params)) {}
+    NotifyMessage(const NotifyMessage&) = delete;
     ~NotifyMessage() override = default;
 
     [[nodiscard]] auto GetParams() const -> const nlohmann::json& { return m_params; }

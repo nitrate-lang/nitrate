@@ -36,11 +36,13 @@
 using namespace nlohmann;
 using namespace no3::lsp;
 
-void rpc::DoInitialize(const RequestMessage&, ResponseMessage& resp) {
-  resp["serverInfo"]["name"] = "nitrateLanguageServer";
-  resp["serverInfo"]["version"] = "0.0.1";
+void rpc::RequestInitialize(const RequestMessage&, ResponseMessage& resp) {
+  auto& j = *resp;
 
-  resp["capabilities"]["positionEncodings"] = "utf-8";
-  resp["capabilities"]["textDocumentSync"] = 1;  // Full sync
-  resp["capabilities"]["documentFormattingProvider"] = true;
+  j["serverInfo"]["name"] = "nitrateLanguageServer";
+  j["serverInfo"]["version"] = "0.0.1";
+
+  j["capabilities"]["positionEncodings"] = "utf-8";
+  j["capabilities"]["textDocumentSync"] = 1;  // Full sync
+  j["capabilities"]["documentFormattingProvider"] = true;
 }

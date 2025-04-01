@@ -39,19 +39,23 @@
 #include <lsp/core/protocol/Response.hh>
 
 namespace no3::lsp::rpc {
+#define LSP_REQUEST(name) void Request##name(const message::RequestMessage&, message::ResponseMessage&)
+#define LSP_NOTIFY(name) void Notify##name(const message::NotifyMessage&)
+
+  LSP_REQUEST(Initialize);
+  LSP_REQUEST(Shutdown);
+  LSP_REQUEST(Formatting);
+
+  LSP_NOTIFY(Initialized);
+  LSP_NOTIFY(Exit);
+  LSP_NOTIFY(SetTrace);
+  LSP_NOTIFY(TextDocumentDidChange);
+  LSP_NOTIFY(TextDocumentDidClose);
+  LSP_NOTIFY(TextDocumentDidOpen);
+  LSP_NOTIFY(TextDocumentDidSave);
+
+#undef REQUEST_HANDLER
+#undef NOTIFICATION_HANDLER
+
   using namespace message;
-
-  void DoInitialize(const RequestMessage&, ResponseMessage&);
-  void DoInitialized(const NotifyMessage&);
-  void DoShutdown(const RequestMessage&, ResponseMessage&);
-  void DoExit(const NotifyMessage&);
-
-  void SetTrace(const NotifyMessage&);
-
-  void DoDidChange(const NotifyMessage&);
-  void DoDidClose(const NotifyMessage&);
-  void DoDidOpen(const NotifyMessage&);
-  void DoDidSave(const NotifyMessage&);
-
-  void DoFormatting(const RequestMessage&, ResponseMessage&);
 }  // namespace no3::lsp::rpc

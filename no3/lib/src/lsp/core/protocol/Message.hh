@@ -43,15 +43,14 @@ namespace no3::lsp::message {
     Notification,
   };
 
-  class Message : public nlohmann::json {
+  class Message {
     MessageKind m_kind;
-
-  protected:
-    virtual void FinalizeImpl() = 0;
+    nlohmann::json m_json;
 
   public:
     Message(MessageKind kind) : m_kind(kind){};
-    Message(MessageKind kind, nlohmann::json params) : nlohmann::json(std::move(params)), m_kind(kind) {}
+    Message(MessageKind kind, nlohmann::json json) : m_kind(kind), m_json(std::move(json)) {}
+    Message(const Message&) = delete;
     virtual ~Message() = default;
 
     [[nodiscard]] auto GetKind() const -> MessageKind { return m_kind; }
@@ -59,8 +58,11 @@ namespace no3::lsp::message {
     [[nodiscard]] auto IsResponse() const -> bool { return m_kind == MessageKind::Response; }
     [[nodiscard]] auto IsNotification() const -> bool { return m_kind == MessageKind::Notification; }
 
-    void Finalize() { FinalizeImpl(); }
-
     [[nodiscard]] virtual auto GetMethod() const -> std::string_view { return ""; }
+
+    [[nodiscard]] auto operator->() const -> const nlohmann::json* { return &m_json; }
+    [[nodiscard]] auto operator->() -> nlohmann::json* { return &m_json; }
+    [[nodiscard]] auto operator*() const -> const nlohmann::json& { return m_json; }
+    [[nodiscard]] auto operator*() -> nlohmann::json& { return m_json; }
   };
 }  // namespace no3::lsp::message

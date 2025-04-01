@@ -31,28 +31,38 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <chrono>
 #include <lsp/core/Server.hh>
 #include <lsp/core/ThreadPool.hh>
 #include <mutex>
 #include <nitrate-core/Logger.hh>
+#include <nitrate-core/SmartLock.hh>
 #include <stop_token>
 
 using namespace ncc;
 
 void ThreadPool::Start() {
-  // We want at least 2 threads
-  auto optimal_thread_count = std::max(std::jthread::hardware_concurrency(), 2U);
-  Log << Info << "Starting thread pool with " << optimal_thread_count << " threads";
+  auto optimal_thread_count = std::max(std::jthread::hardware_concurrency(), 1U);
+  Log << Debug << "Starting thread pool with " << optimal_thread_count << " threads";
+
+  // Enable thread synchronization
+  EnableSync = true;
+
+  auto parent_thread_logger = Log;
 
   for (uint32_t i = 0; i < optimal_thread_count; ++i) {
-    m_threads.emplace_back([this](const std::stop_token& st) { ThreadLoop(st); });
+    m_threads.emplace_back([this, parent_thread_logger](const std::stop_token& st) {
+      // Use the logger from the parent thread
+      Log = parent_thread_logger;
+      ThreadLoop(st);
+    });
   }
 }
 
 void ThreadPool::ThreadLoop(const std::stop_token& st) {
+  Log << Trace << "ThreadPool: ThreadLoop(" << std::this_thread::get_id() << ") started";
+
   while (!st.stop_requested()) {
-    std::function<void(std::stop_token)> job;
+    Task job;
 
     {
       std::unique_lock lock(m_queue_mutex);
@@ -69,33 +79,35 @@ void ThreadPool::ThreadLoop(const std::stop_token& st) {
 
     job(st);
   }
+
+  Log << Trace << "ThreadPool: ThreadLoop(" << std::this_thread::get_id() << ") stopped";
 }
 
-void ThreadPool::Schedule(const std::function<void(std::stop_token st)>& job) {
+void ThreadPool::Schedule(Task job) {
   std::lock_guard lock(m_queue_mutex);
-  m_jobs.push(job);
+  m_jobs.emplace(std::move(job));
 }
 
 void ThreadPool::WaitForAll() {
-  while (Busy()) {
+  while (!Empty()) {
     std::this_thread::yield();
   }
 }
 
-auto ThreadPool::Busy() -> bool {
+auto ThreadPool::Empty() -> bool {
   std::lock_guard lock(m_queue_mutex);
-  return !m_jobs.empty();
+  return m_jobs.empty();
 }
 
 void ThreadPool::Stop() {
   { /* Gracefully request stop */
     std::lock_guard lock(m_queue_mutex);
-    for (std::jthread& active_thread : m_threads) {
+    for (auto& active_thread : m_threads) {
       active_thread.request_stop();
     }
   }
 
-  while (Busy()) {
+  while (!Empty()) {
   }
 
   m_threads.clear();

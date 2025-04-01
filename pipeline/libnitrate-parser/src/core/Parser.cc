@@ -491,7 +491,7 @@ auto GeneralParser::Parse() -> ASTRoot {
     ParserSwapScanner(rd_ptr);
 
     { /* Subscribe to events emitted by the parser */
-      auto sub_id = Log.Subscribe([this](const LogMessage &m) {
+      auto sub_id = Log->Subscribe([this](const LogMessage &m) {
         if (m.m_sev >= Error && m.m_by.GetKind() == ParserSignal.GetKind()) {
           m_impl->m_failed = true;
         }
@@ -518,7 +518,7 @@ auto GeneralParser::Parse() -> ASTRoot {
         m_impl->m_rd.SkipCommentsState(old_state);
       }
 
-      Log.Unsubscribe(sub_id);
+      Log->Unsubscribe(sub_id);
     }
 
     ParserSwapScanner(rd_ptr);

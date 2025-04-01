@@ -35,6 +35,6 @@
 
 using namespace no3::lsp;
 
-void rpc::DoShutdown(const RequestMessage&, ResponseMessage&) {
+void rpc::RequestShutdown(const RequestMessage&, ResponseMessage&) {
   /// TODO: Cleanup resources
 }
