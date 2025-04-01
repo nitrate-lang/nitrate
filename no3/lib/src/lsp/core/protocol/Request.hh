@@ -56,6 +56,7 @@ namespace no3::lsp::message {
 
     [[nodiscard]] auto GetRequestID() const -> const MessageSequenceID& { return m_request_id; }
     [[nodiscard]] auto GetParams() const -> const nlohmann::json& { return *this; }
+    [[nodiscard]] auto GetMethod() const -> std::string_view override { return m_method; }
 
     [[nodiscard]] auto GetResponseObject() const -> ResponseMessage { return {m_request_id}; }
   };

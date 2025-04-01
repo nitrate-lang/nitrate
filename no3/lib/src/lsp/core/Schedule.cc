@@ -31,29 +31,33 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#pragma once
+#include <lsp/core/RPC.hh>
+#include <nitrate-core/Assert.hh>
+#include <nitrate-core/Logger.hh>
 
-#include <lsp/core/protocol/Message.hh>
+using namespace ncc;
+using namespace no3::lsp::core;
+using namespace no3::lsp::message;
 
-namespace no3::lsp::message {
-  class NotifyMessage final : public Message {
-    std::string m_method;
-    nlohmann::json m_params;
+void RequestScheduler::Schedule(std::unique_ptr<Message> request) {
+  Log << Trace << "LSPServer: RequestScheduler::Schedule() called";
 
-  protected:
-    void FinalizeImpl() override {
-      /// TODO:
-    }
+  if (m_exit_requested) [[unlikely]] {
+    Log << Trace << "LSPServer: RequestScheduler::Schedule(): Exit requested, ignoring request";
+    return;
+  }
 
-  public:
-    NotifyMessage(std::string method, nlohmann::json params)
-        : Message(MessageKind::Notification, std::move(params)),
-          m_method(std::move(method)),
-          m_params(std::move(params)) {}
-    ~NotifyMessage() override = default;
+  if (!m_thread_pool.has_value()) [[unlikely]] {
+    Log << Trace << "LSPServer: RequestScheduler::Schedule(): Starting thread pool";
 
-    [[nodiscard]] auto GetParams() const -> const nlohmann::json& { return m_params; }
-    [[nodiscard]] auto GetMethod() const -> std::string_view override { return m_method; }
-  };
+    m_thread_pool.emplace();
+    m_thread_pool->Start();
+  }
 
-}  // namespace no3::lsp::message
+  Log << Trace << "LSPServer: RequestScheduler::Schedule(): Scheduling \"" << request->GetMethod() << "\" request";
+
+  (void)m_io;
+  (void)m_io_lock;
+
+  /// TODO: Handle the request
+}

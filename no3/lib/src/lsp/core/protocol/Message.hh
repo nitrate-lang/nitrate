@@ -60,5 +60,7 @@ namespace no3::lsp::message {
     [[nodiscard]] auto IsNotification() const -> bool { return m_kind == MessageKind::Notification; }
 
     void Finalize() { FinalizeImpl(); }
+
+    [[nodiscard]] virtual auto GetMethod() const -> std::string_view { return ""; }
   };
 }  // namespace no3::lsp::message

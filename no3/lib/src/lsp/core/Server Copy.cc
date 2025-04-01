@@ -181,7 +181,7 @@
 //   bool is_lsp_notification = !doc.contains("id");
 
 //   if (is_lsp_notification) {
-//     message = MessageObject(NotificationMessage(doc["method"].get<std::string>(), std::move(params)));
+//     message = MessageObject(NotifyMessage(doc["method"].get<std::string>(), std::move(params)));
 //   } else {
 //     if (!doc["id"].is_string() && !doc["id"].is_number()) [[unlikely]] {
 //       Log << "Request object key \"id\" is not a string or int";
@@ -291,7 +291,7 @@
 //   }
 // }
 
-// void LSPServer::DoNotification(const NotificationMessage& notif) {
+// void LSPServer::DoNotification(const NotifyMessage& notif) {
 //   Log << Info << "Handling notification: \"" << notif.Method() << "\"";
 
 //   auto it = m_notification_handlers.find(notif.Method());
@@ -320,6 +320,6 @@
 //   } else {
 //     std::unique_lock<std::shared_mutex> lock(m_task_mutex);
 
-//     DoNotification(std::get<NotificationMessage>(message.get()));
+//     DoNotification(std::get<NotifyMessage>(message.get()));
 //   }
 // }

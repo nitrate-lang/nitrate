@@ -33,27 +33,24 @@
 
 #pragma once
 
+#include <istream>
+#include <lsp/core/ThreadPool.hh>
 #include <lsp/core/protocol/Message.hh>
 
-namespace no3::lsp::message {
-  class NotifyMessage final : public Message {
-    std::string m_method;
-    nlohmann::json m_params;
+namespace no3::lsp::core {
+  auto LSPReadRequest(std::istream& in, std::mutex& in_lock) -> std::optional<std::unique_ptr<message::Message>>;
 
-  protected:
-    void FinalizeImpl() override {
-      /// TODO:
-    }
+  class RequestScheduler {
+    std::optional<ThreadPool> m_thread_pool;
+    std::iostream& m_io;
+    std::mutex& m_io_lock;
+    std::atomic<bool> m_exit_requested = false;
 
   public:
-    NotifyMessage(std::string method, nlohmann::json params)
-        : Message(MessageKind::Notification, std::move(params)),
-          m_method(std::move(method)),
-          m_params(std::move(params)) {}
-    ~NotifyMessage() override = default;
+    RequestScheduler(std::iostream& io, std::mutex& io_lock) : m_io(io), m_io_lock(io_lock) {}
+    ~RequestScheduler() = default;
 
-    [[nodiscard]] auto GetParams() const -> const nlohmann::json& { return m_params; }
-    [[nodiscard]] auto GetMethod() const -> std::string_view override { return m_method; }
+    [[nodiscard]] bool IsExitRequested() const { return m_exit_requested; }
+    void Schedule(std::unique_ptr<message::Message> request);
   };
-
-}  // namespace no3::lsp::message
+}  // namespace no3::lsp::core
