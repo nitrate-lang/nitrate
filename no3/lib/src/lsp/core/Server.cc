@@ -35,10 +35,12 @@
 #include <ios>
 #include <lsp/core/Server.hh>
 #include <lsp/core/ThreadPool.hh>
-#include <lsp/core/protocol/LSP.hh>
+#include <lsp/core/protocol/Message.hh>
 #include <lsp/route/RoutesList.hh>
 #include <nitrate-core/Assert.hh>
 #include <nitrate-core/Logger.hh>
+
+#include "lsp/core/protocol/Notification.hh"
 
 using namespace ncc;
 using namespace no3::lsp::core;
@@ -56,7 +58,7 @@ class LSPServer::PImpl {
     ~RequestScheduler() = default;
 
     [[nodiscard]] bool IsExitRequested() const { return m_exit_requested; }
-    void Schedule(RequestMessage request);
+    void Schedule(std::unique_ptr<Message> request);
   };
 
 public:
@@ -66,7 +68,7 @@ public:
   std::mutex m_io_mutex;
   RequestScheduler m_request_scheduler;
 
-  [[nodiscard]] auto ReadRequest() -> std::optional<RequestMessage>;
+  [[nodiscard]] auto ReadRequest() -> std::optional<std::unique_ptr<Message>>;
 
   PImpl(std::iostream& io) : m_io(io), m_request_scheduler(io, m_io_mutex) {}
 };
@@ -367,10 +369,40 @@ static auto QuickJsonRPCMessageCheck(const nlohmann::json& json_rpc) -> bool {
     return false;
   }
 
+  if (json_rpc.contains("id")) {
+    if (!json_rpc["id"].is_string() && !json_rpc["id"].is_number_integer()) [[unlikely]] {
+      Log << "LSPServer: ValidateJsonRPCMessage(): 'id' field is not a string or integer";
+      return false;
+    }
+  }
+
   return true;
 }
 
-auto LSPServer::PImpl::ReadRequest() -> std::optional<RequestMessage> {
+static auto ConvertRPCMessageToLSPMessage(nlohmann::json json_rpc) -> std::unique_ptr<Message> {
+  auto method = json_rpc["method"].get<std::string>();
+  auto params = json_rpc.contains("params") ? std::move(json_rpc["params"]) : nlohmann::json{};
+
+  if (bool is_notification = !json_rpc.contains("id")) {
+    Log << Trace << "LSPServer: ConvertRPCMessageToLSPMessage(): Notification message";
+    return std::make_unique<NotifyMessage>(std::move(method), std::move(params));
+  }
+
+  auto id = std::move(json_rpc["id"]);
+  if (id.is_number_integer()) {
+    Log << Trace << "LSPServer: ConvertRPCMessageToLSPMessage(): Request message";
+    return std::make_unique<RequestMessage>(std::move(method), id.get<int64_t>(), std::move(params));
+  }
+
+  if (id.is_string()) {
+    Log << Trace << "LSPServer: ConvertRPCMessageToLSPMessage(): Request message";
+    return std::make_unique<RequestMessage>(std::move(method), id.get<std::string>(), std::move(params));
+  }
+
+  qcore_panic("unreachable");
+}
+
+auto LSPServer::PImpl::ReadRequest() -> std::optional<std::unique_ptr<Message>> {
   std::lock_guard lock(m_io_mutex);
   if (m_io.eof()) [[unlikely]] {
     Log << Warning << "LSPServer: ReadRequest(): EOF reached";
@@ -401,11 +433,10 @@ auto LSPServer::PImpl::ReadRequest() -> std::optional<RequestMessage> {
     return std::nullopt;
   }
 
-  /// TODO: Parse the request from the input stream
-  return std::nullopt;
+  return ConvertRPCMessageToLSPMessage(std::move(json_rpc));
 }
 
-void LSPServer::PImpl::RequestScheduler::Schedule(RequestMessage request) {
+void LSPServer::PImpl::RequestScheduler::Schedule(std::unique_ptr<Message> request) {
   if (!m_thread_pool.has_value()) [[unlikely]] {
     m_thread_pool.emplace();
     m_thread_pool->Start();

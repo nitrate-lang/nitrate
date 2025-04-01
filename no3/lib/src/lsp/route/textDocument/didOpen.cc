@@ -3,18 +3,18 @@
 
 using namespace no3::lsp;
 
-void message::DoDidOpen(const NotificationMessage& notif) {
-  if (!notif.GetJSON().contains("textDocument")) {
+void rpc::DoDidOpen(const NotifyMessage& notif) {
+  if (!notif.contains("textDocument")) {
     Log << "Missing textDocument member";
     return;
   }
 
-  if (!notif.GetJSON()["textDocument"].is_object()) {
+  if (!notif["textDocument"].is_object()) {
     Log << "textDocument is not an object";
     return;
   }
 
-  auto text_document = notif.GetJSON()["textDocument"];
+  auto text_document = notif["textDocument"];
 
   if (!text_document.contains("uri")) {
     Log << "Missing uri member";

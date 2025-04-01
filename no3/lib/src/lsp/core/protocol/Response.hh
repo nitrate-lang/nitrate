@@ -31,16 +31,38 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <lsp/route/RoutesList.hh>
+#pragma once
 
-using namespace nlohmann;
-using namespace no3::lsp;
+#include <lsp/core/protocol/Message.hh>
+#include <lsp/core/protocol/StatusCode.hh>
 
-void rpc::DoInitialize(const RequestMessage&, ResponseMessage& resp) {
-  resp["serverInfo"]["name"] = "nitrateLanguageServer";
-  resp["serverInfo"]["version"] = "0.0.1";
+namespace no3::lsp::message {
+  using MessageSequenceID = std::variant<int64_t, std::string>;
 
-  resp["capabilities"]["positionEncodings"] = "utf-8";
-  resp["capabilities"]["textDocumentSync"] = 1;  // Full sync
-  resp["capabilities"]["documentFormattingProvider"] = true;
-}
+  class ResponseMessage final : public Message {
+    friend class RequestMessage;
+
+    MessageSequenceID m_request_id;
+    std::optional<StatusCode> m_status_code;
+
+    ResponseMessage(MessageSequenceID request_id)
+        : Message(MessageKind::Response), m_request_id(std::move(request_id)) {}
+
+  protected:
+    void FinalizeImpl() override {
+      /// TODO:
+    }
+
+  public:
+    ~ResponseMessage() override = default;
+
+    [[nodiscard]] auto GetResponseID() const -> const MessageSequenceID& { return m_request_id; }
+    [[nodiscard]] auto GetStatusCode() const -> std::optional<StatusCode> { return m_status_code; }
+    [[nodiscard]] auto GetResult() const -> const nlohmann::json& { return *this; }
+    [[nodiscard]] auto GetError() const -> const nlohmann::json& { return *this; }
+    [[nodiscard]] auto IsValidResponse() const -> bool { return !m_status_code.has_value(); }
+    [[nodiscard]] auto IsErrorResponse() const -> bool { return m_status_code.has_value(); }
+
+    void SetStatusCode(std::optional<StatusCode> status_code) { m_status_code = status_code; }
+  };
+}  // namespace no3::lsp::message

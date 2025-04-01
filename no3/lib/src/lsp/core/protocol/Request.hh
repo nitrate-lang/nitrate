@@ -31,16 +31,32 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <lsp/route/RoutesList.hh>
+#pragma once
 
-using namespace nlohmann;
-using namespace no3::lsp;
+#include <lsp/core/protocol/Message.hh>
+#include <lsp/core/protocol/Response.hh>
+#include <lsp/core/protocol/StatusCode.hh>
 
-void rpc::DoInitialize(const RequestMessage&, ResponseMessage& resp) {
-  resp["serverInfo"]["name"] = "nitrateLanguageServer";
-  resp["serverInfo"]["version"] = "0.0.1";
+namespace no3::lsp::message {
+  class RequestMessage final : public Message {
+    std::string m_method;
+    MessageSequenceID m_request_id;
 
-  resp["capabilities"]["positionEncodings"] = "utf-8";
-  resp["capabilities"]["textDocumentSync"] = 1;  // Full sync
-  resp["capabilities"]["documentFormattingProvider"] = true;
-}
+  protected:
+    void FinalizeImpl() override {
+      /// TODO:
+    }
+
+  public:
+    RequestMessage(std::string method, MessageSequenceID request_id, nlohmann::json params)
+        : Message(MessageKind::Request, std::move(params)),
+          m_method(std::move(method)),
+          m_request_id(std::move(request_id)) {}
+    ~RequestMessage() override = default;
+
+    [[nodiscard]] auto GetRequestID() const -> const MessageSequenceID& { return m_request_id; }
+    [[nodiscard]] auto GetParams() const -> const nlohmann::json& { return *this; }
+
+    [[nodiscard]] auto GetResponseObject() const -> ResponseMessage { return {m_request_id}; }
+  };
+}  // namespace no3::lsp::message

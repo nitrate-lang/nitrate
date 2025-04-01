@@ -31,16 +31,28 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <lsp/route/RoutesList.hh>
+#pragma once
 
-using namespace nlohmann;
-using namespace no3::lsp;
+#include <lsp/core/protocol/Message.hh>
 
-void rpc::DoInitialize(const RequestMessage&, ResponseMessage& resp) {
-  resp["serverInfo"]["name"] = "nitrateLanguageServer";
-  resp["serverInfo"]["version"] = "0.0.1";
+namespace no3::lsp::message {
+  class NotifyMessage final : public Message {
+    std::string m_method;
+    nlohmann::json m_params;
 
-  resp["capabilities"]["positionEncodings"] = "utf-8";
-  resp["capabilities"]["textDocumentSync"] = 1;  // Full sync
-  resp["capabilities"]["documentFormattingProvider"] = true;
-}
+  protected:
+    void FinalizeImpl() override {
+      /// TODO:
+    }
+
+  public:
+    NotifyMessage(std::string method, nlohmann::json params)
+        : Message(MessageKind::Notification, std::move(params)),
+          m_method(std::move(method)),
+          m_params(std::move(params)) {}
+    ~NotifyMessage() override = default;
+
+    [[nodiscard]] auto GetParams() const -> const nlohmann::json& { return m_params; }
+  };
+
+}  // namespace no3::lsp::message

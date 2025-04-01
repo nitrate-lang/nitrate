@@ -33,6 +33,32 @@
 
 #pragma once
 
+#include <boost/flyweight.hpp>
+#include <nlohmann/json.hpp>
+
 namespace no3::lsp::message {
-  /// TODO:
+  enum class MessageKind : uint8_t {
+    Request,
+    Response,
+    Notification,
+  };
+
+  class Message : public nlohmann::json {
+    MessageKind m_kind;
+
+  protected:
+    virtual void FinalizeImpl() = 0;
+
+  public:
+    Message(MessageKind kind) : m_kind(kind){};
+    Message(MessageKind kind, nlohmann::json params) : nlohmann::json(std::move(params)), m_kind(kind) {}
+    virtual ~Message() = default;
+
+    [[nodiscard]] auto GetKind() const -> MessageKind { return m_kind; }
+    [[nodiscard]] auto IsRequest() const -> bool { return m_kind == MessageKind::Request; }
+    [[nodiscard]] auto IsResponse() const -> bool { return m_kind == MessageKind::Response; }
+    [[nodiscard]] auto IsNotification() const -> bool { return m_kind == MessageKind::Notification; }
+
+    void Finalize() { FinalizeImpl(); }
+  };
 }  // namespace no3::lsp::message

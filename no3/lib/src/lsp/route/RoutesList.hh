@@ -34,20 +34,24 @@
 #pragma once
 
 #include <lsp/core/Server.hh>
-#include <lsp/core/protocol/LSP.hh>
+#include <lsp/core/protocol/Notification.hh>
+#include <lsp/core/protocol/Request.hh>
+#include <lsp/core/protocol/Response.hh>
 
-namespace no3::lsp::message {
+namespace no3::lsp::rpc {
+  using namespace message;
+
   void DoInitialize(const RequestMessage&, ResponseMessage&);
-  void DoInitialized(const NotificationMessage&);
+  void DoInitialized(const NotifyMessage&);
   void DoShutdown(const RequestMessage&, ResponseMessage&);
-  void DoExit(const NotificationMessage&);
+  void DoExit(const NotifyMessage&);
 
-  void SetTrace(const NotificationMessage&);
+  void SetTrace(const NotifyMessage&);
 
-  void DoDidChange(const NotificationMessage&);
-  void DoDidClose(const NotificationMessage&);
-  void DoDidOpen(const NotificationMessage&);
-  void DoDidSave(const NotificationMessage&);
+  void DoDidChange(const NotifyMessage&);
+  void DoDidClose(const NotifyMessage&);
+  void DoDidOpen(const NotifyMessage&);
+  void DoDidSave(const NotifyMessage&);
 
   void DoFormatting(const RequestMessage&, ResponseMessage&);
-}  // namespace no3::lsp::message
+}  // namespace no3::lsp::rpc
