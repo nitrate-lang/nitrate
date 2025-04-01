@@ -31,6 +31,7 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
+#include <chrono>
 #include <lsp/core/Server.hh>
 #include <lsp/core/ThreadPool.hh>
 #include <mutex>
@@ -69,6 +70,7 @@ void ThreadPool::ThreadLoop(const std::stop_token& st) {
       if (m_jobs.empty()) {
         lock.unlock();
 
+        std::this_thread::sleep_for(std::chrono::microseconds(64));
         std::this_thread::yield();
         continue;
       }

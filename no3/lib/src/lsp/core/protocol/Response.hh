@@ -61,7 +61,7 @@ namespace no3::lsp::message {
 
     void SetStatusCode(std::optional<StatusCode> status_code) { m_status_code = status_code; }
 
-    void Finalize() {
+    ResponseMessage& Finalize() {
       auto& this_json = **this;
 
       if (IsValidResponse()) {
@@ -82,6 +82,8 @@ namespace no3::lsp::message {
       } else {
         this_json["id"] = std::get<std::string>(m_request_id);
       }
+
+      return *this;
     }
   };
 }  // namespace no3::lsp::message
