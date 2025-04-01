@@ -58,5 +58,6 @@ public:
   void Start();
   void Schedule(const std::function<void(std::stop_token)>& job);
   void Stop();
+  void WaitForAll();
   auto Busy() -> bool;
 };

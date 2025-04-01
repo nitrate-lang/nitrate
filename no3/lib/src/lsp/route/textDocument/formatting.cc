@@ -37,57 +37,57 @@ void message::DoFormatting(const RequestMessage& req, ResponseMessage& resp) {
   };
 
   if (!req.GetJSON().contains("textDocument")) {
-    resp.Error(LSPStatus::InvalidParams, "Missing textDocument");
+    resp.Error(StatusCode::InvalidParams, "Missing textDocument");
     return;
   }
 
   if (!req.GetJSON()["textDocument"].is_object()) {
-    resp.Error(LSPStatus::InvalidParams, "textDocument is not an object");
+    resp.Error(StatusCode::InvalidParams, "textDocument is not an object");
     return;
   }
 
   if (!req.GetJSON()["textDocument"].contains("uri")) {
-    resp.Error(LSPStatus::InvalidParams, "Missing textDocument.uri");
+    resp.Error(StatusCode::InvalidParams, "Missing textDocument.uri");
     return;
   }
 
   if (!req.GetJSON()["textDocument"]["uri"].is_string()) {
-    resp.Error(LSPStatus::InvalidParams, "textDocument.uri is not a string");
+    resp.Error(StatusCode::InvalidParams, "textDocument.uri is not a string");
     return;
   }
 
   if (!req.GetJSON().contains("options")) {
-    resp.Error(LSPStatus::InvalidParams, "Missing options");
+    resp.Error(StatusCode::InvalidParams, "Missing options");
     return;
   }
 
   if (!req.GetJSON()["options"].is_object()) {
-    resp.Error(LSPStatus::InvalidParams, "options is not an object");
+    resp.Error(StatusCode::InvalidParams, "options is not an object");
     return;
   }
 
   if (!req.GetJSON()["options"].contains("tabSize")) {
-    resp.Error(LSPStatus::InvalidParams, "Missing options.tabSize");
+    resp.Error(StatusCode::InvalidParams, "Missing options.tabSize");
     return;
   }
 
   if (!req.GetJSON()["options"]["tabSize"].is_number_unsigned()) {
-    resp.Error(LSPStatus::InvalidParams, "options.tabSize is not an integer");
+    resp.Error(StatusCode::InvalidParams, "options.tabSize is not an integer");
     return;
   }
 
   if (req.GetJSON()["options"]["tabSize"].get<size_t>() == 0) {
-    resp.Error(LSPStatus::InvalidParams, "options.tabSize is 0");
+    resp.Error(StatusCode::InvalidParams, "options.tabSize is 0");
     return;
   }
 
   if (!req.GetJSON()["options"].contains("insertSpaces")) {
-    resp.Error(LSPStatus::InvalidParams, "Missing options.insertSpaces");
+    resp.Error(StatusCode::InvalidParams, "Missing options.insertSpaces");
     return;
   }
 
   if (!req.GetJSON()["options"]["insertSpaces"].get<bool>()) {
-    resp.Error(LSPStatus::InvalidParams, "options.insertSpaces is not a boolean");
+    resp.Error(StatusCode::InvalidParams, "options.insertSpaces is not a boolean");
     return;
   }
 
@@ -98,7 +98,7 @@ void message::DoFormatting(const RequestMessage& req, ResponseMessage& resp) {
   auto uri = req.GetJSON()["textDocument"]["uri"].get<std::string>();
   auto file_opt = SyncFS::The().Open(uri);
   if (!file_opt.has_value()) {
-    resp.Error(LSPStatus::InternalError, "Failed to open file");
+    resp.Error(StatusCode::InternalError, "Failed to open file");
     return;
   }
   auto file = file_opt.value();
@@ -123,7 +123,7 @@ void message::DoFormatting(const RequestMessage& req, ResponseMessage& resp) {
   ast.Get()->Accept(*formatter);
 
   if (has_errors) {
-    resp.Error(LSPStatus::InternalError, "Failed to format document");
+    resp.Error(StatusCode::InternalError, "Failed to format document");
     return;
   }
 

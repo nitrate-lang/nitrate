@@ -34,6 +34,7 @@
 #pragma once
 
 #include <lsp/core/Server.hh>
+#include <lsp/core/protocol/LSP.hh>
 
 namespace no3::lsp::message {
   void DoInitialize(const RequestMessage&, ResponseMessage&);
