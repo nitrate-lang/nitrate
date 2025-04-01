@@ -35,6 +35,4 @@
 
 using namespace no3::lsp;
 
-void rpc::NotifyInitialized(const NotifyMessage&) {
-  /// TODO: Setup state for the server
-}
+void rpc::NotifyInitialized(const NotifyMessage&) {}

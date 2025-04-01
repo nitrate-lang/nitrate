@@ -58,4 +58,21 @@ namespace no3::lsp::rpc {
 #undef NOTIFICATION_HANDLER
 
   using namespace message;
+
+  using LSPRequestFunc = std::function<void(const message::RequestMessage&, message::ResponseMessage&)>;
+  using LSPNotifyFunc = std::function<void(const message::NotifyMessage&)>;
+
+  static inline const std::unordered_map<std::string_view, LSPRequestFunc> LSP_REQUEST_MAP = {
+      {"initialize", rpc::RequestInitialize},
+      {"shutdown", rpc::RequestShutdown},
+  };
+
+  static inline const std::unordered_map<std::string_view, LSPNotifyFunc> LSP_NOTIFICATION_MAP = {
+      {"initialized", rpc::NotifyInitialized},
+      {"exit", rpc::NotifyExit},
+      {"textDocument/didOpen", rpc::NotifyTextDocumentDidOpen},
+      {"textDocument/didChange", rpc::NotifyTextDocumentDidChange},
+      {"textDocument/didClose", rpc::NotifyTextDocumentDidClose},
+      {"textDocument/didSave", rpc::NotifyTextDocumentDidSave},
+  };
 }  // namespace no3::lsp::rpc

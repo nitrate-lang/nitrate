@@ -43,25 +43,6 @@ using namespace ncc;
 using namespace no3::lsp::core;
 using namespace no3::lsp::message;
 
-namespace no3::lsp::core {
-  using LSPRequestFunc = std::function<void(const message::RequestMessage&, message::ResponseMessage&)>;
-  using LSPNotifyFunc = std::function<void(const message::NotifyMessage&)>;
-
-  static const std::unordered_map<std::string_view, LSPRequestFunc> LSP_REQUEST_MAP = {
-      {"initialize", rpc::RequestInitialize},
-      {"shutdown", rpc::RequestShutdown},
-  };
-
-  static const std::unordered_map<std::string_view, LSPNotifyFunc> LSP_NOTIFICATION_MAP = {
-      {"initialized", rpc::NotifyInitialized},
-      {"exit", rpc::NotifyExit},
-      {"textDocument/didOpen", rpc::NotifyTextDocumentDidOpen},
-      {"textDocument/didChange", rpc::NotifyTextDocumentDidChange},
-      {"textDocument/didClose", rpc::NotifyTextDocumentDidClose},
-      {"textDocument/didSave", rpc::NotifyTextDocumentDidSave},
-  };
-}  // namespace no3::lsp::core
-
 void LSPScheduler::ExecuteLSPRequest(const message::RequestMessage& message) {
   auto method = message.GetMethod();
   auto response = message.GetResponseObject();
@@ -72,8 +53,8 @@ void LSPScheduler::ExecuteLSPRequest(const message::RequestMessage& message) {
   }
 
   if (const auto is_initialize_request = method == "initialize"; m_is_lsp_initialized || is_initialize_request) {
-    const auto route_it = LSP_REQUEST_MAP.find(method);
-    if (route_it != LSP_REQUEST_MAP.end()) {
+    const auto route_it = rpc::LSP_REQUEST_MAP.find(method);
+    if (route_it != rpc::LSP_REQUEST_MAP.end()) {
       Log << Trace << log_prefix << "Found route, executing";
       route_it->second(message, response);
       Log << Trace << log_prefix << "Finished executing route";
@@ -117,8 +98,8 @@ void LSPScheduler::ExecuteLSPNotification(const message::NotifyMessage& message)
     method.remove_prefix(2);
   }
 
-  const auto route_it = LSP_NOTIFICATION_MAP.find(method);
-  const auto found_route = route_it != LSP_NOTIFICATION_MAP.end();
+  const auto route_it = rpc::LSP_NOTIFICATION_MAP.find(method);
+  const auto found_route = route_it != rpc::LSP_NOTIFICATION_MAP.end();
   if (!found_route) {
     if (may_ignore) {
       Log << Debug << log_prefix << "Ignoring notification";

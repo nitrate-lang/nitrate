@@ -35,6 +35,4 @@
 
 using namespace no3::lsp;
 
-void rpc::NotifyExit(const NotifyMessage&) {
-  /// FIXME: Ensure all threads are cleaned up
-}
+void rpc::NotifyExit(const NotifyMessage&) {}
