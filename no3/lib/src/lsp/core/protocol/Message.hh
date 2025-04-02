@@ -65,5 +65,7 @@ namespace no3::lsp::message {
     [[nodiscard]] auto operator->() -> nlohmann::json* { return &m_json; }
     [[nodiscard]] auto operator*() const -> const nlohmann::json& { return m_json; }
     [[nodiscard]] auto operator*() -> nlohmann::json& { return m_json; }
+
+    virtual auto Finalize() -> Message& = 0;
   };
 }  // namespace no3::lsp::message

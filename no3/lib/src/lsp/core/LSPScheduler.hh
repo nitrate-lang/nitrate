@@ -33,28 +33,23 @@
 
 #pragma once
 
-#include <istream>
 #include <lsp/core/LSPContext.hh>
 #include <lsp/core/ThreadPool.hh>
 #include <lsp/core/protocol/Message.hh>
+#include <ostream>
 
 namespace no3::lsp::core {
-
   class LSPScheduler {
-    std::optional<ThreadPool> m_thread_pool;
-    LSPContext m_context;
-    std::iostream& m_io;
-    std::mutex& m_io_lock;
-    std::mutex m_fruition;
-    std::atomic<bool> m_exit_requested = false;
-
-    static auto IsConcurrentRequest(const message::Message& message) -> bool;
+    class PImpl;
+    std::unique_ptr<PImpl> m_pimpl;
 
   public:
-    LSPScheduler(std::iostream& io, std::mutex& io_lock);
-    ~LSPScheduler() = default;
+    LSPScheduler(std::ostream& os, std::mutex& os_lock);
+    LSPScheduler(const LSPScheduler&) = delete;
+    LSPScheduler(LSPScheduler&&) = default;
+    ~LSPScheduler();
 
-    [[nodiscard]] bool IsExitRequested() const { return m_exit_requested; }
+    [[nodiscard]] bool IsExitRequested() const;
     void Schedule(std::unique_ptr<message::Message> request);
   };
 }  // namespace no3::lsp::core

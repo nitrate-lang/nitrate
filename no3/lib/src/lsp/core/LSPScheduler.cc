@@ -45,63 +45,62 @@ using namespace no3::lsp::core;
 using namespace no3::lsp::message;
 using namespace no3::lsp::protocol;
 
-LSPScheduler::LSPScheduler(std::iostream& io, std::mutex& io_lock) : m_io(io), m_io_lock(io_lock) {}
+class LSPScheduler::PImpl {
+public:
+  std::optional<ThreadPool> m_thread_pool;
+  std::atomic<bool> m_exit_requested = false;
 
-auto LSPScheduler::IsConcurrentRequest(const message::Message& message) -> bool {
-  static const std::unordered_set<std::string_view> parallelizable_messages = {
-      ///========================================================================
-      /// BEGIN: LSP Lifecycle messages
+  LSPContext m_context;
+  std::mutex m_fruition;
 
-      ///========================================================================
-      /// BEGIN: LSP Document Synchronization messages
-  };
+  PImpl(std::ostream& os, std::mutex& os_lock) : m_context(os, os_lock) {}
 
-  return parallelizable_messages.contains(message.GetMethod());
-}
+  static auto IsConcurrentRequest(const message::Message& message) -> bool {
+    static const std::unordered_set<std::string_view> parallelizable_messages = {
+        ///========================================================================
+        /// BEGIN: LSP Lifecycle messages
 
-static void WriteRPCResponse(ResponseMessage response, std::ostream& os, std::mutex& os_lock) {
-  const auto json_response = nlohmann::to_string(*response.Finalize());
+        ///========================================================================
+        /// BEGIN: LSP Document Synchronization messages
+    };
 
-  {  // Critical section
-    std::lock_guard lock(os_lock);
-    os << "Content-Length: " << json_response.size() << "\r\n";
-    os << "Content-Type: application/vscode-jsonrpc; charset=utf-8\r\n\r\n";
-    os << json_response;
-    os.flush();
-
-    Log << Trace << "WriteRPCResponse(): Wrote response: " << json_response;
+    return parallelizable_messages.contains(message.GetMethod());
   }
-}
+};
 
 void LSPScheduler::Schedule(std::unique_ptr<Message> request) {
-  if (m_exit_requested) [[unlikely]] {
+  qcore_assert(m_pimpl != nullptr);
+
+  auto& m = *m_pimpl;
+
+  if (m.m_exit_requested) [[unlikely]] {
     Log << Trace << "LSPScheduler: LSPScheduler::Schedule(): Exit requested, ignoring request";
     return;
   }
 
   {  // Lazy initialization of the thread pool
-    if (!m_thread_pool.has_value()) [[unlikely]] {
+    if (!m.m_thread_pool.has_value()) [[unlikely]] {
       Log << Trace << "LSPScheduler: LSPScheduler::Schedule(): Starting thread pool";
 
-      m_thread_pool.emplace();
-      m_thread_pool->Start();
+      m.m_thread_pool.emplace();
+      m.m_thread_pool->Start();
     }
   }
 
   const auto method = request->GetMethod();
 
-  if (IsConcurrentRequest(*request)) {
-    std::lock_guard lock(m_fruition);
+  if (PImpl::IsConcurrentRequest(*request)) {
+    std::lock_guard lock(m.m_fruition);
 
     Log << Trace << "LSPScheduler: LSPScheduler::Schedule(\"" << method << "\"): Scheduling concurrent request";
 
     const auto sh = std::make_shared<std::unique_ptr<Message>>(std::move(request));
-    m_thread_pool->Schedule([this, sh](const std::stop_token&) {
+    m.m_thread_pool->Schedule([this, sh](const std::stop_token&) {
+      auto& m = *m_pimpl;
+
       bool exit_requested = false;
-      if (auto response_opt = m_context.ExecuteRPC(**sh, exit_requested)) {
-        WriteRPCResponse(std::move(*response_opt), m_io, m_io_lock);
-      }
-      m_exit_requested = exit_requested || m_exit_requested;
+      m.m_context.ExecuteRPC(**sh, exit_requested);
+      m.m_exit_requested = exit_requested || m.m_exit_requested;
     });
 
     return;
@@ -110,15 +109,22 @@ void LSPScheduler::Schedule(std::unique_ptr<Message> request) {
   Log << Trace << "LSPScheduler: LSPScheduler::Schedule(\"" << method << "\"): Concurrency disallowed";
 
   {  // Shall block the primary thread
-    std::lock_guard lock(m_fruition);
-    while (!m_thread_pool->Empty()) {
+    std::lock_guard lock(m.m_fruition);
+    while (!m.m_thread_pool->Empty()) {
       std::this_thread::yield();
     }
 
     bool exit_requested = false;
-    if (auto response_opt = m_context.ExecuteRPC(*request, exit_requested)) {
-      WriteRPCResponse(std::move(*response_opt), m_io, m_io_lock);
-    }
-    m_exit_requested = exit_requested || m_exit_requested;
+    m.m_context.ExecuteRPC(*request, exit_requested);
+    m.m_exit_requested = exit_requested || m.m_exit_requested;
   }
 }
+
+bool LSPScheduler::IsExitRequested() const {
+  qcore_assert(m_pimpl != nullptr);
+  return m_pimpl->m_exit_requested;
+}
+
+LSPScheduler::LSPScheduler(std::ostream& os, std::mutex& os_lock) : m_pimpl(std::make_unique<PImpl>(os, os_lock)) {}
+
+LSPScheduler::~LSPScheduler() = default;

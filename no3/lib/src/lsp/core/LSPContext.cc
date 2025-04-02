@@ -32,6 +32,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <lsp/core/LSPContext.hh>
+#include <lsp/core/protocol/LogTrace.hh>
 #include <nitrate-core/Assert.hh>
 #include <nitrate-core/Logger.hh>
 
@@ -50,15 +51,29 @@ static void BoostFlyweightInit() {
   });
 }
 
-LSPContext::LSPContext() : m_fs(TextDocumentSyncKind::Incremental) {
-  static std::once_flag init_flag;
-  std::call_once(init_flag, []() {
-    Log << Trace << "LSPContext::LSPContext(): Initializing LSP context";
-    BoostFlyweightInit();
-  });
-}
+void LSPContext::FlushLogTraceQueue() {
+  while (true) {
+    const auto message = [&]() -> std::optional<std::string> {
+      std::lock_guard lock(m_log_trace_lock);
 
-LSPContext::~LSPContext() = default;
+      if (m_log_trace_queue.empty()) {
+        return std::nullopt;
+      }
+
+      auto res = std::move(m_log_trace_queue.front());
+      m_log_trace_queue.pop();
+
+      return res;
+    }();
+
+    if (!message.has_value()) [[unlikely]] {
+      break;
+    }
+
+    auto trace_message = LogTraceNotification(message.value());
+    SendMessage(trace_message, false);
+  }
+}
 
 auto LSPContext::ExecuteLSPRequest(const message::RequestMessage& message) -> message::ResponseMessage {
   auto method = message.GetMethod();
@@ -117,8 +132,7 @@ void LSPContext::ExecuteLSPNotification(const message::NotifyMessage& message) {
   }
 }
 
-auto LSPContext::ExecuteRPC(const message::Message& message,
-                            bool& exit_requested) -> std::optional<message::ResponseMessage> {
+void LSPContext::ExecuteRPC(const message::Message& message, bool& exit_requested) {
   switch (const auto method = message.GetMethod(); message.GetKind()) {
     case MessageKind::Notification: {
       Log << Debug << "LSPContext::ExecuteRPC(\"" << method << "\"): Executing LSP Notification";
@@ -127,7 +141,7 @@ auto LSPContext::ExecuteRPC(const message::Message& message,
 
       exit_requested = m_exit_requested;
 
-      return std::nullopt;
+      break;
     }
 
     case MessageKind::Request: {
@@ -137,11 +151,55 @@ auto LSPContext::ExecuteRPC(const message::Message& message,
 
       exit_requested = m_exit_requested;
 
-      return response;
+      SendMessage(response);
+
+      break;
     }
 
     case MessageKind::Response: {
-      return std::nullopt;
+      break;
     }
   }
+
+  if (m_is_lsp_initialized) {
+    FlushLogTraceQueue();
+  }
 }
+
+void LSPContext::SendMessage(Message& message, bool log_transmission) {
+  const auto json_response = nlohmann::to_string(*message.Finalize());
+
+  {  // Critical section
+    std::lock_guard lock(m_os_lock);
+    m_os << "Content-Length: " << json_response.size() << "\r\n";
+    m_os << "Content-Type: application/vscode-jsonrpc; charset=utf-8\r\n\r\n";
+    m_os << json_response;
+    m_os.flush();
+  }
+
+  if (log_transmission) {
+    Log << Trace << "SendJsonRPCMessage(): Wrote response: " << json_response;
+  }
+}
+
+LSPContext::LSPContext(std::ostream& os, std::mutex& os_lock)
+    : m_os(os), m_os_lock(os_lock), m_fs(TextDocumentSyncKind::Incremental) {
+  static std::once_flag init_flag;
+  std::call_once(init_flag, []() {
+    Log << Trace << "LSPContext::LSPContext(): Initializing LSP context";
+    BoostFlyweightInit();
+  });
+
+  m_log_subscriber_id = Log->Subscribe([this](const ncc::LogMessage& log) {
+    auto message = log.m_by.Format(log.m_message, log.m_sev);
+
+    /// FIXME: Support log levels
+
+    {
+      std::lock_guard lock(m_log_trace_lock);
+      m_log_trace_queue.push(message);
+    }
+  });
+}
+
+LSPContext::~LSPContext() { Log->Unsubscribe(m_log_subscriber_id); }

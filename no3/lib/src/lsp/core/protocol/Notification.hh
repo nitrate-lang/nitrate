@@ -36,7 +36,7 @@
 #include <lsp/core/protocol/Message.hh>
 
 namespace no3::lsp::message {
-  class NotifyMessage final : public Message {
+  class NotifyMessage : public Message {
     std::string m_method;
     nlohmann::json m_params;
 
@@ -51,6 +51,21 @@ namespace no3::lsp::message {
 
     [[nodiscard]] auto GetParams() const -> const nlohmann::json& { return m_params; }
     [[nodiscard]] auto GetMethod() const -> std::string_view override { return m_method; }
+
+    auto Finalize() -> NotifyMessage& override {
+      auto& this_json = **this;
+
+      {
+        nlohmann::json tmp = this_json;
+        this_json.clear();
+        this_json["params"] = std::move(tmp);
+      }
+
+      this_json["method"] = m_method;
+      this_json["jsonrpc"] = "2.0";
+
+      return *this;
+    }
   };
 
 }  // namespace no3::lsp::message

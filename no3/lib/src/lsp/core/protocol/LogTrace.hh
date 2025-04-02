@@ -33,30 +33,16 @@
 
 #pragma once
 
-#include <lsp/core/protocol/Message.hh>
-#include <lsp/core/protocol/Response.hh>
-#include <lsp/core/protocol/StatusCode.hh>
+#include <lsp/core/protocol/Notification.hh>
 
 namespace no3::lsp::message {
-  class RequestMessage : public Message {
-    std::string m_method;
-    MessageSequenceID m_request_id;
-
+  class LogTraceNotification final : public NotifyMessage {
   public:
-    RequestMessage(std::string method, MessageSequenceID request_id, nlohmann::json params)
-        : Message(MessageKind::Request, std::move(params)),
-          m_method(std::move(method)),
-          m_request_id(std::move(request_id)) {}
-    RequestMessage(const RequestMessage&) = delete;
-    RequestMessage(RequestMessage&&) = default;
-    ~RequestMessage() override = default;
+    LogTraceNotification(std::string message)
+        : NotifyMessage("$/logTrace", nlohmann::json::object({
+                                          {"message", std::move(message)},
+                                      })) {}
 
-    [[nodiscard]] auto GetRequestID() const -> const MessageSequenceID& { return m_request_id; }
-    [[nodiscard]] auto GetParams() const -> const nlohmann::json& { return **this; }
-    [[nodiscard]] auto GetMethod() const -> std::string_view override { return m_method; }
-
-    [[nodiscard]] auto GetResponseObject() const -> ResponseMessage { return {m_request_id}; }
-
-    auto Finalize() -> RequestMessage& override { return *this; }
+    [[nodiscard]] auto GetMessage() const -> std::string { return GetParams()["message"].get<std::string>(); }
   };
 }  // namespace no3::lsp::message

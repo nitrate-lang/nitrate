@@ -39,11 +39,22 @@
 #include <lsp/core/protocol/Request.hh>
 #include <lsp/core/protocol/Response.hh>
 #include <lsp/core/resource/FileBrowser.hh>
+#include <nitrate-core/Logger.hh>
+#include <queue>
 
 namespace no3::lsp::core {
   class LSPContext final {
+    std::ostream& m_os;
+    std::mutex& m_os_lock;
+
     FileBrowser m_fs;
     std::atomic<bool> m_is_lsp_initialized, m_exit_requested;
+
+    std::queue<std::string> m_log_trace_queue;
+    std::mutex m_log_trace_lock;
+    ncc::LogSubscriberID m_log_subscriber_id;
+
+    void FlushLogTraceQueue();
 
     [[nodiscard]] auto ExecuteLSPRequest(const message::RequestMessage& message) -> message::ResponseMessage;
     void ExecuteLSPNotification(const message::NotifyMessage& message);
@@ -87,10 +98,12 @@ namespace no3::lsp::core {
     ///========================================================================================================
 
   public:
-    LSPContext();
+    LSPContext(std::ostream& os, std::mutex& os_lock);
+    LSPContext(const LSPContext&) = delete;
+    LSPContext(LSPContext&&) = delete;
     ~LSPContext();
 
-    [[nodiscard]] auto ExecuteRPC(const message::Message& message,
-                                  bool& exit_requested) -> std::optional<message::ResponseMessage>;
+    void ExecuteRPC(const message::Message& message, bool& exit_requested);
+    void SendMessage(message::Message& message, bool log_transmission = true);
   };
 }  // namespace no3::lsp::core

@@ -39,7 +39,7 @@
 namespace no3::lsp::message {
   using MessageSequenceID = std::variant<int64_t, std::string>;
 
-  class ResponseMessage final : public Message {
+  class ResponseMessage : public Message {
     friend class RequestMessage;
 
     MessageSequenceID m_request_id;
@@ -62,7 +62,7 @@ namespace no3::lsp::message {
 
     void SetStatusCode(std::optional<StatusCode> status_code) { m_status_code = status_code; }
 
-    ResponseMessage& Finalize() {
+    auto Finalize() -> ResponseMessage& override {
       auto& this_json = **this;
 
       if (IsValidResponse()) {
