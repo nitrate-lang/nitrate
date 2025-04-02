@@ -1,4 +1,4 @@
-#include <lsp/core/RPC.hh>
+#include <lsp/core/LSPContext.hh>
 #include <nitrate-core/Logger.hh>
 
 using namespace ncc;
@@ -18,7 +18,7 @@ static auto VerifyTextDocumentDidClose(const nlohmann::json& j) -> bool {
   return text_document.contains("uri") && text_document["uri"].is_string();
 }
 
-void core::LSPScheduler::NotifyTextDocumentDidClose(const message::NotifyMessage& notif) {
+void core::LSPContext::NotifyTextDocumentDidClose(const message::NotifyMessage& notif) {
   const auto& j = *notif;
   if (!VerifyTextDocumentDidClose(j)) {
     Log << "Invalid textDocument/didClose notification";

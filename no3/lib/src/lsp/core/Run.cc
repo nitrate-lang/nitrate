@@ -34,7 +34,7 @@
 #include <core/GetOpt.hh>
 #include <core/InterpreterImpl.hh>
 #include <fstream>
-#include <lsp/core/Server.hh>
+#include <lsp/core/LSPServer.hh>
 #include <lsp/core/connect/Connection.hh>
 #include <memory>
 #include <nitrate-core/Assert.hh>

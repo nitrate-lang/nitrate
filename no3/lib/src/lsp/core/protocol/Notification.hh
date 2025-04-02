@@ -46,6 +46,7 @@ namespace no3::lsp::message {
           m_method(std::move(method)),
           m_params(std::move(params)) {}
     NotifyMessage(const NotifyMessage&) = delete;
+    NotifyMessage(NotifyMessage&&) = default;
     ~NotifyMessage() override = default;
 
     [[nodiscard]] auto GetParams() const -> const nlohmann::json& { return m_params; }

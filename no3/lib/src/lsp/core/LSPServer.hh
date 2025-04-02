@@ -31,8 +31,30 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <lsp/core/LSPContext.hh>
+#pragma once
 
-using namespace no3::lsp;
+#include <iostream>
+#include <lsp/core/ThreadPool.hh>
+#include <lsp/core/protocol/Message.hh>
+#include <optional>
 
-void core::LSPContext::RequestShutdown(const message::RequestMessage&, message::ResponseMessage&) {}
+namespace no3::lsp::core {
+  class LSPServer {
+    class PImpl;
+    std::unique_ptr<PImpl> m_pimpl;
+
+    auto ReadRequest(std::istream& in, std::mutex& in_lock) -> std::optional<std::unique_ptr<message::Message>>;
+
+  public:
+    LSPServer(std::iostream& io);
+    ~LSPServer();
+
+    enum class State { Suspended, Running, Exited };
+
+    [[nodiscard]] auto Start() -> bool;
+    [[nodiscard]] auto Suspend() -> bool;
+    [[nodiscard]] auto Resume() -> bool;
+    [[nodiscard]] auto Stop() -> bool;
+    [[nodiscard]] auto GetState() const -> State;
+  };
+}  // namespace no3::lsp::core

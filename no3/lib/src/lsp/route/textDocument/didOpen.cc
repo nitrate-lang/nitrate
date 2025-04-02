@@ -1,4 +1,4 @@
-#include <lsp/core/RPC.hh>
+#include <lsp/core/LSPContext.hh>
 #include <nitrate-core/Logger.hh>
 
 using namespace ncc;
@@ -30,7 +30,7 @@ static auto VerifyTextDocumentDidOpen(const nlohmann::json& j) -> bool {
   return true;
 }
 
-void core::LSPScheduler::NotifyTextDocumentDidOpen(const message::NotifyMessage& notif) {
+void core::LSPContext::NotifyTextDocumentDidOpen(const message::NotifyMessage& notif) {
   const auto& j = *notif;
   if (!VerifyTextDocumentDidOpen(j)) {
     Log << "Invalid textDocument/didOpen notification";

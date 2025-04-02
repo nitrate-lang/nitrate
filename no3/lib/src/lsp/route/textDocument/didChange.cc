@@ -1,5 +1,4 @@
-#include <fstream>
-#include <lsp/core/RPC.hh>
+#include <lsp/core/LSPContext.hh>
 #include <nitrate-core/Assert.hh>
 #include <nitrate-core/Logger.hh>
 
@@ -66,7 +65,7 @@ static auto VerifyTextDocumentDidChange(const nlohmann::json& j) -> bool {
   return true;
 }
 
-void core::LSPScheduler::NotifyTextDocumentDidChange(const message::NotifyMessage& notif) {
+void core::LSPContext::NotifyTextDocumentDidChange(const message::NotifyMessage& notif) {
   const auto& j = *notif;
   if (!VerifyTextDocumentDidChange(j)) {
     Log << "Invalid textDocument/didChange notification";

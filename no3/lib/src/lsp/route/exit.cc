@@ -31,8 +31,8 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <lsp/core/RPC.hh>
+#include <lsp/core/LSPContext.hh>
 
 using namespace no3::lsp;
 
-void core::LSPScheduler::NotifyExit(const message::NotifyMessage&) {}
+void core::LSPContext::NotifyExit(const message::NotifyMessage&) {}

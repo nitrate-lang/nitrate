@@ -31,8 +31,8 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <lsp/core/RPC.hh>
-#include <lsp/core/Server.hh>
+#include <lsp/core/LSPScheduler.hh>
+#include <lsp/core/LSPServer.hh>
 #include <lsp/core/ThreadPool.hh>
 #include <nitrate-core/Assert.hh>
 #include <nitrate-core/Logger.hh>
@@ -79,7 +79,7 @@ auto LSPServer::Start() -> bool {
       }
 
       case State::Running: {
-        auto request = LSPReadRequest(m_pimpl->m_io, m_pimpl->m_io_mutex);
+        auto request = ReadRequest(m_pimpl->m_io, m_pimpl->m_io_mutex);
         if (!request.has_value()) [[unlikely]] {
           sucessive_failed_request_count++;
           Log << "LSPServer: Start(): ReadRequest() failed";

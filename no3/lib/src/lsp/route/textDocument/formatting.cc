@@ -3,7 +3,7 @@
 // #include <format/tree/Visitor.hh>
 // #include <lsp/core/Server.hh>
 // #include <lsp/core/SyncFS.hh>
-// #include <lsp/core/RPC.hh>
+// #include <lsp/core/LSPContext.hh>
 // #include <memory>
 // #include <nitrate-core/Environment.hh>
 // #include <nitrate-core/Logger.hh>

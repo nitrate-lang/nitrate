@@ -50,6 +50,7 @@ namespace no3::lsp::message {
 
   public:
     ResponseMessage(const ResponseMessage&) = delete;
+    ResponseMessage(ResponseMessage&&) = default;
     ~ResponseMessage() override = default;
 
     [[nodiscard]] auto GetResponseID() const -> const MessageSequenceID& { return m_request_id; }

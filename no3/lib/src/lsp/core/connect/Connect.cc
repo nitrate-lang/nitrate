@@ -34,7 +34,6 @@
 #include <charconv>
 #include <cstdint>
 #include <cstring>
-#include <lsp/core/Server.hh>
 #include <lsp/core/connect/Connection.hh>
 #include <nitrate-core/Assert.hh>
 #include <nitrate-core/Logger.hh>

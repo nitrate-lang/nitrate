@@ -32,7 +32,6 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <chrono>
-#include <lsp/core/Server.hh>
 #include <lsp/core/ThreadPool.hh>
 #include <mutex>
 #include <nitrate-core/Logger.hh>

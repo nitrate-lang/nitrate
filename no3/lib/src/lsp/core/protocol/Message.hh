@@ -51,6 +51,7 @@ namespace no3::lsp::message {
     Message(MessageKind kind) : m_kind(kind){};
     Message(MessageKind kind, nlohmann::json json) : m_kind(kind), m_json(std::move(json)) {}
     Message(const Message&) = delete;
+    Message(Message&&) = default;
     virtual ~Message() = default;
 
     [[nodiscard]] auto GetKind() const -> MessageKind { return m_kind; }

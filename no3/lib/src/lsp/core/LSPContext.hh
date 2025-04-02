@@ -33,24 +33,65 @@
 
 #pragma once
 
-#include <iostream>
-#include <lsp/core/ThreadPool.hh>
+#include <lsp/core/protocol/Message.hh>
+#include <lsp/core/protocol/Notification.hh>
+#include <lsp/core/protocol/Request.hh>
+#include <lsp/core/protocol/Response.hh>
+#include <lsp/core/resource/FileBrowser.hh>
 
 namespace no3::lsp::core {
-  class LSPServer {
-    class PImpl;
-    std::unique_ptr<PImpl> m_pimpl;
+  class LSPContext final {
+    FileBrowser m_fs;
+    bool m_is_lsp_initialized = false;
+    bool m_exit_requested = false;
+
+    [[nodiscard]] auto ExecuteLSPRequest(const message::RequestMessage& message) -> message::ResponseMessage;
+    void ExecuteLSPNotification(const message::NotifyMessage& message);
+
+    ///========================================================================================================
+
+#define LSP_REQUEST(name) void Request##name(const message::RequestMessage&, message::ResponseMessage&)
+#define LSP_NOTIFY(name) void Notify##name(const message::NotifyMessage&)
+
+    LSP_REQUEST(Initialize);
+    LSP_REQUEST(Shutdown);
+    LSP_REQUEST(Formatting);
+
+    LSP_NOTIFY(Initialized);
+    LSP_NOTIFY(Exit);
+    LSP_NOTIFY(SetTrace);
+    LSP_NOTIFY(TextDocumentDidChange);
+    LSP_NOTIFY(TextDocumentDidClose);
+    LSP_NOTIFY(TextDocumentDidOpen);
+    LSP_NOTIFY(TextDocumentDidSave);
+
+#undef REQUEST_HANDLER
+#undef NOTIFICATION_HANDLER
+
+    using LSPRequestFunc = void (LSPContext::*)(const message::RequestMessage&, message::ResponseMessage&);
+    using LSPNotifyFunc = void (LSPContext::*)(const message::NotifyMessage&);
+
+    static inline const std::unordered_map<std::string_view, LSPRequestFunc> LSP_REQUEST_MAP = {
+        {"initialize", &LSPContext::RequestInitialize},
+        {"shutdown", &LSPContext::RequestShutdown},
+    };
+
+    static inline const std::unordered_map<std::string_view, LSPNotifyFunc> LSP_NOTIFICATION_MAP = {
+        {"initialized", &LSPContext::NotifyInitialized},
+        {"exit", &LSPContext::NotifyExit},
+        {"textDocument/didOpen", &LSPContext::NotifyTextDocumentDidOpen},
+        {"textDocument/didChange", &LSPContext::NotifyTextDocumentDidChange},
+        {"textDocument/didClose", &LSPContext::NotifyTextDocumentDidClose},
+        {"textDocument/didSave", &LSPContext::NotifyTextDocumentDidSave},
+    };
+
+    ///========================================================================================================
 
   public:
-    LSPServer(std::iostream& io);
-    ~LSPServer();
+    LSPContext();
+    ~LSPContext();
 
-    enum class State { Suspended, Running, Exited };
-
-    [[nodiscard]] auto Start() -> bool;
-    [[nodiscard]] auto Suspend() -> bool;
-    [[nodiscard]] auto Resume() -> bool;
-    [[nodiscard]] auto Stop() -> bool;
-    [[nodiscard]] auto GetState() const -> State;
+    [[nodiscard]] auto ExecuteRPC(const message::Message& message,
+                                  bool& exit_requested) -> std::optional<message::ResponseMessage>;
   };
 }  // namespace no3::lsp::core

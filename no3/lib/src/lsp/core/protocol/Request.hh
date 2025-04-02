@@ -48,6 +48,7 @@ namespace no3::lsp::message {
           m_method(std::move(method)),
           m_request_id(std::move(request_id)) {}
     RequestMessage(const RequestMessage&) = delete;
+    RequestMessage(RequestMessage&&) = default;
     ~RequestMessage() override = default;
 
     [[nodiscard]] auto GetRequestID() const -> const MessageSequenceID& { return m_request_id; }
