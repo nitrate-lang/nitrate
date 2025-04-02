@@ -65,7 +65,7 @@ auto FileBrowser::DidOpen(const FlyString& file_uri, FileVersion version, FlyStr
 
   Log << Trace << "FileBrowser::DidOpen: File not already open, opening: " << file_uri;
 
-  m_impl->m_files[std::move(file_uri)] = std::make_shared<ConstFile>(file_uri, version, raw);
+  m_impl->m_files[file_uri] = std::make_shared<ConstFile>(file_uri, version, raw);
 
   Log << Trace << "FileBrowser::DidOpen: File opened: " << file_uri;
 
@@ -93,8 +93,10 @@ auto FileBrowser::DidChange(const FlyString& file_uri, FileVersion version, FlyS
   return true;
 }
 
-static auto FromLCToOffset(std::string_view raw, uint64_t line, uint64_t column) -> std::optional<uint64_t> {
-  uint64_t target_offset = 0;
+static auto FromLCToOffsetUsingUTF16(const std::string_view utf8_bytes, uint64_t line,
+                                     uint64_t column) -> std::optional<uint64_t> {
+  uint64_t raw_offset = 0;
+  const auto utf8_bytes_size = utf8_bytes.size();
 
   {  // Skip until the target line, else return std::nullopt if EOF
     uint64_t current_line = 0;
@@ -102,22 +104,38 @@ static auto FromLCToOffset(std::string_view raw, uint64_t line, uint64_t column)
     while (true) {
       if (current_line == line) [[unlikely]] {
         break;
-      } else if (target_offset >= raw.size()) [[unlikely]] {
+      } else if (raw_offset >= utf8_bytes_size) [[unlikely]] {
         Log << "FromLCToOffset: Offset is out of bounds";
         return std::nullopt;
       }
 
-      if (raw[target_offset++] == '\n') {
-        ++current_line;
+      /**
+       * @ref https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#textDocuments
+       *
+       * export const EOL: string[] = ['\n', '\r\n', '\r'];
+       */
+
+      auto ch = utf8_bytes[raw_offset++];
+      bool is_newline = false;
+
+      if (ch == '\r') {
+        is_newline = true;
+        if (raw_offset < utf8_bytes_size && utf8_bytes[raw_offset] == '\n') {
+          ++raw_offset;
+        }
+      } else if (ch == '\n') {
+        is_newline = true;
       }
+
+      current_line += static_cast<uint64_t>(is_newline);
     }
 
-    // target_offset: is pointing to the first byte after the line break
+    // raw_byte_offset: is pointing to the first byte after the line break
     qcore_assert(current_line == line);
   }
 
   uint64_t line_length = 0;
-  for (auto i = target_offset; i < raw.size() && raw[i] != '\n'; ++i) {
+  for (auto i = raw_offset; i < utf8_bytes.size() && utf8_bytes[i] != '\n'; ++i) {
     ++line_length;
   }
 
@@ -127,14 +145,15 @@ static auto FromLCToOffset(std::string_view raw, uint64_t line, uint64_t column)
     column = line_length;
   }
 
-  target_offset += column;
+  /// TODO: Handle UTF-16 offsets
 
-  if (target_offset > raw.size()) [[unlikely]] {
+  raw_offset += column;
+  if (raw_offset > utf8_bytes.size()) [[unlikely]] {
     Log << "FromLCToOffset: Offset is out of bounds";
     return std::nullopt;
   }
 
-  return target_offset;
+  return raw_offset;
 }
 
 auto FileBrowser::DidChanges(const FlyString& file_uri, FileVersion version, IncrementalChanges changes) -> bool {
@@ -156,13 +175,13 @@ auto FileBrowser::DidChanges(const FlyString& file_uri, FileVersion version, Inc
     auto [start_line, start_character] = range.m_start;
     auto [end_line_ex, end_character_ex] = range.m_end;
 
-    const auto start_offset = FromLCToOffset(state, start_line, start_character);
+    const auto start_offset = FromLCToOffsetUsingUTF16(state, start_line, start_character);
     if (!start_offset) {
       Log << "FileBrowser::DidChange: Failed to convert start line/column to offset";
       return false;
     }
 
-    const auto end_offset_plus_one = FromLCToOffset(state, end_line_ex, end_character_ex);
+    const auto end_offset_plus_one = FromLCToOffsetUsingUTF16(state, end_line_ex, end_character_ex);
     if (!end_offset_plus_one) {
       Log << "FileBrowser::DidChange: Failed to convert end line/column to offset";
       return false;
