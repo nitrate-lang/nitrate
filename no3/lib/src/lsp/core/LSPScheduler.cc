@@ -38,6 +38,7 @@
 #include <nitrate-core/Assert.hh>
 #include <nitrate-core/Logger.hh>
 #include <nlohmann/json.hpp>
+#include <unordered_set>
 
 using namespace ncc;
 using namespace no3::lsp::core;
@@ -47,11 +48,17 @@ using namespace no3::lsp::protocol;
 LSPScheduler::LSPScheduler(std::iostream& io, std::mutex& io_lock) : m_io(io), m_io_lock(io_lock) {}
 
 auto LSPScheduler::IsConcurrentRequest(const message::Message& message) -> bool {
-  /// TODO: Decide if the request is concurrent or not
+  static const std::unordered_set<std::string_view> parallelizable_messages = {
+      ///========================================================================
+      /// BEGIN: LSP Lifecycle messages
+      "exit",
 
-  (void)message;
+      ///========================================================================
+      /// BEGIN: LSP Document Synchronization messages
+      "textDocument/didSave",
+  };
 
-  return false;
+  return parallelizable_messages.contains(message.GetMethod());
 }
 
 static void WriteRPCResponse(ResponseMessage response, std::ostream& os, std::mutex& os_lock) {

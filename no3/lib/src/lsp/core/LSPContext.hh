@@ -33,6 +33,7 @@
 
 #pragma once
 
+#include <atomic>
 #include <lsp/core/protocol/Message.hh>
 #include <lsp/core/protocol/Notification.hh>
 #include <lsp/core/protocol/Request.hh>
@@ -42,8 +43,7 @@
 namespace no3::lsp::core {
   class LSPContext final {
     FileBrowser m_fs;
-    bool m_is_lsp_initialized = false;
-    bool m_exit_requested = false;
+    std::atomic<bool> m_is_lsp_initialized, m_exit_requested;
 
     [[nodiscard]] auto ExecuteLSPRequest(const message::RequestMessage& message) -> message::ResponseMessage;
     void ExecuteLSPNotification(const message::NotifyMessage& message);

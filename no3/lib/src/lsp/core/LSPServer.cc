@@ -65,7 +65,7 @@ auto LSPServer::Start() -> bool {
     m_pimpl->m_state = State::Running;
   }
 
-  constexpr size_t kMaxFailedRequestCount = 10;
+  constexpr size_t kMaxFailedRequestCount = 3;
   size_t sucessive_failed_request_count = 0;
 
   while (true) {

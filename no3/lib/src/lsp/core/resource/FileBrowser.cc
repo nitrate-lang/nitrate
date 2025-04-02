@@ -132,8 +132,6 @@ static auto FromLCToOffset(std::string_view raw, uint64_t line, uint64_t column)
     return std::nullopt;
   }
 
-  /// TODO: Verify this is correct
-
   return target_offset;
 }
 

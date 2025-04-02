@@ -37,8 +37,21 @@
 using namespace ncc;
 using namespace no3::lsp;
 
-void core::LSPContext::RequestInitialize(const message::RequestMessage&, message::ResponseMessage& resp) {
-  auto& j = *resp;
+static auto VerifyInitializeRequest(const nlohmann::json& j) -> bool {
+  /// TODO: Verify the request
+  return true;
+}
+
+void core::LSPContext::RequestInitialize(const message::RequestMessage& request, message::ResponseMessage& response) {
+  const auto& req = *request;
+  if (!VerifyInitializeRequest(req)) [[unlikely]] {
+    Log << "Invalid initialize request";
+    response.SetStatusCode(message::StatusCode::InvalidRequest);
+    return;
+  }
+
+  ////==========================================================================
+  auto& j = *response;
 
   j["serverInfo"]["name"] = "nitrateLanguageServer";
   j["serverInfo"]["version"] = "0.0.1";
@@ -48,7 +61,6 @@ void core::LSPContext::RequestInitialize(const message::RequestMessage&, message
   j["capabilities"]["documentFormattingProvider"] = true;
 
   ////==========================================================================
-
   m_is_lsp_initialized = true;
   Log << Debug << "LSPContext::RequestInitialize(): LSP initialize requested";
 }

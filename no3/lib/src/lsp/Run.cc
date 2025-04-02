@@ -60,7 +60,6 @@ class LspCommandArgumentParser {
 
   bool m_help = false;
   size_t m_stdio = 0;
-  size_t m_pipe = 0;
   size_t m_port = 0;
   std::string m_connect_arg;
   ConnectionType m_connection_mode = ConnectionType::Stdio;
@@ -69,13 +68,12 @@ class LspCommandArgumentParser {
 
   void DisplayHelp() {
     std::string_view help =
-        R"(Usage: lsp [--help] [[--pipe VAR]|[--port VAR]|[--stdio]] [--log VAR]
+        R"(Usage: lsp [--help] [[--port VAR]|[--stdio]] [--log VAR]
 
 Optional arguments:
   -h, --help          shows this help message and exits
   -s, --stdio         instruct LSP server to connect via stdin/stdout
   -p, --port          instruct LSP server to listen on a TCP port
-  -u, --pipe          instruct LSP server to open a named pipe
   -o, --log           log output file [default: "nitrate-lsp.log"]
 )";
 
@@ -83,11 +81,13 @@ Optional arguments:
   }
 
   void DoParse(std::vector<std::string> args) {
-    constexpr const char* kShortOptions = "hsp:u:o:";
+    constexpr const char* kShortOptions = "hsp:o:";
     constexpr std::array kLongOptions = {
-        option{"help", no_argument, nullptr, 'h'},       option{"stdio", no_argument, nullptr, 's'},
-        option{"port", required_argument, nullptr, 'p'}, option{"pipe", required_argument, nullptr, 'u'},
-        option{"log", required_argument, nullptr, 'o'},  option{nullptr, 0, nullptr, 0},
+        option{"help", no_argument, nullptr, 'h'},
+        option{"stdio", no_argument, nullptr, 's'},
+        option{"port", required_argument, nullptr, 'p'},
+        option{"log", required_argument, nullptr, 'o'},
+        option{nullptr, 0, nullptr, 0},
     };
 
     std::vector<char*> argv(args.size());
@@ -130,19 +130,6 @@ Optional arguments:
             m_connect_arg = optarg;
             if (m_port++ > 0) {
               Log << "The -p, --port argument was provided more than once.";
-              m_too_many_args = true;
-            }
-
-            break;
-          }
-
-          case 'u': {
-            Log << Trace << "Parsing command line argument: --pipe, -u";
-
-            m_connection_mode = ConnectionType::Pipe;
-            m_connect_arg = optarg;
-            if (m_pipe++ > 0) {
-              Log << "The -u, --pipe argument was provided more than once.";
               m_too_many_args = true;
             }
 
@@ -194,8 +181,8 @@ Optional arguments:
     if (m_too_many_args) {
       Log << "Too many arguments provided.";
       okay = false;
-    } else if (m_stdio + m_pipe + m_port > 1) {
-      Log << "Only one of --stdio, --pipe, or --port can be specified.";
+    } else if (m_stdio + m_port > 1) {
+      Log << "Only one of --stdio or --port can be specified.";
       okay = false;
     }
 
@@ -281,8 +268,9 @@ static bool StartLSPServer(const std::filesystem::path& log_file, const Connecti
       for (const auto& sub : old_active_subscribers) {
         Log->Resume(sub);
       }
+
+      Log << Info << "LSP server exited";
     } else {
-      Log << Info << "Starting LSP server with " << connection_mode << " connection";
       const auto file_logger_id = Log->Subscribe(file_logger);
       Log << Info << "Starting LSP server with " << connection_mode << " connection";
       lsp_status = LSPServer(*lsp_io.value()).Start();
@@ -297,8 +285,6 @@ static bool StartLSPServer(const std::filesystem::path& log_file, const Connecti
     Log << "Failed to start LSP server.";
     return false;
   }
-
-  Log << Info << "LSP server exited";
 
   return true;
 }
@@ -321,17 +307,7 @@ auto no3::Interpreter::PImpl::CommandLSP(ConstArguments, const MutArguments& arg
 
   auto [connection_mode, connection_arg, log_file] = state.GetOptions();
 
-  switch (connection_mode) {
-    case ConnectionType::Stdio:
-      Log << Trace << R"(options["connect_mode"] = "stdio")";
-      break;
-    case ConnectionType::Pipe:
-      Log << Trace << R"(options["connect_mode"] = "pipe")";
-      break;
-    case ConnectionType::Port:
-      Log << Trace << R"(options["connect_mode"] = "tcp")";
-      break;
-  }
+  Log << Trace << R"(options["connect_mode"] = ")" << connection_mode << "\"";
   Log << Trace << "options[\"connect_arg\"] = " << connection_arg;
   Log << Trace << "options[\"log\"] = " << log_file;
 

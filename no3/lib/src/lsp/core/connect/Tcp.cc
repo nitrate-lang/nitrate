@@ -42,8 +42,6 @@
 #include <lsp/core/connect/Connection.hh>
 #include <nitrate-core/Logger.hh>
 
-/// TODO: Verify this code
-
 using namespace ncc;
 using namespace no3::lsp;
 
@@ -67,6 +65,15 @@ static auto AcceptTcpClientConnection(const char* srv_host, uint16_t srv_port) -
       return std::nullopt;
     }
 
+    int opt = 1;
+    if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) == -1) {
+      close(fd);
+
+      auto* error = strerror_r(errno, err_buffer.data(), err_buffer.size());
+      Log << "Failed to set socket options: " << error;
+      return std::nullopt;
+    }
+
     Log << Trace << "TCP socket created";
   }
 
@@ -87,6 +94,8 @@ static auto AcceptTcpClientConnection(const char* srv_host, uint16_t srv_port) -
     Log << Trace << "Binding to TCP socket";
 
     if (bind(fd, &addr.m_addr, sizeof(addr.m_addr)) == -1) {
+      close(fd);
+
       auto* error = strerror_r(errno, err_buffer.data(), err_buffer.size());
       Log << "Failed to bind socket: " << error;
       return std::nullopt;
@@ -97,6 +106,8 @@ static auto AcceptTcpClientConnection(const char* srv_host, uint16_t srv_port) -
 
   {
     if (listen(fd, 1) == -1) {
+      close(fd);
+
       auto* error = strerror_r(errno, err_buffer.data(), err_buffer.size());
       Log << "Failed to listen on socket: " << error;
       return std::nullopt;
@@ -110,6 +121,8 @@ static auto AcceptTcpClientConnection(const char* srv_host, uint16_t srv_port) -
 
     client_fd = accept(fd, nullptr, nullptr);
     if (client_fd == -1) {
+      close(fd);
+
       auto* error = strerror_r(errno, err_buffer.data(), err_buffer.size());
       Log << "Failed to accept connection: " << error;
       return std::nullopt;
@@ -122,6 +135,8 @@ static auto AcceptTcpClientConnection(const char* srv_host, uint16_t srv_port) -
     Log << Trace << "Closing listening socket";
 
     if (close(fd) == -1) {
+      close(client_fd);
+
       auto* error = strerror_r(errno, err_buffer.data(), err_buffer.size());
       Log << "Failed to close listening socket: " << error;
       return std::nullopt;

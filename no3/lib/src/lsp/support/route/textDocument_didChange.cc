@@ -32,11 +32,19 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <lsp/core/LSPContext.hh>
+#include <lsp/core/protocol/Base.hh>
+#include <lsp/core/resource/FileBrowser.hh>
 #include <nitrate-core/Assert.hh>
 #include <nitrate-core/Logger.hh>
+#include <utility>
+
+#ifndef NDEBUG
+#include <fstream>
+#endif
 
 using namespace ncc;
 using namespace no3::lsp;
+using namespace no3::lsp::protocol;
 
 static auto VerifyTextDocumentDidChange(const nlohmann::json& j) -> bool {
   if (!j.is_object()) {
@@ -61,88 +69,97 @@ static auto VerifyTextDocumentDidChange(const nlohmann::json& j) -> bool {
     return false;
   }
 
-  const auto content_changes_valid =
-      std::all_of(j["contentChanges"].begin(), j["contentChanges"].end(), [](const auto& content_change) {
-        if (!content_change.is_object()) {
-          return false;
-        }
+  return std::all_of(j["contentChanges"].begin(), j["contentChanges"].end(), [](const auto& content_change) {
+    if (!content_change.is_object()) {
+      return false;
+    }
 
-        if (!content_change.contains("range") || !content_change["range"].is_object()) {
-          return false;
-        }
+    // Both variants require the text field
+    if (!content_change.contains("text") || !content_change["text"].is_string()) {
+      return false;
+    }
 
-        const auto& range = content_change["range"];
-        if (!range.contains("start") || !range["start"].is_object()) {
-          return false;
-        }
-        if (!range.contains("end") || !range["end"].is_object()) {
-          return false;
-        }
+    // Only incremental sync requires the range field
+    if (content_change.contains("range")) {
+      if (!content_change["range"].is_object()) {
+        return false;
+      }
 
-        const auto& start = range["start"];
-        if (!start.contains("line") || !start["line"].is_number_integer() || !start.contains("character") ||
-            !start["character"].is_number_integer()) {
-          return false;
-        }
+      const auto& range = content_change["range"];
+      if (!range.contains("start") || !range["start"].is_object()) {
+        return false;
+      }
+      if (!range.contains("end") || !range["end"].is_object()) {
+        return false;
+      }
 
-        const auto& end = range["end"];
-        if (!end.contains("line") || !end["line"].is_number_integer() || !end.contains("character") ||
-            !end["character"].is_number_integer()) {
-          return false;
-        }
+      const auto& start = range["start"];
+      if (!start.contains("line") || !start["line"].is_number_integer() || !start.contains("character") ||
+          !start["character"].is_number_integer()) {
+        return false;
+      }
 
-        if (!content_change.contains("text") || !content_change["text"].is_string()) {
-          return false;
-        }
+      const auto& end = range["end"];
+      if (!end.contains("line") || !end["line"].is_number_integer() || !end.contains("character") ||
+          !end["character"].is_number_integer()) {
+        return false;
+      }
+    }
 
-        return true;
-      });
-
-  return content_changes_valid;
+    return true;
+  });
 }
 
 void core::LSPContext::NotifyTextDocumentDidChange(const message::NotifyMessage& notif) {
   const auto& j = *notif;
-  if (!VerifyTextDocumentDidChange(j)) {
+
+  auto sync_kind = VerifyTextDocumentDidChange(j);
+  if (!sync_kind) {
     Log << "Invalid textDocument/didChange notification";
     return;
   }
 
-  const auto& uri = j["textDocument"]["uri"].get<std::string>();
+  const auto& file_uri = FlyString(j["textDocument"]["uri"].get<std::string>());
   const auto& version = j["textDocument"]["version"].get<int64_t>();
   const auto& content_changes = j["contentChanges"];
 
-  std::vector<protocol::TextDocumentContentChangeEvent> changes;
+  for (const auto& content_change : content_changes) {
+    if (const auto is_incremental_change = content_change.contains("range")) {
+      const auto start_line = content_change["range"]["start"]["line"].get<int64_t>();
+      const auto start_character = content_change["range"]["start"]["character"].get<int64_t>();
+      const auto end_line = content_change["range"]["end"]["line"].get<int64_t>();
+      const auto end_character = content_change["range"]["end"]["character"].get<int64_t>();
 
-  {  // Prepare content changes
-    changes.reserve(content_changes.size());
-
-    for (const auto& content_change : content_changes) {
-      protocol::TextDocumentContentChangeEvent change;
-      change.m_range.m_start.m_line = content_change["range"]["start"]["line"].get<int64_t>();
-      change.m_range.m_start.m_character = content_change["range"]["start"]["character"].get<int64_t>();
-      change.m_range.m_end.m_line = content_change["range"]["end"]["line"].get<int64_t>();
-      change.m_range.m_end.m_character = content_change["range"]["end"]["character"].get<int64_t>();
+      TextDocumentContentChangeEvent change;
+      change.m_range = Range(Position(start_line, start_character), Position(end_line, end_character));
       change.m_text = content_change["text"].get<std::string>();
-      changes.push_back(change);
+
+      const std::array changes = {std::move(change)};
+      if (!m_fs.DidChanges(file_uri, version, changes)) {
+        Log << "Failed to apply changes to text document: " << file_uri;
+        return;
+      }
+    } else {
+      auto new_content = FlyString(content_change["text"].get<std::string>());
+      if (!m_fs.DidChange(file_uri, version, std::move(new_content))) {
+        Log << "Failed to apply changes to text document: " << file_uri;
+        return;
+      }
     }
   }
 
-  if (!m_fs.DidChanges(FlyString(uri), version, changes)) {
-    Log << "Failed to apply changes to text document: " << uri;
-    return;
+  Log << "Applied changes to text document: " << file_uri;
+
+#ifndef NDEBUG
+  {
+    auto raw_content = *m_fs.GetFile(file_uri).value()->ReadAll();
+
+    auto debug_output = std::fstream("/tmp/nitrate_lsp_debug.txt", std::ios::out | std::ios::trunc | std::ios::binary);
+    if (!debug_output) {
+      qcore_panic("Failed to open debug output file");
+    }
+
+    debug_output << raw_content;
   }
-
-  Log << Info << "Applied changes to text document: " << uri;
-
-  // {  /// TODO: Remove this part
-  //   auto raw_content = *m_fs.GetFile(FlyString(uri)).value()->ReadAll();
-
-  //   std::fstream debug_output("/tmp/nitrate_lsp_debug.txt", std::ios::out | std::ios::trunc | std::ios::binary);
-  //   if (!debug_output) {
-  //     qcore_panic("Failed to open debug output file");
-  //   }
-
-  //   debug_output << raw_content;
-  // }
+#endif
 }

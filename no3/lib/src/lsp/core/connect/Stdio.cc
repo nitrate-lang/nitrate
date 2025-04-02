@@ -34,53 +34,50 @@
 #include <boost/iostreams/device/file_descriptor.hpp>
 #include <boost/iostreams/stream.hpp>
 #include <lsp/core/connect/Connection.hh>
+#include <nitrate-core/Assert.hh>
 #include <nitrate-core/Logger.hh>
 
 using namespace ncc;
 using namespace no3::lsp;
 
-/// TODO: Verify this code
-
 class FileDescriptorPairStream : public std::streambuf {
+  char m_tmp;
   int m_in;
   int m_out;
   bool m_close;
 
 public:
-  FileDescriptorPairStream(int in, int out, bool close) : m_in(in), m_out(out), m_close(close) {
-    setg(nullptr, nullptr, nullptr);
-    setp(nullptr, nullptr);
-  };
-
+  FileDescriptorPairStream(int in, int out, bool close) : m_in(in), m_out(out), m_close(close){};
+  FileDescriptorPairStream(const FileDescriptorPairStream &) = delete;
+  FileDescriptorPairStream(FileDescriptorPairStream &&) = delete;
   ~FileDescriptorPairStream() override {
     if (m_close) {
-      close(m_in);
-      close(m_out);
+      if (m_in >= 0) {
+        close(m_in);
+      }
+      if (m_out >= 0) {
+        close(m_out);
+      }
     }
   }
 
   int_type underflow() override {
-    char c;
-    ssize_t n = read(m_in, &c, 1);
-    if (n <= 0) {
+    /// FIXME: Verify this is correct.
+
+    auto bytes_read = ::read(m_in, &m_tmp, 1);
+    if (bytes_read <= 0) {
       return traits_type::eof();
     }
-    setg(&c, &c, &c + 1);
-    return traits_type::to_int_type(c);
+    setg(&m_tmp, &m_tmp, &m_tmp + 1);
+    return traits_type::to_int_type(m_tmp);
   }
 
   int_type overflow(int_type c) override {
-    if (c != traits_type::eof()) {
-      char ch = traits_type::to_char_type(c);
-      ssize_t n = write(m_out, &ch, 1);
-      if (n <= 0) {
-        return traits_type::eof();
-      }
-    }
-    return c;
-  }
+    /// FIXME: Verify this is correct.
 
-  int sync() override { return 0; }
+    auto ch = traits_type::to_char_type(c);
+    return ::write(m_out, &ch, 1) <= 0 ? traits_type::eof() : traits_type::not_eof(c);
+  }
 };
 
 class IostreamDerivative : public std::iostream {
