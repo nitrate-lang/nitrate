@@ -1,60 +1,60 @@
 {
-  "name": "nitrate-lsp",
-  "displayName": "Nitrate: Language Server",
-  "description": "Nitrate completion, navigation, and insights",
-  "version": "1.0.6",
-  "publisher": "nitrate",
-  "license": "LGPL-2.1-or-later",
-  "icon": "./icons/icon-light.png",
-  "author": "Wesley Jones",
-  "engines": {
-    "vscode": "^1.98.0"
-  },
-  "categories": [
-    "Programming Languages",
-    "Linters",
-    "Formatters"
-  ],
-  "keywords": [
-    "Nitrate",
-    "no3"
-  ],
-  "activationEvents": [
-    "onLanguage:nitrate"
-  ],
-  "main": "./dist/extension.js",
-  "scripts": {
-    "vscode:prepublish": "pnpm run package",
-    "compile": "webpack",
-    "watch": "webpack --watch",
-    "package": "webpack --mode production --devtool hidden-source-map",
-    "compile-tests": "tsc -p . --outDir out",
-    "watch-tests": "tsc -p . -w --outDir out",
-    "pretest": "pnpm run compile-tests && pnpm run compile && pnpm run lint",
-    "lint": "eslint src",
-    "test": "vscode-test"
-  },
-  "devDependencies": {
-    "vscode-languageclient": "^9.0.1",
-    "@types/mocha": "^10.0.7",
-    "@types/node": "20.x",
-    "@types/vscode": "^1.98.0",
-    "@typescript-eslint/eslint-plugin": "^8.3.0",
-    "@typescript-eslint/parser": "^8.3.0",
-    "@vscode/test-cli": "^0.0.10",
-    "@vscode/test-electron": "^2.4.1",
-    "eslint": "^9.9.1",
-    "ts-loader": "^9.5.1",
-    "typescript": "^5.5.4",
-    "webpack": "^5.94.0",
-    "webpack-cli": "^5.1.4",
-    "@vscode/vsce": "^3.2.2"
-  },
-  "dependencies": {
-    "vscode-languageclient": "^9.0.1"
-  },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/nitrate-lang/nitrate.git"
-  }
+	"name": "nitrate-lsp",
+	"displayName": "Nitrate: Language Server",
+	"description": "Nitrate completion, navigation, and insights",
+	"version": "1.0.7",
+	"publisher": "nitrate",
+	"license": "LGPL-2.1-or-later",
+	"icon": "./icons/icon-light.png",
+	"author": "Wesley Jones",
+	"engines": {
+		"vscode": "^1.98.0"
+	},
+	"categories": [
+		"Programming Languages",
+		"Linters",
+		"Formatters"
+	],
+	"keywords": [
+		"Nitrate",
+		"no3"
+	],
+	"activationEvents": [
+		"onLanguage:nitrate"
+	],
+	"main": "./dist/extension.js",
+	"scripts": {
+		"vscode:prepublish": "pnpm run package",
+		"compile": "webpack",
+		"watch": "webpack --watch",
+		"package": "webpack --mode production --devtool hidden-source-map",
+		"compile-tests": "tsc -p . --outDir out",
+		"watch-tests": "tsc -p . -w --outDir out",
+		"pretest": "pnpm run compile-tests && pnpm run compile && pnpm run lint",
+		"lint": "eslint src",
+		"test": "vscode-test"
+	},
+	"devDependencies": {
+		"vscode-languageclient": "^9.0.1",
+		"@types/mocha": "^10.0.7",
+		"@types/node": "20.x",
+		"@types/vscode": "^1.98.0",
+		"@typescript-eslint/eslint-plugin": "^8.3.0",
+		"@typescript-eslint/parser": "^8.3.0",
+		"@vscode/test-cli": "^0.0.10",
+		"@vscode/test-electron": "^2.4.1",
+		"eslint": "^9.9.1",
+		"ts-loader": "^9.5.1",
+		"typescript": "^5.5.4",
+		"webpack": "^5.94.0",
+		"webpack-cli": "^5.1.4",
+		"@vscode/vsce": "^3.2.2"
+	},
+	"dependencies": {
+		"vscode-languageclient": "^9.0.1"
+	},
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/nitrate-lang/nitrate.git"
+	}
 }

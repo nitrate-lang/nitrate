@@ -41,7 +41,7 @@ export async function activate(context: ExtensionContext) {
 	const home_dir = require('os').homedir();
 	const log_file = join(home_dir, 'nitrate-lsp.log');
 	const lsp_app = FindExecutablePath('nitrate');
-	if (lsp_app == undefined) {
+	if (lsp_app === undefined) {
 		console.error('Could not find "nitrate" binary in $PATH');
 		throw new Error('Could not find "nitrate" binary in $PATH');
 	}
@@ -70,8 +70,8 @@ export async function activate(context: ExtensionContext) {
 	};
 
 	gLanguageClient = new LanguageClient(
-		'nitrateLanguageServer',
-		'Nitrate: Language Server',
+		'nitrate-lsp',
+		'NitrateLSP',
 		LSPserverOptions,
 		LSPclientOptions
 	);

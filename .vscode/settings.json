@@ -24,4 +24,5 @@
   "coverage-gutters.highlightlight": "rgba(0, 255, 64, 0.0)",
   "coverage-gutters.noHighlightLight": "rgba(255, 0, 0, 0.08)",
   "coverage-gutters.partialHighlightLight": "rgba(255, 235, 0, 0.1)",
+  "nitrate-lsp.trace.server": "verbose",
 }
