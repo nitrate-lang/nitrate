@@ -1,7 +1,12 @@
 import { workspace, ExtensionContext } from 'vscode';
 import { statSync } from 'fs';
 import { delimiter, join } from 'path';
-import { LanguageClient, LanguageClientOptions, ServerOptions, TransportKind } from 'vscode-languageclient/node';
+import {
+	LanguageClient,
+	LanguageClientOptions,
+	ServerOptions,
+	TransportKind
+} from 'vscode-languageclient/node';
 
 function FindExecutablePath(executable_name: string): string | undefined {
 	const env_path = process.env.PATH + delimiter;
