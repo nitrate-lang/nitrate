@@ -31,19 +31,35 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
+#pragma once
+
 #include <lsp/core/protocol/TextDocument.hh>
-#include <lsp/route/RoutesList.hh>
+#include <lsp/core/resource/File.hh>
+#include <memory>
+#include <span>
 
-using namespace nlohmann;
-using namespace no3::lsp;
+namespace no3::lsp::core {
+  class FileBrowser final {
+    friend class FileBrowserSyncronizer;
 
-void rpc::RequestInitialize(const RequestMessage&, ResponseMessage& resp) {
-  auto& j = *resp;
+    class PImpl;
+    std::unique_ptr<PImpl> m_impl;
 
-  j["serverInfo"]["name"] = "nitrateLanguageServer";
-  j["serverInfo"]["version"] = "0.0.1";
+    FileBrowser();
+    ~FileBrowser();
 
-  j["capabilities"]["positionEncoding"] = "utf-16";
-  j["capabilities"]["textDocumentSync"] = protocol::TextDocumentSyncKind::Incremental;
-  j["capabilities"]["documentFormattingProvider"] = true;
-}
+  public:
+    static std::optional<std::unique_ptr<FileBrowser>> Create(protocol::TextDocumentSyncKind sync);
+
+    using IncrementalChanges = std::span<const protocol::TextDocumentContentChangeEvent>;
+
+    [[nodiscard]] auto DidOpen(FlyPath file_uri, FileRevision revision, FlyString raw) -> bool;
+    [[nodiscard]] auto DidChange(FlyPath file_uri, FileRevision new_revision, FlyString raw) -> bool;
+    [[nodiscard]] auto DidChange(FlyPath file_uri, FileRevision new_revision, IncrementalChanges changes) -> bool;
+    [[nodiscard]] auto DidSave(FlyPath file_uri) -> bool;
+    [[nodiscard]] auto DidClose(FlyPath file_uri) -> bool;
+
+    [[nodiscard]] auto GetFile(FlyPath file_uri, std::optional<FileRevision> revision = std::nullopt) const
+        -> std::optional<std::shared_ptr<ConstFile>>;
+  };
+}  // namespace no3::lsp::core

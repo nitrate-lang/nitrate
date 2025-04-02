@@ -56,7 +56,7 @@ namespace no3::lsp::core {
     void ExecuteLSPNotification(const message::NotifyMessage& message);
 
   public:
-    LSPScheduler(std::iostream& io, std::mutex& io_lock) : m_io(io), m_io_lock(io_lock) {}
+    LSPScheduler(std::iostream& io, std::mutex& io_lock);
     ~LSPScheduler() = default;
 
     [[nodiscard]] bool IsExitRequested() const { return m_exit_requested; }

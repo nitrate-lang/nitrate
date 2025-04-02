@@ -31,19 +31,26 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <lsp/core/protocol/TextDocument.hh>
-#include <lsp/route/RoutesList.hh>
+#pragma once
 
-using namespace nlohmann;
-using namespace no3::lsp;
+#include <cstdint>
+#include <lsp/core/protocol/Base.hh>
 
-void rpc::RequestInitialize(const RequestMessage&, ResponseMessage& resp) {
-  auto& j = *resp;
+namespace no3::lsp::protocol {
+  enum class TextDocumentSyncKind { None = 0, Full = 1, Incremental = 2 };
 
-  j["serverInfo"]["name"] = "nitrateLanguageServer";
-  j["serverInfo"]["version"] = "0.0.1";
+  struct Position {
+    uint64_t m_line;
+    uint64_t m_character;
+  };
 
-  j["capabilities"]["positionEncoding"] = "utf-16";
-  j["capabilities"]["textDocumentSync"] = protocol::TextDocumentSyncKind::Incremental;
-  j["capabilities"]["documentFormattingProvider"] = true;
-}
+  struct Range {
+    Position m_start_inclusive;
+    Position m_end_exclusive;
+  };
+
+  struct TextDocumentContentChangeEvent {
+    Range m_range;
+    core::FlyString m_text;
+  };
+}  // namespace no3::lsp::protocol

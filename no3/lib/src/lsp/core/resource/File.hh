@@ -31,19 +31,40 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <lsp/core/protocol/TextDocument.hh>
-#include <lsp/route/RoutesList.hh>
+#pragma once
 
-using namespace nlohmann;
-using namespace no3::lsp;
+#include <boost/flyweight.hpp>
+#include <istream>
+#include <lsp/core/protocol/Base.hh>
+#include <memory>
 
-void rpc::RequestInitialize(const RequestMessage&, ResponseMessage& resp) {
-  auto& j = *resp;
+namespace no3::lsp::core {
+  using FileRevision = long;
 
-  j["serverInfo"]["name"] = "nitrateLanguageServer";
-  j["serverInfo"]["version"] = "0.0.1";
+  class ConstFile {
+    class PImpl;
+    std::unique_ptr<PImpl> m_impl;
 
-  j["capabilities"]["positionEncoding"] = "utf-16";
-  j["capabilities"]["textDocumentSync"] = protocol::TextDocumentSyncKind::Incremental;
-  j["capabilities"]["documentFormattingProvider"] = true;
-}
+    ConstFile(FlyPath path, FileRevision revision, FlyString raw);
+
+  public:
+    ConstFile(const ConstFile&) = delete;
+    ConstFile(ConstFile&&) = default;
+    ConstFile& operator=(const ConstFile&) = delete;
+    ConstFile& operator=(ConstFile&&) = default;
+    ~ConstFile();
+
+    [[nodiscard]] auto GetRevision() const -> FileRevision;
+    [[nodiscard]] auto GetPath() const -> FlyPath;
+    [[nodiscard]] auto GetFileName() const -> FlyPath;
+    [[nodiscard]] auto GetFileNameWithoutExtension() const -> FlyString;
+    [[nodiscard]] auto GetFileExtension() const -> FlyString;
+    [[nodiscard]] auto GetFileSizeInBytes() const -> std::streamsize;
+    [[nodiscard]] auto GetFileSizeInKiloBytes() const -> std::streamsize;
+    [[nodiscard]] auto GetFileSizeInMegaBytes() const -> std::streamsize;
+    [[nodiscard]] auto GetFileSizeInGigaBytes() const -> std::streamsize;
+
+    [[nodiscard]] auto ReadAll() const -> FlyString;
+    [[nodiscard]] auto GetReader() const -> std::unique_ptr<std::istream>;
+  };
+}  // namespace no3::lsp::core

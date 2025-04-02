@@ -32,6 +32,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <lsp/core/RPC.hh>
+#include <lsp/core/protocol/Base.hh>
 #include <lsp/route/RoutesList.hh>
 #include <memory>
 #include <mutex>
@@ -42,6 +43,20 @@
 using namespace ncc;
 using namespace no3::lsp::core;
 using namespace no3::lsp::message;
+
+static void BoostFlyweightInit() {
+  static std::once_flag flyweight_init_flag;
+  std::call_once(flyweight_init_flag, []() {
+    Log << Trace << "LSPServer: BoostFlyweightInit(): Initializing boost flyweight";
+
+    FlyString::init();
+    FlyPath::init();
+  });
+}
+
+LSPScheduler::LSPScheduler(std::iostream& io, std::mutex& io_lock) : m_io(io), m_io_lock(io_lock) {
+  BoostFlyweightInit();
+}
 
 void LSPScheduler::ExecuteLSPRequest(const message::RequestMessage& message) {
   auto method = message.GetMethod();

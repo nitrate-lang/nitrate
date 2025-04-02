@@ -31,19 +31,13 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <lsp/core/protocol/TextDocument.hh>
-#include <lsp/route/RoutesList.hh>
+#pragma once
 
-using namespace nlohmann;
-using namespace no3::lsp;
+#include <boost/flyweight.hpp>
+#include <filesystem>
 
-void rpc::RequestInitialize(const RequestMessage&, ResponseMessage& resp) {
-  auto& j = *resp;
-
-  j["serverInfo"]["name"] = "nitrateLanguageServer";
-  j["serverInfo"]["version"] = "0.0.1";
-
-  j["capabilities"]["positionEncoding"] = "utf-16";
-  j["capabilities"]["textDocumentSync"] = protocol::TextDocumentSyncKind::Incremental;
-  j["capabilities"]["documentFormattingProvider"] = true;
-}
+namespace no3::lsp::core {
+  using FileRevision = long;
+  using FlyString = boost::flyweight<std::string>;
+  using FlyPath = boost::flyweight<std::filesystem::path>;
+}  // namespace no3::lsp::core
