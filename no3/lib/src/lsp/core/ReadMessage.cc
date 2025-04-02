@@ -216,7 +216,7 @@ static auto ConvertRPCMessageToLSPMessage(nlohmann::json json_rpc) -> std::uniqu
 auto LSPServer::ReadRequest(std::istream& in, std::mutex& in_lock) -> std::optional<std::unique_ptr<Message>> {
   std::lock_guard lock(in_lock);
   if (in.eof()) [[unlikely]] {
-    Log << Warning << "ReadRequest(): EOF reached";
+    Log << "ReadRequest(): EOF reached";
     return std::nullopt;
   }
 
