@@ -160,9 +160,6 @@ auto FileBrowser::DidChanges(FlyString file_uri, FileRevision new_revision, Incr
     auto [start_line, start_character] = range.m_start_inclusive;
     auto [end_line_ex, end_character_ex] = range.m_end_exclusive;
 
-    start_character /= 2;   // LSP uses UTF-16, so divide by 2 to get byte offset
-    end_character_ex /= 2;  // LSP uses UTF-16, so divide by 2 to get byte offset
-
     const auto start_offset = FromLCToOffset(state, start_line, start_character);
     if (!start_offset) {
       Log << "FileBrowser::DidChange: Failed to convert start line/column to offset";
@@ -180,14 +177,13 @@ auto FileBrowser::DidChanges(FlyString file_uri, FileRevision new_revision, Incr
         << ", o:" << *end_offset_plus_one << ")";
 
     const auto n = *end_offset_plus_one - *start_offset;
-
-    if (*start_offset >= state.size()) {
-      Log << "FileBrowser::DidChange: Start offset is out of bounds";
+    if (*start_offset > state.size()) {
+      Log << "FileBrowser::DidChange: Start offset is out of bounds: " << *start_offset << " > " << state.size();
       return false;
     }
 
     if (n > state.size()) {
-      Log << "FileBrowser::DidChange: End offset is out of bounds";
+      Log << "FileBrowser::DidChange: End offset is out of bounds: " << n << " > " << state.size();
       return false;
     }
 

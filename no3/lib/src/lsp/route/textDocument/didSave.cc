@@ -1,30 +1,35 @@
 #include <lsp/core/RPC.hh>
-#include <lsp/core/SyncFS.hh>
+#include <nitrate-core/Logger.hh>
 
+using namespace ncc;
 using namespace no3::lsp;
 
-void core::LSPScheduler::NotifyTextDocumentDidSave(const message::NotifyMessage& notif) {
-  const auto& j = *notif;
-
-  if (!j.contains("textDocument")) {
-    Log << "Missing textDocument member";
-    return;
+static auto VerifyTextDocumentDidSave(const nlohmann::json& j) -> bool {
+  if (!j.is_object()) {
+    return false;
   }
 
-  if (!j["textDocument"].is_object()) {
-    Log << "textDocument is not an object";
-    return;
+  if (!j.contains("textDocument") || !j["textDocument"].is_object()) {
+    return false;
   }
 
   const auto& text_document = j["textDocument"];
 
-  if (!text_document.contains("uri")) {
-    Log << "Missing uri member";
+  return text_document.contains("uri") && text_document["uri"].is_string();
+}
+
+void core::LSPScheduler::NotifyTextDocumentDidSave(const message::NotifyMessage& notif) {
+  const auto& j = *notif;
+  if (!VerifyTextDocumentDidSave(j)) {
+    Log << "Invalid textDocument/didSave notification";
     return;
   }
 
-  if (!text_document["uri"].is_string()) {
-    Log << "uri member is not a string";
+  const auto& uri = j["textDocument"]["uri"].get<std::string>();
+  if (!m_fs.DidSave(FlyString(uri))) {
+    Log << "Failed to save text document: " << uri;
     return;
   }
+
+  Log << Info << "Saved text document: " << uri;
 }

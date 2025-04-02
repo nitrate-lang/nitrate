@@ -37,11 +37,11 @@ void core::LSPScheduler::NotifyTextDocumentDidOpen(const message::NotifyMessage&
     return;
   }
 
-  const auto uri = j["textDocument"]["uri"].get<std::string>();
-  const auto version = j["textDocument"]["version"].get<int64_t>();
-  const auto text = j["textDocument"]["text"].get<std::string>();
-  const auto status = m_fs.DidOpen(FlyString(uri), version, FlyString(text));
+  const auto& uri = j["textDocument"]["uri"].get<std::string>();
+  const auto& version = j["textDocument"]["version"].get<int64_t>();
+  const auto& text = j["textDocument"]["text"].get<std::string>();
 
+  const auto& status = m_fs.DidOpen(FlyString(uri), version, FlyString(text));
   if (!status) {
     Log << "Failed to open text document: " << uri;
     return;
