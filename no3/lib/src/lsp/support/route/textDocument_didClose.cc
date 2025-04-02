@@ -32,7 +32,36 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <lsp/core/LSPContext.hh>
+#include <nitrate-core/Logger.hh>
 
+using namespace ncc;
 using namespace no3::lsp;
 
-void core::LSPContext::NotifySetTrace(const message::NotifyMessage&) {}
+static auto VerifyTextDocumentDidClose(const nlohmann::json& j) -> bool {
+  if (!j.is_object()) {
+    return false;
+  }
+
+  if (!j.contains("textDocument") || !j["textDocument"].is_object()) {
+    return false;
+  }
+
+  return j["textDocument"].contains("uri") && j["textDocument"]["uri"].is_string();
+}
+
+void core::LSPContext::NotifyTextDocumentDidClose(const message::NotifyMessage& notif) {
+  const auto& j = *notif;
+  if (!VerifyTextDocumentDidClose(j)) {
+    Log << "Invalid textDocument/didClose notification";
+    return;
+  }
+
+  const auto& uri = j["textDocument"]["uri"].get<std::string>();
+
+  if (!m_fs.DidClose(FlyString(uri))) {
+    Log << "Failed to close text document: " << uri;
+    return;
+  }
+
+  Log << Info << "Closed text document: " << uri;
+}

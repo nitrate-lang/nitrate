@@ -59,7 +59,6 @@ namespace no3::lsp::core {
 
     LSP_NOTIFY(Initialized);
     LSP_NOTIFY(Exit);
-    LSP_NOTIFY(SetTrace);
     LSP_NOTIFY(TextDocumentDidChange);
     LSP_NOTIFY(TextDocumentDidClose);
     LSP_NOTIFY(TextDocumentDidOpen);

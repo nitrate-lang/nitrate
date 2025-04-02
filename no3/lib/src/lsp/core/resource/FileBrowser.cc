@@ -49,11 +49,11 @@ FileBrowser::FileBrowser(protocol::TextDocumentSyncKind) : m_impl(std::make_uniq
 
 FileBrowser::~FileBrowser() = default;
 
-auto FileBrowser::DidOpen(FlyString file_uri, FileRevision revision, FlyString raw) -> bool {
+auto FileBrowser::DidOpen(FlyString file_uri, FileVersion version, FlyString raw) -> bool {
   qcore_assert(m_impl != nullptr);
   std::lock_guard lock(m_impl->m_mutex);
 
-  Log << Trace << "FileBrowser::DidOpen(" << file_uri << ", " << revision << ", " << raw->size() << " bytes)";
+  Log << Trace << "FileBrowser::DidOpen(" << file_uri << ", " << version << ", " << raw->size() << " bytes)";
 
   const auto it = m_impl->m_files.find(file_uri);
   if (it != m_impl->m_files.end()) [[unlikely]] {
@@ -63,18 +63,18 @@ auto FileBrowser::DidOpen(FlyString file_uri, FileRevision revision, FlyString r
 
   Log << Trace << "FileBrowser::DidOpen: File not already open, opening: " << file_uri;
 
-  m_impl->m_files[std::move(file_uri)] = std::make_shared<ConstFile>(file_uri, revision, raw);
+  m_impl->m_files[std::move(file_uri)] = std::make_shared<ConstFile>(file_uri, version, raw);
 
   Log << Trace << "FileBrowser::DidOpen: File opened: " << file_uri;
 
   return true;
 }
 
-auto FileBrowser::DidChange(FlyString file_uri, FileRevision new_revision, FlyString raw) -> bool {
+auto FileBrowser::DidChange(FlyString file_uri, FileVersion version, FlyString raw) -> bool {
   qcore_assert(m_impl != nullptr);
   std::lock_guard lock(m_impl->m_mutex);
 
-  Log << Trace << "FileBrowser::DidChange(" << file_uri << ", " << new_revision << ", " << raw->size() << " bytes)";
+  Log << Trace << "FileBrowser::DidChange(" << file_uri << ", " << version << ", " << raw->size() << " bytes)";
 
   const auto it = m_impl->m_files.find(file_uri);
   if (it == m_impl->m_files.end()) [[unlikely]] {
@@ -82,13 +82,11 @@ auto FileBrowser::DidChange(FlyString file_uri, FileRevision new_revision, FlySt
     return false;
   }
 
-  Log << Trace << "FileBrowser::DidChange: Found file: " << file_uri;
+  const auto old_version = it->second->GetVersion();
+  it->second = std::make_shared<ConstFile>(file_uri, version, raw);
 
-  const auto old_revision = it->second->GetRevision();
-  it->second = std::make_shared<ConstFile>(file_uri, new_revision, raw);
-
-  Log << Trace << "FileBrowser::DidChange: " << file_uri << " changed from revision " << old_revision << " to "
-      << new_revision;
+  Log << Trace << "FileBrowser::DidChange: " << file_uri << " changed from version " << old_version << " to "
+      << version;
 
   return true;
 }
@@ -139,26 +137,24 @@ static auto FromLCToOffset(std::string_view raw, uint64_t line, uint64_t column)
   return target_offset;
 }
 
-auto FileBrowser::DidChanges(FlyString file_uri, FileRevision new_revision, IncrementalChanges changes) -> bool {
+auto FileBrowser::DidChanges(FlyString file_uri, FileVersion version, IncrementalChanges changes) -> bool {
   qcore_assert(m_impl != nullptr);
   std::lock_guard lock(m_impl->m_mutex);
 
-  Log << Trace << "FileBrowser::DidChange(" << file_uri << ", " << new_revision << ", " << changes.size()
-      << " changes)";
+  Log << Trace << "FileBrowser::DidChange(" << file_uri << ", " << version << ", " << changes.size() << " changes)";
 
   const auto it = m_impl->m_files.find(file_uri);
   if (it == m_impl->m_files.end()) [[unlikely]] {
     Log << "FileBrowser::DidChange: File not found: " << file_uri;
     return false;
   }
-  Log << Trace << "FileBrowser::DidChange: Found file: " << file_uri;
 
   std::string state = it->second->ReadAll();
 
   for (size_t i = 0; i < changes.size(); ++i) {
     const auto& [range, new_content] = changes[i];
-    auto [start_line, start_character] = range.m_start_inclusive;
-    auto [end_line_ex, end_character_ex] = range.m_end_exclusive;
+    auto [start_line, start_character] = range.m_start;
+    auto [end_line_ex, end_character_ex] = range.m_end;
 
     const auto start_offset = FromLCToOffset(state, start_line, start_character);
     if (!start_offset) {
@@ -192,8 +188,8 @@ auto FileBrowser::DidChanges(FlyString file_uri, FileRevision new_revision, Incr
   }
 
   Log << Trace << "FileBrowser::DidChange: Flushing " << changes.size() << " changes to file: " << file_uri;
-  it->second = std::make_shared<ConstFile>(file_uri, new_revision, FlyString(state));
-  Log << Trace << "FileBrowser::DidChange: File changed: " << file_uri << " to revision " << new_revision;
+  it->second = std::make_shared<ConstFile>(file_uri, version, FlyString(state));
+  Log << Trace << "FileBrowser::DidChange: File changed: " << file_uri << " to version " << version;
 
   return true;
 }
@@ -219,7 +215,6 @@ auto FileBrowser::DidClose(const FlyString& file_uri) -> bool {
     return false;
   }
 
-  Log << Trace << "FileBrowser::DidClose: Found file: " << file_uri;
   m_impl->m_files.erase(it);
   Log << Trace << "FileBrowser::DidClose: File closed: " << file_uri;
 

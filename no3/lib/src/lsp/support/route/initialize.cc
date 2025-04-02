@@ -32,9 +32,9 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <lsp/core/LSPContext.hh>
-#include <lsp/core/protocol/TextDocument.hh>
+#include <nitrate-core/Logger.hh>
 
-using namespace nlohmann;
+using namespace ncc;
 using namespace no3::lsp;
 
 void core::LSPContext::RequestInitialize(const message::RequestMessage&, message::ResponseMessage& resp) {
@@ -46,4 +46,9 @@ void core::LSPContext::RequestInitialize(const message::RequestMessage&, message
   j["capabilities"]["positionEncoding"] = "utf-16";
   j["capabilities"]["textDocumentSync"] = protocol::TextDocumentSyncKind::Incremental;
   j["capabilities"]["documentFormattingProvider"] = true;
+
+  ////==========================================================================
+
+  m_is_lsp_initialized = true;
+  Log << Debug << "LSPContext::RequestInitialize(): LSP initialize requested";
 }

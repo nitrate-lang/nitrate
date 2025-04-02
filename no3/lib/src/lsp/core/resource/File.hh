@@ -39,21 +39,21 @@
 #include <memory>
 
 namespace no3::lsp::core {
-  using FileRevision = long;
+  using FileVersion = long;
 
   class ConstFile {
     class PImpl;
     std::unique_ptr<PImpl> m_impl;
 
   public:
-    ConstFile(FlyString file_uri, FileRevision revision, FlyString raw);
+    ConstFile(FlyString file_uri, FileVersion version, FlyString raw);
     ConstFile(const ConstFile&) = delete;
     ConstFile(ConstFile&&) = default;
     ConstFile& operator=(const ConstFile&) = delete;
     ConstFile& operator=(ConstFile&&) = default;
     ~ConstFile();
 
-    [[nodiscard]] auto GetRevision() const -> FileRevision;
+    [[nodiscard]] auto GetVersion() const -> FileVersion;
     [[nodiscard]] auto GetURI() const -> FlyString;
     [[nodiscard]] auto GetFileSizeInBytes() const -> std::streamsize;
     [[nodiscard]] auto GetFileSizeInKiloBytes() const -> std::streamsize;

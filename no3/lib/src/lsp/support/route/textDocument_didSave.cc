@@ -31,34 +31,37 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#pragma once
+#include <lsp/core/LSPContext.hh>
+#include <nitrate-core/Logger.hh>
 
-#include <lsp/core/protocol/TextDocument.hh>
-#include <lsp/core/resource/File.hh>
-#include <memory>
-#include <span>
+using namespace ncc;
+using namespace no3::lsp;
 
-namespace no3::lsp::core {
-  class FileBrowser final {
-    class PImpl;
-    std::unique_ptr<PImpl> m_impl;
+static auto VerifyTextDocumentDidSave(const nlohmann::json& j) -> bool {
+  if (!j.is_object()) {
+    return false;
+  }
 
-  public:
-    FileBrowser(protocol::TextDocumentSyncKind sync);
-    FileBrowser(const FileBrowser&) = delete;
-    FileBrowser(FileBrowser&&) = default;
-    FileBrowser& operator=(const FileBrowser&) = delete;
-    FileBrowser& operator=(FileBrowser&&) = default;
-    ~FileBrowser();
+  if (!j.contains("textDocument") || !j["textDocument"].is_object()) {
+    return false;
+  }
 
-    using IncrementalChanges = std::span<const protocol::TextDocumentContentChangeEvent>;
-    using ReadOnlyFile = std::shared_ptr<ConstFile>;
+  return j["textDocument"].contains("uri") && j["textDocument"]["uri"].is_string();
+}
 
-    [[nodiscard]] auto DidOpen(FlyString file_uri, FileVersion version, FlyString raw) -> bool;
-    [[nodiscard]] auto DidChange(FlyString file_uri, FileVersion version, FlyString raw) -> bool;
-    [[nodiscard]] auto DidChanges(FlyString file_uri, FileVersion version, IncrementalChanges changes) -> bool;
-    [[nodiscard]] auto DidSave(const FlyString& file_uri) -> bool;
-    [[nodiscard]] auto DidClose(const FlyString& file_uri) -> bool;
-    [[nodiscard]] auto GetFile(const FlyString& file_uri) const -> std::optional<ReadOnlyFile>;
-  };
-}  // namespace no3::lsp::core
+void core::LSPContext::NotifyTextDocumentDidSave(const message::NotifyMessage& notif) {
+  const auto& j = *notif;
+  if (!VerifyTextDocumentDidSave(j)) {
+    Log << "Invalid textDocument/didSave notification";
+    return;
+  }
+
+  const auto& uri = j["textDocument"]["uri"].get<std::string>();
+
+  if (!m_fs.DidSave(FlyString(uri))) {
+    Log << "Failed to save text document: " << uri;
+    return;
+  }
+
+  Log << Info << "Saved text document: " << uri;
+}

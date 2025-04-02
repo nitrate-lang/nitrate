@@ -45,8 +45,8 @@ namespace no3::lsp::protocol {
   };
 
   struct Range {
-    Position m_start_inclusive;
-    Position m_end_exclusive;
+    Position m_start;  // inclusive
+    Position m_end;    // exclusive
   };
 
   struct TextDocumentContentChangeEvent {

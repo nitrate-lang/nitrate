@@ -32,7 +32,12 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <lsp/core/LSPContext.hh>
+#include <nitrate-core/Logger.hh>
 
+using namespace ncc;
 using namespace no3::lsp;
 
-void core::LSPContext::NotifyExit(const message::NotifyMessage&) {}
+void core::LSPContext::NotifyExit(const message::NotifyMessage&) {
+  m_exit_requested = true;
+  Log << Debug << "LSPContext::NotifyExit(): Exit notice";
+}

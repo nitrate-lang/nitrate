@@ -44,21 +44,21 @@ class ConstFile::PImpl {
 public:
   FlyString m_file_uri;
   FlyString m_raw;
-  FileRevision m_revision;
+  FileVersion m_version;
 
-  PImpl(FlyString file_uri, FileRevision revision, FlyString raw)
-      : m_file_uri(std::move(file_uri)), m_raw(std::move(raw)), m_revision(revision) {}
+  PImpl(FlyString file_uri, FileVersion version, FlyString raw)
+      : m_file_uri(std::move(file_uri)), m_raw(std::move(raw)), m_version(version) {}
   PImpl(const PImpl &) = delete;
 };
 
-ConstFile::ConstFile(FlyString file_uri, FileRevision revision, FlyString raw)
-    : m_impl(std::make_unique<PImpl>(std::move(file_uri), revision, std::move(raw))) {}
+ConstFile::ConstFile(FlyString file_uri, FileVersion version, FlyString raw)
+    : m_impl(std::make_unique<PImpl>(std::move(file_uri), version, std::move(raw))) {}
 
 ConstFile::~ConstFile() = default;
 
-auto ConstFile::GetRevision() const -> FileRevision {
+auto ConstFile::GetVersion() const -> FileVersion {
   qcore_assert(m_impl != nullptr);
-  return m_impl->m_revision;
+  return m_impl->m_version;
 }
 
 auto ConstFile::GetURI() const -> FlyString {

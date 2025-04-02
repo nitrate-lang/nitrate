@@ -32,7 +32,11 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <lsp/core/LSPContext.hh>
+#include <nitrate-core/Logger.hh>
 
+using namespace ncc;
 using namespace no3::lsp;
 
-void core::LSPContext::RequestShutdown(const message::RequestMessage&, message::ResponseMessage&) {}
+void core::LSPContext::RequestShutdown(const message::RequestMessage&, message::ResponseMessage&) {
+  Log << Debug << "LSPContext::RequestShutdown(): Shutdown notice";
+}

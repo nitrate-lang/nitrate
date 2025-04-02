@@ -36,6 +36,6 @@
 #include <boost/flyweight.hpp>
 
 namespace no3::lsp::core {
-  using FileRevision = long;
+  using FileVersion = long;
   using FlyString = boost::flyweight<std::string>;
 }  // namespace no3::lsp::core

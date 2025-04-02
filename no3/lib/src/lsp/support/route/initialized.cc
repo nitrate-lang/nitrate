@@ -32,7 +32,11 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <lsp/core/LSPContext.hh>
+#include <nitrate-core/Logger.hh>
 
+using namespace ncc;
 using namespace no3::lsp;
 
-void core::LSPContext::NotifyInitialized(const message::NotifyMessage&) {}
+void core::LSPContext::NotifyInitialized(const message::NotifyMessage&) {
+  Log << Debug << "LSPContext::NotifyInitialized(): LSP initialized";
+}

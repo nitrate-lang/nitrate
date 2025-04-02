@@ -72,11 +72,6 @@ auto LSPContext::ExecuteLSPRequest(const message::RequestMessage& message) -> me
     const auto route_it = LSP_REQUEST_MAP.find(method);
     if (route_it != LSP_REQUEST_MAP.end()) {
       (*this.*route_it->second)(message, response);
-
-      if (is_initialize_request) [[unlikely]] {
-        m_is_lsp_initialized = true;
-        Log << Debug << log_prefix << "LSP initialized";
-      }
     } else [[unlikely]] {
       if (may_ignore) [[likely]] {
         Log << Debug << log_prefix << "Ignoring request";
@@ -116,11 +111,6 @@ void LSPContext::ExecuteLSPNotification(const message::NotifyMessage& message) {
 
   if (const auto is_exit_notification = method == "exit"; m_is_lsp_initialized || is_exit_notification) {
     (*this.*route_it->second)(message);
-
-    if (is_exit_notification) [[unlikely]] {
-      m_exit_requested = true;
-      Log << Info << log_prefix << "Exit requested";
-    }
   } else [[unlikely]] {
     Log << log_prefix << "LSP not initialized, ignoring notification";
   }
