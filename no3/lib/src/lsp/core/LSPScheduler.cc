@@ -33,7 +33,6 @@
 
 #include <lsp/core/RPC.hh>
 #include <lsp/core/protocol/Base.hh>
-#include <lsp/route/RoutesList.hh>
 #include <memory>
 #include <mutex>
 #include <nitrate-core/Assert.hh>
@@ -43,6 +42,7 @@
 using namespace ncc;
 using namespace no3::lsp::core;
 using namespace no3::lsp::message;
+using namespace no3::lsp::protocol;
 
 static void BoostFlyweightInit() {
   static std::once_flag flyweight_init_flag;
@@ -53,7 +53,8 @@ static void BoostFlyweightInit() {
   });
 }
 
-LSPScheduler::LSPScheduler(std::iostream& io, std::mutex& io_lock) : m_io(io), m_io_lock(io_lock) {
+LSPScheduler::LSPScheduler(std::iostream& io, std::mutex& io_lock)
+    : m_fs(TextDocumentSyncKind::Incremental), m_io(io), m_io_lock(io_lock) {
   BoostFlyweightInit();
 }
 
@@ -67,10 +68,10 @@ void LSPScheduler::ExecuteLSPRequest(const message::RequestMessage& message) {
   }
 
   if (const auto is_initialize_request = method == "initialize"; m_is_lsp_initialized || is_initialize_request) {
-    const auto route_it = rpc::LSP_REQUEST_MAP.find(method);
-    if (route_it != rpc::LSP_REQUEST_MAP.end()) {
+    const auto route_it = LSP_REQUEST_MAP.find(method);
+    if (route_it != LSP_REQUEST_MAP.end()) {
       Log << Trace << log_prefix << "Found route, executing";
-      route_it->second(message, response);
+      (*this.*route_it->second)(message, response);
       Log << Trace << log_prefix << "Finished executing route";
 
       if (is_initialize_request) [[unlikely]] {
@@ -112,8 +113,8 @@ void LSPScheduler::ExecuteLSPNotification(const message::NotifyMessage& message)
     method.remove_prefix(2);
   }
 
-  const auto route_it = rpc::LSP_NOTIFICATION_MAP.find(method);
-  const auto found_route = route_it != rpc::LSP_NOTIFICATION_MAP.end();
+  const auto route_it = LSP_NOTIFICATION_MAP.find(method);
+  const auto found_route = route_it != LSP_NOTIFICATION_MAP.end();
   if (!found_route) {
     if (may_ignore) {
       Log << Debug << log_prefix << "Ignoring notification";
@@ -126,7 +127,7 @@ void LSPScheduler::ExecuteLSPNotification(const message::NotifyMessage& message)
 
   if (const auto is_exit_notification = method == "exit"; m_is_lsp_initialized || is_exit_notification) {
     Log << Trace << log_prefix << "Found route, executing";
-    route_it->second(message);
+    (*this.*route_it->second)(message);
     Log << Trace << log_prefix << "Finished executing route";
 
     if (is_exit_notification) [[unlikely]] {

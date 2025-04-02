@@ -38,11 +38,14 @@
 #include <lsp/core/protocol/Message.hh>
 #include <lsp/core/protocol/Notification.hh>
 #include <lsp/core/protocol/Request.hh>
+#include <lsp/core/protocol/Response.hh>
+#include <lsp/core/resource/FileBrowser.hh>
 
 namespace no3::lsp::core {
   auto LSPReadRequest(std::istream& in, std::mutex& in_lock) -> std::optional<std::unique_ptr<message::Message>>;
 
   class LSPScheduler {
+    FileBrowser m_fs;
     std::optional<ThreadPool> m_thread_pool;
     std::iostream& m_io;
     std::mutex& m_io_lock;
@@ -54,6 +57,45 @@ namespace no3::lsp::core {
     void ExecuteRPC(const message::Message& message);
     void ExecuteLSPRequest(const message::RequestMessage& message);
     void ExecuteLSPNotification(const message::NotifyMessage& message);
+
+    ///========================================================================================================
+
+#define LSP_REQUEST(name) void Request##name(const message::RequestMessage&, message::ResponseMessage&)
+#define LSP_NOTIFY(name) void Notify##name(const message::NotifyMessage&)
+
+    LSP_REQUEST(Initialize);
+    LSP_REQUEST(Shutdown);
+    LSP_REQUEST(Formatting);
+
+    LSP_NOTIFY(Initialized);
+    LSP_NOTIFY(Exit);
+    LSP_NOTIFY(SetTrace);
+    LSP_NOTIFY(TextDocumentDidChange);
+    LSP_NOTIFY(TextDocumentDidClose);
+    LSP_NOTIFY(TextDocumentDidOpen);
+    LSP_NOTIFY(TextDocumentDidSave);
+
+#undef REQUEST_HANDLER
+#undef NOTIFICATION_HANDLER
+
+    using LSPRequestFunc = void (LSPScheduler::*)(const message::RequestMessage&, message::ResponseMessage&);
+    using LSPNotifyFunc = void (LSPScheduler::*)(const message::NotifyMessage&);
+
+    static inline const std::unordered_map<std::string_view, LSPRequestFunc> LSP_REQUEST_MAP = {
+        {"initialize", &LSPScheduler::RequestInitialize},
+        {"shutdown", &LSPScheduler::RequestShutdown},
+    };
+
+    static inline const std::unordered_map<std::string_view, LSPNotifyFunc> LSP_NOTIFICATION_MAP = {
+        {"initialized", &LSPScheduler::NotifyInitialized},
+        {"exit", &LSPScheduler::NotifyExit},
+        {"textDocument/didOpen", &LSPScheduler::NotifyTextDocumentDidOpen},
+        {"textDocument/didChange", &LSPScheduler::NotifyTextDocumentDidChange},
+        {"textDocument/didClose", &LSPScheduler::NotifyTextDocumentDidClose},
+        {"textDocument/didSave", &LSPScheduler::NotifyTextDocumentDidSave},
+    };
+
+    ///========================================================================================================
 
   public:
     LSPScheduler(std::iostream& io, std::mutex& io_lock);

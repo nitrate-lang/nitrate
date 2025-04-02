@@ -31,8 +31,8 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <lsp/route/RoutesList.hh>
+#include <lsp/core/RPC.hh>
 
 using namespace no3::lsp;
 
-void rpc::NotifyExit(const NotifyMessage&) {}
+void core::LSPScheduler::NotifyExit(const message::NotifyMessage&) {}

@@ -31,8 +31,8 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <lsp/route/RoutesList.hh>
+#include <lsp/core/RPC.hh>
 
 using namespace no3::lsp;
 
-void rpc::RequestShutdown(const RequestMessage&, ResponseMessage&) {}
+void core::LSPScheduler::RequestShutdown(const message::RequestMessage&, message::ResponseMessage&) {}

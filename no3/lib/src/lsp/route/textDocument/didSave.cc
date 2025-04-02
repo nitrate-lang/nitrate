@@ -1,9 +1,9 @@
+#include <lsp/core/RPC.hh>
 #include <lsp/core/SyncFS.hh>
-#include <lsp/route/RoutesList.hh>
 
 using namespace no3::lsp;
 
-void rpc::NotifyTextDocumentDidSave(const NotifyMessage& notif) {
+void core::LSPScheduler::NotifyTextDocumentDidSave(const message::NotifyMessage& notif) {
   const auto& j = *notif;
 
   if (!j.contains("textDocument")) {

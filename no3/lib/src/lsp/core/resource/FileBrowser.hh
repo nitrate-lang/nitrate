@@ -43,16 +43,13 @@ namespace no3::lsp::core {
     class PImpl;
     std::unique_ptr<PImpl> m_impl;
 
-    FileBrowser();
-
   public:
+    FileBrowser(protocol::TextDocumentSyncKind sync);
     FileBrowser(const FileBrowser&) = delete;
     FileBrowser(FileBrowser&&) = default;
     FileBrowser& operator=(const FileBrowser&) = delete;
     FileBrowser& operator=(FileBrowser&&) = default;
     ~FileBrowser();
-
-    static std::optional<std::unique_ptr<FileBrowser>> Create(protocol::TextDocumentSyncKind sync);
 
     using IncrementalChanges = std::span<const protocol::TextDocumentContentChangeEvent>;
     using ReadOnlyFile = std::shared_ptr<ConstFile>;

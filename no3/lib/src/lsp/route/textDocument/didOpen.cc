@@ -1,76 +1,51 @@
-#include <lsp/core/SyncFS.hh>
-#include <lsp/route/RoutesList.hh>
+#include <lsp/core/RPC.hh>
+#include <nitrate-core/Logger.hh>
 
+using namespace ncc;
 using namespace no3::lsp;
 
-void rpc::NotifyTextDocumentDidOpen(const NotifyMessage& notif) {
+static auto VerifyTextDocumentDidOpen(const nlohmann::json& j) -> bool {
+  if (!j.is_object()) {
+    return false;
+  }
+
+  if (!j.contains("textDocument") || !j["textDocument"].is_object()) {
+    return false;
+  }
+
+  const auto& text_document = j["textDocument"];
+
+  if (!text_document.contains("uri") || !text_document["uri"].is_string()) {
+    return false;
+  }
+
+  if (!text_document.contains("version") || !text_document["version"].is_number_integer()) {
+    return false;
+  }
+
+  if (!text_document.contains("text") || !text_document["text"].is_string()) {
+    return false;
+  }
+
+  return true;
+}
+
+void core::LSPScheduler::NotifyTextDocumentDidOpen(const message::NotifyMessage& notif) {
   const auto& j = *notif;
-
-  if (!j.contains("textDocument")) {
-    Log << "Missing textDocument member";
+  if (!VerifyTextDocumentDidOpen(j)) {
+    Log << "Invalid textDocument/didOpen notification";
     return;
   }
 
-  if (!j["textDocument"].is_object()) {
-    Log << "textDocument is not an object";
+  const auto uri = j["textDocument"]["uri"].get<std::string>();
+  const auto version = j["textDocument"]["version"].get<int64_t>();
+  const auto text = j["textDocument"]["text"].get<std::string>();
+  const auto status = m_fs.DidOpen(FlyString(uri), version, FlyString(text));
+
+  if (!status) {
+    Log << "Failed to open text document: " << uri;
     return;
   }
 
-  auto text_document = j["textDocument"];
-
-  if (!text_document.contains("uri")) {
-    Log << "Missing uri member";
-    return;
-  }
-
-  if (!text_document["uri"].is_string()) {
-    Log << "uri member is not a string";
-    return;
-  }
-
-  if (!text_document.contains("languageId")) {
-    Log << "Missing languageId member";
-    return;
-  }
-
-  if (!text_document["languageId"].is_string()) {
-    Log << "languageId member is not a string";
-    return;
-  }
-
-  if (!text_document.contains("version")) {
-    Log << "Missing version member";
-    return;
-  }
-
-  if (!text_document["version"].is_number_integer()) {
-    Log << "version member is not an integer";
-    return;
-  }
-
-  if (!text_document.contains("text")) {
-    Log << "Missing text member";
-    return;
-  }
-
-  if (!text_document["text"].is_string()) {
-    Log << "text member is not a string";
-    return;
-  }
-
-  auto uri = text_document["uri"].get<std::string>();
-  auto language_id = text_document["languageId"].get<std::string>();
-  auto text = text_document["text"].get<std::string>();
-
-  auto file_opt = SyncFS::The().Open(uri);
-  if (!file_opt.has_value()) {
-    return;
-  }
-
-  auto file = file_opt.value();
-
-  if (!file->Replace(0, -1, text)) {
-    Log << "Failed to replace code";
-    return;
-  }
+  Log << Info << "Opened text document: " << uri;
 }

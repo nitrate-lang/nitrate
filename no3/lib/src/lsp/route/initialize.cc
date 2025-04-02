@@ -31,13 +31,13 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
+#include <lsp/core/RPC.hh>
 #include <lsp/core/protocol/TextDocument.hh>
-#include <lsp/route/RoutesList.hh>
 
 using namespace nlohmann;
 using namespace no3::lsp;
 
-void rpc::RequestInitialize(const RequestMessage&, ResponseMessage& resp) {
+void core::LSPScheduler::RequestInitialize(const message::RequestMessage&, message::ResponseMessage& resp) {
   auto& j = *resp;
 
   j["serverInfo"]["name"] = "nitrateLanguageServer";

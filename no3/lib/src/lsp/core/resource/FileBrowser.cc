@@ -31,14 +31,10 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <ios>
 #include <lsp/core/resource/FileBrowser.hh>
 #include <memory>
 #include <nitrate-core/Assert.hh>
 #include <nitrate-core/Logger.hh>
-
-#include "lsp/core/protocol/Base.hh"
-#include "lsp/core/resource/File.hh"
 
 using namespace ncc;
 using namespace no3::lsp::core;
@@ -49,13 +45,9 @@ public:
   std::unordered_map<FlyString, std::shared_ptr<ConstFile>> m_files;
 };
 
-FileBrowser::FileBrowser() : m_impl(std::make_unique<PImpl>()) {}
+FileBrowser::FileBrowser(protocol::TextDocumentSyncKind) : m_impl(std::make_unique<PImpl>()) {}
 
 FileBrowser::~FileBrowser() = default;
-
-auto FileBrowser::Create(protocol::TextDocumentSyncKind) -> std::optional<std::unique_ptr<FileBrowser>> {
-  return std::unique_ptr<FileBrowser>(new FileBrowser());
-}
 
 auto FileBrowser::DidOpen(FlyString file_uri, FileRevision revision, FlyString raw) -> bool {
   qcore_assert(m_impl != nullptr);

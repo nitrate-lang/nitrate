@@ -1,6 +1,6 @@
+#include <lsp/core/RPC.hh>
 #include <lsp/core/Server.hh>
 #include <lsp/core/SyncFS.hh>
-#include <lsp/route/RoutesList.hh>
 #include <nitrate-core/Logger.hh>
 #include <nitrate-core/Macro.hh>
 #include <string>
@@ -10,7 +10,7 @@ using namespace no3::lsp;
 
 using DocVersion = int64_t;
 
-void rpc::NotifyTextDocumentDidChange(const NotifyMessage& notif) {
+void core::LSPScheduler::NotifyTextDocumentDidChange(const message::NotifyMessage& notif) {
   using namespace nlohmann;
 
   const auto& j = *notif;
