@@ -63,5 +63,5 @@ void core::LSPContext::NotifyTextDocumentDidClose(const message::NotifyMessage& 
     return;
   }
 
-  Log << Info << "Closed text document: " << uri;
+  Log << Debug << "Closed text document: " << uri;
 }

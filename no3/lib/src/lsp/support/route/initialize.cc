@@ -57,8 +57,12 @@ void core::LSPContext::RequestInitialize(const message::RequestMessage& request,
   j["serverInfo"]["version"] = "0.0.1";
 
   j["capabilities"]["positionEncoding"] = "utf-16";
-  j["capabilities"]["textDocumentSync"] = protocol::TextDocumentSyncKind::Incremental;
-  j["capabilities"]["documentFormattingProvider"] = true;
+  j["capabilities"]["textDocumentSync"] = {
+      {"openClose", true},
+      {"change", protocol::TextDocumentSyncKind::Incremental},
+      {"save", {{"includeText", true}}},
+  };
+  // j["capabilities"]["documentFormattingProvider"] = true;
 
   ////==========================================================================
   m_is_lsp_initialized = true;

@@ -148,7 +148,7 @@ void core::LSPContext::NotifyTextDocumentDidChange(const message::NotifyMessage&
     }
   }
 
-  Log << "Applied changes to text document: " << file_uri;
+  Log << Debug << "Applied changes to text document: " << file_uri;
 
 #ifndef NDEBUG
   {

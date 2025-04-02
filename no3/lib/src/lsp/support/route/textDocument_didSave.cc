@@ -32,7 +32,12 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <lsp/core/LSPContext.hh>
+#include <nitrate-core/Assert.hh>
 #include <nitrate-core/Logger.hh>
+
+#ifndef NDEBUG
+#include <fstream>
+#endif
 
 using namespace ncc;
 using namespace no3::lsp;
@@ -46,7 +51,15 @@ static auto VerifyTextDocumentDidSave(const nlohmann::json& j) -> bool {
     return false;
   }
 
-  return j["textDocument"].contains("uri") && j["textDocument"]["uri"].is_string();
+  if (!j["textDocument"].contains("uri") || !j["textDocument"]["uri"].is_string()) {
+    return false;
+  }
+
+  if (!j.contains("text") || !j["text"].is_string()) {
+    return false;
+  }
+
+  return true;
 }
 
 void core::LSPContext::NotifyTextDocumentDidSave(const message::NotifyMessage& notif) {
@@ -56,12 +69,26 @@ void core::LSPContext::NotifyTextDocumentDidSave(const message::NotifyMessage& n
     return;
   }
 
-  const auto& uri = j["textDocument"]["uri"].get<std::string>();
+  auto file_uri = FlyString(j["textDocument"]["uri"].get<std::string>());
+  auto full_content = FlyString(j["text"].get<std::string>());
 
-  if (!m_fs.DidSave(FlyString(uri))) {
-    Log << "Failed to save text document: " << uri;
+  if (!m_fs.DidSave(file_uri, full_content)) {
+    Log << "Failed to save text document: " << file_uri;
     return;
   }
 
-  Log << Info << "Saved text document: " << uri;
+  Log << Debug << "Saved text document: " << file_uri;
+
+#ifndef NDEBUG
+  {
+    auto raw_content = *m_fs.GetFile(file_uri).value()->ReadAll();
+
+    auto debug_output = std::fstream("/tmp/nitrate_lsp_debug.txt", std::ios::out | std::ios::trunc | std::ios::binary);
+    if (!debug_output) {
+      qcore_panic("Failed to open debug output file");
+    }
+
+    debug_output << raw_content;
+  }
+#endif
 }

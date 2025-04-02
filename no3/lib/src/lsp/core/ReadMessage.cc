@@ -138,7 +138,7 @@ static auto ParseHttpMessage(std::istream& in) -> std::optional<HttpMessage> {
     return std::nullopt;
   }
 
-  Log << Debug << "ParseHttpMessage(): Content-Length: " << content_length_value;
+  Log << Trace << "ParseHttpMessage(): Content-Length: " << content_length_value;
 
   std::string content;
   content.resize(content_length_value);

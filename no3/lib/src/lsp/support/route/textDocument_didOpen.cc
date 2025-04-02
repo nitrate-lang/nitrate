@@ -77,5 +77,5 @@ void core::LSPContext::NotifyTextDocumentDidOpen(const message::NotifyMessage& n
     return;
   }
 
-  Log << Info << "Opened text document: " << uri;
+  Log << Debug << "Opened text document: " << uri;
 }

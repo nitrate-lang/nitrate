@@ -36,6 +36,8 @@
 #include <nitrate-core/Assert.hh>
 #include <nitrate-core/Logger.hh>
 
+#include "lsp/core/protocol/Base.hh"
+
 using namespace ncc;
 using namespace no3::lsp::core;
 
@@ -49,7 +51,7 @@ FileBrowser::FileBrowser(protocol::TextDocumentSyncKind) : m_impl(std::make_uniq
 
 FileBrowser::~FileBrowser() = default;
 
-auto FileBrowser::DidOpen(FlyString file_uri, FileVersion version, FlyString raw) -> bool {
+auto FileBrowser::DidOpen(const FlyString& file_uri, FileVersion version, FlyString raw) -> bool {
   qcore_assert(m_impl != nullptr);
   std::lock_guard lock(m_impl->m_mutex);
 
@@ -70,7 +72,7 @@ auto FileBrowser::DidOpen(FlyString file_uri, FileVersion version, FlyString raw
   return true;
 }
 
-auto FileBrowser::DidChange(FlyString file_uri, FileVersion version, FlyString raw) -> bool {
+auto FileBrowser::DidChange(const FlyString& file_uri, FileVersion version, FlyString raw) -> bool {
   qcore_assert(m_impl != nullptr);
   std::lock_guard lock(m_impl->m_mutex);
 
@@ -135,7 +137,7 @@ static auto FromLCToOffset(std::string_view raw, uint64_t line, uint64_t column)
   return target_offset;
 }
 
-auto FileBrowser::DidChanges(FlyString file_uri, FileVersion version, IncrementalChanges changes) -> bool {
+auto FileBrowser::DidChanges(const FlyString& file_uri, FileVersion version, IncrementalChanges changes) -> bool {
   qcore_assert(m_impl != nullptr);
   std::lock_guard lock(m_impl->m_mutex);
 
@@ -192,12 +194,23 @@ auto FileBrowser::DidChanges(FlyString file_uri, FileVersion version, Incrementa
   return true;
 }
 
-auto FileBrowser::DidSave(const FlyString& file_uri) -> bool {
+auto FileBrowser::DidSave(const FlyString& file_uri, std::optional<FlyString> full_content) -> bool {
   qcore_assert(m_impl != nullptr);
   std::lock_guard lock(m_impl->m_mutex);
 
   Log << Trace << "FileBrowser::DidSave(" << file_uri << ")";
-  // Nothing to do
+
+  const auto it = m_impl->m_files.find(file_uri);
+  if (it == m_impl->m_files.end()) [[unlikely]] {
+    Log << Warning << "FileBrowser::DidSave: File not open: " << file_uri;
+    return true;
+  }
+
+  if (full_content) {
+    Log << Trace << "FileBrowser::DidSave: Saving file: " << file_uri << ", size: " << full_content.value()->size()
+        << " bytes";
+    it->second = std::make_shared<ConstFile>(file_uri, it->second->GetVersion(), *full_content);
+  }
 
   return true;
 }

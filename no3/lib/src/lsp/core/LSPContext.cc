@@ -120,9 +120,9 @@ auto LSPContext::ExecuteRPC(const message::Message& message,
                             bool& exit_requested) -> std::optional<message::ResponseMessage> {
   switch (const auto method = message.GetMethod(); message.GetKind()) {
     case MessageKind::Notification: {
-      Log << Trace << "LSPContext::ExecuteRPC(\"" << method << "\"): Executing LSP Notification";
+      Log << Debug << "LSPContext::ExecuteRPC(\"" << method << "\"): Executing LSP Notification";
       ExecuteLSPNotification(static_cast<const NotifyMessage&>(message));
-      Log << Trace << "LSPContext::ExecuteRPC(\"" << method << "\"): Finished LSP Notification";
+      Log << Debug << "LSPContext::ExecuteRPC(\"" << method << "\"): Finished LSP Notification";
 
       exit_requested = m_exit_requested;
 
@@ -130,9 +130,9 @@ auto LSPContext::ExecuteRPC(const message::Message& message,
     }
 
     case MessageKind::Request: {
-      Log << Trace << "LSPContext::ExecuteRPC(\"" << method << "\"): Executing LSP Request";
+      Log << Debug << "LSPContext::ExecuteRPC(\"" << method << "\"): Executing LSP Request";
       auto response = ExecuteLSPRequest(static_cast<const RequestMessage&>(message));
-      Log << Trace << "LSPContext::ExecuteRPC(\"" << method << "\"): Finished LSP Request";
+      Log << Debug << "LSPContext::ExecuteRPC(\"" << method << "\"): Finished LSP Request";
 
       exit_requested = m_exit_requested;
 

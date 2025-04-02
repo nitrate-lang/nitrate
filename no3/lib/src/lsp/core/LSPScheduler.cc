@@ -51,11 +51,9 @@ auto LSPScheduler::IsConcurrentRequest(const message::Message& message) -> bool 
   static const std::unordered_set<std::string_view> parallelizable_messages = {
       ///========================================================================
       /// BEGIN: LSP Lifecycle messages
-      "exit",
 
       ///========================================================================
       /// BEGIN: LSP Document Synchronization messages
-      "textDocument/didSave",
   };
 
   return parallelizable_messages.contains(message.GetMethod());
