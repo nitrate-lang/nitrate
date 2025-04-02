@@ -4,7 +4,8 @@ This is the implementation of a language server for the Nitrate programming lang
 
 ## Progress on LSP Features
 
-- ✅ Multi-threaded request handling and cancellation support
+- ✅ Multi-threaded request handling
+- 🚧 Cancellation support
 - ✅ Did Open Text Document
 - ✅ Did Change Text Document
 - ✅ Will Save Text Document
@@ -50,7 +51,7 @@ This is the implementation of a language server for the Nitrate programming lang
 - 🚧 Signature Help
 - 🚧 Code Action
 - 🚧 Code Action Resolve
-- ✅ Document Color
+- 🚧 Document Color
 - 🚧 Color Presentation
 - 🚧 Formatting
 - 🚧 Range Formatting
