@@ -55,16 +55,13 @@ namespace no3::lsp::core {
     static std::optional<std::unique_ptr<FileBrowser>> Create(protocol::TextDocumentSyncKind sync);
 
     using IncrementalChanges = std::span<const protocol::TextDocumentContentChangeEvent>;
+    using ReadOnlyFile = std::shared_ptr<ConstFile>;
 
     [[nodiscard]] auto DidOpen(FlyString file_uri, FileRevision revision, FlyString raw) -> bool;
     [[nodiscard]] auto DidChange(FlyString file_uri, FileRevision new_revision, FlyString raw) -> bool;
-    [[nodiscard]] auto DidChange(FlyString file_uri, FileRevision new_revision, IncrementalChanges changes) -> bool;
-    [[nodiscard]] auto DidSave(FlyString file_uri) -> bool;
-    [[nodiscard]] auto DidClose(FlyString file_uri) -> bool;
-
-    using ReadOnlyFile = std::shared_ptr<ConstFile>;
-
-    [[nodiscard]] auto GetFile(const FlyString& file_uri, std::optional<FileRevision> revision = std::nullopt) const
-        -> std::optional<ReadOnlyFile>;
+    [[nodiscard]] auto DidChanges(FlyString file_uri, FileRevision new_revision, IncrementalChanges changes) -> bool;
+    [[nodiscard]] auto DidSave(const FlyString& file_uri) -> bool;
+    [[nodiscard]] auto DidClose(const FlyString& file_uri) -> bool;
+    [[nodiscard]] auto GetFile(const FlyString& file_uri) const -> std::optional<ReadOnlyFile>;
   };
 }  // namespace no3::lsp::core

@@ -45,9 +45,8 @@ namespace no3::lsp::core {
     class PImpl;
     std::unique_ptr<PImpl> m_impl;
 
-    ConstFile(FlyString file_uri, FileRevision revision, FlyString raw);
-
   public:
+    ConstFile(FlyString file_uri, FileRevision revision, FlyString raw);
     ConstFile(const ConstFile&) = delete;
     ConstFile(ConstFile&&) = default;
     ConstFile& operator=(const ConstFile&) = delete;
