@@ -93,15 +93,10 @@ void LSPScheduler::Schedule(std::unique_ptr<Message> request) {
     const auto sh = std::make_shared<std::unique_ptr<Message>>(std::move(request));
     m_thread_pool->Schedule([this, sh](const std::stop_token&) {
       bool exit_requested = false;
-
       if (auto response_opt = m_context.ExecuteRPC(**sh, exit_requested)) {
         WriteRPCResponse(std::move(*response_opt), m_io, m_io_lock);
       }
-
-      if (exit_requested) [[unlikely]] {
-        m_exit_requested = true;
-        Log << Info << "LSPScheduler: LSPScheduler::Schedule(): Exit requested";
-      }
+      m_exit_requested = exit_requested || m_exit_requested;
     });
 
     return;
@@ -109,20 +104,16 @@ void LSPScheduler::Schedule(std::unique_ptr<Message> request) {
 
   Log << Trace << "LSPScheduler: LSPScheduler::Schedule(\"" << method << "\"): Concurrency disallowed";
 
-  // Enforce strict ordering
-  std::lock_guard lock(m_fruition);
-  while (!m_thread_pool->Empty()) {
-    std::this_thread::yield();
-  }
+  {  // Shall block the primary thread
+    std::lock_guard lock(m_fruition);
+    while (!m_thread_pool->Empty()) {
+      std::this_thread::yield();
+    }
 
-  // We execute this on the main thread
-  bool exit_requested = false;
-  if (auto response_opt = m_context.ExecuteRPC(*request, exit_requested)) {
-    WriteRPCResponse(std::move(*response_opt), m_io, m_io_lock);
-  }
-
-  if (exit_requested) [[unlikely]] {
-    m_exit_requested = true;
-    Log << Info << "LSPScheduler: LSPScheduler::Schedule(): Exit requested";
+    bool exit_requested = false;
+    if (auto response_opt = m_context.ExecuteRPC(*request, exit_requested)) {
+      WriteRPCResponse(std::move(*response_opt), m_io, m_io_lock);
+    }
+    m_exit_requested = exit_requested || m_exit_requested;
   }
 }
