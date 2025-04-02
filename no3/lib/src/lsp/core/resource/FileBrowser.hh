@@ -40,26 +40,31 @@
 
 namespace no3::lsp::core {
   class FileBrowser final {
-    friend class FileBrowserSyncronizer;
-
     class PImpl;
     std::unique_ptr<PImpl> m_impl;
 
     FileBrowser();
-    ~FileBrowser();
 
   public:
+    FileBrowser(const FileBrowser&) = delete;
+    FileBrowser(FileBrowser&&) = default;
+    FileBrowser& operator=(const FileBrowser&) = delete;
+    FileBrowser& operator=(FileBrowser&&) = default;
+    ~FileBrowser();
+
     static std::optional<std::unique_ptr<FileBrowser>> Create(protocol::TextDocumentSyncKind sync);
 
     using IncrementalChanges = std::span<const protocol::TextDocumentContentChangeEvent>;
 
-    [[nodiscard]] auto DidOpen(FlyPath file_uri, FileRevision revision, FlyString raw) -> bool;
-    [[nodiscard]] auto DidChange(FlyPath file_uri, FileRevision new_revision, FlyString raw) -> bool;
-    [[nodiscard]] auto DidChange(FlyPath file_uri, FileRevision new_revision, IncrementalChanges changes) -> bool;
-    [[nodiscard]] auto DidSave(FlyPath file_uri) -> bool;
-    [[nodiscard]] auto DidClose(FlyPath file_uri) -> bool;
+    [[nodiscard]] auto DidOpen(FlyString file_uri, FileRevision revision, FlyString raw) -> bool;
+    [[nodiscard]] auto DidChange(FlyString file_uri, FileRevision new_revision, FlyString raw) -> bool;
+    [[nodiscard]] auto DidChange(FlyString file_uri, FileRevision new_revision, IncrementalChanges changes) -> bool;
+    [[nodiscard]] auto DidSave(FlyString file_uri) -> bool;
+    [[nodiscard]] auto DidClose(FlyString file_uri) -> bool;
 
-    [[nodiscard]] auto GetFile(FlyPath file_uri, std::optional<FileRevision> revision = std::nullopt) const
-        -> std::optional<std::shared_ptr<ConstFile>>;
+    using ReadOnlyFile = std::shared_ptr<ConstFile>;
+
+    [[nodiscard]] auto GetFile(const FlyString& file_uri, std::optional<FileRevision> revision = std::nullopt) const
+        -> std::optional<ReadOnlyFile>;
   };
 }  // namespace no3::lsp::core

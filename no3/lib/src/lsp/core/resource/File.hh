@@ -45,7 +45,7 @@ namespace no3::lsp::core {
     class PImpl;
     std::unique_ptr<PImpl> m_impl;
 
-    ConstFile(FlyPath path, FileRevision revision, FlyString raw);
+    ConstFile(FlyString file_uri, FileRevision revision, FlyString raw);
 
   public:
     ConstFile(const ConstFile&) = delete;
@@ -55,10 +55,7 @@ namespace no3::lsp::core {
     ~ConstFile();
 
     [[nodiscard]] auto GetRevision() const -> FileRevision;
-    [[nodiscard]] auto GetPath() const -> FlyPath;
-    [[nodiscard]] auto GetFileName() const -> FlyPath;
-    [[nodiscard]] auto GetFileNameWithoutExtension() const -> FlyString;
-    [[nodiscard]] auto GetFileExtension() const -> FlyString;
+    [[nodiscard]] auto GetURI() const -> FlyString;
     [[nodiscard]] auto GetFileSizeInBytes() const -> std::streamsize;
     [[nodiscard]] auto GetFileSizeInKiloBytes() const -> std::streamsize;
     [[nodiscard]] auto GetFileSizeInMegaBytes() const -> std::streamsize;

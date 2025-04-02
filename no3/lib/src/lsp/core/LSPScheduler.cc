@@ -50,7 +50,6 @@ static void BoostFlyweightInit() {
     Log << Trace << "LSPServer: BoostFlyweightInit(): Initializing boost flyweight";
 
     FlyString::init();
-    FlyPath::init();
   });
 }
 

@@ -31,66 +31,102 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <boost/iostreams/device/array.hpp>
-#include <boost/iostreams/stream.hpp>
-#include <lsp/core/resource/File.hh>
+#include <lsp/core/resource/FileBrowser.hh>
 #include <nitrate-core/Assert.hh>
+#include <nitrate-core/Logger.hh>
 
-#include "lsp/core/protocol/Base.hh"
-
+using namespace ncc;
 using namespace no3::lsp::core;
 
-class ConstFile::PImpl {
+class FileBrowser::PImpl {
 public:
-  FlyString m_file_uri;
-  FlyString m_raw;
-  FileRevision m_revision;
+  struct FileHistory {
+    std::unordered_map<FileRevision, std::shared_ptr<ConstFile>> m_track;
+    FileRevision m_latest;
+  };
 
-  PImpl(FlyString file_uri, FileRevision revision, FlyString raw)
-      : m_file_uri(std::move(file_uri)), m_raw(std::move(raw)), m_revision(revision) {}
-  PImpl(const PImpl &) = delete;
+  std::mutex m_mutex;
+  std::unordered_map<FlyString, FileHistory> m_files;
 };
 
-ConstFile::ConstFile(FlyString file_uri, FileRevision revision, FlyString raw)
-    : m_impl(std::make_unique<PImpl>(std::move(file_uri), revision, std::move(raw))) {}
+FileBrowser::FileBrowser() : m_impl(std::make_unique<PImpl>()) {}
 
-ConstFile::~ConstFile() = default;
+FileBrowser::~FileBrowser() = default;
 
-auto ConstFile::GetRevision() const -> FileRevision {
-  qcore_assert(m_impl != nullptr);
-  return m_impl->m_revision;
+auto FileBrowser::Create(protocol::TextDocumentSyncKind sync) -> std::optional<std::unique_ptr<FileBrowser>> {
+  /// TODO: Implement the logic to create a FileBrowser instance based on the sync kind.
+  return std::nullopt;
 }
 
-auto ConstFile::GetURI() const -> FlyString {
+auto FileBrowser::DidOpen(FlyString file_uri, FileRevision revision, FlyString raw) -> bool {
   qcore_assert(m_impl != nullptr);
-  return m_impl->m_file_uri;
+  std::lock_guard lock(m_impl->m_mutex);
+
+  /// TODO: Implement
+  return false;
 }
 
-auto ConstFile::GetFileSizeInBytes() const -> std::streamsize {
+auto FileBrowser::DidChange(FlyString file_uri, FileRevision new_revision, FlyString raw) -> bool {
   qcore_assert(m_impl != nullptr);
-  return m_impl->m_raw->size();
+  std::lock_guard lock(m_impl->m_mutex);
+
+  /// TODO: Implement
+  return false;
 }
 
-auto ConstFile::GetFileSizeInKiloBytes() const -> std::streamsize { return GetFileSizeInBytes() / 1000; }
-auto ConstFile::GetFileSizeInMegaBytes() const -> std::streamsize { return GetFileSizeInKiloBytes() / 1000; }
-auto ConstFile::GetFileSizeInGigaBytes() const -> std::streamsize { return GetFileSizeInMegaBytes() / 1000; }
-
-auto ConstFile::ReadAll() const -> FlyString {
+auto FileBrowser::DidChange(FlyString file_uri, FileRevision new_revision, IncrementalChanges changes) -> bool {
   qcore_assert(m_impl != nullptr);
-  return m_impl->m_raw;
+  std::lock_guard lock(m_impl->m_mutex);
+
+  /// TODO: Implement
+  return false;
 }
 
-class SourceReferencingStream : public boost::iostreams::stream<boost::iostreams::array_source> {
-  FlyString m_source;
-
-public:
-  SourceReferencingStream(const char *data, std::size_t size, FlyString source)
-      : boost::iostreams::stream<boost::iostreams::array_source>(data, size), m_source(std::move(source)){};
-};
-
-auto ConstFile::GetReader() const -> std::unique_ptr<std::istream> {
+auto FileBrowser::DidSave(FlyString file_uri) -> bool {
   qcore_assert(m_impl != nullptr);
+  std::lock_guard lock(m_impl->m_mutex);
 
-  const auto &data = m_impl->m_raw;
-  return std::make_unique<SourceReferencingStream>(data->data(), data->size(), data);
+  /// TODO: Implement
+  return false;
+}
+
+auto FileBrowser::DidClose(FlyString file_uri) -> bool {
+  qcore_assert(m_impl != nullptr);
+  std::lock_guard lock(m_impl->m_mutex);
+
+  /// TODO: Implement
+  return false;
+}
+
+auto FileBrowser::GetFile(const FlyString& file_uri,
+                          std::optional<FileRevision> revision) const -> std::optional<ReadOnlyFile> {
+  qcore_assert(m_impl != nullptr);
+  std::lock_guard lock(m_impl->m_mutex);
+
+  Log << Trace << "FileBrowser::GetFile(" << file_uri << ", " << revision.value_or(0) << ")";
+
+  auto it = m_impl->m_files.find(file_uri);
+  if (it == m_impl->m_files.end()) [[unlikely]] {
+    Log << Error << "FileBrowser::GetFile: File not found: " << file_uri;
+    return std::nullopt;
+  }
+
+  Log << Trace << "FileBrowser::GetFile: Found file: " << file_uri;
+
+  auto& file_history = it->second;
+  if (revision.has_value()) {
+    auto rev_it = file_history.m_track.find(revision.value());
+    if (rev_it == file_history.m_track.end()) [[unlikely]] {
+      Log << Error << "FileBrowser::GetFile: Revision not found: " << revision.value();
+      return std::nullopt;
+    }
+
+    Log << Trace << "FileBrowser::GetFile: Found revision: " << revision.value();
+
+    return rev_it->second;
+  }
+
+  Log << Trace << "FileBrowser::GetFile: No revision specified, using latest: " << file_history.m_latest;
+
+  return file_history.m_track.at(file_history.m_latest);
 }

@@ -34,10 +34,8 @@
 #pragma once
 
 #include <boost/flyweight.hpp>
-#include <filesystem>
 
 namespace no3::lsp::core {
   using FileRevision = long;
   using FlyString = boost::flyweight<std::string>;
-  using FlyPath = boost::flyweight<std::filesystem::path>;
 }  // namespace no3::lsp::core
