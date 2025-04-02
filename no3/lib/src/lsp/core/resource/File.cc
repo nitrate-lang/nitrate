@@ -33,6 +33,7 @@
 
 #include <boost/iostreams/device/array.hpp>
 #include <boost/iostreams/stream.hpp>
+#include <istream>
 #include <lsp/core/resource/File.hh>
 #include <nitrate-core/Assert.hh>
 
@@ -43,15 +44,15 @@ using namespace no3::lsp::core;
 class ConstFile::PImpl {
 public:
   FlyString m_file_uri;
-  FlyString m_raw;
+  FlyByteString m_raw;
   FileVersion m_version;
 
-  PImpl(FlyString file_uri, FileVersion version, FlyString raw)
+  PImpl(FlyString file_uri, FileVersion version, FlyByteString raw)
       : m_file_uri(std::move(file_uri)), m_raw(std::move(raw)), m_version(version) {}
   PImpl(const PImpl &) = delete;
 };
 
-ConstFile::ConstFile(FlyString file_uri, FileVersion version, FlyString raw)
+ConstFile::ConstFile(FlyString file_uri, FileVersion version, FlyByteString raw)
     : m_impl(std::make_unique<PImpl>(std::move(file_uri), version, std::move(raw))) {}
 
 ConstFile::~ConstFile() = default;
@@ -75,20 +76,21 @@ auto ConstFile::GetFileSizeInKiloBytes() const -> std::streamsize { return GetFi
 auto ConstFile::GetFileSizeInMegaBytes() const -> std::streamsize { return GetFileSizeInKiloBytes() / 1000; }
 auto ConstFile::GetFileSizeInGigaBytes() const -> std::streamsize { return GetFileSizeInMegaBytes() / 1000; }
 
-auto ConstFile::ReadAll() const -> FlyString {
+auto ConstFile::ReadAll() const -> FlyByteString {
   qcore_assert(m_impl != nullptr);
   return m_impl->m_raw;
 }
 
-class SourceReferencingStream : public boost::iostreams::stream<boost::iostreams::array_source> {
-  FlyString m_source;
+class SourceReferencingStream : public boost::iostreams::stream<boost::iostreams::basic_array_source<uint8_t>> {
+  FlyByteString m_source;
 
 public:
-  SourceReferencingStream(const char *data, std::size_t size, FlyString source)
-      : boost::iostreams::stream<boost::iostreams::array_source>(data, size), m_source(std::move(source)){};
+  SourceReferencingStream(const uint8_t *data, std::size_t size, FlyByteString source)
+      : boost::iostreams::stream<boost::iostreams::basic_array_source<uint8_t>>(data, size),
+        m_source(std::move(source)){};
 };
 
-auto ConstFile::GetReader() const -> std::unique_ptr<std::istream> {
+auto ConstFile::GetReader() const -> std::unique_ptr<std::basic_istream<uint8_t>> {
   qcore_assert(m_impl != nullptr);
 
   const auto &data = m_impl->m_raw;

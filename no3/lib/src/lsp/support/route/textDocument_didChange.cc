@@ -129,10 +129,11 @@ void core::LSPContext::NotifyTextDocumentDidChange(const message::NotifyMessage&
       const auto start_character = content_change["range"]["start"]["character"].get<int64_t>();
       const auto end_line = content_change["range"]["end"]["line"].get<int64_t>();
       const auto end_character = content_change["range"]["end"]["character"].get<int64_t>();
+      const auto& new_content = content_change["text"].get<std::string>();
 
       TextDocumentContentChangeEvent change;
       change.m_range = Range(Position(start_line, start_character), Position(end_line, end_character));
-      change.m_text = content_change["text"].get<std::string>();
+      change.m_text = FlyByteString(new_content.begin(), new_content.end());
 
       const std::array changes = {std::move(change)};
       if (!m_fs.DidChanges(file_uri, version, changes)) {
@@ -140,8 +141,8 @@ void core::LSPContext::NotifyTextDocumentDidChange(const message::NotifyMessage&
         return;
       }
     } else {
-      auto new_content = FlyString(content_change["text"].get<std::string>());
-      if (!m_fs.DidChange(file_uri, version, std::move(new_content))) {
+      const auto& new_content = content_change["text"].get<std::string>();
+      if (!m_fs.DidChange(file_uri, version, FlyByteString(new_content.begin(), new_content.end()))) {
         Log << "Failed to apply changes to text document: " << file_uri;
         return;
       }
@@ -159,7 +160,7 @@ void core::LSPContext::NotifyTextDocumentDidChange(const message::NotifyMessage&
       qcore_panic("Failed to open debug output file");
     }
 
-    debug_output << raw_content;
+    debug_output.write(reinterpret_cast<const char*>(raw_content.data()), raw_content.size());
   }
 #endif
 }

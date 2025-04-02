@@ -38,4 +38,5 @@
 namespace no3::lsp::core {
   using FileVersion = long;
   using FlyString = boost::flyweight<std::string>;
+  using FlyByteString = boost::flyweight<std::basic_string<uint8_t>>;
 }  // namespace no3::lsp::core

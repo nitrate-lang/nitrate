@@ -72,7 +72,7 @@ void core::LSPContext::NotifyTextDocumentDidOpen(const message::NotifyMessage& n
   const auto& version = j["textDocument"]["version"].get<int64_t>();
   const auto& text = j["textDocument"]["text"].get<std::string>();
 
-  if (!m_fs.DidOpen(FlyString(uri), version, FlyString(text))) {
+  if (!m_fs.DidOpen(FlyString(uri), version, FlyByteString(text.begin(), text.end()))) {
     Log << "Failed to open text document: " << uri;
     return;
   }

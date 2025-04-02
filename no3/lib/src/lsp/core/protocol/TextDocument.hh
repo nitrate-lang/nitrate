@@ -51,6 +51,6 @@ namespace no3::lsp::protocol {
 
   struct TextDocumentContentChangeEvent {
     Range m_range;
-    core::FlyString m_text;
+    core::FlyByteString m_text;
   };
 }  // namespace no3::lsp::protocol

@@ -70,9 +70,9 @@ void core::LSPContext::NotifyTextDocumentDidSave(const message::NotifyMessage& n
   }
 
   auto file_uri = FlyString(j["textDocument"]["uri"].get<std::string>());
-  auto full_content = FlyString(j["text"].get<std::string>());
+  const auto& full_content = j["text"].get<std::string>();
 
-  if (!m_fs.DidSave(file_uri, full_content)) {
+  if (!m_fs.DidSave(file_uri, FlyByteString(full_content.begin(), full_content.end()))) {
     Log << "Failed to save text document: " << file_uri;
     return;
   }
@@ -88,7 +88,7 @@ void core::LSPContext::NotifyTextDocumentDidSave(const message::NotifyMessage& n
       qcore_panic("Failed to open debug output file");
     }
 
-    debug_output << raw_content;
+    debug_output.write(reinterpret_cast<const char*>(raw_content.data()), raw_content.size());
   }
 #endif
 }

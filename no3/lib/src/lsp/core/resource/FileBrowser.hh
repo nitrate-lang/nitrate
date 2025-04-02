@@ -54,10 +54,11 @@ namespace no3::lsp::core {
     using IncrementalChanges = std::span<const protocol::TextDocumentContentChangeEvent>;
     using ReadOnlyFile = std::shared_ptr<ConstFile>;
 
-    [[nodiscard]] auto DidOpen(const FlyString& file_uri, FileVersion version, FlyString raw) -> bool;
-    [[nodiscard]] auto DidChange(const FlyString& file_uri, FileVersion version, FlyString raw) -> bool;
+    [[nodiscard]] auto DidOpen(const FlyString& file_uri, FileVersion version, FlyByteString raw) -> bool;
+    [[nodiscard]] auto DidChange(const FlyString& file_uri, FileVersion version, FlyByteString raw) -> bool;
     [[nodiscard]] auto DidChanges(const FlyString& file_uri, FileVersion version, IncrementalChanges changes) -> bool;
-    [[nodiscard]] auto DidSave(const FlyString& file_uri, std::optional<FlyString> full_content = std::nullopt) -> bool;
+    [[nodiscard]] auto DidSave(const FlyString& file_uri,
+                               std::optional<FlyByteString> full_content = std::nullopt) -> bool;
     [[nodiscard]] auto DidClose(const FlyString& file_uri) -> bool;
     [[nodiscard]] auto GetFile(const FlyString& file_uri) const -> std::optional<ReadOnlyFile>;
   };

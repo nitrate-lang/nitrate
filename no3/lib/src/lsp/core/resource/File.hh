@@ -46,7 +46,7 @@ namespace no3::lsp::core {
     std::unique_ptr<PImpl> m_impl;
 
   public:
-    ConstFile(FlyString file_uri, FileVersion version, FlyString raw);
+    ConstFile(FlyString file_uri, FileVersion version, FlyByteString raw);
     ConstFile(const ConstFile&) = delete;
     ConstFile(ConstFile&&) = default;
     ConstFile& operator=(const ConstFile&) = delete;
@@ -60,7 +60,7 @@ namespace no3::lsp::core {
     [[nodiscard]] auto GetFileSizeInMegaBytes() const -> std::streamsize;
     [[nodiscard]] auto GetFileSizeInGigaBytes() const -> std::streamsize;
 
-    [[nodiscard]] auto ReadAll() const -> FlyString;
-    [[nodiscard]] auto GetReader() const -> std::unique_ptr<std::istream>;
+    [[nodiscard]] auto ReadAll() const -> FlyByteString;
+    [[nodiscard]] auto GetReader() const -> std::unique_ptr<std::basic_istream<uint8_t>>;
   };
 }  // namespace no3::lsp::core

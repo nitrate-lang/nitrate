@@ -46,6 +46,7 @@ static void BoostFlyweightInit() {
     Log << Trace << "LSPContext: BoostFlyweightInit(): Initializing boost flyweight";
 
     FlyString::init();
+    FlyByteString::init();
   });
 }
 
