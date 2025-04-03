@@ -47,7 +47,7 @@ namespace ncc::parse {
     google::protobuf::Arena *m_arena;
     std::ostream &m_os;
     OptionalSourceProvider m_rd;
-    bool m_plaintext_mode;
+    bool m_json;
 
     void SetTypeMetadata(auto *message, const FlowPtr<Type> &in);
     SyntaxTree::SourceLocationRange *FromSource(FlowPtr<Expr> in);
@@ -177,7 +177,7 @@ namespace ncc::parse {
     void Visit(FlowPtr<Export> n) override;
 
   public:
-    AstWriter(std::ostream &os, bool plaintext_mode = false, OptionalSourceProvider rd = std::nullopt);
+    AstWriter(std::ostream &os, bool json = false, OptionalSourceProvider rd = std::nullopt);
     ~AstWriter() override;
   };
 }  // namespace ncc::parse

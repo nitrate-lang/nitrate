@@ -32,6 +32,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <core/SyntaxTree.pb.h>
+#include <google/protobuf/util/json_util.h>
 
 #include <functional>
 #include <nitrate-core/Logger.hh>
@@ -1806,20 +1807,23 @@ SyntaxTree::Export *AstWriter::From(FlowPtr<Export> in) {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-#define SEND(__message, __node_name)                             \
-  {                                                              \
-    auto *message = From(n);                                     \
-    message->CheckInitialized();                                 \
-    auto *root = Pool::CreateMessage<SyntaxTree::Expr>(m_arena); \
-    root->set_allocated_##__node_name(message);                  \
-    root->CheckInitialized();                                    \
-    if (m_plaintext_mode) {                                      \
-      m_os << root->Utf8DebugString();                           \
-    } else {                                                     \
-      if (!root->SerializeToOstream(&m_os)) [[unlikely]] {       \
-        qcore_panic("Failed to serialize protobuf message");     \
-      }                                                          \
-    }                                                            \
+#define SEND(__message, __node_name)                                           \
+  {                                                                            \
+    auto *message = From(n);                                                   \
+    message->CheckInitialized();                                               \
+    auto *root = Pool::CreateMessage<SyntaxTree::Expr>(m_arena);               \
+    root->set_allocated_##__node_name(message);                                \
+    root->CheckInitialized();                                                  \
+    if (m_json) {                                                              \
+      google::protobuf::util::JsonPrintOptions options;                        \
+      std::string m_json;                                                      \
+      google::protobuf::util::MessageToJsonString(*message, &m_json, options); \
+      m_os << m_json;                                                          \
+    } else {                                                                   \
+      if (!root->SerializeToOstream(&m_os)) [[unlikely]] {                     \
+        qcore_panic("Failed to serialize protobuf message");                   \
+      }                                                                        \
+    }                                                                          \
   }
 
 void AstWriter::Visit(FlowPtr<NamedTy> n) { SEND(From(n), named); }
@@ -1883,7 +1887,7 @@ void AstWriter::Visit(FlowPtr<Enum> n) { SEND(From(n), enum_); }
 void AstWriter::Visit(FlowPtr<Scope> n) { SEND(From(n), scope); }
 void AstWriter::Visit(FlowPtr<Export> n) { SEND(From(n), export_); }
 
-AstWriter::AstWriter(std::ostream &os, bool plaintext_mode, OptionalSourceProvider rd)
-    : m_arena(new google::protobuf::Arena), m_os(os), m_rd(rd), m_plaintext_mode(plaintext_mode) {}
+AstWriter::AstWriter(std::ostream &os, bool json, OptionalSourceProvider rd)
+    : m_arena(new google::protobuf::Arena), m_os(os), m_rd(rd), m_json(json) {}
 
 AstWriter::~AstWriter() { delete m_arena; }

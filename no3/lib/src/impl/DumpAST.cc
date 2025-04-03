@@ -50,7 +50,7 @@ using namespace ncc;
 using namespace no3::core;
 using namespace no3::cmd_impl;
 
-enum class OutputFormat { Text, Protobuf, Minify };
+enum class OutputFormat { Json, Protobuf, Minify };
 
 class ImplParseCommandArgumentParser {
   struct Options {
@@ -128,7 +128,7 @@ Optional arguments:
           case 'd': {
             Log << Trace << "Parsing command line argument: --dump, -d";
 
-            m_output_format = OutputFormat::Text;
+            m_output_format = OutputFormat::Json;
 
             if (m_dump++ > 0) {
               Log << "The -d, --dump argument was provided more than once.";
@@ -158,8 +158,8 @@ Optional arguments:
 
             if (std::strcmp(optarg, "protobuf") == 0) {
               m_output_format = OutputFormat::Protobuf;
-            } else if (std::strcmp(optarg, "text") == 0) {
-              m_output_format = OutputFormat::Text;
+            } else if (std::strcmp(optarg, "json") == 0) {
+              m_output_format = OutputFormat::Json;
             } else if (std::strcmp(optarg, "minify") == 0) {
               m_output_format = OutputFormat::Minify;
             } else {
@@ -225,8 +225,8 @@ Optional arguments:
       okay = false;
     }
 
-    if (m_dump == 1 && m_output_format != OutputFormat::Text) {
-      Log << "Output format must be 'text' when using --dump.";
+    if (m_dump == 1 && m_output_format != OutputFormat::Json) {
+      Log << "Output format must be 'json' when using --dump.";
       okay = false;
     }
 
@@ -278,8 +278,8 @@ auto no3::cmd_impl::subcommands::CommandImplParse(ConstArguments, const MutArgum
   Log << Trace << "options[\"dump\"] = " << (options.m_dump ? "true" : "false");
   Log << Trace << "options[\"tracking\"] = " << (options.m_tracking ? "true" : "false");
   switch (options.m_output_format) {
-    case OutputFormat::Text:
-      Log << Trace << "options[\"format\"] = text";
+    case OutputFormat::Json:
+      Log << Trace << "options[\"format\"] = json";
       break;
     case OutputFormat::Protobuf:
       Log << Trace << "options[\"format\"] = protobuf";
@@ -324,7 +324,7 @@ auto no3::cmd_impl::subcommands::CommandImplParse(ConstArguments, const MutArgum
     }
 
     switch (options.m_output_format) {
-      case OutputFormat::Text: {
+      case OutputFormat::Json: {
         auto source_provider = options.m_tracking ? parse::OptionalSourceProvider(tokenizer) : std::nullopt;
         auto ast_writer = parse::AstWriter(*output_stream, true, source_provider);
         ast_result->Accept(ast_writer);
