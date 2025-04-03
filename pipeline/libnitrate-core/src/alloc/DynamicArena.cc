@@ -162,7 +162,11 @@ void DynamicArena::Reset() { m_pimpl->Reset(); }
 
 auto DynamicArena::do_allocate(size_t bytes, size_t alignment) -> void * {
   auto *ptr = m_pimpl->Allocate(bytes, alignment);
+
+#if !defined(NDEBUG)
   memset(ptr, 0xff, bytes);
+#endif
+
   return ptr;
 }
 
