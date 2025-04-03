@@ -1330,6 +1330,9 @@ Tokenizer::Tokenizer(Tokenizer &&o) noexcept : IScanner(o.m_env), m_impl(std::mo
 Tokenizer::~Tokenizer() = default;
 
 auto Tokenizer::GetSourceWindow(Point start, Point end, char fillchar) -> std::optional<std::vector<std::string>> {
+  /// TODO: Get this working
+  return std::nullopt;
+
   Impl &impl = *m_impl;
 
   if (start.m_line > end.m_line || (start.m_line == end.m_line && start.m_col > end.m_col)) {
