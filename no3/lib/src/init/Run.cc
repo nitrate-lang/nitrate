@@ -32,7 +32,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <core/cli/GetOpt.hh>
-#include <core/cli/InterpreterImpl.hh>
+#include <core/cli/Interpreter.hh>
 #include <core/package/Config.hh>
 #include <core/static/SPDX.hh>
 #include <filesystem>

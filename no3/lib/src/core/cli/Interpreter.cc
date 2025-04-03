@@ -31,7 +31,7 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <core/cli/InterpreterImpl.hh>
+#include <core/cli/Interpreter.hh>
 #include <core/cli/termcolor.hh>
 #include <memory>
 #include <nitrate-core/LogOStream.hh>

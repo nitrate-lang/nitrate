@@ -36,7 +36,7 @@
 #include <boost/uuid/name_generator_sha1.hpp>
 #include <boost/uuid/uuid.hpp>
 #include <boost/uuid/uuid_io.hpp>
-#include <core/cli/InterpreterImpl.hh>
+#include <core/cli/Interpreter.hh>
 #include <core/cli/argh.hh>
 #include <fstream>
 #include <iomanip>

@@ -32,7 +32,7 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <core/cli/GetOpt.hh>
-#include <core/cli/InterpreterImpl.hh>
+#include <core/cli/Interpreter.hh>
 #include <fstream>
 #include <lsp/core/LSPServer.hh>
 #include <lsp/core/connect/Connection.hh>
