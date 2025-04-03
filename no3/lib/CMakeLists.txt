@@ -10,13 +10,13 @@ find_library(libunwind unwind REQUIRED)
 find_library(libdeflate deflate REQUIRED)
 
 #================== COMPILE PROTOBUF ==================
-set(PROTOBUF_SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/src/core/PackageConfigFormat.proto)
-set(PROTOBUF_SOURCE_CC ${CMAKE_CURRENT_SOURCE_DIR}/src/core/PackageConfigFormat.pb.cc)
-set(PROTOBUF_SOURCE_H ${CMAKE_CURRENT_SOURCE_DIR}/src/core/PackageConfigFormat.pb.h)
+set(PROTOBUF_SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/src/core/package/ConfigFormat.proto)
+set(PROTOBUF_SOURCE_CC ${CMAKE_CURRENT_SOURCE_DIR}/src/core/package/ConfigFormat.pb.cc)
+set(PROTOBUF_SOURCE_H ${CMAKE_CURRENT_SOURCE_DIR}/src/core/package/ConfigFormat.pb.h)
 
 add_custom_command(
   OUTPUT ${PROTOBUF_SOURCE_CC} ${PROTOBUF_SOURCE_H}
-  COMMAND protoc --proto_path=${CMAKE_CURRENT_SOURCE_DIR}/src/core --cpp_out=${CMAKE_CURRENT_SOURCE_DIR}/src/core ${PROTOBUF_SOURCE}
+  COMMAND protoc --proto_path=${CMAKE_CURRENT_SOURCE_DIR}/src/core/package --cpp_out=${CMAKE_CURRENT_SOURCE_DIR}/src/core/package ${PROTOBUF_SOURCE}
   DEPENDS ${PROTOBUF_SOURCE}
   WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
   COMMENT "Compiling ${PROTOBUF_SOURCE}"
@@ -31,7 +31,7 @@ set(CXX_SOURCES ${CXX_SOURCES} ${PROTOBUF_SOURCE_CC})
 
 #================== SET BUILD FLAGS ==================
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-exceptions -Wno-error=overlength-strings")
-set_source_files_properties(src/core/SPDX-API.cc PROPERTIES COMPILE_FLAGS "-frtti -fexceptions")
+set_source_files_properties(src/core/static/SPDX-API.cc PROPERTIES COMPILE_FLAGS "-frtti -fexceptions")
 
 add_library(nitrate-tool ${CXX_SOURCES})
 

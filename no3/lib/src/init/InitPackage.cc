@@ -34,7 +34,7 @@
 #include <git2.h>
 #include <git2/types.h>
 
-#include <core/PackageConfig.hh>
+#include <core/package/Config.hh>
 #include <fstream>
 #include <init/InitPackage.hh>
 #include <nitrate-core/CatchAll.hh>

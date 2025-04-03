@@ -31,8 +31,8 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <core/PackageConfig.hh>
-#include <core/SPDX.hh>
+#include <core/package/Config.hh>
+#include <core/static/SPDX.hh>
 #include <nitrate-core/Assert.hh>
 #include <nitrate-core/Logger.hh>
 #include <regex>

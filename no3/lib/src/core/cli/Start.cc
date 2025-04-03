@@ -31,7 +31,7 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <core/PackageConfigFormat.pb.h>
+#include <core/package/ConfigFormat.pb.h>
 #include <git2/global.h>
 
 #include <atomic>
@@ -72,7 +72,8 @@ NCC_EXPORT RCInitializationContext::RCInitializationContext(RCInitializationCont
   o.m_active = false;
 }
 
-NCC_EXPORT auto RCInitializationContext::operator=(const RCInitializationContext& o) noexcept -> RCInitializationContext& {
+NCC_EXPORT auto RCInitializationContext::operator=(const RCInitializationContext& o) noexcept
+    -> RCInitializationContext& {
   m_active = o.m_active;
   m_on_deinit = o.m_on_deinit;
   if (m_active) {  // Dont increment RC for moved-from instances

@@ -31,7 +31,7 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <core/SPDX.hh>
+#include <core/static/SPDX.hh>
 #include <curlpp/Easy.hpp>
 #include <curlpp/Options.hpp>
 #include <nitrate-core/CatchAll.hh>

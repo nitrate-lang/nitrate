@@ -36,7 +36,7 @@
 
 // #include <core/Config.hh>
 // #include <core/argparse.hpp>
-// #include <core/termcolor.hh>
+// #include <core/cli/termcolor.hh>
 // #include <fstream>
 // #include <iostream>
 // #include <memory>

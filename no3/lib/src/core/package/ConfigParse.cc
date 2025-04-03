@@ -31,10 +31,10 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <core/PackageConfigFormat.pb.h>
+#include <core/package/ConfigFormat.pb.h>
 #include <google/protobuf/util/json_util.h>
 
-#include <core/PackageConfig.hh>
+#include <core/package/Config.hh>
 #include <fstream>
 #include <nitrate-core/Assert.hh>
 #include <nitrate-core/Logger.hh>

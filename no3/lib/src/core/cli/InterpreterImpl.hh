@@ -31,66 +31,49 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <algorithm>
-#include <core/SPDX.hh>
-#include <functional>
-#include <nitrate-core/Assert.hh>
-#include <nitrate-core/CatchAll.hh>
+#pragma once
+
+#include <core/cli/termcolor.hh>
+#include <memory>
 #include <nitrate-core/Logger.hh>
+#include <no3/Interpreter.hh>
 #include <vector>
 
-using namespace ncc;
+namespace no3 {
+  using ConstArguments = std::span<const std::string>;
+  using MutArguments = std::vector<std::string>;
+  using CommandFunction = std::function<bool(ConstArguments full_argv, MutArguments argv)>;
 
-static auto Levenstein(std::string_view a, std::string_view b) -> size_t {
-  /// BY: https://chatgpt.com/share/67c8cc55-73dc-8001-b7ca-7da50b9d5410
+  class Interpreter::PImpl {
+    friend class Interpreter;
 
-  size_t m = a.size();
-  size_t n = b.size();
-  std::vector<std::vector<size_t>> memo(m + 1, std::vector<size_t>(n + 1, -1));
+    std::unique_ptr<detail::RCInitializationContext> m_init_rc = OpenLibrary();
+    std::unordered_map<std::string, CommandFunction> m_commands;
+    size_t m_log_sub_id = 0;
+    std::vector<size_t> m_log_suspend_ids;
 
-  std::function<size_t(size_t, size_t)> dp = [&](size_t i, size_t j) -> size_t {
-    if (memo[i][j] != static_cast<size_t>(-1)) {
-      return memo[i][j];
-    }
+    static auto CommandBuild(ConstArguments full_argv, const MutArguments& argv) -> bool;
+    static auto CommandClean(ConstArguments full_argv, const MutArguments& argv) -> bool;
+    static auto CommandImpl(ConstArguments full_argv, MutArguments argv) -> bool;
+    static auto CommandDoc(ConstArguments full_argv, const MutArguments& argv) -> bool;
+    static auto CommandFormat(ConstArguments full_argv, const MutArguments& argv) -> bool;
+    static auto CommandHelp(ConstArguments full_argv, const MutArguments& argv) -> bool;
+    static auto CommandInit(ConstArguments full_argv, const MutArguments& argv) -> bool;
+    static auto CommandInstall(ConstArguments full_argv, const MutArguments& argv) -> bool;
+    static auto CommandFind(ConstArguments full_argv, const MutArguments& argv) -> bool;
+    static auto CommandRemove(ConstArguments full_argv, const MutArguments& argv) -> bool;
+    static auto CommandLSP(ConstArguments full_argv, const MutArguments& argv) -> bool;
+    static auto CommandLicense(ConstArguments full_argv, const MutArguments& argv) -> bool;
+    static auto CommandTest(ConstArguments full_argv, const MutArguments& argv) -> bool;
+    static auto CommandVersion(ConstArguments full_argv, const MutArguments& argv) -> bool;
+    static auto CommandUpdate(ConstArguments full_argv, const MutArguments& argv) -> bool;
 
-    if (i == m) {
-      return memo[i][j] = n - j;
-    }
+    void SetupCommands();
 
-    if (j == n) {
-      return memo[i][j] = m - i;
-    }
+  public:
+    PImpl() noexcept { SetupCommands(); }
 
-    if (a[i] == b[j]) {
-      return memo[i][j] = dp(i + 1, j + 1);
-    }
-
-    return memo[i][j] = 1 + std::min({dp(i, j + 1), dp(i + 1, j), dp(i + 1, j + 1)});
+    auto Perform(const std::vector<std::string>& command) -> bool;
   };
 
-  return dp(0, 0);
-}
-
-auto no3::constants::FindClosestSPDXLicense(std::string query) -> std::string_view {
-  size_t minv = -1;
-  std::string_view mini;
-
-  std::transform(query.begin(), query.end(), query.begin(), ::tolower);
-
-  qcore_assert(!SPDX_IDENTIFIERS.empty());
-
-  for (const auto& [lowercase_spdx, case_sensitive_spdx] : SPDX_IDENTIFIERS) {
-    size_t const dist = Levenstein(lowercase_spdx, query);
-    if (dist < minv) {
-      minv = dist;
-      mini = case_sensitive_spdx;
-    }
-  }
-
-  return mini;
-}
-
-auto no3::constants::IsExactSPDXLicenseMatch(std::string query) -> bool {
-  std::transform(query.begin(), query.end(), query.begin(), ::tolower);
-  return SPDX_IDENTIFIERS.contains(query);
-}
+}  // namespace no3

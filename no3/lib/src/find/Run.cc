@@ -31,7 +31,7 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <core/InterpreterImpl.hh>
+#include <core/cli/InterpreterImpl.hh>
 
 using namespace ncc;
 

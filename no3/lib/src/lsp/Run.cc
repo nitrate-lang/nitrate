@@ -31,8 +31,8 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <core/GetOpt.hh>
-#include <core/InterpreterImpl.hh>
+#include <core/cli/GetOpt.hh>
+#include <core/cli/InterpreterImpl.hh>
 #include <fstream>
 #include <lsp/core/LSPServer.hh>
 #include <lsp/core/connect/Connection.hh>

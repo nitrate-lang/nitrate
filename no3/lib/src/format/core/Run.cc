@@ -33,9 +33,9 @@
 
 #include <libdeflate.h>
 
-#include <core/GetOpt.hh>
-#include <core/InterpreterImpl.hh>
-#include <core/PackageConfig.hh>
+#include <core/cli/GetOpt.hh>
+#include <core/cli/InterpreterImpl.hh>
+#include <core/package/Config.hh>
 #include <filesystem>
 #include <format/tree/Visitor.hh>
 #include <fstream>

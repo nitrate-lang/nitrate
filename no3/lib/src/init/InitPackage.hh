@@ -34,7 +34,7 @@
 
 #pragma once
 
-#include <core/PackageConfig.hh>
+#include <core/package/Config.hh>
 #include <filesystem>
 #include <string>
 

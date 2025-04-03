@@ -31,10 +31,10 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <core/GetOpt.hh>
-#include <core/InterpreterImpl.hh>
-#include <core/PackageConfig.hh>
-#include <core/SPDX.hh>
+#include <core/cli/GetOpt.hh>
+#include <core/cli/InterpreterImpl.hh>
+#include <core/package/Config.hh>
+#include <core/static/SPDX.hh>
 #include <filesystem>
 #include <init/InitPackage.hh>
 #include <nitrate-core/CatchAll.hh>
@@ -307,7 +307,7 @@ static void DisplayPoliteLicenseRejection(const std::string& package_license) {
 }
 
 static auto GetNewPackagePath(const std::filesystem::path& directory,
-                                                              const std::string& name) -> std::optional<std::filesystem::path> {
+                              const std::string& name) -> std::optional<std::filesystem::path> {
   std::string just_name = name.substr(name.find('/') + 1);
   size_t attempts = 0;
 

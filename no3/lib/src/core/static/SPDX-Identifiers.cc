@@ -31,7 +31,7 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <core/SPDX.hh>
+#include <core/static/SPDX.hh>
 
 namespace no3::constants {
   const std::unordered_map<std::string_view, std::string_view> SPDX_IDENTIFIERS = {

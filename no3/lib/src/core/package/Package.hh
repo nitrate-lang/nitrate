@@ -31,11 +31,4 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __NO3_CORE_CONFIG_HH__
-#define __NO3_CORE_CONFIG_HH__
-
-#define NO3_DEV_TOOLS 1
-#define NO3_GLOBAL_PACKAGE_DIR "/usr/local/share/no3/packages"
-#define NO3_GLOBAL_BINARY_DIR "/usr/local/bin"
-
-#endif  // __NO3_CORE_CONFIG_HH__
+#pragma once

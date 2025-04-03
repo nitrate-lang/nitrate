@@ -32,7 +32,7 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <core/SPDX.hh>
+#include <core/static/SPDX.hh>
 #include <init/InitPackage.hh>
 #include <nitrate-core/Assert.hh>
 #include <optional>

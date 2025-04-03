@@ -31,8 +31,8 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <core/PackageConfig.hh>
-#include <core/argh.hh>
+#include <core/cli/argh.hh>
+#include <core/package/Config.hh>
 #include <filesystem>
 #include <fstream>
 #include <impl/Subcommands.hh>

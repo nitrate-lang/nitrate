@@ -31,7 +31,7 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <core/GetOpt.hh>
+#include <core/cli/GetOpt.hh>
 #include <cstring>
 #include <filesystem>
 #include <fstream>

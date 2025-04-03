@@ -36,8 +36,8 @@
 #include <boost/uuid/name_generator_sha1.hpp>
 #include <boost/uuid/uuid.hpp>
 #include <boost/uuid/uuid_io.hpp>
-#include <core/InterpreterImpl.hh>
-#include <core/argh.hh>
+#include <core/cli/InterpreterImpl.hh>
+#include <core/cli/argh.hh>
 #include <fstream>
 #include <iomanip>
 #include <iostream>
@@ -366,7 +366,8 @@ static auto GetSystemInfo() -> nlohmann::ordered_json {
   return info;
 }
 
-static auto GetVersionUsingJson(bool minify, bool system_info, const nlohmann::ordered_json& version_array) -> std::string {
+static auto GetVersionUsingJson(bool minify, bool system_info,
+                                const nlohmann::ordered_json& version_array) -> std::string {
   nlohmann::ordered_json j;
 
   const auto microseconds_since_epoch =

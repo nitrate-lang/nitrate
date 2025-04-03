@@ -31,10 +31,10 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <core/PackageConfigFormat.pb.h>
+#include <core/package/ConfigFormat.pb.h>
 
 #include <boost/bimap.hpp>
-#include <core/PackageConfig.hh>
+#include <core/package/Config.hh>
 #include <nitrate-core/Logger.hh>
 #include <nlohmann/json_fwd.hpp>
 
