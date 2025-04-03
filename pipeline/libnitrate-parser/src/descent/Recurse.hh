@@ -60,7 +60,7 @@ namespace ncc::parse {
 
   using ImportedFilesSet = std::shared_ptr<std::unordered_set<std::filesystem::path>>;
 
-  class GeneralParser::Context final : public ASTFactory {
+  class GeneralParser::PImpl final : public ASTFactory {
     friend class GeneralParser;
 
     ImportedFilesSet m_imported_files;
@@ -70,20 +70,20 @@ namespace ncc::parse {
     lex::IScanner &m_rd;
     size_t m_recursion_depth = 0;
     bool m_failed = false;
-    GeneralParser::Context &m = *this;  // NOLINT(readability-identifier-naming)
+    GeneralParser::PImpl &m = *this;  // NOLINT(readability-identifier-naming)
 
   public:
-    Context(lex::IScanner &lexer, ImportConfig import_config, std::shared_ptr<IEnvironment> env,
-            std::pmr::memory_resource &pool)
+    PImpl(lex::IScanner &lexer, ImportConfig import_config, std::shared_ptr<IEnvironment> env,
+          std::pmr::memory_resource &pool)
         : ASTFactory(pool),
           m_imported_files(std::make_shared<std::unordered_set<std::filesystem::path>>()),
           m_import_config(std::move(import_config)),
           m_env(std::move(env)),
           m_pool(pool),
           m_rd(lexer) {}
-    Context(const Context &) = delete;
-    Context(Context &&o) noexcept = delete;
-    ~Context() = default;
+    PImpl(const PImpl &) = delete;
+    PImpl(PImpl &&o) noexcept = delete;
+    ~PImpl() = default;
 
     auto CreateSubParser(lex::IScanner &scanner) -> GeneralParser {
       auto sub_parser = GeneralParser(scanner, m_env, m_pool, m_import_config);
@@ -91,6 +91,8 @@ namespace ncc::parse {
       sub_parser.m_impl->m_imported_files = m_imported_files;
       return sub_parser;
     }
+
+    auto GetPImplPtr(GeneralParser &parser) -> std::unique_ptr<PImpl> & { return parser.m_impl; }
 
     lex::Token Next() { return m_rd.Next(); }
     lex::Token Peek() { return m_rd.Peek(); }

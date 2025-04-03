@@ -420,7 +420,7 @@ static auto RecurseImportRegularFile(GeneralParser::Context &m, ImportedFilesSet
       Log << Trace << "RecurseImport: Creating subparser for: " << abs_import_path;
 
       auto subparser = m.CreateSubParser(scanner);
-      auto subtree = subparser.m_impl->RecurseBlock(false, false, BlockMode::Unknown);
+      auto subtree = m.GetPImplPtr(subparser)->RecurseBlock(false, false, BlockMode::Unknown);
 
       ImportName importee_name;
       import::ImportSubgraphVisitor subgraph_visitor(m, import_config.GetThisImportName(), importee_name);
@@ -519,7 +519,7 @@ static auto RecurseImportPackage(GeneralParser::Context &m, ImportedFilesSet &im
 
     Log << Trace << "RecurseImport: Creating subparser for: " << file_name;
     auto subparser = m.CreateSubParser(scanner);
-    auto subtree = subparser.m_impl->RecurseBlock(false, false, BlockMode::Unknown);
+    auto subtree = m.GetPImplPtr(subparser)->RecurseBlock(false, false, BlockMode::Unknown);
 
     // Prepare the subgraph by stripping out unnecessary nodes and
     // transforming definitions into declarations as needed

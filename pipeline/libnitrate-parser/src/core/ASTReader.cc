@@ -36,6 +36,8 @@
 #include <google/protobuf/util/json_util.h>
 
 #include <boost/multiprecision/cpp_int.hpp>
+#include <memory>
+#include <nitrate-core/Assert.hh>
 #include <nitrate-core/Logger.hh>
 #include <nitrate-core/Macro.hh>
 #include <nitrate-lexer/Scanner.hh>
@@ -52,6 +54,15 @@ using namespace ncc;
 using namespace ncc::lex;
 using namespace ncc::parse;
 using namespace nitrate::parser;
+
+class ASTReader::PImpl {
+public:
+  ReaderSourceManager m_rd;
+  Result<Expr> m_root;
+  Format m_format;
+
+  PImpl(Format format, ReaderSourceManager source_manager) : m_rd(source_manager), m_format(format) {}
+};
 
 static NCC_FORCE_INLINE std::optional<parse::BlockMode> FromBlockMode(SyntaxTree::Block_Safety mode) noexcept {
   switch (mode) {
@@ -378,7 +389,9 @@ static NCC_FORCE_INLINE std::optional<parse::ImportMode> FromImportMode(SyntaxTr
   }
 }
 
-void AstReader::UnmarshalLocationLocation(const SyntaxTree::SourceLocationRange &in, FlowPtr<Expr> out) {
+void ASTReader::UnmarshalLocationLocation(const SyntaxTree::SourceLocationRange &in, FlowPtr<Expr> out) {
+  auto &m_rd = m_impl->m_rd;
+
   if (!m_rd.has_value()) {
     return;
   }
@@ -407,7 +420,7 @@ void AstReader::UnmarshalLocationLocation(const SyntaxTree::SourceLocationRange 
   out->SetSourcePosition(start_loc, end_loc);
 }
 
-void AstReader::UnmarshalCodeComment(
+void ASTReader::UnmarshalCodeComment(
     const ::google::protobuf::RepeatedPtrField<::nitrate::parser::SyntaxTree::UserComment> &in, FlowPtr<Expr> out) {
   std::vector<string> comments;
   comments.reserve(in.size());
@@ -419,7 +432,7 @@ void AstReader::UnmarshalCodeComment(
   out->SetComments(comments);
 }
 
-auto AstReader::Unmarshal(const SyntaxTree::Expr &in) -> Result<Expr> {
+auto ASTReader::Unmarshal(const SyntaxTree::Expr &in) -> Result<Expr> {
   switch (in.node_case()) {
     case SyntaxTree::Expr::kDiscarded: {
       auto to_discard = CreateNull();
@@ -673,7 +686,7 @@ auto AstReader::Unmarshal(const SyntaxTree::Expr &in) -> Result<Expr> {
   }
 }
 
-auto AstReader::Unmarshal(const SyntaxTree::Type &in) -> Result<Type> {
+auto ASTReader::Unmarshal(const SyntaxTree::Type &in) -> Result<Type> {
   switch (in.node_case()) {
     case SyntaxTree::Type::kDiscarded: {
       auto to_discard = CreateVoid();
@@ -787,7 +800,7 @@ auto AstReader::Unmarshal(const SyntaxTree::Type &in) -> Result<Type> {
   }
 }
 
-auto AstReader::Unmarshal(const SyntaxTree::Type &in, bool is_set) -> Result<Type> {
+auto ASTReader::Unmarshal(const SyntaxTree::Type &in, bool is_set) -> Result<Type> {
   if (is_set) {
     return Unmarshal(in);
   }
@@ -795,7 +808,7 @@ auto AstReader::Unmarshal(const SyntaxTree::Type &in, bool is_set) -> Result<Typ
   return CreateInferredType();
 }
 
-auto AstReader::Unmarshal(const SyntaxTree::NamedTy &in) -> Result<NamedTy> {
+auto ASTReader::Unmarshal(const SyntaxTree::NamedTy &in) -> Result<NamedTy> {
   auto bit_width = Unmarshal(in.bit_width());
   if (in.has_bit_width() && !bit_width.has_value()) [[unlikely]] {
     return std::nullopt;
@@ -819,7 +832,7 @@ auto AstReader::Unmarshal(const SyntaxTree::NamedTy &in) -> Result<NamedTy> {
   return type;
 }
 
-auto AstReader::Unmarshal(const SyntaxTree::InferTy &in) -> Result<InferTy> {
+auto ASTReader::Unmarshal(const SyntaxTree::InferTy &in) -> Result<InferTy> {
   auto bit_width = Unmarshal(in.bit_width());
   if (in.has_bit_width() && !bit_width.has_value()) [[unlikely]] {
     return std::nullopt;
@@ -843,7 +856,7 @@ auto AstReader::Unmarshal(const SyntaxTree::InferTy &in) -> Result<InferTy> {
   return type;
 }
 
-auto AstReader::Unmarshal(const SyntaxTree::TemplateType &in) -> Result<TemplateType> {
+auto ASTReader::Unmarshal(const SyntaxTree::TemplateType &in) -> Result<TemplateType> {
   auto bit_width = Unmarshal(in.bit_width());
   if (in.has_bit_width() && !bit_width.has_value()) [[unlikely]] {
     return std::nullopt;
@@ -887,7 +900,7 @@ auto AstReader::Unmarshal(const SyntaxTree::TemplateType &in) -> Result<Template
   return type;
 }
 
-auto AstReader::Unmarshal(const SyntaxTree::U1 &in) -> Result<U1> {
+auto ASTReader::Unmarshal(const SyntaxTree::U1 &in) -> Result<U1> {
   auto bit_width = Unmarshal(in.bit_width());
   if (in.has_bit_width() && !bit_width.has_value()) [[unlikely]] {
     return std::nullopt;
@@ -911,7 +924,7 @@ auto AstReader::Unmarshal(const SyntaxTree::U1 &in) -> Result<U1> {
   return type;
 }
 
-auto AstReader::Unmarshal(const SyntaxTree::U8 &in) -> Result<U8> {
+auto ASTReader::Unmarshal(const SyntaxTree::U8 &in) -> Result<U8> {
   auto bit_width = Unmarshal(in.bit_width());
   if (in.has_bit_width() && !bit_width.has_value()) [[unlikely]] {
     return std::nullopt;
@@ -935,7 +948,7 @@ auto AstReader::Unmarshal(const SyntaxTree::U8 &in) -> Result<U8> {
   return type;
 }
 
-auto AstReader::Unmarshal(const SyntaxTree::U16 &in) -> Result<U16> {
+auto ASTReader::Unmarshal(const SyntaxTree::U16 &in) -> Result<U16> {
   auto bit_width = Unmarshal(in.bit_width());
   if (in.has_bit_width() && !bit_width.has_value()) [[unlikely]] {
     return std::nullopt;
@@ -959,7 +972,7 @@ auto AstReader::Unmarshal(const SyntaxTree::U16 &in) -> Result<U16> {
   return type;
 }
 
-auto AstReader::Unmarshal(const SyntaxTree::U32 &in) -> Result<U32> {
+auto ASTReader::Unmarshal(const SyntaxTree::U32 &in) -> Result<U32> {
   auto bit_width = Unmarshal(in.bit_width());
   if (in.has_bit_width() && !bit_width.has_value()) [[unlikely]] {
     return std::nullopt;
@@ -983,7 +996,7 @@ auto AstReader::Unmarshal(const SyntaxTree::U32 &in) -> Result<U32> {
   return type;
 }
 
-auto AstReader::Unmarshal(const SyntaxTree::U64 &in) -> Result<U64> {
+auto ASTReader::Unmarshal(const SyntaxTree::U64 &in) -> Result<U64> {
   auto bit_width = Unmarshal(in.bit_width());
   if (in.has_bit_width() && !bit_width.has_value()) [[unlikely]] {
     return std::nullopt;
@@ -1007,7 +1020,7 @@ auto AstReader::Unmarshal(const SyntaxTree::U64 &in) -> Result<U64> {
   return type;
 }
 
-auto AstReader::Unmarshal(const SyntaxTree::U128 &in) -> Result<U128> {
+auto ASTReader::Unmarshal(const SyntaxTree::U128 &in) -> Result<U128> {
   auto bit_width = Unmarshal(in.bit_width());
   if (in.has_bit_width() && !bit_width.has_value()) [[unlikely]] {
     return std::nullopt;
@@ -1031,7 +1044,7 @@ auto AstReader::Unmarshal(const SyntaxTree::U128 &in) -> Result<U128> {
   return type;
 }
 
-auto AstReader::Unmarshal(const SyntaxTree::I8 &in) -> Result<I8> {
+auto ASTReader::Unmarshal(const SyntaxTree::I8 &in) -> Result<I8> {
   auto bit_width = Unmarshal(in.bit_width());
   if (in.has_bit_width() && !bit_width.has_value()) [[unlikely]] {
     return std::nullopt;
@@ -1055,7 +1068,7 @@ auto AstReader::Unmarshal(const SyntaxTree::I8 &in) -> Result<I8> {
   return type;
 }
 
-auto AstReader::Unmarshal(const SyntaxTree::I16 &in) -> Result<I16> {
+auto ASTReader::Unmarshal(const SyntaxTree::I16 &in) -> Result<I16> {
   auto bit_width = Unmarshal(in.bit_width());
   if (in.has_bit_width() && !bit_width.has_value()) [[unlikely]] {
     return std::nullopt;
@@ -1079,7 +1092,7 @@ auto AstReader::Unmarshal(const SyntaxTree::I16 &in) -> Result<I16> {
   return type;
 }
 
-auto AstReader::Unmarshal(const SyntaxTree::I32 &in) -> Result<I32> {
+auto ASTReader::Unmarshal(const SyntaxTree::I32 &in) -> Result<I32> {
   auto bit_width = Unmarshal(in.bit_width());
   if (in.has_bit_width() && !bit_width.has_value()) [[unlikely]] {
     return std::nullopt;
@@ -1103,7 +1116,7 @@ auto AstReader::Unmarshal(const SyntaxTree::I32 &in) -> Result<I32> {
   return type;
 }
 
-auto AstReader::Unmarshal(const SyntaxTree::I64 &in) -> Result<I64> {
+auto ASTReader::Unmarshal(const SyntaxTree::I64 &in) -> Result<I64> {
   auto bit_width = Unmarshal(in.bit_width());
   if (in.has_bit_width() && !bit_width.has_value()) [[unlikely]] {
     return std::nullopt;
@@ -1127,7 +1140,7 @@ auto AstReader::Unmarshal(const SyntaxTree::I64 &in) -> Result<I64> {
   return type;
 }
 
-auto AstReader::Unmarshal(const SyntaxTree::I128 &in) -> Result<I128> {
+auto ASTReader::Unmarshal(const SyntaxTree::I128 &in) -> Result<I128> {
   auto bit_width = Unmarshal(in.bit_width());
   if (in.has_bit_width() && !bit_width.has_value()) [[unlikely]] {
     return std::nullopt;
@@ -1151,7 +1164,7 @@ auto AstReader::Unmarshal(const SyntaxTree::I128 &in) -> Result<I128> {
   return type;
 }
 
-auto AstReader::Unmarshal(const SyntaxTree::F16 &in) -> Result<F16> {
+auto ASTReader::Unmarshal(const SyntaxTree::F16 &in) -> Result<F16> {
   auto bit_width = Unmarshal(in.bit_width());
   if (in.has_bit_width() && !bit_width.has_value()) [[unlikely]] {
     return std::nullopt;
@@ -1175,7 +1188,7 @@ auto AstReader::Unmarshal(const SyntaxTree::F16 &in) -> Result<F16> {
   return type;
 }
 
-auto AstReader::Unmarshal(const SyntaxTree::F32 &in) -> Result<F32> {
+auto ASTReader::Unmarshal(const SyntaxTree::F32 &in) -> Result<F32> {
   auto bit_width = Unmarshal(in.bit_width());
   if (in.has_bit_width() && !bit_width.has_value()) [[unlikely]] {
     return std::nullopt;
@@ -1199,7 +1212,7 @@ auto AstReader::Unmarshal(const SyntaxTree::F32 &in) -> Result<F32> {
   return type;
 }
 
-auto AstReader::Unmarshal(const SyntaxTree::F64 &in) -> Result<F64> {
+auto ASTReader::Unmarshal(const SyntaxTree::F64 &in) -> Result<F64> {
   auto bit_width = Unmarshal(in.bit_width());
   if (in.has_bit_width() && !bit_width.has_value()) [[unlikely]] {
     return std::nullopt;
@@ -1223,7 +1236,7 @@ auto AstReader::Unmarshal(const SyntaxTree::F64 &in) -> Result<F64> {
   return type;
 }
 
-auto AstReader::Unmarshal(const SyntaxTree::F128 &in) -> Result<F128> {
+auto ASTReader::Unmarshal(const SyntaxTree::F128 &in) -> Result<F128> {
   auto bit_width = Unmarshal(in.bit_width());
   if (in.has_bit_width() && !bit_width.has_value()) [[unlikely]] {
     return std::nullopt;
@@ -1247,7 +1260,7 @@ auto AstReader::Unmarshal(const SyntaxTree::F128 &in) -> Result<F128> {
   return type;
 }
 
-auto AstReader::Unmarshal(const SyntaxTree::VoidTy &in) -> Result<VoidTy> {
+auto ASTReader::Unmarshal(const SyntaxTree::VoidTy &in) -> Result<VoidTy> {
   auto bit_width = Unmarshal(in.bit_width());
   if (in.has_bit_width() && !bit_width.has_value()) [[unlikely]] {
     return std::nullopt;
@@ -1271,7 +1284,7 @@ auto AstReader::Unmarshal(const SyntaxTree::VoidTy &in) -> Result<VoidTy> {
   return type;
 }
 
-auto AstReader::Unmarshal(const SyntaxTree::PtrTy &in) -> Result<PtrTy> {
+auto ASTReader::Unmarshal(const SyntaxTree::PtrTy &in) -> Result<PtrTy> {
   auto bit_width = Unmarshal(in.bit_width());
   if (in.has_bit_width() && !bit_width.has_value()) [[unlikely]] {
     return std::nullopt;
@@ -1300,7 +1313,7 @@ auto AstReader::Unmarshal(const SyntaxTree::PtrTy &in) -> Result<PtrTy> {
   return type;
 }
 
-auto AstReader::Unmarshal(const SyntaxTree::OpaqueTy &in) -> Result<OpaqueTy> {
+auto ASTReader::Unmarshal(const SyntaxTree::OpaqueTy &in) -> Result<OpaqueTy> {
   auto bit_width = Unmarshal(in.bit_width());
   if (in.has_bit_width() && !bit_width.has_value()) [[unlikely]] {
     return std::nullopt;
@@ -1324,7 +1337,7 @@ auto AstReader::Unmarshal(const SyntaxTree::OpaqueTy &in) -> Result<OpaqueTy> {
   return type;
 }
 
-auto AstReader::Unmarshal(const SyntaxTree::TupleTy &in) -> Result<TupleTy> {
+auto ASTReader::Unmarshal(const SyntaxTree::TupleTy &in) -> Result<TupleTy> {
   auto bit_width = Unmarshal(in.bit_width());
   if (in.has_bit_width() && !bit_width.has_value()) [[unlikely]] {
     return std::nullopt;
@@ -1360,7 +1373,7 @@ auto AstReader::Unmarshal(const SyntaxTree::TupleTy &in) -> Result<TupleTy> {
   return type;
 }
 
-auto AstReader::Unmarshal(const SyntaxTree::ArrayTy &in) -> Result<ArrayTy> {
+auto ASTReader::Unmarshal(const SyntaxTree::ArrayTy &in) -> Result<ArrayTy> {
   auto bit_width = Unmarshal(in.bit_width());
   if (in.has_bit_width() && !bit_width.has_value()) [[unlikely]] {
     return std::nullopt;
@@ -1394,7 +1407,7 @@ auto AstReader::Unmarshal(const SyntaxTree::ArrayTy &in) -> Result<ArrayTy> {
   return type;
 }
 
-auto AstReader::Unmarshal(const SyntaxTree::RefTy &in) -> Result<RefTy> {
+auto ASTReader::Unmarshal(const SyntaxTree::RefTy &in) -> Result<RefTy> {
   auto bit_width = Unmarshal(in.bit_width());
   if (in.has_bit_width() && !bit_width.has_value()) [[unlikely]] {
     return std::nullopt;
@@ -1423,7 +1436,7 @@ auto AstReader::Unmarshal(const SyntaxTree::RefTy &in) -> Result<RefTy> {
   return type;
 }
 
-auto AstReader::Unmarshal(const SyntaxTree::FuncTy &in) -> Result<FuncTy> {
+auto ASTReader::Unmarshal(const SyntaxTree::FuncTy &in) -> Result<FuncTy> {
   auto bit_width = Unmarshal(in.bit_width());
   if (in.has_bit_width() && !bit_width.has_value()) [[unlikely]] {
     return std::nullopt;
@@ -1485,7 +1498,7 @@ auto AstReader::Unmarshal(const SyntaxTree::FuncTy &in) -> Result<FuncTy> {
   return type;
 }
 
-auto AstReader::Unmarshal(const SyntaxTree::Unary &in) -> Result<Unary> {
+auto ASTReader::Unmarshal(const SyntaxTree::Unary &in) -> Result<Unary> {
   auto operand = Unmarshal(in.operand());
   if (!operand.has_value()) [[unlikely]] {
     return std::nullopt;
@@ -1503,7 +1516,7 @@ auto AstReader::Unmarshal(const SyntaxTree::Unary &in) -> Result<Unary> {
   return object;
 }
 
-auto AstReader::Unmarshal(const SyntaxTree::Binary &in) -> Result<Binary> {
+auto ASTReader::Unmarshal(const SyntaxTree::Binary &in) -> Result<Binary> {
   auto lhs = Unmarshal(in.left());
   if (!lhs.has_value()) [[unlikely]] {
     return std::nullopt;
@@ -1526,7 +1539,7 @@ auto AstReader::Unmarshal(const SyntaxTree::Binary &in) -> Result<Binary> {
   return object;
 }
 
-auto AstReader::Unmarshal(const SyntaxTree::Integer &in) -> Result<Integer> {
+auto ASTReader::Unmarshal(const SyntaxTree::Integer &in) -> Result<Integer> {
   auto object = CreateInteger(in.number());
   if (!object.has_value()) [[unlikely]] {
     return std::nullopt;
@@ -1538,7 +1551,7 @@ auto AstReader::Unmarshal(const SyntaxTree::Integer &in) -> Result<Integer> {
   return object.value();
 }
 
-auto AstReader::Unmarshal(const SyntaxTree::Float &in) -> Result<Float> {
+auto ASTReader::Unmarshal(const SyntaxTree::Float &in) -> Result<Float> {
   auto object = CreateFloat(in.number());
   if (!object.has_value()) [[unlikely]] {
     return std::nullopt;
@@ -1550,7 +1563,7 @@ auto AstReader::Unmarshal(const SyntaxTree::Float &in) -> Result<Float> {
   return object;
 }
 
-auto AstReader::Unmarshal(const SyntaxTree::Boolean &in) -> Result<Boolean> {
+auto ASTReader::Unmarshal(const SyntaxTree::Boolean &in) -> Result<Boolean> {
   auto object = CreateBoolean(in.value());
   UnmarshalLocationLocation(in.location(), object);
   UnmarshalCodeComment(in.comments(), object);
@@ -1558,7 +1571,7 @@ auto AstReader::Unmarshal(const SyntaxTree::Boolean &in) -> Result<Boolean> {
   return object;
 }
 
-auto AstReader::Unmarshal(const SyntaxTree::String &in) -> Result<String> {
+auto ASTReader::Unmarshal(const SyntaxTree::String &in) -> Result<String> {
   auto object = CreateString(in.text());
   UnmarshalLocationLocation(in.location(), object);
   UnmarshalCodeComment(in.comments(), object);
@@ -1566,7 +1579,7 @@ auto AstReader::Unmarshal(const SyntaxTree::String &in) -> Result<String> {
   return object;
 }
 
-auto AstReader::Unmarshal(const SyntaxTree::Character &in) -> Result<Character> {
+auto ASTReader::Unmarshal(const SyntaxTree::Character &in) -> Result<Character> {
   auto value = in.char_();
   if (value < 0 || value > 255) [[unlikely]] {
     return std::nullopt;
@@ -1579,7 +1592,7 @@ auto AstReader::Unmarshal(const SyntaxTree::Character &in) -> Result<Character> 
   return object;
 }
 
-auto AstReader::Unmarshal(const SyntaxTree::Null &in) -> Result<Null> {
+auto ASTReader::Unmarshal(const SyntaxTree::Null &in) -> Result<Null> {
   auto object = CreateNull();
   UnmarshalLocationLocation(in.location(), object);
   UnmarshalCodeComment(in.comments(), object);
@@ -1587,7 +1600,7 @@ auto AstReader::Unmarshal(const SyntaxTree::Null &in) -> Result<Null> {
   return object;
 }
 
-auto AstReader::Unmarshal(const SyntaxTree::Call &in) -> Result<Call> {
+auto ASTReader::Unmarshal(const SyntaxTree::Call &in) -> Result<Call> {
   auto callee = Unmarshal(in.callee());
   if (!callee.has_value()) [[unlikely]] {
     return std::nullopt;
@@ -1612,7 +1625,7 @@ auto AstReader::Unmarshal(const SyntaxTree::Call &in) -> Result<Call> {
   return object;
 }
 
-auto AstReader::Unmarshal(const SyntaxTree::TemplateCall &in) -> Result<TemplateCall> {
+auto ASTReader::Unmarshal(const SyntaxTree::TemplateCall &in) -> Result<TemplateCall> {
   auto callee = Unmarshal(in.callee());
   if (!callee.has_value()) [[unlikely]] {
     return std::nullopt;
@@ -1649,7 +1662,7 @@ auto AstReader::Unmarshal(const SyntaxTree::TemplateCall &in) -> Result<Template
   return object;
 }
 
-auto AstReader::Unmarshal(const SyntaxTree::Import &in) -> Result<Import> {
+auto ASTReader::Unmarshal(const SyntaxTree::Import &in) -> Result<Import> {
   auto subtree = Unmarshal(in.subtree());
   if (!subtree.has_value()) [[unlikely]] {
     return std::nullopt;
@@ -1667,7 +1680,7 @@ auto AstReader::Unmarshal(const SyntaxTree::Import &in) -> Result<Import> {
   return object;
 }
 
-auto AstReader::Unmarshal(const SyntaxTree::List &in) -> Result<List> {
+auto ASTReader::Unmarshal(const SyntaxTree::List &in) -> Result<List> {
   std::vector<FlowPtr<Expr>> items;
   items.reserve(in.elements_size());
 
@@ -1687,7 +1700,7 @@ auto AstReader::Unmarshal(const SyntaxTree::List &in) -> Result<List> {
   return object;
 }
 
-auto AstReader::Unmarshal(const SyntaxTree::Assoc &in) -> Result<Assoc> {
+auto ASTReader::Unmarshal(const SyntaxTree::Assoc &in) -> Result<Assoc> {
   auto key = Unmarshal(in.key());
   if (!key.has_value()) [[unlikely]] {
     return std::nullopt;
@@ -1705,7 +1718,7 @@ auto AstReader::Unmarshal(const SyntaxTree::Assoc &in) -> Result<Assoc> {
   return object;
 }
 
-auto AstReader::Unmarshal(const SyntaxTree::Index &in) -> Result<Index> {
+auto ASTReader::Unmarshal(const SyntaxTree::Index &in) -> Result<Index> {
   auto base = Unmarshal(in.base());
   if (!base.has_value()) [[unlikely]] {
     return std::nullopt;
@@ -1723,7 +1736,7 @@ auto AstReader::Unmarshal(const SyntaxTree::Index &in) -> Result<Index> {
   return object;
 }
 
-auto AstReader::Unmarshal(const SyntaxTree::Slice &in) -> Result<Slice> {
+auto ASTReader::Unmarshal(const SyntaxTree::Slice &in) -> Result<Slice> {
   auto base = Unmarshal(in.base());
   if (!base.has_value()) [[unlikely]] {
     return std::nullopt;
@@ -1746,7 +1759,7 @@ auto AstReader::Unmarshal(const SyntaxTree::Slice &in) -> Result<Slice> {
   return object;
 }
 
-auto AstReader::Unmarshal(const SyntaxTree::FString &in) -> Result<FString> {
+auto ASTReader::Unmarshal(const SyntaxTree::FString &in) -> Result<FString> {
   std::vector<std::variant<string, FlowPtr<Expr>>> items;
   items.reserve(in.elements_size());
 
@@ -1780,7 +1793,7 @@ auto AstReader::Unmarshal(const SyntaxTree::FString &in) -> Result<FString> {
   return object;
 }
 
-auto AstReader::Unmarshal(const SyntaxTree::Identifier &in) -> Result<Identifier> {
+auto ASTReader::Unmarshal(const SyntaxTree::Identifier &in) -> Result<Identifier> {
   auto object = CreateIdentifier(in.name());
   UnmarshalLocationLocation(in.location(), object);
   UnmarshalCodeComment(in.comments(), object);
@@ -1788,7 +1801,7 @@ auto AstReader::Unmarshal(const SyntaxTree::Identifier &in) -> Result<Identifier
   return object;
 }
 
-auto AstReader::Unmarshal(const SyntaxTree::Block &in) -> Result<Block> {
+auto ASTReader::Unmarshal(const SyntaxTree::Block &in) -> Result<Block> {
   std::vector<FlowPtr<Expr>> items;
   items.reserve(in.statements_size());
 
@@ -1813,7 +1826,7 @@ auto AstReader::Unmarshal(const SyntaxTree::Block &in) -> Result<Block> {
   return object;
 }
 
-auto AstReader::Unmarshal(const SyntaxTree::Variable &in) -> Result<Variable> {
+auto ASTReader::Unmarshal(const SyntaxTree::Variable &in) -> Result<Variable> {
   auto type = Unmarshal(in.type(), in.has_type());
   if (!type.has_value()) [[unlikely]] {
     return std::nullopt;
@@ -1848,7 +1861,7 @@ auto AstReader::Unmarshal(const SyntaxTree::Variable &in) -> Result<Variable> {
   return object;
 }
 
-auto AstReader::Unmarshal(const SyntaxTree::Assembly &in) -> Result<Assembly> {
+auto ASTReader::Unmarshal(const SyntaxTree::Assembly &in) -> Result<Assembly> {
   std::vector<FlowPtr<Expr>> arguments;
   arguments.reserve(in.arguments_size());
 
@@ -1868,7 +1881,7 @@ auto AstReader::Unmarshal(const SyntaxTree::Assembly &in) -> Result<Assembly> {
   return object;
 }
 
-auto AstReader::Unmarshal(const SyntaxTree::If &in) -> Result<If> {
+auto ASTReader::Unmarshal(const SyntaxTree::If &in) -> Result<If> {
   auto condition = Unmarshal(in.condition());
   if (!condition.has_value()) [[unlikely]] {
     return std::nullopt;
@@ -1891,7 +1904,7 @@ auto AstReader::Unmarshal(const SyntaxTree::If &in) -> Result<If> {
   return object;
 }
 
-auto AstReader::Unmarshal(const SyntaxTree::While &in) -> Result<While> {
+auto ASTReader::Unmarshal(const SyntaxTree::While &in) -> Result<While> {
   auto condition = Unmarshal(in.condition());
   if (!condition.has_value()) [[unlikely]] {
     return std::nullopt;
@@ -1909,7 +1922,7 @@ auto AstReader::Unmarshal(const SyntaxTree::While &in) -> Result<While> {
   return object;
 }
 
-auto AstReader::Unmarshal(const SyntaxTree::For &in) -> Result<For> {
+auto ASTReader::Unmarshal(const SyntaxTree::For &in) -> Result<For> {
   auto init = Unmarshal(in.init());
   if (in.has_init() && !init.has_value()) [[unlikely]] {
     return std::nullopt;
@@ -1937,7 +1950,7 @@ auto AstReader::Unmarshal(const SyntaxTree::For &in) -> Result<For> {
   return object;
 }
 
-auto AstReader::Unmarshal(const SyntaxTree::Foreach &in) -> Result<Foreach> {
+auto ASTReader::Unmarshal(const SyntaxTree::Foreach &in) -> Result<Foreach> {
   auto expression = Unmarshal(in.expression());
   if (!expression.has_value()) [[unlikely]] {
     return std::nullopt;
@@ -1955,7 +1968,7 @@ auto AstReader::Unmarshal(const SyntaxTree::Foreach &in) -> Result<Foreach> {
   return object;
 }
 
-auto AstReader::Unmarshal(const SyntaxTree::Break &in) -> Result<Break> {
+auto ASTReader::Unmarshal(const SyntaxTree::Break &in) -> Result<Break> {
   auto object = CreateBreak();
   UnmarshalLocationLocation(in.location(), object);
   UnmarshalCodeComment(in.comments(), object);
@@ -1963,7 +1976,7 @@ auto AstReader::Unmarshal(const SyntaxTree::Break &in) -> Result<Break> {
   return object;
 }
 
-auto AstReader::Unmarshal(const SyntaxTree::Continue &in) -> Result<Continue> {
+auto ASTReader::Unmarshal(const SyntaxTree::Continue &in) -> Result<Continue> {
   auto object = CreateContinue();
   UnmarshalLocationLocation(in.location(), object);
   UnmarshalCodeComment(in.comments(), object);
@@ -1971,7 +1984,7 @@ auto AstReader::Unmarshal(const SyntaxTree::Continue &in) -> Result<Continue> {
   return object;
 }
 
-auto AstReader::Unmarshal(const SyntaxTree::Return &in) -> Result<Return> {
+auto ASTReader::Unmarshal(const SyntaxTree::Return &in) -> Result<Return> {
   auto value = Unmarshal(in.value());
   if (in.has_value() && !value.has_value()) [[unlikely]] {
     return std::nullopt;
@@ -1984,7 +1997,7 @@ auto AstReader::Unmarshal(const SyntaxTree::Return &in) -> Result<Return> {
   return object;
 }
 
-auto AstReader::Unmarshal(const SyntaxTree::Case &in) -> Result<Case> {
+auto ASTReader::Unmarshal(const SyntaxTree::Case &in) -> Result<Case> {
   auto condition = Unmarshal(in.condition());
   if (!condition.has_value()) [[unlikely]] {
     return std::nullopt;
@@ -2002,7 +2015,7 @@ auto AstReader::Unmarshal(const SyntaxTree::Case &in) -> Result<Case> {
   return object;
 }
 
-auto AstReader::Unmarshal(const SyntaxTree::Switch &in) -> Result<Switch> {
+auto ASTReader::Unmarshal(const SyntaxTree::Switch &in) -> Result<Switch> {
   auto condition = Unmarshal(in.condition());
   if (!condition.has_value()) [[unlikely]] {
     return std::nullopt;
@@ -2032,7 +2045,7 @@ auto AstReader::Unmarshal(const SyntaxTree::Switch &in) -> Result<Switch> {
   return object;
 }
 
-auto AstReader::Unmarshal(const SyntaxTree::Typedef &in) -> Result<Typedef> {
+auto ASTReader::Unmarshal(const SyntaxTree::Typedef &in) -> Result<Typedef> {
   auto type = Unmarshal(in.type());
   if (!type.has_value()) [[unlikely]] {
     return std::nullopt;
@@ -2045,7 +2058,7 @@ auto AstReader::Unmarshal(const SyntaxTree::Typedef &in) -> Result<Typedef> {
   return object;
 }
 
-auto AstReader::Unmarshal(const SyntaxTree::Function &in) -> Result<Function> {
+auto ASTReader::Unmarshal(const SyntaxTree::Function &in) -> Result<Function> {
   std::vector<FlowPtr<Expr>> attributes;
   attributes.reserve(in.attributes_size());
 
@@ -2116,7 +2129,7 @@ auto AstReader::Unmarshal(const SyntaxTree::Function &in) -> Result<Function> {
   return object;
 }
 
-auto AstReader::Unmarshal(const SyntaxTree::Struct &in) -> Result<Struct> {
+auto ASTReader::Unmarshal(const SyntaxTree::Struct &in) -> Result<Struct> {
   std::vector<FlowPtr<Expr>> attributes;
   attributes.reserve(in.attributes_size());
 
@@ -2197,7 +2210,7 @@ auto AstReader::Unmarshal(const SyntaxTree::Struct &in) -> Result<Struct> {
   return object;
 }
 
-auto AstReader::Unmarshal(const SyntaxTree::Enum &in) -> Result<Enum> {
+auto ASTReader::Unmarshal(const SyntaxTree::Enum &in) -> Result<Enum> {
   auto base_type = Unmarshal(in.base_type());
   if (in.has_base_type() && !base_type.has_value()) [[unlikely]] {
     return std::nullopt;
@@ -2222,7 +2235,7 @@ auto AstReader::Unmarshal(const SyntaxTree::Enum &in) -> Result<Enum> {
   return object;
 }
 
-auto AstReader::Unmarshal(const SyntaxTree::Scope &in) -> Result<Scope> {
+auto ASTReader::Unmarshal(const SyntaxTree::Scope &in) -> Result<Scope> {
   auto block = Unmarshal(in.body());
   if (!block.has_value()) [[unlikely]] {
     return std::nullopt;
@@ -2241,7 +2254,7 @@ auto AstReader::Unmarshal(const SyntaxTree::Scope &in) -> Result<Scope> {
   return object;
 }
 
-auto AstReader::Unmarshal(const SyntaxTree::Export &in) -> Result<Export> {
+auto ASTReader::Unmarshal(const SyntaxTree::Export &in) -> Result<Export> {
   auto block = Unmarshal(in.body());
   if (!block.has_value()) [[unlikely]] {
     return std::nullopt;
@@ -2266,9 +2279,9 @@ auto AstReader::Unmarshal(const SyntaxTree::Export &in) -> Result<Export> {
   return object;
 }
 
-AstReader::AstReader(std::string_view buf, Format format, std::pmr::memory_resource &pool,
+ASTReader::ASTReader(std::string_view buf, Format format, std::pmr::memory_resource &pool,
                      ReaderSourceManager source_manager)
-    : ASTFactory(pool), m_rd(source_manager), m_format(format) {
+    : ASTFactory(pool), m_impl(std::make_unique<PImpl>(format, source_manager)) {
   SyntaxTree::Expr root;
 
   switch (format) {
@@ -2291,13 +2304,12 @@ AstReader::AstReader(std::string_view buf, Format format, std::pmr::memory_resou
 
   root.CheckInitialized();
 
-  m_root = Unmarshal(root);
+  m_impl->m_root = Unmarshal(root);
 }
 
-auto AstReader::Get() -> NullableFlowPtr<Expr> {
-  if (!m_root.has_value()) [[unlikely]] {
-    return std::nullopt;
-  }
+ASTReader::~ASTReader() = default;
 
-  return m_root.value();
+auto ASTReader::Get() -> NullableFlowPtr<Expr> {
+  qcore_assert(m_impl != nullptr);
+  return m_impl->m_root;
 }

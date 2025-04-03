@@ -328,14 +328,14 @@ auto no3::cmd_impl::subcommands::CommandImplParse(ConstArguments, const MutArgum
 
       case OutputFormat::Json: {
         auto source_provider = options.m_tracking ? OptionalSourceProvider(tokenizer) : std::nullopt;
-        auto ast_writer = AstWriter(*output_stream, AstWriter::Format::JSON, source_provider);
+        auto ast_writer = ASTWriter(*output_stream, ASTWriter::Format::JSON, source_provider);
         ast_result->Accept(ast_writer);
         break;
       }
 
       case OutputFormat::Protobuf: {
         auto source_provider = options.m_tracking ? OptionalSourceProvider(tokenizer) : std::nullopt;
-        auto ast_writer = AstWriter(*output_stream, AstWriter::Format::PROTO, source_provider);
+        auto ast_writer = ASTWriter(*output_stream, ASTWriter::Format::PROTO, source_provider);
         ast_result->Accept(ast_writer);
         break;
       }

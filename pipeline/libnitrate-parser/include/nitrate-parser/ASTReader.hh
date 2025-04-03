@@ -48,7 +48,10 @@ namespace ncc::parse {
 
   using ReaderSourceManager = std::optional<std::reference_wrapper<lex::IScanner>>;
 
-  class NCC_EXPORT AstReader final : private ASTFactory {
+  class NCC_EXPORT ASTReader final : private ASTFactory {
+    class PImpl;
+    std::unique_ptr<PImpl> m_impl;
+
     template <typename T>
     using Result = NullableFlowPtr<T>;
 
@@ -123,18 +126,13 @@ namespace ncc::parse {
   public:
     enum class Format { JSON, PROTO };
 
-    AstReader(std::istream &in, Format format, std::pmr::memory_resource &pool,
+    ASTReader(std::istream &in, Format format, std::pmr::memory_resource &pool,
               ReaderSourceManager source_manager = std::nullopt);
-    AstReader(std::string_view buf, Format format, std::pmr::memory_resource &pool,
+    ASTReader(std::string_view buf, Format format, std::pmr::memory_resource &pool,
               ReaderSourceManager source_manager = std::nullopt);
-    ~AstReader() = default;
+    ~ASTReader();
 
     auto Get() -> NullableFlowPtr<Expr>;
-
-  private:
-    Result<Expr> m_root;
-    ReaderSourceManager m_rd;
-    Format m_format;
   };
 }  // namespace ncc::parse
 

@@ -156,9 +156,10 @@ static auto ParseFStringExpression(GeneralParser::Context &m, std::string_view s
       auto in_src = boost::iostreams::stream<boost::iostreams::array_source>(buf_view.data(), buf_view.size());
       auto scanner = Tokenizer(in_src, m.GetEnvironment());
       auto sub_parser = m.CreateSubParser(scanner);
-      auto subnode = sub_parser.m_impl->RecurseExpr({
-          Token(Punc, PuncRCur),
-      });
+      auto subnode = m.GetPImplPtr(sub_parser)
+                         ->RecurseExpr({
+                             Token(Punc, PuncRCur),
+                         });
 
       sections.emplace_back(subnode);
 

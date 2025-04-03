@@ -43,9 +43,13 @@
 namespace ncc::parse {
   using namespace nitrate::parser;
 
-  class NCC_EXPORT AstWriter : public ASTVisitor {
+  class NCC_EXPORT ASTWriter : public ASTVisitor {
+    class PImpl;
+    std::unique_ptr<PImpl> m_impl;
+
     void SetTypeMetadata(auto *message, const FlowPtr<Type> &in);
     SyntaxTree::SourceLocationRange *FromSource(FlowPtr<Expr> in);
+
     SyntaxTree::Expr *From(FlowPtr<Expr> in);
     SyntaxTree::Type *From(FlowPtr<Type> in);
     SyntaxTree::NamedTy *From(FlowPtr<NamedTy> in);
@@ -174,14 +178,8 @@ namespace ncc::parse {
   public:
     enum class Format { JSON, PROTO };
 
-    AstWriter(std::ostream &os, Format format, OptionalSourceProvider rd = std::nullopt);
-    ~AstWriter() override;
-
-  private:
-    google::protobuf::Arena *m_arena;
-    std::ostream &m_os;
-    OptionalSourceProvider m_rd;
-    Format m_format;
+    ASTWriter(std::ostream &os, Format format, OptionalSourceProvider rd = std::nullopt);
+    ~ASTWriter() override;
   };
 }  // namespace ncc::parse
 
