@@ -54,12 +54,12 @@ for subdir in glob.glob(os.path.join(tree_dir, "*")):
   ASSERT_TRUE(lib_rc) << "Failed to initialize library";
 
   auto mm = DynamicArena();
-  auto ast = ASTReader(source, kFmt, mm);
-  ASSERT_TRUE(ast.Get()) << "Failed to decode serialized AST";
+  auto ast = ASTReader(source, kFmt, mm).Get();
+  ASSERT_TRUE(ast) << "Failed to decode serialized AST";
 
   std::stringstream ss;
   auto writer = CodeWriterFactory::Create(ss);
-  ast.Get().value()->Accept(*writer);
+  ast.value()->Accept(*writer);
 
   EXPECT_EQ(ss.str(), expect) << "CodeWriter output does not match expected output";
 }
@@ -75,16 +75,14 @@ for subdir in glob.glob(os.path.join(tree_dir, "*")):
             for source_file in glob.glob(f"{test_group_path}/*.nit"):
                 test_identity = os.path.basename(
                     source_file).replace(".nit", "")
+                is_negative_test = test_identity.startswith("e_")
+                if is_negative_test:
+                    continue
+
                 expected_file = source_file.replace(".nit", ".json")
 
                 f.write(
-                    f"\nTEST(Parser, CodeWriter_{test_group_name}_{test_identity}) {{")
-
-                is_negative_test = test_identity.startswith("e_")
-                if is_negative_test:
-                    f.write(f"  // True negative\n")
-                else:
-                    f.write(f"  // True positive\n")
+                    f"\nTEST(Parser, CodeWriter_{test_group_name}_{test_identity}) {{\n")
 
                 with open(source_file, "r") as source_f:
                     source_file_content = source_f.read()

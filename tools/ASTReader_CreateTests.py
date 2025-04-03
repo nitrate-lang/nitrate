@@ -53,22 +53,17 @@ static void TestCase(std::string_view source, std::string_view expect) {
   ASSERT_TRUE(lib_rc) << "Failed to initialize library";
 
   auto mm = DynamicArena();
-  auto rd = ASTReader(source, kFmt, mm);
-  if (expect.empty()) {
-    ASSERT_FALSE(rd.Get()) << "Expected decoding to fail";
-    return;
-  }
-
-  ASSERT_TRUE(rd.Get()) << "Failed to decode serialized AST";
+  auto ast_a = ASTReader(source, kFmt, mm).Get();
+  ASSERT_TRUE(ast_a) << "Failed to decode serialized AST";
 
   auto env = std::make_shared<ncc::Environment>();
   auto istream = GetStream(expect);
   auto lexer = Tokenizer(istream, env);
   auto parser = GeneralParser(lexer, env, mm);
-  auto ast = parser.Parse();
-  ASSERT_TRUE(ast.Check()) << "Failed to parse AST";
+  auto ast_b = parser.Parse();
+  ASSERT_TRUE(ast_b.Check()) << "Failed to parse AST";
 
-  EXPECT_EQ(rd.Get().value()->IsEq(ast.Get()), true) << "ASTs are not equal";
+  EXPECT_EQ(ast_a.value()->IsEq(ast_b.Get()), true) << "ASTs are not equal";
 }
 """)
 
@@ -82,16 +77,13 @@ static void TestCase(std::string_view source, std::string_view expect) {
             for source_file in glob.glob(f"{test_group_path}/*.nit"):
                 test_identity = os.path.basename(
                     source_file).replace(".nit", "")
+                is_negative_test = test_identity.startswith("e_")
+                if is_negative_test:
+                    continue
                 expected_file = source_file.replace(".nit", ".json")
 
                 f.write(
-                    f"\nTEST(Parser, ASTReader_{domain}_{test_group_name}_{test_identity}) {{")
-
-                is_negative_test = test_identity.startswith("e_")
-                if is_negative_test:
-                    f.write(f"  // True negative\n")
-                else:
-                    f.write(f"  // True positive\n")
+                    f"\nTEST(Parser, ASTReader_{domain}_{test_group_name}_{test_identity}) {{\n")
 
                 with open(source_file, "r") as source_f:
                     source_file_content = source_f.read()

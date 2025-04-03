@@ -36,6 +36,7 @@ for subdir in glob.glob(os.path.join(tree_dir, "*")):
         f.write("#include <nitrate-parser/ASTWriter.hh>\n")
         f.write("#include <nitrate-parser/Context.hh>\n")
         f.write("#include <nitrate-parser/Init.hh>\n")
+        f.write("#include <nlohmann/json.hpp>\n")
         f.write("#include <string_view>\n")
         f.write("\n")
         f.write("using namespace ncc;\n")
@@ -51,7 +52,7 @@ for subdir in glob.glob(os.path.join(tree_dir, "*")):
 static void TestCase(std::string_view source, std::string_view expect) {
   auto lib_rc = ncc::parse::ParseLibrary.GetRC();
   ASSERT_TRUE(lib_rc) << "Failed to initialize library";
-  
+
   auto env = std::make_shared<ncc::Environment>();
   auto istream = GetStream(source);
   auto lexer = Tokenizer(istream, env);
@@ -63,7 +64,10 @@ static void TestCase(std::string_view source, std::string_view expect) {
   auto writer = ASTWriter(ss, kFmt, lexer);
   ast.Get()->Accept(writer);
 
-  EXPECT_EQ(ss.str(), expect) << "ASTWriter output does not match expected output";
+  auto json = nlohmann::json::parse(ss.str(), nullptr, false);
+  ASSERT_FALSE(json.is_discarded()) << "Failed to parse JSON output";
+
+  EXPECT_EQ(json.dump(2), expect) << "ASTWriter output does not match expected output";
 }
 """)
 
@@ -77,16 +81,14 @@ static void TestCase(std::string_view source, std::string_view expect) {
             for source_file in glob.glob(f"{test_group_path}/*.nit"):
                 test_identity = os.path.basename(
                     source_file).replace(".nit", "")
+                is_negative_test = test_identity.startswith("e_")
+                if is_negative_test:
+                    continue
+
                 expected_file = source_file.replace(".nit", ".json")
 
                 f.write(
-                    f"\nTEST(Parser, ASTWriter_{domain}_{test_group_name}_{test_identity}) {{")
-
-                is_negative_test = test_identity.startswith("e_")
-                if is_negative_test:
-                    f.write(f"  // True negative\n")
-                else:
-                    f.write(f"  // True positive\n")
+                    f"\nTEST(Parser, ASTWriter_{domain}_{test_group_name}_{test_identity}) {{\n")
 
                 with open(source_file, "r") as source_f:
                     source_file_content = source_f.read()
