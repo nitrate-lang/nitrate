@@ -62,6 +62,10 @@ package-example/
 no3/lib/src/core/PackageConfigFormat.pb.cc
 no3/lib/src/core/PackageConfigFormat.pb.h
 nitrate-lsp.log
-test/src/pipeline/libnitrate-parser/core/ASTReader_Canonical.cc
-test/src/pipeline/libnitrate-parser/core/ASTReader_Littered.cc
-test/src/pipeline/libnitrate-parser/core/ASTReader_Minified.cc
+test/src/pipeline/libnitrate-parser/core/ASTReader_Canonical.gen.cc
+test/src/pipeline/libnitrate-parser/core/ASTReader_Littered.gen.cc
+test/src/pipeline/libnitrate-parser/core/ASTReader_Minified.gen.cc
+test/src/pipeline/libnitrate-parser/core/ASTWriter_Canonical.gen.cc
+test/src/pipeline/libnitrate-parser/core/ASTWriter_Littered.gen.cc
+test/src/pipeline/libnitrate-parser/core/ASTWriter_Minified.gen.cc
+test/src/pipeline/libnitrate-parser/core/CodeWriter.gen.cc
