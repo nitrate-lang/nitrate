@@ -64,7 +64,7 @@ static std::optional<ConfigFormatPair> LocatePackageConfigFile(const std::filesy
   const std::vector<ConfigFormatPair> config_format_precedence = {
       {kConfigJSON, package_dir / "no3.json"},
       {kConfigPROTOBUF, package_dir / "no3.pb"},
-      {kConfigNITRATE, package_dir / "no3.n"},
+      {kConfigNITRATE, package_dir / "no3.nit"},
   };
 
   for (const auto& [format, path] : config_format_precedence) {

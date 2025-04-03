@@ -45,16 +45,13 @@ auto ASTFactory::CreateTypedef(string name, FlowPtr<Type> base, SourceLocation o
 auto ASTFactory::CreateStruct(CompositeType comp_type, string name,
                               const std::optional<std::vector<TemplateParameter>>& tparams,
                               const std::vector<StructField>& fields, const std::vector<StructFunction>& methods,
-                              const std::vector<StructFunction>& static_methods, const std::vector<string>& constraints,
-                              const std::vector<FlowPtr<Expr>>& attributes, SourceLocation origin) -> FlowPtr<Struct> {
+                              const std::vector<string>& constraints, const std::vector<FlowPtr<Expr>>& attributes,
+                              SourceLocation origin) -> FlowPtr<Struct> {
   auto fields_copy = AllocateArray<StructField>(fields.size());
   std::copy(fields.begin(), fields.end(), fields_copy.begin());
 
   auto methods_copy = AllocateArray<StructFunction>(methods.size());
   std::copy(methods.begin(), methods.end(), methods_copy.begin());
-
-  auto static_methods_copy = AllocateArray<StructFunction>(static_methods.size());
-  std::copy(static_methods.begin(), static_methods.end(), static_methods_copy.begin());
 
   auto attributes_copy = AllocateArray<FlowPtr<Expr>>(attributes.size());
   std::copy(attributes.begin(), attributes.end(), attributes_copy.begin());
@@ -68,7 +65,7 @@ auto ASTFactory::CreateStruct(CompositeType comp_type, string name,
   }
 
   return CreateInstance<Struct>(comp_type, attributes_copy, name, tparams_copy, constraints_copy, fields_copy,
-                                methods_copy, static_methods_copy)(m_pool, origin);
+                                methods_copy)(m_pool, origin);
 }
 
 auto ASTFactory::CreateEnum(string name, const std::vector<FactoryEnumItem>& ele, NullableFlowPtr<Type> ele_ty,
@@ -94,7 +91,6 @@ auto ASTFactory::CreateEnum(string name, std::span<const std::pair<string, Nulla
 auto ASTFactory::CreateFunction(string name, NullableFlowPtr<Type> ret_ty,
                                 const std::vector<FactoryFunctionParameter>& params, bool variadic,
                                 NullableFlowPtr<Expr> body, const std::vector<FlowPtr<Expr>>& attributes,
-                                NullableFlowPtr<Expr> precond, NullableFlowPtr<Expr> postcond,
                                 const std::optional<std::vector<TemplateParameter>>& template_parameters,
                                 SourceLocation origin) -> std::optional<FlowPtr<Function>> {
   auto params_copy = AllocateArray<std::tuple<string, FlowPtr<Type>, NullableFlowPtr<Expr>>>(params.size());
@@ -110,7 +106,7 @@ auto ASTFactory::CreateFunction(string name, NullableFlowPtr<Type> ret_ty,
   std::copy(attributes.begin(), attributes.end(), attributes_copy.begin());
 
   if (!ret_ty.has_value()) {
-    ret_ty = CreateUnknownType(nullptr, nullptr, nullptr, origin);
+    ret_ty = CreateInferredType(nullptr, nullptr, nullptr, origin);
   }
 
   auto template_parameters_copy =
@@ -121,16 +117,14 @@ auto ASTFactory::CreateFunction(string name, NullableFlowPtr<Type> ret_ty,
   }
 
   return CreateInstance<Function>(attributes_copy, name, template_parameters_copy, params_copy, variadic,
-                                  ret_ty.value(), precond, postcond, body)(m_pool, origin);
+                                  ret_ty.value(), body)(m_pool, origin);
 }
 
 auto ASTFactory::CreateAnonymousFunction(NullableFlowPtr<Type> ret_ty,
                                          const std::vector<FactoryFunctionParameter>& params, bool variadic,
                                          NullableFlowPtr<Expr> body, const std::vector<FlowPtr<Expr>>& attributes,
-                                         NullableFlowPtr<Expr> precond, NullableFlowPtr<Expr> postcond,
                                          SourceLocation origin) -> std::optional<FlowPtr<Function>> {
-  return CreateFunction("", std::move(ret_ty), params, variadic, std::move(body), attributes, std::move(precond),
-                        std::move(postcond), std::nullopt, origin);
+  return CreateFunction("", std::move(ret_ty), params, variadic, std::move(body), attributes, std::nullopt, origin);
 }
 
 auto ASTFactory::CreateScope(string name, FlowPtr<Expr> body, const std::vector<string>& tags,
@@ -185,7 +179,7 @@ auto ASTFactory::CreateVariable(VariableType variant, string name, std::span<con
   std::copy(attributes.begin(), attributes.end(), attributes_copy.begin());
 
   if (!type.has_value()) {
-    type = CreateUnknownType(nullptr, nullptr, nullptr, origin);
+    type = CreateInferredType(nullptr, nullptr, nullptr, origin);
   }
 
   return CreateInstance<Variable>(name, type.value(), init, variant, attributes_copy)(m_pool, origin);
@@ -197,11 +191,6 @@ auto ASTFactory::CreateAssembly(string asm_code, SourceLocation origin) -> FlowP
 
 auto ASTFactory::CreateReturn(NullableFlowPtr<Expr> value, SourceLocation origin) -> FlowPtr<Return> {
   return CreateInstance<Return>(value)(m_pool, origin);
-}
-
-auto ASTFactory::CreateReturnIf(FlowPtr<Expr> cond, NullableFlowPtr<Expr> value,
-                                SourceLocation origin) -> FlowPtr<ReturnIf> {
-  return CreateInstance<ReturnIf>(cond, value)(m_pool, origin);
 }
 
 auto ASTFactory::CreateBreak(SourceLocation origin) -> FlowPtr<Break> {

@@ -154,7 +154,7 @@ auto Package::CompileDirectory(std::filesystem::path folder_path) -> LazyLoader 
 
     auto dir_it = OMNI_CATCH(std::filesystem::recursive_directory_iterator(path));
     if (!dir_it.has_value()) {
-      Log << Error << "Package: Failed to create recursive directory iterator: " << path.string();
+      Log << "Package: Failed to create recursive directory iterator: " << path.string();
       return std::nullopt;
     }
 
@@ -174,7 +174,7 @@ auto Package::CompileDirectory(std::filesystem::path folder_path) -> LazyLoader 
       {  // Skip non source files
         auto ext = entry.path().extension().string();
         std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
-        if (ext != ".nit" && ext != ".n") {
+        if (ext != ".nit") {
           Log << Trace << "Package: Skipping non-Nitrate file: " << entry.path();
           continue;
         }
@@ -183,7 +183,7 @@ auto Package::CompileDirectory(std::filesystem::path folder_path) -> LazyLoader 
       auto loader = CompileFile(entry.path());
       const auto &maybe_content = loader.Get();
       if (!maybe_content.has_value()) [[unlikely]] {
-        Log << Error << "Package: Failed to compile file: " << entry.path();
+        Log << "Package: Failed to compile file: " << entry.path();
         return std::nullopt;
       }
 
@@ -210,7 +210,7 @@ auto Package::CompileFile(std::filesystem::path file_path) -> LazyLoader {
 
       std::ifstream f(path.string(), std::ios::in | std::ios::binary);
       if (!f.is_open()) {
-        Log << Error << "Package: Failed to open file: " << path.string();
+        Log << "Package: Failed to open file: " << path.string();
         return std::nullopt;
       }
 

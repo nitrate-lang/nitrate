@@ -161,8 +161,6 @@ NCC_EXPORT auto ncc::parse::ec::Formatter(std::string_view msg, Sev sev) -> std:
       }
     }
 
-    ss << "\n";
-
     return ss.str();
   }
 
@@ -174,8 +172,6 @@ NCC_EXPORT auto ncc::parse::ec::Formatter(std::string_view msg, Sev sev) -> std:
   } else {
     ss << msg;
   }
-
-  ss << "\n";
 
   return ss.str();
 }

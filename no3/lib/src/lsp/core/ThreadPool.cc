@@ -1,80 +1,114 @@
+////////////////////////////////////////////////////////////////////////////////
+///                                                                          ///
+///     .-----------------.    .----------------.     .----------------.     ///
+///    | .--------------. |   | .--------------. |   | .--------------. |    ///
+///    | | ____  _____  | |   | |     ____     | |   | |    ______    | |    ///
+///    | ||_   _|_   _| | |   | |   .'    `.   | |   | |   / ____ `.  | |    ///
+///    | |  |   \ | |   | |   | |  /  .--.  \  | |   | |   `'  __) |  | |    ///
+///    | |  | |\ \| |   | |   | |  | |    | |  | |   | |   _  |__ '.  | |    ///
+///    | | _| |_\   |_  | |   | |  \  `--'  /  | |   | |  | \____) |  | |    ///
+///    | ||_____|\____| | |   | |   `.____.'   | |   | |   \______.'  | |    ///
+///    | |              | |   | |              | |   | |              | |    ///
+///    | '--------------' |   | '--------------' |   | '--------------' |    ///
+///     '----------------'     '----------------'     '----------------'     ///
+///                                                                          ///
+///   * NITRATE TOOLCHAIN - The official toolchain for the Nitrate language. ///
+///   * Copyright (C) 2024 Wesley C. Jones                                   ///
+///                                                                          ///
+///   The Nitrate Toolchain is free software; you can redistribute it or     ///
+///   modify it under the terms of the GNU Lesser General Public             ///
+///   License as published by the Free Software Foundation; either           ///
+///   version 2.1 of the License, or (at your option) any later version.     ///
+///                                                                          ///
+///   The Nitrate Toolcain is distributed in the hope that it will be        ///
+///   useful, but WITHOUT ANY WARRANTY; without even the implied warranty of ///
+///   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU      ///
+///   Lesser General Public License for more details.                        ///
+///                                                                          ///
+///   You should have received a copy of the GNU Lesser General Public       ///
+///   License along with the Nitrate Toolchain; if not, see                  ///
+///   <https://www.gnu.org/licenses/>.                                       ///
+///                                                                          ///
+////////////////////////////////////////////////////////////////////////////////
+
 #include <chrono>
-#include <lsp/core/Server.hh>
 #include <lsp/core/ThreadPool.hh>
 #include <mutex>
 #include <nitrate-core/Logger.hh>
+#include <nitrate-core/SmartLock.hh>
 #include <stop_token>
 
 using namespace ncc;
 
 void ThreadPool::Start() {
-  uint32_t num_threads = std::jthread::hardware_concurrency();  // Max # of threads the system
-                                                                // supports
+  auto optimal_thread_count = std::max(std::jthread::hardware_concurrency(), 1U);
+  Log << Debug << "Starting thread pool with " << optimal_thread_count << " threads";
 
-  // We want at least 2 threads
-  if (num_threads < 2) {
-    num_threads = 2;
-  }
+  // Enable thread synchronization
+  EnableSync = true;
 
-  Log << Info << "Starting thread pool with " << num_threads << " threads";
+  auto parent_thread_logger = Log;
 
-  for (uint32_t ii = 0; ii < num_threads; ++ii) {
-    m_threads.emplace_back([this](const std::stop_token& st) { ThreadLoop(st); });
+  for (uint32_t i = 0; i < optimal_thread_count; ++i) {
+    m_threads.emplace_back([this, parent_thread_logger](const std::stop_token& st) {
+      // Use the logger from the parent thread
+      Log = parent_thread_logger;
+      ThreadLoop(st);
+    });
   }
 }
 
 void ThreadPool::ThreadLoop(const std::stop_token& st) {
-  bool has_any_yet = false;
+  Log << Trace << "ThreadPool: ThreadLoop(" << std::this_thread::get_id() << ") started";
 
   while (!st.stop_requested()) {
-    std::function<void(std::stop_token)> job;
+    Task job;
+
     {
-      std::unique_lock<std::mutex> lock(m_queue_mutex);
+      std::unique_lock lock(m_queue_mutex);
       if (m_jobs.empty()) {
         lock.unlock();
 
-        // Climate change is real, lets do our part
-        if (!has_any_yet) {
-          std::this_thread::sleep_for(std::chrono::milliseconds(50));
-        } else {
-          std::this_thread::sleep_for(std::chrono::milliseconds(1));
-        }
-
+        std::this_thread::sleep_for(std::chrono::microseconds(64));
+        std::this_thread::yield();
         continue;
       }
 
-      has_any_yet = true;
       job = m_jobs.front();
       m_jobs.pop();
     }
 
     job(st);
   }
+
+  Log << Trace << "ThreadPool: ThreadLoop(" << std::this_thread::get_id() << ") stopped";
 }
 
-void ThreadPool::QueueJob(const std::function<void(std::stop_token st)>& job) {
-  std::lock_guard<std::mutex> lock(m_queue_mutex);
-  m_jobs.push(job);
+void ThreadPool::Schedule(Task job) {
+  std::lock_guard lock(m_queue_mutex);
+  m_jobs.emplace(std::move(job));
 }
 
-auto ThreadPool::Busy() -> bool {
-  bool poolbusy;
-  {
-    std::lock_guard<std::mutex> lock(m_queue_mutex);
-    poolbusy = !m_jobs.empty();
+void ThreadPool::WaitForAll() {
+  while (!Empty()) {
+    std::this_thread::yield();
   }
-  return poolbusy;
+}
+
+auto ThreadPool::Empty() -> bool {
+  std::lock_guard lock(m_queue_mutex);
+  return m_jobs.empty();
 }
 
 void ThreadPool::Stop() {
   { /* Gracefully request stop */
-    std::lock_guard<std::mutex> lock(m_queue_mutex);
-    for (std::jthread& active_thread : m_threads) {
+    std::lock_guard lock(m_queue_mutex);
+    for (auto& active_thread : m_threads) {
       active_thread.request_stop();
     }
   }
 
-  while (Busy()) {
+  while (!Empty()) {
   }
 
   m_threads.clear();

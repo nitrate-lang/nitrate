@@ -43,14 +43,14 @@ namespace ncc::parse {
     string m_name;
 
   public:
-    constexpr NamedTy(auto name) : Type(QAST_NAMED), m_name(name) {}
+    constexpr NamedTy(auto name) : Type(AST_tNAMED), m_name(name) {}
 
     [[nodiscard, gnu::pure]] constexpr auto GetName() const { return m_name; }
   };
 
   class InferTy : public Type {
   public:
-    constexpr InferTy() : Type(QAST_INFER) {}
+    constexpr InferTy() : Type(AST_tINFER) {}
   };
 
   class TemplateType : public Type {
@@ -58,7 +58,7 @@ namespace ncc::parse {
     std::span<CallArg> m_args;
 
   public:
-    constexpr TemplateType(auto templ, auto args) : Type(QAST_TEMPLATE), m_template(std::move(templ)), m_args(args) {}
+    constexpr TemplateType(auto templ, auto args) : Type(AST_tTEMPLATE), m_template(std::move(templ)), m_args(args) {}
 
     [[nodiscard, gnu::pure]] constexpr auto GetTemplate() const { return m_template; }
     [[nodiscard, gnu::pure]] constexpr auto GetArgs() const { return m_args; }
@@ -66,82 +66,82 @@ namespace ncc::parse {
 
   class U1 : public Type {
   public:
-    constexpr U1() : Type(QAST_U1){};
+    constexpr U1() : Type(AST_tU1){};
   };
 
   class U8 : public Type {
   public:
-    constexpr U8() : Type(QAST_U8){};
+    constexpr U8() : Type(AST_tU8){};
   };
 
   class U16 : public Type {
   public:
-    constexpr U16() : Type(QAST_U16){};
+    constexpr U16() : Type(AST_tU16){};
   };
 
   class U32 : public Type {
   public:
-    constexpr U32() : Type(QAST_U32){};
+    constexpr U32() : Type(AST_tU32){};
   };
 
   class U64 : public Type {
   public:
-    constexpr U64() : Type(QAST_U64){};
+    constexpr U64() : Type(AST_tU64){};
   };
 
   class U128 : public Type {
   public:
-    constexpr U128() : Type(QAST_U128){};
+    constexpr U128() : Type(AST_tU128){};
   };
 
   class I8 : public Type {
   public:
-    constexpr I8() : Type(QAST_I8){};
+    constexpr I8() : Type(AST_tI8){};
   };
 
   class I16 : public Type {
   public:
-    constexpr I16() : Type(QAST_I16){};
+    constexpr I16() : Type(AST_tI16){};
   };
 
   class I32 : public Type {
   public:
-    constexpr I32() : Type(QAST_I32){};
+    constexpr I32() : Type(AST_tI32){};
   };
 
   class I64 : public Type {
   public:
-    constexpr I64() : Type(QAST_I64){};
+    constexpr I64() : Type(AST_tI64){};
   };
 
   class I128 : public Type {
   public:
-    constexpr I128() : Type(QAST_I128){};
+    constexpr I128() : Type(AST_tI128){};
   };
 
   class F16 : public Type {
   public:
-    constexpr F16() : Type(QAST_F16){};
+    constexpr F16() : Type(AST_tF16){};
   };
 
   class F32 : public Type {
   public:
-    constexpr F32() : Type(QAST_F32){};
+    constexpr F32() : Type(AST_tF32){};
   };
 
   class F64 : public Type {
   public:
-    constexpr F64() : Type(QAST_F64){};
+    constexpr F64() : Type(AST_tF64){};
   };
 
   class F128 : public Type {
   public:
-    constexpr F128() : Type(QAST_F128){};
+    constexpr F128() : Type(AST_tF128){};
   };
 
   class VoidTy : public Type {
   public:
-    constexpr VoidTy() : Type(QAST_VOID) {}
+    constexpr VoidTy() : Type(AST_tVOID) {}
   };
 
   class PtrTy : public Type {
@@ -149,7 +149,7 @@ namespace ncc::parse {
     bool m_volatil;
 
   public:
-    constexpr PtrTy(auto item, auto volatil) : Type(QAST_PTR), m_item(std::move(item)), m_volatil(volatil) {}
+    constexpr PtrTy(auto item, auto volatil) : Type(AST_tPTR), m_item(std::move(item)), m_volatil(volatil) {}
 
     [[nodiscard, gnu::pure]] constexpr auto GetItem() const { return m_item; }
     [[nodiscard, gnu::pure]] constexpr auto IsVolatile() const -> bool { return m_volatil; }
@@ -159,7 +159,7 @@ namespace ncc::parse {
     string m_name;
 
   public:
-    constexpr OpaqueTy(auto name) : Type(QAST_OPAQUE), m_name(name) {}
+    constexpr OpaqueTy(auto name) : Type(AST_tOPAQUE), m_name(name) {}
 
     [[nodiscard, gnu::pure]] constexpr auto GetName() const { return m_name; }
   };
@@ -168,7 +168,7 @@ namespace ncc::parse {
     std::span<FlowPtr<Type>> m_items;
 
   public:
-    constexpr TupleTy(auto items) : Type(QAST_TUPLE), m_items(items) {}
+    constexpr TupleTy(auto items) : Type(AST_tTUPLE), m_items(items) {}
 
     [[nodiscard, gnu::pure]] constexpr auto GetItems() const { return m_items; }
   };
@@ -178,7 +178,7 @@ namespace ncc::parse {
     FlowPtr<Expr> m_size;
 
   public:
-    constexpr ArrayTy(auto item, auto size) : Type(QAST_ARRAY), m_item(std::move(item)), m_size(std::move(size)) {}
+    constexpr ArrayTy(auto item, auto size) : Type(AST_tARRAY), m_item(std::move(item)), m_size(std::move(size)) {}
 
     [[nodiscard, gnu::pure]] constexpr auto GetItem() const { return m_item; }
     [[nodiscard, gnu::pure]] constexpr auto GetSize() const { return m_size; }
@@ -189,7 +189,7 @@ namespace ncc::parse {
     bool m_volatil;
 
   public:
-    constexpr RefTy(auto item, bool volatil) : Type(QAST_REF), m_item(std::move(item)), m_volatil(volatil) {}
+    constexpr RefTy(auto item, bool volatil) : Type(AST_tREF), m_item(std::move(item)), m_volatil(volatil) {}
 
     [[nodiscard, gnu::pure]] constexpr auto GetItem() const { return m_item; }
     [[nodiscard, gnu::pure]] constexpr auto IsVolatile() const { return m_volatil; }
@@ -203,7 +203,7 @@ namespace ncc::parse {
 
   public:
     constexpr FuncTy(auto return_type, auto parameters, auto variadic, auto attributes)
-        : Type(QAST_FUNCTOR),
+        : Type(AST_tFUNCTION),
           m_attributes(attributes),
           m_params(parameters),
           m_return(std::move(return_type)),

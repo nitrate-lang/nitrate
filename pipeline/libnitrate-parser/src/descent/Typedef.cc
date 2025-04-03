@@ -38,13 +38,13 @@ using namespace ncc;
 using namespace ncc::lex;
 using namespace ncc::parse;
 
-auto GeneralParser::PImpl::RecurseTypedef() -> FlowPtr<Expr> {
+auto GeneralParser::Context::RecurseTypedef() -> FlowPtr<Expr> {
   if (auto type_name = RecurseName()) [[likely]] {
     if (NextIf<OpSet>()) [[likely]] {
       auto the_type = RecurseType();
 
       if (NextIf<PuncSemi>()) [[likely]] {
-        return m_fac.CreateTypedef(type_name, the_type);
+        return CreateTypedef(type_name, the_type);
       } else {
         Log << ParserSignal << Current() << "Expected ';' in typedef declaration";
       }
@@ -55,5 +55,5 @@ auto GeneralParser::PImpl::RecurseTypedef() -> FlowPtr<Expr> {
     Log << ParserSignal << Current() << "Expected name in typedef declaration";
   }
 
-  return m_fac.CreateMockInstance<Typedef>();
+  return CreateMockInstance<Typedef>();
 }

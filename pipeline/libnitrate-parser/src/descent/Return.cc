@@ -38,9 +38,9 @@ using namespace ncc;
 using namespace ncc::lex;
 using namespace ncc::parse;
 
-auto GeneralParser::PImpl::RecurseReturn() -> FlowPtr<Expr> {
+auto GeneralParser::Context::RecurseReturn() -> FlowPtr<Expr> {
   if (NextIf<PuncSemi>()) {
-    return m_fac.CreateReturn();
+    return CreateReturn();
   }
 
   auto return_value = RecurseExpr({
@@ -51,29 +51,5 @@ auto GeneralParser::PImpl::RecurseReturn() -> FlowPtr<Expr> {
     Log << ParserSignal << Current() << "Expected ';' after the return statement.";
   }
 
-  return m_fac.CreateReturn(return_value);
-}
-
-auto GeneralParser::PImpl::RecurseReturnIf() -> FlowPtr<Expr> {
-  auto return_if = RecurseExpr({
-      Token(Punc, PuncComa),
-  });
-
-  if (NextIf<PuncComa>()) {
-    auto return_value = RecurseExpr({
-        Token(Punc, PuncSemi),
-    });
-
-    if (!NextIf<PuncSemi>()) [[unlikely]] {
-      Log << ParserSignal << Current() << "Expected ';' after the retif value.";
-    }
-
-    return m_fac.CreateReturnIf(return_if, return_value);
-  }
-
-  if (!NextIf<PuncSemi>()) [[unlikely]] {
-    Log << ParserSignal << Current() << "Expected ';' after the retif value.";
-  }
-
-  return m_fac.CreateReturnIf(return_if);
+  return CreateReturn(return_value);
 }

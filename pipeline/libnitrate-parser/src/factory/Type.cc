@@ -367,8 +367,8 @@ auto ASTFactory::CreateNamed(string name, NullableFlowPtr<Expr> bits, NullableFl
   return node;
 }
 
-auto ASTFactory::CreateUnknownType(NullableFlowPtr<Expr> bits, NullableFlowPtr<Expr> min, NullableFlowPtr<Expr> max,
-                                   SourceLocation origin) -> FlowPtr<InferTy> {
+auto ASTFactory::CreateInferredType(NullableFlowPtr<Expr> bits, NullableFlowPtr<Expr> min, NullableFlowPtr<Expr> max,
+                                    SourceLocation origin) -> FlowPtr<InferTy> {
   auto node = CreateInstance<InferTy>()(m_pool, origin);
 
   node->SetWidth(std::move(bits));

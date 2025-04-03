@@ -18,8 +18,6 @@ if false {} else {};
 
 if false {} else if false {} else {};;
 
-retif true, 0;
-
 switch 0 {
   0 => 0;
   1 => 1;
@@ -58,9 +56,6 @@ struct [Special, 10] MyStruct<x: i32 = 0, i = 0, t>: Object, MyTrait {
   pub fn foo();
   pro fn bar();
   sec fn baz();
-  pub static fn foo();
-  pro static fn bar();
-  sec static fn baz();
 }
 
 region [Special, 10] MyStruct<x: i32 = 0, i = 0, t>: Object, MyTrait {
@@ -73,9 +68,6 @@ region [Special, 10] MyStruct<x: i32 = 0, i = 0, t>: Object, MyTrait {
   pub fn foo();
   pro fn bar();
   sec fn baz();
-  pub static fn foo();
-  pro static fn bar();
-  sec static fn baz();
 }
 
 class [Special, 10] MyStruct<x: i32 = 0, i = 0, t>: Object, MyTrait {
@@ -88,9 +80,6 @@ class [Special, 10] MyStruct<x: i32 = 0, i = 0, t>: Object, MyTrait {
   pub fn foo();
   pro fn bar();
   sec fn baz();
-  pub static fn foo();
-  pro static fn bar();
-  sec static fn baz();
 }
 
 group [Special, 10] MyStruct<x: i32 = 0, i = 0, t>: Object, MyTrait {
@@ -103,9 +92,6 @@ group [Special, 10] MyStruct<x: i32 = 0, i = 0, t>: Object, MyTrait {
   pub fn foo();
   pro fn bar();
   sec fn baz();
-  pub static fn foo();
-  pro static fn bar();
-  sec static fn baz();
 }
 
 union [Special, 10] MyStruct<x: i32 = 0, i = 0, t>: Object, MyTrait {
@@ -118,9 +104,6 @@ union [Special, 10] MyStruct<x: i32 = 0, i = 0, t>: Object, MyTrait {
   pub fn foo();
   pro fn bar();
   sec fn baz();
-  pub static fn foo();
-  pro static fn bar();
-  sec static fn baz();
 }
 
 enum hello: u32 {

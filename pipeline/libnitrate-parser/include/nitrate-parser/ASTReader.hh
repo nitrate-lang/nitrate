@@ -49,13 +49,12 @@ namespace ncc::parse {
 
   using ReaderSourceManager = std::optional<std::reference_wrapper<lex::IScanner>>;
 
-  class NCC_EXPORT AstReader final {
+  class NCC_EXPORT AstReader final : private ASTFactory {
     template <typename T>
     using Result = NullableFlowPtr<T>;
 
     Result<Expr> m_root;
     ReaderSourceManager m_rd;
-    ASTFactory m_fac;
 
     void UnmarshalLocationLocation(const SyntaxTree::SourceLocationRange &in, FlowPtr<Expr> out);
     void UnmarshalCodeComment(
@@ -91,14 +90,12 @@ namespace ncc::parse {
     auto Unmarshal(const SyntaxTree::FuncTy &in) -> Result<FuncTy>;
     auto Unmarshal(const SyntaxTree::Unary &in) -> Result<Unary>;
     auto Unmarshal(const SyntaxTree::Binary &in) -> Result<Binary>;
-    auto Unmarshal(const SyntaxTree::Ternary &in) -> Result<Ternary>;
     auto Unmarshal(const SyntaxTree::Integer &in) -> Result<Integer>;
     auto Unmarshal(const SyntaxTree::Float &in) -> Result<Float>;
     auto Unmarshal(const SyntaxTree::Boolean &in) -> Result<Boolean>;
     auto Unmarshal(const SyntaxTree::String &in) -> Result<String>;
     auto Unmarshal(const SyntaxTree::Character &in) -> Result<Character>;
     auto Unmarshal(const SyntaxTree::Null &in) -> Result<Null>;
-    auto Unmarshal(const SyntaxTree::Undefined &in) -> Result<Undefined>;
     auto Unmarshal(const SyntaxTree::Call &in) -> Result<Call>;
     auto Unmarshal(const SyntaxTree::TemplateCall &in) -> Result<TemplateCall>;
     auto Unmarshal(const SyntaxTree::Import &in) -> Result<Import>;
@@ -118,7 +115,6 @@ namespace ncc::parse {
     auto Unmarshal(const SyntaxTree::Break &in) -> Result<Break>;
     auto Unmarshal(const SyntaxTree::Continue &in) -> Result<Continue>;
     auto Unmarshal(const SyntaxTree::Return &in) -> Result<Return>;
-    auto Unmarshal(const SyntaxTree::ReturnIf &in) -> Result<ReturnIf>;
     auto Unmarshal(const SyntaxTree::Case &in) -> Result<Case>;
     auto Unmarshal(const SyntaxTree::Switch &in) -> Result<Switch>;
     auto Unmarshal(const SyntaxTree::Typedef &in) -> Result<Typedef>;

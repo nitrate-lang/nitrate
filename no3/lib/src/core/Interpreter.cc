@@ -114,13 +114,6 @@ auto Interpreter::PImpl::CommandHelp(ConstArguments, const MutArguments&) -> boo
   return true;
 }
 
-auto Interpreter::PImpl::CommandLSP(ConstArguments, const MutArguments& argv) -> bool {
-  (void)argv;
-
-  Log << "Not implemented";
-  return false;
-}
-
 auto Interpreter::PImpl::CommandLicense(ConstArguments, const MutArguments& argv) -> bool {
   if (argv.size() != 1) {
     Log << "Command 'license' does not take any arguments.";
@@ -189,13 +182,13 @@ NCC_EXPORT Interpreter::Interpreter(OutputHandler output_handler) noexcept {
   // Collect all suspended log subscriber IDs so we can resume them when
   // the interpreter is destroyed.
   std::vector<LogSubscriberID> log_suspend_ids;
-  for (const auto& sub : Log.SubscribersList()) {
+  for (const auto& sub : Log->SubscribersList()) {
     if (sub.IsSuspended()) {
       log_suspend_ids.push_back(sub.ID());
     }
   }
 
-  Log.SuspendAll();
+  Log->SuspendAll();
 
   // All writes to this thread's log stream will be redirected to the output
   // handler. The implication is any code outside the interpreter
@@ -207,12 +200,13 @@ NCC_EXPORT Interpreter::Interpreter(OutputHandler output_handler) noexcept {
   // We attach the subscriber to the global logger, prior to initializing
   // to ensure that initialization messages are captured in the interpreter's
   // output.
-  const auto log_sub_id = Log.Subscribe([&](const LogMessage& m) {
+  const auto log_sub_id = Log->Subscribe([&](const LogMessage& m) {
     if (m.m_sev < GetMinimumLogLevel()) {
       return;
     }
 
     output_handler(m.m_by.Format(m.m_message, m.m_sev));
+    output_handler("\n");
   });
 
   // The PImpl constructor will automatically initialize all required
@@ -234,13 +228,13 @@ NCC_EXPORT Interpreter::~Interpreter() noexcept {
     // them.
     m_impl.reset();
 
-    Log.Unsubscribe(sub_id);
+    Log->Unsubscribe(sub_id);
 
     // Resume all log subscribers that were active before the interpreter
     // was created. If any if these subscriptions were removed externally
-    // Log.Resume will simply ignore them.
+    // Log->Resume will simply ignore them.
     for (auto id : suspend_ids) {
-      Log.Resume(id);
+      Log->Resume(id);
     }
   }
 }

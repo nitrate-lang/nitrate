@@ -37,6 +37,7 @@
 #include <core/InterpreterImpl.hh>
 #include <core/PackageConfig.hh>
 #include <filesystem>
+#include <format/tree/Visitor.hh>
 #include <fstream>
 #include <memory>
 #include <nitrate-core/Allocate.hh>
@@ -280,8 +281,8 @@ static auto SafeCheckFileExists(const std::string& path) -> bool {
   return false;
 }
 
-static auto GetRecursiveDirectoryContents(
-    const std::filesystem::path& path) -> std::optional<std::vector<std::filesystem::path>> {
+static auto GetRecursiveDirectoryContents(const std::filesystem::path& path)
+    -> std::optional<std::vector<std::filesystem::path>> {
   return OMNI_CATCH([&]() -> std::vector<std::filesystem::path> {
     std::vector<std::filesystem::path> paths;  // Might mem leak if exception is thrown
     for (const auto& entry : std::filesystem::recursive_directory_iterator(path)) {
@@ -408,7 +409,7 @@ static auto SecondaryArgumentCheck(FormatOptions& options)
     Log << Trace << "Found " << contents.value().size() << " files in the source directory.";
 
     for (const auto& path : contents.value()) {
-      if (path.extension() != ".n" && path.extension() != ".nit") {
+      if (path.extension() != ".nit") {
         Log << Trace << "Skipping non-source file: " << path;
         continue;
       }
@@ -654,9 +655,9 @@ static auto FormatFile(const std::filesystem::path& src, const std::filesystem::
   std::optional<FlowPtr<ncc::parse::Expr>> ptree_root;
 
   { /* Perform source code parsing */
-    auto reenable_log = std::shared_ptr<void>(nullptr, [](auto) { Log.Enable(); });
+    auto reenable_log = std::shared_ptr<void>(nullptr, [](auto) { Log->Enable(); });
     if (quiet_parser) {
-      Log.Disable();
+      Log->Disable();
     }
 
     auto unit_env = std::make_shared<ncc::Environment>();
@@ -722,13 +723,16 @@ static auto FormatFile(const std::filesystem::path& src, const std::filesystem::
 
   bool okay = false;
 
-  /// TODO: Remove this ling
-  Log << Info << ptree_root.value()->PrettyPrint();
-
   switch (mode) {
     case FormatMode::Standard: {
-      /// TODO: Implement file formatting
-      Log << "Standard formatting mode is not yet implemented.";
+      bool has_errors = false;
+      auto writer = no3::format::QuasiCanonicalFormatterFactory::Create(*dst_file_ptr, has_errors);
+      ptree_root.value().Accept(*writer);
+      okay = !has_errors;
+      if (has_errors) {
+        Log << "Failed to format the source file: " << src;
+      }
+
       break;
     }
 

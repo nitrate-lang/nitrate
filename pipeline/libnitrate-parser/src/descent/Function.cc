@@ -41,17 +41,17 @@ using namespace ncc;
 using namespace ncc::lex;
 using namespace ncc::parse;
 
-auto GeneralParser::PImpl::RecurseFunctionParameterType() -> FlowPtr<parse::Type> {
-  if (NextIf<PuncColn>()) {
-    return RecurseType();
+static auto RecurseFunctionParameterType(GeneralParser::Context& m) -> FlowPtr<parse::Type> {
+  if (m.NextIf<PuncColn>()) {
+    return m.RecurseType();
   }
 
-  return m_fac.CreateUnknownType();
+  return m.CreateInferredType();
 }
 
-auto GeneralParser::PImpl::RecurseFunctionParameterValue() -> NullableFlowPtr<Expr> {
-  if (NextIf<OpSet>()) {
-    return RecurseExpr({
+static auto RecurseFunctionParameterValue(GeneralParser::Context& m) -> NullableFlowPtr<Expr> {
+  if (m.NextIf<OpSet>()) {
+    return m.RecurseExpr({
         Token(Punc, PuncComa),
         Token(Punc, PuncRPar),
         Token(Oper, OpGT),
@@ -61,20 +61,20 @@ auto GeneralParser::PImpl::RecurseFunctionParameterValue() -> NullableFlowPtr<Ex
   return std::nullopt;
 }
 
-auto GeneralParser::PImpl::RecurseFunctionParameter() -> std::optional<FuncParam> {
-  if (auto param_name = RecurseName()) [[likely]] {
-    auto param_type = RecurseFunctionParameterType();
-    auto param_value = RecurseFunctionParameterValue();
+static auto RecurseFunctionParameter(GeneralParser::Context& m) -> std::optional<FuncParam> {
+  if (auto param_name = m.RecurseName()) [[likely]] {
+    auto param_type = RecurseFunctionParameterType(m);
+    auto param_value = RecurseFunctionParameterValue(m);
 
     return FuncParam{param_name, param_type, param_value};
   }
 
-  Log << ParserSignal << Next() << "Expected a parameter name before ':'";
+  Log << ParserSignal << m.Next() << "Expected a parameter name before ':'";
 
   return std::nullopt;
 }
 
-auto GeneralParser::PImpl::RecurseTemplateParameters() -> std::optional<std::vector<TemplateParameter>> {
+auto GeneralParser::Context::RecurseTemplateParameters() -> std::optional<std::vector<TemplateParameter>> {
   if (!NextIf<OpLT>()) {
     return std::nullopt;
   }
@@ -82,7 +82,7 @@ auto GeneralParser::PImpl::RecurseTemplateParameters() -> std::optional<std::vec
   std::vector<TemplateParameter> params;
 
   while (true) {
-    if (m_rd.IsEof()) [[unlikely]] {
+    if (m.IsEof()) [[unlikely]] {
       Log << ParserSignal << Current() << "Unexpected EOF in template parameters";
       return params;
     }
@@ -91,7 +91,7 @@ auto GeneralParser::PImpl::RecurseTemplateParameters() -> std::optional<std::vec
       break;
     }
 
-    if (auto param_opt = RecurseFunctionParameter()) {
+    if (auto param_opt = RecurseFunctionParameter(*this)) {
       auto [param_name, param_type, param_value] = param_opt.value();
 
       params.emplace_back(param_name, param_type, param_value);
@@ -105,12 +105,12 @@ auto GeneralParser::PImpl::RecurseTemplateParameters() -> std::optional<std::vec
   return params;
 }
 
-auto GeneralParser::PImpl::RecurseFunctionParameters()
+static auto RecurseFunctionParameters(GeneralParser::Context& m)
     -> std::pair<std::vector<ASTFactory::FactoryFunctionParameter>, bool> {
   std::pair<std::vector<ASTFactory::FactoryFunctionParameter>, bool> parameters;
 
-  if (!NextIf<PuncLPar>()) [[unlikely]] {
-    Log << ParserSignal << Current() << "Expected '(' after function name";
+  if (!m.NextIf<PuncLPar>()) [[unlikely]] {
+    Log << ParserSignal << m.Current() << "Expected '(' after function name";
 
     return parameters;
   }
@@ -118,33 +118,33 @@ auto GeneralParser::PImpl::RecurseFunctionParameters()
   bool is_variadic = false;
 
   while (true) {
-    if (m_rd.IsEof()) [[unlikely]] {
-      Log << ParserSignal << Current() << "Unexpected EOF in function parameters";
+    if (m.IsEof()) [[unlikely]] {
+      Log << ParserSignal << m.Current() << "Unexpected EOF in function parameters";
 
       return parameters;
     }
 
-    if (NextIf<PuncRPar>()) {
+    if (m.NextIf<PuncRPar>()) {
       break;
     }
 
-    if (NextIf<OpEllipsis>()) {
+    if (m.NextIf<OpEllipsis>()) {
       is_variadic = true;
 
-      if (!Peek().Is<PuncRPar>()) {
-        Log << ParserSignal << Current() << "Expected ')' after variadic parameter";
+      if (!m.Peek().Is<PuncRPar>()) {
+        Log << ParserSignal << m.Current() << "Expected ')' after variadic parameter";
       }
       continue;
     }
 
-    if (auto parameter = RecurseFunctionParameter()) {
+    if (auto parameter = RecurseFunctionParameter(m)) {
       auto [param_name, param_type, param_value] = parameter.value();
       parameters.first.emplace_back(param_name, param_type, param_value);
     } else {
-      Log << ParserSignal << Next() << "Expected a function parameter";
+      Log << ParserSignal << m.Next() << "Expected a function parameter";
     }
 
-    NextIf<PuncComa>();
+    m.NextIf<PuncComa>();
   }
 
   parameters.second = is_variadic;
@@ -152,7 +152,7 @@ auto GeneralParser::PImpl::RecurseFunctionParameters()
   return parameters;
 }
 
-auto GeneralParser::PImpl::RecurseFunctionAttributes() -> std::vector<FlowPtr<Expr>> {
+static auto RecurseFunctionAttributes(GeneralParser::Context& m) -> std::vector<FlowPtr<Expr>> {
   static const std::unordered_set<Keyword> reserved_words = {
       Pure, Impure, Quasi, Retro, Inline, Foreign, Safe, Unsafe,
   };
@@ -160,7 +160,7 @@ auto GeneralParser::PImpl::RecurseFunctionAttributes() -> std::vector<FlowPtr<Ex
   std::vector<FlowPtr<Expr>> attributes;
 
   while (true) {  // Parse some free-standing attributes
-    auto tok = Peek();
+    auto tok = m.Peek();
     if (!tok.Is(KeyW)) {
       break;
     }
@@ -169,35 +169,35 @@ auto GeneralParser::PImpl::RecurseFunctionAttributes() -> std::vector<FlowPtr<Ex
       break;
     }
 
-    Next();
-    attributes.emplace_back(m_fac.CreateIdentifier(tok.AsString()));
+    m.Next();
+    attributes.emplace_back(m.CreateIdentifier(tok.AsString()));
   }
 
-  if (NextIf<PuncLBrk>()) {
+  if (m.NextIf<PuncLBrk>()) {
     while (true) {
-      if (m_rd.IsEof()) [[unlikely]] {
-        Log << ParserSignal << Current() << "Unexpected EOF in function attributes";
+      if (m.IsEof()) [[unlikely]] {
+        Log << ParserSignal << m.Current() << "Unexpected EOF in function attributes";
         return attributes;
       }
 
-      if (NextIf<PuncRBrk>()) {
+      if (m.NextIf<PuncRBrk>()) {
         break;
       }
 
-      if (auto tok = Peek(); tok.Is(KeyW) && reserved_words.contains(tok.GetKeyword())) {
-        Next();
-        attributes.emplace_back(m_fac.CreateIdentifier(tok.AsString()));
+      if (auto tok = m.Peek(); tok.Is(KeyW) && reserved_words.contains(tok.GetKeyword())) {
+        m.Next();
+        attributes.emplace_back(m.CreateIdentifier(tok.AsString()));
       } else {
-        auto expr = RecurseExpr({Token(Punc, PuncComa), Token(Punc, PuncRBrk)});
+        auto expr = m.RecurseExpr({Token(Punc, PuncComa), Token(Punc, PuncRBrk)});
         attributes.emplace_back(expr);
       }
 
-      NextIf<PuncComa>();
+      m.NextIf<PuncComa>();
     }
   }
 
   while (true) {  // Parse some free-standing attributes
-    auto tok = Peek();
+    auto tok = m.Peek();
     if (!tok.Is(KeyW)) {
       break;
     }
@@ -206,49 +206,57 @@ auto GeneralParser::PImpl::RecurseFunctionAttributes() -> std::vector<FlowPtr<Ex
       break;
     }
 
-    Next();
+    m.Next();
 
-    attributes.emplace_back(m_fac.CreateIdentifier(tok.AsString()));
+    attributes.emplace_back(m.CreateIdentifier(tok.AsString()));
   }
 
   return attributes;
 }
 
-auto GeneralParser::PImpl::RecurseFunctionReturnType() -> FlowPtr<parse::Type> {
-  if (NextIf<PuncColn>()) {
-    return RecurseType();
+static auto RecurseFunctionReturnType(GeneralParser::Context& m) -> FlowPtr<parse::Type> {
+  if (m.NextIf<PuncColn>()) {
+    return m.RecurseType();
   }
 
-  return m_fac.CreateUnknownType();
+  if (m.NextIf<OpMinus>()) {
+    if (!m.NextIf<OpGT>()) [[unlikely]] {
+      Log << ParserSignal << m.Current() << "Expected '->' after function return type";
+    }
+
+    return m.RecurseType();
+  }
+
+  return m.CreateInferredType();
 }
 
-auto GeneralParser::PImpl::RecurseFunctionBody(bool parse_declaration_only) -> NullableFlowPtr<Expr> {
-  if (parse_declaration_only || NextIf<PuncSemi>()) {
+static auto RecurseFunctionBody(GeneralParser::Context& m, bool parse_declaration_only) -> NullableFlowPtr<Expr> {
+  if (parse_declaration_only || m.NextIf<PuncSemi>()) {
     return std::nullopt;
   }
 
-  if (NextIf<OpArrow>()) {
-    return RecurseBlock(false, true, BlockMode::Unknown);
+  if (m.NextIf<OpArrow>()) {
+    return m.RecurseBlock(false, true, BlockMode::Unknown);
   }
 
-  return RecurseBlock(true, false, BlockMode::Unknown);
+  return m.RecurseBlock(true, false, BlockMode::Unknown);
 }
 
-auto GeneralParser::PImpl::RecurseFunction(bool parse_declaration_only) -> FlowPtr<Function> {
+auto GeneralParser::Context::RecurseFunction(bool parse_declaration_only) -> FlowPtr<Function> {
   auto start_pos = Current().GetStart();
 
-  auto function_attributes = RecurseFunctionAttributes();
+  auto function_attributes = RecurseFunctionAttributes(*this);
   auto function_name = RecurseName();
   auto function_template_parameters = RecurseTemplateParameters();
-  auto function_parameters = RecurseFunctionParameters();
-  auto function_return_type = RecurseFunctionReturnType();
-  auto function_body = RecurseFunctionBody(parse_declaration_only);
+  auto function_parameters = RecurseFunctionParameters(*this);
+  auto function_return_type = RecurseFunctionReturnType(*this);
+  auto function_body = RecurseFunctionBody(*this, parse_declaration_only);
 
-  auto function = m_fac.CreateFunction(function_name, function_return_type, function_parameters.first,
-                                       function_parameters.second, function_body, function_attributes, std::nullopt,
-                                       std::nullopt, function_template_parameters);
+  auto function =
+      CreateFunction(function_name, function_return_type, function_parameters.first, function_parameters.second,
+                     function_body, function_attributes, function_template_parameters);
   if (!function.has_value()) [[unlikely]] {
-    function = m_fac.CreateMockInstance<Function>();
+    function = CreateMockInstance<Function>();
   }
 
   function.value()->SetOffset(start_pos);

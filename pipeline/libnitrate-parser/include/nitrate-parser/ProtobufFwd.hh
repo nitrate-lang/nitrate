@@ -39,14 +39,12 @@ namespace nitrate::parser::SyntaxTree {  // NOLINT
   class Root;
   class Binary;
   class Unary;
-  class Ternary;
   class Integer;
   class Float;
   class String;
   class Character;
   class Boolean;
   class Null;
-  class Undefined;
   class Call;
   class List;
   class Assoc;
@@ -93,7 +91,6 @@ namespace nitrate::parser::SyntaxTree {  // NOLINT
   class Variable;
   class Assembly;
   class Return;
-  class ReturnIf;
   class Break;
   class Continue;
   class If;

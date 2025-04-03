@@ -80,14 +80,12 @@ namespace ncc::parse {
     SyntaxTree::FuncTy *From(FlowPtr<FuncTy> in);
     SyntaxTree::Unary *From(FlowPtr<Unary> in);
     SyntaxTree::Binary *From(FlowPtr<Binary> in);
-    SyntaxTree::Ternary *From(FlowPtr<Ternary> in);
     SyntaxTree::Integer *From(FlowPtr<Integer> in);
     SyntaxTree::Float *From(FlowPtr<Float> in);
     SyntaxTree::Boolean *From(FlowPtr<Boolean> in);
     SyntaxTree::String *From(FlowPtr<String> in);
     SyntaxTree::Character *From(FlowPtr<Character> in);
     SyntaxTree::Null *From(FlowPtr<Null> in);
-    SyntaxTree::Undefined *From(FlowPtr<Undefined> in);
     SyntaxTree::Call *From(FlowPtr<Call> in);
     SyntaxTree::TemplateCall *From(FlowPtr<TemplateCall> in);
     SyntaxTree::Import *From(FlowPtr<Import> in);
@@ -107,7 +105,6 @@ namespace ncc::parse {
     SyntaxTree::Break *From(FlowPtr<Break> in);
     SyntaxTree::Continue *From(FlowPtr<Continue> in);
     SyntaxTree::Return *From(FlowPtr<Return> in);
-    SyntaxTree::ReturnIf *From(FlowPtr<ReturnIf> in);
     SyntaxTree::Case *From(FlowPtr<Case> in);
     SyntaxTree::Switch *From(FlowPtr<Switch> in);
     SyntaxTree::Typedef *From(FlowPtr<Typedef> in);
@@ -145,14 +142,12 @@ namespace ncc::parse {
     void Visit(FlowPtr<FuncTy> n) override;
     void Visit(FlowPtr<Unary> n) override;
     void Visit(FlowPtr<Binary> n) override;
-    void Visit(FlowPtr<Ternary> n) override;
     void Visit(FlowPtr<Integer> n) override;
     void Visit(FlowPtr<Float> n) override;
     void Visit(FlowPtr<Boolean> n) override;
     void Visit(FlowPtr<String> n) override;
     void Visit(FlowPtr<Character> n) override;
     void Visit(FlowPtr<Null> n) override;
-    void Visit(FlowPtr<Undefined> n) override;
     void Visit(FlowPtr<Call> n) override;
     void Visit(FlowPtr<TemplateCall> n) override;
     void Visit(FlowPtr<Import> n) override;
@@ -172,7 +167,6 @@ namespace ncc::parse {
     void Visit(FlowPtr<Break> n) override;
     void Visit(FlowPtr<Continue> n) override;
     void Visit(FlowPtr<Return> n) override;
-    void Visit(FlowPtr<ReturnIf> n) override;
     void Visit(FlowPtr<Case> n) override;
     void Visit(FlowPtr<Switch> n) override;
     void Visit(FlowPtr<Typedef> n) override;

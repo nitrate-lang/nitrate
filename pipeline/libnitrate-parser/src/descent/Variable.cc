@@ -39,86 +39,59 @@ using namespace ncc;
 using namespace ncc::lex;
 using namespace ncc::parse;
 
-auto GeneralParser::PImpl::RecurseVariableAttributes() -> std::vector<FlowPtr<Expr>> {
-  std::vector<FlowPtr<Expr>> attributes;
-
-  if (!NextIf<PuncLBrk>()) {
-    return attributes;
+static auto RecurseVariableTypeSpecifier(GeneralParser::Context& m) -> FlowPtr<parse::Type> {
+  if (m.NextIf<PuncColn>()) {
+    return m.RecurseType();
   }
 
-  while (true) {
-    if (m_rd.IsEof()) [[unlikely]] {
-      Log << ParserSignal << Current() << "Encountered EOF while parsing variable attribute";
-      return attributes;
-    }
-
-    if (NextIf<PuncRBrk>()) {
-      return attributes;
-    }
-
-    auto attribute = RecurseExpr({
-        Token(Punc, PuncComa),
-        Token(Punc, PuncRBrk),
-    });
-
-    attributes.push_back(attribute);
-
-    NextIf<PuncComa>();
-  }
+  return m.CreateInferredType();
 }
 
-auto GeneralParser::PImpl::RecurseVariableType() -> FlowPtr<parse::Type> {
-  if (NextIf<PuncColn>()) {
-    return RecurseType();
-  }
-
-  return m_fac.CreateUnknownType();
-}
-
-auto GeneralParser::PImpl::RecurseVariableValue() -> NullableFlowPtr<Expr> {
-  if (NextIf<OpSet>()) {
-    return RecurseExpr({
-        Token(Punc, PuncComa),
-        Token(Punc, PuncSemi),
+static auto RecurseVariableInitializer(GeneralParser::Context& m) -> NullableFlowPtr<Expr> {
+  if (m.NextIf<OpSet>()) {
+    return m.RecurseExpr({
+        Token(PuncComa),
+        Token(PuncSemi),
     });
   }
 
   return std::nullopt;
 }
 
-auto GeneralParser::PImpl::RecurseVariableInstance(VariableType decl_type) -> FlowPtr<Expr> {
-  auto symbol_attributes_opt = RecurseVariableAttributes();
-  auto variable_name = RecurseName();
-  if (!variable_name) {
-    Log << ParserSignal << Next() << "No variable name found in variable declaration";
-    return m_fac.CreateMockInstance<Variable>();
+static auto RecurseVariableInstance(GeneralParser::Context& m, VariableType decl_type) -> FlowPtr<Expr> {
+  auto attributes = m.RecurseAttributes("variable");
+  auto name = m.RecurseName();
+  if (!name) {
+    Log << ParserSignal << m.Next() << "No variable name found in variable declaration";
   }
+  auto type = RecurseVariableTypeSpecifier(m);
+  auto init = RecurseVariableInitializer(m);
+  auto variable = m.CreateVariable(decl_type, name, attributes, type, init);
 
-  auto variable_type = RecurseVariableType();
-  auto variable_initial = RecurseVariableValue();
-
-  return m_fac.CreateVariable(decl_type, variable_name, symbol_attributes_opt, variable_type, variable_initial);
+  return variable;
 }
 
-auto GeneralParser::PImpl::RecurseVariable(VariableType decl_type) -> std::vector<FlowPtr<Expr>> {
+auto GeneralParser::Context::RecurseVariable(VariableType decl_type) -> std::vector<FlowPtr<Expr>> {
   std::vector<FlowPtr<Expr>> variables;
 
   while (true) {
-    if (m_rd.IsEof()) [[unlikely]] {
+    if (m.IsEof()) [[unlikely]] {
       Log << ParserSignal << Current() << "Unexpected EOF in variable declaration";
-      break;
+      return variables;
     }
 
-    auto variable_opt = RecurseVariableInstance(decl_type);
-    variables.push_back(variable_opt);
+    auto variable = RecurseVariableInstance(m, decl_type);
+    variables.push_back(variable);
 
-    if (NextIf<PuncSemi>() || NextIf<PuncComa>()) {
+    if (NextIf<PuncComa>()) {
+      continue;
+    }
+
+    if (NextIf<PuncSemi>()) {
       return variables;
     }
 
     Log << ParserSignal << Next() << "Expected comma or semicolon after variable declaration";
-    break;
+    return variables;
   }
-
-  return {m_fac.CreateMockInstance<Variable>()};
 }

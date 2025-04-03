@@ -49,7 +49,7 @@
 #include <variant>
 
 namespace ncc::parse {
-  class NCC_EXPORT ASTFactory final {
+  class NCC_EXPORT ASTFactory {
     using SourceLocation = std::source_location;
 
     std::pmr::memory_resource& m_pool;
@@ -127,9 +127,6 @@ namespace ncc::parse {
     [[gnu::pure, nodiscard]] auto CreateUnary(lex::Operator op, FlowPtr<Expr> rhs, bool is_postfix = false,
                                               SourceLocation origin = SourceLocation::current()) -> FlowPtr<Unary>;
 
-    [[gnu::pure, nodiscard]] auto CreateTernary(FlowPtr<Expr> condition, FlowPtr<Expr> then, FlowPtr<Expr> ele,
-                                                SourceLocation origin = SourceLocation::current()) -> FlowPtr<Ternary>;
-
     [[gnu::pure, nodiscard]] auto CreateInteger(const boost::multiprecision::uint128_type& x,
                                                 SourceLocation origin = SourceLocation::current()) -> FlowPtr<Integer>;
 
@@ -170,9 +167,6 @@ namespace ncc::parse {
                                                 SourceLocation origin = SourceLocation::current()) -> FlowPtr<Boolean>;
 
     [[gnu::pure, nodiscard]] auto CreateNull(SourceLocation origin = SourceLocation::current()) -> FlowPtr<Null>;
-
-    [[gnu::pure, nodiscard]] auto CreateUndefined(SourceLocation origin = SourceLocation::current())
-        -> FlowPtr<Undefined>;
 
     [[gnu::pure, nodiscard]] auto CreateCall(
         FlowPtr<Expr> callee, const std::unordered_map<std::variant<string, size_t>, FlowPtr<Expr>>& named_args = {},
@@ -352,7 +346,7 @@ namespace ncc::parse {
                                               NullableFlowPtr<Expr> min = nullptr, NullableFlowPtr<Expr> max = nullptr,
                                               SourceLocation origin = SourceLocation::current()) -> FlowPtr<NamedTy>;
 
-    [[gnu::pure, nodiscard]] auto CreateUnknownType(
+    [[gnu::pure, nodiscard]] auto CreateInferredType(
         NullableFlowPtr<Expr> bits = nullptr, NullableFlowPtr<Expr> min = nullptr, NullableFlowPtr<Expr> max = nullptr,
         SourceLocation origin = SourceLocation::current()) -> FlowPtr<InferTy>;
 
@@ -386,8 +380,7 @@ namespace ncc::parse {
         CompositeType comp_type = CompositeType::Class, string name = "",
         const std::optional<std::vector<TemplateParameter>>& tparams = std::nullopt,
         const std::vector<StructField>& fields = {}, const std::vector<StructFunction>& methods = {},
-        const std::vector<StructFunction>& static_methods = {}, const std::vector<string>& constraints = {},
-        const std::vector<FlowPtr<Expr>>& attributes = {},
+        const std::vector<string>& constraints = {}, const std::vector<FlowPtr<Expr>>& attributes = {},
         SourceLocation origin = SourceLocation::current()) -> FlowPtr<Struct>;
 
     [[gnu::pure, nodiscard]] auto CreateEnum(string name, const std::vector<FactoryEnumItem>& ele,
@@ -402,15 +395,12 @@ namespace ncc::parse {
     [[gnu::pure, nodiscard]] auto CreateFunction(
         string name, NullableFlowPtr<Type> ret_ty = nullptr, const std::vector<FactoryFunctionParameter>& params = {},
         bool variadic = false, NullableFlowPtr<Expr> body = nullptr, const std::vector<FlowPtr<Expr>>& attributes = {},
-        NullableFlowPtr<Expr> precond = nullptr, NullableFlowPtr<Expr> postcond = nullptr,
-
         const std::optional<std::vector<TemplateParameter>>& template_parameters = std::nullopt,
         SourceLocation origin = SourceLocation::current()) -> std::optional<FlowPtr<Function>>;
 
     [[gnu::pure, nodiscard]] auto CreateAnonymousFunction(
         NullableFlowPtr<Type> ret_ty = nullptr, const std::vector<FactoryFunctionParameter>& params = {},
         bool variadic = false, NullableFlowPtr<Expr> body = nullptr, const std::vector<FlowPtr<Expr>>& attributes = {},
-        NullableFlowPtr<Expr> precond = nullptr, NullableFlowPtr<Expr> postcond = nullptr,
         SourceLocation origin = SourceLocation::current()) -> std::optional<FlowPtr<Function>>;
 
     [[gnu::pure, nodiscard]] auto CreateScope(string name, FlowPtr<Expr> body, const std::vector<string>& tags,
@@ -450,10 +440,6 @@ namespace ncc::parse {
 
     [[gnu::pure, nodiscard]] auto CreateReturn(NullableFlowPtr<Expr> value = nullptr,
                                                SourceLocation origin = SourceLocation::current()) -> FlowPtr<Return>;
-
-    [[gnu::pure, nodiscard]] auto CreateReturnIf(FlowPtr<Expr> cond, NullableFlowPtr<Expr> value = nullptr,
-                                                 SourceLocation origin = SourceLocation::current())
-        -> FlowPtr<ReturnIf>;
 
     [[gnu::pure, nodiscard]] auto CreateBreak(SourceLocation origin = SourceLocation::current()) -> FlowPtr<Break>;
 

@@ -38,51 +38,23 @@ using namespace ncc;
 using namespace ncc::lex;
 using namespace ncc::parse;
 
-auto GeneralParser::PImpl::RecurseAbiName() -> string {
-  auto tok = NextIf<Text>();
+static auto RecurseExportAbiName(GeneralParser::Context& m) -> string {
+  auto tok = m.NextIf<Text>();
   return tok ? tok->GetString() : "";
 }
 
-auto GeneralParser::PImpl::RecurseExportAttributes() -> std::vector<FlowPtr<Expr>> {
-  std::vector<FlowPtr<Expr>> attributes;
-
-  if (!NextIf<PuncLBrk>()) {
-    return attributes;
+static auto RecurseExportBody(GeneralParser::Context& m) -> FlowPtr<Block> {
+  if (m.Peek().Is<PuncLCur>()) {
+    return m.RecurseBlock(true, false, BlockMode::Unknown);
   }
 
-  while (true) {
-    if (m_rd.IsEof()) [[unlikely]] {
-      Log << ParserSignal << Current() << "Encountered EOF while parsing export attributes";
-      return attributes;
-    }
-
-    if (NextIf<PuncRBrk>()) {
-      return attributes;
-    }
-
-    auto attribute = RecurseExpr({
-        Token(Punc, PuncComa),
-        Token(Punc, PuncRBrk),
-    });
-
-    attributes.push_back(attribute);
-
-    NextIf<PuncComa>();
-  }
+  return m.RecurseBlock(false, true, BlockMode::Unknown);
 }
 
-auto GeneralParser::PImpl::RecurseExportBody() -> FlowPtr<Block> {
-  if (Peek().Is<PuncLCur>()) {
-    return RecurseBlock(true, false, BlockMode::Unknown);
-  }
+auto GeneralParser::Context::RecurseExport(Vis vis) -> FlowPtr<Expr> {
+  auto export_abi = RecurseExportAbiName(m);
+  auto export_attributes = RecurseAttributes("export");
+  auto export_body = RecurseExportBody(m);
 
-  return RecurseBlock(false, true, BlockMode::Unknown);
-}
-
-auto GeneralParser::PImpl::RecurseExport(Vis vis) -> FlowPtr<Expr> {
-  auto export_abi = RecurseAbiName();
-  auto export_attributes = RecurseExportAttributes();
-  auto export_body = RecurseExportBody();
-
-  return m_fac.CreateExport(export_body, export_attributes, vis, export_abi);
+  return CreateExport(export_body, export_attributes, vis, export_abi);
 }

@@ -150,7 +150,7 @@ void IRWriter::Visit(FlowPtr<Binary> n) {
   WriteSourceLocation(n);
 
   string("op");
-  string(op_repr(n->GetOp()));
+  string(lex::LEXICAL_OPERATORS.right.at(n->GetOp()));
 
   string("lhs");
   n->GetLHS().Accept(*this);
@@ -170,7 +170,7 @@ void IRWriter::Visit(FlowPtr<Unary> n) {
   WriteSourceLocation(n);
 
   string("op");
-  string(op_repr(n->GetOp()));
+  string(lex::LEXICAL_OPERATORS.right.at(n->GetOp()));
 
   string("expr");
   n->GetExpr().Accept(*this);

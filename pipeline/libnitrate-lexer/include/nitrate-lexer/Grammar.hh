@@ -66,7 +66,7 @@ namespace ncc::lex {
   enum class OpMode : uint8_t { Binary, PreUnary, PostUnary, Ternary };
   enum Associativity : uint8_t { Left, Right };
 
-  inline static const auto LEXICAL_KEYWORDS = detail::MakeBimap<std::string, Keyword>({
+  inline static const auto LEXICAL_KEYWORDS = detail::MakeBimap<std::string_view, Keyword>({
       {"scope", Scope},
       {"pub", Pub},
       {"sec", Sec},
@@ -104,7 +104,6 @@ namespace ncc::lex {
       {"break", Break},
       {"continue", Continue},
       {"ret", Return},
-      {"retif", Retif},
       {"foreach", Foreach},
       {"try", Try},
       {"catch", Catch},
@@ -112,7 +111,6 @@ namespace ncc::lex {
       {"async", Async},
       {"await", Await},
       {"__asm__", __Asm__},
-      {"undef", Undef},
       {"null", Null},
       {"true", True},
       {"false", False},
@@ -120,7 +118,7 @@ namespace ncc::lex {
       {"unit_assert", UnitAssert},
   });
 
-  inline static const auto LEXICAL_OPERATORS = detail::MakeBimap<std::string, Operator>({
+  inline static const auto LEXICAL_OPERATORS = detail::MakeBimap<std::string_view, Operator>({
       {"+", OpPlus},
       {"-", OpMinus},
       {"*", OpTimes},
@@ -194,25 +192,17 @@ namespace ncc::lex {
   auto GetOperatorPrecedence(Operator op, OpMode type) -> short;
   auto GetOperatorAssociativity(Operator op, OpMode type) -> Associativity;
 
-  static inline const char *op_repr(Operator op) {  // NOLINT
-    return LEXICAL_OPERATORS.right.at(op).c_str();
-  }
-
-  static inline const char *kw_repr(Keyword kw) {  // NOLINT
-    return LEXICAL_KEYWORDS.right.at(kw).c_str();
-  }
-
   static inline const char *punct_repr(Punctor punct) {  // NOLINT
     return LEXICAL_PUNCTORS.right.at(punct).c_str();
   }
 
   inline auto operator<<(std::ostream &os, Operator op) -> std::ostream & {
-    os << op_repr(op);
+    os << ncc::lex::LEXICAL_OPERATORS.right.at(op);
     return os;
   }
 
   inline auto operator<<(std::ostream &os, Keyword kw) -> std::ostream & {
-    os << kw_repr(kw);
+    os << ncc::lex::LEXICAL_KEYWORDS.right.at(kw);
     return os;
   }
 

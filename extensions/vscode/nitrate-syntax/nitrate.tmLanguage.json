@@ -1,0 +1,222 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "nitrate",
+  "patterns": [
+    {
+      "include": "#OPERATORS"
+    },
+    {
+      "include": "#WORDS"
+    },
+    {
+      "include": "#LITERAL"
+    },
+    {
+      "include": "#COMMENT"
+    },
+    {
+      "include": "#IDENTIFIER"
+    }
+  ],
+  "repository": {
+    "OPERATORS": {
+      "patterns": [
+        {
+          "name": "keyword.operator.nit",
+          "match": "(\\~|\\|\\|\\=|\\|\\||\\|\\=|\\||\\^\\^\\=|\\^\\^|\\^\\=|\\^|\\?|\\>\\>\\>\\=|\\>\\>\\>|\\>\\>\\=|\\>\\>|\\>\\=|\\>|\\=\\>|\\=\\=|\\=|\\<\\=|\\<\\<\\=|\\<\\<\\<\\=|\\<\\<\\<|\\<\\<|\\<|\\/\\=|\\/|\\.\\.\\.|\\.\\.|\\.|\\-\\=|\\-\\-|\\-|\\+\\=|\\+\\+|\\+|\\*\\=|\\*|\\&\\=|\\&\\&\\=|\\&\\&|\\&|\\%\\=|\\%|\\!\\=|\\!)"
+        }
+      ]
+    },
+    "WORDS": {
+      "patterns": [
+        {
+          "name": "keyword.control.nit",
+          "match": "\\b(if|else|for|while|do|switch|break|continue|ret|foreach|try|catch|throw|async|await)\\b"
+        },
+        {
+          "name": "keyword.operator.nit",
+          "match": "\\b(as|bitcast_as|in|out|sizeof|bitsizeof|alignof|typeof|comptime)\\b"
+        },
+        {
+          "name": "keyword.other.nit",
+          "match": "\\b(type|__fstring|promise|__asm__)\\b"
+        },
+        {
+          "name": "storage.type.nit",
+          "match": "\\b(scope|import|let|var|const|struct|region|group|class|union|opaque|enum|fn|escape_block|unit_assert)\\b"
+        },
+        {
+          "name": "storage.modifier.nit",
+          "match": "\\b(pub|sec|pro|static|safe|unsafe|pure|impure|quasi|retro|inline|foreign)\\b"
+        },
+        {
+          "name": "constant.language.nit",
+          "match": "\\b(null|true|false)\\b"
+        },
+        {
+          "name": "keyword.other.nit",
+          "match": "\\b(void|u1|u8|u16|u32|u64|u128|i8|i16|i32|i64|i128|f8|f16|f32|f64|f128|bool|string|str|isize|usize|uintn|intn|any)\\b"
+        }
+      ]
+    },
+    "LITERAL": {
+      "patterns": [
+        {
+          "name": "string.quoted.single.nit",
+          "begin": "'",
+          "end": "'",
+          "patterns": [
+            {
+              "name": "constant.character.escape.nit",
+              "match": "\\\\(x|X)[0-9a-fA-F]{2}"
+            },
+            {
+              "name": "constant.character.escape.nit",
+              "match": "\\\\(o|O)[0-7]{3}"
+            },
+            {
+              "name": "constant.character.escape.nit",
+              "match": "\\\\(u|U)\\{[0-9a-fA-F]{1,8}\\}"
+            },
+            {
+              "name": "constant.character.escape.nit",
+              "match": "\\\\."
+            }
+          ]
+        },
+        {
+          "name": "string.quoted.double.nit",
+          "begin": "\"",
+          "end": "\"",
+          "patterns": [
+            {
+              "name": "constant.character.escape.nit",
+              "match": "\\\\(x|X)[0-9a-fA-F]{2}"
+            },
+            {
+              "name": "constant.character.escape.nit",
+              "match": "\\\\(o|O)[0-7]{3}"
+            },
+            {
+              "name": "constant.character.escape.nit",
+              "match": "\\\\(u|U)\\{[0-9a-fA-F]{1,8}\\}"
+            },
+            {
+              "name": "constant.character.escape.nit",
+              "match": "\\\\."
+            }
+          ]
+        },
+        {
+          "name": "string.quoted.other.nit",
+          "begin": "f\\s*'",
+          "end": "'",
+          "patterns": [
+            {
+              "name": "string.quoted.other.nit",
+              "begin": "\\{",
+              "end": "\\}",
+              "patterns": [
+                {
+                  "include": "source.nit"
+                }
+              ]
+            },
+            {
+              "name": "constant.character.escape.nit",
+              "match": "\\\\(x|X)[0-9a-fA-F]{2}"
+            },
+            {
+              "name": "constant.character.escape.nit",
+              "match": "\\\\(o|O)[0-7]{3}"
+            },
+            {
+              "name": "constant.character.escape.nit",
+              "match": "\\\\(u|U)\\{[0-9a-fA-F]{1,8}\\}"
+            },
+            {
+              "name": "constant.character.escape.nit",
+              "match": "\\\\."
+            }
+          ]
+        },
+        {
+          "name": "string.quoted.double.nit",
+          "begin": "f\\s*\"",
+          "end": "\"",
+          "patterns": [
+            {
+              "name": "string.quoted.other.nit",
+              "begin": "\\{",
+              "end": "\\}",
+              "patterns": [
+                {
+                  "include": "source.nit"
+                }
+              ]
+            },
+            {
+              "name": "constant.character.escape.nit",
+              "match": "\\\\(x|X)[0-9a-fA-F]{2}"
+            },
+            {
+              "name": "constant.character.escape.nit",
+              "match": "\\\\(o|O)[0-7]{3}"
+            },
+            {
+              "name": "constant.character.escape.nit",
+              "match": "\\\\(u|U)\\{[0-9a-fA-F]{1,8}\\}"
+            },
+            {
+              "name": "constant.character.escape.nit",
+              "match": "\\\\."
+            }
+          ]
+        },
+        {
+          "name": "constant.numeric.nit",
+          "match": "\\b(\\d[\\d_]*\\.\\d[\\d_]*([eE][+-]?\\d[\\d_]*)?|\\d[\\d_]*[eE][+-]?\\d[\\d_]*(\\.\\d[\\d_]*)?)\\b"
+        },
+        {
+          "name": "constant.numeric.nit",
+          "match": "\\b(0x[0-9a-fA-F_]+(_\\w+)?|0b[01_]+(_\\w+)?|0o[0-7_]+(_\\w+)?|0d[0-9_]+|[\\d_]+(_\\w+)?)\\b"
+        }
+      ]
+    },
+    "COMMENT": {
+      "patterns": [
+        {
+          "name": "comment.block.nit",
+          "begin": "/\\*",
+          "end": "\\*/"
+        },
+        {
+          "name": "comment.line.nit",
+          "match": "//.*"
+        },
+        {
+          "name": "comment.line.nit",
+          "match": "#.*"
+        },
+        {
+          "name": "comment.line.nit",
+          "match": "~>.*"
+        }
+      ]
+    },
+    "IDENTIFIER": {
+      "patterns": [
+        {
+          "name": "variable.other.nit",
+          "match": "\\b([a-zA-Z_][a-zA-Z0-9_]*)\\b"
+        },
+        {
+          "name": "variable.other.nit",
+          "begin": "`",
+          "end": "`"
+        }
+      ]
+    }
+  },
+  "scopeName": "source.nit"
+}

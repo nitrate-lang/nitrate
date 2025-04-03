@@ -163,7 +163,6 @@ namespace ncc::lex {
     Break,       /* 'break' */
     Continue,    /* 'continue' */
     Return,      /* 'ret' */
-    Retif,       /* 'retif' */
     Foreach,     /* 'foreach' */
     Try,         /* 'try' */
     Catch,       /* 'catch' */
@@ -171,7 +170,6 @@ namespace ncc::lex {
     Async,       /* 'async' */
     Await,       /* 'await' */
     __Asm__,     /* '__asm__' */
-    Undef,       /* 'undef' */
     Null,        /* 'null' */
     True,        /* 'true' */
     False,       /* 'false' */

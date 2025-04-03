@@ -246,10 +246,10 @@ NCC_EXPORT auto ncc::lex::to_string(TokenType ty, TokenData v) -> ncc::string {
       return "";
 
     case KeyW:
-      return ncc::lex::kw_repr(v.m_key);
+      return ncc::lex::LEXICAL_KEYWORDS.right.at(v.m_key);
 
     case Oper:
-      return ncc::lex::op_repr(v.m_op);
+      return ncc::lex::LEXICAL_OPERATORS.right.at(v.m_op);
 
     case Punc:
       return ncc::lex::punct_repr(v.m_punc);

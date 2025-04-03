@@ -57,12 +57,12 @@ void PushTokenObject(lua_State* lua, Token tok) {
     }
 
     case KeyW: {
-      lua_pushstring(lua, kw_repr(tok.GetKeyword()));
+      lua_pushstring(lua, ncc::lex::LEXICAL_KEYWORDS.right.at(tok.GetKeyword()).data());
       break;
     }
 
     case Oper: {
-      lua_pushstring(lua, op_repr(tok.GetOperator()));
+      lua_pushstring(lua, ncc::lex::LEXICAL_OPERATORS.right.at(tok.GetOperator()).data());
       break;
     }
 

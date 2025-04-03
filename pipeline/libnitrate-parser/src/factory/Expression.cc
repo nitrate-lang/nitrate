@@ -38,6 +38,8 @@
 #include <string>
 #include <unordered_set>
 
+#include "nitrate-core/Assert.hh"
+
 using namespace ncc::parse;
 
 auto ASTFactory::CreateBinary(FlowPtr<Expr> lhs, lex::Operator op, FlowPtr<Expr> rhs,
@@ -48,11 +50,6 @@ auto ASTFactory::CreateBinary(FlowPtr<Expr> lhs, lex::Operator op, FlowPtr<Expr>
 auto ASTFactory::CreateUnary(lex::Operator op, FlowPtr<Expr> rhs, bool is_postfix,
                              SourceLocation origin) -> FlowPtr<Unary> {
   return CreateInstance<Unary>(op, rhs, is_postfix)(m_pool, origin);
-}
-
-auto ASTFactory::CreateTernary(FlowPtr<Expr> condition, FlowPtr<Expr> then, FlowPtr<Expr> ele,
-                               SourceLocation origin) -> FlowPtr<Ternary> {
-  return CreateInstance<Ternary>(condition, then, ele)(m_pool, origin);
 }
 
 auto ASTFactory::CreateInteger(const boost::multiprecision::uint128_type& x,
@@ -121,10 +118,6 @@ auto ASTFactory::CreateBoolean(bool x, SourceLocation origin) -> FlowPtr<Boolean
 }
 
 auto ASTFactory::CreateNull(SourceLocation origin) -> FlowPtr<Null> { return CreateInstance<Null>()(m_pool, origin); }
-
-auto ASTFactory::CreateUndefined(SourceLocation origin) -> FlowPtr<Undefined> {
-  return CreateInstance<Undefined>()(m_pool, origin);
-}
 
 auto ASTFactory::CreateCall(FlowPtr<Expr> callee,
                             const std::unordered_map<std::variant<string, size_t>, FlowPtr<Expr>>& named_args,
@@ -224,6 +217,10 @@ auto ASTFactory::CreateFormatString(const std::vector<std::variant<string, FlowP
 }
 
 auto ASTFactory::CreateIdentifier(string name, SourceLocation origin) -> FlowPtr<Identifier> {
+  if (name->empty()) [[unlikely]] {
+    qcore_panic("Identifier name cannot be empty");
+  }
+
   return CreateInstance<Identifier>(name)(m_pool, origin);
 }
 

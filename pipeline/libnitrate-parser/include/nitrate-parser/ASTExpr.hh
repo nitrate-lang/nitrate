@@ -47,7 +47,7 @@ namespace ncc::parse {
 
   public:
     constexpr Unary(auto op, auto rhs, bool is_postfix)
-        : Expr(QAST_UNEXPR), m_rhs(std::move(rhs)), m_op(op), m_is_postfix(is_postfix) {}
+        : Expr(AST_eUNARY), m_rhs(std::move(rhs)), m_op(op), m_is_postfix(is_postfix) {}
 
     [[nodiscard, gnu::pure]] constexpr auto GetRHS() const { return m_rhs; }
     [[nodiscard, gnu::pure]] constexpr auto GetRHS() { return m_rhs; }
@@ -63,7 +63,7 @@ namespace ncc::parse {
 
   public:
     constexpr Binary(auto lhs, auto op, auto rhs)
-        : Expr(QAST_BINEXPR), m_lhs(std::move(lhs)), m_rhs(std::move(rhs)), m_op(op) {}
+        : Expr(AST_eBIN), m_lhs(std::move(lhs)), m_rhs(std::move(rhs)), m_op(op) {}
 
     [[nodiscard, gnu::pure]] constexpr auto GetLHS() const { return m_lhs; }
     [[nodiscard, gnu::pure]] constexpr auto GetLHS() { return m_lhs; }
@@ -73,26 +73,11 @@ namespace ncc::parse {
     [[nodiscard, gnu::pure]] constexpr auto GetOp() { return m_op; }
   };
 
-  class Ternary final : public Expr {
-    FlowPtr<Expr> m_cond, m_lhs, m_rhs;
-
-  public:
-    constexpr Ternary(auto cond, auto lhs, auto rhs)
-        : Expr(QAST_TEREXPR), m_cond(std::move(cond)), m_lhs(std::move(lhs)), m_rhs(std::move(rhs)) {}
-
-    [[nodiscard, gnu::pure]] constexpr auto GetCond() const { return m_cond; }
-    [[nodiscard, gnu::pure]] constexpr auto GetCond() { return m_cond; }
-    [[nodiscard, gnu::pure]] constexpr auto GetLHS() const { return m_lhs; }
-    [[nodiscard, gnu::pure]] constexpr auto GetLHS() { return m_lhs; }
-    [[nodiscard, gnu::pure]] constexpr auto GetRHS() const { return m_rhs; }
-    [[nodiscard, gnu::pure]] constexpr auto GetRHS() { return m_rhs; }
-  };
-
   class Integer final : public Expr {
     string m_value;
 
   public:
-    constexpr Integer(auto value) : Expr(QAST_INT), m_value(value) {}
+    constexpr Integer(auto value) : Expr(AST_eINT), m_value(value) {}
 
     [[nodiscard, gnu::pure]] constexpr auto GetValue() const { return m_value; }
     [[nodiscard, gnu::pure]] constexpr auto GetValue() { return m_value; }
@@ -102,7 +87,7 @@ namespace ncc::parse {
     string m_value;
 
   public:
-    constexpr Float(auto value) : Expr(QAST_FLOAT), m_value(value) {}
+    constexpr Float(auto value) : Expr(AST_eFLOAT), m_value(value) {}
 
     [[nodiscard, gnu::pure]] constexpr auto GetValue() const { return m_value; }
     [[nodiscard, gnu::pure]] constexpr auto GetValue() { return m_value; }
@@ -112,7 +97,7 @@ namespace ncc::parse {
     bool m_value;
 
   public:
-    constexpr Boolean(auto value) : Expr(QAST_BOOL), m_value(value) {}
+    constexpr Boolean(auto value) : Expr(AST_eBOOL), m_value(value) {}
 
     [[nodiscard, gnu::pure]] constexpr auto GetValue() const { return m_value; }
     [[nodiscard, gnu::pure]] constexpr auto GetValue() { return m_value; }
@@ -122,7 +107,7 @@ namespace ncc::parse {
     string m_value;
 
   public:
-    constexpr String(auto value) : Expr(QAST_STRING), m_value(value) {}
+    constexpr String(auto value) : Expr(AST_eSTRING), m_value(value) {}
 
     [[nodiscard, gnu::pure]] constexpr auto GetValue() const { return m_value; }
     [[nodiscard, gnu::pure]] constexpr auto GetValue() { return m_value; }
@@ -132,7 +117,7 @@ namespace ncc::parse {
     uint8_t m_value;
 
   public:
-    constexpr Character(auto value) : Expr(QAST_CHAR), m_value(value) {}
+    constexpr Character(auto value) : Expr(AST_eCHAR), m_value(value) {}
 
     [[nodiscard, gnu::pure]] constexpr auto GetValue() const { return m_value; }
     [[nodiscard, gnu::pure]] constexpr auto GetValue() { return m_value; }
@@ -140,23 +125,15 @@ namespace ncc::parse {
 
   class Null final : public Expr {
   public:
-    constexpr Null() : Expr(QAST_NULL) {}
+    constexpr Null() : Expr(AST_eNULL) {}
   };
-
-  class Undefined final : public Expr {
-  public:
-    constexpr Undefined() : Expr(QAST_UNDEF) {}
-  };
-
-  static_assert(sizeof(Undefined) == sizeof(Expr),
-                "The undefined node is used internally to represent that a node is deleted.");
 
   class Call final : public Expr {
     FlowPtr<Expr> m_func;
     std::span<CallArg> m_args;
 
   public:
-    constexpr Call(auto func, auto args) : Expr(QAST_CALL), m_func(std::move(func)), m_args(args) {}
+    constexpr Call(auto func, auto args) : Expr(AST_eCALL), m_func(std::move(func)), m_args(args) {}
 
     [[nodiscard, gnu::pure]] constexpr auto GetFunc() const { return m_func; }
     [[nodiscard, gnu::pure]] constexpr auto GetFunc() { return m_func; }
@@ -170,7 +147,7 @@ namespace ncc::parse {
 
   public:
     constexpr TemplateCall(auto func, auto args, auto template_args)
-        : Expr(QAST_TEMPL_CALL), m_func(std::move(func)), m_template_args(template_args), m_args(args) {}
+        : Expr(AST_eTEMPLATE_CALL), m_func(std::move(func)), m_template_args(template_args), m_args(args) {}
 
     [[nodiscard, gnu::pure]] constexpr auto GetFunc() const { return m_func; }
     [[nodiscard, gnu::pure]] constexpr auto GetFunc() { return m_func; }
@@ -187,7 +164,7 @@ namespace ncc::parse {
 
   public:
     constexpr Import(auto name, auto mode, auto subtree)
-        : Expr(QAST_IMPORT), m_subtree(std::move(subtree)), m_name(name), m_mode(mode) {}
+        : Expr(AST_eIMPORT), m_subtree(std::move(subtree)), m_name(name), m_mode(mode) {}
 
     [[nodiscard, gnu::pure]] constexpr auto GetSubtree() const { return m_subtree; }
     [[nodiscard, gnu::pure]] constexpr auto GetSubtree() { return m_subtree; }
@@ -201,7 +178,7 @@ namespace ncc::parse {
     std::span<FlowPtr<Expr>> m_items;
 
   public:
-    constexpr List(auto items) : Expr(QAST_LIST), m_items(items) {}
+    constexpr List(auto items) : Expr(AST_eLIST), m_items(items) {}
 
     [[nodiscard, gnu::pure]] constexpr auto GetItems() const { return m_items; }
     [[nodiscard, gnu::pure]] constexpr auto GetItems() { return m_items; }
@@ -211,7 +188,7 @@ namespace ncc::parse {
     FlowPtr<Expr> m_key, m_value;
 
   public:
-    constexpr Assoc(auto key, auto value) : Expr(QAST_ASSOC), m_key(std::move(key)), m_value(std::move(value)) {}
+    constexpr Assoc(auto key, auto value) : Expr(AST_ePAIR), m_key(std::move(key)), m_value(std::move(value)) {}
 
     [[nodiscard, gnu::pure]] constexpr auto GetKey() const { return m_key; }
     [[nodiscard, gnu::pure]] constexpr auto GetKey() { return m_key; }
@@ -223,7 +200,7 @@ namespace ncc::parse {
     FlowPtr<Expr> m_base, m_index;
 
   public:
-    constexpr Index(auto base, auto index) : Expr(QAST_INDEX), m_base(std::move(base)), m_index(std::move(index)) {}
+    constexpr Index(auto base, auto index) : Expr(AST_eINDEX), m_base(std::move(base)), m_index(std::move(index)) {}
 
     [[nodiscard, gnu::pure]] constexpr auto GetBase() const { return m_base; }
     [[nodiscard, gnu::pure]] constexpr auto GetBase() { return m_base; }
@@ -236,7 +213,7 @@ namespace ncc::parse {
 
   public:
     constexpr Slice(auto base, auto start, auto end)
-        : Expr(QAST_SLICE), m_base(std::move(base)), m_start(std::move(start)), m_end(std::move(end)) {}
+        : Expr(AST_eSLICE), m_base(std::move(base)), m_start(std::move(start)), m_end(std::move(end)) {}
 
     [[nodiscard, gnu::pure]] constexpr auto GetBase() const { return m_base; }
     [[nodiscard, gnu::pure]] constexpr auto GetBase() { return m_base; }
@@ -250,7 +227,7 @@ namespace ncc::parse {
     std::span<std::variant<string, FlowPtr<Expr>>> m_items;
 
   public:
-    constexpr FString(auto items) : Expr(QAST_FSTRING), m_items(items) {}
+    constexpr FString(auto items) : Expr(AST_eFSTRING), m_items(items) {}
 
     [[nodiscard, gnu::pure]] constexpr auto GetItems() const { return m_items; }
     [[nodiscard, gnu::pure]] constexpr auto GetItems() { return m_items; }
@@ -260,7 +237,9 @@ namespace ncc::parse {
     string m_name;
 
   public:
-    constexpr Identifier(auto name) : Expr(QAST_IDENT), m_name(name) {}
+    constexpr Identifier(auto name) : Expr(AST_eIDENT), m_name(name) {
+      qcore_assert(!m_name->empty(), "Identifier name cannot be empty");
+    }
 
     [[nodiscard, gnu::pure]] constexpr auto GetName() const { return m_name; }
     [[nodiscard, gnu::pure]] constexpr auto GetName() { return m_name; }

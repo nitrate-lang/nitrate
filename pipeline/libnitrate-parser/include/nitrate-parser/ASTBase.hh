@@ -97,154 +97,148 @@ namespace ncc::parse {
     [[nodiscard, gnu::pure]] constexpr auto GetKindName() const -> std::string_view { return GetKindName(m_node_type); }
     [[nodiscard, gnu::pure]] constexpr auto Is(ASTNodeKind type) const -> bool { return type == GetKind(); }
     [[nodiscard, gnu::pure]] constexpr auto IsMock() const -> bool { return m_mock; }
-    [[nodiscard, gnu::pure]] constexpr auto IsDiscarded() const -> bool { return Is(QAST_DISCARDED); }
+    [[nodiscard, gnu::pure]] constexpr auto IsDiscarded() const -> bool { return Is(AST_DISCARDED); }
 
     template <typename T>
     [[nodiscard, gnu::const]] static constexpr auto GetTypeCode() -> ASTNodeKind {
       using namespace ncc::parse;
 
       if constexpr (std::is_same_v<T, Binary>) {
-        return QAST_BINEXPR;
+        return AST_eBIN;
       } else if constexpr (std::is_same_v<T, Unary>) {
-        return QAST_UNEXPR;
-      } else if constexpr (std::is_same_v<T, Ternary>) {
-        return QAST_TEREXPR;
+        return AST_eUNARY;
       } else if constexpr (std::is_same_v<T, Integer>) {
-        return QAST_INT;
+        return AST_eINT;
       } else if constexpr (std::is_same_v<T, Float>) {
-        return QAST_FLOAT;
+        return AST_eFLOAT;
       } else if constexpr (std::is_same_v<T, String>) {
-        return QAST_STRING;
+        return AST_eSTRING;
       } else if constexpr (std::is_same_v<T, Character>) {
-        return QAST_CHAR;
+        return AST_eCHAR;
       } else if constexpr (std::is_same_v<T, Boolean>) {
-        return QAST_BOOL;
+        return AST_eBOOL;
       } else if constexpr (std::is_same_v<T, Null>) {
-        return QAST_NULL;
-      } else if constexpr (std::is_same_v<T, Undefined>) {
-        return QAST_UNDEF;
+        return AST_eNULL;
       } else if constexpr (std::is_same_v<T, Call>) {
-        return QAST_CALL;
+        return AST_eCALL;
       } else if constexpr (std::is_same_v<T, List>) {
-        return QAST_LIST;
+        return AST_eLIST;
       } else if constexpr (std::is_same_v<T, Assoc>) {
-        return QAST_ASSOC;
+        return AST_ePAIR;
       } else if constexpr (std::is_same_v<T, Index>) {
-        return QAST_INDEX;
+        return AST_eINDEX;
       } else if constexpr (std::is_same_v<T, Slice>) {
-        return QAST_SLICE;
+        return AST_eSLICE;
       } else if constexpr (std::is_same_v<T, FString>) {
-        return QAST_FSTRING;
+        return AST_eFSTRING;
       } else if constexpr (std::is_same_v<T, Identifier>) {
-        return QAST_IDENT;
+        return AST_eIDENT;
       } else if constexpr (std::is_same_v<T, TemplateCall>) {
-        return QAST_TEMPL_CALL;
+        return AST_eTEMPLATE_CALL;
       } else if constexpr (std::is_same_v<T, Import>) {
-        return QAST_IMPORT;
+        return AST_eIMPORT;
       } else if constexpr (std::is_same_v<T, RefTy>) {
-        return QAST_REF;
+        return AST_tREF;
       } else if constexpr (std::is_same_v<T, U1>) {
-        return QAST_U1;
+        return AST_tU1;
       } else if constexpr (std::is_same_v<T, U8>) {
-        return QAST_U8;
+        return AST_tU8;
       } else if constexpr (std::is_same_v<T, U16>) {
-        return QAST_U16;
+        return AST_tU16;
       } else if constexpr (std::is_same_v<T, U32>) {
-        return QAST_U32;
+        return AST_tU32;
       } else if constexpr (std::is_same_v<T, U64>) {
-        return QAST_U64;
+        return AST_tU64;
       } else if constexpr (std::is_same_v<T, U128>) {
-        return QAST_U128;
+        return AST_tU128;
       } else if constexpr (std::is_same_v<T, I8>) {
-        return QAST_I8;
+        return AST_tI8;
       } else if constexpr (std::is_same_v<T, I16>) {
-        return QAST_I16;
+        return AST_tI16;
       } else if constexpr (std::is_same_v<T, I32>) {
-        return QAST_I32;
+        return AST_tI32;
       } else if constexpr (std::is_same_v<T, I64>) {
-        return QAST_I64;
+        return AST_tI64;
       } else if constexpr (std::is_same_v<T, I128>) {
-        return QAST_I128;
+        return AST_tI128;
       } else if constexpr (std::is_same_v<T, F16>) {
-        return QAST_F16;
+        return AST_tF16;
       } else if constexpr (std::is_same_v<T, F32>) {
-        return QAST_F32;
+        return AST_tF32;
       } else if constexpr (std::is_same_v<T, F64>) {
-        return QAST_F64;
+        return AST_tF64;
       } else if constexpr (std::is_same_v<T, F128>) {
-        return QAST_F128;
+        return AST_tF128;
       } else if constexpr (std::is_same_v<T, VoidTy>) {
-        return QAST_VOID;
+        return AST_tVOID;
       } else if constexpr (std::is_same_v<T, PtrTy>) {
-        return QAST_PTR;
+        return AST_tPTR;
       } else if constexpr (std::is_same_v<T, OpaqueTy>) {
-        return QAST_OPAQUE;
+        return AST_tOPAQUE;
       } else if constexpr (std::is_same_v<T, ArrayTy>) {
-        return QAST_ARRAY;
+        return AST_tARRAY;
       } else if constexpr (std::is_same_v<T, TupleTy>) {
-        return QAST_TUPLE;
+        return AST_tTUPLE;
       } else if constexpr (std::is_same_v<T, FuncTy>) {
-        return QAST_FUNCTOR;
+        return AST_tFUNCTION;
       } else if constexpr (std::is_same_v<T, NamedTy>) {
-        return QAST_NAMED;
+        return AST_tNAMED;
       } else if constexpr (std::is_same_v<T, InferTy>) {
-        return QAST_INFER;
+        return AST_tINFER;
       } else if constexpr (std::is_same_v<T, TemplateType>) {
-        return QAST_TEMPLATE;
+        return AST_tTEMPLATE;
       } else if constexpr (std::is_same_v<T, Typedef>) {
-        return QAST_TYPEDEF;
+        return AST_sTYPEDEF;
       } else if constexpr (std::is_same_v<T, Struct>) {
-        return QAST_STRUCT;
+        return AST_sSTRUCT;
       } else if constexpr (std::is_same_v<T, Enum>) {
-        return QAST_ENUM;
+        return AST_sENUM;
       } else if constexpr (std::is_same_v<T, Function>) {
-        return QAST_FUNCTION;
+        return AST_sFUNCTION;
       } else if constexpr (std::is_same_v<T, Scope>) {
-        return QAST_SCOPE;
+        return AST_sSCOPE;
       } else if constexpr (std::is_same_v<T, Export>) {
-        return QAST_EXPORT;
+        return AST_sEXPORT;
       } else if constexpr (std::is_same_v<T, Block>) {
-        return QAST_BLOCK;
+        return AST_sBLOCK;
       } else if constexpr (std::is_same_v<T, Variable>) {
-        return QAST_VAR;
+        return AST_sVAR;
       } else if constexpr (std::is_same_v<T, Assembly>) {
-        return QAST_INLINE_ASM;
+        return AST_sASM;
       } else if constexpr (std::is_same_v<T, Return>) {
-        return QAST_RETURN;
-      } else if constexpr (std::is_same_v<T, ReturnIf>) {
-        return QAST_RETIF;
+        return AST_sRET;
       } else if constexpr (std::is_same_v<T, Break>) {
-        return QAST_BREAK;
+        return AST_sBRK;
       } else if constexpr (std::is_same_v<T, Continue>) {
-        return QAST_CONTINUE;
+        return AST_sCONT;
       } else if constexpr (std::is_same_v<T, If>) {
-        return QAST_IF;
+        return AST_sIF;
       } else if constexpr (std::is_same_v<T, While>) {
-        return QAST_WHILE;
+        return AST_sWHILE;
       } else if constexpr (std::is_same_v<T, For>) {
-        return QAST_FOR;
+        return AST_sFOR;
       } else if constexpr (std::is_same_v<T, Foreach>) {
-        return QAST_FOREACH;
+        return AST_sFOREACH;
       } else if constexpr (std::is_same_v<T, Case>) {
-        return QAST_CASE;
+        return AST_sCASE;
       } else if constexpr (std::is_same_v<T, Switch>) {
-        return QAST_SWITCH;
+        return AST_sSWITCH;
       }
     }
 
     [[nodiscard, gnu::pure]] constexpr auto IsType() const -> bool {
       const auto kind = GetKind();
-      return kind >= QAST__TYPE_FIRST && kind <= QAST__TYPE_LAST;
+      return kind >= AST__TYPE_FIRST && kind <= AST__TYPE_LAST;
     }
 
     [[nodiscard, gnu::pure]] constexpr auto IsStmt() const -> bool {
       const auto kind = GetKind();
-      return kind >= QAST__STMT_FIRST && kind <= QAST__STMT_LAST;
+      return kind >= AST__STMT_FIRST && kind <= AST__STMT_LAST;
     }
 
     [[nodiscard, gnu::pure]] constexpr auto IsExpr() const -> bool {
       const auto kind = GetKind();
-      return kind >= QAST__EXPR_FIRST && kind <= QAST__EXPR_LAST;
+      return kind >= AST__EXPR_FIRST && kind <= AST__EXPR_LAST;
     }
 
     template <typename T>
@@ -284,7 +278,7 @@ namespace ncc::parse {
 
       if constexpr (std::is_same_v<T, Type>) {
         auto kind = ptr->GetKind();
-        if (kind < QAST__TYPE_FIRST || kind > QAST__TYPE_LAST) [[unlikely]] {
+        if (kind < AST__TYPE_FIRST || kind > AST__TYPE_LAST) [[unlikely]] {
           qcore_panicf("Invalid cast from %s to Type", ptr->GetKindName());
         }
       } else {
@@ -331,8 +325,8 @@ namespace ncc::parse {
     void SetComments(std::span<const string> comments);
     void SetOffset(lex::LocationID pos);
     void SetParenthesisDepth(size_t depth);
-    void SetMock(bool mock);
-    void Discard() { m_node_type = QAST_DISCARDED; };
+    auto SetMock(bool mock = true) -> Expr &;
+    void Discard() { m_node_type = AST_DISCARDED; };
   } __attribute__((packed));
 
   static_assert(sizeof(Expr) == 8);
@@ -341,72 +335,69 @@ namespace ncc::parse {
 
   namespace detail {
     constexpr static auto kGetKindNames = []() {
-      std::array<std::string_view, QAST__RANGE + 1> r;
+      std::array<std::string_view, AST__RANGE + 1> r;
       r.fill("");
 
-      r[QAST_BINEXPR] = "Binexpr";
-      r[QAST_UNEXPR] = "Unexpr";
-      r[QAST_TEREXPR] = "Terexpr";
-      r[QAST_INT] = "Int";
-      r[QAST_FLOAT] = "Float";
-      r[QAST_STRING] = "String";
-      r[QAST_CHAR] = "Char";
-      r[QAST_BOOL] = "Bool";
-      r[QAST_NULL] = "Null";
-      r[QAST_UNDEF] = "Undef";
-      r[QAST_CALL] = "Call";
-      r[QAST_LIST] = "List";
-      r[QAST_ASSOC] = "Assoc";
-      r[QAST_INDEX] = "Index";
-      r[QAST_SLICE] = "Slice";
-      r[QAST_FSTRING] = "Fstring";
-      r[QAST_IDENT] = "Ident";
-      r[QAST_TEMPL_CALL] = "TemplateCall";
-      r[QAST_IMPORT] = "Import";
-      r[QAST_REF] = "Ref";
-      r[QAST_U1] = "U1";
-      r[QAST_U8] = "U8";
-      r[QAST_U16] = "U16";
-      r[QAST_U32] = "U32";
-      r[QAST_U64] = "U64";
-      r[QAST_U128] = "U128";
-      r[QAST_I8] = "I8";
-      r[QAST_I16] = "I16";
-      r[QAST_I32] = "I32";
-      r[QAST_I64] = "I64";
-      r[QAST_I128] = "I128";
-      r[QAST_F16] = "F16";
-      r[QAST_F32] = "F32";
-      r[QAST_F64] = "F64";
-      r[QAST_F128] = "F128";
-      r[QAST_VOID] = "Void";
-      r[QAST_PTR] = "Ptr";
-      r[QAST_OPAQUE] = "Opaque";
-      r[QAST_ARRAY] = "Array";
-      r[QAST_TUPLE] = "Tuple";
-      r[QAST_FUNCTOR] = "FuncTy";
-      r[QAST_NAMED] = "Unres";
-      r[QAST_INFER] = "Infer";
-      r[QAST_TEMPLATE] = "Templ";
-      r[QAST_TYPEDEF] = "Typedef";
-      r[QAST_STRUCT] = "Struct";
-      r[QAST_ENUM] = "Enum";
-      r[QAST_FUNCTION] = "Function";
-      r[QAST_SCOPE] = "Scope";
-      r[QAST_EXPORT] = "Export";
-      r[QAST_BLOCK] = "Block";
-      r[QAST_VAR] = "Let";
-      r[QAST_INLINE_ASM] = "Assembly";
-      r[QAST_RETURN] = "Return";
-      r[QAST_RETIF] = "Retif";
-      r[QAST_BREAK] = "Break";
-      r[QAST_CONTINUE] = "Continue";
-      r[QAST_IF] = "If";
-      r[QAST_WHILE] = "While";
-      r[QAST_FOR] = "For";
-      r[QAST_FOREACH] = "Foreach";
-      r[QAST_CASE] = "Case";
-      r[QAST_SWITCH] = "Switch";
+      r[AST_eBIN] = "Binexpr";
+      r[AST_eUNARY] = "Unexpr";
+      r[AST_eINT] = "Int";
+      r[AST_eFLOAT] = "Float";
+      r[AST_eSTRING] = "String";
+      r[AST_eCHAR] = "Char";
+      r[AST_eBOOL] = "Bool";
+      r[AST_eNULL] = "Null";
+      r[AST_eCALL] = "Call";
+      r[AST_eLIST] = "List";
+      r[AST_ePAIR] = "Assoc";
+      r[AST_eINDEX] = "Index";
+      r[AST_eSLICE] = "Slice";
+      r[AST_eFSTRING] = "Fstring";
+      r[AST_eIDENT] = "Ident";
+      r[AST_eTEMPLATE_CALL] = "TemplateCall";
+      r[AST_eIMPORT] = "Import";
+      r[AST_tREF] = "Ref";
+      r[AST_tU1] = "U1";
+      r[AST_tU8] = "U8";
+      r[AST_tU16] = "U16";
+      r[AST_tU32] = "U32";
+      r[AST_tU64] = "U64";
+      r[AST_tU128] = "U128";
+      r[AST_tI8] = "I8";
+      r[AST_tI16] = "I16";
+      r[AST_tI32] = "I32";
+      r[AST_tI64] = "I64";
+      r[AST_tI128] = "I128";
+      r[AST_tF16] = "F16";
+      r[AST_tF32] = "F32";
+      r[AST_tF64] = "F64";
+      r[AST_tF128] = "F128";
+      r[AST_tVOID] = "Void";
+      r[AST_tPTR] = "Ptr";
+      r[AST_tOPAQUE] = "Opaque";
+      r[AST_tARRAY] = "Array";
+      r[AST_tTUPLE] = "Tuple";
+      r[AST_tFUNCTION] = "FuncTy";
+      r[AST_tNAMED] = "Unres";
+      r[AST_tINFER] = "Infer";
+      r[AST_tTEMPLATE] = "Templ";
+      r[AST_sTYPEDEF] = "Typedef";
+      r[AST_sSTRUCT] = "Struct";
+      r[AST_sENUM] = "Enum";
+      r[AST_sFUNCTION] = "Function";
+      r[AST_sSCOPE] = "Scope";
+      r[AST_sEXPORT] = "Export";
+      r[AST_sBLOCK] = "Block";
+      r[AST_sVAR] = "Let";
+      r[AST_sASM] = "Assembly";
+      r[AST_sRET] = "Return";
+      r[AST_sBRK] = "Break";
+      r[AST_sCONT] = "Continue";
+      r[AST_sIF] = "If";
+      r[AST_sWHILE] = "While";
+      r[AST_sFOR] = "For";
+      r[AST_sFOREACH] = "Foreach";
+      r[AST_sCASE] = "Case";
+      r[AST_sSWITCH] = "Switch";
 
       return r;
     }();
@@ -423,50 +414,50 @@ namespace ncc::parse {
   public:
     [[nodiscard]] constexpr auto IsPrimitive() const -> bool {
       switch (GetKind()) {
-        case QAST_U1:
-        case QAST_U8:
-        case QAST_U16:
-        case QAST_U32:
-        case QAST_U64:
-        case QAST_U128:
-        case QAST_I8:
-        case QAST_I16:
-        case QAST_I32:
-        case QAST_I64:
-        case QAST_I128:
-        case QAST_F16:
-        case QAST_F32:
-        case QAST_F64:
-        case QAST_F128:
-        case QAST_VOID:
+        case AST_tU1:
+        case AST_tU8:
+        case AST_tU16:
+        case AST_tU32:
+        case AST_tU64:
+        case AST_tU128:
+        case AST_tI8:
+        case AST_tI16:
+        case AST_tI32:
+        case AST_tI64:
+        case AST_tI128:
+        case AST_tF16:
+        case AST_tF32:
+        case AST_tF64:
+        case AST_tF128:
+        case AST_tVOID:
           return true;
         default:
           return false;
       }
     }
 
-    [[nodiscard, gnu::pure]] constexpr auto IsArray() const -> bool { return GetKind() == QAST_ARRAY; };
-    [[nodiscard, gnu::pure]] constexpr auto IsTuple() const -> bool { return GetKind() == QAST_TUPLE; }
-    [[nodiscard, gnu::pure]] constexpr auto IsPointer() const -> bool { return GetKind() == QAST_PTR; }
-    [[nodiscard, gnu::pure]] constexpr auto IsFunction() const -> bool { return GetKind() == QAST_FUNCTOR; }
+    [[nodiscard, gnu::pure]] constexpr auto IsArray() const -> bool { return GetKind() == AST_tARRAY; };
+    [[nodiscard, gnu::pure]] constexpr auto IsTuple() const -> bool { return GetKind() == AST_tTUPLE; }
+    [[nodiscard, gnu::pure]] constexpr auto IsPointer() const -> bool { return GetKind() == AST_tPTR; }
+    [[nodiscard, gnu::pure]] constexpr auto IsFunction() const -> bool { return GetKind() == AST_tFUNCTION; }
     [[nodiscard, gnu::pure]] constexpr auto IsComposite() const -> bool { return IsArray() || IsTuple(); }
-    [[nodiscard, gnu::pure]] constexpr auto IsVoid() const -> bool { return GetKind() == QAST_VOID; }
-    [[nodiscard, gnu::pure]] constexpr auto IsBool() const -> bool { return GetKind() == QAST_U1; }
-    [[nodiscard, gnu::pure]] constexpr auto IsRef() const -> bool { return GetKind() == QAST_REF; }
+    [[nodiscard, gnu::pure]] constexpr auto IsVoid() const -> bool { return GetKind() == AST_tVOID; }
+    [[nodiscard, gnu::pure]] constexpr auto IsBool() const -> bool { return GetKind() == AST_tU1; }
+    [[nodiscard, gnu::pure]] constexpr auto IsRef() const -> bool { return GetKind() == AST_tREF; }
     [[nodiscard, gnu::pure]] constexpr auto IsNumeric() const -> bool {
-      return GetKind() >= QAST_U1 && GetKind() <= QAST_F128;
+      return GetKind() >= AST_tU1 && GetKind() <= AST_tF128;
     }
     [[nodiscard, gnu::pure]] constexpr auto IsIntegral() const -> bool {
-      return GetKind() >= QAST_U1 && GetKind() <= QAST_I128;
+      return GetKind() >= AST_tU1 && GetKind() <= AST_tI128;
     }
     [[nodiscard, gnu::pure]] constexpr auto IsFloatingPoint() const -> bool {
-      return GetKind() >= QAST_F16 && GetKind() <= QAST_F128;
+      return GetKind() >= AST_tF16 && GetKind() <= AST_tF128;
     }
     [[nodiscard, gnu::pure]] constexpr auto IsSigned() const -> bool {
-      return GetKind() >= QAST_I8 && GetKind() <= QAST_I128;
+      return GetKind() >= AST_tI8 && GetKind() <= AST_tI128;
     }
     [[nodiscard, gnu::pure]] constexpr auto IsUnsigned() const -> bool {
-      return GetKind() >= QAST_U1 && GetKind() <= QAST_U128;
+      return GetKind() >= AST_tU1 && GetKind() <= AST_tU128;
     }
 
     [[nodiscard, gnu::pure]] constexpr auto GetWidth() const { return m_width; }

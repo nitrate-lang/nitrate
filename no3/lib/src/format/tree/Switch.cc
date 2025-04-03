@@ -31,41 +31,14 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <format/tree/Visitor.hh>
+#include <format/tree/Formatter.hh>
 
-using namespace ncc;
-using namespace ncc::parse;
-using namespace no3::format;
+using namespace no3::format::details;
 
-void CambrianFormatter::Visit(FlowPtr<Case> n) {
-  PrintLineComments(n);
-
-  n->GetCond().Accept(*this);
-  m_line << " => ";
-  n->GetBody()->Accept(*this);
+void QuasiCanonicalFormatter::Visit(FlowPtr<Case> n) {
+  /// TODO: Implement standard format
 }
 
-void CambrianFormatter::Visit(FlowPtr<parse::Switch> n) {
-  PrintLineComments(n);
-
-  m_line << "switch ";
-  n->GetCond().Accept(*this);
-  m_line << " {" << '\n';
-  m_indent += m_tabSize;
-
-  for (auto c : n->GetCases()) {
-    m_line << GetIndent();
-    c.Accept(*this);
-    m_line << '\n';
-  }
-
-  if (n->GetDefault()) {
-    m_line << GetIndent();
-    m_line << "_ => ";
-    n->GetDefault().value()->Accept(*this);
-    m_line << '\n';
-  }
-
-  m_indent -= m_tabSize;
-  m_line << GetIndent() << "}";
+void QuasiCanonicalFormatter::Visit(FlowPtr<parse::Switch> n) {
+  /// TODO: Implement standard format
 }

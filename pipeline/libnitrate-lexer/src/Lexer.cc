@@ -77,6 +77,7 @@ enum NumberKind : uint8_t {
 
 enum class LexState : uint8_t {
   Identifier,
+  IdentifierEscaped,
   String,
   Integer,
   CommentStart,
@@ -352,9 +353,9 @@ constexpr auto kCharMap = []() constexpr {
   map['f'] = '\f';
   map['r'] = '\r';
 
-  map['x'] = -1;
-  map['u'] = -1;
-  map['o'] = -1;
+  map['x'] = map['X'] = -1;
+  map['u'] = map['U'] = -1;
+  map['o'] = map['O'] = -1;
 
   return map;
 }();
@@ -756,6 +757,31 @@ public:
     return {Name, string(std::move(m_buf)), start_pos};
   };
 
+  auto ParseIdentifierEscaped(LocationID start_pos) -> Token {
+    uint8_t c;
+
+    while (true) {
+      c = NextChar();
+      if (c == '`') {
+        break;
+      }
+
+      m_buf += c;
+    }
+
+    if (m_buf.empty()) [[unlikely]] {
+      Log << InvalidIdentifier << LogSource() << "Empty identifier";
+      return Token::EndOfFile();
+    }
+
+    if (!IsUtf8(m_buf.c_str())) [[unlikely]] {
+      Log << InvalidUTF8 << LogSource() << "Invalid UTF-8 sequence in identifier";
+      return Token::EndOfFile();
+    }
+
+    return {Name, string(std::move(m_buf)), start_pos};
+  }
+
   auto ParseString(uint8_t c, LocationID start_pos) -> Token {
     auto quote = c;
     c = NextChar();
@@ -777,6 +803,7 @@ public:
         }
 
         switch (c) {
+          case 'X':
           case 'x': {
             std::array hex = {NextChar(), NextChar()};
             if (!kHexDigitsTable[hex[0]] || !kHexDigitsTable[hex[1]]) {
@@ -793,6 +820,7 @@ public:
             break;
           }
 
+          case 'U':
           case 'u': {
             c = NextChar();
             if (c != '{') [[unlikely]] {
@@ -855,6 +883,7 @@ public:
             break;
           }
 
+          case 'O':
           case 'o': {
             std::array<uint8_t, 3> oct = {NextChar(), NextChar(), NextChar()};
             uint8_t val;
@@ -1215,16 +1244,16 @@ auto Tokenizer::GetNext() -> Token {
   const auto start_pos = InternLocation(Location(impl.m_offset, impl.m_line, impl.m_column, impl.m_filename));
 
   const auto state = [c]() {
+    if (kDigitsTable[c]) {
+      return LexState::Integer;
+    }
+
     if (kIdentiferStartTable[c]) {
       return LexState::Identifier;
     }
 
     if (c == '/') {
       return LexState::CommentStart;
-    }
-
-    if (kDigitsTable[c]) {
-      return LexState::Integer;
     }
 
     if (c == '"' || c == '\'') {
@@ -1235,6 +1264,10 @@ auto Tokenizer::GetNext() -> Token {
       return LexState::MacroStart;
     }
 
+    if (c == '`') {
+      return LexState::IdentifierEscaped;
+    }
+
     return LexState::Other;
   }();
 
@@ -1242,6 +1275,10 @@ auto Tokenizer::GetNext() -> Token {
     switch (state) {
       case LexState::Identifier: {
         return impl.ParseIdentifier(c, start_pos);
+      }
+
+      case LexState::IdentifierEscaped: {
+        return impl.ParseIdentifierEscaped(start_pos);
       }
 
       case LexState::String: {
@@ -1293,9 +1330,12 @@ Tokenizer::Tokenizer(Tokenizer &&o) noexcept : IScanner(o.m_env), m_impl(std::mo
 Tokenizer::~Tokenizer() = default;
 
 auto Tokenizer::GetSourceWindow(Point start, Point end, char fillchar) -> std::optional<std::vector<std::string>> {
+  /// TODO: Get this working
+  return std::nullopt;
+
   Impl &impl = *m_impl;
 
-  if (start.m_y > end.m_y || (start.m_y == end.m_y && start.m_x > end.m_x)) {
+  if (start.m_line > end.m_line || (start.m_line == end.m_line && start.m_col > end.m_col)) {
     Log << "Invalid source window range";
     return std::nullopt;
   }
@@ -1319,12 +1359,12 @@ auto Tokenizer::GetSourceWindow(Point start, Point end, char fillchar) -> std::o
       }
 
       bool is_begin = false;
-      if (line == start.m_x && column == start.m_y) [[unlikely]] {
+      if (line == start.m_col && column == start.m_line) [[unlikely]] {
         is_begin = true;
       } else {
         switch (ch) {
           case '\n': {
-            if (line == start.m_x && start.m_y == -1) [[unlikely]] {
+            if (line == start.m_col && start.m_line == -1) [[unlikely]] {
               is_begin = true;
             }
 
@@ -1345,15 +1385,15 @@ auto Tokenizer::GetSourceWindow(Point start, Point end, char fillchar) -> std::o
         std::string line_buf;
 
         do {
-          long current_line = lines.size() + start.m_x;
+          long current_line = lines.size() + start.m_col;
           long current_column = line_buf.size();
 
-          if (current_line == end.m_x && current_column == end.m_y) [[unlikely]] {
+          if (current_line == end.m_col && current_column == end.m_line) [[unlikely]] {
             spinning = false;
           } else {
             switch (ch) {
               case '\n': {
-                if (current_line == end.m_x && end.m_y == -1) [[unlikely]] {
+                if (current_line == end.m_col && end.m_line == -1) [[unlikely]] {
                   spinning = false;
                 }
 

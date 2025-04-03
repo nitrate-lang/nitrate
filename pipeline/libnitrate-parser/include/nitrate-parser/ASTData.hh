@@ -31,8 +31,8 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#ifndef __NITRATE_AST_STRUCTURAL_DATA_H__
-#define __NITRATE_AST_STRUCTURAL_DATA_H__
+#ifndef __NITRATE_AST_sSTRUCTURAL_DATA_H__
+#define __NITRATE_AST_sSTRUCTURAL_DATA_H__
 
 #include <memory>
 #include <nitrate-core/Allocate.hh>
@@ -60,15 +60,15 @@ namespace ncc::parse {
   using FuncParam = std::tuple<string, FlowPtr<Type>, NullableFlowPtr<Expr>>;
 
   class StructField {
-    string m_name;
-    NullableFlowPtr<Expr> m_value;
-    FlowPtr<Type> m_type;
-    Vis m_vis;
-    bool m_is_static;
-
   public:
+    bool m_is_static;
+    Vis m_vis;
+    string m_name;
+    FlowPtr<Type> m_type;
+    NullableFlowPtr<Expr> m_value;
+
     StructField(Vis vis, bool is_static, string name, FlowPtr<Type> type, NullableFlowPtr<Expr> value)
-        : m_name(name), m_value(std::move(value)), m_type(std::move(type)), m_vis(vis), m_is_static(is_static) {}
+        : m_is_static(is_static), m_vis(vis), m_name(name), m_type(std::move(type)), m_value(std::move(value)) {}
 
     [[nodiscard]] auto GetVis() const { return m_vis; }
     [[nodiscard]] auto IsStatic() const { return m_is_static; }

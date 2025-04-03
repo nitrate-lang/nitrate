@@ -38,6 +38,8 @@
 #include <cstdio>
 #include <functional>
 #include <iostream>
+#include <memory>
+#include <mutex>
 #include <nitrate-core/Macro.hh>
 #include <optional>
 #include <source_location>
@@ -215,6 +217,8 @@ namespace ncc {
   public:
     explicit LogStream(LogCallback pub) : m_recv(std::move(pub)) {}
     LogStream(LogStream &&) = default;
+    LogStream(const LogStream &) = delete;
+    LogStream &operator=(const LogStream &) = delete;
 
     ~LogStream() {
       if (m_recv) {
@@ -255,55 +259,50 @@ namespace ncc {
     };
 
   private:
+    mutable std::mutex m_mutex;
     std::vector<Subscriber> m_subs;
     LogSubscriberID m_sub_id_ctr = 0;
     bool m_enabled = true;
 
   public:
     LoggerContext() = default;
-    LoggerContext(LoggerContext &&o) noexcept : m_subs(std::move(o.m_subs)), m_enabled(o.m_enabled) {}
+    LoggerContext(const LoggerContext &) = delete;
+    LoggerContext(LoggerContext &&o) noexcept
+        : std::ostream(o.rdbuf()), m_subs(std::move(o.m_subs)), m_enabled(o.m_enabled) {}
     ~LoggerContext() override = default;
 
     auto Subscribe(LogCallback cb) -> LogSubscriberID;
     void Unsubscribe(LogSubscriberID id);
     void UnsubscribeAll();
-    auto SubscribersList() const -> const auto & { return m_subs; }
+    auto SubscribersList() const -> const std::vector<Subscriber> &;
 
     void Suspend(LogSubscriberID id);
     void SuspendAll();
     void Resume(LogSubscriberID id);
     void ResumeAll();
 
-    auto operator+=(LogCallback cb) -> LogSubscriberID { return Subscribe(std::move(cb)); }
+    void Enable();
+    void Disable();
+    [[nodiscard]] auto Enabled() const -> bool;
 
-    void Enable() { m_enabled = true; }
-    void Disable() { m_enabled = false; }
-    [[nodiscard]] auto Enabled() const -> bool { return m_enabled; }
-
-    void Reset() {
-      m_subs.clear();
-      m_enabled = true;
-      m_sub_id_ctr = 0;
-    }
+    void Reset();
 
     void Publish(const std::string &msg, Sev sev, const ECBase &ec) const;
   };
 
-  auto operator<<(LoggerContext &log, const auto &value) -> LogStream {
-    LogStream stream([&log](const LogMessage &m) { log.Publish(m.m_message, m.m_sev, m.m_by); });
-
+  auto operator<<(std::shared_ptr<LoggerContext> &log, const auto &value) -> LogStream {
+    auto stream = LogStream([&log](const LogMessage &m) { log->Publish(m.m_message, m.m_sev, m.m_by); });
     stream.Write(value);
-
     return stream;
   };
 
-  auto operator<<(LogStream &&stream, const auto &value) -> LogStream {
+  auto operator<<(LogStream stream, const auto &value) -> LogStream {
     stream.Write(value);
-    return std::move(stream);
+    return stream;
   };
 
   /** This logger may be used prior to nitrate-core initialization */
-  extern thread_local LoggerContext Log;
+  extern thread_local std::shared_ptr<LoggerContext> Log;
 }  // namespace ncc
 
 #endif

@@ -37,7 +37,7 @@ using namespace ncc;
 using namespace ncc::lex;
 using namespace ncc::parse;
 
-auto GeneralParser::PImpl::RecurseEscapeBlock() -> void {
+auto GeneralParser::Context::RecurseEscapeBlock() -> void {
   if (!NextIf<PuncLPar>()) {
     Log << ParserSignal << Current() << "Expected '(' to open the escape block annotation";
     return;
@@ -61,7 +61,7 @@ auto GeneralParser::PImpl::RecurseEscapeBlock() -> void {
   size_t depth = 1;
 
   while (depth > 0) {
-    if (m_rd.IsEof()) {
+    if (m.IsEof()) {
       Log << ParserSignal << Current() << "Unexpected end of file while parsing 'escape_block'";
       return;
     }

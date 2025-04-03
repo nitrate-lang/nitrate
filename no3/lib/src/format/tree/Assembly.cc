@@ -31,18 +31,10 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <format/tree/Visitor.hh>
+#include <format/tree/Formatter.hh>
 
-using namespace ncc;
-using namespace ncc::parse;
-using namespace no3::format;
+using namespace no3::format::details;
 
-void CambrianFormatter::Visit(FlowPtr<Assembly> n) {
-  PrintLineComments(n);
-
-  /* Support for inline assembly is not avaliable yet */
-
-  m_failed = true;
-
-  m_line << "/* !!! */";
+void QuasiCanonicalFormatter::Visit(FlowPtr<Assembly> n) {
+  /// TODO: Implement standard format
 }

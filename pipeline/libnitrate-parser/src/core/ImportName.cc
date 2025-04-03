@@ -36,30 +36,12 @@
 
 using namespace ncc::parse;
 
-bool ImportName::Validate(const std::string &name) {
-  /// TODO: Validate the import name
-  (void)name;
-  return true;
-}
-
-ImportName::ImportName(std::string name) {
-  if (Validate(name)) {
-    m_name = std::move(name);
-    return;
-  }
-
-  Log << Trace << "ImportName: Not valid: " << name;
-}
+ImportName::ImportName(std::string name) : m_name(std::move(name)) {}
 
 auto ImportName::GetChain() const -> const std::vector<std::string_view> & {
   if (!m_chain.has_value()) [[unlikely]] {
-    if (!m_name.has_value()) {
-      m_chain = {};
-      return m_chain.value();
-    }
-
     std::vector<std::string_view> chain;
-    std::string_view name = *m_name;
+    std::string_view name = m_name;
 
     while (!name.empty()) {
       auto pos = name.find_first_of("::");
@@ -78,12 +60,4 @@ auto ImportName::GetChain() const -> const std::vector<std::string_view> & {
   return m_chain.value();
 }
 
-std::ostream &ncc::parse::operator<<(std::ostream &os, const ImportName &name) {
-  if (name.IsValid()) {
-    os << name.GetName();
-  } else {
-    os << "<invalid>";
-  }
-
-  return os;
-}
+std::ostream &ncc::parse::operator<<(std::ostream &os, const ImportName &name) { return os << name.GetName(); }

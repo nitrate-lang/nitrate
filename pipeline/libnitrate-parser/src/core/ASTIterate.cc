@@ -148,19 +148,12 @@ class IterVisitor : public ASTVisitor {
     Add(n->GetRHS());
   }
 
-  void Visit(FlowPtr<Ternary> n) override {
-    Add(n->GetCond());
-    Add(n->GetLHS());
-    Add(n->GetRHS());
-  }
-
   void Visit(FlowPtr<Integer>) override {}
   void Visit(FlowPtr<Float>) override {}
   void Visit(FlowPtr<Boolean>) override {}
   void Visit(FlowPtr<parse::String>) override {}
   void Visit(FlowPtr<Character>) override {}
   void Visit(FlowPtr<Null>) override {}
-  void Visit(FlowPtr<Undefined>) override {}
 
   void Visit(FlowPtr<Call> n) override {
     Add(n->GetFunc());
@@ -250,11 +243,6 @@ class IterVisitor : public ASTVisitor {
   void Visit(FlowPtr<Continue>) override {}
   void Visit(FlowPtr<Return> n) override { Add(n->GetValue()); }
 
-  void Visit(FlowPtr<ReturnIf> n) override {
-    Add(n->GetCond());
-    Add(n->GetValue());
-  }
-
   void Visit(FlowPtr<Case> n) override {
     Add(n->GetCond());
     Add(n->GetBody());
@@ -284,8 +272,6 @@ class IterVisitor : public ASTVisitor {
     });
 
     Add(n->GetReturn());
-    Add(n->GetPrecond());
-    Add(n->GetPostcond());
     Add(n->GetBody());
   }
 
@@ -305,8 +291,6 @@ class IterVisitor : public ASTVisitor {
     });
 
     std::for_each(n->GetMethods().begin(), n->GetMethods().end(), [&](auto method) { Add(method.m_func); });
-
-    std::for_each(n->GetStaticMethods().begin(), n->GetStaticMethods().end(), [&](auto method) { Add(method.m_func); });
   }
 
   void Visit(FlowPtr<Enum> n) override {

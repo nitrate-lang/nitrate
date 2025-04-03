@@ -381,15 +381,6 @@ message Binary {
   required Expr right = 6;
 }
 
-message Ternary {
-  optional SourceLocationRange location = 1;
-  repeated UserComment comments = 2;
-
-  required Expr condition = 4;
-  required Expr true_branch = 5;
-  required Expr false_branch = 6;
-}
-
 message Integer {
   optional SourceLocationRange location = 1;
   repeated UserComment comments = 2;
@@ -431,11 +422,6 @@ message Character {
 }
 
 message Null {
-  optional SourceLocationRange location = 1;
-  repeated UserComment comments = 2;
-}
-
-message Undefined {
   optional SourceLocationRange location = 1;
   repeated UserComment comments = 2;
 }
@@ -621,14 +607,6 @@ message Return {
   optional Expr value = 4;
 }
 
-message ReturnIf {
-  optional SourceLocationRange location = 1;
-  repeated UserComment comments = 2;
-
-  required Expr condition = 4;
-  optional Expr value = 5;
-}
-
 message Case {
   optional SourceLocationRange location = 1;
   repeated UserComment comments = 2;
@@ -696,8 +674,6 @@ message Function {
   optional TemplateParameters template_parameters = 7;
   repeated FunctionParameter parameters = 8;
   optional bool variadic = 9 [default = false];
-  optional Expr precondition = 11;
-  optional Expr postcondition = 12;
   repeated Expr attributes = 13;
   optional Expr body = 14;
 }
@@ -735,7 +711,6 @@ message Struct {
   repeated Expr attributes = 8;
   repeated Field fields = 9;
   repeated Method methods = 10;
-  repeated Method static_methods = 11;
 }
 
 message Type {
@@ -776,14 +751,12 @@ message Expr {
 
     Unary unary = 11;
     Binary binary = 12;
-    Ternary ternary = 14;
     Integer integer = 15;
     Float float = 16;
     Boolean boolean = 17;
     String string = 18;
     Character character = 19;
     Null null = 20;
-    Undefined undefined = 21;
     Call call = 22;
     TemplateCall template_call = 23;
     Import import = 24;
@@ -804,7 +777,6 @@ message Expr {
     Break break = 57;
     Continue continue = 58;
     Return return = 59;
-    ReturnIf return_if = 60;
     Case case = 61;
     Switch switch = 62;
     Export export = 63;

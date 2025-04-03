@@ -31,52 +31,14 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <format/tree/Visitor.hh>
-#include <unordered_set>
+#include <format/tree/Formatter.hh>
 
-using namespace ncc;
-using namespace ncc::lex;
-using namespace ncc::parse;
-using namespace no3::format;
+using namespace no3::format::details;
 
-void CambrianFormatter::Visit(FlowPtr<Unary> n) {
-  static const std::unordered_set<Operator> word_ops = {OpAs,        OpBitcastAs, OpIn,     OpOut,     OpSizeof,
-                                                        OpBitsizeof, OpAlignof,   OpTypeof, OpComptime};
-
-  PrintMultilineComments(n);
-
-  if (n->IsPostfix()) {
-    n->GetRHS().Accept(*this);
-    m_line << n->GetOp();
-  } else {
-    m_line << n->GetOp();
-    if (word_ops.contains(n->GetOp())) {
-      m_line << " ";
-    }
-    n->GetRHS().Accept(*this);
-  }
+void QuasiCanonicalFormatter::Visit(FlowPtr<Unary> n) {
+  /// TODO: Implement standard format
 }
 
-void CambrianFormatter::Visit(FlowPtr<Binary> n) {
-  PrintMultilineComments(n);
-
-  if (n->GetOp() == OpDot) {
-    n->GetLHS().Accept(*this);
-    m_line << ".";
-    n->GetRHS().Accept(*this);
-  } else {
-    n->GetLHS().Accept(*this);
-    m_line << " " << n->GetOp() << " ";
-    n->GetRHS().Accept(*this);
-  }
-}
-
-void CambrianFormatter::Visit(FlowPtr<Ternary> n) {
-  PrintMultilineComments(n);
-
-  n->GetCond().Accept(*this);
-  m_line << " ? ";
-  n->GetLHS().Accept(*this);
-  m_line << " : ";
-  n->GetRHS().Accept(*this);
+void QuasiCanonicalFormatter::Visit(FlowPtr<Binary> n) {
+  /// TODO: Implement standard format
 }

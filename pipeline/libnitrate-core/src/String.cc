@@ -93,7 +93,7 @@ static google::dense_hash_map<std::string_view, const std::string*> FastMap = []
 
 std::string ncc::string::DefaultEmptyString;
 
-auto String::CreateInstance(std::string_view str) -> const std::string& {
+auto AutoString::CreateInstance(std::string_view str) -> const std::string& {
   if (str.empty()) {
     return DefaultEmptyString;
   }
@@ -118,7 +118,7 @@ auto String::CreateInstance(std::string_view str) -> const std::string& {
   return *ptr;
 }
 
-auto String::CreateInstance(std::string&& str) -> const std::string& {
+auto AutoString::CreateInstance(std::string&& str) -> const std::string& {
   if (str.empty()) {
     return DefaultEmptyString;
   }
@@ -143,7 +143,7 @@ auto String::CreateInstance(std::string&& str) -> const std::string& {
   return *ptr;
 }
 
-void String::ResetInstances() {
+void AutoString::ResetInstances() {
   SmartLock lock(StringLock);
 
   Strings.Clear();

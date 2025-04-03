@@ -33,13 +33,15 @@
 
 #include <algorithm>
 #include <fstream>
+#include <memory>
 #include <nitrate-core/Assert.hh>
 #include <nitrate-core/Logger.hh>
+#include <nitrate-core/SmartLock.hh>
 #include <vector>
 
 using namespace ncc;
 
-NCC_EXPORT thread_local LoggerContext ncc::Log;
+NCC_EXPORT thread_local std::shared_ptr<LoggerContext> ncc::Log = std::make_shared<LoggerContext>();
 
 NCC_EXPORT auto ncc::Formatter(std::string_view msg, Sev sev) -> std::string {
   constexpr std::array<std::string_view, Sev_MaxValue + 1> kAnsiPrefixes = {
@@ -52,7 +54,7 @@ NCC_EXPORT auto ncc::Formatter(std::string_view msg, Sev sev) -> std::string {
   }
 
   std::stringstream ss;
-  ss << kAnsiPrefixes[sev] << msg << "\n";
+  ss << kAnsiPrefixes[sev] << msg;
 
   return ss.str();
 }
@@ -141,18 +143,31 @@ void ECBase::Finalize() {
 }
 
 auto LoggerContext::Subscribe(LogCallback cb) -> LogSubscriberID {
+  SmartLock lock(m_mutex);
+
   auto new_sub_id = m_sub_id_ctr++;
   m_subs.emplace_back(std::move(cb), new_sub_id, false);
   return new_sub_id;
 }
 
 void LoggerContext::Unsubscribe(LogSubscriberID id) {
+  SmartLock lock(m_mutex);
   std::erase_if(m_subs, [id](const auto &sub) { return sub.ID() == id; });
 }
 
-void LoggerContext::UnsubscribeAll() { m_subs.clear(); }
+void LoggerContext::UnsubscribeAll() {
+  SmartLock lock(m_mutex);
+  m_subs.clear();
+}
+
+auto LoggerContext::SubscribersList() const -> const std::vector<Subscriber> & {
+  SmartLock lock(m_mutex);
+  return m_subs;
+}
 
 void LoggerContext::Suspend(LogSubscriberID id) {
+  SmartLock lock(m_mutex);
+
   auto it = std::find_if(m_subs.begin(), m_subs.end(), [id](const auto &sub) { return sub.ID() == id; });
 
   if (it != m_subs.end()) {
@@ -161,12 +176,16 @@ void LoggerContext::Suspend(LogSubscriberID id) {
 }
 
 void LoggerContext::SuspendAll() {
+  SmartLock lock(m_mutex);
+
   for (auto &sub : m_subs) {
     sub.m_suspended = true;
   }
 }
 
 void LoggerContext::Resume(LogSubscriberID id) {
+  SmartLock lock(m_mutex);
+
   auto it = std::find_if(m_subs.begin(), m_subs.end(), [id](const auto &sub) { return sub.ID() == id; });
 
   if (it != m_subs.end()) {
@@ -175,17 +194,46 @@ void LoggerContext::Resume(LogSubscriberID id) {
 }
 
 void LoggerContext::ResumeAll() {
+  SmartLock lock(m_mutex);
+
   for (auto &sub : m_subs) {
     sub.m_suspended = false;
   }
 }
 
+void LoggerContext::Enable() {
+  SmartLock lock(m_mutex);
+  m_enabled = true;
+}
+
+void LoggerContext::Disable() {
+  SmartLock lock(m_mutex);
+  m_enabled = false;
+}
+
+auto LoggerContext::Enabled() const -> bool {
+  SmartLock lock(m_mutex);
+  return m_enabled;
+}
+
+void LoggerContext::Reset() {
+  SmartLock lock(m_mutex);
+
+  m_subs.clear();
+  m_enabled = true;
+  m_sub_id_ctr = 0;
+}
+
 void LoggerContext::Publish(const std::string &msg, Sev sev, const ECBase &ec) const {
-  if (m_enabled) {
+  SmartLock lock(m_mutex);
+
+  if (m_enabled) [[likely]] {
     for (const auto &subscription : m_subs) {
-      if (!subscription.IsSuspended()) {
-        subscription.m_cb({msg, sev, ec});
+      if (subscription.IsSuspended()) [[unlikely]] {
+        continue;
       }
+
+      subscription.m_cb({msg, sev, ec});
     }
   }
 }

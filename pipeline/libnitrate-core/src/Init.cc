@@ -53,9 +53,9 @@ NCC_EXPORT auto CoreLibrarySetup::Init() -> bool {
 NCC_EXPORT void CoreLibrarySetup::Deinit() {
   Log << Trace << "Deinitializing Nitrate Core Library...";
 
-  Log.Reset();
+  Log->Reset();
 
-  String::ResetInstances();
+  AutoString::ResetInstances();
 }
 
 NCC_EXPORT auto CoreLibrarySetup::GetSemVersion() -> std::array<uint32_t, 3> {

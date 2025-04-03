@@ -38,15 +38,15 @@ using namespace ncc;
 using namespace ncc::lex;
 using namespace ncc::parse;
 
-auto GeneralParser::PImpl::RecurseEnumField() -> std::pair<string, NullableFlowPtr<Expr>> {
-  auto member_name = RecurseName();
+static auto RecurseEnumField(GeneralParser::Context& m) -> std::pair<string, NullableFlowPtr<Expr>> {
+  auto member_name = m.RecurseName();
   if (!member_name) {
-    Log << ParserSignal << Current() << "Enum member name cannot be empty.";
+    Log << ParserSignal << m.Current() << "Enum member name cannot be empty.";
     return {"", std::nullopt};
   }
 
-  if (NextIf<OpSet>()) {
-    auto member_value = RecurseExpr({
+  if (m.NextIf<OpSet>()) {
+    auto member_value = m.RecurseExpr({
         Token(Punc, PuncSemi),
         Token(Punc, PuncComa),
         Token(Punc, PuncRCur),
@@ -58,46 +58,46 @@ auto GeneralParser::PImpl::RecurseEnumField() -> std::pair<string, NullableFlowP
   return {member_name, std::nullopt};
 }
 
-auto GeneralParser::PImpl::RecurseEnumFields() -> std::vector<std::pair<string, NullableFlowPtr<Expr>>> {
+static auto RecurseEnumFields(GeneralParser::Context& m) -> std::vector<std::pair<string, NullableFlowPtr<Expr>>> {
   std::vector<std::pair<string, NullableFlowPtr<Expr>>> items;
 
-  if (NextIf<PuncSemi>()) {
+  if (m.NextIf<PuncSemi>()) {
     return items;
   }
 
-  if (!NextIf<PuncLCur>()) {
-    Log << ParserSignal << Current() << "Expected '{' to start enum fields.";
+  if (!m.NextIf<PuncLCur>()) {
+    Log << ParserSignal << m.Current() << "Expected '{' to start enum fields.";
     return items;
   }
 
   while (true) {
-    if (m_rd.IsEof()) [[unlikely]] {
-      Log << ParserSignal << Current() << "Unexpected EOF encountered while parsing enum fields.";
+    if (m.IsEof()) [[unlikely]] {
+      Log << ParserSignal << m.Current() << "Unexpected EOF encountered while parsing enum fields.";
       return items;
     }
 
-    if (NextIf<PuncRCur>()) {
+    if (m.NextIf<PuncRCur>()) {
       return items;
     }
 
-    items.push_back(RecurseEnumField());
+    items.push_back(RecurseEnumField(m));
 
-    if (NextIf<PuncComa>()) {
+    if (m.NextIf<PuncComa>()) {
       continue;
     }
 
-    if (NextIf<PuncSemi>()) {
+    if (m.NextIf<PuncSemi>()) {
       continue;
     }
 
-    Log << ParserSignal << Next() << "Expected ',' or ';' after enum field.";
+    Log << ParserSignal << m.Next() << "Expected ',' or ';' after enum field.";
   }
 }
 
-auto GeneralParser::PImpl::RecurseEnum() -> FlowPtr<Expr> {
+auto GeneralParser::Context::RecurseEnum() -> FlowPtr<Expr> {
   auto name = RecurseName();
   auto type = NextIf<PuncColn>() ? NullableFlowPtr<parse::Type>(RecurseType()) : std::nullopt;
-  auto items = RecurseEnumFields();
+  auto items = RecurseEnumFields(m);
 
-  return m_fac.CreateEnum(name, items, type);
+  return CreateEnum(name, items, type);
 }

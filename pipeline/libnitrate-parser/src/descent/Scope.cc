@@ -38,52 +38,52 @@ using namespace ncc;
 using namespace ncc::lex;
 using namespace ncc::parse;
 
-auto GeneralParser::PImpl::RecurseScopeDeps() -> std::vector<string> {
+static auto RecurseScopeDeps(GeneralParser::Context& m) -> std::vector<string> {
   std::vector<string> dependencies;
 
-  if (!NextIf<PuncLBrk>()) {
+  if (!m.NextIf<PuncLBrk>()) {
     return dependencies;
   }
 
   while (true) {
-    if (m_rd.IsEof()) [[unlikely]] {
-      Log << ParserSignal << Current() << "Unexpected EOF in scope dependencies";
+    if (m.IsEof()) [[unlikely]] {
+      Log << ParserSignal << m.Current() << "Unexpected EOF in scope dependencies";
       return dependencies;
     }
 
-    if (NextIf<PuncRBrk>()) {
+    if (m.NextIf<PuncRBrk>()) {
       return dependencies;
     }
 
-    if (auto dependency_name = RecurseName()) {
+    if (auto dependency_name = m.RecurseName()) {
       dependencies.push_back(dependency_name);
     } else {
-      Log << ParserSignal << Next() << "Expected dependency name";
+      Log << ParserSignal << m.Next() << "Expected dependency name";
     }
 
-    NextIf<PuncComa>();
+    m.NextIf<PuncComa>();
   }
 }
 
-auto GeneralParser::PImpl::RecurseScopeBlock() -> FlowPtr<Expr> {
-  if (NextIf<PuncSemi>()) {
-    return m_fac.CreateBlock();
+static auto RecurseScopeBlock(GeneralParser::Context& m) -> FlowPtr<Expr> {
+  if (m.NextIf<PuncSemi>()) {
+    return m.CreateBlock();
   }
 
-  return RecurseBlock(true, false, BlockMode::Unknown);
+  return m.RecurseBlock(true, false, BlockMode::Unknown);
 }
 
-auto GeneralParser::PImpl::RecurseScope() -> FlowPtr<Expr> {
+auto GeneralParser::Context::RecurseScope() -> FlowPtr<Expr> {
   auto scope_name = RecurseName();
   bool has_colon = NextIf<PuncColn>().has_value();
-  auto dependencies = RecurseScopeDeps();
+  auto dependencies = RecurseScopeDeps(*this);
 
   bool is_colon_required = !dependencies.empty() && !scope_name->empty();
   if (!has_colon && is_colon_required) [[unlikely]] {
     Log << ParserSignal << Current() << "Expected ':' after scope name";
   }
 
-  auto scope_block = RecurseScopeBlock();
+  auto scope_block = RecurseScopeBlock(*this);
 
-  return m_fac.CreateScope(scope_name, scope_block, dependencies);
+  return CreateScope(scope_name, scope_block, dependencies);
 }

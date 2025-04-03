@@ -34,15 +34,15 @@
 #include <boost/multiprecision/cpp_int.hpp>
 #include <core/CodeWriter.hh>
 #include <nitrate-core/Logger.hh>
+#include <nitrate-lexer/Enums.hh>
 #include <nitrate-lexer/Grammar.hh>
 #include <nitrate-parser/AST.hh>
 #include <nitrate-parser/ASTExpr.hh>
 #include <nitrate-parser/ASTStmt.hh>
 #include <nitrate-parser/ASTType.hh>
 #include <sstream>
+#include <string_view>
 #include <variant>
-
-#include "nitrate-lexer/Enums.hh"
 
 using namespace ncc;
 using namespace ncc::lex;
@@ -341,45 +341,186 @@ namespace ncc::parse {
       m_ldata = punc;
     }
 
+    static constexpr auto kIdentiferStartTable = []() {
+      std::array<bool, 256> map = {};
+      map.fill(false);
+
+      for (uint8_t c = 'a'; c <= 'z'; ++c) {
+        map[c] = true;
+      }
+
+      for (uint8_t c = 'A'; c <= 'Z'; ++c) {
+        map[c] = true;
+      }
+
+      map['_'] = true;
+
+      /* Support UTF-8 */
+      for (uint8_t c = 0x80; c < 0xff; c++) {
+        map[c] = true;
+      }
+
+      return map;
+    }();
+
+    static constexpr auto kIdentifierCharTable = []() {
+      std::array<bool, 256> tab = {};
+
+      for (uint8_t c = 'a'; c <= 'z'; ++c) {
+        tab[c] = true;
+      }
+
+      for (uint8_t c = 'A'; c <= 'Z'; ++c) {
+        tab[c] = true;
+      }
+
+      for (uint8_t c = '0'; c <= '9'; ++c) {
+        tab[c] = true;
+      }
+
+      tab['_'] = true;
+
+      /* Support UTF-8 */
+      for (uint8_t c = 0x80; c < 0xff; c++) {
+        tab[c] = true;
+      }
+
+      return tab;
+    }();
+
+    /// https://stackoverflow.com/questions/1031645/how-to-detect-utf-8-in-plain-c
+    static auto IsUtf8(std::basic_string_view<uint8_t> bytes) -> bool {
+      while (!bytes.empty()) {
+        if ((  // ASCII
+               // use bytes[0] <= 0x7F to allow ASCII control characters
+                bytes[0] == 0x09 || bytes[0] == 0x0A || bytes[0] == 0x0D || (0x20 <= bytes[0] && bytes[0] <= 0x7E))) {
+          bytes.remove_prefix(1);
+          continue;
+        }
+
+        if ((  // non-overlong 2-byte
+                (0xC2 <= bytes[0] && bytes[0] <= 0xDF) && (0x80 <= bytes[1] && bytes[1] <= 0xBF))) {
+          bytes.remove_prefix(2);
+          continue;
+        }
+
+        if ((  // excluding overlongs
+                bytes[0] == 0xE0 && (0xA0 <= bytes[1] && bytes[1] <= 0xBF) && (0x80 <= bytes[2] && bytes[2] <= 0xBF)) ||
+            (  // straight 3-byte
+                ((0xE1 <= bytes[0] && bytes[0] <= 0xEC) || bytes[0] == 0xEE || bytes[0] == 0xEF) &&
+                (0x80 <= bytes[1] && bytes[1] <= 0xBF) && (0x80 <= bytes[2] && bytes[2] <= 0xBF)) ||
+            (  // excluding surrogates
+                bytes[0] == 0xED && (0x80 <= bytes[1] && bytes[1] <= 0x9F) && (0x80 <= bytes[2] && bytes[2] <= 0xBF))) {
+          bytes.remove_prefix(3);
+          continue;
+        }
+
+        if ((  // planes 1-3
+                bytes[0] == 0xF0 && (0x90 <= bytes[1] && bytes[1] <= 0xBF) && (0x80 <= bytes[2] && bytes[2] <= 0xBF) &&
+                (0x80 <= bytes[3] && bytes[3] <= 0xBF)) ||
+            (  // planes 4-15
+                (0xF1 <= bytes[0] && bytes[0] <= 0xF3) && (0x80 <= bytes[1] && bytes[1] <= 0xBF) &&
+                (0x80 <= bytes[2] && bytes[2] <= 0xBF) && (0x80 <= bytes[3] && bytes[3] <= 0xBF)) ||
+            (  // plane 16
+                bytes[0] == 0xF4 && (0x80 <= bytes[1] && bytes[1] <= 0x8F) && (0x80 <= bytes[2] && bytes[2] <= 0xBF) &&
+                (0x80 <= bytes[3] && bytes[3] <= 0xBF))) {
+          bytes.remove_prefix(4);
+          continue;
+        }
+
+        return false;
+      }
+
+      return true;
+    }
+
     void PutIdentifier(std::string_view name) {
+      bool use_escape = [name] {
+        if (!kIdentiferStartTable[static_cast<uint8_t>(name.at(0))]) [[unlikely]] {
+          return true;
+        }
+
+        auto conforms_to_character_subset =
+            std::all_of(name.begin() + 1, name.end(), [](uint8_t ch) { return kIdentifierCharTable[ch]; });
+        if (!conforms_to_character_subset) [[unlikely]] {
+          return true;
+        }
+
+        if (LEXICAL_KEYWORDS.left.find(name) != LEXICAL_KEYWORDS.left.end()) [[unlikely]] {
+          return true;
+        }
+
+        if (LEXICAL_OPERATORS.left.find(name) != LEXICAL_OPERATORS.left.end()) [[unlikely]] {
+          return true;
+        }
+
+        std::basic_string_view<uint8_t> name_bytes(reinterpret_cast<const uint8_t*>(name.data()), name.size());
+        if (!IsUtf8(name_bytes)) [[unlikely]] {
+          return true;
+        }
+
+        return false;
+      }();
+
       switch (m_last) {
         case Oper: {
-          if (IsWordOperator(m_ldata.m_op)) {
-            m_os << ' ' << name;
+          if (use_escape) {
+            m_os << "`" << name << "`";
           } else {
-            m_os << name;
+            if (IsWordOperator(m_ldata.m_op)) {
+              m_os << ' ' << name;
+            } else {
+              m_os << name;
+            }
           }
+
           break;
         }
 
         case KeyW:
         case Name:
         case Macr: {
-          m_os << ' ' << name;
+          if (use_escape) {
+            m_os << "`" << name << "`";
+          } else {
+            m_os << ' ' << name;
+          }
           break;
         }
 
         case NumL: {
-          /// FIXME: Minimize redundant whitespace
-          m_os << ' ' << name;
+          if (use_escape) {
+            m_os << "`" << name << "`";
+          } else {
+            // 'E' and 'e' are used in floating point numbers
+            if (name[0] == 'e' || name[0] == 'E') {
+              m_os << ' ';
+            }
+
+            m_os << name;
+          }
           break;
         }
 
         case IntL: {
-          bool was_it_hex = m_ldata.m_str->starts_with("0x");
-          if (was_it_hex) {
-            if (std::isxdigit(name.front()) == 0) {
-              m_os << name;
-            } else {
-              m_os << ' ' << name;
-            }
+          if (use_escape) {
+            m_os << "`" << name << "`";
           } else {
-            /**
-             * Otherwise, it was in decimal. Therefore the allowed character is [0-9].
-             * Because identifiers cannot start with a digit, we don't require whitespace.
-             */
+            bool was_it_hex = m_ldata.m_str->starts_with("0x");
+            if (was_it_hex) {
+              if (std::isxdigit(name.front()) == 0) {
+                m_os << name;
+              } else {
+                m_os << ' ' << name;
+              }
+            } else {
+              /**
+               * Otherwise, it was in decimal. Therefore the allowed character is [0-9].
+               * Because identifiers cannot start with a digit, we don't require whitespace.
+               */
 
-            m_os << name;
+              m_os << name;
+            }
           }
           break;
         }
@@ -390,7 +531,11 @@ namespace ncc::parse {
         case Char:
         case MacB:
         case Note: {
-          m_os << name;
+          if (use_escape) {
+            m_os << "`" << name << "`";
+          } else {
+            m_os << name;
+          }
           break;
         }
       }
@@ -911,7 +1056,7 @@ namespace ncc::parse {
         auto [pname, ptype, pdefault] = *it;
         PutIdentifier(pname);
 
-        if (!ptype->Is(QAST_INFER)) {
+        if (!ptype->Is(AST_tINFER)) {
           PutPunctor(PuncColn);
           ptype->Accept(*this);
         }
@@ -930,7 +1075,7 @@ namespace ncc::parse {
       }
       PutPunctor(PuncRPar);
 
-      if (!n->GetReturn()->Is(QAST_INFER)) {
+      if (!n->GetReturn()->Is(AST_tINFER)) {
         PutPunctor(PuncColn);
         n->GetReturn()->Accept(*this);
       }
@@ -957,18 +1102,6 @@ namespace ncc::parse {
 
       n->GetLHS()->Accept(*this);
       PutOperator(n->GetOp());
-      n->GetRHS()->Accept(*this);
-
-      PrintTrailing(n);
-    }
-
-    void Visit(FlowPtr<Ternary> n) override {
-      PrintLeading(n);
-
-      n->GetCond()->Accept(*this);
-      PutOperator(OpTernary);
-      n->GetLHS()->Accept(*this);
-      PutPunctor(PuncColn);
       n->GetRHS()->Accept(*this);
 
       PrintTrailing(n);
@@ -1022,14 +1155,6 @@ namespace ncc::parse {
       PrintTrailing(n);
     }
 
-    void Visit(FlowPtr<Undefined> n) override {
-      PrintLeading(n);
-
-      PutKeyword(Undef);
-
-      PrintTrailing(n);
-    }
-
     void Visit(FlowPtr<Call> n) override {
       PrintLeading(n);
 
@@ -1056,7 +1181,7 @@ namespace ncc::parse {
       PrintLeading(n);
 
       n->GetFunc()->Accept(*this);
-      PutOperator(OpLT);
+      PutPunctor(PuncLCur);
       for (auto it = n->GetTemplateArgs().begin(); it != n->GetTemplateArgs().end(); ++it) {
         if (it != n->GetTemplateArgs().begin()) {
           PutPunctor(PuncComa);
@@ -1069,7 +1194,7 @@ namespace ncc::parse {
 
         it->second->Accept(*this);
       }
-      PutOperator(OpGT);
+      PutPunctor(PuncRCur);
       PutPunctor(PuncLPar);
       for (auto it = n->GetArgs().begin(); it != n->GetArgs().end(); ++it) {
         if (it != n->GetArgs().begin()) {
@@ -1250,7 +1375,7 @@ namespace ncc::parse {
       }
 
       PutIdentifier(n->GetName());
-      if (!n->GetType()->Is(QAST_INFER)) {
+      if (!n->GetType()->Is(AST_tINFER)) {
         PutPunctor(PuncColn);
         n->GetType()->Accept(*this);
       }
@@ -1266,7 +1391,6 @@ namespace ncc::parse {
     void Visit(FlowPtr<Assembly> n) override {
       PrintLeading(n);
 
-      /// TODO: Implement code writer
       qcore_implement();
       (void)n;
 
@@ -1366,19 +1490,6 @@ namespace ncc::parse {
       PrintTrailing(n);
     }
 
-    void Visit(FlowPtr<ReturnIf> n) override {
-      PrintLeading(n);
-
-      PutKeyword(lex::Retif);
-      n->GetCond()->Accept(*this);
-      if (n->GetValue()) {
-        PutPunctor(PuncComa);
-        n->GetValue().value()->Accept(*this);
-      }
-
-      PrintTrailing(n);
-    }
-
     void Visit(FlowPtr<Case> n) override {
       PrintLeading(n);
 
@@ -1449,7 +1560,7 @@ namespace ncc::parse {
           auto& [pname, ptype, pdefault] = *it;
           PutIdentifier(pname);
 
-          if (!ptype->Is(QAST_INFER)) {
+          if (!ptype->Is(AST_tINFER)) {
             PutPunctor(PuncColn);
             ptype->Accept(*this);
           }
@@ -1471,7 +1582,7 @@ namespace ncc::parse {
         auto& [pname, ptype, pdefault] = *it;
         PutIdentifier(pname);
 
-        if (!ptype->Is(QAST_INFER)) {
+        if (!ptype->Is(AST_tINFER)) {
           PutPunctor(PuncColn);
           ptype->Accept(*this);
         }
@@ -1490,7 +1601,7 @@ namespace ncc::parse {
       }
       PutPunctor(PuncRPar);
 
-      if (!n->GetReturn()->Is(QAST_INFER)) {
+      if (!n->GetReturn()->Is(AST_tINFER)) {
         PutPunctor(PuncColn);
         n->GetReturn()->Accept(*this);
       }
@@ -1498,7 +1609,7 @@ namespace ncc::parse {
       if (n->GetBody()) {
         auto body = n->GetBody().value();
 
-        if (body->Is(QAST_BLOCK) && body->As<Block>()->GetStatements().size() == 1) {
+        if (body->Is(AST_sBLOCK) && body->As<Block>()->GetStatements().size() == 1) {
           PutOperator(OpArrow);
           body->As<Block>()->GetStatements().front()->Accept(*this);
         } else {
@@ -1510,11 +1621,119 @@ namespace ncc::parse {
     }
 
     void Visit(FlowPtr<Struct> n) override {
+      static const std::unordered_map<CompositeType, lex::Keyword> kStructKeywords = {
+          {CompositeType::Struct, lex::Struct}, {CompositeType::Union, lex::Union},
+          {CompositeType::Class, lex::Class},   {CompositeType::Group, lex::Group},
+          {CompositeType::Region, lex::Region},
+      };
+
       PrintLeading(n);
 
-      /// TODO: Implement code writer
-      qcore_implement();
-      (void)n;
+      PutKeyword(kStructKeywords.at(n->GetCompositeType()));
+
+      if (!n->GetAttributes().empty()) {
+        PutPunctor(PuncLBrk);
+        for (auto it = n->GetAttributes().begin(); it != n->GetAttributes().end(); ++it) {
+          if (it != n->GetAttributes().begin()) {
+            PutPunctor(PuncComa);
+          }
+
+          it->Accept(*this);
+        }
+        PutPunctor(PuncRBrk);
+      }
+
+      if (n->GetName()) {
+        PutIdentifier(n->GetName());
+      }
+
+      if (n->GetTemplateParams()) {
+        PutOperator(OpLT);
+        for (auto it = n->GetTemplateParams().value().begin(); it != n->GetTemplateParams().value().end(); ++it) {
+          if (it != n->GetTemplateParams().value().begin()) {
+            PutPunctor(PuncComa);
+          }
+
+          auto& [pname, ptype, pdefault] = *it;
+          PutIdentifier(pname);
+
+          if (!ptype->Is(AST_tINFER)) {
+            PutPunctor(PuncColn);
+            ptype->Accept(*this);
+          }
+
+          if (pdefault) {
+            PutOperator(OpSet);
+            pdefault.value()->Accept(*this);
+          }
+        }
+        PutOperator(OpGT);
+      }
+
+      if (!n->GetNames().empty()) {
+        PutPunctor(PuncColn);
+        PutPunctor(PuncLBrk);
+        for (auto it = n->GetNames().begin(); it != n->GetNames().end(); ++it) {
+          if (it != n->GetNames().begin()) {
+            PutPunctor(PuncComa);
+          }
+
+          PutIdentifier(*it);
+        }
+        PutPunctor(PuncRBrk);
+      }
+
+      PutPunctor(PuncLCur);
+
+      for (auto it = n->GetFields().begin(); it != n->GetFields().end(); ++it) {
+        auto& [is_static, vis, name, type, default_value] = *it;
+
+        switch (vis) {
+          case Vis::Pub:
+            PutKeyword(lex::Pub);
+            break;
+          case Vis::Sec:
+            PutKeyword(Sec);
+            break;
+          case Vis::Pro:
+            PutKeyword(Pro);
+            break;
+        }
+
+        if (is_static) {
+          PutKeyword(lex::Static);
+        }
+
+        PutIdentifier(name);
+        PutPunctor(PuncColn);
+        type->Accept(*this);
+        if (default_value) {
+          PutOperator(OpSet);
+          default_value.value()->Accept(*this);
+        }
+
+        if (std::next(it) != n->GetFields().end() || !n->GetMethods().empty()) {
+          PutPunctor(PuncComa);
+        }
+      }
+
+      for (auto& [vis, method] : n->GetMethods()) {
+        switch (vis) {
+          case Vis::Pub:
+            PutKeyword(lex::Pub);
+            break;
+          case Vis::Sec:
+            PutKeyword(Sec);
+            break;
+          case Vis::Pro:
+            PutKeyword(Pro);
+            break;
+        }
+
+        method->Accept(*this);
+      }
+
+      PutPunctor(PuncRCur);
 
       PrintTrailing(n);
     }
@@ -1604,7 +1823,7 @@ namespace ncc::parse {
         PutPunctor(PuncRBrk);
       }
 
-      if (n->GetBody()->Is(QAST_BLOCK) && n->GetBody()->As<Block>()->GetStatements().size() == 1) {
+      if (n->GetBody()->Is(AST_sBLOCK) && n->GetBody()->As<Block>()->GetStatements().size() == 1) {
         n->GetBody()->As<Block>()->GetStatements().front()->Accept(*this);
       } else {
         n->GetBody()->Accept(*this);

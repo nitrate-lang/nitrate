@@ -61,3 +61,4 @@ coverage/
 package-example/
 no3/lib/src/core/PackageConfigFormat.pb.cc
 no3/lib/src/core/PackageConfigFormat.pb.h
+nitrate-lsp.log

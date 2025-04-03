@@ -39,76 +39,76 @@ using namespace ncc;
 using namespace ncc::lex;
 using namespace ncc::parse;
 
-auto GeneralParser::PImpl::RecurseSwitchCaseBody() -> FlowPtr<Expr> {
-  if (!NextIf<OpArrow>()) {
-    Log << ParserSignal << Current() << "Expected '=>' in switch case.";
+static auto RecurseSwitchCaseBody(GeneralParser::Context& m) -> FlowPtr<Expr> {
+  if (!m.NextIf<OpArrow>()) {
+    Log << ParserSignal << m.Current() << "Expected '=>' in switch case.";
   }
 
-  if (Peek().Is<PuncLCur>()) {
-    return RecurseBlock(true, false, BlockMode::Unknown);
+  if (m.Peek().Is<PuncLCur>()) {
+    return m.RecurseBlock(true, false, BlockMode::Unknown);
   }
 
-  return RecurseBlock(false, true, BlockMode::Unknown);
+  return m.RecurseBlock(false, true, BlockMode::Unknown);
 }
 
-auto GeneralParser::PImpl::RecurseSwitchCase() -> std::pair<FlowPtr<Expr>, bool> {
-  auto cond = RecurseExpr({
+static auto RecurseSwitchCase(GeneralParser::Context& m) -> std::pair<FlowPtr<Expr>, bool> {
+  auto cond = m.RecurseExpr({
       Token(Oper, OpArrow),
       Token(Punc, PuncLCur),
   });
-  auto body = RecurseSwitchCaseBody();
+  auto body = RecurseSwitchCaseBody(m);
 
-  auto is_the_default_case = cond->Is(QAST_IDENT) && cond->As<Identifier>()->GetName() == "_";
+  auto is_the_default_case = cond->Is(AST_eIDENT) && cond->As<Identifier>()->GetName() == "_";
 
   if (is_the_default_case) {
     return {body, true};
   }
 
-  return {m_fac.CreateCase(cond, body), false};
+  return {m.CreateCase(cond, body), false};
 }
 
-auto GeneralParser::PImpl::RecurseSwitchBody()
+static auto RecurseSwitchBody(GeneralParser::Context& m)
     -> std::optional<std::pair<std::vector<FlowPtr<Case>>, NullableFlowPtr<Expr>>> {
   std::vector<FlowPtr<Case>> cases;
   NullableFlowPtr<Expr> default_case;
 
   while (true) {
-    if (m_rd.IsEof()) [[unlikely]] {
-      Log << ParserSignal << Current() << "Unexpected EOF in switch statement.";
+    if (m.IsEof()) [[unlikely]] {
+      Log << ParserSignal << m.Current() << "Unexpected EOF in switch statement.";
       break;
     }
 
-    if (NextIf<PuncRCur>()) {
+    if (m.NextIf<PuncRCur>()) {
       return {{cases, default_case}};
     }
 
-    auto [stmt, is_default] = RecurseSwitchCase();
+    auto [stmt, is_default] = RecurseSwitchCase(m);
     if (is_default) {
       if (!default_case) [[likely]] {
         default_case = stmt;
       } else {
-        Log << ParserSignal << Current() << "Duplicate default case in switch.";
+        Log << ParserSignal << m.Current() << "Duplicate default case in switch.";
       }
     } else {
       cases.push_back(stmt.As<Case>());
     }
 
-    NextIf<PuncComa>() || NextIf<PuncSemi>();
+    m.NextIf<PuncComa>() || m.NextIf<PuncSemi>();
   }
 
   return std::nullopt;
 }
 
-auto GeneralParser::PImpl::RecurseSwitch() -> FlowPtr<Expr> {
+auto GeneralParser::Context::RecurseSwitch() -> FlowPtr<Expr> {
   auto switch_cond = RecurseExpr({
       Token(Punc, PuncLCur),
   });
 
   if (NextIf<PuncLCur>()) [[likely]] {
-    if (auto switch_body = RecurseSwitchBody()) [[likely]] {
+    if (auto switch_body = RecurseSwitchBody(*this)) [[likely]] {
       auto [switch_cases, switch_default] = switch_body.value();
 
-      return m_fac.CreateSwitch(switch_cond, switch_default, switch_cases);
+      return CreateSwitch(switch_cond, switch_default, switch_cases);
     } else {
       Log << ParserSignal << Current() << "Switch statement body is malformed.";
     }
@@ -116,5 +116,5 @@ auto GeneralParser::PImpl::RecurseSwitch() -> FlowPtr<Expr> {
     Log << ParserSignal << Current() << "Expected '{' after switch condition.";
   }
 
-  return m_fac.CreateMockInstance<Switch>();
+  return CreateMockInstance<Switch>();
 }

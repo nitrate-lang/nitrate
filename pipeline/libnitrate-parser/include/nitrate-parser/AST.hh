@@ -39,99 +39,96 @@
 
 namespace ncc::parse {
   enum ASTNodeKind : uint8_t {
-    QAST_DISCARDED, /* Deleted node */
+    AST_DISCARDED, /* Deleted node */
 
     /*****************************************************************************
      * Expressions
      ****************************************************************************/
-    QAST_BINEXPR,    /* Binary expression */
-    QAST_UNEXPR,     /* Unary expression */
-    QAST_TEREXPR,    /* Ternary expression */
-    QAST_INT,        /* Integer literal */
-    QAST_FLOAT,      /* Floating-point literal */
-    QAST_STRING,     /* String literal */
-    QAST_CHAR,       /* Character literal */
-    QAST_BOOL,       /* Boolean literal */
-    QAST_NULL,       /* Null literal */
-    QAST_UNDEF,      /* Undefined expression */
-    QAST_CALL,       /* Function call */
-    QAST_LIST,       /* List expression */
-    QAST_ASSOC,      /* Associative pair */
-    QAST_INDEX,      /* Index access */
-    QAST_SLICE,      /* Slice access */
-    QAST_FSTRING,    /* Formatted string */
-    QAST_IDENT,      /* Identifier */
-    QAST_TEMPL_CALL, /* Template call */
-    QAST_IMPORT,     /* Import expression */
+    AST_eBIN,           /* Binary expression */
+    AST_eUNARY,         /* Unary expression */
+    AST_eINT,           /* Integer literal */
+    AST_eFLOAT,         /* Floating-point literal */
+    AST_eSTRING,        /* String literal */
+    AST_eCHAR,          /* Character literal */
+    AST_eBOOL,          /* Boolean literal */
+    AST_eNULL,          /* Null literal */
+    AST_eCALL,          /* Function call */
+    AST_eLIST,          /* List expression */
+    AST_ePAIR,          /* Associative pair */
+    AST_eINDEX,         /* Index access */
+    AST_eSLICE,         /* Slice access */
+    AST_eFSTRING,       /* Formatted string */
+    AST_eIDENT,         /* Identifier */
+    AST_eTEMPLATE_CALL, /* Template call */
+    AST_eIMPORT,        /* Import expression */
 
     /*****************************************************************************
      * Types
      ****************************************************************************/
 
-    QAST_U1,       /* 1-bit unsigned integer (boolean) */
-    QAST_U8,       /* 8-bit unsigned integer */
-    QAST_U16,      /* 16-bit unsigned integer */
-    QAST_U32,      /* 32-bit unsigned integer */
-    QAST_U64,      /* 64-bit unsigned integer */
-    QAST_U128,     /* 128-bit unsigned integer */
-    QAST_I8,       /* 8-bit signed integer */
-    QAST_I16,      /* 16-bit signed integer */
-    QAST_I32,      /* 32-bit signed integer */
-    QAST_I64,      /* 64-bit signed integer */
-    QAST_I128,     /* 128-bit signed integer */
-    QAST_F16,      /* 16-bit floating-point number */
-    QAST_F32,      /* 32-bit floating-point number */
-    QAST_F64,      /* 64-bit floating-point number */
-    QAST_F128,     /* 128-bit floating-point number */
-    QAST_VOID,     /* Void type */
-    QAST_INFER,    /* Inferred type */
-    QAST_OPAQUE,   /* Opaque named type */
-    QAST_NAMED,    /* Unresolved type name */
-    QAST_REF,      /* Reference type */
-    QAST_PTR,      /* Raw pointer type */
-    QAST_ARRAY,    /* Basic array type */
-    QAST_TUPLE,    /* Tuple type */
-    QAST_TEMPLATE, /* Template type */
-    QAST_FUNCTOR,  /* Function type */
+    AST_tU1,       /* 1-bit unsigned integer (boolean) */
+    AST_tU8,       /* 8-bit unsigned integer */
+    AST_tU16,      /* 16-bit unsigned integer */
+    AST_tU32,      /* 32-bit unsigned integer */
+    AST_tU64,      /* 64-bit unsigned integer */
+    AST_tU128,     /* 128-bit unsigned integer */
+    AST_tI8,       /* 8-bit signed integer */
+    AST_tI16,      /* 16-bit signed integer */
+    AST_tI32,      /* 32-bit signed integer */
+    AST_tI64,      /* 64-bit signed integer */
+    AST_tI128,     /* 128-bit signed integer */
+    AST_tF16,      /* 16-bit floating-point number */
+    AST_tF32,      /* 32-bit floating-point number */
+    AST_tF64,      /* 64-bit floating-point number */
+    AST_tF128,     /* 128-bit floating-point number */
+    AST_tVOID,     /* Void type */
+    AST_tINFER,    /* Inferred type */
+    AST_tOPAQUE,   /* Opaque named type */
+    AST_tNAMED,    /* Unresolved type name */
+    AST_tREF,      /* Reference type */
+    AST_tPTR,      /* Raw pointer type */
+    AST_tARRAY,    /* Basic array type */
+    AST_tTUPLE,    /* Tuple type */
+    AST_tTEMPLATE, /* Template type */
+    AST_tFUNCTION, /* Function type */
 
     /*****************************************************************************
      * Statements
      ****************************************************************************/
 
-    QAST_IF,         /* If statement */
-    QAST_RETIF,      /* Return-if statement */
-    QAST_SWITCH,     /* Switch statement */
-    QAST_CASE,       /* Case statement */
-    QAST_RETURN,     /* Return statement */
-    QAST_BREAK,      /* Break statement */
-    QAST_CONTINUE,   /* Continue statement */
-    QAST_WHILE,      /* While statement */
-    QAST_FOR,        /* For statement */
-    QAST_FOREACH,    /* Foreach statement */
-    QAST_INLINE_ASM, /* Inline assembly statement */
-    QAST_TYPEDEF,    /* Type alias declaration */
-    QAST_STRUCT,     /* Struct definition */
-    QAST_ENUM,       /* Enum definition */
-    QAST_SCOPE,      /* Namespace scope */
-    QAST_BLOCK,      /* Block statement */
-    QAST_EXPORT,     /* Export statement */
-    QAST_VAR,        /* Variable declaration */
-    QAST_FUNCTION,   /* Function definition */
+    AST_sIF,       /* If statement */
+    AST_sSWITCH,   /* Switch statement */
+    AST_sCASE,     /* Case statement */
+    AST_sRET,      /* Return statement */
+    AST_sBRK,      /* Break statement */
+    AST_sCONT,     /* Continue statement */
+    AST_sWHILE,    /* While statement */
+    AST_sFOR,      /* For statement */
+    AST_sFOREACH,  /* Foreach statement */
+    AST_sASM,      /* Inline assembly statement */
+    AST_sTYPEDEF,  /* Type alias declaration */
+    AST_sSTRUCT,   /* Struct definition */
+    AST_sENUM,     /* Enum definition */
+    AST_sSCOPE,    /* Namespace scope */
+    AST_sBLOCK,    /* Block statement */
+    AST_sEXPORT,   /* Export statement */
+    AST_sVAR,      /* Variable declaration */
+    AST_sFUNCTION, /* Function definition/declaration */
 
     ///======================================================================
 
-    QAST__TYPE_FIRST = QAST_U1,
-    QAST__TYPE_LAST = QAST_FUNCTOR,
+    AST__TYPE_FIRST = AST_tU1,
+    AST__TYPE_LAST = AST_tFUNCTION,
 
-    QAST__STMT_FIRST = QAST_IF,
-    QAST__STMT_LAST = QAST_FUNCTION,
+    AST__STMT_FIRST = AST_sIF,
+    AST__STMT_LAST = AST_sFUNCTION,
 
-    QAST__EXPR_FIRST = QAST_DISCARDED,
-    QAST__EXPR_LAST = QAST_FUNCTION,
+    AST__EXPR_FIRST = AST_DISCARDED,
+    AST__EXPR_LAST = AST_sFUNCTION,
 
-    QAST__FIRST = QAST_DISCARDED,
-    QAST__LAST = QAST_FUNCTION,
-    QAST__RANGE = QAST__LAST - QAST__FIRST,
+    AST__FIRST = AST_DISCARDED,
+    AST__LAST = AST_sFUNCTION,
+    AST__RANGE = AST__LAST - AST__FIRST,
   };
 
   auto operator<<(std::ostream& os, ASTNodeKind kind) -> std::ostream&;
