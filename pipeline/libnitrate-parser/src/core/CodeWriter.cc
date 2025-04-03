@@ -33,15 +33,19 @@
 
 #include <boost/multiprecision/cpp_int.hpp>
 #include <core/CodeWriter.hh>
+#include <memory>
+#include <nitrate-core/Environment.hh>
 #include <nitrate-core/Logger.hh>
 #include <nitrate-lexer/Enums.hh>
 #include <nitrate-lexer/Grammar.hh>
+#include <nitrate-lexer/Lexer.hh>
 #include <nitrate-parser/AST.hh>
 #include <nitrate-parser/ASTExpr.hh>
 #include <nitrate-parser/ASTStmt.hh>
 #include <nitrate-parser/ASTType.hh>
 #include <sstream>
 #include <string_view>
+#include <unordered_map>
 #include <variant>
 
 using namespace ncc;
@@ -49,86 +53,55 @@ using namespace ncc::lex;
 using namespace ncc::parse;
 
 namespace ncc::parse {
+  static const auto OPERATOR_ADJACENCY_TABLE = [] {
+    struct PairHash {
+      size_t operator()(const std::pair<Operator, Operator>& p) const {
+        return std::hash<int>()(static_cast<int>(p.first)) ^ std::hash<int>()(static_cast<int>(p.second));
+      }
+    };
+
+    struct Result {
+      bool m_seperate;
+    };
+
+    auto env = std::make_shared<ncc::Environment>();
+
+    std::unordered_map<std::pair<Operator, Operator>, Result, PairHash> map;
+    map.reserve(LEXICAL_OPERATORS.size() * LEXICAL_OPERATORS.size());
+    for (const auto& [outer_str, outer_op] : LEXICAL_OPERATORS) {
+      for (const auto& [inner_str, inner_op] : LEXICAL_OPERATORS) {
+        env->Reset();
+
+        bool seperate = true;
+
+        std::stringstream ss;
+        ss << outer_str << inner_str;
+        ss.seekg(0);
+
+        auto lexer = Tokenizer(ss, env);
+
+        auto first = lexer.Next();
+        auto second = lexer.Next();
+        auto third = lexer.Next();
+
+        if (first.Is(Oper) && second.Is(Oper) && third.Is(EofF)) {
+          if (first.GetOperator() == outer_op && second.GetOperator() == inner_op) {
+            seperate = false;
+          }
+        }
+
+        map[{outer_op, inner_op}] = {seperate};
+      }
+    }
+
+    return map;
+  }();
+
   class CodeWriter final : public ICodeWriter {
     std::ostream& m_os;
     TokenType m_last{};
     TokenData m_ldata;
     bool m_did_root{};
-
-    static constexpr auto kNumberOfOperators = Op_Last - Op_First + 1;
-
-    /// FIXME: Optimize this lookup table to minimize redundant whitespace
-    static constexpr std::array<char, (kNumberOfOperators * kNumberOfOperators) + 1> kOpOnOpAction = {
-        /*
-         OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO
-         ppppppppppppppppppppppppppppppppppppppppppppppppppppppp
-         PMTSPBBBBLRRRLLLLLGLGENSPMTSPBBBLLLLRRRIDABIOSBATCDREAT
-         liileiiiiSSOOooooTTEEqEeliileiiioooSSOOnesinuiilyooalre
-         unmartttthhTTgggg      tunmartttggghhTTcc t tztipmtnlrr
-         suescAOXNiiLRiiii       suescAOXiiiiiLR   c  esgep gion
-          sshenrooff  cccc       SsshenrocccffSS   a  oinot epwa
-             nd rttt  AOXN       eSSSndSrAOXttee   s  fzofi  s r
-             t        nroo       teeetSeSnroSStt   t   ef m  i y
-                      d rt        tttSetedSree     A   o  e  s
-                                     et tSeStt     s   f
-                                     t   ete
-                                         t t                                */
-        "                                                       " /* OpPlus */
-        "                                                       " /* OpMinus */
-        "                                                       " /* OpTimes */
-        "                                                       " /* OpSlash */
-        "                                                       " /* OpPercent */
-        "                                                       " /* OpBitAnd */
-        "                                                       " /* OpBitOr */
-        "                                                       " /* OpBitXor */
-        "                                                       " /* OpBitNot */
-        "                                                       " /* OpLShift */
-        "                                                       " /* OpRShift */
-        "                                                       " /* OpROTL */
-        "                                                       " /* OpROTR */
-        "                                                       " /* OpLogicAnd */
-        "                                                       " /* OpLogicOr */
-        "                                                       " /* OpLogicXor */
-        "                                                       " /* OpLogicNot */
-        "                                                       " /* OpLT */
-        "                                                       " /* OpGT */
-        "                                                       " /* OpLE */
-        "                                                       " /* OpGE */
-        "                                                       " /* OpEq */
-        "                                                       " /* OpNE */
-        "                                                       " /* OpSet */
-        "                                                       " /* OpPlusSet */
-        "                                                       " /* OpMinusSet */
-        "                                                       " /* OpTimesSet */
-        "                                                       " /* OpSlashSet */
-        "                                                       " /* OpPercentSet */
-        "                                                       " /* OpBitAndSet */
-        "                                                       " /* OpBitOrSet */
-        "                                                       " /* OpBitXorSet */
-        "                                                       " /* OpLogicAndSet */
-        "                                                       " /* OpLogicOrSet */
-        "                                                       " /* OpLogicXorSet */
-        "                                                       " /* OpLShiftSet */
-        "                                                       " /* OpRShiftSet */
-        "                                                       " /* OpROTLSet */
-        "                                                       " /* OpROTRSet */
-        "                                                       " /* OpInc */
-        "                                                       " /* OpDec */
-        "                                                       " /* OpAs */
-        "                                                       " /* OpBitcastAs */
-        "                                                       " /* OpIn */
-        "                                                       " /* OpOut */
-        "                                                       " /* OpSizeof */
-        "                                                       " /* OpBitsizeof */
-        "                                                       " /* OpAlignof */
-        "                                                       " /* OpTypeof */
-        "                                                       " /* OpComptime */
-        "                                                       " /* OpDot */
-        "                                                       " /* OpRange */
-        "                                                       " /* OpEllipsis */
-        "                                                       " /* OpArrow */
-        "                                                       " /* OpTernary */
-    };
 
     static bool IsWordOperator(Operator op) {
       switch (op) {
@@ -274,15 +247,11 @@ namespace ncc::parse {
         }
 
         case Oper: {
-          auto table_row = static_cast<size_t>(m_ldata.m_op) - static_cast<size_t>(Op_First);
-          auto table_col = static_cast<size_t>(op) - static_cast<size_t>(Op_First);
-          auto table_idx = table_row * kNumberOfOperators + table_col;
-
-          if (kOpOnOpAction[table_idx] == ' ') {
-            m_os << ' ' << op;
-          } else {
-            m_os << op;
+          if (OPERATOR_ADJACENCY_TABLE.at({m_ldata.m_op, op}).m_seperate) {
+            m_os << ' ';
           }
+
+          m_os << op;
           break;
         }
 
@@ -1621,7 +1590,7 @@ namespace ncc::parse {
     }
 
     void Visit(FlowPtr<Struct> n) override {
-      static const std::unordered_map<CompositeType, lex::Keyword> kStructKeywords = {
+      static const std::unordered_map<CompositeType, lex::Keyword> struct_keywords = {
           {CompositeType::Struct, lex::Struct}, {CompositeType::Union, lex::Union},
           {CompositeType::Class, lex::Class},   {CompositeType::Group, lex::Group},
           {CompositeType::Region, lex::Region},
@@ -1629,7 +1598,7 @@ namespace ncc::parse {
 
       PrintLeading(n);
 
-      PutKeyword(kStructKeywords.at(n->GetCompositeType()));
+      PutKeyword(struct_keywords.at(n->GetCompositeType()));
 
       if (!n->GetAttributes().empty()) {
         PutPunctor(PuncLBrk);
