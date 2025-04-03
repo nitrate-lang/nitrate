@@ -157,20 +157,20 @@ auto Expr::PrettyPrint(OptionalSourceProvider rd) const -> std::string {
 }
 
 auto Expr::PrettyPrint(std::ostream &os, OptionalSourceProvider rd) const -> std::ostream & {
-  AstWriter writer(os, true, rd);
+  AstWriter writer(os, AstWriter::Format::JSON, rd);
   const_cast<Expr *>(this)->Accept(writer);
   return os;
 }
 
 auto Expr::Serialize(std::ostream &os) const -> std::ostream & {
-  AstWriter writer(os);
+  AstWriter writer(os, AstWriter::Format::PROTO);
   const_cast<Expr *>(this)->Accept(writer);
   return os;
 }
 
 std::string Expr::Serialize() const {
   std::stringstream ss;
-  AstWriter writer(ss);
+  AstWriter writer(ss, AstWriter::Format::PROTO);
   const_cast<Expr *>(this)->Accept(writer);
 
   return ss.str();
@@ -187,8 +187,8 @@ auto Expr::IsEq(const FlowPtr<Expr> &o) const -> bool {
 
   std::stringstream ss1;
   std::stringstream ss2;
-  AstWriter writer1(ss1);
-  AstWriter writer2(ss2);
+  AstWriter writer1(ss1, AstWriter::Format::PROTO);
+  AstWriter writer2(ss2, AstWriter::Format::PROTO);
 
   const_cast<Expr *>(this)->Accept(writer1);
   const_cast<Expr *>(o.get())->Accept(writer2);
@@ -198,7 +198,7 @@ auto Expr::IsEq(const FlowPtr<Expr> &o) const -> bool {
 
 auto Expr::Hash64() const -> uint64_t {
   std::stringstream ss;
-  AstWriter writer(ss);
+  AstWriter writer(ss, AstWriter::Format::PROTO);
   const_cast<Expr *>(this)->Accept(writer);
 
   return std::hash<std::string>{}(ss.str());

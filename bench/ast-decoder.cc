@@ -97,7 +97,7 @@ int main(int argc, char *argv[]) {
 
   {
     std::stringstream ss;
-    AstWriter writer(ss);
+    AstWriter writer(ss, AstWriter::Format::PROTO);
     parser.Get()->Accept(writer);
     serialied_ast = ss.str();
   }

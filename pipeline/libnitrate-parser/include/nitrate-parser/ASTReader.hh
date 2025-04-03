@@ -40,7 +40,6 @@
 #include <nitrate-lexer/ScannerFwd.hh>
 #include <nitrate-parser/AST.hh>
 #include <nitrate-parser/ASTFactory.hh>
-#include <nitrate-parser/Context.hh>
 #include <nitrate-parser/ProtobufFwd.hh>
 #include <optional>
 
@@ -52,9 +51,6 @@ namespace ncc::parse {
   class NCC_EXPORT AstReader final : private ASTFactory {
     template <typename T>
     using Result = NullableFlowPtr<T>;
-
-    Result<Expr> m_root;
-    ReaderSourceManager m_rd;
 
     void UnmarshalLocationLocation(const SyntaxTree::SourceLocationRange &in, FlowPtr<Expr> out);
     void UnmarshalCodeComment(
@@ -125,11 +121,20 @@ namespace ncc::parse {
     auto Unmarshal(const SyntaxTree::Export &in) -> Result<Export>;
 
   public:
-    AstReader(std::string_view protobuf_data, std::pmr::memory_resource &pool,
+    enum class Format { JSON, PROTO };
+
+    AstReader(std::istream &in, Format format, std::pmr::memory_resource &pool,
+              ReaderSourceManager source_manager = std::nullopt);
+    AstReader(std::string_view buf, Format format, std::pmr::memory_resource &pool,
               ReaderSourceManager source_manager = std::nullopt);
     ~AstReader() = default;
 
     auto Get() -> NullableFlowPtr<Expr>;
+
+  private:
+    Result<Expr> m_root;
+    ReaderSourceManager m_rd;
+    Format m_format;
   };
 }  // namespace ncc::parse
 

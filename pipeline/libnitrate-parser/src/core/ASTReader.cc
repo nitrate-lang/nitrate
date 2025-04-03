@@ -33,6 +33,7 @@
 
 #include <core/SyntaxTree.pb.h>
 #include <google/protobuf/io/coded_stream.h>
+#include <google/protobuf/util/json_util.h>
 
 #include <boost/multiprecision/cpp_int.hpp>
 #include <nitrate-core/Logger.hh>
@@ -2265,16 +2266,30 @@ auto AstReader::Unmarshal(const SyntaxTree::Export &in) -> Result<Export> {
   return object;
 }
 
-AstReader::AstReader(std::string_view protobuf_data, std::pmr::memory_resource &pool,
+AstReader::AstReader(std::string_view buf, Format format, std::pmr::memory_resource &pool,
                      ReaderSourceManager source_manager)
-    : ASTFactory(pool), m_rd(source_manager) {
-  google::protobuf::io::CodedInputStream input((const uint8_t *)protobuf_data.data(), protobuf_data.size());
-  input.SetRecursionLimit(kRecursionLimit);
-
+    : ASTFactory(pool), m_rd(source_manager), m_format(format) {
   SyntaxTree::Expr root;
-  if (!root.ParseFromCodedStream(&input)) [[unlikely]] {
-    return;
+
+  switch (format) {
+    case Format::PROTO: {
+      google::protobuf::io::CodedInputStream input((const uint8_t *)buf.data(), buf.size());
+      input.SetRecursionLimit(kRecursionLimit);
+      if (!root.ParseFromCodedStream(&input)) [[unlikely]] {
+        return;
+      }
+
+      break;
+    }
+
+    case Format::JSON: {
+      if (!google::protobuf::util::JsonStringToMessage(buf, &root).ok()) [[unlikely]] {
+        return;
+      }
+    }
   }
+
+  root.CheckInitialized();
 
   m_root = Unmarshal(root);
 }
