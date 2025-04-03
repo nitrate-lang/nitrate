@@ -492,8 +492,12 @@ namespace ncc::parse {
           if (use_escape) {
             m_os << "`" << name << "`";
           } else {
-            /// FIXME: Minimize redundant whitespace
-            m_os << ' ' << name;
+            // 'E' and 'e' are used in floating point numbers
+            if (name[0] == 'e' || name[0] == 'E') {
+              m_os << ' ';
+            }
+
+            m_os << name;
           }
           break;
         }
@@ -1387,7 +1391,6 @@ namespace ncc::parse {
     void Visit(FlowPtr<Assembly> n) override {
       PrintLeading(n);
 
-      /// TODO: Implement code writer
       qcore_implement();
       (void)n;
 
