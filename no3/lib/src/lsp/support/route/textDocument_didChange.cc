@@ -110,8 +110,8 @@ static auto VerifyTextDocumentDidChange(const nlohmann::json& j) -> bool {
   });
 }
 
-void core::LSPContext::NotifyTextDocumentDidChange(const message::NotifyMessage& notif) {
-  const auto& j = *notif;
+void core::LSPContext::NotifyTextDocumentDidChange(const message::NotifyMessage& notice) {
+  const auto& j = *notice;
 
   auto sync_kind = VerifyTextDocumentDidChange(j);
   if (!sync_kind) {

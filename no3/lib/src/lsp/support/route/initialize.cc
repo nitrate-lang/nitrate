@@ -38,7 +38,12 @@ using namespace ncc;
 using namespace no3::lsp;
 
 static auto VerifyInitializeRequest(const nlohmann::json& j) -> bool {
-  /// TODO: Verify the request
+  if (j.contains("trace")) {
+    if (!j["trace"].is_string()) {
+      return false;
+    }
+  }
+
   return true;
 }
 
@@ -48,6 +53,16 @@ void core::LSPContext::RequestInitialize(const message::RequestMessage& request,
     Log << "Invalid initialize request";
     response.SetStatusCode(message::StatusCode::InvalidRequest);
     return;
+  }
+
+  if (req.contains("trace")) {
+    if (req["trace"] == "messages") {
+      m_trace = TraceValue::Messages;
+    } else if (req["trace"] == "verbose") {
+      m_trace = TraceValue::Verbose;
+    } else {
+      m_trace = TraceValue::Off;
+    }
   }
 
   ////==========================================================================
@@ -62,7 +77,6 @@ void core::LSPContext::RequestInitialize(const message::RequestMessage& request,
       {"change", protocol::TextDocumentSyncKind::Incremental},
       {"save", {{"includeText", true}}},
   };
-  // j["capabilities"]["documentFormattingProvider"] = true;
 
   ////==========================================================================
   m_is_lsp_initialized = true;

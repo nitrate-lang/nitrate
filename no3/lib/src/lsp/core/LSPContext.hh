@@ -44,12 +44,18 @@
 
 namespace no3::lsp::core {
   class LSPContext final {
+    enum class TraceValue {
+      Off,
+      Messages,
+      Verbose,
+    };
+
     std::ostream& m_os;
     std::mutex& m_os_lock;
 
     FileBrowser m_fs;
     std::atomic<bool> m_is_lsp_initialized, m_exit_requested;
-
+    std::atomic<TraceValue> m_trace = TraceValue::Off;
     std::queue<std::string> m_log_trace_queue;
     std::mutex m_log_trace_lock;
     ncc::LogSubscriberID m_log_subscriber_id;
@@ -69,6 +75,7 @@ namespace no3::lsp::core {
     LSP_REQUEST(Formatting);
 
     LSP_NOTIFY(Initialized);
+    LSP_NOTIFY(SetTrace);
     LSP_NOTIFY(Exit);
     LSP_NOTIFY(TextDocumentDidChange);
     LSP_NOTIFY(TextDocumentDidClose);
@@ -88,7 +95,9 @@ namespace no3::lsp::core {
 
     static inline const std::unordered_map<std::string_view, LSPNotifyFunc> LSP_NOTIFICATION_MAP = {
         {"initialized", &LSPContext::NotifyInitialized},
+        {"$/setTrace", &LSPContext::NotifySetTrace},
         {"exit", &LSPContext::NotifyExit},
+
         {"textDocument/didOpen", &LSPContext::NotifyTextDocumentDidOpen},
         {"textDocument/didChange", &LSPContext::NotifyTextDocumentDidChange},
         {"textDocument/didClose", &LSPContext::NotifyTextDocumentDidClose},

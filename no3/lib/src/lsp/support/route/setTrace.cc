@@ -32,63 +32,40 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <lsp/core/LSPContext.hh>
-#include <nitrate-core/Assert.hh>
 #include <nitrate-core/Logger.hh>
-
-#ifndef NDEBUG
-#include <fstream>
-#endif
 
 using namespace ncc;
 using namespace no3::lsp;
 
-static auto VerifyTextDocumentDidSave(const nlohmann::json& j) -> bool {
+static auto VerifySetTrace(const nlohmann::json& j) -> bool {
   if (!j.is_object()) {
     return false;
   }
 
-  if (!j.contains("textDocument") || !j["textDocument"].is_object()) {
+  if (!j.contains("value") || !j["value"].is_string()) {
     return false;
   }
 
-  if (!j["textDocument"].contains("uri") || !j["textDocument"]["uri"].is_string()) {
-    return false;
-  }
+  const auto& value = j["value"].get<std::string>();
 
-  if (!j.contains("text") || !j["text"].is_string()) {
-    return false;
-  }
-
-  return true;
+  return value == "off" || value == "messages" || value == "verbose";
 }
 
-void core::LSPContext::NotifyTextDocumentDidSave(const message::NotifyMessage& notice) {
+void core::LSPContext::NotifySetTrace(const message::NotifyMessage& notice) {
   const auto& j = *notice;
-  if (!VerifyTextDocumentDidSave(j)) {
-    Log << "Invalid textDocument/didSave notification";
+
+  if (!VerifySetTrace(j)) {
+    Log << "Invalid setTrace notification";
     return;
   }
 
-  auto file_uri = FlyString(j["textDocument"]["uri"].get<std::string>());
-  const auto& full_content = j["text"].get<std::string>();
+  const auto& value = j["value"].get<std::string>();
 
-  if (!m_fs.DidSave(file_uri, FlyByteString(full_content.begin(), full_content.end()))) {
-    Log << "Failed to save text document: " << file_uri;
-    return;
+  if (value == "off") {
+    m_trace = TraceValue::Off;
+  } else if (value == "messages") {
+    m_trace = TraceValue::Messages;
+  } else if (value == "verbose") {
+    m_trace = TraceValue::Verbose;
   }
-
-  Log << Debug << "Saved text document: " << file_uri;
-
-#ifndef NDEBUG
-  {
-    auto raw_content = *m_fs.GetFile(file_uri).value()->ReadAll();
-
-    auto debug_output = std::fstream("/tmp/nitrate_lsp_debug.txt", std::ios::out | std::ios::trunc | std::ios::binary);
-    if (!debug_output) {
-      qcore_panic("Failed to open debug output file");
-    }
-
-    debug_output.write(reinterpret_cast<const char*>(raw_content.data()), raw_content.size());
-  }
-#endif
 }

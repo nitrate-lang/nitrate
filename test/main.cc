@@ -9,6 +9,8 @@ namespace nitrate::testing {
 int main(int argc, char** argv) {
   std::vector<std::string> args(argv, argv + argc);
 
-  ncc::Log->Subscribe([](const ncc::LogMessage& msg) { std::cout << msg.m_by.Format(msg.m_message, msg.m_sev); });
+  ncc::Log->Subscribe(
+      [](const ncc::LogMessage& msg) { std::cout << msg.m_by.Format(msg.m_message, msg.m_sev) << "\n"; });
+
   return nitrate::testing::RunTestSuite(args) ? 0 : 1;
 }

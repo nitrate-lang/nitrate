@@ -49,8 +49,8 @@ static auto VerifyTextDocumentDidClose(const nlohmann::json& j) -> bool {
   return j["textDocument"].contains("uri") && j["textDocument"]["uri"].is_string();
 }
 
-void core::LSPContext::NotifyTextDocumentDidClose(const message::NotifyMessage& notif) {
-  const auto& j = *notif;
+void core::LSPContext::NotifyTextDocumentDidClose(const message::NotifyMessage& notice) {
+  const auto& j = *notice;
   if (!VerifyTextDocumentDidClose(j)) {
     Log << "Invalid textDocument/didClose notification";
     return;

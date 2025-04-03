@@ -59,6 +59,7 @@ public:
     static const std::unordered_set<std::string_view> parallelizable_messages = {
         ///========================================================================
         /// BEGIN: LSP Lifecycle messages
+        "$/setTrace",
 
         ///========================================================================
         /// BEGIN: LSP Document Synchronization messages

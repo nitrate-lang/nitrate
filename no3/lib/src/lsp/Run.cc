@@ -236,6 +236,7 @@ static bool StartLSPServer(const std::filesystem::path& log_file, const Connecti
   auto file_logger = [&log_stream](const LogMessage& msg) {
     auto message = msg.m_by.Format(msg.m_message, msg.m_sev);
     log_stream->write(message.data(), message.size());
+    log_stream->write("\n", 1);
     log_stream->flush();
   };
 

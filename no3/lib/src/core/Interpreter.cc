@@ -206,6 +206,7 @@ NCC_EXPORT Interpreter::Interpreter(OutputHandler output_handler) noexcept {
     }
 
     output_handler(m.m_by.Format(m.m_message, m.m_sev));
+    output_handler("\n");
   });
 
   // The PImpl constructor will automatically initialize all required

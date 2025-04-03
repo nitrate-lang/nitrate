@@ -61,8 +61,8 @@ static auto VerifyTextDocumentDidOpen(const nlohmann::json& j) -> bool {
   return true;
 }
 
-void core::LSPContext::NotifyTextDocumentDidOpen(const message::NotifyMessage& notif) {
-  const auto& j = *notif;
+void core::LSPContext::NotifyTextDocumentDidOpen(const message::NotifyMessage& notice) {
+  const auto& j = *notice;
   if (!VerifyTextDocumentDidOpen(j)) {
     Log << "Invalid textDocument/didOpen notification";
     return;

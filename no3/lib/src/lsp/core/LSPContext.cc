@@ -35,6 +35,7 @@
 #include <lsp/core/protocol/LogTrace.hh>
 #include <nitrate-core/Assert.hh>
 #include <nitrate-core/Logger.hh>
+#include <regex>
 
 using namespace ncc;
 using namespace no3::lsp::core;
@@ -76,13 +77,10 @@ void LSPContext::FlushLogTraceQueue() {
 }
 
 auto LSPContext::ExecuteLSPRequest(const message::RequestMessage& message) -> message::ResponseMessage {
-  auto method = message.GetMethod();
-  auto response = message.GetResponseObject();
+  const auto method = message.GetMethod();
   const auto log_prefix = "LSPContext::ExecuteLSPRequest(\"" + std::string(method) + "\"): ";
   const auto may_ignore = method.starts_with("$/");
-  if (may_ignore) {
-    method.remove_prefix(2);
-  }
+  auto response = message.GetResponseObject();
 
   if (const auto is_initialize_request = method == "initialize"; m_is_lsp_initialized || is_initialize_request) {
     const auto route_it = LSP_REQUEST_MAP.find(method);
@@ -106,12 +104,9 @@ auto LSPContext::ExecuteLSPRequest(const message::RequestMessage& message) -> me
 }
 
 void LSPContext::ExecuteLSPNotification(const message::NotifyMessage& message) {
-  auto method = message.GetMethod();
+  const auto method = message.GetMethod();
   const auto log_prefix = "LSPContext::ExecuteLSPNotification(\"" + std::string(method) + "\"): ";
   const auto may_ignore = method.starts_with("$/");
-  if (may_ignore) {
-    method.remove_prefix(2);
-  }
 
   const auto route_it = LSP_NOTIFICATION_MAP.find(method);
   const auto found_route = route_it != LSP_NOTIFICATION_MAP.end();
@@ -182,6 +177,11 @@ void LSPContext::SendMessage(Message& message, bool log_transmission) {
   }
 }
 
+static void StripANSI(std::string& str) {
+  static const std::regex ansi_escape(R"(\x1B\[[0-9;]*[A-Za-z])", std::regex_constants::optimize);
+  str = std::regex_replace(str, ansi_escape, "");
+}
+
 LSPContext::LSPContext(std::ostream& os, std::mutex& os_lock)
     : m_os(os), m_os_lock(os_lock), m_fs(TextDocumentSyncKind::Incremental) {
   static std::once_flag init_flag;
@@ -191,9 +191,26 @@ LSPContext::LSPContext(std::ostream& os, std::mutex& os_lock)
   });
 
   m_log_subscriber_id = Log->Subscribe([this](const ncc::LogMessage& log) {
-    auto message = log.m_by.Format(log.m_message, log.m_sev);
+    switch (m_trace) {
+      case TraceValue::Off: {
+        return;
+      }
 
-    /// FIXME: Support log levels
+      case TraceValue::Messages: {
+        if (log.m_sev <= Sev::Trace) {
+          return;
+        }
+
+        break;
+      }
+
+      case TraceValue::Verbose: {
+        break;
+      }
+    }
+
+    auto message = log.m_by.Format(log.m_message, log.m_sev);
+    StripANSI(message);
 
     {
       std::lock_guard lock(m_log_trace_lock);

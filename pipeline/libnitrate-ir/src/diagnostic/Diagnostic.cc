@@ -296,7 +296,7 @@ NCC_EXPORT std::string ec::Formatter(std::string_view msg, Sev sev) {
       ss << ind
          << "\x1b[33m╔═\x1b[0m \x1b[32;1mCode "
             "Intelligence:\x1b[0m\n";
-      for (auto hint : hints) {
+      for (const auto &hint : hints) {
         auto lines = WordBreak(hint, kWidth - 2);
 
         if (lines.size() == 0) {
@@ -318,7 +318,10 @@ NCC_EXPORT std::string ec::Formatter(std::string_view msg, Sev sev) {
   if (sl != kLexEof && sc != kLexEof && el != kLexEof && ec != kLexEof) { /* Source window */
     constexpr size_t kWindowWidth = 60;
 
-    int64_t x_0 = sc, y_0 = sl, x_1 = ec, y_1 = el;
+    int64_t x_0 = sc;
+    int64_t y_0 = sl;
+    int64_t x_1 = ec;
+    int64_t y_1 = el;
     ConfineRectBounds(x_0, y_0, x_1, y_1, kWindowWidth);
 
     /// TODO: Get source code
@@ -352,8 +355,6 @@ NCC_EXPORT std::string ec::Formatter(std::string_view msg, Sev sev) {
       ss << ind << "  \x1b[32m┗" << sep << "┛\x1b[0m\n\n";
     }
   }
-
-  ss << "\n";
 
   return ss.str();
 }

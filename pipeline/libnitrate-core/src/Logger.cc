@@ -54,7 +54,7 @@ NCC_EXPORT auto ncc::Formatter(std::string_view msg, Sev sev) -> std::string {
   }
 
   std::stringstream ss;
-  ss << kAnsiPrefixes[sev] << msg << "\n";
+  ss << kAnsiPrefixes[sev] << msg;
 
   return ss.str();
 }
