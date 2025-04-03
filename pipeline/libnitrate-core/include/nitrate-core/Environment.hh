@@ -59,6 +59,7 @@ namespace ncc {
     auto Contains(std::string_view key) -> bool override;
     auto Get(string key) -> std::optional<string> override;
     void Set(string key, std::optional<string> value) override;
+    void Reset() override;
 
     auto GetKeys() const { return m_data | std::ranges::views::keys; }
   };

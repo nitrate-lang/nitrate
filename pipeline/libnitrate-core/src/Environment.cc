@@ -78,3 +78,8 @@ void Environment::Set(string key, std::optional<string> value) {
     m_data.erase(key);
   }
 }
+
+void Environment::Reset() {
+  m_data.clear();
+  SetupDefaultKeys();
+}

@@ -45,6 +45,7 @@ namespace ncc {
     virtual auto Contains(std::string_view key) -> bool = 0;
     virtual auto Get(string key) -> std::optional<string> = 0;
     virtual void Set(string key, std::optional<string> value) = 0;
+    virtual void Reset() = 0;
   };
 }  // namespace ncc
 
