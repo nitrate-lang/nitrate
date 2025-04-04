@@ -32,3 +32,9 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #pragma once
+
+namespace no3::package {
+  class Package final {
+  public:
+  };
+}  // namespace no3::package

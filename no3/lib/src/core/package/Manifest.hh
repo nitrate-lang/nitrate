@@ -33,13 +33,14 @@
 
 #pragma once
 
-#include <boost/archive/text_iarchive.hpp>
-#include <boost/flyweight.hpp>
-#include <boost/optional.hpp>
-#include <boost/unordered_map.hpp>
-#include <boost/unordered_set.hpp>
+#include <algorithm>
+#include <cstdint>
+#include <map>
+#include <optional>
+#include <set>
 #include <string>
 #include <unordered_map>
+#include <utility>
 #include <vector>
 
 namespace no3::package::manifest {
@@ -63,6 +64,8 @@ namespace no3::package::manifest {
         : m_major(major), m_minor(minor), m_patch(patch) {}
     constexpr SemanticVersion() = default;
 
+    [[nodiscard]] auto operator<=>(const SemanticVersion& o) const = default;
+
     [[nodiscard]] constexpr auto GetMajor() const -> Code { return m_major; }
     [[nodiscard]] constexpr auto GetMinor() const -> Code { return m_minor; }
     [[nodiscard]] constexpr auto GetPatch() const -> Code { return m_patch; }
@@ -70,10 +73,6 @@ namespace no3::package::manifest {
     constexpr void SetMajor(Code major) { m_major = major; }
     constexpr void SetMinor(Code minor) { m_minor = minor; }
     constexpr void SetPatch(Code patch) { m_patch = patch; }
-
-    void serialize(auto& ar, unsigned) {  // NOLINT(readability-identifier-naming)
-      ar & m_major & m_minor & m_patch;
-    }
   };
 
   class Contact final {
@@ -85,13 +84,15 @@ namespace no3::package::manifest {
       Support,
     };
 
-    Contact(String name, String email, std::vector<Role> roles, boost::optional<String> phone = boost::none)
+    Contact(String name, String email, std::vector<Role> roles, std::optional<String> phone = std::nullopt)
         : m_name(std::move(name)), m_email(std::move(email)), m_roles(std::move(roles)), m_phone(std::move(phone)) {}
+
+    [[nodiscard]] auto operator<=>(const Contact& o) const = default;
 
     [[nodiscard]] auto GetName() const -> const String& { return m_name; }
     [[nodiscard]] auto GetEmail() const -> const String& { return m_email; }
     [[nodiscard]] auto GetRoles() const -> const std::vector<Role>& { return m_roles; }
-    [[nodiscard]] auto GetPhone() const -> const boost::optional<String>& { return m_phone; }
+    [[nodiscard]] auto GetPhone() const -> const std::optional<String>& { return m_phone; }
     [[nodiscard]] auto ContainsPhone() const -> bool { return m_phone.has_value(); }
 
     void SetName(const String& name) { m_name = name; }
@@ -100,18 +101,14 @@ namespace no3::package::manifest {
     void SetRoles(const std::vector<Role>& roles) { m_roles = roles; }
     void ClearRoles() { m_roles.clear(); }
 
-    void SetPhone(const boost::optional<String>& phone) { m_phone = phone; }
+    void SetPhone(const std::optional<String>& phone) { m_phone = phone; }
     void ClearPhone() { m_phone.reset(); }
-
-    void serialize(auto& ar, unsigned) {  // NOLINT(readability-identifier-naming)
-      ar & m_name & m_email & m_roles & m_phone;
-    }
 
   private:
     String m_name;
     String m_email;
     std::vector<Role> m_roles;
-    boost::optional<String> m_phone;
+    std::optional<String> m_phone;
   };
 
   class Platforms final {
@@ -122,6 +119,8 @@ namespace no3::package::manifest {
     Platforms() : m_allow({"*"}), m_deny({"*"}){};
     Platforms(std::vector<String> allow, std::vector<String> deny)
         : m_allow(std::move(allow)), m_deny(std::move(deny)) {}
+
+    [[nodiscard]] auto operator<=>(const Platforms& o) const = default;
 
     [[nodiscard]] auto GetAllow() const -> const std::vector<String>& { return m_allow; }
     [[nodiscard]] auto GetDeny() const -> const std::vector<String>& { return m_deny; }
@@ -137,10 +136,6 @@ namespace no3::package::manifest {
     void ClearDeny() { m_deny.clear(); }
     void AddDeny(const String& deny) { m_deny.push_back(deny); }
     void RemoveDeny(const String& deny) { m_deny.erase(std::remove(m_deny.begin(), m_deny.end(), deny), m_deny.end()); }
-
-    void serialize(auto& ar, unsigned) {  // NOLINT(readability-identifier-naming)
-      ar & m_allow & m_deny;
-    }
   };
 
   class Optimization final {
@@ -156,7 +151,7 @@ namespace no3::package::manifest {
     class Switch final {
     public:
       using Flag = String;
-      using Flags = boost::unordered_set<Flag>;
+      using Flags = std::set<Flag>;
 
       Switch() = default;
       explicit Switch(Flags alpha, Flags beta, Flags gamma, Flags llvm, Flags lto, Flags runtime)
@@ -166,6 +161,8 @@ namespace no3::package::manifest {
             m_llvm(std::move(llvm)),
             m_lto(std::move(lto)),
             m_runtime(std::move(runtime)) {}
+
+      [[nodiscard]] auto operator<=>(const Switch& o) const = default;
 
       [[nodiscard]] auto GetAlpha() const -> const Flags& { return m_alpha; }
       [[nodiscard]] auto GetBeta() const -> const Flags& { return m_beta; }
@@ -216,10 +213,6 @@ namespace no3::package::manifest {
       [[nodiscard]] auto ContainsLTOFlag(const Flag& flag) const -> bool { return m_lto.contains(flag); }
       [[nodiscard]] auto ContainsRuntimeFlag(const Flag& flag) const -> bool { return m_runtime.contains(flag); }
 
-      void serialize(auto& ar, unsigned) {  // NOLINT(readability-identifier-naming)
-        ar & m_alpha & m_beta & m_gamma & m_llvm & m_lto & m_runtime;
-      }
-
     private:
       Flags m_alpha;
       Flags m_beta;
@@ -242,6 +235,8 @@ namespace no3::package::manifest {
       m_profiles.insert(additional_profiles.begin(), additional_profiles.end());
     }
 
+    [[nodiscard]] auto operator<=>(const Optimization& o) const = default;
+
     [[nodiscard]] auto GetRapid() const -> const Switch& { return m_profiles.at(RAPID_KEY); }
     [[nodiscard]] auto GetDebug() const -> const Switch& { return m_profiles.at(DEBUG_KEY); }
     [[nodiscard]] auto GetRelease() const -> const Switch& { return m_profiles.at(RELEASE_KEY); }
@@ -250,8 +245,8 @@ namespace no3::package::manifest {
     [[nodiscard]] auto GetDebug() -> Switch& { return m_profiles.at(DEBUG_KEY); }
     [[nodiscard]] auto GetRelease() -> Switch& { return m_profiles.at(RELEASE_KEY); }
 
-    [[nodiscard]] auto GetProfile(const String& name) const -> const Switch& { return m_profiles.at(name); }
-    [[nodiscard]] auto GetProfile(const String& name) -> Switch& { return m_profiles.at(name); }
+    [[nodiscard]] auto GetProfile(const String& name) const -> const Switch& { return m_profiles[name]; }
+    [[nodiscard]] auto GetProfile(const String& name) -> Switch& { return m_profiles[name]; }
 
     [[nodiscard]] auto ContainsProfile(const String& name) const -> bool { return m_profiles.contains(name); }
     void SetProfile(const String& name, const Switch& profile) { m_profiles[name] = profile; }
@@ -270,14 +265,10 @@ namespace no3::package::manifest {
       m_profiles[RELEASE_KEY] = Switch();
     }
 
-    void serialize(auto& ar, unsigned) {  // NOLINT(readability-identifier-naming)
-      ar & m_profiles;
-    }
-
   private:
-    using Profiles = boost::unordered_map<String, Switch>;
+    using Profiles = std::map<String, Switch>;
 
-    Profiles m_profiles;
+    mutable Profiles m_profiles;
   };
 
   class Dependency final {
@@ -287,17 +278,15 @@ namespace no3::package::manifest {
     SemanticVersion m_version;
 
   public:
-    Dependency(UUID uuid, SemanticVersion version) : m_uuid(std::move(uuid)), m_version(std::move(version)) {}
+    Dependency(UUID uuid, SemanticVersion version) : m_uuid(std::move(uuid)), m_version(version) {}
+
+    [[nodiscard]] auto operator<=>(const Dependency& o) const = default;
 
     [[nodiscard]] auto GetUUID() const -> const UUID& { return m_uuid; }
     [[nodiscard]] auto GetVersion() const -> const SemanticVersion& { return m_version; }
 
     void SetUUID(const UUID& uuid) { m_uuid = uuid; }
     void SetVersion(const SemanticVersion& version) { m_version = version; }
-
-    void serialize(auto& ar, unsigned) {  // NOLINT(readability-identifier-naming)
-      ar & m_uuid & m_version;
-    }
   };
 
   class Manifest final {
@@ -314,9 +303,61 @@ namespace no3::package::manifest {
   public:
     Manifest(String name, Category category) : m_name(std::move(name)), m_category(category) {}
 
-    void serialize(auto& ar, unsigned) {  // NOLINT(readability-identifier-naming)
-      ar & m_name & m_description & m_spdx_license & m_category & m_version & m_contacts & m_platforms &
-          m_optimization & m_dependencies;
+    [[nodiscard]] auto operator<=>(const Manifest& o) const = default;
+
+    [[nodiscard]] auto GetName() const -> const String& { return m_name; }
+    [[nodiscard]] auto GetDescription() const -> const String& { return m_description; }
+    [[nodiscard]] auto GetSPDXLicense() const -> const String& { return m_spdx_license; }
+    [[nodiscard]] auto GetCategory() const -> Category { return m_category; }
+    [[nodiscard]] auto GetVersion() const -> const SemanticVersion& { return m_version; }
+    [[nodiscard]] auto GetContacts() const -> const std::vector<Contact>& { return m_contacts; }
+    [[nodiscard]] auto GetPlatforms() const -> const Platforms& { return m_platforms; }
+    [[nodiscard]] auto GetOptimization() const -> const Optimization& { return m_optimization; }
+    [[nodiscard]] auto GetDependencies() const -> const std::vector<Dependency>& { return m_dependencies; }
+
+    [[nodiscard]] auto GetName() -> String& { return m_name; }
+    [[nodiscard]] auto GetDescription() -> String& { return m_description; }
+    [[nodiscard]] auto GetSPDXLicense() -> String& { return m_spdx_license; }
+    [[nodiscard]] auto GetCategory() -> Category& { return m_category; }
+    [[nodiscard]] auto GetVersion() -> SemanticVersion& { return m_version; }
+    [[nodiscard]] auto GetContacts() -> std::vector<Contact>& { return m_contacts; }
+    [[nodiscard]] auto GetPlatforms() -> Platforms& { return m_platforms; }
+    [[nodiscard]] auto GetOptimization() -> Optimization& { return m_optimization; }
+    [[nodiscard]] auto GetDependencies() -> std::vector<Dependency>& { return m_dependencies; }
+
+    void SetName(String name) { m_name = std::move(name); }
+    void SetDescription(String description) { m_description = std::move(description); }
+    void SetSPDXLicense(String spdx_license) { m_spdx_license = std::move(spdx_license); }
+    void SetCategory(Category category) { m_category = category; }
+    void SetVersion(SemanticVersion version) { m_version = version; }
+    void SetContacts(std::vector<Contact> contacts) { m_contacts = std::move(contacts); }
+    void SetPlatforms(Platforms platforms) { m_platforms = std::move(platforms); }
+    void SetOptimization(Optimization optimization) { m_optimization = std::move(optimization); }
+    void SetDependencies(std::vector<Dependency> dependencies) { m_dependencies = std::move(dependencies); }
+
+    void AddContact(const Contact& contact) { m_contacts.push_back(contact); }
+    void RemoveContact(const Contact& contact) {
+      m_contacts.erase(std::remove(m_contacts.begin(), m_contacts.end(), contact), m_contacts.end());
     }
+    void ClearContacts() { m_contacts.clear(); }
+
+    void AddPlatformAllow(const String& allow) { m_platforms.AddAllow(allow); }
+    void RemovePlatformAllow(const String& allow) { m_platforms.RemoveAllow(allow); }
+    void ClearPlatformAllow() { m_platforms.ClearAllow(); }
+    void AddPlatformDeny(const String& deny) { m_platforms.AddDeny(deny); }
+    void RemovePlatformDeny(const String& deny) { m_platforms.RemoveDeny(deny); }
+    void ClearPlatformDeny() { m_platforms.ClearDeny(); }
+
+    void AddOptimizationProfile(const String& name, const Optimization::Switch& profile) {
+      m_optimization.SetProfile(name, profile);
+    }
+    void RemoveOptimizationProfile(const String& name) { m_optimization.ClearProfile(name); }
+    void ClearOptimizationProfiles() { m_optimization.ClearAllProfiles(); }
+
+    void AddDependency(const Dependency& dependency) { m_dependencies.push_back(dependency); }
+    void RemoveDependency(const Dependency& dependency) {
+      m_dependencies.erase(std::remove(m_dependencies.begin(), m_dependencies.end(), dependency), m_dependencies.end());
+    }
+    void ClearDependencies() { m_dependencies.clear(); }
   };
 }  // namespace no3::package::manifest
