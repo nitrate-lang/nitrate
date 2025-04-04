@@ -37,6 +37,7 @@
 #include <cstdint>
 #include <map>
 #include <optional>
+#include <ostream>
 #include <set>
 #include <string>
 #include <unordered_map>
@@ -64,11 +65,11 @@ namespace no3::package::manifest {
         : m_major(major), m_minor(minor), m_patch(patch) {}
     constexpr SemanticVersion() = default;
 
-    [[nodiscard]] auto operator<=>(const SemanticVersion& o) const = default;
+    [[nodiscard, gnu::pure]] auto operator<=>(const SemanticVersion& o) const = default;
 
-    [[nodiscard]] constexpr auto GetMajor() const -> Code { return m_major; }
-    [[nodiscard]] constexpr auto GetMinor() const -> Code { return m_minor; }
-    [[nodiscard]] constexpr auto GetPatch() const -> Code { return m_patch; }
+    [[nodiscard, gnu::pure]] constexpr auto GetMajor() const -> Code { return m_major; }
+    [[nodiscard, gnu::pure]] constexpr auto GetMinor() const -> Code { return m_minor; }
+    [[nodiscard, gnu::pure]] constexpr auto GetPatch() const -> Code { return m_patch; }
 
     constexpr void SetMajor(Code major) { m_major = major; }
     constexpr void SetMinor(Code minor) { m_minor = minor; }
@@ -87,13 +88,13 @@ namespace no3::package::manifest {
     Contact(String name, String email, std::vector<Role> roles, std::optional<String> phone = std::nullopt)
         : m_name(std::move(name)), m_email(std::move(email)), m_roles(std::move(roles)), m_phone(std::move(phone)) {}
 
-    [[nodiscard]] auto operator<=>(const Contact& o) const = default;
+    [[nodiscard, gnu::pure]] auto operator<=>(const Contact& o) const = default;
 
-    [[nodiscard]] auto GetName() const -> const String& { return m_name; }
-    [[nodiscard]] auto GetEmail() const -> const String& { return m_email; }
-    [[nodiscard]] auto GetRoles() const -> const std::vector<Role>& { return m_roles; }
-    [[nodiscard]] auto GetPhone() const -> const std::optional<String>& { return m_phone; }
-    [[nodiscard]] auto ContainsPhone() const -> bool { return m_phone.has_value(); }
+    [[nodiscard, gnu::pure]] auto GetName() const -> const String& { return m_name; }
+    [[nodiscard, gnu::pure]] auto GetEmail() const -> const String& { return m_email; }
+    [[nodiscard, gnu::pure]] auto GetRoles() const -> const std::vector<Role>& { return m_roles; }
+    [[nodiscard, gnu::pure]] auto GetPhone() const -> const std::optional<String>& { return m_phone; }
+    [[nodiscard, gnu::pure]] auto ContainsPhone() const -> bool { return m_phone.has_value(); }
 
     void SetName(const String& name) { m_name = name; }
     void SetEmail(const String& email) { m_email = email; }
@@ -305,6 +306,9 @@ namespace no3::package::manifest {
 
     [[nodiscard]] auto operator<=>(const Manifest& o) const = default;
 
+    [[nodiscard]] auto ToJson(std::ostream& os) const -> std::ostream&;
+    static auto FromJson(std::istream& is) -> std::optional<Manifest>;
+
     [[nodiscard]] auto GetName() const -> const String& { return m_name; }
     [[nodiscard]] auto GetDescription() const -> const String& { return m_description; }
     [[nodiscard]] auto GetSPDXLicense() const -> const String& { return m_spdx_license; }
@@ -336,10 +340,10 @@ namespace no3::package::manifest {
     void SetDependencies(std::vector<Dependency> dependencies) { m_dependencies = std::move(dependencies); }
 
     void AddContact(const Contact& contact) { m_contacts.push_back(contact); }
+    void ClearContacts() { m_contacts.clear(); }
     void RemoveContact(const Contact& contact) {
       m_contacts.erase(std::remove(m_contacts.begin(), m_contacts.end(), contact), m_contacts.end());
     }
-    void ClearContacts() { m_contacts.clear(); }
 
     void AddPlatformAllow(const String& allow) { m_platforms.AddAllow(allow); }
     void RemovePlatformAllow(const String& allow) { m_platforms.RemoveAllow(allow); }
@@ -355,9 +359,9 @@ namespace no3::package::manifest {
     void ClearOptimizationProfiles() { m_optimization.ClearAllProfiles(); }
 
     void AddDependency(const Dependency& dependency) { m_dependencies.push_back(dependency); }
+    void ClearDependencies() { m_dependencies.clear(); }
     void RemoveDependency(const Dependency& dependency) {
       m_dependencies.erase(std::remove(m_dependencies.begin(), m_dependencies.end(), dependency), m_dependencies.end());
     }
-    void ClearDependencies() { m_dependencies.clear(); }
   };
 }  // namespace no3::package::manifest
