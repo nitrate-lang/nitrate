@@ -85,22 +85,24 @@ namespace no3::package::manifest {
       Support,
     };
 
-    Contact(String name, String email, std::vector<Role> roles, std::optional<String> phone = std::nullopt)
+    Contact(String name, String email, std::set<Role> roles, std::optional<String> phone = std::nullopt)
         : m_name(std::move(name)), m_email(std::move(email)), m_roles(std::move(roles)), m_phone(std::move(phone)) {}
 
     [[nodiscard, gnu::pure]] auto operator<=>(const Contact& o) const = default;
 
     [[nodiscard, gnu::pure]] auto GetName() const -> const String& { return m_name; }
     [[nodiscard, gnu::pure]] auto GetEmail() const -> const String& { return m_email; }
-    [[nodiscard, gnu::pure]] auto GetRoles() const -> const std::vector<Role>& { return m_roles; }
+    [[nodiscard, gnu::pure]] auto GetRoles() const -> const std::set<Role>& { return m_roles; }
     [[nodiscard, gnu::pure]] auto GetPhone() const -> const std::optional<String>& { return m_phone; }
     [[nodiscard, gnu::pure]] auto ContainsPhone() const -> bool { return m_phone.has_value(); }
 
     void SetName(const String& name) { m_name = name; }
     void SetEmail(const String& email) { m_email = email; }
 
-    void SetRoles(const std::vector<Role>& roles) { m_roles = roles; }
+    void SetRoles(const std::set<Role>& roles) { m_roles = roles; }
     void ClearRoles() { m_roles.clear(); }
+    void AddRole(Role role) { m_roles.insert(role); }
+    void RemoveRole(Role role) { m_roles.erase(role); }
 
     void SetPhone(const std::optional<String>& phone) { m_phone = phone; }
     void ClearPhone() { m_phone.reset(); }
@@ -108,7 +110,7 @@ namespace no3::package::manifest {
   private:
     String m_name;
     String m_email;
-    std::vector<Role> m_roles;
+    std::set<Role> m_roles;
     std::optional<String> m_phone;
   };
 
@@ -223,6 +225,33 @@ namespace no3::package::manifest {
       Flags m_runtime;
     };
 
+    class Requirements final {
+      uint64_t m_min_free_cores;
+      uint64_t m_min_free_memory;
+      uint64_t m_min_free_storage;
+
+    public:
+      constexpr Requirements() : m_min_free_cores(0), m_min_free_memory(0), m_min_free_storage(0) {}
+      constexpr explicit Requirements(uint64_t min_free_cores, uint64_t min_free_memory, uint64_t min_free_storage)
+          : m_min_free_cores(min_free_cores),
+            m_min_free_memory(min_free_memory),
+            m_min_free_storage(min_free_storage) {}
+
+      [[nodiscard]] auto operator<=>(const Requirements& o) const = default;
+
+      [[nodiscard]] auto GetMinFreeCores() const -> uint64_t { return m_min_free_cores; }
+      [[nodiscard]] auto GetMinFreeMemory() const -> uint64_t { return m_min_free_memory; }
+      [[nodiscard]] auto GetMinFreeStorage() const -> uint64_t { return m_min_free_storage; }
+
+      [[nodiscard]] auto GetMinFreeCores() -> uint64_t& { return m_min_free_cores; }
+      [[nodiscard]] auto GetMinFreeMemory() -> uint64_t& { return m_min_free_memory; }
+      [[nodiscard]] auto GetMinFreeStorage() -> uint64_t& { return m_min_free_storage; }
+
+      void SetMinFreeCores(uint64_t min_free_cores) { m_min_free_cores = min_free_cores; }
+      void SetMinFreeMemory(uint64_t min_free_memory) { m_min_free_memory = min_free_memory; }
+      void SetMinFreeStorage(uint64_t min_free_storage) { m_min_free_storage = min_free_storage; }
+    };
+
     Optimization() {
       m_profiles[RAPID_KEY] = Switch();
       m_profiles[DEBUG_KEY] = Switch();
@@ -230,9 +259,10 @@ namespace no3::package::manifest {
     }
 
     explicit Optimization(Switch rapid, Switch debug, Switch release,
-                          const std::unordered_map<String, Switch>& additional_profiles = {})
-        : m_profiles(
-              {{RAPID_KEY, std::move(rapid)}, {DEBUG_KEY, std::move(debug)}, {RELEASE_KEY, std::move(release)}}) {
+                          const std::unordered_map<String, Switch>& additional_profiles = {},
+                          Requirements requirements = Requirements())
+        : m_profiles({{RAPID_KEY, std::move(rapid)}, {DEBUG_KEY, std::move(debug)}, {RELEASE_KEY, std::move(release)}}),
+          m_requirements(requirements) {
       m_profiles.insert(additional_profiles.begin(), additional_profiles.end());
     }
 
@@ -266,10 +296,16 @@ namespace no3::package::manifest {
       m_profiles[RELEASE_KEY] = Switch();
     }
 
+    [[nodiscard]] auto GetRequirements() const -> const Requirements& { return m_requirements; }
+    [[nodiscard]] auto GetRequirements() -> Requirements& { return m_requirements; }
+
+    void SetRequirements(const Requirements& requirements) { m_requirements = requirements; }
+
   private:
     using Profiles = std::map<String, Switch>;
 
     mutable Profiles m_profiles;
+    Requirements m_requirements;
   };
 
   class Dependency final {
@@ -293,7 +329,7 @@ namespace no3::package::manifest {
   class Manifest final {
     String m_name;
     String m_description;
-    String m_spdx_license = "LGPL-2.1";
+    String m_license = "LGPL-2.1";
     Category m_category;
     SemanticVersion m_version;
     std::vector<Contact> m_contacts;
@@ -301,17 +337,20 @@ namespace no3::package::manifest {
     Optimization m_optimization;
     std::vector<Dependency> m_dependencies;
 
+    Manifest() = default;
+
   public:
     Manifest(String name, Category category) : m_name(std::move(name)), m_category(category) {}
+    Manifest(const Manifest&) = default;
+    Manifest(Manifest&&) = default;
+    Manifest& operator=(const Manifest&) = default;
+    Manifest& operator=(Manifest&&) = default;
 
     [[nodiscard]] auto operator<=>(const Manifest& o) const = default;
 
-    [[nodiscard]] auto ToJson(std::ostream& os) const -> std::ostream&;
-    static auto FromJson(std::istream& is) -> std::optional<Manifest>;
-
     [[nodiscard]] auto GetName() const -> const String& { return m_name; }
     [[nodiscard]] auto GetDescription() const -> const String& { return m_description; }
-    [[nodiscard]] auto GetSPDXLicense() const -> const String& { return m_spdx_license; }
+    [[nodiscard]] auto GetLicense() const -> const String& { return m_license; }
     [[nodiscard]] auto GetCategory() const -> Category { return m_category; }
     [[nodiscard]] auto GetVersion() const -> const SemanticVersion& { return m_version; }
     [[nodiscard]] auto GetContacts() const -> const std::vector<Contact>& { return m_contacts; }
@@ -321,7 +360,7 @@ namespace no3::package::manifest {
 
     [[nodiscard]] auto GetName() -> String& { return m_name; }
     [[nodiscard]] auto GetDescription() -> String& { return m_description; }
-    [[nodiscard]] auto GetSPDXLicense() -> String& { return m_spdx_license; }
+    [[nodiscard]] auto GetLicense() -> String& { return m_license; }
     [[nodiscard]] auto GetCategory() -> Category& { return m_category; }
     [[nodiscard]] auto GetVersion() -> SemanticVersion& { return m_version; }
     [[nodiscard]] auto GetContacts() -> std::vector<Contact>& { return m_contacts; }
@@ -331,7 +370,7 @@ namespace no3::package::manifest {
 
     void SetName(String name) { m_name = std::move(name); }
     void SetDescription(String description) { m_description = std::move(description); }
-    void SetSPDXLicense(String spdx_license) { m_spdx_license = std::move(spdx_license); }
+    void SetLicense(String spdx_license) { m_license = std::move(spdx_license); }
     void SetCategory(Category category) { m_category = category; }
     void SetVersion(SemanticVersion version) { m_version = version; }
     void SetContacts(std::vector<Contact> contacts) { m_contacts = std::move(contacts); }
@@ -363,5 +402,17 @@ namespace no3::package::manifest {
     void RemoveDependency(const Dependency& dependency) {
       m_dependencies.erase(std::remove(m_dependencies.begin(), m_dependencies.end(), dependency), m_dependencies.end());
     }
+
+    ///=============================================================================================
+    ///==                               (DE)SERIALIZATION FUNCTIONS                               ==
+    [[nodiscard]] auto ToJson(std::ostream& os, bool& correct_schema, bool minify = false) const -> std::ostream&;
+    static auto FromJson(std::istream& is) -> std::optional<Manifest>;
+    static auto FromJson(std::string_view json) -> std::optional<Manifest>;
+
+    ///=============================================================================================
+    ///==                                  VALIDATION FUNCTIONS                                   ==
+    [[nodiscard]] static auto IsValidLicense(std::string_view license) -> bool;
+    [[nodiscard]] static auto IsValidName(std::string_view name) -> bool;
+    [[nodiscard]] static auto GetNameRegex() -> std::string_view;
   };
 }  // namespace no3::package::manifest

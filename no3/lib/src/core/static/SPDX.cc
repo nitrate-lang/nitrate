@@ -90,7 +90,6 @@ auto no3::constants::FindClosestSPDXLicense(std::string query) -> std::string_vi
   return mini;
 }
 
-auto no3::constants::IsExactSPDXLicenseMatch(std::string query) -> bool {
-  std::transform(query.begin(), query.end(), query.begin(), ::tolower);
+auto no3::constants::IsExactSPDXLicenseMatch(std::string_view query) -> bool {
   return SPDX_IDENTIFIERS.contains(query);
 }
