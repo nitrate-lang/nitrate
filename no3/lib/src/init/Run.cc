@@ -34,6 +34,7 @@
 #include <core/cli/GetOpt.hh>
 #include <core/cli/Interpreter.hh>
 #include <core/package/Config.hh>
+#include <core/package/Manifest.hh>
 #include <core/static/SPDX.hh>
 #include <filesystem>
 #include <init/InitPackage.hh>
@@ -257,7 +258,7 @@ static void DisplayPoliteNameRejection(const std::string& package_name) {
   std::stringstream help;
 
   help << "Package names must satisfy the following regular expression:\n";
-  help << "\t" << PackageConfig::PackageNameRegex << "\n";
+  help << "\t" << Manifest::GetNameRegex() << "\n";
   help << "\tAlso, there must be no duplicate hyphens.\n\n";
 
   help << "The package name you provided was: \"" << package_name << "\"\n\n";
@@ -368,13 +369,13 @@ auto no3::Interpreter::PImpl::CommandInit(ConstArguments, const MutArguments& ar
 
   Log << Trace << "Finished parsing command line arguments.";
 
-  if (!PackageConfig::ValidatePackageLicense(package_license)) {
+  if (!Manifest::IsValidLicense(package_license)) {
     DisplayPoliteLicenseRejection(package_license);
     Log << Trace << "Aborting package initialization due to an invalid SPDX license identifier.";
     return false;
   }
 
-  if (!PackageConfig::ValidatePackageName(package_name, package_category == PackageCategory::StandardLibrary)) {
+  if (!Manifest::IsValidName(package_name)) {
     DisplayPoliteNameRejection(package_name);
     Log << Trace << "Aborting package initialization due to an invalid package name.";
     return false;

@@ -40,9 +40,9 @@
 #include <set>
 
 using namespace ncc;
-using namespace no3::package::manifest;
+using namespace no3::package;
 
-namespace no3::package::manifest::check {
+namespace no3::package::check {
 #define schema_assert(__expr)                                                    \
   if (!(__expr)) [[unlikely]] {                                                  \
     ncc::Log << "Invalid configuration:" << " schema_assert(" << #__expr << ")"; \
@@ -398,55 +398,56 @@ namespace no3::package::manifest::check {
     return true;
   }
 
-}  // namespace no3::package::manifest::check
+}  // namespace no3::package::check
 
-namespace no3::package::manifest::convert {
-  static auto ConvertCategory(const std::string& category) -> Category {
+namespace no3::package::convert {
+  static auto ConvertCategory(const std::string& category) -> Manifest::Category {
     if (category == "std") {
-      return Category::StandardLibrary;
+      return Manifest::Category::StandardLibrary;
     }
 
     if (category == "lib") {
-      return Category::Library;
+      return Manifest::Category::Library;
     }
 
     qcore_assert(category == "exe");
-    return Category::Application;
+    return Manifest::Category::Application;
   }
 
-  static auto ConvertContactRole(const std::string& role) -> Contact::Role {
+  static auto ConvertContactRole(const std::string& role) -> Manifest::Contact::Role {
     if (role == "owner") {
-      return Contact::Role::Owner;
+      return Manifest::Contact::Role::Owner;
     }
 
     if (role == "contributor") {
-      return Contact::Role::Contributor;
+      return Manifest::Contact::Role::Contributor;
     }
 
     if (role == "maintainer") {
-      return Contact::Role::Maintainer;
+      return Manifest::Contact::Role::Maintainer;
     }
 
     qcore_assert(role == "support");
-    return Contact::Role::Support;
+    return Manifest::Contact::Role::Support;
   }
 
-  static auto ConvertSemanticVersion(const nlohmann::json& j) -> SemanticVersion {
-    return SemanticVersion(j["major"].get<uint32_t>(), j["minor"].get<uint32_t>(), j["patch"].get<uint32_t>());
+  static auto ConvertSemanticVersion(const nlohmann::json& j) -> Manifest::SemanticVersion {
+    return Manifest::SemanticVersion(j["major"].get<uint32_t>(), j["minor"].get<uint32_t>(),
+                                     j["patch"].get<uint32_t>());
   }
 
-  static auto ConvertContact(const nlohmann::json& j) -> Contact {
+  static auto ConvertContact(const nlohmann::json& j) -> Manifest::Contact {
     auto name = j["name"].get<std::string>();
     auto email = j["email"].get<std::string>();
     auto roles = [&]() {
-      std::set<Contact::Role> roles;
+      std::set<Manifest::Contact::Role> roles;
       for (const auto& role : j["roles"]) {
         roles.insert(ConvertContactRole(role.get<std::string>()));
       }
       return roles;
     };
 
-    auto c = Contact(std::move(name), std::move(email), roles());
+    auto c = Manifest::Contact(std::move(name), std::move(email), roles());
     if (j.contains("phone")) {
       c.SetPhone(j["phone"].get<std::string>());
     }
@@ -454,7 +455,7 @@ namespace no3::package::manifest::convert {
     return c;
   }
 
-  static auto ConvertPlatforms(const nlohmann::json& j) -> Platforms {
+  static auto ConvertPlatforms(const nlohmann::json& j) -> Manifest::Platforms {
     auto allow = [&]() {
       std::vector<std::string> allow;
       allow.reserve(j["allow"].size());
@@ -484,19 +485,21 @@ namespace no3::package::manifest::convert {
     return v;
   }
 
-  static auto ConvertOptimizationSwitch(const nlohmann::json& j) -> Optimization::Switch {
-    return Optimization::Switch(ConvertOptimizationSwitchStage(j["alpha"]), ConvertOptimizationSwitchStage(j["beta"]),
-                                ConvertOptimizationSwitchStage(j["gamma"]), ConvertOptimizationSwitchStage(j["llvm"]),
-                                ConvertOptimizationSwitchStage(j["lto"]), ConvertOptimizationSwitchStage(j["runtime"]));
+  static auto ConvertOptimizationSwitch(const nlohmann::json& j) -> Manifest::Optimization::Switch {
+    return Manifest::Optimization::Switch(
+        ConvertOptimizationSwitchStage(j["alpha"]), ConvertOptimizationSwitchStage(j["beta"]),
+        ConvertOptimizationSwitchStage(j["gamma"]), ConvertOptimizationSwitchStage(j["llvm"]),
+        ConvertOptimizationSwitchStage(j["lto"]), ConvertOptimizationSwitchStage(j["runtime"]));
   }
 
-  static auto ConvertOptimizationRequirements(const nlohmann::json& j) -> Optimization::Requirements {
-    return Optimization::Requirements(j["min-free-cores"].get<uint32_t>(), j["min-free-memory"].get<uint32_t>(),
-                                      j["min-free-storage"].get<uint32_t>());
+  static auto ConvertOptimizationRequirements(const nlohmann::json& j) -> Manifest::Optimization::Requirements {
+    return Manifest::Optimization::Requirements(j["min-free-cores"].get<uint32_t>(),
+                                                j["min-free-memory"].get<uint32_t>(),
+                                                j["min-free-storage"].get<uint32_t>());
   }
 
-  static auto ConvertOptimization(const nlohmann::json& j) -> Optimization {
-    Optimization optimization;
+  static auto ConvertOptimization(const nlohmann::json& j) -> Manifest::Optimization {
+    Manifest::Optimization optimization;
 
     optimization.SetRequirements(ConvertOptimizationRequirements(j["requirements"]));
 
@@ -509,11 +512,11 @@ namespace no3::package::manifest::convert {
     return optimization;
   }
 
-  static auto ConvertDependency(const nlohmann::json& j) -> Dependency {
+  static auto ConvertDependency(const nlohmann::json& j) -> Manifest::Dependency {
     return {j["uuid"].get<std::string>(), ConvertSemanticVersion(j["version"])};
   }
 
-}  // namespace no3::package::manifest::convert
+}  // namespace no3::package::convert
 
 static auto ObjectToInstance(const nlohmann::json& j, Manifest& m) -> Manifest& {
   m.SetName(j["name"].get<std::string>());

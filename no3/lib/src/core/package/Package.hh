@@ -33,8 +33,11 @@
 
 #pragma once
 
+#include <string>
+
 namespace no3::package {
   class Package final {
   public:
+    Package(std::string name) = default;
   };
 }  // namespace no3::package
