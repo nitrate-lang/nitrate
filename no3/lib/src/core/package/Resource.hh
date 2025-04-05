@@ -33,9 +33,58 @@
 
 #pragma once
 
+#include <core/package/LazyResource.hh>
+#include <memory>
+
 namespace no3::package {
-  class Resource {
+  class ResourceReader : public LazyResourceReader {
+    class PImpl;
+    std::unique_ptr<PImpl> m_impl;
+
   public:
-    Resource() = default;
+    ResourceReader();
+    ResourceReader(std::istream& istream);
+    ResourceReader(const ResourceReader&) = delete;
+    ResourceReader(ResourceReader&&) = default;
+    ResourceReader& operator=(const ResourceReader&) = delete;
+    ResourceReader& operator=(ResourceReader&&) = default;
+    ~ResourceReader();
+
+    [[nodiscard]] auto Resolve() const -> ResourceReader&;
+    [[nodiscard]] auto GetReader() const -> std::istream&;
+    [[nodiscard]] auto GetSize() const -> std::size_t;
+  };
+
+  class ResourceWriter : public LazyResourceWriter {
+    class PImpl;
+    std::unique_ptr<PImpl> m_impl;
+
+  public:
+    ResourceWriter(std::ostream& ostream);
+    ResourceWriter(const ResourceWriter&) = delete;
+    ResourceWriter(ResourceWriter&&) = default;
+    ResourceWriter& operator=(const ResourceWriter&) = delete;
+    ResourceWriter& operator=(ResourceWriter&&) = default;
+    ~ResourceWriter();
+
+    [[nodiscard]] auto Resolve() const -> ResourceWriter&;
+    [[nodiscard]] auto GetWriter() const -> std::ostream&;
+  };
+
+  class Resource : public ResourceReader, public ResourceWriter {
+    class PImpl;
+    std::unique_ptr<PImpl> m_impl;
+
+  public:
+    Resource(std::istream& istream, std::ostream& ostream);
+    Resource(const Resource&) = delete;
+    Resource(Resource&&) = default;
+    Resource& operator=(const Resource&) = delete;
+    Resource& operator=(Resource&&) = default;
+    ~Resource() = default;
+
+    [[nodiscard]] auto Resolve() const -> Resource&;
+    [[nodiscard]] auto Desolve() const -> LazyResource;
+    [[nodiscard]] auto GetStream() const -> std::iostream&;
   };
 }  // namespace no3::package
