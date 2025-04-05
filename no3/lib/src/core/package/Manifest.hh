@@ -56,13 +56,9 @@ namespace no3::package {
     };
 
     class SemanticVersion final {
+    public:
       using Code = uint32_t;
 
-      Code m_major = 0;
-      Code m_minor = 1;
-      Code m_patch = 0;
-
-    public:
       constexpr explicit SemanticVersion(Code major, Code minor, Code patch)
           : m_major(major), m_minor(minor), m_patch(patch) {}
       constexpr SemanticVersion() = default;
@@ -76,6 +72,11 @@ namespace no3::package {
       constexpr void SetMajor(Code major) { m_major = major; }
       constexpr void SetMinor(Code minor) { m_minor = minor; }
       constexpr void SetPatch(Code patch) { m_patch = patch; }
+
+    private:
+      Code m_major = 0;
+      Code m_minor = 1;
+      Code m_patch = 0;
     };
 
     class Contact final {
@@ -231,30 +232,28 @@ namespace no3::package {
       };
 
       class Requirements final {
-        uint64_t m_min_free_cores;
-        uint64_t m_min_free_memory;
-        uint64_t m_min_free_storage;
+        uint64_t m_min_cores;
+        uint64_t m_min_memory;
+        uint64_t m_min_storage;
 
       public:
-        constexpr Requirements() : m_min_free_cores(0), m_min_free_memory(0), m_min_free_storage(0) {}
-        constexpr explicit Requirements(uint64_t min_free_cores, uint64_t min_free_memory, uint64_t min_free_storage)
-            : m_min_free_cores(min_free_cores),
-              m_min_free_memory(min_free_memory),
-              m_min_free_storage(min_free_storage) {}
+        constexpr Requirements() : m_min_cores(0), m_min_memory(0), m_min_storage(0) {}
+        constexpr explicit Requirements(uint64_t min_cores, uint64_t min_memory, uint64_t min_storage)
+            : m_min_cores(min_cores), m_min_memory(min_memory), m_min_storage(min_storage) {}
 
         [[nodiscard]] auto operator<=>(const Requirements& o) const = default;
 
-        [[nodiscard]] auto GetMinFreeCores() const -> uint64_t { return m_min_free_cores; }
-        [[nodiscard]] auto GetMinFreeMemory() const -> uint64_t { return m_min_free_memory; }
-        [[nodiscard]] auto GetMinFreeStorage() const -> uint64_t { return m_min_free_storage; }
+        [[nodiscard]] auto GetMinCores() const -> uint64_t { return m_min_cores; }
+        [[nodiscard]] auto GetMinMemory() const -> uint64_t { return m_min_memory; }
+        [[nodiscard]] auto GetMinStorage() const -> uint64_t { return m_min_storage; }
 
-        [[nodiscard]] auto GetMinFreeCores() -> uint64_t& { return m_min_free_cores; }
-        [[nodiscard]] auto GetMinFreeMemory() -> uint64_t& { return m_min_free_memory; }
-        [[nodiscard]] auto GetMinFreeStorage() -> uint64_t& { return m_min_free_storage; }
+        [[nodiscard]] auto GetMinCores() -> uint64_t& { return m_min_cores; }
+        [[nodiscard]] auto GetMinMemory() -> uint64_t& { return m_min_memory; }
+        [[nodiscard]] auto GetMinStorage() -> uint64_t& { return m_min_storage; }
 
-        void SetMinFreeCores(uint64_t min_free_cores) { m_min_free_cores = min_free_cores; }
-        void SetMinFreeMemory(uint64_t min_free_memory) { m_min_free_memory = min_free_memory; }
-        void SetMinFreeStorage(uint64_t min_free_storage) { m_min_free_storage = min_free_storage; }
+        void SetMinCores(uint64_t min_cores) { m_min_cores = min_cores; }
+        void SetMinMemory(uint64_t min_memory) { m_min_memory = min_memory; }
+        void SetMinStorage(uint64_t min_storage) { m_min_storage = min_storage; }
       };
 
       Optimization() {

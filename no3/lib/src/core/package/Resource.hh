@@ -33,15 +33,9 @@
 
 #pragma once
 
-#include <core/package/LazyResource.hh>
-#include <core/package/Manifest.hh>
-#include <string>
-
 namespace no3::package {
-  class Package {
-    Manifest m_manifest;
-
+  class Resource {
   public:
-    Package(std::string name, Manifest::Category category = Manifest::Category::Application);
+    Resource() = default;
   };
 }  // namespace no3::package

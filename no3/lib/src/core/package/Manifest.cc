@@ -204,19 +204,19 @@ namespace no3::package::check {
       schema_assert(json.contains("requirements"));
       schema_assert(json["requirements"].is_object());
 
-      {  // key ["optimization"]["requirements"]["min-free-cores"]
-        schema_assert(json["requirements"].contains("min-free-cores"));
-        schema_assert(json["requirements"]["min-free-cores"].is_number_unsigned());
+      {  // key ["optimization"]["requirements"]["min-cores"]
+        schema_assert(json["requirements"].contains("min-cores"));
+        schema_assert(json["requirements"]["min-cores"].is_number_unsigned());
       }
 
-      {  // key ["optimization"]["requirements"]["min-free-memory"]
-        schema_assert(json["requirements"].contains("min-free-memory"));
-        schema_assert(json["requirements"]["min-free-memory"].is_number_unsigned());
+      {  // key ["optimization"]["requirements"]["min-memory"]
+        schema_assert(json["requirements"].contains("min-memory"));
+        schema_assert(json["requirements"]["min-memory"].is_number_unsigned());
       }
 
-      {  // key ["optimization"]["requirements"]["min-free-storage"]
-        schema_assert(json["requirements"].contains("min-free-storage"));
-        schema_assert(json["requirements"]["min-free-storage"].is_number_unsigned());
+      {  // key ["optimization"]["requirements"]["min-storage"]
+        schema_assert(json["requirements"].contains("min-storage"));
+        schema_assert(json["requirements"]["min-storage"].is_number_unsigned());
       }
     }
 
@@ -493,9 +493,8 @@ namespace no3::package::convert {
   }
 
   static auto ConvertOptimizationRequirements(const nlohmann::json& j) -> Manifest::Optimization::Requirements {
-    return Manifest::Optimization::Requirements(j["min-free-cores"].get<uint32_t>(),
-                                                j["min-free-memory"].get<uint32_t>(),
-                                                j["min-free-storage"].get<uint32_t>());
+    return Manifest::Optimization::Requirements(j["min-cores"].get<uint32_t>(), j["min-memory"].get<uint32_t>(),
+                                                j["min-storage"].get<uint32_t>());
   }
 
   static auto ConvertOptimization(const nlohmann::json& j) -> Manifest::Optimization {
@@ -625,9 +624,9 @@ auto Manifest::ToJson(std::ostream& os, bool& correct_schema, bool minify) const
     return j_release;
   }();
   const auto& requirements = GetOptimization().GetRequirements();
-  j["optimization"]["requirements"]["min-free-cores"] = requirements.GetMinFreeCores();
-  j["optimization"]["requirements"]["min-free-memory"] = requirements.GetMinFreeMemory();
-  j["optimization"]["requirements"]["min-free-storage"] = requirements.GetMinFreeStorage();
+  j["optimization"]["requirements"]["min-cores"] = requirements.GetMinCores();
+  j["optimization"]["requirements"]["min-memory"] = requirements.GetMinMemory();
+  j["optimization"]["requirements"]["min-storage"] = requirements.GetMinStorage();
   j["dependencies"] = [&] {
     nlohmann::ordered_json j_dependencies = nlohmann::json::array();
     for (const auto& dependency : GetDependencies()) {
