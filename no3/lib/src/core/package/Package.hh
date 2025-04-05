@@ -112,7 +112,7 @@ namespace no3::package {
      *         These failures may include the GenericStoreOperation returning false, the stream write
      *         failing, or GenericStoreOperation(File|BinaryFile) returning true, but the output
      *         parameter being nullptr.
-     * @note In the event of any failure, the Store() operation may cancel prematurely, leaving
+     * @note In the event of any failure, the Store() operation may cancel prematurely, leaving the
      *       partially written package in an unspecified state.
      */
     [[nodiscard]] auto Store(const GenericStoreOperation& dest, bool write_content = true) -> bool;
