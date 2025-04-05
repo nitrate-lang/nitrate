@@ -108,10 +108,10 @@ namespace no3::package {
      * @brief Store the package.
      * @param dest Implementation of the GenericStoreOperation interface.
      * @param write_content Should the content of emission files will be written to their stream.
-     * @return true if no failures occurred during the store operation. These may include
-     *         GenericStoreOperation returning false, the stream write failing, or
-     *         GenericStoreOperation(File|BinaryFile) returning true, but the output parameter
-     *         being nullptr. Otherwise, false.
+     * @return true if no failures occurred during the store operation. Otherwise, false.
+     *         These failures may include the GenericStoreOperation returning false, the stream write
+     *         failing, or GenericStoreOperation(File|BinaryFile) returning true, but the output
+     *         parameter being nullptr.
      * @note In the event of any failure, the Store() operation may cancel prematurely, leaving
      *       partially written package in an unspecified state.
      */
