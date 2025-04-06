@@ -145,9 +145,6 @@ void Sequencer::AttachAPIFunctions(Sequencer &self) noexcept {
     /* Vendor specific features */
     BindMethod(self, "ctrl", &Sequencer::SysCtrl);
 
-    /* Resource API */
-    BindMethod(self, "fetch", &Sequencer::SysFetch);
-
     /* Math and Logic API */
     BindMethod(self, "random", &Sequencer::SysRandom);
   }
@@ -250,25 +247,6 @@ void Sequencer::SequenceSource(Sequencer &self, std::string_view code) {
   }
 }
 
-auto Sequencer::HandleImportDirective(Sequencer &self) -> bool {
-  const auto import_name = self.m_scanner.Next().AsString();
-
-  if (!self.m_scanner.Next().Is<PuncSemi>()) [[unlikely]] {
-    Log << SeqLog << "Expected a semicolon after import name";
-    self.SetFailBit();
-
-    return false;
-  }
-
-  if (auto content = FetchModuleData(self, import_name)) {
-    SequenceSource(self, content.value());
-  } else {
-    self.SetFailBit();
-  }
-
-  return true;
-}
-
 auto Sequencer::HandleMacroBlock(Sequencer &self, Token macro) -> bool {
   qcore_assert(macro.GetKind() == MacB);
 
@@ -319,15 +297,8 @@ auto Sequencer::GetNext() -> Token {
         case Punc:
         case Name:
         case Note:
+        case KeyW:
           [[likely]] { break; }
-
-        case KeyW: {
-          if (tok.GetKeyword() == Import && HandleImportDirective(*this)) [[unlikely]] {
-            continue;
-          }
-
-          break;
-        }
 
         case MacB: {
           if (HandleMacroBlock(*this, tok)) [[likely]] {
@@ -358,12 +329,7 @@ auto Sequencer::GetLocationFallback(ncc::lex::LocationID id) -> std::optional<nc
 }
 
 SequencerPImpl::SequencerPImpl(std::shared_ptr<ncc::IEnvironment> env)
-    : m_random(0),
-      m_fetch_module(FileSystemFetchModule),
-      m_captures({}),
-      m_env(std::move(env)),
-      m_L(luaL_newstate())
-      {
+    : m_random(0), m_captures({}), m_env(std::move(env)), m_L(luaL_newstate()) {
   if (m_L == nullptr) {
     Log << Emergency << SeqLog << "Failed to create Lua state";
     qcore_panic("Failed to create LUA context");
@@ -393,10 +359,6 @@ auto Sequencer::SetFailBit(bool fail) -> bool {
   m_scanner.SetFailBit(fail);
 
   return old;
-}
-
-auto Sequencer::SetFetchFunc(FetchModuleFunc func) -> void {
-  m_shared->m_fetch_module = func ? std::move(func) : FileSystemFetchModule;
 }
 
 auto Sequencer::GetSourceWindow(Point start, Point end, char fillchar) -> std::optional<std::vector<std::string>> {

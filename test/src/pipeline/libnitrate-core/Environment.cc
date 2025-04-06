@@ -11,7 +11,6 @@ TEST(Core, Environment_Create) {
     auto env = std::make_shared<ncc::Environment>();
 
     EXPECT_TRUE(env->Contains("this.keys"));
-    EXPECT_TRUE(env->Contains("this.job"));
     EXPECT_TRUE(env->Contains("this.created_at"));
   }
 }
@@ -111,6 +110,6 @@ TEST(Core, Environment_Get_Special) {
     auto env = std::make_shared<ncc::Environment>();
 
     EXPECT_TRUE(env->Contains("this.keys"));
-    EXPECT_EQ(env->Get("this.keys").value(), "15 this.created_at8 this.job");
+    EXPECT_EQ(env->Get("this.keys").value(), "15 this.created_at");
   }
 }
