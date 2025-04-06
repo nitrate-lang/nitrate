@@ -456,7 +456,7 @@ auto GeneralParser::Context::RecurseBlock(bool braces, bool single, BlockMode sa
 
 GeneralParser::GeneralParser(ncc::lex::IScanner &lexer, std::shared_ptr<ncc::IEnvironment> env,
                              std::pmr::memory_resource &pool, const std::optional<ImportConfig> &import_config)
-    : m_impl(std::make_unique<GeneralParser::Context>(lexer, import_config.value_or(ImportConfig::GetDefault()),
+    : m_impl(std::make_unique<GeneralParser::Context>(lexer, import_config.value_or(ImportConfig::GetDefault(env)),
                                                       std::move(env), pool)) {}
 
 GeneralParser::~GeneralParser() = default;

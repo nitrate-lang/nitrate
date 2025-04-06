@@ -297,10 +297,8 @@ auto no3::cmd_impl::subcommands::CommandImplParse(ConstArguments, const MutArgum
 
   {
     auto pool = ncc::DynamicArena();
-
-    auto import_config = ncc::parse::ImportConfig::GetDefault();
-
     auto env = std::make_shared<ncc::Environment>();
+    auto import_config = ncc::parse::ImportConfig::GetDefault(env);
     auto tokenizer = ncc::lex::Tokenizer(input_file, env);
     tokenizer.SetCurrentFilename(options.m_source_path.string());
 

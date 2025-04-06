@@ -43,6 +43,7 @@
 #include <nitrate-core/Allocate.hh>
 #include <nitrate-core/CatchAll.hh>
 #include <nitrate-core/Environment.hh>
+#include <nitrate-core/IEnvironment.hh>
 #include <nitrate-lexer/Lexer.hh>
 #include <nitrate-parser/ASTBase.hh>
 #include <nitrate-parser/CodeWriter.hh>
@@ -61,7 +62,8 @@ enum class FormatMode { Standard, Minify, Deflate };
 static auto ValidateConfiguration(const nlohmann::json& j) -> bool;
 static void AssignDefaultConfigurationSettings(nlohmann::json& j);
 static auto FormatFile(const std::filesystem::path& src, const std::filesystem::path& dst, const nlohmann::json& config,
-                       FormatMode mode, const ncc::parse::ImportConfig& import_config) -> bool;
+                       FormatMode mode, const ncc::parse::ImportConfig& import_config,
+                       const std::shared_ptr<IEnvironment>& env) -> bool;
 
 struct FormatOptions {
   FormatMode m_mode;
@@ -468,7 +470,9 @@ auto no3::Interpreter::PImpl::CommandFormat(ConstArguments, const MutArguments& 
 
   Log << Debug << "Formatting " << mapping_opt.size() << " source file(s).";
 
-  ncc::parse::ImportConfig import_config = ncc::parse::ImportConfig::GetDefault();
+  auto pipeline_env = std::make_shared<ncc::Environment>();
+
+  ncc::parse::ImportConfig import_config = ncc::parse::ImportConfig::GetDefault(pipeline_env);
   if (this_import_name_opt.has_value()) {
     import_config.SetThisImportName(this_import_name_opt.value());
   }
@@ -476,11 +480,14 @@ auto no3::Interpreter::PImpl::CommandFormat(ConstArguments, const MutArguments& 
   size_t success_count = 0;
   size_t failure_count = 0;
   for (const auto& [src_file, dst_file] : mapping_opt) {
+    pipeline_env->Reset();
+
     import_config.ClearFilesToNotImport();
     import_config.AddFileToNotImport(src_file);
 
     Log << Info << "Applying format " << src_file << " => " << dst_file;
-    if (!FormatFile(src_file, dst_file, options.m_config, options.m_mode, import_config)) {
+
+    if (!FormatFile(src_file, dst_file, options.m_config, options.m_mode, import_config, pipeline_env)) {
       Log << "Unable to format file: " << src_file;
       failure_count++;
       continue;
@@ -643,7 +650,8 @@ static auto DeflateStreams(std::istream& in, std::ostream& out) -> bool {
 }
 
 static auto FormatFile(const std::filesystem::path& src, const std::filesystem::path& dst, const nlohmann::json& config,
-                       FormatMode mode, const ncc::parse::ImportConfig& import_config) -> bool {
+                       FormatMode mode, const ncc::parse::ImportConfig& import_config,
+                       const std::shared_ptr<IEnvironment>& env) -> bool {
   std::ifstream src_file(src, std::ios::binary);
   if (!src_file.is_open()) {
     Log << "Failed to open the source file: " << src;
@@ -660,11 +668,10 @@ static auto FormatFile(const std::filesystem::path& src, const std::filesystem::
       Log->Disable();
     }
 
-    auto unit_env = std::make_shared<ncc::Environment>();
-    auto tokenizer = ncc::lex::Tokenizer(src_file, unit_env);
+    auto tokenizer = ncc::lex::Tokenizer(src_file, env);
     tokenizer.SetCurrentFilename(src.string());
 
-    auto parser = ncc::parse::GeneralParser(tokenizer, unit_env, pool, import_config);
+    auto parser = ncc::parse::GeneralParser(tokenizer, env, pool, import_config);
     auto ast_result = parser.Parse();
 
     Log << Trace << "The parser used " << pool.GetSpaceUsed() << " bytes of memory.";

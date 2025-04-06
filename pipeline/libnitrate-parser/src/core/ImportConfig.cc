@@ -147,29 +147,26 @@ auto ImportConfig::ClearFilesToNotImport() -> void {
 
 ///=============================================================================
 
-static std::optional<std::unordered_set<std::filesystem::path>> GetSearchPathFromEnv() {
-  const char *env = std::getenv("NCC_PACKAGE_PATH");  // NOLINT(concurrency-mt-unsafe)
-  if (env == nullptr) {
-    return std::nullopt;
-  }
+static std::optional<std::unordered_set<std::filesystem::path>> GetSearchPathFromEnv(
+    const std::shared_ptr<ncc::IEnvironment> &env) {
+  auto env_str = env->Get("NCC_PACKAGE_PATH").value_or("");
+  size_t start = 0;
+  size_t end = env_str->find_first_of(':');
 
   std::unordered_set<std::filesystem::path> paths;
-  std::string_view env_str(env);
-  std::string_view::size_type start = 0;
-  std::string_view::size_type end = env_str.find_first_of(':');
   while (end != std::string_view::npos) {
-    paths.emplace(env_str.substr(start, end - start));
+    paths.emplace(env_str->substr(start, end - start));
     start = end + 1;
-    end = env_str.find_first_of(':', start);
+    end = env_str->find_first_of(':', start);
   }
-  paths.emplace(env_str.substr(start));
+  paths.emplace(env_str->substr(start));
 
   return paths;
 }
 
-auto ImportConfig::GetDefault() -> ImportConfig {
-  ImportName name("");  // empty name
-  auto paths = GetSearchPathFromEnv();
+auto ImportConfig::GetDefault(const std::shared_ptr<IEnvironment> &env) -> ImportConfig {
+  ImportName name("");
+  auto paths = GetSearchPathFromEnv(env);
   ImportConfig config(name, paths.value_or(std::unordered_set<std::filesystem::path>{}));
   return config;
 }

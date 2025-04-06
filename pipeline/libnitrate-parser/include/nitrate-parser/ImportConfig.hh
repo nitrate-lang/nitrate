@@ -34,6 +34,8 @@
 #ifndef __NITRATE_AST_eIMPORT_CONFIG_H__
 #define __NITRATE_AST_eIMPORT_CONFIG_H__
 
+#include <memory>
+#include <nitrate-core/IEnvironment.hh>
 #include <nitrate-parser/Package.hh>
 #include <unordered_set>
 
@@ -43,7 +45,7 @@ namespace ncc::parse {
     std::unique_ptr<PImpl> m_impl;
 
   public:
-    static auto GetDefault() -> ImportConfig;
+    static auto GetDefault(const std::shared_ptr<IEnvironment> &env) -> ImportConfig;
 
     ImportConfig(const ImportName &this_import_name,
                  const std::unordered_set<std::filesystem::path> &package_search_paths = {},
