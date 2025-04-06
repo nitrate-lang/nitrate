@@ -55,7 +55,7 @@ namespace ncc {
     auto sync() -> int override;
   };
 
-  extern thread_local std::ostream clog;  // NOLINT(readability-identifier-naming)
+  extern thread_local std::ostream GLog;
 }  // namespace ncc
 
 #endif

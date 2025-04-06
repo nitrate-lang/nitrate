@@ -34,7 +34,7 @@
 #ifndef __NITRATE_AST_PROTOBUF_FWD_H__
 #define __NITRATE_AST_PROTOBUF_FWD_H__
 
-namespace nitrate::parser::SyntaxTree {  // NOLINT
+namespace nitrate::parser::SyntaxTree {  // NOLINT(readability-identifier-naming)
   class Base;
   class Root;
   class Binary;

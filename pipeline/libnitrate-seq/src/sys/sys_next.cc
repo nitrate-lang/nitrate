@@ -46,7 +46,7 @@ void PushTokenObject(lua_State* lua, Token tok) {
   lua_newtable(lua);
 
   lua_pushstring(lua, "ty");
-  lua_pushstring(lua, to_string(tok.GetKind())->c_str());
+  lua_pushstring(lua, ToString(tok.GetKind())->c_str());
   lua_settable(lua, -3);
 
   lua_pushstring(lua, "v");
@@ -67,7 +67,7 @@ void PushTokenObject(lua_State* lua, Token tok) {
     }
 
     case Punc: {
-      lua_pushstring(lua, punct_repr(tok.GetPunctor()));
+      lua_pushstring(lua, ncc::lex::LEXICAL_PUNCTORS.right.at(tok.GetPunctor()).data());
       break;
     }
 

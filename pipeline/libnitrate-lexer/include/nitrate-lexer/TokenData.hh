@@ -72,7 +72,7 @@ namespace ncc::lex {
     }
   } __attribute__((packed));
 
-  auto to_string(TokenType, TokenData) -> string;  // NOLINT(readability-identifier-naming)
+  auto ToString(TokenType, TokenData) -> string;
 }  // namespace ncc::lex
 
 #endif

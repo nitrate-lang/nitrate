@@ -39,7 +39,7 @@
 using namespace ncc;
 
 static LogOStream LogStreamBuffer;
-NCC_EXPORT thread_local std::ostream ncc::clog(&LogStreamBuffer);
+NCC_EXPORT thread_local std::ostream ncc::GLog(&LogStreamBuffer);
 
 auto LogOStream::overflow(int_type c) -> std::streambuf::int_type {
   Log << Raw << (char)c;

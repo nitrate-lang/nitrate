@@ -308,7 +308,7 @@ auto no3::cmd_impl::subcommands::CommandImplParse(ConstArguments, const MutArgum
     std::unique_ptr<std::ostream> output_stream;
 
     if (options.m_output_path == "-") {
-      output_stream = std::make_unique<std::ostream>(ncc::clog.rdbuf());
+      output_stream = std::make_unique<std::ostream>(ncc::GLog.rdbuf());
     } else {
       Log << Trace << "Opening the output file: " << options.m_output_path;
 

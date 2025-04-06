@@ -507,7 +507,7 @@ auto GeneralParser::Parse() -> ASTRoot {
             Log << ParserSignal << "Some lexical errors have occurred";
           }
 
-          for_each<dfs_pre>(node, [&](auto c) {
+          ForEach<dfs_pre>(node, [&](auto c) {
             m_impl->m_failed |= !c || c->IsMock();
             return m_impl->m_failed ? IterOp::Abort : IterOp::Proceed;
           });

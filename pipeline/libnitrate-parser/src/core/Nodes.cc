@@ -211,7 +211,7 @@ auto Expr::RecursiveChildCount() -> size_t {
 
   size_t count = 0;
 
-  for_each(this, [&](auto) { count++; });
+  ForEach(this, [&](auto) { count++; });
 
   return count - 1;
 }

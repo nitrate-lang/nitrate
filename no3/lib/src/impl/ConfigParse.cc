@@ -122,7 +122,7 @@ auto no3::cmd_impl::subcommands::CommandImplConfigParse(ConstArguments, const Mu
         return false;
       }
     } else {
-      file = std::make_unique<std::ostream>(ncc::clog.rdbuf());
+      file = std::make_unique<std::ostream>(ncc::GLog.rdbuf());
     }
 
     if (to_format == "json") {
