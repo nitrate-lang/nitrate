@@ -49,7 +49,7 @@ auto ASTFactory::CreateMockInstance(ASTNodeKind kind, SourceLocation origin) -> 
     case AST_DISCARDED: {
       // Create some node to avoid a panic
       r = CreateNull();
-      r.value()->Discard();
+      r.Unwrap()->Discard();
       break;
     }
 
@@ -357,8 +357,8 @@ auto ASTFactory::CreateMockInstance(ASTNodeKind kind, SourceLocation origin) -> 
 #undef SIMPLE_TYPE
 #undef SIMPLE_EXPR
 
-  r.value()->SetMock();
+  r.Unwrap()->SetMock();
   r.SetTracking(origin);
 
-  return r.value();
+  return r.Unwrap();
 }

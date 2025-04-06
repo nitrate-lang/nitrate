@@ -445,10 +445,9 @@ auto GeneralParser::Context::RecurseBlock(bool braces, bool single, BlockMode sa
         }
       }
 
-      if (r.has_value()) {
-        r.value()->SetOffset(loc_start);
-        r = r.value();
-        statements.push_back(r.value());
+      if (r) {
+        r.Unwrap()->SetOffset(loc_start);
+        statements.push_back(r.Unwrap());
       }
     }
   }

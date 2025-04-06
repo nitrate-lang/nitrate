@@ -345,8 +345,8 @@ static auto RecurseExprPunctor(GeneralParser::Context &m, lex::Punctor punc) -> 
       e = m.RecurseExpr({
           Token(Punc, PuncRPar),
       });
-      auto depth = e.value()->GetParenthesisDepth();
-      e.value()->SetParenthesisDepth(depth + 1);
+      auto depth = e.Unwrap()->GetParenthesisDepth();
+      e.Unwrap()->SetParenthesisDepth(depth + 1);
 
       if (!m.NextIf<PuncRPar>()) {
         Log << ParserSignal << m.Current() << "Expected ')' to close the expression";
@@ -523,8 +523,8 @@ static auto RecurseExprPrimary(GeneralParser::Context &m, bool is_type) -> Nulla
 
       case KeyW: {
         m.Next();
-        if ((e = RecurseExprKeyword(m, tok.GetKeyword())).has_value()) {
-          e.value()->SetOffset(start_pos);
+        if ((e = RecurseExprKeyword(m, tok.GetKeyword()))) {
+          e.Unwrap()->SetOffset(start_pos);
         }
 
         break;
@@ -538,8 +538,8 @@ static auto RecurseExprPrimary(GeneralParser::Context &m, bool is_type) -> Nulla
       case Punc: {
         m.Next();
 
-        if ((e = RecurseExprPunctor(m, tok.GetPunctor())).has_value()) {
-          e.value()->SetOffset(start_pos);
+        if ((e = RecurseExprPunctor(m, tok.GetPunctor()))) {
+          e.Unwrap()->SetOffset(start_pos);
         }
 
         break;
@@ -673,7 +673,7 @@ auto GeneralParser::Context::RecurseExpr(const std::set<Token> &end) -> FlowPtr<
   }
 
   if (auto left_side_opt = RecurseExprPrimary(*this, false)) {
-    auto left_side = left_side_opt.value();
+    auto left_side = left_side_opt.Unwrap();
     auto spinning = true;
 
     /****************************************
@@ -739,7 +739,7 @@ auto GeneralParser::Context::RecurseExpr(const std::set<Token> &end) -> FlowPtr<
                 auto [op, Offset] = pre_unary_ops.top();
                 pre_unary_ops.pop();
 
-                auto pre_unary_expr = CreateUnary(op, right_side.value());
+                auto pre_unary_expr = CreateUnary(op, right_side.Unwrap());
                 pre_unary_expr->SetOffset(Offset);
 
                 right_side = pre_unary_expr;
@@ -751,7 +751,7 @@ auto GeneralParser::Context::RecurseExpr(const std::set<Token> &end) -> FlowPtr<
               }
 
               stack.emplace(left_side, source_offset, next_min_precedence, FrameType::Binary, op);
-              left_side = right_side.value();
+              left_side = right_side.Unwrap();
             } else {
               Log << ParserSignal << Current() << "Failed to parse right-hand side of binary expression";
             }

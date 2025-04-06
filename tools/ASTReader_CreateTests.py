@@ -63,7 +63,7 @@ static void TestCase(std::string_view source, std::string_view expect) {
   auto ast_b = parser.Parse();
   ASSERT_TRUE(ast_b.Check()) << "Failed to parse AST";
 
-  EXPECT_EQ(ast_a.value()->IsEq(ast_b.Get()), true) << "ASTs are not equal";
+  EXPECT_EQ(ast_a.Unwrap()->IsEq(ast_b.Get()), true) << "ASTs are not equal";
 }
 """)
 

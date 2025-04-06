@@ -167,12 +167,8 @@ namespace ncc {
 
       constexpr auto operator->() -> Pointee * { return m_s.m_ref; }
       constexpr auto operator->() const -> const Pointee * { return m_s.m_ref; }
-      [[nodiscard]] constexpr auto get() -> Pointee * {  // NOLINT(readability-identifier-naming)
-        return m_s.m_ref;
-      }
-      [[nodiscard]] constexpr auto get() const -> const Pointee * {  // NOLINT(readability-identifier-naming)
-        return m_s.m_ref;
-      }
+      [[nodiscard]] constexpr auto Get() -> Pointee * { return m_s.m_ref; }
+      [[nodiscard]] constexpr auto Get() const -> const Pointee * { return m_s.m_ref; }
       constexpr operator bool() const { return m_s.m_ref != nullptr; }
 
       ///=========================================================================
@@ -181,24 +177,24 @@ namespace ncc {
       template <class U>
       constexpr operator FlowPtr<const U>() const {
         static_assert(std::is_convertible_v<const Pointee *, const U *>, "Cannot convert Pointee* to U*");
-        return FlowPtr<const U>(static_cast<const U *>(get()), Trace());
+        return FlowPtr<const U>(static_cast<const U *>(Get()), Trace());
       }
 
       template <class U>
       constexpr operator FlowPtr<U>() {
         static_assert(std::is_convertible_v<Pointee *, U *>, "Cannot convert Pointee* to U*");
-        return FlowPtr<U>(static_cast<U *>(get()), Trace());
+        return FlowPtr<U>(static_cast<U *>(Get()), Trace());
       }
 
       template <class U>
       [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] constexpr auto As()
           const {
-        return FlowPtr<const U>(reinterpret_cast<const U *>(get()), Trace());
+        return FlowPtr<const U>(reinterpret_cast<const U *>(Get()), Trace());
       }
 
       template <class U>
       constexpr auto As() {
-        return FlowPtr<U>(reinterpret_cast<U *>(get()), Trace());
+        return FlowPtr<U>(reinterpret_cast<U *>(Get()), Trace());
       }
 
       ///=========================================================================
@@ -246,7 +242,7 @@ namespace std {
   template <class Pointee, class Tracking>
   struct hash<ncc::FlowPtr<Pointee, Tracking>> {
     auto operator()(const ncc::FlowPtr<Pointee, Tracking> &ptr) const -> size_t {
-      return std::hash<const Pointee *>()(ptr.get());
+      return std::hash<const Pointee *>()(ptr.Get());
     }
   };
 }  // namespace std

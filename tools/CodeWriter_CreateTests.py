@@ -59,7 +59,7 @@ for subdir in glob.glob(os.path.join(tree_dir, "*")):
 
   std::stringstream ss;
   auto writer = CodeWriterFactory::Create(ss);
-  ast.value()->Accept(*writer);
+  ast.Unwrap()->Accept(*writer);
 
   EXPECT_EQ(ss.str(), expect) << "CodeWriter output does not match expected output";
 }

@@ -381,10 +381,10 @@ namespace ncc::parse {
     [[nodiscard, gnu::pure]] constexpr auto GetBody() { return m_body; }
     [[nodiscard, gnu::pure]] constexpr auto IsVariadic() const { return m_variadic; }
     [[nodiscard, gnu::pure]] constexpr auto IsVariadic() { return m_variadic; }
-    [[nodiscard, gnu::pure]] constexpr auto IsDeclaration() const -> bool { return !m_body.has_value(); }
-    [[nodiscard, gnu::pure]] constexpr auto IsDeclaration() -> bool { return !m_body.has_value(); }
-    [[nodiscard, gnu::pure]] constexpr auto IsDefinition() const -> bool { return m_body.has_value(); }
-    [[nodiscard, gnu::pure]] constexpr auto IsDefinition() -> bool { return m_body.has_value(); }
+    [[nodiscard, gnu::pure]] constexpr auto IsDeclaration() const -> bool { return !m_body.Isset(); }
+    [[nodiscard, gnu::pure]] constexpr auto IsDeclaration() -> bool { return !m_body.Isset(); }
+    [[nodiscard, gnu::pure]] constexpr auto IsDefinition() const -> bool { return m_body.Isset(); }
+    [[nodiscard, gnu::pure]] constexpr auto IsDefinition() -> bool { return m_body.Isset(); }
 
     constexpr void SetName(auto name) { m_name = name; }
     constexpr void SetAttributes(auto attributes) { m_attributes = attributes; }

@@ -177,7 +177,7 @@ std::string Expr::Serialize() const {
 }
 
 auto Expr::IsEq(const FlowPtr<Expr> &o) const -> bool {
-  if (this == o.get()) {
+  if (this == o.Get()) {
     return true;
   }
 
@@ -191,7 +191,7 @@ auto Expr::IsEq(const FlowPtr<Expr> &o) const -> bool {
   ASTWriter writer2(ss2, ASTWriter::Format::PROTO);
 
   const_cast<Expr *>(this)->Accept(writer1);
-  const_cast<Expr *>(o.get())->Accept(writer2);
+  const_cast<Expr *>(o.Get())->Accept(writer2);
 
   return ss1.str() == ss2.str();
 }

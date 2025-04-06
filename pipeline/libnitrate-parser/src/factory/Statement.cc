@@ -105,7 +105,7 @@ auto ASTFactory::CreateFunction(string name, NullableFlowPtr<Type> ret_ty,
   auto attributes_copy = AllocateArray<FlowPtr<Expr>>(attributes.size());
   std::copy(attributes.begin(), attributes.end(), attributes_copy.begin());
 
-  if (!ret_ty.has_value()) {
+  if (!ret_ty) {
     ret_ty = CreateInferredType(nullptr, nullptr, nullptr, origin);
   }
 
@@ -117,7 +117,7 @@ auto ASTFactory::CreateFunction(string name, NullableFlowPtr<Type> ret_ty,
   }
 
   return CreateInstance<Function>(attributes_copy, name, template_parameters_copy, params_copy, variadic,
-                                  ret_ty.value(), body)(m_pool, origin);
+                                  ret_ty.Unwrap(), body)(m_pool, origin);
 }
 
 auto ASTFactory::CreateAnonymousFunction(NullableFlowPtr<Type> ret_ty,
@@ -178,11 +178,11 @@ auto ASTFactory::CreateVariable(VariableType variant, string name, std::span<con
   auto attributes_copy = AllocateArray<FlowPtr<Expr>>(attributes.size());
   std::copy(attributes.begin(), attributes.end(), attributes_copy.begin());
 
-  if (!type.has_value()) {
+  if (!type) {
     type = CreateInferredType(nullptr, nullptr, nullptr, origin);
   }
 
-  return CreateInstance<Variable>(name, type.value(), init, variant, attributes_copy)(m_pool, origin);
+  return CreateInstance<Variable>(name, type.Unwrap(), init, variant, attributes_copy)(m_pool, origin);
 }
 
 auto ASTFactory::CreateAssembly(string asm_code, SourceLocation origin) -> FlowPtr<Assembly> {

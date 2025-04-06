@@ -721,18 +721,18 @@ namespace ncc::parse {
         PutPunctor(PuncColn);
         PutPunctor(PuncLBrk);
         if (n->GetRangeBegin()) {
-          n->GetRangeBegin().value()->Accept(*this);
+          n->GetRangeBegin().Unwrap()->Accept(*this);
         }
         PutPunctor(PuncColn);
         if (n->GetRangeEnd()) {
-          n->GetRangeEnd().value()->Accept(*this);
+          n->GetRangeEnd().Unwrap()->Accept(*this);
         }
         PutPunctor(PuncRBrk);
       }
 
       if (n->GetWidth()) {
         PutPunctor(PuncColn);
-        n->GetWidth().value()->Accept(*this);
+        n->GetWidth().Unwrap()->Accept(*this);
       }
     }
 
@@ -1032,7 +1032,7 @@ namespace ncc::parse {
 
         if (pdefault) {
           PutOperator(OpSet);
-          pdefault.value()->Accept(*this);
+          pdefault.Unwrap()->Accept(*this);
         }
       }
       if (n->IsVariadic()) {
@@ -1351,7 +1351,7 @@ namespace ncc::parse {
 
       if (n->GetInitializer()) {
         PutOperator(OpSet);
-        n->GetInitializer().value()->Accept(*this);
+        n->GetInitializer().Unwrap()->Accept(*this);
       }
 
       PrintTrailing(n);
@@ -1374,7 +1374,7 @@ namespace ncc::parse {
       n->GetThen()->Accept(*this);
       if (n->GetElse()) {
         PutKeyword(lex::Else);
-        n->GetElse().value()->Accept(*this);
+        n->GetElse().Unwrap()->Accept(*this);
       }
 
       PrintTrailing(n);
@@ -1396,19 +1396,19 @@ namespace ncc::parse {
       PutKeyword(lex::For);
 
       if (n->GetInit()) {
-        n->GetInit().value()->Accept(*this);
+        n->GetInit().Unwrap()->Accept(*this);
       } else {
         PutPunctor(PuncSemi);
       }
 
       if (n->GetCond()) {
-        n->GetCond().value()->Accept(*this);
+        n->GetCond().Unwrap()->Accept(*this);
       } else {
         PutPunctor(PuncSemi);
       }
 
       if (n->GetStep()) {
-        n->GetStep().value()->Accept(*this);
+        n->GetStep().Unwrap()->Accept(*this);
       }
 
       n->GetBody()->Accept(*this);
@@ -1453,7 +1453,7 @@ namespace ncc::parse {
 
       PutKeyword(lex::Return);
       if (n->GetValue()) {
-        n->GetValue().value()->Accept(*this);
+        n->GetValue().Unwrap()->Accept(*this);
       }
 
       PrintTrailing(n);
@@ -1481,7 +1481,7 @@ namespace ncc::parse {
       if (n->GetDefault()) {
         PutIdentifier("_");
         PutOperator(OpArrow);
-        n->GetDefault().value()->Accept(*this);
+        n->GetDefault().Unwrap()->Accept(*this);
       }
       PutPunctor(PuncRCur);
 
@@ -1519,10 +1519,10 @@ namespace ncc::parse {
         PutIdentifier(n->GetName());
       }
 
-      if (n->GetTemplateParams().has_value()) {
+      if (n->GetTemplateParams()) {
         PutOperator(OpLT);
-        for (auto it = n->GetTemplateParams().value().begin(); it != n->GetTemplateParams().value().end(); ++it) {
-          if (it != n->GetTemplateParams().value().begin()) {
+        for (auto it = n->GetTemplateParams()->begin(); it != n->GetTemplateParams()->end(); ++it) {
+          if (it != n->GetTemplateParams()->begin()) {
             PutPunctor(PuncComa);
           }
 
@@ -1536,7 +1536,7 @@ namespace ncc::parse {
 
           if (pdefault) {
             PutOperator(OpSet);
-            pdefault.value()->Accept(*this);
+            pdefault.Unwrap()->Accept(*this);
           }
         }
         PutOperator(OpGT);
@@ -1558,7 +1558,7 @@ namespace ncc::parse {
 
         if (pdefault) {
           PutOperator(OpSet);
-          pdefault.value()->Accept(*this);
+          pdefault.Unwrap()->Accept(*this);
         }
       }
       if (n->IsVariadic()) {
@@ -1576,7 +1576,7 @@ namespace ncc::parse {
       }
 
       if (n->GetBody()) {
-        auto body = n->GetBody().value();
+        auto body = n->GetBody().Unwrap();
 
         if (body->Is(AST_sBLOCK) && body->As<Block>()->GetStatements().size() == 1) {
           PutOperator(OpArrow);
@@ -1618,8 +1618,8 @@ namespace ncc::parse {
 
       if (n->GetTemplateParams()) {
         PutOperator(OpLT);
-        for (auto it = n->GetTemplateParams().value().begin(); it != n->GetTemplateParams().value().end(); ++it) {
-          if (it != n->GetTemplateParams().value().begin()) {
+        for (auto it = n->GetTemplateParams()->begin(); it != n->GetTemplateParams()->end(); ++it) {
+          if (it != n->GetTemplateParams()->begin()) {
             PutPunctor(PuncComa);
           }
 
@@ -1633,7 +1633,7 @@ namespace ncc::parse {
 
           if (pdefault) {
             PutOperator(OpSet);
-            pdefault.value()->Accept(*this);
+            pdefault.Unwrap()->Accept(*this);
           }
         }
         PutOperator(OpGT);
@@ -1678,7 +1678,7 @@ namespace ncc::parse {
         type->Accept(*this);
         if (default_value) {
           PutOperator(OpSet);
-          default_value.value()->Accept(*this);
+          default_value.Unwrap()->Accept(*this);
         }
 
         if (std::next(it) != n->GetFields().end() || !n->GetMethods().empty()) {
@@ -1716,14 +1716,14 @@ namespace ncc::parse {
       }
       if (n->GetType()) {
         PutPunctor(PuncColn);
-        n->GetType().value()->Accept(*this);
+        n->GetType().Unwrap()->Accept(*this);
       }
       PutPunctor(PuncLCur);
       for (auto& [field, expr] : n->GetFields()) {
         PutIdentifier(field);
         if (expr) {
           PutOperator(OpSet);
-          expr.value()->Accept(*this);
+          expr.Unwrap()->Accept(*this);
         }
         PutPunctor(PuncComa);
       }

@@ -285,23 +285,23 @@ static SyntaxTree::Import_Mode FromImportMode(ncc::parse::ImportMode mode) {
 }
 
 void ASTWriter::SetTypeMetadata(auto *message, const FlowPtr<Type> &in) {
-  if (in->GetWidth().has_value()) [[unlikely]] {
-    message->set_allocated_bit_width(From(in->GetWidth().value()));
+  if (in->GetWidth()) [[unlikely]] {
+    message->set_allocated_bit_width(From(in->GetWidth().Unwrap()));
   }
 
-  if (in->GetRangeBegin().has_value()) [[unlikely]] {
-    message->set_allocated_minimum(From(in->GetRangeBegin().value()));
+  if (in->GetRangeBegin()) [[unlikely]] {
+    message->set_allocated_minimum(From(in->GetRangeBegin().Unwrap()));
   }
 
-  if (in->GetRangeEnd().has_value()) [[unlikely]] {
-    message->set_allocated_maximum(From(in->GetRangeEnd().value()));
+  if (in->GetRangeEnd()) [[unlikely]] {
+    message->set_allocated_maximum(From(in->GetRangeEnd().Unwrap()));
   }
 }
 
 SyntaxTree::SourceLocationRange *ASTWriter::FromSource(FlowPtr<Expr> in) {
   auto &m_rd = m_impl->m_rd;
   auto &pool = m_impl->m_pool;
-  if (!m_rd.has_value()) {
+  if (!m_rd) {
     return nullptr;
   }
 
@@ -1094,8 +1094,8 @@ SyntaxTree::FuncTy *ASTWriter::From(FlowPtr<FuncTy> in) {
       if (!IsCompressable(type)) {
         parameter->set_allocated_type(From(type));
       }
-      if (default_.has_value()) {
-        parameter->set_allocated_default_value(From(default_.value()));
+      if (default_) {
+        parameter->set_allocated_default_value(From(default_.Unwrap()));
       }
 
       param_list->AddAllocated(parameter);
@@ -1417,8 +1417,8 @@ SyntaxTree::Variable *ASTWriter::From(FlowPtr<Variable> in) {
   if (!IsCompressable(in->GetType())) {
     message->set_allocated_type(From(in->GetType()));
   }
-  if (in->GetInitializer().has_value()) {
-    message->set_allocated_initial_value(From(in->GetInitializer().value()));
+  if (in->GetInitializer()) {
+    message->set_allocated_initial_value(From(in->GetInitializer().Unwrap()));
   }
 
   switch (in->GetVariableKind()) {
@@ -1482,8 +1482,8 @@ SyntaxTree::If *ASTWriter::From(FlowPtr<If> in) {
   message->set_allocated_condition(From(in->GetCond()));
   message->set_allocated_true_branch(From(in->GetThen()));
 
-  if (in->GetElse().has_value()) {
-    message->set_allocated_false_branch(From(in->GetElse().value()));
+  if (in->GetElse()) {
+    message->set_allocated_false_branch(From(in->GetElse().Unwrap()));
   }
 
   return message;
@@ -1506,16 +1506,16 @@ SyntaxTree::For *ASTWriter::From(FlowPtr<For> in) {
 
   message->set_allocated_location(FromSource(in));
 
-  if (in->GetInit().has_value()) {
-    message->set_allocated_init(From(in->GetInit().value()));
+  if (in->GetInit()) {
+    message->set_allocated_init(From(in->GetInit().Unwrap()));
   }
 
-  if (in->GetCond().has_value()) {
-    message->set_allocated_condition(From(in->GetCond().value()));
+  if (in->GetCond()) {
+    message->set_allocated_condition(From(in->GetCond().Unwrap()));
   }
 
-  if (in->GetStep().has_value()) {
-    message->set_allocated_step(From(in->GetStep().value()));
+  if (in->GetStep()) {
+    message->set_allocated_step(From(in->GetStep().Unwrap()));
   }
 
   message->set_allocated_body(From(in->GetBody()));
@@ -1561,8 +1561,8 @@ SyntaxTree::Return *ASTWriter::From(FlowPtr<Return> in) {
   auto *message = Pool::CreateMessage<SyntaxTree::Return>(pool);
 
   message->set_allocated_location(FromSource(in));
-  if (in->GetValue().has_value()) {
-    message->set_allocated_value(From(in->GetValue().value()));
+  if (in->GetValue()) {
+    message->set_allocated_value(From(in->GetValue().Unwrap()));
   }
 
   return message;
@@ -1599,8 +1599,8 @@ SyntaxTree::Switch *ASTWriter::From(FlowPtr<Switch> in) {
     });
   }
 
-  if (in->GetDefault().has_value()) {
-    message->set_allocated_default_(From(in->GetDefault().value()));
+  if (in->GetDefault()) {
+    message->set_allocated_default_(From(in->GetDefault().Unwrap()));
   }
 
   return message;
@@ -1630,8 +1630,8 @@ SyntaxTree::Function *ASTWriter::From(FlowPtr<Function> in) {
     message->set_variadic(in->IsVariadic());
   }
 
-  if (in->GetBody().has_value()) {
-    message->set_allocated_body(From(in->GetBody().value()));
+  if (in->GetBody()) {
+    message->set_allocated_body(From(in->GetBody().Unwrap()));
   }
 
   { /* Add all attributes */
@@ -1648,7 +1648,7 @@ SyntaxTree::Function *ASTWriter::From(FlowPtr<Function> in) {
   }
 
   /* Add all template parameters */
-  if (in->GetTemplateParams().has_value()) {
+  if (in->GetTemplateParams()) {
     auto params = in->GetTemplateParams().value();
     auto param_list = message->mutable_template_parameters()->parameters();
     param_list.Reserve(params.size());
@@ -1660,8 +1660,8 @@ SyntaxTree::Function *ASTWriter::From(FlowPtr<Function> in) {
       if (!IsCompressable(type)) {
         parameter->set_allocated_type(From(type));
       }
-      if (default_.has_value()) {
-        parameter->set_allocated_default_value(From(default_.value()));
+      if (default_) {
+        parameter->set_allocated_default_value(From(default_.Unwrap()));
       }
 
       param_list.AddAllocated(parameter);
@@ -1680,15 +1680,15 @@ SyntaxTree::Function *ASTWriter::From(FlowPtr<Function> in) {
       if (!IsCompressable(type)) {
         parameter->set_allocated_type(From(type));
       }
-      if (default_.has_value()) {
-        parameter->set_allocated_default_value(From(default_.value()));
+      if (default_) {
+        parameter->set_allocated_default_value(From(default_.Unwrap()));
       }
 
       param_list->AddAllocated(parameter);
     }
   }
 
-  if (in->GetTemplateParams().has_value()) {
+  if (in->GetTemplateParams()) {
     auto items = in->GetTemplateParams().value();
 
     message->mutable_template_parameters()->mutable_parameters()->Reserve(items.size());
@@ -1702,8 +1702,8 @@ SyntaxTree::Function *ASTWriter::From(FlowPtr<Function> in) {
       if (!IsCompressable(param_type)) {
         parameter->set_allocated_type(From(param_type));
       }
-      if (param_default.has_value()) {
-        parameter->set_allocated_default_value(From(param_default.value()));
+      if (param_default) {
+        parameter->set_allocated_default_value(From(param_default.Unwrap()));
       }
 
       message->mutable_template_parameters()->mutable_parameters()->AddAllocated(parameter);
@@ -1721,7 +1721,7 @@ SyntaxTree::Struct *ASTWriter::From(FlowPtr<Struct> in) {
   message->set_name(in->GetName().Get());
   message->set_kind(FromStructKind(in->GetCompositeType()));
 
-  if (in->GetTemplateParams().has_value()) {
+  if (in->GetTemplateParams()) {
     auto items = in->GetTemplateParams().value();
 
     message->mutable_template_parameters()->mutable_parameters()->Reserve(items.size());
@@ -1735,8 +1735,8 @@ SyntaxTree::Struct *ASTWriter::From(FlowPtr<Struct> in) {
       if (!IsCompressable(param_type)) {
         parameter->set_allocated_type(From(param_type));
       }
-      if (param_default.has_value()) {
-        parameter->set_allocated_default_value(From(param_default.value()));
+      if (param_default) {
+        parameter->set_allocated_default_value(From(param_default.Unwrap()));
       }
 
       message->mutable_template_parameters()->mutable_parameters()->AddAllocated(parameter);
@@ -1779,8 +1779,8 @@ SyntaxTree::Struct *ASTWriter::From(FlowPtr<Struct> in) {
       if (item.IsStatic()) {
         field->set_is_static(true);
       }
-      if (item.GetValue().has_value()) {
-        field->set_allocated_default_value(From(item.GetValue().value()));
+      if (item.GetValue()) {
+        field->set_allocated_default_value(From(item.GetValue().Unwrap()));
       }
 
       message->mutable_fields()->AddAllocated(field);
@@ -1813,8 +1813,8 @@ SyntaxTree::Enum *ASTWriter::From(FlowPtr<Enum> in) {
   message->set_allocated_location(FromSource(in));
   message->set_name(in->GetName().Get());
 
-  if (in->GetType().has_value()) {
-    message->set_allocated_base_type(From(in->GetType().value()));
+  if (in->GetType()) {
+    message->set_allocated_base_type(From(in->GetType().Unwrap()));
   }
 
   { /* Add all elements */
@@ -1824,8 +1824,8 @@ SyntaxTree::Enum *ASTWriter::From(FlowPtr<Enum> in) {
     std::for_each(items.begin(), items.end(), [&](auto item) {
       auto *element = Pool::CreateMessage<SyntaxTree::Enum_Field>(pool);
       element->set_name(item.first.Get());
-      if (item.second.has_value()) {
-        element->set_allocated_value(From(item.second.value()));
+      if (item.second) {
+        element->set_allocated_value(From(item.second.Unwrap()));
       }
       message->mutable_items()->AddAllocated(element);
     });

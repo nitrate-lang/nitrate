@@ -64,11 +64,11 @@ class IterVisitor : public ASTVisitor {
 
   template <class T>
   constexpr void Add(NullableFlowPtr<T> n) {
-    if (!n.has_value() || n == nullptr || n.value()->IsDiscarded()) {
+    if (!n.Isset() || n == nullptr || n.Unwrap()->IsDiscarded()) {
       return;
     }
 
-    m_sub.push_back(n.value());
+    m_sub.push_back(n.Unwrap());
   }
 
   void AddTypesuffix(const FlowPtr<Type>& n) {

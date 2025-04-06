@@ -152,7 +152,7 @@ static auto RecurseFunctionType(GeneralParser::Context& m) -> FlowPtr<parse::Typ
 
   auto func_ty =
       m.CreateFunctionType(fn_def->GetReturn(), fn_def->GetParams(), fn_def->IsVariadic(), fn_def->GetAttributes());
-  if (!func_ty.has_value()) {
+  if (!func_ty) {
     Log << ParserSignal << m.Current() << "Function type specification is incorrect";
     func_ty = m.CreateMockInstance<FuncTy>();
   }
@@ -374,14 +374,14 @@ static auto RecurseTypeByName(GeneralParser::Context& m, string name) -> FlowPtr
     type = m.CreateNamed(name);
   }
 
-  if (!type.has_value()) {
+  if (!type) {
     Log << ParserSignal << m.Current() << "Unknown type name: " << name;
     return m.CreateMockInstance<VoidTy>();
   }
 
-  type.value()->SetOffset(m.Current().GetStart());
+  type.Unwrap()->SetOffset(m.Current().GetStart());
 
-  return type.value();
+  return type.Unwrap();
 }
 
 static auto RecurseTypeByPunctuation(GeneralParser::Context& m, Punctor punc) -> FlowPtr<parse::Type> {
