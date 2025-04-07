@@ -47,6 +47,8 @@
 #include <no3/Interpreter.hh>
 #include <unordered_map>
 
+#include "nitrate-core/Environment.hh"
+
 using namespace no3;
 using namespace no3::detail;
 
@@ -128,23 +130,21 @@ NCC_EXPORT std::unique_ptr<detail::RCInitializationContext> no3::OpenLibrary(
 ///===================================================================================================
 
 auto GetMinimumLogLevel() -> ncc::Sev {
+  constexpr auto kDefaultLevel = ncc::Info;
+
   static const std::unordered_map<std::string, ncc::Sev> map = {
       {"TRACE", ncc::Trace},         {"DEBUG", ncc::Debug}, {"INFO", ncc::Info},         {"NOTICE", ncc::Notice},
       {"WARNING", ncc::Warning},     {"ERROR", ncc::Error}, {"CRITICAL", ncc::Critical}, {"ALERT", ncc::Alert},
       {"EMERGENCY", ncc::Emergency}, {"RAW", ncc::Raw},
   };
 
-  constexpr auto kDefaultLevel = ncc::Info;
-  const char* env_val = std::getenv("NCC_LOG_LEVEL");  // NOLINT(concurrency-mt-unsafe)
-  if (env_val == nullptr) {
-    return kDefaultLevel;
-  }
+  if (auto setting = ncc::Environment().Get("NCC_LOG_LEVEL")) {
+    std::string level(*setting);
+    std::transform(level.begin(), level.end(), level.begin(), ::toupper);
 
-  std::string level(env_val);
-  std::transform(level.begin(), level.end(), level.begin(), ::toupper);
-
-  if (auto it = map.find(level); it != map.end()) {
-    return it->second;
+    if (auto it = map.find(level); it != map.end()) {
+      return it->second;
+    }
   }
 
   return kDefaultLevel;

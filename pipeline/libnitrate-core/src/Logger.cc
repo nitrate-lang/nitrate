@@ -39,6 +39,8 @@
 #include <nitrate-core/SmartLock.hh>
 #include <vector>
 
+#include "nitrate-core/Environment.hh"
+
 using namespace ncc;
 
 NCC_EXPORT thread_local std::shared_ptr<LoggerContext> ncc::Log = std::make_shared<LoggerContext>();
@@ -106,15 +108,16 @@ void ECBase::GetJsonRepresentation(std::ostream &os) const {
 }
 
 static auto GetRealPath(std::string_view in_path) -> std::optional<std::string> {
-  std::string path((in_path));
+  const auto static_env = Environment();
+
+  auto path = std::string(in_path);
 
   if (auto index = path.find("$NCC_CONF"); index != std::string::npos) {
-    const char *ncc_conf = std::getenv("NCC_CONF");  // NOLINT(concurrency-mt-unsafe)
-    if (ncc_conf == nullptr) {
+    if (auto ncc_conf = static_env.Get("NCC_CONF")) {
+      path.replace(index, 9, **ncc_conf);
+    } else {
       return std::nullopt;
     }
-
-    path.replace(index, 9, ncc_conf);
   }
 
   return path;

@@ -34,49 +34,103 @@
 #include <boost/uuid/uuid.hpp>
 #include <boost/uuid/uuid_generators.hpp>
 #include <boost/uuid/uuid_io.hpp>
-#include <chrono>
 #include <nitrate-core/Environment.hh>
 #include <nitrate-core/Macro.hh>
+#include <ranges>
+#include <shared_mutex>
 #include <sstream>
+#include <unordered_map>
 
 using namespace ncc;
 
-void Environment::SetupDefaultKeys() {
-  /* Set the compiler start time */
-  auto now = std::chrono::system_clock::now();
-  auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch());
+class Environment::PImpl {
+  static auto GetInitialEnvironment() {
+    std::unordered_map<string, string> initial;
 
-  m_data["this.created_at"] = std::to_string(ms.count());
-}
-
-auto Environment::Contains(std::string_view key) -> bool { return m_data.contains(key) || key == "this.keys"; }
-
-auto Environment::Get(string key) -> std::optional<string> {
-  if (key == "this.keys") {
-    std::stringstream keys;
-    for (auto const &[k, _] : m_data) {
-      keys << k->size() << " " << k;
+    for (auto **environ_it = environ; *environ_it != nullptr; ++environ_it) {
+      const std::string_view env_var(*environ_it);
+      const auto pos = env_var.find('=');
+      if (pos != std::string_view::npos) {
+        initial[env_var.substr(0, pos)] = env_var.substr(pos + 1);
+      }
     }
 
-    return keys.str();
+    return initial;
   }
 
-  if (auto it = m_data.find(key); it != m_data.end()) {
-    return it->second;
+public:
+  std::unordered_map<string, string> m_initial;
+  std::unordered_map<string, string> m_current;
+  mutable std::shared_mutex m_mutex;
+
+  PImpl() { m_current = m_initial = GetInitialEnvironment(); }
+};
+
+Environment::Environment() : m_impl(std::make_unique<PImpl>()) {}
+
+Environment::~Environment() {
+  auto &m = *m_impl;
+  std::unique_lock lock(m.m_mutex);
+
+  m.m_current.clear();
+  m.m_initial.clear();
+}
+
+auto Environment::Contains(std::string_view key) const -> bool {
+  auto &m = *m_impl;
+  std::shared_lock lock(m.m_mutex);
+
+  return m.m_current.contains(key) || key == "this.keys";
+}
+
+auto Environment::Get(string key) const -> std::optional<string> {
+  const auto &m = *m_impl;
+  std::shared_lock lock(m.m_mutex);
+
+  if (key != "this.keys") [[likely]] {
+    auto it = m.m_current.find(key);
+    return it == m.m_current.end() ? std::nullopt : std::make_optional(it->second);
   }
 
-  return std::nullopt;
+  std::stringstream keys;
+  for (auto const &[k, _] : m.m_current) {
+    keys << k->size() << " " << k;
+  }
+
+  return keys.str();
 }
 
 void Environment::Set(string key, std::optional<string> value) {
-  if (value.has_value()) {
-    m_data.insert_or_assign(key, *value);
-  } else {
-    m_data.erase(key);
+  auto &m = *m_impl;
+  std::unique_lock lock(m.m_mutex);
+
+  if (key != "this.keys") {
+    if (value.has_value()) {
+      m.m_current.insert_or_assign(key, *value);
+    } else {
+      m.m_current.erase(key);
+    }
   }
 }
 
 void Environment::Reset() {
-  m_data.clear();
-  SetupDefaultKeys();
+  auto &m = *m_impl;
+  std::unique_lock lock(m.m_mutex);
+
+  m.m_current = m.m_initial;
+}
+
+auto Environment::GetKeys() const -> std::vector<string> {
+  auto &m = *m_impl;
+  std::shared_lock lock(m.m_mutex);
+
+  std::vector<string> keys;
+  keys.reserve(m.m_current.size() + 1);
+  keys.emplace_back("this.keys");
+
+  for (auto const &[k, _] : m.m_current) {
+    keys.push_back(k);
+  }
+
+  return keys;
 }

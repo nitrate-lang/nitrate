@@ -37,6 +37,7 @@
 #include <fstream>
 #include <impl/Subcommands.hh>
 #include <memory>
+#include <nitrate-core/Allocate.hh>
 #include <nitrate-core/CatchAll.hh>
 #include <nitrate-core/Environment.hh>
 #include <nitrate-core/Logger.hh>
@@ -52,7 +53,9 @@ using namespace no3::cmd_impl;
 enum class OutputFormat { Json, Protobuf, Minify };
 
 static bool ParseFile(const auto& source_path, const auto& output_path, const auto& dump, const auto& tracking,
-                      const auto& output_format) {
+                      const auto& output_format, auto& env) {
+  env->Reset();
+
   Log << Trace << "options[\"source\"] = " << source_path;
   Log << Trace << "options[\"output\"] = " << output_path;
   Log << Trace << "options[\"dump\"] = " << (dump ? "true" : "false");
@@ -77,7 +80,6 @@ static bool ParseFile(const auto& source_path, const auto& output_path, const au
 
   {
     auto pool = ncc::DynamicArena();
-    auto env = std::make_shared<ncc::Environment>();
     auto import_config = ncc::parse::ImportConfig::GetDefault(env);
     auto tokenizer = ncc::lex::Tokenizer(input_file, env);
     tokenizer.SetCurrentFilename(source_path);
@@ -195,8 +197,10 @@ auto no3::cmd_impl::subcommands::CommandImplParse(ConstArguments, const MutArgum
     return OutputFormat::Json;  // Default to JSON
   }();
 
+  auto env = std::make_shared<ncc::Environment>();
+
   for (const auto& source_path : source_paths) {
-    if (!ParseFile(source_path, output_path, dump, tracking, output_format)) {
+    if (!ParseFile(source_path, output_path, dump, tracking, output_format, env)) {
       Log << Error << "Failed to parse file: " << source_path;
       return false;
     }

@@ -34,34 +34,29 @@
 #ifndef __NITRATE_CORE_ENV_H__
 #define __NITRATE_CORE_ENV_H__
 
-#include <nitrate-core/Allocate.hh>
 #include <nitrate-core/IEnvironment.hh>
 #include <nitrate-core/String.hh>
 #include <optional>
-#include <ranges>
-#include <unordered_map>
 
 namespace ncc {
   class NCC_EXPORT Environment final : public IEnvironment {
-    std::unordered_map<string, string> m_data;
-
-    void SetupDefaultKeys();
+    class PImpl;
+    std::unique_ptr<PImpl> m_impl;
 
   public:
-    Environment() { SetupDefaultKeys(); }
-    ~Environment() override = default;
-
+    Environment();
     Environment(const Environment &) = delete;
-    Environment(Environment &&) = delete;
+    Environment(Environment &&) = default;
     auto operator=(const Environment &) -> Environment & = delete;
-    auto operator=(Environment &&) -> Environment & = delete;
+    auto operator=(Environment &&) -> Environment & = default;
+    ~Environment() override;
 
-    auto Contains(std::string_view key) -> bool override;
-    auto Get(string key) -> std::optional<string> override;
-    void Set(string key, std::optional<string> value) override;
-    void Reset() override;
+    [[nodiscard]] auto Contains(std::string_view key) const -> bool override;
+    [[nodiscard]] auto Get(string key) const -> std::optional<string> override;
+    auto Set(string key, std::optional<string> value) -> void override;
+    auto Reset() -> void override;
 
-    auto GetKeys() const { return m_data | std::ranges::views::keys; }
+    [[nodiscard]] auto GetKeys() const -> std::vector<string>;
   };
 
 }  // namespace ncc
