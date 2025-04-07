@@ -67,7 +67,7 @@ static auto VerifyTextDocumentCompletion(const nlohmann::json& j) -> bool {
   return true;
 }
 
-void core::Context::RequestCompletion(const message::RequestMessage& request, message::ResponseMessage& response) {
+void core::Context::RequestCompletion(const message::RequestMessage& request, message::ResponseMessage&) {
   const auto& j = *request;
   if (!VerifyTextDocumentCompletion(j)) {
     Log << "Invalid textDocument/completion request";
@@ -92,13 +92,13 @@ void core::Context::RequestCompletion(const message::RequestMessage& request, me
     return;
   }
 
-  auto rd = file->GetReader();
-  rd->seekg(*offset);
+  // auto rd = file->ReadAll();
+  // rd->seekg(*offset);
 
-  std::basic_string<uint8_t> line_str;
-  // std::getline(*rd, line_str);
+  // auto snippet = std::basic_string((std::istreambuf_iterator(*rd)), std::istreambuf_iterator<uint8_t>());
 
-  // Log << Trace << "RequestCompletion: line_str: " << (const char*)line_str.c_str();
+  // (Log << Trace << "RequestCompletion: line_str: ")
+  //     ->write(reinterpret_cast<const char*>(snippet.data()), snippet.size());
 
   /// TODO: Implement completion logic here
 }

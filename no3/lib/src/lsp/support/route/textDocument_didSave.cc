@@ -88,7 +88,7 @@ void core::Context::NotifyTextDocumentDidSave(const message::NotifyMessage& noti
       qcore_panic("Failed to open debug output file");
     }
 
-    debug_output.write(reinterpret_cast<const char*>(raw_content.data()), raw_content.size());
+    debug_output.write(reinterpret_cast<const char*>(raw_content.c_str()), raw_content.size());
   }
 #endif
 }

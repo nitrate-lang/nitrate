@@ -36,8 +36,10 @@
 #include <istream>
 #include <lsp/protocol/Base.hh>
 #include <lsp/resource/File.hh>
+#include <memory>
 #include <nitrate-core/Assert.hh>
 #include <nitrate-core/Logger.hh>
+#include <string_view>
 
 using namespace ncc;
 using namespace no3::lsp::core;
@@ -82,20 +84,12 @@ auto ConstFile::ReadAll() const -> FlyByteString {
   return m_impl->m_raw;
 }
 
-class SourceReferencingStream : public boost::iostreams::stream<boost::iostreams::basic_array_source<uint8_t>> {
-  FlyByteString m_source;
-
-public:
-  SourceReferencingStream(const uint8_t *data, std::size_t size, FlyByteString source)
-      : boost::iostreams::stream<boost::iostreams::basic_array_source<uint8_t>>(data, size),
-        m_source(std::move(source)){};
-};
-
 auto ConstFile::GetReader() const -> std::unique_ptr<std::basic_istream<uint8_t>> {
   qcore_assert(m_impl != nullptr);
-
   const auto &data = m_impl->m_raw;
-  return std::make_unique<SourceReferencingStream>(data->data(), data->size(), data);
+
+  return std::make_unique<boost::iostreams::stream<boost::iostreams::basic_array_source<uint8_t>>>(data->data(),
+                                                                                                   data->size());
 }
 
 struct UnicodeResult {
@@ -103,14 +97,13 @@ struct UnicodeResult {
   uint8_t m_size;
 };
 
-static auto UTF8ToUTF16CharacterCount(const uint8_t *utf8_bytes,
-                                      size_t utf8_bytes_size) -> std::optional<UnicodeResult> {
+static auto UTF8ToUTF16CharacterCount(std::basic_string_view<uint8_t> utf8_bytes) -> std::optional<UnicodeResult> {
   std::array<uint8_t, 4> utf8_buf;
   uint32_t codepoint = 0;
   uint8_t codepoint_size = 0;
 
   utf8_buf.fill(0);
-  std::memcpy(utf8_buf.data(), utf8_bytes, utf8_bytes_size < 4 ? utf8_bytes_size : 4);
+  std::memcpy(utf8_buf.data(), utf8_bytes.data(), utf8_bytes.size() < 4 ? utf8_bytes.size() : 4);
 
   if ((utf8_buf[0] & 0x80) == 0) [[likely]] {
     codepoint = utf8_buf[0];
@@ -188,8 +181,7 @@ auto ConstFile::GetOffset(std::basic_string_view<uint8_t> raw, uint64_t line,
       return raw_offset;
     }
 
-    const auto substr = raw.substr(i);
-    if (auto res = UTF8ToUTF16CharacterCount(substr.data(), substr.size())) {
+    if (auto res = UTF8ToUTF16CharacterCount(raw.substr(i))) {
       utf16_line_pos += res->m_count;
       i += res->m_size - 1;
     }
