@@ -31,85 +31,35 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <chrono>
-#include <lsp/core/ThreadPool.hh>
-#include <mutex>
-#include <nitrate-core/Logger.hh>
-#include <nitrate-core/SmartLock.hh>
-#include <stop_token>
+#pragma once
 
-using namespace ncc;
+#include <lsp/protocol/TextDocument.hh>
+#include <lsp/resource/File.hh>
+#include <memory>
+#include <span>
 
-void ThreadPool::Start() {
-  auto optimal_thread_count = std::max(std::jthread::hardware_concurrency(), 1U);
-  Log << Debug << "Starting thread pool with " << optimal_thread_count << " threads";
+namespace no3::lsp::core {
+  class FileBrowser final {
+    class PImpl;
+    std::unique_ptr<PImpl> m_impl;
 
-  // Enable thread synchronization
-  EnableSync = true;
+  public:
+    FileBrowser(protocol::TextDocumentSyncKind sync);
+    FileBrowser(const FileBrowser&) = delete;
+    FileBrowser(FileBrowser&&) = default;
+    FileBrowser& operator=(const FileBrowser&) = delete;
+    FileBrowser& operator=(FileBrowser&&) = default;
+    ~FileBrowser();
 
-  auto parent_thread_logger = Log;
+    using IncrementalChanges = std::span<const protocol::TextDocumentContentChangeEvent>;
+    using ReadOnlyFile = std::shared_ptr<ConstFile>;
 
-  for (uint32_t i = 0; i < optimal_thread_count; ++i) {
-    m_threads.emplace_back([this, parent_thread_logger](const std::stop_token& st) {
-      // Use the logger from the parent thread
-      Log = parent_thread_logger;
-      ThreadLoop(st);
-    });
-  }
-}
-
-void ThreadPool::ThreadLoop(const std::stop_token& st) {
-  Log << Trace << "ThreadPool: ThreadLoop(" << std::this_thread::get_id() << ") started";
-
-  while (!st.stop_requested()) {
-    Task job;
-
-    {
-      std::unique_lock lock(m_queue_mutex);
-      if (m_jobs.empty()) {
-        lock.unlock();
-
-        std::this_thread::sleep_for(std::chrono::microseconds(64));
-        std::this_thread::yield();
-        continue;
-      }
-
-      job = m_jobs.front();
-      m_jobs.pop();
-    }
-
-    job(st);
-  }
-
-  Log << Trace << "ThreadPool: ThreadLoop(" << std::this_thread::get_id() << ") stopped";
-}
-
-void ThreadPool::Schedule(Task job) {
-  std::lock_guard lock(m_queue_mutex);
-  m_jobs.emplace(std::move(job));
-}
-
-void ThreadPool::WaitForAll() {
-  while (!Empty()) {
-    std::this_thread::yield();
-  }
-}
-
-auto ThreadPool::Empty() -> bool {
-  std::lock_guard lock(m_queue_mutex);
-  return m_jobs.empty();
-}
-
-void ThreadPool::Stop() {
-  { /* Gracefully request stop */
-    std::lock_guard lock(m_queue_mutex);
-    for (auto& active_thread : m_threads) {
-      active_thread.request_stop();
-    }
-  }
-
-  while (!Empty()) {
-  }
-
-  m_threads.clear();
-}
+    [[nodiscard]] auto DidOpen(const FlyString& file_uri, FileVersion version, FlyByteString raw) -> bool;
+    [[nodiscard]] auto DidChange(const FlyString& file_uri, FileVersion version, FlyByteString raw) -> bool;
+    [[nodiscard]] auto DidChanges(const FlyString& file_uri, FileVersion version, IncrementalChanges changes) -> bool;
+    [[nodiscard]] auto DidSave(const FlyString& file_uri,
+                               std::optional<FlyByteString> full_content = std::nullopt) -> bool;
+    [[nodiscard]] auto DidClose(const FlyString& file_uri) -> bool;
+    [[nodiscard]] auto GetFile(const FlyString& file_uri) const -> std::optional<ReadOnlyFile>;
+  };
+}  // namespace no3::lsp::core

@@ -33,16 +33,58 @@
 
 #pragma once
 
-#include <lsp/core/protocol/Notification.hh>
+#include <lsp/protocol/Message.hh>
+#include <lsp/protocol/StatusCode.hh>
 
 namespace no3::lsp::message {
-  class LogTraceNotification final : public NotifyMessage {
-  public:
-    LogTraceNotification(std::string message)
-        : NotifyMessage("$/logTrace", nlohmann::json::object({
-                                          {"message", std::move(message)},
-                                      })) {}
+  using MessageSequenceID = std::variant<int64_t, std::string>;
 
-    [[nodiscard]] auto GetMessage() const -> std::string { return GetParams()["message"].get<std::string>(); }
+  class ResponseMessage : public Message {
+    friend class RequestMessage;
+
+    MessageSequenceID m_request_id;
+    std::optional<StatusCode> m_status_code;
+
+    ResponseMessage(MessageSequenceID request_id)
+        : Message(MessageKind::Response), m_request_id(std::move(request_id)) {}
+
+  public:
+    ResponseMessage(const ResponseMessage&) = delete;
+    ResponseMessage(ResponseMessage&&) = default;
+    ~ResponseMessage() override = default;
+
+    [[nodiscard]] auto GetResponseID() const -> const MessageSequenceID& { return m_request_id; }
+    [[nodiscard]] auto GetStatusCode() const -> std::optional<StatusCode> { return m_status_code; }
+    [[nodiscard]] auto GetResult() const -> const nlohmann::json& { return **this; }
+    [[nodiscard]] auto GetError() const -> const nlohmann::json& { return **this; }
+    [[nodiscard]] auto IsValidResponse() const -> bool { return !m_status_code.has_value(); }
+    [[nodiscard]] auto IsErrorResponse() const -> bool { return m_status_code.has_value(); }
+
+    void SetStatusCode(std::optional<StatusCode> status_code) { m_status_code = status_code; }
+
+    auto Finalize() -> ResponseMessage& override {
+      auto& this_json = **this;
+
+      if (IsValidResponse()) {
+        nlohmann::json tmp = this_json;
+        this_json.clear();
+        this_json["result"] = std::move(tmp);
+      } else {
+        nlohmann::json tmp = this_json;
+        this_json.clear();
+        this_json["error"] = std::move(tmp);
+        this_json["error"]["code"] = static_cast<int>(m_status_code.value());
+      }
+
+      this_json["jsonrpc"] = "2.0";
+
+      if (std::holds_alternative<int64_t>(m_request_id)) {
+        this_json["id"] = std::get<int64_t>(m_request_id);
+      } else {
+        this_json["id"] = std::get<std::string>(m_request_id);
+      }
+
+      return *this;
+    }
   };
 }  // namespace no3::lsp::message

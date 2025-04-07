@@ -31,8 +31,8 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <lsp/core/LSPContext.hh>
-#include <lsp/core/protocol/LogTrace.hh>
+#include <lsp/protocol/LogTrace.hh>
+#include <lsp/server/Context.hh>
 #include <nitrate-core/Assert.hh>
 #include <nitrate-core/Logger.hh>
 #include <regex>
@@ -45,14 +45,14 @@ using namespace no3::lsp::protocol;
 static void BoostFlyweightInit() {
   static std::once_flag flyweight_init_flag;
   std::call_once(flyweight_init_flag, []() {
-    Log << Trace << "LSPContext: BoostFlyweightInit(): Initializing boost flyweight";
+    Log << Trace << "Context: BoostFlyweightInit(): Initializing boost flyweight";
 
     FlyString::init();
     FlyByteString::init();
   });
 }
 
-void LSPContext::FlushLogTraceQueue() {
+void Context::FlushLogTraceQueue() {
   while (true) {
     const auto message = [&]() -> std::optional<std::string> {
       std::lock_guard lock(m_log_trace_lock);
@@ -76,9 +76,9 @@ void LSPContext::FlushLogTraceQueue() {
   }
 }
 
-auto LSPContext::ExecuteLSPRequest(const message::RequestMessage& message) -> message::ResponseMessage {
+auto Context::ExecuteLSPRequest(const message::RequestMessage& message) -> message::ResponseMessage {
   const auto method = message.GetMethod();
-  const auto log_prefix = "LSPContext::ExecuteLSPRequest(\"" + std::string(method) + "\"): ";
+  const auto log_prefix = "Context::ExecuteLSPRequest(\"" + std::string(method) + "\"): ";
   const auto may_ignore = method.starts_with("$/");
   auto response = message.GetResponseObject();
 
@@ -103,9 +103,9 @@ auto LSPContext::ExecuteLSPRequest(const message::RequestMessage& message) -> me
   return response;
 }
 
-void LSPContext::ExecuteLSPNotification(const message::NotifyMessage& message) {
+void Context::ExecuteLSPNotification(const message::NotifyMessage& message) {
   const auto method = message.GetMethod();
-  const auto log_prefix = "LSPContext::ExecuteLSPNotification(\"" + std::string(method) + "\"): ";
+  const auto log_prefix = "Context::ExecuteLSPNotification(\"" + std::string(method) + "\"): ";
   const auto may_ignore = method.starts_with("$/");
 
   const auto route_it = LSP_NOTIFICATION_MAP.find(method);
@@ -127,12 +127,12 @@ void LSPContext::ExecuteLSPNotification(const message::NotifyMessage& message) {
   }
 }
 
-void LSPContext::ExecuteRPC(const message::Message& message, bool& exit_requested) {
+void Context::ExecuteRPC(const message::Message& message, bool& exit_requested) {
   switch (const auto method = message.GetMethod(); message.GetKind()) {
     case MessageKind::Notification: {
-      Log << Debug << "LSPContext::ExecuteRPC(\"" << method << "\"): Executing LSP Notification";
+      Log << Debug << "Context::ExecuteRPC(\"" << method << "\"): Executing LSP Notification";
       ExecuteLSPNotification(static_cast<const NotifyMessage&>(message));
-      Log << Debug << "LSPContext::ExecuteRPC(\"" << method << "\"): Finished LSP Notification";
+      Log << Debug << "Context::ExecuteRPC(\"" << method << "\"): Finished LSP Notification";
 
       exit_requested = m_exit_requested;
 
@@ -140,9 +140,9 @@ void LSPContext::ExecuteRPC(const message::Message& message, bool& exit_requeste
     }
 
     case MessageKind::Request: {
-      Log << Debug << "LSPContext::ExecuteRPC(\"" << method << "\"): Executing LSP Request";
+      Log << Debug << "Context::ExecuteRPC(\"" << method << "\"): Executing LSP Request";
       auto response = ExecuteLSPRequest(static_cast<const RequestMessage&>(message));
-      Log << Debug << "LSPContext::ExecuteRPC(\"" << method << "\"): Finished LSP Request";
+      Log << Debug << "Context::ExecuteRPC(\"" << method << "\"): Finished LSP Request";
 
       exit_requested = m_exit_requested;
 
@@ -161,7 +161,7 @@ void LSPContext::ExecuteRPC(const message::Message& message, bool& exit_requeste
   }
 }
 
-void LSPContext::SendMessage(Message& message, bool log_transmission) {
+void Context::SendMessage(Message& message, bool log_transmission) {
   const auto json_response = nlohmann::to_string(*message.Finalize());
 
   {  // Critical section
@@ -182,11 +182,11 @@ static void StripANSI(std::string& str) {
   str = std::regex_replace(str, ansi_escape, "");
 }
 
-LSPContext::LSPContext(std::ostream& os, std::mutex& os_lock)
+Context::Context(std::ostream& os, std::mutex& os_lock)
     : m_os(os), m_os_lock(os_lock), m_fs(TextDocumentSyncKind::Incremental) {
   static std::once_flag init_flag;
   std::call_once(init_flag, []() {
-    Log << Trace << "LSPContext::LSPContext(): Initializing LSP context";
+    Log << Trace << "Context::Context(): Initializing LSP context";
     BoostFlyweightInit();
   });
 
@@ -219,4 +219,4 @@ LSPContext::LSPContext(std::ostream& os, std::mutex& os_lock)
   });
 }
 
-LSPContext::~LSPContext() { Log->Unsubscribe(m_log_subscriber_id); }
+Context::~Context() { Log->Unsubscribe(m_log_subscriber_id); }

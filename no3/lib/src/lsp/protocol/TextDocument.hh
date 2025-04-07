@@ -31,37 +31,26 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <charconv>
+#pragma once
+
 #include <cstdint>
-#include <cstring>
-#include <lsp/core/connect/Connection.hh>
-#include <nitrate-core/Assert.hh>
-#include <nitrate-core/Logger.hh>
+#include <lsp/protocol/Base.hh>
 
-using namespace ncc;
-using namespace no3::lsp;
+namespace no3::lsp::protocol {
+  enum class TextDocumentSyncKind { None = 0, Full = 1, Incremental = 2 };
 
-auto core::OpenConnection(ConnectionType type, const std::string& target) -> std::optional<DuplexStream> {
-  switch (type) {
-    case ConnectionType::Port: {
-      uint16_t port = 0;
+  struct Position {
+    uint64_t m_line;
+    uint64_t m_character;
+  };
 
-      std::from_chars_result res = std::from_chars(target.c_str(), target.c_str() + target.size(), port);
-      if (res.ec != std::errc()) {
-        Log << "Invalid port number: " << target;
-        return std::nullopt;
-      }
+  struct Range {
+    Position m_start;  // inclusive
+    Position m_end;    // exclusive
+  };
 
-      if (port > UINT16_MAX) {
-        Log << "Port number is out of the range of valid TCP ports";
-        return std::nullopt;
-      }
-
-      return ConnectToTcpPort(port);
-    }
-
-    case ConnectionType::Stdio: {
-      return ConnectToStdio();
-    }
-  }
-}
+  struct TextDocumentContentChangeEvent {
+    Range m_range;
+    core::FlyByteString m_text;
+  };
+}  // namespace no3::lsp::protocol

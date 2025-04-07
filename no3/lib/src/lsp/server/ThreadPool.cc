@@ -31,41 +31,85 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#pragma once
+#include <chrono>
+#include <lsp/server/ThreadPool.hh>
+#include <mutex>
+#include <nitrate-core/Logger.hh>
+#include <nitrate-core/SmartLock.hh>
+#include <stop_token>
 
-#include <lsp/core/protocol/Message.hh>
+using namespace ncc;
 
-namespace no3::lsp::message {
-  class NotifyMessage : public Message {
-    std::string m_method;
-    nlohmann::json m_params;
+void ThreadPool::Start() {
+  auto optimal_thread_count = std::max(std::jthread::hardware_concurrency(), 1U);
+  Log << Debug << "Starting thread pool with " << optimal_thread_count << " threads";
 
-  public:
-    NotifyMessage(std::string method, nlohmann::json params)
-        : Message(MessageKind::Notification, std::move(params)),
-          m_method(std::move(method)),
-          m_params(std::move(params)) {}
-    NotifyMessage(const NotifyMessage&) = delete;
-    NotifyMessage(NotifyMessage&&) = default;
-    ~NotifyMessage() override = default;
+  // Enable thread synchronization
+  EnableSync = true;
 
-    [[nodiscard]] auto GetParams() const -> const nlohmann::json& { return m_params; }
-    [[nodiscard]] auto GetMethod() const -> std::string_view override { return m_method; }
+  auto parent_thread_logger = Log;
 
-    auto Finalize() -> NotifyMessage& override {
-      auto& this_json = **this;
+  for (uint32_t i = 0; i < optimal_thread_count; ++i) {
+    m_threads.emplace_back([this, parent_thread_logger](const std::stop_token& st) {
+      // Use the logger from the parent thread
+      Log = parent_thread_logger;
+      ThreadLoop(st);
+    });
+  }
+}
 
-      {
-        nlohmann::json tmp = this_json;
-        this_json.clear();
-        this_json["params"] = std::move(tmp);
+void ThreadPool::ThreadLoop(const std::stop_token& st) {
+  Log << Trace << "ThreadPool: ThreadLoop(" << std::this_thread::get_id() << ") started";
+
+  while (!st.stop_requested()) {
+    Task job;
+
+    {
+      std::unique_lock lock(m_queue_mutex);
+      if (m_jobs.empty()) {
+        lock.unlock();
+
+        std::this_thread::sleep_for(std::chrono::microseconds(64));
+        std::this_thread::yield();
+        continue;
       }
 
-      this_json["method"] = m_method;
-      this_json["jsonrpc"] = "2.0";
-
-      return *this;
+      job = m_jobs.front();
+      m_jobs.pop();
     }
-  };
 
-}  // namespace no3::lsp::message
+    job(st);
+  }
+
+  Log << Trace << "ThreadPool: ThreadLoop(" << std::this_thread::get_id() << ") stopped";
+}
+
+void ThreadPool::Schedule(Task job) {
+  std::lock_guard lock(m_queue_mutex);
+  m_jobs.emplace(std::move(job));
+}
+
+void ThreadPool::WaitForAll() {
+  while (!Empty()) {
+    std::this_thread::yield();
+  }
+}
+
+auto ThreadPool::Empty() -> bool {
+  std::lock_guard lock(m_queue_mutex);
+  return m_jobs.empty();
+}
+
+void ThreadPool::Stop() {
+  { /* Gracefully request stop */
+    std::lock_guard lock(m_queue_mutex);
+    for (auto& active_thread : m_threads) {
+      active_thread.request_stop();
+    }
+  }
+
+  while (!Empty()) {
+  }
+
+  m_threads.clear();
+}

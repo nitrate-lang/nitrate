@@ -32,9 +32,9 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <charconv>
-#include <lsp/core/LSPServer.hh>
-#include <lsp/core/protocol/Notification.hh>
-#include <lsp/core/protocol/Request.hh>
+#include <lsp/protocol/Notification.hh>
+#include <lsp/protocol/Request.hh>
+#include <lsp/server/Server.hh>
 #include <nitrate-core/Assert.hh>
 #include <nitrate-core/Logger.hh>
 
@@ -213,7 +213,7 @@ static auto ConvertRPCMessageToLSPMessage(nlohmann::json json_rpc) -> std::uniqu
   qcore_panic("unreachable");
 }
 
-auto LSPServer::ReadRequest(std::istream& in, std::mutex& in_lock) -> std::optional<std::unique_ptr<Message>> {
+auto Server::ReadRequest(std::istream& in, std::mutex& in_lock) -> std::optional<std::unique_ptr<Message>> {
   std::lock_guard lock(in_lock);
   if (in.eof()) [[unlikely]] {
     Log << "ReadRequest(): EOF reached";

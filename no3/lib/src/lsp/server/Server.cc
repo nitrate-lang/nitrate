@@ -31,9 +31,9 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <lsp/core/LSPScheduler.hh>
-#include <lsp/core/LSPServer.hh>
-#include <lsp/core/ThreadPool.hh>
+#include <lsp/server/Scheduler.hh>
+#include <lsp/server/Server.hh>
+#include <lsp/server/ThreadPool.hh>
 #include <nitrate-core/Assert.hh>
 #include <nitrate-core/Logger.hh>
 
@@ -41,27 +41,27 @@ using namespace ncc;
 using namespace no3::lsp::core;
 using namespace no3::lsp::message;
 
-class LSPServer::PImpl {
+class Server::PImpl {
 public:
   State m_state = State::Suspended;
   std::mutex m_state_mutex;
   std::iostream& m_io;
   std::mutex m_io_mutex;
-  LSPScheduler m_request_scheduler;
+  Scheduler m_request_scheduler;
 
   PImpl(std::iostream& io) : m_io(io), m_request_scheduler(io, m_io_mutex) {}
 };
 
-LSPServer::LSPServer(std::iostream& io) : m_pimpl(std::make_unique<PImpl>(io)) {}
+Server::Server(std::iostream& io) : m_pimpl(std::make_unique<PImpl>(io)) {}
 
-LSPServer::~LSPServer() = default;
+Server::~Server() = default;
 
-auto LSPServer::Start() -> bool {
+auto Server::Start() -> bool {
   qcore_assert(m_pimpl != nullptr);
 
   {
     std::lock_guard lock(m_pimpl->m_state_mutex);
-    Log << Trace << "LSPServer: Start(): State::Suspended -> State::Running";
+    Log << Trace << "Server: Start(): State::Suspended -> State::Running";
     m_pimpl->m_state = State::Running;
   }
 
@@ -82,12 +82,12 @@ auto LSPServer::Start() -> bool {
         auto request = ReadRequest(m_pimpl->m_io, m_pimpl->m_io_mutex);
         if (!request.has_value()) [[unlikely]] {
           sucessive_failed_request_count++;
-          Log << "LSPServer: Start(): ReadRequest() failed";
+          Log << "Server: Start(): ReadRequest() failed";
 
           if (sucessive_failed_request_count > kMaxFailedRequestCount) {
-            Log << "LSPServer: Start(): Too many successive invalid requests (max: " << kMaxFailedRequestCount
+            Log << "Server: Start(): Too many successive invalid requests (max: " << kMaxFailedRequestCount
                 << "). Exiting.";
-            Log << Trace << "LSPServer: Start(): State::Running -> State::Exited";
+            Log << Trace << "Server: Start(): State::Running -> State::Exited";
             m_pimpl->m_state = State::Exited;
             break;
           }
@@ -101,8 +101,8 @@ auto LSPServer::Start() -> bool {
         scheduler.Schedule(std::move(request.value()));
 
         if (scheduler.IsExitRequested()) [[unlikely]] {
-          Log << Trace << "LSPServer: Start(): Exit requested";
-          Log << Trace << "LSPServer: Start(): State::Running -> State::Exited";
+          Log << Trace << "Server: Start(): Exit requested";
+          Log << Trace << "Server: Start(): State::Running -> State::Exited";
           m_pimpl->m_state = State::Exited;
           break;
         }
@@ -117,79 +117,79 @@ auto LSPServer::Start() -> bool {
   }
 }
 
-auto LSPServer::Suspend() -> bool {
+auto Server::Suspend() -> bool {
   qcore_assert(m_pimpl != nullptr);
   std::lock_guard lock(m_pimpl->m_state_mutex);
 
   switch (auto current_state = m_pimpl->m_state) {
     case State::Suspended: {
-      Log << Trace << "LSPServer: Suspend(): State::Suspended -> State::Suspended";
+      Log << Trace << "Server: Suspend(): State::Suspended -> State::Suspended";
       return true;
     }
 
     case State::Running: {
-      Log << Trace << "LSPServer: Suspend(): State::Running -> State::Suspended";
+      Log << Trace << "Server: Suspend(): State::Running -> State::Suspended";
       m_pimpl->m_state = State::Suspended;
       return true;
     }
 
     case State::Exited: {
-      Log << Trace << "LSPServer: Suspend(): State::Exited -> State::Exited";
+      Log << Trace << "Server: Suspend(): State::Exited -> State::Exited";
       // Already exited, can not suspend
       return false;
     }
   }
 }
 
-auto LSPServer::Resume() -> bool {
+auto Server::Resume() -> bool {
   qcore_assert(m_pimpl != nullptr);
   std::lock_guard lock(m_pimpl->m_state_mutex);
 
   switch (auto current_state = m_pimpl->m_state) {
     case State::Suspended: {
-      Log << Trace << "LSPServer: Resume(): State::Suspended -> State::Running";
+      Log << Trace << "Server: Resume(): State::Suspended -> State::Running";
       m_pimpl->m_state = State::Running;
       return true;
     }
 
     case State::Running: {
-      Log << Trace << "LSPServer: Resume(): State::Running -> State::Running";
+      Log << Trace << "Server: Resume(): State::Running -> State::Running";
       return true;
     }
 
     case State::Exited: {
-      Log << Trace << "LSPServer: Resume(): State::Exited -> State::Exited";
+      Log << Trace << "Server: Resume(): State::Exited -> State::Exited";
       // Already exited, can not resume
       return false;
     }
   }
 }
 
-auto LSPServer::Stop() -> bool {
+auto Server::Stop() -> bool {
   qcore_assert(m_pimpl != nullptr);
   std::lock_guard lock(m_pimpl->m_state_mutex);
 
   switch (auto current_state = m_pimpl->m_state) {
     case State::Suspended: {
-      Log << Trace << "LSPServer: Stop(): State::Suspended -> State::Exited";
+      Log << Trace << "Server: Stop(): State::Suspended -> State::Exited";
       m_pimpl->m_state = State::Exited;
       return true;
     }
 
     case State::Running: {
-      Log << Trace << "LSPServer: Stop(): State::Running -> State::Exited";
+      Log << Trace << "Server: Stop(): State::Running -> State::Exited";
       m_pimpl->m_state = State::Exited;
       return true;
     }
 
     case State::Exited: {
-      Log << Trace << "LSPServer: Stop(): State::Exited -> State::Exited";
+      Log << Trace << "Server: Stop(): State::Exited -> State::Exited";
       return true;
     }
   }
 }
 
-auto LSPServer::GetState() const -> State {
+auto Server::GetState() const -> State {
   qcore_assert(m_pimpl != nullptr);
   std::lock_guard lock(m_pimpl->m_state_mutex);
 

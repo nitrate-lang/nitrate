@@ -33,33 +33,30 @@
 
 #pragma once
 
-#include <lsp/core/protocol/TextDocument.hh>
-#include <lsp/core/resource/File.hh>
-#include <memory>
-#include <span>
+#include <lsp/protocol/Message.hh>
+#include <lsp/protocol/Response.hh>
+#include <lsp/protocol/StatusCode.hh>
 
-namespace no3::lsp::core {
-  class FileBrowser final {
-    class PImpl;
-    std::unique_ptr<PImpl> m_impl;
+namespace no3::lsp::message {
+  class RequestMessage : public Message {
+    std::string m_method;
+    MessageSequenceID m_request_id;
 
   public:
-    FileBrowser(protocol::TextDocumentSyncKind sync);
-    FileBrowser(const FileBrowser&) = delete;
-    FileBrowser(FileBrowser&&) = default;
-    FileBrowser& operator=(const FileBrowser&) = delete;
-    FileBrowser& operator=(FileBrowser&&) = default;
-    ~FileBrowser();
+    RequestMessage(std::string method, MessageSequenceID request_id, nlohmann::json params)
+        : Message(MessageKind::Request, std::move(params)),
+          m_method(std::move(method)),
+          m_request_id(std::move(request_id)) {}
+    RequestMessage(const RequestMessage&) = delete;
+    RequestMessage(RequestMessage&&) = default;
+    ~RequestMessage() override = default;
 
-    using IncrementalChanges = std::span<const protocol::TextDocumentContentChangeEvent>;
-    using ReadOnlyFile = std::shared_ptr<ConstFile>;
+    [[nodiscard]] auto GetRequestID() const -> const MessageSequenceID& { return m_request_id; }
+    [[nodiscard]] auto GetParams() const -> const nlohmann::json& { return **this; }
+    [[nodiscard]] auto GetMethod() const -> std::string_view override { return m_method; }
 
-    [[nodiscard]] auto DidOpen(const FlyString& file_uri, FileVersion version, FlyByteString raw) -> bool;
-    [[nodiscard]] auto DidChange(const FlyString& file_uri, FileVersion version, FlyByteString raw) -> bool;
-    [[nodiscard]] auto DidChanges(const FlyString& file_uri, FileVersion version, IncrementalChanges changes) -> bool;
-    [[nodiscard]] auto DidSave(const FlyString& file_uri,
-                               std::optional<FlyByteString> full_content = std::nullopt) -> bool;
-    [[nodiscard]] auto DidClose(const FlyString& file_uri) -> bool;
-    [[nodiscard]] auto GetFile(const FlyString& file_uri) const -> std::optional<ReadOnlyFile>;
+    [[nodiscard]] auto GetResponseObject() const -> ResponseMessage { return {m_request_id}; }
+
+    auto Finalize() -> RequestMessage& override { return *this; }
   };
-}  // namespace no3::lsp::core
+}  // namespace no3::lsp::message

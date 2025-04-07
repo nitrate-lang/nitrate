@@ -31,36 +31,37 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#pragma once
+#include <charconv>
+#include <cstdint>
+#include <cstring>
+#include <lsp/connect/Connection.hh>
+#include <nitrate-core/Assert.hh>
+#include <nitrate-core/Logger.hh>
 
-#include <boost/flyweight.hpp>
-#include <istream>
-#include <lsp/core/protocol/Base.hh>
-#include <memory>
+using namespace ncc;
+using namespace no3::lsp;
 
-namespace no3::lsp::core {
-  using FileVersion = long;
+auto core::OpenConnection(ConnectionType type, const std::string& target) -> std::optional<DuplexStream> {
+  switch (type) {
+    case ConnectionType::Port: {
+      uint16_t port = 0;
 
-  class ConstFile {
-    class PImpl;
-    std::unique_ptr<PImpl> m_impl;
+      std::from_chars_result res = std::from_chars(target.c_str(), target.c_str() + target.size(), port);
+      if (res.ec != std::errc()) {
+        Log << "Invalid port number: " << target;
+        return std::nullopt;
+      }
 
-  public:
-    ConstFile(FlyString file_uri, FileVersion version, FlyByteString raw);
-    ConstFile(const ConstFile&) = delete;
-    ConstFile(ConstFile&&) = default;
-    ConstFile& operator=(const ConstFile&) = delete;
-    ConstFile& operator=(ConstFile&&) = default;
-    ~ConstFile();
+      if (port > UINT16_MAX) {
+        Log << "Port number is out of the range of valid TCP ports";
+        return std::nullopt;
+      }
 
-    [[nodiscard]] auto GetVersion() const -> FileVersion;
-    [[nodiscard]] auto GetURI() const -> FlyString;
-    [[nodiscard]] auto GetFileSizeInBytes() const -> std::streamsize;
-    [[nodiscard]] auto GetFileSizeInKiloBytes() const -> std::streamsize;
-    [[nodiscard]] auto GetFileSizeInMegaBytes() const -> std::streamsize;
-    [[nodiscard]] auto GetFileSizeInGigaBytes() const -> std::streamsize;
+      return ConnectToTcpPort(port);
+    }
 
-    [[nodiscard]] auto ReadAll() const -> FlyByteString;
-    [[nodiscard]] auto GetReader() const -> std::unique_ptr<std::basic_istream<uint8_t>>;
-  };
-}  // namespace no3::lsp::core
+    case ConnectionType::Stdio: {
+      return ConnectToStdio();
+    }
+  }
+}

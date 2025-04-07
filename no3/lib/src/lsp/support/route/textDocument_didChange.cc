@@ -31,9 +31,9 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <lsp/core/LSPContext.hh>
-#include <lsp/core/protocol/Base.hh>
-#include <lsp/core/resource/FileBrowser.hh>
+#include <lsp/protocol/Base.hh>
+#include <lsp/resource/FileBrowser.hh>
+#include <lsp/server/Context.hh>
 #include <nitrate-core/Assert.hh>
 #include <nitrate-core/Logger.hh>
 #include <utility>
@@ -110,7 +110,7 @@ static auto VerifyTextDocumentDidChange(const nlohmann::json& j) -> bool {
   });
 }
 
-void core::LSPContext::NotifyTextDocumentDidChange(const message::NotifyMessage& notice) {
+void core::Context::NotifyTextDocumentDidChange(const message::NotifyMessage& notice) {
   const auto& j = *notice;
 
   auto sync_kind = VerifyTextDocumentDidChange(j);

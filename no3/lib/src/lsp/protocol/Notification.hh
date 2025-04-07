@@ -31,74 +31,41 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <boost/iostreams/device/file_descriptor.hpp>
-#include <boost/iostreams/stream.hpp>
-#include <lsp/core/connect/Connection.hh>
-#include <nitrate-core/Assert.hh>
-#include <nitrate-core/Logger.hh>
+#pragma once
 
-using namespace ncc;
-using namespace no3::lsp;
+#include <lsp/protocol/Message.hh>
 
-class FileDescriptorPairStream : public std::streambuf {
-  char m_tmp;
-  int m_in;
-  int m_out;
-  bool m_close;
+namespace no3::lsp::message {
+  class NotifyMessage : public Message {
+    std::string m_method;
+    nlohmann::json m_params;
 
-public:
-  FileDescriptorPairStream(int in, int out, bool close) : m_in(in), m_out(out), m_close(close){};
-  FileDescriptorPairStream(const FileDescriptorPairStream &) = delete;
-  FileDescriptorPairStream(FileDescriptorPairStream &&) = delete;
-  ~FileDescriptorPairStream() override {
-    if (m_close) {
-      if (m_in >= 0) {
-        close(m_in);
+  public:
+    NotifyMessage(std::string method, nlohmann::json params)
+        : Message(MessageKind::Notification, std::move(params)),
+          m_method(std::move(method)),
+          m_params(std::move(params)) {}
+    NotifyMessage(const NotifyMessage&) = delete;
+    NotifyMessage(NotifyMessage&&) = default;
+    ~NotifyMessage() override = default;
+
+    [[nodiscard]] auto GetParams() const -> const nlohmann::json& { return m_params; }
+    [[nodiscard]] auto GetMethod() const -> std::string_view override { return m_method; }
+
+    auto Finalize() -> NotifyMessage& override {
+      auto& this_json = **this;
+
+      {
+        nlohmann::json tmp = this_json;
+        this_json.clear();
+        this_json["params"] = std::move(tmp);
       }
-      if (m_out >= 0) {
-        close(m_out);
-      }
+
+      this_json["method"] = m_method;
+      this_json["jsonrpc"] = "2.0";
+
+      return *this;
     }
-  }
+  };
 
-  int_type underflow() override {
-    /// FIXME: Verify this is correct.
-
-    auto bytes_read = ::read(m_in, &m_tmp, 1);
-    if (bytes_read <= 0) {
-      return traits_type::eof();
-    }
-    setg(&m_tmp, &m_tmp, &m_tmp + 1);
-    return traits_type::to_int_type(m_tmp);
-  }
-
-  int_type overflow(int_type c) override {
-    /// FIXME: Verify this is correct.
-
-    auto ch = traits_type::to_char_type(c);
-    return ::write(m_out, &ch, 1) <= 0 ? traits_type::eof() : traits_type::not_eof(c);
-  }
-};
-
-class IostreamDerivative : public std::iostream {
-  std::unique_ptr<FileDescriptorPairStream> m_stream;
-
-public:
-  IostreamDerivative(std::unique_ptr<FileDescriptorPairStream> stream)
-      : std::iostream(stream.get()), m_stream(std::move(stream)) {}
-};
-
-auto core::ConnectToStdio() -> std::optional<DuplexStream> {
-  Log << Trace << "Creating stream wrapper for stdin and stdout";
-
-  auto stream_buf = std::make_unique<FileDescriptorPairStream>(STDIN_FILENO, STDOUT_FILENO, false);
-  auto io_stream = std::make_unique<IostreamDerivative>(std::move(stream_buf));
-  if (!io_stream->good()) {
-    Log << "Failed to create stream wrapper for stdin and stdout";
-    return std::nullopt;
-  }
-
-  Log << Trace << "Connected to stdio";
-
-  return io_stream;
-}
+}  // namespace no3::lsp::message

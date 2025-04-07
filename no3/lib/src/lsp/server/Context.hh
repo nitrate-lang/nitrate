@@ -34,16 +34,16 @@
 #pragma once
 
 #include <atomic>
-#include <lsp/core/protocol/Message.hh>
-#include <lsp/core/protocol/Notification.hh>
-#include <lsp/core/protocol/Request.hh>
-#include <lsp/core/protocol/Response.hh>
-#include <lsp/core/resource/FileBrowser.hh>
+#include <lsp/protocol/Message.hh>
+#include <lsp/protocol/Notification.hh>
+#include <lsp/protocol/Request.hh>
+#include <lsp/protocol/Response.hh>
+#include <lsp/resource/FileBrowser.hh>
 #include <nitrate-core/Logger.hh>
 #include <queue>
 
 namespace no3::lsp::core {
-  class LSPContext final {
+  class Context final {
     enum class TraceValue {
       Off,
       Messages,
@@ -85,32 +85,32 @@ namespace no3::lsp::core {
 #undef REQUEST_HANDLER
 #undef NOTIFICATION_HANDLER
 
-    using LSPRequestFunc = void (LSPContext::*)(const message::RequestMessage&, message::ResponseMessage&);
-    using LSPNotifyFunc = void (LSPContext::*)(const message::NotifyMessage&);
+    using LSPRequestFunc = void (Context::*)(const message::RequestMessage&, message::ResponseMessage&);
+    using LSPNotifyFunc = void (Context::*)(const message::NotifyMessage&);
 
     static inline const std::unordered_map<std::string_view, LSPRequestFunc> LSP_REQUEST_MAP = {
-        {"initialize", &LSPContext::RequestInitialize},
-        {"shutdown", &LSPContext::RequestShutdown},
+        {"initialize", &Context::RequestInitialize},
+        {"shutdown", &Context::RequestShutdown},
     };
 
     static inline const std::unordered_map<std::string_view, LSPNotifyFunc> LSP_NOTIFICATION_MAP = {
-        {"initialized", &LSPContext::NotifyInitialized},
-        {"$/setTrace", &LSPContext::NotifySetTrace},
-        {"exit", &LSPContext::NotifyExit},
+        {"initialized", &Context::NotifyInitialized},
+        {"$/setTrace", &Context::NotifySetTrace},
+        {"exit", &Context::NotifyExit},
 
-        {"textDocument/didOpen", &LSPContext::NotifyTextDocumentDidOpen},
-        {"textDocument/didChange", &LSPContext::NotifyTextDocumentDidChange},
-        {"textDocument/didClose", &LSPContext::NotifyTextDocumentDidClose},
-        {"textDocument/didSave", &LSPContext::NotifyTextDocumentDidSave},
+        {"textDocument/didOpen", &Context::NotifyTextDocumentDidOpen},
+        {"textDocument/didChange", &Context::NotifyTextDocumentDidChange},
+        {"textDocument/didClose", &Context::NotifyTextDocumentDidClose},
+        {"textDocument/didSave", &Context::NotifyTextDocumentDidSave},
     };
 
     ///========================================================================================================
 
   public:
-    LSPContext(std::ostream& os, std::mutex& os_lock);
-    LSPContext(const LSPContext&) = delete;
-    LSPContext(LSPContext&&) = delete;
-    ~LSPContext();
+    Context(std::ostream& os, std::mutex& os_lock);
+    Context(const Context&) = delete;
+    Context(Context&&) = delete;
+    ~Context();
 
     void ExecuteRPC(const message::Message& message, bool& exit_requested);
     void SendMessage(message::Message& message, bool log_transmission = true);

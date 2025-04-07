@@ -33,30 +33,28 @@
 
 #pragma once
 
-#include <lsp/core/protocol/Message.hh>
-#include <lsp/core/protocol/Response.hh>
-#include <lsp/core/protocol/StatusCode.hh>
+#include <iostream>
+#include <lsp/protocol/Message.hh>
+#include <lsp/server/ThreadPool.hh>
+#include <optional>
 
-namespace no3::lsp::message {
-  class RequestMessage : public Message {
-    std::string m_method;
-    MessageSequenceID m_request_id;
+namespace no3::lsp::core {
+  class Server {
+    class PImpl;
+    std::unique_ptr<PImpl> m_pimpl;
+
+    auto ReadRequest(std::istream& in, std::mutex& in_lock) -> std::optional<std::unique_ptr<message::Message>>;
 
   public:
-    RequestMessage(std::string method, MessageSequenceID request_id, nlohmann::json params)
-        : Message(MessageKind::Request, std::move(params)),
-          m_method(std::move(method)),
-          m_request_id(std::move(request_id)) {}
-    RequestMessage(const RequestMessage&) = delete;
-    RequestMessage(RequestMessage&&) = default;
-    ~RequestMessage() override = default;
+    Server(std::iostream& io);
+    ~Server();
 
-    [[nodiscard]] auto GetRequestID() const -> const MessageSequenceID& { return m_request_id; }
-    [[nodiscard]] auto GetParams() const -> const nlohmann::json& { return **this; }
-    [[nodiscard]] auto GetMethod() const -> std::string_view override { return m_method; }
+    enum class State { Suspended, Running, Exited };
 
-    [[nodiscard]] auto GetResponseObject() const -> ResponseMessage { return {m_request_id}; }
-
-    auto Finalize() -> RequestMessage& override { return *this; }
+    [[nodiscard]] auto Start() -> bool;
+    [[nodiscard]] auto Suspend() -> bool;
+    [[nodiscard]] auto Resume() -> bool;
+    [[nodiscard]] auto Stop() -> bool;
+    [[nodiscard]] auto GetState() const -> State;
   };
-}  // namespace no3::lsp::message
+}  // namespace no3::lsp::core

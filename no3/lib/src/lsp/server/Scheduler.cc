@@ -31,8 +31,8 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <lsp/core/LSPScheduler.hh>
-#include <lsp/core/protocol/Base.hh>
+#include <lsp/protocol/Base.hh>
+#include <lsp/server/Scheduler.hh>
 #include <memory>
 #include <mutex>
 #include <nitrate-core/Assert.hh>
@@ -45,12 +45,12 @@ using namespace no3::lsp::core;
 using namespace no3::lsp::message;
 using namespace no3::lsp::protocol;
 
-class LSPScheduler::PImpl {
+class Scheduler::PImpl {
 public:
   std::optional<ThreadPool> m_thread_pool;
   std::atomic<bool> m_exit_requested = false;
 
-  LSPContext m_context;
+  Context m_context;
   std::mutex m_fruition;
 
   PImpl(std::ostream& os, std::mutex& os_lock) : m_context(os, os_lock) {}
@@ -69,19 +69,19 @@ public:
   }
 };
 
-void LSPScheduler::Schedule(std::unique_ptr<Message> request) {
+void Scheduler::Schedule(std::unique_ptr<Message> request) {
   qcore_assert(m_pimpl != nullptr);
 
   auto& m = *m_pimpl;
 
   if (m.m_exit_requested) [[unlikely]] {
-    Log << Trace << "LSPScheduler: LSPScheduler::Schedule(): Exit requested, ignoring request";
+    Log << Trace << "Scheduler: Scheduler::Schedule(): Exit requested, ignoring request";
     return;
   }
 
   {  // Lazy initialization of the thread pool
     if (!m.m_thread_pool.has_value()) [[unlikely]] {
-      Log << Trace << "LSPScheduler: LSPScheduler::Schedule(): Starting thread pool";
+      Log << Trace << "Scheduler: Scheduler::Schedule(): Starting thread pool";
 
       m.m_thread_pool.emplace();
       m.m_thread_pool->Start();
@@ -93,7 +93,7 @@ void LSPScheduler::Schedule(std::unique_ptr<Message> request) {
   if (PImpl::IsConcurrentRequest(*request)) {
     std::lock_guard lock(m.m_fruition);
 
-    Log << Trace << "LSPScheduler: LSPScheduler::Schedule(\"" << method << "\"): Scheduling concurrent request";
+    Log << Trace << "Scheduler: Scheduler::Schedule(\"" << method << "\"): Scheduling concurrent request";
 
     const auto sh = std::make_shared<std::unique_ptr<Message>>(std::move(request));
     m.m_thread_pool->Schedule([this, sh](const std::stop_token&) {
@@ -107,7 +107,7 @@ void LSPScheduler::Schedule(std::unique_ptr<Message> request) {
     return;
   }
 
-  Log << Trace << "LSPScheduler: LSPScheduler::Schedule(\"" << method << "\"): Concurrency disallowed";
+  Log << Trace << "Scheduler: Scheduler::Schedule(\"" << method << "\"): Concurrency disallowed";
 
   {  // Shall block the primary thread
     std::lock_guard lock(m.m_fruition);
@@ -121,11 +121,11 @@ void LSPScheduler::Schedule(std::unique_ptr<Message> request) {
   }
 }
 
-bool LSPScheduler::IsExitRequested() const {
+bool Scheduler::IsExitRequested() const {
   qcore_assert(m_pimpl != nullptr);
   return m_pimpl->m_exit_requested;
 }
 
-LSPScheduler::LSPScheduler(std::ostream& os, std::mutex& os_lock) : m_pimpl(std::make_unique<PImpl>(os, os_lock)) {}
+Scheduler::Scheduler(std::ostream& os, std::mutex& os_lock) : m_pimpl(std::make_unique<PImpl>(os, os_lock)) {}
 
-LSPScheduler::~LSPScheduler() = default;
+Scheduler::~Scheduler() = default;

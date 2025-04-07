@@ -39,7 +39,7 @@
 
 #include <boost/iostreams/device/file_descriptor.hpp>
 #include <boost/iostreams/stream.hpp>
-#include <lsp/core/connect/Connection.hh>
+#include <lsp/connect/Connection.hh>
 #include <nitrate-core/Logger.hh>
 
 using namespace ncc;

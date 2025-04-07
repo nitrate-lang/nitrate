@@ -33,24 +33,16 @@
 
 #pragma once
 
-#include <cstdint>
-#include <lsp/core/protocol/Base.hh>
+#include <lsp/protocol/Notification.hh>
 
-namespace no3::lsp::protocol {
-  enum class TextDocumentSyncKind { None = 0, Full = 1, Incremental = 2 };
+namespace no3::lsp::message {
+  class LogTraceNotification final : public NotifyMessage {
+  public:
+    LogTraceNotification(std::string message)
+        : NotifyMessage("$/logTrace", nlohmann::json::object({
+                                          {"message", std::move(message)},
+                                      })) {}
 
-  struct Position {
-    uint64_t m_line;
-    uint64_t m_character;
+    [[nodiscard]] auto GetMessage() const -> std::string { return GetParams()["message"].get<std::string>(); }
   };
-
-  struct Range {
-    Position m_start;  // inclusive
-    Position m_end;    // exclusive
-  };
-
-  struct TextDocumentContentChangeEvent {
-    Range m_range;
-    core::FlyByteString m_text;
-  };
-}  // namespace no3::lsp::protocol
+}  // namespace no3::lsp::message

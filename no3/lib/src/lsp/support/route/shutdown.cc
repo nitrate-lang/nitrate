@@ -31,12 +31,12 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <lsp/core/LSPContext.hh>
+#include <lsp/server/Context.hh>
 #include <nitrate-core/Logger.hh>
 
 using namespace ncc;
 using namespace no3::lsp;
 
-void core::LSPContext::RequestShutdown(const message::RequestMessage&, message::ResponseMessage&) {
-  Log << Debug << "LSPContext::RequestShutdown(): Shutdown notice";
+void core::Context::RequestShutdown(const message::RequestMessage&, message::ResponseMessage&) {
+  Log << Debug << "Context::RequestShutdown(): Shutdown notice";
 }

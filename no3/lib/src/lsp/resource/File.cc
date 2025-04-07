@@ -31,25 +31,67 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#pragma once
+#include <boost/iostreams/device/array.hpp>
+#include <boost/iostreams/stream.hpp>
+#include <istream>
+#include <lsp/protocol/Base.hh>
+#include <lsp/resource/File.hh>
+#include <nitrate-core/Assert.hh>
 
-#include <lsp/core/LSPContext.hh>
-#include <lsp/core/ThreadPool.hh>
-#include <lsp/core/protocol/Message.hh>
-#include <ostream>
+using namespace no3::lsp::core;
 
-namespace no3::lsp::core {
-  class LSPScheduler {
-    class PImpl;
-    std::unique_ptr<PImpl> m_pimpl;
+class ConstFile::PImpl {
+public:
+  FlyString m_file_uri;
+  FlyByteString m_raw;
+  FileVersion m_version;
 
-  public:
-    LSPScheduler(std::ostream& os, std::mutex& os_lock);
-    LSPScheduler(const LSPScheduler&) = delete;
-    LSPScheduler(LSPScheduler&&) = default;
-    ~LSPScheduler();
+  PImpl(FlyString file_uri, FileVersion version, FlyByteString raw)
+      : m_file_uri(std::move(file_uri)), m_raw(std::move(raw)), m_version(version) {}
+  PImpl(const PImpl &) = delete;
+};
 
-    [[nodiscard]] bool IsExitRequested() const;
-    void Schedule(std::unique_ptr<message::Message> request);
-  };
-}  // namespace no3::lsp::core
+ConstFile::ConstFile(FlyString file_uri, FileVersion version, FlyByteString raw)
+    : m_impl(std::make_unique<PImpl>(std::move(file_uri), version, std::move(raw))) {}
+
+ConstFile::~ConstFile() = default;
+
+auto ConstFile::GetVersion() const -> FileVersion {
+  qcore_assert(m_impl != nullptr);
+  return m_impl->m_version;
+}
+
+auto ConstFile::GetURI() const -> FlyString {
+  qcore_assert(m_impl != nullptr);
+  return m_impl->m_file_uri;
+}
+
+auto ConstFile::GetFileSizeInBytes() const -> std::streamsize {
+  qcore_assert(m_impl != nullptr);
+  return m_impl->m_raw->size();
+}
+
+auto ConstFile::GetFileSizeInKiloBytes() const -> std::streamsize { return GetFileSizeInBytes() / 1000; }
+auto ConstFile::GetFileSizeInMegaBytes() const -> std::streamsize { return GetFileSizeInKiloBytes() / 1000; }
+auto ConstFile::GetFileSizeInGigaBytes() const -> std::streamsize { return GetFileSizeInMegaBytes() / 1000; }
+
+auto ConstFile::ReadAll() const -> FlyByteString {
+  qcore_assert(m_impl != nullptr);
+  return m_impl->m_raw;
+}
+
+class SourceReferencingStream : public boost::iostreams::stream<boost::iostreams::basic_array_source<uint8_t>> {
+  FlyByteString m_source;
+
+public:
+  SourceReferencingStream(const uint8_t *data, std::size_t size, FlyByteString source)
+      : boost::iostreams::stream<boost::iostreams::basic_array_source<uint8_t>>(data, size),
+        m_source(std::move(source)){};
+};
+
+auto ConstFile::GetReader() const -> std::unique_ptr<std::basic_istream<uint8_t>> {
+  qcore_assert(m_impl != nullptr);
+
+  const auto &data = m_impl->m_raw;
+  return std::make_unique<SourceReferencingStream>(data->data(), data->size(), data);
+}

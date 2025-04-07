@@ -31,7 +31,7 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <lsp/core/resource/FileBrowser.hh>
+#include <lsp/resource/FileBrowser.hh>
 #include <memory>
 #include <nitrate-core/Assert.hh>
 #include <nitrate-core/Logger.hh>

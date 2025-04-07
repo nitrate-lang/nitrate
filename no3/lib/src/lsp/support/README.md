@@ -8,11 +8,11 @@ This is the implementation of a language server for the Nitrate programming lang
 - 🚧 Cancellation support
 - ✅ Did Open Text Document
 - ✅ Did Change Text Document
-- ✅ Will Save Text Document
+- ❌ Will Save Text Document
 - ❌ Will Save Document Wait Until
 - ✅ Did Save Text Document
 - ✅ Did Close Text Document
-- 🚧 Rename a Text Document
+- ❌ Rename a Text Document
 - ❌ Did Open Notebook Document
 - ❌ Did Change Notebook Document
 - ❌ Did Save Notebook Document
