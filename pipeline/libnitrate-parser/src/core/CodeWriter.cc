@@ -347,6 +347,7 @@ namespace ncc::parse {
         tab[c] = true;
       }
 
+      tab[':'] = true;
       tab['_'] = true;
 
       /* Support UTF-8 */
@@ -425,6 +426,25 @@ namespace ncc::parse {
 
         std::basic_string_view<uint8_t> name_bytes(reinterpret_cast<const uint8_t*>(name.data()), name.size());
         if (!IsUtf8(name_bytes)) [[unlikely]] {
+          return true;
+        }
+
+        size_t colon = 0;
+        for (char ch : name) {
+          if (const auto is_colon = ch == ':') {
+            if (++colon >= 3) [[unlikely]] {
+              return true;
+            }
+          } else {
+            if (colon != 0 && colon != 2) [[unlikely]] {
+              return true;
+            }
+
+            colon = 0;
+          }
+        }
+
+        if (colon != 0 && colon != 2) [[unlikely]] {
           return true;
         }
 
