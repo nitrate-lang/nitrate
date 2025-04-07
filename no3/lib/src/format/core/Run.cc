@@ -53,6 +53,8 @@
 #include <sstream>
 #include <unordered_map>
 
+#include "core/package/Manifest.hh"
+
 using namespace ncc;
 using namespace no3::package;
 
@@ -498,8 +500,11 @@ static auto FormulateFileMapping(bool is_directory, const FormatOptions& options
       return std::nullopt;
     }
 
-    if (auto pkg_opt = PackageConfig::ParsePackage(options.m_source_path)) {
-      import_name = pkg_opt.value().ImportName();
+    auto manifest_ifstream = std::ifstream(options.m_source_path / "no3.json");
+    if (manifest_ifstream.is_open()) {
+      if (auto manifest = Manifest::FromJson(manifest_ifstream)) {
+        import_name = manifest->GetName();
+      }
     }
 
     Log << Trace << "Found " << contents.value().size() << " files in the source directory.";
