@@ -25,6 +25,7 @@
 -Wno-error=unused-parameter
 -Wno-overlength-strings
 -fno-rtti
+-DBOOST_NO_EXCEPTIONS
 
 -D__TARGET_MAJOR_VERSION=0
 -D__TARGET_MINOR_VERSION=0

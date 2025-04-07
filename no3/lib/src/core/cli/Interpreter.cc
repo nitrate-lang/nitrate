@@ -34,7 +34,6 @@
 #include <core/cli/Interpreter.hh>
 #include <core/cli/termcolor.hh>
 #include <memory>
-#include <nitrate-core/LogOStream.hh>
 #include <nitrate-core/Logger.hh>
 #include <no3/Interpreter.hh>
 #include <vector>
@@ -159,7 +158,6 @@ auto Interpreter::PImpl::Perform(const std::vector<std::string>& command) -> boo
   if (command.size() >= 2) {
     if (auto it = m_commands.find(command[1]); it != m_commands.end()) {
       auto ok = it->second(command, MutArguments(command.begin() + 1, command.end()));
-      GLog.flush();
 
       return ok;
     }

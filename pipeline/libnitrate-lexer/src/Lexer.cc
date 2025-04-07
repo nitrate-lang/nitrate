@@ -452,28 +452,29 @@ public:
     m_buf.clear();
   }
 
-  void RefillCharacterBuffer() {
-    m_file.read(m_getc_buffer.data(), kGetcBufferSize);
-    auto gcount = m_file.gcount();
+  void RefreshCharacterBuffer() {
+    if (m_getc_buffer_pos == kGetcBufferSize) [[unlikely]] {
+      m_file.read(m_getc_buffer.data(), kGetcBufferSize);
+      auto gcount = m_file.gcount();
 
-    if (gcount == 0) [[unlikely]] {
-      if (m_at_end) [[unlikely]] {
-        if (m_parsing) [[unlikely]] {
-          Log << UnexpectedEOF << "Unexpected EOF while reading file";
-          m_on_eof();
+      if (gcount == 0) [[unlikely]] {
+        if (m_at_end) [[unlikely]] {
+          if (m_parsing) [[unlikely]] {
+            Log << UnexpectedEOF << "Unexpected EOF while reading file";
+            m_on_eof();
+          }
+
+          // Benchmarks show that this is the fastest way to signal EOF
+          // for large files.
+          throw ScannerEOF();
         }
 
-        // Benchmarks show that this is the fastest way to signal EOF
-        // for large files.
-        throw ScannerEOF();
+        m_at_end = true;
       }
 
-      m_at_end = true;
+      memset(m_getc_buffer.data() + gcount, '\n', kGetcBufferSize - gcount);
+      m_getc_buffer_pos = 0;
     }
-
-    // Fill extra buffer with '#' with is a comment character
-    memset(m_getc_buffer.data() + gcount, '\n', kGetcBufferSize - gcount);
-    m_getc_buffer_pos = 0;
   }
 
   auto NextCharIf(uint8_t cmp) -> bool {
@@ -488,10 +489,7 @@ public:
 
       m_rewind.pop();
     } else {
-      if (m_getc_buffer_pos == kGetcBufferSize) [[unlikely]] {
-        RefillCharacterBuffer();
-      }
-
+      RefreshCharacterBuffer();
       c = m_getc_buffer[m_getc_buffer_pos];
 
       if (c != cmp) {
@@ -502,7 +500,7 @@ public:
     }
 
     m_offset += 1;
-    m_line = m_line + static_cast<uint32_t>(c == '\n');
+    m_line += static_cast<uint32_t>(c == '\n');
     m_column = static_cast<uint32_t>(c != '\n') * (m_column + 1);
 
     return true;
@@ -515,10 +513,7 @@ public:
       c = m_rewind.top();
       m_rewind.pop();
     } else {
-      if (m_getc_buffer_pos == kGetcBufferSize) [[unlikely]] {
-        RefillCharacterBuffer();
-      }
-
+      RefreshCharacterBuffer();
       c = m_getc_buffer[m_getc_buffer_pos++];
     }
 
@@ -535,10 +530,7 @@ public:
     if (!m_rewind.empty()) {
       c = m_rewind.top();
     } else {
-      if (m_getc_buffer_pos == kGetcBufferSize) [[unlikely]] {
-        RefillCharacterBuffer();
-      }
-
+      RefreshCharacterBuffer();
       c = m_getc_buffer[m_getc_buffer_pos];
     }
 

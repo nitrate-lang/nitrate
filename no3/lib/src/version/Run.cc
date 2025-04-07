@@ -42,7 +42,6 @@
 #include <iomanip>
 #include <iostream>
 #include <nitrate-core/Init.hh>
-#include <nitrate-core/LogOStream.hh>
 #include <nitrate-lexer/Init.hh>
 #include <nitrate-parser/Init.hh>
 #include <nitrate-seq/Init.hh>

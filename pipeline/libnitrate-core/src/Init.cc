@@ -65,16 +65,3 @@ NCC_EXPORT auto CoreLibrarySetup::GetSemVersion() -> std::array<uint32_t, 3> {
 NCC_EXPORT auto CoreLibrarySetup::BuildId() -> ncc::BuildId {
   return {__TARGET_COMMIT_HASH, __TARGET_COMMIT_DATE, __TARGET_COMMIT_BRANCH};
 }
-
-#define BOOST_NO_EXCEPTIONS
-#include <boost/throw_exception.hpp>
-
-[[maybe_unused]] NCC_EXPORT void boost::throw_exception(std::exception const& m, boost::source_location const&) {
-  Log << "boost::throw_exception: " << m.what();
-  std::terminate();
-}
-
-[[maybe_unused]] NCC_EXPORT void boost::throw_exception(std::exception const& m) {
-  Log << "boost::throw_exception: " << m.what();
-  std::terminate();
-}

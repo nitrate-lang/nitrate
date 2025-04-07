@@ -39,7 +39,6 @@
 #include <filesystem>
 #include <init/InitPackage.hh>
 #include <nitrate-core/CatchAll.hh>
-#include <nitrate-core/LogOStream.hh>
 #include <source_location>
 #include <sstream>
 

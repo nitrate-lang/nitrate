@@ -36,8 +36,8 @@
 #include <filesystem>
 #include <fstream>
 #include <impl/Subcommands.hh>
+#include <memory>
 #include <nitrate-core/CatchAll.hh>
-#include <nitrate-core/LogOStream.hh>
 #include <nitrate-core/Logger.hh>
 
 using namespace ncc;
@@ -113,6 +113,7 @@ auto no3::cmd_impl::subcommands::CommandImplConfigParse(ConstArguments, const Mu
 
   if (auto config = no3::package::PackageConfig::ParsePackage(package_dir)) {
     std::unique_ptr<std::ostream> file;
+    std::unique_ptr<std::ostream> stream;
 
     if (output_file != "-") {
       file = std::make_unique<std::ofstream>(output_file, std::ios::out | std::ios::trunc);
@@ -122,7 +123,8 @@ auto no3::cmd_impl::subcommands::CommandImplConfigParse(ConstArguments, const Mu
         return false;
       }
     } else {
-      file = std::make_unique<std::ostream>(ncc::GLog.rdbuf());
+      stream = (ncc::Log << Raw);
+      file = std::make_unique<std::ostream>(stream->rdbuf());
     }
 
     if (to_format == "json") {

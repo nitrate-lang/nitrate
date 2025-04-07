@@ -39,7 +39,6 @@
 #include <memory>
 #include <nitrate-core/Assert.hh>
 #include <nitrate-core/CatchAll.hh>
-#include <nitrate-core/LogOStream.hh>
 #include <nitrate-core/Logger.hh>
 #include <nitrate-core/Macro.hh>
 
