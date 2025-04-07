@@ -72,10 +72,10 @@ static auto Levenstein(std::string_view a, std::string_view b) -> size_t {
 }
 
 auto no3::constants::FindClosestSPDXLicense(std::string query) -> std::string_view {
+  std::transform(query.begin(), query.end(), query.begin(), ::tolower);
+
   size_t minv = -1;
   std::string_view mini;
-
-  std::transform(query.begin(), query.end(), query.begin(), ::tolower);
 
   qcore_assert(!SPDX_IDENTIFIERS.empty());
 
@@ -91,5 +91,7 @@ auto no3::constants::FindClosestSPDXLicense(std::string query) -> std::string_vi
 }
 
 auto no3::constants::IsExactSPDXLicenseMatch(std::string_view query) -> bool {
-  return SPDX_IDENTIFIERS.contains(query);
+  std::string lowercase_query(query);
+  std::transform(lowercase_query.begin(), lowercase_query.end(), lowercase_query.begin(), ::tolower);
+  return SPDX_IDENTIFIERS.contains(lowercase_query);
 }

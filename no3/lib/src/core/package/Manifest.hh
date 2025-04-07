@@ -396,7 +396,7 @@ namespace no3::package {
 
     ///=============================================================================================
     ///==                               (DE)SERIALIZATION FUNCTIONS                               ==
-    [[nodiscard]] auto ToJson(std::ostream& os, bool& correct_schema, bool minify = false) const -> std::ostream&;
+    auto ToJson(std::ostream& os, bool& correct_schema, bool minify = false) const -> std::ostream&;
     static auto FromJson(std::istream& is) -> std::optional<Manifest>;
     static auto FromJson(std::string_view json) -> std::optional<Manifest>;
 
@@ -410,7 +410,7 @@ namespace no3::package {
     std::string m_name;
     std::string m_description;
     std::string m_license = "LGPL-2.1";
-    Category m_category;
+    Category m_category = Category::Application;
     SemanticVersion m_version;
     std::vector<Contact> m_contacts;
     Platforms m_platforms;

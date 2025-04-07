@@ -38,6 +38,7 @@
 #include <nlohmann/json.hpp>
 #include <regex>
 #include <set>
+#include <sstream>
 
 using namespace ncc;
 using namespace no3::package;
@@ -112,18 +113,10 @@ namespace no3::package::check {
   }
 
   static auto ValidateSemVersion(const nlohmann::ordered_json& json) -> bool {
-    schema_assert(json.is_object());
+    static std::regex semver_regex(R"(^\d+\.\d+(\.\d+)?$)");
 
-    schema_assert(json.contains("major"));
-    schema_assert(json["major"].is_number_unsigned());
-
-    schema_assert(json.contains("minor"));
-    schema_assert(json["minor"].is_number_unsigned());
-
-    schema_assert(json.contains("patch"));
-    schema_assert(json["patch"].is_number_unsigned());
-
-    schema_assert(json.size() == 3);
+    schema_assert(json.is_string());
+    schema_assert(std::regex_match(json.get<std::string>(), semver_regex));
 
     return true;
   }
@@ -268,7 +261,7 @@ namespace no3::package::check {
     {  // key ["format"]
       schema_assert(j.contains("format"));
       schema_assert(ValidateSemVersion(j["format"]));
-      schema_assert(j["format"]["major"].get<uint32_t>() == 1);
+      schema_assert(j["format"].get<std::string>().starts_with("1."));
     }
 
     {  // key ["name"]
@@ -401,6 +394,15 @@ namespace no3::package::check {
 }  // namespace no3::package::check
 
 namespace no3::package::convert {
+  static auto EncodeSemanticVersion(uint32_t major, uint32_t minor, uint32_t patch) -> std::string {
+    std::stringstream ss;
+    ss << major << '.' << minor;
+    if (patch != 0) {
+      ss << '.' << patch;
+    }
+    return ss.str();
+  }
+
   static auto ConvertCategory(const std::string& category) -> Manifest::Category {
     if (category == "std") {
       return Manifest::Category::StandardLibrary;
@@ -432,8 +434,20 @@ namespace no3::package::convert {
   }
 
   static auto ConvertSemanticVersion(const nlohmann::json& j) -> Manifest::SemanticVersion {
-    return Manifest::SemanticVersion(j["major"].get<uint32_t>(), j["minor"].get<uint32_t>(),
-                                     j["patch"].get<uint32_t>());
+    uint32_t major = 0;
+    uint32_t minor = 0;
+    uint32_t patch = 0;
+
+    const auto version = j.get<std::string>();
+    const auto pos1 = version.find('.');
+    const auto pos2 = version.find('.', pos1 + 1);
+    major = std::stoul(version.substr(0, pos1));
+    minor = std::stoul(version.substr(pos1 + 1, pos2 - pos1 - 1));
+    if (pos2 != std::string::npos) {
+      patch = std::stoul(version.substr(pos2 + 1));
+    }
+
+    return Manifest::SemanticVersion(major, minor, patch);
   }
 
   static auto ConvertContact(const nlohmann::json& j) -> Manifest::Contact {
@@ -504,7 +518,7 @@ namespace no3::package::convert {
 
     for (const auto& [key, value] : j.items()) {
       if (key != "requirements") {
-        optimization.SetProfile(key, ConvertOptimizationSwitch(value));
+        optimization.SetProfile(key, ConvertOptimizationSwitch(value["switch"]));
       }
     }
 
@@ -542,8 +556,7 @@ auto Manifest::ToJson(std::ostream& os, bool& correct_schema, bool minify) const
 
   nlohmann::ordered_json j;
 
-  j["format"]["major"] = 1;
-  j["format"]["minor"] = 0;
+  j["format"] = "1.0";
 
   j["name"] = GetName();
   j["description"] = GetDescription();
@@ -558,9 +571,8 @@ auto Manifest::ToJson(std::ostream& os, bool& correct_schema, bool minify) const
         return "exe";
     }
   }();
-  j["version"]["major"] = GetVersion().GetMajor();
-  j["version"]["minor"] = GetVersion().GetMinor();
-  j["version"]["patch"] = GetVersion().GetPatch();
+  auto ver = GetVersion();
+  j["version"] = convert::EncodeSemanticVersion(ver.GetMajor(), ver.GetMinor(), ver.GetPatch());
   j["contacts"] = [&] {
     nlohmann::ordered_json contacts = nlohmann::json::array();
     for (const auto& contact : GetContacts()) {
@@ -601,6 +613,7 @@ auto Manifest::ToJson(std::ostream& os, bool& correct_schema, bool minify) const
     j_rapid["gamma"] = rapid.GetGamma();
     j_rapid["llvm"] = rapid.GetLLVM();
     j_rapid["lto"] = rapid.GetLTO();
+    j_rapid["runtime"] = rapid.GetRuntime();
     return j_rapid;
   }();
   j["optimization"]["debug"]["switch"] = [&] {
@@ -611,6 +624,7 @@ auto Manifest::ToJson(std::ostream& os, bool& correct_schema, bool minify) const
     j_debug["gamma"] = debug.GetGamma();
     j_debug["llvm"] = debug.GetLLVM();
     j_debug["lto"] = debug.GetLTO();
+    j_debug["runtime"] = debug.GetRuntime();
     return j_debug;
   }();
   j["optimization"]["release"]["switch"] = [&] {
@@ -621,6 +635,7 @@ auto Manifest::ToJson(std::ostream& os, bool& correct_schema, bool minify) const
     j_release["gamma"] = release.GetGamma();
     j_release["llvm"] = release.GetLLVM();
     j_release["lto"] = release.GetLTO();
+    j_release["runtime"] = release.GetRuntime();
     return j_release;
   }();
   const auto& requirements = GetOptimization().GetRequirements();
@@ -632,9 +647,8 @@ auto Manifest::ToJson(std::ostream& os, bool& correct_schema, bool minify) const
     for (const auto& dependency : GetDependencies()) {
       nlohmann::ordered_json j_dependency;
       j_dependency["uuid"] = dependency.GetUUID();
-      j_dependency["version"]["major"] = dependency.GetVersion().GetMajor();
-      j_dependency["version"]["minor"] = dependency.GetVersion().GetMinor();
-      j_dependency["version"]["patch"] = dependency.GetVersion().GetPatch();
+      j_dependency["version"] = convert::EncodeSemanticVersion(
+          dependency.GetVersion().GetMajor(), dependency.GetVersion().GetMinor(), dependency.GetVersion().GetPatch());
       j_dependencies.push_back(std::move(j_dependency));
     }
     return j_dependencies;

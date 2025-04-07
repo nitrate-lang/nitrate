@@ -41,7 +41,7 @@ static const auto IMPL_SUBCOMMANDS = []() {
   std::unordered_map<std::string_view, CommandFunction> m;
 
   m["help"] = m["--help"] = m["-h"] = cmd_impl::subcommands::CommandImplHelp;
-  m["config-parse"] = cmd_impl::subcommands::CommandImplConfigParse;
+  m["config-check"] = cmd_impl::subcommands::CommandImplConfigParse;
   m["self-test"] = cmd_impl::subcommands::CommandImplSelfTest;
   m["parse"] = cmd_impl::subcommands::CommandImplParse;
 
@@ -56,8 +56,8 @@ auto no3::cmd_impl::subcommands::CommandImplHelp(ConstArguments, const MutArgume
 │ help, --help  │ Display this help message                                    │
 │ -h            │ Get help: https://nitrate.dev/docs/no3/impl                  │
 ├───────────────┼──────────────────────────────────────────────────────────────┤
-│ config-parse  │ Package configuration file parsing and validation            │
-│               │ Get help: https://nitrate.dev/docs/no3/impl/config-parse     │
+│ config-check  │ Package manifest file parsing and validation                 │
+│               │ Get help: https://nitrate.dev/docs/no3/impl/config-check     │
 ├───────────────┼──────────────────────────────────────────────────────────────┤
 │ self-test     │ Run internal test suite                                      │
 │               │ Get help: https://nitrate.dev/docs/no3/impl/self-test        │

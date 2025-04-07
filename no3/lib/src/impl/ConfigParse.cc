@@ -31,115 +31,94 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <core/cli/argh.hh>
-#include <core/package/Config.hh>
-#include <filesystem>
+#include <boost/program_options.hpp>
+#include <boost/program_options/parsers.hpp>
+#include <core/package/Manifest.hh>
 #include <fstream>
 #include <impl/Subcommands.hh>
 #include <memory>
 #include <nitrate-core/CatchAll.hh>
 #include <nitrate-core/Logger.hh>
+#include <sstream>
 
 using namespace ncc;
 using namespace no3::cmd_impl;
 
-static void DisplayHelp() {
-  std::string_view message = R"(Usage: config-parse [--help] [--minify] [--to VAR] [--output VAR] package
-
-Positional arguments:
-  package       The package to parse the configuration for [required]
-
-Optional arguments:
-  -h, --help    shows help message and exits
-  -C, --minify  Minify the output JSON
-  -t, --to      Translate the configuration to another format [nargs=0..1] [default: "json"]
-  -o, --output  The output file to write the configuration to [nargs=0..1] [default: "-"]
-)";
-
-  Log << Raw << message;
-}
-
 auto no3::cmd_impl::subcommands::CommandImplConfigParse(ConstArguments, const MutArguments& argv) -> bool {
-  argh::parser cmdl;
-  cmdl.add_params({"help", "minify", "C", "to", "t", "output", "o"});
-  cmdl.parse(argv, argh::parser::SINGLE_DASH_IS_MULTIFLAG);
+  namespace po = boost::program_options;
+  po::options_description desc("Allowed options");
+  po::positional_options_description p;
+  p.add("manifest-file", -1);
 
-  if (cmdl[{"-h", "--help"}]) {
-    DisplayHelp();
+  auto add_option = desc.add_options();
+  add_option("help,h", "Display this help message");
+  add_option("output,o", po::value<std::string>()->default_value("-"), "Output file (default: -)");
+  add_option("minify,m", "Minify the output");
+  add_option("manifest-file,f", po::value<std::string>(), "Path to the package manifest file");
+
+  std::vector<const char*> args;
+  args.reserve(argv.size());
+  for (const auto& arg : argv) {
+    args.push_back(arg.c_str());
+  }
+
+  po::variables_map vm;
+  if (auto cli_parser = OMNI_CATCH(po::command_line_parser(args.size(), args.data()).options(desc).positional(p).run());
+      !cli_parser || !OMNI_CATCH(po::store(*cli_parser, vm)) || !OMNI_CATCH(po::notify(vm))) {
+    Log << Error << "Failed to parse command line arguments.";
+    desc.print(*(Log << Raw));
+    return false;
+  };
+
+  Log << Trace << "Parsed command line arguments.";
+
+  if (vm.contains("help")) {
+    desc.print(*(Log << Raw));
     return true;
   }
 
-  std::string to_format;
-  std::string output_file;
-  std::string package_dir;
-  cmdl({"-t", "--to"}) >> to_format;
-  cmdl({"-o", "--output"}) >> output_file;
-  cmdl(1) >> package_dir;
-  const bool minify = cmdl[{"-C", "--minify"}];
-
-  if (package_dir.empty()) {
-    Log << "package: 1 argument(s) expected. 0 provided.";
+  if (!vm.contains("manifest-file")) {
+    Log << "manifest-file: 1 argument(s) expected. 0 provided.";
+    desc.print(*(Log << Raw));
     return false;
   }
 
-  if (to_format.empty()) {
-    to_format = "json";
-  }
+  auto manifest_file = vm.at("manifest-file").as<std::string>();
 
-  if (output_file.empty()) {
-    output_file = "-";
-  }
-
-  if (to_format != "json" && to_format != "protobuf") {
-    Log << "to: invalid choice: " << to_format << " (choose from 'json', 'protobuf')";
+  auto input_stream = std::ifstream(manifest_file);
+  if (!input_stream.is_open()) {
+    Log << "Failed to open manifest file: " << manifest_file;
     return false;
   }
 
-  if (minify && to_format != "json") {
-    Log << "minify: option only valid for JSON output";
-    return false;
-  }
+  if (auto manifest = package::Manifest::FromJson(input_stream)) {
+    std::stringstream ss;
+    bool correct_schema = false;
 
-  auto package_dir_exists = OMNI_CATCH(std::filesystem::exists(package_dir));
-  if (!package_dir_exists.has_value()) {
-    Log << "Failed to check if the package exists: " << package_dir;
-    return false;
-  }
+    manifest->ToJson(ss, correct_schema, vm.contains("minify"));
 
-  if (!package_dir_exists.value()) {
-    Log << "The package does not exist: " << package_dir;
-    return false;
-  }
+    if (correct_schema) {
+      auto output_file = vm.at("output").as<std::string>();
+      if (output_file != "-") {
+        auto file = std::make_unique<std::ofstream>(output_file, std::ios::out | std::ios::trunc);
+        if (!file->good()) {
+          Log << "Failed to open output file: " << output_file;
+          std::remove(output_file.c_str());
+          return false;
+        }
 
-  if (auto config = no3::package::PackageConfig::ParsePackage(package_dir)) {
-    std::unique_ptr<std::ostream> file;
-    std::unique_ptr<std::ostream> stream;
+        *file << ss.str();
 
-    if (output_file != "-") {
-      file = std::make_unique<std::ofstream>(output_file, std::ios::out | std::ios::trunc);
-      if (!file->good()) {
-        Log << "Failed to open output file: " << output_file;
-        std::remove(output_file.c_str());
-        return false;
+        return true;
       }
-    } else {
-      stream = (ncc::Log << Raw);
-      file = std::make_unique<std::ostream>(stream->rdbuf());
-    }
 
-    if (to_format == "json") {
-      *file << config->Json().dump(minify ? -1 : 2);
+      ncc::Log << Raw << ss.str();
+
       return true;
     }
-
-    if (to_format == "protobuf") {
-      *file << config->Protobuf() << std::flush;
-      return true;
-    }
-
-    Log << "Unknown format: " << to_format;
-    return false;
   }
+
+  Log << "Manifest file schema is incorrect.";
 
   return false;
 }
