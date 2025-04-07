@@ -34,7 +34,7 @@
 #include <git2.h>
 #include <git2/types.h>
 
-#include <core/package/Config.hh>
+#include <core/package/Manifest.hh>
 #include <fstream>
 #include <init/InitPackage.hh>
 #include <nitrate-core/CatchAll.hh>
@@ -112,8 +112,8 @@ static auto InitPackageDirectoryStructure(const std::filesystem::path& package_p
   }
 
   switch (options.m_package_category) {
-    case no3::package::PackageCategory::Library:
-    case no3::package::PackageCategory::StandardLibrary: {
+    case no3::package::Manifest::Category::Library:
+    case no3::package::Manifest::Category::StandardLibrary: {
       if (!CreateLocalFile(package_path / "src" / "lib.nit", GenerateDefaultLibrarySource())) {
         Log << "Failed to create the lib.n file: " << package_path / "src" / "lib.nit";
         return false;
@@ -121,7 +121,7 @@ static auto InitPackageDirectoryStructure(const std::filesystem::path& package_p
       break;
     }
 
-    case no3::package::PackageCategory::Executable: {
+    case no3::package::Manifest::Category::Executable: {
       if (!CreateLocalFile(package_path / "src" / "main.nit", GenerateDefaultMainSource())) {
         Log << "Failed to create the main.n file: " << package_path / "src" / "main.nit";
         return false;
@@ -171,10 +171,39 @@ static auto InitPackageDirectoryStructure(const std::filesystem::path& package_p
   }
 
   {
-    auto initial_config = PackageConfig::CreateInitialConfiguration(
-                              options.m_package_name, options.m_package_description, options.m_package_license,
-                              options.m_package_version, options.m_package_category)
-                              .dump(2);
+    bool correct_schema = false;
+    auto initial_config = Manifest(options.m_package_name, options.m_package_category)
+                              .SetDescription(options.m_package_description)
+                              .SetLicense(options.m_package_license)
+                              .SetVersion(options.m_package_version)
+                              .SetOptimization(Manifest::Optimization()
+                                                   .SetProfile("rapid", Manifest::Optimization::Switch()
+                                                                            .SetAlpha({"-O0"})
+                                                                            .SetBeta({"-O0"})
+                                                                            .SetGamma({"-O0"})
+                                                                            .SetLLVM({"-O1"})
+                                                                            .SetLTO({"-O0"})
+                                                                            .SetRuntime({"-O0"}))
+                                                   .SetProfile("debug", Manifest::Optimization::Switch()
+                                                                            .SetAlpha({"-O2"})
+                                                                            .SetBeta({"-O2"})
+                                                                            .SetGamma({"-O2"})
+                                                                            .SetLLVM({"-O3"})
+                                                                            .SetLTO({"-O0"})
+                                                                            .SetRuntime({"-O1"}))
+                                                   .SetProfile("release", Manifest::Optimization::Switch()
+                                                                              .SetAlpha({"-O3"})
+                                                                              .SetBeta({"-O3"})
+                                                                              .SetGamma({"-O3"})
+                                                                              .SetLLVM({"-O3"})
+                                                                              .SetLTO({"-O3"})
+                                                                              .SetRuntime({"-O3"})))
+                              .ToJson(correct_schema);
+
+    if (!correct_schema) {
+      Log << "Failed to create the initial package configuration: " << package_path / "no3.json";
+      return false;
+    }
 
     if (!CreateLocalFile(package_path / "no3.json", initial_config)) {
       Log << "Failed to create the no3.json file: " << package_path / "no3.json";

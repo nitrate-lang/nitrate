@@ -63,14 +63,13 @@ namespace no3::package {
 
     static std::string PackageNameRegex;
 
-    [[nodiscard]] static auto ValidatePackageName(const std::string& package_name, bool maybe_standard_lib = false) -> bool;
+    [[nodiscard]] static auto ValidatePackageName(const std::string& package_name,
+                                                  bool maybe_standard_lib = false) -> bool;
     [[nodiscard]] static auto ValidatePackageLicense(const std::string& license) -> bool;
     [[nodiscard]] static auto ValidatePackageVersion(const std::string& version) -> bool;
 
-    [[nodiscard]] static auto CreateInitialConfiguration(const std::string& name,
-                                                                           const std::string& description,
-                                                                           const std::string& license,
-                                                                           const std::string& version,
-                                                                           PackageCategory category) -> nlohmann::ordered_json;
+    [[nodiscard]] static auto CreateInitialConfiguration(const std::string& name, const std::string& description,
+                                                         const std::string& license, const std::string& version,
+                                                         PackageCategory category) -> nlohmann::ordered_json;
   };
 }  // namespace no3::package

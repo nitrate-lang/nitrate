@@ -52,26 +52,34 @@ namespace no3::package {
     enum class Category {
       StandardLibrary,
       Library,
-      Application,
+      Executable,
     };
 
-    class SemanticVersion final {
+    class Version final {
     public:
       using Code = uint32_t;
 
-      constexpr explicit SemanticVersion(Code major, Code minor, Code patch)
-          : m_major(major), m_minor(minor), m_patch(patch) {}
-      constexpr SemanticVersion() = default;
+      constexpr Version(Code major, Code minor, Code patch) : m_major(major), m_minor(minor), m_patch(patch) {}
+      constexpr Version() = default;
 
-      [[nodiscard, gnu::pure]] auto operator<=>(const SemanticVersion& o) const = default;
+      [[nodiscard, gnu::pure]] auto operator<=>(const Version& o) const = default;
 
       [[nodiscard, gnu::pure]] constexpr auto GetMajor() const -> Code { return m_major; }
       [[nodiscard, gnu::pure]] constexpr auto GetMinor() const -> Code { return m_minor; }
       [[nodiscard, gnu::pure]] constexpr auto GetPatch() const -> Code { return m_patch; }
 
-      constexpr void SetMajor(Code major) { m_major = major; }
-      constexpr void SetMinor(Code minor) { m_minor = minor; }
-      constexpr void SetPatch(Code patch) { m_patch = patch; }
+      constexpr auto SetMajor(Code major) -> Version& {
+        m_major = major;
+        return *this;
+      }
+      constexpr auto SetMinor(Code minor) -> Version& {
+        m_minor = minor;
+        return *this;
+      }
+      constexpr auto SetPatch(Code patch) -> Version& {
+        m_patch = patch;
+        return *this;
+      }
 
     private:
       Code m_major = 0;
@@ -100,16 +108,40 @@ namespace no3::package {
       [[nodiscard, gnu::pure]] auto GetPhone() const -> const std::optional<std::string>& { return m_phone; }
       [[nodiscard, gnu::pure]] auto ContainsPhone() const -> bool { return m_phone.has_value(); }
 
-      void SetName(const std::string& name) { m_name = name; }
-      void SetEmail(const std::string& email) { m_email = email; }
+      auto SetName(const std::string& name) -> Contact& {
+        m_name = name;
+        return *this;
+      }
+      auto SetEmail(const std::string& email) -> Contact& {
+        m_email = email;
+        return *this;
+      }
 
-      void SetRoles(const std::set<Role>& roles) { m_roles = roles; }
-      void ClearRoles() { m_roles.clear(); }
-      void AddRole(Role role) { m_roles.insert(role); }
-      void RemoveRole(Role role) { m_roles.erase(role); }
+      auto SetRoles(const std::set<Role>& roles) -> Contact& {
+        m_roles = roles;
+        return *this;
+      }
+      auto ClearRoles() -> Contact& {
+        m_roles.clear();
+        return *this;
+      }
+      auto AddRole(Role role) -> Contact& {
+        m_roles.insert(role);
+        return *this;
+      }
+      auto RemoveRole(Role role) -> Contact& {
+        m_roles.erase(role);
+        return *this;
+      }
 
-      void SetPhone(const std::optional<std::string>& phone) { m_phone = phone; }
-      void ClearPhone() { m_phone.reset(); }
+      auto SetPhone(const std::optional<std::string>& phone) -> Contact& {
+        m_phone = phone;
+        return *this;
+      }
+      auto ClearPhone() -> Contact& {
+        m_phone.reset();
+        return *this;
+      }
 
     private:
       std::string m_name;
@@ -132,18 +164,38 @@ namespace no3::package {
       [[nodiscard]] auto GetAllow() const -> const std::vector<std::string>& { return m_allow; }
       [[nodiscard]] auto GetDeny() const -> const std::vector<std::string>& { return m_deny; }
 
-      void SetAllow(const std::vector<std::string>& allow) { m_allow = allow; }
-      void ClearAllow() { m_allow.clear(); }
-      void AddAllow(const std::string& allow) { m_allow.push_back(allow); }
-      void RemoveAllow(const std::string& allow) {
+      auto SetAllow(const std::vector<std::string>& allow) -> Platforms& {
+        m_allow = allow;
+        return *this;
+      }
+      auto ClearAllow() -> Platforms& {
+        m_allow.clear();
+        return *this;
+      }
+      auto AddAllow(const std::string& allow) -> Platforms& {
+        m_allow.push_back(allow);
+        return *this;
+      }
+      auto RemoveAllow(const std::string& allow) -> Platforms& {
         m_allow.erase(std::remove(m_allow.begin(), m_allow.end(), allow), m_allow.end());
+        return *this;
       }
 
-      void SetDeny(const std::vector<std::string>& deny) { m_deny = deny; }
-      void ClearDeny() { m_deny.clear(); }
-      void AddDeny(const std::string& deny) { m_deny.push_back(deny); }
-      void RemoveDeny(const std::string& deny) {
+      auto SetDeny(const std::vector<std::string>& deny) -> Platforms& {
+        m_deny = deny;
+        return *this;
+      }
+      auto ClearDeny() -> Platforms& {
+        m_deny.clear();
+        return *this;
+      }
+      auto AddDeny(const std::string& deny) -> Platforms& {
+        m_deny.push_back(deny);
+        return *this;
+      }
+      auto RemoveDeny(const std::string& deny) -> Platforms& {
         m_deny.erase(std::remove(m_deny.begin(), m_deny.end(), deny), m_deny.end());
+        return *this;
       }
     };
 
@@ -187,33 +239,105 @@ namespace no3::package {
         [[nodiscard]] auto GetLTO() -> Flags& { return m_lto; }
         [[nodiscard]] auto GetRuntime() -> Flags& { return m_runtime; }
 
-        void SetAlpha(const Flags& alpha) { m_alpha = alpha; }
-        void SetBeta(const Flags& beta) { m_beta = beta; }
-        void SetGamma(const Flags& gamma) { m_gamma = gamma; }
-        void SetLLVM(const Flags& llvm) { m_llvm = llvm; }
-        void SetLTO(const Flags& lto) { m_lto = lto; }
-        void SetRuntime(const Flags& runtime) { m_runtime = runtime; }
+        auto SetAlpha(const Flags& alpha) -> Switch& {
+          m_alpha = alpha;
+          return *this;
+        }
+        auto SetBeta(const Flags& beta) -> Switch& {
+          m_beta = beta;
+          return *this;
+        }
+        auto SetGamma(const Flags& gamma) -> Switch& {
+          m_gamma = gamma;
+          return *this;
+        }
+        auto SetLLVM(const Flags& llvm) -> Switch& {
+          m_llvm = llvm;
+          return *this;
+        }
+        auto SetLTO(const Flags& lto) -> Switch& {
+          m_lto = lto;
+          return *this;
+        }
+        auto SetRuntime(const Flags& runtime) -> Switch& {
+          m_runtime = runtime;
+          return *this;
+        }
 
-        void ClearAlpha() { m_alpha.clear(); }
-        void ClearBeta() { m_beta.clear(); }
-        void ClearGamma() { m_gamma.clear(); }
-        void ClearLLVM() { m_llvm.clear(); }
-        void ClearLTO() { m_lto.clear(); }
-        void ClearRuntime() { m_runtime.clear(); }
+        auto ClearAlpha() -> Switch& {
+          m_alpha.clear();
+          return *this;
+        }
+        auto ClearBeta() -> Switch& {
+          m_beta.clear();
+          return *this;
+        }
+        auto ClearGamma() -> Switch& {
+          m_gamma.clear();
+          return *this;
+        }
+        auto ClearLLVM() -> Switch& {
+          m_llvm.clear();
+          return *this;
+        }
+        auto ClearLTO() -> Switch& {
+          m_lto.clear();
+          return *this;
+        }
+        auto ClearRuntime() -> Switch& {
+          m_runtime.clear();
+          return *this;
+        }
 
-        void SetAlphaFlag(const Flag& flag) { m_alpha.insert(flag); }
-        void SetBetaFlag(const Flag& flag) { m_beta.insert(flag); }
-        void SetGammaFlag(const Flag& flag) { m_gamma.insert(flag); }
-        void SetLLVMFlag(const Flag& flag) { m_llvm.insert(flag); }
-        void SetLTOFlag(const Flag& flag) { m_lto.insert(flag); }
-        void SetRuntimeFlag(const Flag& flag) { m_runtime.insert(flag); }
+        auto SetAlphaFlag(const Flag& flag) -> Switch& {
+          m_alpha.insert(flag);
+          return *this;
+        }
+        auto SetBetaFlag(const Flag& flag) -> Switch& {
+          m_beta.insert(flag);
+          return *this;
+        }
+        auto SetGammaFlag(const Flag& flag) -> Switch& {
+          m_gamma.insert(flag);
+          return *this;
+        }
+        auto SetLLVMFlag(const Flag& flag) -> Switch& {
+          m_llvm.insert(flag);
+          return *this;
+        }
+        auto SetLTOFlag(const Flag& flag) -> Switch& {
+          m_lto.insert(flag);
+          return *this;
+        }
+        auto SetRuntimeFlag(const Flag& flag) -> Switch& {
+          m_runtime.insert(flag);
+          return *this;
+        }
 
-        void ClearAlphaFlag(const Flag& flag) { m_alpha.erase(flag); }
-        void ClearBetaFlag(const Flag& flag) { m_beta.erase(flag); }
-        void ClearGammaFlag(const Flag& flag) { m_gamma.erase(flag); }
-        void ClearLLVMFlag(const Flag& flag) { m_llvm.erase(flag); }
-        void ClearLTOFlag(const Flag& flag) { m_lto.erase(flag); }
-        void ClearRuntimeFlag(const Flag& flag) { m_runtime.erase(flag); }
+        auto ClearAlphaFlag(const Flag& flag) -> Switch& {
+          m_alpha.erase(flag);
+          return *this;
+        }
+        auto ClearBetaFlag(const Flag& flag) -> Switch& {
+          m_beta.erase(flag);
+          return *this;
+        }
+        auto ClearGammaFlag(const Flag& flag) -> Switch& {
+          m_gamma.erase(flag);
+          return *this;
+        }
+        auto ClearLLVMFlag(const Flag& flag) -> Switch& {
+          m_llvm.erase(flag);
+          return *this;
+        }
+        auto ClearLTOFlag(const Flag& flag) -> Switch& {
+          m_lto.erase(flag);
+          return *this;
+        }
+        auto ClearRuntimeFlag(const Flag& flag) -> Switch& {
+          m_runtime.erase(flag);
+          return *this;
+        }
 
         [[nodiscard]] auto ContainsAlphaFlag(const Flag& flag) const -> bool { return m_alpha.contains(flag); }
         [[nodiscard]] auto ContainsBetaFlag(const Flag& flag) const -> bool { return m_beta.contains(flag); }
@@ -237,7 +361,7 @@ namespace no3::package {
         uint64_t m_min_storage;
 
       public:
-        constexpr Requirements() : m_min_cores(0), m_min_memory(0), m_min_storage(0) {}
+        constexpr Requirements() : m_min_cores(1), m_min_memory(2 * 1024 * 1024), m_min_storage(0) {}
         constexpr explicit Requirements(uint64_t min_cores, uint64_t min_memory, uint64_t min_storage)
             : m_min_cores(min_cores), m_min_memory(min_memory), m_min_storage(min_storage) {}
 
@@ -251,9 +375,18 @@ namespace no3::package {
         [[nodiscard]] auto GetMinMemory() -> uint64_t& { return m_min_memory; }
         [[nodiscard]] auto GetMinStorage() -> uint64_t& { return m_min_storage; }
 
-        void SetMinCores(uint64_t min_cores) { m_min_cores = min_cores; }
-        void SetMinMemory(uint64_t min_memory) { m_min_memory = min_memory; }
-        void SetMinStorage(uint64_t min_storage) { m_min_storage = min_storage; }
+        auto SetMinCores(uint64_t min_cores) -> Requirements& {
+          m_min_cores = min_cores;
+          return *this;
+        }
+        auto SetMinMemory(uint64_t min_memory) -> Requirements& {
+          m_min_memory = min_memory;
+          return *this;
+        }
+        auto SetMinStorage(uint64_t min_storage) -> Requirements& {
+          m_min_storage = min_storage;
+          return *this;
+        }
       };
 
       Optimization() {
@@ -285,26 +418,34 @@ namespace no3::package {
       [[nodiscard]] auto GetProfile(const std::string& name) -> Switch& { return m_profiles[name]; }
 
       [[nodiscard]] auto ContainsProfile(const std::string& name) const -> bool { return m_profiles.contains(name); }
-      void SetProfile(const std::string& name, const Switch& profile) { m_profiles[name] = profile; }
+      auto SetProfile(const std::string& name, const Switch& profile) -> Optimization& {
+        m_profiles[name] = profile;
+        return *this;
+      }
 
-      void ClearProfile(const std::string& name) {
+      auto ClearProfile(const std::string& name) -> Optimization& {
         if (!IsRequiredProfile(name)) {
           m_profiles.erase(name);
         }
+        return *this;
       }
 
-      void ClearAllProfiles() {
+      auto ClearAllProfiles() -> Optimization& {
         m_profiles.clear();
 
         m_profiles[RAPID_KEY] = Switch();
         m_profiles[DEBUG_KEY] = Switch();
         m_profiles[RELEASE_KEY] = Switch();
+        return *this;
       }
 
       [[nodiscard]] auto GetRequirements() const -> const Requirements& { return m_requirements; }
       [[nodiscard]] auto GetRequirements() -> Requirements& { return m_requirements; }
 
-      void SetRequirements(const Requirements& requirements) { m_requirements = requirements; }
+      auto SetRequirements(const Requirements& requirements) -> Optimization& {
+        m_requirements = requirements;
+        return *this;
+      }
 
     private:
       using Profiles = std::map<std::string, Switch>;
@@ -317,18 +458,24 @@ namespace no3::package {
       using UUID = std::string;
 
       UUID m_uuid;
-      SemanticVersion m_version;
+      Version m_version;
 
     public:
-      Dependency(UUID uuid, SemanticVersion version) : m_uuid(std::move(uuid)), m_version(version) {}
+      Dependency(UUID uuid, Version version) : m_uuid(std::move(uuid)), m_version(version) {}
 
       [[nodiscard]] auto operator<=>(const Dependency& o) const = default;
 
       [[nodiscard]] auto GetUUID() const -> const UUID& { return m_uuid; }
-      [[nodiscard]] auto GetVersion() const -> const SemanticVersion& { return m_version; }
+      [[nodiscard]] auto GetVersion() const -> const Version& { return m_version; }
 
-      void SetUUID(const UUID& uuid) { m_uuid = uuid; }
-      void SetVersion(const SemanticVersion& version) { m_version = version; }
+      auto SetUUID(const UUID& uuid) -> Dependency& {
+        m_uuid = uuid;
+        return *this;
+      }
+      auto SetVersion(const Version& version) -> Dependency& {
+        m_version = version;
+        return *this;
+      }
     };
 
     Manifest(std::string name, Category category) : m_name(std::move(name)), m_category(category) {}
@@ -343,7 +490,7 @@ namespace no3::package {
     [[nodiscard]] auto GetDescription() const -> const std::string& { return m_description; }
     [[nodiscard]] auto GetLicense() const -> const std::string& { return m_license; }
     [[nodiscard]] auto GetCategory() const -> Category { return m_category; }
-    [[nodiscard]] auto GetVersion() const -> const SemanticVersion& { return m_version; }
+    [[nodiscard]] auto GetVersion() const -> const Version& { return m_version; }
     [[nodiscard]] auto GetContacts() const -> const std::vector<Contact>& { return m_contacts; }
     [[nodiscard]] auto GetPlatforms() const -> const Platforms& { return m_platforms; }
     [[nodiscard]] auto GetOptimization() const -> const Optimization& { return m_optimization; }
@@ -353,50 +500,117 @@ namespace no3::package {
     [[nodiscard]] auto GetDescription() -> std::string& { return m_description; }
     [[nodiscard]] auto GetLicense() -> std::string& { return m_license; }
     [[nodiscard]] auto GetCategory() -> Category& { return m_category; }
-    [[nodiscard]] auto GetVersion() -> SemanticVersion& { return m_version; }
+    [[nodiscard]] auto GetVersion() -> Version& { return m_version; }
     [[nodiscard]] auto GetContacts() -> std::vector<Contact>& { return m_contacts; }
     [[nodiscard]] auto GetPlatforms() -> Platforms& { return m_platforms; }
     [[nodiscard]] auto GetOptimization() -> Optimization& { return m_optimization; }
     [[nodiscard]] auto GetDependencies() -> std::vector<Dependency>& { return m_dependencies; }
 
-    void SetName(std::string name) { m_name = std::move(name); }
-    void SetDescription(std::string description) { m_description = std::move(description); }
-    void SetLicense(std::string spdx_license) { m_license = std::move(spdx_license); }
-    void SetCategory(Category category) { m_category = category; }
-    void SetVersion(SemanticVersion version) { m_version = version; }
-    void SetContacts(std::vector<Contact> contacts) { m_contacts = std::move(contacts); }
-    void SetPlatforms(Platforms platforms) { m_platforms = std::move(platforms); }
-    void SetOptimization(Optimization optimization) { m_optimization = std::move(optimization); }
-    void SetDependencies(std::vector<Dependency> dependencies) { m_dependencies = std::move(dependencies); }
+    auto SetName(std::string name) -> Manifest& {
+      m_name = std::move(name);
+      return *this;
+    }
+    auto SetDescription(std::string description) -> Manifest& {
+      m_description = std::move(description);
+      return *this;
+    }
+    auto SetLicense(std::string spdx_license) -> Manifest& {
+      m_license = std::move(spdx_license);
+      return *this;
+    }
+    auto SetCategory(Category category) -> Manifest& {
+      m_category = category;
+      return *this;
+    }
+    auto SetVersion(Version version) -> Manifest& {
+      m_version = version;
+      return *this;
+    }
+    auto SetContacts(std::vector<Contact> contacts) -> Manifest& {
+      m_contacts = std::move(contacts);
+      return *this;
+    }
+    auto SetPlatforms(Platforms platforms) -> Manifest& {
+      m_platforms = std::move(platforms);
+      return *this;
+    }
+    auto SetOptimization(Optimization optimization) -> Manifest& {
+      m_optimization = std::move(optimization);
+      return *this;
+    }
+    auto SetDependencies(std::vector<Dependency> dependencies) -> Manifest& {
+      m_dependencies = std::move(dependencies);
+      return *this;
+    }
 
-    void AddContact(const Contact& contact) { m_contacts.push_back(contact); }
-    void ClearContacts() { m_contacts.clear(); }
-    void RemoveContact(const Contact& contact) {
+    auto AddContact(const Contact& contact) -> Manifest& {
+      m_contacts.push_back(contact);
+      return *this;
+    }
+    auto ClearContacts() -> Manifest& {
+      m_contacts.clear();
+      return *this;
+    }
+    auto RemoveContact(const Contact& contact) -> Manifest& {
       m_contacts.erase(std::remove(m_contacts.begin(), m_contacts.end(), contact), m_contacts.end());
+      return *this;
     }
 
-    void AddPlatformAllow(const std::string& allow) { m_platforms.AddAllow(allow); }
-    void RemovePlatformAllow(const std::string& allow) { m_platforms.RemoveAllow(allow); }
-    void ClearPlatformAllow() { m_platforms.ClearAllow(); }
-    void AddPlatformDeny(const std::string& deny) { m_platforms.AddDeny(deny); }
-    void RemovePlatformDeny(const std::string& deny) { m_platforms.RemoveDeny(deny); }
-    void ClearPlatformDeny() { m_platforms.ClearDeny(); }
+    auto AddPlatformAllow(const std::string& allow) -> Manifest& {
+      m_platforms.AddAllow(allow);
+      return *this;
+    }
+    auto RemovePlatformAllow(const std::string& allow) -> Manifest& {
+      m_platforms.RemoveAllow(allow);
+      return *this;
+    }
+    auto ClearPlatformAllow() -> Manifest& {
+      m_platforms.ClearAllow();
+      return *this;
+    }
+    auto AddPlatformDeny(const std::string& deny) -> Manifest& {
+      m_platforms.AddDeny(deny);
+      return *this;
+    }
+    auto RemovePlatformDeny(const std::string& deny) -> Manifest& {
+      m_platforms.RemoveDeny(deny);
+      return *this;
+    }
+    auto ClearPlatformDeny() -> Manifest& {
+      m_platforms.ClearDeny();
+      return *this;
+    }
 
-    void AddOptimizationProfile(const std::string& name, const Optimization::Switch& profile) {
+    auto AddOptimizationProfile(const std::string& name, const Optimization::Switch& profile) -> Manifest& {
       m_optimization.SetProfile(name, profile);
+      return *this;
     }
-    void RemoveOptimizationProfile(const std::string& name) { m_optimization.ClearProfile(name); }
-    void ClearOptimizationProfiles() { m_optimization.ClearAllProfiles(); }
+    auto RemoveOptimizationProfile(const std::string& name) -> Manifest& {
+      m_optimization.ClearProfile(name);
+      return *this;
+    }
+    auto ClearOptimizationProfiles() -> Manifest& {
+      m_optimization.ClearAllProfiles();
+      return *this;
+    }
 
-    void AddDependency(const Dependency& dependency) { m_dependencies.push_back(dependency); }
-    void ClearDependencies() { m_dependencies.clear(); }
-    void RemoveDependency(const Dependency& dependency) {
+    auto AddDependency(const Dependency& dependency) -> Manifest& {
+      m_dependencies.push_back(dependency);
+      return *this;
+    }
+    auto ClearDependencies() -> Manifest& {
+      m_dependencies.clear();
+      return *this;
+    }
+    auto RemoveDependency(const Dependency& dependency) -> Manifest& {
       m_dependencies.erase(std::remove(m_dependencies.begin(), m_dependencies.end(), dependency), m_dependencies.end());
+      return *this;
     }
 
     ///=============================================================================================
     ///==                               (DE)SERIALIZATION FUNCTIONS                               ==
     auto ToJson(std::ostream& os, bool& correct_schema, bool minify = false) const -> std::ostream&;
+    auto ToJson(bool& correct_schema, bool minify = false) const -> std::string;
     static auto FromJson(std::istream& is) -> std::optional<Manifest>;
     static auto FromJson(std::string_view json) -> std::optional<Manifest>;
 
@@ -410,8 +624,8 @@ namespace no3::package {
     std::string m_name;
     std::string m_description;
     std::string m_license = "LGPL-2.1";
-    Category m_category = Category::Application;
-    SemanticVersion m_version;
+    Category m_category = Category::Executable;
+    Version m_version;
     std::vector<Contact> m_contacts;
     Platforms m_platforms;
     Optimization m_optimization;

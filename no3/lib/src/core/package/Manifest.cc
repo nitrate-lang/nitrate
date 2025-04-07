@@ -286,7 +286,7 @@ namespace no3::package::check {
       schema_assert(j["category"].is_string());
       schema_assert([&]() {
         auto v = j["category"].get<std::string>();
-        schema_assert(v == "app" || v == "lib" || v == "std");
+        schema_assert(v == "exe" || v == "lib" || v == "std");
         return true;
       }());
     }
@@ -413,7 +413,7 @@ namespace no3::package::convert {
     }
 
     qcore_assert(category == "exe");
-    return Manifest::Category::Application;
+    return Manifest::Category::Executable;
   }
 
   static auto ConvertContactRole(const std::string& role) -> Manifest::Contact::Role {
@@ -433,7 +433,7 @@ namespace no3::package::convert {
     return Manifest::Contact::Role::Support;
   }
 
-  static auto ConvertSemanticVersion(const nlohmann::json& j) -> Manifest::SemanticVersion {
+  static auto ConvertSemanticVersion(const nlohmann::json& j) -> Manifest::Version {
     uint32_t major = 0;
     uint32_t minor = 0;
     uint32_t patch = 0;
@@ -447,7 +447,7 @@ namespace no3::package::convert {
       patch = std::stoul(version.substr(pos2 + 1));
     }
 
-    return Manifest::SemanticVersion(major, minor, patch);
+    return Manifest::Version(major, minor, patch);
   }
 
   static auto ConvertContact(const nlohmann::json& j) -> Manifest::Contact {
@@ -567,7 +567,7 @@ auto Manifest::ToJson(std::ostream& os, bool& correct_schema, bool minify) const
         return "std";
       case Category::Library:
         return "lib";
-      case Category::Application:
+      case Category::Executable:
         return "exe";
     }
   }();
@@ -665,6 +665,12 @@ auto Manifest::ToJson(std::ostream& os, bool& correct_schema, bool minify) const
   os << j.dump(minify ? -1 : 2);
 
   return os;
+}
+
+auto Manifest::ToJson(bool& correct_schema, bool minify) const -> std::string {
+  std::ostringstream oss;
+  ToJson(oss, correct_schema, minify);
+  return oss.str();
 }
 
 auto Manifest::FromJson(std::istream& is) -> std::optional<Manifest> {
