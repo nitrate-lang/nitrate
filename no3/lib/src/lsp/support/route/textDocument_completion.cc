@@ -67,18 +67,18 @@ static auto VerifyTextDocumentCompletion(const nlohmann::json& j) -> bool {
   return true;
 }
 
-void core::Context::RequestCompletion(const message::RequestMessage& req, message::ResponseMessage&) {
-  const auto& j = *req;
+void core::Context::RequestCompletion(const message::RequestMessage& request, message::ResponseMessage& response) {
+  const auto& j = *request;
   if (!VerifyTextDocumentCompletion(j)) {
     Log << "Invalid textDocument/completion request";
     return;
   }
 
-  return;
-
   const auto file_uri = FlyString(j["textDocument"]["uri"].get<std::string>());
-  const auto line = j["textDocument"]["position"]["line"].get<uint32_t>();
-  const auto character = j["textDocument"]["position"]["character"].get<uint32_t>();
+  const auto line = j["position"]["line"].get<uint64_t>();
+  const auto character = j["position"]["character"].get<uint64_t>();
+
+  Log << Trace << "RequestCompletion: file: " << file_uri << ", line: " << line << ", character: " << character;
 
   auto file = m_fs.GetFile(file_uri).value_or(nullptr);
   if (!file) {
@@ -96,9 +96,9 @@ void core::Context::RequestCompletion(const message::RequestMessage& req, messag
   rd->seekg(*offset);
 
   std::basic_string<uint8_t> line_str;
-  std::getline(*rd, line_str);
+  // std::getline(*rd, line_str);
 
-  Log << Trace << "RequestCompletion: line_str: " << line_str.c_str();
+  // Log << Trace << "RequestCompletion: line_str: " << (const char*)line_str.c_str();
 
   /// TODO: Implement completion logic here
 }

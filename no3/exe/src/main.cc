@@ -57,6 +57,8 @@ static void IncreaseStackLimit() {
 auto main(int argc, char* argv[]) -> int {
   IncreaseStackLimit();
 
+  no3::Interpreter interpreter;
+
   std::vector<std::string> args(argv, argv + argc);
   if (args.size() == 2 && args[1] == "shell") {
     using_history();
@@ -84,11 +86,11 @@ auto main(int argc, char* argv[]) -> int {
         break;
       }
 
-      no3::Interpreter().Execute(SplitCommand(args[0] + " " + input));
+      interpreter.Execute(SplitCommand(args[0] + " " + input));
     }
 
     write_history((GetUserDirectory() / ".no3_history").c_str());
   } else {
-    return no3::Interpreter().Execute(args) ? 0 : 1;
+    return interpreter.Execute(args) ? 0 : 1;
   }
 }

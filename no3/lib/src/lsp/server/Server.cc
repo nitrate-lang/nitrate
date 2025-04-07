@@ -46,10 +46,11 @@ public:
   State m_state = State::Suspended;
   std::mutex m_state_mutex;
   std::iostream& m_io;
-  std::mutex m_io_mutex;
+  std::mutex m_is_mutex;
+  std::mutex m_os_mutex;
   Scheduler m_request_scheduler;
 
-  PImpl(std::iostream& io) : m_io(io), m_request_scheduler(io, m_io_mutex) {}
+  PImpl(std::iostream& io) : m_io(io), m_request_scheduler(io, m_os_mutex) {}
 };
 
 Server::Server(std::iostream& io) : m_pimpl(std::make_unique<PImpl>(io)) {}
@@ -79,7 +80,7 @@ auto Server::Start() -> bool {
       }
 
       case State::Running: {
-        auto request = ReadRequest(m_pimpl->m_io, m_pimpl->m_io_mutex);
+        auto request = ReadRequest(m_pimpl->m_io, m_pimpl->m_is_mutex);
         if (!request.has_value()) [[unlikely]] {
           sucessive_failed_request_count++;
           Log << "Server: Start(): ReadRequest() failed";

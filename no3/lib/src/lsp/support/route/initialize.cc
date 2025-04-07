@@ -82,6 +82,6 @@ void core::Context::RequestInitialize(const message::RequestMessage& request, me
   };
 
   ////==========================================================================
-  m_is_lsp_initialized = true;
   Log << Debug << "Context::RequestInitialize(): LSP initialize requested";
+  m_is_lsp_initialized = true;
 }

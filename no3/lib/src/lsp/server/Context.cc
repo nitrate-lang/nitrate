@@ -52,30 +52,6 @@ static void BoostFlyweightInit() {
   });
 }
 
-void Context::FlushLogTraceQueue() {
-  while (true) {
-    const auto message = [&]() -> std::optional<std::string> {
-      std::lock_guard lock(m_log_trace_lock);
-
-      if (m_log_trace_queue.empty()) {
-        return std::nullopt;
-      }
-
-      auto res = std::move(m_log_trace_queue.front());
-      m_log_trace_queue.pop();
-
-      return res;
-    }();
-
-    if (!message.has_value()) [[unlikely]] {
-      break;
-    }
-
-    auto trace_message = LogTraceNotification(message.value());
-    SendMessage(trace_message, false);
-  }
-}
-
 auto Context::ExecuteLSPRequest(const message::RequestMessage& message) -> message::ResponseMessage {
   const auto method = message.GetMethod();
   const auto log_prefix = "Context::ExecuteLSPRequest(\"" + std::string(method) + "\"): ";
@@ -120,11 +96,12 @@ void Context::ExecuteLSPNotification(const message::NotifyMessage& message) {
     return;
   }
 
-  if (const auto is_exit_notification = method == "exit"; m_is_lsp_initialized || is_exit_notification) {
+  if (m_is_lsp_initialized || (method == "initialized" || method == "exit")) {
     (*this.*route_it->second)(message);
-  } else [[unlikely]] {
-    Log << log_prefix << "LSP not initialized, ignoring notification";
+    return;
   }
+
+  Log << log_prefix << "LSP not initialized, ignoring notification";
 }
 
 void Context::ExecuteRPC(const message::Message& message, bool& exit_requested) {
@@ -154,10 +131,6 @@ void Context::ExecuteRPC(const message::Message& message, bool& exit_requested) 
     case MessageKind::Response: {
       break;
     }
-  }
-
-  if (m_is_lsp_initialized) {
-    FlushLogTraceQueue();
   }
 }
 
@@ -191,6 +164,10 @@ Context::Context(std::ostream& os, std::mutex& os_lock)
   });
 
   m_log_subscriber_id = Log->Subscribe([this](const ncc::LogMessage& log) {
+    if (!m_can_send_trace) {
+      return;
+    }
+
     switch (m_trace) {
       case TraceValue::Off: {
         return;
@@ -212,10 +189,8 @@ Context::Context(std::ostream& os, std::mutex& os_lock)
     auto message = log.m_by.Format(log.m_message, log.m_sev);
     StripANSI(message);
 
-    {
-      std::lock_guard lock(m_log_trace_lock);
-      m_log_trace_queue.push(message);
-    }
+    auto trace_message = LogTraceNotification(std::move(message));
+    SendMessage(trace_message, false);
   });
 }
 

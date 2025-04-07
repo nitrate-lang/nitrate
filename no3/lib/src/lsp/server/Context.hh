@@ -40,7 +40,6 @@
 #include <lsp/protocol/Response.hh>
 #include <lsp/resource/FileBrowser.hh>
 #include <nitrate-core/Logger.hh>
-#include <queue>
 
 namespace no3::lsp::core {
   class Context final {
@@ -54,13 +53,9 @@ namespace no3::lsp::core {
     std::mutex& m_os_lock;
 
     FileBrowser m_fs;
-    std::atomic<bool> m_is_lsp_initialized, m_exit_requested;
-    std::atomic<TraceValue> m_trace = TraceValue::Off;
-    std::queue<std::string> m_log_trace_queue;
-    std::mutex m_log_trace_lock;
+    std::atomic<bool> m_is_lsp_initialized, m_can_send_trace, m_exit_requested;
+    std::atomic<TraceValue> m_trace = TraceValue::Messages;
     ncc::LogSubscriberID m_log_subscriber_id;
-
-    void FlushLogTraceQueue();
 
     [[nodiscard]] auto ExecuteLSPRequest(const message::RequestMessage& message) -> message::ResponseMessage;
     void ExecuteLSPNotification(const message::NotifyMessage& message);

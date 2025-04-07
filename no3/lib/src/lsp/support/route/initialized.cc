@@ -38,5 +38,6 @@ using namespace ncc;
 using namespace no3::lsp;
 
 void core::Context::NotifyInitialized(const message::NotifyMessage&) {
+  m_can_send_trace = true;
   Log << Debug << "Context::NotifyInitialized(): LSP initialized";
 }
