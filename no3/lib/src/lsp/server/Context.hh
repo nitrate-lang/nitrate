@@ -72,7 +72,7 @@ namespace no3::lsp::core {
 
     LSP_REQUEST(Initialize);
     LSP_REQUEST(Shutdown);
-    LSP_REQUEST(Formatting);
+    LSP_REQUEST(Completion);
 
     LSP_NOTIFY(Initialized);
     LSP_NOTIFY(SetTrace);
@@ -91,6 +91,7 @@ namespace no3::lsp::core {
     static inline const std::unordered_map<std::string_view, LSPRequestFunc> LSP_REQUEST_MAP = {
         {"initialize", &Context::RequestInitialize},
         {"shutdown", &Context::RequestShutdown},
+        {"textDocument/completion", &Context::RequestCompletion},
     };
 
     static inline const std::unordered_map<std::string_view, LSPNotifyFunc> LSP_NOTIFICATION_MAP = {

@@ -63,6 +63,10 @@ public:
 
         ///========================================================================
         /// BEGIN: LSP Document Synchronization messages
+
+        ///========================================================================
+        /// BEGIN: LSP Feature messages
+        "textDocument/completion",
     };
 
     return parallelizable_messages.contains(message.GetMethod());

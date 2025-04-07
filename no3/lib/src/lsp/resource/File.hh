@@ -37,6 +37,7 @@
 #include <istream>
 #include <lsp/protocol/Base.hh>
 #include <memory>
+#include <string_view>
 
 namespace no3::lsp::core {
   using FileVersion = long;
@@ -62,5 +63,13 @@ namespace no3::lsp::core {
 
     [[nodiscard]] auto ReadAll() const -> FlyByteString;
     [[nodiscard]] auto GetReader() const -> std::unique_ptr<std::basic_istream<uint8_t>>;
+
+    static auto GetOffset(std::basic_string_view<uint8_t> raw, uint64_t line,
+                          uint64_t column) -> std::optional<uint64_t>;
+    static auto GetLC(std::basic_string_view<uint8_t> raw,
+                      uint64_t offset) -> std::optional<std::pair<uint64_t, uint64_t>>;
+
+    auto GetOffset(uint64_t line, uint64_t column) -> std::optional<uint64_t>;
+    auto GetLC(uint64_t offset) -> std::optional<std::pair<uint64_t, uint64_t>>;
   };
 }  // namespace no3::lsp::core

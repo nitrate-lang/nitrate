@@ -32,56 +32,73 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <lsp/server/Context.hh>
+#include <nitrate-core/Assert.hh>
 #include <nitrate-core/Logger.hh>
+
+#include "lsp/protocol/Request.hh"
+#include "lsp/protocol/Response.hh"
 
 using namespace ncc;
 using namespace no3::lsp;
 
-static auto VerifyInitializeRequest(const nlohmann::json& j) -> bool {
-  if (j.contains("trace")) {
-    if (!j["trace"].is_string()) {
-      return false;
-    }
+static auto VerifyTextDocumentCompletion(const nlohmann::json& j) -> bool {
+  if (!j.is_object()) {
+    return false;
+  }
+
+  if (!j.contains("textDocument") || !j["textDocument"].is_object()) {
+    return false;
+  }
+
+  if (!j["textDocument"].contains("uri") || !j["textDocument"]["uri"].is_string()) {
+    return false;
+  }
+
+  if (!j.contains("position") || !j["position"].is_object()) {
+    return false;
+  }
+  if (!j["position"].contains("line") || !j["position"]["line"].is_number_unsigned()) {
+    return false;
+  }
+  if (!j["position"].contains("character") || !j["position"]["character"].is_number_unsigned()) {
+    return false;
   }
 
   return true;
 }
 
-void core::Context::RequestInitialize(const message::RequestMessage& request, message::ResponseMessage& response) {
-  const auto& req = *request;
-  if (!VerifyInitializeRequest(req)) [[unlikely]] {
-    Log << "Invalid initialize request";
-    response.SetStatusCode(message::StatusCode::InvalidRequest);
+void core::Context::RequestCompletion(const message::RequestMessage& req, message::ResponseMessage&) {
+  const auto& j = *req;
+  if (!VerifyTextDocumentCompletion(j)) {
+    Log << "Invalid textDocument/completion request";
     return;
   }
 
-  if (req.contains("trace")) {
-    if (req["trace"] == "messages") {
-      m_trace = TraceValue::Messages;
-    } else if (req["trace"] == "verbose") {
-      m_trace = TraceValue::Verbose;
-    } else {
-      m_trace = TraceValue::Off;
-    }
+  return;
+
+  const auto file_uri = FlyString(j["textDocument"]["uri"].get<std::string>());
+  const auto line = j["textDocument"]["position"]["line"].get<uint32_t>();
+  const auto character = j["textDocument"]["position"]["character"].get<uint32_t>();
+
+  auto file = m_fs.GetFile(file_uri).value_or(nullptr);
+  if (!file) {
+    Log << "File not opened: " << file_uri;
+    return;
   }
 
-  ////==========================================================================
-  auto& j = *response;
+  auto offset = file->GetOffset(line, character);
+  if (!offset) {
+    Log << "Invalid position: " << line << ":" << character;
+    return;
+  }
 
-  j["serverInfo"]["name"] = "nitrateLanguageServer";
-  j["serverInfo"]["version"] = "0.0.1";
+  auto rd = file->GetReader();
+  rd->seekg(*offset);
 
-  j["capabilities"]["positionEncoding"] = "utf-16";
-  j["capabilities"]["textDocumentSync"] = {
-      {"openClose", true},
-      {"change", protocol::TextDocumentSyncKind::Incremental},
-      {"save", {{"includeText", true}}},
-  };
-  j["capabilities"]["completionProvider"] = {
-      {"triggerCharacters", {".", "::"}},
-  };
+  std::basic_string<uint8_t> line_str;
+  std::getline(*rd, line_str);
 
-  ////==========================================================================
-  m_is_lsp_initialized = true;
-  Log << Debug << "Context::RequestInitialize(): LSP initialize requested";
+  Log << Trace << "RequestCompletion: line_str: " << line_str.c_str();
+
+  /// TODO: Implement completion logic here
 }
