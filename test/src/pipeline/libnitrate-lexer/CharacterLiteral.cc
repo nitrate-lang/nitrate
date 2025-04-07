@@ -39,6 +39,13 @@ TEST_CASE(Char, Hex, 3, R"('\x00')", {Token(Char, 1, "\0")});
 TEST_CASE(Char, Hex, 4, R"('\x80')", {Token(Char, "\x80")});
 TEST_CASE(Char, Hex, 5, R"('\xAG')", {});
 TEST_CASE(Char, Hex, 6, R"('\xGA')", {});
+TEST_CASE(Char, Hex, 10, R"('\X89')", {Token(Char, "\x89")});
+TEST_CASE(Char, Hex, 11, R"('\X0A')", {Token(Char, "\n")});
+TEST_CASE(Char, Hex, 12, R"('\Xff')", {Token(Char, "\xff")});
+TEST_CASE(Char, Hex, 13, R"('\X00')", {Token(Char, 1, "\0")});
+TEST_CASE(Char, Hex, 14, R"('\X80')", {Token(Char, "\x80")});
+TEST_CASE(Char, Hex, 15, R"('\XAG')", {});
+TEST_CASE(Char, Hex, 16, R"('\XGA')", {});
 
 ///============================================================================///
 /// UNICODE ESCAPE SEQUENCES
@@ -52,6 +59,16 @@ TEST_CASE(Char, Unicode, 6, R"('\u{41}')", {Token(Char, "A")});
 TEST_CASE(Char, Unicode, 7, R"('\u{100}')", {Token(Text, "Ā")});
 TEST_CASE(Char, Unicode, 8, R"('🍉')", {Token(Text, "🍉")});
 TEST_CASE(Char, Unicode, 9, R"('\u{D800}')", {Token(Text, "\xed\xa0\x80")});
+TEST_CASE(Char, Unicode, 10, R"('\U{1F525}')", {Token(Text, "🔥")});
+TEST_CASE(Char, Unicode, 11, R"('\U1F525}')", {});
+TEST_CASE(Char, Unicode, 12, R"('\U{1F525')", {});
+TEST_CASE(Char, Unicode, 13, R"('\U{ZZZ}')", {});
+TEST_CASE(Char, Unicode, 14, R"('\U{FFFFFFFF}')", {});
+TEST_CASE(Char, Unicode, 15, R"('\U{FFFFFFFFF}')", {});
+TEST_CASE(Char, Unicode, 16, R"('\U{41}')", {Token(Char, "A")});
+TEST_CASE(Char, Unicode, 17, R"('\U{100}')", {Token(Text, "Ā")});
+TEST_CASE(Char, Unicode, 18, R"('🍉')", {Token(Text, "🍉")});
+TEST_CASE(Char, Unicode, 19, R"('\U{D800}')", {Token(Text, "\xed\xa0\x80")});
 
 ///============================================================================///
 /// OCTAL ESCAPE SEQUENCES
@@ -59,6 +76,10 @@ TEST_CASE(Char, Octal, 0, R"('\o000')", {Token(Char, 1, "\0")});
 TEST_CASE(Char, Octal, 1, R"('\o377')", {Token(Char, "\xff")});
 TEST_CASE(Char, Octal, 2, R"('\o400')", {});
 TEST_CASE(Char, Octal, 3, R"('\o777')", {});
+TEST_CASE(Char, Octal, 10, R"('\O000')", {Token(Char, 1, "\0")});
+TEST_CASE(Char, Octal, 11, R"('\O377')", {Token(Char, "\xff")});
+TEST_CASE(Char, Octal, 12, R"('\O400')", {});
+TEST_CASE(Char, Octal, 13, R"('\O777')", {});
 
 ///============================================================================///
 /// MALFORMED QUOTES
