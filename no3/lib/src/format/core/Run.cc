@@ -300,13 +300,13 @@ static bool FormatFiles(const std::optional<parse::ImportName>& current_package_
     import_config.ClearFilesToNotImport();
     import_config.AddFileToNotImport(src_file);
 
-    Log << Info << "Applying format " << src_file << " => " << dst_file;
-
     if (!FormatFile(src_file, dst_file, config, mode, import_config, pipeline_env)) {
       Log << "Unable to format file: " << src_file;
       failure_count++;
       continue;
     }
+
+    Log << Info << "Formatted " << src_file << " => " << dst_file;
 
     success_count++;
   }

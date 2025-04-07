@@ -197,7 +197,7 @@ static void AssignDefaults(nlohmann::ordered_json& json) {
 std::optional<PackageConfig> PackageConfig::ParsePackage(const std::filesystem::path& package_dir) {
   const auto package_config = LocatePackageConfigFile(package_dir);
   if (!package_config.has_value()) {
-    Log << "No known package configuration was found in " << package_dir;
+    Log << Trace << "No known package configuration was found in " << package_dir;
     return std::nullopt;
   }
 
