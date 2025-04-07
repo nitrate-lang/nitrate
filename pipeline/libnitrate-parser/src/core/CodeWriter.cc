@@ -44,6 +44,7 @@
 #include <nitrate-parser/ASTStmt.hh>
 #include <nitrate-parser/ASTType.hh>
 #include <sstream>
+#include <stack>
 #include <string_view>
 #include <unordered_map>
 #include <variant>
@@ -102,6 +103,14 @@ namespace ncc::parse {
     TokenType m_last{};
     TokenData m_ldata;
     bool m_did_root{};
+    std::stack<bool> m_type_context;
+
+    void PushTypeContext() { m_type_context.push(true); }
+    void PopTypeContext() {
+      qcore_assert(!m_type_context.empty());
+      m_type_context.pop();
+    }
+    [[nodiscard]] bool IsTypeContext() const { return m_type_context.top(); }
 
     static bool IsWordOperator(Operator op) {
       switch (op) {
@@ -771,6 +780,10 @@ namespace ncc::parse {
     }
 
     void Visit(FlowPtr<NamedTy> n) override {
+      if (!IsTypeContext()) {
+        PutKeyword(lex::Type);
+      }
+
       PrintLeading(n);
 
       PutIdentifier(n->GetName());
@@ -780,6 +793,10 @@ namespace ncc::parse {
     }
 
     void Visit(FlowPtr<InferTy> n) override {
+      if (!IsTypeContext()) {
+        PutKeyword(lex::Type);
+      }
+
       PrintLeading(n);
 
       PutOperator(OpTernary);
@@ -789,6 +806,10 @@ namespace ncc::parse {
     }
 
     void Visit(FlowPtr<TemplateType> n) override {
+      if (!IsTypeContext()) {
+        PutKeyword(lex::Type);
+      }
+
       PrintLeading(n);
 
       n->GetTemplate()->Accept(*this);
@@ -814,6 +835,10 @@ namespace ncc::parse {
     }
 
     void Visit(FlowPtr<U1> n) override {
+      if (!IsTypeContext()) {
+        PutKeyword(lex::Type);
+      }
+
       PrintLeading(n);
 
       PutIdentifier("u1");
@@ -823,6 +848,10 @@ namespace ncc::parse {
     }
 
     void Visit(FlowPtr<U8> n) override {
+      if (!IsTypeContext()) {
+        PutKeyword(lex::Type);
+      }
+
       PrintLeading(n);
 
       PutIdentifier("u8");
@@ -832,6 +861,10 @@ namespace ncc::parse {
     }
 
     void Visit(FlowPtr<U16> n) override {
+      if (!IsTypeContext()) {
+        PutKeyword(lex::Type);
+      }
+
       PrintLeading(n);
 
       PutIdentifier("u16");
@@ -841,6 +874,10 @@ namespace ncc::parse {
     }
 
     void Visit(FlowPtr<U32> n) override {
+      if (!IsTypeContext()) {
+        PutKeyword(lex::Type);
+      }
+
       PrintLeading(n);
 
       PutIdentifier("u32");
@@ -850,6 +887,10 @@ namespace ncc::parse {
     }
 
     void Visit(FlowPtr<U64> n) override {
+      if (!IsTypeContext()) {
+        PutKeyword(lex::Type);
+      }
+
       PrintLeading(n);
 
       PutIdentifier("u64");
@@ -859,6 +900,10 @@ namespace ncc::parse {
     }
 
     void Visit(FlowPtr<U128> n) override {
+      if (!IsTypeContext()) {
+        PutKeyword(lex::Type);
+      }
+
       PrintLeading(n);
 
       PutIdentifier("u128");
@@ -868,6 +913,10 @@ namespace ncc::parse {
     }
 
     void Visit(FlowPtr<I8> n) override {
+      if (!IsTypeContext()) {
+        PutKeyword(lex::Type);
+      }
+
       PrintLeading(n);
 
       PutIdentifier("i8");
@@ -877,6 +926,10 @@ namespace ncc::parse {
     }
 
     void Visit(FlowPtr<I16> n) override {
+      if (!IsTypeContext()) {
+        PutKeyword(lex::Type);
+      }
+
       PrintLeading(n);
 
       PutIdentifier("i16");
@@ -886,6 +939,10 @@ namespace ncc::parse {
     }
 
     void Visit(FlowPtr<I32> n) override {
+      if (!IsTypeContext()) {
+        PutKeyword(lex::Type);
+      }
+
       PrintLeading(n);
 
       PutIdentifier("i32");
@@ -895,6 +952,10 @@ namespace ncc::parse {
     }
 
     void Visit(FlowPtr<I64> n) override {
+      if (!IsTypeContext()) {
+        PutKeyword(lex::Type);
+      }
+
       PrintLeading(n);
 
       PutIdentifier("i64");
@@ -904,6 +965,10 @@ namespace ncc::parse {
     }
 
     void Visit(FlowPtr<I128> n) override {
+      if (!IsTypeContext()) {
+        PutKeyword(lex::Type);
+      }
+
       PrintLeading(n);
 
       PutIdentifier("i128");
@@ -913,6 +978,10 @@ namespace ncc::parse {
     }
 
     void Visit(FlowPtr<F16> n) override {
+      if (!IsTypeContext()) {
+        PutKeyword(lex::Type);
+      }
+
       PrintLeading(n);
 
       PutIdentifier("f16");
@@ -922,6 +991,10 @@ namespace ncc::parse {
     }
 
     void Visit(FlowPtr<F32> n) override {
+      if (!IsTypeContext()) {
+        PutKeyword(lex::Type);
+      }
+
       PrintLeading(n);
 
       PutIdentifier("f32");
@@ -931,6 +1004,10 @@ namespace ncc::parse {
     }
 
     void Visit(FlowPtr<F64> n) override {
+      if (!IsTypeContext()) {
+        PutKeyword(lex::Type);
+      }
+
       PrintLeading(n);
 
       PutIdentifier("f64");
@@ -940,6 +1017,10 @@ namespace ncc::parse {
     }
 
     void Visit(FlowPtr<F128> n) override {
+      if (!IsTypeContext()) {
+        PutKeyword(lex::Type);
+      }
+
       PrintLeading(n);
 
       PutIdentifier("f128");
@@ -949,6 +1030,10 @@ namespace ncc::parse {
     }
 
     void Visit(FlowPtr<VoidTy> n) override {
+      if (!IsTypeContext()) {
+        PutKeyword(lex::Type);
+      }
+
       PrintLeading(n);
 
       PutIdentifier("void");
@@ -958,6 +1043,10 @@ namespace ncc::parse {
     }
 
     void Visit(FlowPtr<PtrTy> n) override {
+      if (!IsTypeContext()) {
+        PutKeyword(lex::Type);
+      }
+
       PrintLeading(n);
 
       PutOperator(OpTimes);
@@ -968,6 +1057,10 @@ namespace ncc::parse {
     }
 
     void Visit(FlowPtr<OpaqueTy> n) override {
+      if (!IsTypeContext()) {
+        PutKeyword(lex::Type);
+      }
+
       PrintLeading(n);
 
       PutKeyword(Opaque);
@@ -980,6 +1073,10 @@ namespace ncc::parse {
     }
 
     void Visit(FlowPtr<TupleTy> n) override {
+      if (!IsTypeContext()) {
+        PutKeyword(lex::Type);
+      }
+
       PrintLeading(n);
 
       PutPunctor(PuncLPar);
@@ -997,6 +1094,10 @@ namespace ncc::parse {
     }
 
     void Visit(FlowPtr<ArrayTy> n) override {
+      if (!IsTypeContext()) {
+        PutKeyword(lex::Type);
+      }
+
       PrintLeading(n);
 
       PutPunctor(PuncLBrk);
@@ -1010,6 +1111,10 @@ namespace ncc::parse {
     }
 
     void Visit(FlowPtr<RefTy> n) override {
+      if (!IsTypeContext()) {
+        PutKeyword(lex::Type);
+      }
+
       PrintLeading(n);
 
       PutOperator(OpBitAnd);
@@ -1020,6 +1125,10 @@ namespace ncc::parse {
     }
 
     void Visit(FlowPtr<FuncTy> n) override {
+      if (!IsTypeContext()) {
+        PutKeyword(lex::Type);
+      }
+
       PrintLeading(n);
 
       PutKeyword(lex::Fn);
@@ -1822,7 +1931,7 @@ namespace ncc::parse {
     }
 
   public:
-    CodeWriter(std::ostream& os) : m_os(os), m_ldata(TokenData::GetDefault(EofF)) {}
+    CodeWriter(std::ostream& os) : m_os(os), m_ldata(TokenData::GetDefault(EofF)) { m_type_context.push(false); }
     ~CodeWriter() override = default;
   };
 }  // namespace ncc::parse
