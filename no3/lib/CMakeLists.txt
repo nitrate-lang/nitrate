@@ -10,21 +10,6 @@ find_library(libboost_program_options boost_program_options REQUIRED)
 find_library(libunwind unwind REQUIRED)
 find_library(libdeflate deflate REQUIRED)
 
-#================== COMPILE PROTOBUF ==================
-set(PROTOBUF_SOURCE ${CMAKE_CURRENT_SOURCE_DIR}/src/core/package/ConfigFormat.proto)
-set(PROTOBUF_SOURCE_CC ${CMAKE_CURRENT_SOURCE_DIR}/src/core/package/ConfigFormat.pb.cc)
-set(PROTOBUF_SOURCE_H ${CMAKE_CURRENT_SOURCE_DIR}/src/core/package/ConfigFormat.pb.h)
-
-add_custom_command(
-  OUTPUT ${PROTOBUF_SOURCE_CC} ${PROTOBUF_SOURCE_H}
-  COMMAND protoc --proto_path=${CMAKE_CURRENT_SOURCE_DIR}/src/core/package --cpp_out=${CMAKE_CURRENT_SOURCE_DIR}/src/core/package ${PROTOBUF_SOURCE}
-  DEPENDS ${PROTOBUF_SOURCE}
-  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-  COMMENT "Compiling ${PROTOBUF_SOURCE}"
-  VERBATIM
-)
-add_custom_target(nitrate-tool-package-compile-proto DEPENDS ${PROTOBUF_SOURCE_CC} ${PROTOBUF_SOURCE_H})
-
 #================== FIND SOURCES ==================
 file(GLOB_RECURSE CXX_SOURCES "src/*.cc")
 remove(CXX_SOURCES "${PROTOBUF_SOURCE_CC}")
@@ -78,7 +63,6 @@ add_dependencies(nitrate-tool
   nitrate-lexer
   nitrate-seq
   nitrate-core
-  nitrate-tool-package-compile-proto
 )
 
 install(TARGETS nitrate-tool DESTINATION lib)

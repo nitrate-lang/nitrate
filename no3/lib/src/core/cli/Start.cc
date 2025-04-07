@@ -31,8 +31,8 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <core/package/ConfigFormat.pb.h>
 #include <git2/global.h>
+#include <google/protobuf/stubs/common.h>
 
 #include <atomic>
 #include <curlpp/cURLpp.hpp>

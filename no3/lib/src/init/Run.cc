@@ -35,12 +35,12 @@
 #include <boost/program_options/parsers.hpp>
 #include <core/cli/GetOpt.hh>
 #include <core/cli/Interpreter.hh>
-#include <core/package/Config.hh>
 #include <core/package/Manifest.hh>
 #include <core/static/SPDX.hh>
 #include <filesystem>
 #include <init/InitPackage.hh>
 #include <nitrate-core/CatchAll.hh>
+#include <nlohmann/json.hpp>
 #include <source_location>
 #include <sstream>
 

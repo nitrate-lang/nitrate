@@ -36,7 +36,7 @@
 #include <boost/program_options.hpp>
 #include <boost/program_options/parsers.hpp>
 #include <core/cli/Interpreter.hh>
-#include <core/package/Config.hh>
+#include <core/package/Manifest.hh>
 #include <filesystem>
 #include <format/tree/Visitor.hh>
 #include <fstream>
@@ -49,11 +49,10 @@
 #include <nitrate-parser/CodeWriter.hh>
 #include <nitrate-parser/Context.hh>
 #include <nitrate-parser/Package.hh>
+#include <nlohmann/json.hpp>
 #include <random>
 #include <sstream>
 #include <unordered_map>
-
-#include "core/package/Manifest.hh"
 
 using namespace ncc;
 using namespace no3::package;
