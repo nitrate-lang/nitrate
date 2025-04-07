@@ -510,11 +510,13 @@ auto no3::Interpreter::PImpl::CommandVersion(ConstArguments, const MutArguments&
 
   if (!json && (system_info || minify)) {
     Log << "The --system-info and --minify options are only valid when using --json";
+    DisplayHelp();
     return false;
   }
 
   if (brief && json) {
     Log << "The --brief and --json options are mutually exclusive";
+    DisplayHelp();
     return false;
   }
 
