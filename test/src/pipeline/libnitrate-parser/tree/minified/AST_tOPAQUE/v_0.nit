@@ -1,1 +1,1 @@
-# TODO: Develop
++type opaque(named):[3:29]:5;

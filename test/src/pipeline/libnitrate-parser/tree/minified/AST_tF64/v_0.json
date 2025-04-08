@@ -1,1 +1,30 @@
-{}
+{
+  "block": {
+    "statements": [
+      {
+        "unary": {
+          "operator": "Op_Plus",
+          "operand": {
+            "f64": {
+              "bitWidth": {
+                "integer": {
+                  "number": "5"
+                }
+              },
+              "minimum": {
+                "integer": {
+                  "number": "3"
+                }
+              },
+              "maximum": {
+                "integer": {
+                  "number": "29"
+                }
+              }
+            }
+          }
+        }
+      }
+    ]
+  }
+}

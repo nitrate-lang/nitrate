@@ -1,1 +1,34 @@
-{}
+{
+  "block": {
+    "statements": [
+      {
+        "unary": {
+          "operator": "Op_Plus",
+          "operand": {
+            "ref": {
+              "pointee": {
+                "infer": {
+                  "bitWidth": {
+                    "integer": {
+                      "number": "5"
+                    }
+                  },
+                  "minimum": {
+                    "integer": {
+                      "number": "3"
+                    }
+                  },
+                  "maximum": {
+                    "integer": {
+                      "number": "29"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    ]
+  }
+}
