@@ -55,7 +55,7 @@ for subdir in glob.glob(os.path.join(tree_dir, "*")):
 
   auto mm = DynamicArena();
   auto ast = ASTReader(source, kFmt, mm).Get();
-  ASSERT_TRUE(ast) << "Failed to decode serialized AST";
+  ASSERT_TRUE(ast) << "Failed to deserialize AST";
 
   std::stringstream ss;
   auto writer = CodeWriterFactory::Create(ss);

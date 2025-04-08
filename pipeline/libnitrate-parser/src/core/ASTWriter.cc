@@ -1886,29 +1886,29 @@ SyntaxTree::Export *ASTWriter::From(FlowPtr<Export> in) {
 
 ////////////////////////////////////////////////////////////////////////////////
 
-#define SEND(__message, __node_name)                                             \
-  {                                                                              \
-    auto *message = From(n);                                                     \
-    message->CheckInitialized();                                                 \
-    auto *root = Pool::CreateMessage<SyntaxTree::Expr>(m_impl->m_pool);          \
-    root->set_allocated_##__node_name(message);                                  \
-    root->CheckInitialized();                                                    \
-    switch (m_impl->m_format) {                                                  \
-      case Format::PROTO: {                                                      \
-        if (!root->SerializeToOstream(&m_impl->m_os)) [[unlikely]] {             \
-          qcore_panic("Failed to serialize protobuf message");                   \
-        }                                                                        \
-        break;                                                                   \
-      }                                                                          \
-                                                                                 \
-      case Format::JSON: {                                                       \
-        google::protobuf::util::JsonPrintOptions options;                        \
-        std::string m_json;                                                      \
-        google::protobuf::util::MessageToJsonString(*message, &m_json, options); \
-        m_impl->m_os << m_json;                                                  \
-        break;                                                                   \
-      }                                                                          \
-    }                                                                            \
+#define SEND(__message, __node_name)                                          \
+  {                                                                           \
+    auto *message = From(n);                                                  \
+    message->CheckInitialized();                                              \
+    auto *root = Pool::CreateMessage<SyntaxTree::Expr>(m_impl->m_pool);       \
+    root->set_allocated_##__node_name(message);                               \
+    root->CheckInitialized();                                                 \
+    switch (m_impl->m_format) {                                               \
+      case Format::PROTO: {                                                   \
+        if (!root->SerializeToOstream(&m_impl->m_os)) [[unlikely]] {          \
+          qcore_panic("Failed to serialize protobuf message");                \
+        }                                                                     \
+        break;                                                                \
+      }                                                                       \
+                                                                              \
+      case Format::JSON: {                                                    \
+        google::protobuf::util::JsonPrintOptions options;                     \
+        std::string m_json;                                                   \
+        google::protobuf::util::MessageToJsonString(*root, &m_json, options); \
+        m_impl->m_os << m_json;                                               \
+        break;                                                                \
+      }                                                                       \
+    }                                                                         \
   }
 
 void ASTWriter::Visit(FlowPtr<NamedTy> n) { SEND(From(n), named); }

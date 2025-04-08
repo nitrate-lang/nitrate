@@ -54,7 +54,7 @@ static void TestCase(std::string_view source, std::string_view expect) {
 
   auto mm = DynamicArena();
   auto ast_a = ASTReader(source, kFmt, mm).Get();
-  ASSERT_TRUE(ast_a) << "Failed to decode serialized AST";
+  ASSERT_TRUE(ast_a) << "Failed to deserialize AST";
 
   auto env = std::make_shared<ncc::Environment>();
   auto istream = GetStream(expect);

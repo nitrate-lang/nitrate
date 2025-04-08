@@ -1,9 +1,8 @@
 cmake_minimum_required(VERSION 3.14)
 project(nitrate-test CXX)
 
-file(GLOB_RECURSE AST_TEST_VECTORS ${CMAKE_CURRENT_SOURCE_DIR}/src/pipeline/libnitrate-parser/tree)
-
 set(PARSER_TEST_SRC "${CMAKE_CURRENT_SOURCE_DIR}/src/pipeline/libnitrate-parser")
+file(GLOB_RECURSE AST_TEST_VECTORS ${PARSER_TEST_SRC}/tree/*.*)
 
 ##############################################################################################################################
 ## Generate Parser test cases for ASTReader

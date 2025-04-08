@@ -32,8 +32,13 @@
 ////////////////////////////////////////////////////////////////////////////////
 
 #include <core/SyntaxTree.pb.h>
+#include <google/protobuf/any.h>
 #include <google/protobuf/io/coded_stream.h>
+#include <google/protobuf/io/zero_copy_stream_impl_lite.h>
+#include <google/protobuf/message.h>
 #include <google/protobuf/util/json_util.h>
+#include <google/protobuf/util/type_resolver.h>
+#include <google/protobuf/util/type_resolver_util.h>
 
 #include <boost/multiprecision/cpp_int.hpp>
 #include <memory>
@@ -59,9 +64,8 @@ class ASTReader::PImpl {
 public:
   ReaderSourceManager m_rd;
   Result<Expr> m_root;
-  Format m_format;
 
-  PImpl(Format format, ReaderSourceManager source_manager) : m_rd(source_manager), m_format(format) {}
+  PImpl(ReaderSourceManager source_manager) : m_rd(source_manager) {}
 };
 
 static NCC_FORCE_INLINE std::optional<parse::BlockMode> FromBlockMode(SyntaxTree::Block_Safety mode) noexcept {
@@ -2281,7 +2285,7 @@ auto ASTReader::Unmarshal(const SyntaxTree::Export &in) -> Result<Export> {
 
 ASTReader::ASTReader(std::string_view buf, Format format, std::pmr::memory_resource &pool,
                      ReaderSourceManager source_manager)
-    : ASTFactory(pool), m_impl(std::make_unique<PImpl>(format, source_manager)) {
+    : ASTFactory(pool), m_impl(std::make_unique<PImpl>(source_manager)) {
   SyntaxTree::Expr root;
 
   switch (format) {
@@ -2296,9 +2300,32 @@ ASTReader::ASTReader(std::string_view buf, Format format, std::pmr::memory_resou
     }
 
     case Format::JSON: {
-      if (!google::protobuf::util::JsonStringToMessage(buf, &root).ok()) [[unlikely]] {
+      std::string binary_data;
+
+      {
+        auto resolver = std::unique_ptr<google::protobuf::util::TypeResolver>(
+            google::protobuf::util::NewTypeResolverForDescriptorPool(
+                "type.googleapis.com", google::protobuf::DescriptorPool::generated_pool()));
+
+        auto json_input_stream = google::protobuf::io::ArrayInputStream((const uint8_t *)buf.data(), buf.size());
+        auto coded_output_stream = google::protobuf::io::StringOutputStream(&binary_data);
+        google::protobuf::util::JsonParseOptions options;
+
+        const auto type_url = "type.googleapis.com/" + SyntaxTree::Expr::GetDescriptor()->full_name();
+        auto status = google::protobuf::util::JsonToBinaryStream(resolver.get(), type_url, &json_input_stream,
+                                                                 &coded_output_stream, options);
+        if (!status.ok()) [[unlikely]] {
+          return;
+        }
+      }
+
+      google::protobuf::io::CodedInputStream input((const uint8_t *)binary_data.data(), binary_data.size());
+      input.SetRecursionLimit(kRecursionLimit);
+      if (!root.ParseFromCodedStream(&input)) [[unlikely]] {
         return;
       }
+
+      break;
     }
   }
 
