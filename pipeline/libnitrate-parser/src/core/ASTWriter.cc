@@ -1842,10 +1842,7 @@ SyntaxTree::Scope *ASTWriter::From(FlowPtr<Scope> in) {
 
   { /* Add all dependencies */
     const auto &items = in->GetDeps();
-    std::vector<std::string_view> names(items.size());
-    std::transform(items.begin(), items.end(), names.begin(), [](auto item) { return item.Get(); });
-
-    message->mutable_dependencies()->Assign(names.begin(), names.end());
+    message->mutable_dependencies()->Assign(items.begin(), items.end());
   }
 
   message->set_name(in->GetName().Get());
