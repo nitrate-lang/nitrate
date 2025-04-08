@@ -1259,6 +1259,8 @@ namespace ncc::parse {
     }
 
     void Visit(FlowPtr<Unary> n) override {
+      auto frame = CreateContextFrame();
+
       PrintLeading(n);
 
       if (n->IsPostfix()) {
@@ -1273,6 +1275,8 @@ namespace ncc::parse {
     }
 
     void Visit(FlowPtr<Binary> n) override {
+      auto frame = CreateContextFrame();
+
       PrintLeading(n);
 
       n->GetLHS()->Accept(*this);
@@ -1283,6 +1287,8 @@ namespace ncc::parse {
     }
 
     void Visit(FlowPtr<Integer> n) override {
+      auto frame = CreateContextFrame();
+
       PrintLeading(n);
 
       PutInteger(n->GetValue());
@@ -1291,6 +1297,8 @@ namespace ncc::parse {
     }
 
     void Visit(FlowPtr<Float> n) override {
+      auto frame = CreateContextFrame();
+
       PrintLeading(n);
 
       PutFloat(n->GetValue());
@@ -1299,6 +1307,8 @@ namespace ncc::parse {
     }
 
     void Visit(FlowPtr<Boolean> n) override {
+      auto frame = CreateContextFrame();
+
       PrintLeading(n);
 
       PutKeyword(n->GetValue() ? True : False);
@@ -1307,6 +1317,8 @@ namespace ncc::parse {
     }
 
     void Visit(FlowPtr<String> n) override {
+      auto frame = CreateContextFrame();
+
       PrintLeading(n);
 
       PutString(n->GetValue());
@@ -1315,6 +1327,8 @@ namespace ncc::parse {
     }
 
     void Visit(FlowPtr<Character> n) override {
+      auto frame = CreateContextFrame();
+
       PrintLeading(n);
 
       PutCharacter(n->GetValue());
@@ -1323,6 +1337,8 @@ namespace ncc::parse {
     }
 
     void Visit(FlowPtr<Null> n) override {
+      auto frame = CreateContextFrame();
+
       PrintLeading(n);
 
       PutKeyword(lex::Null);
@@ -1331,6 +1347,8 @@ namespace ncc::parse {
     }
 
     void Visit(FlowPtr<Call> n) override {
+      auto frame = CreateContextFrame();
+
       PrintLeading(n);
 
       n->GetFunc()->Accept(*this);
@@ -1353,6 +1371,8 @@ namespace ncc::parse {
     }
 
     void Visit(FlowPtr<TemplateCall> n) override {
+      auto frame = CreateContextFrame();
+
       PrintLeading(n);
 
       n->GetFunc()->Accept(*this);
@@ -1389,6 +1409,8 @@ namespace ncc::parse {
     }
 
     void Visit(FlowPtr<Import> n) override {
+      auto frame = CreateContextFrame();
+
       PrintLeading(n);
 
       PutKeyword(lex::Import);
@@ -1413,6 +1435,8 @@ namespace ncc::parse {
     }
 
     void Visit(FlowPtr<List> n) override {
+      auto frame = CreateContextFrame();
+
       PrintLeading(n);
 
       PutPunctor(PuncLBrk);
@@ -1429,6 +1453,8 @@ namespace ncc::parse {
     }
 
     void Visit(FlowPtr<Assoc> n) override {
+      auto frame = CreateContextFrame();
+
       PrintLeading(n);
 
       PutPunctor(PuncLCur);
@@ -1441,6 +1467,8 @@ namespace ncc::parse {
     }
 
     void Visit(FlowPtr<Index> n) override {
+      auto frame = CreateContextFrame();
+
       PrintLeading(n);
 
       n->GetBase()->Accept(*this);
@@ -1452,6 +1480,8 @@ namespace ncc::parse {
     }
 
     void Visit(FlowPtr<Slice> n) override {
+      auto frame = CreateContextFrame();
+
       PrintLeading(n);
 
       n->GetBase()->Accept(*this);
@@ -1465,6 +1495,8 @@ namespace ncc::parse {
     }
 
     void Visit(FlowPtr<FString> n) override {
+      auto frame = CreateContextFrame();
+
       PrintLeading(n);
 
       PutIdentifier("f");
@@ -1490,6 +1522,8 @@ namespace ncc::parse {
     }
 
     void Visit(FlowPtr<Identifier> n) override {
+      auto frame = CreateContextFrame();
+
       PrintLeading(n);
 
       PutIdentifier(n->GetName());
@@ -1498,6 +1532,8 @@ namespace ncc::parse {
     }
 
     void Visit(FlowPtr<Block> n) override {
+      auto frame = CreateContextFrame();
+
       PrintLeading(n);
 
       bool use_braces = m_did_root;
@@ -1523,6 +1559,8 @@ namespace ncc::parse {
     }
 
     void Visit(FlowPtr<Variable> n) override {
+      auto frame = CreateContextFrame();
+
       PrintLeading(n);
 
       switch (n->GetVariableKind()) {
@@ -1564,6 +1602,8 @@ namespace ncc::parse {
     }
 
     void Visit(FlowPtr<Assembly> n) override {
+      auto frame = CreateContextFrame();
+
       PrintLeading(n);
 
       qcore_implement();
@@ -1573,6 +1613,8 @@ namespace ncc::parse {
     }
 
     void Visit(FlowPtr<If> n) override {
+      auto frame = CreateContextFrame();
+
       PrintLeading(n);
 
       PutKeyword(lex::If);
@@ -1587,6 +1629,8 @@ namespace ncc::parse {
     }
 
     void Visit(FlowPtr<While> n) override {
+      auto frame = CreateContextFrame();
+
       PrintLeading(n);
 
       PutKeyword(lex::While);
@@ -1597,6 +1641,8 @@ namespace ncc::parse {
     }
 
     void Visit(FlowPtr<For> n) override {
+      auto frame = CreateContextFrame();
+
       PrintLeading(n);
 
       PutKeyword(lex::For);
@@ -1623,6 +1669,8 @@ namespace ncc::parse {
     }
 
     void Visit(FlowPtr<Foreach> n) override {
+      auto frame = CreateContextFrame();
+
       PrintLeading(n);
 
       PutKeyword(lex::Foreach);
@@ -1639,6 +1687,8 @@ namespace ncc::parse {
     }
 
     void Visit(FlowPtr<Break> n) override {
+      auto frame = CreateContextFrame();
+
       PrintLeading(n);
 
       PutKeyword(lex::Break);
@@ -1647,6 +1697,8 @@ namespace ncc::parse {
     }
 
     void Visit(FlowPtr<Continue> n) override {
+      auto frame = CreateContextFrame();
+
       PrintLeading(n);
 
       PutKeyword(lex::Continue);
@@ -1655,6 +1707,8 @@ namespace ncc::parse {
     }
 
     void Visit(FlowPtr<Return> n) override {
+      auto frame = CreateContextFrame();
+
       PrintLeading(n);
 
       PutKeyword(lex::Return);
@@ -1666,6 +1720,8 @@ namespace ncc::parse {
     }
 
     void Visit(FlowPtr<Case> n) override {
+      auto frame = CreateContextFrame();
+
       PrintLeading(n);
 
       n->GetCond()->Accept(*this);
@@ -1676,6 +1732,8 @@ namespace ncc::parse {
     }
 
     void Visit(FlowPtr<Switch> n) override {
+      auto frame = CreateContextFrame();
+
       PrintLeading(n);
 
       PutKeyword(lex::Switch);
@@ -1695,6 +1753,8 @@ namespace ncc::parse {
     }
 
     void Visit(FlowPtr<Typedef> n) override {
+      auto frame = CreateContextFrame();
+
       PrintLeading(n);
 
       PutKeyword(lex::Type);
@@ -1706,6 +1766,8 @@ namespace ncc::parse {
     }
 
     void Visit(FlowPtr<Function> n) override {
+      auto frame = CreateContextFrame();
+
       PrintLeading(n);
 
       PutKeyword(lex::Fn);
@@ -1801,6 +1863,8 @@ namespace ncc::parse {
           {CompositeType::Class, lex::Class},   {CompositeType::Group, lex::Group},
           {CompositeType::Region, lex::Region},
       };
+
+      auto frame = CreateContextFrame();
 
       PrintLeading(n);
 
@@ -1914,6 +1978,8 @@ namespace ncc::parse {
     }
 
     void Visit(FlowPtr<Enum> n) override {
+      auto frame = CreateContextFrame();
+
       PrintLeading(n);
 
       PutKeyword(lex::Enum);
@@ -1939,6 +2005,8 @@ namespace ncc::parse {
     }
 
     void Visit(FlowPtr<Scope> n) override {
+      auto frame = CreateContextFrame();
+
       PrintLeading(n);
 
       PutKeyword(lex::Scope);
@@ -1968,6 +2036,8 @@ namespace ncc::parse {
     }
 
     void Visit(FlowPtr<Export> n) override {
+      auto frame = CreateContextFrame();
+
       PrintLeading(n);
 
       switch (n->GetVis()) {
