@@ -1,3 +1,33 @@
 {
-  "block": {}
+  "block": {
+    "statements": [
+      {
+        "if": {
+          "condition": {
+            "integer": {
+              "number": "12"
+            }
+          },
+          "trueBranch": {
+            "block": {}
+          },
+          "falseBranch": {
+            "if": {
+              "condition": {
+                "integer": {
+                  "number": "13"
+                }
+              },
+              "trueBranch": {
+                "block": {}
+              },
+              "falseBranch": {
+                "block": {}
+              }
+            }
+          }
+        }
+      }
+    ]
+  }
 }
