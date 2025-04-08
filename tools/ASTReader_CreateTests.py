@@ -48,7 +48,7 @@ for subdir in glob.glob(os.path.join(tree_dir, "*")):
   return boost::iostreams::stream<boost::iostreams::array_source>(str.data(), str.size());
 }
 
-static void TestCase(std::string_view source, std::string_view expect) {
+[[maybe_unused]] static void TestCase(std::string_view source, std::string_view expect) {
   auto lib_rc = ncc::parse::ParseLibrary.GetRC();
   ASSERT_TRUE(lib_rc) << "Failed to initialize library";
 

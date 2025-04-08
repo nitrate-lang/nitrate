@@ -49,7 +49,7 @@ for subdir in glob.glob(os.path.join(tree_dir, "*")):
 
         f.write("static constexpr auto kFmt = ASTReader::Format::JSON;\n\n")
 
-        f.write("""static void TestCase(std::string_view source, std::string_view expect) {
+        f.write("""[[maybe_unused]] static void TestCase(std::string_view source, std::string_view expect) {
   auto lib_rc = ncc::parse::ParseLibrary.GetRC();
   ASSERT_TRUE(lib_rc) << "Failed to initialize library";
 
