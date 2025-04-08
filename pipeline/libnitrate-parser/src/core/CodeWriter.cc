@@ -105,11 +105,19 @@ namespace ncc::parse {
     bool m_did_root{};
     std::stack<bool> m_type_context;
 
-    void PushTypeContext() { m_type_context.push(true); }
-    void PopTypeContext() {
-      qcore_assert(!m_type_context.empty());
-      m_type_context.pop();
-    }
+    class ContextFrame {
+      std::stack<bool>& m_context;
+
+    public:
+      ContextFrame(std::stack<bool>& ctx) : m_context(ctx) { m_context.push(false); }
+      ~ContextFrame() { m_context.pop(); }
+    };
+
+    auto CreateContextFrame() -> ContextFrame { return {m_type_context}; }
+
+    void EnableTypeContext() { m_type_context.top() = true; }
+    void DisableTypeContext() { m_type_context.top() = false; }
+
     [[nodiscard]] bool IsTypeContext() const { return m_type_context.top(); }
 
     static bool IsWordOperator(Operator op) {
@@ -746,6 +754,8 @@ namespace ncc::parse {
     ///=============================================================================
 
     void PutTypeStuff(const FlowPtr<Type>& n) {
+      auto frame = CreateContextFrame();
+
       if (n->GetRangeBegin() || n->GetRangeEnd()) {
         PutPunctor(PuncColn);
         PutPunctor(PuncLBrk);
@@ -784,6 +794,8 @@ namespace ncc::parse {
         PutKeyword(lex::Type);
       }
 
+      auto frame = CreateContextFrame();
+
       PrintLeading(n);
 
       PutIdentifier(n->GetName());
@@ -796,6 +808,8 @@ namespace ncc::parse {
       if (!IsTypeContext()) {
         PutKeyword(lex::Type);
       }
+
+      auto frame = CreateContextFrame();
 
       PrintLeading(n);
 
@@ -810,9 +824,14 @@ namespace ncc::parse {
         PutKeyword(lex::Type);
       }
 
+      auto frame = CreateContextFrame();
+
       PrintLeading(n);
 
+      EnableTypeContext();
       n->GetTemplate()->Accept(*this);
+      DisableTypeContext();
+
       PutOperator(OpLT);
       for (auto it = n->GetArgs().begin(); it != n->GetArgs().end(); ++it) {
         if (it != n->GetArgs().begin()) {
@@ -825,7 +844,9 @@ namespace ncc::parse {
           PutPunctor(PuncColn);
         }
 
+        EnableTypeContext();
         pval->Accept(*this);
+        DisableTypeContext();
       }
       PutOperator(OpGT);
 
@@ -838,6 +859,8 @@ namespace ncc::parse {
       if (!IsTypeContext()) {
         PutKeyword(lex::Type);
       }
+
+      auto frame = CreateContextFrame();
 
       PrintLeading(n);
 
@@ -852,6 +875,8 @@ namespace ncc::parse {
         PutKeyword(lex::Type);
       }
 
+      auto frame = CreateContextFrame();
+
       PrintLeading(n);
 
       PutIdentifier("u8");
@@ -864,6 +889,8 @@ namespace ncc::parse {
       if (!IsTypeContext()) {
         PutKeyword(lex::Type);
       }
+
+      auto frame = CreateContextFrame();
 
       PrintLeading(n);
 
@@ -878,6 +905,8 @@ namespace ncc::parse {
         PutKeyword(lex::Type);
       }
 
+      auto frame = CreateContextFrame();
+
       PrintLeading(n);
 
       PutIdentifier("u32");
@@ -890,6 +919,8 @@ namespace ncc::parse {
       if (!IsTypeContext()) {
         PutKeyword(lex::Type);
       }
+
+      auto frame = CreateContextFrame();
 
       PrintLeading(n);
 
@@ -904,6 +935,8 @@ namespace ncc::parse {
         PutKeyword(lex::Type);
       }
 
+      auto frame = CreateContextFrame();
+
       PrintLeading(n);
 
       PutIdentifier("u128");
@@ -916,6 +949,8 @@ namespace ncc::parse {
       if (!IsTypeContext()) {
         PutKeyword(lex::Type);
       }
+
+      auto frame = CreateContextFrame();
 
       PrintLeading(n);
 
@@ -930,6 +965,8 @@ namespace ncc::parse {
         PutKeyword(lex::Type);
       }
 
+      auto frame = CreateContextFrame();
+
       PrintLeading(n);
 
       PutIdentifier("i16");
@@ -942,6 +979,8 @@ namespace ncc::parse {
       if (!IsTypeContext()) {
         PutKeyword(lex::Type);
       }
+
+      auto frame = CreateContextFrame();
 
       PrintLeading(n);
 
@@ -956,6 +995,8 @@ namespace ncc::parse {
         PutKeyword(lex::Type);
       }
 
+      auto frame = CreateContextFrame();
+
       PrintLeading(n);
 
       PutIdentifier("i64");
@@ -968,6 +1009,8 @@ namespace ncc::parse {
       if (!IsTypeContext()) {
         PutKeyword(lex::Type);
       }
+
+      auto frame = CreateContextFrame();
 
       PrintLeading(n);
 
@@ -982,6 +1025,8 @@ namespace ncc::parse {
         PutKeyword(lex::Type);
       }
 
+      auto frame = CreateContextFrame();
+
       PrintLeading(n);
 
       PutIdentifier("f16");
@@ -994,6 +1039,8 @@ namespace ncc::parse {
       if (!IsTypeContext()) {
         PutKeyword(lex::Type);
       }
+
+      auto frame = CreateContextFrame();
 
       PrintLeading(n);
 
@@ -1008,6 +1055,8 @@ namespace ncc::parse {
         PutKeyword(lex::Type);
       }
 
+      auto frame = CreateContextFrame();
+
       PrintLeading(n);
 
       PutIdentifier("f64");
@@ -1020,6 +1069,8 @@ namespace ncc::parse {
       if (!IsTypeContext()) {
         PutKeyword(lex::Type);
       }
+
+      auto frame = CreateContextFrame();
 
       PrintLeading(n);
 
@@ -1034,6 +1085,8 @@ namespace ncc::parse {
         PutKeyword(lex::Type);
       }
 
+      auto frame = CreateContextFrame();
+
       PrintLeading(n);
 
       PutIdentifier("void");
@@ -1047,10 +1100,14 @@ namespace ncc::parse {
         PutKeyword(lex::Type);
       }
 
+      auto frame = CreateContextFrame();
+
       PrintLeading(n);
 
       PutOperator(OpTimes);
+      EnableTypeContext();
       n->GetItem()->Accept(*this);
+      DisableTypeContext();
       PutTypeStuff(n);
 
       PrintTrailing(n);
@@ -1060,6 +1117,8 @@ namespace ncc::parse {
       if (!IsTypeContext()) {
         PutKeyword(lex::Type);
       }
+
+      auto frame = CreateContextFrame();
 
       PrintLeading(n);
 
@@ -1077,6 +1136,8 @@ namespace ncc::parse {
         PutKeyword(lex::Type);
       }
 
+      auto frame = CreateContextFrame();
+
       PrintLeading(n);
 
       PutPunctor(PuncLPar);
@@ -1085,7 +1146,9 @@ namespace ncc::parse {
           PutPunctor(PuncComa);
         }
 
+        EnableTypeContext();
         (*it)->Accept(*this);
+        DisableTypeContext();
       }
       PutPunctor(PuncRPar);
       PutTypeStuff(n);
@@ -1098,10 +1161,14 @@ namespace ncc::parse {
         PutKeyword(lex::Type);
       }
 
+      auto frame = CreateContextFrame();
+
       PrintLeading(n);
 
       PutPunctor(PuncLBrk);
+      EnableTypeContext();
       n->GetItem()->Accept(*this);
+      DisableTypeContext();
       PutPunctor(PuncColn);
       n->GetSize()->Accept(*this);
       PutPunctor(PuncRBrk);
@@ -1115,10 +1182,14 @@ namespace ncc::parse {
         PutKeyword(lex::Type);
       }
 
+      auto frame = CreateContextFrame();
+
       PrintLeading(n);
 
       PutOperator(OpBitAnd);
+      EnableTypeContext();
       n->GetItem()->Accept(*this);
+      DisableTypeContext();
       PutTypeStuff(n);
 
       PrintTrailing(n);
@@ -1128,6 +1199,8 @@ namespace ncc::parse {
       if (!IsTypeContext()) {
         PutKeyword(lex::Type);
       }
+
+      auto frame = CreateContextFrame();
 
       PrintLeading(n);
 
@@ -1156,7 +1229,9 @@ namespace ncc::parse {
 
         if (!ptype->Is(AST_tINFER)) {
           PutPunctor(PuncColn);
+          EnableTypeContext();
           ptype->Accept(*this);
+          DisableTypeContext();
         }
 
         if (pdefault) {
@@ -1175,7 +1250,9 @@ namespace ncc::parse {
 
       if (!n->GetReturn()->Is(AST_tINFER)) {
         PutPunctor(PuncColn);
+        EnableTypeContext();
         n->GetReturn()->Accept(*this);
+        DisableTypeContext();
       }
 
       PrintTrailing(n);
