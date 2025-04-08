@@ -1280,8 +1280,16 @@ namespace ncc::parse {
       PrintLeading(n);
 
       n->GetLHS()->Accept(*this);
-      PutOperator(n->GetOp());
-      n->GetRHS()->Accept(*this);
+      const auto op = n->GetOp();
+      PutOperator(op);
+
+      if (op == OpAs || op == OpBitcastAs) {
+        EnableTypeContext();
+        n->GetRHS()->Accept(*this);
+        DisableTypeContext();
+      } else {
+        n->GetRHS()->Accept(*this);
+      }
 
       PrintTrailing(n);
     }
@@ -1590,7 +1598,10 @@ namespace ncc::parse {
       PutIdentifier(n->GetName());
       if (!n->GetType()->Is(AST_tINFER)) {
         PutPunctor(PuncColn);
+
+        EnableTypeContext();
         n->GetType()->Accept(*this);
+        DisableTypeContext();
       }
 
       if (n->GetInitializer()) {
@@ -1760,7 +1771,10 @@ namespace ncc::parse {
       PutKeyword(lex::Type);
       PutIdentifier(n->GetName());
       PutOperator(OpSet);
+
+      EnableTypeContext();
       n->GetType()->Accept(*this);
+      DisableTypeContext();
 
       PrintTrailing(n);
     }
@@ -1799,7 +1813,10 @@ namespace ncc::parse {
 
           if (!ptype->Is(AST_tINFER)) {
             PutPunctor(PuncColn);
+
+            EnableTypeContext();
             ptype->Accept(*this);
+            DisableTypeContext();
           }
 
           if (pdefault) {
@@ -1821,7 +1838,10 @@ namespace ncc::parse {
 
         if (!ptype->Is(AST_tINFER)) {
           PutPunctor(PuncColn);
+
+          EnableTypeContext();
           ptype->Accept(*this);
+          DisableTypeContext();
         }
 
         if (pdefault) {
@@ -1840,7 +1860,10 @@ namespace ncc::parse {
 
       if (!n->GetReturn()->Is(AST_tINFER)) {
         PutPunctor(PuncColn);
+
+        EnableTypeContext();
         n->GetReturn()->Accept(*this);
+        DisableTypeContext();
       }
 
       if (n->GetBody()) {
@@ -1898,7 +1921,10 @@ namespace ncc::parse {
 
           if (!ptype->Is(AST_tINFER)) {
             PutPunctor(PuncColn);
+
+            EnableTypeContext();
             ptype->Accept(*this);
+            DisableTypeContext();
           }
 
           if (pdefault) {
@@ -1945,7 +1971,11 @@ namespace ncc::parse {
 
         PutIdentifier(name);
         PutPunctor(PuncColn);
+
+        EnableTypeContext();
         type->Accept(*this);
+        DisableTypeContext();
+
         if (default_value) {
           PutOperator(OpSet);
           default_value.Unwrap()->Accept(*this);
@@ -1988,7 +2018,10 @@ namespace ncc::parse {
       }
       if (n->GetType()) {
         PutPunctor(PuncColn);
+
+        EnableTypeContext();
         n->GetType().Unwrap()->Accept(*this);
+        DisableTypeContext();
       }
       PutPunctor(PuncLCur);
       for (auto& [field, expr] : n->GetFields()) {
