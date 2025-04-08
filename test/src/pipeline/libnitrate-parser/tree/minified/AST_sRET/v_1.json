@@ -2,7 +2,7 @@
   "block": {
     "statements": [
       {
-        "break": {}
+        "return": {}
       }
     ]
   }

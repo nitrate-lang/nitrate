@@ -1,3 +1,16 @@
 {
-  "block": {}
+  "block": {
+    "statements": [
+      {
+        "boolean": {
+          "value": true
+        }
+      },
+      {
+        "boolean": {
+          "value": false
+        }
+      }
+    ]
+  }
 }

@@ -1,3 +1,38 @@
 {
-  "block": {}
+  "block": {
+    "statements": [
+      {
+        "unary": {
+          "operator": "Op_Plus",
+          "operand": {
+            "array": {
+              "bitWidth": {
+                "integer": {
+                  "number": "5"
+                }
+              },
+              "minimum": {
+                "integer": {
+                  "number": "3"
+                }
+              },
+              "maximum": {
+                "integer": {
+                  "number": "29"
+                }
+              },
+              "elementType": {
+                "infer": {}
+              },
+              "elementCount": {
+                "integer": {
+                  "number": "17"
+                }
+              }
+            }
+          }
+        }
+      }
+    ]
+  }
 }

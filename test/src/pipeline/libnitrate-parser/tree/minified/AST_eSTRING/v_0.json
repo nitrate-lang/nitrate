@@ -1,3 +1,11 @@
 {
-  "block": {}
+  "block": {
+    "statements": [
+      {
+        "string": {
+          "text": "SGVsbG8sIFdvcmxkIQ=="
+        }
+      }
+    ]
+  }
 }

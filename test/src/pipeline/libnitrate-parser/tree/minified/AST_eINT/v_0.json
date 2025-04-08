@@ -1,3 +1,11 @@
 {
-  "block": {}
+  "block": {
+    "statements": [
+      {
+        "integer": {
+          "number": "42"
+        }
+      }
+    ]
+  }
 }

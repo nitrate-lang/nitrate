@@ -1,3 +1,11 @@
 {
-  "block": {}
+  "block": {
+    "statements": [
+      {
+        "float": {
+          "number": "4.269"
+        }
+      }
+    ]
+  }
 }

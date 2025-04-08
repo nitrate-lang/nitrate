@@ -1,3 +1,15 @@
 {
-  "block": {}
+  "block": {
+    "statements": [
+      {
+        "return": {
+          "value": {
+            "integer": {
+              "number": "32"
+            }
+          }
+        }
+      }
+    ]
+  }
 }

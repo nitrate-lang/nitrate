@@ -1,3 +1,9 @@
 {
-  "block": {}
+  "block": {
+    "statements": [
+      {
+        "continue": {}
+      }
+    ]
+  }
 }

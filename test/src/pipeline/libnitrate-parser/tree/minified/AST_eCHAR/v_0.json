@@ -1,3 +1,11 @@
 {
-  "block": {}
+  "block": {
+    "statements": [
+      {
+        "character": {
+          "char": 10
+        }
+      }
+    ]
+  }
 }

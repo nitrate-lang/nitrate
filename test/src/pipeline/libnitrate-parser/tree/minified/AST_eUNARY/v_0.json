@@ -1,3 +1,27 @@
 {
-  "block": {}
+  "block": {
+    "statements": [
+      {
+        "unary": {
+          "operator": "Op_Plus",
+          "operand": {
+            "integer": {
+              "number": "20"
+            }
+          }
+        }
+      },
+      {
+        "unary": {
+          "operator": "Op_Inc",
+          "operand": {
+            "identifier": {
+              "name": "x"
+            }
+          },
+          "isPostfix": true
+        }
+      }
+    ]
+  }
 }
