@@ -67,7 +67,7 @@ static void TestCase(std::string_view source, std::string_view expect) {
   auto json = nlohmann::ordered_json::parse(ss.str(), nullptr, false);
   ASSERT_FALSE(json.is_discarded()) << "Failed to parse JSON output";
 
-  EXPECT_EQ(json.dump(), expect) << "ASTWriter output does not match expected output";
+  EXPECT_EQ(json.dump(2), expect) << "ASTWriter output does not match expected output";
 }
 """)
 
