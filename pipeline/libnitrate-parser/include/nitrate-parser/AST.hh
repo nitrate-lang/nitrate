@@ -51,7 +51,6 @@ namespace ncc::parse {
     AST_eSTRING,        /* String literal */
     AST_eCHAR,          /* Character literal */
     AST_eBOOL,          /* Boolean literal */
-    AST_eNULL,          /* Null literal */
     AST_eCALL,          /* Function call */
     AST_eLIST,          /* List expression */
     AST_ePAIR,          /* Associative pair */

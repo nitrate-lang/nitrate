@@ -410,14 +410,6 @@ auto GeneralParser::Context::RecurseBlock(bool braces, bool single, BlockMode sa
           break;
         }
 
-        case Keyword::Null: {
-          r = CreateNull();
-          if (!NextIf<PuncSemi>()) {
-            Log << ParserSignal << Current() << "Expected ';' after 'null' statement";
-          }
-          break;
-        }
-
         case True: {
           r = CreateBoolean(true);
           if (!NextIf<PuncSemi>()) {

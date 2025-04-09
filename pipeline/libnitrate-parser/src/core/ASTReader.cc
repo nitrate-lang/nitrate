@@ -439,7 +439,7 @@ void ASTReader::UnmarshalCodeComment(
 auto ASTReader::Unmarshal(const SyntaxTree::Expr &in) -> Result<Expr> {
   switch (in.node_case()) {
     case SyntaxTree::Expr::kDiscarded: {
-      auto to_discard = CreateNull();
+      auto to_discard = CreateInferredType();
       to_discard->Discard();
       return to_discard;
     }
@@ -470,10 +470,6 @@ auto ASTReader::Unmarshal(const SyntaxTree::Expr &in) -> Result<Expr> {
 
     case SyntaxTree::Expr::kCharacter: {
       return Unmarshal(in.character());
-    }
-
-    case SyntaxTree::Expr::kNull: {
-      return Unmarshal(in.null());
     }
 
     case SyntaxTree::Expr::kCall: {
@@ -1078,14 +1074,6 @@ auto ASTReader::Unmarshal(const SyntaxTree::Character &in) -> Result<Character> 
   }
 
   auto object = CreateCharacter(value);
-  UnmarshalLocationLocation(in.location(), object);
-  UnmarshalCodeComment(in.comments(), object);
-
-  return object;
-}
-
-auto ASTReader::Unmarshal(const SyntaxTree::Null &in) -> Result<Null> {
-  auto object = CreateNull();
   UnmarshalLocationLocation(in.location(), object);
   UnmarshalCodeComment(in.comments(), object);
 

@@ -136,7 +136,6 @@ class IterVisitor : public ASTVisitor {
   void Visit(FlowPtr<Boolean>) override {}
   void Visit(FlowPtr<parse::String>) override {}
   void Visit(FlowPtr<Character>) override {}
-  void Visit(FlowPtr<Null>) override {}
 
   void Visit(FlowPtr<Call> n) override {
     Add(n->GetFunc());

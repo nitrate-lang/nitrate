@@ -60,7 +60,6 @@ namespace ncc::parse {
     virtual void Visit(FlowPtr<Boolean> n) = 0;
     virtual void Visit(FlowPtr<String> n) = 0;
     virtual void Visit(FlowPtr<Character> n) = 0;
-    virtual void Visit(FlowPtr<Null> n) = 0;
     virtual void Visit(FlowPtr<Call> n) = 0;
     virtual void Visit(FlowPtr<TemplateCall> n) = 0;
     virtual void Visit(FlowPtr<Import> n) = 0;
@@ -123,10 +122,6 @@ namespace ncc::parse {
         }
         case AST_eBOOL: {
           Visit(n.template As<Boolean>());
-          break;
-        }
-        case AST_eNULL: {
-          Visit(n.template As<Null>());
           break;
         }
         case AST_eCALL: {

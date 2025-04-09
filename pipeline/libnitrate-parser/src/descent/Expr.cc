@@ -303,11 +303,6 @@ static auto RecurseExprKeyword(GeneralParser::Context &m, lex::Keyword key) -> N
       break;
     }
 
-    case Keyword::Null: {
-      e = m.CreateNull();
-      break;
-    }
-
     case True: {
       e = m.CreateBoolean(true);
       break;

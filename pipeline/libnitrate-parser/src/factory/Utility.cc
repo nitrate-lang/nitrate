@@ -42,13 +42,13 @@ using namespace ncc::parse;
 auto ASTFactory::CreateMockInstance(ASTNodeKind kind, SourceLocation origin) -> FlowPtr<Expr> {
   NullableFlowPtr<Expr> r;
 
-#define SIMPLE_EXPR() CreateMockInstance(AST_eNULL, origin)
+#define SIMPLE_EXPR() CreateMockInstance(AST_tINFER, origin)
 #define SIMPLE_TYPE() CreateMockInstance<Type>(AST_tINFER, origin)
 
   switch (kind) {
     case AST_DISCARDED: {
       // Create some node to avoid a panic
-      r = CreateNull();
+      r = CreateInferredType();
       r.Unwrap()->Discard();
       break;
     }
@@ -85,11 +85,6 @@ auto ASTFactory::CreateMockInstance(ASTNodeKind kind, SourceLocation origin) -> 
 
     case AST_eBOOL: {
       r = CreateBoolean(false);
-      break;
-    }
-
-    case AST_eNULL: {
-      r = CreateNull();
       break;
     }
 

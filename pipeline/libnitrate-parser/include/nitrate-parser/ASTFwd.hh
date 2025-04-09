@@ -44,7 +44,6 @@ namespace ncc::parse {
   class String;
   class Character;
   class Boolean;
-  class Null;
   class Call;
   class List;
   class Assoc;

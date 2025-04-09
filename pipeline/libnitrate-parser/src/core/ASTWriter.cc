@@ -383,11 +383,6 @@ SyntaxTree::Expr *ASTWriter::From(FlowPtr<Expr> in) {
       break;
     }
 
-    case AST_eNULL: {
-      message->set_allocated_null(From(in.As<Null>()));
-      break;
-    }
-
     case AST_eCALL: {
       message->set_allocated_call(From(in.As<Call>()));
       break;
@@ -869,15 +864,6 @@ SyntaxTree::Character *ASTWriter::From(FlowPtr<Character> in) {
 
   message->set_allocated_location(FromSource(in));
   message->set_char_(in->GetValue());
-
-  return message;
-}
-
-SyntaxTree::Null *ASTWriter::From(FlowPtr<Null> in) {
-  auto &pool = m_impl->m_pool;
-  auto *message = Pool::CreateMessage<SyntaxTree::Null>(pool);
-
-  message->set_allocated_location(FromSource(in));
 
   return message;
 }
@@ -1604,7 +1590,6 @@ void ASTWriter::Visit(FlowPtr<Float> n) { SEND(From(n), float_); }
 void ASTWriter::Visit(FlowPtr<Boolean> n) { SEND(From(n), boolean); }
 void ASTWriter::Visit(FlowPtr<String> n) { SEND(From(n), string); }
 void ASTWriter::Visit(FlowPtr<Character> n) { SEND(From(n), character); }
-void ASTWriter::Visit(FlowPtr<Null> n) { SEND(From(n), null); }
 void ASTWriter::Visit(FlowPtr<Call> n) { SEND(From(n), call); }
 void ASTWriter::Visit(FlowPtr<TemplateCall> n) { SEND(From(n), template_call); }
 void ASTWriter::Visit(FlowPtr<Import> n) { SEND(From(n), import); }

@@ -1104,16 +1104,6 @@ namespace ncc::parse {
       PrintTrailing(n);
     }
 
-    void Visit(FlowPtr<Null> n) override {
-      auto frame = CreateContextFrame();
-
-      PrintLeading(n);
-
-      PutKeyword(lex::Null);
-
-      PrintTrailing(n);
-    }
-
     void Visit(FlowPtr<Call> n) override {
       auto frame = CreateContextFrame();
 

@@ -67,7 +67,6 @@ namespace no3::format::details {
     void Visit(FlowPtr<Boolean> n) override;
     void Visit(FlowPtr<String> n) override;
     void Visit(FlowPtr<Character> n) override;
-    void Visit(FlowPtr<Null> n) override;
     void Visit(FlowPtr<Call> n) override;
     void Visit(FlowPtr<TemplateCall> n) override;
     void Visit(FlowPtr<Import> n) override;

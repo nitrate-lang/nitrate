@@ -46,7 +46,3 @@ void QuasiCanonicalFormatter::Visit(FlowPtr<Integer> n) {
 void QuasiCanonicalFormatter::Visit(FlowPtr<Boolean> n) {
   /// TODO: Implement standard format
 }
-
-void QuasiCanonicalFormatter::Visit(FlowPtr<parse::Null> n) {
-  /// TODO: Implement standard format
-}

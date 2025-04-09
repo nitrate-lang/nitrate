@@ -117,8 +117,6 @@ auto ASTFactory::CreateBoolean(bool x, SourceLocation origin) -> FlowPtr<Boolean
   return CreateInstance<Boolean>(x)(m_pool, origin);
 }
 
-auto ASTFactory::CreateNull(SourceLocation origin) -> FlowPtr<Null> { return CreateInstance<Null>()(m_pool, origin); }
-
 auto ASTFactory::CreateCall(FlowPtr<Expr> callee,
                             const std::unordered_map<std::variant<string, size_t>, FlowPtr<Expr>>& named_args,
                             SourceLocation origin) -> std::optional<FlowPtr<Call>> {

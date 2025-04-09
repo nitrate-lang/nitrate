@@ -277,11 +277,6 @@ message Character {
   required uint32 char = 4;
 }
 
-message Null {
-  optional SourceLocationRange location = 1;
-  repeated UserComment comments = 2;
-}
-
 message Call {
   optional SourceLocationRange location = 1;
   repeated UserComment comments = 2;
@@ -596,7 +591,6 @@ message Expr {
     Boolean boolean = 17;
     String string = 18;
     Character character = 19;
-    Null null = 20;
     Call call = 22;
     TemplateCall template_call = 23;
     Import import = 24;
