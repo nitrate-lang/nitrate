@@ -81,7 +81,10 @@ endforeach()
 
 add_library(nitrate-testing SHARED ${STATIC_SOURCES} ${TESTING_PARSER_GENERATED_SOURCES})
 target_link_libraries(nitrate-testing PUBLIC
-  nitrate
+  nitrate-beta-opt
+  nitrate-beta
+  nitrate-alpha-opt
+  nitrate-alpha
   nitrate-parser
   nitrate-lexer
   nitrate-seq
@@ -94,7 +97,10 @@ target_include_directories(nitrate-testing PRIVATE
 )
 
 add_dependencies(nitrate-testing
-  nitrate
+  nitrate-beta-opt
+  nitrate-beta
+  nitrate-alpha-opt
+  nitrate-alpha
   nitrate-parser
   nitrate-lexer
   nitrate-seq
