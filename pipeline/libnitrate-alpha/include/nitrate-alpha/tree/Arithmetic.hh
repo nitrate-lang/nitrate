@@ -33,4 +33,39 @@
 
 #pragma once
 
-namespace ncc::alpha::tree {}
+#include <cstdint>
+
+namespace ncc::alpha::tree {
+  enum class Op : uint8_t {
+    Add,        /* Addition */
+    Sub,        /* Subtraction */
+    Mul,        /* Multiplication */
+    sDiv,       /* Signed division */
+    uDiv,       /* Unsigned division */
+    sMod,       /* Signed modulus */
+    uMod,       /* Unsigned modulus */
+    BitAnd,     /* Bitwise AND */
+    BitOr,      /* Bitwise OR */
+    BitXor,     /* Bitwise XOR */
+    BitNot,     /* Bitwise NOT */
+    LShift,     /* Left shift */
+    sRShift,    /* Signed shift */
+    uRShift,    /* Unsigned right shift */
+    LRotate,    /* Rotate left */
+    RRotate,    /* Rotate right */
+    LogicAnd,   /* Logical AND */
+    LogicOr,    /* Logical OR */
+    LogicXor,   /* Logical XOR */
+    LogicNot,   /* Logical NOT */
+    LT,         /* Less than */
+    GT,         /* Greater than */
+    LE,         /* Less than or equal to */
+    GE,         /* Greater than or equal to */
+    Eq,         /* Equal to */
+    NE,         /* Not equal to */
+    Set,        /* Assignment */
+    BitcastAs,  /* Bitcast */
+    Bitsizeof,  /* Bit size of */
+    Bitalignof, /* Bit alignment of */
+  };
+}

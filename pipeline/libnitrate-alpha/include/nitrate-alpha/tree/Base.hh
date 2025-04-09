@@ -38,34 +38,34 @@
 #include <string_view>
 
 namespace ncc::alpha::tree {
-  class eINT;
-  class eFLOAT;
-  class eTUPLE;
-  class eBIN;
-  class eUNARY;
-  class eACCESS;
-  class eINDEX;
-  class eBLOCK;
-  class eCALL;
-  class eIF;
-  class eSWITCH;
-  class eRET;
-  class eBREAK;
-  class eCONTINUE;
-  class eWHILE;
-  class eASM;
-  class eVAR;
-  class eFUNCTION;
-  class tINT;
-  class tUINT;
-  class tFLOAT;
-  class tVOID;
-  class tINFER;
-  class tREF;
-  class tPTR;
-  class tARRAY;
-  class tTUPLE;
-  class tFUNCTION;
+  class IR_eINT;
+  class IR_eFLOAT;
+  class IR_eTUPLE;
+  class IR_eBIN;
+  class IR_eUNARY;
+  class IR_eACCESS;
+  class IR_eINDEX;
+  class IR_eBLOCK;
+  class IR_eCALL;
+  class IR_eIF;
+  class IR_eSWITCH;
+  class IR_eRET;
+  class IR_eBREAK;
+  class IR_eCONTINUE;
+  class IR_eWHILE;
+  class IR_eASM;
+  class IR_eVAR;
+  class IR_eFUNCTION;
+  class IR_tINT;
+  class IR_tUINT;
+  class IR_tFLOAT;
+  class IR_tVOID;
+  class IR_tINFER;
+  class IR_tREF;
+  class IR_tPTR;
+  class IR_tARRAY;
+  class IR_tTUPLE;
+  class IR_tFUNCTION;
 
   enum IRKind : uint8_t {
     AIR_DISCARDED,
@@ -134,9 +134,9 @@ namespace ncc::alpha::tree {
 
   public:
     constexpr Base(IRKind kind) : m_kind(kind){};
-    constexpr Base(const Base &) = delete;
+    constexpr Base(const Base &) = default;
     constexpr Base(Base &&) = default;
-    constexpr Base &operator=(const Base &) = delete;
+    constexpr Base &operator=(const Base &) = default;
     constexpr Base &operator=(Base &&) = default;
 
     /*****************************************************************************
@@ -160,61 +160,61 @@ namespace ncc::alpha::tree {
 
     template <typename T>
     [[nodiscard, gnu::const]] static constexpr auto GetTypeCode() -> IRKind {
-      if constexpr (std::is_same_v<T, eINT>) {
+      if constexpr (std::is_same_v<T, IR_eINT>) {
         return AIR_eINT;
-      } else if constexpr (std::is_same_v<T, eFLOAT>) {
+      } else if constexpr (std::is_same_v<T, IR_eFLOAT>) {
         return AIR_eFLOAT;
-      } else if constexpr (std::is_same_v<T, eTUPLE>) {
+      } else if constexpr (std::is_same_v<T, IR_eTUPLE>) {
         return AIR_eTUPLE;
-      } else if constexpr (std::is_same_v<T, eBIN>) {
+      } else if constexpr (std::is_same_v<T, IR_eBIN>) {
         return AIR_eBIN;
-      } else if constexpr (std::is_same_v<T, eUNARY>) {
+      } else if constexpr (std::is_same_v<T, IR_eUNARY>) {
         return AIR_eUNARY;
-      } else if constexpr (std::is_same_v<T, eACCESS>) {
+      } else if constexpr (std::is_same_v<T, IR_eACCESS>) {
         return AIR_eACCESS;
-      } else if constexpr (std::is_same_v<T, eINDEX>) {
+      } else if constexpr (std::is_same_v<T, IR_eINDEX>) {
         return AIR_eINDEX;
-      } else if constexpr (std::is_same_v<T, eBLOCK>) {
+      } else if constexpr (std::is_same_v<T, IR_eBLOCK>) {
         return AIR_eBLOCK;
-      } else if constexpr (std::is_same_v<T, eCALL>) {
+      } else if constexpr (std::is_same_v<T, IR_eCALL>) {
         return AIR_eCALL;
-      } else if constexpr (std::is_same_v<T, eIF>) {
+      } else if constexpr (std::is_same_v<T, IR_eIF>) {
         return AIR_eIF;
-      } else if constexpr (std::is_same_v<T, eSWITCH>) {
+      } else if constexpr (std::is_same_v<T, IR_eSWITCH>) {
         return AIR_eSWITCH;
-      } else if constexpr (std::is_same_v<T, eRET>) {
+      } else if constexpr (std::is_same_v<T, IR_eRET>) {
         return AIR_eRET;
-      } else if constexpr (std::is_same_v<T, eBREAK>) {
+      } else if constexpr (std::is_same_v<T, IR_eBREAK>) {
         return AIR_eBREAK;
-      } else if constexpr (std::is_same_v<T, eCONTINUE>) {
+      } else if constexpr (std::is_same_v<T, IR_eCONTINUE>) {
         return AIR_eCONTINUE;
-      } else if constexpr (std::is_same_v<T, eWHILE>) {
+      } else if constexpr (std::is_same_v<T, IR_eWHILE>) {
         return AIR_eWHILE;
-      } else if constexpr (std::is_same_v<T, eASM>) {
+      } else if constexpr (std::is_same_v<T, IR_eASM>) {
         return AIR_eASM;
-      } else if constexpr (std::is_same_v<T, eVAR>) {
+      } else if constexpr (std::is_same_v<T, IR_eVAR>) {
         return AIR_eVAR;
-      } else if constexpr (std::is_same_v<T, eFUNCTION>) {
+      } else if constexpr (std::is_same_v<T, IR_eFUNCTION>) {
         return AIR_eFUNCTION;
-      } else if constexpr (std::is_same_v<T, tINT>) {
+      } else if constexpr (std::is_same_v<T, IR_tINT>) {
         return AIR_tINT;
-      } else if constexpr (std::is_same_v<T, tUINT>) {
+      } else if constexpr (std::is_same_v<T, IR_tUINT>) {
         return AIR_tUINT;
-      } else if constexpr (std::is_same_v<T, tFLOAT>) {
+      } else if constexpr (std::is_same_v<T, IR_tFLOAT>) {
         return AIR_tFLOAT;
-      } else if constexpr (std::is_same_v<T, tVOID>) {
+      } else if constexpr (std::is_same_v<T, IR_tVOID>) {
         return AIR_tVOID;
-      } else if constexpr (std::is_same_v<T, tINFER>) {
+      } else if constexpr (std::is_same_v<T, IR_tINFER>) {
         return AIR_tINFER;
-      } else if constexpr (std::is_same_v<T, tREF>) {
+      } else if constexpr (std::is_same_v<T, IR_tREF>) {
         return AIR_tREF;
-      } else if constexpr (std::is_same_v<T, tPTR>) {
+      } else if constexpr (std::is_same_v<T, IR_tPTR>) {
         return AIR_tPTR;
-      } else if constexpr (std::is_same_v<T, tARRAY>) {
+      } else if constexpr (std::is_same_v<T, IR_tARRAY>) {
         return AIR_tARRAY;
-      } else if constexpr (std::is_same_v<T, tTUPLE>) {
+      } else if constexpr (std::is_same_v<T, IR_tTUPLE>) {
         return AIR_tTUPLE;
-      } else if constexpr (std::is_same_v<T, tFUNCTION>) {
+      } else if constexpr (std::is_same_v<T, IR_tFUNCTION>) {
         return AIR_tFUNCTION;
       } else {
         static_assert(!std::is_same_v<T, T>, "Unrecognized type to Base::GetTypeCode");
