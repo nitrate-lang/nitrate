@@ -35,14 +35,14 @@
 
 using namespace no3::format::details;
 
-void QuasiCanonicalFormatter::Visit(FlowPtr<Call> n) {
+void CanonicalFormatter::Visit(FlowPtr<Call> n) {
   /// TODO: Implement standard format
 }
 
-void QuasiCanonicalFormatter::Visit(FlowPtr<TemplateCall> n) {
+void CanonicalFormatter::Visit(FlowPtr<TemplateCall> n) {
   /// TODO: Implement standard format
 }
 
-void QuasiCanonicalFormatter::Visit(FlowPtr<Import> n) {
+void CanonicalFormatter::Visit(FlowPtr<Import> n) {
   /// TODO: Implement standard format
 }

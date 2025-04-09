@@ -35,10 +35,10 @@
 
 using namespace no3::format::details;
 
-void QuasiCanonicalFormatter::Visit(FlowPtr<Function> n) {
+void CanonicalFormatter::Visit(FlowPtr<Function> n) {
   /// TODO: Implement standard format
 }
 
-void QuasiCanonicalFormatter::Visit(FlowPtr<FuncTy> n) {
+void CanonicalFormatter::Visit(FlowPtr<FuncTy> n) {
   /// TODO: Implement standard format
 }

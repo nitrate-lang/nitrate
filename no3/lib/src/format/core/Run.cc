@@ -199,7 +199,7 @@ static auto FormatFile(const std::filesystem::path& src, const std::filesystem::
   switch (mode) {
     case FormatMode::Standard: {
       bool has_errors = false;
-      auto writer = no3::format::QuasiCanonicalFormatterFactory::Create(*dst_file_ptr, has_errors);
+      auto writer = no3::format::CanonicalFormatterFactory::Create(*dst_file_ptr, has_errors);
       ptree_root.value().Accept(*writer);
       okay = !has_errors;
       if (has_errors) {

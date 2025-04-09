@@ -35,6 +35,6 @@
 
 using namespace no3::format::details;
 
-void QuasiCanonicalFormatter::Visit(FlowPtr<TemplateType> n) {
+void CanonicalFormatter::Visit(FlowPtr<TemplateType> n) {
   /// TODO: Implement standard format
 }

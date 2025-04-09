@@ -36,10 +36,10 @@
 
 using namespace no3::format::details;
 
-void QuasiCanonicalFormatter::Visit(FlowPtr<List> n) {
+void CanonicalFormatter::Visit(FlowPtr<List> n) {
   /// TODO: Implement standard format
 }
 
-void QuasiCanonicalFormatter::Visit(FlowPtr<Assoc> node) {
+void CanonicalFormatter::Visit(FlowPtr<Assoc> node) {
   /// TODO: Implement standard format
 }
