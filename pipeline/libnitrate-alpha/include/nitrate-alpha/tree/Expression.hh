@@ -33,4 +33,4 @@
 
 #pragma once
 
-namespace ncc::alpha {}
+namespace ncc::alpha::tree {}
