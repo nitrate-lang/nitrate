@@ -43,7 +43,7 @@ auto ASTFactory::CreateMockInstance(ASTNodeKind kind, SourceLocation origin) -> 
   NullableFlowPtr<Expr> r;
 
 #define SIMPLE_EXPR() CreateMockInstance(AST_eNULL, origin)
-#define SIMPLE_TYPE() CreateMockInstance<Type>(AST_tVOID, origin)
+#define SIMPLE_TYPE() CreateMockInstance<Type>(AST_tINFER, origin)
 
   switch (kind) {
     case AST_DISCARDED: {
@@ -135,86 +135,6 @@ auto ASTFactory::CreateMockInstance(ASTNodeKind kind, SourceLocation origin) -> 
 
     case AST_eIMPORT: {
       r = CreateImport("", ImportMode::Code, SIMPLE_EXPR());
-      break;
-    }
-
-    case AST_tU1: {
-      r = CreateU1();
-      break;
-    }
-
-    case AST_tU8: {
-      r = CreateU8();
-      break;
-    }
-
-    case AST_tU16: {
-      r = CreateU16();
-      break;
-    }
-
-    case AST_tU32: {
-      r = CreateU32();
-      break;
-    }
-
-    case AST_tU64: {
-      r = CreateU64();
-      break;
-    }
-
-    case AST_tU128: {
-      r = CreateU128();
-      break;
-    }
-
-    case AST_tI8: {
-      r = CreateI8();
-      break;
-    }
-
-    case AST_tI16: {
-      r = CreateI16();
-      break;
-    }
-
-    case AST_tI32: {
-      r = CreateI32();
-      break;
-    }
-
-    case AST_tI64: {
-      r = CreateI64();
-      break;
-    }
-
-    case AST_tI128: {
-      r = CreateI128();
-      break;
-    }
-
-    case AST_tF16: {
-      r = CreateF16();
-      break;
-    }
-
-    case AST_tF32: {
-      r = CreateF32();
-      break;
-    }
-
-    case AST_tF64: {
-      r = CreateF64();
-      break;
-    }
-
-    case AST_tF128: {
-      r = CreateF128();
-      break;
-    }
-
-    case AST_tVOID: {
-      r = CreateVoid();
       break;
     }
 

@@ -747,7 +747,7 @@ auto GeneralParser::Context::RecurseExpr(const std::set<Token> &end) -> FlowPtr<
 
               if (stack.size() + 1 > kMaxRecursionDepth) {
                 Log << ParserSignal << Current() << "Recursion depth exceeds maximum limit";
-                return CreateMockInstance<VoidTy>();
+                return CreateMockInstance<InferTy>();
               }
 
               stack.emplace(left_side, source_offset, next_min_precedence, FrameType::Binary, op);
@@ -849,5 +849,5 @@ auto GeneralParser::Context::RecurseExpr(const std::set<Token> &end) -> FlowPtr<
   }
   Log << ParserSignal << Current() << "Expected an expression";
 
-  return CreateMockInstance<VoidTy>();
+  return CreateMockInstance<InferTy>();
 }

@@ -139,38 +139,6 @@ namespace ncc::parse {
         return AST_eIMPORT;
       } else if constexpr (std::is_same_v<T, RefTy>) {
         return AST_tREF;
-      } else if constexpr (std::is_same_v<T, U1>) {
-        return AST_tU1;
-      } else if constexpr (std::is_same_v<T, U8>) {
-        return AST_tU8;
-      } else if constexpr (std::is_same_v<T, U16>) {
-        return AST_tU16;
-      } else if constexpr (std::is_same_v<T, U32>) {
-        return AST_tU32;
-      } else if constexpr (std::is_same_v<T, U64>) {
-        return AST_tU64;
-      } else if constexpr (std::is_same_v<T, U128>) {
-        return AST_tU128;
-      } else if constexpr (std::is_same_v<T, I8>) {
-        return AST_tI8;
-      } else if constexpr (std::is_same_v<T, I16>) {
-        return AST_tI16;
-      } else if constexpr (std::is_same_v<T, I32>) {
-        return AST_tI32;
-      } else if constexpr (std::is_same_v<T, I64>) {
-        return AST_tI64;
-      } else if constexpr (std::is_same_v<T, I128>) {
-        return AST_tI128;
-      } else if constexpr (std::is_same_v<T, F16>) {
-        return AST_tF16;
-      } else if constexpr (std::is_same_v<T, F32>) {
-        return AST_tF32;
-      } else if constexpr (std::is_same_v<T, F64>) {
-        return AST_tF64;
-      } else if constexpr (std::is_same_v<T, F128>) {
-        return AST_tF128;
-      } else if constexpr (std::is_same_v<T, VoidTy>) {
-        return AST_tVOID;
       } else if constexpr (std::is_same_v<T, PtrTy>) {
         return AST_tPTR;
       } else if constexpr (std::is_same_v<T, OpaqueTy>) {
@@ -356,22 +324,6 @@ namespace ncc::parse {
       r[AST_eTEMPLATE_CALL] = "TemplateCall";
       r[AST_eIMPORT] = "Import";
       r[AST_tREF] = "Ref";
-      r[AST_tU1] = "U1";
-      r[AST_tU8] = "U8";
-      r[AST_tU16] = "U16";
-      r[AST_tU32] = "U32";
-      r[AST_tU64] = "U64";
-      r[AST_tU128] = "U128";
-      r[AST_tI8] = "I8";
-      r[AST_tI16] = "I16";
-      r[AST_tI32] = "I32";
-      r[AST_tI64] = "I64";
-      r[AST_tI128] = "I128";
-      r[AST_tF16] = "F16";
-      r[AST_tF32] = "F32";
-      r[AST_tF64] = "F64";
-      r[AST_tF128] = "F128";
-      r[AST_tVOID] = "Void";
       r[AST_tPTR] = "Ptr";
       r[AST_tOPAQUE] = "Opaque";
       r[AST_tARRAY] = "Array";
@@ -412,54 +364,12 @@ namespace ncc::parse {
     constexpr Type(ASTNodeKind ty) : Expr(ty) {}
 
   public:
-    [[nodiscard]] constexpr auto IsPrimitive() const -> bool {
-      switch (GetKind()) {
-        case AST_tU1:
-        case AST_tU8:
-        case AST_tU16:
-        case AST_tU32:
-        case AST_tU64:
-        case AST_tU128:
-        case AST_tI8:
-        case AST_tI16:
-        case AST_tI32:
-        case AST_tI64:
-        case AST_tI128:
-        case AST_tF16:
-        case AST_tF32:
-        case AST_tF64:
-        case AST_tF128:
-        case AST_tVOID:
-          return true;
-        default:
-          return false;
-      }
-    }
-
     [[nodiscard, gnu::pure]] constexpr auto IsArray() const -> bool { return GetKind() == AST_tARRAY; };
     [[nodiscard, gnu::pure]] constexpr auto IsTuple() const -> bool { return GetKind() == AST_tTUPLE; }
     [[nodiscard, gnu::pure]] constexpr auto IsPointer() const -> bool { return GetKind() == AST_tPTR; }
     [[nodiscard, gnu::pure]] constexpr auto IsFunction() const -> bool { return GetKind() == AST_tFUNCTION; }
     [[nodiscard, gnu::pure]] constexpr auto IsComposite() const -> bool { return IsArray() || IsTuple(); }
-    [[nodiscard, gnu::pure]] constexpr auto IsVoid() const -> bool { return GetKind() == AST_tVOID; }
-    [[nodiscard, gnu::pure]] constexpr auto IsBool() const -> bool { return GetKind() == AST_tU1; }
     [[nodiscard, gnu::pure]] constexpr auto IsRef() const -> bool { return GetKind() == AST_tREF; }
-    [[nodiscard, gnu::pure]] constexpr auto IsNumeric() const -> bool {
-      return GetKind() >= AST_tU1 && GetKind() <= AST_tF128;
-    }
-    [[nodiscard, gnu::pure]] constexpr auto IsIntegral() const -> bool {
-      return GetKind() >= AST_tU1 && GetKind() <= AST_tI128;
-    }
-    [[nodiscard, gnu::pure]] constexpr auto IsFloatingPoint() const -> bool {
-      return GetKind() >= AST_tF16 && GetKind() <= AST_tF128;
-    }
-    [[nodiscard, gnu::pure]] constexpr auto IsSigned() const -> bool {
-      return GetKind() >= AST_tI8 && GetKind() <= AST_tI128;
-    }
-    [[nodiscard, gnu::pure]] constexpr auto IsUnsigned() const -> bool {
-      return GetKind() >= AST_tU1 && GetKind() <= AST_tU128;
-    }
-
     [[nodiscard, gnu::pure]] constexpr auto GetWidth() const { return m_width; }
     [[nodiscard, gnu::pure]] constexpr auto GetRangeBegin() const { return m_range_begin; }
     [[nodiscard, gnu::pure]] constexpr auto GetRangeEnd() const { return m_range_end; }

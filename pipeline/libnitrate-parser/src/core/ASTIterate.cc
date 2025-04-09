@@ -87,23 +87,6 @@ class IterVisitor : public ASTVisitor {
     AddTypesuffix(n);
   }
 
-  void Visit(FlowPtr<U1> n) override { AddTypesuffix(n); }
-  void Visit(FlowPtr<U8> n) override { AddTypesuffix(n); }
-  void Visit(FlowPtr<U16> n) override { AddTypesuffix(n); }
-  void Visit(FlowPtr<U32> n) override { AddTypesuffix(n); }
-  void Visit(FlowPtr<U64> n) override { AddTypesuffix(n); }
-  void Visit(FlowPtr<U128> n) override { AddTypesuffix(n); }
-  void Visit(FlowPtr<I8> n) override { AddTypesuffix(n); }
-  void Visit(FlowPtr<I16> n) override { AddTypesuffix(n); }
-  void Visit(FlowPtr<I32> n) override { AddTypesuffix(n); }
-  void Visit(FlowPtr<I64> n) override { AddTypesuffix(n); }
-  void Visit(FlowPtr<I128> n) override { AddTypesuffix(n); }
-  void Visit(FlowPtr<F16> n) override { AddTypesuffix(n); }
-  void Visit(FlowPtr<F32> n) override { AddTypesuffix(n); }
-  void Visit(FlowPtr<F64> n) override { AddTypesuffix(n); }
-  void Visit(FlowPtr<F128> n) override { AddTypesuffix(n); }
-  void Visit(FlowPtr<VoidTy> n) override { AddTypesuffix(n); }
-
   void Visit(FlowPtr<PtrTy> n) override {
     Add(n->GetItem());
     AddTypesuffix(n);

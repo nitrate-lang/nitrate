@@ -41,5 +41,5 @@ using namespace ncc::parse;
 auto GeneralParser::Context::RecurseTry() -> FlowPtr<Expr> {
   Log << ParserSignal << Current() << "Try is not yet implemented";
 
-  return CreateMockInstance<VoidTy>();
+  return CreateMockInstance<InferTy>();
 }
