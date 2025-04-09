@@ -288,41 +288,6 @@ auto GeneralParser::Context::RecurseBlock(bool braces, bool single, BlockMode sa
           break;
         }
 
-        case Pure: {
-          Log << ParserSignal << Current() << "Unexpected 'pure' in block context";
-          break;
-        }
-
-        case Impure: {
-          Log << ParserSignal << Current() << "Unexpected 'impure' in block context";
-          break;
-        }
-
-        case Quasi: {
-          Log << ParserSignal << Current() << "Unexpected 'quasi' in block context";
-          break;
-        }
-
-        case Retro: {
-          Log << ParserSignal << Current() << "Unexpected 'retro' in block context";
-          break;
-        }
-
-        case Inline: {
-          Log << ParserSignal << Current() << "Unexpected 'inline' in block context";
-          break;
-        }
-
-        case Foreign: {
-          Log << ParserSignal << Current() << "Unexpected 'foreign' in block context";
-          break;
-        }
-
-        case Promise: {
-          Log << ParserSignal << Current() << "Unexpected 'promise' in block context";
-          break;
-        }
-
         case Keyword::If: {
           r = RecurseIf();
           break;

@@ -147,13 +147,6 @@ namespace ncc::lex {
     Fn,          /* 'fn' */
     Safe,        /* 'safe' */
     Unsafe,      /* 'unsafe' */
-    Pure,        /* 'pure' */
-    Impure,      /* 'impure' */
-    Quasi,       /* 'quasi' */
-    Retro,       /* 'retro' */
-    Inline,      /* 'inline' */
-    Foreign,     /* 'foreign' */
-    Promise,     /* 'promise' */
     If,          /* 'if' */
     Else,        /* 'else' */
     For,         /* 'for' */
