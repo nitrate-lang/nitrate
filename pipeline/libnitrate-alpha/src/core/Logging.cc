@@ -31,18 +31,21 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#pragma once
-
-#include <nitrate-core/Init.hh>
+#include <nitrate-alpha/core/Logging.hh>
 #include <nitrate-core/Macro.hh>
 
-namespace ncc::alpha::core {
-  struct NCC_EXPORT AlphaLibrarySetup {
-    static auto Init() -> bool;
-    static void Deinit();
-    static auto GetSemVersion() -> std::array<uint32_t, 3>;
-    static auto BuildId() -> BuildId;
-  };
+NCC_EXPORT std::string ncc::alpha::core::detail::AlphaFormatter(std::string_view msg, Sev sev) {
+  using namespace ncc;
 
-  extern LibraryRC<AlphaLibrarySetup> AlphaLibrary;
-}  // namespace ncc::alpha::core
+  if (sev == Raw) {
+    return std::string(msg);
+  }
+
+  /// FIXME: Write a nice log formatter
+
+  if (sev <= ncc::Debug) {
+    return "\x1b[37;1m[\x1b[0m\x1b[34;1mAlpha\x1b[0m\x1b[37;1m]: debug:\x1b[0m " + std::string(msg);
+  }
+
+  return "\x1b[37;1m[\x1b[0m\x1b[34;1mAlpha\x1b[0m\x1b[37;1m]:\x1b[0m " + std::string(msg);
+}

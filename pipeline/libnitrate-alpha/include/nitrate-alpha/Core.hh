@@ -33,4 +33,5 @@
 
 #pragma once
 
-namespace ncc::alpha {}
+#include <nitrate-alpha/core/Init.hh>
+#include <nitrate-alpha/core/Logging.hh>

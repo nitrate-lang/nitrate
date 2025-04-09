@@ -33,16 +33,20 @@
 
 #pragma once
 
-#include <nitrate-core/Init.hh>
-#include <nitrate-core/Macro.hh>
+#include <nitrate-core/Logger.hh>
 
 namespace ncc::alpha::core {
-  struct NCC_EXPORT AlphaLibrarySetup {
-    static auto Init() -> bool;
-    static void Deinit();
-    static auto GetSemVersion() -> std::array<uint32_t, 3>;
-    static auto BuildId() -> BuildId;
-  };
+  NCC_EC_GROUP(Alpha);
 
-  extern LibraryRC<AlphaLibrarySetup> AlphaLibrary;
+  namespace detail {
+    std::string AlphaFormatter(std::string_view msg, Sev sev);
+  }
+
+  NCC_EC_EX(Alpha, Compile, detail::AlphaFormatter);
+  NCC_EC_EX(Alpha, Core, detail::AlphaFormatter);
+  NCC_EC_EX(Alpha, Factory, detail::AlphaFormatter);
+  NCC_EC_EX(Alpha, Module, detail::AlphaFormatter);
+  NCC_EC_EX(Alpha, Support, detail::AlphaFormatter);
+  NCC_EC_EX(Alpha, Traverse, detail::AlphaFormatter);
+  NCC_EC_EX(Alpha, Tree, detail::AlphaFormatter);
 }  // namespace ncc::alpha::core

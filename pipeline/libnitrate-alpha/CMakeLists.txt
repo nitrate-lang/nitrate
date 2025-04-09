@@ -17,8 +17,17 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D__TARGET_COMMIT_DATE=\\\"${__TARGET_CO
 file(GLOB_RECURSE CXX_SOURCES "src/*.cc")
 
 add_library(nitrate-alpha ${CXX_SOURCES})
-target_include_directories(nitrate-alpha PUBLIC src "include")
-target_link_libraries(nitrate-alpha PUBLIC)
+target_include_directories(nitrate-alpha PUBLIC
+  "src"
+  "include"
+  "${CMAKE_CURRENT_SOURCE_DIR}/../libnitrate-core/include"
+  "${CMAKE_CURRENT_SOURCE_DIR}/../libnitrate-parser/include"
+)
+target_link_libraries(nitrate-alpha PUBLIC
+  nitrate-core
+  nitrate-parser
+)
+add_dependencies(nitrate-alpha nitrate-core nitrate-parser)
 
 install(TARGETS nitrate-alpha DESTINATION lib)
 install(DIRECTORY "include/" DESTINATION "include")
