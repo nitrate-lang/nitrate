@@ -57,7 +57,6 @@ namespace ncc::alpha::tree {
   class IR_eVAR;
   class IR_eFUNCTION;
   class IR_tINT;
-  class IR_tUINT;
   class IR_tFLOAT;
   class IR_tVOID;
   class IR_tINFER;
@@ -96,7 +95,6 @@ namespace ncc::alpha::tree {
      * Types
      ****************************************************************************/
     AIR_tINT,
-    AIR_tUINT,
     AIR_tFLOAT,
     AIR_tVOID,
     AIR_tINFER,
@@ -204,8 +202,6 @@ namespace ncc::alpha::tree {
         return AIR_eFUNCTION;
       } else if constexpr (std::is_same_v<T, IR_tINT>) {
         return AIR_tINT;
-      } else if constexpr (std::is_same_v<T, IR_tUINT>) {
-        return AIR_tUINT;
       } else if constexpr (std::is_same_v<T, IR_tFLOAT>) {
         return AIR_tFLOAT;
       } else if constexpr (std::is_same_v<T, IR_tVOID>) {
@@ -298,7 +294,6 @@ namespace ncc::alpha::tree {
       r[AIR_eVAR] = "eVAR";
       r[AIR_eFUNCTION] = "eFUNCTION";
       r[AIR_tINT] = "tINT";
-      r[AIR_tUINT] = "tUINT";
       r[AIR_tFLOAT] = "tFLOAT";
       r[AIR_tVOID] = "tVOID";
       r[AIR_tINFER] = "tINFER";

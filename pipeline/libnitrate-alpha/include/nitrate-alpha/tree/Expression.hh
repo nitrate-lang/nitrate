@@ -38,6 +38,39 @@
 #include <nitrate-core/FlowPtr.hh>
 
 namespace ncc::alpha::tree {
+  class IR_eTUPLE final : public Base {
+  public:
+    using TupleElements = std::pmr::vector<FlowPtr<Base>>;
+
+    IR_eTUPLE(TupleElements elements) : Base(IRKind::AIR_eTUPLE), m_elements(std::move(elements)) {}
+    constexpr IR_eTUPLE(const IR_eTUPLE &) = default;
+    constexpr IR_eTUPLE(IR_eTUPLE &&) = default;
+    IR_eTUPLE &operator=(const IR_eTUPLE &) = default;
+    IR_eTUPLE &operator=(IR_eTUPLE &&) noexcept = default;
+
+    [[nodiscard, gnu::pure]] constexpr auto GetElements() const -> std::span<const FlowPtr<Base>> { return m_elements; }
+
+    [[nodiscard, gnu::pure]] constexpr auto GetElements() -> TupleElements & {
+      SetDirtyBit();
+      return m_elements;
+    }
+
+    [[nodiscard, gnu::pure]] constexpr auto operator->() const -> const TupleElements * { return &m_elements; }
+
+    [[nodiscard, gnu::pure]] constexpr auto operator->() -> TupleElements * {
+      SetDirtyBit();
+      return &m_elements;
+    }
+
+    void SetElements(TupleElements elements) {
+      m_elements = std::move(elements);
+      SetDirtyBit();
+    }
+
+  private:
+    TupleElements m_elements;
+  };
+
   class IR_eBIN final : public Base {
   public:
     enum Op : uint8_t {
@@ -212,11 +245,9 @@ namespace ncc::alpha::tree {
   };
 
   class IR_eBLOCK final : public Base {
+  public:
     using ExpressionList = std::pmr::vector<FlowPtr<Base>>;
 
-    ExpressionList m_body;
-
-  public:
     IR_eBLOCK(ExpressionList body) : Base(IRKind::AIR_eBLOCK), m_body(std::move(body)) {}
     constexpr IR_eBLOCK(const IR_eBLOCK &) = default;
     constexpr IR_eBLOCK(IR_eBLOCK &&) = default;
@@ -242,5 +273,8 @@ namespace ncc::alpha::tree {
       m_body = std::move(body);
       SetDirtyBit();
     }
+
+  private:
+    ExpressionList m_body;
   };
 }  // namespace ncc::alpha::tree

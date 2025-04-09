@@ -65,22 +65,7 @@ namespace ncc::alpha::tree {
     [[nodiscard, gnu::pure]] constexpr static auto CreateSigned(Int128 val, IntType ty) { return IR_eINT(val, ty); }
     [[nodiscard, gnu::pure]] constexpr static auto CreateUnsigned(UInt128 val, IntType ty) { return IR_eINT(val, ty); }
 
-    [[nodiscard, gnu::pure]] constexpr auto GetType() const -> IntType { return m_type; }
-    [[nodiscard, gnu::pure]] constexpr auto GetTypeName() const -> std::string_view {
-      switch (m_type) {
-        case IntType::kField8:
-          return "kField8";
-        case IntType::kField16:
-          return "kField16";
-        case IntType::kField32:
-          return "kField32";
-        case IntType::kField64:
-          return "kField64";
-        case IntType::kField128:
-          return "kField128";
-      }
-    }
-
+    [[nodiscard, gnu::pure]] constexpr auto GetSize() const -> IntType { return m_type; }
     [[nodiscard, gnu::pure]] constexpr auto GetSigned() const -> Int128 { return static_cast<Int128>(m_value); }
     [[nodiscard, gnu::pure]] constexpr auto GetUnsigned() const -> UInt128 { return m_value; }
 
@@ -161,20 +146,7 @@ namespace ncc::alpha::tree {
 
     [[nodiscard, gnu::pure]] constexpr static auto Create(Float128 val, FloatType ty) { return IR_eFLOAT(val, ty); }
 
-    [[nodiscard, gnu::pure]] constexpr auto GetType() const -> FloatType { return m_type; }
-    [[nodiscard, gnu::pure]] constexpr auto GetTypeName() const -> std::string_view {
-      switch (m_type) {
-        case FloatType::kField16:
-          return "kField16";
-        case FloatType::kField32:
-          return "kField32";
-        case FloatType::kField64:
-          return "kField64";
-        case FloatType::kField128:
-          return "kField128";
-      }
-    }
-
+    [[nodiscard, gnu::pure]] constexpr auto GetSize() const -> FloatType { return m_type; }
     [[nodiscard, gnu::pure]] constexpr auto GetValue() const -> Float128 { return m_value; }
 
     [[nodiscard, gnu::pure]] constexpr auto IsZero() const -> bool { return m_value == 0.0; }

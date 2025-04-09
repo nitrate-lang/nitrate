@@ -39,12 +39,9 @@
 
 namespace ncc::alpha::tree {
   class IR_eCALL : public Base {
+  public:
     using CallArguments = std::pmr::vector<FlowPtr<Base>>;
 
-    FlowPtr<Base> m_callee;
-    CallArguments m_arguments;
-
-  public:
     IR_eCALL(FlowPtr<Base> callee, CallArguments arguments)
         : Base(IRKind::AIR_eCALL), m_callee(std::move(callee)), m_arguments(std::move(arguments)) {}
     constexpr IR_eCALL(const IR_eCALL &) = default;
@@ -67,6 +64,13 @@ namespace ncc::alpha::tree {
       return m_arguments;
     }
 
+    [[nodiscard, gnu::pure]] constexpr auto operator->() const -> const CallArguments * { return &m_arguments; }
+
+    [[nodiscard, gnu::pure]] constexpr auto operator->() -> CallArguments * {
+      SetDirtyBit();
+      return &m_arguments;
+    }
+
     constexpr void SetCallee(FlowPtr<Base> callee) {
       m_callee = std::move(callee);
       SetDirtyBit();
@@ -76,6 +80,10 @@ namespace ncc::alpha::tree {
       m_arguments = std::move(arguments);
       SetDirtyBit();
     }
+
+  private:
+    FlowPtr<Base> m_callee;
+    CallArguments m_arguments;
   };
 
   class IR_eIF final : public Base {
@@ -129,14 +137,10 @@ namespace ncc::alpha::tree {
   };
 
   class IR_eSWITCH final : public Base {
+  public:
     using Case = std::pair<FlowPtr<Base>, FlowPtr<IR_eBLOCK>>;
     using CaseList = std::pmr::vector<Case>;
 
-    FlowPtr<Base> m_condition;
-    CaseList m_cases;
-    NullableFlowPtr<IR_eBLOCK> m_default_block;
-
-  public:
     IR_eSWITCH(FlowPtr<Base> condition, CaseList cases, NullableFlowPtr<IR_eBLOCK> default_block)
         : Base(IRKind::AIR_eSWITCH),
           m_condition(std::move(condition)),
@@ -168,6 +172,13 @@ namespace ncc::alpha::tree {
       return m_default_block;
     }
 
+    [[nodiscard, gnu::pure]] constexpr auto operator->() const -> const CaseList * { return &m_cases; }
+
+    [[nodiscard, gnu::pure]] constexpr auto operator->() -> CaseList * {
+      SetDirtyBit();
+      return &m_cases;
+    }
+
     constexpr void SetCondition(FlowPtr<Base> condition) {
       m_condition = std::move(condition);
       SetDirtyBit();
@@ -182,6 +193,11 @@ namespace ncc::alpha::tree {
       m_default_block = std::move(default_block);
       SetDirtyBit();
     }
+
+  private:
+    FlowPtr<Base> m_condition;
+    CaseList m_cases;
+    NullableFlowPtr<IR_eBLOCK> m_default_block;
   };
 
   class IR_eRET final : public Base {
