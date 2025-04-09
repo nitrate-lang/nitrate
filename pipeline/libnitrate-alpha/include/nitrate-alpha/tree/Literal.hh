@@ -103,11 +103,13 @@ namespace ncc::alpha::tree {
 
     constexpr auto SetSigned(Int128 val) -> IR_eINT & {
       m_value = PrepareSigned(val, m_type);
+      SetDirtyBit();
       return *this;
     }
 
     constexpr auto SetUnsigned(UInt128 val) -> IR_eINT & {
       m_value = PrepareUnsigned(val, m_type);
+      SetDirtyBit();
       return *this;
     }
 
@@ -186,7 +188,7 @@ namespace ncc::alpha::tree {
     [[maybe_unused]] uint8_t m_pad : 3;
     Float128 m_value;
 
-    [[nodiscard, gnu::pure]] constexpr static auto Prepare(Float128 x, FloatType ty) -> Float128 {
+    [[nodiscard, gnu::pure]] constexpr static auto Prepare(Float128 x, FloatType) -> Float128 {
       /// FIXME: Clip to the range of the type
       return x;
     }

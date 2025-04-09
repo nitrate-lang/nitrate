@@ -113,7 +113,8 @@ namespace ncc::alpha::tree {
   static inline constexpr size_t kAIRNodeCount = AIR__LAST - AIR__FIRST + 1;
 
   class Base {
-    IRKind m_kind : 6;
+    IRKind m_kind : 5;
+    bool m_is_dirty : 1 = true;
     bool m_is_poison : 1 = false;
     bool m_is_discarded : 1 = false;
 
@@ -131,6 +132,11 @@ namespace ncc::alpha::tree {
 
       return reinterpret_cast<T *>(ptr);
     }
+
+    constexpr void ClearDirtyBit() { m_is_dirty = false; }
+
+  protected:
+    constexpr void SetDirtyBit() { m_is_dirty = true; }
 
   public:
     constexpr Base(IRKind kind) : m_kind(kind){};
