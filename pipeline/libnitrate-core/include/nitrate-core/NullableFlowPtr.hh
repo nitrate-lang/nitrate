@@ -43,8 +43,6 @@ namespace ncc {
     class NullableFlowPtr {
       FlowPtr<Pointee, Tracking> m_flow = FlowPtr<Pointee, Tracking>::CreateNullPtr();
 
-      static_assert(sizeof(m_flow) >= sizeof(uintptr_t));
-
     public:
       using value_type = Pointee;
 

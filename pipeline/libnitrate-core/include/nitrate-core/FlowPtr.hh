@@ -88,22 +88,31 @@ namespace ncc {
   namespace flowptr_detail {
     template <class Pointee, class Tracking>
     class WithTracking {
-      Pointee *m_raw_ptr;
+#if defined(__x86_64__)
+      uintptr_t m_raw_ptr : 48;
+#else
+      uintptr_t m_raw_ptr;
+#endif
 
     public:
       Tracking m_tracking;
 
-      constexpr WithTracking(Pointee *ptr, Tracking tracking) : m_raw_ptr(ptr), m_tracking(std::move(tracking)) {}
-      [[nodiscard]] constexpr auto GetPointer() const -> Pointee * { return m_raw_ptr; }
+      constexpr WithTracking(Pointee *ptr, Tracking tracking)
+          : m_raw_ptr(reinterpret_cast<uintptr_t>(ptr)), m_tracking(std::move(tracking)) {}
+      [[nodiscard]] constexpr auto GetPointer() const -> Pointee * { return reinterpret_cast<Pointee *>(m_raw_ptr); }
     } __attribute__((packed));
 
     template <class Pointee, class Tracking>
     class WithoutTracking {
-      Pointee *m_raw_ptr;
+#if defined(__x86_64__)
+      uintptr_t m_raw_ptr : 48;
+#else
+      uintptr_t m_raw_ptr;
+#endif
 
     public:
-      constexpr WithoutTracking(Pointee *ptr, Tracking) : m_raw_ptr(ptr) {}
-      [[nodiscard]] constexpr auto GetPointer() const -> Pointee * { return m_raw_ptr; }
+      constexpr WithoutTracking(Pointee *ptr, Tracking) : m_raw_ptr(reinterpret_cast<uintptr_t>(ptr)) {}
+      [[nodiscard]] constexpr auto GetPointer() const -> Pointee * { return reinterpret_cast<Pointee *>(m_raw_ptr); }
     } __attribute__((packed));
 
     template <class Pointee, class Tracking>
