@@ -33,4 +33,9 @@
 
 #pragma once
 
-namespace ncc::alpha {}
+#include <nitrate-alpha/tree/Base.hh>
+#include <nitrate-alpha/tree/ControlFlow.hh>
+#include <nitrate-alpha/tree/Expression.hh>
+#include <nitrate-alpha/tree/Literal.hh>
+#include <nitrate-alpha/tree/Symbol.hh>
+#include <nitrate-alpha/tree/Type.hh>

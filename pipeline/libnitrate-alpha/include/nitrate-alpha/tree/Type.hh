@@ -151,6 +151,8 @@ namespace ncc::alpha::tree {
   };
 
   class IR_tFUNCTION final : public Base {
+  public:
+    using FunctionArgumentTypes = std::pmr::vector<FlowPtr<Base>>;
     /// TODO:
   };
 }  // namespace ncc::alpha::tree
