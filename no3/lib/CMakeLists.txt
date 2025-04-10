@@ -33,16 +33,25 @@ target_include_directories(nitrate-tool PUBLIC
   "${CMAKE_SOURCE_DIR}/libnitrate-lexer/include"
   "${CMAKE_SOURCE_DIR}/libnitrate-seq/include"
   "${CMAKE_SOURCE_DIR}/libnitrate-parser/include"
-  "${CMAKE_SOURCE_DIR}/libnitrate-ir/include"
+  "${CMAKE_SOURCE_DIR}/libnitrate-mangle/include"
+  "${CMAKE_SOURCE_DIR}/libnitrate-alpha/include"
+  "${CMAKE_SOURCE_DIR}/libnitrate-alpha-check/include"
+  "${CMAKE_SOURCE_DIR}/libnitrate-alpha-opt/include"
+  "${CMAKE_SOURCE_DIR}/libnitrate-beta/include"
+  "${CMAKE_SOURCE_DIR}/libnitrate-beta-opt/include"
   "${CMAKE_SOURCE_DIR}/libnitrate-emit/include"
   "${CMAKE_SOURCE_DIR}/no3/lib/include"
 )
 
 target_link_libraries(nitrate-tool PUBLIC
   "nitrate-testing"
-  # "nitrate-emit"
-  # "nitrate-ir"
   "nitrate-parser"
+  "nitrate-mangle"
+  "nitrate-alpha"
+  "nitrate-alpha-check"
+  "nitrate-alpha-opt"
+  "nitrate-beta"
+  "nitrate-beta-opt"
   "nitrate-lexer"
   "nitrate-seq"
   "nitrate-core"
@@ -57,8 +66,12 @@ target_link_libraries(nitrate-tool PUBLIC
 )
 add_dependencies(nitrate-tool
   nitrate-testing
-  # nitrate-emit
-  # nitrate-ir
+  nitrate-mangle
+  nitrate-alpha
+  nitrate-alpha-check
+  nitrate-alpha-opt
+  nitrate-beta
+  nitrate-beta-opt
   nitrate-parser
   nitrate-lexer
   nitrate-seq

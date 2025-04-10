@@ -36,6 +36,9 @@
 #include <nitrate-alpha/tree/Base.hh>
 #include <nitrate-core/FlowPtr.hh>
 #include <nitrate-core/NullableFlowPtr.hh>
+#include <span>
+#include <string>
+#include <vector>
 
 namespace ncc::alpha::tree {
   class IR_eCALL : public Base {
