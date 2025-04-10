@@ -36,6 +36,8 @@
 #include <cstdint>
 #include <nitrate-alpha/tree/Base.hh>
 #include <nitrate-core/FlowPtr.hh>
+#include <span>
+#include <vector>
 
 namespace ncc::alpha::tree {
   class IR_eTUPLE final : public Base {
@@ -176,15 +178,15 @@ namespace ncc::alpha::tree {
   private:
     Op m_op;
     FlowPtr<Base> m_rhs;
-  };
+  } __attribute__((packed));
 
   class IR_eACCESS final : public Base {
-    uint32_t m_field;
     FlowPtr<Base> m_aggregate;
+    uint32_t m_field;
 
   public:
     constexpr IR_eACCESS(FlowPtr<Base> aggregate, uint32_t field)
-        : Base(IRKind::AIR_eACCESS), m_field(field), m_aggregate(std::move(aggregate)) {}
+        : Base(IRKind::AIR_eACCESS), m_aggregate(std::move(aggregate)), m_field(field) {}
     constexpr IR_eACCESS(const IR_eACCESS &) = default;
     constexpr IR_eACCESS(IR_eACCESS &&) = default;
     constexpr IR_eACCESS &operator=(const IR_eACCESS &) = default;
@@ -207,7 +209,7 @@ namespace ncc::alpha::tree {
       m_field = field;
       SetDirtyBit();
     }
-  };
+  } __attribute__((packed));
 
   class IR_eINDEX final : public Base {
     FlowPtr<Base> m_base, m_index;
@@ -242,7 +244,7 @@ namespace ncc::alpha::tree {
       m_index = std::move(index);
       SetDirtyBit();
     }
-  };
+  } __attribute__((packed));
 
   class IR_eBLOCK final : public Base {
   public:

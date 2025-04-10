@@ -72,7 +72,7 @@ namespace ncc::alpha::tree {
       m_value = std::move(value);
       SetDirtyBit();
     }
-  };
+  } __attribute__((packed));
 
   class IR_eFUNCTION final : public Base {
     FlowPtr<IR_tFUNCTION> m_type;
@@ -108,5 +108,5 @@ namespace ncc::alpha::tree {
       m_body = std::move(body);
       SetDirtyBit();
     }
-  };
+  } __attribute__((packed));
 }  // namespace ncc::alpha::tree

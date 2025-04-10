@@ -35,6 +35,8 @@
 
 #include <nitrate-alpha/tree/Base.hh>
 #include <nitrate-core/FlowPtr.hh>
+#include <span>
+#include <vector>
 
 namespace ncc::alpha::tree {
   class IR_tINT final : public Base {
@@ -68,7 +70,7 @@ namespace ncc::alpha::tree {
 
   class IR_tFLOAT final : public Base {
     /// TODO:
-  };
+  } __attribute__((packed));
 
   class IR_tVOID final : public Base {
   public:
@@ -77,7 +79,7 @@ namespace ncc::alpha::tree {
     constexpr IR_tVOID(IR_tVOID &&) = default;
     constexpr IR_tVOID &operator=(const IR_tVOID &) = default;
     constexpr IR_tVOID &operator=(IR_tVOID &&) noexcept = default;
-  };
+  } __attribute__((packed));
 
   class IR_tINFER final : public Base {
   public:
@@ -86,7 +88,7 @@ namespace ncc::alpha::tree {
     constexpr IR_tINFER(IR_tINFER &&) = default;
     constexpr IR_tINFER &operator=(const IR_tINFER &) = default;
     constexpr IR_tINFER &operator=(IR_tINFER &&) noexcept = default;
-  };
+  } __attribute__((packed));
 
   class IR_tREF final : public Base {
     FlowPtr<Base> m_refee;
@@ -99,7 +101,7 @@ namespace ncc::alpha::tree {
     constexpr IR_tREF &operator=(IR_tREF &&) noexcept = default;
 
     [[nodiscard, gnu::pure]] constexpr auto GetRefee() const -> FlowPtr<const Base> { return m_refee; }
-  };
+  } __attribute__((packed));
 
   class IR_tPTR final : public Base {
     FlowPtr<Base> m_pointee;
@@ -112,7 +114,7 @@ namespace ncc::alpha::tree {
     constexpr IR_tPTR &operator=(IR_tPTR &&) noexcept = default;
 
     [[nodiscard, gnu::pure]] constexpr auto GetPointee() const -> FlowPtr<const Base> { return m_pointee; }
-  };
+  } __attribute__((packed));
 
   class IR_tARRAY final : public Base {
     FlowPtr<Base> m_element_type;
@@ -128,7 +130,7 @@ namespace ncc::alpha::tree {
 
     [[nodiscard, gnu::pure]] constexpr auto GetElementType() const -> FlowPtr<const Base> { return m_element_type; }
     [[nodiscard, gnu::pure]] constexpr auto GetSize() const -> uint64_t { return m_size; }
-  };
+  } __attribute__((packed));
 
   class IR_tTUPLE final : public Base {
   public:

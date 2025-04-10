@@ -137,7 +137,7 @@ namespace ncc::alpha::tree {
       m_false_block = std::move(false_block);
       SetDirtyBit();
     }
-  };
+  } __attribute__((packed));
 
   class IR_eSWITCH final : public Base {
   public:
@@ -224,7 +224,7 @@ namespace ncc::alpha::tree {
       m_value = std::move(value);
       SetDirtyBit();
     }
-  };
+  } __attribute__((packed));
 
   class IR_eBREAK final : public Base {
   public:
@@ -233,7 +233,7 @@ namespace ncc::alpha::tree {
     constexpr IR_eBREAK(IR_eBREAK &&) = default;
     constexpr IR_eBREAK &operator=(const IR_eBREAK &) = default;
     constexpr IR_eBREAK &operator=(IR_eBREAK &&) noexcept = default;
-  };
+  } __attribute__((packed));
 
   class IR_eCONTINUE final : public Base {
   public:
@@ -242,7 +242,7 @@ namespace ncc::alpha::tree {
     constexpr IR_eCONTINUE(IR_eCONTINUE &&) = default;
     constexpr IR_eCONTINUE &operator=(const IR_eCONTINUE &) = default;
     constexpr IR_eCONTINUE &operator=(IR_eCONTINUE &&) noexcept = default;
-  };
+  } __attribute__((packed));
 
   class IR_eWHILE final : public Base {
     FlowPtr<Base> m_condition;
@@ -278,7 +278,7 @@ namespace ncc::alpha::tree {
       m_body = std::move(body);
       SetDirtyBit();
     }
-  };
+  } __attribute__((packed));
 
   class IR_eASM final : public Base {
     std::pmr::string m_asm_code;
