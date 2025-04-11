@@ -69,7 +69,7 @@ namespace ncc::alpha::tree {
   } __attribute__((packed));
 
   class IR_tFLOAT final : public Base {
-    /// TODO:
+    /// TODO: Implement float types
   } __attribute__((packed));
 
   class IR_tVOID final : public Base {
@@ -155,6 +155,32 @@ namespace ncc::alpha::tree {
   class IR_tFUNCTION final : public Base {
   public:
     using FunctionArgumentTypes = std::pmr::vector<FlowPtr<Base>>;
-    /// TODO:
+    using FunctionAttributes = std::pmr::vector<FlowPtr<Base>>;
+
+    IR_tFUNCTION(FunctionArgumentTypes argument_types, FlowPtr<Base> return_type,
+                 FunctionAttributes attributes = FunctionAttributes())
+        : Base(IRKind::AIR_tFUNCTION),
+          m_return_type(std::move(return_type)),
+          m_argument_types(std::move(argument_types)),
+          m_attributes(std::move(attributes)) {}
+    constexpr IR_tFUNCTION(const IR_tFUNCTION &) = default;
+    constexpr IR_tFUNCTION(IR_tFUNCTION &&) = default;
+    IR_tFUNCTION &operator=(const IR_tFUNCTION &) = default;
+    IR_tFUNCTION &operator=(IR_tFUNCTION &&) noexcept = default;
+
+    [[nodiscard, gnu::pure]] constexpr auto GetReturnType() const -> FlowPtr<const Base> { return m_return_type; }
+
+    [[nodiscard, gnu::pure]] constexpr auto GetArgumentTypes() const -> std::span<const FlowPtr<Base>> {
+      return m_argument_types;
+    }
+
+    [[nodiscard, gnu::pure]] constexpr auto GetAttributes() const -> std::span<const FlowPtr<Base>> {
+      return m_attributes;
+    }
+
+  private:
+    FlowPtr<Base> m_return_type;
+    FunctionArgumentTypes m_argument_types;
+    FunctionAttributes m_attributes;
   };
 }  // namespace ncc::alpha::tree
