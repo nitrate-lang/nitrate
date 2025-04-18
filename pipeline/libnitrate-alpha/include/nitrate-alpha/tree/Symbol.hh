@@ -36,26 +36,28 @@
 #include <nitrate-alpha/tree/Base.hh>
 #include <nitrate-core/FlowPtr.hh>
 #include <nitrate-core/NullableFlowPtr.hh>
+#include <nitrate-core/String.hh>
 
 namespace ncc::alpha::tree {
   class IR_eVAR final : public Base {
-    FlowPtr<IR_tREF> m_type;
+    string m_name;
     FlowPtr<Base> m_value;
 
   public:
-    constexpr IR_eVAR(FlowPtr<IR_tREF> type, FlowPtr<Base> value)
-        : Base(IRKind::AIR_eVAR), m_type(std::move(type)), m_value(std::move(value)) {}
+    constexpr IR_eVAR(string name, FlowPtr<Base> value)
+        : Base(IRKind::AIR_eVAR), m_name(name), m_value(std::move(value)) {}
     constexpr IR_eVAR(const IR_eVAR &) = default;
     constexpr IR_eVAR(IR_eVAR &&) = default;
     constexpr IR_eVAR &operator=(const IR_eVAR &) = default;
     constexpr IR_eVAR &operator=(IR_eVAR &&) noexcept = default;
 
-    [[nodiscard, gnu::pure]] constexpr auto GetType() const -> FlowPtr<const IR_tREF> { return m_type; }
+    [[nodiscard, gnu::pure]] constexpr auto GetName() const -> const string & { return m_name; }
+
     [[nodiscard, gnu::pure]] constexpr auto GetValue() const -> FlowPtr<const Base> { return m_value; }
 
-    [[nodiscard, gnu::pure]] constexpr auto GetType() -> FlowPtr<IR_tREF> {
+    [[nodiscard, gnu::pure]] constexpr auto GetName() -> string & {
       SetDirtyBit();
-      return m_type;
+      return m_name;
     }
 
     [[nodiscard, gnu::pure]] constexpr auto GetValue() -> FlowPtr<Base> {
@@ -63,8 +65,8 @@ namespace ncc::alpha::tree {
       return m_value;
     }
 
-    constexpr void SetType(FlowPtr<IR_tREF> type) {
-      m_type = std::move(type);
+    constexpr void SetName(string name) {
+      m_name = name;
       SetDirtyBit();
     }
 

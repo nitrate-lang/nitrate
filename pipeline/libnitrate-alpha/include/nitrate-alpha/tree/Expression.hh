@@ -36,10 +36,42 @@
 #include <cstdint>
 #include <nitrate-alpha/tree/Base.hh>
 #include <nitrate-core/FlowPtr.hh>
+#include <nitrate-core/String.hh>
 #include <span>
 #include <vector>
 
 namespace ncc::alpha::tree {
+  class IR_eREF final : public Base {
+  public:
+    enum RefType : uint8_t {
+      kConstRef,
+      kMutRef,
+    };
+
+    constexpr IR_eREF(string referee, RefType type) : Base(IRKind::AIR_eREF), m_referee(referee), m_type(type) {}
+    constexpr IR_eREF(const IR_eREF &) = default;
+    constexpr IR_eREF(IR_eREF &&) = default;
+    constexpr IR_eREF &operator=(const IR_eREF &) = default;
+    constexpr IR_eREF &operator=(IR_eREF &&) = default;
+
+    [[nodiscard, gnu::pure]] constexpr auto GetReferee() const -> const string & { return m_referee; }
+    [[nodiscard, gnu::pure]] constexpr auto GetType() const -> RefType { return m_type; }
+
+    constexpr void SetReferee(string referee) {
+      m_referee = referee;
+      SetDirtyBit();
+    }
+
+    constexpr void SetType(RefType type) {
+      m_type = type;
+      SetDirtyBit();
+    }
+
+  private:
+    string m_referee;
+    RefType m_type;
+  };
+
   class IR_eTUPLE final : public Base {
   public:
     using TupleElements = std::pmr::vector<FlowPtr<Base>>;

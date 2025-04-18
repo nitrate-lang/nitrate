@@ -40,6 +40,7 @@
 namespace ncc::alpha::tree {
   class IR_eINT;
   class IR_eFLOAT;
+  class IR_eREF;
   class IR_eTUPLE;
   class IR_eBIN;
   class IR_eUNARY;
@@ -74,6 +75,7 @@ namespace ncc::alpha::tree {
      ****************************************************************************/
     AIR_eINT,
     AIR_eFLOAT,
+    AIR_eREF,
     AIR_eTUPLE,
     AIR_eBIN,
     AIR_eUNARY,
@@ -168,6 +170,8 @@ namespace ncc::alpha::tree {
         return AIR_eINT;
       } else if constexpr (std::is_same_v<T, IR_eFLOAT>) {
         return AIR_eFLOAT;
+      } else if constexpr (std::is_same_v<T, IR_eREF>) {
+        return AIR_eREF;
       } else if constexpr (std::is_same_v<T, IR_eTUPLE>) {
         return AIR_eTUPLE;
       } else if constexpr (std::is_same_v<T, IR_eBIN>) {
@@ -277,6 +281,7 @@ namespace ncc::alpha::tree {
       r[AIR_DISCARDED] = "DISCARDED";
       r[AIR_eINT] = "eINT";
       r[AIR_eFLOAT] = "eFLOAT";
+      r[AIR_eREF] = "eREF";
       r[AIR_eTUPLE] = "eTUPLE";
       r[AIR_eBIN] = "eBIN";
       r[AIR_eUNARY] = "eUNARY";
