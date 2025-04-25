@@ -156,9 +156,10 @@ static auto ParseFStringExpression(GeneralParser::Context &m, std::string_view s
       auto in_src = boost::iostreams::stream<boost::iostreams::array_source>(buf_view.data(), buf_view.size());
       auto scanner = Tokenizer(in_src, m.GetEnvironment());
       auto sub_parser = m.CreateSubParser(scanner);
-      auto subnode = sub_parser.m_impl->RecurseExpr({
-          Token(Punc, PuncRCur),
-      });
+      auto subnode = m.GetPImplPtr(sub_parser)
+                         ->RecurseExpr({
+                             Token(Punc, PuncRCur),
+                         });
 
       sections.emplace_back(subnode);
 
@@ -302,11 +303,6 @@ static auto RecurseExprKeyword(GeneralParser::Context &m, lex::Keyword key) -> N
       break;
     }
 
-    case Keyword::Null: {
-      e = m.CreateNull();
-      break;
-    }
-
     case True: {
       e = m.CreateBoolean(true);
       break;
@@ -344,8 +340,8 @@ static auto RecurseExprPunctor(GeneralParser::Context &m, lex::Punctor punc) -> 
       e = m.RecurseExpr({
           Token(Punc, PuncRPar),
       });
-      auto depth = e.value()->GetParenthesisDepth();
-      e.value()->SetParenthesisDepth(depth + 1);
+      auto depth = e.Unwrap()->GetParenthesisDepth();
+      e.Unwrap()->SetParenthesisDepth(depth + 1);
 
       if (!m.NextIf<PuncRPar>()) {
         Log << ParserSignal << m.Current() << "Expected ')' to close the expression";
@@ -522,8 +518,8 @@ static auto RecurseExprPrimary(GeneralParser::Context &m, bool is_type) -> Nulla
 
       case KeyW: {
         m.Next();
-        if ((e = RecurseExprKeyword(m, tok.GetKeyword())).has_value()) {
-          e.value()->SetOffset(start_pos);
+        if ((e = RecurseExprKeyword(m, tok.GetKeyword()))) {
+          e.Unwrap()->SetOffset(start_pos);
         }
 
         break;
@@ -537,8 +533,8 @@ static auto RecurseExprPrimary(GeneralParser::Context &m, bool is_type) -> Nulla
       case Punc: {
         m.Next();
 
-        if ((e = RecurseExprPunctor(m, tok.GetPunctor())).has_value()) {
-          e.value()->SetOffset(start_pos);
+        if ((e = RecurseExprPunctor(m, tok.GetPunctor()))) {
+          e.Unwrap()->SetOffset(start_pos);
         }
 
         break;
@@ -672,7 +668,7 @@ auto GeneralParser::Context::RecurseExpr(const std::set<Token> &end) -> FlowPtr<
   }
 
   if (auto left_side_opt = RecurseExprPrimary(*this, false)) {
-    auto left_side = left_side_opt.value();
+    auto left_side = left_side_opt.Unwrap();
     auto spinning = true;
 
     /****************************************
@@ -738,7 +734,7 @@ auto GeneralParser::Context::RecurseExpr(const std::set<Token> &end) -> FlowPtr<
                 auto [op, Offset] = pre_unary_ops.top();
                 pre_unary_ops.pop();
 
-                auto pre_unary_expr = CreateUnary(op, right_side.value());
+                auto pre_unary_expr = CreateUnary(op, right_side.Unwrap());
                 pre_unary_expr->SetOffset(Offset);
 
                 right_side = pre_unary_expr;
@@ -746,11 +742,11 @@ auto GeneralParser::Context::RecurseExpr(const std::set<Token> &end) -> FlowPtr<
 
               if (stack.size() + 1 > kMaxRecursionDepth) {
                 Log << ParserSignal << Current() << "Recursion depth exceeds maximum limit";
-                return CreateMockInstance<VoidTy>();
+                return CreateMockInstance<InferTy>();
               }
 
               stack.emplace(left_side, source_offset, next_min_precedence, FrameType::Binary, op);
-              left_side = right_side.value();
+              left_side = right_side.Unwrap();
             } else {
               Log << ParserSignal << Current() << "Failed to parse right-hand side of binary expression";
             }
@@ -848,5 +844,5 @@ auto GeneralParser::Context::RecurseExpr(const std::set<Token> &end) -> FlowPtr<
   }
   Log << ParserSignal << Current() << "Expected an expression";
 
-  return CreateMockInstance<VoidTy>();
+  return CreateMockInstance<InferTy>();
 }

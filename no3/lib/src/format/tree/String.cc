@@ -35,14 +35,14 @@
 
 using namespace no3::format::details;
 
-void QuasiCanonicalFormatter::Visit(FlowPtr<parse::String> n) {
+void CanonicalFormatter::Visit(FlowPtr<parse::String> n) {
   /// TODO: Implement standard format
 }
 
-void QuasiCanonicalFormatter::Visit(FlowPtr<Character> n) {
+void CanonicalFormatter::Visit(FlowPtr<Character> n) {
   /// TODO: Implement standard format
 }
 
-void QuasiCanonicalFormatter::Visit(FlowPtr<FString> n) {
+void CanonicalFormatter::Visit(FlowPtr<FString> n) {
   /// TODO: Implement standard format
 }

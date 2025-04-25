@@ -31,7 +31,7 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <lsp/core/LSPContext.hh>
+#include <lsp/server/Context.hh>
 #include <nitrate-core/Logger.hh>
 
 using namespace ncc;
@@ -61,7 +61,7 @@ static auto VerifyTextDocumentDidOpen(const nlohmann::json& j) -> bool {
   return true;
 }
 
-void core::LSPContext::NotifyTextDocumentDidOpen(const message::NotifyMessage& notice) {
+void core::Context::NotifyTextDocumentDidOpen(const message::NotifyMessage& notice) {
   const auto& j = *notice;
   if (!VerifyTextDocumentDidOpen(j)) {
     Log << "Invalid textDocument/didOpen notification";

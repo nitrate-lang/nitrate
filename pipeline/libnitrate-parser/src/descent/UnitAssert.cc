@@ -76,7 +76,7 @@ auto GeneralParser::Context::RecurseUnitAssert() -> FlowPtr<Expr> {
                                         .value();
 
   auto unit_test_function =
-      *CreateFunction(unit_test_name, CreateU1(), {}, false, test_body, {ephermal_section_attribute});
+      *CreateFunction(unit_test_name, CreateNamed("u1"), {}, false, test_body, {ephermal_section_attribute});
 
   return unit_test_function;
 }

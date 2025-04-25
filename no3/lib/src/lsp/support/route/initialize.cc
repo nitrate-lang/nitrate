@@ -31,7 +31,7 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <lsp/core/LSPContext.hh>
+#include <lsp/server/Context.hh>
 #include <nitrate-core/Logger.hh>
 
 using namespace ncc;
@@ -47,7 +47,7 @@ static auto VerifyInitializeRequest(const nlohmann::json& j) -> bool {
   return true;
 }
 
-void core::LSPContext::RequestInitialize(const message::RequestMessage& request, message::ResponseMessage& response) {
+void core::Context::RequestInitialize(const message::RequestMessage& request, message::ResponseMessage& response) {
   const auto& req = *request;
   if (!VerifyInitializeRequest(req)) [[unlikely]] {
     Log << "Invalid initialize request";
@@ -77,8 +77,11 @@ void core::LSPContext::RequestInitialize(const message::RequestMessage& request,
       {"change", protocol::TextDocumentSyncKind::Incremental},
       {"save", {{"includeText", true}}},
   };
+  j["capabilities"]["completionProvider"] = {
+      {"triggerCharacters", {".", "::"}},
+  };
 
   ////==========================================================================
+  Log << Debug << "Context::RequestInitialize(): LSP initialize requested";
   m_is_lsp_initialized = true;
-  Log << Debug << "LSPContext::RequestInitialize(): LSP initialize requested";
 }

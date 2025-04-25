@@ -33,15 +33,20 @@
 
 #include <boost/multiprecision/cpp_int.hpp>
 #include <core/CodeWriter.hh>
+#include <memory>
+#include <nitrate-core/Environment.hh>
 #include <nitrate-core/Logger.hh>
 #include <nitrate-lexer/Enums.hh>
 #include <nitrate-lexer/Grammar.hh>
+#include <nitrate-lexer/Lexer.hh>
 #include <nitrate-parser/AST.hh>
 #include <nitrate-parser/ASTExpr.hh>
 #include <nitrate-parser/ASTStmt.hh>
 #include <nitrate-parser/ASTType.hh>
 #include <sstream>
+#include <stack>
 #include <string_view>
+#include <unordered_map>
 #include <variant>
 
 using namespace ncc;
@@ -49,86 +54,71 @@ using namespace ncc::lex;
 using namespace ncc::parse;
 
 namespace ncc::parse {
+  static const auto OPERATOR_ADJACENCY_TABLE = [] {
+    struct PairHash {
+      size_t operator()(const std::pair<Operator, Operator>& p) const {
+        return std::hash<int>()(static_cast<int>(p.first)) ^ std::hash<int>()(static_cast<int>(p.second));
+      }
+    };
+
+    struct Result {
+      bool m_seperate;
+    };
+
+    auto env = std::make_shared<ncc::Environment>();
+
+    std::unordered_map<std::pair<Operator, Operator>, Result, PairHash> map;
+    map.reserve(LEXICAL_OPERATORS.size() * LEXICAL_OPERATORS.size());
+    for (const auto& [outer_str, outer_op] : LEXICAL_OPERATORS) {
+      for (const auto& [inner_str, inner_op] : LEXICAL_OPERATORS) {
+        env->Reset();
+
+        bool seperate = true;
+
+        std::stringstream ss;
+        ss << outer_str << inner_str;
+        ss.seekg(0);
+
+        auto lexer = Tokenizer(ss, env);
+
+        auto first = lexer.Next();
+        auto second = lexer.Next();
+        auto third = lexer.Next();
+
+        if (first.Is(Oper) && second.Is(Oper) && third.Is(EofF)) {
+          if (first.GetOperator() == outer_op && second.GetOperator() == inner_op) {
+            seperate = false;
+          }
+        }
+
+        map[{outer_op, inner_op}] = {seperate};
+      }
+    }
+
+    return map;
+  }();
+
   class CodeWriter final : public ICodeWriter {
     std::ostream& m_os;
     TokenType m_last{};
     TokenData m_ldata;
     bool m_did_root{};
+    std::stack<bool> m_type_context;
 
-    static constexpr auto kNumberOfOperators = Op_Last - Op_First + 1;
+    class ContextFrame {
+      std::stack<bool>& m_context;
 
-    /// FIXME: Optimize this lookup table to minimize redundant whitespace
-    static constexpr std::array<char, (kNumberOfOperators * kNumberOfOperators) + 1> kOpOnOpAction = {
-        /*
-         OOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOO
-         ppppppppppppppppppppppppppppppppppppppppppppppppppppppp
-         PMTSPBBBBLRRRLLLLLGLGENSPMTSPBBBLLLLRRRIDABIOSBATCDREAT
-         liileiiiiSSOOooooTTEEqEeliileiiioooSSOOnesinuiilyooalre
-         unmartttthhTTgggg      tunmartttggghhTTcc t tztipmtnlrr
-         suescAOXNiiLRiiii       suescAOXiiiiiLR   c  esgep gion
-          sshenrooff  cccc       SsshenrocccffSS   a  oinot epwa
-             nd rttt  AOXN       eSSSndSrAOXttee   s  fzofi  s r
-             t        nroo       teeetSeSnroSStt   t   ef m  i y
-                      d rt        tttSetedSree     A   o  e  s
-                                     et tSeStt     s   f
-                                     t   ete
-                                         t t                                */
-        "                                                       " /* OpPlus */
-        "                                                       " /* OpMinus */
-        "                                                       " /* OpTimes */
-        "                                                       " /* OpSlash */
-        "                                                       " /* OpPercent */
-        "                                                       " /* OpBitAnd */
-        "                                                       " /* OpBitOr */
-        "                                                       " /* OpBitXor */
-        "                                                       " /* OpBitNot */
-        "                                                       " /* OpLShift */
-        "                                                       " /* OpRShift */
-        "                                                       " /* OpROTL */
-        "                                                       " /* OpROTR */
-        "                                                       " /* OpLogicAnd */
-        "                                                       " /* OpLogicOr */
-        "                                                       " /* OpLogicXor */
-        "                                                       " /* OpLogicNot */
-        "                                                       " /* OpLT */
-        "                                                       " /* OpGT */
-        "                                                       " /* OpLE */
-        "                                                       " /* OpGE */
-        "                                                       " /* OpEq */
-        "                                                       " /* OpNE */
-        "                                                       " /* OpSet */
-        "                                                       " /* OpPlusSet */
-        "                                                       " /* OpMinusSet */
-        "                                                       " /* OpTimesSet */
-        "                                                       " /* OpSlashSet */
-        "                                                       " /* OpPercentSet */
-        "                                                       " /* OpBitAndSet */
-        "                                                       " /* OpBitOrSet */
-        "                                                       " /* OpBitXorSet */
-        "                                                       " /* OpLogicAndSet */
-        "                                                       " /* OpLogicOrSet */
-        "                                                       " /* OpLogicXorSet */
-        "                                                       " /* OpLShiftSet */
-        "                                                       " /* OpRShiftSet */
-        "                                                       " /* OpROTLSet */
-        "                                                       " /* OpROTRSet */
-        "                                                       " /* OpInc */
-        "                                                       " /* OpDec */
-        "                                                       " /* OpAs */
-        "                                                       " /* OpBitcastAs */
-        "                                                       " /* OpIn */
-        "                                                       " /* OpOut */
-        "                                                       " /* OpSizeof */
-        "                                                       " /* OpBitsizeof */
-        "                                                       " /* OpAlignof */
-        "                                                       " /* OpTypeof */
-        "                                                       " /* OpComptime */
-        "                                                       " /* OpDot */
-        "                                                       " /* OpRange */
-        "                                                       " /* OpEllipsis */
-        "                                                       " /* OpArrow */
-        "                                                       " /* OpTernary */
+    public:
+      ContextFrame(std::stack<bool>& ctx) : m_context(ctx) { m_context.push(false); }
+      ~ContextFrame() { m_context.pop(); }
     };
+
+    auto CreateContextFrame() -> ContextFrame { return {m_type_context}; }
+
+    void EnableTypeContext() { m_type_context.top() = true; }
+    void DisableTypeContext() { m_type_context.top() = false; }
+
+    [[nodiscard]] bool IsTypeContext() const { return m_type_context.top(); }
 
     static bool IsWordOperator(Operator op) {
       switch (op) {
@@ -274,15 +264,11 @@ namespace ncc::parse {
         }
 
         case Oper: {
-          auto table_row = static_cast<size_t>(m_ldata.m_op) - static_cast<size_t>(Op_First);
-          auto table_col = static_cast<size_t>(op) - static_cast<size_t>(Op_First);
-          auto table_idx = table_row * kNumberOfOperators + table_col;
-
-          if (kOpOnOpAction[table_idx] == ' ') {
-            m_os << ' ' << op;
-          } else {
-            m_os << op;
+          if (OPERATOR_ADJACENCY_TABLE.at({m_ldata.m_op, op}).m_seperate) {
+            m_os << ' ';
           }
+
+          m_os << op;
           break;
         }
 
@@ -378,6 +364,7 @@ namespace ncc::parse {
         tab[c] = true;
       }
 
+      tab[':'] = true;
       tab['_'] = true;
 
       /* Support UTF-8 */
@@ -456,6 +443,25 @@ namespace ncc::parse {
 
         std::basic_string_view<uint8_t> name_bytes(reinterpret_cast<const uint8_t*>(name.data()), name.size());
         if (!IsUtf8(name_bytes)) [[unlikely]] {
+          return true;
+        }
+
+        size_t colon = 0;
+        for (char ch : name) {
+          if (const auto is_colon = ch == ':') {
+            if (++colon >= 3) [[unlikely]] {
+              return true;
+            }
+          } else {
+            if (colon != 0 && colon != 2) [[unlikely]] {
+              return true;
+            }
+
+            colon = 0;
+          }
+        }
+
+        if (colon != 0 && colon != 2) [[unlikely]] {
           return true;
         }
 
@@ -748,22 +754,24 @@ namespace ncc::parse {
     ///=============================================================================
 
     void PutTypeStuff(const FlowPtr<Type>& n) {
+      auto frame = CreateContextFrame();
+
       if (n->GetRangeBegin() || n->GetRangeEnd()) {
         PutPunctor(PuncColn);
         PutPunctor(PuncLBrk);
         if (n->GetRangeBegin()) {
-          n->GetRangeBegin().value()->Accept(*this);
+          n->GetRangeBegin().Unwrap()->Accept(*this);
         }
         PutPunctor(PuncColn);
         if (n->GetRangeEnd()) {
-          n->GetRangeEnd().value()->Accept(*this);
+          n->GetRangeEnd().Unwrap()->Accept(*this);
         }
         PutPunctor(PuncRBrk);
       }
 
       if (n->GetWidth()) {
         PutPunctor(PuncColn);
-        n->GetWidth().value()->Accept(*this);
+        n->GetWidth().Unwrap()->Accept(*this);
       }
     }
 
@@ -782,6 +790,12 @@ namespace ncc::parse {
     }
 
     void Visit(FlowPtr<NamedTy> n) override {
+      if (!IsTypeContext()) {
+        PutKeyword(lex::Type);
+      }
+
+      auto frame = CreateContextFrame();
+
       PrintLeading(n);
 
       PutIdentifier(n->GetName());
@@ -791,6 +805,12 @@ namespace ncc::parse {
     }
 
     void Visit(FlowPtr<InferTy> n) override {
+      if (!IsTypeContext()) {
+        PutKeyword(lex::Type);
+      }
+
+      auto frame = CreateContextFrame();
+
       PrintLeading(n);
 
       PutOperator(OpTernary);
@@ -800,9 +820,18 @@ namespace ncc::parse {
     }
 
     void Visit(FlowPtr<TemplateType> n) override {
+      if (!IsTypeContext()) {
+        PutKeyword(lex::Type);
+      }
+
+      auto frame = CreateContextFrame();
+
       PrintLeading(n);
 
+      EnableTypeContext();
       n->GetTemplate()->Accept(*this);
+      DisableTypeContext();
+
       PutOperator(OpLT);
       for (auto it = n->GetArgs().begin(); it != n->GetArgs().end(); ++it) {
         if (it != n->GetArgs().begin()) {
@@ -815,7 +844,9 @@ namespace ncc::parse {
           PutPunctor(PuncColn);
         }
 
+        EnableTypeContext();
         pval->Accept(*this);
+        DisableTypeContext();
       }
       PutOperator(OpGT);
 
@@ -824,161 +855,31 @@ namespace ncc::parse {
       PrintTrailing(n);
     }
 
-    void Visit(FlowPtr<U1> n) override {
-      PrintLeading(n);
-
-      PutIdentifier("u1");
-      PutTypeStuff(n);
-
-      PrintTrailing(n);
-    }
-
-    void Visit(FlowPtr<U8> n) override {
-      PrintLeading(n);
-
-      PutIdentifier("u8");
-      PutTypeStuff(n);
-
-      PrintTrailing(n);
-    }
-
-    void Visit(FlowPtr<U16> n) override {
-      PrintLeading(n);
-
-      PutIdentifier("u16");
-      PutTypeStuff(n);
-
-      PrintTrailing(n);
-    }
-
-    void Visit(FlowPtr<U32> n) override {
-      PrintLeading(n);
-
-      PutIdentifier("u32");
-      PutTypeStuff(n);
-
-      PrintTrailing(n);
-    }
-
-    void Visit(FlowPtr<U64> n) override {
-      PrintLeading(n);
-
-      PutIdentifier("u64");
-      PutTypeStuff(n);
-
-      PrintTrailing(n);
-    }
-
-    void Visit(FlowPtr<U128> n) override {
-      PrintLeading(n);
-
-      PutIdentifier("u128");
-      PutTypeStuff(n);
-
-      PrintTrailing(n);
-    }
-
-    void Visit(FlowPtr<I8> n) override {
-      PrintLeading(n);
-
-      PutIdentifier("i8");
-      PutTypeStuff(n);
-
-      PrintTrailing(n);
-    }
-
-    void Visit(FlowPtr<I16> n) override {
-      PrintLeading(n);
-
-      PutIdentifier("i16");
-      PutTypeStuff(n);
-
-      PrintTrailing(n);
-    }
-
-    void Visit(FlowPtr<I32> n) override {
-      PrintLeading(n);
-
-      PutIdentifier("i32");
-      PutTypeStuff(n);
-
-      PrintTrailing(n);
-    }
-
-    void Visit(FlowPtr<I64> n) override {
-      PrintLeading(n);
-
-      PutIdentifier("i64");
-      PutTypeStuff(n);
-
-      PrintTrailing(n);
-    }
-
-    void Visit(FlowPtr<I128> n) override {
-      PrintLeading(n);
-
-      PutIdentifier("i128");
-      PutTypeStuff(n);
-
-      PrintTrailing(n);
-    }
-
-    void Visit(FlowPtr<F16> n) override {
-      PrintLeading(n);
-
-      PutIdentifier("f16");
-      PutTypeStuff(n);
-
-      PrintTrailing(n);
-    }
-
-    void Visit(FlowPtr<F32> n) override {
-      PrintLeading(n);
-
-      PutIdentifier("f32");
-      PutTypeStuff(n);
-
-      PrintTrailing(n);
-    }
-
-    void Visit(FlowPtr<F64> n) override {
-      PrintLeading(n);
-
-      PutIdentifier("f64");
-      PutTypeStuff(n);
-
-      PrintTrailing(n);
-    }
-
-    void Visit(FlowPtr<F128> n) override {
-      PrintLeading(n);
-
-      PutIdentifier("f128");
-      PutTypeStuff(n);
-
-      PrintTrailing(n);
-    }
-
-    void Visit(FlowPtr<VoidTy> n) override {
-      PrintLeading(n);
-
-      PutIdentifier("void");
-      PutTypeStuff(n);
-
-      PrintTrailing(n);
-    }
-
     void Visit(FlowPtr<PtrTy> n) override {
+      if (!IsTypeContext()) {
+        PutKeyword(lex::Type);
+      }
+
+      auto frame = CreateContextFrame();
+
       PrintLeading(n);
 
       PutOperator(OpTimes);
+      EnableTypeContext();
       n->GetItem()->Accept(*this);
+      DisableTypeContext();
       PutTypeStuff(n);
 
       PrintTrailing(n);
     }
 
     void Visit(FlowPtr<OpaqueTy> n) override {
+      if (!IsTypeContext()) {
+        PutKeyword(lex::Type);
+      }
+
+      auto frame = CreateContextFrame();
+
       PrintLeading(n);
 
       PutKeyword(Opaque);
@@ -991,6 +892,12 @@ namespace ncc::parse {
     }
 
     void Visit(FlowPtr<TupleTy> n) override {
+      if (!IsTypeContext()) {
+        PutKeyword(lex::Type);
+      }
+
+      auto frame = CreateContextFrame();
+
       PrintLeading(n);
 
       PutPunctor(PuncLPar);
@@ -999,7 +906,9 @@ namespace ncc::parse {
           PutPunctor(PuncComa);
         }
 
+        EnableTypeContext();
         (*it)->Accept(*this);
+        DisableTypeContext();
       }
       PutPunctor(PuncRPar);
       PutTypeStuff(n);
@@ -1008,10 +917,18 @@ namespace ncc::parse {
     }
 
     void Visit(FlowPtr<ArrayTy> n) override {
+      if (!IsTypeContext()) {
+        PutKeyword(lex::Type);
+      }
+
+      auto frame = CreateContextFrame();
+
       PrintLeading(n);
 
       PutPunctor(PuncLBrk);
+      EnableTypeContext();
       n->GetItem()->Accept(*this);
+      DisableTypeContext();
       PutPunctor(PuncColn);
       n->GetSize()->Accept(*this);
       PutPunctor(PuncRBrk);
@@ -1021,16 +938,30 @@ namespace ncc::parse {
     }
 
     void Visit(FlowPtr<RefTy> n) override {
+      if (!IsTypeContext()) {
+        PutKeyword(lex::Type);
+      }
+
+      auto frame = CreateContextFrame();
+
       PrintLeading(n);
 
       PutOperator(OpBitAnd);
+      EnableTypeContext();
       n->GetItem()->Accept(*this);
+      DisableTypeContext();
       PutTypeStuff(n);
 
       PrintTrailing(n);
     }
 
     void Visit(FlowPtr<FuncTy> n) override {
+      if (!IsTypeContext()) {
+        PutKeyword(lex::Type);
+      }
+
+      auto frame = CreateContextFrame();
+
       PrintLeading(n);
 
       PutKeyword(lex::Fn);
@@ -1058,12 +989,14 @@ namespace ncc::parse {
 
         if (!ptype->Is(AST_tINFER)) {
           PutPunctor(PuncColn);
+          EnableTypeContext();
           ptype->Accept(*this);
+          DisableTypeContext();
         }
 
         if (pdefault) {
           PutOperator(OpSet);
-          pdefault.value()->Accept(*this);
+          pdefault.Unwrap()->Accept(*this);
         }
       }
       if (n->IsVariadic()) {
@@ -1077,13 +1010,17 @@ namespace ncc::parse {
 
       if (!n->GetReturn()->Is(AST_tINFER)) {
         PutPunctor(PuncColn);
+        EnableTypeContext();
         n->GetReturn()->Accept(*this);
+        DisableTypeContext();
       }
 
       PrintTrailing(n);
     }
 
     void Visit(FlowPtr<Unary> n) override {
+      auto frame = CreateContextFrame();
+
       PrintLeading(n);
 
       if (n->IsPostfix()) {
@@ -1098,16 +1035,28 @@ namespace ncc::parse {
     }
 
     void Visit(FlowPtr<Binary> n) override {
+      auto frame = CreateContextFrame();
+
       PrintLeading(n);
 
       n->GetLHS()->Accept(*this);
-      PutOperator(n->GetOp());
-      n->GetRHS()->Accept(*this);
+      const auto op = n->GetOp();
+      PutOperator(op);
+
+      if (op == OpAs || op == OpBitcastAs) {
+        EnableTypeContext();
+        n->GetRHS()->Accept(*this);
+        DisableTypeContext();
+      } else {
+        n->GetRHS()->Accept(*this);
+      }
 
       PrintTrailing(n);
     }
 
     void Visit(FlowPtr<Integer> n) override {
+      auto frame = CreateContextFrame();
+
       PrintLeading(n);
 
       PutInteger(n->GetValue());
@@ -1116,6 +1065,8 @@ namespace ncc::parse {
     }
 
     void Visit(FlowPtr<Float> n) override {
+      auto frame = CreateContextFrame();
+
       PrintLeading(n);
 
       PutFloat(n->GetValue());
@@ -1124,6 +1075,8 @@ namespace ncc::parse {
     }
 
     void Visit(FlowPtr<Boolean> n) override {
+      auto frame = CreateContextFrame();
+
       PrintLeading(n);
 
       PutKeyword(n->GetValue() ? True : False);
@@ -1132,6 +1085,8 @@ namespace ncc::parse {
     }
 
     void Visit(FlowPtr<String> n) override {
+      auto frame = CreateContextFrame();
+
       PrintLeading(n);
 
       PutString(n->GetValue());
@@ -1140,6 +1095,8 @@ namespace ncc::parse {
     }
 
     void Visit(FlowPtr<Character> n) override {
+      auto frame = CreateContextFrame();
+
       PrintLeading(n);
 
       PutCharacter(n->GetValue());
@@ -1147,15 +1104,9 @@ namespace ncc::parse {
       PrintTrailing(n);
     }
 
-    void Visit(FlowPtr<Null> n) override {
-      PrintLeading(n);
-
-      PutKeyword(lex::Null);
-
-      PrintTrailing(n);
-    }
-
     void Visit(FlowPtr<Call> n) override {
+      auto frame = CreateContextFrame();
+
       PrintLeading(n);
 
       n->GetFunc()->Accept(*this);
@@ -1178,6 +1129,8 @@ namespace ncc::parse {
     }
 
     void Visit(FlowPtr<TemplateCall> n) override {
+      auto frame = CreateContextFrame();
+
       PrintLeading(n);
 
       n->GetFunc()->Accept(*this);
@@ -1214,6 +1167,8 @@ namespace ncc::parse {
     }
 
     void Visit(FlowPtr<Import> n) override {
+      auto frame = CreateContextFrame();
+
       PrintLeading(n);
 
       PutKeyword(lex::Import);
@@ -1238,6 +1193,8 @@ namespace ncc::parse {
     }
 
     void Visit(FlowPtr<List> n) override {
+      auto frame = CreateContextFrame();
+
       PrintLeading(n);
 
       PutPunctor(PuncLBrk);
@@ -1254,6 +1211,8 @@ namespace ncc::parse {
     }
 
     void Visit(FlowPtr<Assoc> n) override {
+      auto frame = CreateContextFrame();
+
       PrintLeading(n);
 
       PutPunctor(PuncLCur);
@@ -1266,6 +1225,8 @@ namespace ncc::parse {
     }
 
     void Visit(FlowPtr<Index> n) override {
+      auto frame = CreateContextFrame();
+
       PrintLeading(n);
 
       n->GetBase()->Accept(*this);
@@ -1277,6 +1238,8 @@ namespace ncc::parse {
     }
 
     void Visit(FlowPtr<Slice> n) override {
+      auto frame = CreateContextFrame();
+
       PrintLeading(n);
 
       n->GetBase()->Accept(*this);
@@ -1290,6 +1253,8 @@ namespace ncc::parse {
     }
 
     void Visit(FlowPtr<FString> n) override {
+      auto frame = CreateContextFrame();
+
       PrintLeading(n);
 
       PutIdentifier("f");
@@ -1315,6 +1280,8 @@ namespace ncc::parse {
     }
 
     void Visit(FlowPtr<Identifier> n) override {
+      auto frame = CreateContextFrame();
+
       PrintLeading(n);
 
       PutIdentifier(n->GetName());
@@ -1323,6 +1290,8 @@ namespace ncc::parse {
     }
 
     void Visit(FlowPtr<Block> n) override {
+      auto frame = CreateContextFrame();
+
       PrintLeading(n);
 
       bool use_braces = m_did_root;
@@ -1348,6 +1317,8 @@ namespace ncc::parse {
     }
 
     void Visit(FlowPtr<Variable> n) override {
+      auto frame = CreateContextFrame();
+
       PrintLeading(n);
 
       switch (n->GetVariableKind()) {
@@ -1377,18 +1348,23 @@ namespace ncc::parse {
       PutIdentifier(n->GetName());
       if (!n->GetType()->Is(AST_tINFER)) {
         PutPunctor(PuncColn);
+
+        EnableTypeContext();
         n->GetType()->Accept(*this);
+        DisableTypeContext();
       }
 
       if (n->GetInitializer()) {
         PutOperator(OpSet);
-        n->GetInitializer().value()->Accept(*this);
+        n->GetInitializer().Unwrap()->Accept(*this);
       }
 
       PrintTrailing(n);
     }
 
     void Visit(FlowPtr<Assembly> n) override {
+      auto frame = CreateContextFrame();
+
       PrintLeading(n);
 
       qcore_implement();
@@ -1398,6 +1374,8 @@ namespace ncc::parse {
     }
 
     void Visit(FlowPtr<If> n) override {
+      auto frame = CreateContextFrame();
+
       PrintLeading(n);
 
       PutKeyword(lex::If);
@@ -1405,13 +1383,15 @@ namespace ncc::parse {
       n->GetThen()->Accept(*this);
       if (n->GetElse()) {
         PutKeyword(lex::Else);
-        n->GetElse().value()->Accept(*this);
+        n->GetElse().Unwrap()->Accept(*this);
       }
 
       PrintTrailing(n);
     }
 
     void Visit(FlowPtr<While> n) override {
+      auto frame = CreateContextFrame();
+
       PrintLeading(n);
 
       PutKeyword(lex::While);
@@ -1422,24 +1402,26 @@ namespace ncc::parse {
     }
 
     void Visit(FlowPtr<For> n) override {
+      auto frame = CreateContextFrame();
+
       PrintLeading(n);
 
       PutKeyword(lex::For);
 
       if (n->GetInit()) {
-        n->GetInit().value()->Accept(*this);
+        n->GetInit().Unwrap()->Accept(*this);
       } else {
         PutPunctor(PuncSemi);
       }
 
       if (n->GetCond()) {
-        n->GetCond().value()->Accept(*this);
+        n->GetCond().Unwrap()->Accept(*this);
       } else {
         PutPunctor(PuncSemi);
       }
 
       if (n->GetStep()) {
-        n->GetStep().value()->Accept(*this);
+        n->GetStep().Unwrap()->Accept(*this);
       }
 
       n->GetBody()->Accept(*this);
@@ -1448,6 +1430,8 @@ namespace ncc::parse {
     }
 
     void Visit(FlowPtr<Foreach> n) override {
+      auto frame = CreateContextFrame();
+
       PrintLeading(n);
 
       PutKeyword(lex::Foreach);
@@ -1464,6 +1448,8 @@ namespace ncc::parse {
     }
 
     void Visit(FlowPtr<Break> n) override {
+      auto frame = CreateContextFrame();
+
       PrintLeading(n);
 
       PutKeyword(lex::Break);
@@ -1472,6 +1458,8 @@ namespace ncc::parse {
     }
 
     void Visit(FlowPtr<Continue> n) override {
+      auto frame = CreateContextFrame();
+
       PrintLeading(n);
 
       PutKeyword(lex::Continue);
@@ -1480,17 +1468,21 @@ namespace ncc::parse {
     }
 
     void Visit(FlowPtr<Return> n) override {
+      auto frame = CreateContextFrame();
+
       PrintLeading(n);
 
       PutKeyword(lex::Return);
       if (n->GetValue()) {
-        n->GetValue().value()->Accept(*this);
+        n->GetValue().Unwrap()->Accept(*this);
       }
 
       PrintTrailing(n);
     }
 
     void Visit(FlowPtr<Case> n) override {
+      auto frame = CreateContextFrame();
+
       PrintLeading(n);
 
       n->GetCond()->Accept(*this);
@@ -1501,6 +1493,8 @@ namespace ncc::parse {
     }
 
     void Visit(FlowPtr<Switch> n) override {
+      auto frame = CreateContextFrame();
+
       PrintLeading(n);
 
       PutKeyword(lex::Switch);
@@ -1512,7 +1506,7 @@ namespace ncc::parse {
       if (n->GetDefault()) {
         PutIdentifier("_");
         PutOperator(OpArrow);
-        n->GetDefault().value()->Accept(*this);
+        n->GetDefault().Unwrap()->Accept(*this);
       }
       PutPunctor(PuncRCur);
 
@@ -1520,17 +1514,24 @@ namespace ncc::parse {
     }
 
     void Visit(FlowPtr<Typedef> n) override {
+      auto frame = CreateContextFrame();
+
       PrintLeading(n);
 
       PutKeyword(lex::Type);
       PutIdentifier(n->GetName());
       PutOperator(OpSet);
+
+      EnableTypeContext();
       n->GetType()->Accept(*this);
+      DisableTypeContext();
 
       PrintTrailing(n);
     }
 
     void Visit(FlowPtr<Function> n) override {
+      auto frame = CreateContextFrame();
+
       PrintLeading(n);
 
       PutKeyword(lex::Fn);
@@ -1550,10 +1551,10 @@ namespace ncc::parse {
         PutIdentifier(n->GetName());
       }
 
-      if (n->GetTemplateParams().has_value()) {
+      if (n->GetTemplateParams()) {
         PutOperator(OpLT);
-        for (auto it = n->GetTemplateParams().value().begin(); it != n->GetTemplateParams().value().end(); ++it) {
-          if (it != n->GetTemplateParams().value().begin()) {
+        for (auto it = n->GetTemplateParams()->begin(); it != n->GetTemplateParams()->end(); ++it) {
+          if (it != n->GetTemplateParams()->begin()) {
             PutPunctor(PuncComa);
           }
 
@@ -1562,12 +1563,15 @@ namespace ncc::parse {
 
           if (!ptype->Is(AST_tINFER)) {
             PutPunctor(PuncColn);
+
+            EnableTypeContext();
             ptype->Accept(*this);
+            DisableTypeContext();
           }
 
           if (pdefault) {
             PutOperator(OpSet);
-            pdefault.value()->Accept(*this);
+            pdefault.Unwrap()->Accept(*this);
           }
         }
         PutOperator(OpGT);
@@ -1584,12 +1588,15 @@ namespace ncc::parse {
 
         if (!ptype->Is(AST_tINFER)) {
           PutPunctor(PuncColn);
+
+          EnableTypeContext();
           ptype->Accept(*this);
+          DisableTypeContext();
         }
 
         if (pdefault) {
           PutOperator(OpSet);
-          pdefault.value()->Accept(*this);
+          pdefault.Unwrap()->Accept(*this);
         }
       }
       if (n->IsVariadic()) {
@@ -1603,11 +1610,14 @@ namespace ncc::parse {
 
       if (!n->GetReturn()->Is(AST_tINFER)) {
         PutPunctor(PuncColn);
+
+        EnableTypeContext();
         n->GetReturn()->Accept(*this);
+        DisableTypeContext();
       }
 
       if (n->GetBody()) {
-        auto body = n->GetBody().value();
+        auto body = n->GetBody().Unwrap();
 
         if (body->Is(AST_sBLOCK) && body->As<Block>()->GetStatements().size() == 1) {
           PutOperator(OpArrow);
@@ -1621,15 +1631,17 @@ namespace ncc::parse {
     }
 
     void Visit(FlowPtr<Struct> n) override {
-      static const std::unordered_map<CompositeType, lex::Keyword> kStructKeywords = {
+      static const std::unordered_map<CompositeType, lex::Keyword> struct_keywords = {
           {CompositeType::Struct, lex::Struct}, {CompositeType::Union, lex::Union},
           {CompositeType::Class, lex::Class},   {CompositeType::Group, lex::Group},
           {CompositeType::Region, lex::Region},
       };
 
+      auto frame = CreateContextFrame();
+
       PrintLeading(n);
 
-      PutKeyword(kStructKeywords.at(n->GetCompositeType()));
+      PutKeyword(struct_keywords.at(n->GetCompositeType()));
 
       if (!n->GetAttributes().empty()) {
         PutPunctor(PuncLBrk);
@@ -1649,8 +1661,8 @@ namespace ncc::parse {
 
       if (n->GetTemplateParams()) {
         PutOperator(OpLT);
-        for (auto it = n->GetTemplateParams().value().begin(); it != n->GetTemplateParams().value().end(); ++it) {
-          if (it != n->GetTemplateParams().value().begin()) {
+        for (auto it = n->GetTemplateParams()->begin(); it != n->GetTemplateParams()->end(); ++it) {
+          if (it != n->GetTemplateParams()->begin()) {
             PutPunctor(PuncComa);
           }
 
@@ -1659,12 +1671,15 @@ namespace ncc::parse {
 
           if (!ptype->Is(AST_tINFER)) {
             PutPunctor(PuncColn);
+
+            EnableTypeContext();
             ptype->Accept(*this);
+            DisableTypeContext();
           }
 
           if (pdefault) {
             PutOperator(OpSet);
-            pdefault.value()->Accept(*this);
+            pdefault.Unwrap()->Accept(*this);
           }
         }
         PutOperator(OpGT);
@@ -1706,10 +1721,14 @@ namespace ncc::parse {
 
         PutIdentifier(name);
         PutPunctor(PuncColn);
+
+        EnableTypeContext();
         type->Accept(*this);
+        DisableTypeContext();
+
         if (default_value) {
           PutOperator(OpSet);
-          default_value.value()->Accept(*this);
+          default_value.Unwrap()->Accept(*this);
         }
 
         if (std::next(it) != n->GetFields().end() || !n->GetMethods().empty()) {
@@ -1739,6 +1758,8 @@ namespace ncc::parse {
     }
 
     void Visit(FlowPtr<Enum> n) override {
+      auto frame = CreateContextFrame();
+
       PrintLeading(n);
 
       PutKeyword(lex::Enum);
@@ -1747,14 +1768,17 @@ namespace ncc::parse {
       }
       if (n->GetType()) {
         PutPunctor(PuncColn);
-        n->GetType().value()->Accept(*this);
+
+        EnableTypeContext();
+        n->GetType().Unwrap()->Accept(*this);
+        DisableTypeContext();
       }
       PutPunctor(PuncLCur);
       for (auto& [field, expr] : n->GetFields()) {
         PutIdentifier(field);
         if (expr) {
           PutOperator(OpSet);
-          expr.value()->Accept(*this);
+          expr.Unwrap()->Accept(*this);
         }
         PutPunctor(PuncComa);
       }
@@ -1764,6 +1788,8 @@ namespace ncc::parse {
     }
 
     void Visit(FlowPtr<Scope> n) override {
+      auto frame = CreateContextFrame();
+
       PrintLeading(n);
 
       PutKeyword(lex::Scope);
@@ -1793,6 +1819,8 @@ namespace ncc::parse {
     }
 
     void Visit(FlowPtr<Export> n) override {
+      auto frame = CreateContextFrame();
+
       PrintLeading(n);
 
       switch (n->GetVis()) {
@@ -1833,7 +1861,7 @@ namespace ncc::parse {
     }
 
   public:
-    CodeWriter(std::ostream& os) : m_os(os), m_ldata(TokenData::GetDefault(EofF)) {}
+    CodeWriter(std::ostream& os) : m_os(os), m_ldata(TokenData::GetDefault(EofF)) { m_type_context.push(false); }
     ~CodeWriter() override = default;
   };
 }  // namespace ncc::parse

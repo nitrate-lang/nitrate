@@ -31,15 +31,14 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <core/GetOpt.hh>
-#include <core/InterpreterImpl.hh>
+#include <core/cli/GetOpt.hh>
+#include <core/cli/Interpreter.hh>
 #include <fstream>
-#include <lsp/core/LSPServer.hh>
-#include <lsp/core/connect/Connection.hh>
+#include <lsp/connect/Connection.hh>
+#include <lsp/server/Server.hh>
 #include <memory>
 #include <nitrate-core/Assert.hh>
 #include <nitrate-core/CatchAll.hh>
-#include <nitrate-core/LogOStream.hh>
 #include <nitrate-core/Logger.hh>
 #include <nitrate-core/Macro.hh>
 
@@ -209,8 +208,8 @@ public:
   [[nodiscard]] auto GetOptions() -> Options { return {m_log_file, m_connect_arg, m_connection_mode}; }
 };
 
-static bool StartLSPServer(const std::filesystem::path& log_file, const ConnectionType& connection_mode,
-                           const std::string& connection_arg) {
+static bool StartServer(const std::filesystem::path& log_file, const ConnectionType& connection_mode,
+                        const std::string& connection_arg) {
   Log << Trace << "Opening connection for the LSP server IO";
   auto lsp_io = OpenConnection(connection_mode, connection_arg);
   if (!lsp_io.has_value()) {
@@ -261,7 +260,7 @@ static bool StartLSPServer(const std::filesystem::path& log_file, const Connecti
         auto file_logger_id = Log->Subscribe(file_logger);
 
         Log << Info << "Starting LSP server with " << connection_mode << " connection";
-        lsp_status = LSPServer(*lsp_io.value()).Start();
+        lsp_status = Server(*lsp_io.value()).Start();
         Log << Info << "LSP server exited";
         Log->Unsubscribe(file_logger_id);
       }
@@ -274,7 +273,7 @@ static bool StartLSPServer(const std::filesystem::path& log_file, const Connecti
     } else {
       const auto file_logger_id = Log->Subscribe(file_logger);
       Log << Info << "Starting LSP server with " << connection_mode << " connection";
-      lsp_status = LSPServer(*lsp_io.value()).Start();
+      lsp_status = Server(*lsp_io.value()).Start();
       Log << Info << "LSP server exited";
       Log->Unsubscribe(file_logger_id);
     }
@@ -312,5 +311,5 @@ auto no3::Interpreter::PImpl::CommandLSP(ConstArguments, const MutArguments& arg
   Log << Trace << "options[\"connect_arg\"] = " << connection_arg;
   Log << Trace << "options[\"log\"] = " << log_file;
 
-  return StartLSPServer(log_file, connection_mode, connection_arg);
+  return StartServer(log_file, connection_mode, connection_arg);
 }

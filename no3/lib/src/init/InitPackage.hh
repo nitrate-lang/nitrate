@@ -34,7 +34,7 @@
 
 #pragma once
 
-#include <core/PackageConfig.hh>
+#include <core/package/Manifest.hh>
 #include <filesystem>
 #include <string>
 
@@ -43,8 +43,8 @@ namespace no3::package {
     std::string m_package_name;
     std::string m_package_description;
     std::string m_package_license;
-    std::string m_package_version;
-    PackageCategory m_package_category;
+    Manifest::Version m_package_version;
+    Manifest::Category m_package_category;
   };
 
   auto CreatePackage(const std::filesystem::path& package_path, const InitOptions& options) -> bool;

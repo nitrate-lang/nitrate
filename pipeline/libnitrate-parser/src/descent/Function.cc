@@ -154,7 +154,9 @@ static auto RecurseFunctionParameters(GeneralParser::Context& m)
 
 static auto RecurseFunctionAttributes(GeneralParser::Context& m) -> std::vector<FlowPtr<Expr>> {
   static const std::unordered_set<Keyword> reserved_words = {
-      Pure, Impure, Quasi, Retro, Inline, Foreign, Safe, Unsafe,
+      Safe,
+      Unsafe,
+      Async,
   };
 
   std::vector<FlowPtr<Expr>> attributes;

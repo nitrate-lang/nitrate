@@ -288,41 +288,6 @@ auto GeneralParser::Context::RecurseBlock(bool braces, bool single, BlockMode sa
           break;
         }
 
-        case Pure: {
-          Log << ParserSignal << Current() << "Unexpected 'pure' in block context";
-          break;
-        }
-
-        case Impure: {
-          Log << ParserSignal << Current() << "Unexpected 'impure' in block context";
-          break;
-        }
-
-        case Quasi: {
-          Log << ParserSignal << Current() << "Unexpected 'quasi' in block context";
-          break;
-        }
-
-        case Retro: {
-          Log << ParserSignal << Current() << "Unexpected 'retro' in block context";
-          break;
-        }
-
-        case Inline: {
-          Log << ParserSignal << Current() << "Unexpected 'inline' in block context";
-          break;
-        }
-
-        case Foreign: {
-          Log << ParserSignal << Current() << "Unexpected 'foreign' in block context";
-          break;
-        }
-
-        case Promise: {
-          Log << ParserSignal << Current() << "Unexpected 'promise' in block context";
-          break;
-        }
-
         case Keyword::If: {
           r = RecurseIf();
           break;
@@ -410,14 +375,6 @@ auto GeneralParser::Context::RecurseBlock(bool braces, bool single, BlockMode sa
           break;
         }
 
-        case Keyword::Null: {
-          r = CreateNull();
-          if (!NextIf<PuncSemi>()) {
-            Log << ParserSignal << Current() << "Expected ';' after 'null' statement";
-          }
-          break;
-        }
-
         case True: {
           r = CreateBoolean(true);
           if (!NextIf<PuncSemi>()) {
@@ -445,10 +402,9 @@ auto GeneralParser::Context::RecurseBlock(bool braces, bool single, BlockMode sa
         }
       }
 
-      if (r.has_value()) {
-        r.value()->SetOffset(loc_start);
-        r = r.value();
-        statements.push_back(r.value());
+      if (r) {
+        r.Unwrap()->SetOffset(loc_start);
+        statements.push_back(r.Unwrap());
       }
     }
   }
@@ -456,7 +412,7 @@ auto GeneralParser::Context::RecurseBlock(bool braces, bool single, BlockMode sa
 
 GeneralParser::GeneralParser(ncc::lex::IScanner &lexer, std::shared_ptr<ncc::IEnvironment> env,
                              std::pmr::memory_resource &pool, const std::optional<ImportConfig> &import_config)
-    : m_impl(std::make_unique<GeneralParser::Context>(lexer, import_config.value_or(ImportConfig::GetDefault()),
+    : m_impl(std::make_unique<GeneralParser::Context>(lexer, import_config.value_or(ImportConfig::GetDefault(env)),
                                                       std::move(env), pool)) {}
 
 GeneralParser::~GeneralParser() = default;
@@ -507,7 +463,7 @@ auto GeneralParser::Parse() -> ASTRoot {
             Log << ParserSignal << "Some lexical errors have occurred";
           }
 
-          for_each<dfs_pre>(node, [&](auto c) {
+          ForEach<dfs_pre>(node, [&](auto c) {
             m_impl->m_failed |= !c || c->IsMock();
             return m_impl->m_failed ? IterOp::Abort : IterOp::Proceed;
           });

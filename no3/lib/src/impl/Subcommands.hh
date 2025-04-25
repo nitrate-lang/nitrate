@@ -33,7 +33,7 @@
 
 #pragma once
 
-#include <core/InterpreterImpl.hh>
+#include <core/cli/Interpreter.hh>
 
 namespace no3::cmd_impl::subcommands {
   auto CommandImplHelp(ConstArguments full_argv, const MutArguments& argv) -> bool;

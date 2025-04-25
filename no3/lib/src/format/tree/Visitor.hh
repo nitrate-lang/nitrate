@@ -62,7 +62,7 @@ namespace no3::format {
     static auto CanonicalSettings() -> FormatterConfig { return {}; }
   };
 
-  class QuasiCanonicalFormatterFactory {
+  class CanonicalFormatterFactory {
   public:
     static auto Create(std::ostream& out, bool& has_errors,
                        const FormatterConfig& config = FormatterConfig::CanonicalSettings())

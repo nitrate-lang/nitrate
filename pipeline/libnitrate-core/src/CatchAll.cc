@@ -34,13 +34,16 @@
 // This translation unit must be compiled with exceptions enabled.
 
 #include <nitrate-core/CatchAll.hh>
+#include <nitrate-core/Logger.hh>
 #include <nitrate-core/Macro.hh>
+
+using namespace ncc;
 
 #ifndef NCC_CATCH_ALL_ENABLED_EXCEPTIONS
 #error "This file requires exceptions to be enabled."
 #endif
 
-NCC_EXPORT auto ncc::detail::CatchAllAny(const std::function<std::any()> &expr) -> std::optional<std::any> {
+NCC_EXPORT auto ncc::detail::CatchAllAny(const std::function<std::any()>& expr) -> std::optional<std::any> {
   try {
     return expr();
   } catch (...) {
@@ -48,11 +51,23 @@ NCC_EXPORT auto ncc::detail::CatchAllAny(const std::function<std::any()> &expr) 
   }
 }
 
-NCC_EXPORT auto ncc::detail::CatchAllVoid(const std::function<void()> &expr) -> bool {
+NCC_EXPORT auto ncc::detail::CatchAllVoid(const std::function<void()>& expr) -> bool {
   try {
     expr();
     return true;
   } catch (...) {
     return false;
   }
+}
+
+#include <boost/throw_exception.hpp>
+
+[[maybe_unused]] NCC_EXPORT void boost::throw_exception(std::exception const& m, boost::source_location const&) {
+  Log << Trace << "boost::throw_exception: " << m.what();
+  throw m;
+}
+
+[[maybe_unused]] NCC_EXPORT void boost::throw_exception(std::exception const& m) {
+  Log << Trace << "boost::throw_exception: " << m.what();
+  throw m;
 }

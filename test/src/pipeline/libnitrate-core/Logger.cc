@@ -3,6 +3,7 @@
 
 #include <algorithm>
 #include <nitrate-core/Assert.hh>
+#include <nitrate-core/Environment.hh>
 #include <nitrate-core/Init.hh>
 #include <nitrate-core/Logger.hh>
 #include <optional>
@@ -147,8 +148,7 @@ NCC_EC_GROUP(Test_Core);
 NCC_EC_EX(Test_Core, TestError, Formatter, "$NCC_CONF/ec/core/TestError")
 
 TEST(Core, Log_EC_ToJson) {
-  if (std::getenv  // NOLINT(concurrency-mt-unsafe)
-      ("NCC_CONF") == nullptr) {
+  if (!Environment().Contains("NCC_CONF")) {
     FAIL() << "NCC_CONF environment variable is not set.";
     return;
   }

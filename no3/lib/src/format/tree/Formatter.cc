@@ -34,7 +34,7 @@
 #include <format/tree/Formatter.hh>
 #include <format/tree/Visitor.hh>
 
-auto no3::format::QuasiCanonicalFormatterFactory::Create(
-    std::ostream& out, bool& has_errors, const FormatterConfig& config) -> std::unique_ptr<ncc::parse::ASTVisitor> {
-  return std::make_unique<details::QuasiCanonicalFormatter>(out, has_errors, config);
+auto no3::format::CanonicalFormatterFactory::Create(std::ostream& out, bool& has_errors, const FormatterConfig& config)
+    -> std::unique_ptr<ncc::parse::ASTVisitor> {
+  return std::make_unique<details::CanonicalFormatter>(out, has_errors, config);
 }

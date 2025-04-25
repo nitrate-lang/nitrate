@@ -51,7 +51,6 @@ namespace ncc::parse {
     AST_eSTRING,        /* String literal */
     AST_eCHAR,          /* Character literal */
     AST_eBOOL,          /* Boolean literal */
-    AST_eNULL,          /* Null literal */
     AST_eCALL,          /* Function call */
     AST_eLIST,          /* List expression */
     AST_ePAIR,          /* Associative pair */
@@ -66,22 +65,6 @@ namespace ncc::parse {
      * Types
      ****************************************************************************/
 
-    AST_tU1,       /* 1-bit unsigned integer (boolean) */
-    AST_tU8,       /* 8-bit unsigned integer */
-    AST_tU16,      /* 16-bit unsigned integer */
-    AST_tU32,      /* 32-bit unsigned integer */
-    AST_tU64,      /* 64-bit unsigned integer */
-    AST_tU128,     /* 128-bit unsigned integer */
-    AST_tI8,       /* 8-bit signed integer */
-    AST_tI16,      /* 16-bit signed integer */
-    AST_tI32,      /* 32-bit signed integer */
-    AST_tI64,      /* 64-bit signed integer */
-    AST_tI128,     /* 128-bit signed integer */
-    AST_tF16,      /* 16-bit floating-point number */
-    AST_tF32,      /* 32-bit floating-point number */
-    AST_tF64,      /* 64-bit floating-point number */
-    AST_tF128,     /* 128-bit floating-point number */
-    AST_tVOID,     /* Void type */
     AST_tINFER,    /* Inferred type */
     AST_tOPAQUE,   /* Opaque named type */
     AST_tNAMED,    /* Unresolved type name */
@@ -117,7 +100,7 @@ namespace ncc::parse {
 
     ///======================================================================
 
-    AST__TYPE_FIRST = AST_tU1,
+    AST__TYPE_FIRST = AST_tINFER,
     AST__TYPE_LAST = AST_tFUNCTION,
 
     AST__STMT_FIRST = AST_sIF,

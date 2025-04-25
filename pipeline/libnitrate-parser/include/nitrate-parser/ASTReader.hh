@@ -40,7 +40,6 @@
 #include <nitrate-lexer/ScannerFwd.hh>
 #include <nitrate-parser/AST.hh>
 #include <nitrate-parser/ASTFactory.hh>
-#include <nitrate-parser/Context.hh>
 #include <nitrate-parser/ProtobufFwd.hh>
 #include <optional>
 
@@ -49,12 +48,12 @@ namespace ncc::parse {
 
   using ReaderSourceManager = std::optional<std::reference_wrapper<lex::IScanner>>;
 
-  class NCC_EXPORT AstReader final : private ASTFactory {
+  class NCC_EXPORT ASTReader final : private ASTFactory {
+    class PImpl;
+    std::unique_ptr<PImpl> m_impl;
+
     template <typename T>
     using Result = NullableFlowPtr<T>;
-
-    Result<Expr> m_root;
-    ReaderSourceManager m_rd;
 
     void UnmarshalLocationLocation(const SyntaxTree::SourceLocationRange &in, FlowPtr<Expr> out);
     void UnmarshalCodeComment(
@@ -66,22 +65,6 @@ namespace ncc::parse {
     auto Unmarshal(const SyntaxTree::NamedTy &in) -> Result<NamedTy>;
     auto Unmarshal(const SyntaxTree::InferTy &in) -> Result<InferTy>;
     auto Unmarshal(const SyntaxTree::TemplateType &in) -> Result<TemplateType>;
-    auto Unmarshal(const SyntaxTree::U1 &in) -> Result<U1>;
-    auto Unmarshal(const SyntaxTree::U8 &in) -> Result<U8>;
-    auto Unmarshal(const SyntaxTree::U16 &in) -> Result<U16>;
-    auto Unmarshal(const SyntaxTree::U32 &in) -> Result<U32>;
-    auto Unmarshal(const SyntaxTree::U64 &in) -> Result<U64>;
-    auto Unmarshal(const SyntaxTree::U128 &in) -> Result<U128>;
-    auto Unmarshal(const SyntaxTree::I8 &in) -> Result<I8>;
-    auto Unmarshal(const SyntaxTree::I16 &in) -> Result<I16>;
-    auto Unmarshal(const SyntaxTree::I32 &in) -> Result<I32>;
-    auto Unmarshal(const SyntaxTree::I64 &in) -> Result<I64>;
-    auto Unmarshal(const SyntaxTree::I128 &in) -> Result<I128>;
-    auto Unmarshal(const SyntaxTree::F16 &in) -> Result<F16>;
-    auto Unmarshal(const SyntaxTree::F32 &in) -> Result<F32>;
-    auto Unmarshal(const SyntaxTree::F64 &in) -> Result<F64>;
-    auto Unmarshal(const SyntaxTree::F128 &in) -> Result<F128>;
-    auto Unmarshal(const SyntaxTree::VoidTy &in) -> Result<VoidTy>;
     auto Unmarshal(const SyntaxTree::PtrTy &in) -> Result<PtrTy>;
     auto Unmarshal(const SyntaxTree::OpaqueTy &in) -> Result<OpaqueTy>;
     auto Unmarshal(const SyntaxTree::TupleTy &in) -> Result<TupleTy>;
@@ -95,7 +78,6 @@ namespace ncc::parse {
     auto Unmarshal(const SyntaxTree::Boolean &in) -> Result<Boolean>;
     auto Unmarshal(const SyntaxTree::String &in) -> Result<String>;
     auto Unmarshal(const SyntaxTree::Character &in) -> Result<Character>;
-    auto Unmarshal(const SyntaxTree::Null &in) -> Result<Null>;
     auto Unmarshal(const SyntaxTree::Call &in) -> Result<Call>;
     auto Unmarshal(const SyntaxTree::TemplateCall &in) -> Result<TemplateCall>;
     auto Unmarshal(const SyntaxTree::Import &in) -> Result<Import>;
@@ -125,9 +107,13 @@ namespace ncc::parse {
     auto Unmarshal(const SyntaxTree::Export &in) -> Result<Export>;
 
   public:
-    AstReader(std::string_view protobuf_data, std::pmr::memory_resource &pool,
+    enum class Format { JSON, PROTO };
+
+    ASTReader(std::istream &in, Format format, std::pmr::memory_resource &pool,
               ReaderSourceManager source_manager = std::nullopt);
-    ~AstReader() = default;
+    ASTReader(std::string_view buf, Format format, std::pmr::memory_resource &pool,
+              ReaderSourceManager source_manager = std::nullopt);
+    ~ASTReader();
 
     auto Get() -> NullableFlowPtr<Expr>;
   };

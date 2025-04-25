@@ -34,10 +34,9 @@
 #ifndef __NITRATE_CORE_FLOWPTR_H__
 #define __NITRATE_CORE_FLOWPTR_H__
 
+#include <cassert>
 #include <cstddef>
-#include <nitrate-core/Assert.hh>
-#include <nitrate-core/Logger.hh>
-#include <nitrate-core/Macro.hh>
+#include <cstdint>
 #include <source_location>
 #include <string_view>
 #include <type_traits>
@@ -69,13 +68,13 @@ namespace ncc {
 
         return m_line == o.m_line && m_column == o.m_column && a == b && c == d;
       }
-    };
+    } __attribute__((packed));
 
     class Empty {
     public:
       constexpr Empty() = default;
       constexpr auto operator==(const Empty &) const -> bool { return true; }
-    };
+    } __attribute__((packed));
 
     static inline trace::Empty NoTraceStatic;
   }  // namespace trace
@@ -88,19 +87,33 @@ namespace ncc {
 
   namespace flowptr_detail {
     template <class Pointee, class Tracking>
-    struct WithTracking {
-      Pointee *m_ref;
+    class WithTracking {
+#if defined(__x86_64__)
+      uintptr_t m_raw_ptr : 48;
+#else
+      uintptr_t m_raw_ptr;
+#endif
+
+    public:
       Tracking m_tracking;
 
-      constexpr WithTracking(Pointee *ptr, Tracking tracking) : m_ref(ptr), m_tracking(std::move(tracking)) {}
-    };
+      constexpr WithTracking(Pointee *ptr, Tracking tracking)
+          : m_raw_ptr(reinterpret_cast<uintptr_t>(ptr)), m_tracking(std::move(tracking)) {}
+      [[nodiscard]] constexpr auto GetPointer() const -> Pointee * { return reinterpret_cast<Pointee *>(m_raw_ptr); }
+    } __attribute__((packed));
 
     template <class Pointee, class Tracking>
-    struct WithoutTracking {
-      Pointee *m_ref;
+    class WithoutTracking {
+#if defined(__x86_64__)
+      uintptr_t m_raw_ptr : 48;
+#else
+      uintptr_t m_raw_ptr;
+#endif
 
-      constexpr WithoutTracking(Pointee *ptr, Tracking) : m_ref(ptr) {}
-    };
+    public:
+      constexpr WithoutTracking(Pointee *ptr, Tracking) : m_raw_ptr(reinterpret_cast<uintptr_t>(ptr)) {}
+      [[nodiscard]] constexpr auto GetPointer() const -> Pointee * { return reinterpret_cast<Pointee *>(m_raw_ptr); }
+    } __attribute__((packed));
 
     template <class Pointee, class Tracking>
     class NullableFlowPtr;
@@ -122,7 +135,6 @@ namespace ncc {
 
       constexpr static auto CreateNullPtr() -> FlowPtr<Pointee, Tracking> {
         FlowPtr<Pointee, Tracking> ptr;
-        ptr.m_s.m_ref = nullptr;
         return ptr;
       }
 
@@ -135,7 +147,7 @@ namespace ncc {
       template <class U>
       constexpr FlowPtr(U *ptr, Tracking tracking = Tracking()) : m_s(ptr, std::move(tracking)) {
         static_assert(std::is_convertible_v<U *, Pointee *>, "Cannot convert U* to Pointee*");
-        qcore_assert(ptr != nullptr, "FlowPtr cannot be null");
+        assert(ptr != nullptr && "FlowPtr cannot be null");
       }
 
       constexpr FlowPtr(const FlowPtr &o) : m_s(o.m_s) {}
@@ -156,55 +168,54 @@ namespace ncc {
       ///=========================================================================
       /// Comparison
 
-      constexpr auto operator==(const FlowPtr &o) const -> bool { return m_s.m_ref == o.m_s.m_ref; }
-
-      constexpr auto operator!=(const FlowPtr &o) const -> bool { return m_s.m_ref != o.m_s.m_ref; }
-
-      constexpr auto operator==(std::nullptr_t) const -> bool { return m_s.m_ref == nullptr; }
+      [[nodiscard, gnu::pure]] constexpr auto operator==(const FlowPtr &o) const -> bool {
+        return m_s.GetPointer() == o.m_s.GetPointer();
+      }
+      [[nodiscard, gnu::pure]] constexpr auto operator!=(const FlowPtr &o) const -> bool {
+        return m_s.GetPointer() != o.m_s.GetPointer();
+      }
+      [[nodiscard, gnu::pure]] constexpr auto operator==(std::nullptr_t) const -> bool {
+        return m_s.GetPointer() == nullptr;
+      }
 
       ///=========================================================================
       /// Accessors
 
-      constexpr auto operator->() -> Pointee * { return m_s.m_ref; }
-      constexpr auto operator->() const -> const Pointee * { return m_s.m_ref; }
-      [[nodiscard]] constexpr auto get() -> Pointee * {  // NOLINT(readability-identifier-naming)
-        return m_s.m_ref;
-      }
-      [[nodiscard]] constexpr auto get() const -> const Pointee * {  // NOLINT(readability-identifier-naming)
-        return m_s.m_ref;
-      }
-      constexpr operator bool() const { return m_s.m_ref != nullptr; }
+      [[nodiscard, gnu::pure]] constexpr auto operator->() -> Pointee * { return Get(); }
+      [[nodiscard, gnu::pure]] constexpr auto operator->() const -> const Pointee * { return Get(); }
+      [[nodiscard, gnu::pure]] constexpr auto Get() -> Pointee * { return m_s.GetPointer(); }
+      [[nodiscard, gnu::pure]] constexpr auto Get() const -> const Pointee * { return m_s.GetPointer(); }
+      [[nodiscard, gnu::pure]] constexpr operator bool() const { return Get() != nullptr; }
 
       ///=========================================================================
       /// Casting
 
       template <class U>
-      constexpr operator FlowPtr<const U>() const {
+      [[nodiscard, gnu::pure]] constexpr operator FlowPtr<const U>() const {
         static_assert(std::is_convertible_v<const Pointee *, const U *>, "Cannot convert Pointee* to U*");
-        return FlowPtr<const U>(static_cast<const U *>(get()), Trace());
+        return FlowPtr<const U>(static_cast<const U *>(Get()), Trace());
       }
 
       template <class U>
-      constexpr operator FlowPtr<U>() {
+      [[nodiscard, gnu::pure]] constexpr operator FlowPtr<U>() {
         static_assert(std::is_convertible_v<Pointee *, U *>, "Cannot convert Pointee* to U*");
-        return FlowPtr<U>(static_cast<U *>(get()), Trace());
+        return FlowPtr<U>(static_cast<U *>(Get()), Trace());
       }
 
       template <class U>
-      [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] [[nodiscard]] constexpr auto As()
-          const {
-        return FlowPtr<const U>(reinterpret_cast<const U *>(get()), Trace());
+      [[nodiscard, gnu::pure]] constexpr auto As() const {
+        return FlowPtr<const U>(reinterpret_cast<const U *>(Get()), Trace());
       }
 
       template <class U>
-      constexpr auto As() {
-        return FlowPtr<U>(reinterpret_cast<U *>(get()), Trace());
+      [[nodiscard, gnu::pure]] constexpr auto As() {
+        return FlowPtr<U>(reinterpret_cast<U *>(Get()), Trace());
       }
 
       ///=========================================================================
       /// Data-Flow tracking
 
-      [[nodiscard]] constexpr auto Trace() const -> const Tracking & {
+      [[nodiscard]] constexpr auto Trace() const -> Tracking {
         if constexpr (kIsTracking) {
           return m_s.m_tracking;
         } else {
@@ -230,7 +241,10 @@ namespace ncc {
       constexpr void Accept(Vistor &&v) {
         v.Dispatch(*this);
       }
-    };
+    } __attribute__((packed));
+
+    static_assert(sizeof(FlowPtr<void, trace::Empty>) <= sizeof(uintptr_t),
+                  "FlowPtr<void> must be no larger then a pointer");
   }  // namespace flowptr_detail
 
   template <class Pointee, class Tracking = DefaultTracking>
@@ -246,7 +260,7 @@ namespace std {
   template <class Pointee, class Tracking>
   struct hash<ncc::FlowPtr<Pointee, Tracking>> {
     auto operator()(const ncc::FlowPtr<Pointee, Tracking> &ptr) const -> size_t {
-      return std::hash<const Pointee *>()(ptr.get());
+      return std::hash<const Pointee *>()(ptr.Get());
     }
   };
 }  // namespace std

@@ -35,10 +35,10 @@
 
 using namespace no3::format::details;
 
-void QuasiCanonicalFormatter::Visit(FlowPtr<NamedTy> n) {
+void CanonicalFormatter::Visit(FlowPtr<NamedTy> n) {
   /// TODO: Implement standard format
 }
 
-void QuasiCanonicalFormatter::Visit(FlowPtr<Identifier> n) {
+void CanonicalFormatter::Visit(FlowPtr<Identifier> n) {
   /// TODO: Implement standard format
 }

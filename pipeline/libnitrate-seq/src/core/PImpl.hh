@@ -44,7 +44,6 @@ namespace ncc::seq {
   public:
     std::mt19937 m_random;
     std::queue<std::queue<lex::Token>> m_emission;
-    FetchModuleFunc m_fetch_module;
     std::list<MethodType> m_captures;
     std::shared_ptr<IEnvironment> m_env;
     lua_State* m_L;

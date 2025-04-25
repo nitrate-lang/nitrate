@@ -87,150 +87,6 @@ message TemplateType {
   repeated CallArgument arguments = 8;
 }
 
-message U1 {
-  optional SourceLocationRange location = 1;
-  repeated UserComment comments = 2;
-
-  optional Expr bit_width = 4;
-  optional Expr minimum = 5;
-  optional Expr maximum = 6;
-}
-
-message U8 {
-  optional SourceLocationRange location = 1;
-  repeated UserComment comments = 2;
-
-  optional Expr bit_width = 4;
-  optional Expr minimum = 5;
-  optional Expr maximum = 6;
-}
-
-message U16 {
-  optional SourceLocationRange location = 1;
-  repeated UserComment comments = 2;
-
-  optional Expr bit_width = 4;
-  optional Expr minimum = 5;
-  optional Expr maximum = 6;
-}
-
-message U32 {
-  optional SourceLocationRange location = 1;
-  repeated UserComment comments = 2;
-
-  optional Expr bit_width = 4;
-  optional Expr minimum = 5;
-  optional Expr maximum = 6;
-}
-
-message U64 {
-  optional SourceLocationRange location = 1;
-  repeated UserComment comments = 2;
-
-  optional Expr bit_width = 4;
-  optional Expr minimum = 5;
-  optional Expr maximum = 6;
-}
-
-message U128 {
-  optional SourceLocationRange location = 1;
-  repeated UserComment comments = 2;
-
-  optional Expr bit_width = 4;
-  optional Expr minimum = 5;
-  optional Expr maximum = 6;
-}
-
-message I8 {
-  optional SourceLocationRange location = 1;
-  repeated UserComment comments = 2;
-
-  optional Expr bit_width = 4;
-  optional Expr minimum = 5;
-  optional Expr maximum = 6;
-}
-
-message I16 {
-  optional SourceLocationRange location = 1;
-  repeated UserComment comments = 2;
-
-  optional Expr bit_width = 4;
-  optional Expr minimum = 5;
-  optional Expr maximum = 6;
-}
-
-message I32 {
-  optional SourceLocationRange location = 1;
-  repeated UserComment comments = 2;
-
-  optional Expr bit_width = 4;
-  optional Expr minimum = 5;
-  optional Expr maximum = 6;
-}
-
-message I64 {
-  optional SourceLocationRange location = 1;
-  repeated UserComment comments = 2;
-
-  optional Expr bit_width = 4;
-  optional Expr minimum = 5;
-  optional Expr maximum = 6;
-}
-
-message I128 {
-  optional SourceLocationRange location = 1;
-  repeated UserComment comments = 2;
-
-  optional Expr bit_width = 4;
-  optional Expr minimum = 5;
-  optional Expr maximum = 6;
-}
-
-message F16 {
-  optional SourceLocationRange location = 1;
-  repeated UserComment comments = 2;
-
-  optional Expr bit_width = 4;
-  optional Expr minimum = 5;
-  optional Expr maximum = 6;
-}
-
-message F32 {
-  optional SourceLocationRange location = 1;
-  repeated UserComment comments = 2;
-
-  optional Expr bit_width = 4;
-  optional Expr minimum = 5;
-  optional Expr maximum = 6;
-}
-
-message F64 {
-  optional SourceLocationRange location = 1;
-  repeated UserComment comments = 2;
-
-  optional Expr bit_width = 4;
-  optional Expr minimum = 5;
-  optional Expr maximum = 6;
-}
-
-message F128 {
-  optional SourceLocationRange location = 1;
-  repeated UserComment comments = 2;
-
-  optional Expr bit_width = 4;
-  optional Expr minimum = 5;
-  optional Expr maximum = 6;
-}
-
-message VoidTy {
-  optional SourceLocationRange location = 1;
-  repeated UserComment comments = 2;
-
-  optional Expr bit_width = 4;
-  optional Expr minimum = 5;
-  optional Expr maximum = 6;
-}
-
 message PtrTy {
   optional SourceLocationRange location = 1;
   repeated UserComment comments = 2;
@@ -419,11 +275,6 @@ message Character {
 
   /* Range: [0, 2^8). */
   required uint32 char = 4;
-}
-
-message Null {
-  optional SourceLocationRange location = 1;
-  repeated UserComment comments = 2;
 }
 
 message Call {
@@ -717,22 +568,6 @@ message Type {
   oneof node {
     Discarded discarded = 1;
 
-    U1 u1 = 80;
-    U8 u8 = 81;
-    U16 u16 = 82;
-    U32 u32 = 83;
-    U64 u64 = 84;
-    U128 u128 = 85;
-    I8 i8 = 86;
-    I16 i16 = 87;
-    I32 i32 = 88;
-    I64 i64 = 89;
-    I128 i128 = 90;
-    F16 f16 = 91;
-    F32 f32 = 92;
-    F64 f64 = 93;
-    F128 f128 = 94;
-    VoidTy void = 95;
     InferTy infer = 96;
     OpaqueTy opaque = 97;
     PtrTy ptr = 98;
@@ -756,7 +591,6 @@ message Expr {
     Boolean boolean = 17;
     String string = 18;
     Character character = 19;
-    Null null = 20;
     Call call = 22;
     TemplateCall template_call = 23;
     Import import = 24;
@@ -786,22 +620,6 @@ message Expr {
     Function function = 67;
     Struct struct = 68;
 
-    U1 u1 = 80;
-    U8 u8 = 81;
-    U16 u16 = 82;
-    U32 u32 = 83;
-    U64 u64 = 84;
-    U128 u128 = 85;
-    I8 i8 = 86;
-    I16 i16 = 87;
-    I32 i32 = 88;
-    I64 i64 = 89;
-    I128 i128 = 90;
-    F16 f16 = 91;
-    F32 f32 = 92;
-    F64 f64 = 93;
-    F128 f128 = 94;
-    VoidTy void = 95;
     InferTy infer = 96;
     OpaqueTy opaque = 97;
     PtrTy ptr = 98;

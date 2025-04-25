@@ -43,35 +43,18 @@
 namespace ncc::parse {
   using namespace nitrate::parser;
 
-  class NCC_EXPORT AstWriter : public ASTVisitor {
-    google::protobuf::Arena *m_arena;
-    std::ostream &m_os;
-    OptionalSourceProvider m_rd;
-    bool m_plaintext_mode;
+  class NCC_EXPORT ASTWriter : public ASTVisitor {
+    class PImpl;
+    std::unique_ptr<PImpl> m_impl;
 
     void SetTypeMetadata(auto *message, const FlowPtr<Type> &in);
     SyntaxTree::SourceLocationRange *FromSource(FlowPtr<Expr> in);
+
     SyntaxTree::Expr *From(FlowPtr<Expr> in);
     SyntaxTree::Type *From(FlowPtr<Type> in);
     SyntaxTree::NamedTy *From(FlowPtr<NamedTy> in);
     SyntaxTree::InferTy *From(FlowPtr<InferTy> in);
     SyntaxTree::TemplateType *From(FlowPtr<TemplateType> in);
-    SyntaxTree::U1 *From(FlowPtr<U1> in);
-    SyntaxTree::U8 *From(FlowPtr<U8> in);
-    SyntaxTree::U16 *From(FlowPtr<U16> in);
-    SyntaxTree::U32 *From(FlowPtr<U32> in);
-    SyntaxTree::U64 *From(FlowPtr<U64> in);
-    SyntaxTree::U128 *From(FlowPtr<U128> in);
-    SyntaxTree::I8 *From(FlowPtr<I8> in);
-    SyntaxTree::I16 *From(FlowPtr<I16> in);
-    SyntaxTree::I32 *From(FlowPtr<I32> in);
-    SyntaxTree::I64 *From(FlowPtr<I64> in);
-    SyntaxTree::I128 *From(FlowPtr<I128> in);
-    SyntaxTree::F16 *From(FlowPtr<F16> in);
-    SyntaxTree::F32 *From(FlowPtr<F32> in);
-    SyntaxTree::F64 *From(FlowPtr<F64> in);
-    SyntaxTree::F128 *From(FlowPtr<F128> in);
-    SyntaxTree::VoidTy *From(FlowPtr<VoidTy> in);
     SyntaxTree::PtrTy *From(FlowPtr<PtrTy> in);
     SyntaxTree::OpaqueTy *From(FlowPtr<OpaqueTy> in);
     SyntaxTree::TupleTy *From(FlowPtr<TupleTy> in);
@@ -85,7 +68,6 @@ namespace ncc::parse {
     SyntaxTree::Boolean *From(FlowPtr<Boolean> in);
     SyntaxTree::String *From(FlowPtr<String> in);
     SyntaxTree::Character *From(FlowPtr<Character> in);
-    SyntaxTree::Null *From(FlowPtr<Null> in);
     SyntaxTree::Call *From(FlowPtr<Call> in);
     SyntaxTree::TemplateCall *From(FlowPtr<TemplateCall> in);
     SyntaxTree::Import *From(FlowPtr<Import> in);
@@ -118,22 +100,6 @@ namespace ncc::parse {
     void Visit(FlowPtr<NamedTy> n) override;
     void Visit(FlowPtr<InferTy> n) override;
     void Visit(FlowPtr<TemplateType> n) override;
-    void Visit(FlowPtr<U1> n) override;
-    void Visit(FlowPtr<U8> n) override;
-    void Visit(FlowPtr<U16> n) override;
-    void Visit(FlowPtr<U32> n) override;
-    void Visit(FlowPtr<U64> n) override;
-    void Visit(FlowPtr<U128> n) override;
-    void Visit(FlowPtr<I8> n) override;
-    void Visit(FlowPtr<I16> n) override;
-    void Visit(FlowPtr<I32> n) override;
-    void Visit(FlowPtr<I64> n) override;
-    void Visit(FlowPtr<I128> n) override;
-    void Visit(FlowPtr<F16> n) override;
-    void Visit(FlowPtr<F32> n) override;
-    void Visit(FlowPtr<F64> n) override;
-    void Visit(FlowPtr<F128> n) override;
-    void Visit(FlowPtr<VoidTy> n) override;
     void Visit(FlowPtr<PtrTy> n) override;
     void Visit(FlowPtr<OpaqueTy> n) override;
     void Visit(FlowPtr<TupleTy> n) override;
@@ -147,7 +113,6 @@ namespace ncc::parse {
     void Visit(FlowPtr<Boolean> n) override;
     void Visit(FlowPtr<String> n) override;
     void Visit(FlowPtr<Character> n) override;
-    void Visit(FlowPtr<Null> n) override;
     void Visit(FlowPtr<Call> n) override;
     void Visit(FlowPtr<TemplateCall> n) override;
     void Visit(FlowPtr<Import> n) override;
@@ -177,8 +142,10 @@ namespace ncc::parse {
     void Visit(FlowPtr<Export> n) override;
 
   public:
-    AstWriter(std::ostream &os, bool plaintext_mode = false, OptionalSourceProvider rd = std::nullopt);
-    ~AstWriter() override;
+    enum class Format { JSON, PROTO };
+
+    ASTWriter(std::ostream &os, Format format, OptionalSourceProvider rd = std::nullopt);
+    ~ASTWriter() override;
   };
 }  // namespace ncc::parse
 

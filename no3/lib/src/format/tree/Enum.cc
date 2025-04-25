@@ -35,6 +35,6 @@
 
 using namespace no3::format::details;
 
-void QuasiCanonicalFormatter::Visit(ncc::FlowPtr<ncc::parse::Enum> n) {
+void CanonicalFormatter::Visit(ncc::FlowPtr<ncc::parse::Enum> n) {
   /// TODO: Implement standard format
 }

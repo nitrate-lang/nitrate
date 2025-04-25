@@ -166,8 +166,6 @@ namespace ncc::parse {
     [[gnu::pure, nodiscard]] auto CreateBoolean(bool x,
                                                 SourceLocation origin = SourceLocation::current()) -> FlowPtr<Boolean>;
 
-    [[gnu::pure, nodiscard]] auto CreateNull(SourceLocation origin = SourceLocation::current()) -> FlowPtr<Null>;
-
     [[gnu::pure, nodiscard]] auto CreateCall(
         FlowPtr<Expr> callee, const std::unordered_map<std::variant<string, size_t>, FlowPtr<Expr>>& named_args = {},
         SourceLocation origin = SourceLocation::current()) -> std::optional<FlowPtr<Call>>;
@@ -240,70 +238,6 @@ namespace ncc::parse {
                                                   NullableFlowPtr<Expr> min = nullptr,
                                                   NullableFlowPtr<Expr> max = nullptr,
                                                   SourceLocation origin = SourceLocation::current()) -> FlowPtr<RefTy>;
-
-    [[gnu::pure, nodiscard]] auto CreateU1(NullableFlowPtr<Expr> bits = nullptr, NullableFlowPtr<Expr> min = nullptr,
-                                           NullableFlowPtr<Expr> max = nullptr,
-                                           SourceLocation origin = SourceLocation::current()) -> FlowPtr<U1>;
-
-    [[gnu::pure, nodiscard]] auto CreateU8(NullableFlowPtr<Expr> bits = nullptr, NullableFlowPtr<Expr> min = nullptr,
-                                           NullableFlowPtr<Expr> max = nullptr,
-                                           SourceLocation origin = SourceLocation::current()) -> FlowPtr<U8>;
-
-    [[gnu::pure, nodiscard]] auto CreateU16(NullableFlowPtr<Expr> bits = nullptr, NullableFlowPtr<Expr> min = nullptr,
-                                            NullableFlowPtr<Expr> max = nullptr,
-                                            SourceLocation origin = SourceLocation::current()) -> FlowPtr<U16>;
-
-    [[gnu::pure, nodiscard]] auto CreateU32(NullableFlowPtr<Expr> bits = nullptr, NullableFlowPtr<Expr> min = nullptr,
-                                            NullableFlowPtr<Expr> max = nullptr,
-                                            SourceLocation origin = SourceLocation::current()) -> FlowPtr<U32>;
-
-    [[gnu::pure, nodiscard]] auto CreateU64(NullableFlowPtr<Expr> bits = nullptr, NullableFlowPtr<Expr> min = nullptr,
-                                            NullableFlowPtr<Expr> max = nullptr,
-                                            SourceLocation origin = SourceLocation::current()) -> FlowPtr<U64>;
-
-    [[gnu::pure, nodiscard]] auto CreateU128(NullableFlowPtr<Expr> bits = nullptr, NullableFlowPtr<Expr> min = nullptr,
-                                             NullableFlowPtr<Expr> max = nullptr,
-                                             SourceLocation origin = SourceLocation::current()) -> FlowPtr<U128>;
-
-    [[gnu::pure, nodiscard]] auto CreateI8(NullableFlowPtr<Expr> bits = nullptr, NullableFlowPtr<Expr> min = nullptr,
-                                           NullableFlowPtr<Expr> max = nullptr,
-                                           SourceLocation origin = SourceLocation::current()) -> FlowPtr<I8>;
-
-    [[gnu::pure, nodiscard]] auto CreateI16(NullableFlowPtr<Expr> bits = nullptr, NullableFlowPtr<Expr> min = nullptr,
-                                            NullableFlowPtr<Expr> max = nullptr,
-                                            SourceLocation origin = SourceLocation::current()) -> FlowPtr<I16>;
-
-    [[gnu::pure, nodiscard]] auto CreateI32(NullableFlowPtr<Expr> bits = nullptr, NullableFlowPtr<Expr> min = nullptr,
-                                            NullableFlowPtr<Expr> max = nullptr,
-                                            SourceLocation origin = SourceLocation::current()) -> FlowPtr<I32>;
-
-    [[gnu::pure, nodiscard]] auto CreateI64(NullableFlowPtr<Expr> bits = nullptr, NullableFlowPtr<Expr> min = nullptr,
-                                            NullableFlowPtr<Expr> max = nullptr,
-                                            SourceLocation origin = SourceLocation::current()) -> FlowPtr<I64>;
-
-    [[gnu::pure, nodiscard]] auto CreateI128(NullableFlowPtr<Expr> bits = nullptr, NullableFlowPtr<Expr> min = nullptr,
-                                             NullableFlowPtr<Expr> max = nullptr,
-                                             SourceLocation origin = SourceLocation::current()) -> FlowPtr<I128>;
-
-    [[gnu::pure, nodiscard]] auto CreateF16(NullableFlowPtr<Expr> bits = nullptr, NullableFlowPtr<Expr> min = nullptr,
-                                            NullableFlowPtr<Expr> max = nullptr,
-                                            SourceLocation origin = SourceLocation::current()) -> FlowPtr<F16>;
-
-    [[gnu::pure, nodiscard]] auto CreateF32(NullableFlowPtr<Expr> bits = nullptr, NullableFlowPtr<Expr> min = nullptr,
-                                            NullableFlowPtr<Expr> max = nullptr,
-                                            SourceLocation origin = SourceLocation::current()) -> FlowPtr<F32>;
-
-    [[gnu::pure, nodiscard]] auto CreateF64(NullableFlowPtr<Expr> bits = nullptr, NullableFlowPtr<Expr> min = nullptr,
-                                            NullableFlowPtr<Expr> max = nullptr,
-                                            SourceLocation origin = SourceLocation::current()) -> FlowPtr<F64>;
-
-    [[gnu::pure, nodiscard]] auto CreateF128(NullableFlowPtr<Expr> bits = nullptr, NullableFlowPtr<Expr> min = nullptr,
-                                             NullableFlowPtr<Expr> max = nullptr,
-                                             SourceLocation origin = SourceLocation::current()) -> FlowPtr<F128>;
-
-    [[gnu::pure, nodiscard]] auto CreateVoid(NullableFlowPtr<Expr> bits = nullptr, NullableFlowPtr<Expr> min = nullptr,
-                                             NullableFlowPtr<Expr> max = nullptr,
-                                             SourceLocation origin = SourceLocation::current()) -> FlowPtr<VoidTy>;
 
     [[gnu::pure, nodiscard]] auto CreatePointer(FlowPtr<Type> to, bool volatil = false,
                                                 NullableFlowPtr<Expr> bits = nullptr,

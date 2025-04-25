@@ -31,6 +31,9 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -g -Wall -Wextra -pedantic -Werror \
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-rtti")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3")
 
+# Configure boost libraries
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DBOOST_NO_EXCEPTIONS")
+
 if(STRIP_OUTPUT)
   set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -s")
   set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -s")
@@ -45,7 +48,7 @@ endif()
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
   set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fsanitize=address,undefined")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DNITRATE_FLOWPTR_TRACE=1")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-omit-frame-pointer -DNITRATE_FLOWPTR_TRACE=1")
 elseif(CMAKE_BUILD_TYPE STREQUAL "Release")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DNDEBUG -fvisibility=hidden -fvisibility-inlines-hidden")
   set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DNITRATE_FLOWPTR_TRACE=0")
@@ -82,9 +85,10 @@ if(CMAKE_BUILD_TYPE STREQUAL "Release" AND BUILD_SHARED_LIBS)
     nitrate-lexer
     nitrate-seq
     nitrate-parser
-    # nitrate-ir
-    # nitrate-emit
-    nitrate)
+    nitrate-alpha
+    nitrate-alpha-opt
+    nitrate-beta
+    nitrate-beta-opt)
     target_compile_options(${lib} PRIVATE -flto)
     target_link_options(${lib} PRIVATE -flto)
   endforeach()
@@ -95,9 +99,10 @@ if(CMAKE_BUILD_TYPE STREQUAL "Debug")
     nitrate-lexer
     nitrate-seq
     nitrate-parser
-    # nitrate-ir
-    # nitrate-emit
-    nitrate)
+    nitrate-alpha
+    nitrate-alpha-opt
+    nitrate-beta
+    nitrate-beta-opt)
     target_compile_options(${lib} PRIVATE -fsanitize=address,undefined,fuzzer)
     target_link_options(${lib} PRIVATE -fsanitize=address,undefined,fuzzer)
   endforeach()

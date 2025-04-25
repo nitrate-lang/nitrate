@@ -31,7 +31,7 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <lsp/core/LSPContext.hh>
+#include <lsp/server/Context.hh>
 #include <nitrate-core/Assert.hh>
 #include <nitrate-core/Logger.hh>
 
@@ -62,7 +62,7 @@ static auto VerifyTextDocumentDidSave(const nlohmann::json& j) -> bool {
   return true;
 }
 
-void core::LSPContext::NotifyTextDocumentDidSave(const message::NotifyMessage& notice) {
+void core::Context::NotifyTextDocumentDidSave(const message::NotifyMessage& notice) {
   const auto& j = *notice;
   if (!VerifyTextDocumentDidSave(j)) {
     Log << "Invalid textDocument/didSave notification";
@@ -88,7 +88,7 @@ void core::LSPContext::NotifyTextDocumentDidSave(const message::NotifyMessage& n
       qcore_panic("Failed to open debug output file");
     }
 
-    debug_output.write(reinterpret_cast<const char*>(raw_content.data()), raw_content.size());
+    debug_output.write(reinterpret_cast<const char*>(raw_content.c_str()), raw_content.size());
   }
 #endif
 }

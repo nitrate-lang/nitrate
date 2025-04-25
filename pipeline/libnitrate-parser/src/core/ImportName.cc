@@ -60,4 +60,6 @@ auto ImportName::GetChain() const -> const std::vector<std::string_view> & {
   return m_chain.value();
 }
 
-std::ostream &ncc::parse::operator<<(std::ostream &os, const ImportName &name) { return os << name.GetName(); }
+NCC_EXPORT std::ostream &ncc::parse::operator<<(std::ostream &os, const ImportName &name) {
+  return os << name.GetName();
+}

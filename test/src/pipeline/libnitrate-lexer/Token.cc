@@ -262,60 +262,60 @@ TEST(Lexer, GetOperatorAssociativity) {
 TEST(Lexer, GetOperatorAssociativity_BadInput) { EXPECT_EQ(GetOperatorAssociativity(OpAs, OpMode::Ternary), Left); }
 
 TEST(Lexer, Token_ToString) {
-  EXPECT_EQ(to_string(EofF, TokenData("")), "");
-  EXPECT_EQ(to_string(EofF, TokenData(OpPlus)), "");
+  EXPECT_EQ(ToString(EofF, TokenData("")), "");
+  EXPECT_EQ(ToString(EofF, TokenData(OpPlus)), "");
 
-  EXPECT_EQ(to_string(KeyW, TokenData(Scope)), "scope");
-  EXPECT_EQ(to_string(KeyW, TokenData(Struct)), "struct");
+  EXPECT_EQ(ToString(KeyW, TokenData(Scope)), "scope");
+  EXPECT_EQ(ToString(KeyW, TokenData(Struct)), "struct");
 
-  EXPECT_EQ(to_string(Oper, TokenData(OpPlus)), "+");
-  EXPECT_EQ(to_string(Oper, TokenData(OpLogicAndSet)), "&&=");
+  EXPECT_EQ(ToString(Oper, TokenData(OpPlus)), "+");
+  EXPECT_EQ(ToString(Oper, TokenData(OpLogicAndSet)), "&&=");
 
-  EXPECT_EQ(to_string(Punc, TokenData(PuncLPar)), "(");
-  EXPECT_EQ(to_string(Punc, TokenData(PuncScope)), "::");
+  EXPECT_EQ(ToString(Punc, TokenData(PuncLPar)), "(");
+  EXPECT_EQ(ToString(Punc, TokenData(PuncScope)), "::");
 
-  EXPECT_EQ(to_string(Name, TokenData("hello_world")), "hello_world");
-  EXPECT_EQ(to_string(Name, TokenData("")), "");
-  EXPECT_EQ(to_string(Name, TokenData("in valid$!()@")), "in valid$!()@");
+  EXPECT_EQ(ToString(Name, TokenData("hello_world")), "hello_world");
+  EXPECT_EQ(ToString(Name, TokenData("")), "");
+  EXPECT_EQ(ToString(Name, TokenData("in valid$!()@")), "in valid$!()@");
 
-  EXPECT_EQ(to_string(IntL, TokenData("123")), "123");
-  EXPECT_EQ(to_string(IntL, TokenData("")), "");
-  EXPECT_EQ(to_string(IntL, TokenData("in valid$!()@")), "in valid$!()@");
+  EXPECT_EQ(ToString(IntL, TokenData("123")), "123");
+  EXPECT_EQ(ToString(IntL, TokenData("")), "");
+  EXPECT_EQ(ToString(IntL, TokenData("in valid$!()@")), "in valid$!()@");
 
-  EXPECT_EQ(to_string(NumL, TokenData("123.456")), "123.456");
-  EXPECT_EQ(to_string(NumL, TokenData("")), "");
-  EXPECT_EQ(to_string(NumL, TokenData("in valid$!()@")), "in valid$!()@");
+  EXPECT_EQ(ToString(NumL, TokenData("123.456")), "123.456");
+  EXPECT_EQ(ToString(NumL, TokenData("")), "");
+  EXPECT_EQ(ToString(NumL, TokenData("in valid$!()@")), "in valid$!()@");
 
-  EXPECT_EQ(to_string(Text, TokenData("hello world")), "hello world");
-  EXPECT_EQ(to_string(Text, TokenData("")), "");
+  EXPECT_EQ(ToString(Text, TokenData("hello world")), "hello world");
+  EXPECT_EQ(ToString(Text, TokenData("")), "");
 
-  EXPECT_EQ(to_string(Char, TokenData("a")), "a");
-  EXPECT_EQ(to_string(Char, TokenData("")), "");
-  EXPECT_EQ(to_string(Char, TokenData("in valid$!()@")), "in valid$!()@");
+  EXPECT_EQ(ToString(Char, TokenData("a")), "a");
+  EXPECT_EQ(ToString(Char, TokenData("")), "");
+  EXPECT_EQ(ToString(Char, TokenData("in valid$!()@")), "in valid$!()@");
 
-  EXPECT_EQ(to_string(MacB, TokenData("")), "");
-  EXPECT_EQ(to_string(MacB, TokenData("in valid$!()@")), "in valid$!()@");
+  EXPECT_EQ(ToString(MacB, TokenData("")), "");
+  EXPECT_EQ(ToString(MacB, TokenData("in valid$!()@")), "in valid$!()@");
 
-  EXPECT_EQ(to_string(Macr, TokenData("")), "");
-  EXPECT_EQ(to_string(Macr, TokenData("in valid$!()@")), "in valid$!()@");
+  EXPECT_EQ(ToString(Macr, TokenData("")), "");
+  EXPECT_EQ(ToString(Macr, TokenData("in valid$!()@")), "in valid$!()@");
 
-  EXPECT_EQ(to_string(Note, TokenData("")), "");
-  EXPECT_EQ(to_string(Note, TokenData("this is a note")), "this is a note");
+  EXPECT_EQ(ToString(Note, TokenData("")), "");
+  EXPECT_EQ(ToString(Note, TokenData("this is a note")), "this is a note");
 }
 
 TEST(Lexer, TokenType_ToString) {
-  EXPECT_EQ(to_string(EofF), "eof");
-  EXPECT_EQ(to_string(KeyW), "key");
-  EXPECT_EQ(to_string(Oper), "op");
-  EXPECT_EQ(to_string(Punc), "sym");
-  EXPECT_EQ(to_string(Name), "name");
-  EXPECT_EQ(to_string(IntL), "int");
-  EXPECT_EQ(to_string(NumL), "num");
-  EXPECT_EQ(to_string(Text), "str");
-  EXPECT_EQ(to_string(Char), "char");
-  EXPECT_EQ(to_string(MacB), "macb");
-  EXPECT_EQ(to_string(Macr), "macr");
-  EXPECT_EQ(to_string(Note), "note");
+  EXPECT_EQ(ToString(EofF), "eof");
+  EXPECT_EQ(ToString(KeyW), "key");
+  EXPECT_EQ(ToString(Oper), "op");
+  EXPECT_EQ(ToString(Punc), "sym");
+  EXPECT_EQ(ToString(Name), "name");
+  EXPECT_EQ(ToString(IntL), "int");
+  EXPECT_EQ(ToString(NumL), "num");
+  EXPECT_EQ(ToString(Text), "str");
+  EXPECT_EQ(ToString(Char), "char");
+  EXPECT_EQ(ToString(MacB), "macb");
+  EXPECT_EQ(ToString(Macr), "macr");
+  EXPECT_EQ(ToString(Note), "note");
 }
 
 TEST(Lexer, Token_OStream) {

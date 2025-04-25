@@ -32,13 +32,15 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <core/SPDX.hh>
+#include <core/static/SPDX.hh>
 #include <init/InitPackage.hh>
 #include <nitrate-core/Assert.hh>
 #include <optional>
 #include <regex>
 #include <sstream>
 #include <string>
+
+#include "core/package/Manifest.hh"
 
 static const std::string_view DEFAULT_DOCKER_IGNORE = R"(.no3/
 .git/
@@ -372,11 +374,11 @@ auto no3::package::GenerateReadme(const InitOptions& options) -> std::string {
   const auto project_description = options.m_package_description;
   const auto* project_category = [&]() {
     switch (options.m_package_category) {
-      case PackageCategory::Library:
+      case Manifest::Category::Library:
         return "library";
-      case PackageCategory::StandardLibrary:
+      case Manifest::Category::StandardLibrary:
         return "stdlib";
-      case PackageCategory::Executable:
+      case Manifest::Category::Executable:
         return "exe";
     }
   }();
@@ -410,8 +412,8 @@ auto no3::package::GenerateReadme(const InitOptions& options) -> std::string {
 
   if (gh_username.has_value()) {
     switch (options.m_package_category) {
-      case PackageCategory::Library:
-      case PackageCategory::StandardLibrary: {
+      case Manifest::Category::Library:
+      case Manifest::Category::StandardLibrary: {
         content += R"(```bash
 # Change the working directory to your package
 cd <your_project>
@@ -422,7 +424,7 @@ nitrate install https://github.com/{{gh_username}}/{{project_name}}
         break;
       }
 
-      case PackageCategory::Executable: {
+      case Manifest::Category::Executable: {
         content += R"(```bash
 nitrate install https://github.com/{{gh_username}}/{{project_name}}
 ```)";
@@ -431,7 +433,7 @@ nitrate install https://github.com/{{gh_username}}/{{project_name}}
 
     content = std::regex_replace(content, std::regex(R"(\{\{gh_username\}\})"), gh_username.value());
   } else {
-    if (options.m_package_category == PackageCategory::StandardLibrary) {
+    if (options.m_package_category == Manifest::Category::StandardLibrary) {
       content += R"(This package should be installed by default with the Nitrate toolchain.)";
     } else {
       content += R"(TODO: Write instructions on how to install this package.)";

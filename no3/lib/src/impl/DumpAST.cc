@@ -31,14 +31,15 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <core/GetOpt.hh>
+#include <boost/program_options.hpp>
+#include <boost/program_options/parsers.hpp>
 #include <cstring>
-#include <filesystem>
 #include <fstream>
 #include <impl/Subcommands.hh>
 #include <memory>
+#include <nitrate-core/Allocate.hh>
+#include <nitrate-core/CatchAll.hh>
 #include <nitrate-core/Environment.hh>
-#include <nitrate-core/LogOStream.hh>
 #include <nitrate-core/Logger.hh>
 #include <nitrate-lexer/Lexer.hh>
 #include <nitrate-parser/ASTBase.hh>
@@ -47,239 +48,21 @@
 #include <nitrate-parser/Context.hh>
 
 using namespace ncc;
-using namespace no3::core;
 using namespace no3::cmd_impl;
 
-enum class OutputFormat { Text, Protobuf, Minify };
+enum class OutputFormat { Json, Protobuf, Minify };
 
-class ImplParseCommandArgumentParser {
-  struct Options {
-    std::filesystem::path& m_source_path;
-    std::filesystem::path& m_output_path;
-    OutputFormat m_output_format;
-    bool m_dump;
-    bool m_tracking;
+static bool ParseFile(const auto& source_path, const auto& output_path, const auto& dump, const auto& tracking,
+                      const auto& output_format, auto& env) {
+  env->Reset();
 
-    Options(std::filesystem::path& source_path, std::filesystem::path& output_path, OutputFormat output_format,
-            bool dump, bool tracking)
-        : m_source_path(source_path),
-          m_output_path(output_path),
-          m_output_format(output_format),
-          m_dump(dump),
-          m_tracking(tracking) {}
-  };
-
-  bool m_help = false;
-  size_t m_dump = 0;
-  size_t m_tracking = 0;
-  size_t m_output_format_count = 0;
-  OutputFormat m_output_format = OutputFormat::Protobuf;
-  std::filesystem::path m_output_path;
-  std::filesystem::path m_source_path;
-  bool m_too_many_args = false;
-
-  void DisplayHelp() {
-    std::string_view help =
-        R"(Usage: parse [--help] [--dump] [--tracking] [--to VAR] [--output VAR] path
-
-Positional arguments:
-  path    path to a source file to parse
-
-Optional arguments:
-  -h, --help          shows this help message and exits
-  -d, --dump          pretty print the parse tree
-  -s, --tracking      embed source location tracking information in the parse tree
-  -t, --to            output format [nargs=0..1] [default: protobuf]
-  -o, --output        file to write the serialized parse tree to [nargs=0..1] [default: "-"]
-)";
-
-    Log << Raw << help;
-  }
-
-  void DoParse(std::vector<std::string> args) {
-    constexpr const char* kShortOptions = "hdst:o:";
-    constexpr std::array kLongOptions = {
-        option{"help", no_argument, nullptr, 'h'},         option{"dump", no_argument, nullptr, 'd'},
-        option{"tracking", no_argument, nullptr, 's'},     option{"to", required_argument, nullptr, 't'},
-        option{"output", required_argument, nullptr, 'o'}, option{nullptr, 0, nullptr, 0},
-    };
-
-    std::vector<char*> argv(args.size());
-    std::transform(args.begin(), args.end(), argv.begin(), [](auto& str) { return str.data(); });
-
-    {  // Lock the mutex to prevent multiple threads from calling getopt_long at the same time.
-      std::lock_guard lock(GET_OPT);
-
-      Log << Trace << "Starting to parse command line arguments";
-
-      int c;
-      int option_index = 0;
-
-      opterr = 0;
-      while ((c = GET_OPT.getopt_long(args.size(), argv.data(), kShortOptions, kLongOptions.data(), &option_index)) !=
-             -1) {
-        switch (c) {
-          case 'h': {
-            Log << Trace << "Parsing command line argument: --help";
-            m_help = true;
-            break;
-          }
-
-          case 'd': {
-            Log << Trace << "Parsing command line argument: --dump, -d";
-
-            m_output_format = OutputFormat::Text;
-
-            if (m_dump++ > 0) {
-              Log << "The -d, --dump argument was provided more than once.";
-              m_too_many_args = true;
-            }
-
-            break;
-          }
-
-          case 's': {
-            Log << Trace << "Parsing command line argument: -s, --tracking";
-            if (m_tracking++ > 0) {
-              Log << "The -s, --tracking argument was provided more than once.";
-              m_too_many_args = true;
-            }
-
-            break;
-          }
-
-          case 't': {
-            Log << Trace << "Parsing command line argument: --to, -t";
-            if (m_output_format_count++ > 0) {
-              Log << "The --to argument was provided more than once.";
-              m_too_many_args = true;
-              break;
-            }
-
-            if (std::strcmp(optarg, "protobuf") == 0) {
-              m_output_format = OutputFormat::Protobuf;
-            } else if (std::strcmp(optarg, "text") == 0) {
-              m_output_format = OutputFormat::Text;
-            } else if (std::strcmp(optarg, "minify") == 0) {
-              m_output_format = OutputFormat::Minify;
-            } else {
-              Log << "Unknown output format: " << optarg;
-              m_too_many_args = true;
-            }
-
-            break;
-          }
-
-          case 'o': {
-            Log << Trace << "Parsing command line argument: --output";
-            if (!m_output_path.empty()) {
-              Log << "The --output argument was provided more than once.";
-              m_too_many_args = true;
-              break;
-            }
-
-            m_output_path = optarg;
-            break;
-          }
-
-          case '?': {
-            Log << "Unknown command line argument: -" << (char)optopt;
-            m_too_many_args = true;
-            break;
-          }
-
-          default: {
-            Log << "Unknown command line argument: -" << (char)c;
-            m_too_many_args = true;
-            break;
-          }
-        }
-      }
-
-      if ((size_t)optind == args.size() - 1) {
-        Log << Trace << "Parsing command line argument: path";
-        m_source_path = args[optind];
-      } else if ((size_t)optind < args.size()) {
-        m_too_many_args = true;
-      }
-
-      if (m_output_path.empty()) {
-        Log << Trace << "No output path provided. Setting it to stdout.";
-        m_output_path = "-";
-      }
-
-      Log << Trace << "Finished parsing command line arguments";
-    }
-  }
-
-  [[nodiscard]] auto Check() const -> bool {
-    bool okay = true;
-
-    if (m_too_many_args) {
-      Log << "Too many arguments provided.";
-      okay = false;
-    }
-
-    if (m_source_path.empty()) {
-      Log << "path: 1 argument(s) expected. 0 provided.";
-      okay = false;
-    }
-
-    if (m_dump == 1 && m_output_format != OutputFormat::Text) {
-      Log << "Output format must be 'text' when using --dump.";
-      okay = false;
-    }
-
-    return okay;
-  }
-
-public:
-  ImplParseCommandArgumentParser(const std::vector<std::string>& args, bool& is_valid, bool& performed_action) {
-    is_valid = false;
-    performed_action = false;
-
-    DoParse(args);
-
-    if (m_help) {
-      DisplayHelp();
-      is_valid = true;
-      performed_action = true;
-      return;
-    }
-
-    is_valid = Check();
-  }
-
-  [[nodiscard]] auto GetOptions() -> Options {
-    return {m_source_path, m_output_path, m_output_format, m_dump != 0, m_tracking != 0};
-  }
-};
-
-auto no3::cmd_impl::subcommands::CommandImplParse(ConstArguments, const MutArguments& argv) -> bool {
-  bool is_valid = false;
-  bool performed_action = false;
-
-  ImplParseCommandArgumentParser state(argv, is_valid, performed_action);
-
-  if (!is_valid) {
-    Log << Trace << "Failed to parse command line arguments.";
-    return false;
-  }
-
-  if (performed_action) {
-    Log << Trace << "Performed built-in action.";
-    return true;
-  }
-
-  auto options = state.GetOptions();
-
-  Log << Trace << "options[\"source\"] = " << options.m_source_path;
-  Log << Trace << "options[\"output\"] = " << options.m_output_path;
-  Log << Trace << "options[\"dump\"] = " << (options.m_dump ? "true" : "false");
-  Log << Trace << "options[\"tracking\"] = " << (options.m_tracking ? "true" : "false");
-  switch (options.m_output_format) {
-    case OutputFormat::Text:
-      Log << Trace << "options[\"format\"] = text";
+  Log << Trace << "options[\"source\"] = " << source_path;
+  Log << Trace << "options[\"output\"] = " << output_path;
+  Log << Trace << "options[\"dump\"] = " << (dump ? "true" : "false");
+  Log << Trace << "options[\"tracking\"] = " << (tracking ? "true" : "false");
+  switch (output_format) {
+    case OutputFormat::Json:
+      Log << Trace << "options[\"format\"] = json";
       break;
     case OutputFormat::Protobuf:
       Log << Trace << "options[\"format\"] = protobuf";
@@ -289,63 +72,138 @@ auto no3::cmd_impl::subcommands::CommandImplParse(ConstArguments, const MutArgum
       break;
   }
 
-  auto input_file = std::ifstream(options.m_source_path);
+  auto input_file = std::ifstream(source_path);
   if (!input_file.is_open()) {
-    Log << "Failed to open the input file: " << options.m_source_path;
+    Log << "Failed to open the input file: " << source_path;
     return false;
   }
 
   {
     auto pool = ncc::DynamicArena();
-
-    auto import_config = ncc::parse::ImportConfig::GetDefault();
-
-    auto env = std::make_shared<ncc::Environment>();
+    auto import_config = ncc::parse::ImportConfig::GetDefault(env);
     auto tokenizer = ncc::lex::Tokenizer(input_file, env);
-    tokenizer.SetCurrentFilename(options.m_source_path.string());
+    tokenizer.SetCurrentFilename(source_path);
 
     auto parser = ncc::parse::GeneralParser(tokenizer, env, pool, import_config);
     auto ast_result = parser.Parse().Get();
 
     std::unique_ptr<std::ostream> output_stream;
 
-    if (options.m_output_path == "-") {
-      output_stream = std::make_unique<std::ostream>(ncc::clog.rdbuf());
+    if (output_path == "-") {
+      output_stream = (Log << Raw);
     } else {
-      Log << Trace << "Opening the output file: " << options.m_output_path;
+      Log << Trace << "Opening the output file: " << output_path;
 
-      output_stream = std::make_unique<std::ofstream>(options.m_output_path, std::ios::binary);
+      output_stream = std::make_unique<std::ofstream>(output_path, std::ios::binary);
       if (!output_stream->good()) {
-        Log << "Failed to open the output file: " << options.m_output_path;
+        Log << "Failed to open the output file: " << output_path;
         return false;
       }
 
-      Log << Trace << "Opened the output file: " << options.m_output_path;
+      Log << Trace << "Opened the output file: " << output_path;
     }
 
-    switch (options.m_output_format) {
-      case OutputFormat::Text: {
-        auto source_provider = options.m_tracking ? parse::OptionalSourceProvider(tokenizer) : std::nullopt;
-        auto ast_writer = parse::AstWriter(*output_stream, true, source_provider);
+    switch (output_format) {
+      using namespace parse;
+
+      case OutputFormat::Json: {
+        auto source_provider = tracking ? OptionalSourceProvider(tokenizer) : std::nullopt;
+        auto ast_writer = ASTWriter(*output_stream, ASTWriter::Format::JSON, source_provider);
         ast_result->Accept(ast_writer);
         break;
       }
 
       case OutputFormat::Protobuf: {
-        auto source_provider = options.m_tracking ? parse::OptionalSourceProvider(tokenizer) : std::nullopt;
-        auto ast_writer = parse::AstWriter(*output_stream, false, source_provider);
+        auto source_provider = tracking ? OptionalSourceProvider(tokenizer) : std::nullopt;
+        auto ast_writer = ASTWriter(*output_stream, ASTWriter::Format::PROTO, source_provider);
         ast_result->Accept(ast_writer);
         break;
       }
 
       case OutputFormat::Minify: {
-        auto writer = parse::CodeWriterFactory::Create(*output_stream);
+        auto writer = CodeWriterFactory::Create(*output_stream);
         ast_result->Accept(*writer);
         break;
       }
     }
 
     output_stream->flush();
+  }
+
+  return true;
+}
+
+auto no3::cmd_impl::subcommands::CommandImplParse(ConstArguments, const MutArguments& argv) -> bool {
+  namespace po = boost::program_options;
+
+  po::options_description desc("Allowed options");
+  po::positional_options_description p;
+  p.add("source", -1);
+
+  auto add_option = desc.add_options();
+  add_option("help,h", "produce help message");
+  add_option("dump,d", "pretty print the parse tree");
+  add_option("tracking,t", "retain source location information");
+  add_option("format,f", po::value<std::string>()->default_value("json"), "output format");
+  add_option("output,o", po::value<std::string>()->default_value("-"), "destination of serialized parse tree");
+  add_option("source,s", po::value<std::vector<std::string>>(), "source file to parse");
+
+  std::vector<const char*> args;
+  args.reserve(argv.size());
+  for (const auto& arg : argv) {
+    args.push_back(arg.c_str());
+  }
+
+  po::variables_map vm;
+  if (auto cli_parser = OMNI_CATCH(po::command_line_parser(args.size(), args.data()).options(desc).positional(p).run());
+      !cli_parser || !OMNI_CATCH(po::store(*cli_parser, vm)) || !OMNI_CATCH(po::notify(vm))) {
+    Log << Error << "Failed to parse command line arguments.";
+    desc.print(*(Log << Raw));
+    return false;
+  };
+
+  Log << Trace << "Parsed command line arguments.";
+
+  if (vm.contains("help")) {
+    desc.print(*(Log << Raw));
+    return true;
+  }
+
+  if (!vm.contains("source")) {
+    Log << "source: 1 argument(s) expected. 0 provided.";
+    desc.print(*(Log << Raw));
+    return false;
+  }
+
+  const auto dump = vm.contains("dump");
+  const auto tracking = vm.contains("tracking");
+  const auto source_paths = vm.at("source").as<std::vector<std::string>>();
+  const auto output_path = vm.at("output").as<std::string>();
+  const auto output_format = [&] {
+    std::string format = vm.at("format").as<std::string>();
+    if (format == "json") {
+      return OutputFormat::Json;
+    }
+
+    if (format == "protobuf") {
+      return OutputFormat::Protobuf;
+    }
+
+    if (format == "minify") {
+      return OutputFormat::Minify;
+    }
+
+    Log << Error << "Invalid output format: " << format;
+    return OutputFormat::Json;  // Default to JSON
+  }();
+
+  auto env = std::make_shared<ncc::Environment>();
+
+  for (const auto& source_path : source_paths) {
+    if (!ParseFile(source_path, output_path, dump, tracking, output_format, env)) {
+      Log << Error << "Failed to parse file: " << source_path;
+      return false;
+    }
   }
 
   return true;

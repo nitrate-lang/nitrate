@@ -46,7 +46,7 @@ namespace no3::format::details {
   using namespace ncc;
   using namespace parse;
 
-  class QuasiCanonicalFormatter final : public ASTVisitor {
+  class CanonicalFormatter final : public ASTVisitor {
     std::ostream& m_out;
     FormatterConfig m_profile;
     bool& m_has_errors;
@@ -54,22 +54,6 @@ namespace no3::format::details {
     void Visit(FlowPtr<NamedTy> n) override;
     void Visit(FlowPtr<InferTy> n) override;
     void Visit(FlowPtr<TemplateType> n) override;
-    void Visit(FlowPtr<U1> n) override;
-    void Visit(FlowPtr<U8> n) override;
-    void Visit(FlowPtr<U16> n) override;
-    void Visit(FlowPtr<U32> n) override;
-    void Visit(FlowPtr<U64> n) override;
-    void Visit(FlowPtr<U128> n) override;
-    void Visit(FlowPtr<I8> n) override;
-    void Visit(FlowPtr<I16> n) override;
-    void Visit(FlowPtr<I32> n) override;
-    void Visit(FlowPtr<I64> n) override;
-    void Visit(FlowPtr<I128> n) override;
-    void Visit(FlowPtr<F16> n) override;
-    void Visit(FlowPtr<F32> n) override;
-    void Visit(FlowPtr<F64> n) override;
-    void Visit(FlowPtr<F128> n) override;
-    void Visit(FlowPtr<VoidTy> n) override;
     void Visit(FlowPtr<PtrTy> n) override;
     void Visit(FlowPtr<OpaqueTy> n) override;
     void Visit(FlowPtr<TupleTy> n) override;
@@ -83,7 +67,6 @@ namespace no3::format::details {
     void Visit(FlowPtr<Boolean> n) override;
     void Visit(FlowPtr<String> n) override;
     void Visit(FlowPtr<Character> n) override;
-    void Visit(FlowPtr<Null> n) override;
     void Visit(FlowPtr<Call> n) override;
     void Visit(FlowPtr<TemplateCall> n) override;
     void Visit(FlowPtr<Import> n) override;
@@ -113,8 +96,8 @@ namespace no3::format::details {
     void Visit(FlowPtr<Export> n) override;
 
   public:
-    QuasiCanonicalFormatter(std::ostream& out, bool& has_errors, FormatterConfig config)
+    CanonicalFormatter(std::ostream& out, bool& has_errors, FormatterConfig config)
         : m_out(out), m_profile(config), m_has_errors(has_errors) {}
-    ~QuasiCanonicalFormatter() override = default;
+    ~CanonicalFormatter() override = default;
   };
 }  // namespace no3::format::details

@@ -35,22 +35,22 @@
 
 using namespace no3::format::details;
 
-void QuasiCanonicalFormatter::Visit(FlowPtr<parse::While> n) {
+void CanonicalFormatter::Visit(FlowPtr<parse::While> n) {
   /// TODO: Implement standard format
 }
 
-void QuasiCanonicalFormatter::Visit(FlowPtr<parse::Return> n) {
+void CanonicalFormatter::Visit(FlowPtr<parse::Return> n) {
   /// TODO: Implement standard format
 }
 
-void QuasiCanonicalFormatter::Visit(FlowPtr<parse::If> n) {
+void CanonicalFormatter::Visit(FlowPtr<parse::If> n) {
   /// TODO: Implement standard format
 }
 
-void QuasiCanonicalFormatter::Visit(FlowPtr<parse::Break> n) {
+void CanonicalFormatter::Visit(FlowPtr<parse::Break> n) {
   /// TODO: Implement standard format
 }
 
-void QuasiCanonicalFormatter::Visit(FlowPtr<parse::Continue> n) {
+void CanonicalFormatter::Visit(FlowPtr<parse::Continue> n) {
   /// TODO: Implement standard format
 }

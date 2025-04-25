@@ -35,7 +35,6 @@
 #define __NITRATE_SEQ_HH__
 
 #include <cstdint>
-#include <functional>
 #include <memory>
 #include <nitrate-core/EnvironmentFwd.hh>
 #include <nitrate-core/Macro.hh>
@@ -47,9 +46,6 @@
 struct lua_State;
 
 namespace ncc::seq {
-  using FetchModuleFunc = std::function<std::optional<std::string>(std::string_view)>;
-  auto FileSystemFetchModule(std::string_view path) -> std::optional<std::string>;
-
   class Sequencer;
   class SequencerPImpl;
   using MethodType = int (seq::Sequencer::*)();
@@ -75,7 +71,6 @@ namespace ncc::seq {
     [[nodiscard]] auto SysGet() -> int32_t;
     [[nodiscard]] auto SysSet() -> int32_t;
     [[nodiscard]] auto SysCtrl() -> int32_t;
-    [[nodiscard]] auto SysFetch() -> int32_t;
     [[nodiscard]] auto SysRandom() -> int32_t;
 
     ///=========================================================================
@@ -88,11 +83,9 @@ namespace ncc::seq {
     ///=========================================================================
     /// Preprocessor helper functions
 
-    static auto FetchModuleData(Sequencer& self, std::string_view module_name) -> std::optional<std::string>;
     static auto ExecuteLua(Sequencer& self, const char* code) -> std::optional<std::string>;
     static auto CreateChild(Sequencer& self, std::istream& file) -> std::unique_ptr<Sequencer>;
     static auto SequenceSource(Sequencer& self, std::string_view code) -> void;
-    static auto HandleImportDirective(Sequencer& self) -> bool;
     static auto HandleMacroBlock(Sequencer& self, lex::Token macro) -> bool;
     static auto HandleMacroStatement(Sequencer& self, lex::Token macro) -> bool;
 
@@ -111,7 +104,6 @@ namespace ncc::seq {
     [[nodiscard]] auto HasError() const -> bool override;
     auto SetFailBit(bool fail = true) -> bool override;
 
-    auto SetFetchFunc(FetchModuleFunc func) -> void;
     auto GetSourceWindow(Point start, Point end, char fillchar) -> std::optional<std::vector<std::string>> override;
   };
 

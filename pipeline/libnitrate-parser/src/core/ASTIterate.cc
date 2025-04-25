@@ -64,11 +64,11 @@ class IterVisitor : public ASTVisitor {
 
   template <class T>
   constexpr void Add(NullableFlowPtr<T> n) {
-    if (!n.has_value() || n == nullptr || n.value()->IsDiscarded()) {
+    if (!n.Isset() || n == nullptr || n.Unwrap()->IsDiscarded()) {
       return;
     }
 
-    m_sub.push_back(n.value());
+    m_sub.push_back(n.Unwrap());
   }
 
   void AddTypesuffix(const FlowPtr<Type>& n) {
@@ -86,23 +86,6 @@ class IterVisitor : public ASTVisitor {
 
     AddTypesuffix(n);
   }
-
-  void Visit(FlowPtr<U1> n) override { AddTypesuffix(n); }
-  void Visit(FlowPtr<U8> n) override { AddTypesuffix(n); }
-  void Visit(FlowPtr<U16> n) override { AddTypesuffix(n); }
-  void Visit(FlowPtr<U32> n) override { AddTypesuffix(n); }
-  void Visit(FlowPtr<U64> n) override { AddTypesuffix(n); }
-  void Visit(FlowPtr<U128> n) override { AddTypesuffix(n); }
-  void Visit(FlowPtr<I8> n) override { AddTypesuffix(n); }
-  void Visit(FlowPtr<I16> n) override { AddTypesuffix(n); }
-  void Visit(FlowPtr<I32> n) override { AddTypesuffix(n); }
-  void Visit(FlowPtr<I64> n) override { AddTypesuffix(n); }
-  void Visit(FlowPtr<I128> n) override { AddTypesuffix(n); }
-  void Visit(FlowPtr<F16> n) override { AddTypesuffix(n); }
-  void Visit(FlowPtr<F32> n) override { AddTypesuffix(n); }
-  void Visit(FlowPtr<F64> n) override { AddTypesuffix(n); }
-  void Visit(FlowPtr<F128> n) override { AddTypesuffix(n); }
-  void Visit(FlowPtr<VoidTy> n) override { AddTypesuffix(n); }
 
   void Visit(FlowPtr<PtrTy> n) override {
     Add(n->GetItem());
@@ -153,7 +136,6 @@ class IterVisitor : public ASTVisitor {
   void Visit(FlowPtr<Boolean>) override {}
   void Visit(FlowPtr<parse::String>) override {}
   void Visit(FlowPtr<Character>) override {}
-  void Visit(FlowPtr<Null>) override {}
 
   void Visit(FlowPtr<Call> n) override {
     Add(n->GetFunc());

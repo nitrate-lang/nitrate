@@ -31,23 +31,19 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <boost/predef.h>
-
+#include <boost/program_options.hpp>
+#include <boost/program_options/parsers.hpp>
 #include <boost/uuid/name_generator_sha1.hpp>
 #include <boost/uuid/uuid.hpp>
 #include <boost/uuid/uuid_io.hpp>
-#include <core/InterpreterImpl.hh>
-#include <core/argh.hh>
-#include <fstream>
+#include <core/cli/Interpreter.hh>
 #include <iomanip>
-#include <iostream>
+#include <nitrate-core/CatchAll.hh>
 #include <nitrate-core/Init.hh>
-#include <nitrate-core/LogOStream.hh>
 #include <nitrate-lexer/Init.hh>
 #include <nitrate-parser/Init.hh>
 #include <nitrate-seq/Init.hh>
 #include <nlohmann/json.hpp>
-#include <nlohmann/json_fwd.hpp>
 #include <sstream>
 #include <utility>
 
@@ -366,7 +362,8 @@ static auto GetSystemInfo() -> nlohmann::ordered_json {
   return info;
 }
 
-static auto GetVersionUsingJson(bool minify, bool system_info, const nlohmann::ordered_json& version_array) -> std::string {
+static auto GetVersionUsingJson(bool minify, bool system_info,
+                                const nlohmann::ordered_json& version_array) -> std::string {
   nlohmann::ordered_json j;
 
   const auto microseconds_since_epoch =
@@ -420,6 +417,30 @@ static auto GetVersionUsingBrief(const nlohmann::ordered_json& version_array) ->
   return brief_log.str();
 }
 
+static auto GetSoftwareComponents(const std::vector<std::string>& of) -> std::optional<std::vector<SoftwareComponent>> {
+  static const std::unordered_map<std::string_view, SoftwareComponent> component_map = {
+      {NITRATE_CORE, SoftwareComponent::Core},           {NITRATE_LEXER, SoftwareComponent::Lexer},
+      {NITRATE_SEQUENCER, SoftwareComponent::Sequencer}, {NITRATE_PARSER, SoftwareComponent::Parser},
+      {NITRATE_IR_ALPHA, SoftwareComponent::IRAlpha},    {NITRATE_IR_ALPHA_OPT, SoftwareComponent::AlphaOptimizer},
+      {NITRATE_IR_BETA, SoftwareComponent::IRBeta},      {NITRATE_IR_BETA_OPT, SoftwareComponent::BetaOptimizer},
+      {NITRATE_IR_GAMMA, SoftwareComponent::IRGamma},    {NITRATE_IR_GAMMA_OPT, SoftwareComponent::GammaOptimizer},
+      {NITRATE_CODEGEN, SoftwareComponent::Codegen},
+  };
+
+  std::vector<SoftwareComponent> components;
+  for (const auto& component_name : of) {
+    auto map_it = component_map.find(component_name);
+    if (map_it == component_map.end()) {
+      Log << "Unknown software component: " << component_name;
+      return std::nullopt;
+    }
+
+    components.push_back(map_it->second);
+  }
+
+  return components;
+}
+
 static void DisplayHelp() {
   std::string_view message = R"(Usage: version [--help] [--of VAR]... [--system-info] [--minify] [[--brief]|[--json]]
 
@@ -435,62 +456,53 @@ Optional arguments:
   Log << Raw << message;
 }
 
-static auto GetSoftwareComponents(const argh::parser& program) -> std::optional<std::vector<SoftwareComponent>> {
-  static const std::unordered_map<std::string_view, SoftwareComponent> component_map = {
-      {NITRATE_CORE, SoftwareComponent::Core},           {NITRATE_LEXER, SoftwareComponent::Lexer},
-      {NITRATE_SEQUENCER, SoftwareComponent::Sequencer}, {NITRATE_PARSER, SoftwareComponent::Parser},
-      {NITRATE_IR_ALPHA, SoftwareComponent::IRAlpha},    {NITRATE_IR_ALPHA_OPT, SoftwareComponent::AlphaOptimizer},
-      {NITRATE_IR_BETA, SoftwareComponent::IRBeta},      {NITRATE_IR_BETA_OPT, SoftwareComponent::BetaOptimizer},
-      {NITRATE_IR_GAMMA, SoftwareComponent::IRGamma},    {NITRATE_IR_GAMMA_OPT, SoftwareComponent::GammaOptimizer},
-      {NITRATE_CODEGEN, SoftwareComponent::Codegen},
+auto no3::Interpreter::PImpl::CommandVersion(ConstArguments, const MutArguments& argv) -> bool {
+  namespace po = boost::program_options;
+
+  po::options_description desc("Allowed options");
+
+  auto add_option = desc.add_options();
+  add_option("help,h", "produce help message");
+  add_option("of,O", po::value<std::vector<std::string>>(), "software component to include version info for");
+  add_option("system-info,S", "include information about the local system");
+  add_option("minify,C", "minify the output");
+  add_option("brief,B", "short human-readable output");
+  add_option("json,J", "output in JSON format");
+
+  std::vector<const char*> args;
+  args.reserve(argv.size());
+  for (const auto& arg : argv) {
+    args.push_back(arg.c_str());
+  }
+
+  po::variables_map vm;
+  if (auto cli_parser = OMNI_CATCH(po::parse_command_line(args.size(), args.data(), desc));
+      !cli_parser || !OMNI_CATCH(po::store(*cli_parser, vm)) || !OMNI_CATCH(po::notify(vm))) {
+    Log << Error << "Failed to parse command line arguments.";
+    desc.print(*(Log << Raw));
+    return false;
   };
 
-  std::vector<SoftwareComponent> components;
-  for (const auto& [_, value] : program.params({"O", "of"})) {
-    for (const auto& component_name : value) {
-      auto map_it = component_map.find(component_name);
-      if (map_it == component_map.end()) {
-        Log << "Unknown software component: " << component_name;
-        return std::nullopt;
-      }
-
-      components.push_back(map_it->second);
-    }
-  }
-
-  if (components.empty()) {
-    components.push_back(SoftwareComponent::Core);
-    components.push_back(SoftwareComponent::Lexer);
-    components.push_back(SoftwareComponent::Sequencer);
-    components.push_back(SoftwareComponent::Parser);
-    components.push_back(SoftwareComponent::IRAlpha);
-    components.push_back(SoftwareComponent::AlphaOptimizer);
-    components.push_back(SoftwareComponent::IRBeta);
-    components.push_back(SoftwareComponent::BetaOptimizer);
-    components.push_back(SoftwareComponent::IRGamma);
-    components.push_back(SoftwareComponent::GammaOptimizer);
-    components.push_back(SoftwareComponent::Codegen);
-  }
-
-  return components;
-}
-
-auto no3::Interpreter::PImpl::CommandVersion(ConstArguments, const MutArguments& argv) -> bool {
-  argh::parser cmdl;
-  cmdl.add_params({"help", "of", "system-info", "minify", "brief", "json"});
-  cmdl.parse(argv, argh::parser::SINGLE_DASH_IS_MULTIFLAG);
-
-  if (cmdl[{"-h", "--help"}]) {
+  if (vm.contains("help")) {
     DisplayHelp();
     return true;
   }
 
-  bool system_info = cmdl[{"-S", "--system-info"}];
-  bool minify = cmdl[{"-C", "--minify"}];
-  bool brief = cmdl[{"-B", "--brief"}];
-  bool json = cmdl[{"-J", "--json"}];
+  std::vector<std::string> of;
+  if (vm.contains("of")) {
+    of = vm.at("of").as<std::vector<std::string>>();
+  } else {
+    of = {NITRATE_CORE,     NITRATE_LEXER,        NITRATE_SEQUENCER, NITRATE_PARSER,
+          NITRATE_IR_ALPHA, NITRATE_IR_ALPHA_OPT, NITRATE_IR_BETA,   NITRATE_IR_BETA_OPT,
+          NITRATE_IR_GAMMA, NITRATE_IR_GAMMA_OPT, NITRATE_CODEGEN};
+  }
 
-  const auto components = GetSoftwareComponents(cmdl);
+  const auto system_info = vm.contains("system-info");
+  const auto minify = vm.contains("minify");
+  const auto brief = vm.contains("brief");
+  const auto json = vm.contains("json");
+
+  const auto components = GetSoftwareComponents(of);
   if (!components) {
     DisplayHelp();
     return false;
@@ -498,11 +510,13 @@ auto no3::Interpreter::PImpl::CommandVersion(ConstArguments, const MutArguments&
 
   if (!json && (system_info || minify)) {
     Log << "The --system-info and --minify options are only valid when using --json";
+    DisplayHelp();
     return false;
   }
 
   if (brief && json) {
     Log << "The --brief and --json options are mutually exclusive";
+    DisplayHelp();
     return false;
   }
 

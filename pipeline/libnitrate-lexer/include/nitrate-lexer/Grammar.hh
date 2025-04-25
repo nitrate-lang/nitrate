@@ -88,13 +88,6 @@ namespace ncc::lex {
       {"fn", Fn},
       {"safe", Safe},
       {"unsafe", Unsafe},
-      {"pure", Pure},
-      {"impure", Impure},
-      {"quasi", Quasi},
-      {"retro", Retro},
-      {"inline", Inline},
-      {"foreign", Foreign},
-      {"promise", Promise},
       {"if", If},
       {"else", Else},
       {"for", For},
@@ -111,7 +104,6 @@ namespace ncc::lex {
       {"async", Async},
       {"await", Await},
       {"__asm__", __Asm__},
-      {"null", Null},
       {"true", True},
       {"false", False},
       {"escape_block", EscapeBlock},
@@ -192,10 +184,6 @@ namespace ncc::lex {
   auto GetOperatorPrecedence(Operator op, OpMode type) -> short;
   auto GetOperatorAssociativity(Operator op, OpMode type) -> Associativity;
 
-  static inline const char *punct_repr(Punctor punct) {  // NOLINT
-    return LEXICAL_PUNCTORS.right.at(punct).c_str();
-  }
-
   inline auto operator<<(std::ostream &os, Operator op) -> std::ostream & {
     os << ncc::lex::LEXICAL_OPERATORS.right.at(op);
     return os;
@@ -207,7 +195,7 @@ namespace ncc::lex {
   }
 
   inline auto operator<<(std::ostream &os, Punctor punct) -> std::ostream & {
-    os << punct_repr(punct);
+    os << ncc::lex::LEXICAL_PUNCTORS.right.at(punct);
     return os;
   }
 }  // namespace ncc::lex

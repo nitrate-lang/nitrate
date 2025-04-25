@@ -47,22 +47,6 @@ namespace ncc::parse {
     virtual void Visit(FlowPtr<NamedTy> n) = 0;
     virtual void Visit(FlowPtr<InferTy> n) = 0;
     virtual void Visit(FlowPtr<TemplateType> n) = 0;
-    virtual void Visit(FlowPtr<U1> n) = 0;
-    virtual void Visit(FlowPtr<U8> n) = 0;
-    virtual void Visit(FlowPtr<U16> n) = 0;
-    virtual void Visit(FlowPtr<U32> n) = 0;
-    virtual void Visit(FlowPtr<U64> n) = 0;
-    virtual void Visit(FlowPtr<U128> n) = 0;
-    virtual void Visit(FlowPtr<I8> n) = 0;
-    virtual void Visit(FlowPtr<I16> n) = 0;
-    virtual void Visit(FlowPtr<I32> n) = 0;
-    virtual void Visit(FlowPtr<I64> n) = 0;
-    virtual void Visit(FlowPtr<I128> n) = 0;
-    virtual void Visit(FlowPtr<F16> n) = 0;
-    virtual void Visit(FlowPtr<F32> n) = 0;
-    virtual void Visit(FlowPtr<F64> n) = 0;
-    virtual void Visit(FlowPtr<F128> n) = 0;
-    virtual void Visit(FlowPtr<VoidTy> n) = 0;
     virtual void Visit(FlowPtr<PtrTy> n) = 0;
     virtual void Visit(FlowPtr<OpaqueTy> n) = 0;
     virtual void Visit(FlowPtr<TupleTy> n) = 0;
@@ -76,7 +60,6 @@ namespace ncc::parse {
     virtual void Visit(FlowPtr<Boolean> n) = 0;
     virtual void Visit(FlowPtr<String> n) = 0;
     virtual void Visit(FlowPtr<Character> n) = 0;
-    virtual void Visit(FlowPtr<Null> n) = 0;
     virtual void Visit(FlowPtr<Call> n) = 0;
     virtual void Visit(FlowPtr<TemplateCall> n) = 0;
     virtual void Visit(FlowPtr<Import> n) = 0;
@@ -141,10 +124,6 @@ namespace ncc::parse {
           Visit(n.template As<Boolean>());
           break;
         }
-        case AST_eNULL: {
-          Visit(n.template As<Null>());
-          break;
-        }
         case AST_eCALL: {
           Visit(n.template As<Call>());
           break;
@@ -183,70 +162,6 @@ namespace ncc::parse {
         }
         case AST_tREF: {
           Visit(n.template As<RefTy>());
-          break;
-        }
-        case AST_tU1: {
-          Visit(n.template As<U1>());
-          break;
-        }
-        case AST_tU8: {
-          Visit(n.template As<U8>());
-          break;
-        }
-        case AST_tU16: {
-          Visit(n.template As<U16>());
-          break;
-        }
-        case AST_tU32: {
-          Visit(n.template As<U32>());
-          break;
-        }
-        case AST_tU64: {
-          Visit(n.template As<U64>());
-          break;
-        }
-        case AST_tU128: {
-          Visit(n.template As<U128>());
-          break;
-        }
-        case AST_tI8: {
-          Visit(n.template As<I8>());
-          break;
-        }
-        case AST_tI16: {
-          Visit(n.template As<I16>());
-          break;
-        }
-        case AST_tI32: {
-          Visit(n.template As<I32>());
-          break;
-        }
-        case AST_tI64: {
-          Visit(n.template As<I64>());
-          break;
-        }
-        case AST_tI128: {
-          Visit(n.template As<I128>());
-          break;
-        }
-        case AST_tF16: {
-          Visit(n.template As<F16>());
-          break;
-        }
-        case AST_tF32: {
-          Visit(n.template As<F32>());
-          break;
-        }
-        case AST_tF64: {
-          Visit(n.template As<F64>());
-          break;
-        }
-        case AST_tF128: {
-          Visit(n.template As<F128>());
-          break;
-        }
-        case AST_tVOID: {
-          Visit(n.template As<VoidTy>());
           break;
         }
         case AST_tPTR: {

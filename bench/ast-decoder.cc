@@ -36,7 +36,7 @@ static auto CalculateStatistic(const std::vector<T> &data) -> Statistic<T> {
 }
 
 static void BenchEncode(const std::string &serialied_ast) {
-  if (!AstReader(serialied_ast).Get().has_value()) {
+  if (!ASTReader(serialied_ast).Get().has_value()) {
     qcore_panic("Failed to decode AST");
   }
 }
@@ -97,7 +97,7 @@ int main(int argc, char *argv[]) {
 
   {
     std::stringstream ss;
-    AstWriter writer(ss);
+    ASTWriter writer(ss, ASTWriter::Format::PROTO);
     parser.Get()->Accept(writer);
     serialied_ast = ss.str();
   }

@@ -5,8 +5,20 @@
 -I./pipeline/libnitrate-seq/src
 -I./pipeline/libnitrate-parser/include
 -I./pipeline/libnitrate-parser/src
--I./pipeline/libnitrate-ir/include
--I./pipeline/libnitrate-ir/src
+-I./pipeline/libnitrate-mangle/include
+-I./pipeline/libnitrate-mangle/src
+-I./pipeline/libnitrate-alpha/include
+-I./pipeline/libnitrate-alpha/src
+-I./pipeline/libnitrate-alpha-check/include
+-I./pipeline/libnitrate-alpha-check/src
+-I./pipeline/libnitrate-alpha-opt/include
+-I./pipeline/libnitrate-alpha-opt/src
+-I./pipeline/libnitrate-beta/include
+-I./pipeline/libnitrate-beta/src
+-I./pipeline/libnitrate-beta-check/include
+-I./pipeline/libnitrate-beta-check/src
+-I./pipeline/libnitrate-beta-opt/include
+-I./pipeline/libnitrate-beta-opt/src
 -I./pipeline/libnitrate-emit/include
 -I./pipeline/libnitrate-emit/src
 -I./pipeline/libnitrate/include
@@ -25,6 +37,7 @@
 -Wno-error=unused-parameter
 -Wno-overlength-strings
 -fno-rtti
+-DBOOST_NO_EXCEPTIONS
 
 -D__TARGET_MAJOR_VERSION=0
 -D__TARGET_MINOR_VERSION=0

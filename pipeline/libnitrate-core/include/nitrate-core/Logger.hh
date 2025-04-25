@@ -208,19 +208,20 @@ namespace ncc {
 
   using LogCallback = std::function<void(const LogMessage &)>;
 
-  class LogStream final {
+  class LogStream final : public std::ostream {
     std::stringstream m_ss;
     Sev m_severity = Sev::Error;
     const ECBase *m_ec = nullptr;
     LogCallback m_recv;
 
   public:
-    explicit LogStream(LogCallback pub) : m_recv(std::move(pub)) {}
-    LogStream(LogStream &&) = default;
+    explicit LogStream(LogCallback pub) : m_recv(std::move(pub)) { rdbuf(m_ss.rdbuf()); }
+    LogStream(LogStream &&) = delete;
+    LogStream &operator=(LogStream &&) = delete;
     LogStream(const LogStream &) = delete;
     LogStream &operator=(const LogStream &) = delete;
 
-    ~LogStream() {
+    ~LogStream() override {
       if (m_recv) {
         m_recv(LogMessage{m_ss.str(), m_severity, m_ec != nullptr ? *m_ec : UnknownEC});
       }
@@ -290,14 +291,15 @@ namespace ncc {
     void Publish(const std::string &msg, Sev sev, const ECBase &ec) const;
   };
 
-  auto operator<<(std::shared_ptr<LoggerContext> &log, const auto &value) -> LogStream {
-    auto stream = LogStream([&log](const LogMessage &m) { log->Publish(m.m_message, m.m_sev, m.m_by); });
-    stream.Write(value);
+  auto operator<<(std::shared_ptr<LoggerContext> &log, const auto &value) -> std::unique_ptr<LogStream> {
+    auto stream =
+        std::make_unique<LogStream>([&log](const LogMessage &m) { log->Publish(m.m_message, m.m_sev, m.m_by); });
+    stream->Write(value);
     return stream;
   };
 
-  auto operator<<(LogStream stream, const auto &value) -> LogStream {
-    stream.Write(value);
+  auto operator<<(std::unique_ptr<LogStream> stream, const auto &value) -> std::unique_ptr<LogStream> {
+    stream->Write(value);
     return stream;
   };
 

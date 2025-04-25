@@ -36,7 +36,7 @@ static auto CalculateStatistic(const std::vector<T> &data) -> Statistic<T> {
 
 static size_t BenchEncode(const Expr *root) {
   std::stringstream ss;
-  AstWriter writer(ss);
+  ASTWriter writer(ss, ASTWriter::Format::PROTO);
   root->Accept(writer);
 
   return ss.str().size();

@@ -111,7 +111,7 @@ namespace ncc::lex {
       }
     }
 
-    [[nodiscard]] constexpr auto AsString() const { return to_string(m_type, m_v); }
+    [[nodiscard]] constexpr auto AsString() const { return ToString(m_type, m_v); }
 
     template <auto V>
     [[nodiscard]] constexpr auto Is(string value) const -> bool {
@@ -175,9 +175,9 @@ namespace ncc::lex {
 
   using Token = TokenBase;
 
-  string to_string(TokenType ty);  // NOLINT
+  auto ToString(TokenType ty) -> string;
   static inline auto operator<<(std::ostream &os, TokenType ty) -> std::ostream & {
-    os << to_string(ty);
+    os << ToString(ty);
     return os;
   }
 

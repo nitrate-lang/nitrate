@@ -63,7 +63,7 @@ namespace ncc::parse {
   }  // namespace detail
 
   template <IterMode mode, typename T>
-  void iterate(FlowPtr<T> root, const IterCallback &cb) {  // NOLINT(readability-identifier-naming)
+  void Traverse(FlowPtr<T> root, const IterCallback &cb) {
     if constexpr (mode == dfs_pre) {
       return detail::DfsPreImpl(root, cb);
     } else if constexpr (mode == dfs_post) {
@@ -80,9 +80,8 @@ namespace ncc::parse {
   }
 
   template <auto mode = dfs_pre>
-  void for_each(FlowPtr<Expr> v,  // NOLINT(readability-identifier-naming)
-                const std::function<void(FlowPtr<Expr>)> &f) {
-    iterate<mode>(v, [&](auto, FlowPtr<Expr> c) -> IterOp {
+  void ForEach(FlowPtr<Expr> v, const std::function<void(FlowPtr<Expr>)> &f) {
+    Traverse<mode>(v, [&](auto, FlowPtr<Expr> c) -> IterOp {
       f(std::move(c));
 
       return IterOp::Proceed;
@@ -90,9 +89,8 @@ namespace ncc::parse {
   }
 
   template <typename T, auto mode = dfs_pre>
-  void for_each(FlowPtr<Expr> v,  // NOLINT(readability-identifier-naming)
-                std::function<void(FlowPtr<T>)> f) {
-    iterate<mode>(v, [&](auto, FlowPtr<Expr> c) -> IterOp {
+  void ForEach(FlowPtr<Expr> v, std::function<void(FlowPtr<T>)> f) {
+    Traverse<mode>(v, [&](auto, FlowPtr<Expr> c) -> IterOp {
       if (c->GetKind() != Expr::GetTypeCode<T>()) {
         return IterOp::Proceed;
       }

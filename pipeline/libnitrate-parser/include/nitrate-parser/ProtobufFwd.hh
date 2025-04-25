@@ -34,7 +34,7 @@
 #ifndef __NITRATE_AST_PROTOBUF_FWD_H__
 #define __NITRATE_AST_PROTOBUF_FWD_H__
 
-namespace nitrate::parser::SyntaxTree {  // NOLINT
+namespace nitrate::parser::SyntaxTree {  // NOLINT(readability-identifier-naming)
   class Base;
   class Root;
   class Binary;
@@ -57,22 +57,6 @@ namespace nitrate::parser::SyntaxTree {  // NOLINT
   class Import;
   class RefTy;
   class Unspecified;
-  class U1;
-  class U8;
-  class U16;
-  class U32;
-  class U64;
-  class U128;
-  class I8;
-  class I16;
-  class I32;
-  class I64;
-  class I128;
-  class F16;
-  class F32;
-  class F64;
-  class F128;
-  class VoidTy;
   class PtrTy;
   class OpaqueTy;
   class ArrayTy;

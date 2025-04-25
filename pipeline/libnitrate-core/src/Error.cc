@@ -138,12 +138,14 @@ static void PanicRenderReport(const std::vector<std::string> &lines) {
 
   std::setlocale(LC_ALL, "");  // NOLINT(concurrency-mt-unsafe)
 
+  std::stringstream os;
+
   { /* Print shockwave */
-    std::cerr << "\n\n";
-    std::cerr << "▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚"
-                 "▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚\n";
-    std::cerr << "▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚"
-                 "▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚\n\n\n";
+    os << "\n\n";
+    os << "▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚"
+          "▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚\n";
+    os << "▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚"
+          "▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚\n\n\n";
   }
 
   {
@@ -152,44 +154,45 @@ static void PanicRenderReport(const std::vector<std::string> &lines) {
       sep += "━";
     }
 
-    std::cerr << "\x1b[31;1m┏" << sep << "┓\x1b[0m\n";
+    os << "\x1b[31;1m┏" << sep << "┓\x1b[0m\n";
     for (const auto &str : lines) {
-      std::cerr << "\x1b[31;1m┃\x1b[0m " << str << " \x1b[31;1m┃\x1b[0m\n";
+      os << "\x1b[31;1m┃\x1b[0m " << str << " \x1b[31;1m┃\x1b[0m\n";
     }
-    std::cerr << "\x1b[31;1m┗" << sep << "\x1b[31;1m┛\x1b[0m\n\n";
+    os << "\x1b[31;1m┗" << sep << "\x1b[31;1m┛\x1b[0m\n\n";
   }
 
-  std::cerr << "\x1b[31;1m┏━━━━━━┫ BEGIN STACK TRACE ┣━━\x1b[0m\n";
-  std::cerr << "\x1b[31;1m┃\x1b[0m\n";
+  os << "\x1b[31;1m┏━━━━━━┫ BEGIN STACK TRACE ┣━━\x1b[0m\n";
+  os << "\x1b[31;1m┃\x1b[0m\n";
 
   auto trace = GetBacktrace();
 
   for (auto &[addr, name] : trace) {
-    std::cerr << "\x1b[31;1m┣╸╸\x1b[0m \x1b[37;1m";
-    std::cerr << "0x" << std::hex << std::setfill('0') << addr << std::dec << ":\x1b[0m \t";
-    std::cerr << name << "\n";
+    os << "\x1b[31;1m┣╸╸\x1b[0m \x1b[37;1m";
+    os << "0x" << std::hex << std::setfill('0') << addr << std::dec << ":\x1b[0m \t";
+    os << name << "\n";
   }
-  std::cerr << std::dec;
+  os << std::dec;
 
-  std::cerr << "\x1b[31;1m┃\x1b[0m\n";
-  std::cerr << "\x1b[31;1m┗━━━━━━┫ END STACK TRACE ┣━━\x1b[0m\n\n";
+  os << "\x1b[31;1m┃\x1b[0m\n";
+  os << "\x1b[31;1m┗━━━━━━┫ END STACK TRACE ┣━━\x1b[0m\n\n";
 
-  std::cerr << "libc version: " << LibcVersion << "\n";
+  os << "libc version: " << LibcVersion << "\n";
 
-  std::cerr << "The application has encountered a fatal internal "
-               "error.\n\n";
-  std::cerr << "\x1b[32;40;1;4mPlease report this error\x1b[0m to the Nitrate "
-               "developers "
-               "at\n\x1b[36;1;4m"
-            << kProjectRepoUrl << "\x1b[0m.\n\n";
+  os << "The application has encountered a fatal internal "
+        "error.\n\n";
+  os << "\x1b[32;40;1;4mPlease report this error\x1b[0m to the Nitrate "
+        "developers "
+        "at\n\x1b[36;1;4m"
+     << kProjectRepoUrl << "\x1b[0m.\n\n";
 
-  std::cerr << "\n\n▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚"
-               "▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚\n";
-  std::cerr << "▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚"
-               "▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚\n\n";
+  os << "\n\n▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚"
+        "▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚\n";
+  os << "▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚"
+        "▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚▚\n\n";
 
-  std::cerr << "\nAborting..." << "\n";
-  std::cerr.flush();
+  os << "\nAborting..." << "\n";
+
+  ncc::Log << ncc::Emergency << os.str();
 }
 
 extern "C" NCC_EXPORT void QCorePanic(const char *msg) { QCorePanicF("%s", msg); }

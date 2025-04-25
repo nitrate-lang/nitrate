@@ -240,7 +240,7 @@ NCC_EXPORT auto ncc::lex::GetOperatorAssociativity(Operator op, OpMode type) -> 
   return Left;
 }
 
-NCC_EXPORT auto ncc::lex::to_string(TokenType ty, TokenData v) -> ncc::string {
+NCC_EXPORT auto ncc::lex::ToString(TokenType ty, TokenData v) -> ncc::string {
   switch (ty) {
     case EofF:
       return "";
@@ -252,7 +252,7 @@ NCC_EXPORT auto ncc::lex::to_string(TokenType ty, TokenData v) -> ncc::string {
       return ncc::lex::LEXICAL_OPERATORS.right.at(v.m_op);
 
     case Punc:
-      return ncc::lex::punct_repr(v.m_punc);
+      return ncc::lex::LEXICAL_PUNCTORS.right.at(v.m_punc);
 
     case Name:
       return v.m_str;
@@ -282,7 +282,7 @@ NCC_EXPORT auto ncc::lex::to_string(TokenType ty, TokenData v) -> ncc::string {
 
 NCC_EXPORT auto LocationID::Get(IScanner &l) const -> Location { return l.GetLocation(LocationID(m_id)); }
 
-NCC_EXPORT auto ncc::lex::to_string(TokenType ty) -> string {
+NCC_EXPORT auto ncc::lex::ToString(TokenType ty) -> string {
   switch (ty) {
     case EofF:
       return "eof";

@@ -31,14 +31,16 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <core/GetOpt.hh>
-#include <core/InterpreterImpl.hh>
-#include <core/PackageConfig.hh>
-#include <core/SPDX.hh>
+#include <boost/program_options.hpp>
+#include <boost/program_options/parsers.hpp>
+#include <core/cli/GetOpt.hh>
+#include <core/cli/Interpreter.hh>
+#include <core/package/Manifest.hh>
+#include <core/static/SPDX.hh>
 #include <filesystem>
 #include <init/InitPackage.hh>
 #include <nitrate-core/CatchAll.hh>
-#include <nitrate-core/LogOStream.hh>
+#include <nlohmann/json.hpp>
 #include <source_location>
 #include <sstream>
 
@@ -46,210 +48,24 @@ using namespace ncc;
 using namespace no3::core;
 using namespace no3::package;
 
-class RunCommandArgumentParser {
-  bool m_help = false;
-  size_t m_lib = 0;
-  size_t m_standard_lib = 0;
-  size_t m_exe = 0;
-  PackageCategory m_category = PackageCategory::Library;
-  std::string m_license;
-  std::string m_output;
-  std::string m_package_name;
-  bool m_too_many_args = false;
-
-  void DisplayHelp() {
-    std::string_view help =
-        R"(Usage: impl [--help] [[--lib]|[--standard-lib]|[--exe]] [--license VAR] [--output VAR] package-name
+void DisplayHelp() {
+  std::string_view help =
+      R"(Usage: init [--help] [[--lib]|[--standard-lib]|[--exe]] [--license VAR] [--output VAR] package-name
 
 Positional arguments:
-  package-name    The name of the package to initialize. [required]
+  package-name                The name of the package to initialize. [required]
 
 Optional arguments:
-  -h, --help          shows this help message and exits
-  -c, --lib           create a library package
-  -s, --standard-lib  create a standard library package
-  -e, --exe           create an executable package
-  -l, --license       set the package's SPDX license [nargs=0..1] [default: "MIT"]
-  -o, --output        the folder that will contain the package [nargs=0..1] [default: "."]
+  -h [ --help ]               produce help message
+  -c [ --lib ]                create a library package
+  -s [ --standard-lib ]       create a standard library package
+  -e [ --exe ]                create an executable package
+  -l [ --license ] arg (=MIT) set the package's SPDX license
+  -o [ --output ] arg (=.)    output directory for the package
 )";
 
-    Log << Raw << help;
-  }
-
-  void DoParse(std::vector<std::string> args) {
-    constexpr const char* kShortOptions = "hl:v:o:";
-    constexpr std::array kLongOptions = {
-        option{"help", no_argument, nullptr, 'h'},
-        option{"lib", no_argument, nullptr, 'c'},
-        option{"standard-lib", no_argument, nullptr, 's'},
-        option{"exe", no_argument, nullptr, 'e'},
-        option{"license", required_argument, nullptr, 'l'},
-        option{"output", required_argument, nullptr, 'o'},
-        option{nullptr, 0, nullptr, 0},
-    };
-
-    std::vector<char*> argv(args.size());
-    std::transform(args.begin(), args.end(), argv.begin(), [](auto& str) { return str.data(); });
-
-    {
-      std::lock_guard lock(GET_OPT);
-
-      Log << Trace << "Starting to parse command line arguments";
-
-      int c;
-      int option_index = 0;
-
-      opterr = 0;
-      while ((c = GET_OPT.getopt_long(args.size(), argv.data(), kShortOptions, kLongOptions.data(), &option_index)) !=
-             -1) {
-        switch (c) {
-          case 'h': {
-            Log << Trace << "Parsing command line argument: --help";
-            m_help = true;
-            break;
-          }
-
-          case 'l': {
-            Log << Trace << "Parsing command line argument: --license";
-            if (!m_license.empty()) {
-              Log << "The --license argument was provided more than once.";
-              m_too_many_args = true;
-              break;
-            }
-
-            m_license = optarg;
-            break;
-          }
-
-          case 'o': {
-            Log << Trace << "Parsing command line argument: --output";
-            if (!m_output.empty()) {
-              Log << "The --output argument was provided more than once.";
-              m_too_many_args = true;
-              break;
-            }
-
-            m_output = optarg;
-            break;
-          }
-
-          case 'c': {
-            Log << Trace << "Parsing command line argument: --lib";
-            m_category = PackageCategory::Library;
-
-            if (m_lib++ > 0) {
-              Log << "The --lib argument was provided more than once.";
-              m_too_many_args = true;
-            }
-
-            break;
-          }
-
-          case 's': {
-            Log << Trace << "Parsing command line argument: --standard-lib";
-            m_category = PackageCategory::StandardLibrary;
-
-            if (m_standard_lib++ > 0) {
-              Log << "The --standard-lib argument was provided more than once.";
-              m_too_many_args = true;
-            }
-
-            break;
-          }
-
-          case 'e': {
-            Log << Trace << "Parsing command line argument: --exe";
-            m_category = PackageCategory::Executable;
-
-            if (m_exe++ > 0) {
-              Log << "The --exe argument was provided more than once.";
-              m_too_many_args = true;
-            }
-
-            break;
-          }
-
-          case '?': {
-            Log << "Unknown command line argument: -" << (char)optopt;
-            m_too_many_args = true;
-            break;
-          }
-
-          default: {
-            Log << "Unknown command line argument: -" << (char)c;
-            m_too_many_args = true;
-            break;
-          }
-        }
-      }
-
-      if (m_license.empty()) {
-        Log << Trace << "Setting the default value for the --license argument.";
-        m_license = "MIT";
-      }
-
-      if (m_output.empty()) {
-        Log << Trace << "Setting the default value for the --output argument.";
-        m_output = ".";
-      }
-
-      if ((size_t)optind == args.size() - 1) {
-        Log << Trace << "Parsing command line argument: package-name";
-        m_package_name = args[optind];
-      } else if ((size_t)optind < args.size()) {
-        m_too_many_args = true;
-      }
-
-      Log << Trace << "Finished parsing command line arguments";
-    }
-  }
-
-  [[nodiscard]] auto Check() const -> bool {
-    bool okay = true;
-
-    if (m_too_many_args) {
-      Log << "Too many arguments provided.";
-      okay = false;
-    }
-
-    if (m_package_name.empty()) {
-      Log << "package-name: 1 argument(s) expected. 0 provided.";
-      okay = false;
-    }
-
-    if (m_lib + m_standard_lib + m_exe == 0) {
-      Log << "One of '--exe', '--lib', '--standard-lib' is required.";
-      okay = false;
-    } else if (m_lib + m_standard_lib + m_exe != 1) {
-      Log << "Arguments '--exe', '--lib', '--standard-lib' are mutually exclusive.";
-      okay = false;
-    }
-
-    return okay;
-  }
-
-public:
-  RunCommandArgumentParser(const std::vector<std::string>& args, bool& is_valid, bool& performed_action) {
-    is_valid = false;
-    performed_action = false;
-
-    DoParse(args);
-
-    if (m_help) {
-      DisplayHelp();
-      is_valid = true;
-      performed_action = true;
-      return;
-    }
-
-    is_valid = Check();
-  }
-
-  [[nodiscard]] auto GetPackageName() const -> const auto& { return m_package_name; }
-  [[nodiscard]] auto GetLicense() const -> const auto& { return m_license; }
-  [[nodiscard]] auto GetOutput() const -> const auto& { return m_output; }
-  [[nodiscard]] auto GetCategory() const -> const auto& { return m_category; }
-};
+  Log << Raw << help;
+}
 
 static void DisplayPoliteNameRejection(const std::string& package_name) {
   Log << "Sorry, the specified package name is not acceptable.";
@@ -257,7 +73,7 @@ static void DisplayPoliteNameRejection(const std::string& package_name) {
   std::stringstream help;
 
   help << "Package names must satisfy the following regular expression:\n";
-  help << "\t" << PackageConfig::PackageNameRegex << "\n";
+  help << "\t" << Manifest::GetNameRegex() << "\n";
   help << "\tAlso, there must be no duplicate hyphens.\n\n";
 
   help << "The package name you provided was: \"" << package_name << "\"\n\n";
@@ -307,7 +123,7 @@ static void DisplayPoliteLicenseRejection(const std::string& package_license) {
 }
 
 static auto GetNewPackagePath(const std::filesystem::path& directory,
-                                                              const std::string& name) -> std::optional<std::filesystem::path> {
+                              const std::string& name) -> std::optional<std::filesystem::path> {
   std::string just_name = name.substr(name.find('/') + 1);
   size_t attempts = 0;
 
@@ -343,24 +159,76 @@ static auto GetNewPackagePath(const std::filesystem::path& directory,
 auto no3::Interpreter::PImpl::CommandInit(ConstArguments, const MutArguments& argv) -> bool {
   Log << Trace << "Executing the " << std::source_location::current().function_name();
 
-  bool is_valid = false;
-  bool performed_action = false;
-  RunCommandArgumentParser state(argv, is_valid, performed_action);
+  namespace po = boost::program_options;
 
-  if (!is_valid) {
-    Log << Trace << "Failed to parse command line arguments.";
-    return false;
+  po::options_description desc;
+  po::positional_options_description p;
+  p.add("package-name", 1);
+
+  auto add_option = desc.add_options();
+  add_option("help,h", "produce help message");
+  add_option("lib,c", "create a library package");
+  add_option("standard-lib,s", "create a standard library package");
+  add_option("exe,e", "create an executable package");
+  add_option("license,l", po::value<std::string>()->default_value("MIT"), "set the package's SPDX license");
+  add_option("output,o", po::value<std::string>()->default_value("."), "output directory for the package");
+  add_option("package-name", po::value<std::string>(), "name of the package to initialize");
+
+  std::vector<const char*> args;
+  args.reserve(argv.size());
+  for (const auto& arg : argv) {
+    args.push_back(arg.c_str());
   }
 
-  if (performed_action) {
-    Log << Trace << "Performed built-in action.";
+  po::variables_map vm;
+  if (auto cli_parser = OMNI_CATCH(po::command_line_parser(args.size(), args.data()).options(desc).positional(p).run());
+      !cli_parser || !OMNI_CATCH(po::store(*cli_parser, vm)) || !OMNI_CATCH(po::notify(vm))) {
+    Log << Error << "Failed to parse command line arguments.";
+    DisplayHelp();
+    return false;
+  };
+
+  Log << Trace << "Parsed command line arguments.";
+
+  if (vm.contains("help")) {
+    DisplayHelp();
     return true;
   }
 
-  const auto& package_name = state.GetPackageName();
-  const auto& package_license = state.GetLicense();
-  const auto& package_output = state.GetOutput();
-  const auto& package_category = state.GetCategory();
+  if (!vm.contains("package-name")) {
+    Log << "package-name: 1 argument(s) expected. 0 provided.";
+    DisplayHelp();
+    return false;
+  }
+
+  const auto is_lib = vm.count("lib");
+  const auto is_standard_lib = vm.count("standard-lib");
+  const auto is_exe = vm.count("exe");
+  const auto sum = is_lib + is_standard_lib + is_exe;
+  if (sum > 1) {
+    Log << "Only one of --lib, --standard-lib, or --exe may be specified.";
+    DisplayHelp();
+    return false;
+  }
+
+  const auto& package_name = vm.at("package-name").as<std::string>();
+  const auto& package_license = vm.at("license").as<std::string>();
+  const auto& package_output = vm.at("output").as<std::string>();
+  const auto& package_category = [&] {
+    if (vm.contains("lib")) {
+      return Manifest::Category::Library;
+    }
+
+    if (vm.contains("standard-lib")) {
+      return Manifest::Category::StandardLibrary;
+    }
+
+    if (vm.contains("exe")) {
+      return Manifest::Category::Executable;
+    }
+
+    return Manifest::Category::Executable;
+  }();
 
   Log << Trace << R"(args["package-name"] = ")" << package_name << "\"";
   Log << Trace << R"(args["license"] = ")" << package_license << "\"";
@@ -368,13 +236,13 @@ auto no3::Interpreter::PImpl::CommandInit(ConstArguments, const MutArguments& ar
 
   Log << Trace << "Finished parsing command line arguments.";
 
-  if (!PackageConfig::ValidatePackageLicense(package_license)) {
+  if (!Manifest::IsValidLicense(package_license)) {
     DisplayPoliteLicenseRejection(package_license);
     Log << Trace << "Aborting package initialization due to an invalid SPDX license identifier.";
     return false;
   }
 
-  if (!PackageConfig::ValidatePackageName(package_name, package_category == PackageCategory::StandardLibrary)) {
+  if (!Manifest::IsValidName(package_name)) {
     DisplayPoliteNameRejection(package_name);
     Log << Trace << "Aborting package initialization due to an invalid package name.";
     return false;
@@ -408,7 +276,7 @@ auto no3::Interpreter::PImpl::CommandInit(ConstArguments, const MutArguments& ar
   options.m_package_name = package_name;
   options.m_package_description = "No description was provided by the package creator.";
   options.m_package_license = constants::FindClosestSPDXLicense(package_license);  // convert to proper letter case
-  options.m_package_version = "0.1.0";
+  options.m_package_version = {0, 1, 0};
   options.m_package_category = package_category;
 
   Log << Info << "Initializing the package at: " << package_path.value();

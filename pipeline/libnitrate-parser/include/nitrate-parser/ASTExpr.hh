@@ -123,11 +123,6 @@ namespace ncc::parse {
     [[nodiscard, gnu::pure]] constexpr auto GetValue() { return m_value; }
   };
 
-  class Null final : public Expr {
-  public:
-    constexpr Null() : Expr(AST_eNULL) {}
-  };
-
   class Call final : public Expr {
     FlowPtr<Expr> m_func;
     std::span<CallArg> m_args;

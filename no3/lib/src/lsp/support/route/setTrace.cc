@@ -31,7 +31,7 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <lsp/core/LSPContext.hh>
+#include <lsp/server/Context.hh>
 #include <nitrate-core/Logger.hh>
 
 using namespace ncc;
@@ -51,7 +51,7 @@ static auto VerifySetTrace(const nlohmann::json& j) -> bool {
   return value == "off" || value == "messages" || value == "verbose";
 }
 
-void core::LSPContext::NotifySetTrace(const message::NotifyMessage& notice) {
+void core::Context::NotifySetTrace(const message::NotifyMessage& notice) {
   const auto& j = *notice;
 
   if (!VerifySetTrace(j)) {

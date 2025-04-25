@@ -157,27 +157,27 @@ auto Expr::PrettyPrint(OptionalSourceProvider rd) const -> std::string {
 }
 
 auto Expr::PrettyPrint(std::ostream &os, OptionalSourceProvider rd) const -> std::ostream & {
-  AstWriter writer(os, true, rd);
+  ASTWriter writer(os, ASTWriter::Format::JSON, rd);
   const_cast<Expr *>(this)->Accept(writer);
   return os;
 }
 
 auto Expr::Serialize(std::ostream &os) const -> std::ostream & {
-  AstWriter writer(os);
+  ASTWriter writer(os, ASTWriter::Format::PROTO);
   const_cast<Expr *>(this)->Accept(writer);
   return os;
 }
 
 std::string Expr::Serialize() const {
   std::stringstream ss;
-  AstWriter writer(ss);
+  ASTWriter writer(ss, ASTWriter::Format::PROTO);
   const_cast<Expr *>(this)->Accept(writer);
 
   return ss.str();
 }
 
 auto Expr::IsEq(const FlowPtr<Expr> &o) const -> bool {
-  if (this == o.get()) {
+  if (this == o.Get()) {
     return true;
   }
 
@@ -187,18 +187,18 @@ auto Expr::IsEq(const FlowPtr<Expr> &o) const -> bool {
 
   std::stringstream ss1;
   std::stringstream ss2;
-  AstWriter writer1(ss1);
-  AstWriter writer2(ss2);
+  ASTWriter writer1(ss1, ASTWriter::Format::PROTO);
+  ASTWriter writer2(ss2, ASTWriter::Format::PROTO);
 
   const_cast<Expr *>(this)->Accept(writer1);
-  const_cast<Expr *>(o.get())->Accept(writer2);
+  const_cast<Expr *>(o.Get())->Accept(writer2);
 
   return ss1.str() == ss2.str();
 }
 
 auto Expr::Hash64() const -> uint64_t {
   std::stringstream ss;
-  AstWriter writer(ss);
+  ASTWriter writer(ss, ASTWriter::Format::PROTO);
   const_cast<Expr *>(this)->Accept(writer);
 
   return std::hash<std::string>{}(ss.str());
@@ -211,7 +211,7 @@ auto Expr::RecursiveChildCount() -> size_t {
 
   size_t count = 0;
 
-  for_each(this, [&](auto) { count++; });
+  ForEach(this, [&](auto) { count++; });
 
   return count - 1;
 }

@@ -61,22 +61,6 @@ namespace ncc::parse::import {
     void Visit(FlowPtr<NamedTy> n) override { n->Discard(); };
     void Visit(FlowPtr<InferTy> n) override { n->Discard(); };
     void Visit(FlowPtr<TemplateType> n) override { n->Discard(); };
-    void Visit(FlowPtr<U1> n) override { n->Discard(); };
-    void Visit(FlowPtr<U8> n) override { n->Discard(); };
-    void Visit(FlowPtr<U16> n) override { n->Discard(); };
-    void Visit(FlowPtr<U32> n) override { n->Discard(); };
-    void Visit(FlowPtr<U64> n) override { n->Discard(); };
-    void Visit(FlowPtr<U128> n) override { n->Discard(); };
-    void Visit(FlowPtr<I8> n) override { n->Discard(); };
-    void Visit(FlowPtr<I16> n) override { n->Discard(); };
-    void Visit(FlowPtr<I32> n) override { n->Discard(); };
-    void Visit(FlowPtr<I64> n) override { n->Discard(); };
-    void Visit(FlowPtr<I128> n) override { n->Discard(); };
-    void Visit(FlowPtr<F16> n) override { n->Discard(); };
-    void Visit(FlowPtr<F32> n) override { n->Discard(); };
-    void Visit(FlowPtr<F64> n) override { n->Discard(); };
-    void Visit(FlowPtr<F128> n) override { n->Discard(); };
-    void Visit(FlowPtr<VoidTy> n) override { n->Discard(); };
     void Visit(FlowPtr<PtrTy> n) override { n->Discard(); };
     void Visit(FlowPtr<OpaqueTy> n) override { n->Discard(); };
     void Visit(FlowPtr<TupleTy> n) override { n->Discard(); };
@@ -90,7 +74,6 @@ namespace ncc::parse::import {
     void Visit(FlowPtr<Boolean> n) override { n->Discard(); };
     void Visit(FlowPtr<String> n) override { n->Discard(); };
     void Visit(FlowPtr<Character> n) override { n->Discard(); };
-    void Visit(FlowPtr<Null> n) override { n->Discard(); };
     void Visit(FlowPtr<Call> n) override { n->Discard(); };
     void Visit(FlowPtr<TemplateCall> n) override { n->Discard(); };
     void Visit(FlowPtr<List> n) override { n->Discard(); };
@@ -420,7 +403,7 @@ static auto RecurseImportRegularFile(GeneralParser::Context &m, ImportedFilesSet
       Log << Trace << "RecurseImport: Creating subparser for: " << abs_import_path;
 
       auto subparser = m.CreateSubParser(scanner);
-      auto subtree = subparser.m_impl->RecurseBlock(false, false, BlockMode::Unknown);
+      auto subtree = m.GetPImplPtr(subparser)->RecurseBlock(false, false, BlockMode::Unknown);
 
       ImportName importee_name;
       import::ImportSubgraphVisitor subgraph_visitor(m, import_config.GetThisImportName(), importee_name);
@@ -519,7 +502,7 @@ static auto RecurseImportPackage(GeneralParser::Context &m, ImportedFilesSet &im
 
     Log << Trace << "RecurseImport: Creating subparser for: " << file_name;
     auto subparser = m.CreateSubParser(scanner);
-    auto subtree = subparser.m_impl->RecurseBlock(false, false, BlockMode::Unknown);
+    auto subtree = m.GetPImplPtr(subparser)->RecurseBlock(false, false, BlockMode::Unknown);
 
     // Prepare the subgraph by stripping out unnecessary nodes and
     // transforming definitions into declarations as needed
