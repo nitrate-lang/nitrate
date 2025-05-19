@@ -239,12 +239,6 @@ namespace ncc::parse {
                                                   NullableFlowPtr<Expr> max = nullptr,
                                                   SourceLocation origin = SourceLocation::current()) -> FlowPtr<RefTy>;
 
-    [[gnu::pure, nodiscard]] auto CreatePointer(FlowPtr<Type> to, bool volatil = false,
-                                                NullableFlowPtr<Expr> bits = nullptr,
-                                                NullableFlowPtr<Expr> min = nullptr,
-                                                NullableFlowPtr<Expr> max = nullptr,
-                                                SourceLocation origin = SourceLocation::current()) -> FlowPtr<PtrTy>;
-
     [[gnu::pure, nodiscard]] auto CreateOpaque(string name, NullableFlowPtr<Expr> bits = nullptr,
                                                NullableFlowPtr<Expr> min = nullptr, NullableFlowPtr<Expr> max = nullptr,
                                                SourceLocation origin = SourceLocation::current()) -> FlowPtr<OpaqueTy>;

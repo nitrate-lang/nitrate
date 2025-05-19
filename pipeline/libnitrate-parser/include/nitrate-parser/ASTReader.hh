@@ -65,7 +65,6 @@ namespace ncc::parse {
     auto Unmarshal(const SyntaxTree::NamedTy &in) -> Result<NamedTy>;
     auto Unmarshal(const SyntaxTree::InferTy &in) -> Result<InferTy>;
     auto Unmarshal(const SyntaxTree::TemplateType &in) -> Result<TemplateType>;
-    auto Unmarshal(const SyntaxTree::PtrTy &in) -> Result<PtrTy>;
     auto Unmarshal(const SyntaxTree::OpaqueTy &in) -> Result<OpaqueTy>;
     auto Unmarshal(const SyntaxTree::TupleTy &in) -> Result<TupleTy>;
     auto Unmarshal(const SyntaxTree::ArrayTy &in) -> Result<ArrayTy>;

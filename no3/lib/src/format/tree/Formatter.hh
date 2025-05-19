@@ -54,7 +54,6 @@ namespace no3::format::details {
     void Visit(FlowPtr<NamedTy> n) override;
     void Visit(FlowPtr<InferTy> n) override;
     void Visit(FlowPtr<TemplateType> n) override;
-    void Visit(FlowPtr<PtrTy> n) override;
     void Visit(FlowPtr<OpaqueTy> n) override;
     void Visit(FlowPtr<TupleTy> n) override;
     void Visit(FlowPtr<ArrayTy> n) override;

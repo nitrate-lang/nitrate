@@ -55,7 +55,6 @@ namespace ncc::parse {
     SyntaxTree::NamedTy *From(FlowPtr<NamedTy> in);
     SyntaxTree::InferTy *From(FlowPtr<InferTy> in);
     SyntaxTree::TemplateType *From(FlowPtr<TemplateType> in);
-    SyntaxTree::PtrTy *From(FlowPtr<PtrTy> in);
     SyntaxTree::OpaqueTy *From(FlowPtr<OpaqueTy> in);
     SyntaxTree::TupleTy *From(FlowPtr<TupleTy> in);
     SyntaxTree::ArrayTy *From(FlowPtr<ArrayTy> in);
@@ -100,7 +99,6 @@ namespace ncc::parse {
     void Visit(FlowPtr<NamedTy> n) override;
     void Visit(FlowPtr<InferTy> n) override;
     void Visit(FlowPtr<TemplateType> n) override;
-    void Visit(FlowPtr<PtrTy> n) override;
     void Visit(FlowPtr<OpaqueTy> n) override;
     void Visit(FlowPtr<TupleTy> n) override;
     void Visit(FlowPtr<ArrayTy> n) override;

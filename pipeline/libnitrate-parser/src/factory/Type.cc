@@ -50,17 +50,6 @@ auto ASTFactory::CreateReference(FlowPtr<Type> to, bool volatil, NullableFlowPtr
   return node;
 }
 
-auto ASTFactory::CreatePointer(FlowPtr<Type> to, bool volatil, NullableFlowPtr<Expr> bits, NullableFlowPtr<Expr> min,
-                               NullableFlowPtr<Expr> max, SourceLocation origin) -> FlowPtr<PtrTy> {
-  auto node = CreateInstance<PtrTy>(to, volatil)(m_pool, origin);
-
-  node->SetWidth(std::move(bits));
-  node->SetRangeBegin(std::move(min));
-  node->SetRangeEnd(std::move(max));
-
-  return node;
-}
-
 auto ASTFactory::CreateOpaque(string name, NullableFlowPtr<Expr> bits, NullableFlowPtr<Expr> min,
                               NullableFlowPtr<Expr> max, SourceLocation origin) -> FlowPtr<OpaqueTy> {
   auto node = CreateInstance<OpaqueTy>(name)(m_pool, origin);

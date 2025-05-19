@@ -55,7 +55,6 @@ namespace ncc::parse {
   class TemplateCall;
   class Import;
   class RefTy;
-  class PtrTy;
   class OpaqueTy;
   class ArrayTy;
   class TupleTy;

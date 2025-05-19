@@ -1642,13 +1642,6 @@ public:
 //     }  // namespace prim
 
 //     namespace other {
-//       static ty_t for_PTR_TY(craft_t &b, const PtrTy *N) {
-//         if (ty_t pointee = T(N->getPointee())) {
-//           return PointerType::get(pointee.value(), 0);
-//         }
-
-//         return nullopt;
-//       }
 
 //       static ty_t for_CONST_TY(craft_t &b, const ConstTy *N) {
 //         return T(N->GetItem());
@@ -1821,7 +1814,6 @@ public:
 //       FUNCTION(IR_tF64_TY, for_F64_TY, F64Ty);
 //       FUNCTION(IR_tF128_TY, for_F128_TY, F128Ty);
 //       FUNCTION(IR_tVOID, for_VOID_TY, VoidTy);
-//       FUNCTION(IR_tPTR, for_PTR_TY, PtrTy);
 //       FUNCTION(IR_tCONST, for_CONST_TY, ConstTy);
 //       FUNCTION(IR_tOPAQUE, for_OPAQUE_TY, OpaqueTy);
 //       FUNCTION(IR_tSTRUCT, for_STRUCT_TY, StructTy);

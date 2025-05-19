@@ -47,7 +47,6 @@ namespace ncc::parse {
     virtual void Visit(FlowPtr<NamedTy> n) = 0;
     virtual void Visit(FlowPtr<InferTy> n) = 0;
     virtual void Visit(FlowPtr<TemplateType> n) = 0;
-    virtual void Visit(FlowPtr<PtrTy> n) = 0;
     virtual void Visit(FlowPtr<OpaqueTy> n) = 0;
     virtual void Visit(FlowPtr<TupleTy> n) = 0;
     virtual void Visit(FlowPtr<ArrayTy> n) = 0;
@@ -162,10 +161,6 @@ namespace ncc::parse {
         }
         case AST_tREF: {
           Visit(n.template As<RefTy>());
-          break;
-        }
-        case AST_tPTR: {
-          Visit(n.template As<PtrTy>());
           break;
         }
         case AST_tOPAQUE: {

@@ -61,7 +61,6 @@ namespace ncc::parse::import {
     void Visit(FlowPtr<NamedTy> n) override { n->Discard(); };
     void Visit(FlowPtr<InferTy> n) override { n->Discard(); };
     void Visit(FlowPtr<TemplateType> n) override { n->Discard(); };
-    void Visit(FlowPtr<PtrTy> n) override { n->Discard(); };
     void Visit(FlowPtr<OpaqueTy> n) override { n->Discard(); };
     void Visit(FlowPtr<TupleTy> n) override { n->Discard(); };
     void Visit(FlowPtr<ArrayTy> n) override { n->Discard(); };

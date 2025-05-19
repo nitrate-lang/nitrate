@@ -211,16 +211,6 @@ static auto RecurseTypeByOperator(GeneralParser::Context& m, Operator op) -> Flo
   m.Next();
 
   switch (op) {
-    case OpTimes: {
-      auto start = m.Current().GetStart();
-      auto pointee = m.RecurseType();
-      auto ptr_ty = m.CreatePointer(pointee);
-
-      ptr_ty->SetOffset(start);
-
-      return ptr_ty;
-    }
-
     case OpBitAnd: {
       auto start = m.Current().GetStart();
       auto refee = m.RecurseType();

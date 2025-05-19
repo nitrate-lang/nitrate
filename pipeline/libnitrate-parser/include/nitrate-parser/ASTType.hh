@@ -64,17 +64,6 @@ namespace ncc::parse {
     [[nodiscard, gnu::pure]] constexpr auto GetArgs() const { return m_args; }
   };
 
-  class PtrTy : public Type {
-    FlowPtr<Type> m_item;
-    bool m_volatil;
-
-  public:
-    constexpr PtrTy(auto item, auto volatil) : Type(AST_tPTR), m_item(std::move(item)), m_volatil(volatil) {}
-
-    [[nodiscard, gnu::pure]] constexpr auto GetItem() const { return m_item; }
-    [[nodiscard, gnu::pure]] constexpr auto IsVolatile() const -> bool { return m_volatil; }
-  };
-
   class OpaqueTy : public Type {
     string m_name;
 
