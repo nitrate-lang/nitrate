@@ -11,11 +11,6 @@
     "/app",
     "/home/wesjo/Documents/Projects/nitrate"
   ],
-  "files.exclude": {
-    "build": true,
-    "coverage": true,
-    "default.profraw": true
-  },
   "coverage-gutters.showLineCoverage": true,
   "coverage-gutters.showRulerCoverage": true,
   "coverage-gutters.highlightdark": "rgba(0, 122, 30, 0.0)",
