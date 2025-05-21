@@ -137,8 +137,6 @@ namespace ncc::parse {
         return AST_eIMPORT;
       } else if constexpr (std::is_same_v<T, RefTy>) {
         return AST_tREF;
-      } else if constexpr (std::is_same_v<T, PtrTy>) {
-        return AST_tPTR;
       } else if constexpr (std::is_same_v<T, OpaqueTy>) {
         return AST_tOPAQUE;
       } else if constexpr (std::is_same_v<T, ArrayTy>) {
@@ -321,7 +319,6 @@ namespace ncc::parse {
       r[AST_eTEMPLATE_CALL] = "TemplateCall";
       r[AST_eIMPORT] = "Import";
       r[AST_tREF] = "Ref";
-      r[AST_tPTR] = "Ptr";
       r[AST_tOPAQUE] = "Opaque";
       r[AST_tARRAY] = "Array";
       r[AST_tTUPLE] = "Tuple";
@@ -363,7 +360,6 @@ namespace ncc::parse {
   public:
     [[nodiscard, gnu::pure]] constexpr auto IsArray() const -> bool { return GetKind() == AST_tARRAY; };
     [[nodiscard, gnu::pure]] constexpr auto IsTuple() const -> bool { return GetKind() == AST_tTUPLE; }
-    [[nodiscard, gnu::pure]] constexpr auto IsPointer() const -> bool { return GetKind() == AST_tPTR; }
     [[nodiscard, gnu::pure]] constexpr auto IsFunction() const -> bool { return GetKind() == AST_tFUNCTION; }
     [[nodiscard, gnu::pure]] constexpr auto IsComposite() const -> bool { return IsArray() || IsTuple(); }
     [[nodiscard, gnu::pure]] constexpr auto IsRef() const -> bool { return GetKind() == AST_tREF; }

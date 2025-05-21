@@ -69,3 +69,4 @@ test/src/pipeline/libnitrate-parser/core/ASTWriter_Canonical.gen.cc
 test/src/pipeline/libnitrate-parser/core/ASTWriter_Littered.gen.cc
 test/src/pipeline/libnitrate-parser/core/ASTWriter_Minified.gen.cc
 test/src/pipeline/libnitrate-parser/core/CodeWriter.gen.cc
+test.nit

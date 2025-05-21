@@ -592,10 +592,6 @@ auto ASTReader::Unmarshal(const SyntaxTree::Expr &in) -> Result<Expr> {
       return Unmarshal(in.template_());
     }
 
-    case SyntaxTree::Expr::kPtr: {
-      return Unmarshal(in.ptr());
-    }
-
     case SyntaxTree::Expr::kOpaque: {
       return Unmarshal(in.opaque());
     }
@@ -640,10 +636,6 @@ auto ASTReader::Unmarshal(const SyntaxTree::Type &in) -> Result<Type> {
 
     case SyntaxTree::Type::kTemplate: {
       return Unmarshal(in.template_());
-    }
-
-    case SyntaxTree::Type::kPtr: {
-      return Unmarshal(in.ptr());
     }
 
     case SyntaxTree::Type::kOpaque: {
@@ -765,35 +757,6 @@ auto ASTReader::Unmarshal(const SyntaxTree::TemplateType &in) -> Result<Template
   type->SetWidth(bit_width);
   type->SetRangeBegin(minimum);
   type->SetRangeEnd(maximum);
-
-  UnmarshalLocationLocation(in.location(), type);
-  UnmarshalCodeComment(in.comments(), type);
-
-  return type;
-}
-
-auto ASTReader::Unmarshal(const SyntaxTree::PtrTy &in) -> Result<PtrTy> {
-  auto bit_width = Unmarshal(in.bit_width());
-  if (in.has_bit_width() && !bit_width) [[unlikely]] {
-    return std::nullopt;
-  }
-
-  auto minimum = Unmarshal(in.minimum());
-  if (in.has_minimum() && !minimum) [[unlikely]] {
-    return std::nullopt;
-  }
-
-  auto maximum = Unmarshal(in.maximum());
-  if (in.has_maximum() && !maximum) [[unlikely]] {
-    return std::nullopt;
-  }
-
-  auto pointee = Unmarshal(in.pointee());
-  if (!pointee) [[unlikely]] {
-    return std::nullopt;
-  }
-
-  auto type = CreatePointer(pointee.Unwrap(), in.volatile_(), bit_width, minimum, maximum);
 
   UnmarshalLocationLocation(in.location(), type);
   UnmarshalCodeComment(in.comments(), type);

@@ -538,11 +538,6 @@ SyntaxTree::Expr *ASTWriter::From(FlowPtr<Expr> in) {
       break;
     }
 
-    case AST_tPTR: {
-      message->set_allocated_ptr(From(in.As<PtrTy>()));
-      break;
-    }
-
     case AST_tARRAY: {
       message->set_allocated_array(From(in.As<ArrayTy>()));
       break;
@@ -589,11 +584,6 @@ SyntaxTree::Type *ASTWriter::From(FlowPtr<Type> in) {
 
     case AST_tREF: {
       message->set_allocated_ref(From(in.As<RefTy>()));
-      break;
-    }
-
-    case AST_tPTR: {
-      message->set_allocated_ptr(From(in.As<PtrTy>()));
       break;
     }
 
@@ -666,20 +656,6 @@ SyntaxTree::TemplateType *ASTWriter::From(FlowPtr<TemplateType> in) {
       arg_list->AddAllocated(argument);
     }
   }
-
-  return message;
-}
-
-SyntaxTree::PtrTy *ASTWriter::From(FlowPtr<PtrTy> in) {
-  auto &pool = m_impl->m_pool;
-  auto *message = Pool::CreateMessage<SyntaxTree::PtrTy>(pool);
-
-  message->set_allocated_location(FromSource(in));
-  message->set_allocated_pointee(From(in->GetItem()));
-  if (in->IsVolatile()) {
-    message->set_volatile_(in->IsVolatile());
-  }
-  SetTypeMetadata(message, in);
 
   return message;
 }
@@ -1577,7 +1553,6 @@ SyntaxTree::Export *ASTWriter::From(FlowPtr<Export> in) {
 void ASTWriter::Visit(FlowPtr<NamedTy> n) { SEND(From(n), named); }
 void ASTWriter::Visit(FlowPtr<InferTy> n) { SEND(From(n), infer); }
 void ASTWriter::Visit(FlowPtr<TemplateType> n) { SEND(From(n), template_); }
-void ASTWriter::Visit(FlowPtr<PtrTy> n) { SEND(From(n), ptr); }
 void ASTWriter::Visit(FlowPtr<OpaqueTy> n) { SEND(From(n), opaque); }
 void ASTWriter::Visit(FlowPtr<TupleTy> n) { SEND(From(n), tuple); }
 void ASTWriter::Visit(FlowPtr<ArrayTy> n) SEND(From(n), array);

@@ -87,11 +87,6 @@ class IterVisitor : public ASTVisitor {
     AddTypesuffix(n);
   }
 
-  void Visit(FlowPtr<PtrTy> n) override {
-    Add(n->GetItem());
-    AddTypesuffix(n);
-  }
-
   void Visit(FlowPtr<OpaqueTy> n) override { AddTypesuffix(n); }
 
   void Visit(FlowPtr<TupleTy> n) override {

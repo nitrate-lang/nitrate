@@ -57,7 +57,6 @@ namespace nitrate::parser::SyntaxTree {  // NOLINT(readability-identifier-naming
   class Import;
   class RefTy;
   class Unspecified;
-  class PtrTy;
   class OpaqueTy;
   class ArrayTy;
   class TupleTy;

@@ -153,11 +153,6 @@ auto ASTFactory::CreateMockInstance(ASTNodeKind kind, SourceLocation origin) -> 
       break;
     }
 
-    case AST_tPTR: {
-      r = CreatePointer(SIMPLE_TYPE());
-      break;
-    }
-
     case AST_tARRAY: {
       r = CreateArray(SIMPLE_TYPE(), SIMPLE_EXPR());
       break;

@@ -855,24 +855,6 @@ namespace ncc::parse {
       PrintTrailing(n);
     }
 
-    void Visit(FlowPtr<PtrTy> n) override {
-      if (!IsTypeContext()) {
-        PutKeyword(lex::Type);
-      }
-
-      auto frame = CreateContextFrame();
-
-      PrintLeading(n);
-
-      PutOperator(OpTimes);
-      EnableTypeContext();
-      n->GetItem()->Accept(*this);
-      DisableTypeContext();
-      PutTypeStuff(n);
-
-      PrintTrailing(n);
-    }
-
     void Visit(FlowPtr<OpaqueTy> n) override {
       if (!IsTypeContext()) {
         PutKeyword(lex::Type);

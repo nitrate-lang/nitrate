@@ -69,7 +69,6 @@ namespace ncc::parse {
     AST_tOPAQUE,   /* Opaque named type */
     AST_tNAMED,    /* Unresolved type name */
     AST_tREF,      /* Reference type */
-    AST_tPTR,      /* Raw pointer type */
     AST_tARRAY,    /* Basic array type */
     AST_tTUPLE,    /* Tuple type */
     AST_tTEMPLATE, /* Template type */

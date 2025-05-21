@@ -39,10 +39,6 @@ void CanonicalFormatter::Visit(FlowPtr<InferTy> n) {
   /// TODO: Implement standard format
 }
 
-void CanonicalFormatter::Visit(FlowPtr<PtrTy> n) {
-  /// TODO: Implement standard format
-}
-
 void CanonicalFormatter::Visit(FlowPtr<RefTy> n) {
   /// TODO: Implement standard format
 }

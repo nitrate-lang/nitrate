@@ -87,18 +87,6 @@ message TemplateType {
   repeated CallArgument arguments = 8;
 }
 
-message PtrTy {
-  optional SourceLocationRange location = 1;
-  repeated UserComment comments = 2;
-
-  optional Expr bit_width = 4;
-  optional Expr minimum = 5;
-  optional Expr maximum = 6;
-
-  optional bool volatile = 7 [default = false];
-  required Type pointee = 8;
-}
-
 message RefTy {
   optional SourceLocationRange location = 1;
   repeated UserComment comments = 2;
@@ -570,7 +558,6 @@ message Type {
 
     InferTy infer = 96;
     OpaqueTy opaque = 97;
-    PtrTy ptr = 98;
     RefTy ref = 99;
     ArrayTy array = 100;
     TupleTy tuple = 101;
@@ -622,7 +609,6 @@ message Expr {
 
     InferTy infer = 96;
     OpaqueTy opaque = 97;
-    PtrTy ptr = 98;
     RefTy ref = 99;
     ArrayTy array = 100;
     TupleTy tuple = 101;
