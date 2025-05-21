@@ -30,8 +30,3 @@
 *.exe
 *.out
 *.app
-
-# Cmake
-/.build/
-/build/
-coverage/
