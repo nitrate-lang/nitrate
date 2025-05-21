@@ -1,8 +1,8 @@
-[submodule "pipeline/libnitrate-seq/third_party/lua"]
-	path = pipeline/libnitrate-seq/third_party/lua
-	url = https://github.com/lua/lua
-	branch = v5.4
 [submodule "stdlib"]
 	path = stdlib
 	url = https://github.com/nitrate-lang/std
+	branch = main
+[submodule "no3"]
+	path = no3
+	url = git@github.com:nitrate-lang/no3.git
 	branch = main
