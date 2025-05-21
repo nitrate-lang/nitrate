@@ -78,23 +78,11 @@ endif()
 
 add_subdirectory(pipeline)
 add_subdirectory(test)
-add_subdirectory(no3)
+# add_subdirectory(no3)
 
-if(CMAKE_BUILD_TYPE STREQUAL "Release" AND BUILD_SHARED_LIBS)
-  foreach(lib nitrate-core
-    nitrate-lexer
-    nitrate-seq
-    nitrate-parser)
-    target_compile_options(${lib} PRIVATE -flto)
-    target_link_options(${lib} PRIVATE -flto)
-  endforeach()
-endif()
 
 if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-  foreach(lib nitrate-core
-    nitrate-lexer
-    nitrate-seq
-    nitrate-parser)
+  foreach(lib nitrate-core)
     target_compile_options(${lib} PRIVATE -fsanitize=address,undefined,fuzzer)
     target_link_options(${lib} PRIVATE -fsanitize=address,undefined,fuzzer)
   endforeach()

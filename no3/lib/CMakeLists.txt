@@ -30,20 +30,11 @@ add_library(nitrate-tool ${CXX_SOURCES})
 target_include_directories(nitrate-tool PUBLIC
   "src"
   "${CMAKE_SOURCE_DIR}/libnitrate-core/include"
-  "${CMAKE_SOURCE_DIR}/libnitrate-lexer/include"
-  "${CMAKE_SOURCE_DIR}/libnitrate-seq/include"
-  "${CMAKE_SOURCE_DIR}/libnitrate-parser/include"
-  "${CMAKE_SOURCE_DIR}/libnitrate-mangle/include"
-  "${CMAKE_SOURCE_DIR}/libnitrate-emit/include"
   "${CMAKE_SOURCE_DIR}/no3/lib/include"
 )
 
 target_link_libraries(nitrate-tool PUBLIC
   "nitrate-testing"
-  "nitrate-parser"
-  "nitrate-mangle"
-  "nitrate-lexer"
-  "nitrate-seq"
   "nitrate-core"
   "${libunwind}"
   "${libyaml_cpp}"
@@ -53,14 +44,6 @@ target_link_libraries(nitrate-tool PUBLIC
   "${libboost_filesystem}"
   "${libboost_program_options}"
   "${libdeflate}"
-)
-add_dependencies(nitrate-tool
-  nitrate-testing
-  nitrate-mangle
-  nitrate-parser
-  nitrate-lexer
-  nitrate-seq
-  nitrate-core
 )
 
 install(TARGETS nitrate-tool DESTINATION lib)

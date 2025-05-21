@@ -5,6 +5,5 @@ add_executable(no3 src/main.cc)
 
 target_link_libraries(no3 PRIVATE nitrate-tool readline)
 target_include_directories(no3 PRIVATE ${CMAKE_SOURCE_DIR}/no3/lib/include)
-add_dependencies(no3 nitrate-tool)
 
 install(TARGETS no3 DESTINATION bin)

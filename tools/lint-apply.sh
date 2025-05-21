@@ -2,13 +2,6 @@
 
 SOURCE_FOLDERS=(
                 "pipeline/libnitrate-core"
-                "pipeline/libnitrate-lexer"
-                "pipeline/libnitrate-seq/include"
-                "pipeline/libnitrate-seq/src"
-                "pipeline/libnitrate-parser"
-                "pipeline/libnitrate-ir"
-                "pipeline/libnitrate-emit"
-                "pipeline/libnitrate/src"
                 "no3/src"
                 )
 

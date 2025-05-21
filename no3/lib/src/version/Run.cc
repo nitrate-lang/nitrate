@@ -40,9 +40,6 @@
 #include <iomanip>
 #include <nitrate-core/CatchAll.hh>
 #include <nitrate-core/Init.hh>
-#include <nitrate-lexer/Init.hh>
-#include <nitrate-parser/Init.hh>
-#include <nitrate-seq/Init.hh>
 #include <nlohmann/json.hpp>
 #include <sstream>
 #include <utility>
