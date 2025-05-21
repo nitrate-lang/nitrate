@@ -2,3 +2,7 @@
 	path = stdlib
 	url = https://github.com/nitrate-lang/std
 	branch = main
+[submodule "no3"]
+	path = no3
+	url = git@github.com:nitrate-lang/no3.git
+	branch = main
