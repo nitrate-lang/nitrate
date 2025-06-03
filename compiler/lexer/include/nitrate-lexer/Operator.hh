@@ -88,6 +88,7 @@ namespace nitrate::compiler::lexer {
     OpDot,      /* '.':          Dot */
     OpRange,    /* '..':         Range */
     OpEllipsis, /* '...':        Ellipsis */
+    OpScope,    /* '::':         Scope resolution */
   };
 
   static inline const boost::bimap<Operator, std::string_view> OPERATOR_MAP = [] {
@@ -158,6 +159,7 @@ namespace nitrate::compiler::lexer {
     map.insert({Operator::OpDot, "."});
     map.insert({Operator::OpRange, ".."});
     map.insert({Operator::OpEllipsis, "..."});
+    map.insert({Operator::OpScope, "::"});
 
     return mapping;
   }();
