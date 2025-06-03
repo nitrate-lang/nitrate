@@ -1,31 +1,86 @@
-Checks: "-*,readability-*,-readability-identifier-length,-readability-named-parameter,-readability-magic-numbers,-readability-function-cognitive-complexity,-readability-convert-member-functions-to-static,portability-*,-readability-make-member-function-const,performance-*,-performance-no-int-to-ptr,modernize-*,concurrency-*,clang-analyzer-*,boost-*"
+Checks: "-*,readability-*,-readability-named-parameter,-readability-identifier-length,-readability-convert-member-functions-to-static,portability-*,-readability-make-member-function-const,performance-*,-performance-no-int-to-ptr,modernize-*,-modernize-avoid-c-arrays,concurrency-*,clang-analyzer-*"
 WarningsAsErrors: "-*"
 CheckOptions:
-  - key: readability-identifier-naming.TypedefCase
+  - key: readability-identifier-naming.AbstractClassCase
     value: CamelCase
-  - key: readability-identifier-naming.StructCase
-    value: CamelCase
+  - key: readability-identifier-naming.AbstractClassSuffix
+    value: "Protocol"
+
   - key: readability-identifier-naming.ClassCase
     value: CamelCase
-  - key: readability-identifier-naming.VariableCase
-    value: lower_case
-  - key: readability-identifier-naming.GlobalVariableCase
+
+  - key: readability-identifier-naming.ConceptCase
     value: CamelCase
-  - key: readability-identifier-naming.ConstexprVariableCase
+
+  - key: readability-identifier-naming.EnumCase
     value: CamelCase
-  - key: readability-identifier-naming.ConstexprVariablePrefix
-    value: "k"
-  - key: readability-identifier-naming.ParameterCase
-    value: lower_case
+
   - key: readability-identifier-naming.FunctionCase
-    value: CamelCase
-  - key: readability-identifier-naming.NamespaceCase
     value: lower_case
+
+  - key: readability-identifier-naming.GlobalVariableCase
+    value: UPPER_CASE
+  - key: readability-identifier-naming.GlobalVariableSuffix
+    value: "_GLOBAL"
+
   - key: readability-identifier-naming.GlobalConstantCase
     value: UPPER_CASE
+
+  - key: readability-identifier-naming.IgnoreMainLikeFunctions
+    value: true
+
+  - key: readability-identifier-naming.LocalVariableCase
+    value: lower_case
+
+  - key: readability-identifier-naming.MacroDefinitionCase
+    value: UPPER_CASE
+  - key: readability-identifier-naming.MacroDefinitionPrefix
+    value: "W_"
+
+  - key: readability-identifier-naming.MemberCase
+    value: lower_case
   - key: readability-identifier-naming.MemberPrefix
-    value: m_
-  - key: misc-assert-side-effect.CheckFunctionCalls
-    value: 1
-  - key: misc-assert-side-effect.AssertMacros
-    value: "assert"
+    value: "m_"
+
+  - key: readability-identifier-naming.MethodCase
+    value: lower_case
+
+  - key: readability-identifier-naming.NamespaceCase
+    value: lower_case
+
+  - key: readability-identifier-naming.ParameterCase
+    value: lower_case
+
+  - key: readability-identifier-naming.ParameterPackCase
+    value: lower_case
+
+  - key: readability-identifier-naming.StaticVariableCase
+    value: UPPER_CASE
+  - key: readability-identifier-naming.StaticVariableSuffix
+    value: "_STATIC"
+
+  - key: readability-identifier-naming.StructCase
+    value: CamelCase
+
+  - key: readability-identifier-naming.TypeTemplateParameterCase
+    value: CamelCase
+
+  - key: readability-identifier-naming.ValueTemplateParameterCase
+    value: CamelCase
+
+  - key: readability-identifier-naming.TypeAliasCase
+    value: CamelCase
+
+  - key: readability-identifier-naming.TypedefCase
+    value: CamelCase
+
+  - key: readability-identifier-naming.UnionCase
+    value: CamelCase
+
+  - key: readability-identifier-naming.VariableCase
+    value: lower_case
+
+  - key: readability-identifier-naming.VirtualMethodCase
+    value: lower_case
+  - key: readability-identifier-naming.VirtualMethodPrefix
+    value: "virt_"
