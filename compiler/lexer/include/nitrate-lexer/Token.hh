@@ -30,7 +30,6 @@
 
 namespace nitrate::compiler::lexer {
   enum class TokenType : uint8_t {
-    EndOfFile,
     Identifier,
     Keyword,
     Operator,
@@ -40,7 +39,7 @@ namespace nitrate::compiler::lexer {
     Comment,
   };
 
-  static inline constexpr size_t TOKEN_TYPE_COUNT = 8;
+  static inline constexpr size_t TOKEN_TYPE_COUNT = 7;
 
   class FileSourceLocation {
     uint32_t m_line = 0;
@@ -74,8 +73,7 @@ namespace nitrate::compiler::lexer {
 
   class Token {
   public:
-    using TokenValue =
-        std::variant<std::monostate, Identifier, Keyword, Operator, Punctor, StringLiteral, NumberLiteral, Comment>;
+    using TokenValue = std::variant<Identifier, Keyword, Operator, Punctor, StringLiteral, NumberLiteral, Comment>;
 
     [[nodiscard]] static auto from_identifier(Identifier id, FileSourceRange source_range) -> Token {
       return Token{std::move(id), std::move(source_range)};
@@ -105,9 +103,6 @@ namespace nitrate::compiler::lexer {
       return Token{std::move(com), std::move(source_range)};
     }
 
-    Token() = default;
-    explicit Token(TokenValue value, FileSourceRange source_range)
-        : m_value(std::move(value)), m_source_range(std::move(source_range)) {}
     Token(const Token&) = default;
     Token(Token&&) = default;
     auto operator=(const Token&) -> Token& = default;
@@ -121,15 +116,12 @@ namespace nitrate::compiler::lexer {
       return static_cast<TokenType>(m_value.index());
     }
 
-    [[nodiscard]] constexpr auto is_end_of_file() const -> bool {
-      static_assert(std::holds_alternative<std::monostate>(TokenValue{}),
-                    "TokenValue must have a default state for uninitialized tokens.");
-      return std::holds_alternative<std::monostate>(m_value);
-    }
-
     [[nodiscard]] constexpr auto source_range() const -> const FileSourceRange& { return m_source_range; }
 
   private:
+    explicit Token(TokenValue value, FileSourceRange source_range)
+        : m_value(std::move(value)), m_source_range(std::move(source_range)) {}
+
     TokenValue m_value;
     FileSourceRange m_source_range;
   };
