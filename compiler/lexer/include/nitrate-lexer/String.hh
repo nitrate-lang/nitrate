@@ -45,6 +45,9 @@ namespace nitrate::compiler::lexer {
     [[nodiscard]] constexpr auto is_triple_quote() const -> bool { return m_type == StringType::TripleQuote; }
     [[nodiscard]] constexpr auto is_raw_string() const -> bool { return m_type == StringType::RawString; }
 
+    [[nodiscard]] constexpr auto size() const -> size_t { return m_value->size(); }
+    [[nodiscard]] constexpr auto empty() const -> bool { return m_value->empty(); }
+
     [[nodiscard]] constexpr auto begin() const { return m_value->cbegin(); }
     [[nodiscard]] constexpr auto end() const { return m_value->cend(); }
   };
