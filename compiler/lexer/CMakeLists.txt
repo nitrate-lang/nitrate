@@ -14,6 +14,8 @@ add_compile_options(
   -Wextra
   -Wpedantic
   -Werror
+  -fno-exceptions
+  -fno-rtti
 )
 
 add_library(${TARGET_NAME} ${LEXER_SOURCES})
