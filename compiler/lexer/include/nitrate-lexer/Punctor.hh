@@ -19,6 +19,19 @@
 
 #pragma once
 
+#include <cstdint>
+
 namespace nitrate::compiler::lexer {
-  // TODO: Write code
-}
+  enum class Punctor : uint8_t {
+    LeftParenthesis,   // (
+    RightParenthesis,  // )
+    LeftBracket,       // [
+    RightBracket,      // ]
+    LeftBrace,         // {
+    RightBrace,        // }
+    Comma,             // ,
+    Semicolon,         // ;
+    Colon,             // :
+    AtSign,            // @
+  };
+}  // namespace nitrate::compiler::lexer
