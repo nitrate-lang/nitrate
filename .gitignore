@@ -34,3 +34,4 @@
 .build/
 install/
 example.nit
+out.json
