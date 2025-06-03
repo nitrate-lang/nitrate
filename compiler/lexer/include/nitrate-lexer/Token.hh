@@ -118,6 +118,8 @@ namespace nitrate::compiler::lexer {
 
     [[nodiscard]] constexpr auto source_range() const -> const FileSourceRange& { return m_source_range; }
 
+    auto dump(std::ostream& os, bool include_source_range = true) const -> std::ostream&;
+
   private:
     explicit Token(TokenValue value, FileSourceRange source_range)
         : m_value(std::move(value)), m_source_range(std::move(source_range)) {}
