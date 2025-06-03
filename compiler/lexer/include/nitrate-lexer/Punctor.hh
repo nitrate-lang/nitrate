@@ -69,7 +69,8 @@ namespace nitrate::compiler::lexer {
   }
 
   [[nodiscard]] inline auto punctor_to_string(Punctor punctor) -> std::string_view {
-    char ch = static_cast<char>(PUNCTOR_MAP.left.at(punctor));
-    return {&ch, 1};
+    const uint8_t& ch = PUNCTOR_MAP.left.at(punctor);
+    const char* ch_ptr = reinterpret_cast<const char*>(&ch);
+    return {ch_ptr, 1};
   }
 }  // namespace nitrate::compiler::lexer
