@@ -26,6 +26,9 @@
 
 namespace nitrate::compiler::lexer {
   class Lexer {
+    class LexicalParser;
+    friend class LexicalParser;
+
     std::istream& m_input_stream;
     uint32_t m_head_stream_position = 0;
     uint32_t m_lead_stream_position = 0;
