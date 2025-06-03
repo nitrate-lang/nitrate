@@ -322,6 +322,134 @@ public:
     return std::nullopt;  // Placeholder implementation
   }
 
+  auto parse_binary_number_literal(std::string &number_value) -> bool {
+    const auto consume_bin_digit = [&](auto ch) {
+      if (ch == '0' || ch == '1' || ch == '_') {
+        number_value += static_cast<char>(ch);
+        return true;
+      }
+      return false;
+    };
+
+    if (!consume_while(consume_bin_digit)) {
+      spdlog::error("[Lexer] Failed to read the body of a binary number literal");
+      return false;
+    }
+
+    if (number_value.empty()) [[unlikely]] {
+      spdlog::error("[Lexer] Binary number literal cannot be empty");
+      return false;
+    }
+
+    return true;
+  }
+
+  auto parse_octal_number_literal(std::string &number_value) -> bool {
+    const auto consume_oct_digit = [&](auto ch) {
+      if ((ch >= '0' && ch <= '7') || ch == '_') {
+        number_value += static_cast<char>(ch);
+        return true;
+      }
+      return false;
+    };
+
+    if (!consume_while(consume_oct_digit)) {
+      spdlog::error("[Lexer] Failed to read the body of an octal number literal");
+      return false;
+    }
+
+    if (number_value.empty()) [[unlikely]] {
+      spdlog::error("[Lexer] Octal number literal cannot be empty");
+      return false;
+    }
+
+    return true;
+  }
+
+  auto parse_decimal_number_literal(std::string &number_value) -> bool {
+    const auto consume_dec_digit = [&](auto ch) {
+      if (IS_BASE10_DIGIT[ch] || ch == '_') {
+        number_value += static_cast<char>(ch);
+        return true;
+      }
+      return false;
+    };
+
+    if (!consume_while(consume_dec_digit)) {
+      spdlog::error("[Lexer] Failed to read the body of a decimal number literal");
+      return false;
+    }
+
+    if (number_value.empty()) [[unlikely]] {
+      spdlog::error("[Lexer] Decimal number literal cannot be empty");
+      return false;
+    }
+
+    return true;
+  }
+
+  auto parse_hexadecimal_number_literal(std::string &number_value) -> bool {
+    const auto consume_hex_digit = [&](auto ch) {
+      const auto is_hex_digit = (ch >= '0' && ch <= '9') || (ch >= 'a' && ch <= 'f') || (ch >= 'A' && ch <= 'F');
+      if (is_hex_digit || ch == '_') {
+        number_value += static_cast<char>(ch);
+        return true;
+      }
+      return false;
+    };
+
+    if (!consume_while(consume_hex_digit)) {
+      spdlog::error("[Lexer] Failed to read the body of a hexadecimal number literal");
+      return false;
+    }
+
+    if (number_value.empty()) [[unlikely]] {
+      spdlog::error("[Lexer] Hexadecimal number literal cannot be empty");
+      return false;
+    }
+
+    return true;
+  }
+
+  auto parse_floating_point_number_literal(std::string &number_value) -> bool {
+    // TODO: Implement floating-point number literal parsing logic
+    spdlog::error("[Lexer] Floating-point number literal parsing is not yet implemented");
+    (void)number_value;  // Avoid unused variable warning
+
+    return false;  // Placeholder implementation
+  }
+
+  auto decide_number_literal_base(uint8_t first_ch, std::string &number_value) -> NumberLiteralType {
+    if (first_ch == '0') {
+      const auto next_ch = m_lexer.peek_byte();
+      if (next_ch.has_value()) {
+        if (*next_ch == 'x' || *next_ch == 'X') {
+          (void)m_lexer.next_byte();
+          return NumberLiteralType::UIntHex;
+        }
+
+        if (*next_ch == 'b' || *next_ch == 'B') {
+          (void)m_lexer.next_byte();
+          return NumberLiteralType::UIntBin;
+        }
+
+        if (*next_ch == 'o' || *next_ch == 'O') {
+          (void)m_lexer.next_byte();
+          return NumberLiteralType::UIntOct;
+        }
+
+        if (*next_ch == 'd' || *next_ch == 'D') {
+          (void)m_lexer.next_byte();
+          return NumberLiteralType::UIntDec;
+        }
+      }
+    }
+
+    number_value += static_cast<char>(first_ch);
+
+    return NumberLiteralType::UIntDec;
+  }
+
   auto parse_number_literal() -> std::optional<Token> {
     const auto start_position = m_lexer.current_source_location();
 
@@ -334,136 +462,38 @@ public:
     assert(IS_BASE10_DIGIT[ch] && "Expected a digit for a number literal");
 
     std::string number_value;
+    const auto number_literal_type = decide_number_literal_base(ch, number_value);
 
-    const auto number_literal_type = [&] {
-      if (ch == '0') {
-        const auto next_ch = m_lexer.peek_byte();
-        if (next_ch.has_value()) {
-          if (*next_ch == 'x' || *next_ch == 'X') {
-            (void)m_lexer.next_byte();  // Consume 'x' or 'X'
-            return NumberLiteralType::UIntHex;
-          }
-
-          if (*next_ch == 'b' || *next_ch == 'B') {
-            (void)m_lexer.next_byte();  // Consume 'b' or 'B'
-            return NumberLiteralType::UIntBin;
-          }
-
-          if (*next_ch == 'o' || *next_ch == 'O') {
-            (void)m_lexer.next_byte();  // Consume 'o' or 'O'
-            return NumberLiteralType::UIntOct;
-          }
-
-          if (*next_ch == 'd' || *next_ch == 'D') {
-            (void)m_lexer.next_byte();  // Consume 'd' or 'D'
-            return NumberLiteralType::UIntDec;
-          }
-        }
-      }
-
-      number_value += static_cast<char>(ch);
-
-      return NumberLiteralType::UIntDec;
-    }();
-
+    bool status = false;
     switch (number_literal_type) {
       case NumberLiteralType::UIntBin: {
-        const auto consume_bin_digit = [&](auto ch) {
-          if (ch == '0' || ch == '1' || ch == '_') {
-            number_value += static_cast<char>(ch);
-            return true;
-          }
-          return false;
-        };
-
-        if (!consume_while(consume_bin_digit)) {
-          spdlog::error("[Lexer] Failed to read the body of a binary number literal");
-          return std::nullopt;
-        }
-
-        if (number_value.empty()) [[unlikely]] {
-          spdlog::error("[Lexer] Binary number literal cannot be empty");
-          return std::nullopt;
-        }
-
+        status = parse_binary_number_literal(number_value);
         break;
       }
 
       case NumberLiteralType::UIntOct: {
-        const auto consume_oct_digit = [&](auto ch) {
-          if ((ch >= '0' && ch <= '7') || ch == '_') {
-            number_value += static_cast<char>(ch);
-            return true;
-          }
-          return false;
-        };
-
-        if (!consume_while(consume_oct_digit)) {
-          spdlog::error("[Lexer] Failed to read the body of an octal number literal");
-          return std::nullopt;
-        }
-
-        if (number_value.empty()) [[unlikely]] {
-          spdlog::error("[Lexer] Octal number literal cannot be empty");
-          return std::nullopt;
-        }
-
+        status = parse_octal_number_literal(number_value);
         break;
       }
 
       case NumberLiteralType::UIntDec: {
-        const auto consume_dec_digit = [&](auto ch) {
-          if (IS_BASE10_DIGIT[ch] || ch == '_') {
-            number_value += static_cast<char>(ch);
-            return true;
-          }
-          return false;
-        };
-
-        if (!consume_while(consume_dec_digit)) {
-          spdlog::error("[Lexer] Failed to read the body of a decimal number literal");
-          return std::nullopt;
-        }
-
-        if (number_value.empty()) [[unlikely]] {
-          spdlog::error("[Lexer] Decimal number literal cannot be empty");
-          return std::nullopt;
-        }
-
+        status = parse_decimal_number_literal(number_value);
         break;
       }
 
       case NumberLiteralType::UIntHex: {
-        const auto consume_hex_digit = [&](auto ch) {
-          const auto is_hex_digit = (ch >= '0' && ch <= '9') || (ch >= 'a' && ch <= 'f') || (ch >= 'A' && ch <= 'F');
-          if (is_hex_digit || ch == '_') {
-            number_value += static_cast<char>(ch);
-            return true;
-          }
-          return false;
-        };
-
-        if (!consume_while(consume_hex_digit)) {
-          spdlog::error("[Lexer] Failed to read the body of a hexadecimal number literal");
-          return std::nullopt;
-        }
-
-        if (number_value.empty()) [[unlikely]] {
-          spdlog::error("[Lexer] Hexadecimal number literal cannot be empty");
-          return std::nullopt;
-        }
-
+        status = parse_hexadecimal_number_literal(number_value);
         break;
       }
 
       case NumberLiteralType::UFloatIEEE754: {
-        // TODO: Implement floating-point number literal parsing logic
-
-        spdlog::error("[Lexer] Floating-point number literal parsing is not yet implemented");
-        return std::nullopt;  // Placeholder implementation
-
+        status = parse_floating_point_number_literal(number_value);
         break;
       }
+    }
+
+    if (!status) [[unlikely]] {
+      return std::nullopt;  // Error already logged
     }
 
     const auto end_position = m_lexer.current_source_location();
