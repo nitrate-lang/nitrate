@@ -31,5 +31,5 @@ install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/include/nitrate-lexer"
   FILES_MATCHING PATTERN "*.hh")
 
 add_executable(${TARGET_NAME}-test ${LEXER_TEST_SOURCES})
-target_link_libraries(${TARGET_NAME}-test PRIVATE ${TARGET_NAME} gtest_main gtest)
+target_link_libraries(${TARGET_NAME}-test PRIVATE ${TARGET_NAME} gtest_main gtest spdlog)
 add_test(NAME ${TARGET_NAME}-test COMMAND ${TARGET_NAME}-test)
