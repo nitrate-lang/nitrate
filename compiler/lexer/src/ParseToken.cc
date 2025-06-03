@@ -291,17 +291,17 @@ public:
     }
 
     const auto end_position = m_lexer.current_source_location();
-    const auto source_range = FileSourceRange(m_lexer.current_file(), start_position, end_position);
+    auto source_range = FileSourceRange(m_lexer.current_file(), start_position, end_position);
 
     if (identifier_type == IdentifierType::Typical) {
       if (is_keyword(*identifier_value)) {
         const auto keyword = *keyword_from_string(*identifier_value);
-        return Token::from_keyword(keyword, source_range);
+        return Token::from_keyword(keyword, std::move(source_range));
       }
 
       if (is_operator(*identifier_value)) {
         const auto op = *operator_from_string(*identifier_value);
-        return Token::from_operator(op, source_range);
+        return Token::from_operator(op, std::move(source_range));
       }
 
       if (!is_utf8(identifier_value->c_str())) [[unlikely]] {
@@ -313,7 +313,7 @@ public:
     auto flyweight_identifier = boost::flyweight<std::string>(std::move(*identifier_value));
     auto identifier = Identifier(std::move(flyweight_identifier), identifier_type);
 
-    return Token::from_identifier(std::move(identifier), source_range);
+    return Token::from_identifier(std::move(identifier), std::move(source_range));
   }
 
   auto parse_string_literal() -> std::optional<Token> {
