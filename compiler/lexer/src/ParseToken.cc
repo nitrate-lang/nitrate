@@ -308,9 +308,41 @@ public:
   }
 
   auto parse_comment() -> std::optional<Token> {
-    // TODO: Implement comment parsing logic
-    spdlog::warn("[Lexer] Comment parsing is not yet implemented");
-    return std::nullopt;  // Placeholder implementation
+    const auto start_position = m_lexer.current_source_location();
+
+    const auto first_ch = m_lexer.next_byte();
+    if (!first_ch.has_value()) [[unlikely]] {
+      spdlog::error("[Lexer] Failed to read the first byte of a comment");
+      return std::nullopt;
+    }
+
+    if (*first_ch != '#') [[unlikely]] {
+      spdlog::error("[Lexer] Expected a comment to start with '#', but found: '{}'", *first_ch);
+      return std::nullopt;
+    }
+
+    // Consume the rest of the comment until a newline or end of input
+    std::string comment_value;
+    const auto consume_comment_body = [&](auto ch) {
+      if (ch == '\n' || ch == '\r' || !ch) {
+        return false;  // Stop at newline or end of input
+      }
+
+      comment_value += static_cast<char>(ch);
+      return true;
+    };
+
+    if (!consume_while(consume_comment_body)) {
+      return std::nullopt;
+    }
+
+    const auto end_position = m_lexer.current_source_location();
+    auto source_range = FileSourceRange(m_lexer.current_file(), start_position, end_position);
+
+    auto flyweight_identifier = boost::flyweight<std::string>(std::move(comment_value));
+    auto comment = Comment(std::move(flyweight_identifier), CommentType::SingleLine);
+
+    return Token::from_comment(std::move(comment), std::move(source_range));
   }
 
   auto parse_operator_or_punctor_or_comment() -> std::optional<Token> {

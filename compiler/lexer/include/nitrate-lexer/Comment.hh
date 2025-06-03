@@ -33,7 +33,7 @@ namespace nitrate::compiler::lexer {
     CommentType m_type;
 
   public:
-    Comment(CommentType type, boost::flyweight<std::string> value) : m_value(std::move(value)), m_type(type) {}
+    Comment(boost::flyweight<std::string> value, CommentType type) : m_value(std::move(value)), m_type(type) {}
 
     [[nodiscard]] constexpr auto type() const -> CommentType { return m_type; }
     [[nodiscard]] constexpr auto value() const -> const std::string& { return m_value.get(); }
