@@ -116,3 +116,10 @@ BOOST_SYMBOL_EXPORT auto Lexer::pop_rewind_checkpoint() -> bool {
 
   return true;
 }
+
+namespace boost {
+  void throw_exception(const std::exception& e) {
+    spdlog::error("[Lexer] Exception thrown: {}", e.what());
+    std::terminate();  // Terminate the program on lexer exceptions
+  }
+}  // namespace boost
