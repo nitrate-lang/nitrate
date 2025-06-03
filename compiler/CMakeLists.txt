@@ -1,3 +1,3 @@
-cmake_minimum_required(VERSION 3.10)
 project(nitrate-compiler)
 
+add_subdirectory(lexer)
