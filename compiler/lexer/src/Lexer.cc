@@ -17,4 +17,96 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-// TODO: Write code
+#include <nitrate-lexer/Lexer.hh>
+
+using namespace nitrate::compiler::lexer;
+
+BOOST_SYMBOL_EXPORT Lexer::Lexer(std::istream& is) : m_input_stream(is) {}
+
+BOOST_SYMBOL_EXPORT auto Lexer::peek_byte() -> std::optional<uint8_t> {
+  const auto byte = m_input_stream.peek();
+
+  if (byte == std::char_traits<char>::eof()) [[unlikely]] {
+    return std::nullopt;  // If we reach the end of the stream
+  }
+
+  return static_cast<uint8_t>(byte);
+}
+
+BOOST_SYMBOL_EXPORT auto Lexer::next_byte() -> std::optional<uint8_t> {
+  const auto byte = m_input_stream.get();
+
+  if (byte == std::char_traits<char>::eof()) [[unlikely]] {
+    return std::nullopt;  // If we reach the end of the stream
+  }
+
+  ++m_lead_stream_position;
+
+  return static_cast<uint8_t>(byte);
+}
+
+BOOST_SYMBOL_EXPORT auto Lexer::parse_next_token() -> std::optional<Token> {
+  // TODO: Implement logic to read the next token from the input stream
+  // This will involve reading characters, recognizing keywords, identifiers,
+  // literals, operators, and punctuation, and constructing a Token object.
+  // This is a complex task that requires a full lexer implementation.
+  return std::nullopt;  // Placeholder implementation
+}
+
+BOOST_SYMBOL_EXPORT auto Lexer::next_token() -> std::optional<Token> {
+  if (!m_token_queue.empty()) {
+    auto token = std::move(m_token_queue.front());
+    m_token_queue.pop_front();
+    m_head_stream_position = token.source_range().end().offset() + 1;
+
+    return token;
+  }
+
+  auto token = parse_next_token();
+  if (!token.has_value()) [[unlikely]] {
+    return std::nullopt;
+  }
+
+  m_head_stream_position = token->source_range().end().offset() + 1;
+
+  return token;
+}
+
+BOOST_SYMBOL_EXPORT auto Lexer::peek_token(uint8_t k) -> std::optional<Token> {
+  assert(k > 0 && "k must be greater than 0 to peek at tokens.");
+
+  while (m_token_queue.size() < k) {
+    auto token = parse_next_token();
+    if (!token.has_value()) [[unlikely]] {
+      return std::nullopt;  // No more tokens available
+    }
+    m_token_queue.push_back(std::move(token.value()));
+  }
+
+  const size_t index = k - 1;  // k is 1-based, so we access k-1
+  assert(index < m_token_queue.size() && "Not enough tokens in the queue to peek at k-th token.");
+
+  return m_token_queue[index];
+}
+
+BOOST_SYMBOL_EXPORT auto Lexer::push_rewind_checkpoint() -> bool {
+  m_rewind_checkpoints.push(m_head_stream_position);
+  return true;
+}
+
+BOOST_SYMBOL_EXPORT auto Lexer::pop_rewind_checkpoint() -> bool {
+  assert(!m_rewind_checkpoints.empty() && "Attempted to pop a lexical checkpoint from an empty stack.");
+
+  const auto checkpoint = m_rewind_checkpoints.top();
+  if (!m_input_stream.seekg(checkpoint, std::ios::beg)) [[unlikely]] {
+    return false;
+  }
+
+  m_rewind_checkpoints.pop();
+
+  m_head_stream_position = checkpoint;
+  m_lead_stream_position = checkpoint;
+  m_token_queue.clear();
+
+  return true;
+}
