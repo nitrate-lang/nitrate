@@ -29,21 +29,21 @@ namespace nitrate::compiler::lexer {
   };
 
   class Comment {
-    boost::flyweight<std::string> m_content;
+    boost::flyweight<std::string> m_value;
     CommentType m_type;
 
   public:
-    Comment(CommentType type, boost::flyweight<std::string> content) : m_content(std::move(content)), m_type(type) {}
+    Comment(CommentType type, boost::flyweight<std::string> value) : m_value(std::move(value)), m_type(type) {}
 
     [[nodiscard]] constexpr auto type() const -> CommentType { return m_type; }
-    [[nodiscard]] constexpr auto content() const -> const std::string& { return m_content.get(); }
+    [[nodiscard]] constexpr auto value() const -> const std::string& { return m_value.get(); }
 
     [[nodiscard]] constexpr auto is_single_line() const -> bool { return m_type == CommentType::SingleLine; }
     [[nodiscard]] constexpr auto is_multi_line() const -> bool { return m_type == CommentType::MultiLine; }
     [[nodiscard]] auto is_documentation() const -> bool;
     [[nodiscard]] auto is_tool_signal() const -> bool;
 
-    [[nodiscard]] constexpr auto begin() const { return m_content->cbegin(); }
-    [[nodiscard]] constexpr auto end() const { return m_content->cend(); }
+    [[nodiscard]] constexpr auto begin() const { return m_value->cbegin(); }
+    [[nodiscard]] constexpr auto end() const { return m_value->cend(); }
   };
 }  // namespace nitrate::compiler::lexer
