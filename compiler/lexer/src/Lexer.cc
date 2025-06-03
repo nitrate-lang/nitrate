@@ -45,14 +45,6 @@ BOOST_SYMBOL_EXPORT auto Lexer::next_byte() -> std::optional<uint8_t> {
   return static_cast<uint8_t>(byte);
 }
 
-BOOST_SYMBOL_EXPORT auto Lexer::parse_next_token() -> std::optional<Token> {
-  // TODO: Implement logic to read the next token from the input stream
-  // This will involve reading characters, recognizing keywords, identifiers,
-  // literals, operators, and punctuation, and constructing a Token object.
-  // This is a complex task that requires a full lexer implementation.
-  return std::nullopt;  // Placeholder implementation
-}
-
 BOOST_SYMBOL_EXPORT auto Lexer::next_token() -> std::optional<Token> {
   if (!m_token_queue.empty()) {
     auto token = std::move(m_token_queue.front());
