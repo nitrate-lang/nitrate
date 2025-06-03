@@ -33,3 +33,8 @@ install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/include/nitrate-lexer"
 add_executable(${TARGET_NAME}-test ${LEXER_TEST_SOURCES})
 target_link_libraries(${TARGET_NAME}-test PRIVATE ${TARGET_NAME} gtest_main gtest spdlog)
 add_test(NAME ${TARGET_NAME}-test COMMAND ${TARGET_NAME}-test)
+
+add_executable(nitrate-lex example/nitrate-lex.cc)
+target_link_libraries(nitrate-lex PRIVATE ${TARGET_NAME})
+
+install(TARGETS nitrate-lex)
