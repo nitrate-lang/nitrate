@@ -100,6 +100,22 @@ static constexpr auto IS_BASE10_DIGIT = []() {
   return map;
 }();
 
+static const auto IS_OPERATOR_BYTE = []() {
+  std::array<bool, 256> map = {};
+  map.fill(false);
+
+  for (const auto &op : OPERATOR_MAP) {
+    for (auto ch : op.right) {
+      const auto byte = static_cast<uint8_t>(ch);
+      if (!IS_IDENTIFIER_BODY_CHAR[byte]) {
+        map[byte] = true;
+      }
+    }
+  }
+
+  return map;
+}();
+
 /// https://stackoverflow.com/questions/1031645/how-to-detect-utf-8-in-plain-c
 static auto is_utf8(const char *string) -> bool {
   if (string == nullptr) {
@@ -283,6 +299,11 @@ public:
         return Token::from_keyword(keyword, source_range);
       }
 
+      if (is_operator(*identifier_value)) {
+        const auto op = *operator_from_string(*identifier_value);
+        return Token::from_operator(op, source_range);
+      }
+
       if (!is_utf8(identifier_value->c_str())) [[unlikely]] {
         spdlog::error("[Lexer] Identifier '{}' is not valid UTF-8", *identifier_value);
         return std::nullopt;
@@ -345,10 +366,127 @@ public:
     return Token::from_comment(std::move(comment), std::move(source_range));
   }
 
+  auto parse_singleline_comment_after_slash() -> std::optional<std::string> {
+    std::string comment_value;
+    comment_value += '/';  // Include the initial slash
+
+    const auto consume_body_predicate = [&](auto ch) {
+      if (ch == '\n' || ch == '\r' || !ch) {
+        return false;  // Stop at newline or end of input
+      }
+
+      comment_value += static_cast<char>(ch);
+      return true;
+    };
+
+    if (!consume_while(consume_body_predicate)) {
+      spdlog::error("[Lexer] Failed to read the body of a single-line comment");
+      return std::nullopt;
+    }
+
+    return comment_value;
+  }
+
+  auto parse_multiline_comment_after_slash() -> std::optional<std::string> {
+    std::string comment_value;
+    comment_value += "/";  // Include the initial '/'
+
+    while (true) {
+      auto ch = m_lexer.next_byte();
+      if (!ch.has_value()) [[unlikely]] {
+        spdlog::error("[Lexer] Failed to read the next byte in a multiline comment");
+        return std::nullopt;  // End of input or error
+      }
+
+      if (*ch == '*' && m_lexer.peek_byte() == '/') {
+        comment_value += "*/";  // Include the closing '*/'
+        if (!m_lexer.next_byte()) {
+          spdlog::error("[Lexer] Failed to read the closing '*/' in a multiline comment");
+          return std::nullopt;
+        }
+
+        break;
+      }
+
+      comment_value += static_cast<char>(*ch);
+    }
+
+    return comment_value;
+  }
+
   auto parse_operator_or_punctor_or_comment() -> std::optional<Token> {
-    // TODO: Implement logic to parse operators, punctuation, etc.
-    spdlog::warn("[Lexer] Operator, punctor, or comment parsing is not yet implemented");
-    return std::nullopt;  // Placeholder implementation
+    const auto start_position = m_lexer.current_source_location();
+    const auto first_ch = m_lexer.next_byte();
+    if (!first_ch.has_value()) [[unlikely]] {
+      spdlog::error("[Lexer] Failed to read the first byte of an operator, punctor, or comment");
+      return std::nullopt;
+    }
+
+    const auto ch = *first_ch;
+    if (is_punctor(ch) && m_lexer.peek_byte() != ':') {
+      auto punctor = *punctor_from_byte(ch);
+      const auto end_position = m_lexer.current_source_location();
+      auto source_range = FileSourceRange(m_lexer.current_file(), start_position, end_position);
+
+      return Token::from_punctor(punctor, std::move(source_range));
+    }
+
+    if (ch == '/') {
+      const auto next_ch = m_lexer.peek_byte();
+      const auto is_singleline_comment = next_ch == '/';
+      const auto is_multiline_comment = next_ch == '*';
+
+      auto comment_value = [&]() -> std::optional<std::string> {
+        if (is_singleline_comment) {
+          return parse_singleline_comment_after_slash();
+        }
+
+        if (is_multiline_comment) {
+          return parse_multiline_comment_after_slash();
+        }
+
+        return std::nullopt;
+      }();
+
+      if (comment_value.has_value()) {
+        const auto end_position = m_lexer.current_source_location();
+        auto source_range = FileSourceRange(m_lexer.current_file(), start_position, end_position);
+
+        auto flyweight_identifier = boost::flyweight<std::string>(std::move(*comment_value));
+        auto comment = Comment(std::move(flyweight_identifier),
+                               is_singleline_comment ? CommentType::SingleLine : CommentType::MultiLine);
+
+        return Token::from_comment(std::move(comment), std::move(source_range));
+      }
+    }
+
+    // If we reach here, it means we encountered an operator or garbage
+    std::string operator_value;
+    operator_value += static_cast<char>(ch);
+    while (true) {
+      auto next_ch = m_lexer.peek_byte();
+      if (!next_ch.has_value() || !IS_OPERATOR_BYTE[*next_ch]) {
+        break;  // Stop if the next byte is not part of an operator
+      }
+
+      operator_value += static_cast<char>(*next_ch);
+      if (!m_lexer.next_byte().has_value()) [[unlikely]] {
+        spdlog::error("[Lexer] Failed to read the next byte of an operator");
+        return std::nullopt;  // End of input or error
+      }
+    }
+
+    if (is_operator(operator_value)) {
+      auto op = *operator_from_string(operator_value);
+      const auto end_position = m_lexer.current_source_location();
+      auto source_range = FileSourceRange(m_lexer.current_file(), start_position, end_position);
+
+      return Token::from_operator(op, std::move(source_range));
+    }
+
+    spdlog::error("[Lexer] Unrecognized operator: '{}'", operator_value);
+
+    return std::nullopt;
   }
 };
 
