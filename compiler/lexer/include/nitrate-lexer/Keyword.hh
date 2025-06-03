@@ -131,4 +131,21 @@ namespace nitrate::compiler::lexer {
 
     return mapping;
   }();
+
+  [[nodiscard]] inline auto is_keyword(std::string_view str) -> bool {
+    return KEYWORD_MAP.right.find(str) != KEYWORD_MAP.right.end();
+  }
+
+  [[nodiscard]] inline auto keyword_from_string(std::string_view str) -> std::optional<Keyword> {
+    auto it = KEYWORD_MAP.right.find(str);
+    if (it != KEYWORD_MAP.right.end()) {
+      return it->second;
+    }
+
+    return std::nullopt;
+  }
+
+  [[nodiscard]] inline auto keyword_to_string(Keyword keyword) -> std::string_view {
+    return KEYWORD_MAP.left.at(keyword);
+  }
 }  // namespace nitrate::compiler::lexer

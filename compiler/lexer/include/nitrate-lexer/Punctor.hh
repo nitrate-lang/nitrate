@@ -54,4 +54,21 @@ namespace nitrate::compiler::lexer {
 
     return mapping;
   }();
+
+  [[nodiscard]] inline auto is_punctor(std::string_view str) -> bool {
+    return PUNCTOR_MAP.right.find(str) != PUNCTOR_MAP.right.end();
+  }
+
+  [[nodiscard]] inline auto punctor_from_string(std::string_view str) -> std::optional<Punctor> {
+    auto it = PUNCTOR_MAP.right.find(str);
+    if (it != PUNCTOR_MAP.right.end()) {
+      return it->second;
+    }
+
+    return std::nullopt;
+  }
+
+  [[nodiscard]] inline auto punctor_to_string(Punctor punctor) -> std::string_view {
+    return PUNCTOR_MAP.left.at(punctor);
+  }
 }  // namespace nitrate::compiler::lexer

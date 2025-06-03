@@ -161,4 +161,19 @@ namespace nitrate::compiler::lexer {
 
     return mapping;
   }();
+
+  [[nodiscard]] inline auto is_operator(std::string_view str) -> bool {
+    return OPERATOR_MAP.right.find(str) != OPERATOR_MAP.right.end();
+  }
+
+  [[nodiscard]] inline auto operator_from_string(std::string_view str) -> std::optional<Operator> {
+    auto it = OPERATOR_MAP.right.find(str);
+    if (it != OPERATOR_MAP.right.end()) {
+      return it->second;
+    }
+
+    return std::nullopt;
+  }
+
+  [[nodiscard]] inline auto operator_to_string(Operator op) -> std::string_view { return OPERATOR_MAP.left.at(op); }
 }  // namespace nitrate::compiler::lexer
