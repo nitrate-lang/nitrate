@@ -35,7 +35,7 @@ namespace nitrate::compiler::lexer {
   public:
     Identifier(boost::flyweight<std::string> name, IdentifierType type) : m_name(std::move(name)), m_type(type) {}
 
-    [[nodiscard]] constexpr auto name() -> const std::string& { return m_name.get(); }
+    [[nodiscard]] constexpr auto name() const -> const std::string& { return m_name.get(); }
     [[nodiscard]] constexpr auto type() const -> IdentifierType { return m_type; }
 
     [[nodiscard]] constexpr auto is_typical() const -> bool { return m_type == IdentifierType::Typical; }
