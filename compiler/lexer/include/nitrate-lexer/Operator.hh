@@ -19,6 +19,7 @@
 
 #pragma once
 
+#include <boost/bimap.hpp>
 #include <cstdint>
 
 namespace nitrate::compiler::lexer {
@@ -88,4 +89,76 @@ namespace nitrate::compiler::lexer {
     OpRange,    /* '..':         Range */
     OpEllipsis, /* '...':        Ellipsis */
   };
+
+  static inline const boost::bimap<Operator, std::string_view> OPERATOR_MAP = [] {
+    boost::bimap<Operator, std::string_view> mapping;
+    auto& map = mapping.left;
+
+    map[OpPlus] = "+";
+    map[OpMinus] = "-";
+    map[OpTimes] = "*";
+    map[OpSlash] = "/";
+    map[OpPercent] = "%";
+
+    map[OpBitAnd] = "&";
+    map[OpBitOr] = "|";
+    map[OpBitXor] = "^";
+    map[OpBitNot] = "~";
+    map[OpBitShl] = "<<";
+    map[OpBitShr] = ">>";
+    map[OpBitRotl] = "<<<";
+    map[OpBitRotr] = ">>>";
+
+    map[OpLogicAnd] = "&&";
+    map[OpLogicOr] = "||";
+    map[OpLogicXor] = "^^";
+    map[OpLogicNot] = "!";
+    map[OpLogicLt] = "<";
+    map[OpLogicGt] = ">";
+    map[OpLogicLe] = "<=";
+    map[OpLogicGe] = ">=";
+    map[OpLogicEq] = "==";
+    map[OpLogicNe] = "!=";
+
+    map[OpSet] = "=";
+    map[OpSetPlus] = "+=";
+    map[OpSetMinus] = "-=";
+    map[OpSetTimes] = "*=";
+    map[OpSetSlash] = "/=";
+    map[OpSetPercent] = "%=";
+    map[OpSetBitAnd] = "&=";
+    map[OpSetBitOr] = "|=";
+    map[OpSetBitXor] = "^=";
+    map[OpSetBitNot] = "~=";
+    map[OpSetBitShl] = "<<=";
+    map[OpSetBitShr] = ">>=";
+    map[OpSetBitRotl] = "<<<=";
+    map[OpSetBitRotr] = ">>>=";
+    map[OpSetLogicAnd] = "&&=";
+    map[OpSetLogicOr] = "||=";
+    map[OpSetLogicXor] = "^^=";
+    map[OpSetLogicNot] = "!==";
+    map[OpSetLogicLt] = "<==";
+    map[OpSetLogicGt] = ">==";
+    map[OpSetLogicLe] = "<==";
+    map[OpSetLogicGe] = ">==";
+    map[OpSetLogicEq] = "===";
+    map[OpSetLogicNe] = "!==";
+    map[OpSetInc] = "++";
+    map[OpSetDec] = "--";
+
+    map[OpAs] = "as";
+    map[OpBitcastAs] = "bitcast_as";
+    map[OpSizeof] = "sizeof";
+    map[OpAlignof] = "alignof";
+    map[OpTypeof] = "typeof";
+
+    map[OpIn] = "in";
+    map[OpOut] = "out";
+    map[OpDot] = ".";
+    map[OpRange] = "..";
+    map[OpEllipsis] = "...";
+
+    return mapping;
+  }();
 }  // namespace nitrate::compiler::lexer
