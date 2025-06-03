@@ -21,7 +21,7 @@
 
 using namespace nitrate::compiler::lexer;
 
-BOOST_SYMBOL_EXPORT auto Lexer::parse_next_token() -> std::optional<Token> {
+auto Lexer::parse_next_token() -> std::optional<Token> {
   // TODO: Implement logic to read the next token from the input stream
   // This will involve reading characters, recognizing keywords, identifiers,
   // literals, operators, and punctuation, and constructing a Token object.

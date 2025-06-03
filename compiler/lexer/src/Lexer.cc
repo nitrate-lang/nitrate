@@ -23,7 +23,7 @@ using namespace nitrate::compiler::lexer;
 
 BOOST_SYMBOL_EXPORT Lexer::Lexer(std::istream& is) : m_input_stream(is) {}
 
-BOOST_SYMBOL_EXPORT auto Lexer::peek_byte() -> std::optional<uint8_t> {
+auto Lexer::peek_byte() -> std::optional<uint8_t> {
   const auto byte = m_input_stream.peek();
 
   if (byte == std::char_traits<char>::eof()) [[unlikely]] {
@@ -33,7 +33,7 @@ BOOST_SYMBOL_EXPORT auto Lexer::peek_byte() -> std::optional<uint8_t> {
   return static_cast<uint8_t>(byte);
 }
 
-BOOST_SYMBOL_EXPORT auto Lexer::next_byte() -> std::optional<uint8_t> {
+auto Lexer::next_byte() -> std::optional<uint8_t> {
   const auto byte = m_input_stream.get();
 
   if (byte == std::char_traits<char>::eof()) [[unlikely]] {
