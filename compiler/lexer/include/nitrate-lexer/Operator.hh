@@ -24,142 +24,144 @@
 
 namespace nitrate::compiler::lexer {
   enum class Operator : uint8_t {
-    OpPlus,    /* '+': Addition */
-    OpMinus,   /* '-': Subtraction */
-    OpTimes,   /* '*': Multiplication */
-    OpSlash,   /* '/': Division */
-    OpPercent, /* '%': Modulus */
+    Plus,    /* '+': Addition */
+    Minus,   /* '-': Subtraction */
+    Times,   /* '*': Multiplication */
+    Slash,   /* '/': Division */
+    Percent, /* '%': Modulus */
 
-    OpBitAnd,  /* '&':   Bitwise AND */
-    OpBitOr,   /* '|':   Bitwise OR */
-    OpBitXor,  /* '^':   Bitwise XOR */
-    OpBitNot,  /* '~':   Bitwise NOT */
-    OpBitShl,  /* '<<':  Bitwise left shift */
-    OpBitShr,  /* '>>':  Bitwise right shift */
-    OpBitRotl, /* '<<<': Bitwise rotate left */
-    OpBitRotr, /* '>>>': Bitwise rotate right */
+    BitAnd,  /* '&':   Bitwise AND */
+    BitOr,   /* '|':   Bitwise OR */
+    BitXor,  /* '^':   Bitwise XOR */
+    BitNot,  /* '~':   Bitwise NOT */
+    BitShl,  /* '<<':  Bitwise left shift */
+    BitShr,  /* '>>':  Bitwise right shift */
+    BitRotl, /* '<<<': Bitwise rotate left */
+    BitRotr, /* '>>>': Bitwise rotate right */
 
-    OpLogicAnd, /* '&&': Logical AND */
-    OpLogicOr,  /* '||': Logical OR */
-    OpLogicXor, /* '^^': Logical XOR */
-    OpLogicNot, /* '!':  Logical NOT */
-    OpLogicLt,  /* '<':  Logical less than */
-    OpLogicGt,  /* '>':  Logical greater than */
-    OpLogicLe,  /* '<=': Logical less than or equal to */
-    OpLogicGe,  /* '>=': Logical greater than or equal to */
-    OpLogicEq,  /* '==': Logical equal to */
-    OpLogicNe,  /* '!=': Logical not equal to */
+    LogicAnd, /* '&&': Logical AND */
+    LogicOr,  /* '||': Logical OR */
+    LogicXor, /* '^^': Logical XOR */
+    LogicNot, /* '!':  Logical NOT */
+    LogicLt,  /* '<':  Logical less than */
+    LogicGt,  /* '>':  Logical greater than */
+    LogicLe,  /* '<=': Logical less than or equal to */
+    LogicGe,  /* '>=': Logical greater than or equal to */
+    LogicEq,  /* '==': Logical equal to */
+    LogicNe,  /* '!=': Logical not equal to */
 
-    OpSet,         /* '=':    Assignment */
-    OpSetPlus,     /* '+=':   Addition Assignment */
-    OpSetMinus,    /* '-=':   Subtraction Assignment */
-    OpSetTimes,    /* '*=':   Multiplication Assignment */
-    OpSetSlash,    /* '/=':   Division Assignment */
-    OpSetPercent,  /* '%=':   Modulus Assignment */
-    OpSetBitAnd,   /* '&=':   Bitwise AND Assignment */
-    OpSetBitOr,    /* '|=':   Bitwise OR Assignment */
-    OpSetBitXor,   /* '^=':   Bitwise XOR Assignment */
-    OpSetBitNot,   /* '~=':   Bitwise NOT Assignment */
-    OpSetBitShl,   /* '<<=':  Bitwise left shift Assignment */
-    OpSetBitShr,   /* '>>=':  Bitwise right shift Assignment */
-    OpSetBitRotl,  /* '<<<=': Bitwise rotate left Assignment */
-    OpSetBitRotr,  /* '>>>=': Bitwise rotate right Assignment */
-    OpSetLogicAnd, /* '&&=':  Logical AND Assignment */
-    OpSetLogicOr,  /* '||=':  Logical OR Assignment */
-    OpSetLogicXor, /* '^^=':  Logical XOR Assignment */
-    OpSetLogicNot, /* '!==':  Logical NOT Assignment */
-    OpSetLogicLt,  /* '<==':  Logical less than Assignment */
-    OpSetLogicGt,  /* '>==':  Logical greater than Assignment */
-    OpSetLogicLe,  /* '<==':  Logical less than or equal to Assignment */
-    OpSetLogicGe,  /* '>==':  Logical greater than or equal to Assignment */
-    OpSetLogicEq,  /* '===':  Logical equal to Assignment */
-    OpSetLogicNe,  /* '!==':  Logical not equal to Assignment */
-    OpSetInc,      /* '++':   Increment */
-    OpSetDec,      /* '--':   Decrement */
+    Set,         /* '=':    Assignment */
+    SetPlus,     /* '+=':   Addition Assignment */
+    SetMinus,    /* '-=':   Subtraction Assignment */
+    SetTimes,    /* '*=':   Multiplication Assignment */
+    SetSlash,    /* '/=':   Division Assignment */
+    SetPercent,  /* '%=':   Modulus Assignment */
+    SetBitAnd,   /* '&=':   Bitwise AND Assignment */
+    SetBitOr,    /* '|=':   Bitwise OR Assignment */
+    SetBitXor,   /* '^=':   Bitwise XOR Assignment */
+    SetBitNot,   /* '~=':   Bitwise NOT Assignment */
+    SetBitShl,   /* '<<=':  Bitwise left shift Assignment */
+    SetBitShr,   /* '>>=':  Bitwise right shift Assignment */
+    SetBitRotl,  /* '<<<=': Bitwise rotate left Assignment */
+    SetBitRotr,  /* '>>>=': Bitwise rotate right Assignment */
+    SetLogicAnd, /* '&&=':  Logical AND Assignment */
+    SetLogicOr,  /* '||=':  Logical OR Assignment */
+    SetLogicXor, /* '^^=':  Logical XOR Assignment */
+    SetLogicNot, /* '!==':  Logical NOT Assignment */
+    SetLogicLt,  /* '<==':  Logical less than Assignment */
+    SetLogicGt,  /* '>==':  Logical greater than Assignment */
+    SetLogicLe,  /* '<==':  Logical less than or equal to Assignment */
+    SetLogicGe,  /* '>==':  Logical greater than or equal to Assignment */
+    SetLogicEq,  /* '===':  Logical equal to Assignment */
+    SetLogicNe,  /* '!==':  Logical not equal to Assignment */
+    SetInc,      /* '++':   Increment */
+    SetDec,      /* '--':   Decrement */
 
-    OpAs,        /* 'as':         Type cast */
-    OpBitcastAs, /* 'bitcast_as': Bitcast */
-    OpSizeof,    /* 'sizeof':     Size of */
-    OpAlignof,   /* 'alignof':    Alignment of */
-    OpTypeof,    /* 'typeof':     Type of */
+    As,        /* 'as':         Type cast */
+    BitcastAs, /* 'bitcast_as': Bitcast */
+    Sizeof,    /* 'sizeof':     Size of */
+    Alignof,   /* 'alignof':    Alignment of */
+    Typeof,    /* 'typeof':     Type of */
 
-    OpIn,       /* 'in' */
-    OpOut,      /* 'out' */
-    OpDot,      /* '.':          Dot */
-    OpRange,    /* '..':         Range */
-    OpEllipsis, /* '...':        Ellipsis */
-    OpScope,    /* '::':         Scope resolution */
+    In,       /* 'in' */
+    Out,      /* 'out' */
+    Dot,      /* '.':          Dot */
+    Range,    /* '..':         Range */
+    Ellipsis, /* '...':        Ellipsis */
+    Scope,    /* '::':         Scope resolution */
+    Question, /* '?':          Ternary operator (conditional) */
   };
 
   static inline const boost::bimap<Operator, std::string_view> OPERATOR_MAP = [] {
     boost::bimap<Operator, std::string_view> mapping;
     auto& map = mapping.left;
 
-    map.insert({Operator::OpPlus, "+"});
-    map.insert({Operator::OpMinus, "-"});
-    map.insert({Operator::OpTimes, "*"});
-    map.insert({Operator::OpSlash, "/"});
-    map.insert({Operator::OpPercent, "%"});
+    map.insert({Operator::Plus, "+"});
+    map.insert({Operator::Minus, "-"});
+    map.insert({Operator::Times, "*"});
+    map.insert({Operator::Slash, "/"});
+    map.insert({Operator::Percent, "%"});
 
-    map.insert({Operator::OpBitAnd, "&"});
-    map.insert({Operator::OpBitOr, "|"});
-    map.insert({Operator::OpBitXor, "^"});
-    map.insert({Operator::OpBitNot, "~"});
-    map.insert({Operator::OpBitShl, "<<"});
-    map.insert({Operator::OpBitShr, ">>"});
-    map.insert({Operator::OpBitRotl, "<<<"});
-    map.insert({Operator::OpBitRotr, ">>>"});
+    map.insert({Operator::BitAnd, "&"});
+    map.insert({Operator::BitOr, "|"});
+    map.insert({Operator::BitXor, "^"});
+    map.insert({Operator::BitNot, "~"});
+    map.insert({Operator::BitShl, "<<"});
+    map.insert({Operator::BitShr, ">>"});
+    map.insert({Operator::BitRotl, "<<<"});
+    map.insert({Operator::BitRotr, ">>>"});
 
-    map.insert({Operator::OpLogicAnd, "&&"});
-    map.insert({Operator::OpLogicOr, "||"});
-    map.insert({Operator::OpLogicXor, "^^"});
-    map.insert({Operator::OpLogicNot, "!"});
-    map.insert({Operator::OpLogicLt, "<"});
-    map.insert({Operator::OpLogicGt, ">"});
-    map.insert({Operator::OpLogicLe, "<="});
-    map.insert({Operator::OpLogicGe, ">="});
-    map.insert({Operator::OpLogicEq, "=="});
-    map.insert({Operator::OpLogicNe, "!="});
+    map.insert({Operator::LogicAnd, "&&"});
+    map.insert({Operator::LogicOr, "||"});
+    map.insert({Operator::LogicXor, "^^"});
+    map.insert({Operator::LogicNot, "!"});
+    map.insert({Operator::LogicLt, "<"});
+    map.insert({Operator::LogicGt, ">"});
+    map.insert({Operator::LogicLe, "<="});
+    map.insert({Operator::LogicGe, ">="});
+    map.insert({Operator::LogicEq, "=="});
+    map.insert({Operator::LogicNe, "!="});
 
-    map.insert({Operator::OpSet, "="});
-    map.insert({Operator::OpSetPlus, "+="});
-    map.insert({Operator::OpSetMinus, "-="});
-    map.insert({Operator::OpSetTimes, "*="});
-    map.insert({Operator::OpSetSlash, "/="});
-    map.insert({Operator::OpSetPercent, "%="});
-    map.insert({Operator::OpSetBitAnd, "&="});
-    map.insert({Operator::OpSetBitOr, "|="});
-    map.insert({Operator::OpSetBitXor, "^="});
-    map.insert({Operator::OpSetBitNot, "~="});
-    map.insert({Operator::OpSetBitShl, "<<="});
-    map.insert({Operator::OpSetBitShr, ">>="});
-    map.insert({Operator::OpSetBitRotl, "<<<="});
-    map.insert({Operator::OpSetBitRotr, ">>>="});
-    map.insert({Operator::OpSetLogicAnd, "&&="});
-    map.insert({Operator::OpSetLogicOr, "||="});
-    map.insert({Operator::OpSetLogicXor, "^^="});
-    map.insert({Operator::OpSetLogicNot, "!=="});
-    map.insert({Operator::OpSetLogicLt, "<=="});
-    map.insert({Operator::OpSetLogicGt, ">=="});
-    map.insert({Operator::OpSetLogicLe, "<=="});
-    map.insert({Operator::OpSetLogicGe, ">=="});
-    map.insert({Operator::OpSetLogicEq, "==="});
-    map.insert({Operator::OpSetLogicNe, "!=="});
-    map.insert({Operator::OpSetInc, "++"});
-    map.insert({Operator::OpSetDec, "--"});
+    map.insert({Operator::Set, "="});
+    map.insert({Operator::SetPlus, "+="});
+    map.insert({Operator::SetMinus, "-="});
+    map.insert({Operator::SetTimes, "*="});
+    map.insert({Operator::SetSlash, "/="});
+    map.insert({Operator::SetPercent, "%="});
+    map.insert({Operator::SetBitAnd, "&="});
+    map.insert({Operator::SetBitOr, "|="});
+    map.insert({Operator::SetBitXor, "^="});
+    map.insert({Operator::SetBitNot, "~="});
+    map.insert({Operator::SetBitShl, "<<="});
+    map.insert({Operator::SetBitShr, ">>="});
+    map.insert({Operator::SetBitRotl, "<<<="});
+    map.insert({Operator::SetBitRotr, ">>>="});
+    map.insert({Operator::SetLogicAnd, "&&="});
+    map.insert({Operator::SetLogicOr, "||="});
+    map.insert({Operator::SetLogicXor, "^^="});
+    map.insert({Operator::SetLogicNot, "!=="});
+    map.insert({Operator::SetLogicLt, "<=="});
+    map.insert({Operator::SetLogicGt, ">=="});
+    map.insert({Operator::SetLogicLe, "<=="});
+    map.insert({Operator::SetLogicGe, ">=="});
+    map.insert({Operator::SetLogicEq, "==="});
+    map.insert({Operator::SetLogicNe, "!=="});
+    map.insert({Operator::SetInc, "++"});
+    map.insert({Operator::SetDec, "--"});
 
-    map.insert({Operator::OpAs, "as"});
-    map.insert({Operator::OpBitcastAs, "bitcast_as"});
-    map.insert({Operator::OpSizeof, "sizeof"});
-    map.insert({Operator::OpAlignof, "alignof"});
-    map.insert({Operator::OpTypeof, "typeof"});
+    map.insert({Operator::As, "as"});
+    map.insert({Operator::BitcastAs, "bitcast_as"});
+    map.insert({Operator::Sizeof, "sizeof"});
+    map.insert({Operator::Alignof, "alignof"});
+    map.insert({Operator::Typeof, "typeof"});
 
-    map.insert({Operator::OpIn, "in"});
-    map.insert({Operator::OpOut, "out"});
-    map.insert({Operator::OpDot, "."});
-    map.insert({Operator::OpRange, ".."});
-    map.insert({Operator::OpEllipsis, "..."});
-    map.insert({Operator::OpScope, "::"});
+    map.insert({Operator::In, "in"});
+    map.insert({Operator::Out, "out"});
+    map.insert({Operator::Dot, "."});
+    map.insert({Operator::Range, ".."});
+    map.insert({Operator::Ellipsis, "..."});
+    map.insert({Operator::Scope, "::"});
+    map.insert({Operator::Question, "?"});
 
     return mapping;
   }();
