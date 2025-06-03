@@ -17,6 +17,9 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
+#define FMT_HEADER_ONLY
+#include <spdlog/spdlog.h>
+
 #include <nitrate-lexer/Lexer.hh>
 
 using namespace nitrate::compiler::lexer;
@@ -100,6 +103,7 @@ BOOST_SYMBOL_EXPORT auto Lexer::pop_rewind_checkpoint() -> bool {
 
   const auto checkpoint = m_rewind_checkpoints.top();
   if (!m_input_stream.seekg(checkpoint, std::ios::beg)) [[unlikely]] {
+    spdlog::error("[Lexer] Failed to seek to the rewind checkpoint at position {}", checkpoint);
     return false;
   }
 
