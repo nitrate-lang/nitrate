@@ -187,24 +187,44 @@ public:
     return true;
   }
 
-  auto parse_identifier_or_keyword() -> std::optional<Token> {
-    const auto start_position = m_lexer.current_source_location();
-
-    const auto first_ch = m_lexer.next_byte();
-    if (!first_ch.has_value()) [[unlikely]] {
-      spdlog::error("[Lexer] Failed to read the first byte of an identifier or keyword");
-      return std::nullopt;
-    }
-
-    if (*first_ch == '`') {
-      // TODO: Handle raw identifiers
-      spdlog::warn("[Lexer] Raw identifiers are not yet supported");
-      return std::nullopt;
-    }
-
-    auto utf8_unverified_identifier = [this, first_ch]() -> std::optional<std::string> {
+  auto parse_atypical_literal_after_tick() -> std::optional<std::string> {
+    auto identifier = [this]() -> std::optional<std::string> {
       std::string value;
-      value += static_cast<char>(*first_ch);
+      const auto consume_body_predicate = [&](auto ch) {
+        if (ch == '`') {
+          return false;
+        }
+
+        value += static_cast<char>(ch);
+
+        return true;
+      };
+
+      if (!consume_while(consume_body_predicate)) {
+        return std::nullopt;
+      }
+
+      return value;
+    }();
+
+    if (!identifier.has_value()) [[unlikely]] {
+      spdlog::error("[Lexer] Failed to read a atypical identifier in its entirety");
+      return std::nullopt;
+    }
+
+    if (auto tick = m_lexer.next_byte(); !tick.has_value() || *tick != '`') [[unlikely]] {
+      spdlog::error("[Lexer] Expected a closing tick terminator for atypical identifier, but found: '{}'",
+                    tick.value_or(' '));
+      return std::nullopt;
+    }
+
+    return identifier;
+  }
+
+  auto parse_typical_literal_body(uint8_t first_byte) -> std::optional<std::string> {
+    auto identifier = [this, first_byte]() -> std::optional<std::string> {
+      std::string value;
+      value += static_cast<char>(first_byte);
 
       const auto consume_body_predicate = [&](auto ch) {
         if (!IS_IDENTIFIER_BODY_CHAR[ch]) {
@@ -223,27 +243,54 @@ public:
       return value;
     }();
 
-    if (!utf8_unverified_identifier.has_value()) [[unlikely]] {
+    if (!identifier.has_value()) [[unlikely]] {
       spdlog::error("[Lexer] Failed to read an identifier or keyword in its entirety");
+      return std::nullopt;
+    }
+
+    return identifier;
+  }
+
+  auto parse_identifier_or_keyword() -> std::optional<Token> {
+    const auto start_position = m_lexer.current_source_location();
+
+    const auto first_ch = m_lexer.next_byte();
+    if (!first_ch.has_value()) [[unlikely]] {
+      spdlog::error("[Lexer] Failed to read the first byte of an identifier or keyword");
+      return std::nullopt;
+    }
+
+    const auto identifier_type = *first_ch == '`' ? IdentifierType::Atypical : IdentifierType::Typical;
+
+    auto identifier_value = [&]() {
+      if (identifier_type == IdentifierType::Atypical) {
+        return parse_atypical_literal_after_tick();
+      }
+
+      return parse_typical_literal_body(*first_ch);
+    }();
+    if (!identifier_value.has_value()) [[unlikely]] {
+      spdlog::error("[Lexer] Failed to read the identifier or keyword body");
       return std::nullopt;
     }
 
     const auto end_position = m_lexer.current_source_location();
     const auto source_range = FileSourceRange(m_lexer.current_file(), start_position, end_position);
 
-    if (is_keyword(*utf8_unverified_identifier)) {
-      const auto keyword = *keyword_from_string(*utf8_unverified_identifier);
+    if (identifier_type == IdentifierType::Typical) {
+      if (is_keyword(*identifier_value)) {
+        const auto keyword = *keyword_from_string(*identifier_value);
+        return Token::from_keyword(keyword, source_range);
+      }
 
-      return Token::from_keyword(keyword, source_range);
+      if (!is_utf8(identifier_value->c_str())) [[unlikely]] {
+        spdlog::error("[Lexer] Identifier '{}' is not valid UTF-8", *identifier_value);
+        return std::nullopt;
+      }
     }
 
-    if (!is_utf8(utf8_unverified_identifier->c_str())) [[unlikely]] {
-      spdlog::error("[Lexer] Invalid UTF-8 sequence in identifier: '{}'", *utf8_unverified_identifier);
-      return std::nullopt;
-    }
-
-    auto flyweight_identifier = boost::flyweight<std::string>(std::move(*utf8_unverified_identifier));
-    auto identifier = Identifier(std::move(flyweight_identifier), IdentifierType::Typical);
+    auto flyweight_identifier = boost::flyweight<std::string>(std::move(*identifier_value));
+    auto identifier = Identifier(std::move(flyweight_identifier), identifier_type);
 
     return Token::from_identifier(std::move(identifier), source_range);
   }
