@@ -36,5 +36,8 @@ add_test(NAME ${TARGET_NAME}-test COMMAND ${TARGET_NAME}-test)
 
 add_executable(nitrate-lex example/nitrate-lex.cc)
 target_link_libraries(nitrate-lex PRIVATE ${TARGET_NAME})
-
 install(TARGETS nitrate-lex)
+
+add_executable(nitrate-lex-throughput example/nitrate-lex-throughput.cc)
+target_link_libraries(nitrate-lex-throughput PRIVATE ${TARGET_NAME})
+install(TARGETS nitrate-lex-throughput)
