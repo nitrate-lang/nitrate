@@ -46,18 +46,16 @@ BOOST_SYMBOL_EXPORT auto Lexer::next_byte() -> std::optional<uint8_t> {
 }
 
 BOOST_SYMBOL_EXPORT auto Lexer::next_token() -> std::optional<Token> {
-  if (!m_token_queue.empty()) {
-    auto token = std::move(m_token_queue.front());
-    m_token_queue.pop_front();
-    m_head_stream_position = token.source_range().end().offset() + 1;
+  auto token = [this]() -> std::optional<Token> {
+    if (!m_token_queue.empty()) {
+      auto token = std::move(m_token_queue.front());
+      m_token_queue.pop_front();
 
-    return token;
-  }
+      return token;
+    }
 
-  auto token = parse_next_token();
-  if (!token.has_value()) [[unlikely]] {
-    return std::nullopt;
-  }
+    return parse_next_token();
+  }();
 
   m_head_stream_position = token->source_range().end().offset() + 1;
 
