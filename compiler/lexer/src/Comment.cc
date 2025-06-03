@@ -22,12 +22,25 @@
 using namespace nitrate::compiler::lexer;
 
 BOOST_SYMBOL_EXPORT auto Comment::is_documentation() const -> bool {
-  // TODO: Implement logic to determine if the comment is documentation
-  return false;  // Placeholder implementation
+  if (is_single_line()) {  // looks like "/// comment"
+    return value().starts_with("///");
+  }
+
+  if (is_multi_line()) {  // looks like "/** comment */"
+    return value().starts_with("/**") && value().ends_with("*/");
+  }
+
+  return false;
 }
 
 BOOST_SYMBOL_EXPORT auto Comment::is_tool_signal() const -> bool {
-  // TODO: Implement logic to determine if the comment is a signal
-  // to language tools
-  return false;  // Placeholder implementation
+  if (is_single_line()) {  // looks like "#! comment"
+    return value().starts_with("#!");
+  }
+
+  if (is_multi_line()) {  // looks like "/*! comment */"
+    return value().starts_with("/*!") && value().ends_with("*/");
+  }
+
+  return false;
 }
