@@ -20,7 +20,6 @@
 #pragma once
 
 #include <boost/bimap.hpp>
-#include <boost/flyweight.hpp>
 #include <cstdint>
 
 namespace nitrate::compiler::lexer {
