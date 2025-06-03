@@ -46,7 +46,7 @@ namespace nitrate::compiler::lexer {
     [[nodiscard]] auto parse_next_token() -> std::optional<Token>;
 
   public:
-    Lexer(std::istream& is);
+    Lexer(std::istream& is, boost::flyweight<std::string> file);
     Lexer(const Lexer&) = delete;
     Lexer(Lexer&&) = delete;
     auto operator=(const Lexer&) -> Lexer& = delete;
