@@ -37,29 +37,29 @@ namespace nitrate::compiler::lexer {
     AtSign,            // @
   };
 
-  static inline const boost::bimap<Punctor, std::string_view> PUNCTOR_MAP = [] {
-    boost::bimap<Punctor, std::string_view> mapping;
+  static inline const boost::bimap<Punctor, uint8_t> PUNCTOR_MAP = [] {
+    boost::bimap<Punctor, uint8_t> mapping;
     auto& map = mapping.left;
 
-    map.insert({Punctor::LeftParenthesis, "("});
-    map.insert({Punctor::RightParenthesis, ")"});
-    map.insert({Punctor::LeftBracket, "["});
-    map.insert({Punctor::RightBracket, "]"});
-    map.insert({Punctor::LeftBrace, "{"});
-    map.insert({Punctor::RightBrace, "}"});
-    map.insert({Punctor::Comma, ","});
-    map.insert({Punctor::Semicolon, ";"});
-    map.insert({Punctor::Colon, ":"});
-    map.insert({Punctor::AtSign, "@"});
+    map.insert({Punctor::LeftParenthesis, '('});
+    map.insert({Punctor::RightParenthesis, ')'});
+    map.insert({Punctor::LeftBracket, '['});
+    map.insert({Punctor::RightBracket, ']'});
+    map.insert({Punctor::LeftBrace, '{'});
+    map.insert({Punctor::RightBrace, '}'});
+    map.insert({Punctor::Comma, ','});
+    map.insert({Punctor::Semicolon, ';'});
+    map.insert({Punctor::Colon, ':'});
+    map.insert({Punctor::AtSign, '@'});
 
     return mapping;
   }();
 
-  [[nodiscard]] inline auto is_punctor(std::string_view str) -> bool {
+  [[nodiscard]] inline auto is_punctor(uint8_t str) -> bool {
     return PUNCTOR_MAP.right.find(str) != PUNCTOR_MAP.right.end();
   }
 
-  [[nodiscard]] inline auto punctor_from_string(std::string_view str) -> std::optional<Punctor> {
+  [[nodiscard]] inline auto punctor_from_byte(uint8_t str) -> std::optional<Punctor> {
     auto it = PUNCTOR_MAP.right.find(str);
     if (it != PUNCTOR_MAP.right.end()) {
       return it->second;
@@ -69,6 +69,7 @@ namespace nitrate::compiler::lexer {
   }
 
   [[nodiscard]] inline auto punctor_to_string(Punctor punctor) -> std::string_view {
-    return PUNCTOR_MAP.left.at(punctor);
+    char ch = static_cast<char>(PUNCTOR_MAP.left.at(punctor));
+    return {&ch, 1};
   }
 }  // namespace nitrate::compiler::lexer
