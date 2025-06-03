@@ -42,7 +42,18 @@ auto Lexer::next_byte() -> std::optional<uint8_t> {
 
   ++m_lead_stream_position;
 
+  if (byte == '\n') {
+    ++m_line_number;
+    m_column_number = 0;  // Reset column number on new line
+  } else {
+    ++m_column_number;  // Increment column number for other characters
+  }
+
   return static_cast<uint8_t>(byte);
+}
+
+auto Lexer::current_source_location() const -> FileSourceLocation {
+  return {m_line_number, m_column_number, m_lead_stream_position};
 }
 
 BOOST_SYMBOL_EXPORT auto Lexer::next_token() -> std::optional<Token> {
