@@ -19,6 +19,7 @@
 
 #pragma once
 
+#include <boost/bimap.hpp>
 #include <boost/flyweight.hpp>
 #include <cstdint>
 
@@ -77,4 +78,58 @@ namespace nitrate::compiler::lexer {
     Trait,    /* 'trait' */
     Union,    /* 'union' */
   };
+
+  static inline const boost::bimap<Keyword, std::string_view> KEYWORD_MAP = [] {
+    boost::bimap<Keyword, std::string_view> mapping;
+    auto& map = mapping.left;
+
+    map[Keyword::Scope] = "scope";
+    map[Keyword::Import] = "import";
+    map[Keyword::Pub] = "pub";
+    map[Keyword::Sec] = "sec";
+    map[Keyword::Pro] = "pro";
+
+    map[Keyword::Let] = "let";
+    map[Keyword::Var] = "var";
+    map[Keyword::Fn] = "fn";
+
+    map[Keyword::Safe] = "safe";
+    map[Keyword::Unsafe] = "unsafe";
+    map[Keyword::Promise] = "promise";
+    map[Keyword::Static] = "static";
+    map[Keyword::Mut] = "mut";
+    map[Keyword::Const] = "const";
+
+    map[Keyword::If] = "if";
+    map[Keyword::Else] = "else";
+    map[Keyword::For] = "for";
+    map[Keyword::While] = "while";
+    map[Keyword::Do] = "do";
+    map[Keyword::Switch] = "switch";
+    map[Keyword::Break] = "break";
+    map[Keyword::Continue] = "continue";
+    map[Keyword::Return] = "ret";
+    map[Keyword::Foreach] = "foreach";
+    map[Keyword::Try] = "try";
+    map[Keyword::Catch] = "catch";
+    map[Keyword::Throw] = "throw";
+    map[Keyword::Async] = "async";
+    map[Keyword::Await] = "await";
+    map[Keyword::Asm] = "asm";
+
+    map[Keyword::Null] = "null";
+    map[Keyword::True] = "true";
+    map[Keyword::False] = "false";
+
+    map[Keyword::Type] = "type";
+    map[Keyword::Opaque] = "opaque";
+    map[Keyword::Enum] = "enum";
+    map[Keyword::Struct] = "struct";
+    map[Keyword::Class] = "class";
+    map[Keyword::Contract] = "interface";
+    map[Keyword::Trait] = "trait";
+    map[Keyword::Union] = "union";
+
+    return mapping;
+  }();
 }  // namespace nitrate::compiler::lexer
