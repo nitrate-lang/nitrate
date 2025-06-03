@@ -39,7 +39,7 @@ namespace nitrate::compiler::lexer {
     [[nodiscard]] constexpr auto content() const -> const boost::flyweight<std::string>& { return m_content; }
     [[nodiscard]] constexpr auto is_single_line() const -> bool { return m_type == CommentType::SingleLine; }
     [[nodiscard]] constexpr auto is_multi_line() const -> bool { return m_type == CommentType::MultiLine; }
-    [[nodiscard]] constexpr auto is_documentation() const -> bool;
-    [[nodiscard]] constexpr auto is_tool_signal() const -> bool;
+    [[nodiscard]] auto is_documentation() const -> bool;
+    [[nodiscard]] auto is_tool_signal() const -> bool;
   };
 }  // namespace nitrate::compiler::lexer
