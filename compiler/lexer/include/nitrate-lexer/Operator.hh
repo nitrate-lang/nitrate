@@ -23,7 +23,7 @@
 #include <cstdint>
 
 namespace nitrate::compiler::lexer {
-  enum Operator : uint8_t {
+  enum class Operator : uint8_t {
     OpPlus,    /* '+': Addition */
     OpMinus,   /* '-': Subtraction */
     OpTimes,   /* '*': Multiplication */
@@ -94,70 +94,70 @@ namespace nitrate::compiler::lexer {
     boost::bimap<Operator, std::string_view> mapping;
     auto& map = mapping.left;
 
-    map[OpPlus] = "+";
-    map[OpMinus] = "-";
-    map[OpTimes] = "*";
-    map[OpSlash] = "/";
-    map[OpPercent] = "%";
+    map.insert({Operator::OpPlus, "+"});
+    map.insert({Operator::OpMinus, "-"});
+    map.insert({Operator::OpTimes, "*"});
+    map.insert({Operator::OpSlash, "/"});
+    map.insert({Operator::OpPercent, "%"});
 
-    map[OpBitAnd] = "&";
-    map[OpBitOr] = "|";
-    map[OpBitXor] = "^";
-    map[OpBitNot] = "~";
-    map[OpBitShl] = "<<";
-    map[OpBitShr] = ">>";
-    map[OpBitRotl] = "<<<";
-    map[OpBitRotr] = ">>>";
+    map.insert({Operator::OpBitAnd, "&"});
+    map.insert({Operator::OpBitOr, "|"});
+    map.insert({Operator::OpBitXor, "^"});
+    map.insert({Operator::OpBitNot, "~"});
+    map.insert({Operator::OpBitShl, "<<"});
+    map.insert({Operator::OpBitShr, ">>"});
+    map.insert({Operator::OpBitRotl, "<<<"});
+    map.insert({Operator::OpBitRotr, ">>>"});
 
-    map[OpLogicAnd] = "&&";
-    map[OpLogicOr] = "||";
-    map[OpLogicXor] = "^^";
-    map[OpLogicNot] = "!";
-    map[OpLogicLt] = "<";
-    map[OpLogicGt] = ">";
-    map[OpLogicLe] = "<=";
-    map[OpLogicGe] = ">=";
-    map[OpLogicEq] = "==";
-    map[OpLogicNe] = "!=";
+    map.insert({Operator::OpLogicAnd, "&&"});
+    map.insert({Operator::OpLogicOr, "||"});
+    map.insert({Operator::OpLogicXor, "^^"});
+    map.insert({Operator::OpLogicNot, "!"});
+    map.insert({Operator::OpLogicLt, "<"});
+    map.insert({Operator::OpLogicGt, ">"});
+    map.insert({Operator::OpLogicLe, "<="});
+    map.insert({Operator::OpLogicGe, ">="});
+    map.insert({Operator::OpLogicEq, "=="});
+    map.insert({Operator::OpLogicNe, "!="});
 
-    map[OpSet] = "=";
-    map[OpSetPlus] = "+=";
-    map[OpSetMinus] = "-=";
-    map[OpSetTimes] = "*=";
-    map[OpSetSlash] = "/=";
-    map[OpSetPercent] = "%=";
-    map[OpSetBitAnd] = "&=";
-    map[OpSetBitOr] = "|=";
-    map[OpSetBitXor] = "^=";
-    map[OpSetBitNot] = "~=";
-    map[OpSetBitShl] = "<<=";
-    map[OpSetBitShr] = ">>=";
-    map[OpSetBitRotl] = "<<<=";
-    map[OpSetBitRotr] = ">>>=";
-    map[OpSetLogicAnd] = "&&=";
-    map[OpSetLogicOr] = "||=";
-    map[OpSetLogicXor] = "^^=";
-    map[OpSetLogicNot] = "!==";
-    map[OpSetLogicLt] = "<==";
-    map[OpSetLogicGt] = ">==";
-    map[OpSetLogicLe] = "<==";
-    map[OpSetLogicGe] = ">==";
-    map[OpSetLogicEq] = "===";
-    map[OpSetLogicNe] = "!==";
-    map[OpSetInc] = "++";
-    map[OpSetDec] = "--";
+    map.insert({Operator::OpSet, "="});
+    map.insert({Operator::OpSetPlus, "+="});
+    map.insert({Operator::OpSetMinus, "-="});
+    map.insert({Operator::OpSetTimes, "*="});
+    map.insert({Operator::OpSetSlash, "/="});
+    map.insert({Operator::OpSetPercent, "%="});
+    map.insert({Operator::OpSetBitAnd, "&="});
+    map.insert({Operator::OpSetBitOr, "|="});
+    map.insert({Operator::OpSetBitXor, "^="});
+    map.insert({Operator::OpSetBitNot, "~="});
+    map.insert({Operator::OpSetBitShl, "<<="});
+    map.insert({Operator::OpSetBitShr, ">>="});
+    map.insert({Operator::OpSetBitRotl, "<<<="});
+    map.insert({Operator::OpSetBitRotr, ">>>="});
+    map.insert({Operator::OpSetLogicAnd, "&&="});
+    map.insert({Operator::OpSetLogicOr, "||="});
+    map.insert({Operator::OpSetLogicXor, "^^="});
+    map.insert({Operator::OpSetLogicNot, "!=="});
+    map.insert({Operator::OpSetLogicLt, "<=="});
+    map.insert({Operator::OpSetLogicGt, ">=="});
+    map.insert({Operator::OpSetLogicLe, "<=="});
+    map.insert({Operator::OpSetLogicGe, ">=="});
+    map.insert({Operator::OpSetLogicEq, "==="});
+    map.insert({Operator::OpSetLogicNe, "!=="});
+    map.insert({Operator::OpSetInc, "++"});
+    map.insert({Operator::OpSetDec, "--"});
 
-    map[OpAs] = "as";
-    map[OpBitcastAs] = "bitcast_as";
-    map[OpSizeof] = "sizeof";
-    map[OpAlignof] = "alignof";
-    map[OpTypeof] = "typeof";
+    map.insert({Operator::OpAs, "as"});
+    map.insert({Operator::OpBitcastAs, "bitcast_as"});
+    map.insert({Operator::OpSizeof, "sizeof"});
+    map.insert({Operator::OpAlignof, "alignof"});
+    map.insert({Operator::OpTypeof, "typeof"});
 
-    map[OpIn] = "in";
-    map[OpOut] = "out";
-    map[OpDot] = ".";
-    map[OpRange] = "..";
-    map[OpEllipsis] = "...";
+    map.insert({Operator::OpIn, "in"});
+    map.insert({Operator::OpOut, "out"});
+    map.insert({Operator::OpDot, "."});
+    map.insert({Operator::OpRange, ".."});
+    map.insert({Operator::OpEllipsis, "..."});
 
     return mapping;
   }();
