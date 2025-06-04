@@ -28,6 +28,7 @@ namespace nitrate::compiler::parser {
   class SymbolName {
   public:
     SymbolName(boost::flyweight<std::string> unqualified_name, boost::flyweight<std::string> scope);
+    SymbolName(std::string_view unqualified_name, std::string_view scope = "");
 
     [[nodiscard]] auto operator<=>(const SymbolName& o) const -> std::strong_ordering {
       return qualified_name() <=> o.qualified_name();
@@ -44,6 +45,11 @@ namespace nitrate::compiler::parser {
   class SymbolTable {
   public:
     SymbolTable();
+    SymbolTable(const SymbolTable&) = delete;
+    SymbolTable(SymbolTable&&) = delete;
+    auto operator=(const SymbolTable&) -> SymbolTable& = delete;
+    auto operator=(SymbolTable&&) -> SymbolTable& = delete;
+    ~SymbolTable() = default;
 
     [[nodiscard]] auto define(SymbolName name, Expr& symbol) -> bool;
     [[nodiscard]] auto undefine(const SymbolName& name) -> bool;
