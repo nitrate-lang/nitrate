@@ -302,25 +302,28 @@ namespace nitrate::compiler::parser {
 
   class TupleTy : public Type {
   public:
-    using ElementsList = std::pmr::deque<std::unique_ptr<Type>>;
+    using ElementsList = std::vector<std::unique_ptr<Type>>;
 
     TupleTy(ElementsList elements = {}) : Type(ASTKind::tTuple), m_elements(std::move(elements)) {}
 
     [[nodiscard]] constexpr auto get_elements() const -> const ElementsList& { return m_elements; }
-    [[nodiscard]] constexpr auto get_elements() -> ElementsList& { return m_elements; }
     [[nodiscard]] constexpr auto is_empty() const -> bool { return m_elements.empty(); }
     [[nodiscard]] constexpr auto size() const -> size_t { return m_elements.size(); }
 
     auto set_elements(ElementsList elements) -> void { m_elements = std::move(elements); }
+
     auto push_back(std::unique_ptr<Type> element) -> void { m_elements.push_back(std::move(element)); }
-    auto push_front(std::unique_ptr<Type> element) -> void { m_elements.push_front(std::move(element)); }
+    auto push_front(std::unique_ptr<Type> element) -> void {
+      m_elements.insert(m_elements.begin(), std::move(element));
+    }
+
     auto clear() -> void { m_elements.clear(); }
 
-    [[nodiscard]] auto begin() -> ElementsList::iterator { return m_elements.begin(); }
     [[nodiscard]] auto begin() const -> ElementsList::const_iterator { return m_elements.begin(); }
+    [[nodiscard]] auto begin() -> ElementsList::iterator { return m_elements.begin(); }
 
-    [[nodiscard]] auto end() -> ElementsList::iterator { return m_elements.end(); }
     [[nodiscard]] auto end() const -> ElementsList::const_iterator { return m_elements.end(); }
+    [[nodiscard]] auto end() -> ElementsList::iterator { return m_elements.end(); }
 
   private:
     ElementsList m_elements;
