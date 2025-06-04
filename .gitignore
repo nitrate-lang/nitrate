@@ -38,4 +38,4 @@ out.json
 
 !compiler/lexer/corpus/program.nit
 compiler/lexer/corpus/
-
+fuzz-*.log
