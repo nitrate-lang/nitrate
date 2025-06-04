@@ -27,6 +27,13 @@
 
 using namespace nitrate::compiler::lexer;
 
+namespace boost {
+  void throw_exception(const std::exception &e) {
+    spdlog::error("[Lexer] Exception thrown: {}", e.what());
+    std::terminate();  // Terminate the program on lexer exceptions
+  }
+}  // namespace boost
+
 static const auto LEXER_FILENAME = boost::flyweight<std::string>("stdin");
 
 extern "C" auto LLVMFuzzerInitialize(int *, char ***) -> int {  // NOLINT(readability-identifier-naming)
