@@ -30,7 +30,7 @@ target_include_directories(${TARGET_NAME} PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>)
 if(NITRATE_COMPILER_FUZZING)
-  target_compile_options(${TARGET_NAME} PRIVATE -fsanitize=fuzzer)
+  target_compile_options(${TARGET_NAME} PRIVATE -fsanitize=fuzzer -fprofile-instr-generate -fcoverage-mapping)
 endif()
 
 install(TARGETS ${TARGET_NAME}
