@@ -21,6 +21,7 @@
 
 #include <boost/flyweight.hpp>
 #include <boost/flyweight/flyweight_fwd.hpp>
+#include <deque>
 #include <iostream>
 #include <memory>
 #include <nitrate-lexer/Token.hh>
@@ -161,18 +162,33 @@ namespace nitrate::compiler::parser {
   PLACEHOLDER_IMPL(FString, ASTKind::gFString);  // TODO: Implement node
 
   class String : public Expr {
-    boost::flyweight<std::string> m_value;
+    std::pmr::string m_value;
 
   public:
-    String(boost::flyweight<std::string> value) : Expr(ASTKind::gString), m_value(std::move(value)) {}
+    String(std::pmr::string value = "") : Expr(ASTKind::gString), m_value(std::move(value)) {}
 
-    [[nodiscard]] constexpr auto get_value() const -> const std::string& { return m_value.get(); }
-    auto set_value(const boost::flyweight<std::string>& value) -> void { m_value = value; }
+    [[nodiscard]] constexpr auto get_value() const -> const std::pmr::string& { return m_value; }
+    auto set_value(std::pmr::string value) -> void { m_value = std::move(value); }
   };
 
   PLACEHOLDER_IMPL(Char, ASTKind::gChar);  // TODO: Implement node
 
-  PLACEHOLDER_IMPL(List, ASTKind::gList);                  // TODO: Implement node
+  class List : public Expr {
+  public:
+    using ElementsList = std::pmr::deque<std::unique_ptr<Expr>>;
+
+    List(ElementsList elements = {}) : Expr(ASTKind::gList), m_elements(std::move(elements)) {}
+
+    [[nodiscard]] constexpr auto get_elements() const -> const ElementsList& { return m_elements; }
+    [[nodiscard]] auto get_elements() -> ElementsList& { return m_elements; }
+    auto set_elements(ElementsList elements) -> void { m_elements = std::move(elements); }
+    auto push_back(std::unique_ptr<Expr> element) -> void { m_elements.push_back(std::move(element)); }
+    auto push_front(std::unique_ptr<Expr> element) -> void { m_elements.push_front(std::move(element)); }
+
+  private:
+    ElementsList m_elements;
+  };
+
   PLACEHOLDER_IMPL(Ident, ASTKind::gIdent);                // TODO: Implement node
   PLACEHOLDER_IMPL(Index, ASTKind::gIndex);                // TODO: Implement node
   PLACEHOLDER_IMPL(Slice, ASTKind::gSlice);                // TODO: Implement node
