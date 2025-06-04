@@ -50,7 +50,7 @@ namespace nitrate::compiler::parser {
     constexpr auto discard() -> void { m_is_discarded = true; }
 
     [[nodiscard]] constexpr auto is_parenthesized() const -> bool { return m_is_parenthesized; }
-    constexpr auto set_parenthesized(bool is_parenthesized) -> void { m_is_parenthesized = is_parenthesized; }
+    constexpr auto set_parenthesized(bool b) -> void { m_is_parenthesized = b; }
 
     [[nodiscard]] constexpr auto source_range() const -> const lexer::FileSourceRange& { return m_source_range.get(); }
 
