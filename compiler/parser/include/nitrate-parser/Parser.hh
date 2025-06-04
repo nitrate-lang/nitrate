@@ -39,13 +39,13 @@ namespace nitrate::compiler::parser {
 
     [[nodiscard]] auto parse() -> std::unique_ptr<Expr>;
 
-    [[nodiscard]] constexpr auto symbol_table() -> SymbolTable& { return m_symbol_table; }
-    [[nodiscard]] constexpr auto symbol_table() const -> const SymbolTable& { return m_symbol_table; }
+    [[nodiscard]] auto symbol_table() -> std::shared_ptr<SymbolTable> { return m_symbol_table; }
+    [[nodiscard]] auto symbol_table() const -> std::shared_ptr<const SymbolTable> { return m_symbol_table; }
     [[nodiscard]] constexpr auto lexer() -> lexer::Lexer& { return m_lexer; }
     [[nodiscard]] constexpr auto lexer() const -> const lexer::Lexer& { return m_lexer; }
 
   private:
     lexer::Lexer& m_lexer;
-    SymbolTable m_symbol_table;
+    std::shared_ptr<SymbolTable> m_symbol_table;
   };
 }  // namespace nitrate::compiler::parser
