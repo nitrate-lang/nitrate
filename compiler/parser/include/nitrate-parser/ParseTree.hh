@@ -69,56 +69,56 @@ namespace nitrate::compiler::parser {
     name() : Expr(type) {}           \
   };
 
-  PLACEHOLDER_IMPL(BinExpr, ASTKind::gBinExpr);
-  PLACEHOLDER_IMPL(UnaryExpr, ASTKind::gUnaryExpr);
-  PLACEHOLDER_IMPL(Number, ASTKind::gNumber);
-  PLACEHOLDER_IMPL(FString, ASTKind::gFString);
-  PLACEHOLDER_IMPL(String, ASTKind::gString);
-  PLACEHOLDER_IMPL(Char, ASTKind::gChar);
-  PLACEHOLDER_IMPL(List, ASTKind::gList);
-  PLACEHOLDER_IMPL(Ident, ASTKind::gIdent);
-  PLACEHOLDER_IMPL(Index, ASTKind::gIndex);
-  PLACEHOLDER_IMPL(Slice, ASTKind::gSlice);
-  PLACEHOLDER_IMPL(Call, ASTKind::gCall);
-  PLACEHOLDER_IMPL(TemplateCall, ASTKind::gTemplateCall);
-  PLACEHOLDER_IMPL(If, ASTKind::gIf);
-  PLACEHOLDER_IMPL(Else, ASTKind::gElse);
-  PLACEHOLDER_IMPL(For, ASTKind::gFor);
-  PLACEHOLDER_IMPL(While, ASTKind::gWhile);
-  PLACEHOLDER_IMPL(Do, ASTKind::gDo);
-  PLACEHOLDER_IMPL(Switch, ASTKind::gSwitch);
-  PLACEHOLDER_IMPL(Break, ASTKind::gBreak);
-  PLACEHOLDER_IMPL(Continue, ASTKind::gContinue);
-  PLACEHOLDER_IMPL(Return, ASTKind::gReturn);
-  PLACEHOLDER_IMPL(Foreach, ASTKind::gForeach);
-  PLACEHOLDER_IMPL(Try, ASTKind::gTry);
-  PLACEHOLDER_IMPL(Catch, ASTKind::gCatch);
-  PLACEHOLDER_IMPL(Throw, ASTKind::gThrow);
-  PLACEHOLDER_IMPL(Await, ASTKind::gAwait);
-  PLACEHOLDER_IMPL(Asm, ASTKind::gAsm);
+  PLACEHOLDER_IMPL(BinExpr, ASTKind::gBinExpr);            // TODO: Implement node
+  PLACEHOLDER_IMPL(UnaryExpr, ASTKind::gUnaryExpr);        // TODO: Implement node
+  PLACEHOLDER_IMPL(Number, ASTKind::gNumber);              // TODO: Implement node
+  PLACEHOLDER_IMPL(FString, ASTKind::gFString);            // TODO: Implement node
+  PLACEHOLDER_IMPL(String, ASTKind::gString);              // TODO: Implement node
+  PLACEHOLDER_IMPL(Char, ASTKind::gChar);                  // TODO: Implement node
+  PLACEHOLDER_IMPL(List, ASTKind::gList);                  // TODO: Implement node
+  PLACEHOLDER_IMPL(Ident, ASTKind::gIdent);                // TODO: Implement node
+  PLACEHOLDER_IMPL(Index, ASTKind::gIndex);                // TODO: Implement node
+  PLACEHOLDER_IMPL(Slice, ASTKind::gSlice);                // TODO: Implement node
+  PLACEHOLDER_IMPL(Call, ASTKind::gCall);                  // TODO: Implement node
+  PLACEHOLDER_IMPL(TemplateCall, ASTKind::gTemplateCall);  // TODO: Implement node
+  PLACEHOLDER_IMPL(If, ASTKind::gIf);                      // TODO: Implement node
+  PLACEHOLDER_IMPL(Else, ASTKind::gElse);                  // TODO: Implement node
+  PLACEHOLDER_IMPL(For, ASTKind::gFor);                    // TODO: Implement node
+  PLACEHOLDER_IMPL(While, ASTKind::gWhile);                // TODO: Implement node
+  PLACEHOLDER_IMPL(Do, ASTKind::gDo);                      // TODO: Implement node
+  PLACEHOLDER_IMPL(Switch, ASTKind::gSwitch);              // TODO: Implement node
+  PLACEHOLDER_IMPL(Break, ASTKind::gBreak);                // TODO: Implement node
+  PLACEHOLDER_IMPL(Continue, ASTKind::gContinue);          // TODO: Implement node
+  PLACEHOLDER_IMPL(Return, ASTKind::gReturn);              // TODO: Implement node
+  PLACEHOLDER_IMPL(Foreach, ASTKind::gForeach);            // TODO: Implement node
+  PLACEHOLDER_IMPL(Try, ASTKind::gTry);                    // TODO: Implement node
+  PLACEHOLDER_IMPL(Catch, ASTKind::gCatch);                // TODO: Implement node
+  PLACEHOLDER_IMPL(Throw, ASTKind::gThrow);                // TODO: Implement node
+  PLACEHOLDER_IMPL(Await, ASTKind::gAwait);                // TODO: Implement node
+  PLACEHOLDER_IMPL(Asm, ASTKind::gAsm);                    // TODO: Implement node
 
-  PLACEHOLDER_IMPL(InferTy, ASTKind::tInfer);
-  PLACEHOLDER_IMPL(OpaqueTy, ASTKind::tOpaque);
-  PLACEHOLDER_IMPL(NamedTy, ASTKind::tNamed);
-  PLACEHOLDER_IMPL(RefTy, ASTKind::tRef);
-  PLACEHOLDER_IMPL(PtrTy, ASTKind::tPtr);
-  PLACEHOLDER_IMPL(ArrayTy, ASTKind::tArray);
-  PLACEHOLDER_IMPL(TupleTy, ASTKind::tTuple);
-  PLACEHOLDER_IMPL(TemplateTy, ASTKind::tTemplate);
-  PLACEHOLDER_IMPL(LambdaTy, ASTKind::tLambda);
+  PLACEHOLDER_IMPL(InferTy, ASTKind::tInfer);        // TODO: Implement node
+  PLACEHOLDER_IMPL(OpaqueTy, ASTKind::tOpaque);      // TODO: Implement node
+  PLACEHOLDER_IMPL(NamedTy, ASTKind::tNamed);        // TODO: Implement node
+  PLACEHOLDER_IMPL(RefTy, ASTKind::tRef);            // TODO: Implement node
+  PLACEHOLDER_IMPL(PtrTy, ASTKind::tPtr);            // TODO: Implement node
+  PLACEHOLDER_IMPL(ArrayTy, ASTKind::tArray);        // TODO: Implement node
+  PLACEHOLDER_IMPL(TupleTy, ASTKind::tTuple);        // TODO: Implement node
+  PLACEHOLDER_IMPL(TemplateTy, ASTKind::tTemplate);  // TODO: Implement node
+  PLACEHOLDER_IMPL(LambdaTy, ASTKind::tLambda);      // TODO: Implement node
 
-  PLACEHOLDER_IMPL(Let, ASTKind::sLet);
-  PLACEHOLDER_IMPL(Var, ASTKind::sVar);
-  PLACEHOLDER_IMPL(Fn, ASTKind::sFn);
-  PLACEHOLDER_IMPL(Enum, ASTKind::sEnum);
-  PLACEHOLDER_IMPL(Struct, ASTKind::sStruct);
-  PLACEHOLDER_IMPL(Union, ASTKind::sUnion);
-  PLACEHOLDER_IMPL(Contract, ASTKind::sContract);
-  PLACEHOLDER_IMPL(Trait, ASTKind::sTrait);
-  PLACEHOLDER_IMPL(TypeDef, ASTKind::sTypeDef);
-  PLACEHOLDER_IMPL(Scope, ASTKind::sScope);
-  PLACEHOLDER_IMPL(Import, ASTKind::sImport);
-  PLACEHOLDER_IMPL(UnitTest, ASTKind::sUnitTest);
+  PLACEHOLDER_IMPL(Let, ASTKind::sLet);            // TODO: Implement node
+  PLACEHOLDER_IMPL(Var, ASTKind::sVar);            // TODO: Implement node
+  PLACEHOLDER_IMPL(Fn, ASTKind::sFn);              // TODO: Implement node
+  PLACEHOLDER_IMPL(Enum, ASTKind::sEnum);          // TODO: Implement node
+  PLACEHOLDER_IMPL(Struct, ASTKind::sStruct);      // TODO: Implement node
+  PLACEHOLDER_IMPL(Union, ASTKind::sUnion);        // TODO: Implement node
+  PLACEHOLDER_IMPL(Contract, ASTKind::sContract);  // TODO: Implement node
+  PLACEHOLDER_IMPL(Trait, ASTKind::sTrait);        // TODO: Implement node
+  PLACEHOLDER_IMPL(TypeDef, ASTKind::sTypeDef);    // TODO: Implement node
+  PLACEHOLDER_IMPL(Scope, ASTKind::sScope);        // TODO: Implement node
+  PLACEHOLDER_IMPL(Import, ASTKind::sImport);      // TODO: Implement node
+  PLACEHOLDER_IMPL(UnitTest, ASTKind::sUnitTest);  // TODO: Implement node
 
 #define W_NITRATE_PARSER_EXPR_ACCEPT_METHOD(visitor_name, constness)     \
   constexpr auto Expr::accept(visitor_name& visitor) constness -> void { \
