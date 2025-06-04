@@ -66,11 +66,6 @@ BOOST_SYMBOL_EXPORT auto Token::dump(std::ostream& os, bool include_source_range
           break;
         }
 
-        case StringType::TripleQuote: {
-          j["string_type"] = "triple_quoted";
-          break;
-        }
-
         case StringType::RawString: {
           j["string_type"] = "raw";
           break;
