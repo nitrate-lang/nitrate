@@ -23,8 +23,11 @@
 #include <fstream>
 #include <iostream>
 #include <nitrate-lexer/Lexer.hh>
+#include <nitrate-parser/ParseTree.hh>
+#include <nitrate-parser/Parser.hh>
 
 using namespace nitrate::compiler::lexer;
+using namespace nitrate::compiler::parser;
 
 auto main(int argc, char* argv[]) -> int {
   std::vector<std::string> args(argv, argv + argc);
@@ -41,8 +44,9 @@ auto main(int argc, char* argv[]) -> int {
   }
 
   auto lexer = Lexer(is, boost::flyweight<std::string>(input_file));
+  auto parser = Parser(lexer);
 
-  // TODO: Parse using the lexer
+  (void)parser.parse();
 
   return 0;
 }

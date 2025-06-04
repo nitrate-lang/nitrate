@@ -23,8 +23,11 @@
 #include <fstream>
 #include <iostream>
 #include <nitrate-lexer/Lexer.hh>
+#include <nitrate-parser/ParseTree.hh>
+#include <nitrate-parser/Parser.hh>
 
 using namespace nitrate::compiler::lexer;
+using namespace nitrate::compiler::parser;
 
 auto main(int argc, char* argv[]) -> int {
   spdlog::enable_backtrace(32);
@@ -44,8 +47,9 @@ auto main(int argc, char* argv[]) -> int {
 
   {
     auto lexer = Lexer(std::cin, boost::flyweight<std::string>("stdin"));
+    auto parser = Parser(lexer);
 
-    // TODO: Parse using the lexer
+    parser.parse()->dump(os);
   }
 
   return 0;

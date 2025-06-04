@@ -23,8 +23,11 @@
 #include <boost/iostreams/device/array.hpp>
 #include <boost/iostreams/stream.hpp>
 #include <nitrate-lexer/Lexer.hh>
+#include <nitrate-parser/ParseTree.hh>
+#include <nitrate-parser/Parser.hh>
 
 using namespace nitrate::compiler::lexer;
+using namespace nitrate::compiler::parser;
 
 namespace boost {
   void throw_exception(const std::exception &e) {
@@ -49,8 +52,9 @@ extern "C" auto LLVMFuzzerTestOneInput(const uint8_t *data,  // NOLINT(readabili
                                        size_t size) -> int {
   auto input = boost::iostreams::stream<boost::iostreams::array_source>(reinterpret_cast<const char *>(data), size);
   auto lexer = Lexer(input, LEXER_FILENAME);
+  auto parser = Parser(lexer);
 
-  // TODO: Parse using the lexer
+  (void)parser.parse();
 
   return 0;  // Values other than 0 and -1 are reserved for future use.
 }
