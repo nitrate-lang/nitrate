@@ -8,16 +8,23 @@ InlayHints:
 Diagnostics:
   ClangTidy:
     Add: modernize* readability* performance* bugprone* cppcoreguidelines*
-    Remove: modernize-use-trailing-return-type
 CompileFlags:
   Add:
     [
-      -std=gnu++20,
-      -I/usr/include/c++/13/,
-      -I/usr/include/x86_64-linux-gnu/c++/13,
       -Wall,
       -Wextra,
+      -Wpedantic,
       -Werror,
-      -pedantic,
-      -Wno-gnu-zero-variadic-macro-arguments,
+      -Wshadow,
+      -Wconversion,
+      -Wsign-conversion,
+      -Wno-error=unused-parameter,
+      -Wno-error=unused-variable,
+      -Wno-error=unused-function,
+      -Wno-error=deprecated,
+      -fstack-protector,
+      -fPIC,
+      -fno-rtti,
+      -fno-exceptions,
+      -std=c++20,
     ]

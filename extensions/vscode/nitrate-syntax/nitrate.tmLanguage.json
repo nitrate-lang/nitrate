@@ -3,16 +3,16 @@
   "name": "nitrate",
   "patterns": [
     {
-      "include": "#OPERATORS"
+      "include": "#COMMENT"
     },
     {
-      "include": "#WORDS"
+      "include": "#OPERATORS"
     },
     {
       "include": "#LITERAL"
     },
     {
-      "include": "#COMMENT"
+      "include": "#WORDS"
     },
     {
       "include": "#IDENTIFIER"
@@ -31,23 +31,19 @@
       "patterns": [
         {
           "name": "keyword.control.nit",
-          "match": "\\b(if|else|for|while|do|switch|break|continue|ret|foreach|try|catch|throw|async|await)\\b"
+          "match": "\\b(if|else|for|while|do|switch|break|continue|ret|foreach|try|catch|throw|async|await|asm)\\b"
         },
         {
           "name": "keyword.operator.nit",
-          "match": "\\b(as|bitcast_as|in|out|sizeof|bitsizeof|alignof|typeof|comptime)\\b"
-        },
-        {
-          "name": "keyword.other.nit",
-          "match": "\\b(type|__fstring|promise|__asm__)\\b"
+          "match": "\\b(as|bitcast_as|sizeof|alignof|typeof|in|out)\\b"
         },
         {
           "name": "storage.type.nit",
-          "match": "\\b(scope|import|let|var|const|struct|region|group|class|union|opaque|enum|fn|escape_block|unit_assert)\\b"
+          "match": "\\b(let|var|fn|enum|struct|class|union|interface|trait|opaque|type|scope|import|unit_test)\\b"
         },
         {
           "name": "storage.modifier.nit",
-          "match": "\\b(pub|sec|pro|static|safe|unsafe|pure|impure|quasi|retro|inline|foreign)\\b"
+          "match": "\\b(safe|unsafe|promise|static|mut|const|pub|sec|pro)\\b"
         },
         {
           "name": "constant.language.nit",
@@ -55,7 +51,7 @@
         },
         {
           "name": "keyword.other.nit",
-          "match": "\\b(void|u1|u8|u16|u32|u64|u128|i8|i16|i32|i64|i128|f8|f16|f32|f64|f128|bool|string|str|isize|usize|uintn|intn|any)\\b"
+          "match": "\\b(bool|u1|u8|u16|u32|u64|u128|i8|i16|i32|i64|i128|f8|f16|f32|f64|f128|str|isize|usize|uint|int|any)\\b"
         }
       ]
     },
@@ -188,7 +184,12 @@
         {
           "name": "comment.block.nit",
           "begin": "/\\*",
-          "end": "\\*/"
+          "end": "\\*/",
+          "patterns": [
+            {
+              "include": "#COMMENT"
+            }
+          ]
         },
         {
           "name": "comment.line.nit",
@@ -197,10 +198,6 @@
         {
           "name": "comment.line.nit",
           "match": "#.*"
-        },
-        {
-          "name": "comment.line.nit",
-          "match": "~>.*"
         }
       ]
     },

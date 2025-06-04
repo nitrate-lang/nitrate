@@ -30,3 +30,12 @@
 *.exe
 *.out
 *.app
+
+.build/
+install/
+example.nit
+out.json
+
+compiler/lexer/corpus/
+compiler/lexer/corpus-min/
+fuzz-*.log
