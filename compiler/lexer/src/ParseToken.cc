@@ -173,21 +173,6 @@ class Lexer::LexicalParser {
 public:
   constexpr LexicalParser(Lexer &lexer) : m_lexer(lexer) {}
 
-  [[nodiscard]] auto skip_bytes_while(auto predicate) -> bool {
-    while (true) {
-      auto ch = m_lexer.peek_byte();
-      if (!ch.has_value() || !predicate(*ch)) {
-        break;
-      }
-
-      if (!m_lexer.next_byte().has_value()) [[unlikely]] {
-        return false;  // End of input || error
-      }
-    }
-
-    return true;
-  }
-
   [[nodiscard]] auto consume_while(auto predicate) -> bool {
     while (true) {
       auto ch = m_lexer.peek_byte();
@@ -228,7 +213,8 @@ public:
       return std::nullopt;
     }
 
-    if (auto tick = m_lexer.next_byte(); !tick.has_value() || *tick != '`') [[unlikely]] {
+    auto tick = m_lexer.next_byte();
+    if (!tick.has_value() || *tick != '`') [[unlikely]] {
       spdlog::error("[Lexer] Expected a closing tick terminator for atypical identifier, but found: '{}'",
                     tick.value_or(' '));
       return std::nullopt;
@@ -568,6 +554,8 @@ public:
     std::string comment_value;
     comment_value += "/";  // Include the initial '/'
 
+    uint32_t depth = 1;
+
     while (true) {
       auto ch = m_lexer.next_byte();
       if (!ch.has_value()) [[unlikely]] {
@@ -575,17 +563,23 @@ public:
         return std::nullopt;  // End of input or error
       }
 
-      if (*ch == '*' && m_lexer.peek_byte() == '/') {
-        comment_value += "*/";  // Include the closing '*/'
-        if (!m_lexer.next_byte()) {
-          spdlog::error("[Lexer] Failed to read the closing '*/' in a multiline comment");
-          return std::nullopt;
+      auto next_ch = m_lexer.peek_byte();
+
+      if (*ch == '/' && next_ch == '*') {
+        depth++;
+        comment_value += "/*";
+        (void)m_lexer.next_byte();
+      } else if (*ch == '*' && next_ch == '/') {
+        depth--;
+        comment_value += "*/";
+        (void)m_lexer.next_byte();
+
+        if (depth == 0) {
+          break;  // End of multiline comment
         }
-
-        break;
+      } else {
+        comment_value += static_cast<char>(*ch);
       }
-
-      comment_value += static_cast<char>(*ch);
     }
 
     return comment_value;
@@ -647,10 +641,7 @@ public:
       }
 
       operator_value += static_cast<char>(*next_ch);
-      if (!m_lexer.next_byte().has_value()) [[unlikely]] {
-        spdlog::error("[Lexer] Failed to read the next byte of an operator");
-        return std::nullopt;  // End of input or error
-      }
+      (void)m_lexer.next_byte();
     }
 
     if (is_operator(operator_value)) {
@@ -670,7 +661,7 @@ public:
 auto Lexer::parse_next_token() -> std::optional<Token> {
   auto lex = LexicalParser(*this);
 
-  if (!lex.skip_bytes_while([](auto ch) { return IS_WHITESPACE[ch]; })) {
+  if (!lex.consume_while([](auto ch) { return IS_WHITESPACE[ch]; })) {
     spdlog::error("[Lexer] Failed to skip whitespace");
     return std::nullopt;
   }
