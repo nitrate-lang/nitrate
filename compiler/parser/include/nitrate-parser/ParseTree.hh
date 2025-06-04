@@ -20,6 +20,7 @@
 #pragma once
 
 #include <boost/flyweight.hpp>
+#include <boost/flyweight/flyweight_fwd.hpp>
 #include <iostream>
 #include <memory>
 #include <nitrate-lexer/Token.hh>
@@ -156,10 +157,21 @@ namespace nitrate::compiler::parser {
     auto set_postfix(bool is_postfix) -> void { m_is_postfix = is_postfix; }
   };
 
-  PLACEHOLDER_IMPL(Number, ASTKind::gNumber);              // TODO: Implement node
-  PLACEHOLDER_IMPL(FString, ASTKind::gFString);            // TODO: Implement node
-  PLACEHOLDER_IMPL(String, ASTKind::gString);              // TODO: Implement node
-  PLACEHOLDER_IMPL(Char, ASTKind::gChar);                  // TODO: Implement node
+  PLACEHOLDER_IMPL(Number, ASTKind::gNumber);    // TODO: Implement node
+  PLACEHOLDER_IMPL(FString, ASTKind::gFString);  // TODO: Implement node
+
+  class String : public Expr {
+    boost::flyweight<std::string> m_value;
+
+  public:
+    String(boost::flyweight<std::string> value) : Expr(ASTKind::gString), m_value(std::move(value)) {}
+
+    [[nodiscard]] constexpr auto get_value() const -> const std::string& { return m_value.get(); }
+    auto set_value(const boost::flyweight<std::string>& value) -> void { m_value = value; }
+  };
+
+  PLACEHOLDER_IMPL(Char, ASTKind::gChar);  // TODO: Implement node
+
   PLACEHOLDER_IMPL(List, ASTKind::gList);                  // TODO: Implement node
   PLACEHOLDER_IMPL(Ident, ASTKind::gIdent);                // TODO: Implement node
   PLACEHOLDER_IMPL(Index, ASTKind::gIndex);                // TODO: Implement node
