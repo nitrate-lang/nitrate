@@ -20,10 +20,10 @@
 #pragma once
 
 #include <boost/flyweight.hpp>
+#include <iostream>
 #include <nitrate-lexer/Token.hh>
 #include <nitrate-parser/ParseTreeFwd.hh>
 #include <nitrate-parser/Visitor.hh>
-#include <ostream>
 
 namespace nitrate::compiler::parser {
   class Expr {
@@ -59,7 +59,7 @@ namespace nitrate::compiler::parser {
     constexpr auto accept(ConstVisitor& visitor) const -> void;
     constexpr auto accept(Visitor& visitor) -> void;
 
-    auto dump(std::ostream& os) const -> std::ostream&;
+    auto dump(std::ostream& os = std::cout) const -> std::ostream&;
   };
 
 #define PLACEHOLDER_IMPL(name, type) \
