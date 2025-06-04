@@ -600,7 +600,7 @@ public:
     }
 
     const auto ch = *first_ch;
-    if (is_punctor(ch) && m_lexer.peek_byte() != ':') {
+    if (auto is_scope_operator = ch == ':' && m_lexer.peek_byte() == ':'; !is_scope_operator && is_punctor(ch)) {
       auto punctor = *punctor_from_byte(ch);
       const auto end_position = m_lexer.current_source_location();
       auto source_range = FileSourceRange(m_lexer.current_file(), start_position, end_position);
