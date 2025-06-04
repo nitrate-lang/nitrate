@@ -21,4 +21,6 @@
 
 #include <nitrate-lexer/Lexer.hh>
 
+// TODO: Unit test the lexer
+
 TEST(test, test) { EXPECT_EQ(1, 1); }
