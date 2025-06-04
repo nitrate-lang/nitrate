@@ -42,7 +42,7 @@ namespace nitrate::compiler::parser {
       uint64_t m_id : 56;
 
     public:
-      SourceLocationTag() : m_id(0) {}
+      constexpr SourceLocationTag() : m_id(0) {}
       SourceLocationTag(boost::flyweight<lexer::FileSourceRange> source_range) {
         std::lock_guard lock(SOURCE_RANGES_LOCK_GLOBAL);
         m_id = ++SOURCE_RANGES_ID_CTR_GLOBAL;
@@ -73,7 +73,7 @@ namespace nitrate::compiler::parser {
     SourceLocationTag m_source_range;
 
   public:
-    Expr(ASTKind kind) : m_kind(kind) {}
+    constexpr Expr(ASTKind kind) : m_kind(kind) {}
 
     Expr(const Expr&) = delete;
     Expr(Expr&&) = delete;
@@ -147,15 +147,15 @@ namespace nitrate::compiler::parser {
 
     [[nodiscard]] constexpr auto get_operand() const -> const Expr& { return *m_operand; }
     [[nodiscard]] constexpr auto get_operand() -> Expr& { return *m_operand; }
-    [[nodiscard]] auto get_operand_ptr() const -> const std::unique_ptr<Expr>& { return m_operand; }
-    [[nodiscard]] auto get_operand_ptr() -> std::unique_ptr<Expr>& { return m_operand; }
+    [[nodiscard]] constexpr auto get_operand_ptr() const -> const std::unique_ptr<Expr>& { return m_operand; }
+    [[nodiscard]] constexpr auto get_operand_ptr() -> std::unique_ptr<Expr>& { return m_operand; }
     auto set_operand(std::unique_ptr<Expr> operand) -> void { m_operand = std::move(operand); }
 
     [[nodiscard]] constexpr auto get_op() const -> UnaryOp { return m_op; }
-    auto set_op(UnaryOp op) -> void { m_op = op; }
+    constexpr auto set_op(UnaryOp op) -> void { m_op = op; }
 
     [[nodiscard]] constexpr auto is_postfix() const -> bool { return m_is_postfix; }
-    auto set_postfix(bool is_postfix) -> void { m_is_postfix = is_postfix; }
+    constexpr auto set_postfix(bool is_postfix) -> void { m_is_postfix = is_postfix; }
   };
 
   PLACEHOLDER_IMPL(Number, ASTKind::gNumber);    // TODO: Implement node
@@ -180,10 +180,20 @@ namespace nitrate::compiler::parser {
     List(ElementsList elements = {}) : Expr(ASTKind::gList), m_elements(std::move(elements)) {}
 
     [[nodiscard]] constexpr auto get_elements() const -> const ElementsList& { return m_elements; }
-    [[nodiscard]] auto get_elements() -> ElementsList& { return m_elements; }
+    [[nodiscard]] constexpr auto get_elements() -> ElementsList& { return m_elements; }
+    [[nodiscard]] constexpr auto is_empty() const -> bool { return m_elements.empty(); }
+    [[nodiscard]] constexpr auto size() const -> size_t { return m_elements.size(); }
+
     auto set_elements(ElementsList elements) -> void { m_elements = std::move(elements); }
     auto push_back(std::unique_ptr<Expr> element) -> void { m_elements.push_back(std::move(element)); }
     auto push_front(std::unique_ptr<Expr> element) -> void { m_elements.push_front(std::move(element)); }
+    auto clear() -> void { m_elements.clear(); }
+
+    [[nodiscard]] auto begin() -> ElementsList::iterator { return m_elements.begin(); }
+    [[nodiscard]] auto begin() const -> ElementsList::const_iterator { return m_elements.begin(); }
+
+    [[nodiscard]] auto end() -> ElementsList::iterator { return m_elements.end(); }
+    [[nodiscard]] auto end() const -> ElementsList::const_iterator { return m_elements.end(); }
 
   private:
     ElementsList m_elements;
@@ -214,12 +224,12 @@ namespace nitrate::compiler::parser {
 
   class Break : public Expr {
   public:
-    Break() : Expr(ASTKind::gBreak) {}
+    constexpr Break() : Expr(ASTKind::gBreak) {}
   };
 
   class Continue : public Expr {
   public:
-    Continue() : Expr(ASTKind::gContinue) {}
+    constexpr Continue() : Expr(ASTKind::gContinue) {}
   };
 
   PLACEHOLDER_IMPL(Return, ASTKind::gReturn);    // TODO: Implement node
@@ -232,12 +242,12 @@ namespace nitrate::compiler::parser {
 
   class Type : public Expr {
   public:
-    Type(ASTKind kind) : Expr(kind) {}
+    constexpr Type(ASTKind kind) : Expr(kind) {}
   };
 
   class InferTy : public Type {
   public:
-    InferTy() : Type(ASTKind::tInfer) {}
+    constexpr InferTy() : Type(ASTKind::tInfer) {}
   };
 
   PLACEHOLDER_IMPL(OpaqueTy, ASTKind::tOpaque);  // TODO: Implement node
@@ -269,8 +279,53 @@ namespace nitrate::compiler::parser {
     auto set_target(std::unique_ptr<Type> target_type) -> void { m_target = std::move(target_type); }
   };
 
-  PLACEHOLDER_IMPL(ArrayTy, ASTKind::tArray);        // TODO: Implement node
-  PLACEHOLDER_IMPL(TupleTy, ASTKind::tTuple);        // TODO: Implement node
+  class ArrayTy : public Type {
+    std::unique_ptr<Type> m_element_type;
+    std::unique_ptr<Expr> m_size;
+
+  public:
+    ArrayTy(std::unique_ptr<Type> element_type, std::unique_ptr<Expr> size)
+        : Type(ASTKind::tArray), m_element_type(std::move(element_type)), m_size(std::move(size)) {}
+
+    [[nodiscard]] constexpr auto get_element_type() const -> const Type& { return *m_element_type; }
+    [[nodiscard]] constexpr auto get_element_type() -> Type& { return *m_element_type; }
+    [[nodiscard]] auto get_element_type_ptr() const -> const std::unique_ptr<Type>& { return m_element_type; }
+    [[nodiscard]] auto get_element_type_ptr() -> std::unique_ptr<Type>& { return m_element_type; }
+    auto set_element_type(std::unique_ptr<Type> element_type) -> void { m_element_type = std::move(element_type); }
+
+    [[nodiscard]] constexpr auto get_size() const -> const Expr& { return *m_size; }
+    [[nodiscard]] constexpr auto get_size() -> Expr& { return *m_size; }
+    [[nodiscard]] auto get_size_ptr() const -> const std::unique_ptr<Expr>& { return m_size; }
+    [[nodiscard]] auto get_size_ptr() -> std::unique_ptr<Expr>& { return m_size; }
+    auto set_size(std::unique_ptr<Expr> size) -> void { m_size = std::move(size); }
+  };
+
+  class TupleTy : public Type {
+  public:
+    using ElementsList = std::pmr::deque<std::unique_ptr<Type>>;
+
+    TupleTy(ElementsList elements = {}) : Type(ASTKind::tTuple), m_elements(std::move(elements)) {}
+
+    [[nodiscard]] constexpr auto get_elements() const -> const ElementsList& { return m_elements; }
+    [[nodiscard]] constexpr auto get_elements() -> ElementsList& { return m_elements; }
+    [[nodiscard]] constexpr auto is_empty() const -> bool { return m_elements.empty(); }
+    [[nodiscard]] constexpr auto size() const -> size_t { return m_elements.size(); }
+
+    auto set_elements(ElementsList elements) -> void { m_elements = std::move(elements); }
+    auto push_back(std::unique_ptr<Type> element) -> void { m_elements.push_back(std::move(element)); }
+    auto push_front(std::unique_ptr<Type> element) -> void { m_elements.push_front(std::move(element)); }
+    auto clear() -> void { m_elements.clear(); }
+
+    [[nodiscard]] auto begin() -> ElementsList::iterator { return m_elements.begin(); }
+    [[nodiscard]] auto begin() const -> ElementsList::const_iterator { return m_elements.begin(); }
+
+    [[nodiscard]] auto end() -> ElementsList::iterator { return m_elements.end(); }
+    [[nodiscard]] auto end() const -> ElementsList::const_iterator { return m_elements.end(); }
+
+  private:
+    ElementsList m_elements;
+  };
+
   PLACEHOLDER_IMPL(TemplateTy, ASTKind::tTemplate);  // TODO: Implement node
   PLACEHOLDER_IMPL(LambdaTy, ASTKind::tLambda);      // TODO: Implement node
 
