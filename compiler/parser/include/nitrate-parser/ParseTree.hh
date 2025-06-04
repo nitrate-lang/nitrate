@@ -211,21 +211,64 @@ namespace nitrate::compiler::parser {
   PLACEHOLDER_IMPL(While, ASTKind::gWhile);                // TODO: Implement node
   PLACEHOLDER_IMPL(Do, ASTKind::gDo);                      // TODO: Implement node
   PLACEHOLDER_IMPL(Switch, ASTKind::gSwitch);              // TODO: Implement node
-  PLACEHOLDER_IMPL(Break, ASTKind::gBreak);                // TODO: Implement node
-  PLACEHOLDER_IMPL(Continue, ASTKind::gContinue);          // TODO: Implement node
-  PLACEHOLDER_IMPL(Return, ASTKind::gReturn);              // TODO: Implement node
-  PLACEHOLDER_IMPL(Foreach, ASTKind::gForeach);            // TODO: Implement node
-  PLACEHOLDER_IMPL(Try, ASTKind::gTry);                    // TODO: Implement node
-  PLACEHOLDER_IMPL(Catch, ASTKind::gCatch);                // TODO: Implement node
-  PLACEHOLDER_IMPL(Throw, ASTKind::gThrow);                // TODO: Implement node
-  PLACEHOLDER_IMPL(Await, ASTKind::gAwait);                // TODO: Implement node
-  PLACEHOLDER_IMPL(Asm, ASTKind::gAsm);                    // TODO: Implement node
 
-  PLACEHOLDER_IMPL(InferTy, ASTKind::tInfer);        // TODO: Implement node
-  PLACEHOLDER_IMPL(OpaqueTy, ASTKind::tOpaque);      // TODO: Implement node
-  PLACEHOLDER_IMPL(NamedTy, ASTKind::tNamed);        // TODO: Implement node
-  PLACEHOLDER_IMPL(RefTy, ASTKind::tRef);            // TODO: Implement node
-  PLACEHOLDER_IMPL(PtrTy, ASTKind::tPtr);            // TODO: Implement node
+  class Break : public Expr {
+  public:
+    Break() : Expr(ASTKind::gBreak) {}
+  };
+
+  class Continue : public Expr {
+  public:
+    Continue() : Expr(ASTKind::gContinue) {}
+  };
+
+  PLACEHOLDER_IMPL(Return, ASTKind::gReturn);    // TODO: Implement node
+  PLACEHOLDER_IMPL(Foreach, ASTKind::gForeach);  // TODO: Implement node
+  PLACEHOLDER_IMPL(Try, ASTKind::gTry);          // TODO: Implement node
+  PLACEHOLDER_IMPL(Catch, ASTKind::gCatch);      // TODO: Implement node
+  PLACEHOLDER_IMPL(Throw, ASTKind::gThrow);      // TODO: Implement node
+  PLACEHOLDER_IMPL(Await, ASTKind::gAwait);      // TODO: Implement node
+  PLACEHOLDER_IMPL(Asm, ASTKind::gAsm);          // TODO: Implement node
+
+  class Type : public Expr {
+  public:
+    Type(ASTKind kind) : Expr(kind) {}
+  };
+
+  class InferTy : public Type {
+  public:
+    InferTy() : Type(ASTKind::tInfer) {}
+  };
+
+  PLACEHOLDER_IMPL(OpaqueTy, ASTKind::tOpaque);  // TODO: Implement node
+  PLACEHOLDER_IMPL(NamedTy, ASTKind::tNamed);    // TODO: Implement node
+
+  class RefTy : public Type {
+    std::unique_ptr<Type> m_target;
+
+  public:
+    RefTy(std::unique_ptr<Type> target_type) : Type(ASTKind::tRef), m_target(std::move(target_type)) {}
+
+    [[nodiscard]] constexpr auto get_target() const -> const Type& { return *m_target; }
+    [[nodiscard]] constexpr auto get_target() -> Type& { return *m_target; }
+    [[nodiscard]] auto get_target_ptr() const -> const std::unique_ptr<Type>& { return m_target; }
+    [[nodiscard]] auto get_target_ptr() -> std::unique_ptr<Type>& { return m_target; }
+    auto set_target(std::unique_ptr<Type> target_type) -> void { m_target = std::move(target_type); }
+  };
+
+  class PtrTy : public Type {
+    std::unique_ptr<Type> m_target;
+
+  public:
+    PtrTy(std::unique_ptr<Type> target_type) : Type(ASTKind::tPtr), m_target(std::move(target_type)) {}
+
+    [[nodiscard]] constexpr auto get_target() const -> const Type& { return *m_target; }
+    [[nodiscard]] constexpr auto get_target() -> Type& { return *m_target; }
+    [[nodiscard]] auto get_target_ptr() const -> const std::unique_ptr<Type>& { return m_target; }
+    [[nodiscard]] auto get_target_ptr() -> std::unique_ptr<Type>& { return m_target; }
+    auto set_target(std::unique_ptr<Type> target_type) -> void { m_target = std::move(target_type); }
+  };
+
   PLACEHOLDER_IMPL(ArrayTy, ASTKind::tArray);        // TODO: Implement node
   PLACEHOLDER_IMPL(TupleTy, ASTKind::tTuple);        // TODO: Implement node
   PLACEHOLDER_IMPL(TemplateTy, ASTKind::tTemplate);  // TODO: Implement node
