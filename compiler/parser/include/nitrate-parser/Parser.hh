@@ -34,7 +34,7 @@ namespace nitrate::compiler::parser {
     auto operator=(Parser&&) -> Parser& = delete;
     ~Parser() = default;
 
-    [[nodiscard]] auto parse_type() -> std::unique_ptr<Type>;
+    [[nodiscard]] auto parse_type() -> std::unique_ptr<Expr>;
     [[nodiscard]] auto parse_expression() -> std::unique_ptr<Expr>;
 
     [[nodiscard]] auto parse() -> std::unique_ptr<Expr>;

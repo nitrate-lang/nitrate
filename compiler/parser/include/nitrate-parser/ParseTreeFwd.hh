@@ -87,7 +87,6 @@ namespace nitrate::compiler::parser {
   class ConstVisitor;
 
   class Expr;
-  class Type;
 
   class BinExpr;
   class UnaryExpr;

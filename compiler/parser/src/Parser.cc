@@ -29,7 +29,7 @@ using namespace nitrate::compiler::parser;
 BOOST_SYMBOL_EXPORT Parser::Parser(lexer::Lexer& lexer)
     : m_lexer(lexer), m_symbol_table(std::make_shared<SymbolTable>()) {}
 
-BOOST_SYMBOL_EXPORT auto Parser::parse_type() -> std::unique_ptr<Type> {
+BOOST_SYMBOL_EXPORT auto Parser::parse_type() -> std::unique_ptr<Expr> {
   // TODO: Implement type parsing logic
 
   spdlog::critical("Parser::parse_type() is not implemented yet.");
