@@ -14,6 +14,7 @@ add_compile_options(
   -Wextra
   -Wpedantic
   -Werror
+  -Wold-style-cast
   -fno-exceptions
   -fno-rtti
 )

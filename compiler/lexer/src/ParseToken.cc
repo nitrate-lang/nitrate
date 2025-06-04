@@ -56,7 +56,9 @@ static constexpr auto IS_IDENTIFIER_FIRST_CHAR = []() {
   map['`'] = true;  // For raw identifiers
 
   /* Support UTF-8 */
-  for (uint8_t c = 0x80; c < 0xff; c++) {
+  const uint8_t first_non_ascii = 0x80;
+  const uint8_t last_non_ascii = 0xff;
+  for (size_t c = first_non_ascii; c < last_non_ascii; c++) {
     map[c] = true;
   }
 
@@ -82,7 +84,9 @@ static constexpr auto IS_IDENTIFIER_BODY_CHAR = []() {
   map['_'] = true;
 
   /* Support UTF-8 */
-  for (uint8_t c = 0x80; c < 0xff; c++) {
+  const uint8_t first_non_ascii = 0x80;
+  const uint8_t last_non_ascii = 0xff;
+  for (size_t c = first_non_ascii; c < last_non_ascii; c++) {
     map[c] = true;
   }
 
@@ -116,13 +120,39 @@ static const auto IS_OPERATOR_BYTE = []() {
   return map;
 }();
 
-/// https://stackoverflow.com/questions/1031645/how-to-detect-utf-8-in-plain-c
+static constexpr auto ESCAPE_MAP_SENTINAL = static_cast<uint8_t>(-1);
+
+static constexpr auto ESCAPE_CHAR_MAP = []() constexpr {
+  std::array<uint8_t, 256> map = {};
+  for (size_t i = 0; i < map.size(); ++i) {
+    map[i] = static_cast<uint8_t>(i);
+  }
+
+  map['0'] = '\0';
+  map['a'] = '\a';
+  map['b'] = '\b';
+  map['t'] = '\t';
+  map['n'] = '\n';
+  map['v'] = '\v';
+  map['f'] = '\f';
+  map['r'] = '\r';
+
+  map['x'] = ESCAPE_MAP_SENTINAL;
+  map['u'] = ESCAPE_MAP_SENTINAL;
+  map['o'] = ESCAPE_MAP_SENTINAL;
+
+  return map;
+}();
+
 static auto is_utf8(const char *string) -> bool {
+  // Source: https://stackoverflow.com/questions/1031645/how-to-detect-utf-8-in-plain-c
+
+  // NOLINTBEGIN(readability-magic-numbers)
   if (string == nullptr) {
     return false;
   }
 
-  const auto *bytes = (const unsigned char *)string;
+  const auto *bytes = std::bit_cast<const unsigned char *>(string);
   while (*bytes != 0U) {
     if ((  // ASCII
            // use bytes[0] <= 0x7F to allow ASCII control characters
@@ -163,6 +193,8 @@ static auto is_utf8(const char *string) -> bool {
 
     return false;
   }
+
+  // NOLINTEND(readability-magic-numbers)
 
   return true;
 }
@@ -216,7 +248,7 @@ public:
     auto tick = m_lexer.next_byte();
     if (!tick.has_value() || *tick != '`') [[unlikely]] {
       spdlog::error("[Lexer] Expected a closing tick terminator for atypical identifier, but found: '{}'",
-                    tick.value_or(' '));
+                    static_cast<char>(tick.value_or(' ')));
       return std::nullopt;
     }
 
@@ -303,9 +335,71 @@ public:
   }
 
   auto parse_string_literal() -> std::optional<Token> {
-    /// TODO: Implement string literal parsing logic
-    spdlog::warn("[Lexer] String literal parsing is not yet implemented");
-    return std::nullopt;  // Placeholder implementation
+    // TODO: Support for raw string literals
+
+    const auto start_position = m_lexer.current_source_location();
+
+    const auto first_ch = m_lexer.next_byte();
+    if (!first_ch.has_value()) [[unlikely]] {
+      spdlog::error("[Lexer] Failed to read the first byte of a string literal");
+      return std::nullopt;
+    }
+
+    const auto quote_ch = *first_ch;
+    assert(quote_ch == '"' || quote_ch == '\'' && "Expected a string literal to start with a double or single quote");
+
+    const auto string_literal_type = [&] {
+      if (quote_ch == '"') {
+        return StringType::DoubleQuote;
+      }
+
+      if (quote_ch == '\'') {
+        return StringType::SingleQuote;
+      }
+
+      assert(false && "Unrecognized string literal type");
+    }();
+
+    std::string string_value;
+    while (true) {
+      const auto current_ch = m_lexer.next_byte();
+      if (!current_ch.has_value()) [[unlikely]] {
+        spdlog::error("[Lexer] Failed to read the next byte in a string literal");
+        return std::nullopt;
+      }
+
+      const auto ch = *current_ch;
+      if (ch == quote_ch) {
+        break;
+      }
+
+      if (ch == '\\') {
+        const auto escape_ch = m_lexer.next_byte();
+        if (!escape_ch.has_value()) [[unlikely]] {
+          spdlog::error("[Lexer] Failed to read the next byte after an escape character in a string literal");
+          return std::nullopt;
+        }
+
+        const auto mapped = ESCAPE_CHAR_MAP[*escape_ch];
+        if (mapped == ESCAPE_MAP_SENTINAL) {
+          // TODO: Handle escape sequences like \x{XX}, \o{XXX}, \u{XXXX}
+          spdlog::error("[Lexer] Unsupported escape sequence in string literal: '\\{}'", static_cast<char>(*escape_ch));
+          return std::nullopt;
+        }
+
+        string_value += static_cast<char>(mapped);
+      } else {
+        string_value += static_cast<char>(ch);
+      }
+    };
+
+    const auto end_position = m_lexer.current_source_location();
+    auto source_range = FileSourceRange(m_lexer.current_file(), start_position, end_position);
+
+    auto flyweight_string_value = boost::flyweight<std::string>(std::move(string_value));
+    auto string_literal = StringLiteral(std::move(flyweight_string_value), string_literal_type);
+
+    return Token::from_string_literal(std::move(string_literal), std::move(source_range));
   }
 
   auto parse_binary_number_literal(std::string &number_value) -> bool {
@@ -501,7 +595,7 @@ public:
     }
 
     if (*first_ch != '#') [[unlikely]] {
-      spdlog::error("[Lexer] Expected a comment to start with '#', but found: '{}'", *first_ch);
+      spdlog::error("[Lexer] Expected a comment to start with '#', but found: '{}'", static_cast<char>(*first_ch));
       return std::nullopt;
     }
 
