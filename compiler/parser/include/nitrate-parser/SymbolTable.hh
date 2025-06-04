@@ -20,16 +20,19 @@
 #pragma once
 
 #include <boost/flyweight.hpp>
+#include <boost/unordered_map.hpp>
 #include <nitrate-parser/ParseTreeFwd.hh>
 #include <optional>
-#include <unordered_map>
 
 namespace nitrate::compiler::parser {
   class SymbolName {
   public:
-    SymbolName(boost::flyweight<std::string> unqualified_name, boost::flyweight<std::string> scope);
-    SymbolName(std::string_view unqualified_name, std::string_view scope = "");
+    SymbolName(std::string_view unqualified_name, std::string_view scope = "")
+        : SymbolName(boost::flyweight<std::string>(unqualified_name), boost::flyweight<std::string>(scope)) {}
 
+    SymbolName(boost::flyweight<std::string> unqualified_name, boost::flyweight<std::string> scope);
+
+    [[nodiscard]] auto operator==(const SymbolName& o) const -> bool { return qualified_name() == o.qualified_name(); }
     [[nodiscard]] auto operator<=>(const SymbolName& o) const -> std::strong_ordering {
       return qualified_name() <=> o.qualified_name();
     }
@@ -42,9 +45,11 @@ namespace nitrate::compiler::parser {
     boost::flyweight<std::string> m_unqualified_name, m_qualified_name, m_scope;
   };
 
+  inline auto hash_value(const SymbolName& name) -> std::size_t { return boost::hash_value(name.qualified_name()); }
+
   class SymbolTable {
   public:
-    SymbolTable();
+    SymbolTable() = default;
     SymbolTable(const SymbolTable&) = delete;
     SymbolTable(SymbolTable&&) = delete;
     auto operator=(const SymbolTable&) -> SymbolTable& = delete;
@@ -57,6 +62,6 @@ namespace nitrate::compiler::parser {
     [[nodiscard]] auto resolve(const SymbolName& name) const -> std::optional<Expr*>;
 
   private:
-    std::unordered_map<SymbolName, Expr*> m_symbols;
+    boost::unordered_map<SymbolName, Expr*> m_symbols;
   };
 }  // namespace nitrate::compiler::parser
