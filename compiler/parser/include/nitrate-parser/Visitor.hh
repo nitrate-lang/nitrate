@@ -27,9 +27,6 @@ namespace nitrate::compiler::parser {
   public:                                                  \
     virtual ~name() = default;                             \
                                                            \
-    virtual void visit(ref_prefix Expr& node) = 0;         \
-    virtual void visit(ref_prefix Type& node) = 0;         \
-                                                           \
     virtual void visit(ref_prefix BinExpr& node) = 0;      \
     virtual void visit(ref_prefix UnaryExpr& node) = 0;    \
     virtual void visit(ref_prefix Number& node) = 0;       \
