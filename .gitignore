@@ -38,5 +38,5 @@ out.json
 
 !compiler/lexer/corpus/program.nit
 compiler/lexer/corpus/
-compiler/lexer/corpus-new/
+compiler/lexer/corpus-min/
 fuzz-*.log
