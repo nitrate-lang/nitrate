@@ -189,7 +189,18 @@ namespace nitrate::compiler::parser {
     ElementsList m_elements;
   };
 
-  PLACEHOLDER_IMPL(Ident, ASTKind::gIdent);                // TODO: Implement node
+  class Ident : public Expr {
+    boost::flyweight<std::string> m_name;
+
+  public:
+    Ident(boost::flyweight<std::string> name) : Expr(ASTKind::gIdent), m_name(std::move(name)) {}
+    Ident(std::string name) : Expr(ASTKind::gIdent), m_name(std::move(name)) {}
+
+    [[nodiscard]] constexpr auto get_name() const -> const std::string& { return m_name.get(); }
+    auto set_name(const boost::flyweight<std::string>& name) -> void { m_name = name; }
+    auto set_name(std::string name) -> void { m_name = std::move(name); }
+  };
+
   PLACEHOLDER_IMPL(Index, ASTKind::gIndex);                // TODO: Implement node
   PLACEHOLDER_IMPL(Slice, ASTKind::gSlice);                // TODO: Implement node
   PLACEHOLDER_IMPL(Call, ASTKind::gCall);                  // TODO: Implement node
