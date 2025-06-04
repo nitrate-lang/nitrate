@@ -1,1 +1,2 @@
 -Icompiler/lexer/include
+-Icompiler/parser/include
