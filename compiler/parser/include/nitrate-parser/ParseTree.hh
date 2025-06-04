@@ -21,6 +21,7 @@
 
 #include <boost/flyweight.hpp>
 #include <iostream>
+#include <memory>
 #include <nitrate-lexer/Token.hh>
 #include <nitrate-parser/ParseTreeFwd.hh>
 #include <nitrate-parser/Visitor.hh>
@@ -31,10 +32,43 @@ namespace nitrate::compiler::parser {
     static_assert(static_cast<size_t>(ASTKIND_MAX) <= (1 << M_KIND_BITS) - 1,
                   "ASTKind must fit in 6 bits for Expr::m_kind");
 
+    class SourceLocationTag {
+      static std::unordered_map<uint64_t, boost::flyweight<lexer::FileSourceRange>> SOURCE_RANGES_GLOBAL;
+      static uint64_t SOURCE_RANGES_ID_CTR_GLOBAL;
+      static std::mutex SOURCE_RANGES_LOCK_GLOBAL;
+
+      uint64_t m_id : 56;
+
+    public:
+      SourceLocationTag() : m_id(0) {}
+      SourceLocationTag(boost::flyweight<lexer::FileSourceRange> source_range) {
+        std::lock_guard lock(SOURCE_RANGES_LOCK_GLOBAL);
+        m_id = ++SOURCE_RANGES_ID_CTR_GLOBAL;
+        SOURCE_RANGES_GLOBAL.emplace(static_cast<uint64_t>(m_id), std::move(source_range));
+      }
+
+      SourceLocationTag(const SourceLocationTag&) = delete;
+      SourceLocationTag(SourceLocationTag&& o) : m_id(o.m_id) { o.m_id = 0; }
+      auto operator=(const SourceLocationTag&) -> SourceLocationTag& = delete;
+      auto operator=(SourceLocationTag&& o) -> SourceLocationTag& = default;
+
+      ~SourceLocationTag() {
+        if (m_id != 0) {
+          std::lock_guard lock(SOURCE_RANGES_LOCK_GLOBAL);
+          SOURCE_RANGES_GLOBAL.erase(m_id);
+        }
+      }
+
+      [[nodiscard]] auto get() const -> const lexer::FileSourceRange& {
+        std::lock_guard lock(SOURCE_RANGES_LOCK_GLOBAL);
+        return SOURCE_RANGES_GLOBAL.at(m_id).get();
+      }
+    } __attribute__((packed));
+
     ASTKind m_kind : M_KIND_BITS;
     bool m_is_discarded : 1 = false;
     bool m_is_parenthesized : 1 = false;
-    boost::flyweight<lexer::FileSourceRange> m_source_range;
+    SourceLocationTag m_source_range;
 
   public:
     Expr(ASTKind kind) : m_kind(kind) {}
@@ -43,7 +77,7 @@ namespace nitrate::compiler::parser {
     Expr(Expr&&) = delete;
     auto operator=(const Expr&) -> Expr& = delete;
     auto operator=(Expr&&) -> Expr& = delete;
-    virtual ~Expr() = default;
+    virtual ~Expr();
 
     [[nodiscard]] constexpr auto get_kind() const -> ASTKind { return m_kind; }
     [[nodiscard]] constexpr auto is_discarded() const -> bool { return m_is_discarded; }
@@ -53,6 +87,9 @@ namespace nitrate::compiler::parser {
     constexpr auto set_parenthesized(bool b) -> void { m_is_parenthesized = b; }
 
     [[nodiscard]] constexpr auto source_range() const -> const lexer::FileSourceRange& { return m_source_range.get(); }
+    auto set_source_range(lexer::FileSourceRange source_range) -> void {
+      m_source_range = SourceLocationTag(boost::flyweight<lexer::FileSourceRange>(std::move(source_range)));
+    }
 
     /** Perform minimal required semantic analysis */
     [[nodiscard]] auto check(const SymbolTable& symbol_table) const -> bool;
@@ -61,7 +98,7 @@ namespace nitrate::compiler::parser {
     constexpr auto accept(Visitor& visitor) -> void;
 
     auto dump(std::ostream& os = std::cout) const -> std::ostream&;
-  };
+  } __attribute__((packed));
 
 #define PLACEHOLDER_IMPL(name, type) \
   class name : public Expr {         \
@@ -69,7 +106,13 @@ namespace nitrate::compiler::parser {
     name() : Expr(type) {}           \
   };
 
-  PLACEHOLDER_IMPL(BinExpr, ASTKind::gBinExpr);            // TODO: Implement node
+  class BinExpr : public Expr {  // TODO: Implement node
+    std::unique_ptr<Expr> m_lhs, m_rhs;
+
+  public:
+    BinExpr() : Expr(ASTKind::gBinExpr) {}
+  };
+
   PLACEHOLDER_IMPL(UnaryExpr, ASTKind::gUnaryExpr);        // TODO: Implement node
   PLACEHOLDER_IMPL(Number, ASTKind::gNumber);              // TODO: Implement node
   PLACEHOLDER_IMPL(FString, ASTKind::gFString);            // TODO: Implement node
