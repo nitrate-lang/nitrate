@@ -20,13 +20,13 @@
 #pragma once
 
 #include <boost/flyweight.hpp>
-#include <boost/flyweight/flyweight_fwd.hpp>
 #include <deque>
 #include <iostream>
 #include <memory>
 #include <nitrate-lexer/Token.hh>
 #include <nitrate-parser/ParseTreeFwd.hh>
 #include <nitrate-parser/Visitor.hh>
+#include <span>
 
 namespace nitrate::compiler::parser {
   class Expr {
@@ -102,10 +102,10 @@ namespace nitrate::compiler::parser {
     auto dump(std::ostream& os = std::cout) const -> std::ostream&;
   } __attribute__((packed));
 
-#define PLACEHOLDER_IMPL(name, type) \
-  class name : public Expr {         \
-  public:                            \
-    name() : Expr(type) {}           \
+#define W_PLACEHOLDER_IMPL(name, type) \
+  class name : public Expr {           \
+  public:                              \
+    name() : Expr(type) {}             \
   };
 
   class BinExpr : public Expr {
@@ -158,8 +158,8 @@ namespace nitrate::compiler::parser {
     constexpr auto set_postfix(bool is_postfix) -> void { m_is_postfix = is_postfix; }
   };
 
-  PLACEHOLDER_IMPL(Number, ASTKind::gNumber);    // TODO: Implement node
-  PLACEHOLDER_IMPL(FString, ASTKind::gFString);  // TODO: Implement node
+  W_PLACEHOLDER_IMPL(Number, ASTKind::gNumber);    // TODO: Implement node
+  W_PLACEHOLDER_IMPL(FString, ASTKind::gFString);  // TODO: Implement node
 
   class String : public Expr {
     std::pmr::string m_value;
@@ -171,7 +171,7 @@ namespace nitrate::compiler::parser {
     auto set_value(std::pmr::string value) -> void { m_value = std::move(value); }
   };
 
-  PLACEHOLDER_IMPL(Char, ASTKind::gChar);  // TODO: Implement node
+  W_PLACEHOLDER_IMPL(Char, ASTKind::gChar);  // TODO: Implement node
 
   class List : public Expr {
   public:
@@ -211,16 +211,16 @@ namespace nitrate::compiler::parser {
     auto set_name(std::string name) -> void { m_name = std::move(name); }
   };
 
-  PLACEHOLDER_IMPL(Index, ASTKind::gIndex);                // TODO: Implement node
-  PLACEHOLDER_IMPL(Slice, ASTKind::gSlice);                // TODO: Implement node
-  PLACEHOLDER_IMPL(Call, ASTKind::gCall);                  // TODO: Implement node
-  PLACEHOLDER_IMPL(TemplateCall, ASTKind::gTemplateCall);  // TODO: Implement node
-  PLACEHOLDER_IMPL(If, ASTKind::gIf);                      // TODO: Implement node
-  PLACEHOLDER_IMPL(Else, ASTKind::gElse);                  // TODO: Implement node
-  PLACEHOLDER_IMPL(For, ASTKind::gFor);                    // TODO: Implement node
-  PLACEHOLDER_IMPL(While, ASTKind::gWhile);                // TODO: Implement node
-  PLACEHOLDER_IMPL(Do, ASTKind::gDo);                      // TODO: Implement node
-  PLACEHOLDER_IMPL(Switch, ASTKind::gSwitch);              // TODO: Implement node
+  W_PLACEHOLDER_IMPL(Index, ASTKind::gIndex);                // TODO: Implement node
+  W_PLACEHOLDER_IMPL(Slice, ASTKind::gSlice);                // TODO: Implement node
+  W_PLACEHOLDER_IMPL(Call, ASTKind::gCall);                  // TODO: Implement node
+  W_PLACEHOLDER_IMPL(TemplateCall, ASTKind::gTemplateCall);  // TODO: Implement node
+  W_PLACEHOLDER_IMPL(If, ASTKind::gIf);                      // TODO: Implement node
+  W_PLACEHOLDER_IMPL(Else, ASTKind::gElse);                  // TODO: Implement node
+  W_PLACEHOLDER_IMPL(For, ASTKind::gFor);                    // TODO: Implement node
+  W_PLACEHOLDER_IMPL(While, ASTKind::gWhile);                // TODO: Implement node
+  W_PLACEHOLDER_IMPL(Do, ASTKind::gDo);                      // TODO: Implement node
+  W_PLACEHOLDER_IMPL(Switch, ASTKind::gSwitch);              // TODO: Implement node
 
   class Break : public Expr {
   public:
@@ -232,118 +232,134 @@ namespace nitrate::compiler::parser {
     constexpr Continue() : Expr(ASTKind::gContinue) {}
   };
 
-  PLACEHOLDER_IMPL(Return, ASTKind::gReturn);    // TODO: Implement node
-  PLACEHOLDER_IMPL(Foreach, ASTKind::gForeach);  // TODO: Implement node
-  PLACEHOLDER_IMPL(Try, ASTKind::gTry);          // TODO: Implement node
-  PLACEHOLDER_IMPL(Catch, ASTKind::gCatch);      // TODO: Implement node
-  PLACEHOLDER_IMPL(Throw, ASTKind::gThrow);      // TODO: Implement node
-  PLACEHOLDER_IMPL(Await, ASTKind::gAwait);      // TODO: Implement node
-  PLACEHOLDER_IMPL(Asm, ASTKind::gAsm);          // TODO: Implement node
+  W_PLACEHOLDER_IMPL(Return, ASTKind::gReturn);    // TODO: Implement node
+  W_PLACEHOLDER_IMPL(Foreach, ASTKind::gForeach);  // TODO: Implement node
+  W_PLACEHOLDER_IMPL(Try, ASTKind::gTry);          // TODO: Implement node
+  W_PLACEHOLDER_IMPL(Catch, ASTKind::gCatch);      // TODO: Implement node
+  W_PLACEHOLDER_IMPL(Throw, ASTKind::gThrow);      // TODO: Implement node
+  W_PLACEHOLDER_IMPL(Await, ASTKind::gAwait);      // TODO: Implement node
+  W_PLACEHOLDER_IMPL(Asm, ASTKind::gAsm);          // TODO: Implement node
 
-  class Type : public Expr {
-  public:
-    constexpr Type(ASTKind kind) : Expr(kind) {}
-  };
+  class Type final {
+    using Variant = std::variant<InferTy, OpaqueTy, NamedTy, RefTy, PtrTy, ArrayTy, TupleTy, TemplateTy, LambdaTy>;
 
-  class InferTy : public Type {
-  public:
-    constexpr InferTy() : Type(ASTKind::tInfer) {}
-  };
-
-  PLACEHOLDER_IMPL(OpaqueTy, ASTKind::tOpaque);  // TODO: Implement node
-  PLACEHOLDER_IMPL(NamedTy, ASTKind::tNamed);    // TODO: Implement node
-
-  class RefTy : public Type {
-    std::unique_ptr<Type> m_target;
+    std::unique_ptr<boost::flyweight<Variant>> m_node;
 
   public:
-    RefTy(std::unique_ptr<Type> target_type) : Type(ASTKind::tRef), m_target(std::move(target_type)) {}
+    template <typename T, typename... Args>
+    explicit Type(Args&&... args)
+        : m_node(std::make_unique<boost::flyweight<Variant>>(T(std::forward<Args>(args)...))) {}
 
-    [[nodiscard]] constexpr auto get_target() const -> const Type& { return *m_target; }
-    [[nodiscard]] constexpr auto get_target() -> Type& { return *m_target; }
-    [[nodiscard]] auto get_target_ptr() const -> const std::unique_ptr<Type>& { return m_target; }
-    [[nodiscard]] auto get_target_ptr() -> std::unique_ptr<Type>& { return m_target; }
-    auto set_target(std::unique_ptr<Type> target_type) -> void { m_target = std::move(target_type); }
+    Type(const Type&) = delete;
+    Type(Type&&) = default;
+    auto operator=(const Type&) -> Type& = delete;
+    auto operator=(Type&&) -> Type& = default;
+    ~Type() = default;
+
+    [[nodiscard]] constexpr operator const Expr&() const;
   };
 
-  class PtrTy : public Type {
-    std::unique_ptr<Type> m_target;
+  class InferTy : public Expr {
+  public:
+    constexpr InferTy() : Expr(ASTKind::tInfer) {}
+  };
+
+  class OpaqueTy : public Expr {
+    boost::flyweight<std::string> m_name;
 
   public:
-    PtrTy(std::unique_ptr<Type> target_type) : Type(ASTKind::tPtr), m_target(std::move(target_type)) {}
+    OpaqueTy(boost::flyweight<std::string> name) : Expr(ASTKind::tOpaque), m_name(std::move(name)) {}
+    OpaqueTy(std::string name) : Expr(ASTKind::tOpaque), m_name(std::move(name)) {}
 
-    [[nodiscard]] constexpr auto get_target() const -> const Type& { return *m_target; }
-    [[nodiscard]] constexpr auto get_target() -> Type& { return *m_target; }
-    [[nodiscard]] auto get_target_ptr() const -> const std::unique_ptr<Type>& { return m_target; }
-    [[nodiscard]] auto get_target_ptr() -> std::unique_ptr<Type>& { return m_target; }
-    auto set_target(std::unique_ptr<Type> target_type) -> void { m_target = std::move(target_type); }
+    [[nodiscard]] constexpr auto get_name() const -> const std::string& { return m_name.get(); }
   };
 
-  class ArrayTy : public Type {
-    std::unique_ptr<Type> m_element_type;
+  class NamedTy : public Expr {
+    boost::flyweight<std::string> m_name;
+
+  public:
+    NamedTy(boost::flyweight<std::string> name) : Expr(ASTKind::tNamed), m_name(std::move(name)) {}
+    NamedTy(std::string name) : Expr(ASTKind::tNamed), m_name(std::move(name)) {}
+
+    [[nodiscard]] constexpr auto get_name() const -> const std::string& { return m_name.get(); }
+  };
+
+  class RefTy : public Expr {
+    Type m_target;
+
+  public:
+    RefTy(Type target_type) : Expr(ASTKind::tRef), m_target(std::move(target_type)) {}
+
+    [[nodiscard]] constexpr auto get_target() const -> const Expr& { return m_target; }
+  };
+
+  class PtrTy : public Expr {
+    Type m_target;
+
+  public:
+    PtrTy(Type target_type) : Expr(ASTKind::tPtr), m_target(std::move(target_type)) {}
+
+    [[nodiscard]] constexpr auto get_target() const -> const Expr& { return m_target; }
+  };
+
+  class ArrayTy : public Expr {
+    Type m_element_type;
     std::unique_ptr<Expr> m_size;
 
   public:
-    ArrayTy(std::unique_ptr<Type> element_type, std::unique_ptr<Expr> size)
-        : Type(ASTKind::tArray), m_element_type(std::move(element_type)), m_size(std::move(size)) {}
+    ArrayTy(Type element_type, std::unique_ptr<Expr> size)
+        : Expr(ASTKind::tArray), m_element_type(std::move(element_type)), m_size(std::move(size)) {}
 
-    [[nodiscard]] constexpr auto get_element_type() const -> const Type& { return *m_element_type; }
-    [[nodiscard]] constexpr auto get_element_type() -> Type& { return *m_element_type; }
-    [[nodiscard]] auto get_element_type_ptr() const -> const std::unique_ptr<Type>& { return m_element_type; }
-    [[nodiscard]] auto get_element_type_ptr() -> std::unique_ptr<Type>& { return m_element_type; }
-    auto set_element_type(std::unique_ptr<Type> element_type) -> void { m_element_type = std::move(element_type); }
-
+    [[nodiscard]] constexpr auto get_element_type() const -> const Expr& { return m_element_type; }
     [[nodiscard]] constexpr auto get_size() const -> const Expr& { return *m_size; }
-    [[nodiscard]] constexpr auto get_size() -> Expr& { return *m_size; }
-    [[nodiscard]] auto get_size_ptr() const -> const std::unique_ptr<Expr>& { return m_size; }
-    [[nodiscard]] auto get_size_ptr() -> std::unique_ptr<Expr>& { return m_size; }
-    auto set_size(std::unique_ptr<Expr> size) -> void { m_size = std::move(size); }
   };
 
-  class TupleTy : public Type {
+  class TupleTy : public Expr {
   public:
-    using ElementsList = std::vector<std::unique_ptr<Type>>;
+    using ElementsList = std::vector<Expr>;
 
-    TupleTy(ElementsList elements = {}) : Type(ASTKind::tTuple), m_elements(std::move(elements)) {}
+    TupleTy(ElementsList elements = {}) : Expr(ASTKind::tTuple), m_elements(std::move(elements)) {}
 
-    [[nodiscard]] constexpr auto get_elements() const -> const ElementsList& { return m_elements; }
+    [[nodiscard]] constexpr auto get_elements() const -> std::span<const Expr> { return m_elements; }
     [[nodiscard]] constexpr auto is_empty() const -> bool { return m_elements.empty(); }
     [[nodiscard]] constexpr auto size() const -> size_t { return m_elements.size(); }
 
-    auto set_elements(ElementsList elements) -> void { m_elements = std::move(elements); }
-
-    auto push_back(std::unique_ptr<Type> element) -> void { m_elements.push_back(std::move(element)); }
-    auto push_front(std::unique_ptr<Type> element) -> void {
-      m_elements.insert(m_elements.begin(), std::move(element));
-    }
-
-    auto clear() -> void { m_elements.clear(); }
-
-    [[nodiscard]] auto begin() const -> ElementsList::const_iterator { return m_elements.begin(); }
-    [[nodiscard]] auto begin() -> ElementsList::iterator { return m_elements.begin(); }
-
-    [[nodiscard]] auto end() const -> ElementsList::const_iterator { return m_elements.end(); }
-    [[nodiscard]] auto end() -> ElementsList::iterator { return m_elements.end(); }
+    [[nodiscard]] auto begin() const -> std::span<const Expr>::iterator { return get_elements().begin(); }
+    [[nodiscard]] auto end() const -> std::span<const Expr>::iterator { return get_elements().end(); }
 
   private:
     ElementsList m_elements;
   };
 
-  PLACEHOLDER_IMPL(TemplateTy, ASTKind::tTemplate);  // TODO: Implement node
-  PLACEHOLDER_IMPL(LambdaTy, ASTKind::tLambda);      // TODO: Implement node
+  class TemplateTy : public Expr {
+  public:
+    TemplateTy() : Expr(ASTKind::tTemplate) {}
+    // TODO: Implement TemplateTy node
+  };
 
-  PLACEHOLDER_IMPL(Let, ASTKind::sLet);            // TODO: Implement node
-  PLACEHOLDER_IMPL(Var, ASTKind::sVar);            // TODO: Implement node
-  PLACEHOLDER_IMPL(Fn, ASTKind::sFn);              // TODO: Implement node
-  PLACEHOLDER_IMPL(Enum, ASTKind::sEnum);          // TODO: Implement node
-  PLACEHOLDER_IMPL(Struct, ASTKind::sStruct);      // TODO: Implement node
-  PLACEHOLDER_IMPL(Union, ASTKind::sUnion);        // TODO: Implement node
-  PLACEHOLDER_IMPL(Contract, ASTKind::sContract);  // TODO: Implement node
-  PLACEHOLDER_IMPL(Trait, ASTKind::sTrait);        // TODO: Implement node
-  PLACEHOLDER_IMPL(TypeDef, ASTKind::sTypeDef);    // TODO: Implement node
-  PLACEHOLDER_IMPL(Scope, ASTKind::sScope);        // TODO: Implement node
-  PLACEHOLDER_IMPL(Import, ASTKind::sImport);      // TODO: Implement node
-  PLACEHOLDER_IMPL(UnitTest, ASTKind::sUnitTest);  // TODO: Implement node
+  class LambdaTy : public Expr {
+  public:
+    LambdaTy() : Expr(ASTKind::tLambda) {}
+
+    // TODO: Implement LambdaTy node
+  };
+
+  constexpr Type::operator const Expr&() const {
+    return std::visit([](const auto& node) -> const Expr& { return node; }, m_node->get());
+  }
+
+  W_PLACEHOLDER_IMPL(Let, ASTKind::sLet);            // TODO: Implement node
+  W_PLACEHOLDER_IMPL(Var, ASTKind::sVar);            // TODO: Implement node
+  W_PLACEHOLDER_IMPL(Fn, ASTKind::sFn);              // TODO: Implement node
+  W_PLACEHOLDER_IMPL(Enum, ASTKind::sEnum);          // TODO: Implement node
+  W_PLACEHOLDER_IMPL(Struct, ASTKind::sStruct);      // TODO: Implement node
+  W_PLACEHOLDER_IMPL(Union, ASTKind::sUnion);        // TODO: Implement node
+  W_PLACEHOLDER_IMPL(Contract, ASTKind::sContract);  // TODO: Implement node
+  W_PLACEHOLDER_IMPL(Trait, ASTKind::sTrait);        // TODO: Implement node
+  W_PLACEHOLDER_IMPL(TypeDef, ASTKind::sTypeDef);    // TODO: Implement node
+  W_PLACEHOLDER_IMPL(Scope, ASTKind::sScope);        // TODO: Implement node
+  W_PLACEHOLDER_IMPL(Import, ASTKind::sImport);      // TODO: Implement node
+  W_PLACEHOLDER_IMPL(UnitTest, ASTKind::sUnitTest);  // TODO: Implement node
 
 #define W_NITRATE_PARSER_EXPR_ACCEPT_METHOD(visitor_name, constness)     \
   constexpr auto Expr::accept(visitor_name& visitor) constness -> void { \
