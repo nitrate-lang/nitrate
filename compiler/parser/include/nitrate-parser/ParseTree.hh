@@ -118,17 +118,44 @@ namespace nitrate::compiler::parser {
 
     [[nodiscard]] constexpr auto get_lhs() const -> const Expr& { return *m_lhs; }
     [[nodiscard]] constexpr auto get_lhs() -> Expr& { return *m_lhs; }
+    [[nodiscard]] auto get_lhs_ptr() const -> const std::unique_ptr<Expr>& { return m_lhs; }
+    [[nodiscard]] auto get_lhs_ptr() -> std::unique_ptr<Expr>& { return m_lhs; }
     auto set_lhs(std::unique_ptr<Expr> lhs) -> void { m_lhs = std::move(lhs); }
 
     [[nodiscard]] constexpr auto get_rhs() const -> const Expr& { return *m_rhs; }
     [[nodiscard]] constexpr auto get_rhs() -> Expr& { return *m_rhs; }
+    [[nodiscard]] auto get_rhs_ptr() const -> const std::unique_ptr<Expr>& { return m_rhs; }
+    [[nodiscard]] auto get_rhs_ptr() -> std::unique_ptr<Expr>& { return m_rhs; }
     auto set_rhs(std::unique_ptr<Expr> rhs) -> void { m_rhs = std::move(rhs); }
 
     [[nodiscard]] constexpr auto get_op() const -> BinOp { return m_op; }
     auto set_op(BinOp op) -> void { m_op = op; }
   };
 
-  PLACEHOLDER_IMPL(UnaryExpr, ASTKind::gUnaryExpr);        // TODO: Implement node
+  class UnaryExpr : public Expr {
+    using UnaryOp = lexer::Operator;
+
+    std::unique_ptr<Expr> m_operand;
+    UnaryOp m_op;
+    bool m_is_postfix : 1 = false;
+
+  public:
+    UnaryExpr(std::unique_ptr<Expr> operand, UnaryOp op, bool is_postfix)
+        : Expr(ASTKind::gUnaryExpr), m_operand(std::move(operand)), m_op(op), m_is_postfix(is_postfix) {}
+
+    [[nodiscard]] constexpr auto get_operand() const -> const Expr& { return *m_operand; }
+    [[nodiscard]] constexpr auto get_operand() -> Expr& { return *m_operand; }
+    [[nodiscard]] auto get_operand_ptr() const -> const std::unique_ptr<Expr>& { return m_operand; }
+    [[nodiscard]] auto get_operand_ptr() -> std::unique_ptr<Expr>& { return m_operand; }
+    auto set_operand(std::unique_ptr<Expr> operand) -> void { m_operand = std::move(operand); }
+
+    [[nodiscard]] constexpr auto get_op() const -> UnaryOp { return m_op; }
+    auto set_op(UnaryOp op) -> void { m_op = op; }
+
+    [[nodiscard]] constexpr auto is_postfix() const -> bool { return m_is_postfix; }
+    auto set_postfix(bool is_postfix) -> void { m_is_postfix = is_postfix; }
+  };
+
   PLACEHOLDER_IMPL(Number, ASTKind::gNumber);              // TODO: Implement node
   PLACEHOLDER_IMPL(FString, ASTKind::gFString);            // TODO: Implement node
   PLACEHOLDER_IMPL(String, ASTKind::gString);              // TODO: Implement node
