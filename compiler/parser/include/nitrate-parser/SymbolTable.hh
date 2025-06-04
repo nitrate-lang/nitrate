@@ -20,7 +20,6 @@
 #pragma once
 
 #include <boost/flyweight.hpp>
-#include <memory>
 #include <nitrate-parser/ParseTreeFwd.hh>
 #include <optional>
 #include <unordered_map>
@@ -46,12 +45,12 @@ namespace nitrate::compiler::parser {
   public:
     SymbolTable();
 
-    [[nodiscard]] auto define(SymbolName name, std::shared_ptr<Expr> symbol) -> bool;
+    [[nodiscard]] auto define(SymbolName name, Expr& symbol) -> bool;
     [[nodiscard]] auto undefine(const SymbolName& name) -> bool;
     [[nodiscard]] auto is_defined(const SymbolName& name) const -> bool;
-    [[nodiscard]] auto resolve(const SymbolName& name) const -> std::optional<std::shared_ptr<Expr>>;
+    [[nodiscard]] auto resolve(const SymbolName& name) const -> std::optional<Expr*>;
 
   private:
-    std::unordered_map<SymbolName, std::shared_ptr<Expr>> m_symbols;
+    std::unordered_map<SymbolName, Expr*> m_symbols;
   };
 }  // namespace nitrate::compiler::parser
