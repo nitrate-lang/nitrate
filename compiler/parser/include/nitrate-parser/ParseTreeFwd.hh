@@ -23,8 +23,6 @@
 
 namespace nitrate::compiler::parser {
   enum class ASTKind : uint8_t {
-    Discarded,
-
     /* General Expression Nodes */
     gBinExpr,
     gUnaryExpr,
@@ -80,7 +78,7 @@ namespace nitrate::compiler::parser {
     sUnitTest,
   };
 
-  constexpr ASTKind ASTKIND_MIN = ASTKind::Discarded;
+  constexpr ASTKind ASTKIND_MIN = ASTKind::gBinExpr;
   constexpr ASTKind ASTKIND_MAX = ASTKind::sUnitTest;
 
   class SymbolTable;

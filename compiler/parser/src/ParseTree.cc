@@ -17,26 +17,8 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
+#include <boost/config.hpp>
 #include <nitrate-parser/ParseTree.hh>
 #include <nitrate-parser/Parser.hh>
 
 using namespace nitrate::compiler::parser;
-
-BOOST_SYMBOL_EXPORT Parser::Parser(lexer::Lexer& lexer)
-    : m_lexer(lexer), m_symbol_table(std::make_shared<SymbolTable>()) {}
-
-BOOST_SYMBOL_EXPORT auto Parser::parse_type() -> std::unique_ptr<Type> {
-  // TODO: Implement type parsing logic
-  return nullptr;  // Placeholder
-}
-
-BOOST_SYMBOL_EXPORT auto Parser::parse_expression() -> std::unique_ptr<Expr> {
-  auto node = std::make_unique<Scope>();
-
-  return node;
-
-  // TODO: Implement expression parsing logic
-  return nullptr;  // Placeholder
-}
-
-BOOST_SYMBOL_EXPORT auto Parser::parse() -> std::unique_ptr<Expr> { return parse_expression(); }

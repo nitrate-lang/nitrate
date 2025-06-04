@@ -32,6 +32,7 @@ namespace nitrate::compiler::parser {
                   "ASTKind must fit in 6 bits for Expr::m_kind");
 
     ASTKind m_kind : M_KIND_BITS;
+    bool m_is_discarded : 1 = false;
     bool m_is_parenthesized : 1 = false;
     boost::flyweight<lexer::FileSourceRange> m_source_range;
 
@@ -42,11 +43,11 @@ namespace nitrate::compiler::parser {
     Expr(Expr&&) = delete;
     auto operator=(const Expr&) -> Expr& = delete;
     auto operator=(Expr&&) -> Expr& = delete;
-    ~Expr();
+    virtual ~Expr() = default;
 
     [[nodiscard]] constexpr auto get_kind() const -> ASTKind { return m_kind; }
-    [[nodiscard]] constexpr auto is_discarded() const -> bool { return m_kind == ASTKind::Discarded; }
-    constexpr auto discard() -> void { m_kind = ASTKind::Discarded; }
+    [[nodiscard]] constexpr auto is_discarded() const -> bool { return m_is_discarded; }
+    constexpr auto discard() -> void { m_is_discarded = true; }
 
     [[nodiscard]] constexpr auto is_parenthesized() const -> bool { return m_is_parenthesized; }
     constexpr auto set_parenthesized(bool is_parenthesized) -> void { m_is_parenthesized = is_parenthesized; }
@@ -124,9 +125,6 @@ namespace nitrate::compiler::parser {
     constness Expr& node = *this;                                        \
                                                                          \
     switch (get_kind()) {                                                \
-      case ASTKind::Discarded:                                           \
-        visitor.visit(static_cast<constness Expr&>(node));               \
-        break;                                                           \
       case ASTKind::gBinExpr:                                            \
         visitor.visit(static_cast<constness BinExpr&>(node));            \
         break;                                                           \
@@ -276,7 +274,8 @@ namespace nitrate::compiler::parser {
     }                                                                    \
   }
 
-  W_NITRATE_PARSER_EXPR_ACCEPT_METHOD(Visitor, ) W_NITRATE_PARSER_EXPR_ACCEPT_METHOD(ConstVisitor, const)
+  W_NITRATE_PARSER_EXPR_ACCEPT_METHOD(Visitor, );
+  W_NITRATE_PARSER_EXPR_ACCEPT_METHOD(ConstVisitor, const);
 
 #undef W_NITRATE_PARSER_EXPR_ACCEPT_METHOD
 }  // namespace nitrate::compiler::parser
