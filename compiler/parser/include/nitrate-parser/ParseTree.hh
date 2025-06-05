@@ -148,25 +148,27 @@ namespace nitrate::compiler::parser {
   };
 
   class UnaryExpr : public Expr {
-    using UnaryOp = lexer::Operator;
-
-    std::unique_ptr<Expr> m_operand;
-    UnaryOp m_op;
-    bool m_is_postfix : 1;
-
   public:
-    UnaryExpr(std::unique_ptr<Expr> operand, UnaryOp op, bool is_postfix)
+    using Op = lexer::Operator;
+    using Operand = std::unique_ptr<Expr>;
+
+    UnaryExpr(Operand operand, Op op, bool is_postfix)
         : Expr(ASTKind::gUnaryExpr), m_operand(std::move(operand)), m_op(op), m_is_postfix(is_postfix) {}
 
     [[nodiscard]] constexpr auto get_operand() const -> const Expr& { return *m_operand; }
     [[nodiscard]] constexpr auto get_operand() -> Expr& { return *m_operand; }
-    auto set_operand(std::unique_ptr<Expr> operand) -> void { m_operand = std::move(operand); }
+    auto set_operand(Operand operand) -> void { m_operand = std::move(operand); }
 
-    [[nodiscard]] constexpr auto get_op() const -> UnaryOp { return m_op; }
-    constexpr auto set_op(UnaryOp op) -> void { m_op = op; }
+    [[nodiscard]] constexpr auto get_op() const -> Op { return m_op; }
+    constexpr auto set_op(Op op) -> void { m_op = op; }
 
     [[nodiscard]] constexpr auto is_postfix() const -> bool { return m_is_postfix; }
     constexpr auto set_postfix(bool is_postfix) -> void { m_is_postfix = is_postfix; }
+
+  private:
+    Operand m_operand;
+    Op m_op;
+    bool m_is_postfix : 1;
   };
 
   W_PLACEHOLDER_IMPL(Number, ASTKind::gNumber);  // TODO: Implement node
