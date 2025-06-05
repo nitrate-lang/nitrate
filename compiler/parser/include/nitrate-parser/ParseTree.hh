@@ -320,9 +320,27 @@ namespace nitrate::compiler::parser {
     auto set_else_branch(ElseNodePtr else_branch) -> void { m_else_branch = std::move(else_branch); }
   };
 
-  W_PLACEHOLDER_IMPL(Else, ASTKind::gElse);      // TODO: Implement node
-  W_PLACEHOLDER_IMPL(For, ASTKind::gFor);        // TODO: Implement node
-  W_PLACEHOLDER_IMPL(While, ASTKind::gWhile);    // TODO: Implement node
+  W_PLACEHOLDER_IMPL(Else, ASTKind::gElse);  // TODO: Implement node
+  W_PLACEHOLDER_IMPL(For, ASTKind::gFor);    // TODO: Implement node
+
+  class While : public Expr {
+    Nullable<std::unique_ptr<Expr>> m_condition;
+    std::unique_ptr<Expr> m_body;
+
+  public:
+    While(Nullable<std::unique_ptr<Expr>> condition, std::unique_ptr<Expr> body)
+        : Expr(ASTKind::gWhile), m_condition(std::move(condition)), m_body(std::move(body)) {}
+
+    [[nodiscard]] constexpr auto get_condition() const -> const Nullable<std::unique_ptr<Expr>>& { return m_condition; }
+    [[nodiscard]] constexpr auto get_condition() -> Nullable<std::unique_ptr<Expr>>& { return m_condition; }
+    [[nodiscard]] constexpr auto has_condition() const -> bool { return m_condition.has_value(); }
+    auto set_condition(Nullable<std::unique_ptr<Expr>> condition) -> void { m_condition = std::move(condition); }
+
+    [[nodiscard]] constexpr auto get_body() const -> const Expr& { return *m_body; }
+    [[nodiscard]] constexpr auto get_body() -> Expr& { return *m_body; }
+    auto set_body(std::unique_ptr<Expr> body) -> void { m_body = std::move(body); }
+  };
+
   W_PLACEHOLDER_IMPL(Do, ASTKind::gDo);          // TODO: Implement node
   W_PLACEHOLDER_IMPL(Switch, ASTKind::gSwitch);  // TODO: Implement node
 
