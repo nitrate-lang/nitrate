@@ -265,6 +265,9 @@ namespace nitrate::compiler::parser {
     Ident(std::string name) : Expr(ASTKind::gIdent), m_name(std::move(name)) {}
 
     [[nodiscard]] constexpr auto get_name() const -> const std::string& { return m_name.get(); }
+    [[nodiscard]] constexpr auto is_empty() const -> bool { return m_name->empty(); }
+    [[nodiscard]] constexpr auto size() const -> size_t { return m_name->size(); }
+
     auto set_name(const NameType& name) -> void { m_name = name; }
     auto set_name(std::string name) -> void { m_name = std::move(name); }
 
@@ -273,19 +276,24 @@ namespace nitrate::compiler::parser {
   };
 
   class Index : public Expr {
-    std::unique_ptr<Expr> m_target, m_index;
-
   public:
-    Index(std::unique_ptr<Expr> target, std::unique_ptr<Expr> index)
+    using Target = std::unique_ptr<Expr>;
+    using IndexExpr = std::unique_ptr<Expr>;
+
+    Index(Target target, IndexExpr index)
         : Expr(ASTKind::gIndex), m_target(std::move(target)), m_index(std::move(index)) {}
 
     [[nodiscard]] constexpr auto get_target() const -> const Expr& { return *m_target; }
     [[nodiscard]] constexpr auto get_target() -> Expr& { return *m_target; }
-    auto set_target(std::unique_ptr<Expr> target) -> void { m_target = std::move(target); }
+    auto set_target(Target target) -> void { m_target = std::move(target); }
 
     [[nodiscard]] constexpr auto get_index() const -> const Expr& { return *m_index; }
     [[nodiscard]] constexpr auto get_index() -> Expr& { return *m_index; }
-    auto set_index(std::unique_ptr<Expr> index) -> void { m_index = std::move(index); }
+    auto set_index(IndexExpr index) -> void { m_index = std::move(index); }
+
+  private:
+    Target m_target;
+    IndexExpr m_index;
   };
 
   class Slice : public Expr {
