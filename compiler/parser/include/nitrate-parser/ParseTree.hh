@@ -218,9 +218,9 @@ namespace nitrate::compiler::parser {
   };
 
   class Char : public Expr {
+  public:
     using Codepoint = uint32_t;
 
-  public:
     Char(Codepoint value) : Expr(ASTKind::gChar), m_value(value) {}
 
     [[nodiscard]] constexpr auto get_value() const -> Codepoint { return m_value; }
@@ -232,7 +232,8 @@ namespace nitrate::compiler::parser {
 
   class List : public Expr {
   public:
-    using ElementsList = std::pmr::deque<std::unique_ptr<Expr>>;
+    using Element = std::unique_ptr<Expr>;
+    using ElementsList = std::pmr::deque<Element>;
 
     List(ElementsList elements) : Expr(ASTKind::gList), m_elements(std::move(elements)) {}
 
@@ -242,8 +243,8 @@ namespace nitrate::compiler::parser {
     [[nodiscard]] constexpr auto size() const -> size_t { return m_elements.size(); }
 
     auto set_elements(ElementsList elements) -> void { m_elements = std::move(elements); }
-    auto push_back(std::unique_ptr<Expr> element) -> void { m_elements.push_back(std::move(element)); }
-    auto push_front(std::unique_ptr<Expr> element) -> void { m_elements.push_front(std::move(element)); }
+    auto push_back(Element element) -> void { m_elements.push_back(std::move(element)); }
+    auto push_front(Element element) -> void { m_elements.push_front(std::move(element)); }
     auto clear() -> void { m_elements.clear(); }
 
     [[nodiscard]] auto begin() -> ElementsList::iterator { return m_elements.begin(); }
@@ -257,15 +258,18 @@ namespace nitrate::compiler::parser {
   };
 
   class Ident : public Expr {
-    boost::flyweight<std::string> m_name;
-
   public:
-    Ident(boost::flyweight<std::string> name) : Expr(ASTKind::gIdent), m_name(std::move(name)) {}
+    using NameType = boost::flyweight<std::string>;
+
+    Ident(NameType name) : Expr(ASTKind::gIdent), m_name(std::move(name)) {}
     Ident(std::string name) : Expr(ASTKind::gIdent), m_name(std::move(name)) {}
 
     [[nodiscard]] constexpr auto get_name() const -> const std::string& { return m_name.get(); }
-    auto set_name(const boost::flyweight<std::string>& name) -> void { m_name = name; }
+    auto set_name(const NameType& name) -> void { m_name = name; }
     auto set_name(std::string name) -> void { m_name = std::move(name); }
+
+  private:
+    NameType m_name;
   };
 
   class Index : public Expr {
