@@ -171,7 +171,7 @@ namespace nitrate::compiler::parser {
     bool m_is_postfix : 1;
   };
 
-  W_PLACEHOLDER_IMPL(Number, ASTKind::gNumber);  // TODO: Implement node
+  W_PLACEHOLDER_IMPL(Number, ASTKind::gNumber);  // TODO: Implement node number
 
   class FString : public Expr {
   public:
@@ -323,8 +323,8 @@ namespace nitrate::compiler::parser {
     End m_end;
   };
 
-  W_PLACEHOLDER_IMPL(Call, ASTKind::gCall);                  // TODO: Implement node
-  W_PLACEHOLDER_IMPL(TemplateCall, ASTKind::gTemplateCall);  // TODO: Implement node
+  W_PLACEHOLDER_IMPL(Call, ASTKind::gCall);                  // TODO: Implement node call
+  W_PLACEHOLDER_IMPL(TemplateCall, ASTKind::gTemplateCall);  // TODO: Implement node template call
 
   class If : public Expr {
   public:
@@ -357,8 +357,8 @@ namespace nitrate::compiler::parser {
     ElseBranch m_else_branch;
   };
 
-  W_PLACEHOLDER_IMPL(Else, ASTKind::gElse);  // TODO: Implement node
-  W_PLACEHOLDER_IMPL(For, ASTKind::gFor);    // TODO: Implement node
+  W_PLACEHOLDER_IMPL(Else, ASTKind::gElse);  // TODO: Implement node else
+  W_PLACEHOLDER_IMPL(For, ASTKind::gFor);    // TODO: Implement node for
 
   class While : public Expr {
   public:
@@ -382,8 +382,8 @@ namespace nitrate::compiler::parser {
     Body m_body;
   };
 
-  W_PLACEHOLDER_IMPL(Do, ASTKind::gDo);          // TODO: Implement node
-  W_PLACEHOLDER_IMPL(Switch, ASTKind::gSwitch);  // TODO: Implement node
+  W_PLACEHOLDER_IMPL(Do, ASTKind::gDo);          // TODO: Implement node do
+  W_PLACEHOLDER_IMPL(Switch, ASTKind::gSwitch);  // TODO: Implement node switch
 
   class Break : public Expr {
   public:
@@ -410,13 +410,13 @@ namespace nitrate::compiler::parser {
     ValueType m_value;
   };
 
-  W_PLACEHOLDER_IMPL(Foreach, ASTKind::gForeach);  // TODO: Implement node
-  W_PLACEHOLDER_IMPL(Try, ASTKind::gTry);          // TODO: Implement node
-  W_PLACEHOLDER_IMPL(Catch, ASTKind::gCatch);      // TODO: Implement node
-  W_PLACEHOLDER_IMPL(Throw, ASTKind::gThrow);      // TODO: Implement node
+  W_PLACEHOLDER_IMPL(Foreach, ASTKind::gForeach);  // TODO: Implement node foreach
+  W_PLACEHOLDER_IMPL(Try, ASTKind::gTry);          // TODO: Implement node try
+  W_PLACEHOLDER_IMPL(Catch, ASTKind::gCatch);      // TODO: Implement node catch
+  W_PLACEHOLDER_IMPL(Throw, ASTKind::gThrow);      // TODO: Implement node throw
 
-  W_PLACEHOLDER_IMPL(Await, ASTKind::gAwait);  // TODO: Implement node
-  W_PLACEHOLDER_IMPL(Asm, ASTKind::gAsm);      // TODO: Implement node
+  W_PLACEHOLDER_IMPL(Await, ASTKind::gAwait);  // TODO: Implement node await
+  W_PLACEHOLDER_IMPL(Asm, ASTKind::gAsm);      // TODO: Implement node asm
 
   class InferTy : public Expr {
   public:
@@ -520,18 +520,18 @@ namespace nitrate::compiler::parser {
     // TODO: Implement LambdaTy node
   };
 
-  W_PLACEHOLDER_IMPL(Let, ASTKind::sLet);            // TODO: Implement node
-  W_PLACEHOLDER_IMPL(Var, ASTKind::sVar);            // TODO: Implement node
-  W_PLACEHOLDER_IMPL(Fn, ASTKind::sFn);              // TODO: Implement node
-  W_PLACEHOLDER_IMPL(Enum, ASTKind::sEnum);          // TODO: Implement node
-  W_PLACEHOLDER_IMPL(Struct, ASTKind::sStruct);      // TODO: Implement node
-  W_PLACEHOLDER_IMPL(Union, ASTKind::sUnion);        // TODO: Implement node
-  W_PLACEHOLDER_IMPL(Contract, ASTKind::sContract);  // TODO: Implement node
-  W_PLACEHOLDER_IMPL(Trait, ASTKind::sTrait);        // TODO: Implement node
-  W_PLACEHOLDER_IMPL(TypeDef, ASTKind::sTypeDef);    // TODO: Implement node
-  W_PLACEHOLDER_IMPL(Scope, ASTKind::sScope);        // TODO: Implement node
-  W_PLACEHOLDER_IMPL(Import, ASTKind::sImport);      // TODO: Implement node
-  W_PLACEHOLDER_IMPL(UnitTest, ASTKind::sUnitTest);  // TODO: Implement node
+  W_PLACEHOLDER_IMPL(Let, ASTKind::sLet);            // TODO: Implement node Let
+  W_PLACEHOLDER_IMPL(Var, ASTKind::sVar);            // TODO: Implement node Var
+  W_PLACEHOLDER_IMPL(Fn, ASTKind::sFn);              // TODO: Implement node Fn
+  W_PLACEHOLDER_IMPL(Enum, ASTKind::sEnum);          // TODO: Implement node Enum
+  W_PLACEHOLDER_IMPL(Struct, ASTKind::sStruct);      // TODO: Implement node Struct
+  W_PLACEHOLDER_IMPL(Union, ASTKind::sUnion);        // TODO: Implement node Union
+  W_PLACEHOLDER_IMPL(Contract, ASTKind::sContract);  // TODO: Implement node Contract
+  W_PLACEHOLDER_IMPL(Trait, ASTKind::sTrait);        // TODO: Implement node Trait
+  W_PLACEHOLDER_IMPL(TypeDef, ASTKind::sTypeDef);    // TODO: Implement node TypeDef
+  W_PLACEHOLDER_IMPL(Scope, ASTKind::sScope);        // TODO: Implement node Scope
+  W_PLACEHOLDER_IMPL(Import, ASTKind::sImport);      // TODO: Implement node Import
+  W_PLACEHOLDER_IMPL(UnitTest, ASTKind::sUnitTest);  // TODO: Implement node UnitTest
 
 #define W_NITRATE_PARSER_EXPR_ACCEPT_METHOD(visitor_name, constness)     \
   constexpr auto Expr::accept(visitor_name& visitor) constness -> void { \
