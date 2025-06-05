@@ -297,23 +297,30 @@ namespace nitrate::compiler::parser {
   };
 
   class Slice : public Expr {
-    std::unique_ptr<Expr> m_target, m_start, m_end;
-
   public:
-    Slice(std::unique_ptr<Expr> target, std::unique_ptr<Expr> start, std::unique_ptr<Expr> end)
+    using Target = std::unique_ptr<Expr>;
+    using Start = std::unique_ptr<Expr>;
+    using End = std::unique_ptr<Expr>;
+
+    Slice(Target target, Start start, End end)
         : Expr(ASTKind::gSlice), m_target(std::move(target)), m_start(std::move(start)), m_end(std::move(end)) {}
 
     [[nodiscard]] constexpr auto get_target() const -> const Expr& { return *m_target; }
     [[nodiscard]] constexpr auto get_target() -> Expr& { return *m_target; }
-    auto set_target(std::unique_ptr<Expr> target) -> void { m_target = std::move(target); }
+    auto set_target(Target target) -> void { m_target = std::move(target); }
 
     [[nodiscard]] constexpr auto get_start() const -> const Expr& { return *m_start; }
     [[nodiscard]] constexpr auto get_start() -> Expr& { return *m_start; }
-    auto set_start(std::unique_ptr<Expr> start) -> void { m_start = std::move(start); }
+    auto set_start(Start start) -> void { m_start = std::move(start); }
 
     [[nodiscard]] constexpr auto get_end() const -> const Expr& { return *m_end; }
     [[nodiscard]] constexpr auto get_end() -> Expr& { return *m_end; }
-    auto set_end(std::unique_ptr<Expr> end) -> void { m_end = std::move(end); }
+    auto set_end(End end) -> void { m_end = std::move(end); }
+
+  private:
+    Target m_target;
+    Start m_start;
+    End m_end;
   };
 
   W_PLACEHOLDER_IMPL(Call, ASTKind::gCall);                  // TODO: Implement node
