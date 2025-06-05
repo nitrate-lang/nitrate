@@ -89,6 +89,32 @@ namespace nitrate::compiler::parser {
 
   static constexpr auto hash_value(const Expr& node) -> size_t { return node.hash(); }
 
+  template <class T>
+  class Nullable {
+    T m_value;
+
+  public:
+    Nullable() = default;
+    Nullable(T value) : m_value(std::move(value)) {}
+    Nullable(const Nullable&) = delete;
+    Nullable(Nullable&&) = default;
+    auto operator=(const Nullable&) -> Nullable& = delete;
+    auto operator=(Nullable&&) -> Nullable& = default;
+
+    [[nodiscard]] constexpr auto has_value() const -> bool { return m_value != nullptr; }
+    [[nodiscard]] constexpr operator bool() const { return has_value(); }
+
+    [[nodiscard]] constexpr auto value() const -> const T& {
+      assert(has_value() && "Nullable<T>::value() called on empty Nullable");
+      return *m_value;
+    }
+
+    [[nodiscard]] constexpr auto value() -> T& {
+      assert(has_value() && "Nullable<T>::value() called on empty Nullable");
+      return *m_value;
+    }
+  };
+
 #define W_PLACEHOLDER_IMPL(name, type) \
   class name : public Expr {           \
   public:                              \
@@ -228,16 +254,77 @@ namespace nitrate::compiler::parser {
     auto set_name(std::string name) -> void { m_name = std::move(name); }
   };
 
-  W_PLACEHOLDER_IMPL(Index, ASTKind::gIndex);                // TODO: Implement node
-  W_PLACEHOLDER_IMPL(Slice, ASTKind::gSlice);                // TODO: Implement node
+  class Index : public Expr {
+    std::unique_ptr<Expr> m_target, m_index;
+
+  public:
+    Index(std::unique_ptr<Expr> target, std::unique_ptr<Expr> index)
+        : Expr(ASTKind::gIndex), m_target(std::move(target)), m_index(std::move(index)) {}
+
+    [[nodiscard]] constexpr auto get_target() const -> const Expr& { return *m_target; }
+    [[nodiscard]] constexpr auto get_target() -> Expr& { return *m_target; }
+    auto set_target(std::unique_ptr<Expr> target) -> void { m_target = std::move(target); }
+
+    [[nodiscard]] constexpr auto get_index() const -> const Expr& { return *m_index; }
+    [[nodiscard]] constexpr auto get_index() -> Expr& { return *m_index; }
+    auto set_index(std::unique_ptr<Expr> index) -> void { m_index = std::move(index); }
+  };
+
+  class Slice : public Expr {
+    std::unique_ptr<Expr> m_target, m_start, m_end;
+
+  public:
+    Slice(std::unique_ptr<Expr> target, std::unique_ptr<Expr> start, std::unique_ptr<Expr> end)
+        : Expr(ASTKind::gSlice), m_target(std::move(target)), m_start(std::move(start)), m_end(std::move(end)) {}
+
+    [[nodiscard]] constexpr auto get_target() const -> const Expr& { return *m_target; }
+    [[nodiscard]] constexpr auto get_target() -> Expr& { return *m_target; }
+    auto set_target(std::unique_ptr<Expr> target) -> void { m_target = std::move(target); }
+
+    [[nodiscard]] constexpr auto get_start() const -> const Expr& { return *m_start; }
+    [[nodiscard]] constexpr auto get_start() -> Expr& { return *m_start; }
+    auto set_start(std::unique_ptr<Expr> start) -> void { m_start = std::move(start); }
+
+    [[nodiscard]] constexpr auto get_end() const -> const Expr& { return *m_end; }
+    [[nodiscard]] constexpr auto get_end() -> Expr& { return *m_end; }
+    auto set_end(std::unique_ptr<Expr> end) -> void { m_end = std::move(end); }
+  };
+
   W_PLACEHOLDER_IMPL(Call, ASTKind::gCall);                  // TODO: Implement node
   W_PLACEHOLDER_IMPL(TemplateCall, ASTKind::gTemplateCall);  // TODO: Implement node
-  W_PLACEHOLDER_IMPL(If, ASTKind::gIf);                      // TODO: Implement node
-  W_PLACEHOLDER_IMPL(Else, ASTKind::gElse);                  // TODO: Implement node
-  W_PLACEHOLDER_IMPL(For, ASTKind::gFor);                    // TODO: Implement node
-  W_PLACEHOLDER_IMPL(While, ASTKind::gWhile);                // TODO: Implement node
-  W_PLACEHOLDER_IMPL(Do, ASTKind::gDo);                      // TODO: Implement node
-  W_PLACEHOLDER_IMPL(Switch, ASTKind::gSwitch);              // TODO: Implement node
+
+  class If : public Expr {
+    std::unique_ptr<Expr> m_condition, m_then_branch;
+    Nullable<std::unique_ptr<Expr>> m_else_branch;
+
+  public:
+    using ElseNodePtr = Nullable<std::unique_ptr<Expr>>;
+
+    If(std::unique_ptr<Expr> condition, std::unique_ptr<Expr> then_branch, Nullable<std::unique_ptr<Expr>> else_branch)
+        : Expr(ASTKind::gIf),
+          m_condition(std::move(condition)),
+          m_then_branch(std::move(then_branch)),
+          m_else_branch(std::move(else_branch)) {}
+
+    [[nodiscard]] constexpr auto get_condition() const -> const Expr& { return *m_condition; }
+    [[nodiscard]] constexpr auto get_condition() -> Expr& { return *m_condition; }
+    auto set_condition(std::unique_ptr<Expr> condition) -> void { m_condition = std::move(condition); }
+
+    [[nodiscard]] constexpr auto get_then_branch() const -> const Expr& { return *m_then_branch; }
+    [[nodiscard]] constexpr auto get_then_branch() -> Expr& { return *m_then_branch; }
+    auto set_then_branch(std::unique_ptr<Expr> then_branch) -> void { m_then_branch = std::move(then_branch); }
+
+    [[nodiscard]] constexpr auto get_else_branch() const -> const ElseNodePtr& { return m_else_branch; }
+    [[nodiscard]] constexpr auto get_else_branch() -> ElseNodePtr& { return m_else_branch; }
+    [[nodiscard]] constexpr auto has_else_branch() const -> bool { return m_else_branch.has_value(); }
+    auto set_else_branch(ElseNodePtr else_branch) -> void { m_else_branch = std::move(else_branch); }
+  };
+
+  W_PLACEHOLDER_IMPL(Else, ASTKind::gElse);      // TODO: Implement node
+  W_PLACEHOLDER_IMPL(For, ASTKind::gFor);        // TODO: Implement node
+  W_PLACEHOLDER_IMPL(While, ASTKind::gWhile);    // TODO: Implement node
+  W_PLACEHOLDER_IMPL(Do, ASTKind::gDo);          // TODO: Implement node
+  W_PLACEHOLDER_IMPL(Switch, ASTKind::gSwitch);  // TODO: Implement node
 
   class Break : public Expr {
   public:
@@ -249,13 +336,25 @@ namespace nitrate::compiler::parser {
     constexpr Continue() : Expr(ASTKind::gContinue) {}
   };
 
-  W_PLACEHOLDER_IMPL(Return, ASTKind::gReturn);    // TODO: Implement node
+  class Return : public Expr {
+    Nullable<std::unique_ptr<Expr>> m_value;
+
+  public:
+    Return(Nullable<std::unique_ptr<Expr>> value) : Expr(ASTKind::gReturn), m_value(std::move(value)) {}
+
+    [[nodiscard]] constexpr auto get_value() const -> const Nullable<std::unique_ptr<Expr>>& { return m_value; }
+    [[nodiscard]] constexpr auto get_value() -> Nullable<std::unique_ptr<Expr>>& { return m_value; }
+    [[nodiscard]] constexpr auto has_value() const -> bool { return m_value.has_value(); }
+    auto set_value(Nullable<std::unique_ptr<Expr>> value) -> void { m_value = std::move(value); }
+  };
+
   W_PLACEHOLDER_IMPL(Foreach, ASTKind::gForeach);  // TODO: Implement node
   W_PLACEHOLDER_IMPL(Try, ASTKind::gTry);          // TODO: Implement node
   W_PLACEHOLDER_IMPL(Catch, ASTKind::gCatch);      // TODO: Implement node
   W_PLACEHOLDER_IMPL(Throw, ASTKind::gThrow);      // TODO: Implement node
-  W_PLACEHOLDER_IMPL(Await, ASTKind::gAwait);      // TODO: Implement node
-  W_PLACEHOLDER_IMPL(Asm, ASTKind::gAsm);          // TODO: Implement node
+
+  W_PLACEHOLDER_IMPL(Await, ASTKind::gAwait);  // TODO: Implement node
+  W_PLACEHOLDER_IMPL(Asm, ASTKind::gAsm);      // TODO: Implement node
 
   class InferTy : public Expr {
   public:
