@@ -122,25 +122,29 @@ namespace nitrate::compiler::parser {
   };
 
   class BinExpr : public Expr {
-    using BinOp = lexer::Operator;
-
-    std::unique_ptr<Expr> m_lhs, m_rhs;
-    BinOp m_op;
-
   public:
-    BinExpr(std::unique_ptr<Expr> lhs, std::unique_ptr<Expr> rhs, BinOp op)
+    using LHS = std::unique_ptr<Expr>;
+    using RHS = std::unique_ptr<Expr>;
+    using Op = lexer::Operator;
+
+    BinExpr(LHS lhs, RHS rhs, Op op)
         : Expr(ASTKind::gBinExpr), m_lhs(std::move(lhs)), m_rhs(std::move(rhs)), m_op(op) {}
 
     [[nodiscard]] constexpr auto get_lhs() const -> const Expr& { return *m_lhs; }
     [[nodiscard]] constexpr auto get_lhs() -> Expr& { return *m_lhs; }
-    auto set_lhs(std::unique_ptr<Expr> lhs) -> void { m_lhs = std::move(lhs); }
+    auto set_lhs(LHS lhs) -> void { m_lhs = std::move(lhs); }
 
     [[nodiscard]] constexpr auto get_rhs() const -> const Expr& { return *m_rhs; }
     [[nodiscard]] constexpr auto get_rhs() -> Expr& { return *m_rhs; }
-    auto set_rhs(std::unique_ptr<Expr> rhs) -> void { m_rhs = std::move(rhs); }
+    auto set_rhs(RHS rhs) -> void { m_rhs = std::move(rhs); }
 
-    [[nodiscard]] constexpr auto get_op() const -> BinOp { return m_op; }
-    auto set_op(BinOp op) -> void { m_op = op; }
+    [[nodiscard]] constexpr auto get_op() const -> Op { return m_op; }
+    auto set_op(Op op) -> void { m_op = op; }
+
+  private:
+    LHS m_lhs;
+    RHS m_rhs;
+    Op m_op;
   };
 
   class UnaryExpr : public Expr {
