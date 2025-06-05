@@ -139,8 +139,33 @@ namespace nitrate::compiler::parser {
     constexpr auto set_postfix(bool is_postfix) -> void { m_is_postfix = is_postfix; }
   };
 
-  W_PLACEHOLDER_IMPL(Number, ASTKind::gNumber);    // TODO: Implement node
-  W_PLACEHOLDER_IMPL(FString, ASTKind::gFString);  // TODO: Implement node
+  W_PLACEHOLDER_IMPL(Number, ASTKind::gNumber);  // TODO: Implement node
+
+  class FString : public Expr {
+    using FStringPart = std::variant<std::string, std::unique_ptr<Expr>>;  // String or Expr
+    using PartsList = std::pmr::vector<FStringPart>;
+
+    PartsList m_parts;
+
+  public:
+    FString(PartsList parts) : Expr(ASTKind::gFString), m_parts(std::move(parts)) {}
+
+    [[nodiscard]] constexpr auto get_parts() const -> const PartsList& { return m_parts; }
+    [[nodiscard]] constexpr auto get_parts() -> PartsList& { return m_parts; }
+    [[nodiscard]] constexpr auto is_empty() const -> bool { return m_parts.empty(); }
+    [[nodiscard]] constexpr auto size() const -> size_t { return m_parts.size(); }
+
+    auto set_parts(PartsList parts) -> void { m_parts = std::move(parts); }
+    auto push_back(FStringPart part) -> void { m_parts.push_back(std::move(part)); }
+    auto push_front(FStringPart part) -> void { m_parts.insert(m_parts.begin(), std::move(part)); }
+    auto clear() -> void { m_parts.clear(); }
+
+    [[nodiscard]] auto begin() -> PartsList::iterator { return m_parts.begin(); }
+    [[nodiscard]] auto begin() const -> PartsList::const_iterator { return m_parts.begin(); }
+
+    [[nodiscard]] auto end() -> PartsList::iterator { return m_parts.end(); }
+    [[nodiscard]] auto end() const -> PartsList::const_iterator { return m_parts.end(); }
+  };
 
   class String : public Expr {
     std::pmr::string m_value;
@@ -152,7 +177,18 @@ namespace nitrate::compiler::parser {
     auto set_value(std::pmr::string value) -> void { m_value = std::move(value); }
   };
 
-  W_PLACEHOLDER_IMPL(Char, ASTKind::gChar);  // TODO: Implement node
+  class Char : public Expr {
+    using Codepoint = uint32_t;
+
+  public:
+    Char(Codepoint value) : Expr(ASTKind::gChar), m_value(value) {}
+
+    [[nodiscard]] constexpr auto get_value() const -> Codepoint { return m_value; }
+    auto set_value(Codepoint value) -> void { m_value = value; }
+
+  private:
+    Codepoint m_value;
+  };
 
   class List : public Expr {
   public:
