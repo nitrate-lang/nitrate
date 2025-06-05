@@ -174,29 +174,30 @@ namespace nitrate::compiler::parser {
   W_PLACEHOLDER_IMPL(Number, ASTKind::gNumber);  // TODO: Implement node
 
   class FString : public Expr {
-    using FStringPart = std::variant<std::string, std::unique_ptr<Expr>>;  // String or Expr
-    using PartsList = std::pmr::vector<FStringPart>;
-
-    PartsList m_parts;
-
   public:
-    FString(PartsList parts) : Expr(ASTKind::gFString), m_parts(std::move(parts)) {}
+    using Element = std::variant<std::string, std::unique_ptr<Expr>>;  // String or Expr
+    using ElementsList = std::pmr::vector<Element>;
 
-    [[nodiscard]] constexpr auto get_parts() const -> const PartsList& { return m_parts; }
-    [[nodiscard]] constexpr auto get_parts() -> PartsList& { return m_parts; }
-    [[nodiscard]] constexpr auto is_empty() const -> bool { return m_parts.empty(); }
-    [[nodiscard]] constexpr auto size() const -> size_t { return m_parts.size(); }
+    FString(ElementsList elements) : Expr(ASTKind::gFString), m_elements(std::move(elements)) {}
 
-    auto set_parts(PartsList parts) -> void { m_parts = std::move(parts); }
-    auto push_back(FStringPart part) -> void { m_parts.push_back(std::move(part)); }
-    auto push_front(FStringPart part) -> void { m_parts.insert(m_parts.begin(), std::move(part)); }
-    auto clear() -> void { m_parts.clear(); }
+    [[nodiscard]] constexpr auto get_elements() const -> const ElementsList& { return m_elements; }
+    [[nodiscard]] constexpr auto get_elements() -> ElementsList& { return m_elements; }
+    [[nodiscard]] constexpr auto is_empty() const -> bool { return m_elements.empty(); }
+    [[nodiscard]] constexpr auto size() const -> size_t { return m_elements.size(); }
 
-    [[nodiscard]] auto begin() -> PartsList::iterator { return m_parts.begin(); }
-    [[nodiscard]] auto begin() const -> PartsList::const_iterator { return m_parts.begin(); }
+    auto set_elements(ElementsList elements) -> void { m_elements = std::move(elements); }
+    auto push_back(Element part) -> void { m_elements.push_back(std::move(part)); }
+    auto push_front(Element part) -> void { m_elements.insert(m_elements.begin(), std::move(part)); }
+    auto clear() -> void { m_elements.clear(); }
 
-    [[nodiscard]] auto end() -> PartsList::iterator { return m_parts.end(); }
-    [[nodiscard]] auto end() const -> PartsList::const_iterator { return m_parts.end(); }
+    [[nodiscard]] auto begin() -> ElementsList::iterator { return m_elements.begin(); }
+    [[nodiscard]] auto begin() const -> ElementsList::const_iterator { return m_elements.begin(); }
+
+    [[nodiscard]] auto end() -> ElementsList::iterator { return m_elements.end(); }
+    [[nodiscard]] auto end() const -> ElementsList::const_iterator { return m_elements.end(); }
+
+  private:
+    ElementsList m_elements;
   };
 
   class String : public Expr {
