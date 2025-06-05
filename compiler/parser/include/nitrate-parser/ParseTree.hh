@@ -396,15 +396,18 @@ namespace nitrate::compiler::parser {
   };
 
   class Return : public Expr {
-    Nullable<std::unique_ptr<Expr>> m_value;
-
   public:
-    Return(Nullable<std::unique_ptr<Expr>> value) : Expr(ASTKind::gReturn), m_value(std::move(value)) {}
+    using ValueType = Nullable<std::unique_ptr<Expr>>;
 
-    [[nodiscard]] constexpr auto get_value() const -> const Nullable<std::unique_ptr<Expr>>& { return m_value; }
-    [[nodiscard]] constexpr auto get_value() -> Nullable<std::unique_ptr<Expr>>& { return m_value; }
+    Return(ValueType value) : Expr(ASTKind::gReturn), m_value(std::move(value)) {}
+
+    [[nodiscard]] constexpr auto get_value() const -> const ValueType& { return m_value; }
+    [[nodiscard]] constexpr auto get_value() -> ValueType& { return m_value; }
     [[nodiscard]] constexpr auto has_value() const -> bool { return m_value.has_value(); }
-    auto set_value(Nullable<std::unique_ptr<Expr>> value) -> void { m_value = std::move(value); }
+    auto set_value(ValueType value) -> void { m_value = std::move(value); }
+
+  private:
+    ValueType m_value;
   };
 
   W_PLACEHOLDER_IMPL(Foreach, ASTKind::gForeach);  // TODO: Implement node
@@ -421,41 +424,53 @@ namespace nitrate::compiler::parser {
   };
 
   class OpaqueTy : public Expr {
-    boost::flyweight<std::string> m_name;
-
   public:
-    OpaqueTy(boost::flyweight<std::string> name) : Expr(ASTKind::tOpaque), m_name(std::move(name)) {}
+    using NameType = boost::flyweight<std::string>;
+
+    OpaqueTy(NameType name) : Expr(ASTKind::tOpaque), m_name(std::move(name)) {}
     OpaqueTy(std::string name) : Expr(ASTKind::tOpaque), m_name(std::move(name)) {}
 
     [[nodiscard]] constexpr auto get_name() const -> const std::string& { return m_name.get(); }
+
+  private:
+    NameType m_name;
   };
 
   class NamedTy : public Expr {
-    boost::flyweight<std::string> m_name;
-
   public:
-    NamedTy(boost::flyweight<std::string> name) : Expr(ASTKind::tNamed), m_name(std::move(name)) {}
+    using NameType = boost::flyweight<std::string>;
+
+    NamedTy(NameType name) : Expr(ASTKind::tNamed), m_name(std::move(name)) {}
     NamedTy(std::string name) : Expr(ASTKind::tNamed), m_name(std::move(name)) {}
 
     [[nodiscard]] constexpr auto get_name() const -> const std::string& { return m_name.get(); }
+
+  private:
+    NameType m_name;
   };
 
   class RefTy : public Expr {
-    std::unique_ptr<Expr> m_target;
-
   public:
-    RefTy(std::unique_ptr<Expr> target) : Expr(ASTKind::tRef), m_target(std::move(target)) {}
+    using Target = std::unique_ptr<Expr>;
+
+    RefTy(Target target) : Expr(ASTKind::tRef), m_target(std::move(target)) {}
 
     [[nodiscard]] constexpr auto get_target() const -> const Expr& { return *m_target; }
+
+  private:
+    Target m_target;
   };
 
   class PtrTy : public Expr {
-    std::unique_ptr<Expr> m_target;
-
   public:
-    PtrTy(std::unique_ptr<Expr> target) : Expr(ASTKind::tPtr), m_target(std::move(target)) {}
+    using Target = std::unique_ptr<Expr>;
+
+    PtrTy(Target target) : Expr(ASTKind::tPtr), m_target(std::move(target)) {}
 
     [[nodiscard]] constexpr auto get_target() const -> const Expr& { return *m_target; }
+
+  private:
+    Target m_target;
   };
 
   class ArrayTy : public Expr {
