@@ -474,14 +474,19 @@ namespace nitrate::compiler::parser {
   };
 
   class ArrayTy : public Expr {
-    std::unique_ptr<Expr> m_element_type, m_size;
-
   public:
-    ArrayTy(std::unique_ptr<Expr> element_type, std::unique_ptr<Expr> size)
+    using ElementType = std::unique_ptr<Expr>;
+    using Size = std::unique_ptr<Expr>;
+
+    ArrayTy(ElementType element_type, Size size)
         : Expr(ASTKind::tArray), m_element_type(std::move(element_type)), m_size(std::move(size)) {}
 
     [[nodiscard]] constexpr auto get_element_type() const -> const Expr& { return *m_element_type; }
     [[nodiscard]] constexpr auto get_size() const -> const Expr& { return *m_size; }
+
+  private:
+    ElementType m_element_type;
+    Size m_size;
   };
 
   class TupleTy : public Expr {
