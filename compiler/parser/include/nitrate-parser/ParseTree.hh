@@ -327,13 +327,12 @@ namespace nitrate::compiler::parser {
   W_PLACEHOLDER_IMPL(TemplateCall, ASTKind::gTemplateCall);  // TODO: Implement node
 
   class If : public Expr {
-    std::unique_ptr<Expr> m_condition, m_then_branch;
-    Nullable<std::unique_ptr<Expr>> m_else_branch;
-
   public:
-    using ElseNodePtr = Nullable<std::unique_ptr<Expr>>;
+    using Condition = std::unique_ptr<Expr>;
+    using ThenBranch = std::unique_ptr<Expr>;
+    using ElseBranch = Nullable<std::unique_ptr<Expr>>;
 
-    If(std::unique_ptr<Expr> condition, std::unique_ptr<Expr> then_branch, Nullable<std::unique_ptr<Expr>> else_branch)
+    If(Condition condition, ThenBranch then_branch, ElseBranch else_branch)
         : Expr(ASTKind::gIf),
           m_condition(std::move(condition)),
           m_then_branch(std::move(then_branch)),
@@ -341,16 +340,21 @@ namespace nitrate::compiler::parser {
 
     [[nodiscard]] constexpr auto get_condition() const -> const Expr& { return *m_condition; }
     [[nodiscard]] constexpr auto get_condition() -> Expr& { return *m_condition; }
-    auto set_condition(std::unique_ptr<Expr> condition) -> void { m_condition = std::move(condition); }
+    auto set_condition(Condition condition) -> void { m_condition = std::move(condition); }
 
     [[nodiscard]] constexpr auto get_then_branch() const -> const Expr& { return *m_then_branch; }
     [[nodiscard]] constexpr auto get_then_branch() -> Expr& { return *m_then_branch; }
-    auto set_then_branch(std::unique_ptr<Expr> then_branch) -> void { m_then_branch = std::move(then_branch); }
+    auto set_then_branch(ThenBranch then_branch) -> void { m_then_branch = std::move(then_branch); }
 
-    [[nodiscard]] constexpr auto get_else_branch() const -> const ElseNodePtr& { return m_else_branch; }
-    [[nodiscard]] constexpr auto get_else_branch() -> ElseNodePtr& { return m_else_branch; }
+    [[nodiscard]] constexpr auto get_else_branch() const -> const ElseBranch& { return m_else_branch; }
+    [[nodiscard]] constexpr auto get_else_branch() -> ElseBranch& { return m_else_branch; }
     [[nodiscard]] constexpr auto has_else_branch() const -> bool { return m_else_branch.has_value(); }
-    auto set_else_branch(ElseNodePtr else_branch) -> void { m_else_branch = std::move(else_branch); }
+    auto set_else_branch(ElseBranch else_branch) -> void { m_else_branch = std::move(else_branch); }
+
+  private:
+    Condition m_condition;
+    ThenBranch m_then_branch;
+    ElseBranch m_else_branch;
   };
 
   W_PLACEHOLDER_IMPL(Else, ASTKind::gElse);  // TODO: Implement node
