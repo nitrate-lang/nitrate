@@ -17,7 +17,6 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <boost/config.hpp>
 #include <nitrate-parser/ParseTree.hh>
 #include <nitrate-parser/Parser.hh>
 
@@ -55,8 +54,4 @@ BOOST_SYMBOL_EXPORT auto Expr::operator==(const Expr& o) const -> bool {
 BOOST_SYMBOL_EXPORT auto Expr::hash() const -> size_t {
   // TODO: Implement a proper hash function
   return 0;
-}
-
-void test() {  //
-  boost::flyweight<TupleTy> x;
 }

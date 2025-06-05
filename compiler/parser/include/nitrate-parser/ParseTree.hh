@@ -122,7 +122,7 @@ namespace nitrate::compiler::parser {
 
     std::unique_ptr<Expr> m_operand;
     UnaryOp m_op;
-    bool m_is_postfix : 1 = false;
+    bool m_is_postfix : 1;
 
   public:
     UnaryExpr(std::unique_ptr<Expr> operand, UnaryOp op, bool is_postfix)
@@ -146,7 +146,7 @@ namespace nitrate::compiler::parser {
     std::pmr::string m_value;
 
   public:
-    String(std::pmr::string value = "") : Expr(ASTKind::gString), m_value(std::move(value)) {}
+    String(std::pmr::string value) : Expr(ASTKind::gString), m_value(std::move(value)) {}
 
     [[nodiscard]] constexpr auto get_value() const -> const std::pmr::string& { return m_value; }
     auto set_value(std::pmr::string value) -> void { m_value = std::move(value); }
@@ -158,7 +158,7 @@ namespace nitrate::compiler::parser {
   public:
     using ElementsList = std::pmr::deque<std::unique_ptr<Expr>>;
 
-    List(ElementsList elements = {}) : Expr(ASTKind::gList), m_elements(std::move(elements)) {}
+    List(ElementsList elements) : Expr(ASTKind::gList), m_elements(std::move(elements)) {}
 
     [[nodiscard]] constexpr auto get_elements() const -> const ElementsList& { return m_elements; }
     [[nodiscard]] constexpr auto get_elements() -> ElementsList& { return m_elements; }
@@ -280,7 +280,7 @@ namespace nitrate::compiler::parser {
     using ElementsList = std::vector<std::unique_ptr<Expr>>;
     using ElementsSpan = std::span<const std::unique_ptr<Expr>>;
 
-    TupleTy(ElementsList elements = {}) : Expr(ASTKind::tTuple), m_elements(std::move(elements)) {}
+    TupleTy(ElementsList elements) : Expr(ASTKind::tTuple), m_elements(std::move(elements)) {}
 
     [[nodiscard]] constexpr auto get_elements() const -> ElementsSpan { return m_elements; }
     [[nodiscard]] constexpr auto is_empty() const -> bool { return m_elements.empty(); }
