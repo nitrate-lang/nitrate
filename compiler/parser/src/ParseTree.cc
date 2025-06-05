@@ -19,6 +19,7 @@
 
 #include <nitrate-parser/ParseTree.hh>
 #include <nitrate-parser/Parser.hh>
+#include <sstream>
 
 using namespace nitrate::compiler::parser;
 using namespace nitrate::compiler::lexer;
@@ -46,12 +47,22 @@ BOOST_SYMBOL_EXPORT [[nodiscard]] auto Expr::SourceLocationTag::get() const -> c
 }
 
 BOOST_SYMBOL_EXPORT auto Expr::operator==(const Expr& o) const -> bool {
-  // FIXME: Implement a proper equality check
-  (void)o;
-  return true;
+  // FIXME: Optimize this comparison
+
+  std::stringstream a;
+  std::stringstream b;
+
+  dump(a);
+  o.dump(b);
+
+  return a.str() == b.str();
 }
 
 BOOST_SYMBOL_EXPORT auto Expr::hash() const -> size_t {
-  // TODO: Implement a proper hash function
-  return 0;
+  // FIXME: Optimize this hashing
+
+  std::stringstream ss;
+  dump(ss);
+
+  return std::hash<std::string>{}(ss.str());
 }
