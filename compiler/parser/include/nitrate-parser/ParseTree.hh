@@ -201,13 +201,20 @@ namespace nitrate::compiler::parser {
   };
 
   class String : public Expr {
-    std::pmr::string m_value;
-
   public:
-    String(std::pmr::string value) : Expr(ASTKind::gString), m_value(std::move(value)) {}
+    using ValueType = std::pmr::string;
 
-    [[nodiscard]] constexpr auto get_value() const -> const std::pmr::string& { return m_value; }
-    auto set_value(std::pmr::string value) -> void { m_value = std::move(value); }
+    String(ValueType value) : Expr(ASTKind::gString), m_value(std::move(value)) {}
+
+    [[nodiscard]] constexpr auto get_value() const -> const ValueType& { return m_value; }
+    [[nodiscard]] constexpr auto get_value() -> ValueType& { return m_value; }
+    [[nodiscard]] constexpr auto is_empty() const -> bool { return m_value.empty(); }
+    [[nodiscard]] constexpr auto size() const -> size_t { return m_value.size(); }
+
+    auto set_value(ValueType value) -> void { m_value = std::move(value); }
+
+  private:
+    ValueType m_value;
   };
 
   class Char : public Expr {
