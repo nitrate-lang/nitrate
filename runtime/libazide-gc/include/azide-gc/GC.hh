@@ -15,6 +15,22 @@ namespace azide::gc {
    */
   struct GC;
 
+  struct TaskAPI {
+    using Suspend = void (*)(void* user_data, uint64_t task_id);
+    using Resume = void (*)(void* user_data, uint64_t task_id);
+
+    Suspend m_suspend = nullptr;
+    Resume m_resume = nullptr;
+    void* m_user_data = nullptr;
+  };
+
+  struct AsyncFinalization {
+    using Runner = void (*)(void* user_data, void* base, size_t size, uint64_t object_id);
+
+    Runner m_runner = nullptr;
+    void* m_user_data = nullptr;
+  };
+
   /**
    * @brief Creates and initializes a new garbage collector instance.
    *
@@ -29,7 +45,7 @@ namespace azide::gc {
    *
    * @note This function is thread-safe.
    */
-  extern "C" [[nodiscard]] auto azide_gc_create() -> GC*;
+  extern "C" [[nodiscard]] auto azide_gc_create(TaskAPI task_api, AsyncFinalization runner) -> GC*;
 
   /**
    * @brief Destroys the specified garbage collector instance and releases all
@@ -147,11 +163,15 @@ namespace azide::gc {
    */
   extern "C" [[nodiscard]] auto azide_gc_is_managed(GC* gc, void* base, size_t size) -> bool;
 
-  extern "C" auto azide_gc_add_task(GC* gc, uint64_t task_id, uint8_t* stack_begin, uint8_t* stack_end) -> void;
+  extern "C" auto azide_gc_add_task(GC* gc, uint64_t task_id) -> void;
   extern "C" auto azide_gc_del_task(GC* gc, uint64_t task_id) -> void;
 
-  extern "C" auto azide_gc_step(GC* gc) -> void;
+  extern "C" auto azide_gc_destroyed(GC* gc, uint64_t object_id) -> void;
 
+  extern "C" auto azide_gc_step(GC* gc) -> uint64_t;
+
+  extern "C" auto azide_gc_malloc(GC* gc, size_t size, size_t align) -> void*;
+  extern "C" auto azide_gc_sizeof(GC* gc, const void* ptr) -> size_t;
 }  // namespace azide::gc
 
 #endif
@@ -159,7 +179,14 @@ namespace azide::gc {
 static void test() {
   using namespace azide::gc;
 
-  auto* gc = azide_gc_create();
+  auto* gc = azide_gc_create(
+      {
+          .m_suspend = nullptr, /* Suspend callback */
+          .m_resume = nullptr,  /* Resume callback */
+      },
+      {
+          .m_runner = nullptr, /* Async finalization callback */
+      });
   if (gc == nullptr) {
     // Handle error: GC creation failed
     return;
@@ -169,6 +196,9 @@ static void test() {
   std::array<uint8_t, heap_size> heap;
 
   azide_gc_manage(gc, heap.data(), heap.size());
+  azide_gc_add_task(gc, 1);
+  azide_gc_add_task(gc, 2);
+  azide_gc_add_task(gc, 3);
   azide_gc_enable(gc);
 
   azide_gc_step(gc);
