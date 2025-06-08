@@ -57,7 +57,7 @@ namespace azide::gc {
    *
    * @note This function is thread-safe.
    */
-  extern "C" [[nodiscard]] auto azide_gc_create(Interface support) -> GC*;
+  extern "C" [[nodiscard]] auto azide_gc_create(Interface support) noexcept -> GC*;
 
   /**
    * @brief Destroys the specified garbage collector instance and releases all
@@ -71,7 +71,7 @@ namespace azide::gc {
    *
    * @note This function is **thread-safe**, including with respect to the GC instance.
    */
-  extern "C" auto azide_gc_destroy(GC* gc) -> void;
+  extern "C" auto azide_gc_destroy(GC* gc) noexcept -> void;
 
   /**
    * @brief Enables the garbage collector for the specified GC instance.
@@ -85,7 +85,7 @@ namespace azide::gc {
    *
    * @note This function is **thread-safe**, including with respect to the GC instance.
    */
-  extern "C" auto azide_gc_enable(GC* gc) -> void;
+  extern "C" auto azide_gc_enable(GC* gc) noexcept -> void;
 
   /**
    * @brief Disables the garbage collector for the specified GC instance.
@@ -99,7 +99,7 @@ namespace azide::gc {
    *
    * @note This function is **thread-safe**, including with respect to the GC instance.
    */
-  extern "C" auto azide_gc_disable(GC* gc) -> void;
+  extern "C" auto azide_gc_disable(GC* gc) noexcept -> void;
 
   /**
    * @brief Checks if the garbage collector is currently enabled.
@@ -109,7 +109,7 @@ namespace azide::gc {
    *
    * @note This function is **thread-safe**, including with respect to the GC instance.
    */
-  extern "C" [[nodiscard]] auto azide_gc_is_enabled(const GC* gc) -> bool;
+  extern "C" [[nodiscard]] auto azide_gc_is_enabled(const GC* gc) noexcept -> bool;
 
   /**
    * @brief Registers a memory range with the garbage collector.
@@ -138,7 +138,7 @@ namespace azide::gc {
    *
    * @note This function is **thread-safe**, including with respect to the GC instance.
    */
-  extern "C" [[nodiscard]] auto azide_gc_manage(GC* gc, void* base, size_t size) -> bool;
+  extern "C" [[nodiscard]] auto azide_gc_manage(GC* gc, void* base, size_t size) noexcept -> bool;
 
   /**
    * @brief Removes a memory range from garbage collection management.
@@ -158,7 +158,7 @@ namespace azide::gc {
    *
    * @note This function is **thread-safe**, including with respect to the GC instance.
    */
-  extern "C" auto azide_gc_unmanage(GC* gc, void* base, size_t size) -> void;
+  extern "C" auto azide_gc_unmanage(GC* gc, void* base, size_t size) noexcept -> void;
 
   /**
    * @brief Checks if a memory range is managed by the given garbage collector.
@@ -173,7 +173,7 @@ namespace azide::gc {
    *
    * @note This function is **thread-safe**, including with respect to the GC instance.
    */
-  extern "C" [[nodiscard]] auto azide_gc_is_managed(GC* gc, void* base, size_t size) -> bool;
+  extern "C" [[nodiscard]] auto azide_gc_is_managed(GC* gc, void* base, size_t size) noexcept -> bool;
 
   /**
    * @brief Registers a root pointer with the garbage collector.
@@ -191,7 +191,7 @@ namespace azide::gc {
    *
    * @note This function is **thread-safe**, including with respect to the GC instance.
    */
-  extern "C" [[nodiscard]] auto azide_gc_add_root(GC* gc, void** root) -> bool;
+  extern "C" [[nodiscard]] auto azide_gc_add_root(GC* gc, void** root) noexcept -> bool;
 
   /**
    * @brief Removes a root pointer from the garbage collector's root set.
@@ -206,7 +206,7 @@ namespace azide::gc {
    *
    * @note This function is **thread-safe**, including with respect to the GC instance.
    */
-  extern "C" auto azide_gc_del_root(GC* gc, void** root) -> void;
+  extern "C" auto azide_gc_del_root(GC* gc, void** root) noexcept -> void;
 
   /**
    * @brief Enumeration of events that can be notified to the garbage collector.
@@ -296,12 +296,12 @@ namespace azide::gc {
    *
    * @note This function is **thread-safe**, including with respect to the GC instance.
    */
-  extern "C" [[nodiscard]] auto azide_gc_notify(GC* gc, Event event, uint64_t p) -> bool;
+  extern "C" [[nodiscard]] auto azide_gc_notify(GC* gc, Event event, uint64_t p) noexcept -> bool;
 
-  extern "C" auto azide_gc_step(GC* gc) -> uint64_t;
-  extern "C" auto azide_gc_catchup(GC* gc) -> uint64_t;
+  extern "C" auto azide_gc_step(GC* gc) noexcept -> uint64_t;
+  extern "C" auto azide_gc_catchup(GC* gc) noexcept -> uint64_t;
 
-  extern "C" auto azide_gc_malloc(GC* gc, size_t size, size_t align) -> void*;
+  extern "C" auto azide_gc_malloc(GC* gc, size_t size, size_t align) noexcept -> void*;
 }  // namespace azide::gc
 
 #endif

@@ -5,7 +5,13 @@
 #include <boost/config.hpp>
 #include <cassert>
 #include <cstring>
+#include <memory_resource>
 #include <mutex>
+
+namespace std {
+  void __throw_bad_array_new_length() { __builtin_trap(); }
+  void __throw_length_error(const char*) { __builtin_trap(); }
+}  // namespace std
 
 namespace azide::gc {
   class SpinLock {
@@ -51,7 +57,9 @@ namespace azide::gc {
 
     std::array<ManagedRange, MAX_MANAGED_RANGES> m_managed_ranges;
 
-    GC(Interface support)
+    std::pmr::vector<void**> m_roots;
+
+    GC(Interface support, std::pmr::memory_resource* resource)
         : m_malloc(support.m_malloc),
           m_malloc_m(support.m_malloc_m),
           m_free(support.m_free),
@@ -61,7 +69,9 @@ namespace azide::gc {
           m_pause(support.m_pause),
           m_pause_m(support.m_pause_m),
           m_resume(support.m_resume),
-          m_resume_m(support.m_resume_m) {
+          m_resume_m(support.m_resume_m),
+          m_managed_ranges(),
+          m_roots(resource) {
       (void)m_runner;
       (void)m_runner_m;
       (void)m_pause;
@@ -89,7 +99,7 @@ namespace azide::gc {
     auto set_enabled(bool enabled) -> void { m_enabled = enabled; }
   };
 
-  BOOST_SYMBOL_EXPORT auto azide_gc_create(Interface support) -> GC* {
+  BOOST_SYMBOL_EXPORT auto azide_gc_create(Interface support) noexcept -> GC* {
     if (const auto missing_required_callbacks = support.m_runner == nullptr     // AsyncFinalizer
                                                 || support.m_malloc == nullptr  // Malloc
                                                 || support.m_free == nullptr;   // Free
@@ -102,10 +112,13 @@ namespace azide::gc {
       return nullptr;
     }
 
-    return new (v_ptr) GC(support);
+    // FIXME: Use the m_malloc, m_free in a pmr allocator
+    std::pmr::memory_resource* resource = std::pmr::null_memory_resource();
+
+    return new (v_ptr) GC(support, resource);
   }
 
-  BOOST_SYMBOL_EXPORT auto azide_gc_destroy(GC* gc) -> void {
+  BOOST_SYMBOL_EXPORT auto azide_gc_destroy(GC* gc) noexcept -> void {
     if (gc == nullptr) {
       return;
     }
@@ -119,13 +132,13 @@ namespace azide::gc {
 
     {  // Clear the object for safety
       const uint8_t sentinel_byte = 0xa3;
-      memset(gc, sentinel_byte, sizeof(GC));
+      memset(static_cast<void*>(gc), sentinel_byte, sizeof(GC));
     }
 
     gc_free(gc_free_m, gc);
   }
 
-  BOOST_SYMBOL_EXPORT auto azide_gc_enable(GC* gc) -> void {
+  BOOST_SYMBOL_EXPORT auto azide_gc_enable(GC* gc) noexcept -> void {
     assert(gc != nullptr && "GC instance must not be null");
 
     return gc->critical_section([&] {
@@ -133,7 +146,7 @@ namespace azide::gc {
     });
   }
 
-  BOOST_SYMBOL_EXPORT auto azide_gc_disable(GC* gc) -> void {
+  BOOST_SYMBOL_EXPORT auto azide_gc_disable(GC* gc) noexcept -> void {
     assert(gc != nullptr && "GC instance must not be null");
 
     return gc->critical_section([&] {
@@ -141,7 +154,7 @@ namespace azide::gc {
     });
   }
 
-  BOOST_SYMBOL_EXPORT auto azide_gc_is_enabled(const GC* gc) -> bool {
+  BOOST_SYMBOL_EXPORT auto azide_gc_is_enabled(const GC* gc) noexcept -> bool {
     assert(gc != nullptr && "GC instance must not be null");
 
     return gc->critical_section([&] {
@@ -149,7 +162,7 @@ namespace azide::gc {
     });
   }
 
-  BOOST_SYMBOL_EXPORT auto azide_gc_manage(GC* gc, void* base, size_t size) -> bool {
+  BOOST_SYMBOL_EXPORT auto azide_gc_manage(GC* gc, void* base, size_t size) noexcept -> bool {
     assert(gc != nullptr && "GC instance must not be null");
 
     // TODO: Manage the memory range
@@ -160,7 +173,7 @@ namespace azide::gc {
     return false;
   }
 
-  BOOST_SYMBOL_EXPORT auto azide_gc_unmanage(GC* gc, void* base, size_t size) -> void {
+  BOOST_SYMBOL_EXPORT auto azide_gc_unmanage(GC* gc, void* base, size_t size) noexcept -> void {
     assert(gc != nullptr && "GC instance must not be null");
 
     // TODO: Unmanage the memory range
@@ -169,7 +182,7 @@ namespace azide::gc {
     (void)size;
   }
 
-  BOOST_SYMBOL_EXPORT auto azide_gc_is_managed(GC* gc, void* base, size_t size) -> bool {
+  BOOST_SYMBOL_EXPORT auto azide_gc_is_managed(GC* gc, void* base, size_t size) noexcept -> bool {
     assert(gc != nullptr && "GC instance must not be null");
 
     return gc->critical_section([&] {
@@ -190,26 +203,31 @@ namespace azide::gc {
     });
   }
 
-  BOOST_SYMBOL_EXPORT auto azide_gc_add_root(GC* gc, void** root) -> bool {
+  BOOST_SYMBOL_EXPORT auto azide_gc_add_root(GC* gc, void** root) noexcept -> bool {
     assert(gc != nullptr && "GC instance must not be null");
 
-    // TODO: Add a root pointer
-    (void)gc;
-    (void)root;
+    return gc->critical_section([&] {
+      // FIXME: Handle allocator error
+      gc->m_roots.push_back(root);
 
-    return false;
+      return true;
+    });
   }
 
-  BOOST_SYMBOL_EXPORT auto azide_gc_del_root(GC* gc, void** root) -> void {
+  BOOST_SYMBOL_EXPORT auto azide_gc_del_root(GC* gc, void** root) noexcept -> void {
     assert(gc != nullptr && "GC instance must not be null");
 
-    // TODO: Remove a root pointer
-    (void)gc;
-    (void)root;
+    return gc->critical_section([&] {
+      auto it = std::find(gc->m_roots.begin(), gc->m_roots.end(), root);
+      if (it != gc->m_roots.end()) {
+        gc->m_roots.erase(it);
+      }
+    });
   }
 
-  BOOST_SYMBOL_EXPORT auto azide_gc_notify(GC* gc, Event event, uint64_t p) -> bool {
+  BOOST_SYMBOL_EXPORT auto azide_gc_notify(GC* gc, Event event, uint64_t p) noexcept -> bool {
     assert(gc != nullptr && "GC instance must not be null");
+    (void)gc;
 
     (void)p;
 
@@ -246,7 +264,7 @@ namespace azide::gc {
     }
   }
 
-  BOOST_SYMBOL_EXPORT auto azide_gc_step(GC* gc) -> uint64_t {
+  BOOST_SYMBOL_EXPORT auto azide_gc_step(GC* gc) noexcept -> uint64_t {
     assert(gc != nullptr && "GC instance must not be null");
 
     // TODO: Perform a deterministic unit of work for the GC
@@ -254,7 +272,7 @@ namespace azide::gc {
     return 0;
   }
 
-  BOOST_SYMBOL_EXPORT auto azide_gc_catchup(GC* gc) -> uint64_t {
+  BOOST_SYMBOL_EXPORT auto azide_gc_catchup(GC* gc) noexcept -> uint64_t {
     assert(gc != nullptr && "GC instance must not be null");
 
     // TODO: Perform all pending work for the GC
@@ -263,7 +281,7 @@ namespace azide::gc {
     return 0;
   }
 
-  BOOST_SYMBOL_EXPORT auto azide_gc_malloc(GC* gc, size_t size, size_t align) -> void* {
+  BOOST_SYMBOL_EXPORT auto azide_gc_malloc(GC* gc, size_t size, size_t align) noexcept -> void* {
     assert(gc != nullptr && "GC instance must not be null");
 
     // TODO: Allocate memory with the GC
