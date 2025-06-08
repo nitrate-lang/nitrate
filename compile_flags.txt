@@ -1,2 +1,3 @@
 -Icompiler/lexer/include
 -Icompiler/parser/include
+-Iruntime/libazide-gc/include
