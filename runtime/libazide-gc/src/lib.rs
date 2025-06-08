@@ -8,6 +8,14 @@ fn panic(_info: &core::panic::PanicInfo) -> ! {
     loop {}
 }
 
+pub enum Event {
+    TaskCreated = 0,
+    TaskExited = 1,
+    TaskBlocked = 2,
+    TaskUnblocked = 3,
+    ObjectDestructed = 10,
+}
+
 #[repr(C)]
 pub struct Interface {
     x: u32,
@@ -31,7 +39,6 @@ pub extern "C" fn azide_gc_destroy(gc: *mut GC) {
     }
 
     let gc = unsafe { &mut *gc };
-
     let _lock = gc.lock.lock();
 
     // TODO: Clean up the GC instance
@@ -42,12 +49,9 @@ pub extern "C" fn azide_gc_enable(_gc: *mut GC) {
     assert!(!_gc.is_null(), "GC instance must not be null");
 
     let gc = unsafe { &mut *_gc };
+    let _lock = gc.lock.lock();
 
-    {
-        let _lock = gc.lock.lock();
-
-        gc.enabled = true;
-    }
+    gc.enabled = true;
 }
 
 #[unsafe(no_mangle)]
@@ -55,12 +59,9 @@ pub extern "C" fn azide_gc_disable(_gc: *mut GC) {
     assert!(!_gc.is_null(), "GC instance must not be null");
 
     let gc = unsafe { &mut *_gc };
+    let _lock = gc.lock.lock();
 
-    {
-        let _lock = gc.lock.lock();
-
-        gc.enabled = false;
-    }
+    gc.enabled = false;
 }
 
 #[unsafe(no_mangle)]
@@ -68,63 +69,142 @@ pub extern "C" fn azide_gc_is_enabled(_gc: *const GC) -> bool {
     assert!(!_gc.is_null(), "GC instance must not be null");
 
     let gc = unsafe { &*_gc };
+    let _lock = gc.lock.lock();
 
-    {
-        let _lock = gc.lock.lock();
-
-        return gc.enabled;
-    }
+    gc.enabled
 }
 
 #[unsafe(no_mangle)]
 pub extern "C" fn azide_gc_manage(_gc: *mut GC, _base: *mut u8, _size: usize) -> bool {
+    assert!(!_gc.is_null(), "GC instance must not be null");
+
+    let gc = unsafe { &*_gc };
+    let _lock = gc.lock.lock();
+
     // TODO: Implement the logic to manage memory
     return false;
 }
 
 #[unsafe(no_mangle)]
 pub extern "C" fn azide_gc_unmanage(_gc: *mut GC, _base: *mut u8, _size: usize) {
+    assert!(!_gc.is_null(), "GC instance must not be null");
+
+    let gc = unsafe { &*_gc };
+    let _lock = gc.lock.lock();
+
     // TODO: Implement the logic to unmanage memory
 }
 
 #[unsafe(no_mangle)]
 pub extern "C" fn azide_gc_is_managed(_gc: *mut GC, _base: *mut u8, _size: usize) -> bool {
+    assert!(!_gc.is_null(), "GC instance must not be null");
+
+    let gc = unsafe { &*_gc };
+    let _lock = gc.lock.lock();
+
     // TODO: Implement the logic to check if the memory is managed
     return false;
 }
 
 #[unsafe(no_mangle)]
 pub extern "C" fn azide_gc_add_root(_gc: *mut GC, _base: *const *mut u8) -> bool {
+    assert!(!_gc.is_null(), "GC instance must not be null");
+
+    let gc = unsafe { &*_gc };
+    let _lock = gc.lock.lock();
+
     // TODO: Implement the logic to add a root
     return false;
 }
 
 #[unsafe(no_mangle)]
-pub extern "C" fn azide_gc_del_root(_gc: *mut GC, _base: *const *mut u8) -> bool {
+pub extern "C" fn azide_gc_del_root(_gc: *mut GC, _base: *const *mut u8) {
+    assert!(!_gc.is_null(), "GC instance must not be null");
+
+    let gc = unsafe { &*_gc };
+    let _lock = gc.lock.lock();
+
     // TODO: Implement the logic to delete a root
-    return false;
 }
 
 #[unsafe(no_mangle)]
-pub extern "C" fn azide_gc_notify(_gc: *mut GC, _event: u32, _p: u64) -> bool {
+pub extern "C" fn azide_gc_notify(_gc: *mut GC, event: u32, _p: u64) -> bool {
+    assert!(!_gc.is_null(), "GC instance must not be null");
+
+    let gc = unsafe { &*_gc };
+    let _lock = gc.lock.lock();
+
     // TODO: Implement the logic to notify the GC
-    return false;
+
+    match event {
+        x if x == Event::TaskCreated as u32 => {
+            // TODO: Handle task creation event
+            return false;
+        }
+
+        x if x == Event::TaskExited as u32 => {
+            // TODO: Handle task exit event
+            return false;
+        }
+
+        x if x == Event::TaskBlocked as u32 => {
+            // TODO: Handle task blocked event
+            return false;
+        }
+
+        x if x == Event::TaskUnblocked as u32 => {
+            // TODO: Handle task unblocked event
+            return false;
+        }
+
+        x if x == Event::ObjectDestructed as u32 => {
+            // TODO: Handle object destructed event
+            return false;
+        }
+
+        _ => {
+            return false;
+        }
+    }
 }
 
 #[unsafe(no_mangle)]
 pub extern "C" fn azide_gc_step(_gc: *mut GC) -> u64 {
+    assert!(!_gc.is_null(), "GC instance must not be null");
+
+    let gc = unsafe { &*_gc };
+    let _lock = gc.lock.lock();
+
+    if !gc.enabled {
+        return 0;
+    }
+
     // TODO: Implement the logic to perform a GC step
     return 0;
 }
 
 #[unsafe(no_mangle)]
 pub extern "C" fn azide_gc_catchup(_gc: *mut GC) -> u64 {
+    assert!(!_gc.is_null(), "GC instance must not be null");
+
+    let gc = unsafe { &*_gc };
+    let _lock = gc.lock.lock();
+
+    if !gc.enabled {
+        return 0;
+    }
+
     // TODO: Implement the logic to perform a GC catchup
     return 0;
 }
 
 #[unsafe(no_mangle)]
 pub extern "C" fn azide_gc_malloc(_gc: *mut GC, _size: usize, _align: usize) -> *mut u8 {
+    assert!(!_gc.is_null(), "GC instance must not be null");
+
+    let gc = unsafe { &*_gc };
+    let _lock = gc.lock.lock();
+
     // TODO: Implement the logic to allocate memory
     return 0 as *mut u8;
 }

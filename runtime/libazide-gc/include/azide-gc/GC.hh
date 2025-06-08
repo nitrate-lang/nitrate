@@ -218,7 +218,7 @@ namespace azide::gc {
    *
    * The values of this enumeration are used as parameters in the azide_gc_notify function.
    */
-  enum class Event : uint8_t {
+  enum class Event : uint32_t {
     /**
      * @brief New coroutine/task has been created.
      *
