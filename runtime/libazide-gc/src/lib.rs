@@ -1,6 +1,9 @@
 #![no_std]
 
+use spin;
+
 #[panic_handler]
+#[cfg(not(test))]
 fn panic(_info: &core::panic::PanicInfo) -> ! {
     loop {}
 }
@@ -10,7 +13,10 @@ pub struct Interface {
     x: u32,
 }
 
-pub struct GC {}
+pub struct GC {
+    pub lock: spin::Mutex<()>,
+    pub enabled: bool,
+}
 
 #[unsafe(no_mangle)]
 pub extern "C" fn azide_gc_create(_support: Interface) -> *mut GC {
@@ -19,24 +25,55 @@ pub extern "C" fn azide_gc_create(_support: Interface) -> *mut GC {
 }
 
 #[unsafe(no_mangle)]
-pub extern "C" fn azide_gc_destroy(_gc: *mut GC) {
-    // TODO: Implement the logic to destroy the GC instance
+pub extern "C" fn azide_gc_destroy(gc: *mut GC) {
+    if gc.is_null() {
+        return;
+    }
+
+    let gc = unsafe { &mut *gc };
+
+    let _lock = gc.lock.lock();
+
+    // TODO: Clean up the GC instance
 }
 
 #[unsafe(no_mangle)]
 pub extern "C" fn azide_gc_enable(_gc: *mut GC) {
-    // TODO: Implement the logic to enable the GC instance
+    assert!(!_gc.is_null(), "GC instance must not be null");
+
+    let gc = unsafe { &mut *_gc };
+
+    {
+        let _lock = gc.lock.lock();
+
+        gc.enabled = true;
+    }
 }
 
 #[unsafe(no_mangle)]
 pub extern "C" fn azide_gc_disable(_gc: *mut GC) {
-    // TODO: Implement the logic to disable the GC instance
+    assert!(!_gc.is_null(), "GC instance must not be null");
+
+    let gc = unsafe { &mut *_gc };
+
+    {
+        let _lock = gc.lock.lock();
+
+        gc.enabled = false;
+    }
 }
 
 #[unsafe(no_mangle)]
-pub extern "C" fn azide_gc_is_enabled(_gc: *mut GC) -> bool {
-    // TODO: Implement the logic to check if the GC instance is enabled
-    return false;
+pub extern "C" fn azide_gc_is_enabled(_gc: *const GC) -> bool {
+    assert!(!_gc.is_null(), "GC instance must not be null");
+
+    let gc = unsafe { &*_gc };
+
+    {
+        let _lock = gc.lock.lock();
+
+        return gc.enabled;
+    }
 }
 
 #[unsafe(no_mangle)]
