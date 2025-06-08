@@ -71,16 +71,16 @@ namespace azide::gc {
     if (const auto missing_required_callbacks = support.m_runner == nullptr     // AsyncFinalizer
                                                 || support.m_malloc == nullptr  // Malloc
                                                 || support.m_free == nullptr;   // Free
-        missing_required_callbacks) {
+        missing_required_callbacks) [[unlikely]] {
       return nullptr;
     }
 
     void* v_ptr = support.m_malloc(support.m_malloc_m, sizeof(GC));
-    if (v_ptr == nullptr) {
+    if (v_ptr == nullptr) [[unlikely]] {
       return nullptr;
     }
 
-    return new (v_ptr) GC(support);  // Placement new to construct GC in allocated memory
+    return new (v_ptr) GC(support);
   }
 
   auto azide_gc_destroy(GC* gc) -> void {
@@ -88,43 +88,42 @@ namespace azide::gc {
       return;
     }
 
-    // FIXME: Ensure that C++ allows the object to be destroyed while its methods
-    // are still being called.
-    gc->critical_section([&]() {
-      const auto gc_free = gc->m_free;
-      auto* gc_free_m = gc->m_free_m;
+    gc->lock();
 
-      // Call the destructor to clean up resources
-      gc->~GC();
+    const auto gc_free = gc->m_free;
+    auto* gc_free_m = gc->m_free_m;
 
-      const uint8_t safety_sentinel = 0xa3;
-      memset(gc, safety_sentinel, sizeof(GC));  // Clear the memory for safety
+    gc->~GC();
 
-      gc_free(gc_free_m, gc);
-    });
+    {  // Clear the object for safety
+      const uint8_t sentinel_byte = 0xa3;
+      memset(gc, sentinel_byte, sizeof(GC));
+    }
+
+    gc_free(gc_free_m, gc);
   }
 
   auto azide_gc_enable(GC* gc) -> void {
     assert(gc != nullptr && "GC instance must not be null");
 
-    gc->critical_section([&] {  //
-      gc->set_enabled(true);
+    return gc->critical_section([&] {
+      gc->set_enabled(true);  //
     });
   }
 
   auto azide_gc_disable(GC* gc) -> void {
     assert(gc != nullptr && "GC instance must not be null");
 
-    gc->critical_section([&] {  //
-      gc->set_enabled(false);
+    return gc->critical_section([&] {
+      gc->set_enabled(false);  //
     });
   }
 
   auto azide_gc_is_enabled(const GC* gc) -> bool {
     assert(gc != nullptr && "GC instance must not be null");
 
-    return gc->critical_section([&] {  //
-      return gc->is_enabled();
+    return gc->critical_section([&] {
+      return gc->is_enabled();  //
     });
   }
 
@@ -140,6 +139,8 @@ namespace azide::gc {
   }
 
   auto azide_gc_unmanage(GC* gc, void* base, size_t size) -> void {
+    assert(gc != nullptr && "GC instance must not be null");
+
     // TODO: Unmanage the memory range
     (void)gc;
     (void)base;
@@ -147,8 +148,6 @@ namespace azide::gc {
   }
 
   auto azide_gc_is_managed(GC* gc, void* base, size_t size) -> bool {
-    assert(gc != nullptr && "GC instance must not be null");
-
     assert(gc != nullptr && "GC instance must not be null");
 
     // TODO: Check if the memory range is managed
