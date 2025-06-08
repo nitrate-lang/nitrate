@@ -1,3 +1,4 @@
+#include <atomic>
 #include <azide-gc/GC.hh>
 #include <boost/config.hpp>
 #include <cassert>
@@ -5,10 +6,22 @@
 #include <mutex>
 
 namespace azide::gc {
+  class SpinLock {
+    std::atomic<bool> m_locked = false;
+
+  public:
+    void lock() {
+      while (m_locked.exchange(true, std::memory_order_acquire)) {
+        // Spin-wait (busy-wait)
+      }
+    }
+
+    void unlock() { m_locked.store(false, std::memory_order_release); }
+  };
+
   struct GC {
   private:
-    mutable std::mutex m_mutex;  // Internal mutex for thread-safety
-
+    mutable SpinLock m_mutex;
     bool m_enabled = false;
 
   public:
@@ -55,11 +68,11 @@ namespace azide::gc {
     [[nodiscard]] auto malloc(size_t size) -> void* { return m_malloc(m_malloc_m, size); }
     auto free(void* ptr) -> void { m_free(m_free_m, ptr); }
 
-    auto lock() -> void { m_mutex.lock(); }
-    auto unlock() -> void { m_mutex.unlock(); }
+    auto lock() const -> void { m_mutex.lock(); }
+    auto unlock() const -> void { m_mutex.unlock(); }
 
-    auto critical_section(auto section) const -> decltype(section()) {
-      std::lock_guard lock(m_mutex);
+    [[nodiscard]] auto critical_section(auto section) const -> decltype(section()) {
+      std::lock_guard lock(*this);
       return section();
     }
 
@@ -67,7 +80,7 @@ namespace azide::gc {
     auto set_enabled(bool enabled) -> void { m_enabled = enabled; }
   };
 
-  auto azide_gc_create(Interface support) -> GC* {
+  BOOST_SYMBOL_EXPORT auto azide_gc_create(Interface support) -> GC* {
     if (const auto missing_required_callbacks = support.m_runner == nullptr     // AsyncFinalizer
                                                 || support.m_malloc == nullptr  // Malloc
                                                 || support.m_free == nullptr;   // Free
@@ -83,7 +96,7 @@ namespace azide::gc {
     return new (v_ptr) GC(support);
   }
 
-  auto azide_gc_destroy(GC* gc) -> void {
+  BOOST_SYMBOL_EXPORT auto azide_gc_destroy(GC* gc) -> void {
     if (gc == nullptr) {
       return;
     }
@@ -103,7 +116,7 @@ namespace azide::gc {
     gc_free(gc_free_m, gc);
   }
 
-  auto azide_gc_enable(GC* gc) -> void {
+  BOOST_SYMBOL_EXPORT auto azide_gc_enable(GC* gc) -> void {
     assert(gc != nullptr && "GC instance must not be null");
 
     return gc->critical_section([&] {
@@ -111,7 +124,7 @@ namespace azide::gc {
     });
   }
 
-  auto azide_gc_disable(GC* gc) -> void {
+  BOOST_SYMBOL_EXPORT auto azide_gc_disable(GC* gc) -> void {
     assert(gc != nullptr && "GC instance must not be null");
 
     return gc->critical_section([&] {
@@ -119,7 +132,7 @@ namespace azide::gc {
     });
   }
 
-  auto azide_gc_is_enabled(const GC* gc) -> bool {
+  BOOST_SYMBOL_EXPORT auto azide_gc_is_enabled(const GC* gc) -> bool {
     assert(gc != nullptr && "GC instance must not be null");
 
     return gc->critical_section([&] {
@@ -127,7 +140,7 @@ namespace azide::gc {
     });
   }
 
-  auto azide_gc_manage(GC* gc, void* base, size_t size) -> bool {
+  BOOST_SYMBOL_EXPORT auto azide_gc_manage(GC* gc, void* base, size_t size) -> bool {
     assert(gc != nullptr && "GC instance must not be null");
 
     // TODO: Manage the memory range
@@ -138,7 +151,7 @@ namespace azide::gc {
     return false;
   }
 
-  auto azide_gc_unmanage(GC* gc, void* base, size_t size) -> void {
+  BOOST_SYMBOL_EXPORT auto azide_gc_unmanage(GC* gc, void* base, size_t size) -> void {
     assert(gc != nullptr && "GC instance must not be null");
 
     // TODO: Unmanage the memory range
@@ -147,7 +160,7 @@ namespace azide::gc {
     (void)size;
   }
 
-  auto azide_gc_is_managed(GC* gc, void* base, size_t size) -> bool {
+  BOOST_SYMBOL_EXPORT auto azide_gc_is_managed(GC* gc, void* base, size_t size) -> bool {
     assert(gc != nullptr && "GC instance must not be null");
 
     // TODO: Check if the memory range is managed
@@ -158,7 +171,7 @@ namespace azide::gc {
     return false;
   }
 
-  auto azide_gc_add_root(GC* gc, void** root) -> bool {
+  BOOST_SYMBOL_EXPORT auto azide_gc_add_root(GC* gc, void** root) -> bool {
     assert(gc != nullptr && "GC instance must not be null");
 
     // TODO: Add a root pointer
@@ -168,7 +181,7 @@ namespace azide::gc {
     return false;
   }
 
-  auto azide_gc_del_root(GC* gc, void** root) -> void {
+  BOOST_SYMBOL_EXPORT auto azide_gc_del_root(GC* gc, void** root) -> void {
     assert(gc != nullptr && "GC instance must not be null");
 
     // TODO: Remove a root pointer
@@ -176,7 +189,7 @@ namespace azide::gc {
     (void)root;
   }
 
-  auto azide_gc_notify(GC* gc, Event event, uint64_t p) -> bool {
+  BOOST_SYMBOL_EXPORT auto azide_gc_notify(GC* gc, Event event, uint64_t p) -> bool {
     assert(gc != nullptr && "GC instance must not be null");
 
     (void)p;
@@ -214,7 +227,7 @@ namespace azide::gc {
     }
   }
 
-  auto azide_gc_step(GC* gc) -> uint64_t {
+  BOOST_SYMBOL_EXPORT auto azide_gc_step(GC* gc) -> uint64_t {
     assert(gc != nullptr && "GC instance must not be null");
 
     // TODO: Perform a deterministic unit of work for the GC
@@ -222,7 +235,7 @@ namespace azide::gc {
     return 0;
   }
 
-  auto azide_gc_catchup(GC* gc) -> uint64_t {
+  BOOST_SYMBOL_EXPORT auto azide_gc_catchup(GC* gc) -> uint64_t {
     assert(gc != nullptr && "GC instance must not be null");
 
     // TODO: Perform all pending work for the GC
@@ -231,7 +244,7 @@ namespace azide::gc {
     return 0;
   }
 
-  auto azide_gc_malloc(GC* gc, size_t size, size_t align) -> void* {
+  BOOST_SYMBOL_EXPORT auto azide_gc_malloc(GC* gc, size_t size, size_t align) -> void* {
     assert(gc != nullptr && "GC instance must not be null");
 
     // TODO: Allocate memory with the GC

@@ -17,6 +17,8 @@ add_compile_options(
   -g3
   -fno-exceptions
   -fno-rtti
+  -fvisibility=hidden
+  -fvisibility-inlines-hidden
 )
 
 if(NITRATE_COMPILER_SANITIZE)
