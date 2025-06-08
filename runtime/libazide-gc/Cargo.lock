@@ -3,5 +3,5 @@
 version = 4
 
 [[package]]
-name = "libazide-gc"
+name = "azide-gc"
 version = "0.1.0"

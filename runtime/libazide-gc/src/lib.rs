@@ -1,14 +1,93 @@
 #![no_std]
 
+#[panic_handler]
+fn panic(_info: &core::panic::PanicInfo) -> ! {
+    loop {}
+}
+
 #[repr(C)]
 pub struct Interface {
     x: u32,
 }
 
-#[repr(C)]
 pub struct GC {}
 
 #[unsafe(no_mangle)]
 pub extern "C" fn azide_gc_create(_support: Interface) -> *mut GC {
+    // TODO: Implement the logic to create a new GC instance
     return 0 as *mut GC;
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn azide_gc_destroy(_gc: *mut GC) {
+    // TODO: Implement the logic to destroy the GC instance
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn azide_gc_enable(_gc: *mut GC) {
+    // TODO: Implement the logic to enable the GC instance
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn azide_gc_disable(_gc: *mut GC) {
+    // TODO: Implement the logic to disable the GC instance
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn azide_gc_is_enabled(_gc: *mut GC) -> bool {
+    // TODO: Implement the logic to check if the GC instance is enabled
+    return false;
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn azide_gc_manage(_gc: *mut GC, _base: *mut u8, _size: usize) -> bool {
+    // TODO: Implement the logic to manage memory
+    return false;
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn azide_gc_unmanage(_gc: *mut GC, _base: *mut u8, _size: usize) {
+    // TODO: Implement the logic to unmanage memory
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn azide_gc_is_managed(_gc: *mut GC, _base: *mut u8, _size: usize) -> bool {
+    // TODO: Implement the logic to check if the memory is managed
+    return false;
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn azide_gc_add_root(_gc: *mut GC, _base: *const *mut u8) -> bool {
+    // TODO: Implement the logic to add a root
+    return false;
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn azide_gc_del_root(_gc: *mut GC, _base: *const *mut u8) -> bool {
+    // TODO: Implement the logic to delete a root
+    return false;
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn azide_gc_notify(_gc: *mut GC, _event: u32, _p: u64) -> bool {
+    // TODO: Implement the logic to notify the GC
+    return false;
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn azide_gc_step(_gc: *mut GC) -> u64 {
+    // TODO: Implement the logic to perform a GC step
+    return 0;
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn azide_gc_catchup(_gc: *mut GC) -> u64 {
+    // TODO: Implement the logic to perform a GC catchup
+    return 0;
+}
+
+#[unsafe(no_mangle)]
+pub extern "C" fn azide_gc_malloc(_gc: *mut GC, _size: usize, _align: usize) -> *mut u8 {
+    // TODO: Implement the logic to allocate memory
+    return 0 as *mut u8;
 }
