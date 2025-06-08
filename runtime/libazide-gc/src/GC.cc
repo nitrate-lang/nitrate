@@ -2,10 +2,9 @@
 #include <boost/config.hpp>
 
 namespace azide::gc {
-  auto azide_gc_create(TaskAPI task_api, AsyncFinalization runner) -> GC* {
+  auto azide_gc_create(Interface support) -> GC* {
     // TODO: Create and initialize a GC instance
-    (void)task_api;
-    (void)runner;
+    (void)support;
 
     return nullptr;
   }

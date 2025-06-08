@@ -14,21 +14,18 @@ namespace azide::gc {
    */
   struct GC;
 
-  struct TaskAPI {
+  struct Interface {
     using PauseTasks = void (*)(void* m);
     using ResumeTasks = void (*)(void* m);
+    using AsyncFinalizer = void (*)(void* m, void* base, size_t size, uint64_t object_id);
 
     PauseTasks m_pause = nullptr;
     void* m_pause_m = nullptr;
 
     ResumeTasks m_resume = nullptr;
     void* m_resume_m = nullptr;
-  };
 
-  struct AsyncFinalization {
-    using Runner = void (*)(void* m, void* base, size_t size, uint64_t object_id);
-
-    Runner m_runner = nullptr;
+    AsyncFinalizer m_runner = nullptr;
     void* m_runner_m = nullptr;
   };
 
@@ -40,12 +37,9 @@ namespace azide::gc {
    *
    * The GC instance will be in the disabled state upon creation.
    *
-   * @param task_api A structure containing function pointers for task management.
-   *                 These functions are used to pause and resume tasks during garbage collection.
-   *                 If the `m_pause` or `m_resume` pointers are null, the GC will not pause tasks during collection.
-   * @param runner   A structure containing a function pointer for asynchronous finalization.
-   *                 This function is called to finalize objects that are no longer reachable.
-   *                 If the `m_runner` is null, nullptr is returned from this function.
+   * @param support An Interface structure that provided callbacks for the GC to use.
+   *                This dependency injection allows the GC to work without linking
+   *                against any specific threading library or the standard library.
    *
    * @return GC* Pointer to the newly created garbage collector instance.
    *         Returns nullptr if creation fails.
@@ -55,7 +49,7 @@ namespace azide::gc {
    *
    * @note This function is thread-safe.
    */
-  extern "C" [[nodiscard]] auto azide_gc_create(TaskAPI task_api, AsyncFinalization runner) -> GC*;
+  extern "C" [[nodiscard]] auto azide_gc_create(Interface support) -> GC*;
 
   /**
    * @brief Destroys the specified garbage collector instance and releases all
