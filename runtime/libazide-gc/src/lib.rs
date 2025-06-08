@@ -29,6 +29,7 @@ pub struct GC {
 #[unsafe(no_mangle)]
 pub extern "C" fn azide_gc_create(_support: Interface) -> *mut GC {
     // TODO: Implement the logic to create a new GC instance
+
     return 0 as *mut GC;
 }
 
@@ -82,6 +83,7 @@ pub extern "C" fn azide_gc_manage(_gc: *mut GC, _base: *mut u8, _size: usize) ->
     let _lock = gc.lock.lock();
 
     // TODO: Implement the logic to manage memory
+
     return false;
 }
 
@@ -103,6 +105,7 @@ pub extern "C" fn azide_gc_is_managed(_gc: *mut GC, _base: *mut u8, _size: usize
     let _lock = gc.lock.lock();
 
     // TODO: Implement the logic to check if the memory is managed
+
     return false;
 }
 
@@ -114,6 +117,7 @@ pub extern "C" fn azide_gc_add_root(_gc: *mut GC, _base: *const *mut u8) -> bool
     let _lock = gc.lock.lock();
 
     // TODO: Implement the logic to add a root
+
     return false;
 }
 
@@ -169,33 +173,31 @@ pub extern "C" fn azide_gc_notify(_gc: *mut GC, event: u32, _p: u64) -> bool {
 }
 
 #[unsafe(no_mangle)]
-pub extern "C" fn azide_gc_step(_gc: *mut GC) -> u64 {
+pub extern "C" fn azide_gc_step(_gc: *mut GC) -> bool {
     assert!(!_gc.is_null(), "GC instance must not be null");
 
     let gc = unsafe { &*_gc };
     let _lock = gc.lock.lock();
 
     if !gc.enabled {
-        return 0;
+        return true;
     }
 
     // TODO: Implement the logic to perform a GC step
-    return 0;
+
+    return false;
 }
 
 #[unsafe(no_mangle)]
-pub extern "C" fn azide_gc_catchup(_gc: *mut GC) -> u64 {
+pub extern "C" fn azide_gc_catchup(_gc: *mut GC) {
     assert!(!_gc.is_null(), "GC instance must not be null");
 
-    let gc = unsafe { &*_gc };
-    let _lock = gc.lock.lock();
-
-    if !gc.enabled {
-        return 0;
+    loop {
+        let work_remaining = azide_gc_step(_gc);
+        if !work_remaining {
+            break;
+        }
     }
-
-    // TODO: Implement the logic to perform a GC catchup
-    return 0;
 }
 
 #[unsafe(no_mangle)]
@@ -206,5 +208,6 @@ pub extern "C" fn azide_gc_malloc(_gc: *mut GC, _size: usize, _align: usize) -> 
     let _lock = gc.lock.lock();
 
     // TODO: Implement the logic to allocate memory
+
     return 0 as *mut u8;
 }

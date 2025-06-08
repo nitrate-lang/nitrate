@@ -317,8 +317,8 @@ enum azide_gc_event_t {
  */
 extern bool azide_gc_notify(struct azide_gc_t* gc, enum azide_gc_event_t event, uint64_t p);
 
-extern uint64_t azide_gc_step(struct azide_gc_t* gc);
-extern uint64_t azide_gc_catchup(struct azide_gc_t* gc);
+extern bool azide_gc_step(struct azide_gc_t* gc);
+extern void azide_gc_catchup(struct azide_gc_t* gc);
 
 extern void* azide_gc_malloc(struct azide_gc_t* gc, size_t size, size_t align);
 
