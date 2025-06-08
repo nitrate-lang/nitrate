@@ -1,3 +1,5 @@
+#include <algorithm>
+#include <array>
 #include <atomic>
 #include <azide-gc/GC.hh>
 #include <boost/config.hpp>
@@ -31,7 +33,6 @@ namespace azide::gc {
     Interface::Free m_free;
     void* m_free_m;
 
-  private:
     Interface::AsyncFinalizer m_runner;
     void* m_runner_m;
 
@@ -41,7 +42,15 @@ namespace azide::gc {
     Interface::ResumeTasks m_resume;
     void* m_resume_m;
 
-  public:
+    struct ManagedRange {
+      uint8_t* m_base = nullptr;
+      size_t m_size = 0;
+    };
+
+    static constexpr size_t MAX_MANAGED_RANGES = 20;
+
+    std::array<ManagedRange, MAX_MANAGED_RANGES> m_managed_ranges;
+
     GC(Interface support)
         : m_malloc(support.m_malloc),
           m_malloc_m(support.m_malloc_m),
@@ -163,12 +172,22 @@ namespace azide::gc {
   BOOST_SYMBOL_EXPORT auto azide_gc_is_managed(GC* gc, void* base, size_t size) -> bool {
     assert(gc != nullptr && "GC instance must not be null");
 
-    // TODO: Check if the memory range is managed
-    (void)gc;
-    (void)base;
-    (void)size;
+    return gc->critical_section([&] {
+      const auto* check_start = static_cast<uint8_t*>(base);
+      const auto* check_end = check_start + size;
 
-    return false;
+      return std::ranges::any_of(gc->m_managed_ranges, [&](const auto& range) {
+        if (range.m_base == nullptr || range.m_size == 0) {
+          return false;  // Skip uninitialized ranges
+        }
+
+        // Check if the range overlaps with the managed range
+        const auto* range_start = range.m_base;
+        const auto* range_end = range_start + range.m_size;
+
+        return (check_start >= range_start && check_end <= range_end);
+      });
+    });
   }
 
   BOOST_SYMBOL_EXPORT auto azide_gc_add_root(GC* gc, void** root) -> bool {
