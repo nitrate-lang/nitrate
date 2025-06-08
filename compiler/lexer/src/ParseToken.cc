@@ -358,6 +358,7 @@ public:
       }
 
       assert(false && "Unrecognized string literal type");
+      __builtin_unreachable();
     }();
 
     std::string string_value;
