@@ -18,6 +18,8 @@ namespace azide::gc {
     using PauseTasks = void (*)(void* m);
     using ResumeTasks = void (*)(void* m);
     using AsyncFinalizer = void (*)(void* m, void* base, size_t size, uint64_t object_id);
+    using Malloc = void* (*)(void* m, size_t size);
+    using Free = void (*)(void* m, void* ptr);
 
     PauseTasks m_pause = nullptr;
     void* m_pause_m = nullptr;
@@ -27,6 +29,12 @@ namespace azide::gc {
 
     AsyncFinalizer m_runner = nullptr;
     void* m_runner_m = nullptr;
+
+    Malloc m_malloc = nullptr;
+    void* m_malloc_m = nullptr;
+
+    Free m_free = nullptr;
+    void* m_free_m = nullptr;
   };
 
   /**
