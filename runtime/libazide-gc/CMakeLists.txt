@@ -2,41 +2,30 @@ project(azide-gc CXX)
 
 set(TARGET_NAME "azide-gc")
 
-file(GLOB_RECURSE AZIDE_GC_SOURCES "src/*.cc")
+if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+  set(CARGO_BUILD_MODE "--debug")
+elseif(CMAKE_BUILD_TYPE STREQUAL "Release")
+  set(CARGO_BUILD_MODE "--release")
+elseif(NOT CMAKE_BUILD_TYPE)
+  set(CARGO_BUILD_MODE "--debug")
+  message(STATUS "CMAKE_BUILD_TYPE is not set, defaulting to Debug.")
+else()
+  message(FATAL_ERROR "Unsupported CMAKE_BUILD_TYPE: ${CMAKE_BUILD_TYPE}. Supported types are Debug and Release.")
+endif()
 
-set(CMAKE_CXX_STANDARD 20)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_EXTENSIONS OFF)
-
-add_compile_options(
-  -Wall
-  -Wextra
-  -Wpedantic
-  -Werror
-  -Wold-style-cast
-  -g3
-  -fno-exceptions
-  -fno-rtti
-  -fvisibility=hidden
-  -fvisibility-inlines-hidden
+add_custom_target(${TARGET_NAME} ALL
+  COMMAND cargo build ${CARGO_BUILD_MODE} --target-dir ${CMAKE_CURRENT_BINARY_DIR}/cargo
+  WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+  VERBATIM
 )
 
-if(NITRATE_COMPILER_SANITIZE)
-  add_compile_options(-fsanitize=address -fsanitize=undefined)
-  add_link_options(-fsanitize=address -fsanitize=undefined)
-endif()
+add_custom_command(TARGET ${TARGET_NAME} POST_BUILD
+  COMMAND ${CMAKE_COMMAND} -E copy
+  ${CMAKE_CURRENT_BINARY_DIR}/cargo/release/libazide_gc.so
+  ${CMAKE_CURRENT_BINARY_DIR}/libazide-gc.so
+)
 
-add_library(${TARGET_NAME} ${AZIDE_GC_SOURCES})
-target_link_libraries(${TARGET_NAME} PUBLIC)
-target_include_directories(${TARGET_NAME} PUBLIC
-  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-  $<INSTALL_INTERFACE:include>)
-if(NITRATE_COMPILER_FUZZING)
-  target_compile_options(${TARGET_NAME} PRIVATE -fsanitize=fuzzer -fprofile-instr-generate -fcoverage-mapping)
-endif()
-
-install(TARGETS ${TARGET_NAME})
 install(DIRECTORY "include/" DESTINATION "include")
-
-if(NITRATE_COMPILER_FUZZING)
-endif()
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/libazide-gc.so
+  DESTINATION lib
+)
