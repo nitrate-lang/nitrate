@@ -77,7 +77,7 @@ extern struct azide_gc* azide_gc_create(struct azide_gc_setup_t support);
  * @param gc Pointer to the GC instance to destroy.
  * @note The GC instance must have been created with azide_gc_create.
  *
- * @note This function is **thread-safe**, including with respect to the GC instance.
+ * @note This function is **not thread-safe**, with respect to the GC instance.
  */
 extern void azide_gc_destroy(struct azide_gc_t* gc);
 
