@@ -4,6 +4,8 @@ mod azide_gc_setup;
 
 extern crate alloc;
 
+use alloc::collections::BTreeSet;
+use alloc::vec::Vec;
 use spin;
 
 #[panic_handler]
@@ -29,62 +31,54 @@ extern "C" fn rust_eh_personality() {
     panic!("No exception handling support in this build");
 }
 
-pub enum Event {
-    TaskCreated = 0,
-    TaskExited = 1,
-    TaskBlocked = 2,
-    TaskUnblocked = 3,
-    ObjectDestructed = 10,
-}
-
 #[repr(C)]
 #[derive(Copy, Clone)]
-pub struct PauseTaskUserData {
+pub struct PauseTaskUD {
     _data: *mut (),
 }
 
 #[repr(C)]
 #[derive(Copy, Clone)]
-pub struct ResumeTaskUserData {
+pub struct ResumeTaskUD {
     _data: *mut (),
 }
 
 #[repr(C)]
 #[derive(Copy, Clone)]
-pub struct AsyncFinalizerUserData {
+pub struct DestroyerUD {
     _data: *mut (),
 }
 
-type PauseTaskFn = extern "C" fn(ud: PauseTaskUserData);
-type ResumeTaskFn = extern "C" fn(ud: ResumeTaskUserData);
-type AsyncFinalizerFn =
-    extern "C" fn(ud: AsyncFinalizerUserData, base: *mut u8, size: usize, object_id: u64);
+type PauseTaskFn = extern "C" fn(ud: PauseTaskUD);
+type ResumeTaskFn = extern "C" fn(ud: ResumeTaskUD);
+type DestroyerFn = extern "C" fn(ud: DestroyerUD, base: *mut u8, size: usize, object_id: u64);
 
 #[repr(C)]
 #[derive(Copy, Clone)]
 pub struct Interface {
     pub pause_tasks: Option<PauseTaskFn>,
-    pub pause_tasks_ud: PauseTaskUserData,
+    pub pause_tasks_ud: PauseTaskUD,
 
     pub resume_tasks: Option<ResumeTaskFn>,
-    pub resume_tasks_ud: ResumeTaskUserData,
+    pub resume_tasks_ud: ResumeTaskUD,
 
-    pub destroyer: Option<AsyncFinalizerFn>,
-    pub destroyer_ud: AsyncFinalizerUserData,
+    pub destroyer: Option<DestroyerFn>,
+    pub destroyer_ud: DestroyerUD,
 }
 
 pub struct GC {
     lock: spin::Mutex<()>,
     enabled: bool,
+    roots: BTreeSet<*const *mut u8>,
 
     pause_tasks: PauseTaskFn,
-    pause_tasks_ud: PauseTaskUserData,
+    pause_tasks_ud: PauseTaskUD,
 
     resume_tasks: ResumeTaskFn,
-    resume_tasks_ud: ResumeTaskUserData,
+    resume_tasks_ud: ResumeTaskUD,
 
-    destroyer: AsyncFinalizerFn,
-    destroyer_ud: AsyncFinalizerUserData,
+    destroyer: DestroyerFn,
+    destroyer_ud: DestroyerUD,
 }
 
 // new method for GC
@@ -97,6 +91,7 @@ impl GC {
         GC {
             lock: spin::Mutex::new(()),
             enabled: false,
+            roots: BTreeSet::new(),
             pause_tasks,
             pause_tasks_ud: support.pause_tasks_ud,
             resume_tasks,
@@ -109,6 +104,14 @@ impl GC {
 
 #[unsafe(no_mangle)]
 pub extern "C" fn azide_gc_create(support: &Interface) -> *mut GC {
+    if support.pause_tasks.is_none()
+        || support.resume_tasks.is_none()
+        || support.destroyer.is_none()
+    {
+        // If any of the required function pointers are null, we cannot create the GC.
+        return core::ptr::null_mut();
+    }
+
     let layout = alloc::alloc::Layout::new::<GC>();
     let gc_ptr = unsafe { alloc::alloc::alloc(layout) } as *mut GC;
     if gc_ptr.is_null() {
@@ -186,19 +189,28 @@ pub extern "C" fn azide_gc_is_managed(gc: &mut GC, _base: *mut u8, _size: usize)
 }
 
 #[unsafe(no_mangle)]
-pub extern "C" fn azide_gc_add_root(gc: &mut GC, _base: *const *mut u8) -> bool {
+pub extern "C" fn azide_gc_add_root(gc: &mut GC, base: *const *mut u8) -> bool {
     let _lock = gc.lock.lock();
 
-    // TODO: Implement the logic to add a root
+    // FIXME: Properly handle allocation errors
+    gc.roots.insert(base);
 
-    return false;
+    true
 }
 
 #[unsafe(no_mangle)]
-pub extern "C" fn azide_gc_del_root(gc: &mut GC, _base: *const *mut u8) {
+pub extern "C" fn azide_gc_del_root(gc: &mut GC, base: *const *mut u8) {
     let _lock = gc.lock.lock();
 
-    // TODO: Implement the logic to delete a root
+    gc.roots.remove(&base);
+}
+
+pub enum Event {
+    TaskCreated = 0,
+    TaskExited = 1,
+    TaskBlocked = 2,
+    TaskUnblocked = 3,
+    ObjectDestructed = 10,
 }
 
 #[unsafe(no_mangle)]

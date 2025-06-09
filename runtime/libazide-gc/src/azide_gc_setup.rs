@@ -1,24 +1,24 @@
 #[repr(C)]
 #[derive(Copy, Clone)]
-pub struct MallocUserData {
+pub struct MallocUD {
     _data: *mut (),
 }
 
 #[repr(C)]
 #[derive(Copy, Clone)]
-pub struct FreeUserData {
+pub struct FreeUD {
     _data: *mut (),
 }
 
-type MallocFn = unsafe extern "C" fn(ud: MallocUserData, size: usize) -> *mut u8;
-type FreeFn = unsafe extern "C" fn(ud: FreeUserData, ptr: *mut u8);
+type MallocFn = unsafe extern "C" fn(ud: MallocUD, size: usize) -> *mut u8;
+type FreeFn = unsafe extern "C" fn(ud: FreeUD, ptr: *mut u8);
 
 #[derive(Copy, Clone)]
 struct AzideGCInternalAllocator {
     malloc_fn: Option<MallocFn>,
-    malloc_ud: MallocUserData,
+    malloc_ud: MallocUD,
     free_fn: Option<FreeFn>,
-    free_ud: FreeUserData,
+    free_ud: FreeUD,
 }
 
 unsafe impl alloc::alloc::GlobalAlloc for AzideGCInternalAllocator {
@@ -40,11 +40,11 @@ unsafe impl alloc::alloc::GlobalAlloc for AzideGCInternalAllocator {
 #[global_allocator]
 static mut GLOBAL_ALLOCATOR: AzideGCInternalAllocator = AzideGCInternalAllocator {
     malloc_fn: None,
-    malloc_ud: MallocUserData {
+    malloc_ud: MallocUD {
         _data: core::ptr::null_mut(),
     },
     free_fn: None,
-    free_ud: FreeUserData {
+    free_ud: FreeUD {
         _data: core::ptr::null_mut(),
     },
 };
@@ -52,9 +52,9 @@ static mut GLOBAL_ALLOCATOR: AzideGCInternalAllocator = AzideGCInternalAllocator
 #[unsafe(no_mangle)]
 pub extern "C" fn azide_gc_setup(
     malloc: Option<MallocFn>,
-    malloc_ud: MallocUserData,
+    malloc_ud: MallocUD,
     free: Option<FreeFn>,
-    free_ud: FreeUserData,
+    free_ud: FreeUD,
 ) {
     let malloc_fn = malloc.expect("malloc ptr is null");
     let free_fn = free.expect("free ptr is null");
