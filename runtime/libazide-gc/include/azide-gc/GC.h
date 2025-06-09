@@ -20,28 +20,40 @@ extern "C" {
  */
 struct azide_gc_t;
 
-typedef void (*azide_gc_pause_tasks_t)(void* m);
-typedef void (*azide_gc_resume_tasks_t)(void* m);
-typedef void (*azide_gc_async_finalizer_t)(void* m, void* base, size_t size, uint64_t object_id);
-typedef void* (*azide_gc_malloc_t)(void* m, size_t size);
-typedef void (*azide_gc_free_t)(void* m, void* ptr);
+typedef void (*azide_gc_pause_tasks_t)(void* ud);
+typedef void (*azide_gc_resume_tasks_t)(void* ud);
+typedef void (*azide_gc_async_finalizer_t)(void* ud, void* base, size_t size, uint64_t object_id);
+typedef void* (*azide_gc_malloc_t)(void* ud, size_t size);
+typedef void (*azide_gc_free_t)(void* ud, void* ptr);
 
 struct azide_gc_setup_t {
   azide_gc_pause_tasks_t m_pause;
-  void* m_pause_m;
+  void* m_pause_ud;
 
   azide_gc_resume_tasks_t m_resume;
-  void* m_resume_m;
+  void* m_resume_ud;
 
   azide_gc_async_finalizer_t m_runner;
-  void* m_runner_m;
-
-  azide_gc_malloc_t m_malloc;
-  void* m_malloc_m;
-
-  azide_gc_free_t m_free;
-  void* m_free_m;
+  void* m_runner_ud;
 };
+
+/**
+ * @brief Initializes the Azide garbage collector library with custom memory allocation and deallocation callbacks.
+ *
+ * This function sets up the library to use user-provided memory allocation and free functions.
+ * The callbacks allow integration with custom memory management strategies.
+ *
+ * @param malloc_cb   Pointer to a function that allocates memory blocks.
+ * @param malloc_ud   User data to be passed to the malloc callback.
+ * @param free_cb     Pointer to a function that frees memory blocks.
+ * @param free_ud     User data to be passed to the free callback.
+ *
+ * @note This function must be called before any other Azide GC functions are used.
+ *
+ * @note This function is **not thread-safe** and should be called before any
+ *       concurrent operations involving the garbage collector.
+ */
+extern void azide_gc_setup(azide_gc_malloc_t malloc_cb, void* malloc_ud, azide_gc_free_t free_cb, void* free_ud);
 
 /**
  * @brief Creates and initializes a new garbage collector instance.
@@ -63,7 +75,7 @@ struct azide_gc_setup_t {
  *
  * @note This function is thread-safe.
  */
-extern struct azide_gc* azide_gc_create(struct azide_gc_setup_t support);
+extern struct azide_gc_t* azide_gc_create(struct azide_gc_setup_t* support);
 
 /**
  * @brief Destroys the specified garbage collector instance and releases all
@@ -248,7 +260,7 @@ enum azide_gc_event_t {
    *          a OS thread id, or any particular type, but must be unique
    *          within the context of the GC instance.
    */
-  TaskCreated = 0,
+  AZIDE_GC_TASK_CREATED = 0,
 
   /**
    * @brief Task exiting event.
@@ -259,7 +271,7 @@ enum azide_gc_event_t {
    *
    * @param p The task id of the task that is exiting.
    */
-  TaskExited = 1,
+  AZIDE_GC_TASK_EXITED = 1,
 
   /**
    * @brief Task blocked event.
@@ -272,7 +284,7 @@ enum azide_gc_event_t {
    * @param p The task id of the task that is blocked. This id must match the one used
    *          when the task was created with TaskCreated.
    */
-  TaskBlocked = 2,
+  AZIDE_GC_TASK_BLOCKED = 2,
 
   /**
    * @brief Task unblocked event.
@@ -285,7 +297,7 @@ enum azide_gc_event_t {
    * @param p The task id of the task that is unblocked. This id must match the one used
    *          when the task was created with TaskCreated.
    */
-  TaskUnblocked = 3,
+  AZIDE_GC_TASK_UNBLOCKED = 3,
 
   /**
    * @brief Asynchronous finalization event.
@@ -296,7 +308,7 @@ enum azide_gc_event_t {
    * @param p The object id of the finalized object. This is the same id provided to
    * the m_runner callback's `object_id` parameter when the GC was created.
    */
-  ObjectDestructed = 10,
+  AZIDE_GC_OBJECT_FINALIZED = 4,
 };
 
 /**

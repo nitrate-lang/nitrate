@@ -1,8 +1,33 @@
 #![no_std]
 
-extern crate std;
+mod azide_gc_setup;
+
+extern crate alloc;
 
 use spin;
+
+#[panic_handler]
+#[cfg(not(test))]
+fn panic(_info: &core::panic::PanicInfo) -> ! {
+    if cfg!(target_arch = "x86_64") || cfg!(target_arch = "x86") {
+        // For x86_64, we use the `ud2` instruction to trigger an undefined instruction exception.
+        // This is a common way to handle panics in low-level code.
+        unsafe {
+            core::arch::asm!("ud2");
+        }
+    }
+
+    // For other architectures, we just loop indefinitely.
+    loop {
+        // This is a no-op, but it prevents the program from continuing execution.
+        // In a real-world scenario, you might want to log the panic or perform some cleanup.
+    }
+}
+
+#[unsafe(no_mangle)]
+extern "C" fn rust_eh_personality() {
+    panic!("No exception handling support in this build");
+}
 
 pub enum Event {
     TaskCreated = 0,
@@ -30,64 +55,41 @@ pub struct AsyncFinalizerUserData {
     _data: *mut (),
 }
 
-#[repr(C)]
-#[derive(Copy, Clone)]
-pub struct MallocUserData {
-    _data: *mut (),
-}
+type PauseTaskFn = extern "C" fn(ud: PauseTaskUserData);
+type ResumeTaskFn = extern "C" fn(ud: ResumeTaskUserData);
+type AsyncFinalizerFn =
+    extern "C" fn(ud: AsyncFinalizerUserData, base: *mut u8, size: usize, object_id: u64);
 
 #[repr(C)]
 #[derive(Copy, Clone)]
-pub struct FreeUserData {
-    _data: *mut (),
-}
-
-#[repr(C)]
 pub struct Interface {
-    pub pause_tasks: Option<extern "C" fn(ud: PauseTaskUserData)>,
+    pub pause_tasks: Option<PauseTaskFn>,
     pub pause_tasks_ud: PauseTaskUserData,
 
-    pub resume_tasks: Option<extern "C" fn(ud: ResumeTaskUserData)>,
+    pub resume_tasks: Option<ResumeTaskFn>,
     pub resume_tasks_ud: ResumeTaskUserData,
 
-    pub destroyer: Option<
-        extern "C" fn(ud: AsyncFinalizerUserData, base: *mut u8, size: usize, object_id: u64),
-    >,
+    pub destroyer: Option<AsyncFinalizerFn>,
     pub destroyer_ud: AsyncFinalizerUserData,
-
-    pub malloc: Option<extern "C" fn(ud: MallocUserData, size: usize) -> *mut u8>,
-    pub malloc_ud: MallocUserData,
-
-    pub free: Option<unsafe extern "C" fn(ud: FreeUserData, ptr: *mut u8)>,
-    pub free_ud: FreeUserData,
 }
 
 pub struct GC {
     lock: spin::Mutex<()>,
     enabled: bool,
 
-    pause_tasks: extern "C" fn(ud: PauseTaskUserData),
+    pause_tasks: PauseTaskFn,
     pause_tasks_ud: PauseTaskUserData,
 
-    resume_tasks: extern "C" fn(ud: ResumeTaskUserData),
+    resume_tasks: ResumeTaskFn,
     resume_tasks_ud: ResumeTaskUserData,
 
-    destroyer:
-        extern "C" fn(ud: AsyncFinalizerUserData, base: *mut u8, size: usize, object_id: u64),
+    destroyer: AsyncFinalizerFn,
     destroyer_ud: AsyncFinalizerUserData,
-
-    malloc: extern "C" fn(ud: MallocUserData, size: usize) -> *mut u8,
-    malloc_ud: MallocUserData,
-
-    free: unsafe extern "C" fn(ud: FreeUserData, ptr: *mut u8),
-    free_ud: FreeUserData,
 }
 
 // new method for GC
 impl GC {
     pub fn new(support: Interface) -> GC {
-        let malloc = support.malloc.expect("malloc ptr is null");
-        let free = support.free.expect("free ptr is null");
         let destroyer = support.destroyer.expect("async_finalizer ptr is null");
         let pause_tasks = support.pause_tasks.expect("pause_tasks ptr is null");
         let resume_tasks = support.resume_tasks.expect("resume_tasks ptr is null");
@@ -101,31 +103,23 @@ impl GC {
             resume_tasks_ud: support.resume_tasks_ud,
             destroyer,
             destroyer_ud: support.destroyer_ud,
-            malloc,
-            malloc_ud: support.malloc_ud,
-            free,
-            free_ud: support.free_ud,
         }
     }
 }
 
 #[unsafe(no_mangle)]
-pub extern "C" fn azide_gc_create(support: Interface) -> *mut GC {
-    let malloc = support.malloc.expect("malloc ptr is null");
-
-    let alloc_size = size_of::<GC>();
-    let ptr = malloc(support.malloc_ud, alloc_size) as *mut GC;
-    if ptr.is_null() || !ptr.is_aligned() {
-        return ptr;
+pub extern "C" fn azide_gc_create(support: &Interface) -> *mut GC {
+    let layout = alloc::alloc::Layout::new::<GC>();
+    let gc_ptr = unsafe { alloc::alloc::alloc(layout) } as *mut GC;
+    if gc_ptr.is_null() {
+        return gc_ptr;
     }
-
-    let gc = unsafe { &mut *ptr };
 
     unsafe {
-        std::ptr::write(gc, GC::new(support));
+        core::ptr::write(gc_ptr, GC::new(*support));
     }
 
-    gc
+    gc_ptr
 }
 
 #[unsafe(no_mangle)]
@@ -137,13 +131,11 @@ pub extern "C" fn azide_gc_destroy(gc_ptr: *mut GC) {
     assert!(gc_ptr.is_aligned());
 
     let gc: &mut GC = unsafe { &mut *gc_ptr };
-
-    let free = gc.free;
-    let free_ud = gc.free_ud;
+    let layout = alloc::alloc::Layout::new::<GC>();
 
     unsafe {
-        std::ptr::drop_in_place(gc);
-        free(free_ud, gc_ptr as *mut u8);
+        core::ptr::drop_in_place(gc);
+        alloc::alloc::dealloc(gc_ptr as *mut u8, layout);
     }
 }
 
