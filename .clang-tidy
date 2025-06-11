@@ -3,8 +3,6 @@ WarningsAsErrors: "-*"
 CheckOptions:
   - key: readability-identifier-naming.AbstractClassCase
     value: CamelCase
-  - key: readability-identifier-naming.AbstractClassSuffix
-    value: "Protocol"
 
   - key: readability-identifier-naming.ClassCase
     value: CamelCase
@@ -82,5 +80,3 @@ CheckOptions:
 
   - key: readability-identifier-naming.VirtualMethodCase
     value: lower_case
-  - key: readability-identifier-naming.VirtualMethodPrefix
-    value: "virt_"

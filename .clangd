@@ -8,6 +8,8 @@ InlayHints:
 Diagnostics:
   ClangTidy:
     Add: modernize* readability* performance* bugprone* cppcoreguidelines*
+If:
+  PathMatch: [.*\.cc, .*\.hh, .*\.cpp, .*\.hpp]
 CompileFlags:
   Add:
     [
