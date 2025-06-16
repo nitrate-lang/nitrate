@@ -21,7 +21,7 @@
 
 #include <boost/flyweight.hpp>
 #include <boost/unordered_map.hpp>
-#include <nitrate-parser/ParseTreeFwd.hh>
+#include <nitrate-parser/ParseTree.hh>
 #include <optional>
 
 namespace nitrate::compiler::parser {

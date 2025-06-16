@@ -19,50 +19,51 @@
 
 #include <nitrate-parser/ParseTree.hh>
 #include <nitrate-parser/Parser.hh>
-#include <sstream>
 
 using namespace nitrate::compiler::parser;
 using namespace nitrate::compiler::lexer;
 
-std::unordered_map<uint64_t, boost::flyweight<FileSourceRange>> SOURCE_RANGES_GLOBAL;
-uint64_t SOURCE_RANGES_ID_CTR_GLOBAL;
-std::mutex SOURCE_RANGES_LOCK_GLOBAL;
+static std::unordered_map<uint64_t, boost::flyweight<FileSourceRange>> SOURCE_RANGES_GLOBAL;
+static uint64_t SOURCE_RANGES_ID_CTR_GLOBAL;
+static std::mutex SOURCE_RANGES_LOCK_GLOBAL;
 
-BOOST_SYMBOL_EXPORT Expr::SourceLocationTag::SourceLocationTag(boost::flyweight<lexer::FileSourceRange> source_range) {
-  std::lock_guard lock(SOURCE_RANGES_LOCK_GLOBAL);
-  m_id = ++SOURCE_RANGES_ID_CTR_GLOBAL;
-  SOURCE_RANGES_GLOBAL.emplace(static_cast<uint64_t>(m_id), std::move(source_range));
-}
-
-BOOST_SYMBOL_EXPORT Expr::SourceLocationTag::~SourceLocationTag() {
-  if (m_id != 0) {
+namespace nitrate::compiler::parser::detail {
+  BOOST_SYMBOL_EXPORT SourceLocationTag::SourceLocationTag(boost::flyweight<lexer::FileSourceRange> source_range) {
     std::lock_guard lock(SOURCE_RANGES_LOCK_GLOBAL);
-    SOURCE_RANGES_GLOBAL.erase(m_id);
+    m_id = ++SOURCE_RANGES_ID_CTR_GLOBAL;
+    SOURCE_RANGES_GLOBAL.emplace(static_cast<uint64_t>(m_id), std::move(source_range));
   }
-}
 
-BOOST_SYMBOL_EXPORT [[nodiscard]] auto Expr::SourceLocationTag::get() const -> const lexer::FileSourceRange& {
-  std::lock_guard lock(SOURCE_RANGES_LOCK_GLOBAL);
-  return SOURCE_RANGES_GLOBAL.at(m_id).get();
-}
+  BOOST_SYMBOL_EXPORT SourceLocationTag::~SourceLocationTag() {
+    if (m_id != 0) {
+      std::lock_guard lock(SOURCE_RANGES_LOCK_GLOBAL);
+      SOURCE_RANGES_GLOBAL.erase(m_id);
+    }
+  }
 
-BOOST_SYMBOL_EXPORT auto Expr::operator==(const Expr& o) const -> bool {
-  // FIXME: Optimize this comparison
+  BOOST_SYMBOL_EXPORT auto SourceLocationTag::get() const -> const lexer::FileSourceRange& {
+    std::lock_guard lock(SOURCE_RANGES_LOCK_GLOBAL);
+    return SOURCE_RANGES_GLOBAL.at(m_id).get();
+  }
+}  // namespace nitrate::compiler::parser::detail
 
-  std::stringstream a;
-  std::stringstream b;
+// BOOST_SYMBOL_EXPORT auto Expr::operator==(const Expr& o) const -> bool {
+//   // FIXME: Optimize this comparison
 
-  dump(a);
-  o.dump(b);
+//   std::stringstream a;
+//   std::stringstream b;
 
-  return a.str() == b.str();
-}
+//   dump(a);
+//   o.dump(b);
 
-BOOST_SYMBOL_EXPORT auto Expr::hash() const -> size_t {
-  // FIXME: Optimize this hashing
+//   return a.str() == b.str();
+// }
 
-  std::stringstream ss;
-  dump(ss);
+// BOOST_SYMBOL_EXPORT auto Expr::hash() const -> size_t {
+//   // FIXME: Optimize this hashing
 
-  return std::hash<std::string>{}(ss.str());
-}
+//   std::stringstream ss;
+//   dump(ss);
+
+//   return std::hash<std::string>{}(ss.str());
+// }

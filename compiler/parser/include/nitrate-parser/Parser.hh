@@ -21,7 +21,7 @@
 
 #include <memory>
 #include <nitrate-lexer/Lexer.hh>
-#include <nitrate-parser/ParseTreeFwd.hh>
+#include <nitrate-parser/ParseTree.hh>
 #include <nitrate-parser/SymbolTable.hh>
 
 namespace nitrate::compiler::parser {
@@ -34,10 +34,10 @@ namespace nitrate::compiler::parser {
     auto operator=(Parser&&) -> Parser& = delete;
     ~Parser() = default;
 
-    [[nodiscard]] auto parse_type() -> std::unique_ptr<Expr>;
-    [[nodiscard]] auto parse_expression() -> std::unique_ptr<Expr>;
+    [[nodiscard]] auto parse_type() -> Type;
+    [[nodiscard]] auto parse_expression() -> Expr;
 
-    [[nodiscard]] auto parse() -> std::unique_ptr<Expr>;
+    [[nodiscard]] auto parse() -> Expr;
 
     [[nodiscard]] auto symbol_table() -> std::shared_ptr<SymbolTable> { return m_symbol_table; }
     [[nodiscard]] auto symbol_table() const -> std::shared_ptr<const SymbolTable> { return m_symbol_table; }
