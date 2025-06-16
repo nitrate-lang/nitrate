@@ -348,7 +348,7 @@ public:
     const auto quote_ch = *first_ch;
     assert(quote_ch == '"' || quote_ch == '\'' && "Expected a string literal to start with a double or single quote");
 
-    const auto string_literal_type = [&] {
+    const auto string_literal_type = *[&]() -> std::optional<StringType> {
       if (quote_ch == '"') {
         return StringType::DoubleQuote;
       }
@@ -357,7 +357,7 @@ public:
         return StringType::SingleQuote;
       }
 
-      assert(false && "Unrecognized string literal type");
+      return std::nullopt;
     }();
 
     std::string string_value;
