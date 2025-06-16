@@ -23,61 +23,6 @@
 #include <nitrate-lexer/Token.hh>
 
 namespace nitrate::compiler::parser {
-  enum class ASTKind : uint8_t {
-    /* General Expression Nodes */
-    gBinExpr,
-    gUnaryExpr,
-    gNumber,
-    gFString,
-    gString,
-    gChar,
-    gList,
-    gIdent,
-    gIndex,
-    gSlice,
-    gCall,
-    gTemplateCall,
-    gIf,
-    gElse,
-    gFor,
-    gWhile,
-    gDo,
-    gSwitch,
-    gBreak,
-    gContinue,
-    gReturn,
-    gForeach,
-    gTry,
-    gCatch,
-    gThrow,
-    gAwait,
-    gAsm,
-
-    /* Type Nodes */
-    tInfer,
-    tOpaque,
-    tNamed,
-    tRef,
-    tPtr,
-    tArray,
-    tTuple,
-    tTemplate,
-    tLambda,
-
-    /* Symbol Nodes */
-    sVar,
-    sFn,
-    sEnum,
-    sStruct,
-    sUnion,
-    sContract,
-    sTrait,
-    sTypeDef,
-    sScope,
-    sImport,
-    sUnitTest,
-  };
-
   class BinExpr;
   class UnaryExpr;
   class Number;        // TODO: Implement this class
@@ -118,36 +63,27 @@ namespace nitrate::compiler::parser {
   using Expr = std::variant<BinExpr, UnaryExpr, String>;
 
   namespace detail {
-    class SourceLocationTag {
+    class LocationTag final {
       uint64_t m_id : 48;
 
     public:
-      constexpr SourceLocationTag() : m_id(0) {}
-      SourceLocationTag(lexer::FileSourceRange source_range);
-      SourceLocationTag(const SourceLocationTag&);
-      SourceLocationTag(SourceLocationTag&& o) : m_id(o.m_id) { o.m_id = 0; }
-      auto operator=(const SourceLocationTag&) -> SourceLocationTag&;
-      auto operator=(SourceLocationTag&& o) -> SourceLocationTag& {
+      constexpr LocationTag() : m_id(0) {}
+      LocationTag(lexer::FileSourceRange source_range);
+      LocationTag(const LocationTag&);
+      LocationTag(LocationTag&& o) : m_id(o.m_id) { o.m_id = 0; }
+      auto operator=(const LocationTag&) -> LocationTag&;
+      auto operator=(LocationTag&& o) -> LocationTag& {
         m_id = o.m_id;
         o.m_id = 0;
         return *this;
       }
-      ~SourceLocationTag();
+      ~LocationTag();
 
-      [[nodiscard]] constexpr auto operator<=>(const SourceLocationTag&) const -> std::weak_ordering = default;
+      [[nodiscard]] constexpr auto operator<=>(const LocationTag&) const -> std::strong_ordering = default;
+      [[nodiscard]] constexpr auto operator==(const LocationTag& o) const -> bool { return get() == o.get(); }
 
       [[nodiscard]] auto get() const -> const lexer::FileSourceRange&;
     } __attribute__((packed));
-
-#define W_NITRATE_AST_PARENTHESIZED_TRAIT()                                                    \
-  [[nodiscard]] constexpr auto is_parenthesized() const -> bool { return m_is_parenthesized; } \
-  constexpr auto set_parenthesized(bool b) -> void { m_is_parenthesized = b; }
-
-#define W_NITRATE_AST_SOURCE_RANGE_TRAIT()                                                                            \
-  [[nodiscard]] constexpr auto source_range() const -> const lexer::FileSourceRange& { return m_source_range.get(); } \
-  auto set_source_range(lexer::FileSourceRange source_range) -> void {                                                \
-    m_source_range = detail::SourceLocationTag(boost::flyweight<lexer::FileSourceRange>(std::move(source_range)));    \
-  }
 
     inline auto clone_expr(const std::unique_ptr<Expr>& expr) -> std::unique_ptr<Expr>;
   }  // namespace detail
@@ -201,16 +137,19 @@ namespace nitrate::compiler::parser {
     [[nodiscard]] constexpr auto get_op() const -> Op { return m_op; }
     auto set_op(Op op) -> void { m_op = op; }
 
-    W_NITRATE_AST_PARENTHESIZED_TRAIT();
-    W_NITRATE_AST_SOURCE_RANGE_TRAIT();
+    [[nodiscard]] constexpr auto is_parenthesized() const -> bool { return m_is_parenthesized; }
+    constexpr auto set_parenthesized(bool b) -> void { m_is_parenthesized = b; }
+
+    [[nodiscard]] constexpr auto source_range() const -> const auto& { return m_source_range.get(); }
+    auto set_source_range(auto source_range) -> void { m_source_range = detail::LocationTag(std::move(source_range)); }
 
   protected:
-    using MemberTuple = std::tuple<const detail::SourceLocationTag&, const bool&, const Op&, const LHS&, const RHS&>;
+    using MemberTuple = std::tuple<const detail::LocationTag&, const bool&, const Op&, const LHS&, const RHS&>;
 
     [[nodiscard]] constexpr auto state() const -> MemberTuple;
 
   private:
-    detail::SourceLocationTag m_source_range;
+    detail::LocationTag m_source_range;
     bool m_is_parenthesized : 1 = false;
     Op m_op : 7;
     std::unique_ptr<LHS> m_lhs;
@@ -260,17 +199,19 @@ namespace nitrate::compiler::parser {
     [[nodiscard]] constexpr auto is_postfix() const -> bool { return m_is_postfix; }
     constexpr auto set_postfix(bool is_postfix) -> void { m_is_postfix = is_postfix; }
 
-    W_NITRATE_AST_PARENTHESIZED_TRAIT();
-    W_NITRATE_AST_SOURCE_RANGE_TRAIT();
+    [[nodiscard]] constexpr auto is_parenthesized() const -> bool { return m_is_parenthesized; }
+    constexpr auto set_parenthesized(bool b) -> void { m_is_parenthesized = b; }
+
+    [[nodiscard]] constexpr auto source_range() const -> const auto& { return m_source_range.get(); }
+    auto set_source_range(auto source_range) -> void { m_source_range = detail::LocationTag(std::move(source_range)); }
 
   protected:
-    using MemberTuple =
-        std::tuple<const detail::SourceLocationTag&, const bool&, const Op&, const bool&, const Operand&>;
+    using MemberTuple = std::tuple<const detail::LocationTag&, const bool&, const Op&, const bool&, const Operand&>;
 
     [[nodiscard]] constexpr auto state() const -> MemberTuple;
 
   private:
-    detail::SourceLocationTag m_source_range;
+    detail::LocationTag m_source_range;
     bool m_is_parenthesized : 1 = false;
     Op m_op : 7;
     bool m_is_postfix : 1;
@@ -289,7 +230,7 @@ namespace nitrate::compiler::parser {
     ~String() = default;
 
     [[nodiscard]] constexpr auto operator==(const String& o) const -> bool = default;
-    [[nodiscard]] constexpr auto operator<=>(const String& o) const -> std::strong_ordering = default;
+    [[nodiscard]] constexpr auto operator<=>(const String& o) const -> std::weak_ordering = default;
 
     [[nodiscard]] constexpr auto get_value() const -> const ValueType& { return m_value; }
     [[nodiscard]] constexpr auto get_value() -> ValueType& { return m_value; }
@@ -298,15 +239,13 @@ namespace nitrate::compiler::parser {
 
     auto set_value(ValueType value) -> void { m_value = std::move(value); }
 
+    [[nodiscard]] constexpr auto source_range() const -> const auto& { return m_source_range.get(); }
+    auto set_source_range(auto source_range) -> void { m_source_range = detail::LocationTag(std::move(source_range)); }
+
   private:
     ValueType m_value;
+    detail::LocationTag m_source_range;
   };
-
-  /*------------------------------------------------------------------------------------------------------------*/
-
-  inline auto detail::clone_expr(const std::unique_ptr<Expr>& expr) -> std::unique_ptr<Expr> {
-    return expr ? std::make_unique<Expr>(*expr) : nullptr;
-  }
 
   /*------------------------------------------------------------------------------------------------------------*/
 
@@ -352,7 +291,10 @@ namespace nitrate::compiler::parser {
   /*------------------------------------------------------------------------------------------------------------*/
 
   namespace detail {
-#undef W_NITRATE_AST_SOURCE_RANGE_TRAIT
-#undef W_NITRATE_AST_PARENTHESIZED_TRAIT
+    inline auto clone_expr(const std::unique_ptr<Expr>& expr) -> std::unique_ptr<Expr> {
+      return expr ? std::make_unique<Expr>(*expr) : nullptr;
+    }
   }  // namespace detail
+
+  /*------------------------------------------------------------------------------------------------------------*/
 }  // namespace nitrate::compiler::parser

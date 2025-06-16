@@ -28,20 +28,20 @@ static uint64_t SOURCE_RANGES_ID_CTR_GLOBAL;
 static std::mutex SOURCE_RANGES_LOCK_GLOBAL;
 
 namespace nitrate::compiler::parser::detail {
-  BOOST_SYMBOL_EXPORT SourceLocationTag::SourceLocationTag(lexer::FileSourceRange source_range) {
+  BOOST_SYMBOL_EXPORT LocationTag::LocationTag(lexer::FileSourceRange source_range) {
     std::lock_guard lock(SOURCE_RANGES_LOCK_GLOBAL);
     m_id = ++SOURCE_RANGES_ID_CTR_GLOBAL;
     SOURCE_RANGES_GLOBAL.emplace(static_cast<uint64_t>(m_id), std::move(source_range));
   }
 
-  BOOST_SYMBOL_EXPORT SourceLocationTag::~SourceLocationTag() {
+  BOOST_SYMBOL_EXPORT LocationTag::~LocationTag() {
     if (m_id != 0) {
       std::lock_guard lock(SOURCE_RANGES_LOCK_GLOBAL);
       SOURCE_RANGES_GLOBAL.erase(m_id);
     }
   }
 
-  BOOST_SYMBOL_EXPORT auto SourceLocationTag::get() const -> const lexer::FileSourceRange& {
+  BOOST_SYMBOL_EXPORT auto LocationTag::get() const -> const lexer::FileSourceRange& {
     std::lock_guard lock(SOURCE_RANGES_LOCK_GLOBAL);
     return SOURCE_RANGES_GLOBAL.at(m_id).get();
   }
