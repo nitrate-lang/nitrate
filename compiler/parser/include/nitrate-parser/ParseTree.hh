@@ -19,7 +19,6 @@
 
 #pragma once
 
-#include <boost/flyweight.hpp>
 #include <memory>
 #include <nitrate-lexer/Token.hh>
 
@@ -81,44 +80,42 @@ namespace nitrate::compiler::parser {
 
   class BinExpr;
   class UnaryExpr;
-  class Number;
-  class FString;
-  class String;
-  class Char;
-  class List;
-  class Ident;
-  class Index;
-  class Slice;
-  class Call;
-  class TemplateCall;
-  class If;
-  class Else;
-  class For;
-  class While;
-  class Do;
-  class Switch;
-  class Break;
-  class Continue;
-  class Return;
-  class Foreach;
-  class Try;
-  class Catch;
-  class Throw;
-  class Await;
-  class Asm;
-  class InferTy;
-  class OpaqueTy;
-  class NamedTy;
-  class RefTy;
-  class PtrTy;
-  class ArrayTy;
-  class TupleTy;
-  class TemplateTy;
-  class LambdaTy;
+  class Number;        // TODO: Implement this class
+  class FString;       // TODO: Implement this class
+  class String;        // TODO: Implement this class
+  class Char;          // TODO: Implement this class
+  class List;          // TODO: Implement this class
+  class Ident;         // TODO: Implement this class
+  class Index;         // TODO: Implement this class
+  class Slice;         // TODO: Implement this class
+  class Call;          // TODO: Implement this class
+  class TemplateCall;  // TODO: Implement this class
+  class If;            // TODO: Implement this class
+  class Else;          // TODO: Implement this class
+  class For;           // TODO: Implement this class
+  class While;         // TODO: Implement this class
+  class Do;            // TODO: Implement this class
+  class Switch;        // TODO: Implement this class
+  class Break;         // TODO: Implement this class
+  class Continue;      // TODO: Implement this class
+  class Return;        // TODO: Implement this class
+  class Foreach;       // TODO: Implement this class
+  class Try;           // TODO: Implement this class
+  class Catch;         // TODO: Implement this class
+  class Throw;         // TODO: Implement this class
+  class Await;         // TODO: Implement this class
+  class Asm;           // TODO: Implement this class
+  class InferTy;       // TODO: Implement this class
+  class OpaqueTy;      // TODO: Implement this class
+  class NamedTy;       // TODO: Implement this class
+  class RefTy;         // TODO: Implement this class
+  class PtrTy;         // TODO: Implement this class
+  class ArrayTy;       // TODO: Implement this class
+  class TupleTy;       // TODO: Implement this class
+  class TemplateTy;    // TODO: Implement this class
+  class LambdaTy;      // TODO: Implement this class
 
   using Expr = std::variant<BinExpr, UnaryExpr, String>;
-
-  using Type = std::variant<InferTy>;
 
   namespace detail {
     class SourceLocationTag {
@@ -126,7 +123,7 @@ namespace nitrate::compiler::parser {
 
     public:
       constexpr SourceLocationTag() : m_id(0) {}
-      SourceLocationTag(boost::flyweight<lexer::FileSourceRange> source_range);
+      SourceLocationTag(lexer::FileSourceRange source_range);
       SourceLocationTag(const SourceLocationTag&);
       SourceLocationTag(SourceLocationTag&& o) : m_id(o.m_id) { o.m_id = 0; }
       auto operator=(const SourceLocationTag&) -> SourceLocationTag&;
@@ -155,11 +152,7 @@ namespace nitrate::compiler::parser {
     inline auto clone_expr(const std::unique_ptr<Expr>& expr) -> std::unique_ptr<Expr>;
   }  // namespace detail
 
-#define W_PLACEHOLDER_IMPL(name, type) \
-  class name {                         \
-  public:                              \
-    name() {}                          \
-  };
+  /*------------------------------------------------------------------------------------------------------------*/
 
   class BinExpr final {
   public:
@@ -179,11 +172,14 @@ namespace nitrate::compiler::parser {
           m_rhs(detail::clone_expr(o.m_rhs)) {}
     BinExpr(BinExpr&&) = default;
     auto operator=(const BinExpr& o) -> BinExpr& {
-      m_source_range = o.m_source_range;
-      m_is_parenthesized = o.m_is_parenthesized;
-      m_op = o.m_op;
-      m_lhs = detail::clone_expr(o.m_lhs);
-      m_rhs = detail::clone_expr(o.m_rhs);
+      if (this != &o) {
+        m_source_range = o.m_source_range;
+        m_is_parenthesized = o.m_is_parenthesized;
+        m_op = o.m_op;
+        m_lhs = detail::clone_expr(o.m_lhs);
+        m_rhs = detail::clone_expr(o.m_rhs);
+      }
+
       return *this;
     }
     auto operator=(BinExpr&& o) -> BinExpr& = default;
@@ -194,11 +190,13 @@ namespace nitrate::compiler::parser {
 
     [[nodiscard]] constexpr auto get_lhs() const -> const LHS&;
     [[nodiscard]] constexpr auto get_lhs() -> LHS&;
-    auto set_lhs(LHS lhs) -> void;
+    auto set_lhs(std::unique_ptr<LHS> lhs) -> void { m_lhs = std::move(lhs); }
+    inline auto set_lhs(LHS lhs) -> void;
 
     [[nodiscard]] constexpr auto get_rhs() const -> const RHS&;
     [[nodiscard]] constexpr auto get_rhs() -> RHS&;
-    auto set_rhs(RHS rhs) -> void;
+    auto set_rhs(std::unique_ptr<RHS> rhs) -> void { m_rhs = std::move(rhs); }
+    inline auto set_rhs(RHS rhs) -> void;
 
     [[nodiscard]] constexpr auto get_op() const -> Op { return m_op; }
     auto set_op(Op op) -> void { m_op = op; }
@@ -236,11 +234,13 @@ namespace nitrate::compiler::parser {
           m_operand(detail::clone_expr(o.m_operand)) {}
     UnaryExpr(UnaryExpr&&) = default;
     auto operator=(const UnaryExpr& o) -> UnaryExpr& {
-      m_source_range = o.m_source_range;
-      m_is_parenthesized = o.m_is_parenthesized;
-      m_op = o.m_op;
-      m_is_postfix = o.m_is_postfix;
-      m_operand = detail::clone_expr(o.m_operand);
+      if (this != &o) {
+        m_source_range = o.m_source_range;
+        m_is_parenthesized = o.m_is_parenthesized;
+        m_op = o.m_op;
+        m_is_postfix = o.m_is_postfix;
+        m_operand = detail::clone_expr(o.m_operand);
+      }
       return *this;
     }
     auto operator=(UnaryExpr&&) -> UnaryExpr& = default;
@@ -251,7 +251,8 @@ namespace nitrate::compiler::parser {
 
     [[nodiscard]] constexpr auto get_operand() const -> const Operand&;
     [[nodiscard]] constexpr auto get_operand() -> Operand&;
-    auto set_operand(Operand operand) -> void;
+    auto set_operand(std::unique_ptr<Operand> operand) -> void { m_operand = std::move(operand); }
+    inline auto set_operand(Operand operand) -> void;
 
     [[nodiscard]] constexpr auto get_op() const -> Op { return m_op; }
     constexpr auto set_op(Op op) -> void { m_op = op; }
@@ -301,11 +302,6 @@ namespace nitrate::compiler::parser {
     ValueType m_value;
   };
 
-  class InferTy {
-  public:
-    constexpr InferTy() = default;
-  };
-
   /*------------------------------------------------------------------------------------------------------------*/
 
   inline auto detail::clone_expr(const std::unique_ptr<Expr>& expr) -> std::unique_ptr<Expr> {
@@ -324,6 +320,16 @@ namespace nitrate::compiler::parser {
   constexpr auto BinExpr::operator==(const BinExpr& o) const -> bool { return state() == o.state(); }
   constexpr auto BinExpr::operator<=>(const BinExpr& o) const -> std::weak_ordering { return state() <=> o.state(); }
 
+  auto BinExpr::set_lhs(LHS lhs) -> void {
+    assert(m_lhs != nullptr && "Cannot set LHS of BinExpr when m_lhs is nullptr");
+    *m_lhs = std::move(lhs);
+  }
+
+  auto BinExpr::set_rhs(RHS rhs) -> void {
+    assert(m_rhs != nullptr && "Cannot set RHS of BinExpr when m_rhs is nullptr");
+    *m_rhs = std::move(rhs);
+  }
+
   /*------------------------------------------------------------------------------------------------------------*/
 
   UnaryExpr::UnaryExpr(Operand operand, Op op, bool is_postfix)
@@ -336,6 +342,11 @@ namespace nitrate::compiler::parser {
   constexpr auto UnaryExpr::operator==(const UnaryExpr& o) const -> bool { return state() == o.state(); }
   constexpr auto UnaryExpr::operator<=>(const UnaryExpr& o) const -> std::weak_ordering {
     return state() <=> o.state();
+  }
+
+  auto UnaryExpr::set_operand(Operand operand) -> void {
+    assert(m_operand != nullptr && "Cannot set Operand of UnaryExpr when m_operand is nullptr");
+    *m_operand = std::move(operand);
   }
 
   /*------------------------------------------------------------------------------------------------------------*/

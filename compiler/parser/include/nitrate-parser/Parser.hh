@@ -25,6 +25,9 @@
 #include <nitrate-parser/SymbolTable.hh>
 
 namespace nitrate::compiler::parser {
+  // FIXME: Create a seperate variant for types
+  using Type = Expr;
+
   class Parser {
   public:
     Parser(lexer::Lexer& lexer);
