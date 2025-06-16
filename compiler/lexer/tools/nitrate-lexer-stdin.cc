@@ -43,7 +43,7 @@ auto main(int argc, char* argv[]) -> int {
   }
 
   {
-    auto lexer = Lexer(std::cin, boost::flyweight<std::string>("stdin"));
+    auto lexer = Lexer(std::cin, StringData("stdin"));
 
     os << "[";
 

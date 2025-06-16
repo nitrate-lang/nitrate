@@ -19,8 +19,8 @@
 
 #pragma once
 
-#include <boost/flyweight.hpp>
 #include <cstdint>
+#include <nitrate-lexer/StringData.hh>
 
 namespace nitrate::compiler::lexer {
   enum class CommentType : uint8_t {
@@ -29,11 +29,11 @@ namespace nitrate::compiler::lexer {
   };
 
   class Comment {
-    boost::flyweight<std::string> m_value;
+    StringData m_value;
     CommentType m_type;
 
   public:
-    Comment(boost::flyweight<std::string> value, CommentType type) : m_value(std::move(value)), m_type(type) {}
+    Comment(StringData value, CommentType type) : m_value(std::move(value)), m_type(type) {}
 
     [[nodiscard]] constexpr auto type() const -> CommentType { return m_type; }
     [[nodiscard]] constexpr auto value() const -> const std::string& { return m_value.get(); }

@@ -59,13 +59,13 @@ namespace nitrate::compiler::lexer {
   };
 
   class FileSourceRange {
-    boost::flyweight<std::string> m_file;
+    StringData m_file;
     FileSourceLocation m_begin;
     FileSourceLocation m_end;
 
   public:
     FileSourceRange() = default;
-    FileSourceRange(boost::flyweight<std::string> file, FileSourceLocation begin, FileSourceLocation end)
+    FileSourceRange(StringData file, FileSourceLocation begin, FileSourceLocation end)
         : m_file(std::move(file)), m_begin(begin), m_end(end) {}
 
     [[nodiscard]] auto operator<=>(const FileSourceRange& other) const -> std::strong_ordering = default;

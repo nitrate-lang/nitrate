@@ -19,8 +19,8 @@
 
 #pragma once
 
-#include <boost/flyweight.hpp>
 #include <cstdint>
+#include <nitrate-lexer/StringData.hh>
 
 namespace nitrate::compiler::lexer {
   enum class IdentifierType : uint8_t {
@@ -29,11 +29,11 @@ namespace nitrate::compiler::lexer {
   };
 
   class Identifier {
-    boost::flyweight<std::string> m_name;
+    StringData m_name;
     IdentifierType m_type;
 
   public:
-    Identifier(boost::flyweight<std::string> name, IdentifierType type) : m_name(std::move(name)), m_type(type) {}
+    Identifier(StringData name, IdentifierType type) : m_name(std::move(name)), m_type(type) {}
 
     [[nodiscard]] constexpr auto name() const -> const std::string& { return m_name.get(); }
     [[nodiscard]] constexpr auto type() const -> IdentifierType { return m_type; }

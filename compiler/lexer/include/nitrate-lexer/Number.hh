@@ -19,8 +19,8 @@
 
 #pragma once
 
-#include <boost/flyweight.hpp>
 #include <cstdint>
+#include <nitrate-lexer/StringData.hh>
 
 namespace nitrate::compiler::lexer {
   enum class NumberLiteralType : uint8_t {
@@ -33,12 +33,11 @@ namespace nitrate::compiler::lexer {
   };
 
   class NumberLiteral {
-    boost::flyweight<std::string> m_value;
+    StringData m_value;
     NumberLiteralType m_type;
 
   public:
-    NumberLiteral(boost::flyweight<std::string> value, NumberLiteralType type)
-        : m_value(std::move(value)), m_type(type) {}
+    NumberLiteral(StringData value, NumberLiteralType type) : m_value(std::move(value)), m_type(type) {}
 
     [[nodiscard]] constexpr auto value() const -> const std::string& { return m_value.get(); }
     [[nodiscard]] constexpr auto type() const -> NumberLiteralType { return m_type; }
