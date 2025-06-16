@@ -374,16 +374,24 @@ public:
       }
 
       if (ch == '\\') {
-        const auto escape_ch = m_lexer.next_byte();
-        if (!escape_ch.has_value()) [[unlikely]] {
+        const auto escape_ch_opt = m_lexer.next_byte();
+        if (!escape_ch_opt.has_value()) [[unlikely]] {
           spdlog::error("[Lexer] Failed to read the next byte after an escape character in a string literal");
           return std::nullopt;
         }
 
-        const auto mapped = ESCAPE_CHAR_MAP[*escape_ch];
+        const auto escape_ch = escape_ch_opt.value();
+
+        const auto mapped = ESCAPE_CHAR_MAP[escape_ch];
         if (mapped == ESCAPE_MAP_SENTINAL) {
-          // TODO: Handle escape sequences like \x{XX}, \o{XXX}, \u{XXXX}
-          spdlog::error("[Lexer] Unsupported escape sequence in string literal: '\\{}'", static_cast<char>(*escape_ch));
+          if (escape_ch == 'x' || escape_ch == 'u' || escape_ch == 'o') {
+            // TODO: Handle escape sequences like \x{XX}, \o{XXX}, \u{XXXX}
+            spdlog::error("[Lexer] Escape sequences like '\\{}' are not yet supported in string literals",
+                          static_cast<char>(escape_ch));
+            return std::nullopt;
+          }
+
+          spdlog::error("[Lexer] Unsupported escape sequence in string literal: '\\{}'", static_cast<char>(escape_ch));
           return std::nullopt;
         }
 
