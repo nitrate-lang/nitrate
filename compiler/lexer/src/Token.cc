@@ -27,7 +27,7 @@ BOOST_SYMBOL_EXPORT auto Token::dump(std::ostream& os, bool include_source_range
 
   switch (type()) {
     case TokenType::Identifier: {
-      j["type"] = "name";
+      j["type"] = "identifier";
       j["value"] = std::get<Identifier>(m_value).name();
       j["is_raw"] = std::get<Identifier>(m_value).is_atypical();
       break;
@@ -45,9 +45,9 @@ BOOST_SYMBOL_EXPORT auto Token::dump(std::ostream& os, bool include_source_range
       break;
     }
 
-    case TokenType::Punctor: {
-      j["type"] = "punctor";
-      j["value"] = punctor_to_string(std::get<Punctor>(m_value));
+    case TokenType::Punctuator: {
+      j["type"] = "punctuator";
+      j["value"] = punctor_to_string(std::get<Punctuator>(m_value));
       break;
     }
 

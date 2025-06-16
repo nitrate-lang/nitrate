@@ -24,7 +24,7 @@
 #include <nitrate-lexer/Keyword.hh>
 #include <nitrate-lexer/Number.hh>
 #include <nitrate-lexer/Operator.hh>
-#include <nitrate-lexer/Punctor.hh>
+#include <nitrate-lexer/Punctuator.hh>
 #include <nitrate-lexer/String.hh>
 #include <variant>
 
@@ -33,7 +33,7 @@ namespace nitrate::compiler::lexer {
     Identifier,
     Keyword,
     Operator,
-    Punctor,
+    Punctuator,
     StringLiteral,
     NumberLiteral,
     Comment,
@@ -82,7 +82,7 @@ namespace nitrate::compiler::lexer {
 
   class Token {
   public:
-    using TokenValue = std::variant<Identifier, Keyword, Operator, Punctor, StringLiteral, NumberLiteral, Comment>;
+    using TokenValue = std::variant<Identifier, Keyword, Operator, Punctuator, StringLiteral, NumberLiteral, Comment>;
 
     [[nodiscard]] static auto from_identifier(Identifier id, FileSourceRange source_range) -> Token {
       return Token{std::move(id), std::move(source_range)};
@@ -96,7 +96,7 @@ namespace nitrate::compiler::lexer {
       return Token{op, std::move(source_range)};
     }
 
-    [[nodiscard]] static auto from_punctor(Punctor pun, FileSourceRange source_range) -> Token {
+    [[nodiscard]] static auto from_punctor(Punctuator pun, FileSourceRange source_range) -> Token {
       return Token{pun, std::move(source_range)};
     }
 

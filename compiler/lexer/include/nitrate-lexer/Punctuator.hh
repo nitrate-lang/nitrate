@@ -24,7 +24,7 @@
 #include <string_view>
 
 namespace nitrate::compiler::lexer {
-  enum class Punctor : uint8_t {
+  enum class Punctuator : uint8_t {
     LeftParenthesis,   // (
     RightParenthesis,  // )
     LeftBracket,       // [
@@ -37,20 +37,20 @@ namespace nitrate::compiler::lexer {
     AtSign,            // @
   };
 
-  static inline const boost::bimap<Punctor, uint8_t> PUNCTOR_MAP = [] {
-    boost::bimap<Punctor, uint8_t> mapping;
+  static inline const boost::bimap<Punctuator, uint8_t> PUNCTOR_MAP = [] {
+    boost::bimap<Punctuator, uint8_t> mapping;
     auto& map = mapping.left;
 
-    map.insert({Punctor::LeftParenthesis, '('});
-    map.insert({Punctor::RightParenthesis, ')'});
-    map.insert({Punctor::LeftBracket, '['});
-    map.insert({Punctor::RightBracket, ']'});
-    map.insert({Punctor::LeftBrace, '{'});
-    map.insert({Punctor::RightBrace, '}'});
-    map.insert({Punctor::Comma, ','});
-    map.insert({Punctor::Semicolon, ';'});
-    map.insert({Punctor::Colon, ':'});
-    map.insert({Punctor::AtSign, '@'});
+    map.insert({Punctuator::LeftParenthesis, '('});
+    map.insert({Punctuator::RightParenthesis, ')'});
+    map.insert({Punctuator::LeftBracket, '['});
+    map.insert({Punctuator::RightBracket, ']'});
+    map.insert({Punctuator::LeftBrace, '{'});
+    map.insert({Punctuator::RightBrace, '}'});
+    map.insert({Punctuator::Comma, ','});
+    map.insert({Punctuator::Semicolon, ';'});
+    map.insert({Punctuator::Colon, ':'});
+    map.insert({Punctuator::AtSign, '@'});
 
     return mapping;
   }();
@@ -59,7 +59,7 @@ namespace nitrate::compiler::lexer {
     return PUNCTOR_MAP.right.find(str) != PUNCTOR_MAP.right.end();
   }
 
-  [[nodiscard]] inline auto punctor_from_byte(uint8_t str) -> std::optional<Punctor> {
+  [[nodiscard]] inline auto punctor_from_byte(uint8_t str) -> std::optional<Punctuator> {
     auto it = PUNCTOR_MAP.right.find(str);
     if (it != PUNCTOR_MAP.right.end()) {
       return it->second;
@@ -68,7 +68,7 @@ namespace nitrate::compiler::lexer {
     return std::nullopt;
   }
 
-  [[nodiscard]] inline auto punctor_to_string(Punctor punctor) -> std::string_view {
+  [[nodiscard]] inline auto punctor_to_string(Punctuator punctor) -> std::string_view {
     const uint8_t& ch = PUNCTOR_MAP.left.at(punctor);
     const char* ch_ptr = reinterpret_cast<const char*>(&ch);
     return {ch_ptr, 1};
