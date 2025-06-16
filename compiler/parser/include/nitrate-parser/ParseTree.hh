@@ -116,7 +116,7 @@ namespace nitrate::compiler::parser {
   class TemplateTy;
   class LambdaTy;
 
-  using Expr = std::variant<BinExpr, UnaryExpr>;
+  using Expr = std::variant<BinExpr, UnaryExpr, String>;
 
   using Type = std::variant<InferTy>;
 
@@ -169,6 +169,8 @@ namespace nitrate::compiler::parser {
 
     BinExpr() = delete;
     BinExpr(LHS lhs, RHS rhs, Op op);
+    BinExpr(std::unique_ptr<LHS> lhs, std::unique_ptr<RHS> rhs, Op op)
+        : m_op(op), m_lhs(std::move(lhs)), m_rhs(std::move(rhs)) {}
     BinExpr(const BinExpr& o)
         : m_source_range(o.m_source_range),
           m_is_parenthesized(o.m_is_parenthesized),
@@ -223,8 +225,9 @@ namespace nitrate::compiler::parser {
     using Operand = Expr;
 
     UnaryExpr() = delete;
-    UnaryExpr(Operand operand, Op op, bool is_postfix)
-        : m_op(op), m_is_postfix(is_postfix), m_operand(std::make_unique<Operand>(std::move(operand))) {}
+    UnaryExpr(Operand operand, Op op, bool is_postfix);
+    UnaryExpr(std::unique_ptr<Operand> operand, Op op, bool is_postfix)
+        : m_op(op), m_is_postfix(is_postfix), m_operand(std::move(operand)) {}
     UnaryExpr(const UnaryExpr& o)
         : m_source_range(o.m_source_range),
           m_is_parenthesized(o.m_is_parenthesized),
@@ -306,13 +309,15 @@ namespace nitrate::compiler::parser {
   public:
     using ValueType = std::pmr::string;
 
-    String() = default;
-    String(ValueType value) : m_value(std::move(value)) {}
-    String(const String&) = delete;
+    String(ValueType value = "") : m_value(std::move(value)) {}
+    String(const String&) = default;
     String(String&&) = default;
-    auto operator=(const String&) -> String& = delete;
+    auto operator=(const String&) -> String& = default;
     auto operator=(String&&) -> String& = default;
     ~String() = default;
+
+    [[nodiscard]] constexpr auto operator==(const String& o) const -> bool = default;
+    [[nodiscard]] constexpr auto operator<=>(const String& o) const -> std::strong_ordering = default;
 
     [[nodiscard]] constexpr auto get_value() const -> const ValueType& { return m_value; }
     [[nodiscard]] constexpr auto get_value() -> ValueType& { return m_value; }
@@ -637,12 +642,18 @@ namespace nitrate::compiler::parser {
   // W_PLACEHOLDER_IMPL(Import, ASTKind::sImport);      // TODO: Implement node Import
   // W_PLACEHOLDER_IMPL(UnitTest, ASTKind::sUnitTest);  // TODO: Implement node UnitTest
 
+  BinExpr::BinExpr(LHS lhs, RHS rhs, Op op)
+      : m_op(op), m_lhs(std::make_unique<LHS>(std::move(lhs))), m_rhs(std::make_unique<RHS>(std::move(rhs))) {}
+
   constexpr auto BinExpr::state() const -> MemberTuple {
     return std::tie(m_source_range, m_is_parenthesized, m_op, *m_lhs, *m_rhs);
   }
 
   constexpr auto BinExpr::operator==(const BinExpr& o) const -> bool { return state() == o.state(); }
   constexpr auto BinExpr::operator<=>(const BinExpr& o) const -> std::weak_ordering { return state() <=> o.state(); }
+
+  UnaryExpr::UnaryExpr(Operand operand, Op op, bool is_postfix)
+      : m_op(op), m_is_postfix(is_postfix), m_operand(std::make_unique<Operand>(std::move(operand))) {}
 
   constexpr auto UnaryExpr::state() const -> MemberTuple {
     return std::tie(m_source_range, m_is_parenthesized, m_op, m_is_postfix, *m_operand);
