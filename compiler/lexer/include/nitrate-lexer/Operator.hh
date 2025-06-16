@@ -24,11 +24,19 @@
 
 namespace nitrate::compiler::lexer {
   enum class Operator : uint8_t {
+    /*----------------------------------------------------------------*
+     * Arithmetic Operators                                           *
+     *----------------------------------------------------------------*/
+
     Plus,    /* '+': Addition */
     Minus,   /* '-': Subtraction */
     Times,   /* '*': Multiplication */
     Slash,   /* '/': Division */
     Percent, /* '%': Modulus */
+
+    /*----------------------------------------------------------------*
+     * Bitwise Operators                                              *
+     *----------------------------------------------------------------*/
 
     BitAnd,  /* '&':   Bitwise AND */
     BitOr,   /* '|':   Bitwise OR */
@@ -38,6 +46,10 @@ namespace nitrate::compiler::lexer {
     BitShr,  /* '>>':  Bitwise right shift */
     BitRotl, /* '<<<': Bitwise rotate left */
     BitRotr, /* '>>>': Bitwise rotate right */
+
+    /*----------------------------------------------------------------*
+     * Logical Operators                                              *
+     *----------------------------------------------------------------*/
 
     LogicAnd, /* '&&': Logical AND */
     LogicOr,  /* '||': Logical OR */
@@ -49,6 +61,10 @@ namespace nitrate::compiler::lexer {
     LogicGe,  /* '>=': Logical greater than or equal to */
     LogicEq,  /* '==': Logical equal to */
     LogicNe,  /* '!=': Logical not equal to */
+
+    /*----------------------------------------------------------------*
+     * Assignment Operators                                           *
+     *----------------------------------------------------------------*/
 
     Set,         /* '=':    Assignment */
     SetPlus,     /* '+=':   Addition Assignment */
@@ -77,19 +93,33 @@ namespace nitrate::compiler::lexer {
     SetInc,      /* '++':   Increment */
     SetDec,      /* '--':   Decrement */
 
+    /*----------------------------------------------------------------*
+     * Type System Operators                                          *
+     *----------------------------------------------------------------*/
+
     As,        /* 'as':         Type cast */
     BitcastAs, /* 'bitcast_as': Bitcast */
     Sizeof,    /* 'sizeof':     Size of */
     Alignof,   /* 'alignof':    Alignment of */
     Typeof,    /* 'typeof':     Type of */
 
-    In,       /* 'in' */
-    Out,      /* 'out' */
-    Dot,      /* '.':          Dot */
-    Range,    /* '..':         Range */
-    Ellipsis, /* '...':        Ellipsis */
-    Scope,    /* '::':         Scope resolution */
-    Question, /* '?':          Ternary operator (conditional) */
+    /*----------------------------------------------------------------*
+     * Syntactic Operators                                            *
+     *----------------------------------------------------------------*/
+    Dot,        /* '.':          Dot */
+    Ellipsis,   /* '...':        Ellipsis */
+    Scope,      /* '::':         Scope resolution */
+    Arrow,      /* '->':         Arrow operator */
+    BlockArrow, /* '=>':         Block arrow operator */
+
+    /*----------------------------------------------------------------*
+     * Special Operators                                              *
+     *----------------------------------------------------------------*/
+
+    Range,     /* '..':         Range */
+    Question,  /* '?':          Ternary operator (conditional) */
+    Spaceship, /* '<=>':        Spaceship operator (three-way comparison) */
+
   };
 
   static inline const boost::bimap<Operator, std::string_view> OPERATOR_MAP = [] {
@@ -155,13 +185,15 @@ namespace nitrate::compiler::lexer {
     map.insert({Operator::Alignof, "alignof"});
     map.insert({Operator::Typeof, "typeof"});
 
-    map.insert({Operator::In, "in"});
-    map.insert({Operator::Out, "out"});
     map.insert({Operator::Dot, "."});
-    map.insert({Operator::Range, ".."});
     map.insert({Operator::Ellipsis, "..."});
     map.insert({Operator::Scope, "::"});
+    map.insert({Operator::Arrow, "->"});
+    map.insert({Operator::BlockArrow, "=>"});
+
+    map.insert({Operator::Range, ".."});
     map.insert({Operator::Question, "?"});
+    map.insert({Operator::Spaceship, "<=>"});
 
     return mapping;
   }();
