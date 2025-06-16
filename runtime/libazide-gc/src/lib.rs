@@ -164,7 +164,7 @@ pub extern "C" fn azide_gc_is_enabled(gc: &GC) -> bool {
 }
 
 #[unsafe(no_mangle)]
-pub extern "C" fn azide_gc_manage(gc: &mut GC, _base: *mut u8, _size: usize) -> bool {
+pub extern "C" fn azide_gc_manage(gc: &mut GC, base: *mut u8, size: usize) -> bool {
     let _lock = gc.lock.lock();
 
     // TODO: Implement the logic to manage memory
@@ -173,14 +173,14 @@ pub extern "C" fn azide_gc_manage(gc: &mut GC, _base: *mut u8, _size: usize) -> 
 }
 
 #[unsafe(no_mangle)]
-pub extern "C" fn azide_gc_unmanage(gc: &mut GC, _base: *mut u8, _size: usize) {
+pub extern "C" fn azide_gc_unmanage(gc: &mut GC, base: *mut u8, size: usize) {
     let _lock = gc.lock.lock();
 
     // TODO: Implement the logic to unmanage memory
 }
 
 #[unsafe(no_mangle)]
-pub extern "C" fn azide_gc_is_managed(gc: &mut GC, _base: *mut u8, _size: usize) -> bool {
+pub extern "C" fn azide_gc_is_managed(gc: &mut GC, base: *mut u8, size: usize) -> bool {
     let _lock = gc.lock.lock();
 
     // TODO: Implement the logic to check if the memory is managed

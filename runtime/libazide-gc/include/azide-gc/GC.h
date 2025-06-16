@@ -22,7 +22,7 @@ struct azide_gc_t;
 
 typedef void (*azide_gc_pause_tasks_t)(void* ud);
 typedef void (*azide_gc_resume_tasks_t)(void* ud);
-typedef void (*azide_gc_async_finalizer_t)(void* ud, void* base, size_t size, uint64_t object_id);
+typedef void (*azide_gc_destroyer_t)(void* ud, void* base, size_t size, uint64_t object_id);
 typedef void* (*azide_gc_malloc_t)(void* ud, size_t size);
 typedef void (*azide_gc_free_t)(void* ud, void* ptr);
 
@@ -33,8 +33,8 @@ struct azide_gc_setup_t {
   azide_gc_resume_tasks_t m_resume;
   void* m_resume_ud;
 
-  azide_gc_async_finalizer_t m_runner;
-  void* m_runner_ud;
+  azide_gc_destroyer_t m_destroyer;
+  void* m_destroyer_ud;
 };
 
 /**
