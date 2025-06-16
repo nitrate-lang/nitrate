@@ -23,6 +23,14 @@
 #include <nitrate-lexer/Token.hh>
 
 namespace nitrate::compiler::parser {
+  /*------------------------------------------------------------------------------------------------------------------*/
+
+  /*
+   * Forward declarations of all classes used to model Nitrate expressions.
+   * These classes are used to represent the abstract syntax tree (AST)
+   * of any Nitrate program.
+   */
+
   class BinExpr;
   class UnaryExpr;
   class Number;        // TODO: Implement this class
@@ -62,7 +70,10 @@ namespace nitrate::compiler::parser {
 
   using Expr = std::variant<BinExpr, UnaryExpr, String>;
 
-  namespace detail {
+  /*------------------------------------------------------------------------------------------------------------------*/
+
+  class ExprBase {
+  protected:
     class LocationTag final {
       uint64_t m_id : 48;
 
@@ -83,14 +94,26 @@ namespace nitrate::compiler::parser {
       [[nodiscard]] constexpr auto operator==(const LocationTag& o) const -> bool { return get() == o.get(); }
 
       [[nodiscard]] auto get() const -> const lexer::FileSourceRange&;
+
     } __attribute__((packed));
 
     inline auto clone_expr(const std::unique_ptr<Expr>& expr) -> std::unique_ptr<Expr>;
-  }  // namespace detail
 
-  /*------------------------------------------------------------------------------------------------------------*/
+    ExprBase() = default;
+    ExprBase(const ExprBase&) = default;
+    ExprBase(ExprBase&&) = default;
+    auto operator=(const ExprBase&) -> ExprBase& = default;
+    auto operator=(ExprBase&&) -> ExprBase& = default;
+    ~ExprBase() = default;
 
-  class BinExpr final {
+  public:
+    [[nodiscard]] constexpr auto operator==(const ExprBase& o) const -> bool = default;
+    [[nodiscard]] constexpr auto operator<=>(const ExprBase& o) const -> std::strong_ordering = default;
+  };
+
+  /*------------------------------------------------------------------------------------------------------------------*/
+
+  class BinExpr final : ExprBase {
   public:
     using LHS = Expr;
     using RHS = Expr;
@@ -104,16 +127,16 @@ namespace nitrate::compiler::parser {
         : m_source_range(o.m_source_range),
           m_is_parenthesized(o.m_is_parenthesized),
           m_op(o.m_op),
-          m_lhs(detail::clone_expr(o.m_lhs)),
-          m_rhs(detail::clone_expr(o.m_rhs)) {}
+          m_lhs(clone_expr(o.m_lhs)),
+          m_rhs(clone_expr(o.m_rhs)) {}
     BinExpr(BinExpr&&) = default;
     auto operator=(const BinExpr& o) -> BinExpr& {
       if (this != &o) {
         m_source_range = o.m_source_range;
         m_is_parenthesized = o.m_is_parenthesized;
         m_op = o.m_op;
-        m_lhs = detail::clone_expr(o.m_lhs);
-        m_rhs = detail::clone_expr(o.m_rhs);
+        m_lhs = clone_expr(o.m_lhs);
+        m_rhs = clone_expr(o.m_rhs);
       }
 
       return *this;
@@ -141,22 +164,24 @@ namespace nitrate::compiler::parser {
     constexpr auto set_parenthesized(bool b) -> void { m_is_parenthesized = b; }
 
     [[nodiscard]] constexpr auto source_range() const -> const auto& { return m_source_range.get(); }
-    auto set_source_range(auto source_range) -> void { m_source_range = detail::LocationTag(std::move(source_range)); }
+    auto set_source_range(auto source_range) -> void { m_source_range = LocationTag(std::move(source_range)); }
 
   protected:
-    using MemberTuple = std::tuple<const detail::LocationTag&, const bool&, const Op&, const LHS&, const RHS&>;
+    using MemberTuple = std::tuple<const LocationTag&, const bool&, const Op&, const LHS&, const RHS&>;
 
     [[nodiscard]] constexpr auto state() const -> MemberTuple;
 
   private:
-    detail::LocationTag m_source_range;
+    LocationTag m_source_range;
     bool m_is_parenthesized : 1 = false;
     Op m_op : 7;
     std::unique_ptr<LHS> m_lhs;
     std::unique_ptr<RHS> m_rhs;
   };
 
-  class UnaryExpr final {
+  /*------------------------------------------------------------------------------------------------------------------*/
+
+  class UnaryExpr final : ExprBase {
   public:
     using Op = lexer::Operator;
     using Operand = Expr;
@@ -170,7 +195,7 @@ namespace nitrate::compiler::parser {
           m_is_parenthesized(o.m_is_parenthesized),
           m_op(o.m_op),
           m_is_postfix(o.m_is_postfix),
-          m_operand(detail::clone_expr(o.m_operand)) {}
+          m_operand(clone_expr(o.m_operand)) {}
     UnaryExpr(UnaryExpr&&) = default;
     auto operator=(const UnaryExpr& o) -> UnaryExpr& {
       if (this != &o) {
@@ -178,7 +203,7 @@ namespace nitrate::compiler::parser {
         m_is_parenthesized = o.m_is_parenthesized;
         m_op = o.m_op;
         m_is_postfix = o.m_is_postfix;
-        m_operand = detail::clone_expr(o.m_operand);
+        m_operand = clone_expr(o.m_operand);
       }
       return *this;
     }
@@ -203,22 +228,24 @@ namespace nitrate::compiler::parser {
     constexpr auto set_parenthesized(bool b) -> void { m_is_parenthesized = b; }
 
     [[nodiscard]] constexpr auto source_range() const -> const auto& { return m_source_range.get(); }
-    auto set_source_range(auto source_range) -> void { m_source_range = detail::LocationTag(std::move(source_range)); }
+    auto set_source_range(auto source_range) -> void { m_source_range = LocationTag(std::move(source_range)); }
 
   protected:
-    using MemberTuple = std::tuple<const detail::LocationTag&, const bool&, const Op&, const bool&, const Operand&>;
+    using MemberTuple = std::tuple<const LocationTag&, const bool&, const Op&, const bool&, const Operand&>;
 
     [[nodiscard]] constexpr auto state() const -> MemberTuple;
 
   private:
-    detail::LocationTag m_source_range;
+    LocationTag m_source_range;
     bool m_is_parenthesized : 1 = false;
     Op m_op : 7;
     bool m_is_postfix : 1;
     std::unique_ptr<Operand> m_operand;
   };
 
-  class String final {
+  /*------------------------------------------------------------------------------------------------------------------*/
+
+  class String final : ExprBase {
   public:
     using ValueType = std::pmr::string;
 
@@ -240,14 +267,19 @@ namespace nitrate::compiler::parser {
     auto set_value(ValueType value) -> void { m_value = std::move(value); }
 
     [[nodiscard]] constexpr auto source_range() const -> const auto& { return m_source_range.get(); }
-    auto set_source_range(auto source_range) -> void { m_source_range = detail::LocationTag(std::move(source_range)); }
+    auto set_source_range(auto source_range) -> void { m_source_range = LocationTag(std::move(source_range)); }
+
+  protected:
+    using MemberTuple = std::tuple<const LocationTag&, const ValueType&>;
+
+    [[nodiscard]] constexpr auto state() const -> MemberTuple { return std::tie(m_source_range, m_value); }
 
   private:
     ValueType m_value;
-    detail::LocationTag m_source_range;
+    LocationTag m_source_range;
   };
 
-  /*------------------------------------------------------------------------------------------------------------*/
+  /*------------------------------------------------------------------------------------------------------------------*/
 
   BinExpr::BinExpr(LHS lhs, RHS rhs, Op op)
       : m_op(op), m_lhs(std::make_unique<LHS>(std::move(lhs))), m_rhs(std::make_unique<RHS>(std::move(rhs))) {}
@@ -269,7 +301,7 @@ namespace nitrate::compiler::parser {
     *m_rhs = std::move(rhs);
   }
 
-  /*------------------------------------------------------------------------------------------------------------*/
+  /*------------------------------------------------------------------------------------------------------------------*/
 
   UnaryExpr::UnaryExpr(Operand operand, Op op, bool is_postfix)
       : m_op(op), m_is_postfix(is_postfix), m_operand(std::make_unique<Operand>(std::move(operand))) {}
@@ -288,13 +320,11 @@ namespace nitrate::compiler::parser {
     *m_operand = std::move(operand);
   }
 
-  /*------------------------------------------------------------------------------------------------------------*/
+  /*------------------------------------------------------------------------------------------------------------------*/
 
-  namespace detail {
-    inline auto clone_expr(const std::unique_ptr<Expr>& expr) -> std::unique_ptr<Expr> {
-      return expr ? std::make_unique<Expr>(*expr) : nullptr;
-    }
-  }  // namespace detail
+  auto ExprBase::clone_expr(const std::unique_ptr<Expr>& expr) -> std::unique_ptr<Expr> {
+    return expr ? std::make_unique<Expr>(*expr) : nullptr;
+  }
 
-  /*------------------------------------------------------------------------------------------------------------*/
+  /*------------------------------------------------------------------------------------------------------------------*/
 }  // namespace nitrate::compiler::parser
