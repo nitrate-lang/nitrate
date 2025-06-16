@@ -137,6 +137,8 @@ namespace nitrate::compiler::parser {
       }
       ~SourceLocationTag();
 
+      [[nodiscard]] constexpr auto operator<=>(const SourceLocationTag&) const -> std::weak_ordering = default;
+
       [[nodiscard]] auto get() const -> const lexer::FileSourceRange&;
     } __attribute__((packed));
 
@@ -185,6 +187,9 @@ namespace nitrate::compiler::parser {
     auto operator=(BinExpr&& o) -> BinExpr& = default;
     ~BinExpr() = default;
 
+    [[nodiscard]] constexpr auto operator==(const BinExpr& o) const -> bool;
+    [[nodiscard]] constexpr auto operator<=>(const BinExpr& o) const -> std::weak_ordering;
+
     [[nodiscard]] constexpr auto get_lhs() const -> const LHS&;
     [[nodiscard]] constexpr auto get_lhs() -> LHS&;
     auto set_lhs(LHS lhs) -> void;
@@ -198,6 +203,11 @@ namespace nitrate::compiler::parser {
 
     W_NITRATE_AST_PARENTHESIZED_TRAIT();
     W_NITRATE_AST_SOURCE_RANGE_TRAIT();
+
+  protected:
+    using MemberTuple = std::tuple<const detail::SourceLocationTag&, const bool&, const Op&, const LHS&, const RHS&>;
+
+    [[nodiscard]] constexpr auto state() const -> MemberTuple;
 
   private:
     detail::SourceLocationTag m_source_range;
@@ -233,6 +243,9 @@ namespace nitrate::compiler::parser {
     auto operator=(UnaryExpr&&) -> UnaryExpr& = default;
     ~UnaryExpr() = default;
 
+    [[nodiscard]] constexpr auto operator==(const UnaryExpr&) const -> bool;
+    [[nodiscard]] constexpr auto operator<=>(const UnaryExpr&) const -> std::weak_ordering;
+
     [[nodiscard]] constexpr auto get_operand() const -> const Operand&;
     [[nodiscard]] constexpr auto get_operand() -> Operand&;
     auto set_operand(Operand operand) -> void;
@@ -245,6 +258,12 @@ namespace nitrate::compiler::parser {
 
     W_NITRATE_AST_PARENTHESIZED_TRAIT();
     W_NITRATE_AST_SOURCE_RANGE_TRAIT();
+
+  protected:
+    using MemberTuple =
+        std::tuple<const detail::SourceLocationTag&, const bool&, const Op&, const bool&, const Operand&>;
+
+    [[nodiscard]] constexpr auto state() const -> MemberTuple;
 
   private:
     detail::SourceLocationTag m_source_range;
@@ -617,6 +636,22 @@ namespace nitrate::compiler::parser {
   // W_PLACEHOLDER_IMPL(Scope, ASTKind::sScope);        // TODO: Implement node Scope
   // W_PLACEHOLDER_IMPL(Import, ASTKind::sImport);      // TODO: Implement node Import
   // W_PLACEHOLDER_IMPL(UnitTest, ASTKind::sUnitTest);  // TODO: Implement node UnitTest
+
+  constexpr auto BinExpr::state() const -> MemberTuple {
+    return std::tie(m_source_range, m_is_parenthesized, m_op, *m_lhs, *m_rhs);
+  }
+
+  constexpr auto BinExpr::operator==(const BinExpr& o) const -> bool { return state() == o.state(); }
+  constexpr auto BinExpr::operator<=>(const BinExpr& o) const -> std::weak_ordering { return state() <=> o.state(); }
+
+  constexpr auto UnaryExpr::state() const -> MemberTuple {
+    return std::tie(m_source_range, m_is_parenthesized, m_op, m_is_postfix, *m_operand);
+  }
+
+  constexpr auto UnaryExpr::operator==(const UnaryExpr& o) const -> bool { return state() == o.state(); }
+  constexpr auto UnaryExpr::operator<=>(const UnaryExpr& o) const -> std::weak_ordering {
+    return state() <=> o.state();
+  }
 
   namespace detail {
 #undef W_NITRATE_AST_SOURCE_RANGE_TRAIT
