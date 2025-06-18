@@ -40,7 +40,7 @@ auto main(int argc, char* argv[]) -> int {
     return 1;
   }
 
-  auto lexer = Lexer(is, boost::flyweight<std::string>(input_file));
+  auto lexer = Lexer(is, StringData(input_file));
 
   size_t token_count = 0;
   while (lexer.next_token()) {

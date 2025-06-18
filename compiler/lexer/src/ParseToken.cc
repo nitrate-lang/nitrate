@@ -328,7 +328,7 @@ public:
       }
     }
 
-    auto flyweight_identifier = boost::flyweight<std::string>(std::move(*identifier_value));
+    auto flyweight_identifier = StringData(std::move(*identifier_value));
     auto identifier = Identifier(std::move(flyweight_identifier), identifier_type);
 
     return Token::from_identifier(std::move(identifier), std::move(source_range));
@@ -348,7 +348,7 @@ public:
     const auto quote_ch = *first_ch;
     assert(quote_ch == '"' || quote_ch == '\'' && "Expected a string literal to start with a double or single quote");
 
-    const auto string_literal_type = [&] {
+    const auto string_literal_type = *[&]() -> std::optional<StringType> {
       if (quote_ch == '"') {
         return StringType::DoubleQuote;
       }
@@ -357,8 +357,7 @@ public:
         return StringType::SingleQuote;
       }
 
-      assert(false && "Unrecognized string literal type");
-      __builtin_unreachable();
+      return std::nullopt;
     }();
 
     std::string string_value;
@@ -375,16 +374,24 @@ public:
       }
 
       if (ch == '\\') {
-        const auto escape_ch = m_lexer.next_byte();
-        if (!escape_ch.has_value()) [[unlikely]] {
+        const auto escape_ch_opt = m_lexer.next_byte();
+        if (!escape_ch_opt.has_value()) [[unlikely]] {
           spdlog::error("[Lexer] Failed to read the next byte after an escape character in a string literal");
           return std::nullopt;
         }
 
-        const auto mapped = ESCAPE_CHAR_MAP[*escape_ch];
+        const auto escape_ch = escape_ch_opt.value();
+
+        const auto mapped = ESCAPE_CHAR_MAP[escape_ch];
         if (mapped == ESCAPE_MAP_SENTINAL) {
-          // TODO: Handle escape sequences like \x{XX}, \o{XXX}, \u{XXXX}
-          spdlog::error("[Lexer] Unsupported escape sequence in string literal: '\\{}'", static_cast<char>(*escape_ch));
+          if (escape_ch == 'x' || escape_ch == 'u' || escape_ch == 'o') {
+            // TODO: Handle escape sequences like \x{XX}, \o{XXX}, \u{XXXX}
+            spdlog::error("[Lexer] Escape sequences like '\\{}' are not yet supported in string literals",
+                          static_cast<char>(escape_ch));
+            return std::nullopt;
+          }
+
+          spdlog::error("[Lexer] Unsupported escape sequence in string literal: '\\{}'", static_cast<char>(escape_ch));
           return std::nullopt;
         }
 
@@ -397,7 +404,7 @@ public:
     const auto end_position = m_lexer.current_source_location();
     auto source_range = FileSourceRange(m_lexer.current_file(), start_position, end_position);
 
-    auto flyweight_string_value = boost::flyweight<std::string>(std::move(string_value));
+    auto flyweight_string_value = StringData(std::move(string_value));
     auto string_literal = StringLiteral(std::move(flyweight_string_value), string_literal_type);
 
     return Token::from_string_literal(std::move(string_literal), std::move(source_range));
@@ -580,7 +587,7 @@ public:
     const auto end_position = m_lexer.current_source_location();
     auto source_range = FileSourceRange(m_lexer.current_file(), start_position, end_position);
 
-    auto flyweight_number_value = boost::flyweight<std::string>(std::move(number_value));
+    auto flyweight_number_value = StringData(std::move(number_value));
     auto number_literal = NumberLiteral(std::move(flyweight_number_value), number_literal_type);
 
     return Token::from_number_literal(std::move(number_literal), std::move(source_range));
@@ -618,7 +625,7 @@ public:
     const auto end_position = m_lexer.current_source_location();
     auto source_range = FileSourceRange(m_lexer.current_file(), start_position, end_position);
 
-    auto flyweight_identifier = boost::flyweight<std::string>(std::move(comment_value));
+    auto flyweight_identifier = StringData(std::move(comment_value));
     auto comment = Comment(std::move(flyweight_identifier), CommentType::SingleLine);
 
     return Token::from_comment(std::move(comment), std::move(source_range));
@@ -718,7 +725,7 @@ public:
         const auto end_position = m_lexer.current_source_location();
         auto source_range = FileSourceRange(m_lexer.current_file(), start_position, end_position);
 
-        auto flyweight_identifier = boost::flyweight<std::string>(std::move(*comment_value));
+        auto flyweight_identifier = StringData(std::move(*comment_value));
         auto comment = Comment(std::move(flyweight_identifier),
                                is_singleline_comment ? CommentType::SingleLine : CommentType::MultiLine);
 

@@ -18,6 +18,7 @@ add_compile_options(
   -g3
   -fno-exceptions
   -fno-rtti
+  -fvisibility=hidden
 )
 
 if(NITRATE_COMPILER_SANITIZE)
@@ -26,6 +27,7 @@ if(NITRATE_COMPILER_SANITIZE)
 endif()
 
 add_library(${TARGET_NAME} ${LEXER_SOURCES})
+target_link_libraries(${TARGET_NAME} PUBLIC boost_system boost_container)
 target_include_directories(${TARGET_NAME} PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>)

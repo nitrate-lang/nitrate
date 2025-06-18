@@ -24,7 +24,7 @@
 #include <nitrate-lexer/Keyword.hh>
 #include <nitrate-lexer/Number.hh>
 #include <nitrate-lexer/Operator.hh>
-#include <nitrate-lexer/Punctor.hh>
+#include <nitrate-lexer/Punctuator.hh>
 #include <nitrate-lexer/String.hh>
 #include <variant>
 
@@ -33,7 +33,7 @@ namespace nitrate::compiler::lexer {
     Identifier,
     Keyword,
     Operator,
-    Punctor,
+    Punctuator,
     StringLiteral,
     NumberLiteral,
     Comment,
@@ -51,29 +51,38 @@ namespace nitrate::compiler::lexer {
     FileSourceLocation(uint32_t line, uint32_t column, uint32_t offset)
         : m_line(line), m_column(column), m_offset(offset) {}
 
+    [[nodiscard]] constexpr auto operator<=>(const FileSourceLocation& other) const -> std::strong_ordering = default;
+
     [[nodiscard]] auto line() const -> uint32_t { return m_line; }
     [[nodiscard]] auto column() const -> uint32_t { return m_column; }
     [[nodiscard]] auto offset() const -> uint32_t { return m_offset; }
   };
 
   class FileSourceRange {
-    boost::flyweight<std::string> m_file;
+    StringData m_file;
     FileSourceLocation m_begin;
     FileSourceLocation m_end;
 
   public:
     FileSourceRange() = default;
-    FileSourceRange(boost::flyweight<std::string> file, FileSourceLocation begin, FileSourceLocation end)
+    FileSourceRange(StringData file, FileSourceLocation begin, FileSourceLocation end)
         : m_file(std::move(file)), m_begin(begin), m_end(end) {}
+
+    [[nodiscard]] auto operator<=>(const FileSourceRange& other) const -> std::strong_ordering = default;
 
     [[nodiscard]] auto file() const -> const std::string& { return m_file.get(); }
     [[nodiscard]] auto begin() const -> FileSourceLocation { return m_begin; }
     [[nodiscard]] auto end() const -> FileSourceLocation { return m_end; }
   };
 
+  inline auto hash_value(const FileSourceRange& range) -> size_t {
+    return std::hash<std::string>()(range.file()) ^ std::hash<uint32_t>()(range.begin().offset()) ^
+           std::hash<uint32_t>()(range.end().offset());
+  }
+
   class Token {
   public:
-    using TokenValue = std::variant<Identifier, Keyword, Operator, Punctor, StringLiteral, NumberLiteral, Comment>;
+    using TokenValue = std::variant<Identifier, Keyword, Operator, Punctuator, StringLiteral, NumberLiteral, Comment>;
 
     [[nodiscard]] static auto from_identifier(Identifier id, FileSourceRange source_range) -> Token {
       return Token{std::move(id), std::move(source_range)};
@@ -87,7 +96,7 @@ namespace nitrate::compiler::lexer {
       return Token{op, std::move(source_range)};
     }
 
-    [[nodiscard]] static auto from_punctor(Punctor pun, FileSourceRange source_range) -> Token {
+    [[nodiscard]] static auto from_punctor(Punctuator pun, FileSourceRange source_range) -> Token {
       return Token{pun, std::move(source_range)};
     }
 

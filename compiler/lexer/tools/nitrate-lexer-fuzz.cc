@@ -17,7 +17,6 @@
 ///                                                                          ///
 ////////////////////////////////////////////////////////////////////////////////
 
-#include <boost/flyweight/flyweight_fwd.hpp>
 #define FMT_HEADER_ONLY
 #include <spdlog/spdlog.h>
 
@@ -34,7 +33,7 @@ namespace boost {
   }
 }  // namespace boost
 
-static const auto LEXER_FILENAME = boost::flyweight<std::string>("stdin");
+static const auto LEXER_FILENAME = StringData("stdin");
 
 extern "C" auto LLVMFuzzerInitialize(int *, char ***) -> int {  // NOLINT(readability-identifier-naming)
   // This function is called once at the start of the fuzzer.

@@ -24,7 +24,7 @@
 
 using namespace nitrate::compiler::lexer;
 
-BOOST_SYMBOL_EXPORT Lexer::Lexer(std::istream& is, boost::flyweight<std::string> file)
+BOOST_SYMBOL_EXPORT Lexer::Lexer(std::istream& is, StringData file)
     : m_input_stream(is), m_current_file(std::move(file)) {}
 
 auto Lexer::peek_byte() -> std::optional<uint8_t> {

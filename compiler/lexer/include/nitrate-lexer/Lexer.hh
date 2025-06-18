@@ -35,18 +35,18 @@ namespace nitrate::compiler::lexer {
 
     uint32_t m_head_stream_position = 0, m_lead_stream_position = 0;
     uint32_t m_line_number = 0, m_column_number = 0;
-    boost::flyweight<std::string> m_current_file;
+    StringData m_current_file;
 
     [[nodiscard]] auto peek_byte() -> std::optional<uint8_t>;
     [[nodiscard]] auto next_byte() -> std::optional<uint8_t>;
 
     [[nodiscard]] auto current_source_location() const -> FileSourceLocation;
-    [[nodiscard]] auto current_file() const -> const boost::flyweight<std::string>& { return m_current_file; }
+    [[nodiscard]] auto current_file() const -> const StringData& { return m_current_file; }
 
     [[nodiscard]] auto parse_next_token() -> std::optional<Token>;
 
   public:
-    Lexer(std::istream& is, boost::flyweight<std::string> file);
+    Lexer(std::istream& is, StringData file);
     Lexer(const Lexer&) = delete;
     Lexer(Lexer&&) = delete;
     auto operator=(const Lexer&) -> Lexer& = delete;
