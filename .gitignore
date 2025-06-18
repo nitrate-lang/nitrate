@@ -39,3 +39,4 @@ out.json
 compiler/lexer/corpus/
 compiler/lexer/corpus-min/
 fuzz-*.log
+runtime/libazide-gc/target/
