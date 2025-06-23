@@ -45,3 +45,4 @@ runtime/libazide-gc/target/
 # Added by cargo
 
 /target
+compiler.old
