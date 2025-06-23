@@ -3,10 +3,14 @@ name = "nitrate"
 version = "0.1.0"
 edition = "2024"
 
-[[bin]]
-name = "nitc"
-path = "nitc/src/main.rs"
+[dependencies]
+nitrate_lexer = { path = "compiler/lexer" }
+nitrate_parser = { path = "compiler/parser" }
 
 [[bin]]
 name = "no3"
 path = "no3/src/main.rs"
+
+[[bin]]
+name = "nitc"
+path = "nitc/src/main.rs"
