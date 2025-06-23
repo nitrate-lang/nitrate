@@ -1,21 +1,26 @@
+// Must not be increased beyond u32::MAX, as the lexer/compiler pipeline
+// assumes that offsets are representable as u32 values. However, it is
+// acceptable to decrease this value (for whatever reason?).
+const MAX_SOURCE_SIZE: usize = u32::MAX as usize;
+
 #[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
 pub enum IdentifierKind {
     Typical,
     Atypical,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
+#[derive(Debug, Clone, PartialEq, PartialOrd)]
 pub struct Identifier<'input> {
-    name: &'input str,
+    name: &'input [u8],
     kind: IdentifierKind,
 }
 
 impl<'input> Identifier<'input> {
-    pub fn new(name: &'input str, kind: IdentifierKind) -> Self {
+    pub fn new(name: &'input [u8], kind: IdentifierKind) -> Self {
         Identifier { name, kind }
     }
 
-    pub fn name(&self) -> &str {
+    pub fn name(&self) -> &[u8] {
         self.name
     }
 
@@ -32,15 +37,15 @@ pub enum IntegerKind {
     Hexadecimal,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
+#[derive(Debug, Clone, PartialEq, PartialOrd)]
 pub struct Integer<'input> {
     value: u128,
-    original_text: &'input str,
+    original_text: &'input [u8],
     kind: IntegerKind,
 }
 
 impl<'input> Integer<'input> {
-    pub fn new(value: u128, original_text: &'input str, kind: IntegerKind) -> Self {
+    pub fn new(value: u128, original_text: &'input [u8], kind: IntegerKind) -> Self {
         Integer {
             value,
             original_text,
@@ -52,7 +57,7 @@ impl<'input> Integer<'input> {
         self.value
     }
 
-    pub fn original_text(&self) -> &str {
+    pub fn original_text(&self) -> &[u8] {
         self.original_text
     }
 
@@ -61,14 +66,14 @@ impl<'input> Integer<'input> {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
+#[derive(Debug, Clone, PartialEq, PartialOrd)]
 pub struct Float<'input> {
     value: f64,
-    original_text: &'input str,
+    original_text: &'input [u8],
 }
 
 impl<'input> Float<'input> {
-    pub fn new(value: f64, original_text: &'input str) -> Self {
+    pub fn new(value: f64, original_text: &'input [u8]) -> Self {
         Float {
             value,
             original_text,
@@ -79,7 +84,7 @@ impl<'input> Float<'input> {
         self.value
     }
 
-    pub fn original_text(&self) -> &str {
+    pub fn original_text(&self) -> &[u8] {
         self.original_text
     }
 }
@@ -250,18 +255,18 @@ pub enum CommentKind {
     MultiLine,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
+#[derive(Debug, Clone, PartialEq, PartialOrd)]
 pub struct Comment<'input> {
-    text: &'input str,
+    text: &'input [u8],
     kind: CommentKind,
 }
 
 impl<'input> Comment<'input> {
-    pub fn new(text: &'input str, kind: CommentKind) -> Self {
+    pub fn new(text: &'input [u8], kind: CommentKind) -> Self {
         Comment { text, kind }
     }
 
-    pub fn text(&self) -> &str {
+    pub fn text(&self) -> &[u8] {
         self.text
     }
 
@@ -270,13 +275,13 @@ impl<'input> Comment<'input> {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
+#[derive(Debug, Clone, PartialEq, PartialOrd)]
 pub enum Token<'input> {
     Identifier(Identifier<'input>),
     Integer(Integer<'input>),
     Float(Float<'input>),
     Keyword(Keyword),
-    String(&'input str),
+    String(&'input [u8]),
     Char(char),
     Punctuation(Punctuation),
     Operator(Operator),
@@ -285,7 +290,7 @@ pub enum Token<'input> {
     Illegal,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
+#[derive(Debug, Clone, PartialEq, PartialOrd)]
 pub struct SourcePosition {
     line: u32,   // zero-based unicode-aware line number
     column: u32, // zero-based unicode-aware column number
@@ -314,7 +319,7 @@ impl SourcePosition {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
+#[derive(Debug, Clone, PartialEq, PartialOrd)]
 pub struct SourceRange<'input> {
     start: SourcePosition,
     end: SourcePosition,
@@ -355,7 +360,7 @@ impl<'input> SourceRange<'input> {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
+#[derive(Debug, Clone, PartialEq, PartialOrd)]
 pub struct AnnotatedToken<'input> {
     token: Token<'input>,
     range: SourceRange<'input>,
@@ -375,42 +380,59 @@ impl<'input> AnnotatedToken<'input> {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Lexer<'input> {
     src: &'input [u8],
+    filename: &'input str,
+    read_pos: SourcePosition,
+    current: Option<AnnotatedToken<'input>>,
+}
+
+#[derive(Debug, Clone, Copy)]
+pub enum LexerConstructionError {
+    SourceTooBig,
 }
 
 impl<'input> Lexer<'input> {
-    pub fn new(src: &'input [u8]) -> Self {
-        Lexer { src }
-    }
+    pub fn new(src: &'input [u8], filename: &'input str) -> Result<Self, LexerConstructionError> {
+        if src.len() > MAX_SOURCE_SIZE {
+            return Err(LexerConstructionError::SourceTooBig);
+        }
 
-    pub fn save_state(&self) -> Lexer<'input> {
-        // TODO: Implement saving the current position
-        Lexer { src: self.src }
-    }
+        assert!(
+            src.len() <= MAX_SOURCE_SIZE,
+            "Source size exceeds maximum allowed size"
+        );
 
-    pub fn assume_state(&mut self, _state: Lexer<'input>) {
-
-        // TODO: Implement rewinding the position
-    }
-
-    pub fn lookahead_token(&mut self, _lookahead: u32) -> AnnotatedToken<'input> {
-        // TODO: Implement looking ahead for a specific number of tokens
-        AnnotatedToken::new(Token::Illegal, SourceRange::invalid())
+        Ok(Lexer {
+            src,
+            filename,
+            read_pos: SourcePosition::new(0, 0, 0),
+            current: None,
+        })
     }
 
     pub fn skip_token(&mut self) {
-        // TODO: Implement skipping the next token
+        if self.current.is_some() {
+            self.current = None;
+        } else {
+            self.get_next_token(); // Discard the token
+        }
     }
 
     pub fn next_token(&mut self) -> AnnotatedToken<'input> {
-        // TODO: Implement the logic to return the next token
-        AnnotatedToken::new(Token::Illegal, SourceRange::invalid())
+        self.current.take().unwrap_or_else(|| self.get_next_token())
     }
 
     pub fn peek_token(&mut self) -> AnnotatedToken<'input> {
-        // TODO: Implement peeking the next token without consuming it
-        AnnotatedToken::new(Token::Illegal, SourceRange::invalid())
+        let token = self.current.take().unwrap_or_else(|| self.get_next_token());
+        self.current = Some(token.clone());
+
+        token
+    }
+
+    fn get_next_token(&mut self) -> AnnotatedToken<'input> {
+        // TODO: Implement the logic to get the next token from the source
+        AnnotatedToken::new(Token::Eof, SourceRange::invalid())
     }
 }

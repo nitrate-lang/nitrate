@@ -3,12 +3,6 @@
 version = 4
 
 [[package]]
-name = "input-stream"
-version = "0.4.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f7fbf0d9dfcfb4b5888a4aa08bc6f45eefa3a936a0a2b07a69aa0c0e1a6c4fcc"
-
-[[package]]
 name = "nitrate"
 version = "0.1.0"
 dependencies = [
@@ -19,9 +13,6 @@ dependencies = [
 [[package]]
 name = "nitrate_lexer"
 version = "0.1.0"
-dependencies = [
- "input-stream",
-]
 
 [[package]]
 name = "nitrate_parser"
