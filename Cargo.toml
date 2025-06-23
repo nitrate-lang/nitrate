@@ -3,4 +3,10 @@ name = "nitrate"
 version = "0.1.0"
 edition = "2024"
 
-[dependencies]
+[[bin]]
+name = "nitc"
+path = "nitc/src/main.rs"
+
+[[bin]]
+name = "no3"
+path = "no3/src/main.rs"
