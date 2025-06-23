@@ -5,7 +5,6 @@ pub enum IdentifierKind {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
-#[repr(packed)]
 pub struct Identifier<'input> {
     name: &'input str,
     kind: IdentifierKind,
@@ -34,7 +33,6 @@ pub enum IntegerKind {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
-#[repr(packed)]
 pub struct Integer<'input> {
     value: u128,
     original_text: &'input str,
@@ -64,7 +62,6 @@ impl<'input> Integer<'input> {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
-#[repr(packed)]
 pub struct Float<'input> {
     value: f64,
     original_text: &'input str,
@@ -254,7 +251,6 @@ pub enum CommentKind {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
-#[repr(packed)]
 pub struct Comment<'input> {
     text: &'input str,
     kind: CommentKind,
@@ -290,7 +286,6 @@ pub enum Token<'input> {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
-#[repr(packed)]
 pub struct SourcePosition {
     line: u32,   // zero-based unicode-aware line number
     column: u32, // zero-based unicode-aware column number
@@ -320,7 +315,6 @@ impl SourcePosition {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
-#[repr(packed)]
 pub struct SourceRange<'input> {
     start: SourcePosition,
     end: SourcePosition,
