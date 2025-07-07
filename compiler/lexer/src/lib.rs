@@ -40,15 +40,15 @@ pub enum IntegerKind {
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
 pub struct Integer<'input> {
     value: u128,
-    original_text: &'input str,
+    origin: &'input str,
     kind: IntegerKind,
 }
 
 impl<'input> Integer<'input> {
-    pub fn new(value: u128, original_text: &'input str, kind: IntegerKind) -> Self {
+    pub fn new(value: u128, origin: &'input str, kind: IntegerKind) -> Self {
         Integer {
             value,
-            original_text,
+            origin,
             kind,
         }
     }
@@ -57,8 +57,8 @@ impl<'input> Integer<'input> {
         self.value
     }
 
-    pub fn original_text(&self) -> &str {
-        self.original_text
+    pub fn origin(&self) -> &str {
+        self.origin
     }
 
     pub fn kind(&self) -> IntegerKind {
@@ -69,23 +69,20 @@ impl<'input> Integer<'input> {
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
 pub struct Float<'input> {
     value: f64,
-    original_text: &'input str,
+    origin: &'input str,
 }
 
 impl<'input> Float<'input> {
-    pub fn new(value: f64, original_text: &'input str) -> Self {
-        Float {
-            value,
-            original_text,
-        }
+    pub fn new(value: f64, origin: &'input str) -> Self {
+        Float { value, origin }
     }
 
     pub fn value(&self) -> f64 {
         self.value
     }
 
-    pub fn original_text(&self) -> &str {
-        self.original_text
+    pub fn origin(&self) -> &str {
+        self.origin
     }
 }
 
@@ -450,7 +447,7 @@ impl<'input> Lexer<'input> {
             .copied()
     }
 
-    fn read_while<F>(&mut self, mut condition: F) -> &'input str
+    fn read_while<F>(&mut self, mut condition: F) -> &'input [u8]
     where
         F: FnMut(u8) -> bool,
     {
@@ -466,7 +463,7 @@ impl<'input> Lexer<'input> {
             }
         }
 
-        &self.src[start_offset..end_offset]
+        &self.src.as_bytes()[start_offset..end_offset]
     }
 
     fn read_identifier_token(&mut self) -> Option<Token<'input>> {
@@ -475,100 +472,94 @@ impl<'input> Lexer<'input> {
 
             let identifier = self.read_while(|b| b != b'`');
 
-            if self.peek_byte()? == b'`' {
+            if self.peek_byte()? != b'`' {
+                None
+            } else {
                 self.advance(b'`');
+
+                let identifier = str::from_utf8(identifier).ok()?;
 
                 Some(Token::Identifier(Identifier::new(
                     identifier,
                     IdentifierKind::Atypical,
                 )))
-            } else {
-                Some(Token::Illegal) // Because of an unclosed backtick
             }
         } else {
-            let identifier = self.read_while(|b| b.is_ascii_alphanumeric() || b == b'_');
-            assert!(!identifier.is_empty(), "Identifier should not be empty");
+            let code = self.read_while(|b| b.is_ascii_alphanumeric() || b == b'_' || !b.is_ascii());
+            assert!(!code.is_empty(), "Identifier should not be empty");
 
-            // Check if the identifier is word-like operator
-            if let Some(operator) = match identifier {
-                "as" => Some(Operator::As),
-                "bitcast_as" => Some(Operator::BitcastAs),
-                "sizeof" => Some(Operator::Sizeof),
-                "alignof" => Some(Operator::Alignof),
-                "typeof" => Some(Operator::Typeof),
+            // Check for a word-like operator
+            if let Some(operator) = match code {
+                b"as" => Some(Operator::As),
+                b"bitcast_as" => Some(Operator::BitcastAs),
+                b"sizeof" => Some(Operator::Sizeof),
+                b"alignof" => Some(Operator::Alignof),
+                b"typeof" => Some(Operator::Typeof),
                 _ => None,
             } {
                 return Some(Token::Operator(operator));
             }
 
-            // Check if the identifier is a keyword
-            if let Some(keyword) = match identifier {
-                "let" => Some(Keyword::Let),
-                "var" => Some(Keyword::Var),
-                "fn" => Some(Keyword::Fn),
-                "enum" => Some(Keyword::Enum),
-                "struct" => Some(Keyword::Struct),
-                "class" => Some(Keyword::Class),
-                "union" => Some(Keyword::Union),
-                "interface" => Some(Keyword::Contract),
-                "trait" => Some(Keyword::Trait),
-                "type" => Some(Keyword::Type),
-                "opaque" => Some(Keyword::Opaque),
-                "scope" => Some(Keyword::Scope),
-                "import" => Some(Keyword::Import),
-                "unit_test" => Some(Keyword::UnitTest),
+            // Check for a keyword
+            if let Some(keyword) = match code {
+                b"let" => Some(Keyword::Let),
+                b"var" => Some(Keyword::Var),
+                b"fn" => Some(Keyword::Fn),
+                b"enum" => Some(Keyword::Enum),
+                b"struct" => Some(Keyword::Struct),
+                b"class" => Some(Keyword::Class),
+                b"union" => Some(Keyword::Union),
+                b"interface" => Some(Keyword::Contract),
+                b"trait" => Some(Keyword::Trait),
+                b"type" => Some(Keyword::Type),
+                b"opaque" => Some(Keyword::Opaque),
+                b"scope" => Some(Keyword::Scope),
+                b"import" => Some(Keyword::Import),
+                b"unit_test" => Some(Keyword::UnitTest),
 
-                "safe" => Some(Keyword::Safe),
-                "unsafe" => Some(Keyword::Unsafe),
-                "promise" => Some(Keyword::Promise),
-                "static" => Some(Keyword::Static),
-                "mut" => Some(Keyword::Mut),
-                "const" => Some(Keyword::Const),
-                "pub" => Some(Keyword::Pub),
-                "sec" => Some(Keyword::Sec),
-                "pro" => Some(Keyword::Pro),
+                b"safe" => Some(Keyword::Safe),
+                b"unsafe" => Some(Keyword::Unsafe),
+                b"promise" => Some(Keyword::Promise),
+                b"static" => Some(Keyword::Static),
+                b"mut" => Some(Keyword::Mut),
+                b"const" => Some(Keyword::Const),
+                b"pub" => Some(Keyword::Pub),
+                b"sec" => Some(Keyword::Sec),
+                b"pro" => Some(Keyword::Pro),
 
-                "if" => Some(Keyword::If),
-                "else" => Some(Keyword::Else),
-                "for" => Some(Keyword::For),
-                "while" => Some(Keyword::While),
-                "do" => Some(Keyword::Do),
-                "switch" => Some(Keyword::Switch),
-                "break" => Some(Keyword::Break),
-                "continue" => Some(Keyword::Continue),
-                "ret" => Some(Keyword::Return),
-                "foreach" => Some(Keyword::Foreach),
-                "try" => Some(Keyword::Try),
-                "catch" => Some(Keyword::Catch),
-                "throw" => Some(Keyword::Throw),
-                "async" => Some(Keyword::Async),
-                "await" => Some(Keyword::Await),
-                "asm" => Some(Keyword::Asm),
+                b"if" => Some(Keyword::If),
+                b"else" => Some(Keyword::Else),
+                b"for" => Some(Keyword::For),
+                b"while" => Some(Keyword::While),
+                b"do" => Some(Keyword::Do),
+                b"switch" => Some(Keyword::Switch),
+                b"break" => Some(Keyword::Break),
+                b"continue" => Some(Keyword::Continue),
+                b"ret" => Some(Keyword::Return),
+                b"foreach" => Some(Keyword::Foreach),
+                b"try" => Some(Keyword::Try),
+                b"catch" => Some(Keyword::Catch),
+                b"throw" => Some(Keyword::Throw),
+                b"async" => Some(Keyword::Async),
+                b"await" => Some(Keyword::Await),
+                b"asm" => Some(Keyword::Asm),
 
-                "null" => Some(Keyword::Null),
-                "true" => Some(Keyword::True),
-                "false" => Some(Keyword::False),
+                b"null" => Some(Keyword::Null),
+                b"true" => Some(Keyword::True),
+                b"false" => Some(Keyword::False),
 
                 _ => None,
             } {
                 Some(Token::Keyword(keyword))
             } else {
+                let identifier = str::from_utf8(code).ok()?;
+
                 Some(Token::Identifier(Identifier::new(
                     identifier,
                     IdentifierKind::Typical,
                 )))
             }
         }
-    }
-
-    fn read_integer_token(&mut self) -> Option<Token<'input>> {
-        // TODO: Implement the logic to read an integer token
-        None
-    }
-
-    fn read_float_token(&mut self) -> Option<Token<'input>> {
-        // TODO: Implement the logic to read a float token
-        None
     }
 
     fn read_number_token(&mut self) -> Option<Token<'input>> {
@@ -587,10 +578,10 @@ impl<'input> Lexer<'input> {
     }
 
     fn read_comment_token(&mut self) -> Option<Token<'input>> {
-        let comment_text = self.read_while(|b| b != b'\n');
+        let comment = str::from_utf8(self.read_while(|b| b != b'\n')).ok()?;
 
         Some(Token::Comment(Comment::new(
-            comment_text,
+            comment,
             CommentKind::SingleLine,
         )))
     }
@@ -626,7 +617,7 @@ impl<'input> Lexer<'input> {
          * They are handled in `read_identifier_token`.
          */
 
-        let token_text = self.read_while(|b| {
+        let code = self.read_while(|b| {
             match b {
                 // Whitespace is not an operator character.
                 b if b.is_ascii_whitespace() => false,
@@ -663,65 +654,65 @@ impl<'input> Lexer<'input> {
         });
 
         // Handle the colon punctuator because it is ambiguous with the scope operator "::".
-        if token_text == ":" {
+        if code == b":" {
             return Some(Token::Punctuation(Punctuation::Colon));
         }
 
-        let operator = match token_text {
-            "+" => Operator::Add,
-            "-" => Operator::Sub,
-            "*" => Operator::Mul,
-            "/" => Operator::Div,
-            "%" => Operator::Mod,
+        let operator = match code {
+            b"+" => Operator::Add,
+            b"-" => Operator::Sub,
+            b"*" => Operator::Mul,
+            b"/" => Operator::Div,
+            b"%" => Operator::Mod,
 
-            "&" => Operator::BitAnd,
-            "|" => Operator::BitOr,
-            "^" => Operator::BitXor,
-            "~" => Operator::BitNot,
-            "<<" => Operator::BitShl,
-            ">>" => Operator::BitShr,
-            "<<<" => Operator::BitRotl,
-            ">>>" => Operator::BitRotr,
+            b"&" => Operator::BitAnd,
+            b"|" => Operator::BitOr,
+            b"^" => Operator::BitXor,
+            b"~" => Operator::BitNot,
+            b"<<" => Operator::BitShl,
+            b">>" => Operator::BitShr,
+            b"<<<" => Operator::BitRotl,
+            b">>>" => Operator::BitRotr,
 
-            "&&" => Operator::LogicAnd,
-            "||" => Operator::LogicOr,
-            "^^" => Operator::LogicXor,
-            "!" => Operator::LogicNot,
-            "<" => Operator::LogicLt,
-            ">" => Operator::LogicGt,
-            "<=" => Operator::LogicLe,
-            ">=" => Operator::LogicGe,
-            "==" => Operator::LogicEq,
-            "!=" => Operator::LogicNe,
+            b"&&" => Operator::LogicAnd,
+            b"||" => Operator::LogicOr,
+            b"^^" => Operator::LogicXor,
+            b"!" => Operator::LogicNot,
+            b"<" => Operator::LogicLt,
+            b">" => Operator::LogicGt,
+            b"<=" => Operator::LogicLe,
+            b">=" => Operator::LogicGe,
+            b"==" => Operator::LogicEq,
+            b"!=" => Operator::LogicNe,
 
-            "=" => Operator::Set,
-            "+=" => Operator::SetPlus,
-            "-=" => Operator::SetMinus,
-            "*=" => Operator::SetTimes,
-            "/=" => Operator::SetSlash,
-            "%=" => Operator::SetPercent,
-            "&=" => Operator::SetBitAnd,
-            "|=" => Operator::SetBitOr,
-            "^=" => Operator::SetBitXor,
-            "<<=" => Operator::SetBitShl,
-            ">>=" => Operator::SetBitShr,
-            "<<<=" => Operator::SetBitRotl,
-            ">>>=" => Operator::SetBitRotr,
-            "&&=" => Operator::SetLogicAnd,
-            "||=" => Operator::SetLogicOr,
-            "^^=" => Operator::SetLogicXor,
-            "++" => Operator::Inc,
-            "--" => Operator::Dec,
+            b"=" => Operator::Set,
+            b"+=" => Operator::SetPlus,
+            b"-=" => Operator::SetMinus,
+            b"*=" => Operator::SetTimes,
+            b"/=" => Operator::SetSlash,
+            b"%=" => Operator::SetPercent,
+            b"&=" => Operator::SetBitAnd,
+            b"|=" => Operator::SetBitOr,
+            b"^=" => Operator::SetBitXor,
+            b"<<=" => Operator::SetBitShl,
+            b">>=" => Operator::SetBitShr,
+            b"<<<=" => Operator::SetBitRotl,
+            b">>>=" => Operator::SetBitRotr,
+            b"&&=" => Operator::SetLogicAnd,
+            b"||=" => Operator::SetLogicOr,
+            b"^^=" => Operator::SetLogicXor,
+            b"++" => Operator::Inc,
+            b"--" => Operator::Dec,
 
-            "." => Operator::Dot,
-            "..." => Operator::Ellipsis,
-            "::" => Operator::Scope,
-            "->" => Operator::Arrow,
-            "=>" => Operator::BlockArrow,
+            b"." => Operator::Dot,
+            b"..." => Operator::Ellipsis,
+            b"::" => Operator::Scope,
+            b"->" => Operator::Arrow,
+            b"=>" => Operator::BlockArrow,
 
-            ".." => Operator::Range,
-            "?" => Operator::Question,
-            "<=>" => Operator::Spaceship,
+            b".." => Operator::Range,
+            b"?" => Operator::Question,
+            b"<=>" => Operator::Spaceship,
 
             _ => return None, // Invalid operator
         };
@@ -738,7 +729,7 @@ impl<'input> Lexer<'input> {
         let token = match self.peek_byte() {
             None => Some(Token::Eof),
             Some(b) => match b {
-                b if b.is_ascii_alphabetic() || b == b'_' || b == b'`' => {
+                b if b.is_ascii_alphabetic() || b == b'_' || b == b'`' || !b.is_ascii() => {
                     self.read_identifier_token()
                 }
                 b if b.is_ascii_digit() => self.read_number_token(),
