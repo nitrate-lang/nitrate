@@ -3,14 +3,6 @@
 version = 4
 
 [[package]]
-name = "nitrate"
-version = "0.1.0"
-dependencies = [
- "nitrate_lexer",
- "nitrate_parser",
-]
-
-[[package]]
 name = "nitrate-lexer-stdin"
 version = "0.1.0"
 dependencies = [
@@ -19,8 +11,4 @@ dependencies = [
 
 [[package]]
 name = "nitrate_lexer"
-version = "0.1.0"
-
-[[package]]
-name = "nitrate_parser"
 version = "0.1.0"

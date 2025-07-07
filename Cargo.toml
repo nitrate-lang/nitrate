@@ -7,6 +7,14 @@ edition = "2024"
 nitrate_lexer = { path = "compiler/lexer" }
 nitrate_parser = { path = "compiler/parser" }
 
+[workspace]
+members = [
+  "compiler/lexer",
+  "compiler/lexer/tools/nitrate-lexer-stdin",
+  "compiler/parser",
+]
+
+
 [[bin]]
 name = "no3"
 path = "no3/src/main.rs"
