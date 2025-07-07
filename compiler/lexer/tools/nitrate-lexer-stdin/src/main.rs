@@ -13,7 +13,7 @@ fn main() {
         Ok(_) => {}
     }
 
-    let mut lexer = Lexer::new(&source_code.as_bytes(), &filename);
+    let mut lexer = Lexer::new(&source_code, &filename);
     match &mut lexer {
         Err(e) => {
             eprintln!("Failed to create lexer: {:?}", e);

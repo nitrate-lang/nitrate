@@ -11,16 +11,16 @@ pub enum IdentifierKind {
 
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
 pub struct Identifier<'input> {
-    name: &'input [u8],
+    name: &'input str,
     kind: IdentifierKind,
 }
 
 impl<'input> Identifier<'input> {
-    pub fn new(name: &'input [u8], kind: IdentifierKind) -> Self {
+    pub fn new(name: &'input str, kind: IdentifierKind) -> Self {
         Identifier { name, kind }
     }
 
-    pub fn name(&self) -> &[u8] {
+    pub fn name(&self) -> &str {
         self.name
     }
 
@@ -40,12 +40,12 @@ pub enum IntegerKind {
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
 pub struct Integer<'input> {
     value: u128,
-    original_text: &'input [u8],
+    original_text: &'input str,
     kind: IntegerKind,
 }
 
 impl<'input> Integer<'input> {
-    pub fn new(value: u128, original_text: &'input [u8], kind: IntegerKind) -> Self {
+    pub fn new(value: u128, original_text: &'input str, kind: IntegerKind) -> Self {
         Integer {
             value,
             original_text,
@@ -57,7 +57,7 @@ impl<'input> Integer<'input> {
         self.value
     }
 
-    pub fn original_text(&self) -> &[u8] {
+    pub fn original_text(&self) -> &str {
         self.original_text
     }
 
@@ -69,11 +69,11 @@ impl<'input> Integer<'input> {
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
 pub struct Float<'input> {
     value: f64,
-    original_text: &'input [u8],
+    original_text: &'input str,
 }
 
 impl<'input> Float<'input> {
-    pub fn new(value: f64, original_text: &'input [u8]) -> Self {
+    pub fn new(value: f64, original_text: &'input str) -> Self {
         Float {
             value,
             original_text,
@@ -84,7 +84,7 @@ impl<'input> Float<'input> {
         self.value
     }
 
-    pub fn original_text(&self) -> &[u8] {
+    pub fn original_text(&self) -> &str {
         self.original_text
     }
 }
@@ -257,16 +257,16 @@ pub enum CommentKind {
 
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
 pub struct Comment<'input> {
-    text: &'input [u8],
+    text: &'input str,
     kind: CommentKind,
 }
 
 impl<'input> Comment<'input> {
-    pub fn new(text: &'input [u8], kind: CommentKind) -> Self {
+    pub fn new(text: &'input str, kind: CommentKind) -> Self {
         Comment { text, kind }
     }
 
-    pub fn text(&self) -> &[u8] {
+    pub fn text(&self) -> &str {
         self.text
     }
 
@@ -281,7 +281,7 @@ pub enum Token<'input> {
     Integer(Integer<'input>),
     Float(Float<'input>),
     Keyword(Keyword),
-    String(&'input [u8]),
+    String(&'input str),
     Char(char),
     Punctuation(Punctuation),
     Operator(Operator),
@@ -390,7 +390,7 @@ impl<'input> AnnotatedToken<'input> {
 
 #[derive(Debug, Clone)]
 pub struct Lexer<'input> {
-    src: &'input [u8],
+    src: &'input str,
     filename: &'input str,
     read_pos: SourcePosition,
     current: Option<AnnotatedToken<'input>>,
@@ -402,7 +402,7 @@ pub enum LexerConstructionError {
 }
 
 impl<'input> Lexer<'input> {
-    pub fn new(src: &'input [u8], filename: &'input str) -> Result<Self, LexerConstructionError> {
+    pub fn new(src: &'input str, filename: &'input str) -> Result<Self, LexerConstructionError> {
         if src.len() > MAX_SOURCE_SIZE {
             return Err(LexerConstructionError::SourceTooBig);
         }
@@ -457,17 +457,20 @@ impl<'input> Lexer<'input> {
     }
 
     fn peek_byte(&self) -> Option<u8> {
-        self.src.get(self.read_pos.offset() as usize).copied()
+        self.src
+            .as_bytes()
+            .get(self.read_pos.offset() as usize)
+            .copied()
     }
 
-    fn read_while<F>(&mut self, mut condition: F) -> &'input [u8]
+    fn read_while<F>(&mut self, mut condition: F) -> &'input str
     where
         F: FnMut(u8) -> bool,
     {
         let start_offset = self.read_pos.offset() as usize;
         let mut end_offset = start_offset;
 
-        while let Some(b) = self.src.get(end_offset) {
+        while let Some(b) = self.src.as_bytes().get(end_offset) {
             if condition(*b) {
                 self.advance(*b);
                 end_offset += 1;
@@ -510,8 +513,12 @@ impl<'input> Lexer<'input> {
     }
 
     fn read_comment_token(&mut self) -> Option<Token<'input>> {
-        // TODO: Implement the logic to read a comment token
-        None
+        let comment_text = self.read_while(|b| b != b'\n');
+
+        Some(Token::Comment(Comment::new(
+            comment_text,
+            CommentKind::SingleLine,
+        )))
     }
 
     fn read_punctuation_token(&mut self) -> Option<Token<'input>> {
