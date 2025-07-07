@@ -335,6 +335,14 @@ impl<'input> SourceRange<'input> {
         }
     }
 
+    pub fn eof(pos: SourcePosition, filename: &'input str) -> Self {
+        SourceRange {
+            start: pos.clone(),
+            end: pos.clone(),
+            filename,
+        }
+    }
+
     pub fn invalid() -> Self {
         SourceRange {
             start: SourcePosition::new(0, 0, 0),
@@ -431,8 +439,128 @@ impl<'input> Lexer<'input> {
         token
     }
 
+    fn advance(&mut self, b: u8) {
+        self.read_pos.offset += 1;
+
+        if b == b'\n' {
+            // The line number can never overflow, because
+            // the maximum source size is limited to u32::MAX,
+            // which is the maximum value for a line number.
+            self.read_pos.line += 1;
+            self.read_pos.column = 0;
+        } else {
+            // The column number can never overflow, because
+            // the maximum source size is limited to u32::MAX,
+            // which is the maximum value for a column number.
+            self.read_pos.column += 1;
+        }
+    }
+
+    fn peek_byte(&self) -> Option<u8> {
+        self.src.get(self.read_pos.offset() as usize).copied()
+    }
+
+    fn read_while<F>(&mut self, mut condition: F) -> &'input [u8]
+    where
+        F: FnMut(u8) -> bool,
+    {
+        let start_offset = self.read_pos.offset() as usize;
+        let mut end_offset = start_offset;
+
+        while let Some(b) = self.src.get(end_offset) {
+            if condition(*b) {
+                self.advance(*b);
+                end_offset += 1;
+            } else {
+                break;
+            }
+        }
+
+        &self.src[start_offset..end_offset]
+    }
+
+    fn read_identifier_token(&mut self) -> Option<Token<'input>> {
+        // TODO: Implement the logic to read an identifier token
+        None
+    }
+
+    fn read_integer_token(&mut self) -> Option<Token<'input>> {
+        // TODO: Implement the logic to read an integer token
+        None
+    }
+
+    fn read_float_token(&mut self) -> Option<Token<'input>> {
+        // TODO: Implement the logic to read a float token
+        None
+    }
+
+    fn read_number_token(&mut self) -> Option<Token<'input>> {
+        // TODO: Implement the logic to read a number token
+        None
+    }
+
+    fn read_string_token(&mut self) -> Option<Token<'input>> {
+        // TODO: Implement the logic to read a string token
+        None
+    }
+
+    fn read_char_token(&mut self) -> Option<Token<'input>> {
+        // TODO: Implement the logic to read a character token
+        None
+    }
+
+    fn read_comment_token(&mut self) -> Option<Token<'input>> {
+        // TODO: Implement the logic to read a comment token
+        None
+    }
+
+    fn read_punctuation_token(&mut self) -> Option<Token<'input>> {
+        // TODO: Implement the logic to read a punctuation token
+        None
+    }
+
+    fn read_operator_token(&mut self) -> Option<Token<'input>> {
+        // TODO: Implement the logic to read an operator token
+        None
+    }
+
     fn get_next_token(&mut self) -> AnnotatedToken<'input> {
-        // TODO: Implement the logic to get the next token from the source
-        AnnotatedToken::new(Token::Eof, SourceRange::invalid())
+        // Skip whitespace
+        self.read_while(|b| b.is_ascii_whitespace());
+
+        let start_pos = self.read_pos.clone();
+
+        let token = match self.peek_byte() {
+            None => Some(Token::Eof),
+            Some(b) => match b {
+                b if b.is_ascii_alphabetic() || b == b'_' || b == b'`' => {
+                    self.read_identifier_token()
+                }
+                b if b.is_ascii_digit() => self.read_number_token(),
+                b'"' => self.read_string_token(),
+                b'\'' => self.read_char_token(),
+                b if b == b'('
+                    || b == b')'
+                    || b == b'['
+                    || b == b']'
+                    || b == b'{'
+                    || b == b'}'
+                    || b == b','
+                    || b == b';'
+                    || b == b'@' =>
+                {
+                    self.read_punctuation_token()
+                }
+                b'#' => self.read_comment_token(),
+
+                _ => self.read_operator_token(),
+            },
+        }
+        .unwrap_or(Token::Illegal);
+
+        let end_pos = self.read_pos.clone();
+        let range = SourceRange::new(start_pos, end_pos, self.filename);
+
+        AnnotatedToken::new(token, range)
     }
 }
