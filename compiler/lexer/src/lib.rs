@@ -483,8 +483,32 @@ impl<'input> Lexer<'input> {
     }
 
     fn read_identifier_token(&mut self) -> Option<Token<'input>> {
-        // TODO: Implement the logic to read an identifier token
-        None
+        if self.peek_byte()? == b'`' {
+            self.advance(b'`');
+
+            let identifier = self.read_while(|b| b != b'`');
+
+            if self.peek_byte()? == b'`' {
+                self.advance(b'`');
+
+                Some(Token::Identifier(Identifier::new(
+                    identifier,
+                    IdentifierKind::Atypical,
+                )))
+            } else {
+                Some(Token::Illegal) // Because of an unclosed backtick
+            }
+        } else {
+            let identifier = self.read_while(|b| b.is_ascii_alphanumeric() || b == b'_');
+            if identifier.is_empty() {
+                return None; // This shouldn't happen, but just in case
+            }
+
+            Some(Token::Identifier(Identifier::new(
+                identifier,
+                IdentifierKind::Typical,
+            )))
+        }
     }
 
     fn read_integer_token(&mut self) -> Option<Token<'input>> {
