@@ -161,92 +161,84 @@ pub enum Operator {
     /*----------------------------------------------------------------*
      * Arithmetic Operators                                           *
      *----------------------------------------------------------------*/
-    Plus,    /* '+': Addition */
-    Minus,   /* '-': Subtraction */
-    Times,   /* '*': Multiplication */
-    Slash,   /* '/': Division */
-    Percent, /* '%': Modulus */
+    Add, /* '+': "Addition Operator" */
+    Sub, /* '-': "Subtraction Operator" */
+    Mul, /* '*': "Multiplication Operator" */
+    Div, /* '/': "Division Operator" */
+    Mod, /* '%': "Modulus Operator" */
 
     /*----------------------------------------------------------------*
      * Bitwise Operators                                              *
      *----------------------------------------------------------------*/
-    BitAnd,  /* '&':   Bitwise AND */
-    BitOr,   /* '|':   Bitwise OR */
-    BitXor,  /* '^':   Bitwise XOR */
-    BitNot,  /* '~':   Bitwise NOT */
-    BitShl,  /* '<<':  Bitwise left shift */
-    BitShr,  /* '>>':  Bitwise right shift */
-    BitRotl, /* '<<<': Bitwise rotate left */
-    BitRotr, /* '>>>': Bitwise rotate right */
+    BitAnd,  /* '&':   "Bitwise AND Operator" */
+    BitOr,   /* '|':   "Bitwise OR Operator" */
+    BitXor,  /* '^':   "Bitwise XOR Operator" */
+    BitNot,  /* '~':   "Bitwise NOT Operator" */
+    BitShl,  /* '<<':  "Bitwise Left-Shift Operator" */
+    BitShr,  /* '>>':  "Bitwise Right-Shift Operator" */
+    BitRotl, /* '<<<': "Bitwise Left-Rotate Operator" */
+    BitRotr, /* '>>>': "Bitwise Right-Rotate Operator" */
 
     /*----------------------------------------------------------------*
      * Logical Operators                                              *
      *----------------------------------------------------------------*/
-    LogicAnd, /* '&&': Logical AND */
-    LogicOr,  /* '||': Logical OR */
-    LogicXor, /* '^^': Logical XOR */
-    LogicNot, /* '!':  Logical NOT */
-    LogicLt,  /* '<':  Logical less than */
-    LogicGt,  /* '>':  Logical greater than */
-    LogicLe,  /* '<=': Logical less than or equal to */
-    LogicGe,  /* '>=': Logical greater than or equal to */
-    LogicEq,  /* '==': Logical equal to */
-    LogicNe,  /* '!=': Logical not equal to */
+    LogicAnd, /* '&&': "Logical AND Operator" */
+    LogicOr,  /* '||': "Logical OR Operator" */
+    LogicXor, /* '^^': "Logical XOR Operator" */
+    LogicNot, /* '!':  "Logical NOT Operator" */
+    LogicLt,  /* '<':  "Logical Less-Than Operator" */
+    LogicGt,  /* '>':  "Logical Greater-Than Operator" */
+    LogicLe,  /* '<=': "Logical Less-Than or Equal-To Operator" */
+    LogicGe,  /* '>=': "Logical Greater-Than or Equal-To Operator" */
+    LogicEq,  /* '==': "Logical Equal-To Operator" */
+    LogicNe,  /* '!=': "Logical Not Equal-To Operator" */
 
     /*----------------------------------------------------------------*
      * Assignment Operators                                           *
      *----------------------------------------------------------------*/
-    Set,         /* '=':    Assignment */
-    SetPlus,     /* '+=':   Addition Assignment */
-    SetMinus,    /* '-=':   Subtraction Assignment */
-    SetTimes,    /* '*=':   Multiplication Assignment */
-    SetSlash,    /* '/=':   Division Assignment */
-    SetPercent,  /* '%=':   Modulus Assignment */
-    SetBitAnd,   /* '&=':   Bitwise AND Assignment */
-    SetBitOr,    /* '|=':   Bitwise OR Assignment */
-    SetBitXor,   /* '^=':   Bitwise XOR Assignment */
-    SetBitNot,   /* '~=':   Bitwise NOT Assignment */
-    SetBitShl,   /* '<<=':  Bitwise left shift Assignment */
-    SetBitShr,   /* '>>=':  Bitwise right shift Assignment */
-    SetBitRotl,  /* '<<<=': Bitwise rotate left Assignment */
-    SetBitRotr,  /* '>>>=': Bitwise rotate right Assignment */
-    SetLogicAnd, /* '&&=':  Logical AND Assignment */
-    SetLogicOr,  /* '||=':  Logical OR Assignment */
-    SetLogicXor, /* '^^=':  Logical XOR Assignment */
-    SetLogicNot, /* '!==':  Logical NOT Assignment */
-    SetLogicLt,  /* '<==':  Logical less than Assignment */
-    SetLogicGt,  /* '>==':  Logical greater than Assignment */
-    SetLogicLe,  /* '<==':  Logical less than or equal to Assignment */
-    SetLogicGe,  /* '>==':  Logical greater than or equal to Assignment */
-    SetLogicEq,  /* '===':  Logical equal to Assignment */
-    SetLogicNe,  /* '!==':  Logical not equal to Assignment */
-    SetInc,      /* '++':   Increment */
-    SetDec,      /* '--':   Decrement */
+    Set,         /* '=':    "Assignment Operator" */
+    SetPlus,     /* '+=':   "Addition Assignment Operator" */
+    SetMinus,    /* '-=':   "Subtraction Assignment Operator" */
+    SetTimes,    /* '*=':   "Multiplication Assignment Operator" */
+    SetSlash,    /* '/=':   "Division Assignment Operator" */
+    SetPercent,  /* '%=':   "Modulus Assignment Operator" */
+    SetBitAnd,   /* '&=':   "Bitwise AND Assignment Operator" */
+    SetBitOr,    /* '|=':   "Bitwise OR Assignment Operator" */
+    SetBitXor,   /* '^=':   "Bitwise XOR Assignment Operator" */
+    SetBitShl,   /* '<<=':  "Bitwise Left-Shift Assignment Operator" */
+    SetBitShr,   /* '>>=':  "Bitwise Right-Shift Assignment Operator" */
+    SetBitRotl,  /* '<<<=': "Bitwise Rotate-Left Assignment Operator" */
+    SetBitRotr,  /* '>>>=': "Bitwise Rotate-Right Assignment Operator" */
+    SetLogicAnd, /* '&&=':  "Logical AND Assignment Operator" */
+    SetLogicOr,  /* '||=':  "Logical OR Assignment Operator" */
+    SetLogicXor, /* '^^=':  "Logical XOR Assignment Operator" */
+    Inc,         /* '++':   "Increment Operator" */
+    Dec,         /* '--':   "Decrement Operator" */
 
     /*----------------------------------------------------------------*
      * Type System Operators                                          *
      *----------------------------------------------------------------*/
-    As,        /* 'as':         Type cast */
-    BitcastAs, /* 'bitcast_as': Bitcast */
-    Sizeof,    /* 'sizeof':     Size of */
-    Alignof,   /* 'alignof':    Alignment of */
-    Typeof,    /* 'typeof':     Type of */
+    As,        /* 'as':         "Type Cast Operator" */
+    BitcastAs, /* 'bitcast_as': "Bitcast Operator" */
+    Sizeof,    /* 'sizeof':     "Size Of Operator" */
+    Alignof,   /* 'alignof':    "Alignment Of Operator" */
+    Typeof,    /* 'typeof':     "Type Of Operator" */
 
     /*----------------------------------------------------------------*
      * Syntactic Operators                                            *
      *----------------------------------------------------------------*/
-    Dot,        /* '.':          Dot */
-    Ellipsis,   /* '...':        Ellipsis */
-    Scope,      /* '::':         Scope resolution */
-    Arrow,      /* '->':         Arrow operator */
-    BlockArrow, /* '=>':         Block arrow operator */
+    Dot,        /* '.':          "Dot Operator" */
+    Ellipsis,   /* '...':        "Ellipsis Operator" */
+    Scope,      /* '::':         "Scope Resolution Operator" */
+    Arrow,      /* '->':         "Arrow Operator" */
+    BlockArrow, /* '=>':         "Block Arrow Operator" */
 
     /*----------------------------------------------------------------*
      * Special Operators                                              *
      *----------------------------------------------------------------*/
-    Range,     /* '..':         Range */
-    Question,  /* '?':          Ternary operator (conditional) */
-    Spaceship, /* '<=>':        Spaceship operator (three-way comparison) */
+    Range,     /* '..':         "Range Operator" */
+    Question,  /* '?':          "Ternary Operator" */
+    Spaceship, /* '<=>':        "Spaceship Operator" */
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
@@ -497,57 +489,74 @@ impl<'input> Lexer<'input> {
             let identifier = self.read_while(|b| b.is_ascii_alphanumeric() || b == b'_');
             assert!(!identifier.is_empty(), "Identifier should not be empty");
 
-            match identifier {
-                "let" => Some(Token::Keyword(Keyword::Let)),
-                "var" => Some(Token::Keyword(Keyword::Var)),
-                "fn" => Some(Token::Keyword(Keyword::Fn)),
-                "enum" => Some(Token::Keyword(Keyword::Enum)),
-                "struct" => Some(Token::Keyword(Keyword::Struct)),
-                "class" => Some(Token::Keyword(Keyword::Class)),
-                "union" => Some(Token::Keyword(Keyword::Union)),
-                "interface" => Some(Token::Keyword(Keyword::Contract)),
-                "trait" => Some(Token::Keyword(Keyword::Trait)),
-                "type" => Some(Token::Keyword(Keyword::Type)),
-                "opaque" => Some(Token::Keyword(Keyword::Opaque)),
-                "scope" => Some(Token::Keyword(Keyword::Scope)),
-                "import" => Some(Token::Keyword(Keyword::Import)),
-                "unit_test" => Some(Token::Keyword(Keyword::UnitTest)),
+            // Check if the identifier is word-like operator
+            if let Some(operator) = match identifier {
+                "as" => Some(Operator::As),
+                "bitcast_as" => Some(Operator::BitcastAs),
+                "sizeof" => Some(Operator::Sizeof),
+                "alignof" => Some(Operator::Alignof),
+                "typeof" => Some(Operator::Typeof),
+                _ => None,
+            } {
+                return Some(Token::Operator(operator));
+            }
 
-                "safe" => Some(Token::Keyword(Keyword::Safe)),
-                "unsafe" => Some(Token::Keyword(Keyword::Unsafe)),
-                "promise" => Some(Token::Keyword(Keyword::Promise)),
-                "static" => Some(Token::Keyword(Keyword::Static)),
-                "mut" => Some(Token::Keyword(Keyword::Mut)),
-                "const" => Some(Token::Keyword(Keyword::Const)),
-                "pub" => Some(Token::Keyword(Keyword::Pub)),
-                "sec" => Some(Token::Keyword(Keyword::Sec)),
-                "pro" => Some(Token::Keyword(Keyword::Pro)),
+            // Check if the identifier is a keyword
+            if let Some(keyword) = match identifier {
+                "let" => Some(Keyword::Let),
+                "var" => Some(Keyword::Var),
+                "fn" => Some(Keyword::Fn),
+                "enum" => Some(Keyword::Enum),
+                "struct" => Some(Keyword::Struct),
+                "class" => Some(Keyword::Class),
+                "union" => Some(Keyword::Union),
+                "interface" => Some(Keyword::Contract),
+                "trait" => Some(Keyword::Trait),
+                "type" => Some(Keyword::Type),
+                "opaque" => Some(Keyword::Opaque),
+                "scope" => Some(Keyword::Scope),
+                "import" => Some(Keyword::Import),
+                "unit_test" => Some(Keyword::UnitTest),
 
-                "if" => Some(Token::Keyword(Keyword::If)),
-                "else" => Some(Token::Keyword(Keyword::Else)),
-                "for" => Some(Token::Keyword(Keyword::For)),
-                "while" => Some(Token::Keyword(Keyword::While)),
-                "do" => Some(Token::Keyword(Keyword::Do)),
-                "switch" => Some(Token::Keyword(Keyword::Switch)),
-                "break" => Some(Token::Keyword(Keyword::Break)),
-                "continue" => Some(Token::Keyword(Keyword::Continue)),
-                "ret" => Some(Token::Keyword(Keyword::Return)),
-                "foreach" => Some(Token::Keyword(Keyword::Foreach)),
-                "try" => Some(Token::Keyword(Keyword::Try)),
-                "catch" => Some(Token::Keyword(Keyword::Catch)),
-                "throw" => Some(Token::Keyword(Keyword::Throw)),
-                "async" => Some(Token::Keyword(Keyword::Async)),
-                "await" => Some(Token::Keyword(Keyword::Await)),
-                "asm" => Some(Token::Keyword(Keyword::Asm)),
+                "safe" => Some(Keyword::Safe),
+                "unsafe" => Some(Keyword::Unsafe),
+                "promise" => Some(Keyword::Promise),
+                "static" => Some(Keyword::Static),
+                "mut" => Some(Keyword::Mut),
+                "const" => Some(Keyword::Const),
+                "pub" => Some(Keyword::Pub),
+                "sec" => Some(Keyword::Sec),
+                "pro" => Some(Keyword::Pro),
 
-                "null" => Some(Token::Keyword(Keyword::Null)),
-                "true" => Some(Token::Keyword(Keyword::True)),
-                "false" => Some(Token::Keyword(Keyword::False)),
+                "if" => Some(Keyword::If),
+                "else" => Some(Keyword::Else),
+                "for" => Some(Keyword::For),
+                "while" => Some(Keyword::While),
+                "do" => Some(Keyword::Do),
+                "switch" => Some(Keyword::Switch),
+                "break" => Some(Keyword::Break),
+                "continue" => Some(Keyword::Continue),
+                "ret" => Some(Keyword::Return),
+                "foreach" => Some(Keyword::Foreach),
+                "try" => Some(Keyword::Try),
+                "catch" => Some(Keyword::Catch),
+                "throw" => Some(Keyword::Throw),
+                "async" => Some(Keyword::Async),
+                "await" => Some(Keyword::Await),
+                "asm" => Some(Keyword::Asm),
 
-                _ => Some(Token::Identifier(Identifier::new(
+                "null" => Some(Keyword::Null),
+                "true" => Some(Keyword::True),
+                "false" => Some(Keyword::False),
+
+                _ => None,
+            } {
+                Some(Token::Keyword(keyword))
+            } else {
+                Some(Token::Identifier(Identifier::new(
                     identifier,
                     IdentifierKind::Typical,
-                ))),
+                )))
             }
         }
     }
@@ -612,9 +621,112 @@ impl<'input> Lexer<'input> {
     }
 
     fn read_operator_token(&mut self) -> Option<Token<'input>> {
-        // TODO: Implement the logic to read an operator token
-        // TODO: Don't forget to handle the colon punctuator
-        None
+        /*
+         * The word-like operators are not handled here, as they are ambiguous with identifiers.
+         * They are handled in `read_identifier_token`.
+         */
+
+        let token_text = self.read_while(|b| {
+            match b {
+                // Whitespace is not an operator character.
+                b if b.is_ascii_whitespace() => false,
+
+                // Identifier characters are not operator characters.
+                b if b.is_ascii_alphabetic() || b == b'_' || b == b'`' => false,
+
+                // Numbers, Integers, and floats are not operator characters.
+                b if b.is_ascii_digit() => false,
+
+                // String and character delimiters are not operator characters.
+                b'"' | b'\'' => false,
+
+                // Comment delimiters are not operator characters.
+                b if b == b'#' => false,
+
+                // Punctuation characters are not operator characters.
+                b if b == b'('
+                    || b == b')'
+                    || b == b'['
+                    || b == b']'
+                    || b == b'{'
+                    || b == b'}'
+                    || b == b','
+                    || b == b';'
+                    || b == b'@' =>
+                {
+                    false
+                }
+
+                // Anything else might be an operator character.
+                _ => true,
+            }
+        });
+
+        // Handle the colon punctuator because it is ambiguous with the scope operator "::".
+        if token_text == ":" {
+            return Some(Token::Punctuation(Punctuation::Colon));
+        }
+
+        let operator = match token_text {
+            "+" => Operator::Add,
+            "-" => Operator::Sub,
+            "*" => Operator::Mul,
+            "/" => Operator::Div,
+            "%" => Operator::Mod,
+
+            "&" => Operator::BitAnd,
+            "|" => Operator::BitOr,
+            "^" => Operator::BitXor,
+            "~" => Operator::BitNot,
+            "<<" => Operator::BitShl,
+            ">>" => Operator::BitShr,
+            "<<<" => Operator::BitRotl,
+            ">>>" => Operator::BitRotr,
+
+            "&&" => Operator::LogicAnd,
+            "||" => Operator::LogicOr,
+            "^^" => Operator::LogicXor,
+            "!" => Operator::LogicNot,
+            "<" => Operator::LogicLt,
+            ">" => Operator::LogicGt,
+            "<=" => Operator::LogicLe,
+            ">=" => Operator::LogicGe,
+            "==" => Operator::LogicEq,
+            "!=" => Operator::LogicNe,
+
+            "=" => Operator::Set,
+            "+=" => Operator::SetPlus,
+            "-=" => Operator::SetMinus,
+            "*=" => Operator::SetTimes,
+            "/=" => Operator::SetSlash,
+            "%=" => Operator::SetPercent,
+            "&=" => Operator::SetBitAnd,
+            "|=" => Operator::SetBitOr,
+            "^=" => Operator::SetBitXor,
+            "<<=" => Operator::SetBitShl,
+            ">>=" => Operator::SetBitShr,
+            "<<<=" => Operator::SetBitRotl,
+            ">>>=" => Operator::SetBitRotr,
+            "&&=" => Operator::SetLogicAnd,
+            "||=" => Operator::SetLogicOr,
+            "^^=" => Operator::SetLogicXor,
+            "++" => Operator::Inc,
+            "--" => Operator::Dec,
+
+            "." => Operator::Dot,
+            "..." => Operator::Ellipsis,
+            "::" => Operator::Scope,
+            "->" => Operator::Arrow,
+            "=>" => Operator::BlockArrow,
+
+            ".." => Operator::Range,
+            "?" => Operator::Question,
+            "<=>" => Operator::Spaceship,
+
+            _ => return None, // Invalid operator
+        };
+
+        Some(Token::Operator(operator))
     }
 
     fn get_next_token(&mut self) -> AnnotatedToken<'input> {
