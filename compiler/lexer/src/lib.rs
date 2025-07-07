@@ -1,3 +1,6 @@
+use log::error;
+use stackvector::StackVec;
+
 // Must not be increased beyond u32::MAX, as the lexer/compiler pipeline
 // assumes that offsets are representable as u32 values. However, it is
 // acceptable to decrease this value (for whatever reason?).
@@ -497,11 +500,8 @@ impl<'src> Lexer<'src> {
                 b"typeof" => Some(Operator::Typeof),
                 _ => None,
             } {
-                return Some(Token::Operator(operator));
-            }
-
-            // Check for a keyword
-            if let Some(keyword) = match code {
+                Some(Token::Operator(operator))
+            } else if let Some(keyword) = match code {
                 b"let" => Some(Keyword::Let),
                 b"var" => Some(Keyword::Var),
                 b"fn" => Some(Keyword::Fn),
@@ -573,31 +573,39 @@ impl<'src> Lexer<'src> {
     }
 
     fn read_char_token(&mut self) -> Option<Token<'src>> {
-        if self.peek_byte()? != b'\'' {
-            return None; // Invalid character token
-        }
+        assert!(self.peek_byte()? == b'\'');
         self.advance(b'\'');
 
-        // TODO: Implement read of character token
+        let mut char_buffer = StackVec::<[u8; 4]>::new();
 
-        let is_escaped = false;
-        while let Some(b) = self.peek_byte() {
-            match b {
-                b'\\' => {
-                    //
+        loop {
+            match self.peek_byte()? {
+                b if b == b'\\' => {
+                    // TODO: Implement escape sequence handling
                 }
 
-                b'\'' if !is_escaped => {
-                    //
+                b'\'' => {
+                    self.advance(b'\'');
+                    let mut chars_iter = str::from_utf8(&char_buffer).ok()?.chars();
+                    let character = chars_iter.next()?;
+
+                    if chars_iter.next().is_some() {
+                        return None; // More than one character in char token
+                    } else {
+                        return Some(Token::Char(character));
+                    }
                 }
 
-                _ => {
-                    //
+                b => {
+                    if char_buffer.len() >= char_buffer.capacity() {
+                        return None; // Too many bytes for a char token
+                    }
+
+                    char_buffer.push(b);
+                    self.advance(b);
                 }
             }
         }
-
-        None
     }
 
     fn read_comment_token(&mut self) -> Option<Token<'src>> {
