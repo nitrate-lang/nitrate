@@ -10,13 +10,13 @@ pub enum IdentifierKind {
 }
 
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
-pub struct Identifier<'input> {
-    name: &'input str,
+pub struct Identifier<'src> {
+    name: &'src str,
     kind: IdentifierKind,
 }
 
-impl<'input> Identifier<'input> {
-    pub fn new(name: &'input str, kind: IdentifierKind) -> Self {
+impl<'src> Identifier<'src> {
+    pub fn new(name: &'src str, kind: IdentifierKind) -> Self {
         Identifier { name, kind }
     }
 
@@ -38,14 +38,14 @@ pub enum IntegerKind {
 }
 
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
-pub struct Integer<'input> {
+pub struct Integer<'src> {
     value: u128,
-    origin: &'input str,
+    origin: &'src str,
     kind: IntegerKind,
 }
 
-impl<'input> Integer<'input> {
-    pub fn new(value: u128, origin: &'input str, kind: IntegerKind) -> Self {
+impl<'src> Integer<'src> {
+    pub fn new(value: u128, origin: &'src str, kind: IntegerKind) -> Self {
         Integer {
             value,
             origin,
@@ -67,13 +67,13 @@ impl<'input> Integer<'input> {
 }
 
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
-pub struct Float<'input> {
+pub struct Float<'src> {
     value: f64,
-    origin: &'input str,
+    origin: &'src str,
 }
 
-impl<'input> Float<'input> {
-    pub fn new(value: f64, origin: &'input str) -> Self {
+impl<'src> Float<'src> {
+    pub fn new(value: f64, origin: &'src str) -> Self {
         Float { value, origin }
     }
 
@@ -245,13 +245,13 @@ pub enum CommentKind {
 }
 
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
-pub struct Comment<'input> {
-    text: &'input str,
+pub struct Comment<'src> {
+    text: &'src str,
     kind: CommentKind,
 }
 
-impl<'input> Comment<'input> {
-    pub fn new(text: &'input str, kind: CommentKind) -> Self {
+impl<'src> Comment<'src> {
+    pub fn new(text: &'src str, kind: CommentKind) -> Self {
         Comment { text, kind }
     }
 
@@ -265,16 +265,16 @@ impl<'input> Comment<'input> {
 }
 
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
-pub enum Token<'input> {
-    Identifier(Identifier<'input>),
-    Integer(Integer<'input>),
-    Float(Float<'input>),
+pub enum Token<'src> {
+    Identifier(Identifier<'src>),
+    Integer(Integer<'src>),
+    Float(Float<'src>),
     Keyword(Keyword),
-    String(&'input str),
+    String(&'src str),
     Char(char),
     Punctuation(Punctuation),
     Operator(Operator),
-    Comment(Comment<'input>),
+    Comment(Comment<'src>),
     Eof,
     Illegal,
 }
@@ -309,14 +309,14 @@ impl SourcePosition {
 }
 
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
-pub struct SourceRange<'input> {
+pub struct SourceRange<'src> {
     start: SourcePosition,
     end: SourcePosition,
-    filename: &'input str,
+    filename: &'src str,
 }
 
-impl<'input> SourceRange<'input> {
-    pub fn new(start: SourcePosition, end: SourcePosition, filename: &'input str) -> Self {
+impl<'src> SourceRange<'src> {
+    pub fn new(start: SourcePosition, end: SourcePosition, filename: &'src str) -> Self {
         SourceRange {
             start,
             end,
@@ -324,7 +324,7 @@ impl<'input> SourceRange<'input> {
         }
     }
 
-    pub fn eof(pos: SourcePosition, filename: &'input str) -> Self {
+    pub fn eof(pos: SourcePosition, filename: &'src str) -> Self {
         SourceRange {
             start: pos.clone(),
             end: pos.clone(),
@@ -348,7 +348,7 @@ impl<'input> SourceRange<'input> {
         &self.end
     }
 
-    pub fn filename(&self) -> &'input str {
+    pub fn filename(&self) -> &'src str {
         self.filename
     }
 
@@ -358,31 +358,31 @@ impl<'input> SourceRange<'input> {
 }
 
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
-pub struct AnnotatedToken<'input> {
-    token: Token<'input>,
-    range: SourceRange<'input>,
+pub struct AnnotatedToken<'src> {
+    token: Token<'src>,
+    range: SourceRange<'src>,
 }
 
-impl<'input> AnnotatedToken<'input> {
-    pub fn new(token: Token<'input>, range: SourceRange<'input>) -> Self {
+impl<'src> AnnotatedToken<'src> {
+    pub fn new(token: Token<'src>, range: SourceRange<'src>) -> Self {
         AnnotatedToken { token, range }
     }
 
-    pub fn token(&self) -> &Token<'input> {
+    pub fn token(&self) -> &Token<'src> {
         &self.token
     }
 
-    pub fn range(&self) -> &SourceRange<'input> {
+    pub fn range(&self) -> &SourceRange<'src> {
         &self.range
     }
 }
 
 #[derive(Debug, Clone)]
-pub struct Lexer<'input> {
-    src: &'input str,
-    filename: &'input str,
+pub struct Lexer<'src> {
+    src: &'src str,
+    filename: &'src str,
     read_pos: SourcePosition,
-    current: Option<AnnotatedToken<'input>>,
+    current: Option<AnnotatedToken<'src>>,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -390,8 +390,8 @@ pub enum LexerConstructionError {
     SourceTooBig,
 }
 
-impl<'input> Lexer<'input> {
-    pub fn new(src: &'input str, filename: &'input str) -> Result<Self, LexerConstructionError> {
+impl<'src> Lexer<'src> {
+    pub fn new(src: &'src str, filename: &'src str) -> Result<Self, LexerConstructionError> {
         if src.len() > MAX_SOURCE_SIZE {
             Err(LexerConstructionError::SourceTooBig)
         } else {
@@ -412,11 +412,11 @@ impl<'input> Lexer<'input> {
         }
     }
 
-    pub fn next_token(&mut self) -> AnnotatedToken<'input> {
+    pub fn next_token(&mut self) -> AnnotatedToken<'src> {
         self.current.take().unwrap_or_else(|| self.get_next_token())
     }
 
-    pub fn peek_token(&mut self) -> AnnotatedToken<'input> {
+    pub fn peek_token(&mut self) -> AnnotatedToken<'src> {
         let token = self.current.take().unwrap_or_else(|| self.get_next_token());
         self.current = Some(token.clone());
 
@@ -447,7 +447,7 @@ impl<'input> Lexer<'input> {
             .copied()
     }
 
-    fn read_while<F>(&mut self, mut condition: F) -> &'input [u8]
+    fn read_while<F>(&mut self, mut condition: F) -> &'src [u8]
     where
         F: FnMut(u8) -> bool,
     {
@@ -466,7 +466,7 @@ impl<'input> Lexer<'input> {
         &self.src.as_bytes()[start_offset..end_offset]
     }
 
-    fn read_identifier_token(&mut self) -> Option<Token<'input>> {
+    fn read_identifier_token(&mut self) -> Option<Token<'src>> {
         if self.peek_byte()? == b'`' {
             self.advance(b'`');
 
@@ -562,22 +562,45 @@ impl<'input> Lexer<'input> {
         }
     }
 
-    fn read_number_token(&mut self) -> Option<Token<'input>> {
-        // TODO: Implement the logic to read a number token
+    fn read_number_token(&mut self) -> Option<Token<'src>> {
+        // TODO: Implement read of number token
         None
     }
 
-    fn read_string_token(&mut self) -> Option<Token<'input>> {
-        // TODO: Implement the logic to read a string token
+    fn read_string_token(&mut self) -> Option<Token<'src>> {
+        // TODO: Implement read of string token
         None
     }
 
-    fn read_char_token(&mut self) -> Option<Token<'input>> {
-        // TODO: Implement the logic to read a character token
+    fn read_char_token(&mut self) -> Option<Token<'src>> {
+        if self.peek_byte()? != b'\'' {
+            return None; // Invalid character token
+        }
+        self.advance(b'\'');
+
+        // TODO: Implement read of character token
+
+        let is_escaped = false;
+        while let Some(b) = self.peek_byte() {
+            match b {
+                b'\\' => {
+                    //
+                }
+
+                b'\'' if !is_escaped => {
+                    //
+                }
+
+                _ => {
+                    //
+                }
+            }
+        }
+
         None
     }
 
-    fn read_comment_token(&mut self) -> Option<Token<'input>> {
+    fn read_comment_token(&mut self) -> Option<Token<'src>> {
         let comment = str::from_utf8(self.read_while(|b| b != b'\n')).ok()?;
 
         Some(Token::Comment(Comment::new(
@@ -586,7 +609,7 @@ impl<'input> Lexer<'input> {
         )))
     }
 
-    fn read_punctuation_token(&mut self) -> Option<Token<'input>> {
+    fn read_punctuation_token(&mut self) -> Option<Token<'src>> {
         /*
          * The colon punctuator is not handled here, as it is ambiguous with the scope
          * operator "::". See `read_operator_token` for the handling the colon punctuator.
@@ -611,7 +634,7 @@ impl<'input> Lexer<'input> {
         Some(Token::Punctuation(punctuation))
     }
 
-    fn read_operator_token(&mut self) -> Option<Token<'input>> {
+    fn read_operator_token(&mut self) -> Option<Token<'src>> {
         /*
          * The word-like operators are not handled here, as they are ambiguous with identifiers.
          * They are handled in `read_identifier_token`.
@@ -720,7 +743,7 @@ impl<'input> Lexer<'input> {
         Some(Token::Operator(operator))
     }
 
-    fn get_next_token(&mut self) -> AnnotatedToken<'input> {
+    fn get_next_token(&mut self) -> AnnotatedToken<'src> {
         // Skip whitespace
         self.read_while(|b| b.is_ascii_whitespace());
 
