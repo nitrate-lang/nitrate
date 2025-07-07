@@ -1,7 +1,10 @@
+use env_logger;
 use nitrate_lexer::*;
 use std::io::Read;
 
 fn main() {
+    env_logger::init();
+
     let filename = "stdin";
     let mut source_code = String::new();
 
