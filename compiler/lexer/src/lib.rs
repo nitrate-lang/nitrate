@@ -500,14 +500,60 @@ impl<'input> Lexer<'input> {
             }
         } else {
             let identifier = self.read_while(|b| b.is_ascii_alphanumeric() || b == b'_');
-            if identifier.is_empty() {
-                return None; // This shouldn't happen, but just in case
-            }
+            assert!(!identifier.is_empty(), "Identifier should not be empty");
 
-            Some(Token::Identifier(Identifier::new(
-                identifier,
-                IdentifierKind::Typical,
-            )))
+            match identifier {
+                "let" => Some(Token::Keyword(Keyword::Let)),
+                "var" => Some(Token::Keyword(Keyword::Var)),
+                "fn" => Some(Token::Keyword(Keyword::Fn)),
+                "enum" => Some(Token::Keyword(Keyword::Enum)),
+                "struct" => Some(Token::Keyword(Keyword::Struct)),
+                "class" => Some(Token::Keyword(Keyword::Class)),
+                "union" => Some(Token::Keyword(Keyword::Union)),
+                "interface" => Some(Token::Keyword(Keyword::Contract)),
+                "trait" => Some(Token::Keyword(Keyword::Trait)),
+                "type" => Some(Token::Keyword(Keyword::Type)),
+                "opaque" => Some(Token::Keyword(Keyword::Opaque)),
+                "scope" => Some(Token::Keyword(Keyword::Scope)),
+                "import" => Some(Token::Keyword(Keyword::Import)),
+                "unit_test" => Some(Token::Keyword(Keyword::UnitTest)),
+
+                "safe" => Some(Token::Keyword(Keyword::Safe)),
+                "unsafe" => Some(Token::Keyword(Keyword::Unsafe)),
+                "promise" => Some(Token::Keyword(Keyword::Promise)),
+                "static" => Some(Token::Keyword(Keyword::Static)),
+                "mut" => Some(Token::Keyword(Keyword::Mut)),
+                "const" => Some(Token::Keyword(Keyword::Const)),
+                "pub" => Some(Token::Keyword(Keyword::Pub)),
+                "sec" => Some(Token::Keyword(Keyword::Sec)),
+                "pro" => Some(Token::Keyword(Keyword::Pro)),
+
+                "if" => Some(Token::Keyword(Keyword::If)),
+                "else" => Some(Token::Keyword(Keyword::Else)),
+                "for" => Some(Token::Keyword(Keyword::For)),
+                "while" => Some(Token::Keyword(Keyword::While)),
+                "do" => Some(Token::Keyword(Keyword::Do)),
+                "switch" => Some(Token::Keyword(Keyword::Switch)),
+                "break" => Some(Token::Keyword(Keyword::Break)),
+                "continue" => Some(Token::Keyword(Keyword::Continue)),
+                "ret" => Some(Token::Keyword(Keyword::Return)),
+                "foreach" => Some(Token::Keyword(Keyword::Foreach)),
+                "try" => Some(Token::Keyword(Keyword::Try)),
+                "catch" => Some(Token::Keyword(Keyword::Catch)),
+                "throw" => Some(Token::Keyword(Keyword::Throw)),
+                "async" => Some(Token::Keyword(Keyword::Async)),
+                "await" => Some(Token::Keyword(Keyword::Await)),
+                "asm" => Some(Token::Keyword(Keyword::Asm)),
+
+                "null" => Some(Token::Keyword(Keyword::Null)),
+                "true" => Some(Token::Keyword(Keyword::True)),
+                "false" => Some(Token::Keyword(Keyword::False)),
+
+                _ => Some(Token::Identifier(Identifier::new(
+                    identifier,
+                    IdentifierKind::Typical,
+                ))),
+            }
         }
     }
 
