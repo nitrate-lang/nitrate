@@ -587,12 +587,33 @@ impl<'input> Lexer<'input> {
     }
 
     fn read_punctuation_token(&mut self) -> Option<Token<'input>> {
-        // TODO: Implement the logic to read a punctuation token
-        None
+        /*
+         * The colon punctuator is not handled here, as it is ambiguous with the scope
+         * operator "::". See `read_operator_token` for the handling the colon punctuator.
+         */
+
+        let b = self.peek_byte()?;
+        self.advance(b);
+
+        let punctuation = match b {
+            b'(' => Punctuation::LeftParenthesis,
+            b')' => Punctuation::RightParenthesis,
+            b'[' => Punctuation::LeftBracket,
+            b']' => Punctuation::RightBracket,
+            b'{' => Punctuation::LeftBrace,
+            b'}' => Punctuation::RightBrace,
+            b',' => Punctuation::Comma,
+            b';' => Punctuation::Semicolon,
+            b'@' => Punctuation::AtSign,
+            _ => return None, // Invalid punctuation
+        };
+
+        Some(Token::Punctuation(punctuation))
     }
 
     fn read_operator_token(&mut self) -> Option<Token<'input>> {
         // TODO: Implement the logic to read an operator token
+        // TODO: Don't forget to handle the colon punctuator
         None
     }
 
