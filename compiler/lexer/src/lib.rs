@@ -475,24 +475,49 @@ impl<'src> Lexer<'src> {
 
             let identifier = self.read_while(|b| b != b'`');
 
-            if self.peek_byte()? != b'`' {
+            return if self.peek_byte().unwrap_or_default() != b'`' {
+                error!(
+                    "Lexer error: Unterminated atypical identifier @ (row {}, col {}, off {})",
+                    self.read_pos.line(),
+                    self.read_pos.column(),
+                    self.read_pos.offset()
+                );
+
                 None
             } else {
                 self.advance(b'`');
 
-                let identifier = str::from_utf8(identifier).ok()?;
+                if identifier.is_empty() {
+                    error!(
+                        "Lexer error: Atypical identifier is empty @ (row {}, col {}, off {})",
+                        self.read_pos.line(),
+                        self.read_pos.column(),
+                        self.read_pos.offset()
+                    );
 
-                Some(Token::Identifier(Identifier::new(
-                    identifier,
-                    IdentifierKind::Atypical,
-                )))
-            }
+                    None
+                } else if let Some(identifier) = str::from_utf8(identifier).ok() {
+                    Some(Token::Identifier(Identifier::new(
+                        identifier,
+                        IdentifierKind::Atypical,
+                    )))
+                } else {
+                    error!(
+                        "Lexer error: Atypical identifier contains invalid utf-8 @ (row {}, col {}, off {})",
+                        self.read_pos.line(),
+                        self.read_pos.column(),
+                        self.read_pos.offset()
+                    );
+
+                    None
+                }
+            };
         } else {
             let code = self.read_while(|b| b.is_ascii_alphanumeric() || b == b'_' || !b.is_ascii());
             assert!(!code.is_empty(), "Identifier should not be empty");
 
             // Check for a word-like operator
-            if let Some(operator) = match code {
+            return if let Some(operator) = match code {
                 b"as" => Some(Operator::As),
                 b"bitcast_as" => Some(Operator::BitcastAs),
                 b"sizeof" => Some(Operator::Sizeof),
@@ -552,13 +577,22 @@ impl<'src> Lexer<'src> {
             } {
                 Some(Token::Keyword(keyword))
             } else {
-                let identifier = str::from_utf8(code).ok()?;
+                if let Some(identifier) = str::from_utf8(code).ok() {
+                    Some(Token::Identifier(Identifier::new(
+                        identifier,
+                        IdentifierKind::Typical,
+                    )))
+                } else {
+                    error!(
+                        "Lexer error: Typical identifier contains invalid utf-8 @ (row {}, col {}, off {})",
+                        self.read_pos.line(),
+                        self.read_pos.column(),
+                        self.read_pos.offset()
+                    );
 
-                Some(Token::Identifier(Identifier::new(
-                    identifier,
-                    IdentifierKind::Typical,
-                )))
-            }
+                    None
+                }
+            };
         }
     }
 
@@ -609,12 +643,21 @@ impl<'src> Lexer<'src> {
     }
 
     fn read_comment_token(&mut self) -> Option<Token<'src>> {
-        let comment = str::from_utf8(self.read_while(|b| b != b'\n')).ok()?;
+        if let Some(comment) = str::from_utf8(self.read_while(|b| b != b'\n')).ok() {
+            Some(Token::Comment(Comment::new(
+                comment,
+                CommentKind::SingleLine,
+            )))
+        } else {
+            error!(
+                "Lexer error: Single-line comment contains invalid utf-8 @ (row {}, col {}, off {})",
+                self.read_pos.line(),
+                self.read_pos.column(),
+                self.read_pos.offset()
+            );
 
-        Some(Token::Comment(Comment::new(
-            comment,
-            CommentKind::SingleLine,
-        )))
+            None
+        }
     }
 
     fn read_punctuation_token(&mut self) -> Option<Token<'src>> {
