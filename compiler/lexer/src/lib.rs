@@ -404,20 +404,15 @@ pub enum LexerConstructionError {
 impl<'input> Lexer<'input> {
     pub fn new(src: &'input str, filename: &'input str) -> Result<Self, LexerConstructionError> {
         if src.len() > MAX_SOURCE_SIZE {
-            return Err(LexerConstructionError::SourceTooBig);
+            Err(LexerConstructionError::SourceTooBig)
+        } else {
+            Ok(Lexer {
+                src,
+                filename,
+                read_pos: SourcePosition::new(0, 0, 0),
+                current: None,
+            })
         }
-
-        assert!(
-            src.len() <= MAX_SOURCE_SIZE,
-            "Source size exceeds maximum allowed size"
-        );
-
-        Ok(Lexer {
-            src,
-            filename,
-            read_pos: SourcePosition::new(0, 0, 0),
-            current: None,
-        })
     }
 
     pub fn skip_token(&mut self) {
