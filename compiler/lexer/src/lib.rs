@@ -624,7 +624,7 @@ impl<'src> Lexer<'src> {
                     let character = chars_iter.next()?;
 
                     if chars_iter.next().is_some() {
-                        return None; // More than one character in char token
+                        return None;
                     } else {
                         return Some(Token::Char(character));
                     }
@@ -632,7 +632,7 @@ impl<'src> Lexer<'src> {
 
                 b => {
                     if char_buffer.len() >= char_buffer.capacity() {
-                        return None; // Too many bytes for a char token
+                        return None;
                     }
 
                     char_buffer.push(b);
@@ -669,7 +669,7 @@ impl<'src> Lexer<'src> {
         let b = self.peek_byte()?;
         self.advance(b);
 
-        let punctuation = match b {
+        Some(Token::Punctuation(match b {
             b'(' => Punctuation::LeftParenthesis,
             b')' => Punctuation::RightParenthesis,
             b'[' => Punctuation::LeftBracket,
@@ -679,10 +679,19 @@ impl<'src> Lexer<'src> {
             b',' => Punctuation::Comma,
             b';' => Punctuation::Semicolon,
             b'@' => Punctuation::AtSign,
-            _ => return None, // Invalid punctuation
-        };
 
-        Some(Token::Punctuation(punctuation))
+            _ => {
+                error!(
+                    "Lexer error: Invalid punctuation character '{}' @ (row {}, col {}, off {})",
+                    b as char,
+                    self.read_pos.line(),
+                    self.read_pos.column(),
+                    self.read_pos.offset()
+                );
+
+                return None;
+            }
+        }))
     }
 
     fn read_operator_token(&mut self) -> Option<Token<'src>> {
@@ -693,37 +702,14 @@ impl<'src> Lexer<'src> {
 
         let code = self.read_while(|b| {
             match b {
-                // Whitespace is not an operator character.
-                b if b.is_ascii_whitespace() => false,
+                b if b.is_ascii_whitespace() => false,           // whitespace
+                b if b.is_ascii_digit() => false,                // number
+                b'_' | b'`' if b.is_ascii_alphabetic() => false, // identifier
+                b'"' | b'\'' => false,                           // string and char literals
+                b'#' => false,                                   // comments
+                b'(' | b')' | b'[' | b']' | b'{' | b'}' | b',' | b';' | b'@' => false, // punctuation
 
-                // Identifier characters are not operator characters.
-                b if b.is_ascii_alphabetic() || b == b'_' || b == b'`' => false,
-
-                // Numbers, Integers, and floats are not operator characters.
-                b if b.is_ascii_digit() => false,
-
-                // String and character delimiters are not operator characters.
-                b'"' | b'\'' => false,
-
-                // Comment delimiters are not operator characters.
-                b if b == b'#' => false,
-
-                // Punctuation characters are not operator characters.
-                b if b == b'('
-                    || b == b')'
-                    || b == b'['
-                    || b == b']'
-                    || b == b'{'
-                    || b == b'}'
-                    || b == b','
-                    || b == b';'
-                    || b == b'@' =>
-                {
-                    false
-                }
-
-                // Anything else might be an operator character.
-                _ => true,
+                _ => true, // operators and colon punctuator
             }
         });
 
@@ -732,7 +718,7 @@ impl<'src> Lexer<'src> {
             return Some(Token::Punctuation(Punctuation::Colon));
         }
 
-        let operator = match code {
+        Some(Token::Operator(match code {
             b"+" => Operator::Add,
             b"-" => Operator::Sub,
             b"*" => Operator::Mul,
@@ -788,14 +774,31 @@ impl<'src> Lexer<'src> {
             b"?" => Operator::Question,
             b"<=>" => Operator::Spaceship,
 
-            _ => return None, // Invalid operator
-        };
+            _ => {
+                if let Some(utf8_op) = str::from_utf8(code).ok() {
+                    error!(
+                        "Lexer error: Invalid operator '{}' @ (row {}, col {}, off {})",
+                        utf8_op,
+                        self.read_pos.line(),
+                        self.read_pos.column(),
+                        self.read_pos.offset()
+                    );
+                } else {
+                    error!(
+                        "Lexer error: Invalid operator '{:?}' @ (row {}, col {}, off {})",
+                        code,
+                        self.read_pos.line(),
+                        self.read_pos.column(),
+                        self.read_pos.offset()
+                    );
+                }
 
-        Some(Token::Operator(operator))
+                return None;
+            }
+        }))
     }
 
     fn get_next_token(&mut self) -> AnnotatedToken<'src> {
-        // Skip whitespace
         self.read_while(|b| b.is_ascii_whitespace());
 
         let start_pos = self.read_pos.clone();
