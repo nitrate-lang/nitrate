@@ -628,31 +628,31 @@ impl<'src> Lexer<'src> {
         assert!(self.peek_byte()? == b'\'');
         self.advance(b'\'');
 
-        let mut char_buffer = StackVec::<[u8; 4]>::new();
+        // Lets use more than 4 bytes for debugability of misuses of single quotes.
+        let mut char_buffer = StackVec::<[u8; 32]>::new();
 
         loop {
             match self.peek_byte()? {
-                b if b == b'\\' => {
+                b'\\' => {
                     // TODO: Implement escape sequence handling
                 }
 
                 b'\'' => {
                     self.advance(b'\'');
-                    let mut chars_iter = str::from_utf8(&char_buffer).ok()?.chars();
 
-                    if let Some(character) = chars_iter.next() {
-                        if chars_iter.next().is_some() {
-                            error!(
-                                "error[L0010]: Character literal '{}' contains more than one character. Did you mean to use a string literal?\n--> {}",
-                                str::from_utf8(&char_buffer).unwrap_or("<invalid utf-8>"),
-                                start_pos
-                            );
+                    let chars_buffer = str::from_utf8(&char_buffer);
+                    if chars_buffer.is_err() {
+                        error!(
+                            "error[L0012]: Character literal '{:?}' contains some invalid utf-8 bytes\n--> {}",
+                            char_buffer.as_slice() as &[u8],
+                            start_pos
+                        );
 
-                            return None;
-                        } else {
-                            return Some(Token::Char(character));
-                        }
-                    } else {
+                        return None;
+                    }
+
+                    let chars_buffer = chars_buffer.expect("Invalid UTF-8");
+                    if chars_buffer.is_empty() {
                         error!(
                             "error[L0011]: Character literal is empty. Did you forget to specify the character?\n--> {}",
                             start_pos
@@ -660,6 +660,21 @@ impl<'src> Lexer<'src> {
 
                         return None;
                     }
+
+                    let mut chars_iter = chars_buffer.chars();
+                    let character = chars_iter.next()?;
+
+                    if chars_iter.next().is_some() {
+                        error!(
+                            "error[L0010]: Character literal '{}' contains more than one character. Did you mean to use a string literal?\n--> {}",
+                            str::from_utf8(&char_buffer).unwrap_or("<invalid utf-8>"),
+                            start_pos
+                        );
+
+                        return None;
+                    }
+
+                    return Some(Token::Char(character));
                 }
 
                 b => {
@@ -839,16 +854,7 @@ impl<'src> Lexer<'src> {
                 b if b.is_ascii_digit() => self.read_number_token(),
                 b'"' => self.read_string_token(),
                 b'\'' => self.read_char_token(),
-                b if b == b'('
-                    || b == b')'
-                    || b == b'['
-                    || b == b']'
-                    || b == b'{'
-                    || b == b'}'
-                    || b == b','
-                    || b == b';'
-                    || b == b'@' =>
-                {
+                b'(' | b')' | b'[' | b']' | b'{' | b'}' | b',' | b';' | b'@' => {
                     self.read_punctuation_token()
                 }
                 b'#' => self.read_comment_token(),
