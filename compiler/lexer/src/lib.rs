@@ -360,6 +360,28 @@ impl<'src> SourceRange<'src> {
     }
 }
 
+struct DebugPosition<'src> {
+    filename: &'src str,
+    line: u32,
+    column: u32,
+}
+
+impl<'src> DebugPosition<'src> {
+    fn new(pos: SourcePosition, filename: &'src str) -> Self {
+        DebugPosition {
+            filename,
+            line: pos.line(),
+            column: pos.column(),
+        }
+    }
+}
+
+impl std::fmt::Display for DebugPosition<'_> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}:{}:{}", self.filename, self.line + 1, self.column + 1)
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
 pub struct AnnotatedToken<'src> {
     token: Token<'src>,
@@ -470,6 +492,8 @@ impl<'src> Lexer<'src> {
     }
 
     fn read_identifier_token(&mut self) -> Option<Token<'src>> {
+        let start_pos = DebugPosition::new(self.read_pos.clone(), self.filename);
+
         if self.peek_byte()? == b'`' {
             self.advance(b'`');
 
@@ -477,10 +501,8 @@ impl<'src> Lexer<'src> {
 
             return if self.peek_byte().unwrap_or_default() != b'`' {
                 error!(
-                    "Lexer error: Unterminated atypical identifier @ (row {}, col {}, off {})",
-                    self.read_pos.line(),
-                    self.read_pos.column(),
-                    self.read_pos.offset()
+                    "error[L0001]: Unterminated atypical identifier. Did you forget the '`' terminator?\n--> {}",
+                    start_pos
                 );
 
                 None
@@ -489,10 +511,8 @@ impl<'src> Lexer<'src> {
 
                 if identifier.is_empty() {
                     error!(
-                        "Lexer error: Atypical identifier is empty @ (row {}, col {}, off {})",
-                        self.read_pos.line(),
-                        self.read_pos.column(),
-                        self.read_pos.offset()
+                        "error[L0002]: Atypical identifier does not contain at least one character.\n--> {}",
+                        start_pos
                     );
 
                     None
@@ -503,10 +523,8 @@ impl<'src> Lexer<'src> {
                     )))
                 } else {
                     error!(
-                        "Lexer error: Atypical identifier contains invalid utf-8 @ (row {}, col {}, off {})",
-                        self.read_pos.line(),
-                        self.read_pos.column(),
-                        self.read_pos.offset()
+                        "error[L0003]: Identifier contains some invalid utf-8 bytes\n--> {}",
+                        start_pos
                     );
 
                     None
@@ -584,10 +602,8 @@ impl<'src> Lexer<'src> {
                     )))
                 } else {
                     error!(
-                        "Lexer error: Typical identifier contains invalid utf-8 @ (row {}, col {}, off {})",
-                        self.read_pos.line(),
-                        self.read_pos.column(),
-                        self.read_pos.offset()
+                        "error[L0003]: Identifier contains some invalid utf-8 bytes\n--> {}",
+                        start_pos
                     );
 
                     None
@@ -607,6 +623,8 @@ impl<'src> Lexer<'src> {
     }
 
     fn read_char_token(&mut self) -> Option<Token<'src>> {
+        let start_pos = DebugPosition::new(self.read_pos.clone(), self.filename);
+
         assert!(self.peek_byte()? == b'\'');
         self.advance(b'\'');
 
@@ -621,17 +639,37 @@ impl<'src> Lexer<'src> {
                 b'\'' => {
                     self.advance(b'\'');
                     let mut chars_iter = str::from_utf8(&char_buffer).ok()?.chars();
-                    let character = chars_iter.next()?;
 
-                    if chars_iter.next().is_some() {
-                        return None;
+                    if let Some(character) = chars_iter.next() {
+                        if chars_iter.next().is_some() {
+                            error!(
+                                "error[L0010]: Character literal '{}' contains more than one character. Did you mean to use a string literal?\n--> {}",
+                                str::from_utf8(&char_buffer).unwrap_or("<invalid utf-8>"),
+                                start_pos
+                            );
+
+                            return None;
+                        } else {
+                            return Some(Token::Char(character));
+                        }
                     } else {
-                        return Some(Token::Char(character));
+                        error!(
+                            "error[L0011]: Character literal is empty. Did you forget to specify the character?\n--> {}",
+                            start_pos
+                        );
+
+                        return None;
                     }
                 }
 
                 b => {
                     if char_buffer.len() >= char_buffer.capacity() {
+                        error!(
+                            "error[L0012]: Character literal '{}' is too long. Did you mean to use a string literal?\n--> {}",
+                            str::from_utf8(&char_buffer).unwrap_or("<invalid utf-8>"),
+                            start_pos
+                        );
+
                         return None;
                     }
 
@@ -643,6 +681,8 @@ impl<'src> Lexer<'src> {
     }
 
     fn read_comment_token(&mut self) -> Option<Token<'src>> {
+        let start_pos = DebugPosition::new(self.read_pos.clone(), self.filename);
+
         if let Some(comment) = str::from_utf8(self.read_while(|b| b != b'\n')).ok() {
             Some(Token::Comment(Comment::new(
                 comment,
@@ -650,10 +690,8 @@ impl<'src> Lexer<'src> {
             )))
         } else {
             error!(
-                "Lexer error: Single-line comment contains invalid utf-8 @ (row {}, col {}, off {})",
-                self.read_pos.line(),
-                self.read_pos.column(),
-                self.read_pos.offset()
+                "error[L0020]: Single-line comment contains some invalid utf-8 bytes\n--> {}",
+                start_pos
             );
 
             None
@@ -665,6 +703,8 @@ impl<'src> Lexer<'src> {
          * The colon punctuator is not handled here, as it is ambiguous with the scope
          * operator "::". See `read_operator_token` for the handling the colon punctuator.
          */
+
+        let start_pos = DebugPosition::new(self.read_pos.clone(), self.filename);
 
         let b = self.peek_byte()?;
         self.advance(b);
@@ -682,11 +722,8 @@ impl<'src> Lexer<'src> {
 
             _ => {
                 error!(
-                    "Lexer error: Invalid punctuation character '{}' @ (row {}, col {}, off {})",
-                    b as char,
-                    self.read_pos.line(),
-                    self.read_pos.column(),
-                    self.read_pos.offset()
+                    "error[L0030]: The token `{}` is not valid. Did you mistype an operator or forget some whitespace?\n--> {}",
+                    b as char, start_pos
                 );
 
                 return None;
@@ -699,6 +736,8 @@ impl<'src> Lexer<'src> {
          * The word-like operators are not handled here, as they are ambiguous with identifiers.
          * They are handled in `read_identifier_token`.
          */
+
+        let start_pos = DebugPosition::new(self.read_pos.clone(), self.filename);
 
         let code = self.read_while(|b| {
             match b {
@@ -775,23 +814,11 @@ impl<'src> Lexer<'src> {
             b"<=>" => Operator::Spaceship,
 
             _ => {
-                if let Some(utf8_op) = str::from_utf8(code).ok() {
-                    error!(
-                        "Lexer error: Invalid operator '{}' @ (row {}, col {}, off {})",
-                        utf8_op,
-                        self.read_pos.line(),
-                        self.read_pos.column(),
-                        self.read_pos.offset()
-                    );
-                } else {
-                    error!(
-                        "Lexer error: Invalid operator '{:?}' @ (row {}, col {}, off {})",
-                        code,
-                        self.read_pos.line(),
-                        self.read_pos.column(),
-                        self.read_pos.offset()
-                    );
-                }
+                error!(
+                    "error[L0030]: The token `{}` is not valid. Did you mistype an operator or forget some whitespace?\n--> {}",
+                    str::from_utf8(code).unwrap_or("<invalid utf-8>"),
+                    start_pos
+                );
 
                 return None;
             }
