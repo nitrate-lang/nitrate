@@ -645,13 +645,37 @@ impl<'src> Lexer<'src> {
                     self.advance(b'\\');
 
                     match self.peek_byte()? {
-                        b'n' => {
-                            char_buffer.push(b'\n');
-                            self.advance(b'n');
+                        b'0' => {
+                            char_buffer.push(b'\0');
+                            self.advance(b'0');
+                        }
+                        b'a' => {
+                            char_buffer.push(b'\x07');
+                            self.advance(b'a');
+                        }
+                        b'b' => {
+                            char_buffer.push(b'\x08');
+                            self.advance(b'b');
                         }
                         b't' => {
                             char_buffer.push(b'\t');
                             self.advance(b't');
+                        }
+                        b'n' => {
+                            char_buffer.push(b'\n');
+                            self.advance(b'n');
+                        }
+                        b'v' => {
+                            char_buffer.push(b'\x0b');
+                            self.advance(b'v');
+                        }
+                        b'f' => {
+                            char_buffer.push(b'\x0c');
+                            self.advance(b'f');
+                        }
+                        b'r' => {
+                            char_buffer.push(b'\r');
+                            self.advance(b'r');
                         }
                         b'\\' => {
                             char_buffer.push(b'\\');
