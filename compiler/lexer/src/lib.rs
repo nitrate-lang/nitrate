@@ -499,7 +499,7 @@ impl<'src> Lexer<'src> {
 
             let identifier = self.read_while(|b| b != b'`');
 
-            return if self.peek_byte().unwrap_or_default() != b'`' {
+            if self.peek_byte().unwrap_or_default() != b'`' {
                 error!(
                     "error[L0001]: Unterminated atypical identifier. Did you forget the '`' terminator?\n--> {}",
                     start_pos
@@ -516,7 +516,7 @@ impl<'src> Lexer<'src> {
                     );
 
                     None
-                } else if let Some(identifier) = str::from_utf8(identifier).ok() {
+                } else if let Ok(identifier) = str::from_utf8(identifier) {
                     Some(Token::Identifier(Identifier::new(
                         identifier,
                         IdentifierKind::Atypical,
@@ -529,13 +529,13 @@ impl<'src> Lexer<'src> {
 
                     None
                 }
-            };
+            }
         } else {
             let code = self.read_while(|b| b.is_ascii_alphanumeric() || b == b'_' || !b.is_ascii());
             assert!(!code.is_empty(), "Identifier should not be empty");
 
             // Check for a word-like operator
-            return if let Some(operator) = match code {
+            if let Some(operator) = match code {
                 b"as" => Some(Operator::As),
                 b"bitcast_as" => Some(Operator::BitcastAs),
                 b"sizeof" => Some(Operator::Sizeof),
@@ -594,21 +594,19 @@ impl<'src> Lexer<'src> {
                 _ => None,
             } {
                 Some(Token::Keyword(keyword))
+            } else if let Ok(identifier) = str::from_utf8(code) {
+                Some(Token::Identifier(Identifier::new(
+                    identifier,
+                    IdentifierKind::Typical,
+                )))
             } else {
-                if let Some(identifier) = str::from_utf8(code).ok() {
-                    Some(Token::Identifier(Identifier::new(
-                        identifier,
-                        IdentifierKind::Typical,
-                    )))
-                } else {
-                    error!(
-                        "error[L0003]: Identifier contains some invalid utf-8 bytes\n--> {}",
-                        start_pos
-                    );
+                error!(
+                    "error[L0003]: Identifier contains some invalid utf-8 bytes\n--> {}",
+                    start_pos
+                );
 
-                    None
-                }
-            };
+                None
+            }
         }
     }
 
@@ -726,7 +724,7 @@ impl<'src> Lexer<'src> {
     fn read_comment_token(&mut self) -> Option<Token<'src>> {
         let start_pos = DebugPosition::new(self.read_pos.clone(), self.filename);
 
-        if let Some(comment) = str::from_utf8(self.read_while(|b| b != b'\n')).ok() {
+        if let Ok(comment) = str::from_utf8(self.read_while(|b| b != b'\n')) {
             Some(Token::Comment(Comment::new(
                 comment,
                 CommentKind::SingleLine,
