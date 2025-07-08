@@ -632,9 +632,47 @@ impl<'src> Lexer<'src> {
         let mut char_buffer = StackVec::<[u8; 32]>::new();
 
         loop {
+            if char_buffer.len() >= char_buffer.capacity() {
+                error!(
+                    "error[L0012]: Character literal '{}' is too long. Did you mean to use a string literal?\n--> {}",
+                    str::from_utf8(&char_buffer).unwrap_or("<invalid utf-8>"),
+                    start_pos
+                );
+
+                return None;
+            }
+
             match self.peek_byte()? {
                 b'\\' => {
-                    // TODO: Implement escape sequence handling
+                    self.advance(b'\\');
+
+                    match self.peek_byte()? {
+                        b'n' => {
+                            char_buffer.push(b'\n');
+                            self.advance(b'n');
+                        }
+                        b't' => {
+                            char_buffer.push(b'\t');
+                            self.advance(b't');
+                        }
+                        b'\\' => {
+                            char_buffer.push(b'\\');
+                            self.advance(b'\\');
+                        }
+                        b'\'' => {
+                            char_buffer.push(b'\'');
+                            self.advance(b'\'');
+                        }
+
+                        b => {
+                            error!(
+                                "error[L0013]: Invalid escape sequence '\\{}' in character literal\n--> {}",
+                                b as char, start_pos
+                            );
+
+                            return None;
+                        }
+                    }
                 }
 
                 b'\'' => {
@@ -678,16 +716,6 @@ impl<'src> Lexer<'src> {
                 }
 
                 b => {
-                    if char_buffer.len() >= char_buffer.capacity() {
-                        error!(
-                            "error[L0012]: Character literal '{}' is too long. Did you mean to use a string literal?\n--> {}",
-                            str::from_utf8(&char_buffer).unwrap_or("<invalid utf-8>"),
-                            start_pos
-                        );
-
-                        return None;
-                    }
-
                     char_buffer.push(b);
                     self.advance(b);
                 }
