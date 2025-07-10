@@ -488,122 +488,125 @@ impl<'src> Lexer<'src> {
         &self.source[start_offset..end_offset]
     }
 
-    fn parse_identifier(&mut self) -> Option<Token<'src>> {
+    fn parse_atypical_identifier(&mut self) -> Option<Token<'src>> {
         let start_pos = DebugPosition::new(self.read_pos.clone(), self.filename);
 
-        if self.peek_byte()? == b'`' {
+        assert!(self.peek_byte()? == b'`');
+        self.advance(b'`');
+
+        let identifier = self.read_while(|b| b != b'`');
+
+        if self.peek_byte().unwrap_or_default() == b'`' {
             self.advance(b'`');
-
-            let identifier = self.read_while(|b| b != b'`');
-
-            if self.peek_byte().unwrap_or_default() != b'`' {
-                error!(
-                    "error[L0001]: Unterminated atypical identifier. Did you forget the '`' terminator?\n--> {}",
-                    start_pos
-                );
-
-                None
-            } else {
-                self.advance(b'`');
-
-                if identifier.is_empty() {
-                    error!(
-                        "error[L0002]: Atypical identifier does not contain at least one character.\n--> {}",
-                        start_pos
-                    );
-
-                    None
-                } else if let Ok(identifier) = str::from_utf8(identifier) {
-                    Some(Token::Identifier(Identifier::new(
-                        identifier,
-                        IdentifierKind::Atypical,
-                    )))
-                } else {
-                    error!(
-                        "error[L0003]: Identifier contains some invalid utf-8 bytes\n--> {}",
-                        start_pos
-                    );
-
-                    None
-                }
-            }
         } else {
-            let code = self.read_while(|b| b.is_ascii_alphanumeric() || b == b'_' || !b.is_ascii());
-            assert!(!code.is_empty(), "Identifier should not be empty");
+            error!(
+                "error[L0001]: Unterminated atypical identifier. Did you forget the '`' terminator?\n--> {}",
+                start_pos
+            );
 
-            // Check for a word-like operator
-            if let Some(operator) = match code {
-                b"as" => Some(Operator::As),
-                b"bitcast_as" => Some(Operator::BitcastAs),
-                b"sizeof" => Some(Operator::Sizeof),
-                b"alignof" => Some(Operator::Alignof),
-                b"typeof" => Some(Operator::Typeof),
-                _ => None,
-            } {
-                Some(Token::Operator(operator))
-            } else if let Some(keyword) = match code {
-                b"let" => Some(Keyword::Let),
-                b"var" => Some(Keyword::Var),
-                b"fn" => Some(Keyword::Fn),
-                b"enum" => Some(Keyword::Enum),
-                b"struct" => Some(Keyword::Struct),
-                b"class" => Some(Keyword::Class),
-                b"union" => Some(Keyword::Union),
-                b"interface" => Some(Keyword::Contract),
-                b"trait" => Some(Keyword::Trait),
-                b"type" => Some(Keyword::Type),
-                b"opaque" => Some(Keyword::Opaque),
-                b"scope" => Some(Keyword::Scope),
-                b"import" => Some(Keyword::Import),
-                b"unit_test" => Some(Keyword::UnitTest),
+            return None;
+        }
 
-                b"safe" => Some(Keyword::Safe),
-                b"unsafe" => Some(Keyword::Unsafe),
-                b"promise" => Some(Keyword::Promise),
-                b"static" => Some(Keyword::Static),
-                b"mut" => Some(Keyword::Mut),
-                b"const" => Some(Keyword::Const),
-                b"pub" => Some(Keyword::Pub),
-                b"sec" => Some(Keyword::Sec),
-                b"pro" => Some(Keyword::Pro),
+        if identifier.is_empty() {
+            error!(
+                "error[L0002]: Atypical identifier does not contain at least one character.\n--> {}",
+                start_pos
+            );
 
-                b"if" => Some(Keyword::If),
-                b"else" => Some(Keyword::Else),
-                b"for" => Some(Keyword::For),
-                b"while" => Some(Keyword::While),
-                b"do" => Some(Keyword::Do),
-                b"switch" => Some(Keyword::Switch),
-                b"break" => Some(Keyword::Break),
-                b"continue" => Some(Keyword::Continue),
-                b"ret" => Some(Keyword::Return),
-                b"foreach" => Some(Keyword::Foreach),
-                b"try" => Some(Keyword::Try),
-                b"catch" => Some(Keyword::Catch),
-                b"throw" => Some(Keyword::Throw),
-                b"async" => Some(Keyword::Async),
-                b"await" => Some(Keyword::Await),
-                b"asm" => Some(Keyword::Asm),
+            None
+        } else if let Ok(identifier) = str::from_utf8(identifier) {
+            Some(Token::Identifier(Identifier::new(
+                identifier,
+                IdentifierKind::Atypical,
+            )))
+        } else {
+            error!(
+                "error[L0003]: Identifier contains some invalid utf-8 bytes\n--> {}",
+                start_pos
+            );
 
-                b"null" => Some(Keyword::Null),
-                b"true" => Some(Keyword::True),
-                b"false" => Some(Keyword::False),
+            None
+        }
+    }
 
-                _ => None,
-            } {
-                Some(Token::Keyword(keyword))
-            } else if let Ok(identifier) = str::from_utf8(code) {
-                Some(Token::Identifier(Identifier::new(
-                    identifier,
-                    IdentifierKind::Typical,
-                )))
-            } else {
-                error!(
-                    "error[L0003]: Identifier contains some invalid utf-8 bytes\n--> {}",
-                    start_pos
-                );
+    fn parse_typical_identifier(&mut self) -> Option<Token<'src>> {
+        let start_pos = DebugPosition::new(self.read_pos.clone(), self.filename);
 
-                None
-            }
+        let code = self.read_while(|b| b.is_ascii_alphanumeric() || b == b'_' || !b.is_ascii());
+        assert!(!code.is_empty(), "Identifier should not be empty");
+
+        // Check for a word-like operator
+        if let Some(operator) = match code {
+            b"as" => Some(Operator::As),
+            b"bitcast_as" => Some(Operator::BitcastAs),
+            b"sizeof" => Some(Operator::Sizeof),
+            b"alignof" => Some(Operator::Alignof),
+            b"typeof" => Some(Operator::Typeof),
+            _ => None,
+        } {
+            Some(Token::Operator(operator))
+        } else if let Some(keyword) = match code {
+            b"let" => Some(Keyword::Let),
+            b"var" => Some(Keyword::Var),
+            b"fn" => Some(Keyword::Fn),
+            b"enum" => Some(Keyword::Enum),
+            b"struct" => Some(Keyword::Struct),
+            b"class" => Some(Keyword::Class),
+            b"union" => Some(Keyword::Union),
+            b"interface" => Some(Keyword::Contract),
+            b"trait" => Some(Keyword::Trait),
+            b"type" => Some(Keyword::Type),
+            b"opaque" => Some(Keyword::Opaque),
+            b"scope" => Some(Keyword::Scope),
+            b"import" => Some(Keyword::Import),
+            b"unit_test" => Some(Keyword::UnitTest),
+
+            b"safe" => Some(Keyword::Safe),
+            b"unsafe" => Some(Keyword::Unsafe),
+            b"promise" => Some(Keyword::Promise),
+            b"static" => Some(Keyword::Static),
+            b"mut" => Some(Keyword::Mut),
+            b"const" => Some(Keyword::Const),
+            b"pub" => Some(Keyword::Pub),
+            b"sec" => Some(Keyword::Sec),
+            b"pro" => Some(Keyword::Pro),
+
+            b"if" => Some(Keyword::If),
+            b"else" => Some(Keyword::Else),
+            b"for" => Some(Keyword::For),
+            b"while" => Some(Keyword::While),
+            b"do" => Some(Keyword::Do),
+            b"switch" => Some(Keyword::Switch),
+            b"break" => Some(Keyword::Break),
+            b"continue" => Some(Keyword::Continue),
+            b"ret" => Some(Keyword::Return),
+            b"foreach" => Some(Keyword::Foreach),
+            b"try" => Some(Keyword::Try),
+            b"catch" => Some(Keyword::Catch),
+            b"throw" => Some(Keyword::Throw),
+            b"async" => Some(Keyword::Async),
+            b"await" => Some(Keyword::Await),
+            b"asm" => Some(Keyword::Asm),
+
+            b"null" => Some(Keyword::Null),
+            b"true" => Some(Keyword::True),
+            b"false" => Some(Keyword::False),
+
+            _ => None,
+        } {
+            Some(Token::Keyword(keyword))
+        } else if let Ok(identifier) = str::from_utf8(code) {
+            Some(Token::Identifier(Identifier::new(
+                identifier,
+                IdentifierKind::Typical,
+            )))
+        } else {
+            error!(
+                "error[L0003]: Identifier contains some invalid utf-8 bytes\n--> {}",
+                start_pos
+            );
+
+            None
         }
     }
 
@@ -744,8 +747,9 @@ impl<'src> Lexer<'src> {
 
     fn parse_comment(&mut self) -> Option<Token<'src>> {
         let start_pos = DebugPosition::new(self.read_pos.clone(), self.filename);
+        let comment_bytes = self.read_while(|b| b != b'\n');
 
-        if let Ok(comment) = str::from_utf8(self.read_while(|b| b != b'\n')) {
+        if let Ok(comment) = str::from_utf8(&comment_bytes) {
             Some(Token::Comment(Comment::new(
                 comment,
                 CommentKind::SingleLine,
@@ -769,18 +773,16 @@ impl<'src> Lexer<'src> {
         let start_pos = DebugPosition::new(self.read_pos.clone(), self.filename);
 
         let b = self.peek_byte()?;
-        self.advance(b);
-
-        Some(Token::Punctuation(match b {
-            b'(' => Punctuation::LeftParenthesis,
-            b')' => Punctuation::RightParenthesis,
-            b'[' => Punctuation::LeftBracket,
-            b']' => Punctuation::RightBracket,
-            b'{' => Punctuation::LeftBrace,
-            b'}' => Punctuation::RightBrace,
-            b',' => Punctuation::Comma,
-            b';' => Punctuation::Semicolon,
-            b'@' => Punctuation::AtSign,
+        let punctor = match b {
+            b'(' => Some(Punctuation::LeftParenthesis),
+            b')' => Some(Punctuation::RightParenthesis),
+            b'[' => Some(Punctuation::LeftBracket),
+            b']' => Some(Punctuation::RightBracket),
+            b'{' => Some(Punctuation::LeftBrace),
+            b'}' => Some(Punctuation::RightBrace),
+            b',' => Some(Punctuation::Comma),
+            b';' => Some(Punctuation::Semicolon),
+            b'@' => Some(Punctuation::AtSign),
 
             _ => {
                 error!(
@@ -788,9 +790,17 @@ impl<'src> Lexer<'src> {
                     b as char, start_pos
                 );
 
-                return None;
+                None
             }
-        }))
+        };
+
+        if let Some(punctor) = punctor {
+            self.advance(b);
+
+            Some(Token::Punctuation(punctor))
+        } else {
+            None
+        }
     }
 
     fn parse_operator(&mut self) -> Option<Token<'src>> {
@@ -895,8 +905,9 @@ impl<'src> Lexer<'src> {
         let token = match self.peek_byte() {
             None => Some(Token::Eof),
             Some(b) => match b {
-                b if b.is_ascii_alphabetic() || b == b'_' || b == b'`' || !b.is_ascii() => {
-                    self.parse_identifier()
+                b'`' => self.parse_atypical_identifier(),
+                b if b.is_ascii_alphabetic() || b == b'_' || !b.is_ascii() => {
+                    self.parse_typical_identifier()
                 }
                 b if b.is_ascii_digit() => self.parse_number(),
                 b'"' => self.parse_string(),
