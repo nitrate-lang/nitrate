@@ -13,13 +13,13 @@ pub enum IdentifierKind {
 }
 
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
-pub struct Identifier<'src> {
-    name: &'src str,
+pub struct Identifier<'a> {
+    name: &'a str,
     kind: IdentifierKind,
 }
 
-impl<'src> Identifier<'src> {
-    pub fn new(name: &'src str, kind: IdentifierKind) -> Self {
+impl<'a> Identifier<'a> {
+    pub fn new(name: &'a str, kind: IdentifierKind) -> Self {
         Identifier { name, kind }
     }
 
@@ -41,14 +41,14 @@ pub enum IntegerKind {
 }
 
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
-pub struct Integer<'src> {
+pub struct Integer<'a> {
     value: u128,
-    origin: &'src str,
+    origin: &'a str,
     kind: IntegerKind,
 }
 
-impl<'src> Integer<'src> {
-    pub fn new(value: u128, origin: &'src str, kind: IntegerKind) -> Self {
+impl<'a> Integer<'a> {
+    pub fn new(value: u128, origin: &'a str, kind: IntegerKind) -> Self {
         Integer {
             value,
             origin,
@@ -70,13 +70,13 @@ impl<'src> Integer<'src> {
 }
 
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
-pub struct Float<'src> {
+pub struct Float<'a> {
     value: f64,
-    origin: &'src str,
+    origin: &'a str,
 }
 
-impl<'src> Float<'src> {
-    pub fn new(value: f64, origin: &'src str) -> Self {
+impl<'a> Float<'a> {
+    pub fn new(value: f64, origin: &'a str) -> Self {
         Float { value, origin }
     }
 
@@ -248,13 +248,13 @@ pub enum CommentKind {
 }
 
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
-pub struct Comment<'src> {
-    text: &'src str,
+pub struct Comment<'a> {
+    text: &'a str,
     kind: CommentKind,
 }
 
-impl<'src> Comment<'src> {
-    pub fn new(text: &'src str, kind: CommentKind) -> Self {
+impl<'a> Comment<'a> {
+    pub fn new(text: &'a str, kind: CommentKind) -> Self {
         Comment { text, kind }
     }
 
@@ -268,16 +268,16 @@ impl<'src> Comment<'src> {
 }
 
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
-pub enum Token<'src> {
-    Identifier(Identifier<'src>),
-    Integer(Integer<'src>),
-    Float(Float<'src>),
+pub enum Token<'a> {
+    Identifier(Identifier<'a>),
+    Integer(Integer<'a>),
+    Float(Float<'a>),
     Keyword(Keyword),
-    String(&'src str),
+    String(&'a str),
     Char(char),
     Punctuation(Punctuation),
     Operator(Operator),
-    Comment(Comment<'src>),
+    Comment(Comment<'a>),
     Eof,
     Illegal,
 }
@@ -312,14 +312,14 @@ impl SourcePosition {
 }
 
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
-pub struct SourceRange<'src> {
+pub struct SourceRange<'a> {
     start: SourcePosition,
     end: SourcePosition,
-    filename: &'src str,
+    filename: &'a str,
 }
 
-impl<'src> SourceRange<'src> {
-    pub fn new(start: SourcePosition, end: SourcePosition, filename: &'src str) -> Self {
+impl<'a> SourceRange<'a> {
+    pub fn new(start: SourcePosition, end: SourcePosition, filename: &'a str) -> Self {
         SourceRange {
             start,
             end,
@@ -327,7 +327,7 @@ impl<'src> SourceRange<'src> {
         }
     }
 
-    pub fn eof(pos: SourcePosition, filename: &'src str) -> Self {
+    pub fn eof(pos: SourcePosition, filename: &'a str) -> Self {
         SourceRange {
             start: pos.clone(),
             end: pos.clone(),
@@ -351,7 +351,7 @@ impl<'src> SourceRange<'src> {
         &self.end
     }
 
-    pub fn filename(&self) -> &'src str {
+    pub fn filename(&self) -> &'a str {
         self.filename
     }
 
@@ -360,14 +360,14 @@ impl<'src> SourceRange<'src> {
     }
 }
 
-pub struct LexerPosition<'src> {
-    filename: &'src str,
+pub struct LexerPosition<'a> {
+    filename: &'a str,
     line: u32,
     column: u32,
 }
 
-impl<'src> LexerPosition<'src> {
-    pub fn new(pos: SourcePosition, filename: &'src str) -> Self {
+impl<'a> LexerPosition<'a> {
+    pub fn new(pos: SourcePosition, filename: &'a str) -> Self {
         LexerPosition {
             filename,
             line: pos.line(),
@@ -383,31 +383,31 @@ impl std::fmt::Display for LexerPosition<'_> {
 }
 
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
-pub struct AnnotatedToken<'src> {
-    token: Token<'src>,
-    range: SourceRange<'src>,
+pub struct AnnotatedToken<'a> {
+    token: Token<'a>,
+    range: SourceRange<'a>,
 }
 
-impl<'src> AnnotatedToken<'src> {
-    pub fn new(token: Token<'src>, range: SourceRange<'src>) -> Self {
+impl<'a> AnnotatedToken<'a> {
+    pub fn new(token: Token<'a>, range: SourceRange<'a>) -> Self {
         AnnotatedToken { token, range }
     }
 
-    pub fn token(&self) -> &Token<'src> {
+    pub fn token(&self) -> &Token {
         &self.token
     }
 
-    pub fn range(&self) -> &SourceRange<'src> {
+    pub fn range(&self) -> &SourceRange {
         &self.range
     }
 }
 
 #[derive(Debug, Clone)]
-pub struct Lexer<'src> {
-    source: &'src [u8],
-    filename: &'src str,
+pub struct Lexer<'a> {
+    source: &'a [u8],
+    filename: &'a str,
     read_pos: SourcePosition,
-    current: Option<AnnotatedToken<'src>>,
+    current: Option<AnnotatedToken<'a>>,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -415,8 +415,8 @@ pub enum LexerConstructionError {
     SourceTooBig,
 }
 
-impl<'src> Lexer<'src> {
-    pub fn new(src: &'src [u8], filename: &'src str) -> Result<Self, LexerConstructionError> {
+impl<'a> Lexer<'a> {
+    pub fn new(src: &'a [u8], filename: &'a str) -> Result<Self, LexerConstructionError> {
         if src.len() > MAX_SOURCE_SIZE {
             Err(LexerConstructionError::SourceTooBig)
         } else {
@@ -437,18 +437,18 @@ impl<'src> Lexer<'src> {
         }
     }
 
-    pub fn next_token(&mut self) -> AnnotatedToken<'src> {
+    pub fn next_token(&mut self) -> AnnotatedToken<'a> {
         self.current.take().unwrap_or_else(|| self.get_next_token())
     }
 
-    pub fn peek_token(&mut self) -> AnnotatedToken<'src> {
+    pub fn peek_token(&mut self) -> AnnotatedToken<'a> {
         let token = self.current.take().unwrap_or_else(|| self.get_next_token());
         self.current = Some(token.clone());
 
         token
     }
 
-    pub fn current_position(&self) -> LexerPosition<'src> {
+    pub fn current_position(&self) -> LexerPosition<'a> {
         LexerPosition::new(self.read_pos.clone(), self.filename)
     }
 
@@ -476,7 +476,7 @@ impl<'src> Lexer<'src> {
             .ok_or(())
     }
 
-    fn read_while<F>(&mut self, mut condition: F) -> &'src [u8]
+    fn read_while<F>(&mut self, mut condition: F) -> &'a [u8]
     where
         F: FnMut(u8) -> bool,
     {
@@ -495,7 +495,7 @@ impl<'src> Lexer<'src> {
         &self.source[start_offset..end_offset]
     }
 
-    fn parse_atypical_identifier(&mut self) -> Result<Token<'src>, ()> {
+    fn parse_atypical_identifier(&mut self) -> Result<Token<'a>, ()> {
         let start_pos = self.current_position();
 
         assert!(self.peek_byte()? == b'`');
@@ -529,7 +529,7 @@ impl<'src> Lexer<'src> {
         }
     }
 
-    fn parse_typical_identifier(&mut self) -> Result<Token<'src>, ()> {
+    fn parse_typical_identifier(&mut self) -> Result<Token<'a>, ()> {
         let start_pos = self.current_position();
 
         let name = self.read_while(|b| b.is_ascii_alphanumeric() || b == b'_' || !b.is_ascii());
@@ -609,17 +609,17 @@ impl<'src> Lexer<'src> {
         }
     }
 
-    fn parse_number(&mut self) -> Result<Token<'src>, ()> {
+    fn parse_number(&mut self) -> Result<Token<'a>, ()> {
         // TODO: Implement read of number token
         Err(())
     }
 
-    fn parse_string(&mut self) -> Result<Token<'src>, ()> {
+    fn parse_string(&mut self) -> Result<Token<'a>, ()> {
         // TODO: Implement read of string token
         Err(())
     }
 
-    fn parse_char(&mut self) -> Result<Token<'src>, ()> {
+    fn parse_char(&mut self) -> Result<Token<'a>, ()> {
         // TODO: Audit code
 
         let start_pos = self.current_position();
@@ -748,7 +748,7 @@ impl<'src> Lexer<'src> {
         }
     }
 
-    fn parse_comment(&mut self) -> Result<Token<'src>, ()> {
+    fn parse_comment(&mut self) -> Result<Token<'a>, ()> {
         let start_pos = self.current_position();
         let mut comment_bytes = self.read_while(|b| b != b'\n');
 
@@ -772,7 +772,7 @@ impl<'src> Lexer<'src> {
         }
     }
 
-    fn parse_punctuation(&mut self) -> Result<Token<'src>, ()> {
+    fn parse_punctuation(&mut self) -> Result<Token<'a>, ()> {
         /*
          * The colon punctuator is not handled here, as it is ambiguous with the scope
          * operator "::". See `parse_operator` for the handling the colon punctuator.
@@ -807,7 +807,7 @@ impl<'src> Lexer<'src> {
         Ok(Token::Punctuation(punctuator))
     }
 
-    fn parse_operator(&mut self) -> Result<Token<'src>, ()> {
+    fn parse_operator(&mut self) -> Result<Token<'a>, ()> {
         /*
          * The word-like operators are not handled here, as they are ambiguous with identifiers.
          * They are handled in `parse_typical_identifier`.
@@ -902,7 +902,7 @@ impl<'src> Lexer<'src> {
         }))
     }
 
-    fn get_next_token(&mut self) -> AnnotatedToken<'src> {
+    fn get_next_token(&mut self) -> AnnotatedToken<'a> {
         // TODO: Audit code
 
         self.read_while(|b| b.is_ascii_whitespace());
