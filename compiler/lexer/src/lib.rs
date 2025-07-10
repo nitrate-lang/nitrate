@@ -514,14 +514,7 @@ impl<'src> Lexer<'src> {
             return Err(());
         }
 
-        if identifier.is_empty() {
-            error!(
-                "error[L0002]: Atypical identifier does not contain at least one character.\n--> {}",
-                start_pos
-            );
-
-            Err(())
-        } else if let Ok(identifier) = str::from_utf8(identifier) {
+        if let Ok(identifier) = str::from_utf8(identifier) {
             Ok(Token::Identifier(Identifier::new(
                 identifier,
                 IdentifierKind::Atypical,
@@ -537,6 +530,8 @@ impl<'src> Lexer<'src> {
     }
 
     fn parse_typical_identifier(&mut self) -> Result<Token<'src>, ()> {
+        // TODO: Audit code
+
         let start_pos = self.current_position();
 
         let code = self.read_while(|b| b.is_ascii_alphanumeric() || b == b'_' || !b.is_ascii());
@@ -628,6 +623,8 @@ impl<'src> Lexer<'src> {
     }
 
     fn parse_char(&mut self) -> Result<Token<'src>, ()> {
+        // TODO: Audit code
+
         let start_pos = self.current_position();
 
         assert!(self.peek_byte()? == b'\'');
@@ -755,6 +752,8 @@ impl<'src> Lexer<'src> {
     }
 
     fn parse_comment(&mut self) -> Result<Token<'src>, ()> {
+        // TODO: Audit code
+
         let start_pos = self.current_position();
         let comment_bytes = self.read_while(|b| b != b'\n');
 
@@ -774,6 +773,8 @@ impl<'src> Lexer<'src> {
     }
 
     fn parse_punctuation(&mut self) -> Result<Token<'src>, ()> {
+        // TODO: Audit code
+
         /*
          * The colon punctuator is not handled here, as it is ambiguous with the scope
          * operator "::". See `parse_operator` for the handling the colon punctuator.
@@ -811,6 +812,8 @@ impl<'src> Lexer<'src> {
     }
 
     fn parse_operator(&mut self) -> Result<Token<'src>, ()> {
+        // TODO: Audit code
+
         /*
          * The word-like operators are not handled here, as they are ambiguous with identifiers.
          * They are handled in `parse_identifier`.
@@ -905,6 +908,8 @@ impl<'src> Lexer<'src> {
     }
 
     fn get_next_token(&mut self) -> AnnotatedToken<'src> {
+        // TODO: Audit code
+
         self.read_while(|b| b.is_ascii_whitespace());
 
         let start_pos = self.read_pos.clone();
