@@ -808,22 +808,21 @@ impl<'src> Lexer<'src> {
     }
 
     fn parse_operator(&mut self) -> Result<Token<'src>, ()> {
-        // TODO: Audit code
-
         /*
          * The word-like operators are not handled here, as they are ambiguous with identifiers.
-         * They are handled in `parse_identifier`.
+         * They are handled in `parse_typical_identifier`.
          */
 
         let start_pos = self.current_position();
 
         let code = self.read_while(|b| {
             match b {
-                b if b.is_ascii_whitespace() => false,           // whitespace
-                b if b.is_ascii_digit() => false,                // number
-                b'_' | b'`' if b.is_ascii_alphabetic() => false, // identifier
-                b'"' | b'\'' => false,                           // string and char literals
-                b'#' => false,                                   // comments
+                b if b.is_ascii_whitespace() => false, // whitespace
+                b if b.is_ascii_digit() => false,      // number
+                b'`' => false,                         // atypical identifier
+                b if b.is_ascii_alphabetic() || b == b'_' => false, // typical identifier
+                b'"' | b'\'' => false,                 // string and char literals
+                b'#' => false,                         // comments
                 b'(' | b')' | b'[' | b']' | b'{' | b'}' | b',' | b';' | b'@' => false, // punctuation
 
                 _ => true, // operators and colon punctuator
