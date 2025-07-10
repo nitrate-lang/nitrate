@@ -488,7 +488,7 @@ impl<'src> Lexer<'src> {
         &self.source[start_offset..end_offset]
     }
 
-    fn read_identifier_token(&mut self) -> Option<Token<'src>> {
+    fn parse_identifier(&mut self) -> Option<Token<'src>> {
         let start_pos = DebugPosition::new(self.read_pos.clone(), self.filename);
 
         if self.peek_byte()? == b'`' {
@@ -607,17 +607,17 @@ impl<'src> Lexer<'src> {
         }
     }
 
-    fn read_number_token(&mut self) -> Option<Token<'src>> {
+    fn parse_number(&mut self) -> Option<Token<'src>> {
         // TODO: Implement read of number token
         None
     }
 
-    fn read_string_token(&mut self) -> Option<Token<'src>> {
+    fn parse_string(&mut self) -> Option<Token<'src>> {
         // TODO: Implement read of string token
         None
     }
 
-    fn read_char_token(&mut self) -> Option<Token<'src>> {
+    fn parse_char(&mut self) -> Option<Token<'src>> {
         let start_pos = DebugPosition::new(self.read_pos.clone(), self.filename);
 
         assert!(self.peek_byte()? == b'\'');
@@ -742,7 +742,7 @@ impl<'src> Lexer<'src> {
         }
     }
 
-    fn read_comment_token(&mut self) -> Option<Token<'src>> {
+    fn parse_comment(&mut self) -> Option<Token<'src>> {
         let start_pos = DebugPosition::new(self.read_pos.clone(), self.filename);
 
         if let Ok(comment) = str::from_utf8(self.read_while(|b| b != b'\n')) {
@@ -760,10 +760,10 @@ impl<'src> Lexer<'src> {
         }
     }
 
-    fn read_punctuation_token(&mut self) -> Option<Token<'src>> {
+    fn parse_punctuation(&mut self) -> Option<Token<'src>> {
         /*
          * The colon punctuator is not handled here, as it is ambiguous with the scope
-         * operator "::". See `read_operator_token` for the handling the colon punctuator.
+         * operator "::". See `parse_operator` for the handling the colon punctuator.
          */
 
         let start_pos = DebugPosition::new(self.read_pos.clone(), self.filename);
@@ -793,10 +793,10 @@ impl<'src> Lexer<'src> {
         }))
     }
 
-    fn read_operator_token(&mut self) -> Option<Token<'src>> {
+    fn parse_operator(&mut self) -> Option<Token<'src>> {
         /*
          * The word-like operators are not handled here, as they are ambiguous with identifiers.
-         * They are handled in `read_identifier_token`.
+         * They are handled in `parse_identifier`.
          */
 
         let start_pos = DebugPosition::new(self.read_pos.clone(), self.filename);
@@ -896,17 +896,17 @@ impl<'src> Lexer<'src> {
             None => Some(Token::Eof),
             Some(b) => match b {
                 b if b.is_ascii_alphabetic() || b == b'_' || b == b'`' || !b.is_ascii() => {
-                    self.read_identifier_token()
+                    self.parse_identifier()
                 }
-                b if b.is_ascii_digit() => self.read_number_token(),
-                b'"' => self.read_string_token(),
-                b'\'' => self.read_char_token(),
+                b if b.is_ascii_digit() => self.parse_number(),
+                b'"' => self.parse_string(),
+                b'\'' => self.parse_char(),
                 b'(' | b')' | b'[' | b']' | b'{' | b'}' | b',' | b';' | b'@' => {
-                    self.read_punctuation_token()
+                    self.parse_punctuation()
                 }
-                b'#' => self.read_comment_token(),
+                b'#' => self.parse_comment(),
 
-                _ => self.read_operator_token(),
+                _ => self.parse_operator(),
             },
         }
         .unwrap_or(Token::Illegal);
