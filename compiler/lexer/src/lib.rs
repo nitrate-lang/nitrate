@@ -749,10 +749,13 @@ impl<'src> Lexer<'src> {
     }
 
     fn parse_comment(&mut self) -> Result<Token<'src>, ()> {
-        // TODO: Audit code
-
         let start_pos = self.current_position();
-        let comment_bytes = self.read_while(|b| b != b'\n');
+        let mut comment_bytes = self.read_while(|b| b != b'\n');
+
+        // CRLF is dumb
+        if comment_bytes.ends_with(b"\r") {
+            comment_bytes = &comment_bytes[..comment_bytes.len() - 1];
+        }
 
         if let Ok(comment) = str::from_utf8(&comment_bytes) {
             Ok(Token::Comment(Comment::new(
