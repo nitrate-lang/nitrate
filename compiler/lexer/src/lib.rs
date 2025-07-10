@@ -360,15 +360,15 @@ impl<'src> SourceRange<'src> {
     }
 }
 
-struct DebugPosition<'src> {
+pub struct LexerPosition<'src> {
     filename: &'src str,
     line: u32,
     column: u32,
 }
 
-impl<'src> DebugPosition<'src> {
-    fn new(pos: SourcePosition, filename: &'src str) -> Self {
-        DebugPosition {
+impl<'src> LexerPosition<'src> {
+    pub fn new(pos: SourcePosition, filename: &'src str) -> Self {
+        LexerPosition {
             filename,
             line: pos.line(),
             column: pos.column(),
@@ -376,7 +376,7 @@ impl<'src> DebugPosition<'src> {
     }
 }
 
-impl std::fmt::Display for DebugPosition<'_> {
+impl std::fmt::Display for LexerPosition<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}:{}:{}", self.filename, self.line + 1, self.column + 1)
     }
@@ -448,6 +448,10 @@ impl<'src> Lexer<'src> {
         token
     }
 
+    pub fn current_position(&self) -> LexerPosition<'src> {
+        LexerPosition::new(self.read_pos.clone(), self.filename)
+    }
+
     fn advance(&mut self, b: u8) {
         self.read_pos.offset += 1;
 
@@ -489,7 +493,7 @@ impl<'src> Lexer<'src> {
     }
 
     fn parse_atypical_identifier(&mut self) -> Option<Token<'src>> {
-        let start_pos = DebugPosition::new(self.read_pos.clone(), self.filename);
+        let start_pos = self.current_position();
 
         assert!(self.peek_byte()? == b'`');
         self.advance(b'`');
@@ -530,7 +534,7 @@ impl<'src> Lexer<'src> {
     }
 
     fn parse_typical_identifier(&mut self) -> Option<Token<'src>> {
-        let start_pos = DebugPosition::new(self.read_pos.clone(), self.filename);
+        let start_pos = self.current_position();
 
         let code = self.read_while(|b| b.is_ascii_alphanumeric() || b == b'_' || !b.is_ascii());
         assert!(!code.is_empty(), "Identifier should not be empty");
@@ -621,7 +625,7 @@ impl<'src> Lexer<'src> {
     }
 
     fn parse_char(&mut self) -> Option<Token<'src>> {
-        let start_pos = DebugPosition::new(self.read_pos.clone(), self.filename);
+        let start_pos = self.current_position();
 
         assert!(self.peek_byte()? == b'\'');
         self.advance(b'\'');
@@ -746,7 +750,7 @@ impl<'src> Lexer<'src> {
     }
 
     fn parse_comment(&mut self) -> Option<Token<'src>> {
-        let start_pos = DebugPosition::new(self.read_pos.clone(), self.filename);
+        let start_pos = self.current_position();
         let comment_bytes = self.read_while(|b| b != b'\n');
 
         if let Ok(comment) = str::from_utf8(&comment_bytes) {
@@ -770,7 +774,7 @@ impl<'src> Lexer<'src> {
          * operator "::". See `parse_operator` for the handling the colon punctuator.
          */
 
-        let start_pos = DebugPosition::new(self.read_pos.clone(), self.filename);
+        let start_pos = self.current_position();
 
         let b = self.peek_byte()?;
         let punctor = match b {
@@ -809,7 +813,7 @@ impl<'src> Lexer<'src> {
          * They are handled in `parse_identifier`.
          */
 
-        let start_pos = DebugPosition::new(self.read_pos.clone(), self.filename);
+        let start_pos = self.current_position();
 
         let code = self.read_while(|b| {
             match b {
