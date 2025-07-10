@@ -469,8 +469,11 @@ impl<'src> Lexer<'src> {
         }
     }
 
-    fn peek_byte(&self) -> Option<u8> {
-        self.source.get(self.read_pos.offset() as usize).copied()
+    fn peek_byte(&self) -> Result<u8, ()> {
+        self.source
+            .get(self.read_pos.offset() as usize)
+            .copied()
+            .ok_or(())
     }
 
     fn read_while<F>(&mut self, mut condition: F) -> &'src [u8]
@@ -492,7 +495,7 @@ impl<'src> Lexer<'src> {
         &self.source[start_offset..end_offset]
     }
 
-    fn parse_atypical_identifier(&mut self) -> Option<Token<'src>> {
+    fn parse_atypical_identifier(&mut self) -> Result<Token<'src>, ()> {
         let start_pos = self.current_position();
 
         assert!(self.peek_byte()? == b'`');
@@ -508,7 +511,7 @@ impl<'src> Lexer<'src> {
                 start_pos
             );
 
-            return None;
+            return Err(());
         }
 
         if identifier.is_empty() {
@@ -517,9 +520,9 @@ impl<'src> Lexer<'src> {
                 start_pos
             );
 
-            None
+            Err(())
         } else if let Ok(identifier) = str::from_utf8(identifier) {
-            Some(Token::Identifier(Identifier::new(
+            Ok(Token::Identifier(Identifier::new(
                 identifier,
                 IdentifierKind::Atypical,
             )))
@@ -529,78 +532,78 @@ impl<'src> Lexer<'src> {
                 start_pos
             );
 
-            None
+            Err(())
         }
     }
 
-    fn parse_typical_identifier(&mut self) -> Option<Token<'src>> {
+    fn parse_typical_identifier(&mut self) -> Result<Token<'src>, ()> {
         let start_pos = self.current_position();
 
         let code = self.read_while(|b| b.is_ascii_alphanumeric() || b == b'_' || !b.is_ascii());
         assert!(!code.is_empty(), "Identifier should not be empty");
 
         // Check for a word-like operator
-        if let Some(operator) = match code {
-            b"as" => Some(Operator::As),
-            b"bitcast_as" => Some(Operator::BitcastAs),
-            b"sizeof" => Some(Operator::Sizeof),
-            b"alignof" => Some(Operator::Alignof),
-            b"typeof" => Some(Operator::Typeof),
-            _ => None,
+        if let Ok(operator) = match code {
+            b"as" => Ok(Operator::As),
+            b"bitcast_as" => Ok(Operator::BitcastAs),
+            b"sizeof" => Ok(Operator::Sizeof),
+            b"alignof" => Ok(Operator::Alignof),
+            b"typeof" => Ok(Operator::Typeof),
+            _ => Err(()),
         } {
-            Some(Token::Operator(operator))
-        } else if let Some(keyword) = match code {
-            b"let" => Some(Keyword::Let),
-            b"var" => Some(Keyword::Var),
-            b"fn" => Some(Keyword::Fn),
-            b"enum" => Some(Keyword::Enum),
-            b"struct" => Some(Keyword::Struct),
-            b"class" => Some(Keyword::Class),
-            b"union" => Some(Keyword::Union),
-            b"interface" => Some(Keyword::Contract),
-            b"trait" => Some(Keyword::Trait),
-            b"type" => Some(Keyword::Type),
-            b"opaque" => Some(Keyword::Opaque),
-            b"scope" => Some(Keyword::Scope),
-            b"import" => Some(Keyword::Import),
-            b"unit_test" => Some(Keyword::UnitTest),
+            Ok(Token::Operator(operator))
+        } else if let Ok(keyword) = match code {
+            b"let" => Ok(Keyword::Let),
+            b"var" => Ok(Keyword::Var),
+            b"fn" => Ok(Keyword::Fn),
+            b"enum" => Ok(Keyword::Enum),
+            b"struct" => Ok(Keyword::Struct),
+            b"class" => Ok(Keyword::Class),
+            b"union" => Ok(Keyword::Union),
+            b"interface" => Ok(Keyword::Contract),
+            b"trait" => Ok(Keyword::Trait),
+            b"type" => Ok(Keyword::Type),
+            b"opaque" => Ok(Keyword::Opaque),
+            b"scope" => Ok(Keyword::Scope),
+            b"import" => Ok(Keyword::Import),
+            b"unit_test" => Ok(Keyword::UnitTest),
 
-            b"safe" => Some(Keyword::Safe),
-            b"unsafe" => Some(Keyword::Unsafe),
-            b"promise" => Some(Keyword::Promise),
-            b"static" => Some(Keyword::Static),
-            b"mut" => Some(Keyword::Mut),
-            b"const" => Some(Keyword::Const),
-            b"pub" => Some(Keyword::Pub),
-            b"sec" => Some(Keyword::Sec),
-            b"pro" => Some(Keyword::Pro),
+            b"safe" => Ok(Keyword::Safe),
+            b"unsafe" => Ok(Keyword::Unsafe),
+            b"promise" => Ok(Keyword::Promise),
+            b"static" => Ok(Keyword::Static),
+            b"mut" => Ok(Keyword::Mut),
+            b"const" => Ok(Keyword::Const),
+            b"pub" => Ok(Keyword::Pub),
+            b"sec" => Ok(Keyword::Sec),
+            b"pro" => Ok(Keyword::Pro),
 
-            b"if" => Some(Keyword::If),
-            b"else" => Some(Keyword::Else),
-            b"for" => Some(Keyword::For),
-            b"while" => Some(Keyword::While),
-            b"do" => Some(Keyword::Do),
-            b"switch" => Some(Keyword::Switch),
-            b"break" => Some(Keyword::Break),
-            b"continue" => Some(Keyword::Continue),
-            b"ret" => Some(Keyword::Return),
-            b"foreach" => Some(Keyword::Foreach),
-            b"try" => Some(Keyword::Try),
-            b"catch" => Some(Keyword::Catch),
-            b"throw" => Some(Keyword::Throw),
-            b"async" => Some(Keyword::Async),
-            b"await" => Some(Keyword::Await),
-            b"asm" => Some(Keyword::Asm),
+            b"if" => Ok(Keyword::If),
+            b"else" => Ok(Keyword::Else),
+            b"for" => Ok(Keyword::For),
+            b"while" => Ok(Keyword::While),
+            b"do" => Ok(Keyword::Do),
+            b"switch" => Ok(Keyword::Switch),
+            b"break" => Ok(Keyword::Break),
+            b"continue" => Ok(Keyword::Continue),
+            b"ret" => Ok(Keyword::Return),
+            b"foreach" => Ok(Keyword::Foreach),
+            b"try" => Ok(Keyword::Try),
+            b"catch" => Ok(Keyword::Catch),
+            b"throw" => Ok(Keyword::Throw),
+            b"async" => Ok(Keyword::Async),
+            b"await" => Ok(Keyword::Await),
+            b"asm" => Ok(Keyword::Asm),
 
-            b"null" => Some(Keyword::Null),
-            b"true" => Some(Keyword::True),
-            b"false" => Some(Keyword::False),
+            b"null" => Ok(Keyword::Null),
+            b"true" => Ok(Keyword::True),
+            b"false" => Ok(Keyword::False),
 
-            _ => None,
+            _ => Err(()),
         } {
-            Some(Token::Keyword(keyword))
+            Ok(Token::Keyword(keyword))
         } else if let Ok(identifier) = str::from_utf8(code) {
-            Some(Token::Identifier(Identifier::new(
+            Ok(Token::Identifier(Identifier::new(
                 identifier,
                 IdentifierKind::Typical,
             )))
@@ -610,21 +613,21 @@ impl<'src> Lexer<'src> {
                 start_pos
             );
 
-            None
+            Err(())
         }
     }
 
-    fn parse_number(&mut self) -> Option<Token<'src>> {
+    fn parse_number(&mut self) -> Result<Token<'src>, ()> {
         // TODO: Implement read of number token
-        None
+        Err(())
     }
 
-    fn parse_string(&mut self) -> Option<Token<'src>> {
+    fn parse_string(&mut self) -> Result<Token<'src>, ()> {
         // TODO: Implement read of string token
-        None
+        Err(())
     }
 
-    fn parse_char(&mut self) -> Option<Token<'src>> {
+    fn parse_char(&mut self) -> Result<Token<'src>, ()> {
         let start_pos = self.current_position();
 
         assert!(self.peek_byte()? == b'\'');
@@ -641,7 +644,7 @@ impl<'src> Lexer<'src> {
                     start_pos
                 );
 
-                return None;
+                return Err(());
             }
 
             match self.peek_byte()? {
@@ -696,7 +699,7 @@ impl<'src> Lexer<'src> {
                                 b as char, start_pos
                             );
 
-                            return None;
+                            return Err(());
                         }
                     }
                 }
@@ -712,7 +715,7 @@ impl<'src> Lexer<'src> {
                             start_pos
                         );
 
-                        return None;
+                        return Err(());
                     }
 
                     let chars_buffer = chars_buffer.expect("Invalid UTF-8");
@@ -722,11 +725,13 @@ impl<'src> Lexer<'src> {
                             start_pos
                         );
 
-                        return None;
+                        return Err(());
                     }
 
                     let mut chars_iter = chars_buffer.chars();
-                    let character = chars_iter.next()?;
+                    let character = chars_iter
+                        .next()
+                        .expect("Character literal should not be empty");
 
                     if chars_iter.next().is_some() {
                         error!(
@@ -735,10 +740,10 @@ impl<'src> Lexer<'src> {
                             start_pos
                         );
 
-                        return None;
+                        return Err(());
                     }
 
-                    return Some(Token::Char(character));
+                    return Ok(Token::Char(character));
                 }
 
                 b => {
@@ -749,12 +754,12 @@ impl<'src> Lexer<'src> {
         }
     }
 
-    fn parse_comment(&mut self) -> Option<Token<'src>> {
+    fn parse_comment(&mut self) -> Result<Token<'src>, ()> {
         let start_pos = self.current_position();
         let comment_bytes = self.read_while(|b| b != b'\n');
 
         if let Ok(comment) = str::from_utf8(&comment_bytes) {
-            Some(Token::Comment(Comment::new(
+            Ok(Token::Comment(Comment::new(
                 comment,
                 CommentKind::SingleLine,
             )))
@@ -764,11 +769,11 @@ impl<'src> Lexer<'src> {
                 start_pos
             );
 
-            None
+            Err(())
         }
     }
 
-    fn parse_punctuation(&mut self) -> Option<Token<'src>> {
+    fn parse_punctuation(&mut self) -> Result<Token<'src>, ()> {
         /*
          * The colon punctuator is not handled here, as it is ambiguous with the scope
          * operator "::". See `parse_operator` for the handling the colon punctuator.
@@ -777,16 +782,16 @@ impl<'src> Lexer<'src> {
         let start_pos = self.current_position();
 
         let b = self.peek_byte()?;
-        let punctor = match b {
-            b'(' => Some(Punctuation::LeftParenthesis),
-            b')' => Some(Punctuation::RightParenthesis),
-            b'[' => Some(Punctuation::LeftBracket),
-            b']' => Some(Punctuation::RightBracket),
-            b'{' => Some(Punctuation::LeftBrace),
-            b'}' => Some(Punctuation::RightBrace),
-            b',' => Some(Punctuation::Comma),
-            b';' => Some(Punctuation::Semicolon),
-            b'@' => Some(Punctuation::AtSign),
+        if let Ok(punctor) = match b {
+            b'(' => Ok(Punctuation::LeftParenthesis),
+            b')' => Ok(Punctuation::RightParenthesis),
+            b'[' => Ok(Punctuation::LeftBracket),
+            b']' => Ok(Punctuation::RightBracket),
+            b'{' => Ok(Punctuation::LeftBrace),
+            b'}' => Ok(Punctuation::RightBrace),
+            b',' => Ok(Punctuation::Comma),
+            b';' => Ok(Punctuation::Semicolon),
+            b'@' => Ok(Punctuation::AtSign),
 
             _ => {
                 error!(
@@ -794,20 +799,18 @@ impl<'src> Lexer<'src> {
                     b as char, start_pos
                 );
 
-                None
+                Err(())
             }
-        };
-
-        if let Some(punctor) = punctor {
+        } {
             self.advance(b);
 
-            Some(Token::Punctuation(punctor))
+            Ok(Token::Punctuation(punctor))
         } else {
-            None
+            Err(())
         }
     }
 
-    fn parse_operator(&mut self) -> Option<Token<'src>> {
+    fn parse_operator(&mut self) -> Result<Token<'src>, ()> {
         /*
          * The word-like operators are not handled here, as they are ambiguous with identifiers.
          * They are handled in `parse_identifier`.
@@ -830,10 +833,10 @@ impl<'src> Lexer<'src> {
 
         // Handle the colon punctuator because it is ambiguous with the scope operator "::".
         if code == b":" {
-            return Some(Token::Punctuation(Punctuation::Colon));
+            return Ok(Token::Punctuation(Punctuation::Colon));
         }
 
-        Some(Token::Operator(match code {
+        Ok(Token::Operator(match code {
             b"+" => Operator::Add,
             b"-" => Operator::Sub,
             b"*" => Operator::Mul,
@@ -896,7 +899,7 @@ impl<'src> Lexer<'src> {
                     start_pos
                 );
 
-                return None;
+                return Err(());
             }
         }))
     }
@@ -907,8 +910,8 @@ impl<'src> Lexer<'src> {
         let start_pos = self.read_pos.clone();
 
         let token = match self.peek_byte() {
-            None => Some(Token::Eof),
-            Some(b) => match b {
+            Err(()) => Ok(Token::Eof),
+            Ok(b) => match b {
                 b'`' => self.parse_atypical_identifier(),
                 b if b.is_ascii_alphabetic() || b == b'_' || !b.is_ascii() => {
                     self.parse_typical_identifier()
