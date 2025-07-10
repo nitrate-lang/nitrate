@@ -773,42 +773,38 @@ impl<'src> Lexer<'src> {
     }
 
     fn parse_punctuation(&mut self) -> Result<Token<'src>, ()> {
-        // TODO: Audit code
-
         /*
          * The colon punctuator is not handled here, as it is ambiguous with the scope
          * operator "::". See `parse_operator` for the handling the colon punctuator.
          */
 
         let start_pos = self.current_position();
+        let p = self.peek_byte()?;
 
-        let b = self.peek_byte()?;
-        if let Ok(punctor) = match b {
-            b'(' => Ok(Punctuation::LeftParenthesis),
-            b')' => Ok(Punctuation::RightParenthesis),
-            b'[' => Ok(Punctuation::LeftBracket),
-            b']' => Ok(Punctuation::RightBracket),
-            b'{' => Ok(Punctuation::LeftBrace),
-            b'}' => Ok(Punctuation::RightBrace),
-            b',' => Ok(Punctuation::Comma),
-            b';' => Ok(Punctuation::Semicolon),
-            b'@' => Ok(Punctuation::AtSign),
+        let punctuator = match p {
+            b'(' => Punctuation::LeftParenthesis,
+            b')' => Punctuation::RightParenthesis,
+            b'[' => Punctuation::LeftBracket,
+            b']' => Punctuation::RightBracket,
+            b'{' => Punctuation::LeftBrace,
+            b'}' => Punctuation::RightBrace,
+            b',' => Punctuation::Comma,
+            b';' => Punctuation::Semicolon,
+            b'@' => Punctuation::AtSign,
 
             _ => {
                 error!(
                     "error[L0030]: The token `{}` is not valid. Did you mistype an operator or forget some whitespace?\n--> {}",
-                    b as char, start_pos
+                    p as char, start_pos
                 );
 
-                Err(())
+                return Err(());
             }
-        } {
-            self.advance(b);
+        };
 
-            Ok(Token::Punctuation(punctor))
-        } else {
-            Err(())
-        }
+        self.advance(p);
+
+        Ok(Token::Punctuation(punctuator))
     }
 
     fn parse_operator(&mut self) -> Result<Token<'src>, ()> {
