@@ -757,7 +757,7 @@ impl<'src> Lexer<'src> {
             comment_bytes = &comment_bytes[..comment_bytes.len() - 1];
         }
 
-        if let Ok(comment) = str::from_utf8(&comment_bytes) {
+        if let Ok(comment) = str::from_utf8(comment_bytes) {
             Ok(Token::Comment(Comment::new(
                 comment,
                 CommentKind::SingleLine,
