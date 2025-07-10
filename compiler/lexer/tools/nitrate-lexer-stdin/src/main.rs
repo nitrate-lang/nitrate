@@ -9,9 +9,9 @@ fn main() {
         .init();
 
     let filename = "stdin";
-    let mut source_code = String::new();
+    let mut source_code = Vec::new();
 
-    if let Err(e) = std::io::stdin().read_to_string(&mut source_code) {
+    if let Err(e) = std::io::stdin().read_to_end(&mut source_code) {
         eprintln!("Error reading from stdin: {}", e);
         return;
     }

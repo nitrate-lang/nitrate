@@ -404,7 +404,7 @@ impl<'src> AnnotatedToken<'src> {
 
 #[derive(Debug, Clone)]
 pub struct Lexer<'src> {
-    src: &'src str,
+    source: &'src [u8],
     filename: &'src str,
     read_pos: SourcePosition,
     current: Option<AnnotatedToken<'src>>,
@@ -416,12 +416,12 @@ pub enum LexerConstructionError {
 }
 
 impl<'src> Lexer<'src> {
-    pub fn new(src: &'src str, filename: &'src str) -> Result<Self, LexerConstructionError> {
+    pub fn new(src: &'src [u8], filename: &'src str) -> Result<Self, LexerConstructionError> {
         if src.len() > MAX_SOURCE_SIZE {
             Err(LexerConstructionError::SourceTooBig)
         } else {
             Ok(Lexer {
-                src,
+                source: src,
                 filename,
                 read_pos: SourcePosition::new(0, 0, 0),
                 current: None,
@@ -466,10 +466,7 @@ impl<'src> Lexer<'src> {
     }
 
     fn peek_byte(&self) -> Option<u8> {
-        self.src
-            .as_bytes()
-            .get(self.read_pos.offset() as usize)
-            .copied()
+        self.source.get(self.read_pos.offset() as usize).copied()
     }
 
     fn read_while<F>(&mut self, mut condition: F) -> &'src [u8]
@@ -479,7 +476,7 @@ impl<'src> Lexer<'src> {
         let start_offset = self.read_pos.offset() as usize;
         let mut end_offset = start_offset;
 
-        while let Some(b) = self.src.as_bytes().get(end_offset) {
+        while let Some(b) = self.source.get(end_offset) {
             if condition(*b) {
                 self.advance(*b);
                 end_offset += 1;
@@ -488,7 +485,7 @@ impl<'src> Lexer<'src> {
             }
         }
 
-        &self.src.as_bytes()[start_offset..end_offset]
+        &self.source[start_offset..end_offset]
     }
 
     fn read_identifier_token(&mut self) -> Option<Token<'src>> {
