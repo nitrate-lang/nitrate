@@ -92,20 +92,20 @@ impl<'src> Float<'src> {
 #[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
 pub enum Keyword {
     /* Storage */
-    Let,      /* 'let' */
-    Var,      /* 'var' */
-    Fn,       /* 'fn' */
-    Enum,     /* 'enum' */
-    Struct,   /* 'struct' */
-    Class,    /* 'class' */
-    Union,    /* 'union' */
-    Contract, /* 'interface' */
-    Trait,    /* 'trait' */
-    Type,     /* 'type' */
-    Opaque,   /* 'opaque' */
-    Scope,    /* 'scope' */
-    Import,   /* 'import' */
-    UnitTest, /* 'unit_test' */
+    Let,       /* 'let' */
+    Var,       /* 'var' */
+    Fn,        /* 'fn' */
+    Enum,      /* 'enum' */
+    Struct,    /* 'struct' */
+    Class,     /* 'class' */
+    Union,     /* 'union' */
+    Interface, /* 'interface' */
+    Trait,     /* 'trait' */
+    Type,      /* 'type' */
+    Opaque,    /* 'opaque' */
+    Scope,     /* 'scope' */
+    Import,    /* 'import' */
+    UnitTest,  /* 'unit_test' */
 
     /* Modifiers */
     Safe,    /* 'safe' */
@@ -127,7 +127,7 @@ pub enum Keyword {
     Switch,   /* 'switch' */
     Break,    /* 'break' */
     Continue, /* 'continue' */
-    Return,   /* 'ret' */
+    Ret,      /* 'ret' */
     Foreach,  /* 'foreach' */
     Try,      /* 'try' */
     Catch,    /* 'catch' */
@@ -530,74 +530,71 @@ impl<'src> Lexer<'src> {
     }
 
     fn parse_typical_identifier(&mut self) -> Result<Token<'src>, ()> {
-        // TODO: Audit code
-
         let start_pos = self.current_position();
 
-        let code = self.read_while(|b| b.is_ascii_alphanumeric() || b == b'_' || !b.is_ascii());
-        assert!(!code.is_empty(), "Identifier should not be empty");
+        let name = self.read_while(|b| b.is_ascii_alphanumeric() || b == b'_' || !b.is_ascii());
+        assert!(!name.is_empty(), "Identifier should not be empty");
 
-        // Check for a word-like operator
-        if let Ok(operator) = match code {
-            b"as" => Ok(Operator::As),
-            b"bitcast_as" => Ok(Operator::BitcastAs),
-            b"sizeof" => Ok(Operator::Sizeof),
-            b"alignof" => Ok(Operator::Alignof),
-            b"typeof" => Ok(Operator::Typeof),
-            _ => Err(()),
+        if let Some(word_like_operator) = match name {
+            b"as" => Some(Operator::As),
+            b"bitcast_as" => Some(Operator::BitcastAs),
+            b"sizeof" => Some(Operator::Sizeof),
+            b"alignof" => Some(Operator::Alignof),
+            b"typeof" => Some(Operator::Typeof),
+            _ => None,
         } {
-            Ok(Token::Operator(operator))
-        } else if let Ok(keyword) = match code {
-            b"let" => Ok(Keyword::Let),
-            b"var" => Ok(Keyword::Var),
-            b"fn" => Ok(Keyword::Fn),
-            b"enum" => Ok(Keyword::Enum),
-            b"struct" => Ok(Keyword::Struct),
-            b"class" => Ok(Keyword::Class),
-            b"union" => Ok(Keyword::Union),
-            b"interface" => Ok(Keyword::Contract),
-            b"trait" => Ok(Keyword::Trait),
-            b"type" => Ok(Keyword::Type),
-            b"opaque" => Ok(Keyword::Opaque),
-            b"scope" => Ok(Keyword::Scope),
-            b"import" => Ok(Keyword::Import),
-            b"unit_test" => Ok(Keyword::UnitTest),
+            Ok(Token::Operator(word_like_operator))
+        } else if let Some(keyword) = match name {
+            b"let" => Some(Keyword::Let),
+            b"var" => Some(Keyword::Var),
+            b"fn" => Some(Keyword::Fn),
+            b"enum" => Some(Keyword::Enum),
+            b"struct" => Some(Keyword::Struct),
+            b"class" => Some(Keyword::Class),
+            b"union" => Some(Keyword::Union),
+            b"interface" => Some(Keyword::Interface),
+            b"trait" => Some(Keyword::Trait),
+            b"type" => Some(Keyword::Type),
+            b"opaque" => Some(Keyword::Opaque),
+            b"scope" => Some(Keyword::Scope),
+            b"import" => Some(Keyword::Import),
+            b"unit_test" => Some(Keyword::UnitTest),
 
-            b"safe" => Ok(Keyword::Safe),
-            b"unsafe" => Ok(Keyword::Unsafe),
-            b"promise" => Ok(Keyword::Promise),
-            b"static" => Ok(Keyword::Static),
-            b"mut" => Ok(Keyword::Mut),
-            b"const" => Ok(Keyword::Const),
-            b"pub" => Ok(Keyword::Pub),
-            b"sec" => Ok(Keyword::Sec),
-            b"pro" => Ok(Keyword::Pro),
+            b"safe" => Some(Keyword::Safe),
+            b"unsafe" => Some(Keyword::Unsafe),
+            b"promise" => Some(Keyword::Promise),
+            b"static" => Some(Keyword::Static),
+            b"mut" => Some(Keyword::Mut),
+            b"const" => Some(Keyword::Const),
+            b"pub" => Some(Keyword::Pub),
+            b"sec" => Some(Keyword::Sec),
+            b"pro" => Some(Keyword::Pro),
 
-            b"if" => Ok(Keyword::If),
-            b"else" => Ok(Keyword::Else),
-            b"for" => Ok(Keyword::For),
-            b"while" => Ok(Keyword::While),
-            b"do" => Ok(Keyword::Do),
-            b"switch" => Ok(Keyword::Switch),
-            b"break" => Ok(Keyword::Break),
-            b"continue" => Ok(Keyword::Continue),
-            b"ret" => Ok(Keyword::Return),
-            b"foreach" => Ok(Keyword::Foreach),
-            b"try" => Ok(Keyword::Try),
-            b"catch" => Ok(Keyword::Catch),
-            b"throw" => Ok(Keyword::Throw),
-            b"async" => Ok(Keyword::Async),
-            b"await" => Ok(Keyword::Await),
-            b"asm" => Ok(Keyword::Asm),
+            b"if" => Some(Keyword::If),
+            b"else" => Some(Keyword::Else),
+            b"for" => Some(Keyword::For),
+            b"while" => Some(Keyword::While),
+            b"do" => Some(Keyword::Do),
+            b"switch" => Some(Keyword::Switch),
+            b"break" => Some(Keyword::Break),
+            b"continue" => Some(Keyword::Continue),
+            b"ret" => Some(Keyword::Ret),
+            b"foreach" => Some(Keyword::Foreach),
+            b"try" => Some(Keyword::Try),
+            b"catch" => Some(Keyword::Catch),
+            b"throw" => Some(Keyword::Throw),
+            b"async" => Some(Keyword::Async),
+            b"await" => Some(Keyword::Await),
+            b"asm" => Some(Keyword::Asm),
 
-            b"null" => Ok(Keyword::Null),
-            b"true" => Ok(Keyword::True),
-            b"false" => Ok(Keyword::False),
+            b"null" => Some(Keyword::Null),
+            b"true" => Some(Keyword::True),
+            b"false" => Some(Keyword::False),
 
-            _ => Err(()),
+            _ => None,
         } {
             Ok(Token::Keyword(keyword))
-        } else if let Ok(identifier) = str::from_utf8(code) {
+        } else if let Ok(identifier) = str::from_utf8(name) {
             Ok(Token::Identifier(Identifier::new(
                 identifier,
                 IdentifierKind::Typical,
