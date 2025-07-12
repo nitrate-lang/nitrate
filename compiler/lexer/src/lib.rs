@@ -408,16 +408,21 @@ impl<'a> Lexer<'a> {
         if self.current.is_some() {
             self.current = None;
         } else {
-            self.get_next_token(); // Discard the token
+            self.parse_next_token(); // Discard the token
         }
     }
 
     pub fn next_token(&mut self) -> AnnotatedToken<'a> {
-        self.current.take().unwrap_or_else(|| self.get_next_token())
+        self.current
+            .take()
+            .unwrap_or_else(|| self.parse_next_token())
     }
 
     pub fn peek_token(&mut self) -> AnnotatedToken<'a> {
-        let token = self.current.take().unwrap_or_else(|| self.get_next_token());
+        let token = self
+            .current
+            .take()
+            .unwrap_or_else(|| self.parse_next_token());
         self.current = Some(token.clone());
 
         token
@@ -877,18 +882,16 @@ impl<'a> Lexer<'a> {
         }))
     }
 
-    fn get_next_token(&mut self) -> AnnotatedToken<'a> {
-        // TODO: Audit code
-
+    fn parse_next_token(&mut self) -> AnnotatedToken<'a> {
         self.read_while(|b| b.is_ascii_whitespace());
 
-        let start_pos = self.read_pos.clone();
+        let start_pos = self.current_position();
 
         let token = match self.peek_byte() {
             Err(()) => Ok(Token::Eof),
             Ok(b) => match b {
                 b'`' => self.parse_atypical_identifier(),
-                b if b.is_ascii_alphabetic() || b == b'_' || !b.is_ascii() => {
+                b if b.is_ascii_alphabetic() || b == b'_' || !b.is_ascii() /* Support UTF-8 identifiers */ => {
                     self.parse_typical_identifier()
                 }
                 b if b.is_ascii_digit() => self.parse_number(),
@@ -904,7 +907,7 @@ impl<'a> Lexer<'a> {
         }
         .unwrap_or(Token::Illegal);
 
-        let end_pos = self.read_pos.clone();
+        let end_pos = self.current_position();
 
         AnnotatedToken::new(token, start_pos, end_pos)
     }
