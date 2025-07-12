@@ -478,7 +478,7 @@ impl<'a> Lexer<'a> {
     fn parse_atypical_identifier(&mut self) -> Result<Token<'a>, ()> {
         let start_pos = self.current_position();
 
-        assert!(self.peek_byte()? == b'`');
+        assert!(self.peek_byte().unwrap() == b'`');
         self.advance(b'`');
 
         let identifier = self.read_while(|b| b != b'`');
@@ -599,12 +599,71 @@ impl<'a> Lexer<'a> {
         Err(())
     }
 
-    fn parse_char(&mut self) -> Result<Token<'a>, ()> {
-        // TODO: Audit code
+    fn parse_char_escape(&mut self, start_pos: &SourcePosition) -> Result<u8, ()> {
+        match self.peek_byte() {
+            Ok(b'0') => {
+                self.advance(b'0');
+                Ok(b'\0')
+            }
+            Ok(b'a') => {
+                self.advance(b'a');
+                Ok(b'\x07')
+            }
+            Ok(b'b') => {
+                self.advance(b'b');
+                Ok(b'\x08')
+            }
+            Ok(b't') => {
+                self.advance(b't');
+                Ok(b'\t')
+            }
+            Ok(b'n') => {
+                self.advance(b'n');
+                Ok(b'\n')
+            }
+            Ok(b'v') => {
+                self.advance(b'v');
+                Ok(b'\x0b')
+            }
+            Ok(b'f') => {
+                self.advance(b'f');
+                Ok(b'\x0c')
+            }
+            Ok(b'r') => {
+                self.advance(b'r');
+                Ok(b'\r')
+            }
+            Ok(b'\\') => {
+                self.advance(b'\\');
+                Ok(b'\\')
+            }
+            Ok(b'\'') => {
+                self.advance(b'\'');
+                Ok(b'\'')
+            }
+            Ok(b) => {
+                error!(
+                    "error[L0013]: Invalid escape sequence '\\{}' in character literal\n--> {}",
+                    b as char, start_pos
+                );
 
+                Err(())
+            }
+
+            Err(()) => {
+                error!(
+                    "error[L0015]: Unexpected end of input while parsing character literal\n--> {}",
+                    start_pos
+                );
+                Err(())
+            }
+        }
+    }
+
+    fn parse_char(&mut self) -> Result<Token<'a>, ()> {
         let start_pos = self.current_position();
 
-        assert!(self.peek_byte()? == b'\'');
+        assert!(self.peek_byte().unwrap() == b'\'');
         self.advance(b'\'');
 
         // Lets use more than 4 bytes for debugability of misuses of single quotes.
@@ -621,68 +680,47 @@ impl<'a> Lexer<'a> {
                 return Err(());
             }
 
-            match self.peek_byte()? {
-                b'\\' => {
+            match self.peek_byte() {
+                Ok(b'\\') => {
                     self.advance(b'\\');
 
-                    match self.peek_byte()? {
-                        b'0' => {
-                            char_buffer.push(b'\0');
-                            self.advance(b'0');
-                        }
-                        b'a' => {
-                            char_buffer.push(b'\x07');
-                            self.advance(b'a');
-                        }
-                        b'b' => {
-                            char_buffer.push(b'\x08');
-                            self.advance(b'b');
-                        }
-                        b't' => {
-                            char_buffer.push(b'\t');
-                            self.advance(b't');
-                        }
-                        b'n' => {
-                            char_buffer.push(b'\n');
-                            self.advance(b'n');
-                        }
-                        b'v' => {
-                            char_buffer.push(b'\x0b');
-                            self.advance(b'v');
-                        }
-                        b'f' => {
-                            char_buffer.push(b'\x0c');
-                            self.advance(b'f');
-                        }
-                        b'r' => {
-                            char_buffer.push(b'\r');
-                            self.advance(b'r');
-                        }
-                        b'\\' => {
-                            char_buffer.push(b'\\');
-                            self.advance(b'\\');
-                        }
-                        b'\'' => {
-                            char_buffer.push(b'\'');
-                            self.advance(b'\'');
-                        }
+                    if let Ok(escaped_char) = self.parse_char_escape(&start_pos) {
+                        char_buffer.push(escaped_char);
+                    } else {
+                        return Err(());
+                    }
+                }
 
-                        b => {
+                Ok(b'\'') => {
+                    self.advance(b'\'');
+
+                    if let Ok(chars_buffer) = str::from_utf8(&char_buffer) {
+                        if chars_buffer.is_empty() {
                             error!(
-                                "error[L0013]: Invalid escape sequence '\\{}' in character literal\n--> {}",
-                                b as char, start_pos
+                                "error[L0011]: Character literal is empty. Did you forget to specify the character?\n--> {}",
+                                start_pos
                             );
 
                             return Err(());
                         }
-                    }
-                }
 
-                b'\'' => {
-                    self.advance(b'\'');
+                        let mut chars_iter = chars_buffer.chars();
+                        let character = chars_iter
+                            .next()
+                            .expect("Character literal should not be empty");
 
-                    let chars_buffer = str::from_utf8(&char_buffer);
-                    if chars_buffer.is_err() {
+                        if chars_iter.next().is_some() {
+                            error!(
+                                "error[L0010]: Character literal '{}' contains more than one character. Did you mean to use a string literal?\n--> {}",
+                                str::from_utf8(&char_buffer).unwrap_or("<invalid utf-8>"),
+                                start_pos
+                            );
+
+                            return Err(());
+                        }
+
+                        return Ok(Token::Char(character));
+                    } else {
                         error!(
                             "error[L0012]: Character literal '{:?}' contains some invalid utf-8 bytes\n--> {}",
                             char_buffer.as_slice() as &[u8],
@@ -691,38 +729,20 @@ impl<'a> Lexer<'a> {
 
                         return Err(());
                     }
-
-                    let chars_buffer = chars_buffer.expect("Invalid UTF-8");
-                    if chars_buffer.is_empty() {
-                        error!(
-                            "error[L0011]: Character literal is empty. Did you forget to specify the character?\n--> {}",
-                            start_pos
-                        );
-
-                        return Err(());
-                    }
-
-                    let mut chars_iter = chars_buffer.chars();
-                    let character = chars_iter
-                        .next()
-                        .expect("Character literal should not be empty");
-
-                    if chars_iter.next().is_some() {
-                        error!(
-                            "error[L0010]: Character literal '{}' contains more than one character. Did you mean to use a string literal?\n--> {}",
-                            str::from_utf8(&char_buffer).unwrap_or("<invalid utf-8>"),
-                            start_pos
-                        );
-
-                        return Err(());
-                    }
-
-                    return Ok(Token::Char(character));
                 }
 
-                b => {
+                Ok(b) => {
                     char_buffer.push(b);
                     self.advance(b);
+                }
+
+                Err(()) => {
+                    error!(
+                        "error[L0015]: Unexpected end of input while parsing character literal\n--> {}",
+                        start_pos
+                    );
+
+                    return Err(());
                 }
             }
         }
