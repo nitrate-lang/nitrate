@@ -1,5 +1,6 @@
 use log::error;
 use stackvector::StackVec;
+use string_interner::{StringInterner, backend::StringBackend};
 
 // Must not be increased beyond u32::MAX, as the lexer/compiler pipeline
 // assumes that offsets are representable as u32 values. However, it is
@@ -268,12 +269,13 @@ impl<'a> Comment<'a> {
 }
 
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
-pub enum Token<'a> {
+pub enum Token<'a, 'b> {
     Identifier(Identifier<'a>),
     Integer(Integer<'a>),
     Float(Float<'a>),
     Keyword(Keyword),
-    String(&'a str),
+    String(&'b str),
+    BinaryString(&'b [u8]),
     Char(char),
     Punctuation(Punctuation),
     Operator(Operator),
@@ -324,8 +326,8 @@ impl std::fmt::Display for SourcePosition<'_> {
 }
 
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
-pub struct AnnotatedToken<'a> {
-    token: Token<'a>,
+pub struct AnnotatedToken<'a, 'b> {
+    token: Token<'a, 'b>,
 
     start_line: u32,
     start_column: u32,
@@ -338,8 +340,8 @@ pub struct AnnotatedToken<'a> {
     filename: &'a str,
 }
 
-impl<'a> AnnotatedToken<'a> {
-    pub fn new(token: Token<'a>, start: SourcePosition<'a>, end: SourcePosition<'a>) -> Self {
+impl<'a, 'b> AnnotatedToken<'a, 'b> {
+    pub fn new(token: Token<'a, 'b>, start: SourcePosition<'a>, end: SourcePosition<'a>) -> Self {
         AnnotatedToken {
             token,
             start_line: start.line(),
@@ -379,11 +381,40 @@ impl<'a> AnnotatedToken<'a> {
     }
 }
 
+#[derive(Debug)]
+pub struct StringStorage<'a> {
+    source: Option<&'a [u8]>,
+    strings: StringInterner<StringBackend>,
+}
+
+impl<'a> StringStorage<'a> {
+    pub fn new() -> Self {
+        StringStorage {
+            source: None,
+            strings: StringInterner::new(),
+        }
+    }
+
+    fn get_or_intern_str(&self, _str: Vec<u8>) -> &str {
+        ""
+        // TODO: Implement methods for storing and retrieving strings
+    }
+
+    fn get_or_intern_bytes(&self, _bytes: Vec<u8>) -> &[u8] {
+        b""
+        // TODO: Implement methods for storing and retrieving strings
+    }
+}
+
 #[derive(Debug, Clone)]
-pub struct Lexer<'a> {
+pub struct Lexer<'a, 'b>
+where
+    'a: 'b,
+{
     source: &'a [u8],
     read_pos: SourcePosition<'a>,
-    current: Option<AnnotatedToken<'a>>,
+    current: Option<AnnotatedToken<'a, 'b>>,
+    storage: &'b StringStorage<'a>,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -391,15 +422,27 @@ pub enum LexerConstructionError {
     SourceTooBig,
 }
 
-impl<'a> Lexer<'a> {
-    pub fn new(src: &'a [u8], filename: &'a str) -> Result<Self, LexerConstructionError> {
+enum StringEscape {
+    Char(char),
+    Byte(u8),
+}
+
+impl<'a, 'b> Lexer<'a, 'b> {
+    pub fn new(
+        src: &'a [u8],
+        filename: &'a str,
+        storage: &'b mut StringStorage<'a>,
+    ) -> Result<Self, LexerConstructionError> {
         if src.len() > MAX_SOURCE_SIZE {
             Err(LexerConstructionError::SourceTooBig)
         } else {
+            storage.source = Some(src);
+
             Ok(Lexer {
                 source: src,
                 read_pos: SourcePosition::new(0, 0, 0, filename),
                 current: None,
+                storage,
             })
         }
     }
@@ -412,13 +455,13 @@ impl<'a> Lexer<'a> {
         }
     }
 
-    pub fn next_token(&mut self) -> AnnotatedToken<'a> {
+    pub fn next_token(&mut self) -> AnnotatedToken<'a, 'b> {
         self.current
             .take()
             .unwrap_or_else(|| self.parse_next_token())
     }
 
-    pub fn peek_token(&mut self) -> AnnotatedToken<'a> {
+    pub fn peek_token(&mut self) -> AnnotatedToken<'a, 'b> {
         let token = self
             .current
             .take()
@@ -475,7 +518,7 @@ impl<'a> Lexer<'a> {
         &self.source[start_offset..end_offset]
     }
 
-    fn parse_atypical_identifier(&mut self) -> Result<Token<'a>, ()> {
+    fn parse_atypical_identifier(&mut self) -> Result<Token<'a, 'b>, ()> {
         let start_pos = self.current_position();
 
         assert!(self.peek_byte().unwrap() == b'`');
@@ -509,7 +552,7 @@ impl<'a> Lexer<'a> {
         }
     }
 
-    fn parse_typical_identifier(&mut self) -> Result<Token<'a>, ()> {
+    fn parse_typical_identifier(&mut self) -> Result<Token<'a, 'b>, ()> {
         let start_pos = self.current_position();
 
         let name = self.read_while(|b| b.is_ascii_alphanumeric() || b == b'_' || !b.is_ascii());
@@ -589,14 +632,137 @@ impl<'a> Lexer<'a> {
         }
     }
 
-    fn parse_number(&mut self) -> Result<Token<'a>, ()> {
+    fn parse_number(&mut self) -> Result<Token<'a, 'b>, ()> {
         // TODO: Implement read of number token
         Err(())
     }
 
-    fn parse_string(&mut self) -> Result<Token<'a>, ()> {
+    fn parse_string_escape(&mut self, start_pos: &SourcePosition) -> Result<StringEscape, ()> {
+        // TODO: Implement read of string escape sequence
+
+        match self.peek_byte() {
+            Ok(b'0') => {
+                self.advance(b'0');
+                Ok(StringEscape::Byte(b'\0'))
+            }
+            Ok(b'a') => {
+                self.advance(b'a');
+                Ok(StringEscape::Byte(b'\x07'))
+            }
+            Ok(b'b') => {
+                self.advance(b'b');
+                Ok(StringEscape::Byte(b'\x08'))
+            }
+            Ok(b't') => {
+                self.advance(b't');
+                Ok(StringEscape::Byte(b'\t'))
+            }
+            Ok(b'n') => {
+                self.advance(b'n');
+                Ok(StringEscape::Byte(b'\n'))
+            }
+            Ok(b'v') => {
+                self.advance(b'v');
+                Ok(StringEscape::Byte(b'\x0b'))
+            }
+            Ok(b'f') => {
+                self.advance(b'f');
+                Ok(StringEscape::Byte(b'\x0c'))
+            }
+            Ok(b'r') => {
+                self.advance(b'r');
+                Ok(StringEscape::Byte(b'\r'))
+            }
+            Ok(b'\\') => {
+                self.advance(b'\\');
+                Ok(StringEscape::Byte(b'\\'))
+            }
+            Ok(b'\'') => {
+                self.advance(b'\'');
+                Ok(StringEscape::Byte(b'\''))
+            }
+            Ok(b) => {
+                error!(
+                    "error[L0043]: Invalid escape sequence '\\{}' in string literal\n--> {}",
+                    b as char, start_pos
+                );
+
+                Err(())
+            }
+
+            Err(()) => {
+                error!(
+                    "error[L0045]: Unexpected end of input while parsing string literal\n--> {}",
+                    start_pos
+                );
+                Err(())
+            }
+        }
+    }
+
+    fn parse_string(&mut self) -> Result<Token<'a, 'b>, ()> {
         // TODO: Implement read of string token
-        Err(())
+
+        let start_pos = self.current_position();
+
+        assert!(self.peek_byte().unwrap() == b'"');
+        self.advance(b'"');
+
+        // FIXME: Implement zero-copy string parsing
+        let mut string_buffer = Vec::new();
+
+        loop {
+            match self.peek_byte() {
+                Ok(b'\\') => {
+                    self.advance(b'\\');
+
+                    if let Ok(escaped_char) = self.parse_string_escape(&start_pos) {
+                        match escaped_char {
+                            StringEscape::Char(c) => {
+                                let utf8_repr = c
+                                    .to_string()
+                                    .as_bytes()
+                                    .get(0..4)
+                                    .expect("Character escape should fit in 4 bytes")
+                                    .to_owned();
+
+                                string_buffer.extend_from_slice(&utf8_repr);
+                            }
+                            StringEscape::Byte(b) => {
+                                string_buffer.push(b);
+                            }
+                        }
+                    } else {
+                        return Err(());
+                    }
+                }
+
+                Ok(b'"') => {
+                    self.advance(b'"');
+
+                    if std::str::from_utf8(&string_buffer).is_ok() {
+                        let intern = self.storage.get_or_intern_str(string_buffer);
+                        return Ok(Token::String(intern));
+                    } else {
+                        let intern = self.storage.get_or_intern_bytes(string_buffer);
+                        return Ok(Token::BinaryString(intern));
+                    }
+                }
+
+                Ok(b) => {
+                    string_buffer.push(b);
+                    self.advance(b);
+                }
+
+                Err(()) => {
+                    error!(
+                        "error[L0045]: Unexpected end of input while parsing string literal\n--> {}",
+                        start_pos
+                    );
+                    return Err(());
+                }
+            }
+        }
     }
 
     fn parse_char_escape(&mut self, start_pos: &SourcePosition) -> Result<u8, ()> {
@@ -660,7 +826,7 @@ impl<'a> Lexer<'a> {
         }
     }
 
-    fn parse_char(&mut self) -> Result<Token<'a>, ()> {
+    fn parse_char(&mut self) -> Result<Token<'a, 'b>, ()> {
         let start_pos = self.current_position();
 
         assert!(self.peek_byte().unwrap() == b'\'');
@@ -748,7 +914,7 @@ impl<'a> Lexer<'a> {
         }
     }
 
-    fn parse_comment(&mut self) -> Result<Token<'a>, ()> {
+    fn parse_comment(&mut self) -> Result<Token<'a, 'b>, ()> {
         let start_pos = self.current_position();
         let mut comment_bytes = self.read_while(|b| b != b'\n');
 
@@ -772,7 +938,7 @@ impl<'a> Lexer<'a> {
         }
     }
 
-    fn parse_punctuation(&mut self) -> Result<Token<'a>, ()> {
+    fn parse_punctuation(&mut self) -> Result<Token<'a, 'b>, ()> {
         /*
          * The colon punctuator is not handled here, as it is ambiguous with the scope
          * operator "::". See `parse_operator` for the handling the colon punctuator.
@@ -807,7 +973,7 @@ impl<'a> Lexer<'a> {
         Ok(Token::Punctuation(punctuator))
     }
 
-    fn parse_operator(&mut self) -> Result<Token<'a>, ()> {
+    fn parse_operator(&mut self) -> Result<Token<'a, 'b>, ()> {
         /*
          * The word-like operators are not handled here, as they are ambiguous with identifiers.
          * They are handled in `parse_typical_identifier`.
@@ -902,7 +1068,7 @@ impl<'a> Lexer<'a> {
         }))
     }
 
-    fn parse_next_token(&mut self) -> AnnotatedToken<'a> {
+    fn parse_next_token(&mut self) -> AnnotatedToken<'a, 'b> {
         self.read_while(|b| b.is_ascii_whitespace());
 
         let start_pos = self.current_position();
