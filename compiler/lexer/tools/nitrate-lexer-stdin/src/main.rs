@@ -16,7 +16,9 @@ fn main() {
         return;
     }
 
-    let lexer = Lexer::new(&source_code, filename);
+    let mut storage = StringStorage::new();
+
+    let lexer = Lexer::new(&source_code, filename, &mut storage);
     if lexer.is_err() {
         eprintln!("Failed to create lexer");
         return;
