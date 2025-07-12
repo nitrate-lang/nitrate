@@ -283,18 +283,20 @@ pub enum Token<'a> {
 }
 
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
-pub struct SourcePosition {
+pub struct SourcePosition<'a> {
     line: u32,   // zero-based unicode-aware line number
     column: u32, // zero-based unicode-aware column number
     offset: u32, // zero-based raw byte offset number
+    filename: &'a str,
 }
 
-impl SourcePosition {
-    pub fn new(line: u32, column: u32, offset: u32) -> Self {
+impl<'a> SourcePosition<'a> {
+    pub fn new(line: u32, column: u32, offset: u32, filename: &'a str) -> Self {
         SourcePosition {
             line,
             column,
             offset,
+            filename,
         }
     }
 
@@ -309,74 +311,13 @@ impl SourcePosition {
     pub fn offset(&self) -> u32 {
         self.offset
     }
-}
-
-#[derive(Debug, Clone, PartialEq, PartialOrd)]
-pub struct SourceRange<'a> {
-    start: SourcePosition,
-    end: SourcePosition,
-    filename: &'a str,
-}
-
-impl<'a> SourceRange<'a> {
-    pub fn new(start: SourcePosition, end: SourcePosition, filename: &'a str) -> Self {
-        SourceRange {
-            start,
-            end,
-            filename,
-        }
-    }
-
-    pub fn eof(pos: SourcePosition, filename: &'a str) -> Self {
-        SourceRange {
-            start: pos.clone(),
-            end: pos.clone(),
-            filename,
-        }
-    }
-
-    pub fn invalid() -> Self {
-        SourceRange {
-            start: SourcePosition::new(0, 0, 0),
-            end: SourcePosition::new(0, 0, 0),
-            filename: "",
-        }
-    }
-
-    pub fn start(&self) -> &SourcePosition {
-        &self.start
-    }
-
-    pub fn end(&self) -> &SourcePosition {
-        &self.end
-    }
 
     pub fn filename(&self) -> &'a str {
         self.filename
     }
-
-    pub fn is_valid(&self) -> bool {
-        self.start.offset < self.end.offset
-    }
 }
 
-pub struct LexerPosition<'a> {
-    filename: &'a str,
-    line: u32,
-    column: u32,
-}
-
-impl<'a> LexerPosition<'a> {
-    pub fn new(pos: SourcePosition, filename: &'a str) -> Self {
-        LexerPosition {
-            filename,
-            line: pos.line(),
-            column: pos.column(),
-        }
-    }
-}
-
-impl std::fmt::Display for LexerPosition<'_> {
+impl std::fmt::Display for SourcePosition<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}:{}:{}", self.filename, self.line + 1, self.column + 1)
     }
@@ -385,28 +326,63 @@ impl std::fmt::Display for LexerPosition<'_> {
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
 pub struct AnnotatedToken<'a> {
     token: Token<'a>,
-    range: SourceRange<'a>,
+
+    start_line: u32,
+    start_column: u32,
+    start_offset: u32,
+
+    end_line: u32,
+    end_column: u32,
+    end_offset: u32,
+
+    filename: &'a str,
 }
 
 impl<'a> AnnotatedToken<'a> {
-    pub fn new(token: Token<'a>, range: SourceRange<'a>) -> Self {
-        AnnotatedToken { token, range }
+    pub fn new(token: Token<'a>, start: SourcePosition<'a>, end: SourcePosition<'a>) -> Self {
+        AnnotatedToken {
+            token,
+            start_line: start.line(),
+            start_column: start.column(),
+            start_offset: start.offset(),
+            end_line: end.line(),
+            end_column: end.column(),
+            end_offset: end.offset(),
+            filename: start.filename(),
+        }
     }
 
     pub fn token(&self) -> &Token {
         &self.token
     }
 
-    pub fn range(&self) -> &SourceRange {
-        &self.range
+    pub fn start(&self) -> SourcePosition<'a> {
+        SourcePosition::new(
+            self.start_line,
+            self.start_column,
+            self.start_offset,
+            self.filename,
+        )
+    }
+
+    pub fn end(&self) -> SourcePosition<'a> {
+        SourcePosition::new(
+            self.end_line,
+            self.end_column,
+            self.end_offset,
+            self.filename,
+        )
+    }
+
+    pub fn range(&self) -> (SourcePosition<'a>, SourcePosition<'a>) {
+        (self.start(), self.end())
     }
 }
 
 #[derive(Debug, Clone)]
 pub struct Lexer<'a> {
     source: &'a [u8],
-    filename: &'a str,
-    read_pos: SourcePosition,
+    read_pos: SourcePosition<'a>,
     current: Option<AnnotatedToken<'a>>,
 }
 
@@ -422,8 +398,7 @@ impl<'a> Lexer<'a> {
         } else {
             Ok(Lexer {
                 source: src,
-                filename,
-                read_pos: SourcePosition::new(0, 0, 0),
+                read_pos: SourcePosition::new(0, 0, 0, filename),
                 current: None,
             })
         }
@@ -448,8 +423,8 @@ impl<'a> Lexer<'a> {
         token
     }
 
-    pub fn current_position(&self) -> LexerPosition<'a> {
-        LexerPosition::new(self.read_pos.clone(), self.filename)
+    pub fn current_position(&self) -> SourcePosition<'a> {
+        self.read_pos.clone()
     }
 
     fn advance(&mut self, b: u8) {
@@ -930,8 +905,7 @@ impl<'a> Lexer<'a> {
         .unwrap_or(Token::Illegal);
 
         let end_pos = self.read_pos.clone();
-        let range = SourceRange::new(start_pos, end_pos, self.filename);
 
-        AnnotatedToken::new(token, range)
+        AnnotatedToken::new(token, start_pos, end_pos)
     }
 }
