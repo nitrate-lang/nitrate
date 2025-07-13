@@ -707,6 +707,36 @@ impl<'a, 'b> Lexer<'a, 'b> {
         }
     }
 
+    fn parse_string_octal_escape(
+        &mut self,
+        start_pos: &SourcePosition,
+    ) -> Result<StringEscape, ()> {
+        let mut digits = [0u8; 3];
+
+        for i in 0..3 {
+            let byte = self.peek_byte()?;
+            self.advance(byte);
+            digits[i] = byte;
+
+            if byte < b'0' || byte > b'7' {
+                error!(
+                    "error[L0044]: Invalid octal escape sequence '\\o{}' in string literal. Expected three octal digits (0-7) after '\\o'.\n--> {}",
+                    str::from_utf8(&digits).unwrap_or("<invalid utf-8>"),
+                    start_pos
+                );
+
+                return Err(());
+            }
+        }
+
+        let mut value = 0u8;
+        for &digit in &digits {
+            value = (value << 3) | (digit - b'0');
+        }
+
+        Ok(StringEscape::Byte(value))
+    }
+
     fn parse_string_escape(&mut self, start_pos: &SourcePosition) -> Result<StringEscape, ()> {
         match self.peek_byte() {
             Ok(b'0') => {
@@ -760,15 +790,8 @@ impl<'a, 'b> Lexer<'a, 'b> {
             }
 
             Ok(b'o') => {
-                self.advance(b'x');
-
-                // TODO: Implement octal escape sequence parsing
-                error!(
-                    "error[L0048]: Octal escape sequence '\\o' is not implemented yet\n--> {}",
-                    start_pos
-                );
-
-                Err(())
+                self.advance(b'o');
+                self.parse_string_octal_escape(start_pos)
             }
 
             Ok(b'u') => {
