@@ -5,6 +5,7 @@ edition = "2024"
 
 [dependencies]
 env_logger = "0.11.8"
+hashbrown = "0.15.4"
 log = "0.4.27"
 stackvector = "1.1.1"
 string-interner = "0.19.0"

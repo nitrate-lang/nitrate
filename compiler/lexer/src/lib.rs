@@ -1,5 +1,5 @@
+use hashbrown::hash_set::HashSet;
 use std::cell::RefCell;
-use std::collections::HashSet;
 use std::marker::PhantomData;
 
 use log::error;
@@ -387,8 +387,8 @@ impl<'a, 'b> AnnotatedToken<'a, 'b> {
 
 #[derive(Debug, Default)]
 pub struct StringStorage<'b> {
-    strings: HashSet<Rc<String>>,
-    binary_strings: HashSet<Rc<Vec<u8>>>,
+    strings: HashSet<String>,
+    binary_strings: HashSet<Vec<u8>>,
     _data: PhantomData<&'b ()>,
 }
 
@@ -402,13 +402,7 @@ impl<'b> StringStorage<'b> {
     }
 
     fn get_or_intern_str(&mut self, str: String) -> &'b str {
-        let val = Rc::new(str);
-
-        if !self.strings.contains(&val) {
-            self.strings.insert(Rc::clone(&val));
-        }
-
-        let string = self.strings.get(&val).unwrap();
+        let string = self.strings.get_or_insert(str);
 
         /*
          * SAFETY: The lifetime `b` is the same as the lifetime of
@@ -419,13 +413,7 @@ impl<'b> StringStorage<'b> {
     }
 
     fn get_or_intern_bytes(&mut self, bytes: Vec<u8>) -> &'b [u8] {
-        let val = Rc::new(bytes);
-
-        if !self.binary_strings.contains(&val) {
-            self.binary_strings.insert(Rc::clone(&val));
-        }
-
-        let bytes = self.binary_strings.get(&val).unwrap();
+        let bytes = self.binary_strings.get_or_insert(bytes);
 
         /*
          * SAFETY: The lifetime `b` is the same as the lifetime of
