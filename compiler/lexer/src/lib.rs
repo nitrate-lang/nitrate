@@ -734,52 +734,73 @@ impl<'a, 'b> Lexer<'a, 'b> {
         assert!(self.peek_byte().unwrap() == b'"');
         self.advance(b'"');
 
-        // FIXME: Implement zero-copy string parsing
-        let mut string_buffer = Vec::new();
+        let start_offset = self.current_position().offset as usize;
+        let mut end_offset = start_offset;
+        let mut storage = Vec::new();
 
         loop {
             match self.peek_byte() {
                 Ok(b'\\') => {
                     self.advance(b'\\');
 
-                    if let Ok(escaped_char) = self.parse_string_escape(&start_pos) {
-                        match escaped_char {
-                            StringEscape::Char(c) => {
-                                let utf8_repr = c
-                                    .to_string()
-                                    .as_bytes()
-                                    .get(0..4)
-                                    .expect("Character escape should fit in 4 bytes")
-                                    .to_owned();
-
-                                string_buffer.extend_from_slice(&utf8_repr);
-                            }
-                            StringEscape::Byte(b) => {
-                                string_buffer.push(b);
-                            }
-                        }
-                    } else {
-                        return Err(());
+                    if storage.is_empty() {
+                        storage = self.source[start_offset..end_offset].to_vec();
                     }
+
+                    match self.parse_string_escape(&start_pos) {
+                        Ok(StringEscape::Char(c)) => {
+                            storage.extend_from_slice(c.to_string().as_bytes());
+                        }
+
+                        Ok(StringEscape::Byte(b)) => {
+                            storage.push(b);
+                        }
+
+                        Err(()) => {
+                            return Err(());
+                        }
+                    }
+
+                    assert!(
+                        !storage.is_empty(),
+                        "Dynamic string buffer should not be empty after parsing escape sequence"
+                    );
                 }
 
                 Ok(b'"') => {
                     self.advance(b'"');
 
-                    if str::from_utf8(&string_buffer).is_ok() {
-                        /* Safety: It is safe because we just checked it ^^^ */
-                        let string = unsafe { String::from_utf8_unchecked(string_buffer) };
-                        let intern = self.storage.borrow_mut().get_or_intern_str(string);
+                    if storage.is_empty() {
+                        let buffer = &self.source[start_offset..end_offset];
 
-                        return Ok(Token::String(intern));
+                        if let Ok(string) = str::from_utf8(&buffer) {
+                            return Ok(Token::String(string));
+                        } else {
+                            return Ok(Token::BinaryString(buffer));
+                        }
                     } else {
-                        let intern = self.storage.borrow_mut().get_or_intern_bytes(string_buffer);
-                        return Ok(Token::BinaryString(intern));
+                        let buffer = String::from_utf8(storage);
+
+                        if let Ok(string) = buffer {
+                            return Ok(Token::String(
+                                self.storage.borrow_mut().get_or_intern_str(string),
+                            ));
+                        } else {
+                            return Ok(Token::BinaryString(
+                                self.storage
+                                    .borrow_mut()
+                                    .get_or_intern_bytes(buffer.unwrap_err().into_bytes()),
+                            ));
+                        }
                     }
                 }
 
                 Ok(b) => {
-                    string_buffer.push(b);
+                    if storage.is_empty() {
+                        end_offset += 1;
+                    } else {
+                        storage.push(b);
+                    }
                     self.advance(b);
                 }
 
