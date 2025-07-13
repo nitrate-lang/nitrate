@@ -402,7 +402,7 @@ impl<'b> StringStorage<'b> {
     }
 
     fn get_or_intern_str(&mut self, str: String) -> &'b str {
-        let val = Rc::from(str);
+        let val = Rc::new(str);
 
         if !self.strings.contains(&val) {
             self.strings.insert(Rc::clone(&val));
@@ -419,7 +419,7 @@ impl<'b> StringStorage<'b> {
     }
 
     fn get_or_intern_bytes(&mut self, bytes: Vec<u8>) -> &'b [u8] {
-        let val = Rc::from(bytes);
+        let val = Rc::new(bytes);
 
         if !self.binary_strings.contains(&val) {
             self.binary_strings.insert(Rc::clone(&val));
@@ -470,7 +470,7 @@ impl<'a, 'b> Lexer<'a, 'b> {
                 source: src,
                 read_pos: SourcePosition::new(0, 0, 0, filename),
                 current: None,
-                storage: Rc::from(RefCell::new(std::mem::take(storage))),
+                storage: Rc::new(RefCell::new(std::mem::take(storage))),
             })
         }
     }
