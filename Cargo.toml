@@ -7,7 +7,6 @@ edition = "2024"
 env_logger = "0.11.8"
 nitrate_lexer = { path = "compiler/lexer" }
 nitrate_parser = { path = "compiler/parser" }
-tracing-allocator = "0.1.0"
 tracking-allocator = "0.4.0"
 
 [workspace]
