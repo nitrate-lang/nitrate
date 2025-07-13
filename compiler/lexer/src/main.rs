@@ -1,7 +1,48 @@
 use nitrate_lexer::*;
 use std::io::Read;
 
+use tracking_allocator::{AllocationGroupId, AllocationRegistry, AllocationTracker, Allocator};
+
+use std::alloc::System;
+
+#[global_allocator]
+static GLOBAL: Allocator<System> = Allocator::system();
+
+struct StdoutTracker;
+
+impl AllocationTracker for StdoutTracker {
+    fn allocated(
+        &self,
+        addr: usize,
+        object_size: usize,
+        _wrapped_size: usize,
+        _group_id: AllocationGroupId,
+    ) {
+        println!("{:016x} A {:016x}", addr, object_size);
+    }
+
+    fn deallocated(
+        &self,
+        addr: usize,
+        object_size: usize,
+        _wrapped_size: usize,
+        _source_group_id: AllocationGroupId,
+        _current_group_id: AllocationGroupId,
+    ) {
+        println!("{:016x} D {:016x}", addr, object_size);
+    }
+}
+
+fn enable_allocation_tracking() {
+    let _ = AllocationRegistry::set_global_tracker(StdoutTracker)
+        .expect("no other global tracker should be set yet");
+
+    AllocationRegistry::enable_tracking();
+}
+
 fn main() {
+    enable_allocation_tracking();
+
     env_logger::Builder::from_default_env()
         .format_timestamp(None)
         .format_level(false)
@@ -26,6 +67,10 @@ fn main() {
 
     let mut lexer = lexer.unwrap();
 
+    println!("==================================================================");
+    println!("Starting to lex the input...");
+    println!("==================================================================");
+
     loop {
         let token = lexer.next_token();
         match token.token() {
@@ -38,8 +83,12 @@ fn main() {
                 break;
             }
             _ => {
-                println!("{:?}", token);
+                println!("{:?}", token.token());
             }
         }
     }
+
+    println!("==================================================================");
+    println!("Lexing completed successfully.");
+    println!("==================================================================");
 }
