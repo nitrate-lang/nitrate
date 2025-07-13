@@ -666,45 +666,40 @@ impl<'a, 'b> Lexer<'a, 'b> {
     }
 
     fn parse_string_hex_escape(&mut self, start_pos: &SourcePosition) -> Result<StringEscape, ()> {
-        let first_nibble = self.peek_byte()?;
-        self.advance(first_nibble);
+        let mut digits = [0u8; 2];
 
-        if first_nibble.is_ascii_hexdigit() {
-            let second_nibble = self.peek_byte()?;
-            self.advance(second_nibble);
+        for i in 0..2 {
+            let byte = self.peek_byte()?;
+            self.advance(byte);
 
-            if second_nibble.is_ascii_hexdigit() {
-                let first_nibble = first_nibble.to_ascii_lowercase();
-                let second_nibble = second_nibble.to_ascii_lowercase();
-
-                let first_value = if first_nibble.is_ascii_digit() {
-                    first_nibble - b'0'
-                } else {
-                    first_nibble - b'a' + 10
-                };
-                let second_value = if second_nibble.is_ascii_digit() {
-                    second_nibble - b'0'
-                } else {
-                    second_nibble - b'a' + 10
-                };
-
-                Ok(StringEscape::Byte((first_value << 4) | second_value))
+            if (byte >= b'0' && byte <= b'9')
+                || (byte >= b'a' && byte <= b'f')
+                || (byte >= b'A' && byte <= b'F')
+            {
+                digits[i] = byte;
             } else {
                 error!(
-                    "error[L0043]: Invalid hex escape sequence '\\x{}{}' in string literal. Expected a hex digit after '\\x'.\n--> {}",
-                    first_nibble as char, second_nibble as char, start_pos
+                    "error[L0043]: Invalid hex escape sequence '\\x{}' in string literal. Expected two hex digits (0-9, a-f, A-F) after '\\x'.\n--> {}",
+                    str::from_utf8(&digits[..i + 1]).unwrap_or("<invalid utf-8>"),
+                    start_pos
                 );
 
-                Err(())
+                return Err(());
             }
-        } else {
-            error!(
-                "error[L0043]: Invalid hex escape sequence '\\x{}' in string literal. Expected a hex digit after '\\x'.\n--> {}",
-                first_nibble as char, start_pos
-            );
-
-            Err(())
         }
+
+        let mut value = 0u8;
+        for digit in digits {
+            let digit = digit.to_ascii_lowercase();
+
+            if digit >= b'0' && digit <= b'9' {
+                value = (value << 4) | (digit - b'0');
+            } else {
+                value = (value << 4) | (digit - b'a' + 10);
+            }
+        }
+
+        Ok(StringEscape::Byte(value))
     }
 
     fn parse_string_octal_escape(
