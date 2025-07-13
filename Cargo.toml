@@ -9,11 +9,7 @@ nitrate_lexer = { path = "compiler/lexer" }
 nitrate_parser = { path = "compiler/parser" }
 
 [workspace]
-members = [
-  "compiler/lexer",
-  "compiler/lexer/tools/nitrate-lexer-stdin",
-  "compiler/parser",
-]
+members = ["compiler/lexer", "compiler/parser"]
 
 
 [[bin]]

@@ -157,17 +157,10 @@ dependencies = [
 ]
 
 [[package]]
-name = "nitrate-lexer-stdin"
-version = "0.1.0"
-dependencies = [
- "env_logger",
- "nitrate_lexer",
-]
-
-[[package]]
 name = "nitrate_lexer"
 version = "0.1.0"
 dependencies = [
+ "env_logger",
  "log",
  "stackvector",
  "string-interner",
