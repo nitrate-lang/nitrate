@@ -1239,3 +1239,31 @@ impl<'a, 'b> Lexer<'a, 'b> {
         AnnotatedToken::new(token, start_pos, end_pos)
     }
 }
+
+#[test]
+fn test_parse_string_escape() {
+    let test_vector = [
+        // "👀 Hello, 🔥😂 \0\a\b\t\n\v\f\r\\\'\"\x38\x0fA\o0171"
+        0x22, 0xf0, 0x9f, 0x91, 0x80, 0x20, 0x48, 0x65, 0x6c, 0x6c, 0x6f, 0x2c, 0x20, 0xf0, 0x9f,
+        0x94, 0xa5, 0xf0, 0x9f, 0x98, 0x82, 0x20, 0x5c, 0x30, 0x5c, 0x61, 0x5c, 0x62, 0x5c, 0x74,
+        0x5c, 0x6e, 0x5c, 0x76, 0x5c, 0x66, 0x5c, 0x72, 0x5c, 0x5c, 0x5c, 0x27, 0x5c, 0x22, 0x5c,
+        0x78, 0x33, 0x38, 0x5c, 0x78, 0x30, 0x66, 0x41, 0x5c, 0x6f, 0x30, 0x31, 0x37, 0x31, 0x22,
+    ];
+
+    let expected = "👀 Hello, 🔥😂 \0\u{7}\u{8}\t\n\u{b}\u{c}\r\\'\"8\u{f}A\u{f}1";
+
+    let mut storage = StringStorage::new();
+    let mut lexer =
+        Lexer::new(&test_vector, "test_file", &mut storage).expect("Failed to create lexer");
+
+    match lexer.next_token().token() {
+        Token::String(s) => {
+            assert_eq!(
+                s.as_bytes(),
+                expected.as_bytes(),
+                "Parsed string does not match expected"
+            );
+        }
+        _ => panic!("Expected a string token"),
+    }
+}
