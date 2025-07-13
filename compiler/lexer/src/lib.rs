@@ -1,6 +1,10 @@
+use std::cell::RefCell;
+use std::collections::HashSet;
+use std::marker::PhantomData;
+
 use log::error;
 use stackvector::StackVec;
-use string_interner::{StringInterner, backend::StringBackend};
+use std::rc::Rc;
 
 // Must not be increased beyond u32::MAX, as the lexer/compiler pipeline
 // assumes that offsets are representable as u32 values. However, it is
@@ -381,28 +385,54 @@ impl<'a, 'b> AnnotatedToken<'a, 'b> {
     }
 }
 
-#[derive(Debug)]
-pub struct StringStorage<'a> {
-    source: Option<&'a [u8]>,
-    strings: StringInterner<StringBackend>,
+#[derive(Debug, Default)]
+pub struct StringStorage<'b> {
+    strings: HashSet<Rc<String>>,
+    binary_strings: HashSet<Rc<Vec<u8>>>,
+    _data: PhantomData<&'b ()>,
 }
 
-impl<'a> StringStorage<'a> {
+impl<'b> StringStorage<'b> {
     pub fn new() -> Self {
         StringStorage {
-            source: None,
-            strings: StringInterner::new(),
+            strings: HashSet::new(),
+            binary_strings: HashSet::new(),
+            _data: PhantomData,
         }
     }
 
-    fn get_or_intern_str(&self, _str: Vec<u8>) -> &str {
-        ""
-        // TODO: Implement methods for storing and retrieving strings
+    fn get_or_intern_str(&mut self, str: String) -> &'b str {
+        let val = Rc::from(str);
+
+        if !self.strings.contains(&val) {
+            self.strings.insert(Rc::clone(&val));
+        }
+
+        let string = self.strings.get(&val).unwrap();
+
+        /*
+         * SAFETY: The lifetime `b` is the same as the lifetime of
+         * Self, which owns the string. Therefore, it is safe to
+         * transmute the reference, Probably..
+         */
+        return unsafe { std::mem::transmute::<&str, &'b str>(string) };
     }
 
-    fn get_or_intern_bytes(&self, _bytes: Vec<u8>) -> &[u8] {
-        b""
-        // TODO: Implement methods for storing and retrieving strings
+    fn get_or_intern_bytes(&mut self, bytes: Vec<u8>) -> &'b [u8] {
+        let val = Rc::from(bytes);
+
+        if !self.binary_strings.contains(&val) {
+            self.binary_strings.insert(Rc::clone(&val));
+        }
+
+        let bytes = self.binary_strings.get(&val).unwrap();
+
+        /*
+         * SAFETY: The lifetime `b` is the same as the lifetime of
+         * Self, which owns the byte vector. Therefore, it is safe to
+         * transmute the reference, Probably..
+         */
+        return unsafe { std::mem::transmute::<&[u8], &'b [u8]>(bytes) };
     }
 }
 
@@ -414,7 +444,7 @@ where
     source: &'a [u8],
     read_pos: SourcePosition<'a>,
     current: Option<AnnotatedToken<'a, 'b>>,
-    storage: &'b StringStorage<'a>,
+    storage: Rc<RefCell<StringStorage<'b>>>,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -431,18 +461,16 @@ impl<'a, 'b> Lexer<'a, 'b> {
     pub fn new(
         src: &'a [u8],
         filename: &'a str,
-        storage: &'b mut StringStorage<'a>,
+        storage: &'b mut StringStorage<'b>,
     ) -> Result<Self, LexerConstructionError> {
         if src.len() > MAX_SOURCE_SIZE {
             Err(LexerConstructionError::SourceTooBig)
         } else {
-            storage.source = Some(src);
-
             Ok(Lexer {
                 source: src,
                 read_pos: SourcePosition::new(0, 0, 0, filename),
                 current: None,
-                storage,
+                storage: Rc::from(RefCell::new(std::mem::take(storage))),
             })
         }
     }
@@ -701,8 +729,6 @@ impl<'a, 'b> Lexer<'a, 'b> {
     }
 
     fn parse_string(&mut self) -> Result<Token<'a, 'b>, ()> {
-        // TODO: Implement read of string token
-
         let start_pos = self.current_position();
 
         assert!(self.peek_byte().unwrap() == b'"');
@@ -740,11 +766,14 @@ impl<'a, 'b> Lexer<'a, 'b> {
                 Ok(b'"') => {
                     self.advance(b'"');
 
-                    if std::str::from_utf8(&string_buffer).is_ok() {
-                        let intern = self.storage.get_or_intern_str(string_buffer);
+                    if str::from_utf8(&string_buffer).is_ok() {
+                        /* Safety: It is safe because we just checked it ^^^ */
+                        let string = unsafe { String::from_utf8_unchecked(string_buffer) };
+                        let intern = self.storage.borrow_mut().get_or_intern_str(string);
+
                         return Ok(Token::String(intern));
                     } else {
-                        let intern = self.storage.get_or_intern_bytes(string_buffer);
+                        let intern = self.storage.borrow_mut().get_or_intern_bytes(string_buffer);
                         return Ok(Token::BinaryString(intern));
                     }
                 }
