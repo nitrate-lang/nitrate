@@ -387,8 +387,8 @@ impl<'a, 'b> AnnotatedToken<'a, 'b> {
 
 #[derive(Debug, Default)]
 pub struct StringStorage<'b> {
-    strings: HashSet<SmallVec<[u8; 256]>>,
-    binary_strings: HashSet<SmallVec<[u8; 256]>>,
+    strings: HashSet<SmallVec<[u8; 32]>>,
+    binary_strings: HashSet<SmallVec<[u8; 32]>>,
     _data: PhantomData<&'b ()>,
 }
 
@@ -401,7 +401,7 @@ impl<'b> StringStorage<'b> {
         }
     }
 
-    fn get_or_intern_str(&mut self, str: SmallVec<[u8; 256]>) -> &'b str {
+    fn get_or_intern_str(&mut self, str: SmallVec<[u8; 32]>) -> &'b str {
         let bytes = self.strings.get_or_insert(str);
         let string = unsafe { str::from_utf8_unchecked(&bytes) };
 
@@ -413,7 +413,7 @@ impl<'b> StringStorage<'b> {
         return unsafe { std::mem::transmute::<&str, &'b str>(string) };
     }
 
-    fn get_or_intern_bytes(&mut self, bytes: SmallVec<[u8; 256]>) -> &'b [u8] {
+    fn get_or_intern_bytes(&mut self, bytes: SmallVec<[u8; 32]>) -> &'b [u8] {
         let bytes = self.binary_strings.get_or_insert(bytes);
 
         /*
@@ -816,7 +816,7 @@ impl<'a, 'b> Lexer<'a, 'b> {
 
         let start_offset = self.current_position().offset as usize;
         let mut end_offset = start_offset;
-        let mut storage = SmallVec::<[u8; 256]>::new();
+        let mut storage = SmallVec::<[u8; 32]>::new();
 
         loop {
             match self.peek_byte() {
