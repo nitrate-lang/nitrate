@@ -1,9 +1,9 @@
 use hashbrown::hash_set::HashSet;
+use log::error;
+use smallvec::SmallVec;
+use stackvector::StackVec;
 use std::cell::RefCell;
 use std::marker::PhantomData;
-
-use log::error;
-use stackvector::StackVec;
 use std::rc::Rc;
 
 // Must not be increased beyond u32::MAX, as the lexer/compiler pipeline
@@ -387,8 +387,8 @@ impl<'a, 'b> AnnotatedToken<'a, 'b> {
 
 #[derive(Debug, Default)]
 pub struct StringStorage<'b> {
-    strings: HashSet<String>,
-    binary_strings: HashSet<Vec<u8>>,
+    strings: HashSet<SmallVec<[u8; 256]>>,
+    binary_strings: HashSet<SmallVec<[u8; 256]>>,
     _data: PhantomData<&'b ()>,
 }
 
@@ -401,8 +401,9 @@ impl<'b> StringStorage<'b> {
         }
     }
 
-    fn get_or_intern_str(&mut self, str: String) -> &'b str {
-        let string = self.strings.get_or_insert(str);
+    fn get_or_intern_str(&mut self, str: SmallVec<[u8; 256]>) -> &'b str {
+        let bytes = self.strings.get_or_insert(str);
+        let string = unsafe { str::from_utf8_unchecked(&bytes) };
 
         /*
          * SAFETY: The lifetime `b` is the same as the lifetime of
@@ -412,7 +413,7 @@ impl<'b> StringStorage<'b> {
         return unsafe { std::mem::transmute::<&str, &'b str>(string) };
     }
 
-    fn get_or_intern_bytes(&mut self, bytes: Vec<u8>) -> &'b [u8] {
+    fn get_or_intern_bytes(&mut self, bytes: SmallVec<[u8; 256]>) -> &'b [u8] {
         let bytes = self.binary_strings.get_or_insert(bytes);
 
         /*
@@ -815,7 +816,7 @@ impl<'a, 'b> Lexer<'a, 'b> {
 
         let start_offset = self.current_position().offset as usize;
         let mut end_offset = start_offset;
-        let mut storage = Vec::new();
+        let mut storage = SmallVec::<[u8; 256]>::new();
 
         loop {
             match self.peek_byte() {
@@ -823,7 +824,7 @@ impl<'a, 'b> Lexer<'a, 'b> {
                     self.advance(b'\\');
 
                     if storage.is_empty() {
-                        storage = self.source[start_offset..end_offset].to_vec();
+                        storage.extend_from_slice(&self.source[start_offset..end_offset]);
                     }
 
                     match self.parse_string_escape(&start_pos) {
@@ -858,17 +859,13 @@ impl<'a, 'b> Lexer<'a, 'b> {
                             return Ok(Token::BinaryString(buffer));
                         }
                     } else {
-                        let buffer = String::from_utf8(storage);
-
-                        if let Ok(string) = buffer {
+                        if str::from_utf8(&storage).is_ok() {
                             return Ok(Token::String(
-                                self.storage.borrow_mut().get_or_intern_str(string),
+                                self.storage.borrow_mut().get_or_intern_str(storage),
                             ));
                         } else {
                             return Ok(Token::BinaryString(
-                                self.storage
-                                    .borrow_mut()
-                                    .get_or_intern_bytes(buffer.unwrap_err().into_bytes()),
+                                self.storage.borrow_mut().get_or_intern_bytes(storage),
                             ));
                         }
                     }
