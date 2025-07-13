@@ -665,9 +665,49 @@ impl<'a, 'b> Lexer<'a, 'b> {
         Err(())
     }
 
-    fn parse_string_escape(&mut self, start_pos: &SourcePosition) -> Result<StringEscape, ()> {
-        // TODO: Implement read of string escape sequence
+    fn parse_string_hex_escape(&mut self, start_pos: &SourcePosition) -> Result<StringEscape, ()> {
+        let first_nibble = self.peek_byte()?;
+        self.advance(first_nibble);
 
+        if first_nibble.is_ascii_hexdigit() {
+            let second_nibble = self.peek_byte()?;
+            self.advance(second_nibble);
+
+            if second_nibble.is_ascii_hexdigit() {
+                let first_nibble = first_nibble.to_ascii_lowercase();
+                let second_nibble = second_nibble.to_ascii_lowercase();
+
+                let first_value = if first_nibble.is_ascii_digit() {
+                    first_nibble - b'0'
+                } else {
+                    first_nibble - b'a' + 10
+                };
+                let second_value = if second_nibble.is_ascii_digit() {
+                    second_nibble - b'0'
+                } else {
+                    second_nibble - b'a' + 10
+                };
+
+                Ok(StringEscape::Byte((first_value << 4) | second_value))
+            } else {
+                error!(
+                    "error[L0043]: Invalid hex escape sequence '\\x{}{}' in string literal. Expected a hex digit after '\\x'.\n--> {}",
+                    first_nibble as char, second_nibble as char, start_pos
+                );
+
+                Err(())
+            }
+        } else {
+            error!(
+                "error[L0043]: Invalid hex escape sequence '\\x{}' in string literal. Expected a hex digit after '\\x'.\n--> {}",
+                first_nibble as char, start_pos
+            );
+
+            Err(())
+        }
+    }
+
+    fn parse_string_escape(&mut self, start_pos: &SourcePosition) -> Result<StringEscape, ()> {
         match self.peek_byte() {
             Ok(b'0') => {
                 self.advance(b'0');
@@ -709,9 +749,42 @@ impl<'a, 'b> Lexer<'a, 'b> {
                 self.advance(b'\'');
                 Ok(StringEscape::Byte(b'\''))
             }
+            Ok(b'"') => {
+                self.advance(b'"');
+                Ok(StringEscape::Char('"'))
+            }
+
+            Ok(b'x') => {
+                self.advance(b'x');
+                self.parse_string_hex_escape(start_pos)
+            }
+
+            Ok(b'o') => {
+                self.advance(b'x');
+
+                // TODO: Implement octal escape sequence parsing
+                error!(
+                    "error[L0048]: Octal escape sequence '\\o' is not implemented yet\n--> {}",
+                    start_pos
+                );
+
+                Err(())
+            }
+
+            Ok(b'u') => {
+                self.advance(b'x');
+
+                // TODO: Implement unicode escape sequence parsing
+                error!(
+                    "error[L0048]: Unicode escape sequence '\\u' is not implemented yet\n--> {}",
+                    start_pos
+                );
+                Err(())
+            }
+
             Ok(b) => {
                 error!(
-                    "error[L0043]: Invalid escape sequence '\\{}' in string literal\n--> {}",
+                    "error[L0040]: Invalid escape sequence '\\{}' in string literal\n--> {}",
                     b as char, start_pos
                 );
 
@@ -720,7 +793,7 @@ impl<'a, 'b> Lexer<'a, 'b> {
 
             Err(()) => {
                 error!(
-                    "error[L0045]: Unexpected end of input while parsing string literal\n--> {}",
+                    "error[L0041]: Unexpected end of input while parsing string literal\n--> {}",
                     start_pos
                 );
                 Err(())
@@ -806,7 +879,7 @@ impl<'a, 'b> Lexer<'a, 'b> {
 
                 Err(()) => {
                     error!(
-                        "error[L0045]: Unexpected end of input while parsing string literal\n--> {}",
+                        "error[L0041]: Unexpected end of input while parsing string literal\n--> {}",
                         start_pos
                     );
                     return Err(());
