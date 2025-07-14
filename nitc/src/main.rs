@@ -1,4 +1,4 @@
-use nitrate_lexer::*;
+use nitrate_compiler::lexer::*;
 use std::io::Read;
 
 fn main() {

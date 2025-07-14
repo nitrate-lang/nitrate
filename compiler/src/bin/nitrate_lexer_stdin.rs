@@ -1,4 +1,4 @@
-use nitrate_lexer::*;
+use nitrate_compiler::lexer::*;
 use std::io::Read;
 
 use tracking_allocator::{AllocationGroupId, AllocationRegistry, AllocationTracker, Allocator};

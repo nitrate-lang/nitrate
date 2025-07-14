@@ -178,13 +178,18 @@ name = "nitrate"
 version = "0.1.0"
 dependencies = [
  "env_logger",
- "nitrate_lexer",
- "nitrate_parser",
+ "hashbrown",
+ "log",
+ "nitrate_compiler",
+ "smallvec",
+ "stackvector",
+ "tracing",
+ "tracing-subscriber",
  "tracking-allocator",
 ]
 
 [[package]]
-name = "nitrate_lexer"
+name = "nitrate_compiler"
 version = "0.1.0"
 dependencies = [
  "env_logger",
@@ -196,10 +201,6 @@ dependencies = [
  "tracing-subscriber",
  "tracking-allocator",
 ]
-
-[[package]]
-name = "nitrate_parser"
-version = "0.1.0"
 
 [[package]]
 name = "nu-ansi-term"
