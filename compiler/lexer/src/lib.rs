@@ -721,6 +721,89 @@ impl<'a, 'b> Lexer<'a, 'b> {
         Ok(StringEscape::Byte(value))
     }
 
+    fn parse_string_unicode_escape(
+        &mut self,
+        start_pos: &SourcePosition,
+    ) -> Result<StringEscape, ()> {
+        if self.peek_byte()? != b'{' {
+            error!(
+                "error[L0047]: Invalid unicode escape in string literal. Expected '{{' after '\\u'.\n--> {}",
+                start_pos
+            );
+            return Err(());
+        }
+        self.advance(b'{');
+
+        if self.peek_byte()? == b'U' {
+            self.advance(b'U');
+
+            if self.peek_byte()? == b'+' {
+                self.advance(b'+');
+            } else {
+                error!(
+                    "error[L0049]: Invalid unicode escape in string literal. Expected '+' after '\\uU'.\n--> {}",
+                    start_pos
+                );
+                return Err(());
+            }
+        }
+
+        let codepoint = (|| {
+            let digits = self.read_while(|b| b.is_ascii_hexdigit());
+            if digits.is_empty() {
+                error!(
+                    "error[L0045]: Invalid unicode escape in string literal. Expected at least one hex digit after '\\u{{'.\n--> {}",
+                    start_pos
+                );
+                return None;
+            }
+
+            if digits.len() > 8 {
+                error!(
+                    "error[L0048]: Unicode escape codepoint in string literal is too large: '\\u{{{}}}'.\n--> {}",
+                    str::from_utf8(&digits).unwrap_or("<invalid utf-8>"),
+                    start_pos
+                );
+                return None;
+            }
+
+            let mut value = 0u32;
+            for &digit in digits {
+                let digit = digit.to_ascii_lowercase();
+
+                if digit >= b'0' && digit <= b'9' {
+                    value = (value << 4) | (digit - b'0') as u32
+                } else {
+                    value = (value << 4) | (digit - b'a' + 10) as u32
+                }
+            }
+
+            let codepoint = char::from_u32(value);
+            if codepoint.is_none() {
+                error!(
+                    "error[L0048]: Unicode escape codepoint in string literal is too large: '\\u{{{}}}'.\n--> {}",
+                    str::from_utf8(&digits).unwrap_or("<invalid utf-8>"),
+                    start_pos
+                );
+
+                return None;
+            }
+
+            codepoint
+        })();
+
+        if self.peek_byte()? != b'}' {
+            error!(
+                "error[L0046]: Invalid unicode escape in string literal. Expected '}}' after '\\u{{'.\n--> {}",
+                start_pos
+            );
+            return Err(());
+        }
+        self.advance(b'}');
+
+        codepoint.map_or_else(|| Err(()), |c| Ok(StringEscape::Char(c)))
+    }
+
     fn parse_string_escape(&mut self, start_pos: &SourcePosition) -> Result<StringEscape, ()> {
         match self.peek_byte() {
             Ok(b'0') => {
@@ -779,14 +862,8 @@ impl<'a, 'b> Lexer<'a, 'b> {
             }
 
             Ok(b'u') => {
-                self.advance(b'x');
-
-                // TODO: Implement unicode escape sequence parsing
-                error!(
-                    "error[L0048]: Unicode escape sequence '\\u' is not implemented yet\n--> {}",
-                    start_pos
-                );
-                Err(())
+                self.advance(b'u');
+                self.parse_string_unicode_escape(start_pos)
             }
 
             Ok(b) => {
