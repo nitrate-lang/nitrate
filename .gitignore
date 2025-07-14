@@ -40,3 +40,10 @@ compiler/lexer/corpus/
 compiler/lexer/corpus-min/
 fuzz-*.log
 runtime/libazide-gc/target/
+
+
+# Added by cargo
+
+/target
+compiler.old
+trace.txt
