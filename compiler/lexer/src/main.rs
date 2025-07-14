@@ -75,11 +75,13 @@ fn main() {
         let token = lexer.next_token();
         match token.token() {
             Token::Eof => {
-                println!("End of file reached.");
+                println!("==================================================================");
+                println!("Lexing completed; reached end of file.");
                 break;
             }
             Token::Illegal => {
-                eprintln!("Illegal token encountered: {:?}", token);
+                println!("==================================================================");
+                println!("Lexing completed; encountered illegal token: {:?}", token);
                 break;
             }
             _ => {
@@ -88,7 +90,5 @@ fn main() {
         }
     }
 
-    println!("==================================================================");
-    println!("Lexing completed successfully.");
     println!("==================================================================");
 }
