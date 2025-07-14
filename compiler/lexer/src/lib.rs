@@ -1181,7 +1181,10 @@ impl<'a, 'b> Lexer<'a, 'b> {
                 self.advance(b'?');
                 Ok(Token::Operator(Operator::Question))
             }
-
+            b'~' => {
+                self.advance(b'~');
+                Ok(Token::Operator(Operator::BitNot))
+            }
             b'+' => {
                 self.advance(b'+');
                 match self.peek_byte() {
@@ -1286,31 +1289,129 @@ impl<'a, 'b> Lexer<'a, 'b> {
             }
             b'^' => {
                 self.advance(b'^');
-                Err(()) // TODO:
-            }
-            b'~' => {
-                self.advance(b'~');
-                Err(()) // TODO:
+                match self.peek_byte() {
+                    Ok(b'^') => {
+                        self.advance(b'^');
+                        match self.peek_byte() {
+                            Ok(b'=') => {
+                                self.advance(b'=');
+                                Ok(Token::Operator(Operator::SetLogicXor))
+                            }
+                            _ => Ok(Token::Operator(Operator::LogicXor)),
+                        }
+                    }
+                    Ok(b'=') => {
+                        self.advance(b'=');
+                        Ok(Token::Operator(Operator::SetBitXor))
+                    }
+                    _ => Ok(Token::Operator(Operator::BitXor)),
+                }
             }
             b'<' => {
                 self.advance(b'<');
-                Err(()) // TODO:
+                match self.peek_byte() {
+                    Ok(b'=') => {
+                        self.advance(b'=');
+                        match self.peek_byte() {
+                            Ok(b'>') => {
+                                self.advance(b'>');
+                                Ok(Token::Operator(Operator::Spaceship))
+                            }
+                            _ => Ok(Token::Operator(Operator::LogicLe)),
+                        }
+                    }
+                    Ok(b'<') => {
+                        self.advance(b'<');
+                        match self.peek_byte() {
+                            Ok(b'=') => {
+                                self.advance(b'=');
+                                Ok(Token::Operator(Operator::SetBitShl))
+                            }
+                            Ok(b'<') => {
+                                self.advance(b'<');
+                                match self.peek_byte() {
+                                    Ok(b'=') => {
+                                        self.advance(b'=');
+                                        Ok(Token::Operator(Operator::SetBitRotl))
+                                    }
+                                    _ => Ok(Token::Operator(Operator::BitRotl)),
+                                }
+                            }
+                            _ => Ok(Token::Operator(Operator::BitShl)),
+                        }
+                    }
+                    _ => Ok(Token::Operator(Operator::LogicLt)),
+                }
             }
             b'>' => {
                 self.advance(b'>');
-                Err(()) // TODO:
+                match self.peek_byte() {
+                    Ok(b'=') => {
+                        self.advance(b'=');
+                        Ok(Token::Operator(Operator::LogicGe))
+                    }
+                    Ok(b'>') => {
+                        self.advance(b'>');
+                        match self.peek_byte() {
+                            Ok(b'=') => {
+                                self.advance(b'=');
+                                Ok(Token::Operator(Operator::SetBitShr))
+                            }
+                            Ok(b'>') => {
+                                self.advance(b'>');
+                                match self.peek_byte() {
+                                    Ok(b'=') => {
+                                        self.advance(b'=');
+                                        Ok(Token::Operator(Operator::SetBitRotr))
+                                    }
+                                    _ => Ok(Token::Operator(Operator::BitRotr)),
+                                }
+                            }
+                            _ => Ok(Token::Operator(Operator::BitShr)),
+                        }
+                    }
+                    _ => Ok(Token::Operator(Operator::LogicGt)),
+                }
             }
             b'!' => {
                 self.advance(b'!');
-                Err(()) // TODO:
+                match self.peek_byte() {
+                    Ok(b'=') => {
+                        self.advance(b'=');
+                        Ok(Token::Operator(Operator::LogicNe))
+                    }
+                    _ => Ok(Token::Operator(Operator::LogicNot)),
+                }
             }
             b'=' => {
                 self.advance(b'=');
-                Err(()) // TODO:
+                match self.peek_byte() {
+                    Ok(b'=') => {
+                        self.advance(b'=');
+                        Ok(Token::Operator(Operator::LogicEq))
+                    }
+                    Ok(b'>') => {
+                        self.advance(b'>');
+                        Ok(Token::Operator(Operator::BlockArrow))
+                    }
+                    _ => Ok(Token::Operator(Operator::Set)),
+                }
             }
             b'.' => {
                 self.advance(b'.');
-                Err(()) // TODO:
+                match self.peek_byte() {
+                    Ok(b'.') => {
+                        self.advance(b'.');
+                        match self.peek_byte() {
+                            Ok(b'.') => {
+                                self.advance(b'.');
+                                Ok(Token::Operator(Operator::Ellipsis))
+                            }
+                            _ => Ok(Token::Operator(Operator::Range)),
+                        }
+                    }
+                    _ => Ok(Token::Operator(Operator::Dot)),
+                }
             }
 
             _ => {
@@ -1323,73 +1424,6 @@ impl<'a, 'b> Lexer<'a, 'b> {
                 Err(())
             }
         }
-
-        // Ok(Token::Operator(match code {
-        //     b"+" => Operator::Add,
-        //     b"-" => Operator::Sub,
-        //     b"*" => Operator::Mul,
-        //     b"/" => Operator::Div,
-        //     b"%" => Operator::Mod,
-
-        //     b"&" => Operator::BitAnd,
-        //     b"|" => Operator::BitOr,
-        //     b"^" => Operator::BitXor,
-        //     b"~" => Operator::BitNot,
-        //     b"<<" => Operator::BitShl,
-        //     b">>" => Operator::BitShr,
-        //     b"<<<" => Operator::BitRotl,
-        //     b">>>" => Operator::BitRotr,
-
-        //     b"&&" => Operator::LogicAnd,
-        //     b"||" => Operator::LogicOr,
-        //     b"^^" => Operator::LogicXor,
-        //     b"!" => Operator::LogicNot,
-        //     b"<" => Operator::LogicLt,
-        //     b">" => Operator::LogicGt,
-        //     b"<=" => Operator::LogicLe,
-        //     b">=" => Operator::LogicGe,
-        //     b"==" => Operator::LogicEq,
-        //     b"!=" => Operator::LogicNe,
-
-        //     b"=" => Operator::Set,
-        //     b"+=" => Operator::SetPlus,
-        //     b"-=" => Operator::SetMinus,
-        //     b"*=" => Operator::SetTimes,
-        //     b"/=" => Operator::SetSlash,
-        //     b"%=" => Operator::SetPercent,
-        //     b"&=" => Operator::SetBitAnd,
-        //     b"|=" => Operator::SetBitOr,
-        //     b"^=" => Operator::SetBitXor,
-        //     b"<<=" => Operator::SetBitShl,
-        //     b">>=" => Operator::SetBitShr,
-        //     b"<<<=" => Operator::SetBitRotl,
-        //     b">>>=" => Operator::SetBitRotr,
-        //     b"&&=" => Operator::SetLogicAnd,
-        //     b"||=" => Operator::SetLogicOr,
-        //     b"^^=" => Operator::SetLogicXor,
-        //     b"++" => Operator::Inc,
-        //     b"--" => Operator::Dec,
-
-        //     b"." => Operator::Dot,
-        //     b"..." => Operator::Ellipsis,
-        //     b"::" => Operator::Scope,
-        //     b"->" => Operator::Arrow,
-        //     b"=>" => Operator::BlockArrow,
-
-        //     b".." => Operator::Range,
-        //     b"?" => Operator::Question,
-        //     b"<=>" => Operator::Spaceship,
-
-        //     _ => {
-        //         error!(
-        //             "error[L0030]: The token `{}` is not valid. Did you mistype an operator or forget some whitespace?\n--> {}",
-        //             str::from_utf8(code).unwrap_or("<invalid utf-8>"),
-        //             start_pos
-        //         );
-
-        //         return Err(());
-        //     }
-        // }))
     }
 
     fn parse_next_token(&mut self) -> AnnotatedToken<'a, 'b> {
