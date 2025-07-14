@@ -492,7 +492,7 @@ impl<'a, 'b> Lexer<'a, 'b> {
         self.read_pos.clone()
     }
 
-    fn advance(&mut self, b: u8) {
+    fn advance(&mut self, b: u8) -> u8 {
         self.read_pos.offset += 1;
 
         if b == b'\n' {
@@ -507,6 +507,8 @@ impl<'a, 'b> Lexer<'a, 'b> {
             // which is the maximum value for a column number.
             self.read_pos.column += 1;
         }
+
+        b
     }
 
     fn peek_byte(&self) -> Result<u8, ()> {
@@ -1141,134 +1143,253 @@ impl<'a, 'b> Lexer<'a, 'b> {
         }
     }
 
-    fn parse_punctuation(&mut self) -> Result<Token<'a, 'b>, ()> {
-        /*
-         * The colon punctuator is not handled here, as it is ambiguous with the scope
-         * operator "::". See `parse_operator` for the handling the colon punctuator.
-         */
-
-        let start_pos = self.current_position();
-        let p = self.peek_byte()?;
-
-        let punctuator = match p {
-            b'(' => Punctuation::LeftParenthesis,
-            b')' => Punctuation::RightParenthesis,
-            b'[' => Punctuation::LeftBracket,
-            b']' => Punctuation::RightBracket,
-            b'{' => Punctuation::LeftBrace,
-            b'}' => Punctuation::RightBrace,
-            b',' => Punctuation::Comma,
-            b';' => Punctuation::Semicolon,
-            b'@' => Punctuation::AtSign,
-
-            _ => {
-                error!(
-                    "error[L0030]: The token `{}` is not valid. Did you mistype an operator or forget some whitespace?\n--> {}",
-                    p as char, start_pos
-                );
-
-                return Err(());
-            }
-        };
-
-        self.advance(p);
-
-        Ok(Token::Punctuation(punctuator))
-    }
-
-    fn parse_operator(&mut self) -> Result<Token<'a, 'b>, ()> {
+    fn parse_operator_or_punctuation(&mut self) -> Result<Token<'a, 'b>, ()> {
         /*
          * The word-like operators are not handled here, as they are ambiguous with identifiers.
          * They are handled in `parse_typical_identifier`.
          */
 
         let start_pos = self.current_position();
+        let b = self.peek_byte()?;
 
-        let code = self.read_while(|b| {
-            match b {
-                b if b.is_ascii_whitespace() => false, // whitespace
-                b if b.is_ascii_digit() => false,      // number
-                b'`' => false,                         // atypical identifier
-                b if b.is_ascii_alphabetic() || b == b'_' => false, // typical identifier
-                b'"' | b'\'' => false,                 // string and char literals
-                b'#' => false,                         // comments
-                b'(' | b')' | b'[' | b']' | b'{' | b'}' | b',' | b';' | b'@' => false, // punctuation
+        match b {
+            b'(' | b')' | b'[' | b']' | b'{' | b'}' | b',' | b';' | b'@' => match self.advance(b) {
+                b'(' => Ok(Token::Punctuation(Punctuation::LeftParenthesis)),
+                b')' => Ok(Token::Punctuation(Punctuation::RightParenthesis)),
+                b'[' => Ok(Token::Punctuation(Punctuation::LeftBracket)),
+                b']' => Ok(Token::Punctuation(Punctuation::RightBracket)),
+                b'{' => Ok(Token::Punctuation(Punctuation::LeftBrace)),
+                b'}' => Ok(Token::Punctuation(Punctuation::RightBrace)),
+                b',' => Ok(Token::Punctuation(Punctuation::Comma)),
+                b';' => Ok(Token::Punctuation(Punctuation::Semicolon)),
+                b'@' => Ok(Token::Punctuation(Punctuation::AtSign)),
+                _ => unreachable!(), // All cases are handled above
+            },
 
-                _ => true, // operators and colon punctuator
+            b':' => {
+                self.advance(b':');
+                match self.peek_byte() {
+                    Ok(b':') => {
+                        self.advance(b':');
+                        Ok(Token::Operator(Operator::Scope))
+                    }
+                    _ => Ok(Token::Punctuation(Punctuation::Colon)),
+                }
             }
-        });
 
-        // Handle the colon punctuator because it is ambiguous with the scope operator "::".
-        if code == b":" {
-            return Ok(Token::Punctuation(Punctuation::Colon));
-        }
+            b'?' => {
+                self.advance(b'?');
+                Ok(Token::Operator(Operator::Question))
+            }
 
-        Ok(Token::Operator(match code {
-            b"+" => Operator::Add,
-            b"-" => Operator::Sub,
-            b"*" => Operator::Mul,
-            b"/" => Operator::Div,
-            b"%" => Operator::Mod,
-
-            b"&" => Operator::BitAnd,
-            b"|" => Operator::BitOr,
-            b"^" => Operator::BitXor,
-            b"~" => Operator::BitNot,
-            b"<<" => Operator::BitShl,
-            b">>" => Operator::BitShr,
-            b"<<<" => Operator::BitRotl,
-            b">>>" => Operator::BitRotr,
-
-            b"&&" => Operator::LogicAnd,
-            b"||" => Operator::LogicOr,
-            b"^^" => Operator::LogicXor,
-            b"!" => Operator::LogicNot,
-            b"<" => Operator::LogicLt,
-            b">" => Operator::LogicGt,
-            b"<=" => Operator::LogicLe,
-            b">=" => Operator::LogicGe,
-            b"==" => Operator::LogicEq,
-            b"!=" => Operator::LogicNe,
-
-            b"=" => Operator::Set,
-            b"+=" => Operator::SetPlus,
-            b"-=" => Operator::SetMinus,
-            b"*=" => Operator::SetTimes,
-            b"/=" => Operator::SetSlash,
-            b"%=" => Operator::SetPercent,
-            b"&=" => Operator::SetBitAnd,
-            b"|=" => Operator::SetBitOr,
-            b"^=" => Operator::SetBitXor,
-            b"<<=" => Operator::SetBitShl,
-            b">>=" => Operator::SetBitShr,
-            b"<<<=" => Operator::SetBitRotl,
-            b">>>=" => Operator::SetBitRotr,
-            b"&&=" => Operator::SetLogicAnd,
-            b"||=" => Operator::SetLogicOr,
-            b"^^=" => Operator::SetLogicXor,
-            b"++" => Operator::Inc,
-            b"--" => Operator::Dec,
-
-            b"." => Operator::Dot,
-            b"..." => Operator::Ellipsis,
-            b"::" => Operator::Scope,
-            b"->" => Operator::Arrow,
-            b"=>" => Operator::BlockArrow,
-
-            b".." => Operator::Range,
-            b"?" => Operator::Question,
-            b"<=>" => Operator::Spaceship,
+            b'+' => {
+                self.advance(b'+');
+                match self.peek_byte() {
+                    Ok(b'=') => {
+                        self.advance(b'=');
+                        Ok(Token::Operator(Operator::SetPlus))
+                    }
+                    Ok(b'+') => {
+                        self.advance(b'+');
+                        Ok(Token::Operator(Operator::Inc))
+                    }
+                    _ => Ok(Token::Operator(Operator::Add)),
+                }
+            }
+            b'-' => {
+                self.advance(b'-');
+                match self.peek_byte() {
+                    Ok(b'=') => {
+                        self.advance(b'=');
+                        Ok(Token::Operator(Operator::SetMinus))
+                    }
+                    Ok(b'-') => {
+                        self.advance(b'-');
+                        Ok(Token::Operator(Operator::Dec))
+                    }
+                    Ok(b'>') => {
+                        self.advance(b'>');
+                        Ok(Token::Operator(Operator::Arrow))
+                    }
+                    _ => Ok(Token::Operator(Operator::Sub)),
+                }
+            }
+            b'*' => {
+                self.advance(b'*');
+                match self.peek_byte() {
+                    Ok(b'=') => {
+                        self.advance(b'=');
+                        Ok(Token::Operator(Operator::SetTimes))
+                    }
+                    _ => Ok(Token::Operator(Operator::Mul)),
+                }
+            }
+            b'/' => {
+                self.advance(b'/');
+                match self.peek_byte() {
+                    Ok(b'=') => {
+                        self.advance(b'=');
+                        Ok(Token::Operator(Operator::SetSlash))
+                    }
+                    _ => Ok(Token::Operator(Operator::Div)),
+                }
+            }
+            b'%' => {
+                self.advance(b'%');
+                match self.peek_byte() {
+                    Ok(b'=') => {
+                        self.advance(b'=');
+                        Ok(Token::Operator(Operator::SetPercent))
+                    }
+                    _ => Ok(Token::Operator(Operator::Mod)),
+                }
+            }
+            b'&' => {
+                self.advance(b'&');
+                match self.peek_byte() {
+                    Ok(b'&') => {
+                        self.advance(b'&');
+                        match self.peek_byte() {
+                            Ok(b'=') => {
+                                self.advance(b'=');
+                                Ok(Token::Operator(Operator::SetLogicAnd))
+                            }
+                            _ => Ok(Token::Operator(Operator::LogicAnd)),
+                        }
+                    }
+                    Ok(b'=') => {
+                        self.advance(b'=');
+                        Ok(Token::Operator(Operator::SetBitAnd))
+                    }
+                    _ => Ok(Token::Operator(Operator::BitAnd)),
+                }
+            }
+            b'|' => {
+                self.advance(b'|');
+                match self.peek_byte() {
+                    Ok(b'|') => {
+                        self.advance(b'|');
+                        match self.peek_byte() {
+                            Ok(b'=') => {
+                                self.advance(b'=');
+                                Ok(Token::Operator(Operator::SetLogicOr))
+                            }
+                            _ => Ok(Token::Operator(Operator::LogicOr)),
+                        }
+                    }
+                    Ok(b'=') => {
+                        self.advance(b'=');
+                        Ok(Token::Operator(Operator::SetBitOr))
+                    }
+                    _ => Ok(Token::Operator(Operator::BitOr)),
+                }
+            }
+            b'^' => {
+                self.advance(b'^');
+                Err(()) // TODO:
+            }
+            b'~' => {
+                self.advance(b'~');
+                Err(()) // TODO:
+            }
+            b'<' => {
+                self.advance(b'<');
+                Err(()) // TODO:
+            }
+            b'>' => {
+                self.advance(b'>');
+                Err(()) // TODO:
+            }
+            b'!' => {
+                self.advance(b'!');
+                Err(()) // TODO:
+            }
+            b'=' => {
+                self.advance(b'=');
+                Err(()) // TODO:
+            }
+            b'.' => {
+                self.advance(b'.');
+                Err(()) // TODO:
+            }
 
             _ => {
                 error!(
                     "error[L0030]: The token `{}` is not valid. Did you mistype an operator or forget some whitespace?\n--> {}",
-                    str::from_utf8(code).unwrap_or("<invalid utf-8>"),
+                    str::from_utf8(&[b]).unwrap_or("<invalid utf-8>"),
                     start_pos
                 );
 
-                return Err(());
+                Err(())
             }
-        }))
+        }
+
+        // Ok(Token::Operator(match code {
+        //     b"+" => Operator::Add,
+        //     b"-" => Operator::Sub,
+        //     b"*" => Operator::Mul,
+        //     b"/" => Operator::Div,
+        //     b"%" => Operator::Mod,
+
+        //     b"&" => Operator::BitAnd,
+        //     b"|" => Operator::BitOr,
+        //     b"^" => Operator::BitXor,
+        //     b"~" => Operator::BitNot,
+        //     b"<<" => Operator::BitShl,
+        //     b">>" => Operator::BitShr,
+        //     b"<<<" => Operator::BitRotl,
+        //     b">>>" => Operator::BitRotr,
+
+        //     b"&&" => Operator::LogicAnd,
+        //     b"||" => Operator::LogicOr,
+        //     b"^^" => Operator::LogicXor,
+        //     b"!" => Operator::LogicNot,
+        //     b"<" => Operator::LogicLt,
+        //     b">" => Operator::LogicGt,
+        //     b"<=" => Operator::LogicLe,
+        //     b">=" => Operator::LogicGe,
+        //     b"==" => Operator::LogicEq,
+        //     b"!=" => Operator::LogicNe,
+
+        //     b"=" => Operator::Set,
+        //     b"+=" => Operator::SetPlus,
+        //     b"-=" => Operator::SetMinus,
+        //     b"*=" => Operator::SetTimes,
+        //     b"/=" => Operator::SetSlash,
+        //     b"%=" => Operator::SetPercent,
+        //     b"&=" => Operator::SetBitAnd,
+        //     b"|=" => Operator::SetBitOr,
+        //     b"^=" => Operator::SetBitXor,
+        //     b"<<=" => Operator::SetBitShl,
+        //     b">>=" => Operator::SetBitShr,
+        //     b"<<<=" => Operator::SetBitRotl,
+        //     b">>>=" => Operator::SetBitRotr,
+        //     b"&&=" => Operator::SetLogicAnd,
+        //     b"||=" => Operator::SetLogicOr,
+        //     b"^^=" => Operator::SetLogicXor,
+        //     b"++" => Operator::Inc,
+        //     b"--" => Operator::Dec,
+
+        //     b"." => Operator::Dot,
+        //     b"..." => Operator::Ellipsis,
+        //     b"::" => Operator::Scope,
+        //     b"->" => Operator::Arrow,
+        //     b"=>" => Operator::BlockArrow,
+
+        //     b".." => Operator::Range,
+        //     b"?" => Operator::Question,
+        //     b"<=>" => Operator::Spaceship,
+
+        //     _ => {
+        //         error!(
+        //             "error[L0030]: The token `{}` is not valid. Did you mistype an operator or forget some whitespace?\n--> {}",
+        //             str::from_utf8(code).unwrap_or("<invalid utf-8>"),
+        //             start_pos
+        //         );
+
+        //         return Err(());
+        //     }
+        // }))
     }
 
     fn parse_next_token(&mut self) -> AnnotatedToken<'a, 'b> {
@@ -1286,12 +1407,8 @@ impl<'a, 'b> Lexer<'a, 'b> {
                 b if b.is_ascii_digit() => self.parse_number(),
                 b'"' => self.parse_string(),
                 b'\'' => self.parse_char(),
-                b'(' | b')' | b'[' | b']' | b'{' | b'}' | b',' | b';' | b'@' => {
-                    self.parse_punctuation()
-                }
                 b'#' => self.parse_comment(),
-
-                _ => self.parse_operator(),
+                _ => self.parse_operator_or_punctuation(),
             },
         }
         .unwrap_or(Token::Illegal);
