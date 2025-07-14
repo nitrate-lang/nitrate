@@ -545,15 +545,17 @@ impl<'a, 'b> Lexer<'a, 'b> {
 
         let identifier = self.read_while(|b| b != b'`');
 
-        if self.peek_byte().unwrap_or_default() == b'`' {
-            self.advance(b'`');
-        } else {
-            error!(
-                "error[L0001]: Unterminated atypical identifier. Did you forget the '`' terminator?\n--> {}",
-                start_pos
-            );
-
-            return Err(());
+        match self.peek_byte() {
+            Ok(b'`') => {
+                self.advance(b'`');
+            }
+            _ => {
+                error!(
+                    "error[L0001]: Unterminated atypical identifier. Did you forget the '`' terminator?\n--> {}",
+                    start_pos
+                );
+                return Err(());
+            }
         }
 
         if let Ok(identifier) = str::from_utf8(identifier) {
@@ -661,12 +663,12 @@ impl<'a, 'b> Lexer<'a, 'b> {
 
         for i in 0..2 {
             let byte = self.peek_byte()?;
-            self.advance(byte);
 
             if (byte >= b'0' && byte <= b'9')
                 || (byte >= b'a' && byte <= b'f')
                 || (byte >= b'A' && byte <= b'F')
             {
+                self.advance(byte);
                 digits[i] = byte;
             } else {
                 error!(
@@ -701,10 +703,11 @@ impl<'a, 'b> Lexer<'a, 'b> {
 
         for i in 0..3 {
             let byte = self.peek_byte()?;
-            self.advance(byte);
-            digits[i] = byte;
 
-            if byte < b'0' || byte > b'7' {
+            if byte >= b'0' && byte <= b'7' {
+                self.advance(byte);
+                digits[i] = byte;
+            } else {
                 error!(
                     "error[L0044]: Invalid octal escape sequence '\\o{}' in string literal. Expected three octal digits (0-7) after '\\o'.\n--> {}",
                     str::from_utf8(&digits).unwrap_or("<invalid utf-8>"),
@@ -951,12 +954,12 @@ impl<'a, 'b> Lexer<'a, 'b> {
                 }
 
                 Ok(b) => {
+                    self.advance(b);
                     if storage.is_empty() {
                         end_offset += 1;
                     } else {
                         storage.push(b);
                     }
-                    self.advance(b);
                 }
 
                 Err(()) => {
@@ -1103,8 +1106,8 @@ impl<'a, 'b> Lexer<'a, 'b> {
                 }
 
                 Ok(b) => {
-                    char_buffer.push(b);
                     self.advance(b);
+                    char_buffer.push(b);
                 }
 
                 Err(()) => {
