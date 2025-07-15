@@ -740,7 +740,10 @@ impl<'a, 'b> Lexer<'a, 'b> {
                 continue;
             }
 
-            if let Ok(digit) = u128::from_str_radix(str::from_utf8(&[*digit]).unwrap(), base) {
+            if let Ok(digit) = u128::from_str_radix(
+                str::from_utf8(&[*digit]).expect("Unexpected non-utf8 digit"),
+                base,
+            ) {
                 if let Some(y) = number.checked_mul(base as u128) {
                     if let Some(sum) = y.checked_add(digit) {
                         number = sum;
@@ -762,7 +765,7 @@ impl<'a, 'b> Lexer<'a, 'b> {
 
         Ok(Token::Integer(Integer::new(
             number,
-            str::from_utf8(&digits).unwrap(),
+            str::from_utf8(&digits).expect("Unexpected non-utf8 digit"),
             match base {
                 2 => IntegerKind::Binary,
                 8 => IntegerKind::Octal,
