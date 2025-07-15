@@ -662,8 +662,111 @@ impl<'a, 'b> Lexer<'a, 'b> {
     }
 
     fn parse_number(&mut self) -> Result<Token<'a, 'b>, ()> {
-        // TODO: Implement read of number token
-        Err(())
+        let start_pos = self.current_position();
+
+        let mut digits = self.read_while(|b| b.is_ascii_digit() || b == b'_');
+        assert!(!digits.is_empty(), "Number should not be empty");
+        let mut base = 10u32;
+
+        if digits == b"0" {
+            match self.peek_byte() {
+                Ok(b'b') => {
+                    self.advance(b'b');
+                    base = 2;
+
+                    digits = self.read_while(|b| b == b'0' || b == b'1' || b == b'_');
+                    if digits.is_empty() {
+                        error!(
+                            "error[L0051]: Binary literal must contain at least one digit after '0b'\n--> {}",
+                            start_pos
+                        );
+                        return Err(());
+                    }
+                }
+
+                Ok(b'o') => {
+                    self.advance(b'o');
+                    base = 8;
+
+                    digits = self.read_while(|b| (b >= b'0' && b <= b'7') || b == b'_');
+                    if digits.is_empty() {
+                        error!(
+                            "error[L0052]: Octal literal must contain at least one digit after '0o'\n--> {}",
+                            start_pos
+                        );
+                        return Err(());
+                    }
+                }
+
+                Ok(b'd') => {
+                    self.advance(b'd');
+                    base = 10;
+
+                    digits = self.read_while(|b| b.is_ascii_digit() || b == b'_');
+                    if digits.is_empty() {
+                        error!(
+                            "error[L0053]: Decimal literal must contain at least one digit after '0d'\n--> {}",
+                            start_pos
+                        );
+                        return Err(());
+                    }
+                }
+
+                Ok(b'x') => {
+                    self.advance(b'x');
+                    base = 16;
+
+                    digits = self.read_while(|b| b.is_ascii_hexdigit() || b == b'_');
+                    if digits.is_empty() {
+                        error!(
+                            "error[L0054]: Hexadecimal literal must contain at least one digit after '0x'\n--> {}",
+                            start_pos
+                        );
+                        return Err(());
+                    }
+                }
+
+                _ => {}
+            }
+        }
+
+        let mut number = 0u128;
+        for digit in digits {
+            if digit == &b'_' {
+                continue;
+            }
+
+            if let Ok(digit) = u128::from_str_radix(str::from_utf8(&[*digit]).unwrap(), base) {
+                if let Some(y) = number.checked_mul(base as u128) {
+                    if let Some(sum) = y.checked_add(digit) {
+                        number = sum;
+                        continue;
+                    }
+                }
+            }
+
+            error!(
+                "error[L0050]: Integer literal is too large to fit in u128\n--> {}",
+                start_pos
+            );
+            return Err(());
+        }
+
+        // TODO: Support IEEE 754 floating-point numbers
+
+        digits = &self.source[start_pos.offset as usize..self.current_position().offset() as usize];
+
+        Ok(Token::Integer(Integer::new(
+            number,
+            str::from_utf8(&digits).unwrap(),
+            match base {
+                2 => IntegerKind::Binary,
+                8 => IntegerKind::Octal,
+                10 => IntegerKind::Decimal,
+                16 => IntegerKind::Hexadecimal,
+                _ => unreachable!(),
+            },
+        )))
     }
 
     fn parse_string_hex_escape(&mut self, start_pos: &SourcePosition) -> Result<StringEscape, ()> {

@@ -1,5 +1,4 @@
 use nitrate_compiler::lexer::*;
-use nitrate_compiler::parser::*;
 use std::io::Read;
 
 fn read_source_file(filename: &str) -> std::io::Result<Vec<u8>> {
@@ -31,15 +30,32 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut lexer = Lexer::new(&source_code, filename, &mut storage)
         .map_err(|e| format!("Failed to create lexer for file {}: {}", filename, e))?;
 
-    let mut parser = Parser::new(&mut lexer)
-        .map_err(|e| format!("Failed to create parser for file {}: {}", filename, e))?;
+    loop {
+        let token = lexer.next_token();
+        match token.token() {
+            Token::Eof => {
+                println!("End of file");
+                break;
+            }
+            Token::Illegal => {
+                eprintln!("Illegal token found: {:?}", token);
+                break;
+            }
+            _ => {
+                println!("Token: {:?}", token);
+            }
+        }
+    }
 
-    let _parsetree = parser.parse().map_or(
-        Err(format!("Failed to parse source code in file {}", filename)),
-        |tree| Ok(tree),
-    )?;
+    // let mut parser = Parser::new(&mut lexer)
+    //     .map_err(|e| format!("Failed to create parser for file {}: {}", filename, e))?;
 
-    println!("Successfully parsed file: {}", filename);
+    // let _parsetree = parser.parse().map_or(
+    //     Err(format!("Failed to parse source code in file {}", filename)),
+    //     |tree| Ok(tree),
+    // )?;
+
+    // println!("Successfully parsed file: {}", filename);
 
     Ok(()) // Indicate success
 }
