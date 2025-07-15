@@ -504,6 +504,10 @@ impl<'a, 'b> Lexer<'a, 'b> {
         self.read_pos.clone()
     }
 
+    pub fn set_position(&mut self, pos: SourcePosition<'a>) {
+        self.read_pos = pos;
+    }
+
     const fn advance(&mut self, b: u8) -> u8 {
         self.read_pos.offset += 1;
 
@@ -665,18 +669,62 @@ impl<'a, 'b> Lexer<'a, 'b> {
         }
     }
 
+    fn convert_float_repr(&self, str: &[u8]) -> Result<f64, ()> {
+        // TODO: Support IEEE 754 floating-point numbers
+        Err(())
+    }
+
+    fn parse_float(&mut self, start_pos: &SourcePosition) -> Result<Token<'a, 'b>, ()> {
+        match self.peek_byte() {
+            Ok(b'.') => {
+                let rewind_pos = self.current_position();
+                self.advance(b'.');
+
+                match self.peek_byte() {
+                    Ok(b) if b.is_ascii_digit() => {
+                        self.read_while(|b| b.is_ascii_digit() || b == b'_');
+
+                        let digits = &self.source
+                            [start_pos.offset as usize..self.current_position().offset() as usize];
+
+                        if let Ok(result) = self.convert_float_repr(digits) {
+                            Ok(Token::Float(Float::new(
+                                result,
+                                str::from_utf8(&digits).expect("Unexpected non-utf8 digit"),
+                            )))
+                        } else {
+                            error!(
+                                "error[L0055]: Invalid float literal '{}'\n--> {}",
+                                str::from_utf8(&digits).expect("Unexpected non-utf8 digit"),
+                                start_pos
+                            );
+
+                            Err(())
+                        }
+                    }
+                    _ => {
+                        self.set_position(rewind_pos);
+                        Err(())
+                    }
+                }
+            }
+
+            _ => Err(()),
+        }
+    }
+
     fn parse_number(&mut self) -> Result<Token<'a, 'b>, ()> {
         let start_pos = self.current_position();
 
         let mut digits = self.read_while(|b| b.is_ascii_digit() || b == b'_');
         assert!(!digits.is_empty(), "Number should not be empty");
-        let mut base = 10u32;
+        let mut base_prefix = None;
 
         if digits == b"0" {
             match self.peek_byte() {
                 Ok(b'b') => {
                     self.advance(b'b');
-                    base = 2;
+                    base_prefix = Some(2);
 
                     digits = self.read_while(|b| b == b'0' || b == b'1' || b == b'_');
                     if digits.is_empty() {
@@ -690,7 +738,7 @@ impl<'a, 'b> Lexer<'a, 'b> {
 
                 Ok(b'o') => {
                     self.advance(b'o');
-                    base = 8;
+                    base_prefix = Some(8);
 
                     digits = self.read_while(|b| (b >= b'0' && b <= b'7') || b == b'_');
                     if digits.is_empty() {
@@ -704,7 +752,7 @@ impl<'a, 'b> Lexer<'a, 'b> {
 
                 Ok(b'd') => {
                     self.advance(b'd');
-                    base = 10;
+                    base_prefix = Some(10);
 
                     digits = self.read_while(|b| b.is_ascii_digit() || b == b'_');
                     if digits.is_empty() {
@@ -718,7 +766,7 @@ impl<'a, 'b> Lexer<'a, 'b> {
 
                 Ok(b'x') => {
                     self.advance(b'x');
-                    base = 16;
+                    base_prefix = Some(16);
 
                     digits = self.read_while(|b| b.is_ascii_hexdigit() || b == b'_');
                     if digits.is_empty() {
@@ -740,6 +788,8 @@ impl<'a, 'b> Lexer<'a, 'b> {
                 continue;
             }
 
+            let base = base_prefix.unwrap_or(10);
+
             if let Ok(digit) = u128::from_str_radix(
                 str::from_utf8(&[*digit]).expect("Unexpected non-utf8 digit"),
                 base,
@@ -759,18 +809,24 @@ impl<'a, 'b> Lexer<'a, 'b> {
             return Err(());
         }
 
-        // TODO: Support IEEE 754 floating-point numbers
+        if base_prefix.is_none() {
+            if let Ok(float) = self.parse_float(&start_pos) {
+                return Ok(float);
+            }
+        }
 
         digits = &self.source[start_pos.offset as usize..self.current_position().offset() as usize];
 
         Ok(Token::Integer(Integer::new(
             number,
             str::from_utf8(&digits).expect("Unexpected non-utf8 digit"),
-            match base {
-                2 => IntegerKind::Binary,
-                8 => IntegerKind::Octal,
-                10 => IntegerKind::Decimal,
-                16 => IntegerKind::Hexadecimal,
+            match base_prefix {
+                None => IntegerKind::Decimal,
+
+                Some(2) => IntegerKind::Binary,
+                Some(8) => IntegerKind::Octal,
+                Some(10) => IntegerKind::Decimal,
+                Some(16) => IntegerKind::Hexadecimal,
                 _ => unreachable!(),
             },
         )))
@@ -1274,18 +1330,20 @@ impl<'a, 'b> Lexer<'a, 'b> {
         let b = self.peek_byte()?;
 
         match b {
-            b'(' | b')' | b'[' | b']' | b'{' | b'}' | b',' | b';' | b'@' => match self.advance(b) {
-                b'(' => Ok(Token::Punctuation(Punctuation::LeftParenthesis)),
-                b')' => Ok(Token::Punctuation(Punctuation::RightParenthesis)),
-                b'[' => Ok(Token::Punctuation(Punctuation::LeftBracket)),
-                b']' => Ok(Token::Punctuation(Punctuation::RightBracket)),
-                b'{' => Ok(Token::Punctuation(Punctuation::LeftBrace)),
-                b'}' => Ok(Token::Punctuation(Punctuation::RightBrace)),
-                b',' => Ok(Token::Punctuation(Punctuation::Comma)),
-                b';' => Ok(Token::Punctuation(Punctuation::Semicolon)),
-                b'@' => Ok(Token::Punctuation(Punctuation::AtSign)),
-                _ => unreachable!(), // All cases are handled above
-            },
+            b'(' | b')' | b'[' | b']' | b'{' | b'}' | b',' | b';' | b'@' => {
+                match self.advance(b) {
+                    b'(' => Ok(Token::Punctuation(Punctuation::LeftParenthesis)),
+                    b')' => Ok(Token::Punctuation(Punctuation::RightParenthesis)),
+                    b'[' => Ok(Token::Punctuation(Punctuation::LeftBracket)),
+                    b']' => Ok(Token::Punctuation(Punctuation::RightBracket)),
+                    b'{' => Ok(Token::Punctuation(Punctuation::LeftBrace)),
+                    b'}' => Ok(Token::Punctuation(Punctuation::RightBrace)),
+                    b',' => Ok(Token::Punctuation(Punctuation::Comma)),
+                    b';' => Ok(Token::Punctuation(Punctuation::Semicolon)),
+                    b'@' => Ok(Token::Punctuation(Punctuation::AtSign)),
+                    _ => unreachable!(), // All cases are handled above
+                }
+            }
 
             b':' => {
                 self.advance(b':');
