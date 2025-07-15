@@ -314,8 +314,8 @@ impl<'a> SourcePosition<'a> {
         self.column
     }
 
-    pub const fn offset(&self) -> u32 {
-        self.offset
+    pub const fn offset(&self) -> usize {
+        self.offset as usize
     }
 
     pub const fn filename(&self) -> &'a str {
@@ -354,10 +354,10 @@ impl<'a, 'b> AnnotatedToken<'a, 'b> {
             token,
             start_line: start.line(),
             start_column: start.column(),
-            start_offset: start.offset(),
+            start_offset: start.offset,
             end_line: end.line(),
             end_column: end.column(),
-            end_offset: end.offset(),
+            end_offset: end.offset,
             filename: start.filename(),
         }
     }
@@ -528,17 +528,14 @@ impl<'a, 'b> Lexer<'a, 'b> {
     }
 
     fn peek_byte(&self) -> Result<u8, ()> {
-        self.source
-            .get(self.read_pos.offset() as usize)
-            .copied()
-            .ok_or(())
+        self.source.get(self.read_pos.offset()).copied().ok_or(())
     }
 
     fn read_while<F>(&mut self, mut condition: F) -> &'a [u8]
     where
         F: FnMut(u8) -> bool,
     {
-        let start_offset = self.read_pos.offset() as usize;
+        let start_offset = self.read_pos.offset();
         let mut end_offset = start_offset;
 
         while let Some(b) = self.source.get(end_offset) {
@@ -669,9 +666,14 @@ impl<'a, 'b> Lexer<'a, 'b> {
         }
     }
 
-    fn convert_float_repr(&self, str: &[u8]) -> Result<f64, ()> {
-        // TODO: Support IEEE 754 floating-point numbers
-        Err(())
+    fn convert_float_repr(&self, str_bytes: &str) -> Result<f64, ()> {
+        match str_bytes.replace("_", "").parse::<f64>() {
+            Ok(value) => Ok(value),
+            Err(e) => {
+                error!("error[L0058]: Invalid float literal: {}", e);
+                Err(())
+            }
+        }
     }
 
     fn parse_float(&mut self, start_pos: &SourcePosition) -> Result<Token<'a, 'b>, ()> {
@@ -684,111 +686,39 @@ impl<'a, 'b> Lexer<'a, 'b> {
                     Ok(b) if b.is_ascii_digit() => {
                         self.read_while(|b| b.is_ascii_digit() || b == b'_');
 
-                        let digits = &self.source
-                            [start_pos.offset as usize..self.current_position().offset() as usize];
+                        let literal = str::from_utf8(
+                            &self.source[start_pos.offset()..self.current_position().offset()],
+                        )
+                        .unwrap();
 
-                        if let Ok(result) = self.convert_float_repr(digits) {
-                            Ok(Token::Float(Float::new(
-                                result,
-                                str::from_utf8(&digits).expect("Unexpected non-utf8 digit"),
-                            )))
-                        } else {
-                            error!(
-                                "error[L0055]: Invalid float literal '{}'\n--> {}",
-                                str::from_utf8(&digits).expect("Unexpected non-utf8 digit"),
-                                start_pos
-                            );
-
-                            Err(())
+                        if let Ok(result) = self.convert_float_repr(&literal) {
+                            return Ok(Token::Float(Float::new(result, literal)));
                         }
                     }
                     _ => {
                         self.set_position(rewind_pos);
-                        Err(())
                     }
                 }
             }
 
-            _ => Err(()),
+            _ => {}
         }
+
+        Err(())
     }
 
-    fn parse_number(&mut self) -> Result<Token<'a, 'b>, ()> {
-        let start_pos = self.current_position();
-
-        let mut digits = self.read_while(|b| b.is_ascii_digit() || b == b'_');
-        assert!(!digits.is_empty(), "Number should not be empty");
-        let mut base_prefix = None;
-
-        if digits == b"0" {
-            match self.peek_byte() {
-                Ok(b'b') => {
-                    self.advance(b'b');
-                    base_prefix = Some(2);
-
-                    digits = self.read_while(|b| b == b'0' || b == b'1' || b == b'_');
-                    if digits.is_empty() {
-                        error!(
-                            "error[L0051]: Binary literal must contain at least one digit after '0b'\n--> {}",
-                            start_pos
-                        );
-                        return Err(());
-                    }
-                }
-
-                Ok(b'o') => {
-                    self.advance(b'o');
-                    base_prefix = Some(8);
-
-                    digits = self.read_while(|b| (b >= b'0' && b <= b'7') || b == b'_');
-                    if digits.is_empty() {
-                        error!(
-                            "error[L0052]: Octal literal must contain at least one digit after '0o'\n--> {}",
-                            start_pos
-                        );
-                        return Err(());
-                    }
-                }
-
-                Ok(b'd') => {
-                    self.advance(b'd');
-                    base_prefix = Some(10);
-
-                    digits = self.read_while(|b| b.is_ascii_digit() || b == b'_');
-                    if digits.is_empty() {
-                        error!(
-                            "error[L0053]: Decimal literal must contain at least one digit after '0d'\n--> {}",
-                            start_pos
-                        );
-                        return Err(());
-                    }
-                }
-
-                Ok(b'x') => {
-                    self.advance(b'x');
-                    base_prefix = Some(16);
-
-                    digits = self.read_while(|b| b.is_ascii_hexdigit() || b == b'_');
-                    if digits.is_empty() {
-                        error!(
-                            "error[L0054]: Hexadecimal literal must contain at least one digit after '0x'\n--> {}",
-                            start_pos
-                        );
-                        return Err(());
-                    }
-                }
-
-                _ => {}
-            }
-        }
-
+    fn radix_decode(
+        &self,
+        digits: &[u8],
+        base: u32,
+        start_pos: &SourcePosition,
+    ) -> Result<u128, ()> {
         let mut number = 0u128;
+
         for digit in digits {
             if digit == &b'_' {
                 continue;
             }
-
-            let base = base_prefix.unwrap_or(10);
 
             if let Ok(digit) = u128::from_str_radix(
                 str::from_utf8(&[*digit]).expect("Unexpected non-utf8 digit"),
@@ -809,20 +739,92 @@ impl<'a, 'b> Lexer<'a, 'b> {
             return Err(());
         }
 
+        Ok(number)
+    }
+
+    fn parse_number(&mut self) -> Result<Token<'a, 'b>, ()> {
+        let start_pos = self.current_position();
+
+        let mut base_prefix = None;
+        let mut literal = self.read_while(|b| b.is_ascii_digit() || b == b'_');
+        assert!(!literal.is_empty(), "Number should not be empty");
+
+        if literal == b"0" {
+            match self.peek_byte() {
+                Ok(b'b') => {
+                    self.advance(b'b');
+                    base_prefix = Some(2);
+
+                    literal = self.read_while(|b| b == b'0' || b == b'1' || b == b'_');
+                    if literal.is_empty() {
+                        error!(
+                            "error[L0051]: Binary literal must contain at least one digit after '0b'\n--> {}",
+                            start_pos
+                        );
+                        return Err(());
+                    }
+                }
+
+                Ok(b'o') => {
+                    self.advance(b'o');
+                    base_prefix = Some(8);
+
+                    literal = self.read_while(|b| (b >= b'0' && b <= b'7') || b == b'_');
+                    if literal.is_empty() {
+                        error!(
+                            "error[L0052]: Octal literal must contain at least one digit after '0o'\n--> {}",
+                            start_pos
+                        );
+                        return Err(());
+                    }
+                }
+
+                Ok(b'd') => {
+                    self.advance(b'd');
+                    base_prefix = Some(10);
+
+                    literal = self.read_while(|b| b.is_ascii_digit() || b == b'_');
+                    if literal.is_empty() {
+                        error!(
+                            "error[L0053]: Decimal literal must contain at least one digit after '0d'\n--> {}",
+                            start_pos
+                        );
+                        return Err(());
+                    }
+                }
+
+                Ok(b'x') => {
+                    self.advance(b'x');
+                    base_prefix = Some(16);
+
+                    literal = self.read_while(|b| b.is_ascii_hexdigit() || b == b'_');
+                    if literal.is_empty() {
+                        error!(
+                            "error[L0054]: Hexadecimal literal must contain at least one digit after '0x'\n--> {}",
+                            start_pos
+                        );
+                        return Err(());
+                    }
+                }
+
+                _ => {}
+            }
+        }
+
         if base_prefix.is_none() {
             if let Ok(float) = self.parse_float(&start_pos) {
                 return Ok(float);
             }
         }
 
-        digits = &self.source[start_pos.offset as usize..self.current_position().offset() as usize];
+        let number = self.radix_decode(literal, base_prefix.unwrap_or(10u32), &start_pos)?;
+        literal = &self.source[start_pos.offset()..self.current_position().offset()];
 
         Ok(Token::Integer(Integer::new(
             number,
-            str::from_utf8(&digits).expect("Unexpected non-utf8 digit"),
+            str::from_utf8(&literal).expect("Unexpected non-utf8 digit"),
             match base_prefix {
                 None => IntegerKind::Decimal,
-
                 Some(2) => IntegerKind::Binary,
                 Some(8) => IntegerKind::Octal,
                 Some(10) => IntegerKind::Decimal,
@@ -1070,7 +1072,7 @@ impl<'a, 'b> Lexer<'a, 'b> {
         assert!(self.peek_byte().unwrap() == b'"');
         self.advance(b'"');
 
-        let start_offset = self.current_position().offset as usize;
+        let start_offset = self.current_position().offset();
         let mut end_offset = start_offset;
         let mut storage = SmallVec::<[u8; 32]>::new();
 
