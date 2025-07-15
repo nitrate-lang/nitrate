@@ -24,15 +24,15 @@ pub struct Identifier<'a> {
 }
 
 impl<'a> Identifier<'a> {
-    pub fn new(name: &'a str, kind: IdentifierKind) -> Self {
+    pub const fn new(name: &'a str, kind: IdentifierKind) -> Self {
         Identifier { name, kind }
     }
 
-    pub fn name(&self) -> &str {
+    pub const fn name(&self) -> &str {
         self.name
     }
 
-    pub fn kind(&self) -> IdentifierKind {
+    pub const fn kind(&self) -> IdentifierKind {
         self.kind
     }
 }
@@ -53,7 +53,7 @@ pub struct Integer<'a> {
 }
 
 impl<'a> Integer<'a> {
-    pub fn new(value: u128, origin: &'a str, kind: IntegerKind) -> Self {
+    pub const fn new(value: u128, origin: &'a str, kind: IntegerKind) -> Self {
         Integer {
             value,
             origin,
@@ -61,15 +61,15 @@ impl<'a> Integer<'a> {
         }
     }
 
-    pub fn value(&self) -> u128 {
+    pub const fn value(&self) -> u128 {
         self.value
     }
 
-    pub fn origin(&self) -> &str {
+    pub const fn origin(&self) -> &str {
         self.origin
     }
 
-    pub fn kind(&self) -> IntegerKind {
+    pub const fn kind(&self) -> IntegerKind {
         self.kind
     }
 }
@@ -81,15 +81,15 @@ pub struct Float<'a> {
 }
 
 impl<'a> Float<'a> {
-    pub fn new(value: f64, origin: &'a str) -> Self {
+    pub const fn new(value: f64, origin: &'a str) -> Self {
         Float { value, origin }
     }
 
-    pub fn value(&self) -> f64 {
+    pub const fn value(&self) -> f64 {
         self.value
     }
 
-    pub fn origin(&self) -> &str {
+    pub const fn origin(&self) -> &str {
         self.origin
     }
 }
@@ -259,15 +259,15 @@ pub struct Comment<'a> {
 }
 
 impl<'a> Comment<'a> {
-    pub fn new(text: &'a str, kind: CommentKind) -> Self {
+    pub const fn new(text: &'a str, kind: CommentKind) -> Self {
         Comment { text, kind }
     }
 
-    pub fn text(&self) -> &str {
+    pub const fn text(&self) -> &str {
         self.text
     }
 
-    pub fn kind(&self) -> CommentKind {
+    pub const fn kind(&self) -> CommentKind {
         self.kind
     }
 }
@@ -297,7 +297,7 @@ pub struct SourcePosition<'a> {
 }
 
 impl<'a> SourcePosition<'a> {
-    pub fn new(line: u32, column: u32, offset: u32, filename: &'a str) -> Self {
+    pub const fn new(line: u32, column: u32, offset: u32, filename: &'a str) -> Self {
         SourcePosition {
             line,
             column,
@@ -306,19 +306,19 @@ impl<'a> SourcePosition<'a> {
         }
     }
 
-    pub fn line(&self) -> u32 {
+    pub const fn line(&self) -> u32 {
         self.line
     }
 
-    pub fn column(&self) -> u32 {
+    pub const fn column(&self) -> u32 {
         self.column
     }
 
-    pub fn offset(&self) -> u32 {
+    pub const fn offset(&self) -> u32 {
         self.offset
     }
 
-    pub fn filename(&self) -> &'a str {
+    pub const fn filename(&self) -> &'a str {
         self.filename
     }
 }
@@ -345,7 +345,11 @@ pub struct AnnotatedToken<'a, 'b> {
 }
 
 impl<'a, 'b> AnnotatedToken<'a, 'b> {
-    pub fn new(token: Token<'a, 'b>, start: SourcePosition<'a>, end: SourcePosition<'a>) -> Self {
+    pub const fn new(
+        token: Token<'a, 'b>,
+        start: SourcePosition<'a>,
+        end: SourcePosition<'a>,
+    ) -> Self {
         AnnotatedToken {
             token,
             start_line: start.line(),
@@ -358,11 +362,11 @@ impl<'a, 'b> AnnotatedToken<'a, 'b> {
         }
     }
 
-    pub fn token(&self) -> &Token {
+    pub const fn token(&self) -> &Token {
         &self.token
     }
 
-    pub fn start(&self) -> SourcePosition<'a> {
+    pub const fn start(&self) -> SourcePosition<'a> {
         SourcePosition::new(
             self.start_line,
             self.start_column,
@@ -371,7 +375,7 @@ impl<'a, 'b> AnnotatedToken<'a, 'b> {
         )
     }
 
-    pub fn end(&self) -> SourcePosition<'a> {
+    pub const fn end(&self) -> SourcePosition<'a> {
         SourcePosition::new(
             self.end_line,
             self.end_column,
@@ -380,7 +384,7 @@ impl<'a, 'b> AnnotatedToken<'a, 'b> {
         )
     }
 
-    pub fn range(&self) -> (SourcePosition<'a>, SourcePosition<'a>) {
+    pub const fn range(&self) -> (SourcePosition<'a>, SourcePosition<'a>) {
         (self.start(), self.end())
     }
 }
@@ -500,7 +504,7 @@ impl<'a, 'b> Lexer<'a, 'b> {
         self.read_pos.clone()
     }
 
-    fn advance(&mut self, b: u8) -> u8 {
+    const fn advance(&mut self, b: u8) -> u8 {
         self.read_pos.offset += 1;
 
         if b == b'\n' {
