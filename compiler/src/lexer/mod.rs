@@ -441,6 +441,14 @@ pub enum LexerConstructionError {
     SourceTooBig,
 }
 
+impl std::fmt::Display for LexerConstructionError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            LexerConstructionError::SourceTooBig => write!(f, "Source code is too big"),
+        }
+    }
+}
+
 enum StringEscape {
     Char(char),
     Byte(u8),
