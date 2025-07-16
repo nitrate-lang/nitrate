@@ -7,6 +7,7 @@ use super::character::CharLit;
 use super::list::List;
 use super::number::NumberLit;
 use super::string::StringLit;
+use super::unary_op::UnaryExpr;
 
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct OriginTag {
@@ -52,6 +53,7 @@ pub enum InnerExpr<'a> {
     List(List<'a>),
 
     BinaryOp(BinaryExpr<'a>),
+    UnaryOp(UnaryExpr<'a>),
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -146,12 +148,13 @@ impl<'a> ToCode<'a> for Expr<'a> {
         match &self.expr {
             InnerExpr::Discard => {}
 
-            InnerExpr::Number(lit) => lit.to_code(tokens, options),
-            InnerExpr::String(lit) => lit.to_code(tokens, options),
-            InnerExpr::Char(lit) => lit.to_code(tokens, options),
-            InnerExpr::List(lit) => lit.to_code(tokens, options),
+            InnerExpr::Number(e) => e.to_code(tokens, options),
+            InnerExpr::String(e) => e.to_code(tokens, options),
+            InnerExpr::Char(e) => e.to_code(tokens, options),
+            InnerExpr::List(e) => e.to_code(tokens, options),
 
-            InnerExpr::BinaryOp(lit) => lit.to_code(tokens, options),
+            InnerExpr::BinaryOp(e) => e.to_code(tokens, options),
+            InnerExpr::UnaryOp(e) => e.to_code(tokens, options),
         }
 
         if self.has_parenthesis() {
