@@ -1,4 +1,4 @@
-use nitrate_compiler::lexer::*;
+use nitrate_compiler::lexer::{Lexer, Token};
 use std::io::Read;
 
 use tracking_allocator::{AllocationGroupId, AllocationRegistry, AllocationTracker, Allocator};
@@ -57,9 +57,7 @@ fn main() {
         return;
     }
 
-    let mut storage = StringStorage::new();
-
-    let lexer = Lexer::new(&source_code, filename, &mut storage);
+    let lexer = Lexer::new(&source_code, filename);
     if lexer.is_err() {
         eprintln!("Failed to create lexer");
         return;

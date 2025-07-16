@@ -26,8 +26,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let source_code = read_source_file(filename)
         .map_err(|e| format!("Failed to read source file {}: {}", filename, e))?;
 
-    let mut storage = StringStorage::new();
-    let mut lexer = Lexer::new(&source_code, filename, &mut storage)
+    let mut lexer = Lexer::new(&source_code, filename)
         .map_err(|e| format!("Failed to create lexer for file {}: {}", filename, e))?;
 
     println!("=====================================================");

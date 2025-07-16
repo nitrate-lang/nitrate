@@ -1,4 +1,4 @@
-use crate::lexer::Lexer;
+use crate::lexer::*;
 
 pub struct Parser<'a> {
     lexer: &'a mut Lexer<'a>,

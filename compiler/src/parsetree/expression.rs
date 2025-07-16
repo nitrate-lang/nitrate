@@ -1,6 +1,6 @@
 // TODO: Develop nitrate abstract syntax tree (AST) data structures
 
-use crate::lexer::{Comment, CommentKind, Token};
+use crate::lexer::*;
 
 use super::binary_op::BinaryExpr;
 use super::character::CharLit;
