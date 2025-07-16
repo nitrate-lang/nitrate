@@ -16,6 +16,14 @@ impl<'a> List<'a> {
         self.value
     }
 
+    pub fn inner_mut(&mut self) -> &mut Vec<Expr<'a>> {
+        &mut self.value
+    }
+
+    pub fn items(&self) -> &[Expr<'a>] {
+        &self.value
+    }
+
     pub fn iter(&self) -> std::slice::Iter<Expr<'a>> {
         self.value.iter()
     }
