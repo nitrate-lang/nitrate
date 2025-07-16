@@ -15,7 +15,7 @@ impl CharLit {
         self.value
     }
 
-    pub fn value(&self) -> char {
+    pub fn get(&self) -> char {
         self.value
     }
 }
@@ -30,6 +30,6 @@ impl std::ops::Deref for CharLit {
 
 impl<'a> ToCode<'a> for CharLit {
     fn to_code(&self, tokens: &mut Vec<Token<'a>>, _options: &CodeFormat) {
-        tokens.push(Token::Char(self.value()));
+        tokens.push(Token::Char(self.get()));
     }
 }

@@ -11,7 +11,7 @@ impl<'a> StringLit<'a> {
         StringLit { value }
     }
 
-    pub fn value(&self) -> &'a [u8] {
+    pub fn get(&self) -> &'a [u8] {
         self.value
     }
 }
@@ -26,7 +26,7 @@ impl<'a> std::ops::Deref for StringLit<'a> {
 
 impl<'a> ToCode<'a> for StringLit<'a> {
     fn to_code(&self, tokens: &mut Vec<Token<'a>>, _options: &CodeFormat) {
-        let string_lit = StringLitToken::from_ref(self.value());
+        let string_lit = StringLitToken::from_ref(self);
         tokens.push(Token::String(string_lit));
     }
 }

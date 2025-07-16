@@ -4,32 +4,30 @@ use crate::lexer::{Punctuation, Token};
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct List<'a> {
-    value: Vec<Expr<'a>>,
+    items: Vec<Expr<'a>>,
 }
 
 impl<'a> List<'a> {
-    pub fn new(value: Vec<Expr<'a>>) -> Self {
-        List { value }
+    pub fn new(items: Vec<Expr<'a>>) -> Self {
+        List { items }
     }
 
     pub fn into_inner(self) -> Vec<Expr<'a>> {
-        self.value
+        self.items
     }
+}
 
-    pub fn inner_mut(&mut self) -> &mut Vec<Expr<'a>> {
-        &mut self.value
+impl<'a> std::ops::Deref for List<'a> {
+    type Target = [Expr<'a>];
+
+    fn deref(&self) -> &Self::Target {
+        &self.items
     }
+}
 
-    pub fn items(&self) -> &[Expr<'a>] {
-        &self.value
-    }
-
-    pub fn iter(&self) -> std::slice::Iter<Expr<'a>> {
-        self.value.iter()
-    }
-
-    pub fn iter_mut(&mut self) -> std::slice::IterMut<Expr<'a>> {
-        self.value.iter_mut()
+impl<'a> std::ops::DerefMut for List<'a> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.items
     }
 }
 
