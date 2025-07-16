@@ -11,6 +11,10 @@ impl CharLit {
         CharLit { value, origin }
     }
 
+    pub fn into_inner(self) -> char {
+        self.value
+    }
+
     pub fn origin(&self) -> OriginTag {
         self.origin
     }
