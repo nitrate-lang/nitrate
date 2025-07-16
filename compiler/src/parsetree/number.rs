@@ -1,31 +1,23 @@
-use super::origin::OriginTag;
-
 use apint::ApInt;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct NumberLit {
     value: ApInt,
-    origin: OriginTag,
 }
 
 impl NumberLit {
-    pub fn new(value: ApInt, origin: OriginTag) -> Self {
-        NumberLit { value, origin }
+    pub fn new(value: ApInt) -> Self {
+        NumberLit { value }
     }
 
-    pub fn from_u128(value: u128, origin: OriginTag) -> Self {
+    pub fn from_u128(value: u128) -> Self {
         NumberLit {
             value: ApInt::from_u128(value),
-            origin,
         }
     }
 
     pub fn into_inner(self) -> ApInt {
         self.value
-    }
-
-    pub fn origin(&self) -> OriginTag {
-        self.origin
     }
 }
 

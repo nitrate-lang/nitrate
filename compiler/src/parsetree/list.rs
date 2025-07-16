@@ -1,30 +1,24 @@
-use super::expression::ExprLit;
-use super::origin::OriginTag;
+use super::expression::Expr;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct ListLit<'a> {
-    value: Vec<ExprLit<'a>>,
-    origin: OriginTag,
+pub struct List<'a> {
+    value: Vec<Expr<'a>>,
 }
 
-impl<'a> ListLit<'a> {
-    pub fn new(value: Vec<ExprLit<'a>>, origin: OriginTag) -> Self {
-        ListLit { value, origin }
+impl<'a> List<'a> {
+    pub fn new(value: Vec<Expr<'a>>) -> Self {
+        List { value }
     }
 
-    pub fn into_inner(self) -> Vec<ExprLit<'a>> {
+    pub fn into_inner(self) -> Vec<Expr<'a>> {
         self.value
     }
 
-    pub fn origin(&self) -> OriginTag {
-        self.origin
-    }
-
-    pub fn iter(&self) -> std::slice::Iter<ExprLit<'a>> {
+    pub fn iter(&self) -> std::slice::Iter<Expr<'a>> {
         self.value.iter()
     }
 
-    pub fn mut_iter(&mut self) -> std::slice::IterMut<ExprLit<'a>> {
+    pub fn iter_mut(&mut self) -> std::slice::IterMut<Expr<'a>> {
         self.value.iter_mut()
     }
 }

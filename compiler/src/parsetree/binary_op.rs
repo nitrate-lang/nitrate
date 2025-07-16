@@ -1,5 +1,4 @@
 use super::expression::Expr;
-use super::origin::OriginTag;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum BinaryOperator {
@@ -83,26 +82,15 @@ pub struct BinaryExpr<'a> {
     left: Box<Expr<'a>>,
     right: Box<Expr<'a>>,
     operator: BinaryOperator,
-    origin: OriginTag,
 }
 
 impl<'a> BinaryExpr<'a> {
-    pub fn new(
-        left: Box<Expr<'a>>,
-        operator: BinaryOperator,
-        right: Box<Expr<'a>>,
-        origin: OriginTag,
-    ) -> Self {
+    pub fn new(left: Box<Expr<'a>>, operator: BinaryOperator, right: Box<Expr<'a>>) -> Self {
         BinaryExpr {
             left,
             right,
             operator,
-            origin,
         }
-    }
-
-    pub fn origin(&self) -> OriginTag {
-        self.origin
     }
 
     pub fn left(&self) -> &Expr<'a> {

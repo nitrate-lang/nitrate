@@ -1,22 +1,15 @@
-use super::origin::OriginTag;
-
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct CharLit {
     value: char,
-    origin: OriginTag,
 }
 
 impl CharLit {
-    pub fn new(value: char, origin: OriginTag) -> Self {
-        CharLit { value, origin }
+    pub fn new(value: char) -> Self {
+        CharLit { value }
     }
 
     pub fn into_inner(self) -> char {
         self.value
-    }
-
-    pub fn origin(&self) -> OriginTag {
-        self.origin
     }
 }
 
