@@ -1,5 +1,6 @@
 // TODO: Develop nitrate abstract syntax tree (AST) data structures
 
+use super::binary_op::BinaryExpr;
 use super::character::CharLit;
 use super::list::ListLit;
 use super::number::NumberLit;
@@ -22,8 +23,7 @@ impl<'a> ExprLit<'a> {
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Expr<'a> {
     ExprLit(ExprLit<'a>),
-
-    Other, // Placeholder for other expression types
+    BinaryOp(BinaryExpr<'a>),
 }
 
 impl<'a> Expr<'a> {
