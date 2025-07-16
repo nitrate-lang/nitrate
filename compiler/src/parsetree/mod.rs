@@ -1,4 +1,5 @@
 pub mod binary_op;
+pub mod block;
 pub mod character;
 pub mod expression;
 pub mod list;

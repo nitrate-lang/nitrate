@@ -3,6 +3,7 @@
 use crate::lexer::*;
 
 use super::binary_op::BinaryExpr;
+use super::block::Block;
 use super::character::CharLit;
 use super::list::List;
 use super::number::NumberLit;
@@ -52,6 +53,7 @@ pub enum InnerExpr<'a> {
     Char(CharLit),
     List(List<'a>),
 
+    Block(Block<'a>),
     BinaryOp(BinaryExpr<'a>),
     UnaryOp(UnaryExpr<'a>),
 }
@@ -153,6 +155,7 @@ impl<'a> ToCode<'a> for Expr<'a> {
             InnerExpr::Char(e) => e.to_code(tokens, options),
             InnerExpr::List(e) => e.to_code(tokens, options),
 
+            InnerExpr::Block(e) => e.to_code(tokens, options),
             InnerExpr::BinaryOp(e) => e.to_code(tokens, options),
             InnerExpr::UnaryOp(e) => e.to_code(tokens, options),
         }
