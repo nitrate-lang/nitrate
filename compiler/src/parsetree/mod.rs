@@ -2,10 +2,13 @@
 
 mod number;
 mod origin;
+mod string;
 
-use number::Number;
+use number::NumberLit;
+use string::StringLit;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub enum Expr {
-    Number(Number),
+pub enum Expr<'a> {
+    Number(NumberLit),
+    String(StringLit<'a>),
 }

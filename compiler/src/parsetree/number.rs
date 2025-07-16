@@ -3,18 +3,18 @@ use super::origin::OriginTag;
 use apint::ApInt;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct Number {
+pub struct NumberLit {
     value: ApInt,
     origin: OriginTag,
 }
 
-impl Number {
+impl NumberLit {
     pub fn new(value: ApInt, origin: OriginTag) -> Self {
-        Number { value, origin }
+        NumberLit { value, origin }
     }
 
     pub fn from_u128(value: u128, origin: OriginTag) -> Self {
-        Number {
+        NumberLit {
             value: ApInt::from_u128(value),
             origin,
         }
@@ -29,7 +29,7 @@ impl Number {
     }
 }
 
-impl std::ops::Deref for Number {
+impl std::ops::Deref for NumberLit {
     type Target = ApInt;
 
     fn deref(&self) -> &Self::Target {
@@ -37,7 +37,7 @@ impl std::ops::Deref for Number {
     }
 }
 
-impl std::ops::DerefMut for Number {
+impl std::ops::DerefMut for NumberLit {
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.value
     }

@@ -4,7 +4,7 @@ pub struct OriginTag {
 }
 
 impl OriginTag {
-    fn new(offset: u32) -> Self {
+    pub fn new(offset: u32) -> Self {
         OriginTag { offset }
     }
 }
