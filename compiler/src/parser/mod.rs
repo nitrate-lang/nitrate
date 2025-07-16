@@ -25,10 +25,6 @@ impl<'a> Parser<'a> {
         self.lexer
     }
 
-    fn filename(&self) -> &str {
-        self.lexer.current_position().filename()
-    }
-
     pub fn parse(&mut self) -> Option<()> {
         // TODO: Develop nitrate parser
         None

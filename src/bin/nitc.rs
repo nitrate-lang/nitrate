@@ -30,19 +30,22 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut lexer = Lexer::new(&source_code, filename, &mut storage)
         .map_err(|e| format!("Failed to create lexer for file {}: {}", filename, e))?;
 
+    println!("=====================================================");
     loop {
         let token = lexer.next_token();
         match token.token() {
             Token::Eof => {
+                println!("=====================================================");
                 println!("End of file");
                 break;
             }
             Token::Illegal => {
+                println!("=====================================================");
                 eprintln!("Illegal token found: {:?}", token);
                 break;
             }
             _ => {
-                println!("Token: {:?}", token);
+                println!("{:?}", token.token());
             }
         }
     }
