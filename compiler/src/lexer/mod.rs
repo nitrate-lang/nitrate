@@ -2,9 +2,7 @@ use hashbrown::hash_set::HashSet;
 use log::error;
 use smallvec::SmallVec;
 use stackvector::StackVec;
-use std::cell::RefCell;
 use std::marker::PhantomData;
-use std::rc::Rc;
 
 // Must not be increased beyond u32::MAX, as the lexer/compiler pipeline
 // assumes that offsets are representable as u32 values. However, it is
@@ -429,7 +427,7 @@ impl<'b> StringStorage<'b> {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug)]
 pub struct Lexer<'a, 'b>
 where
     'a: 'b,
@@ -437,7 +435,7 @@ where
     source: &'a [u8],
     read_pos: SourcePosition<'a>,
     current: Option<AnnotatedToken<'a, 'b>>,
-    storage: Rc<RefCell<StringStorage<'b>>>,
+    storage: &'b mut StringStorage<'b>,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -471,7 +469,7 @@ impl<'a, 'b> Lexer<'a, 'b> {
                 source: src,
                 read_pos: SourcePosition::new(0, 0, 0, filename),
                 current: None,
-                storage: Rc::new(RefCell::new(std::mem::take(storage))),
+                storage: storage,
             })
         }
     }
@@ -1118,12 +1116,10 @@ impl<'a, 'b> Lexer<'a, 'b> {
                         }
                     } else {
                         if str::from_utf8(&storage).is_ok() {
-                            return Ok(Token::String(
-                                self.storage.borrow_mut().get_or_intern_str(storage),
-                            ));
+                            return Ok(Token::String(self.storage.get_or_intern_str(storage)));
                         } else {
                             return Ok(Token::BinaryString(
-                                self.storage.borrow_mut().get_or_intern_bytes(storage),
+                                self.storage.get_or_intern_bytes(storage),
                             ));
                         }
                     }
