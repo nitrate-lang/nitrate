@@ -265,8 +265,8 @@ impl<'a> Lexer<'a> {
                         )
                         .unwrap();
 
-                        if let Ok(result) = self.convert_float_repr(&literal) {
-                            return Ok(Token::Float(Float::new(result, literal)));
+                        if let Ok(result) = self.convert_float_repr(literal) {
+                            return Ok(Token::Float(Float::new(result)));
                         }
                     }
                     _ => {
@@ -392,11 +392,9 @@ impl<'a> Lexer<'a> {
         }
 
         let number = self.radix_decode(literal, base_prefix.unwrap_or(10u32), &start_pos)?;
-        literal = &self.source[start_pos.offset()..self.current_position().offset()];
 
         Ok(Token::Integer(Integer::new(
             number,
-            str::from_utf8(&literal).expect("Unexpected non-utf8 digit"),
             match base_prefix {
                 None => IntegerKind::Decimal,
                 Some(2) => IntegerKind::Binary,

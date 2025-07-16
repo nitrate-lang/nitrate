@@ -124,21 +124,38 @@ impl<'a> std::ops::DerefMut for Expr<'a> {
     }
 }
 
+#[derive(Debug, Default, Clone, PartialEq, Eq, Hash)]
+pub struct CodeFormat {}
+
 pub trait ToCode<'a> {
-    fn to_code(&self, tokens: &mut Vec<Token<'a>>);
+    fn to_code(&self, tokens: &mut Vec<Token<'a>>, options: &CodeFormat);
 }
 
 impl<'a> ToCode<'a> for Expr<'a> {
-    fn to_code(&self, tokens: &mut Vec<Token<'a>>) {
+    fn to_code(&self, tokens: &mut Vec<Token<'a>>, options: &CodeFormat) {
+        // TODO: Serialize attached comments
+
+        if self.is_discarded() {
+            return;
+        }
+
+        if self.has_parenthesis() {
+            tokens.push(Token::Punctuation(Punctuation::LeftParenthesis));
+        }
+
         match &self.expr {
             InnerExpr::Discard => {}
 
-            InnerExpr::Number(lit) => lit.to_code(tokens),
-            InnerExpr::String(lit) => lit.to_code(tokens),
-            InnerExpr::Char(lit) => lit.to_code(tokens),
-            InnerExpr::List(lit) => lit.to_code(tokens),
+            InnerExpr::Number(lit) => lit.to_code(tokens, options),
+            InnerExpr::String(lit) => lit.to_code(tokens, options),
+            InnerExpr::Char(lit) => lit.to_code(tokens, options),
+            InnerExpr::List(lit) => lit.to_code(tokens, options),
 
-            InnerExpr::BinaryOp(lit) => lit.to_code(tokens),
+            InnerExpr::BinaryOp(lit) => lit.to_code(tokens, options),
+        }
+
+        if self.has_parenthesis() {
+            tokens.push(Token::Punctuation(Punctuation::RightParenthesis));
         }
     }
 }

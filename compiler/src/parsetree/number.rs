@@ -1,44 +1,44 @@
-use super::expression::ToCode;
-use crate::lexer::Token;
-use apint::ApInt;
+use super::expression::{CodeFormat, ToCode};
+use crate::lexer::{Integer, IntegerKind, Operator, Token};
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct NumberLit {
-    value: ApInt,
+    value: u128,
+    is_negative: bool,
 }
 
 impl NumberLit {
-    pub fn new(value: ApInt) -> Self {
-        NumberLit { value }
+    pub fn new(value: u128, is_negative: bool) -> Self {
+        NumberLit { value, is_negative }
     }
 
     pub fn from_u128(value: u128) -> Self {
         NumberLit {
-            value: ApInt::from_u128(value),
+            value,
+            is_negative: false,
         }
     }
 
-    pub fn into_inner(self) -> ApInt {
+    pub fn into_inner(self) -> u128 {
         self.value
     }
-}
 
-impl std::ops::Deref for NumberLit {
-    type Target = ApInt;
-
-    fn deref(&self) -> &Self::Target {
-        &self.value
+    pub fn value(&self) -> u128 {
+        self.value
     }
-}
 
-impl std::ops::DerefMut for NumberLit {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.value
+    pub fn is_negative(&self) -> bool {
+        self.is_negative
     }
 }
 
 impl<'a> ToCode<'a> for NumberLit {
-    fn to_code(&self, tokens: &mut Vec<Token<'a>>) {
-        // TODO: Convert number to code
+    fn to_code(&self, tokens: &mut Vec<Token<'a>>, _options: &CodeFormat) {
+        if self.is_negative() {
+            tokens.push(Token::Operator(Operator::Sub));
+        }
+
+        let number = Integer::new(self.value(), IntegerKind::Decimal);
+        tokens.push(Token::Integer(number));
     }
 }

@@ -35,27 +35,18 @@ pub enum IntegerKind {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct Integer<'a> {
+pub struct Integer {
     value: u128,
-    origin: &'a str,
     kind: IntegerKind,
 }
 
-impl<'a> Integer<'a> {
-    pub const fn new(value: u128, origin: &'a str, kind: IntegerKind) -> Self {
-        Integer {
-            value,
-            origin,
-            kind,
-        }
+impl Integer {
+    pub const fn new(value: u128, kind: IntegerKind) -> Self {
+        Integer { value, kind }
     }
 
     pub const fn value(&self) -> u128 {
         self.value
-    }
-
-    pub const fn origin(&self) -> &str {
-        self.origin
     }
 
     pub const fn kind(&self) -> IntegerKind {
@@ -64,22 +55,17 @@ impl<'a> Integer<'a> {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub struct Float<'a> {
+pub struct Float {
     value: f64,
-    origin: &'a str,
 }
 
-impl<'a> Float<'a> {
-    pub const fn new(value: f64, origin: &'a str) -> Self {
-        Float { value, origin }
+impl Float {
+    pub const fn new(value: f64) -> Self {
+        Float { value }
     }
 
     pub const fn value(&self) -> f64 {
         self.value
-    }
-
-    pub const fn origin(&self) -> &str {
-        self.origin
     }
 }
 
@@ -319,8 +305,8 @@ impl<'a> Comment<'a> {
 #[derive(Debug, Clone, PartialEq)]
 pub enum Token<'a> {
     Identifier(Identifier<'a>),
-    Integer(Integer<'a>),
-    Float(Float<'a>),
+    Integer(Integer),
+    Float(Float),
     Keyword(Keyword),
     String(StringLit<'a>),
     Char(char),

@@ -1,6 +1,6 @@
 use super::expression::Expr;
-use super::expression::ToCode;
-use crate::lexer::Token;
+use super::expression::{CodeFormat, ToCode};
+use crate::lexer::{Punctuation, Token};
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct List<'a> {
@@ -26,7 +26,14 @@ impl<'a> List<'a> {
 }
 
 impl<'a> ToCode<'a> for List<'a> {
-    fn to_code(&self, tokens: &mut Vec<Token<'a>>) {
-        // TODO: Convert list to code
+    fn to_code(&self, tokens: &mut Vec<Token<'a>>, options: &CodeFormat) {
+        tokens.push(Token::Punctuation(Punctuation::LeftBracket));
+        for (i, expr) in self.iter().enumerate() {
+            if i > 0 {
+                tokens.push(Token::Punctuation(Punctuation::Comma));
+            }
+            expr.to_code(tokens, options);
+        }
+        tokens.push(Token::Punctuation(Punctuation::RightBracket));
     }
 }

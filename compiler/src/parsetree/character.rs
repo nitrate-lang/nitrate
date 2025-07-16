@@ -1,4 +1,4 @@
-use super::expression::ToCode;
+use super::expression::{CodeFormat, ToCode};
 use crate::lexer::Token;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -14,6 +14,10 @@ impl CharLit {
     pub fn into_inner(self) -> char {
         self.value
     }
+
+    pub fn value(&self) -> char {
+        self.value
+    }
 }
 
 impl std::ops::Deref for CharLit {
@@ -25,7 +29,7 @@ impl std::ops::Deref for CharLit {
 }
 
 impl<'a> ToCode<'a> for CharLit {
-    fn to_code(&self, tokens: &mut Vec<Token<'a>>) {
-        // TODO: Convert character to code
+    fn to_code(&self, tokens: &mut Vec<Token<'a>>, _options: &CodeFormat) {
+        tokens.push(Token::Char(self.value()));
     }
 }
