@@ -1,7 +1,7 @@
 use crate::lexer::Lexer;
 
 pub struct Parser<'a> {
-    lexer: &'a mut Lexer<'a, 'a>,
+    lexer: &'a mut Lexer<'a>,
 }
 
 pub enum ParserConstructionError {
@@ -17,11 +17,11 @@ impl std::fmt::Display for ParserConstructionError {
 }
 
 impl<'a> Parser<'a> {
-    pub fn new(lexer: &'a mut Lexer<'a, 'a>) -> Result<Self, ParserConstructionError> {
+    pub fn new(lexer: &'a mut Lexer<'a>) -> Result<Self, ParserConstructionError> {
         Ok(Parser { lexer })
     }
 
-    pub fn get_lexer(&mut self) -> &mut Lexer<'a, 'a> {
+    pub fn get_lexer(&mut self) -> &mut Lexer<'a> {
         self.lexer
     }
 

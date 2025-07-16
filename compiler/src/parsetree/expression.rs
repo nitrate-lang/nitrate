@@ -1,7 +1,5 @@
 // TODO: Develop nitrate abstract syntax tree (AST) data structures
 
-use apint::ApInt;
-
 use crate::lexer::{Comment, CommentKind, Token};
 
 use super::binary_op::BinaryExpr;
@@ -127,11 +125,11 @@ impl<'a> std::ops::DerefMut for Expr<'a> {
 }
 
 pub trait ToCode<'a> {
-    fn to_code(&self) -> Vec<Token<'a, 'a>>;
+    fn to_code(&self) -> Vec<Token<'a>>;
 }
 
 impl<'a> ToCode<'a> for Expr<'a> {
-    fn to_code(&self) -> Vec<Token<'a, 'a>> {
+    fn to_code(&self) -> Vec<Token<'a>> {
         let mut tokens = Vec::new();
 
         match &self.expr {
@@ -144,16 +142,4 @@ impl<'a> ToCode<'a> for Expr<'a> {
 
         tokens
     }
-}
-
-fn test() {
-    let mut expr = Some(Expr::new(
-        InnerExpr::Number(NumberLit::from_u128(0)),
-        ExprMeta::new(false, OriginTag::new(0)),
-    ));
-
-    let mut tokens = expr.unwrap().to_code();
-    expr = None;
-
-    tokens.clear();
 }

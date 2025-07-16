@@ -271,13 +271,13 @@ impl<'a> Comment<'a> {
 }
 
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
-pub enum Token<'a, 'b> {
+pub enum Token<'a> {
     Identifier(Identifier<'a>),
     Integer(Integer<'a>),
     Float(Float<'a>),
     Keyword(Keyword),
-    String(&'b str),
-    BinaryString(&'b [u8]),
+    String(&'a str),
+    BinaryString(&'a [u8]),
     Char(char),
     Punctuation(Punctuation),
     Operator(Operator),
@@ -328,8 +328,8 @@ impl std::fmt::Display for SourcePosition<'_> {
 }
 
 #[derive(Debug, Clone, PartialEq, PartialOrd)]
-pub struct AnnotatedToken<'a, 'b> {
-    token: Token<'a, 'b>,
+pub struct AnnotatedToken<'a> {
+    token: Token<'a>,
 
     start_line: u32,
     start_column: u32,
@@ -342,12 +342,8 @@ pub struct AnnotatedToken<'a, 'b> {
     filename: &'a str,
 }
 
-impl<'a, 'b> AnnotatedToken<'a, 'b> {
-    pub const fn new(
-        token: Token<'a, 'b>,
-        start: SourcePosition<'a>,
-        end: SourcePosition<'a>,
-    ) -> Self {
+impl<'a> AnnotatedToken<'a> {
+    pub const fn new(token: Token<'a>, start: SourcePosition<'a>, end: SourcePosition<'a>) -> Self {
         AnnotatedToken {
             token,
             start_line: start.line(),
@@ -428,14 +424,11 @@ impl<'b> StringStorage<'b> {
 }
 
 #[derive(Debug)]
-pub struct Lexer<'a, 'b>
-where
-    'a: 'b,
-{
+pub struct Lexer<'a> {
     source: &'a [u8],
     read_pos: SourcePosition<'a>,
-    current: Option<AnnotatedToken<'a, 'b>>,
-    storage: &'b mut StringStorage<'b>,
+    current: Option<AnnotatedToken<'a>>,
+    storage: &'a mut StringStorage<'a>,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -456,11 +449,11 @@ enum StringEscape {
     Byte(u8),
 }
 
-impl<'a, 'b> Lexer<'a, 'b> {
+impl<'a> Lexer<'a> {
     pub fn new(
         src: &'a [u8],
         filename: &'a str,
-        storage: &'b mut StringStorage<'b>,
+        storage: &'a mut StringStorage<'a>,
     ) -> Result<Self, LexerConstructionError> {
         if src.len() > MAX_SOURCE_SIZE {
             Err(LexerConstructionError::SourceTooBig)
@@ -482,13 +475,13 @@ impl<'a, 'b> Lexer<'a, 'b> {
         }
     }
 
-    pub fn next_token(&mut self) -> AnnotatedToken<'a, 'b> {
+    pub fn next_token(&mut self) -> AnnotatedToken<'a> {
         self.current
             .take()
             .unwrap_or_else(|| self.parse_next_token())
     }
 
-    pub fn peek_token(&mut self) -> AnnotatedToken<'a, 'b> {
+    pub fn peek_token(&mut self) -> AnnotatedToken<'a> {
         let token = self
             .current
             .take()
@@ -548,7 +541,7 @@ impl<'a, 'b> Lexer<'a, 'b> {
         &self.source[start_offset..end_offset]
     }
 
-    fn parse_atypical_identifier(&mut self) -> Result<Token<'a, 'b>, ()> {
+    fn parse_atypical_identifier(&mut self) -> Result<Token<'a>, ()> {
         let start_pos = self.current_position();
 
         assert!(self.peek_byte().unwrap() == b'`');
@@ -584,7 +577,7 @@ impl<'a, 'b> Lexer<'a, 'b> {
         }
     }
 
-    fn parse_typical_identifier(&mut self) -> Result<Token<'a, 'b>, ()> {
+    fn parse_typical_identifier(&mut self) -> Result<Token<'a>, ()> {
         let start_pos = self.current_position();
 
         let name = self.read_while(|b| b.is_ascii_alphanumeric() || b == b'_' || !b.is_ascii());
@@ -674,7 +667,7 @@ impl<'a, 'b> Lexer<'a, 'b> {
         }
     }
 
-    fn parse_float(&mut self, start_pos: &SourcePosition) -> Result<Token<'a, 'b>, ()> {
+    fn parse_float(&mut self, start_pos: &SourcePosition) -> Result<Token<'a>, ()> {
         match self.peek_byte() {
             Ok(b'.') => {
                 let rewind_pos = self.current_position();
@@ -740,7 +733,7 @@ impl<'a, 'b> Lexer<'a, 'b> {
         Ok(number)
     }
 
-    fn parse_number(&mut self) -> Result<Token<'a, 'b>, ()> {
+    fn parse_number(&mut self) -> Result<Token<'a>, ()> {
         let start_pos = self.current_position();
 
         let mut base_prefix = None;
@@ -1064,7 +1057,7 @@ impl<'a, 'b> Lexer<'a, 'b> {
         }
     }
 
-    fn parse_string(&mut self) -> Result<Token<'a, 'b>, ()> {
+    fn parse_string(&mut self) -> Result<Token<'a>, ()> {
         let start_pos = self.current_position();
 
         assert!(self.peek_byte().unwrap() == b'"');
@@ -1206,7 +1199,7 @@ impl<'a, 'b> Lexer<'a, 'b> {
         }
     }
 
-    fn parse_char(&mut self) -> Result<Token<'a, 'b>, ()> {
+    fn parse_char(&mut self) -> Result<Token<'a>, ()> {
         let start_pos = self.current_position();
 
         assert!(self.peek_byte().unwrap() == b'\'');
@@ -1294,7 +1287,7 @@ impl<'a, 'b> Lexer<'a, 'b> {
         }
     }
 
-    fn parse_comment(&mut self) -> Result<Token<'a, 'b>, ()> {
+    fn parse_comment(&mut self) -> Result<Token<'a>, ()> {
         let start_pos = self.current_position();
         let mut comment_bytes = self.read_while(|b| b != b'\n');
 
@@ -1318,7 +1311,7 @@ impl<'a, 'b> Lexer<'a, 'b> {
         }
     }
 
-    fn parse_operator_or_punctuation(&mut self) -> Result<Token<'a, 'b>, ()> {
+    fn parse_operator_or_punctuation(&mut self) -> Result<Token<'a>, ()> {
         /*
          * The word-like operators are not handled here, as they are ambiguous with identifiers.
          * They are handled in `parse_typical_identifier`.
@@ -1603,7 +1596,7 @@ impl<'a, 'b> Lexer<'a, 'b> {
         }
     }
 
-    fn parse_next_token(&mut self) -> AnnotatedToken<'a, 'b> {
+    fn parse_next_token(&mut self) -> AnnotatedToken<'a> {
         self.read_while(|b| b.is_ascii_whitespace());
 
         let start_pos = self.current_position();
