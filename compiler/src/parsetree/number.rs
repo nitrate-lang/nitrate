@@ -1,3 +1,5 @@
+use super::expression::ToCode;
+use crate::lexer::Token;
 use apint::ApInt;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -32,5 +34,11 @@ impl std::ops::Deref for NumberLit {
 impl std::ops::DerefMut for NumberLit {
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.value
+    }
+}
+
+impl<'a> ToCode<'a> for NumberLit {
+    fn to_code(&self, tokens: &mut Vec<Token<'a>>) {
+        // TODO: Convert number to code
     }
 }

@@ -125,21 +125,20 @@ impl<'a> std::ops::DerefMut for Expr<'a> {
 }
 
 pub trait ToCode<'a> {
-    fn to_code(&self) -> Vec<Token<'a>>;
+    fn to_code(&self, tokens: &mut Vec<Token<'a>>);
 }
 
 impl<'a> ToCode<'a> for Expr<'a> {
-    fn to_code(&self) -> Vec<Token<'a>> {
-        let mut tokens = Vec::new();
-
+    fn to_code(&self, tokens: &mut Vec<Token<'a>>) {
         match &self.expr {
-            InnerExpr::String(string) => tokens.push(Token::Comment(Comment::new(
-                string,
-                CommentKind::SingleLine,
-            ))),
-            _ => {}
-        }
+            InnerExpr::Discard => {}
 
-        tokens
+            InnerExpr::Number(lit) => lit.to_code(tokens),
+            InnerExpr::String(lit) => lit.to_code(tokens),
+            InnerExpr::Char(lit) => lit.to_code(tokens),
+            InnerExpr::List(lit) => lit.to_code(tokens),
+
+            InnerExpr::BinaryOp(lit) => lit.to_code(tokens),
+        }
     }
 }

@@ -1,4 +1,6 @@
 use super::expression::Expr;
+use super::expression::ToCode;
+use crate::lexer::Token;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum BinaryOperator {
@@ -103,5 +105,11 @@ impl<'a> BinaryExpr<'a> {
 
     pub fn right(&self) -> &Expr<'a> {
         &self.right
+    }
+}
+
+impl<'a> ToCode<'a> for BinaryExpr<'a> {
+    fn to_code(&self, tokens: &mut Vec<Token<'a>>) {
+        // TODO: Convert binary expression to code
     }
 }

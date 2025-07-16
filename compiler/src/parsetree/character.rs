@@ -1,3 +1,6 @@
+use super::expression::ToCode;
+use crate::lexer::Token;
+
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct CharLit {
     value: char,
@@ -18,5 +21,11 @@ impl std::ops::Deref for CharLit {
 
     fn deref(&self) -> &Self::Target {
         &self.value
+    }
+}
+
+impl<'a> ToCode<'a> for CharLit {
+    fn to_code(&self, tokens: &mut Vec<Token<'a>>) {
+        // TODO: Convert character to code
     }
 }

@@ -1,4 +1,6 @@
 use super::expression::Expr;
+use super::expression::ToCode;
+use crate::lexer::Token;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct List<'a> {
@@ -20,5 +22,11 @@ impl<'a> List<'a> {
 
     pub fn iter_mut(&mut self) -> std::slice::IterMut<Expr<'a>> {
         self.value.iter_mut()
+    }
+}
+
+impl<'a> ToCode<'a> for List<'a> {
+    fn to_code(&self, tokens: &mut Vec<Token<'a>>) {
+        // TODO: Convert list to code
     }
 }
