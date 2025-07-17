@@ -13,8 +13,33 @@ pub struct Identifier<'a> {
 }
 
 impl<'a> Identifier<'a> {
-    pub const fn new(name: &'a str, kind: IdentifierKind) -> Self {
-        Identifier { name, kind }
+    pub fn new(name: &'a str) -> Self {
+        Identifier {
+            name,
+            kind: Identifier::get_kind(name),
+        }
+    }
+
+    pub fn new_typical(name: &'a str) -> Self {
+        assert!(
+            Identifier::is_typical(name),
+            "Expected a typical identifier"
+        );
+        Identifier {
+            name,
+            kind: IdentifierKind::Typical,
+        }
+    }
+
+    pub fn new_atypical(name: &'a str) -> Self {
+        assert!(
+            Identifier::is_atypical(name),
+            "Expected an atypical identifier"
+        );
+        Identifier {
+            name,
+            kind: IdentifierKind::Atypical,
+        }
     }
 
     pub const fn name(&self) -> &str {
@@ -23,6 +48,30 @@ impl<'a> Identifier<'a> {
 
     pub const fn kind(&self) -> IdentifierKind {
         self.kind
+    }
+
+    pub fn is_typical(name: &str) -> bool {
+        let mut iter = name.chars();
+
+        if let Some(first) = iter.next() {
+            if first.is_ascii_alphabetic() || first == '_' || !first.is_ascii() {
+                return iter.all(|c| c.is_ascii_alphanumeric() || c == '_' || !c.is_ascii());
+            }
+        }
+
+        false
+    }
+
+    pub fn is_atypical(name: &str) -> bool {
+        !Self::is_typical(name)
+    }
+
+    pub fn get_kind(name: &str) -> IdentifierKind {
+        if Self::is_typical(name) {
+            IdentifierKind::Typical
+        } else {
+            IdentifierKind::Atypical
+        }
     }
 }
 
