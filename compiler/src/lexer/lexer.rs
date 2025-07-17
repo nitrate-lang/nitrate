@@ -4,7 +4,7 @@ use stackvector::StackVec;
 
 use super::token::*;
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, PartialOrd, Hash)]
 pub enum LexerConstructionError {
     SourceTooBig,
 }
@@ -17,7 +17,7 @@ impl std::fmt::Display for LexerConstructionError {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, PartialEq, PartialOrd, Hash)]
 pub struct Lexer<'a> {
     source: &'a [u8],
     read_pos: SourcePosition<'a>,
