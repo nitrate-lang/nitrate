@@ -2,15 +2,16 @@ use super::expression::{CodeFormat, ToCode};
 use crate::lexer::{Float, Integer, IntegerKind, Token};
 use apint::UInt;
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Hash)]
 pub struct IntegerLit {
     value: UInt,
+    kind: IntegerKind,
 }
 
 impl IntegerLit {
-    pub fn new(value: UInt) -> Option<Self> {
+    pub fn new(value: UInt, kind: IntegerKind) -> Option<Self> {
         if value.try_to_u128().is_ok() {
-            Some(IntegerLit { value })
+            Some(IntegerLit { value, kind })
         } else {
             None
         }
@@ -23,6 +24,10 @@ impl IntegerLit {
     pub fn get(&self) -> &UInt {
         &self.value
     }
+
+    pub fn kind(&self) -> IntegerKind {
+        self.kind
+    }
 }
 
 impl<'a> ToCode<'a> for IntegerLit {
@@ -31,7 +36,7 @@ impl<'a> ToCode<'a> for IntegerLit {
             .try_to_u128()
             .expect("IntegerLit apint::UInt value should fit in u128");
 
-        let number = Integer::new(u128, IntegerKind::Decimal);
+        let number = Integer::new(u128, self.kind());
         tokens.push(Token::Integer(number));
     }
 }

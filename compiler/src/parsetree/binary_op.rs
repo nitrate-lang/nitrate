@@ -2,7 +2,7 @@ use super::expression::Expr;
 use super::expression::{CodeFormat, ToCode};
 use crate::lexer::{Operator, Token};
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Hash)]
 pub enum BinaryOperator {
     /*----------------------------------------------------------------*
      * Arithmetic Operators                                           *
@@ -134,7 +134,7 @@ impl<'a> ToCode<'a> for BinaryOperator {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Hash)]
 pub struct BinaryExpr<'a> {
     left: Box<Expr<'a>>,
     right: Box<Expr<'a>>,

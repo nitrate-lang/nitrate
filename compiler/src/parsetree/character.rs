@@ -1,7 +1,7 @@
 use super::expression::{CodeFormat, ToCode};
 use crate::lexer::Token;
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Hash)]
 pub struct CharLit {
     value: char,
 }

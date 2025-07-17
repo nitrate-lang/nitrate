@@ -2,7 +2,7 @@ use super::expression::Expr;
 use super::expression::{CodeFormat, ToCode};
 use crate::lexer::{Punctuation, Token};
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Hash)]
 pub struct List<'a> {
     items: Vec<Expr<'a>>,
 }
