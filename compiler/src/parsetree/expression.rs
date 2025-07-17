@@ -7,6 +7,7 @@ use super::block::Block;
 use super::character::CharLit;
 use super::list::List;
 use super::number::{FloatLit, IntegerLit};
+use super::object::Object;
 use super::statement::Statement;
 use super::string::StringLit;
 use super::unary_op::UnaryExpr;
@@ -95,16 +96,51 @@ impl<'a> Metadata<'a> {
 pub enum InnerExpr<'a> {
     Discard,
 
+    /* Primitive Expressions */
     Integer(IntegerLit),
     Float(FloatLit),
     String(StringLit<'a>),
     Char(CharLit),
     List(List<'a>),
+    Object(Object<'a>),
 
+    /* Compound Expressions */
     Block(Block<'a>),
     Statement(Statement<'a>),
     BinaryOp(BinaryExpr<'a>),
     UnaryOp(UnaryExpr<'a>),
+
+    /* Control Flow */
+    If,
+    For,
+    Foreach,
+    While,
+    Switch,
+    Return,
+    Continue,
+    Break,
+
+    /* Primitive Types */
+    UInt1,
+    UInt8,
+    UInt16,
+    UInt32,
+    UInt64,
+    UInt128,
+    Int8,
+    Int16,
+    Int32,
+    Int64,
+    Int128,
+    Float16,
+    Float32,
+    Float64,
+    Float128,
+    Unit,
+
+    /* Compound Types */
+    ArrayTy,
+    FunctionTy,
 }
 
 #[derive(Debug, Clone, PartialEq, PartialOrd, Hash)]
@@ -168,7 +204,29 @@ impl<'a> Expr<'a> {
             | InnerExpr::Integer(_)
             | InnerExpr::String(_)
             | InnerExpr::Char(_) => true,
+
             InnerExpr::List(list) => list.iter().all(|item| item.is_lit()),
+            InnerExpr::Object(map) => map.iter().all(|(_, value)| value.is_lit()),
+
+            InnerExpr::UInt1
+            | InnerExpr::UInt8
+            | InnerExpr::UInt16
+            | InnerExpr::UInt32
+            | InnerExpr::UInt64
+            | InnerExpr::UInt128
+            | InnerExpr::Int8
+            | InnerExpr::Int16
+            | InnerExpr::Int32
+            | InnerExpr::Int64
+            | InnerExpr::Int128
+            | InnerExpr::Float16
+            | InnerExpr::Float32
+            | InnerExpr::Float64
+            | InnerExpr::Float128 => true,
+
+            // FIXME: Verify recursively that components of ArrayTy and FunctionTy are literals
+            InnerExpr::ArrayTy | InnerExpr::FunctionTy => true,
+
             _ => false,
         }
     }
@@ -183,10 +241,15 @@ pub trait ToCode<'a> {
 
 impl<'a> ToCode<'a> for Expr<'a> {
     fn to_code(&self, tokens: &mut Vec<Token<'a>>, options: &CodeFormat) {
-        // TODO: Serialize attached comments
-
         if self.is_discarded() {
             return;
+        }
+
+        for comment in self.comments() {
+            tokens.push(Token::Comment(Comment::new(
+                comment,
+                CommentKind::SingleLine,
+            )));
         }
 
         if self.has_parenthesis() {
@@ -201,11 +264,41 @@ impl<'a> ToCode<'a> for Expr<'a> {
             InnerExpr::String(e) => e.to_code(tokens, options),
             InnerExpr::Char(e) => e.to_code(tokens, options),
             InnerExpr::List(e) => e.to_code(tokens, options),
+            InnerExpr::Object(e) => e.to_code(tokens, options),
 
             InnerExpr::Block(e) => e.to_code(tokens, options),
             InnerExpr::Statement(e) => e.to_code(tokens, options),
             InnerExpr::BinaryOp(e) => e.to_code(tokens, options),
             InnerExpr::UnaryOp(e) => e.to_code(tokens, options),
+
+            InnerExpr::If => {}
+            InnerExpr::For => {}
+            InnerExpr::Foreach => {}
+            InnerExpr::While => {}
+            InnerExpr::Switch => {}
+            InnerExpr::Return => {}
+            InnerExpr::Continue => {}
+            InnerExpr::Break => {}
+
+            InnerExpr::UInt1 => {}
+            InnerExpr::UInt8 => {}
+            InnerExpr::UInt16 => {}
+            InnerExpr::UInt32 => {}
+            InnerExpr::UInt64 => {}
+            InnerExpr::UInt128 => {}
+            InnerExpr::Int8 => {}
+            InnerExpr::Int16 => {}
+            InnerExpr::Int32 => {}
+            InnerExpr::Int64 => {}
+            InnerExpr::Int128 => {}
+            InnerExpr::Float16 => {}
+            InnerExpr::Float32 => {}
+            InnerExpr::Float64 => {}
+            InnerExpr::Float128 => {}
+            InnerExpr::Unit => {}
+
+            InnerExpr::ArrayTy => {}
+            InnerExpr::FunctionTy => {}
         }
 
         if self.has_parenthesis() {
