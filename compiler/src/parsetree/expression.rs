@@ -6,7 +6,7 @@ use super::binary_op::BinaryExpr;
 use super::block::Block;
 use super::character::CharLit;
 use super::list::List;
-use super::number::NumberLit;
+use super::number::{FloatLit, IntegerLit};
 use super::statement::Statement;
 use super::string::StringLit;
 use super::unary_op::UnaryExpr;
@@ -95,7 +95,8 @@ impl<'a> Metadata<'a> {
 pub enum InnerExpr<'a> {
     Discard,
 
-    Number(NumberLit),
+    Integer(IntegerLit),
+    Float(FloatLit),
     String(StringLit<'a>),
     Char(CharLit),
     List(List<'a>),
@@ -163,24 +164,13 @@ impl<'a> Expr<'a> {
 
     pub fn is_lit(&self) -> bool {
         match &self.expr {
-            InnerExpr::Number(_) | InnerExpr::String(_) | InnerExpr::Char(_) => true,
+            InnerExpr::Float(_)
+            | InnerExpr::Integer(_)
+            | InnerExpr::String(_)
+            | InnerExpr::Char(_) => true,
             InnerExpr::List(list) => list.iter().all(|item| item.is_lit()),
             _ => false,
         }
-    }
-}
-
-impl<'a> std::ops::Deref for Expr<'a> {
-    type Target = InnerExpr<'a>;
-
-    fn deref(&self) -> &Self::Target {
-        &self.expr
-    }
-}
-
-impl<'a> std::ops::DerefMut for Expr<'a> {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.expr
     }
 }
 
@@ -206,7 +196,8 @@ impl<'a> ToCode<'a> for Expr<'a> {
         match &self.expr {
             InnerExpr::Discard => {}
 
-            InnerExpr::Number(e) => e.to_code(tokens, options),
+            InnerExpr::Integer(e) => e.to_code(tokens, options),
+            InnerExpr::Float(e) => e.to_code(tokens, options),
             InnerExpr::String(e) => e.to_code(tokens, options),
             InnerExpr::Char(e) => e.to_code(tokens, options),
             InnerExpr::List(e) => e.to_code(tokens, options),
@@ -220,5 +211,19 @@ impl<'a> ToCode<'a> for Expr<'a> {
         if self.has_parenthesis() {
             tokens.push(Token::Punctuation(Punctuation::RightParenthesis));
         }
+    }
+}
+
+impl<'a> std::ops::Deref for Expr<'a> {
+    type Target = InnerExpr<'a>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.expr
+    }
+}
+
+impl<'a> std::ops::DerefMut for Expr<'a> {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.expr
     }
 }

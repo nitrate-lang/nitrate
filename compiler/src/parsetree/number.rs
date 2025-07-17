@@ -1,45 +1,86 @@
 use super::expression::{CodeFormat, ToCode};
-use crate::lexer::{Integer, IntegerKind, Operator, Token};
+use crate::lexer::{Float, Integer, IntegerKind, Token};
+use apint::UInt;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-#[repr(packed)]
-pub struct NumberLit {
-    value: u128,
-    is_negative: bool,
+pub struct IntegerLit {
+    value: UInt,
 }
 
-impl NumberLit {
-    pub fn new(value: u128, is_negative: bool) -> Self {
-        NumberLit { value, is_negative }
-    }
-
-    pub fn from_u128(value: u128) -> Self {
-        NumberLit {
-            value,
-            is_negative: false,
+impl IntegerLit {
+    pub fn new(value: UInt) -> Option<Self> {
+        if value.try_to_u128().is_ok() {
+            Some(IntegerLit { value })
+        } else {
+            None
         }
     }
 
-    pub fn into_inner(self) -> u128 {
+    pub fn into_inner(self) -> UInt {
         self.value
     }
 
-    pub fn get(&self) -> u128 {
-        self.value
-    }
-
-    pub fn is_negative(&self) -> bool {
-        self.is_negative
+    pub fn get(&self) -> &UInt {
+        &self.value
     }
 }
 
-impl<'a> ToCode<'a> for NumberLit {
+impl<'a> ToCode<'a> for IntegerLit {
     fn to_code(&self, tokens: &mut Vec<Token<'a>>, _options: &CodeFormat) {
-        if self.is_negative() {
-            tokens.push(Token::Operator(Operator::Sub));
-        }
+        let u128 = self
+            .try_to_u128()
+            .expect("IntegerLit apint::UInt value should fit in u128");
 
-        let number = Integer::new(self.get(), IntegerKind::Decimal);
+        let number = Integer::new(u128, IntegerKind::Decimal);
         tokens.push(Token::Integer(number));
+    }
+}
+
+impl std::ops::Deref for IntegerLit {
+    type Target = UInt;
+
+    fn deref(&self) -> &Self::Target {
+        &self.value
+    }
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct FloatLit {
+    value: f64,
+}
+
+impl FloatLit {
+    pub fn new(value: f64) -> Self {
+        FloatLit { value }
+    }
+
+    pub fn into_inner(self) -> f64 {
+        self.value
+    }
+
+    pub fn get(&self) -> f64 {
+        self.value
+    }
+}
+
+impl<'a> ToCode<'a> for FloatLit {
+    fn to_code(&self, tokens: &mut Vec<Token<'a>>, _options: &CodeFormat) {
+        let number = Float::new(self.get());
+        tokens.push(Token::Float(number));
+    }
+}
+
+impl std::ops::Deref for FloatLit {
+    type Target = f64;
+
+    fn deref(&self) -> &Self::Target {
+        &self.value
+    }
+}
+
+impl Eq for FloatLit {}
+impl std::hash::Hash for FloatLit {
+    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
+        self.value.to_bits().hash(state);
     }
 }

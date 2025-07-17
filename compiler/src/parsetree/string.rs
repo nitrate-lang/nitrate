@@ -16,17 +16,17 @@ impl<'a> StringLit<'a> {
     }
 }
 
+impl<'a> ToCode<'a> for StringLit<'a> {
+    fn to_code(&self, tokens: &mut Vec<Token<'a>>, _options: &CodeFormat) {
+        let string_lit = StringLitToken::from_ref(self);
+        tokens.push(Token::String(string_lit));
+    }
+}
+
 impl<'a> std::ops::Deref for StringLit<'a> {
     type Target = &'a [u8];
 
     fn deref(&self) -> &Self::Target {
         &self.value
-    }
-}
-
-impl<'a> ToCode<'a> for StringLit<'a> {
-    fn to_code(&self, tokens: &mut Vec<Token<'a>>, _options: &CodeFormat) {
-        let string_lit = StringLitToken::from_ref(self);
-        tokens.push(Token::String(string_lit));
     }
 }

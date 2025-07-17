@@ -24,6 +24,13 @@ impl<'a> Statement<'a> {
     }
 }
 
+impl<'a> ToCode<'a> for Statement<'a> {
+    fn to_code(&self, tokens: &mut Vec<Token<'a>>, options: &CodeFormat) {
+        self.expr.to_code(tokens, options);
+        tokens.push(Token::Punctuation(Punctuation::Semicolon));
+    }
+}
+
 impl<'a> std::ops::Deref for Statement<'a> {
     type Target = Expr<'a>;
 
@@ -35,12 +42,5 @@ impl<'a> std::ops::Deref for Statement<'a> {
 impl<'a> std::ops::DerefMut for Statement<'a> {
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.expr
-    }
-}
-
-impl<'a> ToCode<'a> for Statement<'a> {
-    fn to_code(&self, tokens: &mut Vec<Token<'a>>, options: &CodeFormat) {
-        self.expr.to_code(tokens, options);
-        tokens.push(Token::Punctuation(Punctuation::Semicolon));
     }
 }

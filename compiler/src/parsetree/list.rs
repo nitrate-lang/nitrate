@@ -21,6 +21,19 @@ impl<'a> List<'a> {
     }
 }
 
+impl<'a> ToCode<'a> for List<'a> {
+    fn to_code(&self, tokens: &mut Vec<Token<'a>>, options: &CodeFormat) {
+        tokens.push(Token::Punctuation(Punctuation::LeftBracket));
+        for (i, expr) in self.iter().enumerate() {
+            if i > 0 {
+                tokens.push(Token::Punctuation(Punctuation::Comma));
+            }
+            expr.to_code(tokens, options);
+        }
+        tokens.push(Token::Punctuation(Punctuation::RightBracket));
+    }
+}
+
 impl<'a> std::ops::Deref for List<'a> {
     type Target = [Expr<'a>];
 
@@ -32,18 +45,5 @@ impl<'a> std::ops::Deref for List<'a> {
 impl<'a> std::ops::DerefMut for List<'a> {
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.items
-    }
-}
-
-impl<'a> ToCode<'a> for List<'a> {
-    fn to_code(&self, tokens: &mut Vec<Token<'a>>, options: &CodeFormat) {
-        tokens.push(Token::Punctuation(Punctuation::LeftBracket));
-        for (i, expr) in self.iter().enumerate() {
-            if i > 0 {
-                tokens.push(Token::Punctuation(Punctuation::Comma));
-            }
-            expr.to_code(tokens, options);
-        }
-        tokens.push(Token::Punctuation(Punctuation::RightBracket));
     }
 }

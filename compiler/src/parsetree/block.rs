@@ -21,6 +21,16 @@ impl<'a> Block<'a> {
     }
 }
 
+impl<'a> ToCode<'a> for Block<'a> {
+    fn to_code(&self, tokens: &mut Vec<Token<'a>>, options: &CodeFormat) {
+        tokens.push(Token::Punctuation(Punctuation::LeftBrace));
+        for expr in self.iter() {
+            expr.to_code(tokens, options);
+        }
+        tokens.push(Token::Punctuation(Punctuation::RightBrace));
+    }
+}
+
 impl<'a> std::ops::Deref for Block<'a> {
     type Target = [Expr<'a>];
 
@@ -32,15 +42,5 @@ impl<'a> std::ops::Deref for Block<'a> {
 impl<'a> std::ops::DerefMut for Block<'a> {
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.items
-    }
-}
-
-impl<'a> ToCode<'a> for Block<'a> {
-    fn to_code(&self, tokens: &mut Vec<Token<'a>>, options: &CodeFormat) {
-        tokens.push(Token::Punctuation(Punctuation::LeftBrace));
-        for expr in self.iter() {
-            expr.to_code(tokens, options);
-        }
-        tokens.push(Token::Punctuation(Punctuation::RightBrace));
     }
 }

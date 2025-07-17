@@ -20,16 +20,16 @@ impl CharLit {
     }
 }
 
+impl<'a> ToCode<'a> for CharLit {
+    fn to_code(&self, tokens: &mut Vec<Token<'a>>, _options: &CodeFormat) {
+        tokens.push(Token::Char(self.get()));
+    }
+}
+
 impl std::ops::Deref for CharLit {
     type Target = char;
 
     fn deref(&self) -> &Self::Target {
         &self.value
-    }
-}
-
-impl<'a> ToCode<'a> for CharLit {
-    fn to_code(&self, tokens: &mut Vec<Token<'a>>, _options: &CodeFormat) {
-        tokens.push(Token::Char(self.get()));
     }
 }
