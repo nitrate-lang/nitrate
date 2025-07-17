@@ -15,6 +15,10 @@ impl<'a> Block<'a> {
     pub fn into_inner(self) -> Vec<Expr<'a>> {
         self.items
     }
+
+    pub fn items(&self) -> &[Expr<'a>] {
+        &self.items
+    }
 }
 
 impl<'a> std::ops::Deref for Block<'a> {

@@ -7,6 +7,7 @@ use super::block::Block;
 use super::character::CharLit;
 use super::list::List;
 use super::number::NumberLit;
+use super::statement::Statement;
 use super::string::StringLit;
 use super::unary_op::UnaryExpr;
 
@@ -100,6 +101,7 @@ pub enum InnerExpr<'a> {
     List(List<'a>),
 
     Block(Block<'a>),
+    Statement(Statement<'a>),
     BinaryOp(BinaryExpr<'a>),
     UnaryOp(UnaryExpr<'a>),
 }
@@ -115,16 +117,16 @@ impl<'a> Expr<'a> {
         Expr { expr, metadata }
     }
 
-    pub fn expr(&self) -> &InnerExpr<'a> {
+    pub fn into_inner(self) -> InnerExpr<'a> {
+        self.expr
+    }
+
+    pub fn get(&self) -> &InnerExpr<'a> {
         &self.expr
     }
 
-    pub fn expr_mut(&mut self) -> &mut InnerExpr<'a> {
+    pub fn get_mut(&mut self) -> &mut InnerExpr<'a> {
         &mut self.expr
-    }
-
-    pub fn into_inner(self) -> InnerExpr<'a> {
-        self.expr
     }
 
     pub fn discard(&mut self) {
@@ -210,6 +212,7 @@ impl<'a> ToCode<'a> for Expr<'a> {
             InnerExpr::List(e) => e.to_code(tokens, options),
 
             InnerExpr::Block(e) => e.to_code(tokens, options),
+            InnerExpr::Statement(e) => e.to_code(tokens, options),
             InnerExpr::BinaryOp(e) => e.to_code(tokens, options),
             InnerExpr::UnaryOp(e) => e.to_code(tokens, options),
         }

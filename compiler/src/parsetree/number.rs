@@ -24,7 +24,7 @@ impl NumberLit {
         self.value
     }
 
-    pub fn value(&self) -> u128 {
+    pub fn get(&self) -> u128 {
         self.value
     }
 
@@ -39,7 +39,7 @@ impl<'a> ToCode<'a> for NumberLit {
             tokens.push(Token::Operator(Operator::Sub));
         }
 
-        let number = Integer::new(self.value(), IntegerKind::Decimal);
+        let number = Integer::new(self.get(), IntegerKind::Decimal);
         tokens.push(Token::Integer(number));
     }
 }
