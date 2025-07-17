@@ -1,7 +1,7 @@
 use super::expression::{CodeFormat, ToCode};
 use crate::lexer::{StringLit as StringLitToken, Token};
 
-#[derive(Debug, Clone, PartialEq, Hash)]
+#[derive(Debug, Clone, PartialEq, PartialOrd, Hash)]
 pub struct StringLit<'a> {
     value: &'a [u8],
 }

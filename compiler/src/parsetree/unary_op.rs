@@ -2,7 +2,7 @@ use super::expression::Expr;
 use super::expression::{CodeFormat, ToCode};
 use crate::lexer::{Operator, Token};
 
-#[derive(Debug, Clone, Copy, PartialEq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, PartialOrd, Hash)]
 pub enum UnaryOperator {
     /*----------------------------------------------------------------*
      * Arithmetic Operators                                           *
@@ -62,7 +62,7 @@ impl<'a> ToCode<'a> for UnaryOperator {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Hash)]
+#[derive(Debug, Clone, PartialEq, PartialOrd, Hash)]
 pub struct UnaryExpr<'a> {
     operand: Box<Expr<'a>>,
     operator: UnaryOperator,

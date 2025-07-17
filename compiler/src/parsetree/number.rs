@@ -2,7 +2,7 @@ use super::expression::{CodeFormat, ToCode};
 use crate::lexer::{Float, Integer, IntegerKind, Token};
 use apint::UInt;
 
-#[derive(Debug, Clone, PartialEq, Hash)]
+#[derive(Debug, Clone, PartialEq, PartialOrd, Hash)]
 pub struct IntegerLit {
     value: UInt,
     kind: IntegerKind,
@@ -49,7 +49,7 @@ impl std::ops::Deref for IntegerLit {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialOrd, PartialEq)]
 pub struct FloatLit {
     value: f64,
 }
@@ -83,7 +83,6 @@ impl std::ops::Deref for FloatLit {
     }
 }
 
-impl Eq for FloatLit {}
 impl std::hash::Hash for FloatLit {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
         self.value.to_bits().hash(state);

@@ -11,7 +11,7 @@ use super::statement::Statement;
 use super::string::StringLit;
 use super::unary_op::UnaryExpr;
 
-#[derive(Debug, Default, Clone, Copy, PartialEq, Hash)]
+#[derive(Debug, Default, Clone, Copy, PartialEq, PartialOrd, Hash)]
 pub struct OriginTag {
     offset: u32,
 }
@@ -22,13 +22,13 @@ impl OriginTag {
     }
 }
 
-#[derive(Debug, Default, Clone, PartialEq, Hash)]
+#[derive(Debug, Default, Clone, PartialEq, PartialOrd, Hash)]
 struct UncommonMetadata<'a> {
     has_parenthesis: bool,
     comments: Vec<&'a str>,
 }
 
-#[derive(Debug, Default, Clone, PartialEq, Hash)]
+#[derive(Debug, Default, Clone, PartialEq, PartialOrd, Hash)]
 pub struct Metadata<'a> {
     origin: OriginTag,
     optional: Option<Box<UncommonMetadata<'a>>>,
@@ -91,7 +91,7 @@ impl<'a> Metadata<'a> {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Hash)]
+#[derive(Debug, Clone, PartialEq, PartialOrd, Hash)]
 pub enum InnerExpr<'a> {
     Discard,
 
@@ -107,7 +107,7 @@ pub enum InnerExpr<'a> {
     UnaryOp(UnaryExpr<'a>),
 }
 
-#[derive(Debug, Clone, PartialEq, Hash)]
+#[derive(Debug, Clone, PartialEq, PartialOrd, Hash)]
 pub struct Expr<'a> {
     expr: InnerExpr<'a>,
     metadata: Metadata<'a>,
@@ -174,7 +174,7 @@ impl<'a> Expr<'a> {
     }
 }
 
-#[derive(Debug, Default, Clone, PartialEq, Hash)]
+#[derive(Debug, Default, Clone, PartialEq, PartialOrd, Hash)]
 pub struct CodeFormat {}
 
 pub trait ToCode<'a> {
