@@ -2,6 +2,7 @@ use super::expression::{CodeFormat, ToCode};
 use crate::lexer::{Integer, IntegerKind, Operator, Token};
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[repr(packed)]
 pub struct NumberLit {
     value: u128,
     is_negative: bool,

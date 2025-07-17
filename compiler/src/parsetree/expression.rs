@@ -22,25 +22,71 @@ impl OriginTag {
 }
 
 #[derive(Debug, Default, Clone, PartialEq, Eq, Hash)]
-pub struct ExprMeta {
-    origin: OriginTag,
+struct UncommonMetadata<'a> {
     has_parenthesis: bool,
+    comments: Vec<&'a str>,
 }
 
-impl ExprMeta {
-    pub fn new(has_parenthesis: bool, origin: OriginTag) -> Self {
-        ExprMeta {
-            has_parenthesis,
-            origin,
-        }
-    }
+#[derive(Debug, Default, Clone, PartialEq, Eq, Hash)]
+pub struct Metadata<'a> {
+    origin: OriginTag,
+    optional: Option<Box<UncommonMetadata<'a>>>,
+}
 
-    pub fn has_parenthesis(&self) -> bool {
-        self.has_parenthesis
+impl<'a> Metadata<'a> {
+    pub fn new(origin: OriginTag, has_parenthesis: bool, comments: Option<Vec<&'a str>>) -> Self {
+        let requires_extra = comments.is_some() || has_parenthesis;
+        if requires_extra {
+            Metadata {
+                origin,
+                optional: Some(Box::new(UncommonMetadata {
+                    has_parenthesis,
+                    comments: comments.unwrap_or_default(),
+                })),
+            }
+        } else {
+            Metadata {
+                origin,
+                optional: None,
+            }
+        }
     }
 
     pub fn origin(&self) -> OriginTag {
         self.origin
+    }
+
+    pub fn set_origin(&mut self, origin: OriginTag) {
+        self.origin = origin;
+    }
+
+    pub fn has_parenthesis(&self) -> bool {
+        self.optional
+            .as_ref()
+            .map_or(false, |opt| opt.has_parenthesis)
+    }
+
+    pub fn set_has_parenthesis(&mut self, has_parenthesis: bool) {
+        if let Some(opt) = &mut self.optional {
+            opt.has_parenthesis = has_parenthesis;
+        } else {
+            self.optional = Some(Box::new(UncommonMetadata {
+                has_parenthesis,
+                comments: Vec::new(),
+            }));
+        }
+    }
+
+    pub fn comments(&self) -> &[&'a str] {
+        self.optional.as_ref().map_or(&[], |opt| &opt.comments)
+    }
+
+    pub fn comments_mut(&mut self) -> &mut Vec<&'a str> {
+        if let None = self.optional {
+            self.optional = Some(Box::new(UncommonMetadata::default()));
+        }
+
+        &mut self.optional.as_mut().unwrap().comments
     }
 }
 
@@ -61,20 +107,12 @@ pub enum InnerExpr<'a> {
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Expr<'a> {
     expr: InnerExpr<'a>,
-    metadata: ExprMeta,
+    metadata: Metadata<'a>,
 }
 
 impl<'a> Expr<'a> {
-    pub fn new(expr: InnerExpr<'a>, metadata: ExprMeta) -> Self {
+    pub fn new(expr: InnerExpr<'a>, metadata: Metadata<'a>) -> Self {
         Expr { expr, metadata }
-    }
-
-    pub fn is_lit(&self) -> bool {
-        match &self.expr {
-            InnerExpr::Number(_) | InnerExpr::String(_) | InnerExpr::Char(_) => true,
-            InnerExpr::List(list) => list.iter().all(|item| item.is_lit()),
-            _ => false,
-        }
     }
 
     pub fn expr(&self) -> &InnerExpr<'a> {
@@ -102,7 +140,7 @@ impl<'a> Expr<'a> {
     }
 
     pub fn set_has_parenthesis(&mut self, has_parenthesis: bool) {
-        self.metadata.has_parenthesis = has_parenthesis;
+        self.metadata.set_has_parenthesis(has_parenthesis);
     }
 
     pub fn origin(&self) -> OriginTag {
@@ -110,7 +148,23 @@ impl<'a> Expr<'a> {
     }
 
     pub fn set_origin(&mut self, origin: OriginTag) {
-        self.metadata.origin = origin;
+        self.metadata.set_origin(origin);
+    }
+
+    pub fn comments(&self) -> &[&'a str] {
+        &self.metadata.comments()
+    }
+
+    pub fn add_comment(&mut self, comment: &'a str) {
+        self.metadata.comments_mut().push(comment);
+    }
+
+    pub fn is_lit(&self) -> bool {
+        match &self.expr {
+            InnerExpr::Number(_) | InnerExpr::String(_) | InnerExpr::Char(_) => true,
+            InnerExpr::List(list) => list.iter().all(|item| item.is_lit()),
+            _ => false,
+        }
     }
 }
 
