@@ -1,3 +1,4 @@
+pub mod array_type;
 pub mod binary_op;
 pub mod block;
 pub mod character;
@@ -7,9 +8,10 @@ pub mod number;
 pub mod object;
 pub mod statement;
 pub mod string;
-pub mod tuple;
+pub mod tuple_type;
 pub mod unary_op;
 
+pub use array_type::*;
 pub use binary_op::*;
 pub use block::*;
 pub use character::*;
@@ -19,5 +21,5 @@ pub use number::*;
 pub use object::*;
 pub use statement::*;
 pub use string::*;
-pub use tuple::*;
+pub use tuple_type::*;
 pub use unary_op::*;

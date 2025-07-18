@@ -2,6 +2,7 @@
 
 use crate::lexer::*;
 
+use super::array_type::ArrayType;
 use super::binary_op::BinaryExpr;
 use super::block::Block;
 use super::character::CharLit;
@@ -10,7 +11,7 @@ use super::number::{FloatLit, IntegerLit};
 use super::object::Object;
 use super::statement::Statement;
 use super::string::StringLit;
-use super::tuple::Tuple;
+use super::tuple_type::TupleType;
 use super::unary_op::UnaryExpr;
 
 #[derive(Debug, Default, Clone, Copy, PartialEq, PartialOrd, Hash)]
@@ -139,9 +140,9 @@ pub enum InnerExpr<'a> {
     Float128,
 
     /* Compound Types */
-    TupleTy(Tuple<'a>),
+    TupleType(TupleType<'a>),
     StructTy,
-    ArrayTy,
+    ArrayTy(ArrayType<'a>),
     FunctionTy,
 }
 
@@ -226,10 +227,12 @@ impl<'a> Expr<'a> {
             | InnerExpr::Float64
             | InnerExpr::Float128 => true,
 
-            InnerExpr::TupleTy(tuple) => tuple.iter().all(|item| item.is_lit()),
+            InnerExpr::TupleType(tuple) => tuple.iter().all(|item| item.is_lit()),
 
             // FIXME: Verify recursively that components of ArrayTy and FunctionTy are literals
-            InnerExpr::StructTy | InnerExpr::ArrayTy | InnerExpr::FunctionTy => true,
+            InnerExpr::StructTy | InnerExpr::FunctionTy => true,
+
+            InnerExpr::ArrayTy(array) => array.element_ty().is_lit() && array.count().is_lit(),
 
             _ => false,
         }
@@ -253,9 +256,9 @@ impl<'a> Expr<'a> {
             | InnerExpr::Float64
             | InnerExpr::Float128 => true,
 
-            InnerExpr::TupleTy(_)
+            InnerExpr::TupleType(_)
             | InnerExpr::StructTy
-            | InnerExpr::ArrayTy
+            | InnerExpr::ArrayTy(_)
             | InnerExpr::FunctionTy => true,
 
             _ => false,
@@ -327,13 +330,11 @@ impl<'a> ToCode<'a> for Expr<'a> {
             InnerExpr::Float64 => {}
             InnerExpr::Float128 => {}
 
-            InnerExpr::TupleTy(e) => e.to_code(tokens, options),
+            InnerExpr::TupleType(e) => e.to_code(tokens, options),
             InnerExpr::StructTy => {
                 // TODO:
             }
-            InnerExpr::ArrayTy => {
-                // TODO:
-            }
+            InnerExpr::ArrayTy(e) => e.to_code(tokens, options),
             InnerExpr::FunctionTy => {
                 // TODO:
             }

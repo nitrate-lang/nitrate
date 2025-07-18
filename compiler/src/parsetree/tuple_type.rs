@@ -3,16 +3,16 @@ use super::expression::{CodeFormat, ToCode};
 use crate::lexer::{Punctuation, Token};
 
 #[derive(Debug, Clone, PartialEq, PartialOrd, Hash)]
-pub struct Tuple<'a> {
+pub struct TupleType<'a> {
     items: Vec<Expr<'a>>,
 }
 
-impl<'a> Tuple<'a> {
+impl<'a> TupleType<'a> {
     pub fn new(items: Vec<Expr<'a>>) -> Option<Self> {
         items
             .iter()
             .all(|item| item.is_type())
-            .then(|| Tuple { items })
+            .then(|| TupleType { items })
     }
 
     pub fn into_inner(self) -> Vec<Expr<'a>> {
@@ -24,7 +24,7 @@ impl<'a> Tuple<'a> {
     }
 }
 
-impl<'a> ToCode<'a> for Tuple<'a> {
+impl<'a> ToCode<'a> for TupleType<'a> {
     fn to_code(&self, tokens: &mut Vec<Token<'a>>, options: &CodeFormat) {
         tokens.push(Token::Punctuation(Punctuation::LeftBracket));
         for (i, expr) in self.iter().enumerate() {
@@ -37,7 +37,7 @@ impl<'a> ToCode<'a> for Tuple<'a> {
     }
 }
 
-impl<'a> std::ops::Deref for Tuple<'a> {
+impl<'a> std::ops::Deref for TupleType<'a> {
     type Target = [Expr<'a>];
 
     fn deref(&self) -> &Self::Target {
@@ -45,7 +45,7 @@ impl<'a> std::ops::Deref for Tuple<'a> {
     }
 }
 
-impl<'a> std::ops::DerefMut for Tuple<'a> {
+impl<'a> std::ops::DerefMut for TupleType<'a> {
     fn deref_mut(&mut self) -> &mut Self::Target {
         &mut self.items
     }
