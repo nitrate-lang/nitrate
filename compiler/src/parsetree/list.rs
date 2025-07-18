@@ -4,24 +4,24 @@ use crate::lexer::{Punctuation, Token};
 
 #[derive(Debug, Clone, PartialEq, PartialOrd, Hash)]
 pub struct List<'a> {
-    items: Vec<Expr<'a>>,
+    elements: Vec<Expr<'a>>,
 }
 
 impl<'a> List<'a> {
-    pub fn new(items: Vec<Expr<'a>>) -> Self {
-        List { items }
+    pub fn new(elements: Vec<Expr<'a>>) -> Self {
+        List { elements }
     }
 
     pub fn into_inner(self) -> Vec<Expr<'a>> {
-        self.items
+        self.elements
     }
 
     pub fn elements(&self) -> &[Expr<'a>] {
-        &self.items
+        &self.elements
     }
 
     pub fn elements_mut(&mut self) -> &mut Vec<Expr<'a>> {
-        &mut self.items
+        &mut self.elements
     }
 }
 

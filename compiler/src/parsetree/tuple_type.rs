@@ -4,24 +4,24 @@ use crate::lexer::{Punctuation, Token};
 
 #[derive(Debug, Clone, PartialEq, PartialOrd, Hash)]
 pub struct TupleType<'a> {
-    items: Vec<Type<'a>>,
+    elements: Vec<Type<'a>>,
 }
 
 impl<'a> TupleType<'a> {
-    pub fn new(items: Vec<Type<'a>>) -> Self {
-        TupleType { items }
+    pub fn new(elements: Vec<Type<'a>>) -> Self {
+        TupleType { elements }
     }
 
     pub fn into_inner(self) -> Vec<Type<'a>> {
-        self.items
+        self.elements
     }
 
     pub fn elements(&self) -> &[Type<'a>] {
-        &self.items
+        &self.elements
     }
 
     pub fn elements_mut(&mut self) -> &mut Vec<Type<'a>> {
-        &mut self.items
+        &mut self.elements
     }
 }
 
