@@ -89,33 +89,32 @@ impl<'a> Type<'a> {
     }
 
     pub fn into_expr(self) -> Expr<'a> {
-        Expr::new(
-            match self.expr {
-                InnerType::Discard => InnerExpr::Discard,
+        let expr = match self.expr {
+            InnerType::Discard => InnerExpr::Discard,
 
-                InnerType::UInt1 => InnerExpr::UInt1,
-                InnerType::UInt8 => InnerExpr::UInt8,
-                InnerType::UInt16 => InnerExpr::UInt16,
-                InnerType::UInt32 => InnerExpr::UInt32,
-                InnerType::UInt64 => InnerExpr::UInt64,
-                InnerType::UInt128 => InnerExpr::UInt128,
-                InnerType::Int8 => InnerExpr::Int8,
-                InnerType::Int16 => InnerExpr::Int16,
-                InnerType::Int32 => InnerExpr::Int32,
-                InnerType::Int64 => InnerExpr::Int64,
-                InnerType::Int128 => InnerExpr::Int128,
-                InnerType::Float16 => InnerExpr::Float16,
-                InnerType::Float32 => InnerExpr::Float32,
-                InnerType::Float64 => InnerExpr::Float64,
-                InnerType::Float128 => InnerExpr::Float128,
+            InnerType::UInt1 => InnerExpr::UInt1,
+            InnerType::UInt8 => InnerExpr::UInt8,
+            InnerType::UInt16 => InnerExpr::UInt16,
+            InnerType::UInt32 => InnerExpr::UInt32,
+            InnerType::UInt64 => InnerExpr::UInt64,
+            InnerType::UInt128 => InnerExpr::UInt128,
+            InnerType::Int8 => InnerExpr::Int8,
+            InnerType::Int16 => InnerExpr::Int16,
+            InnerType::Int32 => InnerExpr::Int32,
+            InnerType::Int64 => InnerExpr::Int64,
+            InnerType::Int128 => InnerExpr::Int128,
+            InnerType::Float16 => InnerExpr::Float16,
+            InnerType::Float32 => InnerExpr::Float32,
+            InnerType::Float64 => InnerExpr::Float64,
+            InnerType::Float128 => InnerExpr::Float128,
 
-                InnerType::TupleType(tuple) => InnerExpr::TupleType(tuple),
-                InnerType::StructType(struct_type) => InnerExpr::StructType(struct_type),
-                InnerType::ArrayType(array) => InnerExpr::ArrayType(array),
-                InnerType::FunctionType(function) => InnerExpr::FunctionType(function),
-            },
-            self.metadata,
-        )
+            InnerType::TupleType(tuple) => InnerExpr::TupleType(tuple),
+            InnerType::StructType(struct_type) => InnerExpr::StructType(struct_type),
+            InnerType::ArrayType(array) => InnerExpr::ArrayType(array),
+            InnerType::FunctionType(function) => InnerExpr::FunctionType(function),
+        };
+
+        Expr::new(expr, self.metadata)
     }
 
     pub fn is_lit(&self) -> bool {

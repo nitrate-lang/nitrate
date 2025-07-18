@@ -205,7 +205,7 @@ impl<'a> Expr<'a> {
     }
 
     pub fn into_type(self) -> Option<Type<'a>> {
-        match self.expr {
+        let type_maybe = match self.expr {
             InnerExpr::Discard => Some(InnerType::Discard),
 
             InnerExpr::UInt1 => Some(InnerType::UInt1),
@@ -229,8 +229,9 @@ impl<'a> Expr<'a> {
             InnerExpr::ArrayType(array) => Some(InnerType::ArrayType(array)),
             InnerExpr::FunctionType(function) => Some(InnerType::FunctionType(function)),
             _ => None,
-        }
-        .map(|inner| Type::new(inner, self.metadata))
+        };
+
+        type_maybe.map(|inner| Type::new(inner, self.metadata))
     }
 
     pub fn is_lit(&self) -> bool {
