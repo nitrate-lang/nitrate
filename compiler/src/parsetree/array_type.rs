@@ -5,12 +5,12 @@ use crate::lexer::{Punctuation, Token};
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Hash)]
 pub struct ArrayType<'a> {
-    element_ty: Box<Type<'a>>,
+    element_ty: &'a Type<'a>,
     count: Box<Expr<'a>>,
 }
 
 impl<'a> ArrayType<'a> {
-    pub fn new(element_ty: Box<Type<'a>>, count: Box<Expr<'a>>) -> Self {
+    pub fn new(element_ty: &'a Type<'a>, count: Box<Expr<'a>>) -> Self {
         ArrayType { element_ty, count }
     }
 

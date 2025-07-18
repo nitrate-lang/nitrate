@@ -7,14 +7,14 @@ use crate::parsetree::InnerType;
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Hash)]
 pub struct FunctionType<'a> {
     parameters: Vec<(&'a str, Type<'a>, Option<Expr<'a>>)>,
-    return_type: Option<Box<Type<'a>>>,
+    return_type: Option<&'a Type<'a>>,
     attributes: Vec<Expr<'a>>,
 }
 
 impl<'a> FunctionType<'a> {
     pub fn new(
         parameters: Vec<(&'a str, Type<'a>, Option<Expr<'a>>)>,
-        return_type: Option<Box<Type<'a>>>,
+        return_type: Option<&'a Type<'a>>,
         attributes: Vec<Expr<'a>>,
     ) -> Self {
         FunctionType {

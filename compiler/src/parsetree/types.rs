@@ -1,3 +1,5 @@
+use std::collections::BTreeMap;
+
 use super::array_type::ArrayType;
 use super::expression::{CodeFormat, Expr, InnerExpr, Metadata, ToCode};
 use super::function_type::FunctionType;
@@ -6,8 +8,6 @@ use super::tuple_type::TupleType;
 use crate::lexer::{Identifier, Operator, Punctuation, Token};
 use crate::parsetree::OriginTag;
 use hashbrown::HashSet;
-use std::sync::Arc;
-use std::sync::Mutex;
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Hash)]
 pub enum InnerType<'a> {
@@ -268,5 +268,51 @@ impl<'a> TypeFactory<'a> {
     pub fn get_f128(&mut self, parentheses: bool) -> &Type<'a> {
         self.set
             .get_or_insert(Type::new(InnerType::Float128, parentheses))
+    }
+
+    pub fn get_infer_type(&mut self, parentheses: bool) -> &Type<'a> {
+        self.set
+            .get_or_insert(Type::new(InnerType::InferType, parentheses))
+    }
+
+    pub fn get_tuple_type(&mut self, tuple: Vec<Type<'a>>, parentheses: bool) -> &Type<'a> {
+        self.set.get_or_insert(Type::new(
+            InnerType::TupleType(TupleType::new(tuple)),
+            parentheses,
+        ))
+    }
+
+    pub fn get_array_type(
+        &mut self,
+        element: &'a Type<'a>,
+        size: Box<Expr<'a>>,
+        parentheses: bool,
+    ) -> &Type<'a> {
+        self.set.get_or_insert(Type::new(
+            InnerType::ArrayType(ArrayType::new(element, size)),
+            parentheses,
+        ))
+    }
+
+    pub fn get_struct_type(
+        &mut self,
+        struct_type: BTreeMap<&'a str, Type<'a>>,
+        parentheses: bool,
+    ) -> &Type<'a> {
+        self.set.get_or_insert(Type::new(
+            InnerType::StructType(StructType::new(struct_type)),
+            parentheses,
+        ))
+    }
+
+    pub fn get_function_type(
+        &mut self,
+        function_type: FunctionType<'a>,
+        parentheses: bool,
+    ) -> &Type<'a> {
+        self.set.get_or_insert(Type::new(
+            InnerType::FunctionType(function_type),
+            parentheses,
+        ))
     }
 }

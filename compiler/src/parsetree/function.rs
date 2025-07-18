@@ -7,7 +7,7 @@ use crate::parsetree::{Block, InnerType};
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Hash)]
 pub struct Function<'a> {
     parameters: Vec<(&'a str, Type<'a>, Option<Expr<'a>>)>,
-    return_type: Option<Box<Type<'a>>>,
+    return_type: Option<&'a Type<'a>>,
     attributes: Vec<Expr<'a>>,
     name: &'a str,
     definition: Option<Block<'a>>,
@@ -17,7 +17,7 @@ impl<'a> Function<'a> {
     pub fn new_definition(
         name: &'a str,
         parameters: Vec<(&'a str, Type<'a>, Option<Expr<'a>>)>,
-        return_type: Option<Box<Type<'a>>>,
+        return_type: Option<&'a Type<'a>>,
         attributes: Vec<Expr<'a>>,
         definition: Block<'a>,
     ) -> Self {
@@ -33,7 +33,7 @@ impl<'a> Function<'a> {
     pub fn new_declaration(
         name: &'a str,
         parameters: Vec<(&'a str, Type<'a>, Option<Expr<'a>>)>,
-        return_type: Option<Box<Type<'a>>>,
+        return_type: Option<&'a Type<'a>>,
         attributes: Vec<Expr<'a>>,
     ) -> Self {
         Function {
@@ -57,8 +57,8 @@ impl<'a> Function<'a> {
         self.return_type.as_deref()
     }
 
-    pub fn return_type_mut(&mut self) -> Option<&mut Type<'a>> {
-        self.return_type.as_deref_mut()
+    pub fn set_return_type(&mut self, ty: Option<&'a Type<'a>>) {
+        self.return_type = ty;
     }
 
     pub fn attributes(&self) -> &Vec<Expr<'a>> {
@@ -133,7 +133,7 @@ impl<'a> ToCode<'a> for Function<'a> {
 #[derive(Debug, Default, Clone, PartialEq, Eq, PartialOrd, Hash)]
 pub struct FunctionBuilder<'a> {
     parameters: Vec<(&'a str, Type<'a>, Option<Expr<'a>>)>,
-    return_type: Option<Box<Type<'a>>>,
+    return_type: Option<&'a Type<'a>>,
     attributes: Vec<Expr<'a>>,
     name: &'a str,
     definition: Option<Block<'a>>,
@@ -165,8 +165,8 @@ impl<'a> FunctionBuilder<'a> {
         self
     }
 
-    pub fn with_return_type(mut self, ty: Type<'a>) -> Self {
-        self.return_type = Some(Box::new(ty));
+    pub fn with_return_type(mut self, ty: &'a Type<'a>) -> Self {
+        self.return_type = Some(ty);
         self
     }
 
