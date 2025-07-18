@@ -20,12 +20,16 @@ impl<'a> StructType<'a> {
     pub fn fields(&self) -> &BTreeMap<&'a str, Type<'a>> {
         &self.fields
     }
+
+    pub fn fields_mut(&mut self) -> &mut BTreeMap<&'a str, Type<'a>> {
+        &mut self.fields
+    }
 }
 
 impl<'a> ToCode<'a> for StructType<'a> {
     fn to_code(&self, tokens: &mut Vec<Token<'a>>, options: &CodeFormat) {
         tokens.push(Token::Punctuation(Punctuation::LeftBracket));
-        for (field_name, field_ty) in self.iter() {
+        for (field_name, field_ty) in self.fields().iter() {
             tokens.push(Token::Identifier(Identifier::new(field_name)));
             tokens.push(Token::Punctuation(Punctuation::Colon));
 
@@ -33,19 +37,5 @@ impl<'a> ToCode<'a> for StructType<'a> {
             tokens.push(Token::Punctuation(Punctuation::Comma));
         }
         tokens.push(Token::Punctuation(Punctuation::RightBracket));
-    }
-}
-
-impl<'a> std::ops::Deref for StructType<'a> {
-    type Target = BTreeMap<&'a str, Type<'a>>;
-
-    fn deref(&self) -> &Self::Target {
-        &self.fields
-    }
-}
-
-impl<'a> std::ops::DerefMut for StructType<'a> {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.fields
     }
 }

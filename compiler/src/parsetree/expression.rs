@@ -260,8 +260,10 @@ impl<'a> Expr<'a> {
             | InnerExpr::Float64
             | InnerExpr::Float128 => true,
 
-            InnerExpr::TupleType(tuple) => tuple.iter().all(|item| item.is_lit()),
-            InnerExpr::StructType(_struct) => _struct.iter().all(|(_, field)| field.is_lit()),
+            InnerExpr::TupleType(tuple) => tuple.elements().iter().all(|item| item.is_lit()),
+            InnerExpr::StructType(_struct) => {
+                _struct.fields().iter().all(|(_, field)| field.is_lit())
+            }
             InnerExpr::ArrayType(array) => array.element_ty().is_lit() && array.count().is_lit(),
             InnerExpr::FunctionType(function) => {
                 function.parameters().iter().all(|(_, ty, default)| {

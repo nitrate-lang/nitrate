@@ -135,8 +135,11 @@ impl<'a> Type<'a> {
             | InnerType::Float64
             | InnerType::Float128 => true,
 
-            InnerType::TupleType(tuple) => tuple.iter().all(|item| item.is_lit()),
-            InnerType::StructType(_struct) => _struct.iter().all(|(_, field_ty)| field_ty.is_lit()),
+            InnerType::TupleType(tuple) => tuple.elements().iter().all(|item| item.is_lit()),
+            InnerType::StructType(_struct) => _struct
+                .fields()
+                .iter()
+                .all(|(_, field_ty)| field_ty.is_lit()),
             InnerType::ArrayType(array) => array.element_ty().is_lit() && array.count().is_lit(),
             InnerType::FunctionType(function) => {
                 function.parameters().iter().all(|(_, ty, default)| {
