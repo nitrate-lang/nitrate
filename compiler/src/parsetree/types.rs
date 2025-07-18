@@ -121,21 +121,23 @@ impl<'a> Type<'a> {
 
     pub fn is_lit(&self) -> bool {
         match &self.expr {
-            InnerType::UInt1
-            | InnerType::UInt8
-            | InnerType::UInt16
-            | InnerType::UInt32
-            | InnerType::UInt64
-            | InnerType::UInt128
-            | InnerType::Int8
-            | InnerType::Int16
-            | InnerType::Int32
-            | InnerType::Int64
-            | InnerType::Int128
-            | InnerType::Float16
-            | InnerType::Float32
-            | InnerType::Float64
-            | InnerType::Float128 => true,
+            InnerType::Discard => false,
+
+            InnerType::UInt1 => true,
+            InnerType::UInt8 => true,
+            InnerType::UInt16 => true,
+            InnerType::UInt32 => true,
+            InnerType::UInt64 => true,
+            InnerType::UInt128 => true,
+            InnerType::Int8 => true,
+            InnerType::Int16 => true,
+            InnerType::Int32 => true,
+            InnerType::Int64 => true,
+            InnerType::Int128 => true,
+            InnerType::Float16 => true,
+            InnerType::Float32 => true,
+            InnerType::Float64 => true,
+            InnerType::Float128 => true,
 
             InnerType::InferType => false,
             InnerType::TupleType(tuple) => tuple.elements().iter().all(|item| item.is_lit()),
@@ -150,8 +152,6 @@ impl<'a> Type<'a> {
                 }) && function.return_type().map_or(true, |ty| ty.is_lit())
                     && function.attributes().iter().all(|attr| attr.is_lit())
             }
-
-            _ => false,
         }
     }
 }
