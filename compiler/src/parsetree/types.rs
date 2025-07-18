@@ -29,8 +29,8 @@ pub enum InnerType<'a> {
     /* Compound Types */
     InferType,
     TupleType(TupleType<'a>),
-    StructType(StructType<'a>),
     ArrayType(ArrayType<'a>),
+    StructType(StructType<'a>),
     FunctionType(FunctionType<'a>),
 }
 
@@ -111,8 +111,8 @@ impl<'a> Type<'a> {
 
             InnerType::InferType => InnerExpr::InferType,
             InnerType::TupleType(tuple) => InnerExpr::TupleType(tuple),
-            InnerType::StructType(struct_type) => InnerExpr::StructType(struct_type),
             InnerType::ArrayType(array) => InnerExpr::ArrayType(array),
+            InnerType::StructType(struct_type) => InnerExpr::StructType(struct_type),
             InnerType::FunctionType(function) => InnerExpr::FunctionType(function),
         };
 
@@ -141,11 +141,11 @@ impl<'a> Type<'a> {
 
             InnerType::InferType => false,
             InnerType::TupleType(tuple) => tuple.elements().iter().all(|item| item.is_lit()),
+            InnerType::ArrayType(array) => array.element_ty().is_lit() && array.count().is_lit(),
             InnerType::StructType(_struct) => _struct
                 .fields()
                 .iter()
                 .all(|(_, field_ty)| field_ty.is_lit()),
-            InnerType::ArrayType(array) => array.element_ty().is_lit() && array.count().is_lit(),
             InnerType::FunctionType(function) => {
                 function.parameters().iter().all(|(_, ty, default)| {
                     ty.is_lit() && default.as_ref().map_or(true, |d| d.is_lit())
@@ -194,8 +194,8 @@ impl<'a> ToCode<'a> for Type<'a> {
 
             InnerType::InferType => tokens.push(Token::Operator(Operator::Question)),
             InnerType::TupleType(e) => e.to_code(tokens, options),
-            InnerType::StructType(e) => e.to_code(tokens, options),
             InnerType::ArrayType(e) => e.to_code(tokens, options),
+            InnerType::StructType(e) => e.to_code(tokens, options),
             InnerType::FunctionType(e) => e.to_code(tokens, options),
         }
 

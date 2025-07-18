@@ -135,8 +135,8 @@ pub enum InnerExpr<'a> {
     /* Compound Types */
     InferType,
     TupleType(TupleType<'a>),
-    StructType(StructType<'a>),
     ArrayType(ArrayType<'a>),
+    StructType(StructType<'a>),
     FunctionType(FunctionType<'a>),
 }
 
@@ -229,8 +229,8 @@ impl<'a> Expr<'a> {
 
             InnerExpr::InferType => Some(InnerType::InferType),
             InnerExpr::TupleType(tuple) => Some(InnerType::TupleType(tuple)),
-            InnerExpr::StructType(struct_type) => Some(InnerType::StructType(struct_type)),
             InnerExpr::ArrayType(array) => Some(InnerType::ArrayType(array)),
+            InnerExpr::StructType(struct_type) => Some(InnerType::StructType(struct_type)),
             InnerExpr::FunctionType(function) => Some(InnerType::FunctionType(function)),
         };
 
@@ -271,10 +271,10 @@ impl<'a> Expr<'a> {
 
             InnerExpr::InferType => false,
             InnerExpr::TupleType(tuple) => tuple.elements().iter().all(|item| item.is_lit()),
+            InnerExpr::ArrayType(array) => array.element_ty().is_lit() && array.count().is_lit(),
             InnerExpr::StructType(_struct) => {
                 _struct.fields().iter().all(|(_, field)| field.is_lit())
             }
-            InnerExpr::ArrayType(array) => array.element_ty().is_lit() && array.count().is_lit(),
             InnerExpr::FunctionType(function) => {
                 function.parameters().iter().all(|(_, ty, default)| {
                     ty.is_lit() && default.as_ref().map_or(true, |d| d.is_lit())
@@ -318,8 +318,8 @@ impl<'a> Expr<'a> {
 
             InnerExpr::InferType => true,
             InnerExpr::TupleType(_) => true,
-            InnerExpr::StructType(_) => true,
             InnerExpr::ArrayType(_) => true,
+            InnerExpr::StructType(_) => true,
             InnerExpr::FunctionType(_) => true,
         }
     }
@@ -382,8 +382,8 @@ impl<'a> ToCode<'a> for Expr<'a> {
 
             InnerExpr::InferType => tokens.push(Token::Operator(Operator::Question)),
             InnerExpr::TupleType(e) => e.to_code(tokens, options),
-            InnerExpr::StructType(e) => e.to_code(tokens, options),
             InnerExpr::ArrayType(e) => e.to_code(tokens, options),
+            InnerExpr::StructType(e) => e.to_code(tokens, options),
             InnerExpr::FunctionType(e) => e.to_code(tokens, options),
         }
 
