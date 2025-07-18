@@ -29,7 +29,7 @@ impl<'a> StructType<'a> {
 impl<'a> ToCode<'a> for StructType<'a> {
     fn to_code(&self, tokens: &mut Vec<Token<'a>>, options: &CodeFormat) {
         tokens.push(Token::Punctuation(Punctuation::LeftBracket));
-        for (field_name, field_ty) in self.fields().iter() {
+        for (field_name, field_ty) in self.fields() {
             tokens.push(Token::Identifier(Identifier::new(field_name)));
             tokens.push(Token::Punctuation(Punctuation::Colon));
 

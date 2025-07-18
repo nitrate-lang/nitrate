@@ -30,17 +30,3 @@ impl<'a> ToCode<'a> for Statement<'a> {
         tokens.push(Token::Punctuation(Punctuation::Semicolon));
     }
 }
-
-impl<'a> std::ops::Deref for Statement<'a> {
-    type Target = Expr<'a>;
-
-    fn deref(&self) -> &Self::Target {
-        &self.expr
-    }
-}
-
-impl<'a> std::ops::DerefMut for Statement<'a> {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.expr
-    }
-}

@@ -241,8 +241,8 @@ impl<'a> Expr<'a> {
             | InnerExpr::String(_)
             | InnerExpr::Char(_) => true,
 
-            InnerExpr::List(list) => list.iter().all(|item| item.is_lit()),
-            InnerExpr::Object(map) => map.iter().all(|(_, value)| value.is_lit()),
+            InnerExpr::List(list) => list.elements().iter().all(|item| item.is_lit()),
+            InnerExpr::Object(map) => map.get().iter().all(|(_, value)| value.is_lit()),
 
             InnerExpr::UInt1
             | InnerExpr::UInt8
