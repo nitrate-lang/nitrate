@@ -6,6 +6,7 @@ use super::array_type::ArrayType;
 use super::binary_op::BinaryExpr;
 use super::block::Block;
 use super::character::CharLit;
+use super::function_type::FunctionType;
 use super::list::List;
 use super::number::{FloatLit, IntegerLit};
 use super::object::Object;
@@ -142,9 +143,9 @@ pub enum InnerExpr<'a> {
 
     /* Compound Types */
     TupleType(TupleType<'a>),
-    StructTy(StructType<'a>),
-    ArrayTy(ArrayType<'a>),
-    FunctionTy,
+    StructType(StructType<'a>),
+    ArrayType(ArrayType<'a>),
+    FunctionType(FunctionType<'a>),
 }
 
 #[derive(Debug, Clone, PartialEq, PartialOrd, Hash)]
@@ -229,12 +230,16 @@ impl<'a> Expr<'a> {
             | InnerExpr::Float128 => true,
 
             InnerExpr::TupleType(tuple) => tuple.iter().all(|item| item.is_lit()),
-            InnerExpr::StructTy(_struct) => _struct.iter().all(|(_, field)| field.is_lit()),
-
-            // FIXME: Verify recursively that components of ArrayTy and FunctionTy are literals
-            InnerExpr::FunctionTy => true,
-
-            InnerExpr::ArrayTy(array) => array.element_ty().is_lit() && array.count().is_lit(),
+            InnerExpr::StructType(_struct) => _struct.iter().all(|(_, field)| field.is_lit()),
+            InnerExpr::ArrayType(array) => array.element_ty().is_lit() && array.count().is_lit(),
+            InnerExpr::FunctionType(function) => {
+                function
+                    .parameters()
+                    .iter()
+                    .all(|(_, ty, default)| ty.is_lit() && default.is_lit())
+                    && function.return_type().map_or(true, |ty| ty.is_lit())
+                    && function.attributes().iter().all(|attr| attr.is_lit())
+            }
 
             _ => false,
         }
@@ -259,9 +264,9 @@ impl<'a> Expr<'a> {
             | InnerExpr::Float128 => true,
 
             InnerExpr::TupleType(_)
-            | InnerExpr::StructTy(_)
-            | InnerExpr::ArrayTy(_)
-            | InnerExpr::FunctionTy => true,
+            | InnerExpr::StructType(_)
+            | InnerExpr::ArrayType(_)
+            | InnerExpr::FunctionType(_) => true,
 
             _ => false,
         }
@@ -333,11 +338,9 @@ impl<'a> ToCode<'a> for Expr<'a> {
             InnerExpr::Float128 => {}
 
             InnerExpr::TupleType(e) => e.to_code(tokens, options),
-            InnerExpr::StructTy(e) => e.to_code(tokens, options),
-            InnerExpr::ArrayTy(e) => e.to_code(tokens, options),
-            InnerExpr::FunctionTy => {
-                // TODO:
-            }
+            InnerExpr::StructType(e) => e.to_code(tokens, options),
+            InnerExpr::ArrayType(e) => e.to_code(tokens, options),
+            InnerExpr::FunctionType(e) => e.to_code(tokens, options),
         }
 
         if self.has_parenthesis() {
