@@ -1,25 +1,22 @@
-use super::expression::Expr;
 use super::expression::{CodeFormat, ToCode};
+use super::types::Type;
 use crate::lexer::{Punctuation, Token};
 
 #[derive(Debug, Clone, PartialEq, PartialOrd, Hash)]
 pub struct TupleType<'a> {
-    items: Vec<Expr<'a>>,
+    items: Vec<Type<'a>>,
 }
 
 impl<'a> TupleType<'a> {
-    pub fn new(items: Vec<Expr<'a>>) -> Option<Self> {
-        items
-            .iter()
-            .all(|item| item.is_type())
-            .then(|| TupleType { items })
+    pub fn new(items: Vec<Type<'a>>) -> Self {
+        TupleType { items }
     }
 
-    pub fn into_inner(self) -> Vec<Expr<'a>> {
+    pub fn into_inner(self) -> Vec<Type<'a>> {
         self.items
     }
 
-    pub fn items(&self) -> &[Expr<'a>] {
+    pub fn items(&self) -> &[Type<'a>] {
         &self.items
     }
 }
@@ -27,18 +24,18 @@ impl<'a> TupleType<'a> {
 impl<'a> ToCode<'a> for TupleType<'a> {
     fn to_code(&self, tokens: &mut Vec<Token<'a>>, options: &CodeFormat) {
         tokens.push(Token::Punctuation(Punctuation::LeftBracket));
-        for (i, expr) in self.iter().enumerate() {
+        for (i, ty) in self.iter().enumerate() {
             if i > 0 {
                 tokens.push(Token::Punctuation(Punctuation::Comma));
             }
-            expr.to_code(tokens, options);
+            ty.to_code(tokens, options);
         }
         tokens.push(Token::Punctuation(Punctuation::RightBracket));
     }
 }
 
 impl<'a> std::ops::Deref for TupleType<'a> {
-    type Target = [Expr<'a>];
+    type Target = [Type<'a>];
 
     fn deref(&self) -> &Self::Target {
         &self.items

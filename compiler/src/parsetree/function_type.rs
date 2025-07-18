@@ -1,43 +1,41 @@
 use super::expression::Expr;
 use super::expression::{CodeFormat, ToCode};
+use super::types::Type;
 use crate::lexer::Token;
 
 #[derive(Debug, Clone, PartialEq, PartialOrd, Hash)]
 pub struct FunctionType<'a> {
-    parameters: Vec<(&'a str, Expr<'a>, Expr<'a>)>,
-    return_type: Option<Box<Expr<'a>>>,
+    parameters: Vec<(&'a str, Type<'a>, Option<Expr<'a>>)>,
+    return_type: Option<Box<Type<'a>>>,
     attributes: Vec<Expr<'a>>,
 }
 
 impl<'a> FunctionType<'a> {
     pub fn new(
-        parameters: Vec<(&'a str, Expr<'a>, Expr<'a>)>,
-        return_type: Option<Box<Expr<'a>>>,
+        parameters: Vec<(&'a str, Type<'a>, Option<Expr<'a>>)>,
+        return_type: Option<Box<Type<'a>>>,
         attributes: Vec<Expr<'a>>,
-    ) -> Option<Self> {
-        let params_valid = parameters.iter().all(|(_, ty, _)| ty.is_type());
-        let return_valid = return_type.as_ref().map_or(true, |ty| ty.is_type());
-
-        (params_valid && return_valid).then(|| Self {
+    ) -> Self {
+        FunctionType {
             parameters,
             return_type,
             attributes,
-        })
+        }
     }
 
-    pub fn parameters(&self) -> &Vec<(&'a str, Expr<'a>, Expr<'a>)> {
+    pub fn parameters(&self) -> &Vec<(&'a str, Type<'a>, Option<Expr<'a>>)> {
         &self.parameters
     }
 
-    pub fn parameters_mut(&mut self) -> &mut Vec<(&'a str, Expr<'a>, Expr<'a>)> {
+    pub fn parameters_mut(&mut self) -> &mut Vec<(&'a str, Type<'a>, Option<Expr<'a>>)> {
         &mut self.parameters
     }
 
-    pub fn return_type(&self) -> Option<&Expr<'a>> {
+    pub fn return_type(&self) -> Option<&Type<'a>> {
         self.return_type.as_deref()
     }
 
-    pub fn return_type_mut(&mut self) -> Option<&mut Expr<'a>> {
+    pub fn return_type_mut(&mut self) -> Option<&mut Type<'a>> {
         self.return_type.as_deref_mut()
     }
 

@@ -14,6 +14,7 @@ use super::statement::Statement;
 use super::string::StringLit;
 use super::struct_type::StructType;
 use super::tuple_type::TupleType;
+use super::types::{InnerType, Type};
 use super::unary_op::UnaryExpr;
 
 #[derive(Debug, Default, Clone, Copy, PartialEq, PartialOrd, Hash)]
@@ -203,6 +204,35 @@ impl<'a> Expr<'a> {
         self.metadata.comments_mut().push(comment);
     }
 
+    pub fn into_type(self) -> Option<Type<'a>> {
+        match self.expr {
+            InnerExpr::Discard => Some(InnerType::Discard),
+
+            InnerExpr::UInt1 => Some(InnerType::UInt1),
+            InnerExpr::UInt8 => Some(InnerType::UInt8),
+            InnerExpr::UInt16 => Some(InnerType::UInt16),
+            InnerExpr::UInt32 => Some(InnerType::UInt32),
+            InnerExpr::UInt64 => Some(InnerType::UInt64),
+            InnerExpr::UInt128 => Some(InnerType::UInt128),
+            InnerExpr::Int8 => Some(InnerType::Int8),
+            InnerExpr::Int16 => Some(InnerType::Int16),
+            InnerExpr::Int32 => Some(InnerType::Int32),
+            InnerExpr::Int64 => Some(InnerType::Int64),
+            InnerExpr::Int128 => Some(InnerType::Int128),
+            InnerExpr::Float16 => Some(InnerType::Float16),
+            InnerExpr::Float32 => Some(InnerType::Float32),
+            InnerExpr::Float64 => Some(InnerType::Float64),
+            InnerExpr::Float128 => Some(InnerType::Float128),
+
+            InnerExpr::TupleType(tuple) => Some(InnerType::TupleType(tuple)),
+            InnerExpr::StructType(struct_type) => Some(InnerType::StructType(struct_type)),
+            InnerExpr::ArrayType(array) => Some(InnerType::ArrayType(array)),
+            InnerExpr::FunctionType(function) => Some(InnerType::FunctionType(function)),
+            _ => None,
+        }
+        .map(|inner| Type::new(inner, self.metadata))
+    }
+
     pub fn is_lit(&self) -> bool {
         match &self.expr {
             InnerExpr::Float(_)
@@ -233,11 +263,9 @@ impl<'a> Expr<'a> {
             InnerExpr::StructType(_struct) => _struct.iter().all(|(_, field)| field.is_lit()),
             InnerExpr::ArrayType(array) => array.element_ty().is_lit() && array.count().is_lit(),
             InnerExpr::FunctionType(function) => {
-                function
-                    .parameters()
-                    .iter()
-                    .all(|(_, ty, default)| ty.is_lit() && default.is_lit())
-                    && function.return_type().map_or(true, |ty| ty.is_lit())
+                function.parameters().iter().all(|(_, ty, default)| {
+                    ty.is_lit() && default.as_ref().map_or(true, |d| d.is_lit())
+                }) && function.return_type().map_or(true, |ty| ty.is_lit())
                     && function.attributes().iter().all(|attr| attr.is_lit())
             }
 

@@ -1,25 +1,24 @@
 use super::expression::Expr;
 use super::expression::{CodeFormat, ToCode};
+use super::types::Type;
 use crate::lexer::{Punctuation, Token};
 
 #[derive(Debug, Clone, PartialEq, PartialOrd, Hash)]
 pub struct ArrayType<'a> {
-    element_ty: Box<Expr<'a>>,
+    element_ty: Box<Type<'a>>,
     count: Box<Expr<'a>>,
 }
 
 impl<'a> ArrayType<'a> {
-    pub fn new(element_ty: Box<Expr<'a>>, count: Box<Expr<'a>>) -> Option<Self> {
-        element_ty
-            .is_type()
-            .then(|| ArrayType { element_ty, count })
+    pub fn new(element_ty: Box<Type<'a>>, count: Box<Expr<'a>>) -> Self {
+        ArrayType { element_ty, count }
     }
 
-    pub fn element_ty(&self) -> &Expr<'a> {
+    pub fn element_ty(&self) -> &Type<'a> {
         &self.element_ty
     }
 
-    pub fn element_ty_mut(&mut self) -> &mut Expr<'a> {
+    pub fn element_ty_mut(&mut self) -> &mut Type<'a> {
         &mut self.element_ty
     }
 

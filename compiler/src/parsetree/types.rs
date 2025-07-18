@@ -1,5 +1,3 @@
-// TODO: Develop nitrate abstract syntax tree (AST) data structures
-
 use super::array_type::ArrayType;
 use super::expression::{CodeFormat, Expr, InnerExpr, Metadata, OriginTag, ToCode};
 use super::function_type::FunctionType;
@@ -142,11 +140,9 @@ impl<'a> Type<'a> {
             InnerType::StructType(_struct) => _struct.iter().all(|(_, field_ty)| field_ty.is_lit()),
             InnerType::ArrayType(array) => array.element_ty().is_lit() && array.count().is_lit(),
             InnerType::FunctionType(function) => {
-                function
-                    .parameters()
-                    .iter()
-                    .all(|(_, ty, default)| ty.is_lit() && default.is_lit())
-                    && function.return_type().map_or(true, |ty| ty.is_lit())
+                function.parameters().iter().all(|(_, ty, default)| {
+                    ty.is_lit() && default.as_ref().map_or(true, |d| d.is_lit())
+                }) && function.return_type().map_or(true, |ty| ty.is_lit())
                     && function.attributes().iter().all(|attr| attr.is_lit())
             }
 
