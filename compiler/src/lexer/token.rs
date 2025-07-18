@@ -1,12 +1,12 @@
 use smallvec::SmallVec;
 
-#[derive(Debug, Clone, Copy, PartialEq, PartialOrd, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Hash)]
 pub enum IdentifierKind {
     Typical,
     Atypical,
 }
 
-#[derive(Debug, Clone, PartialEq, PartialOrd, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Hash)]
 pub struct Identifier<'a> {
     name: &'a str,
     kind: IdentifierKind,
@@ -75,7 +75,7 @@ impl<'a> Identifier<'a> {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, PartialOrd, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Hash)]
 pub enum IntegerKind {
     Binary,
     Octal,
@@ -83,7 +83,7 @@ pub enum IntegerKind {
     Hexadecimal,
 }
 
-#[derive(Debug, Clone, PartialEq, PartialOrd, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Hash)]
 pub struct Integer {
     value: u128,
     kind: IntegerKind,
@@ -124,7 +124,9 @@ impl std::hash::Hash for Float {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, PartialOrd, Hash)]
+impl std::cmp::Eq for Float {}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Hash)]
 pub enum Keyword {
     /* Storage */
     Let,       /* 'let' */
@@ -177,7 +179,7 @@ pub enum Keyword {
     False, /* 'false' */
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, PartialOrd, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Hash)]
 pub enum Punctuation {
     LeftParenthesis,  /* '(' */
     RightParenthesis, /* ')' */
@@ -191,7 +193,7 @@ pub enum Punctuation {
     AtSign,           /* '@' */
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, PartialOrd, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Hash)]
 pub enum Operator {
     /*----------------------------------------------------------------*
      * Arithmetic Operators                                           *
@@ -276,13 +278,13 @@ pub enum Operator {
     Spaceship, /* '<=>':        "Spaceship Operator" */
 }
 
-#[derive(Debug, Clone, PartialEq, PartialOrd, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Hash)]
 enum StringData<'a> {
     RefString(&'a [u8]),
     DynString(SmallVec<[u8; 64]>),
 }
 
-#[derive(Clone, PartialEq, PartialOrd, Hash)]
+#[derive(Clone, PartialEq, Eq, PartialOrd, Hash)]
 pub struct StringLit<'a> {
     data: StringData<'a>,
     is_utf8: bool,
@@ -331,13 +333,13 @@ impl<'a> std::fmt::Debug for StringLit<'a> {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, PartialOrd, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Hash)]
 pub enum CommentKind {
     SingleLine,
     MultiLine,
 }
 
-#[derive(Debug, Clone, PartialEq, PartialOrd, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Hash)]
 pub struct Comment<'a> {
     text: &'a str,
     kind: CommentKind,
@@ -357,7 +359,7 @@ impl<'a> Comment<'a> {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, PartialOrd, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Hash)]
 pub enum Token<'a> {
     Identifier(Identifier<'a>),
     Integer(Integer),
@@ -372,7 +374,7 @@ pub enum Token<'a> {
     Illegal,
 }
 
-#[derive(Debug, Clone, PartialEq, PartialOrd, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Hash)]
 pub struct SourcePosition<'a> {
     line: u32,   // zero-based unicode-aware line number
     column: u32, // zero-based unicode-aware column number
@@ -413,7 +415,7 @@ impl std::fmt::Display for SourcePosition<'_> {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, PartialOrd, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Hash)]
 pub struct AnnotatedToken<'a> {
     token: Token<'a>,
 
