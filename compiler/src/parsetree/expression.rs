@@ -115,16 +115,6 @@ pub enum InnerExpr<'a> {
     BinaryOp(BinaryExpr<'a>),
     UnaryOp(UnaryExpr<'a>),
 
-    /* Control Flow */
-    If,
-    For,
-    Foreach,
-    While,
-    Switch,
-    Return,
-    Continue,
-    Break,
-
     /* Primitive Types */
     UInt1,
     UInt8,
@@ -221,15 +211,6 @@ impl<'a> Expr<'a> {
             InnerExpr::BinaryOp(_) => None,
             InnerExpr::UnaryOp(_) => None,
 
-            InnerExpr::If => None,
-            InnerExpr::For => None,
-            InnerExpr::Foreach => None,
-            InnerExpr::While => None,
-            InnerExpr::Switch => None,
-            InnerExpr::Return => None,
-            InnerExpr::Continue => None,
-            InnerExpr::Break => None,
-
             InnerExpr::UInt1 => Some(InnerType::UInt1),
             InnerExpr::UInt8 => Some(InnerType::UInt8),
             InnerExpr::UInt16 => Some(InnerType::UInt16),
@@ -271,15 +252,6 @@ impl<'a> Expr<'a> {
             InnerExpr::Statement(_) => false,
             InnerExpr::BinaryOp(_) => false,
             InnerExpr::UnaryOp(_) => false,
-
-            InnerExpr::If => false,
-            InnerExpr::For => false,
-            InnerExpr::Foreach => false,
-            InnerExpr::While => false,
-            InnerExpr::Switch => false,
-            InnerExpr::Return => false,
-            InnerExpr::Continue => false,
-            InnerExpr::Break => false,
 
             InnerExpr::UInt1 => true,
             InnerExpr::UInt8 => true,
@@ -327,15 +299,6 @@ impl<'a> Expr<'a> {
             InnerExpr::Statement(_) => false,
             InnerExpr::BinaryOp(_) => false,
             InnerExpr::UnaryOp(_) => false,
-
-            InnerExpr::If => false,
-            InnerExpr::For => false,
-            InnerExpr::Foreach => false,
-            InnerExpr::While => false,
-            InnerExpr::Switch => false,
-            InnerExpr::Return => false,
-            InnerExpr::Continue => false,
-            InnerExpr::Break => false,
 
             InnerExpr::UInt1 => true,
             InnerExpr::UInt8 => true,
@@ -400,15 +363,6 @@ impl<'a> ToCode<'a> for Expr<'a> {
             InnerExpr::Statement(e) => e.to_code(tokens, options),
             InnerExpr::BinaryOp(e) => e.to_code(tokens, options),
             InnerExpr::UnaryOp(e) => e.to_code(tokens, options),
-
-            InnerExpr::If => {}
-            InnerExpr::For => {}
-            InnerExpr::Foreach => {}
-            InnerExpr::While => {}
-            InnerExpr::Switch => {}
-            InnerExpr::Return => {}
-            InnerExpr::Continue => {}
-            InnerExpr::Break => {}
 
             InnerExpr::UInt1 => tokens.push(Token::Identifier(Identifier::new("bool"))),
             InnerExpr::UInt8 => tokens.push(Token::Identifier(Identifier::new("u8"))),
