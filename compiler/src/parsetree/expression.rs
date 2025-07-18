@@ -6,6 +6,7 @@ use super::array_type::ArrayType;
 use super::binary_op::BinaryExpr;
 use super::block::Block;
 use super::character::CharLit;
+use super::function::Function;
 use super::function_type::FunctionType;
 use super::list::List;
 use super::number::{FloatLit, IntegerLit};
@@ -110,10 +111,11 @@ pub enum InnerExpr<'a> {
     Object(Object<'a>),
 
     /* Compound Expressions */
-    Block(Block<'a>),
-    Statement(Statement<'a>),
-    BinaryOp(BinaryExpr<'a>),
     UnaryOp(UnaryExpr<'a>),
+    BinaryOp(BinaryExpr<'a>),
+    Statement(Statement<'a>),
+    Block(Block<'a>),
+    Function(Function<'a>),
 
     /* Primitive Types */
     UInt1,
@@ -207,10 +209,11 @@ impl<'a> Expr<'a> {
             InnerExpr::List(_) => None,
             InnerExpr::Object(_) => None,
 
-            InnerExpr::Block(_) => None,
-            InnerExpr::Statement(_) => None,
-            InnerExpr::BinaryOp(_) => None,
             InnerExpr::UnaryOp(_) => None,
+            InnerExpr::BinaryOp(_) => None,
+            InnerExpr::Statement(_) => None,
+            InnerExpr::Block(_) => None,
+            InnerExpr::Function(_) => None,
 
             InnerExpr::UInt1 => Some(InnerType::UInt1),
             InnerExpr::UInt8 => Some(InnerType::UInt8),
@@ -250,10 +253,11 @@ impl<'a> Expr<'a> {
             InnerExpr::List(list) => list.elements().iter().all(|item| item.is_lit()),
             InnerExpr::Object(map) => map.get().iter().all(|(_, value)| value.is_lit()),
 
-            InnerExpr::Block(_) => false,
-            InnerExpr::Statement(_) => false,
-            InnerExpr::BinaryOp(_) => false,
             InnerExpr::UnaryOp(_) => false,
+            InnerExpr::BinaryOp(_) => false,
+            InnerExpr::Statement(_) => false,
+            InnerExpr::Block(_) => false,
+            InnerExpr::Function(_) => false,
 
             InnerExpr::UInt1 => true,
             InnerExpr::UInt8 => true,
@@ -298,10 +302,11 @@ impl<'a> Expr<'a> {
             InnerExpr::List(_) => false,
             InnerExpr::Object(_) => false,
 
-            InnerExpr::Block(_) => false,
-            InnerExpr::Statement(_) => false,
-            InnerExpr::BinaryOp(_) => false,
             InnerExpr::UnaryOp(_) => false,
+            InnerExpr::BinaryOp(_) => false,
+            InnerExpr::Statement(_) => false,
+            InnerExpr::Block(_) => false,
+            InnerExpr::Function(_) => false,
 
             InnerExpr::UInt1 => true,
             InnerExpr::UInt8 => true,
@@ -363,10 +368,11 @@ impl<'a> ToCode<'a> for Expr<'a> {
             InnerExpr::List(e) => e.to_code(tokens, options),
             InnerExpr::Object(e) => e.to_code(tokens, options),
 
-            InnerExpr::Block(e) => e.to_code(tokens, options),
-            InnerExpr::Statement(e) => e.to_code(tokens, options),
-            InnerExpr::BinaryOp(e) => e.to_code(tokens, options),
             InnerExpr::UnaryOp(e) => e.to_code(tokens, options),
+            InnerExpr::BinaryOp(e) => e.to_code(tokens, options),
+            InnerExpr::Statement(e) => e.to_code(tokens, options),
+            InnerExpr::Block(e) => e.to_code(tokens, options),
+            InnerExpr::Function(e) => e.to_code(tokens, options),
 
             InnerExpr::UInt1 => tokens.push(Token::Identifier(Identifier::new("bool"))),
             InnerExpr::UInt8 => tokens.push(Token::Identifier(Identifier::new("u8"))),
