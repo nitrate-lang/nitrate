@@ -7,6 +7,7 @@ pub mod number;
 pub mod object;
 pub mod statement;
 pub mod string;
+pub mod tuple;
 pub mod unary_op;
 
 pub use binary_op::*;
@@ -18,4 +19,5 @@ pub use number::*;
 pub use object::*;
 pub use statement::*;
 pub use string::*;
+pub use tuple::*;
 pub use unary_op::*;

@@ -10,6 +10,7 @@ use super::number::{FloatLit, IntegerLit};
 use super::object::Object;
 use super::statement::Statement;
 use super::string::StringLit;
+use super::tuple::Tuple;
 use super::unary_op::UnaryExpr;
 
 #[derive(Debug, Default, Clone, Copy, PartialEq, PartialOrd, Hash)]
@@ -138,7 +139,7 @@ pub enum InnerExpr<'a> {
     Float128,
 
     /* Compound Types */
-    TupleTy,
+    TupleTy(Tuple<'a>),
     StructTy,
     ArrayTy,
     FunctionTy,
@@ -225,11 +226,10 @@ impl<'a> Expr<'a> {
             | InnerExpr::Float64
             | InnerExpr::Float128 => true,
 
+            InnerExpr::TupleTy(tuple) => tuple.iter().all(|item| item.is_lit()),
+
             // FIXME: Verify recursively that components of ArrayTy and FunctionTy are literals
-            InnerExpr::TupleTy
-            | InnerExpr::StructTy
-            | InnerExpr::ArrayTy
-            | InnerExpr::FunctionTy => true,
+            InnerExpr::StructTy | InnerExpr::ArrayTy | InnerExpr::FunctionTy => true,
 
             _ => false,
         }
@@ -253,7 +253,7 @@ impl<'a> Expr<'a> {
             | InnerExpr::Float64
             | InnerExpr::Float128 => true,
 
-            InnerExpr::TupleTy
+            InnerExpr::TupleTy(_)
             | InnerExpr::StructTy
             | InnerExpr::ArrayTy
             | InnerExpr::FunctionTy => true,
@@ -327,9 +327,7 @@ impl<'a> ToCode<'a> for Expr<'a> {
             InnerExpr::Float64 => {}
             InnerExpr::Float128 => {}
 
-            InnerExpr::TupleTy => {
-                // TODO:
-            }
+            InnerExpr::TupleTy(e) => e.to_code(tokens, options),
             InnerExpr::StructTy => {
                 // TODO:
             }
