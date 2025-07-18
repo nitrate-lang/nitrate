@@ -3,11 +3,12 @@ use super::expression::{CodeFormat, ToCode};
 use super::types::Type;
 use crate::lexer::{Identifier, Keyword, Operator, Punctuation, Token};
 use crate::parsetree::{Block, InnerType};
+use std::rc::Rc;
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Hash)]
 pub struct Function<'a> {
-    parameters: Vec<(&'a str, Type<'a>, Option<Expr<'a>>)>,
-    return_type: Option<&'a Type<'a>>,
+    parameters: Vec<(&'a str, Rc<Type<'a>>, Option<Expr<'a>>)>,
+    return_type: Option<Rc<Type<'a>>>,
     attributes: Vec<Expr<'a>>,
     name: &'a str,
     definition: Option<Block<'a>>,
@@ -16,8 +17,8 @@ pub struct Function<'a> {
 impl<'a> Function<'a> {
     pub fn new_definition(
         name: &'a str,
-        parameters: Vec<(&'a str, Type<'a>, Option<Expr<'a>>)>,
-        return_type: Option<&'a Type<'a>>,
+        parameters: Vec<(&'a str, Rc<Type<'a>>, Option<Expr<'a>>)>,
+        return_type: Option<Rc<Type<'a>>>,
         attributes: Vec<Expr<'a>>,
         definition: Block<'a>,
     ) -> Self {
@@ -32,8 +33,8 @@ impl<'a> Function<'a> {
 
     pub fn new_declaration(
         name: &'a str,
-        parameters: Vec<(&'a str, Type<'a>, Option<Expr<'a>>)>,
-        return_type: Option<&'a Type<'a>>,
+        parameters: Vec<(&'a str, Rc<Type<'a>>, Option<Expr<'a>>)>,
+        return_type: Option<Rc<Type<'a>>>,
         attributes: Vec<Expr<'a>>,
     ) -> Self {
         Function {
@@ -45,19 +46,19 @@ impl<'a> Function<'a> {
         }
     }
 
-    pub fn parameters(&self) -> &Vec<(&'a str, Type<'a>, Option<Expr<'a>>)> {
+    pub fn parameters(&self) -> &Vec<(&'a str, Rc<Type<'a>>, Option<Expr<'a>>)> {
         &self.parameters
     }
 
-    pub fn parameters_mut(&mut self) -> &mut Vec<(&'a str, Type<'a>, Option<Expr<'a>>)> {
+    pub fn parameters_mut(&mut self) -> &mut Vec<(&'a str, Rc<Type<'a>>, Option<Expr<'a>>)> {
         &mut self.parameters
     }
 
-    pub fn return_type(&self) -> Option<&Type<'a>> {
-        self.return_type.as_deref()
+    pub fn return_type(&self) -> Option<&Rc<Type<'a>>> {
+        self.return_type.as_ref()
     }
 
-    pub fn set_return_type(&mut self, ty: Option<&'a Type<'a>>) {
+    pub fn set_return_type(&mut self, ty: Option<Rc<Type<'a>>>) {
         self.return_type = ty;
     }
 
@@ -105,7 +106,7 @@ impl<'a> ToCode<'a> for Function<'a> {
 
             tokens.push(Token::Identifier(Identifier::new(name)));
 
-            if !matches!(**ty, InnerType::InferType) {
+            if !matches!(***ty, InnerType::InferType) {
                 tokens.push(Token::Punctuation(Punctuation::Colon));
                 ty.to_code(tokens, options);
             }
@@ -118,7 +119,7 @@ impl<'a> ToCode<'a> for Function<'a> {
         tokens.push(Token::Punctuation(Punctuation::RightParenthesis));
 
         if let Some(return_type) = self.return_type() {
-            if !matches!(**return_type, InnerType::InferType) {
+            if !matches!(***return_type, InnerType::InferType) {
                 tokens.push(Token::Punctuation(Punctuation::Colon));
                 return_type.to_code(tokens, options);
             }
@@ -132,8 +133,8 @@ impl<'a> ToCode<'a> for Function<'a> {
 
 #[derive(Debug, Default, Clone, PartialEq, Eq, PartialOrd, Hash)]
 pub struct FunctionBuilder<'a> {
-    parameters: Vec<(&'a str, Type<'a>, Option<Expr<'a>>)>,
-    return_type: Option<&'a Type<'a>>,
+    parameters: Vec<(&'a str, Rc<Type<'a>>, Option<Expr<'a>>)>,
+    return_type: Option<Rc<Type<'a>>>,
     attributes: Vec<Expr<'a>>,
     name: &'a str,
     definition: Option<Block<'a>>,
@@ -158,14 +159,14 @@ impl<'a> FunctionBuilder<'a> {
     pub fn with_parameter(
         mut self,
         name: &'a str,
-        ty: Type<'a>,
+        ty: Rc<Type<'a>>,
         default: Option<Expr<'a>>,
     ) -> Self {
         self.parameters.push((name, ty, default));
         self
     }
 
-    pub fn with_return_type(mut self, ty: &'a Type<'a>) -> Self {
+    pub fn with_return_type(mut self, ty: Rc<Type<'a>>) -> Self {
         self.return_type = Some(ty);
         self
     }

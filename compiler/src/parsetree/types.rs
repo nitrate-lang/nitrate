@@ -1,13 +1,14 @@
-use std::collections::BTreeMap;
-
 use super::array_type::ArrayType;
 use super::expression::{CodeFormat, Expr, InnerExpr, Metadata, ToCode};
 use super::function_type::FunctionType;
 use super::struct_type::StructType;
 use super::tuple_type::TupleType;
-use crate::lexer::{Identifier, Operator, Punctuation, Token};
+use crate::lexer::{Identifier, Punctuation, Token};
 use crate::parsetree::OriginTag;
 use hashbrown::HashSet;
+use std::collections::BTreeMap;
+use std::rc::Rc;
+use std::sync::Mutex;
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Hash)]
 pub enum InnerType<'a> {
@@ -157,7 +158,7 @@ impl<'a> ToCode<'a> for Type<'a> {
             InnerType::Float64 => tokens.push(Token::Identifier(Identifier::new("f64"))),
             InnerType::Float128 => tokens.push(Token::Identifier(Identifier::new("f128"))),
 
-            InnerType::InferType => tokens.push(Token::Operator(Operator::Question)),
+            InnerType::InferType => tokens.push(Token::Identifier(Identifier::new("_"))),
             InnerType::TupleType(e) => e.to_code(tokens, options),
             InnerType::ArrayType(e) => e.to_code(tokens, options),
             InnerType::StructType(e) => e.to_code(tokens, options),
@@ -178,141 +179,173 @@ impl<'a> std::ops::Deref for Type<'a> {
     }
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug)]
 pub struct TypeFactory<'a> {
-    set: HashSet<Type<'a>>,
+    bool: Rc<Type<'a>>,
+    u8: Rc<Type<'a>>,
+    u16: Rc<Type<'a>>,
+    u32: Rc<Type<'a>>,
+    u64: Rc<Type<'a>>,
+    u128: Rc<Type<'a>>,
+    i8: Rc<Type<'a>>,
+    i16: Rc<Type<'a>>,
+    i32: Rc<Type<'a>>,
+    i64: Rc<Type<'a>>,
+    i128: Rc<Type<'a>>,
+    f8: Rc<Type<'a>>,
+    f16: Rc<Type<'a>>,
+    f32: Rc<Type<'a>>,
+    f64: Rc<Type<'a>>,
+    f128: Rc<Type<'a>>,
+    infer_type: Rc<Type<'a>>,
+
+    compound_types: Mutex<HashSet<Rc<Type<'a>>>>,
 }
 
 impl<'a> TypeFactory<'a> {
     pub fn new() -> Self {
         TypeFactory {
-            set: HashSet::new(),
+            bool: Rc::new(Type::new(InnerType::Bool, false)),
+            u8: Rc::new(Type::new(InnerType::UInt8, false)),
+            u16: Rc::new(Type::new(InnerType::UInt16, false)),
+            u32: Rc::new(Type::new(InnerType::UInt32, false)),
+            u64: Rc::new(Type::new(InnerType::UInt64, false)),
+            u128: Rc::new(Type::new(InnerType::UInt128, false)),
+            i8: Rc::new(Type::new(InnerType::Int8, false)),
+            i16: Rc::new(Type::new(InnerType::Int16, false)),
+            i32: Rc::new(Type::new(InnerType::Int32, false)),
+            i64: Rc::new(Type::new(InnerType::Int64, false)),
+            i128: Rc::new(Type::new(InnerType::Int128, false)),
+            f8: Rc::new(Type::new(InnerType::Float8, false)),
+            f16: Rc::new(Type::new(InnerType::Float16, false)),
+            f32: Rc::new(Type::new(InnerType::Float32, false)),
+            f64: Rc::new(Type::new(InnerType::Float64, false)),
+            f128: Rc::new(Type::new(InnerType::Float128, false)),
+            infer_type: Rc::new(Type::new(InnerType::InferType, false)),
+            compound_types: Mutex::new(HashSet::new()),
         }
     }
 
-    pub fn get_bool(&mut self, parentheses: bool) -> &Type<'a> {
-        self.set
-            .get_or_insert(Type::new(InnerType::Bool, parentheses))
+    pub fn get_bool(&self) -> Rc<Type<'a>> {
+        self.bool.clone()
     }
 
-    pub fn get_u8(&mut self, parentheses: bool) -> &Type<'a> {
-        self.set
-            .get_or_insert(Type::new(InnerType::UInt8, parentheses))
+    pub fn get_u8(&self) -> Rc<Type<'a>> {
+        self.u8.clone()
     }
 
-    pub fn get_u16(&mut self, parentheses: bool) -> &Type<'a> {
-        self.set
-            .get_or_insert(Type::new(InnerType::UInt16, parentheses))
+    pub fn get_u16(&self) -> Rc<Type<'a>> {
+        self.u16.clone()
     }
 
-    pub fn get_u32(&mut self, parentheses: bool) -> &Type<'a> {
-        self.set
-            .get_or_insert(Type::new(InnerType::UInt32, parentheses))
+    pub fn get_u32(&self) -> Rc<Type<'a>> {
+        self.u32.clone()
     }
 
-    pub fn get_u64(&mut self, parentheses: bool) -> &Type<'a> {
-        self.set
-            .get_or_insert(Type::new(InnerType::UInt64, parentheses))
+    pub fn get_u64(&self) -> Rc<Type<'a>> {
+        self.u64.clone()
     }
 
-    pub fn get_u128(&mut self, parentheses: bool) -> &Type<'a> {
-        self.set
-            .get_or_insert(Type::new(InnerType::UInt128, parentheses))
+    pub fn get_u128(&self) -> Rc<Type<'a>> {
+        self.u128.clone()
     }
 
-    pub fn get_i8(&mut self, parentheses: bool) -> &Type<'a> {
-        self.set
-            .get_or_insert(Type::new(InnerType::Int8, parentheses))
+    pub fn get_i8(&self) -> Rc<Type<'a>> {
+        self.i8.clone()
     }
 
-    pub fn get_i16(&mut self, parentheses: bool) -> &Type<'a> {
-        self.set
-            .get_or_insert(Type::new(InnerType::Int16, parentheses))
+    pub fn get_i16(&self) -> Rc<Type<'a>> {
+        self.i16.clone()
     }
 
-    pub fn get_i32(&mut self, parentheses: bool) -> &Type<'a> {
-        self.set
-            .get_or_insert(Type::new(InnerType::Int32, parentheses))
+    pub fn get_i32(&self) -> Rc<Type<'a>> {
+        self.i32.clone()
     }
 
-    pub fn get_i64(&mut self, parentheses: bool) -> &Type<'a> {
-        self.set
-            .get_or_insert(Type::new(InnerType::Int64, parentheses))
+    pub fn get_i64(&self) -> Rc<Type<'a>> {
+        self.i64.clone()
     }
 
-    pub fn get_i128(&mut self, parentheses: bool) -> &Type<'a> {
-        self.set
-            .get_or_insert(Type::new(InnerType::Int128, parentheses))
+    pub fn get_i128(&self) -> Rc<Type<'a>> {
+        self.i128.clone()
     }
 
-    pub fn get_f8(&mut self, parentheses: bool) -> &Type<'a> {
-        self.set
-            .get_or_insert(Type::new(InnerType::Float8, parentheses))
+    pub fn get_f8(&self) -> Rc<Type<'a>> {
+        self.f8.clone()
     }
 
-    pub fn get_f16(&mut self, parentheses: bool) -> &Type<'a> {
-        self.set
-            .get_or_insert(Type::new(InnerType::Float16, parentheses))
+    pub fn get_f16(&self) -> Rc<Type<'a>> {
+        self.f16.clone()
     }
 
-    pub fn get_f32(&mut self, parentheses: bool) -> &Type<'a> {
-        self.set
-            .get_or_insert(Type::new(InnerType::Float32, parentheses))
+    pub fn get_f32(&self) -> Rc<Type<'a>> {
+        self.f32.clone()
     }
 
-    pub fn get_f64(&mut self, parentheses: bool) -> &Type<'a> {
-        self.set
-            .get_or_insert(Type::new(InnerType::Float64, parentheses))
+    pub fn get_f64(&self) -> Rc<Type<'a>> {
+        self.f64.clone()
     }
 
-    pub fn get_f128(&mut self, parentheses: bool) -> &Type<'a> {
-        self.set
-            .get_or_insert(Type::new(InnerType::Float128, parentheses))
+    pub fn get_f128(&self) -> Rc<Type<'a>> {
+        self.f128.clone()
     }
 
-    pub fn get_infer_type(&mut self, parentheses: bool) -> &Type<'a> {
-        self.set
-            .get_or_insert(Type::new(InnerType::InferType, parentheses))
+    pub fn get_infer_type(&self) -> Rc<Type<'a>> {
+        self.infer_type.clone()
     }
 
-    pub fn get_tuple_type(&mut self, tuple: Vec<Type<'a>>, parentheses: bool) -> &Type<'a> {
-        self.set.get_or_insert(Type::new(
-            InnerType::TupleType(TupleType::new(tuple)),
-            parentheses,
-        ))
+    pub fn get_tuple_type(&self, elements: Vec<Rc<Type<'a>>>) -> Rc<Type<'a>> {
+        let mut pool = self.compound_types.lock().unwrap();
+
+        let object = Rc::new(Type::new(
+            InnerType::TupleType(TupleType::new(elements)),
+            false,
+        ));
+
+        pool.get_or_insert(object).clone()
     }
 
-    pub fn get_array_type(
-        &mut self,
-        element: &'a Type<'a>,
-        size: Box<Expr<'a>>,
-        parentheses: bool,
-    ) -> &Type<'a> {
-        self.set.get_or_insert(Type::new(
+    pub fn get_array_type(&self, element: Rc<Type<'a>>, size: Box<Expr<'a>>) -> Rc<Type<'a>> {
+        let mut pool = self.compound_types.lock().unwrap();
+
+        let object = Rc::new(Type::new(
             InnerType::ArrayType(ArrayType::new(element, size)),
-            parentheses,
-        ))
+            false,
+        ));
+
+        pool.get_or_insert(object).clone()
     }
 
     pub fn get_struct_type(
-        &mut self,
-        struct_type: BTreeMap<&'a str, Type<'a>>,
-        parentheses: bool,
-    ) -> &Type<'a> {
-        self.set.get_or_insert(Type::new(
-            InnerType::StructType(StructType::new(struct_type)),
-            parentheses,
-        ))
+        &self,
+        name: Option<&'a str>,
+        attributes: Vec<Expr<'a>>,
+        fields: BTreeMap<&'a str, Rc<Type<'a>>>,
+    ) -> Rc<Type<'a>> {
+        let mut pool = self.compound_types.lock().unwrap();
+
+        let object = Rc::new(Type::new(
+            InnerType::StructType(StructType::new(name, attributes, fields)),
+            false,
+        ));
+
+        pool.get_or_insert(object).clone()
     }
 
     pub fn get_function_type(
-        &mut self,
-        function_type: FunctionType<'a>,
+        &self,
+        parameters: Vec<(&'a str, Rc<Type<'a>>, Option<Expr<'a>>)>,
+        return_type: Option<Rc<Type<'a>>>,
+        attributes: Vec<Expr<'a>>,
         parentheses: bool,
-    ) -> &Type<'a> {
-        self.set.get_or_insert(Type::new(
-            InnerType::FunctionType(function_type),
+    ) -> Rc<Type<'a>> {
+        let mut pool = self.compound_types.lock().unwrap();
+
+        let object = Rc::new(Type::new(
+            InnerType::FunctionType(FunctionType::new(parameters, return_type, attributes)),
             parentheses,
-        ))
+        ));
+
+        pool.get_or_insert(object).clone()
     }
 }

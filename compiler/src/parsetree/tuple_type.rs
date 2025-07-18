@@ -1,22 +1,23 @@
 use super::expression::{CodeFormat, ToCode};
 use super::types::Type;
 use crate::lexer::{Punctuation, Token};
+use std::rc::Rc;
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Hash)]
 pub struct TupleType<'a> {
-    elements: Vec<Type<'a>>,
+    elements: Vec<Rc<Type<'a>>>,
 }
 
 impl<'a> TupleType<'a> {
-    pub fn new(elements: Vec<Type<'a>>) -> Self {
+    pub fn new(elements: Vec<Rc<Type<'a>>>) -> Self {
         TupleType { elements }
     }
 
-    pub fn into_inner(self) -> Vec<Type<'a>> {
+    pub fn into_inner(self) -> Vec<Rc<Type<'a>>> {
         self.elements
     }
 
-    pub fn elements(&self) -> &[Type<'a>] {
+    pub fn elements(&self) -> &[Rc<Type<'a>>] {
         &self.elements
     }
 }

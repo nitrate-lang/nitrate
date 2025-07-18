@@ -393,7 +393,7 @@ impl<'a> ToCode<'a> for Expr<'a> {
             InnerExpr::Float64 => tokens.push(Token::Identifier(Identifier::new("f64"))),
             InnerExpr::Float128 => tokens.push(Token::Identifier(Identifier::new("f128"))),
 
-            InnerExpr::InferType => tokens.push(Token::Operator(Operator::Question)),
+            InnerExpr::InferType => tokens.push(Token::Identifier(Identifier::new("_"))),
             InnerExpr::TupleType(e) => e.to_code(tokens, options),
             InnerExpr::ArrayType(e) => e.to_code(tokens, options),
             InnerExpr::StructType(e) => e.to_code(tokens, options),

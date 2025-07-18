@@ -3,18 +3,19 @@ use super::expression::{CodeFormat, ToCode};
 use super::types::Type;
 use crate::lexer::{Identifier, Keyword, Operator, Punctuation, Token};
 use crate::parsetree::InnerType;
+use std::rc::Rc;
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Hash)]
 pub struct FunctionType<'a> {
-    parameters: Vec<(&'a str, Type<'a>, Option<Expr<'a>>)>,
-    return_type: Option<&'a Type<'a>>,
+    parameters: Vec<(&'a str, Rc<Type<'a>>, Option<Expr<'a>>)>,
+    return_type: Option<Rc<Type<'a>>>,
     attributes: Vec<Expr<'a>>,
 }
 
 impl<'a> FunctionType<'a> {
     pub fn new(
-        parameters: Vec<(&'a str, Type<'a>, Option<Expr<'a>>)>,
-        return_type: Option<&'a Type<'a>>,
+        parameters: Vec<(&'a str, Rc<Type<'a>>, Option<Expr<'a>>)>,
+        return_type: Option<Rc<Type<'a>>>,
         attributes: Vec<Expr<'a>>,
     ) -> Self {
         FunctionType {
@@ -24,12 +25,12 @@ impl<'a> FunctionType<'a> {
         }
     }
 
-    pub fn parameters(&self) -> &Vec<(&'a str, Type<'a>, Option<Expr<'a>>)> {
+    pub fn parameters(&self) -> &Vec<(&'a str, Rc<Type<'a>>, Option<Expr<'a>>)> {
         &self.parameters
     }
 
-    pub fn return_type(&self) -> Option<&Type<'a>> {
-        self.return_type.as_deref()
+    pub fn return_type(&self) -> Option<&Rc<Type<'a>>> {
+        self.return_type.as_ref()
     }
 
     pub fn attributes(&self) -> &Vec<Expr<'a>> {
@@ -56,7 +57,7 @@ impl<'a> ToCode<'a> for FunctionType<'a> {
 
             tokens.push(Token::Identifier(Identifier::new(name)));
 
-            if !matches!(**ty, InnerType::InferType) {
+            if !matches!(***ty, InnerType::InferType) {
                 tokens.push(Token::Punctuation(Punctuation::Colon));
                 ty.to_code(tokens, options);
             }
@@ -69,7 +70,7 @@ impl<'a> ToCode<'a> for FunctionType<'a> {
         tokens.push(Token::Punctuation(Punctuation::RightParenthesis));
 
         if let Some(return_type) = self.return_type() {
-            if !matches!(**return_type, InnerType::InferType) {
+            if !matches!(***return_type, InnerType::InferType) {
                 tokens.push(Token::Punctuation(Punctuation::Colon));
                 return_type.to_code(tokens, options);
             }
