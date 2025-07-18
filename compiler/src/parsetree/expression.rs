@@ -199,8 +199,10 @@ impl<'a> Expr<'a> {
     }
 
     pub fn into_type(self) -> Option<Type<'a>> {
+        let has_parenthesis = self.has_parenthesis();
+
         let type_maybe = match self.expr {
-            InnerExpr::Discard => Some(InnerType::Discard),
+            InnerExpr::Discard => None,
 
             InnerExpr::Integer(_) => None,
             InnerExpr::Float(_) => None,
@@ -239,7 +241,7 @@ impl<'a> Expr<'a> {
             InnerExpr::FunctionType(function) => Some(InnerType::FunctionType(function)),
         };
 
-        type_maybe.map(|inner| Type::new(inner, self.metadata))
+        type_maybe.map(|inner| Type::new(inner, has_parenthesis))
     }
 
     pub fn is_lit(&self) -> bool {

@@ -28,24 +28,12 @@ impl<'a> FunctionType<'a> {
         &self.parameters
     }
 
-    pub fn parameters_mut(&mut self) -> &mut Vec<(&'a str, Type<'a>, Option<Expr<'a>>)> {
-        &mut self.parameters
-    }
-
     pub fn return_type(&self) -> Option<&Type<'a>> {
         self.return_type.as_deref()
     }
 
-    pub fn return_type_mut(&mut self) -> Option<&mut Type<'a>> {
-        self.return_type.as_deref_mut()
-    }
-
     pub fn attributes(&self) -> &Vec<Expr<'a>> {
         &self.attributes
-    }
-
-    pub fn attributes_mut(&mut self) -> &mut Vec<Expr<'a>> {
-        &mut self.attributes
     }
 }
 

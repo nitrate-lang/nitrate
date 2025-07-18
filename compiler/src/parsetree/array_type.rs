@@ -18,16 +18,8 @@ impl<'a> ArrayType<'a> {
         &self.element_ty
     }
 
-    pub fn element_ty_mut(&mut self) -> &mut Type<'a> {
-        &mut self.element_ty
-    }
-
     pub fn count(&self) -> &Expr<'a> {
         &self.count
-    }
-
-    pub fn count_mut(&mut self) -> &mut Expr<'a> {
-        &mut self.count
     }
 }
 

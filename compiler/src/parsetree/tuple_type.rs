@@ -19,10 +19,6 @@ impl<'a> TupleType<'a> {
     pub fn elements(&self) -> &[Type<'a>] {
         &self.elements
     }
-
-    pub fn elements_mut(&mut self) -> &mut Vec<Type<'a>> {
-        &mut self.elements
-    }
 }
 
 impl<'a> ToCode<'a> for TupleType<'a> {

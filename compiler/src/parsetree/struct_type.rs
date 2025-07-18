@@ -20,10 +20,6 @@ impl<'a> StructType<'a> {
     pub fn fields(&self) -> &BTreeMap<&'a str, Type<'a>> {
         &self.fields
     }
-
-    pub fn fields_mut(&mut self) -> &mut BTreeMap<&'a str, Type<'a>> {
-        &mut self.fields
-    }
 }
 
 impl<'a> ToCode<'a> for StructType<'a> {
