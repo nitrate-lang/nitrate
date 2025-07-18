@@ -11,6 +11,7 @@ use super::number::{FloatLit, IntegerLit};
 use super::object::Object;
 use super::statement::Statement;
 use super::string::StringLit;
+use super::struct_type::StructType;
 use super::tuple_type::TupleType;
 use super::unary_op::UnaryExpr;
 
@@ -141,7 +142,7 @@ pub enum InnerExpr<'a> {
 
     /* Compound Types */
     TupleType(TupleType<'a>),
-    StructTy,
+    StructTy(StructType<'a>),
     ArrayTy(ArrayType<'a>),
     FunctionTy,
 }
@@ -228,9 +229,10 @@ impl<'a> Expr<'a> {
             | InnerExpr::Float128 => true,
 
             InnerExpr::TupleType(tuple) => tuple.iter().all(|item| item.is_lit()),
+            InnerExpr::StructTy(_struct) => _struct.iter().all(|(_, field)| field.is_lit()),
 
             // FIXME: Verify recursively that components of ArrayTy and FunctionTy are literals
-            InnerExpr::StructTy | InnerExpr::FunctionTy => true,
+            InnerExpr::FunctionTy => true,
 
             InnerExpr::ArrayTy(array) => array.element_ty().is_lit() && array.count().is_lit(),
 
@@ -257,7 +259,7 @@ impl<'a> Expr<'a> {
             | InnerExpr::Float128 => true,
 
             InnerExpr::TupleType(_)
-            | InnerExpr::StructTy
+            | InnerExpr::StructTy(_)
             | InnerExpr::ArrayTy(_)
             | InnerExpr::FunctionTy => true,
 
@@ -331,9 +333,7 @@ impl<'a> ToCode<'a> for Expr<'a> {
             InnerExpr::Float128 => {}
 
             InnerExpr::TupleType(e) => e.to_code(tokens, options),
-            InnerExpr::StructTy => {
-                // TODO:
-            }
+            InnerExpr::StructTy(e) => e.to_code(tokens, options),
             InnerExpr::ArrayTy(e) => e.to_code(tokens, options),
             InnerExpr::FunctionTy => {
                 // TODO:

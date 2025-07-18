@@ -8,6 +8,7 @@ pub mod number;
 pub mod object;
 pub mod statement;
 pub mod string;
+pub mod struct_type;
 pub mod tuple_type;
 pub mod unary_op;
 
@@ -21,5 +22,6 @@ pub use number::*;
 pub use object::*;
 pub use statement::*;
 pub use string::*;
+pub use struct_type::*;
 pub use tuple_type::*;
 pub use unary_op::*;
