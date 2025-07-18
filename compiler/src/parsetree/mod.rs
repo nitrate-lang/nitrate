@@ -11,6 +11,7 @@ pub mod statement;
 pub mod string;
 pub mod struct_type;
 pub mod tuple_type;
+pub mod types;
 pub mod unary_op;
 
 pub use array_type::*;
@@ -26,4 +27,5 @@ pub use statement::*;
 pub use string::*;
 pub use struct_type::*;
 pub use tuple_type::*;
+pub use types::*;
 pub use unary_op::*;
