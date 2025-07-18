@@ -321,21 +321,21 @@ impl<'a> ToCode<'a> for Expr<'a> {
             InnerExpr::Continue => {}
             InnerExpr::Break => {}
 
-            InnerExpr::UInt1 => {}
-            InnerExpr::UInt8 => {}
-            InnerExpr::UInt16 => {}
-            InnerExpr::UInt32 => {}
-            InnerExpr::UInt64 => {}
-            InnerExpr::UInt128 => {}
-            InnerExpr::Int8 => {}
-            InnerExpr::Int16 => {}
-            InnerExpr::Int32 => {}
-            InnerExpr::Int64 => {}
-            InnerExpr::Int128 => {}
-            InnerExpr::Float16 => {}
-            InnerExpr::Float32 => {}
-            InnerExpr::Float64 => {}
-            InnerExpr::Float128 => {}
+            InnerExpr::UInt1 => tokens.push(Token::Identifier(Identifier::new("bool"))),
+            InnerExpr::UInt8 => tokens.push(Token::Identifier(Identifier::new("u8"))),
+            InnerExpr::UInt16 => tokens.push(Token::Identifier(Identifier::new("u16"))),
+            InnerExpr::UInt32 => tokens.push(Token::Identifier(Identifier::new("u32"))),
+            InnerExpr::UInt64 => tokens.push(Token::Identifier(Identifier::new("u64"))),
+            InnerExpr::UInt128 => tokens.push(Token::Identifier(Identifier::new("u128"))),
+            InnerExpr::Int8 => tokens.push(Token::Identifier(Identifier::new("i8"))),
+            InnerExpr::Int16 => tokens.push(Token::Identifier(Identifier::new("i16"))),
+            InnerExpr::Int32 => tokens.push(Token::Identifier(Identifier::new("i32"))),
+            InnerExpr::Int64 => tokens.push(Token::Identifier(Identifier::new("i64"))),
+            InnerExpr::Int128 => tokens.push(Token::Identifier(Identifier::new("i128"))),
+            InnerExpr::Float16 => tokens.push(Token::Identifier(Identifier::new("f16"))),
+            InnerExpr::Float32 => tokens.push(Token::Identifier(Identifier::new("f32"))),
+            InnerExpr::Float64 => tokens.push(Token::Identifier(Identifier::new("f64"))),
+            InnerExpr::Float128 => tokens.push(Token::Identifier(Identifier::new("f128"))),
 
             InnerExpr::TupleType(e) => e.to_code(tokens, options),
             InnerExpr::StructType(e) => e.to_code(tokens, options),
