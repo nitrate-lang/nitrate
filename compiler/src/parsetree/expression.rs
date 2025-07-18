@@ -136,9 +136,10 @@ pub enum InnerExpr<'a> {
     Float32,
     Float64,
     Float128,
-    Unit,
 
     /* Compound Types */
+    TupleTy,
+    StructTy,
     ArrayTy,
     FunctionTy,
 }
@@ -225,7 +226,37 @@ impl<'a> Expr<'a> {
             | InnerExpr::Float128 => true,
 
             // FIXME: Verify recursively that components of ArrayTy and FunctionTy are literals
-            InnerExpr::ArrayTy | InnerExpr::FunctionTy => true,
+            InnerExpr::TupleTy
+            | InnerExpr::StructTy
+            | InnerExpr::ArrayTy
+            | InnerExpr::FunctionTy => true,
+
+            _ => false,
+        }
+    }
+
+    pub fn is_type(&self) -> bool {
+        match &self.expr {
+            InnerExpr::UInt1
+            | InnerExpr::UInt8
+            | InnerExpr::UInt16
+            | InnerExpr::UInt32
+            | InnerExpr::UInt64
+            | InnerExpr::UInt128
+            | InnerExpr::Int8
+            | InnerExpr::Int16
+            | InnerExpr::Int32
+            | InnerExpr::Int64
+            | InnerExpr::Int128
+            | InnerExpr::Float16
+            | InnerExpr::Float32
+            | InnerExpr::Float64
+            | InnerExpr::Float128 => true,
+
+            InnerExpr::TupleTy
+            | InnerExpr::StructTy
+            | InnerExpr::ArrayTy
+            | InnerExpr::FunctionTy => true,
 
             _ => false,
         }
@@ -295,10 +326,19 @@ impl<'a> ToCode<'a> for Expr<'a> {
             InnerExpr::Float32 => {}
             InnerExpr::Float64 => {}
             InnerExpr::Float128 => {}
-            InnerExpr::Unit => {}
 
-            InnerExpr::ArrayTy => {}
-            InnerExpr::FunctionTy => {}
+            InnerExpr::TupleTy => {
+                // TODO:
+            }
+            InnerExpr::StructTy => {
+                // TODO:
+            }
+            InnerExpr::ArrayTy => {
+                // TODO:
+            }
+            InnerExpr::FunctionTy => {
+                // TODO:
+            }
         }
 
         if self.has_parenthesis() {
