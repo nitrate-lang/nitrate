@@ -3,7 +3,7 @@ use super::types::Type;
 use crate::lexer::{Identifier, Punctuation, Token};
 use std::collections::BTreeMap;
 
-#[derive(Debug, Clone, PartialEq, PartialOrd, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Hash)]
 pub struct StructType<'a> {
     fields: BTreeMap<&'a str, Type<'a>>,
 }

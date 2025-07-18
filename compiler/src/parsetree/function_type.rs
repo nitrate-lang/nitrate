@@ -4,7 +4,7 @@ use super::types::Type;
 use crate::lexer::{Identifier, Keyword, Operator, Punctuation, Token};
 use crate::parsetree::InnerType;
 
-#[derive(Debug, Clone, PartialEq, PartialOrd, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Hash)]
 pub struct FunctionType<'a> {
     parameters: Vec<(&'a str, Type<'a>, Option<Expr<'a>>)>,
     return_type: Option<Box<Type<'a>>>,

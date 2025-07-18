@@ -2,7 +2,7 @@ use super::expression::{CodeFormat, ToCode};
 use crate::lexer::{Float, Integer, IntegerKind, Token};
 use apint::UInt;
 
-#[derive(Debug, Clone, PartialEq, PartialOrd, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Hash)]
 pub struct IntegerLit {
     value: UInt,
     kind: IntegerKind,
@@ -67,6 +67,8 @@ impl FloatLit {
         self.value
     }
 }
+
+impl std::cmp::Eq for FloatLit {}
 
 impl<'a> ToCode<'a> for FloatLit {
     fn to_code(&self, tokens: &mut Vec<Token<'a>>, _options: &CodeFormat) {

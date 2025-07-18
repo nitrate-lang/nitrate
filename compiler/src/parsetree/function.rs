@@ -4,7 +4,7 @@ use super::types::Type;
 use crate::lexer::{Identifier, Keyword, Operator, Punctuation, Token};
 use crate::parsetree::{Block, InnerType};
 
-#[derive(Debug, Clone, PartialEq, PartialOrd, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Hash)]
 pub struct Function<'a> {
     parameters: Vec<(&'a str, Type<'a>, Option<Expr<'a>>)>,
     return_type: Option<Box<Type<'a>>>,
@@ -130,7 +130,7 @@ impl<'a> ToCode<'a> for Function<'a> {
     }
 }
 
-#[derive(Debug, Default, Clone, PartialEq, PartialOrd, Hash)]
+#[derive(Debug, Default, Clone, PartialEq, Eq, PartialOrd, Hash)]
 pub struct FunctionBuilder<'a> {
     parameters: Vec<(&'a str, Type<'a>, Option<Expr<'a>>)>,
     return_type: Option<Box<Type<'a>>>,

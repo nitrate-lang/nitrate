@@ -3,7 +3,7 @@ use super::expression::{CodeFormat, ToCode};
 use super::types::Type;
 use crate::lexer::{Punctuation, Token};
 
-#[derive(Debug, Clone, PartialEq, PartialOrd, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Hash)]
 pub struct ArrayType<'a> {
     element_ty: Box<Type<'a>>,
     count: Box<Expr<'a>>,

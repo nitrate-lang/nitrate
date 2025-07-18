@@ -18,7 +18,7 @@ use super::tuple_type::TupleType;
 use super::types::{InnerType, Type};
 use super::unary_op::UnaryExpr;
 
-#[derive(Debug, Default, Clone, Copy, PartialEq, PartialOrd, Hash)]
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq, PartialOrd, Hash)]
 pub struct OriginTag {
     offset: u32,
 }
@@ -29,13 +29,13 @@ impl OriginTag {
     }
 }
 
-#[derive(Debug, Default, Clone, PartialEq, PartialOrd, Hash)]
+#[derive(Debug, Default, Clone, PartialEq, Eq, PartialOrd, Hash)]
 struct UncommonMetadata<'a> {
     has_parenthesis: bool,
     comments: Vec<&'a str>,
 }
 
-#[derive(Debug, Default, Clone, PartialEq, PartialOrd, Hash)]
+#[derive(Debug, Default, Clone, PartialEq, Eq, PartialOrd, Hash)]
 pub struct Metadata<'a> {
     origin: OriginTag,
     optional: Option<Box<UncommonMetadata<'a>>>,
@@ -98,7 +98,7 @@ impl<'a> Metadata<'a> {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, PartialOrd, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Hash)]
 pub enum InnerExpr<'a> {
     Discard,
 
@@ -118,7 +118,7 @@ pub enum InnerExpr<'a> {
     Function(Function<'a>),
 
     /* Primitive Types */
-    UInt1,
+    Bool,
     UInt8,
     UInt16,
     UInt32,
@@ -143,7 +143,7 @@ pub enum InnerExpr<'a> {
     FunctionType(FunctionType<'a>),
 }
 
-#[derive(Debug, Clone, PartialEq, PartialOrd, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Hash)]
 pub struct Expr<'a> {
     expr: InnerExpr<'a>,
     metadata: Metadata<'a>,
@@ -217,7 +217,7 @@ impl<'a> Expr<'a> {
             InnerExpr::Block(_) => None,
             InnerExpr::Function(_) => None,
 
-            InnerExpr::UInt1 => Some(InnerType::UInt1),
+            InnerExpr::Bool => Some(InnerType::Bool),
             InnerExpr::UInt8 => Some(InnerType::UInt8),
             InnerExpr::UInt16 => Some(InnerType::UInt16),
             InnerExpr::UInt32 => Some(InnerType::UInt32),
@@ -261,7 +261,7 @@ impl<'a> Expr<'a> {
             InnerExpr::Block(_) => false,
             InnerExpr::Function(_) => false,
 
-            InnerExpr::UInt1 => true,
+            InnerExpr::Bool => true,
             InnerExpr::UInt8 => true,
             InnerExpr::UInt16 => true,
             InnerExpr::UInt32 => true,
@@ -310,7 +310,7 @@ impl<'a> Expr<'a> {
             InnerExpr::Block(_) => false,
             InnerExpr::Function(_) => false,
 
-            InnerExpr::UInt1 => true,
+            InnerExpr::Bool => true,
             InnerExpr::UInt8 => true,
             InnerExpr::UInt16 => true,
             InnerExpr::UInt32 => true,
@@ -376,7 +376,7 @@ impl<'a> ToCode<'a> for Expr<'a> {
             InnerExpr::Block(e) => e.to_code(tokens, options),
             InnerExpr::Function(e) => e.to_code(tokens, options),
 
-            InnerExpr::UInt1 => tokens.push(Token::Identifier(Identifier::new("bool"))),
+            InnerExpr::Bool => tokens.push(Token::Identifier(Identifier::new("bool"))),
             InnerExpr::UInt8 => tokens.push(Token::Identifier(Identifier::new("u8"))),
             InnerExpr::UInt16 => tokens.push(Token::Identifier(Identifier::new("u16"))),
             InnerExpr::UInt32 => tokens.push(Token::Identifier(Identifier::new("u32"))),

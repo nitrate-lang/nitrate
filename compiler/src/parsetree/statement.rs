@@ -1,7 +1,7 @@
 use super::expression::{CodeFormat, Expr, ToCode};
 use crate::lexer::{Punctuation, Token};
 
-#[derive(Debug, Clone, PartialEq, PartialOrd, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Hash)]
 pub struct Statement<'a> {
     expr: Box<Expr<'a>>,
 }

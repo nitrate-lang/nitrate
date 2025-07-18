@@ -5,11 +5,14 @@ use super::struct_type::StructType;
 use super::tuple_type::TupleType;
 use crate::lexer::{Identifier, Operator, Punctuation, Token};
 use crate::parsetree::OriginTag;
+use hashbrown::HashSet;
+use std::sync::Arc;
+use std::sync::Mutex;
 
-#[derive(Debug, Clone, PartialEq, PartialOrd, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Hash)]
 pub enum InnerType<'a> {
     /* Primitive Types */
-    UInt1,
+    Bool,
     UInt8,
     UInt16,
     UInt32,
@@ -34,7 +37,7 @@ pub enum InnerType<'a> {
     FunctionType(FunctionType<'a>),
 }
 
-#[derive(Debug, Clone, PartialEq, PartialOrd, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Hash)]
 pub struct Type<'a> {
     expr: InnerType<'a>,
     has_parenthesis: bool,
@@ -64,7 +67,7 @@ impl<'a> Type<'a> {
         let has_parenthesis = self.has_parenthesis();
 
         let expr = match self.expr {
-            InnerType::UInt1 => InnerExpr::UInt1,
+            InnerType::Bool => InnerExpr::Bool,
             InnerType::UInt8 => InnerExpr::UInt8,
             InnerType::UInt16 => InnerExpr::UInt16,
             InnerType::UInt32 => InnerExpr::UInt32,
@@ -96,7 +99,7 @@ impl<'a> Type<'a> {
 
     pub fn is_lit(&self) -> bool {
         match &self.expr {
-            InnerType::UInt1 => true,
+            InnerType::Bool => true,
             InnerType::UInt8 => true,
             InnerType::UInt16 => true,
             InnerType::UInt32 => true,
@@ -137,7 +140,7 @@ impl<'a> ToCode<'a> for Type<'a> {
         }
 
         match &self.expr {
-            InnerType::UInt1 => tokens.push(Token::Identifier(Identifier::new("bool"))),
+            InnerType::Bool => tokens.push(Token::Identifier(Identifier::new("bool"))),
             InnerType::UInt8 => tokens.push(Token::Identifier(Identifier::new("u8"))),
             InnerType::UInt16 => tokens.push(Token::Identifier(Identifier::new("u16"))),
             InnerType::UInt32 => tokens.push(Token::Identifier(Identifier::new("u32"))),
@@ -172,5 +175,98 @@ impl<'a> std::ops::Deref for Type<'a> {
 
     fn deref(&self) -> &Self::Target {
         &self.expr
+    }
+}
+
+#[derive(Debug, Default)]
+pub struct TypeFactory<'a> {
+    set: HashSet<Type<'a>>,
+}
+
+impl<'a> TypeFactory<'a> {
+    pub fn new() -> Self {
+        TypeFactory {
+            set: HashSet::new(),
+        }
+    }
+
+    pub fn get_bool(&mut self, parentheses: bool) -> &Type<'a> {
+        self.set
+            .get_or_insert(Type::new(InnerType::Bool, parentheses))
+    }
+
+    pub fn get_u8(&mut self, parentheses: bool) -> &Type<'a> {
+        self.set
+            .get_or_insert(Type::new(InnerType::UInt8, parentheses))
+    }
+
+    pub fn get_u16(&mut self, parentheses: bool) -> &Type<'a> {
+        self.set
+            .get_or_insert(Type::new(InnerType::UInt16, parentheses))
+    }
+
+    pub fn get_u32(&mut self, parentheses: bool) -> &Type<'a> {
+        self.set
+            .get_or_insert(Type::new(InnerType::UInt32, parentheses))
+    }
+
+    pub fn get_u64(&mut self, parentheses: bool) -> &Type<'a> {
+        self.set
+            .get_or_insert(Type::new(InnerType::UInt64, parentheses))
+    }
+
+    pub fn get_u128(&mut self, parentheses: bool) -> &Type<'a> {
+        self.set
+            .get_or_insert(Type::new(InnerType::UInt128, parentheses))
+    }
+
+    pub fn get_i8(&mut self, parentheses: bool) -> &Type<'a> {
+        self.set
+            .get_or_insert(Type::new(InnerType::Int8, parentheses))
+    }
+
+    pub fn get_i16(&mut self, parentheses: bool) -> &Type<'a> {
+        self.set
+            .get_or_insert(Type::new(InnerType::Int16, parentheses))
+    }
+
+    pub fn get_i32(&mut self, parentheses: bool) -> &Type<'a> {
+        self.set
+            .get_or_insert(Type::new(InnerType::Int32, parentheses))
+    }
+
+    pub fn get_i64(&mut self, parentheses: bool) -> &Type<'a> {
+        self.set
+            .get_or_insert(Type::new(InnerType::Int64, parentheses))
+    }
+
+    pub fn get_i128(&mut self, parentheses: bool) -> &Type<'a> {
+        self.set
+            .get_or_insert(Type::new(InnerType::Int128, parentheses))
+    }
+
+    pub fn get_f8(&mut self, parentheses: bool) -> &Type<'a> {
+        self.set
+            .get_or_insert(Type::new(InnerType::Float8, parentheses))
+    }
+
+    pub fn get_f16(&mut self, parentheses: bool) -> &Type<'a> {
+        self.set
+            .get_or_insert(Type::new(InnerType::Float16, parentheses))
+    }
+
+    pub fn get_f32(&mut self, parentheses: bool) -> &Type<'a> {
+        self.set
+            .get_or_insert(Type::new(InnerType::Float32, parentheses))
+    }
+
+    pub fn get_f64(&mut self, parentheses: bool) -> &Type<'a> {
+        self.set
+            .get_or_insert(Type::new(InnerType::Float64, parentheses))
+    }
+
+    pub fn get_f128(&mut self, parentheses: bool) -> &Type<'a> {
+        self.set
+            .get_or_insert(Type::new(InnerType::Float128, parentheses))
     }
 }
