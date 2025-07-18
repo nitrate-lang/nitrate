@@ -29,9 +29,7 @@ impl<'a> ToCode<'a> for List<'a> {
     fn to_code(&self, tokens: &mut Vec<Token<'a>>, options: &CodeFormat) {
         tokens.push(Token::Punctuation(Punctuation::LeftBracket));
         for (i, expr) in self.elements().iter().enumerate() {
-            if i > 0 {
-                tokens.push(Token::Punctuation(Punctuation::Comma));
-            }
+            (i > 0).then(|| tokens.push(Token::Punctuation(Punctuation::Comma)));
             expr.to_code(tokens, options);
         }
         tokens.push(Token::Punctuation(Punctuation::RightBracket));

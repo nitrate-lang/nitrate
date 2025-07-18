@@ -3,7 +3,7 @@ use super::expression::{CodeFormat, Expr, InnerExpr, Metadata, OriginTag, ToCode
 use super::function_type::FunctionType;
 use super::struct_type::StructType;
 use super::tuple_type::TupleType;
-use crate::lexer::{Comment, CommentKind, Identifier, Punctuation, Token};
+use crate::lexer::{Comment, CommentKind, Identifier, Operator, Punctuation, Token};
 
 #[derive(Debug, Clone, PartialEq, PartialOrd, Hash)]
 pub enum InnerType<'a> {
@@ -27,6 +27,7 @@ pub enum InnerType<'a> {
     Float128,
 
     /* Compound Types */
+    InferType,
     TupleType(TupleType<'a>),
     StructType(StructType<'a>),
     ArrayType(ArrayType<'a>),
@@ -108,6 +109,7 @@ impl<'a> Type<'a> {
             InnerType::Float64 => InnerExpr::Float64,
             InnerType::Float128 => InnerExpr::Float128,
 
+            InnerType::InferType => InnerExpr::InferType,
             InnerType::TupleType(tuple) => InnerExpr::TupleType(tuple),
             InnerType::StructType(struct_type) => InnerExpr::StructType(struct_type),
             InnerType::ArrayType(array) => InnerExpr::ArrayType(array),
@@ -135,6 +137,7 @@ impl<'a> Type<'a> {
             | InnerType::Float64
             | InnerType::Float128 => true,
 
+            InnerType::InferType => false,
             InnerType::TupleType(tuple) => tuple.elements().iter().all(|item| item.is_lit()),
             InnerType::StructType(_struct) => _struct
                 .fields()
@@ -189,6 +192,7 @@ impl<'a> ToCode<'a> for Type<'a> {
             InnerType::Float64 => tokens.push(Token::Identifier(Identifier::new("f64"))),
             InnerType::Float128 => tokens.push(Token::Identifier(Identifier::new("f128"))),
 
+            InnerType::InferType => tokens.push(Token::Operator(Operator::Question)),
             InnerType::TupleType(e) => e.to_code(tokens, options),
             InnerType::StructType(e) => e.to_code(tokens, options),
             InnerType::ArrayType(e) => e.to_code(tokens, options),
