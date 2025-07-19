@@ -2,6 +2,45 @@ use nitrate_compiler::lexer::*;
 use nitrate_compiler::parser::*;
 use std::io::Read;
 
+use tracking_allocator::{AllocationGroupId, AllocationRegistry, AllocationTracker, Allocator};
+
+use std::alloc::System;
+
+#[global_allocator]
+static GLOBAL: Allocator<System> = Allocator::system();
+
+struct StdoutTracker;
+
+impl AllocationTracker for StdoutTracker {
+    fn allocated(
+        &self,
+        addr: usize,
+        object_size: usize,
+        _wrapped_size: usize,
+        _group_id: AllocationGroupId,
+    ) {
+        println!("{:016x} A {:016x}", addr, object_size);
+    }
+
+    fn deallocated(
+        &self,
+        addr: usize,
+        object_size: usize,
+        _wrapped_size: usize,
+        _source_group_id: AllocationGroupId,
+        _current_group_id: AllocationGroupId,
+    ) {
+        println!("{:016x} D {:016x}", addr, object_size);
+    }
+}
+
+fn enable_allocation_tracking() {
+    let _ = AllocationRegistry::set_global_tracker(StdoutTracker)
+        .expect("no other global tracker should be set yet");
+
+    AllocationRegistry::enable_tracking();
+}
+
 fn read_source_file(filename: &str) -> std::io::Result<Vec<u8>> {
     let mut file = std::fs::File::open(filename)?;
     let mut contents = Vec::new();
@@ -10,6 +49,8 @@ fn read_source_file(filename: &str) -> std::io::Result<Vec<u8>> {
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
+    enable_allocation_tracking();
+
     env_logger::Builder::from_default_env()
         .format_timestamp(None)
         .format_level(false)
@@ -27,36 +68,21 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let source_code = read_source_file(filename)
         .map_err(|e| format!("Failed to read source file {}: {}", filename, e))?;
 
-    let mut lexer = Lexer::new(&source_code, filename)
+    let lexer = Lexer::new(&source_code, filename)
         .map_err(|e| format!("Failed to create lexer for file {}: {}", filename, e))?;
 
-    // println!("=====================================================");
-    // loop {
-    //     let token = lexer.next_token();
-    //     match token.token() {
-    //         Token::Eof => {
-    //             println!("=====================================================");
-    //             println!("End of file");
-    //             break;
-    //         }
-    //         Token::Illegal => {
-    //             println!("=====================================================");
-    //             eprintln!("Illegal token found: {:?}", token);
-    //             break;
-    //         }
-    //         _ => {
-    //             println!("{:?}", token.token());
-    //         }
-    //     }
-    // }
+    let mut parser = Parser::new(lexer);
 
-    let mut parser = Parser::new(&mut lexer)
-        .map_err(|e| format!("Failed to create parser for file {}: {}", filename, e))?;
+    println!("===========================================");
 
-    let _parsetree = parser.parse().map_or(
-        Err(format!("Failed to parse source code in file {}", filename)),
-        |tree| Ok(tree),
-    )?;
+    {
+        let _parsetree = parser.parse().map_or_else(
+            || Err(format!("Failed to parse source code in file {}", filename)),
+            |tree| Ok(tree),
+        )?;
+    }
+
+    println!("===========================================");
 
     println!("Successfully parsed file: {}", filename);
 
