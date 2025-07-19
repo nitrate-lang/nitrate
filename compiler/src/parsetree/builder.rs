@@ -9,7 +9,7 @@ static TYPE_FACTORY: LazyLock<TypeFactory> = LazyLock::new(|| TypeFactory::new()
 #[derive(Debug, Clone, Default, PartialEq, Eq, PartialOrd, Hash)]
 pub struct Builder<'a> {
     inner: Option<InnerExpr<'a>>,
-    metadata: Metadata<'a>,
+    metadata: Metadata,
 }
 
 impl<'a> Builder<'a> {
@@ -27,7 +27,7 @@ impl<'a> Builder<'a> {
         self
     }
 
-    pub fn get_metadata(self) -> Metadata<'a> {
+    pub fn get_metadata(self) -> Metadata {
         self.metadata
     }
 

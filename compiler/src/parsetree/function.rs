@@ -6,9 +6,11 @@ use super::types::Type;
 use crate::lexer::{Identifier, Keyword, Operator, Punctuation, Token};
 use std::sync::Arc;
 
+pub type FunctionParameter<'a> = (&'a str, Arc<Type<'a>>, Option<Box<Expr<'a>>>);
+
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Hash)]
 pub struct Function<'a> {
-    parameters: Vec<(&'a str, Arc<Type<'a>>, Option<Expr<'a>>)>,
+    parameters: Vec<FunctionParameter<'a>>,
     return_type: Option<Arc<Type<'a>>>,
     attributes: Vec<Expr<'a>>,
     name: &'a str,
@@ -18,7 +20,7 @@ pub struct Function<'a> {
 impl<'a> Function<'a> {
     pub fn new(
         name: &'a str,
-        parameters: Vec<(&'a str, Arc<Type<'a>>, Option<Expr<'a>>)>,
+        parameters: Vec<FunctionParameter<'a>>,
         return_type: Option<Arc<Type<'a>>>,
         attributes: Vec<Expr<'a>>,
         definition: Option<Block<'a>>,
@@ -32,11 +34,11 @@ impl<'a> Function<'a> {
         }
     }
 
-    pub fn parameters(&self) -> &Vec<(&'a str, Arc<Type<'a>>, Option<Expr<'a>>)> {
+    pub fn parameters(&self) -> &Vec<FunctionParameter<'a>> {
         &self.parameters
     }
 
-    pub fn parameters_mut(&mut self) -> &mut Vec<(&'a str, Arc<Type<'a>>, Option<Expr<'a>>)> {
+    pub fn parameters_mut(&mut self) -> &mut Vec<FunctionParameter<'a>> {
         &mut self.parameters
     }
 

@@ -4,7 +4,7 @@ use super::block::Block;
 use super::builder::Builder;
 use super::character::CharLit;
 use super::expression::{Expr, InnerExpr};
-use super::function::Function;
+use super::function::{Function, FunctionParameter};
 use super::list::List;
 use super::number::{FloatLit, IntegerLit};
 use super::object::Object;
@@ -16,7 +16,7 @@ use super::unary_op::{UnaryExpr, UnaryOperator};
 use super::variable::{Variable, VariableKind};
 use crate::lexer::IntegerKind;
 use apint::UInt;
-use std::collections::{BTreeMap, LinkedList};
+use std::collections::BTreeMap;
 use std::sync::Arc;
 
 #[derive(Debug)]
@@ -182,7 +182,7 @@ impl<'a> IntegerBuilderHelper<'a> {
         let value = self.value.expect("Integer value must be provided");
         let kind = self.kind.unwrap_or(IntegerKind::Decimal);
 
-        let int = IntegerLit::new(value, kind).unwrap();
+        let int = Box::new(IntegerLit::new(value, kind).unwrap());
         let integer_expr = InnerExpr::Integer(int);
 
         Expr::new(integer_expr, self.outer.get_metadata())
@@ -207,7 +207,7 @@ impl<'a> FloatBuilderHelper<'a> {
 
     pub fn build(self) -> Expr<'a> {
         let value = self.value.expect("Float value must be provided");
-        let float_expr = InnerExpr::Float(FloatLit::new(value));
+        let float_expr = InnerExpr::Float(Box::new(FloatLit::new(value)));
 
         Expr::new(float_expr, self.outer.get_metadata())
     }
@@ -236,7 +236,7 @@ impl<'a> StringBuilderHelper<'a> {
 
     pub fn build(self) -> Expr<'a> {
         let value = self.value.expect("String value must be provided");
-        let string_expr = InnerExpr::String(StringLit::new(value));
+        let string_expr = InnerExpr::String(Box::new(StringLit::new(value)));
 
         Expr::new(string_expr, self.outer.get_metadata())
     }
@@ -260,7 +260,7 @@ impl<'a> CharBuilderHelper<'a> {
 
     pub fn build(self) -> Expr<'a> {
         let value = self.value.expect("Char value must be provided");
-        let char_expr = InnerExpr::Char(CharLit::new(value));
+        let char_expr = InnerExpr::Char(Box::new(CharLit::new(value)));
 
         Expr::new(char_expr, self.outer.get_metadata())
     }
@@ -382,9 +382,9 @@ impl<'a> UnaryExprBuilderHelper<'a> {
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Hash)]
 pub struct BinaryExprBuilderHelper<'a> {
     outer: Builder<'a>,
-    left: Option<Box<Expr<'a>>>,
+    left: Option<Expr<'a>>,
     operator: Option<BinaryOperator>,
-    right: Option<Box<Expr<'a>>>,
+    right: Option<Expr<'a>>,
 }
 
 impl<'a> BinaryExprBuilderHelper<'a> {
@@ -397,7 +397,7 @@ impl<'a> BinaryExprBuilderHelper<'a> {
         }
     }
 
-    pub fn with_left(mut self, left: Box<Expr<'a>>) -> Self {
+    pub fn with_left(mut self, left: Expr<'a>) -> Self {
         self.left = Some(left);
         self
     }
@@ -407,7 +407,7 @@ impl<'a> BinaryExprBuilderHelper<'a> {
         self
     }
 
-    pub fn with_right(mut self, right: Box<Expr<'a>>) -> Self {
+    pub fn with_right(mut self, right: Expr<'a>) -> Self {
         self.right = Some(right);
         self
     }
@@ -488,7 +488,7 @@ impl<'a> BlockBuilderHelper<'a> {
 pub struct FunctionBuilderHelper<'a> {
     outer: Builder<'a>,
     name: &'a str,
-    parameters: Vec<(&'a str, Arc<Type<'a>>, Option<Expr<'a>>)>,
+    parameters: Vec<FunctionParameter<'a>>,
     return_type: Option<Arc<Type<'a>>>,
     attributes: Vec<Expr<'a>>,
     definition: Option<Expr<'a>>,
@@ -517,13 +517,14 @@ impl<'a> FunctionBuilderHelper<'a> {
         ty: Arc<Type<'a>>,
         default_value: Option<Expr<'a>>,
     ) -> Self {
-        self.parameters.push((name, ty, default_value));
+        self.parameters
+            .push((name, ty, default_value.map(|v| v.into())));
         self
     }
 
     pub fn with_parameters<I>(mut self, parameters: I) -> Self
     where
-        I: IntoIterator<Item = (&'a str, Arc<Type<'a>>, Option<Expr<'a>>)>,
+        I: IntoIterator<Item = (&'a str, Arc<Type<'a>>, Option<Box<Expr<'a>>>)>,
     {
         self.parameters.extend(parameters);
         self
@@ -652,7 +653,7 @@ impl<'a> ReturnBuilderHelper<'a> {
 pub struct ArrayTypeBuilderHelper<'a> {
     outer: Builder<'a>,
     element_ty: Option<Arc<Type<'a>>>,
-    count: Option<Box<Expr<'a>>>,
+    count: Option<Expr<'a>>,
 }
 
 impl<'a> ArrayTypeBuilderHelper<'a> {
@@ -669,7 +670,7 @@ impl<'a> ArrayTypeBuilderHelper<'a> {
         self
     }
 
-    pub fn with_count(mut self, count: Box<Expr<'a>>) -> Self {
+    pub fn with_count(mut self, count: Expr<'a>) -> Self {
         self.count = Some(count);
         self
     }

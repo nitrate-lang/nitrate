@@ -32,33 +32,16 @@ impl OriginTag {
 }
 
 #[derive(Debug, Default, Clone, PartialEq, Eq, PartialOrd, Hash)]
-struct UncommonMetadata<'a> {
-    has_parenthesis: bool,
-    comments: Vec<&'a str>,
-}
-
-#[derive(Debug, Default, Clone, PartialEq, Eq, PartialOrd, Hash)]
-pub struct Metadata<'a> {
+pub struct Metadata {
     origin: OriginTag,
-    optional: Option<Box<UncommonMetadata<'a>>>,
+    has_parenthesis: bool,
 }
 
-impl<'a> Metadata<'a> {
-    pub fn new(origin: OriginTag, has_parenthesis: bool, comments: Option<Vec<&'a str>>) -> Self {
-        let requires_extra = comments.is_some() || has_parenthesis;
-        if requires_extra {
-            Metadata {
-                origin,
-                optional: Some(Box::new(UncommonMetadata {
-                    has_parenthesis,
-                    comments: comments.unwrap_or_default(),
-                })),
-            }
-        } else {
-            Metadata {
-                origin,
-                optional: None,
-            }
+impl Metadata {
+    pub fn new(origin: OriginTag, has_parenthesis: bool) -> Self {
+        Metadata {
+            origin,
+            has_parenthesis,
         }
     }
 
@@ -71,32 +54,11 @@ impl<'a> Metadata<'a> {
     }
 
     pub fn has_parenthesis(&self) -> bool {
-        self.optional
-            .as_ref()
-            .map_or(false, |opt| opt.has_parenthesis)
+        self.has_parenthesis
     }
 
     pub fn set_has_parenthesis(&mut self, has_parenthesis: bool) {
-        if let Some(opt) = &mut self.optional {
-            opt.has_parenthesis = has_parenthesis;
-        } else {
-            self.optional = Some(Box::new(UncommonMetadata {
-                has_parenthesis,
-                comments: Vec::new(),
-            }));
-        }
-    }
-
-    pub fn comments(&self) -> &[&'a str] {
-        self.optional.as_ref().map_or(&[], |opt| &opt.comments)
-    }
-
-    pub fn comments_mut(&mut self) -> &mut Vec<&'a str> {
-        if let None = self.optional {
-            self.optional = Some(Box::new(UncommonMetadata::default()));
-        }
-
-        &mut self.optional.as_mut().unwrap().comments
+        self.has_parenthesis = has_parenthesis;
     }
 }
 
@@ -105,10 +67,10 @@ pub enum InnerExpr<'a> {
     Discard,
 
     /* Primitive Expressions */
-    Integer(IntegerLit),
-    Float(FloatLit),
-    String(StringLit<'a>),
-    Char(CharLit),
+    Integer(Box<IntegerLit>),
+    Float(Box<FloatLit>),
+    String(Box<StringLit<'a>>),
+    Char(Box<CharLit>),
     List(Box<List<'a>>),
     Object(Box<Object<'a>>),
 
@@ -154,11 +116,11 @@ pub enum InnerExpr<'a> {
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Hash)]
 pub struct Expr<'a> {
     expr: InnerExpr<'a>,
-    metadata: Metadata<'a>,
+    metadata: Metadata,
 }
 
 impl<'a> Expr<'a> {
-    pub fn new(expr: InnerExpr<'a>, metadata: Metadata<'a>) -> Self {
+    pub fn new(expr: InnerExpr<'a>, metadata: Metadata) -> Self {
         Expr { expr, metadata }
     }
 
@@ -196,14 +158,6 @@ impl<'a> Expr<'a> {
 
     pub fn set_origin(&mut self, origin: OriginTag) {
         self.metadata.set_origin(origin);
-    }
-
-    pub fn comments(&self) -> &[&'a str] {
-        &self.metadata.comments()
-    }
-
-    pub fn add_comment(&mut self, comment: &'a str) {
-        self.metadata.comments_mut().push(comment);
     }
 
     pub fn into_type(self) -> Option<Type<'a>> {
@@ -367,13 +321,6 @@ impl<'a> ToCode<'a> for Expr<'a> {
     fn to_code(&self, tokens: &mut Vec<Token<'a>>, options: &CodeFormat) {
         if self.is_discarded() {
             return;
-        }
-
-        for comment in self.comments() {
-            tokens.push(Token::Comment(Comment::new(
-                comment,
-                CommentKind::SingleLine,
-            )));
         }
 
         if self.has_parenthesis() {

@@ -88,10 +88,7 @@ impl<'a> Type<'a> {
             InnerType::FunctionType(function) => InnerExpr::FunctionType(function),
         };
 
-        Expr::new(
-            expr,
-            Metadata::new(OriginTag::default(), has_parenthesis, None),
-        )
+        Expr::new(expr, Metadata::new(OriginTag::default(), has_parenthesis))
     }
 
     pub fn is_lit(&self) -> bool {

@@ -1,19 +1,20 @@
 use super::expression::Expr;
 use super::expression::{CodeFormat, ToCode};
+use super::function::FunctionParameter;
 use super::types::{InnerType, Type};
 use crate::lexer::{Identifier, Keyword, Operator, Punctuation, Token};
 use std::sync::Arc;
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Hash)]
 pub struct FunctionType<'a> {
-    parameters: Vec<(&'a str, Arc<Type<'a>>, Option<Box<Expr<'a>>>)>,
+    parameters: Vec<FunctionParameter<'a>>,
     return_type: Option<Arc<Type<'a>>>,
     attributes: Vec<Expr<'a>>,
 }
 
 impl<'a> FunctionType<'a> {
     fn new(
-        parameters: Vec<(&'a str, Arc<Type<'a>>, Option<Box<Expr<'a>>>)>,
+        parameters: Vec<FunctionParameter<'a>>,
         return_type: Option<Arc<Type<'a>>>,
         attributes: Vec<Expr<'a>>,
     ) -> Self {
@@ -24,7 +25,7 @@ impl<'a> FunctionType<'a> {
         }
     }
 
-    pub fn parameters(&self) -> &Vec<(&'a str, Arc<Type<'a>>, Option<Box<Expr<'a>>>)> {
+    pub fn parameters(&self) -> &Vec<FunctionParameter<'a>> {
         &self.parameters
     }
 
