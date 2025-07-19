@@ -68,9 +68,9 @@ pub enum InnerExpr<'a> {
 
     /* Primitive Expressions */
     Integer(Box<IntegerLit>),
-    Float(Box<FloatLit>),
+    Float(FloatLit),
     String(Box<StringLit<'a>>),
-    Char(Box<CharLit>),
+    Char(CharLit),
     List(Box<List<'a>>),
     Object(Box<Object<'a>>),
 

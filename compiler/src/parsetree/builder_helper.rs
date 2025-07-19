@@ -207,7 +207,7 @@ impl<'a> FloatBuilderHelper<'a> {
 
     pub fn build(self) -> Expr<'a> {
         let value = self.value.expect("Float value must be provided");
-        let float_expr = InnerExpr::Float(Box::new(FloatLit::new(value)));
+        let float_expr = InnerExpr::Float(FloatLit::new(value));
 
         Expr::new(float_expr, self.outer.get_metadata())
     }
@@ -260,7 +260,7 @@ impl<'a> CharBuilderHelper<'a> {
 
     pub fn build(self) -> Expr<'a> {
         let value = self.value.expect("Char value must be provided");
-        let char_expr = InnerExpr::Char(Box::new(CharLit::new(value)));
+        let char_expr = InnerExpr::Char(CharLit::new(value));
 
         Expr::new(char_expr, self.outer.get_metadata())
     }
