@@ -40,7 +40,7 @@ impl<'a> Parser<'a> {
             ]),
             Some(self.types.get_f128()),
             Vec::from([Expr::new(
-                InnerExpr::Float(FloatLit::new(1.0)),
+                InnerExpr::Float(FloatLitBuilder::default().with_value(1.0).build()),
                 Metadata::default(),
             )]),
             false,

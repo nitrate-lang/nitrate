@@ -9,7 +9,7 @@ pub struct IntegerLit {
 }
 
 impl IntegerLit {
-    pub fn new(value: UInt, kind: IntegerKind) -> Option<Self> {
+    fn new(value: UInt, kind: IntegerKind) -> Option<Self> {
         if value.try_to_u128().is_ok() {
             Some(IntegerLit { value, kind })
         } else {
@@ -49,13 +49,38 @@ impl std::ops::Deref for IntegerLit {
     }
 }
 
+#[derive(Debug, Clone, Default, PartialEq, Eq, PartialOrd, Hash)]
+pub struct IntegerLitBuilder {
+    value: Option<UInt>,
+    kind: Option<IntegerKind>,
+}
+
+impl IntegerLitBuilder {
+    pub fn with_value(mut self, value: UInt) -> Self {
+        self.value = Some(value);
+        self
+    }
+
+    pub fn with_kind(mut self, kind: IntegerKind) -> Self {
+        self.kind = Some(kind);
+        self
+    }
+
+    pub fn build(self) -> IntegerLit {
+        let value = self.value.expect("IntegerLitBuilder must have a value");
+        let kind = self.kind.expect("IntegerLitBuilder must have a kind");
+
+        IntegerLit::new(value, kind).expect("IntegerLitBuilder must create a valid IntegerLit")
+    }
+}
+
 #[derive(Debug, Clone, PartialOrd, PartialEq)]
 pub struct FloatLit {
     value: f64,
 }
 
 impl FloatLit {
-    pub fn new(value: f64) -> Self {
+    fn new(value: f64) -> Self {
         FloatLit { value }
     }
 
@@ -88,5 +113,22 @@ impl std::ops::Deref for FloatLit {
 impl std::hash::Hash for FloatLit {
     fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
         self.value.to_bits().hash(state);
+    }
+}
+
+#[derive(Debug, Clone, Default, PartialEq, PartialOrd)]
+pub struct FloatLitBuilder {
+    value: Option<f64>,
+}
+
+impl FloatLitBuilder {
+    pub fn with_value(mut self, value: f64) -> Self {
+        self.value = Some(value);
+        self
+    }
+
+    pub fn build(self) -> FloatLit {
+        let value = self.value.expect("FloatLitBuilder must have a value");
+        FloatLit::new(value)
     }
 }

@@ -18,26 +18,14 @@ pub struct Variable<'a> {
 }
 
 impl<'a> Variable<'a> {
-    pub fn new_var(
+    fn new(
+        kind: VariableKind,
         name: &'a str,
         var_type: Option<Rc<Type<'a>>>,
         value: Option<Box<Expr<'a>>>,
     ) -> Self {
         Variable {
-            kind: VariableKind::Var,
-            name,
-            var_type,
-            value,
-        }
-    }
-
-    pub fn new_let(
-        name: &'a str,
-        var_type: Option<Rc<Type<'a>>>,
-        value: Option<Box<Expr<'a>>>,
-    ) -> Self {
-        Variable {
-            kind: VariableKind::Let,
+            kind,
             name,
             var_type,
             value,
@@ -91,5 +79,41 @@ impl<'a> ToCode<'a> for Variable<'a> {
             tokens.push(Token::Operator(Operator::Set));
             value.to_code(tokens, options);
         }
+    }
+}
+
+#[derive(Debug, Clone, Default, PartialEq, Eq, PartialOrd, Hash)]
+pub struct VariableBuilder<'a> {
+    kind: Option<VariableKind>,
+    name: &'a str,
+    var_type: Option<Rc<Type<'a>>>,
+    value: Option<Box<Expr<'a>>>,
+}
+
+impl<'a> VariableBuilder<'a> {
+    pub fn with_kind(mut self, kind: VariableKind) -> Self {
+        self.kind = Some(kind);
+        self
+    }
+
+    pub fn with_name(mut self, name: &'a str) -> Self {
+        self.name = name;
+        self
+    }
+
+    pub fn with_type(mut self, var_type: Rc<Type<'a>>) -> Self {
+        self.var_type = Some(var_type);
+        self
+    }
+
+    pub fn with_value(mut self, value: Box<Expr<'a>>) -> Self {
+        self.value = Some(value);
+        self
+    }
+
+    pub fn build(self) -> Variable<'a> {
+        let kind = self.kind.expect("VariableBuilder kind must be set");
+
+        Variable::new(kind, self.name, self.var_type, self.value)
     }
 }

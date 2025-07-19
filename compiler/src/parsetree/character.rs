@@ -7,7 +7,7 @@ pub struct CharLit {
 }
 
 impl CharLit {
-    pub fn new(value: char) -> Self {
+    fn new(value: char) -> Self {
         CharLit { value }
     }
 
@@ -31,5 +31,21 @@ impl std::ops::Deref for CharLit {
 
     fn deref(&self) -> &Self::Target {
         &self.value
+    }
+}
+
+#[derive(Debug, Clone, Default, PartialEq, Eq, PartialOrd, Hash)]
+pub struct CharLitBuilder {
+    value: Option<char>,
+}
+
+impl CharLitBuilder {
+    pub fn with_char(mut self, value: char) -> Self {
+        self.value = Some(value);
+        self
+    }
+
+    pub fn build(self) -> CharLit {
+        CharLit::new(self.value.expect("CharLitBuilder must have a value"))
     }
 }

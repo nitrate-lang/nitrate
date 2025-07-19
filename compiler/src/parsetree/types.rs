@@ -4,7 +4,7 @@ use super::function_type::FunctionType;
 use super::struct_type::StructType;
 use super::tuple_type::TupleType;
 use crate::lexer::{Identifier, Punctuation, Token};
-use crate::parsetree::OriginTag;
+use crate::parsetree::{ArrayTypeBuilder, OriginTag, StructTypeBuilder, TupleTypeBuilder};
 use hashbrown::HashSet;
 use std::collections::BTreeMap;
 use std::rc::Rc;
@@ -298,7 +298,7 @@ impl<'a> TypeFactory<'a> {
         let mut pool = self.compound_types.lock().unwrap();
 
         let object = Rc::new(Type::new(
-            InnerType::TupleType(TupleType::new(elements)),
+            InnerType::TupleType(TupleTypeBuilder::default().with_elements(elements).build()),
             false,
         ));
 
@@ -309,7 +309,12 @@ impl<'a> TypeFactory<'a> {
         let mut pool = self.compound_types.lock().unwrap();
 
         let object = Rc::new(Type::new(
-            InnerType::ArrayType(ArrayType::new(element, size)),
+            InnerType::ArrayType(
+                ArrayTypeBuilder::default()
+                    .with_element_ty(element)
+                    .with_count(size)
+                    .build(),
+            ),
             false,
         ));
 
@@ -325,7 +330,13 @@ impl<'a> TypeFactory<'a> {
         let mut pool = self.compound_types.lock().unwrap();
 
         let object = Rc::new(Type::new(
-            InnerType::StructType(StructType::new(name, attributes, fields)),
+            InnerType::StructType(
+                StructTypeBuilder::default()
+                    .with_name(name)
+                    .with_attributes(attributes)
+                    .with_fields(fields)
+                    .build(),
+            ),
             false,
         ));
 

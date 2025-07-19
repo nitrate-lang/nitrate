@@ -70,7 +70,7 @@ pub struct UnaryExpr<'a> {
 }
 
 impl<'a> UnaryExpr<'a> {
-    pub fn new(operand: Box<Expr<'a>>, operator: UnaryOperator, is_postfix: bool) -> Self {
+    fn new(operand: Box<Expr<'a>>, operator: UnaryOperator, is_postfix: bool) -> Self {
         UnaryExpr {
             operand,
             operator,
@@ -100,5 +100,47 @@ impl<'a> ToCode<'a> for UnaryExpr<'a> {
             self.operator.to_code(tokens, options);
             self.operand.to_code(tokens, options);
         }
+    }
+}
+
+#[derive(Debug, Clone, Default, PartialEq, Eq, PartialOrd, Hash)]
+pub struct UnaryExprBuilder<'a> {
+    operand: Option<Box<Expr<'a>>>,
+    operator: Option<UnaryOperator>,
+    is_postfix: Option<bool>,
+}
+
+impl<'a> UnaryExprBuilder<'a> {
+    pub fn with_operand(mut self, operand: Box<Expr<'a>>) -> Self {
+        self.operand = Some(operand);
+        self
+    }
+
+    pub fn with_operator(mut self, operator: UnaryOperator) -> Self {
+        self.operator = Some(operator);
+        self
+    }
+
+    pub fn set_postfix(mut self) -> Self {
+        self.is_postfix = Some(true);
+        self
+    }
+
+    pub fn set_prefix(mut self) -> Self {
+        self.is_postfix = Some(false);
+        self
+    }
+
+    pub fn build(self) -> UnaryExpr<'a> {
+        let operand = self.operand.expect("UnaryExprBuilder operand must be set");
+        let operator = self
+            .operator
+            .expect("UnaryExprBuilder operator must be set");
+
+        let is_postfix = self
+            .is_postfix
+            .expect("UnaryExprBuilder is_postfix must be set");
+
+        UnaryExpr::new(operand, operator, is_postfix)
     }
 }

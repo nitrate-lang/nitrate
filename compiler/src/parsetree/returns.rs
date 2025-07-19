@@ -7,7 +7,7 @@ pub struct Return<'a> {
 }
 
 impl<'a> Return<'a> {
-    pub fn new(value: Option<Box<Expr<'a>>>) -> Self {
+    fn new(value: Option<Box<Expr<'a>>>) -> Self {
         Return { value }
     }
 
@@ -30,5 +30,21 @@ impl<'a> ToCode<'a> for Return<'a> {
         if let Some(value) = self.value() {
             value.to_code(tokens, options);
         }
+    }
+}
+
+#[derive(Debug, Clone, Default, PartialEq, Eq, PartialOrd, Hash)]
+pub struct ReturnBuilder<'a> {
+    value: Option<Box<Expr<'a>>>,
+}
+
+impl<'a> ReturnBuilder<'a> {
+    pub fn with_value(mut self, value: Box<Expr<'a>>) -> Self {
+        self.value = Some(value);
+        self
+    }
+
+    pub fn build(self) -> Return<'a> {
+        Return::new(self.value)
     }
 }

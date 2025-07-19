@@ -15,34 +15,19 @@ pub struct Function<'a> {
 }
 
 impl<'a> Function<'a> {
-    pub fn new_definition(
+    fn new(
         name: &'a str,
         parameters: Vec<(&'a str, Rc<Type<'a>>, Option<Expr<'a>>)>,
         return_type: Option<Rc<Type<'a>>>,
         attributes: Vec<Expr<'a>>,
-        definition: Block<'a>,
+        definition: Option<Block<'a>>,
     ) -> Self {
         Function {
             name,
             parameters,
             return_type,
             attributes,
-            definition: Some(definition),
-        }
-    }
-
-    pub fn new_declaration(
-        name: &'a str,
-        parameters: Vec<(&'a str, Rc<Type<'a>>, Option<Expr<'a>>)>,
-        return_type: Option<Rc<Type<'a>>>,
-        attributes: Vec<Expr<'a>>,
-    ) -> Self {
-        Function {
-            name,
-            parameters,
-            return_type,
-            attributes,
-            definition: None,
+            definition: definition,
         }
     }
 
@@ -141,16 +126,6 @@ pub struct FunctionBuilder<'a> {
 }
 
 impl<'a> FunctionBuilder<'a> {
-    pub fn new(name: &'a str) -> Self {
-        FunctionBuilder {
-            name,
-            parameters: Vec::new(),
-            return_type: None,
-            attributes: Vec::new(),
-            definition: None,
-        }
-    }
-
     pub fn with_name(mut self, name: &'a str) -> Self {
         self.name = name;
         self
@@ -182,21 +157,12 @@ impl<'a> FunctionBuilder<'a> {
     }
 
     pub fn build(self) -> Function<'a> {
-        if let Some(definition) = self.definition {
-            Function::new_definition(
-                self.name,
-                self.parameters,
-                self.return_type,
-                self.attributes,
-                definition,
-            )
-        } else {
-            Function::new_declaration(
-                self.name,
-                self.parameters,
-                self.return_type,
-                self.attributes,
-            )
-        }
+        Function::new(
+            self.name,
+            self.parameters,
+            self.return_type,
+            self.attributes,
+            self.definition,
+        )
     }
 }

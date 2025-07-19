@@ -8,7 +8,7 @@ pub struct List<'a> {
 }
 
 impl<'a> List<'a> {
-    pub fn new(elements: Vec<Expr<'a>>) -> Self {
+    fn new(elements: Vec<Expr<'a>>) -> Self {
         List { elements }
     }
 
@@ -33,5 +33,21 @@ impl<'a> ToCode<'a> for List<'a> {
             expr.to_code(tokens, options);
         }
         tokens.push(Token::Punctuation(Punctuation::RightBracket));
+    }
+}
+
+#[derive(Debug, Clone, Default, PartialEq, Eq, PartialOrd, Hash)]
+pub struct ListBuilder<'a> {
+    elements: Vec<Expr<'a>>,
+}
+
+impl<'a> ListBuilder<'a> {
+    pub fn with_element(mut self, element: Expr<'a>) -> Self {
+        self.elements.push(element);
+        self
+    }
+
+    pub fn build(self) -> List<'a> {
+        List::new(self.elements)
     }
 }

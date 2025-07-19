@@ -12,7 +12,7 @@ pub struct StructType<'a> {
 }
 
 impl<'a> StructType<'a> {
-    pub fn new(
+    fn new(
         name: Option<&'a str>,
         attributes: Vec<Expr<'a>>,
         fields: BTreeMap<&'a str, Rc<Type<'a>>>,
@@ -66,5 +66,43 @@ impl<'a> ToCode<'a> for StructType<'a> {
             tokens.push(Token::Punctuation(Punctuation::Comma));
         }
         tokens.push(Token::Punctuation(Punctuation::RightBrace));
+    }
+}
+
+#[derive(Debug, Clone, Default, PartialEq, Eq, PartialOrd, Hash)]
+pub struct StructTypeBuilder<'a> {
+    name: Option<&'a str>,
+    attributes: Vec<Expr<'a>>,
+    fields: BTreeMap<&'a str, Rc<Type<'a>>>,
+}
+
+impl<'a> StructTypeBuilder<'a> {
+    pub fn with_name(mut self, name: Option<&'a str>) -> Self {
+        self.name = name;
+        self
+    }
+
+    pub fn with_attribute(mut self, attribute: Expr<'a>) -> Self {
+        self.attributes.push(attribute);
+        self
+    }
+
+    pub fn with_attributes(mut self, attributes: Vec<Expr<'a>>) -> Self {
+        self.attributes.extend(attributes);
+        self
+    }
+
+    pub fn with_field(mut self, field_name: &'a str, field_ty: Rc<Type<'a>>) -> Self {
+        self.fields.insert(field_name, field_ty);
+        self
+    }
+
+    pub fn with_fields(mut self, fields: BTreeMap<&'a str, Rc<Type<'a>>>) -> Self {
+        self.fields.extend(fields);
+        self
+    }
+
+    pub fn build(self) -> StructType<'a> {
+        StructType::new(self.name, self.attributes, self.fields)
     }
 }

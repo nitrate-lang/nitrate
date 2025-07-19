@@ -9,7 +9,7 @@ pub struct Object<'a> {
 }
 
 impl<'a> Object<'a> {
-    pub fn new(fields: BTreeMap<&'a str, Expr<'a>>) -> Self {
+    fn new(fields: BTreeMap<&'a str, Expr<'a>>) -> Self {
         Object { fields }
     }
 
@@ -37,5 +37,20 @@ impl<'a> ToCode<'a> for Object<'a> {
             tokens.push(Token::Punctuation(Punctuation::Comma));
         }
         tokens.push(Token::Punctuation(Punctuation::RightBracket));
+    }
+}
+
+#[derive(Debug, Clone, Default, PartialEq, Eq, PartialOrd, Hash)]
+pub struct ObjectBuilder<'a> {
+    fields: BTreeMap<&'a str, Expr<'a>>,
+}
+impl<'a> ObjectBuilder<'a> {
+    pub fn with_field(mut self, key: &'a str, value: Expr<'a>) -> Self {
+        self.fields.insert(key, value);
+        self
+    }
+
+    pub fn build(self) -> Object<'a> {
+        Object::new(self.fields)
     }
 }

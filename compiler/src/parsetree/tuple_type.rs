@@ -9,7 +9,7 @@ pub struct TupleType<'a> {
 }
 
 impl<'a> TupleType<'a> {
-    pub fn new(elements: Vec<Rc<Type<'a>>>) -> Self {
+    fn new(elements: Vec<Rc<Type<'a>>>) -> Self {
         TupleType { elements }
     }
 
@@ -30,5 +30,26 @@ impl<'a> ToCode<'a> for TupleType<'a> {
             ty.to_code(tokens, options);
         }
         tokens.push(Token::Punctuation(Punctuation::RightBracket));
+    }
+}
+
+#[derive(Debug, Clone, Default, PartialEq, Eq, PartialOrd, Hash)]
+pub struct TupleTypeBuilder<'a> {
+    elements: Vec<Rc<Type<'a>>>,
+}
+
+impl<'a> TupleTypeBuilder<'a> {
+    pub fn with_element(mut self, element: Rc<Type<'a>>) -> Self {
+        self.elements.push(element);
+        self
+    }
+
+    pub fn with_elements(mut self, elements: Vec<Rc<Type<'a>>>) -> Self {
+        self.elements.extend(elements);
+        self
+    }
+
+    pub fn build(self) -> TupleType<'a> {
+        TupleType::new(self.elements)
     }
 }

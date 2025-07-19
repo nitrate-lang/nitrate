@@ -8,7 +8,7 @@ pub struct Block<'a> {
 }
 
 impl<'a> Block<'a> {
-    pub fn new(items: Vec<Expr<'a>>) -> Self {
+    fn new(items: Vec<Expr<'a>>) -> Self {
         Block { items }
     }
 
@@ -32,5 +32,21 @@ impl<'a> ToCode<'a> for Block<'a> {
             expr.to_code(tokens, options);
         }
         tokens.push(Token::Punctuation(Punctuation::RightBrace));
+    }
+}
+
+#[derive(Debug, Clone, Default, PartialEq, Eq, PartialOrd, Hash)]
+pub struct BlockBuilder<'a> {
+    items: Vec<Expr<'a>>,
+}
+
+impl<'a> BlockBuilder<'a> {
+    pub fn with_expr(mut self, expr: Expr<'a>) -> Self {
+        self.items.push(expr);
+        self
+    }
+
+    pub fn build(self) -> Block<'a> {
+        Block::new(self.items)
     }
 }

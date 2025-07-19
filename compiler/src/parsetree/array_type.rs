@@ -11,7 +11,7 @@ pub struct ArrayType<'a> {
 }
 
 impl<'a> ArrayType<'a> {
-    pub fn new(element_ty: Rc<Type<'a>>, count: Box<Expr<'a>>) -> Self {
+    fn new(element_ty: Rc<Type<'a>>, count: Box<Expr<'a>>) -> Self {
         ArrayType { element_ty, count }
     }
 
@@ -31,5 +31,32 @@ impl<'a> ToCode<'a> for ArrayType<'a> {
         tokens.push(Token::Punctuation(Punctuation::Semicolon));
         self.count.to_code(tokens, options);
         tokens.push(Token::Punctuation(Punctuation::RightBracket));
+    }
+}
+
+#[derive(Debug, Clone, Default, PartialEq, Eq, PartialOrd, Hash)]
+pub struct ArrayTypeBuilder<'a> {
+    element_ty: Option<Rc<Type<'a>>>,
+    count: Option<Box<Expr<'a>>>,
+}
+
+impl<'a> ArrayTypeBuilder<'a> {
+    pub fn with_element_ty(mut self, element_ty: Rc<Type<'a>>) -> Self {
+        self.element_ty = Some(element_ty);
+        self
+    }
+
+    pub fn with_count(mut self, count: Box<Expr<'a>>) -> Self {
+        self.count = Some(count);
+        self
+    }
+
+    pub fn build(self) -> ArrayType<'a> {
+        let element_ty = self
+            .element_ty
+            .expect("ArrayTypeBuilder element type must be set");
+        let count = self.count.expect("ArrayTypeBuilder count must be set");
+
+        ArrayType::new(element_ty, count)
     }
 }
