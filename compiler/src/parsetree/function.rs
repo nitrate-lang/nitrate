@@ -1,8 +1,9 @@
+use super::block::Block;
 use super::expression::Expr;
 use super::expression::{CodeFormat, ToCode};
+use super::types::InnerType;
 use super::types::Type;
 use crate::lexer::{Identifier, Keyword, Operator, Punctuation, Token};
-use crate::parsetree::{Block, InnerType};
 use std::sync::Arc;
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Hash)]

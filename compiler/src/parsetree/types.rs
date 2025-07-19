@@ -1,10 +1,10 @@
 use super::array_type::ArrayType;
+use super::expression::OriginTag;
 use super::expression::{CodeFormat, Expr, InnerExpr, Metadata, ToCode};
 use super::function_type::FunctionType;
 use super::struct_type::StructType;
 use super::tuple_type::TupleType;
 use crate::lexer::{Identifier, Punctuation, Token};
-use crate::parsetree::OriginTag;
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Hash)]
 pub enum InnerType<'a> {

@@ -1,8 +1,7 @@
 use super::expression::Expr;
 use super::expression::{CodeFormat, ToCode};
-use super::types::Type;
+use super::types::{InnerType, Type};
 use crate::lexer::{Identifier, Keyword, Operator, Punctuation, Token};
-use crate::parsetree::InnerType;
 use std::sync::Arc;
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Hash)]
