@@ -33,7 +33,7 @@ impl<'a> Variable<'a> {
     }
 
     pub fn kind(&self) -> VariableKind {
-        self.kind.clone()
+        self.kind
     }
 
     pub fn name(&self) -> &'a str {

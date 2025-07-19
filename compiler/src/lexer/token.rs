@@ -42,7 +42,7 @@ impl<'a> Identifier<'a> {
         }
     }
 
-    pub const fn name(&self) -> &str {
+    pub const fn name(&self) -> &'a str {
         self.name
     }
 
@@ -446,6 +446,10 @@ impl<'a> AnnotatedToken<'a> {
 
     pub const fn token(&self) -> &Token {
         &self.token
+    }
+
+    pub fn into_token(self) -> Token<'a> {
+        self.token
     }
 
     pub const fn start(&self) -> SourcePosition<'a> {
