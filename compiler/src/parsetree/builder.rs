@@ -6,7 +6,9 @@ use super::number::FloatLit;
 use super::statement::Statement;
 use super::types::{InnerType, Type};
 use super::unary_op::UnaryExpr;
-use crate::parsetree::{BinaryOperator, InnerExpr, OriginTag, UnaryOperator};
+use crate::lexer::IntegerKind;
+use crate::parsetree::{BinaryOperator, InnerExpr, IntegerLit, OriginTag, UnaryOperator};
+use apint::UInt;
 use std::sync::{Arc, LazyLock};
 
 #[derive(Debug)]
@@ -123,6 +125,87 @@ impl<'a> TypeFactory<'a> {
 }
 
 static TYPE_FACTORY: LazyLock<TypeFactory> = LazyLock::new(|| TypeFactory::new());
+
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Hash)]
+pub struct IntegerBuilderHelper<'a> {
+    outer: Builder<'a>,
+    value: Option<UInt>,
+    kind: Option<IntegerKind>,
+}
+
+impl<'a> IntegerBuilderHelper<'a> {
+    fn new(outer: Builder<'a>) -> Self {
+        IntegerBuilderHelper {
+            outer,
+            value: None,
+            kind: None,
+        }
+    }
+
+    pub fn with_u8(mut self, value: u8) -> Self {
+        self.value = Some(UInt::from_u8(value));
+        self
+    }
+
+    pub fn with_u16(mut self, value: u16) -> Self {
+        self.value = Some(UInt::from_u16(value));
+        self
+    }
+
+    pub fn with_u32(mut self, value: u32) -> Self {
+        self.value = Some(UInt::from_u32(value));
+        self
+    }
+
+    pub fn with_u64(mut self, value: u64) -> Self {
+        self.value = Some(UInt::from_u64(value));
+        self
+    }
+
+    pub fn with_u128(mut self, value: u128) -> Self {
+        self.value = Some(UInt::from_u128(value));
+        self
+    }
+
+    pub fn with_kind(mut self, kind: IntegerKind) -> Self {
+        self.kind = Some(kind);
+        self
+    }
+
+    pub fn build(self) -> Expr<'a> {
+        let value = self.value.expect("Integer value must be provided");
+        let kind = self.kind.unwrap_or(IntegerKind::Decimal);
+
+        let int = IntegerLit::new(value, kind).unwrap();
+        let integer_expr = InnerExpr::Integer(int);
+
+        Expr::new(integer_expr, self.outer.metadata)
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, PartialOrd)]
+pub struct FloatBuilderHelper<'a> {
+    outer: Builder<'a>,
+    value: Option<f64>,
+}
+
+impl<'a> FloatBuilderHelper<'a> {
+    fn new(outer: Builder<'a>) -> Self {
+        FloatBuilderHelper { outer, value: None }
+    }
+
+    pub fn with_value(mut self, value: f64) -> Self {
+        self.value = Some(value);
+        self
+    }
+
+    pub fn build(self) -> Expr<'a> {
+        let value = self.value.expect("Float value must be provided");
+        let float_expr = InnerExpr::Float(FloatLit::new(value));
+
+        Expr::new(float_expr, self.outer.metadata)
+    }
+}
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Hash)]
 pub struct UnaryExprBuilderHelper<'a> {
@@ -331,22 +414,56 @@ impl<'a> Builder<'a> {
     }
 
     /////////////////////////////////////////////////////////////////
+    /// BEGIN: Primitive Expression Builders
+    pub fn integer(self) -> IntegerBuilderHelper<'a> {
+        IntegerBuilderHelper::new(self)
+    }
+
+    pub fn get_integer() -> IntegerBuilderHelper<'a> {
+        IntegerBuilderHelper::new(Builder::default())
+    }
+
+    pub fn float(self) -> FloatBuilderHelper<'a> {
+        FloatBuilderHelper::new(self)
+    }
+
+    pub fn get_float() -> FloatBuilderHelper<'a> {
+        FloatBuilderHelper::new(Builder::default())
+    }
+
+    /////////////////////////////////////////////////////////////////
     // BEGIN: Compound Expression Builders
 
     pub fn unary_expr(self) -> UnaryExprBuilderHelper<'a> {
         UnaryExprBuilderHelper::new(self)
     }
 
+    pub fn get_unary_expr() -> UnaryExprBuilderHelper<'a> {
+        UnaryExprBuilderHelper::new(Builder::default())
+    }
+
     pub fn binary_expr(self) -> BinaryExprBuilderHelper<'a> {
         BinaryExprBuilderHelper::new(self)
+    }
+
+    pub fn get_binary_expr() -> BinaryExprBuilderHelper<'a> {
+        BinaryExprBuilderHelper::new(Builder::default())
     }
 
     pub fn statement(self) -> StatementBuilderHelper<'a> {
         StatementBuilderHelper::new(self)
     }
 
+    pub fn get_statement() -> StatementBuilderHelper<'a> {
+        StatementBuilderHelper::new(Builder::default())
+    }
+
     pub fn block(self) -> BlockBuilderHelper<'a> {
         BlockBuilderHelper::new(self)
+    }
+
+    pub fn get_block() -> BlockBuilderHelper<'a> {
+        BlockBuilderHelper::new(Builder::default())
     }
 
     /////////////////////////////////////////////////////////////////
@@ -425,14 +542,16 @@ impl<'a> Builder<'a> {
     pub fn array_type(self) -> ArrayTypeBuilderHelper<'a> {
         ArrayTypeBuilderHelper::new(self)
     }
+
+    pub fn get_array_type() -> ArrayTypeBuilderHelper<'a> {
+        ArrayTypeBuilderHelper::new(Builder::default())
+    }
 }
 
 fn test() {
     let element_ty = Arc::new(Type::new(InnerType::UInt8, false));
-    let count = Box::new(Expr::new(
-        InnerExpr::Float(FloatLit::new(5.0)),
-        Metadata::default(),
-    ));
 
-    let e = Builder::get_u8();
+    let count = Builder::get_integer().with_u8(10).build();
+
+    let e = Builder::get_float().with_value(10.0).build();
 }
