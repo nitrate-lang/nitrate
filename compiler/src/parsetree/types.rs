@@ -28,10 +28,10 @@ pub enum InnerType<'a> {
 
     /* Compound Types */
     InferType,
-    TupleType(TupleType<'a>),
-    ArrayType(ArrayType<'a>),
-    StructType(StructType<'a>),
-    FunctionType(FunctionType<'a>),
+    TupleType(Box<TupleType<'a>>),
+    ArrayType(Box<ArrayType<'a>>),
+    StructType(Box<StructType<'a>>),
+    FunctionType(Box<FunctionType<'a>>),
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Hash)]

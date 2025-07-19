@@ -109,21 +109,21 @@ pub enum InnerExpr<'a> {
     Float(FloatLit),
     String(StringLit<'a>),
     Char(CharLit),
-    List(List<'a>),
-    Object(Object<'a>),
+    List(Box<List<'a>>),
+    Object(Box<Object<'a>>),
 
     /* Compound Expressions */
-    UnaryOp(UnaryExpr<'a>),
-    BinaryOp(BinaryExpr<'a>),
-    Statement(Statement<'a>),
-    Block(Block<'a>),
+    UnaryOp(Box<UnaryExpr<'a>>),
+    BinaryOp(Box<BinaryExpr<'a>>),
+    Statement(Box<Statement<'a>>),
+    Block(Box<Block<'a>>),
 
     /* Definition */
-    Function(Function<'a>),
-    Variable(Variable<'a>),
+    Function(Box<Function<'a>>),
+    Variable(Box<Variable<'a>>),
 
     /* Control Flow */
-    Return(Return<'a>),
+    Return(Box<Return<'a>>),
 
     /* Primitive Types */
     Bool,
@@ -145,10 +145,10 @@ pub enum InnerExpr<'a> {
 
     /* Compound Types */
     InferType,
-    TupleType(TupleType<'a>),
-    ArrayType(ArrayType<'a>),
-    StructType(StructType<'a>),
-    FunctionType(FunctionType<'a>),
+    TupleType(Box<TupleType<'a>>),
+    ArrayType(Box<ArrayType<'a>>),
+    StructType(Box<StructType<'a>>),
+    FunctionType(Box<FunctionType<'a>>),
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Hash)]

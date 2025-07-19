@@ -6,14 +6,14 @@ use std::sync::Arc;
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Hash)]
 pub struct FunctionType<'a> {
-    parameters: Vec<(&'a str, Arc<Type<'a>>, Option<Expr<'a>>)>,
+    parameters: Vec<(&'a str, Arc<Type<'a>>, Option<Box<Expr<'a>>>)>,
     return_type: Option<Arc<Type<'a>>>,
     attributes: Vec<Expr<'a>>,
 }
 
 impl<'a> FunctionType<'a> {
     fn new(
-        parameters: Vec<(&'a str, Arc<Type<'a>>, Option<Expr<'a>>)>,
+        parameters: Vec<(&'a str, Arc<Type<'a>>, Option<Box<Expr<'a>>>)>,
         return_type: Option<Arc<Type<'a>>>,
         attributes: Vec<Expr<'a>>,
     ) -> Self {
@@ -24,7 +24,7 @@ impl<'a> FunctionType<'a> {
         }
     }
 
-    pub fn parameters(&self) -> &Vec<(&'a str, Arc<Type<'a>>, Option<Expr<'a>>)> {
+    pub fn parameters(&self) -> &Vec<(&'a str, Arc<Type<'a>>, Option<Box<Expr<'a>>>)> {
         &self.parameters
     }
 

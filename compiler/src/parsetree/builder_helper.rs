@@ -16,7 +16,7 @@ use super::unary_op::{UnaryExpr, UnaryOperator};
 use super::variable::{Variable, VariableKind};
 use crate::lexer::IntegerKind;
 use apint::UInt;
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, LinkedList};
 use std::sync::Arc;
 
 #[derive(Debug)]
@@ -294,7 +294,7 @@ impl<'a> ListBuilderHelper<'a> {
     }
 
     pub fn build(self) -> Expr<'a> {
-        let list_expr = InnerExpr::List(List::new(self.elements));
+        let list_expr = InnerExpr::List(Box::new(List::new(self.elements)));
 
         Expr::new(list_expr, self.outer.get_metadata())
     }
@@ -328,7 +328,7 @@ impl<'a> ObjectBuilderHelper<'a> {
     }
 
     pub fn build(self) -> Expr<'a> {
-        let object_expr = InnerExpr::Object(Object::new(self.fields));
+        let object_expr = InnerExpr::Object(Box::new(Object::new(self.fields)));
 
         Expr::new(object_expr, self.outer.get_metadata())
     }
@@ -372,7 +372,8 @@ impl<'a> UnaryExprBuilderHelper<'a> {
         let operand = self.operand.expect("Operand must be provided");
         let is_postfix = self.is_postfix.expect("is_postfix flag must be provided");
 
-        let unary_expr = InnerExpr::UnaryOp(UnaryExpr::new(operand, operator, is_postfix));
+        let unary_expr =
+            InnerExpr::UnaryOp(Box::new(UnaryExpr::new(operand, operator, is_postfix)));
 
         Expr::new(unary_expr, self.outer.get_metadata())
     }
@@ -416,7 +417,7 @@ impl<'a> BinaryExprBuilderHelper<'a> {
         let operator = self.operator.expect("Binary operator must be provided");
         let right = self.right.expect("Right expression must be provided");
 
-        let binary_expr = InnerExpr::BinaryOp(BinaryExpr::new(left, operator, right));
+        let binary_expr = InnerExpr::BinaryOp(Box::new(BinaryExpr::new(left, operator, right)));
 
         Expr::new(binary_expr, self.outer.get_metadata())
     }
@@ -443,7 +444,7 @@ impl<'a> StatementBuilderHelper<'a> {
 
     pub fn build(self) -> Expr<'a> {
         let expression = self.expression.expect("Expression must be provided");
-        let statement = InnerExpr::Statement(Statement::new(expression));
+        let statement = InnerExpr::Statement(Box::new(Statement::new(expression)));
 
         Expr::new(statement, self.outer.get_metadata())
     }
@@ -477,7 +478,7 @@ impl<'a> BlockBuilderHelper<'a> {
     }
 
     pub fn build(self) -> Expr<'a> {
-        let block = InnerExpr::Block(Block::new(self.expressions));
+        let block = InnerExpr::Block(Box::new(Block::new(self.expressions)));
 
         Expr::new(block, self.outer.get_metadata())
     }
@@ -558,7 +559,7 @@ impl<'a> FunctionBuilderHelper<'a> {
     }
 
     pub fn build(self) -> Expr<'a> {
-        let function = InnerExpr::Function(Function::new(
+        let function = InnerExpr::Function(Box::new(Function::new(
             self.name,
             self.parameters,
             self.return_type,
@@ -567,7 +568,7 @@ impl<'a> FunctionBuilderHelper<'a> {
                 InnerExpr::Block(block) => Block::new(block.into_inner()),
                 _ => panic!("Function definition must be a block expression"),
             }),
-        ));
+        )));
 
         Expr::new(function, self.outer.get_metadata())
     }
@@ -616,8 +617,9 @@ impl<'a> VariableBuilderHelper<'a> {
     pub fn build(self) -> Expr<'a> {
         let kind = self.kind.expect("Variable kind must be provided");
 
-        let variable = Variable::new(kind, self.name, self.ty, self.value);
-        let variable = InnerExpr::Variable(variable);
+        let variable = InnerExpr::Variable(Box::new(Variable::new(
+            kind, self.name, self.ty, self.value,
+        )));
 
         Expr::new(variable, self.outer.get_metadata())
     }
@@ -640,7 +642,7 @@ impl<'a> ReturnBuilderHelper<'a> {
     }
 
     pub fn build(self) -> Expr<'a> {
-        let return_expr = InnerExpr::Return(Return::new(self.value));
+        let return_expr = InnerExpr::Return(Box::new(Return::new(self.value)));
 
         Expr::new(return_expr, self.outer.get_metadata())
     }
@@ -673,10 +675,10 @@ impl<'a> ArrayTypeBuilderHelper<'a> {
     }
 
     pub fn build(self) -> Expr<'a> {
-        let array_type = InnerExpr::ArrayType(ArrayType::new(
+        let array_type = InnerExpr::ArrayType(Box::new(ArrayType::new(
             self.element_ty.unwrap(),
             self.count.unwrap(),
-        ));
+        )));
 
         Expr::new(array_type, self.outer.get_metadata())
     }
