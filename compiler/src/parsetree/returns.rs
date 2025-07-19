@@ -19,7 +19,7 @@ impl<'a> Return<'a> {
         self.value.as_deref()
     }
 
-    pub fn get_mut(&mut self) -> Option<&mut Expr<'a>> {
+    pub fn value_mut(&mut self) -> Option<&mut Expr<'a>> {
         self.value.as_deref_mut()
     }
 }

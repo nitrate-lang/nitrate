@@ -18,6 +18,7 @@ use super::struct_type::StructType;
 use super::tuple_type::TupleType;
 use super::types::{InnerType, Type};
 use super::unary_op::UnaryExpr;
+use super::variable::Variable;
 
 #[derive(Debug, Default, Clone, Copy, PartialEq, Eq, PartialOrd, Hash)]
 pub struct OriginTag {
@@ -119,17 +120,10 @@ pub enum InnerExpr<'a> {
 
     /* Definition */
     Function(Function<'a>),
-    // VariableDecl, // TODO: Implement variable declaration expression
+    Variable(Variable<'a>),
 
     /* Control Flow */
-    Return(Return<'a>), // TODO: Implement return expression
-    // If,           // TODO: Implement if expression
-    // While,        // TODO: Implement while expression
-    // For,          // TODO: Implement for expression
-    // Break,        // TODO: Implement break expression
-    // Continue,     // TODO: Implement continue expression
-    // Switch,       // TODO: Implement switch expression
-    // FunctionCall, // TODO: Implement function call expression
+    Return(Return<'a>),
 
     /* Primitive Types */
     Bool,
@@ -231,6 +225,7 @@ impl<'a> Expr<'a> {
             InnerExpr::Block(_) => None,
 
             InnerExpr::Function(_) => None,
+            InnerExpr::Variable(_) => None,
 
             InnerExpr::Return(_) => None,
 
@@ -278,6 +273,7 @@ impl<'a> Expr<'a> {
             InnerExpr::Block(_) => false,
 
             InnerExpr::Function(_) => false,
+            InnerExpr::Variable(_) => false,
 
             InnerExpr::Return(_) => false,
 
@@ -330,6 +326,7 @@ impl<'a> Expr<'a> {
             InnerExpr::Block(_) => false,
 
             InnerExpr::Function(_) => false,
+            InnerExpr::Variable(_) => false,
 
             InnerExpr::Return(_) => false,
 
@@ -399,6 +396,7 @@ impl<'a> ToCode<'a> for Expr<'a> {
             InnerExpr::Block(e) => e.to_code(tokens, options),
 
             InnerExpr::Function(e) => e.to_code(tokens, options),
+            InnerExpr::Variable(e) => e.to_code(tokens, options),
 
             InnerExpr::Return(e) => e.to_code(tokens, options),
 
