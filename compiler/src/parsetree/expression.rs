@@ -11,6 +11,7 @@ use super::function_type::FunctionType;
 use super::list::List;
 use super::number::{FloatLit, IntegerLit};
 use super::object::Object;
+use super::returns::Return;
 use super::statement::Statement;
 use super::string::StringLit;
 use super::struct_type::StructType;
@@ -115,7 +116,20 @@ pub enum InnerExpr<'a> {
     BinaryOp(BinaryExpr<'a>),
     Statement(Statement<'a>),
     Block(Block<'a>),
+
+    /* Definition */
     Function(Function<'a>),
+    // VariableDecl, // TODO: Implement variable declaration expression
+
+    /* Control Flow */
+    Return(Return<'a>), // TODO: Implement return expression
+    // If,           // TODO: Implement if expression
+    // While,        // TODO: Implement while expression
+    // For,          // TODO: Implement for expression
+    // Break,        // TODO: Implement break expression
+    // Continue,     // TODO: Implement continue expression
+    // Switch,       // TODO: Implement switch expression
+    // FunctionCall, // TODO: Implement function call expression
 
     /* Primitive Types */
     Bool,
@@ -215,7 +229,10 @@ impl<'a> Expr<'a> {
             InnerExpr::BinaryOp(_) => None,
             InnerExpr::Statement(_) => None,
             InnerExpr::Block(_) => None,
+
             InnerExpr::Function(_) => None,
+
+            InnerExpr::Return(_) => None,
 
             InnerExpr::Bool => Some(InnerType::Bool),
             InnerExpr::UInt8 => Some(InnerType::UInt8),
@@ -259,7 +276,10 @@ impl<'a> Expr<'a> {
             InnerExpr::BinaryOp(_) => false,
             InnerExpr::Statement(_) => false,
             InnerExpr::Block(_) => false,
+
             InnerExpr::Function(_) => false,
+
+            InnerExpr::Return(_) => false,
 
             InnerExpr::Bool => true,
             InnerExpr::UInt8 => true,
@@ -308,7 +328,10 @@ impl<'a> Expr<'a> {
             InnerExpr::BinaryOp(_) => false,
             InnerExpr::Statement(_) => false,
             InnerExpr::Block(_) => false,
+
             InnerExpr::Function(_) => false,
+
+            InnerExpr::Return(_) => false,
 
             InnerExpr::Bool => true,
             InnerExpr::UInt8 => true,
@@ -374,7 +397,10 @@ impl<'a> ToCode<'a> for Expr<'a> {
             InnerExpr::BinaryOp(e) => e.to_code(tokens, options),
             InnerExpr::Statement(e) => e.to_code(tokens, options),
             InnerExpr::Block(e) => e.to_code(tokens, options),
+
             InnerExpr::Function(e) => e.to_code(tokens, options),
+
+            InnerExpr::Return(e) => e.to_code(tokens, options),
 
             InnerExpr::Bool => tokens.push(Token::Identifier(Identifier::new("bool"))),
             InnerExpr::UInt8 => tokens.push(Token::Identifier(Identifier::new("u8"))),
