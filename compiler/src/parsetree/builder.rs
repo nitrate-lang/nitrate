@@ -116,6 +116,16 @@ impl<'a> Builder<'a> {
     }
 
     /////////////////////////////////////////////////////////////////
+    /// BEGIN: Definition Builders
+    pub fn function(self) -> FunctionBuilderHelper<'a> {
+        FunctionBuilderHelper::new(self)
+    }
+
+    pub fn get_function() -> FunctionBuilderHelper<'a> {
+        FunctionBuilderHelper::new(Builder::default())
+    }
+
+    /////////////////////////////////////////////////////////////////
     // BEGIN: Primitive Type Builders
     pub fn get_bool() -> Arc<Type<'a>> {
         TYPE_FACTORY.get_bool()

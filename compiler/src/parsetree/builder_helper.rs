@@ -4,6 +4,7 @@ use super::block::Block;
 use super::builder::Builder;
 use super::character::CharLit;
 use super::expression::{Expr, InnerExpr};
+use super::function::Function;
 use super::list::List;
 use super::number::{FloatLit, IntegerLit};
 use super::object::Object;
@@ -477,6 +478,87 @@ impl<'a> BlockBuilderHelper<'a> {
         let block = InnerExpr::Block(Block::new(self.expressions));
 
         Expr::new(block, self.outer.get_metadata())
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Hash)]
+pub struct FunctionBuilderHelper<'a> {
+    outer: Builder<'a>,
+    name: &'a str,
+    parameters: Vec<(&'a str, Arc<Type<'a>>, Option<Expr<'a>>)>,
+    return_type: Option<Arc<Type<'a>>>,
+    attributes: Vec<Expr<'a>>,
+    definition: Option<Block<'a>>,
+}
+
+impl<'a> FunctionBuilderHelper<'a> {
+    pub fn new(outer: Builder<'a>) -> Self {
+        FunctionBuilderHelper {
+            outer,
+            name: "",
+            parameters: Vec::new(),
+            return_type: None,
+            attributes: Vec::new(),
+            definition: None,
+        }
+    }
+
+    pub fn with_name(mut self, name: &'a str) -> Self {
+        self.name = name;
+        self
+    }
+
+    pub fn with_parameter(
+        mut self,
+        name: &'a str,
+        ty: Arc<Type<'a>>,
+        default_value: Option<Expr<'a>>,
+    ) -> Self {
+        self.parameters.push((name, ty, default_value));
+        self
+    }
+
+    pub fn with_parameters<I>(mut self, parameters: I) -> Self
+    where
+        I: IntoIterator<Item = (&'a str, Arc<Type<'a>>, Option<Expr<'a>>)>,
+    {
+        self.parameters.extend(parameters);
+        self
+    }
+
+    pub fn with_return_type(mut self, ty: Arc<Type<'a>>) -> Self {
+        self.return_type = Some(ty);
+        self
+    }
+
+    pub fn with_attribute(mut self, attribute: Expr<'a>) -> Self {
+        self.attributes.push(attribute);
+        self
+    }
+
+    pub fn with_attributes<I>(mut self, attributes: I) -> Self
+    where
+        I: IntoIterator<Item = Expr<'a>>,
+    {
+        self.attributes.extend(attributes);
+        self
+    }
+
+    pub fn with_definition(mut self, definition: Block<'a>) -> Self {
+        self.definition = Some(definition);
+        self
+    }
+
+    pub fn build(self) -> Expr<'a> {
+        let function = InnerExpr::Function(Function::new(
+            self.name,
+            self.parameters,
+            self.return_type,
+            self.attributes,
+            self.definition,
+        ));
+
+        Expr::new(function, self.outer.get_metadata())
     }
 }
 
