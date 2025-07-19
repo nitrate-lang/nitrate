@@ -1,6 +1,4 @@
-use apint::UInt;
-
-use crate::parsetree::{BinaryOperator, InnerExpr, OriginTag};
+use crate::parsetree::{BinaryOperator, InnerExpr, OriginTag, UnaryOperator};
 
 use super::array_type::ArrayType;
 use super::binary_op::BinaryExpr;
@@ -63,8 +61,8 @@ impl<'a> ArrayTypeBuilderHelper<'a> {
 pub struct BinaryExprBuilderHelper<'a> {
     outer: Builder<'a>,
     left: Option<Box<Expr<'a>>>,
-    right: Option<Box<Expr<'a>>>,
     operator: Option<BinaryOperator>,
+    right: Option<Box<Expr<'a>>>,
 }
 
 impl<'a> BinaryExprBuilderHelper<'a> {
@@ -82,24 +80,68 @@ impl<'a> BinaryExprBuilderHelper<'a> {
         self
     }
 
-    pub fn with_right(mut self, right: Box<Expr<'a>>) -> Self {
-        self.right = Some(right);
-        self
-    }
-
     pub fn with_operator(mut self, operator: BinaryOperator) -> Self {
         self.operator = Some(operator);
         self
     }
 
+    pub fn with_right(mut self, right: Box<Expr<'a>>) -> Self {
+        self.right = Some(right);
+        self
+    }
+
     pub fn build(self) -> Expr<'a> {
         let left = self.left.expect("Left expression must be provided");
-        let right = self.right.expect("Right expression must be provided");
         let operator = self.operator.expect("Binary operator must be provided");
+        let right = self.right.expect("Right expression must be provided");
 
         let binary_expr = InnerExpr::BinaryOp(BinaryExpr::new(left, operator, right));
 
         Expr::new(binary_expr, self.outer.metadata)
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Hash)]
+pub struct UnaryExprBuilderHelper<'a> {
+    outer: Builder<'a>,
+    operator: Option<UnaryOperator>,
+    operand: Option<Box<Expr<'a>>>,
+    is_postfix: Option<bool>,
+}
+
+impl<'a> UnaryExprBuilderHelper<'a> {
+    fn new(outer: Builder<'a>) -> Self {
+        UnaryExprBuilderHelper {
+            outer,
+            operator: None,
+            operand: None,
+            is_postfix: None,
+        }
+    }
+
+    pub fn with_operator(mut self, operator: UnaryOperator) -> Self {
+        self.operator = Some(operator);
+        self
+    }
+
+    pub fn with_operand(mut self, operand: Box<Expr<'a>>) -> Self {
+        self.operand = Some(operand);
+        self
+    }
+
+    pub fn set_postfix(mut self, is_postfix: bool) -> Self {
+        self.is_postfix = Some(is_postfix);
+        self
+    }
+
+    pub fn build(self) -> Expr<'a> {
+        let operator = self.operator.expect("Unary operator must be provided");
+        let operand = self.operand.expect("Operand must be provided");
+        let is_postfix = self.is_postfix.expect("is_postfix flag must be provided");
+
+        let unary_expr = InnerExpr::UnaryOp(UnaryExpr::new(operand, operator, is_postfix));
+
+        Expr::new(unary_expr, self.outer.metadata)
     }
 }
 
@@ -127,6 +169,10 @@ impl<'a> Builder<'a> {
 
     pub fn binary_expr(self) -> BinaryExprBuilderHelper<'a> {
         BinaryExprBuilderHelper::new(self)
+    }
+
+    pub fn unary_expr(self) -> UnaryExprBuilderHelper<'a> {
+        UnaryExprBuilderHelper::new(self)
     }
 }
 
