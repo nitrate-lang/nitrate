@@ -477,6 +477,23 @@ impl<'a> BlockBuilderHelper<'a> {
         self
     }
 
+    pub fn add_statement(mut self, expression: Expr<'a>) -> Self {
+        let statement = Builder::get_statement().with_expression(expression).build();
+        self.elements.push(statement);
+        self
+    }
+
+    pub fn add_statements<I>(mut self, statements: I) -> Self
+    where
+        I: IntoIterator<Item = Expr<'a>>,
+    {
+        for statement in statements {
+            let statement = Builder::get_statement().with_expression(statement).build();
+            self.elements.push(statement);
+        }
+        self
+    }
+
     pub fn build(self) -> Expr<'a> {
         let block = InnerExpr::Block(Box::new(Block::new(self.elements)));
 
