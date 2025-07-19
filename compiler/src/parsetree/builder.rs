@@ -1,15 +1,128 @@
-use crate::parsetree::{BinaryOperator, InnerExpr, OriginTag, UnaryOperator};
-
 use super::array_type::ArrayType;
 use super::binary_op::BinaryExpr;
 use super::block::Block;
 use super::expression::{Expr, Metadata};
 use super::number::FloatLit;
 use super::statement::Statement;
-use super::types::TypeFactory;
 use super::types::{InnerType, Type};
 use super::unary_op::UnaryExpr;
+use crate::parsetree::{BinaryOperator, InnerExpr, OriginTag, UnaryOperator};
 use std::sync::{Arc, LazyLock};
+
+#[derive(Debug)]
+struct TypeFactory<'a> {
+    bool: Arc<Type<'a>>,
+    u8: Arc<Type<'a>>,
+    u16: Arc<Type<'a>>,
+    u32: Arc<Type<'a>>,
+    u64: Arc<Type<'a>>,
+    u128: Arc<Type<'a>>,
+    i8: Arc<Type<'a>>,
+    i16: Arc<Type<'a>>,
+    i32: Arc<Type<'a>>,
+    i64: Arc<Type<'a>>,
+    i128: Arc<Type<'a>>,
+    f8: Arc<Type<'a>>,
+    f16: Arc<Type<'a>>,
+    f32: Arc<Type<'a>>,
+    f64: Arc<Type<'a>>,
+    f128: Arc<Type<'a>>,
+    infer_type: Arc<Type<'a>>,
+}
+
+impl<'a> TypeFactory<'a> {
+    pub fn new() -> Self {
+        TypeFactory {
+            bool: Arc::new(Type::new(InnerType::Bool, false)),
+            u8: Arc::new(Type::new(InnerType::UInt8, false)),
+            u16: Arc::new(Type::new(InnerType::UInt16, false)),
+            u32: Arc::new(Type::new(InnerType::UInt32, false)),
+            u64: Arc::new(Type::new(InnerType::UInt64, false)),
+            u128: Arc::new(Type::new(InnerType::UInt128, false)),
+            i8: Arc::new(Type::new(InnerType::Int8, false)),
+            i16: Arc::new(Type::new(InnerType::Int16, false)),
+            i32: Arc::new(Type::new(InnerType::Int32, false)),
+            i64: Arc::new(Type::new(InnerType::Int64, false)),
+            i128: Arc::new(Type::new(InnerType::Int128, false)),
+            f8: Arc::new(Type::new(InnerType::Float8, false)),
+            f16: Arc::new(Type::new(InnerType::Float16, false)),
+            f32: Arc::new(Type::new(InnerType::Float32, false)),
+            f64: Arc::new(Type::new(InnerType::Float64, false)),
+            f128: Arc::new(Type::new(InnerType::Float128, false)),
+            infer_type: Arc::new(Type::new(InnerType::InferType, false)),
+        }
+    }
+
+    pub fn get_bool(&self) -> Arc<Type<'a>> {
+        self.bool.clone()
+    }
+
+    pub fn get_u8(&self) -> Arc<Type<'a>> {
+        self.u8.clone()
+    }
+
+    pub fn get_u16(&self) -> Arc<Type<'a>> {
+        self.u16.clone()
+    }
+
+    pub fn get_u32(&self) -> Arc<Type<'a>> {
+        self.u32.clone()
+    }
+
+    pub fn get_u64(&self) -> Arc<Type<'a>> {
+        self.u64.clone()
+    }
+
+    pub fn get_u128(&self) -> Arc<Type<'a>> {
+        self.u128.clone()
+    }
+
+    pub fn get_i8(&self) -> Arc<Type<'a>> {
+        self.i8.clone()
+    }
+
+    pub fn get_i16(&self) -> Arc<Type<'a>> {
+        self.i16.clone()
+    }
+
+    pub fn get_i32(&self) -> Arc<Type<'a>> {
+        self.i32.clone()
+    }
+
+    pub fn get_i64(&self) -> Arc<Type<'a>> {
+        self.i64.clone()
+    }
+
+    pub fn get_i128(&self) -> Arc<Type<'a>> {
+        self.i128.clone()
+    }
+
+    pub fn get_f8(&self) -> Arc<Type<'a>> {
+        self.f8.clone()
+    }
+
+    pub fn get_f16(&self) -> Arc<Type<'a>> {
+        self.f16.clone()
+    }
+
+    pub fn get_f32(&self) -> Arc<Type<'a>> {
+        self.f32.clone()
+    }
+
+    pub fn get_f64(&self) -> Arc<Type<'a>> {
+        self.f64.clone()
+    }
+
+    pub fn get_f128(&self) -> Arc<Type<'a>> {
+        self.f128.clone()
+    }
+
+    pub fn get_infer_type(&self) -> Arc<Type<'a>> {
+        self.infer_type.clone()
+    }
+}
+
+static TYPE_FACTORY: LazyLock<TypeFactory> = LazyLock::new(|| TypeFactory::new());
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Hash)]
 pub struct UnaryExprBuilderHelper<'a> {
@@ -195,8 +308,6 @@ impl<'a> ArrayTypeBuilderHelper<'a> {
         Expr::new(array_type, self.outer.metadata)
     }
 }
-
-static TYPE_FACTORY: LazyLock<TypeFactory> = LazyLock::new(|| TypeFactory::new());
 
 #[derive(Debug, Clone, Default, PartialEq, Eq, PartialOrd, Hash)]
 pub struct Builder<'a> {
