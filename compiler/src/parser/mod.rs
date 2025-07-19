@@ -1,5 +1,4 @@
 use crate::lexer::*;
-use crate::parsetree;
 use crate::parsetree::*;
 
 pub struct Parser<'a> {

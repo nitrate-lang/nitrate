@@ -135,6 +135,16 @@ impl<'a> Builder<'a> {
     }
 
     /////////////////////////////////////////////////////////////////
+    /// BEGIN: Control Flow Builders
+    pub fn return_(self) -> ReturnBuilderHelper<'a> {
+        ReturnBuilderHelper::new(self)
+    }
+
+    pub fn get_return() -> ReturnBuilderHelper<'a> {
+        ReturnBuilderHelper::new(Builder::default())
+    }
+
+    /////////////////////////////////////////////////////////////////
     // BEGIN: Primitive Type Builders
     pub fn get_bool() -> Arc<Type<'a>> {
         TYPE_FACTORY.get_bool()

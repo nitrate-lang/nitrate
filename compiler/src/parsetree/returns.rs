@@ -7,7 +7,7 @@ pub struct Return<'a> {
 }
 
 impl<'a> Return<'a> {
-    fn new(value: Option<Box<Expr<'a>>>) -> Self {
+    pub fn new(value: Option<Box<Expr<'a>>>) -> Self {
         Return { value }
     }
 

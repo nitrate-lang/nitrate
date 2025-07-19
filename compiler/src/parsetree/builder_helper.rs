@@ -8,12 +8,13 @@ use super::function::Function;
 use super::list::List;
 use super::number::{FloatLit, IntegerLit};
 use super::object::Object;
+use super::returns::Return;
 use super::statement::Statement;
 use super::string::StringLit;
 use super::types::{InnerType, Type};
 use super::unary_op::{UnaryExpr, UnaryOperator};
+use super::variable::{Variable, VariableKind};
 use crate::lexer::IntegerKind;
-use crate::parsetree::variable::{Variable, VariableKind};
 use apint::UInt;
 use std::collections::BTreeMap;
 use std::sync::Arc;
@@ -610,6 +611,29 @@ impl<'a> VariableBuilderHelper<'a> {
         let variable = InnerExpr::Variable(variable);
 
         Expr::new(variable, self.outer.get_metadata())
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Hash)]
+pub struct ReturnBuilderHelper<'a> {
+    outer: Builder<'a>,
+    value: Option<Box<Expr<'a>>>,
+}
+
+impl<'a> ReturnBuilderHelper<'a> {
+    pub fn new(outer: Builder<'a>) -> Self {
+        ReturnBuilderHelper { outer, value: None }
+    }
+
+    pub fn with_value(mut self, value: Box<Expr<'a>>) -> Self {
+        self.value = Some(value);
+        self
+    }
+
+    pub fn build(self) -> Expr<'a> {
+        let return_expr = InnerExpr::Return(Return::new(self.value));
+
+        Expr::new(return_expr, self.outer.get_metadata())
     }
 }
 
