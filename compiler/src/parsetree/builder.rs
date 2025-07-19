@@ -13,6 +13,10 @@ pub struct Builder<'a> {
 }
 
 impl<'a> Builder<'a> {
+    pub fn init() {
+        TYPE_FACTORY.get_unit();
+    }
+
     /////////////////////////////////////////////////////////////////
     // BEGIN: Metadata Setters
     pub fn set_parenthesis(mut self, has_parenthesis: bool) -> Self {
