@@ -34,19 +34,3 @@ impl<'a> ToCode<'a> for Block<'a> {
         tokens.push(Token::Punctuation(Punctuation::RightBrace));
     }
 }
-
-#[derive(Debug, Clone, Default, PartialEq, Eq, PartialOrd, Hash)]
-pub struct BlockBuilder<'a> {
-    items: Vec<Expr<'a>>,
-}
-
-impl<'a> BlockBuilder<'a> {
-    pub fn with_expr(mut self, expr: Expr<'a>) -> Self {
-        self.items.push(expr);
-        self
-    }
-
-    pub fn build(self) -> Block<'a> {
-        Block::new(self.items)
-    }
-}
