@@ -8,9 +8,11 @@ use super::types::{InnerType, Type};
 use super::unary_op::UnaryExpr;
 use crate::lexer::IntegerKind;
 use crate::parsetree::{
-    BinaryOperator, CharLit, InnerExpr, IntegerLit, OriginTag, StringLit, UnaryOperator,
+    BinaryOperator, CharLit, InnerExpr, IntegerLit, List, Object, OriginTag, StringLit,
+    UnaryOperator,
 };
 use apint::UInt;
+use std::collections::BTreeMap;
 use std::sync::{Arc, LazyLock};
 
 #[derive(Debug)]
@@ -263,6 +265,74 @@ impl<'a> CharBuilderHelper<'a> {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Hash)]
+pub struct ListBuilderHelper<'a> {
+    outer: Builder<'a>,
+    elements: Vec<Expr<'a>>,
+}
+
+impl<'a> ListBuilderHelper<'a> {
+    fn new(outer: Builder<'a>) -> Self {
+        ListBuilderHelper {
+            outer,
+            elements: Vec::new(),
+        }
+    }
+
+    pub fn add_element(mut self, element: Expr<'a>) -> Self {
+        self.elements.push(element);
+        self
+    }
+
+    pub fn add_elements<I>(mut self, elements: I) -> Self
+    where
+        I: IntoIterator<Item = Expr<'a>>,
+    {
+        self.elements.extend(elements);
+        self
+    }
+
+    pub fn build(self) -> Expr<'a> {
+        let list_expr = InnerExpr::List(List::new(self.elements));
+
+        Expr::new(list_expr, self.outer.metadata)
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Hash)]
+pub struct ObjectBuilderHelper<'a> {
+    outer: Builder<'a>,
+    fields: BTreeMap<&'a str, Expr<'a>>,
+}
+
+impl<'a> ObjectBuilderHelper<'a> {
+    fn new(outer: Builder<'a>) -> Self {
+        ObjectBuilderHelper {
+            outer,
+            fields: BTreeMap::new(),
+        }
+    }
+
+    pub fn add_field(mut self, key: &'a str, value: Expr<'a>) -> Self {
+        self.fields.insert(key, value);
+        self
+    }
+
+    pub fn add_fields<I>(mut self, fields: I) -> Self
+    where
+        I: IntoIterator<Item = (&'a str, Expr<'a>)>,
+    {
+        self.fields.extend(fields);
+        self
+    }
+
+    pub fn build(self) -> Expr<'a> {
+        let object_expr = InnerExpr::Object(Object::new(self.fields));
+
+        Expr::new(object_expr, self.outer.metadata)
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Hash)]
 pub struct UnaryExprBuilderHelper<'a> {
     outer: Builder<'a>,
     operator: Option<UnaryOperator>,
@@ -502,6 +572,22 @@ impl<'a> Builder<'a> {
         CharBuilderHelper::new(Builder::default())
     }
 
+    pub fn list(self) -> ListBuilderHelper<'a> {
+        ListBuilderHelper::new(self)
+    }
+
+    pub fn get_list() -> ListBuilderHelper<'a> {
+        ListBuilderHelper::new(Builder::default())
+    }
+
+    pub fn object(self) -> ObjectBuilderHelper<'a> {
+        ObjectBuilderHelper::new(self)
+    }
+
+    pub fn get_object() -> ObjectBuilderHelper<'a> {
+        ObjectBuilderHelper::new(Builder::default())
+    }
+
     /////////////////////////////////////////////////////////////////
     // BEGIN: Compound Expression Builders
 
@@ -619,10 +705,9 @@ impl<'a> Builder<'a> {
     }
 }
 
-fn test() {
-    let element_ty = Arc::new(Type::new(InnerType::UInt8, false));
-
-    let count = Builder::get_integer().with_u8(10).build();
-
-    let e = Builder::get_float().with_value(10.0).build();
+pub fn test_builder() {
+    let _e = Builder::get_list()
+        .add_element(Builder::get_integer().with_u32(42).build())
+        .add_element(Builder::get_string().with_string("Hello").build())
+        .build();
 }

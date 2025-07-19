@@ -9,7 +9,7 @@ pub struct Object<'a> {
 }
 
 impl<'a> Object<'a> {
-    fn new(fields: BTreeMap<&'a str, Expr<'a>>) -> Self {
+    pub fn new(fields: BTreeMap<&'a str, Expr<'a>>) -> Self {
         Object { fields }
     }
 
