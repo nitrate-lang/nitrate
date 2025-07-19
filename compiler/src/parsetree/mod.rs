@@ -1,6 +1,7 @@
 pub mod array_type;
 pub mod binary_op;
 pub mod block;
+pub mod builder;
 pub mod character;
 pub mod expression;
 pub mod function;
@@ -20,6 +21,7 @@ pub mod variable;
 pub use array_type::*;
 pub use binary_op::*;
 pub use block::*;
+pub use builder::*;
 pub use character::*;
 pub use expression::*;
 pub use function::*;

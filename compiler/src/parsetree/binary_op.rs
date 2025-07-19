@@ -142,7 +142,7 @@ pub struct BinaryExpr<'a> {
 }
 
 impl<'a> BinaryExpr<'a> {
-    fn new(left: Box<Expr<'a>>, operator: BinaryOperator, right: Box<Expr<'a>>) -> Self {
+    pub fn new(left: Box<Expr<'a>>, operator: BinaryOperator, right: Box<Expr<'a>>) -> Self {
         BinaryExpr {
             left,
             right,

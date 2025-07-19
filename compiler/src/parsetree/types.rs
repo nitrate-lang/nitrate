@@ -4,7 +4,9 @@ use super::function_type::FunctionType;
 use super::struct_type::StructType;
 use super::tuple_type::TupleType;
 use crate::lexer::{Identifier, Punctuation, Token};
-use crate::parsetree::{ArrayTypeBuilder, OriginTag, StructTypeBuilder, TupleTypeBuilder};
+use crate::parsetree::{
+    ArrayTypeBuilder, FunctionTypeBuilder, OriginTag, StructTypeBuilder, TupleTypeBuilder,
+};
 use hashbrown::HashSet;
 use std::collections::BTreeMap;
 use std::rc::Rc;
@@ -353,7 +355,13 @@ impl<'a> TypeFactory<'a> {
         let mut pool = self.compound_types.lock().unwrap();
 
         let object = Rc::new(Type::new(
-            InnerType::FunctionType(FunctionType::new(parameters, return_type, attributes)),
+            InnerType::FunctionType(
+                FunctionTypeBuilder::default()
+                    .with_parameters(parameters)
+                    .with_return_type(return_type)
+                    .with_attributes(attributes)
+                    .build(),
+            ),
             parentheses,
         ));
 

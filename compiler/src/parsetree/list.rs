@@ -8,7 +8,7 @@ pub struct List<'a> {
 }
 
 impl<'a> List<'a> {
-    fn new(elements: Vec<Expr<'a>>) -> Self {
+    pub fn new(elements: Vec<Expr<'a>>) -> Self {
         List { elements }
     }
 

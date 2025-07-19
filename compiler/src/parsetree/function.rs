@@ -15,7 +15,7 @@ pub struct Function<'a> {
 }
 
 impl<'a> Function<'a> {
-    fn new(
+    pub fn new(
         name: &'a str,
         parameters: Vec<(&'a str, Rc<Type<'a>>, Option<Expr<'a>>)>,
         return_type: Option<Rc<Type<'a>>>,

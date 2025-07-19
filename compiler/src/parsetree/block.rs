@@ -8,7 +8,7 @@ pub struct Block<'a> {
 }
 
 impl<'a> Block<'a> {
-    fn new(items: Vec<Expr<'a>>) -> Self {
+    pub fn new(items: Vec<Expr<'a>>) -> Self {
         Block { items }
     }
 

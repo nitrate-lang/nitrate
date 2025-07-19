@@ -77,3 +77,49 @@ impl<'a> ToCode<'a> for FunctionType<'a> {
         }
     }
 }
+
+#[derive(Debug, Clone, Default, PartialEq, Eq, PartialOrd, Hash)]
+pub struct FunctionTypeBuilder<'a> {
+    parameters: Vec<(&'a str, Rc<Type<'a>>, Option<Expr<'a>>)>,
+    return_type: Option<Rc<Type<'a>>>,
+    attributes: Vec<Expr<'a>>,
+}
+
+impl<'a> FunctionTypeBuilder<'a> {
+    pub fn with_parameter(
+        mut self,
+        name: &'a str,
+        ty: Rc<Type<'a>>,
+        default: Option<Expr<'a>>,
+    ) -> Self {
+        self.parameters.push((name, ty, default));
+        self
+    }
+
+    pub fn with_parameters(
+        mut self,
+        parameters: Vec<(&'a str, Rc<Type<'a>>, Option<Expr<'a>>)>,
+    ) -> Self {
+        self.parameters.extend(parameters);
+        self
+    }
+
+    pub fn with_return_type(mut self, return_type: Option<Rc<Type<'a>>>) -> Self {
+        self.return_type = return_type;
+        self
+    }
+
+    pub fn with_attribute(mut self, attribute: Expr<'a>) -> Self {
+        self.attributes.push(attribute);
+        self
+    }
+
+    pub fn with_attributes(mut self, attributes: Vec<Expr<'a>>) -> Self {
+        self.attributes.extend(attributes);
+        self
+    }
+
+    pub fn build(self) -> FunctionType<'a> {
+        FunctionType::new(self.parameters, self.return_type, self.attributes)
+    }
+}

@@ -11,7 +11,7 @@ pub struct ArrayType<'a> {
 }
 
 impl<'a> ArrayType<'a> {
-    fn new(element_ty: Rc<Type<'a>>, count: Box<Expr<'a>>) -> Self {
+    pub fn new(element_ty: Rc<Type<'a>>, count: Box<Expr<'a>>) -> Self {
         ArrayType { element_ty, count }
     }
 
