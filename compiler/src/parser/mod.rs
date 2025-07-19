@@ -34,7 +34,7 @@ impl<'a> Parser<'a> {
             .with_return_type(Builder::get_i32())
             .with_definition(
                 Builder::get_block()
-                    .add_element(
+                    .add_statement(
                         Builder::get_return()
                             .with_value(Builder::get_integer().with_u32(10).build())
                             .build(),
@@ -46,7 +46,10 @@ impl<'a> Parser<'a> {
         let mut tokens = Vec::new();
         func.to_code(&mut tokens, &CodeFormat::default());
 
-        println!("{:?}", tokens);
+        // println!("{:?}", tokens);
+        for token in tokens {
+            println!("{:?}", token);
+        }
 
         None
     }

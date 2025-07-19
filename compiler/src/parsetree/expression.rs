@@ -1,5 +1,3 @@
-// TODO: Develop nitrate abstract syntax tree (AST) data structures
-
 use crate::lexer::*;
 
 use super::array_type::ArrayType;
