@@ -490,7 +490,7 @@ pub struct FunctionBuilderHelper<'a> {
     parameters: Vec<(&'a str, Arc<Type<'a>>, Option<Expr<'a>>)>,
     return_type: Option<Arc<Type<'a>>>,
     attributes: Vec<Expr<'a>>,
-    definition: Option<Block<'a>>,
+    definition: Option<Expr<'a>>,
 }
 
 impl<'a> FunctionBuilderHelper<'a> {
@@ -546,9 +546,15 @@ impl<'a> FunctionBuilderHelper<'a> {
         self
     }
 
-    pub fn with_definition(mut self, definition: Block<'a>) -> Self {
-        self.definition = Some(definition);
-        self
+    pub fn with_definition(mut self, definition: Expr<'a>) -> Self {
+        match definition.get() {
+            InnerExpr::Block(_) => {
+                self.definition = Some(definition);
+                self
+            }
+
+            _ => panic!("Function definition must be a block expression"),
+        }
     }
 
     pub fn build(self) -> Expr<'a> {
@@ -557,7 +563,10 @@ impl<'a> FunctionBuilderHelper<'a> {
             self.parameters,
             self.return_type,
             self.attributes,
-            self.definition,
+            self.definition.map(|d| match d.into_inner() {
+                InnerExpr::Block(block) => Block::new(block.into_inner()),
+                _ => panic!("Function definition must be a block expression"),
+            }),
         ));
 
         Expr::new(function, self.outer.get_metadata())

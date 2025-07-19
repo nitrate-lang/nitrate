@@ -1,4 +1,5 @@
 use crate::lexer::*;
+use crate::parsetree;
 use crate::parsetree::*;
 
 pub struct Parser<'a> {
@@ -30,14 +31,23 @@ impl<'a> Parser<'a> {
         // TODO: Develop nitrate parser
 
         let u32 = Builder::get_u32();
-        // let _e = Builder::get_variable()
-        //     .with_kind(VariableKind::Let)
-        //     .with_name("x")
-        //     .with_type(Builder::get_i32())
-        //     .build();
+
+        let func = Builder::get_function()
+            .with_name("main")
+            .with_return_type(Builder::get_i32())
+            .with_definition(
+                Builder::get_block()
+                    .add_expression(
+                        Builder::get_return()
+                            .with_value(Box::new(Builder::get_integer().with_u32(10).build()))
+                            .build(),
+                    )
+                    .build(),
+            )
+            .build();
 
         let mut tokens = Vec::new();
-        u32.to_code(&mut tokens, &CodeFormat::default());
+        func.to_code(&mut tokens, &CodeFormat::default());
 
         println!("{:?}", tokens);
 
