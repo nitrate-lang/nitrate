@@ -9,8 +9,7 @@ use crate::parsetree::{
 };
 use hashbrown::HashSet;
 use std::collections::BTreeMap;
-use std::rc::Rc;
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex};
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Hash)]
 pub enum InnerType<'a> {
@@ -47,7 +46,7 @@ pub struct Type<'a> {
 }
 
 impl<'a> Type<'a> {
-    pub fn new(expr: InnerType<'a>, has_parenthesis: bool) -> Self {
+    pub const fn new(expr: InnerType<'a>, has_parenthesis: bool) -> Self {
         Type {
             expr,
             has_parenthesis,
@@ -183,123 +182,123 @@ impl<'a> std::ops::Deref for Type<'a> {
 
 #[derive(Debug)]
 pub struct TypeFactory<'a> {
-    bool: Rc<Type<'a>>,
-    u8: Rc<Type<'a>>,
-    u16: Rc<Type<'a>>,
-    u32: Rc<Type<'a>>,
-    u64: Rc<Type<'a>>,
-    u128: Rc<Type<'a>>,
-    i8: Rc<Type<'a>>,
-    i16: Rc<Type<'a>>,
-    i32: Rc<Type<'a>>,
-    i64: Rc<Type<'a>>,
-    i128: Rc<Type<'a>>,
-    f8: Rc<Type<'a>>,
-    f16: Rc<Type<'a>>,
-    f32: Rc<Type<'a>>,
-    f64: Rc<Type<'a>>,
-    f128: Rc<Type<'a>>,
-    infer_type: Rc<Type<'a>>,
+    bool: Arc<Type<'a>>,
+    u8: Arc<Type<'a>>,
+    u16: Arc<Type<'a>>,
+    u32: Arc<Type<'a>>,
+    u64: Arc<Type<'a>>,
+    u128: Arc<Type<'a>>,
+    i8: Arc<Type<'a>>,
+    i16: Arc<Type<'a>>,
+    i32: Arc<Type<'a>>,
+    i64: Arc<Type<'a>>,
+    i128: Arc<Type<'a>>,
+    f8: Arc<Type<'a>>,
+    f16: Arc<Type<'a>>,
+    f32: Arc<Type<'a>>,
+    f64: Arc<Type<'a>>,
+    f128: Arc<Type<'a>>,
+    infer_type: Arc<Type<'a>>,
 
-    compound_types: Mutex<HashSet<Rc<Type<'a>>>>,
+    compound_types: Mutex<HashSet<Arc<Type<'a>>>>,
 }
 
 impl<'a> TypeFactory<'a> {
     pub fn new() -> Self {
         TypeFactory {
-            bool: Rc::new(Type::new(InnerType::Bool, false)),
-            u8: Rc::new(Type::new(InnerType::UInt8, false)),
-            u16: Rc::new(Type::new(InnerType::UInt16, false)),
-            u32: Rc::new(Type::new(InnerType::UInt32, false)),
-            u64: Rc::new(Type::new(InnerType::UInt64, false)),
-            u128: Rc::new(Type::new(InnerType::UInt128, false)),
-            i8: Rc::new(Type::new(InnerType::Int8, false)),
-            i16: Rc::new(Type::new(InnerType::Int16, false)),
-            i32: Rc::new(Type::new(InnerType::Int32, false)),
-            i64: Rc::new(Type::new(InnerType::Int64, false)),
-            i128: Rc::new(Type::new(InnerType::Int128, false)),
-            f8: Rc::new(Type::new(InnerType::Float8, false)),
-            f16: Rc::new(Type::new(InnerType::Float16, false)),
-            f32: Rc::new(Type::new(InnerType::Float32, false)),
-            f64: Rc::new(Type::new(InnerType::Float64, false)),
-            f128: Rc::new(Type::new(InnerType::Float128, false)),
-            infer_type: Rc::new(Type::new(InnerType::InferType, false)),
+            bool: Arc::new(Type::new(InnerType::Bool, false)),
+            u8: Arc::new(Type::new(InnerType::UInt8, false)),
+            u16: Arc::new(Type::new(InnerType::UInt16, false)),
+            u32: Arc::new(Type::new(InnerType::UInt32, false)),
+            u64: Arc::new(Type::new(InnerType::UInt64, false)),
+            u128: Arc::new(Type::new(InnerType::UInt128, false)),
+            i8: Arc::new(Type::new(InnerType::Int8, false)),
+            i16: Arc::new(Type::new(InnerType::Int16, false)),
+            i32: Arc::new(Type::new(InnerType::Int32, false)),
+            i64: Arc::new(Type::new(InnerType::Int64, false)),
+            i128: Arc::new(Type::new(InnerType::Int128, false)),
+            f8: Arc::new(Type::new(InnerType::Float8, false)),
+            f16: Arc::new(Type::new(InnerType::Float16, false)),
+            f32: Arc::new(Type::new(InnerType::Float32, false)),
+            f64: Arc::new(Type::new(InnerType::Float64, false)),
+            f128: Arc::new(Type::new(InnerType::Float128, false)),
+            infer_type: Arc::new(Type::new(InnerType::InferType, false)),
             compound_types: Mutex::new(HashSet::new()),
         }
     }
 
-    pub fn get_bool(&self) -> Rc<Type<'a>> {
+    pub fn get_bool(&self) -> Arc<Type<'a>> {
         self.bool.clone()
     }
 
-    pub fn get_u8(&self) -> Rc<Type<'a>> {
+    pub fn get_u8(&self) -> Arc<Type<'a>> {
         self.u8.clone()
     }
 
-    pub fn get_u16(&self) -> Rc<Type<'a>> {
+    pub fn get_u16(&self) -> Arc<Type<'a>> {
         self.u16.clone()
     }
 
-    pub fn get_u32(&self) -> Rc<Type<'a>> {
+    pub fn get_u32(&self) -> Arc<Type<'a>> {
         self.u32.clone()
     }
 
-    pub fn get_u64(&self) -> Rc<Type<'a>> {
+    pub fn get_u64(&self) -> Arc<Type<'a>> {
         self.u64.clone()
     }
 
-    pub fn get_u128(&self) -> Rc<Type<'a>> {
+    pub fn get_u128(&self) -> Arc<Type<'a>> {
         self.u128.clone()
     }
 
-    pub fn get_i8(&self) -> Rc<Type<'a>> {
+    pub fn get_i8(&self) -> Arc<Type<'a>> {
         self.i8.clone()
     }
 
-    pub fn get_i16(&self) -> Rc<Type<'a>> {
+    pub fn get_i16(&self) -> Arc<Type<'a>> {
         self.i16.clone()
     }
 
-    pub fn get_i32(&self) -> Rc<Type<'a>> {
+    pub fn get_i32(&self) -> Arc<Type<'a>> {
         self.i32.clone()
     }
 
-    pub fn get_i64(&self) -> Rc<Type<'a>> {
+    pub fn get_i64(&self) -> Arc<Type<'a>> {
         self.i64.clone()
     }
 
-    pub fn get_i128(&self) -> Rc<Type<'a>> {
+    pub fn get_i128(&self) -> Arc<Type<'a>> {
         self.i128.clone()
     }
 
-    pub fn get_f8(&self) -> Rc<Type<'a>> {
+    pub fn get_f8(&self) -> Arc<Type<'a>> {
         self.f8.clone()
     }
 
-    pub fn get_f16(&self) -> Rc<Type<'a>> {
+    pub fn get_f16(&self) -> Arc<Type<'a>> {
         self.f16.clone()
     }
 
-    pub fn get_f32(&self) -> Rc<Type<'a>> {
+    pub fn get_f32(&self) -> Arc<Type<'a>> {
         self.f32.clone()
     }
 
-    pub fn get_f64(&self) -> Rc<Type<'a>> {
+    pub fn get_f64(&self) -> Arc<Type<'a>> {
         self.f64.clone()
     }
 
-    pub fn get_f128(&self) -> Rc<Type<'a>> {
+    pub fn get_f128(&self) -> Arc<Type<'a>> {
         self.f128.clone()
     }
 
-    pub fn get_infer_type(&self) -> Rc<Type<'a>> {
+    pub fn get_infer_type(&self) -> Arc<Type<'a>> {
         self.infer_type.clone()
     }
 
-    pub fn get_tuple_type(&self, elements: Vec<Rc<Type<'a>>>) -> Rc<Type<'a>> {
+    pub fn get_tuple_type(&self, elements: Vec<Arc<Type<'a>>>) -> Arc<Type<'a>> {
         let mut pool = self.compound_types.lock().unwrap();
 
-        let object = Rc::new(Type::new(
+        let object = Arc::new(Type::new(
             InnerType::TupleType(TupleTypeBuilder::default().with_elements(elements).build()),
             false,
         ));
@@ -307,10 +306,10 @@ impl<'a> TypeFactory<'a> {
         pool.get_or_insert(object).clone()
     }
 
-    pub fn get_array_type(&self, element: Rc<Type<'a>>, size: Box<Expr<'a>>) -> Rc<Type<'a>> {
+    pub fn get_array_type(&self, element: Arc<Type<'a>>, size: Box<Expr<'a>>) -> Arc<Type<'a>> {
         let mut pool = self.compound_types.lock().unwrap();
 
-        let object = Rc::new(Type::new(
+        let object = Arc::new(Type::new(
             InnerType::ArrayType(
                 ArrayTypeBuilder::default()
                     .with_element_ty(element)
@@ -327,11 +326,11 @@ impl<'a> TypeFactory<'a> {
         &self,
         name: Option<&'a str>,
         attributes: Vec<Expr<'a>>,
-        fields: BTreeMap<&'a str, Rc<Type<'a>>>,
-    ) -> Rc<Type<'a>> {
+        fields: BTreeMap<&'a str, Arc<Type<'a>>>,
+    ) -> Arc<Type<'a>> {
         let mut pool = self.compound_types.lock().unwrap();
 
-        let object = Rc::new(Type::new(
+        let object = Arc::new(Type::new(
             InnerType::StructType(
                 StructTypeBuilder::default()
                     .with_name(name)
@@ -347,14 +346,14 @@ impl<'a> TypeFactory<'a> {
 
     pub fn get_function_type(
         &self,
-        parameters: Vec<(&'a str, Rc<Type<'a>>, Option<Expr<'a>>)>,
-        return_type: Option<Rc<Type<'a>>>,
+        parameters: Vec<(&'a str, Arc<Type<'a>>, Option<Expr<'a>>)>,
+        return_type: Option<Arc<Type<'a>>>,
         attributes: Vec<Expr<'a>>,
         parentheses: bool,
-    ) -> Rc<Type<'a>> {
+    ) -> Arc<Type<'a>> {
         let mut pool = self.compound_types.lock().unwrap();
 
-        let object = Rc::new(Type::new(
+        let object = Arc::new(Type::new(
             InnerType::FunctionType(
                 FunctionTypeBuilder::default()
                     .with_parameters(parameters)

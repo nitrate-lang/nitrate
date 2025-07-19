@@ -2,16 +2,16 @@ use super::expression::Expr;
 use super::expression::{CodeFormat, ToCode};
 use super::types::Type;
 use crate::lexer::{Punctuation, Token};
-use std::rc::Rc;
+use std::sync::Arc;
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Hash)]
 pub struct ArrayType<'a> {
-    element_ty: Rc<Type<'a>>,
+    element_ty: Arc<Type<'a>>,
     count: Box<Expr<'a>>,
 }
 
 impl<'a> ArrayType<'a> {
-    pub fn new(element_ty: Rc<Type<'a>>, count: Box<Expr<'a>>) -> Self {
+    pub fn new(element_ty: Arc<Type<'a>>, count: Box<Expr<'a>>) -> Self {
         ArrayType { element_ty, count }
     }
 
@@ -36,12 +36,12 @@ impl<'a> ToCode<'a> for ArrayType<'a> {
 
 #[derive(Debug, Clone, Default, PartialEq, Eq, PartialOrd, Hash)]
 pub struct ArrayTypeBuilder<'a> {
-    element_ty: Option<Rc<Type<'a>>>,
+    element_ty: Option<Arc<Type<'a>>>,
     count: Option<Box<Expr<'a>>>,
 }
 
 impl<'a> ArrayTypeBuilder<'a> {
-    pub fn with_element_ty(mut self, element_ty: Rc<Type<'a>>) -> Self {
+    pub fn with_element_ty(mut self, element_ty: Arc<Type<'a>>) -> Self {
         self.element_ty = Some(element_ty);
         self
     }

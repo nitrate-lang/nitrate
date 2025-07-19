@@ -3,23 +3,13 @@ use crate::parsetree::{BinaryOperator, InnerExpr, OriginTag, UnaryOperator};
 use super::array_type::ArrayType;
 use super::binary_op::BinaryExpr;
 use super::block::Block;
-use super::character::CharLit;
 use super::expression::{Expr, Metadata};
-use super::function::Function;
-use super::function_type::FunctionType;
-use super::list::List;
-use super::number::{FloatLit, IntegerLit};
-use super::object::Object;
-use super::returns::Return;
+use super::number::FloatLit;
 use super::statement::Statement;
-use super::string::StringLit;
-use super::struct_type::StructType;
-use super::tuple_type::TupleType;
+use super::types::TypeFactory;
 use super::types::{InnerType, Type};
 use super::unary_op::UnaryExpr;
-use super::variable::Variable;
-use crate::lexer::{Float, Integer, IntegerKind, Token};
-use std::rc::Rc;
+use std::sync::{Arc, LazyLock};
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Hash)]
 pub struct UnaryExprBuilderHelper<'a> {
@@ -173,7 +163,7 @@ impl<'a> BlockBuilderHelper<'a> {
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Hash)]
 pub struct ArrayTypeBuilderHelper<'a> {
     outer: Builder<'a>,
-    element_ty: Option<Rc<Type<'a>>>,
+    element_ty: Option<Arc<Type<'a>>>,
     count: Option<Box<Expr<'a>>>,
 }
 
@@ -186,7 +176,7 @@ impl<'a> ArrayTypeBuilderHelper<'a> {
         }
     }
 
-    pub fn with_element_ty(mut self, element_ty: Rc<Type<'a>>) -> Self {
+    pub fn with_element_ty(mut self, element_ty: Arc<Type<'a>>) -> Self {
         self.element_ty = Some(element_ty);
         self
     }
@@ -206,6 +196,8 @@ impl<'a> ArrayTypeBuilderHelper<'a> {
     }
 }
 
+static TYPE_FACTORY: LazyLock<TypeFactory> = LazyLock::new(|| TypeFactory::new());
+
 #[derive(Debug, Clone, Default, PartialEq, Eq, PartialOrd, Hash)]
 pub struct Builder<'a> {
     inner: Option<InnerExpr<'a>>,
@@ -213,6 +205,9 @@ pub struct Builder<'a> {
 }
 
 impl<'a> Builder<'a> {
+    /////////////////////////////////////////////////////////////////
+    // BEGIN: Metadata Setters
+
     pub fn set_parenthesis(mut self, has_parenthesis: bool) -> Self {
         self.metadata.set_has_parenthesis(has_parenthesis);
 
@@ -223,6 +218,9 @@ impl<'a> Builder<'a> {
         self.metadata.set_origin(origin);
         self
     }
+
+    /////////////////////////////////////////////////////////////////
+    // BEGIN: Compound Expression Builders
 
     pub fn unary_expr(self) -> UnaryExprBuilderHelper<'a> {
         UnaryExprBuilderHelper::new(self)
@@ -240,21 +238,90 @@ impl<'a> Builder<'a> {
         BlockBuilderHelper::new(self)
     }
 
+    /////////////////////////////////////////////////////////////////
+    // BEGIN: Primitive Type Builders
+    pub fn get_bool() -> Arc<Type<'a>> {
+        TYPE_FACTORY.get_bool()
+    }
+
+    pub fn get_u8() -> Arc<Type<'a>> {
+        TYPE_FACTORY.get_u8()
+    }
+
+    pub fn get_u16() -> Arc<Type<'a>> {
+        TYPE_FACTORY.get_u16()
+    }
+
+    pub fn get_u32() -> Arc<Type<'a>> {
+        TYPE_FACTORY.get_u32()
+    }
+
+    pub fn get_u64() -> Arc<Type<'a>> {
+        TYPE_FACTORY.get_u64()
+    }
+
+    pub fn get_u128() -> Arc<Type<'a>> {
+        TYPE_FACTORY.get_u128()
+    }
+
+    pub fn get_i8() -> Arc<Type<'a>> {
+        TYPE_FACTORY.get_i8()
+    }
+
+    pub fn get_i16() -> Arc<Type<'a>> {
+        TYPE_FACTORY.get_i16()
+    }
+
+    pub fn get_i32() -> Arc<Type<'a>> {
+        TYPE_FACTORY.get_i32()
+    }
+
+    pub fn get_i64() -> Arc<Type<'a>> {
+        TYPE_FACTORY.get_i64()
+    }
+
+    pub fn get_i128() -> Arc<Type<'a>> {
+        TYPE_FACTORY.get_i128()
+    }
+
+    pub fn get_f8() -> Arc<Type<'a>> {
+        TYPE_FACTORY.get_f8()
+    }
+
+    pub fn get_f16() -> Arc<Type<'a>> {
+        TYPE_FACTORY.get_f16()
+    }
+
+    pub fn get_f32() -> Arc<Type<'a>> {
+        TYPE_FACTORY.get_f32()
+    }
+
+    pub fn get_f64() -> Arc<Type<'a>> {
+        TYPE_FACTORY.get_f64()
+    }
+
+    pub fn get_f128() -> Arc<Type<'a>> {
+        TYPE_FACTORY.get_f128()
+    }
+
+    pub fn get_infer_type() -> Arc<Type<'a>> {
+        TYPE_FACTORY.get_infer_type()
+    }
+
+    /////////////////////////////////////////////////////////////////
+    // BEGIN: Compound Type Builders
+
     pub fn array_type(self) -> ArrayTypeBuilderHelper<'a> {
         ArrayTypeBuilderHelper::new(self)
     }
 }
 
 fn test() {
-    let element_ty = Rc::new(Type::new(InnerType::UInt8, false));
+    let element_ty = Arc::new(Type::new(InnerType::UInt8, false));
     let count = Box::new(Expr::new(
         InnerExpr::Float(FloatLit::new(5.0)),
         Metadata::default(),
     ));
 
-    let e = Builder::default()
-        .block()
-        .add_expression(*count.clone())
-        .add_expression(*count)
-        .build();
+    let e = Builder::get_u8();
 }

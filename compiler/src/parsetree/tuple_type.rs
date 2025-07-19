@@ -1,23 +1,23 @@
 use super::expression::{CodeFormat, ToCode};
 use super::types::Type;
 use crate::lexer::{Punctuation, Token};
-use std::rc::Rc;
+use std::sync::Arc;
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Hash)]
 pub struct TupleType<'a> {
-    elements: Vec<Rc<Type<'a>>>,
+    elements: Vec<Arc<Type<'a>>>,
 }
 
 impl<'a> TupleType<'a> {
-    fn new(elements: Vec<Rc<Type<'a>>>) -> Self {
+    fn new(elements: Vec<Arc<Type<'a>>>) -> Self {
         TupleType { elements }
     }
 
-    pub fn into_inner(self) -> Vec<Rc<Type<'a>>> {
+    pub fn into_inner(self) -> Vec<Arc<Type<'a>>> {
         self.elements
     }
 
-    pub fn elements(&self) -> &[Rc<Type<'a>>] {
+    pub fn elements(&self) -> &[Arc<Type<'a>>] {
         &self.elements
     }
 }
@@ -35,16 +35,16 @@ impl<'a> ToCode<'a> for TupleType<'a> {
 
 #[derive(Debug, Clone, Default, PartialEq, Eq, PartialOrd, Hash)]
 pub struct TupleTypeBuilder<'a> {
-    elements: Vec<Rc<Type<'a>>>,
+    elements: Vec<Arc<Type<'a>>>,
 }
 
 impl<'a> TupleTypeBuilder<'a> {
-    pub fn with_element(mut self, element: Rc<Type<'a>>) -> Self {
+    pub fn with_element(mut self, element: Arc<Type<'a>>) -> Self {
         self.elements.push(element);
         self
     }
 
-    pub fn with_elements(mut self, elements: Vec<Rc<Type<'a>>>) -> Self {
+    pub fn with_elements(mut self, elements: Vec<Arc<Type<'a>>>) -> Self {
         self.elements.extend(elements);
         self
     }

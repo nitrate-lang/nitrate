@@ -1,7 +1,7 @@
 use super::expression::{CodeFormat, Expr, ToCode};
 use super::types::Type;
 use crate::lexer::{Identifier, Keyword, Operator, Punctuation, Token};
-use std::rc::Rc;
+use std::sync::Arc;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Hash)]
 pub enum VariableKind {
@@ -13,7 +13,7 @@ pub enum VariableKind {
 pub struct Variable<'a> {
     kind: VariableKind,
     name: &'a str,
-    var_type: Option<Rc<Type<'a>>>,
+    var_type: Option<Arc<Type<'a>>>,
     value: Option<Box<Expr<'a>>>,
 }
 
@@ -21,7 +21,7 @@ impl<'a> Variable<'a> {
     fn new(
         kind: VariableKind,
         name: &'a str,
-        var_type: Option<Rc<Type<'a>>>,
+        var_type: Option<Arc<Type<'a>>>,
         value: Option<Box<Expr<'a>>>,
     ) -> Self {
         Variable {
@@ -44,11 +44,11 @@ impl<'a> Variable<'a> {
         self.name = name;
     }
 
-    pub fn get_type(&self) -> Option<&Rc<Type<'a>>> {
+    pub fn get_type(&self) -> Option<&Arc<Type<'a>>> {
         self.var_type.as_ref()
     }
 
-    pub fn get_type_mut(&mut self) -> Option<&mut Rc<Type<'a>>> {
+    pub fn get_type_mut(&mut self) -> Option<&mut Arc<Type<'a>>> {
         self.var_type.as_mut()
     }
 
@@ -86,7 +86,7 @@ impl<'a> ToCode<'a> for Variable<'a> {
 pub struct VariableBuilder<'a> {
     kind: Option<VariableKind>,
     name: &'a str,
-    var_type: Option<Rc<Type<'a>>>,
+    var_type: Option<Arc<Type<'a>>>,
     value: Option<Box<Expr<'a>>>,
 }
 
@@ -101,7 +101,7 @@ impl<'a> VariableBuilder<'a> {
         self
     }
 
-    pub fn with_type(mut self, var_type: Rc<Type<'a>>) -> Self {
+    pub fn with_type(mut self, var_type: Arc<Type<'a>>) -> Self {
         self.var_type = Some(var_type);
         self
     }

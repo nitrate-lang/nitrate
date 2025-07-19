@@ -2,20 +2,20 @@ use super::expression::{CodeFormat, Expr, ToCode};
 use super::types::Type;
 use crate::lexer::{Identifier, Keyword, Punctuation, Token};
 use std::collections::BTreeMap;
-use std::rc::Rc;
+use std::sync::Arc;
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Hash)]
 pub struct StructType<'a> {
     name: Option<&'a str>,
     attributes: Vec<Expr<'a>>,
-    fields: BTreeMap<&'a str, Rc<Type<'a>>>,
+    fields: BTreeMap<&'a str, Arc<Type<'a>>>,
 }
 
 impl<'a> StructType<'a> {
     fn new(
         name: Option<&'a str>,
         attributes: Vec<Expr<'a>>,
-        fields: BTreeMap<&'a str, Rc<Type<'a>>>,
+        fields: BTreeMap<&'a str, Arc<Type<'a>>>,
     ) -> Self {
         StructType {
             name,
@@ -24,7 +24,7 @@ impl<'a> StructType<'a> {
         }
     }
 
-    pub fn into_inner(self) -> BTreeMap<&'a str, Rc<Type<'a>>> {
+    pub fn into_inner(self) -> BTreeMap<&'a str, Arc<Type<'a>>> {
         self.fields
     }
 
@@ -36,7 +36,7 @@ impl<'a> StructType<'a> {
         &self.attributes
     }
 
-    pub fn fields(&self) -> &BTreeMap<&'a str, Rc<Type<'a>>> {
+    pub fn fields(&self) -> &BTreeMap<&'a str, Arc<Type<'a>>> {
         &self.fields
     }
 }
@@ -73,7 +73,7 @@ impl<'a> ToCode<'a> for StructType<'a> {
 pub struct StructTypeBuilder<'a> {
     name: Option<&'a str>,
     attributes: Vec<Expr<'a>>,
-    fields: BTreeMap<&'a str, Rc<Type<'a>>>,
+    fields: BTreeMap<&'a str, Arc<Type<'a>>>,
 }
 
 impl<'a> StructTypeBuilder<'a> {
@@ -92,12 +92,12 @@ impl<'a> StructTypeBuilder<'a> {
         self
     }
 
-    pub fn with_field(mut self, field_name: &'a str, field_ty: Rc<Type<'a>>) -> Self {
+    pub fn with_field(mut self, field_name: &'a str, field_ty: Arc<Type<'a>>) -> Self {
         self.fields.insert(field_name, field_ty);
         self
     }
 
-    pub fn with_fields(mut self, fields: BTreeMap<&'a str, Rc<Type<'a>>>) -> Self {
+    pub fn with_fields(mut self, fields: BTreeMap<&'a str, Arc<Type<'a>>>) -> Self {
         self.fields.extend(fields);
         self
     }

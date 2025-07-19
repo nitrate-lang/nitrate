@@ -3,19 +3,19 @@ use super::expression::{CodeFormat, ToCode};
 use super::types::Type;
 use crate::lexer::{Identifier, Keyword, Operator, Punctuation, Token};
 use crate::parsetree::InnerType;
-use std::rc::Rc;
+use std::sync::Arc;
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Hash)]
 pub struct FunctionType<'a> {
-    parameters: Vec<(&'a str, Rc<Type<'a>>, Option<Expr<'a>>)>,
-    return_type: Option<Rc<Type<'a>>>,
+    parameters: Vec<(&'a str, Arc<Type<'a>>, Option<Expr<'a>>)>,
+    return_type: Option<Arc<Type<'a>>>,
     attributes: Vec<Expr<'a>>,
 }
 
 impl<'a> FunctionType<'a> {
     pub fn new(
-        parameters: Vec<(&'a str, Rc<Type<'a>>, Option<Expr<'a>>)>,
-        return_type: Option<Rc<Type<'a>>>,
+        parameters: Vec<(&'a str, Arc<Type<'a>>, Option<Expr<'a>>)>,
+        return_type: Option<Arc<Type<'a>>>,
         attributes: Vec<Expr<'a>>,
     ) -> Self {
         FunctionType {
@@ -25,11 +25,11 @@ impl<'a> FunctionType<'a> {
         }
     }
 
-    pub fn parameters(&self) -> &Vec<(&'a str, Rc<Type<'a>>, Option<Expr<'a>>)> {
+    pub fn parameters(&self) -> &Vec<(&'a str, Arc<Type<'a>>, Option<Expr<'a>>)> {
         &self.parameters
     }
 
-    pub fn return_type(&self) -> Option<&Rc<Type<'a>>> {
+    pub fn return_type(&self) -> Option<&Arc<Type<'a>>> {
         self.return_type.as_ref()
     }
 
@@ -80,8 +80,8 @@ impl<'a> ToCode<'a> for FunctionType<'a> {
 
 #[derive(Debug, Clone, Default, PartialEq, Eq, PartialOrd, Hash)]
 pub struct FunctionTypeBuilder<'a> {
-    parameters: Vec<(&'a str, Rc<Type<'a>>, Option<Expr<'a>>)>,
-    return_type: Option<Rc<Type<'a>>>,
+    parameters: Vec<(&'a str, Arc<Type<'a>>, Option<Expr<'a>>)>,
+    return_type: Option<Arc<Type<'a>>>,
     attributes: Vec<Expr<'a>>,
 }
 
@@ -89,7 +89,7 @@ impl<'a> FunctionTypeBuilder<'a> {
     pub fn with_parameter(
         mut self,
         name: &'a str,
-        ty: Rc<Type<'a>>,
+        ty: Arc<Type<'a>>,
         default: Option<Expr<'a>>,
     ) -> Self {
         self.parameters.push((name, ty, default));
@@ -98,13 +98,13 @@ impl<'a> FunctionTypeBuilder<'a> {
 
     pub fn with_parameters(
         mut self,
-        parameters: Vec<(&'a str, Rc<Type<'a>>, Option<Expr<'a>>)>,
+        parameters: Vec<(&'a str, Arc<Type<'a>>, Option<Expr<'a>>)>,
     ) -> Self {
         self.parameters.extend(parameters);
         self
     }
 
-    pub fn with_return_type(mut self, return_type: Option<Rc<Type<'a>>>) -> Self {
+    pub fn with_return_type(mut self, return_type: Option<Arc<Type<'a>>>) -> Self {
         self.return_type = return_type;
         self
     }
