@@ -15,7 +15,6 @@ pub struct Builder<'a> {
 impl<'a> Builder<'a> {
     /////////////////////////////////////////////////////////////////
     // BEGIN: Metadata Setters
-
     pub fn set_parenthesis(mut self, has_parenthesis: bool) -> Self {
         self.metadata.set_has_parenthesis(has_parenthesis);
 
@@ -83,7 +82,6 @@ impl<'a> Builder<'a> {
 
     /////////////////////////////////////////////////////////////////
     // BEGIN: Compound Expression Builders
-
     pub fn unary_expr(self) -> UnaryExprBuilderHelper<'a> {
         UnaryExprBuilderHelper::new(self)
     }
@@ -214,8 +212,19 @@ impl<'a> Builder<'a> {
         TYPE_FACTORY.get_infer_type()
     }
 
+    pub fn get_unit() -> Arc<Type<'a>> {
+        TYPE_FACTORY.get_unit()
+    }
+
     /////////////////////////////////////////////////////////////////
     // BEGIN: Compound Type Builders
+    pub fn tuple_type(self) -> TupleTypeBuilderHelper<'a> {
+        TupleTypeBuilderHelper::new(self)
+    }
+
+    pub fn get_tuple_type() -> TupleTypeBuilderHelper<'a> {
+        TupleTypeBuilderHelper::new(Builder::default())
+    }
 
     pub fn array_type(self) -> ArrayTypeBuilderHelper<'a> {
         ArrayTypeBuilderHelper::new(self)

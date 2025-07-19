@@ -11,6 +11,7 @@ use super::object::Object;
 use super::returns::Return;
 use super::statement::Statement;
 use super::string::StringLit;
+use super::tuple_type::TupleType;
 use super::types::{InnerType, Type};
 use super::unary_op::{UnaryExpr, UnaryOperator};
 use super::variable::{Variable, VariableKind};
@@ -38,6 +39,7 @@ pub struct TypeFactory<'a> {
     f64: Arc<Type<'a>>,
     f128: Arc<Type<'a>>,
     infer_type: Arc<Type<'a>>,
+    unit: Arc<Type<'a>>,
 }
 
 impl<'a> TypeFactory<'a> {
@@ -60,6 +62,10 @@ impl<'a> TypeFactory<'a> {
             f64: Arc::new(Type::new(InnerType::Float64, false)),
             f128: Arc::new(Type::new(InnerType::Float128, false)),
             infer_type: Arc::new(Type::new(InnerType::InferType, false)),
+            unit: Arc::new(Type::new(
+                InnerType::TupleType(Box::new(TupleType::new(Vec::new()))),
+                false,
+            )),
         }
     }
 
@@ -129,6 +135,10 @@ impl<'a> TypeFactory<'a> {
 
     pub fn get_infer_type(&self) -> Arc<Type<'a>> {
         self.infer_type.clone()
+    }
+
+    pub fn get_unit(&self) -> Arc<Type<'a>> {
+        self.unit.clone()
     }
 }
 
@@ -663,6 +673,40 @@ impl<'a> ReturnBuilderHelper<'a> {
         let return_expr = InnerExpr::Return(Box::new(Return::new(self.value)));
 
         Expr::new(return_expr, self.outer.get_metadata())
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Hash)]
+pub struct TupleTypeBuilderHelper<'a> {
+    outer: Builder<'a>,
+    elements: Vec<Arc<Type<'a>>>,
+}
+
+impl<'a> TupleTypeBuilderHelper<'a> {
+    pub fn new(outer: Builder<'a>) -> Self {
+        TupleTypeBuilderHelper {
+            outer,
+            elements: Vec::new(),
+        }
+    }
+
+    pub fn add_element(mut self, ty: Arc<Type<'a>>) -> Self {
+        self.elements.push(ty);
+        self
+    }
+
+    pub fn add_elements<I>(mut self, elements: I) -> Self
+    where
+        I: IntoIterator<Item = Arc<Type<'a>>>,
+    {
+        self.elements.extend(elements);
+        self
+    }
+
+    pub fn build(self) -> Expr<'a> {
+        let tuple_type = InnerExpr::TupleType(Box::new(TupleType::new(self.elements)));
+
+        Expr::new(tuple_type, self.outer.get_metadata())
     }
 }
 

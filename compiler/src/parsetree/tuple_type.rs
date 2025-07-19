@@ -9,7 +9,7 @@ pub struct TupleType<'a> {
 }
 
 impl<'a> TupleType<'a> {
-    fn new(elements: Vec<Arc<Type<'a>>>) -> Self {
+    pub fn new(elements: Vec<Arc<Type<'a>>>) -> Self {
         TupleType { elements }
     }
 
