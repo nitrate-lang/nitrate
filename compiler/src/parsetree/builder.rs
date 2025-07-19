@@ -1,6 +1,7 @@
 use super::builder_helper::*;
 use super::expression::{InnerExpr, Metadata, OriginTag};
 use super::types::Type;
+pub use super::variable::VariableKind;
 use std::sync::{Arc, LazyLock};
 
 static TYPE_FACTORY: LazyLock<TypeFactory> = LazyLock::new(|| TypeFactory::new());
@@ -125,6 +126,14 @@ impl<'a> Builder<'a> {
         FunctionBuilderHelper::new(Builder::default())
     }
 
+    pub fn variable(self) -> VariableBuilderHelper<'a> {
+        VariableBuilderHelper::new(self)
+    }
+
+    pub fn get_variable() -> VariableBuilderHelper<'a> {
+        VariableBuilderHelper::new(Builder::default())
+    }
+
     /////////////////////////////////////////////////////////////////
     // BEGIN: Primitive Type Builders
     pub fn get_bool() -> Arc<Type<'a>> {
@@ -205,11 +214,4 @@ impl<'a> Builder<'a> {
     pub fn get_array_type() -> ArrayTypeBuilderHelper<'a> {
         ArrayTypeBuilderHelper::new(Builder::default())
     }
-}
-
-pub fn test_builder() {
-    let _e = Builder::get_list()
-        .add_element(Builder::get_integer().with_u32(42).build())
-        .add_element(Builder::get_string().with_string("Hello").build())
-        .build();
 }

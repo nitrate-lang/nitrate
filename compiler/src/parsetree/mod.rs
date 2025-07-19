@@ -19,6 +19,6 @@ mod types;
 mod unary_op;
 mod variable;
 
-pub use builder::Builder;
+pub use builder::*;
 pub use expression::{CodeFormat, Expr, OriginTag, ToCode};
 pub use types::Type;

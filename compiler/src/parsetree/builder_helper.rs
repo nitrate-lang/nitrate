@@ -13,6 +13,7 @@ use super::string::StringLit;
 use super::types::{InnerType, Type};
 use super::unary_op::{UnaryExpr, UnaryOperator};
 use crate::lexer::IntegerKind;
+use crate::parsetree::variable::{Variable, VariableKind};
 use apint::UInt;
 use std::collections::BTreeMap;
 use std::sync::Arc;
@@ -559,6 +560,56 @@ impl<'a> FunctionBuilderHelper<'a> {
         ));
 
         Expr::new(function, self.outer.get_metadata())
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Hash)]
+pub struct VariableBuilderHelper<'a> {
+    outer: Builder<'a>,
+    kind: Option<VariableKind>,
+    name: &'a str,
+    ty: Option<Arc<Type<'a>>>,
+    value: Option<Box<Expr<'a>>>,
+}
+
+impl<'a> VariableBuilderHelper<'a> {
+    pub fn new(outer: Builder<'a>) -> Self {
+        VariableBuilderHelper {
+            outer,
+            kind: None,
+            name: "",
+            ty: None,
+            value: None,
+        }
+    }
+
+    pub fn with_kind(mut self, kind: VariableKind) -> Self {
+        self.kind = Some(kind);
+        self
+    }
+
+    pub fn with_name(mut self, name: &'a str) -> Self {
+        self.name = name;
+        self
+    }
+
+    pub fn with_type(mut self, ty: Arc<Type<'a>>) -> Self {
+        self.ty = Some(ty);
+        self
+    }
+
+    pub fn with_value(mut self, value: Box<Expr<'a>>) -> Self {
+        self.value = Some(value);
+        self
+    }
+
+    pub fn build(self) -> Expr<'a> {
+        let kind = self.kind.expect("Variable kind must be provided");
+
+        let variable = Variable::new(kind, self.name, self.ty, self.value);
+        let variable = InnerExpr::Variable(variable);
+
+        Expr::new(variable, self.outer.get_metadata())
     }
 }
 

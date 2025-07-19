@@ -31,6 +31,11 @@ impl<'a> Parser<'a> {
         // TODO: Develop nitrate parser
 
         let u32 = Builder::get_u32();
+        // let _e = Builder::get_variable()
+        //     .with_kind(VariableKind::Let)
+        //     .with_name("x")
+        //     .with_type(Builder::get_i32())
+        //     .build();
 
         let mut tokens = Vec::new();
         u32.to_code(&mut tokens, &CodeFormat::default());

@@ -18,7 +18,7 @@ pub struct Variable<'a> {
 }
 
 impl<'a> Variable<'a> {
-    fn new(
+    pub fn new(
         kind: VariableKind,
         name: &'a str,
         var_type: Option<Arc<Type<'a>>>,
