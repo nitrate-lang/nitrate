@@ -453,32 +453,32 @@ impl<'a> StatementBuilderHelper<'a> {
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Hash)]
 pub struct BlockBuilderHelper<'a> {
     outer: Builder<'a>,
-    expressions: Vec<Expr<'a>>,
+    elements: Vec<Expr<'a>>,
 }
 
 impl<'a> BlockBuilderHelper<'a> {
     pub fn new(outer: Builder<'a>) -> Self {
         BlockBuilderHelper {
             outer,
-            expressions: Vec::new(),
+            elements: Vec::new(),
         }
     }
 
-    pub fn add_expression(mut self, expr: Expr<'a>) -> Self {
-        self.expressions.push(expr);
+    pub fn add_element(mut self, expr: Expr<'a>) -> Self {
+        self.elements.push(expr);
         self
     }
 
-    pub fn add_expressions<I>(mut self, expressions: I) -> Self
+    pub fn add_expressions<I>(mut self, elements: I) -> Self
     where
         I: IntoIterator<Item = Expr<'a>>,
     {
-        self.expressions.extend(expressions);
+        self.elements.extend(elements);
         self
     }
 
     pub fn build(self) -> Expr<'a> {
-        let block = InnerExpr::Block(Box::new(Block::new(self.expressions)));
+        let block = InnerExpr::Block(Box::new(Block::new(self.elements)));
 
         Expr::new(block, self.outer.get_metadata())
     }

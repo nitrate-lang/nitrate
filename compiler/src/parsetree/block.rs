@@ -4,31 +4,31 @@ use crate::lexer::{Punctuation, Token};
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Hash)]
 pub struct Block<'a> {
-    items: Vec<Expr<'a>>,
+    elements: Vec<Expr<'a>>,
 }
 
 impl<'a> Block<'a> {
     pub fn new(items: Vec<Expr<'a>>) -> Self {
-        Block { items }
+        Block { elements: items }
     }
 
     pub fn into_inner(self) -> Vec<Expr<'a>> {
-        self.items
+        self.elements
     }
 
-    pub fn expressions(&self) -> &[Expr<'a>] {
-        &self.items
+    pub fn elements(&self) -> &[Expr<'a>] {
+        &self.elements
     }
 
-    pub fn expressions_mut(&mut self) -> &mut Vec<Expr<'a>> {
-        &mut self.items
+    pub fn elements_mut(&mut self) -> &mut Vec<Expr<'a>> {
+        &mut self.elements
     }
 }
 
 impl<'a> ToCode<'a> for Block<'a> {
     fn to_code(&self, tokens: &mut Vec<Token<'a>>, options: &CodeFormat) {
         tokens.push(Token::Punctuation(Punctuation::LeftBrace));
-        for expr in self.expressions() {
+        for expr in self.elements() {
             expr.to_code(tokens, options);
         }
         tokens.push(Token::Punctuation(Punctuation::RightBrace));

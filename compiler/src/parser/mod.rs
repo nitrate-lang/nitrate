@@ -34,7 +34,7 @@ impl<'a> Parser<'a> {
             .with_return_type(Builder::get_i32())
             .with_definition(
                 Builder::get_block()
-                    .add_expression(
+                    .add_element(
                         Builder::get_return()
                             .with_value(Builder::get_integer().with_u32(10).build())
                             .build(),
