@@ -12,7 +12,7 @@ pub struct StructType<'a> {
 }
 
 impl<'a> StructType<'a> {
-    fn new(
+    pub fn new(
         name: Option<&'a str>,
         attributes: Vec<Expr<'a>>,
         fields: BTreeMap<&'a str, Arc<Type<'a>>>,

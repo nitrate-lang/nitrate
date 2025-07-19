@@ -11,6 +11,7 @@ use super::object::Object;
 use super::returns::Return;
 use super::statement::Statement;
 use super::string::StringLit;
+use super::struct_type::StructType;
 use super::tuple_type::TupleType;
 use super::types::{InnerType, Type};
 use super::unary_op::{UnaryExpr, UnaryOperator};
@@ -743,5 +744,65 @@ impl<'a> ArrayTypeBuilderHelper<'a> {
         )));
 
         Expr::new(array_type, self.outer.get_metadata())
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Hash)]
+pub struct StructTypeBuilderHelper<'a> {
+    outer: Builder<'a>,
+    name: Option<&'a str>,
+    attributes: Vec<Expr<'a>>,
+    fields: BTreeMap<&'a str, Arc<Type<'a>>>,
+}
+
+impl<'a> StructTypeBuilderHelper<'a> {
+    pub fn new(outer: Builder<'a>) -> Self {
+        StructTypeBuilderHelper {
+            outer,
+            name: None,
+            attributes: Vec::new(),
+            fields: BTreeMap::new(),
+        }
+    }
+
+    pub fn with_name(mut self, name: &'a str) -> Self {
+        self.name = Some(name);
+        self
+    }
+
+    pub fn add_attribute(mut self, attribute: Expr<'a>) -> Self {
+        self.attributes.push(attribute);
+        self
+    }
+
+    pub fn add_attributes<I>(mut self, attributes: I) -> Self
+    where
+        I: IntoIterator<Item = Expr<'a>>,
+    {
+        self.attributes.extend(attributes);
+        self
+    }
+
+    pub fn add_field(mut self, name: &'a str, ty: Arc<Type<'a>>) -> Self {
+        self.fields.insert(name, ty);
+        self
+    }
+
+    pub fn add_fields<I>(mut self, fields: I) -> Self
+    where
+        I: IntoIterator<Item = (&'a str, Arc<Type<'a>>)>,
+    {
+        self.fields.extend(fields);
+        self
+    }
+
+    pub fn build(self) -> Expr<'a> {
+        let struct_type = InnerExpr::StructType(Box::new(StructType::new(
+            self.name,
+            self.attributes,
+            self.fields,
+        )));
+
+        Expr::new(struct_type, self.outer.get_metadata())
     }
 }

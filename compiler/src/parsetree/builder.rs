@@ -233,4 +233,12 @@ impl<'a> Builder<'a> {
     pub fn get_array_type() -> ArrayTypeBuilderHelper<'a> {
         ArrayTypeBuilderHelper::new(Builder::default())
     }
+
+    pub fn struct_type(self) -> StructTypeBuilderHelper<'a> {
+        StructTypeBuilderHelper::new(self)
+    }
+
+    pub fn get_struct_type() -> StructTypeBuilderHelper<'a> {
+        StructTypeBuilderHelper::new(Builder::default())
+    }
 }
