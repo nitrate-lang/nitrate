@@ -13,7 +13,7 @@ pub struct FunctionType<'a> {
 }
 
 impl<'a> FunctionType<'a> {
-    fn new(
+    pub fn new(
         parameters: Vec<FunctionParameter<'a>>,
         return_type: Option<Arc<Type<'a>>>,
         attributes: Vec<Expr<'a>>,

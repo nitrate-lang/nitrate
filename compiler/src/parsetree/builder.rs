@@ -241,4 +241,12 @@ impl<'a> Builder<'a> {
     pub fn get_struct_type() -> StructTypeBuilderHelper<'a> {
         StructTypeBuilderHelper::new(Builder::default())
     }
+
+    pub fn function_type(self) -> FunctionTypeBuilderHelper<'a> {
+        FunctionTypeBuilderHelper::new(self)
+    }
+
+    pub fn get_function_type() -> FunctionTypeBuilderHelper<'a> {
+        FunctionTypeBuilderHelper::new(Builder::default())
+    }
 }
