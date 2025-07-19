@@ -4,12 +4,7 @@ use super::function_type::FunctionType;
 use super::struct_type::StructType;
 use super::tuple_type::TupleType;
 use crate::lexer::{Identifier, Punctuation, Token};
-use crate::parsetree::{
-    ArrayTypeBuilder, FunctionTypeBuilder, OriginTag, StructTypeBuilder, TupleTypeBuilder,
-};
-use hashbrown::HashSet;
-use std::collections::BTreeMap;
-use std::sync::{Arc, Mutex};
+use crate::parsetree::OriginTag;
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Hash)]
 pub enum InnerType<'a> {

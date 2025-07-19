@@ -7,7 +7,7 @@ pub struct StringLit<'a> {
 }
 
 impl<'a> StringLit<'a> {
-    fn new(value: &'a [u8]) -> Self {
+    pub fn new(value: &'a [u8]) -> Self {
         StringLit { value }
     }
 
@@ -28,21 +28,5 @@ impl<'a> std::ops::Deref for StringLit<'a> {
 
     fn deref(&self) -> &Self::Target {
         &self.value
-    }
-}
-
-#[derive(Debug, Clone, Default, PartialEq, Eq, PartialOrd, Hash)]
-pub struct StringLitBuilder<'a> {
-    value: Option<&'a [u8]>,
-}
-
-impl<'a> StringLitBuilder<'a> {
-    pub fn with_value(mut self, value: &'a [u8]) -> Self {
-        self.value = Some(value);
-        self
-    }
-
-    pub fn build(self) -> StringLit<'a> {
-        StringLit::new(self.value.expect("StringLitBuilder must have a value"))
     }
 }

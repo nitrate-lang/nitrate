@@ -35,19 +35,3 @@ impl<'a> ToCode<'a> for List<'a> {
         tokens.push(Token::Punctuation(Punctuation::RightBracket));
     }
 }
-
-#[derive(Debug, Clone, Default, PartialEq, Eq, PartialOrd, Hash)]
-pub struct ListBuilder<'a> {
-    elements: Vec<Expr<'a>>,
-}
-
-impl<'a> ListBuilder<'a> {
-    pub fn with_element(mut self, element: Expr<'a>) -> Self {
-        self.elements.push(element);
-        self
-    }
-
-    pub fn build(self) -> List<'a> {
-        List::new(self.elements)
-    }
-}

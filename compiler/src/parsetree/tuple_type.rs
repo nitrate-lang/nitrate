@@ -32,24 +32,3 @@ impl<'a> ToCode<'a> for TupleType<'a> {
         tokens.push(Token::Punctuation(Punctuation::RightBracket));
     }
 }
-
-#[derive(Debug, Clone, Default, PartialEq, Eq, PartialOrd, Hash)]
-pub struct TupleTypeBuilder<'a> {
-    elements: Vec<Arc<Type<'a>>>,
-}
-
-impl<'a> TupleTypeBuilder<'a> {
-    pub fn with_element(mut self, element: Arc<Type<'a>>) -> Self {
-        self.elements.push(element);
-        self
-    }
-
-    pub fn with_elements(mut self, elements: Vec<Arc<Type<'a>>>) -> Self {
-        self.elements.extend(elements);
-        self
-    }
-
-    pub fn build(self) -> TupleType<'a> {
-        TupleType::new(self.elements)
-    }
-}

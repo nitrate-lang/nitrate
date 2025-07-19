@@ -81,39 +81,3 @@ impl<'a> ToCode<'a> for Variable<'a> {
         }
     }
 }
-
-#[derive(Debug, Clone, Default, PartialEq, Eq, PartialOrd, Hash)]
-pub struct VariableBuilder<'a> {
-    kind: Option<VariableKind>,
-    name: &'a str,
-    var_type: Option<Arc<Type<'a>>>,
-    value: Option<Box<Expr<'a>>>,
-}
-
-impl<'a> VariableBuilder<'a> {
-    pub fn with_kind(mut self, kind: VariableKind) -> Self {
-        self.kind = Some(kind);
-        self
-    }
-
-    pub fn with_name(mut self, name: &'a str) -> Self {
-        self.name = name;
-        self
-    }
-
-    pub fn with_type(mut self, var_type: Arc<Type<'a>>) -> Self {
-        self.var_type = Some(var_type);
-        self
-    }
-
-    pub fn with_value(mut self, value: Box<Expr<'a>>) -> Self {
-        self.value = Some(value);
-        self
-    }
-
-    pub fn build(self) -> Variable<'a> {
-        let kind = self.kind.expect("VariableBuilder kind must be set");
-
-        Variable::new(kind, self.name, self.var_type, self.value)
-    }
-}

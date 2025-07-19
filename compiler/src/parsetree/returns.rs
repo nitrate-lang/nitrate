@@ -32,19 +32,3 @@ impl<'a> ToCode<'a> for Return<'a> {
         }
     }
 }
-
-#[derive(Debug, Clone, Default, PartialEq, Eq, PartialOrd, Hash)]
-pub struct ReturnBuilder<'a> {
-    value: Option<Box<Expr<'a>>>,
-}
-
-impl<'a> ReturnBuilder<'a> {
-    pub fn with_value(mut self, value: Box<Expr<'a>>) -> Self {
-        self.value = Some(value);
-        self
-    }
-
-    pub fn build(self) -> Return<'a> {
-        Return::new(self.value)
-    }
-}

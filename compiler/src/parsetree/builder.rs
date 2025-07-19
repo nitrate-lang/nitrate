@@ -7,7 +7,9 @@ use super::statement::Statement;
 use super::types::{InnerType, Type};
 use super::unary_op::UnaryExpr;
 use crate::lexer::IntegerKind;
-use crate::parsetree::{BinaryOperator, InnerExpr, IntegerLit, OriginTag, UnaryOperator};
+use crate::parsetree::{
+    BinaryOperator, CharLit, InnerExpr, IntegerLit, OriginTag, StringLit, UnaryOperator,
+};
 use apint::UInt;
 use std::sync::{Arc, LazyLock};
 
@@ -204,6 +206,59 @@ impl<'a> FloatBuilderHelper<'a> {
         let float_expr = InnerExpr::Float(FloatLit::new(value));
 
         Expr::new(float_expr, self.outer.metadata)
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Hash)]
+pub struct StringBuilderHelper<'a> {
+    outer: Builder<'a>,
+    value: Option<&'a [u8]>,
+}
+
+impl<'a> StringBuilderHelper<'a> {
+    fn new(outer: Builder<'a>) -> Self {
+        StringBuilderHelper { outer, value: None }
+    }
+
+    pub fn with_string(mut self, value: &'a str) -> Self {
+        self.value = Some(value.as_bytes());
+        self
+    }
+
+    pub fn with_bytes(mut self, value: &'a [u8]) -> Self {
+        self.value = Some(value);
+        self
+    }
+
+    pub fn build(self) -> Expr<'a> {
+        let value = self.value.expect("String value must be provided");
+        let string_expr = InnerExpr::String(StringLit::new(value));
+
+        Expr::new(string_expr, self.outer.metadata)
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Hash)]
+pub struct CharBuilderHelper<'a> {
+    outer: Builder<'a>,
+    value: Option<char>,
+}
+
+impl<'a> CharBuilderHelper<'a> {
+    fn new(outer: Builder<'a>) -> Self {
+        CharBuilderHelper { outer, value: None }
+    }
+
+    pub fn with_char(mut self, value: char) -> Self {
+        self.value = Some(value);
+        self
+    }
+
+    pub fn build(self) -> Expr<'a> {
+        let value = self.value.expect("Char value must be provided");
+        let char_expr = InnerExpr::Char(CharLit::new(value));
+
+        Expr::new(char_expr, self.outer.metadata)
     }
 }
 
@@ -429,6 +484,22 @@ impl<'a> Builder<'a> {
 
     pub fn get_float() -> FloatBuilderHelper<'a> {
         FloatBuilderHelper::new(Builder::default())
+    }
+
+    pub fn string(self) -> StringBuilderHelper<'a> {
+        StringBuilderHelper::new(self)
+    }
+
+    pub fn get_string() -> StringBuilderHelper<'a> {
+        StringBuilderHelper::new(Builder::default())
+    }
+
+    pub fn char(self) -> CharBuilderHelper<'a> {
+        CharBuilderHelper::new(self)
+    }
+
+    pub fn get_char() -> CharBuilderHelper<'a> {
+        CharBuilderHelper::new(Builder::default())
     }
 
     /////////////////////////////////////////////////////////////////
