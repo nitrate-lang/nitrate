@@ -64,13 +64,13 @@ impl<'a> ToCode<'a> for UnaryOperator {
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Hash)]
 pub struct UnaryExpr<'a> {
-    operand: Box<Expr<'a>>,
+    operand: Expr<'a>,
     operator: UnaryOperator,
     is_postfix: bool,
 }
 
 impl<'a> UnaryExpr<'a> {
-    pub fn new(operand: Box<Expr<'a>>, operator: UnaryOperator, is_postfix: bool) -> Self {
+    pub fn new(operand: Expr<'a>, operator: UnaryOperator, is_postfix: bool) -> Self {
         UnaryExpr {
             operand,
             operator,

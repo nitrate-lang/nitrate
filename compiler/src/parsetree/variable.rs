@@ -14,7 +14,7 @@ pub struct Variable<'a> {
     kind: VariableKind,
     name: &'a str,
     var_type: Option<Arc<Type<'a>>>,
-    value: Option<Box<Expr<'a>>>,
+    value: Option<Expr<'a>>,
 }
 
 impl<'a> Variable<'a> {
@@ -22,7 +22,7 @@ impl<'a> Variable<'a> {
         kind: VariableKind,
         name: &'a str,
         var_type: Option<Arc<Type<'a>>>,
-        value: Option<Box<Expr<'a>>>,
+        value: Option<Expr<'a>>,
     ) -> Self {
         Variable {
             kind,
@@ -53,11 +53,11 @@ impl<'a> Variable<'a> {
     }
 
     pub fn value(&self) -> Option<&Expr<'a>> {
-        self.value.as_deref()
+        self.value.as_ref()
     }
 
     pub fn value_mut(&mut self) -> Option<&mut Expr<'a>> {
-        self.value.as_deref_mut()
+        self.value.as_mut()
     }
 }
 

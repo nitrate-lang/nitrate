@@ -3,15 +3,15 @@ use crate::lexer::{Punctuation, Token};
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Hash)]
 pub struct Statement<'a> {
-    expr: Box<Expr<'a>>,
+    expr: Expr<'a>,
 }
 
 impl<'a> Statement<'a> {
-    pub fn new(expr: Box<Expr<'a>>) -> Self {
+    pub fn new(expr: Expr<'a>) -> Self {
         Statement { expr }
     }
 
-    pub fn into_inner(self) -> Box<Expr<'a>> {
+    pub fn into_inner(self) -> Expr<'a> {
         self.expr
     }
 

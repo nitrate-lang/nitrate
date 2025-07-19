@@ -36,7 +36,7 @@ impl<'a> Parser<'a> {
                 Builder::get_block()
                     .add_expression(
                         Builder::get_return()
-                            .with_value(Box::new(Builder::get_integer().with_u32(10).build()))
+                            .with_value(Builder::get_integer().with_u32(10).build())
                             .build(),
                     )
                     .build(),

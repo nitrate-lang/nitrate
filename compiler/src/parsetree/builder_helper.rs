@@ -338,7 +338,7 @@ impl<'a> ObjectBuilderHelper<'a> {
 pub struct UnaryExprBuilderHelper<'a> {
     outer: Builder<'a>,
     operator: Option<UnaryOperator>,
-    operand: Option<Box<Expr<'a>>>,
+    operand: Option<Expr<'a>>,
     is_postfix: Option<bool>,
 }
 
@@ -357,7 +357,7 @@ impl<'a> UnaryExprBuilderHelper<'a> {
         self
     }
 
-    pub fn with_operand(mut self, operand: Box<Expr<'a>>) -> Self {
+    pub fn with_operand(mut self, operand: Expr<'a>) -> Self {
         self.operand = Some(operand);
         self
     }
@@ -426,7 +426,7 @@ impl<'a> BinaryExprBuilderHelper<'a> {
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Hash)]
 pub struct StatementBuilderHelper<'a> {
     outer: Builder<'a>,
-    expression: Option<Box<Expr<'a>>>,
+    expression: Option<Expr<'a>>,
 }
 
 impl<'a> StatementBuilderHelper<'a> {
@@ -437,7 +437,7 @@ impl<'a> StatementBuilderHelper<'a> {
         }
     }
 
-    pub fn with_expression(mut self, expression: Box<Expr<'a>>) -> Self {
+    pub fn with_expression(mut self, expression: Expr<'a>) -> Self {
         self.expression = Some(expression);
         self
     }
@@ -581,7 +581,7 @@ pub struct VariableBuilderHelper<'a> {
     kind: Option<VariableKind>,
     name: &'a str,
     ty: Option<Arc<Type<'a>>>,
-    value: Option<Box<Expr<'a>>>,
+    value: Option<Expr<'a>>,
 }
 
 impl<'a> VariableBuilderHelper<'a> {
@@ -610,7 +610,7 @@ impl<'a> VariableBuilderHelper<'a> {
         self
     }
 
-    pub fn with_value(mut self, value: Box<Expr<'a>>) -> Self {
+    pub fn with_value(mut self, value: Expr<'a>) -> Self {
         self.value = Some(value);
         self
     }
@@ -629,7 +629,7 @@ impl<'a> VariableBuilderHelper<'a> {
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Hash)]
 pub struct ReturnBuilderHelper<'a> {
     outer: Builder<'a>,
-    value: Option<Box<Expr<'a>>>,
+    value: Option<Expr<'a>>,
 }
 
 impl<'a> ReturnBuilderHelper<'a> {
@@ -637,7 +637,7 @@ impl<'a> ReturnBuilderHelper<'a> {
         ReturnBuilderHelper { outer, value: None }
     }
 
-    pub fn with_value(mut self, value: Box<Expr<'a>>) -> Self {
+    pub fn with_value(mut self, value: Expr<'a>) -> Self {
         self.value = Some(value);
         self
     }
