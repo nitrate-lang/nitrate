@@ -515,7 +515,7 @@ impl<'a> FunctionBuilderHelper<'a> {
         mut self,
         name: &'a str,
         ty: Option<Arc<Type<'a>>>,
-        default_value: Option<Box<Expr<'a>>>,
+        default_value: Option<Expr<'a>>,
     ) -> Self {
         self.parameters
             .push((name, ty, default_value.map(|v| v.into())));
@@ -524,7 +524,7 @@ impl<'a> FunctionBuilderHelper<'a> {
 
     pub fn with_parameters<I>(mut self, parameters: I) -> Self
     where
-        I: IntoIterator<Item = (&'a str, Option<Arc<Type<'a>>>, Option<Box<Expr<'a>>>)>,
+        I: IntoIterator<Item = (&'a str, Option<Arc<Type<'a>>>, Option<Expr<'a>>)>,
     {
         self.parameters.extend(parameters);
         self

@@ -6,7 +6,7 @@ use super::types::Type;
 use crate::lexer::{Identifier, Keyword, Operator, Punctuation, Token};
 use std::sync::Arc;
 
-pub type FunctionParameter<'a> = (&'a str, Option<Arc<Type<'a>>>, Option<Box<Expr<'a>>>);
+pub type FunctionParameter<'a> = (&'a str, Option<Arc<Type<'a>>>, Option<Expr<'a>>);
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Hash)]
 pub struct Function<'a> {
