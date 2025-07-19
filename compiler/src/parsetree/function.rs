@@ -6,7 +6,7 @@ use super::types::Type;
 use crate::lexer::{Identifier, Keyword, Operator, Punctuation, Token};
 use std::sync::Arc;
 
-pub type FunctionParameter<'a> = (&'a str, Arc<Type<'a>>, Option<Box<Expr<'a>>>);
+pub type FunctionParameter<'a> = (&'a str, Option<Arc<Type<'a>>>, Option<Box<Expr<'a>>>);
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Hash)]
 pub struct Function<'a> {
@@ -94,9 +94,11 @@ impl<'a> ToCode<'a> for Function<'a> {
 
             tokens.push(Token::Identifier(Identifier::new(name)));
 
-            if !matches!(***ty, InnerType::InferType) {
-                tokens.push(Token::Punctuation(Punctuation::Colon));
-                ty.to_code(tokens, options);
+            if let Some(ty) = ty {
+                if !matches!(***ty, InnerType::InferType) {
+                    tokens.push(Token::Punctuation(Punctuation::Colon));
+                    ty.to_code(tokens, options);
+                }
             }
 
             if let Some(default_expr) = default {

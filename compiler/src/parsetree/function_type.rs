@@ -57,9 +57,11 @@ impl<'a> ToCode<'a> for FunctionType<'a> {
 
             tokens.push(Token::Identifier(Identifier::new(name)));
 
-            if !matches!(***ty, InnerType::InferType) {
-                tokens.push(Token::Punctuation(Punctuation::Colon));
-                ty.to_code(tokens, options);
+            if let Some(ty) = ty {
+                if !matches!(***ty, InnerType::InferType) {
+                    tokens.push(Token::Punctuation(Punctuation::Colon));
+                    ty.to_code(tokens, options);
+                }
             }
 
             if let Some(default_expr) = default {

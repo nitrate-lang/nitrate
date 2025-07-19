@@ -256,7 +256,8 @@ impl<'a> Expr<'a> {
             }
             InnerExpr::FunctionType(function) => {
                 function.parameters().iter().all(|(_, ty, default)| {
-                    ty.is_lit() && default.as_ref().map_or(true, |d| d.is_lit())
+                    ty.as_ref().map_or(true, |f| f.is_lit())
+                        && default.as_ref().map_or(true, |d| d.is_lit())
                 }) && function.return_type().map_or(true, |ty| ty.is_lit())
                     && function.attributes().iter().all(|attr| attr.is_lit())
             }
