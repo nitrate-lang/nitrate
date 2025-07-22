@@ -14,11 +14,13 @@ mod returns;
 mod statement;
 mod string;
 mod struct_type;
+mod to_code;
 mod tuple_type;
 mod types;
 mod unary_op;
 mod variable;
 
 pub use builder::*;
-pub use expression::{CodeFormat, Expr, OriginTag, ToCode};
+pub use expression::{Expr, OriginTag};
+pub use to_code::*;
 pub use types::Type;

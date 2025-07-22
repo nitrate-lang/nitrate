@@ -1,6 +1,4 @@
-use super::expression::{CodeFormat, ToCode};
 use super::types::Type;
-use crate::lexer::{Punctuation, Token};
 use std::sync::Arc;
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Hash)]
@@ -19,16 +17,5 @@ impl<'a> TupleType<'a> {
 
     pub fn elements(&self) -> &[Arc<Type<'a>>] {
         &self.elements
-    }
-}
-
-impl<'a> ToCode<'a> for TupleType<'a> {
-    fn to_code(&self, tokens: &mut Vec<Token<'a>>, options: &CodeFormat) {
-        tokens.push(Token::Punctuation(Punctuation::LeftBracket));
-        for (i, ty) in self.elements().iter().enumerate() {
-            (i > 0).then(|| tokens.push(Token::Punctuation(Punctuation::Comma)));
-            ty.to_code(tokens, options);
-        }
-        tokens.push(Token::Punctuation(Punctuation::RightBracket));
     }
 }

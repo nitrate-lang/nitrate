@@ -1,7 +1,5 @@
 use super::expression::Expr;
-use super::expression::{CodeFormat, ToCode};
 use super::types::Type;
-use crate::lexer::{Punctuation, Token};
 use std::sync::Arc;
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Hash)]
@@ -21,15 +19,5 @@ impl<'a> ArrayType<'a> {
 
     pub fn count(&self) -> &Expr<'a> {
         &self.count
-    }
-}
-
-impl<'a> ToCode<'a> for ArrayType<'a> {
-    fn to_code(&self, tokens: &mut Vec<Token<'a>>, options: &CodeFormat) {
-        tokens.push(Token::Punctuation(Punctuation::LeftBracket));
-        self.element_ty.to_code(tokens, options);
-        tokens.push(Token::Punctuation(Punctuation::Semicolon));
-        self.count.to_code(tokens, options);
-        tokens.push(Token::Punctuation(Punctuation::RightBracket));
     }
 }

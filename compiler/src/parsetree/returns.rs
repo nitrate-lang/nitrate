@@ -1,5 +1,4 @@
-use super::expression::{CodeFormat, Expr, ToCode};
-use crate::lexer::{Keyword, Token};
+use super::expression::Expr;
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Hash)]
 pub struct Return<'a> {
@@ -21,14 +20,5 @@ impl<'a> Return<'a> {
 
     pub fn value_mut(&mut self) -> Option<&mut Expr<'a>> {
         self.value.as_mut()
-    }
-}
-
-impl<'a> ToCode<'a> for Return<'a> {
-    fn to_code(&self, tokens: &mut Vec<Token<'a>>, options: &CodeFormat) {
-        tokens.push(Token::Keyword(Keyword::Ret));
-        if let Some(value) = self.value() {
-            value.to_code(tokens, options);
-        }
     }
 }

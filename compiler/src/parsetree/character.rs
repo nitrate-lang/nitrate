@@ -1,6 +1,3 @@
-use super::expression::{CodeFormat, ToCode};
-use crate::lexer::Token;
-
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Hash)]
 pub struct CharLit {
     value: char,
@@ -17,12 +14,6 @@ impl CharLit {
 
     pub fn get(&self) -> char {
         self.value
-    }
-}
-
-impl<'a> ToCode<'a> for CharLit {
-    fn to_code(&self, tokens: &mut Vec<Token<'a>>, _options: &CodeFormat) {
-        tokens.push(Token::Char(self.get()));
     }
 }
 

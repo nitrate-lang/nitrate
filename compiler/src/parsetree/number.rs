@@ -1,5 +1,4 @@
-use super::expression::{CodeFormat, ToCode};
-use crate::lexer::{Float, Integer, IntegerKind, Token};
+use crate::lexer::IntegerKind;
 use apint::UInt;
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Hash)]
@@ -27,17 +26,6 @@ impl IntegerLit {
 
     pub fn kind(&self) -> IntegerKind {
         self.kind
-    }
-}
-
-impl<'a> ToCode<'a> for IntegerLit {
-    fn to_code(&self, tokens: &mut Vec<Token<'a>>, _options: &CodeFormat) {
-        let u128 = self
-            .try_to_u128()
-            .expect("IntegerLit apint::UInt value should fit in u128");
-
-        let number = Integer::new(u128, self.kind());
-        tokens.push(Token::Integer(number));
     }
 }
 
@@ -69,13 +57,6 @@ impl FloatLit {
 }
 
 impl std::cmp::Eq for FloatLit {}
-
-impl<'a> ToCode<'a> for FloatLit {
-    fn to_code(&self, tokens: &mut Vec<Token<'a>>, _options: &CodeFormat) {
-        let number = Float::new(self.get());
-        tokens.push(Token::Float(number));
-    }
-}
 
 impl std::ops::Deref for FloatLit {
     type Target = f64;

@@ -1,5 +1,4 @@
-use super::expression::{CodeFormat, Expr, ToCode};
-use crate::lexer::{Punctuation, Token};
+use super::expression::Expr;
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Hash)]
 pub struct Statement<'a> {
@@ -21,12 +20,5 @@ impl<'a> Statement<'a> {
 
     pub fn get_mut(&mut self) -> &mut Expr<'a> {
         &mut self.expr
-    }
-}
-
-impl<'a> ToCode<'a> for Statement<'a> {
-    fn to_code(&self, tokens: &mut Vec<Token<'a>>, options: &CodeFormat) {
-        self.expr.to_code(tokens, options);
-        tokens.push(Token::Punctuation(Punctuation::Semicolon));
     }
 }

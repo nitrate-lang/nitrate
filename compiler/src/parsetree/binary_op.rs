@@ -1,6 +1,4 @@
 use super::expression::Expr;
-use super::expression::{CodeFormat, ToCode};
-use crate::lexer::{Operator, Token};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Hash)]
 pub enum BinaryOperator {
@@ -79,61 +77,6 @@ pub enum BinaryOperator {
     Spaceship, /* '<=>':        "Spaceship Operator" */
 }
 
-impl<'a> ToCode<'a> for BinaryOperator {
-    fn to_code(&self, tokens: &mut Vec<Token<'a>>, _options: &CodeFormat) {
-        let operator = Token::Operator(match self {
-            BinaryOperator::Add => Operator::Add,
-            BinaryOperator::Sub => Operator::Sub,
-            BinaryOperator::Mul => Operator::Mul,
-            BinaryOperator::Div => Operator::Div,
-            BinaryOperator::Mod => Operator::Mod,
-            BinaryOperator::BitAnd => Operator::BitAnd,
-            BinaryOperator::BitOr => Operator::BitOr,
-            BinaryOperator::BitXor => Operator::BitXor,
-            BinaryOperator::BitShl => Operator::BitShl,
-            BinaryOperator::BitShr => Operator::BitShr,
-            BinaryOperator::BitRotl => Operator::BitRotl,
-            BinaryOperator::BitRotr => Operator::BitRotr,
-            BinaryOperator::LogicAnd => Operator::LogicAnd,
-            BinaryOperator::LogicOr => Operator::LogicOr,
-            BinaryOperator::LogicXor => Operator::LogicXor,
-            BinaryOperator::LogicLt => Operator::LogicLt,
-            BinaryOperator::LogicGt => Operator::LogicGt,
-            BinaryOperator::LogicLe => Operator::LogicLe,
-            BinaryOperator::LogicGe => Operator::LogicGe,
-            BinaryOperator::LogicEq => Operator::LogicEq,
-            BinaryOperator::LogicNe => Operator::LogicNe,
-            BinaryOperator::Set => Operator::Set,
-            BinaryOperator::SetPlus => Operator::SetPlus,
-            BinaryOperator::SetMinus => Operator::SetMinus,
-            BinaryOperator::SetTimes => Operator::SetTimes,
-            BinaryOperator::SetSlash => Operator::SetSlash,
-            BinaryOperator::SetPercent => Operator::SetPercent,
-            BinaryOperator::SetBitAnd => Operator::SetBitAnd,
-            BinaryOperator::SetBitOr => Operator::SetBitOr,
-            BinaryOperator::SetBitXor => Operator::SetBitXor,
-            BinaryOperator::SetBitShl => Operator::SetBitShl,
-            BinaryOperator::SetBitShr => Operator::SetBitShr,
-            BinaryOperator::SetBitRotl => Operator::SetBitRotl,
-            BinaryOperator::SetBitRotr => Operator::SetBitRotr,
-            BinaryOperator::SetLogicAnd => Operator::SetLogicAnd,
-            BinaryOperator::SetLogicOr => Operator::SetLogicOr,
-            BinaryOperator::SetLogicXor => Operator::SetLogicXor,
-            BinaryOperator::As => Operator::As,
-            BinaryOperator::Dot => Operator::Dot,
-            BinaryOperator::Ellipsis => Operator::Ellipsis,
-            BinaryOperator::Scope => Operator::Scope,
-            BinaryOperator::Arrow => Operator::Arrow,
-            BinaryOperator::BlockArrow => Operator::BlockArrow,
-            BinaryOperator::Range => Operator::Range,
-            BinaryOperator::Question => Operator::Question,
-            BinaryOperator::Spaceship => Operator::Spaceship,
-        });
-
-        tokens.push(operator);
-    }
-}
-
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Hash)]
 pub struct BinaryExpr<'a> {
     left: Expr<'a>,
@@ -160,13 +103,5 @@ impl<'a> BinaryExpr<'a> {
 
     pub fn right(&self) -> &Expr<'a> {
         &self.right
-    }
-}
-
-impl<'a> ToCode<'a> for BinaryExpr<'a> {
-    fn to_code(&self, tokens: &mut Vec<Token<'a>>, options: &CodeFormat) {
-        self.left.to_code(tokens, options);
-        self.operator.to_code(tokens, options);
-        self.right.to_code(tokens, options);
     }
 }

@@ -1,10 +1,9 @@
 use super::array_type::ArrayType;
 use super::expression::OriginTag;
-use super::expression::{CodeFormat, Expr, InnerExpr, Metadata, ToCode};
+use super::expression::{Expr, InnerExpr, Metadata};
 use super::function_type::FunctionType;
 use super::struct_type::StructType;
 use super::tuple_type::TupleType;
-use crate::lexer::{Identifier, Punctuation, Token};
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Hash)]
 pub enum InnerType<'a> {
@@ -124,43 +123,6 @@ impl<'a> Type<'a> {
                 }) && function.return_type().map_or(true, |ty| ty.is_lit())
                     && function.attributes().iter().all(|attr| attr.is_lit())
             }
-        }
-    }
-}
-
-impl<'a> ToCode<'a> for Type<'a> {
-    fn to_code(&self, tokens: &mut Vec<Token<'a>>, options: &CodeFormat) {
-        if self.has_parenthesis() {
-            tokens.push(Token::Punctuation(Punctuation::LeftParenthesis));
-        }
-
-        match &self.expr {
-            InnerType::Bool => tokens.push(Token::Identifier(Identifier::new("bool"))),
-            InnerType::UInt8 => tokens.push(Token::Identifier(Identifier::new("u8"))),
-            InnerType::UInt16 => tokens.push(Token::Identifier(Identifier::new("u16"))),
-            InnerType::UInt32 => tokens.push(Token::Identifier(Identifier::new("u32"))),
-            InnerType::UInt64 => tokens.push(Token::Identifier(Identifier::new("u64"))),
-            InnerType::UInt128 => tokens.push(Token::Identifier(Identifier::new("u128"))),
-            InnerType::Int8 => tokens.push(Token::Identifier(Identifier::new("i8"))),
-            InnerType::Int16 => tokens.push(Token::Identifier(Identifier::new("i16"))),
-            InnerType::Int32 => tokens.push(Token::Identifier(Identifier::new("i32"))),
-            InnerType::Int64 => tokens.push(Token::Identifier(Identifier::new("i64"))),
-            InnerType::Int128 => tokens.push(Token::Identifier(Identifier::new("i128"))),
-            InnerType::Float8 => tokens.push(Token::Identifier(Identifier::new("f8"))),
-            InnerType::Float16 => tokens.push(Token::Identifier(Identifier::new("f16"))),
-            InnerType::Float32 => tokens.push(Token::Identifier(Identifier::new("f32"))),
-            InnerType::Float64 => tokens.push(Token::Identifier(Identifier::new("f64"))),
-            InnerType::Float128 => tokens.push(Token::Identifier(Identifier::new("f128"))),
-
-            InnerType::InferType => tokens.push(Token::Identifier(Identifier::new("_"))),
-            InnerType::TupleType(e) => e.to_code(tokens, options),
-            InnerType::ArrayType(e) => e.to_code(tokens, options),
-            InnerType::StructType(e) => e.to_code(tokens, options),
-            InnerType::FunctionType(e) => e.to_code(tokens, options),
-        }
-
-        if self.has_parenthesis() {
-            tokens.push(Token::Punctuation(Punctuation::RightParenthesis));
         }
     }
 }

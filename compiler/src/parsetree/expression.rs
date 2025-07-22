@@ -1,5 +1,3 @@
-use crate::lexer::*;
-
 use super::array_type::ArrayType;
 use super::binary_op::BinaryExpr;
 use super::block::Block;
@@ -305,73 +303,6 @@ impl<'a> Expr<'a> {
             InnerExpr::ArrayType(_) => true,
             InnerExpr::StructType(_) => true,
             InnerExpr::FunctionType(_) => true,
-        }
-    }
-}
-
-#[derive(Debug, Default, Clone, PartialEq, PartialOrd, Hash)]
-pub struct CodeFormat {}
-
-pub trait ToCode<'a> {
-    fn to_code(&self, tokens: &mut Vec<Token<'a>>, options: &CodeFormat);
-}
-
-impl<'a> ToCode<'a> for Expr<'a> {
-    fn to_code(&self, tokens: &mut Vec<Token<'a>>, options: &CodeFormat) {
-        if self.is_discarded() {
-            return;
-        }
-
-        if self.has_parenthesis() {
-            tokens.push(Token::Punctuation(Punctuation::LeftParenthesis));
-        }
-
-        match &self.expr {
-            InnerExpr::Discard => {}
-
-            InnerExpr::Integer(e) => e.to_code(tokens, options),
-            InnerExpr::Float(e) => e.to_code(tokens, options),
-            InnerExpr::String(e) => e.to_code(tokens, options),
-            InnerExpr::Char(e) => e.to_code(tokens, options),
-            InnerExpr::List(e) => e.to_code(tokens, options),
-            InnerExpr::Object(e) => e.to_code(tokens, options),
-
-            InnerExpr::UnaryOp(e) => e.to_code(tokens, options),
-            InnerExpr::BinaryOp(e) => e.to_code(tokens, options),
-            InnerExpr::Statement(e) => e.to_code(tokens, options),
-            InnerExpr::Block(e) => e.to_code(tokens, options),
-
-            InnerExpr::Function(e) => e.to_code(tokens, options),
-            InnerExpr::Variable(e) => e.to_code(tokens, options),
-
-            InnerExpr::Return(e) => e.to_code(tokens, options),
-
-            InnerExpr::Bool => tokens.push(Token::Identifier(Identifier::new("bool"))),
-            InnerExpr::UInt8 => tokens.push(Token::Identifier(Identifier::new("u8"))),
-            InnerExpr::UInt16 => tokens.push(Token::Identifier(Identifier::new("u16"))),
-            InnerExpr::UInt32 => tokens.push(Token::Identifier(Identifier::new("u32"))),
-            InnerExpr::UInt64 => tokens.push(Token::Identifier(Identifier::new("u64"))),
-            InnerExpr::UInt128 => tokens.push(Token::Identifier(Identifier::new("u128"))),
-            InnerExpr::Int8 => tokens.push(Token::Identifier(Identifier::new("i8"))),
-            InnerExpr::Int16 => tokens.push(Token::Identifier(Identifier::new("i16"))),
-            InnerExpr::Int32 => tokens.push(Token::Identifier(Identifier::new("i32"))),
-            InnerExpr::Int64 => tokens.push(Token::Identifier(Identifier::new("i64"))),
-            InnerExpr::Int128 => tokens.push(Token::Identifier(Identifier::new("i128"))),
-            InnerExpr::Float8 => tokens.push(Token::Identifier(Identifier::new("f8"))),
-            InnerExpr::Float16 => tokens.push(Token::Identifier(Identifier::new("f16"))),
-            InnerExpr::Float32 => tokens.push(Token::Identifier(Identifier::new("f32"))),
-            InnerExpr::Float64 => tokens.push(Token::Identifier(Identifier::new("f64"))),
-            InnerExpr::Float128 => tokens.push(Token::Identifier(Identifier::new("f128"))),
-
-            InnerExpr::InferType => tokens.push(Token::Identifier(Identifier::new("_"))),
-            InnerExpr::TupleType(e) => e.to_code(tokens, options),
-            InnerExpr::ArrayType(e) => e.to_code(tokens, options),
-            InnerExpr::StructType(e) => e.to_code(tokens, options),
-            InnerExpr::FunctionType(e) => e.to_code(tokens, options),
-        }
-
-        if self.has_parenthesis() {
-            tokens.push(Token::Punctuation(Punctuation::RightParenthesis));
         }
     }
 }
