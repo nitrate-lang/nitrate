@@ -5,6 +5,7 @@ mod builder;
 mod builder_helper;
 mod character;
 mod expression;
+mod flat_tree;
 mod function;
 mod function_type;
 mod list;
@@ -22,5 +23,6 @@ mod variable;
 
 pub use builder::*;
 pub use expression::{Expr, OriginTag};
+pub use flat_tree::*;
 pub use to_code::*;
 pub use types::Type;
