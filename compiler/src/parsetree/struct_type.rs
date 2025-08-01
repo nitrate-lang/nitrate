@@ -6,14 +6,14 @@ use std::sync::Arc;
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Hash)]
 pub struct StructType<'a> {
     name: Option<&'a str>,
-    attributes: Vec<Expr<'a>>,
+    attributes: Vec<Box<Expr<'a>>>,
     fields: BTreeMap<&'a str, Arc<Type<'a>>>,
 }
 
 impl<'a> StructType<'a> {
     pub fn new(
         name: Option<&'a str>,
-        attributes: Vec<Expr<'a>>,
+        attributes: Vec<Box<Expr<'a>>>,
         fields: BTreeMap<&'a str, Arc<Type<'a>>>,
     ) -> Self {
         StructType {
@@ -31,7 +31,7 @@ impl<'a> StructType<'a> {
         self.name
     }
 
-    pub fn attributes(&self) -> &[Expr<'a>] {
+    pub fn attributes(&self) -> &[Box<Expr<'a>>] {
         &self.attributes
     }
 

@@ -2,15 +2,15 @@ use super::expression::Expr;
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Hash)]
 pub struct Statement<'a> {
-    expr: Expr<'a>,
+    expr: Box<Expr<'a>>,
 }
 
 impl<'a> Statement<'a> {
-    pub fn new(expr: Expr<'a>) -> Self {
+    pub fn new(expr: Box<Expr<'a>>) -> Self {
         Statement { expr }
     }
 
-    pub fn into_inner(self) -> Expr<'a> {
+    pub fn into_inner(self) -> Box<Expr<'a>> {
         self.expr
     }
 

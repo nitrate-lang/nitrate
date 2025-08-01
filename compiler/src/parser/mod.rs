@@ -46,7 +46,7 @@ impl<'a> Parser<'a> {
                     )
                     .build();
 
-                Some(func)
+                Some(*func)
             }
 
             _ => None,

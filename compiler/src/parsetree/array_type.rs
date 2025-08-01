@@ -5,11 +5,11 @@ use std::sync::Arc;
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Hash)]
 pub struct ArrayType<'a> {
     element_ty: Arc<Type<'a>>,
-    count: Expr<'a>,
+    count: Box<Expr<'a>>,
 }
 
 impl<'a> ArrayType<'a> {
-    pub fn new(element_ty: Arc<Type<'a>>, count: Expr<'a>) -> Self {
+    pub fn new(element_ty: Arc<Type<'a>>, count: Box<Expr<'a>>) -> Self {
         ArrayType { element_ty, count }
     }
 

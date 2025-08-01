@@ -3,13 +3,13 @@ use super::expression::Expr;
 use super::types::Type;
 use std::sync::Arc;
 
-pub type FunctionParameter<'a> = (&'a str, Option<Arc<Type<'a>>>, Option<Expr<'a>>);
+pub type FunctionParameter<'a> = (&'a str, Option<Arc<Type<'a>>>, Option<Box<Expr<'a>>>);
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Hash)]
 pub struct Function<'a> {
     parameters: Vec<FunctionParameter<'a>>,
     return_type: Option<Arc<Type<'a>>>,
-    attributes: Vec<Expr<'a>>,
+    attributes: Vec<Box<Expr<'a>>>,
     name: &'a str,
     definition: Option<Block<'a>>,
 }
@@ -19,7 +19,7 @@ impl<'a> Function<'a> {
         name: &'a str,
         parameters: Vec<FunctionParameter<'a>>,
         return_type: Option<Arc<Type<'a>>>,
-        attributes: Vec<Expr<'a>>,
+        attributes: Vec<Box<Expr<'a>>>,
         definition: Option<Block<'a>>,
     ) -> Self {
         Function {
@@ -47,11 +47,11 @@ impl<'a> Function<'a> {
         self.return_type = ty;
     }
 
-    pub fn attributes(&self) -> &Vec<Expr<'a>> {
+    pub fn attributes(&self) -> &Vec<Box<Expr<'a>>> {
         &self.attributes
     }
 
-    pub fn attributes_mut(&mut self) -> &mut Vec<Expr<'a>> {
+    pub fn attributes_mut(&mut self) -> &mut Vec<Box<Expr<'a>>> {
         &mut self.attributes
     }
 

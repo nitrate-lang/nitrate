@@ -63,25 +63,25 @@ pub enum InnerExpr<'a> {
     Discard,
 
     /* Primitive Expressions */
-    Integer(Box<IntegerLit>),
+    Integer(IntegerLit),
     Float(FloatLit),
-    String(Box<StringLit<'a>>),
+    String(StringLit<'a>),
     Char(CharLit),
-    List(Box<List<'a>>),
-    Object(Box<Object<'a>>),
+    List(List<'a>),
+    Object(Object<'a>),
 
     /* Compound Expressions */
-    UnaryOp(Box<UnaryExpr<'a>>),
-    BinaryOp(Box<BinaryExpr<'a>>),
-    Statement(Box<Statement<'a>>),
-    Block(Box<Block<'a>>),
+    UnaryOp(UnaryExpr<'a>),
+    BinaryOp(BinaryExpr<'a>),
+    Statement(Statement<'a>),
+    Block(Block<'a>),
 
     /* Definition */
-    Function(Box<Function<'a>>),
-    Variable(Box<Variable<'a>>),
+    Function(Function<'a>),
+    Variable(Variable<'a>),
 
     /* Control Flow */
-    Return(Box<Return<'a>>),
+    Return(Return<'a>),
 
     /* Primitive Types */
     Bool,
@@ -103,10 +103,10 @@ pub enum InnerExpr<'a> {
 
     /* Compound Types */
     InferType,
-    TupleType(Box<TupleType<'a>>),
-    ArrayType(Box<ArrayType<'a>>),
-    StructType(Box<StructType<'a>>),
-    FunctionType(Box<FunctionType<'a>>),
+    TupleType(TupleType<'a>),
+    ArrayType(ArrayType<'a>),
+    StructType(StructType<'a>),
+    FunctionType(FunctionType<'a>),
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Hash)]

@@ -79,13 +79,13 @@ pub enum BinaryOperator {
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Hash)]
 pub struct BinaryExpr<'a> {
-    left: Expr<'a>,
-    right: Expr<'a>,
+    left: Box<Expr<'a>>,
+    right: Box<Expr<'a>>,
     operator: BinaryOperator,
 }
 
 impl<'a> BinaryExpr<'a> {
-    pub fn new(left: Expr<'a>, operator: BinaryOperator, right: Expr<'a>) -> Self {
+    pub fn new(left: Box<Expr<'a>>, operator: BinaryOperator, right: Box<Expr<'a>>) -> Self {
         BinaryExpr {
             left,
             right,

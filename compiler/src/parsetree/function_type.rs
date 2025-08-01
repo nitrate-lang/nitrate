@@ -7,14 +7,14 @@ use std::sync::Arc;
 pub struct FunctionType<'a> {
     parameters: Vec<FunctionParameter<'a>>,
     return_type: Option<Arc<Type<'a>>>,
-    attributes: Vec<Expr<'a>>,
+    attributes: Vec<Box<Expr<'a>>>,
 }
 
 impl<'a> FunctionType<'a> {
     pub fn new(
         parameters: Vec<FunctionParameter<'a>>,
         return_type: Option<Arc<Type<'a>>>,
-        attributes: Vec<Expr<'a>>,
+        attributes: Vec<Box<Expr<'a>>>,
     ) -> Self {
         FunctionType {
             parameters,
@@ -31,7 +31,7 @@ impl<'a> FunctionType<'a> {
         self.return_type.as_ref()
     }
 
-    pub fn attributes(&self) -> &Vec<Expr<'a>> {
+    pub fn attributes(&self) -> &Vec<Box<Expr<'a>>> {
         &self.attributes
     }
 }
