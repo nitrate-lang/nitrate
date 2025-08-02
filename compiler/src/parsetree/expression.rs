@@ -15,58 +15,6 @@ use super::tuple_type::TupleType;
 use super::unary_op::UnaryExpr;
 use super::variable::Variable;
 
-#[derive(Debug, Clone, Copy)]
-#[repr(u8)]
-pub enum ExprKind {
-    Discard,
-
-    /* Primitive Expressions */
-    Integer,
-    Float,
-    String,
-    Char,
-    List,
-    Object,
-
-    /* Compound Expressions */
-    UnaryOp,
-    BinaryOp,
-    Statement,
-    Block,
-
-    /* Definition */
-    Function,
-    Variable,
-
-    /* Control Flow */
-    Return,
-
-    /* Primitive Types */
-    Bool,
-    UInt8,
-    UInt16,
-    UInt32,
-    UInt64,
-    UInt128,
-    Int8,
-    Int16,
-    Int32,
-    Int64,
-    Int128,
-    Float8,
-    Float16,
-    Float32,
-    Float64,
-    Float128,
-
-    /* Compound Types */
-    InferType,
-    TupleType,
-    ArrayType,
-    StructType,
-    FunctionType,
-}
-
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Hash)]
 pub enum Expr<'a> {
     Discard,
@@ -92,34 +40,6 @@ pub enum Expr<'a> {
     /* Control Flow */
     Return(Return<'a>),
 
-    /* Primitive Types */
-    Bool,
-    UInt8,
-    UInt16,
-    UInt32,
-    UInt64,
-    UInt128,
-    Int8,
-    Int16,
-    Int32,
-    Int64,
-    Int128,
-    Float8,
-    Float16,
-    Float32,
-    Float64,
-    Float128,
-
-    /* Compound Types */
-    InferType,
-    TupleType(TupleType<'a>),
-    ArrayType(ArrayType<'a>),
-    StructType(StructType<'a>),
-    FunctionType(FunctionType<'a>),
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Hash)]
-pub enum Type<'a> {
     /* Primitive Types */
     Bool,
     UInt8,
@@ -195,6 +115,34 @@ pub enum RefExpr<'storage, 'a> {
     ArrayType(&'storage ArrayType<'a>),
     StructType(&'storage StructType<'a>),
     FunctionType(&'storage FunctionType<'a>),
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Hash)]
+pub enum Type<'a> {
+    /* Primitive Types */
+    Bool,
+    UInt8,
+    UInt16,
+    UInt32,
+    UInt64,
+    UInt128,
+    Int8,
+    Int16,
+    Int32,
+    Int64,
+    Int128,
+    Float8,
+    Float16,
+    Float32,
+    Float64,
+    Float128,
+
+    /* Compound Types */
+    InferType,
+    TupleType(TupleType<'a>),
+    ArrayType(ArrayType<'a>),
+    StructType(StructType<'a>),
+    FunctionType(FunctionType<'a>),
 }
 
 impl<'a> TryInto<Type<'a>> for Expr<'a> {

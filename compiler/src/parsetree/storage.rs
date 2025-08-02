@@ -2,7 +2,7 @@ use super::array_type::ArrayType;
 use super::binary_op::BinaryExpr;
 use super::block::Block;
 use super::character::CharLit;
-use super::expression::{Expr, ExprKind, RefExpr};
+use super::expression::{Expr, RefExpr};
 use super::function::Function;
 use super::function_type::FunctionType;
 use super::list::List;
@@ -15,6 +15,51 @@ use super::struct_type::StructType;
 use super::tuple_type::TupleType;
 use super::unary_op::UnaryExpr;
 use super::variable::Variable;
+
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+enum ExprKind {
+    Discard,
+
+    Integer,
+    Float,
+    String,
+    Char,
+    List,
+    Object,
+
+    UnaryOp,
+    BinaryOp,
+    Statement,
+    Block,
+
+    Function,
+    Variable,
+
+    Return,
+
+    Bool,
+    UInt8,
+    UInt16,
+    UInt32,
+    UInt64,
+    UInt128,
+    Int8,
+    Int16,
+    Int32,
+    Int64,
+    Int128,
+    Float8,
+    Float16,
+    Float32,
+    Float64,
+    Float128,
+
+    InferType,
+    TupleType,
+    ArrayType,
+    StructType,
+    FunctionType,
+}
 
 #[derive(Debug, Clone, Copy)]
 pub struct ExprRef<'a> {
@@ -59,8 +104,6 @@ impl<'a> ExprRef<'a> {
         (self.id & 0x03FFFFFF) as usize
     }
 }
-
-// TODO: Amoritze the allocation overhead of parsing by using a vector of vectors structure
 
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct Storage<'a> {
@@ -243,93 +286,51 @@ impl<'a> Storage<'a> {
         }
     }
 
-    pub fn get(&self, id: ExprRef) -> &Expr<'a> {
+    pub fn get(&self, id: ExprRef) -> Option<RefExpr<'_, 'a>> {
         let index = id.instance_index() as usize;
 
-        panic!("Storage::get is not implemented yet, id: {:?}", id);
+        match id.variant_index() {
+            ExprKind::Discard => Some(RefExpr::Discard),
 
-        // let instance = match id.variant_index() {
-        //     ExprKind::Discard => {
-        //         // TODO:
-        //         // self.get(index)
-        //         panic!("Discard variant is not implemented")
-        //     }
+            ExprKind::Integer => self.integers.get(index).map(RefExpr::Integer),
+            ExprKind::Float => self.floats.get(index).map(RefExpr::Float),
+            ExprKind::String => self.strings.get(index).map(RefExpr::String),
+            ExprKind::Char => self.characters.get(index).map(RefExpr::Char),
+            ExprKind::List => self.lists.get(index).map(RefExpr::List),
+            ExprKind::Object => self.objects.get(index).map(RefExpr::Object),
 
-        //     ExprKind::Integer => self.integers.get(index),
-        //     ExprKind::Float => self.floats.get(index),
-        //     ExprKind::String => self.strings.get(index),
-        //     ExprKind::Char => self.characters.get(index),
-        //     ExprKind::List => self.lists.get(index),
-        //     ExprKind::Object => self.nodes.get(index),
+            ExprKind::UnaryOp => self.unary_ops.get(index).map(RefExpr::UnaryOp),
+            ExprKind::BinaryOp => self.binary_ops.get(index).map(RefExpr::BinaryOp),
+            ExprKind::Statement => self.statements.get(index).map(RefExpr::Statement),
+            ExprKind::Block => self.blocks.get(index).map(RefExpr::Block),
 
-        //     ExprKind::UnaryOp => self.unary_ops.get(index),
-        //     ExprKind::BinaryOp => self.binary_ops.get(index),
-        //     ExprKind::Statement => self.statements.get(index),
-        //     ExprKind::Block => self.blocks.get(index),
+            ExprKind::Function => self.functions.get(index).map(RefExpr::Function),
+            ExprKind::Variable => self.variables.get(index).map(RefExpr::Variable),
 
-        //     ExprKind::Function => self.functions.get(index),
-        //     ExprKind::Variable => self.variables.get(index),
+            ExprKind::Return => self.returns.get(index).map(RefExpr::Return),
 
-        //     ExprKind::Return => self.returns.get(index),
+            ExprKind::Bool => Some(RefExpr::Bool),
+            ExprKind::UInt8 => Some(RefExpr::UInt8),
+            ExprKind::UInt16 => Some(RefExpr::UInt16),
+            ExprKind::UInt32 => Some(RefExpr::UInt32),
+            ExprKind::UInt64 => Some(RefExpr::UInt64),
+            ExprKind::UInt128 => Some(RefExpr::UInt128),
+            ExprKind::Int8 => Some(RefExpr::Int8),
+            ExprKind::Int16 => Some(RefExpr::Int16),
+            ExprKind::Int32 => Some(RefExpr::Int32),
+            ExprKind::Int64 => Some(RefExpr::Int64),
+            ExprKind::Int128 => Some(RefExpr::Int128),
+            ExprKind::Float8 => Some(RefExpr::Float8),
+            ExprKind::Float16 => Some(RefExpr::Float16),
+            ExprKind::Float32 => Some(RefExpr::Float32),
+            ExprKind::Float64 => Some(RefExpr::Float64),
+            ExprKind::Float128 => Some(RefExpr::Float128),
 
-        //     ExprKind::Bool => {
-        //         // TODO:
-        //     }
-        //     ExprKind::UInt8 => {
-        //         // TODO:
-        //     }
-        //     ExprKind::UInt16 => {
-        //         // TODO:
-        //     }
-        //     ExprKind::UInt32 => {
-        //         // TODO:
-        //     }
-        //     ExprKind::UInt64 => {
-        //         // TODO:
-        //     }
-        //     ExprKind::UInt128 => {
-        //         // TODO:
-        //     }
-        //     ExprKind::Int8 => {
-        //         // TODO:
-        //     }
-        //     ExprKind::Int16 => {
-        //         // TODO:
-        //     }
-        //     ExprKind::Int32 => {
-        //         // TODO:
-        //     }
-        //     ExprKind::Int64 => {
-        //         // TODO:
-        //     }
-        //     ExprKind::Int128 => {
-        //         // TODO:
-        //     }
-        //     ExprKind::Float8 => {
-        //         // TODO:
-        //     }
-        //     ExprKind::Float16 => {
-        //         // TODO:
-        //     }
-        //     ExprKind::Float32 => {
-        //         // TODO:
-        //     }
-        //     ExprKind::Float64 => {
-        //         // TODO:
-        //     }
-        //     ExprKind::Float128 => {
-        //         // TODO:
-        //     }
-
-        //     ExprKind::InferType => {
-        //         // TODO:
-        //     }
-        //     ExprKind::TupleType => self.tuple_types.get(index),
-        //     ExprKind::ArrayType => self.array_types.get(index),
-        //     ExprKind::StructType => self.struct_types.get(index),
-        //     ExprKind::FunctionType => self.function_types.get(index),
-        // };
-
-        // instance.expect("Expression not found in Storage")
+            ExprKind::InferType => Some(RefExpr::InferType),
+            ExprKind::TupleType => self.tuple_types.get(index).map(RefExpr::TupleType),
+            ExprKind::ArrayType => self.array_types.get(index).map(RefExpr::ArrayType),
+            ExprKind::StructType => self.struct_types.get(index).map(RefExpr::StructType),
+            ExprKind::FunctionType => self.function_types.get(index).map(RefExpr::FunctionType),
+        }
     }
 }
