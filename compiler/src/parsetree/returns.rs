@@ -1,24 +1,24 @@
-use super::expression::Expr;
+use super::storage::ExprRef;
 
 #[derive(Debug, Clone)]
 pub struct Return<'a> {
-    value: Option<Box<Expr<'a>>>,
+    value: Option<ExprRef<'a>>,
 }
 
 impl<'a> Return<'a> {
-    pub fn new(value: Option<Box<Expr<'a>>>) -> Self {
+    pub fn new(value: Option<ExprRef<'a>>) -> Self {
         Return { value }
     }
 
-    pub fn into_inner(self) -> Option<Box<Expr<'a>>> {
+    pub fn into_inner(self) -> Option<ExprRef<'a>> {
         self.value
     }
 
-    pub fn value(&self) -> Option<&Expr<'a>> {
-        self.value.as_deref()
+    pub fn value(&self) -> Option<ExprRef<'a>> {
+        self.value
     }
 
-    pub fn value_mut(&mut self) -> Option<&mut Expr<'a>> {
-        self.value.as_deref_mut()
+    pub fn set_value(&mut self, value: Option<ExprRef<'a>>) {
+        self.value = value;
     }
 }

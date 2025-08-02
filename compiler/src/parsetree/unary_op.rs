@@ -1,4 +1,4 @@
-use super::expression::Expr;
+use super::storage::ExprRef;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Hash)]
 pub enum UnaryOperator {
@@ -41,13 +41,13 @@ pub enum UnaryOperator {
 
 #[derive(Debug, Clone)]
 pub struct UnaryExpr<'a> {
-    operand: Box<Expr<'a>>,
+    operand: ExprRef<'a>,
     operator: UnaryOperator,
     is_postfix: bool,
 }
 
 impl<'a> UnaryExpr<'a> {
-    pub fn new(operand: Box<Expr<'a>>, operator: UnaryOperator, is_postfix: bool) -> Self {
+    pub fn new(operand: ExprRef<'a>, operator: UnaryOperator, is_postfix: bool) -> Self {
         UnaryExpr {
             operand,
             operator,
@@ -55,8 +55,8 @@ impl<'a> UnaryExpr<'a> {
         }
     }
 
-    pub fn operand(&self) -> &Expr<'a> {
-        &self.operand
+    pub fn operand(&self) -> ExprRef<'a> {
+        self.operand
     }
 
     pub fn operator(&self) -> UnaryOperator {
