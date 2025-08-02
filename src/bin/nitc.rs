@@ -86,5 +86,5 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     println!("Successfully parsed file: {}", filename);
 
-    Ok(()) // Indicate success
+    Ok(())
 }

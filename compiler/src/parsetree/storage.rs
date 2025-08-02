@@ -147,6 +147,7 @@ pub struct TypeRef<'a> {
 
 impl<'a> ExprRef<'a> {
     fn new(variant: ExprKind, index: usize) -> Option<Self> {
+        // FIXME: Enforce at compile time using reflection
         assert!((variant as u32) < 64, "Variant index must be less than 64");
 
         let can_store_index = index < (1 << 26);
@@ -158,6 +159,7 @@ impl<'a> ExprRef<'a> {
     }
 
     fn new_single(variant: ExprKind) -> Self {
+        // FIXME: Enforce at compile time using reflection
         assert!((variant as u32) < 64, "Variant index must be less than 64");
 
         ExprRef {
@@ -169,7 +171,7 @@ impl<'a> ExprRef<'a> {
     fn variant_index(&self) -> ExprKind {
         let number = (self.id >> 26) as u8;
 
-        // SAFETY: The number is guaranteed to be in the range of ExprKind
+        // FIXME: SAFETY: The number is guaranteed to be in the range of ExprKind
         unsafe { std::mem::transmute::<u8, ExprKind>(number) }
     }
 
@@ -180,6 +182,7 @@ impl<'a> ExprRef<'a> {
 
 impl<'a> TypeRef<'a> {
     fn new(variant: TypeKind, index: usize) -> Option<Self> {
+        // FIXME: Enforce at compile time using reflection
         assert!((variant as u32) < 64, "Variant index must be less than 64");
 
         let can_store_index = index < (1 << 26);
@@ -193,7 +196,7 @@ impl<'a> TypeRef<'a> {
     fn variant_index(&self) -> TypeKind {
         let number = (self.id >> 26) as u8;
 
-        // SAFETY: The number is guaranteed to be in the range of TypeKind
+        // FIXME: SAFETY: The number is guaranteed to be in the range of TypeKind
         unsafe { std::mem::transmute::<u8, TypeKind>(number) }
     }
 
