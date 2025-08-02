@@ -1,4 +1,4 @@
-use super::types::Type;
+use super::expression::Type;
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Hash)]
 pub struct TupleType<'a> {

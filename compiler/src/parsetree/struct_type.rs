@@ -1,5 +1,4 @@
-use super::expression::Expr;
-use super::types::Type;
+use super::expression::{Expr, Type};
 use std::collections::BTreeMap;
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Hash)]

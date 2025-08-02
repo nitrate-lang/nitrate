@@ -12,9 +12,60 @@ use super::statement::Statement;
 use super::string::StringLit;
 use super::struct_type::StructType;
 use super::tuple_type::TupleType;
-use super::types::Type;
 use super::unary_op::UnaryExpr;
 use super::variable::Variable;
+
+#[derive(Debug, Clone, Copy)]
+#[repr(u8)]
+pub enum ExprKind {
+    Discard,
+
+    /* Primitive Expressions */
+    Integer,
+    Float,
+    String,
+    Char,
+    List,
+    Object,
+
+    /* Compound Expressions */
+    UnaryOp,
+    BinaryOp,
+    Statement,
+    Block,
+
+    /* Definition */
+    Function,
+    Variable,
+
+    /* Control Flow */
+    Return,
+
+    /* Primitive Types */
+    Bool,
+    UInt8,
+    UInt16,
+    UInt32,
+    UInt64,
+    UInt128,
+    Int8,
+    Int16,
+    Int32,
+    Int64,
+    Int128,
+    Float8,
+    Float16,
+    Float32,
+    Float64,
+    Float128,
+
+    /* Compound Types */
+    InferType,
+    TupleType,
+    ArrayType,
+    StructType,
+    FunctionType,
+}
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Hash)]
 pub enum Expr<'a> {
@@ -67,6 +118,85 @@ pub enum Expr<'a> {
     FunctionType(FunctionType<'a>),
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Hash)]
+pub enum Type<'a> {
+    /* Primitive Types */
+    Bool,
+    UInt8,
+    UInt16,
+    UInt32,
+    UInt64,
+    UInt128,
+    Int8,
+    Int16,
+    Int32,
+    Int64,
+    Int128,
+    Float8,
+    Float16,
+    Float32,
+    Float64,
+    Float128,
+
+    /* Compound Types */
+    InferType,
+    TupleType(TupleType<'a>),
+    ArrayType(ArrayType<'a>),
+    StructType(StructType<'a>),
+    FunctionType(FunctionType<'a>),
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Hash)]
+pub enum RefExpr<'storage, 'a> {
+    Discard,
+
+    /* Primitive Expressions */
+    Integer(&'storage IntegerLit),
+    Float(&'storage FloatLit),
+    String(&'storage StringLit<'a>),
+    Char(&'storage CharLit),
+    List(&'storage List<'a>),
+    Object(&'storage Object<'a>),
+
+    /* Compound Expressions */
+    UnaryOp(&'storage UnaryExpr<'a>),
+    BinaryOp(&'storage BinaryExpr<'a>),
+    Statement(&'storage Statement<'a>),
+    Block(&'storage Block<'a>),
+
+    /* Definition */
+    Function(&'storage Function<'a>),
+    Variable(&'storage Variable<'a>),
+
+    /* Control Flow */
+    Return(&'storage Return<'a>),
+
+    /* Primitive Types */
+    Bool,
+    UInt8,
+    UInt16,
+    UInt32,
+    UInt64,
+    UInt128,
+    Int8,
+    Int16,
+    Int32,
+    Int64,
+    Int128,
+    Float8,
+    Float16,
+    Float32,
+    Float64,
+    Float128,
+
+    /* Compound Types */
+    InferType,
+    TupleType(&'storage TupleType<'a>),
+    ArrayType(&'storage ArrayType<'a>),
+    StructType(&'storage StructType<'a>),
+    FunctionType(&'storage FunctionType<'a>),
+}
+
 impl<'a> TryInto<Type<'a>> for Expr<'a> {
     type Error = Self;
 
@@ -113,6 +243,35 @@ impl<'a> TryInto<Type<'a>> for Expr<'a> {
             Expr::ArrayType(array) => Ok(Type::ArrayType(array)),
             Expr::StructType(struct_type) => Ok(Type::StructType(struct_type)),
             Expr::FunctionType(function) => Ok(Type::FunctionType(function)),
+        }
+    }
+}
+
+impl<'a> Into<Expr<'a>> for Type<'a> {
+    fn into(self) -> Expr<'a> {
+        match self {
+            Type::Bool => Expr::Bool,
+            Type::UInt8 => Expr::UInt8,
+            Type::UInt16 => Expr::UInt16,
+            Type::UInt32 => Expr::UInt32,
+            Type::UInt64 => Expr::UInt64,
+            Type::UInt128 => Expr::UInt128,
+            Type::Int8 => Expr::Int8,
+            Type::Int16 => Expr::Int16,
+            Type::Int32 => Expr::Int32,
+            Type::Int64 => Expr::Int64,
+            Type::Int128 => Expr::Int128,
+            Type::Float8 => Expr::Float8,
+            Type::Float16 => Expr::Float16,
+            Type::Float32 => Expr::Float32,
+            Type::Float64 => Expr::Float64,
+            Type::Float128 => Expr::Float128,
+
+            Type::InferType => Expr::InferType,
+            Type::TupleType(tuple) => Expr::TupleType(tuple),
+            Type::ArrayType(array) => Expr::ArrayType(array),
+            Type::StructType(struct_type) => Expr::StructType(struct_type),
+            Type::FunctionType(function) => Expr::FunctionType(function),
         }
     }
 }

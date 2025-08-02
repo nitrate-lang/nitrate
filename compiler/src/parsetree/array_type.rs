@@ -1,5 +1,4 @@
-use super::expression::Expr;
-use super::types::Type;
+use super::expression::{Expr, Type};
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Hash)]
 pub struct ArrayType<'a> {

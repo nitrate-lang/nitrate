@@ -2,7 +2,7 @@ use super::array_type::ArrayType;
 use super::binary_op::BinaryExpr;
 use super::block::Block;
 use super::character::CharLit;
-use super::expression::Expr;
+use super::expression::{Expr, ExprKind, RefExpr};
 use super::function::Function;
 use super::function_type::FunctionType;
 use super::list::List;
@@ -15,58 +15,6 @@ use super::struct_type::StructType;
 use super::tuple_type::TupleType;
 use super::unary_op::UnaryExpr;
 use super::variable::Variable;
-
-#[derive(Debug, Clone, Copy)]
-#[repr(u8)]
-pub enum ExprKind {
-    Discard,
-
-    /* Primitive Expressions */
-    Integer,
-    Float,
-    String,
-    Char,
-    List,
-    Object,
-
-    /* Compound Expressions */
-    UnaryOp,
-    BinaryOp,
-    Statement,
-    Block,
-
-    /* Definition */
-    Function,
-    Variable,
-
-    /* Control Flow */
-    Return,
-
-    /* Primitive Types */
-    Bool,
-    UInt8,
-    UInt16,
-    UInt32,
-    UInt64,
-    UInt128,
-    Int8,
-    Int16,
-    Int32,
-    Int64,
-    Int128,
-    Float8,
-    Float16,
-    Float32,
-    Float64,
-    Float128,
-
-    /* Compound Types */
-    InferType,
-    TupleType,
-    ArrayType,
-    StructType,
-    FunctionType,
-}
 
 #[derive(Debug, Clone, Copy)]
 pub struct ExprRef<'a> {

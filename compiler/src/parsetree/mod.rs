@@ -17,12 +17,10 @@ mod string;
 mod struct_type;
 mod to_code;
 mod tuple_type;
-mod types;
 mod unary_op;
 mod variable;
 
 pub use builder::*;
-pub use expression::Expr;
+pub use expression::{Expr, Type};
 pub use storage::*;
 pub use to_code::*;
-pub use types::Type;

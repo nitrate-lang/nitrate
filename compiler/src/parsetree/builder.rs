@@ -1,6 +1,5 @@
 use super::builder_helper::*;
-use super::expression::Expr;
-use super::types::Type;
+use super::expression::{Expr, Type};
 pub use super::variable::VariableKind;
 use std::sync::LazyLock;
 

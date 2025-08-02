@@ -2,7 +2,7 @@ use super::array_type::ArrayType;
 use super::binary_op::{BinaryExpr, BinaryOperator};
 use super::block::Block;
 use super::character::CharLit;
-use super::expression::Expr;
+use super::expression::{Expr, Type};
 use super::function::Function;
 use super::function_type::FunctionType;
 use super::list::List;
@@ -13,7 +13,6 @@ use super::statement::Statement;
 use super::string::StringLit;
 use super::struct_type::StructType;
 use super::tuple_type::TupleType;
-use super::types::Type;
 use super::unary_op::{UnaryExpr, UnaryOperator};
 use super::variable::{Variable, VariableKind};
 use crate::lexer::{

@@ -1,6 +1,5 @@
 use super::block::Block;
-use super::expression::Expr;
-use super::types::Type;
+use super::expression::{Expr, Type};
 
 pub type FunctionParameter<'a> = (&'a str, Option<Box<Type<'a>>>, Option<Box<Expr<'a>>>);
 

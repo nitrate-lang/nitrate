@@ -1,6 +1,5 @@
-use super::expression::Expr;
+use super::expression::{Expr, Type};
 use super::function::FunctionParameter;
-use super::types::Type;
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Hash)]
 pub struct FunctionType<'a> {
