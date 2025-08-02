@@ -1,145 +1,25 @@
-// TODO: Reimplement this file
-
 // use super::array_type::ArrayType;
-// use super::binary_op::{BinaryExpr, BinaryOperator};
+// use super::binary_op::{BinaryOp, BinaryOperator};
 // use super::block::Block;
 // use super::builder::Builder;
 // use super::character::CharLit;
 // use super::expression::{Expr, Type};
 // use super::function::{Function, FunctionParameter};
 // use super::function_type::FunctionType;
-// use super::list::List;
+// use super::list::ListLit;
 // use super::number::{FloatLit, IntegerLit};
-// use super::object::Object;
+// use super::object::ObjectLit;
 // use super::returns::Return;
 // use super::statement::Statement;
+// use super::storage::{ExprRef, TypeRef};
 // use super::string::StringLit;
 // use super::struct_type::StructType;
 // use super::tuple_type::TupleType;
-// use super::unary_op::{UnaryExpr, UnaryOperator};
+// use super::unary_op::{UnaryOp, UnaryOperator};
 // use super::variable::{Variable, VariableKind};
 // use crate::lexer::IntegerKind;
 // use apint::UInt;
 // use std::collections::BTreeMap;
-
-// #[derive(Debug)]
-// pub struct TypeFactory<'a> {
-//     bool: Box<Type<'a>>,
-//     u8: Box<Type<'a>>,
-//     u16: Box<Type<'a>>,
-//     u32: Box<Type<'a>>,
-//     u64: Box<Type<'a>>,
-//     u128: Box<Type<'a>>,
-//     i8: Box<Type<'a>>,
-//     i16: Box<Type<'a>>,
-//     i32: Box<Type<'a>>,
-//     i64: Box<Type<'a>>,
-//     i128: Box<Type<'a>>,
-//     f8: Box<Type<'a>>,
-//     f16: Box<Type<'a>>,
-//     f32: Box<Type<'a>>,
-//     f64: Box<Type<'a>>,
-//     f128: Box<Type<'a>>,
-//     infer_type: Box<Type<'a>>,
-//     unit: Box<Type<'a>>,
-// }
-
-// impl<'a> TypeFactory<'a> {
-//     pub fn new() -> Self {
-//         TypeFactory {
-//             bool: Box::new(Type::Bool),
-//             u8: Box::new(Type::UInt8),
-//             u16: Box::new(Type::UInt16),
-//             u32: Box::new(Type::UInt32),
-//             u64: Box::new(Type::UInt64),
-//             u128: Box::new(Type::UInt128),
-//             i8: Box::new(Type::Int8),
-//             i16: Box::new(Type::Int16),
-//             i32: Box::new(Type::Int32),
-//             i64: Box::new(Type::Int64),
-//             i128: Box::new(Type::Int128),
-//             f8: Box::new(Type::Float8),
-//             f16: Box::new(Type::Float16),
-//             f32: Box::new(Type::Float32),
-//             f64: Box::new(Type::Float64),
-//             f128: Box::new(Type::Float128),
-//             infer_type: Box::new(Type::InferType),
-//             unit: Box::new(Type::TupleType(TupleType::new(Vec::new()))),
-//         }
-//     }
-
-//     pub fn get_bool(&self) -> Box<Type<'a>> {
-//         self.bool.clone()
-//     }
-
-//     pub fn get_u8(&self) -> Box<Type<'a>> {
-//         self.u8.clone()
-//     }
-
-//     pub fn get_u16(&self) -> Box<Type<'a>> {
-//         self.u16.clone()
-//     }
-
-//     pub fn get_u32(&self) -> Box<Type<'a>> {
-//         self.u32.clone()
-//     }
-
-//     pub fn get_u64(&self) -> Box<Type<'a>> {
-//         self.u64.clone()
-//     }
-
-//     pub fn get_u128(&self) -> Box<Type<'a>> {
-//         self.u128.clone()
-//     }
-
-//     pub fn get_i8(&self) -> Box<Type<'a>> {
-//         self.i8.clone()
-//     }
-
-//     pub fn get_i16(&self) -> Box<Type<'a>> {
-//         self.i16.clone()
-//     }
-
-//     pub fn get_i32(&self) -> Box<Type<'a>> {
-//         self.i32.clone()
-//     }
-
-//     pub fn get_i64(&self) -> Box<Type<'a>> {
-//         self.i64.clone()
-//     }
-
-//     pub fn get_i128(&self) -> Box<Type<'a>> {
-//         self.i128.clone()
-//     }
-
-//     pub fn get_f8(&self) -> Box<Type<'a>> {
-//         self.f8.clone()
-//     }
-
-//     pub fn get_f16(&self) -> Box<Type<'a>> {
-//         self.f16.clone()
-//     }
-
-//     pub fn get_f32(&self) -> Box<Type<'a>> {
-//         self.f32.clone()
-//     }
-
-//     pub fn get_f64(&self) -> Box<Type<'a>> {
-//         self.f64.clone()
-//     }
-
-//     pub fn get_f128(&self) -> Box<Type<'a>> {
-//         self.f128.clone()
-//     }
-
-//     pub fn get_infer_type(&self) -> Box<Type<'a>> {
-//         self.infer_type.clone()
-//     }
-
-//     pub fn get_unit(&self) -> Box<Type<'a>> {
-//         self.unit.clone()
-//     }
-// }
 
 // #[derive(Debug, Clone)]
 // pub struct IntegerBuilderHelper<'a> {
@@ -193,7 +73,7 @@
 
 //         let integer_lit = IntegerLit::new(value, kind).expect("Failed to create IntegerLit");
 
-//         Box::new(Expr::Integer(integer_lit))
+//         Box::new(Expr::IntegerLit(integer_lit))
 //     }
 // }
 
@@ -216,7 +96,7 @@
 //     pub fn build(self) -> Box<Expr<'a>> {
 //         let value = self.value.expect("Float value must be provided");
 
-//         Box::new(Expr::Float(FloatLit::new(value)))
+//         Box::new(Expr::FloatLit(FloatLit::new(value)))
 //     }
 // }
 
@@ -244,7 +124,7 @@
 //     pub fn build(self) -> Box<Expr<'a>> {
 //         let value = self.value.expect("String value must be provided");
 
-//         Box::new(Expr::String(StringLit::new(value)))
+//         Box::new(Expr::StringLit(StringLit::new(value)))
 //     }
 // }
 
@@ -267,14 +147,14 @@
 //     pub fn build(self) -> Box<Expr<'a>> {
 //         let value = self.value.expect("Char value must be provided");
 
-//         Box::new(Expr::Char(CharLit::new(value)))
+//         Box::new(Expr::CharLit(CharLit::new(value)))
 //     }
 // }
 
 // #[derive(Debug, Clone)]
 // pub struct ListBuilderHelper<'a> {
 //     outer: Builder<'a>,
-//     elements: Vec<Box<Expr<'a>>>,
+//     elements: Vec<ExprRef<'a>>,
 // }
 
 // impl<'a> ListBuilderHelper<'a> {
@@ -285,21 +165,21 @@
 //         }
 //     }
 
-//     pub fn add_element(mut self, element: Box<Expr<'a>>) -> Self {
+//     pub fn add_element(mut self, element: ExprRef<'a>) -> Self {
 //         self.elements.push(element);
 //         self
 //     }
 
 //     pub fn add_elements<I>(mut self, elements: I) -> Self
 //     where
-//         I: IntoIterator<Item = Box<Expr<'a>>>,
+//         I: IntoIterator<Item = ExprRef<'a>>,
 //     {
 //         self.elements.extend(elements);
 //         self
 //     }
 
-//     pub fn build(self) -> Box<Expr<'a>> {
-//         Box::new(Expr::List(List::new(self.elements)))
+//     pub fn build(self) -> ExprRef<'a> {
+//         let node=Expr::ListLit(ListLit::new(self.elements))
 //     }
 // }
 
@@ -331,7 +211,7 @@
 //     }
 
 //     pub fn build(self) -> Box<Expr<'a>> {
-//         Box::new(Expr::Object(Object::new(self.fields)))
+//         Box::new(Expr::ObjectLit(ObjectLit::new(self.fields)))
 //     }
 // }
 
@@ -373,7 +253,7 @@
 //         let operand = self.operand.expect("Operand must be provided");
 //         let is_postfix = self.is_postfix.expect("is_postfix flag must be provided");
 
-//         let unary = UnaryExpr::new(operand, operator, is_postfix);
+//         let unary = UnaryOp::new(operand, operator, is_postfix);
 
 //         Box::new(Expr::UnaryOp(unary))
 //     }
