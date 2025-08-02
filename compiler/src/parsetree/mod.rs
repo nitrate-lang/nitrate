@@ -21,6 +21,6 @@ mod unary_op;
 mod variable;
 
 pub use builder::*;
-pub use expression::{MutRefExpr, MutRefType, RefExpr, RefType};
+pub use expression::{ExprRef, ExprRefMut, TypeRef, TypeRefMut};
 pub use storage::{ExprKey, Storage, TypeKey};
 pub use to_code::*;

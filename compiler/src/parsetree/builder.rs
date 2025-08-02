@@ -1,5 +1,5 @@
 use super::builder_helper::*;
-use super::expression::{OwnedExpr, OwnedType};
+use super::expression::{ExprOwned, TypeOwned};
 use super::storage::{Storage, TypeKey};
 use super::tuple_type::TupleType;
 pub use super::variable::VariableKind;
@@ -132,109 +132,109 @@ impl<'storage, 'a> Builder<'storage, 'a> {
     // BEGIN: Primitive Type Builders
     pub fn get_bool(&mut self) -> TypeKey<'a> {
         self.storage
-            .add_type(OwnedType::Bool)
+            .add_type(TypeOwned::Bool)
             .expect(ADD_TYPE_EXPECT_REASON)
     }
 
     pub fn get_u8(&mut self) -> TypeKey<'a> {
         self.storage
-            .add_type(OwnedType::UInt8)
+            .add_type(TypeOwned::UInt8)
             .expect(ADD_TYPE_EXPECT_REASON)
     }
 
     pub fn get_u16(&mut self) -> TypeKey<'a> {
         self.storage
-            .add_type(OwnedType::UInt16)
+            .add_type(TypeOwned::UInt16)
             .expect(ADD_TYPE_EXPECT_REASON)
     }
 
     pub fn get_u32(&mut self) -> TypeKey<'a> {
         self.storage
-            .add_type(OwnedType::UInt32)
+            .add_type(TypeOwned::UInt32)
             .expect(ADD_TYPE_EXPECT_REASON)
     }
 
     pub fn get_u64(&mut self) -> TypeKey<'a> {
         self.storage
-            .add_type(OwnedType::UInt64)
+            .add_type(TypeOwned::UInt64)
             .expect(ADD_TYPE_EXPECT_REASON)
     }
 
     pub fn get_u128(&mut self) -> TypeKey<'a> {
         self.storage
-            .add_type(OwnedType::UInt128)
+            .add_type(TypeOwned::UInt128)
             .expect(ADD_TYPE_EXPECT_REASON)
     }
 
     pub fn get_i8(&mut self) -> TypeKey<'a> {
         self.storage
-            .add_type(OwnedType::Int8)
+            .add_type(TypeOwned::Int8)
             .expect(ADD_TYPE_EXPECT_REASON)
     }
 
     pub fn get_i16(&mut self) -> TypeKey<'a> {
         self.storage
-            .add_type(OwnedType::Int16)
+            .add_type(TypeOwned::Int16)
             .expect(ADD_TYPE_EXPECT_REASON)
     }
 
     pub fn get_i32(&mut self) -> TypeKey<'a> {
         self.storage
-            .add_type(OwnedType::Int32)
+            .add_type(TypeOwned::Int32)
             .expect(ADD_TYPE_EXPECT_REASON)
     }
 
     pub fn get_i64(&mut self) -> TypeKey<'a> {
         self.storage
-            .add_type(OwnedType::Int64)
+            .add_type(TypeOwned::Int64)
             .expect(ADD_TYPE_EXPECT_REASON)
     }
 
     pub fn get_i128(&mut self) -> TypeKey<'a> {
         self.storage
-            .add_type(OwnedType::Int128)
+            .add_type(TypeOwned::Int128)
             .expect(ADD_TYPE_EXPECT_REASON)
     }
 
     pub fn get_f8(&mut self) -> TypeKey<'a> {
         self.storage
-            .add_type(OwnedType::Float8)
+            .add_type(TypeOwned::Float8)
             .expect(ADD_TYPE_EXPECT_REASON)
     }
 
     pub fn get_f16(&mut self) -> TypeKey<'a> {
         self.storage
-            .add_type(OwnedType::Float16)
+            .add_type(TypeOwned::Float16)
             .expect(ADD_TYPE_EXPECT_REASON)
     }
 
     pub fn get_f32(&mut self) -> TypeKey<'a> {
         self.storage
-            .add_type(OwnedType::Float32)
+            .add_type(TypeOwned::Float32)
             .expect(ADD_TYPE_EXPECT_REASON)
     }
 
     pub fn get_f64(&mut self) -> TypeKey<'a> {
         self.storage
-            .add_type(OwnedType::Float64)
+            .add_type(TypeOwned::Float64)
             .expect(ADD_TYPE_EXPECT_REASON)
     }
 
     pub fn get_f128(&mut self) -> TypeKey<'a> {
         self.storage
-            .add_type(OwnedType::Float128)
+            .add_type(TypeOwned::Float128)
             .expect(ADD_TYPE_EXPECT_REASON)
     }
 
     pub fn get_infer_type(&mut self) -> TypeKey<'a> {
         self.storage
-            .add_type(OwnedType::InferType)
+            .add_type(TypeOwned::InferType)
             .expect(ADD_TYPE_EXPECT_REASON)
     }
 
     pub fn get_unit(&mut self) -> TypeKey<'a> {
         self.storage
-            .add_type(OwnedType::TupleType(TupleType::new(vec![])))
+            .add_type(TypeOwned::TupleType(TupleType::new(vec![])))
             .expect(ADD_TYPE_EXPECT_REASON)
     }
 

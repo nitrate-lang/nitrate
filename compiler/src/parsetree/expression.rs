@@ -16,7 +16,7 @@ use super::unary_op::UnaryOp;
 use super::variable::Variable;
 
 #[derive(Debug, Clone)]
-pub(crate) enum OwnedExpr<'a> {
+pub(crate) enum ExprOwned<'a> {
     /* Primitive Types */
     Bool,
     UInt8,
@@ -67,7 +67,7 @@ pub(crate) enum OwnedExpr<'a> {
 }
 
 #[derive(Debug, Clone)]
-pub(crate) enum OwnedType<'a> {
+pub(crate) enum TypeOwned<'a> {
     /* Primitive Types */
     Bool,
     UInt8,
@@ -95,7 +95,7 @@ pub(crate) enum OwnedType<'a> {
 }
 
 #[derive(Debug, Clone, Copy)]
-pub enum RefExpr<'storage, 'a> {
+pub enum ExprRef<'storage, 'a> {
     /* Primitive Types */
     Bool,
     UInt8,
@@ -146,7 +146,7 @@ pub enum RefExpr<'storage, 'a> {
 }
 
 #[derive(Debug)]
-pub enum MutRefExpr<'storage, 'a> {
+pub enum ExprRefMut<'storage, 'a> {
     /* Primitive Types */
     Bool,
     UInt8,
@@ -197,7 +197,7 @@ pub enum MutRefExpr<'storage, 'a> {
 }
 
 #[derive(Debug, Clone, Copy)]
-pub enum RefType<'storage, 'a> {
+pub enum TypeRef<'storage, 'a> {
     /* Primitive Types */
     Bool,
     UInt8,
@@ -225,7 +225,7 @@ pub enum RefType<'storage, 'a> {
 }
 
 #[derive(Debug)]
-pub enum MutRefType<'storage, 'a> {
+pub enum TypeRefMut<'storage, 'a> {
     /* Primitive Types */
     Bool,
     UInt8,
@@ -252,227 +252,227 @@ pub enum MutRefType<'storage, 'a> {
     FunctionType(&'storage mut FunctionType<'a>),
 }
 
-impl<'a> TryInto<OwnedType<'a>> for OwnedExpr<'a> {
+impl<'a> TryInto<TypeOwned<'a>> for ExprOwned<'a> {
     type Error = Self;
 
-    fn try_into(self) -> Result<OwnedType<'a>, Self::Error> {
+    fn try_into(self) -> Result<TypeOwned<'a>, Self::Error> {
         match self {
-            OwnedExpr::Bool => Ok(OwnedType::Bool),
-            OwnedExpr::UInt8 => Ok(OwnedType::UInt8),
-            OwnedExpr::UInt16 => Ok(OwnedType::UInt16),
-            OwnedExpr::UInt32 => Ok(OwnedType::UInt32),
-            OwnedExpr::UInt64 => Ok(OwnedType::UInt64),
-            OwnedExpr::UInt128 => Ok(OwnedType::UInt128),
-            OwnedExpr::Int8 => Ok(OwnedType::Int8),
-            OwnedExpr::Int16 => Ok(OwnedType::Int16),
-            OwnedExpr::Int32 => Ok(OwnedType::Int32),
-            OwnedExpr::Int64 => Ok(OwnedType::Int64),
-            OwnedExpr::Int128 => Ok(OwnedType::Int128),
-            OwnedExpr::Float8 => Ok(OwnedType::Float8),
-            OwnedExpr::Float16 => Ok(OwnedType::Float16),
-            OwnedExpr::Float32 => Ok(OwnedType::Float32),
-            OwnedExpr::Float64 => Ok(OwnedType::Float64),
-            OwnedExpr::Float128 => Ok(OwnedType::Float128),
+            ExprOwned::Bool => Ok(TypeOwned::Bool),
+            ExprOwned::UInt8 => Ok(TypeOwned::UInt8),
+            ExprOwned::UInt16 => Ok(TypeOwned::UInt16),
+            ExprOwned::UInt32 => Ok(TypeOwned::UInt32),
+            ExprOwned::UInt64 => Ok(TypeOwned::UInt64),
+            ExprOwned::UInt128 => Ok(TypeOwned::UInt128),
+            ExprOwned::Int8 => Ok(TypeOwned::Int8),
+            ExprOwned::Int16 => Ok(TypeOwned::Int16),
+            ExprOwned::Int32 => Ok(TypeOwned::Int32),
+            ExprOwned::Int64 => Ok(TypeOwned::Int64),
+            ExprOwned::Int128 => Ok(TypeOwned::Int128),
+            ExprOwned::Float8 => Ok(TypeOwned::Float8),
+            ExprOwned::Float16 => Ok(TypeOwned::Float16),
+            ExprOwned::Float32 => Ok(TypeOwned::Float32),
+            ExprOwned::Float64 => Ok(TypeOwned::Float64),
+            ExprOwned::Float128 => Ok(TypeOwned::Float128),
 
-            OwnedExpr::InferType => Ok(OwnedType::InferType),
-            OwnedExpr::TupleType(x) => Ok(OwnedType::TupleType(x)),
-            OwnedExpr::ArrayType(x) => Ok(OwnedType::ArrayType(x)),
-            OwnedExpr::StructType(x) => Ok(OwnedType::StructType(x)),
-            OwnedExpr::FunctionType(x) => Ok(OwnedType::FunctionType(x)),
+            ExprOwned::InferType => Ok(TypeOwned::InferType),
+            ExprOwned::TupleType(x) => Ok(TypeOwned::TupleType(x)),
+            ExprOwned::ArrayType(x) => Ok(TypeOwned::ArrayType(x)),
+            ExprOwned::StructType(x) => Ok(TypeOwned::StructType(x)),
+            ExprOwned::FunctionType(x) => Ok(TypeOwned::FunctionType(x)),
 
-            OwnedExpr::Discard
-            | OwnedExpr::IntegerLit(_)
-            | OwnedExpr::FloatLit(_)
-            | OwnedExpr::StringLit(_)
-            | OwnedExpr::CharLit(_)
-            | OwnedExpr::ListLit(_)
-            | OwnedExpr::ObjectLit(_)
-            | OwnedExpr::UnaryOp(_)
-            | OwnedExpr::BinaryOp(_)
-            | OwnedExpr::Statement(_)
-            | OwnedExpr::Block(_)
-            | OwnedExpr::Function(_)
-            | OwnedExpr::Variable(_)
-            | OwnedExpr::Return(_) => Err(self),
+            ExprOwned::Discard
+            | ExprOwned::IntegerLit(_)
+            | ExprOwned::FloatLit(_)
+            | ExprOwned::StringLit(_)
+            | ExprOwned::CharLit(_)
+            | ExprOwned::ListLit(_)
+            | ExprOwned::ObjectLit(_)
+            | ExprOwned::UnaryOp(_)
+            | ExprOwned::BinaryOp(_)
+            | ExprOwned::Statement(_)
+            | ExprOwned::Block(_)
+            | ExprOwned::Function(_)
+            | ExprOwned::Variable(_)
+            | ExprOwned::Return(_) => Err(self),
         }
     }
 }
 
-impl<'a> Into<OwnedExpr<'a>> for OwnedType<'a> {
-    fn into(self) -> OwnedExpr<'a> {
+impl<'a> Into<ExprOwned<'a>> for TypeOwned<'a> {
+    fn into(self) -> ExprOwned<'a> {
         match self {
-            OwnedType::Bool => OwnedExpr::Bool,
-            OwnedType::UInt8 => OwnedExpr::UInt8,
-            OwnedType::UInt16 => OwnedExpr::UInt16,
-            OwnedType::UInt32 => OwnedExpr::UInt32,
-            OwnedType::UInt64 => OwnedExpr::UInt64,
-            OwnedType::UInt128 => OwnedExpr::UInt128,
-            OwnedType::Int8 => OwnedExpr::Int8,
-            OwnedType::Int16 => OwnedExpr::Int16,
-            OwnedType::Int32 => OwnedExpr::Int32,
-            OwnedType::Int64 => OwnedExpr::Int64,
-            OwnedType::Int128 => OwnedExpr::Int128,
-            OwnedType::Float8 => OwnedExpr::Float8,
-            OwnedType::Float16 => OwnedExpr::Float16,
-            OwnedType::Float32 => OwnedExpr::Float32,
-            OwnedType::Float64 => OwnedExpr::Float64,
-            OwnedType::Float128 => OwnedExpr::Float128,
+            TypeOwned::Bool => ExprOwned::Bool,
+            TypeOwned::UInt8 => ExprOwned::UInt8,
+            TypeOwned::UInt16 => ExprOwned::UInt16,
+            TypeOwned::UInt32 => ExprOwned::UInt32,
+            TypeOwned::UInt64 => ExprOwned::UInt64,
+            TypeOwned::UInt128 => ExprOwned::UInt128,
+            TypeOwned::Int8 => ExprOwned::Int8,
+            TypeOwned::Int16 => ExprOwned::Int16,
+            TypeOwned::Int32 => ExprOwned::Int32,
+            TypeOwned::Int64 => ExprOwned::Int64,
+            TypeOwned::Int128 => ExprOwned::Int128,
+            TypeOwned::Float8 => ExprOwned::Float8,
+            TypeOwned::Float16 => ExprOwned::Float16,
+            TypeOwned::Float32 => ExprOwned::Float32,
+            TypeOwned::Float64 => ExprOwned::Float64,
+            TypeOwned::Float128 => ExprOwned::Float128,
 
-            OwnedType::InferType => OwnedExpr::InferType,
-            OwnedType::TupleType(x) => OwnedExpr::TupleType(x),
-            OwnedType::ArrayType(x) => OwnedExpr::ArrayType(x),
-            OwnedType::StructType(x) => OwnedExpr::StructType(x),
-            OwnedType::FunctionType(x) => OwnedExpr::FunctionType(x),
+            TypeOwned::InferType => ExprOwned::InferType,
+            TypeOwned::TupleType(x) => ExprOwned::TupleType(x),
+            TypeOwned::ArrayType(x) => ExprOwned::ArrayType(x),
+            TypeOwned::StructType(x) => ExprOwned::StructType(x),
+            TypeOwned::FunctionType(x) => ExprOwned::FunctionType(x),
         }
     }
 }
 
-impl<'storage, 'a> TryInto<RefType<'storage, 'a>> for RefExpr<'storage, 'a> {
+impl<'storage, 'a> TryInto<TypeRef<'storage, 'a>> for ExprRef<'storage, 'a> {
     type Error = Self;
 
-    fn try_into(self) -> Result<RefType<'storage, 'a>, Self::Error> {
+    fn try_into(self) -> Result<TypeRef<'storage, 'a>, Self::Error> {
         match self {
-            RefExpr::Bool => Ok(RefType::Bool),
-            RefExpr::UInt8 => Ok(RefType::UInt8),
-            RefExpr::UInt16 => Ok(RefType::UInt16),
-            RefExpr::UInt32 => Ok(RefType::UInt32),
-            RefExpr::UInt64 => Ok(RefType::UInt64),
-            RefExpr::UInt128 => Ok(RefType::UInt128),
-            RefExpr::Int8 => Ok(RefType::Int8),
-            RefExpr::Int16 => Ok(RefType::Int16),
-            RefExpr::Int32 => Ok(RefType::Int32),
-            RefExpr::Int64 => Ok(RefType::Int64),
-            RefExpr::Int128 => Ok(RefType::Int128),
-            RefExpr::Float8 => Ok(RefType::Float8),
-            RefExpr::Float16 => Ok(RefType::Float16),
-            RefExpr::Float32 => Ok(RefType::Float32),
-            RefExpr::Float64 => Ok(RefType::Float64),
-            RefExpr::Float128 => Ok(RefType::Float128),
+            ExprRef::Bool => Ok(TypeRef::Bool),
+            ExprRef::UInt8 => Ok(TypeRef::UInt8),
+            ExprRef::UInt16 => Ok(TypeRef::UInt16),
+            ExprRef::UInt32 => Ok(TypeRef::UInt32),
+            ExprRef::UInt64 => Ok(TypeRef::UInt64),
+            ExprRef::UInt128 => Ok(TypeRef::UInt128),
+            ExprRef::Int8 => Ok(TypeRef::Int8),
+            ExprRef::Int16 => Ok(TypeRef::Int16),
+            ExprRef::Int32 => Ok(TypeRef::Int32),
+            ExprRef::Int64 => Ok(TypeRef::Int64),
+            ExprRef::Int128 => Ok(TypeRef::Int128),
+            ExprRef::Float8 => Ok(TypeRef::Float8),
+            ExprRef::Float16 => Ok(TypeRef::Float16),
+            ExprRef::Float32 => Ok(TypeRef::Float32),
+            ExprRef::Float64 => Ok(TypeRef::Float64),
+            ExprRef::Float128 => Ok(TypeRef::Float128),
 
-            RefExpr::InferType => Ok(RefType::InferType),
-            RefExpr::TupleType(x) => Ok(RefType::TupleType(x)),
-            RefExpr::ArrayType(x) => Ok(RefType::ArrayType(x)),
-            RefExpr::StructType(x) => Ok(RefType::StructType(x)),
-            RefExpr::FunctionType(x) => Ok(RefType::FunctionType(x)),
+            ExprRef::InferType => Ok(TypeRef::InferType),
+            ExprRef::TupleType(x) => Ok(TypeRef::TupleType(x)),
+            ExprRef::ArrayType(x) => Ok(TypeRef::ArrayType(x)),
+            ExprRef::StructType(x) => Ok(TypeRef::StructType(x)),
+            ExprRef::FunctionType(x) => Ok(TypeRef::FunctionType(x)),
 
-            RefExpr::Discard
-            | RefExpr::IntegerLit(_)
-            | RefExpr::FloatLit(_)
-            | RefExpr::StringLit(_)
-            | RefExpr::CharLit(_)
-            | RefExpr::ListLit(_)
-            | RefExpr::ObjectLit(_)
-            | RefExpr::UnaryOp(_)
-            | RefExpr::BinaryOp(_)
-            | RefExpr::Statement(_)
-            | RefExpr::Block(_)
-            | RefExpr::Function(_)
-            | RefExpr::Variable(_)
-            | RefExpr::Return(_) => Err(self),
+            ExprRef::Discard
+            | ExprRef::IntegerLit(_)
+            | ExprRef::FloatLit(_)
+            | ExprRef::StringLit(_)
+            | ExprRef::CharLit(_)
+            | ExprRef::ListLit(_)
+            | ExprRef::ObjectLit(_)
+            | ExprRef::UnaryOp(_)
+            | ExprRef::BinaryOp(_)
+            | ExprRef::Statement(_)
+            | ExprRef::Block(_)
+            | ExprRef::Function(_)
+            | ExprRef::Variable(_)
+            | ExprRef::Return(_) => Err(self),
         }
     }
 }
 
-impl<'storage, 'a> TryInto<MutRefType<'storage, 'a>> for MutRefExpr<'storage, 'a> {
+impl<'storage, 'a> TryInto<TypeRefMut<'storage, 'a>> for ExprRefMut<'storage, 'a> {
     type Error = Self;
 
-    fn try_into(self) -> Result<MutRefType<'storage, 'a>, Self::Error> {
+    fn try_into(self) -> Result<TypeRefMut<'storage, 'a>, Self::Error> {
         match self {
-            MutRefExpr::Bool => Ok(MutRefType::Bool),
-            MutRefExpr::UInt8 => Ok(MutRefType::UInt8),
-            MutRefExpr::UInt16 => Ok(MutRefType::UInt16),
-            MutRefExpr::UInt32 => Ok(MutRefType::UInt32),
-            MutRefExpr::UInt64 => Ok(MutRefType::UInt64),
-            MutRefExpr::UInt128 => Ok(MutRefType::UInt128),
-            MutRefExpr::Int8 => Ok(MutRefType::Int8),
-            MutRefExpr::Int16 => Ok(MutRefType::Int16),
-            MutRefExpr::Int32 => Ok(MutRefType::Int32),
-            MutRefExpr::Int64 => Ok(MutRefType::Int64),
-            MutRefExpr::Int128 => Ok(MutRefType::Int128),
-            MutRefExpr::Float8 => Ok(MutRefType::Float8),
-            MutRefExpr::Float16 => Ok(MutRefType::Float16),
-            MutRefExpr::Float32 => Ok(MutRefType::Float32),
-            MutRefExpr::Float64 => Ok(MutRefType::Float64),
-            MutRefExpr::Float128 => Ok(MutRefType::Float128),
+            ExprRefMut::Bool => Ok(TypeRefMut::Bool),
+            ExprRefMut::UInt8 => Ok(TypeRefMut::UInt8),
+            ExprRefMut::UInt16 => Ok(TypeRefMut::UInt16),
+            ExprRefMut::UInt32 => Ok(TypeRefMut::UInt32),
+            ExprRefMut::UInt64 => Ok(TypeRefMut::UInt64),
+            ExprRefMut::UInt128 => Ok(TypeRefMut::UInt128),
+            ExprRefMut::Int8 => Ok(TypeRefMut::Int8),
+            ExprRefMut::Int16 => Ok(TypeRefMut::Int16),
+            ExprRefMut::Int32 => Ok(TypeRefMut::Int32),
+            ExprRefMut::Int64 => Ok(TypeRefMut::Int64),
+            ExprRefMut::Int128 => Ok(TypeRefMut::Int128),
+            ExprRefMut::Float8 => Ok(TypeRefMut::Float8),
+            ExprRefMut::Float16 => Ok(TypeRefMut::Float16),
+            ExprRefMut::Float32 => Ok(TypeRefMut::Float32),
+            ExprRefMut::Float64 => Ok(TypeRefMut::Float64),
+            ExprRefMut::Float128 => Ok(TypeRefMut::Float128),
 
-            MutRefExpr::InferType => Ok(MutRefType::InferType),
-            MutRefExpr::TupleType(x) => Ok(MutRefType::TupleType(x)),
-            MutRefExpr::ArrayType(x) => Ok(MutRefType::ArrayType(x)),
-            MutRefExpr::StructType(x) => Ok(MutRefType::StructType(x)),
-            MutRefExpr::FunctionType(x) => Ok(MutRefType::FunctionType(x)),
+            ExprRefMut::InferType => Ok(TypeRefMut::InferType),
+            ExprRefMut::TupleType(x) => Ok(TypeRefMut::TupleType(x)),
+            ExprRefMut::ArrayType(x) => Ok(TypeRefMut::ArrayType(x)),
+            ExprRefMut::StructType(x) => Ok(TypeRefMut::StructType(x)),
+            ExprRefMut::FunctionType(x) => Ok(TypeRefMut::FunctionType(x)),
 
-            MutRefExpr::Discard
-            | MutRefExpr::IntegerLit(_)
-            | MutRefExpr::FloatLit(_)
-            | MutRefExpr::StringLit(_)
-            | MutRefExpr::CharLit(_)
-            | MutRefExpr::ListLit(_)
-            | MutRefExpr::ObjectLit(_)
-            | MutRefExpr::UnaryOp(_)
-            | MutRefExpr::BinaryOp(_)
-            | MutRefExpr::Statement(_)
-            | MutRefExpr::Block(_)
-            | MutRefExpr::Function(_)
-            | MutRefExpr::Variable(_)
-            | MutRefExpr::Return(_) => Err(self),
+            ExprRefMut::Discard
+            | ExprRefMut::IntegerLit(_)
+            | ExprRefMut::FloatLit(_)
+            | ExprRefMut::StringLit(_)
+            | ExprRefMut::CharLit(_)
+            | ExprRefMut::ListLit(_)
+            | ExprRefMut::ObjectLit(_)
+            | ExprRefMut::UnaryOp(_)
+            | ExprRefMut::BinaryOp(_)
+            | ExprRefMut::Statement(_)
+            | ExprRefMut::Block(_)
+            | ExprRefMut::Function(_)
+            | ExprRefMut::Variable(_)
+            | ExprRefMut::Return(_) => Err(self),
         }
     }
 }
 
-impl<'storage, 'a> Into<RefExpr<'storage, 'a>> for RefType<'storage, 'a> {
-    fn into(self) -> RefExpr<'storage, 'a> {
+impl<'storage, 'a> Into<ExprRef<'storage, 'a>> for TypeRef<'storage, 'a> {
+    fn into(self) -> ExprRef<'storage, 'a> {
         match self {
-            RefType::Bool => RefExpr::Bool,
-            RefType::UInt8 => RefExpr::UInt8,
-            RefType::UInt16 => RefExpr::UInt16,
-            RefType::UInt32 => RefExpr::UInt32,
-            RefType::UInt64 => RefExpr::UInt64,
-            RefType::UInt128 => RefExpr::UInt128,
-            RefType::Int8 => RefExpr::Int8,
-            RefType::Int16 => RefExpr::Int16,
-            RefType::Int32 => RefExpr::Int32,
-            RefType::Int64 => RefExpr::Int64,
-            RefType::Int128 => RefExpr::Int128,
-            RefType::Float8 => RefExpr::Float8,
-            RefType::Float16 => RefExpr::Float16,
-            RefType::Float32 => RefExpr::Float32,
-            RefType::Float64 => RefExpr::Float64,
-            RefType::Float128 => RefExpr::Float128,
+            TypeRef::Bool => ExprRef::Bool,
+            TypeRef::UInt8 => ExprRef::UInt8,
+            TypeRef::UInt16 => ExprRef::UInt16,
+            TypeRef::UInt32 => ExprRef::UInt32,
+            TypeRef::UInt64 => ExprRef::UInt64,
+            TypeRef::UInt128 => ExprRef::UInt128,
+            TypeRef::Int8 => ExprRef::Int8,
+            TypeRef::Int16 => ExprRef::Int16,
+            TypeRef::Int32 => ExprRef::Int32,
+            TypeRef::Int64 => ExprRef::Int64,
+            TypeRef::Int128 => ExprRef::Int128,
+            TypeRef::Float8 => ExprRef::Float8,
+            TypeRef::Float16 => ExprRef::Float16,
+            TypeRef::Float32 => ExprRef::Float32,
+            TypeRef::Float64 => ExprRef::Float64,
+            TypeRef::Float128 => ExprRef::Float128,
 
-            RefType::InferType => RefExpr::InferType,
-            RefType::TupleType(x) => RefExpr::TupleType(x),
-            RefType::ArrayType(x) => RefExpr::ArrayType(x),
-            RefType::StructType(x) => RefExpr::StructType(x),
-            RefType::FunctionType(x) => RefExpr::FunctionType(x),
+            TypeRef::InferType => ExprRef::InferType,
+            TypeRef::TupleType(x) => ExprRef::TupleType(x),
+            TypeRef::ArrayType(x) => ExprRef::ArrayType(x),
+            TypeRef::StructType(x) => ExprRef::StructType(x),
+            TypeRef::FunctionType(x) => ExprRef::FunctionType(x),
         }
     }
 }
 
-impl<'storage, 'a> Into<MutRefExpr<'storage, 'a>> for MutRefType<'storage, 'a> {
-    fn into(self) -> MutRefExpr<'storage, 'a> {
+impl<'storage, 'a> Into<ExprRefMut<'storage, 'a>> for TypeRefMut<'storage, 'a> {
+    fn into(self) -> ExprRefMut<'storage, 'a> {
         match self {
-            MutRefType::Bool => MutRefExpr::Bool,
-            MutRefType::UInt8 => MutRefExpr::UInt8,
-            MutRefType::UInt16 => MutRefExpr::UInt16,
-            MutRefType::UInt32 => MutRefExpr::UInt32,
-            MutRefType::UInt64 => MutRefExpr::UInt64,
-            MutRefType::UInt128 => MutRefExpr::UInt128,
-            MutRefType::Int8 => MutRefExpr::Int8,
-            MutRefType::Int16 => MutRefExpr::Int16,
-            MutRefType::Int32 => MutRefExpr::Int32,
-            MutRefType::Int64 => MutRefExpr::Int64,
-            MutRefType::Int128 => MutRefExpr::Int128,
-            MutRefType::Float8 => MutRefExpr::Float8,
-            MutRefType::Float16 => MutRefExpr::Float16,
-            MutRefType::Float32 => MutRefExpr::Float32,
-            MutRefType::Float64 => MutRefExpr::Float64,
-            MutRefType::Float128 => MutRefExpr::Float128,
+            TypeRefMut::Bool => ExprRefMut::Bool,
+            TypeRefMut::UInt8 => ExprRefMut::UInt8,
+            TypeRefMut::UInt16 => ExprRefMut::UInt16,
+            TypeRefMut::UInt32 => ExprRefMut::UInt32,
+            TypeRefMut::UInt64 => ExprRefMut::UInt64,
+            TypeRefMut::UInt128 => ExprRefMut::UInt128,
+            TypeRefMut::Int8 => ExprRefMut::Int8,
+            TypeRefMut::Int16 => ExprRefMut::Int16,
+            TypeRefMut::Int32 => ExprRefMut::Int32,
+            TypeRefMut::Int64 => ExprRefMut::Int64,
+            TypeRefMut::Int128 => ExprRefMut::Int128,
+            TypeRefMut::Float8 => ExprRefMut::Float8,
+            TypeRefMut::Float16 => ExprRefMut::Float16,
+            TypeRefMut::Float32 => ExprRefMut::Float32,
+            TypeRefMut::Float64 => ExprRefMut::Float64,
+            TypeRefMut::Float128 => ExprRefMut::Float128,
 
-            MutRefType::InferType => MutRefExpr::InferType,
-            MutRefType::TupleType(x) => MutRefExpr::TupleType(x),
-            MutRefType::ArrayType(x) => MutRefExpr::ArrayType(x),
-            MutRefType::StructType(x) => MutRefExpr::StructType(x),
-            MutRefType::FunctionType(x) => MutRefExpr::FunctionType(x),
+            TypeRefMut::InferType => ExprRefMut::InferType,
+            TypeRefMut::TupleType(x) => ExprRefMut::TupleType(x),
+            TypeRefMut::ArrayType(x) => ExprRefMut::ArrayType(x),
+            TypeRefMut::StructType(x) => ExprRefMut::StructType(x),
+            TypeRefMut::FunctionType(x) => ExprRefMut::FunctionType(x),
         }
     }
 }
