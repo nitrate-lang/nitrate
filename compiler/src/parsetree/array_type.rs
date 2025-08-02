@@ -1,21 +1,21 @@
-use super::storage::{ExprRef, TypeRef};
+use super::storage::{ExprKey, TypeKey};
 
 #[derive(Debug, Clone)]
 pub struct ArrayType<'a> {
-    element_ty: TypeRef<'a>,
-    count: ExprRef<'a>,
+    element_ty: TypeKey<'a>,
+    count: ExprKey<'a>,
 }
 
 impl<'a> ArrayType<'a> {
-    pub fn new(element_ty: TypeRef<'a>, count: ExprRef<'a>) -> Self {
+    pub fn new(element_ty: TypeKey<'a>, count: ExprKey<'a>) -> Self {
         ArrayType { element_ty, count }
     }
 
-    pub fn element_ty(&self) -> TypeRef<'a> {
+    pub fn element_ty(&self) -> TypeKey<'a> {
         self.element_ty
     }
 
-    pub fn count(&self) -> ExprRef<'a> {
+    pub fn count(&self) -> ExprKey<'a> {
         self.count
     }
 }

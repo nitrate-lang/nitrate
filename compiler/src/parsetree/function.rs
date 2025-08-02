@@ -1,13 +1,13 @@
 use super::block::Block;
-use super::storage::{ExprRef, TypeRef};
+use super::storage::{ExprKey, TypeKey};
 
-pub type FunctionParameter<'a> = (&'a str, Option<TypeRef<'a>>, Option<ExprRef<'a>>);
+pub type FunctionParameter<'a> = (&'a str, Option<TypeKey<'a>>, Option<ExprKey<'a>>);
 
 #[derive(Debug, Clone)]
 pub struct Function<'a> {
     parameters: Vec<FunctionParameter<'a>>,
-    return_type: Option<TypeRef<'a>>,
-    attributes: Vec<ExprRef<'a>>,
+    return_type: Option<TypeKey<'a>>,
+    attributes: Vec<ExprKey<'a>>,
     name: &'a str,
     definition: Option<Block<'a>>,
 }
@@ -16,8 +16,8 @@ impl<'a> Function<'a> {
     pub fn new(
         name: &'a str,
         parameters: Vec<FunctionParameter<'a>>,
-        return_type: Option<TypeRef<'a>>,
-        attributes: Vec<ExprRef<'a>>,
+        return_type: Option<TypeKey<'a>>,
+        attributes: Vec<ExprKey<'a>>,
         definition: Option<Block<'a>>,
     ) -> Self {
         Function {
@@ -37,19 +37,19 @@ impl<'a> Function<'a> {
         &mut self.parameters
     }
 
-    pub fn return_type(&self) -> Option<TypeRef<'a>> {
+    pub fn return_type(&self) -> Option<TypeKey<'a>> {
         self.return_type
     }
 
-    pub fn set_return_type(&mut self, ty: Option<TypeRef<'a>>) {
+    pub fn set_return_type(&mut self, ty: Option<TypeKey<'a>>) {
         self.return_type = ty;
     }
 
-    pub fn attributes(&self) -> &[ExprRef<'a>] {
+    pub fn attributes(&self) -> &[ExprKey<'a>] {
         &self.attributes
     }
 
-    pub fn attributes_mut(&mut self) -> &mut Vec<ExprRef<'a>> {
+    pub fn attributes_mut(&mut self) -> &mut Vec<ExprKey<'a>> {
         &mut self.attributes
     }
 

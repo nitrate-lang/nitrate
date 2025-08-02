@@ -1,6 +1,6 @@
 use super::builder_helper::*;
 use super::expression::{OwnedExpr, OwnedType};
-use super::storage::{Storage, TypeRef};
+use super::storage::{Storage, TypeKey};
 use super::tuple_type::TupleType;
 pub use super::variable::VariableKind;
 
@@ -130,109 +130,109 @@ impl<'storage, 'a> Builder<'storage, 'a> {
 
     /////////////////////////////////////////////////////////////////
     // BEGIN: Primitive Type Builders
-    pub fn get_bool(&mut self) -> TypeRef<'a> {
+    pub fn get_bool(&mut self) -> TypeKey<'a> {
         self.storage
             .add_type(OwnedType::Bool)
             .expect(ADD_TYPE_EXPECT_REASON)
     }
 
-    pub fn get_u8(&mut self) -> TypeRef<'a> {
+    pub fn get_u8(&mut self) -> TypeKey<'a> {
         self.storage
             .add_type(OwnedType::UInt8)
             .expect(ADD_TYPE_EXPECT_REASON)
     }
 
-    pub fn get_u16(&mut self) -> TypeRef<'a> {
+    pub fn get_u16(&mut self) -> TypeKey<'a> {
         self.storage
             .add_type(OwnedType::UInt16)
             .expect(ADD_TYPE_EXPECT_REASON)
     }
 
-    pub fn get_u32(&mut self) -> TypeRef<'a> {
+    pub fn get_u32(&mut self) -> TypeKey<'a> {
         self.storage
             .add_type(OwnedType::UInt32)
             .expect(ADD_TYPE_EXPECT_REASON)
     }
 
-    pub fn get_u64(&mut self) -> TypeRef<'a> {
+    pub fn get_u64(&mut self) -> TypeKey<'a> {
         self.storage
             .add_type(OwnedType::UInt64)
             .expect(ADD_TYPE_EXPECT_REASON)
     }
 
-    pub fn get_u128(&mut self) -> TypeRef<'a> {
+    pub fn get_u128(&mut self) -> TypeKey<'a> {
         self.storage
             .add_type(OwnedType::UInt128)
             .expect(ADD_TYPE_EXPECT_REASON)
     }
 
-    pub fn get_i8(&mut self) -> TypeRef<'a> {
+    pub fn get_i8(&mut self) -> TypeKey<'a> {
         self.storage
             .add_type(OwnedType::Int8)
             .expect(ADD_TYPE_EXPECT_REASON)
     }
 
-    pub fn get_i16(&mut self) -> TypeRef<'a> {
+    pub fn get_i16(&mut self) -> TypeKey<'a> {
         self.storage
             .add_type(OwnedType::Int16)
             .expect(ADD_TYPE_EXPECT_REASON)
     }
 
-    pub fn get_i32(&mut self) -> TypeRef<'a> {
+    pub fn get_i32(&mut self) -> TypeKey<'a> {
         self.storage
             .add_type(OwnedType::Int32)
             .expect(ADD_TYPE_EXPECT_REASON)
     }
 
-    pub fn get_i64(&mut self) -> TypeRef<'a> {
+    pub fn get_i64(&mut self) -> TypeKey<'a> {
         self.storage
             .add_type(OwnedType::Int64)
             .expect(ADD_TYPE_EXPECT_REASON)
     }
 
-    pub fn get_i128(&mut self) -> TypeRef<'a> {
+    pub fn get_i128(&mut self) -> TypeKey<'a> {
         self.storage
             .add_type(OwnedType::Int128)
             .expect(ADD_TYPE_EXPECT_REASON)
     }
 
-    pub fn get_f8(&mut self) -> TypeRef<'a> {
+    pub fn get_f8(&mut self) -> TypeKey<'a> {
         self.storage
             .add_type(OwnedType::Float8)
             .expect(ADD_TYPE_EXPECT_REASON)
     }
 
-    pub fn get_f16(&mut self) -> TypeRef<'a> {
+    pub fn get_f16(&mut self) -> TypeKey<'a> {
         self.storage
             .add_type(OwnedType::Float16)
             .expect(ADD_TYPE_EXPECT_REASON)
     }
 
-    pub fn get_f32(&mut self) -> TypeRef<'a> {
+    pub fn get_f32(&mut self) -> TypeKey<'a> {
         self.storage
             .add_type(OwnedType::Float32)
             .expect(ADD_TYPE_EXPECT_REASON)
     }
 
-    pub fn get_f64(&mut self) -> TypeRef<'a> {
+    pub fn get_f64(&mut self) -> TypeKey<'a> {
         self.storage
             .add_type(OwnedType::Float64)
             .expect(ADD_TYPE_EXPECT_REASON)
     }
 
-    pub fn get_f128(&mut self) -> TypeRef<'a> {
+    pub fn get_f128(&mut self) -> TypeKey<'a> {
         self.storage
             .add_type(OwnedType::Float128)
             .expect(ADD_TYPE_EXPECT_REASON)
     }
 
-    pub fn get_infer_type(&mut self) -> TypeRef<'a> {
+    pub fn get_infer_type(&mut self) -> TypeKey<'a> {
         self.storage
             .add_type(OwnedType::InferType)
             .expect(ADD_TYPE_EXPECT_REASON)
     }
 
-    pub fn get_unit(&mut self) -> TypeRef<'a> {
+    pub fn get_unit(&mut self) -> TypeKey<'a> {
         self.storage
             .add_type(OwnedType::TupleType(TupleType::new(vec![])))
             .expect(ADD_TYPE_EXPECT_REASON)

@@ -163,25 +163,25 @@ impl Into<ExprKind> for TypeKind {
 }
 
 #[derive(Debug, Clone, Copy)]
-pub struct ExprRef<'a> {
+pub struct ExprKey<'a> {
     id: u32,
     _marker: std::marker::PhantomData<&'a ()>,
 }
 
 #[derive(Debug, Clone, Copy)]
-pub struct TypeRef<'a> {
+pub struct TypeKey<'a> {
     id: u32,
     _marker: std::marker::PhantomData<&'a ()>,
 }
 
-impl<'a> ExprRef<'a> {
+impl<'a> ExprKey<'a> {
     fn new(variant: ExprKind, index: usize) -> Option<Self> {
         // FIXME: Enforce at compile time using reflection
         assert!((variant as u32) < 64, "Variant index must be less than 64");
 
         let can_store_index = index < (1 << 26);
 
-        can_store_index.then_some(ExprRef {
+        can_store_index.then_some(ExprKey {
             id: (variant as u32) << 26 | index as u32,
             _marker: std::marker::PhantomData,
         })
@@ -191,7 +191,7 @@ impl<'a> ExprRef<'a> {
         // FIXME: Enforce at compile time using reflection
         assert!((variant as u32) < 64, "Variant index must be less than 64");
 
-        ExprRef {
+        ExprKey {
             id: (variant as u32) << 26,
             _marker: std::marker::PhantomData,
         }
@@ -219,14 +219,14 @@ impl<'a> ExprRef<'a> {
     }
 }
 
-impl<'a> TypeRef<'a> {
+impl<'a> TypeKey<'a> {
     fn new(variant: TypeKind, index: usize) -> Option<Self> {
         // FIXME: Enforce at compile time using reflection
         assert!((variant as u32) < 64, "Variant index must be less than 64");
 
         let can_store_index = index < (1 << 26);
 
-        can_store_index.then_some(TypeRef {
+        can_store_index.then_some(TypeKey {
             id: (variant as u32) << 26 | index as u32,
             _marker: std::marker::PhantomData,
         })
@@ -254,19 +254,19 @@ impl<'a> TypeRef<'a> {
     }
 }
 
-impl<'a> Into<ExprRef<'a>> for TypeRef<'a> {
-    fn into(self) -> ExprRef<'a> {
-        ExprRef::new(self.variant_index().into(), self.instance_index())
+impl<'a> Into<ExprKey<'a>> for TypeKey<'a> {
+    fn into(self) -> ExprKey<'a> {
+        ExprKey::new(self.variant_index().into(), self.instance_index())
             .expect("TypeRef must be convertible to ExprRef")
     }
 }
 
-impl<'a> TryInto<TypeRef<'a>> for ExprRef<'a> {
+impl<'a> TryInto<TypeKey<'a>> for ExprKey<'a> {
     type Error = ();
 
-    fn try_into(self) -> Result<TypeRef<'a>, Self::Error> {
+    fn try_into(self) -> Result<TypeKey<'a>, Self::Error> {
         let variant = self.variant_index().try_into()?;
-        TypeRef::new(variant, self.instance_index()).ok_or(())
+        TypeKey::new(variant, self.instance_index()).ok_or(())
     }
 }
 
@@ -296,132 +296,132 @@ pub struct Storage<'a> {
 }
 
 impl<'a> Storage<'a> {
-    pub(crate) fn add_expr(&mut self, expr: OwnedExpr<'a>) -> Option<ExprRef<'a>> {
+    pub(crate) fn add_expr(&mut self, expr: OwnedExpr<'a>) -> Option<ExprKey<'a>> {
         match expr {
-            OwnedExpr::Bool => Some(ExprRef::new_single(ExprKind::Bool)),
-            OwnedExpr::UInt8 => Some(ExprRef::new_single(ExprKind::UInt8)),
-            OwnedExpr::UInt16 => Some(ExprRef::new_single(ExprKind::UInt16)),
-            OwnedExpr::UInt32 => Some(ExprRef::new_single(ExprKind::UInt32)),
-            OwnedExpr::UInt64 => Some(ExprRef::new_single(ExprKind::UInt64)),
-            OwnedExpr::UInt128 => Some(ExprRef::new_single(ExprKind::UInt128)),
-            OwnedExpr::Int8 => Some(ExprRef::new_single(ExprKind::Int8)),
-            OwnedExpr::Int16 => Some(ExprRef::new_single(ExprKind::Int16)),
-            OwnedExpr::Int32 => Some(ExprRef::new_single(ExprKind::Int32)),
-            OwnedExpr::Int64 => Some(ExprRef::new_single(ExprKind::Int64)),
-            OwnedExpr::Int128 => Some(ExprRef::new_single(ExprKind::Int128)),
-            OwnedExpr::Float8 => Some(ExprRef::new_single(ExprKind::Float8)),
-            OwnedExpr::Float16 => Some(ExprRef::new_single(ExprKind::Float16)),
-            OwnedExpr::Float32 => Some(ExprRef::new_single(ExprKind::Float32)),
-            OwnedExpr::Float64 => Some(ExprRef::new_single(ExprKind::Float64)),
-            OwnedExpr::Float128 => Some(ExprRef::new_single(ExprKind::Float128)),
+            OwnedExpr::Bool => Some(ExprKey::new_single(ExprKind::Bool)),
+            OwnedExpr::UInt8 => Some(ExprKey::new_single(ExprKind::UInt8)),
+            OwnedExpr::UInt16 => Some(ExprKey::new_single(ExprKind::UInt16)),
+            OwnedExpr::UInt32 => Some(ExprKey::new_single(ExprKind::UInt32)),
+            OwnedExpr::UInt64 => Some(ExprKey::new_single(ExprKind::UInt64)),
+            OwnedExpr::UInt128 => Some(ExprKey::new_single(ExprKind::UInt128)),
+            OwnedExpr::Int8 => Some(ExprKey::new_single(ExprKind::Int8)),
+            OwnedExpr::Int16 => Some(ExprKey::new_single(ExprKind::Int16)),
+            OwnedExpr::Int32 => Some(ExprKey::new_single(ExprKind::Int32)),
+            OwnedExpr::Int64 => Some(ExprKey::new_single(ExprKind::Int64)),
+            OwnedExpr::Int128 => Some(ExprKey::new_single(ExprKind::Int128)),
+            OwnedExpr::Float8 => Some(ExprKey::new_single(ExprKind::Float8)),
+            OwnedExpr::Float16 => Some(ExprKey::new_single(ExprKind::Float16)),
+            OwnedExpr::Float32 => Some(ExprKey::new_single(ExprKind::Float32)),
+            OwnedExpr::Float64 => Some(ExprKey::new_single(ExprKind::Float64)),
+            OwnedExpr::Float128 => Some(ExprKey::new_single(ExprKind::Float128)),
 
-            OwnedExpr::InferType => Some(ExprRef::new_single(ExprKind::InferType)),
+            OwnedExpr::InferType => Some(ExprKey::new_single(ExprKind::InferType)),
 
-            OwnedExpr::TupleType(node) => ExprRef::new(ExprKind::TupleType, self.tuple_types.len())
+            OwnedExpr::TupleType(node) => ExprKey::new(ExprKind::TupleType, self.tuple_types.len())
                 .and_then(|k| {
                     self.tuple_types.push(node);
                     Some(k)
                 }),
 
-            OwnedExpr::ArrayType(node) => ExprRef::new(ExprKind::ArrayType, self.array_types.len())
+            OwnedExpr::ArrayType(node) => ExprKey::new(ExprKind::ArrayType, self.array_types.len())
                 .and_then(|k| {
                     self.array_types.push(node);
                     Some(k)
                 }),
 
             OwnedExpr::StructType(node) => {
-                ExprRef::new(ExprKind::StructType, self.struct_types.len()).and_then(|k| {
+                ExprKey::new(ExprKind::StructType, self.struct_types.len()).and_then(|k| {
                     self.struct_types.push(node);
                     Some(k)
                 })
             }
 
             OwnedExpr::FunctionType(node) => {
-                ExprRef::new(ExprKind::FunctionType, self.function_types.len()).and_then(|k| {
+                ExprKey::new(ExprKind::FunctionType, self.function_types.len()).and_then(|k| {
                     self.function_types.push(node);
                     Some(k)
                 })
             }
 
-            OwnedExpr::Discard => Some(ExprRef::new_single(ExprKind::Discard)),
+            OwnedExpr::Discard => Some(ExprKey::new_single(ExprKind::Discard)),
 
-            OwnedExpr::IntegerLit(node) => ExprRef::new(ExprKind::Integer, self.integers.len())
+            OwnedExpr::IntegerLit(node) => ExprKey::new(ExprKind::Integer, self.integers.len())
                 .and_then(|k| {
                     self.integers.push(node);
                     Some(k)
                 }),
 
             OwnedExpr::FloatLit(node) => {
-                ExprRef::new(ExprKind::Float, self.floats.len()).and_then(|k| {
+                ExprKey::new(ExprKind::Float, self.floats.len()).and_then(|k| {
                     self.floats.push(node);
                     Some(k)
                 })
             }
 
-            OwnedExpr::StringLit(node) => ExprRef::new(ExprKind::String, self.strings.len())
+            OwnedExpr::StringLit(node) => ExprKey::new(ExprKind::String, self.strings.len())
                 .and_then(|k| {
                     self.strings.push(node);
                     Some(k)
                 }),
 
-            OwnedExpr::CharLit(node) => ExprRef::new(ExprKind::Char, self.characters.len())
+            OwnedExpr::CharLit(node) => ExprKey::new(ExprKind::Char, self.characters.len())
                 .and_then(|k| {
                     self.characters.push(node);
                     Some(k)
                 }),
 
             OwnedExpr::ListLit(node) => {
-                ExprRef::new(ExprKind::List, self.lists.len()).and_then(|k| {
+                ExprKey::new(ExprKind::List, self.lists.len()).and_then(|k| {
                     self.lists.push(node);
                     Some(k)
                 })
             }
 
-            OwnedExpr::ObjectLit(node) => ExprRef::new(ExprKind::Object, self.objects.len())
+            OwnedExpr::ObjectLit(node) => ExprKey::new(ExprKind::Object, self.objects.len())
                 .and_then(|k| {
                     self.objects.push(node);
                     Some(k)
                 }),
 
-            OwnedExpr::UnaryOp(node) => ExprRef::new(ExprKind::UnaryOp, self.unary_ops.len())
+            OwnedExpr::UnaryOp(node) => ExprKey::new(ExprKind::UnaryOp, self.unary_ops.len())
                 .and_then(|k| {
                     self.unary_ops.push(node);
                     Some(k)
                 }),
 
-            OwnedExpr::BinaryOp(node) => ExprRef::new(ExprKind::BinaryOp, self.binary_ops.len())
+            OwnedExpr::BinaryOp(node) => ExprKey::new(ExprKind::BinaryOp, self.binary_ops.len())
                 .and_then(|k| {
                     self.binary_ops.push(node);
                     Some(k)
                 }),
 
-            OwnedExpr::Statement(node) => ExprRef::new(ExprKind::Statement, self.statements.len())
+            OwnedExpr::Statement(node) => ExprKey::new(ExprKind::Statement, self.statements.len())
                 .and_then(|k| {
                     self.statements.push(node);
                     Some(k)
                 }),
 
             OwnedExpr::Block(node) => {
-                ExprRef::new(ExprKind::Block, self.blocks.len()).and_then(|k| {
+                ExprKey::new(ExprKind::Block, self.blocks.len()).and_then(|k| {
                     self.blocks.push(node);
                     Some(k)
                 })
             }
 
-            OwnedExpr::Function(node) => ExprRef::new(ExprKind::Function, self.functions.len())
+            OwnedExpr::Function(node) => ExprKey::new(ExprKind::Function, self.functions.len())
                 .and_then(|k| {
                     self.functions.push(node);
                     Some(k)
                 }),
 
-            OwnedExpr::Variable(node) => ExprRef::new(ExprKind::Variable, self.variables.len())
+            OwnedExpr::Variable(node) => ExprKey::new(ExprKind::Variable, self.variables.len())
                 .and_then(|k| {
                     self.variables.push(node);
                     Some(k)
                 }),
 
             OwnedExpr::Return(node) => {
-                ExprRef::new(ExprKind::Return, self.returns.len()).and_then(|k| {
+                ExprKey::new(ExprKind::Return, self.returns.len()).and_then(|k| {
                     self.returns.push(node);
                     Some(k)
                 })
@@ -429,7 +429,7 @@ impl<'a> Storage<'a> {
         }
     }
 
-    pub(crate) fn add_type(&mut self, ty: OwnedType<'a>) -> Option<TypeRef<'a>> {
+    pub(crate) fn add_type(&mut self, ty: OwnedType<'a>) -> Option<TypeKey<'a>> {
         self.add_expr(ty.into()).and_then(|expr_ref| {
             /*
              * All TypeKinds have analogous ExprKinds, so we can use the same
@@ -442,11 +442,11 @@ impl<'a> Storage<'a> {
                 .expect("The expr was a type");
             let index = expr_ref.instance_index();
 
-            TypeRef::new(variant, index)
+            TypeKey::new(variant, index)
         })
     }
 
-    pub fn get_expr(&self, id: ExprRef<'a>) -> Option<RefExpr<'_, 'a>> {
+    pub fn get_expr(&self, id: ExprKey<'a>) -> Option<RefExpr<'_, 'a>> {
         let index = id.instance_index() as usize;
 
         match id.variant_index() {
@@ -494,7 +494,7 @@ impl<'a> Storage<'a> {
         }
     }
 
-    pub fn get_expr_mut(&mut self, id: ExprRef<'a>) -> Option<MutRefExpr<'_, 'a>> {
+    pub fn get_expr_mut(&mut self, id: ExprKey<'a>) -> Option<MutRefExpr<'_, 'a>> {
         let index = id.instance_index() as usize;
 
         match id.variant_index() {
@@ -545,7 +545,7 @@ impl<'a> Storage<'a> {
         }
     }
 
-    pub fn get_type(&self, id: TypeRef<'a>) -> Option<RefType<'_, 'a>> {
+    pub fn get_type(&self, id: TypeKey<'a>) -> Option<RefType<'_, 'a>> {
         let index = id.instance_index() as usize;
 
         match id.variant_index() {
@@ -574,7 +574,7 @@ impl<'a> Storage<'a> {
         }
     }
 
-    pub fn get_type_mut(&mut self, id: TypeRef<'a>) -> Option<MutRefType<'_, 'a>> {
+    pub fn get_type_mut(&mut self, id: TypeKey<'a>) -> Option<MutRefType<'_, 'a>> {
         let index = id.instance_index() as usize;
 
         match id.variant_index() {

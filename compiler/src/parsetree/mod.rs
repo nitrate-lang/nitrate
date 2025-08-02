@@ -22,5 +22,5 @@ mod variable;
 
 pub use builder::*;
 pub use expression::{MutRefExpr, MutRefType, RefExpr, RefType};
-pub use storage::{ExprRef, Storage, TypeRef};
+pub use storage::{ExprKey, Storage, TypeKey};
 pub use to_code::*;

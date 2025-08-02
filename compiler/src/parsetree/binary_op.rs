@@ -1,4 +1,4 @@
-use super::storage::ExprRef;
+use super::storage::ExprKey;
 
 #[derive(Debug, Clone, Copy)]
 pub enum BinaryOperator {
@@ -79,13 +79,13 @@ pub enum BinaryOperator {
 
 #[derive(Debug, Clone)]
 pub struct BinaryOp<'a> {
-    left: ExprRef<'a>,
-    right: ExprRef<'a>,
+    left: ExprKey<'a>,
+    right: ExprKey<'a>,
     operator: BinaryOperator,
 }
 
 impl<'a> BinaryOp<'a> {
-    pub fn new(left: ExprRef<'a>, operator: BinaryOperator, right: ExprRef<'a>) -> Self {
+    pub fn new(left: ExprKey<'a>, operator: BinaryOperator, right: ExprKey<'a>) -> Self {
         BinaryOp {
             left,
             right,
@@ -93,7 +93,7 @@ impl<'a> BinaryOp<'a> {
         }
     }
 
-    pub fn left(&self) -> ExprRef<'a> {
+    pub fn left(&self) -> ExprKey<'a> {
         self.left
     }
 
@@ -101,7 +101,7 @@ impl<'a> BinaryOp<'a> {
         self.operator
     }
 
-    pub fn right(&self) -> ExprRef<'a> {
+    pub fn right(&self) -> ExprKey<'a> {
         self.right
     }
 }

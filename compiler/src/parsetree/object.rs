@@ -1,25 +1,25 @@
-use super::storage::ExprRef;
+use super::storage::ExprKey;
 use std::collections::BTreeMap;
 
 #[derive(Debug, Clone)]
 pub struct ObjectLit<'a> {
-    fields: BTreeMap<&'a str, ExprRef<'a>>,
+    fields: BTreeMap<&'a str, ExprKey<'a>>,
 }
 
 impl<'a> ObjectLit<'a> {
-    pub fn new(fields: BTreeMap<&'a str, ExprRef<'a>>) -> Self {
+    pub fn new(fields: BTreeMap<&'a str, ExprKey<'a>>) -> Self {
         ObjectLit { fields }
     }
 
-    pub fn into_inner(self) -> BTreeMap<&'a str, ExprRef<'a>> {
+    pub fn into_inner(self) -> BTreeMap<&'a str, ExprKey<'a>> {
         self.fields
     }
 
-    pub fn get(&self) -> &BTreeMap<&'a str, ExprRef<'a>> {
+    pub fn get(&self) -> &BTreeMap<&'a str, ExprKey<'a>> {
         &self.fields
     }
 
-    pub fn get_mut(&mut self) -> &mut BTreeMap<&'a str, ExprRef<'a>> {
+    pub fn get_mut(&mut self) -> &mut BTreeMap<&'a str, ExprKey<'a>> {
         &mut self.fields
     }
 }

@@ -11,7 +11,7 @@ use super::number::{FloatLit, IntegerLit};
 use super::object::ObjectLit;
 use super::returns::Return;
 use super::statement::Statement;
-use super::storage::{ExprRef, Storage, TypeRef};
+use super::storage::{ExprKey, Storage, TypeKey};
 use super::string::StringLit;
 use super::struct_type::StructType;
 use super::tuple_type::TupleType;
@@ -67,7 +67,7 @@ impl<'storage, 'a> IntegerBuilderHelper<'storage, 'a> {
         self
     }
 
-    pub fn build(self) -> Option<ExprRef<'a>> {
+    pub fn build(self) -> Option<ExprKey<'a>> {
         let value = self.value.expect("Integer value must be provided");
         let kind = self.kind.unwrap_or(IntegerKind::Decimal);
 

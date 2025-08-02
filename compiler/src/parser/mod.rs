@@ -12,8 +12,8 @@ pub struct CopyrightMetadata<'a> {
 pub struct SourceModel<'a> {
     language_version: (u32, u32),
     copyright: CopyrightMetadata<'a>,
-    insource_config: HashMap<&'a str, ExprRef<'a>>,
-    tree: ExprRef<'a>,
+    insource_config: HashMap<&'a str, ExprKey<'a>>,
+    tree: ExprKey<'a>,
 }
 
 impl<'a> SourceModel<'a> {
@@ -25,11 +25,11 @@ impl<'a> SourceModel<'a> {
         &self.copyright
     }
 
-    pub fn insource_config(&self) -> &HashMap<&'a str, ExprRef<'a>> {
+    pub fn insource_config(&self) -> &HashMap<&'a str, ExprKey<'a>> {
         &self.insource_config
     }
 
-    pub fn tree(&self) -> ExprRef<'a> {
+    pub fn tree(&self) -> ExprKey<'a> {
         self.tree
     }
 }
@@ -47,13 +47,13 @@ impl<'storage, 'lexer, 'a> Parser<'storage, 'lexer, 'a> {
         }
     }
 
-    pub fn parse_expression(&mut self) -> Option<ExprRef<'a>> {
+    pub fn parse_expression(&mut self) -> Option<ExprKey<'a>> {
         // TODO: Develop nitrate parser
 
         None
     }
 
-    pub fn parse_type(&mut self) -> Option<TypeRef<'a>> {
+    pub fn parse_type(&mut self) -> Option<TypeKey<'a>> {
         // TODO: Develop nitrate type parser
 
         None

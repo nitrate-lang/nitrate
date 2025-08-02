@@ -1,24 +1,24 @@
-use super::storage::ExprRef;
+use super::storage::ExprKey;
 
 #[derive(Debug, Clone)]
 pub struct Statement<'a> {
-    expr: ExprRef<'a>,
+    expr: ExprKey<'a>,
 }
 
 impl<'a> Statement<'a> {
-    pub fn new(expr: ExprRef<'a>) -> Self {
+    pub fn new(expr: ExprKey<'a>) -> Self {
         Statement { expr }
     }
 
-    pub fn into_inner(self) -> ExprRef<'a> {
+    pub fn into_inner(self) -> ExprKey<'a> {
         self.expr
     }
 
-    pub fn get(&self) -> ExprRef<'a> {
+    pub fn get(&self) -> ExprKey<'a> {
         self.expr
     }
 
-    pub fn set(&mut self, expr: ExprRef<'a>) {
+    pub fn set(&mut self, expr: ExprKey<'a>) {
         self.expr = expr;
     }
 }
