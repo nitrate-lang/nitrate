@@ -1,13 +1,13 @@
 use super::block::Block;
-use super::expression::{Expr, Type};
+use super::storage::{ExprRef, TypeRef};
 
-pub type FunctionParameter<'a> = (&'a str, Option<Box<Type<'a>>>, Option<Box<Expr<'a>>>);
+pub type FunctionParameter<'a> = (&'a str, Option<TypeRef<'a>>, Option<ExprRef<'a>>);
 
 #[derive(Debug, Clone)]
 pub struct Function<'a> {
     parameters: Vec<FunctionParameter<'a>>,
-    return_type: Option<Box<Type<'a>>>,
-    attributes: Vec<Box<Expr<'a>>>,
+    return_type: Option<TypeRef<'a>>,
+    attributes: Vec<ExprRef<'a>>,
     name: &'a str,
     definition: Option<Block<'a>>,
 }
@@ -16,8 +16,8 @@ impl<'a> Function<'a> {
     pub fn new(
         name: &'a str,
         parameters: Vec<FunctionParameter<'a>>,
-        return_type: Option<Box<Type<'a>>>,
-        attributes: Vec<Box<Expr<'a>>>,
+        return_type: Option<TypeRef<'a>>,
+        attributes: Vec<ExprRef<'a>>,
         definition: Option<Block<'a>>,
     ) -> Self {
         Function {
@@ -29,7 +29,7 @@ impl<'a> Function<'a> {
         }
     }
 
-    pub fn parameters(&self) -> &Vec<FunctionParameter<'a>> {
+    pub fn parameters(&self) -> &[FunctionParameter<'a>] {
         &self.parameters
     }
 
@@ -37,24 +37,28 @@ impl<'a> Function<'a> {
         &mut self.parameters
     }
 
-    pub fn return_type(&self) -> Option<&Box<Type<'a>>> {
-        self.return_type.as_ref()
+    pub fn return_type(&self) -> Option<TypeRef<'a>> {
+        self.return_type
     }
 
-    pub fn set_return_type(&mut self, ty: Option<Box<Type<'a>>>) {
+    pub fn set_return_type(&mut self, ty: Option<TypeRef<'a>>) {
         self.return_type = ty;
     }
 
-    pub fn attributes(&self) -> &Vec<Box<Expr<'a>>> {
+    pub fn attributes(&self) -> &[ExprRef<'a>] {
         &self.attributes
     }
 
-    pub fn attributes_mut(&mut self) -> &mut Vec<Box<Expr<'a>>> {
+    pub fn attributes_mut(&mut self) -> &mut Vec<ExprRef<'a>> {
         &mut self.attributes
     }
 
     pub fn name(&self) -> &'a str {
         self.name
+    }
+
+    pub fn set_name(&mut self, name: &'a str) {
+        self.name = name;
     }
 
     pub fn definition(&self) -> Option<&Block<'a>> {

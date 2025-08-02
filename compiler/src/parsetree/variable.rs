@@ -1,4 +1,4 @@
-use super::expression::{Expr, Type};
+use super::storage::{ExprRef, TypeRef};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Hash)]
 pub enum VariableKind {
@@ -10,16 +10,16 @@ pub enum VariableKind {
 pub struct Variable<'a> {
     kind: VariableKind,
     name: &'a str,
-    var_type: Option<Box<Type<'a>>>,
-    value: Option<Box<Expr<'a>>>,
+    var_type: Option<TypeRef<'a>>,
+    value: Option<ExprRef<'a>>,
 }
 
 impl<'a> Variable<'a> {
     pub fn new(
         kind: VariableKind,
         name: &'a str,
-        var_type: Option<Box<Type<'a>>>,
-        value: Option<Box<Expr<'a>>>,
+        var_type: Option<TypeRef<'a>>,
+        value: Option<ExprRef<'a>>,
     ) -> Self {
         Variable {
             kind,
@@ -41,19 +41,19 @@ impl<'a> Variable<'a> {
         self.name = name;
     }
 
-    pub fn get_type(&self) -> Option<&Box<Type<'a>>> {
-        self.var_type.as_ref()
+    pub fn get_type(&self) -> Option<TypeRef<'a>> {
+        self.var_type
     }
 
-    pub fn get_type_mut(&mut self) -> Option<&mut Box<Type<'a>>> {
-        self.var_type.as_mut()
+    pub fn set_type(&mut self, var_type: Option<TypeRef<'a>>) {
+        self.var_type = var_type;
     }
 
-    pub fn value(&self) -> Option<&Expr<'a>> {
-        self.value.as_deref()
+    pub fn value(&self) -> Option<ExprRef<'a>> {
+        self.value
     }
 
-    pub fn value_mut(&mut self) -> Option<&mut Expr<'a>> {
-        self.value.as_deref_mut()
+    pub fn set_value(&mut self, value: Option<ExprRef<'a>>) {
+        self.value = value;
     }
 }

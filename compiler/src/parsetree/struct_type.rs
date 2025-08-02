@@ -1,18 +1,18 @@
-use super::expression::{Expr, Type};
+use super::storage::{ExprRef, TypeRef};
 use std::collections::BTreeMap;
 
 #[derive(Debug, Clone)]
 pub struct StructType<'a> {
     name: Option<&'a str>,
-    attributes: Vec<Box<Expr<'a>>>,
-    fields: BTreeMap<&'a str, Box<Type<'a>>>,
+    attributes: Vec<ExprRef<'a>>,
+    fields: BTreeMap<&'a str, TypeRef<'a>>,
 }
 
 impl<'a> StructType<'a> {
     pub fn new(
         name: Option<&'a str>,
-        attributes: Vec<Box<Expr<'a>>>,
-        fields: BTreeMap<&'a str, Box<Type<'a>>>,
+        attributes: Vec<ExprRef<'a>>,
+        fields: BTreeMap<&'a str, TypeRef<'a>>,
     ) -> Self {
         StructType {
             name,
@@ -21,7 +21,7 @@ impl<'a> StructType<'a> {
         }
     }
 
-    pub fn into_inner(self) -> BTreeMap<&'a str, Box<Type<'a>>> {
+    pub fn into_inner(self) -> BTreeMap<&'a str, TypeRef<'a>> {
         self.fields
     }
 
@@ -29,11 +29,11 @@ impl<'a> StructType<'a> {
         self.name
     }
 
-    pub fn attributes(&self) -> &[Box<Expr<'a>>] {
+    pub fn attributes(&self) -> &[ExprRef<'a>] {
         &self.attributes
     }
 
-    pub fn fields(&self) -> &BTreeMap<&'a str, Box<Type<'a>>> {
+    pub fn fields(&self) -> &BTreeMap<&'a str, TypeRef<'a>> {
         &self.fields
     }
 }

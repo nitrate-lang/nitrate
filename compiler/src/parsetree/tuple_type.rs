@@ -1,20 +1,20 @@
-use super::expression::Type;
+use super::storage::TypeRef;
 
 #[derive(Debug, Clone)]
 pub struct TupleType<'a> {
-    elements: Vec<Box<Type<'a>>>,
+    elements: Vec<TypeRef<'a>>,
 }
 
 impl<'a> TupleType<'a> {
-    pub fn new(elements: Vec<Box<Type<'a>>>) -> Self {
+    pub fn new(elements: Vec<TypeRef<'a>>) -> Self {
         TupleType { elements }
     }
 
-    pub fn into_inner(self) -> Vec<Box<Type<'a>>> {
+    pub fn into_inner(self) -> Vec<TypeRef<'a>> {
         self.elements
     }
 
-    pub fn elements(&self) -> &[Box<Type<'a>>] {
+    pub fn elements(&self) -> &[TypeRef<'a>] {
         &self.elements
     }
 }
