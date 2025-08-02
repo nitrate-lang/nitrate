@@ -3,7 +3,7 @@ use super::binary_op::{BinaryOp, BinaryOperator};
 use super::block::Block;
 use super::builder::Builder;
 use super::character::CharLit;
-use super::expression::{Expr, Type};
+use super::expression::OwnedExpr;
 use super::function::{Function, FunctionParameter};
 use super::function_type::FunctionType;
 use super::list::ListLit;
@@ -72,7 +72,7 @@ impl<'storage, 'a> IntegerBuilderHelper<'storage, 'a> {
         let kind = self.kind.unwrap_or(IntegerKind::Decimal);
 
         self.storage
-            .add_expr(Expr::IntegerLit(IntegerLit::new(value, kind)?))
+            .add_expr(OwnedExpr::IntegerLit(IntegerLit::new(value, kind)?))
     }
 }
 
