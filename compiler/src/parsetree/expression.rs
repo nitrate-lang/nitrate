@@ -1,18 +1,18 @@
 use super::array_type::ArrayType;
-use super::binary_op::BinaryExpr;
+use super::binary_op::BinaryOp;
 use super::block::Block;
 use super::character::CharLit;
 use super::function::Function;
 use super::function_type::FunctionType;
-use super::list::List;
+use super::list::ListLit;
 use super::number::{FloatLit, IntegerLit};
-use super::object::Object;
+use super::object::ObjectLit;
 use super::returns::Return;
 use super::statement::Statement;
 use super::string::StringLit;
 use super::struct_type::StructType;
 use super::tuple_type::TupleType;
-use super::unary_op::UnaryExpr;
+use super::unary_op::UnaryOp;
 use super::variable::Variable;
 
 #[derive(Debug, Clone)]
@@ -44,17 +44,17 @@ pub enum Expr<'a> {
 
     Discard,
 
-    /* Primitive Expressions */
-    Integer(IntegerLit),
-    Float(FloatLit),
-    String(StringLit<'a>),
-    Char(CharLit),
-    List(List<'a>),
-    Object(Object<'a>),
+    /* Literal Expressions */
+    IntegerLit(IntegerLit),
+    FloatLit(FloatLit),
+    StringLit(StringLit<'a>),
+    CharLit(CharLit),
+    ListLit(ListLit<'a>),
+    ObjectLit(ObjectLit<'a>),
 
     /* Compound Expressions */
-    UnaryOp(UnaryExpr<'a>),
-    BinaryOp(BinaryExpr<'a>),
+    UnaryOp(UnaryOp<'a>),
+    BinaryOp(BinaryOp<'a>),
     Statement(Statement<'a>),
     Block(Block<'a>),
 
@@ -123,17 +123,17 @@ pub enum RefExpr<'storage, 'a> {
 
     Discard,
 
-    /* Primitive Expressions */
-    Integer(&'storage IntegerLit),
-    Float(&'storage FloatLit),
-    String(&'storage StringLit<'a>),
-    Char(&'storage CharLit),
-    List(&'storage List<'a>),
-    Object(&'storage Object<'a>),
+    /* Literal Expressions */
+    IntegerLit(&'storage IntegerLit),
+    FloatLit(&'storage FloatLit),
+    StringLit(&'storage StringLit<'a>),
+    CharLit(&'storage CharLit),
+    ListLit(&'storage ListLit<'a>),
+    ObjectLit(&'storage ObjectLit<'a>),
 
     /* Compound Expressions */
-    UnaryOp(&'storage UnaryExpr<'a>),
-    BinaryOp(&'storage BinaryExpr<'a>),
+    UnaryOp(&'storage UnaryOp<'a>),
+    BinaryOp(&'storage BinaryOp<'a>),
     Statement(&'storage Statement<'a>),
     Block(&'storage Block<'a>),
 
@@ -202,12 +202,12 @@ impl<'a> TryInto<Type<'a>> for Expr<'a> {
             Expr::FunctionType(x) => Ok(Type::FunctionType(x)),
 
             Expr::Discard
-            | Expr::Integer(_)
-            | Expr::Float(_)
-            | Expr::String(_)
-            | Expr::Char(_)
-            | Expr::List(_)
-            | Expr::Object(_)
+            | Expr::IntegerLit(_)
+            | Expr::FloatLit(_)
+            | Expr::StringLit(_)
+            | Expr::CharLit(_)
+            | Expr::ListLit(_)
+            | Expr::ObjectLit(_)
             | Expr::UnaryOp(_)
             | Expr::BinaryOp(_)
             | Expr::Statement(_)
@@ -277,12 +277,12 @@ impl<'storage, 'a> TryInto<RefType<'storage, 'a>> for RefExpr<'storage, 'a> {
             RefExpr::FunctionType(x) => Ok(RefType::FunctionType(x)),
 
             RefExpr::Discard
-            | RefExpr::Integer(_)
-            | RefExpr::Float(_)
-            | RefExpr::String(_)
-            | RefExpr::Char(_)
-            | RefExpr::List(_)
-            | RefExpr::Object(_)
+            | RefExpr::IntegerLit(_)
+            | RefExpr::FloatLit(_)
+            | RefExpr::StringLit(_)
+            | RefExpr::CharLit(_)
+            | RefExpr::ListLit(_)
+            | RefExpr::ObjectLit(_)
             | RefExpr::UnaryOp(_)
             | RefExpr::BinaryOp(_)
             | RefExpr::Statement(_)

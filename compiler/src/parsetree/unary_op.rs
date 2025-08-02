@@ -40,15 +40,15 @@ pub enum UnaryOperator {
 }
 
 #[derive(Debug, Clone)]
-pub struct UnaryExpr<'a> {
+pub struct UnaryOp<'a> {
     operand: ExprRef<'a>,
     operator: UnaryOperator,
     is_postfix: bool,
 }
 
-impl<'a> UnaryExpr<'a> {
+impl<'a> UnaryOp<'a> {
     pub fn new(operand: ExprRef<'a>, operator: UnaryOperator, is_postfix: bool) -> Self {
-        UnaryExpr {
+        UnaryOp {
             operand,
             operator,
             is_postfix,

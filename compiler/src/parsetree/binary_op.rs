@@ -78,15 +78,15 @@ pub enum BinaryOperator {
 }
 
 #[derive(Debug, Clone)]
-pub struct BinaryExpr<'a> {
+pub struct BinaryOp<'a> {
     left: ExprRef<'a>,
     right: ExprRef<'a>,
     operator: BinaryOperator,
 }
 
-impl<'a> BinaryExpr<'a> {
+impl<'a> BinaryOp<'a> {
     pub fn new(left: ExprRef<'a>, operator: BinaryOperator, right: ExprRef<'a>) -> Self {
-        BinaryExpr {
+        BinaryOp {
             left,
             right,
             operator,

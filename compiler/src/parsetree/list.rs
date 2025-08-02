@@ -1,13 +1,13 @@
 use super::storage::ExprRef;
 
 #[derive(Debug, Clone)]
-pub struct List<'a> {
+pub struct ListLit<'a> {
     elements: Vec<ExprRef<'a>>,
 }
 
-impl<'a> List<'a> {
+impl<'a> ListLit<'a> {
     pub fn new(elements: Vec<ExprRef<'a>>) -> Self {
-        List { elements }
+        ListLit { elements }
     }
 
     pub fn into_inner(self) -> Vec<ExprRef<'a>> {

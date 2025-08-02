@@ -16,7 +16,7 @@
 //     }
 
 //     /////////////////////////////////////////////////////////////////
-//     /// BEGIN: Primitive Expression Builders
+//     /// BEGIN: Literal Expression Builders
 //     pub fn integer(self) -> IntegerBuilderHelper<'a> {
 //         IntegerBuilderHelper::new(self)
 //     }

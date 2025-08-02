@@ -1,19 +1,19 @@
 use super::array_type::ArrayType;
-use super::binary_op::BinaryExpr;
+use super::binary_op::BinaryOp;
 use super::block::Block;
 use super::character::CharLit;
 use super::expression::{Expr, RefExpr, RefType, Type};
 use super::function::Function;
 use super::function_type::FunctionType;
-use super::list::List;
+use super::list::ListLit;
 use super::number::{FloatLit, IntegerLit};
-use super::object::Object;
+use super::object::ObjectLit;
 use super::returns::Return;
 use super::statement::Statement;
 use super::string::StringLit;
 use super::struct_type::StructType;
 use super::tuple_type::TupleType;
-use super::unary_op::UnaryExpr;
+use super::unary_op::UnaryOp;
 use super::variable::Variable;
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
@@ -208,11 +208,11 @@ pub struct Storage<'a> {
     floats: Vec<FloatLit>,
     strings: Vec<StringLit<'a>>,
     characters: Vec<CharLit>,
-    lists: Vec<List<'a>>,
-    objects: Vec<Object<'a>>,
+    lists: Vec<ListLit<'a>>,
+    objects: Vec<ObjectLit<'a>>,
 
-    unary_ops: Vec<UnaryExpr<'a>>,
-    binary_ops: Vec<BinaryExpr<'a>>,
+    unary_ops: Vec<UnaryOp<'a>>,
+    binary_ops: Vec<BinaryOp<'a>>,
     statements: Vec<Statement<'a>>,
     blocks: Vec<Block<'a>>,
 
@@ -302,36 +302,39 @@ impl<'a> Storage<'a> {
 
             Expr::Discard => Some(ExprRef::new_single(ExprKind::Discard)),
 
-            Expr::Integer(node) => {
-                ExprRef::new(ExprKind::Integer, self.integers.len()).and_then(|k| {
+            Expr::IntegerLit(node) => ExprRef::new(ExprKind::Integer, self.integers.len())
+                .and_then(|k| {
                     self.integers.push(node);
+                    Some(k)
+                }),
+
+            Expr::FloatLit(node) => {
+                ExprRef::new(ExprKind::Float, self.floats.len()).and_then(|k| {
+                    self.floats.push(node);
                     Some(k)
                 })
             }
 
-            Expr::Float(node) => ExprRef::new(ExprKind::Float, self.floats.len()).and_then(|k| {
-                self.floats.push(node);
-                Some(k)
-            }),
-
-            Expr::String(node) => {
+            Expr::StringLit(node) => {
                 ExprRef::new(ExprKind::String, self.strings.len()).and_then(|k| {
                     self.strings.push(node);
                     Some(k)
                 })
             }
 
-            Expr::Char(node) => ExprRef::new(ExprKind::Char, self.characters.len()).and_then(|k| {
-                self.characters.push(node);
-                Some(k)
-            }),
+            Expr::CharLit(node) => {
+                ExprRef::new(ExprKind::Char, self.characters.len()).and_then(|k| {
+                    self.characters.push(node);
+                    Some(k)
+                })
+            }
 
-            Expr::List(node) => ExprRef::new(ExprKind::List, self.lists.len()).and_then(|k| {
+            Expr::ListLit(node) => ExprRef::new(ExprKind::List, self.lists.len()).and_then(|k| {
                 self.lists.push(node);
                 Some(k)
             }),
 
-            Expr::Object(node) => {
+            Expr::ObjectLit(node) => {
                 ExprRef::new(ExprKind::Object, self.objects.len()).and_then(|k| {
                     self.objects.push(node);
                     Some(k)
@@ -429,12 +432,12 @@ impl<'a> Storage<'a> {
 
             ExprKind::Discard => Some(RefExpr::Discard),
 
-            ExprKind::Integer => self.integers.get(index).map(RefExpr::Integer),
-            ExprKind::Float => self.floats.get(index).map(RefExpr::Float),
-            ExprKind::String => self.strings.get(index).map(RefExpr::String),
-            ExprKind::Char => self.characters.get(index).map(RefExpr::Char),
-            ExprKind::List => self.lists.get(index).map(RefExpr::List),
-            ExprKind::Object => self.objects.get(index).map(RefExpr::Object),
+            ExprKind::Integer => self.integers.get(index).map(RefExpr::IntegerLit),
+            ExprKind::Float => self.floats.get(index).map(RefExpr::FloatLit),
+            ExprKind::String => self.strings.get(index).map(RefExpr::StringLit),
+            ExprKind::Char => self.characters.get(index).map(RefExpr::CharLit),
+            ExprKind::List => self.lists.get(index).map(RefExpr::ListLit),
+            ExprKind::Object => self.objects.get(index).map(RefExpr::ObjectLit),
 
             ExprKind::UnaryOp => self.unary_ops.get(index).map(RefExpr::UnaryOp),
             ExprKind::BinaryOp => self.binary_ops.get(index).map(RefExpr::BinaryOp),

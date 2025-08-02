@@ -2,13 +2,13 @@ use super::storage::ExprRef;
 use std::collections::BTreeMap;
 
 #[derive(Debug, Clone)]
-pub struct Object<'a> {
+pub struct ObjectLit<'a> {
     fields: BTreeMap<&'a str, ExprRef<'a>>,
 }
 
-impl<'a> Object<'a> {
+impl<'a> ObjectLit<'a> {
     pub fn new(fields: BTreeMap<&'a str, ExprRef<'a>>) -> Self {
-        Object { fields }
+        ObjectLit { fields }
     }
 
     pub fn into_inner(self) -> BTreeMap<&'a str, ExprRef<'a>> {
