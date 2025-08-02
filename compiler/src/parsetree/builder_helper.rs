@@ -3,7 +3,7 @@ use super::binary_op::{BinaryExpr, BinaryOperator};
 use super::block::Block;
 use super::builder::Builder;
 use super::character::CharLit;
-use super::expression::{Expr, InnerExpr};
+use super::expression::Expr;
 use super::function::{Function, FunctionParameter};
 use super::function_type::FunctionType;
 use super::list::List;
@@ -14,7 +14,7 @@ use super::statement::Statement;
 use super::string::StringLit;
 use super::struct_type::StructType;
 use super::tuple_type::TupleType;
-use super::types::{InnerType, Type};
+use super::types::Type;
 use super::unary_op::{UnaryExpr, UnaryOperator};
 use super::variable::{Variable, VariableKind};
 use crate::lexer::IntegerKind;
@@ -46,27 +46,24 @@ pub struct TypeFactory<'a> {
 impl<'a> TypeFactory<'a> {
     pub fn new() -> Self {
         TypeFactory {
-            bool: Box::new(Type::new(InnerType::Bool, false)),
-            u8: Box::new(Type::new(InnerType::UInt8, false)),
-            u16: Box::new(Type::new(InnerType::UInt16, false)),
-            u32: Box::new(Type::new(InnerType::UInt32, false)),
-            u64: Box::new(Type::new(InnerType::UInt64, false)),
-            u128: Box::new(Type::new(InnerType::UInt128, false)),
-            i8: Box::new(Type::new(InnerType::Int8, false)),
-            i16: Box::new(Type::new(InnerType::Int16, false)),
-            i32: Box::new(Type::new(InnerType::Int32, false)),
-            i64: Box::new(Type::new(InnerType::Int64, false)),
-            i128: Box::new(Type::new(InnerType::Int128, false)),
-            f8: Box::new(Type::new(InnerType::Float8, false)),
-            f16: Box::new(Type::new(InnerType::Float16, false)),
-            f32: Box::new(Type::new(InnerType::Float32, false)),
-            f64: Box::new(Type::new(InnerType::Float64, false)),
-            f128: Box::new(Type::new(InnerType::Float128, false)),
-            infer_type: Box::new(Type::new(InnerType::InferType, false)),
-            unit: Box::new(Type::new(
-                InnerType::TupleType(TupleType::new(Vec::new())),
-                false,
-            )),
+            bool: Box::new(Type::Bool),
+            u8: Box::new(Type::UInt8),
+            u16: Box::new(Type::UInt16),
+            u32: Box::new(Type::UInt32),
+            u64: Box::new(Type::UInt64),
+            u128: Box::new(Type::UInt128),
+            i8: Box::new(Type::Int8),
+            i16: Box::new(Type::Int16),
+            i32: Box::new(Type::Int32),
+            i64: Box::new(Type::Int64),
+            i128: Box::new(Type::Int128),
+            f8: Box::new(Type::Float8),
+            f16: Box::new(Type::Float16),
+            f32: Box::new(Type::Float32),
+            f64: Box::new(Type::Float64),
+            f128: Box::new(Type::Float128),
+            infer_type: Box::new(Type::InferType),
+            unit: Box::new(Type::TupleType(TupleType::new(Vec::new()))),
         }
     }
 
@@ -195,10 +192,7 @@ impl<'a> IntegerBuilderHelper<'a> {
 
         let integer_lit = IntegerLit::new(value, kind).expect("Failed to create IntegerLit");
 
-        Box::new(Expr::new(
-            InnerExpr::Integer(integer_lit),
-            self.outer.get_metadata(),
-        ))
+        Box::new(Expr::Integer(integer_lit))
     }
 }
 
@@ -221,10 +215,7 @@ impl<'a> FloatBuilderHelper<'a> {
     pub fn build(self) -> Box<Expr<'a>> {
         let value = self.value.expect("Float value must be provided");
 
-        Box::new(Expr::new(
-            InnerExpr::Float(FloatLit::new(value)),
-            self.outer.get_metadata(),
-        ))
+        Box::new(Expr::Float(FloatLit::new(value)))
     }
 }
 
@@ -252,10 +243,7 @@ impl<'a> StringBuilderHelper<'a> {
     pub fn build(self) -> Box<Expr<'a>> {
         let value = self.value.expect("String value must be provided");
 
-        Box::new(Expr::new(
-            InnerExpr::String(StringLit::new(value)),
-            self.outer.get_metadata(),
-        ))
+        Box::new(Expr::String(StringLit::new(value)))
     }
 }
 
@@ -278,10 +266,7 @@ impl<'a> CharBuilderHelper<'a> {
     pub fn build(self) -> Box<Expr<'a>> {
         let value = self.value.expect("Char value must be provided");
 
-        Box::new(Expr::new(
-            InnerExpr::Char(CharLit::new(value)),
-            self.outer.get_metadata(),
-        ))
+        Box::new(Expr::Char(CharLit::new(value)))
     }
 }
 
@@ -313,10 +298,7 @@ impl<'a> ListBuilderHelper<'a> {
     }
 
     pub fn build(self) -> Box<Expr<'a>> {
-        Box::new(Expr::new(
-            InnerExpr::List(List::new(self.elements)),
-            self.outer.get_metadata(),
-        ))
+        Box::new(Expr::List(List::new(self.elements)))
     }
 }
 
@@ -348,10 +330,7 @@ impl<'a> ObjectBuilderHelper<'a> {
     }
 
     pub fn build(self) -> Box<Expr<'a>> {
-        Box::new(Expr::new(
-            InnerExpr::Object(Object::new(self.fields)),
-            self.outer.get_metadata(),
-        ))
+        Box::new(Expr::Object(Object::new(self.fields)))
     }
 }
 
@@ -395,10 +374,7 @@ impl<'a> UnaryExprBuilderHelper<'a> {
 
         let unary = UnaryExpr::new(operand, operator, is_postfix);
 
-        Box::new(Expr::new(
-            InnerExpr::UnaryOp(unary),
-            self.outer.get_metadata(),
-        ))
+        Box::new(Expr::UnaryOp(unary))
     }
 }
 
@@ -442,10 +418,7 @@ impl<'a> BinaryExprBuilderHelper<'a> {
 
         let binary_expr = BinaryExpr::new(left, operator, right);
 
-        Box::new(Expr::new(
-            InnerExpr::BinaryOp(binary_expr),
-            self.outer.get_metadata(),
-        ))
+        Box::new(Expr::BinaryOp(binary_expr))
     }
 }
 
@@ -471,10 +444,7 @@ impl<'a> StatementBuilderHelper<'a> {
     pub fn build(self) -> Box<Expr<'a>> {
         let expression = self.expression.expect("Expression must be provided");
 
-        Box::new(Expr::new(
-            InnerExpr::Statement(Statement::new(expression)),
-            self.outer.get_metadata(),
-        ))
+        Box::new(Expr::Statement(Statement::new(expression)))
     }
 }
 
@@ -523,10 +493,7 @@ impl<'a> BlockBuilderHelper<'a> {
     }
 
     pub fn build(self) -> Box<Expr<'a>> {
-        Box::new(Expr::new(
-            InnerExpr::Block(Block::new(self.elements)),
-            self.outer.get_metadata(),
-        ))
+        Box::new(Expr::Block(Block::new(self.elements)))
     }
 }
 
@@ -594,8 +561,8 @@ impl<'a> FunctionBuilderHelper<'a> {
     }
 
     pub fn with_definition(mut self, definition: Box<Expr<'a>>) -> Self {
-        match definition.get() {
-            InnerExpr::Block(_) => {
+        match *definition {
+            Expr::Block(_) => {
                 self.definition = Some(definition);
                 self
             }
@@ -605,8 +572,8 @@ impl<'a> FunctionBuilderHelper<'a> {
     }
 
     pub fn build(self) -> Box<Expr<'a>> {
-        let definition = self.definition.map(|d| match d.into_inner() {
-            InnerExpr::Block(block) => Block::new(block.into_inner()),
+        let definition = self.definition.map(|d| match *d {
+            Expr::Block(block) => Block::new(block.into_inner()),
             _ => panic!("Function definition must be a block expression"),
         });
 
@@ -618,10 +585,7 @@ impl<'a> FunctionBuilderHelper<'a> {
             definition,
         );
 
-        Box::new(Expr::new(
-            InnerExpr::Function(function),
-            self.outer.get_metadata(),
-        ))
+        Box::new(Expr::Function(function))
     }
 }
 
@@ -668,10 +632,9 @@ impl<'a> VariableBuilderHelper<'a> {
     pub fn build(self) -> Box<Expr<'a>> {
         let kind = self.kind.expect("Variable kind must be provided");
 
-        Box::new(Expr::new(
-            InnerExpr::Variable(Variable::new(kind, self.name, self.ty, self.value)),
-            self.outer.get_metadata(),
-        ))
+        Box::new(Expr::Variable(Variable::new(
+            kind, self.name, self.ty, self.value,
+        )))
     }
 }
 
@@ -692,10 +655,7 @@ impl<'a> ReturnBuilderHelper<'a> {
     }
 
     pub fn build(self) -> Box<Expr<'a>> {
-        Box::new(Expr::new(
-            InnerExpr::Return(Return::new(self.value)),
-            self.outer.get_metadata(),
-        ))
+        Box::new(Expr::Return(Return::new(self.value)))
     }
 }
 
@@ -727,10 +687,7 @@ impl<'a> TupleTypeBuilderHelper<'a> {
     }
 
     pub fn build(self) -> Box<Expr<'a>> {
-        Box::new(Expr::new(
-            InnerExpr::TupleType(TupleType::new(self.elements)),
-            self.outer.get_metadata(),
-        ))
+        Box::new(Expr::TupleType(TupleType::new(self.elements)))
     }
 }
 
@@ -766,10 +723,7 @@ impl<'a> ArrayTypeBuilderHelper<'a> {
 
         let array_type = ArrayType::new(element_ty, count);
 
-        Box::new(Expr::new(
-            InnerExpr::ArrayType(array_type),
-            self.outer.get_metadata(),
-        ))
+        Box::new(Expr::ArrayType(array_type))
     }
 }
 
@@ -825,10 +779,7 @@ impl<'a> StructTypeBuilderHelper<'a> {
     pub fn build(self) -> Box<Expr<'a>> {
         let struct_type = StructType::new(self.name, self.attributes, self.fields);
 
-        Box::new(Expr::new(
-            InnerExpr::StructType(struct_type),
-            self.outer.get_metadata(),
-        ))
+        Box::new(Expr::StructType(struct_type))
     }
 }
 
@@ -889,9 +840,6 @@ impl<'a> FunctionTypeBuilderHelper<'a> {
     pub fn build(self) -> Box<Expr<'a>> {
         let function_type = FunctionType::new(self.parameters, self.return_type, self.attributes);
 
-        Box::new(Expr::new(
-            InnerExpr::FunctionType(function_type),
-            self.outer.get_metadata(),
-        ))
+        Box::new(Expr::FunctionType(function_type))
     }
 }

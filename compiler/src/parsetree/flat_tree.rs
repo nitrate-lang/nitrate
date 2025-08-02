@@ -2,7 +2,7 @@ use super::array_type::ArrayType;
 use super::binary_op::BinaryExpr;
 use super::block::Block;
 use super::character::CharLit;
-use super::expression::InnerExpr;
+use super::expression::Expr;
 use super::function::Function;
 use super::function_type::FunctionType;
 use super::list::List;
@@ -166,132 +166,127 @@ impl<'a> FlatTree<'a> {
         }
     }
 
-    pub fn add(&mut self, expr: InnerExpr<'a>) -> Option<ExprRef> {
+    pub fn add(&mut self, expr: Expr<'a>) -> Option<ExprRef> {
         match expr {
-            InnerExpr::Discard => Some(ExprRef::new_single(ExprKind::Discard)),
+            Expr::Discard => Some(ExprRef::new_single(ExprKind::Discard)),
 
-            InnerExpr::Integer(node) => ExprRef::new(ExprKind::Integer, self.integers.len())
-                .and_then(|k| {
+            Expr::Integer(node) => {
+                ExprRef::new(ExprKind::Integer, self.integers.len()).and_then(|k| {
                     self.integers.push(node);
-                    Some(k)
-                }),
-
-            InnerExpr::Float(node) => {
-                ExprRef::new(ExprKind::Float, self.floats.len()).and_then(|k| {
-                    self.floats.push(node);
                     Some(k)
                 })
             }
 
-            InnerExpr::String(node) => {
+            Expr::Float(node) => ExprRef::new(ExprKind::Float, self.floats.len()).and_then(|k| {
+                self.floats.push(node);
+                Some(k)
+            }),
+
+            Expr::String(node) => {
                 ExprRef::new(ExprKind::String, self.strings.len()).and_then(|k| {
                     self.strings.push(node);
                     Some(k)
                 })
             }
 
-            InnerExpr::Char(node) => {
-                ExprRef::new(ExprKind::Char, self.characters.len()).and_then(|k| {
-                    self.characters.push(node);
-                    Some(k)
-                })
-            }
+            Expr::Char(node) => ExprRef::new(ExprKind::Char, self.characters.len()).and_then(|k| {
+                self.characters.push(node);
+                Some(k)
+            }),
 
-            InnerExpr::List(node) => ExprRef::new(ExprKind::List, self.lists.len()).and_then(|k| {
+            Expr::List(node) => ExprRef::new(ExprKind::List, self.lists.len()).and_then(|k| {
                 self.lists.push(node);
                 Some(k)
             }),
 
-            InnerExpr::Object(node) => {
+            Expr::Object(node) => {
                 ExprRef::new(ExprKind::Object, self.objects.len()).and_then(|k| {
                     self.objects.push(node);
                     Some(k)
                 })
             }
 
-            InnerExpr::UnaryOp(node) => ExprRef::new(ExprKind::UnaryOp, self.unary_ops.len())
-                .and_then(|k| {
+            Expr::UnaryOp(node) => {
+                ExprRef::new(ExprKind::UnaryOp, self.unary_ops.len()).and_then(|k| {
                     self.unary_ops.push(node);
                     Some(k)
-                }),
+                })
+            }
 
-            InnerExpr::BinaryOp(node) => ExprRef::new(ExprKind::BinaryOp, self.binary_ops.len())
+            Expr::BinaryOp(node) => ExprRef::new(ExprKind::BinaryOp, self.binary_ops.len())
                 .and_then(|k| {
                     self.binary_ops.push(node);
                     Some(k)
                 }),
 
-            InnerExpr::Statement(node) => ExprRef::new(ExprKind::Statement, self.statements.len())
+            Expr::Statement(node) => ExprRef::new(ExprKind::Statement, self.statements.len())
                 .and_then(|k| {
                     self.statements.push(node);
                     Some(k)
                 }),
 
-            InnerExpr::Block(node) => {
-                ExprRef::new(ExprKind::Block, self.blocks.len()).and_then(|k| {
-                    self.blocks.push(node);
-                    Some(k)
-                })
-            }
+            Expr::Block(node) => ExprRef::new(ExprKind::Block, self.blocks.len()).and_then(|k| {
+                self.blocks.push(node);
+                Some(k)
+            }),
 
-            InnerExpr::Function(node) => ExprRef::new(ExprKind::Function, self.functions.len())
+            Expr::Function(node) => ExprRef::new(ExprKind::Function, self.functions.len())
                 .and_then(|k| {
                     self.functions.push(node);
                     Some(k)
                 }),
 
-            InnerExpr::Variable(node) => ExprRef::new(ExprKind::Variable, self.variables.len())
+            Expr::Variable(node) => ExprRef::new(ExprKind::Variable, self.variables.len())
                 .and_then(|k| {
                     self.variables.push(node);
                     Some(k)
                 }),
 
-            InnerExpr::Return(node) => {
+            Expr::Return(node) => {
                 ExprRef::new(ExprKind::Return, self.returns.len()).and_then(|k| {
                     self.returns.push(node);
                     Some(k)
                 })
             }
 
-            InnerExpr::Bool => Some(ExprRef::new_single(ExprKind::Bool)),
-            InnerExpr::UInt8 => Some(ExprRef::new_single(ExprKind::UInt8)),
-            InnerExpr::UInt16 => Some(ExprRef::new_single(ExprKind::UInt16)),
-            InnerExpr::UInt32 => Some(ExprRef::new_single(ExprKind::UInt32)),
-            InnerExpr::UInt64 => Some(ExprRef::new_single(ExprKind::UInt64)),
-            InnerExpr::UInt128 => Some(ExprRef::new_single(ExprKind::UInt128)),
-            InnerExpr::Int8 => Some(ExprRef::new_single(ExprKind::Int8)),
-            InnerExpr::Int16 => Some(ExprRef::new_single(ExprKind::Int16)),
-            InnerExpr::Int32 => Some(ExprRef::new_single(ExprKind::Int32)),
-            InnerExpr::Int64 => Some(ExprRef::new_single(ExprKind::Int64)),
-            InnerExpr::Int128 => Some(ExprRef::new_single(ExprKind::Int128)),
-            InnerExpr::Float8 => Some(ExprRef::new_single(ExprKind::Float8)),
-            InnerExpr::Float16 => Some(ExprRef::new_single(ExprKind::Float16)),
-            InnerExpr::Float32 => Some(ExprRef::new_single(ExprKind::Float32)),
-            InnerExpr::Float64 => Some(ExprRef::new_single(ExprKind::Float64)),
-            InnerExpr::Float128 => Some(ExprRef::new_single(ExprKind::Float128)),
+            Expr::Bool => Some(ExprRef::new_single(ExprKind::Bool)),
+            Expr::UInt8 => Some(ExprRef::new_single(ExprKind::UInt8)),
+            Expr::UInt16 => Some(ExprRef::new_single(ExprKind::UInt16)),
+            Expr::UInt32 => Some(ExprRef::new_single(ExprKind::UInt32)),
+            Expr::UInt64 => Some(ExprRef::new_single(ExprKind::UInt64)),
+            Expr::UInt128 => Some(ExprRef::new_single(ExprKind::UInt128)),
+            Expr::Int8 => Some(ExprRef::new_single(ExprKind::Int8)),
+            Expr::Int16 => Some(ExprRef::new_single(ExprKind::Int16)),
+            Expr::Int32 => Some(ExprRef::new_single(ExprKind::Int32)),
+            Expr::Int64 => Some(ExprRef::new_single(ExprKind::Int64)),
+            Expr::Int128 => Some(ExprRef::new_single(ExprKind::Int128)),
+            Expr::Float8 => Some(ExprRef::new_single(ExprKind::Float8)),
+            Expr::Float16 => Some(ExprRef::new_single(ExprKind::Float16)),
+            Expr::Float32 => Some(ExprRef::new_single(ExprKind::Float32)),
+            Expr::Float64 => Some(ExprRef::new_single(ExprKind::Float64)),
+            Expr::Float128 => Some(ExprRef::new_single(ExprKind::Float128)),
 
-            InnerExpr::InferType => Some(ExprRef::new_single(ExprKind::InferType)),
+            Expr::InferType => Some(ExprRef::new_single(ExprKind::InferType)),
 
-            InnerExpr::TupleType(node) => ExprRef::new(ExprKind::TupleType, self.tuple_types.len())
+            Expr::TupleType(node) => ExprRef::new(ExprKind::TupleType, self.tuple_types.len())
                 .and_then(|k| {
                     self.tuple_types.push(node);
                     Some(k)
                 }),
 
-            InnerExpr::ArrayType(node) => ExprRef::new(ExprKind::ArrayType, self.array_types.len())
+            Expr::ArrayType(node) => ExprRef::new(ExprKind::ArrayType, self.array_types.len())
                 .and_then(|k| {
                     self.array_types.push(node);
                     Some(k)
                 }),
 
-            InnerExpr::StructType(node) => {
-                ExprRef::new(ExprKind::StructType, self.struct_types.len()).and_then(|k| {
+            Expr::StructType(node) => ExprRef::new(ExprKind::StructType, self.struct_types.len())
+                .and_then(|k| {
                     self.struct_types.push(node);
                     Some(k)
-                })
-            }
+                }),
 
-            InnerExpr::FunctionType(node) => {
+            Expr::FunctionType(node) => {
                 ExprRef::new(ExprKind::FunctionType, self.function_types.len()).and_then(|k| {
                     self.function_types.push(node);
                     Some(k)
@@ -300,7 +295,7 @@ impl<'a> FlatTree<'a> {
         }
     }
 
-    pub fn get(&self, id: ExprRef) -> &InnerExpr<'a> {
+    pub fn get(&self, id: ExprRef) -> &Expr<'a> {
         let index = id.instance_index() as usize;
 
         panic!("FlatTree::get is not implemented yet, id: {:?}", id);

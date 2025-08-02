@@ -1,5 +1,5 @@
 use super::builder_helper::*;
-use super::expression::{InnerExpr, Metadata, OriginTag};
+use super::expression::{Expr, Metadata, OriginTag};
 use super::types::Type;
 pub use super::variable::VariableKind;
 use std::sync::LazyLock;
@@ -8,7 +8,7 @@ static TYPE_FACTORY: LazyLock<TypeFactory> = LazyLock::new(|| TypeFactory::new()
 
 #[derive(Debug, Clone, Default, PartialEq, Eq, PartialOrd, Hash)]
 pub struct Builder<'a> {
-    inner: Option<InnerExpr<'a>>,
+    inner: Option<Expr<'a>>,
     metadata: Metadata,
 }
 

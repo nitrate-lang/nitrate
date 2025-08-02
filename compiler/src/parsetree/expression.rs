@@ -12,7 +12,7 @@ use super::statement::Statement;
 use super::string::StringLit;
 use super::struct_type::StructType;
 use super::tuple_type::TupleType;
-use super::types::{InnerType, Type};
+use super::types::Type;
 use super::unary_op::UnaryExpr;
 use super::variable::Variable;
 
@@ -59,7 +59,7 @@ impl Metadata {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Hash)]
-pub enum InnerExpr<'a> {
+pub enum Expr<'a> {
     Discard,
 
     /* Primitive Expressions */
@@ -109,148 +109,104 @@ pub enum InnerExpr<'a> {
     FunctionType(FunctionType<'a>),
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Hash)]
-pub struct Expr<'a> {
-    expr: InnerExpr<'a>,
-    metadata: Metadata,
-}
-
 impl<'a> Expr<'a> {
-    pub fn new(expr: InnerExpr<'a>, metadata: Metadata) -> Self {
-        Expr { expr, metadata }
-    }
-
-    pub fn into_inner(self) -> InnerExpr<'a> {
-        self.expr
-    }
-
-    pub fn get(&self) -> &InnerExpr<'a> {
-        &self.expr
-    }
-
-    pub fn get_mut(&mut self) -> &mut InnerExpr<'a> {
-        &mut self.expr
-    }
-
     pub fn discard(&mut self) {
-        self.expr = InnerExpr::Discard;
+        *self = Expr::Discard;
     }
 
     pub fn is_discarded(&self) -> bool {
-        matches!(self.expr, InnerExpr::Discard)
-    }
-
-    pub fn has_parenthesis(&self) -> bool {
-        self.metadata.has_parenthesis()
-    }
-
-    pub fn set_has_parenthesis(&mut self, has_parenthesis: bool) {
-        self.metadata.set_has_parenthesis(has_parenthesis);
-    }
-
-    pub fn origin(&self) -> OriginTag {
-        self.metadata.origin()
-    }
-
-    pub fn set_origin(&mut self, origin: OriginTag) {
-        self.metadata.set_origin(origin);
+        matches!(self, Expr::Discard)
     }
 
     pub fn into_type(self) -> Option<Type<'a>> {
-        let has_parenthesis = self.has_parenthesis();
+        match self {
+            Expr::Discard => None,
 
-        let type_maybe = match self.expr {
-            InnerExpr::Discard => None,
+            Expr::Integer(_) => None,
+            Expr::Float(_) => None,
+            Expr::String(_) => None,
+            Expr::Char(_) => None,
+            Expr::List(_) => None,
+            Expr::Object(_) => None,
 
-            InnerExpr::Integer(_) => None,
-            InnerExpr::Float(_) => None,
-            InnerExpr::String(_) => None,
-            InnerExpr::Char(_) => None,
-            InnerExpr::List(_) => None,
-            InnerExpr::Object(_) => None,
+            Expr::UnaryOp(_) => None,
+            Expr::BinaryOp(_) => None,
+            Expr::Statement(_) => None,
+            Expr::Block(_) => None,
 
-            InnerExpr::UnaryOp(_) => None,
-            InnerExpr::BinaryOp(_) => None,
-            InnerExpr::Statement(_) => None,
-            InnerExpr::Block(_) => None,
+            Expr::Function(_) => None,
+            Expr::Variable(_) => None,
 
-            InnerExpr::Function(_) => None,
-            InnerExpr::Variable(_) => None,
+            Expr::Return(_) => None,
 
-            InnerExpr::Return(_) => None,
+            Expr::Bool => Some(Type::Bool),
+            Expr::UInt8 => Some(Type::UInt8),
+            Expr::UInt16 => Some(Type::UInt16),
+            Expr::UInt32 => Some(Type::UInt32),
+            Expr::UInt64 => Some(Type::UInt64),
+            Expr::UInt128 => Some(Type::UInt128),
+            Expr::Int8 => Some(Type::Int8),
+            Expr::Int16 => Some(Type::Int16),
+            Expr::Int32 => Some(Type::Int32),
+            Expr::Int64 => Some(Type::Int64),
+            Expr::Int128 => Some(Type::Int128),
+            Expr::Float8 => Some(Type::Float8),
+            Expr::Float16 => Some(Type::Float16),
+            Expr::Float32 => Some(Type::Float32),
+            Expr::Float64 => Some(Type::Float64),
+            Expr::Float128 => Some(Type::Float128),
 
-            InnerExpr::Bool => Some(InnerType::Bool),
-            InnerExpr::UInt8 => Some(InnerType::UInt8),
-            InnerExpr::UInt16 => Some(InnerType::UInt16),
-            InnerExpr::UInt32 => Some(InnerType::UInt32),
-            InnerExpr::UInt64 => Some(InnerType::UInt64),
-            InnerExpr::UInt128 => Some(InnerType::UInt128),
-            InnerExpr::Int8 => Some(InnerType::Int8),
-            InnerExpr::Int16 => Some(InnerType::Int16),
-            InnerExpr::Int32 => Some(InnerType::Int32),
-            InnerExpr::Int64 => Some(InnerType::Int64),
-            InnerExpr::Int128 => Some(InnerType::Int128),
-            InnerExpr::Float8 => Some(InnerType::Float8),
-            InnerExpr::Float16 => Some(InnerType::Float16),
-            InnerExpr::Float32 => Some(InnerType::Float32),
-            InnerExpr::Float64 => Some(InnerType::Float64),
-            InnerExpr::Float128 => Some(InnerType::Float128),
-
-            InnerExpr::InferType => Some(InnerType::InferType),
-            InnerExpr::TupleType(tuple) => Some(InnerType::TupleType(tuple)),
-            InnerExpr::ArrayType(array) => Some(InnerType::ArrayType(array)),
-            InnerExpr::StructType(struct_type) => Some(InnerType::StructType(struct_type)),
-            InnerExpr::FunctionType(function) => Some(InnerType::FunctionType(function)),
-        };
-
-        type_maybe.map(|inner| Type::new(inner, has_parenthesis))
+            Expr::InferType => Some(Type::InferType),
+            Expr::TupleType(tuple) => Some(Type::TupleType(tuple)),
+            Expr::ArrayType(array) => Some(Type::ArrayType(array)),
+            Expr::StructType(struct_type) => Some(Type::StructType(struct_type)),
+            Expr::FunctionType(function) => Some(Type::FunctionType(function)),
+        }
     }
 
     pub fn is_lit(&self) -> bool {
-        match &self.expr {
-            InnerExpr::Discard => false,
+        match self {
+            Expr::Discard => false,
 
-            InnerExpr::Integer(_) => true,
-            InnerExpr::Float(_) => true,
-            InnerExpr::String(_) => true,
-            InnerExpr::Char(_) => true,
-            InnerExpr::List(list) => list.elements().iter().all(|item| item.is_lit()),
-            InnerExpr::Object(map) => map.get().iter().all(|(_, value)| value.is_lit()),
+            Expr::Integer(_) => true,
+            Expr::Float(_) => true,
+            Expr::String(_) => true,
+            Expr::Char(_) => true,
+            Expr::List(list) => list.elements().iter().all(|item| item.is_lit()),
+            Expr::Object(map) => map.get().iter().all(|(_, value)| value.is_lit()),
 
-            InnerExpr::UnaryOp(_) => false,
-            InnerExpr::BinaryOp(_) => false,
-            InnerExpr::Statement(_) => false,
-            InnerExpr::Block(_) => false,
+            Expr::UnaryOp(_) => false,
+            Expr::BinaryOp(_) => false,
+            Expr::Statement(_) => false,
+            Expr::Block(_) => false,
 
-            InnerExpr::Function(_) => false,
-            InnerExpr::Variable(_) => false,
+            Expr::Function(_) => false,
+            Expr::Variable(_) => false,
 
-            InnerExpr::Return(_) => false,
+            Expr::Return(_) => false,
 
-            InnerExpr::Bool => true,
-            InnerExpr::UInt8 => true,
-            InnerExpr::UInt16 => true,
-            InnerExpr::UInt32 => true,
-            InnerExpr::UInt64 => true,
-            InnerExpr::UInt128 => true,
-            InnerExpr::Int8 => true,
-            InnerExpr::Int16 => true,
-            InnerExpr::Int32 => true,
-            InnerExpr::Int64 => true,
-            InnerExpr::Int128 => true,
-            InnerExpr::Float8 => true,
-            InnerExpr::Float16 => true,
-            InnerExpr::Float32 => true,
-            InnerExpr::Float64 => true,
-            InnerExpr::Float128 => true,
+            Expr::Bool => true,
+            Expr::UInt8 => true,
+            Expr::UInt16 => true,
+            Expr::UInt32 => true,
+            Expr::UInt64 => true,
+            Expr::UInt128 => true,
+            Expr::Int8 => true,
+            Expr::Int16 => true,
+            Expr::Int32 => true,
+            Expr::Int64 => true,
+            Expr::Int128 => true,
+            Expr::Float8 => true,
+            Expr::Float16 => true,
+            Expr::Float32 => true,
+            Expr::Float64 => true,
+            Expr::Float128 => true,
 
-            InnerExpr::InferType => false,
-            InnerExpr::TupleType(tuple) => tuple.elements().iter().all(|item| item.is_lit()),
-            InnerExpr::ArrayType(array) => array.element_ty().is_lit() && array.count().is_lit(),
-            InnerExpr::StructType(_struct) => {
-                _struct.fields().iter().all(|(_, field)| field.is_lit())
-            }
-            InnerExpr::FunctionType(function) => {
+            Expr::InferType => false,
+            Expr::TupleType(tuple) => tuple.elements().iter().all(|item| item.is_lit()),
+            Expr::ArrayType(array) => array.element_ty().is_lit() && array.count().is_lit(),
+            Expr::StructType(_struct) => _struct.fields().iter().all(|(_, field)| field.is_lit()),
+            Expr::FunctionType(function) => {
                 function.parameters().iter().all(|(_, ty, default)| {
                     ty.as_ref().map_or(true, |f| f.is_lit())
                         && default.as_ref().map_or(true, |d| d.is_lit())
@@ -261,62 +217,48 @@ impl<'a> Expr<'a> {
     }
 
     pub fn is_type(&self) -> bool {
-        match &self.expr {
-            InnerExpr::Discard => false,
+        match self {
+            Expr::Discard => false,
 
-            InnerExpr::Integer(_) => false,
-            InnerExpr::Float(_) => false,
-            InnerExpr::String(_) => false,
-            InnerExpr::Char(_) => false,
-            InnerExpr::List(_) => false,
-            InnerExpr::Object(_) => false,
+            Expr::Integer(_) => false,
+            Expr::Float(_) => false,
+            Expr::String(_) => false,
+            Expr::Char(_) => false,
+            Expr::List(_) => false,
+            Expr::Object(_) => false,
 
-            InnerExpr::UnaryOp(_) => false,
-            InnerExpr::BinaryOp(_) => false,
-            InnerExpr::Statement(_) => false,
-            InnerExpr::Block(_) => false,
+            Expr::UnaryOp(_) => false,
+            Expr::BinaryOp(_) => false,
+            Expr::Statement(_) => false,
+            Expr::Block(_) => false,
 
-            InnerExpr::Function(_) => false,
-            InnerExpr::Variable(_) => false,
+            Expr::Function(_) => false,
+            Expr::Variable(_) => false,
 
-            InnerExpr::Return(_) => false,
+            Expr::Return(_) => false,
 
-            InnerExpr::Bool => true,
-            InnerExpr::UInt8 => true,
-            InnerExpr::UInt16 => true,
-            InnerExpr::UInt32 => true,
-            InnerExpr::UInt64 => true,
-            InnerExpr::UInt128 => true,
-            InnerExpr::Int8 => true,
-            InnerExpr::Int16 => true,
-            InnerExpr::Int32 => true,
-            InnerExpr::Int64 => true,
-            InnerExpr::Int128 => true,
-            InnerExpr::Float8 => true,
-            InnerExpr::Float16 => true,
-            InnerExpr::Float32 => true,
-            InnerExpr::Float64 => true,
-            InnerExpr::Float128 => true,
+            Expr::Bool => true,
+            Expr::UInt8 => true,
+            Expr::UInt16 => true,
+            Expr::UInt32 => true,
+            Expr::UInt64 => true,
+            Expr::UInt128 => true,
+            Expr::Int8 => true,
+            Expr::Int16 => true,
+            Expr::Int32 => true,
+            Expr::Int64 => true,
+            Expr::Int128 => true,
+            Expr::Float8 => true,
+            Expr::Float16 => true,
+            Expr::Float32 => true,
+            Expr::Float64 => true,
+            Expr::Float128 => true,
 
-            InnerExpr::InferType => true,
-            InnerExpr::TupleType(_) => true,
-            InnerExpr::ArrayType(_) => true,
-            InnerExpr::StructType(_) => true,
-            InnerExpr::FunctionType(_) => true,
+            Expr::InferType => true,
+            Expr::TupleType(_) => true,
+            Expr::ArrayType(_) => true,
+            Expr::StructType(_) => true,
+            Expr::FunctionType(_) => true,
         }
-    }
-}
-
-impl<'a> std::ops::Deref for Expr<'a> {
-    type Target = InnerExpr<'a>;
-
-    fn deref(&self) -> &Self::Target {
-        &self.expr
-    }
-}
-
-impl<'a> std::ops::DerefMut for Expr<'a> {
-    fn deref_mut(&mut self) -> &mut Self::Target {
-        &mut self.expr
     }
 }
