@@ -17,29 +17,6 @@ use super::variable::Variable;
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Hash)]
 pub enum Expr<'a> {
-    Discard,
-
-    /* Primitive Expressions */
-    Integer(IntegerLit),
-    Float(FloatLit),
-    String(StringLit<'a>),
-    Char(CharLit),
-    List(List<'a>),
-    Object(Object<'a>),
-
-    /* Compound Expressions */
-    UnaryOp(UnaryExpr<'a>),
-    BinaryOp(BinaryExpr<'a>),
-    Statement(Statement<'a>),
-    Block(Block<'a>),
-
-    /* Definition */
-    Function(Function<'a>),
-    Variable(Variable<'a>),
-
-    /* Control Flow */
-    Return(Return<'a>),
-
     /* Primitive Types */
     Bool,
     UInt8,
@@ -64,57 +41,29 @@ pub enum Expr<'a> {
     ArrayType(ArrayType<'a>),
     StructType(StructType<'a>),
     FunctionType(FunctionType<'a>),
-}
 
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Hash)]
-pub enum RefExpr<'storage, 'a> {
     Discard,
 
     /* Primitive Expressions */
-    Integer(&'storage IntegerLit),
-    Float(&'storage FloatLit),
-    String(&'storage StringLit<'a>),
-    Char(&'storage CharLit),
-    List(&'storage List<'a>),
-    Object(&'storage Object<'a>),
+    Integer(IntegerLit),
+    Float(FloatLit),
+    String(StringLit<'a>),
+    Char(CharLit),
+    List(List<'a>),
+    Object(Object<'a>),
 
     /* Compound Expressions */
-    UnaryOp(&'storage UnaryExpr<'a>),
-    BinaryOp(&'storage BinaryExpr<'a>),
-    Statement(&'storage Statement<'a>),
-    Block(&'storage Block<'a>),
+    UnaryOp(UnaryExpr<'a>),
+    BinaryOp(BinaryExpr<'a>),
+    Statement(Statement<'a>),
+    Block(Block<'a>),
 
     /* Definition */
-    Function(&'storage Function<'a>),
-    Variable(&'storage Variable<'a>),
+    Function(Function<'a>),
+    Variable(Variable<'a>),
 
     /* Control Flow */
-    Return(&'storage Return<'a>),
-
-    /* Primitive Types */
-    Bool,
-    UInt8,
-    UInt16,
-    UInt32,
-    UInt64,
-    UInt128,
-    Int8,
-    Int16,
-    Int32,
-    Int64,
-    Int128,
-    Float8,
-    Float16,
-    Float32,
-    Float64,
-    Float128,
-
-    /* Compound Types */
-    InferType,
-    TupleType(&'storage TupleType<'a>),
-    ArrayType(&'storage ArrayType<'a>),
-    StructType(&'storage StructType<'a>),
-    FunctionType(&'storage FunctionType<'a>),
+    Return(Return<'a>),
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Hash)]
@@ -145,30 +94,90 @@ pub enum Type<'a> {
     FunctionType(FunctionType<'a>),
 }
 
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Hash)]
+pub enum RefExpr<'storage, 'a> {
+    /* Primitive Types */
+    Bool,
+    UInt8,
+    UInt16,
+    UInt32,
+    UInt64,
+    UInt128,
+    Int8,
+    Int16,
+    Int32,
+    Int64,
+    Int128,
+    Float8,
+    Float16,
+    Float32,
+    Float64,
+    Float128,
+
+    /* Compound Types */
+    InferType,
+    TupleType(&'storage TupleType<'a>),
+    ArrayType(&'storage ArrayType<'a>),
+    StructType(&'storage StructType<'a>),
+    FunctionType(&'storage FunctionType<'a>),
+
+    Discard,
+
+    /* Primitive Expressions */
+    Integer(&'storage IntegerLit),
+    Float(&'storage FloatLit),
+    String(&'storage StringLit<'a>),
+    Char(&'storage CharLit),
+    List(&'storage List<'a>),
+    Object(&'storage Object<'a>),
+
+    /* Compound Expressions */
+    UnaryOp(&'storage UnaryExpr<'a>),
+    BinaryOp(&'storage BinaryExpr<'a>),
+    Statement(&'storage Statement<'a>),
+    Block(&'storage Block<'a>),
+
+    /* Definition */
+    Function(&'storage Function<'a>),
+    Variable(&'storage Variable<'a>),
+
+    /* Control Flow */
+    Return(&'storage Return<'a>),
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Hash)]
+pub enum RefType<'storage, 'a> {
+    /* Primitive Types */
+    Bool,
+    UInt8,
+    UInt16,
+    UInt32,
+    UInt64,
+    UInt128,
+    Int8,
+    Int16,
+    Int32,
+    Int64,
+    Int128,
+    Float8,
+    Float16,
+    Float32,
+    Float64,
+    Float128,
+
+    /* Compound Types */
+    InferType,
+    TupleType(&'storage TupleType<'a>),
+    ArrayType(&'storage ArrayType<'a>),
+    StructType(&'storage StructType<'a>),
+    FunctionType(&'storage FunctionType<'a>),
+}
+
 impl<'a> TryInto<Type<'a>> for Expr<'a> {
     type Error = Self;
 
     fn try_into(self) -> Result<Type<'a>, Self::Error> {
         match self {
-            Expr::Discard => Err(self),
-
-            Expr::Integer(_) => Err(self),
-            Expr::Float(_) => Err(self),
-            Expr::String(_) => Err(self),
-            Expr::Char(_) => Err(self),
-            Expr::List(_) => Err(self),
-            Expr::Object(_) => Err(self),
-
-            Expr::UnaryOp(_) => Err(self),
-            Expr::BinaryOp(_) => Err(self),
-            Expr::Statement(_) => Err(self),
-            Expr::Block(_) => Err(self),
-
-            Expr::Function(_) => Err(self),
-            Expr::Variable(_) => Err(self),
-
-            Expr::Return(_) => Err(self),
-
             Expr::Bool => Ok(Type::Bool),
             Expr::UInt8 => Ok(Type::UInt8),
             Expr::UInt16 => Ok(Type::UInt16),
@@ -187,10 +196,25 @@ impl<'a> TryInto<Type<'a>> for Expr<'a> {
             Expr::Float128 => Ok(Type::Float128),
 
             Expr::InferType => Ok(Type::InferType),
-            Expr::TupleType(tuple) => Ok(Type::TupleType(tuple)),
-            Expr::ArrayType(array) => Ok(Type::ArrayType(array)),
-            Expr::StructType(struct_type) => Ok(Type::StructType(struct_type)),
-            Expr::FunctionType(function) => Ok(Type::FunctionType(function)),
+            Expr::TupleType(x) => Ok(Type::TupleType(x)),
+            Expr::ArrayType(x) => Ok(Type::ArrayType(x)),
+            Expr::StructType(x) => Ok(Type::StructType(x)),
+            Expr::FunctionType(x) => Ok(Type::FunctionType(x)),
+
+            Expr::Discard
+            | Expr::Integer(_)
+            | Expr::Float(_)
+            | Expr::String(_)
+            | Expr::Char(_)
+            | Expr::List(_)
+            | Expr::Object(_)
+            | Expr::UnaryOp(_)
+            | Expr::BinaryOp(_)
+            | Expr::Statement(_)
+            | Expr::Block(_)
+            | Expr::Function(_)
+            | Expr::Variable(_)
+            | Expr::Return(_) => Err(self),
         }
     }
 }
@@ -216,10 +240,85 @@ impl<'a> Into<Expr<'a>> for Type<'a> {
             Type::Float128 => Expr::Float128,
 
             Type::InferType => Expr::InferType,
-            Type::TupleType(tuple) => Expr::TupleType(tuple),
-            Type::ArrayType(array) => Expr::ArrayType(array),
-            Type::StructType(struct_type) => Expr::StructType(struct_type),
-            Type::FunctionType(function) => Expr::FunctionType(function),
+            Type::TupleType(x) => Expr::TupleType(x),
+            Type::ArrayType(x) => Expr::ArrayType(x),
+            Type::StructType(x) => Expr::StructType(x),
+            Type::FunctionType(x) => Expr::FunctionType(x),
+        }
+    }
+}
+
+impl<'storage, 'a> TryInto<RefType<'storage, 'a>> for RefExpr<'storage, 'a> {
+    type Error = Self;
+
+    fn try_into(self) -> Result<RefType<'storage, 'a>, Self::Error> {
+        match self {
+            RefExpr::Bool => Ok(RefType::Bool),
+            RefExpr::UInt8 => Ok(RefType::UInt8),
+            RefExpr::UInt16 => Ok(RefType::UInt16),
+            RefExpr::UInt32 => Ok(RefType::UInt32),
+            RefExpr::UInt64 => Ok(RefType::UInt64),
+            RefExpr::UInt128 => Ok(RefType::UInt128),
+            RefExpr::Int8 => Ok(RefType::Int8),
+            RefExpr::Int16 => Ok(RefType::Int16),
+            RefExpr::Int32 => Ok(RefType::Int32),
+            RefExpr::Int64 => Ok(RefType::Int64),
+            RefExpr::Int128 => Ok(RefType::Int128),
+            RefExpr::Float8 => Ok(RefType::Float8),
+            RefExpr::Float16 => Ok(RefType::Float16),
+            RefExpr::Float32 => Ok(RefType::Float32),
+            RefExpr::Float64 => Ok(RefType::Float64),
+            RefExpr::Float128 => Ok(RefType::Float128),
+
+            RefExpr::InferType => Ok(RefType::InferType),
+            RefExpr::TupleType(x) => Ok(RefType::TupleType(x)),
+            RefExpr::ArrayType(x) => Ok(RefType::ArrayType(x)),
+            RefExpr::StructType(x) => Ok(RefType::StructType(x)),
+            RefExpr::FunctionType(x) => Ok(RefType::FunctionType(x)),
+
+            RefExpr::Discard
+            | RefExpr::Integer(_)
+            | RefExpr::Float(_)
+            | RefExpr::String(_)
+            | RefExpr::Char(_)
+            | RefExpr::List(_)
+            | RefExpr::Object(_)
+            | RefExpr::UnaryOp(_)
+            | RefExpr::BinaryOp(_)
+            | RefExpr::Statement(_)
+            | RefExpr::Block(_)
+            | RefExpr::Function(_)
+            | RefExpr::Variable(_)
+            | RefExpr::Return(_) => Err(self),
+        }
+    }
+}
+
+impl<'storage, 'a> Into<RefExpr<'storage, 'a>> for RefType<'storage, 'a> {
+    fn into(self) -> RefExpr<'storage, 'a> {
+        match self {
+            RefType::Bool => RefExpr::Bool,
+            RefType::UInt8 => RefExpr::UInt8,
+            RefType::UInt16 => RefExpr::UInt16,
+            RefType::UInt32 => RefExpr::UInt32,
+            RefType::UInt64 => RefExpr::UInt64,
+            RefType::UInt128 => RefExpr::UInt128,
+            RefType::Int8 => RefExpr::Int8,
+            RefType::Int16 => RefExpr::Int16,
+            RefType::Int32 => RefExpr::Int32,
+            RefType::Int64 => RefExpr::Int64,
+            RefType::Int128 => RefExpr::Int128,
+            RefType::Float8 => RefExpr::Float8,
+            RefType::Float16 => RefExpr::Float16,
+            RefType::Float32 => RefExpr::Float32,
+            RefType::Float64 => RefExpr::Float64,
+            RefType::Float128 => RefExpr::Float128,
+
+            RefType::InferType => RefExpr::InferType,
+            RefType::TupleType(x) => RefExpr::TupleType(x),
+            RefType::ArrayType(x) => RefExpr::ArrayType(x),
+            RefType::StructType(x) => RefExpr::StructType(x),
+            RefType::FunctionType(x) => RefExpr::FunctionType(x),
         }
     }
 }

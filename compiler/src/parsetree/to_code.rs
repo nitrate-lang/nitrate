@@ -378,25 +378,6 @@ impl<'a> ToCode<'a> for Expr<'a> {
         // TODO: Put parenthesis handling back if needed
 
         match self {
-            Expr::Discard => {}
-
-            Expr::Integer(e) => e.to_code(tokens, options),
-            Expr::Float(e) => e.to_code(tokens, options),
-            Expr::String(e) => e.to_code(tokens, options),
-            Expr::Char(e) => e.to_code(tokens, options),
-            Expr::List(e) => e.to_code(tokens, options),
-            Expr::Object(e) => e.to_code(tokens, options),
-
-            Expr::UnaryOp(e) => e.to_code(tokens, options),
-            Expr::BinaryOp(e) => e.to_code(tokens, options),
-            Expr::Statement(e) => e.to_code(tokens, options),
-            Expr::Block(e) => e.to_code(tokens, options),
-
-            Expr::Function(e) => e.to_code(tokens, options),
-            Expr::Variable(e) => e.to_code(tokens, options),
-
-            Expr::Return(e) => e.to_code(tokens, options),
-
             Expr::Bool => tokens.push(Token::Identifier(Identifier::new("bool"))),
             Expr::UInt8 => tokens.push(Token::Identifier(Identifier::new("u8"))),
             Expr::UInt16 => tokens.push(Token::Identifier(Identifier::new("u16"))),
@@ -419,12 +400,30 @@ impl<'a> ToCode<'a> for Expr<'a> {
             Expr::ArrayType(e) => e.to_code(tokens, options),
             Expr::StructType(e) => e.to_code(tokens, options),
             Expr::FunctionType(e) => e.to_code(tokens, options),
+
+            Expr::Discard => {}
+
+            Expr::Integer(e) => e.to_code(tokens, options),
+            Expr::Float(e) => e.to_code(tokens, options),
+            Expr::String(e) => e.to_code(tokens, options),
+            Expr::Char(e) => e.to_code(tokens, options),
+            Expr::List(e) => e.to_code(tokens, options),
+            Expr::Object(e) => e.to_code(tokens, options),
+
+            Expr::UnaryOp(e) => e.to_code(tokens, options),
+            Expr::BinaryOp(e) => e.to_code(tokens, options),
+            Expr::Statement(e) => e.to_code(tokens, options),
+            Expr::Block(e) => e.to_code(tokens, options),
+
+            Expr::Function(e) => e.to_code(tokens, options),
+            Expr::Variable(e) => e.to_code(tokens, options),
+
+            Expr::Return(e) => e.to_code(tokens, options),
         }
 
         // if self.has_parenthesis() {
         //     tokens.push(Token::Punctuation(Punctuation::RightParenthesis));
         // }
-        // TODO: Put parenthesis handling back if needed
     }
 }
 
@@ -463,6 +462,5 @@ impl<'a> ToCode<'a> for Type<'a> {
         // if self.has_parenthesis() {
         //     tokens.push(Token::Punctuation(Punctuation::RightParenthesis));
         // }
-        // TODO: Put parenthesis handling back if needed
     }
 }
