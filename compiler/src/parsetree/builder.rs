@@ -1,3 +1,4 @@
+use super::builder_helper::*;
 use super::expression::Type;
 use super::storage::{Storage, TypeRef};
 use super::tuple_type::TupleType;
@@ -15,11 +16,11 @@ impl<'storage, 'a> Builder<'storage, 'a> {
         Builder { storage }
     }
 
-    // /////////////////////////////////////////////////////////////////
-    // /// BEGIN: Literal Expression Builders
-    // pub fn integer(self) -> IntegerBuilderHelper<'a> {
-    //     IntegerBuilderHelper::new(self)
-    // }
+    /////////////////////////////////////////////////////////////////
+    // BEGIN: Literal Expression Builders
+    pub fn create_integer(&mut self) -> IntegerBuilderHelper<'_, 'a> {
+        IntegerBuilderHelper::new(self.storage)
+    }
 
     // pub fn get_integer() -> IntegerBuilderHelper<'a> {
     //     IntegerBuilderHelper::new(Builder::default())
@@ -66,7 +67,7 @@ impl<'storage, 'a> Builder<'storage, 'a> {
     // }
 
     // /////////////////////////////////////////////////////////////////
-    // // BEGIN: Compound Expression Builders
+    // BEGIN: Compound Expression Builders
     // pub fn unary_expr(self) -> UnaryExprBuilderHelper<'a> {
     //     UnaryExprBuilderHelper::new(self)
     // }
@@ -100,7 +101,7 @@ impl<'storage, 'a> Builder<'storage, 'a> {
     // }
 
     // /////////////////////////////////////////////////////////////////
-    // /// BEGIN: Definition Builders
+    // BEGIN: Definition Builders
     // pub fn function(self) -> FunctionBuilderHelper<'a> {
     //     FunctionBuilderHelper::new(self)
     // }
@@ -118,7 +119,7 @@ impl<'storage, 'a> Builder<'storage, 'a> {
     // }
 
     // /////////////////////////////////////////////////////////////////
-    // /// BEGIN: Control Flow Builders
+    // // BEGIN: Control Flow Builders
     // pub fn return_(self) -> ReturnBuilderHelper<'a> {
     //     ReturnBuilderHelper::new(self)
     // }

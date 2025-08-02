@@ -1,81 +1,80 @@
-// use super::array_type::ArrayType;
-// use super::binary_op::{BinaryOp, BinaryOperator};
-// use super::block::Block;
-// use super::builder::Builder;
-// use super::character::CharLit;
-// use super::expression::{Expr, Type};
-// use super::function::{Function, FunctionParameter};
-// use super::function_type::FunctionType;
-// use super::list::ListLit;
-// use super::number::{FloatLit, IntegerLit};
-// use super::object::ObjectLit;
-// use super::returns::Return;
-// use super::statement::Statement;
-// use super::storage::{ExprRef, TypeRef};
-// use super::string::StringLit;
-// use super::struct_type::StructType;
-// use super::tuple_type::TupleType;
-// use super::unary_op::{UnaryOp, UnaryOperator};
-// use super::variable::{Variable, VariableKind};
-// use crate::lexer::IntegerKind;
-// use apint::UInt;
-// use std::collections::BTreeMap;
+use super::array_type::ArrayType;
+use super::binary_op::{BinaryOp, BinaryOperator};
+use super::block::Block;
+use super::builder::Builder;
+use super::character::CharLit;
+use super::expression::{Expr, Type};
+use super::function::{Function, FunctionParameter};
+use super::function_type::FunctionType;
+use super::list::ListLit;
+use super::number::{FloatLit, IntegerLit};
+use super::object::ObjectLit;
+use super::returns::Return;
+use super::statement::Statement;
+use super::storage::{ExprRef, Storage, TypeRef};
+use super::string::StringLit;
+use super::struct_type::StructType;
+use super::tuple_type::TupleType;
+use super::unary_op::{UnaryOp, UnaryOperator};
+use super::variable::{Variable, VariableKind};
+use crate::lexer::IntegerKind;
+use apint::UInt;
+use std::collections::BTreeMap;
 
-// #[derive(Debug, Clone)]
-// pub struct IntegerBuilderHelper<'a> {
-//     outer: Builder<'a>,
-//     value: Option<UInt>,
-//     kind: Option<IntegerKind>,
-// }
+#[derive(Debug)]
+pub struct IntegerBuilderHelper<'storage, 'a> {
+    storage: &'storage mut Storage<'a>,
+    value: Option<UInt>,
+    kind: Option<IntegerKind>,
+}
 
-// impl<'a> IntegerBuilderHelper<'a> {
-//     pub fn new(outer: Builder<'a>) -> Self {
-//         IntegerBuilderHelper {
-//             outer,
-//             value: None,
-//             kind: None,
-//         }
-//     }
+impl<'storage, 'a> IntegerBuilderHelper<'storage, 'a> {
+    pub(crate) fn new(storage: &'storage mut Storage<'a>) -> Self {
+        IntegerBuilderHelper {
+            storage,
+            value: None,
+            kind: None,
+        }
+    }
 
-//     pub fn with_u8(mut self, value: u8) -> Self {
-//         self.value = Some(UInt::from_u8(value));
-//         self
-//     }
+    pub fn with_u8(mut self, value: u8) -> Self {
+        self.value = Some(UInt::from_u8(value));
+        self
+    }
 
-//     pub fn with_u16(mut self, value: u16) -> Self {
-//         self.value = Some(UInt::from_u16(value));
-//         self
-//     }
+    pub fn with_u16(mut self, value: u16) -> Self {
+        self.value = Some(UInt::from_u16(value));
+        self
+    }
 
-//     pub fn with_u32(mut self, value: u32) -> Self {
-//         self.value = Some(UInt::from_u32(value));
-//         self
-//     }
+    pub fn with_u32(mut self, value: u32) -> Self {
+        self.value = Some(UInt::from_u32(value));
+        self
+    }
 
-//     pub fn with_u64(mut self, value: u64) -> Self {
-//         self.value = Some(UInt::from_u64(value));
-//         self
-//     }
+    pub fn with_u64(mut self, value: u64) -> Self {
+        self.value = Some(UInt::from_u64(value));
+        self
+    }
 
-//     pub fn with_u128(mut self, value: u128) -> Self {
-//         self.value = Some(UInt::from_u128(value));
-//         self
-//     }
+    pub fn with_u128(mut self, value: u128) -> Self {
+        self.value = Some(UInt::from_u128(value));
+        self
+    }
 
-//     pub fn with_kind(mut self, kind: IntegerKind) -> Self {
-//         self.kind = Some(kind);
-//         self
-//     }
+    pub fn with_kind(mut self, kind: IntegerKind) -> Self {
+        self.kind = Some(kind);
+        self
+    }
 
-//     pub fn build(self) -> Box<Expr<'a>> {
-//         let value = self.value.expect("Integer value must be provided");
-//         let kind = self.kind.unwrap_or(IntegerKind::Decimal);
+    pub fn build(self) -> Option<ExprRef<'a>> {
+        let value = self.value.expect("Integer value must be provided");
+        let kind = self.kind.unwrap_or(IntegerKind::Decimal);
 
-//         let integer_lit = IntegerLit::new(value, kind).expect("Failed to create IntegerLit");
-
-//         Box::new(Expr::IntegerLit(integer_lit))
-//     }
-// }
+        self.storage
+            .add_expr(Expr::IntegerLit(IntegerLit::new(value, kind)?))
+    }
+}
 
 // #[derive(Debug, Clone)]
 // pub struct FloatBuilderHelper<'a> {
