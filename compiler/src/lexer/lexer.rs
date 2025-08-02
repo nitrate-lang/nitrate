@@ -17,7 +17,7 @@ impl std::fmt::Display for LexerConstructionError {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, PartialOrd, Hash)]
+#[derive(Debug)]
 pub struct Lexer<'a> {
     source: &'a [u8],
     read_pos: SourcePosition<'a>,

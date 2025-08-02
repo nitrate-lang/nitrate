@@ -1,5 +1,6 @@
 use nitrate_compiler::lexer::*;
 use nitrate_compiler::parser::*;
+use nitrate_compiler::parsetree::*;
 use std::io::Read;
 
 use tracking_allocator::{AllocationGroupId, AllocationRegistry, AllocationTracker, Allocator};
@@ -68,10 +69,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let source_code = read_source_file(filename)
         .map_err(|e| format!("Failed to read source file {}: {}", filename, e))?;
 
-    let lexer = Lexer::new(&source_code, filename)
+    let mut lexer = Lexer::new(&source_code, filename)
         .map_err(|e| format!("Failed to create lexer for file {}: {}", filename, e))?;
 
-    let mut parser = Parser::new(lexer);
+    let mut storage = Storage::default();
+    let mut parser = Parser::new(&mut lexer, &mut storage);
 
     println!("===========================================");
 

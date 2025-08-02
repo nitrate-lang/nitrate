@@ -1,54 +1,67 @@
 use crate::lexer::*;
 use crate::parsetree::*;
+use std::collections::HashMap;
 
-pub struct Parser<'a> {
-    lexer: Lexer<'a>,
+pub struct CopyrightMetadata<'a> {
+    pub author_name: Option<&'a str>,
+    pub copyright_year: Option<u16>,
+    pub copyright_string: Option<&'a str>,
+    pub some_license_name: Option<&'a str>,
 }
 
-impl<'a> Parser<'a> {
-    pub fn new(lexer: Lexer<'a>) -> Self {
-        // Builder::init();
+pub struct SourceModel<'a> {
+    language_version: (u32, u32),
+    copyright: CopyrightMetadata<'a>,
+    insource_config: HashMap<&'a str, ExprRef<'a>>,
+    tree: ExprRef<'a>,
+}
 
-        Parser { lexer }
+impl<'a> SourceModel<'a> {
+    pub fn version(&self) -> (u32, u32) {
+        self.language_version
     }
 
-    pub fn into_lexer(self) -> Lexer<'a> {
-        self.lexer
+    pub fn copyright(&self) -> &CopyrightMetadata<'a> {
+        &self.copyright
     }
 
-    pub fn get_lexer(&self) -> &Lexer<'a> {
-        &self.lexer
+    pub fn insource_config(&self) -> &HashMap<&'a str, ExprRef<'a>> {
+        &self.insource_config
     }
 
-    pub fn get_lexer_mut(&mut self) -> &mut Lexer<'a> {
-        &mut self.lexer
+    pub fn tree(&self) -> ExprRef<'a> {
+        self.tree
+    }
+}
+
+pub struct Parser<'storage, 'lexer, 'a> {
+    lexer: &'lexer mut Lexer<'a>,
+    bb: Builder<'storage, 'a>,
+}
+
+impl<'storage, 'lexer, 'a> Parser<'storage, 'lexer, 'a> {
+    pub fn new(lexer: &'lexer mut Lexer<'a>, storage: &'storage mut Storage<'a>) -> Self {
+        Parser {
+            lexer,
+            bb: Builder::new(storage),
+        }
     }
 
-    pub fn parse(&mut self) -> Option<ExprRef<'a>> {
+    pub fn parse_expression(&mut self) -> Option<ExprRef<'a>> {
         // TODO: Develop nitrate parser
 
-        let token = self.lexer.next_token();
+        None
+    }
 
-        // Test ownership and coping
-        match token.into_token() {
-            // Token::Identifier(name) => {
-            //     let func = Builder::get_function()
-            //         .with_name(name.name())
-            //         .with_return_type(Builder::get_i32())
-            //         .with_definition(
-            //             Builder::get_block()
-            //                 .add_statement(
-            //                     Builder::get_return()
-            //                         .with_value(Builder::get_integer().with_u32(10).build())
-            //                         .build(),
-            //                 )
-            //                 .build(),
-            //         )
-            //         .build();
+    pub fn parse_type(&mut self) -> Option<TypeRef<'a>> {
+        // TODO: Develop nitrate type parser
 
-            //     Some(func)
-            // }
-            _ => None,
-        }
+        None
+    }
+
+    pub fn parse(&mut self) -> Option<SourceModel<'a>> {
+        // self.lexer.clone();
+        // self.parse_expression()
+        None
     }
 }

@@ -133,6 +133,35 @@ impl TryInto<TypeKind> for ExprKind {
     }
 }
 
+impl Into<ExprKind> for TypeKind {
+    fn into(self) -> ExprKind {
+        match self {
+            TypeKind::Bool => ExprKind::Bool,
+            TypeKind::UInt8 => ExprKind::UInt8,
+            TypeKind::UInt16 => ExprKind::UInt16,
+            TypeKind::UInt32 => ExprKind::UInt32,
+            TypeKind::UInt64 => ExprKind::UInt64,
+            TypeKind::UInt128 => ExprKind::UInt128,
+            TypeKind::Int8 => ExprKind::Int8,
+            TypeKind::Int16 => ExprKind::Int16,
+            TypeKind::Int32 => ExprKind::Int32,
+            TypeKind::Int64 => ExprKind::Int64,
+            TypeKind::Int128 => ExprKind::Int128,
+            TypeKind::Float8 => ExprKind::Float8,
+            TypeKind::Float16 => ExprKind::Float16,
+            TypeKind::Float32 => ExprKind::Float32,
+            TypeKind::Float64 => ExprKind::Float64,
+            TypeKind::Float128 => ExprKind::Float128,
+
+            TypeKind::InferType => ExprKind::InferType,
+            TypeKind::TupleType => ExprKind::TupleType,
+            TypeKind::ArrayType => ExprKind::ArrayType,
+            TypeKind::StructType => ExprKind::StructType,
+            TypeKind::FunctionType => ExprKind::FunctionType,
+        }
+    }
+}
+
 #[derive(Debug, Clone, Copy)]
 pub struct ExprRef<'a> {
     id: u32,
@@ -205,6 +234,22 @@ impl<'a> TypeRef<'a> {
     }
 }
 
+impl<'a> Into<ExprRef<'a>> for TypeRef<'a> {
+    fn into(self) -> ExprRef<'a> {
+        ExprRef::new(self.variant_index().into(), self.instance_index())
+            .expect("TypeRef must be convertible to ExprRef")
+    }
+}
+
+impl<'a> TryInto<TypeRef<'a>> for ExprRef<'a> {
+    type Error = ();
+
+    fn try_into(self) -> Result<TypeRef<'a>, Self::Error> {
+        let variant = self.variant_index().try_into()?;
+        TypeRef::new(variant, self.instance_index()).ok_or(())
+    }
+}
+
 #[derive(Debug, Clone, Default)]
 pub struct Storage<'a> {
     integers: Vec<IntegerLit>,
@@ -231,33 +276,7 @@ pub struct Storage<'a> {
 }
 
 impl<'a> Storage<'a> {
-    pub fn new() -> Self {
-        Storage {
-            integers: Vec::new(),
-            floats: Vec::new(),
-            strings: Vec::new(),
-            characters: Vec::new(),
-            lists: Vec::new(),
-            objects: Vec::new(),
-
-            unary_ops: Vec::new(),
-            binary_ops: Vec::new(),
-            statements: Vec::new(),
-            blocks: Vec::new(),
-
-            functions: Vec::new(),
-            variables: Vec::new(),
-
-            returns: Vec::new(),
-
-            tuple_types: Vec::new(),
-            array_types: Vec::new(),
-            struct_types: Vec::new(),
-            function_types: Vec::new(),
-        }
-    }
-
-    pub fn add_expr(&mut self, expr: Expr<'a>) -> Option<ExprRef<'a>> {
+    pub(crate) fn add_expr(&mut self, expr: Expr<'a>) -> Option<ExprRef<'a>> {
         match expr {
             Expr::Bool => Some(ExprRef::new_single(ExprKind::Bool)),
             Expr::UInt8 => Some(ExprRef::new_single(ExprKind::UInt8)),
@@ -389,7 +408,7 @@ impl<'a> Storage<'a> {
         }
     }
 
-    pub fn add_type(&mut self, ty: Type<'a>) -> Option<TypeRef<'a>> {
+    pub(crate) fn add_type(&mut self, ty: Type<'a>) -> Option<TypeRef<'a>> {
         self.add_expr(ty.into()).and_then(|expr_ref| {
             /*
              * All TypeKinds have analogous ExprKinds, so we can use the same
@@ -406,7 +425,7 @@ impl<'a> Storage<'a> {
         })
     }
 
-    pub fn get_expr(&self, id: ExprRef<'a>) -> Option<RefExpr<'_, 'a>> {
+    pub(crate) fn get_expr(&self, id: ExprRef<'a>) -> Option<RefExpr<'_, 'a>> {
         let index = id.instance_index() as usize;
 
         match id.variant_index() {
@@ -454,7 +473,7 @@ impl<'a> Storage<'a> {
         }
     }
 
-    pub fn get_type(&self, id: TypeRef<'a>) -> Option<RefType<'_, 'a>> {
+    pub(crate) fn get_type(&self, id: TypeRef<'a>) -> Option<RefType<'_, 'a>> {
         let index = id.instance_index() as usize;
 
         match id.variant_index() {
