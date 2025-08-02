@@ -67,58 +67,52 @@ pub enum Expr<'a> {
     FunctionType(FunctionType<'a>),
 }
 
-impl<'a> Expr<'a> {
-    pub fn discard(&mut self) {
-        *self = Expr::Discard;
-    }
+impl<'a> TryInto<Type<'a>> for Expr<'a> {
+    type Error = Self;
 
-    pub fn is_discarded(&self) -> bool {
-        matches!(self, Expr::Discard)
-    }
-
-    pub fn into_type(self) -> Option<Type<'a>> {
+    fn try_into(self) -> Result<Type<'a>, Self::Error> {
         match self {
-            Expr::Discard => None,
+            Expr::Discard => Err(self),
 
-            Expr::Integer(_) => None,
-            Expr::Float(_) => None,
-            Expr::String(_) => None,
-            Expr::Char(_) => None,
-            Expr::List(_) => None,
-            Expr::Object(_) => None,
+            Expr::Integer(_) => Err(self),
+            Expr::Float(_) => Err(self),
+            Expr::String(_) => Err(self),
+            Expr::Char(_) => Err(self),
+            Expr::List(_) => Err(self),
+            Expr::Object(_) => Err(self),
 
-            Expr::UnaryOp(_) => None,
-            Expr::BinaryOp(_) => None,
-            Expr::Statement(_) => None,
-            Expr::Block(_) => None,
+            Expr::UnaryOp(_) => Err(self),
+            Expr::BinaryOp(_) => Err(self),
+            Expr::Statement(_) => Err(self),
+            Expr::Block(_) => Err(self),
 
-            Expr::Function(_) => None,
-            Expr::Variable(_) => None,
+            Expr::Function(_) => Err(self),
+            Expr::Variable(_) => Err(self),
 
-            Expr::Return(_) => None,
+            Expr::Return(_) => Err(self),
 
-            Expr::Bool => Some(Type::Bool),
-            Expr::UInt8 => Some(Type::UInt8),
-            Expr::UInt16 => Some(Type::UInt16),
-            Expr::UInt32 => Some(Type::UInt32),
-            Expr::UInt64 => Some(Type::UInt64),
-            Expr::UInt128 => Some(Type::UInt128),
-            Expr::Int8 => Some(Type::Int8),
-            Expr::Int16 => Some(Type::Int16),
-            Expr::Int32 => Some(Type::Int32),
-            Expr::Int64 => Some(Type::Int64),
-            Expr::Int128 => Some(Type::Int128),
-            Expr::Float8 => Some(Type::Float8),
-            Expr::Float16 => Some(Type::Float16),
-            Expr::Float32 => Some(Type::Float32),
-            Expr::Float64 => Some(Type::Float64),
-            Expr::Float128 => Some(Type::Float128),
+            Expr::Bool => Ok(Type::Bool),
+            Expr::UInt8 => Ok(Type::UInt8),
+            Expr::UInt16 => Ok(Type::UInt16),
+            Expr::UInt32 => Ok(Type::UInt32),
+            Expr::UInt64 => Ok(Type::UInt64),
+            Expr::UInt128 => Ok(Type::UInt128),
+            Expr::Int8 => Ok(Type::Int8),
+            Expr::Int16 => Ok(Type::Int16),
+            Expr::Int32 => Ok(Type::Int32),
+            Expr::Int64 => Ok(Type::Int64),
+            Expr::Int128 => Ok(Type::Int128),
+            Expr::Float8 => Ok(Type::Float8),
+            Expr::Float16 => Ok(Type::Float16),
+            Expr::Float32 => Ok(Type::Float32),
+            Expr::Float64 => Ok(Type::Float64),
+            Expr::Float128 => Ok(Type::Float128),
 
-            Expr::InferType => Some(Type::InferType),
-            Expr::TupleType(tuple) => Some(Type::TupleType(tuple)),
-            Expr::ArrayType(array) => Some(Type::ArrayType(array)),
-            Expr::StructType(struct_type) => Some(Type::StructType(struct_type)),
-            Expr::FunctionType(function) => Some(Type::FunctionType(function)),
+            Expr::InferType => Ok(Type::InferType),
+            Expr::TupleType(tuple) => Ok(Type::TupleType(tuple)),
+            Expr::ArrayType(array) => Ok(Type::ArrayType(array)),
+            Expr::StructType(struct_type) => Ok(Type::StructType(struct_type)),
+            Expr::FunctionType(function) => Ok(Type::FunctionType(function)),
         }
     }
 }

@@ -220,7 +220,7 @@ impl<'a> ToCode<'a> for Function<'a> {
             tokens.push(Token::Identifier(Identifier::new(name)));
 
             if let Some(ty) = ty {
-                if !matches!(**ty, Type::InferType) {
+                if **ty != Type::InferType {
                     tokens.push(Token::Punctuation(Punctuation::Colon));
                     ty.to_code(tokens, options);
                 }
@@ -234,7 +234,7 @@ impl<'a> ToCode<'a> for Function<'a> {
         tokens.push(Token::Punctuation(Punctuation::RightParenthesis));
 
         if let Some(return_type) = self.return_type() {
-            if !matches!(**return_type, Type::InferType) {
+            if **return_type != Type::InferType {
                 tokens.push(Token::Punctuation(Punctuation::Colon));
                 return_type.to_code(tokens, options);
             }
@@ -345,7 +345,7 @@ impl<'a> ToCode<'a> for FunctionType<'a> {
             tokens.push(Token::Identifier(Identifier::new(name)));
 
             if let Some(ty) = ty {
-                if !matches!(**ty, Type::InferType) {
+                if **ty != Type::InferType {
                     tokens.push(Token::Punctuation(Punctuation::Colon));
                     ty.to_code(tokens, options);
                 }
@@ -359,7 +359,7 @@ impl<'a> ToCode<'a> for FunctionType<'a> {
         tokens.push(Token::Punctuation(Punctuation::RightParenthesis));
 
         if let Some(return_type) = self.return_type() {
-            if !matches!(**return_type, Type::InferType) {
+            if **return_type != Type::InferType {
                 tokens.push(Token::Punctuation(Punctuation::Colon));
                 return_type.to_code(tokens, options);
             }
@@ -369,7 +369,7 @@ impl<'a> ToCode<'a> for FunctionType<'a> {
 
 impl<'a> ToCode<'a> for Expr<'a> {
     fn to_code(&self, tokens: &mut Vec<Token<'a>>, options: &CodeFormat) {
-        if self.is_discarded() {
+        if self == &Expr::Discard {
             return;
         }
 

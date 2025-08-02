@@ -32,8 +32,8 @@ pub enum Type<'a> {
     FunctionType(FunctionType<'a>),
 }
 
-impl<'a> Type<'a> {
-    pub fn into_expr(self) -> Expr<'a> {
+impl<'a> Into<Expr<'a>> for Type<'a> {
+    fn into(self) -> Expr<'a> {
         match self {
             Type::Bool => Expr::Bool,
             Type::UInt8 => Expr::UInt8,
