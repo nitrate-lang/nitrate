@@ -1,6 +1,6 @@
 use super::expression::Type;
 
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Hash)]
+#[derive(Debug, Clone)]
 pub struct TupleType<'a> {
     elements: Vec<Box<Type<'a>>>,
 }

@@ -6,7 +6,7 @@ pub enum VariableKind {
     Var,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Hash)]
+#[derive(Debug, Clone)]
 pub struct Variable<'a> {
     kind: VariableKind,
     name: &'a str,

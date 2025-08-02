@@ -39,7 +39,7 @@ pub enum UnaryOperator {
     Question, /* '?':          "Ternary Operator" */
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Hash)]
+#[derive(Debug, Clone)]
 pub struct UnaryExpr<'a> {
     operand: Box<Expr<'a>>,
     operator: UnaryOperator,

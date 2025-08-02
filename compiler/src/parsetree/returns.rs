@@ -1,6 +1,6 @@
 use super::expression::Expr;
 
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Hash)]
+#[derive(Debug, Clone)]
 pub struct Return<'a> {
     value: Option<Box<Expr<'a>>>,
 }

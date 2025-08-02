@@ -1,7 +1,7 @@
 use super::expression::{Expr, Type};
 use std::collections::BTreeMap;
 
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Hash)]
+#[derive(Debug, Clone)]
 pub struct StructType<'a> {
     name: Option<&'a str>,
     attributes: Vec<Box<Expr<'a>>>,

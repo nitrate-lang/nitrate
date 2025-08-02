@@ -15,7 +15,7 @@ use super::tuple_type::TupleType;
 use super::unary_op::UnaryExpr;
 use super::variable::Variable;
 
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Hash)]
+#[derive(Debug, Clone)]
 pub enum Expr<'a> {
     /* Primitive Types */
     Bool,
@@ -66,7 +66,7 @@ pub enum Expr<'a> {
     Return(Return<'a>),
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Hash)]
+#[derive(Debug, Clone)]
 pub enum Type<'a> {
     /* Primitive Types */
     Bool,
@@ -94,7 +94,7 @@ pub enum Type<'a> {
     FunctionType(FunctionType<'a>),
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Hash)]
+#[derive(Debug, Clone)]
 pub enum RefExpr<'storage, 'a> {
     /* Primitive Types */
     Bool,
@@ -145,7 +145,7 @@ pub enum RefExpr<'storage, 'a> {
     Return(&'storage Return<'a>),
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Hash)]
+#[derive(Debug, Clone)]
 pub enum RefType<'storage, 'a> {
     /* Primitive Types */
     Bool,

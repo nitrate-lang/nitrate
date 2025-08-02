@@ -1,7 +1,7 @@
 use super::expression::Expr;
 use std::collections::BTreeMap;
 
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Hash)]
+#[derive(Debug, Clone)]
 pub struct Object<'a> {
     fields: BTreeMap<&'a str, Box<Expr<'a>>>,
 }

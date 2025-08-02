@@ -3,7 +3,7 @@ use super::expression::{Expr, Type};
 
 pub type FunctionParameter<'a> = (&'a str, Option<Box<Type<'a>>>, Option<Box<Expr<'a>>>);
 
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Hash)]
+#[derive(Debug, Clone)]
 pub struct Function<'a> {
     parameters: Vec<FunctionParameter<'a>>,
     return_type: Option<Box<Type<'a>>>,

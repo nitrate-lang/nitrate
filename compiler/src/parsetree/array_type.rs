@@ -1,21 +1,21 @@
-use super::expression::{Expr, Type};
+use super::storage::{ExprRef, TypeRef};
 
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Hash)]
+#[derive(Debug, Clone)]
 pub struct ArrayType<'a> {
-    element_ty: Box<Type<'a>>,
-    count: Box<Expr<'a>>,
+    element_ty: TypeRef<'a>,
+    count: ExprRef<'a>,
 }
 
 impl<'a> ArrayType<'a> {
-    pub fn new(element_ty: Box<Type<'a>>, count: Box<Expr<'a>>) -> Self {
+    pub fn new(element_ty: TypeRef<'a>, count: ExprRef<'a>) -> Self {
         ArrayType { element_ty, count }
     }
 
-    pub fn element_ty(&self) -> &Type<'a> {
-        &self.element_ty
+    pub fn element_ty(&self) -> TypeRef<'a> {
+        self.element_ty
     }
 
-    pub fn count(&self) -> &Expr<'a> {
-        &self.count
+    pub fn count(&self) -> ExprRef<'a> {
+        self.count
     }
 }

@@ -1,6 +1,6 @@
 use super::expression::Expr;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Hash)]
+#[derive(Debug, Clone, Copy)]
 pub enum BinaryOperator {
     /*----------------------------------------------------------------*
      * Arithmetic Operators                                           *
@@ -77,7 +77,7 @@ pub enum BinaryOperator {
     Spaceship, /* '<=>':        "Spaceship Operator" */
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Hash)]
+#[derive(Debug, Clone)]
 pub struct BinaryExpr<'a> {
     left: Box<Expr<'a>>,
     right: Box<Expr<'a>>,

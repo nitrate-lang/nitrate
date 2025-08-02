@@ -1,7 +1,7 @@
 use super::expression::{Expr, Type};
 use super::function::FunctionParameter;
 
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Hash)]
+#[derive(Debug, Clone)]
 pub struct FunctionType<'a> {
     parameters: Vec<FunctionParameter<'a>>,
     return_type: Option<Box<Type<'a>>>,
