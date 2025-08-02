@@ -115,7 +115,7 @@ impl<'a> ExprRef<'a> {
 // TODO: Amoritze the allocation overhead of parsing by using a vector of vectors structure
 
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
-pub struct FlatTree<'a> {
+pub struct Storage<'a> {
     integers: Vec<IntegerLit>,
     floats: Vec<FloatLit>,
     strings: Vec<StringLit<'a>>,
@@ -139,9 +139,9 @@ pub struct FlatTree<'a> {
     function_types: Vec<FunctionType<'a>>,
 }
 
-impl<'a> FlatTree<'a> {
+impl<'a> Storage<'a> {
     pub fn new() -> Self {
-        FlatTree {
+        Storage {
             integers: Vec::new(),
             floats: Vec::new(),
             strings: Vec::new(),
@@ -298,7 +298,7 @@ impl<'a> FlatTree<'a> {
     pub fn get(&self, id: ExprRef) -> &Expr<'a> {
         let index = id.instance_index() as usize;
 
-        panic!("FlatTree::get is not implemented yet, id: {:?}", id);
+        panic!("Storage::get is not implemented yet, id: {:?}", id);
 
         // let instance = match id.variant_index() {
         //     ExprKind::Discard => {
@@ -382,6 +382,6 @@ impl<'a> FlatTree<'a> {
         //     ExprKind::FunctionType => self.function_types.get(index),
         // };
 
-        // instance.expect("Expression not found in FlatTree")
+        // instance.expect("Expression not found in Storage")
     }
 }
