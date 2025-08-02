@@ -1,5 +1,5 @@
 use super::builder_helper::*;
-use super::expression::{Expr, Metadata, OriginTag};
+use super::expression::Expr;
 use super::types::Type;
 pub use super::variable::VariableKind;
 use std::sync::LazyLock;
@@ -9,29 +9,11 @@ static TYPE_FACTORY: LazyLock<TypeFactory> = LazyLock::new(|| TypeFactory::new()
 #[derive(Debug, Clone, Default, PartialEq, Eq, PartialOrd, Hash)]
 pub struct Builder<'a> {
     inner: Option<Expr<'a>>,
-    metadata: Metadata,
 }
 
 impl<'a> Builder<'a> {
     pub fn init() {
         TYPE_FACTORY.get_unit();
-    }
-
-    /////////////////////////////////////////////////////////////////
-    // BEGIN: Metadata Setters
-    pub fn set_parenthesis(mut self, has_parenthesis: bool) -> Self {
-        self.metadata.set_has_parenthesis(has_parenthesis);
-
-        self
-    }
-
-    pub fn set_origin(mut self, origin: OriginTag) -> Self {
-        self.metadata.set_origin(origin);
-        self
-    }
-
-    pub fn get_metadata(self) -> Metadata {
-        self.metadata
     }
 
     /////////////////////////////////////////////////////////////////

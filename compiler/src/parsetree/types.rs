@@ -59,40 +59,4 @@ impl<'a> Type<'a> {
             Type::FunctionType(function) => Expr::FunctionType(function),
         }
     }
-
-    pub fn is_lit(&self) -> bool {
-        match self {
-            Type::Bool => true,
-            Type::UInt8 => true,
-            Type::UInt16 => true,
-            Type::UInt32 => true,
-            Type::UInt64 => true,
-            Type::UInt128 => true,
-            Type::Int8 => true,
-            Type::Int16 => true,
-            Type::Int32 => true,
-            Type::Int64 => true,
-            Type::Int128 => true,
-            Type::Float8 => true,
-            Type::Float16 => true,
-            Type::Float32 => true,
-            Type::Float64 => true,
-            Type::Float128 => true,
-
-            Type::InferType => false,
-            Type::TupleType(tuple) => tuple.elements().iter().all(|item| item.is_lit()),
-            Type::ArrayType(array) => array.element_ty().is_lit() && array.count().is_lit(),
-            Type::StructType(_struct) => _struct
-                .fields()
-                .iter()
-                .all(|(_, field_ty)| field_ty.is_lit()),
-            Type::FunctionType(function) => {
-                function.parameters().iter().all(|(_, ty, default)| {
-                    ty.as_ref().map_or(true, |f| f.is_lit())
-                        && default.as_ref().map_or(true, |d| d.is_lit())
-                }) && function.return_type().map_or(true, |ty| ty.is_lit())
-                    && function.attributes().iter().all(|attr| attr.is_lit())
-            }
-        }
-    }
 }

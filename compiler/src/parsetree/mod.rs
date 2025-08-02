@@ -22,7 +22,7 @@ mod unary_op;
 mod variable;
 
 pub use builder::*;
-pub use expression::{Expr, OriginTag};
+pub use expression::Expr;
 pub use flat_tree::*;
 pub use to_code::*;
 pub use types::Type;
