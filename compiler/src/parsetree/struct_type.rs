@@ -1,20 +1,19 @@
 use super::expression::Expr;
 use super::types::Type;
 use std::collections::BTreeMap;
-use std::sync::Arc;
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Hash)]
 pub struct StructType<'a> {
     name: Option<&'a str>,
     attributes: Vec<Box<Expr<'a>>>,
-    fields: BTreeMap<&'a str, Arc<Type<'a>>>,
+    fields: BTreeMap<&'a str, Box<Type<'a>>>,
 }
 
 impl<'a> StructType<'a> {
     pub fn new(
         name: Option<&'a str>,
         attributes: Vec<Box<Expr<'a>>>,
-        fields: BTreeMap<&'a str, Arc<Type<'a>>>,
+        fields: BTreeMap<&'a str, Box<Type<'a>>>,
     ) -> Self {
         StructType {
             name,
@@ -23,7 +22,7 @@ impl<'a> StructType<'a> {
         }
     }
 
-    pub fn into_inner(self) -> BTreeMap<&'a str, Arc<Type<'a>>> {
+    pub fn into_inner(self) -> BTreeMap<&'a str, Box<Type<'a>>> {
         self.fields
     }
 
@@ -35,7 +34,7 @@ impl<'a> StructType<'a> {
         &self.attributes
     }
 
-    pub fn fields(&self) -> &BTreeMap<&'a str, Arc<Type<'a>>> {
+    pub fn fields(&self) -> &BTreeMap<&'a str, Box<Type<'a>>> {
         &self.fields
     }
 }

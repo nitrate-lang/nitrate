@@ -1,21 +1,20 @@
 use super::types::Type;
-use std::sync::Arc;
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Hash)]
 pub struct TupleType<'a> {
-    elements: Vec<Arc<Type<'a>>>,
+    elements: Vec<Box<Type<'a>>>,
 }
 
 impl<'a> TupleType<'a> {
-    pub fn new(elements: Vec<Arc<Type<'a>>>) -> Self {
+    pub fn new(elements: Vec<Box<Type<'a>>>) -> Self {
         TupleType { elements }
     }
 
-    pub fn into_inner(self) -> Vec<Arc<Type<'a>>> {
+    pub fn into_inner(self) -> Vec<Box<Type<'a>>> {
         self.elements
     }
 
-    pub fn elements(&self) -> &[Arc<Type<'a>>] {
+    pub fn elements(&self) -> &[Box<Type<'a>>] {
         &self.elements
     }
 }

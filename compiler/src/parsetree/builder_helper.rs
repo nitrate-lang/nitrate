@@ -20,126 +20,125 @@ use super::variable::{Variable, VariableKind};
 use crate::lexer::IntegerKind;
 use apint::UInt;
 use std::collections::BTreeMap;
-use std::sync::Arc;
 
 #[derive(Debug)]
 pub struct TypeFactory<'a> {
-    bool: Arc<Type<'a>>,
-    u8: Arc<Type<'a>>,
-    u16: Arc<Type<'a>>,
-    u32: Arc<Type<'a>>,
-    u64: Arc<Type<'a>>,
-    u128: Arc<Type<'a>>,
-    i8: Arc<Type<'a>>,
-    i16: Arc<Type<'a>>,
-    i32: Arc<Type<'a>>,
-    i64: Arc<Type<'a>>,
-    i128: Arc<Type<'a>>,
-    f8: Arc<Type<'a>>,
-    f16: Arc<Type<'a>>,
-    f32: Arc<Type<'a>>,
-    f64: Arc<Type<'a>>,
-    f128: Arc<Type<'a>>,
-    infer_type: Arc<Type<'a>>,
-    unit: Arc<Type<'a>>,
+    bool: Box<Type<'a>>,
+    u8: Box<Type<'a>>,
+    u16: Box<Type<'a>>,
+    u32: Box<Type<'a>>,
+    u64: Box<Type<'a>>,
+    u128: Box<Type<'a>>,
+    i8: Box<Type<'a>>,
+    i16: Box<Type<'a>>,
+    i32: Box<Type<'a>>,
+    i64: Box<Type<'a>>,
+    i128: Box<Type<'a>>,
+    f8: Box<Type<'a>>,
+    f16: Box<Type<'a>>,
+    f32: Box<Type<'a>>,
+    f64: Box<Type<'a>>,
+    f128: Box<Type<'a>>,
+    infer_type: Box<Type<'a>>,
+    unit: Box<Type<'a>>,
 }
 
 impl<'a> TypeFactory<'a> {
     pub fn new() -> Self {
         TypeFactory {
-            bool: Arc::new(Type::new(InnerType::Bool, false)),
-            u8: Arc::new(Type::new(InnerType::UInt8, false)),
-            u16: Arc::new(Type::new(InnerType::UInt16, false)),
-            u32: Arc::new(Type::new(InnerType::UInt32, false)),
-            u64: Arc::new(Type::new(InnerType::UInt64, false)),
-            u128: Arc::new(Type::new(InnerType::UInt128, false)),
-            i8: Arc::new(Type::new(InnerType::Int8, false)),
-            i16: Arc::new(Type::new(InnerType::Int16, false)),
-            i32: Arc::new(Type::new(InnerType::Int32, false)),
-            i64: Arc::new(Type::new(InnerType::Int64, false)),
-            i128: Arc::new(Type::new(InnerType::Int128, false)),
-            f8: Arc::new(Type::new(InnerType::Float8, false)),
-            f16: Arc::new(Type::new(InnerType::Float16, false)),
-            f32: Arc::new(Type::new(InnerType::Float32, false)),
-            f64: Arc::new(Type::new(InnerType::Float64, false)),
-            f128: Arc::new(Type::new(InnerType::Float128, false)),
-            infer_type: Arc::new(Type::new(InnerType::InferType, false)),
-            unit: Arc::new(Type::new(
+            bool: Box::new(Type::new(InnerType::Bool, false)),
+            u8: Box::new(Type::new(InnerType::UInt8, false)),
+            u16: Box::new(Type::new(InnerType::UInt16, false)),
+            u32: Box::new(Type::new(InnerType::UInt32, false)),
+            u64: Box::new(Type::new(InnerType::UInt64, false)),
+            u128: Box::new(Type::new(InnerType::UInt128, false)),
+            i8: Box::new(Type::new(InnerType::Int8, false)),
+            i16: Box::new(Type::new(InnerType::Int16, false)),
+            i32: Box::new(Type::new(InnerType::Int32, false)),
+            i64: Box::new(Type::new(InnerType::Int64, false)),
+            i128: Box::new(Type::new(InnerType::Int128, false)),
+            f8: Box::new(Type::new(InnerType::Float8, false)),
+            f16: Box::new(Type::new(InnerType::Float16, false)),
+            f32: Box::new(Type::new(InnerType::Float32, false)),
+            f64: Box::new(Type::new(InnerType::Float64, false)),
+            f128: Box::new(Type::new(InnerType::Float128, false)),
+            infer_type: Box::new(Type::new(InnerType::InferType, false)),
+            unit: Box::new(Type::new(
                 InnerType::TupleType(TupleType::new(Vec::new())),
                 false,
             )),
         }
     }
 
-    pub fn get_bool(&self) -> Arc<Type<'a>> {
+    pub fn get_bool(&self) -> Box<Type<'a>> {
         self.bool.clone()
     }
 
-    pub fn get_u8(&self) -> Arc<Type<'a>> {
+    pub fn get_u8(&self) -> Box<Type<'a>> {
         self.u8.clone()
     }
 
-    pub fn get_u16(&self) -> Arc<Type<'a>> {
+    pub fn get_u16(&self) -> Box<Type<'a>> {
         self.u16.clone()
     }
 
-    pub fn get_u32(&self) -> Arc<Type<'a>> {
+    pub fn get_u32(&self) -> Box<Type<'a>> {
         self.u32.clone()
     }
 
-    pub fn get_u64(&self) -> Arc<Type<'a>> {
+    pub fn get_u64(&self) -> Box<Type<'a>> {
         self.u64.clone()
     }
 
-    pub fn get_u128(&self) -> Arc<Type<'a>> {
+    pub fn get_u128(&self) -> Box<Type<'a>> {
         self.u128.clone()
     }
 
-    pub fn get_i8(&self) -> Arc<Type<'a>> {
+    pub fn get_i8(&self) -> Box<Type<'a>> {
         self.i8.clone()
     }
 
-    pub fn get_i16(&self) -> Arc<Type<'a>> {
+    pub fn get_i16(&self) -> Box<Type<'a>> {
         self.i16.clone()
     }
 
-    pub fn get_i32(&self) -> Arc<Type<'a>> {
+    pub fn get_i32(&self) -> Box<Type<'a>> {
         self.i32.clone()
     }
 
-    pub fn get_i64(&self) -> Arc<Type<'a>> {
+    pub fn get_i64(&self) -> Box<Type<'a>> {
         self.i64.clone()
     }
 
-    pub fn get_i128(&self) -> Arc<Type<'a>> {
+    pub fn get_i128(&self) -> Box<Type<'a>> {
         self.i128.clone()
     }
 
-    pub fn get_f8(&self) -> Arc<Type<'a>> {
+    pub fn get_f8(&self) -> Box<Type<'a>> {
         self.f8.clone()
     }
 
-    pub fn get_f16(&self) -> Arc<Type<'a>> {
+    pub fn get_f16(&self) -> Box<Type<'a>> {
         self.f16.clone()
     }
 
-    pub fn get_f32(&self) -> Arc<Type<'a>> {
+    pub fn get_f32(&self) -> Box<Type<'a>> {
         self.f32.clone()
     }
 
-    pub fn get_f64(&self) -> Arc<Type<'a>> {
+    pub fn get_f64(&self) -> Box<Type<'a>> {
         self.f64.clone()
     }
 
-    pub fn get_f128(&self) -> Arc<Type<'a>> {
+    pub fn get_f128(&self) -> Box<Type<'a>> {
         self.f128.clone()
     }
 
-    pub fn get_infer_type(&self) -> Arc<Type<'a>> {
+    pub fn get_infer_type(&self) -> Box<Type<'a>> {
         self.infer_type.clone()
     }
 
-    pub fn get_unit(&self) -> Arc<Type<'a>> {
+    pub fn get_unit(&self) -> Box<Type<'a>> {
         self.unit.clone()
     }
 }
@@ -536,7 +535,7 @@ pub struct FunctionBuilderHelper<'a> {
     outer: Builder<'a>,
     name: &'a str,
     parameters: Vec<FunctionParameter<'a>>,
-    return_type: Option<Arc<Type<'a>>>,
+    return_type: Option<Box<Type<'a>>>,
     attributes: Vec<Box<Expr<'a>>>,
     definition: Option<Box<Expr<'a>>>,
 }
@@ -561,7 +560,7 @@ impl<'a> FunctionBuilderHelper<'a> {
     pub fn with_parameter(
         mut self,
         name: &'a str,
-        ty: Option<Arc<Type<'a>>>,
+        ty: Option<Box<Type<'a>>>,
         default_value: Option<Box<Expr<'a>>>,
     ) -> Self {
         self.parameters.push((name, ty, default_value));
@@ -570,13 +569,13 @@ impl<'a> FunctionBuilderHelper<'a> {
 
     pub fn with_parameters<I>(mut self, parameters: I) -> Self
     where
-        I: IntoIterator<Item = (&'a str, Option<Arc<Type<'a>>>, Option<Box<Expr<'a>>>)>,
+        I: IntoIterator<Item = (&'a str, Option<Box<Type<'a>>>, Option<Box<Expr<'a>>>)>,
     {
         self.parameters.extend(parameters);
         self
     }
 
-    pub fn with_return_type(mut self, ty: Arc<Type<'a>>) -> Self {
+    pub fn with_return_type(mut self, ty: Box<Type<'a>>) -> Self {
         self.return_type = Some(ty);
         self
     }
@@ -631,7 +630,7 @@ pub struct VariableBuilderHelper<'a> {
     outer: Builder<'a>,
     kind: Option<VariableKind>,
     name: &'a str,
-    ty: Option<Arc<Type<'a>>>,
+    ty: Option<Box<Type<'a>>>,
     value: Option<Box<Expr<'a>>>,
 }
 
@@ -656,7 +655,7 @@ impl<'a> VariableBuilderHelper<'a> {
         self
     }
 
-    pub fn with_type(mut self, ty: Arc<Type<'a>>) -> Self {
+    pub fn with_type(mut self, ty: Box<Type<'a>>) -> Self {
         self.ty = Some(ty);
         self
     }
@@ -703,7 +702,7 @@ impl<'a> ReturnBuilderHelper<'a> {
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Hash)]
 pub struct TupleTypeBuilderHelper<'a> {
     outer: Builder<'a>,
-    elements: Vec<Arc<Type<'a>>>,
+    elements: Vec<Box<Type<'a>>>,
 }
 
 impl<'a> TupleTypeBuilderHelper<'a> {
@@ -714,14 +713,14 @@ impl<'a> TupleTypeBuilderHelper<'a> {
         }
     }
 
-    pub fn add_element(mut self, ty: Arc<Type<'a>>) -> Self {
+    pub fn add_element(mut self, ty: Box<Type<'a>>) -> Self {
         self.elements.push(ty);
         self
     }
 
     pub fn add_elements<I>(mut self, elements: I) -> Self
     where
-        I: IntoIterator<Item = Arc<Type<'a>>>,
+        I: IntoIterator<Item = Box<Type<'a>>>,
     {
         self.elements.extend(elements);
         self
@@ -738,7 +737,7 @@ impl<'a> TupleTypeBuilderHelper<'a> {
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Hash)]
 pub struct ArrayTypeBuilderHelper<'a> {
     outer: Builder<'a>,
-    element_ty: Option<Arc<Type<'a>>>,
+    element_ty: Option<Box<Type<'a>>>,
     count: Option<Box<Expr<'a>>>,
 }
 
@@ -751,7 +750,7 @@ impl<'a> ArrayTypeBuilderHelper<'a> {
         }
     }
 
-    pub fn with_element_ty(mut self, element_ty: Arc<Type<'a>>) -> Self {
+    pub fn with_element_ty(mut self, element_ty: Box<Type<'a>>) -> Self {
         self.element_ty = Some(element_ty);
         self
     }
@@ -779,7 +778,7 @@ pub struct StructTypeBuilderHelper<'a> {
     outer: Builder<'a>,
     name: Option<&'a str>,
     attributes: Vec<Box<Expr<'a>>>,
-    fields: BTreeMap<&'a str, Arc<Type<'a>>>,
+    fields: BTreeMap<&'a str, Box<Type<'a>>>,
 }
 
 impl<'a> StructTypeBuilderHelper<'a> {
@@ -810,14 +809,14 @@ impl<'a> StructTypeBuilderHelper<'a> {
         self
     }
 
-    pub fn add_field(mut self, name: &'a str, ty: Arc<Type<'a>>) -> Self {
+    pub fn add_field(mut self, name: &'a str, ty: Box<Type<'a>>) -> Self {
         self.fields.insert(name, ty);
         self
     }
 
     pub fn add_fields<I>(mut self, fields: I) -> Self
     where
-        I: IntoIterator<Item = (&'a str, Arc<Type<'a>>)>,
+        I: IntoIterator<Item = (&'a str, Box<Type<'a>>)>,
     {
         self.fields.extend(fields);
         self
@@ -837,7 +836,7 @@ impl<'a> StructTypeBuilderHelper<'a> {
 pub struct FunctionTypeBuilderHelper<'a> {
     outer: Builder<'a>,
     parameters: Vec<FunctionParameter<'a>>,
-    return_type: Option<Arc<Type<'a>>>,
+    return_type: Option<Box<Type<'a>>>,
     attributes: Vec<Box<Expr<'a>>>,
 }
 
@@ -854,7 +853,7 @@ impl<'a> FunctionTypeBuilderHelper<'a> {
     pub fn add_parameter(
         mut self,
         name: &'a str,
-        ty: Option<Arc<Type<'a>>>,
+        ty: Option<Box<Type<'a>>>,
         default_value: Option<Box<Expr<'a>>>,
     ) -> Self {
         self.parameters.push((name, ty, default_value));
@@ -863,13 +862,13 @@ impl<'a> FunctionTypeBuilderHelper<'a> {
 
     pub fn add_parameters<I>(mut self, parameters: I) -> Self
     where
-        I: IntoIterator<Item = (&'a str, Option<Arc<Type<'a>>>, Option<Box<Expr<'a>>>)>,
+        I: IntoIterator<Item = (&'a str, Option<Box<Type<'a>>>, Option<Box<Expr<'a>>>)>,
     {
         self.parameters.extend(parameters);
         self
     }
 
-    pub fn with_return_type(mut self, ty: Arc<Type<'a>>) -> Self {
+    pub fn with_return_type(mut self, ty: Box<Type<'a>>) -> Self {
         self.return_type = Some(ty);
         self
     }

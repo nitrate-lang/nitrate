@@ -2,7 +2,7 @@ use super::builder_helper::*;
 use super::expression::{InnerExpr, Metadata, OriginTag};
 use super::types::Type;
 pub use super::variable::VariableKind;
-use std::sync::{Arc, LazyLock};
+use std::sync::LazyLock;
 
 static TYPE_FACTORY: LazyLock<TypeFactory> = LazyLock::new(|| TypeFactory::new());
 
@@ -148,75 +148,75 @@ impl<'a> Builder<'a> {
 
     /////////////////////////////////////////////////////////////////
     // BEGIN: Primitive Type Builders
-    pub fn get_bool() -> Arc<Type<'a>> {
+    pub fn get_bool() -> Box<Type<'a>> {
         TYPE_FACTORY.get_bool()
     }
 
-    pub fn get_u8() -> Arc<Type<'a>> {
+    pub fn get_u8() -> Box<Type<'a>> {
         TYPE_FACTORY.get_u8()
     }
 
-    pub fn get_u16() -> Arc<Type<'a>> {
+    pub fn get_u16() -> Box<Type<'a>> {
         TYPE_FACTORY.get_u16()
     }
 
-    pub fn get_u32() -> Arc<Type<'a>> {
+    pub fn get_u32() -> Box<Type<'a>> {
         TYPE_FACTORY.get_u32()
     }
 
-    pub fn get_u64() -> Arc<Type<'a>> {
+    pub fn get_u64() -> Box<Type<'a>> {
         TYPE_FACTORY.get_u64()
     }
 
-    pub fn get_u128() -> Arc<Type<'a>> {
+    pub fn get_u128() -> Box<Type<'a>> {
         TYPE_FACTORY.get_u128()
     }
 
-    pub fn get_i8() -> Arc<Type<'a>> {
+    pub fn get_i8() -> Box<Type<'a>> {
         TYPE_FACTORY.get_i8()
     }
 
-    pub fn get_i16() -> Arc<Type<'a>> {
+    pub fn get_i16() -> Box<Type<'a>> {
         TYPE_FACTORY.get_i16()
     }
 
-    pub fn get_i32() -> Arc<Type<'a>> {
+    pub fn get_i32() -> Box<Type<'a>> {
         TYPE_FACTORY.get_i32()
     }
 
-    pub fn get_i64() -> Arc<Type<'a>> {
+    pub fn get_i64() -> Box<Type<'a>> {
         TYPE_FACTORY.get_i64()
     }
 
-    pub fn get_i128() -> Arc<Type<'a>> {
+    pub fn get_i128() -> Box<Type<'a>> {
         TYPE_FACTORY.get_i128()
     }
 
-    pub fn get_f8() -> Arc<Type<'a>> {
+    pub fn get_f8() -> Box<Type<'a>> {
         TYPE_FACTORY.get_f8()
     }
 
-    pub fn get_f16() -> Arc<Type<'a>> {
+    pub fn get_f16() -> Box<Type<'a>> {
         TYPE_FACTORY.get_f16()
     }
 
-    pub fn get_f32() -> Arc<Type<'a>> {
+    pub fn get_f32() -> Box<Type<'a>> {
         TYPE_FACTORY.get_f32()
     }
 
-    pub fn get_f64() -> Arc<Type<'a>> {
+    pub fn get_f64() -> Box<Type<'a>> {
         TYPE_FACTORY.get_f64()
     }
 
-    pub fn get_f128() -> Arc<Type<'a>> {
+    pub fn get_f128() -> Box<Type<'a>> {
         TYPE_FACTORY.get_f128()
     }
 
-    pub fn get_infer_type() -> Arc<Type<'a>> {
+    pub fn get_infer_type() -> Box<Type<'a>> {
         TYPE_FACTORY.get_infer_type()
     }
 
-    pub fn get_unit() -> Arc<Type<'a>> {
+    pub fn get_unit() -> Box<Type<'a>> {
         TYPE_FACTORY.get_unit()
     }
 

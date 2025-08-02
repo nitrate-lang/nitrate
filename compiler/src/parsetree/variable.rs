@@ -1,6 +1,5 @@
 use super::expression::Expr;
 use super::types::Type;
-use std::sync::Arc;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Hash)]
 pub enum VariableKind {
@@ -12,7 +11,7 @@ pub enum VariableKind {
 pub struct Variable<'a> {
     kind: VariableKind,
     name: &'a str,
-    var_type: Option<Arc<Type<'a>>>,
+    var_type: Option<Box<Type<'a>>>,
     value: Option<Box<Expr<'a>>>,
 }
 
@@ -20,7 +19,7 @@ impl<'a> Variable<'a> {
     pub fn new(
         kind: VariableKind,
         name: &'a str,
-        var_type: Option<Arc<Type<'a>>>,
+        var_type: Option<Box<Type<'a>>>,
         value: Option<Box<Expr<'a>>>,
     ) -> Self {
         Variable {
@@ -43,11 +42,11 @@ impl<'a> Variable<'a> {
         self.name = name;
     }
 
-    pub fn get_type(&self) -> Option<&Arc<Type<'a>>> {
+    pub fn get_type(&self) -> Option<&Box<Type<'a>>> {
         self.var_type.as_ref()
     }
 
-    pub fn get_type_mut(&mut self) -> Option<&mut Arc<Type<'a>>> {
+    pub fn get_type_mut(&mut self) -> Option<&mut Box<Type<'a>>> {
         self.var_type.as_mut()
     }
 
