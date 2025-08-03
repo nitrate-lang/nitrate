@@ -176,7 +176,6 @@ pub struct TypeKey<'a> {
 
 impl<'a> ExprKey<'a> {
     fn new(variant: ExprKind, index: usize) -> Option<Self> {
-        // FIXME: Enforce at compile time using reflection
         assert!((variant as u32) < 64, "Variant index must be less than 64");
 
         let can_store_index = index < (1 << 26);
@@ -188,7 +187,6 @@ impl<'a> ExprKey<'a> {
     }
 
     fn new_single(variant: ExprKind) -> Self {
-        // FIXME: Enforce at compile time using reflection
         assert!((variant as u32) < 64, "Variant index must be less than 64");
 
         ExprKey {
@@ -200,7 +198,7 @@ impl<'a> ExprKey<'a> {
     fn variant_index(&self) -> ExprKind {
         let number = (self.id >> 26) as u8;
 
-        // FIXME: SAFETY: The number is guaranteed to be in the range of ExprKind
+        // SAFETY: The number is guaranteed to be in the range of ExprKind
         unsafe { std::mem::transmute::<u8, ExprKind>(number) }
     }
 
@@ -208,20 +206,20 @@ impl<'a> ExprKey<'a> {
         (self.id & 0x03FFFFFF) as usize
     }
 
-    pub fn get(&self) -> ExprRef<'_, 'a> {
-        // TODO: Implement this method to retrieve the expression from thread-local storage
-        panic!("get() not implemented for ExprRef");
+    pub fn get<'storage>(&self, storage: &'storage Storage<'a>) -> ExprRef<'storage, 'a> {
+        storage.get_expr(*self)
     }
 
-    pub fn get_mut(&mut self) -> ExprRefMut<'_, 'a> {
-        // TODO: Implement this method to retrieve the expression from thread-local storage
-        panic!("get_mut() not implemented for ExprRef");
+    pub fn get_mut<'storage>(
+        &mut self,
+        storage: &'storage mut Storage<'a>,
+    ) -> ExprRefMut<'storage, 'a> {
+        storage.get_expr_mut(*self)
     }
 }
 
 impl<'a> TypeKey<'a> {
     fn new(variant: TypeKind, index: usize) -> Option<Self> {
-        // FIXME: Enforce at compile time using reflection
         assert!((variant as u32) < 64, "Variant index must be less than 64");
 
         let can_store_index = index < (1 << 26);
@@ -235,7 +233,7 @@ impl<'a> TypeKey<'a> {
     fn variant_index(&self) -> TypeKind {
         let number = (self.id >> 26) as u8;
 
-        // FIXME: SAFETY: The number is guaranteed to be in the range of TypeKind
+        // SAFETY: The number is guaranteed to be in the range of TypeKind
         unsafe { std::mem::transmute::<u8, TypeKind>(number) }
     }
 
@@ -243,14 +241,15 @@ impl<'a> TypeKey<'a> {
         (self.id & 0x03FFFFFF) as usize
     }
 
-    pub fn get(&self) -> TypeRef<'_, 'a> {
-        // TODO: Implement this method to retrieve the expression from thread-local storage
-        panic!("get() not implemented for TypeRef");
+    pub fn get<'storage>(&self, storage: &'storage Storage<'a>) -> TypeRef<'storage, 'a> {
+        storage.get_type(*self)
     }
 
-    pub fn get_mut(&mut self) -> TypeRefMut<'_, 'a> {
-        // TODO: Implement this method to retrieve the expression from thread-local storage
-        panic!("get_mut() not implemented for TypeRef");
+    pub fn get_mut<'storage>(
+        &mut self,
+        storage: &'storage mut Storage<'a>,
+    ) -> TypeRefMut<'storage, 'a> {
+        storage.get_type_mut(*self)
     }
 }
 
@@ -446,7 +445,7 @@ impl<'a> Storage<'a> {
         })
     }
 
-    pub fn get_expr(&self, id: ExprKey<'a>) -> Option<ExprRef<'_, 'a>> {
+    pub fn get_expr(&self, id: ExprKey<'a>) -> ExprRef<'_, 'a> {
         let index = id.instance_index() as usize;
 
         match id.variant_index() {
@@ -492,9 +491,10 @@ impl<'a> Storage<'a> {
 
             ExprKind::Return => self.returns.get(index).map(ExprRef::Return),
         }
+        .expect("Expression not found in storage")
     }
 
-    pub fn get_expr_mut(&mut self, id: ExprKey<'a>) -> Option<ExprRefMut<'_, 'a>> {
+    pub fn get_expr_mut(&mut self, id: ExprKey<'a>) -> ExprRefMut<'_, 'a> {
         let index = id.instance_index() as usize;
 
         match id.variant_index() {
@@ -543,9 +543,10 @@ impl<'a> Storage<'a> {
 
             ExprKind::Return => self.returns.get_mut(index).map(ExprRefMut::Return),
         }
+        .expect("Expression not found in storage")
     }
 
-    pub fn get_type(&self, id: TypeKey<'a>) -> Option<TypeRef<'_, 'a>> {
+    pub fn get_type(&self, id: TypeKey<'a>) -> TypeRef<'_, 'a> {
         let index = id.instance_index() as usize;
 
         match id.variant_index() {
@@ -572,9 +573,10 @@ impl<'a> Storage<'a> {
             TypeKind::StructType => self.struct_types.get(index).map(TypeRef::StructType),
             TypeKind::FunctionType => self.function_types.get(index).map(TypeRef::FunctionType),
         }
+        .expect("Expression not found in storage")
     }
 
-    pub fn get_type_mut(&mut self, id: TypeKey<'a>) -> Option<TypeRefMut<'_, 'a>> {
+    pub fn get_type_mut(&mut self, id: TypeKey<'a>) -> TypeRefMut<'_, 'a> {
         let index = id.instance_index() as usize;
 
         match id.variant_index() {
@@ -604,5 +606,6 @@ impl<'a> Storage<'a> {
                 .get_mut(index)
                 .map(TypeRefMut::FunctionType),
         }
+        .expect("Expression not found in storage")
     }
 }
