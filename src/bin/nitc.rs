@@ -1,6 +1,9 @@
 use nitrate_compiler::lexer::*;
 use nitrate_compiler::parser::*;
 use nitrate_compiler::parsetree::*;
+use slog::{Drain, Logger, o};
+use slog_async::Async;
+use slog_term::*;
 use std::io::Read;
 
 use tracking_allocator::{AllocationGroupId, AllocationRegistry, AllocationTracker, Allocator};
@@ -42,6 +45,10 @@ fn enable_allocation_tracking() {
     AllocationRegistry::enable_tracking();
 }
 
+fn disable_allocation_tracking() {
+    AllocationRegistry::disable_tracking();
+}
+
 fn read_source_file(filename: &str) -> std::io::Result<Vec<u8>> {
     let mut file = std::fs::File::open(filename)?;
     let mut contents = Vec::new();
@@ -50,7 +57,7 @@ fn read_source_file(filename: &str) -> std::io::Result<Vec<u8>> {
 }
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    enable_allocation_tracking();
+    // enable_allocation_tracking();
 
     env_logger::Builder::from_default_env()
         .format_timestamp(None)
@@ -73,9 +80,23 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .map_err(|e| format!("Failed to create lexer for file {}: {}", filename, e))?;
 
     let mut storage = Storage::new();
-    let mut parser = Parser::new(lexer, &mut storage);
 
-    println!("===========================================");
+    // Create a drain that outputs to the terminal
+    let decorator = TermDecorator::new().build();
+    let drain = slog_term::FullFormat::new(decorator)
+        .use_custom_header_print(|_, w, msg, b| {
+            let message = msg.msg().to_string();
+            w.write(message.as_bytes())?;
+
+            // Return true if any message was written?
+            Ok(!message.is_empty())
+        })
+        .build()
+        .fuse();
+    let drain = Async::new(drain.fuse()).build().fuse();
+    let root_logger = Logger::root(drain, o!());
+
+    let mut parser = Parser::new(lexer, &mut storage, root_logger);
 
     {
         let _parsetree = parser.parse().map_or_else(
@@ -83,8 +104,6 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             |tree| Ok(tree),
         )?;
     }
-
-    println!("===========================================");
 
     println!("Successfully parsed file: {}", filename);
 
