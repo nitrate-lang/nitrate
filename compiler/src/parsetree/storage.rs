@@ -1,8 +1,10 @@
+use hashbrown::HashSet;
+
 use super::array_type::ArrayType;
 use super::binary_op::BinaryOp;
 use super::block::Block;
 use super::character::CharLit;
-use super::expression::{ExprOwned, ExprRef, ExprRefMut, TypeOwned, TypeRef, TypeRefMut};
+use super::expression::{ExprOwned, ExprRef, ExprRefMut, TypeOwned, TypeRef};
 use super::function::Function;
 use super::function_type::FunctionType;
 use super::list::ListLit;
@@ -162,7 +164,7 @@ impl Into<ExprKind> for TypeKind {
     }
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Hash, PartialEq, Eq)]
 pub struct ExprKey<'a> {
     id: u32,
     _marker: std::marker::PhantomData<&'a ()>,
@@ -230,6 +232,15 @@ impl<'a> TypeKey<'a> {
         })
     }
 
+    pub(crate) fn new_single(variant: TypeKind) -> Self {
+        assert!((variant as u32) < 64, "Variant index must be less than 64");
+
+        TypeKey {
+            id: (variant as u32) << 26,
+            _marker: std::marker::PhantomData,
+        }
+    }
+
     pub(crate) fn variant_index(&self) -> TypeKind {
         let number = (self.id >> 26) as u8;
 
@@ -243,13 +254,6 @@ impl<'a> TypeKey<'a> {
 
     pub fn get<'storage>(&self, storage: &'storage Storage<'a>) -> TypeRef<'storage, 'a> {
         storage.get_type(*self)
-    }
-
-    pub fn get_mut<'storage>(
-        &mut self,
-        storage: &'storage mut Storage<'a>,
-    ) -> TypeRefMut<'storage, 'a> {
-        storage.get_type_mut(*self)
     }
 }
 
@@ -292,6 +296,8 @@ pub struct Storage<'a> {
     array_types: Vec<ArrayType<'a>>,
     struct_types: Vec<StructType<'a>>,
     function_types: Vec<FunctionType<'a>>,
+
+    has_parentheses: HashSet<ExprKey<'a>>,
 }
 
 impl<'a> Storage<'a> {
@@ -474,20 +480,54 @@ impl<'a> Storage<'a> {
     }
 
     pub(crate) fn add_type(&mut self, ty: TypeOwned<'a>) -> Option<TypeKey<'a>> {
-        self.add_expr(ty.into()).and_then(|expr_ref| {
-            /*
-             * All TypeKinds have analogous ExprKinds, so we can use the same
-             * variant index for both.
-             */
+        // FIXME: Deduplicate type instances
 
-            let variant = expr_ref
-                .variant_index()
-                .try_into()
-                .expect("Failed to convert ExprKind to TypeKind");
-            let index = expr_ref.instance_index();
+        match ty {
+            TypeOwned::Bool => Some(TypeKey::new_single(TypeKind::Bool)),
+            TypeOwned::UInt8 => Some(TypeKey::new_single(TypeKind::UInt8)),
+            TypeOwned::UInt16 => Some(TypeKey::new_single(TypeKind::UInt16)),
+            TypeOwned::UInt32 => Some(TypeKey::new_single(TypeKind::UInt32)),
+            TypeOwned::UInt64 => Some(TypeKey::new_single(TypeKind::UInt64)),
+            TypeOwned::UInt128 => Some(TypeKey::new_single(TypeKind::UInt128)),
+            TypeOwned::Int8 => Some(TypeKey::new_single(TypeKind::Int8)),
+            TypeOwned::Int16 => Some(TypeKey::new_single(TypeKind::Int16)),
+            TypeOwned::Int32 => Some(TypeKey::new_single(TypeKind::Int32)),
+            TypeOwned::Int64 => Some(TypeKey::new_single(TypeKind::Int64)),
+            TypeOwned::Int128 => Some(TypeKey::new_single(TypeKind::Int128)),
+            TypeOwned::Float8 => Some(TypeKey::new_single(TypeKind::Float8)),
+            TypeOwned::Float16 => Some(TypeKey::new_single(TypeKind::Float16)),
+            TypeOwned::Float32 => Some(TypeKey::new_single(TypeKind::Float32)),
+            TypeOwned::Float64 => Some(TypeKey::new_single(TypeKind::Float64)),
+            TypeOwned::Float128 => Some(TypeKey::new_single(TypeKind::Float128)),
 
-            TypeKey::new(variant, index)
-        })
+            TypeOwned::InferType => Some(TypeKey::new_single(TypeKind::InferType)),
+
+            TypeOwned::TupleType(node) => TypeKey::new(TypeKind::TupleType, self.tuple_types.len())
+                .and_then(|k| {
+                    self.tuple_types.push(node);
+                    Some(k)
+                }),
+
+            TypeOwned::ArrayType(node) => TypeKey::new(TypeKind::ArrayType, self.array_types.len())
+                .and_then(|k| {
+                    self.array_types.push(node);
+                    Some(k)
+                }),
+
+            TypeOwned::StructType(node) => {
+                TypeKey::new(TypeKind::StructType, self.struct_types.len()).and_then(|k| {
+                    self.struct_types.push(node);
+                    Some(k)
+                })
+            }
+
+            TypeOwned::FunctionType(node) => {
+                TypeKey::new(TypeKind::FunctionType, self.function_types.len()).and_then(|k| {
+                    self.function_types.push(node);
+                    Some(k)
+                })
+            }
+        }
     }
 
     pub fn get_expr(&self, id: ExprKey<'a>) -> ExprRef<'_, 'a> {
@@ -621,36 +661,11 @@ impl<'a> Storage<'a> {
         .expect("Expression not found in storage")
     }
 
-    pub fn get_type_mut(&mut self, id: TypeKey<'a>) -> TypeRefMut<'_, 'a> {
-        let index = id.instance_index() as usize;
+    pub fn has_parentheses(&self, key: ExprKey<'a>) -> bool {
+        self.has_parentheses.contains(&key)
+    }
 
-        match id.variant_index() {
-            TypeKind::Bool => Some(TypeRefMut::Bool),
-            TypeKind::UInt8 => Some(TypeRefMut::UInt8),
-            TypeKind::UInt16 => Some(TypeRefMut::UInt16),
-            TypeKind::UInt32 => Some(TypeRefMut::UInt32),
-            TypeKind::UInt64 => Some(TypeRefMut::UInt64),
-            TypeKind::UInt128 => Some(TypeRefMut::UInt128),
-            TypeKind::Int8 => Some(TypeRefMut::Int8),
-            TypeKind::Int16 => Some(TypeRefMut::Int16),
-            TypeKind::Int32 => Some(TypeRefMut::Int32),
-            TypeKind::Int64 => Some(TypeRefMut::Int64),
-            TypeKind::Int128 => Some(TypeRefMut::Int128),
-            TypeKind::Float8 => Some(TypeRefMut::Float8),
-            TypeKind::Float16 => Some(TypeRefMut::Float16),
-            TypeKind::Float32 => Some(TypeRefMut::Float32),
-            TypeKind::Float64 => Some(TypeRefMut::Float64),
-            TypeKind::Float128 => Some(TypeRefMut::Float128),
-
-            TypeKind::InferType => Some(TypeRefMut::InferType),
-            TypeKind::TupleType => self.tuple_types.get_mut(index).map(TypeRefMut::TupleType),
-            TypeKind::ArrayType => self.array_types.get_mut(index).map(TypeRefMut::ArrayType),
-            TypeKind::StructType => self.struct_types.get_mut(index).map(TypeRefMut::StructType),
-            TypeKind::FunctionType => self
-                .function_types
-                .get_mut(index)
-                .map(TypeRefMut::FunctionType),
-        }
-        .expect("Expression not found in storage")
+    pub fn add_parentheses(&mut self, key: ExprKey<'a>) {
+        self.has_parentheses.insert(key);
     }
 }

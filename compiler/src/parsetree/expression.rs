@@ -9,7 +9,7 @@ use super::number::{FloatLit, IntegerLit};
 use super::object::ObjectLit;
 use super::returns::Return;
 use super::statement::Statement;
-use super::storage::{ExprKey, ExprKind, Storage, TypeKey, TypeKind};
+use super::storage::{ExprKey, ExprKind, Storage, TypeKey};
 use super::string::StringLit;
 use super::struct_type::StructType;
 use super::tuple_type::TupleType;
@@ -225,34 +225,6 @@ pub enum TypeRef<'storage, 'a> {
     FunctionType(&'storage FunctionType<'a>),
 }
 
-#[derive(Debug)]
-pub enum TypeRefMut<'storage, 'a> {
-    /* Primitive Types */
-    Bool,
-    UInt8,
-    UInt16,
-    UInt32,
-    UInt64,
-    UInt128,
-    Int8,
-    Int16,
-    Int32,
-    Int64,
-    Int128,
-    Float8,
-    Float16,
-    Float32,
-    Float64,
-    Float128,
-
-    /* Compound Types */
-    InferType,
-    TupleType(&'storage mut TupleType<'a>),
-    ArrayType(&'storage mut ArrayType<'a>),
-    StructType(&'storage mut StructType<'a>),
-    FunctionType(&'storage mut FunctionType<'a>),
-}
-
 impl<'a> TryInto<TypeOwned<'a>> for ExprOwned<'a> {
     type Error = Self;
 
@@ -374,33 +346,33 @@ impl<'storage, 'a> TryInto<TypeRef<'storage, 'a>> for ExprRef<'storage, 'a> {
     }
 }
 
-impl<'storage, 'a> TryInto<TypeRefMut<'storage, 'a>> for ExprRefMut<'storage, 'a> {
+impl<'storage, 'a> TryInto<TypeRef<'storage, 'a>> for ExprRefMut<'storage, 'a> {
     type Error = Self;
 
-    fn try_into(self) -> Result<TypeRefMut<'storage, 'a>, Self::Error> {
+    fn try_into(self) -> Result<TypeRef<'storage, 'a>, Self::Error> {
         match self {
-            ExprRefMut::Bool => Ok(TypeRefMut::Bool),
-            ExprRefMut::UInt8 => Ok(TypeRefMut::UInt8),
-            ExprRefMut::UInt16 => Ok(TypeRefMut::UInt16),
-            ExprRefMut::UInt32 => Ok(TypeRefMut::UInt32),
-            ExprRefMut::UInt64 => Ok(TypeRefMut::UInt64),
-            ExprRefMut::UInt128 => Ok(TypeRefMut::UInt128),
-            ExprRefMut::Int8 => Ok(TypeRefMut::Int8),
-            ExprRefMut::Int16 => Ok(TypeRefMut::Int16),
-            ExprRefMut::Int32 => Ok(TypeRefMut::Int32),
-            ExprRefMut::Int64 => Ok(TypeRefMut::Int64),
-            ExprRefMut::Int128 => Ok(TypeRefMut::Int128),
-            ExprRefMut::Float8 => Ok(TypeRefMut::Float8),
-            ExprRefMut::Float16 => Ok(TypeRefMut::Float16),
-            ExprRefMut::Float32 => Ok(TypeRefMut::Float32),
-            ExprRefMut::Float64 => Ok(TypeRefMut::Float64),
-            ExprRefMut::Float128 => Ok(TypeRefMut::Float128),
+            ExprRefMut::Bool => Ok(TypeRef::Bool),
+            ExprRefMut::UInt8 => Ok(TypeRef::UInt8),
+            ExprRefMut::UInt16 => Ok(TypeRef::UInt16),
+            ExprRefMut::UInt32 => Ok(TypeRef::UInt32),
+            ExprRefMut::UInt64 => Ok(TypeRef::UInt64),
+            ExprRefMut::UInt128 => Ok(TypeRef::UInt128),
+            ExprRefMut::Int8 => Ok(TypeRef::Int8),
+            ExprRefMut::Int16 => Ok(TypeRef::Int16),
+            ExprRefMut::Int32 => Ok(TypeRef::Int32),
+            ExprRefMut::Int64 => Ok(TypeRef::Int64),
+            ExprRefMut::Int128 => Ok(TypeRef::Int128),
+            ExprRefMut::Float8 => Ok(TypeRef::Float8),
+            ExprRefMut::Float16 => Ok(TypeRef::Float16),
+            ExprRefMut::Float32 => Ok(TypeRef::Float32),
+            ExprRefMut::Float64 => Ok(TypeRef::Float64),
+            ExprRefMut::Float128 => Ok(TypeRef::Float128),
 
-            ExprRefMut::InferType => Ok(TypeRefMut::InferType),
-            ExprRefMut::TupleType(x) => Ok(TypeRefMut::TupleType(x)),
-            ExprRefMut::ArrayType(x) => Ok(TypeRefMut::ArrayType(x)),
-            ExprRefMut::StructType(x) => Ok(TypeRefMut::StructType(x)),
-            ExprRefMut::FunctionType(x) => Ok(TypeRefMut::FunctionType(x)),
+            ExprRefMut::InferType => Ok(TypeRef::InferType),
+            ExprRefMut::TupleType(x) => Ok(TypeRef::TupleType(x)),
+            ExprRefMut::ArrayType(x) => Ok(TypeRef::ArrayType(x)),
+            ExprRefMut::StructType(x) => Ok(TypeRef::StructType(x)),
+            ExprRefMut::FunctionType(x) => Ok(TypeRef::FunctionType(x)),
 
             ExprRefMut::Discard
             | ExprRefMut::IntegerLit(_)
@@ -445,35 +417,6 @@ impl<'storage, 'a> Into<ExprRef<'storage, 'a>> for TypeRef<'storage, 'a> {
             TypeRef::ArrayType(x) => ExprRef::ArrayType(x),
             TypeRef::StructType(x) => ExprRef::StructType(x),
             TypeRef::FunctionType(x) => ExprRef::FunctionType(x),
-        }
-    }
-}
-
-impl<'storage, 'a> Into<ExprRefMut<'storage, 'a>> for TypeRefMut<'storage, 'a> {
-    fn into(self) -> ExprRefMut<'storage, 'a> {
-        match self {
-            TypeRefMut::Bool => ExprRefMut::Bool,
-            TypeRefMut::UInt8 => ExprRefMut::UInt8,
-            TypeRefMut::UInt16 => ExprRefMut::UInt16,
-            TypeRefMut::UInt32 => ExprRefMut::UInt32,
-            TypeRefMut::UInt64 => ExprRefMut::UInt64,
-            TypeRefMut::UInt128 => ExprRefMut::UInt128,
-            TypeRefMut::Int8 => ExprRefMut::Int8,
-            TypeRefMut::Int16 => ExprRefMut::Int16,
-            TypeRefMut::Int32 => ExprRefMut::Int32,
-            TypeRefMut::Int64 => ExprRefMut::Int64,
-            TypeRefMut::Int128 => ExprRefMut::Int128,
-            TypeRefMut::Float8 => ExprRefMut::Float8,
-            TypeRefMut::Float16 => ExprRefMut::Float16,
-            TypeRefMut::Float32 => ExprRefMut::Float32,
-            TypeRefMut::Float64 => ExprRefMut::Float64,
-            TypeRefMut::Float128 => ExprRefMut::Float128,
-
-            TypeRefMut::InferType => ExprRefMut::InferType,
-            TypeRefMut::TupleType(x) => ExprRefMut::TupleType(x),
-            TypeRefMut::ArrayType(x) => ExprRefMut::ArrayType(x),
-            TypeRefMut::StructType(x) => ExprRefMut::StructType(x),
-            TypeRefMut::FunctionType(x) => ExprRefMut::FunctionType(x),
         }
     }
 }
@@ -528,166 +471,17 @@ impl<'a> ExprKey<'a> {
         }
     }
 
-    pub fn has_parentheses(&self, _storage: &Storage<'a>) -> bool {
-        match self.variant_index() {
-            ExprKind::Bool
-            | ExprKind::UInt8
-            | ExprKind::UInt16
-            | ExprKind::UInt32
-            | ExprKind::UInt64
-            | ExprKind::UInt128
-            | ExprKind::Int8
-            | ExprKind::Int16
-            | ExprKind::Int32
-            | ExprKind::Int64
-            | ExprKind::Int128
-            | ExprKind::Float8
-            | ExprKind::Float16
-            | ExprKind::Float32
-            | ExprKind::Float64
-            | ExprKind::Float128
-            | ExprKind::InferType
-            | ExprKind::TupleType
-            | ExprKind::ArrayType
-            | ExprKind::StructType => false,
-
-            ExprKind::FunctionType => {
-                // TODO: Check if the expression has parentheses
-                false
-            }
-
-            ExprKind::Discard
-            | ExprKind::IntegerLit
-            | ExprKind::FloatLit
-            | ExprKind::StringLit
-            | ExprKind::CharLit
-            | ExprKind::ListLit
-            | ExprKind::ObjectLit => false,
-
-            ExprKind::UnaryOp => {
-                // TODO: Check if the expression has parentheses
-                false
-            }
-
-            ExprKind::BinaryOp => {
-                // TODO: Check if the expression has parentheses
-                false
-            }
-
-            ExprKind::Statement => {
-                // TODO: Check if the expression has parentheses
-                false
-            }
-
-            ExprKind::Block => false,
-
-            ExprKind::Function => {
-                // TODO: Check if the expression has parentheses
-                false
-            }
-            ExprKind::Variable => {
-                // TODO: Check if the expression has parentheses
-                false
-            }
-
-            ExprKind::Return => {
-                // TODO: Check if the expression has parentheses
-                false
-            }
-        }
+    pub fn has_parentheses(&self, storage: &Storage<'a>) -> bool {
+        storage.has_parentheses(*self)
     }
 
-    pub fn set_parentheses(&mut self, _storage: &Storage<'a>, _has_parentheses: bool) {
-        match self.variant_index() {
-            ExprKind::Bool
-            | ExprKind::UInt8
-            | ExprKind::UInt16
-            | ExprKind::UInt32
-            | ExprKind::UInt64
-            | ExprKind::UInt128
-            | ExprKind::Int8
-            | ExprKind::Int16
-            | ExprKind::Int32
-            | ExprKind::Int64
-            | ExprKind::Int128
-            | ExprKind::Float8
-            | ExprKind::Float16
-            | ExprKind::Float32
-            | ExprKind::Float64
-            | ExprKind::Float128
-            | ExprKind::InferType
-            | ExprKind::TupleType
-            | ExprKind::ArrayType
-            | ExprKind::StructType => {}
-
-            ExprKind::FunctionType => {
-                // TODO: Set if the expression has parentheses
-            }
-
-            ExprKind::Discard
-            | ExprKind::IntegerLit
-            | ExprKind::FloatLit
-            | ExprKind::StringLit
-            | ExprKind::CharLit
-            | ExprKind::ListLit
-            | ExprKind::ObjectLit => {}
-
-            ExprKind::UnaryOp => {
-                // TODO: Set if the expression has parentheses
-            }
-
-            ExprKind::BinaryOp => {
-                // TODO: Set if the expression has parentheses
-            }
-
-            ExprKind::Statement => {
-                // TODO: Set if the expression has parentheses
-            }
-
-            ExprKind::Block => {}
-
-            ExprKind::Function => {
-                // TODO: Set if the expression has parentheses
-            }
-            ExprKind::Variable => {
-                // TODO: Set if the expression has parentheses
-            }
-
-            ExprKind::Return => {
-                // TODO: Set if the expression has parentheses
-            }
-        }
+    pub fn add_parentheses(&mut self, storage: &mut Storage<'a>) {
+        storage.add_parentheses(*self)
     }
 }
 
 impl<'a> TypeKey<'a> {
-    pub fn has_parentheses(&self, _storage: &Storage<'a>) -> bool {
-        match self.variant_index() {
-            TypeKind::Bool
-            | TypeKind::UInt8
-            | TypeKind::UInt16
-            | TypeKind::UInt32
-            | TypeKind::UInt64
-            | TypeKind::UInt128
-            | TypeKind::Int8
-            | TypeKind::Int16
-            | TypeKind::Int32
-            | TypeKind::Int64
-            | TypeKind::Int128
-            | TypeKind::Float8
-            | TypeKind::Float16
-            | TypeKind::Float32
-            | TypeKind::Float64
-            | TypeKind::Float128
-            | TypeKind::InferType
-            | TypeKind::TupleType
-            | TypeKind::ArrayType
-            | TypeKind::StructType => false,
-
-            TypeKind::FunctionType => {
-                // TODO: Check if the expression has parentheses
-                false
-            }
-        }
+    pub fn has_parentheses(&self, storage: &Storage<'a>) -> bool {
+        storage.has_parentheses(self.to_owned().into())
     }
 }

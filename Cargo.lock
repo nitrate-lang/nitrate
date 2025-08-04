@@ -227,6 +227,7 @@ dependencies = [
  "hashbrown",
  "log",
  "smallvec 1.15.1",
+ "spdx",
  "stackvector",
  "tracing",
  "tracing-subscriber",
@@ -433,6 +434,15 @@ name = "smallvec"
 version = "1.15.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "67b1b7a3b5fe4f1376887184045fcf45c69e92af734b7aaddc05fb777b6fbd03"
+
+[[package]]
+name = "spdx"
+version = "0.10.9"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c3e17e880bafaeb362a7b751ec46bdc5b61445a188f80e0606e68167cd540fa3"
+dependencies = [
+ "smallvec 1.15.1",
+]
 
 [[package]]
 name = "stackvector"
