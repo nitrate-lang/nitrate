@@ -323,31 +323,31 @@ impl<'storage, 'a> BinaryOpBuilderHelper<'storage, 'a> {
     }
 }
 
-// #[derive(Debug)]
-// pub struct StatementBuilderHelper<'storage, 'a> {
-//     storage: &'storage mut Storage<'a>,
-//     expression: Option<ExprKey<'a>>,
-// }
+#[derive(Debug)]
+pub struct StatementBuilderHelper<'storage, 'a> {
+    storage: &'storage mut Storage<'a>,
+    expression: Option<ExprKey<'a>>,
+}
 
-// impl<'storage, 'a> StatementBuilderHelper<'storage, 'a> {
-//     pub(crate) fn new(storage: &'storage mut Storage<'a>) -> Self {
-//         StatementBuilderHelper {
-//             outer,
-//             expression: None,
-//         }
-//     }
+impl<'storage, 'a> StatementBuilderHelper<'storage, 'a> {
+    pub(crate) fn new(storage: &'storage mut Storage<'a>) -> Self {
+        StatementBuilderHelper {
+            storage,
+            expression: None,
+        }
+    }
 
-//     pub fn with_expression(mut self, expression: ExprKey<'a>) -> Self {
-//         self.expression = Some(expression);
-//         self
-//     }
+    pub fn with_expression(mut self, expression: ExprKey<'a>) -> Self {
+        self.expression = Some(expression);
+        self
+    }
 
-//     pub fn build(self) -> Option<ExprKey<'a>> {
-//         let expression = self.expression.expect("Expression must be provided");
-
-//         Box::new(Expr::Statement(Statement::new(expression)))
-//     }
-// }
+    pub fn build(self) -> Option<ExprKey<'a>> {
+        self.storage.add_expr(ExprOwned::Statement(Statement::new(
+            self.expression.expect("Expression must be provided"),
+        )))
+    }
+}
 
 // #[derive(Debug)]
 // pub struct BlockBuilderHelper<'storage, 'a> {

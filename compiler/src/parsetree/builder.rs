@@ -2,6 +2,8 @@ use super::builder_helper::*;
 use super::expression::TypeOwned;
 use super::storage::{Storage, TypeKey};
 use super::tuple_type::TupleType;
+
+pub use super::binary_op::BinaryOperator;
 pub use super::variable::VariableKind;
 
 #[derive(Debug)]
@@ -52,9 +54,9 @@ impl<'storage, 'a> Builder<'storage, 'a> {
         BinaryOpBuilderHelper::new(self.storage)
     }
 
-    // pub fn statement(self) -> StatementBuilderHelper<'a> {
-    //     StatementBuilderHelper::new(self)
-    // }
+    pub fn create_statement(&mut self) -> StatementBuilderHelper<'_, 'a> {
+        StatementBuilderHelper::new(self.storage)
+    }
 
     // pub fn block(self) -> BlockBuilderHelper<'a> {
     //     BlockBuilderHelper::new(self)
