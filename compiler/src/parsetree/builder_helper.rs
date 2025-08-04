@@ -69,7 +69,7 @@ impl<'storage, 'a> IntegerBuilderHelper<'storage, 'a> {
 
     pub fn build(self) -> Option<ExprKey<'a>> {
         self.storage.add_expr(ExprOwned::IntegerLit(IntegerLit::new(
-            self.value?,
+            self.value.expect("Integer value must be provided"),
             self.kind.unwrap_or(IntegerKind::Decimal),
         )?))
     }
@@ -95,8 +95,9 @@ impl<'storage, 'a> FloatBuilderHelper<'storage, 'a> {
     }
 
     pub fn build(self) -> Option<ExprKey<'a>> {
-        self.storage
-            .add_expr(ExprOwned::FloatLit(FloatLit::new(self.value?)))
+        self.storage.add_expr(ExprOwned::FloatLit(FloatLit::new(
+            self.value.expect("Float value must be provided"),
+        )))
     }
 }
 
@@ -125,8 +126,9 @@ impl<'storage, 'a> StringBuilderHelper<'storage, 'a> {
     }
 
     pub fn build(self) -> Option<ExprKey<'a>> {
-        self.storage
-            .add_expr(ExprOwned::StringLit(StringLit::new(self.value?)))
+        self.storage.add_expr(ExprOwned::StringLit(StringLit::new(
+            self.value.expect("String value must be provided"),
+        )))
     }
 }
 
@@ -137,7 +139,7 @@ pub struct CharBuilderHelper<'storage, 'a> {
 }
 
 impl<'storage, 'a> CharBuilderHelper<'storage, 'a> {
-    pub fn new(storage: &'storage mut Storage<'a>) -> Self {
+    pub(crate) fn new(storage: &'storage mut Storage<'a>) -> Self {
         CharBuilderHelper {
             storage,
             value: None,
@@ -150,8 +152,9 @@ impl<'storage, 'a> CharBuilderHelper<'storage, 'a> {
     }
 
     pub fn build(self) -> Option<ExprKey<'a>> {
-        self.storage
-            .add_expr(ExprOwned::CharLit(CharLit::new(self.value?)))
+        self.storage.add_expr(ExprOwned::CharLit(CharLit::new(
+            self.value.expect("Char value must be provided"),
+        )))
     }
 }
 
@@ -162,7 +165,7 @@ pub struct ListBuilderHelper<'storage, 'a> {
 }
 
 impl<'storage, 'a> ListBuilderHelper<'storage, 'a> {
-    pub fn new(storage: &'storage mut Storage<'a>) -> Self {
+    pub(crate) fn new(storage: &'storage mut Storage<'a>) -> Self {
         ListBuilderHelper {
             storage,
             elements: Vec::new(),
@@ -200,7 +203,7 @@ pub struct ObjectBuilderHelper<'storage, 'a> {
 }
 
 impl<'storage, 'a> ObjectBuilderHelper<'storage, 'a> {
-    pub fn new(storage: &'storage mut Storage<'a>) -> Self {
+    pub(crate) fn new(storage: &'storage mut Storage<'a>) -> Self {
         ObjectBuilderHelper {
             storage,
             fields: BTreeMap::new(),
@@ -226,102 +229,108 @@ impl<'storage, 'a> ObjectBuilderHelper<'storage, 'a> {
     }
 }
 
+#[derive(Debug)]
+pub struct UnaryOpBuilderHelper<'storage, 'a> {
+    storage: &'storage mut Storage<'a>,
+    operator: Option<UnaryOperator>,
+    operand: Option<ExprKey<'a>>,
+    is_postfix: Option<bool>,
+}
+
+impl<'storage, 'a> UnaryOpBuilderHelper<'storage, 'a> {
+    pub(crate) fn new(storage: &'storage mut Storage<'a>) -> Self {
+        UnaryOpBuilderHelper {
+            storage,
+            operator: None,
+            operand: None,
+            is_postfix: None,
+        }
+    }
+
+    pub fn with_operator(mut self, operator: UnaryOperator) -> Self {
+        self.operator = Some(operator);
+        self
+    }
+
+    pub fn with_operand(mut self, operand: ExprKey<'a>) -> Self {
+        self.operand = Some(operand);
+        self
+    }
+
+    pub fn with_prefix(mut self) -> Self {
+        self.is_postfix = Some(false);
+        self
+    }
+
+    pub fn with_postfix(mut self) -> Self {
+        self.is_postfix = Some(true);
+        self
+    }
+
+    pub fn with_postfix_flag(mut self, is_postfix: bool) -> Self {
+        self.is_postfix = Some(is_postfix);
+        self
+    }
+
+    pub fn build(self) -> Option<ExprKey<'a>> {
+        self.storage.add_expr(ExprOwned::UnaryOp(UnaryOp::new(
+            self.operand.expect("Operand must be provided"),
+            self.operator.expect("Unary operator must be provided"),
+            self.is_postfix.expect("Postfix flag must be provided"),
+        )))
+    }
+}
+
+#[derive(Debug)]
+pub struct BinaryOpBuilderHelper<'storage, 'a> {
+    storage: &'storage mut Storage<'a>,
+    left: Option<ExprKey<'a>>,
+    operator: Option<BinaryOperator>,
+    right: Option<ExprKey<'a>>,
+}
+
+impl<'storage, 'a> BinaryOpBuilderHelper<'storage, 'a> {
+    pub(crate) fn new(storage: &'storage mut Storage<'a>) -> Self {
+        BinaryOpBuilderHelper {
+            storage,
+            left: None,
+            operator: None,
+            right: None,
+        }
+    }
+
+    pub fn with_left(mut self, left: ExprKey<'a>) -> Self {
+        self.left = Some(left);
+        self
+    }
+
+    pub fn with_operator(mut self, operator: BinaryOperator) -> Self {
+        self.operator = Some(operator);
+        self
+    }
+
+    pub fn with_right(mut self, right: ExprKey<'a>) -> Self {
+        self.right = Some(right);
+        self
+    }
+
+    pub fn build(self) -> Option<ExprKey<'a>> {
+        self.storage.add_expr(ExprOwned::BinaryOp(BinaryOp::new(
+            self.left.expect("Left expression must be provided"),
+            self.operator.expect("Binary operator must be provided"),
+            self.right.expect("Right expression must be provided"),
+        )))
+    }
+}
+
 // #[derive(Debug)]
-// pub struct UnaryExprBuilderHelper<'a> {
-//     outer: Builder<'a>,
-//     operator: Option<UnaryOperator>,
-//     operand: Option<ExprKey<'a>>,
-//     is_postfix: Option<bool>,
-// }
-
-// impl<'a> UnaryExprBuilderHelper<'a> {
-//     pub fn new(outer: Builder<'a>) -> Self {
-//         UnaryExprBuilderHelper {
-//             outer,
-//             operator: None,
-//             operand: None,
-//             is_postfix: None,
-//         }
-//     }
-
-//     pub fn with_operator(mut self, operator: UnaryOperator) -> Self {
-//         self.operator = Some(operator);
-//         self
-//     }
-
-//     pub fn with_operand(mut self, operand: ExprKey<'a>) -> Self {
-//         self.operand = Some(operand);
-//         self
-//     }
-
-//     pub fn set_postfix(mut self, is_postfix: bool) -> Self {
-//         self.is_postfix = Some(is_postfix);
-//         self
-//     }
-
-//     pub fn build(self) -> ExprKey<'a> {
-//         let operator = self.operator.expect("Unary operator must be provided");
-//         let operand = self.operand.expect("Operand must be provided");
-//         let is_postfix = self.is_postfix.expect("is_postfix flag must be provided");
-
-//         let unary = UnaryOp::new(operand, operator, is_postfix);
-
-//         Box::new(Expr::UnaryOp(unary))
-//     }
-// }
-
-// #[derive(Debug)]
-// pub struct BinaryExprBuilderHelper<'a> {
-//     outer: Builder<'a>,
-//     left: Option<ExprKey<'a>>,
-//     operator: Option<BinaryOperator>,
-//     right: Option<ExprKey<'a>>,
-// }
-
-// impl<'a> BinaryExprBuilderHelper<'a> {
-//     pub fn new(outer: Builder<'a>) -> Self {
-//         BinaryExprBuilderHelper {
-//             outer,
-//             left: None,
-//             right: None,
-//             operator: None,
-//         }
-//     }
-
-//     pub fn with_left(mut self, left: ExprKey<'a>) -> Self {
-//         self.left = Some(left);
-//         self
-//     }
-
-//     pub fn with_operator(mut self, operator: BinaryOperator) -> Self {
-//         self.operator = Some(operator);
-//         self
-//     }
-
-//     pub fn with_right(mut self, right: ExprKey<'a>) -> Self {
-//         self.right = Some(right);
-//         self
-//     }
-
-//     pub fn build(self) -> ExprKey<'a> {
-//         let left = self.left.expect("Left expression must be provided");
-//         let operator = self.operator.expect("Binary operator must be provided");
-//         let right = self.right.expect("Right expression must be provided");
-
-//         let binary_expr = BinaryExpr::new(left, operator, right);
-
-//         Box::new(Expr::BinaryOp(binary_expr))
-//     }
-// }
-
-// #[derive(Debug)]
-// pub struct StatementBuilderHelper<'a> {
-//     outer: Builder<'a>,
+// pub struct StatementBuilderHelper<'storage, 'a> {
+//     storage: &'storage mut Storage<'a>,
 //     expression: Option<ExprKey<'a>>,
 // }
 
-// impl<'a> StatementBuilderHelper<'a> {
-//     pub fn new(outer: Builder<'a>) -> Self {
+// impl<'storage, 'a> StatementBuilderHelper<'storage, 'a> {
+//     pub(crate) fn new(storage: &'storage mut Storage<'a>) -> Self {
 //         StatementBuilderHelper {
 //             outer,
 //             expression: None,
@@ -333,7 +342,7 @@ impl<'storage, 'a> ObjectBuilderHelper<'storage, 'a> {
 //         self
 //     }
 
-//     pub fn build(self) -> ExprKey<'a> {
+//     pub fn build(self) -> Option<ExprKey<'a>> {
 //         let expression = self.expression.expect("Expression must be provided");
 
 //         Box::new(Expr::Statement(Statement::new(expression)))
@@ -341,13 +350,13 @@ impl<'storage, 'a> ObjectBuilderHelper<'storage, 'a> {
 // }
 
 // #[derive(Debug)]
-// pub struct BlockBuilderHelper<'a> {
-//     outer: Builder<'a>,
+// pub struct BlockBuilderHelper<'storage, 'a> {
+//     storage: &'storage mut Storage<'a>,
 //     elements: Vec<ExprKey<'a>>,
 // }
 
-// impl<'a> BlockBuilderHelper<'a> {
-//     pub fn new(outer: Builder<'a>) -> Self {
+// impl<'storage, 'a> BlockBuilderHelper<'storage, 'a> {
+//     pub(crate) fn new(storage: &'storage mut Storage<'a>) -> Self {
 //         BlockBuilderHelper {
 //             outer,
 //             elements: Vec::new(),
@@ -384,14 +393,14 @@ impl<'storage, 'a> ObjectBuilderHelper<'storage, 'a> {
 //         self
 //     }
 
-//     pub fn build(self) -> ExprKey<'a> {
+//     pub fn build(self) -> Option<ExprKey<'a>> {
 //         Box::new(Expr::Block(Block::new(self.elements)))
 //     }
 // }
 
 // #[derive(Debug)]
-// pub struct FunctionBuilderHelper<'a> {
-//     outer: Builder<'a>,
+// pub struct FunctionBuilderHelper<'storage, 'a> {
+//     storage: &'storage mut Storage<'a>,
 //     name: &'a str,
 //     parameters: Vec<FunctionParameter<'a>>,
 //     return_type: Option<Box<Type<'a>>>,
@@ -399,8 +408,8 @@ impl<'storage, 'a> ObjectBuilderHelper<'storage, 'a> {
 //     definition: Option<ExprKey<'a>>,
 // }
 
-// impl<'a> FunctionBuilderHelper<'a> {
-//     pub fn new(outer: Builder<'a>) -> Self {
+// impl<'storage, 'a> FunctionBuilderHelper<'storage, 'a> {
+//     pub(crate) fn new(storage: &'storage mut Storage<'a>) -> Self {
 //         FunctionBuilderHelper {
 //             outer,
 //             name: "",
@@ -463,7 +472,7 @@ impl<'storage, 'a> ObjectBuilderHelper<'storage, 'a> {
 //         }
 //     }
 
-//     pub fn build(self) -> ExprKey<'a> {
+//     pub fn build(self) -> Option<ExprKey<'a>> {
 //         let definition = self.definition.map(|d| match *d {
 //             Expr::Block(block) => Block::new(block.into_inner()),
 //             _ => panic!("Function definition must be a block expression"),
@@ -482,16 +491,16 @@ impl<'storage, 'a> ObjectBuilderHelper<'storage, 'a> {
 // }
 
 // #[derive(Debug)]
-// pub struct VariableBuilderHelper<'a> {
-//     outer: Builder<'a>,
+// pub struct VariableBuilderHelper<'storage, 'a> {
+//     storage: &'storage mut Storage<'a>,
 //     kind: Option<VariableKind>,
 //     name: &'a str,
 //     ty: Option<Box<Type<'a>>>,
 //     value: Option<ExprKey<'a>>,
 // }
 
-// impl<'a> VariableBuilderHelper<'a> {
-//     pub fn new(outer: Builder<'a>) -> Self {
+// impl<'storage, 'a> VariableBuilderHelper<'storage, 'a> {
+//     pub(crate) fn new(storage: &'storage mut Storage<'a>) -> Self {
 //         VariableBuilderHelper {
 //             outer,
 //             kind: None,
@@ -521,7 +530,7 @@ impl<'storage, 'a> ObjectBuilderHelper<'storage, 'a> {
 //         self
 //     }
 
-//     pub fn build(self) -> ExprKey<'a> {
+//     pub fn build(self) -> Option<ExprKey<'a>> {
 //         let kind = self.kind.expect("Variable kind must be provided");
 
 //         Box::new(Expr::Variable(Variable::new(
@@ -531,13 +540,13 @@ impl<'storage, 'a> ObjectBuilderHelper<'storage, 'a> {
 // }
 
 // #[derive(Debug)]
-// pub struct ReturnBuilderHelper<'a> {
-//     outer: Builder<'a>,
+// pub struct ReturnBuilderHelper<'storage, 'a> {
+//     storage: &'storage mut Storage<'a>,
 //     value: Option<ExprKey<'a>>,
 // }
 
-// impl<'a> ReturnBuilderHelper<'a> {
-//     pub fn new(outer: Builder<'a>) -> Self {
+// impl<'storage, 'a> ReturnBuilderHelper<'storage, 'a> {
+//     pub(crate) fn new(storage: &'storage mut Storage<'a>) -> Self {
 //         ReturnBuilderHelper { outer, value: None }
 //     }
 
@@ -546,19 +555,19 @@ impl<'storage, 'a> ObjectBuilderHelper<'storage, 'a> {
 //         self
 //     }
 
-//     pub fn build(self) -> ExprKey<'a> {
+//     pub fn build(self) -> Option<ExprKey<'a>> {
 //         Box::new(Expr::Return(Return::new(self.value)))
 //     }
 // }
 
 // #[derive(Debug)]
-// pub struct TupleTypeBuilderHelper<'a> {
-//     outer: Builder<'a>,
+// pub struct TupleTypeBuilderHelper<'storage, 'a> {
+//     storage: &'storage mut Storage<'a>,
 //     elements: Vec<Box<Type<'a>>>,
 // }
 
-// impl<'a> TupleTypeBuilderHelper<'a> {
-//     pub fn new(outer: Builder<'a>) -> Self {
+// impl<'storage, 'a> TupleTypeBuilderHelper<'storage, 'a> {
+//     pub(crate) fn new(storage: &'storage mut Storage<'a>) -> Self {
 //         TupleTypeBuilderHelper {
 //             outer,
 //             elements: Vec::new(),
@@ -578,20 +587,20 @@ impl<'storage, 'a> ObjectBuilderHelper<'storage, 'a> {
 //         self
 //     }
 
-//     pub fn build(self) -> ExprKey<'a> {
+//     pub fn build(self) -> Option<ExprKey<'a>> {
 //         Box::new(Expr::TupleType(TupleType::new(self.elements)))
 //     }
 // }
 
 // #[derive(Debug)]
-// pub struct ArrayTypeBuilderHelper<'a> {
-//     outer: Builder<'a>,
+// pub struct ArrayTypeBuilderHelper<'storage, 'a> {
+//     storage: &'storage mut Storage<'a>,
 //     element_ty: Option<Box<Type<'a>>>,
 //     count: Option<ExprKey<'a>>,
 // }
 
-// impl<'a> ArrayTypeBuilderHelper<'a> {
-//     pub fn new(outer: Builder<'a>) -> Self {
+// impl<'storage, 'a> ArrayTypeBuilderHelper<'storage, 'a> {
+//     pub(crate) fn new(storage: &'storage mut Storage<'a>) -> Self {
 //         ArrayTypeBuilderHelper {
 //             outer,
 //             element_ty: None,
@@ -609,7 +618,7 @@ impl<'storage, 'a> ObjectBuilderHelper<'storage, 'a> {
 //         self
 //     }
 
-//     pub fn build(self) -> ExprKey<'a> {
+//     pub fn build(self) -> Option<ExprKey<'a>> {
 //         let element_ty = self.element_ty.expect("Element type must be provided");
 //         let count = self.count.expect("Count must be provided");
 
@@ -620,15 +629,15 @@ impl<'storage, 'a> ObjectBuilderHelper<'storage, 'a> {
 // }
 
 // #[derive(Debug)]
-// pub struct StructTypeBuilderHelper<'a> {
-//     outer: Builder<'a>,
+// pub struct StructTypeBuilderHelper<'storage, 'a> {
+//     storage: &'storage mut Storage<'a>,
 //     name: Option<&'a str>,
 //     attributes: Vec<ExprKey<'a>>,
 //     fields: BTreeMap<&'a str, Box<Type<'a>>>,
 // }
 
-// impl<'a> StructTypeBuilderHelper<'a> {
-//     pub fn new(outer: Builder<'a>) -> Self {
+// impl<'storage, 'a> StructTypeBuilderHelper<'storage, 'a> {
+//     pub(crate) fn new(storage: &'storage mut Storage<'a>) -> Self {
 //         StructTypeBuilderHelper {
 //             outer,
 //             name: None,
@@ -668,7 +677,7 @@ impl<'storage, 'a> ObjectBuilderHelper<'storage, 'a> {
 //         self
 //     }
 
-//     pub fn build(self) -> ExprKey<'a> {
+//     pub fn build(self) -> Option<ExprKey<'a>> {
 //         let struct_type = StructType::new(self.name, self.attributes, self.fields);
 
 //         Box::new(Expr::StructType(struct_type))
@@ -676,15 +685,15 @@ impl<'storage, 'a> ObjectBuilderHelper<'storage, 'a> {
 // }
 
 // #[derive(Debug)]
-// pub struct FunctionTypeBuilderHelper<'a> {
-//     outer: Builder<'a>,
+// pub struct FunctionTypeBuilderHelper<'storage, 'a> {
+//     storage: &'storage mut Storage<'a>,
 //     parameters: Vec<FunctionParameter<'a>>,
 //     return_type: Option<Box<Type<'a>>>,
 //     attributes: Vec<ExprKey<'a>>,
 // }
 
-// impl<'a> FunctionTypeBuilderHelper<'a> {
-//     pub fn new(outer: Builder<'a>) -> Self {
+// impl<'storage, 'a> FunctionTypeBuilderHelper<'storage, 'a> {
+//     pub(crate) fn new(storage: &'storage mut Storage<'a>) -> Self {
 //         FunctionTypeBuilderHelper {
 //             outer,
 //             parameters: Vec::new(),
@@ -729,7 +738,7 @@ impl<'storage, 'a> ObjectBuilderHelper<'storage, 'a> {
 //         self
 //     }
 
-//     pub fn build(self) -> ExprKey<'a> {
+//     pub fn build(self) -> Option<ExprKey<'a>> {
 //         let function_type = FunctionType::new(self.parameters, self.return_type, self.attributes);
 
 //         Box::new(Expr::FunctionType(function_type))

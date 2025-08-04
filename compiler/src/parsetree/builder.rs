@@ -42,15 +42,15 @@ impl<'storage, 'a> Builder<'storage, 'a> {
         ObjectBuilderHelper::new(self.storage)
     }
 
-    // /////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////
     // BEGIN: Compound Expression Builders
-    // pub fn unary_expr(self) -> UnaryExprBuilderHelper<'a> {
-    //     UnaryExprBuilderHelper::new(self)
-    // }
+    pub fn create_unary_expr(&mut self) -> UnaryOpBuilderHelper<'_, 'a> {
+        UnaryOpBuilderHelper::new(self.storage)
+    }
 
-    // pub fn binary_expr(self) -> BinaryExprBuilderHelper<'a> {
-    //     BinaryExprBuilderHelper::new(self)
-    // }
+    pub fn create_binary_expr(&mut self) -> BinaryOpBuilderHelper<'_, 'a> {
+        BinaryOpBuilderHelper::new(self.storage)
+    }
 
     // pub fn statement(self) -> StatementBuilderHelper<'a> {
     //     StatementBuilderHelper::new(self)
