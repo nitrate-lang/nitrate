@@ -21,37 +21,43 @@ impl<'storage, 'a> Parser<'storage, 'a> {
         let first_token = self.lexer.peek();
 
         match first_token.token() {
-            Token::Name(name) => match name.name() {
-                "u1" | "bool" => Some(self.bb.get_bool()),
-                "u8" => Some(self.bb.get_u8()),
-                "u16" => Some(self.bb.get_u16()),
-                "u32" => Some(self.bb.get_u32()),
-                "u64" => Some(self.bb.get_u64()),
-                "u128" => Some(self.bb.get_u128()),
-                "i8" => Some(self.bb.get_i8()),
-                "i16" => Some(self.bb.get_i16()),
-                "i32" => Some(self.bb.get_i32()),
-                "i64" => Some(self.bb.get_i64()),
-                "i128" => Some(self.bb.get_i128()),
-                "f8" => Some(self.bb.get_f8()),
-                "f16" => Some(self.bb.get_f16()),
-                "f32" => Some(self.bb.get_f32()),
-                "f64" => Some(self.bb.get_f64()),
-                "f128" => Some(self.bb.get_f128()),
+            Token::Name(name) => {
+                self.lexer.skip();
 
-                _ => {
-                    self.set_failed_bit();
-                    error!(
-                        self.log,
-                        "Named type parsing not yet implemented: '{}'\n--> {}",
-                        name.name(),
-                        first_token.start()
-                    );
+                let mut bb = Builder::new(self.storage);
 
-                    // TODO: Create type name identifier
-                    None
+                match name.name() {
+                    "u1" | "bool" => Some(bb.get_bool()),
+                    "u8" => Some(bb.get_u8()),
+                    "u16" => Some(bb.get_u16()),
+                    "u32" => Some(bb.get_u32()),
+                    "u64" => Some(bb.get_u64()),
+                    "u128" => Some(bb.get_u128()),
+                    "i8" => Some(bb.get_i8()),
+                    "i16" => Some(bb.get_i16()),
+                    "i32" => Some(bb.get_i32()),
+                    "i64" => Some(bb.get_i64()),
+                    "i128" => Some(bb.get_i128()),
+                    "f8" => Some(bb.get_f8()),
+                    "f16" => Some(bb.get_f16()),
+                    "f32" => Some(bb.get_f32()),
+                    "f64" => Some(bb.get_f64()),
+                    "f128" => Some(bb.get_f128()),
+
+                    _ => {
+                        self.set_failed_bit();
+                        error!(
+                            self.log,
+                            "Named type parsing not yet implemented: '{}'\n--> {}",
+                            name.name(),
+                            first_token.start()
+                        );
+
+                        // TODO: Create type name identifier
+                        None
+                    }
                 }
-            },
+            }
 
             Token::Integer(_) => {
                 self.set_failed_bit();
@@ -146,29 +152,25 @@ impl<'storage, 'a> Parser<'storage, 'a> {
     }
 
     pub fn parse_type(&mut self) -> Option<TypeKey<'a>> {
-        let has_parentheses = self.lexer.peek_t() == Token::Punct(Punct::LeftParen);
-        if has_parentheses {
-            self.lexer.skip();
-        }
+        if self.lexer.skip_if(&Token::Punct(Punct::LeftParen)) {
+            let mut inner = self.parse_type();
 
-        let primary = self.parse_type_primary();
-        let constraints = self.parse_type_constraints();
-
-        if has_parentheses {
-            if self.lexer.peek_t() == Token::Punct(Punct::RightParen) {
-                self.lexer.skip();
-            } else {
+            if !self.lexer.skip_if(&Token::Punct(Punct::RightParen)) {
                 self.set_failed_bit();
-
                 error!(
                     self.log,
                     "error[P????]: Expected right parenthesis after type expression\n--> {}",
                     self.lexer.peek().start()
                 );
             }
-        }
 
-        // TODO: Create wrapper node for types with constraints
-        primary
+            inner.inspect(|v| v.add_parentheses(self.storage))
+        } else {
+            let primary = self.parse_type_primary();
+            let constraints = self.parse_type_constraints();
+
+            // TODO: Create wrapper node for types with constraints
+            primary
+        }
     }
 }

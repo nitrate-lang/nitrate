@@ -6,7 +6,7 @@ use std::collections::HashMap;
 
 pub struct Parser<'storage, 'a> {
     pub(crate) lexer: Lexer<'a>,
-    pub(crate) bb: Builder<'storage, 'a>,
+    pub(crate) storage: &'storage mut Storage<'a>,
     pub(crate) log: Logger,
     failed_bit: bool,
 }
@@ -15,22 +15,34 @@ impl<'storage, 'a> Parser<'storage, 'a> {
     pub fn new(lexer: Lexer<'a>, storage: &'storage mut Storage<'a>, log: Logger) -> Self {
         Parser {
             lexer,
-            bb: Builder::new(storage),
+            storage,
             log,
             failed_bit: false,
         }
+    }
+
+    pub fn get_storage(&self) -> &Storage<'a> {
+        self.storage
+    }
+
+    pub fn get_storage_mut(&mut self) -> &mut Storage<'a> {
+        self.storage
     }
 
     pub(crate) fn set_failed_bit(&mut self) {
         self.failed_bit = true;
     }
 
+    pub fn has_failed(&self) -> bool {
+        self.failed_bit
+    }
+
     pub fn parse_expression(&mut self) -> Option<ExprKey<'a>> {
         // TODO: Develop nitrate parser
 
-        self.parse_type();
+        self.parse_type().map(|t| t.into())
 
-        None
+        // None
     }
 
     pub fn parse(&mut self) -> Option<SourceModel<'a>> {
