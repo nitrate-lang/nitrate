@@ -378,7 +378,7 @@ impl<'a> ToCode<'a> for ExprKey<'a> {
         // if self.has_parenthesis() {
         //     tokens.push(Token::Punctuation(Punctuation::LeftParenthesis));
         // }
-        // TODO: Put parenthesis handling back if needed
+        // FIXME: Put parenthesis handling back if needed
 
         match expr {
             ExprRef::Bool => tokens.push(Token::Identifier(Identifier::new("bool"))),
