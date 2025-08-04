@@ -369,18 +369,16 @@ impl<'a> ToCode<'a> for FunctionType<'a> {
 
 impl<'a> ToCode<'a> for ExprKey<'a> {
     fn to_code(&self, bank: &Storage<'a>, tokens: &mut Vec<Token<'a>>, options: &CodeFormat) {
-        let expr = self.get(bank);
-
-        if expr.is_discard() {
+        if self.is_discard() {
             return;
         }
 
-        // if self.has_parenthesis() {
-        //     tokens.push(Token::Punctuation(Punctuation::LeftParenthesis));
-        // }
-        // FIXME: Put parenthesis handling back if needed
+        let has_parentheses = self.has_parentheses(bank);
+        if has_parentheses {
+            tokens.push(Token::Punctuation(Punctuation::LeftParenthesis));
+        }
 
-        match expr {
+        match self.get(bank) {
             ExprRef::Bool => tokens.push(Token::Identifier(Identifier::new("bool"))),
             ExprRef::UInt8 => tokens.push(Token::Identifier(Identifier::new("u8"))),
             ExprRef::UInt16 => tokens.push(Token::Identifier(Identifier::new("u16"))),
@@ -424,18 +422,19 @@ impl<'a> ToCode<'a> for ExprKey<'a> {
             ExprRef::Return(e) => e.to_code(bank, tokens, options),
         }
 
-        // if self.has_parenthesis() {
-        //     tokens.push(Token::Punctuation(Punctuation::RightParenthesis));
-        // }
+        if has_parentheses {
+            tokens.push(Token::Punctuation(Punctuation::RightParenthesis));
+        }
     }
 }
 
 impl<'a> ToCode<'a> for TypeKey<'a> {
     fn to_code(&self, bank: &Storage<'a>, tokens: &mut Vec<Token<'a>>, options: &CodeFormat) {
-        // if self.has_parenthesis() {
-        //     tokens.push(Token::Punctuation(Punctuation::LeftParenthesis));
-        // }
-        // FIXME: Put parenthesis handling back if needed
+        let has_parentheses = self.has_parentheses(bank);
+
+        if has_parentheses {
+            tokens.push(Token::Punctuation(Punctuation::LeftParenthesis));
+        }
 
         match self.get(bank) {
             TypeRef::Bool => tokens.push(Token::Identifier(Identifier::new("bool"))),
@@ -462,8 +461,8 @@ impl<'a> ToCode<'a> for TypeKey<'a> {
             TypeRef::FunctionType(e) => e.to_code(bank, tokens, options),
         }
 
-        // if self.has_parenthesis() {
-        //     tokens.push(Token::Punctuation(Punctuation::RightParenthesis));
-        // }
+        if has_parentheses {
+            tokens.push(Token::Punctuation(Punctuation::RightParenthesis));
+        }
     }
 }

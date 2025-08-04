@@ -9,6 +9,7 @@ use super::number::{FloatLit, IntegerLit};
 use super::object::ObjectLit;
 use super::returns::Return;
 use super::statement::Statement;
+use super::storage::{ExprKey, ExprKind, Storage, TypeKey, TypeKind};
 use super::string::StringLit;
 use super::struct_type::StructType;
 use super::tuple_type::TupleType;
@@ -477,104 +478,216 @@ impl<'storage, 'a> Into<ExprRefMut<'storage, 'a>> for TypeRefMut<'storage, 'a> {
     }
 }
 
-impl<'storage, 'a> ExprRef<'storage, 'a> {
+impl<'a> ExprKey<'a> {
     pub fn is_discard(&self) -> bool {
-        matches!(self, ExprRef::Discard)
+        self.variant_index() == ExprKind::Discard
     }
 
     pub fn discard(&mut self) {
-        *self = ExprRef::Discard;
+        *self = ExprKey::new_single(ExprKind::Discard);
     }
 
     pub fn is_type(&self) -> bool {
-        match self {
-            ExprRef::Bool
-            | ExprRef::UInt8
-            | ExprRef::UInt16
-            | ExprRef::UInt32
-            | ExprRef::UInt64
-            | ExprRef::UInt128
-            | ExprRef::Int8
-            | ExprRef::Int16
-            | ExprRef::Int32
-            | ExprRef::Int64
-            | ExprRef::Int128
-            | ExprRef::Float8
-            | ExprRef::Float16
-            | ExprRef::Float32
-            | ExprRef::Float64
-            | ExprRef::Float128
-            | ExprRef::InferType
-            | ExprRef::TupleType(_)
-            | ExprRef::ArrayType(_)
-            | ExprRef::StructType(_)
-            | ExprRef::FunctionType(_) => true,
+        match self.variant_index() {
+            ExprKind::Bool
+            | ExprKind::UInt8
+            | ExprKind::UInt16
+            | ExprKind::UInt32
+            | ExprKind::UInt64
+            | ExprKind::UInt128
+            | ExprKind::Int8
+            | ExprKind::Int16
+            | ExprKind::Int32
+            | ExprKind::Int64
+            | ExprKind::Int128
+            | ExprKind::Float8
+            | ExprKind::Float16
+            | ExprKind::Float32
+            | ExprKind::Float64
+            | ExprKind::Float128
+            | ExprKind::InferType
+            | ExprKind::TupleType
+            | ExprKind::ArrayType
+            | ExprKind::StructType
+            | ExprKind::FunctionType => true,
 
-            ExprRef::Discard
-            | ExprRef::IntegerLit(_)
-            | ExprRef::FloatLit(_)
-            | ExprRef::StringLit(_)
-            | ExprRef::CharLit(_)
-            | ExprRef::ListLit(_)
-            | ExprRef::ObjectLit(_)
-            | ExprRef::UnaryOp(_)
-            | ExprRef::BinaryOp(_)
-            | ExprRef::Statement(_)
-            | ExprRef::Block(_)
-            | ExprRef::Function(_)
-            | ExprRef::Variable(_)
-            | ExprRef::Return(_) => false,
+            ExprKind::Discard
+            | ExprKind::IntegerLit
+            | ExprKind::FloatLit
+            | ExprKind::StringLit
+            | ExprKind::CharLit
+            | ExprKind::ListLit
+            | ExprKind::ObjectLit
+            | ExprKind::UnaryOp
+            | ExprKind::BinaryOp
+            | ExprKind::Statement
+            | ExprKind::Block
+            | ExprKind::Function
+            | ExprKind::Variable
+            | ExprKind::Return => false,
+        }
+    }
+
+    pub fn has_parentheses(&self, _storage: &Storage<'a>) -> bool {
+        match self.variant_index() {
+            ExprKind::Bool
+            | ExprKind::UInt8
+            | ExprKind::UInt16
+            | ExprKind::UInt32
+            | ExprKind::UInt64
+            | ExprKind::UInt128
+            | ExprKind::Int8
+            | ExprKind::Int16
+            | ExprKind::Int32
+            | ExprKind::Int64
+            | ExprKind::Int128
+            | ExprKind::Float8
+            | ExprKind::Float16
+            | ExprKind::Float32
+            | ExprKind::Float64
+            | ExprKind::Float128
+            | ExprKind::InferType
+            | ExprKind::TupleType
+            | ExprKind::ArrayType
+            | ExprKind::StructType => false,
+
+            ExprKind::FunctionType => {
+                // TODO: Check if the expression has parentheses
+                false
+            }
+
+            ExprKind::Discard
+            | ExprKind::IntegerLit
+            | ExprKind::FloatLit
+            | ExprKind::StringLit
+            | ExprKind::CharLit
+            | ExprKind::ListLit
+            | ExprKind::ObjectLit => false,
+
+            ExprKind::UnaryOp => {
+                // TODO: Check if the expression has parentheses
+                false
+            }
+
+            ExprKind::BinaryOp => {
+                // TODO: Check if the expression has parentheses
+                false
+            }
+
+            ExprKind::Statement => {
+                // TODO: Check if the expression has parentheses
+                false
+            }
+
+            ExprKind::Block => false,
+
+            ExprKind::Function => {
+                // TODO: Check if the expression has parentheses
+                false
+            }
+            ExprKind::Variable => {
+                // TODO: Check if the expression has parentheses
+                false
+            }
+
+            ExprKind::Return => {
+                // TODO: Check if the expression has parentheses
+                false
+            }
+        }
+    }
+
+    pub fn set_parentheses(&mut self, _storage: &Storage<'a>, _has_parentheses: bool) {
+        match self.variant_index() {
+            ExprKind::Bool
+            | ExprKind::UInt8
+            | ExprKind::UInt16
+            | ExprKind::UInt32
+            | ExprKind::UInt64
+            | ExprKind::UInt128
+            | ExprKind::Int8
+            | ExprKind::Int16
+            | ExprKind::Int32
+            | ExprKind::Int64
+            | ExprKind::Int128
+            | ExprKind::Float8
+            | ExprKind::Float16
+            | ExprKind::Float32
+            | ExprKind::Float64
+            | ExprKind::Float128
+            | ExprKind::InferType
+            | ExprKind::TupleType
+            | ExprKind::ArrayType
+            | ExprKind::StructType => {}
+
+            ExprKind::FunctionType => {
+                // TODO: Set if the expression has parentheses
+            }
+
+            ExprKind::Discard
+            | ExprKind::IntegerLit
+            | ExprKind::FloatLit
+            | ExprKind::StringLit
+            | ExprKind::CharLit
+            | ExprKind::ListLit
+            | ExprKind::ObjectLit => {}
+
+            ExprKind::UnaryOp => {
+                // TODO: Set if the expression has parentheses
+            }
+
+            ExprKind::BinaryOp => {
+                // TODO: Set if the expression has parentheses
+            }
+
+            ExprKind::Statement => {
+                // TODO: Set if the expression has parentheses
+            }
+
+            ExprKind::Block => {}
+
+            ExprKind::Function => {
+                // TODO: Set if the expression has parentheses
+            }
+            ExprKind::Variable => {
+                // TODO: Set if the expression has parentheses
+            }
+
+            ExprKind::Return => {
+                // TODO: Set if the expression has parentheses
+            }
         }
     }
 }
 
-impl<'storage, 'a> ExprRefMut<'storage, 'a> {
-    pub fn is_discard(&self) -> bool {
-        matches!(self, ExprRefMut::Discard)
-    }
+impl<'a> TypeKey<'a> {
+    pub fn has_parentheses(&self, _storage: &Storage<'a>) -> bool {
+        match self.variant_index() {
+            TypeKind::Bool
+            | TypeKind::UInt8
+            | TypeKind::UInt16
+            | TypeKind::UInt32
+            | TypeKind::UInt64
+            | TypeKind::UInt128
+            | TypeKind::Int8
+            | TypeKind::Int16
+            | TypeKind::Int32
+            | TypeKind::Int64
+            | TypeKind::Int128
+            | TypeKind::Float8
+            | TypeKind::Float16
+            | TypeKind::Float32
+            | TypeKind::Float64
+            | TypeKind::Float128
+            | TypeKind::InferType
+            | TypeKind::TupleType
+            | TypeKind::ArrayType
+            | TypeKind::StructType => false,
 
-    pub fn discard(&mut self) {
-        *self = ExprRefMut::Discard;
-    }
-
-    pub fn is_type(&self) -> bool {
-        match self {
-            ExprRefMut::Bool
-            | ExprRefMut::UInt8
-            | ExprRefMut::UInt16
-            | ExprRefMut::UInt32
-            | ExprRefMut::UInt64
-            | ExprRefMut::UInt128
-            | ExprRefMut::Int8
-            | ExprRefMut::Int16
-            | ExprRefMut::Int32
-            | ExprRefMut::Int64
-            | ExprRefMut::Int128
-            | ExprRefMut::Float8
-            | ExprRefMut::Float16
-            | ExprRefMut::Float32
-            | ExprRefMut::Float64
-            | ExprRefMut::Float128
-            | ExprRefMut::InferType
-            | ExprRefMut::TupleType(_)
-            | ExprRefMut::ArrayType(_)
-            | ExprRefMut::StructType(_)
-            | ExprRefMut::FunctionType(_) => true,
-
-            ExprRefMut::Discard
-            | ExprRefMut::IntegerLit(_)
-            | ExprRefMut::FloatLit(_)
-            | ExprRefMut::StringLit(_)
-            | ExprRefMut::CharLit(_)
-            | ExprRefMut::ListLit(_)
-            | ExprRefMut::ObjectLit(_)
-            | ExprRefMut::UnaryOp(_)
-            | ExprRefMut::BinaryOp(_)
-            | ExprRefMut::Statement(_)
-            | ExprRefMut::Block(_)
-            | ExprRefMut::Function(_)
-            | ExprRefMut::Variable(_)
-            | ExprRefMut::Return(_) => false,
+            TypeKind::FunctionType => {
+                // TODO: Check if the expression has parentheses
+                false
+            }
         }
     }
 }

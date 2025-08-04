@@ -43,12 +43,12 @@ pub enum ExprKind {
 
     Discard,
 
-    Integer,
-    Float,
-    String,
-    Char,
-    List,
-    Object,
+    IntegerLit,
+    FloatLit,
+    StringLit,
+    CharLit,
+    ListLit,
+    ObjectLit,
 
     UnaryOp,
     BinaryOp,
@@ -62,7 +62,7 @@ pub enum ExprKind {
 }
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
-enum TypeKind {
+pub(crate) enum TypeKind {
     Bool,
     UInt8,
     UInt16,
@@ -116,12 +116,12 @@ impl TryInto<TypeKind> for ExprKind {
             ExprKind::FunctionType => Ok(TypeKind::FunctionType),
 
             ExprKind::Discard
-            | ExprKind::Integer
-            | ExprKind::Float
-            | ExprKind::String
-            | ExprKind::Char
-            | ExprKind::List
-            | ExprKind::Object
+            | ExprKind::IntegerLit
+            | ExprKind::FloatLit
+            | ExprKind::StringLit
+            | ExprKind::CharLit
+            | ExprKind::ListLit
+            | ExprKind::ObjectLit
             | ExprKind::UnaryOp
             | ExprKind::BinaryOp
             | ExprKind::Statement
@@ -175,7 +175,7 @@ pub struct TypeKey<'a> {
 }
 
 impl<'a> ExprKey<'a> {
-    fn new(variant: ExprKind, index: usize) -> Option<Self> {
+    pub(crate) fn new(variant: ExprKind, index: usize) -> Option<Self> {
         assert!((variant as u32) < 64, "Variant index must be less than 64");
 
         let can_store_index = index < (1 << 26);
@@ -186,7 +186,7 @@ impl<'a> ExprKey<'a> {
         })
     }
 
-    fn new_single(variant: ExprKind) -> Self {
+    pub(crate) fn new_single(variant: ExprKind) -> Self {
         assert!((variant as u32) < 64, "Variant index must be less than 64");
 
         ExprKey {
@@ -195,7 +195,7 @@ impl<'a> ExprKey<'a> {
         }
     }
 
-    fn variant_index(&self) -> ExprKind {
+    pub(crate) fn variant_index(&self) -> ExprKind {
         let number = (self.id >> 26) as u8;
 
         // SAFETY: The number is guaranteed to be in the range of ExprKind
@@ -219,7 +219,7 @@ impl<'a> ExprKey<'a> {
 }
 
 impl<'a> TypeKey<'a> {
-    fn new(variant: TypeKind, index: usize) -> Option<Self> {
+    pub(crate) fn new(variant: TypeKind, index: usize) -> Option<Self> {
         assert!((variant as u32) < 64, "Variant index must be less than 64");
 
         let can_store_index = index < (1 << 26);
@@ -230,7 +230,7 @@ impl<'a> TypeKey<'a> {
         })
     }
 
-    fn variant_index(&self) -> TypeKind {
+    pub(crate) fn variant_index(&self) -> TypeKind {
         let number = (self.id >> 26) as u8;
 
         // SAFETY: The number is guaranteed to be in the range of TypeKind
@@ -322,12 +322,12 @@ impl<'a> Storage<'a> {
 
             ExprKind::Discard => {}
 
-            ExprKind::Integer => self.integers.reserve(additional),
-            ExprKind::Float => self.floats.reserve(additional),
-            ExprKind::String => self.strings.reserve(additional),
-            ExprKind::Char => self.characters.reserve(additional),
-            ExprKind::List => self.lists.reserve(additional),
-            ExprKind::Object => self.objects.reserve(additional),
+            ExprKind::IntegerLit => self.integers.reserve(additional),
+            ExprKind::FloatLit => self.floats.reserve(additional),
+            ExprKind::StringLit => self.strings.reserve(additional),
+            ExprKind::CharLit => self.characters.reserve(additional),
+            ExprKind::ListLit => self.lists.reserve(additional),
+            ExprKind::ObjectLit => self.objects.reserve(additional),
 
             ExprKind::UnaryOp => self.unary_ops.reserve(additional),
             ExprKind::BinaryOp => self.binary_ops.reserve(additional),
@@ -390,39 +390,38 @@ impl<'a> Storage<'a> {
 
             ExprOwned::Discard => Some(ExprKey::new_single(ExprKind::Discard)),
 
-            ExprOwned::IntegerLit(node) => ExprKey::new(ExprKind::Integer, self.integers.len())
+            ExprOwned::IntegerLit(node) => ExprKey::new(ExprKind::IntegerLit, self.integers.len())
                 .and_then(|k| {
                     self.integers.push(node);
                     Some(k)
                 }),
 
-            ExprOwned::FloatLit(node) => {
-                ExprKey::new(ExprKind::Float, self.floats.len()).and_then(|k| {
+            ExprOwned::FloatLit(node) => ExprKey::new(ExprKind::FloatLit, self.floats.len())
+                .and_then(|k| {
                     self.floats.push(node);
                     Some(k)
-                })
-            }
+                }),
 
-            ExprOwned::StringLit(node) => ExprKey::new(ExprKind::String, self.strings.len())
+            ExprOwned::StringLit(node) => ExprKey::new(ExprKind::StringLit, self.strings.len())
                 .and_then(|k| {
                     self.strings.push(node);
                     Some(k)
                 }),
 
-            ExprOwned::CharLit(node) => ExprKey::new(ExprKind::Char, self.characters.len())
+            ExprOwned::CharLit(node) => ExprKey::new(ExprKind::CharLit, self.characters.len())
                 .and_then(|k| {
                     self.characters.push(node);
                     Some(k)
                 }),
 
             ExprOwned::ListLit(node) => {
-                ExprKey::new(ExprKind::List, self.lists.len()).and_then(|k| {
+                ExprKey::new(ExprKind::ListLit, self.lists.len()).and_then(|k| {
                     self.lists.push(node);
                     Some(k)
                 })
             }
 
-            ExprOwned::ObjectLit(node) => ExprKey::new(ExprKind::Object, self.objects.len())
+            ExprOwned::ObjectLit(node) => ExprKey::new(ExprKind::ObjectLit, self.objects.len())
                 .and_then(|k| {
                     self.objects.push(node);
                     Some(k)
@@ -520,12 +519,12 @@ impl<'a> Storage<'a> {
 
             ExprKind::Discard => Some(ExprRef::Discard),
 
-            ExprKind::Integer => self.integers.get(index).map(ExprRef::IntegerLit),
-            ExprKind::Float => self.floats.get(index).map(ExprRef::FloatLit),
-            ExprKind::String => self.strings.get(index).map(ExprRef::StringLit),
-            ExprKind::Char => self.characters.get(index).map(ExprRef::CharLit),
-            ExprKind::List => self.lists.get(index).map(ExprRef::ListLit),
-            ExprKind::Object => self.objects.get(index).map(ExprRef::ObjectLit),
+            ExprKind::IntegerLit => self.integers.get(index).map(ExprRef::IntegerLit),
+            ExprKind::FloatLit => self.floats.get(index).map(ExprRef::FloatLit),
+            ExprKind::StringLit => self.strings.get(index).map(ExprRef::StringLit),
+            ExprKind::CharLit => self.characters.get(index).map(ExprRef::CharLit),
+            ExprKind::ListLit => self.lists.get(index).map(ExprRef::ListLit),
+            ExprKind::ObjectLit => self.objects.get(index).map(ExprRef::ObjectLit),
 
             ExprKind::UnaryOp => self.unary_ops.get(index).map(ExprRef::UnaryOp),
             ExprKind::BinaryOp => self.binary_ops.get(index).map(ExprRef::BinaryOp),
@@ -572,12 +571,12 @@ impl<'a> Storage<'a> {
 
             ExprKind::Discard => Some(ExprRefMut::Discard),
 
-            ExprKind::Integer => self.integers.get_mut(index).map(ExprRefMut::IntegerLit),
-            ExprKind::Float => self.floats.get_mut(index).map(ExprRefMut::FloatLit),
-            ExprKind::String => self.strings.get_mut(index).map(ExprRefMut::StringLit),
-            ExprKind::Char => self.characters.get_mut(index).map(ExprRefMut::CharLit),
-            ExprKind::List => self.lists.get_mut(index).map(ExprRefMut::ListLit),
-            ExprKind::Object => self.objects.get_mut(index).map(ExprRefMut::ObjectLit),
+            ExprKind::IntegerLit => self.integers.get_mut(index).map(ExprRefMut::IntegerLit),
+            ExprKind::FloatLit => self.floats.get_mut(index).map(ExprRefMut::FloatLit),
+            ExprKind::StringLit => self.strings.get_mut(index).map(ExprRefMut::StringLit),
+            ExprKind::CharLit => self.characters.get_mut(index).map(ExprRefMut::CharLit),
+            ExprKind::ListLit => self.lists.get_mut(index).map(ExprRefMut::ListLit),
+            ExprKind::ObjectLit => self.objects.get_mut(index).map(ExprRefMut::ObjectLit),
 
             ExprKind::UnaryOp => self.unary_ops.get_mut(index).map(ExprRefMut::UnaryOp),
             ExprKind::BinaryOp => self.binary_ops.get_mut(index).map(ExprRefMut::BinaryOp),
