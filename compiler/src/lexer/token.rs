@@ -180,17 +180,17 @@ pub enum Keyword {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Hash)]
-pub enum Punctuation {
-    LeftParenthesis,  /* '(' */
-    RightParenthesis, /* ')' */
-    LeftBracket,      /* '[' */
-    RightBracket,     /* ']' */
-    LeftBrace,        /* '{' */
-    RightBrace,       /* '}' */
-    Comma,            /* ',' */
-    Semicolon,        /* ';' */
-    Colon,            /* ':' */
-    AtSign,           /* '@' */
+pub enum Punct {
+    LeftParen,    /* '(' */
+    RightParen,   /* ')' */
+    LeftBracket,  /* '[' */
+    RightBracket, /* ']' */
+    LeftBrace,    /* '{' */
+    RightBrace,   /* '}' */
+    Comma,        /* ',' */
+    Semicolon,    /* ';' */
+    Colon,        /* ':' */
+    AtSign,       /* '@' */
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Hash)]
@@ -361,14 +361,14 @@ impl<'a> Comment<'a> {
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Hash)]
 pub enum Token<'a> {
-    Identifier(Identifier<'a>),
+    Name(Identifier<'a>),
     Integer(Integer),
     Float(Float),
     Keyword(Keyword),
     String(StringLit<'a>),
     Char(char),
-    Punctuation(Punctuation),
-    Operator(Operator),
+    Punct(Punct),
+    Op(Operator),
     Comment(Comment<'a>),
     Eof,
     Illegal,
