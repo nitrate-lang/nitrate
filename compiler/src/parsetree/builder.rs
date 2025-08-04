@@ -196,15 +196,15 @@ impl<'storage, 'a> Builder<'storage, 'a> {
             .expect(ADD_TYPE_EXPECT_REASON)
     }
 
-    // /////////////////////////////////////////////////////////////////
-    // // BEGIN: Compound Type Builders
-    // pub fn tuple_type(self) -> TupleTypeBuilder<'a> {
-    //     TupleTypeBuilder::new(self)
-    // }
+    /////////////////////////////////////////////////////////////////
+    // BEGIN: Compound Type Builders
+    pub fn create_tuple_type(&mut self) -> TupleTypeBuilder<'_, 'a> {
+        TupleTypeBuilder::new(self.storage)
+    }
 
-    // pub fn array_type(self) -> ArrayTypeBuilder<'a> {
-    //     ArrayTypeBuilder::new(self)
-    // }
+    pub fn create_array_type(&mut self) -> ArrayTypeBuilder<'_, 'a> {
+        ArrayTypeBuilder::new(self.storage)
+    }
 
     // pub fn struct_type(self) -> StructTypeBuilder<'a> {
     //     StructTypeBuilder::new(self)

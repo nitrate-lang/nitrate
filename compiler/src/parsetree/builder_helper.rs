@@ -3,8 +3,7 @@ use super::binary_op::{BinaryOp, BinaryOperator};
 use super::block::Block;
 use super::builder::Builder;
 use super::character::CharLit;
-use super::expression::ExprOwned;
-use super::expression::{ExprRef, TypeRef};
+use super::expression::{ExprOwned, ExprRef, TypeOwned, TypeRef};
 use super::function::{Function, FunctionParameter};
 use super::function_type::FunctionType;
 use super::list::ListLit;
@@ -574,73 +573,72 @@ impl<'storage, 'a> ReturnBuilder<'storage, 'a> {
     }
 }
 
-// #[derive(Debug)]
-// pub struct TupleTypeBuilder<'storage, 'a> {
-//     storage: &'storage mut Storage<'a>,
-//     elements: Vec<TypeKey<'a>>,
-// }
+#[derive(Debug)]
+pub struct TupleTypeBuilder<'storage, 'a> {
+    storage: &'storage mut Storage<'a>,
+    elements: Vec<TypeKey<'a>>,
+}
 
-// impl<'storage, 'a> TupleTypeBuilder<'storage, 'a> {
-//     pub(crate) fn new(storage: &'storage mut Storage<'a>) -> Self {
-//         TupleTypeBuilder {
-//             outer,
-//             elements: Vec::new(),
-//         }
-//     }
+impl<'storage, 'a> TupleTypeBuilder<'storage, 'a> {
+    pub(crate) fn new(storage: &'storage mut Storage<'a>) -> Self {
+        TupleTypeBuilder {
+            storage,
+            elements: Vec::new(),
+        }
+    }
 
-//     pub fn add_element(mut self, ty: TypeKey<'a>) -> Self {
-//         self.elements.push(ty);
-//         self
-//     }
+    pub fn add_element(mut self, ty: TypeKey<'a>) -> Self {
+        self.elements.push(ty);
+        self
+    }
 
-//     pub fn add_elements<I>(mut self, elements: I) -> Self
-//     where
-//         I: IntoIterator<Item = TypeKey<'a>>,
-//     {
-//         self.elements.extend(elements);
-//         self
-//     }
+    pub fn add_elements<I>(mut self, elements: I) -> Self
+    where
+        I: IntoIterator<Item = TypeKey<'a>>,
+    {
+        self.elements.extend(elements);
+        self
+    }
 
-//     pub fn build(self) -> Option<ExprKey<'a>> {
-//         Box::new(Expr::TupleType(TupleType::new(self.elements)))
-//     }
-// }
+    pub fn build(self) -> Option<TypeKey<'a>> {
+        self.storage
+            .add_type(TypeOwned::TupleType(TupleType::new(self.elements)))
+    }
+}
 
-// #[derive(Debug)]
-// pub struct ArrayTypeBuilder<'storage, 'a> {
-//     storage: &'storage mut Storage<'a>,
-//     element_ty: Option<TypeKey<'a>>,
-//     count: Option<ExprKey<'a>>,
-// }
+#[derive(Debug)]
+pub struct ArrayTypeBuilder<'storage, 'a> {
+    storage: &'storage mut Storage<'a>,
+    element_ty: Option<TypeKey<'a>>,
+    count: Option<ExprKey<'a>>,
+}
 
-// impl<'storage, 'a> ArrayTypeBuilder<'storage, 'a> {
-//     pub(crate) fn new(storage: &'storage mut Storage<'a>) -> Self {
-//         ArrayTypeBuilder {
-//             outer,
-//             element_ty: None,
-//             count: None,
-//         }
-//     }
+impl<'storage, 'a> ArrayTypeBuilder<'storage, 'a> {
+    pub(crate) fn new(storage: &'storage mut Storage<'a>) -> Self {
+        ArrayTypeBuilder {
+            storage,
+            element_ty: None,
+            count: None,
+        }
+    }
 
-//     pub fn with_element_ty(mut self, element_ty: TypeKey<'a>) -> Self {
-//         self.element_ty = Some(element_ty);
-//         self
-//     }
+    pub fn with_element_ty(mut self, element_ty: TypeKey<'a>) -> Self {
+        self.element_ty = Some(element_ty);
+        self
+    }
 
-//     pub fn with_count(mut self, count: ExprKey<'a>) -> Self {
-//         self.count = Some(count);
-//         self
-//     }
+    pub fn with_count(mut self, count: ExprKey<'a>) -> Self {
+        self.count = Some(count);
+        self
+    }
 
-//     pub fn build(self) -> Option<ExprKey<'a>> {
-//         let element_ty = self.element_ty.expect("Element type must be provided");
-//         let count = self.count.expect("Count must be provided");
-
-//         let array_type = ArrayType::new(element_ty, count);
-
-//         Box::new(Expr::ArrayType(array_type))
-//     }
-// }
+    pub fn build(self) -> Option<TypeKey<'a>> {
+        self.storage.add_type(TypeOwned::ArrayType(ArrayType::new(
+            self.element_ty.expect("Element type must be provided"),
+            self.count.expect("Count must be provided"),
+        )))
+    }
+}
 
 // #[derive(Debug)]
 // pub struct StructTypeBuilder<'storage, 'a> {
