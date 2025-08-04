@@ -12,9 +12,89 @@ struct TypeConstraints<'a> {
 }
 
 impl<'storage, 'a> Parser<'storage, 'a> {
-    fn parse_type_constraints(&mut self) -> Option<TypeConstraints<'a>> {
-        // TODO: Type constraint parser
-        Some(TypeConstraints::default())
+    fn parse_type_min_max_constraints(&mut self, constraints: &mut TypeConstraints<'a>) {
+        assert!(self.lexer.peek_t() == Token::Punct(Punct::LeftBracket));
+        self.lexer.skip();
+
+        if !self.lexer.next_is(&Token::Punct(Punct::Colon)) {
+            if let Some(minimum) = self.parse_expression() {
+                constraints.minimum = Some(minimum);
+            } else {
+                self.set_failed_bit();
+                error!(
+                    self.log,
+                    "error[P????]: Failed to parse minimum type constraint\n--> {}",
+                    self.lexer.current_position()
+                );
+            }
+
+            if !self.lexer.skip_if(&Token::Punct(Punct::Colon)) {
+                self.set_failed_bit();
+                error!(
+                    self.log,
+                    "error[P????]: Expected a colon after minimum type constraint\n--> {}",
+                    self.lexer.current_position()
+                );
+            }
+        }
+
+        if !self.lexer.next_is(&Token::Punct(Punct::RightBracket)) {
+            if let Some(maximum) = self.parse_expression() {
+                constraints.maximum = Some(maximum);
+            } else {
+                self.set_failed_bit();
+                error!(
+                    self.log,
+                    "error[P????]: Failed to parse maximum type constraint\n--> {}",
+                    self.lexer.current_position()
+                );
+            }
+        }
+
+        if !self.lexer.skip_if(&Token::Punct(Punct::RightBracket)) {
+            self.set_failed_bit();
+            error!(
+                self.log,
+                "error[P????]: Expected a right bracket to close minimum/maximum constraints\n--> {}",
+                self.lexer.current_position()
+            );
+        }
+    }
+
+    fn parse_type_constraints(&mut self) -> TypeConstraints<'a> {
+        let mut constraints = TypeConstraints::default();
+
+        if self.lexer.skip_if(&Token::Punct(Punct::Colon)) {
+            if self.lexer.next_is(&Token::Punct(Punct::LeftBracket)) {
+                self.parse_type_min_max_constraints(&mut constraints);
+            } else {
+                if let Some(width) = self.parse_expression() {
+                    constraints.width = Some(width);
+                } else {
+                    self.set_failed_bit();
+                    error!(
+                        self.log,
+                        "error[P????]: Failed to parse width type constraint\n--> {}",
+                        self.lexer.current_position()
+                    );
+                }
+
+                if self.lexer.skip_if(&Token::Punct(Punct::Colon)) {
+                    if self.lexer.next_is(&Token::Punct(Punct::LeftBracket)) {
+                        self.parse_type_min_max_constraints(&mut constraints);
+                    } else {
+                        self.set_failed_bit();
+                        error!(
+                            self.log,
+                            "error[P????]: Expected a left bracket to start minimum/maximum constraints\n--> {}",
+                            self.lexer.current_position()
+                        );
+                    }
+                }
+            }
+        }
+
+        constraints
     }
 
     fn parse_tuple_type(&mut self) -> Option<TypeKey<'a>> {

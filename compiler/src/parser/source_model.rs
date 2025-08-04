@@ -6,7 +6,6 @@ use std::collections::HashMap;
 pub struct CopyrightMetadata<'a> {
     author_name: Option<&'a str>,
     copyright_year: Option<u16>,
-    copyright_string: Option<&'a str>,
     license_id: Option<LicenseId>,
 }
 
@@ -14,13 +13,11 @@ impl<'a> CopyrightMetadata<'a> {
     pub(crate) fn new(
         author_name: Option<&'a str>,
         copyright_year: Option<u16>,
-        copyright_string: Option<&'a str>,
         license_id: Option<LicenseId>,
     ) -> Self {
         CopyrightMetadata {
             author_name,
             copyright_year,
-            copyright_string,
             license_id,
         }
     }
@@ -31,10 +28,6 @@ impl<'a> CopyrightMetadata<'a> {
 
     pub fn copyright_year(&self) -> Option<u16> {
         self.copyright_year
-    }
-
-    pub fn copyright_string(&self) -> Option<&'a str> {
-        self.copyright_string
     }
 
     pub fn license_name(&self) -> Option<LicenseId> {
