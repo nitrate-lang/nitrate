@@ -54,10 +54,14 @@ impl<'a> Lexer<'a> {
         }
     }
 
-    pub fn next_token(&mut self) -> AnnotatedToken<'a> {
+    pub fn next(&mut self) -> AnnotatedToken<'a> {
         self.current
             .take()
             .unwrap_or_else(|| self.parse_next_token())
+    }
+
+    pub fn next_t(&mut self) -> Token<'a> {
+        self.next().into_token()
     }
 
     pub fn peek(&mut self) -> AnnotatedToken<'a> {
@@ -68,6 +72,10 @@ impl<'a> Lexer<'a> {
         self.current = Some(token.clone());
 
         token
+    }
+
+    pub fn peek_t(&mut self) -> Token<'a> {
+        self.peek().into_token()
     }
 
     pub fn current_position(&self) -> SourcePosition<'a> {
@@ -1200,7 +1208,7 @@ fn test_parse_string_escape() {
 
     let mut lexer = Lexer::new(&test_vector, "test_file").expect("Failed to create lexer");
 
-    match lexer.next_token().token() {
+    match lexer.next().token() {
         Token::String(s) => {
             assert_eq!(
                 s.data(),
