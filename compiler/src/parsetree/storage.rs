@@ -4,7 +4,7 @@ use super::array_type::ArrayType;
 use super::binary_op::BinaryOp;
 use super::block::Block;
 use super::character::CharLit;
-use super::expression::{ExprOwned, ExprRef, ExprRefMut, TypeOwned, TypeRef};
+use super::expression::{ExprKind, ExprOwned, ExprRef, ExprRefMut, TypeKind, TypeOwned, TypeRef};
 use super::function::Function;
 use super::function_type::FunctionType;
 use super::list::ListLit;
@@ -18,159 +18,13 @@ use super::tuple_type::TupleType;
 use super::unary_op::UnaryOp;
 use super::variable::Variable;
 
-#[derive(Debug, PartialEq, Eq, Clone, Copy)]
-pub enum ExprKind {
-    Bool,
-    UInt8,
-    UInt16,
-    UInt32,
-    UInt64,
-    UInt128,
-    Int8,
-    Int16,
-    Int32,
-    Int64,
-    Int128,
-    Float8,
-    Float16,
-    Float32,
-    Float64,
-    Float128,
-
-    InferType,
-    TupleType,
-    ArrayType,
-    StructType,
-    FunctionType,
-
-    Discard,
-
-    IntegerLit,
-    FloatLit,
-    StringLit,
-    CharLit,
-    ListLit,
-    ObjectLit,
-
-    UnaryOp,
-    BinaryOp,
-    Statement,
-    Block,
-
-    Function,
-    Variable,
-
-    Return,
-}
-
-#[derive(Debug, PartialEq, Eq, Clone, Copy)]
-pub(crate) enum TypeKind {
-    Bool,
-    UInt8,
-    UInt16,
-    UInt32,
-    UInt64,
-    UInt128,
-    Int8,
-    Int16,
-    Int32,
-    Int64,
-    Int128,
-    Float8,
-    Float16,
-    Float32,
-    Float64,
-    Float128,
-
-    InferType,
-    TupleType,
-    ArrayType,
-    StructType,
-    FunctionType,
-}
-
-impl TryInto<TypeKind> for ExprKind {
-    type Error = ();
-
-    fn try_into(self) -> Result<TypeKind, Self::Error> {
-        match self {
-            ExprKind::Bool => Ok(TypeKind::Bool),
-            ExprKind::UInt8 => Ok(TypeKind::UInt8),
-            ExprKind::UInt16 => Ok(TypeKind::UInt16),
-            ExprKind::UInt32 => Ok(TypeKind::UInt32),
-            ExprKind::UInt64 => Ok(TypeKind::UInt64),
-            ExprKind::UInt128 => Ok(TypeKind::UInt128),
-            ExprKind::Int8 => Ok(TypeKind::Int8),
-            ExprKind::Int16 => Ok(TypeKind::Int16),
-            ExprKind::Int32 => Ok(TypeKind::Int32),
-            ExprKind::Int64 => Ok(TypeKind::Int64),
-            ExprKind::Int128 => Ok(TypeKind::Int128),
-            ExprKind::Float8 => Ok(TypeKind::Float8),
-            ExprKind::Float16 => Ok(TypeKind::Float16),
-            ExprKind::Float32 => Ok(TypeKind::Float32),
-            ExprKind::Float64 => Ok(TypeKind::Float64),
-            ExprKind::Float128 => Ok(TypeKind::Float128),
-
-            ExprKind::InferType => Ok(TypeKind::InferType),
-            ExprKind::TupleType => Ok(TypeKind::TupleType),
-            ExprKind::ArrayType => Ok(TypeKind::ArrayType),
-            ExprKind::StructType => Ok(TypeKind::StructType),
-            ExprKind::FunctionType => Ok(TypeKind::FunctionType),
-
-            ExprKind::Discard
-            | ExprKind::IntegerLit
-            | ExprKind::FloatLit
-            | ExprKind::StringLit
-            | ExprKind::CharLit
-            | ExprKind::ListLit
-            | ExprKind::ObjectLit
-            | ExprKind::UnaryOp
-            | ExprKind::BinaryOp
-            | ExprKind::Statement
-            | ExprKind::Block
-            | ExprKind::Function
-            | ExprKind::Variable
-            | ExprKind::Return => Err(()),
-        }
-    }
-}
-
-impl Into<ExprKind> for TypeKind {
-    fn into(self) -> ExprKind {
-        match self {
-            TypeKind::Bool => ExprKind::Bool,
-            TypeKind::UInt8 => ExprKind::UInt8,
-            TypeKind::UInt16 => ExprKind::UInt16,
-            TypeKind::UInt32 => ExprKind::UInt32,
-            TypeKind::UInt64 => ExprKind::UInt64,
-            TypeKind::UInt128 => ExprKind::UInt128,
-            TypeKind::Int8 => ExprKind::Int8,
-            TypeKind::Int16 => ExprKind::Int16,
-            TypeKind::Int32 => ExprKind::Int32,
-            TypeKind::Int64 => ExprKind::Int64,
-            TypeKind::Int128 => ExprKind::Int128,
-            TypeKind::Float8 => ExprKind::Float8,
-            TypeKind::Float16 => ExprKind::Float16,
-            TypeKind::Float32 => ExprKind::Float32,
-            TypeKind::Float64 => ExprKind::Float64,
-            TypeKind::Float128 => ExprKind::Float128,
-
-            TypeKind::InferType => ExprKind::InferType,
-            TypeKind::TupleType => ExprKind::TupleType,
-            TypeKind::ArrayType => ExprKind::ArrayType,
-            TypeKind::StructType => ExprKind::StructType,
-            TypeKind::FunctionType => ExprKind::FunctionType,
-        }
-    }
-}
-
-#[derive(Debug, Clone, Copy, Hash, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct ExprKey<'a> {
     id: u32,
     _marker: std::marker::PhantomData<&'a ()>,
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct TypeKey<'a> {
     id: u32,
     _marker: std::marker::PhantomData<&'a ()>,
@@ -200,8 +54,51 @@ impl<'a> ExprKey<'a> {
     pub(crate) fn variant_index(&self) -> ExprKind {
         let number = (self.id >> 26) as u8;
 
-        // SAFETY: The number is guaranteed to be in the range of ExprKind
-        unsafe { std::mem::transmute::<u8, ExprKind>(number) }
+        match number {
+            x if x == ExprKind::Bool as u8 => ExprKind::Bool,
+            x if x == ExprKind::UInt8 as u8 => ExprKind::UInt8,
+            x if x == ExprKind::UInt16 as u8 => ExprKind::UInt16,
+            x if x == ExprKind::UInt32 as u8 => ExprKind::UInt32,
+            x if x == ExprKind::UInt64 as u8 => ExprKind::UInt64,
+            x if x == ExprKind::UInt128 as u8 => ExprKind::UInt128,
+            x if x == ExprKind::Int8 as u8 => ExprKind::Int8,
+            x if x == ExprKind::Int16 as u8 => ExprKind::Int16,
+            x if x == ExprKind::Int32 as u8 => ExprKind::Int32,
+            x if x == ExprKind::Int64 as u8 => ExprKind::Int64,
+            x if x == ExprKind::Int128 as u8 => ExprKind::Int128,
+            x if x == ExprKind::Float8 as u8 => ExprKind::Float8,
+            x if x == ExprKind::Float16 as u8 => ExprKind::Float16,
+            x if x == ExprKind::Float32 as u8 => ExprKind::Float32,
+            x if x == ExprKind::Float64 as u8 => ExprKind::Float64,
+            x if x == ExprKind::Float128 as u8 => ExprKind::Float128,
+
+            x if x == ExprKind::InferType as u8 => ExprKind::InferType,
+            x if x == ExprKind::TupleType as u8 => ExprKind::TupleType,
+            x if x == ExprKind::ArrayType as u8 => ExprKind::ArrayType,
+            x if x == ExprKind::StructType as u8 => ExprKind::StructType,
+            x if x == ExprKind::FunctionType as u8 => ExprKind::FunctionType,
+
+            x if x == ExprKind::Discard as u8 => ExprKind::Discard,
+
+            x if x == ExprKind::IntegerLit as u8 => ExprKind::IntegerLit,
+            x if x == ExprKind::FloatLit as u8 => ExprKind::FloatLit,
+            x if x == ExprKind::StringLit as u8 => ExprKind::StringLit,
+            x if x == ExprKind::CharLit as u8 => ExprKind::CharLit,
+            x if x == ExprKind::ListLit as u8 => ExprKind::ListLit,
+            x if x == ExprKind::ObjectLit as u8 => ExprKind::ObjectLit,
+
+            x if x == ExprKind::UnaryOp as u8 => ExprKind::UnaryOp,
+            x if x == ExprKind::BinaryOp as u8 => ExprKind::BinaryOp,
+            x if x == ExprKind::Statement as u8 => ExprKind::Statement,
+            x if x == ExprKind::Block as u8 => ExprKind::Block,
+
+            x if x == ExprKind::Function as u8 => ExprKind::Function,
+            x if x == ExprKind::Variable as u8 => ExprKind::Variable,
+
+            x if x == ExprKind::Return as u8 => ExprKind::Return,
+
+            _ => unreachable!(),
+        }
     }
 
     fn instance_index(&self) -> usize {
@@ -244,8 +141,32 @@ impl<'a> TypeKey<'a> {
     pub(crate) fn variant_index(&self) -> TypeKind {
         let number = (self.id >> 26) as u8;
 
-        // SAFETY: The number is guaranteed to be in the range of TypeKind
-        unsafe { std::mem::transmute::<u8, TypeKind>(number) }
+        match number {
+            x if x == TypeKind::Bool as u8 => TypeKind::Bool,
+            x if x == TypeKind::UInt8 as u8 => TypeKind::UInt8,
+            x if x == TypeKind::UInt16 as u8 => TypeKind::UInt16,
+            x if x == TypeKind::UInt32 as u8 => TypeKind::UInt32,
+            x if x == TypeKind::UInt64 as u8 => TypeKind::UInt64,
+            x if x == TypeKind::UInt128 as u8 => TypeKind::UInt128,
+            x if x == TypeKind::Int8 as u8 => TypeKind::Int8,
+            x if x == TypeKind::Int16 as u8 => TypeKind::Int16,
+            x if x == TypeKind::Int32 as u8 => TypeKind::Int32,
+            x if x == TypeKind::Int64 as u8 => TypeKind::Int64,
+            x if x == TypeKind::Int128 as u8 => TypeKind::Int128,
+            x if x == TypeKind::Float8 as u8 => TypeKind::Float8,
+            x if x == TypeKind::Float16 as u8 => TypeKind::Float16,
+            x if x == TypeKind::Float32 as u8 => TypeKind::Float32,
+            x if x == TypeKind::Float64 as u8 => TypeKind::Float64,
+            x if x == TypeKind::Float128 as u8 => TypeKind::Float128,
+
+            x if x == TypeKind::InferType as u8 => TypeKind::InferType,
+            x if x == TypeKind::TupleType as u8 => TypeKind::TupleType,
+            x if x == TypeKind::ArrayType as u8 => TypeKind::ArrayType,
+            x if x == TypeKind::StructType as u8 => TypeKind::StructType,
+            x if x == TypeKind::FunctionType as u8 => TypeKind::FunctionType,
+
+            _ => unreachable!(),
+        }
     }
 
     fn instance_index(&self) -> usize {
@@ -254,13 +175,6 @@ impl<'a> TypeKey<'a> {
 
     pub fn get<'storage>(&self, storage: &'storage Storage<'a>) -> TypeRef<'storage, 'a> {
         storage.get_type(*self)
-    }
-}
-
-impl<'a> Into<ExprKey<'a>> for TypeKey<'a> {
-    fn into(self) -> ExprKey<'a> {
-        ExprKey::new(self.variant_index().into(), self.instance_index())
-            .expect("TypeRef should be convertible to ExprRef")
     }
 }
 
@@ -273,7 +187,79 @@ impl<'a> TryInto<TypeKey<'a>> for ExprKey<'a> {
     }
 }
 
-#[derive(Debug, Clone, Default)]
+impl<'a> Into<ExprKey<'a>> for TypeKey<'a> {
+    fn into(self) -> ExprKey<'a> {
+        ExprKey::new(self.variant_index().into(), self.instance_index())
+            .expect("TypeRef should be convertible to ExprRef")
+    }
+}
+
+impl<'a> ExprKey<'a> {
+    pub fn is_discard(&self) -> bool {
+        self.variant_index() == ExprKind::Discard
+    }
+
+    pub fn discard(&mut self) {
+        *self = ExprKey::new_single(ExprKind::Discard);
+    }
+
+    pub fn is_type(&self) -> bool {
+        match self.variant_index() {
+            ExprKind::Bool
+            | ExprKind::UInt8
+            | ExprKind::UInt16
+            | ExprKind::UInt32
+            | ExprKind::UInt64
+            | ExprKind::UInt128
+            | ExprKind::Int8
+            | ExprKind::Int16
+            | ExprKind::Int32
+            | ExprKind::Int64
+            | ExprKind::Int128
+            | ExprKind::Float8
+            | ExprKind::Float16
+            | ExprKind::Float32
+            | ExprKind::Float64
+            | ExprKind::Float128
+            | ExprKind::InferType
+            | ExprKind::TupleType
+            | ExprKind::ArrayType
+            | ExprKind::StructType
+            | ExprKind::FunctionType => true,
+
+            ExprKind::Discard
+            | ExprKind::IntegerLit
+            | ExprKind::FloatLit
+            | ExprKind::StringLit
+            | ExprKind::CharLit
+            | ExprKind::ListLit
+            | ExprKind::ObjectLit
+            | ExprKind::UnaryOp
+            | ExprKind::BinaryOp
+            | ExprKind::Statement
+            | ExprKind::Block
+            | ExprKind::Function
+            | ExprKind::Variable
+            | ExprKind::Return => false,
+        }
+    }
+
+    pub fn has_parentheses(&self, storage: &Storage<'a>) -> bool {
+        storage.has_parentheses(*self)
+    }
+
+    pub fn add_parentheses(&mut self, storage: &mut Storage<'a>) {
+        storage.add_parentheses(*self)
+    }
+}
+
+impl<'a> TypeKey<'a> {
+    pub fn has_parentheses(&self, storage: &Storage<'a>) -> bool {
+        storage.has_parentheses(self.to_owned().into())
+    }
+}
+
+#[derive(Debug, Clone)]
 pub struct Storage<'a> {
     integers: Vec<IntegerLit>,
     floats: Vec<FloatLit>,
@@ -301,6 +287,47 @@ pub struct Storage<'a> {
 }
 
 impl<'a> Storage<'a> {
+    const TUPLE_TYPE_UNIT_INDEX: usize = 0;
+    const FUNCTION_TYPE_TRIVIAL_CALLBACK_INDEX: usize = 0;
+
+    pub fn new() -> Self {
+        let mut storage = Storage {
+            integers: Vec::new(),
+            floats: Vec::new(),
+            strings: Vec::new(),
+            characters: Vec::new(),
+            lists: Vec::new(),
+            objects: Vec::new(),
+
+            unary_ops: Vec::new(),
+            binary_ops: Vec::new(),
+            statements: Vec::new(),
+            blocks: Vec::new(),
+
+            functions: Vec::new(),
+            variables: Vec::new(),
+
+            returns: Vec::new(),
+
+            tuple_types: Vec::new(),
+            array_types: Vec::new(),
+            struct_types: Vec::new(),
+            function_types: Vec::new(),
+
+            has_parentheses: HashSet::new(),
+        };
+
+        // Reserve space for the very common unit tuple type
+        storage.tuple_types.push(TupleType::new(Vec::new()));
+
+        // Reserve space for the trivial function type: `fn()`
+        storage
+            .function_types
+            .push(FunctionType::new(Vec::new(), None, Vec::new()));
+
+        storage
+    }
+
     pub fn reserve(&mut self, kind: ExprKind, additional: usize) {
         match kind {
             ExprKind::Bool
@@ -349,50 +376,29 @@ impl<'a> Storage<'a> {
 
     pub(crate) fn add_expr(&mut self, expr: ExprOwned<'a>) -> Option<ExprKey<'a>> {
         match expr {
-            ExprOwned::Bool => Some(ExprKey::new_single(ExprKind::Bool)),
-            ExprOwned::UInt8 => Some(ExprKey::new_single(ExprKind::UInt8)),
-            ExprOwned::UInt16 => Some(ExprKey::new_single(ExprKind::UInt16)),
-            ExprOwned::UInt32 => Some(ExprKey::new_single(ExprKind::UInt32)),
-            ExprOwned::UInt64 => Some(ExprKey::new_single(ExprKind::UInt64)),
-            ExprOwned::UInt128 => Some(ExprKey::new_single(ExprKind::UInt128)),
-            ExprOwned::Int8 => Some(ExprKey::new_single(ExprKind::Int8)),
-            ExprOwned::Int16 => Some(ExprKey::new_single(ExprKind::Int16)),
-            ExprOwned::Int32 => Some(ExprKey::new_single(ExprKind::Int32)),
-            ExprOwned::Int64 => Some(ExprKey::new_single(ExprKind::Int64)),
-            ExprOwned::Int128 => Some(ExprKey::new_single(ExprKind::Int128)),
-            ExprOwned::Float8 => Some(ExprKey::new_single(ExprKind::Float8)),
-            ExprOwned::Float16 => Some(ExprKey::new_single(ExprKind::Float16)),
-            ExprOwned::Float32 => Some(ExprKey::new_single(ExprKind::Float32)),
-            ExprOwned::Float64 => Some(ExprKey::new_single(ExprKind::Float64)),
-            ExprOwned::Float128 => Some(ExprKey::new_single(ExprKind::Float128)),
-
-            ExprOwned::InferType => Some(ExprKey::new_single(ExprKind::InferType)),
-
-            ExprOwned::TupleType(node) => ExprKey::new(ExprKind::TupleType, self.tuple_types.len())
-                .and_then(|k| {
-                    self.tuple_types.push(node);
-                    Some(k)
-                }),
-
-            ExprOwned::ArrayType(node) => ExprKey::new(ExprKind::ArrayType, self.array_types.len())
-                .and_then(|k| {
-                    self.array_types.push(node);
-                    Some(k)
-                }),
-
-            ExprOwned::StructType(node) => {
-                ExprKey::new(ExprKind::StructType, self.struct_types.len()).and_then(|k| {
-                    self.struct_types.push(node);
-                    Some(k)
-                })
-            }
-
-            ExprOwned::FunctionType(node) => {
-                ExprKey::new(ExprKind::FunctionType, self.function_types.len()).and_then(|k| {
-                    self.function_types.push(node);
-                    Some(k)
-                })
-            }
+            ExprOwned::Bool
+            | ExprOwned::UInt8
+            | ExprOwned::UInt16
+            | ExprOwned::UInt32
+            | ExprOwned::UInt64
+            | ExprOwned::UInt128
+            | ExprOwned::Int8
+            | ExprOwned::Int16
+            | ExprOwned::Int32
+            | ExprOwned::Int64
+            | ExprOwned::Int128
+            | ExprOwned::Float8
+            | ExprOwned::Float16
+            | ExprOwned::Float32
+            | ExprOwned::Float64
+            | ExprOwned::Float128
+            | ExprOwned::InferType
+            | ExprOwned::TupleType(_)
+            | ExprOwned::ArrayType(_)
+            | ExprOwned::StructType(_)
+            | ExprOwned::FunctionType(_) => self
+                .add_type(expr.try_into().expect("Expected a type node"))
+                .map(|key| key.into()),
 
             ExprOwned::Discard => Some(ExprKey::new_single(ExprKind::Discard)),
 
@@ -480,8 +486,6 @@ impl<'a> Storage<'a> {
     }
 
     pub(crate) fn add_type(&mut self, ty: TypeOwned<'a>) -> Option<TypeKey<'a>> {
-        // FIXME: Deduplicate type instances
-
         match ty {
             TypeOwned::Bool => Some(TypeKey::new_single(TypeKind::Bool)),
             TypeOwned::UInt8 => Some(TypeKey::new_single(TypeKind::UInt8)),
@@ -502,11 +506,18 @@ impl<'a> Storage<'a> {
 
             TypeOwned::InferType => Some(TypeKey::new_single(TypeKind::InferType)),
 
-            TypeOwned::TupleType(node) => TypeKey::new(TypeKind::TupleType, self.tuple_types.len())
-                .and_then(|k| {
-                    self.tuple_types.push(node);
-                    Some(k)
-                }),
+            TypeOwned::TupleType(node) => {
+                let is_unit_type = node.elements().is_empty();
+
+                if is_unit_type {
+                    TypeKey::new(TypeKind::TupleType, Self::TUPLE_TYPE_UNIT_INDEX)
+                } else {
+                    TypeKey::new(TypeKind::TupleType, self.tuple_types.len()).and_then(|k| {
+                        self.tuple_types.push(node);
+                        Some(k)
+                    })
+                }
+            }
 
             TypeOwned::ArrayType(node) => TypeKey::new(TypeKind::ArrayType, self.array_types.len())
                 .and_then(|k| {
@@ -522,10 +533,21 @@ impl<'a> Storage<'a> {
             }
 
             TypeOwned::FunctionType(node) => {
-                TypeKey::new(TypeKind::FunctionType, self.function_types.len()).and_then(|k| {
-                    self.function_types.push(node);
-                    Some(k)
-                })
+                let is_trivial_callback = node.parameters().is_empty()
+                    && node.return_type().is_none()
+                    && node.attributes().is_empty();
+
+                if is_trivial_callback {
+                    TypeKey::new(
+                        TypeKind::FunctionType,
+                        Self::FUNCTION_TYPE_TRIVIAL_CALLBACK_INDEX,
+                    )
+                } else {
+                    TypeKey::new(TypeKind::FunctionType, self.function_types.len()).and_then(|k| {
+                        self.function_types.push(node);
+                        Some(k)
+                    })
+                }
             }
         }
     }

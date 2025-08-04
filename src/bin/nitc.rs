@@ -72,7 +72,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut lexer = Lexer::new(&source_code, filename)
         .map_err(|e| format!("Failed to create lexer for file {}: {}", filename, e))?;
 
-    let mut storage = Storage::default();
+    let mut storage = Storage::new();
     let mut parser = Parser::new(&mut lexer, &mut storage);
 
     println!("===========================================");

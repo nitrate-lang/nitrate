@@ -9,12 +9,82 @@ use super::number::{FloatLit, IntegerLit};
 use super::object::ObjectLit;
 use super::returns::Return;
 use super::statement::Statement;
-use super::storage::{ExprKey, ExprKind, Storage, TypeKey};
 use super::string::StringLit;
 use super::struct_type::StructType;
 use super::tuple_type::TupleType;
 use super::unary_op::UnaryOp;
 use super::variable::Variable;
+
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+pub enum ExprKind {
+    Bool,
+    UInt8,
+    UInt16,
+    UInt32,
+    UInt64,
+    UInt128,
+    Int8,
+    Int16,
+    Int32,
+    Int64,
+    Int128,
+    Float8,
+    Float16,
+    Float32,
+    Float64,
+    Float128,
+
+    InferType,
+    TupleType,
+    ArrayType,
+    StructType,
+    FunctionType,
+
+    Discard,
+
+    IntegerLit,
+    FloatLit,
+    StringLit,
+    CharLit,
+    ListLit,
+    ObjectLit,
+
+    UnaryOp,
+    BinaryOp,
+    Statement,
+    Block,
+
+    Function,
+    Variable,
+
+    Return,
+}
+
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+pub(crate) enum TypeKind {
+    Bool,
+    UInt8,
+    UInt16,
+    UInt32,
+    UInt64,
+    UInt128,
+    Int8,
+    Int16,
+    Int32,
+    Int64,
+    Int128,
+    Float8,
+    Float16,
+    Float32,
+    Float64,
+    Float128,
+
+    InferType,
+    TupleType,
+    ArrayType,
+    StructType,
+    FunctionType,
+}
 
 #[derive(Debug, Clone)]
 pub(crate) enum ExprOwned<'a> {
@@ -225,6 +295,81 @@ pub enum TypeRef<'storage, 'a> {
     FunctionType(&'storage FunctionType<'a>),
 }
 
+impl TryInto<TypeKind> for ExprKind {
+    type Error = ();
+
+    fn try_into(self) -> Result<TypeKind, Self::Error> {
+        match self {
+            ExprKind::Bool => Ok(TypeKind::Bool),
+            ExprKind::UInt8 => Ok(TypeKind::UInt8),
+            ExprKind::UInt16 => Ok(TypeKind::UInt16),
+            ExprKind::UInt32 => Ok(TypeKind::UInt32),
+            ExprKind::UInt64 => Ok(TypeKind::UInt64),
+            ExprKind::UInt128 => Ok(TypeKind::UInt128),
+            ExprKind::Int8 => Ok(TypeKind::Int8),
+            ExprKind::Int16 => Ok(TypeKind::Int16),
+            ExprKind::Int32 => Ok(TypeKind::Int32),
+            ExprKind::Int64 => Ok(TypeKind::Int64),
+            ExprKind::Int128 => Ok(TypeKind::Int128),
+            ExprKind::Float8 => Ok(TypeKind::Float8),
+            ExprKind::Float16 => Ok(TypeKind::Float16),
+            ExprKind::Float32 => Ok(TypeKind::Float32),
+            ExprKind::Float64 => Ok(TypeKind::Float64),
+            ExprKind::Float128 => Ok(TypeKind::Float128),
+
+            ExprKind::InferType => Ok(TypeKind::InferType),
+            ExprKind::TupleType => Ok(TypeKind::TupleType),
+            ExprKind::ArrayType => Ok(TypeKind::ArrayType),
+            ExprKind::StructType => Ok(TypeKind::StructType),
+            ExprKind::FunctionType => Ok(TypeKind::FunctionType),
+
+            ExprKind::Discard
+            | ExprKind::IntegerLit
+            | ExprKind::FloatLit
+            | ExprKind::StringLit
+            | ExprKind::CharLit
+            | ExprKind::ListLit
+            | ExprKind::ObjectLit
+            | ExprKind::UnaryOp
+            | ExprKind::BinaryOp
+            | ExprKind::Statement
+            | ExprKind::Block
+            | ExprKind::Function
+            | ExprKind::Variable
+            | ExprKind::Return => Err(()),
+        }
+    }
+}
+
+impl Into<ExprKind> for TypeKind {
+    fn into(self) -> ExprKind {
+        match self {
+            TypeKind::Bool => ExprKind::Bool,
+            TypeKind::UInt8 => ExprKind::UInt8,
+            TypeKind::UInt16 => ExprKind::UInt16,
+            TypeKind::UInt32 => ExprKind::UInt32,
+            TypeKind::UInt64 => ExprKind::UInt64,
+            TypeKind::UInt128 => ExprKind::UInt128,
+            TypeKind::Int8 => ExprKind::Int8,
+            TypeKind::Int16 => ExprKind::Int16,
+            TypeKind::Int32 => ExprKind::Int32,
+            TypeKind::Int64 => ExprKind::Int64,
+            TypeKind::Int128 => ExprKind::Int128,
+            TypeKind::Float8 => ExprKind::Float8,
+            TypeKind::Float16 => ExprKind::Float16,
+            TypeKind::Float32 => ExprKind::Float32,
+            TypeKind::Float64 => ExprKind::Float64,
+            TypeKind::Float128 => ExprKind::Float128,
+
+            TypeKind::InferType => ExprKind::InferType,
+            TypeKind::TupleType => ExprKind::TupleType,
+            TypeKind::ArrayType => ExprKind::ArrayType,
+            TypeKind::StructType => ExprKind::StructType,
+            TypeKind::FunctionType => ExprKind::FunctionType,
+        }
+    }
+}
+
 impl<'a> TryInto<TypeOwned<'a>> for ExprOwned<'a> {
     type Error = Self;
 
@@ -418,70 +563,5 @@ impl<'storage, 'a> Into<ExprRef<'storage, 'a>> for TypeRef<'storage, 'a> {
             TypeRef::StructType(x) => ExprRef::StructType(x),
             TypeRef::FunctionType(x) => ExprRef::FunctionType(x),
         }
-    }
-}
-
-impl<'a> ExprKey<'a> {
-    pub fn is_discard(&self) -> bool {
-        self.variant_index() == ExprKind::Discard
-    }
-
-    pub fn discard(&mut self) {
-        *self = ExprKey::new_single(ExprKind::Discard);
-    }
-
-    pub fn is_type(&self) -> bool {
-        match self.variant_index() {
-            ExprKind::Bool
-            | ExprKind::UInt8
-            | ExprKind::UInt16
-            | ExprKind::UInt32
-            | ExprKind::UInt64
-            | ExprKind::UInt128
-            | ExprKind::Int8
-            | ExprKind::Int16
-            | ExprKind::Int32
-            | ExprKind::Int64
-            | ExprKind::Int128
-            | ExprKind::Float8
-            | ExprKind::Float16
-            | ExprKind::Float32
-            | ExprKind::Float64
-            | ExprKind::Float128
-            | ExprKind::InferType
-            | ExprKind::TupleType
-            | ExprKind::ArrayType
-            | ExprKind::StructType
-            | ExprKind::FunctionType => true,
-
-            ExprKind::Discard
-            | ExprKind::IntegerLit
-            | ExprKind::FloatLit
-            | ExprKind::StringLit
-            | ExprKind::CharLit
-            | ExprKind::ListLit
-            | ExprKind::ObjectLit
-            | ExprKind::UnaryOp
-            | ExprKind::BinaryOp
-            | ExprKind::Statement
-            | ExprKind::Block
-            | ExprKind::Function
-            | ExprKind::Variable
-            | ExprKind::Return => false,
-        }
-    }
-
-    pub fn has_parentheses(&self, storage: &Storage<'a>) -> bool {
-        storage.has_parentheses(*self)
-    }
-
-    pub fn add_parentheses(&mut self, storage: &mut Storage<'a>) {
-        storage.add_parentheses(*self)
-    }
-}
-
-impl<'a> TypeKey<'a> {
-    pub fn has_parentheses(&self, storage: &Storage<'a>) -> bool {
-        storage.has_parentheses(self.to_owned().into())
     }
 }
