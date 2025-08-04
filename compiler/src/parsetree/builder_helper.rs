@@ -9,6 +9,7 @@ use super::function_type::FunctionType;
 use super::list::ListLit;
 use super::number::{FloatLit, IntegerLit};
 use super::object::ObjectLit;
+use super::refinement_type::RefinementType;
 use super::returns::Return;
 use super::slice_type::SliceType;
 use super::statement::Statement;
@@ -571,6 +572,57 @@ impl<'storage, 'a> ReturnBuilder<'storage, 'a> {
     pub fn build(self) -> Option<ExprKey<'a>> {
         self.storage
             .add_expr(ExprOwned::Return(Return::new(self.value)))
+    }
+}
+
+#[derive(Debug)]
+pub struct RefinementTypeBuilder<'storage, 'a> {
+    storage: &'storage mut Storage<'a>,
+    principal: Option<TypeKey<'a>>,
+    width: Option<ExprKey<'a>>,
+    minimum: Option<ExprKey<'a>>,
+    maximum: Option<ExprKey<'a>>,
+}
+
+impl<'storage, 'a> RefinementTypeBuilder<'storage, 'a> {
+    pub(crate) fn new(storage: &'storage mut Storage<'a>) -> Self {
+        RefinementTypeBuilder {
+            storage,
+            principal: None,
+            width: None,
+            minimum: None,
+            maximum: None,
+        }
+    }
+
+    pub fn with_principal(mut self, principal: TypeKey<'a>) -> Self {
+        self.principal = Some(principal);
+        self
+    }
+
+    pub fn with_width(mut self, width: Option<ExprKey<'a>>) -> Self {
+        self.width = width;
+        self
+    }
+
+    pub fn with_minimum(mut self, minimum: Option<ExprKey<'a>>) -> Self {
+        self.minimum = minimum;
+        self
+    }
+
+    pub fn with_maximum(mut self, maximum: Option<ExprKey<'a>>) -> Self {
+        self.maximum = maximum;
+        self
+    }
+
+    pub fn build(self) -> Option<TypeKey<'a>> {
+        self.storage
+            .add_type(TypeOwned::RefinementType(RefinementType::new(
+                self.principal.expect("Principal type must be provided"),
+                self.width,
+                self.minimum,
+                self.maximum,
+            )))
     }
 }
 

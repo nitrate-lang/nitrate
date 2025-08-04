@@ -212,6 +212,10 @@ impl<'storage, 'a> Builder<'storage, 'a> {
         self.storage.add_type(TypeOwned::TypeName(name))
     }
 
+    pub fn create_refinement_type(&mut self) -> RefinementTypeBuilder<'_, 'a> {
+        RefinementTypeBuilder::new(self.storage)
+    }
+
     pub fn create_tuple_type(&mut self) -> TupleTypeBuilder<'_, 'a> {
         TupleTypeBuilder::new(self.storage)
     }

@@ -8,6 +8,7 @@ use super::function_type::FunctionType;
 use super::list::ListLit;
 use super::number::{FloatLit, IntegerLit};
 use super::object::ObjectLit;
+use super::refinement_type::RefinementType;
 use super::returns::Return;
 use super::slice_type::SliceType;
 use super::statement::Statement;
@@ -277,6 +278,30 @@ impl<'a> ToCode<'a> for Return<'a> {
     }
 }
 
+impl<'a> ToCode<'a> for RefinementType<'a> {
+    fn to_code(&self, bank: &Storage<'a>, tokens: &mut Vec<Token<'a>>, options: &CodeFormat) {
+        self.principle().to_code(bank, tokens, options);
+
+        if let Some(width) = self.width() {
+            tokens.push(Token::Punct(Punct::Colon));
+            width.to_code(bank, tokens, options);
+        }
+
+        if self.min().is_some() || self.max().is_some() {
+            tokens.push(Token::Punct(Punct::Colon));
+            tokens.push(Token::Punct(Punct::LeftBracket));
+            if let Some(min) = self.min() {
+                min.to_code(bank, tokens, options);
+            }
+            tokens.push(Token::Punct(Punct::Colon));
+            if let Some(max) = self.max() {
+                max.to_code(bank, tokens, options);
+            }
+            tokens.push(Token::Punct(Punct::RightBracket));
+        }
+    }
+}
+
 impl<'a> ToCode<'a> for TupleType<'a> {
     fn to_code(&self, bank: &Storage<'a>, tokens: &mut Vec<Token<'a>>, options: &CodeFormat) {
         tokens.push(Token::Punct(Punct::LeftBrace));
@@ -407,6 +432,7 @@ impl<'a> ToCode<'a> for ExprKey<'a> {
 
             ExprRef::InferType => tokens.push(Token::Name(Name::new("_"))),
             ExprRef::TypeName(e) => tokens.push(Token::Name(Name::new(e))),
+            ExprRef::RefinementType(e) => e.to_code(bank, tokens, options),
             ExprRef::TupleType(e) => e.to_code(bank, tokens, options),
             ExprRef::ArrayType(e) => e.to_code(bank, tokens, options),
             ExprRef::SliceType(e) => e.to_code(bank, tokens, options),
@@ -467,6 +493,7 @@ impl<'a> ToCode<'a> for TypeKey<'a> {
 
             TypeRef::InferType => tokens.push(Token::Name(Name::new("_"))),
             TypeRef::TypeName(e) => tokens.push(Token::Name(Name::new(e))),
+            TypeRef::RefinementType(e) => e.to_code(bank, tokens, options),
             TypeRef::TupleType(e) => e.to_code(bank, tokens, options),
             TypeRef::ArrayType(e) => e.to_code(bank, tokens, options),
             TypeRef::SliceType(e) => e.to_code(bank, tokens, options),

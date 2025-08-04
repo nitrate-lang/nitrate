@@ -10,6 +10,7 @@ use super::function_type::FunctionType;
 use super::list::ListLit;
 use super::number::{FloatLit, IntegerLit};
 use super::object::ObjectLit;
+use super::refinement_type::RefinementType;
 use super::returns::Return;
 use super::slice_type::SliceType;
 use super::statement::Statement;
@@ -79,6 +80,7 @@ impl<'a> ExprKey<'a> {
 
             x if x == ExprKind::InferType as u8 => ExprKind::InferType,
             x if x == ExprKind::TypeName as u8 => ExprKind::TypeName,
+            x if x == ExprKind::RefinementType as u8 => ExprKind::RefinementType,
             x if x == ExprKind::TupleType as u8 => ExprKind::TupleType,
             x if x == ExprKind::ArrayType as u8 => ExprKind::ArrayType,
             x if x == ExprKind::SliceType as u8 => ExprKind::SliceType,
@@ -171,6 +173,7 @@ impl<'a> TypeKey<'a> {
 
             x if x == TypeKind::InferType as u8 => TypeKind::InferType,
             x if x == TypeKind::TypeName as u8 => TypeKind::TypeName,
+            x if x == TypeKind::RefinementType as u8 => TypeKind::RefinementType,
             x if x == TypeKind::TupleType as u8 => TypeKind::TupleType,
             x if x == TypeKind::ArrayType as u8 => TypeKind::ArrayType,
             x if x == TypeKind::SliceType as u8 => TypeKind::SliceType,
@@ -247,6 +250,7 @@ impl<'a> ExprKey<'a> {
             | ExprKind::Float128
             | ExprKind::InferType
             | ExprKind::TypeName
+            | ExprKind::RefinementType
             | ExprKind::TupleType
             | ExprKind::ArrayType
             | ExprKind::SliceType
@@ -309,6 +313,7 @@ pub struct Storage<'a> {
     returns: Vec<Return<'a>>,
 
     type_names: Vec<&'a str>,
+    refinement_types: Vec<RefinementType<'a>>,
     tuple_types: Vec<TupleType<'a>>,
     array_types: Vec<ArrayType<'a>>,
     slice_types: Vec<SliceType<'a>>,
@@ -346,6 +351,7 @@ impl<'a> Storage<'a> {
             returns: Vec::new(),
 
             type_names: Vec::new(),
+            refinement_types: Vec::new(),
             tuple_types: Vec::new(),
             array_types: Vec::new(),
             slice_types: Vec::new(),
@@ -407,6 +413,7 @@ impl<'a> Storage<'a> {
             | ExprKind::InferType => {}
 
             ExprKind::TypeName => self.type_names.reserve(additional),
+            ExprKind::RefinementType => self.refinement_types.reserve(additional),
             ExprKind::TupleType => self.tuple_types.reserve(additional),
             ExprKind::ArrayType => self.array_types.reserve(additional),
             ExprKind::SliceType => self.slice_types.reserve(additional),
@@ -454,6 +461,7 @@ impl<'a> Storage<'a> {
             | ExprOwned::Float128
             | ExprOwned::InferType
             | ExprOwned::TypeName(_)
+            | ExprOwned::RefinementType(_)
             | ExprOwned::TupleType(_)
             | ExprOwned::ArrayType(_)
             | ExprOwned::SliceType(_)
@@ -583,6 +591,13 @@ impl<'a> Storage<'a> {
                     Some(k)
                 }),
 
+            TypeOwned::RefinementType(node) => {
+                TypeKey::new(TypeKind::RefinementType, self.refinement_types.len()).and_then(|k| {
+                    self.refinement_types.push(node);
+                    Some(k)
+                })
+            }
+
             TypeOwned::TupleType(node) => {
                 let is_unit_type = node.elements().is_empty();
 
@@ -658,6 +673,10 @@ impl<'a> Storage<'a> {
                 .type_names
                 .get(index)
                 .map(|name| ExprRef::TypeName(name)),
+            ExprKind::RefinementType => self
+                .refinement_types
+                .get(index)
+                .map(ExprRef::RefinementType),
             ExprKind::TupleType => self.tuple_types.get(index).map(ExprRef::TupleType),
             ExprKind::ArrayType => self.array_types.get(index).map(ExprRef::ArrayType),
             ExprKind::SliceType => self.slice_types.get(index).map(ExprRef::SliceType),
@@ -712,6 +731,10 @@ impl<'a> Storage<'a> {
                 .type_names
                 .get(index)
                 .map(|name| ExprRefMut::TypeName(name)),
+            ExprKind::RefinementType => self
+                .refinement_types
+                .get_mut(index)
+                .map(ExprRefMut::RefinementType),
             ExprKind::TupleType => self.tuple_types.get_mut(index).map(ExprRefMut::TupleType),
             ExprKind::ArrayType => self.array_types.get_mut(index).map(ExprRefMut::ArrayType),
             ExprKind::SliceType => self.slice_types.get_mut(index).map(ExprRefMut::SliceType),
@@ -769,6 +792,10 @@ impl<'a> Storage<'a> {
                 .type_names
                 .get(index)
                 .map(|name| TypeRef::TypeName(name)),
+            TypeKind::RefinementType => self
+                .refinement_types
+                .get(index)
+                .map(TypeRef::RefinementType),
             TypeKind::TupleType => self.tuple_types.get(index).map(TypeRef::TupleType),
             TypeKind::ArrayType => self.array_types.get(index).map(TypeRef::ArrayType),
             TypeKind::SliceType => self.slice_types.get(index).map(TypeRef::SliceType),
