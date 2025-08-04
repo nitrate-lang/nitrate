@@ -3,7 +3,7 @@ use super::binary_op::{BinaryOp, BinaryOperator};
 use super::block::Block;
 use super::builder::Builder;
 use super::character::CharLit;
-use super::expression::{ExprOwned, ExprRef, TypeOwned, TypeRef};
+use super::expression::{ExprOwned, ExprRef, TypeOwned};
 use super::function::{Function, FunctionParameter};
 use super::function_type::FunctionType;
 use super::list::ListLit;
@@ -635,124 +635,129 @@ impl<'storage, 'a> ArrayTypeBuilder<'storage, 'a> {
     pub fn build(self) -> Option<TypeKey<'a>> {
         self.storage.add_type(TypeOwned::ArrayType(ArrayType::new(
             self.element_ty.expect("Element type must be provided"),
-            self.count.expect("Count must be provided"),
+            self.count.expect("Array length must be provided"),
         )))
     }
 }
 
-// #[derive(Debug)]
-// pub struct StructTypeBuilder<'storage, 'a> {
-//     storage: &'storage mut Storage<'a>,
-//     name: Option<&'a str>,
-//     attributes: Vec<ExprKey<'a>>,
-//     fields: BTreeMap<&'a str, TypeKey<'a>>,
-// }
+#[derive(Debug)]
+pub struct StructTypeBuilder<'storage, 'a> {
+    storage: &'storage mut Storage<'a>,
+    name: Option<&'a str>,
+    attributes: Vec<ExprKey<'a>>,
+    fields: BTreeMap<&'a str, TypeKey<'a>>,
+}
 
-// impl<'storage, 'a> StructTypeBuilder<'storage, 'a> {
-//     pub(crate) fn new(storage: &'storage mut Storage<'a>) -> Self {
-//         StructTypeBuilder {
-//             outer,
-//             name: None,
-//             attributes: Vec::new(),
-//             fields: BTreeMap::new(),
-//         }
-//     }
+impl<'storage, 'a> StructTypeBuilder<'storage, 'a> {
+    pub(crate) fn new(storage: &'storage mut Storage<'a>) -> Self {
+        StructTypeBuilder {
+            storage,
+            name: None,
+            attributes: Vec::new(),
+            fields: BTreeMap::new(),
+        }
+    }
 
-//     pub fn with_name(mut self, name: &'a str) -> Self {
-//         self.name = Some(name);
-//         self
-//     }
+    pub fn with_name(mut self, name: &'a str) -> Self {
+        self.name = Some(name);
+        self
+    }
 
-//     pub fn add_attribute(mut self, attribute: ExprKey<'a>) -> Self {
-//         self.attributes.push(attribute);
-//         self
-//     }
+    pub fn add_attribute(mut self, attribute: ExprKey<'a>) -> Self {
+        self.attributes.push(attribute);
+        self
+    }
 
-//     pub fn add_attributes<I>(mut self, attributes: I) -> Self
-//     where
-//         I: IntoIterator<Item = ExprKey<'a>>,
-//     {
-//         self.attributes.extend(attributes);
-//         self
-//     }
+    pub fn add_attributes<I>(mut self, attributes: I) -> Self
+    where
+        I: IntoIterator<Item = ExprKey<'a>>,
+    {
+        self.attributes.extend(attributes);
+        self
+    }
 
-//     pub fn add_field(mut self, name: &'a str, ty: TypeKey<'a>) -> Self {
-//         self.fields.insert(name, ty);
-//         self
-//     }
+    pub fn add_field(mut self, name: &'a str, ty: TypeKey<'a>) -> Self {
+        self.fields.insert(name, ty);
+        self
+    }
 
-//     pub fn add_fields<I>(mut self, fields: I) -> Self
-//     where
-//         I: IntoIterator<Item = (&'a str, TypeKey<'a>)>,
-//     {
-//         self.fields.extend(fields);
-//         self
-//     }
+    pub fn add_fields<I>(mut self, fields: I) -> Self
+    where
+        I: IntoIterator<Item = (&'a str, TypeKey<'a>)>,
+    {
+        self.fields.extend(fields);
+        self
+    }
 
-//     pub fn build(self) -> Option<ExprKey<'a>> {
-//         let struct_type = StructType::new(self.name, self.attributes, self.fields);
+    pub fn build(self) -> Option<TypeKey<'a>> {
+        self.storage.add_type(TypeOwned::StructType(StructType::new(
+            self.name,
+            self.attributes,
+            self.fields,
+        )))
+    }
+}
 
-//         Box::new(Expr::StructType(struct_type))
-//     }
-// }
+#[derive(Debug)]
+pub struct FunctionTypeBuilder<'storage, 'a> {
+    storage: &'storage mut Storage<'a>,
+    parameters: Vec<FunctionParameter<'a>>,
+    return_type: Option<TypeKey<'a>>,
+    attributes: Vec<ExprKey<'a>>,
+}
 
-// #[derive(Debug)]
-// pub struct FunctionTypeBuilder<'storage, 'a> {
-//     storage: &'storage mut Storage<'a>,
-//     parameters: Vec<FunctionParameter<'a>>,
-//     return_type: Option<TypeKey<'a>>,
-//     attributes: Vec<ExprKey<'a>>,
-// }
+impl<'storage, 'a> FunctionTypeBuilder<'storage, 'a> {
+    pub(crate) fn new(storage: &'storage mut Storage<'a>) -> Self {
+        FunctionTypeBuilder {
+            storage,
+            parameters: Vec::new(),
+            return_type: None,
+            attributes: Vec::new(),
+        }
+    }
 
-// impl<'storage, 'a> FunctionTypeBuilder<'storage, 'a> {
-//     pub(crate) fn new(storage: &'storage mut Storage<'a>) -> Self {
-//         FunctionTypeBuilder {
-//             outer,
-//             parameters: Vec::new(),
-//             return_type: None,
-//             attributes: Vec::new(),
-//         }
-//     }
+    pub fn add_parameter(
+        mut self,
+        name: &'a str,
+        ty: Option<TypeKey<'a>>,
+        default_value: Option<ExprKey<'a>>,
+    ) -> Self {
+        self.parameters.push((name, ty, default_value));
+        self
+    }
 
-//     pub fn add_parameter(
-//         mut self,
-//         name: &'a str,
-//         ty: Option<TypeKey<'a>>,
-//         default_value: Option<ExprKey<'a>>,
-//     ) -> Self {
-//         self.parameters.push((name, ty, default_value));
-//         self
-//     }
+    pub fn add_parameters<I>(mut self, parameters: I) -> Self
+    where
+        I: IntoIterator<Item = (&'a str, Option<TypeKey<'a>>, Option<ExprKey<'a>>)>,
+    {
+        self.parameters.extend(parameters);
+        self
+    }
 
-//     pub fn add_parameters<I>(mut self, parameters: I) -> Self
-//     where
-//         I: IntoIterator<Item = (&'a str, Option<TypeKey<'a>>, Option<ExprKey<'a>>)>,
-//     {
-//         self.parameters.extend(parameters);
-//         self
-//     }
+    pub fn with_return_type(mut self, ty: TypeKey<'a>) -> Self {
+        self.return_type = Some(ty);
+        self
+    }
 
-//     pub fn with_return_type(mut self, ty: TypeKey<'a>) -> Self {
-//         self.return_type = Some(ty);
-//         self
-//     }
+    pub fn add_attribute(mut self, attribute: ExprKey<'a>) -> Self {
+        self.attributes.push(attribute);
+        self
+    }
 
-//     pub fn add_attribute(mut self, attribute: ExprKey<'a>) -> Self {
-//         self.attributes.push(attribute);
-//         self
-//     }
+    pub fn add_attributes<I>(mut self, attributes: I) -> Self
+    where
+        I: IntoIterator<Item = ExprKey<'a>>,
+    {
+        self.attributes.extend(attributes);
+        self
+    }
 
-//     pub fn add_attributes<I>(mut self, attributes: I) -> Self
-//     where
-//         I: IntoIterator<Item = ExprKey<'a>>,
-//     {
-//         self.attributes.extend(attributes);
-//         self
-//     }
-
-//     pub fn build(self) -> Option<ExprKey<'a>> {
-//         let function_type = FunctionType::new(self.parameters, self.return_type, self.attributes);
-
-//         Box::new(Expr::FunctionType(function_type))
-//     }
-// }
+    pub fn build(self) -> Option<TypeKey<'a>> {
+        self.storage
+            .add_type(TypeOwned::FunctionType(FunctionType::new(
+                self.parameters,
+                self.return_type,
+                self.attributes,
+            )))
+    }
+}

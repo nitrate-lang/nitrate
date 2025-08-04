@@ -206,11 +206,11 @@ impl<'storage, 'a> Builder<'storage, 'a> {
         ArrayTypeBuilder::new(self.storage)
     }
 
-    // pub fn struct_type(self) -> StructTypeBuilder<'a> {
-    //     StructTypeBuilder::new(self)
-    // }
+    pub fn create_struct_type(&mut self) -> StructTypeBuilder<'_, 'a> {
+        StructTypeBuilder::new(self.storage)
+    }
 
-    // pub fn function_type(self) -> FunctionTypeBuilder<'a> {
-    //     FunctionTypeBuilder::new(self)
-    // }
+    pub fn create_function_type(&mut self) -> FunctionTypeBuilder<'_, 'a> {
+        FunctionTypeBuilder::new(self.storage)
+    }
 }
