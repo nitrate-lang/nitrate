@@ -195,7 +195,7 @@ impl<'storage, 'a> Parser<'storage, 'a> {
             }
 
             Token::Keyword(_) => {
-                // TODO: Handle keywords (like 'fn', 'struct', 'opaque', etc.)
+                // TODO: Handle keywords (like 'fn', 'opaque', etc.)
                 None
             }
 

@@ -18,16 +18,17 @@ use super::struct_type::StructType;
 use super::tuple_type::TupleType;
 use super::unary_op::UnaryOp;
 use super::variable::Variable;
+use std::num::NonZeroU32;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct ExprKey<'a> {
-    id: u32,
+    id: NonZeroU32,
     _marker: std::marker::PhantomData<&'a ()>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct TypeKey<'a> {
-    id: u32,
+    id: NonZeroU32,
     _marker: std::marker::PhantomData<&'a ()>,
 }
 
@@ -36,9 +37,10 @@ impl<'a> ExprKey<'a> {
         assert!((variant as u32) < 64, "Variant index must be less than 64");
 
         let can_store_index = index < (1 << 26);
+        let variant_bits = (variant as u32 + 1) << 26;
 
         can_store_index.then_some(ExprKey {
-            id: (variant as u32) << 26 | index as u32,
+            id: NonZeroU32::new(variant_bits | index as u32).expect("ID must be non-zero"),
             _marker: std::marker::PhantomData,
         })
     }
@@ -46,14 +48,16 @@ impl<'a> ExprKey<'a> {
     pub(crate) fn new_single(variant: ExprKind) -> Self {
         assert!((variant as u32) < 64, "Variant index must be less than 64");
 
+        let variant_bits = (variant as u32 + 1) << 26;
+
         ExprKey {
-            id: (variant as u32) << 26,
+            id: NonZeroU32::new(variant_bits).expect("ID must be non-zero"),
             _marker: std::marker::PhantomData,
         }
     }
 
     pub(crate) fn variant_index(&self) -> ExprKind {
-        let number = (self.id >> 26) as u8;
+        let number = ((self.id.get() >> 26) as u8) - 1;
 
         match number {
             x if x == ExprKind::Bool as u8 => ExprKind::Bool,
@@ -105,7 +109,7 @@ impl<'a> ExprKey<'a> {
     }
 
     fn instance_index(&self) -> usize {
-        (self.id & 0x03FFFFFF) as usize
+        (self.id.get() & 0x03FFFFFF) as usize
     }
 
     pub fn get<'storage>(&self, storage: &'storage Storage<'a>) -> ExprRef<'storage, 'a> {
@@ -125,9 +129,10 @@ impl<'a> TypeKey<'a> {
         assert!((variant as u32) < 64, "Variant index must be less than 64");
 
         let can_store_index = index < (1 << 26);
+        let variant_bits = (variant as u32 + 1) << 26;
 
         can_store_index.then_some(TypeKey {
-            id: (variant as u32) << 26 | index as u32,
+            id: NonZeroU32::new(variant_bits | index as u32).expect("ID must be non-zero"),
             _marker: std::marker::PhantomData,
         })
     }
@@ -135,14 +140,16 @@ impl<'a> TypeKey<'a> {
     pub(crate) fn new_single(variant: TypeKind) -> Self {
         assert!((variant as u32) < 64, "Variant index must be less than 64");
 
+        let variant_bits = (variant as u32 + 1) << 26;
+
         TypeKey {
-            id: (variant as u32) << 26,
+            id: NonZeroU32::new(variant_bits).expect("ID must be non-zero"),
             _marker: std::marker::PhantomData,
         }
     }
 
     pub(crate) fn variant_index(&self) -> TypeKind {
-        let number = (self.id >> 26) as u8;
+        let number = ((self.id.get() >> 26) as u8) - 1;
 
         match number {
             x if x == TypeKind::Bool as u8 => TypeKind::Bool,
@@ -175,7 +182,7 @@ impl<'a> TypeKey<'a> {
     }
 
     fn instance_index(&self) -> usize {
-        (self.id & 0x03FFFFFF) as usize
+        (self.id.get() & 0x03FFFFFF) as usize
     }
 
     pub fn get<'storage>(&self, storage: &'storage Storage<'a>) -> TypeRef<'storage, 'a> {

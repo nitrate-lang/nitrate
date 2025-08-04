@@ -18,6 +18,7 @@ mod string;
 mod struct_type;
 mod to_code;
 mod tuple_type;
+mod type_constraints;
 mod unary_op;
 mod variable;
 
