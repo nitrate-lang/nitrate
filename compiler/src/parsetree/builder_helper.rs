@@ -68,36 +68,37 @@ impl<'storage, 'a> IntegerBuilderHelper<'storage, 'a> {
     }
 
     pub fn build(self) -> Option<ExprKey<'a>> {
-        let value = self.value.expect("Integer value must be provided");
-        let kind = self.kind.unwrap_or(IntegerKind::Decimal);
-
-        self.storage
-            .add_expr(ExprOwned::IntegerLit(IntegerLit::new(value, kind)?))
+        self.storage.add_expr(ExprOwned::IntegerLit(IntegerLit::new(
+            self.value?,
+            self.kind.unwrap_or(IntegerKind::Decimal),
+        )?))
     }
 }
 
-// #[derive(Debug, Clone)]
-// pub struct FloatBuilderHelper<'a> {
-//     outer: Builder<'a>,
-//     value: Option<f64>,
-// }
+#[derive(Debug)]
+pub struct FloatBuilderHelper<'storage, 'a> {
+    storage: &'storage mut Storage<'a>,
+    value: Option<f64>,
+}
 
-// impl<'a> FloatBuilderHelper<'a> {
-//     pub fn new(outer: Builder<'a>) -> Self {
-//         FloatBuilderHelper { outer, value: None }
-//     }
+impl<'storage, 'a> FloatBuilderHelper<'storage, 'a> {
+    pub(crate) fn new(storage: &'storage mut Storage<'a>) -> Self {
+        FloatBuilderHelper {
+            storage,
+            value: None,
+        }
+    }
 
-//     pub fn with_value(mut self, value: f64) -> Self {
-//         self.value = Some(value);
-//         self
-//     }
+    pub fn with_value(mut self, value: f64) -> Self {
+        self.value = Some(value);
+        self
+    }
 
-//     pub fn build(self) -> Box<Expr<'a>> {
-//         let value = self.value.expect("Float value must be provided");
-
-//         Box::new(Expr::FloatLit(FloatLit::new(value)))
-//     }
-// }
+    pub fn build(self) -> Option<ExprKey<'a>> {
+        self.storage
+            .add_expr(ExprOwned::FloatLit(FloatLit::new(self.value?)))
+    }
+}
 
 // #[derive(Debug, Clone)]
 // pub struct StringBuilderHelper<'a> {

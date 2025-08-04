@@ -1,5 +1,5 @@
 use super::builder_helper::*;
-use super::expression::{ExprOwned, TypeOwned};
+use super::expression::TypeOwned;
 use super::storage::{Storage, TypeKey};
 use super::tuple_type::TupleType;
 pub use super::variable::VariableKind;
@@ -22,48 +22,24 @@ impl<'storage, 'a> Builder<'storage, 'a> {
         IntegerBuilderHelper::new(self.storage)
     }
 
-    // pub fn get_integer() -> IntegerBuilderHelper<'a> {
-    //     IntegerBuilderHelper::new(Builder::default())
-    // }
-
-    // pub fn float(self) -> FloatBuilderHelper<'a> {
-    //     FloatBuilderHelper::new(self)
-    // }
-
-    // pub fn get_float() -> FloatBuilderHelper<'a> {
-    //     FloatBuilderHelper::new(Builder::default())
-    // }
+    pub fn create_float(&mut self) -> FloatBuilderHelper<'_, 'a> {
+        FloatBuilderHelper::new(self.storage)
+    }
 
     // pub fn string(self) -> StringBuilderHelper<'a> {
     //     StringBuilderHelper::new(self)
-    // }
-
-    // pub fn get_string() -> StringBuilderHelper<'a> {
-    //     StringBuilderHelper::new(Builder::default())
     // }
 
     // pub fn char(self) -> CharBuilderHelper<'a> {
     //     CharBuilderHelper::new(self)
     // }
 
-    // pub fn get_char() -> CharBuilderHelper<'a> {
-    //     CharBuilderHelper::new(Builder::default())
-    // }
-
     // pub fn list(self) -> ListBuilderHelper<'a> {
     //     ListBuilderHelper::new(self)
     // }
 
-    // pub fn get_list() -> ListBuilderHelper<'a> {
-    //     ListBuilderHelper::new(Builder::default())
-    // }
-
     // pub fn object(self) -> ObjectBuilderHelper<'a> {
     //     ObjectBuilderHelper::new(self)
-    // }
-
-    // pub fn get_object() -> ObjectBuilderHelper<'a> {
-    //     ObjectBuilderHelper::new(Builder::default())
     // }
 
     // /////////////////////////////////////////////////////////////////
@@ -72,32 +48,16 @@ impl<'storage, 'a> Builder<'storage, 'a> {
     //     UnaryExprBuilderHelper::new(self)
     // }
 
-    // pub fn get_unary_expr() -> UnaryExprBuilderHelper<'a> {
-    //     UnaryExprBuilderHelper::new(Builder::default())
-    // }
-
     // pub fn binary_expr(self) -> BinaryExprBuilderHelper<'a> {
     //     BinaryExprBuilderHelper::new(self)
-    // }
-
-    // pub fn get_binary_expr() -> BinaryExprBuilderHelper<'a> {
-    //     BinaryExprBuilderHelper::new(Builder::default())
     // }
 
     // pub fn statement(self) -> StatementBuilderHelper<'a> {
     //     StatementBuilderHelper::new(self)
     // }
 
-    // pub fn get_statement() -> StatementBuilderHelper<'a> {
-    //     StatementBuilderHelper::new(Builder::default())
-    // }
-
     // pub fn block(self) -> BlockBuilderHelper<'a> {
     //     BlockBuilderHelper::new(self)
-    // }
-
-    // pub fn get_block() -> BlockBuilderHelper<'a> {
-    //     BlockBuilderHelper::new(Builder::default())
     // }
 
     // /////////////////////////////////////////////////////////////////
@@ -106,26 +66,14 @@ impl<'storage, 'a> Builder<'storage, 'a> {
     //     FunctionBuilderHelper::new(self)
     // }
 
-    // pub fn get_function() -> FunctionBuilderHelper<'a> {
-    //     FunctionBuilderHelper::new(Builder::default())
-    // }
-
     // pub fn variable(self) -> VariableBuilderHelper<'a> {
     //     VariableBuilderHelper::new(self)
-    // }
-
-    // pub fn get_variable() -> VariableBuilderHelper<'a> {
-    //     VariableBuilderHelper::new(Builder::default())
     // }
 
     // /////////////////////////////////////////////////////////////////
     // // BEGIN: Control Flow Builders
     // pub fn return_(self) -> ReturnBuilderHelper<'a> {
     //     ReturnBuilderHelper::new(self)
-    // }
-
-    // pub fn get_return() -> ReturnBuilderHelper<'a> {
-    //     ReturnBuilderHelper::new(Builder::default())
     // }
 
     /////////////////////////////////////////////////////////////////
@@ -244,31 +192,15 @@ impl<'storage, 'a> Builder<'storage, 'a> {
     //     TupleTypeBuilderHelper::new(self)
     // }
 
-    // pub fn get_tuple_type() -> TupleTypeBuilderHelper<'a> {
-    //     TupleTypeBuilderHelper::new(Builder::default())
-    // }
-
     // pub fn array_type(self) -> ArrayTypeBuilderHelper<'a> {
     //     ArrayTypeBuilderHelper::new(self)
-    // }
-
-    // pub fn get_array_type() -> ArrayTypeBuilderHelper<'a> {
-    //     ArrayTypeBuilderHelper::new(Builder::default())
     // }
 
     // pub fn struct_type(self) -> StructTypeBuilderHelper<'a> {
     //     StructTypeBuilderHelper::new(self)
     // }
 
-    // pub fn get_struct_type() -> StructTypeBuilderHelper<'a> {
-    //     StructTypeBuilderHelper::new(Builder::default())
-    // }
-
     // pub fn function_type(self) -> FunctionTypeBuilderHelper<'a> {
     //     FunctionTypeBuilderHelper::new(self)
-    // }
-
-    // pub fn get_function_type() -> FunctionTypeBuilderHelper<'a> {
-    //     FunctionTypeBuilderHelper::new(Builder::default())
     // }
 }
