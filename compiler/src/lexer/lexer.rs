@@ -64,6 +64,15 @@ impl<'a> Lexer<'a> {
         self.next().into_token()
     }
 
+    pub fn skip_if(&mut self, matches: &Token<'a>) -> bool {
+        if &self.peek_t() == matches {
+            self.skip();
+            true
+        } else {
+            false
+        }
+    }
+
     pub fn peek(&mut self) -> AnnotatedToken<'a> {
         let token = self
             .current
