@@ -11,6 +11,7 @@ mod list;
 mod number;
 mod object;
 mod returns;
+mod slice_type;
 mod statement;
 mod storage;
 mod string;

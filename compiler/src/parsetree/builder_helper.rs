@@ -10,6 +10,7 @@ use super::list::ListLit;
 use super::number::{FloatLit, IntegerLit};
 use super::object::ObjectLit;
 use super::returns::Return;
+use super::slice_type::SliceType;
 use super::statement::Statement;
 use super::storage::{ExprKey, Storage, TypeKey};
 use super::string::StringLit;
@@ -636,6 +637,32 @@ impl<'storage, 'a> ArrayTypeBuilder<'storage, 'a> {
         self.storage.add_type(TypeOwned::ArrayType(ArrayType::new(
             self.element_ty.expect("Element type must be provided"),
             self.count.expect("Array length must be provided"),
+        )))
+    }
+}
+
+#[derive(Debug)]
+pub struct SliceTypeBuilder<'storage, 'a> {
+    storage: &'storage mut Storage<'a>,
+    element_ty: Option<TypeKey<'a>>,
+}
+
+impl<'storage, 'a> SliceTypeBuilder<'storage, 'a> {
+    pub(crate) fn new(storage: &'storage mut Storage<'a>) -> Self {
+        SliceTypeBuilder {
+            storage,
+            element_ty: None,
+        }
+    }
+
+    pub fn with_element_ty(mut self, element_ty: TypeKey<'a>) -> Self {
+        self.element_ty = Some(element_ty);
+        self
+    }
+
+    pub fn build(self) -> Option<TypeKey<'a>> {
+        self.storage.add_type(TypeOwned::SliceType(SliceType::new(
+            self.element_ty.expect("Element type must be provided"),
         )))
     }
 }

@@ -9,6 +9,7 @@ use super::list::ListLit;
 use super::number::{FloatLit, IntegerLit};
 use super::object::ObjectLit;
 use super::returns::Return;
+use super::slice_type::SliceType;
 use super::statement::Statement;
 use super::storage::{ExprKey, Storage, TypeKey};
 use super::string::StringLit;
@@ -297,6 +298,14 @@ impl<'a> ToCode<'a> for ArrayType<'a> {
     }
 }
 
+impl<'a> ToCode<'a> for SliceType<'a> {
+    fn to_code(&self, bank: &Storage<'a>, tokens: &mut Vec<Token<'a>>, options: &CodeFormat) {
+        tokens.push(Token::Punct(Punct::LeftBracket));
+        self.element_ty().to_code(bank, tokens, options);
+        tokens.push(Token::Punct(Punct::RightBracket));
+    }
+}
+
 impl<'a> ToCode<'a> for StructType<'a> {
     fn to_code(&self, bank: &Storage<'a>, tokens: &mut Vec<Token<'a>>, options: &CodeFormat) {
         tokens.push(Token::Keyword(Keyword::Struct));
@@ -399,6 +408,7 @@ impl<'a> ToCode<'a> for ExprKey<'a> {
             ExprRef::InferType => tokens.push(Token::Name(Identifier::new("_"))),
             ExprRef::TupleType(e) => e.to_code(bank, tokens, options),
             ExprRef::ArrayType(e) => e.to_code(bank, tokens, options),
+            ExprRef::SliceType(e) => e.to_code(bank, tokens, options),
             ExprRef::StructType(e) => e.to_code(bank, tokens, options),
             ExprRef::FunctionType(e) => e.to_code(bank, tokens, options),
 
@@ -457,6 +467,7 @@ impl<'a> ToCode<'a> for TypeKey<'a> {
             TypeRef::InferType => tokens.push(Token::Name(Identifier::new("_"))),
             TypeRef::TupleType(e) => e.to_code(bank, tokens, options),
             TypeRef::ArrayType(e) => e.to_code(bank, tokens, options),
+            TypeRef::SliceType(e) => e.to_code(bank, tokens, options),
             TypeRef::StructType(e) => e.to_code(bank, tokens, options),
             TypeRef::FunctionType(e) => e.to_code(bank, tokens, options),
         }

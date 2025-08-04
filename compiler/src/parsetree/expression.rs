@@ -8,6 +8,7 @@ use super::list::ListLit;
 use super::number::{FloatLit, IntegerLit};
 use super::object::ObjectLit;
 use super::returns::Return;
+use super::slice_type::SliceType;
 use super::statement::Statement;
 use super::string::StringLit;
 use super::struct_type::StructType;
@@ -37,6 +38,7 @@ pub enum ExprKind {
     InferType,
     TupleType,
     ArrayType,
+    SliceType,
     StructType,
     FunctionType,
 
@@ -82,6 +84,7 @@ pub(crate) enum TypeKind {
     InferType,
     TupleType,
     ArrayType,
+    SliceType,
     StructType,
     FunctionType,
 }
@@ -110,6 +113,7 @@ pub(crate) enum ExprOwned<'a> {
     InferType,
     TupleType(TupleType<'a>),
     ArrayType(ArrayType<'a>),
+    SliceType(SliceType<'a>),
     StructType(StructType<'a>),
     FunctionType(FunctionType<'a>),
 
@@ -161,6 +165,7 @@ pub(crate) enum TypeOwned<'a> {
     InferType,
     TupleType(TupleType<'a>),
     ArrayType(ArrayType<'a>),
+    SliceType(SliceType<'a>),
     StructType(StructType<'a>),
     FunctionType(FunctionType<'a>),
 }
@@ -189,6 +194,7 @@ pub enum ExprRef<'storage, 'a> {
     InferType,
     TupleType(&'storage TupleType<'a>),
     ArrayType(&'storage ArrayType<'a>),
+    SliceType(&'storage SliceType<'a>),
     StructType(&'storage StructType<'a>),
     FunctionType(&'storage FunctionType<'a>),
 
@@ -240,6 +246,7 @@ pub enum ExprRefMut<'storage, 'a> {
     InferType,
     TupleType(&'storage mut TupleType<'a>),
     ArrayType(&'storage mut ArrayType<'a>),
+    SliceType(&'storage mut SliceType<'a>),
     StructType(&'storage mut StructType<'a>),
     FunctionType(&'storage mut FunctionType<'a>),
 
@@ -291,6 +298,7 @@ pub enum TypeRef<'storage, 'a> {
     InferType,
     TupleType(&'storage TupleType<'a>),
     ArrayType(&'storage ArrayType<'a>),
+    SliceType(&'storage SliceType<'a>),
     StructType(&'storage StructType<'a>),
     FunctionType(&'storage FunctionType<'a>),
 }
@@ -320,6 +328,7 @@ impl TryInto<TypeKind> for ExprKind {
             ExprKind::InferType => Ok(TypeKind::InferType),
             ExprKind::TupleType => Ok(TypeKind::TupleType),
             ExprKind::ArrayType => Ok(TypeKind::ArrayType),
+            ExprKind::SliceType => Ok(TypeKind::SliceType),
             ExprKind::StructType => Ok(TypeKind::StructType),
             ExprKind::FunctionType => Ok(TypeKind::FunctionType),
 
@@ -364,6 +373,7 @@ impl Into<ExprKind> for TypeKind {
             TypeKind::InferType => ExprKind::InferType,
             TypeKind::TupleType => ExprKind::TupleType,
             TypeKind::ArrayType => ExprKind::ArrayType,
+            TypeKind::SliceType => ExprKind::SliceType,
             TypeKind::StructType => ExprKind::StructType,
             TypeKind::FunctionType => ExprKind::FunctionType,
         }
@@ -393,6 +403,7 @@ impl std::fmt::Display for ExprKind {
             ExprKind::InferType => write!(f, "InferType"),
             ExprKind::TupleType => write!(f, "TupleType"),
             ExprKind::ArrayType => write!(f, "ArrayType"),
+            ExprKind::SliceType => write!(f, "SliceType"),
             ExprKind::StructType => write!(f, "StructType"),
             ExprKind::FunctionType => write!(f, "FunctionType"),
 
@@ -441,6 +452,7 @@ impl std::fmt::Display for TypeKind {
             TypeKind::InferType => write!(f, "InferType"),
             TypeKind::TupleType => write!(f, "TupleType"),
             TypeKind::ArrayType => write!(f, "ArrayType"),
+            TypeKind::SliceType => write!(f, "SliceType"),
             TypeKind::StructType => write!(f, "StructType"),
             TypeKind::FunctionType => write!(f, "FunctionType"),
         }
@@ -472,6 +484,7 @@ impl<'a> TryInto<TypeOwned<'a>> for ExprOwned<'a> {
             ExprOwned::InferType => Ok(TypeOwned::InferType),
             ExprOwned::TupleType(x) => Ok(TypeOwned::TupleType(x)),
             ExprOwned::ArrayType(x) => Ok(TypeOwned::ArrayType(x)),
+            ExprOwned::SliceType(x) => Ok(TypeOwned::SliceType(x)),
             ExprOwned::StructType(x) => Ok(TypeOwned::StructType(x)),
             ExprOwned::FunctionType(x) => Ok(TypeOwned::FunctionType(x)),
 
@@ -516,6 +529,7 @@ impl<'a> Into<ExprOwned<'a>> for TypeOwned<'a> {
             TypeOwned::InferType => ExprOwned::InferType,
             TypeOwned::TupleType(x) => ExprOwned::TupleType(x),
             TypeOwned::ArrayType(x) => ExprOwned::ArrayType(x),
+            TypeOwned::SliceType(x) => ExprOwned::SliceType(x),
             TypeOwned::StructType(x) => ExprOwned::StructType(x),
             TypeOwned::FunctionType(x) => ExprOwned::FunctionType(x),
         }
@@ -547,6 +561,7 @@ impl<'storage, 'a> TryInto<TypeRef<'storage, 'a>> for ExprRef<'storage, 'a> {
             ExprRef::InferType => Ok(TypeRef::InferType),
             ExprRef::TupleType(x) => Ok(TypeRef::TupleType(x)),
             ExprRef::ArrayType(x) => Ok(TypeRef::ArrayType(x)),
+            ExprRef::SliceType(x) => Ok(TypeRef::SliceType(x)),
             ExprRef::StructType(x) => Ok(TypeRef::StructType(x)),
             ExprRef::FunctionType(x) => Ok(TypeRef::FunctionType(x)),
 
@@ -593,6 +608,7 @@ impl<'storage, 'a> TryInto<TypeRef<'storage, 'a>> for ExprRefMut<'storage, 'a> {
             ExprRefMut::InferType => Ok(TypeRef::InferType),
             ExprRefMut::TupleType(x) => Ok(TypeRef::TupleType(x)),
             ExprRefMut::ArrayType(x) => Ok(TypeRef::ArrayType(x)),
+            ExprRefMut::SliceType(x) => Ok(TypeRef::SliceType(x)),
             ExprRefMut::StructType(x) => Ok(TypeRef::StructType(x)),
             ExprRefMut::FunctionType(x) => Ok(TypeRef::FunctionType(x)),
 
@@ -637,6 +653,7 @@ impl<'storage, 'a> Into<ExprRef<'storage, 'a>> for TypeRef<'storage, 'a> {
             TypeRef::InferType => ExprRef::InferType,
             TypeRef::TupleType(x) => ExprRef::TupleType(x),
             TypeRef::ArrayType(x) => ExprRef::ArrayType(x),
+            TypeRef::SliceType(x) => ExprRef::SliceType(x),
             TypeRef::StructType(x) => ExprRef::StructType(x),
             TypeRef::FunctionType(x) => ExprRef::FunctionType(x),
         }
