@@ -127,7 +127,7 @@ impl<'a> Lexer<'a> {
     fn parse_atypical_identifier(&mut self) -> Result<Token<'a>, ()> {
         let start_pos = self.current_position();
 
-        assert!(self.peek_byte().unwrap() == b'`');
+        assert!(self.peek_byte().expect("Failed to peek byte") == b'`');
         self.advance(b'`');
 
         let identifier = self.read_while(|b| b != b'`');
@@ -257,7 +257,7 @@ impl<'a> Lexer<'a> {
                         let literal = str::from_utf8(
                             &self.source[start_pos.offset()..self.current_position().offset()],
                         )
-                        .unwrap();
+                        .expect("Failed to convert float literal to str");
 
                         if let Ok(result) = self.convert_float_repr(literal) {
                             return Ok(Token::Float(Float::new(result)));
@@ -635,7 +635,7 @@ impl<'a> Lexer<'a> {
     fn parse_string(&mut self) -> Result<Token<'a>, ()> {
         let start_pos = self.current_position();
 
-        assert!(self.peek_byte().unwrap() == b'"');
+        assert!(self.peek_byte().expect("Failed to peek byte") == b'"');
         self.advance(b'"');
 
         let start_offset = self.current_position().offset();
@@ -766,7 +766,7 @@ impl<'a> Lexer<'a> {
     fn parse_char(&mut self) -> Result<Token<'a>, ()> {
         let start_pos = self.current_position();
 
-        assert!(self.peek_byte().unwrap() == b'\'');
+        assert!(self.peek_byte().expect("Failed to peek byte") == b'\'');
         self.advance(b'\'');
 
         // Lets use more than 4 bytes for debugability of misuses of single quotes.

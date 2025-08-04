@@ -256,7 +256,7 @@ impl<'a> TypeKey<'a> {
 impl<'a> Into<ExprKey<'a>> for TypeKey<'a> {
     fn into(self) -> ExprKey<'a> {
         ExprKey::new(self.variant_index().into(), self.instance_index())
-            .expect("TypeRef must be convertible to ExprRef")
+            .expect("TypeRef should be convertible to ExprRef")
     }
 }
 
@@ -438,7 +438,7 @@ impl<'a> Storage<'a> {
             let variant = expr_ref
                 .variant_index()
                 .try_into()
-                .expect("The expr was a type");
+                .expect("Failed to convert ExprKind to TypeKind");
             let index = expr_ref.instance_index();
 
             TypeKey::new(variant, index)
