@@ -80,8 +80,8 @@ impl<'storage, 'a> Builder<'storage, 'a> {
         self.create_variable().with_kind(VariableKind::Var)
     }
 
-    // /////////////////////////////////////////////////////////////////
-    // // BEGIN: Control Flow Builders
+    /////////////////////////////////////////////////////////////////
+    // BEGIN: Control Flow Builders
     pub fn create_return(&mut self) -> ReturnBuilder<'_, 'a> {
         ReturnBuilder::new(self.storage)
     }
