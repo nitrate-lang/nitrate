@@ -349,61 +349,71 @@ impl<'storage, 'a> StatementBuilder<'storage, 'a> {
     }
 }
 
-// #[derive(Debug)]
-// pub struct BlockBuilder<'storage, 'a> {
-//     storage: &'storage mut Storage<'a>,
-//     elements: Vec<ExprKey<'a>>,
-// }
+#[derive(Debug)]
+pub struct BlockBuilder<'storage, 'a> {
+    storage: &'storage mut Storage<'a>,
+    elements: Vec<ExprKey<'a>>,
+}
 
-// impl<'storage, 'a> BlockBuilder<'storage, 'a> {
-//     pub(crate) fn new(storage: &'storage mut Storage<'a>) -> Self {
-//         BlockBuilder {
-//             outer,
-//             elements: Vec::new(),
-//         }
-//     }
+impl<'storage, 'a> BlockBuilder<'storage, 'a> {
+    pub(crate) fn new(storage: &'storage mut Storage<'a>) -> Self {
+        BlockBuilder {
+            storage,
+            elements: Vec::new(),
+        }
+    }
 
-//     pub fn add_element(mut self, expr: ExprKey<'a>) -> Self {
-//         self.elements.push(expr);
-//         self
-//     }
+    pub fn add_element(mut self, expr: ExprKey<'a>) -> Self {
+        self.elements.push(expr);
+        self
+    }
 
-//     pub fn add_expressions<I>(mut self, elements: I) -> Self
-//     where
-//         I: IntoIterator<Item = ExprKey<'a>>,
-//     {
-//         self.elements.extend(elements);
-//         self
-//     }
+    pub fn add_expressions<I>(mut self, elements: I) -> Self
+    where
+        I: IntoIterator<Item = ExprKey<'a>>,
+    {
+        self.elements.extend(elements);
+        self
+    }
 
-//     pub fn add_statement(mut self, expression: ExprKey<'a>) -> Self {
-//         let statement = Builder::get_statement().with_expression(expression).build();
-//         self.elements.push(statement);
-//         self
-//     }
+    pub fn add_statement(mut self, expression: ExprKey<'a>) -> Option<Self> {
+        let statement = Builder::new(self.storage)
+            .create_statement()
+            .with_expression(expression)
+            .build()?;
 
-//     pub fn add_statements<I>(mut self, statements: I) -> Self
-//     where
-//         I: IntoIterator<Item = ExprKey<'a>>,
-//     {
-//         for statement in statements {
-//             let statement = Builder::get_statement().with_expression(statement).build();
-//             self.elements.push(statement);
-//         }
-//         self
-//     }
+        self.elements.push(statement);
+        Some(self)
+    }
 
-//     pub fn build(self) -> Option<ExprKey<'a>> {
-//         Box::new(Expr::Block(Block::new(self.elements)))
-//     }
-// }
+    pub fn add_statements<I>(mut self, elements: I) -> Option<Self>
+    where
+        I: IntoIterator<Item = ExprKey<'a>>,
+    {
+        for expression in elements {
+            let statement = Builder::new(self.storage)
+                .create_statement()
+                .with_expression(expression)
+                .build()?;
+
+            self.elements.push(statement);
+        }
+
+        Some(self)
+    }
+
+    pub fn build(self) -> Option<ExprKey<'a>> {
+        self.storage
+            .add_expr(ExprOwned::Block(Block::new(self.elements)))
+    }
+}
 
 // #[derive(Debug)]
 // pub struct FunctionBuilder<'storage, 'a> {
 //     storage: &'storage mut Storage<'a>,
 //     name: &'a str,
 //     parameters: Vec<FunctionParameter<'a>>,
-//     return_type: Option<Box<Type<'a>>>,
+//     return_type: Option<TypeKey<'a>>,
 //     attributes: Vec<ExprKey<'a>>,
 //     definition: Option<ExprKey<'a>>,
 // }
@@ -428,7 +438,7 @@ impl<'storage, 'a> StatementBuilder<'storage, 'a> {
 //     pub fn with_parameter(
 //         mut self,
 //         name: &'a str,
-//         ty: Option<Box<Type<'a>>>,
+//         ty: Option<TypeKey<'a>>,
 //         default_value: Option<ExprKey<'a>>,
 //     ) -> Self {
 //         self.parameters.push((name, ty, default_value));
@@ -437,13 +447,13 @@ impl<'storage, 'a> StatementBuilder<'storage, 'a> {
 
 //     pub fn with_parameters<I>(mut self, parameters: I) -> Self
 //     where
-//         I: IntoIterator<Item = (&'a str, Option<Box<Type<'a>>>, Option<ExprKey<'a>>)>,
+//         I: IntoIterator<Item = (&'a str, Option<TypeKey<'a>>, Option<ExprKey<'a>>)>,
 //     {
 //         self.parameters.extend(parameters);
 //         self
 //     }
 
-//     pub fn with_return_type(mut self, ty: Box<Type<'a>>) -> Self {
+//     pub fn with_return_type(mut self, ty: TypeKey<'a>) -> Self {
 //         self.return_type = Some(ty);
 //         self
 //     }
@@ -490,54 +500,55 @@ impl<'storage, 'a> StatementBuilder<'storage, 'a> {
 //     }
 // }
 
-// #[derive(Debug)]
-// pub struct VariableBuilder<'storage, 'a> {
-//     storage: &'storage mut Storage<'a>,
-//     kind: Option<VariableKind>,
-//     name: &'a str,
-//     ty: Option<Box<Type<'a>>>,
-//     value: Option<ExprKey<'a>>,
-// }
+#[derive(Debug)]
+pub struct VariableBuilder<'storage, 'a> {
+    storage: &'storage mut Storage<'a>,
+    kind: Option<VariableKind>,
+    name: &'a str,
+    ty: Option<TypeKey<'a>>,
+    value: Option<ExprKey<'a>>,
+}
 
-// impl<'storage, 'a> VariableBuilder<'storage, 'a> {
-//     pub(crate) fn new(storage: &'storage mut Storage<'a>) -> Self {
-//         VariableBuilder {
-//             outer,
-//             kind: None,
-//             name: "",
-//             ty: None,
-//             value: None,
-//         }
-//     }
+impl<'storage, 'a> VariableBuilder<'storage, 'a> {
+    pub(crate) fn new(storage: &'storage mut Storage<'a>) -> Self {
+        VariableBuilder {
+            storage,
+            kind: None,
+            name: "",
+            ty: None,
+            value: None,
+        }
+    }
 
-//     pub fn with_kind(mut self, kind: VariableKind) -> Self {
-//         self.kind = Some(kind);
-//         self
-//     }
+    pub fn with_kind(mut self, kind: VariableKind) -> Self {
+        self.kind = Some(kind);
+        self
+    }
 
-//     pub fn with_name(mut self, name: &'a str) -> Self {
-//         self.name = name;
-//         self
-//     }
+    pub fn with_name(mut self, name: &'a str) -> Self {
+        self.name = name;
+        self
+    }
 
-//     pub fn with_type(mut self, ty: Box<Type<'a>>) -> Self {
-//         self.ty = Some(ty);
-//         self
-//     }
+    pub fn with_type(mut self, ty: TypeKey<'a>) -> Self {
+        self.ty = Some(ty);
+        self
+    }
 
-//     pub fn with_value(mut self, value: ExprKey<'a>) -> Self {
-//         self.value = Some(value);
-//         self
-//     }
+    pub fn with_value(mut self, value: ExprKey<'a>) -> Self {
+        self.value = Some(value);
+        self
+    }
 
-//     pub fn build(self) -> Option<ExprKey<'a>> {
-//         let kind = self.kind.expect("Variable kind must be provided");
-
-//         Box::new(Expr::Variable(Variable::new(
-//             kind, self.name, self.ty, self.value,
-//         )))
-//     }
-// }
+    pub fn build(self) -> Option<ExprKey<'a>> {
+        self.storage.add_expr(ExprOwned::Variable(Variable::new(
+            self.kind.expect("Variable kind must be provided"),
+            self.name,
+            self.ty,
+            self.value,
+        )))
+    }
+}
 
 // #[derive(Debug)]
 // pub struct ReturnBuilder<'storage, 'a> {
@@ -563,7 +574,7 @@ impl<'storage, 'a> StatementBuilder<'storage, 'a> {
 // #[derive(Debug)]
 // pub struct TupleTypeBuilder<'storage, 'a> {
 //     storage: &'storage mut Storage<'a>,
-//     elements: Vec<Box<Type<'a>>>,
+//     elements: Vec<TypeKey<'a>>,
 // }
 
 // impl<'storage, 'a> TupleTypeBuilder<'storage, 'a> {
@@ -574,14 +585,14 @@ impl<'storage, 'a> StatementBuilder<'storage, 'a> {
 //         }
 //     }
 
-//     pub fn add_element(mut self, ty: Box<Type<'a>>) -> Self {
+//     pub fn add_element(mut self, ty: TypeKey<'a>) -> Self {
 //         self.elements.push(ty);
 //         self
 //     }
 
 //     pub fn add_elements<I>(mut self, elements: I) -> Self
 //     where
-//         I: IntoIterator<Item = Box<Type<'a>>>,
+//         I: IntoIterator<Item = TypeKey<'a>>,
 //     {
 //         self.elements.extend(elements);
 //         self
@@ -595,7 +606,7 @@ impl<'storage, 'a> StatementBuilder<'storage, 'a> {
 // #[derive(Debug)]
 // pub struct ArrayTypeBuilder<'storage, 'a> {
 //     storage: &'storage mut Storage<'a>,
-//     element_ty: Option<Box<Type<'a>>>,
+//     element_ty: Option<TypeKey<'a>>,
 //     count: Option<ExprKey<'a>>,
 // }
 
@@ -608,7 +619,7 @@ impl<'storage, 'a> StatementBuilder<'storage, 'a> {
 //         }
 //     }
 
-//     pub fn with_element_ty(mut self, element_ty: Box<Type<'a>>) -> Self {
+//     pub fn with_element_ty(mut self, element_ty: TypeKey<'a>) -> Self {
 //         self.element_ty = Some(element_ty);
 //         self
 //     }
@@ -633,7 +644,7 @@ impl<'storage, 'a> StatementBuilder<'storage, 'a> {
 //     storage: &'storage mut Storage<'a>,
 //     name: Option<&'a str>,
 //     attributes: Vec<ExprKey<'a>>,
-//     fields: BTreeMap<&'a str, Box<Type<'a>>>,
+//     fields: BTreeMap<&'a str, TypeKey<'a>>,
 // }
 
 // impl<'storage, 'a> StructTypeBuilder<'storage, 'a> {
@@ -664,14 +675,14 @@ impl<'storage, 'a> StatementBuilder<'storage, 'a> {
 //         self
 //     }
 
-//     pub fn add_field(mut self, name: &'a str, ty: Box<Type<'a>>) -> Self {
+//     pub fn add_field(mut self, name: &'a str, ty: TypeKey<'a>) -> Self {
 //         self.fields.insert(name, ty);
 //         self
 //     }
 
 //     pub fn add_fields<I>(mut self, fields: I) -> Self
 //     where
-//         I: IntoIterator<Item = (&'a str, Box<Type<'a>>)>,
+//         I: IntoIterator<Item = (&'a str, TypeKey<'a>)>,
 //     {
 //         self.fields.extend(fields);
 //         self
@@ -688,7 +699,7 @@ impl<'storage, 'a> StatementBuilder<'storage, 'a> {
 // pub struct FunctionTypeBuilder<'storage, 'a> {
 //     storage: &'storage mut Storage<'a>,
 //     parameters: Vec<FunctionParameter<'a>>,
-//     return_type: Option<Box<Type<'a>>>,
+//     return_type: Option<TypeKey<'a>>,
 //     attributes: Vec<ExprKey<'a>>,
 // }
 
@@ -705,7 +716,7 @@ impl<'storage, 'a> StatementBuilder<'storage, 'a> {
 //     pub fn add_parameter(
 //         mut self,
 //         name: &'a str,
-//         ty: Option<Box<Type<'a>>>,
+//         ty: Option<TypeKey<'a>>,
 //         default_value: Option<ExprKey<'a>>,
 //     ) -> Self {
 //         self.parameters.push((name, ty, default_value));
@@ -714,13 +725,13 @@ impl<'storage, 'a> StatementBuilder<'storage, 'a> {
 
 //     pub fn add_parameters<I>(mut self, parameters: I) -> Self
 //     where
-//         I: IntoIterator<Item = (&'a str, Option<Box<Type<'a>>>, Option<ExprKey<'a>>)>,
+//         I: IntoIterator<Item = (&'a str, Option<TypeKey<'a>>, Option<ExprKey<'a>>)>,
 //     {
 //         self.parameters.extend(parameters);
 //         self
 //     }
 
-//     pub fn with_return_type(mut self, ty: Box<Type<'a>>) -> Self {
+//     pub fn with_return_type(mut self, ty: TypeKey<'a>) -> Self {
 //         self.return_type = Some(ty);
 //         self
 //     }

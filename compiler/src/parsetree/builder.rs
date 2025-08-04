@@ -58,9 +58,9 @@ impl<'storage, 'a> Builder<'storage, 'a> {
         StatementBuilder::new(self.storage)
     }
 
-    // pub fn block(self) -> BlockBuilder<'a> {
-    //     BlockBuilder::new(self)
-    // }
+    pub fn create_block(&mut self) -> BlockBuilder<'_, 'a> {
+        BlockBuilder::new(self.storage)
+    }
 
     // /////////////////////////////////////////////////////////////////
     // BEGIN: Definition Builders
@@ -68,9 +68,17 @@ impl<'storage, 'a> Builder<'storage, 'a> {
     //     FunctionBuilder::new(self)
     // }
 
-    // pub fn variable(self) -> VariableBuilder<'a> {
-    //     VariableBuilder::new(self)
-    // }
+    pub fn create_variable(&mut self) -> VariableBuilder<'_, 'a> {
+        VariableBuilder::new(self.storage)
+    }
+
+    pub fn create_let(&mut self) -> VariableBuilder<'_, 'a> {
+        self.create_variable().with_kind(VariableKind::Let)
+    }
+
+    pub fn create_var(&mut self) -> VariableBuilder<'_, 'a> {
+        self.create_variable().with_kind(VariableKind::Var)
+    }
 
     // /////////////////////////////////////////////////////////////////
     // // BEGIN: Control Flow Builders
