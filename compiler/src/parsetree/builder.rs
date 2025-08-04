@@ -26,13 +26,13 @@ impl<'storage, 'a> Builder<'storage, 'a> {
         FloatBuilderHelper::new(self.storage)
     }
 
-    // pub fn string(self) -> StringBuilderHelper<'a> {
-    //     StringBuilderHelper::new(self)
-    // }
+    pub fn create_string(&mut self) -> StringBuilderHelper<'_, 'a> {
+        StringBuilderHelper::new(self.storage)
+    }
 
-    // pub fn char(self) -> CharBuilderHelper<'a> {
-    //     CharBuilderHelper::new(self)
-    // }
+    pub fn create_char(&mut self) -> CharBuilderHelper<'_, 'a> {
+        CharBuilderHelper::new(self.storage)
+    }
 
     // pub fn list(self) -> ListBuilderHelper<'a> {
     //     ListBuilderHelper::new(self)

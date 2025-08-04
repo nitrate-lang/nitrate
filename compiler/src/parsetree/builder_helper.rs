@@ -100,56 +100,60 @@ impl<'storage, 'a> FloatBuilderHelper<'storage, 'a> {
     }
 }
 
-// #[derive(Debug, Clone)]
-// pub struct StringBuilderHelper<'a> {
-//     outer: Builder<'a>,
-//     value: Option<&'a [u8]>,
-// }
+#[derive(Debug)]
+pub struct StringBuilderHelper<'storage, 'a> {
+    storage: &'storage mut Storage<'a>,
+    value: Option<&'a [u8]>,
+}
 
-// impl<'a> StringBuilderHelper<'a> {
-//     pub fn new(outer: Builder<'a>) -> Self {
-//         StringBuilderHelper { outer, value: None }
-//     }
+impl<'storage, 'a> StringBuilderHelper<'storage, 'a> {
+    pub(crate) fn new(storage: &'storage mut Storage<'a>) -> Self {
+        StringBuilderHelper {
+            storage,
+            value: None,
+        }
+    }
 
-//     pub fn with_string(mut self, value: &'a str) -> Self {
-//         self.value = Some(value.as_bytes());
-//         self
-//     }
+    pub fn with_utf8string(mut self, value: &'a str) -> Self {
+        self.value = Some(value.as_bytes());
+        self
+    }
 
-//     pub fn with_bytes(mut self, value: &'a [u8]) -> Self {
-//         self.value = Some(value);
-//         self
-//     }
+    pub fn with_raw_bytes(mut self, value: &'a [u8]) -> Self {
+        self.value = Some(value);
+        self
+    }
 
-//     pub fn build(self) -> Box<Expr<'a>> {
-//         let value = self.value.expect("String value must be provided");
+    pub fn build(self) -> Option<ExprKey<'a>> {
+        self.storage
+            .add_expr(ExprOwned::StringLit(StringLit::new(self.value?)))
+    }
+}
 
-//         Box::new(Expr::StringLit(StringLit::new(value)))
-//     }
-// }
+#[derive(Debug)]
+pub struct CharBuilderHelper<'storage, 'a> {
+    storage: &'storage mut Storage<'a>,
+    value: Option<char>,
+}
 
-// #[derive(Debug, Clone)]
-// pub struct CharBuilderHelper<'a> {
-//     outer: Builder<'a>,
-//     value: Option<char>,
-// }
+impl<'storage, 'a> CharBuilderHelper<'storage, 'a> {
+    pub fn new(storage: &'storage mut Storage<'a>) -> Self {
+        CharBuilderHelper {
+            storage,
+            value: None,
+        }
+    }
 
-// impl<'a> CharBuilderHelper<'a> {
-//     pub fn new(outer: Builder<'a>) -> Self {
-//         CharBuilderHelper { outer, value: None }
-//     }
+    pub fn with_char(mut self, value: char) -> Self {
+        self.value = Some(value);
+        self
+    }
 
-//     pub fn with_char(mut self, value: char) -> Self {
-//         self.value = Some(value);
-//         self
-//     }
-
-//     pub fn build(self) -> Box<Expr<'a>> {
-//         let value = self.value.expect("Char value must be provided");
-
-//         Box::new(Expr::CharLit(CharLit::new(value)))
-//     }
-// }
+    pub fn build(self) -> Option<ExprKey<'a>> {
+        self.storage
+            .add_expr(ExprOwned::CharLit(CharLit::new(self.value?)))
+    }
+}
 
 // #[derive(Debug, Clone)]
 // pub struct ListBuilderHelper<'a> {
