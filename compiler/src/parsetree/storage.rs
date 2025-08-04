@@ -178,6 +178,18 @@ impl<'a> TypeKey<'a> {
     }
 }
 
+impl<'a> std::fmt::Display for ExprKey<'a> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}({})", self.variant_index(), self.instance_index())
+    }
+}
+
+impl<'a> std::fmt::Display for TypeKey<'a> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}({})", self.variant_index(), self.instance_index())
+    }
+}
+
 impl<'a> TryInto<TypeKey<'a>> for ExprKey<'a> {
     type Error = ();
 
@@ -288,7 +300,11 @@ pub struct Storage<'a> {
 
 impl<'a> Storage<'a> {
     const TUPLE_TYPE_UNIT_INDEX: usize = 0;
-    const FUNCTION_TYPE_TRIVIAL_CALLBACK_INDEX: usize = 0;
+    const FUNCTION_TYPE_BASIC_INDEX: usize = 0;
+    const STRING_LIT_EMPTY_INDEX: usize = 0;
+    const CHAR_LIT_SPACE_INDEX: usize = 0;
+    const CHAR_LIT_NEWLINE_INDEX: usize = 1;
+    const CHAR_LIT_TAB_INDEX: usize = 2;
 
     pub fn new() -> Self {
         let mut storage = Storage {
@@ -317,13 +333,33 @@ impl<'a> Storage<'a> {
             has_parentheses: HashSet::new(),
         };
 
-        // Reserve space for the very common unit tuple type
-        storage.tuple_types.push(TupleType::new(Vec::new()));
+        {
+            let empty_tuple = (Self::TUPLE_TYPE_UNIT_INDEX, TupleType::new(Vec::new()));
+            storage.tuple_types.insert(empty_tuple.0, empty_tuple.1);
+        }
 
-        // Reserve space for the trivial function type: `fn()`
-        storage
-            .function_types
-            .push(FunctionType::new(Vec::new(), None, Vec::new()));
+        {
+            let basic_fn_ty = (
+                Self::FUNCTION_TYPE_BASIC_INDEX,
+                FunctionType::new(Vec::new(), None, Vec::new()),
+            );
+            storage.function_types.insert(basic_fn_ty.0, basic_fn_ty.1);
+        }
+
+        {
+            let empty_string = (Self::STRING_LIT_EMPTY_INDEX, StringLit::new(&[]));
+            storage.strings.insert(empty_string.0, empty_string.1);
+        }
+
+        {
+            let space_char = (Self::CHAR_LIT_SPACE_INDEX, CharLit::new(' '));
+            let newline_char = (Self::CHAR_LIT_NEWLINE_INDEX, CharLit::new('\n'));
+            let tab_char = (Self::CHAR_LIT_TAB_INDEX, CharLit::new('\t'));
+
+            storage.characters.insert(space_char.0, space_char.1);
+            storage.characters.insert(newline_char.0, newline_char.1);
+            storage.characters.insert(tab_char.0, tab_char.1);
+        }
 
         storage
     }
@@ -402,11 +438,13 @@ impl<'a> Storage<'a> {
 
             ExprOwned::Discard => Some(ExprKey::new_single(ExprKind::Discard)),
 
-            ExprOwned::IntegerLit(node) => ExprKey::new(ExprKind::IntegerLit, self.integers.len())
-                .and_then(|k| {
+            ExprOwned::IntegerLit(node) => match node.try_to_u128() {
+                // TODO: Deduplicate common integer literals
+                _ => ExprKey::new(ExprKind::IntegerLit, self.integers.len()).and_then(|k| {
                     self.integers.push(node);
                     Some(k)
                 }),
+            },
 
             ExprOwned::FloatLit(node) => ExprKey::new(ExprKind::FloatLit, self.floats.len())
                 .and_then(|k| {
@@ -414,17 +452,25 @@ impl<'a> Storage<'a> {
                     Some(k)
                 }),
 
-            ExprOwned::StringLit(node) => ExprKey::new(ExprKind::StringLit, self.strings.len())
-                .and_then(|k| {
+            ExprOwned::StringLit(node) => match node.get() {
+                &[] => ExprKey::new(ExprKind::StringLit, Self::STRING_LIT_EMPTY_INDEX),
+
+                _ => ExprKey::new(ExprKind::StringLit, self.strings.len()).and_then(|k| {
                     self.strings.push(node);
                     Some(k)
                 }),
+            },
 
-            ExprOwned::CharLit(node) => ExprKey::new(ExprKind::CharLit, self.characters.len())
-                .and_then(|k| {
+            ExprOwned::CharLit(node) => match node.get() {
+                ' ' => ExprKey::new(ExprKind::CharLit, Self::CHAR_LIT_SPACE_INDEX),
+                '\n' => ExprKey::new(ExprKind::CharLit, Self::CHAR_LIT_NEWLINE_INDEX),
+                '\t' => ExprKey::new(ExprKind::CharLit, Self::CHAR_LIT_TAB_INDEX),
+
+                _ => ExprKey::new(ExprKind::CharLit, self.characters.len()).and_then(|k| {
                     self.characters.push(node);
                     Some(k)
                 }),
+            },
 
             ExprOwned::ListLit(node) => {
                 ExprKey::new(ExprKind::ListLit, self.lists.len()).and_then(|k| {
@@ -538,10 +584,7 @@ impl<'a> Storage<'a> {
                     && node.attributes().is_empty();
 
                 if is_trivial_callback {
-                    TypeKey::new(
-                        TypeKind::FunctionType,
-                        Self::FUNCTION_TYPE_TRIVIAL_CALLBACK_INDEX,
-                    )
+                    TypeKey::new(TypeKind::FunctionType, Self::FUNCTION_TYPE_BASIC_INDEX)
                 } else {
                     TypeKey::new(TypeKind::FunctionType, self.function_types.len()).and_then(|k| {
                         self.function_types.push(node);

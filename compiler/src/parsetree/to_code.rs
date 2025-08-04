@@ -278,12 +278,12 @@ impl<'a> ToCode<'a> for Return<'a> {
 
 impl<'a> ToCode<'a> for TupleType<'a> {
     fn to_code(&self, bank: &Storage<'a>, tokens: &mut Vec<Token<'a>>, options: &CodeFormat) {
-        tokens.push(Token::Punctuation(Punctuation::LeftBracket));
+        tokens.push(Token::Punctuation(Punctuation::LeftBrace));
         for (i, ty) in self.elements().iter().enumerate() {
             (i > 0).then(|| tokens.push(Token::Punctuation(Punctuation::Comma)));
             ty.to_code(bank, tokens, options);
         }
-        tokens.push(Token::Punctuation(Punctuation::RightBracket));
+        tokens.push(Token::Punctuation(Punctuation::RightBrace));
     }
 }
 

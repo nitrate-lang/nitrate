@@ -370,6 +370,83 @@ impl Into<ExprKind> for TypeKind {
     }
 }
 
+impl std::fmt::Display for ExprKind {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            ExprKind::Bool => write!(f, "Bool"),
+            ExprKind::UInt8 => write!(f, "UInt8"),
+            ExprKind::UInt16 => write!(f, "UInt16"),
+            ExprKind::UInt32 => write!(f, "UInt32"),
+            ExprKind::UInt64 => write!(f, "UInt64"),
+            ExprKind::UInt128 => write!(f, "UInt128"),
+            ExprKind::Int8 => write!(f, "Int8"),
+            ExprKind::Int16 => write!(f, "Int16"),
+            ExprKind::Int32 => write!(f, "Int32"),
+            ExprKind::Int64 => write!(f, "Int64"),
+            ExprKind::Int128 => write!(f, "Int128"),
+            ExprKind::Float8 => write!(f, "Float8"),
+            ExprKind::Float16 => write!(f, "Float16"),
+            ExprKind::Float32 => write!(f, "Float32"),
+            ExprKind::Float64 => write!(f, "Float64"),
+            ExprKind::Float128 => write!(f, "Float128"),
+
+            ExprKind::InferType => write!(f, "InferType"),
+            ExprKind::TupleType => write!(f, "TupleType"),
+            ExprKind::ArrayType => write!(f, "ArrayType"),
+            ExprKind::StructType => write!(f, "StructType"),
+            ExprKind::FunctionType => write!(f, "FunctionType"),
+
+            ExprKind::Discard => write!(f, "Discard"),
+
+            ExprKind::IntegerLit => write!(f, "IntegerLit"),
+            ExprKind::FloatLit => write!(f, "FloatLit"),
+            ExprKind::StringLit => write!(f, "StringLit"),
+            ExprKind::CharLit => write!(f, "CharLit"),
+            ExprKind::ListLit => write!(f, "ListLit"),
+            ExprKind::ObjectLit => write!(f, "ObjectLit"),
+
+            ExprKind::UnaryOp => write!(f, "UnaryOp"),
+            ExprKind::BinaryOp => write!(f, "BinaryOp"),
+            ExprKind::Statement => write!(f, "Statement"),
+            ExprKind::Block => write!(f, "Block"),
+
+            ExprKind::Function => write!(f, "Function"),
+            ExprKind::Variable => write!(f, "Variable"),
+
+            ExprKind::Return => write!(f, "Return"),
+        }
+    }
+}
+
+impl std::fmt::Display for TypeKind {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            TypeKind::Bool => write!(f, "Bool"),
+            TypeKind::UInt8 => write!(f, "UInt8"),
+            TypeKind::UInt16 => write!(f, "UInt16"),
+            TypeKind::UInt32 => write!(f, "UInt32"),
+            TypeKind::UInt64 => write!(f, "UInt64"),
+            TypeKind::UInt128 => write!(f, "UInt128"),
+            TypeKind::Int8 => write!(f, "Int8"),
+            TypeKind::Int16 => write!(f, "Int16"),
+            TypeKind::Int32 => write!(f, "Int32"),
+            TypeKind::Int64 => write!(f, "Int64"),
+            TypeKind::Int128 => write!(f, "Int128"),
+            TypeKind::Float8 => write!(f, "Float8"),
+            TypeKind::Float16 => write!(f, "Float16"),
+            TypeKind::Float32 => write!(f, "Float32"),
+            TypeKind::Float64 => write!(f, "Float64"),
+            TypeKind::Float128 => write!(f, "Float128"),
+
+            TypeKind::InferType => write!(f, "InferType"),
+            TypeKind::TupleType => write!(f, "TupleType"),
+            TypeKind::ArrayType => write!(f, "ArrayType"),
+            TypeKind::StructType => write!(f, "StructType"),
+            TypeKind::FunctionType => write!(f, "FunctionType"),
+        }
+    }
+}
+
 impl<'a> TryInto<TypeOwned<'a>> for ExprOwned<'a> {
     type Error = Self;
 

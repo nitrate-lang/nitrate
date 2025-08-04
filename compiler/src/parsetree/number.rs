@@ -24,6 +24,12 @@ impl IntegerLit {
         &self.value
     }
 
+    pub fn get_u128(&self) -> u128 {
+        self.value
+            .try_to_u128()
+            .expect("IntegerLit value should fit in u128")
+    }
+
     pub fn kind(&self) -> IntegerKind {
         self.kind
     }

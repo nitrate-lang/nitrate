@@ -18,6 +18,10 @@ impl<'storage, 'a> Builder<'storage, 'a> {
         Builder { storage }
     }
 
+    pub fn get_storage(&mut self) -> &mut Storage<'a> {
+        self.storage
+    }
+
     pub fn get_discard(&mut self) -> ExprKey<'a> {
         self.storage
             .add_expr(ExprOwned::Discard)
