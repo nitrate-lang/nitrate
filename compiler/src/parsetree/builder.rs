@@ -1,6 +1,6 @@
 use super::builder_helper::*;
-use super::expression::TypeOwned;
-use super::storage::{Storage, TypeKey};
+use super::expression::{ExprOwned, TypeOwned};
+use super::storage::{ExprKey, Storage, TypeKey};
 use super::tuple_type::TupleType;
 
 pub use super::binary_op::BinaryOperator;
@@ -16,6 +16,12 @@ const ADD_TYPE_EXPECT_REASON: &str = "`Type` object construction failed because 
 impl<'storage, 'a> Builder<'storage, 'a> {
     pub fn new(storage: &'storage mut Storage<'a>) -> Self {
         Builder { storage }
+    }
+
+    pub fn get_discard(&mut self) -> ExprKey<'a> {
+        self.storage
+            .add_expr(ExprOwned::Discard)
+            .expect(ADD_TYPE_EXPECT_REASON)
     }
 
     /////////////////////////////////////////////////////////////////

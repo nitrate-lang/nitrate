@@ -371,7 +371,7 @@ impl<'a> ToCode<'a> for ExprKey<'a> {
     fn to_code(&self, bank: &Storage<'a>, tokens: &mut Vec<Token<'a>>, options: &CodeFormat) {
         let expr = self.get(bank);
 
-        if matches!(expr, ExprRef::Discard) {
+        if expr.is_discard() {
             return;
         }
 

@@ -1,8 +1,7 @@
+use super::token::*;
 use log::error;
 use smallvec::SmallVec;
 use stackvector::StackVec;
-
-use super::token::*;
 
 #[derive(Debug, Clone, Copy, PartialEq, PartialOrd, Hash)]
 pub enum LexerConstructionError {

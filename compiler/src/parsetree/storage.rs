@@ -17,7 +17,7 @@ use super::unary_op::UnaryOp;
 use super::variable::Variable;
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
-enum ExprKind {
+pub enum ExprKind {
     Bool,
     UInt8,
     UInt16,
@@ -295,6 +295,52 @@ pub struct Storage<'a> {
 }
 
 impl<'a> Storage<'a> {
+    pub fn reserve(&mut self, kind: ExprKind, additional: usize) {
+        match kind {
+            ExprKind::Bool
+            | ExprKind::UInt8
+            | ExprKind::UInt16
+            | ExprKind::UInt32
+            | ExprKind::UInt64
+            | ExprKind::UInt128
+            | ExprKind::Int8
+            | ExprKind::Int16
+            | ExprKind::Int32
+            | ExprKind::Int64
+            | ExprKind::Int128
+            | ExprKind::Float8
+            | ExprKind::Float16
+            | ExprKind::Float32
+            | ExprKind::Float64
+            | ExprKind::Float128
+            | ExprKind::InferType => {}
+
+            ExprKind::TupleType => self.tuple_types.reserve(additional),
+            ExprKind::ArrayType => self.array_types.reserve(additional),
+            ExprKind::StructType => self.struct_types.reserve(additional),
+            ExprKind::FunctionType => self.function_types.reserve(additional),
+
+            ExprKind::Discard => {}
+
+            ExprKind::Integer => self.integers.reserve(additional),
+            ExprKind::Float => self.floats.reserve(additional),
+            ExprKind::String => self.strings.reserve(additional),
+            ExprKind::Char => self.characters.reserve(additional),
+            ExprKind::List => self.lists.reserve(additional),
+            ExprKind::Object => self.objects.reserve(additional),
+
+            ExprKind::UnaryOp => self.unary_ops.reserve(additional),
+            ExprKind::BinaryOp => self.binary_ops.reserve(additional),
+            ExprKind::Statement => self.statements.reserve(additional),
+            ExprKind::Block => self.blocks.reserve(additional),
+
+            ExprKind::Function => self.functions.reserve(additional),
+            ExprKind::Variable => self.variables.reserve(additional),
+
+            ExprKind::Return => self.returns.reserve(additional),
+        }
+    }
+
     pub(crate) fn add_expr(&mut self, expr: ExprOwned<'a>) -> Option<ExprKey<'a>> {
         match expr {
             ExprOwned::Bool => Some(ExprKey::new_single(ExprKind::Bool)),

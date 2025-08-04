@@ -476,3 +476,105 @@ impl<'storage, 'a> Into<ExprRefMut<'storage, 'a>> for TypeRefMut<'storage, 'a> {
         }
     }
 }
+
+impl<'storage, 'a> ExprRef<'storage, 'a> {
+    pub fn is_discard(&self) -> bool {
+        matches!(self, ExprRef::Discard)
+    }
+
+    pub fn discard(&mut self) {
+        *self = ExprRef::Discard;
+    }
+
+    pub fn is_type(&self) -> bool {
+        match self {
+            ExprRef::Bool
+            | ExprRef::UInt8
+            | ExprRef::UInt16
+            | ExprRef::UInt32
+            | ExprRef::UInt64
+            | ExprRef::UInt128
+            | ExprRef::Int8
+            | ExprRef::Int16
+            | ExprRef::Int32
+            | ExprRef::Int64
+            | ExprRef::Int128
+            | ExprRef::Float8
+            | ExprRef::Float16
+            | ExprRef::Float32
+            | ExprRef::Float64
+            | ExprRef::Float128
+            | ExprRef::InferType
+            | ExprRef::TupleType(_)
+            | ExprRef::ArrayType(_)
+            | ExprRef::StructType(_)
+            | ExprRef::FunctionType(_) => true,
+
+            ExprRef::Discard
+            | ExprRef::IntegerLit(_)
+            | ExprRef::FloatLit(_)
+            | ExprRef::StringLit(_)
+            | ExprRef::CharLit(_)
+            | ExprRef::ListLit(_)
+            | ExprRef::ObjectLit(_)
+            | ExprRef::UnaryOp(_)
+            | ExprRef::BinaryOp(_)
+            | ExprRef::Statement(_)
+            | ExprRef::Block(_)
+            | ExprRef::Function(_)
+            | ExprRef::Variable(_)
+            | ExprRef::Return(_) => false,
+        }
+    }
+}
+
+impl<'storage, 'a> ExprRefMut<'storage, 'a> {
+    pub fn is_discard(&self) -> bool {
+        matches!(self, ExprRefMut::Discard)
+    }
+
+    pub fn discard(&mut self) {
+        *self = ExprRefMut::Discard;
+    }
+
+    pub fn is_type(&self) -> bool {
+        match self {
+            ExprRefMut::Bool
+            | ExprRefMut::UInt8
+            | ExprRefMut::UInt16
+            | ExprRefMut::UInt32
+            | ExprRefMut::UInt64
+            | ExprRefMut::UInt128
+            | ExprRefMut::Int8
+            | ExprRefMut::Int16
+            | ExprRefMut::Int32
+            | ExprRefMut::Int64
+            | ExprRefMut::Int128
+            | ExprRefMut::Float8
+            | ExprRefMut::Float16
+            | ExprRefMut::Float32
+            | ExprRefMut::Float64
+            | ExprRefMut::Float128
+            | ExprRefMut::InferType
+            | ExprRefMut::TupleType(_)
+            | ExprRefMut::ArrayType(_)
+            | ExprRefMut::StructType(_)
+            | ExprRefMut::FunctionType(_) => true,
+
+            ExprRefMut::Discard
+            | ExprRefMut::IntegerLit(_)
+            | ExprRefMut::FloatLit(_)
+            | ExprRefMut::StringLit(_)
+            | ExprRefMut::CharLit(_)
+            | ExprRefMut::ListLit(_)
+            | ExprRefMut::ObjectLit(_)
+            | ExprRefMut::UnaryOp(_)
+            | ExprRefMut::BinaryOp(_)
+            | ExprRefMut::Statement(_)
+            | ExprRefMut::Block(_)
+            | ExprRefMut::Function(_)
+            | ExprRefMut::Variable(_)
+            | ExprRefMut::Return(_) => false,
+        }
+    }
+}
