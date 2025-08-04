@@ -260,7 +260,7 @@ impl<'a> ExprKey<'a> {
         storage.has_parentheses(*self)
     }
 
-    pub fn add_parentheses(&mut self, storage: &mut Storage<'a>) {
+    pub fn add_parentheses(&self, storage: &mut Storage<'a>) {
         storage.add_parentheses(*self)
     }
 }
@@ -268,6 +268,10 @@ impl<'a> ExprKey<'a> {
 impl<'a> TypeKey<'a> {
     pub fn has_parentheses(&self, storage: &Storage<'a>) -> bool {
         storage.has_parentheses(self.to_owned().into())
+    }
+
+    pub fn add_parentheses(&self, storage: &mut Storage<'a>) {
+        storage.add_parentheses(self.to_owned().into())
     }
 }
 

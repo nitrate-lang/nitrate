@@ -103,6 +103,16 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             || Err(format!("Failed to parse source code in file {}", filename)),
             |tree| Ok(tree),
         )?;
+
+        let mut tokens = Vec::new();
+
+        _parsetree
+            .tree()
+            .to_code(&storage, &mut tokens, &CodeFormat {});
+
+        for token in tokens {
+            println!("{}", token);
+        }
     }
 
     println!("Successfully parsed file: {}", filename);
