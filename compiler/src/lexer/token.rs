@@ -498,8 +498,14 @@ impl<'a> std::fmt::Debug for StringLit<'a> {
 
 impl<'a> std::fmt::Display for StringLit<'a> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        // TODO: Implement display for StringLit
-        Ok(())
+        if self.is_utf8 {
+            write!(f, "\"{}\"", unsafe {
+                str::from_utf8_unchecked(self.data())
+            })
+        } else {
+            // FIXME: Clean this up
+            unimplemented!();
+        }
     }
 }
 

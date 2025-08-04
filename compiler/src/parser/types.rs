@@ -45,16 +45,15 @@ impl<'storage, 'a> Parser<'storage, 'a> {
                     "f128" => Some(bb.get_f128()),
 
                     _ => {
-                        self.set_failed_bit();
+                        // TODO: Create type name identifier
+
                         error!(
                             self.log,
                             "Named type parsing not yet implemented: '{}'\n--> {}",
                             name.name(),
                             first_token.start()
                         );
-
-                        // TODO: Create type name identifier
-                        None
+                        unimplemented!();
                     }
                 }
             }
@@ -104,10 +103,40 @@ impl<'storage, 'a> Parser<'storage, 'a> {
                 None
             }
 
-            Token::Punct(_) => {
-                // TODO: Handle punctuation (arrays, functions, tuples, etc.)
-                None
-            }
+            Token::Punct(punc) => match punc {
+                Punct::LeftBrace => {
+                    // TODO: Handle left brace to parse tuple types
+
+                    error!(
+                        self.log,
+                        "error[P????]: Tuple types not yet implemented\n--> {}",
+                        first_token.start()
+                    );
+                    unimplemented!();
+                }
+
+                Punct::LeftBracket => {
+                    // TODO: Handle left bracket to parse array and list types
+
+                    error!(
+                        self.log,
+                        "error[P????]: Array and list types not yet implemented\n--> {}",
+                        first_token.start()
+                    );
+                    unimplemented!();
+                }
+
+                punc => {
+                    self.set_failed_bit();
+                    error!(
+                        self.log,
+                        "error[P????]: Unexpected punctuation token '{}' while parsing type\n--> {}",
+                        punc,
+                        first_token.start()
+                    );
+                    None
+                }
+            },
 
             Token::Op(_) => {
                 self.set_failed_bit();
@@ -153,7 +182,7 @@ impl<'storage, 'a> Parser<'storage, 'a> {
 
     pub fn parse_type(&mut self) -> Option<TypeKey<'a>> {
         if self.lexer.skip_if(&Token::Punct(Punct::LeftParen)) {
-            let mut inner = self.parse_type();
+            let inner = self.parse_type();
 
             if !self.lexer.skip_if(&Token::Punct(Punct::RightParen)) {
                 self.set_failed_bit();
