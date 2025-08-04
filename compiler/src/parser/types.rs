@@ -145,14 +145,15 @@ impl<'storage, 'a> Parser<'storage, 'a> {
 
     fn parse_type_primary(&mut self) -> Option<TypeKey<'a>> {
         let first_token = self.lexer.peek();
+        let start_pos = first_token.start();
 
-        match first_token.token() {
+        match first_token.into_token() {
             Token::Name(name) => {
                 self.lexer.skip();
 
                 let mut bb = Builder::new(self.storage);
 
-                match name.name() {
+                match name.into_name() {
                     "u1" | "bool" => Some(bb.get_bool()),
                     "u8" => Some(bb.get_u8()),
                     "u16" => Some(bb.get_u16()),
@@ -169,18 +170,9 @@ impl<'storage, 'a> Parser<'storage, 'a> {
                     "f32" => Some(bb.get_f32()),
                     "f64" => Some(bb.get_f64()),
                     "f128" => Some(bb.get_f128()),
+                    "_" => Some(Builder::new(self.storage).get_infer_type()),
 
-                    _ => {
-                        // TODO: Create type name identifier
-
-                        error!(
-                            self.log,
-                            "Named type parsing not yet implemented: '{}'\n--> {}",
-                            name.name(),
-                            first_token.start()
-                        );
-                        unimplemented!();
-                    }
+                    name => Builder::new(self.storage).create_type_name(name),
                 }
             }
 
@@ -188,8 +180,7 @@ impl<'storage, 'a> Parser<'storage, 'a> {
                 self.set_failed_bit();
                 error!(
                     self.log,
-                    "error[P????]: Unexpected integer token while parsing type\n--> {}",
-                    first_token.start()
+                    "error[P????]: Unexpected integer token while parsing type\n--> {}", start_pos
                 );
                 None
             }
@@ -198,8 +189,7 @@ impl<'storage, 'a> Parser<'storage, 'a> {
                 self.set_failed_bit();
                 error!(
                     self.log,
-                    "error[P????]: Unexpected float token while parsing type\n--> {}",
-                    first_token.start()
+                    "error[P????]: Unexpected float token while parsing type\n--> {}", start_pos
                 );
                 None
             }
@@ -213,8 +203,7 @@ impl<'storage, 'a> Parser<'storage, 'a> {
                 self.set_failed_bit();
                 error!(
                     self.log,
-                    "error[P????]: Unexpected string token while parsing type\n--> {}",
-                    first_token.start()
+                    "error[P????]: Unexpected string token while parsing type\n--> {}", start_pos
                 );
                 None
             }
@@ -224,7 +213,7 @@ impl<'storage, 'a> Parser<'storage, 'a> {
                 error!(
                     self.log,
                     "error[P????]: Unexpected character token while parsing type\n--> {}",
-                    first_token.start()
+                    start_pos
                 );
                 None
             }
@@ -295,7 +284,7 @@ impl<'storage, 'a> Parser<'storage, 'a> {
                         self.log,
                         "error[P????]: Unexpected punctuation token '{}' while parsing type\n--> {}",
                         punc,
-                        first_token.start()
+                        start_pos
                     );
                     None
                 }
@@ -305,8 +294,7 @@ impl<'storage, 'a> Parser<'storage, 'a> {
                 self.set_failed_bit();
                 error!(
                     self.log,
-                    "error[P????]: Unexpected operator token while parsing type\n--> {}",
-                    first_token.start()
+                    "error[P????]: Unexpected operator token while parsing type\n--> {}", start_pos
                 );
                 None
             }
@@ -315,8 +303,7 @@ impl<'storage, 'a> Parser<'storage, 'a> {
                 self.set_failed_bit();
                 error!(
                     self.log,
-                    "error[P????]: Unexpected comment token while parsing type\n--> {}",
-                    first_token.start()
+                    "error[P????]: Unexpected comment token while parsing type\n--> {}", start_pos
                 );
                 None
             }
@@ -325,8 +312,7 @@ impl<'storage, 'a> Parser<'storage, 'a> {
                 self.set_failed_bit();
                 error!(
                     self.log,
-                    "error[P????]: Unexpected end of file while parsing type\n--> {}",
-                    first_token.start()
+                    "error[P????]: Unexpected end of file while parsing type\n--> {}", start_pos
                 );
                 None
             }
@@ -336,7 +322,7 @@ impl<'storage, 'a> Parser<'storage, 'a> {
                 error!(
                     self.log,
                     "error[P????]: Illegal token encountered during type parsing\n--> {}",
-                    first_token.start()
+                    start_pos
                 );
                 None
             }

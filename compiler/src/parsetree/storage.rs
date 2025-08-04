@@ -74,6 +74,7 @@ impl<'a> ExprKey<'a> {
             x if x == ExprKind::Float128 as u8 => ExprKind::Float128,
 
             x if x == ExprKind::InferType as u8 => ExprKind::InferType,
+            x if x == ExprKind::TypeName as u8 => ExprKind::TypeName,
             x if x == ExprKind::TupleType as u8 => ExprKind::TupleType,
             x if x == ExprKind::ArrayType as u8 => ExprKind::ArrayType,
             x if x == ExprKind::SliceType as u8 => ExprKind::SliceType,
@@ -162,6 +163,7 @@ impl<'a> TypeKey<'a> {
             x if x == TypeKind::Float128 as u8 => TypeKind::Float128,
 
             x if x == TypeKind::InferType as u8 => TypeKind::InferType,
+            x if x == TypeKind::TypeName as u8 => TypeKind::TypeName,
             x if x == TypeKind::TupleType as u8 => TypeKind::TupleType,
             x if x == TypeKind::ArrayType as u8 => TypeKind::ArrayType,
             x if x == TypeKind::SliceType as u8 => TypeKind::SliceType,

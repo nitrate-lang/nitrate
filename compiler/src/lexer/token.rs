@@ -36,6 +36,10 @@ impl<'a> Name<'a> {
         }
     }
 
+    pub const fn into_name(self) -> &'a str {
+        self.name
+    }
+
     pub const fn name(&self) -> &'a str {
         self.name
     }
@@ -101,6 +105,10 @@ impl Integer {
         self.value
     }
 
+    pub const fn into_value(self) -> u128 {
+        self.value
+    }
+
     pub const fn kind(&self) -> IntegerKind {
         self.kind
     }
@@ -128,6 +136,10 @@ impl Float {
     }
 
     pub const fn value(&self) -> f64 {
+        self.value
+    }
+
+    pub const fn into_value(self) -> f64 {
         self.value
     }
 }
@@ -521,6 +533,10 @@ impl<'a> Comment<'a> {
     }
 
     pub const fn text(&self) -> &str {
+        self.text
+    }
+
+    pub const fn into_text(self) -> &'a str {
         self.text
     }
 
