@@ -7,36 +7,30 @@ pub enum IdentifierKind {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Hash)]
-pub struct Identifier<'a> {
+pub struct Name<'a> {
     name: &'a str,
     kind: IdentifierKind,
 }
 
-impl<'a> Identifier<'a> {
+impl<'a> Name<'a> {
     pub fn new(name: &'a str) -> Self {
-        Identifier {
+        Name {
             name,
-            kind: Identifier::get_kind(name),
+            kind: Name::get_kind(name),
         }
     }
 
     pub fn new_typical(name: &'a str) -> Self {
-        assert!(
-            Identifier::is_typical(name),
-            "Expected a typical identifier"
-        );
-        Identifier {
+        assert!(Name::is_typical(name), "Expected a typical identifier");
+        Name {
             name,
             kind: IdentifierKind::Typical,
         }
     }
 
     pub fn new_atypical(name: &'a str) -> Self {
-        assert!(
-            Identifier::is_atypical(name),
-            "Expected an atypical identifier"
-        );
-        Identifier {
+        assert!(Name::is_atypical(name), "Expected an atypical identifier");
+        Name {
             name,
             kind: IdentifierKind::Atypical,
         }
@@ -75,7 +69,7 @@ impl<'a> Identifier<'a> {
     }
 }
 
-impl<'a> std::fmt::Display for Identifier<'a> {
+impl<'a> std::fmt::Display for Name<'a> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self.kind() {
             IdentifierKind::Typical => write!(f, "{}", self.name()),
@@ -546,7 +540,7 @@ impl<'a> std::fmt::Display for Comment<'a> {
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Hash)]
 pub enum Token<'a> {
-    Name(Identifier<'a>),
+    Name(Name<'a>),
     Integer(Integer),
     Float(Float),
     Keyword(Keyword),

@@ -172,7 +172,7 @@ impl<'a> Lexer<'a> {
         }
 
         if let Ok(identifier) = str::from_utf8(identifier) {
-            Ok(Token::Name(Identifier::new_atypical(identifier)))
+            Ok(Token::Name(Name::new_atypical(identifier)))
         } else {
             error!(
                 "error[L0003]: Identifier contains some invalid utf-8 bytes\n--> {}",
@@ -249,7 +249,7 @@ impl<'a> Lexer<'a> {
         } {
             Ok(Token::Keyword(keyword))
         } else if let Ok(identifier) = str::from_utf8(name) {
-            Ok(Token::Name(Identifier::new_typical(identifier)))
+            Ok(Token::Name(Name::new_typical(identifier)))
         } else {
             error!(
                 "error[L0003]: Identifier contains some invalid utf-8 bytes\n--> {}",
