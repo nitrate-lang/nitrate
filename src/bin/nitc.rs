@@ -38,14 +38,14 @@ impl AllocationTracker for StdoutTracker {
     }
 }
 
-fn enable_allocation_tracking() {
+pub fn enable_allocation_tracking() {
     let _ = AllocationRegistry::set_global_tracker(StdoutTracker)
         .expect("no other global tracker should be set yet");
 
     AllocationRegistry::enable_tracking();
 }
 
-fn disable_allocation_tracking() {
+pub fn disable_allocation_tracking() {
     AllocationRegistry::disable_tracking();
 }
 
@@ -84,7 +84,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Create a drain that outputs to the terminal
     let decorator = TermDecorator::new().build();
     let drain = slog_term::FullFormat::new(decorator)
-        .use_custom_header_print(|_, w, msg, b| {
+        .use_custom_header_print(|_, w, msg, _| {
             let message = msg.msg().to_string();
             w.write(message.as_bytes())?;
 

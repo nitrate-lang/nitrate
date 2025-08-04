@@ -6,8 +6,9 @@ use std::collections::HashMap;
 
 pub struct Parser<'storage, 'a> {
     pub(crate) lexer: Lexer<'a>,
-    bb: Builder<'storage, 'a>,
+    pub(crate) bb: Builder<'storage, 'a>,
     pub(crate) log: Logger,
+    failed_bit: bool,
 }
 
 impl<'storage, 'a> Parser<'storage, 'a> {
@@ -16,7 +17,12 @@ impl<'storage, 'a> Parser<'storage, 'a> {
             lexer,
             bb: Builder::new(storage),
             log,
+            failed_bit: false,
         }
+    }
+
+    pub(crate) fn set_failed_bit(&mut self) {
+        self.failed_bit = true;
     }
 
     pub fn parse_expression(&mut self) -> Option<ExprKey<'a>> {
