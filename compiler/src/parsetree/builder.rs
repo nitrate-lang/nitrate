@@ -62,11 +62,11 @@ impl<'storage, 'a> Builder<'storage, 'a> {
         BlockBuilder::new(self.storage)
     }
 
-    // /////////////////////////////////////////////////////////////////
+    /////////////////////////////////////////////////////////////////
     // BEGIN: Definition Builders
-    // pub fn function(self) -> FunctionBuilder<'a> {
-    //     FunctionBuilder::new(self)
-    // }
+    pub fn create_function(&mut self) -> FunctionBuilder<'_, 'a> {
+        FunctionBuilder::new(self.storage)
+    }
 
     pub fn create_variable(&mut self) -> VariableBuilder<'_, 'a> {
         VariableBuilder::new(self.storage)
@@ -82,9 +82,9 @@ impl<'storage, 'a> Builder<'storage, 'a> {
 
     // /////////////////////////////////////////////////////////////////
     // // BEGIN: Control Flow Builders
-    // pub fn return_(self) -> ReturnBuilder<'a> {
-    //     ReturnBuilder::new(self)
-    // }
+    pub fn create_return(&mut self) -> ReturnBuilder<'_, 'a> {
+        ReturnBuilder::new(self.storage)
+    }
 
     /////////////////////////////////////////////////////////////////
     // BEGIN: Primitive Type Builders

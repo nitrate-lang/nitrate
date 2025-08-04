@@ -4,6 +4,7 @@ use super::block::Block;
 use super::builder::Builder;
 use super::character::CharLit;
 use super::expression::ExprOwned;
+use super::expression::{ExprRef, TypeRef};
 use super::function::{Function, FunctionParameter};
 use super::function_type::FunctionType;
 use super::list::ListLit;
@@ -408,97 +409,95 @@ impl<'storage, 'a> BlockBuilder<'storage, 'a> {
     }
 }
 
-// #[derive(Debug)]
-// pub struct FunctionBuilder<'storage, 'a> {
-//     storage: &'storage mut Storage<'a>,
-//     name: &'a str,
-//     parameters: Vec<FunctionParameter<'a>>,
-//     return_type: Option<TypeKey<'a>>,
-//     attributes: Vec<ExprKey<'a>>,
-//     definition: Option<ExprKey<'a>>,
-// }
+#[derive(Debug)]
+pub struct FunctionBuilder<'storage, 'a> {
+    storage: &'storage mut Storage<'a>,
+    name: &'a str,
+    parameters: Vec<FunctionParameter<'a>>,
+    return_type: Option<TypeKey<'a>>,
+    attributes: Vec<ExprKey<'a>>,
+    definition: Option<ExprKey<'a>>,
+}
 
-// impl<'storage, 'a> FunctionBuilder<'storage, 'a> {
-//     pub(crate) fn new(storage: &'storage mut Storage<'a>) -> Self {
-//         FunctionBuilder {
-//             outer,
-//             name: "",
-//             parameters: Vec::new(),
-//             return_type: None,
-//             attributes: Vec::new(),
-//             definition: None,
-//         }
-//     }
+impl<'storage, 'a> FunctionBuilder<'storage, 'a> {
+    pub(crate) fn new(storage: &'storage mut Storage<'a>) -> Self {
+        FunctionBuilder {
+            storage,
+            name: "",
+            parameters: Vec::new(),
+            return_type: None,
+            attributes: Vec::new(),
+            definition: None,
+        }
+    }
 
-//     pub fn with_name(mut self, name: &'a str) -> Self {
-//         self.name = name;
-//         self
-//     }
+    pub fn with_name(mut self, name: &'a str) -> Self {
+        self.name = name;
+        self
+    }
 
-//     pub fn with_parameter(
-//         mut self,
-//         name: &'a str,
-//         ty: Option<TypeKey<'a>>,
-//         default_value: Option<ExprKey<'a>>,
-//     ) -> Self {
-//         self.parameters.push((name, ty, default_value));
-//         self
-//     }
+    pub fn with_parameter(
+        mut self,
+        name: &'a str,
+        ty: Option<TypeKey<'a>>,
+        default_value: Option<ExprKey<'a>>,
+    ) -> Self {
+        self.parameters.push((name, ty, default_value));
+        self
+    }
 
-//     pub fn with_parameters<I>(mut self, parameters: I) -> Self
-//     where
-//         I: IntoIterator<Item = (&'a str, Option<TypeKey<'a>>, Option<ExprKey<'a>>)>,
-//     {
-//         self.parameters.extend(parameters);
-//         self
-//     }
+    pub fn with_parameters<I>(mut self, parameters: I) -> Self
+    where
+        I: IntoIterator<Item = (&'a str, Option<TypeKey<'a>>, Option<ExprKey<'a>>)>,
+    {
+        self.parameters.extend(parameters);
+        self
+    }
 
-//     pub fn with_return_type(mut self, ty: TypeKey<'a>) -> Self {
-//         self.return_type = Some(ty);
-//         self
-//     }
+    pub fn with_return_type(mut self, ty: TypeKey<'a>) -> Self {
+        self.return_type = Some(ty);
+        self
+    }
 
-//     pub fn with_attribute(mut self, attribute: ExprKey<'a>) -> Self {
-//         self.attributes.push(attribute);
-//         self
-//     }
+    pub fn with_attribute(mut self, attribute: ExprKey<'a>) -> Self {
+        self.attributes.push(attribute);
+        self
+    }
 
-//     pub fn with_attributes<I>(mut self, attributes: I) -> Self
-//     where
-//         I: IntoIterator<Item = ExprKey<'a>>,
-//     {
-//         self.attributes.extend(attributes);
-//         self
-//     }
+    pub fn with_attributes<I>(mut self, attributes: I) -> Self
+    where
+        I: IntoIterator<Item = ExprKey<'a>>,
+    {
+        self.attributes.extend(attributes);
+        self
+    }
 
-//     pub fn with_definition(mut self, definition: ExprKey<'a>) -> Self {
-//         match *definition {
-//             Expr::Block(_) => {
-//                 self.definition = Some(definition);
-//                 self
-//             }
+    pub fn with_definition(mut self, definition: ExprKey<'a>) -> Option<Self> {
+        match definition.get(self.storage) {
+            ExprRef::Block(_) => {
+                self.definition = Some(definition);
+                Some(self)
+            }
 
-//             _ => panic!("Function definition must be a block expression"),
-//         }
-//     }
+            _ => None,
+        }
+    }
 
-//     pub fn build(self) -> Option<ExprKey<'a>> {
-//         let definition = self.definition.map(|d| match *d {
-//             Expr::Block(block) => Block::new(block.into_inner()),
-//             _ => panic!("Function definition must be a block expression"),
-//         });
+    pub fn build(self) -> Option<ExprKey<'a>> {
+        let definition = self.definition.map(|d| match d.get(self.storage) {
+            ExprRef::Block(block) => block.to_owned(),
+            _ => panic!("Function definition must be a block expression"),
+        });
 
-//         let function = Function::new(
-//             self.name,
-//             self.parameters,
-//             self.return_type,
-//             self.attributes,
-//             definition,
-//         );
-
-//         Box::new(Expr::Function(function))
-//     }
-// }
+        self.storage.add_expr(ExprOwned::Function(Function::new(
+            self.name,
+            self.parameters,
+            self.return_type,
+            self.attributes,
+            definition,
+        )))
+    }
+}
 
 #[derive(Debug)]
 pub struct VariableBuilder<'storage, 'a> {
@@ -550,26 +549,30 @@ impl<'storage, 'a> VariableBuilder<'storage, 'a> {
     }
 }
 
-// #[derive(Debug)]
-// pub struct ReturnBuilder<'storage, 'a> {
-//     storage: &'storage mut Storage<'a>,
-//     value: Option<ExprKey<'a>>,
-// }
+#[derive(Debug)]
+pub struct ReturnBuilder<'storage, 'a> {
+    storage: &'storage mut Storage<'a>,
+    value: Option<ExprKey<'a>>,
+}
 
-// impl<'storage, 'a> ReturnBuilder<'storage, 'a> {
-//     pub(crate) fn new(storage: &'storage mut Storage<'a>) -> Self {
-//         ReturnBuilder { outer, value: None }
-//     }
+impl<'storage, 'a> ReturnBuilder<'storage, 'a> {
+    pub(crate) fn new(storage: &'storage mut Storage<'a>) -> Self {
+        ReturnBuilder {
+            storage,
+            value: None,
+        }
+    }
 
-//     pub fn with_value(mut self, value: ExprKey<'a>) -> Self {
-//         self.value = Some(value);
-//         self
-//     }
+    pub fn with_value(mut self, value: Option<ExprKey<'a>>) -> Self {
+        self.value = value;
+        self
+    }
 
-//     pub fn build(self) -> Option<ExprKey<'a>> {
-//         Box::new(Expr::Return(Return::new(self.value)))
-//     }
-// }
+    pub fn build(self) -> Option<ExprKey<'a>> {
+        self.storage
+            .add_expr(ExprOwned::Return(Return::new(self.value)))
+    }
+}
 
 // #[derive(Debug)]
 // pub struct TupleTypeBuilder<'storage, 'a> {
