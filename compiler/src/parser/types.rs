@@ -105,14 +105,47 @@ impl<'storage, 'a> Parser<'storage, 'a> {
 
             Token::Punct(punc) => match punc {
                 Punct::LeftBrace => {
-                    // TODO: Handle left brace to parse tuple types
+                    self.lexer.skip();
+                    self.lexer.skip_if(&Token::Punct(Punct::Comma));
 
-                    error!(
-                        self.log,
-                        "error[P????]: Tuple types not yet implemented\n--> {}",
-                        first_token.start()
-                    );
-                    unimplemented!();
+                    let mut tuple_elements = Vec::new();
+
+                    while !self.lexer.is_eof() {
+                        if self.lexer.skip_if(&Token::Punct(Punct::RightBrace)) {
+                            break;
+                        }
+
+                        if let Some(element) = self.parse_type() {
+                            tuple_elements.push(element);
+                        } else {
+                            self.set_failed_bit();
+                            error!(
+                                self.log,
+                                "error[P????]: Failed to parse tuple element type\n--> {}",
+                                self.lexer.peek().start()
+                            );
+                        }
+
+                        if !self.lexer.skip_if(&Token::Punct(Punct::Comma)) {
+                            if self.lexer.skip_if(&Token::Punct(Punct::RightBrace)) {
+                                break;
+                            } else {
+                                self.set_failed_bit();
+                                error!(
+                                    self.log,
+                                    "error[P????]: Expected comma or right brace in tuple type\n--> {}",
+                                    self.lexer.peek().start()
+                                );
+
+                                break;
+                            }
+                        }
+                    }
+
+                    Builder::new(self.storage)
+                        .create_tuple_type()
+                        .add_elements(tuple_elements)
+                        .build()
                 }
 
                 Punct::LeftBracket => {

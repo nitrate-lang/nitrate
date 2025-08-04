@@ -21,6 +21,7 @@ pub struct Lexer<'a> {
     source: &'a [u8],
     read_pos: SourcePosition<'a>,
     current: Option<AnnotatedToken<'a>>,
+    is_eof: bool,
 }
 
 enum StringEscape {
@@ -42,6 +43,7 @@ impl<'a> Lexer<'a> {
                 source: src,
                 read_pos: SourcePosition::new(0, 0, 0, filename),
                 current: None,
+                is_eof: false,
             })
         }
     }
@@ -87,8 +89,16 @@ impl<'a> Lexer<'a> {
         self.peek().into_token()
     }
 
+    pub fn next_is(&mut self, matches: &Token<'a>) -> bool {
+        &self.peek_t() == matches
+    }
+
     pub fn current_position(&self) -> SourcePosition<'a> {
         self.read_pos.clone()
+    }
+
+    pub fn is_eof(&self) -> bool {
+        self.is_eof
     }
 
     pub fn set_position(&mut self, pos: SourcePosition<'a>) {
@@ -1182,7 +1192,10 @@ impl<'a> Lexer<'a> {
         let start_pos = self.current_position();
 
         let token = match self.peek_byte() {
-            Err(()) => Ok(Token::Eof),
+            Err(()) => {
+              self.is_eof = true;
+              Ok(Token::Eof)
+            },
             Ok(b) => match b {
                 b'`' => self.parse_atypical_identifier(),
                 b if b.is_ascii_alphabetic() || b == b'_' || !b.is_ascii() /* Support UTF-8 identifiers */ => {

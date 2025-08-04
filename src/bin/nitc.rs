@@ -99,19 +99,18 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut parser = Parser::new(lexer, &mut storage, root_logger);
 
     {
-        let _parsetree = parser.parse().map_or_else(
+        let model = parser.parse().map_or_else(
             || Err(format!("Failed to parse source code in file {}", filename)),
             |tree| Ok(tree),
         )?;
 
-        let mut tokens = Vec::new();
+        if !parser.has_failed() {
+            let mut tokens = Vec::new();
+            model.tree().to_code(&storage, &mut tokens, &CodeFormat {});
 
-        _parsetree
-            .tree()
-            .to_code(&storage, &mut tokens, &CodeFormat {});
-
-        for token in tokens {
-            println!("{}", token);
+            for token in tokens {
+                println!("{}", token);
+            }
         }
     }
 
