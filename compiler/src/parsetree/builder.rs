@@ -20,62 +20,62 @@ impl<'storage, 'a> Builder<'storage, 'a> {
 
     /////////////////////////////////////////////////////////////////
     // BEGIN: Literal Expression Builders
-    pub fn create_integer(&mut self) -> IntegerBuilderHelper<'_, 'a> {
-        IntegerBuilderHelper::new(self.storage)
+    pub fn create_integer(&mut self) -> IntegerBuilder<'_, 'a> {
+        IntegerBuilder::new(self.storage)
     }
 
-    pub fn create_float(&mut self) -> FloatBuilderHelper<'_, 'a> {
-        FloatBuilderHelper::new(self.storage)
+    pub fn create_float(&mut self) -> FloatBuilder<'_, 'a> {
+        FloatBuilder::new(self.storage)
     }
 
-    pub fn create_string(&mut self) -> StringBuilderHelper<'_, 'a> {
-        StringBuilderHelper::new(self.storage)
+    pub fn create_string(&mut self) -> StringBuilder<'_, 'a> {
+        StringBuilder::new(self.storage)
     }
 
-    pub fn create_char(&mut self) -> CharBuilderHelper<'_, 'a> {
-        CharBuilderHelper::new(self.storage)
+    pub fn create_char(&mut self) -> CharBuilder<'_, 'a> {
+        CharBuilder::new(self.storage)
     }
 
-    pub fn create_list(&mut self) -> ListBuilderHelper<'_, 'a> {
-        ListBuilderHelper::new(self.storage)
+    pub fn create_list(&mut self) -> ListBuilder<'_, 'a> {
+        ListBuilder::new(self.storage)
     }
 
-    pub fn create_object(&mut self) -> ObjectBuilderHelper<'_, 'a> {
-        ObjectBuilderHelper::new(self.storage)
+    pub fn create_object(&mut self) -> ObjectBuilder<'_, 'a> {
+        ObjectBuilder::new(self.storage)
     }
 
     /////////////////////////////////////////////////////////////////
     // BEGIN: Compound Expression Builders
-    pub fn create_unary_expr(&mut self) -> UnaryOpBuilderHelper<'_, 'a> {
-        UnaryOpBuilderHelper::new(self.storage)
+    pub fn create_unary_expr(&mut self) -> UnaryOpBuilder<'_, 'a> {
+        UnaryOpBuilder::new(self.storage)
     }
 
-    pub fn create_binary_expr(&mut self) -> BinaryOpBuilderHelper<'_, 'a> {
-        BinaryOpBuilderHelper::new(self.storage)
+    pub fn create_binary_expr(&mut self) -> BinaryOpBuilder<'_, 'a> {
+        BinaryOpBuilder::new(self.storage)
     }
 
-    pub fn create_statement(&mut self) -> StatementBuilderHelper<'_, 'a> {
-        StatementBuilderHelper::new(self.storage)
+    pub fn create_statement(&mut self) -> StatementBuilder<'_, 'a> {
+        StatementBuilder::new(self.storage)
     }
 
-    // pub fn block(self) -> BlockBuilderHelper<'a> {
-    //     BlockBuilderHelper::new(self)
+    // pub fn block(self) -> BlockBuilder<'a> {
+    //     BlockBuilder::new(self)
     // }
 
     // /////////////////////////////////////////////////////////////////
     // BEGIN: Definition Builders
-    // pub fn function(self) -> FunctionBuilderHelper<'a> {
-    //     FunctionBuilderHelper::new(self)
+    // pub fn function(self) -> FunctionBuilder<'a> {
+    //     FunctionBuilder::new(self)
     // }
 
-    // pub fn variable(self) -> VariableBuilderHelper<'a> {
-    //     VariableBuilderHelper::new(self)
+    // pub fn variable(self) -> VariableBuilder<'a> {
+    //     VariableBuilder::new(self)
     // }
 
     // /////////////////////////////////////////////////////////////////
     // // BEGIN: Control Flow Builders
-    // pub fn return_(self) -> ReturnBuilderHelper<'a> {
-    //     ReturnBuilderHelper::new(self)
+    // pub fn return_(self) -> ReturnBuilder<'a> {
+    //     ReturnBuilder::new(self)
     // }
 
     /////////////////////////////////////////////////////////////////
@@ -190,19 +190,19 @@ impl<'storage, 'a> Builder<'storage, 'a> {
 
     // /////////////////////////////////////////////////////////////////
     // // BEGIN: Compound Type Builders
-    // pub fn tuple_type(self) -> TupleTypeBuilderHelper<'a> {
-    //     TupleTypeBuilderHelper::new(self)
+    // pub fn tuple_type(self) -> TupleTypeBuilder<'a> {
+    //     TupleTypeBuilder::new(self)
     // }
 
-    // pub fn array_type(self) -> ArrayTypeBuilderHelper<'a> {
-    //     ArrayTypeBuilderHelper::new(self)
+    // pub fn array_type(self) -> ArrayTypeBuilder<'a> {
+    //     ArrayTypeBuilder::new(self)
     // }
 
-    // pub fn struct_type(self) -> StructTypeBuilderHelper<'a> {
-    //     StructTypeBuilderHelper::new(self)
+    // pub fn struct_type(self) -> StructTypeBuilder<'a> {
+    //     StructTypeBuilder::new(self)
     // }
 
-    // pub fn function_type(self) -> FunctionTypeBuilderHelper<'a> {
-    //     FunctionTypeBuilderHelper::new(self)
+    // pub fn function_type(self) -> FunctionTypeBuilder<'a> {
+    //     FunctionTypeBuilder::new(self)
     // }
 }

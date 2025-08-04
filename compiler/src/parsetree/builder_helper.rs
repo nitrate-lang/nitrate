@@ -22,15 +22,15 @@ use apint::UInt;
 use std::collections::BTreeMap;
 
 #[derive(Debug)]
-pub struct IntegerBuilderHelper<'storage, 'a> {
+pub struct IntegerBuilder<'storage, 'a> {
     storage: &'storage mut Storage<'a>,
     value: Option<UInt>,
     kind: Option<IntegerKind>,
 }
 
-impl<'storage, 'a> IntegerBuilderHelper<'storage, 'a> {
+impl<'storage, 'a> IntegerBuilder<'storage, 'a> {
     pub(crate) fn new(storage: &'storage mut Storage<'a>) -> Self {
-        IntegerBuilderHelper {
+        IntegerBuilder {
             storage,
             value: None,
             kind: None,
@@ -76,14 +76,14 @@ impl<'storage, 'a> IntegerBuilderHelper<'storage, 'a> {
 }
 
 #[derive(Debug)]
-pub struct FloatBuilderHelper<'storage, 'a> {
+pub struct FloatBuilder<'storage, 'a> {
     storage: &'storage mut Storage<'a>,
     value: Option<f64>,
 }
 
-impl<'storage, 'a> FloatBuilderHelper<'storage, 'a> {
+impl<'storage, 'a> FloatBuilder<'storage, 'a> {
     pub(crate) fn new(storage: &'storage mut Storage<'a>) -> Self {
-        FloatBuilderHelper {
+        FloatBuilder {
             storage,
             value: None,
         }
@@ -102,14 +102,14 @@ impl<'storage, 'a> FloatBuilderHelper<'storage, 'a> {
 }
 
 #[derive(Debug)]
-pub struct StringBuilderHelper<'storage, 'a> {
+pub struct StringBuilder<'storage, 'a> {
     storage: &'storage mut Storage<'a>,
     value: Option<&'a [u8]>,
 }
 
-impl<'storage, 'a> StringBuilderHelper<'storage, 'a> {
+impl<'storage, 'a> StringBuilder<'storage, 'a> {
     pub(crate) fn new(storage: &'storage mut Storage<'a>) -> Self {
-        StringBuilderHelper {
+        StringBuilder {
             storage,
             value: None,
         }
@@ -133,14 +133,14 @@ impl<'storage, 'a> StringBuilderHelper<'storage, 'a> {
 }
 
 #[derive(Debug)]
-pub struct CharBuilderHelper<'storage, 'a> {
+pub struct CharBuilder<'storage, 'a> {
     storage: &'storage mut Storage<'a>,
     value: Option<char>,
 }
 
-impl<'storage, 'a> CharBuilderHelper<'storage, 'a> {
+impl<'storage, 'a> CharBuilder<'storage, 'a> {
     pub(crate) fn new(storage: &'storage mut Storage<'a>) -> Self {
-        CharBuilderHelper {
+        CharBuilder {
             storage,
             value: None,
         }
@@ -159,14 +159,14 @@ impl<'storage, 'a> CharBuilderHelper<'storage, 'a> {
 }
 
 #[derive(Debug)]
-pub struct ListBuilderHelper<'storage, 'a> {
+pub struct ListBuilder<'storage, 'a> {
     storage: &'storage mut Storage<'a>,
     elements: Vec<ExprKey<'a>>,
 }
 
-impl<'storage, 'a> ListBuilderHelper<'storage, 'a> {
+impl<'storage, 'a> ListBuilder<'storage, 'a> {
     pub(crate) fn new(storage: &'storage mut Storage<'a>) -> Self {
-        ListBuilderHelper {
+        ListBuilder {
             storage,
             elements: Vec::new(),
         }
@@ -197,14 +197,14 @@ impl<'storage, 'a> ListBuilderHelper<'storage, 'a> {
 }
 
 #[derive(Debug)]
-pub struct ObjectBuilderHelper<'storage, 'a> {
+pub struct ObjectBuilder<'storage, 'a> {
     storage: &'storage mut Storage<'a>,
     fields: BTreeMap<&'a str, ExprKey<'a>>,
 }
 
-impl<'storage, 'a> ObjectBuilderHelper<'storage, 'a> {
+impl<'storage, 'a> ObjectBuilder<'storage, 'a> {
     pub(crate) fn new(storage: &'storage mut Storage<'a>) -> Self {
-        ObjectBuilderHelper {
+        ObjectBuilder {
             storage,
             fields: BTreeMap::new(),
         }
@@ -230,16 +230,16 @@ impl<'storage, 'a> ObjectBuilderHelper<'storage, 'a> {
 }
 
 #[derive(Debug)]
-pub struct UnaryOpBuilderHelper<'storage, 'a> {
+pub struct UnaryOpBuilder<'storage, 'a> {
     storage: &'storage mut Storage<'a>,
     operator: Option<UnaryOperator>,
     operand: Option<ExprKey<'a>>,
     is_postfix: Option<bool>,
 }
 
-impl<'storage, 'a> UnaryOpBuilderHelper<'storage, 'a> {
+impl<'storage, 'a> UnaryOpBuilder<'storage, 'a> {
     pub(crate) fn new(storage: &'storage mut Storage<'a>) -> Self {
-        UnaryOpBuilderHelper {
+        UnaryOpBuilder {
             storage,
             operator: None,
             operand: None,
@@ -282,16 +282,16 @@ impl<'storage, 'a> UnaryOpBuilderHelper<'storage, 'a> {
 }
 
 #[derive(Debug)]
-pub struct BinaryOpBuilderHelper<'storage, 'a> {
+pub struct BinaryOpBuilder<'storage, 'a> {
     storage: &'storage mut Storage<'a>,
     left: Option<ExprKey<'a>>,
     operator: Option<BinaryOperator>,
     right: Option<ExprKey<'a>>,
 }
 
-impl<'storage, 'a> BinaryOpBuilderHelper<'storage, 'a> {
+impl<'storage, 'a> BinaryOpBuilder<'storage, 'a> {
     pub(crate) fn new(storage: &'storage mut Storage<'a>) -> Self {
-        BinaryOpBuilderHelper {
+        BinaryOpBuilder {
             storage,
             left: None,
             operator: None,
@@ -324,14 +324,14 @@ impl<'storage, 'a> BinaryOpBuilderHelper<'storage, 'a> {
 }
 
 #[derive(Debug)]
-pub struct StatementBuilderHelper<'storage, 'a> {
+pub struct StatementBuilder<'storage, 'a> {
     storage: &'storage mut Storage<'a>,
     expression: Option<ExprKey<'a>>,
 }
 
-impl<'storage, 'a> StatementBuilderHelper<'storage, 'a> {
+impl<'storage, 'a> StatementBuilder<'storage, 'a> {
     pub(crate) fn new(storage: &'storage mut Storage<'a>) -> Self {
-        StatementBuilderHelper {
+        StatementBuilder {
             storage,
             expression: None,
         }
@@ -350,14 +350,14 @@ impl<'storage, 'a> StatementBuilderHelper<'storage, 'a> {
 }
 
 // #[derive(Debug)]
-// pub struct BlockBuilderHelper<'storage, 'a> {
+// pub struct BlockBuilder<'storage, 'a> {
 //     storage: &'storage mut Storage<'a>,
 //     elements: Vec<ExprKey<'a>>,
 // }
 
-// impl<'storage, 'a> BlockBuilderHelper<'storage, 'a> {
+// impl<'storage, 'a> BlockBuilder<'storage, 'a> {
 //     pub(crate) fn new(storage: &'storage mut Storage<'a>) -> Self {
-//         BlockBuilderHelper {
+//         BlockBuilder {
 //             outer,
 //             elements: Vec::new(),
 //         }
@@ -399,7 +399,7 @@ impl<'storage, 'a> StatementBuilderHelper<'storage, 'a> {
 // }
 
 // #[derive(Debug)]
-// pub struct FunctionBuilderHelper<'storage, 'a> {
+// pub struct FunctionBuilder<'storage, 'a> {
 //     storage: &'storage mut Storage<'a>,
 //     name: &'a str,
 //     parameters: Vec<FunctionParameter<'a>>,
@@ -408,9 +408,9 @@ impl<'storage, 'a> StatementBuilderHelper<'storage, 'a> {
 //     definition: Option<ExprKey<'a>>,
 // }
 
-// impl<'storage, 'a> FunctionBuilderHelper<'storage, 'a> {
+// impl<'storage, 'a> FunctionBuilder<'storage, 'a> {
 //     pub(crate) fn new(storage: &'storage mut Storage<'a>) -> Self {
-//         FunctionBuilderHelper {
+//         FunctionBuilder {
 //             outer,
 //             name: "",
 //             parameters: Vec::new(),
@@ -491,7 +491,7 @@ impl<'storage, 'a> StatementBuilderHelper<'storage, 'a> {
 // }
 
 // #[derive(Debug)]
-// pub struct VariableBuilderHelper<'storage, 'a> {
+// pub struct VariableBuilder<'storage, 'a> {
 //     storage: &'storage mut Storage<'a>,
 //     kind: Option<VariableKind>,
 //     name: &'a str,
@@ -499,9 +499,9 @@ impl<'storage, 'a> StatementBuilderHelper<'storage, 'a> {
 //     value: Option<ExprKey<'a>>,
 // }
 
-// impl<'storage, 'a> VariableBuilderHelper<'storage, 'a> {
+// impl<'storage, 'a> VariableBuilder<'storage, 'a> {
 //     pub(crate) fn new(storage: &'storage mut Storage<'a>) -> Self {
-//         VariableBuilderHelper {
+//         VariableBuilder {
 //             outer,
 //             kind: None,
 //             name: "",
@@ -540,14 +540,14 @@ impl<'storage, 'a> StatementBuilderHelper<'storage, 'a> {
 // }
 
 // #[derive(Debug)]
-// pub struct ReturnBuilderHelper<'storage, 'a> {
+// pub struct ReturnBuilder<'storage, 'a> {
 //     storage: &'storage mut Storage<'a>,
 //     value: Option<ExprKey<'a>>,
 // }
 
-// impl<'storage, 'a> ReturnBuilderHelper<'storage, 'a> {
+// impl<'storage, 'a> ReturnBuilder<'storage, 'a> {
 //     pub(crate) fn new(storage: &'storage mut Storage<'a>) -> Self {
-//         ReturnBuilderHelper { outer, value: None }
+//         ReturnBuilder { outer, value: None }
 //     }
 
 //     pub fn with_value(mut self, value: ExprKey<'a>) -> Self {
@@ -561,14 +561,14 @@ impl<'storage, 'a> StatementBuilderHelper<'storage, 'a> {
 // }
 
 // #[derive(Debug)]
-// pub struct TupleTypeBuilderHelper<'storage, 'a> {
+// pub struct TupleTypeBuilder<'storage, 'a> {
 //     storage: &'storage mut Storage<'a>,
 //     elements: Vec<Box<Type<'a>>>,
 // }
 
-// impl<'storage, 'a> TupleTypeBuilderHelper<'storage, 'a> {
+// impl<'storage, 'a> TupleTypeBuilder<'storage, 'a> {
 //     pub(crate) fn new(storage: &'storage mut Storage<'a>) -> Self {
-//         TupleTypeBuilderHelper {
+//         TupleTypeBuilder {
 //             outer,
 //             elements: Vec::new(),
 //         }
@@ -593,15 +593,15 @@ impl<'storage, 'a> StatementBuilderHelper<'storage, 'a> {
 // }
 
 // #[derive(Debug)]
-// pub struct ArrayTypeBuilderHelper<'storage, 'a> {
+// pub struct ArrayTypeBuilder<'storage, 'a> {
 //     storage: &'storage mut Storage<'a>,
 //     element_ty: Option<Box<Type<'a>>>,
 //     count: Option<ExprKey<'a>>,
 // }
 
-// impl<'storage, 'a> ArrayTypeBuilderHelper<'storage, 'a> {
+// impl<'storage, 'a> ArrayTypeBuilder<'storage, 'a> {
 //     pub(crate) fn new(storage: &'storage mut Storage<'a>) -> Self {
-//         ArrayTypeBuilderHelper {
+//         ArrayTypeBuilder {
 //             outer,
 //             element_ty: None,
 //             count: None,
@@ -629,16 +629,16 @@ impl<'storage, 'a> StatementBuilderHelper<'storage, 'a> {
 // }
 
 // #[derive(Debug)]
-// pub struct StructTypeBuilderHelper<'storage, 'a> {
+// pub struct StructTypeBuilder<'storage, 'a> {
 //     storage: &'storage mut Storage<'a>,
 //     name: Option<&'a str>,
 //     attributes: Vec<ExprKey<'a>>,
 //     fields: BTreeMap<&'a str, Box<Type<'a>>>,
 // }
 
-// impl<'storage, 'a> StructTypeBuilderHelper<'storage, 'a> {
+// impl<'storage, 'a> StructTypeBuilder<'storage, 'a> {
 //     pub(crate) fn new(storage: &'storage mut Storage<'a>) -> Self {
-//         StructTypeBuilderHelper {
+//         StructTypeBuilder {
 //             outer,
 //             name: None,
 //             attributes: Vec::new(),
@@ -685,16 +685,16 @@ impl<'storage, 'a> StatementBuilderHelper<'storage, 'a> {
 // }
 
 // #[derive(Debug)]
-// pub struct FunctionTypeBuilderHelper<'storage, 'a> {
+// pub struct FunctionTypeBuilder<'storage, 'a> {
 //     storage: &'storage mut Storage<'a>,
 //     parameters: Vec<FunctionParameter<'a>>,
 //     return_type: Option<Box<Type<'a>>>,
 //     attributes: Vec<ExprKey<'a>>,
 // }
 
-// impl<'storage, 'a> FunctionTypeBuilderHelper<'storage, 'a> {
+// impl<'storage, 'a> FunctionTypeBuilder<'storage, 'a> {
 //     pub(crate) fn new(storage: &'storage mut Storage<'a>) -> Self {
-//         FunctionTypeBuilderHelper {
+//         FunctionTypeBuilder {
 //             outer,
 //             parameters: Vec::new(),
 //             return_type: None,
