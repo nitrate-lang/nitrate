@@ -237,6 +237,7 @@ impl<'a> ExprKey<'a> {
             | ExprKind::Float64
             | ExprKind::Float128
             | ExprKind::InferType
+            | ExprKind::TypeName
             | ExprKind::TupleType
             | ExprKind::ArrayType
             | ExprKind::SliceType
@@ -298,6 +299,7 @@ pub struct Storage<'a> {
 
     returns: Vec<Return<'a>>,
 
+    type_names: Vec<&'a str>,
     tuple_types: Vec<TupleType<'a>>,
     array_types: Vec<ArrayType<'a>>,
     slice_types: Vec<SliceType<'a>>,
@@ -334,6 +336,7 @@ impl<'a> Storage<'a> {
 
             returns: Vec::new(),
 
+            type_names: Vec::new(),
             tuple_types: Vec::new(),
             array_types: Vec::new(),
             slice_types: Vec::new(),
@@ -394,6 +397,7 @@ impl<'a> Storage<'a> {
             | ExprKind::Float128
             | ExprKind::InferType => {}
 
+            ExprKind::TypeName => self.type_names.reserve(additional),
             ExprKind::TupleType => self.tuple_types.reserve(additional),
             ExprKind::ArrayType => self.array_types.reserve(additional),
             ExprKind::SliceType => self.slice_types.reserve(additional),
@@ -440,6 +444,7 @@ impl<'a> Storage<'a> {
             | ExprOwned::Float64
             | ExprOwned::Float128
             | ExprOwned::InferType
+            | ExprOwned::TypeName(_)
             | ExprOwned::TupleType(_)
             | ExprOwned::ArrayType(_)
             | ExprOwned::SliceType(_)
@@ -451,7 +456,6 @@ impl<'a> Storage<'a> {
             ExprOwned::Discard => Some(ExprKey::new_single(ExprKind::Discard)),
 
             ExprOwned::IntegerLit(node) => match node.try_to_u128() {
-                // TODO: Deduplicate common integer literals
                 _ => ExprKey::new(ExprKind::IntegerLit, self.integers.len()).and_then(|k| {
                     self.integers.push(node);
                     Some(k)
@@ -564,6 +568,12 @@ impl<'a> Storage<'a> {
 
             TypeOwned::InferType => Some(TypeKey::new_single(TypeKind::InferType)),
 
+            TypeOwned::TypeName(node) => TypeKey::new(TypeKind::TypeName, self.type_names.len())
+                .and_then(|k| {
+                    self.type_names.push(node);
+                    Some(k)
+                }),
+
             TypeOwned::TupleType(node) => {
                 let is_unit_type = node.elements().is_empty();
 
@@ -635,6 +645,10 @@ impl<'a> Storage<'a> {
             ExprKind::Float128 => Some(ExprRef::Float128),
 
             ExprKind::InferType => Some(ExprRef::InferType),
+            ExprKind::TypeName => self
+                .type_names
+                .get(index)
+                .map(|name| ExprRef::TypeName(name)),
             ExprKind::TupleType => self.tuple_types.get(index).map(ExprRef::TupleType),
             ExprKind::ArrayType => self.array_types.get(index).map(ExprRef::ArrayType),
             ExprKind::SliceType => self.slice_types.get(index).map(ExprRef::SliceType),
@@ -685,6 +699,10 @@ impl<'a> Storage<'a> {
             ExprKind::Float128 => Some(ExprRefMut::Float128),
 
             ExprKind::InferType => Some(ExprRefMut::InferType),
+            ExprKind::TypeName => self
+                .type_names
+                .get(index)
+                .map(|name| ExprRefMut::TypeName(name)),
             ExprKind::TupleType => self.tuple_types.get_mut(index).map(ExprRefMut::TupleType),
             ExprKind::ArrayType => self.array_types.get_mut(index).map(ExprRefMut::ArrayType),
             ExprKind::SliceType => self.slice_types.get_mut(index).map(ExprRefMut::SliceType),
@@ -738,6 +756,10 @@ impl<'a> Storage<'a> {
             TypeKind::Float128 => Some(TypeRef::Float128),
 
             TypeKind::InferType => Some(TypeRef::InferType),
+            TypeKind::TypeName => self
+                .type_names
+                .get(index)
+                .map(|name| TypeRef::TypeName(name)),
             TypeKind::TupleType => self.tuple_types.get(index).map(TypeRef::TupleType),
             TypeKind::ArrayType => self.array_types.get(index).map(TypeRef::ArrayType),
             TypeKind::SliceType => self.slice_types.get(index).map(TypeRef::SliceType),

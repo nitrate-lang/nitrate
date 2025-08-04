@@ -207,7 +207,11 @@ impl<'storage, 'a> Builder<'storage, 'a> {
     }
 
     /////////////////////////////////////////////////////////////////
-    // BEGIN: Compound Type Builders
+    // BEGIN: Complex Type Builders
+    pub fn create_type_name(&mut self, name: &'a str) -> Option<TypeKey<'a>> {
+        self.storage.add_type(TypeOwned::TypeName(name))
+    }
+
     pub fn create_tuple_type(&mut self) -> TupleTypeBuilder<'_, 'a> {
         TupleTypeBuilder::new(self.storage)
     }

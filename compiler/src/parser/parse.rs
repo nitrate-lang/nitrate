@@ -39,7 +39,7 @@ impl<'storage, 'a> Parser<'storage, 'a> {
     }
 
     pub fn parse_expression(&mut self) -> Option<ExprKey<'a>> {
-        // TODO: Develop nitrate parser
+        // TODO: Develop nitrate expression parser
 
         self.parse_type().map(|t| t.into())
 

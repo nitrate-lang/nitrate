@@ -18,7 +18,7 @@ use super::tuple_type::TupleType;
 use super::unary_op::{UnaryOp, UnaryOperator};
 use super::variable::{Variable, VariableKind};
 use crate::lexer::{
-    Float, Identifier, Integer, Keyword, Operator, Punct, StringLit as StringLitToken, Token,
+    Float, Integer, Keyword, Name, Operator, Punct, StringLit as StringLitToken, Token,
 };
 
 #[derive(Debug, Default, Clone, PartialEq, PartialOrd, Hash)]
@@ -74,7 +74,7 @@ impl<'a> ToCode<'a> for ObjectLit<'a> {
     fn to_code(&self, bank: &Storage<'a>, tokens: &mut Vec<Token<'a>>, options: &CodeFormat) {
         tokens.push(Token::Punct(Punct::LeftBracket));
         for (key, value) in self.get() {
-            tokens.push(Token::Name(Identifier::new(key)));
+            tokens.push(Token::Name(Name::new(key)));
             tokens.push(Token::Punct(Punct::Colon));
 
             value.to_code(bank, tokens, options);
@@ -211,14 +211,14 @@ impl<'a> ToCode<'a> for Function<'a> {
         }
 
         if !self.name().is_empty() {
-            tokens.push(Token::Name(Identifier::new(self.name())));
+            tokens.push(Token::Name(Name::new(self.name())));
         }
 
         tokens.push(Token::Punct(Punct::LeftParen));
         for (i, (name, ty, default)) in self.parameters().iter().enumerate() {
             (i > 0).then(|| tokens.push(Token::Punct(Punct::Comma)));
 
-            tokens.push(Token::Name(Identifier::new(name)));
+            tokens.push(Token::Name(Name::new(name)));
 
             if let Some(ty) = ty {
                 if !matches!(ty.get(bank), TypeRef::InferType) {
@@ -254,7 +254,7 @@ impl<'a> ToCode<'a> for Variable<'a> {
             VariableKind::Var => tokens.push(Token::Keyword(Keyword::Var)),
         }
 
-        tokens.push(Token::Name(Identifier::new(self.name())));
+        tokens.push(Token::Name(Name::new(self.name())));
 
         if let Some(var_type) = self.get_type() {
             tokens.push(Token::Punct(Punct::Colon));
@@ -320,12 +320,12 @@ impl<'a> ToCode<'a> for StructType<'a> {
         }
 
         if let Some(name) = self.name() {
-            tokens.push(Token::Name(Identifier::new(name)));
+            tokens.push(Token::Name(Name::new(name)));
         }
 
         tokens.push(Token::Punct(Punct::LeftBrace));
         for (field_name, field_ty) in self.fields() {
-            tokens.push(Token::Name(Identifier::new(field_name)));
+            tokens.push(Token::Name(Name::new(field_name)));
             tokens.push(Token::Punct(Punct::Colon));
             field_ty.to_code(bank, tokens, options);
             tokens.push(Token::Punct(Punct::Comma));
@@ -351,7 +351,7 @@ impl<'a> ToCode<'a> for FunctionType<'a> {
         for (i, (name, ty, default)) in self.parameters().iter().enumerate() {
             (i > 0).then(|| tokens.push(Token::Punct(Punct::Comma)));
 
-            tokens.push(Token::Name(Identifier::new(name)));
+            tokens.push(Token::Name(Name::new(name)));
 
             if let Some(ty) = ty {
                 if !matches!(ty.get(bank), TypeRef::InferType) {
@@ -388,24 +388,25 @@ impl<'a> ToCode<'a> for ExprKey<'a> {
         }
 
         match self.get(bank) {
-            ExprRef::Bool => tokens.push(Token::Name(Identifier::new("bool"))),
-            ExprRef::UInt8 => tokens.push(Token::Name(Identifier::new("u8"))),
-            ExprRef::UInt16 => tokens.push(Token::Name(Identifier::new("u16"))),
-            ExprRef::UInt32 => tokens.push(Token::Name(Identifier::new("u32"))),
-            ExprRef::UInt64 => tokens.push(Token::Name(Identifier::new("u64"))),
-            ExprRef::UInt128 => tokens.push(Token::Name(Identifier::new("u128"))),
-            ExprRef::Int8 => tokens.push(Token::Name(Identifier::new("i8"))),
-            ExprRef::Int16 => tokens.push(Token::Name(Identifier::new("i16"))),
-            ExprRef::Int32 => tokens.push(Token::Name(Identifier::new("i32"))),
-            ExprRef::Int64 => tokens.push(Token::Name(Identifier::new("i64"))),
-            ExprRef::Int128 => tokens.push(Token::Name(Identifier::new("i128"))),
-            ExprRef::Float8 => tokens.push(Token::Name(Identifier::new("f8"))),
-            ExprRef::Float16 => tokens.push(Token::Name(Identifier::new("f16"))),
-            ExprRef::Float32 => tokens.push(Token::Name(Identifier::new("f32"))),
-            ExprRef::Float64 => tokens.push(Token::Name(Identifier::new("f64"))),
-            ExprRef::Float128 => tokens.push(Token::Name(Identifier::new("f128"))),
+            ExprRef::Bool => tokens.push(Token::Name(Name::new("bool"))),
+            ExprRef::UInt8 => tokens.push(Token::Name(Name::new("u8"))),
+            ExprRef::UInt16 => tokens.push(Token::Name(Name::new("u16"))),
+            ExprRef::UInt32 => tokens.push(Token::Name(Name::new("u32"))),
+            ExprRef::UInt64 => tokens.push(Token::Name(Name::new("u64"))),
+            ExprRef::UInt128 => tokens.push(Token::Name(Name::new("u128"))),
+            ExprRef::Int8 => tokens.push(Token::Name(Name::new("i8"))),
+            ExprRef::Int16 => tokens.push(Token::Name(Name::new("i16"))),
+            ExprRef::Int32 => tokens.push(Token::Name(Name::new("i32"))),
+            ExprRef::Int64 => tokens.push(Token::Name(Name::new("i64"))),
+            ExprRef::Int128 => tokens.push(Token::Name(Name::new("i128"))),
+            ExprRef::Float8 => tokens.push(Token::Name(Name::new("f8"))),
+            ExprRef::Float16 => tokens.push(Token::Name(Name::new("f16"))),
+            ExprRef::Float32 => tokens.push(Token::Name(Name::new("f32"))),
+            ExprRef::Float64 => tokens.push(Token::Name(Name::new("f64"))),
+            ExprRef::Float128 => tokens.push(Token::Name(Name::new("f128"))),
 
-            ExprRef::InferType => tokens.push(Token::Name(Identifier::new("_"))),
+            ExprRef::InferType => tokens.push(Token::Name(Name::new("_"))),
+            ExprRef::TypeName(e) => tokens.push(Token::Name(Name::new(e))),
             ExprRef::TupleType(e) => e.to_code(bank, tokens, options),
             ExprRef::ArrayType(e) => e.to_code(bank, tokens, options),
             ExprRef::SliceType(e) => e.to_code(bank, tokens, options),
@@ -447,24 +448,25 @@ impl<'a> ToCode<'a> for TypeKey<'a> {
         }
 
         match self.get(bank) {
-            TypeRef::Bool => tokens.push(Token::Name(Identifier::new("bool"))),
-            TypeRef::UInt8 => tokens.push(Token::Name(Identifier::new("u8"))),
-            TypeRef::UInt16 => tokens.push(Token::Name(Identifier::new("u16"))),
-            TypeRef::UInt32 => tokens.push(Token::Name(Identifier::new("u32"))),
-            TypeRef::UInt64 => tokens.push(Token::Name(Identifier::new("u64"))),
-            TypeRef::UInt128 => tokens.push(Token::Name(Identifier::new("u128"))),
-            TypeRef::Int8 => tokens.push(Token::Name(Identifier::new("i8"))),
-            TypeRef::Int16 => tokens.push(Token::Name(Identifier::new("i16"))),
-            TypeRef::Int32 => tokens.push(Token::Name(Identifier::new("i32"))),
-            TypeRef::Int64 => tokens.push(Token::Name(Identifier::new("i64"))),
-            TypeRef::Int128 => tokens.push(Token::Name(Identifier::new("i128"))),
-            TypeRef::Float8 => tokens.push(Token::Name(Identifier::new("f8"))),
-            TypeRef::Float16 => tokens.push(Token::Name(Identifier::new("f16"))),
-            TypeRef::Float32 => tokens.push(Token::Name(Identifier::new("f32"))),
-            TypeRef::Float64 => tokens.push(Token::Name(Identifier::new("f64"))),
-            TypeRef::Float128 => tokens.push(Token::Name(Identifier::new("f128"))),
+            TypeRef::Bool => tokens.push(Token::Name(Name::new("bool"))),
+            TypeRef::UInt8 => tokens.push(Token::Name(Name::new("u8"))),
+            TypeRef::UInt16 => tokens.push(Token::Name(Name::new("u16"))),
+            TypeRef::UInt32 => tokens.push(Token::Name(Name::new("u32"))),
+            TypeRef::UInt64 => tokens.push(Token::Name(Name::new("u64"))),
+            TypeRef::UInt128 => tokens.push(Token::Name(Name::new("u128"))),
+            TypeRef::Int8 => tokens.push(Token::Name(Name::new("i8"))),
+            TypeRef::Int16 => tokens.push(Token::Name(Name::new("i16"))),
+            TypeRef::Int32 => tokens.push(Token::Name(Name::new("i32"))),
+            TypeRef::Int64 => tokens.push(Token::Name(Name::new("i64"))),
+            TypeRef::Int128 => tokens.push(Token::Name(Name::new("i128"))),
+            TypeRef::Float8 => tokens.push(Token::Name(Name::new("f8"))),
+            TypeRef::Float16 => tokens.push(Token::Name(Name::new("f16"))),
+            TypeRef::Float32 => tokens.push(Token::Name(Name::new("f32"))),
+            TypeRef::Float64 => tokens.push(Token::Name(Name::new("f64"))),
+            TypeRef::Float128 => tokens.push(Token::Name(Name::new("f128"))),
 
-            TypeRef::InferType => tokens.push(Token::Name(Identifier::new("_"))),
+            TypeRef::InferType => tokens.push(Token::Name(Name::new("_"))),
+            TypeRef::TypeName(e) => tokens.push(Token::Name(Name::new(e))),
             TypeRef::TupleType(e) => e.to_code(bank, tokens, options),
             TypeRef::ArrayType(e) => e.to_code(bank, tokens, options),
             TypeRef::SliceType(e) => e.to_code(bank, tokens, options),

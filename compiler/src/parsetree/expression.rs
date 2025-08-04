@@ -36,6 +36,7 @@ pub enum ExprKind {
     Float128,
 
     InferType,
+    TypeName,
     TupleType,
     ArrayType,
     SliceType,
@@ -82,6 +83,7 @@ pub(crate) enum TypeKind {
     Float128,
 
     InferType,
+    TypeName,
     TupleType,
     ArrayType,
     SliceType,
@@ -111,6 +113,7 @@ pub(crate) enum ExprOwned<'a> {
 
     /* Compound Types */
     InferType,
+    TypeName(&'a str),
     TupleType(TupleType<'a>),
     ArrayType(ArrayType<'a>),
     SliceType(SliceType<'a>),
@@ -163,6 +166,7 @@ pub(crate) enum TypeOwned<'a> {
 
     /* Compound Types */
     InferType,
+    TypeName(&'a str),
     TupleType(TupleType<'a>),
     ArrayType(ArrayType<'a>),
     SliceType(SliceType<'a>),
@@ -192,6 +196,7 @@ pub enum ExprRef<'storage, 'a> {
 
     /* Compound Types */
     InferType,
+    TypeName(&'a str),
     TupleType(&'storage TupleType<'a>),
     ArrayType(&'storage ArrayType<'a>),
     SliceType(&'storage SliceType<'a>),
@@ -244,6 +249,7 @@ pub enum ExprRefMut<'storage, 'a> {
 
     /* Compound Types */
     InferType,
+    TypeName(&'a str),
     TupleType(&'storage mut TupleType<'a>),
     ArrayType(&'storage mut ArrayType<'a>),
     SliceType(&'storage mut SliceType<'a>),
@@ -296,6 +302,7 @@ pub enum TypeRef<'storage, 'a> {
 
     /* Compound Types */
     InferType,
+    TypeName(&'a str),
     TupleType(&'storage TupleType<'a>),
     ArrayType(&'storage ArrayType<'a>),
     SliceType(&'storage SliceType<'a>),
@@ -326,6 +333,7 @@ impl TryInto<TypeKind> for ExprKind {
             ExprKind::Float128 => Ok(TypeKind::Float128),
 
             ExprKind::InferType => Ok(TypeKind::InferType),
+            ExprKind::TypeName => Ok(TypeKind::TypeName),
             ExprKind::TupleType => Ok(TypeKind::TupleType),
             ExprKind::ArrayType => Ok(TypeKind::ArrayType),
             ExprKind::SliceType => Ok(TypeKind::SliceType),
@@ -371,6 +379,7 @@ impl Into<ExprKind> for TypeKind {
             TypeKind::Float128 => ExprKind::Float128,
 
             TypeKind::InferType => ExprKind::InferType,
+            TypeKind::TypeName => ExprKind::TypeName,
             TypeKind::TupleType => ExprKind::TupleType,
             TypeKind::ArrayType => ExprKind::ArrayType,
             TypeKind::SliceType => ExprKind::SliceType,
@@ -401,6 +410,7 @@ impl std::fmt::Display for ExprKind {
             ExprKind::Float128 => write!(f, "Float128"),
 
             ExprKind::InferType => write!(f, "InferType"),
+            ExprKind::TypeName => write!(f, "TypeName"),
             ExprKind::TupleType => write!(f, "TupleType"),
             ExprKind::ArrayType => write!(f, "ArrayType"),
             ExprKind::SliceType => write!(f, "SliceType"),
@@ -450,6 +460,7 @@ impl std::fmt::Display for TypeKind {
             TypeKind::Float128 => write!(f, "Float128"),
 
             TypeKind::InferType => write!(f, "InferType"),
+            TypeKind::TypeName => write!(f, "TypeName"),
             TypeKind::TupleType => write!(f, "TupleType"),
             TypeKind::ArrayType => write!(f, "ArrayType"),
             TypeKind::SliceType => write!(f, "SliceType"),
@@ -482,6 +493,7 @@ impl<'a> TryInto<TypeOwned<'a>> for ExprOwned<'a> {
             ExprOwned::Float128 => Ok(TypeOwned::Float128),
 
             ExprOwned::InferType => Ok(TypeOwned::InferType),
+            ExprOwned::TypeName(x) => Ok(TypeOwned::TypeName(x)),
             ExprOwned::TupleType(x) => Ok(TypeOwned::TupleType(x)),
             ExprOwned::ArrayType(x) => Ok(TypeOwned::ArrayType(x)),
             ExprOwned::SliceType(x) => Ok(TypeOwned::SliceType(x)),
@@ -527,6 +539,7 @@ impl<'a> Into<ExprOwned<'a>> for TypeOwned<'a> {
             TypeOwned::Float128 => ExprOwned::Float128,
 
             TypeOwned::InferType => ExprOwned::InferType,
+            TypeOwned::TypeName(x) => ExprOwned::TypeName(x),
             TypeOwned::TupleType(x) => ExprOwned::TupleType(x),
             TypeOwned::ArrayType(x) => ExprOwned::ArrayType(x),
             TypeOwned::SliceType(x) => ExprOwned::SliceType(x),
@@ -559,6 +572,7 @@ impl<'storage, 'a> TryInto<TypeRef<'storage, 'a>> for ExprRef<'storage, 'a> {
             ExprRef::Float128 => Ok(TypeRef::Float128),
 
             ExprRef::InferType => Ok(TypeRef::InferType),
+            ExprRef::TypeName(x) => Ok(TypeRef::TypeName(x)),
             ExprRef::TupleType(x) => Ok(TypeRef::TupleType(x)),
             ExprRef::ArrayType(x) => Ok(TypeRef::ArrayType(x)),
             ExprRef::SliceType(x) => Ok(TypeRef::SliceType(x)),
@@ -606,6 +620,7 @@ impl<'storage, 'a> TryInto<TypeRef<'storage, 'a>> for ExprRefMut<'storage, 'a> {
             ExprRefMut::Float128 => Ok(TypeRef::Float128),
 
             ExprRefMut::InferType => Ok(TypeRef::InferType),
+            ExprRefMut::TypeName(x) => Ok(TypeRef::TypeName(x)),
             ExprRefMut::TupleType(x) => Ok(TypeRef::TupleType(x)),
             ExprRefMut::ArrayType(x) => Ok(TypeRef::ArrayType(x)),
             ExprRefMut::SliceType(x) => Ok(TypeRef::SliceType(x)),
@@ -651,6 +666,7 @@ impl<'storage, 'a> Into<ExprRef<'storage, 'a>> for TypeRef<'storage, 'a> {
             TypeRef::Float128 => ExprRef::Float128,
 
             TypeRef::InferType => ExprRef::InferType,
+            TypeRef::TypeName(x) => ExprRef::TypeName(x),
             TypeRef::TupleType(x) => ExprRef::TupleType(x),
             TypeRef::ArrayType(x) => ExprRef::ArrayType(x),
             TypeRef::SliceType(x) => ExprRef::SliceType(x),
