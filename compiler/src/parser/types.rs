@@ -17,6 +17,52 @@ impl<'storage, 'a> Parser<'storage, 'a> {
         Some(TypeConstraints::default())
     }
 
+    fn parse_tuple_type(&mut self) -> Option<TypeKey<'a>> {
+        assert!(self.lexer.peek_t() == Token::Punct(Punct::LeftBrace));
+
+        self.lexer.skip();
+        self.lexer.skip_if(&Token::Punct(Punct::Comma));
+
+        let mut tuple_elements = Vec::new();
+
+        while !self.lexer.is_eof() {
+            if self.lexer.skip_if(&Token::Punct(Punct::RightBrace)) {
+                break;
+            }
+
+            if let Some(element) = self.parse_type() {
+                tuple_elements.push(element);
+            } else {
+                self.set_failed_bit();
+                error!(
+                    self.log,
+                    "error[P????]: Failed to parse tuple element type\n--> {}",
+                    self.lexer.current_position()
+                );
+            }
+
+            if !self.lexer.skip_if(&Token::Punct(Punct::Comma)) {
+                if self.lexer.skip_if(&Token::Punct(Punct::RightBrace)) {
+                    break;
+                } else {
+                    self.set_failed_bit();
+                    error!(
+                        self.log,
+                        "error[P????]: Expected comma or right brace in tuple type\n--> {}",
+                        self.lexer.current_position()
+                    );
+
+                    break;
+                }
+            }
+        }
+
+        Builder::new(self.storage)
+            .create_tuple_type()
+            .add_elements(tuple_elements)
+            .build()
+    }
+
     fn parse_type_primary(&mut self) -> Option<TypeKey<'a>> {
         let first_token = self.lexer.peek();
 
@@ -104,59 +150,63 @@ impl<'storage, 'a> Parser<'storage, 'a> {
             }
 
             Token::Punct(punc) => match punc {
-                Punct::LeftBrace => {
+                Punct::LeftBrace => self.parse_tuple_type(),
+
+                Punct::LeftBracket => {
                     self.lexer.skip();
-                    self.lexer.skip_if(&Token::Punct(Punct::Comma));
+                    let element_type = self.parse_type();
 
-                    let mut tuple_elements = Vec::new();
-
-                    while !self.lexer.is_eof() {
-                        if self.lexer.skip_if(&Token::Punct(Punct::RightBrace)) {
-                            break;
-                        }
-
-                        if let Some(element) = self.parse_type() {
-                            tuple_elements.push(element);
-                        } else {
-                            self.set_failed_bit();
-                            error!(
-                                self.log,
-                                "error[P????]: Failed to parse tuple element type\n--> {}",
-                                self.lexer.peek().start()
-                            );
-                        }
-
-                        if !self.lexer.skip_if(&Token::Punct(Punct::Comma)) {
-                            if self.lexer.skip_if(&Token::Punct(Punct::RightBrace)) {
-                                break;
+                    if self.lexer.skip_if(&Token::Punct(Punct::Semicolon)) {
+                        if let Some(array_count) = self.parse_expression() {
+                            if let Some(element_type) = element_type {
+                                Builder::new(self.storage)
+                                    .create_array_type()
+                                    .with_element_ty(element_type)
+                                    .with_count(array_count)
+                                    .build()
                             } else {
                                 self.set_failed_bit();
                                 error!(
                                     self.log,
-                                    "error[P????]: Expected comma or right brace in tuple type\n--> {}",
-                                    self.lexer.peek().start()
+                                    "error[P????]: Failed to parse element type for array\n--> {}",
+                                    self.lexer.current_position()
                                 );
-
-                                break;
+                                None
                             }
+                        } else {
+                            self.set_failed_bit();
+                            error!(
+                                self.log,
+                                "error[P????]: Failed to parse length expression for array\n--> {}",
+                                self.lexer.current_position()
+                            );
+                            None
+                        }
+                    } else {
+                        if !self.lexer.skip_if(&Token::Punct(Punct::RightBracket)) {
+                            self.set_failed_bit();
+                            error!(
+                                self.log,
+                                "error[P????]: Expected a right bracket to terminate slice type\n--> {}",
+                                self.lexer.current_position()
+                            );
+                        }
+
+                        if let Some(element_type) = element_type {
+                            Builder::new(self.storage)
+                                .create_slice_type()
+                                .with_element_ty(element_type)
+                                .build()
+                        } else {
+                            self.set_failed_bit();
+                            error!(
+                                self.log,
+                                "error[P????]: Failed to parse element type for slice\n--> {}",
+                                self.lexer.current_position()
+                            );
+                            None
                         }
                     }
-
-                    Builder::new(self.storage)
-                        .create_tuple_type()
-                        .add_elements(tuple_elements)
-                        .build()
-                }
-
-                Punct::LeftBracket => {
-                    // TODO: Handle left bracket to parse array and list types
-
-                    error!(
-                        self.log,
-                        "error[P????]: Array and list types not yet implemented\n--> {}",
-                        first_token.start()
-                    );
-                    unimplemented!();
                 }
 
                 punc => {
@@ -222,7 +272,7 @@ impl<'storage, 'a> Parser<'storage, 'a> {
                 error!(
                     self.log,
                     "error[P????]: Expected right parenthesis after type expression\n--> {}",
-                    self.lexer.peek().start()
+                    self.lexer.current_position()
                 );
             }
 
