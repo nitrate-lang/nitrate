@@ -34,13 +34,13 @@ impl<'storage, 'a> Builder<'storage, 'a> {
         CharBuilderHelper::new(self.storage)
     }
 
-    // pub fn list(self) -> ListBuilderHelper<'a> {
-    //     ListBuilderHelper::new(self)
-    // }
+    pub fn create_list(&mut self) -> ListBuilderHelper<'_, 'a> {
+        ListBuilderHelper::new(self.storage)
+    }
 
-    // pub fn object(self) -> ObjectBuilderHelper<'a> {
-    //     ObjectBuilderHelper::new(self)
-    // }
+    pub fn create_object(&mut self) -> ObjectBuilderHelper<'_, 'a> {
+        ObjectBuilderHelper::new(self.storage)
+    }
 
     // /////////////////////////////////////////////////////////////////
     // BEGIN: Compound Expression Builders

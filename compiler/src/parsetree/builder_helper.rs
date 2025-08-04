@@ -155,75 +155,82 @@ impl<'storage, 'a> CharBuilderHelper<'storage, 'a> {
     }
 }
 
-// #[derive(Debug, Clone)]
-// pub struct ListBuilderHelper<'a> {
-//     outer: Builder<'a>,
-//     elements: Vec<ExprRef<'a>>,
-// }
+#[derive(Debug)]
+pub struct ListBuilderHelper<'storage, 'a> {
+    storage: &'storage mut Storage<'a>,
+    elements: Vec<ExprKey<'a>>,
+}
 
-// impl<'a> ListBuilderHelper<'a> {
-//     pub fn new(outer: Builder<'a>) -> Self {
-//         ListBuilderHelper {
-//             outer,
-//             elements: Vec::new(),
-//         }
-//     }
+impl<'storage, 'a> ListBuilderHelper<'storage, 'a> {
+    pub fn new(storage: &'storage mut Storage<'a>) -> Self {
+        ListBuilderHelper {
+            storage,
+            elements: Vec::new(),
+        }
+    }
 
-//     pub fn add_element(mut self, element: ExprRef<'a>) -> Self {
-//         self.elements.push(element);
-//         self
-//     }
+    pub fn add_element(mut self, element: ExprKey<'a>) -> Self {
+        self.elements.push(element);
+        self
+    }
 
-//     pub fn add_elements<I>(mut self, elements: I) -> Self
-//     where
-//         I: IntoIterator<Item = ExprRef<'a>>,
-//     {
-//         self.elements.extend(elements);
-//         self
-//     }
+    pub fn add_elements<I>(mut self, elements: I) -> Self
+    where
+        I: IntoIterator<Item = ExprKey<'a>>,
+    {
+        self.elements.extend(elements);
+        self
+    }
 
-//     pub fn build(self) -> ExprRef<'a> {
-//         let node=Expr::ListLit(ListLit::new(self.elements))
-//     }
-// }
+    pub fn prepend_element(mut self, element: ExprKey<'a>) -> Self {
+        self.elements.insert(0, element);
+        self
+    }
 
-// #[derive(Debug, Clone)]
-// pub struct ObjectBuilderHelper<'a> {
-//     outer: Builder<'a>,
-//     fields: BTreeMap<&'a str, Box<Expr<'a>>>,
-// }
+    pub fn build(self) -> Option<ExprKey<'a>> {
+        self.storage
+            .add_expr(ExprOwned::ListLit(ListLit::new(self.elements)))
+    }
+}
 
-// impl<'a> ObjectBuilderHelper<'a> {
-//     pub fn new(outer: Builder<'a>) -> Self {
-//         ObjectBuilderHelper {
-//             outer,
-//             fields: BTreeMap::new(),
-//         }
-//     }
+#[derive(Debug)]
+pub struct ObjectBuilderHelper<'storage, 'a> {
+    storage: &'storage mut Storage<'a>,
+    fields: BTreeMap<&'a str, ExprKey<'a>>,
+}
 
-//     pub fn add_field(mut self, key: &'a str, value: Box<Expr<'a>>) -> Self {
-//         self.fields.insert(key, value);
-//         self
-//     }
+impl<'storage, 'a> ObjectBuilderHelper<'storage, 'a> {
+    pub fn new(storage: &'storage mut Storage<'a>) -> Self {
+        ObjectBuilderHelper {
+            storage,
+            fields: BTreeMap::new(),
+        }
+    }
 
-//     pub fn add_fields<I>(mut self, fields: I) -> Self
-//     where
-//         I: IntoIterator<Item = (&'a str, Box<Expr<'a>>)>,
-//     {
-//         self.fields.extend(fields);
-//         self
-//     }
+    pub fn add_field(mut self, key: &'a str, value: ExprKey<'a>) -> Self {
+        self.fields.insert(key, value);
+        self
+    }
 
-//     pub fn build(self) -> Box<Expr<'a>> {
-//         Box::new(Expr::ObjectLit(ObjectLit::new(self.fields)))
-//     }
-// }
+    pub fn add_fields<I>(mut self, fields: I) -> Self
+    where
+        I: IntoIterator<Item = (&'a str, ExprKey<'a>)>,
+    {
+        self.fields.extend(fields);
+        self
+    }
 
-// #[derive(Debug, Clone)]
+    pub fn build(self) -> Option<ExprKey<'a>> {
+        self.storage
+            .add_expr(ExprOwned::ObjectLit(ObjectLit::new(self.fields)))
+    }
+}
+
+// #[derive(Debug)]
 // pub struct UnaryExprBuilderHelper<'a> {
 //     outer: Builder<'a>,
 //     operator: Option<UnaryOperator>,
-//     operand: Option<Box<Expr<'a>>>,
+//     operand: Option<ExprKey<'a>>,
 //     is_postfix: Option<bool>,
 // }
 
@@ -242,7 +249,7 @@ impl<'storage, 'a> CharBuilderHelper<'storage, 'a> {
 //         self
 //     }
 
-//     pub fn with_operand(mut self, operand: Box<Expr<'a>>) -> Self {
+//     pub fn with_operand(mut self, operand: ExprKey<'a>) -> Self {
 //         self.operand = Some(operand);
 //         self
 //     }
@@ -252,7 +259,7 @@ impl<'storage, 'a> CharBuilderHelper<'storage, 'a> {
 //         self
 //     }
 
-//     pub fn build(self) -> Box<Expr<'a>> {
+//     pub fn build(self) -> ExprKey<'a> {
 //         let operator = self.operator.expect("Unary operator must be provided");
 //         let operand = self.operand.expect("Operand must be provided");
 //         let is_postfix = self.is_postfix.expect("is_postfix flag must be provided");
@@ -263,12 +270,12 @@ impl<'storage, 'a> CharBuilderHelper<'storage, 'a> {
 //     }
 // }
 
-// #[derive(Debug, Clone)]
+// #[derive(Debug)]
 // pub struct BinaryExprBuilderHelper<'a> {
 //     outer: Builder<'a>,
-//     left: Option<Box<Expr<'a>>>,
+//     left: Option<ExprKey<'a>>,
 //     operator: Option<BinaryOperator>,
-//     right: Option<Box<Expr<'a>>>,
+//     right: Option<ExprKey<'a>>,
 // }
 
 // impl<'a> BinaryExprBuilderHelper<'a> {
@@ -281,7 +288,7 @@ impl<'storage, 'a> CharBuilderHelper<'storage, 'a> {
 //         }
 //     }
 
-//     pub fn with_left(mut self, left: Box<Expr<'a>>) -> Self {
+//     pub fn with_left(mut self, left: ExprKey<'a>) -> Self {
 //         self.left = Some(left);
 //         self
 //     }
@@ -291,12 +298,12 @@ impl<'storage, 'a> CharBuilderHelper<'storage, 'a> {
 //         self
 //     }
 
-//     pub fn with_right(mut self, right: Box<Expr<'a>>) -> Self {
+//     pub fn with_right(mut self, right: ExprKey<'a>) -> Self {
 //         self.right = Some(right);
 //         self
 //     }
 
-//     pub fn build(self) -> Box<Expr<'a>> {
+//     pub fn build(self) -> ExprKey<'a> {
 //         let left = self.left.expect("Left expression must be provided");
 //         let operator = self.operator.expect("Binary operator must be provided");
 //         let right = self.right.expect("Right expression must be provided");
@@ -307,10 +314,10 @@ impl<'storage, 'a> CharBuilderHelper<'storage, 'a> {
 //     }
 // }
 
-// #[derive(Debug, Clone)]
+// #[derive(Debug)]
 // pub struct StatementBuilderHelper<'a> {
 //     outer: Builder<'a>,
-//     expression: Option<Box<Expr<'a>>>,
+//     expression: Option<ExprKey<'a>>,
 // }
 
 // impl<'a> StatementBuilderHelper<'a> {
@@ -321,22 +328,22 @@ impl<'storage, 'a> CharBuilderHelper<'storage, 'a> {
 //         }
 //     }
 
-//     pub fn with_expression(mut self, expression: Box<Expr<'a>>) -> Self {
+//     pub fn with_expression(mut self, expression: ExprKey<'a>) -> Self {
 //         self.expression = Some(expression);
 //         self
 //     }
 
-//     pub fn build(self) -> Box<Expr<'a>> {
+//     pub fn build(self) -> ExprKey<'a> {
 //         let expression = self.expression.expect("Expression must be provided");
 
 //         Box::new(Expr::Statement(Statement::new(expression)))
 //     }
 // }
 
-// #[derive(Debug, Clone)]
+// #[derive(Debug)]
 // pub struct BlockBuilderHelper<'a> {
 //     outer: Builder<'a>,
-//     elements: Vec<Box<Expr<'a>>>,
+//     elements: Vec<ExprKey<'a>>,
 // }
 
 // impl<'a> BlockBuilderHelper<'a> {
@@ -347,20 +354,20 @@ impl<'storage, 'a> CharBuilderHelper<'storage, 'a> {
 //         }
 //     }
 
-//     pub fn add_element(mut self, expr: Box<Expr<'a>>) -> Self {
+//     pub fn add_element(mut self, expr: ExprKey<'a>) -> Self {
 //         self.elements.push(expr);
 //         self
 //     }
 
 //     pub fn add_expressions<I>(mut self, elements: I) -> Self
 //     where
-//         I: IntoIterator<Item = Box<Expr<'a>>>,
+//         I: IntoIterator<Item = ExprKey<'a>>,
 //     {
 //         self.elements.extend(elements);
 //         self
 //     }
 
-//     pub fn add_statement(mut self, expression: Box<Expr<'a>>) -> Self {
+//     pub fn add_statement(mut self, expression: ExprKey<'a>) -> Self {
 //         let statement = Builder::get_statement().with_expression(expression).build();
 //         self.elements.push(statement);
 //         self
@@ -368,7 +375,7 @@ impl<'storage, 'a> CharBuilderHelper<'storage, 'a> {
 
 //     pub fn add_statements<I>(mut self, statements: I) -> Self
 //     where
-//         I: IntoIterator<Item = Box<Expr<'a>>>,
+//         I: IntoIterator<Item = ExprKey<'a>>,
 //     {
 //         for statement in statements {
 //             let statement = Builder::get_statement().with_expression(statement).build();
@@ -377,19 +384,19 @@ impl<'storage, 'a> CharBuilderHelper<'storage, 'a> {
 //         self
 //     }
 
-//     pub fn build(self) -> Box<Expr<'a>> {
+//     pub fn build(self) -> ExprKey<'a> {
 //         Box::new(Expr::Block(Block::new(self.elements)))
 //     }
 // }
 
-// #[derive(Debug, Clone)]
+// #[derive(Debug)]
 // pub struct FunctionBuilderHelper<'a> {
 //     outer: Builder<'a>,
 //     name: &'a str,
 //     parameters: Vec<FunctionParameter<'a>>,
 //     return_type: Option<Box<Type<'a>>>,
-//     attributes: Vec<Box<Expr<'a>>>,
-//     definition: Option<Box<Expr<'a>>>,
+//     attributes: Vec<ExprKey<'a>>,
+//     definition: Option<ExprKey<'a>>,
 // }
 
 // impl<'a> FunctionBuilderHelper<'a> {
@@ -413,7 +420,7 @@ impl<'storage, 'a> CharBuilderHelper<'storage, 'a> {
 //         mut self,
 //         name: &'a str,
 //         ty: Option<Box<Type<'a>>>,
-//         default_value: Option<Box<Expr<'a>>>,
+//         default_value: Option<ExprKey<'a>>,
 //     ) -> Self {
 //         self.parameters.push((name, ty, default_value));
 //         self
@@ -421,7 +428,7 @@ impl<'storage, 'a> CharBuilderHelper<'storage, 'a> {
 
 //     pub fn with_parameters<I>(mut self, parameters: I) -> Self
 //     where
-//         I: IntoIterator<Item = (&'a str, Option<Box<Type<'a>>>, Option<Box<Expr<'a>>>)>,
+//         I: IntoIterator<Item = (&'a str, Option<Box<Type<'a>>>, Option<ExprKey<'a>>)>,
 //     {
 //         self.parameters.extend(parameters);
 //         self
@@ -432,20 +439,20 @@ impl<'storage, 'a> CharBuilderHelper<'storage, 'a> {
 //         self
 //     }
 
-//     pub fn with_attribute(mut self, attribute: Box<Expr<'a>>) -> Self {
+//     pub fn with_attribute(mut self, attribute: ExprKey<'a>) -> Self {
 //         self.attributes.push(attribute);
 //         self
 //     }
 
 //     pub fn with_attributes<I>(mut self, attributes: I) -> Self
 //     where
-//         I: IntoIterator<Item = Box<Expr<'a>>>,
+//         I: IntoIterator<Item = ExprKey<'a>>,
 //     {
 //         self.attributes.extend(attributes);
 //         self
 //     }
 
-//     pub fn with_definition(mut self, definition: Box<Expr<'a>>) -> Self {
+//     pub fn with_definition(mut self, definition: ExprKey<'a>) -> Self {
 //         match *definition {
 //             Expr::Block(_) => {
 //                 self.definition = Some(definition);
@@ -456,7 +463,7 @@ impl<'storage, 'a> CharBuilderHelper<'storage, 'a> {
 //         }
 //     }
 
-//     pub fn build(self) -> Box<Expr<'a>> {
+//     pub fn build(self) -> ExprKey<'a> {
 //         let definition = self.definition.map(|d| match *d {
 //             Expr::Block(block) => Block::new(block.into_inner()),
 //             _ => panic!("Function definition must be a block expression"),
@@ -474,13 +481,13 @@ impl<'storage, 'a> CharBuilderHelper<'storage, 'a> {
 //     }
 // }
 
-// #[derive(Debug, Clone)]
+// #[derive(Debug)]
 // pub struct VariableBuilderHelper<'a> {
 //     outer: Builder<'a>,
 //     kind: Option<VariableKind>,
 //     name: &'a str,
 //     ty: Option<Box<Type<'a>>>,
-//     value: Option<Box<Expr<'a>>>,
+//     value: Option<ExprKey<'a>>,
 // }
 
 // impl<'a> VariableBuilderHelper<'a> {
@@ -509,12 +516,12 @@ impl<'storage, 'a> CharBuilderHelper<'storage, 'a> {
 //         self
 //     }
 
-//     pub fn with_value(mut self, value: Box<Expr<'a>>) -> Self {
+//     pub fn with_value(mut self, value: ExprKey<'a>) -> Self {
 //         self.value = Some(value);
 //         self
 //     }
 
-//     pub fn build(self) -> Box<Expr<'a>> {
+//     pub fn build(self) -> ExprKey<'a> {
 //         let kind = self.kind.expect("Variable kind must be provided");
 
 //         Box::new(Expr::Variable(Variable::new(
@@ -523,10 +530,10 @@ impl<'storage, 'a> CharBuilderHelper<'storage, 'a> {
 //     }
 // }
 
-// #[derive(Debug, Clone)]
+// #[derive(Debug)]
 // pub struct ReturnBuilderHelper<'a> {
 //     outer: Builder<'a>,
-//     value: Option<Box<Expr<'a>>>,
+//     value: Option<ExprKey<'a>>,
 // }
 
 // impl<'a> ReturnBuilderHelper<'a> {
@@ -534,17 +541,17 @@ impl<'storage, 'a> CharBuilderHelper<'storage, 'a> {
 //         ReturnBuilderHelper { outer, value: None }
 //     }
 
-//     pub fn with_value(mut self, value: Box<Expr<'a>>) -> Self {
+//     pub fn with_value(mut self, value: ExprKey<'a>) -> Self {
 //         self.value = Some(value);
 //         self
 //     }
 
-//     pub fn build(self) -> Box<Expr<'a>> {
+//     pub fn build(self) -> ExprKey<'a> {
 //         Box::new(Expr::Return(Return::new(self.value)))
 //     }
 // }
 
-// #[derive(Debug, Clone)]
+// #[derive(Debug)]
 // pub struct TupleTypeBuilderHelper<'a> {
 //     outer: Builder<'a>,
 //     elements: Vec<Box<Type<'a>>>,
@@ -571,16 +578,16 @@ impl<'storage, 'a> CharBuilderHelper<'storage, 'a> {
 //         self
 //     }
 
-//     pub fn build(self) -> Box<Expr<'a>> {
+//     pub fn build(self) -> ExprKey<'a> {
 //         Box::new(Expr::TupleType(TupleType::new(self.elements)))
 //     }
 // }
 
-// #[derive(Debug, Clone)]
+// #[derive(Debug)]
 // pub struct ArrayTypeBuilderHelper<'a> {
 //     outer: Builder<'a>,
 //     element_ty: Option<Box<Type<'a>>>,
-//     count: Option<Box<Expr<'a>>>,
+//     count: Option<ExprKey<'a>>,
 // }
 
 // impl<'a> ArrayTypeBuilderHelper<'a> {
@@ -597,12 +604,12 @@ impl<'storage, 'a> CharBuilderHelper<'storage, 'a> {
 //         self
 //     }
 
-//     pub fn with_count(mut self, count: Box<Expr<'a>>) -> Self {
+//     pub fn with_count(mut self, count: ExprKey<'a>) -> Self {
 //         self.count = Some(count);
 //         self
 //     }
 
-//     pub fn build(self) -> Box<Expr<'a>> {
+//     pub fn build(self) -> ExprKey<'a> {
 //         let element_ty = self.element_ty.expect("Element type must be provided");
 //         let count = self.count.expect("Count must be provided");
 
@@ -612,11 +619,11 @@ impl<'storage, 'a> CharBuilderHelper<'storage, 'a> {
 //     }
 // }
 
-// #[derive(Debug, Clone)]
+// #[derive(Debug)]
 // pub struct StructTypeBuilderHelper<'a> {
 //     outer: Builder<'a>,
 //     name: Option<&'a str>,
-//     attributes: Vec<Box<Expr<'a>>>,
+//     attributes: Vec<ExprKey<'a>>,
 //     fields: BTreeMap<&'a str, Box<Type<'a>>>,
 // }
 
@@ -635,14 +642,14 @@ impl<'storage, 'a> CharBuilderHelper<'storage, 'a> {
 //         self
 //     }
 
-//     pub fn add_attribute(mut self, attribute: Box<Expr<'a>>) -> Self {
+//     pub fn add_attribute(mut self, attribute: ExprKey<'a>) -> Self {
 //         self.attributes.push(attribute);
 //         self
 //     }
 
 //     pub fn add_attributes<I>(mut self, attributes: I) -> Self
 //     where
-//         I: IntoIterator<Item = Box<Expr<'a>>>,
+//         I: IntoIterator<Item = ExprKey<'a>>,
 //     {
 //         self.attributes.extend(attributes);
 //         self
@@ -661,19 +668,19 @@ impl<'storage, 'a> CharBuilderHelper<'storage, 'a> {
 //         self
 //     }
 
-//     pub fn build(self) -> Box<Expr<'a>> {
+//     pub fn build(self) -> ExprKey<'a> {
 //         let struct_type = StructType::new(self.name, self.attributes, self.fields);
 
 //         Box::new(Expr::StructType(struct_type))
 //     }
 // }
 
-// #[derive(Debug, Clone)]
+// #[derive(Debug)]
 // pub struct FunctionTypeBuilderHelper<'a> {
 //     outer: Builder<'a>,
 //     parameters: Vec<FunctionParameter<'a>>,
 //     return_type: Option<Box<Type<'a>>>,
-//     attributes: Vec<Box<Expr<'a>>>,
+//     attributes: Vec<ExprKey<'a>>,
 // }
 
 // impl<'a> FunctionTypeBuilderHelper<'a> {
@@ -690,7 +697,7 @@ impl<'storage, 'a> CharBuilderHelper<'storage, 'a> {
 //         mut self,
 //         name: &'a str,
 //         ty: Option<Box<Type<'a>>>,
-//         default_value: Option<Box<Expr<'a>>>,
+//         default_value: Option<ExprKey<'a>>,
 //     ) -> Self {
 //         self.parameters.push((name, ty, default_value));
 //         self
@@ -698,7 +705,7 @@ impl<'storage, 'a> CharBuilderHelper<'storage, 'a> {
 
 //     pub fn add_parameters<I>(mut self, parameters: I) -> Self
 //     where
-//         I: IntoIterator<Item = (&'a str, Option<Box<Type<'a>>>, Option<Box<Expr<'a>>>)>,
+//         I: IntoIterator<Item = (&'a str, Option<Box<Type<'a>>>, Option<ExprKey<'a>>)>,
 //     {
 //         self.parameters.extend(parameters);
 //         self
@@ -709,20 +716,20 @@ impl<'storage, 'a> CharBuilderHelper<'storage, 'a> {
 //         self
 //     }
 
-//     pub fn add_attribute(mut self, attribute: Box<Expr<'a>>) -> Self {
+//     pub fn add_attribute(mut self, attribute: ExprKey<'a>) -> Self {
 //         self.attributes.push(attribute);
 //         self
 //     }
 
 //     pub fn add_attributes<I>(mut self, attributes: I) -> Self
 //     where
-//         I: IntoIterator<Item = Box<Expr<'a>>>,
+//         I: IntoIterator<Item = ExprKey<'a>>,
 //     {
 //         self.attributes.extend(attributes);
 //         self
 //     }
 
-//     pub fn build(self) -> Box<Expr<'a>> {
+//     pub fn build(self) -> ExprKey<'a> {
 //         let function_type = FunctionType::new(self.parameters, self.return_type, self.attributes);
 
 //         Box::new(Expr::FunctionType(function_type))
