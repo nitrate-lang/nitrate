@@ -449,41 +449,38 @@ impl std::fmt::Display for Operator {
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Hash)]
 enum StringData<'a> {
-    RefString(&'a [u8]),
-    DynString(SmallVec<[u8; 64]>),
+    RefString(&'a str),
+    DynString(String),
 }
 
 #[derive(Clone, PartialEq, Eq, PartialOrd, Hash)]
 pub struct StringLit<'a> {
     data: StringData<'a>,
-    is_utf8: bool,
 }
 
 impl<'a> StringLit<'a> {
-    pub const fn from_ref(data: &'a [u8]) -> Self {
+    pub const fn from_ref(data: &'a str) -> Self {
         StringLit {
             data: StringData::RefString(data),
-            is_utf8: str::from_utf8(data).is_ok(),
         }
     }
 
-    pub fn from_dyn(data: SmallVec<[u8; 64]>) -> Self {
+    pub fn from_dyn(data: String) -> Self {
         StringLit {
-            is_utf8: str::from_utf8(data.as_slice()).is_ok(),
             data: StringData::DynString(data),
         }
     }
 
-    pub fn data(&self) -> &[u8] {
+    pub fn data(&self) -> &str {
         match &self.data {
             StringData::RefString(s) => s,
-            StringData::DynString(s) => s.as_slice(),
+            StringData::DynString(s) => s.as_str(),
         }
     }
 }
 
 impl<'a> std::ops::Deref for StringLit<'a> {
-    type Target = [u8];
+    type Target = str;
 
     fn deref(&self) -> &Self::Target {
         self.data()
@@ -492,26 +489,68 @@ impl<'a> std::ops::Deref for StringLit<'a> {
 
 impl<'a> std::fmt::Debug for StringLit<'a> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        if self.is_utf8 {
-            write!(f, "StringLit({:?})", unsafe {
-                str::from_utf8_unchecked(self.data())
-            })
-        } else {
-            write!(f, "StringLit({:?})", self.data())
-        }
+        write!(f, "StringLit({:?})", self.data())
     }
 }
 
 impl<'a> std::fmt::Display for StringLit<'a> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        if self.is_utf8 {
-            write!(f, "\"{}\"", unsafe {
-                str::from_utf8_unchecked(self.data())
-            })
-        } else {
-            // FIXME: Clean this up
-            unimplemented!();
+        write!(f, "\"{}\"", self.data())
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Hash)]
+enum BinaryStringData<'a> {
+    RefString(&'a [u8]),
+    DynString(SmallVec<[u8; 64]>),
+}
+
+#[derive(Clone, PartialEq, Eq, PartialOrd, Hash)]
+pub struct BinaryStringLit<'a> {
+    data: BinaryStringData<'a>,
+}
+
+impl<'a> BinaryStringLit<'a> {
+    pub const fn from_ref(data: &'a [u8]) -> Self {
+        BinaryStringLit {
+            data: BinaryStringData::RefString(data),
         }
+    }
+
+    pub fn from_dyn(data: SmallVec<[u8; 64]>) -> Self {
+        BinaryStringLit {
+            data: BinaryStringData::DynString(data),
+        }
+    }
+
+    pub fn data(&self) -> &[u8] {
+        match &self.data {
+            BinaryStringData::RefString(s) => s,
+            BinaryStringData::DynString(s) => s.as_slice(),
+        }
+    }
+}
+
+impl<'a> std::ops::Deref for BinaryStringLit<'a> {
+    type Target = [u8];
+
+    fn deref(&self) -> &Self::Target {
+        self.data()
+    }
+}
+
+impl<'a> std::fmt::Debug for BinaryStringLit<'a> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "BinaryStringLit({:?})", self.data())
+    }
+}
+
+impl<'a> std::fmt::Display for BinaryStringLit<'a> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        for byte in self.data() {
+            write!(f, "{:02x} ", byte)?;
+        }
+        Ok(())
     }
 }
 
@@ -561,6 +600,7 @@ pub enum Token<'a> {
     Float(Float),
     Keyword(Keyword),
     String(StringLit<'a>),
+    BinaryString(BinaryStringLit<'a>),
     Char(char),
     Punct(Punct),
     Op(Operator),
@@ -577,6 +617,7 @@ impl<'a> std::fmt::Display for Token<'a> {
             Token::Float(float) => write!(f, "{}", float),
             Token::Keyword(kw) => write!(f, "{}", kw),
             Token::String(s) => write!(f, "{}", s),
+            Token::BinaryString(s) => write!(f, "{}", s),
             Token::Char(c) => write!(f, "'{}'", c),
             Token::Punct(p) => write!(f, "{}", p),
             Token::Op(op) => write!(f, "{}", op),
