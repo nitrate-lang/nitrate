@@ -2,15 +2,15 @@ use super::storage::TypeKey;
 
 #[derive(Debug, Clone)]
 pub struct SliceType<'a> {
-    element_ty: TypeKey<'a>,
+    element: TypeKey<'a>,
 }
 
 impl<'a> SliceType<'a> {
-    pub fn new(element_ty: TypeKey<'a>) -> Self {
-        SliceType { element_ty }
+    pub fn new(element: TypeKey<'a>) -> Self {
+        SliceType { element }
     }
 
-    pub fn element_ty(&self) -> TypeKey<'a> {
-        self.element_ty
+    pub fn element(&self) -> TypeKey<'a> {
+        self.element
     }
 }

@@ -4,6 +4,7 @@ mod block;
 mod builder;
 mod builder_helper;
 mod character;
+mod debug;
 mod expression;
 mod function;
 mod function_type;
@@ -23,6 +24,7 @@ mod unary_op;
 mod variable;
 
 pub use builder::*;
+pub use debug::*;
 pub use expression::{ExprKind, ExprRef, ExprRefMut, TypeRef};
 pub use storage::{ExprKey, Storage, TypeKey};
 pub use to_code::*;

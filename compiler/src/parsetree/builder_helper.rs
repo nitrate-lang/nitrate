@@ -662,7 +662,7 @@ impl<'storage, 'a> TupleTypeBuilder<'storage, 'a> {
 #[derive(Debug)]
 pub struct ArrayTypeBuilder<'storage, 'a> {
     storage: &'storage mut Storage<'a>,
-    element_ty: Option<TypeKey<'a>>,
+    element: Option<TypeKey<'a>>,
     count: Option<ExprKey<'a>>,
 }
 
@@ -670,13 +670,13 @@ impl<'storage, 'a> ArrayTypeBuilder<'storage, 'a> {
     pub(crate) fn new(storage: &'storage mut Storage<'a>) -> Self {
         ArrayTypeBuilder {
             storage,
-            element_ty: None,
+            element: None,
             count: None,
         }
     }
 
-    pub fn with_element_ty(mut self, element_ty: TypeKey<'a>) -> Self {
-        self.element_ty = Some(element_ty);
+    pub fn with_element(mut self, element: TypeKey<'a>) -> Self {
+        self.element = Some(element);
         self
     }
 
@@ -687,7 +687,7 @@ impl<'storage, 'a> ArrayTypeBuilder<'storage, 'a> {
 
     pub fn build(self) -> Option<TypeKey<'a>> {
         self.storage.add_type(TypeOwned::ArrayType(ArrayType::new(
-            self.element_ty.expect("Element type must be provided"),
+            self.element.expect("Element type must be provided"),
             self.count.expect("Array length must be provided"),
         )))
     }
@@ -696,25 +696,25 @@ impl<'storage, 'a> ArrayTypeBuilder<'storage, 'a> {
 #[derive(Debug)]
 pub struct SliceTypeBuilder<'storage, 'a> {
     storage: &'storage mut Storage<'a>,
-    element_ty: Option<TypeKey<'a>>,
+    element: Option<TypeKey<'a>>,
 }
 
 impl<'storage, 'a> SliceTypeBuilder<'storage, 'a> {
     pub(crate) fn new(storage: &'storage mut Storage<'a>) -> Self {
         SliceTypeBuilder {
             storage,
-            element_ty: None,
+            element: None,
         }
     }
 
-    pub fn with_element_ty(mut self, element_ty: TypeKey<'a>) -> Self {
-        self.element_ty = Some(element_ty);
+    pub fn with_element(mut self, element: TypeKey<'a>) -> Self {
+        self.element = Some(element);
         self
     }
 
     pub fn build(self) -> Option<TypeKey<'a>> {
         self.storage.add_type(TypeOwned::SliceType(SliceType::new(
-            self.element_ty.expect("Element type must be provided"),
+            self.element.expect("Element type must be provided"),
         )))
     }
 }

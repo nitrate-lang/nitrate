@@ -105,12 +105,13 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         )?;
 
         if !parser.has_failed() {
-            let mut tokens = Vec::new();
-            model.tree().to_code(&storage, &mut tokens, &CodeFormat {});
+            println!("model = {:#?}", model.tree().as_printable(&storage));
+            // let mut tokens = Vec::new();
+            // model.tree().to_code(&storage, &mut tokens, &CodeFormat {});
 
-            for token in tokens {
-                println!("{}", token);
-            }
+            // for token in tokens {
+            //     println!("{}", token);
+            // }
         }
     }
 

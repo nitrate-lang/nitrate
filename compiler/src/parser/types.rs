@@ -236,7 +236,7 @@ impl<'storage, 'a> Parser<'storage, 'a> {
                             if let Some(element_type) = element_type {
                                 Builder::new(self.storage)
                                     .create_array_type()
-                                    .with_element_ty(element_type)
+                                    .with_element(element_type)
                                     .with_count(array_count)
                                     .build()
                             } else {
@@ -270,7 +270,7 @@ impl<'storage, 'a> Parser<'storage, 'a> {
                         if let Some(element_type) = element_type {
                             Builder::new(self.storage)
                                 .create_slice_type()
-                                .with_element_ty(element_type)
+                                .with_element(element_type)
                                 .build()
                         } else {
                             self.set_failed_bit();

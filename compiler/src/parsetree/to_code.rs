@@ -280,7 +280,7 @@ impl<'a> ToCode<'a> for Return<'a> {
 
 impl<'a> ToCode<'a> for RefinementType<'a> {
     fn to_code(&self, bank: &Storage<'a>, tokens: &mut Vec<Token<'a>>, options: &CodeFormat) {
-        self.principle().to_code(bank, tokens, options);
+        self.principal().to_code(bank, tokens, options);
 
         if let Some(width) = self.width() {
             tokens.push(Token::Punct(Punct::Colon));
@@ -316,7 +316,7 @@ impl<'a> ToCode<'a> for TupleType<'a> {
 impl<'a> ToCode<'a> for ArrayType<'a> {
     fn to_code(&self, bank: &Storage<'a>, tokens: &mut Vec<Token<'a>>, options: &CodeFormat) {
         tokens.push(Token::Punct(Punct::LeftBracket));
-        self.element_ty().to_code(bank, tokens, options);
+        self.element().to_code(bank, tokens, options);
         tokens.push(Token::Punct(Punct::Semicolon));
         self.count().to_code(bank, tokens, options);
         tokens.push(Token::Punct(Punct::RightBracket));
@@ -326,7 +326,7 @@ impl<'a> ToCode<'a> for ArrayType<'a> {
 impl<'a> ToCode<'a> for SliceType<'a> {
     fn to_code(&self, bank: &Storage<'a>, tokens: &mut Vec<Token<'a>>, options: &CodeFormat) {
         tokens.push(Token::Punct(Punct::LeftBracket));
-        self.element_ty().to_code(bank, tokens, options);
+        self.element().to_code(bank, tokens, options);
         tokens.push(Token::Punct(Punct::RightBracket));
     }
 }
