@@ -11,12 +11,18 @@ struct TypeConstraints<'a> {
     width: Option<ExprKey<'a>>,
 }
 
+impl<'a> TypeConstraints<'a> {
+    fn has_any(&self) -> bool {
+        self.minimum.is_some() || self.maximum.is_some() || self.width.is_some()
+    }
+}
+
 impl<'storage, 'a> Parser<'storage, 'a> {
     fn parse_type_min_max_constraints(&mut self, constraints: &mut TypeConstraints<'a>) {
         assert!(self.lexer.peek_t() == Token::Punct(Punct::LeftBracket));
         self.lexer.skip();
 
-        if !self.lexer.next_is(&Token::Punct(Punct::Colon)) {
+        if !self.lexer.skip_if(&Token::Punct(Punct::Colon)) {
             if let Some(minimum) = self.parse_expression() {
                 constraints.minimum = Some(minimum);
             } else {
@@ -38,7 +44,7 @@ impl<'storage, 'a> Parser<'storage, 'a> {
             }
         }
 
-        if !self.lexer.next_is(&Token::Punct(Punct::RightBracket)) {
+        if !self.lexer.skip_if(&Token::Punct(Punct::RightBracket)) {
             if let Some(maximum) = self.parse_expression() {
                 constraints.maximum = Some(maximum);
             } else {
@@ -49,15 +55,15 @@ impl<'storage, 'a> Parser<'storage, 'a> {
                     self.lexer.current_position()
                 );
             }
-        }
 
-        if !self.lexer.skip_if(&Token::Punct(Punct::RightBracket)) {
-            self.set_failed_bit();
-            error!(
-                self.log,
-                "error[P????]: Expected a right bracket to close minimum/maximum constraints\n--> {}",
-                self.lexer.current_position()
-            );
+            if !self.lexer.skip_if(&Token::Punct(Punct::RightBracket)) {
+                self.set_failed_bit();
+                error!(
+                    self.log,
+                    "error[P????]: Expected a right bracket to close minimum/maximum constraints\n--> {}",
+                    self.lexer.current_position()
+                );
+            }
         }
     }
 
@@ -291,6 +297,8 @@ impl<'storage, 'a> Parser<'storage, 'a> {
             },
 
             Token::Op(_) => {
+                // TODO: Handle generic types
+
                 self.set_failed_bit();
                 error!(
                     self.log,
@@ -347,7 +355,25 @@ impl<'storage, 'a> Parser<'storage, 'a> {
             let primary = self.parse_type_primary();
             let constraints = self.parse_type_constraints();
 
-            // TODO: Create wrapper node for types with constraints
+            if constraints.has_any() {
+                if let Some(principal) = primary {
+                    return Builder::new(self.storage)
+                        .create_refinement_type()
+                        .with_principal(principal)
+                        .with_width(constraints.width)
+                        .with_minimum(constraints.minimum)
+                        .with_maximum(constraints.maximum)
+                        .build();
+                } else {
+                    self.set_failed_bit();
+                    error!(
+                        self.log,
+                        "error[P????]: Failed to construct refinement type due to previous errors\n--> {}",
+                        self.lexer.current_position()
+                    );
+                }
+            }
+
             primary
         }
     }

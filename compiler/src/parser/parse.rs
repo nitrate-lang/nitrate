@@ -41,9 +41,18 @@ impl<'storage, 'a> Parser<'storage, 'a> {
     pub fn parse_expression(&mut self) -> Option<ExprKey<'a>> {
         // TODO: Develop nitrate expression parser
 
-        self.parse_type().map(|t| t.into())
+        match self.lexer.peek_t() {
+            Token::Integer(int) => {
+                self.lexer.skip();
 
-        // None
+                Builder::new(self.storage)
+                    .create_integer()
+                    .with_u128(int.value())
+                    .build()
+            }
+
+            _ => self.parse_type().map(|t| t.into()),
+        }
     }
 
     pub fn parse(&mut self) -> Option<SourceModel<'a>> {
