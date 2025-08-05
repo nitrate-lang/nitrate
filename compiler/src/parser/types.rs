@@ -149,6 +149,88 @@ impl<'storage, 'a> Parser<'storage, 'a> {
             .build()
     }
 
+    fn parse_array_or_slice_or_map(&mut self) -> Option<TypeKey<'a>> {
+        self.lexer.skip();
+        let element_type = self.parse_type();
+
+        if self.lexer.skip_if(&Token::Punct(Punct::Semicolon)) {
+            if let Some(array_count) = self.parse_expression() {
+                if let Some(element_type) = element_type {
+                    Builder::new(self.storage)
+                        .create_array_type()
+                        .with_element(element_type)
+                        .with_count(array_count)
+                        .build()
+                } else {
+                    self.set_failed_bit();
+                    error!(
+                        self.log,
+                        "error[P????]: Failed to parse element type for array\n--> {}",
+                        self.lexer.current_position()
+                    );
+                    None
+                }
+            } else {
+                self.set_failed_bit();
+                error!(
+                    self.log,
+                    "error[P????]: Failed to parse length expression for array\n--> {}",
+                    self.lexer.current_position()
+                );
+                None
+            }
+        } else if self.lexer.skip_if(&Token::Op(Operator::Arrow)) {
+            if let Some(map_value_type) = self.parse_type() {
+                if let Some(map_key_type) = element_type {
+                    Builder::new(self.storage)
+                        .create_map_type()
+                        .with_key(map_key_type)
+                        .with_value(map_value_type)
+                        .build()
+                } else {
+                    self.set_failed_bit();
+                    error!(
+                        self.log,
+                        "error[P????]: Failed to parse map's key type\n--> {}",
+                        self.lexer.current_position()
+                    );
+                    None
+                }
+            } else {
+                self.set_failed_bit();
+                error!(
+                    self.log,
+                    "error[P????]: Failed to parse map's value type\n--> {}",
+                    self.lexer.current_position()
+                );
+                None
+            }
+        } else if self.lexer.skip_if(&Token::Punct(Punct::RightBracket)) {
+            if let Some(element_type) = element_type {
+                Builder::new(self.storage)
+                    .create_slice_type()
+                    .with_element(element_type)
+                    .build()
+            } else {
+                self.set_failed_bit();
+                error!(
+                    self.log,
+                    "error[P????]: Failed to parse element type for slice\n--> {}",
+                    self.lexer.current_position()
+                );
+                None
+            }
+        } else {
+            self.set_failed_bit();
+            error!(
+                self.log,
+                "error[P????]: Expected semicolon or right bracket in array/slice type\n--> {}",
+                self.lexer.current_position()
+            );
+            None
+        }
+    }
+
     fn parse_type_primary(&mut self) -> Option<TypeKey<'a>> {
         let first_token = self.lexer.peek();
         let start_pos = first_token.start();
@@ -201,7 +283,7 @@ impl<'storage, 'a> Parser<'storage, 'a> {
             }
 
             Token::Keyword(_) => {
-                // TODO: Handle keywords (like 'fn', 'opaque', etc.)
+                // TODO: Handle keywords like 'fn' and 'opaque'
                 None
             }
 
@@ -236,88 +318,7 @@ impl<'storage, 'a> Parser<'storage, 'a> {
 
             Token::Punct(punc) => match punc {
                 Punct::LeftBrace => self.parse_tuple_type(),
-
-                Punct::LeftBracket => {
-                    self.lexer.skip();
-                    let element_type = self.parse_type();
-
-                    if self.lexer.skip_if(&Token::Punct(Punct::Semicolon)) {
-                        if let Some(array_count) = self.parse_expression() {
-                            if let Some(element_type) = element_type {
-                                Builder::new(self.storage)
-                                    .create_array_type()
-                                    .with_element(element_type)
-                                    .with_count(array_count)
-                                    .build()
-                            } else {
-                                self.set_failed_bit();
-                                error!(
-                                    self.log,
-                                    "error[P????]: Failed to parse element type for array\n--> {}",
-                                    self.lexer.current_position()
-                                );
-                                None
-                            }
-                        } else {
-                            self.set_failed_bit();
-                            error!(
-                                self.log,
-                                "error[P????]: Failed to parse length expression for array\n--> {}",
-                                self.lexer.current_position()
-                            );
-                            None
-                        }
-                    } else if self.lexer.skip_if(&Token::Op(Operator::Arrow)) {
-                        if let Some(map_value_type) = self.parse_type() {
-                            if let Some(map_key_type) = element_type {
-                                Builder::new(self.storage)
-                                    .create_map_type()
-                                    .with_key(map_key_type)
-                                    .with_value(map_value_type)
-                                    .build()
-                            } else {
-                                self.set_failed_bit();
-                                error!(
-                                    self.log,
-                                    "error[P????]: Failed to parse map's key type\n--> {}",
-                                    self.lexer.current_position()
-                                );
-                                None
-                            }
-                        } else {
-                            self.set_failed_bit();
-                            error!(
-                                self.log,
-                                "error[P????]: Failed to parse map's value type\n--> {}",
-                                self.lexer.current_position()
-                            );
-                            None
-                        }
-                    } else if self.lexer.skip_if(&Token::Punct(Punct::RightBracket)) {
-                        if let Some(element_type) = element_type {
-                            Builder::new(self.storage)
-                                .create_slice_type()
-                                .with_element(element_type)
-                                .build()
-                        } else {
-                            self.set_failed_bit();
-                            error!(
-                                self.log,
-                                "error[P????]: Failed to parse element type for slice\n--> {}",
-                                self.lexer.current_position()
-                            );
-                            None
-                        }
-                    } else {
-                        self.set_failed_bit();
-                        error!(
-                            self.log,
-                            "error[P????]: Expected semicolon or right bracket in array/slice type\n--> {}",
-                            self.lexer.current_position()
-                        );
-                        None
-                    }
-                }
+                Punct::LeftBracket => self.parse_array_or_slice_or_map(),
 
                 punc => {
                     self.set_failed_bit();
@@ -331,9 +332,58 @@ impl<'storage, 'a> Parser<'storage, 'a> {
                 }
             },
 
-            Token::Op(_) => {
-                // TODO: Handle generic types
+            Token::Op(Operator::Mul) => {
+                self.lexer.skip();
 
+                let is_mutable = self.lexer.skip_if(&Token::Keyword(Keyword::Mut))
+                    || (self.lexer.skip_if(&Token::Keyword(Keyword::Const)) && false);
+
+                if let Some(target) = self.parse_type() {
+                    Builder::new(self.storage)
+                        .create_unmanaged_type()
+                        .with_target(target)
+                        .with_mutability(is_mutable)
+                        .build()
+                } else {
+                    self.set_failed_bit();
+                    error!(
+                        self.log,
+                        "error[P????]: Failed to parse pointer's target type\n--> {}",
+                        self.lexer.current_position()
+                    );
+                    None
+                }
+            }
+
+            Token::Op(Operator::BitAnd) => {
+                self.lexer.skip();
+
+                let is_mutable = self.lexer.skip_if(&Token::Keyword(Keyword::Mut))
+                    || (self.lexer.skip_if(&Token::Keyword(Keyword::Const)) && false);
+
+                if let Some(target) = self.parse_type() {
+                    Builder::new(self.storage)
+                        .create_managed_type()
+                        .with_target(target)
+                        .with_mutability(is_mutable)
+                        .build()
+                } else {
+                    self.set_failed_bit();
+                    error!(
+                        self.log,
+                        "error[P????]: Failed to parse reference's target type\n--> {}",
+                        self.lexer.current_position()
+                    );
+                    None
+                }
+            }
+
+            Token::Op(Operator::LogicLt) => {
+                // TODO: Handle generic types
+                None
+            }
+
+            Token::Op(_) => {
                 self.set_failed_bit();
                 error!(
                     self.log,
