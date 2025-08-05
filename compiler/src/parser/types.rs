@@ -5,31 +5,31 @@ use crate::lexer::*;
 use crate::parsetree::*;
 
 #[derive(Default)]
-struct TypeConstraints<'a> {
+struct RefinementOptions<'a> {
     minimum: Option<ExprKey<'a>>,
     maximum: Option<ExprKey<'a>>,
     width: Option<ExprKey<'a>>,
 }
 
-impl<'a> TypeConstraints<'a> {
+impl<'a> RefinementOptions<'a> {
     fn has_any(&self) -> bool {
         self.minimum.is_some() || self.maximum.is_some() || self.width.is_some()
     }
 }
 
 impl<'storage, 'a> Parser<'storage, 'a> {
-    fn parse_type_min_max_constraints(&mut self, constraints: &mut TypeConstraints<'a>) {
+    fn parse_refinement_bounds(&mut self, options: &mut RefinementOptions<'a>) {
         assert!(self.lexer.peek_t() == Token::Punct(Punct::LeftBracket));
         self.lexer.skip();
 
         if !self.lexer.skip_if(&Token::Punct(Punct::Colon)) {
             if let Some(minimum) = self.parse_expression() {
-                constraints.minimum = Some(minimum);
+                options.minimum = Some(minimum);
             } else {
                 self.set_failed_bit();
                 error!(
                     self.log,
-                    "error[P????]: Failed to parse minimum type constraint\n--> {}",
+                    "error[P????]: Failed to parse type's minimum refinement bound\n--> {}",
                     self.lexer.current_position()
                 );
             }
@@ -38,7 +38,7 @@ impl<'storage, 'a> Parser<'storage, 'a> {
                 self.set_failed_bit();
                 error!(
                     self.log,
-                    "error[P????]: Expected a colon after minimum type constraint\n--> {}",
+                    "error[P????]: Expected a colon after type's minimum refinement bound\n--> {}",
                     self.lexer.current_position()
                 );
             }
@@ -46,12 +46,12 @@ impl<'storage, 'a> Parser<'storage, 'a> {
 
         if !self.lexer.skip_if(&Token::Punct(Punct::RightBracket)) {
             if let Some(maximum) = self.parse_expression() {
-                constraints.maximum = Some(maximum);
+                options.maximum = Some(maximum);
             } else {
                 self.set_failed_bit();
                 error!(
                     self.log,
-                    "error[P????]: Failed to parse maximum type constraint\n--> {}",
+                    "error[P????]: Failed to parse type's maximum refinement bound\n--> {}",
                     self.lexer.current_position()
                 );
             }
@@ -67,32 +67,32 @@ impl<'storage, 'a> Parser<'storage, 'a> {
         }
     }
 
-    fn parse_type_constraints(&mut self) -> TypeConstraints<'a> {
-        let mut constraints = TypeConstraints::default();
+    fn parse_refinement_options(&mut self) -> RefinementOptions<'a> {
+        let mut options = RefinementOptions::default();
 
         if self.lexer.skip_if(&Token::Punct(Punct::Colon)) {
             if self.lexer.next_is(&Token::Punct(Punct::LeftBracket)) {
-                self.parse_type_min_max_constraints(&mut constraints);
+                self.parse_refinement_bounds(&mut options);
             } else {
                 if let Some(width) = self.parse_expression() {
-                    constraints.width = Some(width);
+                    options.width = Some(width);
                 } else {
                     self.set_failed_bit();
                     error!(
                         self.log,
-                        "error[P????]: Failed to parse width type constraint\n--> {}",
+                        "error[P????]: Failed to parse type's width refinement bound\n--> {}",
                         self.lexer.current_position()
                     );
                 }
 
                 if self.lexer.skip_if(&Token::Punct(Punct::Colon)) {
                     if self.lexer.next_is(&Token::Punct(Punct::LeftBracket)) {
-                        self.parse_type_min_max_constraints(&mut constraints);
+                        self.parse_refinement_bounds(&mut options);
                     } else {
                         self.set_failed_bit();
                         error!(
                             self.log,
-                            "error[P????]: Expected a left bracket to start minimum/maximum constraints\n--> {}",
+                            "error[P????]: Expected a left bracket for type's range refinement bounds\n--> {}",
                             self.lexer.current_position()
                         );
                     }
@@ -100,7 +100,7 @@ impl<'storage, 'a> Parser<'storage, 'a> {
             }
         }
 
-        constraints
+        options
     }
 
     fn parse_tuple_type(&mut self) -> Option<TypeKey<'a>> {
@@ -353,16 +353,16 @@ impl<'storage, 'a> Parser<'storage, 'a> {
             inner.inspect(|v| v.add_parentheses(self.storage))
         } else {
             let primary = self.parse_type_primary();
-            let constraints = self.parse_type_constraints();
+            let options = self.parse_refinement_options();
 
-            if constraints.has_any() {
+            if options.has_any() {
                 if let Some(principal) = primary {
                     return Builder::new(self.storage)
                         .create_refinement_type()
                         .with_principal(principal)
-                        .with_width(constraints.width)
-                        .with_minimum(constraints.minimum)
-                        .with_maximum(constraints.maximum)
+                        .with_width(options.width)
+                        .with_minimum(options.minimum)
+                        .with_maximum(options.maximum)
                         .build();
                 } else {
                     self.set_failed_bit();
