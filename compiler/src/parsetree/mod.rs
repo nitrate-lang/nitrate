@@ -12,6 +12,7 @@ mod list;
 mod map_type;
 mod number;
 mod object;
+mod reference;
 mod refinement_type;
 mod returns;
 mod slice_type;

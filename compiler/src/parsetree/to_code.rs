@@ -9,6 +9,7 @@ use super::list::ListLit;
 use super::map_type::MapType;
 use super::number::{FloatLit, IntegerLit};
 use super::object::ObjectLit;
+use super::reference::{ManagedType, UnmanagedType};
 use super::refinement_type::RefinementType;
 use super::returns::Return;
 use super::slice_type::SliceType;
@@ -412,6 +413,30 @@ impl<'a> ToCode<'a> for FunctionType<'a> {
     }
 }
 
+impl<'a> ToCode<'a> for ManagedType<'a> {
+    fn to_code(&self, bank: &Storage<'a>, tokens: &mut Vec<Token<'a>>, options: &CodeFormat) {
+        tokens.push(Token::Op(Operator::BitAnd));
+        if self.is_mutable() {
+            tokens.push(Token::Keyword(Keyword::Mut));
+        }
+
+        self.target().to_code(bank, tokens, options);
+    }
+}
+
+impl<'a> ToCode<'a> for UnmanagedType<'a> {
+    fn to_code(&self, bank: &Storage<'a>, tokens: &mut Vec<Token<'a>>, options: &CodeFormat) {
+        tokens.push(Token::Op(Operator::Mul));
+        if self.is_mutable() {
+            tokens.push(Token::Keyword(Keyword::Mut));
+        } else {
+            tokens.push(Token::Keyword(Keyword::Const));
+        }
+
+        self.target().to_code(bank, tokens, options);
+    }
+}
+
 impl<'a> ToCode<'a> for ExprKey<'a> {
     fn to_code(&self, bank: &Storage<'a>, tokens: &mut Vec<Token<'a>>, options: &CodeFormat) {
         if self.is_discard() {
@@ -450,6 +475,8 @@ impl<'a> ToCode<'a> for ExprKey<'a> {
             ExprRef::SliceType(e) => e.to_code(bank, tokens, options),
             ExprRef::StructType(e) => e.to_code(bank, tokens, options),
             ExprRef::FunctionType(e) => e.to_code(bank, tokens, options),
+            ExprRef::ManagedType(e) => e.to_code(bank, tokens, options),
+            ExprRef::UnmanagedType(e) => e.to_code(bank, tokens, options),
 
             ExprRef::Discard => {}
 
@@ -512,6 +539,8 @@ impl<'a> ToCode<'a> for TypeKey<'a> {
             TypeRef::SliceType(e) => e.to_code(bank, tokens, options),
             TypeRef::StructType(e) => e.to_code(bank, tokens, options),
             TypeRef::FunctionType(e) => e.to_code(bank, tokens, options),
+            TypeRef::ManagedType(e) => e.to_code(bank, tokens, options),
+            TypeRef::UnmanagedType(e) => e.to_code(bank, tokens, options),
         }
 
         if has_parentheses {

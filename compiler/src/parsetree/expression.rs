@@ -8,6 +8,7 @@ use super::list::ListLit;
 use super::map_type::MapType;
 use super::number::{FloatLit, IntegerLit};
 use super::object::ObjectLit;
+use super::reference::{ManagedType, UnmanagedType};
 use super::refinement_type::RefinementType;
 use super::returns::Return;
 use super::slice_type::SliceType;
@@ -46,6 +47,8 @@ pub enum ExprKind {
     SliceType,
     StructType,
     FunctionType,
+    ManagedType,
+    UnmanagedType,
 
     Discard,
 
@@ -95,6 +98,8 @@ pub(crate) enum TypeKind {
     SliceType,
     StructType,
     FunctionType,
+    ManagedType,
+    UnmanagedType,
 }
 
 #[derive(Debug, Clone)]
@@ -117,7 +122,7 @@ pub(crate) enum ExprOwned<'a> {
     Float64,
     Float128,
 
-    /* Compound Types */
+    /* Non-primitive Types */
     InferType,
     TypeName(&'a str),
     RefinementType(RefinementType<'a>),
@@ -127,6 +132,8 @@ pub(crate) enum ExprOwned<'a> {
     SliceType(SliceType<'a>),
     StructType(StructType<'a>),
     FunctionType(FunctionType<'a>),
+    ManagedType(ManagedType<'a>),
+    UnmanagedType(UnmanagedType<'a>),
 
     Discard,
 
@@ -172,7 +179,7 @@ pub(crate) enum TypeOwned<'a> {
     Float64,
     Float128,
 
-    /* Compound Types */
+    /* Non-primitive  Types */
     InferType,
     TypeName(&'a str),
     RefinementType(RefinementType<'a>),
@@ -182,6 +189,8 @@ pub(crate) enum TypeOwned<'a> {
     SliceType(SliceType<'a>),
     StructType(StructType<'a>),
     FunctionType(FunctionType<'a>),
+    ManagedType(ManagedType<'a>),
+    UnmanagedType(UnmanagedType<'a>),
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -204,7 +213,7 @@ pub enum ExprRef<'storage, 'a> {
     Float64,
     Float128,
 
-    /* Compound Types */
+    /* Non-primitive  Types */
     InferType,
     TypeName(&'a str),
     RefinementType(&'storage RefinementType<'a>),
@@ -214,6 +223,8 @@ pub enum ExprRef<'storage, 'a> {
     SliceType(&'storage SliceType<'a>),
     StructType(&'storage StructType<'a>),
     FunctionType(&'storage FunctionType<'a>),
+    ManagedType(&'storage ManagedType<'a>),
+    UnmanagedType(&'storage UnmanagedType<'a>),
 
     Discard,
 
@@ -259,16 +270,18 @@ pub enum ExprRefMut<'storage, 'a> {
     Float64,
     Float128,
 
-    /* Compound Types */
+    /* Non-primitive  Types */
     InferType,
     TypeName(&'a str),
-    RefinementType(&'storage mut RefinementType<'a>),
-    TupleType(&'storage mut TupleType<'a>),
-    ArrayType(&'storage mut ArrayType<'a>),
-    MapType(&'storage mut MapType<'a>),
-    SliceType(&'storage mut SliceType<'a>),
-    StructType(&'storage mut StructType<'a>),
-    FunctionType(&'storage mut FunctionType<'a>),
+    RefinementType(&'storage RefinementType<'a>),
+    TupleType(&'storage TupleType<'a>),
+    ArrayType(&'storage ArrayType<'a>),
+    MapType(&'storage MapType<'a>),
+    SliceType(&'storage SliceType<'a>),
+    StructType(&'storage StructType<'a>),
+    FunctionType(&'storage FunctionType<'a>),
+    ManagedType(&'storage ManagedType<'a>),
+    UnmanagedType(&'storage UnmanagedType<'a>),
 
     Discard,
 
@@ -314,7 +327,7 @@ pub enum TypeRef<'storage, 'a> {
     Float64,
     Float128,
 
-    /* Compound Types */
+    /* Non-primitive  Types */
     InferType,
     TypeName(&'a str),
     RefinementType(&'storage RefinementType<'a>),
@@ -324,6 +337,8 @@ pub enum TypeRef<'storage, 'a> {
     SliceType(&'storage SliceType<'a>),
     StructType(&'storage StructType<'a>),
     FunctionType(&'storage FunctionType<'a>),
+    ManagedType(&'storage ManagedType<'a>),
+    UnmanagedType(&'storage UnmanagedType<'a>),
 }
 
 impl TryInto<TypeKind> for ExprKind {
@@ -357,6 +372,8 @@ impl TryInto<TypeKind> for ExprKind {
             ExprKind::SliceType => Ok(TypeKind::SliceType),
             ExprKind::StructType => Ok(TypeKind::StructType),
             ExprKind::FunctionType => Ok(TypeKind::FunctionType),
+            ExprKind::ManagedType => Ok(TypeKind::ManagedType),
+            ExprKind::UnmanagedType => Ok(TypeKind::UnmanagedType),
 
             ExprKind::Discard
             | ExprKind::IntegerLit
@@ -405,6 +422,8 @@ impl Into<ExprKind> for TypeKind {
             TypeKind::SliceType => ExprKind::SliceType,
             TypeKind::StructType => ExprKind::StructType,
             TypeKind::FunctionType => ExprKind::FunctionType,
+            TypeKind::ManagedType => ExprKind::ManagedType,
+            TypeKind::UnmanagedType => ExprKind::UnmanagedType,
         }
     }
 }
@@ -438,6 +457,8 @@ impl std::fmt::Display for ExprKind {
             ExprKind::SliceType => write!(f, "SliceType"),
             ExprKind::StructType => write!(f, "StructType"),
             ExprKind::FunctionType => write!(f, "FunctionType"),
+            ExprKind::ManagedType => write!(f, "ManagedType"),
+            ExprKind::UnmanagedType => write!(f, "UnmanagedType"),
 
             ExprKind::Discard => write!(f, "Discard"),
 
@@ -490,6 +511,8 @@ impl std::fmt::Display for TypeKind {
             TypeKind::SliceType => write!(f, "SliceType"),
             TypeKind::StructType => write!(f, "StructType"),
             TypeKind::FunctionType => write!(f, "FunctionType"),
+            TypeKind::ManagedType => write!(f, "ManagedType"),
+            TypeKind::UnmanagedType => write!(f, "UnmanagedType"),
         }
     }
 }
@@ -525,6 +548,8 @@ impl<'a> TryInto<TypeOwned<'a>> for ExprOwned<'a> {
             ExprOwned::SliceType(x) => Ok(TypeOwned::SliceType(x)),
             ExprOwned::StructType(x) => Ok(TypeOwned::StructType(x)),
             ExprOwned::FunctionType(x) => Ok(TypeOwned::FunctionType(x)),
+            ExprOwned::ManagedType(x) => Ok(TypeOwned::ManagedType(x)),
+            ExprOwned::UnmanagedType(x) => Ok(TypeOwned::UnmanagedType(x)),
 
             ExprOwned::Discard
             | ExprOwned::IntegerLit(_)
@@ -573,6 +598,8 @@ impl<'a> Into<ExprOwned<'a>> for TypeOwned<'a> {
             TypeOwned::SliceType(x) => ExprOwned::SliceType(x),
             TypeOwned::StructType(x) => ExprOwned::StructType(x),
             TypeOwned::FunctionType(x) => ExprOwned::FunctionType(x),
+            TypeOwned::ManagedType(x) => ExprOwned::ManagedType(x),
+            TypeOwned::UnmanagedType(x) => ExprOwned::UnmanagedType(x),
         }
     }
 }
@@ -608,6 +635,8 @@ impl<'storage, 'a> TryInto<TypeRef<'storage, 'a>> for ExprRef<'storage, 'a> {
             ExprRef::SliceType(x) => Ok(TypeRef::SliceType(x)),
             ExprRef::StructType(x) => Ok(TypeRef::StructType(x)),
             ExprRef::FunctionType(x) => Ok(TypeRef::FunctionType(x)),
+            ExprRef::ManagedType(x) => Ok(TypeRef::ManagedType(x)),
+            ExprRef::UnmanagedType(x) => Ok(TypeRef::UnmanagedType(x)),
 
             ExprRef::Discard
             | ExprRef::IntegerLit(_)
@@ -658,6 +687,8 @@ impl<'storage, 'a> TryInto<TypeRef<'storage, 'a>> for ExprRefMut<'storage, 'a> {
             ExprRefMut::SliceType(x) => Ok(TypeRef::SliceType(x)),
             ExprRefMut::StructType(x) => Ok(TypeRef::StructType(x)),
             ExprRefMut::FunctionType(x) => Ok(TypeRef::FunctionType(x)),
+            ExprRefMut::ManagedType(x) => Ok(TypeRef::ManagedType(x)),
+            ExprRefMut::UnmanagedType(x) => Ok(TypeRef::UnmanagedType(x)),
 
             ExprRefMut::Discard
             | ExprRefMut::IntegerLit(_)
@@ -706,6 +737,8 @@ impl<'storage, 'a> Into<ExprRef<'storage, 'a>> for TypeRef<'storage, 'a> {
             TypeRef::SliceType(x) => ExprRef::SliceType(x),
             TypeRef::StructType(x) => ExprRef::StructType(x),
             TypeRef::FunctionType(x) => ExprRef::FunctionType(x),
+            TypeRef::ManagedType(x) => ExprRef::ManagedType(x),
+            TypeRef::UnmanagedType(x) => ExprRef::UnmanagedType(x),
         }
     }
 }

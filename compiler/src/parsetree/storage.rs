@@ -11,6 +11,7 @@ use super::list::ListLit;
 use super::map_type::MapType;
 use super::number::{FloatLit, IntegerLit};
 use super::object::ObjectLit;
+use super::reference::{ManagedType, UnmanagedType};
 use super::refinement_type::RefinementType;
 use super::returns::Return;
 use super::slice_type::SliceType;
@@ -88,6 +89,8 @@ impl<'a> ExprKey<'a> {
             x if x == ExprKind::SliceType as u8 => ExprKind::SliceType,
             x if x == ExprKind::StructType as u8 => ExprKind::StructType,
             x if x == ExprKind::FunctionType as u8 => ExprKind::FunctionType,
+            x if x == ExprKind::ManagedType as u8 => ExprKind::ManagedType,
+            x if x == ExprKind::UnmanagedType as u8 => ExprKind::UnmanagedType,
 
             x if x == ExprKind::Discard as u8 => ExprKind::Discard,
 
@@ -182,6 +185,8 @@ impl<'a> TypeKey<'a> {
             x if x == TypeKind::SliceType as u8 => TypeKind::SliceType,
             x if x == TypeKind::StructType as u8 => TypeKind::StructType,
             x if x == TypeKind::FunctionType as u8 => TypeKind::FunctionType,
+            x if x == TypeKind::ManagedType as u8 => TypeKind::ManagedType,
+            x if x == TypeKind::UnmanagedType as u8 => TypeKind::UnmanagedType,
 
             _ => unreachable!(),
         }
@@ -259,7 +264,9 @@ impl<'a> ExprKey<'a> {
             | ExprKind::MapType
             | ExprKind::SliceType
             | ExprKind::StructType
-            | ExprKind::FunctionType => true,
+            | ExprKind::FunctionType
+            | ExprKind::ManagedType
+            | ExprKind::UnmanagedType => true,
 
             ExprKind::Discard
             | ExprKind::IntegerLit
@@ -324,6 +331,8 @@ pub struct Storage<'a> {
     slice_types: Vec<SliceType<'a>>,
     struct_types: Vec<StructType<'a>>,
     function_types: Vec<FunctionType<'a>>,
+    managed_types: Vec<ManagedType<'a>>,
+    unmanaged_types: Vec<UnmanagedType<'a>>,
 
     has_parentheses: HashSet<ExprKey<'a>>,
 }
@@ -363,6 +372,8 @@ impl<'a> Storage<'a> {
             slice_types: Vec::new(),
             struct_types: Vec::new(),
             function_types: Vec::new(),
+            managed_types: Vec::new(),
+            unmanaged_types: Vec::new(),
 
             has_parentheses: HashSet::new(),
         };
@@ -426,6 +437,8 @@ impl<'a> Storage<'a> {
             ExprKind::SliceType => self.slice_types.reserve(additional),
             ExprKind::StructType => self.struct_types.reserve(additional),
             ExprKind::FunctionType => self.function_types.reserve(additional),
+            ExprKind::ManagedType => self.managed_types.reserve(additional),
+            ExprKind::UnmanagedType => self.unmanaged_types.reserve(additional),
 
             ExprKind::Discard => {}
 
@@ -474,7 +487,9 @@ impl<'a> Storage<'a> {
             | ExprOwned::MapType(_)
             | ExprOwned::SliceType(_)
             | ExprOwned::StructType(_)
-            | ExprOwned::FunctionType(_) => self
+            | ExprOwned::FunctionType(_)
+            | ExprOwned::ManagedType(_)
+            | ExprOwned::UnmanagedType(_) => self
                 .add_type(expr.try_into().expect("Expected a type node"))
                 .map(|key| key.into()),
 
@@ -658,6 +673,20 @@ impl<'a> Storage<'a> {
                     })
                 }
             }
+
+            TypeOwned::ManagedType(node) => {
+                TypeKey::new(TypeKind::ManagedType, self.managed_types.len()).and_then(|k| {
+                    self.managed_types.push(node);
+                    Some(k)
+                })
+            }
+
+            TypeOwned::UnmanagedType(node) => {
+                TypeKey::new(TypeKind::UnmanagedType, self.unmanaged_types.len()).and_then(|k| {
+                    self.unmanaged_types.push(node);
+                    Some(k)
+                })
+            }
         }
     }
 
@@ -697,6 +726,8 @@ impl<'a> Storage<'a> {
             ExprKind::SliceType => self.slice_types.get(index).map(ExprRef::SliceType),
             ExprKind::StructType => self.struct_types.get(index).map(ExprRef::StructType),
             ExprKind::FunctionType => self.function_types.get(index).map(ExprRef::FunctionType),
+            ExprKind::ManagedType => self.managed_types.get(index).map(ExprRef::ManagedType),
+            ExprKind::UnmanagedType => self.unmanaged_types.get(index).map(ExprRef::UnmanagedType),
 
             ExprKind::Discard => Some(ExprRef::Discard),
 
@@ -748,17 +779,19 @@ impl<'a> Storage<'a> {
                 .map(|name| ExprRefMut::TypeName(name)),
             ExprKind::RefinementType => self
                 .refinement_types
-                .get_mut(index)
+                .get(index)
                 .map(ExprRefMut::RefinementType),
-            ExprKind::TupleType => self.tuple_types.get_mut(index).map(ExprRefMut::TupleType),
-            ExprKind::ArrayType => self.array_types.get_mut(index).map(ExprRefMut::ArrayType),
-            ExprKind::MapType => self.map_types.get_mut(index).map(ExprRefMut::MapType),
-            ExprKind::SliceType => self.slice_types.get_mut(index).map(ExprRefMut::SliceType),
-            ExprKind::StructType => self.struct_types.get_mut(index).map(ExprRefMut::StructType),
-            ExprKind::FunctionType => self
-                .function_types
-                .get_mut(index)
-                .map(ExprRefMut::FunctionType),
+            ExprKind::TupleType => self.tuple_types.get(index).map(ExprRefMut::TupleType),
+            ExprKind::ArrayType => self.array_types.get(index).map(ExprRefMut::ArrayType),
+            ExprKind::MapType => self.map_types.get(index).map(ExprRefMut::MapType),
+            ExprKind::SliceType => self.slice_types.get(index).map(ExprRefMut::SliceType),
+            ExprKind::StructType => self.struct_types.get(index).map(ExprRefMut::StructType),
+            ExprKind::FunctionType => self.function_types.get(index).map(ExprRefMut::FunctionType),
+            ExprKind::ManagedType => self.managed_types.get(index).map(ExprRefMut::ManagedType),
+            ExprKind::UnmanagedType => self
+                .unmanaged_types
+                .get(index)
+                .map(ExprRefMut::UnmanagedType),
 
             ExprKind::Discard => Some(ExprRefMut::Discard),
 
@@ -818,6 +851,8 @@ impl<'a> Storage<'a> {
             TypeKind::SliceType => self.slice_types.get(index).map(TypeRef::SliceType),
             TypeKind::StructType => self.struct_types.get(index).map(TypeRef::StructType),
             TypeKind::FunctionType => self.function_types.get(index).map(TypeRef::FunctionType),
+            TypeKind::ManagedType => self.managed_types.get(index).map(TypeRef::ManagedType),
+            TypeKind::UnmanagedType => self.unmanaged_types.get(index).map(TypeRef::UnmanagedType),
         }
         .expect("Expression not found in storage")
     }

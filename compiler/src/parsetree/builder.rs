@@ -239,4 +239,12 @@ impl<'storage, 'a> Builder<'storage, 'a> {
     pub fn create_function_type(&mut self) -> FunctionTypeBuilder<'_, 'a> {
         FunctionTypeBuilder::new(self.storage)
     }
+
+    pub fn create_managed_type(&mut self) -> ManagedTypeBuilder<'_, 'a> {
+        ManagedTypeBuilder::new(self.storage)
+    }
+
+    pub fn create_unmanaged_type(&mut self) -> UnmanagedTypeBuilder<'_, 'a> {
+        UnmanagedTypeBuilder::new(self.storage)
+    }
 }

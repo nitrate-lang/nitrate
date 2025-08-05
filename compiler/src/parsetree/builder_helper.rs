@@ -10,6 +10,7 @@ use super::list::ListLit;
 use super::map_type::MapType;
 use super::number::{FloatLit, IntegerLit};
 use super::object::ObjectLit;
+use super::reference::{ManagedType, UnmanagedType};
 use super::refinement_type::RefinementType;
 use super::returns::Return;
 use super::slice_type::SliceType;
@@ -872,6 +873,76 @@ impl<'storage, 'a> FunctionTypeBuilder<'storage, 'a> {
                 self.parameters,
                 self.return_type,
                 self.attributes,
+            )))
+    }
+}
+
+#[derive(Debug)]
+pub struct ManagedTypeBuilder<'storage, 'a> {
+    storage: &'storage mut Storage<'a>,
+    target: Option<TypeKey<'a>>,
+    is_mutable: bool,
+}
+
+impl<'storage, 'a> ManagedTypeBuilder<'storage, 'a> {
+    pub(crate) fn new(storage: &'storage mut Storage<'a>) -> Self {
+        ManagedTypeBuilder {
+            storage,
+            target: None,
+            is_mutable: false,
+        }
+    }
+
+    pub fn with_target(mut self, target: TypeKey<'a>) -> Self {
+        self.target = Some(target);
+        self
+    }
+
+    pub fn with_mutability(mut self, is_mutable: bool) -> Self {
+        self.is_mutable = is_mutable;
+        self
+    }
+
+    pub fn build(self) -> Option<TypeKey<'a>> {
+        self.storage
+            .add_type(TypeOwned::ManagedType(ManagedType::new(
+                self.target.expect("Target type must be provided"),
+                self.is_mutable,
+            )))
+    }
+}
+
+#[derive(Debug)]
+pub struct UnmanagedTypeBuilder<'storage, 'a> {
+    storage: &'storage mut Storage<'a>,
+    target: Option<TypeKey<'a>>,
+    is_mutable: bool,
+}
+
+impl<'storage, 'a> UnmanagedTypeBuilder<'storage, 'a> {
+    pub(crate) fn new(storage: &'storage mut Storage<'a>) -> Self {
+        UnmanagedTypeBuilder {
+            storage,
+            target: None,
+            is_mutable: false,
+        }
+    }
+
+    pub fn with_target(mut self, target: TypeKey<'a>) -> Self {
+        self.target = Some(target);
+        self
+    }
+
+    pub fn with_mutability(mut self, is_mutable: bool) -> Self {
+        self.is_mutable = is_mutable;
+        self
+    }
+
+    pub fn build(self) -> Option<TypeKey<'a>> {
+        self.storage
+            .add_type(TypeOwned::UnmanagedType(UnmanagedType::new(
+                self.target.expect("Target type must be provided"),
+                self.is_mutable,
             )))
     }
 }
