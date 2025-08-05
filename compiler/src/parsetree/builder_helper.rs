@@ -7,6 +7,7 @@ use super::expression::{ExprOwned, ExprRef, TypeOwned};
 use super::function::{Function, FunctionParameter};
 use super::function_type::FunctionType;
 use super::list::ListLit;
+use super::map_type::MapType;
 use super::number::{FloatLit, IntegerLit};
 use super::object::ObjectLit;
 use super::refinement_type::RefinementType;
@@ -689,6 +690,40 @@ impl<'storage, 'a> ArrayTypeBuilder<'storage, 'a> {
         self.storage.add_type(TypeOwned::ArrayType(ArrayType::new(
             self.element.expect("Element type must be provided"),
             self.count.expect("Array length must be provided"),
+        )))
+    }
+}
+
+#[derive(Debug)]
+pub struct MapTypeBuilder<'storage, 'a> {
+    storage: &'storage mut Storage<'a>,
+    key: Option<TypeKey<'a>>,
+    value: Option<TypeKey<'a>>,
+}
+
+impl<'storage, 'a> MapTypeBuilder<'storage, 'a> {
+    pub(crate) fn new(storage: &'storage mut Storage<'a>) -> Self {
+        MapTypeBuilder {
+            storage,
+            key: None,
+            value: None,
+        }
+    }
+
+    pub fn with_key(mut self, key: TypeKey<'a>) -> Self {
+        self.key = Some(key);
+        self
+    }
+
+    pub fn with_value(mut self, value: TypeKey<'a>) -> Self {
+        self.value = Some(value);
+        self
+    }
+
+    pub fn build(self) -> Option<TypeKey<'a>> {
+        self.storage.add_type(TypeOwned::MapType(MapType::new(
+            self.key.expect("Key type must be provided"),
+            self.value.expect("Value type must be provided"),
         )))
     }
 }

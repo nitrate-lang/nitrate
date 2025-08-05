@@ -224,6 +224,10 @@ impl<'storage, 'a> Builder<'storage, 'a> {
         ArrayTypeBuilder::new(self.storage)
     }
 
+    pub fn create_map_type(&mut self) -> MapTypeBuilder<'_, 'a> {
+        MapTypeBuilder::new(self.storage)
+    }
+
     pub fn create_slice_type(&mut self) -> SliceTypeBuilder<'_, 'a> {
         SliceTypeBuilder::new(self.storage)
     }

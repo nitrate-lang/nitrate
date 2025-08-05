@@ -8,6 +8,7 @@ use super::expression::{ExprKind, ExprOwned, ExprRef, ExprRefMut, TypeKind, Type
 use super::function::Function;
 use super::function_type::FunctionType;
 use super::list::ListLit;
+use super::map_type::MapType;
 use super::number::{FloatLit, IntegerLit};
 use super::object::ObjectLit;
 use super::refinement_type::RefinementType;
@@ -83,6 +84,7 @@ impl<'a> ExprKey<'a> {
             x if x == ExprKind::RefinementType as u8 => ExprKind::RefinementType,
             x if x == ExprKind::TupleType as u8 => ExprKind::TupleType,
             x if x == ExprKind::ArrayType as u8 => ExprKind::ArrayType,
+            x if x == ExprKind::MapType as u8 => ExprKind::MapType,
             x if x == ExprKind::SliceType as u8 => ExprKind::SliceType,
             x if x == ExprKind::StructType as u8 => ExprKind::StructType,
             x if x == ExprKind::FunctionType as u8 => ExprKind::FunctionType,
@@ -176,6 +178,7 @@ impl<'a> TypeKey<'a> {
             x if x == TypeKind::RefinementType as u8 => TypeKind::RefinementType,
             x if x == TypeKind::TupleType as u8 => TypeKind::TupleType,
             x if x == TypeKind::ArrayType as u8 => TypeKind::ArrayType,
+            x if x == TypeKind::MapType as u8 => TypeKind::MapType,
             x if x == TypeKind::SliceType as u8 => TypeKind::SliceType,
             x if x == TypeKind::StructType as u8 => TypeKind::StructType,
             x if x == TypeKind::FunctionType as u8 => TypeKind::FunctionType,
@@ -253,6 +256,7 @@ impl<'a> ExprKey<'a> {
             | ExprKind::RefinementType
             | ExprKind::TupleType
             | ExprKind::ArrayType
+            | ExprKind::MapType
             | ExprKind::SliceType
             | ExprKind::StructType
             | ExprKind::FunctionType => true,
@@ -316,6 +320,7 @@ pub struct Storage<'a> {
     refinement_types: Vec<RefinementType<'a>>,
     tuple_types: Vec<TupleType<'a>>,
     array_types: Vec<ArrayType<'a>>,
+    map_types: Vec<MapType<'a>>,
     slice_types: Vec<SliceType<'a>>,
     struct_types: Vec<StructType<'a>>,
     function_types: Vec<FunctionType<'a>>,
@@ -354,6 +359,7 @@ impl<'a> Storage<'a> {
             refinement_types: Vec::new(),
             tuple_types: Vec::new(),
             array_types: Vec::new(),
+            map_types: Vec::new(),
             slice_types: Vec::new(),
             struct_types: Vec::new(),
             function_types: Vec::new(),
@@ -416,6 +422,7 @@ impl<'a> Storage<'a> {
             ExprKind::RefinementType => self.refinement_types.reserve(additional),
             ExprKind::TupleType => self.tuple_types.reserve(additional),
             ExprKind::ArrayType => self.array_types.reserve(additional),
+            ExprKind::MapType => self.map_types.reserve(additional),
             ExprKind::SliceType => self.slice_types.reserve(additional),
             ExprKind::StructType => self.struct_types.reserve(additional),
             ExprKind::FunctionType => self.function_types.reserve(additional),
@@ -464,6 +471,7 @@ impl<'a> Storage<'a> {
             | ExprOwned::RefinementType(_)
             | ExprOwned::TupleType(_)
             | ExprOwned::ArrayType(_)
+            | ExprOwned::MapType(_)
             | ExprOwned::SliceType(_)
             | ExprOwned::StructType(_)
             | ExprOwned::FunctionType(_) => self
@@ -617,6 +625,12 @@ impl<'a> Storage<'a> {
                     Some(k)
                 }),
 
+            TypeOwned::MapType(node) => TypeKey::new(TypeKind::MapType, self.map_types.len())
+                .and_then(|k| {
+                    self.map_types.push(node);
+                    Some(k)
+                }),
+
             TypeOwned::SliceType(node) => TypeKey::new(TypeKind::SliceType, self.slice_types.len())
                 .and_then(|k| {
                     self.slice_types.push(node);
@@ -679,6 +693,7 @@ impl<'a> Storage<'a> {
                 .map(ExprRef::RefinementType),
             ExprKind::TupleType => self.tuple_types.get(index).map(ExprRef::TupleType),
             ExprKind::ArrayType => self.array_types.get(index).map(ExprRef::ArrayType),
+            ExprKind::MapType => self.map_types.get(index).map(ExprRef::MapType),
             ExprKind::SliceType => self.slice_types.get(index).map(ExprRef::SliceType),
             ExprKind::StructType => self.struct_types.get(index).map(ExprRef::StructType),
             ExprKind::FunctionType => self.function_types.get(index).map(ExprRef::FunctionType),
@@ -737,6 +752,7 @@ impl<'a> Storage<'a> {
                 .map(ExprRefMut::RefinementType),
             ExprKind::TupleType => self.tuple_types.get_mut(index).map(ExprRefMut::TupleType),
             ExprKind::ArrayType => self.array_types.get_mut(index).map(ExprRefMut::ArrayType),
+            ExprKind::MapType => self.map_types.get_mut(index).map(ExprRefMut::MapType),
             ExprKind::SliceType => self.slice_types.get_mut(index).map(ExprRefMut::SliceType),
             ExprKind::StructType => self.struct_types.get_mut(index).map(ExprRefMut::StructType),
             ExprKind::FunctionType => self
@@ -798,6 +814,7 @@ impl<'a> Storage<'a> {
                 .map(TypeRef::RefinementType),
             TypeKind::TupleType => self.tuple_types.get(index).map(TypeRef::TupleType),
             TypeKind::ArrayType => self.array_types.get(index).map(TypeRef::ArrayType),
+            TypeKind::MapType => self.map_types.get(index).map(TypeRef::MapType),
             TypeKind::SliceType => self.slice_types.get(index).map(TypeRef::SliceType),
             TypeKind::StructType => self.struct_types.get(index).map(TypeRef::StructType),
             TypeKind::FunctionType => self.function_types.get(index).map(TypeRef::FunctionType),

@@ -9,6 +9,7 @@ mod expression;
 mod function;
 mod function_type;
 mod list;
+mod map_type;
 mod number;
 mod object;
 mod refinement_type;

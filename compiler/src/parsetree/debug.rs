@@ -74,6 +74,12 @@ impl<'storage, 'a> std::fmt::Debug for Printable<'storage, 'a> {
                 .field("count", &x.count().as_printable(self.storage))
                 .finish(),
 
+            ExprRef::MapType(x) => f
+                .debug_struct("MapType")
+                .field("key", &x.key().as_printable(self.storage))
+                .field("value", &x.value().as_printable(self.storage))
+                .finish(),
+
             ExprRef::SliceType(x) => f
                 .debug_struct("SliceType")
                 .field("element", &x.element().as_printable(self.storage))

@@ -6,6 +6,7 @@ use super::expression::{ExprRef, TypeRef};
 use super::function::Function;
 use super::function_type::FunctionType;
 use super::list::ListLit;
+use super::map_type::MapType;
 use super::number::{FloatLit, IntegerLit};
 use super::object::ObjectLit;
 use super::refinement_type::RefinementType;
@@ -323,6 +324,16 @@ impl<'a> ToCode<'a> for ArrayType<'a> {
     }
 }
 
+impl<'a> ToCode<'a> for MapType<'a> {
+    fn to_code(&self, bank: &Storage<'a>, tokens: &mut Vec<Token<'a>>, options: &CodeFormat) {
+        tokens.push(Token::Punct(Punct::LeftBracket));
+        self.key().to_code(bank, tokens, options);
+        tokens.push(Token::Op(Operator::Arrow));
+        self.value().to_code(bank, tokens, options);
+        tokens.push(Token::Punct(Punct::RightBracket));
+    }
+}
+
 impl<'a> ToCode<'a> for SliceType<'a> {
     fn to_code(&self, bank: &Storage<'a>, tokens: &mut Vec<Token<'a>>, options: &CodeFormat) {
         tokens.push(Token::Punct(Punct::LeftBracket));
@@ -435,6 +446,7 @@ impl<'a> ToCode<'a> for ExprKey<'a> {
             ExprRef::RefinementType(e) => e.to_code(bank, tokens, options),
             ExprRef::TupleType(e) => e.to_code(bank, tokens, options),
             ExprRef::ArrayType(e) => e.to_code(bank, tokens, options),
+            ExprRef::MapType(e) => e.to_code(bank, tokens, options),
             ExprRef::SliceType(e) => e.to_code(bank, tokens, options),
             ExprRef::StructType(e) => e.to_code(bank, tokens, options),
             ExprRef::FunctionType(e) => e.to_code(bank, tokens, options),
@@ -496,6 +508,7 @@ impl<'a> ToCode<'a> for TypeKey<'a> {
             TypeRef::RefinementType(e) => e.to_code(bank, tokens, options),
             TypeRef::TupleType(e) => e.to_code(bank, tokens, options),
             TypeRef::ArrayType(e) => e.to_code(bank, tokens, options),
+            TypeRef::MapType(e) => e.to_code(bank, tokens, options),
             TypeRef::SliceType(e) => e.to_code(bank, tokens, options),
             TypeRef::StructType(e) => e.to_code(bank, tokens, options),
             TypeRef::FunctionType(e) => e.to_code(bank, tokens, options),

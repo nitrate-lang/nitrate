@@ -267,16 +267,33 @@ impl<'storage, 'a> Parser<'storage, 'a> {
                             );
                             None
                         }
-                    } else {
-                        if !self.lexer.skip_if(&Token::Punct(Punct::RightBracket)) {
+                    } else if self.lexer.skip_if(&Token::Op(Operator::Arrow)) {
+                        if let Some(map_value_type) = self.parse_type() {
+                            if let Some(map_key_type) = element_type {
+                                Builder::new(self.storage)
+                                    .create_map_type()
+                                    .with_key(map_key_type)
+                                    .with_value(map_value_type)
+                                    .build()
+                            } else {
+                                self.set_failed_bit();
+                                error!(
+                                    self.log,
+                                    "error[P????]: Failed to parse map's key type\n--> {}",
+                                    self.lexer.current_position()
+                                );
+                                None
+                            }
+                        } else {
                             self.set_failed_bit();
                             error!(
                                 self.log,
-                                "error[P????]: Expected a right bracket to terminate slice type\n--> {}",
+                                "error[P????]: Failed to parse map's value type\n--> {}",
                                 self.lexer.current_position()
                             );
+                            None
                         }
-
+                    } else if self.lexer.skip_if(&Token::Punct(Punct::RightBracket)) {
                         if let Some(element_type) = element_type {
                             Builder::new(self.storage)
                                 .create_slice_type()
@@ -291,6 +308,14 @@ impl<'storage, 'a> Parser<'storage, 'a> {
                             );
                             None
                         }
+                    } else {
+                        self.set_failed_bit();
+                        error!(
+                            self.log,
+                            "error[P????]: Expected semicolon or right bracket in array/slice type\n--> {}",
+                            self.lexer.current_position()
+                        );
+                        None
                     }
                 }
 
