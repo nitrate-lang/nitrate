@@ -316,21 +316,19 @@ impl<'storage, 'a> Parser<'storage, 'a> {
                 None
             }
 
-            Token::Punct(punc) => match punc {
-                Punct::LeftBrace => self.parse_tuple_type(),
-                Punct::LeftBracket => self.parse_array_or_slice_or_map(),
+            Token::Punct(Punct::LeftBrace) => self.parse_tuple_type(),
+            Token::Punct(Punct::LeftBracket) => self.parse_array_or_slice_or_map(),
 
-                punc => {
-                    self.set_failed_bit();
-                    error!(
-                        self.log,
-                        "error[P????]: Unexpected punctuation token '{}' while parsing type\n--> {}",
-                        punc,
-                        start_pos
-                    );
-                    None
-                }
-            },
+            Token::Punct(punc) => {
+                self.set_failed_bit();
+                error!(
+                    self.log,
+                    "error[P????]: Unexpected punctuation token '{}' while parsing type\n--> {}",
+                    punc,
+                    start_pos
+                );
+                None
+            }
 
             Token::Op(Operator::Mul) => {
                 self.lexer.skip();
