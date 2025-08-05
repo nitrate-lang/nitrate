@@ -375,7 +375,7 @@ impl<'a> Storage<'a> {
         }
 
         {
-            let empty_string = (Self::STRING_LIT_EMPTY_INDEX, StringLit::new(&[]));
+            let empty_string = (Self::STRING_LIT_EMPTY_INDEX, StringLit::new(""));
             storage.strings.insert(empty_string.0, empty_string.1);
         }
 
@@ -486,7 +486,7 @@ impl<'a> Storage<'a> {
                 }),
 
             ExprOwned::StringLit(node) => match node.get() {
-                &[] => ExprKey::new(ExprKind::StringLit, Self::STRING_LIT_EMPTY_INDEX),
+                "" => ExprKey::new(ExprKind::StringLit, Self::STRING_LIT_EMPTY_INDEX),
 
                 _ => ExprKey::new(ExprKind::StringLit, self.strings.len()).and_then(|k| {
                     self.strings.push(node);

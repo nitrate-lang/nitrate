@@ -106,7 +106,7 @@ impl<'storage, 'a> FloatBuilder<'storage, 'a> {
 #[derive(Debug)]
 pub struct StringBuilder<'storage, 'a> {
     storage: &'storage mut Storage<'a>,
-    value: Option<&'a [u8]>,
+    value: Option<&'a str>,
 }
 
 impl<'storage, 'a> StringBuilder<'storage, 'a> {
@@ -118,11 +118,11 @@ impl<'storage, 'a> StringBuilder<'storage, 'a> {
     }
 
     pub fn with_utf8string(mut self, value: &'a str) -> Self {
-        self.value = Some(value.as_bytes());
+        self.value = Some(value);
         self
     }
 
-    pub fn with_raw_bytes(mut self, value: &'a [u8]) -> Self {
+    pub fn with_raw_bytes(mut self, value: &'a str) -> Self {
         self.value = Some(value);
         self
     }
