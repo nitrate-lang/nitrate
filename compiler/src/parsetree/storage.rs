@@ -206,13 +206,13 @@ impl<'a> TypeKey<'a> {
 
 impl<'a> std::fmt::Display for ExprKey<'a> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}({})", self.variant_index(), self.instance_index())
+        write!(f, "{:?}({})", self.variant_index(), self.instance_index())
     }
 }
 
 impl<'a> std::fmt::Display for TypeKey<'a> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}({})", self.variant_index(), self.instance_index())
+        write!(f, "{:?}({})", self.variant_index(), self.instance_index())
     }
 }
 
