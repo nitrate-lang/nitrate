@@ -448,106 +448,90 @@ impl std::fmt::Display for Operator {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Hash)]
-enum StringData<'a> {
+enum StringDataStorage<'a> {
     RefString(&'a str),
     DynString(String),
 }
 
 #[derive(Clone, PartialEq, Eq, PartialOrd, Hash)]
-pub struct StringLit<'a> {
-    data: StringData<'a>,
+pub struct StringData<'a> {
+    data: StringDataStorage<'a>,
 }
 
-impl<'a> StringLit<'a> {
+impl<'a> StringData<'a> {
     pub const fn from_ref(data: &'a str) -> Self {
-        StringLit {
-            data: StringData::RefString(data),
+        StringData {
+            data: StringDataStorage::RefString(data),
         }
     }
 
     pub fn from_dyn(data: String) -> Self {
-        StringLit {
-            data: StringData::DynString(data),
+        StringData {
+            data: StringDataStorage::DynString(data),
         }
     }
 
-    pub fn data(&self) -> &str {
+    pub fn get(&self) -> &str {
         match &self.data {
-            StringData::RefString(s) => s,
-            StringData::DynString(s) => s.as_str(),
+            StringDataStorage::RefString(s) => s,
+            StringDataStorage::DynString(s) => s.as_str(),
         }
     }
 }
 
-impl<'a> std::ops::Deref for StringLit<'a> {
-    type Target = str;
-
-    fn deref(&self) -> &Self::Target {
-        self.data()
+impl<'a> std::fmt::Debug for StringData<'a> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "StringData({:?})", self.get())
     }
 }
 
-impl<'a> std::fmt::Debug for StringLit<'a> {
+impl<'a> std::fmt::Display for StringData<'a> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "StringLit({:?})", self.data())
-    }
-}
-
-impl<'a> std::fmt::Display for StringLit<'a> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "\"{}\"", self.data())
+        write!(f, "\"{}\"", self.get())
     }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Hash)]
-enum BinaryStringData<'a> {
+enum BinaryDataStorage<'a> {
     RefString(&'a [u8]),
     DynString(SmallVec<[u8; 64]>),
 }
 
 #[derive(Clone, PartialEq, Eq, PartialOrd, Hash)]
-pub struct BinaryStringLit<'a> {
-    data: BinaryStringData<'a>,
+pub struct BinaryData<'a> {
+    data: BinaryDataStorage<'a>,
 }
 
-impl<'a> BinaryStringLit<'a> {
+impl<'a> BinaryData<'a> {
     pub const fn from_ref(data: &'a [u8]) -> Self {
-        BinaryStringLit {
-            data: BinaryStringData::RefString(data),
+        BinaryData {
+            data: BinaryDataStorage::RefString(data),
         }
     }
 
     pub fn from_dyn(data: SmallVec<[u8; 64]>) -> Self {
-        BinaryStringLit {
-            data: BinaryStringData::DynString(data),
+        BinaryData {
+            data: BinaryDataStorage::DynString(data),
         }
     }
 
-    pub fn data(&self) -> &[u8] {
+    pub fn get(&self) -> &[u8] {
         match &self.data {
-            BinaryStringData::RefString(s) => s,
-            BinaryStringData::DynString(s) => s.as_slice(),
+            BinaryDataStorage::RefString(s) => s,
+            BinaryDataStorage::DynString(s) => s.as_slice(),
         }
     }
 }
 
-impl<'a> std::ops::Deref for BinaryStringLit<'a> {
-    type Target = [u8];
-
-    fn deref(&self) -> &Self::Target {
-        self.data()
+impl<'a> std::fmt::Debug for BinaryData<'a> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "BinaryData({:?})", self.get())
     }
 }
 
-impl<'a> std::fmt::Debug for BinaryStringLit<'a> {
+impl<'a> std::fmt::Display for BinaryData<'a> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "BinaryStringLit({:?})", self.data())
-    }
-}
-
-impl<'a> std::fmt::Display for BinaryStringLit<'a> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        for byte in self.data() {
+        for byte in self.get() {
             write!(f, "{:02x} ", byte)?;
         }
         Ok(())
@@ -599,8 +583,8 @@ pub enum Token<'a> {
     Integer(Integer),
     Float(Float),
     Keyword(Keyword),
-    String(StringLit<'a>),
-    BinaryString(BinaryStringLit<'a>),
+    String(StringData<'a>),
+    Binary(BinaryData<'a>),
     Char(char),
     Punct(Punct),
     Op(Operator),
@@ -617,7 +601,7 @@ impl<'a> std::fmt::Display for Token<'a> {
             Token::Float(float) => write!(f, "{}", float),
             Token::Keyword(kw) => write!(f, "{}", kw),
             Token::String(s) => write!(f, "{}", s),
-            Token::BinaryString(s) => write!(f, "{}", s),
+            Token::Binary(s) => write!(f, "{}", s),
             Token::Char(c) => write!(f, "'{}'", c),
             Token::Punct(p) => write!(f, "{}", p),
             Token::Op(op) => write!(f, "{}", op),

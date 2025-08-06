@@ -723,15 +723,15 @@ impl<'a> Lexer<'a> {
                         let buffer = &self.source[start_offset..end_offset];
 
                         if let Some(utf8_str) = str::from_utf8(buffer).ok() {
-                            return Ok(Token::String(StringLit::from_ref(utf8_str)));
+                            return Ok(Token::String(StringData::from_ref(utf8_str)));
                         } else {
-                            return Ok(Token::BinaryString(BinaryStringLit::from_ref(buffer)));
+                            return Ok(Token::Binary(BinaryData::from_ref(buffer)));
                         }
                     } else {
                         if let Some(utf8_str) = String::from_utf8(storage.to_vec()).ok() {
-                            return Ok(Token::String(StringLit::from_dyn(utf8_str)));
+                            return Ok(Token::String(StringData::from_dyn(utf8_str)));
                         } else {
-                            return Ok(Token::BinaryString(BinaryStringLit::from_dyn(storage)));
+                            return Ok(Token::Binary(BinaryData::from_dyn(storage)));
                         }
                     }
                 }
@@ -1260,7 +1260,7 @@ fn test_parse_string_escape() {
 
     match lexer.next().token() {
         Token::String(s) => {
-            assert_eq!(s.data(), expected, "Parsed string does not match expected");
+            assert_eq!(s.get(), expected, "Parsed string does not match expected");
         }
         _ => panic!("Expected a string token"),
     }
