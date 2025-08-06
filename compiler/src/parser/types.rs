@@ -490,6 +490,28 @@ impl<'storage, 'a> Parser<'storage, 'a> {
         }
     }
 
+    fn parse_function_type(&mut self) -> Option<TypeKey<'a>> {
+        // TODO: Handle function types
+        self.set_failed_bit();
+        error!(
+            self.log,
+            "error[P????]: Function types are not yet implemented\n--> {}",
+            self.lexer.sync_position()
+        );
+        None
+    }
+
+    fn parse_opaque_type(&mut self) -> Option<TypeKey<'a>> {
+        // TODO: Handle opaque types
+        self.set_failed_bit();
+        error!(
+            self.log,
+            "error[P????]: Opaque types are not yet implemented\n--> {}",
+            self.lexer.sync_position()
+        );
+        None
+    }
+
     fn parse_type_primary(&mut self) -> Option<TypeKey<'a>> {
         let first_token = self.lexer.peek();
         let start_pos = first_token.start();
@@ -506,16 +528,8 @@ impl<'storage, 'a> Parser<'storage, 'a> {
             Token::Punct(Punct::LeftBracket) => self.parse_array_or_slice_or_map(),
             Token::Op(Operator::BitAnd) => self.parse_managed_type(),
             Token::Op(Operator::Mul) => self.parse_unmanaged_type(),
-
-            Token::Keyword(Keyword::Fn) => {
-                // TODO: Handle function types
-                None
-            }
-
-            Token::Keyword(Keyword::Opaque) => {
-                // TODO: Handle opaque types
-                None
-            }
+            Token::Keyword(Keyword::Fn) => self.parse_function_type(),
+            Token::Keyword(Keyword::Opaque) => self.parse_opaque_type(),
 
             Token::Integer(int) => {
                 self.set_failed_bit();
