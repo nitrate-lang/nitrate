@@ -28,7 +28,7 @@ impl<'storage, 'a> TypeKey<'a> {
 #[allow(dead_code)]
 struct Parameter<'storage, 'a> {
     name: &'a str,
-    param_type: Option<Printable<'storage, 'a>>,
+    param_type: Printable<'storage, 'a>,
     default_value: Option<Printable<'storage, 'a>>,
 }
 
@@ -99,7 +99,7 @@ impl<'storage, 'a> std::fmt::Debug for Printable<'storage, 'a> {
                         .iter()
                         .map(|param| Parameter {
                             name: param.name(),
-                            param_type: param.param_type().map(|t| t.as_printable(self.storage)),
+                            param_type: param.param_type().as_printable(self.storage),
                             default_value: param
                                 .default_value()
                                 .map(|v| v.as_printable(self.storage)),
@@ -212,7 +212,7 @@ impl<'storage, 'a> std::fmt::Debug for Printable<'storage, 'a> {
                     .iter()
                     .map(|param| Parameter {
                         name: param.name(),
-                        param_type: param.param_type().map(|t| t.as_printable(self.storage)),
+                        param_type: param.param_type().as_printable(self.storage),
                         default_value: param.default_value().map(|v| v.as_printable(self.storage)),
                     })
                     .collect::<Vec<_>>();

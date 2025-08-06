@@ -217,11 +217,10 @@ impl<'a> ToCode<'a> for Function<'a> {
 
             tokens.push(Token::Name(Name::new(param.name())));
 
-            if let Some(ty) = param.param_type() {
-                if !matches!(ty.get(bank), TypeOwned::InferType) {
-                    tokens.push(Token::Punct(Punct::Colon));
-                    ty.to_code(bank, tokens, options);
-                }
+            let param_ty = param.param_type();
+            if !matches!(param_ty.get(bank), TypeOwned::InferType) {
+                tokens.push(Token::Punct(Punct::Colon));
+                param_ty.to_code(bank, tokens, options);
             }
 
             if let Some(default_expr) = param.default_value() {
@@ -356,11 +355,10 @@ impl<'a> ToCode<'a> for FunctionType<'a> {
 
             tokens.push(Token::Name(Name::new(param.name())));
 
-            if let Some(ty) = param.param_type() {
-                if !matches!(ty.get(bank), TypeOwned::InferType) {
-                    tokens.push(Token::Punct(Punct::Colon));
-                    ty.to_code(bank, tokens, options);
-                }
+            let param_ty = param.param_type();
+            if !matches!(param_ty.get(bank), TypeOwned::InferType) {
+                tokens.push(Token::Punct(Punct::Colon));
+                param_ty.to_code(bank, tokens, options);
             }
 
             if let Some(default_expr) = param.default_value() {

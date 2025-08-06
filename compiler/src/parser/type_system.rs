@@ -562,9 +562,19 @@ impl<'storage, 'a> Parser<'storage, 'a> {
                 };
 
                 let ty = if self.lexer.skip_if(&Token::Punct(Punct::Colon)) {
-                    self.parse_type()
+                    if let Some(param_type) = self.parse_type() {
+                        param_type
+                    } else {
+                        self.set_failed_bit();
+                        error!(
+                            self.log,
+                            "error[P????]: Unable to parse function parameter type\n--> {}",
+                            self.lexer.sync_position()
+                        );
+                        Builder::new(self.storage).get_infer_type()
+                    }
                 } else {
-                    None
+                    Builder::new(self.storage).get_infer_type()
                 };
 
                 let default = if self.lexer.skip_if(&Token::Op(Operator::Set)) {

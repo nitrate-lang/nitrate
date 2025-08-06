@@ -415,7 +415,7 @@ impl<'storage, 'a> FunctionBuilder<'storage, 'a> {
     pub fn with_parameter(
         mut self,
         name: &'a str,
-        ty: Option<TypeKey<'a>>,
+        ty: TypeKey<'a>,
         default_value: Option<ExprKey<'a>>,
     ) -> Self {
         self.parameters
@@ -750,7 +750,7 @@ impl<'storage, 'a> FunctionTypeBuilder<'storage, 'a> {
     pub fn add_parameter(
         mut self,
         name: &'a str,
-        ty: Option<TypeKey<'a>>,
+        ty: TypeKey<'a>,
         default_value: Option<ExprKey<'a>>,
     ) -> Self {
         self.parameters
