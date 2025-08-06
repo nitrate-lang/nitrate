@@ -89,11 +89,11 @@ impl<'storage, 'a> std::fmt::Debug for Printable<'storage, 'a> {
                     "parameters",
                     &x.parameters()
                         .iter()
-                        .map(|(name, ty, val)| {
+                        .map(|param| {
                             (
-                                name,
-                                ty.map(|t| t.as_printable(self.storage)),
-                                val.map(|v| v.as_printable(self.storage)),
+                                param.name(),
+                                param.param_type().map(|t| t.as_printable(self.storage)),
+                                param.default_value().map(|v| v.as_printable(self.storage)),
                             )
                         })
                         .collect::<Vec<_>>(),
@@ -204,11 +204,11 @@ impl<'storage, 'a> std::fmt::Debug for Printable<'storage, 'a> {
                     "parameters",
                     &x.parameters()
                         .iter()
-                        .map(|(name, ty, val)| {
+                        .map(|param| {
                             (
-                                name,
-                                ty.map(|t| t.as_printable(self.storage)),
-                                val.map(|v| v.as_printable(self.storage)),
+                                param.name(),
+                                param.param_type().map(|t| t.as_printable(self.storage)),
+                                param.default_value().map(|v| v.as_printable(self.storage)),
                             )
                         })
                         .collect::<Vec<_>>(),

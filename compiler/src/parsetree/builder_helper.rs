@@ -418,13 +418,14 @@ impl<'storage, 'a> FunctionBuilder<'storage, 'a> {
         ty: Option<TypeKey<'a>>,
         default_value: Option<ExprKey<'a>>,
     ) -> Self {
-        self.parameters.push((name, ty, default_value));
+        self.parameters
+            .push(FunctionParameter::new(name, ty, default_value));
         self
     }
 
     pub fn with_parameters<I>(mut self, parameters: I) -> Self
     where
-        I: IntoIterator<Item = (&'a str, Option<TypeKey<'a>>, Option<ExprKey<'a>>)>,
+        I: IntoIterator<Item = FunctionParameter<'a>>,
     {
         self.parameters.extend(parameters);
         self
@@ -752,13 +753,14 @@ impl<'storage, 'a> FunctionTypeBuilder<'storage, 'a> {
         ty: Option<TypeKey<'a>>,
         default_value: Option<ExprKey<'a>>,
     ) -> Self {
-        self.parameters.push((name, ty, default_value));
+        self.parameters
+            .push(FunctionParameter::new(name, ty, default_value));
         self
     }
 
     pub fn add_parameters<I>(mut self, parameters: I) -> Self
     where
-        I: IntoIterator<Item = (&'a str, Option<TypeKey<'a>>, Option<ExprKey<'a>>)>,
+        I: IntoIterator<Item = FunctionParameter<'a>>,
     {
         self.parameters.extend(parameters);
         self

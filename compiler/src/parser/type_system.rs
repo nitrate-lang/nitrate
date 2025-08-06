@@ -544,9 +544,7 @@ impl<'storage, 'a> Parser<'storage, 'a> {
         attributes
     }
 
-    fn parse_function_parameters(
-        &mut self,
-    ) -> Vec<(&'a str, Option<TypeKey<'a>>, Option<ExprKey<'a>>)> {
+    fn parse_function_parameters(&mut self) -> Vec<FunctionParameter<'a>> {
         let mut parameters = Vec::new();
 
         if self.lexer.skip_if(&Token::Punct(Punct::LeftParen)) {
@@ -569,7 +567,7 @@ impl<'storage, 'a> Parser<'storage, 'a> {
                         None
                     };
 
-                    parameters.push((param_name.name(), ty, default));
+                    parameters.push(FunctionParameter::new(param_name.name(), ty, default));
                 } else {
                     self.set_failed_bit();
                     error!(

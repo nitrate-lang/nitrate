@@ -212,19 +212,19 @@ impl<'a> ToCode<'a> for Function<'a> {
         }
 
         tokens.push(Token::Punct(Punct::LeftParen));
-        for (i, (name, ty, default)) in self.parameters().iter().enumerate() {
+        for (i, param) in self.parameters().iter().enumerate() {
             (i > 0).then(|| tokens.push(Token::Punct(Punct::Comma)));
 
-            tokens.push(Token::Name(Name::new(name)));
+            tokens.push(Token::Name(Name::new(param.name())));
 
-            if let Some(ty) = ty {
+            if let Some(ty) = param.param_type() {
                 if !matches!(ty.get(bank), TypeOwned::InferType) {
                     tokens.push(Token::Punct(Punct::Colon));
                     ty.to_code(bank, tokens, options);
                 }
             }
 
-            if let Some(default_expr) = default {
+            if let Some(default_expr) = param.default_value() {
                 tokens.push(Token::Op(Operator::Set));
                 default_expr.to_code(bank, tokens, options);
             }
@@ -351,19 +351,19 @@ impl<'a> ToCode<'a> for FunctionType<'a> {
         }
 
         tokens.push(Token::Punct(Punct::LeftParen));
-        for (i, (name, ty, default)) in self.parameters().iter().enumerate() {
+        for (i, param) in self.parameters().iter().enumerate() {
             (i > 0).then(|| tokens.push(Token::Punct(Punct::Comma)));
 
-            tokens.push(Token::Name(Name::new(name)));
+            tokens.push(Token::Name(Name::new(param.name())));
 
-            if let Some(ty) = ty {
+            if let Some(ty) = param.param_type() {
                 if !matches!(ty.get(bank), TypeOwned::InferType) {
                     tokens.push(Token::Punct(Punct::Colon));
                     ty.to_code(bank, tokens, options);
                 }
             }
 
-            if let Some(default_expr) = default {
+            if let Some(default_expr) = param.default_value() {
                 tokens.push(Token::Op(Operator::Set));
                 default_expr.to_code(bank, tokens, options);
             }

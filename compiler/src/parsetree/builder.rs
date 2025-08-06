@@ -6,6 +6,7 @@ use super::tuple_type::TupleType;
 use crate::lexer::StringData;
 
 pub use super::binary_op::BinaryOperator;
+pub use super::function::FunctionParameter;
 pub use super::variable::VariableKind;
 
 #[derive(Debug)]
