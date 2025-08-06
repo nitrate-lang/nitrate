@@ -1,8 +1,7 @@
-use slog::error;
-
 use super::parse::*;
 use crate::lexer::*;
 use crate::parsetree::*;
+use slog::error;
 
 #[derive(Default)]
 struct RefinementOptions<'a> {
@@ -101,6 +100,37 @@ impl<'storage, 'a> Parser<'storage, 'a> {
         }
 
         options
+    }
+
+    fn parse_type_name(&mut self, name: &'a str) -> Option<TypeKey<'a>> {
+        assert!(self.lexer.peek_t() == Token::Name(Name::new(name)));
+        self.lexer.skip();
+
+        let mut bb = Builder::new(self.storage);
+        let principal = match name {
+            "u1" | "bool" => Some(bb.get_bool()),
+            "u8" => Some(bb.get_u8()),
+            "u16" => Some(bb.get_u16()),
+            "u32" => Some(bb.get_u32()),
+            "u64" => Some(bb.get_u64()),
+            "u128" => Some(bb.get_u128()),
+            "i8" => Some(bb.get_i8()),
+            "i16" => Some(bb.get_i16()),
+            "i32" => Some(bb.get_i32()),
+            "i64" => Some(bb.get_i64()),
+            "i128" => Some(bb.get_i128()),
+            "f8" => Some(bb.get_f8()),
+            "f16" => Some(bb.get_f16()),
+            "f32" => Some(bb.get_f32()),
+            "f64" => Some(bb.get_f64()),
+            "f128" => Some(bb.get_f128()),
+            "_" => Some(bb.get_infer_type()),
+            name => bb.create_type_name(name),
+        };
+
+        // TODO: Handle generic types
+
+        principal
     }
 
     fn parse_tuple_type(&mut self) -> Option<TypeKey<'a>> {
@@ -231,93 +261,140 @@ impl<'storage, 'a> Parser<'storage, 'a> {
         }
     }
 
+    fn parse_managed_type(&mut self) -> Option<TypeKey<'a>> {
+        assert!(self.lexer.peek_t() == Token::Op(Operator::BitAnd));
+        self.lexer.skip();
+
+        let is_mutable = self.lexer.skip_if(&Token::Keyword(Keyword::Mut))
+            || (self.lexer.skip_if(&Token::Keyword(Keyword::Const)) && false);
+
+        if let Some(target) = self.parse_type() {
+            Builder::new(self.storage)
+                .create_managed_type()
+                .with_target(target)
+                .with_mutability(is_mutable)
+                .build()
+        } else {
+            self.set_failed_bit();
+            error!(
+                self.log,
+                "error[P????]: Failed to parse reference's target type\n--> {}",
+                self.lexer.current_position()
+            );
+            None
+        }
+    }
+
+    fn parse_unmanaged_type(&mut self) -> Option<TypeKey<'a>> {
+        assert!(self.lexer.peek_t() == Token::Op(Operator::Mul));
+        self.lexer.skip();
+
+        let is_mutable = self.lexer.skip_if(&Token::Keyword(Keyword::Mut))
+            || (self.lexer.skip_if(&Token::Keyword(Keyword::Const)) && false);
+
+        if let Some(target) = self.parse_type() {
+            Builder::new(self.storage)
+                .create_unmanaged_type()
+                .with_target(target)
+                .with_mutability(is_mutable)
+                .build()
+        } else {
+            self.set_failed_bit();
+            error!(
+                self.log,
+                "error[P????]: Failed to parse pointer's target type\n--> {}",
+                self.lexer.current_position()
+            );
+            None
+        }
+    }
+
     fn parse_type_primary(&mut self) -> Option<TypeKey<'a>> {
         let first_token = self.lexer.peek();
         let start_pos = first_token.start();
 
         match first_token.into_token() {
-            Token::Name(name) => {
-                self.lexer.skip();
-
-                let mut bb = Builder::new(self.storage);
-
-                match name.into_name() {
-                    "u1" | "bool" => Some(bb.get_bool()),
-                    "u8" => Some(bb.get_u8()),
-                    "u16" => Some(bb.get_u16()),
-                    "u32" => Some(bb.get_u32()),
-                    "u64" => Some(bb.get_u64()),
-                    "u128" => Some(bb.get_u128()),
-                    "i8" => Some(bb.get_i8()),
-                    "i16" => Some(bb.get_i16()),
-                    "i32" => Some(bb.get_i32()),
-                    "i64" => Some(bb.get_i64()),
-                    "i128" => Some(bb.get_i128()),
-                    "f8" => Some(bb.get_f8()),
-                    "f16" => Some(bb.get_f16()),
-                    "f32" => Some(bb.get_f32()),
-                    "f64" => Some(bb.get_f64()),
-                    "f128" => Some(bb.get_f128()),
-                    "_" => Some(Builder::new(self.storage).get_infer_type()),
-
-                    name => Builder::new(self.storage).create_type_name(name),
-                }
-            }
-
-            Token::Integer(_) => {
-                self.set_failed_bit();
-                error!(
-                    self.log,
-                    "error[P????]: Unexpected integer token while parsing type\n--> {}", start_pos
-                );
-                None
-            }
-
-            Token::Float(_) => {
-                self.set_failed_bit();
-                error!(
-                    self.log,
-                    "error[P????]: Unexpected float token while parsing type\n--> {}", start_pos
-                );
-                None
-            }
-
-            Token::Keyword(_) => {
-                // TODO: Handle keywords like 'fn' and 'opaque'
-                None
-            }
-
-            Token::String(_) => {
-                self.set_failed_bit();
-                error!(
-                    self.log,
-                    "error[P????]: Unexpected string token while parsing type\n--> {}", start_pos
-                );
-                None
-            }
-
-            Token::BinaryString(_) => {
-                self.set_failed_bit();
-                error!(
-                    self.log,
-                    "error[P????]: Unexpected binary string token while parsing type\n--> {}",
-                    start_pos
-                );
-                None
-            }
-
-            Token::Char(_) => {
-                self.set_failed_bit();
-                error!(
-                    self.log,
-                    "error[P????]: Unexpected character token while parsing type\n--> {}",
-                    start_pos
-                );
-                None
-            }
-
+            Token::Name(name) => self.parse_type_name(name.name()),
             Token::Punct(Punct::LeftBrace) => self.parse_tuple_type(),
             Token::Punct(Punct::LeftBracket) => self.parse_array_or_slice_or_map(),
+            Token::Op(Operator::BitAnd) => self.parse_managed_type(),
+            Token::Op(Operator::Mul) => self.parse_unmanaged_type(),
+
+            Token::Keyword(Keyword::Fn) => {
+                // TODO: Handle function types
+                None
+            }
+
+            Token::Keyword(Keyword::Opaque) => {
+                // TODO: Handle opaque types
+                None
+            }
+
+            Token::Integer(int) => {
+                self.set_failed_bit();
+                error!(
+                    self.log,
+                    "error[P????]: Unexpected integer token '{}' while parsing type\n--> {}",
+                    int,
+                    start_pos
+                );
+                None
+            }
+
+            Token::Float(float) => {
+                self.set_failed_bit();
+                error!(
+                    self.log,
+                    "error[P????]: Unexpected float token '{}' while parsing type\n--> {}",
+                    float,
+                    start_pos
+                );
+                None
+            }
+
+            Token::Keyword(func) => {
+                self.set_failed_bit();
+                error!(
+                    self.log,
+                    "error[P????]: Unexpected keyword token '{}' while parsing type\n--> {}",
+                    func,
+                    start_pos
+                );
+                None
+            }
+
+            Token::String(string) => {
+                self.set_failed_bit();
+                error!(
+                    self.log,
+                    "error[P????]: Unexpected string token '{}' while parsing type\n--> {}",
+                    string,
+                    start_pos
+                );
+                None
+            }
+
+            Token::BinaryString(binary) => {
+                self.set_failed_bit();
+                error!(
+                    self.log,
+                    "error[P????]: Unexpected binary string token '{}' while parsing type\n--> {}",
+                    binary,
+                    start_pos
+                );
+                None
+            }
+
+            Token::Char(char) => {
+                self.set_failed_bit();
+                error!(
+                    self.log,
+                    "error[P????]: Unexpected character token '{}' while parsing type\n--> {}",
+                    char,
+                    start_pos
+                );
+                None
+            }
 
             Token::Punct(punc) => {
                 self.set_failed_bit();
@@ -330,62 +407,13 @@ impl<'storage, 'a> Parser<'storage, 'a> {
                 None
             }
 
-            Token::Op(Operator::Mul) => {
-                self.lexer.skip();
-
-                let is_mutable = self.lexer.skip_if(&Token::Keyword(Keyword::Mut))
-                    || (self.lexer.skip_if(&Token::Keyword(Keyword::Const)) && false);
-
-                if let Some(target) = self.parse_type() {
-                    Builder::new(self.storage)
-                        .create_unmanaged_type()
-                        .with_target(target)
-                        .with_mutability(is_mutable)
-                        .build()
-                } else {
-                    self.set_failed_bit();
-                    error!(
-                        self.log,
-                        "error[P????]: Failed to parse pointer's target type\n--> {}",
-                        self.lexer.current_position()
-                    );
-                    None
-                }
-            }
-
-            Token::Op(Operator::BitAnd) => {
-                self.lexer.skip();
-
-                let is_mutable = self.lexer.skip_if(&Token::Keyword(Keyword::Mut))
-                    || (self.lexer.skip_if(&Token::Keyword(Keyword::Const)) && false);
-
-                if let Some(target) = self.parse_type() {
-                    Builder::new(self.storage)
-                        .create_managed_type()
-                        .with_target(target)
-                        .with_mutability(is_mutable)
-                        .build()
-                } else {
-                    self.set_failed_bit();
-                    error!(
-                        self.log,
-                        "error[P????]: Failed to parse reference's target type\n--> {}",
-                        self.lexer.current_position()
-                    );
-                    None
-                }
-            }
-
-            Token::Op(Operator::LogicLt) => {
-                // TODO: Handle generic types
-                None
-            }
-
-            Token::Op(_) => {
+            Token::Op(op) => {
                 self.set_failed_bit();
                 error!(
                     self.log,
-                    "error[P????]: Unexpected operator token while parsing type\n--> {}", start_pos
+                    "error[P????]: Unexpected operator token '{}' while parsing type\n--> {}",
+                    op,
+                    start_pos
                 );
                 None
             }
