@@ -24,6 +24,14 @@ impl<'storage, 'a> TypeKey<'a> {
     }
 }
 
+#[derive(Debug)]
+#[allow(dead_code)]
+struct Parameter<'storage, 'a> {
+    name: &'a str,
+    param_type: Option<Printable<'storage, 'a>>,
+    default_value: Option<Printable<'storage, 'a>>,
+}
+
 impl<'storage, 'a> std::fmt::Debug for Printable<'storage, 'a> {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         match self.expr.get(self.storage) {
@@ -89,12 +97,12 @@ impl<'storage, 'a> std::fmt::Debug for Printable<'storage, 'a> {
                     "parameters",
                     &x.parameters()
                         .iter()
-                        .map(|param| {
-                            (
-                                param.name(),
-                                param.param_type().map(|t| t.as_printable(self.storage)),
-                                param.default_value().map(|v| v.as_printable(self.storage)),
-                            )
+                        .map(|param| Parameter {
+                            name: param.name(),
+                            param_type: param.param_type().map(|t| t.as_printable(self.storage)),
+                            default_value: param
+                                .default_value()
+                                .map(|v| v.as_printable(self.storage)),
                         })
                         .collect::<Vec<_>>(),
                 )
@@ -198,35 +206,34 @@ impl<'storage, 'a> std::fmt::Debug for Printable<'storage, 'a> {
                 )
                 .finish(),
 
-            ExprRef::Function(x) => f
-                .debug_struct("Function")
-                .field(
-                    "parameters",
-                    &x.parameters()
-                        .iter()
-                        .map(|param| {
-                            (
-                                param.name(),
-                                param.param_type().map(|t| t.as_printable(self.storage)),
-                                param.default_value().map(|v| v.as_printable(self.storage)),
-                            )
-                        })
-                        .collect::<Vec<_>>(),
-                )
-                .field(
-                    "return_type",
-                    &x.return_type().map(|t| t.as_printable(self.storage)),
-                )
-                .field(
-                    "attributes",
-                    &x.attributes()
-                        .iter()
-                        .map(|a| a.as_printable(self.storage))
-                        .collect::<Vec<_>>(),
-                )
-                .field("name", &x.name())
-                .field("definition", &x.definition())
-                .finish(),
+            ExprRef::Function(x) => {
+                let parameters = x
+                    .parameters()
+                    .iter()
+                    .map(|param| Parameter {
+                        name: param.name(),
+                        param_type: param.param_type().map(|t| t.as_printable(self.storage)),
+                        default_value: param.default_value().map(|v| v.as_printable(self.storage)),
+                    })
+                    .collect::<Vec<_>>();
+
+                f.debug_struct("Function")
+                    .field("parameters", &parameters)
+                    .field(
+                        "return_type",
+                        &x.return_type().map(|t| t.as_printable(self.storage)),
+                    )
+                    .field(
+                        "attributes",
+                        &x.attributes()
+                            .iter()
+                            .map(|a| a.as_printable(self.storage))
+                            .collect::<Vec<_>>(),
+                    )
+                    .field("name", &x.name())
+                    .field("definition", &x.definition())
+                    .finish()
+            }
 
             ExprRef::Variable(x) => f
                 .debug_struct("Variable")

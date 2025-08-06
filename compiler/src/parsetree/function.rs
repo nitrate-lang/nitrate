@@ -4,19 +4,19 @@ use super::storage::{ExprKey, TypeKey};
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct FunctionParameter<'a> {
     name: &'a str,
-    type_key: Option<TypeKey<'a>>,
+    param_type: Option<TypeKey<'a>>,
     default_value: Option<ExprKey<'a>>,
 }
 
 impl<'a> FunctionParameter<'a> {
     pub fn new(
         name: &'a str,
-        type_key: Option<TypeKey<'a>>,
+        param_type: Option<TypeKey<'a>>,
         default_value: Option<ExprKey<'a>>,
     ) -> Self {
         FunctionParameter {
             name,
-            type_key,
+            param_type,
             default_value,
         }
     }
@@ -26,7 +26,7 @@ impl<'a> FunctionParameter<'a> {
     }
 
     pub fn param_type(&self) -> Option<TypeKey<'a>> {
-        self.type_key
+        self.param_type
     }
 
     pub fn default_value(&self) -> Option<ExprKey<'a>> {
