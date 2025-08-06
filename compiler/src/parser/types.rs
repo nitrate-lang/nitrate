@@ -144,8 +144,8 @@ impl<'storage, 'a> Parser<'storage, 'a> {
 
     fn parse_generic_arguments(&mut self) -> Vec<(&'a str, ExprKey<'a>)> {
         assert!(self.lexer.peek_t() == Token::Op(Operator::LogicLt));
-
         self.lexer.skip();
+
         self.generic_type_depth += 1;
         self.generic_type_suffix_terminator_ambiguity = false;
 
@@ -153,17 +153,20 @@ impl<'storage, 'a> Parser<'storage, 'a> {
 
         self.lexer.skip_if(&Token::Punct(Punct::Comma));
         while self.generic_type_depth > 0 && !self.lexer.is_eof() {
+            // '>'
             if self.lexer.skip_if(&Token::Op(Operator::LogicGt)) {
                 self.generic_type_depth -= 1;
                 break;
             }
 
+            // '>>'
             if self.lexer.skip_if(&Token::Op(Operator::BitShr)) {
                 self.generic_type_depth -= 2;
                 self.generic_type_suffix_terminator_ambiguity = true;
                 break;
             }
 
+            // '>>>'
             if self.lexer.skip_if(&Token::Op(Operator::BitRotr)) {
                 self.generic_type_depth -= 3;
                 self.generic_type_suffix_terminator_ambiguity = true;
@@ -226,13 +229,26 @@ impl<'storage, 'a> Parser<'storage, 'a> {
             let generic_args = self.parse_generic_arguments();
 
             if !is_already_parsing_generic_type {
-                if self.generic_type_depth != 0 {
-                    self.set_failed_bit();
-                    error!(
-                        self.log,
-                        "error[P????]: Mismatched generic type '>' delimiters or invalid generic type\n--> {}",
-                        self.lexer.sync_position()
-                    );
+                match self.generic_type_depth {
+                    0 => {}
+
+                    -1 => {
+                        self.set_failed_bit();
+                        error!(
+                            self.log,
+                            "error[P????]: Unexpected generic type '>' delimiter or invalid generic type\n--> {}",
+                            self.lexer.sync_position()
+                        );
+                    }
+
+                    _ => {
+                        self.set_failed_bit();
+                        error!(
+                            self.log,
+                            "error[P????]: Unexpected generic type '>>' delimiter or invalid generic type\n--> {}",
+                            self.lexer.sync_position()
+                        );
+                    }
                 }
 
                 self.generic_type_depth = 0;
@@ -260,12 +276,11 @@ impl<'storage, 'a> Parser<'storage, 'a> {
 
     fn parse_tuple_type(&mut self) -> Option<TypeKey<'a>> {
         assert!(self.lexer.peek_t() == Token::Punct(Punct::LeftBrace));
-
         self.lexer.skip();
-        self.lexer.skip_if(&Token::Punct(Punct::Comma));
 
         let mut tuple_elements = Vec::new();
 
+        self.lexer.skip_if(&Token::Punct(Punct::Comma));
         while !self.lexer.is_eof() {
             if self.lexer.skip_if(&Token::Punct(Punct::RightBrace)) {
                 break;
@@ -479,7 +494,13 @@ impl<'storage, 'a> Parser<'storage, 'a> {
         let first_token = self.lexer.peek();
         let start_pos = first_token.start();
 
-        match first_token.into_token() {
+        let old_generic_type_depth = self.generic_type_depth;
+        let must_preserve_generic_depth = !matches!(first_token.token(), Token::Name(_));
+        if must_preserve_generic_depth {
+            self.generic_type_depth = 0;
+        }
+
+        let result = match first_token.into_token() {
             Token::Name(name) => self.parse_named_type(name.name()),
             Token::Punct(Punct::LeftBrace) => self.parse_tuple_type(),
             Token::Punct(Punct::LeftBracket) => self.parse_array_or_slice_or_map(),
@@ -611,7 +632,13 @@ impl<'storage, 'a> Parser<'storage, 'a> {
                 );
                 None
             }
+        };
+
+        if must_preserve_generic_depth {
+            self.generic_type_depth = old_generic_type_depth;
         }
+
+        result
     }
 
     pub fn parse_type(&mut self) -> Option<TypeKey<'a>> {
