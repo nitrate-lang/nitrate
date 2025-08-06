@@ -6,7 +6,7 @@ pub struct Block<'a> {
 }
 
 impl<'a> Block<'a> {
-    pub fn new(items: Vec<ExprKey<'a>>) -> Self {
+    pub(crate) fn new(items: Vec<ExprKey<'a>>) -> Self {
         Block { elements: items }
     }
 

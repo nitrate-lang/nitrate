@@ -6,7 +6,7 @@ pub struct SliceType<'a> {
 }
 
 impl<'a> SliceType<'a> {
-    pub fn new(element: TypeKey<'a>) -> Self {
+    pub(crate) fn new(element: TypeKey<'a>) -> Self {
         SliceType { element }
     }
 

@@ -4,7 +4,7 @@ pub struct OpaqueType<'a> {
 }
 
 impl<'a> OpaqueType<'a> {
-    pub fn new(identity: &'a str) -> Self {
+    pub(crate) fn new(identity: &'a str) -> Self {
         OpaqueType { identity }
     }
 

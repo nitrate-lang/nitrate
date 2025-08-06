@@ -7,7 +7,7 @@ pub struct ArrayType<'a> {
 }
 
 impl<'a> ArrayType<'a> {
-    pub fn new(element: TypeKey<'a>, count: ExprKey<'a>) -> Self {
+    pub(crate) fn new(element: TypeKey<'a>, count: ExprKey<'a>) -> Self {
         ArrayType { element, count }
     }
 

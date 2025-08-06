@@ -6,7 +6,7 @@ pub struct ListLit<'a> {
 }
 
 impl<'a> ListLit<'a> {
-    pub fn new(elements: Vec<ExprKey<'a>>) -> Self {
+    pub(crate) fn new(elements: Vec<ExprKey<'a>>) -> Self {
         ListLit { elements }
     }
 

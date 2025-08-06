@@ -15,7 +15,7 @@ pub struct Variable<'a> {
 }
 
 impl<'a> Variable<'a> {
-    pub fn new(
+    pub(crate) fn new(
         kind: VariableKind,
         name: &'a str,
         var_type: Option<TypeKey<'a>>,

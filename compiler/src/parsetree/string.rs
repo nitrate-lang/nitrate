@@ -4,7 +4,7 @@ pub struct StringLit<'a> {
 }
 
 impl<'a> StringLit<'a> {
-    pub fn new(value: &'a str) -> Self {
+    pub(crate) fn new(value: &'a str) -> Self {
         StringLit { value }
     }
 

@@ -13,7 +13,7 @@ pub struct Function<'a> {
 }
 
 impl<'a> Function<'a> {
-    pub fn new(
+    pub(crate) fn new(
         name: &'a str,
         parameters: Vec<FunctionParameter<'a>>,
         return_type: Option<TypeKey<'a>>,

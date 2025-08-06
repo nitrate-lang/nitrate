@@ -7,7 +7,7 @@ pub struct ManagedType<'a> {
 }
 
 impl<'a> ManagedType<'a> {
-    pub fn new(target: TypeKey<'a>, is_mutable: bool) -> Self {
+    pub(crate) fn new(target: TypeKey<'a>, is_mutable: bool) -> Self {
         ManagedType { target, is_mutable }
     }
 
@@ -27,7 +27,7 @@ pub struct UnmanagedType<'a> {
 }
 
 impl<'a> UnmanagedType<'a> {
-    pub fn new(target: TypeKey<'a>, is_mutable: bool) -> Self {
+    pub(crate) fn new(target: TypeKey<'a>, is_mutable: bool) -> Self {
         UnmanagedType { target, is_mutable }
     }
 

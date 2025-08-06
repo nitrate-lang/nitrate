@@ -4,7 +4,7 @@ pub struct CharLit {
 }
 
 impl CharLit {
-    pub fn new(value: char) -> Self {
+    pub(crate) fn new(value: char) -> Self {
         CharLit { value }
     }
 

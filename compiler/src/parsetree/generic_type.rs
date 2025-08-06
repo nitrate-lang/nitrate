@@ -7,7 +7,7 @@ pub struct GenericType<'a> {
 }
 
 impl<'a> GenericType<'a> {
-    pub fn new(base: TypeKey<'a>, args: Vec<(&'a str, ExprKey<'a>)>) -> Self {
+    pub(crate) fn new(base: TypeKey<'a>, args: Vec<(&'a str, ExprKey<'a>)>) -> Self {
         GenericType { base, args }
     }
 
