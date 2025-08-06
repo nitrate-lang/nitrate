@@ -1,7 +1,6 @@
 use super::array_type::ArrayType;
 use super::binary_op::{BinaryOp, BinaryOperator};
 use super::block::Block;
-use super::character::CharLit;
 use super::expression::{ExprRef, TypeOwned};
 use super::function::Function;
 use super::function_type::FunctionType;
@@ -54,12 +53,6 @@ impl<'a> ToCode<'a> for StringLit<'a> {
     fn to_code(&self, _bank: &Storage<'a>, tokens: &mut Vec<Token<'a>>, _options: &CodeFormat) {
         let string_lit = StringLitToken::from_ref(self);
         tokens.push(Token::String(string_lit));
-    }
-}
-
-impl<'a> ToCode<'a> for CharLit {
-    fn to_code(&self, _bank: &Storage<'a>, tokens: &mut Vec<Token<'a>>, _options: &CodeFormat) {
-        tokens.push(Token::Char(self.get()));
     }
 }
 
@@ -483,7 +476,7 @@ impl<'a> ToCode<'a> for ExprKey<'a> {
             ExprRef::IntegerLit(e) => e.to_code(bank, tokens, options),
             ExprRef::FloatLit(e) => e.to_code(bank, tokens, options),
             ExprRef::StringLit(e) => e.to_code(bank, tokens, options),
-            ExprRef::CharLit(e) => e.to_code(bank, tokens, options),
+            ExprRef::CharLit(e) => tokens.push(Token::Char(e)),
             ExprRef::ListLit(e) => e.to_code(bank, tokens, options),
             ExprRef::ObjectLit(e) => e.to_code(bank, tokens, options),
 

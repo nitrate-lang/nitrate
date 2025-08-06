@@ -1,7 +1,6 @@
 use super::array_type::ArrayType;
 use super::binary_op::BinaryOp;
 use super::block::Block;
-use super::character::CharLit;
 use super::function::Function;
 use super::function_type::FunctionType;
 use super::generic_type::GenericType;
@@ -145,7 +144,7 @@ pub(crate) enum ExprOwned<'a> {
     IntegerLit(IntegerLit),
     FloatLit(FloatLit),
     StringLit(StringLit<'a>),
-    CharLit(CharLit),
+    CharLit(char),
     ListLit(ListLit<'a>),
     ObjectLit(ObjectLit<'a>),
 
@@ -238,7 +237,7 @@ pub enum ExprRef<'storage, 'a> {
     IntegerLit(&'storage IntegerLit),
     FloatLit(&'storage FloatLit),
     StringLit(&'storage StringLit<'a>),
-    CharLit(&'storage CharLit),
+    CharLit(char),
     ListLit(&'storage ListLit<'a>),
     ObjectLit(&'storage ObjectLit<'a>),
 
@@ -296,7 +295,7 @@ pub enum ExprRefMut<'storage, 'a> {
     IntegerLit(&'storage mut IntegerLit),
     FloatLit(&'storage mut FloatLit),
     StringLit(&'storage mut StringLit<'a>),
-    CharLit(&'storage mut CharLit),
+    CharLit(char),
     ListLit(&'storage mut ListLit<'a>),
     ObjectLit(&'storage mut ObjectLit<'a>),
 

@@ -43,8 +43,8 @@ impl<'storage, 'a> Builder<'storage, 'a> {
         StringBuilder::new(self.storage)
     }
 
-    pub fn create_char(&mut self) -> CharBuilder<'_, 'a> {
-        CharBuilder::new(self.storage)
+    pub fn create_char(&mut self, char: char) -> Option<ExprKey<'a>> {
+        self.storage.add_expr(ExprOwned::CharLit(char))
     }
 
     pub fn create_list(&mut self) -> ListBuilder<'_, 'a> {

@@ -3,7 +3,6 @@ mod binary_op;
 mod block;
 mod builder;
 mod builder_helper;
-mod character;
 mod debug;
 mod expression;
 mod function;

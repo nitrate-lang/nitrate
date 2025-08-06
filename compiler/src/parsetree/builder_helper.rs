@@ -2,7 +2,6 @@ use super::array_type::ArrayType;
 use super::binary_op::{BinaryOp, BinaryOperator};
 use super::block::Block;
 use super::builder::Builder;
-use super::character::CharLit;
 use super::expression::{ExprOwned, ExprRef, TypeOwned};
 use super::function::{Function, FunctionParameter};
 use super::function_type::FunctionType;
@@ -132,32 +131,6 @@ impl<'storage, 'a> StringBuilder<'storage, 'a> {
     pub fn build(self) -> Option<ExprKey<'a>> {
         self.storage.add_expr(ExprOwned::StringLit(StringLit::new(
             self.value.expect("String value must be provided"),
-        )))
-    }
-}
-
-#[derive(Debug)]
-pub struct CharBuilder<'storage, 'a> {
-    storage: &'storage mut Storage<'a>,
-    value: Option<char>,
-}
-
-impl<'storage, 'a> CharBuilder<'storage, 'a> {
-    pub(crate) fn new(storage: &'storage mut Storage<'a>) -> Self {
-        CharBuilder {
-            storage,
-            value: None,
-        }
-    }
-
-    pub fn with_char(mut self, value: char) -> Self {
-        self.value = Some(value);
-        self
-    }
-
-    pub fn build(self) -> Option<ExprKey<'a>> {
-        self.storage.add_expr(ExprOwned::CharLit(CharLit::new(
-            self.value.expect("Char value must be provided"),
         )))
     }
 }
