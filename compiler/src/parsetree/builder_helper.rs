@@ -581,7 +581,7 @@ impl<'storage, 'a> ReturnBuilder<'storage, 'a> {
 #[derive(Debug)]
 pub struct RefinementTypeBuilder<'storage, 'a> {
     storage: &'storage mut Storage<'a>,
-    principal: Option<TypeKey<'a>>,
+    base: Option<TypeKey<'a>>,
     width: Option<ExprKey<'a>>,
     minimum: Option<ExprKey<'a>>,
     maximum: Option<ExprKey<'a>>,
@@ -591,15 +591,15 @@ impl<'storage, 'a> RefinementTypeBuilder<'storage, 'a> {
     pub(crate) fn new(storage: &'storage mut Storage<'a>) -> Self {
         RefinementTypeBuilder {
             storage,
-            principal: None,
+            base: None,
             width: None,
             minimum: None,
             maximum: None,
         }
     }
 
-    pub fn with_principal(mut self, principal: TypeKey<'a>) -> Self {
-        self.principal = Some(principal);
+    pub fn with_base(mut self, base: TypeKey<'a>) -> Self {
+        self.base = Some(base);
         self
     }
 
@@ -621,7 +621,7 @@ impl<'storage, 'a> RefinementTypeBuilder<'storage, 'a> {
     pub fn build(self) -> Option<TypeKey<'a>> {
         self.storage
             .add_type(TypeOwned::RefinementType(RefinementType::new(
-                self.principal.expect("Principal type must be provided"),
+                self.base.expect("Principal type must be provided"),
                 self.width,
                 self.minimum,
                 self.maximum,
@@ -951,7 +951,7 @@ impl<'storage, 'a> UnmanagedTypeBuilder<'storage, 'a> {
 #[derive(Debug)]
 pub struct GenericTypeBuilder<'storage, 'a> {
     storage: &'storage mut Storage<'a>,
-    principal: Option<TypeKey<'a>>,
+    base: Option<TypeKey<'a>>,
     arguments: Vec<(&'a str, ExprKey<'a>)>,
 }
 
@@ -959,13 +959,13 @@ impl<'storage, 'a> GenericTypeBuilder<'storage, 'a> {
     pub(crate) fn new(storage: &'storage mut Storage<'a>) -> Self {
         GenericTypeBuilder {
             storage,
-            principal: None,
+            base: None,
             arguments: Vec::new(),
         }
     }
 
-    pub fn with_principal(mut self, principal: TypeKey<'a>) -> Self {
-        self.principal = Some(principal);
+    pub fn with_base(mut self, base: TypeKey<'a>) -> Self {
+        self.base = Some(base);
         self
     }
 
@@ -985,7 +985,7 @@ impl<'storage, 'a> GenericTypeBuilder<'storage, 'a> {
     pub fn build(self) -> Option<TypeKey<'a>> {
         self.storage
             .add_type(TypeOwned::GenericType(GenericType::new(
-                self.principal.expect("Principal type must be provided"),
+                self.base.expect("Principal type must be provided"),
                 self.arguments,
             )))
     }

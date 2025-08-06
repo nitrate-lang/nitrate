@@ -129,8 +129,8 @@ impl<'storage, 'a> Parser<'storage, 'a> {
             _ => {}
         }
 
-        if let Some(arg_expr) = self.parse_expression() {
-            Some((argname, arg_expr))
+        if let Some(argval) = self.parse_expression() {
+            Some((argname, argval))
         } else {
             self.set_failed_bit();
             error!(
@@ -149,7 +149,7 @@ impl<'storage, 'a> Parser<'storage, 'a> {
         self.generic_type_depth += 1;
         self.generic_type_suffix_terminator_ambiguity = false;
 
-        let mut arguments = Vec::new();
+        let mut generic_arguments = Vec::new();
 
         self.lexer.skip_if(&Token::Punct(Punct::Comma));
         while self.generic_type_depth > 0 && !self.lexer.is_eof() {
@@ -173,8 +173,8 @@ impl<'storage, 'a> Parser<'storage, 'a> {
                 break;
             }
 
-            if let Some(arg) = self.parse_generic_argument() {
-                arguments.push(arg);
+            if let Some(generic_argument) = self.parse_generic_argument() {
+                generic_arguments.push(generic_argument);
             } else {
                 self.set_failed_bit();
                 error!(
@@ -190,15 +190,15 @@ impl<'storage, 'a> Parser<'storage, 'a> {
             }
         }
 
-        arguments
+        generic_arguments
     }
 
-    fn parse_named_type_name(&mut self, name: &'a str) -> Option<TypeKey<'a>> {
-        assert!(self.lexer.peek_t() == Token::Name(Name::new(name)));
+    fn parse_named_type_name(&mut self, type_name: &'a str) -> Option<TypeKey<'a>> {
+        assert!(self.lexer.peek_t() == Token::Name(Name::new(type_name)));
         self.lexer.skip();
 
         let mut bb = Builder::new(self.storage);
-        match name {
+        match type_name {
             "u1" | "bool" => Some(bb.get_bool()),
             "u8" => Some(bb.get_u8()),
             "u16" => Some(bb.get_u16()),
@@ -216,62 +216,61 @@ impl<'storage, 'a> Parser<'storage, 'a> {
             "f64" => Some(bb.get_f64()),
             "f128" => Some(bb.get_f128()),
             "_" => Some(bb.get_infer_type()),
-            name => bb.create_type_name(name),
+            type_name => bb.create_type_name(type_name),
         }
     }
 
-    fn parse_named_type(&mut self, name: &'a str) -> Option<TypeKey<'a>> {
-        assert!(self.lexer.peek_t() == Token::Name(Name::new(name)));
-        let principal = self.parse_named_type_name(name);
+    fn parse_named_type(&mut self, type_name: &'a str) -> Option<TypeKey<'a>> {
+        assert!(self.lexer.peek_t() == Token::Name(Name::new(type_name)));
 
-        if self.lexer.next_is(&Token::Op(Operator::LogicLt)) {
-            let is_already_parsing_generic_type = self.generic_type_depth != 0;
-            let generic_args = self.parse_generic_arguments();
-
-            if !is_already_parsing_generic_type {
-                match self.generic_type_depth {
-                    0 => {}
-
-                    -1 => {
-                        self.set_failed_bit();
-                        error!(
-                            self.log,
-                            "error[P????]: Unexpected generic type '>' delimiter or invalid generic type\n--> {}",
-                            self.lexer.sync_position()
-                        );
-                    }
-
-                    _ => {
-                        self.set_failed_bit();
-                        error!(
-                            self.log,
-                            "error[P????]: Unexpected generic type '>>' delimiter or invalid generic type\n--> {}",
-                            self.lexer.sync_position()
-                        );
-                    }
-                }
-
-                self.generic_type_depth = 0;
-                self.generic_type_suffix_terminator_ambiguity = false;
-            }
-
-            if let Some(principal) = principal {
-                return Builder::new(self.storage)
-                    .create_generic_type()
-                    .with_principal(principal)
-                    .add_arguments(generic_args)
-                    .build();
-            } else {
-                self.set_failed_bit();
-                error!(
-                    self.log,
-                    "error[P????]: Unable to construct generic type due to previous errors\n--> {}",
-                    self.lexer.sync_position()
-                );
-            }
+        let named_type_base = self.parse_named_type_name(type_name);
+        if !self.lexer.next_is(&Token::Op(Operator::LogicLt)) {
+            return named_type_base;
         }
 
-        principal
+        let is_already_parsing_generic_type = self.generic_type_depth != 0;
+        let generic_args = self.parse_generic_arguments();
+
+        if !is_already_parsing_generic_type {
+            match self.generic_type_depth {
+                0 => {}
+                -1 => {
+                    self.set_failed_bit();
+                    error!(
+                        self.log,
+                        "error[P????]: Unexpected generic type '>' delimiter or invalid generic type\n--> {}",
+                        self.lexer.sync_position()
+                    );
+                }
+                _ => {
+                    self.set_failed_bit();
+                    error!(
+                        self.log,
+                        "error[P????]: Unexpected generic type '>>' delimiter or invalid generic type\n--> {}",
+                        self.lexer.sync_position()
+                    );
+                }
+            }
+
+            self.generic_type_depth = 0;
+            self.generic_type_suffix_terminator_ambiguity = false;
+        }
+
+        if let Some(generic_base) = named_type_base {
+            Builder::new(self.storage)
+                .create_generic_type()
+                .with_base(generic_base)
+                .add_arguments(generic_args)
+                .build()
+        } else {
+            self.set_failed_bit();
+            error!(
+                self.log,
+                "error[P????]: Unable to construct generic type due to previous errors\n--> {}",
+                self.lexer.sync_position()
+            );
+            None
+        }
     }
 
     fn parse_tuple_type(&mut self) -> Option<TypeKey<'a>> {
@@ -320,6 +319,9 @@ impl<'storage, 'a> Parser<'storage, 'a> {
     }
 
     fn parse_rest_of_array(&mut self, element_type: Option<TypeKey<'a>>) -> Option<TypeKey<'a>> {
+        assert!(self.lexer.peek_t() == Token::Punct(Punct::Semicolon));
+        self.lexer.skip();
+
         let array_type = if let Some(array_count) = self.parse_expression() {
             if let Some(element_type) = element_type {
                 Builder::new(self.storage)
@@ -359,12 +361,15 @@ impl<'storage, 'a> Parser<'storage, 'a> {
     }
 
     fn parse_rest_of_map_type(&mut self, key_type: Option<TypeKey<'a>>) -> Option<TypeKey<'a>> {
-        let map_type = if let Some(map_value_type) = self.parse_type() {
-            if let Some(map_key_type) = key_type {
+        assert!(self.lexer.peek_t() == Token::Op(Operator::Arrow));
+        self.lexer.skip();
+
+        let map_type = if let Some(value_type) = self.parse_type() {
+            if let Some(key_type) = key_type {
                 Builder::new(self.storage)
                     .create_map_type()
-                    .with_key(map_key_type)
-                    .with_value(map_value_type)
+                    .with_key(key_type)
+                    .with_value(value_type)
                     .build()
             } else {
                 self.set_failed_bit();
@@ -401,6 +406,9 @@ impl<'storage, 'a> Parser<'storage, 'a> {
         &mut self,
         element_type: Option<TypeKey<'a>>,
     ) -> Option<TypeKey<'a>> {
+        assert!(self.lexer.peek_t() == Token::Punct(Punct::RightBracket));
+        self.lexer.skip();
+
         let slice_type = if let Some(element_type) = element_type {
             Builder::new(self.storage)
                 .create_slice_type()
@@ -420,15 +428,17 @@ impl<'storage, 'a> Parser<'storage, 'a> {
     }
 
     fn parse_array_or_slice_or_map(&mut self) -> Option<TypeKey<'a>> {
+        assert!(self.lexer.peek_t() == Token::Punct(Punct::LeftBracket));
         self.lexer.skip();
-        let base_type = self.parse_type();
 
-        let whatever_type = if self.lexer.skip_if(&Token::Punct(Punct::Semicolon)) {
-            self.parse_rest_of_array(base_type)
-        } else if self.lexer.skip_if(&Token::Op(Operator::Arrow)) {
-            self.parse_rest_of_map_type(base_type)
-        } else if self.lexer.skip_if(&Token::Punct(Punct::RightBracket)) {
-            self.parse_rest_of_slice_type(base_type)
+        let something_type = self.parse_type();
+
+        if self.lexer.next_is(&Token::Punct(Punct::Semicolon)) {
+            self.parse_rest_of_array(something_type)
+        } else if self.lexer.next_is(&Token::Op(Operator::Arrow)) {
+            self.parse_rest_of_map_type(something_type)
+        } else if self.lexer.next_is(&Token::Punct(Punct::RightBracket)) {
+            self.parse_rest_of_slice_type(something_type)
         } else {
             self.set_failed_bit();
             error!(
@@ -437,9 +447,7 @@ impl<'storage, 'a> Parser<'storage, 'a> {
                 self.lexer.sync_position()
             );
             None
-        };
-
-        whatever_type
+        }
     }
 
     fn parse_managed_type(&mut self) -> Option<TypeKey<'a>> {
@@ -491,6 +499,9 @@ impl<'storage, 'a> Parser<'storage, 'a> {
     }
 
     fn parse_function_type(&mut self) -> Option<TypeKey<'a>> {
+        assert!(self.lexer.peek_t() == Token::Keyword(Keyword::Fn));
+        self.lexer.skip();
+
         // TODO: Handle function types
         self.set_failed_bit();
         error!(
@@ -502,6 +513,9 @@ impl<'storage, 'a> Parser<'storage, 'a> {
     }
 
     fn parse_opaque_type(&mut self) -> Option<TypeKey<'a>> {
+        assert!(self.lexer.peek_t() == Token::Keyword(Keyword::Opaque));
+        self.lexer.skip();
+
         // TODO: Handle opaque types
         self.set_failed_bit();
         error!(
@@ -674,10 +688,10 @@ impl<'storage, 'a> Parser<'storage, 'a> {
             let options = self.parse_refinement_options();
 
             if options.has_any() {
-                if let Some(principal) = primary {
+                if let Some(base) = primary {
                     return Builder::new(self.storage)
                         .create_refinement_type()
-                        .with_principal(principal)
+                        .with_base(base)
                         .with_width(options.width)
                         .with_minimum(options.minimum)
                         .with_maximum(options.maximum)

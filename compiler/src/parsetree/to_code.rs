@@ -283,7 +283,7 @@ impl<'a> ToCode<'a> for Return<'a> {
 
 impl<'a> ToCode<'a> for RefinementType<'a> {
     fn to_code(&self, bank: &Storage<'a>, tokens: &mut Vec<Token<'a>>, options: &CodeFormat) {
-        self.principal().to_code(bank, tokens, options);
+        self.base().to_code(bank, tokens, options);
 
         if let Some(width) = self.width() {
             tokens.push(Token::Punct(Punct::Colon));
@@ -440,7 +440,7 @@ impl<'a> ToCode<'a> for UnmanagedType<'a> {
 
 impl<'a> ToCode<'a> for GenericType<'a> {
     fn to_code(&self, bank: &Storage<'a>, tokens: &mut Vec<Token<'a>>, options: &CodeFormat) {
-        self.principal().to_code(bank, tokens, options);
+        self.base().to_code(bank, tokens, options);
 
         tokens.push(Token::Op(Operator::LogicLt));
         for (i, (name, value)) in self.arguments().iter().enumerate() {

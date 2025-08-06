@@ -51,7 +51,7 @@ impl<'storage, 'a> std::fmt::Debug for Printable<'storage, 'a> {
 
             ExprRef::RefinementType(x) => f
                 .debug_struct("RefinementType")
-                .field("principal", &x.principal().as_printable(self.storage))
+                .field("base", &x.base().as_printable(self.storage))
                 .field("width", &x.width().map(|w| w.as_printable(self.storage)))
                 .field("min", &x.min().map(|m| m.as_printable(self.storage)))
                 .field("max", &x.max().map(|m| m.as_printable(self.storage)))
@@ -146,7 +146,7 @@ impl<'storage, 'a> std::fmt::Debug for Printable<'storage, 'a> {
 
             ExprRef::GenericType(x) => f
                 .debug_struct("GenericType")
-                .field("principal", &x.principal().as_printable(self.storage))
+                .field("base", &x.base().as_printable(self.storage))
                 .field(
                     "args",
                     &x.arguments()
