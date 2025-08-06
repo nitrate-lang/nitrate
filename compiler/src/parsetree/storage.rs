@@ -79,8 +79,8 @@ impl<'a> ExprKey<'a> {
             x if x == ExprKind::MapType as u8 => ExprKind::MapType,
             x if x == ExprKind::SliceType as u8 => ExprKind::SliceType,
             x if x == ExprKind::FunctionType as u8 => ExprKind::FunctionType,
-            x if x == ExprKind::ManagedType as u8 => ExprKind::ManagedType,
-            x if x == ExprKind::UnmanagedType as u8 => ExprKind::UnmanagedType,
+            x if x == ExprKind::ManagedRefType as u8 => ExprKind::ManagedRefType,
+            x if x == ExprKind::UnmanagedRefType as u8 => ExprKind::UnmanagedRefType,
             x if x == ExprKind::GenericType as u8 => ExprKind::GenericType,
             x if x == ExprKind::OpaqueType as u8 => ExprKind::OpaqueType,
 
@@ -176,8 +176,8 @@ impl<'a> TypeKey<'a> {
             x if x == TypeKind::MapType as u8 => TypeKind::MapType,
             x if x == TypeKind::SliceType as u8 => TypeKind::SliceType,
             x if x == TypeKind::FunctionType as u8 => TypeKind::FunctionType,
-            x if x == TypeKind::ManagedType as u8 => TypeKind::ManagedType,
-            x if x == TypeKind::UnmanagedType as u8 => TypeKind::UnmanagedType,
+            x if x == TypeKind::ManagedRefType as u8 => TypeKind::ManagedRefType,
+            x if x == TypeKind::UnmanagedRefType as u8 => TypeKind::UnmanagedRefType,
             x if x == TypeKind::GenericType as u8 => TypeKind::GenericType,
             x if x == TypeKind::OpaqueType as u8 => TypeKind::OpaqueType,
 
@@ -257,8 +257,8 @@ impl<'a> ExprKey<'a> {
             | ExprKind::MapType
             | ExprKind::SliceType
             | ExprKind::FunctionType
-            | ExprKind::ManagedType
-            | ExprKind::UnmanagedType
+            | ExprKind::ManagedRefType
+            | ExprKind::UnmanagedRefType
             | ExprKind::GenericType
             | ExprKind::OpaqueType => true,
 
@@ -381,8 +381,8 @@ impl<'a> Storage<'a> {
             | ExprKind::MapType
             | ExprKind::SliceType
             | ExprKind::FunctionType
-            | ExprKind::ManagedType
-            | ExprKind::UnmanagedType
+            | ExprKind::ManagedRefType
+            | ExprKind::UnmanagedRefType
             | ExprKind::GenericType
             | ExprKind::OpaqueType => {}
 
@@ -433,8 +433,8 @@ impl<'a> Storage<'a> {
             | ExprOwned::MapType(_)
             | ExprOwned::SliceType(_)
             | ExprOwned::FunctionType(_)
-            | ExprOwned::ManagedType(_)
-            | ExprOwned::UnmanagedType(_)
+            | ExprOwned::ManagedRefType(_)
+            | ExprOwned::UnmanagedRefType(_)
             | ExprOwned::GenericType(_)
             | ExprOwned::OpaqueType(_) => self
                 .add_type(expr.try_into().expect("Expected a type node"))
@@ -574,8 +574,8 @@ impl<'a> Storage<'a> {
                     TypeOwned::MapType(_) => TypeKind::MapType,
                     TypeOwned::SliceType(_) => TypeKind::SliceType,
                     TypeOwned::FunctionType(_) => TypeKind::FunctionType,
-                    TypeOwned::ManagedType(_) => TypeKind::ManagedType,
-                    TypeOwned::UnmanagedType(_) => TypeKind::UnmanagedType,
+                    TypeOwned::ManagedRefType(_) => TypeKind::ManagedRefType,
+                    TypeOwned::UnmanagedRefType(_) => TypeKind::UnmanagedRefType,
                     TypeOwned::GenericType(_) => TypeKind::GenericType,
                     TypeOwned::OpaqueType(_) => TypeKind::OpaqueType,
                 };
@@ -622,8 +622,8 @@ impl<'a> Storage<'a> {
             | ExprKind::MapType
             | ExprKind::SliceType
             | ExprKind::FunctionType
-            | ExprKind::ManagedType
-            | ExprKind::UnmanagedType
+            | ExprKind::ManagedRefType
+            | ExprKind::UnmanagedRefType
             | ExprKind::GenericType
             | ExprKind::OpaqueType => Some(
                 self.get_type(id.try_into().expect("Expected conversion to TypeKey"))
@@ -680,8 +680,8 @@ impl<'a> Storage<'a> {
             | ExprKind::MapType
             | ExprKind::SliceType
             | ExprKind::FunctionType
-            | ExprKind::ManagedType
-            | ExprKind::UnmanagedType
+            | ExprKind::ManagedRefType
+            | ExprKind::UnmanagedRefType
             | ExprKind::GenericType
             | ExprKind::OpaqueType => Some(
                 self.get_type(id.try_into().expect("Expected conversion to TypeKey"))

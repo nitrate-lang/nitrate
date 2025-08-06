@@ -554,28 +554,26 @@ impl<'storage, 'a> Parser<'storage, 'a> {
                     break;
                 }
 
-                if let Token::Name(param_name) = self.lexer.next().into_token() {
-                    let ty = if self.lexer.skip_if(&Token::Punct(Punct::Colon)) {
-                        self.parse_type()
-                    } else {
-                        None
-                    };
-
-                    let default = if self.lexer.skip_if(&Token::Op(Operator::Set)) {
-                        self.parse_expression()
-                    } else {
-                        None
-                    };
-
-                    parameters.push(FunctionParameter::new(param_name.name(), ty, default));
+                let param_name = if let Token::Name(param_name) = self.lexer.peek_t() {
+                    self.lexer.skip();
+                    param_name.name()
                 } else {
-                    self.set_failed_bit();
-                    error!(
-                        self.log,
-                        "error[P????]: Expected a parameter name in function parameters\n--> {}",
-                        self.lexer.sync_position()
-                    );
-                }
+                    ""
+                };
+
+                let ty = if self.lexer.skip_if(&Token::Punct(Punct::Colon)) {
+                    self.parse_type()
+                } else {
+                    None
+                };
+
+                let default = if self.lexer.skip_if(&Token::Op(Operator::Set)) {
+                    self.parse_expression()
+                } else {
+                    None
+                };
+
+                parameters.push(FunctionParameter::new(param_name, ty, default));
 
                 if !self.lexer.skip_if(&Token::Punct(Punct::Comma)) {
                     if self.lexer.skip_if(&Token::Punct(Punct::RightParen)) {
@@ -601,6 +599,10 @@ impl<'storage, 'a> Parser<'storage, 'a> {
         self.lexer.skip();
 
         let attributes = self.parse_function_attributes();
+        if let Token::Name(_) = self.lexer.peek_t() {
+            self.lexer.skip();
+        }
+
         let parameters = self.parse_function_parameters();
 
         let return_type = if self.lexer.skip_if(&Token::Op(Operator::Arrow)) {

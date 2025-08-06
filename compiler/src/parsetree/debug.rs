@@ -116,14 +116,14 @@ impl<'storage, 'a> std::fmt::Debug for Printable<'storage, 'a> {
                 )
                 .finish(),
 
-            ExprRef::ManagedType(x) => f
-                .debug_struct("ManagedType")
+            ExprRef::ManagedRefType(x) => f
+                .debug_struct("ManagedRefType")
                 .field("target", &x.target().as_printable(self.storage))
                 .field("is_mutable", &x.is_mutable())
                 .finish(),
 
-            ExprRef::UnmanagedType(x) => f
-                .debug_struct("UnmanagedType")
+            ExprRef::UnmanagedRefType(x) => f
+                .debug_struct("UnmanagedRefType")
                 .field("target", &x.target().as_printable(self.storage))
                 .field("is_mutable", &x.is_mutable())
                 .finish(),

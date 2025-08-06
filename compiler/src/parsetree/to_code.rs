@@ -10,7 +10,7 @@ use super::map_type::MapType;
 use super::number::{FloatLit, IntegerLit};
 use super::object::ObjectLit;
 use super::opaque_type::OpaqueType;
-use super::reference::{ManagedType, UnmanagedType};
+use super::reference::{ManagedRefType, UnmanagedRefType};
 use super::refinement_type::RefinementType;
 use super::returns::Return;
 use super::slice_type::SliceType;
@@ -378,7 +378,7 @@ impl<'a> ToCode<'a> for FunctionType<'a> {
     }
 }
 
-impl<'a> ToCode<'a> for ManagedType<'a> {
+impl<'a> ToCode<'a> for ManagedRefType<'a> {
     fn to_code(&self, bank: &Storage<'a>, tokens: &mut Vec<Token<'a>>, options: &CodeFormat) {
         tokens.push(Token::Op(Operator::BitAnd));
         if self.is_mutable() {
@@ -389,7 +389,7 @@ impl<'a> ToCode<'a> for ManagedType<'a> {
     }
 }
 
-impl<'a> ToCode<'a> for UnmanagedType<'a> {
+impl<'a> ToCode<'a> for UnmanagedRefType<'a> {
     fn to_code(&self, bank: &Storage<'a>, tokens: &mut Vec<Token<'a>>, options: &CodeFormat) {
         tokens.push(Token::Op(Operator::Mul));
         if self.is_mutable() {
@@ -465,8 +465,8 @@ impl<'a> ToCode<'a> for ExprKey<'a> {
             ExprRef::MapType(e) => e.to_code(bank, tokens, options),
             ExprRef::SliceType(e) => e.to_code(bank, tokens, options),
             ExprRef::FunctionType(e) => e.to_code(bank, tokens, options),
-            ExprRef::ManagedType(e) => e.to_code(bank, tokens, options),
-            ExprRef::UnmanagedType(e) => e.to_code(bank, tokens, options),
+            ExprRef::ManagedRefType(e) => e.to_code(bank, tokens, options),
+            ExprRef::UnmanagedRefType(e) => e.to_code(bank, tokens, options),
             ExprRef::GenericType(e) => e.to_code(bank, tokens, options),
             ExprRef::OpaqueType(e) => e.to_code(bank, tokens, options),
 
@@ -530,8 +530,8 @@ impl<'a> ToCode<'a> for TypeKey<'a> {
             TypeOwned::MapType(e) => e.to_code(bank, tokens, options),
             TypeOwned::SliceType(e) => e.to_code(bank, tokens, options),
             TypeOwned::FunctionType(e) => e.to_code(bank, tokens, options),
-            TypeOwned::ManagedType(e) => e.to_code(bank, tokens, options),
-            TypeOwned::UnmanagedType(e) => e.to_code(bank, tokens, options),
+            TypeOwned::ManagedRefType(e) => e.to_code(bank, tokens, options),
+            TypeOwned::UnmanagedRefType(e) => e.to_code(bank, tokens, options),
             TypeOwned::GenericType(e) => e.to_code(bank, tokens, options),
             TypeOwned::OpaqueType(e) => e.to_code(bank, tokens, options),
         }

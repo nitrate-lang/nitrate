@@ -9,7 +9,7 @@ use super::map_type::MapType;
 use super::number::{FloatLit, IntegerLit};
 use super::object::ObjectLit;
 use super::opaque_type::OpaqueType;
-use super::reference::{ManagedType, UnmanagedType};
+use super::reference::{ManagedRefType, UnmanagedRefType};
 use super::refinement_type::RefinementType;
 use super::returns::Return;
 use super::slice_type::SliceType;
@@ -46,8 +46,8 @@ pub enum ExprKind {
     MapType,
     SliceType,
     FunctionType,
-    ManagedType,
-    UnmanagedType,
+    ManagedRefType,
+    UnmanagedRefType,
     GenericType,
     OpaqueType,
 
@@ -98,8 +98,8 @@ pub(crate) enum TypeKind {
     MapType,
     SliceType,
     FunctionType,
-    ManagedType,
-    UnmanagedType,
+    ManagedRefType,
+    UnmanagedRefType,
     GenericType,
     OpaqueType,
 }
@@ -133,8 +133,8 @@ pub(crate) enum ExprOwned<'a> {
     MapType(MapType<'a>),
     SliceType(SliceType<'a>),
     FunctionType(FunctionType<'a>),
-    ManagedType(ManagedType<'a>),
-    UnmanagedType(UnmanagedType<'a>),
+    ManagedRefType(ManagedRefType<'a>),
+    UnmanagedRefType(UnmanagedRefType<'a>),
     GenericType(GenericType<'a>),
     OpaqueType(OpaqueType<'a>),
 
@@ -191,8 +191,8 @@ pub enum TypeOwned<'a> {
     MapType(MapType<'a>),
     SliceType(SliceType<'a>),
     FunctionType(FunctionType<'a>),
-    ManagedType(ManagedType<'a>),
-    UnmanagedType(UnmanagedType<'a>),
+    ManagedRefType(ManagedRefType<'a>),
+    UnmanagedRefType(UnmanagedRefType<'a>),
     GenericType(GenericType<'a>),
     OpaqueType(OpaqueType<'a>),
 }
@@ -226,8 +226,8 @@ pub enum ExprRef<'storage, 'a> {
     MapType(&'storage MapType<'a>),
     SliceType(&'storage SliceType<'a>),
     FunctionType(&'storage FunctionType<'a>),
-    ManagedType(&'storage ManagedType<'a>),
-    UnmanagedType(&'storage UnmanagedType<'a>),
+    ManagedRefType(&'storage ManagedRefType<'a>),
+    UnmanagedRefType(&'storage UnmanagedRefType<'a>),
     GenericType(&'storage GenericType<'a>),
     OpaqueType(&'storage OpaqueType<'a>),
 
@@ -284,8 +284,8 @@ pub enum ExprRefMut<'storage, 'a> {
     MapType(&'storage MapType<'a>),
     SliceType(&'storage SliceType<'a>),
     FunctionType(&'storage FunctionType<'a>),
-    ManagedType(&'storage ManagedType<'a>),
-    UnmanagedType(&'storage UnmanagedType<'a>),
+    ManagedRefType(&'storage ManagedRefType<'a>),
+    UnmanagedRefType(&'storage UnmanagedRefType<'a>),
     GenericType(&'storage GenericType<'a>),
     OpaqueType(&'storage OpaqueType<'a>),
 
@@ -343,8 +343,8 @@ impl TryInto<TypeKind> for ExprKind {
             ExprKind::MapType => Ok(TypeKind::MapType),
             ExprKind::SliceType => Ok(TypeKind::SliceType),
             ExprKind::FunctionType => Ok(TypeKind::FunctionType),
-            ExprKind::ManagedType => Ok(TypeKind::ManagedType),
-            ExprKind::UnmanagedType => Ok(TypeKind::UnmanagedType),
+            ExprKind::ManagedRefType => Ok(TypeKind::ManagedRefType),
+            ExprKind::UnmanagedRefType => Ok(TypeKind::UnmanagedRefType),
             ExprKind::GenericType => Ok(TypeKind::GenericType),
             ExprKind::OpaqueType => Ok(TypeKind::OpaqueType),
 
@@ -394,8 +394,8 @@ impl Into<ExprKind> for TypeKind {
             TypeKind::MapType => ExprKind::MapType,
             TypeKind::SliceType => ExprKind::SliceType,
             TypeKind::FunctionType => ExprKind::FunctionType,
-            TypeKind::ManagedType => ExprKind::ManagedType,
-            TypeKind::UnmanagedType => ExprKind::UnmanagedType,
+            TypeKind::ManagedRefType => ExprKind::ManagedRefType,
+            TypeKind::UnmanagedRefType => ExprKind::UnmanagedRefType,
             TypeKind::GenericType => ExprKind::GenericType,
             TypeKind::OpaqueType => ExprKind::OpaqueType,
         }
@@ -432,8 +432,8 @@ impl<'a> TryInto<TypeOwned<'a>> for ExprOwned<'a> {
             ExprOwned::MapType(x) => Ok(TypeOwned::MapType(x)),
             ExprOwned::SliceType(x) => Ok(TypeOwned::SliceType(x)),
             ExprOwned::FunctionType(x) => Ok(TypeOwned::FunctionType(x)),
-            ExprOwned::ManagedType(x) => Ok(TypeOwned::ManagedType(x)),
-            ExprOwned::UnmanagedType(x) => Ok(TypeOwned::UnmanagedType(x)),
+            ExprOwned::ManagedRefType(x) => Ok(TypeOwned::ManagedRefType(x)),
+            ExprOwned::UnmanagedRefType(x) => Ok(TypeOwned::UnmanagedRefType(x)),
             ExprOwned::GenericType(x) => Ok(TypeOwned::GenericType(x)),
             ExprOwned::OpaqueType(x) => Ok(TypeOwned::OpaqueType(x)),
 
@@ -483,8 +483,8 @@ impl<'a> Into<ExprOwned<'a>> for TypeOwned<'a> {
             TypeOwned::MapType(x) => ExprOwned::MapType(x),
             TypeOwned::SliceType(x) => ExprOwned::SliceType(x),
             TypeOwned::FunctionType(x) => ExprOwned::FunctionType(x),
-            TypeOwned::ManagedType(x) => ExprOwned::ManagedType(x),
-            TypeOwned::UnmanagedType(x) => ExprOwned::UnmanagedType(x),
+            TypeOwned::ManagedRefType(x) => ExprOwned::ManagedRefType(x),
+            TypeOwned::UnmanagedRefType(x) => ExprOwned::UnmanagedRefType(x),
             TypeOwned::GenericType(x) => ExprOwned::GenericType(x),
             TypeOwned::OpaqueType(x) => ExprOwned::OpaqueType(x),
         }
@@ -519,8 +519,8 @@ impl<'storage, 'a> Into<ExprRef<'storage, 'a>> for &'storage TypeOwned<'a> {
             TypeOwned::MapType(x) => ExprRef::MapType(x),
             TypeOwned::SliceType(x) => ExprRef::SliceType(x),
             TypeOwned::FunctionType(x) => ExprRef::FunctionType(x),
-            TypeOwned::ManagedType(x) => ExprRef::ManagedType(x),
-            TypeOwned::UnmanagedType(x) => ExprRef::UnmanagedType(x),
+            TypeOwned::ManagedRefType(x) => ExprRef::ManagedRefType(x),
+            TypeOwned::UnmanagedRefType(x) => ExprRef::UnmanagedRefType(x),
             TypeOwned::GenericType(x) => ExprRef::GenericType(x),
             TypeOwned::OpaqueType(x) => ExprRef::OpaqueType(x),
         }
@@ -555,8 +555,8 @@ impl<'storage, 'a> Into<ExprRefMut<'storage, 'a>> for &'storage TypeOwned<'a> {
             TypeOwned::MapType(x) => ExprRefMut::MapType(x),
             TypeOwned::SliceType(x) => ExprRefMut::SliceType(x),
             TypeOwned::FunctionType(x) => ExprRefMut::FunctionType(x),
-            TypeOwned::ManagedType(x) => ExprRefMut::ManagedType(x),
-            TypeOwned::UnmanagedType(x) => ExprRefMut::UnmanagedType(x),
+            TypeOwned::ManagedRefType(x) => ExprRefMut::ManagedRefType(x),
+            TypeOwned::UnmanagedRefType(x) => ExprRefMut::UnmanagedRefType(x),
             TypeOwned::GenericType(x) => ExprRefMut::GenericType(x),
             TypeOwned::OpaqueType(x) => ExprRefMut::OpaqueType(x),
         }

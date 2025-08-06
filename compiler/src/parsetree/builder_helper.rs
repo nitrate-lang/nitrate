@@ -10,7 +10,7 @@ use super::list::ListLit;
 use super::map_type::MapType;
 use super::number::{FloatLit, IntegerLit};
 use super::object::ObjectLit;
-use super::reference::{ManagedType, UnmanagedType};
+use super::reference::{ManagedRefType, UnmanagedRefType};
 use super::refinement_type::RefinementType;
 use super::returns::Return;
 use super::slice_type::SliceType;
@@ -795,15 +795,15 @@ impl<'storage, 'a> FunctionTypeBuilder<'storage, 'a> {
 }
 
 #[derive(Debug)]
-pub struct ManagedTypeBuilder<'storage, 'a> {
+pub struct ManagedRefTypeBuilder<'storage, 'a> {
     storage: &'storage mut Storage<'a>,
     target: Option<TypeKey<'a>>,
     is_mutable: bool,
 }
 
-impl<'storage, 'a> ManagedTypeBuilder<'storage, 'a> {
+impl<'storage, 'a> ManagedRefTypeBuilder<'storage, 'a> {
     pub(crate) fn new(storage: &'storage mut Storage<'a>) -> Self {
-        ManagedTypeBuilder {
+        ManagedRefTypeBuilder {
             storage,
             target: None,
             is_mutable: false,
@@ -822,7 +822,7 @@ impl<'storage, 'a> ManagedTypeBuilder<'storage, 'a> {
 
     pub fn build(self) -> Option<TypeKey<'a>> {
         self.storage
-            .add_type(TypeOwned::ManagedType(ManagedType::new(
+            .add_type(TypeOwned::ManagedRefType(ManagedRefType::new(
                 self.target.expect("Target type must be provided"),
                 self.is_mutable,
             )))
@@ -830,15 +830,15 @@ impl<'storage, 'a> ManagedTypeBuilder<'storage, 'a> {
 }
 
 #[derive(Debug)]
-pub struct UnmanagedTypeBuilder<'storage, 'a> {
+pub struct UnmanagedRefTypeBuilder<'storage, 'a> {
     storage: &'storage mut Storage<'a>,
     target: Option<TypeKey<'a>>,
     is_mutable: bool,
 }
 
-impl<'storage, 'a> UnmanagedTypeBuilder<'storage, 'a> {
+impl<'storage, 'a> UnmanagedRefTypeBuilder<'storage, 'a> {
     pub(crate) fn new(storage: &'storage mut Storage<'a>) -> Self {
-        UnmanagedTypeBuilder {
+        UnmanagedRefTypeBuilder {
             storage,
             target: None,
             is_mutable: false,
@@ -857,7 +857,7 @@ impl<'storage, 'a> UnmanagedTypeBuilder<'storage, 'a> {
 
     pub fn build(self) -> Option<TypeKey<'a>> {
         self.storage
-            .add_type(TypeOwned::UnmanagedType(UnmanagedType::new(
+            .add_type(TypeOwned::UnmanagedRefType(UnmanagedRefType::new(
                 self.target.expect("Target type must be provided"),
                 self.is_mutable,
             )))

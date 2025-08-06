@@ -1,14 +1,14 @@
 use super::storage::TypeKey;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct ManagedType<'a> {
+pub struct ManagedRefType<'a> {
     target: TypeKey<'a>,
     is_mutable: bool,
 }
 
-impl<'a> ManagedType<'a> {
+impl<'a> ManagedRefType<'a> {
     pub(crate) fn new(target: TypeKey<'a>, is_mutable: bool) -> Self {
-        ManagedType { target, is_mutable }
+        ManagedRefType { target, is_mutable }
     }
 
     pub fn target(&self) -> TypeKey<'a> {
@@ -21,14 +21,14 @@ impl<'a> ManagedType<'a> {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct UnmanagedType<'a> {
+pub struct UnmanagedRefType<'a> {
     target: TypeKey<'a>,
     is_mutable: bool,
 }
 
-impl<'a> UnmanagedType<'a> {
+impl<'a> UnmanagedRefType<'a> {
     pub(crate) fn new(target: TypeKey<'a>, is_mutable: bool) -> Self {
-        UnmanagedType { target, is_mutable }
+        UnmanagedRefType { target, is_mutable }
     }
 
     pub fn target(&self) -> TypeKey<'a> {
