@@ -292,9 +292,9 @@ pub enum ExprRefMut<'storage, 'a> {
     Discard,
 
     /* Literal Expressions */
-    IntegerLit(&'storage mut IntegerLit),
-    FloatLit(&'storage mut FloatLit),
-    StringLit(&'storage mut StringLit<'a>),
+    IntegerLit(&'storage IntegerLit),
+    FloatLit(&'storage FloatLit),
+    StringLit(&'storage StringLit<'a>),
     CharLit(char),
     ListLit(&'storage mut ListLit<'a>),
     ObjectLit(&'storage mut ObjectLit<'a>),

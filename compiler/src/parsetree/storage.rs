@@ -303,7 +303,6 @@ pub struct Storage<'a> {
     integers: Vec<IntegerLit>,
     floats: Vec<FloatLit>,
     strings: Vec<StringLit<'a>>,
-    characters: Vec<char>,
     lists: Vec<ListLit<'a>>,
     objects: Vec<ObjectLit<'a>>,
 
@@ -324,16 +323,12 @@ pub struct Storage<'a> {
 
 impl<'a> Storage<'a> {
     const STRING_LIT_EMPTY_INDEX: usize = 0;
-    const CHAR_LIT_SPACE_INDEX: usize = 0;
-    const CHAR_LIT_NEWLINE_INDEX: usize = 1;
-    const CHAR_LIT_TAB_INDEX: usize = 2;
 
     pub fn new() -> Self {
         let mut storage = Storage {
             integers: Vec::new(),
             floats: Vec::new(),
             strings: Vec::new(),
-            characters: Vec::new(),
             lists: Vec::new(),
             objects: Vec::new(),
 
@@ -355,16 +350,6 @@ impl<'a> Storage<'a> {
         {
             let empty_string = (Self::STRING_LIT_EMPTY_INDEX, StringLit::new(""));
             storage.strings.insert(empty_string.0, empty_string.1);
-        }
-
-        {
-            let space_char = (Self::CHAR_LIT_SPACE_INDEX, ' ');
-            let newline_char = (Self::CHAR_LIT_NEWLINE_INDEX, '\n');
-            let tab_char = (Self::CHAR_LIT_TAB_INDEX, '\t');
-
-            storage.characters.insert(space_char.0, space_char.1);
-            storage.characters.insert(newline_char.0, newline_char.1);
-            storage.characters.insert(tab_char.0, tab_char.1);
         }
 
         storage
@@ -406,7 +391,7 @@ impl<'a> Storage<'a> {
             ExprKind::IntegerLit => self.integers.reserve(additional),
             ExprKind::FloatLit => self.floats.reserve(additional),
             ExprKind::StringLit => self.strings.reserve(additional),
-            ExprKind::CharLit => self.characters.reserve(additional),
+            ExprKind::CharLit => {}
             ExprKind::ListLit => self.lists.reserve(additional),
             ExprKind::ObjectLit => self.objects.reserve(additional),
 
@@ -479,16 +464,7 @@ impl<'a> Storage<'a> {
                 }),
             },
 
-            ExprOwned::CharLit(ch) => match ch {
-                ' ' => ExprKey::new(ExprKind::CharLit, Self::CHAR_LIT_SPACE_INDEX),
-                '\n' => ExprKey::new(ExprKind::CharLit, Self::CHAR_LIT_NEWLINE_INDEX),
-                '\t' => ExprKey::new(ExprKind::CharLit, Self::CHAR_LIT_TAB_INDEX),
-
-                _ => ExprKey::new(ExprKind::CharLit, self.characters.len()).and_then(|k| {
-                    self.characters.push(ch);
-                    Some(k)
-                }),
-            },
+            ExprOwned::CharLit(ch) => ExprKey::new(ExprKind::CharLit, ch as usize),
 
             ExprOwned::ListLit(node) => {
                 ExprKey::new(ExprKind::ListLit, self.lists.len()).and_then(|k| {
@@ -659,7 +635,7 @@ impl<'a> Storage<'a> {
             ExprKind::IntegerLit => self.integers.get(index).map(ExprRef::IntegerLit),
             ExprKind::FloatLit => self.floats.get(index).map(ExprRef::FloatLit),
             ExprKind::StringLit => self.strings.get(index).map(ExprRef::StringLit),
-            ExprKind::CharLit => self.characters.get(index).map(|ch| ExprRef::CharLit(*ch)),
+            ExprKind::CharLit => char::from_u32(index as u32).map(|ch| ExprRef::CharLit(ch)),
             ExprKind::ListLit => self.lists.get(index).map(ExprRef::ListLit),
             ExprKind::ObjectLit => self.objects.get(index).map(ExprRef::ObjectLit),
 
@@ -714,13 +690,10 @@ impl<'a> Storage<'a> {
 
             ExprKind::Discard => Some(ExprRefMut::Discard),
 
-            ExprKind::IntegerLit => self.integers.get_mut(index).map(ExprRefMut::IntegerLit),
-            ExprKind::FloatLit => self.floats.get_mut(index).map(ExprRefMut::FloatLit),
-            ExprKind::StringLit => self.strings.get_mut(index).map(ExprRefMut::StringLit),
-            ExprKind::CharLit => self
-                .characters
-                .get_mut(index)
-                .map(|ch| ExprRefMut::CharLit(*ch)),
+            ExprKind::IntegerLit => self.integers.get(index).map(ExprRefMut::IntegerLit),
+            ExprKind::FloatLit => self.floats.get(index).map(ExprRefMut::FloatLit),
+            ExprKind::StringLit => self.strings.get(index).map(ExprRefMut::StringLit),
+            ExprKind::CharLit => char::from_u32(index as u32).map(|ch| ExprRefMut::CharLit(ch)),
             ExprKind::ListLit => self.lists.get_mut(index).map(ExprRefMut::ListLit),
             ExprKind::ObjectLit => self.objects.get_mut(index).map(ExprRefMut::ObjectLit),
 
