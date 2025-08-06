@@ -102,6 +102,14 @@ impl<'storage, 'a> Parser<'storage, 'a> {
         options
     }
 
+    fn parse_generic_arguments(&mut self) -> Vec<(&'a str, ExprKey<'a>)> {
+        let mut args = Vec::new();
+
+        // TODO: Parse generic
+
+        args
+    }
+
     fn parse_type_name(&mut self, name: &'a str) -> Option<TypeKey<'a>> {
         assert!(self.lexer.peek_t() == Token::Name(Name::new(name)));
         self.lexer.skip();
@@ -128,7 +136,9 @@ impl<'storage, 'a> Parser<'storage, 'a> {
             name => bb.create_type_name(name),
         };
 
-        // TODO: Handle generic types
+        if self.lexer.next_is(&Token::Op(Operator::LogicLt)) {
+            let generic_args = self.parse_generic_arguments();
+        }
 
         principal
     }
