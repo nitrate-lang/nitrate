@@ -18,7 +18,6 @@ use super::slice_type::SliceType;
 use super::statement::Statement;
 use super::storage::{ExprKey, Storage, TypeKey};
 use super::string::StringLit;
-use super::struct_type::StructType;
 use super::tuple_type::TupleType;
 use super::unary_op::{UnaryOp, UnaryOperator};
 use super::variable::{Variable, VariableKind};
@@ -752,64 +751,6 @@ impl<'storage, 'a> SliceTypeBuilder<'storage, 'a> {
     pub fn build(self) -> Option<TypeKey<'a>> {
         self.storage.add_type(TypeOwned::SliceType(SliceType::new(
             self.element.expect("Element type must be provided"),
-        )))
-    }
-}
-
-#[derive(Debug)]
-pub struct StructTypeBuilder<'storage, 'a> {
-    storage: &'storage mut Storage<'a>,
-    name: Option<&'a str>,
-    attributes: Vec<ExprKey<'a>>,
-    fields: BTreeMap<&'a str, TypeKey<'a>>,
-}
-
-impl<'storage, 'a> StructTypeBuilder<'storage, 'a> {
-    pub(crate) fn new(storage: &'storage mut Storage<'a>) -> Self {
-        StructTypeBuilder {
-            storage,
-            name: None,
-            attributes: Vec::new(),
-            fields: BTreeMap::new(),
-        }
-    }
-
-    pub fn with_name(mut self, name: &'a str) -> Self {
-        self.name = Some(name);
-        self
-    }
-
-    pub fn add_attribute(mut self, attribute: ExprKey<'a>) -> Self {
-        self.attributes.push(attribute);
-        self
-    }
-
-    pub fn add_attributes<I>(mut self, attributes: I) -> Self
-    where
-        I: IntoIterator<Item = ExprKey<'a>>,
-    {
-        self.attributes.extend(attributes);
-        self
-    }
-
-    pub fn add_field(mut self, name: &'a str, ty: TypeKey<'a>) -> Self {
-        self.fields.insert(name, ty);
-        self
-    }
-
-    pub fn add_fields<I>(mut self, fields: I) -> Self
-    where
-        I: IntoIterator<Item = (&'a str, TypeKey<'a>)>,
-    {
-        self.fields.extend(fields);
-        self
-    }
-
-    pub fn build(self) -> Option<TypeKey<'a>> {
-        self.storage.add_type(TypeOwned::StructType(StructType::new(
-            self.name,
-            self.attributes,
-            self.fields,
         )))
     }
 }

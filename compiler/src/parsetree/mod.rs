@@ -20,7 +20,6 @@ mod slice_type;
 mod statement;
 mod storage;
 mod string;
-mod struct_type;
 mod to_code;
 mod tuple_type;
 mod unary_op;

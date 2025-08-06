@@ -1,5 +1,3 @@
-use std::collections::BTreeMap;
-
 use super::expression::ExprRef;
 use super::storage::{ExprKey, Storage, TypeKey};
 
@@ -83,25 +81,6 @@ impl<'storage, 'a> std::fmt::Debug for Printable<'storage, 'a> {
             ExprRef::SliceType(x) => f
                 .debug_struct("SliceType")
                 .field("element", &x.element().as_printable(self.storage))
-                .finish(),
-
-            ExprRef::StructType(x) => f
-                .debug_struct("StructType")
-                .field("name", &x.name())
-                .field(
-                    "attributes",
-                    &x.attributes()
-                        .iter()
-                        .map(|a| a.as_printable(self.storage))
-                        .collect::<Vec<_>>(),
-                )
-                .field(
-                    "fields",
-                    &x.fields()
-                        .iter()
-                        .map(|(k, v)| (k, v.as_printable(self.storage)))
-                        .collect::<BTreeMap<_, _>>(),
-                )
                 .finish(),
 
             ExprRef::FunctionType(x) => f

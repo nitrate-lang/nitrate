@@ -232,10 +232,6 @@ impl<'storage, 'a> Builder<'storage, 'a> {
         SliceTypeBuilder::new(self.storage)
     }
 
-    pub fn create_struct_type(&mut self) -> StructTypeBuilder<'_, 'a> {
-        StructTypeBuilder::new(self.storage)
-    }
-
     pub fn create_function_type(&mut self) -> FunctionTypeBuilder<'_, 'a> {
         FunctionTypeBuilder::new(self.storage)
     }

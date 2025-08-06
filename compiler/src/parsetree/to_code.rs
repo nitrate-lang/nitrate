@@ -17,7 +17,6 @@ use super::slice_type::SliceType;
 use super::statement::Statement;
 use super::storage::{ExprKey, Storage, TypeKey};
 use super::string::StringLit;
-use super::struct_type::StructType;
 use super::tuple_type::TupleType;
 use super::unary_op::{UnaryOp, UnaryOperator};
 use super::variable::{Variable, VariableKind};
@@ -344,34 +343,6 @@ impl<'a> ToCode<'a> for SliceType<'a> {
     }
 }
 
-impl<'a> ToCode<'a> for StructType<'a> {
-    fn to_code(&self, bank: &Storage<'a>, tokens: &mut Vec<Token<'a>>, options: &CodeFormat) {
-        tokens.push(Token::Keyword(Keyword::Struct));
-
-        if !self.attributes().is_empty() {
-            tokens.push(Token::Punct(Punct::LeftBracket));
-            for (i, attr) in self.attributes().iter().enumerate() {
-                (i != 0).then(|| tokens.push(Token::Punct(Punct::Comma)));
-                attr.to_code(bank, tokens, options);
-            }
-            tokens.push(Token::Punct(Punct::RightBracket));
-        }
-
-        if let Some(name) = self.name() {
-            tokens.push(Token::Name(Name::new(name)));
-        }
-
-        tokens.push(Token::Punct(Punct::LeftBrace));
-        for (field_name, field_ty) in self.fields() {
-            tokens.push(Token::Name(Name::new(field_name)));
-            tokens.push(Token::Punct(Punct::Colon));
-            field_ty.to_code(bank, tokens, options);
-            tokens.push(Token::Punct(Punct::Comma));
-        }
-        tokens.push(Token::Punct(Punct::RightBrace));
-    }
-}
-
 impl<'a> ToCode<'a> for FunctionType<'a> {
     fn to_code(&self, bank: &Storage<'a>, tokens: &mut Vec<Token<'a>>, options: &CodeFormat) {
         tokens.push(Token::Keyword(Keyword::Fn));
@@ -491,7 +462,6 @@ impl<'a> ToCode<'a> for ExprKey<'a> {
             ExprRef::ArrayType(e) => e.to_code(bank, tokens, options),
             ExprRef::MapType(e) => e.to_code(bank, tokens, options),
             ExprRef::SliceType(e) => e.to_code(bank, tokens, options),
-            ExprRef::StructType(e) => e.to_code(bank, tokens, options),
             ExprRef::FunctionType(e) => e.to_code(bank, tokens, options),
             ExprRef::ManagedType(e) => e.to_code(bank, tokens, options),
             ExprRef::UnmanagedType(e) => e.to_code(bank, tokens, options),
@@ -556,7 +526,6 @@ impl<'a> ToCode<'a> for TypeKey<'a> {
             TypeRef::ArrayType(e) => e.to_code(bank, tokens, options),
             TypeRef::MapType(e) => e.to_code(bank, tokens, options),
             TypeRef::SliceType(e) => e.to_code(bank, tokens, options),
-            TypeRef::StructType(e) => e.to_code(bank, tokens, options),
             TypeRef::FunctionType(e) => e.to_code(bank, tokens, options),
             TypeRef::ManagedType(e) => e.to_code(bank, tokens, options),
             TypeRef::UnmanagedType(e) => e.to_code(bank, tokens, options),
