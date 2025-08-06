@@ -135,6 +135,11 @@ impl<'storage, 'a> std::fmt::Debug for Printable<'storage, 'a> {
                 )
                 .finish(),
 
+            ExprRef::OpaqueType(x) => f
+                .debug_struct("OpaqueType")
+                .field("identity", &x.identity())
+                .finish(),
+
             ExprRef::Discard => write!(f, "Discard"),
 
             ExprRef::IntegerLit(x) => f

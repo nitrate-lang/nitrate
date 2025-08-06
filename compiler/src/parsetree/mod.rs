@@ -13,6 +13,7 @@ mod list;
 mod map_type;
 mod number;
 mod object;
+mod opaque_type;
 mod reference;
 mod refinement_type;
 mod returns;

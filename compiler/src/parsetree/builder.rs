@@ -1,5 +1,6 @@
 use super::builder_helper::*;
 use super::expression::{ExprOwned, TypeOwned};
+use super::opaque_type::OpaqueType;
 use super::storage::{ExprKey, Storage, TypeKey};
 use super::tuple_type::TupleType;
 
@@ -246,5 +247,10 @@ impl<'storage, 'a> Builder<'storage, 'a> {
 
     pub fn create_generic_type(&mut self) -> GenericTypeBuilder<'_, 'a> {
         GenericTypeBuilder::new(self.storage)
+    }
+
+    pub fn create_opaque_type(&mut self, identity: &'a str) -> Option<TypeKey<'a>> {
+        self.storage
+            .add_type(TypeOwned::OpaqueType(OpaqueType::new(identity)))
     }
 }
