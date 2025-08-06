@@ -19,7 +19,8 @@ impl std::fmt::Display for LexerConstructionError {
 #[derive(Debug)]
 pub struct Lexer<'a> {
     source: &'a [u8],
-    read_pos: SourcePosition<'a>,
+    current_peek_pos: SourcePosition<'a>,
+    sync_pos: SourcePosition<'a>,
     current: Option<AnnotatedToken<'a>>,
     is_eof: bool,
 }
@@ -41,7 +42,8 @@ impl<'a> Lexer<'a> {
         } else {
             Ok(Lexer {
                 source: src,
-                read_pos: SourcePosition::new(0, 0, 0, filename),
+                current_peek_pos: SourcePosition::new(0, 0, 0, filename),
+                sync_pos: SourcePosition::new(0, 0, 0, filename),
                 current: None,
                 is_eof: false,
             })
@@ -54,12 +56,19 @@ impl<'a> Lexer<'a> {
         } else {
             self.parse_next_token(); // Discard the token
         }
+
+        self.sync_pos = self.reader_position();
     }
 
     pub fn next(&mut self) -> AnnotatedToken<'a> {
-        self.current
+        let token = self
+            .current
             .take()
-            .unwrap_or_else(|| self.parse_next_token())
+            .unwrap_or_else(|| self.parse_next_token());
+
+        self.sync_pos = self.reader_position();
+
+        token
     }
 
     pub fn next_t(&mut self) -> Token<'a> {
@@ -93,30 +102,37 @@ impl<'a> Lexer<'a> {
         &self.peek_t() == matches
     }
 
-    pub fn current_position(&self) -> SourcePosition<'a> {
-        self.read_pos.clone()
+    pub fn sync_position(&self) -> SourcePosition<'a> {
+        self.sync_pos.clone()
     }
 
     pub fn is_eof(&self) -> bool {
         self.is_eof
     }
 
-    pub fn set_position(&mut self, pos: SourcePosition<'a>) {
-        self.read_pos = pos;
+    pub fn rewind(&mut self, pos: SourcePosition<'a>) {
+        self.current_peek_pos = pos.clone();
+        self.sync_pos = pos;
+        self.current = None;
+        self.is_eof = false;
+    }
+
+    fn reader_position(&self) -> SourcePosition<'a> {
+        self.current_peek_pos.clone()
     }
 
     fn advance(&mut self, byte: u8) -> u8 {
-        let current = self.current_position();
+        let current = self.reader_position();
 
         if byte == b'\n' {
-            self.read_pos = SourcePosition::new(
+            self.current_peek_pos = SourcePosition::new(
                 current.line() + 1,
                 0,
                 (current.offset() + 1) as u32,
                 current.filename(),
             );
         } else {
-            self.read_pos = SourcePosition::new(
+            self.current_peek_pos = SourcePosition::new(
                 current.line(),
                 current.column() + 1,
                 (current.offset() + 1) as u32,
@@ -128,14 +144,17 @@ impl<'a> Lexer<'a> {
     }
 
     fn peek_byte(&self) -> Result<u8, ()> {
-        self.source.get(self.read_pos.offset()).copied().ok_or(())
+        self.source
+            .get(self.reader_position().offset())
+            .copied()
+            .ok_or(())
     }
 
     fn read_while<F>(&mut self, mut condition: F) -> &'a [u8]
     where
         F: FnMut(u8) -> bool,
     {
-        let start_offset = self.read_pos.offset();
+        let start_offset = self.reader_position().offset();
         let mut end_offset = start_offset;
 
         while let Some(b) = self.source.get(end_offset) {
@@ -151,7 +170,7 @@ impl<'a> Lexer<'a> {
     }
 
     fn parse_atypical_identifier(&mut self) -> Result<Token<'a>, ()> {
-        let start_pos = self.current_position();
+        let start_pos = self.reader_position();
 
         assert!(self.peek_byte().expect("Failed to peek byte") == b'`');
         self.advance(b'`');
@@ -184,7 +203,7 @@ impl<'a> Lexer<'a> {
     }
 
     fn parse_typical_identifier(&mut self) -> Result<Token<'a>, ()> {
-        let start_pos = self.current_position();
+        let start_pos = self.reader_position();
 
         let name = self.read_while(|b| b.is_ascii_alphanumeric() || b == b'_' || !b.is_ascii());
         assert!(!name.is_empty(), "Identifier should not be empty");
@@ -273,7 +292,7 @@ impl<'a> Lexer<'a> {
     fn parse_float(&mut self, start_pos: &SourcePosition) -> Result<Token<'a>, ()> {
         match self.peek_byte() {
             Ok(b'.') => {
-                let rewind_pos = self.current_position();
+                let rewind_pos = self.reader_position();
                 self.advance(b'.');
 
                 match self.peek_byte() {
@@ -281,7 +300,7 @@ impl<'a> Lexer<'a> {
                         self.read_while(|b| b.is_ascii_digit() || b == b'_');
 
                         let literal = str::from_utf8(
-                            &self.source[start_pos.offset()..self.current_position().offset()],
+                            &self.source[start_pos.offset()..self.reader_position().offset()],
                         )
                         .expect("Failed to convert float literal to str");
 
@@ -290,7 +309,7 @@ impl<'a> Lexer<'a> {
                         }
                     }
                     _ => {
-                        self.set_position(rewind_pos);
+                        self.rewind(rewind_pos);
                     }
                 }
             }
@@ -337,7 +356,7 @@ impl<'a> Lexer<'a> {
     }
 
     fn parse_number(&mut self) -> Result<Token<'a>, ()> {
-        let start_pos = self.current_position();
+        let start_pos = self.reader_position();
 
         let mut base_prefix = None;
         let mut literal = self.read_while(|b| b.is_ascii_digit() || b == b'_');
@@ -659,12 +678,12 @@ impl<'a> Lexer<'a> {
     }
 
     fn parse_string(&mut self) -> Result<Token<'a>, ()> {
-        let start_pos = self.current_position();
+        let start_pos = self.reader_position();
 
         assert!(self.peek_byte().expect("Failed to peek byte") == b'"');
         self.advance(b'"');
 
-        let start_offset = self.current_position().offset();
+        let start_offset = self.reader_position().offset();
         let mut end_offset = start_offset;
         let mut storage = SmallVec::<[u8; 64]>::new();
 
@@ -799,7 +818,7 @@ impl<'a> Lexer<'a> {
     }
 
     fn parse_char(&mut self) -> Result<Token<'a>, ()> {
-        let start_pos = self.current_position();
+        let start_pos = self.reader_position();
 
         assert!(self.peek_byte().expect("Failed to peek byte") == b'\'');
         self.advance(b'\'');
@@ -887,7 +906,7 @@ impl<'a> Lexer<'a> {
     }
 
     fn parse_comment(&mut self) -> Result<Token<'a>, ()> {
-        let start_pos = self.current_position();
+        let start_pos = self.reader_position();
         let mut comment_bytes = self.read_while(|b| b != b'\n');
 
         // CRLF is dumb
@@ -916,7 +935,7 @@ impl<'a> Lexer<'a> {
          * They are handled in `parse_typical_identifier`.
          */
 
-        let start_pos = self.current_position();
+        let start_pos = self.reader_position();
         let b = self.peek_byte()?;
 
         match b {
@@ -1198,7 +1217,7 @@ impl<'a> Lexer<'a> {
     fn parse_next_token(&mut self) -> AnnotatedToken<'a> {
         self.read_while(|b| b.is_ascii_whitespace());
 
-        let start_pos = self.current_position();
+        let start_pos = self.reader_position();
 
         let token = match self.peek_byte() {
             Err(()) => {
@@ -1219,7 +1238,7 @@ impl<'a> Lexer<'a> {
         }
         .unwrap_or(Token::Illegal);
 
-        let end_pos = self.current_position();
+        let end_pos = self.reader_position();
 
         AnnotatedToken::new(token, start_pos, end_pos)
     }
