@@ -144,6 +144,18 @@ impl<'storage, 'a> std::fmt::Debug for Printable<'storage, 'a> {
                 .field("is_mutable", &x.is_mutable())
                 .finish(),
 
+            ExprRef::GenericType(x) => f
+                .debug_struct("GenericType")
+                .field("principal", &x.principal().as_printable(self.storage))
+                .field(
+                    "args",
+                    &x.arguments()
+                        .iter()
+                        .map(|(n, arg)| (n, arg.as_printable(self.storage)))
+                        .collect::<Vec<_>>(),
+                )
+                .finish(),
+
             ExprRef::Discard => write!(f, "Discard"),
 
             ExprRef::IntegerLit(x) => f

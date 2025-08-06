@@ -5,6 +5,7 @@ use super::character::CharLit;
 use super::expression::{ExprRef, TypeRef};
 use super::function::Function;
 use super::function_type::FunctionType;
+use super::generic_type::GenericType;
 use super::list::ListLit;
 use super::map_type::MapType;
 use super::number::{FloatLit, IntegerLit};
@@ -437,6 +438,23 @@ impl<'a> ToCode<'a> for UnmanagedType<'a> {
     }
 }
 
+impl<'a> ToCode<'a> for GenericType<'a> {
+    fn to_code(&self, bank: &Storage<'a>, tokens: &mut Vec<Token<'a>>, options: &CodeFormat) {
+        self.principal().to_code(bank, tokens, options);
+
+        tokens.push(Token::Op(Operator::LogicLt));
+        for (i, (name, value)) in self.arguments().iter().enumerate() {
+            (i > 0).then(|| tokens.push(Token::Punct(Punct::Comma)));
+            if !name.is_empty() {
+                tokens.push(Token::Name(Name::new(name)));
+                tokens.push(Token::Punct(Punct::Colon));
+            }
+            value.to_code(bank, tokens, options);
+        }
+        tokens.push(Token::Op(Operator::LogicGt));
+    }
+}
+
 impl<'a> ToCode<'a> for ExprKey<'a> {
     fn to_code(&self, bank: &Storage<'a>, tokens: &mut Vec<Token<'a>>, options: &CodeFormat) {
         if self.is_discard() {
@@ -477,6 +495,7 @@ impl<'a> ToCode<'a> for ExprKey<'a> {
             ExprRef::FunctionType(e) => e.to_code(bank, tokens, options),
             ExprRef::ManagedType(e) => e.to_code(bank, tokens, options),
             ExprRef::UnmanagedType(e) => e.to_code(bank, tokens, options),
+            ExprRef::GenericType(e) => e.to_code(bank, tokens, options),
 
             ExprRef::Discard => {}
 
@@ -541,6 +560,7 @@ impl<'a> ToCode<'a> for TypeKey<'a> {
             TypeRef::FunctionType(e) => e.to_code(bank, tokens, options),
             TypeRef::ManagedType(e) => e.to_code(bank, tokens, options),
             TypeRef::UnmanagedType(e) => e.to_code(bank, tokens, options),
+            TypeRef::GenericType(e) => e.to_code(bank, tokens, options),
         }
 
         if has_parentheses {

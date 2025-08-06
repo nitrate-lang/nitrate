@@ -247,4 +247,8 @@ impl<'storage, 'a> Builder<'storage, 'a> {
     pub fn create_unmanaged_type(&mut self) -> UnmanagedTypeBuilder<'_, 'a> {
         UnmanagedTypeBuilder::new(self.storage)
     }
+
+    pub fn create_generic_type(&mut self) -> GenericTypeBuilder<'_, 'a> {
+        GenericTypeBuilder::new(self.storage)
+    }
 }

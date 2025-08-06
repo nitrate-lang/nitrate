@@ -4,6 +4,7 @@ use super::block::Block;
 use super::character::CharLit;
 use super::function::Function;
 use super::function_type::FunctionType;
+use super::generic_type::GenericType;
 use super::list::ListLit;
 use super::map_type::MapType;
 use super::number::{FloatLit, IntegerLit};
@@ -49,6 +50,7 @@ pub enum ExprKind {
     FunctionType,
     ManagedType,
     UnmanagedType,
+    GenericType,
 
     Discard,
 
@@ -100,6 +102,7 @@ pub(crate) enum TypeKind {
     FunctionType,
     ManagedType,
     UnmanagedType,
+    GenericType,
 }
 
 #[derive(Debug, Clone)]
@@ -134,6 +137,7 @@ pub(crate) enum ExprOwned<'a> {
     FunctionType(FunctionType<'a>),
     ManagedType(ManagedType<'a>),
     UnmanagedType(UnmanagedType<'a>),
+    GenericType(GenericType<'a>),
 
     Discard,
 
@@ -191,6 +195,7 @@ pub(crate) enum TypeOwned<'a> {
     FunctionType(FunctionType<'a>),
     ManagedType(ManagedType<'a>),
     UnmanagedType(UnmanagedType<'a>),
+    GenericType(GenericType<'a>),
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -225,6 +230,7 @@ pub enum ExprRef<'storage, 'a> {
     FunctionType(&'storage FunctionType<'a>),
     ManagedType(&'storage ManagedType<'a>),
     UnmanagedType(&'storage UnmanagedType<'a>),
+    GenericType(&'storage GenericType<'a>),
 
     Discard,
 
@@ -282,6 +288,7 @@ pub enum ExprRefMut<'storage, 'a> {
     FunctionType(&'storage FunctionType<'a>),
     ManagedType(&'storage ManagedType<'a>),
     UnmanagedType(&'storage UnmanagedType<'a>),
+    GenericType(&'storage GenericType<'a>),
 
     Discard,
 
@@ -339,6 +346,7 @@ pub enum TypeRef<'storage, 'a> {
     FunctionType(&'storage FunctionType<'a>),
     ManagedType(&'storage ManagedType<'a>),
     UnmanagedType(&'storage UnmanagedType<'a>),
+    GenericType(&'storage GenericType<'a>),
 }
 
 impl TryInto<TypeKind> for ExprKind {
@@ -374,6 +382,7 @@ impl TryInto<TypeKind> for ExprKind {
             ExprKind::FunctionType => Ok(TypeKind::FunctionType),
             ExprKind::ManagedType => Ok(TypeKind::ManagedType),
             ExprKind::UnmanagedType => Ok(TypeKind::UnmanagedType),
+            ExprKind::GenericType => Ok(TypeKind::GenericType),
 
             ExprKind::Discard
             | ExprKind::IntegerLit
@@ -424,6 +433,7 @@ impl Into<ExprKind> for TypeKind {
             TypeKind::FunctionType => ExprKind::FunctionType,
             TypeKind::ManagedType => ExprKind::ManagedType,
             TypeKind::UnmanagedType => ExprKind::UnmanagedType,
+            TypeKind::GenericType => ExprKind::GenericType,
         }
     }
 }
@@ -459,6 +469,7 @@ impl std::fmt::Display for ExprKind {
             ExprKind::FunctionType => write!(f, "FunctionType"),
             ExprKind::ManagedType => write!(f, "ManagedType"),
             ExprKind::UnmanagedType => write!(f, "UnmanagedType"),
+            ExprKind::GenericType => write!(f, "GenericType"),
 
             ExprKind::Discard => write!(f, "Discard"),
 
@@ -513,6 +524,7 @@ impl std::fmt::Display for TypeKind {
             TypeKind::FunctionType => write!(f, "FunctionType"),
             TypeKind::ManagedType => write!(f, "ManagedType"),
             TypeKind::UnmanagedType => write!(f, "UnmanagedType"),
+            TypeKind::GenericType => write!(f, "GenericType"),
         }
     }
 }
@@ -550,6 +562,7 @@ impl<'a> TryInto<TypeOwned<'a>> for ExprOwned<'a> {
             ExprOwned::FunctionType(x) => Ok(TypeOwned::FunctionType(x)),
             ExprOwned::ManagedType(x) => Ok(TypeOwned::ManagedType(x)),
             ExprOwned::UnmanagedType(x) => Ok(TypeOwned::UnmanagedType(x)),
+            ExprOwned::GenericType(x) => Ok(TypeOwned::GenericType(x)),
 
             ExprOwned::Discard
             | ExprOwned::IntegerLit(_)
@@ -600,6 +613,7 @@ impl<'a> Into<ExprOwned<'a>> for TypeOwned<'a> {
             TypeOwned::FunctionType(x) => ExprOwned::FunctionType(x),
             TypeOwned::ManagedType(x) => ExprOwned::ManagedType(x),
             TypeOwned::UnmanagedType(x) => ExprOwned::UnmanagedType(x),
+            TypeOwned::GenericType(x) => ExprOwned::GenericType(x),
         }
     }
 }
@@ -637,6 +651,7 @@ impl<'storage, 'a> TryInto<TypeRef<'storage, 'a>> for ExprRef<'storage, 'a> {
             ExprRef::FunctionType(x) => Ok(TypeRef::FunctionType(x)),
             ExprRef::ManagedType(x) => Ok(TypeRef::ManagedType(x)),
             ExprRef::UnmanagedType(x) => Ok(TypeRef::UnmanagedType(x)),
+            ExprRef::GenericType(x) => Ok(TypeRef::GenericType(x)),
 
             ExprRef::Discard
             | ExprRef::IntegerLit(_)
@@ -689,6 +704,7 @@ impl<'storage, 'a> TryInto<TypeRef<'storage, 'a>> for ExprRefMut<'storage, 'a> {
             ExprRefMut::FunctionType(x) => Ok(TypeRef::FunctionType(x)),
             ExprRefMut::ManagedType(x) => Ok(TypeRef::ManagedType(x)),
             ExprRefMut::UnmanagedType(x) => Ok(TypeRef::UnmanagedType(x)),
+            ExprRefMut::GenericType(x) => Ok(TypeRef::GenericType(x)),
 
             ExprRefMut::Discard
             | ExprRefMut::IntegerLit(_)
@@ -739,6 +755,7 @@ impl<'storage, 'a> Into<ExprRef<'storage, 'a>> for TypeRef<'storage, 'a> {
             TypeRef::FunctionType(x) => ExprRef::FunctionType(x),
             TypeRef::ManagedType(x) => ExprRef::ManagedType(x),
             TypeRef::UnmanagedType(x) => ExprRef::UnmanagedType(x),
+            TypeRef::GenericType(x) => ExprRef::GenericType(x),
         }
     }
 }

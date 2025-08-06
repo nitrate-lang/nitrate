@@ -7,6 +7,7 @@ use super::character::CharLit;
 use super::expression::{ExprKind, ExprOwned, ExprRef, ExprRefMut, TypeKind, TypeOwned, TypeRef};
 use super::function::Function;
 use super::function_type::FunctionType;
+use super::generic_type::GenericType;
 use super::list::ListLit;
 use super::map_type::MapType;
 use super::number::{FloatLit, IntegerLit};
@@ -91,6 +92,7 @@ impl<'a> ExprKey<'a> {
             x if x == ExprKind::FunctionType as u8 => ExprKind::FunctionType,
             x if x == ExprKind::ManagedType as u8 => ExprKind::ManagedType,
             x if x == ExprKind::UnmanagedType as u8 => ExprKind::UnmanagedType,
+            x if x == ExprKind::GenericType as u8 => ExprKind::GenericType,
 
             x if x == ExprKind::Discard as u8 => ExprKind::Discard,
 
@@ -187,6 +189,7 @@ impl<'a> TypeKey<'a> {
             x if x == TypeKind::FunctionType as u8 => TypeKind::FunctionType,
             x if x == TypeKind::ManagedType as u8 => TypeKind::ManagedType,
             x if x == TypeKind::UnmanagedType as u8 => TypeKind::UnmanagedType,
+            x if x == TypeKind::GenericType as u8 => TypeKind::GenericType,
 
             _ => unreachable!(),
         }
@@ -266,7 +269,8 @@ impl<'a> ExprKey<'a> {
             | ExprKind::StructType
             | ExprKind::FunctionType
             | ExprKind::ManagedType
-            | ExprKind::UnmanagedType => true,
+            | ExprKind::UnmanagedType
+            | ExprKind::GenericType => true,
 
             ExprKind::Discard
             | ExprKind::IntegerLit
@@ -333,6 +337,7 @@ pub struct Storage<'a> {
     function_types: Vec<FunctionType<'a>>,
     managed_types: Vec<ManagedType<'a>>,
     unmanaged_types: Vec<UnmanagedType<'a>>,
+    generic_types: Vec<GenericType<'a>>,
 
     has_parentheses: HashSet<ExprKey<'a>>,
 }
@@ -374,6 +379,7 @@ impl<'a> Storage<'a> {
             function_types: Vec::new(),
             managed_types: Vec::new(),
             unmanaged_types: Vec::new(),
+            generic_types: Vec::new(),
 
             has_parentheses: HashSet::new(),
         };
@@ -439,6 +445,7 @@ impl<'a> Storage<'a> {
             ExprKind::FunctionType => self.function_types.reserve(additional),
             ExprKind::ManagedType => self.managed_types.reserve(additional),
             ExprKind::UnmanagedType => self.unmanaged_types.reserve(additional),
+            ExprKind::GenericType => self.generic_types.reserve(additional),
 
             ExprKind::Discard => {}
 
@@ -489,7 +496,8 @@ impl<'a> Storage<'a> {
             | ExprOwned::StructType(_)
             | ExprOwned::FunctionType(_)
             | ExprOwned::ManagedType(_)
-            | ExprOwned::UnmanagedType(_) => self
+            | ExprOwned::UnmanagedType(_)
+            | ExprOwned::GenericType(_) => self
                 .add_type(expr.try_into().expect("Expected a type node"))
                 .map(|key| key.into()),
 
@@ -687,6 +695,13 @@ impl<'a> Storage<'a> {
                     Some(k)
                 })
             }
+
+            TypeOwned::GenericType(node) => {
+                TypeKey::new(TypeKind::GenericType, self.generic_types.len()).and_then(|k| {
+                    self.generic_types.push(node);
+                    Some(k)
+                })
+            }
         }
     }
 
@@ -728,6 +743,7 @@ impl<'a> Storage<'a> {
             ExprKind::FunctionType => self.function_types.get(index).map(ExprRef::FunctionType),
             ExprKind::ManagedType => self.managed_types.get(index).map(ExprRef::ManagedType),
             ExprKind::UnmanagedType => self.unmanaged_types.get(index).map(ExprRef::UnmanagedType),
+            ExprKind::GenericType => self.generic_types.get(index).map(ExprRef::GenericType),
 
             ExprKind::Discard => Some(ExprRef::Discard),
 
@@ -792,6 +808,7 @@ impl<'a> Storage<'a> {
                 .unmanaged_types
                 .get(index)
                 .map(ExprRefMut::UnmanagedType),
+            ExprKind::GenericType => self.generic_types.get(index).map(ExprRefMut::GenericType),
 
             ExprKind::Discard => Some(ExprRefMut::Discard),
 
@@ -853,6 +870,7 @@ impl<'a> Storage<'a> {
             TypeKind::FunctionType => self.function_types.get(index).map(TypeRef::FunctionType),
             TypeKind::ManagedType => self.managed_types.get(index).map(TypeRef::ManagedType),
             TypeKind::UnmanagedType => self.unmanaged_types.get(index).map(TypeRef::UnmanagedType),
+            TypeKind::GenericType => self.generic_types.get(index).map(TypeRef::GenericType),
         }
         .expect("Expression not found in storage")
     }

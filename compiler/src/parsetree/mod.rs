@@ -8,6 +8,7 @@ mod debug;
 mod expression;
 mod function;
 mod function_type;
+mod generic_type;
 mod list;
 mod map_type;
 mod number;

@@ -6,6 +6,7 @@ use super::character::CharLit;
 use super::expression::{ExprOwned, ExprRef, TypeOwned};
 use super::function::{Function, FunctionParameter};
 use super::function_type::FunctionType;
+use super::generic_type::GenericType;
 use super::list::ListLit;
 use super::map_type::MapType;
 use super::number::{FloatLit, IntegerLit};
@@ -943,6 +944,49 @@ impl<'storage, 'a> UnmanagedTypeBuilder<'storage, 'a> {
             .add_type(TypeOwned::UnmanagedType(UnmanagedType::new(
                 self.target.expect("Target type must be provided"),
                 self.is_mutable,
+            )))
+    }
+}
+
+#[derive(Debug)]
+pub struct GenericTypeBuilder<'storage, 'a> {
+    storage: &'storage mut Storage<'a>,
+    principal: Option<TypeKey<'a>>,
+    arguments: Vec<(&'a str, ExprKey<'a>)>,
+}
+
+impl<'storage, 'a> GenericTypeBuilder<'storage, 'a> {
+    pub(crate) fn new(storage: &'storage mut Storage<'a>) -> Self {
+        GenericTypeBuilder {
+            storage,
+            principal: None,
+            arguments: Vec::new(),
+        }
+    }
+
+    pub fn with_principal(mut self, principal: TypeKey<'a>) -> Self {
+        self.principal = Some(principal);
+        self
+    }
+
+    pub fn add_argument(mut self, name: &'a str, value: ExprKey<'a>) -> Self {
+        self.arguments.push((name, value));
+        self
+    }
+
+    pub fn add_arguments<I>(mut self, arguments: I) -> Self
+    where
+        I: IntoIterator<Item = (&'a str, ExprKey<'a>)>,
+    {
+        self.arguments.extend(arguments);
+        self
+    }
+
+    pub fn build(self) -> Option<TypeKey<'a>> {
+        self.storage
+            .add_type(TypeOwned::GenericType(GenericType::new(
+                self.principal.expect("Principal type must be provided"),
+                self.arguments,
             )))
     }
 }
