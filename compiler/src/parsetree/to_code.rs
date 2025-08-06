@@ -21,7 +21,7 @@ use super::tuple_type::TupleType;
 use super::unary_op::{UnaryOp, UnaryOperator};
 use super::variable::{Variable, VariableKind};
 use crate::lexer::{
-    Float, Integer, Keyword, Name, Operator, Punct, StringLit as StringLitToken, Token,
+    Float, Integer, Keyword, Name, Operator, Punct, StringData as StringLitToken, Token,
 };
 
 #[derive(Debug, Default, Clone, PartialEq, PartialOrd, Hash)]
@@ -424,7 +424,7 @@ impl<'a> ToCode<'a> for OpaqueType<'a> {
     fn to_code(&self, _bank: &Storage<'a>, tokens: &mut Vec<Token<'a>>, _options: &CodeFormat) {
         tokens.push(Token::Keyword(Keyword::Opaque));
         tokens.push(Token::Punct(Punct::LeftParen));
-        tokens.push(Token::String(StringLitToken::from_ref(self.identity())));
+        tokens.push(Token::String(self.clone().into_inner()));
         tokens.push(Token::Punct(Punct::RightParen));
     }
 }

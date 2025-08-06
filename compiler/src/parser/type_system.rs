@@ -516,14 +516,38 @@ impl<'storage, 'a> Parser<'storage, 'a> {
         assert!(self.lexer.peek_t() == Token::Keyword(Keyword::Opaque));
         self.lexer.skip();
 
-        // TODO: Handle opaque types
-        self.set_failed_bit();
-        error!(
-            self.log,
-            "error[P????]: Opaque types are not yet implemented\n--> {}",
-            self.lexer.sync_position()
-        );
-        None
+        if !self.lexer.skip_if(&Token::Punct(Punct::LeftParen)) {
+            self.set_failed_bit();
+            error!(
+                self.log,
+                "error[P????]: Expected left parenthesis after 'opaque' keyword\n--> {}",
+                self.lexer.sync_position()
+            );
+        }
+
+        let opaque_identity = if let Token::String(string) = self.lexer.peek().into_token() {
+            self.lexer.skip();
+            string
+        } else {
+            self.set_failed_bit();
+            error!(
+                self.log,
+                "error[P????]: Expected a string literal for opaque type identity\n--> {}",
+                self.lexer.sync_position()
+            );
+            StringData::from_ref("")
+        };
+
+        if !self.lexer.skip_if(&Token::Punct(Punct::RightParen)) {
+            self.set_failed_bit();
+            error!(
+                self.log,
+                "error[P????]: Expected right parenthesis to close opaque type declaration\n--> {}",
+                self.lexer.sync_position()
+            );
+        }
+
+        Builder::new(self.storage).create_opaque_type(opaque_identity)
     }
 
     fn parse_type_primary(&mut self) -> Option<TypeKey<'a>> {
@@ -589,7 +613,7 @@ impl<'storage, 'a> Parser<'storage, 'a> {
                 None
             }
 
-            Token::BinaryString(binary) => {
+            Token::Binary(binary) => {
                 self.set_failed_bit();
                 error!(
                     self.log,

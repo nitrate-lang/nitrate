@@ -3,6 +3,7 @@ use super::expression::{ExprOwned, TypeOwned};
 use super::opaque_type::OpaqueType;
 use super::storage::{ExprKey, Storage, TypeKey};
 use super::tuple_type::TupleType;
+use crate::lexer::StringData;
 
 pub use super::binary_op::BinaryOperator;
 pub use super::variable::VariableKind;
@@ -249,7 +250,7 @@ impl<'storage, 'a> Builder<'storage, 'a> {
         GenericTypeBuilder::new(self.storage)
     }
 
-    pub fn create_opaque_type(&mut self, identity: &'a str) -> Option<TypeKey<'a>> {
+    pub fn create_opaque_type(&mut self, identity: StringData<'a>) -> Option<TypeKey<'a>> {
         self.storage
             .add_type(TypeOwned::OpaqueType(OpaqueType::new(identity)))
     }
