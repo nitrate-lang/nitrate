@@ -1,6 +1,6 @@
 use super::storage::TypeKey;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct TupleType<'a> {
     elements: Vec<TypeKey<'a>>,
 }

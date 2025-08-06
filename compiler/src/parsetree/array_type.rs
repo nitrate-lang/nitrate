@@ -1,6 +1,6 @@
 use super::storage::{ExprKey, TypeKey};
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct ArrayType<'a> {
     element: TypeKey<'a>,
     count: ExprKey<'a>,

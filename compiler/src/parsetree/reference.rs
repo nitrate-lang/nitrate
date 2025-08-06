@@ -1,6 +1,6 @@
 use super::storage::TypeKey;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct ManagedType<'a> {
     target: TypeKey<'a>,
     is_mutable: bool,
@@ -20,7 +20,7 @@ impl<'a> ManagedType<'a> {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct UnmanagedType<'a> {
     target: TypeKey<'a>,
     is_mutable: bool,

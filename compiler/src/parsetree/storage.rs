@@ -1,27 +1,18 @@
-use hashbrown::HashSet;
-
-use super::array_type::ArrayType;
 use super::binary_op::BinaryOp;
 use super::block::Block;
 use super::character::CharLit;
-use super::expression::{ExprKind, ExprOwned, ExprRef, ExprRefMut, TypeKind, TypeOwned, TypeRef};
+use super::expression::{ExprKind, ExprOwned, ExprRef, ExprRefMut, TypeKind, TypeOwned};
 use super::function::Function;
-use super::function_type::FunctionType;
-use super::generic_type::GenericType;
 use super::list::ListLit;
-use super::map_type::MapType;
 use super::number::{FloatLit, IntegerLit};
 use super::object::ObjectLit;
-use super::opaque_type::OpaqueType;
-use super::reference::{ManagedType, UnmanagedType};
-use super::refinement_type::RefinementType;
 use super::returns::Return;
-use super::slice_type::SliceType;
 use super::statement::Statement;
 use super::string::StringLit;
-use super::tuple_type::TupleType;
 use super::unary_op::UnaryOp;
 use super::variable::Variable;
+use bimap::BiMap;
+use hashbrown::HashSet;
 use std::num::NonZeroU32;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -199,7 +190,7 @@ impl<'a> TypeKey<'a> {
         (self.id.get() & 0x03FFFFFF) as usize
     }
 
-    pub fn get<'storage>(&self, storage: &'storage Storage<'a>) -> TypeRef<'storage, 'a> {
+    pub fn get<'storage>(&self, storage: &'storage Storage<'a>) -> &'storage TypeOwned<'a> {
         storage.get_type(*self)
     }
 }
@@ -327,24 +318,12 @@ pub struct Storage<'a> {
 
     returns: Vec<Return<'a>>,
 
-    type_names: Vec<&'a str>,
-    refinement_types: Vec<RefinementType<'a>>,
-    tuple_types: Vec<TupleType<'a>>,
-    array_types: Vec<ArrayType<'a>>,
-    map_types: Vec<MapType<'a>>,
-    slice_types: Vec<SliceType<'a>>,
-    function_types: Vec<FunctionType<'a>>,
-    managed_types: Vec<ManagedType<'a>>,
-    unmanaged_types: Vec<UnmanagedType<'a>>,
-    generic_types: Vec<GenericType<'a>>,
-    opaque_types: Vec<OpaqueType<'a>>,
+    dedup_types: BiMap<TypeKey<'a>, TypeOwned<'a>>,
 
     has_parentheses: HashSet<ExprKey<'a>>,
 }
 
 impl<'a> Storage<'a> {
-    const TUPLE_TYPE_UNIT_INDEX: usize = 0;
-    const FUNCTION_TYPE_BASIC_INDEX: usize = 0;
     const STRING_LIT_EMPTY_INDEX: usize = 0;
     const CHAR_LIT_SPACE_INDEX: usize = 0;
     const CHAR_LIT_NEWLINE_INDEX: usize = 1;
@@ -369,33 +348,10 @@ impl<'a> Storage<'a> {
 
             returns: Vec::new(),
 
-            type_names: Vec::new(),
-            refinement_types: Vec::new(),
-            tuple_types: Vec::new(),
-            array_types: Vec::new(),
-            map_types: Vec::new(),
-            slice_types: Vec::new(),
-            function_types: Vec::new(),
-            managed_types: Vec::new(),
-            unmanaged_types: Vec::new(),
-            generic_types: Vec::new(),
-            opaque_types: Vec::new(),
+            dedup_types: BiMap::new(),
 
             has_parentheses: HashSet::new(),
         };
-
-        {
-            let empty_tuple = (Self::TUPLE_TYPE_UNIT_INDEX, TupleType::new(Vec::new()));
-            storage.tuple_types.insert(empty_tuple.0, empty_tuple.1);
-        }
-
-        {
-            let basic_fn_ty = (
-                Self::FUNCTION_TYPE_BASIC_INDEX,
-                FunctionType::new(Vec::new(), None, Vec::new()),
-            );
-            storage.function_types.insert(basic_fn_ty.0, basic_fn_ty.1);
-        }
 
         {
             let empty_string = (Self::STRING_LIT_EMPTY_INDEX, StringLit::new(""));
@@ -433,19 +389,18 @@ impl<'a> Storage<'a> {
             | ExprKind::Float32
             | ExprKind::Float64
             | ExprKind::Float128
-            | ExprKind::InferType => {}
-
-            ExprKind::TypeName => self.type_names.reserve(additional),
-            ExprKind::RefinementType => self.refinement_types.reserve(additional),
-            ExprKind::TupleType => self.tuple_types.reserve(additional),
-            ExprKind::ArrayType => self.array_types.reserve(additional),
-            ExprKind::MapType => self.map_types.reserve(additional),
-            ExprKind::SliceType => self.slice_types.reserve(additional),
-            ExprKind::FunctionType => self.function_types.reserve(additional),
-            ExprKind::ManagedType => self.managed_types.reserve(additional),
-            ExprKind::UnmanagedType => self.unmanaged_types.reserve(additional),
-            ExprKind::GenericType => self.generic_types.reserve(additional),
-            ExprKind::OpaqueType => self.opaque_types.reserve(additional),
+            | ExprKind::InferType
+            | ExprKind::TypeName
+            | ExprKind::RefinementType
+            | ExprKind::TupleType
+            | ExprKind::ArrayType
+            | ExprKind::MapType
+            | ExprKind::SliceType
+            | ExprKind::FunctionType
+            | ExprKind::ManagedType
+            | ExprKind::UnmanagedType
+            | ExprKind::GenericType
+            | ExprKind::OpaqueType => {}
 
             ExprKind::Discard => {}
 
@@ -613,94 +568,53 @@ impl<'a> Storage<'a> {
             TypeOwned::Float32 => Some(TypeKey::new_single(TypeKind::Float32)),
             TypeOwned::Float64 => Some(TypeKey::new_single(TypeKind::Float64)),
             TypeOwned::Float128 => Some(TypeKey::new_single(TypeKind::Float128)),
-
             TypeOwned::InferType => Some(TypeKey::new_single(TypeKind::InferType)),
 
-            TypeOwned::TypeName(node) => TypeKey::new(TypeKind::TypeName, self.type_names.len())
-                .and_then(|k| {
-                    self.type_names.push(node);
-                    Some(k)
-                }),
+            other => {
+                let kind = match other {
+                    TypeOwned::Bool
+                    | TypeOwned::UInt8
+                    | TypeOwned::UInt16
+                    | TypeOwned::UInt32
+                    | TypeOwned::UInt64
+                    | TypeOwned::UInt128
+                    | TypeOwned::Int8
+                    | TypeOwned::Int16
+                    | TypeOwned::Int32
+                    | TypeOwned::Int64
+                    | TypeOwned::Int128
+                    | TypeOwned::Float8
+                    | TypeOwned::Float16
+                    | TypeOwned::Float32
+                    | TypeOwned::Float64
+                    | TypeOwned::Float128
+                    | TypeOwned::InferType => {
+                        unreachable!()
+                    }
 
-            TypeOwned::RefinementType(node) => {
-                TypeKey::new(TypeKind::RefinementType, self.refinement_types.len()).and_then(|k| {
-                    self.refinement_types.push(node);
-                    Some(k)
-                })
-            }
+                    TypeOwned::TypeName(_) => TypeKind::TypeName,
+                    TypeOwned::RefinementType(_) => TypeKind::RefinementType,
+                    TypeOwned::TupleType(_) => TypeKind::TupleType,
+                    TypeOwned::ArrayType(_) => TypeKind::ArrayType,
+                    TypeOwned::MapType(_) => TypeKind::MapType,
+                    TypeOwned::SliceType(_) => TypeKind::SliceType,
+                    TypeOwned::FunctionType(_) => TypeKind::FunctionType,
+                    TypeOwned::ManagedType(_) => TypeKind::ManagedType,
+                    TypeOwned::UnmanagedType(_) => TypeKind::UnmanagedType,
+                    TypeOwned::GenericType(_) => TypeKind::GenericType,
+                    TypeOwned::OpaqueType(_) => TypeKind::OpaqueType,
+                };
 
-            TypeOwned::TupleType(node) => {
-                let is_unit_type = node.elements().is_empty();
-
-                if is_unit_type {
-                    TypeKey::new(TypeKind::TupleType, Self::TUPLE_TYPE_UNIT_INDEX)
+                if let Some(type_key) = self.dedup_types.get_by_right(&other) {
+                    Some(*type_key)
                 } else {
-                    TypeKey::new(TypeKind::TupleType, self.tuple_types.len()).and_then(|k| {
-                        self.tuple_types.push(node);
-                        Some(k)
-                    })
+                    if let Some(key) = TypeKey::new(kind, self.dedup_types.len()) {
+                        self.dedup_types.insert(key, other);
+                        Some(key)
+                    } else {
+                        None
+                    }
                 }
-            }
-
-            TypeOwned::ArrayType(node) => TypeKey::new(TypeKind::ArrayType, self.array_types.len())
-                .and_then(|k| {
-                    self.array_types.push(node);
-                    Some(k)
-                }),
-
-            TypeOwned::MapType(node) => TypeKey::new(TypeKind::MapType, self.map_types.len())
-                .and_then(|k| {
-                    self.map_types.push(node);
-                    Some(k)
-                }),
-
-            TypeOwned::SliceType(node) => TypeKey::new(TypeKind::SliceType, self.slice_types.len())
-                .and_then(|k| {
-                    self.slice_types.push(node);
-                    Some(k)
-                }),
-
-            TypeOwned::FunctionType(node) => {
-                let is_trivial_callback = node.parameters().is_empty()
-                    && node.return_type().is_none()
-                    && node.attributes().is_empty();
-
-                if is_trivial_callback {
-                    TypeKey::new(TypeKind::FunctionType, Self::FUNCTION_TYPE_BASIC_INDEX)
-                } else {
-                    TypeKey::new(TypeKind::FunctionType, self.function_types.len()).and_then(|k| {
-                        self.function_types.push(node);
-                        Some(k)
-                    })
-                }
-            }
-
-            TypeOwned::ManagedType(node) => {
-                TypeKey::new(TypeKind::ManagedType, self.managed_types.len()).and_then(|k| {
-                    self.managed_types.push(node);
-                    Some(k)
-                })
-            }
-
-            TypeOwned::UnmanagedType(node) => {
-                TypeKey::new(TypeKind::UnmanagedType, self.unmanaged_types.len()).and_then(|k| {
-                    self.unmanaged_types.push(node);
-                    Some(k)
-                })
-            }
-
-            TypeOwned::GenericType(node) => {
-                TypeKey::new(TypeKind::GenericType, self.generic_types.len()).and_then(|k| {
-                    self.generic_types.push(node);
-                    Some(k)
-                })
-            }
-
-            TypeOwned::OpaqueType(node) => {
-                TypeKey::new(TypeKind::OpaqueType, self.opaque_types.len()).and_then(|k| {
-                    self.opaque_types.push(node);
-                    Some(k)
-                })
             }
         }
     }
@@ -709,41 +623,37 @@ impl<'a> Storage<'a> {
         let index = id.instance_index() as usize;
 
         match id.variant_index() {
-            ExprKind::Bool => Some(ExprRef::Bool),
-            ExprKind::UInt8 => Some(ExprRef::UInt8),
-            ExprKind::UInt16 => Some(ExprRef::UInt16),
-            ExprKind::UInt32 => Some(ExprRef::UInt32),
-            ExprKind::UInt64 => Some(ExprRef::UInt64),
-            ExprKind::UInt128 => Some(ExprRef::UInt128),
-            ExprKind::Int8 => Some(ExprRef::Int8),
-            ExprKind::Int16 => Some(ExprRef::Int16),
-            ExprKind::Int32 => Some(ExprRef::Int32),
-            ExprKind::Int64 => Some(ExprRef::Int64),
-            ExprKind::Int128 => Some(ExprRef::Int128),
-            ExprKind::Float8 => Some(ExprRef::Float8),
-            ExprKind::Float16 => Some(ExprRef::Float16),
-            ExprKind::Float32 => Some(ExprRef::Float32),
-            ExprKind::Float64 => Some(ExprRef::Float64),
-            ExprKind::Float128 => Some(ExprRef::Float128),
-
-            ExprKind::InferType => Some(ExprRef::InferType),
-            ExprKind::TypeName => self
-                .type_names
-                .get(index)
-                .map(|name| ExprRef::TypeName(name)),
-            ExprKind::RefinementType => self
-                .refinement_types
-                .get(index)
-                .map(ExprRef::RefinementType),
-            ExprKind::TupleType => self.tuple_types.get(index).map(ExprRef::TupleType),
-            ExprKind::ArrayType => self.array_types.get(index).map(ExprRef::ArrayType),
-            ExprKind::MapType => self.map_types.get(index).map(ExprRef::MapType),
-            ExprKind::SliceType => self.slice_types.get(index).map(ExprRef::SliceType),
-            ExprKind::FunctionType => self.function_types.get(index).map(ExprRef::FunctionType),
-            ExprKind::ManagedType => self.managed_types.get(index).map(ExprRef::ManagedType),
-            ExprKind::UnmanagedType => self.unmanaged_types.get(index).map(ExprRef::UnmanagedType),
-            ExprKind::GenericType => self.generic_types.get(index).map(ExprRef::GenericType),
-            ExprKind::OpaqueType => self.opaque_types.get(index).map(ExprRef::OpaqueType),
+            ExprKind::Bool
+            | ExprKind::UInt8
+            | ExprKind::UInt16
+            | ExprKind::UInt32
+            | ExprKind::UInt64
+            | ExprKind::UInt128
+            | ExprKind::Int8
+            | ExprKind::Int16
+            | ExprKind::Int32
+            | ExprKind::Int64
+            | ExprKind::Int128
+            | ExprKind::Float8
+            | ExprKind::Float16
+            | ExprKind::Float32
+            | ExprKind::Float64
+            | ExprKind::Float128
+            | ExprKind::InferType
+            | ExprKind::TypeName
+            | ExprKind::RefinementType
+            | ExprKind::TupleType
+            | ExprKind::ArrayType
+            | ExprKind::MapType
+            | ExprKind::SliceType
+            | ExprKind::FunctionType
+            | ExprKind::ManagedType
+            | ExprKind::UnmanagedType
+            | ExprKind::GenericType
+            | ExprKind::OpaqueType => Some(
+                self.get_type(id.try_into().expect("Expected conversion to TypeKey"))
+                    .into(),
+            ),
 
             ExprKind::Discard => Some(ExprRef::Discard),
 
@@ -771,44 +681,37 @@ impl<'a> Storage<'a> {
         let index = id.instance_index() as usize;
 
         match id.variant_index() {
-            ExprKind::Bool => Some(ExprRefMut::Bool),
-            ExprKind::UInt8 => Some(ExprRefMut::UInt8),
-            ExprKind::UInt16 => Some(ExprRefMut::UInt16),
-            ExprKind::UInt32 => Some(ExprRefMut::UInt32),
-            ExprKind::UInt64 => Some(ExprRefMut::UInt64),
-            ExprKind::UInt128 => Some(ExprRefMut::UInt128),
-            ExprKind::Int8 => Some(ExprRefMut::Int8),
-            ExprKind::Int16 => Some(ExprRefMut::Int16),
-            ExprKind::Int32 => Some(ExprRefMut::Int32),
-            ExprKind::Int64 => Some(ExprRefMut::Int64),
-            ExprKind::Int128 => Some(ExprRefMut::Int128),
-            ExprKind::Float8 => Some(ExprRefMut::Float8),
-            ExprKind::Float16 => Some(ExprRefMut::Float16),
-            ExprKind::Float32 => Some(ExprRefMut::Float32),
-            ExprKind::Float64 => Some(ExprRefMut::Float64),
-            ExprKind::Float128 => Some(ExprRefMut::Float128),
-
-            ExprKind::InferType => Some(ExprRefMut::InferType),
-            ExprKind::TypeName => self
-                .type_names
-                .get(index)
-                .map(|name| ExprRefMut::TypeName(name)),
-            ExprKind::RefinementType => self
-                .refinement_types
-                .get(index)
-                .map(ExprRefMut::RefinementType),
-            ExprKind::TupleType => self.tuple_types.get(index).map(ExprRefMut::TupleType),
-            ExprKind::ArrayType => self.array_types.get(index).map(ExprRefMut::ArrayType),
-            ExprKind::MapType => self.map_types.get(index).map(ExprRefMut::MapType),
-            ExprKind::SliceType => self.slice_types.get(index).map(ExprRefMut::SliceType),
-            ExprKind::FunctionType => self.function_types.get(index).map(ExprRefMut::FunctionType),
-            ExprKind::ManagedType => self.managed_types.get(index).map(ExprRefMut::ManagedType),
-            ExprKind::UnmanagedType => self
-                .unmanaged_types
-                .get(index)
-                .map(ExprRefMut::UnmanagedType),
-            ExprKind::GenericType => self.generic_types.get(index).map(ExprRefMut::GenericType),
-            ExprKind::OpaqueType => self.opaque_types.get(index).map(ExprRefMut::OpaqueType),
+            ExprKind::Bool
+            | ExprKind::UInt8
+            | ExprKind::UInt16
+            | ExprKind::UInt32
+            | ExprKind::UInt64
+            | ExprKind::UInt128
+            | ExprKind::Int8
+            | ExprKind::Int16
+            | ExprKind::Int32
+            | ExprKind::Int64
+            | ExprKind::Int128
+            | ExprKind::Float8
+            | ExprKind::Float16
+            | ExprKind::Float32
+            | ExprKind::Float64
+            | ExprKind::Float128
+            | ExprKind::InferType
+            | ExprKind::TypeName
+            | ExprKind::RefinementType
+            | ExprKind::TupleType
+            | ExprKind::ArrayType
+            | ExprKind::MapType
+            | ExprKind::SliceType
+            | ExprKind::FunctionType
+            | ExprKind::ManagedType
+            | ExprKind::UnmanagedType
+            | ExprKind::GenericType
+            | ExprKind::OpaqueType => Some(
+                self.get_type(id.try_into().expect("Expected conversion to TypeKey"))
+                    .into(),
+            ),
 
             ExprKind::Discard => Some(ExprRefMut::Discard),
 
@@ -832,47 +735,31 @@ impl<'a> Storage<'a> {
         .expect("Expression not found in storage")
     }
 
-    pub fn get_type(&self, id: TypeKey<'a>) -> TypeRef<'_, 'a> {
-        let index = id.instance_index() as usize;
-
+    pub fn get_type(&self, id: TypeKey<'a>) -> &TypeOwned<'a> {
         match id.variant_index() {
-            TypeKind::Bool => Some(TypeRef::Bool),
-            TypeKind::UInt8 => Some(TypeRef::UInt8),
-            TypeKind::UInt16 => Some(TypeRef::UInt16),
-            TypeKind::UInt32 => Some(TypeRef::UInt32),
-            TypeKind::UInt64 => Some(TypeRef::UInt64),
-            TypeKind::UInt128 => Some(TypeRef::UInt128),
-            TypeKind::Int8 => Some(TypeRef::Int8),
-            TypeKind::Int16 => Some(TypeRef::Int16),
-            TypeKind::Int32 => Some(TypeRef::Int32),
-            TypeKind::Int64 => Some(TypeRef::Int64),
-            TypeKind::Int128 => Some(TypeRef::Int128),
-            TypeKind::Float8 => Some(TypeRef::Float8),
-            TypeKind::Float16 => Some(TypeRef::Float16),
-            TypeKind::Float32 => Some(TypeRef::Float32),
-            TypeKind::Float64 => Some(TypeRef::Float64),
-            TypeKind::Float128 => Some(TypeRef::Float128),
+            TypeKind::Bool => &TypeOwned::Bool,
+            TypeKind::UInt8 => &TypeOwned::UInt8,
+            TypeKind::UInt16 => &TypeOwned::UInt16,
+            TypeKind::UInt32 => &TypeOwned::UInt32,
+            TypeKind::UInt64 => &TypeOwned::UInt64,
+            TypeKind::UInt128 => &TypeOwned::UInt128,
+            TypeKind::Int8 => &TypeOwned::Int8,
+            TypeKind::Int16 => &TypeOwned::Int16,
+            TypeKind::Int32 => &TypeOwned::Int32,
+            TypeKind::Int64 => &TypeOwned::Int64,
+            TypeKind::Int128 => &TypeOwned::Int128,
+            TypeKind::Float8 => &TypeOwned::Float8,
+            TypeKind::Float16 => &TypeOwned::Float16,
+            TypeKind::Float32 => &TypeOwned::Float32,
+            TypeKind::Float64 => &TypeOwned::Float64,
+            TypeKind::Float128 => &TypeOwned::Float128,
+            TypeKind::InferType => &TypeOwned::InferType,
 
-            TypeKind::InferType => Some(TypeRef::InferType),
-            TypeKind::TypeName => self
-                .type_names
-                .get(index)
-                .map(|name| TypeRef::TypeName(name)),
-            TypeKind::RefinementType => self
-                .refinement_types
-                .get(index)
-                .map(TypeRef::RefinementType),
-            TypeKind::TupleType => self.tuple_types.get(index).map(TypeRef::TupleType),
-            TypeKind::ArrayType => self.array_types.get(index).map(TypeRef::ArrayType),
-            TypeKind::MapType => self.map_types.get(index).map(TypeRef::MapType),
-            TypeKind::SliceType => self.slice_types.get(index).map(TypeRef::SliceType),
-            TypeKind::FunctionType => self.function_types.get(index).map(TypeRef::FunctionType),
-            TypeKind::ManagedType => self.managed_types.get(index).map(TypeRef::ManagedType),
-            TypeKind::UnmanagedType => self.unmanaged_types.get(index).map(TypeRef::UnmanagedType),
-            TypeKind::GenericType => self.generic_types.get(index).map(TypeRef::GenericType),
-            TypeKind::OpaqueType => self.opaque_types.get(index).map(TypeRef::OpaqueType),
+            _ => self
+                .dedup_types
+                .get_by_left(&id)
+                .expect("TypeKey not found in storage"),
         }
-        .expect("Expression not found in storage")
     }
 
     pub fn has_parentheses(&self, key: ExprKey<'a>) -> bool {

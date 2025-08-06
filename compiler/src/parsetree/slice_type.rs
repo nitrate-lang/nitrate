@@ -1,6 +1,6 @@
 use super::storage::TypeKey;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct SliceType<'a> {
     element: TypeKey<'a>,
 }

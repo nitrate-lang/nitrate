@@ -1,7 +1,7 @@
 use super::function::FunctionParameter;
 use super::storage::{ExprKey, TypeKey};
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct FunctionType<'a> {
     parameters: Vec<FunctionParameter<'a>>,
     return_type: Option<TypeKey<'a>>,

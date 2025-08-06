@@ -163,8 +163,8 @@ pub(crate) enum ExprOwned<'a> {
     Return(Return<'a>),
 }
 
-#[derive(Debug, Clone)]
-pub(crate) enum TypeOwned<'a> {
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub enum TypeOwned<'a> {
     /* Primitive Types */
     Bool,
     UInt8,
@@ -312,41 +312,6 @@ pub enum ExprRefMut<'storage, 'a> {
 
     /* Control Flow */
     Return(&'storage mut Return<'a>),
-}
-
-#[derive(Debug, Clone, Copy)]
-pub enum TypeRef<'storage, 'a> {
-    /* Primitive Types */
-    Bool,
-    UInt8,
-    UInt16,
-    UInt32,
-    UInt64,
-    UInt128,
-    Int8,
-    Int16,
-    Int32,
-    Int64,
-    Int128,
-    Float8,
-    Float16,
-    Float32,
-    Float64,
-    Float128,
-
-    /* Non-primitive  Types */
-    InferType,
-    TypeName(&'a str),
-    RefinementType(&'storage RefinementType<'a>),
-    TupleType(&'storage TupleType<'a>),
-    ArrayType(&'storage ArrayType<'a>),
-    MapType(&'storage MapType<'a>),
-    SliceType(&'storage SliceType<'a>),
-    FunctionType(&'storage FunctionType<'a>),
-    ManagedType(&'storage ManagedType<'a>),
-    UnmanagedType(&'storage UnmanagedType<'a>),
-    GenericType(&'storage GenericType<'a>),
-    OpaqueType(&'storage OpaqueType<'a>),
 }
 
 impl TryInto<TypeKind> for ExprKind {
@@ -527,144 +492,74 @@ impl<'a> Into<ExprOwned<'a>> for TypeOwned<'a> {
     }
 }
 
-impl<'storage, 'a> TryInto<TypeRef<'storage, 'a>> for ExprRef<'storage, 'a> {
-    type Error = Self;
-
-    fn try_into(self) -> Result<TypeRef<'storage, 'a>, Self::Error> {
-        match self {
-            ExprRef::Bool => Ok(TypeRef::Bool),
-            ExprRef::UInt8 => Ok(TypeRef::UInt8),
-            ExprRef::UInt16 => Ok(TypeRef::UInt16),
-            ExprRef::UInt32 => Ok(TypeRef::UInt32),
-            ExprRef::UInt64 => Ok(TypeRef::UInt64),
-            ExprRef::UInt128 => Ok(TypeRef::UInt128),
-            ExprRef::Int8 => Ok(TypeRef::Int8),
-            ExprRef::Int16 => Ok(TypeRef::Int16),
-            ExprRef::Int32 => Ok(TypeRef::Int32),
-            ExprRef::Int64 => Ok(TypeRef::Int64),
-            ExprRef::Int128 => Ok(TypeRef::Int128),
-            ExprRef::Float8 => Ok(TypeRef::Float8),
-            ExprRef::Float16 => Ok(TypeRef::Float16),
-            ExprRef::Float32 => Ok(TypeRef::Float32),
-            ExprRef::Float64 => Ok(TypeRef::Float64),
-            ExprRef::Float128 => Ok(TypeRef::Float128),
-
-            ExprRef::InferType => Ok(TypeRef::InferType),
-            ExprRef::TypeName(x) => Ok(TypeRef::TypeName(x)),
-            ExprRef::RefinementType(x) => Ok(TypeRef::RefinementType(x)),
-            ExprRef::TupleType(x) => Ok(TypeRef::TupleType(x)),
-            ExprRef::ArrayType(x) => Ok(TypeRef::ArrayType(x)),
-            ExprRef::MapType(x) => Ok(TypeRef::MapType(x)),
-            ExprRef::SliceType(x) => Ok(TypeRef::SliceType(x)),
-            ExprRef::FunctionType(x) => Ok(TypeRef::FunctionType(x)),
-            ExprRef::ManagedType(x) => Ok(TypeRef::ManagedType(x)),
-            ExprRef::UnmanagedType(x) => Ok(TypeRef::UnmanagedType(x)),
-            ExprRef::GenericType(x) => Ok(TypeRef::GenericType(x)),
-            ExprRef::OpaqueType(x) => Ok(TypeRef::OpaqueType(x)),
-
-            ExprRef::Discard
-            | ExprRef::IntegerLit(_)
-            | ExprRef::FloatLit(_)
-            | ExprRef::StringLit(_)
-            | ExprRef::CharLit(_)
-            | ExprRef::ListLit(_)
-            | ExprRef::ObjectLit(_)
-            | ExprRef::UnaryOp(_)
-            | ExprRef::BinaryOp(_)
-            | ExprRef::Statement(_)
-            | ExprRef::Block(_)
-            | ExprRef::Function(_)
-            | ExprRef::Variable(_)
-            | ExprRef::Return(_) => Err(self),
-        }
-    }
-}
-
-impl<'storage, 'a> TryInto<TypeRef<'storage, 'a>> for ExprRefMut<'storage, 'a> {
-    type Error = Self;
-
-    fn try_into(self) -> Result<TypeRef<'storage, 'a>, Self::Error> {
-        match self {
-            ExprRefMut::Bool => Ok(TypeRef::Bool),
-            ExprRefMut::UInt8 => Ok(TypeRef::UInt8),
-            ExprRefMut::UInt16 => Ok(TypeRef::UInt16),
-            ExprRefMut::UInt32 => Ok(TypeRef::UInt32),
-            ExprRefMut::UInt64 => Ok(TypeRef::UInt64),
-            ExprRefMut::UInt128 => Ok(TypeRef::UInt128),
-            ExprRefMut::Int8 => Ok(TypeRef::Int8),
-            ExprRefMut::Int16 => Ok(TypeRef::Int16),
-            ExprRefMut::Int32 => Ok(TypeRef::Int32),
-            ExprRefMut::Int64 => Ok(TypeRef::Int64),
-            ExprRefMut::Int128 => Ok(TypeRef::Int128),
-            ExprRefMut::Float8 => Ok(TypeRef::Float8),
-            ExprRefMut::Float16 => Ok(TypeRef::Float16),
-            ExprRefMut::Float32 => Ok(TypeRef::Float32),
-            ExprRefMut::Float64 => Ok(TypeRef::Float64),
-            ExprRefMut::Float128 => Ok(TypeRef::Float128),
-
-            ExprRefMut::InferType => Ok(TypeRef::InferType),
-            ExprRefMut::TypeName(x) => Ok(TypeRef::TypeName(x)),
-            ExprRefMut::RefinementType(x) => Ok(TypeRef::RefinementType(x)),
-            ExprRefMut::TupleType(x) => Ok(TypeRef::TupleType(x)),
-            ExprRefMut::ArrayType(x) => Ok(TypeRef::ArrayType(x)),
-            ExprRefMut::MapType(x) => Ok(TypeRef::MapType(x)),
-            ExprRefMut::SliceType(x) => Ok(TypeRef::SliceType(x)),
-            ExprRefMut::FunctionType(x) => Ok(TypeRef::FunctionType(x)),
-            ExprRefMut::ManagedType(x) => Ok(TypeRef::ManagedType(x)),
-            ExprRefMut::UnmanagedType(x) => Ok(TypeRef::UnmanagedType(x)),
-            ExprRefMut::GenericType(x) => Ok(TypeRef::GenericType(x)),
-            ExprRefMut::OpaqueType(x) => Ok(TypeRef::OpaqueType(x)),
-
-            ExprRefMut::Discard
-            | ExprRefMut::IntegerLit(_)
-            | ExprRefMut::FloatLit(_)
-            | ExprRefMut::StringLit(_)
-            | ExprRefMut::CharLit(_)
-            | ExprRefMut::ListLit(_)
-            | ExprRefMut::ObjectLit(_)
-            | ExprRefMut::UnaryOp(_)
-            | ExprRefMut::BinaryOp(_)
-            | ExprRefMut::Statement(_)
-            | ExprRefMut::Block(_)
-            | ExprRefMut::Function(_)
-            | ExprRefMut::Variable(_)
-            | ExprRefMut::Return(_) => Err(self),
-        }
-    }
-}
-
-impl<'storage, 'a> Into<ExprRef<'storage, 'a>> for TypeRef<'storage, 'a> {
+impl<'storage, 'a> Into<ExprRef<'storage, 'a>> for &'storage TypeOwned<'a> {
     fn into(self) -> ExprRef<'storage, 'a> {
         match self {
-            TypeRef::Bool => ExprRef::Bool,
-            TypeRef::UInt8 => ExprRef::UInt8,
-            TypeRef::UInt16 => ExprRef::UInt16,
-            TypeRef::UInt32 => ExprRef::UInt32,
-            TypeRef::UInt64 => ExprRef::UInt64,
-            TypeRef::UInt128 => ExprRef::UInt128,
-            TypeRef::Int8 => ExprRef::Int8,
-            TypeRef::Int16 => ExprRef::Int16,
-            TypeRef::Int32 => ExprRef::Int32,
-            TypeRef::Int64 => ExprRef::Int64,
-            TypeRef::Int128 => ExprRef::Int128,
-            TypeRef::Float8 => ExprRef::Float8,
-            TypeRef::Float16 => ExprRef::Float16,
-            TypeRef::Float32 => ExprRef::Float32,
-            TypeRef::Float64 => ExprRef::Float64,
-            TypeRef::Float128 => ExprRef::Float128,
+            TypeOwned::Bool => ExprRef::Bool,
+            TypeOwned::UInt8 => ExprRef::UInt8,
+            TypeOwned::UInt16 => ExprRef::UInt16,
+            TypeOwned::UInt32 => ExprRef::UInt32,
+            TypeOwned::UInt64 => ExprRef::UInt64,
+            TypeOwned::UInt128 => ExprRef::UInt128,
+            TypeOwned::Int8 => ExprRef::Int8,
+            TypeOwned::Int16 => ExprRef::Int16,
+            TypeOwned::Int32 => ExprRef::Int32,
+            TypeOwned::Int64 => ExprRef::Int64,
+            TypeOwned::Int128 => ExprRef::Int128,
+            TypeOwned::Float8 => ExprRef::Float8,
+            TypeOwned::Float16 => ExprRef::Float16,
+            TypeOwned::Float32 => ExprRef::Float32,
+            TypeOwned::Float64 => ExprRef::Float64,
+            TypeOwned::Float128 => ExprRef::Float128,
 
-            TypeRef::InferType => ExprRef::InferType,
-            TypeRef::TypeName(x) => ExprRef::TypeName(x),
-            TypeRef::RefinementType(x) => ExprRef::RefinementType(x),
-            TypeRef::TupleType(x) => ExprRef::TupleType(x),
-            TypeRef::ArrayType(x) => ExprRef::ArrayType(x),
-            TypeRef::MapType(x) => ExprRef::MapType(x),
-            TypeRef::SliceType(x) => ExprRef::SliceType(x),
-            TypeRef::FunctionType(x) => ExprRef::FunctionType(x),
-            TypeRef::ManagedType(x) => ExprRef::ManagedType(x),
-            TypeRef::UnmanagedType(x) => ExprRef::UnmanagedType(x),
-            TypeRef::GenericType(x) => ExprRef::GenericType(x),
-            TypeRef::OpaqueType(x) => ExprRef::OpaqueType(x),
+            TypeOwned::InferType => ExprRef::InferType,
+            TypeOwned::TypeName(x) => ExprRef::TypeName(x),
+            TypeOwned::RefinementType(x) => ExprRef::RefinementType(x),
+            TypeOwned::TupleType(x) => ExprRef::TupleType(x),
+            TypeOwned::ArrayType(x) => ExprRef::ArrayType(x),
+            TypeOwned::MapType(x) => ExprRef::MapType(x),
+            TypeOwned::SliceType(x) => ExprRef::SliceType(x),
+            TypeOwned::FunctionType(x) => ExprRef::FunctionType(x),
+            TypeOwned::ManagedType(x) => ExprRef::ManagedType(x),
+            TypeOwned::UnmanagedType(x) => ExprRef::UnmanagedType(x),
+            TypeOwned::GenericType(x) => ExprRef::GenericType(x),
+            TypeOwned::OpaqueType(x) => ExprRef::OpaqueType(x),
+        }
+    }
+}
+
+impl<'storage, 'a> Into<ExprRefMut<'storage, 'a>> for &'storage TypeOwned<'a> {
+    fn into(self) -> ExprRefMut<'storage, 'a> {
+        match self {
+            TypeOwned::Bool => ExprRefMut::Bool,
+            TypeOwned::UInt8 => ExprRefMut::UInt8,
+            TypeOwned::UInt16 => ExprRefMut::UInt16,
+            TypeOwned::UInt32 => ExprRefMut::UInt32,
+            TypeOwned::UInt64 => ExprRefMut::UInt64,
+            TypeOwned::UInt128 => ExprRefMut::UInt128,
+            TypeOwned::Int8 => ExprRefMut::Int8,
+            TypeOwned::Int16 => ExprRefMut::Int16,
+            TypeOwned::Int32 => ExprRefMut::Int32,
+            TypeOwned::Int64 => ExprRefMut::Int64,
+            TypeOwned::Int128 => ExprRefMut::Int128,
+            TypeOwned::Float8 => ExprRefMut::Float8,
+            TypeOwned::Float16 => ExprRefMut::Float16,
+            TypeOwned::Float32 => ExprRefMut::Float32,
+            TypeOwned::Float64 => ExprRefMut::Float64,
+            TypeOwned::Float128 => ExprRefMut::Float128,
+
+            TypeOwned::InferType => ExprRefMut::InferType,
+            TypeOwned::TypeName(x) => ExprRefMut::TypeName(x),
+            TypeOwned::RefinementType(x) => ExprRefMut::RefinementType(x),
+            TypeOwned::TupleType(x) => ExprRefMut::TupleType(x),
+            TypeOwned::ArrayType(x) => ExprRefMut::ArrayType(x),
+            TypeOwned::MapType(x) => ExprRefMut::MapType(x),
+            TypeOwned::SliceType(x) => ExprRefMut::SliceType(x),
+            TypeOwned::FunctionType(x) => ExprRefMut::FunctionType(x),
+            TypeOwned::ManagedType(x) => ExprRefMut::ManagedType(x),
+            TypeOwned::UnmanagedType(x) => ExprRefMut::UnmanagedType(x),
+            TypeOwned::GenericType(x) => ExprRefMut::GenericType(x),
+            TypeOwned::OpaqueType(x) => ExprRefMut::OpaqueType(x),
         }
     }
 }

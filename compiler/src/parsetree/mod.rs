@@ -28,6 +28,6 @@ mod variable;
 
 pub use builder::*;
 pub use debug::*;
-pub use expression::{ExprKind, ExprRef, ExprRefMut, TypeRef};
+pub use expression::{ExprKind, ExprRef, ExprRefMut, TypeOwned};
 pub use storage::{ExprKey, Storage, TypeKey};
 pub use to_code::*;

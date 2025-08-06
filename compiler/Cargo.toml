@@ -5,6 +5,7 @@ edition = "2024"
 
 [dependencies]
 apint = "0.2.0"
+bimap = "0.6.3"
 env_logger = "0.11.8"
 hashbrown = "0.15.4"
 log = "0.4.27"

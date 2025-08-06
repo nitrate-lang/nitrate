@@ -1,6 +1,6 @@
 use super::storage::{ExprKey, TypeKey};
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct RefinementType<'a> {
     base: TypeKey<'a>,
     width: Option<ExprKey<'a>>,

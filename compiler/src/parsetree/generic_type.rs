@@ -1,6 +1,6 @@
 use super::storage::{ExprKey, TypeKey};
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct GenericType<'a> {
     base: TypeKey<'a>,
     args: Vec<(&'a str, ExprKey<'a>)>,

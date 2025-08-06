@@ -1,6 +1,6 @@
 use super::storage::TypeKey;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct MapType<'a> {
     key: TypeKey<'a>,
     value: TypeKey<'a>,
