@@ -96,7 +96,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let drain = Async::new(drain.fuse()).build().fuse();
     let root_logger = Logger::root(drain, o!());
 
-    let mut parser = Parser::new(lexer, &mut storage, root_logger);
+    let mut parser = Parser::new(lexer, &mut storage, Some(root_logger));
 
     {
         let model = parser.parse().map_or_else(

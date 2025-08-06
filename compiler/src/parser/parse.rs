@@ -16,7 +16,9 @@ pub struct Parser<'storage, 'a> {
 }
 
 impl<'storage, 'a> Parser<'storage, 'a> {
-    pub fn new(lexer: Lexer<'a>, storage: &'storage mut Storage<'a>, log: Logger) -> Self {
+    pub fn new(lexer: Lexer<'a>, storage: &'storage mut Storage<'a>, log: Option<Logger>) -> Self {
+        let log = log.unwrap_or_else(|| slog::Logger::root(slog::Discard, slog::o!()));
+
         Parser {
             lexer,
             storage,
@@ -79,6 +81,7 @@ impl<'storage, 'a> Parser<'storage, 'a> {
             copyright_info,
             HashMap::new(),
             program,
+            self.has_failed(),
         ))
     }
 }

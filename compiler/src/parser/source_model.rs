@@ -41,6 +41,7 @@ pub struct SourceModel<'a> {
     copyright: CopyrightMetadata<'a>,
     insource_config: HashMap<&'a str, ExprKey<'a>>,
     tree: ExprKey<'a>,
+    any_errors: bool,
 }
 
 impl<'a> SourceModel<'a> {
@@ -49,12 +50,14 @@ impl<'a> SourceModel<'a> {
         copyright: CopyrightMetadata<'a>,
         insource_config: HashMap<&'a str, ExprKey<'a>>,
         tree: ExprKey<'a>,
+        any_errors: bool,
     ) -> Self {
         SourceModel {
             language_version,
             copyright,
             insource_config,
             tree,
+            any_errors,
         }
     }
 
@@ -72,5 +75,9 @@ impl<'a> SourceModel<'a> {
 
     pub fn tree(&self) -> ExprKey<'a> {
         self.tree
+    }
+
+    pub fn any_errors(&self) -> bool {
+        self.any_errors
     }
 }

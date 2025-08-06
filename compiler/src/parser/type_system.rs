@@ -710,3 +710,116 @@ impl<'storage, 'a> Parser<'storage, 'a> {
         }
     }
 }
+
+#[test]
+fn test_parse_type() {
+    let source = "Option<[str -> Vec<{u8, str: 48, Set<Address<str>>: 2: [1:]}>]>: 1";
+
+    let expected = r#"RefinementType {
+    base: GenericType {
+        base: TypeName {
+            name: "Option",
+        },
+        args: [
+            (
+                "",
+                MapType {
+                    key: TypeName {
+                        name: "str",
+                    },
+                    value: GenericType {
+                        base: TypeName {
+                            name: "Vec",
+                        },
+                        args: [
+                            (
+                                "",
+                                TupleType {
+                                    elements: [
+                                        u8,
+                                        RefinementType {
+                                            base: TypeName {
+                                                name: "str",
+                                            },
+                                            width: Some(
+                                                IntegerLit {
+                                                    value: 48,
+                                                    kind: Decimal,
+                                                },
+                                            ),
+                                            min: None,
+                                            max: None,
+                                        },
+                                        RefinementType {
+                                            base: GenericType {
+                                                base: TypeName {
+                                                    name: "Set",
+                                                },
+                                                args: [
+                                                    (
+                                                        "",
+                                                        GenericType {
+                                                            base: TypeName {
+                                                                name: "Address",
+                                                            },
+                                                            args: [
+                                                                (
+                                                                    "",
+                                                                    TypeName {
+                                                                        name: "str",
+                                                                    },
+                                                                ),
+                                                            ],
+                                                        },
+                                                    ),
+                                                ],
+                                            },
+                                            width: Some(
+                                                IntegerLit {
+                                                    value: 2,
+                                                    kind: Decimal,
+                                                },
+                                            ),
+                                            min: Some(
+                                                IntegerLit {
+                                                    value: 1,
+                                                    kind: Decimal,
+                                                },
+                                            ),
+                                            max: None,
+                                        },
+                                    ],
+                                },
+                            ),
+                        ],
+                    },
+                },
+            ),
+        ],
+    },
+    width: Some(
+        IntegerLit {
+            value: 1,
+            kind: Decimal,
+        },
+    ),
+    min: None,
+    max: None,
+}"#;
+
+    let lexer = Lexer::new(source.as_bytes(), "test").expect("Failed to create lexer");
+    let mut storage = Storage::new();
+
+    let model = Parser::new(lexer, &mut storage, None)
+        .parse()
+        .expect("Failed to parse source");
+    assert!(!model.any_errors(), "Parsing failed with errors");
+
+    let tree = model.tree().as_printable(&storage);
+    let serialized = format!("{:#?}", tree);
+
+    assert_eq!(
+        serialized, expected,
+        "Parsed type does not match expected structure"
+    );
+}

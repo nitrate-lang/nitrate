@@ -2,8 +2,8 @@ use super::expression::ExprRef;
 use super::storage::{ExprKey, Storage, TypeKey};
 
 pub struct Printable<'storage, 'a> {
-    pub storage: &'storage Storage<'a>,
-    pub expr: ExprKey<'a>,
+    storage: &'storage Storage<'a>,
+    expr: ExprKey<'a>,
 }
 
 impl<'storage, 'a> ExprKey<'a> {
