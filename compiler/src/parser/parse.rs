@@ -9,6 +9,9 @@ pub struct Parser<'storage, 'a> {
     pub(crate) lexer: Lexer<'a>,
     pub(crate) storage: &'storage mut Storage<'a>,
     pub(crate) log: Logger,
+    // Source files are 2^32 bytes max, so this won't overflow
+    pub(crate) generic_type_depth: i64,
+    pub(crate) generic_type_suffix_terminator_ambiguity: bool,
     failed_bit: bool,
 }
 
@@ -18,6 +21,8 @@ impl<'storage, 'a> Parser<'storage, 'a> {
             lexer,
             storage,
             log,
+            generic_type_depth: 0,
+            generic_type_suffix_terminator_ambiguity: false,
             failed_bit: false,
         }
     }

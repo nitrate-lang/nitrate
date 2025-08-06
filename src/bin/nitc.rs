@@ -112,10 +112,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             // for token in tokens {
             //     println!("{}", token);
             // }
+            println!("Successfully parsed file: {}", filename);
         }
     }
-
-    println!("Successfully parsed file: {}", filename);
 
     Ok(())
 }

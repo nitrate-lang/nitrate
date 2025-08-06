@@ -28,8 +28,8 @@ impl<'storage, 'a> Parser<'storage, 'a> {
                 self.set_failed_bit();
                 error!(
                     self.log,
-                    "error[P????]: Failed to parse type's minimum refinement bound\n--> {}",
-                    self.lexer.current_position()
+                    "error[P????]: Unable to parse type's minimum refinement bound\n--> {}",
+                    self.lexer.sync_position()
                 );
             }
 
@@ -38,7 +38,7 @@ impl<'storage, 'a> Parser<'storage, 'a> {
                 error!(
                     self.log,
                     "error[P????]: Expected a colon after type's minimum refinement bound\n--> {}",
-                    self.lexer.current_position()
+                    self.lexer.sync_position()
                 );
             }
         }
@@ -50,8 +50,8 @@ impl<'storage, 'a> Parser<'storage, 'a> {
                 self.set_failed_bit();
                 error!(
                     self.log,
-                    "error[P????]: Failed to parse type's maximum refinement bound\n--> {}",
-                    self.lexer.current_position()
+                    "error[P????]: Unable to parse type's maximum refinement bound\n--> {}",
+                    self.lexer.sync_position()
                 );
             }
 
@@ -60,7 +60,7 @@ impl<'storage, 'a> Parser<'storage, 'a> {
                 error!(
                     self.log,
                     "error[P????]: Expected a right bracket to close minimum/maximum constraints\n--> {}",
-                    self.lexer.current_position()
+                    self.lexer.sync_position()
                 );
             }
         }
@@ -68,6 +68,9 @@ impl<'storage, 'a> Parser<'storage, 'a> {
 
     fn parse_refinement_options(&mut self) -> RefinementOptions<'a> {
         let mut options = RefinementOptions::default();
+        if self.generic_type_suffix_terminator_ambiguity {
+            return options;
+        }
 
         if self.lexer.skip_if(&Token::Punct(Punct::Colon)) {
             if self.lexer.next_is(&Token::Punct(Punct::LeftBracket)) {
@@ -79,8 +82,8 @@ impl<'storage, 'a> Parser<'storage, 'a> {
                     self.set_failed_bit();
                     error!(
                         self.log,
-                        "error[P????]: Failed to parse type's width refinement bound\n--> {}",
-                        self.lexer.current_position()
+                        "error[P????]: Unable to parse type's width refinement bound\n--> {}",
+                        self.lexer.sync_position()
                     );
                 }
 
@@ -92,7 +95,7 @@ impl<'storage, 'a> Parser<'storage, 'a> {
                         error!(
                             self.log,
                             "error[P????]: Expected a left bracket for type's range refinement bounds\n--> {}",
-                            self.lexer.current_position()
+                            self.lexer.sync_position()
                         );
                     }
                 }
@@ -102,20 +105,97 @@ impl<'storage, 'a> Parser<'storage, 'a> {
         options
     }
 
-    fn parse_generic_arguments(&mut self) -> Vec<(&'a str, ExprKey<'a>)> {
-        let mut args = Vec::new();
+    fn parse_generic_argument(&mut self) -> Option<(&'a str, ExprKey<'a>)> {
+        let mut argname: &'a str = "";
 
-        // TODO: Parse generic
+        match self.lexer.peek().into_token() {
+            Token::Name(name) => {
+                /* Named generic argument syntax is ambiguous,
+                 * an identifier can be followed by a colon
+                 * to indicate a named argument (followed by the expression value).
+                 * However, if it is not followed by a colon, the identifier is
+                 * to be parsed as an expression.
+                 */
+                let rewind_pos = self.lexer.sync_position();
+                self.lexer.skip();
 
-        args
+                if self.lexer.skip_if(&Token::Punct(Punct::Colon)) {
+                    argname = name.name();
+                } else {
+                    self.lexer.rewind(rewind_pos);
+                }
+            }
+
+            _ => {}
+        }
+
+        if let Some(arg_expr) = self.parse_expression() {
+            Some((argname, arg_expr))
+        } else {
+            self.set_failed_bit();
+            error!(
+                self.log,
+                "error[P????]: Unable to parse generic type argument value\n--> {}",
+                self.lexer.sync_position()
+            );
+            None
+        }
     }
 
-    fn parse_type_name(&mut self, name: &'a str) -> Option<TypeKey<'a>> {
+    fn parse_generic_arguments(&mut self) -> Vec<(&'a str, ExprKey<'a>)> {
+        assert!(self.lexer.peek_t() == Token::Op(Operator::LogicLt));
+
+        self.lexer.skip();
+        self.generic_type_depth += 1;
+        self.generic_type_suffix_terminator_ambiguity = false;
+
+        let mut arguments = Vec::new();
+
+        self.lexer.skip_if(&Token::Punct(Punct::Comma));
+        while self.generic_type_depth > 0 && !self.lexer.is_eof() {
+            if self.lexer.skip_if(&Token::Op(Operator::LogicGt)) {
+                self.generic_type_depth -= 1;
+                break;
+            }
+
+            if self.lexer.skip_if(&Token::Op(Operator::BitShr)) {
+                self.generic_type_depth -= 2;
+                self.generic_type_suffix_terminator_ambiguity = true;
+                break;
+            }
+
+            if self.lexer.skip_if(&Token::Op(Operator::BitRotr)) {
+                self.generic_type_depth -= 3;
+                self.generic_type_suffix_terminator_ambiguity = true;
+                break;
+            }
+
+            if let Some(arg) = self.parse_generic_argument() {
+                arguments.push(arg);
+            } else {
+                self.set_failed_bit();
+                error!(
+                    self.log,
+                    "error[P????]: Unable to parse generic type\n--> {}",
+                    self.lexer.sync_position()
+                );
+                break;
+            }
+
+            if self.lexer.skip_if(&Token::Punct(Punct::Comma)) {
+                continue;
+            }
+        }
+
+        arguments
+    }
+
+    fn parse_named_type_name(&mut self, name: &'a str) -> Option<TypeKey<'a>> {
         assert!(self.lexer.peek_t() == Token::Name(Name::new(name)));
         self.lexer.skip();
 
         let mut bb = Builder::new(self.storage);
-        let principal = match name {
+        match name {
             "u1" | "bool" => Some(bb.get_bool()),
             "u8" => Some(bb.get_u8()),
             "u16" => Some(bb.get_u16()),
@@ -134,10 +214,45 @@ impl<'storage, 'a> Parser<'storage, 'a> {
             "f128" => Some(bb.get_f128()),
             "_" => Some(bb.get_infer_type()),
             name => bb.create_type_name(name),
-        };
+        }
+    }
+
+    fn parse_named_type(&mut self, name: &'a str) -> Option<TypeKey<'a>> {
+        assert!(self.lexer.peek_t() == Token::Name(Name::new(name)));
+        let principal = self.parse_named_type_name(name);
 
         if self.lexer.next_is(&Token::Op(Operator::LogicLt)) {
+            let is_already_parsing_generic_type = self.generic_type_depth != 0;
             let generic_args = self.parse_generic_arguments();
+
+            if !is_already_parsing_generic_type {
+                if self.generic_type_depth != 0 {
+                    self.set_failed_bit();
+                    error!(
+                        self.log,
+                        "error[P????]: Mismatched generic type '>' delimiters or invalid generic type\n--> {}",
+                        self.lexer.sync_position()
+                    );
+                }
+
+                self.generic_type_depth = 0;
+                self.generic_type_suffix_terminator_ambiguity = false;
+            }
+
+            if let Some(principal) = principal {
+                return Builder::new(self.storage)
+                    .create_generic_type()
+                    .with_principal(principal)
+                    .add_arguments(generic_args)
+                    .build();
+            } else {
+                self.set_failed_bit();
+                error!(
+                    self.log,
+                    "error[P????]: Unable to construct generic type due to previous errors\n--> {}",
+                    self.lexer.sync_position()
+                );
+            }
         }
 
         principal
@@ -162,8 +277,8 @@ impl<'storage, 'a> Parser<'storage, 'a> {
                 self.set_failed_bit();
                 error!(
                     self.log,
-                    "error[P????]: Failed to parse tuple element type\n--> {}",
-                    self.lexer.current_position()
+                    "error[P????]: Unable to parse tuple element type\n--> {}",
+                    self.lexer.sync_position()
                 );
             }
 
@@ -175,7 +290,7 @@ impl<'storage, 'a> Parser<'storage, 'a> {
                     error!(
                         self.log,
                         "error[P????]: Expected comma or right brace in tuple type\n--> {}",
-                        self.lexer.current_position()
+                        self.lexer.sync_position()
                     );
 
                     break;
@@ -189,74 +304,20 @@ impl<'storage, 'a> Parser<'storage, 'a> {
             .build()
     }
 
-    fn parse_array_or_slice_or_map(&mut self) -> Option<TypeKey<'a>> {
-        self.lexer.skip();
-        let element_type = self.parse_type();
-
-        if self.lexer.skip_if(&Token::Punct(Punct::Semicolon)) {
-            if let Some(array_count) = self.parse_expression() {
-                if let Some(element_type) = element_type {
-                    Builder::new(self.storage)
-                        .create_array_type()
-                        .with_element(element_type)
-                        .with_count(array_count)
-                        .build()
-                } else {
-                    self.set_failed_bit();
-                    error!(
-                        self.log,
-                        "error[P????]: Failed to parse element type for array\n--> {}",
-                        self.lexer.current_position()
-                    );
-                    None
-                }
-            } else {
-                self.set_failed_bit();
-                error!(
-                    self.log,
-                    "error[P????]: Failed to parse length expression for array\n--> {}",
-                    self.lexer.current_position()
-                );
-                None
-            }
-        } else if self.lexer.skip_if(&Token::Op(Operator::Arrow)) {
-            if let Some(map_value_type) = self.parse_type() {
-                if let Some(map_key_type) = element_type {
-                    Builder::new(self.storage)
-                        .create_map_type()
-                        .with_key(map_key_type)
-                        .with_value(map_value_type)
-                        .build()
-                } else {
-                    self.set_failed_bit();
-                    error!(
-                        self.log,
-                        "error[P????]: Failed to parse map's key type\n--> {}",
-                        self.lexer.current_position()
-                    );
-                    None
-                }
-            } else {
-                self.set_failed_bit();
-                error!(
-                    self.log,
-                    "error[P????]: Failed to parse map's value type\n--> {}",
-                    self.lexer.current_position()
-                );
-                None
-            }
-        } else if self.lexer.skip_if(&Token::Punct(Punct::RightBracket)) {
+    fn parse_rest_of_array(&mut self, element_type: Option<TypeKey<'a>>) -> Option<TypeKey<'a>> {
+        let array_type = if let Some(array_count) = self.parse_expression() {
             if let Some(element_type) = element_type {
                 Builder::new(self.storage)
-                    .create_slice_type()
+                    .create_array_type()
                     .with_element(element_type)
+                    .with_count(array_count)
                     .build()
             } else {
                 self.set_failed_bit();
                 error!(
                     self.log,
-                    "error[P????]: Failed to parse element type for slice\n--> {}",
-                    self.lexer.current_position()
+                    "error[P????]: Unable to parse element type for array\n--> {}",
+                    self.lexer.sync_position()
                 );
                 None
             }
@@ -264,11 +325,106 @@ impl<'storage, 'a> Parser<'storage, 'a> {
             self.set_failed_bit();
             error!(
                 self.log,
-                "error[P????]: Expected semicolon or right bracket in array/slice type\n--> {}",
-                self.lexer.current_position()
+                "error[P????]: Unable to parse length expression for array\n--> {}",
+                self.lexer.sync_position()
             );
             None
+        };
+
+        if !self.lexer.skip_if(&Token::Punct(Punct::RightBracket)) {
+            self.set_failed_bit();
+            error!(
+                self.log,
+                "error[P????]: Expected right bracket to close array type\n--> {}",
+                self.lexer.sync_position()
+            );
         }
+
+        array_type
+    }
+
+    fn parse_rest_of_map_type(&mut self, key_type: Option<TypeKey<'a>>) -> Option<TypeKey<'a>> {
+        let map_type = if let Some(map_value_type) = self.parse_type() {
+            if let Some(map_key_type) = key_type {
+                Builder::new(self.storage)
+                    .create_map_type()
+                    .with_key(map_key_type)
+                    .with_value(map_value_type)
+                    .build()
+            } else {
+                self.set_failed_bit();
+                error!(
+                    self.log,
+                    "error[P????]: Unable to parse map's key type\n--> {}",
+                    self.lexer.sync_position()
+                );
+                None
+            }
+        } else {
+            self.set_failed_bit();
+            error!(
+                self.log,
+                "error[P????]: Unable to parse map's value type\n--> {}",
+                self.lexer.sync_position()
+            );
+            None
+        };
+
+        if !self.lexer.skip_if(&Token::Punct(Punct::RightBracket)) {
+            self.set_failed_bit();
+            error!(
+                self.log,
+                "error[P????]: Expected right bracket to close map type\n--> {}",
+                self.lexer.sync_position()
+            );
+        }
+
+        map_type
+    }
+
+    fn parse_rest_of_slice_type(
+        &mut self,
+        element_type: Option<TypeKey<'a>>,
+    ) -> Option<TypeKey<'a>> {
+        let slice_type = if let Some(element_type) = element_type {
+            Builder::new(self.storage)
+                .create_slice_type()
+                .with_element(element_type)
+                .build()
+        } else {
+            self.set_failed_bit();
+            error!(
+                self.log,
+                "error[P????]: Unable to parse element type for slice\n--> {}",
+                self.lexer.sync_position()
+            );
+            None
+        };
+
+        slice_type
+    }
+
+    fn parse_array_or_slice_or_map(&mut self) -> Option<TypeKey<'a>> {
+        self.lexer.skip();
+        let base_type = self.parse_type();
+
+        let whatever_type = if self.lexer.skip_if(&Token::Punct(Punct::Semicolon)) {
+            self.parse_rest_of_array(base_type)
+        } else if self.lexer.skip_if(&Token::Op(Operator::Arrow)) {
+            self.parse_rest_of_map_type(base_type)
+        } else if self.lexer.skip_if(&Token::Punct(Punct::RightBracket)) {
+            self.parse_rest_of_slice_type(base_type)
+        } else {
+            self.set_failed_bit();
+            error!(
+                self.log,
+                "error[P????]: Expected semicolon, right bracket, or arrow in array/slice/map type respectively\n--> {}",
+                self.lexer.sync_position()
+            );
+            None
+        };
+
+        whatever_type
     }
 
     fn parse_managed_type(&mut self) -> Option<TypeKey<'a>> {
@@ -288,8 +444,8 @@ impl<'storage, 'a> Parser<'storage, 'a> {
             self.set_failed_bit();
             error!(
                 self.log,
-                "error[P????]: Failed to parse reference's target type\n--> {}",
-                self.lexer.current_position()
+                "error[P????]: Unable to parse reference's target type\n--> {}",
+                self.lexer.sync_position()
             );
             None
         }
@@ -312,8 +468,8 @@ impl<'storage, 'a> Parser<'storage, 'a> {
             self.set_failed_bit();
             error!(
                 self.log,
-                "error[P????]: Failed to parse pointer's target type\n--> {}",
-                self.lexer.current_position()
+                "error[P????]: Unable to parse pointer's target type\n--> {}",
+                self.lexer.sync_position()
             );
             None
         }
@@ -324,7 +480,7 @@ impl<'storage, 'a> Parser<'storage, 'a> {
         let start_pos = first_token.start();
 
         match first_token.into_token() {
-            Token::Name(name) => self.parse_type_name(name.name()),
+            Token::Name(name) => self.parse_named_type(name.name()),
             Token::Punct(Punct::LeftBrace) => self.parse_tuple_type(),
             Token::Punct(Punct::LeftBracket) => self.parse_array_or_slice_or_map(),
             Token::Op(Operator::BitAnd) => self.parse_managed_type(),
@@ -467,7 +623,7 @@ impl<'storage, 'a> Parser<'storage, 'a> {
                 error!(
                     self.log,
                     "error[P????]: Expected right parenthesis after type expression\n--> {}",
-                    self.lexer.current_position()
+                    self.lexer.sync_position()
                 );
             }
 
@@ -489,8 +645,8 @@ impl<'storage, 'a> Parser<'storage, 'a> {
                     self.set_failed_bit();
                     error!(
                         self.log,
-                        "error[P????]: Failed to construct refinement type due to previous errors\n--> {}",
-                        self.lexer.current_position()
+                        "error[P????]: Unable to construct refinement type due to previous errors\n--> {}",
+                        self.lexer.sync_position()
                     );
                 }
             }
