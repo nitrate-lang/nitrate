@@ -4,14 +4,14 @@ use super::storage::{ExprKey, TypeKey};
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct FunctionType<'a> {
     parameters: Vec<FunctionParameter<'a>>,
-    return_type: Option<TypeKey<'a>>,
+    return_type: TypeKey<'a>,
     attributes: Vec<ExprKey<'a>>,
 }
 
 impl<'a> FunctionType<'a> {
     pub(crate) fn new(
         parameters: Vec<FunctionParameter<'a>>,
-        return_type: Option<TypeKey<'a>>,
+        return_type: TypeKey<'a>,
         attributes: Vec<ExprKey<'a>>,
     ) -> Self {
         FunctionType {
@@ -25,7 +25,7 @@ impl<'a> FunctionType<'a> {
         &self.parameters
     }
 
-    pub fn return_type(&self) -> Option<TypeKey<'a>> {
+    pub fn return_type(&self) -> TypeKey<'a> {
         self.return_type
     }
 

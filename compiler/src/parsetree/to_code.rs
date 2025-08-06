@@ -233,7 +233,7 @@ impl<'a> ToCode<'a> for Function<'a> {
 
         if let Some(return_type) = self.return_type() {
             if !matches!(return_type.get(bank), TypeOwned::InferType) {
-                tokens.push(Token::Punct(Punct::Colon));
+                tokens.push(Token::Op(Operator::Arrow));
                 return_type.to_code(bank, tokens, options);
             }
         }
@@ -370,11 +370,10 @@ impl<'a> ToCode<'a> for FunctionType<'a> {
         }
         tokens.push(Token::Punct(Punct::RightParen));
 
-        if let Some(return_type) = self.return_type() {
-            if !matches!(return_type.get(bank), TypeOwned::InferType) {
-                tokens.push(Token::Punct(Punct::Colon));
-                return_type.to_code(bank, tokens, options);
-            }
+        let return_type = self.return_type();
+        if !matches!(return_type.get(bank), TypeOwned::InferType) {
+            tokens.push(Token::Op(Operator::Arrow));
+            return_type.to_code(bank, tokens, options);
         }
     }
 }

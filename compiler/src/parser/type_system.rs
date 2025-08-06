@@ -129,7 +129,13 @@ impl<'storage, 'a> Parser<'storage, 'a> {
             _ => {}
         }
 
-        if let Some(argval) = self.parse_expression() {
+        let argval = if self.lexer.skip_if(&Token::Op(Operator::Add)) {
+            self.parse_expression()
+        } else {
+            self.parse_type().map(|t| t.into())
+        };
+
+        if let Some(argval) = argval {
             Some((argname, argval))
         } else {
             self.set_failed_bit();
@@ -498,18 +504,129 @@ impl<'storage, 'a> Parser<'storage, 'a> {
         }
     }
 
+    fn parse_function_attributes(&mut self) -> Vec<ExprKey<'a>> {
+        let mut attributes = Vec::new();
+
+        if self.lexer.skip_if(&Token::Punct(Punct::LeftBracket)) {
+            self.lexer.skip_if(&Token::Punct(Punct::Comma));
+            while !self.lexer.is_eof() {
+                if self.lexer.skip_if(&Token::Punct(Punct::RightBracket)) {
+                    break;
+                }
+
+                if let Some(attribute) = self.parse_expression() {
+                    attributes.push(attribute);
+                } else {
+                    self.set_failed_bit();
+                    error!(
+                        self.log,
+                        "error[P????]: Unable to parse function type attribute\n--> {}",
+                        self.lexer.sync_position()
+                    );
+                }
+
+                if !self.lexer.skip_if(&Token::Punct(Punct::Comma)) {
+                    if self.lexer.skip_if(&Token::Punct(Punct::RightBracket)) {
+                        break;
+                    } else {
+                        self.set_failed_bit();
+                        error!(
+                            self.log,
+                            "error[P????]: Expected comma or right bracket in function type attributes\n--> {}",
+                            self.lexer.sync_position()
+                        );
+                        break;
+                    }
+                }
+            }
+        }
+
+        attributes
+    }
+
+    fn parse_function_parameters(
+        &mut self,
+    ) -> Vec<(&'a str, Option<TypeKey<'a>>, Option<ExprKey<'a>>)> {
+        let mut parameters = Vec::new();
+
+        if self.lexer.skip_if(&Token::Punct(Punct::LeftParen)) {
+            self.lexer.skip_if(&Token::Punct(Punct::Comma));
+            while !self.lexer.is_eof() {
+                if self.lexer.skip_if(&Token::Punct(Punct::RightParen)) {
+                    break;
+                }
+
+                if let Token::Name(param_name) = self.lexer.next().into_token() {
+                    let ty = if self.lexer.skip_if(&Token::Punct(Punct::Colon)) {
+                        self.parse_type()
+                    } else {
+                        None
+                    };
+
+                    let default = if self.lexer.skip_if(&Token::Op(Operator::Set)) {
+                        self.parse_expression()
+                    } else {
+                        None
+                    };
+
+                    parameters.push((param_name.name(), ty, default));
+                } else {
+                    self.set_failed_bit();
+                    error!(
+                        self.log,
+                        "error[P????]: Expected a parameter name in function parameters\n--> {}",
+                        self.lexer.sync_position()
+                    );
+                }
+
+                if !self.lexer.skip_if(&Token::Punct(Punct::Comma)) {
+                    if self.lexer.skip_if(&Token::Punct(Punct::RightParen)) {
+                        break;
+                    } else {
+                        self.set_failed_bit();
+                        error!(
+                            self.log,
+                            "error[P????]: Expected comma or right parenthesis in function parameters\n--> {}",
+                            self.lexer.sync_position()
+                        );
+                        break;
+                    }
+                }
+            }
+        }
+
+        parameters
+    }
+
     fn parse_function_type(&mut self) -> Option<TypeKey<'a>> {
         assert!(self.lexer.peek_t() == Token::Keyword(Keyword::Fn));
         self.lexer.skip();
 
-        // TODO: Handle function types
-        self.set_failed_bit();
-        error!(
-            self.log,
-            "error[P????]: Function types are not yet implemented\n--> {}",
-            self.lexer.sync_position()
-        );
-        None
+        let attributes = self.parse_function_attributes();
+        let parameters = self.parse_function_parameters();
+
+        let return_type = if self.lexer.skip_if(&Token::Op(Operator::Arrow)) {
+            if let Some(return_type) = self.parse_type() {
+                return_type
+            } else {
+                self.set_failed_bit();
+                error!(
+                    self.log,
+                    "error[P????]: Unable to parse function return type\n--> {}",
+                    self.lexer.sync_position()
+                );
+                Builder::new(self.storage).get_infer_type()
+            }
+        } else {
+            Builder::new(self.storage).get_infer_type()
+        };
+
+        Builder::new(self.storage)
+            .create_function_type()
+            .add_attributes(attributes)
+            .add_parameters(parameters)
+            .with_return_type(return_type)
+            .build()
     }
 
     fn parse_opaque_type(&mut self) -> Option<TypeKey<'a>> {

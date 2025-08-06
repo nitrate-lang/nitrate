@@ -58,7 +58,7 @@ impl<'storage, 'a> Parser<'storage, 'a> {
                     .build()
             }
 
-            _ => self.parse_type().map(|t| t.into()),
+            _ => None,
         }
     }
 
@@ -74,7 +74,7 @@ impl<'storage, 'a> Parser<'storage, 'a> {
             license_id(source_license),
         );
 
-        let program = self.parse_expression()?;
+        let program = self.parse_type()?.into();
 
         Some(SourceModel::new(
             language_version,

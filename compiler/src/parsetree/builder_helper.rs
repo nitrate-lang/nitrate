@@ -786,7 +786,7 @@ impl<'storage, 'a> FunctionTypeBuilder<'storage, 'a> {
         self.storage
             .add_type(TypeOwned::FunctionType(FunctionType::new(
                 self.parameters,
-                self.return_type,
+                self.return_type.expect("Return type must be provided"),
                 self.attributes,
             )))
     }

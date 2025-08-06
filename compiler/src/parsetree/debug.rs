@@ -98,10 +98,7 @@ impl<'storage, 'a> std::fmt::Debug for Printable<'storage, 'a> {
                         })
                         .collect::<Vec<_>>(),
                 )
-                .field(
-                    "return_type",
-                    &x.return_type().map(|t| t.as_printable(self.storage)),
-                )
+                .field("return_type", &x.return_type().as_printable(self.storage))
                 .field(
                     "attributes",
                     &x.attributes()
