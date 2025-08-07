@@ -86,7 +86,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         )?;
 
         if !parser.has_failed() {
-            println!("{:#?}", model);
+            // println!("{:#?}", model);
             println!("model = {:#?}", model.tree().as_printable(&storage));
             println!("Successfully parsed file: {}", filename);
         }
