@@ -1,6 +1,6 @@
 use super::parse::Parser;
 use crate::lexer::*;
-use crate::parsetree::ExprKey;
+use crate::parsetree::*;
 use slog::error;
 use spdx::LicenseId;
 use spdx::license_id;
@@ -158,7 +158,31 @@ impl<'storage, 'a> Parser<'storage, 'a> {
         while let Some((macro_name, macro_args)) = self.parse_macro_prefix() {
             match macro_name {
                 "nitrate" => {
+                    if macro_args.len() != 1 {
+                        self.set_failed_bit();
+                        error!(
+                            self.log,
+                            "error[P????]: Expected exactly one argument for 'nitrate' (language version) macro\n--> {}",
+                            self.lexer.sync_position()
+                        );
+                        continue;
+                    }
                     // TODO: Language version
+
+                    let argument = macro_args.first().unwrap().get(self.storage);
+                    if let ExprRef::FloatLit(float) = argument {
+                        let mantissa = float.get() as u32;
+                        let exponent = float - (mantissa as f64);
+
+                        preamble.language_version = (float as u32, 0);
+                    } else {
+                        self.set_failed_bit();
+                        error!(
+                            self.log,
+                            "error[P????]: Expected a float literal for 'nitrate' (language version) macro argument\n--> {}",
+                            self.lexer.sync_position()
+                        );
+                    }
                 }
 
                 "copyright" => {

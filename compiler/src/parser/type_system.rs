@@ -191,8 +191,19 @@ impl<'storage, 'a> Parser<'storage, 'a> {
                 break;
             }
 
-            if self.lexer.skip_if(&Token::Punct(Punct::Comma)) {
-                continue;
+            if !self.lexer.skip_if(&Token::Punct(Punct::Comma)) {
+                if !self.lexer.next_is(&Token::Op(Operator::LogicGt))
+                    && !self.lexer.next_is(&Token::Op(Operator::BitShr))
+                    && !self.lexer.next_is(&Token::Op(Operator::BitRotr))
+                {
+                    self.set_failed_bit();
+                    error!(
+                        self.log,
+                        "error[P????]: Expected ',' or '>' to separate generic type arguments\n--> {}",
+                        self.lexer.sync_position()
+                    );
+                    break;
+                }
             }
         }
 
