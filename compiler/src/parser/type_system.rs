@@ -18,6 +18,8 @@ impl<'a> RefinementOptions<'a> {
 
 impl<'storage, 'a> Parser<'storage, 'a> {
     fn parse_refinement_bounds(&mut self, options: &mut RefinementOptions<'a>) {
+        // TODO: Fix to fail-fast parsing
+
         assert!(self.lexer.peek_t() == Token::Punct(Punct::LeftBracket));
         self.lexer.skip();
 
@@ -67,6 +69,8 @@ impl<'storage, 'a> Parser<'storage, 'a> {
     }
 
     fn parse_refinement_options(&mut self) -> RefinementOptions<'a> {
+        // TODO: Fix to fail-fast parsing
+
         let mut options = RefinementOptions::default();
         if self.generic_type_suffix_terminator_ambiguity {
             return options;
@@ -106,7 +110,9 @@ impl<'storage, 'a> Parser<'storage, 'a> {
     }
 
     fn parse_generic_argument(&mut self) -> Option<(&'a str, ExprKey<'a>)> {
-        let mut argname: &'a str = "";
+        // TODO: Fix to fail-fast parsing
+
+        let mut argument_name: &'a str = "";
 
         match self.lexer.peek_t() {
             Token::Name(name) => {
@@ -120,7 +126,7 @@ impl<'storage, 'a> Parser<'storage, 'a> {
                 self.lexer.skip();
 
                 if self.lexer.skip_if(&Token::Punct(Punct::Colon)) {
-                    argname = name.name();
+                    argument_name = name.name();
                 } else {
                     self.lexer.rewind(rewind_pos);
                 }
@@ -129,26 +135,28 @@ impl<'storage, 'a> Parser<'storage, 'a> {
             _ => {}
         }
 
-        let argval = if self.lexer.skip_if(&Token::Op(Op::Add)) {
+        let type_or_expression = if self.lexer.skip_if(&Token::Op(Op::Add)) {
             self.parse_expression()
         } else {
             self.parse_type().map(|t| t.into())
         };
 
-        if let Some(argval) = argval {
-            Some((argname, argval))
-        } else {
+        let Some(argument_value) = type_or_expression else {
             self.set_failed_bit();
             error!(
                 self.log,
                 "[P????]: Unable to parse generic type argument value\n--> {}",
                 self.lexer.sync_position()
             );
-            None
-        }
+            return None;
+        };
+
+        Some((argument_name, argument_value))
     }
 
     fn parse_generic_arguments(&mut self) -> Vec<(&'a str, ExprKey<'a>)> {
+        // TODO: Fix to fail-fast parsing
+
         assert!(self.lexer.peek_t() == Token::Op(Op::LogicLt));
         self.lexer.skip();
 
@@ -159,29 +167,24 @@ impl<'storage, 'a> Parser<'storage, 'a> {
 
         self.lexer.skip_if(&Token::Punct(Punct::Comma));
         while self.generic_type_depth > 0 && !self.lexer.is_eof() {
-            // '>'
             if self.lexer.skip_if(&Token::Op(Op::LogicGt)) {
                 self.generic_type_depth -= 1;
                 break;
             }
 
-            // '>>'
             if self.lexer.skip_if(&Token::Op(Op::BitShr)) {
                 self.generic_type_depth -= 2;
                 self.generic_type_suffix_terminator_ambiguity = true;
                 break;
             }
 
-            // '>>>'
             if self.lexer.skip_if(&Token::Op(Op::BitRotr)) {
                 self.generic_type_depth -= 3;
                 self.generic_type_suffix_terminator_ambiguity = true;
                 break;
             }
 
-            if let Some(generic_argument) = self.parse_generic_argument() {
-                generic_arguments.push(generic_argument);
-            } else {
+            let Some(generic_argument) = self.parse_generic_argument() else {
                 self.set_failed_bit();
                 error!(
                     self.log,
@@ -189,13 +192,20 @@ impl<'storage, 'a> Parser<'storage, 'a> {
                     self.lexer.sync_position()
                 );
                 break;
+            };
+
+            generic_arguments.push(generic_argument);
+
+            if self.generic_type_depth == 0 {
+                break;
             }
 
             if !self.lexer.skip_if(&Token::Punct(Punct::Comma)) {
-                if !self.lexer.next_is(&Token::Op(Op::LogicGt))
-                    && !self.lexer.next_is(&Token::Op(Op::BitShr))
-                    && !self.lexer.next_is(&Token::Op(Op::BitRotr))
-                {
+                let any_terminator = self.lexer.next_is(&Token::Op(Op::LogicGt))
+                    || self.lexer.next_is(&Token::Op(Op::BitShr))
+                    || self.lexer.next_is(&Token::Op(Op::BitRotr));
+
+                if !any_terminator {
                     self.set_failed_bit();
                     error!(
                         self.log,
@@ -211,6 +221,8 @@ impl<'storage, 'a> Parser<'storage, 'a> {
     }
 
     fn parse_named_type_name(&mut self, type_name: &'a str) -> Option<TypeKey<'a>> {
+        // TODO: Fix to fail-fast parsing
+
         assert!(self.lexer.peek_t() == Token::Name(Name::new(type_name)));
         self.lexer.skip();
 
@@ -238,6 +250,8 @@ impl<'storage, 'a> Parser<'storage, 'a> {
     }
 
     fn parse_named_type(&mut self, type_name: &'a str) -> Option<TypeKey<'a>> {
+        // TODO: Fix to fail-fast parsing
+
         assert!(self.lexer.peek_t() == Token::Name(Name::new(type_name)));
 
         let named_type_base = self.parse_named_type_name(type_name);
@@ -273,24 +287,26 @@ impl<'storage, 'a> Parser<'storage, 'a> {
             self.generic_type_suffix_terminator_ambiguity = false;
         }
 
-        if let Some(generic_base) = named_type_base {
-            Builder::new(self.storage)
-                .create_generic_type()
-                .with_base(generic_base)
-                .add_arguments(generic_args)
-                .build()
-        } else {
+        let Some(generic_base) = named_type_base else {
             self.set_failed_bit();
             error!(
                 self.log,
                 "[P????]: Unable to construct generic type due to previous errors\n--> {}",
                 self.lexer.sync_position()
             );
-            None
-        }
+            return None;
+        };
+
+        Builder::new(self.storage)
+            .create_generic_type()
+            .with_base(generic_base)
+            .add_arguments(generic_args)
+            .build()
     }
 
     fn parse_tuple_type(&mut self) -> Option<TypeKey<'a>> {
+        // TODO: Fix to fail-fast parsing
+
         assert!(self.lexer.peek_t() == Token::Punct(Punct::LeftBrace));
         self.lexer.skip();
 
@@ -302,30 +318,29 @@ impl<'storage, 'a> Parser<'storage, 'a> {
                 break;
             }
 
-            if let Some(element) = self.parse_type() {
-                tuple_elements.push(element);
-            } else {
+            let Some(element) = self.parse_type() else {
                 self.set_failed_bit();
                 error!(
                     self.log,
                     "[P????]: Unable to parse tuple element type\n--> {}",
                     self.lexer.sync_position()
                 );
-            }
+                return None;
+            };
+
+            tuple_elements.push(element);
 
             if !self.lexer.skip_if(&Token::Punct(Punct::Comma)) {
-                if self.lexer.skip_if(&Token::Punct(Punct::RightBrace)) {
-                    break;
-                } else {
+                if !self.lexer.skip_if(&Token::Punct(Punct::RightBrace)) {
                     self.set_failed_bit();
                     error!(
                         self.log,
                         "[P????]: Expected comma or right brace in tuple type\n--> {}",
                         self.lexer.sync_position()
                     );
-
-                    break;
                 }
+
+                break;
             }
         }
 
@@ -336,6 +351,8 @@ impl<'storage, 'a> Parser<'storage, 'a> {
     }
 
     fn parse_rest_of_array(&mut self, element_type: Option<TypeKey<'a>>) -> Option<TypeKey<'a>> {
+        // TODO: Fix to fail-fast parsing
+
         assert!(self.lexer.peek_t() == Token::Punct(Punct::Semicolon));
         self.lexer.skip();
 
@@ -378,6 +395,8 @@ impl<'storage, 'a> Parser<'storage, 'a> {
     }
 
     fn parse_rest_of_map_type(&mut self, key_type: Option<TypeKey<'a>>) -> Option<TypeKey<'a>> {
+        // TODO: Fix to fail-fast parsing
+
         assert!(self.lexer.peek_t() == Token::Op(Op::Arrow));
         self.lexer.skip();
 
@@ -423,6 +442,8 @@ impl<'storage, 'a> Parser<'storage, 'a> {
         &mut self,
         element_type: Option<TypeKey<'a>>,
     ) -> Option<TypeKey<'a>> {
+        // TODO: Fix to fail-fast parsing
+
         assert!(self.lexer.peek_t() == Token::Punct(Punct::RightBracket));
         self.lexer.skip();
 
@@ -445,6 +466,8 @@ impl<'storage, 'a> Parser<'storage, 'a> {
     }
 
     fn parse_array_or_slice_or_map(&mut self) -> Option<TypeKey<'a>> {
+        // TODO: Fix to fail-fast parsing
+
         assert!(self.lexer.peek_t() == Token::Punct(Punct::LeftBracket));
         self.lexer.skip();
 
@@ -468,6 +491,8 @@ impl<'storage, 'a> Parser<'storage, 'a> {
     }
 
     fn parse_managed_type(&mut self) -> Option<TypeKey<'a>> {
+        // TODO: Fix to fail-fast parsing
+
         assert!(self.lexer.peek_t() == Token::Op(Op::BitAnd));
         self.lexer.skip();
 
@@ -492,6 +517,8 @@ impl<'storage, 'a> Parser<'storage, 'a> {
     }
 
     fn parse_unmanaged_type(&mut self) -> Option<TypeKey<'a>> {
+        // TODO: Fix to fail-fast parsing
+
         assert!(self.lexer.peek_t() == Token::Op(Op::Mul));
         self.lexer.skip();
 
@@ -516,6 +543,8 @@ impl<'storage, 'a> Parser<'storage, 'a> {
     }
 
     fn parse_function_attributes(&mut self) -> Vec<ExprKey<'a>> {
+        // TODO: Fix to fail-fast parsing
+
         let mut attributes = Vec::new();
 
         if self.lexer.skip_if(&Token::Punct(Punct::LeftBracket)) {
@@ -556,6 +585,8 @@ impl<'storage, 'a> Parser<'storage, 'a> {
     }
 
     fn parse_function_parameters(&mut self) -> Vec<FunctionParameter<'a>> {
+        // TODO: Fix to fail-fast parsing
+
         let mut parameters = Vec::new();
 
         if self.lexer.skip_if(&Token::Punct(Punct::LeftParen)) {
@@ -616,6 +647,8 @@ impl<'storage, 'a> Parser<'storage, 'a> {
     }
 
     fn parse_function_type(&mut self) -> Option<TypeKey<'a>> {
+        // TODO: Fix to fail-fast parsing
+
         assert!(self.lexer.peek_t() == Token::Keyword(Keyword::Fn));
         self.lexer.skip();
 
@@ -651,6 +684,8 @@ impl<'storage, 'a> Parser<'storage, 'a> {
     }
 
     fn parse_opaque_type(&mut self) -> Option<TypeKey<'a>> {
+        // TODO: Fix to fail-fast parsing
+
         assert!(self.lexer.peek_t() == Token::Keyword(Keyword::Opaque));
         self.lexer.skip();
 
@@ -689,6 +724,8 @@ impl<'storage, 'a> Parser<'storage, 'a> {
     }
 
     fn parse_type_primary(&mut self) -> Option<TypeKey<'a>> {
+        // TODO: Fix to fail-fast parsing
+
         let first_token = self.lexer.peek();
         let start_pos = first_token.start();
 
@@ -824,6 +861,8 @@ impl<'storage, 'a> Parser<'storage, 'a> {
     }
 
     pub fn parse_type(&mut self) -> Option<TypeKey<'a>> {
+        // TODO: Fix to fail-fast parsing
+
         if self.lexer.skip_if(&Token::Punct(Punct::LeftParen)) {
             let inner = self.parse_type();
 
@@ -869,96 +908,100 @@ impl<'storage, 'a> Parser<'storage, 'a> {
 fn test_parse_type() {
     let source = "Option<[str -> Vec<{u8, str: 48, Set<Address<str>>: 2: [1:]}>]>: 1";
 
-    let expected = r#"RefinementType {
-    base: GenericType {
-        base: TypeName {
-            name: "Option",
-        },
-        args: [
-            (
-                "",
-                MapType {
-                    key: TypeName {
-                        name: "str",
-                    },
-                    value: GenericType {
-                        base: TypeName {
-                            name: "Vec",
-                        },
-                        args: [
-                            (
-                                "",
-                                TupleType {
-                                    elements: [
-                                        u8,
-                                        RefinementType {
-                                            base: TypeName {
-                                                name: "str",
-                                            },
-                                            width: Some(
-                                                IntegerLit {
-                                                    value: 48,
-                                                    kind: Decimal,
-                                                },
-                                            ),
-                                            min: None,
-                                            max: None,
-                                        },
-                                        RefinementType {
-                                            base: GenericType {
-                                                base: TypeName {
-                                                    name: "Set",
-                                                },
-                                                args: [
-                                                    (
-                                                        "",
-                                                        GenericType {
-                                                            base: TypeName {
-                                                                name: "Address",
-                                                            },
-                                                            args: [
-                                                                (
-                                                                    "",
-                                                                    TypeName {
-                                                                        name: "str",
-                                                                    },
-                                                                ),
-                                                            ],
+    let expected = r#"Block {
+    elements: [
+        RefinementType {
+            base: GenericType {
+                base: TypeName {
+                    name: "Option",
+                },
+                args: [
+                    (
+                        "",
+                        MapType {
+                            key: TypeName {
+                                name: "str",
+                            },
+                            value: GenericType {
+                                base: TypeName {
+                                    name: "Vec",
+                                },
+                                args: [
+                                    (
+                                        "",
+                                        TupleType {
+                                            elements: [
+                                                u8,
+                                                RefinementType {
+                                                    base: TypeName {
+                                                        name: "str",
+                                                    },
+                                                    width: Some(
+                                                        IntegerLit {
+                                                            value: 48,
+                                                            kind: Decimal,
                                                         },
                                                     ),
-                                                ],
-                                            },
-                                            width: Some(
-                                                IntegerLit {
-                                                    value: 2,
-                                                    kind: Decimal,
+                                                    min: None,
+                                                    max: None,
                                                 },
-                                            ),
-                                            min: Some(
-                                                IntegerLit {
-                                                    value: 1,
-                                                    kind: Decimal,
+                                                RefinementType {
+                                                    base: GenericType {
+                                                        base: TypeName {
+                                                            name: "Set",
+                                                        },
+                                                        args: [
+                                                            (
+                                                                "",
+                                                                GenericType {
+                                                                    base: TypeName {
+                                                                        name: "Address",
+                                                                    },
+                                                                    args: [
+                                                                        (
+                                                                            "",
+                                                                            TypeName {
+                                                                                name: "str",
+                                                                            },
+                                                                        ),
+                                                                    ],
+                                                                },
+                                                            ),
+                                                        ],
+                                                    },
+                                                    width: Some(
+                                                        IntegerLit {
+                                                            value: 2,
+                                                            kind: Decimal,
+                                                        },
+                                                    ),
+                                                    min: Some(
+                                                        IntegerLit {
+                                                            value: 1,
+                                                            kind: Decimal,
+                                                        },
+                                                    ),
+                                                    max: None,
                                                 },
-                                            ),
-                                            max: None,
+                                            ],
                                         },
-                                    ],
-                                },
-                            ),
-                        ],
-                    },
+                                    ),
+                                ],
+                            },
+                        },
+                    ),
+                ],
+            },
+            width: Some(
+                IntegerLit {
+                    value: 1,
+                    kind: Decimal,
                 },
             ),
-        ],
-    },
-    width: Some(
-        IntegerLit {
-            value: 1,
-            kind: Decimal,
+            min: None,
+            max: None,
         },
-    ),
-    min: None,
-    max: None,
+    ],
 }"#;
 
     let lexer = Lexer::new(source.as_bytes(), "test").expect("Failed to create lexer");
