@@ -744,7 +744,7 @@ impl<'storage, 'a> Parser<'storage, 'a> {
                 self.set_failed_bit();
                 error!(
                     self.log,
-                    "error[P????]: Unexpected string token '{}' while parsing type\n--> {}",
+                    "error[P????]: Unexpected string token {} while parsing type\n--> {}",
                     string,
                     start_pos
                 );

@@ -8,7 +8,7 @@ use super::function_type::FunctionType;
 use super::generic_type::GenericType;
 use super::list::ListLit;
 use super::map_type::MapType;
-use super::number::{FloatLit, IntegerLit};
+use super::number::IntegerLit;
 use super::object::ObjectLit;
 use super::reference::{ManagedRefType, UnmanagedRefType};
 use super::refinement_type::RefinementType;
@@ -98,9 +98,9 @@ impl<'storage, 'a> FloatBuilder<'storage, 'a> {
     }
 
     pub fn build(self) -> Option<ExprKey<'a>> {
-        self.storage.add_expr(ExprOwned::FloatLit(FloatLit::new(
+        self.storage.add_expr(ExprOwned::FloatLit(
             self.value.expect("Float value must be provided"),
-        )))
+        ))
     }
 }
 

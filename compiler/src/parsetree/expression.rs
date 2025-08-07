@@ -6,7 +6,7 @@ use super::function_type::FunctionType;
 use super::generic_type::GenericType;
 use super::list::ListLit;
 use super::map_type::MapType;
-use super::number::{FloatLit, IntegerLit};
+use super::number::IntegerLit;
 use super::object::ObjectLit;
 use super::opaque_type::OpaqueType;
 use super::reference::{ManagedRefType, UnmanagedRefType};
@@ -142,7 +142,7 @@ pub(crate) enum ExprOwned<'a> {
 
     /* Literal Expressions */
     IntegerLit(IntegerLit),
-    FloatLit(FloatLit),
+    FloatLit(f64),
     StringLit(StringLit<'a>),
     CharLit(char),
     ListLit(ListLit<'a>),
@@ -235,7 +235,7 @@ pub enum ExprRef<'storage, 'a> {
 
     /* Literal Expressions */
     IntegerLit(&'storage IntegerLit),
-    FloatLit(&'storage FloatLit),
+    FloatLit(f64),
     StringLit(&'storage StringLit<'a>),
     CharLit(char),
     ListLit(&'storage ListLit<'a>),
@@ -293,7 +293,7 @@ pub enum ExprRefMut<'storage, 'a> {
 
     /* Literal Expressions */
     IntegerLit(&'storage IntegerLit),
-    FloatLit(&'storage FloatLit),
+    FloatLit(f64),
     StringLit(&'storage StringLit<'a>),
     CharLit(char),
     ListLit(&'storage mut ListLit<'a>),

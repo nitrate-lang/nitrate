@@ -5,7 +5,7 @@ use super::block::Block;
 use super::expression::{ExprKind, ExprOwned, ExprRef, ExprRefMut, TypeKind, TypeOwned};
 use super::function::Function;
 use super::list::ListLit;
-use super::number::{FloatLit, IntegerLit};
+use super::number::IntegerLit;
 use super::object::ObjectLit;
 use super::returns::Return;
 use super::statement::Statement;
@@ -303,7 +303,7 @@ impl<'a> TypeKey<'a> {
 #[derive(Debug, Clone)]
 pub struct Storage<'a> {
     integers: Vec<IntegerLit>,
-    floats: Vec<FloatLit>,
+    floats: Vec<f64>,
     strings: Vec<StringLit<'a>>,
     lists: Vec<ListLit<'a>>,
     objects: Vec<ObjectLit<'a>>,
@@ -638,7 +638,7 @@ impl<'a> Storage<'a> {
             ExprKind::Discard => Some(ExprRef::Discard),
 
             ExprKind::IntegerLit => self.integers.get(index).map(ExprRef::IntegerLit),
-            ExprKind::FloatLit => self.floats.get(index).map(ExprRef::FloatLit),
+            ExprKind::FloatLit => self.floats.get(index).map(|&f| ExprRef::FloatLit(f)),
             ExprKind::StringLit => self.strings.get(index).map(ExprRef::StringLit),
             ExprKind::CharLit => char::from_u32(index as u32).map(|ch| ExprRef::CharLit(ch)),
             ExprKind::ListLit => self.lists.get(index).map(ExprRef::ListLit),
@@ -696,7 +696,7 @@ impl<'a> Storage<'a> {
             ExprKind::Discard => Some(ExprRefMut::Discard),
 
             ExprKind::IntegerLit => self.integers.get(index).map(ExprRefMut::IntegerLit),
-            ExprKind::FloatLit => self.floats.get(index).map(ExprRefMut::FloatLit),
+            ExprKind::FloatLit => self.floats.get(index).map(|&f| ExprRefMut::FloatLit(f)),
             ExprKind::StringLit => self.strings.get(index).map(ExprRefMut::StringLit),
             ExprKind::CharLit => char::from_u32(index as u32).map(|ch| ExprRefMut::CharLit(ch)),
             ExprKind::ListLit => self.lists.get_mut(index).map(ExprRefMut::ListLit),

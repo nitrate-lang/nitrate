@@ -42,38 +42,3 @@ impl std::ops::Deref for IntegerLit {
         &self.value
     }
 }
-
-#[derive(Debug, Clone, PartialOrd, PartialEq)]
-pub struct FloatLit {
-    value: f64,
-}
-
-impl FloatLit {
-    pub(crate) fn new(value: f64) -> Self {
-        FloatLit { value }
-    }
-
-    pub fn into_inner(self) -> f64 {
-        self.value
-    }
-
-    pub fn get(&self) -> f64 {
-        self.value
-    }
-}
-
-impl std::cmp::Eq for FloatLit {}
-
-impl std::ops::Deref for FloatLit {
-    type Target = f64;
-
-    fn deref(&self) -> &Self::Target {
-        &self.value
-    }
-}
-
-impl std::hash::Hash for FloatLit {
-    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
-        self.value.to_bits().hash(state);
-    }
-}

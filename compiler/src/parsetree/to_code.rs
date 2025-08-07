@@ -7,7 +7,7 @@ use super::function_type::FunctionType;
 use super::generic_type::GenericType;
 use super::list::ListLit;
 use super::map_type::MapType;
-use super::number::{FloatLit, IntegerLit};
+use super::number::IntegerLit;
 use super::object::ObjectLit;
 use super::opaque_type::OpaqueType;
 use super::reference::{ManagedRefType, UnmanagedRefType};
@@ -20,9 +20,7 @@ use super::string::StringLit;
 use super::tuple_type::TupleType;
 use super::unary_op::{UnaryOp, UnaryOperator};
 use super::variable::{Variable, VariableKind};
-use crate::lexer::{
-    Float, Integer, Keyword, Name, Operator, Punct, StringData as StringLitToken, Token,
-};
+use crate::lexer::{Float, Integer, Keyword, Name, Operator, Punct, Token};
 
 #[derive(Debug, Default, Clone, PartialEq, PartialOrd, Hash)]
 pub struct CodeFormat {}
@@ -39,13 +37,6 @@ impl<'a> ToCode<'a> for IntegerLit {
 
         let number = Integer::new(u128, self.kind());
         tokens.push(Token::Integer(number));
-    }
-}
-
-impl<'a> ToCode<'a> for FloatLit {
-    fn to_code(&self, _bank: &Storage<'a>, tokens: &mut Vec<Token<'a>>, _options: &CodeFormat) {
-        let number = Float::new(self.get());
-        tokens.push(Token::Float(number));
     }
 }
 
@@ -470,7 +461,7 @@ impl<'a> ToCode<'a> for ExprKey<'a> {
             ExprRef::Discard => {}
 
             ExprRef::IntegerLit(e) => e.to_code(bank, tokens, options),
-            ExprRef::FloatLit(e) => e.to_code(bank, tokens, options),
+            ExprRef::FloatLit(e) => tokens.push(Token::Float(Float::new(e))),
             ExprRef::StringLit(e) => e.to_code(bank, tokens, options),
             ExprRef::CharLit(e) => tokens.push(Token::Char(e)),
             ExprRef::ListLit(e) => e.to_code(bank, tokens, options),

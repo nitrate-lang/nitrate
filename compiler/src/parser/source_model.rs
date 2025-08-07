@@ -14,7 +14,7 @@ pub struct CopyrightMetadata<'a> {
 }
 
 impl<'a> CopyrightMetadata<'a> {
-    pub(crate) fn new(
+    fn new(
         author_name: Option<&'a str>,
         copyright_year: Option<u16>,
         license_id: Option<LicenseId>,
@@ -162,24 +162,24 @@ impl<'storage, 'a> Parser<'storage, 'a> {
                         self.set_failed_bit();
                         error!(
                             self.log,
-                            "error[P????]: Expected exactly one argument for 'nitrate' (language version) macro\n--> {}",
+                            "error[P????]: Expected exactly one argument (e.g. '1.0') for 'nitrate' (language version) macro\n--> {}",
                             self.lexer.sync_position()
                         );
                         continue;
                     }
-                    // TODO: Language version
 
                     let argument = macro_args.first().unwrap().get(self.storage);
                     if let ExprRef::FloatLit(float) = argument {
-                        let mantissa = float.get() as u32;
-                        let exponent = float - (mantissa as f64);
+                        // Assuming the float is a version number like 1.0, we can parse it
+                        let major = float as u32; // Take int part as major version
+                        let minor = ((float - (major as f64)) * 100.0) as u32; // Take fractional part as minor version
 
-                        preamble.language_version = (float as u32, 0);
+                        preamble.language_version = (major, minor);
                     } else {
                         self.set_failed_bit();
                         error!(
                             self.log,
-                            "error[P????]: Expected a float literal for 'nitrate' (language version) macro argument\n--> {}",
+                            "error[P????]: Expected a float literal (e.g. '1.0') for 'nitrate' (language version) macro argument\n--> {}",
                             self.lexer.sync_position()
                         );
                     }
@@ -190,7 +190,39 @@ impl<'storage, 'a> Parser<'storage, 'a> {
                 }
 
                 "license" => {
-                    // TODO: License metadata
+                    if macro_args.len() != 1 {
+                        self.set_failed_bit();
+                        error!(
+                            self.log,
+                            "error[P????]: Expected exactly one argument (SPDX license ID string) for 'license' macro\n--> {}",
+                            self.lexer.sync_position()
+                        );
+                        continue;
+                    }
+
+                    let argument = macro_args.first().unwrap().get(self.storage);
+                    if let ExprRef::StringLit(maybe_license) = argument {
+                        let maybe_license = maybe_license.clone().into_inner();
+
+                        if let Some(license) = license_id(maybe_license.get()) {
+                            preamble.copyright.license_id = Some(license);
+                        } else {
+                            self.set_failed_bit();
+                            error!(
+                                self.log,
+                                "error[P????]: Unknown SPDX license ID {}. Expected a valid SPDX license ID string for 'license' macro argument\n--> {}",
+                                maybe_license,
+                                self.lexer.sync_position()
+                            );
+                        }
+                    } else {
+                        self.set_failed_bit();
+                        error!(
+                            self.log,
+                            "error[P????]: Expected a string literal (SPDX license ID) for 'license' macro argument\n--> {}",
+                            self.lexer.sync_position()
+                        );
+                    }
                 }
 
                 "insource" => {
@@ -209,20 +241,6 @@ impl<'storage, 'a> Parser<'storage, 'a> {
             }
         }
 
-        let language_version = (1, 0);
-
-        let source_license = "MIT";
-        let source_author = "Wesley";
-        let source_year = 2025;
-
-        SourcePreamble {
-            language_version,
-            copyright: CopyrightMetadata::new(
-                Some(source_author),
-                Some(source_year),
-                license_id(source_license),
-            ),
-            insource_config: HashMap::new(),
-        }
+        preamble
     }
 }
