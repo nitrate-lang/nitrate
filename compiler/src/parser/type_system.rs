@@ -110,8 +110,6 @@ impl<'storage, 'a> Parser<'storage, 'a> {
     }
 
     fn parse_generic_argument(&mut self) -> Option<(&'a str, ExprKey<'a>)> {
-        // TODO: Fix to fail-fast parsing
-
         let mut argument_name: &'a str = "";
 
         match self.lexer.peek_t() {
@@ -148,25 +146,24 @@ impl<'storage, 'a> Parser<'storage, 'a> {
                 "[P????]: Unable to parse generic type argument value\n--> {}",
                 self.lexer.sync_position()
             );
+
             return None;
         };
 
         Some((argument_name, argument_value))
     }
 
-    fn parse_generic_arguments(&mut self) -> Vec<(&'a str, ExprKey<'a>)> {
-        // TODO: Fix to fail-fast parsing
-
+    fn parse_generic_arguments(&mut self) -> Option<Vec<(&'a str, ExprKey<'a>)>> {
         assert!(self.lexer.peek_t() == Token::Op(Op::LogicLt));
         self.lexer.skip();
 
         self.generic_type_depth += 1;
         self.generic_type_suffix_terminator_ambiguity = false;
 
-        let mut generic_arguments = Vec::new();
-
+        let mut arguments = Vec::new();
         self.lexer.skip_if(&Token::Punct(Punct::Comma));
-        while self.generic_type_depth > 0 && !self.lexer.is_eof() {
+
+        while self.generic_type_depth > 0 {
             if self.lexer.skip_if(&Token::Op(Op::LogicGt)) {
                 self.generic_type_depth -= 1;
                 break;
@@ -191,10 +188,11 @@ impl<'storage, 'a> Parser<'storage, 'a> {
                     "[P????]: Unable to parse generic type\n--> {}",
                     self.lexer.sync_position()
                 );
-                break;
+
+                return None;
             };
 
-            generic_arguments.push(generic_argument);
+            arguments.push(generic_argument);
 
             if self.generic_type_depth == 0 {
                 break;
@@ -212,17 +210,16 @@ impl<'storage, 'a> Parser<'storage, 'a> {
                         "[P????]: Expected ',' or '>' to separate generic type arguments\n--> {}",
                         self.lexer.sync_position()
                     );
-                    break;
+
+                    return None;
                 }
             }
         }
 
-        generic_arguments
+        Some(arguments)
     }
 
     fn parse_named_type_name(&mut self, type_name: &'a str) -> Option<TypeKey<'a>> {
-        // TODO: Fix to fail-fast parsing
-
         assert!(self.lexer.peek_t() == Token::Name(Name::new(type_name)));
         self.lexer.skip();
 
@@ -250,17 +247,35 @@ impl<'storage, 'a> Parser<'storage, 'a> {
     }
 
     fn parse_named_type(&mut self, type_name: &'a str) -> Option<TypeKey<'a>> {
-        // TODO: Fix to fail-fast parsing
-
         assert!(self.lexer.peek_t() == Token::Name(Name::new(type_name)));
 
-        let named_type_base = self.parse_named_type_name(type_name);
+        let Some(basis_type) = self.parse_named_type_name(type_name) else {
+            self.set_failed_bit();
+            error!(
+                self.log,
+                "[P????]: Unable to parse named type '{}'\n--> {}",
+                type_name,
+                self.lexer.sync_position()
+            );
+
+            return None;
+        };
+
         if !self.lexer.next_is(&Token::Op(Op::LogicLt)) {
-            return named_type_base;
+            return Some(basis_type);
         }
 
         let is_already_parsing_generic_type = self.generic_type_depth != 0;
-        let generic_args = self.parse_generic_arguments();
+        let Some(generic_args) = self.parse_generic_arguments() else {
+            self.set_failed_bit();
+            error!(
+                self.log,
+                "[P????]: Unable to parse generic type arguments\n--> {}",
+                self.lexer.sync_position()
+            );
+
+            return None;
+        };
 
         if !is_already_parsing_generic_type {
             match self.generic_type_depth {
@@ -272,6 +287,8 @@ impl<'storage, 'a> Parser<'storage, 'a> {
                         "[P????]: Unexpected generic type '>' delimiter or invalid generic type\n--> {}",
                         self.lexer.sync_position()
                     );
+
+                    return None;
                 }
                 _ => {
                     self.set_failed_bit();
@@ -280,6 +297,8 @@ impl<'storage, 'a> Parser<'storage, 'a> {
                         "[P????]: Unexpected generic type '>>' delimiter or invalid generic type\n--> {}",
                         self.lexer.sync_position()
                     );
+
+                    return None;
                 }
             }
 
@@ -287,33 +306,21 @@ impl<'storage, 'a> Parser<'storage, 'a> {
             self.generic_type_suffix_terminator_ambiguity = false;
         }
 
-        let Some(generic_base) = named_type_base else {
-            self.set_failed_bit();
-            error!(
-                self.log,
-                "[P????]: Unable to construct generic type due to previous errors\n--> {}",
-                self.lexer.sync_position()
-            );
-            return None;
-        };
-
         Builder::new(self.storage)
             .create_generic_type()
-            .with_base(generic_base)
+            .with_base(basis_type)
             .add_arguments(generic_args)
             .build()
     }
 
     fn parse_tuple_type(&mut self) -> Option<TypeKey<'a>> {
-        // TODO: Fix to fail-fast parsing
-
         assert!(self.lexer.peek_t() == Token::Punct(Punct::LeftBrace));
         self.lexer.skip();
 
         let mut tuple_elements = Vec::new();
-
         self.lexer.skip_if(&Token::Punct(Punct::Comma));
-        while !self.lexer.is_eof() {
+
+        loop {
             if self.lexer.skip_if(&Token::Punct(Punct::RightBrace)) {
                 break;
             }
@@ -325,22 +332,25 @@ impl<'storage, 'a> Parser<'storage, 'a> {
                     "[P????]: Unable to parse tuple element type\n--> {}",
                     self.lexer.sync_position()
                 );
+
                 return None;
             };
 
             tuple_elements.push(element);
 
             if !self.lexer.skip_if(&Token::Punct(Punct::Comma)) {
-                if !self.lexer.skip_if(&Token::Punct(Punct::RightBrace)) {
+                if self.lexer.skip_if(&Token::Punct(Punct::RightBrace)) {
+                    break;
+                } else {
                     self.set_failed_bit();
                     error!(
                         self.log,
                         "[P????]: Expected comma or right brace in tuple type\n--> {}",
                         self.lexer.sync_position()
                     );
-                }
 
-                break;
+                    return None;
+                }
             }
         }
 
@@ -491,55 +501,53 @@ impl<'storage, 'a> Parser<'storage, 'a> {
     }
 
     fn parse_managed_type(&mut self) -> Option<TypeKey<'a>> {
-        // TODO: Fix to fail-fast parsing
-
         assert!(self.lexer.peek_t() == Token::Op(Op::BitAnd));
         self.lexer.skip();
 
         let is_mutable = self.lexer.skip_if(&Token::Keyword(Keyword::Mut))
             || (self.lexer.skip_if(&Token::Keyword(Keyword::Const)) && false);
 
-        if let Some(target) = self.parse_type() {
-            Builder::new(self.storage)
-                .create_managed_type()
-                .with_target(target)
-                .with_mutability(is_mutable)
-                .build()
-        } else {
+        let Some(target) = self.parse_type() else {
             self.set_failed_bit();
             error!(
                 self.log,
                 "[P????]: Unable to parse reference's target type\n--> {}",
                 self.lexer.sync_position()
             );
-            None
-        }
+
+            return None;
+        };
+
+        Builder::new(self.storage)
+            .create_managed_type()
+            .with_target(target)
+            .with_mutability(is_mutable)
+            .build()
     }
 
     fn parse_unmanaged_type(&mut self) -> Option<TypeKey<'a>> {
-        // TODO: Fix to fail-fast parsing
-
         assert!(self.lexer.peek_t() == Token::Op(Op::Mul));
         self.lexer.skip();
 
         let is_mutable = self.lexer.skip_if(&Token::Keyword(Keyword::Mut))
             || (self.lexer.skip_if(&Token::Keyword(Keyword::Const)) && false);
 
-        if let Some(target) = self.parse_type() {
-            Builder::new(self.storage)
-                .create_unmanaged_type()
-                .with_target(target)
-                .with_mutability(is_mutable)
-                .build()
-        } else {
+        let Some(target) = self.parse_type() else {
             self.set_failed_bit();
             error!(
                 self.log,
-                "[P????]: Unable to parse pointer's target type\n--> {}",
+                "[P????]: Unable to parse unmanaged type's target type\n--> {}",
                 self.lexer.sync_position()
             );
-            None
-        }
+
+            return None;
+        };
+
+        Builder::new(self.storage)
+            .create_unmanaged_type()
+            .with_target(target)
+            .with_mutability(is_mutable)
+            .build()
     }
 
     fn parse_function_attributes(&mut self) -> Option<Vec<ExprKey<'a>>> {
@@ -749,10 +757,8 @@ impl<'storage, 'a> Parser<'storage, 'a> {
     }
 
     fn parse_type_primary(&mut self) -> Option<TypeKey<'a>> {
-        // TODO: Fix to fail-fast parsing
-
         let first_token = self.lexer.peek();
-        let start_pos = first_token.start();
+        let current_pos = first_token.start();
 
         let old_generic_type_depth = self.generic_type_depth;
         let must_preserve_generic_depth = !matches!(first_token.token(), Token::Name(_));
@@ -775,8 +781,9 @@ impl<'storage, 'a> Parser<'storage, 'a> {
                     self.log,
                     "[P????]: Unexpected integer token '{}' while parsing type\n--> {}",
                     int,
-                    start_pos
+                    current_pos
                 );
+
                 None
             }
 
@@ -786,8 +793,9 @@ impl<'storage, 'a> Parser<'storage, 'a> {
                     self.log,
                     "[P????]: Unexpected float token '{}' while parsing type\n--> {}",
                     float,
-                    start_pos
+                    current_pos
                 );
+
                 None
             }
 
@@ -797,8 +805,9 @@ impl<'storage, 'a> Parser<'storage, 'a> {
                     self.log,
                     "[P????]: Unexpected keyword token '{}' while parsing type\n--> {}",
                     func,
-                    start_pos
+                    current_pos
                 );
+
                 None
             }
 
@@ -808,8 +817,9 @@ impl<'storage, 'a> Parser<'storage, 'a> {
                     self.log,
                     "[P????]: Unexpected string token {} while parsing type\n--> {}",
                     string,
-                    start_pos
+                    current_pos
                 );
+
                 None
             }
 
@@ -819,8 +829,9 @@ impl<'storage, 'a> Parser<'storage, 'a> {
                     self.log,
                     "[P????]: Unexpected binary string token '{}' while parsing type\n--> {}",
                     binary,
-                    start_pos
+                    current_pos
                 );
+
                 None
             }
 
@@ -830,8 +841,9 @@ impl<'storage, 'a> Parser<'storage, 'a> {
                     self.log,
                     "[P????]: Unexpected character token '{}' while parsing type\n--> {}",
                     char,
-                    start_pos
+                    current_pos
                 );
+
                 None
             }
 
@@ -841,8 +853,9 @@ impl<'storage, 'a> Parser<'storage, 'a> {
                     self.log,
                     "[P????]: Unexpected punctuation token '{}' while parsing type\n--> {}",
                     punc,
-                    start_pos
+                    current_pos
                 );
+
                 None
             }
 
@@ -852,8 +865,9 @@ impl<'storage, 'a> Parser<'storage, 'a> {
                     self.log,
                     "[P????]: Unexpected operator token '{}' while parsing type\n--> {}",
                     op,
-                    start_pos
+                    current_pos
                 );
+
                 None
             }
 
@@ -861,8 +875,9 @@ impl<'storage, 'a> Parser<'storage, 'a> {
                 self.set_failed_bit();
                 error!(
                     self.log,
-                    "[P????]: Unexpected comment token while parsing type\n--> {}", start_pos
+                    "[P????]: Unexpected comment token while parsing type\n--> {}", current_pos
                 );
+
                 None
             }
 
@@ -872,8 +887,9 @@ impl<'storage, 'a> Parser<'storage, 'a> {
                 self.set_failed_bit();
                 error!(
                     self.log,
-                    "[P????]: Illegal token encountered during type parsing\n--> {}", start_pos
+                    "[P????]: Illegal token encountered during type parsing\n--> {}", current_pos
                 );
+
                 None
             }
         };
