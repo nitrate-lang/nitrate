@@ -1,3 +1,5 @@
+use crate::lexer::StringData;
+
 use super::binary_op::BinaryOp;
 use super::block::Block;
 use super::expression::{ExprKind, ExprOwned, ExprRef, ExprRefMut, TypeKind, TypeOwned};
@@ -348,7 +350,10 @@ impl<'a> Storage<'a> {
         };
 
         {
-            let empty_string = (Self::STRING_LIT_EMPTY_INDEX, StringLit::new(""));
+            let empty_string = (
+                Self::STRING_LIT_EMPTY_INDEX,
+                StringLit::new(StringData::from_ref("")),
+            );
             storage.strings.insert(empty_string.0, empty_string.1);
         }
 

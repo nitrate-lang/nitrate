@@ -20,7 +20,7 @@ use super::string::StringLit;
 use super::tuple_type::TupleType;
 use super::unary_op::{UnaryOp, UnaryOperator};
 use super::variable::{Variable, VariableKind};
-use crate::lexer::IntegerKind;
+use crate::lexer::{IntegerKind, StringData};
 use apint::UInt;
 use std::collections::BTreeMap;
 
@@ -107,7 +107,7 @@ impl<'storage, 'a> FloatBuilder<'storage, 'a> {
 #[derive(Debug)]
 pub struct StringBuilder<'storage, 'a> {
     storage: &'storage mut Storage<'a>,
-    value: Option<&'a str>,
+    value: Option<StringData<'a>>,
 }
 
 impl<'storage, 'a> StringBuilder<'storage, 'a> {
@@ -118,12 +118,7 @@ impl<'storage, 'a> StringBuilder<'storage, 'a> {
         }
     }
 
-    pub fn with_utf8string(mut self, value: &'a str) -> Self {
-        self.value = Some(value);
-        self
-    }
-
-    pub fn with_raw_bytes(mut self, value: &'a str) -> Self {
+    pub fn with_utf8string(mut self, value: StringData<'a>) -> Self {
         self.value = Some(value);
         self
     }

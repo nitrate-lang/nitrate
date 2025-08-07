@@ -1,5 +1,7 @@
 use super::parse::Parser;
+use crate::lexer::*;
 use crate::parsetree::ExprKey;
+use slog::error;
 use spdx::LicenseId;
 use spdx::license_id;
 use std::collections::HashMap;
@@ -84,6 +86,7 @@ impl<'a> SourceModel<'a> {
     }
 }
 
+#[derive(Default)]
 pub struct SourcePreamble<'a> {
     pub language_version: (u32, u32),
     pub copyright: CopyrightMetadata<'a>,
@@ -91,8 +94,96 @@ pub struct SourcePreamble<'a> {
 }
 
 impl<'storage, 'a> Parser<'storage, 'a> {
+    fn parse_macro_prefix(&mut self) -> Option<(&'a str, Vec<ExprKey<'a>>)> {
+        // FIXME: Skip comments
+        while self.lexer.skip_if(&Token::Punct(Punct::Semicolon)) {}
+
+        if !self.lexer.skip_if(&Token::Punct(Punct::AtSign)) {
+            return None;
+        }
+
+        if let Token::Name(macro_name) = self.lexer.next_t() {
+            let mut macro_args = Vec::new();
+
+            self.lexer.skip_if(&Token::Punct(Punct::Comma));
+            while !self.lexer.is_eof() {
+                if self.lexer.skip_if(&Token::Punct(Punct::Semicolon)) {
+                    break;
+                }
+
+                if let Some(arg) = self.parse_expression() {
+                    macro_args.push(arg);
+                } else {
+                    self.set_failed_bit();
+                    error!(
+                        self.log,
+                        "error[P????]: Unable to parse macro argument for macro '{}'\n--> {}",
+                        macro_name.name(),
+                        self.lexer.sync_position()
+                    );
+                    break;
+                }
+
+                if !self.lexer.skip_if(&Token::Punct(Punct::Comma)) {
+                    if self.lexer.skip_if(&Token::Punct(Punct::Semicolon)) {
+                        break;
+                    } else {
+                        self.set_failed_bit();
+                        error!(
+                            self.log,
+                            "error[P????]: Expected ',' or ';' after macro argument\n--> {}",
+                            self.lexer.sync_position()
+                        );
+                        break;
+                    }
+                }
+            }
+
+            Some((macro_name.name(), macro_args))
+        } else {
+            self.set_failed_bit();
+            error!(
+                self.log,
+                "error[P????]: Expected macro name after '@'\n--> {}",
+                self.lexer.sync_position()
+            );
+            None
+        }
+    }
+
     pub(crate) fn parse_preamble(&mut self) -> SourcePreamble<'a> {
         // TODO: Actually parse preamble from source file
+        let mut preamble = SourcePreamble::default();
+
+        while let Some((macro_name, macro_args)) = self.parse_macro_prefix() {
+            match macro_name {
+                "nitrate" => {
+                    // TODO: Language version
+                }
+
+                "copyright" => {
+                    // TODO: Copyright metadata
+                }
+
+                "license" => {
+                    // TODO: License metadata
+                }
+
+                "insource" => {
+                    // TODO: In-source configuration
+                }
+
+                _ => {
+                    self.set_failed_bit();
+                    error!(
+                        self.log,
+                        "error[P????]: Unknown macro '{}'\n--> {}",
+                        macro_name,
+                        self.lexer.sync_position()
+                    );
+                }
+            }
+        }
 
         let language_version = (1, 0);
 

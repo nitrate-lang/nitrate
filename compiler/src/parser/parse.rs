@@ -56,19 +56,46 @@ impl<'storage, 'a> Parser<'storage, 'a> {
                     .build()
             }
 
-            _ => None,
+            Token::Float(float) => {
+                self.lexer.skip();
+
+                Builder::new(self.storage)
+                    .create_float()
+                    .with_value(float.value())
+                    .build()
+            }
+
+            Token::String(string) => {
+                self.lexer.skip();
+
+                Builder::new(self.storage)
+                    .create_string()
+                    .with_utf8string(string)
+                    .build()
+            }
+
+            _ => self.parse_type().map(|t| t.into()),
         }
     }
 
     pub fn parse(&mut self) -> Option<SourceModel<'a>> {
         let preamble = self.parse_preamble();
-        let program = self.parse_type()?.into();
+
+        let mut expressions = Vec::new();
+        while let Some(program) = self.parse_expression() {
+            expressions.push(program);
+        }
+
+        let block = Builder::new(self.storage)
+            .create_block()
+            .add_expressions(expressions)
+            .build()?;
 
         Some(SourceModel::new(
             preamble.language_version,
             preamble.copyright,
             preamble.insource_config,
-            program,
+            block,
             self.has_failed(),
         ))
     }

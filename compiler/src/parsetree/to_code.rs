@@ -51,8 +51,7 @@ impl<'a> ToCode<'a> for FloatLit {
 
 impl<'a> ToCode<'a> for StringLit<'a> {
     fn to_code(&self, _bank: &Storage<'a>, tokens: &mut Vec<Token<'a>>, _options: &CodeFormat) {
-        let string_lit = StringLitToken::from_ref(self);
-        tokens.push(Token::String(string_lit));
+        tokens.push(Token::String(self.clone().into_inner()));
     }
 }
 

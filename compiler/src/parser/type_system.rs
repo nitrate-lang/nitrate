@@ -793,14 +793,7 @@ impl<'storage, 'a> Parser<'storage, 'a> {
                 None
             }
 
-            Token::Eof => {
-                self.set_failed_bit();
-                error!(
-                    self.log,
-                    "error[P????]: Unexpected end of file while parsing type\n--> {}", start_pos
-                );
-                None
-            }
+            Token::Eof => None,
 
             Token::Illegal => {
                 self.set_failed_bit();
