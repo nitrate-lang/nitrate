@@ -8,26 +8,14 @@ use std::collections::HashMap;
 
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct CopyrightMetadata<'a> {
-    author_name: Option<&'a str>,
+    author_name: Option<StringData<'a>>,
     copyright_year: Option<u16>,
     license_id: Option<LicenseId>,
 }
 
 impl<'a> CopyrightMetadata<'a> {
-    fn new(
-        author_name: Option<&'a str>,
-        copyright_year: Option<u16>,
-        license_id: Option<LicenseId>,
-    ) -> Self {
-        CopyrightMetadata {
-            author_name,
-            copyright_year,
-            license_id,
-        }
-    }
-
-    pub fn author_name(&self) -> Option<&'a str> {
-        self.author_name
+    pub fn author_name(&self) -> Option<&StringData<'a>> {
+        self.author_name.as_ref()
     }
 
     pub fn copyright_year(&self) -> Option<u16> {
@@ -95,7 +83,6 @@ pub struct SourcePreamble<'a> {
 
 impl<'storage, 'a> Parser<'storage, 'a> {
     fn parse_macro_prefix(&mut self) -> Option<(&'a str, Vec<ExprKey<'a>>)> {
-        // FIXME: Skip comments
         while self.lexer.skip_if(&Token::Punct(Punct::Semicolon)) {}
 
         if !self.lexer.skip_if(&Token::Punct(Punct::AtSign)) {
@@ -152,7 +139,6 @@ impl<'storage, 'a> Parser<'storage, 'a> {
     }
 
     pub(crate) fn parse_preamble(&mut self) -> SourcePreamble<'a> {
-        // TODO: Actually parse preamble from source file
         let mut preamble = SourcePreamble::default();
 
         while let Some((macro_name, macro_args)) = self.parse_macro_prefix() {
@@ -168,13 +154,17 @@ impl<'storage, 'a> Parser<'storage, 'a> {
                         continue;
                     }
 
-                    let argument = macro_args.first().unwrap().get(self.storage);
-                    if let ExprRef::FloatLit(float) = argument {
-                        // Assuming the float is a version number like 1.0, we can parse it
-                        let major = float as u32; // Take int part as major version
-                        let minor = ((float - (major as f64)) * 100.0) as u32; // Take fractional part as minor version
+                    if let ExprRef::FloatLit(semver) = macro_args[0].get(self.storage) {
+                        let version_string = semver.to_string();
+                        let pos = version_string
+                            .find(".")
+                            .expect("Failed to find '.' in version string");
+                        let (major, minor) = version_string.split_at(pos);
 
-                        preamble.language_version = (major, minor);
+                        preamble.language_version = (
+                            major.parse().expect("Failed to parse major version"),
+                            minor[1..].parse().expect("Failed to parse minor version"),
+                        );
                     } else {
                         self.set_failed_bit();
                         error!(
@@ -186,7 +176,48 @@ impl<'storage, 'a> Parser<'storage, 'a> {
                 }
 
                 "copyright" => {
-                    // TODO: Copyright metadata
+                    if macro_args.len() != 2 {
+                        self.set_failed_bit();
+                        error!(
+                            self.log,
+                            "error[P????]: Expected exactly two arguments (author name and year) for 'copyright' macro\n--> {}",
+                            self.lexer.sync_position()
+                        );
+                        continue;
+                    }
+
+                    if let ExprRef::StringLit(author) = macro_args[0].get(self.storage) {
+                        preamble.copyright.author_name = Some(author.clone().into_inner());
+                    } else {
+                        self.set_failed_bit();
+                        error!(
+                            self.log,
+                            "error[P????]: Expected a string literal (author name) for 'copyright' macro argument\n--> {}",
+                            self.lexer.sync_position()
+                        );
+                    }
+
+                    if let ExprRef::IntegerLit(year) = macro_args[1].get(self.storage) {
+                        preamble.copyright.copyright_year = Some(year.get_u128() as u16);
+                    } else {
+                        self.set_failed_bit();
+                        error!(
+                            self.log,
+                            "error[P????]: Expected an integer literal (year) for 'copyright' macro argument\n--> {}",
+                            self.lexer.sync_position()
+                        );
+                    }
+
+                    if preamble.copyright.author_name.is_none()
+                        || preamble.copyright.copyright_year.is_none()
+                    {
+                        self.set_failed_bit();
+                        error!(
+                            self.log,
+                            "error[P????]: 'copyright' macro requires both author name and year to be specified\n--> {}",
+                            self.lexer.sync_position()
+                        );
+                    }
                 }
 
                 "license" => {
@@ -200,8 +231,7 @@ impl<'storage, 'a> Parser<'storage, 'a> {
                         continue;
                     }
 
-                    let argument = macro_args.first().unwrap().get(self.storage);
-                    if let ExprRef::StringLit(maybe_license) = argument {
+                    if let ExprRef::StringLit(maybe_license) = macro_args[0].get(self.storage) {
                         let maybe_license = maybe_license.clone().into_inner();
 
                         if let Some(license) = license_id(maybe_license.get()) {
@@ -226,7 +256,7 @@ impl<'storage, 'a> Parser<'storage, 'a> {
                 }
 
                 "insource" => {
-                    // TODO: In-source configuration
+                    // TODO: In-source compiler/optimization/linting configuration options
                 }
 
                 _ => {
