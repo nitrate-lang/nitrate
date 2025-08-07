@@ -84,7 +84,6 @@ pub struct SourcePreamble<'a> {
 impl<'storage, 'a> Parser<'storage, 'a> {
     fn parse_macro_prefix(&mut self) -> Option<(&'a str, Vec<ExprKey<'a>>)> {
         while self.lexer.skip_if(&Token::Punct(Punct::Semicolon)) {}
-
         if !self.lexer.skip_if(&Token::Punct(Punct::AtSign)) {
             return None;
         }
@@ -104,7 +103,7 @@ impl<'storage, 'a> Parser<'storage, 'a> {
                     self.set_failed_bit();
                     error!(
                         self.log,
-                        "error[P????]: Unable to parse macro argument for macro '{}'\n--> {}",
+                        "error[P????]: Unable to parse argument expression for macro '{}'\n--> {}",
                         macro_name.name(),
                         self.lexer.sync_position()
                     );
@@ -118,7 +117,7 @@ impl<'storage, 'a> Parser<'storage, 'a> {
                         self.set_failed_bit();
                         error!(
                             self.log,
-                            "error[P????]: Expected ',' or ';' after macro argument\n--> {}",
+                            "error[P????]: Expected ',' or ';' after macro argument expression\n--> {}",
                             self.lexer.sync_position()
                         );
                         break;
@@ -138,125 +137,183 @@ impl<'storage, 'a> Parser<'storage, 'a> {
         }
     }
 
+    fn parse_preamble_version_number(&mut self, number: f64) -> Option<(u32, u32)> {
+        let mut pair = (None, None);
+
+        let input = number.to_string();
+        if let Some(dot_pos) = input.find(".") {
+            let (major_str, minor_str) = input.split_at(dot_pos);
+
+            if let Ok(major) = major_str.parse() {
+                pair.0 = Some(major);
+            }
+
+            if let Ok(minor) = minor_str[1..].parse() {
+                pair.1 = Some(minor);
+            }
+        } else {
+            if let Ok(major) = input.parse() {
+                pair.0 = Some(major);
+                pair.1 = Some(0);
+            }
+        }
+
+        pair.0.zip(pair.1).map(|(major, minor)| (major, minor))
+    }
+
+    fn parse_preamble_version_macro(&mut self, macro_args: Vec<ExprKey<'a>>) -> (u32, u32) {
+        if macro_args.len() != 1 {
+            self.set_failed_bit();
+            error!(
+                self.log,
+                "error[P????]: Expected exactly one argument (e.g. '1.0') for 'nitrate' (language version) macro\n--> {}",
+                self.lexer.sync_position()
+            );
+            return (1, 0);
+        }
+
+        if let ExprRef::FloatLit(float) = macro_args[0].get(self.storage) {
+            if let Some((major, minor)) = self.parse_preamble_version_number(float) {
+                (major, minor)
+            } else {
+                self.set_failed_bit();
+                error!(
+                    self.log,
+                    "error[P????]: Invalid version format '{}'. Expected 'major.minor' (e.g. '1.0') for 'nitrate' (language version) macro argument\n--> {}",
+                    float,
+                    self.lexer.sync_position()
+                );
+
+                (1, 0)
+            }
+        } else {
+            self.set_failed_bit();
+            error!(
+                self.log,
+                "error[P????]: Expected a float literal (e.g. '1.0') for 'nitrate' (language version) macro argument\n--> {}",
+                self.lexer.sync_position()
+            );
+
+            (1, 0)
+        }
+    }
+
+    fn parse_preamble_copyright_macro(
+        &mut self,
+        macro_args: Vec<ExprKey<'a>>,
+        copyright: &mut CopyrightMetadata<'a>,
+    ) {
+        if macro_args.len() != 2 {
+            self.set_failed_bit();
+            error!(
+                self.log,
+                "error[P????]: Expected exactly two arguments (author name and year) for 'copyright' macro\n--> {}",
+                self.lexer.sync_position()
+            );
+            return;
+        }
+
+        if let ExprRef::StringLit(author_name) = macro_args[0].get(self.storage) {
+            copyright.author_name = Some(author_name.clone().into_inner());
+        } else {
+            self.set_failed_bit();
+            error!(
+                self.log,
+                "error[P????]: Expected a string literal (author name) for 'copyright' macro argument\n--> {}",
+                self.lexer.sync_position()
+            );
+        }
+
+        if let ExprRef::IntegerLit(copyright_year) = macro_args[1].get(self.storage) {
+            copyright.copyright_year = Some(copyright_year.get_u128() as u16);
+        } else {
+            self.set_failed_bit();
+            error!(
+                self.log,
+                "error[P????]: Expected an integer literal (year) for 'copyright' macro argument\n--> {}",
+                self.lexer.sync_position()
+            );
+        }
+
+        if copyright.author_name.is_none() || copyright.copyright_year.is_none() {
+            self.set_failed_bit();
+            error!(
+                self.log,
+                "error[P????]: 'copyright' macro requires both author name and year to be specified\n--> {}",
+                self.lexer.sync_position()
+            );
+        }
+    }
+
+    fn parse_preamble_license_macro(
+        &mut self,
+        macro_args: Vec<ExprKey<'a>>,
+        license: &mut Option<LicenseId>,
+    ) {
+        if macro_args.len() != 1 {
+            self.set_failed_bit();
+            error!(
+                self.log,
+                "error[P????]: Expected exactly one argument (SPDX license ID string) for 'license' macro\n--> {}",
+                self.lexer.sync_position()
+            );
+            return;
+        }
+
+        if let ExprRef::StringLit(maybe_license) = macro_args[0].get(self.storage) {
+            let maybe_license = maybe_license.clone().into_inner();
+
+            if let Some(license_id) = license_id(maybe_license.get()) {
+                *license = Some(license_id);
+            } else {
+                self.set_failed_bit();
+                error!(
+                    self.log,
+                    "error[P????]: Unknown SPDX license ID {}. Expected a valid SPDX license ID string for 'license' macro argument\n--> {}",
+                    maybe_license,
+                    self.lexer.sync_position()
+                );
+            }
+        } else {
+            self.set_failed_bit();
+            error!(
+                self.log,
+                "error[P????]: Expected a string literal (SPDX license ID) for 'license' macro argument\n--> {}",
+                self.lexer.sync_position()
+            );
+        }
+    }
+
+    fn parse_preamble_insource_macro(
+        &mut self,
+        _macro_args: Vec<ExprKey<'a>>,
+        _config: &mut HashMap<&'a str, ExprKey<'a>>,
+    ) {
+        // TODO: In-source compiler/optimization/linting configuration options
+    }
+
     pub(crate) fn parse_preamble(&mut self) -> SourcePreamble<'a> {
         let mut preamble = SourcePreamble::default();
 
         while let Some((macro_name, macro_args)) = self.parse_macro_prefix() {
             match macro_name {
                 "nitrate" => {
-                    if macro_args.len() != 1 {
-                        self.set_failed_bit();
-                        error!(
-                            self.log,
-                            "error[P????]: Expected exactly one argument (e.g. '1.0') for 'nitrate' (language version) macro\n--> {}",
-                            self.lexer.sync_position()
-                        );
-                        continue;
-                    }
-
-                    if let ExprRef::FloatLit(semver) = macro_args[0].get(self.storage) {
-                        let version_string = semver.to_string();
-                        let pos = version_string
-                            .find(".")
-                            .expect("Failed to find '.' in version string");
-                        let (major, minor) = version_string.split_at(pos);
-
-                        preamble.language_version = (
-                            major.parse().expect("Failed to parse major version"),
-                            minor[1..].parse().expect("Failed to parse minor version"),
-                        );
-                    } else {
-                        self.set_failed_bit();
-                        error!(
-                            self.log,
-                            "error[P????]: Expected a float literal (e.g. '1.0') for 'nitrate' (language version) macro argument\n--> {}",
-                            self.lexer.sync_position()
-                        );
-                    }
+                    preamble.language_version = self.parse_preamble_version_macro(macro_args);
                 }
 
                 "copyright" => {
-                    if macro_args.len() != 2 {
-                        self.set_failed_bit();
-                        error!(
-                            self.log,
-                            "error[P????]: Expected exactly two arguments (author name and year) for 'copyright' macro\n--> {}",
-                            self.lexer.sync_position()
-                        );
-                        continue;
-                    }
-
-                    if let ExprRef::StringLit(author) = macro_args[0].get(self.storage) {
-                        preamble.copyright.author_name = Some(author.clone().into_inner());
-                    } else {
-                        self.set_failed_bit();
-                        error!(
-                            self.log,
-                            "error[P????]: Expected a string literal (author name) for 'copyright' macro argument\n--> {}",
-                            self.lexer.sync_position()
-                        );
-                    }
-
-                    if let ExprRef::IntegerLit(year) = macro_args[1].get(self.storage) {
-                        preamble.copyright.copyright_year = Some(year.get_u128() as u16);
-                    } else {
-                        self.set_failed_bit();
-                        error!(
-                            self.log,
-                            "error[P????]: Expected an integer literal (year) for 'copyright' macro argument\n--> {}",
-                            self.lexer.sync_position()
-                        );
-                    }
-
-                    if preamble.copyright.author_name.is_none()
-                        || preamble.copyright.copyright_year.is_none()
-                    {
-                        self.set_failed_bit();
-                        error!(
-                            self.log,
-                            "error[P????]: 'copyright' macro requires both author name and year to be specified\n--> {}",
-                            self.lexer.sync_position()
-                        );
-                    }
+                    self.parse_preamble_copyright_macro(macro_args, &mut preamble.copyright);
                 }
 
                 "license" => {
-                    if macro_args.len() != 1 {
-                        self.set_failed_bit();
-                        error!(
-                            self.log,
-                            "error[P????]: Expected exactly one argument (SPDX license ID string) for 'license' macro\n--> {}",
-                            self.lexer.sync_position()
-                        );
-                        continue;
-                    }
-
-                    if let ExprRef::StringLit(maybe_license) = macro_args[0].get(self.storage) {
-                        let maybe_license = maybe_license.clone().into_inner();
-
-                        if let Some(license) = license_id(maybe_license.get()) {
-                            preamble.copyright.license_id = Some(license);
-                        } else {
-                            self.set_failed_bit();
-                            error!(
-                                self.log,
-                                "error[P????]: Unknown SPDX license ID {}. Expected a valid SPDX license ID string for 'license' macro argument\n--> {}",
-                                maybe_license,
-                                self.lexer.sync_position()
-                            );
-                        }
-                    } else {
-                        self.set_failed_bit();
-                        error!(
-                            self.log,
-                            "error[P????]: Expected a string literal (SPDX license ID) for 'license' macro argument\n--> {}",
-                            self.lexer.sync_position()
-                        );
-                    }
+                    self.parse_preamble_license_macro(
+                        macro_args,
+                        &mut preamble.copyright.license_id,
+                    );
                 }
 
                 "insource" => {
-                    // TODO: In-source compiler/optimization/linting configuration options
+                    self.parse_preamble_insource_macro(macro_args, &mut preamble.insource_config);
                 }
 
                 _ => {
