@@ -3,25 +3,25 @@ use crate::parsetree::*;
 use spdx::LicenseId;
 use std::collections::HashMap;
 
-#[derive(Debug, Clone, Default, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct CopyrightInfo<'a> {
-    author_name: Option<StringData<'a>>,
-    copyright_year: Option<u16>,
+    holder_name: StringData<'a>,
+    copyright_year: u16,
 }
 
 impl<'a> CopyrightInfo<'a> {
-    pub(crate) fn new(author_name: Option<StringData<'a>>, copyright_year: Option<u16>) -> Self {
+    pub(crate) fn new(holder_name: StringData<'a>, copyright_year: u16) -> Self {
         CopyrightInfo {
-            author_name,
+            holder_name,
             copyright_year,
         }
     }
 
-    pub fn author_name(&self) -> Option<&StringData<'a>> {
-        self.author_name.as_ref()
+    pub fn holder_name(&self) -> &StringData<'a> {
+        &self.holder_name
     }
 
-    pub fn copyright_year(&self) -> Option<u16> {
+    pub fn copyright_year(&self) -> u16 {
         self.copyright_year
     }
 }
@@ -29,7 +29,7 @@ impl<'a> CopyrightInfo<'a> {
 #[derive(Debug, Clone)]
 pub struct SourceModel<'a> {
     language_version: (u32, u32),
-    copyright: CopyrightInfo<'a>,
+    copyright: Option<CopyrightInfo<'a>>,
     license_id: Option<LicenseId>,
     insource_config: HashMap<&'a str, ExprKey<'a>>,
     tree: ExprKey<'a>,
@@ -39,7 +39,7 @@ pub struct SourceModel<'a> {
 impl<'a> SourceModel<'a> {
     pub(crate) fn new(
         language_version: (u32, u32),
-        copyright: CopyrightInfo<'a>,
+        copyright: Option<CopyrightInfo<'a>>,
         license_id: Option<LicenseId>,
         insource_config: HashMap<&'a str, ExprKey<'a>>,
         tree: ExprKey<'a>,
@@ -59,8 +59,8 @@ impl<'a> SourceModel<'a> {
         self.language_version
     }
 
-    pub fn copyright(&self) -> &CopyrightInfo<'a> {
-        &self.copyright
+    pub fn copyright(&self) -> Option<&CopyrightInfo<'a>> {
+        self.copyright.as_ref()
     }
 
     pub fn license_name(&self) -> Option<&LicenseId> {
