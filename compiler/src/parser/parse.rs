@@ -1,9 +1,7 @@
-use super::source_model::{CopyrightMetadata, SourceModel};
+use super::source_model::SourceModel;
 use crate::lexer::*;
 use crate::parsetree::*;
 use slog::Logger;
-use spdx::license_id;
-use std::collections::HashMap;
 
 pub struct Parser<'storage, 'a> {
     pub(crate) lexer: Lexer<'a>,
@@ -63,23 +61,13 @@ impl<'storage, 'a> Parser<'storage, 'a> {
     }
 
     pub fn parse(&mut self) -> Option<SourceModel<'a>> {
-        let language_version = (1, 0);
-
-        let source_license = "MIT";
-        let source_author = "Wesley";
-        let source_year = 2025;
-        let copyright_info = CopyrightMetadata::new(
-            Some(source_author),
-            Some(source_year),
-            license_id(source_license),
-        );
-
+        let preamble = self.parse_preamble();
         let program = self.parse_type()?.into();
 
         Some(SourceModel::new(
-            language_version,
-            copyright_info,
-            HashMap::new(),
+            preamble.language_version,
+            preamble.copyright,
+            preamble.insource_config,
             program,
             self.has_failed(),
         ))

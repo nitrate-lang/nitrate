@@ -1,5 +1,7 @@
+use super::parse::Parser;
 use crate::parsetree::ExprKey;
 use spdx::LicenseId;
+use spdx::license_id;
 use std::collections::HashMap;
 
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
@@ -79,5 +81,33 @@ impl<'a> SourceModel<'a> {
 
     pub fn any_errors(&self) -> bool {
         self.any_errors
+    }
+}
+
+pub struct SourcePreamble<'a> {
+    pub language_version: (u32, u32),
+    pub copyright: CopyrightMetadata<'a>,
+    pub insource_config: HashMap<&'a str, ExprKey<'a>>,
+}
+
+impl<'storage, 'a> Parser<'storage, 'a> {
+    pub(crate) fn parse_preamble(&mut self) -> SourcePreamble<'a> {
+        // TODO: Actually parse preamble from source file
+
+        let language_version = (1, 0);
+
+        let source_license = "MIT";
+        let source_author = "Wesley";
+        let source_year = 2025;
+
+        SourcePreamble {
+            language_version,
+            copyright: CopyrightMetadata::new(
+                Some(source_author),
+                Some(source_year),
+                license_id(source_license),
+            ),
+            insource_config: HashMap::new(),
+        }
     }
 }
