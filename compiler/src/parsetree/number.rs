@@ -8,7 +8,7 @@ pub struct IntegerLit {
 }
 
 impl IntegerLit {
-    pub fn new(value: UInt, kind: IntegerKind) -> Option<Self> {
+    pub(crate) fn new(value: UInt, kind: IntegerKind) -> Option<Self> {
         if value.try_to_u128().is_ok() {
             Some(IntegerLit { value, kind })
         } else {
@@ -49,7 +49,7 @@ pub struct FloatLit {
 }
 
 impl FloatLit {
-    pub fn new(value: f64) -> Self {
+    pub(crate) fn new(value: f64) -> Self {
         FloatLit { value }
     }
 

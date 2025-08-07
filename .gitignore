@@ -47,3 +47,4 @@ runtime/libazide-gc/target/
 /target
 compiler.old
 trace.txt
+test.nit

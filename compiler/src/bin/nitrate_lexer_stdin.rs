@@ -70,7 +70,7 @@ fn main() {
     println!("==================================================================");
 
     loop {
-        let token = lexer.next_token();
+        let token = lexer.next();
         match token.token() {
             Token::Eof => {
                 println!("==================================================================");

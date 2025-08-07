@@ -7,7 +7,7 @@ pub struct ObjectLit<'a> {
 }
 
 impl<'a> ObjectLit<'a> {
-    pub fn new(fields: BTreeMap<&'a str, ExprKey<'a>>) -> Self {
+    pub(crate) fn new(fields: BTreeMap<&'a str, ExprKey<'a>>) -> Self {
         ObjectLit { fields }
     }
 

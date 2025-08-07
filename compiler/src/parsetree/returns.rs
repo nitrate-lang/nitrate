@@ -6,7 +6,7 @@ pub struct Return<'a> {
 }
 
 impl<'a> Return<'a> {
-    pub fn new(value: Option<ExprKey<'a>>) -> Self {
+    pub(crate) fn new(value: Option<ExprKey<'a>>) -> Self {
         Return { value }
     }
 

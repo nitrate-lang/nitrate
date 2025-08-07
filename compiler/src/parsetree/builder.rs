@@ -1,9 +1,12 @@
 use super::builder_helper::*;
 use super::expression::{ExprOwned, TypeOwned};
+use super::opaque_type::OpaqueType;
 use super::storage::{ExprKey, Storage, TypeKey};
 use super::tuple_type::TupleType;
+use crate::lexer::StringData;
 
 pub use super::binary_op::BinaryOperator;
+pub use super::function::FunctionParameter;
 pub use super::variable::VariableKind;
 
 #[derive(Debug)]
@@ -42,8 +45,8 @@ impl<'storage, 'a> Builder<'storage, 'a> {
         StringBuilder::new(self.storage)
     }
 
-    pub fn create_char(&mut self) -> CharBuilder<'_, 'a> {
-        CharBuilder::new(self.storage)
+    pub fn create_char(&mut self, char: char) -> Option<ExprKey<'a>> {
+        self.storage.add_expr(ExprOwned::CharLit(char))
     }
 
     pub fn create_list(&mut self) -> ListBuilder<'_, 'a> {
@@ -207,7 +210,15 @@ impl<'storage, 'a> Builder<'storage, 'a> {
     }
 
     /////////////////////////////////////////////////////////////////
-    // BEGIN: Compound Type Builders
+    // BEGIN: Complex Type Builders
+    pub fn create_type_name(&mut self, name: &'a str) -> Option<TypeKey<'a>> {
+        self.storage.add_type(TypeOwned::TypeName(name))
+    }
+
+    pub fn create_refinement_type(&mut self) -> RefinementTypeBuilder<'_, 'a> {
+        RefinementTypeBuilder::new(self.storage)
+    }
+
     pub fn create_tuple_type(&mut self) -> TupleTypeBuilder<'_, 'a> {
         TupleTypeBuilder::new(self.storage)
     }
@@ -216,11 +227,32 @@ impl<'storage, 'a> Builder<'storage, 'a> {
         ArrayTypeBuilder::new(self.storage)
     }
 
-    pub fn create_struct_type(&mut self) -> StructTypeBuilder<'_, 'a> {
-        StructTypeBuilder::new(self.storage)
+    pub fn create_map_type(&mut self) -> MapTypeBuilder<'_, 'a> {
+        MapTypeBuilder::new(self.storage)
+    }
+
+    pub fn create_slice_type(&mut self) -> SliceTypeBuilder<'_, 'a> {
+        SliceTypeBuilder::new(self.storage)
     }
 
     pub fn create_function_type(&mut self) -> FunctionTypeBuilder<'_, 'a> {
         FunctionTypeBuilder::new(self.storage)
+    }
+
+    pub fn create_managed_type(&mut self) -> ManagedRefTypeBuilder<'_, 'a> {
+        ManagedRefTypeBuilder::new(self.storage)
+    }
+
+    pub fn create_unmanaged_type(&mut self) -> UnmanagedRefTypeBuilder<'_, 'a> {
+        UnmanagedRefTypeBuilder::new(self.storage)
+    }
+
+    pub fn create_generic_type(&mut self) -> GenericTypeBuilder<'_, 'a> {
+        GenericTypeBuilder::new(self.storage)
+    }
+
+    pub fn create_opaque_type(&mut self, identity: StringData<'a>) -> Option<TypeKey<'a>> {
+        self.storage
+            .add_type(TypeOwned::OpaqueType(OpaqueType::new(identity)))
     }
 }

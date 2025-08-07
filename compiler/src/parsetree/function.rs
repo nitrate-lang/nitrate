@@ -1,7 +1,34 @@
 use super::block::Block;
 use super::storage::{ExprKey, TypeKey};
 
-pub type FunctionParameter<'a> = (&'a str, Option<TypeKey<'a>>, Option<ExprKey<'a>>);
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct FunctionParameter<'a> {
+    name: &'a str,
+    param_type: TypeKey<'a>,
+    default_value: Option<ExprKey<'a>>,
+}
+
+impl<'a> FunctionParameter<'a> {
+    pub fn new(name: &'a str, param_type: TypeKey<'a>, default_value: Option<ExprKey<'a>>) -> Self {
+        FunctionParameter {
+            name,
+            param_type,
+            default_value,
+        }
+    }
+
+    pub fn name(&self) -> &'a str {
+        self.name
+    }
+
+    pub fn param_type(&self) -> TypeKey<'a> {
+        self.param_type
+    }
+
+    pub fn default_value(&self) -> Option<ExprKey<'a>> {
+        self.default_value
+    }
+}
 
 #[derive(Debug, Clone)]
 pub struct Function<'a> {
@@ -13,7 +40,7 @@ pub struct Function<'a> {
 }
 
 impl<'a> Function<'a> {
-    pub fn new(
+    pub(crate) fn new(
         name: &'a str,
         parameters: Vec<FunctionParameter<'a>>,
         return_type: Option<TypeKey<'a>>,

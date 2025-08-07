@@ -85,7 +85,7 @@ pub struct BinaryOp<'a> {
 }
 
 impl<'a> BinaryOp<'a> {
-    pub fn new(left: ExprKey<'a>, operator: BinaryOperator, right: ExprKey<'a>) -> Self {
+    pub(crate) fn new(left: ExprKey<'a>, operator: BinaryOperator, right: ExprKey<'a>) -> Self {
         BinaryOp {
             left,
             right,

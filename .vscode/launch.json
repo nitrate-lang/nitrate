@@ -1,0 +1,103 @@
+{
+  // Use IntelliSense to learn about possible attributes.
+  // Hover to view descriptions of existing attributes.
+  // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "lldb",
+      "request": "launch",
+      "name": "Debug executable 'nitc'",
+      "cargo": {
+        "args": [
+          "build",
+          "--bin=nitc",
+          "--package=nitrate"
+        ],
+        "filter": {
+          "name": "nitc",
+          "kind": "bin"
+        }
+      },
+      "args": [
+        "test.nit"
+      ],
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "type": "lldb",
+      "request": "launch",
+      "name": "Debug unit tests in executable 'nitc'",
+      "cargo": {
+        "args": [
+          "test",
+          "--no-run",
+          "--bin=nitc",
+          "--package=nitrate"
+        ],
+        "filter": {
+          "name": "nitc",
+          "kind": "bin"
+        }
+      },
+      "args": [],
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "type": "lldb",
+      "request": "launch",
+      "name": "Debug unit tests in library 'nitrate_compiler'",
+      "cargo": {
+        "args": [
+          "test",
+          "--no-run",
+          "--lib",
+          "--package=nitrate_compiler"
+        ],
+        "filter": {
+          "name": "nitrate_compiler",
+          "kind": "lib"
+        }
+      },
+      "args": [],
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "type": "lldb",
+      "request": "launch",
+      "name": "Debug executable 'nitrate_lexer_stdin'",
+      "cargo": {
+        "args": [
+          "build",
+          "--bin=nitrate_lexer_stdin",
+          "--package=nitrate_compiler"
+        ],
+        "filter": {
+          "name": "nitrate_lexer_stdin",
+          "kind": "bin"
+        }
+      },
+      "args": [],
+      "cwd": "${workspaceFolder}"
+    },
+    {
+      "type": "lldb",
+      "request": "launch",
+      "name": "Debug unit tests in executable 'nitrate_lexer_stdin'",
+      "cargo": {
+        "args": [
+          "test",
+          "--no-run",
+          "--bin=nitrate_lexer_stdin",
+          "--package=nitrate_compiler"
+        ],
+        "filter": {
+          "name": "nitrate_lexer_stdin",
+          "kind": "bin"
+        }
+      },
+      "args": [],
+      "cwd": "${workspaceFolder}"
+    },
+  ]
+}

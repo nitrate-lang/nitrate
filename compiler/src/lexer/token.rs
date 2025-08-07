@@ -7,39 +7,37 @@ pub enum IdentifierKind {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Hash)]
-pub struct Identifier<'a> {
+pub struct Name<'a> {
     name: &'a str,
     kind: IdentifierKind,
 }
 
-impl<'a> Identifier<'a> {
+impl<'a> Name<'a> {
     pub fn new(name: &'a str) -> Self {
-        Identifier {
+        Name {
             name,
-            kind: Identifier::get_kind(name),
+            kind: Name::get_kind(name),
         }
     }
 
     pub fn new_typical(name: &'a str) -> Self {
-        assert!(
-            Identifier::is_typical(name),
-            "Expected a typical identifier"
-        );
-        Identifier {
+        assert!(Name::is_typical(name), "Expected a typical identifier");
+        Name {
             name,
             kind: IdentifierKind::Typical,
         }
     }
 
     pub fn new_atypical(name: &'a str) -> Self {
-        assert!(
-            Identifier::is_atypical(name),
-            "Expected an atypical identifier"
-        );
-        Identifier {
+        assert!(Name::is_atypical(name), "Expected an atypical identifier");
+        Name {
             name,
             kind: IdentifierKind::Atypical,
         }
+    }
+
+    pub const fn into_name(self) -> &'a str {
+        self.name
     }
 
     pub const fn name(&self) -> &'a str {
@@ -75,6 +73,15 @@ impl<'a> Identifier<'a> {
     }
 }
 
+impl<'a> std::fmt::Display for Name<'a> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self.kind() {
+            IdentifierKind::Typical => write!(f, "{}", self.name()),
+            IdentifierKind::Atypical => write!(f, "`{}`", self.name()),
+        }
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Hash)]
 pub enum IntegerKind {
     Binary,
@@ -98,8 +105,23 @@ impl Integer {
         self.value
     }
 
+    pub const fn into_value(self) -> u128 {
+        self.value
+    }
+
     pub const fn kind(&self) -> IntegerKind {
         self.kind
+    }
+}
+
+impl std::fmt::Display for Integer {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self.kind() {
+            IntegerKind::Binary => write!(f, "0b{:b}", self.value()),
+            IntegerKind::Octal => write!(f, "0o{:o}", self.value()),
+            IntegerKind::Decimal => write!(f, "{}", self.value()),
+            IntegerKind::Hexadecimal => write!(f, "0x{:x}", self.value()),
+        }
     }
 }
 
@@ -116,6 +138,10 @@ impl Float {
     pub const fn value(&self) -> f64 {
         self.value
     }
+
+    pub const fn into_value(self) -> f64 {
+        self.value
+    }
 }
 
 impl std::hash::Hash for Float {
@@ -125,6 +151,12 @@ impl std::hash::Hash for Float {
 }
 
 impl std::cmp::Eq for Float {}
+
+impl std::fmt::Display for Float {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", self.value())
+    }
+}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Hash)]
 pub enum Keyword {
@@ -179,18 +211,88 @@ pub enum Keyword {
     False, /* 'false' */
 }
 
+impl std::fmt::Display for Keyword {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Keyword::Let => write!(f, "let"),
+            Keyword::Var => write!(f, "var"),
+            Keyword::Fn => write!(f, "fn"),
+            Keyword::Enum => write!(f, "enum"),
+            Keyword::Struct => write!(f, "struct"),
+            Keyword::Class => write!(f, "class"),
+            Keyword::Union => write!(f, "union"),
+            Keyword::Interface => write!(f, "interface"),
+            Keyword::Trait => write!(f, "trait"),
+            Keyword::Type => write!(f, "type"),
+            Keyword::Opaque => write!(f, "opaque"),
+            Keyword::Scope => write!(f, "scope"),
+            Keyword::Import => write!(f, "import"),
+            Keyword::UnitTest => write!(f, "unit_test"),
+
+            Keyword::Safe => write!(f, "safe"),
+            Keyword::Unsafe => write!(f, "unsafe"),
+            Keyword::Promise => write!(f, "promise"),
+            Keyword::Static => write!(f, "static"),
+            Keyword::Mut => write!(f, "mut"),
+            Keyword::Const => write!(f, "const"),
+            Keyword::Pub => write!(f, "pub"),
+            Keyword::Sec => write!(f, "sec"),
+            Keyword::Pro => write!(f, "pro"),
+
+            Keyword::If => write!(f, "if"),
+            Keyword::Else => write!(f, "else"),
+            Keyword::For => write!(f, "for"),
+            Keyword::While => write!(f, "while"),
+            Keyword::Do => write!(f, "do"),
+            Keyword::Switch => write!(f, "switch"),
+            Keyword::Break => write!(f, "break"),
+            Keyword::Continue => write!(f, "continue"),
+            Keyword::Ret => write!(f, "ret"),
+            Keyword::Foreach => write!(f, "foreach"),
+            Keyword::Try => write!(f, "try"),
+            Keyword::Catch => write!(f, "catch"),
+            Keyword::Throw => write!(f, "throw"),
+            Keyword::Async => write!(f, "async"),
+            Keyword::Await => write!(f, "await"),
+            Keyword::Asm => write!(f, "asm"),
+
+            // Literals
+            Keyword::Null => write!(f, "null"),
+            Keyword::True => write!(f, "true"),
+            Keyword::False => write!(f, "false"),
+        }
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Hash)]
-pub enum Punctuation {
-    LeftParenthesis,  /* '(' */
-    RightParenthesis, /* ')' */
-    LeftBracket,      /* '[' */
-    RightBracket,     /* ']' */
-    LeftBrace,        /* '{' */
-    RightBrace,       /* '}' */
-    Comma,            /* ',' */
-    Semicolon,        /* ';' */
-    Colon,            /* ':' */
-    AtSign,           /* '@' */
+pub enum Punct {
+    LeftParen,    /* '(' */
+    RightParen,   /* ')' */
+    LeftBracket,  /* '[' */
+    RightBracket, /* ']' */
+    LeftBrace,    /* '{' */
+    RightBrace,   /* '}' */
+    Comma,        /* ',' */
+    Semicolon,    /* ';' */
+    Colon,        /* ':' */
+    AtSign,       /* '@' */
+}
+
+impl std::fmt::Display for Punct {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Punct::LeftParen => write!(f, "("),
+            Punct::RightParen => write!(f, ")"),
+            Punct::LeftBracket => write!(f, "["),
+            Punct::RightBracket => write!(f, "]"),
+            Punct::LeftBrace => write!(f, "{{"),
+            Punct::RightBrace => write!(f, "}}"),
+            Punct::Comma => write!(f, ","),
+            Punct::Semicolon => write!(f, ";"),
+            Punct::Colon => write!(f, ":"),
+            Punct::AtSign => write!(f, "@"),
+        }
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Hash)]
@@ -278,58 +380,161 @@ pub enum Operator {
     Spaceship, /* '<=>':        "Spaceship Operator" */
 }
 
+impl std::fmt::Display for Operator {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Operator::Add => write!(f, "+"),
+            Operator::Sub => write!(f, "-"),
+            Operator::Mul => write!(f, "*"),
+            Operator::Div => write!(f, "/"),
+            Operator::Mod => write!(f, "%"),
+
+            Operator::BitAnd => write!(f, "&"),
+            Operator::BitOr => write!(f, "|"),
+            Operator::BitXor => write!(f, "^"),
+            Operator::BitNot => write!(f, "~"),
+            Operator::BitShl => write!(f, "<<"),
+            Operator::BitShr => write!(f, ">>"),
+            Operator::BitRotl => write!(f, "<<<"),
+            Operator::BitRotr => write!(f, ">>>"),
+
+            Operator::LogicAnd => write!(f, "&&"),
+            Operator::LogicOr => write!(f, "||"),
+            Operator::LogicXor => write!(f, "^^"),
+            Operator::LogicNot => write!(f, "!"),
+            Operator::LogicLt => write!(f, "<"),
+            Operator::LogicGt => write!(f, ">"),
+            Operator::LogicLe => write!(f, "<="),
+            Operator::LogicGe => write!(f, ">="),
+            Operator::LogicEq => write!(f, "=="),
+            Operator::LogicNe => write!(f, "!="),
+
+            Operator::Set => write!(f, "="),
+            Operator::SetPlus => write!(f, "+="),
+            Operator::SetMinus => write!(f, "-="),
+            Operator::SetTimes => write!(f, "*="),
+            Operator::SetSlash => write!(f, "/="),
+            Operator::SetPercent => write!(f, "%="),
+            Operator::SetBitAnd => write!(f, "&="),
+            Operator::SetBitOr => write!(f, "|="),
+            Operator::SetBitXor => write!(f, "^="),
+            Operator::SetBitShl => write!(f, "<<="),
+            Operator::SetBitShr => write!(f, ">>="),
+            Operator::SetBitRotl => write!(f, "<<<="),
+            Operator::SetBitRotr => write!(f, ">>>="),
+            Operator::SetLogicAnd => write!(f, "&&="),
+            Operator::SetLogicOr => write!(f, "||="),
+            Operator::SetLogicXor => write!(f, "^^="),
+            Operator::Inc => write!(f, "++"),
+            Operator::Dec => write!(f, "--"),
+
+            Operator::As => write!(f, "as"),
+            Operator::BitcastAs => write!(f, "bitcast_as"),
+            Operator::Sizeof => write!(f, "sizeof"),
+            Operator::Alignof => write!(f, "alignof"),
+            Operator::Typeof => write!(f, "typeof"),
+
+            Operator::Dot => write!(f, "."),
+            Operator::Ellipsis => write!(f, "..."),
+            Operator::Scope => write!(f, "::"),
+            Operator::Arrow => write!(f, "->"),
+            Operator::BlockArrow => write!(f, "=>"),
+
+            Operator::Range => write!(f, ".."),
+            Operator::Question => write!(f, "?"),
+            Operator::Spaceship => write!(f, "<=>"),
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Hash)]
-enum StringData<'a> {
+enum StringDataStorage<'a> {
+    RefString(&'a str),
+    DynString(String),
+}
+
+#[derive(Clone, PartialEq, Eq, PartialOrd, Hash)]
+pub struct StringData<'a> {
+    data: StringDataStorage<'a>,
+}
+
+impl<'a> StringData<'a> {
+    pub const fn from_ref(data: &'a str) -> Self {
+        StringData {
+            data: StringDataStorage::RefString(data),
+        }
+    }
+
+    pub fn from_dyn(data: String) -> Self {
+        StringData {
+            data: StringDataStorage::DynString(data),
+        }
+    }
+
+    pub fn get(&self) -> &str {
+        match &self.data {
+            StringDataStorage::RefString(s) => s,
+            StringDataStorage::DynString(s) => s.as_str(),
+        }
+    }
+}
+
+impl<'a> std::fmt::Debug for StringData<'a> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "StringData({:?})", self.get())
+    }
+}
+
+impl<'a> std::fmt::Display for StringData<'a> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "\"{}\"", self.get())
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Hash)]
+enum BinaryDataStorage<'a> {
     RefString(&'a [u8]),
     DynString(SmallVec<[u8; 64]>),
 }
 
 #[derive(Clone, PartialEq, Eq, PartialOrd, Hash)]
-pub struct StringLit<'a> {
-    data: StringData<'a>,
-    is_utf8: bool,
+pub struct BinaryData<'a> {
+    data: BinaryDataStorage<'a>,
 }
 
-impl<'a> StringLit<'a> {
+impl<'a> BinaryData<'a> {
     pub const fn from_ref(data: &'a [u8]) -> Self {
-        StringLit {
-            data: StringData::RefString(data),
-            is_utf8: str::from_utf8(data).is_ok(),
+        BinaryData {
+            data: BinaryDataStorage::RefString(data),
         }
     }
 
     pub fn from_dyn(data: SmallVec<[u8; 64]>) -> Self {
-        StringLit {
-            is_utf8: str::from_utf8(data.as_slice()).is_ok(),
-            data: StringData::DynString(data),
+        BinaryData {
+            data: BinaryDataStorage::DynString(data),
         }
     }
 
-    pub fn data(&self) -> &[u8] {
+    pub fn get(&self) -> &[u8] {
         match &self.data {
-            StringData::RefString(s) => s,
-            StringData::DynString(s) => s.as_slice(),
+            BinaryDataStorage::RefString(s) => s,
+            BinaryDataStorage::DynString(s) => s.as_slice(),
         }
     }
 }
 
-impl<'a> std::ops::Deref for StringLit<'a> {
-    type Target = [u8];
-
-    fn deref(&self) -> &Self::Target {
-        self.data()
-    }
-}
-
-impl<'a> std::fmt::Debug for StringLit<'a> {
+impl<'a> std::fmt::Debug for BinaryData<'a> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        if self.is_utf8 {
-            write!(f, "StringLit({:?})", unsafe {
-                str::from_utf8_unchecked(self.data())
-            })
-        } else {
-            write!(f, "StringLit({:?})", self.data())
+        write!(f, "BinaryData({:?})", self.get())
+    }
+}
+
+impl<'a> std::fmt::Display for BinaryData<'a> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        for byte in self.get() {
+            write!(f, "{:02x} ", byte)?;
         }
+        Ok(())
     }
 }
 
@@ -354,24 +559,57 @@ impl<'a> Comment<'a> {
         self.text
     }
 
+    pub const fn into_text(self) -> &'a str {
+        self.text
+    }
+
     pub const fn kind(&self) -> CommentKind {
         self.kind
     }
 }
 
+impl<'a> std::fmt::Display for Comment<'a> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self.kind() {
+            CommentKind::SingleLine => write!(f, "#{}", self.text()),
+            CommentKind::MultiLine => unimplemented!(),
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Hash)]
 pub enum Token<'a> {
-    Identifier(Identifier<'a>),
+    Name(Name<'a>),
     Integer(Integer),
     Float(Float),
     Keyword(Keyword),
-    String(StringLit<'a>),
+    String(StringData<'a>),
+    Binary(BinaryData<'a>),
     Char(char),
-    Punctuation(Punctuation),
-    Operator(Operator),
+    Punct(Punct),
+    Op(Operator),
     Comment(Comment<'a>),
     Eof,
     Illegal,
+}
+
+impl<'a> std::fmt::Display for Token<'a> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Token::Name(id) => write!(f, "{}", id),
+            Token::Integer(int) => write!(f, "{}", int),
+            Token::Float(float) => write!(f, "{}", float),
+            Token::Keyword(kw) => write!(f, "{}", kw),
+            Token::String(s) => write!(f, "{}", s),
+            Token::Binary(s) => write!(f, "{}", s),
+            Token::Char(c) => write!(f, "'{}'", c),
+            Token::Punct(p) => write!(f, "{}", p),
+            Token::Op(op) => write!(f, "{}", op),
+            Token::Comment(c) => write!(f, "{}", c),
+            Token::Eof => write!(f, ""),
+            Token::Illegal => write!(f, "<illegal>"),
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Hash)]

@@ -6,7 +6,7 @@ pub struct Statement<'a> {
 }
 
 impl<'a> Statement<'a> {
-    pub fn new(expr: ExprKey<'a>) -> Self {
+    pub(crate) fn new(expr: ExprKey<'a>) -> Self {
         Statement { expr }
     }
 

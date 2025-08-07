@@ -47,7 +47,7 @@ pub struct UnaryOp<'a> {
 }
 
 impl<'a> UnaryOp<'a> {
-    pub fn new(operand: ExprKey<'a>, operator: UnaryOperator, is_postfix: bool) -> Self {
+    pub(crate) fn new(operand: ExprKey<'a>, operator: UnaryOperator, is_postfix: bool) -> Self {
         UnaryOp {
             operand,
             operator,

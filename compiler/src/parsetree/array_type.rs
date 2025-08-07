@@ -1,18 +1,18 @@
 use super::storage::{ExprKey, TypeKey};
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct ArrayType<'a> {
-    element_ty: TypeKey<'a>,
+    element: TypeKey<'a>,
     count: ExprKey<'a>,
 }
 
 impl<'a> ArrayType<'a> {
-    pub fn new(element_ty: TypeKey<'a>, count: ExprKey<'a>) -> Self {
-        ArrayType { element_ty, count }
+    pub(crate) fn new(element: TypeKey<'a>, count: ExprKey<'a>) -> Self {
+        ArrayType { element, count }
     }
 
-    pub fn element_ty(&self) -> TypeKey<'a> {
-        self.element_ty
+    pub fn element(&self) -> TypeKey<'a> {
+        self.element
     }
 
     pub fn count(&self) -> ExprKey<'a> {
