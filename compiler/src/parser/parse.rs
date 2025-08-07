@@ -35,12 +35,12 @@ impl<'storage, 'a> Parser<'storage, 'a> {
         self.storage
     }
 
-    pub(crate) fn set_failed_bit(&mut self) {
-        self.failed_bit = true;
-    }
-
     pub fn has_failed(&self) -> bool {
         self.failed_bit
+    }
+
+    pub(crate) fn set_failed_bit(&mut self) {
+        self.failed_bit = true;
     }
 
     pub fn parse_expression(&mut self) -> Option<ExprKey<'a>> {
@@ -118,6 +118,7 @@ impl<'storage, 'a> Parser<'storage, 'a> {
         Some(SourceModel::new(
             preamble.language_version,
             preamble.copyright,
+            preamble.license_id,
             preamble.insource_config,
             block,
             self.has_failed(),

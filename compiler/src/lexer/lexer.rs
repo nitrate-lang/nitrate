@@ -117,6 +117,69 @@ impl<'a> Lexer<'a> {
         self.is_eof = false;
     }
 
+    pub fn next_if_string(&mut self) -> Option<StringData<'a>> {
+        if let Token::String(string_data) = self.peek_t() {
+            self.skip();
+            Some(string_data)
+        } else {
+            None
+        }
+    }
+
+    pub fn next_if_binary(&mut self) -> Option<BinaryData<'a>> {
+        if let Token::Binary(binary_data) = self.peek_t() {
+            self.skip();
+            Some(binary_data)
+        } else {
+            None
+        }
+    }
+
+    pub fn next_if_name(&mut self) -> Option<Name<'a>> {
+        if let Token::Name(name) = self.peek_t() {
+            self.skip();
+            Some(name)
+        } else {
+            None
+        }
+    }
+
+    pub fn next_if_keyword(&mut self) -> Option<Keyword> {
+        if let Token::Keyword(keyword) = self.peek_t() {
+            self.skip();
+            Some(keyword)
+        } else {
+            None
+        }
+    }
+
+    pub fn next_if_op(&mut self) -> Option<Op> {
+        if let Token::Op(op) = self.peek_t() {
+            self.skip();
+            Some(op)
+        } else {
+            None
+        }
+    }
+
+    pub fn next_if_integer(&mut self) -> Option<Integer> {
+        if let Token::Integer(integer) = self.peek_t() {
+            self.skip();
+            Some(integer)
+        } else {
+            None
+        }
+    }
+
+    pub fn next_if_float(&mut self) -> Option<Float> {
+        if let Token::Float(float) = self.peek_t() {
+            self.skip();
+            Some(float)
+        } else {
+            None
+        }
+    }
+
     fn reader_position(&self) -> SourcePosition<'a> {
         self.current_peek_pos.clone()
     }
