@@ -108,7 +108,7 @@ impl<'storage, 'a> Parser<'storage, 'a> {
     fn parse_generic_argument(&mut self) -> Option<(&'a str, ExprKey<'a>)> {
         let mut argname: &'a str = "";
 
-        match self.lexer.peek().into_token() {
+        match self.lexer.peek_t() {
             Token::Name(name) => {
                 /* Named generic argument syntax is ambiguous,
                  * an identifier can be followed by a colon
@@ -663,7 +663,7 @@ impl<'storage, 'a> Parser<'storage, 'a> {
             );
         }
 
-        let opaque_identity = if let Token::String(string) = self.lexer.peek().into_token() {
+        let opaque_identity = if let Token::String(string) = self.lexer.peek_t() {
             self.lexer.skip();
             string
         } else {
