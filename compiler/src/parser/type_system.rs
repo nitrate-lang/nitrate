@@ -28,7 +28,7 @@ impl<'storage, 'a> Parser<'storage, 'a> {
                 self.set_failed_bit();
                 error!(
                     self.log,
-                    "error[P????]: Unable to parse type's minimum refinement bound\n--> {}",
+                    "[P????]: Unable to parse type's minimum refinement bound\n--> {}",
                     self.lexer.sync_position()
                 );
             }
@@ -37,7 +37,7 @@ impl<'storage, 'a> Parser<'storage, 'a> {
                 self.set_failed_bit();
                 error!(
                     self.log,
-                    "error[P????]: Expected a colon after type's minimum refinement bound\n--> {}",
+                    "[P????]: Expected a colon after type's minimum refinement bound\n--> {}",
                     self.lexer.sync_position()
                 );
             }
@@ -50,7 +50,7 @@ impl<'storage, 'a> Parser<'storage, 'a> {
                 self.set_failed_bit();
                 error!(
                     self.log,
-                    "error[P????]: Unable to parse type's maximum refinement bound\n--> {}",
+                    "[P????]: Unable to parse type's maximum refinement bound\n--> {}",
                     self.lexer.sync_position()
                 );
             }
@@ -59,7 +59,7 @@ impl<'storage, 'a> Parser<'storage, 'a> {
                 self.set_failed_bit();
                 error!(
                     self.log,
-                    "error[P????]: Expected a right bracket to close minimum/maximum constraints\n--> {}",
+                    "[P????]: Expected a right bracket to close minimum/maximum constraints\n--> {}",
                     self.lexer.sync_position()
                 );
             }
@@ -82,7 +82,7 @@ impl<'storage, 'a> Parser<'storage, 'a> {
                     self.set_failed_bit();
                     error!(
                         self.log,
-                        "error[P????]: Unable to parse type's width refinement bound\n--> {}",
+                        "[P????]: Unable to parse type's width refinement bound\n--> {}",
                         self.lexer.sync_position()
                     );
                 }
@@ -94,7 +94,7 @@ impl<'storage, 'a> Parser<'storage, 'a> {
                         self.set_failed_bit();
                         error!(
                             self.log,
-                            "error[P????]: Expected a left bracket for type's range refinement bounds\n--> {}",
+                            "[P????]: Expected a left bracket for type's range refinement bounds\n--> {}",
                             self.lexer.sync_position()
                         );
                     }
@@ -141,7 +141,7 @@ impl<'storage, 'a> Parser<'storage, 'a> {
             self.set_failed_bit();
             error!(
                 self.log,
-                "error[P????]: Unable to parse generic type argument value\n--> {}",
+                "[P????]: Unable to parse generic type argument value\n--> {}",
                 self.lexer.sync_position()
             );
             None
@@ -185,7 +185,7 @@ impl<'storage, 'a> Parser<'storage, 'a> {
                 self.set_failed_bit();
                 error!(
                     self.log,
-                    "error[P????]: Unable to parse generic type\n--> {}",
+                    "[P????]: Unable to parse generic type\n--> {}",
                     self.lexer.sync_position()
                 );
                 break;
@@ -199,7 +199,7 @@ impl<'storage, 'a> Parser<'storage, 'a> {
                     self.set_failed_bit();
                     error!(
                         self.log,
-                        "error[P????]: Expected ',' or '>' to separate generic type arguments\n--> {}",
+                        "[P????]: Expected ',' or '>' to separate generic type arguments\n--> {}",
                         self.lexer.sync_position()
                     );
                     break;
@@ -255,7 +255,7 @@ impl<'storage, 'a> Parser<'storage, 'a> {
                     self.set_failed_bit();
                     error!(
                         self.log,
-                        "error[P????]: Unexpected generic type '>' delimiter or invalid generic type\n--> {}",
+                        "[P????]: Unexpected generic type '>' delimiter or invalid generic type\n--> {}",
                         self.lexer.sync_position()
                     );
                 }
@@ -263,7 +263,7 @@ impl<'storage, 'a> Parser<'storage, 'a> {
                     self.set_failed_bit();
                     error!(
                         self.log,
-                        "error[P????]: Unexpected generic type '>>' delimiter or invalid generic type\n--> {}",
+                        "[P????]: Unexpected generic type '>>' delimiter or invalid generic type\n--> {}",
                         self.lexer.sync_position()
                     );
                 }
@@ -283,7 +283,7 @@ impl<'storage, 'a> Parser<'storage, 'a> {
             self.set_failed_bit();
             error!(
                 self.log,
-                "error[P????]: Unable to construct generic type due to previous errors\n--> {}",
+                "[P????]: Unable to construct generic type due to previous errors\n--> {}",
                 self.lexer.sync_position()
             );
             None
@@ -308,7 +308,7 @@ impl<'storage, 'a> Parser<'storage, 'a> {
                 self.set_failed_bit();
                 error!(
                     self.log,
-                    "error[P????]: Unable to parse tuple element type\n--> {}",
+                    "[P????]: Unable to parse tuple element type\n--> {}",
                     self.lexer.sync_position()
                 );
             }
@@ -320,7 +320,7 @@ impl<'storage, 'a> Parser<'storage, 'a> {
                     self.set_failed_bit();
                     error!(
                         self.log,
-                        "error[P????]: Expected comma or right brace in tuple type\n--> {}",
+                        "[P????]: Expected comma or right brace in tuple type\n--> {}",
                         self.lexer.sync_position()
                     );
 
@@ -350,7 +350,7 @@ impl<'storage, 'a> Parser<'storage, 'a> {
                 self.set_failed_bit();
                 error!(
                     self.log,
-                    "error[P????]: Unable to parse element type for array\n--> {}",
+                    "[P????]: Unable to parse element type for array\n--> {}",
                     self.lexer.sync_position()
                 );
                 None
@@ -359,7 +359,7 @@ impl<'storage, 'a> Parser<'storage, 'a> {
             self.set_failed_bit();
             error!(
                 self.log,
-                "error[P????]: Unable to parse length expression for array\n--> {}",
+                "[P????]: Unable to parse length expression for array\n--> {}",
                 self.lexer.sync_position()
             );
             None
@@ -369,7 +369,7 @@ impl<'storage, 'a> Parser<'storage, 'a> {
             self.set_failed_bit();
             error!(
                 self.log,
-                "error[P????]: Expected right bracket to close array type\n--> {}",
+                "[P????]: Expected right bracket to close array type\n--> {}",
                 self.lexer.sync_position()
             );
         }
@@ -392,7 +392,7 @@ impl<'storage, 'a> Parser<'storage, 'a> {
                 self.set_failed_bit();
                 error!(
                     self.log,
-                    "error[P????]: Unable to parse map's key type\n--> {}",
+                    "[P????]: Unable to parse map's key type\n--> {}",
                     self.lexer.sync_position()
                 );
                 None
@@ -401,7 +401,7 @@ impl<'storage, 'a> Parser<'storage, 'a> {
             self.set_failed_bit();
             error!(
                 self.log,
-                "error[P????]: Unable to parse map's value type\n--> {}",
+                "[P????]: Unable to parse map's value type\n--> {}",
                 self.lexer.sync_position()
             );
             None
@@ -411,7 +411,7 @@ impl<'storage, 'a> Parser<'storage, 'a> {
             self.set_failed_bit();
             error!(
                 self.log,
-                "error[P????]: Expected right bracket to close map type\n--> {}",
+                "[P????]: Expected right bracket to close map type\n--> {}",
                 self.lexer.sync_position()
             );
         }
@@ -435,7 +435,7 @@ impl<'storage, 'a> Parser<'storage, 'a> {
             self.set_failed_bit();
             error!(
                 self.log,
-                "error[P????]: Unable to parse element type for slice\n--> {}",
+                "[P????]: Unable to parse element type for slice\n--> {}",
                 self.lexer.sync_position()
             );
             None
@@ -460,7 +460,7 @@ impl<'storage, 'a> Parser<'storage, 'a> {
             self.set_failed_bit();
             error!(
                 self.log,
-                "error[P????]: Expected semicolon, right bracket, or arrow in array/slice/map type respectively\n--> {}",
+                "[P????]: Expected semicolon, right bracket, or arrow in array/slice/map type respectively\n--> {}",
                 self.lexer.sync_position()
             );
             None
@@ -484,7 +484,7 @@ impl<'storage, 'a> Parser<'storage, 'a> {
             self.set_failed_bit();
             error!(
                 self.log,
-                "error[P????]: Unable to parse reference's target type\n--> {}",
+                "[P????]: Unable to parse reference's target type\n--> {}",
                 self.lexer.sync_position()
             );
             None
@@ -508,7 +508,7 @@ impl<'storage, 'a> Parser<'storage, 'a> {
             self.set_failed_bit();
             error!(
                 self.log,
-                "error[P????]: Unable to parse pointer's target type\n--> {}",
+                "[P????]: Unable to parse pointer's target type\n--> {}",
                 self.lexer.sync_position()
             );
             None
@@ -531,7 +531,7 @@ impl<'storage, 'a> Parser<'storage, 'a> {
                     self.set_failed_bit();
                     error!(
                         self.log,
-                        "error[P????]: Unable to parse function type attribute\n--> {}",
+                        "[P????]: Unable to parse function type attribute\n--> {}",
                         self.lexer.sync_position()
                     );
                 }
@@ -543,7 +543,7 @@ impl<'storage, 'a> Parser<'storage, 'a> {
                         self.set_failed_bit();
                         error!(
                             self.log,
-                            "error[P????]: Expected comma or right bracket in function type attributes\n--> {}",
+                            "[P????]: Expected comma or right bracket in function type attributes\n--> {}",
                             self.lexer.sync_position()
                         );
                         break;
@@ -579,7 +579,7 @@ impl<'storage, 'a> Parser<'storage, 'a> {
                         self.set_failed_bit();
                         error!(
                             self.log,
-                            "error[P????]: Unable to parse function parameter type\n--> {}",
+                            "[P????]: Unable to parse function parameter type\n--> {}",
                             self.lexer.sync_position()
                         );
                         Builder::new(self.storage).get_infer_type()
@@ -603,7 +603,7 @@ impl<'storage, 'a> Parser<'storage, 'a> {
                         self.set_failed_bit();
                         error!(
                             self.log,
-                            "error[P????]: Expected comma or right parenthesis in function parameters\n--> {}",
+                            "[P????]: Expected comma or right parenthesis in function parameters\n--> {}",
                             self.lexer.sync_position()
                         );
                         break;
@@ -633,7 +633,7 @@ impl<'storage, 'a> Parser<'storage, 'a> {
                 self.set_failed_bit();
                 error!(
                     self.log,
-                    "error[P????]: Unable to parse function return type\n--> {}",
+                    "[P????]: Unable to parse function return type\n--> {}",
                     self.lexer.sync_position()
                 );
                 Builder::new(self.storage).get_infer_type()
@@ -658,7 +658,7 @@ impl<'storage, 'a> Parser<'storage, 'a> {
             self.set_failed_bit();
             error!(
                 self.log,
-                "error[P????]: Expected left parenthesis after 'opaque' keyword\n--> {}",
+                "[P????]: Expected left parenthesis after 'opaque' keyword\n--> {}",
                 self.lexer.sync_position()
             );
         }
@@ -670,7 +670,7 @@ impl<'storage, 'a> Parser<'storage, 'a> {
             self.set_failed_bit();
             error!(
                 self.log,
-                "error[P????]: Expected a string literal for opaque type identity\n--> {}",
+                "[P????]: Expected a string literal for opaque type identity\n--> {}",
                 self.lexer.sync_position()
             );
             StringData::from_ref("")
@@ -680,7 +680,7 @@ impl<'storage, 'a> Parser<'storage, 'a> {
             self.set_failed_bit();
             error!(
                 self.log,
-                "error[P????]: Expected right parenthesis to close opaque type declaration\n--> {}",
+                "[P????]: Expected right parenthesis to close opaque type declaration\n--> {}",
                 self.lexer.sync_position()
             );
         }
@@ -711,7 +711,7 @@ impl<'storage, 'a> Parser<'storage, 'a> {
                 self.set_failed_bit();
                 error!(
                     self.log,
-                    "error[P????]: Unexpected integer token '{}' while parsing type\n--> {}",
+                    "[P????]: Unexpected integer token '{}' while parsing type\n--> {}",
                     int,
                     start_pos
                 );
@@ -722,7 +722,7 @@ impl<'storage, 'a> Parser<'storage, 'a> {
                 self.set_failed_bit();
                 error!(
                     self.log,
-                    "error[P????]: Unexpected float token '{}' while parsing type\n--> {}",
+                    "[P????]: Unexpected float token '{}' while parsing type\n--> {}",
                     float,
                     start_pos
                 );
@@ -733,7 +733,7 @@ impl<'storage, 'a> Parser<'storage, 'a> {
                 self.set_failed_bit();
                 error!(
                     self.log,
-                    "error[P????]: Unexpected keyword token '{}' while parsing type\n--> {}",
+                    "[P????]: Unexpected keyword token '{}' while parsing type\n--> {}",
                     func,
                     start_pos
                 );
@@ -744,7 +744,7 @@ impl<'storage, 'a> Parser<'storage, 'a> {
                 self.set_failed_bit();
                 error!(
                     self.log,
-                    "error[P????]: Unexpected string token {} while parsing type\n--> {}",
+                    "[P????]: Unexpected string token {} while parsing type\n--> {}",
                     string,
                     start_pos
                 );
@@ -755,7 +755,7 @@ impl<'storage, 'a> Parser<'storage, 'a> {
                 self.set_failed_bit();
                 error!(
                     self.log,
-                    "error[P????]: Unexpected binary string token '{}' while parsing type\n--> {}",
+                    "[P????]: Unexpected binary string token '{}' while parsing type\n--> {}",
                     binary,
                     start_pos
                 );
@@ -766,7 +766,7 @@ impl<'storage, 'a> Parser<'storage, 'a> {
                 self.set_failed_bit();
                 error!(
                     self.log,
-                    "error[P????]: Unexpected character token '{}' while parsing type\n--> {}",
+                    "[P????]: Unexpected character token '{}' while parsing type\n--> {}",
                     char,
                     start_pos
                 );
@@ -777,7 +777,7 @@ impl<'storage, 'a> Parser<'storage, 'a> {
                 self.set_failed_bit();
                 error!(
                     self.log,
-                    "error[P????]: Unexpected punctuation token '{}' while parsing type\n--> {}",
+                    "[P????]: Unexpected punctuation token '{}' while parsing type\n--> {}",
                     punc,
                     start_pos
                 );
@@ -788,7 +788,7 @@ impl<'storage, 'a> Parser<'storage, 'a> {
                 self.set_failed_bit();
                 error!(
                     self.log,
-                    "error[P????]: Unexpected operator token '{}' while parsing type\n--> {}",
+                    "[P????]: Unexpected operator token '{}' while parsing type\n--> {}",
                     op,
                     start_pos
                 );
@@ -799,7 +799,7 @@ impl<'storage, 'a> Parser<'storage, 'a> {
                 self.set_failed_bit();
                 error!(
                     self.log,
-                    "error[P????]: Unexpected comment token while parsing type\n--> {}", start_pos
+                    "[P????]: Unexpected comment token while parsing type\n--> {}", start_pos
                 );
                 None
             }
@@ -810,8 +810,7 @@ impl<'storage, 'a> Parser<'storage, 'a> {
                 self.set_failed_bit();
                 error!(
                     self.log,
-                    "error[P????]: Illegal token encountered during type parsing\n--> {}",
-                    start_pos
+                    "[P????]: Illegal token encountered during type parsing\n--> {}", start_pos
                 );
                 None
             }
@@ -832,7 +831,7 @@ impl<'storage, 'a> Parser<'storage, 'a> {
                 self.set_failed_bit();
                 error!(
                     self.log,
-                    "error[P????]: Expected right parenthesis after type expression\n--> {}",
+                    "[P????]: Expected right parenthesis after type expression\n--> {}",
                     self.lexer.sync_position()
                 );
             }
@@ -855,7 +854,7 @@ impl<'storage, 'a> Parser<'storage, 'a> {
                     self.set_failed_bit();
                     error!(
                         self.log,
-                        "error[P????]: Unable to construct refinement type due to previous errors\n--> {}",
+                        "[P????]: Unable to construct refinement type due to previous errors\n--> {}",
                         self.lexer.sync_position()
                     );
                 }

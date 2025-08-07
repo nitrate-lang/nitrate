@@ -1,7 +1,7 @@
 use super::source_model::SourceModel;
 use crate::lexer::*;
 use crate::parsetree::*;
-use slog::Logger;
+use slog::{Logger, error, info};
 
 pub struct Parser<'storage, 'a> {
     pub(crate) lexer: Lexer<'a>,
@@ -78,8 +78,32 @@ impl<'storage, 'a> Parser<'storage, 'a> {
         }
     }
 
+    pub fn is_parser_compatible(&self, language_version: (u32, u32)) -> bool {
+        match language_version {
+            // Future major versions might introduce breaking syntactic changes
+            (1, _) => true,
+
+            _ => false,
+        }
+    }
+
     pub fn parse(&mut self) -> Option<SourceModel<'a>> {
         let preamble = self.parse_preamble();
+
+        if !self.is_parser_compatible(preamble.language_version) {
+            error!(
+                self.log,
+                "[P????]: This compiler does not support Nitrate version {}.{}.",
+                preamble.language_version.0,
+                preamble.language_version.1
+            );
+            info!(
+                self.log,
+                "[P????]: Consider upgrading to a newer version of the compiler."
+            );
+            self.set_failed_bit();
+            return None;
+        }
 
         let mut expressions = Vec::new();
         while let Some(program) = self.parse_expression() {

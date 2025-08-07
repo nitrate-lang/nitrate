@@ -74,11 +74,20 @@ impl<'a> SourceModel<'a> {
     }
 }
 
-#[derive(Default)]
 pub struct SourcePreamble<'a> {
     pub language_version: (u32, u32),
     pub copyright: CopyrightMetadata<'a>,
     pub insource_config: HashMap<&'a str, ExprKey<'a>>,
+}
+
+impl<'a> Default for SourcePreamble<'a> {
+    fn default() -> Self {
+        SourcePreamble {
+            language_version: (1, 0),
+            copyright: CopyrightMetadata::default(),
+            insource_config: HashMap::default(),
+        }
+    }
 }
 
 impl<'storage, 'a> Parser<'storage, 'a> {
@@ -103,7 +112,7 @@ impl<'storage, 'a> Parser<'storage, 'a> {
                     self.set_failed_bit();
                     error!(
                         self.log,
-                        "error[P????]: Unable to parse argument expression for macro '{}'\n--> {}",
+                        "[P????]: Unable to parse argument expression for macro '{}'\n--> {}",
                         macro_name.name(),
                         self.lexer.sync_position()
                     );
@@ -117,7 +126,7 @@ impl<'storage, 'a> Parser<'storage, 'a> {
                         self.set_failed_bit();
                         error!(
                             self.log,
-                            "error[P????]: Expected ',' or ';' after macro argument expression\n--> {}",
+                            "[P????]: Expected ',' or ';' after macro argument expression\n--> {}",
                             self.lexer.sync_position()
                         );
                         break;
@@ -130,7 +139,7 @@ impl<'storage, 'a> Parser<'storage, 'a> {
             self.set_failed_bit();
             error!(
                 self.log,
-                "error[P????]: Expected macro name after '@'\n--> {}",
+                "[P????]: Expected macro name after '@'\n--> {}",
                 self.lexer.sync_position()
             );
             None
@@ -166,7 +175,7 @@ impl<'storage, 'a> Parser<'storage, 'a> {
             self.set_failed_bit();
             error!(
                 self.log,
-                "error[P????]: Expected exactly one argument (e.g. '1.0') for 'nitrate' (language version) macro\n--> {}",
+                "[P????]: Expected exactly one argument (e.g. '1.0') for 'nitrate' (language version) macro\n--> {}",
                 self.lexer.sync_position()
             );
             return (1, 0);
@@ -179,7 +188,7 @@ impl<'storage, 'a> Parser<'storage, 'a> {
                 self.set_failed_bit();
                 error!(
                     self.log,
-                    "error[P????]: Invalid version format '{}'. Expected 'major.minor' (e.g. '1.0') for 'nitrate' (language version) macro argument\n--> {}",
+                    "[P????]: Invalid version format '{}'. Expected 'major.minor' (e.g. '1.0') for 'nitrate' (language version) macro argument\n--> {}",
                     float,
                     self.lexer.sync_position()
                 );
@@ -190,7 +199,7 @@ impl<'storage, 'a> Parser<'storage, 'a> {
             self.set_failed_bit();
             error!(
                 self.log,
-                "error[P????]: Expected a float literal (e.g. '1.0') for 'nitrate' (language version) macro argument\n--> {}",
+                "[P????]: Expected a float literal (e.g. '1.0') for 'nitrate' (language version) macro argument\n--> {}",
                 self.lexer.sync_position()
             );
 
@@ -207,7 +216,7 @@ impl<'storage, 'a> Parser<'storage, 'a> {
             self.set_failed_bit();
             error!(
                 self.log,
-                "error[P????]: Expected exactly two arguments (author name and year) for 'copyright' macro\n--> {}",
+                "[P????]: Expected exactly two arguments (author name and year) for 'copyright' macro\n--> {}",
                 self.lexer.sync_position()
             );
             return;
@@ -219,7 +228,7 @@ impl<'storage, 'a> Parser<'storage, 'a> {
             self.set_failed_bit();
             error!(
                 self.log,
-                "error[P????]: Expected a string literal (author name) for 'copyright' macro argument\n--> {}",
+                "[P????]: Expected a string literal (author name) for 'copyright' macro argument\n--> {}",
                 self.lexer.sync_position()
             );
         }
@@ -230,7 +239,7 @@ impl<'storage, 'a> Parser<'storage, 'a> {
             self.set_failed_bit();
             error!(
                 self.log,
-                "error[P????]: Expected an integer literal (year) for 'copyright' macro argument\n--> {}",
+                "[P????]: Expected an integer literal (year) for 'copyright' macro argument\n--> {}",
                 self.lexer.sync_position()
             );
         }
@@ -239,7 +248,7 @@ impl<'storage, 'a> Parser<'storage, 'a> {
             self.set_failed_bit();
             error!(
                 self.log,
-                "error[P????]: 'copyright' macro requires both author name and year to be specified\n--> {}",
+                "[P????]: 'copyright' macro requires both author name and year to be specified\n--> {}",
                 self.lexer.sync_position()
             );
         }
@@ -254,7 +263,7 @@ impl<'storage, 'a> Parser<'storage, 'a> {
             self.set_failed_bit();
             error!(
                 self.log,
-                "error[P????]: Expected exactly one argument (SPDX license ID string) for 'license' macro\n--> {}",
+                "[P????]: Expected exactly one argument (SPDX license ID string) for 'license' macro\n--> {}",
                 self.lexer.sync_position()
             );
             return;
@@ -269,7 +278,7 @@ impl<'storage, 'a> Parser<'storage, 'a> {
                 self.set_failed_bit();
                 error!(
                     self.log,
-                    "error[P????]: Unknown SPDX license ID {}. Expected a valid SPDX license ID string for 'license' macro argument\n--> {}",
+                    "[P????]: Unknown SPDX license ID {}. Expected a valid SPDX license ID string for 'license' macro argument\n--> {}",
                     maybe_license,
                     self.lexer.sync_position()
                 );
@@ -278,7 +287,7 @@ impl<'storage, 'a> Parser<'storage, 'a> {
             self.set_failed_bit();
             error!(
                 self.log,
-                "error[P????]: Expected a string literal (SPDX license ID) for 'license' macro argument\n--> {}",
+                "[P????]: Expected a string literal (SPDX license ID) for 'license' macro argument\n--> {}",
                 self.lexer.sync_position()
             );
         }
@@ -320,7 +329,7 @@ impl<'storage, 'a> Parser<'storage, 'a> {
                     self.set_failed_bit();
                     error!(
                         self.log,
-                        "error[P????]: Unknown macro '{}'\n--> {}",
+                        "[P????]: Unknown macro '{}'\n--> {}",
                         macro_name,
                         self.lexer.sync_position()
                     );
