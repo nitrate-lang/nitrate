@@ -20,7 +20,7 @@ use super::string::StringLit;
 use super::tuple_type::TupleType;
 use super::unary_op::{UnaryOp, UnaryOperator};
 use super::variable::{Variable, VariableKind};
-use crate::lexer::{Float, Integer, Keyword, Name, Operator, Punct, Token};
+use crate::lexer::{Float, Integer, Keyword, Name, Op, Punct, Token};
 
 #[derive(Debug, Default, Clone, PartialEq, PartialOrd, Hash)]
 pub struct CodeFormat {}
@@ -74,18 +74,18 @@ impl<'a> ToCode<'a> for ObjectLit<'a> {
 impl<'a> ToCode<'a> for UnaryOperator {
     fn to_code(&self, _bank: &Storage<'a>, tokens: &mut Vec<Token<'a>>, _options: &CodeFormat) {
         let operator = Token::Op(match self {
-            UnaryOperator::Add => Operator::Add,
-            UnaryOperator::Sub => Operator::Sub,
-            UnaryOperator::Mul => Operator::Mul,
-            UnaryOperator::BitAnd => Operator::BitAnd,
-            UnaryOperator::BitNot => Operator::BitNot,
-            UnaryOperator::LogicNot => Operator::LogicNot,
-            UnaryOperator::Inc => Operator::Inc,
-            UnaryOperator::Dec => Operator::Dec,
-            UnaryOperator::Sizeof => Operator::Sizeof,
-            UnaryOperator::Alignof => Operator::Alignof,
-            UnaryOperator::Typeof => Operator::Typeof,
-            UnaryOperator::Question => Operator::Question,
+            UnaryOperator::Add => Op::Add,
+            UnaryOperator::Sub => Op::Sub,
+            UnaryOperator::Mul => Op::Mul,
+            UnaryOperator::BitAnd => Op::BitAnd,
+            UnaryOperator::BitNot => Op::BitNot,
+            UnaryOperator::LogicNot => Op::LogicNot,
+            UnaryOperator::Inc => Op::Inc,
+            UnaryOperator::Dec => Op::Dec,
+            UnaryOperator::Sizeof => Op::Sizeof,
+            UnaryOperator::Alignof => Op::Alignof,
+            UnaryOperator::Typeof => Op::Typeof,
+            UnaryOperator::Question => Op::Question,
         });
 
         tokens.push(operator);
@@ -107,52 +107,52 @@ impl<'a> ToCode<'a> for UnaryOp<'a> {
 impl<'a> ToCode<'a> for BinaryOperator {
     fn to_code(&self, _bank: &Storage<'a>, tokens: &mut Vec<Token<'a>>, _options: &CodeFormat) {
         let operator = Token::Op(match self {
-            BinaryOperator::Add => Operator::Add,
-            BinaryOperator::Sub => Operator::Sub,
-            BinaryOperator::Mul => Operator::Mul,
-            BinaryOperator::Div => Operator::Div,
-            BinaryOperator::Mod => Operator::Mod,
-            BinaryOperator::BitAnd => Operator::BitAnd,
-            BinaryOperator::BitOr => Operator::BitOr,
-            BinaryOperator::BitXor => Operator::BitXor,
-            BinaryOperator::BitShl => Operator::BitShl,
-            BinaryOperator::BitShr => Operator::BitShr,
-            BinaryOperator::BitRotl => Operator::BitRotl,
-            BinaryOperator::BitRotr => Operator::BitRotr,
-            BinaryOperator::LogicAnd => Operator::LogicAnd,
-            BinaryOperator::LogicOr => Operator::LogicOr,
-            BinaryOperator::LogicXor => Operator::LogicXor,
-            BinaryOperator::LogicLt => Operator::LogicLt,
-            BinaryOperator::LogicGt => Operator::LogicGt,
-            BinaryOperator::LogicLe => Operator::LogicLe,
-            BinaryOperator::LogicGe => Operator::LogicGe,
-            BinaryOperator::LogicEq => Operator::LogicEq,
-            BinaryOperator::LogicNe => Operator::LogicNe,
-            BinaryOperator::Set => Operator::Set,
-            BinaryOperator::SetPlus => Operator::SetPlus,
-            BinaryOperator::SetMinus => Operator::SetMinus,
-            BinaryOperator::SetTimes => Operator::SetTimes,
-            BinaryOperator::SetSlash => Operator::SetSlash,
-            BinaryOperator::SetPercent => Operator::SetPercent,
-            BinaryOperator::SetBitAnd => Operator::SetBitAnd,
-            BinaryOperator::SetBitOr => Operator::SetBitOr,
-            BinaryOperator::SetBitXor => Operator::SetBitXor,
-            BinaryOperator::SetBitShl => Operator::SetBitShl,
-            BinaryOperator::SetBitShr => Operator::SetBitShr,
-            BinaryOperator::SetBitRotl => Operator::SetBitRotl,
-            BinaryOperator::SetBitRotr => Operator::SetBitRotr,
-            BinaryOperator::SetLogicAnd => Operator::SetLogicAnd,
-            BinaryOperator::SetLogicOr => Operator::SetLogicOr,
-            BinaryOperator::SetLogicXor => Operator::SetLogicXor,
-            BinaryOperator::As => Operator::As,
-            BinaryOperator::Dot => Operator::Dot,
-            BinaryOperator::Ellipsis => Operator::Ellipsis,
-            BinaryOperator::Scope => Operator::Scope,
-            BinaryOperator::Arrow => Operator::Arrow,
-            BinaryOperator::BlockArrow => Operator::BlockArrow,
-            BinaryOperator::Range => Operator::Range,
-            BinaryOperator::Question => Operator::Question,
-            BinaryOperator::Spaceship => Operator::Spaceship,
+            BinaryOperator::Add => Op::Add,
+            BinaryOperator::Sub => Op::Sub,
+            BinaryOperator::Mul => Op::Mul,
+            BinaryOperator::Div => Op::Div,
+            BinaryOperator::Mod => Op::Mod,
+            BinaryOperator::BitAnd => Op::BitAnd,
+            BinaryOperator::BitOr => Op::BitOr,
+            BinaryOperator::BitXor => Op::BitXor,
+            BinaryOperator::BitShl => Op::BitShl,
+            BinaryOperator::BitShr => Op::BitShr,
+            BinaryOperator::BitRotl => Op::BitRotl,
+            BinaryOperator::BitRotr => Op::BitRotr,
+            BinaryOperator::LogicAnd => Op::LogicAnd,
+            BinaryOperator::LogicOr => Op::LogicOr,
+            BinaryOperator::LogicXor => Op::LogicXor,
+            BinaryOperator::LogicLt => Op::LogicLt,
+            BinaryOperator::LogicGt => Op::LogicGt,
+            BinaryOperator::LogicLe => Op::LogicLe,
+            BinaryOperator::LogicGe => Op::LogicGe,
+            BinaryOperator::LogicEq => Op::LogicEq,
+            BinaryOperator::LogicNe => Op::LogicNe,
+            BinaryOperator::Set => Op::Set,
+            BinaryOperator::SetPlus => Op::SetPlus,
+            BinaryOperator::SetMinus => Op::SetMinus,
+            BinaryOperator::SetTimes => Op::SetTimes,
+            BinaryOperator::SetSlash => Op::SetSlash,
+            BinaryOperator::SetPercent => Op::SetPercent,
+            BinaryOperator::SetBitAnd => Op::SetBitAnd,
+            BinaryOperator::SetBitOr => Op::SetBitOr,
+            BinaryOperator::SetBitXor => Op::SetBitXor,
+            BinaryOperator::SetBitShl => Op::SetBitShl,
+            BinaryOperator::SetBitShr => Op::SetBitShr,
+            BinaryOperator::SetBitRotl => Op::SetBitRotl,
+            BinaryOperator::SetBitRotr => Op::SetBitRotr,
+            BinaryOperator::SetLogicAnd => Op::SetLogicAnd,
+            BinaryOperator::SetLogicOr => Op::SetLogicOr,
+            BinaryOperator::SetLogicXor => Op::SetLogicXor,
+            BinaryOperator::As => Op::As,
+            BinaryOperator::Dot => Op::Dot,
+            BinaryOperator::Ellipsis => Op::Ellipsis,
+            BinaryOperator::Scope => Op::Scope,
+            BinaryOperator::Arrow => Op::Arrow,
+            BinaryOperator::BlockArrow => Op::BlockArrow,
+            BinaryOperator::Range => Op::Range,
+            BinaryOperator::Question => Op::Question,
+            BinaryOperator::Spaceship => Op::Spaceship,
         });
 
         tokens.push(operator);
@@ -214,7 +214,7 @@ impl<'a> ToCode<'a> for Function<'a> {
             }
 
             if let Some(default_expr) = param.default_value() {
-                tokens.push(Token::Op(Operator::Set));
+                tokens.push(Token::Op(Op::Set));
                 default_expr.to_code(bank, tokens, options);
             }
         }
@@ -222,7 +222,7 @@ impl<'a> ToCode<'a> for Function<'a> {
 
         if let Some(return_type) = self.return_type() {
             if !matches!(return_type.get(bank), TypeOwned::InferType) {
-                tokens.push(Token::Op(Operator::Arrow));
+                tokens.push(Token::Op(Op::Arrow));
                 return_type.to_code(bank, tokens, options);
             }
         }
@@ -248,7 +248,7 @@ impl<'a> ToCode<'a> for Variable<'a> {
         }
 
         if let Some(value) = self.value() {
-            tokens.push(Token::Op(Operator::Set));
+            tokens.push(Token::Op(Op::Set));
             value.to_code(bank, tokens, options);
         }
     }
@@ -312,7 +312,7 @@ impl<'a> ToCode<'a> for MapType<'a> {
     fn to_code(&self, bank: &Storage<'a>, tokens: &mut Vec<Token<'a>>, options: &CodeFormat) {
         tokens.push(Token::Punct(Punct::LeftBracket));
         self.key().to_code(bank, tokens, options);
-        tokens.push(Token::Op(Operator::Arrow));
+        tokens.push(Token::Op(Op::Arrow));
         self.value().to_code(bank, tokens, options);
         tokens.push(Token::Punct(Punct::RightBracket));
     }
@@ -352,7 +352,7 @@ impl<'a> ToCode<'a> for FunctionType<'a> {
             }
 
             if let Some(default_expr) = param.default_value() {
-                tokens.push(Token::Op(Operator::Set));
+                tokens.push(Token::Op(Op::Set));
                 default_expr.to_code(bank, tokens, options);
             }
         }
@@ -360,7 +360,7 @@ impl<'a> ToCode<'a> for FunctionType<'a> {
 
         let return_type = self.return_type();
         if !matches!(return_type.get(bank), TypeOwned::InferType) {
-            tokens.push(Token::Op(Operator::Arrow));
+            tokens.push(Token::Op(Op::Arrow));
             return_type.to_code(bank, tokens, options);
         }
     }
@@ -368,7 +368,7 @@ impl<'a> ToCode<'a> for FunctionType<'a> {
 
 impl<'a> ToCode<'a> for ManagedRefType<'a> {
     fn to_code(&self, bank: &Storage<'a>, tokens: &mut Vec<Token<'a>>, options: &CodeFormat) {
-        tokens.push(Token::Op(Operator::BitAnd));
+        tokens.push(Token::Op(Op::BitAnd));
         if self.is_mutable() {
             tokens.push(Token::Keyword(Keyword::Mut));
         }
@@ -379,7 +379,7 @@ impl<'a> ToCode<'a> for ManagedRefType<'a> {
 
 impl<'a> ToCode<'a> for UnmanagedRefType<'a> {
     fn to_code(&self, bank: &Storage<'a>, tokens: &mut Vec<Token<'a>>, options: &CodeFormat) {
-        tokens.push(Token::Op(Operator::Mul));
+        tokens.push(Token::Op(Op::Mul));
         if self.is_mutable() {
             tokens.push(Token::Keyword(Keyword::Mut));
         } else {
@@ -394,7 +394,7 @@ impl<'a> ToCode<'a> for GenericType<'a> {
     fn to_code(&self, bank: &Storage<'a>, tokens: &mut Vec<Token<'a>>, options: &CodeFormat) {
         self.base().to_code(bank, tokens, options);
 
-        tokens.push(Token::Op(Operator::LogicLt));
+        tokens.push(Token::Op(Op::LogicLt));
         for (i, (name, value)) in self.arguments().iter().enumerate() {
             (i > 0).then(|| tokens.push(Token::Punct(Punct::Comma)));
             if !name.is_empty() {
@@ -403,7 +403,7 @@ impl<'a> ToCode<'a> for GenericType<'a> {
             }
             value.to_code(bank, tokens, options);
         }
-        tokens.push(Token::Op(Operator::LogicGt));
+        tokens.push(Token::Op(Op::LogicGt));
     }
 }
 

@@ -129,7 +129,7 @@ impl<'storage, 'a> Parser<'storage, 'a> {
             _ => {}
         }
 
-        let argval = if self.lexer.skip_if(&Token::Op(Operator::Add)) {
+        let argval = if self.lexer.skip_if(&Token::Op(Op::Add)) {
             self.parse_expression()
         } else {
             self.parse_type().map(|t| t.into())
@@ -149,7 +149,7 @@ impl<'storage, 'a> Parser<'storage, 'a> {
     }
 
     fn parse_generic_arguments(&mut self) -> Vec<(&'a str, ExprKey<'a>)> {
-        assert!(self.lexer.peek_t() == Token::Op(Operator::LogicLt));
+        assert!(self.lexer.peek_t() == Token::Op(Op::LogicLt));
         self.lexer.skip();
 
         self.generic_type_depth += 1;
@@ -160,20 +160,20 @@ impl<'storage, 'a> Parser<'storage, 'a> {
         self.lexer.skip_if(&Token::Punct(Punct::Comma));
         while self.generic_type_depth > 0 && !self.lexer.is_eof() {
             // '>'
-            if self.lexer.skip_if(&Token::Op(Operator::LogicGt)) {
+            if self.lexer.skip_if(&Token::Op(Op::LogicGt)) {
                 self.generic_type_depth -= 1;
                 break;
             }
 
             // '>>'
-            if self.lexer.skip_if(&Token::Op(Operator::BitShr)) {
+            if self.lexer.skip_if(&Token::Op(Op::BitShr)) {
                 self.generic_type_depth -= 2;
                 self.generic_type_suffix_terminator_ambiguity = true;
                 break;
             }
 
             // '>>>'
-            if self.lexer.skip_if(&Token::Op(Operator::BitRotr)) {
+            if self.lexer.skip_if(&Token::Op(Op::BitRotr)) {
                 self.generic_type_depth -= 3;
                 self.generic_type_suffix_terminator_ambiguity = true;
                 break;
@@ -192,9 +192,9 @@ impl<'storage, 'a> Parser<'storage, 'a> {
             }
 
             if !self.lexer.skip_if(&Token::Punct(Punct::Comma)) {
-                if !self.lexer.next_is(&Token::Op(Operator::LogicGt))
-                    && !self.lexer.next_is(&Token::Op(Operator::BitShr))
-                    && !self.lexer.next_is(&Token::Op(Operator::BitRotr))
+                if !self.lexer.next_is(&Token::Op(Op::LogicGt))
+                    && !self.lexer.next_is(&Token::Op(Op::BitShr))
+                    && !self.lexer.next_is(&Token::Op(Op::BitRotr))
                 {
                     self.set_failed_bit();
                     error!(
@@ -241,7 +241,7 @@ impl<'storage, 'a> Parser<'storage, 'a> {
         assert!(self.lexer.peek_t() == Token::Name(Name::new(type_name)));
 
         let named_type_base = self.parse_named_type_name(type_name);
-        if !self.lexer.next_is(&Token::Op(Operator::LogicLt)) {
+        if !self.lexer.next_is(&Token::Op(Op::LogicLt)) {
             return named_type_base;
         }
 
@@ -378,7 +378,7 @@ impl<'storage, 'a> Parser<'storage, 'a> {
     }
 
     fn parse_rest_of_map_type(&mut self, key_type: Option<TypeKey<'a>>) -> Option<TypeKey<'a>> {
-        assert!(self.lexer.peek_t() == Token::Op(Operator::Arrow));
+        assert!(self.lexer.peek_t() == Token::Op(Op::Arrow));
         self.lexer.skip();
 
         let map_type = if let Some(value_type) = self.parse_type() {
@@ -452,7 +452,7 @@ impl<'storage, 'a> Parser<'storage, 'a> {
 
         if self.lexer.next_is(&Token::Punct(Punct::Semicolon)) {
             self.parse_rest_of_array(something_type)
-        } else if self.lexer.next_is(&Token::Op(Operator::Arrow)) {
+        } else if self.lexer.next_is(&Token::Op(Op::Arrow)) {
             self.parse_rest_of_map_type(something_type)
         } else if self.lexer.next_is(&Token::Punct(Punct::RightBracket)) {
             self.parse_rest_of_slice_type(something_type)
@@ -468,7 +468,7 @@ impl<'storage, 'a> Parser<'storage, 'a> {
     }
 
     fn parse_managed_type(&mut self) -> Option<TypeKey<'a>> {
-        assert!(self.lexer.peek_t() == Token::Op(Operator::BitAnd));
+        assert!(self.lexer.peek_t() == Token::Op(Op::BitAnd));
         self.lexer.skip();
 
         let is_mutable = self.lexer.skip_if(&Token::Keyword(Keyword::Mut))
@@ -492,7 +492,7 @@ impl<'storage, 'a> Parser<'storage, 'a> {
     }
 
     fn parse_unmanaged_type(&mut self) -> Option<TypeKey<'a>> {
-        assert!(self.lexer.peek_t() == Token::Op(Operator::Mul));
+        assert!(self.lexer.peek_t() == Token::Op(Op::Mul));
         self.lexer.skip();
 
         let is_mutable = self.lexer.skip_if(&Token::Keyword(Keyword::Mut))
@@ -588,7 +588,7 @@ impl<'storage, 'a> Parser<'storage, 'a> {
                     Builder::new(self.storage).get_infer_type()
                 };
 
-                let default = if self.lexer.skip_if(&Token::Op(Operator::Set)) {
+                let default = if self.lexer.skip_if(&Token::Op(Op::Set)) {
                     self.parse_expression()
                 } else {
                     None
@@ -626,7 +626,7 @@ impl<'storage, 'a> Parser<'storage, 'a> {
 
         let parameters = self.parse_function_parameters();
 
-        let return_type = if self.lexer.skip_if(&Token::Op(Operator::Arrow)) {
+        let return_type = if self.lexer.skip_if(&Token::Op(Op::Arrow)) {
             if let Some(return_type) = self.parse_type() {
                 return_type
             } else {
@@ -702,8 +702,8 @@ impl<'storage, 'a> Parser<'storage, 'a> {
             Token::Name(name) => self.parse_named_type(name.name()),
             Token::Punct(Punct::LeftBrace) => self.parse_tuple_type(),
             Token::Punct(Punct::LeftBracket) => self.parse_array_or_slice_or_map(),
-            Token::Op(Operator::BitAnd) => self.parse_managed_type(),
-            Token::Op(Operator::Mul) => self.parse_unmanaged_type(),
+            Token::Op(Op::BitAnd) => self.parse_managed_type(),
+            Token::Op(Op::Mul) => self.parse_unmanaged_type(),
             Token::Keyword(Keyword::Fn) => self.parse_function_type(),
             Token::Keyword(Keyword::Opaque) => self.parse_opaque_type(),
 
