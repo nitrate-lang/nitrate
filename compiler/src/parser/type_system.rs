@@ -350,11 +350,13 @@ impl<'storage, 'a> Parser<'storage, 'a> {
             self.generic_type_suffix_terminator_ambiguity = false;
         }
 
-        Builder::new(self.storage)
-            .create_generic_type()
-            .with_base(basis_type)
-            .add_arguments(generic_args)
-            .build()
+        Some(
+            Builder::new(self.storage)
+                .create_generic_type()
+                .with_base(basis_type)
+                .add_arguments(generic_args)
+                .build(),
+        )
     }
 
     fn parse_tuple_type(&mut self) -> Option<TypeKey<'a>> {
@@ -398,10 +400,12 @@ impl<'storage, 'a> Parser<'storage, 'a> {
             }
         }
 
-        Builder::new(self.storage)
-            .create_tuple_type()
-            .add_elements(tuple_elements)
-            .build()
+        Some(
+            Builder::new(self.storage)
+                .create_tuple_type()
+                .add_elements(tuple_elements)
+                .build(),
+        )
     }
 
     fn parse_rest_of_array(
@@ -446,11 +450,13 @@ impl<'storage, 'a> Parser<'storage, 'a> {
             return None;
         }
 
-        Builder::new(self.storage)
-            .create_array_type()
-            .with_element(element_type)
-            .with_count(array_count)
-            .build()
+        Some(
+            Builder::new(self.storage)
+                .create_array_type()
+                .with_element(element_type)
+                .with_count(array_count)
+                .build(),
+        )
     }
 
     fn parse_rest_of_map_type(
@@ -495,11 +501,13 @@ impl<'storage, 'a> Parser<'storage, 'a> {
             return None;
         }
 
-        Builder::new(self.storage)
-            .create_map_type()
-            .with_key(key_type)
-            .with_value(value_type)
-            .build()
+        Some(
+            Builder::new(self.storage)
+                .create_map_type()
+                .with_key(key_type)
+                .with_value(value_type)
+                .build(),
+        )
     }
 
     fn parse_rest_of_slice_type(
@@ -522,10 +530,12 @@ impl<'storage, 'a> Parser<'storage, 'a> {
             return None;
         };
 
-        Builder::new(self.storage)
-            .create_slice_type()
-            .with_element(element_type)
-            .build()
+        Some(
+            Builder::new(self.storage)
+                .create_slice_type()
+                .with_element(element_type)
+                .build(),
+        )
     }
 
     fn parse_array_or_slice_or_map(&mut self) -> Option<TypeKey<'a>> {
@@ -583,11 +593,13 @@ impl<'storage, 'a> Parser<'storage, 'a> {
             return None;
         };
 
-        Builder::new(self.storage)
-            .create_managed_type()
-            .with_target(target)
-            .with_mutability(is_mutable)
-            .build()
+        Some(
+            Builder::new(self.storage)
+                .create_managed_type()
+                .with_target(target)
+                .with_mutability(is_mutable)
+                .build(),
+        )
     }
 
     fn parse_unmanaged_type(&mut self) -> Option<TypeKey<'a>> {
@@ -614,11 +626,13 @@ impl<'storage, 'a> Parser<'storage, 'a> {
             return None;
         };
 
-        Builder::new(self.storage)
-            .create_unmanaged_type()
-            .with_target(target)
-            .with_mutability(is_mutable)
-            .build()
+        Some(
+            Builder::new(self.storage)
+                .create_unmanaged_type()
+                .with_target(target)
+                .with_mutability(is_mutable)
+                .build(),
+        )
     }
 
     fn parse_function_attributes(&mut self) -> Option<Vec<ExprKey<'a>>> {
@@ -780,12 +794,14 @@ impl<'storage, 'a> Parser<'storage, 'a> {
             Builder::new(self.storage).get_infer_type()
         };
 
-        Builder::new(self.storage)
-            .create_function_type()
-            .add_attributes(attributes)
-            .add_parameters(parameters)
-            .with_return_type(return_type)
-            .build()
+        Some(
+            Builder::new(self.storage)
+                .create_function_type()
+                .add_attributes(attributes)
+                .add_parameters(parameters)
+                .with_return_type(return_type)
+                .build(),
+        )
     }
 
     fn parse_opaque_type(&mut self) -> Option<TypeKey<'a>> {
@@ -1030,13 +1046,15 @@ impl<'storage, 'a> Parser<'storage, 'a> {
             };
 
             if refinement.has_any() {
-                return Builder::new(self.storage)
-                    .create_refinement_type()
-                    .with_base(the_type)
-                    .with_width(refinement.width)
-                    .with_minimum(refinement.minimum)
-                    .with_maximum(refinement.maximum)
-                    .build();
+                return Some(
+                    Builder::new(self.storage)
+                        .create_refinement_type()
+                        .with_base(the_type)
+                        .with_width(refinement.width)
+                        .with_minimum(refinement.minimum)
+                        .with_maximum(refinement.maximum)
+                        .build(),
+                );
             }
 
             Some(the_type)

@@ -64,7 +64,7 @@ impl<'storage, 'a> RefinementTypeBuilder<'storage, 'a> {
         self
     }
 
-    pub fn build(self) -> Option<TypeKey<'a>> {
+    pub fn build(self) -> TypeKey<'a> {
         self.storage
             .add_type(TypeOwned::RefinementType(RefinementType::new(
                 self.base.expect("Principal type must be provided"),
@@ -72,6 +72,7 @@ impl<'storage, 'a> RefinementTypeBuilder<'storage, 'a> {
                 self.minimum,
                 self.maximum,
             )))
+            .expect("Failed to create refinement type")
     }
 }
 
@@ -102,9 +103,10 @@ impl<'storage, 'a> TupleTypeBuilder<'storage, 'a> {
         self
     }
 
-    pub fn build(self) -> Option<TypeKey<'a>> {
+    pub fn build(self) -> TypeKey<'a> {
         self.storage
             .add_type(TypeOwned::TupleType(TupleType::new(self.elements)))
+            .expect("Failed to create tuple type")
     }
 }
 
@@ -134,11 +136,13 @@ impl<'storage, 'a> ArrayTypeBuilder<'storage, 'a> {
         self
     }
 
-    pub fn build(self) -> Option<TypeKey<'a>> {
-        self.storage.add_type(TypeOwned::ArrayType(ArrayType::new(
-            self.element.expect("Element type must be provided"),
-            self.count.expect("Array length must be provided"),
-        )))
+    pub fn build(self) -> TypeKey<'a> {
+        self.storage
+            .add_type(TypeOwned::ArrayType(ArrayType::new(
+                self.element.expect("Element type must be provided"),
+                self.count.expect("Array length must be provided"),
+            )))
+            .expect("Failed to create array type")
     }
 }
 
@@ -168,11 +172,13 @@ impl<'storage, 'a> MapTypeBuilder<'storage, 'a> {
         self
     }
 
-    pub fn build(self) -> Option<TypeKey<'a>> {
-        self.storage.add_type(TypeOwned::MapType(MapType::new(
-            self.key.expect("Key type must be provided"),
-            self.value.expect("Value type must be provided"),
-        )))
+    pub fn build(self) -> TypeKey<'a> {
+        self.storage
+            .add_type(TypeOwned::MapType(MapType::new(
+                self.key.expect("Key type must be provided"),
+                self.value.expect("Value type must be provided"),
+            )))
+            .expect("Failed to create map type")
     }
 }
 
@@ -195,10 +201,12 @@ impl<'storage, 'a> SliceTypeBuilder<'storage, 'a> {
         self
     }
 
-    pub fn build(self) -> Option<TypeKey<'a>> {
-        self.storage.add_type(TypeOwned::SliceType(SliceType::new(
-            self.element.expect("Element type must be provided"),
-        )))
+    pub fn build(self) -> TypeKey<'a> {
+        self.storage
+            .add_type(TypeOwned::SliceType(SliceType::new(
+                self.element.expect("Element type must be provided"),
+            )))
+            .expect("Failed to create slice type")
     }
 }
 
@@ -257,13 +265,14 @@ impl<'storage, 'a> FunctionTypeBuilder<'storage, 'a> {
         self
     }
 
-    pub fn build(self) -> Option<TypeKey<'a>> {
+    pub fn build(self) -> TypeKey<'a> {
         self.storage
             .add_type(TypeOwned::FunctionType(FunctionType::new(
                 self.parameters,
                 self.return_type.expect("Return type must be provided"),
                 self.attributes,
             )))
+            .expect("Failed to create function type")
     }
 }
 
@@ -293,12 +302,13 @@ impl<'storage, 'a> ManagedRefTypeBuilder<'storage, 'a> {
         self
     }
 
-    pub fn build(self) -> Option<TypeKey<'a>> {
+    pub fn build(self) -> TypeKey<'a> {
         self.storage
             .add_type(TypeOwned::ManagedRefType(ManagedRefType::new(
                 self.target.expect("Target type must be provided"),
                 self.is_mutable,
             )))
+            .expect("Failed to create managed reference type")
     }
 }
 
@@ -328,12 +338,13 @@ impl<'storage, 'a> UnmanagedRefTypeBuilder<'storage, 'a> {
         self
     }
 
-    pub fn build(self) -> Option<TypeKey<'a>> {
+    pub fn build(self) -> TypeKey<'a> {
         self.storage
             .add_type(TypeOwned::UnmanagedRefType(UnmanagedRefType::new(
                 self.target.expect("Target type must be provided"),
                 self.is_mutable,
             )))
+            .expect("Failed to create unmanaged reference type")
     }
 }
 
@@ -371,12 +382,13 @@ impl<'storage, 'a> GenericTypeBuilder<'storage, 'a> {
         self
     }
 
-    pub fn build(self) -> Option<TypeKey<'a>> {
+    pub fn build(self) -> TypeKey<'a> {
         self.storage
             .add_type(TypeOwned::GenericType(GenericType::new(
                 self.base.expect("Principal type must be provided"),
                 self.arguments,
             )))
+            .expect("Failed to create generic type")
     }
 }
 
