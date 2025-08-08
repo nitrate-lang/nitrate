@@ -3,113 +3,112 @@ use nitrate_compiler::lexer::*;
 use nitrate_compiler::parser::*;
 use nitrate_compiler::parsetree::*;
 
-static mut STORAGE: Option<Storage<'static>> = None;
-static mut LOGGER: Option<slog::Logger> = None;
+struct ParserUtil {
+    storage: Storage<'static>,
+    logger: slog::Logger,
+}
 
-fn parse_type(source_code: &'static str) {
-    #[allow(static_mut_refs)]
-    let storage = unsafe { STORAGE.as_mut().unwrap_unchecked() };
-
-    #[allow(static_mut_refs)]
-    let logger = unsafe { LOGGER.as_mut().unwrap_unchecked() };
-
+fn parse_type(source_code: &'static str, util: &mut ParserUtil) {
     let lexer = Lexer::new(source_code.as_bytes(), "").expect("Failed to create lexer");
-    let mut parser = Parser::new(lexer, storage, logger);
+    let mut parser = Parser::new(lexer, &mut util.storage, &mut util.logger);
     parser.parse_type().expect("Failed to parse type");
 }
 
 #[inline(never)]
-fn primitive() {
-    parse_type("i32");
+fn primitive(util: &mut ParserUtil) {
+    parse_type("i32", util);
 }
 
 #[inline(never)]
-fn infer() {
-    parse_type("_");
+fn infer(util: &mut ParserUtil) {
+    parse_type("_", util);
 }
 
 #[inline(never)]
-fn name() {
-    parse_type("std::Covariant");
+fn name(util: &mut ParserUtil) {
+    parse_type("std::Covariant", util);
 }
 
 #[inline(never)]
-fn refinement() {
-    parse_type("u8: 6: [30:40]");
+fn refinement(util: &mut ParserUtil) {
+    parse_type("u8: 6: [30:40]", util);
 }
 
 #[inline(never)]
-fn tuple() {
-    parse_type("{String, u8, bool}");
+fn tuple(util: &mut ParserUtil) {
+    parse_type("{String, u8, bool}", util);
 }
 
 #[inline(never)]
-fn array() {
-    parse_type("[u8; 10]");
+fn array(util: &mut ParserUtil) {
+    parse_type("[u8; 10]", util);
 }
 
 #[inline(never)]
-fn map() {
-    parse_type("[char -> u8]");
+fn map(util: &mut ParserUtil) {
+    parse_type("[char -> u8]", util);
 }
 
 #[inline(never)]
-fn slice() {
-    parse_type("[u8]");
+fn slice(util: &mut ParserUtil) {
+    parse_type("[u8]", util);
 }
 
 #[inline(never)]
-fn function() {
-    parse_type("fn[10, 20](a, b: i32 = 40) -> bool");
+fn function(util: &mut ParserUtil) {
+    parse_type("fn[10, 20](a, b: i32 = 40) -> bool", util);
 }
 
 #[inline(never)]
-fn reference() {
-    parse_type("&i32");
+fn reference(util: &mut ParserUtil) {
+    parse_type("&i32", util);
 }
 
 #[inline(never)]
-fn pointer() {
-    parse_type("*i32");
+fn pointer(util: &mut ParserUtil) {
+    parse_type("*i32", util);
 }
 
 #[inline(never)]
-fn generic() {
-    parse_type("Vec<Point<f32>: 20, growth: 3.2>");
+fn generic(util: &mut ParserUtil) {
+    parse_type("Vec<Point<f32>: 20, growth: 3.2>", util);
 }
 
 #[inline(never)]
-fn opaque() {
-    parse_type("opaque(\"sqlite3\")");
+fn opaque(util: &mut ParserUtil) {
+    parse_type("opaque(\"sqlite3\")", util);
 }
 
 #[inline(never)]
-fn monster() {
-    parse_type("Option<[str -> Vec<{u8, str: 48, Set<Address<str>>: 2: [1:]}>]>: 1");
+fn monster(util: &mut ParserUtil) {
+    parse_type(
+        "Option<[str -> Vec<{u8, str: 48, Set<Address<str>>: 2: [1:]}>]>: 1",
+        util,
+    );
 }
 
 fn parse_type_benchmark(c: &mut Criterion) {
-    unsafe {
-        STORAGE = Some(Storage::new());
-        LOGGER = Some(slog::Logger::root(slog::Discard, slog::o!()));
-    }
+    let mut util = ParserUtil {
+        storage: Storage::new(),
+        logger: slog::Logger::root(slog::Discard, slog::o!()),
+    };
 
     let mut g = c.benchmark_group("parse_type");
 
-    g.bench_function("primitive", |b| b.iter(|| primitive()));
-    g.bench_function("infer", |b| b.iter(|| infer()));
-    g.bench_function("name", |b| b.iter(|| name()));
-    g.bench_function("refinement", |b| b.iter(|| refinement()));
-    g.bench_function("tuple", |b| b.iter(|| tuple()));
-    g.bench_function("array", |b| b.iter(|| array()));
-    g.bench_function("map", |b| b.iter(|| map()));
-    g.bench_function("slice", |b| b.iter(|| slice()));
-    g.bench_function("function", |b| b.iter(|| function()));
-    g.bench_function("reference", |b| b.iter(|| reference()));
-    g.bench_function("pointer", |b| b.iter(|| pointer()));
-    g.bench_function("generic", |b| b.iter(|| generic()));
-    g.bench_function("opaque", |b| b.iter(|| opaque()));
-    g.bench_function("monster", |b| b.iter(|| monster()));
+    g.bench_function("primitive", |b| b.iter(|| primitive(&mut util)));
+    g.bench_function("infer", |b| b.iter(|| infer(&mut util)));
+    g.bench_function("name", |b| b.iter(|| name(&mut util)));
+    g.bench_function("refinement", |b| b.iter(|| refinement(&mut util)));
+    g.bench_function("tuple", |b| b.iter(|| tuple(&mut util)));
+    g.bench_function("array", |b| b.iter(|| array(&mut util)));
+    g.bench_function("map", |b| b.iter(|| map(&mut util)));
+    g.bench_function("slice", |b| b.iter(|| slice(&mut util)));
+    g.bench_function("function", |b| b.iter(|| function(&mut util)));
+    g.bench_function("reference", |b| b.iter(|| reference(&mut util)));
+    g.bench_function("pointer", |b| b.iter(|| pointer(&mut util)));
+    g.bench_function("generic", |b| b.iter(|| generic(&mut util)));
+    g.bench_function("opaque", |b| b.iter(|| opaque(&mut util)));
+    g.bench_function("monster", |b| b.iter(|| monster(&mut util)));
 
     g.finish();
 }
