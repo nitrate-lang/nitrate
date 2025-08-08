@@ -25,6 +25,362 @@ use apint::UInt;
 use std::collections::BTreeMap;
 
 #[derive(Debug)]
+pub struct RefinementTypeBuilder<'storage, 'a> {
+    storage: &'storage mut Storage<'a>,
+    base: Option<TypeKey<'a>>,
+    width: Option<ExprKey<'a>>,
+    minimum: Option<ExprKey<'a>>,
+    maximum: Option<ExprKey<'a>>,
+}
+
+impl<'storage, 'a> RefinementTypeBuilder<'storage, 'a> {
+    pub(crate) fn new(storage: &'storage mut Storage<'a>) -> Self {
+        RefinementTypeBuilder {
+            storage,
+            base: None,
+            width: None,
+            minimum: None,
+            maximum: None,
+        }
+    }
+
+    pub fn with_base(mut self, base: TypeKey<'a>) -> Self {
+        self.base = Some(base);
+        self
+    }
+
+    pub fn with_width(mut self, width: Option<ExprKey<'a>>) -> Self {
+        self.width = width;
+        self
+    }
+
+    pub fn with_minimum(mut self, minimum: Option<ExprKey<'a>>) -> Self {
+        self.minimum = minimum;
+        self
+    }
+
+    pub fn with_maximum(mut self, maximum: Option<ExprKey<'a>>) -> Self {
+        self.maximum = maximum;
+        self
+    }
+
+    pub fn build(self) -> Option<TypeKey<'a>> {
+        self.storage
+            .add_type(TypeOwned::RefinementType(RefinementType::new(
+                self.base.expect("Principal type must be provided"),
+                self.width,
+                self.minimum,
+                self.maximum,
+            )))
+    }
+}
+
+#[derive(Debug)]
+pub struct TupleTypeBuilder<'storage, 'a> {
+    storage: &'storage mut Storage<'a>,
+    elements: Vec<TypeKey<'a>>,
+}
+
+impl<'storage, 'a> TupleTypeBuilder<'storage, 'a> {
+    pub(crate) fn new(storage: &'storage mut Storage<'a>) -> Self {
+        TupleTypeBuilder {
+            storage,
+            elements: Vec::new(),
+        }
+    }
+
+    pub fn add_element(mut self, ty: TypeKey<'a>) -> Self {
+        self.elements.push(ty);
+        self
+    }
+
+    pub fn add_elements<I>(mut self, elements: I) -> Self
+    where
+        I: IntoIterator<Item = TypeKey<'a>>,
+    {
+        self.elements.extend(elements);
+        self
+    }
+
+    pub fn build(self) -> Option<TypeKey<'a>> {
+        self.storage
+            .add_type(TypeOwned::TupleType(TupleType::new(self.elements)))
+    }
+}
+
+#[derive(Debug)]
+pub struct ArrayTypeBuilder<'storage, 'a> {
+    storage: &'storage mut Storage<'a>,
+    element: Option<TypeKey<'a>>,
+    count: Option<ExprKey<'a>>,
+}
+
+impl<'storage, 'a> ArrayTypeBuilder<'storage, 'a> {
+    pub(crate) fn new(storage: &'storage mut Storage<'a>) -> Self {
+        ArrayTypeBuilder {
+            storage,
+            element: None,
+            count: None,
+        }
+    }
+
+    pub fn with_element(mut self, element: TypeKey<'a>) -> Self {
+        self.element = Some(element);
+        self
+    }
+
+    pub fn with_count(mut self, count: ExprKey<'a>) -> Self {
+        self.count = Some(count);
+        self
+    }
+
+    pub fn build(self) -> Option<TypeKey<'a>> {
+        self.storage.add_type(TypeOwned::ArrayType(ArrayType::new(
+            self.element.expect("Element type must be provided"),
+            self.count.expect("Array length must be provided"),
+        )))
+    }
+}
+
+#[derive(Debug)]
+pub struct MapTypeBuilder<'storage, 'a> {
+    storage: &'storage mut Storage<'a>,
+    key: Option<TypeKey<'a>>,
+    value: Option<TypeKey<'a>>,
+}
+
+impl<'storage, 'a> MapTypeBuilder<'storage, 'a> {
+    pub(crate) fn new(storage: &'storage mut Storage<'a>) -> Self {
+        MapTypeBuilder {
+            storage,
+            key: None,
+            value: None,
+        }
+    }
+
+    pub fn with_key(mut self, key: TypeKey<'a>) -> Self {
+        self.key = Some(key);
+        self
+    }
+
+    pub fn with_value(mut self, value: TypeKey<'a>) -> Self {
+        self.value = Some(value);
+        self
+    }
+
+    pub fn build(self) -> Option<TypeKey<'a>> {
+        self.storage.add_type(TypeOwned::MapType(MapType::new(
+            self.key.expect("Key type must be provided"),
+            self.value.expect("Value type must be provided"),
+        )))
+    }
+}
+
+#[derive(Debug)]
+pub struct SliceTypeBuilder<'storage, 'a> {
+    storage: &'storage mut Storage<'a>,
+    element: Option<TypeKey<'a>>,
+}
+
+impl<'storage, 'a> SliceTypeBuilder<'storage, 'a> {
+    pub(crate) fn new(storage: &'storage mut Storage<'a>) -> Self {
+        SliceTypeBuilder {
+            storage,
+            element: None,
+        }
+    }
+
+    pub fn with_element(mut self, element: TypeKey<'a>) -> Self {
+        self.element = Some(element);
+        self
+    }
+
+    pub fn build(self) -> Option<TypeKey<'a>> {
+        self.storage.add_type(TypeOwned::SliceType(SliceType::new(
+            self.element.expect("Element type must be provided"),
+        )))
+    }
+}
+
+#[derive(Debug)]
+pub struct FunctionTypeBuilder<'storage, 'a> {
+    storage: &'storage mut Storage<'a>,
+    parameters: Vec<FunctionParameter<'a>>,
+    return_type: Option<TypeKey<'a>>,
+    attributes: Vec<ExprKey<'a>>,
+}
+
+impl<'storage, 'a> FunctionTypeBuilder<'storage, 'a> {
+    pub(crate) fn new(storage: &'storage mut Storage<'a>) -> Self {
+        FunctionTypeBuilder {
+            storage,
+            parameters: Vec::new(),
+            return_type: None,
+            attributes: Vec::new(),
+        }
+    }
+
+    pub fn add_parameter(
+        mut self,
+        name: &'a str,
+        ty: TypeKey<'a>,
+        default_value: Option<ExprKey<'a>>,
+    ) -> Self {
+        self.parameters
+            .push(FunctionParameter::new(name, ty, default_value));
+        self
+    }
+
+    pub fn add_parameters<I>(mut self, parameters: I) -> Self
+    where
+        I: IntoIterator<Item = FunctionParameter<'a>>,
+    {
+        self.parameters.extend(parameters);
+        self
+    }
+
+    pub fn with_return_type(mut self, ty: TypeKey<'a>) -> Self {
+        self.return_type = Some(ty);
+        self
+    }
+
+    pub fn add_attribute(mut self, attribute: ExprKey<'a>) -> Self {
+        self.attributes.push(attribute);
+        self
+    }
+
+    pub fn add_attributes<I>(mut self, attributes: I) -> Self
+    where
+        I: IntoIterator<Item = ExprKey<'a>>,
+    {
+        self.attributes.extend(attributes);
+        self
+    }
+
+    pub fn build(self) -> Option<TypeKey<'a>> {
+        self.storage
+            .add_type(TypeOwned::FunctionType(FunctionType::new(
+                self.parameters,
+                self.return_type.expect("Return type must be provided"),
+                self.attributes,
+            )))
+    }
+}
+
+#[derive(Debug)]
+pub struct ManagedRefTypeBuilder<'storage, 'a> {
+    storage: &'storage mut Storage<'a>,
+    target: Option<TypeKey<'a>>,
+    is_mutable: bool,
+}
+
+impl<'storage, 'a> ManagedRefTypeBuilder<'storage, 'a> {
+    pub(crate) fn new(storage: &'storage mut Storage<'a>) -> Self {
+        ManagedRefTypeBuilder {
+            storage,
+            target: None,
+            is_mutable: false,
+        }
+    }
+
+    pub fn with_target(mut self, target: TypeKey<'a>) -> Self {
+        self.target = Some(target);
+        self
+    }
+
+    pub fn with_mutability(mut self, is_mutable: bool) -> Self {
+        self.is_mutable = is_mutable;
+        self
+    }
+
+    pub fn build(self) -> Option<TypeKey<'a>> {
+        self.storage
+            .add_type(TypeOwned::ManagedRefType(ManagedRefType::new(
+                self.target.expect("Target type must be provided"),
+                self.is_mutable,
+            )))
+    }
+}
+
+#[derive(Debug)]
+pub struct UnmanagedRefTypeBuilder<'storage, 'a> {
+    storage: &'storage mut Storage<'a>,
+    target: Option<TypeKey<'a>>,
+    is_mutable: bool,
+}
+
+impl<'storage, 'a> UnmanagedRefTypeBuilder<'storage, 'a> {
+    pub(crate) fn new(storage: &'storage mut Storage<'a>) -> Self {
+        UnmanagedRefTypeBuilder {
+            storage,
+            target: None,
+            is_mutable: false,
+        }
+    }
+
+    pub fn with_target(mut self, target: TypeKey<'a>) -> Self {
+        self.target = Some(target);
+        self
+    }
+
+    pub fn with_mutability(mut self, is_mutable: bool) -> Self {
+        self.is_mutable = is_mutable;
+        self
+    }
+
+    pub fn build(self) -> Option<TypeKey<'a>> {
+        self.storage
+            .add_type(TypeOwned::UnmanagedRefType(UnmanagedRefType::new(
+                self.target.expect("Target type must be provided"),
+                self.is_mutable,
+            )))
+    }
+}
+
+#[derive(Debug)]
+pub struct GenericTypeBuilder<'storage, 'a> {
+    storage: &'storage mut Storage<'a>,
+    base: Option<TypeKey<'a>>,
+    arguments: Vec<(&'a str, ExprKey<'a>)>,
+}
+
+impl<'storage, 'a> GenericTypeBuilder<'storage, 'a> {
+    pub(crate) fn new(storage: &'storage mut Storage<'a>) -> Self {
+        GenericTypeBuilder {
+            storage,
+            base: None,
+            arguments: Vec::new(),
+        }
+    }
+
+    pub fn with_base(mut self, base: TypeKey<'a>) -> Self {
+        self.base = Some(base);
+        self
+    }
+
+    pub fn add_argument(mut self, name: &'a str, value: ExprKey<'a>) -> Self {
+        self.arguments.push((name, value));
+        self
+    }
+
+    pub fn add_arguments<I>(mut self, arguments: I) -> Self
+    where
+        I: IntoIterator<Item = (&'a str, ExprKey<'a>)>,
+    {
+        self.arguments.extend(arguments);
+        self
+    }
+
+    pub fn build(self) -> Option<TypeKey<'a>> {
+        self.storage
+            .add_type(TypeOwned::GenericType(GenericType::new(
+                self.base.expect("Principal type must be provided"),
+                self.arguments,
+            )))
+    }
+}
+
+#[derive(Debug)]
 pub struct IntegerBuilder<'storage, 'a> {
     storage: &'storage mut Storage<'a>,
     value: Option<UInt>,
@@ -543,361 +899,5 @@ impl<'storage, 'a> ReturnBuilder<'storage, 'a> {
     pub fn build(self) -> Option<ExprKey<'a>> {
         self.storage
             .add_expr(ExprOwned::Return(Return::new(self.value)))
-    }
-}
-
-#[derive(Debug)]
-pub struct RefinementTypeBuilder<'storage, 'a> {
-    storage: &'storage mut Storage<'a>,
-    base: Option<TypeKey<'a>>,
-    width: Option<ExprKey<'a>>,
-    minimum: Option<ExprKey<'a>>,
-    maximum: Option<ExprKey<'a>>,
-}
-
-impl<'storage, 'a> RefinementTypeBuilder<'storage, 'a> {
-    pub(crate) fn new(storage: &'storage mut Storage<'a>) -> Self {
-        RefinementTypeBuilder {
-            storage,
-            base: None,
-            width: None,
-            minimum: None,
-            maximum: None,
-        }
-    }
-
-    pub fn with_base(mut self, base: TypeKey<'a>) -> Self {
-        self.base = Some(base);
-        self
-    }
-
-    pub fn with_width(mut self, width: Option<ExprKey<'a>>) -> Self {
-        self.width = width;
-        self
-    }
-
-    pub fn with_minimum(mut self, minimum: Option<ExprKey<'a>>) -> Self {
-        self.minimum = minimum;
-        self
-    }
-
-    pub fn with_maximum(mut self, maximum: Option<ExprKey<'a>>) -> Self {
-        self.maximum = maximum;
-        self
-    }
-
-    pub fn build(self) -> Option<TypeKey<'a>> {
-        self.storage
-            .add_type(TypeOwned::RefinementType(RefinementType::new(
-                self.base.expect("Principal type must be provided"),
-                self.width,
-                self.minimum,
-                self.maximum,
-            )))
-    }
-}
-
-#[derive(Debug)]
-pub struct TupleTypeBuilder<'storage, 'a> {
-    storage: &'storage mut Storage<'a>,
-    elements: Vec<TypeKey<'a>>,
-}
-
-impl<'storage, 'a> TupleTypeBuilder<'storage, 'a> {
-    pub(crate) fn new(storage: &'storage mut Storage<'a>) -> Self {
-        TupleTypeBuilder {
-            storage,
-            elements: Vec::new(),
-        }
-    }
-
-    pub fn add_element(mut self, ty: TypeKey<'a>) -> Self {
-        self.elements.push(ty);
-        self
-    }
-
-    pub fn add_elements<I>(mut self, elements: I) -> Self
-    where
-        I: IntoIterator<Item = TypeKey<'a>>,
-    {
-        self.elements.extend(elements);
-        self
-    }
-
-    pub fn build(self) -> Option<TypeKey<'a>> {
-        self.storage
-            .add_type(TypeOwned::TupleType(TupleType::new(self.elements)))
-    }
-}
-
-#[derive(Debug)]
-pub struct ArrayTypeBuilder<'storage, 'a> {
-    storage: &'storage mut Storage<'a>,
-    element: Option<TypeKey<'a>>,
-    count: Option<ExprKey<'a>>,
-}
-
-impl<'storage, 'a> ArrayTypeBuilder<'storage, 'a> {
-    pub(crate) fn new(storage: &'storage mut Storage<'a>) -> Self {
-        ArrayTypeBuilder {
-            storage,
-            element: None,
-            count: None,
-        }
-    }
-
-    pub fn with_element(mut self, element: TypeKey<'a>) -> Self {
-        self.element = Some(element);
-        self
-    }
-
-    pub fn with_count(mut self, count: ExprKey<'a>) -> Self {
-        self.count = Some(count);
-        self
-    }
-
-    pub fn build(self) -> Option<TypeKey<'a>> {
-        self.storage.add_type(TypeOwned::ArrayType(ArrayType::new(
-            self.element.expect("Element type must be provided"),
-            self.count.expect("Array length must be provided"),
-        )))
-    }
-}
-
-#[derive(Debug)]
-pub struct MapTypeBuilder<'storage, 'a> {
-    storage: &'storage mut Storage<'a>,
-    key: Option<TypeKey<'a>>,
-    value: Option<TypeKey<'a>>,
-}
-
-impl<'storage, 'a> MapTypeBuilder<'storage, 'a> {
-    pub(crate) fn new(storage: &'storage mut Storage<'a>) -> Self {
-        MapTypeBuilder {
-            storage,
-            key: None,
-            value: None,
-        }
-    }
-
-    pub fn with_key(mut self, key: TypeKey<'a>) -> Self {
-        self.key = Some(key);
-        self
-    }
-
-    pub fn with_value(mut self, value: TypeKey<'a>) -> Self {
-        self.value = Some(value);
-        self
-    }
-
-    pub fn build(self) -> Option<TypeKey<'a>> {
-        self.storage.add_type(TypeOwned::MapType(MapType::new(
-            self.key.expect("Key type must be provided"),
-            self.value.expect("Value type must be provided"),
-        )))
-    }
-}
-
-#[derive(Debug)]
-pub struct SliceTypeBuilder<'storage, 'a> {
-    storage: &'storage mut Storage<'a>,
-    element: Option<TypeKey<'a>>,
-}
-
-impl<'storage, 'a> SliceTypeBuilder<'storage, 'a> {
-    pub(crate) fn new(storage: &'storage mut Storage<'a>) -> Self {
-        SliceTypeBuilder {
-            storage,
-            element: None,
-        }
-    }
-
-    pub fn with_element(mut self, element: TypeKey<'a>) -> Self {
-        self.element = Some(element);
-        self
-    }
-
-    pub fn build(self) -> Option<TypeKey<'a>> {
-        self.storage.add_type(TypeOwned::SliceType(SliceType::new(
-            self.element.expect("Element type must be provided"),
-        )))
-    }
-}
-
-#[derive(Debug)]
-pub struct FunctionTypeBuilder<'storage, 'a> {
-    storage: &'storage mut Storage<'a>,
-    parameters: Vec<FunctionParameter<'a>>,
-    return_type: Option<TypeKey<'a>>,
-    attributes: Vec<ExprKey<'a>>,
-}
-
-impl<'storage, 'a> FunctionTypeBuilder<'storage, 'a> {
-    pub(crate) fn new(storage: &'storage mut Storage<'a>) -> Self {
-        FunctionTypeBuilder {
-            storage,
-            parameters: Vec::new(),
-            return_type: None,
-            attributes: Vec::new(),
-        }
-    }
-
-    pub fn add_parameter(
-        mut self,
-        name: &'a str,
-        ty: TypeKey<'a>,
-        default_value: Option<ExprKey<'a>>,
-    ) -> Self {
-        self.parameters
-            .push(FunctionParameter::new(name, ty, default_value));
-        self
-    }
-
-    pub fn add_parameters<I>(mut self, parameters: I) -> Self
-    where
-        I: IntoIterator<Item = FunctionParameter<'a>>,
-    {
-        self.parameters.extend(parameters);
-        self
-    }
-
-    pub fn with_return_type(mut self, ty: TypeKey<'a>) -> Self {
-        self.return_type = Some(ty);
-        self
-    }
-
-    pub fn add_attribute(mut self, attribute: ExprKey<'a>) -> Self {
-        self.attributes.push(attribute);
-        self
-    }
-
-    pub fn add_attributes<I>(mut self, attributes: I) -> Self
-    where
-        I: IntoIterator<Item = ExprKey<'a>>,
-    {
-        self.attributes.extend(attributes);
-        self
-    }
-
-    pub fn build(self) -> Option<TypeKey<'a>> {
-        self.storage
-            .add_type(TypeOwned::FunctionType(FunctionType::new(
-                self.parameters,
-                self.return_type.expect("Return type must be provided"),
-                self.attributes,
-            )))
-    }
-}
-
-#[derive(Debug)]
-pub struct ManagedRefTypeBuilder<'storage, 'a> {
-    storage: &'storage mut Storage<'a>,
-    target: Option<TypeKey<'a>>,
-    is_mutable: bool,
-}
-
-impl<'storage, 'a> ManagedRefTypeBuilder<'storage, 'a> {
-    pub(crate) fn new(storage: &'storage mut Storage<'a>) -> Self {
-        ManagedRefTypeBuilder {
-            storage,
-            target: None,
-            is_mutable: false,
-        }
-    }
-
-    pub fn with_target(mut self, target: TypeKey<'a>) -> Self {
-        self.target = Some(target);
-        self
-    }
-
-    pub fn with_mutability(mut self, is_mutable: bool) -> Self {
-        self.is_mutable = is_mutable;
-        self
-    }
-
-    pub fn build(self) -> Option<TypeKey<'a>> {
-        self.storage
-            .add_type(TypeOwned::ManagedRefType(ManagedRefType::new(
-                self.target.expect("Target type must be provided"),
-                self.is_mutable,
-            )))
-    }
-}
-
-#[derive(Debug)]
-pub struct UnmanagedRefTypeBuilder<'storage, 'a> {
-    storage: &'storage mut Storage<'a>,
-    target: Option<TypeKey<'a>>,
-    is_mutable: bool,
-}
-
-impl<'storage, 'a> UnmanagedRefTypeBuilder<'storage, 'a> {
-    pub(crate) fn new(storage: &'storage mut Storage<'a>) -> Self {
-        UnmanagedRefTypeBuilder {
-            storage,
-            target: None,
-            is_mutable: false,
-        }
-    }
-
-    pub fn with_target(mut self, target: TypeKey<'a>) -> Self {
-        self.target = Some(target);
-        self
-    }
-
-    pub fn with_mutability(mut self, is_mutable: bool) -> Self {
-        self.is_mutable = is_mutable;
-        self
-    }
-
-    pub fn build(self) -> Option<TypeKey<'a>> {
-        self.storage
-            .add_type(TypeOwned::UnmanagedRefType(UnmanagedRefType::new(
-                self.target.expect("Target type must be provided"),
-                self.is_mutable,
-            )))
-    }
-}
-
-#[derive(Debug)]
-pub struct GenericTypeBuilder<'storage, 'a> {
-    storage: &'storage mut Storage<'a>,
-    base: Option<TypeKey<'a>>,
-    arguments: Vec<(&'a str, ExprKey<'a>)>,
-}
-
-impl<'storage, 'a> GenericTypeBuilder<'storage, 'a> {
-    pub(crate) fn new(storage: &'storage mut Storage<'a>) -> Self {
-        GenericTypeBuilder {
-            storage,
-            base: None,
-            arguments: Vec::new(),
-        }
-    }
-
-    pub fn with_base(mut self, base: TypeKey<'a>) -> Self {
-        self.base = Some(base);
-        self
-    }
-
-    pub fn add_argument(mut self, name: &'a str, value: ExprKey<'a>) -> Self {
-        self.arguments.push((name, value));
-        self
-    }
-
-    pub fn add_arguments<I>(mut self, arguments: I) -> Self
-    where
-        I: IntoIterator<Item = (&'a str, ExprKey<'a>)>,
-    {
-        self.arguments.extend(arguments);
-        self
-    }
-
-    pub fn build(self) -> Option<TypeKey<'a>> {
-        self.storage
-            .add_type(TypeOwned::GenericType(GenericType::new(
-                self.base.expect("Principal type must be provided"),
-                self.arguments,
-            )))
     }
 }
