@@ -106,7 +106,17 @@ impl<'storage, 'a> Parser<'storage, 'a> {
         }
 
         let mut expressions = Vec::new();
-        while let Some(program) = self.parse_expression() {
+        while !self.lexer.is_eof() {
+            let Some(program) = self.parse_expression() else {
+                self.set_failed_bit();
+                error!(
+                    self.log,
+                    "[P????]: Unable to parse program expression\n--> {}",
+                    self.lexer.sync_position()
+                );
+                return None;
+            };
+
             expressions.push(program);
         }
 

@@ -17,23 +17,26 @@ impl<'a> RefinementOptions<'a> {
 }
 
 impl<'storage, 'a> Parser<'storage, 'a> {
-    fn parse_refinement_bounds(&mut self, options: &mut RefinementOptions<'a>) {
-        // TODO: Fix to fail-fast parsing
-
+    fn parse_refinement_bounds(&mut self) -> Option<(Option<ExprKey<'a>>, Option<ExprKey<'a>>)> {
         assert!(self.lexer.peek_t() == Token::Punct(Punct::LeftBracket));
         self.lexer.skip();
 
+        let mut minimum_bound = None;
+        let mut maximum_bound = None;
+
         if !self.lexer.skip_if(&Token::Punct(Punct::Colon)) {
-            if let Some(minimum) = self.parse_expression() {
-                options.minimum = Some(minimum);
-            } else {
+            let Some(minimum) = self.parse_expression() else {
                 self.set_failed_bit();
                 error!(
                     self.log,
                     "[P????]: Unable to parse type's minimum refinement bound\n--> {}",
                     self.lexer.sync_position()
                 );
-            }
+
+                return None;
+            };
+
+            minimum_bound = Some(minimum);
 
             if !self.lexer.skip_if(&Token::Punct(Punct::Colon)) {
                 self.set_failed_bit();
@@ -42,20 +45,24 @@ impl<'storage, 'a> Parser<'storage, 'a> {
                     "[P????]: Expected a colon after type's minimum refinement bound\n--> {}",
                     self.lexer.sync_position()
                 );
+
+                return None;
             }
         }
 
         if !self.lexer.skip_if(&Token::Punct(Punct::RightBracket)) {
-            if let Some(maximum) = self.parse_expression() {
-                options.maximum = Some(maximum);
-            } else {
+            let Some(maximum) = self.parse_expression() else {
                 self.set_failed_bit();
                 error!(
                     self.log,
                     "[P????]: Unable to parse type's maximum refinement bound\n--> {}",
                     self.lexer.sync_position()
                 );
-            }
+
+                return None;
+            };
+
+            maximum_bound = Some(maximum);
 
             if !self.lexer.skip_if(&Token::Punct(Punct::RightBracket)) {
                 self.set_failed_bit();
@@ -64,49 +71,86 @@ impl<'storage, 'a> Parser<'storage, 'a> {
                     "[P????]: Expected a right bracket to close minimum/maximum constraints\n--> {}",
                     self.lexer.sync_position()
                 );
+
+                return None;
             }
         }
+
+        Some((minimum_bound, maximum_bound))
     }
 
-    fn parse_refinement_options(&mut self) -> RefinementOptions<'a> {
-        // TODO: Fix to fail-fast parsing
-
-        let mut options = RefinementOptions::default();
-        if self.generic_type_suffix_terminator_ambiguity {
-            return options;
+    fn parse_refinement_options(&mut self) -> Option<RefinementOptions<'a>> {
+        if self.generic_type_suffix_terminator_ambiguity
+            || !self.lexer.skip_if(&Token::Punct(Punct::Colon))
+        {
+            return Some(RefinementOptions::default());
         }
 
-        if self.lexer.skip_if(&Token::Punct(Punct::Colon)) {
-            if self.lexer.next_is(&Token::Punct(Punct::LeftBracket)) {
-                self.parse_refinement_bounds(&mut options);
-            } else {
-                if let Some(width) = self.parse_expression() {
-                    options.width = Some(width);
-                } else {
-                    self.set_failed_bit();
-                    error!(
-                        self.log,
-                        "[P????]: Unable to parse type's width refinement bound\n--> {}",
-                        self.lexer.sync_position()
-                    );
-                }
+        if self.lexer.next_is(&Token::Punct(Punct::LeftBracket)) {
+            let Some((minimum, maximum)) = self.parse_refinement_bounds() else {
+                self.set_failed_bit();
+                error!(
+                    self.log,
+                    "[P????]: Unable to parse type's minimum/maximum refinement bounds\n--> {}",
+                    self.lexer.sync_position()
+                );
 
-                if self.lexer.skip_if(&Token::Punct(Punct::Colon)) {
-                    if self.lexer.next_is(&Token::Punct(Punct::LeftBracket)) {
-                        self.parse_refinement_bounds(&mut options);
-                    } else {
-                        self.set_failed_bit();
-                        error!(
-                            self.log,
-                            "[P????]: Expected a left bracket for type's range refinement bounds\n--> {}",
-                            self.lexer.sync_position()
-                        );
-                    }
-                }
-            }
+                return None;
+            };
+
+            return Some(RefinementOptions {
+                minimum,
+                maximum,
+                width: None,
+            });
         }
 
-        options
+        let Some(width) = self.parse_expression() else {
+            self.set_failed_bit();
+            error!(
+                self.log,
+                "[P????]: Unable to parse type's width refinement bound\n--> {}",
+                self.lexer.sync_position()
+            );
+
+            return None;
+        };
+
+        if !self.lexer.skip_if(&Token::Punct(Punct::Colon)) {
+            return Some(RefinementOptions {
+                width: Some(width),
+                minimum: None,
+                maximum: None,
+            });
+        }
+
+        if !self.lexer.next_is(&Token::Punct(Punct::LeftBracket)) {
+            self.set_failed_bit();
+            error!(
+                self.log,
+                "[P????]: Expected a left bracket for type's range refinement bounds\n--> {}",
+                self.lexer.sync_position()
+            );
+
+            return None;
+        }
+
+        let Some((minimum, maximum)) = self.parse_refinement_bounds() else {
+            self.set_failed_bit();
+            error!(
+                self.log,
+                "[P????]: Unable to parse type's minimum/maximum refinement bounds\n--> {}",
+                self.lexer.sync_position()
+            );
+
+            return None;
+        };
+
+        Some(RefinementOptions {
+            width: Some(width),
+            minimum,
+            maximum,
+        })
     }
 
     fn parse_generic_argument(&mut self) -> Option<(&'a str, ExprKey<'a>)> {
@@ -907,40 +951,52 @@ impl<'storage, 'a> Parser<'storage, 'a> {
         if self.lexer.skip_if(&Token::Punct(Punct::LeftParen)) {
             let inner = self.parse_type();
 
-            if !self.lexer.skip_if(&Token::Punct(Punct::RightParen)) {
+            if self.lexer.skip_if(&Token::Punct(Punct::RightParen)) {
+                inner.inspect(|v| v.add_parentheses(self.storage))
+            } else {
                 self.set_failed_bit();
                 error!(
                     self.log,
                     "[P????]: Expected right parenthesis after type expression\n--> {}",
                     self.lexer.sync_position()
                 );
-            }
 
-            inner.inspect(|v| v.add_parentheses(self.storage))
+                None
+            }
         } else {
-            let primary = self.parse_type_primary();
-            let options = self.parse_refinement_options();
+            let Some(the_type) = self.parse_type_primary() else {
+                self.set_failed_bit();
+                error!(
+                    self.log,
+                    "[P????]: Unable to parse type primary due to previous errors\n--> {}",
+                    self.lexer.sync_position()
+                );
 
-            if options.has_any() {
-                if let Some(base) = primary {
-                    return Builder::new(self.storage)
-                        .create_refinement_type()
-                        .with_base(base)
-                        .with_width(options.width)
-                        .with_minimum(options.minimum)
-                        .with_maximum(options.maximum)
-                        .build();
-                } else {
-                    self.set_failed_bit();
-                    error!(
-                        self.log,
-                        "[P????]: Unable to construct refinement type due to previous errors\n--> {}",
-                        self.lexer.sync_position()
-                    );
-                }
+                return None;
+            };
+
+            let Some(refinement) = self.parse_refinement_options() else {
+                self.set_failed_bit();
+                error!(
+                    self.log,
+                    "[P????]: Unable to parse refinement options due to previous errors\n--> {}",
+                    self.lexer.sync_position()
+                );
+
+                return None;
+            };
+
+            if refinement.has_any() {
+                return Builder::new(self.storage)
+                    .create_refinement_type()
+                    .with_base(the_type)
+                    .with_width(refinement.width)
+                    .with_minimum(refinement.minimum)
+                    .with_maximum(refinement.maximum)
+                    .build();
             }
 
-            primary
+            Some(the_type)
         }
     }
 }
