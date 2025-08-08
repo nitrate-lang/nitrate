@@ -36,8 +36,6 @@ impl<'storage, 'a> Parser<'storage, 'a> {
                 return None;
             };
 
-            minimum_bound = Some(minimum);
-
             if !self.lexer.skip_if(&Token::Punct(Punct::Colon)) {
                 self.set_failed_bit();
                 error!(
@@ -48,6 +46,8 @@ impl<'storage, 'a> Parser<'storage, 'a> {
 
                 return None;
             }
+
+            minimum_bound = Some(minimum);
         }
 
         if !self.lexer.skip_if(&Token::Punct(Punct::RightBracket)) {
@@ -62,8 +62,6 @@ impl<'storage, 'a> Parser<'storage, 'a> {
                 return None;
             };
 
-            maximum_bound = Some(maximum);
-
             if !self.lexer.skip_if(&Token::Punct(Punct::RightBracket)) {
                 self.set_failed_bit();
                 error!(
@@ -74,6 +72,8 @@ impl<'storage, 'a> Parser<'storage, 'a> {
 
                 return None;
             }
+
+            maximum_bound = Some(maximum);
         }
 
         Some((minimum_bound, maximum_bound))
@@ -405,35 +405,29 @@ impl<'storage, 'a> Parser<'storage, 'a> {
     }
 
     fn parse_rest_of_array(&mut self, element_type: Option<TypeKey<'a>>) -> Option<TypeKey<'a>> {
-        // TODO: Fix to fail-fast parsing
-
         assert!(self.lexer.peek_t() == Token::Punct(Punct::Semicolon));
         self.lexer.skip();
 
-        let array_type = if let Some(array_count) = self.parse_expression() {
-            if let Some(element_type) = element_type {
-                Builder::new(self.storage)
-                    .create_array_type()
-                    .with_element(element_type)
-                    .with_count(array_count)
-                    .build()
-            } else {
-                self.set_failed_bit();
-                error!(
-                    self.log,
-                    "[P????]: Unable to parse element type for array\n--> {}",
-                    self.lexer.sync_position()
-                );
-                None
-            }
-        } else {
+        let Some(element_type) = element_type else {
+            self.set_failed_bit();
+            error!(
+                self.log,
+                "[P????]: Unable to parse element type for array\n--> {}",
+                self.lexer.sync_position()
+            );
+
+            return None;
+        };
+
+        let Some(array_count) = self.parse_expression() else {
             self.set_failed_bit();
             error!(
                 self.log,
                 "[P????]: Unable to parse length expression for array\n--> {}",
                 self.lexer.sync_position()
             );
-            None
+
+            return None;
         };
 
         if !self.lexer.skip_if(&Token::Punct(Punct::RightBracket)) {
@@ -443,41 +437,41 @@ impl<'storage, 'a> Parser<'storage, 'a> {
                 "[P????]: Expected right bracket to close array type\n--> {}",
                 self.lexer.sync_position()
             );
+
+            return None;
         }
 
-        array_type
+        Builder::new(self.storage)
+            .create_array_type()
+            .with_element(element_type)
+            .with_count(array_count)
+            .build()
     }
 
     fn parse_rest_of_map_type(&mut self, key_type: Option<TypeKey<'a>>) -> Option<TypeKey<'a>> {
-        // TODO: Fix to fail-fast parsing
-
         assert!(self.lexer.peek_t() == Token::Op(Op::Arrow));
         self.lexer.skip();
 
-        let map_type = if let Some(value_type) = self.parse_type() {
-            if let Some(key_type) = key_type {
-                Builder::new(self.storage)
-                    .create_map_type()
-                    .with_key(key_type)
-                    .with_value(value_type)
-                    .build()
-            } else {
-                self.set_failed_bit();
-                error!(
-                    self.log,
-                    "[P????]: Unable to parse map's key type\n--> {}",
-                    self.lexer.sync_position()
-                );
-                None
-            }
-        } else {
+        let Some(key_type) = key_type else {
+            self.set_failed_bit();
+            error!(
+                self.log,
+                "[P????]: Unable to parse map's key type\n--> {}",
+                self.lexer.sync_position()
+            );
+
+            return None;
+        };
+
+        let Some(value_type) = self.parse_type() else {
             self.set_failed_bit();
             error!(
                 self.log,
                 "[P????]: Unable to parse map's value type\n--> {}",
                 self.lexer.sync_position()
             );
-            None
+
+            return None;
         };
 
         if !self.lexer.skip_if(&Token::Punct(Punct::RightBracket)) {
@@ -487,61 +481,67 @@ impl<'storage, 'a> Parser<'storage, 'a> {
                 "[P????]: Expected right bracket to close map type\n--> {}",
                 self.lexer.sync_position()
             );
+
+            return None;
         }
 
-        map_type
+        Builder::new(self.storage)
+            .create_map_type()
+            .with_key(key_type)
+            .with_value(value_type)
+            .build()
     }
 
     fn parse_rest_of_slice_type(
         &mut self,
         element_type: Option<TypeKey<'a>>,
     ) -> Option<TypeKey<'a>> {
-        // TODO: Fix to fail-fast parsing
-
         assert!(self.lexer.peek_t() == Token::Punct(Punct::RightBracket));
         self.lexer.skip();
 
-        let slice_type = if let Some(element_type) = element_type {
-            Builder::new(self.storage)
-                .create_slice_type()
-                .with_element(element_type)
-                .build()
-        } else {
+        let Some(element_type) = element_type else {
             self.set_failed_bit();
             error!(
                 self.log,
                 "[P????]: Unable to parse element type for slice\n--> {}",
                 self.lexer.sync_position()
             );
-            None
+
+            return None;
         };
 
-        slice_type
+        Builder::new(self.storage)
+            .create_slice_type()
+            .with_element(element_type)
+            .build()
     }
 
     fn parse_array_or_slice_or_map(&mut self) -> Option<TypeKey<'a>> {
-        // TODO: Fix to fail-fast parsing
-
         assert!(self.lexer.peek_t() == Token::Punct(Punct::LeftBracket));
         self.lexer.skip();
 
         let something_type = self.parse_type();
 
         if self.lexer.next_is(&Token::Punct(Punct::Semicolon)) {
-            self.parse_rest_of_array(something_type)
-        } else if self.lexer.next_is(&Token::Op(Op::Arrow)) {
-            self.parse_rest_of_map_type(something_type)
-        } else if self.lexer.next_is(&Token::Punct(Punct::RightBracket)) {
-            self.parse_rest_of_slice_type(something_type)
-        } else {
-            self.set_failed_bit();
-            error!(
-                self.log,
-                "[P????]: Expected semicolon, right bracket, or arrow in array/slice/map type respectively\n--> {}",
-                self.lexer.sync_position()
-            );
-            None
+            return self.parse_rest_of_array(something_type);
         }
+
+        if self.lexer.next_is(&Token::Op(Op::Arrow)) {
+            return self.parse_rest_of_map_type(something_type);
+        }
+
+        if self.lexer.next_is(&Token::Punct(Punct::RightBracket)) {
+            return self.parse_rest_of_slice_type(something_type);
+        }
+
+        self.set_failed_bit();
+        error!(
+            self.log,
+            "[P????]: Expected semicolon, right bracket, or arrow in array/slice/map type respectively\n--> {}",
+            self.lexer.sync_position()
+        );
+
+        None
     }
 
     fn parse_managed_type(&mut self) -> Option<TypeKey<'a>> {
@@ -946,14 +946,10 @@ impl<'storage, 'a> Parser<'storage, 'a> {
     }
 
     pub fn parse_type(&mut self) -> Option<TypeKey<'a>> {
-        // TODO: Fix to fail-fast parsing
-
         if self.lexer.skip_if(&Token::Punct(Punct::LeftParen)) {
             let inner = self.parse_type();
 
-            if self.lexer.skip_if(&Token::Punct(Punct::RightParen)) {
-                inner.inspect(|v| v.add_parentheses(self.storage))
-            } else {
+            if !self.lexer.skip_if(&Token::Punct(Punct::RightParen)) {
                 self.set_failed_bit();
                 error!(
                     self.log,
@@ -961,8 +957,10 @@ impl<'storage, 'a> Parser<'storage, 'a> {
                     self.lexer.sync_position()
                 );
 
-                None
+                return None;
             }
+
+            inner.inspect(|v| v.add_parentheses(self.storage))
         } else {
             let Some(the_type) = self.parse_type_primary() else {
                 self.set_failed_bit();
