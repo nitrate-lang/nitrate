@@ -70,7 +70,7 @@ fn monster() {
     parse_type("Option<[str -> Vec<{u8, str: 48, Set<Address<str>>: 2: [1:]}>]>: 1");
 }
 
-fn criterion_benchmark(c: &mut Criterion) {
+fn parse_type_benchmark(c: &mut Criterion) {
     unsafe {
         STORAGE = Some(Storage::new());
     }
@@ -95,5 +95,5 @@ fn criterion_benchmark(c: &mut Criterion) {
     g.finish();
 }
 
-criterion_group!(benches, criterion_benchmark);
+criterion_group!(benches, parse_type_benchmark);
 criterion_main!(benches);
