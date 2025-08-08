@@ -17,7 +17,7 @@ impl<'a> RefinementOptions<'a> {
 }
 
 impl<'storage, 'a> Parser<'storage, 'a> {
-    fn parse_refinement_bounds(&mut self) -> Option<(Option<ExprKey<'a>>, Option<ExprKey<'a>>)> {
+    fn parse_refinement_range(&mut self) -> Option<(Option<ExprKey<'a>>, Option<ExprKey<'a>>)> {
         assert!(self.lexer.peek_t() == Token::Punct(Punct::LeftBracket));
         self.lexer.skip();
 
@@ -75,7 +75,7 @@ impl<'storage, 'a> Parser<'storage, 'a> {
         }
 
         if self.lexer.next_is(&Token::Punct(Punct::LeftBracket)) {
-            let Some((minimum, maximum)) = self.parse_refinement_bounds() else {
+            let Some((minimum, maximum)) = self.parse_refinement_range() else {
                 self.set_failed_bit();
                 return None;
             };
@@ -111,7 +111,7 @@ impl<'storage, 'a> Parser<'storage, 'a> {
             return None;
         }
 
-        let Some((minimum, maximum)) = self.parse_refinement_bounds() else {
+        let Some((minimum, maximum)) = self.parse_refinement_range() else {
             self.set_failed_bit();
             return None;
         };
@@ -327,7 +327,7 @@ impl<'storage, 'a> Parser<'storage, 'a> {
                     self.set_failed_bit();
                     error!(
                         self.log,
-                        "[P0???]: tuple type: expected ',' or '}}' after type element\n--> {}",
+                        "[P0???]: tuple type: expected ',' or '}}' after element type\n--> {}",
                         self.lexer.sync_position()
                     );
                     info!(
@@ -449,7 +449,7 @@ impl<'storage, 'a> Parser<'storage, 'a> {
         self.set_failed_bit();
         error!(
             self.log,
-            "[P0???]: type: expected ';', ']', or '->' for array, slice, or map type respectively\n--> {}",
+            "[P0???]: type: expected ';', ']', or '->' for array, slice, and map type respectively\n--> {}",
             self.lexer.sync_position()
         );
         info!(
@@ -559,7 +559,7 @@ impl<'storage, 'a> Parser<'storage, 'a> {
                     self.set_failed_bit();
                     error!(
                         self.log,
-                        "[P0???]: function type: expected ',' or ']' after attribute\n--> {}",
+                        "[P0???]: function type: expected ',' or ']' after attribute expression\n--> {}",
                         self.lexer.sync_position()
                     );
 
@@ -866,7 +866,7 @@ impl<'storage, 'a> Parser<'storage, 'a> {
                 self.set_failed_bit();
                 error!(
                     self.log,
-                    "[P0???]: type: unexpected illegal token\n--> {}", current_pos
+                    "[P0???]: type: unexpected invalid token\n--> {}", current_pos
                 );
 
                 None
