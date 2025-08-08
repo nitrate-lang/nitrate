@@ -22,7 +22,6 @@ pub struct Lexer<'a> {
     current_peek_pos: SourcePosition<'a>,
     sync_pos: SourcePosition<'a>,
     current: Option<AnnotatedToken<'a>>,
-    is_eof: bool,
 }
 
 enum StringEscape {
@@ -45,7 +44,6 @@ impl<'a> Lexer<'a> {
                 current_peek_pos: SourcePosition::new(0, 0, 0, filename),
                 sync_pos: SourcePosition::new(0, 0, 0, filename),
                 current: None,
-                is_eof: false,
             })
         }
     }
@@ -106,15 +104,14 @@ impl<'a> Lexer<'a> {
         self.sync_pos.clone()
     }
 
-    pub fn is_eof(&self) -> bool {
-        self.is_eof
+    pub fn is_eof(&mut self) -> bool {
+        self.peek_t() == Token::Eof
     }
 
     pub fn rewind(&mut self, pos: SourcePosition<'a>) {
         self.current_peek_pos = pos.clone();
         self.sync_pos = pos;
         self.current = None;
-        self.is_eof = false;
     }
 
     pub fn next_if_string(&mut self) -> Option<StringData<'a>> {
@@ -1279,7 +1276,6 @@ impl<'a> Lexer<'a> {
 
         let token = match self.peek_byte() {
             Err(()) => {
-              self.is_eof = true;
               Ok(Token::Eof)
             },
             Ok(b) => match b {
