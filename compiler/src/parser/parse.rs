@@ -78,7 +78,7 @@ impl<'storage, 'a> Parser<'storage, 'a> {
         }
     }
 
-    pub fn is_parser_compatible(&self, language_version: (u32, u32)) -> bool {
+    pub fn is_supported(&self, language_version: (u32, u32)) -> bool {
         match language_version {
             // Future major versions might introduce breaking syntactic changes
             (1, _) => true,
@@ -90,7 +90,7 @@ impl<'storage, 'a> Parser<'storage, 'a> {
     pub fn parse(&mut self) -> Option<SourceModel<'a>> {
         let preamble = self.parse_preamble();
 
-        if !self.is_parser_compatible(preamble.language_version) {
+        if !self.is_supported(preamble.language_version) {
             error!(
                 self.log,
                 "[P????]: This compiler does not support Nitrate version {}.{}.",

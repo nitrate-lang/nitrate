@@ -148,10 +148,19 @@ impl<'storage, 'a> Parser<'storage, 'a> {
         }
 
         let current_pos = self.lexer.sync_position();
-        let type_or_expression = if self.lexer.skip_if(&Token::Op(Op::Add)) {
-            self.parse_expression()
-        } else {
-            self.parse_type().map(|t| t.into())
+        let type_or_expression = match self.lexer.peek_t() {
+            Token::Integer(_)
+            | Token::Float(_)
+            | Token::String(_)
+            | Token::Binary(_)
+            | Token::Char(_) => self.parse_expression(),
+
+            Token::Op(Op::Add) => {
+                self.lexer.skip();
+                self.parse_expression()
+            }
+
+            _ => self.parse_type().map(|t| t.into()),
         };
 
         let Some(argument_value) = type_or_expression else {
