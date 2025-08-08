@@ -762,42 +762,21 @@ impl<'storage, 'a> Parser<'storage, 'a> {
         assert!(self.lexer.peek_t() == Token::Keyword(Keyword::Fn));
         self.lexer.skip();
 
-        let current_pos = self.lexer.sync_position();
         let Some(attributes) = self.parse_function_attributes() else {
             self.set_failed_bit();
-            error!(
-                self.log,
-                "[P????]: Unable to parse function type attributes due to previous errors\n--> {}",
-                current_pos
-            );
-
             return None;
         };
 
         self.lexer.next_if_name(); // Ignore function name if present
 
-        let current_pos = self.lexer.sync_position();
         let Some(parameters) = self.parse_function_parameters() else {
             self.set_failed_bit();
-            error!(
-                self.log,
-                "[P????]: Unable to parse function type parameters due to previous errors\n--> {}",
-                current_pos
-            );
-
             return None;
         };
 
         let return_type = if self.lexer.skip_if(&Token::Op(Op::Arrow)) {
-            let current_pos = self.lexer.sync_position();
             let Some(return_type) = self.parse_type() else {
                 self.set_failed_bit();
-                error!(
-                    self.log,
-                    "[P????]: Unable to parse function type return type due to previous errors\n--> {}",
-                    current_pos
-                );
-
                 return None;
             };
 
@@ -980,7 +959,15 @@ impl<'storage, 'a> Parser<'storage, 'a> {
                 None
             }
 
-            Token::Eof => None,
+            Token::Eof => {
+                self.set_failed_bit();
+                error!(
+                    self.log,
+                    "[P????]: Unexpected end of file while parsing type\n--> {}", current_pos
+                );
+
+                None
+            }
 
             Token::Illegal => {
                 self.set_failed_bit();
@@ -1019,27 +1006,13 @@ impl<'storage, 'a> Parser<'storage, 'a> {
 
             inner.inspect(|v| v.add_parentheses(self.storage))
         } else {
-            let current_pos = self.lexer.sync_position();
             let Some(the_type) = self.parse_type_primary() else {
                 self.set_failed_bit();
-                error!(
-                    self.log,
-                    "[P????]: Unable to parse type primary due to previous errors\n--> {}",
-                    current_pos
-                );
-
                 return None;
             };
 
-            let current_pos = self.lexer.sync_position();
             let Some(refinement) = self.parse_refinement_options() else {
                 self.set_failed_bit();
-                error!(
-                    self.log,
-                    "[P????]: Unable to parse refinement options due to previous errors\n--> {}",
-                    current_pos
-                );
-
                 return None;
             };
 
