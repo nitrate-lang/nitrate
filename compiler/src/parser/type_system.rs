@@ -371,14 +371,8 @@ impl<'storage, 'a> Parser<'storage, 'a> {
                 break;
             }
 
-            let current_pos = self.lexer.sync_position();
             let Some(element) = self.parse_type() else {
                 self.set_failed_bit();
-                error!(
-                    self.log,
-                    "[P0???]: Unable to parse tuple element type\n--> {}", current_pos
-                );
-
                 return None;
             };
 
@@ -393,6 +387,10 @@ impl<'storage, 'a> Parser<'storage, 'a> {
                         self.log,
                         "[P0???]: Expected comma or right brace in tuple type\n--> {}",
                         self.lexer.sync_position()
+                    );
+                    info!(
+                        self.log,
+                        "[P0???]: tuple type: syntax hint: {{<type1>, <type2>, ...}}"
                     );
 
                     return None;
@@ -507,20 +505,20 @@ impl<'storage, 'a> Parser<'storage, 'a> {
     fn parse_rest_of_slice_type(
         &mut self,
         element_type: Option<TypeKey<'a>>,
-        start_pos: SourcePosition<'a>,
+        _start_pos: SourcePosition<'a>,
     ) -> Option<TypeKey<'a>> {
-        // TODO: Cleanup slice type parsing error messages
+        /*
+         * The syntax for defining a slice type is as follows:
+         * [<type>];
+         *
+         * The '[' and ']' symbols indicate that the type is a slice.
+         */
 
         assert!(self.lexer.peek_t() == Token::Punct(Punct::RightBracket));
         self.lexer.skip();
 
         let Some(element_type) = element_type else {
             self.set_failed_bit();
-            error!(
-                self.log,
-                "[P0???]: Unable to parse element type for slice\n--> {}", start_pos
-            );
-
             return None;
         };
 
@@ -562,7 +560,17 @@ impl<'storage, 'a> Parser<'storage, 'a> {
     }
 
     fn parse_managed_type(&mut self) -> Option<TypeKey<'a>> {
-        // TODO: Cleanup managed type parsing error messages
+        /*
+         * The syntax for defining a managed reference type is as follows:
+         * &mut <type>;
+         * &const <type>;
+         * &<type>;
+         *
+         * The '&' symbol indicates that the type is managed, and the 'mut' or 'const' keywords
+         * indicate whether the type is mutable or immutable.
+         * If neither 'mut' nor 'const' is specified, the type is considered immutable
+         * by default.
+         */
 
         assert!(self.lexer.peek_t() == Token::Op(Op::BitAnd));
         self.lexer.skip();
@@ -570,14 +578,8 @@ impl<'storage, 'a> Parser<'storage, 'a> {
         let is_mutable = self.lexer.skip_if(&Token::Keyword(Keyword::Mut))
             || (self.lexer.skip_if(&Token::Keyword(Keyword::Const)) && false);
 
-        let current_pos = self.lexer.sync_position();
         let Some(target) = self.parse_type() else {
             self.set_failed_bit();
-            error!(
-                self.log,
-                "[P0???]: Unable to parse reference's target type\n--> {}", current_pos
-            );
-
             return None;
         };
 
@@ -589,7 +591,17 @@ impl<'storage, 'a> Parser<'storage, 'a> {
     }
 
     fn parse_unmanaged_type(&mut self) -> Option<TypeKey<'a>> {
-        // TODO: Cleanup unmanaged type parsing error messages
+        /*
+         * The syntax for defining an unmanaged reference type is as follows:
+         * *mut <type>;
+         * *const <type>;
+         * *<type>;
+         *
+         * The '*' symbol indicates that the type is unmanaged, and the 'mut' or 'const' keywords
+         * indicate whether the type is mutable or immutable.
+         * If neither 'mut' nor 'const' is specified, the type is considered immutable
+         * by default.
+         */
 
         assert!(self.lexer.peek_t() == Token::Op(Op::Mul));
         self.lexer.skip();
@@ -597,14 +609,8 @@ impl<'storage, 'a> Parser<'storage, 'a> {
         let is_mutable = self.lexer.skip_if(&Token::Keyword(Keyword::Mut))
             || (self.lexer.skip_if(&Token::Keyword(Keyword::Const)) && false);
 
-        let current_pos = self.lexer.sync_position();
         let Some(target) = self.parse_type() else {
             self.set_failed_bit();
-            error!(
-                self.log,
-                "[P0???]: Unable to parse unmanaged type's target type\n--> {}", current_pos
-            );
-
             return None;
         };
 
@@ -784,8 +790,6 @@ impl<'storage, 'a> Parser<'storage, 'a> {
 
     fn parse_opaque_type(&mut self) -> Option<TypeKey<'a>> {
         /*
-         * Opaque types are a way to define types without exposing their implementation details.
-         * They are useful for creating abstract data types and hiding implementation details.
          * The syntax for defining an opaque type is as follows:
          * opaque(<string>);
          */
