@@ -18,6 +18,8 @@ impl<'a> RefinementOptions<'a> {
 
 impl<'storage, 'a> Parser<'storage, 'a> {
     fn parse_refinement_bounds(&mut self) -> Option<(Option<ExprKey<'a>>, Option<ExprKey<'a>>)> {
+        // TODO: Cleanup refinement bounds error messages
+
         assert!(self.lexer.peek_t() == Token::Punct(Punct::LeftBracket));
         self.lexer.skip();
 
@@ -80,6 +82,8 @@ impl<'storage, 'a> Parser<'storage, 'a> {
     }
 
     fn parse_refinement_options(&mut self) -> Option<RefinementOptions<'a>> {
+        // TODO: Cleanup refinement options error messages
+
         if self.generic_type_suffix_terminator_ambiguity
             || !self.lexer.skip_if(&Token::Punct(Punct::Colon))
         {
@@ -156,6 +160,8 @@ impl<'storage, 'a> Parser<'storage, 'a> {
     }
 
     fn parse_generic_argument(&mut self) -> Option<(&'a str, ExprKey<'a>)> {
+        // TODO: Cleanup generic argument parsing error messages
+
         let mut argument_name: &'a str = "";
 
         match self.lexer.peek_t() {
@@ -200,6 +206,8 @@ impl<'storage, 'a> Parser<'storage, 'a> {
     }
 
     fn parse_generic_arguments(&mut self) -> Option<Vec<(&'a str, ExprKey<'a>)>> {
+        // TODO: Cleanup generic arguments parsing error messages
+
         assert!(self.lexer.peek_t() == Token::Op(Op::LogicLt));
         self.lexer.skip();
 
@@ -293,6 +301,8 @@ impl<'storage, 'a> Parser<'storage, 'a> {
     }
 
     fn parse_named_type(&mut self, type_name: &'a str) -> Option<TypeKey<'a>> {
+        // TODO: Cleanup named type parsing error messages
+
         assert!(self.lexer.peek_t() == Token::Name(Name::new(type_name)));
 
         let current_pos = self.lexer.sync_position();
@@ -360,6 +370,8 @@ impl<'storage, 'a> Parser<'storage, 'a> {
     }
 
     fn parse_tuple_type(&mut self) -> Option<TypeKey<'a>> {
+        // TODO: Cleanup tuple type parsing error messages
+
         assert!(self.lexer.peek_t() == Token::Punct(Punct::LeftBrace));
         self.lexer.skip();
 
@@ -411,6 +423,8 @@ impl<'storage, 'a> Parser<'storage, 'a> {
         element_type: Option<TypeKey<'a>>,
         start_pos: SourcePosition<'a>,
     ) -> Option<TypeKey<'a>> {
+        // TODO: Cleanup array type parsing error messages
+
         assert!(self.lexer.peek_t() == Token::Punct(Punct::Semicolon));
         self.lexer.skip();
 
@@ -458,6 +472,8 @@ impl<'storage, 'a> Parser<'storage, 'a> {
         key_type: Option<TypeKey<'a>>,
         start_pos: SourcePosition<'a>,
     ) -> Option<TypeKey<'a>> {
+        // TODO: Cleanup map type parsing error messages
+
         assert!(self.lexer.peek_t() == Token::Op(Op::Arrow));
         self.lexer.skip();
 
@@ -505,6 +521,8 @@ impl<'storage, 'a> Parser<'storage, 'a> {
         element_type: Option<TypeKey<'a>>,
         start_pos: SourcePosition<'a>,
     ) -> Option<TypeKey<'a>> {
+        // TODO: Cleanup slice type parsing error messages
+
         assert!(self.lexer.peek_t() == Token::Punct(Punct::RightBracket));
         self.lexer.skip();
 
@@ -525,6 +543,8 @@ impl<'storage, 'a> Parser<'storage, 'a> {
     }
 
     fn parse_array_or_slice_or_map(&mut self) -> Option<TypeKey<'a>> {
+        // TODO: Cleanup array/slice/map type parsing error messages
+
         assert!(self.lexer.peek_t() == Token::Punct(Punct::LeftBracket));
         self.lexer.skip();
 
@@ -554,6 +574,8 @@ impl<'storage, 'a> Parser<'storage, 'a> {
     }
 
     fn parse_managed_type(&mut self) -> Option<TypeKey<'a>> {
+        // TODO: Cleanup managed type parsing error messages
+
         assert!(self.lexer.peek_t() == Token::Op(Op::BitAnd));
         self.lexer.skip();
 
@@ -579,6 +601,8 @@ impl<'storage, 'a> Parser<'storage, 'a> {
     }
 
     fn parse_unmanaged_type(&mut self) -> Option<TypeKey<'a>> {
+        // TODO: Cleanup unmanaged type parsing error messages
+
         assert!(self.lexer.peek_t() == Token::Op(Op::Mul));
         self.lexer.skip();
 
@@ -604,6 +628,8 @@ impl<'storage, 'a> Parser<'storage, 'a> {
     }
 
     fn parse_function_attributes(&mut self) -> Option<Vec<ExprKey<'a>>> {
+        // TODO: Cleanup function attributes parsing error messages
+
         let mut attributes = Vec::new();
 
         if !self.lexer.skip_if(&Token::Punct(Punct::LeftBracket)) {
@@ -650,6 +676,8 @@ impl<'storage, 'a> Parser<'storage, 'a> {
     }
 
     fn parse_function_parameters(&mut self) -> Option<Vec<FunctionParameter<'a>>> {
+        // TODO: Cleanup function parameters parsing error messages
+
         let mut parameters = Vec::new();
 
         if !self.lexer.skip_if(&Token::Punct(Punct::LeftParen)) {
@@ -729,6 +757,8 @@ impl<'storage, 'a> Parser<'storage, 'a> {
     }
 
     fn parse_function_type(&mut self) -> Option<TypeKey<'a>> {
+        // TODO: Cleanup function type parsing error messages
+
         assert!(self.lexer.peek_t() == Token::Keyword(Keyword::Fn));
         self.lexer.skip();
 
@@ -785,6 +815,8 @@ impl<'storage, 'a> Parser<'storage, 'a> {
     }
 
     fn parse_opaque_type(&mut self) -> Option<TypeKey<'a>> {
+        // TODO: Cleanup opaque type parsing error messages
+
         assert!(self.lexer.peek_t() == Token::Keyword(Keyword::Opaque));
         self.lexer.skip();
 
@@ -822,6 +854,8 @@ impl<'storage, 'a> Parser<'storage, 'a> {
     }
 
     fn parse_type_primary(&mut self) -> Option<TypeKey<'a>> {
+        // TODO: Cleanup type primary parsing error messages
+
         let first_token = self.lexer.peek();
         let current_pos = first_token.start();
 
@@ -967,6 +1001,8 @@ impl<'storage, 'a> Parser<'storage, 'a> {
     }
 
     pub fn parse_type(&mut self) -> Option<TypeKey<'a>> {
+        // TODO: Cleanup type parsing error messages
+
         if self.lexer.skip_if(&Token::Punct(Punct::LeftParen)) {
             let inner = self.parse_type();
 
