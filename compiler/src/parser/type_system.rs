@@ -18,8 +18,6 @@ impl<'a> RefinementOptions<'a> {
 
 impl<'storage, 'a> Parser<'storage, 'a> {
     fn parse_refinement_bounds(&mut self) -> Option<(Option<ExprKey<'a>>, Option<ExprKey<'a>>)> {
-        // TODO: Cleanup refinement bounds error messages
-
         assert!(self.lexer.peek_t() == Token::Punct(Punct::LeftBracket));
         self.lexer.skip();
 
@@ -36,7 +34,7 @@ impl<'storage, 'a> Parser<'storage, 'a> {
                 self.set_failed_bit();
                 error!(
                     self.log,
-                    "[P0???]: Expected a colon after type's minimum refinement bound\n--> {}",
+                    "[P0???]: refinement type: expected ':' after minimum range constraint\n--> {}",
                     self.lexer.sync_position()
                 );
 
@@ -56,7 +54,7 @@ impl<'storage, 'a> Parser<'storage, 'a> {
                 self.set_failed_bit();
                 error!(
                     self.log,
-                    "[P0???]: Expected a right bracket to close minimum/maximum constraints\n--> {}",
+                    "[P0???]: refinement type: expected ']' to close range constraints\n--> {}",
                     self.lexer.sync_position()
                 );
 
@@ -70,8 +68,6 @@ impl<'storage, 'a> Parser<'storage, 'a> {
     }
 
     fn parse_refinement_options(&mut self) -> Option<RefinementOptions<'a>> {
-        // TODO: Cleanup refinement options error messages
-
         if self.generic_type_suffix_terminator_ambiguity
             || !self.lexer.skip_if(&Token::Punct(Punct::Colon))
         {
@@ -108,7 +104,7 @@ impl<'storage, 'a> Parser<'storage, 'a> {
             self.set_failed_bit();
             error!(
                 self.log,
-                "[P0???]: Expected a left bracket for type's range refinement bounds\n--> {}",
+                "[P0???]: refinement type: expected '[' for range constraints\n--> {}",
                 self.lexer.sync_position()
             );
 
@@ -128,8 +124,6 @@ impl<'storage, 'a> Parser<'storage, 'a> {
     }
 
     fn parse_generic_argument(&mut self) -> Option<(&'a str, ExprKey<'a>)> {
-        // TODO: Cleanup generic argument parsing error messages
-
         let mut argument_name: &'a str = "";
 
         match self.lexer.peek_t() {
@@ -168,8 +162,6 @@ impl<'storage, 'a> Parser<'storage, 'a> {
     }
 
     fn parse_generic_arguments(&mut self) -> Option<Vec<(&'a str, ExprKey<'a>)>> {
-        // TODO: Cleanup generic arguments parsing error messages
-
         assert!(self.lexer.peek_t() == Token::Op(Op::LogicLt));
         self.lexer.skip();
 
@@ -217,7 +209,7 @@ impl<'storage, 'a> Parser<'storage, 'a> {
                     self.set_failed_bit();
                     error!(
                         self.log,
-                        "[P0???]: Expected ',' or '>' to separate generic type arguments\n--> {}",
+                        "[P0???]: generic type: expected ',' or '>' after generic argument\n--> {}",
                         self.lexer.sync_position()
                     );
 
@@ -257,8 +249,6 @@ impl<'storage, 'a> Parser<'storage, 'a> {
     }
 
     fn parse_named_type(&mut self, type_name: &'a str) -> Option<TypeKey<'a>> {
-        // TODO: Cleanup named type parsing error messages
-
         assert!(self.lexer.peek_t() == Token::Name(Name::new(type_name)));
 
         let basis_type = self.parse_named_type_name(type_name);
@@ -280,7 +270,7 @@ impl<'storage, 'a> Parser<'storage, 'a> {
                     self.set_failed_bit();
                     error!(
                         self.log,
-                        "[P0???]: Unexpected generic type '>' delimiter or invalid generic type\n--> {}",
+                        "[P0???]: generic type: unexpected '>' delimiter\n--> {}",
                         self.lexer.sync_position()
                     );
 
@@ -290,7 +280,7 @@ impl<'storage, 'a> Parser<'storage, 'a> {
                     self.set_failed_bit();
                     error!(
                         self.log,
-                        "[P0???]: Unexpected generic type '>>' delimiter or invalid generic type\n--> {}",
+                        "[P0???]: generic type: unexpected '>>' delimiter\n--> {}",
                         self.lexer.sync_position()
                     );
 
@@ -312,8 +302,6 @@ impl<'storage, 'a> Parser<'storage, 'a> {
     }
 
     fn parse_tuple_type(&mut self) -> Option<TypeKey<'a>> {
-        // TODO: Cleanup tuple type parsing error messages
-
         assert!(self.lexer.peek_t() == Token::Punct(Punct::LeftBrace));
         self.lexer.skip();
 
@@ -339,7 +327,7 @@ impl<'storage, 'a> Parser<'storage, 'a> {
                     self.set_failed_bit();
                     error!(
                         self.log,
-                        "[P0???]: Expected comma or right brace in tuple type\n--> {}",
+                        "[P0???]: tuple type: expected ',' or '}}' after type element\n--> {}",
                         self.lexer.sync_position()
                     );
                     info!(
@@ -373,7 +361,7 @@ impl<'storage, 'a> Parser<'storage, 'a> {
             self.set_failed_bit();
             error!(
                 self.log,
-                "[P0???]: array type: expected ']' to close array type\n--> {}",
+                "[P0???]: array type: expected ']' to close\n--> {}",
                 self.lexer.sync_position()
             );
 
@@ -402,7 +390,7 @@ impl<'storage, 'a> Parser<'storage, 'a> {
             self.set_failed_bit();
             error!(
                 self.log,
-                "[P0???]: map type: expected ']' to close map type\n--> {}",
+                "[P0???]: map type: expected ']' to close\n--> {}",
                 self.lexer.sync_position()
             );
 
@@ -461,7 +449,7 @@ impl<'storage, 'a> Parser<'storage, 'a> {
         self.set_failed_bit();
         error!(
             self.log,
-            "[P0???]: type: expected ';', ']', or '->' for an array, slice, or map type respectively\n--> {}",
+            "[P0???]: type: expected ';', ']', or '->' for array, slice, or map type respectively\n--> {}",
             self.lexer.sync_position()
         );
         info!(
@@ -544,8 +532,6 @@ impl<'storage, 'a> Parser<'storage, 'a> {
     }
 
     fn parse_function_attributes(&mut self) -> Option<Vec<ExprKey<'a>>> {
-        // TODO: Cleanup function attributes parsing error messages
-
         let mut attributes = Vec::new();
 
         if !self.lexer.skip_if(&Token::Punct(Punct::LeftBracket)) {
@@ -573,7 +559,7 @@ impl<'storage, 'a> Parser<'storage, 'a> {
                     self.set_failed_bit();
                     error!(
                         self.log,
-                        "[P0???]: Expected comma or right bracket in function type attributes\n--> {}",
+                        "[P0???]: function type: expected ',' or ']' after attribute\n--> {}",
                         self.lexer.sync_position()
                     );
 
@@ -586,7 +572,10 @@ impl<'storage, 'a> Parser<'storage, 'a> {
     }
 
     fn parse_function_parameters(&mut self) -> Option<Vec<FunctionParameter<'a>>> {
-        // TODO: Cleanup function parameters parsing error messages
+        /*
+         * Syntax for defining function parameters is as follows:
+         *  <parameter> ::= <name>? (':' <type>)? ('=' <expression>)?
+         */
 
         let mut parameters = Vec::new();
 
@@ -642,7 +631,7 @@ impl<'storage, 'a> Parser<'storage, 'a> {
                     self.set_failed_bit();
                     error!(
                         self.log,
-                        "[P0???]: Expected comma or right parenthesis in function parameters\n--> {}",
+                        "[P0???]: function type: expected ',' or ')' after parameter\n--> {}",
                         self.lexer.sync_position()
                     );
 
@@ -740,7 +729,7 @@ impl<'storage, 'a> Parser<'storage, 'a> {
             self.set_failed_bit();
             error!(
                 self.log,
-                "[P0???]: opaque type: Expected ')' to close opaque type\n--> {}",
+                "[P0???]: opaque type: expected ')' to close\n--> {}",
                 self.lexer.sync_position()
             );
             info!(
@@ -755,8 +744,6 @@ impl<'storage, 'a> Parser<'storage, 'a> {
     }
 
     fn parse_type_primary(&mut self) -> Option<TypeKey<'a>> {
-        // TODO: Cleanup type primary parsing error messages
-
         let first_token = self.lexer.peek();
         let current_pos = first_token.start();
 
@@ -779,9 +766,7 @@ impl<'storage, 'a> Parser<'storage, 'a> {
                 self.set_failed_bit();
                 error!(
                     self.log,
-                    "[P0???]: Unexpected integer token '{}' while parsing type\n--> {}",
-                    int,
-                    current_pos
+                    "[P0???]: type: unexpected integer '{}'\n--> {}", int, current_pos
                 );
 
                 None
@@ -791,9 +776,7 @@ impl<'storage, 'a> Parser<'storage, 'a> {
                 self.set_failed_bit();
                 error!(
                     self.log,
-                    "[P0???]: Unexpected float token '{}' while parsing type\n--> {}",
-                    float,
-                    current_pos
+                    "[P0???]: type: unexpected float '{}'\n--> {}", float, current_pos
                 );
 
                 None
@@ -803,9 +786,7 @@ impl<'storage, 'a> Parser<'storage, 'a> {
                 self.set_failed_bit();
                 error!(
                     self.log,
-                    "[P0???]: Unexpected keyword token '{}' while parsing type\n--> {}",
-                    func,
-                    current_pos
+                    "[P0???]: type: unexpected keyword '{}'\n--> {}", func, current_pos
                 );
 
                 None
@@ -815,9 +796,7 @@ impl<'storage, 'a> Parser<'storage, 'a> {
                 self.set_failed_bit();
                 error!(
                     self.log,
-                    "[P0???]: Unexpected string token {} while parsing type\n--> {}",
-                    string,
-                    current_pos
+                    "[P0???]: type: unexpected string '{}'\n--> {}", string, current_pos
                 );
 
                 None
@@ -827,9 +806,7 @@ impl<'storage, 'a> Parser<'storage, 'a> {
                 self.set_failed_bit();
                 error!(
                     self.log,
-                    "[P0???]: Unexpected binary string token '{}' while parsing type\n--> {}",
-                    binary,
-                    current_pos
+                    "[P0???]: type: unexpected binary string '{}'\n--> {}", binary, current_pos
                 );
 
                 None
@@ -839,9 +816,7 @@ impl<'storage, 'a> Parser<'storage, 'a> {
                 self.set_failed_bit();
                 error!(
                     self.log,
-                    "[P0???]: Unexpected character token '{}' while parsing type\n--> {}",
-                    char,
-                    current_pos
+                    "[P0???]: type: unexpected character '{}'\n--> {}", char, current_pos
                 );
 
                 None
@@ -851,9 +826,7 @@ impl<'storage, 'a> Parser<'storage, 'a> {
                 self.set_failed_bit();
                 error!(
                     self.log,
-                    "[P0???]: Unexpected punctuation token '{}' while parsing type\n--> {}",
-                    punc,
-                    current_pos
+                    "[P0???]: type: unexpected punctuation '{}'\n--> {}", punc, current_pos
                 );
 
                 None
@@ -863,9 +836,7 @@ impl<'storage, 'a> Parser<'storage, 'a> {
                 self.set_failed_bit();
                 error!(
                     self.log,
-                    "[P0???]: Unexpected operator token '{}' while parsing type\n--> {}",
-                    op,
-                    current_pos
+                    "[P0???]: type: unexpected operator '{}'\n--> {}", op, current_pos
                 );
 
                 None
@@ -875,7 +846,7 @@ impl<'storage, 'a> Parser<'storage, 'a> {
                 self.set_failed_bit();
                 error!(
                     self.log,
-                    "[P0???]: Unexpected comment token while parsing type\n--> {}", current_pos
+                    "[P0???]: type: unexpected comment\n--> {}", current_pos
                 );
 
                 None
@@ -885,7 +856,7 @@ impl<'storage, 'a> Parser<'storage, 'a> {
                 self.set_failed_bit();
                 error!(
                     self.log,
-                    "[P0???]: Unexpected end of file while parsing type\n--> {}", current_pos
+                    "[P0???]: type: unexpected end of file\n--> {}", current_pos
                 );
 
                 None
@@ -895,7 +866,7 @@ impl<'storage, 'a> Parser<'storage, 'a> {
                 self.set_failed_bit();
                 error!(
                     self.log,
-                    "[P0???]: Illegal token encountered during type parsing\n--> {}", current_pos
+                    "[P0???]: type: unexpected illegal token\n--> {}", current_pos
                 );
 
                 None
@@ -926,7 +897,7 @@ impl<'storage, 'a> Parser<'storage, 'a> {
                 self.set_failed_bit();
                 error!(
                     self.log,
-                    "[P0???]: type: expected ')' to close type expression\n--> {}",
+                    "[P0???]: type: expected ')' to close\n--> {}",
                     self.lexer.sync_position()
                 );
 
