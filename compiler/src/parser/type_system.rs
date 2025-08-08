@@ -221,37 +221,15 @@ impl<'storage, 'a> Parser<'storage, 'a> {
         Some(arguments)
     }
 
-    fn parse_named_type_name(&mut self, type_name: &'a str) -> TypeKey<'a> {
+    fn parse_named_type(&mut self, type_name: &'a str) -> Option<TypeKey<'a>> {
         assert!(self.lexer.peek_t() == Token::Name(Name::new(type_name)));
         self.lexer.skip();
 
-        let mut bb = Builder::new(self.storage);
-        match type_name {
-            "u1" | "bool" => bb.get_bool(),
-            "u8" => bb.get_u8(),
-            "u16" => bb.get_u16(),
-            "u32" => bb.get_u32(),
-            "u64" => bb.get_u64(),
-            "u128" => bb.get_u128(),
-            "i8" => bb.get_i8(),
-            "i16" => bb.get_i16(),
-            "i32" => bb.get_i32(),
-            "i64" => bb.get_i64(),
-            "i128" => bb.get_i128(),
-            "f8" => bb.get_f8(),
-            "f16" => bb.get_f16(),
-            "f32" => bb.get_f32(),
-            "f64" => bb.get_f64(),
-            "f128" => bb.get_f128(),
-            "_" => bb.get_infer_type(),
-            type_name => bb.create_type_name(type_name),
-        }
-    }
+        let basis_type = match type_name {
+            "_" => Builder::new(self.storage).get_infer_type(),
+            type_name => Builder::new(self.storage).create_type_name(type_name),
+        };
 
-    fn parse_named_type(&mut self, type_name: &'a str) -> Option<TypeKey<'a>> {
-        assert!(self.lexer.peek_t() == Token::Name(Name::new(type_name)));
-
-        let basis_type = self.parse_named_type_name(type_name);
         if !self.lexer.next_is(&Token::Op(Op::LogicLt)) {
             return Some(basis_type);
         }
@@ -754,6 +732,86 @@ impl<'storage, 'a> Parser<'storage, 'a> {
         }
 
         let result = match first_token.into_token() {
+            Token::Keyword(Keyword::Bool) => {
+                self.lexer.skip();
+                Some(Builder::new(self.storage).get_bool())
+            }
+
+            Token::Keyword(Keyword::U8) => {
+                self.lexer.skip();
+                Some(Builder::new(self.storage).get_u8())
+            }
+
+            Token::Keyword(Keyword::U16) => {
+                self.lexer.skip();
+                Some(Builder::new(self.storage).get_u16())
+            }
+
+            Token::Keyword(Keyword::U32) => {
+                self.lexer.skip();
+                Some(Builder::new(self.storage).get_u32())
+            }
+
+            Token::Keyword(Keyword::U64) => {
+                self.lexer.skip();
+                Some(Builder::new(self.storage).get_u64())
+            }
+
+            Token::Keyword(Keyword::U128) => {
+                self.lexer.skip();
+                Some(Builder::new(self.storage).get_u128())
+            }
+
+            Token::Keyword(Keyword::I8) => {
+                self.lexer.skip();
+                Some(Builder::new(self.storage).get_i8())
+            }
+
+            Token::Keyword(Keyword::I16) => {
+                self.lexer.skip();
+                Some(Builder::new(self.storage).get_i16())
+            }
+
+            Token::Keyword(Keyword::I32) => {
+                self.lexer.skip();
+                Some(Builder::new(self.storage).get_i32())
+            }
+
+            Token::Keyword(Keyword::I64) => {
+                self.lexer.skip();
+                Some(Builder::new(self.storage).get_i64())
+            }
+
+            Token::Keyword(Keyword::I128) => {
+                self.lexer.skip();
+                Some(Builder::new(self.storage).get_i128())
+            }
+
+            Token::Keyword(Keyword::F8) => {
+                self.lexer.skip();
+                Some(Builder::new(self.storage).get_f8())
+            }
+
+            Token::Keyword(Keyword::F16) => {
+                self.lexer.skip();
+                Some(Builder::new(self.storage).get_f16())
+            }
+
+            Token::Keyword(Keyword::F32) => {
+                self.lexer.skip();
+                Some(Builder::new(self.storage).get_f32())
+            }
+
+            Token::Keyword(Keyword::F64) => {
+                self.lexer.skip();
+                Some(Builder::new(self.storage).get_f64())
+            }
+
+            Token::Keyword(Keyword::F128) => {
+                self.lexer.skip();
+                Some(Builder::new(self.storage).get_f128())
+            }
+
             Token::Name(name) => self.parse_named_type(name.name()),
             Token::Punct(Punct::LeftBrace) => self.parse_tuple_type(),
             Token::Punct(Punct::LeftBracket) => self.parse_array_or_slice_or_map(),

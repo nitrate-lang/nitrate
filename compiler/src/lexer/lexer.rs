@@ -324,6 +324,23 @@ impl<'a> Lexer<'a> {
             b"true" => Some(Keyword::True),
             b"false" => Some(Keyword::False),
 
+            b"bool" => Some(Keyword::Bool),
+            b"u8" => Some(Keyword::U8),
+            b"u16" => Some(Keyword::U16),
+            b"u32" => Some(Keyword::U32),
+            b"u64" => Some(Keyword::U64),
+            b"u128" => Some(Keyword::U128),
+            b"i8" => Some(Keyword::I8),
+            b"i16" => Some(Keyword::I16),
+            b"i32" => Some(Keyword::I32),
+            b"i64" => Some(Keyword::I64),
+            b"i128" => Some(Keyword::I128),
+            b"f8" => Some(Keyword::F8),
+            b"f16" => Some(Keyword::F16),
+            b"f32" => Some(Keyword::F32),
+            b"f64" => Some(Keyword::F64),
+            b"f128" => Some(Keyword::F128),
+
             _ => None,
         } {
             Ok(Token::Keyword(keyword))

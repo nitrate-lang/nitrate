@@ -209,6 +209,24 @@ pub enum Keyword {
     Null,  /* 'null' */
     True,  /* 'true' */
     False, /* 'false' */
+
+    /* Type Keywords */
+    Bool, /* 'bool' */
+    U8,   /* 'u8' */
+    U16,  /* 'u16' */
+    U32,  /* 'u32' */
+    U64,  /* 'u64' */
+    U128, /* 'u128' */
+    I8,   /* 'i8' */
+    I16,  /* 'i16' */
+    I32,  /* 'i32' */
+    I64,  /* 'i64' */
+    I128, /* 'i128' */
+    F8,   /* 'f8' */
+    F16,  /* 'f16' */
+    F32,  /* 'f32' */
+    F64,  /* 'f64' */
+    F128, /* 'f128' */
 }
 
 impl std::fmt::Display for Keyword {
@@ -256,10 +274,26 @@ impl std::fmt::Display for Keyword {
             Keyword::Await => write!(f, "await"),
             Keyword::Asm => write!(f, "asm"),
 
-            // Literals
             Keyword::Null => write!(f, "null"),
             Keyword::True => write!(f, "true"),
             Keyword::False => write!(f, "false"),
+
+            Keyword::Bool => write!(f, "bool"),
+            Keyword::U8 => write!(f, "u8"),
+            Keyword::U16 => write!(f, "u16"),
+            Keyword::U32 => write!(f, "u32"),
+            Keyword::U64 => write!(f, "u64"),
+            Keyword::U128 => write!(f, "u128"),
+            Keyword::I8 => write!(f, "i8"),
+            Keyword::I16 => write!(f, "i16"),
+            Keyword::I32 => write!(f, "i32"),
+            Keyword::I64 => write!(f, "i64"),
+            Keyword::I128 => write!(f, "i128"),
+            Keyword::F8 => write!(f, "f8"),
+            Keyword::F16 => write!(f, "f16"),
+            Keyword::F32 => write!(f, "f32"),
+            Keyword::F64 => write!(f, "f64"),
+            Keyword::F128 => write!(f, "f128"),
         }
     }
 }
