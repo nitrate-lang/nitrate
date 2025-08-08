@@ -107,14 +107,25 @@ impl<'storage, 'a> Parser<'storage, 'a> {
 
         let mut expressions = Vec::new();
         while !self.lexer.is_eof() {
-            let current_pos = self.lexer.sync_position();
+            let initial_pos = self.lexer.sync_position();
             let Some(program) = self.parse_expression() else {
-                self.set_failed_bit();
-                error!(
-                    self.log,
-                    "[P????]: Unable to parse program expression\n--> {}", current_pos
-                );
-                return None;
+                // Resynchronize the lexer to the next semicolon
+                let before_pos = self.lexer.sync_position();
+                while !self.lexer.is_eof() && self.lexer.next_t() != Token::Punct(Punct::Semicolon)
+                {
+                }
+
+                if before_pos == self.lexer.sync_position() {
+                    self.set_failed_bit();
+                    error!(
+                        self.log,
+                        "[P????]: Unable to parse program expression\n--> {}", initial_pos
+                    );
+
+                    break;
+                }
+
+                continue;
             };
 
             expressions.push(program);
