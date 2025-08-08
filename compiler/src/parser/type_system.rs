@@ -147,6 +147,7 @@ impl<'storage, 'a> Parser<'storage, 'a> {
             _ => {}
         }
 
+        let current_pos = self.lexer.sync_position();
         let type_or_expression = if self.lexer.skip_if(&Token::Op(Op::Add)) {
             self.parse_expression()
         } else {
@@ -155,6 +156,15 @@ impl<'storage, 'a> Parser<'storage, 'a> {
 
         let Some(argument_value) = type_or_expression else {
             self.set_failed_bit();
+            error!(
+                self.log,
+                "[P0???]: generic type: expected type or expression after generic argument name\n--> {}",
+                current_pos
+            );
+            info!(
+                self.log,
+                "[P0???]: generic type: syntax hint: if you want to use a Refinement Type as the generic argument, wrap the type in parentheses, e.g. `Vec<(i32: [1: 10])>`"
+            );
             return None;
         };
 
