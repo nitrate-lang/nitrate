@@ -505,9 +505,6 @@ dependencies = [
  "smallvec 1.15.1",
  "spdx",
  "stackvector",
- "tracing",
- "tracing-subscriber",
- "tracking-allocator",
 ]
 
 [[package]]
