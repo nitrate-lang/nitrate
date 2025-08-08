@@ -3,20 +3,22 @@ use crate::lexer::*;
 use crate::parsetree::*;
 use slog::{Logger, error, info};
 
-pub struct Parser<'storage, 'a> {
+pub struct Parser<'storage, 'logger, 'a> {
     pub(crate) lexer: Lexer<'a>,
     pub(crate) storage: &'storage mut Storage<'a>,
-    pub(crate) log: Logger,
+    pub(crate) log: &'logger mut Logger,
     // Source files are 2^32 bytes max, so this won't overflow
     pub(crate) generic_type_depth: i64,
     pub(crate) generic_type_suffix_terminator_ambiguity: bool,
     failed_bit: bool,
 }
 
-impl<'storage, 'a> Parser<'storage, 'a> {
-    pub fn new(lexer: Lexer<'a>, storage: &'storage mut Storage<'a>, log: Option<Logger>) -> Self {
-        let log = log.unwrap_or_else(|| slog::Logger::root(slog::Discard, slog::o!()));
-
+impl<'storage, 'logger, 'a> Parser<'storage, 'logger, 'a> {
+    pub fn new(
+        lexer: Lexer<'a>,
+        storage: &'storage mut Storage<'a>,
+        log: &'logger mut Logger,
+    ) -> Self {
         Parser {
             lexer,
             storage,

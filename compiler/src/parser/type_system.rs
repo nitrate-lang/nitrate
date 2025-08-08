@@ -16,7 +16,7 @@ impl<'a> RefinementOptions<'a> {
     }
 }
 
-impl<'storage, 'a> Parser<'storage, 'a> {
+impl<'storage, 'logger, 'a> Parser<'storage, 'logger, 'a> {
     fn parse_refinement_range(&mut self) -> Option<(Option<ExprKey<'a>>, Option<ExprKey<'a>>)> {
         assert!(self.lexer.peek_t() == Token::Punct(Punct::LeftBracket));
         self.lexer.skip();
@@ -1112,8 +1112,9 @@ fn test_parse_type() {
 
     let lexer = Lexer::new(source.as_bytes(), "test").expect("Failed to create lexer");
     let mut storage = Storage::new();
+    let mut logger = slog::Logger::root(slog::Discard, slog::o!());
 
-    let model = Parser::new(lexer, &mut storage, None)
+    let model = Parser::new(lexer, &mut storage, &mut logger)
         .parse()
         .expect("Failed to parse source");
     assert!(!model.any_errors(), "Parsing failed with errors");

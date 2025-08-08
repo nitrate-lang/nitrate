@@ -80,9 +80,9 @@ fn program() -> i32 {
             .build()
             .fuse();
         let drain = Async::new(drain.fuse()).build().fuse();
-        let root_logger = Logger::root(drain, o!());
+        let mut root_logger = Logger::root(drain, o!());
 
-        let mut parser = Parser::new(lexer, &mut storage, Some(root_logger));
+        let mut parser = Parser::new(lexer, &mut storage, &mut root_logger);
 
         parser.parse()
     };

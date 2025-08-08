@@ -4,16 +4,21 @@ use nitrate_compiler::parser::*;
 use nitrate_compiler::parsetree::*;
 
 static mut STORAGE: Option<Storage<'static>> = None;
+static mut LOGGER: Option<slog::Logger> = None;
 
 fn parse_type(source_code: &'static str) {
     #[allow(static_mut_refs)]
     let storage = unsafe { STORAGE.as_mut().unwrap_unchecked() };
 
+    #[allow(static_mut_refs)]
+    let logger = unsafe { LOGGER.as_mut().unwrap_unchecked() };
+
     let lexer = Lexer::new(source_code.as_bytes(), "").expect("Failed to create lexer");
-    let mut parser = Parser::new(lexer, storage, None);
+    let mut parser = Parser::new(lexer, storage, logger);
     parser.parse_type().expect("Failed to parse type");
 }
 
+#[inline(never)]
 fn primitive() {
     parse_type("i32");
 }
@@ -73,6 +78,7 @@ fn monster() {
 fn parse_type_benchmark(c: &mut Criterion) {
     unsafe {
         STORAGE = Some(Storage::new());
+        LOGGER = Some(slog::Logger::root(slog::Discard, slog::o!()));
     }
 
     let mut g = c.benchmark_group("parse_type");
