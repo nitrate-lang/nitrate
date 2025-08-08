@@ -7,66 +7,66 @@ static mut STORAGE: Option<Storage<'static>> = None;
 
 fn parse_type(source_code: &'static str) {
     #[allow(static_mut_refs)]
-    let storage = unsafe { STORAGE.as_mut().unwrap() };
+    let storage = unsafe { STORAGE.as_mut().unwrap_unchecked() };
 
-    let lexer = Lexer::new(source_code.as_bytes(), "<inline>").expect("Failed to create lexer");
+    let lexer = Lexer::new(source_code.as_bytes(), "").expect("Failed to create lexer");
     let mut parser = Parser::new(lexer, storage, None);
-    parser.parse_type().expect("Failed to parse source code");
+    parser.parse_type().expect("Failed to parse type");
 }
 
-fn parse_type_primitive() {
+fn primitive() {
     parse_type("i32");
 }
 
-fn parse_type_infer() {
+fn infer() {
     parse_type("_");
 }
 
-fn parse_type_name() {
+fn name() {
     parse_type("std::Covariant");
 }
 
-fn parse_type_refine() {
+fn refinement() {
     parse_type("u8: 6: [30:40]");
 }
 
-fn parse_type_tuple() {
+fn tuple() {
     parse_type("{String, u8, bool}");
 }
 
-fn parse_type_array() {
+fn array() {
     parse_type("[u8; 10]");
 }
 
-fn parse_type_map() {
+fn map() {
     parse_type("[char -> u8]");
 }
 
-fn parse_type_slice() {
+fn slice() {
     parse_type("[u8]");
 }
 
-fn parse_type_function() {
+fn function() {
     parse_type("fn[10, 20](a, b: i32 = 40) -> bool");
 }
 
-fn parse_type_ref() {
+fn reference() {
     parse_type("&i32");
 }
 
-fn parse_type_ptr() {
+fn pointer() {
     parse_type("*i32");
 }
 
-fn parse_type_generic() {
+fn generic() {
     parse_type("Vec<Point<f32>: 20, growth: 3.2>");
 }
 
-fn parse_type_opaque() {
+fn opaque() {
     parse_type("opaque(\"sqlite3\")");
 }
 
-fn parse_type_monster() {
+fn monster() {
     parse_type("Option<[str -> Vec<{u8, str: 48, Set<Address<str>>: 2: [1:]}>]>: 1");
 }
 
@@ -75,23 +75,24 @@ fn criterion_benchmark(c: &mut Criterion) {
         STORAGE = Some(Storage::new());
     }
 
-    c.bench_function("parse_type_primitive", |b| {
-        b.iter(|| parse_type_primitive())
-    });
+    let mut g = c.benchmark_group("parse_type");
 
-    c.bench_function("parse_type_infer", |b| b.iter(|| parse_type_infer()));
-    c.bench_function("parse_type_name", |b| b.iter(|| parse_type_name()));
-    c.bench_function("parse_type_refine", |b| b.iter(|| parse_type_refine()));
-    c.bench_function("parse_type_tuple", |b| b.iter(|| parse_type_tuple()));
-    c.bench_function("parse_type_array", |b| b.iter(|| parse_type_array()));
-    c.bench_function("parse_type_map", |b| b.iter(|| parse_type_map()));
-    c.bench_function("parse_type_slice", |b| b.iter(|| parse_type_slice()));
-    c.bench_function("parse_type_function", |b| b.iter(|| parse_type_function()));
-    c.bench_function("parse_type_ref", |b| b.iter(|| parse_type_ref()));
-    c.bench_function("parse_type_ptr", |b| b.iter(|| parse_type_ptr()));
-    c.bench_function("parse_type_generic", |b| b.iter(|| parse_type_generic()));
-    c.bench_function("parse_type_opaque", |b| b.iter(|| parse_type_opaque()));
-    c.bench_function("parse_type_monster", |b| b.iter(|| parse_type_monster()));
+    g.bench_function("primitive", |b| b.iter(|| primitive()));
+    g.bench_function("infer", |b| b.iter(|| infer()));
+    g.bench_function("name", |b| b.iter(|| name()));
+    g.bench_function("refinement", |b| b.iter(|| refinement()));
+    g.bench_function("tuple", |b| b.iter(|| tuple()));
+    g.bench_function("array", |b| b.iter(|| array()));
+    g.bench_function("map", |b| b.iter(|| map()));
+    g.bench_function("slice", |b| b.iter(|| slice()));
+    g.bench_function("function", |b| b.iter(|| function()));
+    g.bench_function("reference", |b| b.iter(|| reference()));
+    g.bench_function("pointer", |b| b.iter(|| pointer()));
+    g.bench_function("generic", |b| b.iter(|| generic()));
+    g.bench_function("opaque", |b| b.iter(|| opaque()));
+    g.bench_function("monster", |b| b.iter(|| monster()));
+
+    g.finish();
 }
 
 criterion_group!(benches, criterion_benchmark);
