@@ -107,12 +107,12 @@ impl<'storage, 'a> Parser<'storage, 'a> {
 
         let mut expressions = Vec::new();
         while !self.lexer.is_eof() {
+            let current_pos = self.lexer.sync_position();
             let Some(program) = self.parse_expression() else {
                 self.set_failed_bit();
                 error!(
                     self.log,
-                    "[P????]: Unable to parse program expression\n--> {}",
-                    self.lexer.sync_position()
+                    "[P????]: Unable to parse program expression\n--> {}", current_pos
                 );
                 return None;
             };
