@@ -408,34 +408,12 @@ impl<'storage, 'a> Parser<'storage, 'a> {
         )
     }
 
-    fn parse_rest_of_array(
-        &mut self,
-        element_type: Option<TypeKey<'a>>,
-        start_pos: SourcePosition<'a>,
-    ) -> Option<TypeKey<'a>> {
-        // TODO: Cleanup array type parsing error messages
-
+    fn parse_rest_of_array(&mut self, element_type: TypeKey<'a>) -> Option<TypeKey<'a>> {
         assert!(self.lexer.peek_t() == Token::Punct(Punct::Semicolon));
         self.lexer.skip();
 
-        let Some(element_type) = element_type else {
-            self.set_failed_bit();
-            error!(
-                self.log,
-                "[P0???]: Unable to parse element type for array\n--> {}", start_pos
-            );
-
-            return None;
-        };
-
-        let current_pos = self.lexer.sync_position();
         let Some(array_count) = self.parse_expression() else {
             self.set_failed_bit();
-            error!(
-                self.log,
-                "[P0???]: Unable to parse length expression for array\n--> {}", current_pos
-            );
-
             return None;
         };
 
@@ -443,7 +421,7 @@ impl<'storage, 'a> Parser<'storage, 'a> {
             self.set_failed_bit();
             error!(
                 self.log,
-                "[P0???]: Expected right bracket to close array type\n--> {}",
+                "[P0???]: array type: expected ']' to close array type\n--> {}",
                 self.lexer.sync_position()
             );
 
@@ -459,34 +437,12 @@ impl<'storage, 'a> Parser<'storage, 'a> {
         )
     }
 
-    fn parse_rest_of_map_type(
-        &mut self,
-        key_type: Option<TypeKey<'a>>,
-        start_pos: SourcePosition<'a>,
-    ) -> Option<TypeKey<'a>> {
-        // TODO: Cleanup map type parsing error messages
-
+    fn parse_rest_of_map_type(&mut self, key_type: TypeKey<'a>) -> Option<TypeKey<'a>> {
         assert!(self.lexer.peek_t() == Token::Op(Op::Arrow));
         self.lexer.skip();
 
-        let Some(key_type) = key_type else {
-            self.set_failed_bit();
-            error!(
-                self.log,
-                "[P0???]: Unable to parse map's key type\n--> {}", start_pos
-            );
-
-            return None;
-        };
-
-        let current_pos = self.lexer.sync_position();
         let Some(value_type) = self.parse_type() else {
             self.set_failed_bit();
-            error!(
-                self.log,
-                "[P0???]: Unable to parse map's value type\n--> {}", current_pos
-            );
-
             return None;
         };
 
@@ -494,7 +450,7 @@ impl<'storage, 'a> Parser<'storage, 'a> {
             self.set_failed_bit();
             error!(
                 self.log,
-                "[P0???]: Expected right bracket to close map type\n--> {}",
+                "[P0???]: map type: expected ']' to close map type\n--> {}",
                 self.lexer.sync_position()
             );
 
@@ -510,25 +466,16 @@ impl<'storage, 'a> Parser<'storage, 'a> {
         )
     }
 
-    fn parse_rest_of_slice_type(
-        &mut self,
-        element_type: Option<TypeKey<'a>>,
-        _start_pos: SourcePosition<'a>,
-    ) -> Option<TypeKey<'a>> {
+    fn parse_rest_of_slice_type(&mut self, element_type: TypeKey<'a>) -> Option<TypeKey<'a>> {
         /*
          * The syntax for defining a slice type is as follows:
-         * [<type>];
+         * [<type>]
          *
          * The '[' and ']' symbols indicate that the type is a slice.
          */
 
         assert!(self.lexer.peek_t() == Token::Punct(Punct::RightBracket));
         self.lexer.skip();
-
-        let Some(element_type) = element_type else {
-            self.set_failed_bit();
-            return None;
-        };
 
         Some(
             Builder::new(self.storage)
@@ -539,31 +486,40 @@ impl<'storage, 'a> Parser<'storage, 'a> {
     }
 
     fn parse_array_or_slice_or_map(&mut self) -> Option<TypeKey<'a>> {
-        // TODO: Cleanup array/slice/map type parsing error messages
-
         assert!(self.lexer.peek_t() == Token::Punct(Punct::LeftBracket));
         self.lexer.skip();
 
-        let current_pos = self.lexer.sync_position();
-        let something_type = self.parse_type();
+        let Some(something_type) = self.parse_type() else {
+            self.set_failed_bit();
+            return None;
+        };
 
         if self.lexer.next_is(&Token::Punct(Punct::Semicolon)) {
-            return self.parse_rest_of_array(something_type, current_pos);
+            return self.parse_rest_of_array(something_type);
         }
 
         if self.lexer.next_is(&Token::Op(Op::Arrow)) {
-            return self.parse_rest_of_map_type(something_type, current_pos);
+            return self.parse_rest_of_map_type(something_type);
         }
 
         if self.lexer.next_is(&Token::Punct(Punct::RightBracket)) {
-            return self.parse_rest_of_slice_type(something_type, current_pos);
+            return self.parse_rest_of_slice_type(something_type);
         }
 
         self.set_failed_bit();
         error!(
             self.log,
-            "[P0???]: Expected semicolon, right bracket, or arrow in array/slice/map type respectively\n--> {}",
+            "[P0???]: type: expected ';', ']', or '->' for an array, slice, or map type respectively\n--> {}",
             self.lexer.sync_position()
+        );
+        info!(
+            self.log,
+            "[P0???]: array type: syntax hint: [<type>; <length>]"
+        );
+        info!(self.log, "[P0???]: slice type: syntax hint: [<type>]");
+        info!(
+            self.log,
+            "[P0???]: map   type: syntax hint: [<key_type> -> <value_type>]"
         );
 
         None
@@ -572,9 +528,9 @@ impl<'storage, 'a> Parser<'storage, 'a> {
     fn parse_managed_type(&mut self) -> Option<TypeKey<'a>> {
         /*
          * The syntax for defining a managed reference type is as follows:
-         * &mut <type>;
-         * &const <type>;
-         * &<type>;
+         * &mut <type>
+         * &const <type>
+         * &<type>
          *
          * The '&' symbol indicates that the type is managed, and the 'mut' or 'const' keywords
          * indicate whether the type is mutable or immutable.
@@ -605,9 +561,9 @@ impl<'storage, 'a> Parser<'storage, 'a> {
     fn parse_unmanaged_type(&mut self) -> Option<TypeKey<'a>> {
         /*
          * The syntax for defining an unmanaged reference type is as follows:
-         * *mut <type>;
-         * *const <type>;
-         * *<type>;
+         * *mut <type>
+         * *const <type>
+         * *<type>
          *
          * The '*' symbol indicates that the type is unmanaged, and the 'mut' or 'const' keywords
          * indicate whether the type is mutable or immutable.
@@ -651,14 +607,8 @@ impl<'storage, 'a> Parser<'storage, 'a> {
                 break;
             }
 
-            let current_pos = self.lexer.sync_position();
             let Some(the_attribute) = self.parse_expression() else {
                 self.set_failed_bit();
-                error!(
-                    self.log,
-                    "[P0???]: Unable to parse function type attribute\n--> {}", current_pos
-                );
-
                 return None;
             };
 
@@ -766,7 +716,11 @@ impl<'storage, 'a> Parser<'storage, 'a> {
     }
 
     fn parse_function_type(&mut self) -> Option<TypeKey<'a>> {
-        // TODO: Cleanup function type parsing error messages
+        /*
+         * The syntax for defining a function type is as follows:
+         * <return_type> ::= "->" <type>
+         * <function_type> ::= fn <attributes>? <name>? <parameters>? <return_type>?
+         */
 
         assert!(self.lexer.peek_t() == Token::Keyword(Keyword::Fn));
         self.lexer.skip();
@@ -776,7 +730,7 @@ impl<'storage, 'a> Parser<'storage, 'a> {
             return None;
         };
 
-        self.lexer.next_if_name(); // Ignore function name if present
+        let _ignored_name = self.lexer.next_if_name();
 
         let Some(parameters) = self.parse_function_parameters() else {
             self.set_failed_bit();
@@ -807,7 +761,7 @@ impl<'storage, 'a> Parser<'storage, 'a> {
     fn parse_opaque_type(&mut self) -> Option<TypeKey<'a>> {
         /*
          * The syntax for defining an opaque type is as follows:
-         * opaque(<string>);
+         * opaque(<string>)
          */
 
         assert!(self.lexer.peek_t() == Token::Keyword(Keyword::Opaque));
@@ -1017,7 +971,14 @@ impl<'storage, 'a> Parser<'storage, 'a> {
     }
 
     pub fn parse_type(&mut self) -> Option<TypeKey<'a>> {
-        // TODO: Cleanup type parsing error messages
+        /*
+         * The syntax for defining a type is as follows:
+         * <type>
+         * (<type>)
+         *
+         * The parentheses may be used for type precedence or grouping,
+         * but they are not required for simple types.
+         */
 
         if self.lexer.skip_if(&Token::Punct(Punct::LeftParen)) {
             let inner = self.parse_type();
@@ -1026,7 +987,7 @@ impl<'storage, 'a> Parser<'storage, 'a> {
                 self.set_failed_bit();
                 error!(
                     self.log,
-                    "[P0???]: Expected right parenthesis after type expression\n--> {}",
+                    "[P0???]: type: expected ')' to close type expression\n--> {}",
                     self.lexer.sync_position()
                 );
 
