@@ -23,54 +23,67 @@ fn primitive() {
     parse_type("i32");
 }
 
+#[inline(never)]
 fn infer() {
     parse_type("_");
 }
 
+#[inline(never)]
 fn name() {
     parse_type("std::Covariant");
 }
 
+#[inline(never)]
 fn refinement() {
     parse_type("u8: 6: [30:40]");
 }
 
+#[inline(never)]
 fn tuple() {
     parse_type("{String, u8, bool}");
 }
 
+#[inline(never)]
 fn array() {
     parse_type("[u8; 10]");
 }
 
+#[inline(never)]
 fn map() {
     parse_type("[char -> u8]");
 }
 
+#[inline(never)]
 fn slice() {
     parse_type("[u8]");
 }
 
+#[inline(never)]
 fn function() {
     parse_type("fn[10, 20](a, b: i32 = 40) -> bool");
 }
 
+#[inline(never)]
 fn reference() {
     parse_type("&i32");
 }
 
+#[inline(never)]
 fn pointer() {
     parse_type("*i32");
 }
 
+#[inline(never)]
 fn generic() {
     parse_type("Vec<Point<f32>: 20, growth: 3.2>");
 }
 
+#[inline(never)]
 fn opaque() {
     parse_type("opaque(\"sqlite3\")");
 }
 
+#[inline(never)]
 fn monster() {
     parse_type("Option<[str -> Vec<{u8, str: 48, Set<Address<str>>: 2: [1:]}>]>: 1");
 }

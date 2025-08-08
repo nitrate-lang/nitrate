@@ -646,7 +646,7 @@ impl<'a> std::fmt::Display for Token<'a> {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Hash)]
 pub struct SourcePosition<'a> {
     line: u32,   // zero-based unicode-aware line number
     column: u32, // zero-based unicode-aware column number

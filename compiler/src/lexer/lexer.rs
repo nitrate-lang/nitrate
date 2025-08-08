@@ -48,16 +48,6 @@ impl<'a> Lexer<'a> {
         }
     }
 
-    pub fn skip(&mut self) {
-        if self.current.is_some() {
-            self.current = None;
-        } else {
-            self.parse_next_token(); // Discard the token
-        }
-
-        self.sync_pos = self.reader_position();
-    }
-
     pub fn next(&mut self) -> AnnotatedToken<'a> {
         let token = self
             .current
@@ -67,19 +57,6 @@ impl<'a> Lexer<'a> {
         self.sync_pos = self.reader_position();
 
         token
-    }
-
-    pub fn next_t(&mut self) -> Token<'a> {
-        self.next().into_token()
-    }
-
-    pub fn skip_if(&mut self, matches: &Token<'a>) -> bool {
-        if &self.peek_t() == matches {
-            self.skip();
-            true
-        } else {
-            false
-        }
     }
 
     pub fn peek(&mut self) -> AnnotatedToken<'a> {
@@ -92,28 +69,59 @@ impl<'a> Lexer<'a> {
         token
     }
 
+    pub fn skip(&mut self) {
+        if self.current.is_some() {
+            self.current = None;
+        } else {
+            self.parse_next_token(); // Discard the token
+        }
+
+        self.sync_pos = self.reader_position();
+    }
+
+    #[inline(always)]
+    pub fn next_t(&mut self) -> Token<'a> {
+        self.next().into_token()
+    }
+
+    #[inline(always)]
     pub fn peek_t(&mut self) -> Token<'a> {
         self.peek().into_token()
     }
 
+    #[inline(always)]
     pub fn next_is(&mut self, matches: &Token<'a>) -> bool {
         &self.peek_t() == matches
     }
 
-    pub fn sync_position(&self) -> SourcePosition<'a> {
-        self.sync_pos.clone()
+    #[inline(always)]
+    pub fn skip_if(&mut self, matches: &Token<'a>) -> bool {
+        if &self.peek_t() == matches {
+            self.skip();
+            true
+        } else {
+            false
+        }
     }
 
+    #[inline(always)]
+    pub fn sync_position(&self) -> SourcePosition<'a> {
+        self.sync_pos
+    }
+
+    #[inline(always)]
     pub fn is_eof(&mut self) -> bool {
         self.peek_t() == Token::Eof
     }
 
+    #[inline(always)]
     pub fn rewind(&mut self, pos: SourcePosition<'a>) {
-        self.current_peek_pos = pos.clone();
+        self.current_peek_pos = pos;
         self.sync_pos = pos;
         self.current = None;
     }
 
+    #[inline(always)]
     pub fn next_if_string(&mut self) -> Option<StringData<'a>> {
         if let Token::String(string_data) = self.peek_t() {
             self.skip();
@@ -123,6 +131,7 @@ impl<'a> Lexer<'a> {
         }
     }
 
+    #[inline(always)]
     pub fn next_if_binary(&mut self) -> Option<BinaryData<'a>> {
         if let Token::Binary(binary_data) = self.peek_t() {
             self.skip();
@@ -132,6 +141,7 @@ impl<'a> Lexer<'a> {
         }
     }
 
+    #[inline(always)]
     pub fn next_if_name(&mut self) -> Option<Name<'a>> {
         if let Token::Name(name) = self.peek_t() {
             self.skip();
@@ -141,6 +151,7 @@ impl<'a> Lexer<'a> {
         }
     }
 
+    #[inline(always)]
     pub fn next_if_keyword(&mut self) -> Option<Keyword> {
         if let Token::Keyword(keyword) = self.peek_t() {
             self.skip();
@@ -150,6 +161,7 @@ impl<'a> Lexer<'a> {
         }
     }
 
+    #[inline(always)]
     pub fn next_if_op(&mut self) -> Option<Op> {
         if let Token::Op(op) = self.peek_t() {
             self.skip();
@@ -159,6 +171,7 @@ impl<'a> Lexer<'a> {
         }
     }
 
+    #[inline(always)]
     pub fn next_if_integer(&mut self) -> Option<Integer> {
         if let Token::Integer(integer) = self.peek_t() {
             self.skip();
@@ -168,6 +181,7 @@ impl<'a> Lexer<'a> {
         }
     }
 
+    #[inline(always)]
     pub fn next_if_float(&mut self) -> Option<Float> {
         if let Token::Float(float) = self.peek_t() {
             self.skip();
@@ -177,10 +191,12 @@ impl<'a> Lexer<'a> {
         }
     }
 
+    #[inline(always)]
     fn reader_position(&self) -> SourcePosition<'a> {
-        self.current_peek_pos.clone()
+        self.current_peek_pos
     }
 
+    #[inline(always)]
     fn advance(&mut self, byte: u8) -> u8 {
         let current = self.reader_position();
 
@@ -203,6 +219,7 @@ impl<'a> Lexer<'a> {
         byte
     }
 
+    #[inline(always)]
     fn peek_byte(&self) -> Result<u8, ()> {
         self.source
             .get(self.reader_position().offset())
@@ -210,6 +227,7 @@ impl<'a> Lexer<'a> {
             .ok_or(())
     }
 
+    #[inline(always)]
     fn read_while<F>(&mut self, mut condition: F) -> &'a [u8]
     where
         F: FnMut(u8) -> bool,
@@ -229,6 +247,7 @@ impl<'a> Lexer<'a> {
         &self.source[start_offset..end_offset]
     }
 
+    #[inline(always)]
     fn parse_atypical_identifier(&mut self) -> Result<Token<'a>, ()> {
         let start_pos = self.reader_position();
 
@@ -262,6 +281,7 @@ impl<'a> Lexer<'a> {
         }
     }
 
+    #[inline(always)]
     fn parse_typical_identifier(&mut self) -> Result<Token<'a>, ()> {
         let start_pos = self.reader_position();
 
@@ -356,6 +376,7 @@ impl<'a> Lexer<'a> {
         }
     }
 
+    #[inline(always)]
     fn convert_float_repr(&self, str_bytes: &str) -> Result<f64, ()> {
         match str_bytes.replace("_", "").parse::<f64>() {
             Ok(value) => Ok(value),
@@ -366,6 +387,7 @@ impl<'a> Lexer<'a> {
         }
     }
 
+    #[inline(always)]
     fn parse_float(&mut self, start_pos: &SourcePosition) -> Result<Token<'a>, ()> {
         match self.peek_byte() {
             Ok(b'.') => {
@@ -397,6 +419,7 @@ impl<'a> Lexer<'a> {
         Err(())
     }
 
+    #[inline(always)]
     fn radix_decode(
         &self,
         digits: &[u8],
@@ -432,6 +455,7 @@ impl<'a> Lexer<'a> {
         Ok(number)
     }
 
+    #[inline(always)]
     fn parse_number(&mut self) -> Result<Token<'a>, ()> {
         let start_pos = self.reader_position();
 
@@ -522,6 +546,7 @@ impl<'a> Lexer<'a> {
         )))
     }
 
+    #[inline(always)]
     fn parse_string_hex_escape(&mut self, start_pos: &SourcePosition) -> Result<StringEscape, ()> {
         let mut digits = [0u8; 2];
 
@@ -559,6 +584,7 @@ impl<'a> Lexer<'a> {
         Ok(StringEscape::Byte(value))
     }
 
+    #[inline(always)]
     fn parse_string_octal_escape(
         &mut self,
         start_pos: &SourcePosition,
@@ -590,6 +616,7 @@ impl<'a> Lexer<'a> {
         Ok(StringEscape::Byte(value))
     }
 
+    #[inline(always)]
     fn parse_string_unicode_escape(
         &mut self,
         start_pos: &SourcePosition,
@@ -669,6 +696,7 @@ impl<'a> Lexer<'a> {
         codepoint.map(|c| StringEscape::Char(c)).ok_or(())
     }
 
+    #[inline(always)]
     fn parse_string_escape(&mut self, start_pos: &SourcePosition) -> Result<StringEscape, ()> {
         match self.peek_byte() {
             Ok(b'0') => {
@@ -750,6 +778,7 @@ impl<'a> Lexer<'a> {
         }
     }
 
+    #[inline(always)]
     fn parse_string(&mut self) -> Result<Token<'a>, ()> {
         let start_pos = self.reader_position();
 
@@ -829,6 +858,7 @@ impl<'a> Lexer<'a> {
         }
     }
 
+    #[inline(always)]
     fn parse_char_escape(&mut self, start_pos: &SourcePosition) -> Result<u8, ()> {
         match self.peek_byte() {
             Ok(b'0') => {
@@ -890,6 +920,7 @@ impl<'a> Lexer<'a> {
         }
     }
 
+    #[inline(always)]
     fn parse_char(&mut self) -> Result<Token<'a>, ()> {
         let start_pos = self.reader_position();
 
@@ -978,6 +1009,7 @@ impl<'a> Lexer<'a> {
         }
     }
 
+    #[inline(always)]
     fn parse_comment(&mut self) -> Result<Token<'a>, ()> {
         let start_pos = self.reader_position();
         let mut comment_bytes = self.read_while(|b| b != b'\n');
@@ -1001,6 +1033,7 @@ impl<'a> Lexer<'a> {
         }
     }
 
+    #[inline(always)]
     fn parse_operator_or_punctuation(&mut self) -> Result<Token<'a>, ()> {
         /*
          * The word-like operators are not handled here, as they are ambiguous with identifiers.
@@ -1286,6 +1319,7 @@ impl<'a> Lexer<'a> {
         }
     }
 
+    #[inline(always)]
     fn parse_next_token(&mut self) -> AnnotatedToken<'a> {
         self.read_while(|b| b.is_ascii_whitespace());
 
