@@ -27,14 +27,8 @@ impl<'storage, 'a> Parser<'storage, 'a> {
         let mut maximum_bound = None;
 
         if !self.lexer.skip_if(&Token::Punct(Punct::Colon)) {
-            let current_pos = self.lexer.sync_position();
             let Some(minimum) = self.parse_expression() else {
                 self.set_failed_bit();
-                error!(
-                    self.log,
-                    "[P0???]: Unable to parse type's minimum refinement bound\n--> {}", current_pos
-                );
-
                 return None;
             };
 
@@ -53,14 +47,8 @@ impl<'storage, 'a> Parser<'storage, 'a> {
         }
 
         if !self.lexer.skip_if(&Token::Punct(Punct::RightBracket)) {
-            let current_pos = self.lexer.sync_position();
             let Some(maximum) = self.parse_expression() else {
                 self.set_failed_bit();
-                error!(
-                    self.log,
-                    "[P0???]: Unable to parse type's maximum refinement bound\n--> {}", current_pos
-                );
-
                 return None;
             };
 
@@ -91,15 +79,8 @@ impl<'storage, 'a> Parser<'storage, 'a> {
         }
 
         if self.lexer.next_is(&Token::Punct(Punct::LeftBracket)) {
-            let current_pos = self.lexer.sync_position();
             let Some((minimum, maximum)) = self.parse_refinement_bounds() else {
                 self.set_failed_bit();
-                error!(
-                    self.log,
-                    "[P0???]: Unable to parse type's minimum/maximum refinement bounds\n--> {}",
-                    current_pos
-                );
-
                 return None;
             };
 
@@ -110,14 +91,8 @@ impl<'storage, 'a> Parser<'storage, 'a> {
             });
         }
 
-        let current_pos = self.lexer.sync_position();
         let Some(width) = self.parse_expression() else {
             self.set_failed_bit();
-            error!(
-                self.log,
-                "[P0???]: Unable to parse type's width refinement bound\n--> {}", current_pos
-            );
-
             return None;
         };
 
@@ -140,15 +115,8 @@ impl<'storage, 'a> Parser<'storage, 'a> {
             return None;
         }
 
-        let current_pos = self.lexer.sync_position();
         let Some((minimum, maximum)) = self.parse_refinement_bounds() else {
             self.set_failed_bit();
-            error!(
-                self.log,
-                "[P0???]: Unable to parse type's minimum/maximum refinement bounds\n--> {}",
-                current_pos
-            );
-
             return None;
         };
 
@@ -185,7 +153,6 @@ impl<'storage, 'a> Parser<'storage, 'a> {
             _ => {}
         }
 
-        let current_pos = self.lexer.sync_position();
         let type_or_expression = if self.lexer.skip_if(&Token::Op(Op::Add)) {
             self.parse_expression()
         } else {
@@ -194,11 +161,6 @@ impl<'storage, 'a> Parser<'storage, 'a> {
 
         let Some(argument_value) = type_or_expression else {
             self.set_failed_bit();
-            error!(
-                self.log,
-                "[P0???]: Unable to parse generic type argument\n--> {}", current_pos
-            );
-
             return None;
         };
 
@@ -267,29 +229,29 @@ impl<'storage, 'a> Parser<'storage, 'a> {
         Some(arguments)
     }
 
-    fn parse_named_type_name(&mut self, type_name: &'a str) -> Option<TypeKey<'a>> {
+    fn parse_named_type_name(&mut self, type_name: &'a str) -> TypeKey<'a> {
         assert!(self.lexer.peek_t() == Token::Name(Name::new(type_name)));
         self.lexer.skip();
 
         let mut bb = Builder::new(self.storage);
         match type_name {
-            "u1" | "bool" => Some(bb.get_bool()),
-            "u8" => Some(bb.get_u8()),
-            "u16" => Some(bb.get_u16()),
-            "u32" => Some(bb.get_u32()),
-            "u64" => Some(bb.get_u64()),
-            "u128" => Some(bb.get_u128()),
-            "i8" => Some(bb.get_i8()),
-            "i16" => Some(bb.get_i16()),
-            "i32" => Some(bb.get_i32()),
-            "i64" => Some(bb.get_i64()),
-            "i128" => Some(bb.get_i128()),
-            "f8" => Some(bb.get_f8()),
-            "f16" => Some(bb.get_f16()),
-            "f32" => Some(bb.get_f32()),
-            "f64" => Some(bb.get_f64()),
-            "f128" => Some(bb.get_f128()),
-            "_" => Some(bb.get_infer_type()),
+            "u1" | "bool" => bb.get_bool(),
+            "u8" => bb.get_u8(),
+            "u16" => bb.get_u16(),
+            "u32" => bb.get_u32(),
+            "u64" => bb.get_u64(),
+            "u128" => bb.get_u128(),
+            "i8" => bb.get_i8(),
+            "i16" => bb.get_i16(),
+            "i32" => bb.get_i32(),
+            "i64" => bb.get_i64(),
+            "i128" => bb.get_i128(),
+            "f8" => bb.get_f8(),
+            "f16" => bb.get_f16(),
+            "f32" => bb.get_f32(),
+            "f64" => bb.get_f64(),
+            "f128" => bb.get_f128(),
+            "_" => bb.get_infer_type(),
             type_name => bb.create_type_name(type_name),
         }
     }
@@ -299,17 +261,7 @@ impl<'storage, 'a> Parser<'storage, 'a> {
 
         assert!(self.lexer.peek_t() == Token::Name(Name::new(type_name)));
 
-        let current_pos = self.lexer.sync_position();
-        let Some(basis_type) = self.parse_named_type_name(type_name) else {
-            self.set_failed_bit();
-            error!(
-                self.log,
-                "[P0???]: Unable to parse named type '{}'\n--> {}", type_name, current_pos
-            );
-
-            return None;
-        };
-
+        let basis_type = self.parse_named_type_name(type_name);
         if !self.lexer.next_is(&Token::Op(Op::LogicLt)) {
             return Some(basis_type);
         }
@@ -656,14 +608,8 @@ impl<'storage, 'a> Parser<'storage, 'a> {
                 .into_name();
 
             let parameter_type = if self.lexer.skip_if(&Token::Punct(Punct::Colon)) {
-                let current_pos = self.lexer.sync_position();
                 let Some(parameter_type) = self.parse_type() else {
                     self.set_failed_bit();
-                    error!(
-                        self.log,
-                        "[P0???]: Unable to parse function parameter type\n--> {}", current_pos
-                    );
-
                     return None;
                 };
 
@@ -673,15 +619,8 @@ impl<'storage, 'a> Parser<'storage, 'a> {
             };
 
             let parameter_default = if self.lexer.skip_if(&Token::Op(Op::Set)) {
-                let current_pos = self.lexer.sync_position();
                 let Some(parameter_default) = self.parse_expression() else {
                     self.set_failed_bit();
-                    error!(
-                        self.log,
-                        "[P0???]: Unable to parse function parameter default value\n--> {}",
-                        current_pos
-                    );
-
                     return None;
                 };
 

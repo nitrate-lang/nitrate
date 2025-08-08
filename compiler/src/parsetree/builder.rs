@@ -211,8 +211,10 @@ impl<'storage, 'a> Builder<'storage, 'a> {
 
     /////////////////////////////////////////////////////////////////
     // BEGIN: Complex Type Builders
-    pub fn create_type_name(&mut self, name: &'a str) -> Option<TypeKey<'a>> {
-        self.storage.add_type(TypeOwned::TypeName(name))
+    pub fn create_type_name(&mut self, name: &'a str) -> TypeKey<'a> {
+        self.storage
+            .add_type(TypeOwned::TypeName(name))
+            .expect(ADD_TYPE_EXPECT_REASON)
     }
 
     pub fn create_refinement_type(&mut self) -> RefinementTypeBuilder<'_, 'a> {
