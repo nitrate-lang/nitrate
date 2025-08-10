@@ -161,20 +161,20 @@ impl std::fmt::Display for Float {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Hash)]
 pub enum Keyword {
     /* Storage */
-    Let,       /* 'let' */
-    Var,       /* 'var' */
-    Fn,        /* 'fn' */
-    Enum,      /* 'enum' */
-    Struct,    /* 'struct' */
-    Class,     /* 'class' */
-    Union,     /* 'union' */
-    Interface, /* 'interface' */
-    Trait,     /* 'trait' */
-    Type,      /* 'type' */
-    Opaque,    /* 'opaque' */
-    Scope,     /* 'scope' */
-    Import,    /* 'import' */
-    UnitTest,  /* 'unit_test' */
+    Let,      /* 'let' */
+    Var,      /* 'var' */
+    Fn,       /* 'fn' */
+    Enum,     /* 'enum' */
+    Struct,   /* 'struct' */
+    Class,    /* 'class' */
+    Union,    /* 'union' */
+    Contract, /* 'contract' */
+    Trait,    /* 'trait' */
+    Impl,     /* 'impl' */
+    Type,     /* 'type' */
+    Opaque,   /* 'opaque' */
+    Scope,    /* 'scope' */
+    Import,   /* 'import' */
 
     /* Modifiers */
     Safe,    /* 'safe' */
@@ -204,6 +204,7 @@ pub enum Keyword {
     Async,    /* 'async' */
     Await,    /* 'await' */
     Asm,      /* 'asm' */
+    Assert,   /* 'assert' */
 
     /* Literals */
     Null,  /* 'null' */
@@ -239,13 +240,13 @@ impl std::fmt::Display for Keyword {
             Keyword::Struct => write!(f, "struct"),
             Keyword::Class => write!(f, "class"),
             Keyword::Union => write!(f, "union"),
-            Keyword::Interface => write!(f, "interface"),
+            Keyword::Contract => write!(f, "contract"),
             Keyword::Trait => write!(f, "trait"),
+            Keyword::Impl => write!(f, "impl"),
             Keyword::Type => write!(f, "type"),
             Keyword::Opaque => write!(f, "opaque"),
             Keyword::Scope => write!(f, "scope"),
             Keyword::Import => write!(f, "import"),
-            Keyword::UnitTest => write!(f, "unit_test"),
 
             Keyword::Safe => write!(f, "safe"),
             Keyword::Unsafe => write!(f, "unsafe"),
@@ -273,6 +274,7 @@ impl std::fmt::Display for Keyword {
             Keyword::Async => write!(f, "async"),
             Keyword::Await => write!(f, "await"),
             Keyword::Asm => write!(f, "asm"),
+            Keyword::Assert => write!(f, "assert"),
 
             Keyword::Null => write!(f, "null"),
             Keyword::True => write!(f, "true"),

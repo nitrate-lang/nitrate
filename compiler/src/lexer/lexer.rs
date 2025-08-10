@@ -305,13 +305,13 @@ impl<'a> Lexer<'a> {
             b"struct" => Some(Keyword::Struct),
             b"class" => Some(Keyword::Class),
             b"union" => Some(Keyword::Union),
-            b"interface" => Some(Keyword::Interface),
+            b"contract" => Some(Keyword::Contract),
             b"trait" => Some(Keyword::Trait),
+            b"impl" => Some(Keyword::Impl),
             b"type" => Some(Keyword::Type),
             b"opaque" => Some(Keyword::Opaque),
             b"scope" => Some(Keyword::Scope),
             b"import" => Some(Keyword::Import),
-            b"unit_test" => Some(Keyword::UnitTest),
 
             b"safe" => Some(Keyword::Safe),
             b"unsafe" => Some(Keyword::Unsafe),
@@ -339,6 +339,7 @@ impl<'a> Lexer<'a> {
             b"async" => Some(Keyword::Async),
             b"await" => Some(Keyword::Await),
             b"asm" => Some(Keyword::Asm),
+            b"assert" => Some(Keyword::Assert),
 
             b"null" => Some(Keyword::Null),
             b"true" => Some(Keyword::True),
