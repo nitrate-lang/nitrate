@@ -68,9 +68,9 @@ impl<'storage, 'logger, 'a> Parser<'storage, 'logger, 'a> {
             .build()
     }
 
-    fn parse_binary_literal(&mut self, content: BinaryData<'a>) -> ExprKey<'a> {
+    fn parse_binary_literal(&mut self, content: BStringData<'a>) -> ExprKey<'a> {
         Builder::new(self.storage)
-            .create_binary()
+            .create_bstring()
             .with_value(content)
             .build()
     }
@@ -135,7 +135,7 @@ impl<'storage, 'logger, 'a> Parser<'storage, 'logger, 'a> {
                 self.parse_literal_suffix(lit)
             }
 
-            Token::Binary(data) => {
+            Token::BString(data) => {
                 self.lexer.skip();
                 let lit = self.parse_binary_literal(data);
                 self.parse_literal_suffix(lit)

@@ -1,7 +1,7 @@
-use crate::lexer::{BinaryData, StringData};
+use crate::lexer::{BStringData, StringData};
 
 use super::array_type::ArrayType;
-use super::binary_op::BinaryOp;
+use super::binary_op::BinExpr;
 use super::block::Block;
 use super::function::Function;
 use super::function_type::FunctionType;
@@ -57,13 +57,13 @@ pub enum ExprKind {
     IntegerLit,
     FloatLit,
     StringLit,
-    BinaryLit,
+    BStringLit,
     CharLit,
     ListLit,
     ObjectLit,
 
     UnaryOp,
-    BinaryOp,
+    BinExpr,
     Statement,
     Block,
 
@@ -146,14 +146,14 @@ pub(crate) enum ExprOwned<'a> {
     IntegerLit(IntegerLit),
     FloatLit(f64),
     StringLit(StringData<'a>),
-    BinaryLit(BinaryData<'a>),
+    BStringLit(BStringData<'a>),
     CharLit(char),
     ListLit(ListLit<'a>),
     ObjectLit(ObjectLit<'a>),
 
     /* Compound Expressions */
     UnaryOp(UnaryOp<'a>),
-    BinaryOp(BinaryOp<'a>),
+    BinExpr(BinExpr<'a>),
     Statement(Statement<'a>),
     Block(Block<'a>),
 
@@ -240,14 +240,14 @@ pub enum ExprRef<'storage, 'a> {
     IntegerLit(&'storage IntegerLit),
     FloatLit(f64),
     StringLit(&'storage StringData<'a>),
-    BinaryLit(&'storage BinaryData<'a>),
+    BStringLit(&'storage BStringData<'a>),
     CharLit(char),
     ListLit(&'storage ListLit<'a>),
     ObjectLit(&'storage ObjectLit<'a>),
 
     /* Compound Expressions */
     UnaryOp(&'storage UnaryOp<'a>),
-    BinaryOp(&'storage BinaryOp<'a>),
+    BinExpr(&'storage BinExpr<'a>),
     Statement(&'storage Statement<'a>),
     Block(&'storage Block<'a>),
 
@@ -299,14 +299,14 @@ pub enum ExprRefMut<'storage, 'a> {
     IntegerLit(&'storage IntegerLit),
     FloatLit(f64),
     StringLit(&'storage StringData<'a>),
-    BinaryLit(&'storage BinaryData<'a>),
+    BStringLit(&'storage BStringData<'a>),
     CharLit(char),
     ListLit(&'storage mut ListLit<'a>),
     ObjectLit(&'storage mut ObjectLit<'a>),
 
     /* Compound Expressions */
     UnaryOp(&'storage mut UnaryOp<'a>),
-    BinaryOp(&'storage mut BinaryOp<'a>),
+    BinExpr(&'storage mut BinExpr<'a>),
     Statement(&'storage mut Statement<'a>),
     Block(&'storage mut Block<'a>),
 
@@ -357,12 +357,12 @@ impl TryInto<TypeKind> for ExprKind {
             | ExprKind::IntegerLit
             | ExprKind::FloatLit
             | ExprKind::StringLit
-            | ExprKind::BinaryLit
+            | ExprKind::BStringLit
             | ExprKind::CharLit
             | ExprKind::ListLit
             | ExprKind::ObjectLit
             | ExprKind::UnaryOp
-            | ExprKind::BinaryOp
+            | ExprKind::BinExpr
             | ExprKind::Statement
             | ExprKind::Block
             | ExprKind::Function
@@ -447,12 +447,12 @@ impl<'a> TryInto<TypeOwned<'a>> for ExprOwned<'a> {
             | ExprOwned::IntegerLit(_)
             | ExprOwned::FloatLit(_)
             | ExprOwned::StringLit(_)
-            | ExprOwned::BinaryLit(_)
+            | ExprOwned::BStringLit(_)
             | ExprOwned::CharLit(_)
             | ExprOwned::ListLit(_)
             | ExprOwned::ObjectLit(_)
             | ExprOwned::UnaryOp(_)
-            | ExprOwned::BinaryOp(_)
+            | ExprOwned::BinExpr(_)
             | ExprOwned::Statement(_)
             | ExprOwned::Block(_)
             | ExprOwned::Function(_)

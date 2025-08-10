@@ -1,5 +1,5 @@
 use super::array_type::ArrayType;
-use super::binary_op::{BinaryOp, BinaryOperator};
+use super::binary_op::{BinExpr, BinExprOp};
 use super::block::Block;
 use super::expression::{ExprRef, TypeOwned};
 use super::function::Function;
@@ -97,62 +97,62 @@ impl<'a> ToCode<'a> for UnaryOp<'a> {
     }
 }
 
-impl<'a> ToCode<'a> for BinaryOperator {
+impl<'a> ToCode<'a> for BinExprOp {
     fn to_code(&self, _bank: &Storage<'a>, tokens: &mut Vec<Token<'a>>, _options: &CodeFormat) {
         let operator = Token::Op(match self {
-            BinaryOperator::Add => Op::Add,
-            BinaryOperator::Sub => Op::Sub,
-            BinaryOperator::Mul => Op::Mul,
-            BinaryOperator::Div => Op::Div,
-            BinaryOperator::Mod => Op::Mod,
-            BinaryOperator::BitAnd => Op::BitAnd,
-            BinaryOperator::BitOr => Op::BitOr,
-            BinaryOperator::BitXor => Op::BitXor,
-            BinaryOperator::BitShl => Op::BitShl,
-            BinaryOperator::BitShr => Op::BitShr,
-            BinaryOperator::BitRotl => Op::BitRotl,
-            BinaryOperator::BitRotr => Op::BitRotr,
-            BinaryOperator::LogicAnd => Op::LogicAnd,
-            BinaryOperator::LogicOr => Op::LogicOr,
-            BinaryOperator::LogicXor => Op::LogicXor,
-            BinaryOperator::LogicLt => Op::LogicLt,
-            BinaryOperator::LogicGt => Op::LogicGt,
-            BinaryOperator::LogicLe => Op::LogicLe,
-            BinaryOperator::LogicGe => Op::LogicGe,
-            BinaryOperator::LogicEq => Op::LogicEq,
-            BinaryOperator::LogicNe => Op::LogicNe,
-            BinaryOperator::Set => Op::Set,
-            BinaryOperator::SetPlus => Op::SetPlus,
-            BinaryOperator::SetMinus => Op::SetMinus,
-            BinaryOperator::SetTimes => Op::SetTimes,
-            BinaryOperator::SetSlash => Op::SetSlash,
-            BinaryOperator::SetPercent => Op::SetPercent,
-            BinaryOperator::SetBitAnd => Op::SetBitAnd,
-            BinaryOperator::SetBitOr => Op::SetBitOr,
-            BinaryOperator::SetBitXor => Op::SetBitXor,
-            BinaryOperator::SetBitShl => Op::SetBitShl,
-            BinaryOperator::SetBitShr => Op::SetBitShr,
-            BinaryOperator::SetBitRotl => Op::SetBitRotl,
-            BinaryOperator::SetBitRotr => Op::SetBitRotr,
-            BinaryOperator::SetLogicAnd => Op::SetLogicAnd,
-            BinaryOperator::SetLogicOr => Op::SetLogicOr,
-            BinaryOperator::SetLogicXor => Op::SetLogicXor,
-            BinaryOperator::As => Op::As,
-            BinaryOperator::Dot => Op::Dot,
-            BinaryOperator::Ellipsis => Op::Ellipsis,
-            BinaryOperator::Scope => Op::Scope,
-            BinaryOperator::Arrow => Op::Arrow,
-            BinaryOperator::BlockArrow => Op::BlockArrow,
-            BinaryOperator::Range => Op::Range,
-            BinaryOperator::Question => Op::Question,
-            BinaryOperator::Spaceship => Op::Spaceship,
+            BinExprOp::Add => Op::Add,
+            BinExprOp::Sub => Op::Sub,
+            BinExprOp::Mul => Op::Mul,
+            BinExprOp::Div => Op::Div,
+            BinExprOp::Mod => Op::Mod,
+            BinExprOp::BitAnd => Op::BitAnd,
+            BinExprOp::BitOr => Op::BitOr,
+            BinExprOp::BitXor => Op::BitXor,
+            BinExprOp::BitShl => Op::BitShl,
+            BinExprOp::BitShr => Op::BitShr,
+            BinExprOp::BitRotl => Op::BitRotl,
+            BinExprOp::BitRotr => Op::BitRotr,
+            BinExprOp::LogicAnd => Op::LogicAnd,
+            BinExprOp::LogicOr => Op::LogicOr,
+            BinExprOp::LogicXor => Op::LogicXor,
+            BinExprOp::LogicLt => Op::LogicLt,
+            BinExprOp::LogicGt => Op::LogicGt,
+            BinExprOp::LogicLe => Op::LogicLe,
+            BinExprOp::LogicGe => Op::LogicGe,
+            BinExprOp::LogicEq => Op::LogicEq,
+            BinExprOp::LogicNe => Op::LogicNe,
+            BinExprOp::Set => Op::Set,
+            BinExprOp::SetPlus => Op::SetPlus,
+            BinExprOp::SetMinus => Op::SetMinus,
+            BinExprOp::SetTimes => Op::SetTimes,
+            BinExprOp::SetSlash => Op::SetSlash,
+            BinExprOp::SetPercent => Op::SetPercent,
+            BinExprOp::SetBitAnd => Op::SetBitAnd,
+            BinExprOp::SetBitOr => Op::SetBitOr,
+            BinExprOp::SetBitXor => Op::SetBitXor,
+            BinExprOp::SetBitShl => Op::SetBitShl,
+            BinExprOp::SetBitShr => Op::SetBitShr,
+            BinExprOp::SetBitRotl => Op::SetBitRotl,
+            BinExprOp::SetBitRotr => Op::SetBitRotr,
+            BinExprOp::SetLogicAnd => Op::SetLogicAnd,
+            BinExprOp::SetLogicOr => Op::SetLogicOr,
+            BinExprOp::SetLogicXor => Op::SetLogicXor,
+            BinExprOp::As => Op::As,
+            BinExprOp::Dot => Op::Dot,
+            BinExprOp::Ellipsis => Op::Ellipsis,
+            BinExprOp::Scope => Op::Scope,
+            BinExprOp::Arrow => Op::Arrow,
+            BinExprOp::BlockArrow => Op::BlockArrow,
+            BinExprOp::Range => Op::Range,
+            BinExprOp::Question => Op::Question,
+            BinExprOp::Spaceship => Op::Spaceship,
         });
 
         tokens.push(operator);
     }
 }
 
-impl<'a> ToCode<'a> for BinaryOp<'a> {
+impl<'a> ToCode<'a> for BinExpr<'a> {
     fn to_code(&self, bank: &Storage<'a>, tokens: &mut Vec<Token<'a>>, options: &CodeFormat) {
         self.left().to_code(bank, tokens, options);
         self.op().to_code(bank, tokens, options);
@@ -456,13 +456,13 @@ impl<'a> ToCode<'a> for ExprKey<'a> {
             ExprRef::IntegerLit(e) => e.to_code(bank, tokens, options),
             ExprRef::FloatLit(e) => tokens.push(Token::Float(e)),
             ExprRef::StringLit(e) => tokens.push(Token::String(e.clone())),
-            ExprRef::BinaryLit(e) => tokens.push(Token::Binary(e.clone())),
+            ExprRef::BStringLit(e) => tokens.push(Token::BString(e.clone())),
             ExprRef::CharLit(e) => tokens.push(Token::Char(e)),
             ExprRef::ListLit(e) => e.to_code(bank, tokens, options),
             ExprRef::ObjectLit(e) => e.to_code(bank, tokens, options),
 
             ExprRef::UnaryOp(e) => e.to_code(bank, tokens, options),
-            ExprRef::BinaryOp(e) => e.to_code(bank, tokens, options),
+            ExprRef::BinExpr(e) => e.to_code(bank, tokens, options),
             ExprRef::Statement(e) => e.to_code(bank, tokens, options),
             ExprRef::Block(e) => e.to_code(bank, tokens, options),
 

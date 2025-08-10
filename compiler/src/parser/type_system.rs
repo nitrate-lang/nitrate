@@ -152,7 +152,7 @@ impl<'storage, 'logger, 'a> Parser<'storage, 'logger, 'a> {
             Token::Integer(_)
             | Token::Float(_)
             | Token::String(_)
-            | Token::Binary(_)
+            | Token::BString(_)
             | Token::Char(_) => self.parse_expression(),
 
             Token::Op(Op::Add) => {
@@ -879,7 +879,7 @@ impl<'storage, 'logger, 'a> Parser<'storage, 'logger, 'a> {
                 None
             }
 
-            Token::Binary(binary) => {
+            Token::BString(binary) => {
                 self.set_failed_bit();
                 error!(
                     self.log,

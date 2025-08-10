@@ -160,8 +160,8 @@ impl<'storage, 'a> std::fmt::Debug for Printable<'storage, 'a> {
                 .field("value", &x.get())
                 .finish(),
 
-            ExprRef::BinaryLit(x) => f
-                .debug_struct("BinaryLit")
+            ExprRef::BStringLit(x) => f
+                .debug_struct("BStringLit")
                 .field("value", &x.get())
                 .finish(),
 
@@ -188,8 +188,8 @@ impl<'storage, 'a> std::fmt::Debug for Printable<'storage, 'a> {
                 .field("is_postfix", &x.is_postfix())
                 .finish(),
 
-            ExprRef::BinaryOp(x) => f
-                .debug_struct("BinaryOp")
+            ExprRef::BinExpr(x) => f
+                .debug_struct("BinExpr")
                 .field("left", &x.left().as_printable(self.storage))
                 .field("right", &x.right().as_printable(self.storage))
                 .field("operator", &x.op())

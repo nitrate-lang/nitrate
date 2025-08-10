@@ -132,8 +132,8 @@ impl<'a> Lexer<'a> {
     }
 
     #[inline(always)]
-    pub fn next_if_binary(&mut self) -> Option<BinaryData<'a>> {
-        if let Token::Binary(binary_data) = self.peek_t() {
+    pub fn next_if_binary(&mut self) -> Option<BStringData<'a>> {
+        if let Token::BString(binary_data) = self.peek_t() {
             self.skip();
             Some(binary_data)
         } else {
@@ -469,7 +469,7 @@ impl<'a> Lexer<'a> {
                     literal = self.read_while(|b| b == b'0' || b == b'1' || b == b'_');
                     if literal.is_empty() {
                         error!(
-                            "[L0301]: Binary literal must contain at least one digit after '0b'\n--> {}",
+                            "[L0301]: Binary integer literal must contain at least one digit after '0b'\n--> {}",
                             start_pos
                         );
                         return Err(());
@@ -533,11 +533,11 @@ impl<'a> Lexer<'a> {
         Ok(Token::Integer(Integer::new(
             number,
             match base_prefix {
-                None => IntegerKind::Decimal,
-                Some(2) => IntegerKind::Binary,
-                Some(8) => IntegerKind::Octal,
-                Some(10) => IntegerKind::Decimal,
-                Some(16) => IntegerKind::Hexadecimal,
+                None => IntegerKind::Dec,
+                Some(2) => IntegerKind::Bin,
+                Some(8) => IntegerKind::Oct,
+                Some(10) => IntegerKind::Dec,
+                Some(16) => IntegerKind::Hex,
                 _ => unreachable!(),
             },
         )))
@@ -824,13 +824,13 @@ impl<'a> Lexer<'a> {
                         if let Some(utf8_str) = str::from_utf8(buffer).ok() {
                             return Ok(Token::String(StringData::from_ref(utf8_str)));
                         } else {
-                            return Ok(Token::Binary(BinaryData::from_ref(buffer)));
+                            return Ok(Token::BString(BStringData::from_ref(buffer)));
                         }
                     } else {
                         if let Some(utf8_str) = String::from_utf8(storage.to_vec()).ok() {
                             return Ok(Token::String(StringData::from_dyn(utf8_str)));
                         } else {
-                            return Ok(Token::Binary(BinaryData::from_dyn(storage)));
+                            return Ok(Token::BString(BStringData::from_dyn(storage)));
                         }
                     }
                 }

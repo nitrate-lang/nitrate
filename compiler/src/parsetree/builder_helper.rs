@@ -1,5 +1,5 @@
 use super::array_type::ArrayType;
-use super::binary_op::{BinaryOp, BinaryOperator};
+use super::binary_op::{BinExpr, BinExprOp};
 use super::block::Block;
 use super::builder::Builder;
 use super::expression::{ExprOwned, ExprRef, TypeOwned};
@@ -19,7 +19,7 @@ use super::storage::{ExprKey, Storage, TypeKey};
 use super::tuple_type::TupleType;
 use super::unary_op::{UnaryOp, UnaryOperator};
 use super::variable::{Variable, VariableKind};
-use crate::lexer::{BinaryData, IntegerKind, StringData};
+use crate::lexer::{BStringData, IntegerKind, StringData};
 use apint::UInt;
 use std::collections::BTreeMap;
 
@@ -440,7 +440,7 @@ impl<'storage, 'a> IntegerBuilder<'storage, 'a> {
     pub fn build(self) -> ExprKey<'a> {
         let lit = IntegerLit::new(
             self.value.expect("Integer value must be provided"),
-            self.kind.unwrap_or(IntegerKind::Decimal),
+            self.kind.unwrap_or(IntegerKind::Dec),
         )
         .expect("Invalid integer value");
 
@@ -507,30 +507,30 @@ impl<'storage, 'a> StringBuilder<'storage, 'a> {
 }
 
 #[derive(Debug)]
-pub struct BinaryBuilder<'storage, 'a> {
+pub struct BStringBuilder<'storage, 'a> {
     storage: &'storage mut Storage<'a>,
-    value: Option<BinaryData<'a>>,
+    value: Option<BStringData<'a>>,
 }
 
-impl<'storage, 'a> BinaryBuilder<'storage, 'a> {
+impl<'storage, 'a> BStringBuilder<'storage, 'a> {
     pub(crate) fn new(storage: &'storage mut Storage<'a>) -> Self {
-        BinaryBuilder {
+        BStringBuilder {
             storage,
             value: None,
         }
     }
 
-    pub fn with_value(mut self, value: BinaryData<'a>) -> Self {
+    pub fn with_value(mut self, value: BStringData<'a>) -> Self {
         self.value = Some(value);
         self
     }
 
     pub fn build(self) -> ExprKey<'a> {
         self.storage
-            .add_expr(ExprOwned::BinaryLit(
-                self.value.expect("Binary value must be provided"),
+            .add_expr(ExprOwned::BStringLit(
+                self.value.expect("BString value must be provided"),
             ))
-            .expect("Failed to create binary literal")
+            .expect("Failed to create BString literal")
     }
 }
 
@@ -662,16 +662,16 @@ impl<'storage, 'a> UnaryOpBuilder<'storage, 'a> {
 }
 
 #[derive(Debug)]
-pub struct BinaryOpBuilder<'storage, 'a> {
+pub struct BinExprBuilder<'storage, 'a> {
     storage: &'storage mut Storage<'a>,
     left: Option<ExprKey<'a>>,
-    operator: Option<BinaryOperator>,
+    operator: Option<BinExprOp>,
     right: Option<ExprKey<'a>>,
 }
 
-impl<'storage, 'a> BinaryOpBuilder<'storage, 'a> {
+impl<'storage, 'a> BinExprBuilder<'storage, 'a> {
     pub(crate) fn new(storage: &'storage mut Storage<'a>) -> Self {
-        BinaryOpBuilder {
+        BinExprBuilder {
             storage,
             left: None,
             operator: None,
@@ -684,7 +684,7 @@ impl<'storage, 'a> BinaryOpBuilder<'storage, 'a> {
         self
     }
 
-    pub fn with_operator(mut self, operator: BinaryOperator) -> Self {
+    pub fn with_operator(mut self, operator: BinExprOp) -> Self {
         self.operator = Some(operator);
         self
     }
@@ -696,12 +696,12 @@ impl<'storage, 'a> BinaryOpBuilder<'storage, 'a> {
 
     pub fn build(self) -> ExprKey<'a> {
         self.storage
-            .add_expr(ExprOwned::BinaryOp(BinaryOp::new(
+            .add_expr(ExprOwned::BinExpr(BinExpr::new(
                 self.left.expect("Left expression must be provided"),
-                self.operator.expect("Binary operator must be provided"),
+                self.operator.expect("BinExpr operator must be provided"),
                 self.right.expect("Right expression must be provided"),
             )))
-            .expect("Failed to create binary operation")
+            .expect("Failed to create BinExpr")
     }
 }
 

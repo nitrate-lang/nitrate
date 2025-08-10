@@ -1,7 +1,7 @@
 use super::storage::ExprKey;
 
 #[derive(Debug, Clone, Copy)]
-pub enum BinaryOperator {
+pub enum BinExprOp {
     /*----------------------------------------------------------------*
      * Arithmetic Operators                                           *
      *----------------------------------------------------------------*/
@@ -78,15 +78,15 @@ pub enum BinaryOperator {
 }
 
 #[derive(Debug, Clone)]
-pub struct BinaryOp<'a> {
+pub struct BinExpr<'a> {
     left: ExprKey<'a>,
     right: ExprKey<'a>,
-    operator: BinaryOperator,
+    operator: BinExprOp,
 }
 
-impl<'a> BinaryOp<'a> {
-    pub(crate) fn new(left: ExprKey<'a>, operator: BinaryOperator, right: ExprKey<'a>) -> Self {
-        BinaryOp {
+impl<'a> BinExpr<'a> {
+    pub(crate) fn new(left: ExprKey<'a>, operator: BinExprOp, right: ExprKey<'a>) -> Self {
+        BinExpr {
             left,
             right,
             operator,
@@ -97,7 +97,7 @@ impl<'a> BinaryOp<'a> {
         self.left
     }
 
-    pub fn op(&self) -> BinaryOperator {
+    pub fn op(&self) -> BinExprOp {
         self.operator
     }
 

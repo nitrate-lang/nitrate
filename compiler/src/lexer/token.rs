@@ -84,10 +84,10 @@ impl<'a> std::fmt::Display for Name<'a> {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Hash)]
 pub enum IntegerKind {
-    Binary,
-    Octal,
-    Decimal,
-    Hexadecimal,
+    Bin,
+    Oct,
+    Dec,
+    Hex,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Hash)]
@@ -117,10 +117,10 @@ impl Integer {
 impl std::fmt::Display for Integer {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self.kind() {
-            IntegerKind::Binary => write!(f, "0b{:b}", self.value()),
-            IntegerKind::Octal => write!(f, "0o{:o}", self.value()),
-            IntegerKind::Decimal => write!(f, "{}", self.value()),
-            IntegerKind::Hexadecimal => write!(f, "0x{:x}", self.value()),
+            IntegerKind::Bin => write!(f, "0b{:b}", self.value()),
+            IntegerKind::Oct => write!(f, "0o{:o}", self.value()),
+            IntegerKind::Dec => write!(f, "{}", self.value()),
+            IntegerKind::Hex => write!(f, "0x{:x}", self.value()),
         }
     }
 }
@@ -170,44 +170,44 @@ impl<'a> std::fmt::Display for StringData<'a> {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Hash)]
-enum BinaryDataStorage<'a> {
+enum BStringDataStorage<'a> {
     RefString(&'a [u8]),
     DynString(SmallVec<[u8; 64]>),
 }
 
 #[derive(Clone, PartialEq, Eq, PartialOrd, Hash)]
-pub struct BinaryData<'a> {
-    data: BinaryDataStorage<'a>,
+pub struct BStringData<'a> {
+    data: BStringDataStorage<'a>,
 }
 
-impl<'a> BinaryData<'a> {
+impl<'a> BStringData<'a> {
     pub const fn from_ref(data: &'a [u8]) -> Self {
-        BinaryData {
-            data: BinaryDataStorage::RefString(data),
+        BStringData {
+            data: BStringDataStorage::RefString(data),
         }
     }
 
     pub fn from_dyn(data: SmallVec<[u8; 64]>) -> Self {
-        BinaryData {
-            data: BinaryDataStorage::DynString(data),
+        BStringData {
+            data: BStringDataStorage::DynString(data),
         }
     }
 
     pub fn get(&self) -> &[u8] {
         match &self.data {
-            BinaryDataStorage::RefString(s) => s,
-            BinaryDataStorage::DynString(s) => s.as_slice(),
+            BStringDataStorage::RefString(s) => s,
+            BStringDataStorage::DynString(s) => s.as_slice(),
         }
     }
 }
 
-impl<'a> std::fmt::Debug for BinaryData<'a> {
+impl<'a> std::fmt::Debug for BStringData<'a> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "BinaryData({:?})", self.get())
+        write!(f, "BStringData({:?})", self.get())
     }
 }
 
-impl<'a> std::fmt::Display for BinaryData<'a> {
+impl<'a> std::fmt::Display for BStringData<'a> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         for byte in self.get() {
             write!(f, "{:02x} ", byte)?;
@@ -578,7 +578,7 @@ pub enum Token<'a> {
     Integer(Integer),
     Float(f64),
     String(StringData<'a>),
-    Binary(BinaryData<'a>),
+    BString(BStringData<'a>),
     Char(char),
     Comment(Comment<'a>),
     Keyword(Keyword),
@@ -595,7 +595,7 @@ impl<'a> std::fmt::Display for Token<'a> {
             Token::Integer(int) => write!(f, "{}", int),
             Token::Float(float) => write!(f, "{}", float),
             Token::String(s) => write!(f, "{}", s),
-            Token::Binary(s) => write!(f, "{}", s),
+            Token::BString(s) => write!(f, "{}", s),
             Token::Char(c) => write!(f, "'{}'", c),
             Token::Comment(c) => write!(f, "{}", c),
             Token::Keyword(kw) => write!(f, "{}", kw),
