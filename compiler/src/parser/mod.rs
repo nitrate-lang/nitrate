@@ -1,3 +1,4 @@
+mod definition;
 mod parse;
 mod preamble;
 mod source_model;
