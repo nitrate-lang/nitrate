@@ -108,7 +108,6 @@ pub(crate) enum TypeKind {
 
 #[derive(Debug, Clone)]
 pub(crate) enum ExprOwned<'a> {
-    /* Primitive Types */
     Bool,
     UInt8,
     UInt16,
@@ -126,7 +125,6 @@ pub(crate) enum ExprOwned<'a> {
     Float64,
     Float128,
 
-    /* Non-primitive Types */
     InferType,
     TypeName(&'a str),
     RefinementType(RefinementType<'a>),
@@ -142,7 +140,6 @@ pub(crate) enum ExprOwned<'a> {
 
     Discard,
 
-    /* Literal Expressions */
     IntegerLit(IntegerLit),
     FloatLit(f64),
     StringLit(StringData<'a>),
@@ -151,23 +148,19 @@ pub(crate) enum ExprOwned<'a> {
     ListLit(ListLit<'a>),
     ObjectLit(ObjectLit<'a>),
 
-    /* Compound Expressions */
     UnaryExpr(UnaryExpr<'a>),
     BinExpr(BinExpr<'a>),
     Statement(Statement<'a>),
     Block(Block<'a>),
 
-    /* Definition */
     Function(Function<'a>),
     Variable(Variable<'a>),
 
-    /* Control Flow */
     Return(Return<'a>),
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum TypeOwned<'a> {
-    /* Primitive Types */
     Bool,
     UInt8,
     UInt16,
@@ -185,7 +178,6 @@ pub enum TypeOwned<'a> {
     Float64,
     Float128,
 
-    /* Non-primitive  Types */
     InferType,
     TypeName(&'a str),
     RefinementType(RefinementType<'a>),
@@ -202,7 +194,6 @@ pub enum TypeOwned<'a> {
 
 #[derive(Debug, Clone, Copy)]
 pub enum ExprRef<'storage, 'a> {
-    /* Primitive Types */
     Bool,
     UInt8,
     UInt16,
@@ -220,7 +211,6 @@ pub enum ExprRef<'storage, 'a> {
     Float64,
     Float128,
 
-    /* Non-primitive  Types */
     InferType,
     TypeName(&'a str),
     RefinementType(&'storage RefinementType<'a>),
@@ -236,7 +226,6 @@ pub enum ExprRef<'storage, 'a> {
 
     Discard,
 
-    /* Literal Expressions */
     IntegerLit(&'storage IntegerLit),
     FloatLit(f64),
     StringLit(&'storage StringData<'a>),
@@ -245,23 +234,19 @@ pub enum ExprRef<'storage, 'a> {
     ListLit(&'storage ListLit<'a>),
     ObjectLit(&'storage ObjectLit<'a>),
 
-    /* Compound Expressions */
     UnaryExpr(&'storage UnaryExpr<'a>),
     BinExpr(&'storage BinExpr<'a>),
     Statement(&'storage Statement<'a>),
     Block(&'storage Block<'a>),
 
-    /* Definition */
     Function(&'storage Function<'a>),
     Variable(&'storage Variable<'a>),
 
-    /* Control Flow */
     Return(&'storage Return<'a>),
 }
 
 #[derive(Debug)]
 pub enum ExprRefMut<'storage, 'a> {
-    /* Primitive Types */
     Bool,
     UInt8,
     UInt16,
@@ -279,7 +264,6 @@ pub enum ExprRefMut<'storage, 'a> {
     Float64,
     Float128,
 
-    /* Non-primitive  Types */
     InferType,
     TypeName(&'a str),
     RefinementType(&'storage RefinementType<'a>),
@@ -295,7 +279,6 @@ pub enum ExprRefMut<'storage, 'a> {
 
     Discard,
 
-    /* Literal Expressions */
     IntegerLit(&'storage IntegerLit),
     FloatLit(f64),
     StringLit(&'storage StringData<'a>),
@@ -304,17 +287,14 @@ pub enum ExprRefMut<'storage, 'a> {
     ListLit(&'storage mut ListLit<'a>),
     ObjectLit(&'storage mut ObjectLit<'a>),
 
-    /* Compound Expressions */
     UnaryExpr(&'storage mut UnaryExpr<'a>),
     BinExpr(&'storage mut BinExpr<'a>),
     Statement(&'storage mut Statement<'a>),
     Block(&'storage mut Block<'a>),
 
-    /* Definition */
     Function(&'storage mut Function<'a>),
     Variable(&'storage mut Variable<'a>),
 
-    /* Control Flow */
     Return(&'storage mut Return<'a>),
 }
 

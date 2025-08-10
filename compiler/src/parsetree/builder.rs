@@ -31,8 +31,6 @@ impl<'storage, 'a> Builder<'storage, 'a> {
             .expect(ADD_TYPE_EXPECT_REASON)
     }
 
-    /////////////////////////////////////////////////////////////////
-    // BEGIN: Literal Expression Builders
     pub fn create_integer(self) -> IntegerBuilder<'storage, 'a> {
         IntegerBuilder::new(self.storage)
     }
@@ -63,8 +61,6 @@ impl<'storage, 'a> Builder<'storage, 'a> {
         ObjectBuilder::new(self.storage)
     }
 
-    /////////////////////////////////////////////////////////////////
-    // BEGIN: Compound Expression Builders
     pub fn create_unary_expr(self) -> UnaryExprBuilder<'storage, 'a> {
         UnaryExprBuilder::new(self.storage)
     }
@@ -81,8 +77,6 @@ impl<'storage, 'a> Builder<'storage, 'a> {
         BlockBuilder::new(self.storage)
     }
 
-    /////////////////////////////////////////////////////////////////
-    // BEGIN: Definition Builders
     pub fn create_function(self) -> FunctionBuilder<'storage, 'a> {
         FunctionBuilder::new(self.storage)
     }
@@ -99,14 +93,10 @@ impl<'storage, 'a> Builder<'storage, 'a> {
         self.create_variable().with_kind(VariableKind::Var)
     }
 
-    /////////////////////////////////////////////////////////////////
-    // BEGIN: Control Flow Builders
     pub fn create_return(self) -> ReturnBuilder<'storage, 'a> {
         ReturnBuilder::new(self.storage)
     }
 
-    /////////////////////////////////////////////////////////////////
-    // BEGIN: Primitive Type Builders
     pub fn get_bool(self) -> TypeKey<'a> {
         self.storage
             .add_type(TypeOwned::Bool)
@@ -215,8 +205,6 @@ impl<'storage, 'a> Builder<'storage, 'a> {
             .expect(ADD_TYPE_EXPECT_REASON)
     }
 
-    /////////////////////////////////////////////////////////////////
-    // BEGIN: Complex Type Builders
     pub fn create_type_name(self, name: &'a str) -> TypeKey<'a> {
         self.storage
             .add_type(TypeOwned::TypeName(name))
