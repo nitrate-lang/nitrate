@@ -95,7 +95,7 @@ impl<'storage, 'logger, 'a> Parser<'storage, 'logger, 'a> {
         let block = Builder::new(self.storage)
             .create_block()
             .add_expressions(expressions)
-            .build()?;
+            .build();
 
         Some(SourceModel::new(
             preamble.language_version,

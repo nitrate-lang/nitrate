@@ -19,7 +19,7 @@ use super::storage::{ExprKey, Storage, TypeKey};
 use super::tuple_type::TupleType;
 use super::unary_op::{UnaryOp, UnaryOperator};
 use super::variable::{Variable, VariableKind};
-use crate::lexer::{Float, Integer, Keyword, Name, Op, Punct, Token};
+use crate::lexer::{Integer, Keyword, Name, Op, Punct, Token};
 
 #[derive(Debug, Default, Clone, PartialEq, PartialOrd, Hash)]
 pub struct CodeFormat {}
@@ -454,7 +454,7 @@ impl<'a> ToCode<'a> for ExprKey<'a> {
             ExprRef::Discard => {}
 
             ExprRef::IntegerLit(e) => e.to_code(bank, tokens, options),
-            ExprRef::FloatLit(e) => tokens.push(Token::Float(Float::new(e))),
+            ExprRef::FloatLit(e) => tokens.push(Token::Float(e)),
             ExprRef::StringLit(e) => tokens.push(Token::String(e.clone())),
             ExprRef::CharLit(e) => tokens.push(Token::Char(e)),
             ExprRef::ListLit(e) => e.to_code(bank, tokens, options),

@@ -437,11 +437,16 @@ impl<'storage, 'a> IntegerBuilder<'storage, 'a> {
         self
     }
 
-    pub fn build(self) -> Option<ExprKey<'a>> {
-        self.storage.add_expr(ExprOwned::IntegerLit(IntegerLit::new(
+    pub fn build(self) -> ExprKey<'a> {
+        let lit = IntegerLit::new(
             self.value.expect("Integer value must be provided"),
             self.kind.unwrap_or(IntegerKind::Decimal),
-        )?))
+        )
+        .expect("Invalid integer value");
+
+        self.storage
+            .add_expr(ExprOwned::IntegerLit(lit))
+            .expect("Failed to create integer literal")
     }
 }
 
@@ -464,10 +469,12 @@ impl<'storage, 'a> FloatBuilder<'storage, 'a> {
         self
     }
 
-    pub fn build(self) -> Option<ExprKey<'a>> {
-        self.storage.add_expr(ExprOwned::FloatLit(
-            self.value.expect("Float value must be provided"),
-        ))
+    pub fn build(self) -> ExprKey<'a> {
+        self.storage
+            .add_expr(ExprOwned::FloatLit(
+                self.value.expect("Float value must be provided"),
+            ))
+            .expect("Failed to create float literal")
     }
 }
 
@@ -490,10 +497,12 @@ impl<'storage, 'a> StringBuilder<'storage, 'a> {
         self
     }
 
-    pub fn build(self) -> Option<ExprKey<'a>> {
-        self.storage.add_expr(ExprOwned::StringLit(
-            self.value.expect("String value must be provided"),
-        ))
+    pub fn build(self) -> ExprKey<'a> {
+        self.storage
+            .add_expr(ExprOwned::StringLit(
+                self.value.expect("String value must be provided"),
+            ))
+            .expect("Failed to create string literal")
     }
 }
 
@@ -529,9 +538,10 @@ impl<'storage, 'a> ListBuilder<'storage, 'a> {
         self
     }
 
-    pub fn build(self) -> Option<ExprKey<'a>> {
+    pub fn build(self) -> ExprKey<'a> {
         self.storage
             .add_expr(ExprOwned::ListLit(ListLit::new(self.elements)))
+            .expect("Failed to create list literal")
     }
 }
 
@@ -562,9 +572,10 @@ impl<'storage, 'a> ObjectBuilder<'storage, 'a> {
         self
     }
 
-    pub fn build(self) -> Option<ExprKey<'a>> {
+    pub fn build(self) -> ExprKey<'a> {
         self.storage
             .add_expr(ExprOwned::ObjectLit(ObjectLit::new(self.fields)))
+            .expect("Failed to create object literal")
     }
 }
 
@@ -611,12 +622,14 @@ impl<'storage, 'a> UnaryOpBuilder<'storage, 'a> {
         self
     }
 
-    pub fn build(self) -> Option<ExprKey<'a>> {
-        self.storage.add_expr(ExprOwned::UnaryOp(UnaryOp::new(
-            self.operand.expect("Operand must be provided"),
-            self.operator.expect("Unary operator must be provided"),
-            self.is_postfix.expect("Postfix flag must be provided"),
-        )))
+    pub fn build(self) -> ExprKey<'a> {
+        self.storage
+            .add_expr(ExprOwned::UnaryOp(UnaryOp::new(
+                self.operand.expect("Operand must be provided"),
+                self.operator.expect("Unary operator must be provided"),
+                self.is_postfix.expect("Postfix flag must be provided"),
+            )))
+            .expect("Failed to create unary operation")
     }
 }
 
@@ -653,12 +666,14 @@ impl<'storage, 'a> BinaryOpBuilder<'storage, 'a> {
         self
     }
 
-    pub fn build(self) -> Option<ExprKey<'a>> {
-        self.storage.add_expr(ExprOwned::BinaryOp(BinaryOp::new(
-            self.left.expect("Left expression must be provided"),
-            self.operator.expect("Binary operator must be provided"),
-            self.right.expect("Right expression must be provided"),
-        )))
+    pub fn build(self) -> ExprKey<'a> {
+        self.storage
+            .add_expr(ExprOwned::BinaryOp(BinaryOp::new(
+                self.left.expect("Left expression must be provided"),
+                self.operator.expect("Binary operator must be provided"),
+                self.right.expect("Right expression must be provided"),
+            )))
+            .expect("Failed to create binary operation")
     }
 }
 
@@ -681,10 +696,12 @@ impl<'storage, 'a> StatementBuilder<'storage, 'a> {
         self
     }
 
-    pub fn build(self) -> Option<ExprKey<'a>> {
-        self.storage.add_expr(ExprOwned::Statement(Statement::new(
-            self.expression.expect("Expression must be provided"),
-        )))
+    pub fn build(self) -> ExprKey<'a> {
+        self.storage
+            .add_expr(ExprOwned::Statement(Statement::new(
+                self.expression.expect("Expression must be provided"),
+            )))
+            .expect("Failed to create statement")
     }
 }
 
@@ -719,7 +736,7 @@ impl<'storage, 'a> BlockBuilder<'storage, 'a> {
         let statement = Builder::new(self.storage)
             .create_statement()
             .with_expression(expression)
-            .build()?;
+            .build();
 
         self.elements.push(statement);
         Some(self)
@@ -733,7 +750,7 @@ impl<'storage, 'a> BlockBuilder<'storage, 'a> {
             let statement = Builder::new(self.storage)
                 .create_statement()
                 .with_expression(expression)
-                .build()?;
+                .build();
 
             self.elements.push(statement);
         }
@@ -741,9 +758,10 @@ impl<'storage, 'a> BlockBuilder<'storage, 'a> {
         Some(self)
     }
 
-    pub fn build(self) -> Option<ExprKey<'a>> {
+    pub fn build(self) -> ExprKey<'a> {
         self.storage
             .add_expr(ExprOwned::Block(Block::new(self.elements)))
+            .expect("Failed to create block")
     }
 }
 
@@ -822,19 +840,21 @@ impl<'storage, 'a> FunctionBuilder<'storage, 'a> {
         }
     }
 
-    pub fn build(self) -> Option<ExprKey<'a>> {
+    pub fn build(self) -> ExprKey<'a> {
         let definition = self.definition.map(|d| match d.get(self.storage) {
             ExprRef::Block(block) => block.to_owned(),
             _ => panic!("Function definition must be a block expression"),
         });
 
-        self.storage.add_expr(ExprOwned::Function(Function::new(
-            self.name,
-            self.parameters,
-            self.return_type,
-            self.attributes,
-            definition,
-        )))
+        self.storage
+            .add_expr(ExprOwned::Function(Function::new(
+                self.name,
+                self.parameters,
+                self.return_type,
+                self.attributes,
+                definition,
+            )))
+            .expect("Failed to create function")
     }
 }
 
@@ -878,13 +898,15 @@ impl<'storage, 'a> VariableBuilder<'storage, 'a> {
         self
     }
 
-    pub fn build(self) -> Option<ExprKey<'a>> {
-        self.storage.add_expr(ExprOwned::Variable(Variable::new(
-            self.kind.expect("Variable kind must be provided"),
-            self.name,
-            self.ty,
-            self.value,
-        )))
+    pub fn build(self) -> ExprKey<'a> {
+        self.storage
+            .add_expr(ExprOwned::Variable(Variable::new(
+                self.kind.expect("Variable kind must be provided"),
+                self.name,
+                self.ty,
+                self.value,
+            )))
+            .expect("Failed to create variable")
     }
 }
 
@@ -907,8 +929,9 @@ impl<'storage, 'a> ReturnBuilder<'storage, 'a> {
         self
     }
 
-    pub fn build(self) -> Option<ExprKey<'a>> {
+    pub fn build(self) -> ExprKey<'a> {
         self.storage
             .add_expr(ExprOwned::Return(Return::new(self.value)))
+            .expect("Failed to create return statement")
     }
 }
