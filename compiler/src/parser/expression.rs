@@ -147,9 +147,9 @@ impl<'storage, 'logger, 'a> Parser<'storage, 'logger, 'a> {
                 self.parse_literal_suffix(lit)
             }
 
-            Token::Name(_name) => {
-                // TODO: Implement identifier parsing logic
-                None
+            Token::Name(name) => {
+                self.lexer.skip();
+                Some(Builder::new(self.storage).create_identifier(name.name()))
             }
 
             Token::Keyword(Keyword::Enum) => self.parse_enum(),
