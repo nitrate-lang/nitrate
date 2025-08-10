@@ -45,6 +45,10 @@ impl<'storage, 'a> Builder<'storage, 'a> {
         StringBuilder::new(self.storage)
     }
 
+    pub fn create_binary(self) -> BinaryBuilder<'storage, 'a> {
+        BinaryBuilder::new(self.storage)
+    }
+
     pub fn create_char(self, char: char) -> ExprKey<'a> {
         self.storage
             .add_expr(ExprOwned::CharLit(char))

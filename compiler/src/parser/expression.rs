@@ -68,9 +68,11 @@ impl<'storage, 'logger, 'a> Parser<'storage, 'logger, 'a> {
             .build()
     }
 
-    fn parse_binary_literal(&mut self, _content: BinaryData<'a>) -> ExprKey<'a> {
-        // TODO: Handle binary literals properly
-        unimplemented!()
+    fn parse_binary_literal(&mut self, content: BinaryData<'a>) -> ExprKey<'a> {
+        Builder::new(self.storage)
+            .create_binary()
+            .with_value(content)
+            .build()
     }
 
     fn parse_char_literal(&mut self, value: char) -> ExprKey<'a> {

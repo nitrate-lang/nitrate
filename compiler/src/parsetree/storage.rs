@@ -1,4 +1,4 @@
-use crate::lexer::StringData;
+use crate::lexer::{BinaryData, StringData};
 
 use super::binary_op::BinaryOp;
 use super::block::Block;
@@ -90,6 +90,7 @@ impl<'a> ExprKey<'a> {
             x if x == ExprKind::IntegerLit as u8 => ExprKind::IntegerLit,
             x if x == ExprKind::FloatLit as u8 => ExprKind::FloatLit,
             x if x == ExprKind::StringLit as u8 => ExprKind::StringLit,
+            x if x == ExprKind::BinaryLit as u8 => ExprKind::BinaryLit,
             x if x == ExprKind::CharLit as u8 => ExprKind::CharLit,
             x if x == ExprKind::ListLit as u8 => ExprKind::ListLit,
             x if x == ExprKind::ObjectLit as u8 => ExprKind::ObjectLit,
@@ -267,6 +268,7 @@ impl<'a> ExprKey<'a> {
             | ExprKind::IntegerLit
             | ExprKind::FloatLit
             | ExprKind::StringLit
+            | ExprKind::BinaryLit
             | ExprKind::CharLit
             | ExprKind::ListLit
             | ExprKind::ObjectLit
@@ -304,6 +306,7 @@ pub struct Storage<'a> {
     integers: Vec<IntegerLit>,
     floats: Vec<f64>,
     strings: Vec<StringData<'a>>,
+    binaries: Vec<BinaryData<'a>>,
     lists: Vec<ListLit<'a>>,
     objects: Vec<ObjectLit<'a>>,
 
@@ -330,6 +333,7 @@ impl<'a> Storage<'a> {
             integers: Vec::new(),
             floats: Vec::new(),
             strings: Vec::new(),
+            binaries: Vec::new(),
             lists: Vec::new(),
             objects: Vec::new(),
 
@@ -392,6 +396,7 @@ impl<'a> Storage<'a> {
             ExprKind::IntegerLit => self.integers.reserve(additional),
             ExprKind::FloatLit => self.floats.reserve(additional),
             ExprKind::StringLit => self.strings.reserve(additional),
+            ExprKind::BinaryLit => self.binaries.reserve(additional),
             ExprKind::CharLit => {}
             ExprKind::ListLit => self.lists.reserve(additional),
             ExprKind::ObjectLit => self.objects.reserve(additional),
@@ -464,6 +469,12 @@ impl<'a> Storage<'a> {
                     Some(k)
                 }),
             },
+
+            ExprOwned::BinaryLit(node) => ExprKey::new(ExprKind::BinaryLit, self.binaries.len())
+                .and_then(|k| {
+                    self.binaries.push(node);
+                    Some(k)
+                }),
 
             ExprOwned::CharLit(ch) => ExprKey::new(ExprKind::CharLit, ch as usize),
 
@@ -636,6 +647,7 @@ impl<'a> Storage<'a> {
             ExprKind::IntegerLit => self.integers.get(index).map(ExprRef::IntegerLit),
             ExprKind::FloatLit => self.floats.get(index).map(|&f| ExprRef::FloatLit(f)),
             ExprKind::StringLit => self.strings.get(index).map(ExprRef::StringLit),
+            ExprKind::BinaryLit => self.binaries.get(index).map(ExprRef::BinaryLit),
             ExprKind::CharLit => char::from_u32(index as u32).map(|ch| ExprRef::CharLit(ch)),
             ExprKind::ListLit => self.lists.get(index).map(ExprRef::ListLit),
             ExprKind::ObjectLit => self.objects.get(index).map(ExprRef::ObjectLit),
@@ -694,6 +706,7 @@ impl<'a> Storage<'a> {
             ExprKind::IntegerLit => self.integers.get(index).map(ExprRefMut::IntegerLit),
             ExprKind::FloatLit => self.floats.get(index).map(|&f| ExprRefMut::FloatLit(f)),
             ExprKind::StringLit => self.strings.get(index).map(ExprRefMut::StringLit),
+            ExprKind::BinaryLit => self.binaries.get(index).map(ExprRefMut::BinaryLit),
             ExprKind::CharLit => char::from_u32(index as u32).map(|ch| ExprRefMut::CharLit(ch)),
             ExprKind::ListLit => self.lists.get_mut(index).map(ExprRefMut::ListLit),
             ExprKind::ObjectLit => self.objects.get_mut(index).map(ExprRefMut::ObjectLit),

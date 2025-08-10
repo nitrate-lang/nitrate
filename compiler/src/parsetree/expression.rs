@@ -1,4 +1,4 @@
-use crate::lexer::StringData;
+use crate::lexer::{BinaryData, StringData};
 
 use super::array_type::ArrayType;
 use super::binary_op::BinaryOp;
@@ -57,6 +57,7 @@ pub enum ExprKind {
     IntegerLit,
     FloatLit,
     StringLit,
+    BinaryLit,
     CharLit,
     ListLit,
     ObjectLit,
@@ -145,6 +146,7 @@ pub(crate) enum ExprOwned<'a> {
     IntegerLit(IntegerLit),
     FloatLit(f64),
     StringLit(StringData<'a>),
+    BinaryLit(BinaryData<'a>),
     CharLit(char),
     ListLit(ListLit<'a>),
     ObjectLit(ObjectLit<'a>),
@@ -238,6 +240,7 @@ pub enum ExprRef<'storage, 'a> {
     IntegerLit(&'storage IntegerLit),
     FloatLit(f64),
     StringLit(&'storage StringData<'a>),
+    BinaryLit(&'storage BinaryData<'a>),
     CharLit(char),
     ListLit(&'storage ListLit<'a>),
     ObjectLit(&'storage ObjectLit<'a>),
@@ -296,6 +299,7 @@ pub enum ExprRefMut<'storage, 'a> {
     IntegerLit(&'storage IntegerLit),
     FloatLit(f64),
     StringLit(&'storage StringData<'a>),
+    BinaryLit(&'storage BinaryData<'a>),
     CharLit(char),
     ListLit(&'storage mut ListLit<'a>),
     ObjectLit(&'storage mut ObjectLit<'a>),
@@ -353,6 +357,7 @@ impl TryInto<TypeKind> for ExprKind {
             | ExprKind::IntegerLit
             | ExprKind::FloatLit
             | ExprKind::StringLit
+            | ExprKind::BinaryLit
             | ExprKind::CharLit
             | ExprKind::ListLit
             | ExprKind::ObjectLit
@@ -442,6 +447,7 @@ impl<'a> TryInto<TypeOwned<'a>> for ExprOwned<'a> {
             | ExprOwned::IntegerLit(_)
             | ExprOwned::FloatLit(_)
             | ExprOwned::StringLit(_)
+            | ExprOwned::BinaryLit(_)
             | ExprOwned::CharLit(_)
             | ExprOwned::ListLit(_)
             | ExprOwned::ObjectLit(_)

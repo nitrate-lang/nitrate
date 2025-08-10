@@ -19,7 +19,7 @@ use super::storage::{ExprKey, Storage, TypeKey};
 use super::tuple_type::TupleType;
 use super::unary_op::{UnaryOp, UnaryOperator};
 use super::variable::{Variable, VariableKind};
-use crate::lexer::{IntegerKind, StringData};
+use crate::lexer::{BinaryData, IntegerKind, StringData};
 use apint::UInt;
 use std::collections::BTreeMap;
 
@@ -503,6 +503,34 @@ impl<'storage, 'a> StringBuilder<'storage, 'a> {
                 self.value.expect("String value must be provided"),
             ))
             .expect("Failed to create string literal")
+    }
+}
+
+#[derive(Debug)]
+pub struct BinaryBuilder<'storage, 'a> {
+    storage: &'storage mut Storage<'a>,
+    value: Option<BinaryData<'a>>,
+}
+
+impl<'storage, 'a> BinaryBuilder<'storage, 'a> {
+    pub(crate) fn new(storage: &'storage mut Storage<'a>) -> Self {
+        BinaryBuilder {
+            storage,
+            value: None,
+        }
+    }
+
+    pub fn with_value(mut self, value: BinaryData<'a>) -> Self {
+        self.value = Some(value);
+        self
+    }
+
+    pub fn build(self) -> ExprKey<'a> {
+        self.storage
+            .add_expr(ExprOwned::BinaryLit(
+                self.value.expect("Binary value must be provided"),
+            ))
+            .expect("Failed to create binary literal")
     }
 }
 

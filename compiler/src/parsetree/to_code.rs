@@ -456,6 +456,7 @@ impl<'a> ToCode<'a> for ExprKey<'a> {
             ExprRef::IntegerLit(e) => e.to_code(bank, tokens, options),
             ExprRef::FloatLit(e) => tokens.push(Token::Float(e)),
             ExprRef::StringLit(e) => tokens.push(Token::String(e.clone())),
+            ExprRef::BinaryLit(e) => tokens.push(Token::Binary(e.clone())),
             ExprRef::CharLit(e) => tokens.push(Token::Char(e)),
             ExprRef::ListLit(e) => e.to_code(bank, tokens, options),
             ExprRef::ObjectLit(e) => e.to_code(bank, tokens, options),

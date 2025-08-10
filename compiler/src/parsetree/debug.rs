@@ -160,6 +160,11 @@ impl<'storage, 'a> std::fmt::Debug for Printable<'storage, 'a> {
                 .field("value", &x.get())
                 .finish(),
 
+            ExprRef::BinaryLit(x) => f
+                .debug_struct("BinaryLit")
+                .field("value", &x.get())
+                .finish(),
+
             ExprRef::CharLit(ch) => f.debug_struct("CharLit").field("value", &ch).finish(),
 
             ExprRef::ListLit(x) => f
