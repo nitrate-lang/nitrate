@@ -31,7 +31,7 @@
       "patterns": [
         {
           "name": "keyword.control.nit",
-          "match": "\\b(if|else|for|while|do|switch|break|continue|ret|foreach|try|catch|throw|async|await|asm)\\b"
+          "match": "\\b(if|else|for|while|do|switch|break|continue|ret|foreach|try|catch|throw|async|await|asm|assert)\\b"
         },
         {
           "name": "keyword.operator.nit",
@@ -39,7 +39,7 @@
         },
         {
           "name": "storage.type.nit",
-          "match": "\\b(let|var|fn|enum|struct|class|union|interface|trait|opaque|type|scope|import|unit_test)\\b"
+          "match": "\\b(let|var|fn|enum|struct|class|union|contract|trait|impl|type|opaque|scope|import)\\b"
         },
         {
           "name": "storage.modifier.nit",
@@ -51,7 +51,7 @@
         },
         {
           "name": "keyword.other.nit",
-          "match": "\\b(bool|u1|u8|u16|u32|u64|u128|i8|i16|i32|i64|i128|f8|f16|f32|f64|f128|str|isize|usize|uint|int|any)\\b"
+          "match": "\\b(bool|u8|u16|u32|u64|u128|i8|i16|i32|i64|i128|f8|f16|f32|f64|f128|isize|usize|str|uint|int|any)\\b"
         }
       ]
     },
@@ -59,26 +59,7 @@
       "patterns": [
         {
           "name": "string.quoted.single.nit",
-          "begin": "'",
-          "end": "'",
-          "patterns": [
-            {
-              "name": "constant.character.escape.nit",
-              "match": "\\\\(x|X)[0-9a-fA-F]{2}"
-            },
-            {
-              "name": "constant.character.escape.nit",
-              "match": "\\\\(o|O)[0-7]{3}"
-            },
-            {
-              "name": "constant.character.escape.nit",
-              "match": "\\\\(u|U)\\{[0-9a-fA-F]{1,8}\\}"
-            },
-            {
-              "name": "constant.character.escape.nit",
-              "match": "\\\\."
-            }
-          ]
+          "match": "'(\\\\(x|X)[0-9a-fA-F]{2}|\\\\(o|O)[0-7]{3}|\\\\(u|U)\\{\\+?[0-9a-fA-F]{1,8}\\}|\\\\.|.)'"
         },
         {
           "name": "string.quoted.double.nit",
@@ -137,39 +118,6 @@
           ]
         },
         {
-          "name": "string.quoted.double.nit",
-          "begin": "f\\s*\"",
-          "end": "\"",
-          "patterns": [
-            {
-              "name": "string.quoted.other.nit",
-              "begin": "\\{",
-              "end": "\\}",
-              "patterns": [
-                {
-                  "include": "source.nit"
-                }
-              ]
-            },
-            {
-              "name": "constant.character.escape.nit",
-              "match": "\\\\(x|X)[0-9a-fA-F]{2}"
-            },
-            {
-              "name": "constant.character.escape.nit",
-              "match": "\\\\(o|O)[0-7]{3}"
-            },
-            {
-              "name": "constant.character.escape.nit",
-              "match": "\\\\(u|U)\\{[0-9a-fA-F]{1,8}\\}"
-            },
-            {
-              "name": "constant.character.escape.nit",
-              "match": "\\\\."
-            }
-          ]
-        },
-        {
           "name": "constant.numeric.nit",
           "match": "\\b(\\d[\\d_]*\\.\\d[\\d_]*([eE][+-]?\\d[\\d_]*)?|\\d[\\d_]*[eE][+-]?\\d[\\d_]*(\\.\\d[\\d_]*)?)\\b"
         },
@@ -181,20 +129,6 @@
     },
     "COMMENT": {
       "patterns": [
-        {
-          "name": "comment.block.nit",
-          "begin": "/\\*",
-          "end": "\\*/",
-          "patterns": [
-            {
-              "include": "#COMMENT"
-            }
-          ]
-        },
-        {
-          "name": "comment.line.nit",
-          "match": "//.*"
-        },
         {
           "name": "comment.line.nit",
           "match": "#.*"
