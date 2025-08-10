@@ -79,9 +79,43 @@ impl<'storage, 'logger, 'a> Parser<'storage, 'logger, 'a> {
         Builder::new(self.storage).create_char(value)
     }
 
-    fn parse_literal_suffix(&mut self, _lit: ExprKey<'a>) -> Option<ExprKey<'a>> {
-        // TODO: Implement literal suffix parsing logic
-        unimplemented!()
+    fn parse_literal_suffix(&mut self, lit: ExprKey<'a>) -> ExprKey<'a> {
+        let bb = Builder::new(self.storage);
+        let type_name = match self.lexer.peek_t() {
+            Token::Name(name) => Some(bb.create_type_name(name.name())),
+
+            Token::Keyword(Keyword::Bool) => Some(bb.get_bool()),
+            Token::Keyword(Keyword::U8) => Some(bb.get_u8()),
+            Token::Keyword(Keyword::U16) => Some(bb.get_u16()),
+            Token::Keyword(Keyword::U32) => Some(bb.get_u32()),
+            Token::Keyword(Keyword::U64) => Some(bb.get_u64()),
+            Token::Keyword(Keyword::U128) => Some(bb.get_u128()),
+            Token::Keyword(Keyword::I8) => Some(bb.get_i8()),
+            Token::Keyword(Keyword::I16) => Some(bb.get_i16()),
+            Token::Keyword(Keyword::I32) => Some(bb.get_i32()),
+            Token::Keyword(Keyword::I64) => Some(bb.get_i64()),
+            Token::Keyword(Keyword::I128) => Some(bb.get_i128()),
+            Token::Keyword(Keyword::F8) => Some(bb.get_f8()),
+            Token::Keyword(Keyword::F16) => Some(bb.get_f16()),
+            Token::Keyword(Keyword::F32) => Some(bb.get_f32()),
+            Token::Keyword(Keyword::F64) => Some(bb.get_f64()),
+            Token::Keyword(Keyword::F128) => Some(bb.get_f128()),
+
+            _ => None,
+        };
+
+        if let Some(type_name) = type_name {
+            self.lexer.skip();
+
+            Builder::new(self.storage)
+                .create_binexpr()
+                .with_left(lit)
+                .with_operator(BinExprOp::As)
+                .with_right(type_name.into())
+                .build()
+        } else {
+            lit
+        }
     }
 
     fn parse_type_or_type_alias(&mut self) -> Option<ExprKey<'a>> {
@@ -120,31 +154,31 @@ impl<'storage, 'logger, 'a> Parser<'storage, 'logger, 'a> {
             Token::Integer(int) => {
                 self.lexer.skip();
                 let lit = self.parse_integer_literal(int.value(), int.kind());
-                self.parse_literal_suffix(lit)
+                Some(self.parse_literal_suffix(lit))
             }
 
             Token::Float(float) => {
                 self.lexer.skip();
                 let lit = self.parse_float_literal(float);
-                self.parse_literal_suffix(lit)
+                Some(self.parse_literal_suffix(lit))
             }
 
             Token::String(string) => {
                 self.lexer.skip();
                 let lit = self.parse_string_literal(string);
-                self.parse_literal_suffix(lit)
+                Some(self.parse_literal_suffix(lit))
             }
 
             Token::BString(data) => {
                 self.lexer.skip();
                 let lit = self.parse_bstring_literal(data);
-                self.parse_literal_suffix(lit)
+                Some(self.parse_literal_suffix(lit))
             }
 
             Token::Char(character) => {
                 self.lexer.skip();
                 let lit = self.parse_char_literal(character);
-                self.parse_literal_suffix(lit)
+                Some(self.parse_literal_suffix(lit))
             }
 
             Token::Name(name) => {
