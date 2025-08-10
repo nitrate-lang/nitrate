@@ -1,5 +1,5 @@
 mod array_type;
-mod binary_op;
+mod bin_expr;
 mod block;
 mod builder;
 mod builder_helper;

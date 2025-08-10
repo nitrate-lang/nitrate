@@ -1,6 +1,6 @@
 use crate::lexer::{BStringData, StringData};
 
-use super::binary_op::BinExpr;
+use super::bin_expr::BinExpr;
 use super::block::Block;
 use super::expression::{ExprKind, ExprOwned, ExprRef, ExprRefMut, TypeKind, TypeOwned};
 use super::function::Function;
@@ -311,7 +311,7 @@ pub struct Storage<'a> {
     objects: Vec<ObjectLit<'a>>,
 
     unary_ops: Vec<UnaryOp<'a>>,
-    binary_ops: Vec<BinExpr<'a>>,
+    binexprs: Vec<BinExpr<'a>>,
     statements: Vec<Statement<'a>>,
     blocks: Vec<Block<'a>>,
 
@@ -338,7 +338,7 @@ impl<'a> Storage<'a> {
             objects: Vec::new(),
 
             unary_ops: Vec::new(),
-            binary_ops: Vec::new(),
+            binexprs: Vec::new(),
             statements: Vec::new(),
             blocks: Vec::new(),
 
@@ -402,7 +402,7 @@ impl<'a> Storage<'a> {
             ExprKind::ObjectLit => self.objects.reserve(additional),
 
             ExprKind::UnaryOp => self.unary_ops.reserve(additional),
-            ExprKind::BinExpr => self.binary_ops.reserve(additional),
+            ExprKind::BinExpr => self.binexprs.reserve(additional),
             ExprKind::Statement => self.statements.reserve(additional),
             ExprKind::Block => self.blocks.reserve(additional),
 
@@ -497,9 +497,9 @@ impl<'a> Storage<'a> {
                     Some(k)
                 }),
 
-            ExprOwned::BinExpr(node) => ExprKey::new(ExprKind::BinExpr, self.binary_ops.len())
+            ExprOwned::BinExpr(node) => ExprKey::new(ExprKind::BinExpr, self.binexprs.len())
                 .and_then(|k| {
-                    self.binary_ops.push(node);
+                    self.binexprs.push(node);
                     Some(k)
                 }),
 
@@ -653,7 +653,7 @@ impl<'a> Storage<'a> {
             ExprKind::ObjectLit => self.objects.get(index).map(ExprRef::ObjectLit),
 
             ExprKind::UnaryOp => self.unary_ops.get(index).map(ExprRef::UnaryOp),
-            ExprKind::BinExpr => self.binary_ops.get(index).map(ExprRef::BinExpr),
+            ExprKind::BinExpr => self.binexprs.get(index).map(ExprRef::BinExpr),
             ExprKind::Statement => self.statements.get(index).map(ExprRef::Statement),
             ExprKind::Block => self.blocks.get(index).map(ExprRef::Block),
 
@@ -712,7 +712,7 @@ impl<'a> Storage<'a> {
             ExprKind::ObjectLit => self.objects.get_mut(index).map(ExprRefMut::ObjectLit),
 
             ExprKind::UnaryOp => self.unary_ops.get_mut(index).map(ExprRefMut::UnaryOp),
-            ExprKind::BinExpr => self.binary_ops.get_mut(index).map(ExprRefMut::BinExpr),
+            ExprKind::BinExpr => self.binexprs.get_mut(index).map(ExprRefMut::BinExpr),
             ExprKind::Statement => self.statements.get_mut(index).map(ExprRefMut::Statement),
             ExprKind::Block => self.blocks.get_mut(index).map(ExprRefMut::Block),
 

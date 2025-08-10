@@ -879,11 +879,11 @@ impl<'storage, 'logger, 'a> Parser<'storage, 'logger, 'a> {
                 None
             }
 
-            Token::BString(binary) => {
+            Token::BString(bstring) => {
                 self.set_failed_bit();
                 error!(
                     self.log,
-                    "[P0???]: type: unexpected binary string '{}'\n--> {}", binary, current_pos
+                    "[P0???]: type: unexpected bstring '{}'\n--> {}", bstring, current_pos
                 );
 
                 None

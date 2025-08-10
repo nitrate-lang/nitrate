@@ -1,5 +1,5 @@
 use super::array_type::ArrayType;
-use super::binary_op::{BinExpr, BinExprOp};
+use super::bin_expr::{BinExpr, BinExprOp};
 use super::block::Block;
 use super::expression::{ExprRef, TypeOwned};
 use super::function::Function;

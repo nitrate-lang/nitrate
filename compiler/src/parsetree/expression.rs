@@ -1,7 +1,7 @@
 use crate::lexer::{BStringData, StringData};
 
 use super::array_type::ArrayType;
-use super::binary_op::BinExpr;
+use super::bin_expr::BinExpr;
 use super::block::Block;
 use super::function::Function;
 use super::function_type::FunctionType;

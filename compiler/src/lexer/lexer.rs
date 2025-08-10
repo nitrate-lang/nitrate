@@ -132,10 +132,10 @@ impl<'a> Lexer<'a> {
     }
 
     #[inline(always)]
-    pub fn next_if_binary(&mut self) -> Option<BStringData<'a>> {
-        if let Token::BString(binary_data) = self.peek_t() {
+    pub fn next_if_bstring(&mut self) -> Option<BStringData<'a>> {
+        if let Token::BString(bstring_data) = self.peek_t() {
             self.skip();
-            Some(binary_data)
+            Some(bstring_data)
         } else {
             None
         }

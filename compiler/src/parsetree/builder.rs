@@ -5,7 +5,7 @@ use super::storage::{ExprKey, Storage, TypeKey};
 use super::tuple_type::TupleType;
 use crate::lexer::StringData;
 
-pub use super::binary_op::BinExprOp;
+pub use super::bin_expr::BinExprOp;
 pub use super::function::FunctionParameter;
 pub use super::variable::VariableKind;
 
@@ -69,7 +69,7 @@ impl<'storage, 'a> Builder<'storage, 'a> {
         UnaryOpBuilder::new(self.storage)
     }
 
-    pub fn create_binary_expr(self) -> BinExprBuilder<'storage, 'a> {
+    pub fn create_binexpr(self) -> BinExprBuilder<'storage, 'a> {
         BinExprBuilder::new(self.storage)
     }
 
