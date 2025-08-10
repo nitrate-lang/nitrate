@@ -485,7 +485,7 @@ impl<'storage, 'a> StringBuilder<'storage, 'a> {
         }
     }
 
-    pub fn with_utf8string(mut self, value: StringData<'a>) -> Self {
+    pub fn with_string(mut self, value: StringData<'a>) -> Self {
         self.value = Some(value);
         self
     }
