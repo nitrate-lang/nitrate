@@ -17,7 +17,7 @@ use super::slice_type::SliceType;
 use super::statement::Statement;
 use super::storage::{ExprKey, Storage, TypeKey};
 use super::tuple_type::TupleType;
-use super::unary_op::{UnaryOp, UnaryOperator};
+use super::unary_expr::{UnaryExpr, UnaryExprOp};
 use super::variable::{Variable, VariableKind};
 use crate::lexer::{BStringData, IntegerKind, StringData};
 use apint::UInt;
@@ -608,16 +608,16 @@ impl<'storage, 'a> ObjectBuilder<'storage, 'a> {
 }
 
 #[derive(Debug)]
-pub struct UnaryOpBuilder<'storage, 'a> {
+pub struct UnaryExprBuilder<'storage, 'a> {
     storage: &'storage mut Storage<'a>,
-    operator: Option<UnaryOperator>,
+    operator: Option<UnaryExprOp>,
     operand: Option<ExprKey<'a>>,
     is_postfix: Option<bool>,
 }
 
-impl<'storage, 'a> UnaryOpBuilder<'storage, 'a> {
+impl<'storage, 'a> UnaryExprBuilder<'storage, 'a> {
     pub(crate) fn new(storage: &'storage mut Storage<'a>) -> Self {
-        UnaryOpBuilder {
+        UnaryExprBuilder {
             storage,
             operator: None,
             operand: None,
@@ -625,7 +625,7 @@ impl<'storage, 'a> UnaryOpBuilder<'storage, 'a> {
         }
     }
 
-    pub fn with_operator(mut self, operator: UnaryOperator) -> Self {
+    pub fn with_operator(mut self, operator: UnaryExprOp) -> Self {
         self.operator = Some(operator);
         self
     }
@@ -652,7 +652,7 @@ impl<'storage, 'a> UnaryOpBuilder<'storage, 'a> {
 
     pub fn build(self) -> ExprKey<'a> {
         self.storage
-            .add_expr(ExprOwned::UnaryOp(UnaryOp::new(
+            .add_expr(ExprOwned::UnaryExpr(UnaryExpr::new(
                 self.operand.expect("Operand must be provided"),
                 self.operator.expect("Unary operator must be provided"),
                 self.is_postfix.expect("Postfix flag must be provided"),

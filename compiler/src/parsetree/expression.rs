@@ -17,7 +17,7 @@ use super::returns::Return;
 use super::slice_type::SliceType;
 use super::statement::Statement;
 use super::tuple_type::TupleType;
-use super::unary_op::UnaryOp;
+use super::unary_expr::UnaryExpr;
 use super::variable::Variable;
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
@@ -62,7 +62,7 @@ pub enum ExprKind {
     ListLit,
     ObjectLit,
 
-    UnaryOp,
+    UnaryExpr,
     BinExpr,
     Statement,
     Block,
@@ -152,7 +152,7 @@ pub(crate) enum ExprOwned<'a> {
     ObjectLit(ObjectLit<'a>),
 
     /* Compound Expressions */
-    UnaryOp(UnaryOp<'a>),
+    UnaryExpr(UnaryExpr<'a>),
     BinExpr(BinExpr<'a>),
     Statement(Statement<'a>),
     Block(Block<'a>),
@@ -246,7 +246,7 @@ pub enum ExprRef<'storage, 'a> {
     ObjectLit(&'storage ObjectLit<'a>),
 
     /* Compound Expressions */
-    UnaryOp(&'storage UnaryOp<'a>),
+    UnaryExpr(&'storage UnaryExpr<'a>),
     BinExpr(&'storage BinExpr<'a>),
     Statement(&'storage Statement<'a>),
     Block(&'storage Block<'a>),
@@ -305,7 +305,7 @@ pub enum ExprRefMut<'storage, 'a> {
     ObjectLit(&'storage mut ObjectLit<'a>),
 
     /* Compound Expressions */
-    UnaryOp(&'storage mut UnaryOp<'a>),
+    UnaryExpr(&'storage mut UnaryExpr<'a>),
     BinExpr(&'storage mut BinExpr<'a>),
     Statement(&'storage mut Statement<'a>),
     Block(&'storage mut Block<'a>),
@@ -361,7 +361,7 @@ impl TryInto<TypeKind> for ExprKind {
             | ExprKind::CharLit
             | ExprKind::ListLit
             | ExprKind::ObjectLit
-            | ExprKind::UnaryOp
+            | ExprKind::UnaryExpr
             | ExprKind::BinExpr
             | ExprKind::Statement
             | ExprKind::Block
@@ -451,7 +451,7 @@ impl<'a> TryInto<TypeOwned<'a>> for ExprOwned<'a> {
             | ExprOwned::CharLit(_)
             | ExprOwned::ListLit(_)
             | ExprOwned::ObjectLit(_)
-            | ExprOwned::UnaryOp(_)
+            | ExprOwned::UnaryExpr(_)
             | ExprOwned::BinExpr(_)
             | ExprOwned::Statement(_)
             | ExprOwned::Block(_)

@@ -181,8 +181,8 @@ impl<'storage, 'a> std::fmt::Debug for Printable<'storage, 'a> {
                 )
                 .finish(),
 
-            ExprRef::UnaryOp(x) => f
-                .debug_struct("UnaryOp")
+            ExprRef::UnaryExpr(x) => f
+                .debug_struct("UnaryExpr")
                 .field("operand", &x.operand().as_printable(self.storage))
                 .field("operator", &x.operator())
                 .field("is_postfix", &x.is_postfix())

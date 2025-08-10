@@ -17,7 +17,7 @@ use super::slice_type::SliceType;
 use super::statement::Statement;
 use super::storage::{ExprKey, Storage, TypeKey};
 use super::tuple_type::TupleType;
-use super::unary_op::{UnaryOp, UnaryOperator};
+use super::unary_expr::{UnaryExpr, UnaryExprOp};
 use super::variable::{Variable, VariableKind};
 use crate::lexer::{Integer, Keyword, Name, Op, Punct, Token};
 
@@ -64,28 +64,28 @@ impl<'a> ToCode<'a> for ObjectLit<'a> {
     }
 }
 
-impl<'a> ToCode<'a> for UnaryOperator {
+impl<'a> ToCode<'a> for UnaryExprOp {
     fn to_code(&self, _bank: &Storage<'a>, tokens: &mut Vec<Token<'a>>, _options: &CodeFormat) {
         let operator = Token::Op(match self {
-            UnaryOperator::Add => Op::Add,
-            UnaryOperator::Sub => Op::Sub,
-            UnaryOperator::Mul => Op::Mul,
-            UnaryOperator::BitAnd => Op::BitAnd,
-            UnaryOperator::BitNot => Op::BitNot,
-            UnaryOperator::LogicNot => Op::LogicNot,
-            UnaryOperator::Inc => Op::Inc,
-            UnaryOperator::Dec => Op::Dec,
-            UnaryOperator::Sizeof => Op::Sizeof,
-            UnaryOperator::Alignof => Op::Alignof,
-            UnaryOperator::Typeof => Op::Typeof,
-            UnaryOperator::Question => Op::Question,
+            UnaryExprOp::Add => Op::Add,
+            UnaryExprOp::Sub => Op::Sub,
+            UnaryExprOp::Mul => Op::Mul,
+            UnaryExprOp::BitAnd => Op::BitAnd,
+            UnaryExprOp::BitNot => Op::BitNot,
+            UnaryExprOp::LogicNot => Op::LogicNot,
+            UnaryExprOp::Inc => Op::Inc,
+            UnaryExprOp::Dec => Op::Dec,
+            UnaryExprOp::Sizeof => Op::Sizeof,
+            UnaryExprOp::Alignof => Op::Alignof,
+            UnaryExprOp::Typeof => Op::Typeof,
+            UnaryExprOp::Question => Op::Question,
         });
 
         tokens.push(operator);
     }
 }
 
-impl<'a> ToCode<'a> for UnaryOp<'a> {
+impl<'a> ToCode<'a> for UnaryExpr<'a> {
     fn to_code(&self, bank: &Storage<'a>, tokens: &mut Vec<Token<'a>>, options: &CodeFormat) {
         if self.is_postfix() {
             self.operand().to_code(bank, tokens, options);
@@ -461,7 +461,7 @@ impl<'a> ToCode<'a> for ExprKey<'a> {
             ExprRef::ListLit(e) => e.to_code(bank, tokens, options),
             ExprRef::ObjectLit(e) => e.to_code(bank, tokens, options),
 
-            ExprRef::UnaryOp(e) => e.to_code(bank, tokens, options),
+            ExprRef::UnaryExpr(e) => e.to_code(bank, tokens, options),
             ExprRef::BinExpr(e) => e.to_code(bank, tokens, options),
             ExprRef::Statement(e) => e.to_code(bank, tokens, options),
             ExprRef::Block(e) => e.to_code(bank, tokens, options),

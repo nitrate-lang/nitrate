@@ -1,7 +1,7 @@
 use super::storage::ExprKey;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Hash)]
-pub enum UnaryOperator {
+pub enum UnaryExprOp {
     /*----------------------------------------------------------------*
      * Arithmetic Operators                                           *
      *----------------------------------------------------------------*/
@@ -40,15 +40,15 @@ pub enum UnaryOperator {
 }
 
 #[derive(Debug, Clone)]
-pub struct UnaryOp<'a> {
+pub struct UnaryExpr<'a> {
     operand: ExprKey<'a>,
-    operator: UnaryOperator,
+    operator: UnaryExprOp,
     is_postfix: bool,
 }
 
-impl<'a> UnaryOp<'a> {
-    pub(crate) fn new(operand: ExprKey<'a>, operator: UnaryOperator, is_postfix: bool) -> Self {
-        UnaryOp {
+impl<'a> UnaryExpr<'a> {
+    pub(crate) fn new(operand: ExprKey<'a>, operator: UnaryExprOp, is_postfix: bool) -> Self {
+        UnaryExpr {
             operand,
             operator,
             is_postfix,
@@ -59,7 +59,7 @@ impl<'a> UnaryOp<'a> {
         self.operand
     }
 
-    pub fn operator(&self) -> UnaryOperator {
+    pub fn operator(&self) -> UnaryExprOp {
         self.operator
     }
 

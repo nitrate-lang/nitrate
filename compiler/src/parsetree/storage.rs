@@ -9,7 +9,7 @@ use super::number::IntegerLit;
 use super::object::ObjectLit;
 use super::returns::Return;
 use super::statement::Statement;
-use super::unary_op::UnaryOp;
+use super::unary_expr::UnaryExpr;
 use super::variable::Variable;
 use bimap::BiMap;
 use hashbrown::HashSet;
@@ -95,7 +95,7 @@ impl<'a> ExprKey<'a> {
             x if x == ExprKind::ListLit as u8 => ExprKind::ListLit,
             x if x == ExprKind::ObjectLit as u8 => ExprKind::ObjectLit,
 
-            x if x == ExprKind::UnaryOp as u8 => ExprKind::UnaryOp,
+            x if x == ExprKind::UnaryExpr as u8 => ExprKind::UnaryExpr,
             x if x == ExprKind::BinExpr as u8 => ExprKind::BinExpr,
             x if x == ExprKind::Statement as u8 => ExprKind::Statement,
             x if x == ExprKind::Block as u8 => ExprKind::Block,
@@ -272,7 +272,7 @@ impl<'a> ExprKey<'a> {
             | ExprKind::CharLit
             | ExprKind::ListLit
             | ExprKind::ObjectLit
-            | ExprKind::UnaryOp
+            | ExprKind::UnaryExpr
             | ExprKind::BinExpr
             | ExprKind::Statement
             | ExprKind::Block
@@ -310,8 +310,8 @@ pub struct Storage<'a> {
     lists: Vec<ListLit<'a>>,
     objects: Vec<ObjectLit<'a>>,
 
-    unary_ops: Vec<UnaryOp<'a>>,
-    binexprs: Vec<BinExpr<'a>>,
+    unary_exprs: Vec<UnaryExpr<'a>>,
+    bin_exprs: Vec<BinExpr<'a>>,
     statements: Vec<Statement<'a>>,
     blocks: Vec<Block<'a>>,
 
@@ -337,8 +337,8 @@ impl<'a> Storage<'a> {
             lists: Vec::new(),
             objects: Vec::new(),
 
-            unary_ops: Vec::new(),
-            binexprs: Vec::new(),
+            unary_exprs: Vec::new(),
+            bin_exprs: Vec::new(),
             statements: Vec::new(),
             blocks: Vec::new(),
 
@@ -401,8 +401,8 @@ impl<'a> Storage<'a> {
             ExprKind::ListLit => self.lists.reserve(additional),
             ExprKind::ObjectLit => self.objects.reserve(additional),
 
-            ExprKind::UnaryOp => self.unary_ops.reserve(additional),
-            ExprKind::BinExpr => self.binexprs.reserve(additional),
+            ExprKind::UnaryExpr => self.unary_exprs.reserve(additional),
+            ExprKind::BinExpr => self.bin_exprs.reserve(additional),
             ExprKind::Statement => self.statements.reserve(additional),
             ExprKind::Block => self.blocks.reserve(additional),
 
@@ -491,15 +491,15 @@ impl<'a> Storage<'a> {
                     Some(k)
                 }),
 
-            ExprOwned::UnaryOp(node) => ExprKey::new(ExprKind::UnaryOp, self.unary_ops.len())
+            ExprOwned::UnaryExpr(node) => ExprKey::new(ExprKind::UnaryExpr, self.unary_exprs.len())
                 .and_then(|k| {
-                    self.unary_ops.push(node);
+                    self.unary_exprs.push(node);
                     Some(k)
                 }),
 
-            ExprOwned::BinExpr(node) => ExprKey::new(ExprKind::BinExpr, self.binexprs.len())
+            ExprOwned::BinExpr(node) => ExprKey::new(ExprKind::BinExpr, self.bin_exprs.len())
                 .and_then(|k| {
-                    self.binexprs.push(node);
+                    self.bin_exprs.push(node);
                     Some(k)
                 }),
 
@@ -652,8 +652,8 @@ impl<'a> Storage<'a> {
             ExprKind::ListLit => self.lists.get(index).map(ExprRef::ListLit),
             ExprKind::ObjectLit => self.objects.get(index).map(ExprRef::ObjectLit),
 
-            ExprKind::UnaryOp => self.unary_ops.get(index).map(ExprRef::UnaryOp),
-            ExprKind::BinExpr => self.binexprs.get(index).map(ExprRef::BinExpr),
+            ExprKind::UnaryExpr => self.unary_exprs.get(index).map(ExprRef::UnaryExpr),
+            ExprKind::BinExpr => self.bin_exprs.get(index).map(ExprRef::BinExpr),
             ExprKind::Statement => self.statements.get(index).map(ExprRef::Statement),
             ExprKind::Block => self.blocks.get(index).map(ExprRef::Block),
 
@@ -711,8 +711,8 @@ impl<'a> Storage<'a> {
             ExprKind::ListLit => self.lists.get_mut(index).map(ExprRefMut::ListLit),
             ExprKind::ObjectLit => self.objects.get_mut(index).map(ExprRefMut::ObjectLit),
 
-            ExprKind::UnaryOp => self.unary_ops.get_mut(index).map(ExprRefMut::UnaryOp),
-            ExprKind::BinExpr => self.binexprs.get_mut(index).map(ExprRefMut::BinExpr),
+            ExprKind::UnaryExpr => self.unary_exprs.get_mut(index).map(ExprRefMut::UnaryExpr),
+            ExprKind::BinExpr => self.bin_exprs.get_mut(index).map(ExprRefMut::BinExpr),
             ExprKind::Statement => self.statements.get_mut(index).map(ExprRefMut::Statement),
             ExprKind::Block => self.blocks.get_mut(index).map(ExprRefMut::Block),
 

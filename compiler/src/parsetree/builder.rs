@@ -65,8 +65,8 @@ impl<'storage, 'a> Builder<'storage, 'a> {
 
     /////////////////////////////////////////////////////////////////
     // BEGIN: Compound Expression Builders
-    pub fn create_unary_expr(self) -> UnaryOpBuilder<'storage, 'a> {
-        UnaryOpBuilder::new(self.storage)
+    pub fn create_unary_expr(self) -> UnaryExprBuilder<'storage, 'a> {
+        UnaryExprBuilder::new(self.storage)
     }
 
     pub fn create_binexpr(self) -> BinExprBuilder<'storage, 'a> {
