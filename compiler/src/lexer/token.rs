@@ -125,36 +125,133 @@ impl std::fmt::Display for Integer {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, PartialOrd)]
-pub struct Float {
-    value: f64,
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Hash)]
+enum StringDataStorage<'a> {
+    RefString(&'a str),
+    DynString(String),
 }
 
-impl Float {
-    pub const fn new(value: f64) -> Self {
-        Float { value }
+#[derive(Clone, PartialEq, Eq, PartialOrd, Hash)]
+pub struct StringData<'a> {
+    data: StringDataStorage<'a>,
+}
+
+impl<'a> StringData<'a> {
+    pub const fn from_ref(data: &'a str) -> Self {
+        StringData {
+            data: StringDataStorage::RefString(data),
+        }
     }
 
-    pub const fn value(&self) -> f64 {
-        self.value
+    pub fn from_dyn(data: String) -> Self {
+        StringData {
+            data: StringDataStorage::DynString(data),
+        }
     }
 
-    pub const fn into_value(self) -> f64 {
-        self.value
+    pub fn get(&self) -> &str {
+        match &self.data {
+            StringDataStorage::RefString(s) => s,
+            StringDataStorage::DynString(s) => s.as_str(),
+        }
     }
 }
 
-impl std::hash::Hash for Float {
-    fn hash<H: std::hash::Hasher>(&self, state: &mut H) {
-        self.value.to_bits().hash(state);
-    }
-}
-
-impl std::cmp::Eq for Float {}
-
-impl std::fmt::Display for Float {
+impl<'a> std::fmt::Debug for StringData<'a> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.value())
+        write!(f, "StringData({:?})", self.get())
+    }
+}
+
+impl<'a> std::fmt::Display for StringData<'a> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "\"{}\"", self.get())
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Hash)]
+enum BinaryDataStorage<'a> {
+    RefString(&'a [u8]),
+    DynString(SmallVec<[u8; 64]>),
+}
+
+#[derive(Clone, PartialEq, Eq, PartialOrd, Hash)]
+pub struct BinaryData<'a> {
+    data: BinaryDataStorage<'a>,
+}
+
+impl<'a> BinaryData<'a> {
+    pub const fn from_ref(data: &'a [u8]) -> Self {
+        BinaryData {
+            data: BinaryDataStorage::RefString(data),
+        }
+    }
+
+    pub fn from_dyn(data: SmallVec<[u8; 64]>) -> Self {
+        BinaryData {
+            data: BinaryDataStorage::DynString(data),
+        }
+    }
+
+    pub fn get(&self) -> &[u8] {
+        match &self.data {
+            BinaryDataStorage::RefString(s) => s,
+            BinaryDataStorage::DynString(s) => s.as_slice(),
+        }
+    }
+}
+
+impl<'a> std::fmt::Debug for BinaryData<'a> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "BinaryData({:?})", self.get())
+    }
+}
+
+impl<'a> std::fmt::Display for BinaryData<'a> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        for byte in self.get() {
+            write!(f, "{:02x} ", byte)?;
+        }
+        Ok(())
+    }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Hash)]
+pub enum CommentKind {
+    SingleLine,
+    MultiLine,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Hash)]
+pub struct Comment<'a> {
+    text: &'a str,
+    kind: CommentKind,
+}
+
+impl<'a> Comment<'a> {
+    pub const fn new(text: &'a str, kind: CommentKind) -> Self {
+        Comment { text, kind }
+    }
+
+    pub const fn text(&self) -> &str {
+        self.text
+    }
+
+    pub const fn into_text(self) -> &'a str {
+        self.text
+    }
+
+    pub const fn kind(&self) -> CommentKind {
+        self.kind
+    }
+}
+
+impl<'a> std::fmt::Display for Comment<'a> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self.kind() {
+            CommentKind::SingleLine => write!(f, "#{}", self.text()),
+            CommentKind::MultiLine => unimplemented!(),
+        }
     }
 }
 
@@ -167,12 +264,10 @@ pub enum Keyword {
     Enum,     /* 'enum' */
     Struct,   /* 'struct' */
     Class,    /* 'class' */
-    Union,    /* 'union' */
     Contract, /* 'contract' */
     Trait,    /* 'trait' */
     Impl,     /* 'impl' */
     Type,     /* 'type' */
-    Opaque,   /* 'opaque' */
     Scope,    /* 'scope' */
     Import,   /* 'import' */
 
@@ -198,9 +293,6 @@ pub enum Keyword {
     Continue, /* 'continue' */
     Ret,      /* 'ret' */
     Foreach,  /* 'foreach' */
-    Try,      /* 'try' */
-    Catch,    /* 'catch' */
-    Throw,    /* 'throw' */
     Async,    /* 'async' */
     Await,    /* 'await' */
     Asm,      /* 'asm' */
@@ -212,22 +304,23 @@ pub enum Keyword {
     False, /* 'false' */
 
     /* Type Keywords */
-    Bool, /* 'bool' */
-    U8,   /* 'u8' */
-    U16,  /* 'u16' */
-    U32,  /* 'u32' */
-    U64,  /* 'u64' */
-    U128, /* 'u128' */
-    I8,   /* 'i8' */
-    I16,  /* 'i16' */
-    I32,  /* 'i32' */
-    I64,  /* 'i64' */
-    I128, /* 'i128' */
-    F8,   /* 'f8' */
-    F16,  /* 'f16' */
-    F32,  /* 'f32' */
-    F64,  /* 'f64' */
-    F128, /* 'f128' */
+    Bool,   /* 'bool' */
+    U8,     /* 'u8' */
+    U16,    /* 'u16' */
+    U32,    /* 'u32' */
+    U64,    /* 'u64' */
+    U128,   /* 'u128' */
+    I8,     /* 'i8' */
+    I16,    /* 'i16' */
+    I32,    /* 'i32' */
+    I64,    /* 'i64' */
+    I128,   /* 'i128' */
+    F8,     /* 'f8' */
+    F16,    /* 'f16' */
+    F32,    /* 'f32' */
+    F64,    /* 'f64' */
+    F128,   /* 'f128' */
+    Opaque, /* 'opaque' */
 }
 
 impl std::fmt::Display for Keyword {
@@ -239,12 +332,10 @@ impl std::fmt::Display for Keyword {
             Keyword::Enum => write!(f, "enum"),
             Keyword::Struct => write!(f, "struct"),
             Keyword::Class => write!(f, "class"),
-            Keyword::Union => write!(f, "union"),
             Keyword::Contract => write!(f, "contract"),
             Keyword::Trait => write!(f, "trait"),
             Keyword::Impl => write!(f, "impl"),
             Keyword::Type => write!(f, "type"),
-            Keyword::Opaque => write!(f, "opaque"),
             Keyword::Scope => write!(f, "scope"),
             Keyword::Import => write!(f, "import"),
 
@@ -268,9 +359,6 @@ impl std::fmt::Display for Keyword {
             Keyword::Continue => write!(f, "continue"),
             Keyword::Ret => write!(f, "ret"),
             Keyword::Foreach => write!(f, "foreach"),
-            Keyword::Try => write!(f, "try"),
-            Keyword::Catch => write!(f, "catch"),
-            Keyword::Throw => write!(f, "throw"),
             Keyword::Async => write!(f, "async"),
             Keyword::Await => write!(f, "await"),
             Keyword::Asm => write!(f, "asm"),
@@ -296,6 +384,7 @@ impl std::fmt::Display for Keyword {
             Keyword::F32 => write!(f, "f32"),
             Keyword::F64 => write!(f, "f64"),
             Keyword::F128 => write!(f, "f128"),
+            Keyword::Opaque => write!(f, "opaque"),
         }
     }
 }
@@ -483,148 +572,18 @@ impl std::fmt::Display for Op {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Hash)]
-enum StringDataStorage<'a> {
-    RefString(&'a str),
-    DynString(String),
-}
-
-#[derive(Clone, PartialEq, Eq, PartialOrd, Hash)]
-pub struct StringData<'a> {
-    data: StringDataStorage<'a>,
-}
-
-impl<'a> StringData<'a> {
-    pub const fn from_ref(data: &'a str) -> Self {
-        StringData {
-            data: StringDataStorage::RefString(data),
-        }
-    }
-
-    pub fn from_dyn(data: String) -> Self {
-        StringData {
-            data: StringDataStorage::DynString(data),
-        }
-    }
-
-    pub fn get(&self) -> &str {
-        match &self.data {
-            StringDataStorage::RefString(s) => s,
-            StringDataStorage::DynString(s) => s.as_str(),
-        }
-    }
-}
-
-impl<'a> std::fmt::Debug for StringData<'a> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "StringData({:?})", self.get())
-    }
-}
-
-impl<'a> std::fmt::Display for StringData<'a> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "\"{}\"", self.get())
-    }
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Hash)]
-enum BinaryDataStorage<'a> {
-    RefString(&'a [u8]),
-    DynString(SmallVec<[u8; 64]>),
-}
-
-#[derive(Clone, PartialEq, Eq, PartialOrd, Hash)]
-pub struct BinaryData<'a> {
-    data: BinaryDataStorage<'a>,
-}
-
-impl<'a> BinaryData<'a> {
-    pub const fn from_ref(data: &'a [u8]) -> Self {
-        BinaryData {
-            data: BinaryDataStorage::RefString(data),
-        }
-    }
-
-    pub fn from_dyn(data: SmallVec<[u8; 64]>) -> Self {
-        BinaryData {
-            data: BinaryDataStorage::DynString(data),
-        }
-    }
-
-    pub fn get(&self) -> &[u8] {
-        match &self.data {
-            BinaryDataStorage::RefString(s) => s,
-            BinaryDataStorage::DynString(s) => s.as_slice(),
-        }
-    }
-}
-
-impl<'a> std::fmt::Debug for BinaryData<'a> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "BinaryData({:?})", self.get())
-    }
-}
-
-impl<'a> std::fmt::Display for BinaryData<'a> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        for byte in self.get() {
-            write!(f, "{:02x} ", byte)?;
-        }
-        Ok(())
-    }
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Hash)]
-pub enum CommentKind {
-    SingleLine,
-    MultiLine,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Hash)]
-pub struct Comment<'a> {
-    text: &'a str,
-    kind: CommentKind,
-}
-
-impl<'a> Comment<'a> {
-    pub const fn new(text: &'a str, kind: CommentKind) -> Self {
-        Comment { text, kind }
-    }
-
-    pub const fn text(&self) -> &str {
-        self.text
-    }
-
-    pub const fn into_text(self) -> &'a str {
-        self.text
-    }
-
-    pub const fn kind(&self) -> CommentKind {
-        self.kind
-    }
-}
-
-impl<'a> std::fmt::Display for Comment<'a> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self.kind() {
-            CommentKind::SingleLine => write!(f, "#{}", self.text()),
-            CommentKind::MultiLine => unimplemented!(),
-        }
-    }
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Hash)]
+#[derive(Debug, Clone, PartialEq, PartialOrd)]
 pub enum Token<'a> {
     Name(Name<'a>),
     Integer(Integer),
-    Float(Float),
-    Keyword(Keyword),
+    Float(f64),
     String(StringData<'a>),
     Binary(BinaryData<'a>),
     Char(char),
+    Comment(Comment<'a>),
+    Keyword(Keyword),
     Punct(Punct),
     Op(Op),
-    Comment(Comment<'a>),
     Eof,
     Illegal,
 }
@@ -635,13 +594,13 @@ impl<'a> std::fmt::Display for Token<'a> {
             Token::Name(id) => write!(f, "{}", id),
             Token::Integer(int) => write!(f, "{}", int),
             Token::Float(float) => write!(f, "{}", float),
-            Token::Keyword(kw) => write!(f, "{}", kw),
             Token::String(s) => write!(f, "{}", s),
             Token::Binary(s) => write!(f, "{}", s),
             Token::Char(c) => write!(f, "'{}'", c),
+            Token::Comment(c) => write!(f, "{}", c),
+            Token::Keyword(kw) => write!(f, "{}", kw),
             Token::Punct(p) => write!(f, "{}", p),
             Token::Op(op) => write!(f, "{}", op),
-            Token::Comment(c) => write!(f, "{}", c),
             Token::Eof => write!(f, ""),
             Token::Illegal => write!(f, "<illegal>"),
         }
@@ -689,7 +648,7 @@ impl std::fmt::Display for SourcePosition<'_> {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Hash)]
+#[derive(Debug, Clone, PartialEq, PartialOrd)]
 pub struct AnnotatedToken<'a> {
     token: Token<'a>,
 

@@ -182,7 +182,7 @@ impl<'a> Lexer<'a> {
     }
 
     #[inline(always)]
-    pub fn next_if_float(&mut self) -> Option<Float> {
+    pub fn next_if_float(&mut self) -> Option<f64> {
         if let Token::Float(float) = self.peek_t() {
             self.skip();
             Some(float)
@@ -304,12 +304,10 @@ impl<'a> Lexer<'a> {
             b"enum" => Some(Keyword::Enum),
             b"struct" => Some(Keyword::Struct),
             b"class" => Some(Keyword::Class),
-            b"union" => Some(Keyword::Union),
             b"contract" => Some(Keyword::Contract),
             b"trait" => Some(Keyword::Trait),
             b"impl" => Some(Keyword::Impl),
             b"type" => Some(Keyword::Type),
-            b"opaque" => Some(Keyword::Opaque),
             b"scope" => Some(Keyword::Scope),
             b"import" => Some(Keyword::Import),
 
@@ -333,9 +331,6 @@ impl<'a> Lexer<'a> {
             b"continue" => Some(Keyword::Continue),
             b"ret" => Some(Keyword::Ret),
             b"foreach" => Some(Keyword::Foreach),
-            b"try" => Some(Keyword::Try),
-            b"catch" => Some(Keyword::Catch),
-            b"throw" => Some(Keyword::Throw),
             b"async" => Some(Keyword::Async),
             b"await" => Some(Keyword::Await),
             b"asm" => Some(Keyword::Asm),
@@ -361,6 +356,7 @@ impl<'a> Lexer<'a> {
             b"f32" => Some(Keyword::F32),
             b"f64" => Some(Keyword::F64),
             b"f128" => Some(Keyword::F128),
+            b"opaque" => Some(Keyword::Opaque),
 
             _ => None,
         } {
@@ -405,7 +401,7 @@ impl<'a> Lexer<'a> {
                         .expect("Failed to convert float literal to str");
 
                         if let Ok(result) = self.convert_float_repr(literal) {
-                            return Ok(Token::Float(Float::new(result)));
+                            return Ok(Token::Float(result));
                         }
                     }
                     _ => {
