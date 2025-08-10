@@ -248,6 +248,8 @@ impl<'storage, 'a> std::fmt::Debug for Printable<'storage, 'a> {
                 .field("value", &x.value().map(|v| v.as_printable(self.storage)))
                 .finish(),
 
+            ExprRef::Identifier(name) => write!(f, "{}", name),
+
             ExprRef::Return(x) => f
                 .debug_struct("Return")
                 .field("value", &x.value().map(|v| v.as_printable(self.storage)))

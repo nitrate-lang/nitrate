@@ -102,6 +102,7 @@ impl<'a> ExprKey<'a> {
 
             x if x == ExprKind::Function as u8 => ExprKind::Function,
             x if x == ExprKind::Variable as u8 => ExprKind::Variable,
+            x if x == ExprKind::Identifier as u8 => ExprKind::Identifier,
 
             x if x == ExprKind::Return as u8 => ExprKind::Return,
 
@@ -278,6 +279,7 @@ impl<'a> ExprKey<'a> {
             | ExprKind::Block
             | ExprKind::Function
             | ExprKind::Variable
+            | ExprKind::Identifier
             | ExprKind::Return => false,
         }
     }
@@ -317,6 +319,7 @@ pub struct Storage<'a> {
 
     functions: Vec<Function<'a>>,
     variables: Vec<Variable<'a>>,
+    identifiers: Vec<&'a str>,
 
     returns: Vec<Return<'a>>,
 
@@ -344,6 +347,7 @@ impl<'a> Storage<'a> {
 
             functions: Vec::new(),
             variables: Vec::new(),
+            identifiers: Vec::new(),
 
             returns: Vec::new(),
 
@@ -408,6 +412,7 @@ impl<'a> Storage<'a> {
 
             ExprKind::Function => self.functions.reserve(additional),
             ExprKind::Variable => self.variables.reserve(additional),
+            ExprKind::Identifier => self.identifiers.reserve(additional),
 
             ExprKind::Return => self.returns.reserve(additional),
         }
@@ -527,6 +532,13 @@ impl<'a> Storage<'a> {
                     self.variables.push(node);
                     Some(k)
                 }),
+
+            ExprOwned::Identifier(node) => {
+                ExprKey::new(ExprKind::Identifier, self.identifiers.len()).and_then(|k| {
+                    self.identifiers.push(node);
+                    Some(k)
+                })
+            }
 
             ExprOwned::Return(node) => {
                 ExprKey::new(ExprKind::Return, self.returns.len()).and_then(|k| {
@@ -659,6 +671,10 @@ impl<'a> Storage<'a> {
 
             ExprKind::Function => self.functions.get(index).map(ExprRef::Function),
             ExprKind::Variable => self.variables.get(index).map(ExprRef::Variable),
+            ExprKind::Identifier => self
+                .identifiers
+                .get(index)
+                .map(|&id| ExprRef::Identifier(id)),
 
             ExprKind::Return => self.returns.get(index).map(ExprRef::Return),
         }
@@ -718,6 +734,10 @@ impl<'a> Storage<'a> {
 
             ExprKind::Function => self.functions.get_mut(index).map(ExprRefMut::Function),
             ExprKind::Variable => self.variables.get_mut(index).map(ExprRefMut::Variable),
+            ExprKind::Identifier => self
+                .identifiers
+                .get_mut(index)
+                .map(|id| ExprRefMut::Identifier(id)),
 
             ExprKind::Return => self.returns.get_mut(index).map(ExprRefMut::Return),
         }

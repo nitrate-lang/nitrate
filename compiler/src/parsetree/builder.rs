@@ -85,6 +85,12 @@ impl<'storage, 'a> Builder<'storage, 'a> {
         VariableBuilder::new(self.storage)
     }
 
+    pub fn create_identifier(self, name: &'a str) -> ExprKey<'a> {
+        self.storage
+            .add_expr(ExprOwned::Identifier(name))
+            .expect("Failed to create identifier")
+    }
+
     pub fn create_let(self) -> VariableBuilder<'storage, 'a> {
         self.create_variable().with_kind(VariableKind::Let)
     }

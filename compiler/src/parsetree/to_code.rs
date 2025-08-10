@@ -468,6 +468,7 @@ impl<'a> ToCode<'a> for ExprKey<'a> {
 
             ExprRef::Function(e) => e.to_code(bank, tokens, options),
             ExprRef::Variable(e) => e.to_code(bank, tokens, options),
+            ExprRef::Identifier(name) => tokens.push(Token::Name(Name::new(name))),
 
             ExprRef::Return(e) => e.to_code(bank, tokens, options),
         }

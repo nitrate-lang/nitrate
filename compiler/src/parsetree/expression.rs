@@ -69,6 +69,7 @@ pub enum ExprKind {
 
     Function,
     Variable,
+    Identifier,
 
     Return,
 }
@@ -155,6 +156,7 @@ pub(crate) enum ExprOwned<'a> {
 
     Function(Function<'a>),
     Variable(Variable<'a>),
+    Identifier(&'a str),
 
     Return(Return<'a>),
 }
@@ -241,6 +243,7 @@ pub enum ExprRef<'storage, 'a> {
 
     Function(&'storage Function<'a>),
     Variable(&'storage Variable<'a>),
+    Identifier(&'a str),
 
     Return(&'storage Return<'a>),
 }
@@ -294,6 +297,7 @@ pub enum ExprRefMut<'storage, 'a> {
 
     Function(&'storage mut Function<'a>),
     Variable(&'storage mut Variable<'a>),
+    Identifier(&'a str),
 
     Return(&'storage mut Return<'a>),
 }
@@ -347,6 +351,7 @@ impl TryInto<TypeKind> for ExprKind {
             | ExprKind::Block
             | ExprKind::Function
             | ExprKind::Variable
+            | ExprKind::Identifier
             | ExprKind::Return => Err(()),
         }
     }
@@ -437,6 +442,7 @@ impl<'a> TryInto<TypeOwned<'a>> for ExprOwned<'a> {
             | ExprOwned::Block(_)
             | ExprOwned::Function(_)
             | ExprOwned::Variable(_)
+            | ExprOwned::Identifier(_)
             | ExprOwned::Return(_) => Err(self),
         }
     }
