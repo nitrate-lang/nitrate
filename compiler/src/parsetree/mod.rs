@@ -19,7 +19,6 @@ mod returns;
 mod slice_type;
 mod statement;
 mod storage;
-mod string;
 mod to_code;
 mod tuple_type;
 mod unary_op;

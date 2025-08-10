@@ -1,7 +1,7 @@
 use crate::lexer::*;
 use crate::parsetree::*;
 use spdx::LicenseId;
-use std::collections::HashMap;
+use std::collections::HashSet;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct CopyrightInfo<'a> {
@@ -31,7 +31,7 @@ pub struct SourceModel<'a> {
     language_version: (u32, u32),
     copyright: Option<CopyrightInfo<'a>>,
     license_id: Option<LicenseId>,
-    insource_config: HashMap<&'a str, ExprKey<'a>>,
+    insource_config: HashSet<StringData<'a>>,
     tree: ExprKey<'a>,
     any_errors: bool,
 }
@@ -41,7 +41,7 @@ impl<'a> SourceModel<'a> {
         language_version: (u32, u32),
         copyright: Option<CopyrightInfo<'a>>,
         license_id: Option<LicenseId>,
-        insource_config: HashMap<&'a str, ExprKey<'a>>,
+        insource_config: HashSet<StringData<'a>>,
         tree: ExprKey<'a>,
         any_errors: bool,
     ) -> Self {
@@ -67,7 +67,7 @@ impl<'a> SourceModel<'a> {
         self.license_id.as_ref()
     }
 
-    pub fn insource_config(&self) -> &HashMap<&'a str, ExprKey<'a>> {
+    pub fn insource_config(&self) -> &HashSet<StringData<'a>> {
         &self.insource_config
     }
 

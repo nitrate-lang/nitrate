@@ -4,13 +4,13 @@ use crate::lexer::*;
 use crate::parsetree::*;
 use slog::error;
 use spdx::{LicenseId, license_id};
-use std::collections::HashMap;
+use std::collections::HashSet;
 
 pub(crate) struct SourcePreamble<'a> {
     pub language_version: (u32, u32),
     pub copyright: Option<CopyrightInfo<'a>>,
     pub license_id: Option<LicenseId>,
-    pub insource_config: HashMap<&'a str, ExprKey<'a>>,
+    pub insource_config: HashSet<StringData<'a>>,
 }
 
 impl<'storage, 'logger, 'a> Parser<'storage, 'logger, 'a> {
@@ -163,7 +163,7 @@ impl<'storage, 'logger, 'a> Parser<'storage, 'logger, 'a> {
         };
 
         Some(CopyrightInfo::new(
-            holder_name.to_owned().into_inner(),
+            holder_name.to_owned(),
             copyright_year.get_u128() as u16,
         ))
     }
@@ -206,17 +206,53 @@ impl<'storage, 'logger, 'a> Parser<'storage, 'logger, 'a> {
 
     fn parse_preamble_insource_macro(
         &mut self,
-        _macro_args: Vec<ExprKey<'a>>,
-    ) -> HashMap<&'a str, ExprKey<'a>> {
-        // TODO: In-source compiler/optimization/linting configuration options
-        HashMap::new()
+        macro_args: Vec<ExprKey<'a>>,
+    ) -> Option<HashSet<StringData<'a>>> {
+        if macro_args.len() != 1 {
+            self.set_failed_bit();
+            error!(
+                self.log,
+                "[P????]: Expected a list of strings for 'insource' macro\n--> {}",
+                self.lexer.sync_position()
+            );
+            return None;
+        }
+
+        let ExprRef::ListLit(list) = macro_args[0].get(self.storage) else {
+            self.set_failed_bit();
+            error!(
+                self.log,
+                "[P????]: Expected a list of strings for 'insource' macro argument\n--> {}",
+                self.lexer.sync_position()
+            );
+
+            return None;
+        };
+
+        let mut config = HashSet::new();
+        for element in list.elements() {
+            let ExprRef::StringLit(option) = element.get(self.storage) else {
+                self.set_failed_bit();
+                error!(
+                    self.log,
+                    "[P????]: Expected a string literal in the list for 'insource' macro argument\n--> {}",
+                    self.lexer.sync_position()
+                );
+
+                return None;
+            };
+
+            config.insert(option.to_owned());
+        }
+
+        Some(config)
     }
 
     pub(crate) fn parse_preamble(&mut self) -> SourcePreamble<'a> {
         let mut language_version = (1, 0);
         let mut copyright = None;
         let mut license_id = None;
-        let mut insource_config = HashMap::new();
+        let mut insource_config = None;
 
         while let Some((macro_name, macro_args)) = self.parse_macro_prefix() {
             match macro_name {
@@ -255,7 +291,7 @@ impl<'storage, 'logger, 'a> Parser<'storage, 'logger, 'a> {
             language_version,
             copyright,
             license_id,
-            insource_config,
+            insource_config: insource_config.unwrap_or_default(),
         }
     }
 }

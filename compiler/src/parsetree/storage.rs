@@ -9,7 +9,6 @@ use super::number::IntegerLit;
 use super::object::ObjectLit;
 use super::returns::Return;
 use super::statement::Statement;
-use super::string::StringLit;
 use super::unary_op::UnaryOp;
 use super::variable::Variable;
 use bimap::BiMap;
@@ -304,7 +303,7 @@ impl<'a> TypeKey<'a> {
 pub struct Storage<'a> {
     integers: Vec<IntegerLit>,
     floats: Vec<f64>,
-    strings: Vec<StringLit<'a>>,
+    strings: Vec<StringData<'a>>,
     lists: Vec<ListLit<'a>>,
     objects: Vec<ObjectLit<'a>>,
 
@@ -350,10 +349,7 @@ impl<'a> Storage<'a> {
         };
 
         {
-            let empty_string = (
-                Self::STRING_LIT_EMPTY_INDEX,
-                StringLit::new(StringData::from_ref("")),
-            );
+            let empty_string = (Self::STRING_LIT_EMPTY_INDEX, StringData::from_ref(""));
             storage.strings.insert(empty_string.0, empty_string.1);
         }
 

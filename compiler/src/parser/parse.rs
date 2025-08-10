@@ -45,41 +45,6 @@ impl<'storage, 'logger, 'a> Parser<'storage, 'logger, 'a> {
         self.failed_bit = true;
     }
 
-    pub fn parse_expression(&mut self) -> Option<ExprKey<'a>> {
-        // TODO: Develop nitrate expression parser
-
-        match self.lexer.peek_t() {
-            Token::Integer(int) => {
-                self.lexer.skip();
-
-                Builder::new(self.storage)
-                    .create_integer()
-                    .with_u128(int.value())
-                    .build()
-            }
-
-            Token::Float(float) => {
-                self.lexer.skip();
-
-                Builder::new(self.storage)
-                    .create_float()
-                    .with_value(float.value())
-                    .build()
-            }
-
-            Token::String(string) => {
-                self.lexer.skip();
-
-                Builder::new(self.storage)
-                    .create_string()
-                    .with_utf8string(string)
-                    .build()
-            }
-
-            _ => self.parse_type().map(|t| t.into()),
-        }
-    }
-
     pub fn is_supported(&self, language_version: (u32, u32)) -> bool {
         match language_version {
             // Future major versions might introduce breaking syntactic changes

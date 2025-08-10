@@ -16,7 +16,6 @@ use super::returns::Return;
 use super::slice_type::SliceType;
 use super::statement::Statement;
 use super::storage::{ExprKey, Storage, TypeKey};
-use super::string::StringLit;
 use super::tuple_type::TupleType;
 use super::unary_op::{UnaryOp, UnaryOperator};
 use super::variable::{Variable, VariableKind};
@@ -37,12 +36,6 @@ impl<'a> ToCode<'a> for IntegerLit {
 
         let number = Integer::new(u128, self.kind());
         tokens.push(Token::Integer(number));
-    }
-}
-
-impl<'a> ToCode<'a> for StringLit<'a> {
-    fn to_code(&self, _bank: &Storage<'a>, tokens: &mut Vec<Token<'a>>, _options: &CodeFormat) {
-        tokens.push(Token::String(self.clone().into_inner()));
     }
 }
 
@@ -462,7 +455,7 @@ impl<'a> ToCode<'a> for ExprKey<'a> {
 
             ExprRef::IntegerLit(e) => e.to_code(bank, tokens, options),
             ExprRef::FloatLit(e) => tokens.push(Token::Float(Float::new(e))),
-            ExprRef::StringLit(e) => e.to_code(bank, tokens, options),
+            ExprRef::StringLit(e) => tokens.push(Token::String(e.clone())),
             ExprRef::CharLit(e) => tokens.push(Token::Char(e)),
             ExprRef::ListLit(e) => e.to_code(bank, tokens, options),
             ExprRef::ObjectLit(e) => e.to_code(bank, tokens, options),

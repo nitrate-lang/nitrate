@@ -16,7 +16,6 @@ use super::returns::Return;
 use super::slice_type::SliceType;
 use super::statement::Statement;
 use super::storage::{ExprKey, Storage, TypeKey};
-use super::string::StringLit;
 use super::tuple_type::TupleType;
 use super::unary_op::{UnaryOp, UnaryOperator};
 use super::variable::{Variable, VariableKind};
@@ -492,9 +491,9 @@ impl<'storage, 'a> StringBuilder<'storage, 'a> {
     }
 
     pub fn build(self) -> Option<ExprKey<'a>> {
-        self.storage.add_expr(ExprOwned::StringLit(StringLit::new(
+        self.storage.add_expr(ExprOwned::StringLit(
             self.value.expect("String value must be provided"),
-        )))
+        ))
     }
 }
 

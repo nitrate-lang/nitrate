@@ -1,3 +1,5 @@
+use crate::lexer::StringData;
+
 use super::array_type::ArrayType;
 use super::binary_op::BinaryOp;
 use super::block::Block;
@@ -14,7 +16,6 @@ use super::refinement_type::RefinementType;
 use super::returns::Return;
 use super::slice_type::SliceType;
 use super::statement::Statement;
-use super::string::StringLit;
 use super::tuple_type::TupleType;
 use super::unary_op::UnaryOp;
 use super::variable::Variable;
@@ -143,7 +144,7 @@ pub(crate) enum ExprOwned<'a> {
     /* Literal Expressions */
     IntegerLit(IntegerLit),
     FloatLit(f64),
-    StringLit(StringLit<'a>),
+    StringLit(StringData<'a>),
     CharLit(char),
     ListLit(ListLit<'a>),
     ObjectLit(ObjectLit<'a>),
@@ -236,7 +237,7 @@ pub enum ExprRef<'storage, 'a> {
     /* Literal Expressions */
     IntegerLit(&'storage IntegerLit),
     FloatLit(f64),
-    StringLit(&'storage StringLit<'a>),
+    StringLit(&'storage StringData<'a>),
     CharLit(char),
     ListLit(&'storage ListLit<'a>),
     ObjectLit(&'storage ObjectLit<'a>),
@@ -294,7 +295,7 @@ pub enum ExprRefMut<'storage, 'a> {
     /* Literal Expressions */
     IntegerLit(&'storage IntegerLit),
     FloatLit(f64),
-    StringLit(&'storage StringLit<'a>),
+    StringLit(&'storage StringData<'a>),
     CharLit(char),
     ListLit(&'storage mut ListLit<'a>),
     ObjectLit(&'storage mut ObjectLit<'a>),
