@@ -1024,7 +1024,7 @@ fn test_parse_type() {
     assert!(!parser.has_failed(), "Parsing failed with errors");
 
     let tree = model.as_printable(&storage);
-    let serialized = format!("{:#?}", tree);
+    let serialized = format!("{tree:#?}");
 
     assert_eq!(
         serialized, expected,

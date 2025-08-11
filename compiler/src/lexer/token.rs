@@ -660,8 +660,8 @@ impl<'a> SourcePosition<'a> {
     }
 
     #[must_use]
-    pub const fn offset(&self) -> usize {
-        self.offset as usize
+    pub const fn offset(&self) -> u32 {
+        self.offset
     }
 
     #[must_use]

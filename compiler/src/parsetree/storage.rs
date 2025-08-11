@@ -59,7 +59,7 @@ impl<'a> ExprKey<'a> {
     }
 
     fn instance_index(self) -> usize {
-        (self.id.get() & 0x03FFFFFF) as usize
+        (self.id.get() & 0x03FF_FFFF) as usize
     }
 
     #[must_use]
@@ -135,7 +135,7 @@ impl<'a> TypeKey<'a> {
     }
 
     fn instance_index(self) -> usize {
-        (self.id.get() & 0x03FFFFFF) as usize
+        (self.id.get() & 0x03FF_FFFF) as usize
     }
 
     #[must_use]

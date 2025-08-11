@@ -208,7 +208,7 @@ impl<'a> Lexer<'a> {
             self.current_peek_pos = SourcePosition::new(
                 current.line() + 1,
                 0,
-                (current.offset() + 1) as u32,
+                current.offset() + 1,
                 current.filename(),
             );
         } else {
@@ -226,7 +226,7 @@ impl<'a> Lexer<'a> {
     #[inline(always)]
     fn peek_byte(&self) -> Result<u8, ()> {
         self.source
-            .get(self.reader_position().offset())
+            .get(self.reader_position().offset() as usize)
             .copied()
             .ok_or(())
     }
@@ -239,7 +239,7 @@ impl<'a> Lexer<'a> {
         let start_offset = self.reader_position().offset();
         let mut end_offset = start_offset;
 
-        while let Some(b) = self.source.get(end_offset) {
+        while let Some(b) = self.source.get(end_offset as usize) {
             if condition(*b) {
                 self.advance(*b);
                 end_offset += 1;
@@ -248,7 +248,7 @@ impl<'a> Lexer<'a> {
             }
         }
 
-        &self.source[start_offset..end_offset]
+        &self.source[start_offset as usize..end_offset as usize]
     }
 
     #[inline(always)]
@@ -389,7 +389,8 @@ impl<'a> Lexer<'a> {
                     self.read_while(|b| b.is_ascii_digit() || b == b'_');
 
                     let literal = str::from_utf8(
-                        &self.source[start_pos.offset()..self.reader_position().offset()],
+                        &self.source
+                            [start_pos.offset() as usize..self.reader_position().offset() as usize],
                     )
                     .expect("Failed to convert float literal to str");
 
@@ -767,7 +768,9 @@ impl<'a> Lexer<'a> {
                     self.advance(b'\\');
 
                     if storage.is_empty() {
-                        storage.extend_from_slice(&self.source[start_offset..end_offset]);
+                        storage.extend_from_slice(
+                            &self.source[start_offset as usize..end_offset as usize],
+                        );
                     }
 
                     match self.parse_string_escape(&start_pos) {
@@ -794,7 +797,7 @@ impl<'a> Lexer<'a> {
                     self.advance(b'"');
 
                     if storage.is_empty() {
-                        let buffer = &self.source[start_offset..end_offset];
+                        let buffer = &self.source[start_offset as usize..end_offset as usize];
 
                         if let Ok(utf8_str) = str::from_utf8(buffer) {
                             return Ok(Token::String(StringData::from_ref(utf8_str)));
