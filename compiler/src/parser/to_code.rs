@@ -2,8 +2,8 @@ use crate::lexer::{Integer, Keyword, Name, Op, Punct, Token};
 use crate::parsetree::node::{
     ArrayType, Assert, Await, BinExpr, BinExprOp, Block, Break, Continue, DoWhileLoop, ForEach,
     Function, FunctionType, GenericType, If, IntegerLit, ListLit, ManagedRefType, MapType,
-    ObjectLit, OpaqueType, RefinementType, Return, SliceType, Statement, Switch, TupleType,
-    UnaryExpr, UnaryExprOp, UnmanagedRefType, Variable, VariableKind, WhileLoop,
+    ObjectLit, RefinementType, Return, SliceType, Statement, Switch, TupleType, UnaryExpr,
+    UnaryExprOp, UnmanagedRefType, Variable, VariableKind, WhileLoop,
 };
 use crate::parsetree::{ExprKey, ExprRef, Storage, TypeKey, TypeOwned};
 
@@ -155,15 +155,6 @@ impl<'a> ToCode<'a> for GenericType<'a> {
             value.to_code(bank, tokens, options);
         }
         tokens.push(Token::Op(Op::LogicGt));
-    }
-}
-
-impl<'a> ToCode<'a> for OpaqueType<'a> {
-    fn to_code(&self, _bank: &Storage<'a>, tokens: &mut Vec<Token<'a>>, _options: &CodeFormat) {
-        tokens.push(Token::Keyword(Keyword::Opaque));
-        tokens.push(Token::Punct(Punct::LeftParen));
-        tokens.push(Token::String(self.clone().into_inner()));
-        tokens.push(Token::Punct(Punct::RightParen));
     }
 }
 
@@ -489,7 +480,12 @@ impl<'a> ToCode<'a> for ExprKey<'a> {
             ExprRef::ManagedRefType(e) => e.to_code(bank, tokens, options),
             ExprRef::UnmanagedRefType(e) => e.to_code(bank, tokens, options),
             ExprRef::GenericType(e) => e.to_code(bank, tokens, options),
-            ExprRef::OpaqueType(e) => e.to_code(bank, tokens, options),
+            ExprRef::OpaqueType(e) => {
+                tokens.push(Token::Keyword(Keyword::Opaque));
+                tokens.push(Token::Punct(Punct::LeftParen));
+                tokens.push(Token::String(e.clone()));
+                tokens.push(Token::Punct(Punct::RightParen));
+            }
 
             ExprRef::Discard => {}
 
@@ -569,7 +565,12 @@ impl<'a> ToCode<'a> for TypeKey<'a> {
             TypeOwned::ManagedRefType(e) => e.to_code(bank, tokens, options),
             TypeOwned::UnmanagedRefType(e) => e.to_code(bank, tokens, options),
             TypeOwned::GenericType(e) => e.to_code(bank, tokens, options),
-            TypeOwned::OpaqueType(e) => e.to_code(bank, tokens, options),
+            TypeOwned::OpaqueType(e) => {
+                tokens.push(Token::Keyword(Keyword::Opaque));
+                tokens.push(Token::Punct(Punct::LeftParen));
+                tokens.push(Token::String(e.clone()));
+                tokens.push(Token::Punct(Punct::RightParen));
+            }
         }
 
         if has_parentheses {

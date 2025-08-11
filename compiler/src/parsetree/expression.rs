@@ -11,7 +11,6 @@ use super::list::ListLit;
 use super::map_type::MapType;
 use super::number::IntegerLit;
 use super::object::ObjectLit;
-use super::opaque_type::OpaqueType;
 use super::reference::{ManagedRefType, UnmanagedRefType};
 use super::refinement_type::RefinementType;
 use super::slice_type::SliceType;
@@ -147,7 +146,7 @@ pub(crate) enum ExprOwned<'a> {
     ManagedRefType(ManagedRefType<'a>),
     UnmanagedRefType(UnmanagedRefType<'a>),
     GenericType(GenericType<'a>),
-    OpaqueType(OpaqueType<'a>),
+    OpaqueType(StringData<'a>),
 
     Discard,
 
@@ -210,7 +209,7 @@ pub enum TypeOwned<'a> {
     ManagedRefType(ManagedRefType<'a>),
     UnmanagedRefType(UnmanagedRefType<'a>),
     GenericType(GenericType<'a>),
-    OpaqueType(OpaqueType<'a>),
+    OpaqueType(StringData<'a>),
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -243,7 +242,7 @@ pub enum ExprRef<'storage, 'a> {
     ManagedRefType(&'storage ManagedRefType<'a>),
     UnmanagedRefType(&'storage UnmanagedRefType<'a>),
     GenericType(&'storage GenericType<'a>),
-    OpaqueType(&'storage OpaqueType<'a>),
+    OpaqueType(&'storage StringData<'a>),
 
     Discard,
 
@@ -306,7 +305,7 @@ pub enum ExprRefMut<'storage, 'a> {
     ManagedRefType(&'storage ManagedRefType<'a>),
     UnmanagedRefType(&'storage UnmanagedRefType<'a>),
     GenericType(&'storage GenericType<'a>),
-    OpaqueType(&'storage OpaqueType<'a>),
+    OpaqueType(&'storage StringData<'a>),
 
     Discard,
 

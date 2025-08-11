@@ -158,7 +158,7 @@ impl std::fmt::Debug for Printable<'_, '_> {
 
             ExprRef::OpaqueType(x) => f
                 .debug_struct("OpaqueType")
-                .field("identity", &x.identity())
+                .field("identity", &x.get())
                 .finish(),
 
             ExprRef::Discard => write!(f, "Discard"),

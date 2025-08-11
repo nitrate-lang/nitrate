@@ -13,7 +13,6 @@ mod list;
 mod map_type;
 mod number;
 mod object;
-mod opaque_type;
 mod reference;
 mod refinement_type;
 mod slice_type;
@@ -42,7 +41,6 @@ pub mod node {
     pub use super::map_type::MapType;
     pub use super::number::IntegerLit;
     pub use super::object::ObjectLit;
-    pub use super::opaque_type::OpaqueType;
     pub use super::reference::{ManagedRefType, UnmanagedRefType};
     pub use super::refinement_type::RefinementType;
     pub use super::slice_type::SliceType;

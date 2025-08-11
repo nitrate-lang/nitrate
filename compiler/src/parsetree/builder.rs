@@ -7,7 +7,6 @@ use super::builder_helper::{
     TupleTypeBuilder, UnaryExprBuilder, UnmanagedRefTypeBuilder, VariableBuilder, WhileLoopBuilder,
 };
 use super::expression::{ExprOwned, TypeOwned};
-use super::opaque_type::OpaqueType;
 use super::storage::{ExprKey, Storage, TypeKey};
 use super::tuple_type::TupleType;
 use super::variable::VariableKind;
@@ -350,7 +349,6 @@ impl<'storage, 'a> Builder<'storage, 'a> {
 
     #[must_use]
     pub fn create_opaque_type(self, identity: StringData<'a>) -> Option<TypeKey<'a>> {
-        self.storage
-            .add_type(TypeOwned::OpaqueType(OpaqueType::new(identity)))
+        self.storage.add_type(TypeOwned::OpaqueType(identity))
     }
 }
