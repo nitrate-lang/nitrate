@@ -6,6 +6,7 @@ pub struct TupleType<'a> {
 }
 
 impl<'a> TupleType<'a> {
+    #[must_use]
     pub(crate) fn new(elements: Vec<TypeKey<'a>>) -> Self {
         TupleType { elements }
     }

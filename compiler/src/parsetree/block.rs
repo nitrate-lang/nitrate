@@ -6,6 +6,7 @@ pub struct Block<'a> {
 }
 
 impl<'a> Block<'a> {
+    #[must_use]
     pub(crate) fn new(items: Vec<ExprKey<'a>>) -> Self {
         Block { elements: items }
     }
@@ -20,6 +21,7 @@ impl<'a> Block<'a> {
         &self.elements
     }
 
+    #[must_use]
     pub fn elements_mut(&mut self) -> &mut Vec<ExprKey<'a>> {
         &mut self.elements
     }

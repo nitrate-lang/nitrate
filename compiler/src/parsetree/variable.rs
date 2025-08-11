@@ -15,6 +15,7 @@ pub struct Variable<'a> {
 }
 
 impl<'a> Variable<'a> {
+    #[must_use]
     pub(crate) fn new(
         kind: VariableKind,
         name: &'a str,

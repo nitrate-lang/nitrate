@@ -6,6 +6,7 @@ pub struct OpaqueType<'a> {
 }
 
 impl<'a> OpaqueType<'a> {
+    #[must_use]
     pub(crate) fn new(identity: StringData<'a>) -> Self {
         OpaqueType { identity }
     }

@@ -6,6 +6,7 @@ pub struct Statement<'a> {
 }
 
 impl<'a> Statement<'a> {
+    #[must_use]
     pub(crate) fn new(expr: ExprKey<'a>) -> Self {
         Statement { expr }
     }

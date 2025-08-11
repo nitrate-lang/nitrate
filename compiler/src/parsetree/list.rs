@@ -6,6 +6,7 @@ pub struct ListLit<'a> {
 }
 
 impl<'a> ListLit<'a> {
+    #[must_use]
     pub(crate) fn new(elements: Vec<ExprKey<'a>>) -> Self {
         ListLit { elements }
     }
@@ -20,6 +21,7 @@ impl<'a> ListLit<'a> {
         &self.elements
     }
 
+    #[must_use]
     pub fn elements_mut(&mut self) -> &mut Vec<ExprKey<'a>> {
         &mut self.elements
     }

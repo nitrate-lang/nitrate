@@ -8,6 +8,7 @@ pub struct IntegerLit {
 }
 
 impl IntegerLit {
+    #[must_use]
     pub(crate) fn new(value: UInt, kind: IntegerKind) -> Option<Self> {
         if value.try_to_u128().is_ok() {
             Some(IntegerLit { value, kind })

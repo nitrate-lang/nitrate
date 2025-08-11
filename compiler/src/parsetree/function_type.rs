@@ -9,6 +9,7 @@ pub struct FunctionType<'a> {
 }
 
 impl<'a> FunctionType<'a> {
+    #[must_use]
     pub(crate) fn new(
         parameters: Vec<FunctionParameter<'a>>,
         return_type: TypeKey<'a>,

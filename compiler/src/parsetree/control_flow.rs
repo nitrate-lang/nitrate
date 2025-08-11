@@ -8,6 +8,7 @@ pub struct If<'a> {
 }
 
 impl<'a> If<'a> {
+    #[must_use]
     pub(crate) fn new(
         condition: ExprKey<'a>,
         then_branch: ExprKey<'a>,
@@ -55,6 +56,7 @@ pub struct WhileLoop<'a> {
 }
 
 impl<'a> WhileLoop<'a> {
+    #[must_use]
     pub(crate) fn new(condition: ExprKey<'a>, body: ExprKey<'a>) -> Self {
         WhileLoop { condition, body }
     }
@@ -85,6 +87,7 @@ pub struct DoWhileLoop<'a> {
 }
 
 impl<'a> DoWhileLoop<'a> {
+    #[must_use]
     pub(crate) fn new(condition: ExprKey<'a>, body: ExprKey<'a>) -> Self {
         DoWhileLoop { condition, body }
     }
@@ -116,6 +119,7 @@ pub struct Switch<'a> {
 }
 
 impl<'a> Switch<'a> {
+    #[must_use]
     pub(crate) fn new(
         condition: ExprKey<'a>,
         cases: Vec<(ExprKey<'a>, ExprKey<'a>)>,
@@ -142,6 +146,7 @@ impl<'a> Switch<'a> {
         &self.cases
     }
 
+    #[must_use]
     pub fn cases_mut(&mut self) -> &mut Vec<(ExprKey<'a>, ExprKey<'a>)> {
         &mut self.cases
     }
@@ -162,6 +167,7 @@ pub struct Break<'a> {
 }
 
 impl<'a> Break<'a> {
+    #[must_use]
     pub(crate) fn new(label: Option<&'a str>) -> Self {
         Break { label }
     }
@@ -182,6 +188,7 @@ pub struct Continue<'a> {
 }
 
 impl<'a> Continue<'a> {
+    #[must_use]
     pub(crate) fn new(label: Option<&'a str>) -> Self {
         Continue { label }
     }
@@ -202,6 +209,7 @@ pub struct Return<'a> {
 }
 
 impl<'a> Return<'a> {
+    #[must_use]
     pub(crate) fn new(value: Option<ExprKey<'a>>) -> Self {
         Return { value }
     }
@@ -224,6 +232,7 @@ pub struct ForEach<'a> {
 }
 
 impl<'a> ForEach<'a> {
+    #[must_use]
     pub(crate) fn new(
         bindings: Vec<(&'a str, Option<TypeKey<'a>>)>,
         iterable: ExprKey<'a>,
@@ -250,6 +259,7 @@ impl<'a> ForEach<'a> {
         &self.bindings
     }
 
+    #[must_use]
     pub fn bindings_mut(&mut self) -> &mut Vec<(&'a str, Option<TypeKey<'a>>)> {
         &mut self.bindings
     }
@@ -270,6 +280,7 @@ pub struct Await<'a> {
 }
 
 impl<'a> Await<'a> {
+    #[must_use]
     pub(crate) fn new(expression: ExprKey<'a>) -> Self {
         Await { expression }
     }
@@ -291,6 +302,7 @@ pub struct Assert<'a> {
 }
 
 impl<'a> Assert<'a> {
+    #[must_use]
     pub(crate) fn new(condition: ExprKey<'a>, message: Option<ExprKey<'a>>) -> Self {
         Assert { condition, message }
     }

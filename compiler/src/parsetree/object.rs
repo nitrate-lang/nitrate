@@ -7,6 +7,7 @@ pub struct ObjectLit<'a> {
 }
 
 impl<'a> ObjectLit<'a> {
+    #[must_use]
     pub(crate) fn new(fields: BTreeMap<&'a str, ExprKey<'a>>) -> Self {
         ObjectLit { fields }
     }
@@ -21,6 +22,7 @@ impl<'a> ObjectLit<'a> {
         &self.fields
     }
 
+    #[must_use]
     pub fn get_mut(&mut self) -> &mut BTreeMap<&'a str, ExprKey<'a>> {
         &mut self.fields
     }

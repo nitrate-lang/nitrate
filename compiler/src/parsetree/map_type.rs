@@ -7,6 +7,7 @@ pub struct MapType<'a> {
 }
 
 impl<'a> MapType<'a> {
+    #[must_use]
     pub(crate) fn new(key: TypeKey<'a>, value: TypeKey<'a>) -> Self {
         MapType { key, value }
     }

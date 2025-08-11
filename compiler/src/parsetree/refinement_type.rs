@@ -9,6 +9,7 @@ pub struct RefinementType<'a> {
 }
 
 impl<'a> RefinementType<'a> {
+    #[must_use]
     pub(crate) fn new(
         base: TypeKey<'a>,
         width: Option<ExprKey<'a>>,

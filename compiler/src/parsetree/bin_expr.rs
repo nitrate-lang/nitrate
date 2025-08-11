@@ -85,6 +85,7 @@ pub struct BinExpr<'a> {
 }
 
 impl<'a> BinExpr<'a> {
+    #[must_use]
     pub(crate) fn new(left: ExprKey<'a>, operator: BinExprOp, right: ExprKey<'a>) -> Self {
         BinExpr {
             left,

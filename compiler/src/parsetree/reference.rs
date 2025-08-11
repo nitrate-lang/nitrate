@@ -7,6 +7,7 @@ pub struct ManagedRefType<'a> {
 }
 
 impl<'a> ManagedRefType<'a> {
+    #[must_use]
     pub(crate) fn new(target: TypeKey<'a>, is_mutable: bool) -> Self {
         ManagedRefType { target, is_mutable }
     }
@@ -29,6 +30,7 @@ pub struct UnmanagedRefType<'a> {
 }
 
 impl<'a> UnmanagedRefType<'a> {
+    #[must_use]
     pub(crate) fn new(target: TypeKey<'a>, is_mutable: bool) -> Self {
         UnmanagedRefType { target, is_mutable }
     }

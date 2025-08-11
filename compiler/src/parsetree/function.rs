@@ -44,6 +44,7 @@ pub struct Function<'a> {
 }
 
 impl<'a> Function<'a> {
+    #[must_use]
     pub(crate) fn new(
         name: &'a str,
         parameters: Vec<FunctionParameter<'a>>,
@@ -65,6 +66,7 @@ impl<'a> Function<'a> {
         &self.parameters
     }
 
+    #[must_use]
     pub fn parameters_mut(&mut self) -> &mut Vec<FunctionParameter<'a>> {
         &mut self.parameters
     }
@@ -83,6 +85,7 @@ impl<'a> Function<'a> {
         &self.attributes
     }
 
+    #[must_use]
     pub fn attributes_mut(&mut self) -> &mut Vec<ExprKey<'a>> {
         &mut self.attributes
     }
@@ -101,6 +104,7 @@ impl<'a> Function<'a> {
         self.definition.as_ref()
     }
 
+    #[must_use]
     pub fn definition_mut(&mut self) -> Option<&mut Block<'a>> {
         self.definition.as_mut()
     }
