@@ -1,7 +1,13 @@
 use super::parse::Parser;
 use crate::lexer::{Keyword, Name, Op, Punct, Token};
 use crate::parsetree::{Builder, ExprKey, TypeKey, node::FunctionParameter};
+
 use slog::{error, info};
+
+#[allow(unused_imports)]
+use crate::lexer::Lexer;
+#[allow(unused_imports)]
+use crate::parsetree::Storage;
 
 #[derive(Default)]
 struct RefinementOptions<'a> {
