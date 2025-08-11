@@ -122,7 +122,17 @@ impl<'a> Parser<'_, '_, 'a> {
 
         let else_branch = if self.lexer.skip_if(&Token::Keyword(Keyword::Else)) {
             if self.lexer.next_is(&Token::Keyword(Keyword::If)) {
-                Some(self.parse_expression()?)
+                let Some(else_if_branch) = self.parse_if() else {
+                    self.set_failed_bit();
+                    error!(
+                        self.log,
+                        "[P????]: expr: if: expected else block after 'else if'\n--> {}",
+                        self.lexer.sync_position()
+                    );
+                    return None;
+                };
+
+                Some(else_if_branch)
             } else {
                 Some(self.parse_block()?)
             }
