@@ -657,7 +657,7 @@ impl<'a> Parser<'a, '_, '_, '_> {
             return None;
         }
 
-        Builder::new(self.storage).create_opaque_type(opaque_identity)
+        Some(Builder::new(self.storage).create_opaque_type(opaque_identity))
     }
 
     fn parse_type_primary(&mut self) -> Option<TypeKey<'a>> {

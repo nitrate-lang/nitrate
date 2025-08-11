@@ -18,8 +18,6 @@ pub struct Builder<'storage, 'a> {
     storage: &'storage mut Storage<'a>,
 }
 
-const ADD_TYPE_EXPECT_REASON: &str = "`Type` object construction failed because of incorrect object deduplication, thereby causing redundant, exorbitant object construction.";
-
 impl<'storage, 'a> Builder<'storage, 'a> {
     pub fn new(storage: &'storage mut Storage<'a>) -> Self {
         Builder { storage }
@@ -31,16 +29,12 @@ impl<'storage, 'a> Builder<'storage, 'a> {
 
     #[must_use]
     pub fn get_discard(self) -> ExprKey<'a> {
-        self.storage
-            .add_expr(ExprOwned::Discard)
-            .expect(ADD_TYPE_EXPECT_REASON)
+        self.storage.add_expr(ExprOwned::Discard)
     }
 
     #[must_use]
     pub fn create_boolean(self, value: bool) -> ExprKey<'a> {
-        self.storage
-            .add_expr(ExprOwned::BooleanLit(value))
-            .expect(ADD_TYPE_EXPECT_REASON)
+        self.storage.add_expr(ExprOwned::BooleanLit(value))
     }
 
     #[must_use]
@@ -105,9 +99,7 @@ impl<'storage, 'a> Builder<'storage, 'a> {
 
     #[must_use]
     pub fn create_identifier(self, name: &'a str) -> ExprKey<'a> {
-        self.storage
-            .add_expr(ExprOwned::Identifier(name))
-            .expect("Failed to create identifier")
+        self.storage.add_expr(ExprOwned::Identifier(name))
     }
 
     #[must_use]
@@ -177,135 +169,98 @@ impl<'storage, 'a> Builder<'storage, 'a> {
 
     #[must_use]
     pub fn get_bool(self) -> TypeKey<'a> {
-        self.storage
-            .add_type(TypeOwned::Bool)
-            .expect(ADD_TYPE_EXPECT_REASON)
+        self.storage.add_type(TypeOwned::Bool)
     }
 
     #[must_use]
     pub fn get_u8(self) -> TypeKey<'a> {
-        self.storage
-            .add_type(TypeOwned::UInt8)
-            .expect(ADD_TYPE_EXPECT_REASON)
+        self.storage.add_type(TypeOwned::UInt8)
     }
 
     #[must_use]
     pub fn get_u16(self) -> TypeKey<'a> {
-        self.storage
-            .add_type(TypeOwned::UInt16)
-            .expect(ADD_TYPE_EXPECT_REASON)
+        self.storage.add_type(TypeOwned::UInt16)
     }
 
     #[must_use]
     pub fn get_u32(self) -> TypeKey<'a> {
-        self.storage
-            .add_type(TypeOwned::UInt32)
-            .expect(ADD_TYPE_EXPECT_REASON)
+        self.storage.add_type(TypeOwned::UInt32)
     }
 
     #[must_use]
     pub fn get_u64(self) -> TypeKey<'a> {
-        self.storage
-            .add_type(TypeOwned::UInt64)
-            .expect(ADD_TYPE_EXPECT_REASON)
+        self.storage.add_type(TypeOwned::UInt64)
     }
 
     #[must_use]
     pub fn get_u128(self) -> TypeKey<'a> {
-        self.storage
-            .add_type(TypeOwned::UInt128)
-            .expect(ADD_TYPE_EXPECT_REASON)
+        self.storage.add_type(TypeOwned::UInt128)
     }
 
     #[must_use]
     pub fn get_i8(self) -> TypeKey<'a> {
-        self.storage
-            .add_type(TypeOwned::Int8)
-            .expect(ADD_TYPE_EXPECT_REASON)
+        self.storage.add_type(TypeOwned::Int8)
     }
 
     #[must_use]
     pub fn get_i16(self) -> TypeKey<'a> {
-        self.storage
-            .add_type(TypeOwned::Int16)
-            .expect(ADD_TYPE_EXPECT_REASON)
+        self.storage.add_type(TypeOwned::Int16)
     }
 
     #[must_use]
     pub fn get_i32(self) -> TypeKey<'a> {
-        self.storage
-            .add_type(TypeOwned::Int32)
-            .expect(ADD_TYPE_EXPECT_REASON)
+        self.storage.add_type(TypeOwned::Int32)
     }
 
     #[must_use]
     pub fn get_i64(self) -> TypeKey<'a> {
-        self.storage
-            .add_type(TypeOwned::Int64)
-            .expect(ADD_TYPE_EXPECT_REASON)
+        self.storage.add_type(TypeOwned::Int64)
     }
 
     #[must_use]
     pub fn get_i128(self) -> TypeKey<'a> {
-        self.storage
-            .add_type(TypeOwned::Int128)
-            .expect(ADD_TYPE_EXPECT_REASON)
+        self.storage.add_type(TypeOwned::Int128)
     }
 
     #[must_use]
     pub fn get_f8(self) -> TypeKey<'a> {
-        self.storage
-            .add_type(TypeOwned::Float8)
-            .expect(ADD_TYPE_EXPECT_REASON)
+        self.storage.add_type(TypeOwned::Float8)
     }
 
     #[must_use]
     pub fn get_f16(self) -> TypeKey<'a> {
-        self.storage
-            .add_type(TypeOwned::Float16)
-            .expect(ADD_TYPE_EXPECT_REASON)
+        self.storage.add_type(TypeOwned::Float16)
     }
 
     #[must_use]
     pub fn get_f32(self) -> TypeKey<'a> {
-        self.storage
-            .add_type(TypeOwned::Float32)
-            .expect(ADD_TYPE_EXPECT_REASON)
+        self.storage.add_type(TypeOwned::Float32)
     }
 
     #[must_use]
     pub fn get_f64(self) -> TypeKey<'a> {
-        self.storage
-            .add_type(TypeOwned::Float64)
-            .expect(ADD_TYPE_EXPECT_REASON)
+        self.storage.add_type(TypeOwned::Float64)
     }
 
     #[must_use]
     pub fn get_f128(self) -> TypeKey<'a> {
-        self.storage
-            .add_type(TypeOwned::Float128)
-            .expect(ADD_TYPE_EXPECT_REASON)
+        self.storage.add_type(TypeOwned::Float128)
     }
 
     #[must_use]
     pub fn get_infer_type(self) -> TypeKey<'a> {
-        self.storage
-            .add_type(TypeOwned::InferType)
-            .expect(ADD_TYPE_EXPECT_REASON)
+        self.storage.add_type(TypeOwned::InferType)
     }
 
     #[must_use]
     pub fn get_unit(self) -> TypeKey<'a> {
         self.storage
             .add_type(TypeOwned::TupleType(TupleType::new(vec![])))
-            .expect(ADD_TYPE_EXPECT_REASON)
     }
 
     #[must_use]
     pub fn create_type_name(self, name: &'a str) -> TypeKey<'a> {
-        self.storage
-            .add_type(TypeOwned::TypeName(name))
-            .expect(ADD_TYPE_EXPECT_REASON)
+        self.storage.add_type(TypeOwned::TypeName(name))
     }
 
     #[must_use]
@@ -354,7 +309,7 @@ impl<'storage, 'a> Builder<'storage, 'a> {
     }
 
     #[must_use]
-    pub fn create_opaque_type(self, identity: StringData<'a>) -> Option<TypeKey<'a>> {
+    pub fn create_opaque_type(self, identity: StringData<'a>) -> TypeKey<'a> {
         self.storage.add_type(TypeOwned::OpaqueType(identity))
     }
 }

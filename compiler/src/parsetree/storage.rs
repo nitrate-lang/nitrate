@@ -402,8 +402,8 @@ impl<'a> Storage<'a> {
         }
     }
 
-    pub(crate) fn add_expr(&mut self, expr: ExprOwned<'a>) -> Option<ExprKey<'a>> {
-        match expr {
+    pub(crate) fn add_expr(&mut self, expr: ExprOwned<'a>) -> ExprKey<'a> {
+        let result = match expr {
             ExprOwned::Bool
             | ExprOwned::UInt8
             | ExprOwned::UInt16
@@ -431,9 +431,10 @@ impl<'a> Storage<'a> {
             | ExprOwned::ManagedRefType(_)
             | ExprOwned::UnmanagedRefType(_)
             | ExprOwned::GenericType(_)
-            | ExprOwned::OpaqueType(_) => self
-                .add_type(expr.try_into().expect("Expected a type node"))
-                .map(std::convert::Into::into),
+            | ExprOwned::OpaqueType(_) => Some(
+                self.add_type(expr.try_into().expect("Expected a type node"))
+                    .into(),
+            ),
 
             ExprOwned::Discard => Some(ExprKey::new_single(ExprKind::Discard)),
 
@@ -576,11 +577,13 @@ impl<'a> Storage<'a> {
                     self.asserts.push(node);
                 })
             }
-        }
+        };
+
+        result.expect("Failed to create expression key")
     }
 
-    pub(crate) fn add_type(&mut self, ty: TypeOwned<'a>) -> Option<TypeKey<'a>> {
-        match ty {
+    pub(crate) fn add_type(&mut self, ty: TypeOwned<'a>) -> TypeKey<'a> {
+        let result = match ty {
             TypeOwned::Bool => Some(TypeKey::new_single(TypeKind::Bool)),
             TypeOwned::UInt8 => Some(TypeKey::new_single(TypeKind::UInt8)),
             TypeOwned::UInt16 => Some(TypeKey::new_single(TypeKind::UInt16)),
@@ -643,7 +646,9 @@ impl<'a> Storage<'a> {
                     None
                 }
             }
-        }
+        };
+
+        result.expect("Failed to create type key")
     }
 
     pub fn get_expr(&self, id: ExprKey<'a>) -> ExprRef<'_, 'a> {
