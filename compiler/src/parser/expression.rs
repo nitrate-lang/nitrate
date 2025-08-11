@@ -114,10 +114,30 @@ impl<'a> Parser<'_, '_, 'a> {
     }
 
     fn parse_if(&mut self) -> Option<ExprKey<'a>> {
-        // TODO: Implement if expression parsing logic
-        self.set_failed_bit();
-        error!(self.log, "If expression parsing not implemented yet");
-        None
+        assert!(self.lexer.peek_t() == Token::Keyword(Keyword::If));
+        self.lexer.skip_tok();
+
+        let condition = self.parse_expression()?;
+        let then_branch = self.parse_block()?;
+
+        let else_branch = if self.lexer.skip_if(&Token::Keyword(Keyword::Else)) {
+            if self.lexer.next_is(&Token::Keyword(Keyword::If)) {
+                Some(self.parse_expression()?)
+            } else {
+                Some(self.parse_block()?)
+            }
+        } else {
+            None
+        };
+
+        Some(
+            Builder::new(self.storage)
+                .create_if()
+                .with_condition(condition)
+                .with_then_branch(then_branch)
+                .with_else_branch(else_branch)
+                .build(),
+        )
     }
 
     fn parse_for(&mut self) -> Option<ExprKey<'a>> {
@@ -445,7 +465,7 @@ impl<'a> Parser<'_, '_, 'a> {
         }
     }
 
-    pub(crate) fn parse_expression(&mut self) -> Option<ExprKey<'a>> {
+    pub fn parse_expression(&mut self) -> Option<ExprKey<'a>> {
         let mut parenthesis_count = 0;
         while self.lexer.skip_if(&Token::Punct(Punct::LeftParen)) {
             parenthesis_count += 1;
@@ -482,5 +502,60 @@ impl<'a> Parser<'_, '_, 'a> {
         // TODO: Unary postfix expression parsing logic
 
         Some(expr)
+    }
+
+    pub(crate) fn parse_block(&mut self) -> Option<ExprKey<'a>> {
+        if !self.lexer.skip_if(&Token::Punct(Punct::LeftBrace)) {
+            self.set_failed_bit();
+            error!(
+                self.log,
+                "[P????]: expr: block: expected opening brace\n--> {}",
+                self.lexer.sync_position()
+            );
+
+            return None;
+        }
+
+        let mut elements = Vec::new();
+        loop {
+            if self.lexer.skip_if(&Token::Punct(Punct::RightBrace)) {
+                break;
+            }
+
+            let Some(expression) = self.parse_expression() else {
+                let before_pos = self.lexer.sync_position();
+                loop {
+                    match self.lexer.next_t() {
+                        Token::Punct(Punct::Semicolon) | Token::Illegal | Token::Eof => {
+                            // Resynchronize the lexer to the next semicolon
+                            break;
+                        }
+                        _ => {}
+                    }
+                }
+
+                if before_pos == self.lexer.sync_position() {
+                    self.set_failed_bit();
+                    error!(
+                        self.log,
+                        "[P????]: expr: block: failed to parse expression\n--> {}",
+                        self.lexer.sync_position()
+                    );
+
+                    return None;
+                }
+
+                continue;
+            };
+
+            elements.push(expression);
+        }
+
+        Some(
+            Builder::new(self.storage)
+                .create_block()
+                .add_expressions(elements)
+                .build(),
+        )
     }
 }
