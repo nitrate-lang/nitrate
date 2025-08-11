@@ -96,12 +96,12 @@ fn program() -> i32 {
         eprintln!("Parsing completed with errors in file: {}", filename);
         println!("model = {:#?}", model.tree().as_printable(&storage));
 
-        return 1;
+        1
     } else {
         println!("Parsing succeeded for file: {}", filename);
         println!("model = {:#?}", model.tree().as_printable(&storage));
 
-        return 0;
+        0
     }
 }
 
