@@ -99,8 +99,44 @@ impl<'storage, 'a> Builder<'storage, 'a> {
         self.create_variable().with_kind(VariableKind::Var)
     }
 
+    pub fn create_if(self) -> IfBuilder<'storage, 'a> {
+        IfBuilder::new(self.storage)
+    }
+
+    pub fn create_while_loop(self) -> WhileLoopBuilder<'storage, 'a> {
+        WhileLoopBuilder::new(self.storage)
+    }
+
+    pub fn create_do_while_loop(self) -> DoWhileLoopBuilder<'storage, 'a> {
+        DoWhileLoopBuilder::new(self.storage)
+    }
+
+    pub fn create_switch(self) -> SwitchBuilder<'storage, 'a> {
+        SwitchBuilder::new(self.storage)
+    }
+
+    pub fn create_break(self) -> BreakBuilder<'storage, 'a> {
+        BreakBuilder::new(self.storage)
+    }
+
+    pub fn create_continue(self) -> ContinueBuilder<'storage, 'a> {
+        ContinueBuilder::new(self.storage)
+    }
+
     pub fn create_return(self) -> ReturnBuilder<'storage, 'a> {
         ReturnBuilder::new(self.storage)
+    }
+
+    pub fn create_for_each(self) -> ForEachBuilder<'storage, 'a> {
+        ForEachBuilder::new(self.storage)
+    }
+
+    pub fn create_await(self) -> AwaitBuilder<'storage, 'a> {
+        AwaitBuilder::new(self.storage)
+    }
+
+    pub fn create_assert(self) -> AssertBuilder<'storage, 'a> {
+        AssertBuilder::new(self.storage)
     }
 
     pub fn get_bool(self) -> TypeKey<'a> {

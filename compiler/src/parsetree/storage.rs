@@ -2,12 +2,12 @@ use crate::lexer::{BStringData, StringData};
 
 use super::bin_expr::BinExpr;
 use super::block::Block;
+use super::control_flow::*;
 use super::expression::{ExprKind, ExprOwned, ExprRef, ExprRefMut, TypeKind, TypeOwned};
 use super::function::Function;
 use super::list::ListLit;
 use super::number::IntegerLit;
 use super::object::ObjectLit;
-use super::returns::Return;
 use super::statement::Statement;
 use super::unary_expr::UnaryExpr;
 use super::variable::Variable;
@@ -53,61 +53,7 @@ impl<'a> ExprKey<'a> {
 
     pub(crate) fn variant_index(&self) -> ExprKind {
         let number = ((self.id.get() >> 26) as u8) - 1;
-
-        match number {
-            x if x == ExprKind::Bool as u8 => ExprKind::Bool,
-            x if x == ExprKind::UInt8 as u8 => ExprKind::UInt8,
-            x if x == ExprKind::UInt16 as u8 => ExprKind::UInt16,
-            x if x == ExprKind::UInt32 as u8 => ExprKind::UInt32,
-            x if x == ExprKind::UInt64 as u8 => ExprKind::UInt64,
-            x if x == ExprKind::UInt128 as u8 => ExprKind::UInt128,
-            x if x == ExprKind::Int8 as u8 => ExprKind::Int8,
-            x if x == ExprKind::Int16 as u8 => ExprKind::Int16,
-            x if x == ExprKind::Int32 as u8 => ExprKind::Int32,
-            x if x == ExprKind::Int64 as u8 => ExprKind::Int64,
-            x if x == ExprKind::Int128 as u8 => ExprKind::Int128,
-            x if x == ExprKind::Float8 as u8 => ExprKind::Float8,
-            x if x == ExprKind::Float16 as u8 => ExprKind::Float16,
-            x if x == ExprKind::Float32 as u8 => ExprKind::Float32,
-            x if x == ExprKind::Float64 as u8 => ExprKind::Float64,
-            x if x == ExprKind::Float128 as u8 => ExprKind::Float128,
-
-            x if x == ExprKind::InferType as u8 => ExprKind::InferType,
-            x if x == ExprKind::TypeName as u8 => ExprKind::TypeName,
-            x if x == ExprKind::RefinementType as u8 => ExprKind::RefinementType,
-            x if x == ExprKind::TupleType as u8 => ExprKind::TupleType,
-            x if x == ExprKind::ArrayType as u8 => ExprKind::ArrayType,
-            x if x == ExprKind::MapType as u8 => ExprKind::MapType,
-            x if x == ExprKind::SliceType as u8 => ExprKind::SliceType,
-            x if x == ExprKind::FunctionType as u8 => ExprKind::FunctionType,
-            x if x == ExprKind::ManagedRefType as u8 => ExprKind::ManagedRefType,
-            x if x == ExprKind::UnmanagedRefType as u8 => ExprKind::UnmanagedRefType,
-            x if x == ExprKind::GenericType as u8 => ExprKind::GenericType,
-            x if x == ExprKind::OpaqueType as u8 => ExprKind::OpaqueType,
-
-            x if x == ExprKind::Discard as u8 => ExprKind::Discard,
-
-            x if x == ExprKind::IntegerLit as u8 => ExprKind::IntegerLit,
-            x if x == ExprKind::FloatLit as u8 => ExprKind::FloatLit,
-            x if x == ExprKind::StringLit as u8 => ExprKind::StringLit,
-            x if x == ExprKind::BStringLit as u8 => ExprKind::BStringLit,
-            x if x == ExprKind::CharLit as u8 => ExprKind::CharLit,
-            x if x == ExprKind::ListLit as u8 => ExprKind::ListLit,
-            x if x == ExprKind::ObjectLit as u8 => ExprKind::ObjectLit,
-
-            x if x == ExprKind::UnaryExpr as u8 => ExprKind::UnaryExpr,
-            x if x == ExprKind::BinExpr as u8 => ExprKind::BinExpr,
-            x if x == ExprKind::Statement as u8 => ExprKind::Statement,
-            x if x == ExprKind::Block as u8 => ExprKind::Block,
-
-            x if x == ExprKind::Function as u8 => ExprKind::Function,
-            x if x == ExprKind::Variable as u8 => ExprKind::Variable,
-            x if x == ExprKind::Identifier as u8 => ExprKind::Identifier,
-
-            x if x == ExprKind::Return as u8 => ExprKind::Return,
-
-            _ => unreachable!(),
-        }
+        ExprKind::try_from(number).expect("Invalid variant index")
     }
 
     fn instance_index(&self) -> usize {
@@ -280,7 +226,16 @@ impl<'a> ExprKey<'a> {
             | ExprKind::Function
             | ExprKind::Variable
             | ExprKind::Identifier
-            | ExprKind::Return => false,
+            | ExprKind::If
+            | ExprKind::WhileLoop
+            | ExprKind::DoWhileLoop
+            | ExprKind::Switch
+            | ExprKind::Break
+            | ExprKind::Continue
+            | ExprKind::Return
+            | ExprKind::ForEach
+            | ExprKind::Await
+            | ExprKind::Assert => false,
         }
     }
 
@@ -321,7 +276,16 @@ pub struct Storage<'a> {
     variables: Vec<Variable<'a>>,
     identifiers: Vec<&'a str>,
 
+    ifs: Vec<If<'a>>,
+    while_loops: Vec<WhileLoop<'a>>,
+    do_while_loops: Vec<DoWhileLoop<'a>>,
+    switches: Vec<Switch<'a>>,
+    breaks: Vec<Break<'a>>,
+    continues: Vec<Continue<'a>>,
     returns: Vec<Return<'a>>,
+    for_eachs: Vec<ForEach<'a>>,
+    awaits: Vec<Await<'a>>,
+    asserts: Vec<Assert<'a>>,
 
     dedup_types: BiMap<TypeKey<'a>, TypeOwned<'a>>,
 
@@ -349,7 +313,16 @@ impl<'a> Storage<'a> {
             variables: Vec::new(),
             identifiers: Vec::new(),
 
+            ifs: Vec::new(),
+            while_loops: Vec::new(),
+            do_while_loops: Vec::new(),
+            switches: Vec::new(),
+            breaks: Vec::new(),
+            continues: Vec::new(),
             returns: Vec::new(),
+            for_eachs: Vec::new(),
+            awaits: Vec::new(),
+            asserts: Vec::new(),
 
             dedup_types: BiMap::new(),
 
@@ -414,7 +387,16 @@ impl<'a> Storage<'a> {
             ExprKind::Variable => self.variables.reserve(additional),
             ExprKind::Identifier => self.identifiers.reserve(additional),
 
+            ExprKind::If => self.ifs.reserve(additional),
+            ExprKind::WhileLoop => self.while_loops.reserve(additional),
+            ExprKind::DoWhileLoop => self.do_while_loops.reserve(additional),
+            ExprKind::Switch => self.switches.reserve(additional),
+            ExprKind::Break => self.breaks.reserve(additional),
+            ExprKind::Continue => self.continues.reserve(additional),
             ExprKind::Return => self.returns.reserve(additional),
+            ExprKind::ForEach => self.for_eachs.reserve(additional),
+            ExprKind::Await => self.awaits.reserve(additional),
+            ExprKind::Assert => self.asserts.reserve(additional),
         }
     }
 
@@ -540,9 +522,66 @@ impl<'a> Storage<'a> {
                 })
             }
 
+            ExprOwned::If(node) => ExprKey::new(ExprKind::If, self.ifs.len()).and_then(|k| {
+                self.ifs.push(node);
+                Some(k)
+            }),
+
+            ExprOwned::WhileLoop(node) => ExprKey::new(ExprKind::WhileLoop, self.while_loops.len())
+                .and_then(|k| {
+                    self.while_loops.push(node);
+                    Some(k)
+                }),
+
+            ExprOwned::DoWhileLoop(node) => {
+                ExprKey::new(ExprKind::DoWhileLoop, self.do_while_loops.len()).and_then(|k| {
+                    self.do_while_loops.push(node);
+                    Some(k)
+                })
+            }
+
+            ExprOwned::Switch(node) => ExprKey::new(ExprKind::Switch, self.switches.len())
+                .and_then(|k| {
+                    self.switches.push(node);
+                    Some(k)
+                }),
+
+            ExprOwned::Break(node) => {
+                ExprKey::new(ExprKind::Break, self.breaks.len()).and_then(|k| {
+                    self.breaks.push(node);
+                    Some(k)
+                })
+            }
+
+            ExprOwned::Continue(node) => ExprKey::new(ExprKind::Continue, self.continues.len())
+                .and_then(|k| {
+                    self.continues.push(node);
+                    Some(k)
+                }),
+
             ExprOwned::Return(node) => {
                 ExprKey::new(ExprKind::Return, self.returns.len()).and_then(|k| {
                     self.returns.push(node);
+                    Some(k)
+                })
+            }
+
+            ExprOwned::ForEach(node) => ExprKey::new(ExprKind::ForEach, self.for_eachs.len())
+                .and_then(|k| {
+                    self.for_eachs.push(node);
+                    Some(k)
+                }),
+
+            ExprOwned::Await(node) => {
+                ExprKey::new(ExprKind::Await, self.awaits.len()).and_then(|k| {
+                    self.awaits.push(node);
+                    Some(k)
+                })
+            }
+
+            ExprOwned::Assert(node) => {
+                ExprKey::new(ExprKind::Assert, self.asserts.len()).and_then(|k| {
+                    self.asserts.push(node);
                     Some(k)
                 })
             }
@@ -676,7 +715,16 @@ impl<'a> Storage<'a> {
                 .get(index)
                 .map(|&id| ExprRef::Identifier(id)),
 
+            ExprKind::If => self.ifs.get(index).map(ExprRef::If),
+            ExprKind::WhileLoop => self.while_loops.get(index).map(ExprRef::WhileLoop),
+            ExprKind::DoWhileLoop => self.do_while_loops.get(index).map(ExprRef::DoWhileLoop),
+            ExprKind::Switch => self.switches.get(index).map(ExprRef::Switch),
+            ExprKind::Break => self.breaks.get(index).map(ExprRef::Break),
+            ExprKind::Continue => self.continues.get(index).map(ExprRef::Continue),
             ExprKind::Return => self.returns.get(index).map(ExprRef::Return),
+            ExprKind::ForEach => self.for_eachs.get(index).map(ExprRef::ForEach),
+            ExprKind::Await => self.awaits.get(index).map(ExprRef::Await),
+            ExprKind::Assert => self.asserts.get(index).map(ExprRef::Assert),
         }
         .expect("Expression not found in storage")
     }
@@ -739,7 +787,19 @@ impl<'a> Storage<'a> {
                 .get_mut(index)
                 .map(|id| ExprRefMut::Identifier(id)),
 
+            ExprKind::If => self.ifs.get_mut(index).map(ExprRefMut::If),
+            ExprKind::WhileLoop => self.while_loops.get_mut(index).map(ExprRefMut::WhileLoop),
+            ExprKind::DoWhileLoop => self
+                .do_while_loops
+                .get_mut(index)
+                .map(ExprRefMut::DoWhileLoop),
+            ExprKind::Switch => self.switches.get_mut(index).map(ExprRefMut::Switch),
+            ExprKind::Break => self.breaks.get_mut(index).map(ExprRefMut::Break),
+            ExprKind::Continue => self.continues.get_mut(index).map(ExprRefMut::Continue),
             ExprKind::Return => self.returns.get_mut(index).map(ExprRefMut::Return),
+            ExprKind::ForEach => self.for_eachs.get_mut(index).map(ExprRefMut::ForEach),
+            ExprKind::Await => self.awaits.get_mut(index).map(ExprRefMut::Await),
+            ExprKind::Assert => self.asserts.get_mut(index).map(ExprRefMut::Assert),
         }
         .expect("Expression not found in storage")
     }

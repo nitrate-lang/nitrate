@@ -47,7 +47,6 @@ impl<'storage, 'logger, 'a> Parser<'storage, 'logger, 'a> {
 
     pub fn is_supported(&self, language_version: (u32, u32)) -> bool {
         match language_version {
-            // Future major versions might introduce breaking syntactic changes
             (1, _) => true,
 
             _ => false,
@@ -58,6 +57,7 @@ impl<'storage, 'logger, 'a> Parser<'storage, 'logger, 'a> {
         let preamble = self.parse_preamble();
 
         if !self.is_supported(preamble.language_version) {
+            self.set_failed_bit();
             error!(
                 self.log,
                 "[P????]: This compiler does not support Nitrate version {}.{}.",
@@ -68,7 +68,7 @@ impl<'storage, 'logger, 'a> Parser<'storage, 'logger, 'a> {
                 self.log,
                 "[P????]: Consider upgrading to a newer version of the compiler."
             );
-            self.set_failed_bit();
+
             return None;
         }
 

@@ -1,8 +1,7 @@
-use crate::lexer::{BStringData, StringData};
-
 use super::array_type::ArrayType;
 use super::bin_expr::BinExpr;
 use super::block::Block;
+use super::control_flow::*;
 use super::function::Function;
 use super::function_type::FunctionType;
 use super::generic_type::GenericType;
@@ -13,12 +12,12 @@ use super::object::ObjectLit;
 use super::opaque_type::OpaqueType;
 use super::reference::{ManagedRefType, UnmanagedRefType};
 use super::refinement_type::RefinementType;
-use super::returns::Return;
 use super::slice_type::SliceType;
 use super::statement::Statement;
 use super::tuple_type::TupleType;
 use super::unary_expr::UnaryExpr;
 use super::variable::Variable;
+use crate::lexer::{BStringData, StringData};
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub enum ExprKind {
@@ -71,7 +70,16 @@ pub enum ExprKind {
     Variable,
     Identifier,
 
+    If,
+    WhileLoop,
+    DoWhileLoop,
+    Switch,
+    Break,
+    Continue,
     Return,
+    ForEach,
+    Await,
+    Assert,
 }
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
@@ -158,7 +166,16 @@ pub(crate) enum ExprOwned<'a> {
     Variable(Variable<'a>),
     Identifier(&'a str),
 
+    If(If<'a>),
+    WhileLoop(WhileLoop<'a>),
+    DoWhileLoop(DoWhileLoop<'a>),
+    Switch(Switch<'a>),
+    Break(Break<'a>),
+    Continue(Continue<'a>),
     Return(Return<'a>),
+    ForEach(ForEach<'a>),
+    Await(Await<'a>),
+    Assert(Assert<'a>),
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -245,7 +262,16 @@ pub enum ExprRef<'storage, 'a> {
     Variable(&'storage Variable<'a>),
     Identifier(&'a str),
 
+    If(&'storage If<'a>),
+    WhileLoop(&'storage WhileLoop<'a>),
+    DoWhileLoop(&'storage DoWhileLoop<'a>),
+    Switch(&'storage Switch<'a>),
+    Break(&'storage Break<'a>),
+    Continue(&'storage Continue<'a>),
     Return(&'storage Return<'a>),
+    ForEach(&'storage ForEach<'a>),
+    Await(&'storage Await<'a>),
+    Assert(&'storage Assert<'a>),
 }
 
 #[derive(Debug)]
@@ -299,7 +325,16 @@ pub enum ExprRefMut<'storage, 'a> {
     Variable(&'storage mut Variable<'a>),
     Identifier(&'a str),
 
+    If(&'storage mut If<'a>),
+    WhileLoop(&'storage mut WhileLoop<'a>),
+    DoWhileLoop(&'storage mut DoWhileLoop<'a>),
+    Switch(&'storage mut Switch<'a>),
+    Break(&'storage mut Break<'a>),
+    Continue(&'storage mut Continue<'a>),
     Return(&'storage mut Return<'a>),
+    ForEach(&'storage mut ForEach<'a>),
+    Await(&'storage mut Await<'a>),
+    Assert(&'storage mut Assert<'a>),
 }
 
 impl TryInto<TypeKind> for ExprKind {
@@ -352,7 +387,86 @@ impl TryInto<TypeKind> for ExprKind {
             | ExprKind::Function
             | ExprKind::Variable
             | ExprKind::Identifier
-            | ExprKind::Return => Err(()),
+            | ExprKind::If
+            | ExprKind::WhileLoop
+            | ExprKind::DoWhileLoop
+            | ExprKind::Switch
+            | ExprKind::Break
+            | ExprKind::Continue
+            | ExprKind::Return
+            | ExprKind::ForEach
+            | ExprKind::Await
+            | ExprKind::Assert => Err(()),
+        }
+    }
+}
+
+impl TryFrom<u8> for ExprKind {
+    type Error = ();
+
+    fn try_from(value: u8) -> Result<Self, Self::Error> {
+        match value {
+            x if x == ExprKind::Bool as u8 => Ok(ExprKind::Bool),
+            x if x == ExprKind::UInt8 as u8 => Ok(ExprKind::UInt8),
+            x if x == ExprKind::UInt16 as u8 => Ok(ExprKind::UInt16),
+            x if x == ExprKind::UInt32 as u8 => Ok(ExprKind::UInt32),
+            x if x == ExprKind::UInt64 as u8 => Ok(ExprKind::UInt64),
+            x if x == ExprKind::UInt128 as u8 => Ok(ExprKind::UInt128),
+            x if x == ExprKind::Int8 as u8 => Ok(ExprKind::Int8),
+            x if x == ExprKind::Int16 as u8 => Ok(ExprKind::Int16),
+            x if x == ExprKind::Int32 as u8 => Ok(ExprKind::Int32),
+            x if x == ExprKind::Int64 as u8 => Ok(ExprKind::Int64),
+            x if x == ExprKind::Int128 as u8 => Ok(ExprKind::Int128),
+            x if x == ExprKind::Float8 as u8 => Ok(ExprKind::Float8),
+            x if x == ExprKind::Float16 as u8 => Ok(ExprKind::Float16),
+            x if x == ExprKind::Float32 as u8 => Ok(ExprKind::Float32),
+            x if x == ExprKind::Float64 as u8 => Ok(ExprKind::Float64),
+            x if x == ExprKind::Float128 as u8 => Ok(ExprKind::Float128),
+
+            x if x == ExprKind::InferType as u8 => Ok(ExprKind::InferType),
+            x if x == ExprKind::TypeName as u8 => Ok(ExprKind::TypeName),
+            x if x == ExprKind::RefinementType as u8 => Ok(ExprKind::RefinementType),
+            x if x == ExprKind::TupleType as u8 => Ok(ExprKind::TupleType),
+            x if x == ExprKind::ArrayType as u8 => Ok(ExprKind::ArrayType),
+            x if x == ExprKind::MapType as u8 => Ok(ExprKind::MapType),
+            x if x == ExprKind::SliceType as u8 => Ok(ExprKind::SliceType),
+            x if x == ExprKind::FunctionType as u8 => Ok(ExprKind::FunctionType),
+            x if x == ExprKind::ManagedRefType as u8 => Ok(ExprKind::ManagedRefType),
+            x if x == ExprKind::UnmanagedRefType as u8 => Ok(ExprKind::UnmanagedRefType),
+            x if x == ExprKind::GenericType as u8 => Ok(ExprKind::GenericType),
+            x if x == ExprKind::OpaqueType as u8 => Ok(ExprKind::OpaqueType),
+
+            x if x == ExprKind::Discard as u8 => Ok(ExprKind::Discard),
+
+            x if x == ExprKind::IntegerLit as u8 => Ok(ExprKind::IntegerLit),
+            x if x == ExprKind::FloatLit as u8 => Ok(ExprKind::FloatLit),
+            x if x == ExprKind::StringLit as u8 => Ok(ExprKind::StringLit),
+            x if x == ExprKind::BStringLit as u8 => Ok(ExprKind::BStringLit),
+            x if x == ExprKind::CharLit as u8 => Ok(ExprKind::CharLit),
+            x if x == ExprKind::ListLit as u8 => Ok(ExprKind::ListLit),
+            x if x == ExprKind::ObjectLit as u8 => Ok(ExprKind::ObjectLit),
+
+            x if x == ExprKind::UnaryExpr as u8 => Ok(ExprKind::UnaryExpr),
+            x if x == ExprKind::BinExpr as u8 => Ok(ExprKind::BinExpr),
+            x if x == ExprKind::Statement as u8 => Ok(ExprKind::Statement),
+            x if x == ExprKind::Block as u8 => Ok(ExprKind::Block),
+
+            x if x == ExprKind::Function as u8 => Ok(ExprKind::Function),
+            x if x == ExprKind::Variable as u8 => Ok(ExprKind::Variable),
+            x if x == ExprKind::Identifier as u8 => Ok(ExprKind::Identifier),
+
+            x if x == ExprKind::If as u8 => Ok(ExprKind::If),
+            x if x == ExprKind::WhileLoop as u8 => Ok(ExprKind::WhileLoop),
+            x if x == ExprKind::DoWhileLoop as u8 => Ok(ExprKind::DoWhileLoop),
+            x if x == ExprKind::Switch as u8 => Ok(ExprKind::Switch),
+            x if x == ExprKind::Break as u8 => Ok(ExprKind::Break),
+            x if x == ExprKind::Continue as u8 => Ok(ExprKind::Continue),
+            x if x == ExprKind::Return as u8 => Ok(ExprKind::Return),
+            x if x == ExprKind::ForEach as u8 => Ok(ExprKind::ForEach),
+            x if x == ExprKind::Await as u8 => Ok(ExprKind::Await),
+            x if x == ExprKind::Assert as u8 => Ok(ExprKind::Assert),
+
+            _ => Err(()),
         }
     }
 }
@@ -443,7 +557,16 @@ impl<'a> TryInto<TypeOwned<'a>> for ExprOwned<'a> {
             | ExprOwned::Function(_)
             | ExprOwned::Variable(_)
             | ExprOwned::Identifier(_)
-            | ExprOwned::Return(_) => Err(self),
+            | ExprOwned::If(_)
+            | ExprOwned::WhileLoop(_)
+            | ExprOwned::DoWhileLoop(_)
+            | ExprOwned::Switch(_)
+            | ExprOwned::Break(_)
+            | ExprOwned::Continue(_)
+            | ExprOwned::Return(_)
+            | ExprOwned::ForEach(_)
+            | ExprOwned::Await(_)
+            | ExprOwned::Assert(_) => Err(self),
         }
     }
 }

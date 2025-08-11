@@ -32,6 +32,20 @@ struct Parameter<'storage, 'a> {
     default_value: Option<Printable<'storage, 'a>>,
 }
 
+#[derive(Debug)]
+#[allow(dead_code)]
+pub struct SwitchCase<'storage, 'a> {
+    value: Printable<'storage, 'a>,
+    body: Printable<'storage, 'a>,
+}
+
+#[derive(Debug)]
+#[allow(dead_code)]
+pub struct ForeachBinding<'storage, 'a> {
+    name: &'a str,
+    type_: Option<Printable<'storage, 'a>>,
+}
+
 impl<'storage, 'a> std::fmt::Debug for Printable<'storage, 'a> {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         match self.expr.get(self.storage) {
@@ -250,9 +264,87 @@ impl<'storage, 'a> std::fmt::Debug for Printable<'storage, 'a> {
 
             ExprRef::Identifier(name) => write!(f, "{}", name),
 
+            ExprRef::If(x) => f
+                .debug_struct("If")
+                .field("condition", &x.condition().as_printable(self.storage))
+                .field("then_branch", &x.then_branch().as_printable(self.storage))
+                .field(
+                    "else_branch",
+                    &x.else_branch().map(|b| b.as_printable(self.storage)),
+                )
+                .finish(),
+
+            ExprRef::WhileLoop(x) => f
+                .debug_struct("WhileLoop")
+                .field("condition", &x.condition().as_printable(self.storage))
+                .field("body", &x.body().as_printable(self.storage))
+                .finish(),
+
+            ExprRef::DoWhileLoop(x) => f
+                .debug_struct("DoWhileLoop")
+                .field("condition", &x.condition().as_printable(self.storage))
+                .field("body", &x.body().as_printable(self.storage))
+                .finish(),
+
+            ExprRef::Switch(x) => f
+                .debug_struct("Switch")
+                .field("condition", &x.condition().as_printable(self.storage))
+                .field(
+                    "cases",
+                    &x.cases()
+                        .iter()
+                        .map(|(value, body)| SwitchCase {
+                            value: value.as_printable(self.storage),
+                            body: body.as_printable(self.storage),
+                        })
+                        .collect::<Vec<_>>(),
+                )
+                .field(
+                    "default_case",
+                    &x.default_case().map(|d| d.as_printable(self.storage)),
+                )
+                .finish(),
+
+            ExprRef::Break(x) => f.debug_struct("Break").field("label", &x.label()).finish(),
+
+            ExprRef::Continue(x) => f
+                .debug_struct("Continue")
+                .field("label", &x.label())
+                .finish(),
+
             ExprRef::Return(x) => f
                 .debug_struct("Return")
                 .field("value", &x.value().map(|v| v.as_printable(self.storage)))
+                .finish(),
+
+            ExprRef::ForEach(x) => f
+                .debug_struct("ForEach")
+                .field(
+                    "bindings",
+                    &x.bindings()
+                        .iter()
+                        .map(|(name, type_)| ForeachBinding {
+                            name,
+                            type_: type_.map(|t| t.as_printable(self.storage)),
+                        })
+                        .collect::<Vec<_>>(),
+                )
+                .field("iterable", &x.iterable().as_printable(self.storage))
+                .field("body", &x.body().as_printable(self.storage))
+                .finish(),
+
+            ExprRef::Await(x) => f
+                .debug_struct("Await")
+                .field("expression", &x.expression().as_printable(self.storage))
+                .finish(),
+
+            ExprRef::Assert(x) => f
+                .debug_struct("Assert")
+                .field("condition", &x.condition().as_printable(self.storage))
+                .field(
+                    "message",
+                    &x.message().map(|m| m.as_printable(self.storage)),
+                )
                 .finish(),
         }
     }

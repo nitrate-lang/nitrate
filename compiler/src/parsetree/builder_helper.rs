@@ -2,6 +2,7 @@ use super::array_type::ArrayType;
 use super::bin_expr::{BinExpr, BinExprOp};
 use super::block::Block;
 use super::builder::Builder;
+use super::control_flow::*;
 use super::expression::{ExprOwned, ExprRef, TypeOwned};
 use super::function::{Function, FunctionParameter};
 use super::function_type::FunctionType;
@@ -12,7 +13,6 @@ use super::number::IntegerLit;
 use super::object::ObjectLit;
 use super::reference::{ManagedRefType, UnmanagedRefType};
 use super::refinement_type::RefinementType;
-use super::returns::Return;
 use super::slice_type::SliceType;
 use super::statement::Statement;
 use super::storage::{ExprKey, Storage, TypeKey};
@@ -20,6 +20,7 @@ use super::tuple_type::TupleType;
 use super::unary_expr::{UnaryExpr, UnaryExprOp};
 use super::variable::{Variable, VariableKind};
 use crate::lexer::{BStringData, IntegerKind, StringData};
+use crate::parsetree::control_flow::DoWhileLoop;
 use apint::UInt;
 use std::collections::BTreeMap;
 
@@ -939,6 +940,238 @@ impl<'storage, 'a> VariableBuilder<'storage, 'a> {
 }
 
 #[derive(Debug)]
+pub struct IfBuilder<'storage, 'a> {
+    storage: &'storage mut Storage<'a>,
+    condition: Option<ExprKey<'a>>,
+    then_branch: Option<ExprKey<'a>>,
+    else_branch: Option<ExprKey<'a>>,
+}
+
+impl<'storage, 'a> IfBuilder<'storage, 'a> {
+    pub(crate) fn new(storage: &'storage mut Storage<'a>) -> Self {
+        IfBuilder {
+            storage,
+            condition: None,
+            then_branch: None,
+            else_branch: None,
+        }
+    }
+
+    pub fn with_condition(mut self, condition: ExprKey<'a>) -> Self {
+        self.condition = Some(condition);
+        self
+    }
+
+    pub fn with_then_branch(mut self, then_branch: ExprKey<'a>) -> Self {
+        self.then_branch = Some(then_branch);
+        self
+    }
+
+    pub fn with_else_branch(mut self, else_branch: Option<ExprKey<'a>>) -> Self {
+        self.else_branch = else_branch;
+        self
+    }
+
+    pub fn build(self) -> ExprKey<'a> {
+        let expr = If::new(
+            self.condition.expect("Condition must be provided"),
+            self.then_branch.expect("Then branch must be provided"),
+            self.else_branch,
+        );
+
+        self.storage
+            .add_expr(ExprOwned::If(expr))
+            .expect("Failed to create if expression")
+    }
+}
+
+#[derive(Debug)]
+pub struct WhileLoopBuilder<'storage, 'a> {
+    storage: &'storage mut Storage<'a>,
+    condition: Option<ExprKey<'a>>,
+    body: Option<ExprKey<'a>>,
+}
+
+impl<'storage, 'a> WhileLoopBuilder<'storage, 'a> {
+    pub(crate) fn new(storage: &'storage mut Storage<'a>) -> Self {
+        WhileLoopBuilder {
+            storage,
+            condition: None,
+            body: None,
+        }
+    }
+
+    pub fn with_condition(mut self, condition: ExprKey<'a>) -> Self {
+        self.condition = Some(condition);
+        self
+    }
+
+    pub fn with_body(mut self, body: ExprKey<'a>) -> Self {
+        self.body = Some(body);
+        self
+    }
+
+    pub fn build(self) -> ExprKey<'a> {
+        let expr = WhileLoop::new(
+            self.condition.expect("Condition must be provided"),
+            self.body.expect("Body expression must be provided"),
+        );
+
+        self.storage
+            .add_expr(ExprOwned::WhileLoop(expr))
+            .expect("Failed to create while loop expression")
+    }
+}
+
+#[derive(Debug)]
+pub struct DoWhileLoopBuilder<'storage, 'a> {
+    storage: &'storage mut Storage<'a>,
+    body: Option<ExprKey<'a>>,
+    condition: Option<ExprKey<'a>>,
+}
+
+impl<'storage, 'a> DoWhileLoopBuilder<'storage, 'a> {
+    pub(crate) fn new(storage: &'storage mut Storage<'a>) -> Self {
+        DoWhileLoopBuilder {
+            storage,
+            body: None,
+            condition: None,
+        }
+    }
+
+    pub fn with_body(mut self, body: ExprKey<'a>) -> Self {
+        self.body = Some(body);
+        self
+    }
+
+    pub fn with_condition(mut self, condition: ExprKey<'a>) -> Self {
+        self.condition = Some(condition);
+        self
+    }
+
+    pub fn build(self) -> ExprKey<'a> {
+        let expr = DoWhileLoop::new(
+            self.condition.expect("Condition must be provided"),
+            self.body.expect("Body expression must be provided"),
+        );
+
+        self.storage
+            .add_expr(ExprOwned::DoWhileLoop(expr))
+            .expect("Failed to create do-while loop expression")
+    }
+}
+
+#[derive(Debug)]
+pub struct SwitchBuilder<'storage, 'a> {
+    storage: &'storage mut Storage<'a>,
+    condition: Option<ExprKey<'a>>,
+    cases: Vec<(ExprKey<'a>, ExprKey<'a>)>,
+    default: Option<ExprKey<'a>>,
+}
+
+impl<'storage, 'a> SwitchBuilder<'storage, 'a> {
+    pub(crate) fn new(storage: &'storage mut Storage<'a>) -> Self {
+        SwitchBuilder {
+            storage,
+            condition: None,
+            cases: Vec::new(),
+            default: None,
+        }
+    }
+
+    pub fn with_condition(mut self, condition: ExprKey<'a>) -> Self {
+        self.condition = Some(condition);
+        self
+    }
+
+    pub fn add_case(mut self, case: ExprKey<'a>, body: ExprKey<'a>) -> Self {
+        self.cases.push((case, body));
+        self
+    }
+
+    pub fn add_cases<I>(mut self, cases: I) -> Self
+    where
+        I: IntoIterator<Item = (ExprKey<'a>, ExprKey<'a>)>,
+    {
+        self.cases.extend(cases);
+        self
+    }
+
+    pub fn with_default(mut self, default: Option<ExprKey<'a>>) -> Self {
+        self.default = default;
+        self
+    }
+
+    pub fn build(self) -> ExprKey<'a> {
+        let expr = super::control_flow::Switch::new(
+            self.condition.expect("Condition must be provided"),
+            self.cases,
+            self.default,
+        );
+
+        self.storage
+            .add_expr(ExprOwned::Switch(expr))
+            .expect("Failed to create switch expression")
+    }
+}
+
+#[derive(Debug)]
+pub struct BreakBuilder<'storage, 'a> {
+    storage: &'storage mut Storage<'a>,
+    label: Option<&'a str>,
+}
+
+impl<'storage, 'a> BreakBuilder<'storage, 'a> {
+    pub(crate) fn new(storage: &'storage mut Storage<'a>) -> Self {
+        BreakBuilder {
+            storage,
+            label: None,
+        }
+    }
+
+    pub fn with_label(mut self, label: Option<&'a str>) -> Self {
+        self.label = label;
+        self
+    }
+
+    pub fn build(self) -> ExprKey<'a> {
+        let expr = Break::new(self.label);
+
+        self.storage
+            .add_expr(ExprOwned::Break(expr))
+            .expect("Failed to create break expression")
+    }
+}
+
+#[derive(Debug)]
+pub struct ContinueBuilder<'storage, 'a> {
+    storage: &'storage mut Storage<'a>,
+    label: Option<&'a str>,
+}
+
+impl<'storage, 'a> ContinueBuilder<'storage, 'a> {
+    pub(crate) fn new(storage: &'storage mut Storage<'a>) -> Self {
+        ContinueBuilder {
+            storage,
+            label: None,
+        }
+    }
+
+    pub fn with_label(mut self, label: Option<&'a str>) -> Self {
+        self.label = label;
+        self
+    }
+
+    pub fn build(self) -> ExprKey<'a> {
+        let expr = Continue::new(self.label);
+
+        self.storage
+            .add_expr(ExprOwned::Continue(expr))
+            .expect("Failed to create continue expression")
+    }
+}
+
+#[derive(Debug)]
 pub struct ReturnBuilder<'storage, 'a> {
     storage: &'storage mut Storage<'a>,
     value: Option<ExprKey<'a>>,
@@ -958,8 +1191,130 @@ impl<'storage, 'a> ReturnBuilder<'storage, 'a> {
     }
 
     pub fn build(self) -> ExprKey<'a> {
+        let expr = Return::new(self.value);
+
         self.storage
-            .add_expr(ExprOwned::Return(Return::new(self.value)))
-            .expect("Failed to create return statement")
+            .add_expr(ExprOwned::Return(expr))
+            .expect("Failed to create return expression")
+    }
+}
+
+#[derive(Debug)]
+pub struct ForEachBuilder<'storage, 'a> {
+    storage: &'storage mut Storage<'a>,
+    bindings: Vec<(&'a str, Option<TypeKey<'a>>)>,
+    iterable: Option<ExprKey<'a>>,
+    body: Option<ExprKey<'a>>,
+}
+
+impl<'storage, 'a> ForEachBuilder<'storage, 'a> {
+    pub(crate) fn new(storage: &'storage mut Storage<'a>) -> Self {
+        ForEachBuilder {
+            storage,
+            bindings: Vec::new(),
+            iterable: None,
+            body: None,
+        }
+    }
+
+    pub fn add_binding(mut self, name: &'a str, ty: Option<TypeKey<'a>>) -> Self {
+        self.bindings.push((name, ty));
+        self
+    }
+
+    pub fn add_bindings<I>(mut self, bindings: I) -> Self
+    where
+        I: IntoIterator<Item = (&'a str, Option<TypeKey<'a>>)>,
+    {
+        self.bindings.extend(bindings);
+        self
+    }
+
+    pub fn with_iterable(mut self, iterable: ExprKey<'a>) -> Self {
+        self.iterable = Some(iterable);
+        self
+    }
+
+    pub fn with_body(mut self, body: ExprKey<'a>) -> Self {
+        self.body = Some(body);
+        self
+    }
+
+    pub fn build(self) -> ExprKey<'a> {
+        let expr = ForEach::new(
+            self.bindings,
+            self.iterable.expect("Iterable expression must be provided"),
+            self.body.expect("Body expression must be provided"),
+        );
+
+        self.storage
+            .add_expr(ExprOwned::ForEach(expr))
+            .expect("Failed to create for-each expression")
+    }
+}
+
+#[derive(Debug)]
+pub struct AwaitBuilder<'storage, 'a> {
+    storage: &'storage mut Storage<'a>,
+    expression: Option<ExprKey<'a>>,
+}
+
+impl<'storage, 'a> AwaitBuilder<'storage, 'a> {
+    pub(crate) fn new(storage: &'storage mut Storage<'a>) -> Self {
+        AwaitBuilder {
+            storage,
+            expression: None,
+        }
+    }
+
+    pub fn with_expression(mut self, expression: ExprKey<'a>) -> Self {
+        self.expression = Some(expression);
+        self
+    }
+
+    pub fn build(self) -> ExprKey<'a> {
+        let expr = Await::new(self.expression.expect("Expression must be provided"));
+
+        self.storage
+            .add_expr(ExprOwned::Await(expr))
+            .expect("Failed to create await expression")
+    }
+}
+
+#[derive(Debug)]
+pub struct AssertBuilder<'storage, 'a> {
+    storage: &'storage mut Storage<'a>,
+    condition: Option<ExprKey<'a>>,
+    message: Option<ExprKey<'a>>,
+}
+
+impl<'storage, 'a> AssertBuilder<'storage, 'a> {
+    pub(crate) fn new(storage: &'storage mut Storage<'a>) -> Self {
+        AssertBuilder {
+            storage,
+            condition: None,
+            message: None,
+        }
+    }
+
+    pub fn with_condition(mut self, condition: ExprKey<'a>) -> Self {
+        self.condition = Some(condition);
+        self
+    }
+
+    pub fn with_message(mut self, message: Option<ExprKey<'a>>) -> Self {
+        self.message = message;
+        self
+    }
+
+    pub fn build(self) -> ExprKey<'a> {
+        let expr = Assert::new(
+            self.condition.expect("Condition must be provided"),
+            self.message,
+        );
+
+        self.storage
+            .add_expr(ExprOwned::Assert(expr))
+            .expect("Failed to create assert expression")
     }
 }

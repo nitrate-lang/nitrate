@@ -1,6 +1,7 @@
 use super::array_type::ArrayType;
 use super::bin_expr::{BinExpr, BinExprOp};
 use super::block::Block;
+use super::control_flow::*;
 use super::expression::{ExprRef, TypeOwned};
 use super::function::Function;
 use super::function_type::FunctionType;
@@ -12,7 +13,6 @@ use super::object::ObjectLit;
 use super::opaque_type::OpaqueType;
 use super::reference::{ManagedRefType, UnmanagedRefType};
 use super::refinement_type::RefinementType;
-use super::returns::Return;
 use super::slice_type::SliceType;
 use super::statement::Statement;
 use super::storage::{ExprKey, Storage, TypeKey};
@@ -26,6 +26,159 @@ pub struct CodeFormat {}
 
 pub trait ToCode<'a> {
     fn to_code(&self, bank: &Storage<'a>, tokens: &mut Vec<Token<'a>>, options: &CodeFormat);
+}
+
+impl<'a> ToCode<'a> for RefinementType<'a> {
+    fn to_code(&self, bank: &Storage<'a>, tokens: &mut Vec<Token<'a>>, options: &CodeFormat) {
+        self.base().to_code(bank, tokens, options);
+
+        if let Some(width) = self.width() {
+            tokens.push(Token::Punct(Punct::Colon));
+            width.to_code(bank, tokens, options);
+        }
+
+        if self.min().is_some() || self.max().is_some() {
+            tokens.push(Token::Punct(Punct::Colon));
+            tokens.push(Token::Punct(Punct::LeftBracket));
+            if let Some(min) = self.min() {
+                min.to_code(bank, tokens, options);
+            }
+            tokens.push(Token::Punct(Punct::Colon));
+            if let Some(max) = self.max() {
+                max.to_code(bank, tokens, options);
+            }
+            tokens.push(Token::Punct(Punct::RightBracket));
+        }
+    }
+}
+
+impl<'a> ToCode<'a> for TupleType<'a> {
+    fn to_code(&self, bank: &Storage<'a>, tokens: &mut Vec<Token<'a>>, options: &CodeFormat) {
+        tokens.push(Token::Punct(Punct::LeftBrace));
+        for (i, ty) in self.elements().iter().enumerate() {
+            (i > 0).then(|| tokens.push(Token::Punct(Punct::Comma)));
+            ty.to_code(bank, tokens, options);
+        }
+        tokens.push(Token::Punct(Punct::RightBrace));
+    }
+}
+
+impl<'a> ToCode<'a> for ArrayType<'a> {
+    fn to_code(&self, bank: &Storage<'a>, tokens: &mut Vec<Token<'a>>, options: &CodeFormat) {
+        tokens.push(Token::Punct(Punct::LeftBracket));
+        self.element().to_code(bank, tokens, options);
+        tokens.push(Token::Punct(Punct::Semicolon));
+        self.count().to_code(bank, tokens, options);
+        tokens.push(Token::Punct(Punct::RightBracket));
+    }
+}
+
+impl<'a> ToCode<'a> for MapType<'a> {
+    fn to_code(&self, bank: &Storage<'a>, tokens: &mut Vec<Token<'a>>, options: &CodeFormat) {
+        tokens.push(Token::Punct(Punct::LeftBracket));
+        self.key().to_code(bank, tokens, options);
+        tokens.push(Token::Op(Op::Arrow));
+        self.value().to_code(bank, tokens, options);
+        tokens.push(Token::Punct(Punct::RightBracket));
+    }
+}
+
+impl<'a> ToCode<'a> for SliceType<'a> {
+    fn to_code(&self, bank: &Storage<'a>, tokens: &mut Vec<Token<'a>>, options: &CodeFormat) {
+        tokens.push(Token::Punct(Punct::LeftBracket));
+        self.element().to_code(bank, tokens, options);
+        tokens.push(Token::Punct(Punct::RightBracket));
+    }
+}
+
+impl<'a> ToCode<'a> for FunctionType<'a> {
+    fn to_code(&self, bank: &Storage<'a>, tokens: &mut Vec<Token<'a>>, options: &CodeFormat) {
+        tokens.push(Token::Keyword(Keyword::Fn));
+
+        if !self.attributes().is_empty() {
+            tokens.push(Token::Punct(Punct::LeftBracket));
+            for (i, attr) in self.attributes().iter().enumerate() {
+                (i > 0).then(|| tokens.push(Token::Punct(Punct::Comma)));
+                attr.to_code(bank, tokens, options);
+            }
+            tokens.push(Token::Punct(Punct::RightBracket));
+        }
+
+        tokens.push(Token::Punct(Punct::LeftParen));
+        for (i, param) in self.parameters().iter().enumerate() {
+            (i > 0).then(|| tokens.push(Token::Punct(Punct::Comma)));
+
+            tokens.push(Token::Name(Name::new(param.name())));
+
+            let param_ty = param.param_type();
+            if !matches!(param_ty.get(bank), TypeOwned::InferType) {
+                tokens.push(Token::Punct(Punct::Colon));
+                param_ty.to_code(bank, tokens, options);
+            }
+
+            if let Some(default_expr) = param.default_value() {
+                tokens.push(Token::Op(Op::Set));
+                default_expr.to_code(bank, tokens, options);
+            }
+        }
+        tokens.push(Token::Punct(Punct::RightParen));
+
+        let return_type = self.return_type();
+        if !matches!(return_type.get(bank), TypeOwned::InferType) {
+            tokens.push(Token::Op(Op::Arrow));
+            return_type.to_code(bank, tokens, options);
+        }
+    }
+}
+
+impl<'a> ToCode<'a> for ManagedRefType<'a> {
+    fn to_code(&self, bank: &Storage<'a>, tokens: &mut Vec<Token<'a>>, options: &CodeFormat) {
+        tokens.push(Token::Op(Op::BitAnd));
+        if self.is_mutable() {
+            tokens.push(Token::Keyword(Keyword::Mut));
+        }
+
+        self.target().to_code(bank, tokens, options);
+    }
+}
+
+impl<'a> ToCode<'a> for UnmanagedRefType<'a> {
+    fn to_code(&self, bank: &Storage<'a>, tokens: &mut Vec<Token<'a>>, options: &CodeFormat) {
+        tokens.push(Token::Op(Op::Mul));
+        if self.is_mutable() {
+            tokens.push(Token::Keyword(Keyword::Mut));
+        } else {
+            tokens.push(Token::Keyword(Keyword::Const));
+        }
+
+        self.target().to_code(bank, tokens, options);
+    }
+}
+
+impl<'a> ToCode<'a> for GenericType<'a> {
+    fn to_code(&self, bank: &Storage<'a>, tokens: &mut Vec<Token<'a>>, options: &CodeFormat) {
+        self.base().to_code(bank, tokens, options);
+
+        tokens.push(Token::Op(Op::LogicLt));
+        for (i, (name, value)) in self.arguments().iter().enumerate() {
+            (i > 0).then(|| tokens.push(Token::Punct(Punct::Comma)));
+            if !name.is_empty() {
+                tokens.push(Token::Name(Name::new(name)));
+                tokens.push(Token::Punct(Punct::Colon));
+            }
+            value.to_code(bank, tokens, options);
+        }
+        tokens.push(Token::Op(Op::LogicGt));
+    }
+}
+
+impl<'a> ToCode<'a> for OpaqueType<'a> {
+    fn to_code(&self, _bank: &Storage<'a>, tokens: &mut Vec<Token<'a>>, _options: &CodeFormat) {
+        tokens.push(Token::Keyword(Keyword::Opaque));
+        tokens.push(Token::Punct(Punct::LeftParen));
+        tokens.push(Token::String(self.clone().into_inner()));
+        tokens.push(Token::Punct(Punct::RightParen));
+    }
 }
 
 impl<'a> ToCode<'a> for IntegerLit {
@@ -247,6 +400,42 @@ impl<'a> ToCode<'a> for Variable<'a> {
     }
 }
 
+impl<'a> ToCode<'a> for If<'a> {
+    fn to_code(&self, _bank: &Storage<'a>, _tokens: &mut Vec<Token<'a>>, _options: &CodeFormat) {
+        // TODO: Implement If to_code
+    }
+}
+
+impl<'a> ToCode<'a> for WhileLoop<'a> {
+    fn to_code(&self, _bank: &Storage<'a>, _tokens: &mut Vec<Token<'a>>, _options: &CodeFormat) {
+        // TODO: Implement WhileLoop to_code
+    }
+}
+
+impl<'a> ToCode<'a> for DoWhileLoop<'a> {
+    fn to_code(&self, _bank: &Storage<'a>, _tokens: &mut Vec<Token<'a>>, _options: &CodeFormat) {
+        // TODO: Implement DoWhileLoop to_code
+    }
+}
+
+impl<'a> ToCode<'a> for Switch<'a> {
+    fn to_code(&self, _bank: &Storage<'a>, _tokens: &mut Vec<Token<'a>>, _options: &CodeFormat) {
+        // TODO: Implement Switch to_code
+    }
+}
+
+impl<'a> ToCode<'a> for Break<'a> {
+    fn to_code(&self, _bank: &Storage<'a>, _tokens: &mut Vec<Token<'a>>, _options: &CodeFormat) {
+        // TODO: Implement Break to_code
+    }
+}
+
+impl<'a> ToCode<'a> for Continue<'a> {
+    fn to_code(&self, _bank: &Storage<'a>, _tokens: &mut Vec<Token<'a>>, _options: &CodeFormat) {
+        // TODO: Implement Continue to_code
+    }
+}
+
 impl<'a> ToCode<'a> for Return<'a> {
     fn to_code(&self, bank: &Storage<'a>, tokens: &mut Vec<Token<'a>>, options: &CodeFormat) {
         tokens.push(Token::Keyword(Keyword::Ret));
@@ -256,156 +445,21 @@ impl<'a> ToCode<'a> for Return<'a> {
     }
 }
 
-impl<'a> ToCode<'a> for RefinementType<'a> {
-    fn to_code(&self, bank: &Storage<'a>, tokens: &mut Vec<Token<'a>>, options: &CodeFormat) {
-        self.base().to_code(bank, tokens, options);
-
-        if let Some(width) = self.width() {
-            tokens.push(Token::Punct(Punct::Colon));
-            width.to_code(bank, tokens, options);
-        }
-
-        if self.min().is_some() || self.max().is_some() {
-            tokens.push(Token::Punct(Punct::Colon));
-            tokens.push(Token::Punct(Punct::LeftBracket));
-            if let Some(min) = self.min() {
-                min.to_code(bank, tokens, options);
-            }
-            tokens.push(Token::Punct(Punct::Colon));
-            if let Some(max) = self.max() {
-                max.to_code(bank, tokens, options);
-            }
-            tokens.push(Token::Punct(Punct::RightBracket));
-        }
+impl<'a> ToCode<'a> for ForEach<'a> {
+    fn to_code(&self, _bank: &Storage<'a>, _tokens: &mut Vec<Token<'a>>, _options: &CodeFormat) {
+        // TODO: Implement ForEach to_code
     }
 }
 
-impl<'a> ToCode<'a> for TupleType<'a> {
-    fn to_code(&self, bank: &Storage<'a>, tokens: &mut Vec<Token<'a>>, options: &CodeFormat) {
-        tokens.push(Token::Punct(Punct::LeftBrace));
-        for (i, ty) in self.elements().iter().enumerate() {
-            (i > 0).then(|| tokens.push(Token::Punct(Punct::Comma)));
-            ty.to_code(bank, tokens, options);
-        }
-        tokens.push(Token::Punct(Punct::RightBrace));
+impl<'a> ToCode<'a> for Await<'a> {
+    fn to_code(&self, _bank: &Storage<'a>, _tokens: &mut Vec<Token<'a>>, _options: &CodeFormat) {
+        // TODO: Implement Await to_code
     }
 }
 
-impl<'a> ToCode<'a> for ArrayType<'a> {
-    fn to_code(&self, bank: &Storage<'a>, tokens: &mut Vec<Token<'a>>, options: &CodeFormat) {
-        tokens.push(Token::Punct(Punct::LeftBracket));
-        self.element().to_code(bank, tokens, options);
-        tokens.push(Token::Punct(Punct::Semicolon));
-        self.count().to_code(bank, tokens, options);
-        tokens.push(Token::Punct(Punct::RightBracket));
-    }
-}
-
-impl<'a> ToCode<'a> for MapType<'a> {
-    fn to_code(&self, bank: &Storage<'a>, tokens: &mut Vec<Token<'a>>, options: &CodeFormat) {
-        tokens.push(Token::Punct(Punct::LeftBracket));
-        self.key().to_code(bank, tokens, options);
-        tokens.push(Token::Op(Op::Arrow));
-        self.value().to_code(bank, tokens, options);
-        tokens.push(Token::Punct(Punct::RightBracket));
-    }
-}
-
-impl<'a> ToCode<'a> for SliceType<'a> {
-    fn to_code(&self, bank: &Storage<'a>, tokens: &mut Vec<Token<'a>>, options: &CodeFormat) {
-        tokens.push(Token::Punct(Punct::LeftBracket));
-        self.element().to_code(bank, tokens, options);
-        tokens.push(Token::Punct(Punct::RightBracket));
-    }
-}
-
-impl<'a> ToCode<'a> for FunctionType<'a> {
-    fn to_code(&self, bank: &Storage<'a>, tokens: &mut Vec<Token<'a>>, options: &CodeFormat) {
-        tokens.push(Token::Keyword(Keyword::Fn));
-
-        if !self.attributes().is_empty() {
-            tokens.push(Token::Punct(Punct::LeftBracket));
-            for (i, attr) in self.attributes().iter().enumerate() {
-                (i > 0).then(|| tokens.push(Token::Punct(Punct::Comma)));
-                attr.to_code(bank, tokens, options);
-            }
-            tokens.push(Token::Punct(Punct::RightBracket));
-        }
-
-        tokens.push(Token::Punct(Punct::LeftParen));
-        for (i, param) in self.parameters().iter().enumerate() {
-            (i > 0).then(|| tokens.push(Token::Punct(Punct::Comma)));
-
-            tokens.push(Token::Name(Name::new(param.name())));
-
-            let param_ty = param.param_type();
-            if !matches!(param_ty.get(bank), TypeOwned::InferType) {
-                tokens.push(Token::Punct(Punct::Colon));
-                param_ty.to_code(bank, tokens, options);
-            }
-
-            if let Some(default_expr) = param.default_value() {
-                tokens.push(Token::Op(Op::Set));
-                default_expr.to_code(bank, tokens, options);
-            }
-        }
-        tokens.push(Token::Punct(Punct::RightParen));
-
-        let return_type = self.return_type();
-        if !matches!(return_type.get(bank), TypeOwned::InferType) {
-            tokens.push(Token::Op(Op::Arrow));
-            return_type.to_code(bank, tokens, options);
-        }
-    }
-}
-
-impl<'a> ToCode<'a> for ManagedRefType<'a> {
-    fn to_code(&self, bank: &Storage<'a>, tokens: &mut Vec<Token<'a>>, options: &CodeFormat) {
-        tokens.push(Token::Op(Op::BitAnd));
-        if self.is_mutable() {
-            tokens.push(Token::Keyword(Keyword::Mut));
-        }
-
-        self.target().to_code(bank, tokens, options);
-    }
-}
-
-impl<'a> ToCode<'a> for UnmanagedRefType<'a> {
-    fn to_code(&self, bank: &Storage<'a>, tokens: &mut Vec<Token<'a>>, options: &CodeFormat) {
-        tokens.push(Token::Op(Op::Mul));
-        if self.is_mutable() {
-            tokens.push(Token::Keyword(Keyword::Mut));
-        } else {
-            tokens.push(Token::Keyword(Keyword::Const));
-        }
-
-        self.target().to_code(bank, tokens, options);
-    }
-}
-
-impl<'a> ToCode<'a> for GenericType<'a> {
-    fn to_code(&self, bank: &Storage<'a>, tokens: &mut Vec<Token<'a>>, options: &CodeFormat) {
-        self.base().to_code(bank, tokens, options);
-
-        tokens.push(Token::Op(Op::LogicLt));
-        for (i, (name, value)) in self.arguments().iter().enumerate() {
-            (i > 0).then(|| tokens.push(Token::Punct(Punct::Comma)));
-            if !name.is_empty() {
-                tokens.push(Token::Name(Name::new(name)));
-                tokens.push(Token::Punct(Punct::Colon));
-            }
-            value.to_code(bank, tokens, options);
-        }
-        tokens.push(Token::Op(Op::LogicGt));
-    }
-}
-
-impl<'a> ToCode<'a> for OpaqueType<'a> {
-    fn to_code(&self, _bank: &Storage<'a>, tokens: &mut Vec<Token<'a>>, _options: &CodeFormat) {
-        tokens.push(Token::Keyword(Keyword::Opaque));
-        tokens.push(Token::Punct(Punct::LeftParen));
-        tokens.push(Token::String(self.clone().into_inner()));
-        tokens.push(Token::Punct(Punct::RightParen));
+impl<'a> ToCode<'a> for Assert<'a> {
+    fn to_code(&self, _bank: &Storage<'a>, _tokens: &mut Vec<Token<'a>>, _options: &CodeFormat) {
+        // TODO: Implement Assert to_code
     }
 }
 
@@ -470,7 +524,16 @@ impl<'a> ToCode<'a> for ExprKey<'a> {
             ExprRef::Variable(e) => e.to_code(bank, tokens, options),
             ExprRef::Identifier(name) => tokens.push(Token::Name(Name::new(name))),
 
+            ExprRef::If(e) => e.to_code(bank, tokens, options),
+            ExprRef::WhileLoop(e) => e.to_code(bank, tokens, options),
+            ExprRef::DoWhileLoop(e) => e.to_code(bank, tokens, options),
+            ExprRef::Switch(e) => e.to_code(bank, tokens, options),
+            ExprRef::Break(e) => e.to_code(bank, tokens, options),
+            ExprRef::Continue(e) => e.to_code(bank, tokens, options),
             ExprRef::Return(e) => e.to_code(bank, tokens, options),
+            ExprRef::ForEach(e) => e.to_code(bank, tokens, options),
+            ExprRef::Await(e) => e.to_code(bank, tokens, options),
+            ExprRef::Assert(e) => e.to_code(bank, tokens, options),
         }
 
         if has_parentheses {
