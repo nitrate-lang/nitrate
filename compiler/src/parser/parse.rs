@@ -46,11 +46,7 @@ impl<'storage, 'logger, 'a> Parser<'storage, 'logger, 'a> {
     }
 
     pub fn is_supported(&self, language_version: (u32, u32)) -> bool {
-        match language_version {
-            (1, _) => true,
-
-            _ => false,
-        }
+        matches!(language_version, (1, _))
     }
 
     pub fn parse(&mut self) -> Option<SourceModel<'a>> {

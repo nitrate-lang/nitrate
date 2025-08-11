@@ -19,15 +19,13 @@ impl<'a> RefinementOptions<'a> {
 impl<'storage, 'logger, 'a> Parser<'storage, 'logger, 'a> {
     fn parse_refinement_range(&mut self) -> Option<(Option<ExprKey<'a>>, Option<ExprKey<'a>>)> {
         assert!(self.lexer.peek_t() == Token::Punct(Punct::LeftBracket));
-        self.lexer.skip();
+        self.lexer.skip_tok();
 
         let mut minimum_bound = None;
         let mut maximum_bound = None;
 
         if !self.lexer.skip_if(&Token::Punct(Punct::Colon)) {
-            let Some(minimum) = self.parse_expression() else {
-                return None;
-            };
+            let minimum = self.parse_expression()?;
 
             if !self.lexer.skip_if(&Token::Punct(Punct::Colon)) {
                 error!(
@@ -43,9 +41,7 @@ impl<'storage, 'logger, 'a> Parser<'storage, 'logger, 'a> {
         }
 
         if !self.lexer.skip_if(&Token::Punct(Punct::RightBracket)) {
-            let Some(maximum) = self.parse_expression() else {
-                return None;
-            };
+            let maximum = self.parse_expression()?;
 
             if !self.lexer.skip_if(&Token::Punct(Punct::RightBracket)) {
                 error!(
@@ -71,9 +67,7 @@ impl<'storage, 'logger, 'a> Parser<'storage, 'logger, 'a> {
         }
 
         if self.lexer.next_is(&Token::Punct(Punct::LeftBracket)) {
-            let Some((minimum, maximum)) = self.parse_refinement_range() else {
-                return None;
-            };
+            let (minimum, maximum) = self.parse_refinement_range()?;
 
             return Some(RefinementOptions {
                 minimum,
@@ -82,9 +76,7 @@ impl<'storage, 'logger, 'a> Parser<'storage, 'logger, 'a> {
             });
         }
 
-        let Some(width) = self.parse_expression() else {
-            return None;
-        };
+        let width = self.parse_expression()?;
 
         if !self.lexer.skip_if(&Token::Punct(Punct::Colon)) {
             return Some(RefinementOptions {
@@ -104,9 +96,7 @@ impl<'storage, 'logger, 'a> Parser<'storage, 'logger, 'a> {
             return None;
         }
 
-        let Some((minimum, maximum)) = self.parse_refinement_range() else {
-            return None;
-        };
+        let (minimum, maximum) = self.parse_refinement_range()?;
 
         Some(RefinementOptions {
             width: Some(width),
@@ -126,7 +116,7 @@ impl<'storage, 'logger, 'a> Parser<'storage, 'logger, 'a> {
              * to be parsed as an expression.
              */
             let rewind_pos = self.lexer.sync_position();
-            self.lexer.skip();
+            self.lexer.skip_tok();
 
             if self.lexer.skip_if(&Token::Punct(Punct::Colon)) {
                 argument_name = name.name();
@@ -144,7 +134,7 @@ impl<'storage, 'logger, 'a> Parser<'storage, 'logger, 'a> {
             | Token::Char(_) => self.parse_expression(),
 
             Token::Op(Op::Add) => {
-                self.lexer.skip();
+                self.lexer.skip_tok();
                 self.parse_expression()
             }
 
@@ -169,7 +159,7 @@ impl<'storage, 'logger, 'a> Parser<'storage, 'logger, 'a> {
 
     fn parse_generic_arguments(&mut self) -> Option<Vec<(&'a str, ExprKey<'a>)>> {
         assert!(self.lexer.peek_t() == Token::Op(Op::LogicLt));
-        self.lexer.skip();
+        self.lexer.skip_tok();
 
         self.generic_type_depth += 1;
         self.generic_type_suffix_terminator_ambiguity = false;
@@ -195,9 +185,7 @@ impl<'storage, 'logger, 'a> Parser<'storage, 'logger, 'a> {
                 break;
             }
 
-            let Some(generic_argument) = self.parse_generic_argument() else {
-                return None;
-            };
+            let generic_argument = self.parse_generic_argument()?;
 
             arguments.push(generic_argument);
 
@@ -227,7 +215,7 @@ impl<'storage, 'logger, 'a> Parser<'storage, 'logger, 'a> {
 
     fn parse_named_type(&mut self, type_name: &'a str) -> Option<TypeKey<'a>> {
         assert!(self.lexer.peek_t() == Token::Name(Name::new(type_name)));
-        self.lexer.skip();
+        self.lexer.skip_tok();
 
         let basis_type = match type_name {
             "_" => Builder::new(self.storage).get_infer_type(),
@@ -240,9 +228,7 @@ impl<'storage, 'logger, 'a> Parser<'storage, 'logger, 'a> {
 
         let is_already_parsing_generic_type = self.generic_type_depth != 0;
 
-        let Some(generic_args) = self.parse_generic_arguments() else {
-            return None;
-        };
+        let generic_args = self.parse_generic_arguments()?;
 
         if !is_already_parsing_generic_type {
             match self.generic_type_depth {
@@ -282,7 +268,7 @@ impl<'storage, 'logger, 'a> Parser<'storage, 'logger, 'a> {
 
     fn parse_tuple_type(&mut self) -> Option<TypeKey<'a>> {
         assert!(self.lexer.peek_t() == Token::Punct(Punct::LeftBrace));
-        self.lexer.skip();
+        self.lexer.skip_tok();
 
         let mut tuple_elements = Vec::new();
         self.lexer.skip_if(&Token::Punct(Punct::Comma));
@@ -292,9 +278,7 @@ impl<'storage, 'logger, 'a> Parser<'storage, 'logger, 'a> {
                 break;
             }
 
-            let Some(element) = self.parse_type() else {
-                return None;
-            };
+            let element = self.parse_type()?;
 
             tuple_elements.push(element);
 
@@ -327,11 +311,9 @@ impl<'storage, 'logger, 'a> Parser<'storage, 'logger, 'a> {
 
     fn parse_rest_of_array(&mut self, element_type: TypeKey<'a>) -> Option<TypeKey<'a>> {
         assert!(self.lexer.peek_t() == Token::Punct(Punct::Semicolon));
-        self.lexer.skip();
+        self.lexer.skip_tok();
 
-        let Some(array_count) = self.parse_expression() else {
-            return None;
-        };
+        let array_count = self.parse_expression()?;
 
         if !self.lexer.skip_if(&Token::Punct(Punct::RightBracket)) {
             error!(
@@ -354,11 +336,9 @@ impl<'storage, 'logger, 'a> Parser<'storage, 'logger, 'a> {
 
     fn parse_rest_of_map_type(&mut self, key_type: TypeKey<'a>) -> Option<TypeKey<'a>> {
         assert!(self.lexer.peek_t() == Token::Op(Op::Arrow));
-        self.lexer.skip();
+        self.lexer.skip_tok();
 
-        let Some(value_type) = self.parse_type() else {
-            return None;
-        };
+        let value_type = self.parse_type()?;
 
         if !self.lexer.skip_if(&Token::Punct(Punct::RightBracket)) {
             error!(
@@ -388,7 +368,7 @@ impl<'storage, 'logger, 'a> Parser<'storage, 'logger, 'a> {
          */
 
         assert!(self.lexer.peek_t() == Token::Punct(Punct::RightBracket));
-        self.lexer.skip();
+        self.lexer.skip_tok();
 
         Some(
             Builder::new(self.storage)
@@ -400,11 +380,9 @@ impl<'storage, 'logger, 'a> Parser<'storage, 'logger, 'a> {
 
     fn parse_array_or_slice_or_map(&mut self) -> Option<TypeKey<'a>> {
         assert!(self.lexer.peek_t() == Token::Punct(Punct::LeftBracket));
-        self.lexer.skip();
+        self.lexer.skip_tok();
 
-        let Some(something_type) = self.parse_type() else {
-            return None;
-        };
+        let something_type = self.parse_type()?;
 
         if self.lexer.next_is(&Token::Punct(Punct::Semicolon)) {
             return self.parse_rest_of_array(something_type);
@@ -450,14 +428,14 @@ impl<'storage, 'logger, 'a> Parser<'storage, 'logger, 'a> {
          */
 
         assert!(self.lexer.peek_t() == Token::Op(Op::BitAnd));
-        self.lexer.skip();
+        self.lexer.skip_tok();
 
-        let is_mutable = self.lexer.skip_if(&Token::Keyword(Keyword::Mut))
-            || (self.lexer.skip_if(&Token::Keyword(Keyword::Const)) && false);
+        let is_mutable = self.lexer.skip_if(&Token::Keyword(Keyword::Mut));
+        if !is_mutable {
+            self.lexer.skip_if(&Token::Keyword(Keyword::Const));
+        }
 
-        let Some(target) = self.parse_type() else {
-            return None;
-        };
+        let target = self.parse_type()?;
 
         Some(
             Builder::new(self.storage)
@@ -482,14 +460,14 @@ impl<'storage, 'logger, 'a> Parser<'storage, 'logger, 'a> {
          */
 
         assert!(self.lexer.peek_t() == Token::Op(Op::Mul));
-        self.lexer.skip();
+        self.lexer.skip_tok();
 
-        let is_mutable = self.lexer.skip_if(&Token::Keyword(Keyword::Mut))
-            || (self.lexer.skip_if(&Token::Keyword(Keyword::Const)) && false);
+        let is_mutable = self.lexer.skip_if(&Token::Keyword(Keyword::Mut));
+        if !is_mutable {
+            self.lexer.skip_if(&Token::Keyword(Keyword::Const));
+        }
 
-        let Some(target) = self.parse_type() else {
-            return None;
-        };
+        let target = self.parse_type()?;
 
         Some(
             Builder::new(self.storage)
@@ -514,11 +492,7 @@ impl<'storage, 'logger, 'a> Parser<'storage, 'logger, 'a> {
                 break;
             }
 
-            let Some(the_attribute) = self.parse_expression() else {
-                return None;
-            };
-
-            attributes.push(the_attribute);
+            attributes.push(self.parse_expression()?);
 
             if !self.lexer.skip_if(&Token::Punct(Punct::Comma)) {
                 if self.lexer.skip_if(&Token::Punct(Punct::RightBracket)) {
@@ -564,21 +538,13 @@ impl<'storage, 'logger, 'a> Parser<'storage, 'logger, 'a> {
                 .into_name();
 
             let parameter_type = if self.lexer.skip_if(&Token::Punct(Punct::Colon)) {
-                let Some(parameter_type) = self.parse_type() else {
-                    return None;
-                };
-
-                parameter_type
+                self.parse_type()?
             } else {
                 Builder::new(self.storage).get_infer_type()
             };
 
             let parameter_default = if self.lexer.skip_if(&Token::Op(Op::Set)) {
-                let Some(parameter_default) = self.parse_expression() else {
-                    return None;
-                };
-
-                Some(parameter_default)
+                Some(self.parse_expression()?)
             } else {
                 None
             };
@@ -615,24 +581,14 @@ impl<'storage, 'logger, 'a> Parser<'storage, 'logger, 'a> {
          */
 
         assert!(self.lexer.peek_t() == Token::Keyword(Keyword::Fn));
-        self.lexer.skip();
+        self.lexer.skip_tok();
 
-        let Some(attributes) = self.parse_function_attributes() else {
-            return None;
-        };
-
+        let attributes = self.parse_function_attributes()?;
         let _ignored_name = self.lexer.next_if_name();
-
-        let Some(parameters) = self.parse_function_parameters() else {
-            return None;
-        };
+        let parameters = self.parse_function_parameters()?;
 
         let return_type = if self.lexer.skip_if(&Token::Op(Op::Arrow)) {
-            let Some(return_type) = self.parse_type() else {
-                return None;
-            };
-
-            return_type
+            self.parse_type()?
         } else {
             Builder::new(self.storage).get_infer_type()
         };
@@ -654,7 +610,7 @@ impl<'storage, 'logger, 'a> Parser<'storage, 'logger, 'a> {
          */
 
         assert!(self.lexer.peek_t() == Token::Keyword(Keyword::Opaque));
-        self.lexer.skip();
+        self.lexer.skip_tok();
 
         if !self.lexer.skip_if(&Token::Punct(Punct::LeftParen)) {
             error!(
@@ -702,7 +658,7 @@ impl<'storage, 'logger, 'a> Parser<'storage, 'logger, 'a> {
     }
 
     fn parse_type_primary(&mut self) -> Option<TypeKey<'a>> {
-        let first_token = self.lexer.peek();
+        let first_token = self.lexer.peek_tok();
         let current_pos = first_token.start();
 
         let old_generic_type_depth = self.generic_type_depth;
@@ -713,82 +669,82 @@ impl<'storage, 'logger, 'a> Parser<'storage, 'logger, 'a> {
 
         let result = match first_token.into_token() {
             Token::Keyword(Keyword::Bool) => {
-                self.lexer.skip();
+                self.lexer.skip_tok();
                 Some(Builder::new(self.storage).get_bool())
             }
 
             Token::Keyword(Keyword::U8) => {
-                self.lexer.skip();
+                self.lexer.skip_tok();
                 Some(Builder::new(self.storage).get_u8())
             }
 
             Token::Keyword(Keyword::U16) => {
-                self.lexer.skip();
+                self.lexer.skip_tok();
                 Some(Builder::new(self.storage).get_u16())
             }
 
             Token::Keyword(Keyword::U32) => {
-                self.lexer.skip();
+                self.lexer.skip_tok();
                 Some(Builder::new(self.storage).get_u32())
             }
 
             Token::Keyword(Keyword::U64) => {
-                self.lexer.skip();
+                self.lexer.skip_tok();
                 Some(Builder::new(self.storage).get_u64())
             }
 
             Token::Keyword(Keyword::U128) => {
-                self.lexer.skip();
+                self.lexer.skip_tok();
                 Some(Builder::new(self.storage).get_u128())
             }
 
             Token::Keyword(Keyword::I8) => {
-                self.lexer.skip();
+                self.lexer.skip_tok();
                 Some(Builder::new(self.storage).get_i8())
             }
 
             Token::Keyword(Keyword::I16) => {
-                self.lexer.skip();
+                self.lexer.skip_tok();
                 Some(Builder::new(self.storage).get_i16())
             }
 
             Token::Keyword(Keyword::I32) => {
-                self.lexer.skip();
+                self.lexer.skip_tok();
                 Some(Builder::new(self.storage).get_i32())
             }
 
             Token::Keyword(Keyword::I64) => {
-                self.lexer.skip();
+                self.lexer.skip_tok();
                 Some(Builder::new(self.storage).get_i64())
             }
 
             Token::Keyword(Keyword::I128) => {
-                self.lexer.skip();
+                self.lexer.skip_tok();
                 Some(Builder::new(self.storage).get_i128())
             }
 
             Token::Keyword(Keyword::F8) => {
-                self.lexer.skip();
+                self.lexer.skip_tok();
                 Some(Builder::new(self.storage).get_f8())
             }
 
             Token::Keyword(Keyword::F16) => {
-                self.lexer.skip();
+                self.lexer.skip_tok();
                 Some(Builder::new(self.storage).get_f16())
             }
 
             Token::Keyword(Keyword::F32) => {
-                self.lexer.skip();
+                self.lexer.skip_tok();
                 Some(Builder::new(self.storage).get_f32())
             }
 
             Token::Keyword(Keyword::F64) => {
-                self.lexer.skip();
+                self.lexer.skip_tok();
                 Some(Builder::new(self.storage).get_f64())
             }
 
             Token::Keyword(Keyword::F128) => {
-                self.lexer.skip();
+                self.lexer.skip_tok();
                 Some(Builder::new(self.storage).get_f128())
             }
 

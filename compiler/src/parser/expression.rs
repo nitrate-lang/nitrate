@@ -73,7 +73,7 @@ impl<'storage, 'logger, 'a> Parser<'storage, 'logger, 'a> {
         };
 
         if let Some(type_name) = type_name {
-            self.lexer.skip();
+            self.lexer.skip_tok();
 
             Builder::new(self.storage)
                 .create_binexpr()
@@ -90,7 +90,7 @@ impl<'storage, 'logger, 'a> Parser<'storage, 'logger, 'a> {
         assert!(self.lexer.peek_t() == Token::Keyword(Keyword::Type));
 
         let rewind_pos = self.lexer.sync_position();
-        self.lexer.skip();
+        self.lexer.skip_tok();
 
         if self.lexer.skip_if(&Token::Punct(Punct::LeftParen)) {
             let Some(the_type) = self.parse_type() else {
@@ -154,7 +154,7 @@ impl<'storage, 'logger, 'a> Parser<'storage, 'logger, 'a> {
 
     fn parse_break(&mut self) -> Option<ExprKey<'a>> {
         assert!(self.lexer.peek_t() == Token::Keyword(Keyword::Break));
-        self.lexer.skip();
+        self.lexer.skip_tok();
 
         // TODO: Implement break branch label parsing logic
 
@@ -163,7 +163,7 @@ impl<'storage, 'logger, 'a> Parser<'storage, 'logger, 'a> {
 
     fn parse_continue(&mut self) -> Option<ExprKey<'a>> {
         assert!(self.lexer.peek_t() == Token::Keyword(Keyword::Continue));
-        self.lexer.skip();
+        self.lexer.skip_tok();
 
         // TODO: Implement continue branch label parsing logic
 
@@ -186,7 +186,7 @@ impl<'storage, 'logger, 'a> Parser<'storage, 'logger, 'a> {
 
     fn parse_await(&mut self) -> Option<ExprKey<'a>> {
         assert!(self.lexer.peek_t() == Token::Keyword(Keyword::Await));
-        self.lexer.skip();
+        self.lexer.skip_tok();
 
         let Some(expr) = self.parse_expression() else {
             self.set_failed_bit();
@@ -288,37 +288,37 @@ impl<'storage, 'logger, 'a> Parser<'storage, 'logger, 'a> {
     fn parse_expression_primary(&mut self) -> Option<ExprKey<'a>> {
         match self.lexer.peek_t() {
             Token::Integer(int) => {
-                self.lexer.skip();
+                self.lexer.skip_tok();
                 let lit = self.parse_integer_literal(int.value(), int.kind());
                 Some(self.parse_literal_suffix(lit))
             }
 
             Token::Float(float) => {
-                self.lexer.skip();
+                self.lexer.skip_tok();
                 let lit = self.parse_float_literal(float);
                 Some(self.parse_literal_suffix(lit))
             }
 
             Token::String(string) => {
-                self.lexer.skip();
+                self.lexer.skip_tok();
                 let lit = self.parse_string_literal(string);
                 Some(self.parse_literal_suffix(lit))
             }
 
             Token::BString(data) => {
-                self.lexer.skip();
+                self.lexer.skip_tok();
                 let lit = self.parse_bstring_literal(data);
                 Some(self.parse_literal_suffix(lit))
             }
 
             Token::Char(character) => {
-                self.lexer.skip();
+                self.lexer.skip_tok();
                 let lit = self.parse_char_literal(character);
                 Some(self.parse_literal_suffix(lit))
             }
 
             Token::Name(name) => {
-                self.lexer.skip();
+                self.lexer.skip_tok();
                 Some(Builder::new(self.storage).create_identifier(name.name()))
             }
 

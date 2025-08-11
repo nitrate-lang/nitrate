@@ -48,7 +48,7 @@ impl<'a> Lexer<'a> {
         }
     }
 
-    pub fn next(&mut self) -> AnnotatedToken<'a> {
+    pub fn next_tok(&mut self) -> AnnotatedToken<'a> {
         let token = self
             .current
             .take()
@@ -59,7 +59,7 @@ impl<'a> Lexer<'a> {
         token
     }
 
-    pub fn peek(&mut self) -> AnnotatedToken<'a> {
+    pub fn peek_tok(&mut self) -> AnnotatedToken<'a> {
         let token = self
             .current
             .take()
@@ -69,7 +69,7 @@ impl<'a> Lexer<'a> {
         token
     }
 
-    pub fn skip(&mut self) {
+    pub fn skip_tok(&mut self) {
         if self.current.is_some() {
             self.current = None;
         } else {
@@ -81,12 +81,12 @@ impl<'a> Lexer<'a> {
 
     #[inline(always)]
     pub fn next_t(&mut self) -> Token<'a> {
-        self.next().into_token()
+        self.next_tok().into_token()
     }
 
     #[inline(always)]
     pub fn peek_t(&mut self) -> Token<'a> {
-        self.peek().into_token()
+        self.peek_tok().into_token()
     }
 
     #[inline(always)]
@@ -97,7 +97,7 @@ impl<'a> Lexer<'a> {
     #[inline(always)]
     pub fn skip_if(&mut self, matches: &Token<'a>) -> bool {
         if &self.peek_t() == matches {
-            self.skip();
+            self.skip_tok();
             true
         } else {
             false
@@ -124,7 +124,7 @@ impl<'a> Lexer<'a> {
     #[inline(always)]
     pub fn next_if_string(&mut self) -> Option<StringData<'a>> {
         if let Token::String(string_data) = self.peek_t() {
-            self.skip();
+            self.skip_tok();
             Some(string_data)
         } else {
             None
@@ -134,7 +134,7 @@ impl<'a> Lexer<'a> {
     #[inline(always)]
     pub fn next_if_bstring(&mut self) -> Option<BStringData<'a>> {
         if let Token::BString(bstring_data) = self.peek_t() {
-            self.skip();
+            self.skip_tok();
             Some(bstring_data)
         } else {
             None
@@ -144,7 +144,7 @@ impl<'a> Lexer<'a> {
     #[inline(always)]
     pub fn next_if_name(&mut self) -> Option<Name<'a>> {
         if let Token::Name(name) = self.peek_t() {
-            self.skip();
+            self.skip_tok();
             Some(name)
         } else {
             None
@@ -154,7 +154,7 @@ impl<'a> Lexer<'a> {
     #[inline(always)]
     pub fn next_if_keyword(&mut self) -> Option<Keyword> {
         if let Token::Keyword(keyword) = self.peek_t() {
-            self.skip();
+            self.skip_tok();
             Some(keyword)
         } else {
             None
@@ -164,7 +164,7 @@ impl<'a> Lexer<'a> {
     #[inline(always)]
     pub fn next_if_op(&mut self) -> Option<Op> {
         if let Token::Op(op) = self.peek_t() {
-            self.skip();
+            self.skip_tok();
             Some(op)
         } else {
             None
@@ -174,7 +174,7 @@ impl<'a> Lexer<'a> {
     #[inline(always)]
     pub fn next_if_integer(&mut self) -> Option<Integer> {
         if let Token::Integer(integer) = self.peek_t() {
-            self.skip();
+            self.skip_tok();
             Some(integer)
         } else {
             None
@@ -184,7 +184,7 @@ impl<'a> Lexer<'a> {
     #[inline(always)]
     pub fn next_if_float(&mut self) -> Option<f64> {
         if let Token::Float(float) = self.peek_t() {
-            self.skip();
+            self.skip_tok();
             Some(float)
         } else {
             None
@@ -1351,7 +1351,7 @@ fn test_parse_string_escape() {
 
     let mut lexer = Lexer::new(&test_vector, "test_file").expect("Failed to create lexer");
 
-    match lexer.next().token() {
+    match lexer.next_tok().token() {
         Token::String(s) => {
             assert_eq!(s.get(), expected, "Parsed string does not match expected");
         }

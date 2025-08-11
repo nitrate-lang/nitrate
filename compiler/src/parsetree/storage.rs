@@ -439,11 +439,10 @@ impl<'a> Storage<'a> {
 
             ExprOwned::Discard => Some(ExprKey::new_single(ExprKind::Discard)),
 
-            ExprOwned::IntegerLit(node) => match node.try_to_u128() {
-                _ => ExprKey::new(ExprKind::IntegerLit, self.integers.len()).inspect(|_| {
+            ExprOwned::IntegerLit(node) => ExprKey::new(ExprKind::IntegerLit, self.integers.len())
+                .inspect(|_| {
                     self.integers.push(node);
                 }),
-            },
 
             ExprOwned::FloatLit(node) => ExprKey::new(ExprKind::FloatLit, self.floats.len())
                 .inspect(|_| {
