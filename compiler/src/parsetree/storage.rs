@@ -30,7 +30,7 @@ pub struct TypeKey<'a> {
 }
 
 impl<'a> ExprKey<'a> {
-    pub(crate) fn new(variant: ExprKind, index: usize) -> Option<Self> {
+    fn new(variant: ExprKind, index: usize) -> Option<Self> {
         assert!((variant as u32) < 64, "Variant index must be less than 64");
 
         let can_store_index = index < (1 << 26);
@@ -42,7 +42,7 @@ impl<'a> ExprKey<'a> {
         })
     }
 
-    pub(crate) fn new_single(variant: ExprKind) -> Self {
+    pub fn new_single(variant: ExprKind) -> Self {
         assert!((variant as u32) < 64, "Variant index must be less than 64");
 
         let variant_bits = (variant as u32 + 1) << 26;
@@ -53,7 +53,7 @@ impl<'a> ExprKey<'a> {
         }
     }
 
-    pub(crate) fn variant_index(self) -> ExprKind {
+    fn variant_index(self) -> ExprKind {
         let number = ((self.id.get() >> 26) as u8) - 1;
         ExprKind::try_from(number).expect("Invalid variant index")
     }
@@ -73,7 +73,7 @@ impl<'a> ExprKey<'a> {
 }
 
 impl<'a> TypeKey<'a> {
-    pub(crate) fn new(variant: TypeKind, index: usize) -> Option<Self> {
+    fn new(variant: TypeKind, index: usize) -> Option<Self> {
         assert!((variant as u32) < 64, "Variant index must be less than 64");
 
         let can_store_index = index < (1 << 26);
@@ -85,7 +85,7 @@ impl<'a> TypeKey<'a> {
         })
     }
 
-    pub(crate) fn new_single(variant: TypeKind) -> Self {
+    fn new_single(variant: TypeKind) -> Self {
         assert!((variant as u32) < 64, "Variant index must be less than 64");
 
         let variant_bits = (variant as u32 + 1) << 26;
@@ -96,7 +96,7 @@ impl<'a> TypeKey<'a> {
         }
     }
 
-    pub(crate) fn variant_index(self) -> TypeKind {
+    fn variant_index(self) -> TypeKind {
         let number = ((self.id.get() >> 26) as u8) - 1;
 
         match number {
