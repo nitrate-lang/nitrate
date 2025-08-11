@@ -86,7 +86,7 @@ impl<'storage, 'logger, 'a> Parser<'storage, 'logger, 'a> {
             pair.1 = Some(0);
         }
 
-        pair.0.zip(pair.1).map(|(major, minor)| (major, minor))
+        pair.0.zip(pair.1)
     }
 
     fn parse_preamble_version_macro(&mut self, macro_args: Vec<ExprKey<'a>>) -> Option<(u32, u32)> {

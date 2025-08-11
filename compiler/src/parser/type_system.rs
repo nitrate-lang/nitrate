@@ -118,25 +118,21 @@ impl<'storage, 'logger, 'a> Parser<'storage, 'logger, 'a> {
     fn parse_generic_argument(&mut self) -> Option<(&'a str, ExprKey<'a>)> {
         let mut argument_name: &'a str = "";
 
-        match self.lexer.peek_t() {
-            Token::Name(name) => {
-                /* Named generic argument syntax is ambiguous,
-                 * an identifier can be followed by a colon
-                 * to indicate a named argument (followed by the expression value).
-                 * However, if it is not followed by a colon, the identifier is
-                 * to be parsed as an expression.
-                 */
-                let rewind_pos = self.lexer.sync_position();
-                self.lexer.skip();
+        if let Token::Name(name) = self.lexer.peek_t() {
+            /* Named generic argument syntax is ambiguous,
+             * an identifier can be followed by a colon
+             * to indicate a named argument (followed by the expression value).
+             * However, if it is not followed by a colon, the identifier is
+             * to be parsed as an expression.
+             */
+            let rewind_pos = self.lexer.sync_position();
+            self.lexer.skip();
 
-                if self.lexer.skip_if(&Token::Punct(Punct::Colon)) {
-                    argument_name = name.name();
-                } else {
-                    self.lexer.rewind(rewind_pos);
-                }
+            if self.lexer.skip_if(&Token::Punct(Punct::Colon)) {
+                argument_name = name.name();
+            } else {
+                self.lexer.rewind(rewind_pos);
             }
-
-            _ => {}
         }
 
         let current_pos = self.lexer.sync_position();

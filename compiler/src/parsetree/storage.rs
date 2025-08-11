@@ -440,153 +440,130 @@ impl<'a> Storage<'a> {
             ExprOwned::Discard => Some(ExprKey::new_single(ExprKind::Discard)),
 
             ExprOwned::IntegerLit(node) => match node.try_to_u128() {
-                _ => ExprKey::new(ExprKind::IntegerLit, self.integers.len()).and_then(|k| {
+                _ => ExprKey::new(ExprKind::IntegerLit, self.integers.len()).inspect(|k| {
                     self.integers.push(node);
-                    Some(k)
                 }),
             },
 
             ExprOwned::FloatLit(node) => ExprKey::new(ExprKind::FloatLit, self.floats.len())
-                .and_then(|k| {
+                .inspect(|k| {
                     self.floats.push(node);
-                    Some(k)
                 }),
 
             ExprOwned::StringLit(node) => match node.get() {
                 "" => ExprKey::new(ExprKind::StringLit, Self::STRING_LIT_EMPTY_INDEX),
 
-                _ => ExprKey::new(ExprKind::StringLit, self.strings.len()).and_then(|k| {
+                _ => ExprKey::new(ExprKind::StringLit, self.strings.len()).inspect(|k| {
                     self.strings.push(node);
-                    Some(k)
                 }),
             },
 
             ExprOwned::BStringLit(node) => ExprKey::new(ExprKind::BStringLit, self.binaries.len())
-                .and_then(|k| {
+                .inspect(|k| {
                     self.binaries.push(node);
-                    Some(k)
                 }),
 
             ExprOwned::CharLit(ch) => ExprKey::new(ExprKind::CharLit, ch as usize),
 
             ExprOwned::ListLit(node) => {
-                ExprKey::new(ExprKind::ListLit, self.lists.len()).and_then(|k| {
+                ExprKey::new(ExprKind::ListLit, self.lists.len()).inspect(|k| {
                     self.lists.push(node);
-                    Some(k)
                 })
             }
 
             ExprOwned::ObjectLit(node) => ExprKey::new(ExprKind::ObjectLit, self.objects.len())
-                .and_then(|k| {
+                .inspect(|k| {
                     self.objects.push(node);
-                    Some(k)
                 }),
 
             ExprOwned::UnaryExpr(node) => ExprKey::new(ExprKind::UnaryExpr, self.unary_exprs.len())
-                .and_then(|k| {
+                .inspect(|k| {
                     self.unary_exprs.push(node);
-                    Some(k)
                 }),
 
             ExprOwned::BinExpr(node) => ExprKey::new(ExprKind::BinExpr, self.bin_exprs.len())
-                .and_then(|k| {
+                .inspect(|k| {
                     self.bin_exprs.push(node);
-                    Some(k)
                 }),
 
             ExprOwned::Statement(node) => ExprKey::new(ExprKind::Statement, self.statements.len())
-                .and_then(|k| {
+                .inspect(|k| {
                     self.statements.push(node);
-                    Some(k)
                 }),
 
             ExprOwned::Block(node) => {
-                ExprKey::new(ExprKind::Block, self.blocks.len()).and_then(|k| {
+                ExprKey::new(ExprKind::Block, self.blocks.len()).inspect(|k| {
                     self.blocks.push(node);
-                    Some(k)
                 })
             }
 
             ExprOwned::Function(node) => ExprKey::new(ExprKind::Function, self.functions.len())
-                .and_then(|k| {
+                .inspect(|k| {
                     self.functions.push(node);
-                    Some(k)
                 }),
 
             ExprOwned::Variable(node) => ExprKey::new(ExprKind::Variable, self.variables.len())
-                .and_then(|k| {
+                .inspect(|k| {
                     self.variables.push(node);
-                    Some(k)
                 }),
 
             ExprOwned::Identifier(node) => {
-                ExprKey::new(ExprKind::Identifier, self.identifiers.len()).and_then(|k| {
+                ExprKey::new(ExprKind::Identifier, self.identifiers.len()).inspect(|k| {
                     self.identifiers.push(node);
-                    Some(k)
                 })
             }
 
-            ExprOwned::If(node) => ExprKey::new(ExprKind::If, self.ifs.len()).and_then(|k| {
+            ExprOwned::If(node) => ExprKey::new(ExprKind::If, self.ifs.len()).inspect(|k| {
                 self.ifs.push(node);
-                Some(k)
             }),
 
             ExprOwned::WhileLoop(node) => ExprKey::new(ExprKind::WhileLoop, self.while_loops.len())
-                .and_then(|k| {
+                .inspect(|k| {
                     self.while_loops.push(node);
-                    Some(k)
                 }),
 
             ExprOwned::DoWhileLoop(node) => {
-                ExprKey::new(ExprKind::DoWhileLoop, self.do_while_loops.len()).and_then(|k| {
+                ExprKey::new(ExprKind::DoWhileLoop, self.do_while_loops.len()).inspect(|k| {
                     self.do_while_loops.push(node);
-                    Some(k)
                 })
             }
 
             ExprOwned::Switch(node) => ExprKey::new(ExprKind::Switch, self.switches.len())
-                .and_then(|k| {
+                .inspect(|k| {
                     self.switches.push(node);
-                    Some(k)
                 }),
 
             ExprOwned::Break(node) => {
-                ExprKey::new(ExprKind::Break, self.breaks.len()).and_then(|k| {
+                ExprKey::new(ExprKind::Break, self.breaks.len()).inspect(|k| {
                     self.breaks.push(node);
-                    Some(k)
                 })
             }
 
             ExprOwned::Continue(node) => ExprKey::new(ExprKind::Continue, self.continues.len())
-                .and_then(|k| {
+                .inspect(|k| {
                     self.continues.push(node);
-                    Some(k)
                 }),
 
             ExprOwned::Return(node) => {
-                ExprKey::new(ExprKind::Return, self.returns.len()).and_then(|k| {
+                ExprKey::new(ExprKind::Return, self.returns.len()).inspect(|k| {
                     self.returns.push(node);
-                    Some(k)
                 })
             }
 
             ExprOwned::ForEach(node) => ExprKey::new(ExprKind::ForEach, self.for_eachs.len())
-                .and_then(|k| {
+                .inspect(|k| {
                     self.for_eachs.push(node);
-                    Some(k)
                 }),
 
             ExprOwned::Await(node) => {
-                ExprKey::new(ExprKind::Await, self.awaits.len()).and_then(|k| {
+                ExprKey::new(ExprKind::Await, self.awaits.len()).inspect(|k| {
                     self.awaits.push(node);
-                    Some(k)
                 })
             }
 
             ExprOwned::Assert(node) => {
-                ExprKey::new(ExprKind::Assert, self.asserts.len()).and_then(|k| {
+                ExprKey::new(ExprKind::Assert, self.asserts.len()).inspect(|k| {
                     self.asserts.push(node);
-                    Some(k)
                 })
             }
         }
@@ -660,7 +637,7 @@ impl<'a> Storage<'a> {
     }
 
     pub fn get_expr(&self, id: ExprKey<'a>) -> ExprRef<'_, 'a> {
-        let index = id.instance_index() as usize;
+        let index = id.instance_index();
 
         match id.variant_index() {
             ExprKind::Bool
@@ -701,7 +678,7 @@ impl<'a> Storage<'a> {
             ExprKind::FloatLit => self.floats.get(index).map(|&f| ExprRef::FloatLit(f)),
             ExprKind::StringLit => self.strings.get(index).map(ExprRef::StringLit),
             ExprKind::BStringLit => self.binaries.get(index).map(ExprRef::BStringLit),
-            ExprKind::CharLit => char::from_u32(index as u32).map(|ch| ExprRef::CharLit(ch)),
+            ExprKind::CharLit => char::from_u32(index as u32).map(ExprRef::CharLit),
             ExprKind::ListLit => self.lists.get(index).map(ExprRef::ListLit),
             ExprKind::ObjectLit => self.objects.get(index).map(ExprRef::ObjectLit),
 
@@ -732,7 +709,7 @@ impl<'a> Storage<'a> {
     }
 
     pub fn get_expr_mut(&mut self, id: ExprKey<'a>) -> ExprRefMut<'_, 'a> {
-        let index = id.instance_index() as usize;
+        let index = id.instance_index();
 
         match id.variant_index() {
             ExprKind::Bool
@@ -773,7 +750,7 @@ impl<'a> Storage<'a> {
             ExprKind::FloatLit => self.floats.get(index).map(|&f| ExprRefMut::FloatLit(f)),
             ExprKind::StringLit => self.strings.get(index).map(ExprRefMut::StringLit),
             ExprKind::BStringLit => self.binaries.get(index).map(ExprRefMut::BStringLit),
-            ExprKind::CharLit => char::from_u32(index as u32).map(|ch| ExprRefMut::CharLit(ch)),
+            ExprKind::CharLit => char::from_u32(index as u32).map(ExprRefMut::CharLit),
             ExprKind::ListLit => self.lists.get_mut(index).map(ExprRefMut::ListLit),
             ExprKind::ObjectLit => self.objects.get_mut(index).map(ExprRefMut::ObjectLit),
 

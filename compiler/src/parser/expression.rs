@@ -87,7 +87,7 @@ impl<'storage, 'logger, 'a> Parser<'storage, 'logger, 'a> {
     }
 
     fn parse_type_or_type_alias(&mut self) -> Option<ExprKey<'a>> {
-        assert!(&self.lexer.peek_t() == &Token::Keyword(Keyword::Type));
+        assert!(self.lexer.peek_t() == Token::Keyword(Keyword::Type));
 
         let rewind_pos = self.lexer.sync_position();
         self.lexer.skip();

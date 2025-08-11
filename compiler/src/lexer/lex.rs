@@ -386,31 +386,27 @@ impl<'a> Lexer<'a> {
 
     #[inline(always)]
     fn parse_float(&mut self, start_pos: &SourcePosition) -> Result<Token<'a>, ()> {
-        match self.peek_byte() {
-            Ok(b'.') => {
-                let rewind_pos = self.reader_position();
-                self.advance(b'.');
+        if let Ok(b'.') = self.peek_byte() {
+            let rewind_pos = self.reader_position();
+            self.advance(b'.');
 
-                match self.peek_byte() {
-                    Ok(b) if b.is_ascii_digit() => {
-                        self.read_while(|b| b.is_ascii_digit() || b == b'_');
+            match self.peek_byte() {
+                Ok(b) if b.is_ascii_digit() => {
+                    self.read_while(|b| b.is_ascii_digit() || b == b'_');
 
-                        let literal = str::from_utf8(
-                            &self.source[start_pos.offset()..self.reader_position().offset()],
-                        )
-                        .expect("Failed to convert float literal to str");
+                    let literal = str::from_utf8(
+                        &self.source[start_pos.offset()..self.reader_position().offset()],
+                    )
+                    .expect("Failed to convert float literal to str");
 
-                        if let Ok(result) = self.convert_float_repr(literal) {
-                            return Ok(Token::Float(result));
-                        }
-                    }
-                    _ => {
-                        self.rewind(rewind_pos);
+                    if let Ok(result) = self.convert_float_repr(literal) {
+                        return Ok(Token::Float(result));
                     }
                 }
+                _ => {
+                    self.rewind(rewind_pos);
+                }
             }
-
-            _ => {}
         }
 
         Err(())
@@ -480,7 +476,7 @@ impl<'a> Lexer<'a> {
                     self.advance(b'o');
                     base_prefix = Some(8);
 
-                    literal = self.read_while(|b| (b >= b'0' && b <= b'7') || b == b'_');
+                    literal = self.read_while(|b| (b'0'..=b'7').contains(&b) || b == b'_');
                     if literal.is_empty() {
                         error!(
                             "[L0302]: Octal literal must contain at least one digit after '0o'\n--> {}",
@@ -550,10 +546,7 @@ impl<'a> Lexer<'a> {
         for i in 0..2 {
             let byte = self.peek_byte()?;
 
-            if (byte >= b'0' && byte <= b'9')
-                || (byte >= b'a' && byte <= b'f')
-                || (byte >= b'A' && byte <= b'F')
-            {
+            if byte.is_ascii_hexdigit() {
                 self.advance(byte);
                 digits[i] = byte;
             } else {
@@ -571,7 +564,7 @@ impl<'a> Lexer<'a> {
         for digit in digits {
             let digit = digit.to_ascii_lowercase();
 
-            if digit >= b'0' && digit <= b'9' {
+            if digit.is_ascii_digit() {
                 value = (value << 4) | (digit - b'0');
             } else {
                 value = (value << 4) | (digit - b'a' + 10);
@@ -591,7 +584,7 @@ impl<'a> Lexer<'a> {
         for i in 0..3 {
             let byte = self.peek_byte()?;
 
-            if byte >= b'0' && byte <= b'7' {
+            if (b'0'..=b'7').contains(&byte) {
                 self.advance(byte);
                 digits[i] = byte;
             } else {
@@ -653,7 +646,7 @@ impl<'a> Lexer<'a> {
         if digits.len() > 8 {
             error!(
                 "[L0405]: Unicode escape codepoint in string literal is too large: '\\u{{{}}}'.\n--> {}",
-                str::from_utf8(&digits).unwrap_or("<invalid utf-8>"),
+                str::from_utf8(digits).unwrap_or("<invalid utf-8>"),
                 start_pos
             );
             return Err(());
@@ -663,7 +656,7 @@ impl<'a> Lexer<'a> {
         for &digit in digits {
             let digit = digit.to_ascii_lowercase();
 
-            if digit >= b'0' && digit <= b'9' {
+            if digit.is_ascii_digit() {
                 value = (value << 4) | (digit - b'0') as u32
             } else {
                 value = (value << 4) | (digit - b'a' + 10) as u32
@@ -674,7 +667,7 @@ impl<'a> Lexer<'a> {
         if codepoint.is_none() {
             error!(
                 "[L0405]: Unicode escape codepoint in string literal is too large: '\\u{{{}}}'.\n--> {}",
-                str::from_utf8(&digits).unwrap_or("<invalid utf-8>"),
+                str::from_utf8(digits).unwrap_or("<invalid utf-8>"),
                 start_pos
             );
 
@@ -690,7 +683,7 @@ impl<'a> Lexer<'a> {
         }
         self.advance(b'}');
 
-        codepoint.map(|c| StringEscape::Char(c)).ok_or(())
+        codepoint.map(StringEscape::Char).ok_or(())
     }
 
     #[inline(always)]
@@ -821,17 +814,15 @@ impl<'a> Lexer<'a> {
                     if storage.is_empty() {
                         let buffer = &self.source[start_offset..end_offset];
 
-                        if let Some(utf8_str) = str::from_utf8(buffer).ok() {
+                        if let Ok(utf8_str) = str::from_utf8(buffer) {
                             return Ok(Token::String(StringData::from_ref(utf8_str)));
                         } else {
                             return Ok(Token::BString(BStringData::from_ref(buffer)));
                         }
+                    } else if let Ok(utf8_str) = String::from_utf8(storage.to_vec()) {
+                        return Ok(Token::String(StringData::from_dyn(utf8_str)));
                     } else {
-                        if let Some(utf8_str) = String::from_utf8(storage.to_vec()).ok() {
-                            return Ok(Token::String(StringData::from_dyn(utf8_str)));
-                        } else {
-                            return Ok(Token::BString(BStringData::from_dyn(storage)));
-                        }
+                        return Ok(Token::BString(BStringData::from_dyn(storage)));
                     }
                 }
 
