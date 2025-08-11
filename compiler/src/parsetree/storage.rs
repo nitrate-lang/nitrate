@@ -215,6 +215,7 @@ impl<'a> ExprKey<'a> {
             | ExprKind::OpaqueType => true,
 
             ExprKind::Discard
+            | ExprKind::BooleanLit
             | ExprKind::IntegerLit
             | ExprKind::FloatLit
             | ExprKind::StringLit
@@ -378,7 +379,8 @@ impl<'a> Storage<'a> {
             | ExprKind::UnmanagedRefType
             | ExprKind::GenericType
             | ExprKind::OpaqueType
-            | ExprKind::Discard => {}
+            | ExprKind::Discard
+            | ExprKind::BooleanLit => {}
 
             ExprKind::IntegerLit => self.integers.reserve(additional),
             ExprKind::FloatLit => self.floats.reserve(additional),
@@ -443,6 +445,14 @@ impl<'a> Storage<'a> {
                 .map(std::convert::Into::into),
 
             ExprOwned::Discard => Some(ExprKey::new_single(ExprKind::Discard)),
+
+            ExprOwned::BooleanLit(node) => ExprKey::new(
+                ExprKind::BooleanLit,
+                match node {
+                    false => 0,
+                    true => 1,
+                },
+            ),
 
             ExprOwned::IntegerLit(node) => ExprKey::new(ExprKind::IntegerLit, self.integers.len())
                 .inspect(|_| {
@@ -677,6 +687,10 @@ impl<'a> Storage<'a> {
 
             ExprKind::Discard => Some(ExprRef::Discard),
 
+            ExprKind::BooleanLit => Some(ExprRef::BooleanLit(match index {
+                0 => false,
+                _ => true,
+            })),
             ExprKind::IntegerLit => self.integers.get(index).map(ExprRef::IntegerLit),
             ExprKind::FloatLit => self.floats.get(index).map(|&f| ExprRef::FloatLit(f)),
             ExprKind::StringLit => self.strings.get(index).map(ExprRef::StringLit),
@@ -748,6 +762,10 @@ impl<'a> Storage<'a> {
 
             ExprKind::Discard => Some(ExprRefMut::Discard),
 
+            ExprKind::BooleanLit => Some(ExprRefMut::BooleanLit(match index {
+                0 => false,
+                _ => true,
+            })),
             ExprKind::IntegerLit => self.integers.get(index).map(ExprRefMut::IntegerLit),
             ExprKind::FloatLit => self.floats.get(index).map(|&f| ExprRefMut::FloatLit(f)),
             ExprKind::StringLit => self.strings.get(index).map(ExprRefMut::StringLit),

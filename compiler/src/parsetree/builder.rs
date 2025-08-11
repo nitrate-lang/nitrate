@@ -37,6 +37,13 @@ impl<'storage, 'a> Builder<'storage, 'a> {
     }
 
     #[must_use]
+    pub fn create_boolean(self, value: bool) -> ExprKey<'a> {
+        self.storage
+            .add_expr(ExprOwned::BooleanLit(value))
+            .expect(ADD_TYPE_EXPECT_REASON)
+    }
+
+    #[must_use]
     pub fn create_integer(self) -> IntegerBuilder<'storage, 'a> {
         IntegerBuilder::new(self.storage)
     }

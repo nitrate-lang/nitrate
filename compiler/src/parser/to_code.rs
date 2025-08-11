@@ -493,6 +493,11 @@ impl<'a> ToCode<'a> for ExprKey<'a> {
 
             ExprRef::Discard => {}
 
+            ExprRef::BooleanLit(e) => tokens.push(Token::Keyword(if e {
+                Keyword::True
+            } else {
+                Keyword::False
+            })),
             ExprRef::IntegerLit(e) => e.to_code(bank, tokens, options),
             ExprRef::FloatLit(e) => tokens.push(Token::Float(e)),
             ExprRef::StringLit(e) => tokens.push(Token::String(e.clone())),

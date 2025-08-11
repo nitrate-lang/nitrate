@@ -158,10 +158,24 @@ impl<'a> Parser<'_, '_, 'a> {
     }
 
     fn parse_while(&mut self) -> Option<ExprKey<'a>> {
-        // TODO: Implement while expression parsing logic
-        self.set_failed_bit();
-        error!(self.log, "While expression parsing not implemented yet");
-        None
+        assert!(self.lexer.peek_t() == Token::Keyword(Keyword::While));
+        self.lexer.skip_tok();
+
+        let condition = if self.lexer.next_is(&Token::Punct(Punct::LeftBrace)) {
+            Builder::new(self.storage).create_boolean(true)
+        } else {
+            self.parse_expression()?
+        };
+
+        let body = self.parse_block()?;
+
+        Some(
+            Builder::new(self.storage)
+                .create_while_loop()
+                .with_condition(condition)
+                .with_body(body)
+                .build(),
+        )
     }
 
     fn parse_do(&mut self) -> Option<ExprKey<'a>> {
@@ -378,6 +392,16 @@ impl<'a> Parser<'_, '_, 'a> {
             Token::Name(name) => {
                 self.lexer.skip_tok();
                 Some(Builder::new(self.storage).create_identifier(name.name()))
+            }
+
+            Token::Keyword(Keyword::True) => {
+                self.lexer.skip_tok();
+                Some(Builder::new(self.storage).create_boolean(true))
+            }
+
+            Token::Keyword(Keyword::False) => {
+                self.lexer.skip_tok();
+                Some(Builder::new(self.storage).create_boolean(false))
             }
 
             Token::Keyword(Keyword::Enum) => self.parse_enum(),

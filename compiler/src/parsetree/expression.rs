@@ -55,6 +55,7 @@ pub enum ExprKind {
 
     Discard,
 
+    BooleanLit,
     IntegerLit,
     FloatLit,
     StringLit,
@@ -150,6 +151,7 @@ pub(crate) enum ExprOwned<'a> {
 
     Discard,
 
+    BooleanLit(bool),
     IntegerLit(IntegerLit),
     FloatLit(f64),
     StringLit(StringData<'a>),
@@ -245,6 +247,7 @@ pub enum ExprRef<'storage, 'a> {
 
     Discard,
 
+    BooleanLit(bool),
     IntegerLit(&'storage IntegerLit),
     FloatLit(f64),
     StringLit(&'storage StringData<'a>),
@@ -307,6 +310,7 @@ pub enum ExprRefMut<'storage, 'a> {
 
     Discard,
 
+    BooleanLit(bool),
     IntegerLit(&'storage IntegerLit),
     FloatLit(f64),
     StringLit(&'storage StringData<'a>),
@@ -371,6 +375,7 @@ impl TryInto<TypeKind> for ExprKind {
             ExprKind::OpaqueType => Ok(TypeKind::OpaqueType),
 
             ExprKind::Discard
+            | ExprKind::BooleanLit
             | ExprKind::IntegerLit
             | ExprKind::FloatLit
             | ExprKind::StringLit
@@ -435,6 +440,7 @@ impl TryFrom<u8> for ExprKind {
 
             x if x == ExprKind::Discard as u8 => Ok(ExprKind::Discard),
 
+            x if x == ExprKind::BooleanLit as u8 => Ok(ExprKind::BooleanLit),
             x if x == ExprKind::IntegerLit as u8 => Ok(ExprKind::IntegerLit),
             x if x == ExprKind::FloatLit as u8 => Ok(ExprKind::FloatLit),
             x if x == ExprKind::StringLit as u8 => Ok(ExprKind::StringLit),
@@ -539,6 +545,7 @@ impl<'a> TryInto<TypeOwned<'a>> for ExprOwned<'a> {
             ExprOwned::OpaqueType(x) => Ok(TypeOwned::OpaqueType(x)),
 
             ExprOwned::Discard
+            | ExprOwned::BooleanLit(_)
             | ExprOwned::IntegerLit(_)
             | ExprOwned::FloatLit(_)
             | ExprOwned::StringLit(_)

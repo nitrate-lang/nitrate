@@ -163,6 +163,8 @@ impl std::fmt::Debug for Printable<'_, '_> {
 
             ExprRef::Discard => write!(f, "Discard"),
 
+            ExprRef::BooleanLit(x) => f.debug_struct("BooleanLit").field("value", &x).finish(),
+
             ExprRef::IntegerLit(x) => f
                 .debug_struct("IntegerLit")
                 .field("value", &x.get_u128())
