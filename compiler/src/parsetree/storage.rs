@@ -440,129 +440,130 @@ impl<'a> Storage<'a> {
             ExprOwned::Discard => Some(ExprKey::new_single(ExprKind::Discard)),
 
             ExprOwned::IntegerLit(node) => match node.try_to_u128() {
-                _ => ExprKey::new(ExprKind::IntegerLit, self.integers.len()).inspect(|k| {
+                _ => ExprKey::new(ExprKind::IntegerLit, self.integers.len()).inspect(|_| {
                     self.integers.push(node);
                 }),
             },
 
             ExprOwned::FloatLit(node) => ExprKey::new(ExprKind::FloatLit, self.floats.len())
-                .inspect(|k| {
+                .inspect(|_| {
                     self.floats.push(node);
                 }),
 
             ExprOwned::StringLit(node) => match node.get() {
                 "" => ExprKey::new(ExprKind::StringLit, Self::STRING_LIT_EMPTY_INDEX),
 
-                _ => ExprKey::new(ExprKind::StringLit, self.strings.len()).inspect(|k| {
+                _ => ExprKey::new(ExprKind::StringLit, self.strings.len()).inspect(|_| {
                     self.strings.push(node);
                 }),
             },
 
             ExprOwned::BStringLit(node) => ExprKey::new(ExprKind::BStringLit, self.binaries.len())
-                .inspect(|k| {
+                .inspect(|_| {
                     self.binaries.push(node);
                 }),
 
             ExprOwned::CharLit(ch) => ExprKey::new(ExprKind::CharLit, ch as usize),
 
             ExprOwned::ListLit(node) => {
-                ExprKey::new(ExprKind::ListLit, self.lists.len()).inspect(|k| {
+                ExprKey::new(ExprKind::ListLit, self.lists.len()).inspect(|_| {
                     self.lists.push(node);
                 })
             }
 
             ExprOwned::ObjectLit(node) => ExprKey::new(ExprKind::ObjectLit, self.objects.len())
-                .inspect(|k| {
+                .inspect(|_| {
                     self.objects.push(node);
                 }),
 
             ExprOwned::UnaryExpr(node) => ExprKey::new(ExprKind::UnaryExpr, self.unary_exprs.len())
-                .inspect(|k| {
+                .inspect(|_| {
                     self.unary_exprs.push(node);
                 }),
 
             ExprOwned::BinExpr(node) => ExprKey::new(ExprKind::BinExpr, self.bin_exprs.len())
-                .inspect(|k| {
+                .inspect(|_| {
                     self.bin_exprs.push(node);
                 }),
 
             ExprOwned::Statement(node) => ExprKey::new(ExprKind::Statement, self.statements.len())
-                .inspect(|k| {
+                .inspect(|_| {
                     self.statements.push(node);
                 }),
 
             ExprOwned::Block(node) => {
-                ExprKey::new(ExprKind::Block, self.blocks.len()).inspect(|k| {
+                ExprKey::new(ExprKind::Block, self.blocks.len()).inspect(|_| {
                     self.blocks.push(node);
                 })
             }
 
             ExprOwned::Function(node) => ExprKey::new(ExprKind::Function, self.functions.len())
-                .inspect(|k| {
+                .inspect(|_| {
                     self.functions.push(node);
                 }),
 
             ExprOwned::Variable(node) => ExprKey::new(ExprKind::Variable, self.variables.len())
-                .inspect(|k| {
+                .inspect(|_| {
                     self.variables.push(node);
                 }),
 
             ExprOwned::Identifier(node) => {
-                ExprKey::new(ExprKind::Identifier, self.identifiers.len()).inspect(|k| {
+                ExprKey::new(ExprKind::Identifier, self.identifiers.len()).inspect(|_| {
                     self.identifiers.push(node);
                 })
             }
 
-            ExprOwned::If(node) => ExprKey::new(ExprKind::If, self.ifs.len()).inspect(|k| {
+            ExprOwned::If(node) => ExprKey::new(ExprKind::If, self.ifs.len()).inspect(|_| {
                 self.ifs.push(node);
             }),
 
             ExprOwned::WhileLoop(node) => ExprKey::new(ExprKind::WhileLoop, self.while_loops.len())
-                .inspect(|k| {
+                .inspect(|_| {
                     self.while_loops.push(node);
                 }),
 
             ExprOwned::DoWhileLoop(node) => {
-                ExprKey::new(ExprKind::DoWhileLoop, self.do_while_loops.len()).inspect(|k| {
+                ExprKey::new(ExprKind::DoWhileLoop, self.do_while_loops.len()).inspect(|_| {
                     self.do_while_loops.push(node);
                 })
             }
 
-            ExprOwned::Switch(node) => ExprKey::new(ExprKind::Switch, self.switches.len())
-                .inspect(|k| {
+            ExprOwned::Switch(node) => {
+                ExprKey::new(ExprKind::Switch, self.switches.len()).inspect(|_| {
                     self.switches.push(node);
-                }),
+                })
+            }
 
             ExprOwned::Break(node) => {
-                ExprKey::new(ExprKind::Break, self.breaks.len()).inspect(|k| {
+                ExprKey::new(ExprKind::Break, self.breaks.len()).inspect(|_| {
                     self.breaks.push(node);
                 })
             }
 
             ExprOwned::Continue(node) => ExprKey::new(ExprKind::Continue, self.continues.len())
-                .inspect(|k| {
+                .inspect(|_| {
                     self.continues.push(node);
                 }),
 
             ExprOwned::Return(node) => {
-                ExprKey::new(ExprKind::Return, self.returns.len()).inspect(|k| {
+                ExprKey::new(ExprKind::Return, self.returns.len()).inspect(|_| {
                     self.returns.push(node);
                 })
             }
 
             ExprOwned::ForEach(node) => ExprKey::new(ExprKind::ForEach, self.for_eachs.len())
-                .inspect(|k| {
+                .inspect(|_| {
                     self.for_eachs.push(node);
                 }),
 
             ExprOwned::Await(node) => {
-                ExprKey::new(ExprKind::Await, self.awaits.len()).inspect(|k| {
+                ExprKey::new(ExprKind::Await, self.awaits.len()).inspect(|_| {
                     self.awaits.push(node);
                 })
             }
 
             ExprOwned::Assert(node) => {
-                ExprKey::new(ExprKind::Assert, self.asserts.len()).inspect(|k| {
+                ExprKey::new(ExprKind::Assert, self.asserts.len()).inspect(|_| {
                     self.asserts.push(node);
                 })
             }
