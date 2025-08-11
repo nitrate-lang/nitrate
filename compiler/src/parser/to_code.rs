@@ -381,8 +381,9 @@ impl<'a> ToCode<'a> for Scope<'a> {
     fn to_code(&self, bank: &Storage<'a>, tokens: &mut Vec<Token<'a>>, options: &CodeFormat) {
         tokens.push(Token::Keyword(Keyword::Scope));
 
-        if !self.name().is_empty() {
-            tokens.push(Token::Name(Name::new(self.name())));
+        for (i, name) in self.scope().names().iter().enumerate() {
+            (i > 0).then(|| tokens.push(Token::Op(Op::Scope)));
+            tokens.push(Token::Name(Name::new(name)));
         }
 
         if !self.attributes().is_empty() {

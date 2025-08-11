@@ -11,6 +11,7 @@ use super::storage::{ExprKey, Storage, TypeKey};
 use super::tuple_type::TupleType;
 use super::variable::VariableKind;
 use crate::lexer::StringData;
+use crate::parsetree::builder_helper::ScopeBuilder;
 
 #[derive(Debug)]
 pub struct Builder<'storage, 'a> {
@@ -107,6 +108,11 @@ impl<'storage, 'a> Builder<'storage, 'a> {
         self.storage
             .add_expr(ExprOwned::Identifier(name))
             .expect("Failed to create identifier")
+    }
+
+    #[must_use]
+    pub fn create_scope(self) -> ScopeBuilder<'storage, 'a> {
+        ScopeBuilder::new(self.storage)
     }
 
     #[must_use]

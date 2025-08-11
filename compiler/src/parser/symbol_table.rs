@@ -32,6 +32,10 @@ impl<'a> QualifiedScope<'a> {
 
         self
     }
+
+    pub fn names(&self) -> &[&'a str] {
+        &self.parts
+    }
 }
 
 impl std::string::ToString for QualifiedScope<'_> {

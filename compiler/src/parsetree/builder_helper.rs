@@ -1,4 +1,5 @@
 use crate::lexer::{BStringData, IntegerKind, StringData};
+use crate::parser::QualifiedScope;
 use crate::parsetree::{node::*, *};
 use apint::UInt;
 use std::collections::BTreeMap;
@@ -915,6 +916,58 @@ impl<'storage, 'a> VariableBuilder<'storage, 'a> {
                 self.value,
             )))
             .expect("Failed to create variable")
+    }
+}
+
+#[derive(Debug)]
+pub struct ScopeBuilder<'storage, 'a> {
+    storage: &'storage mut Storage<'a>,
+    scope: Option<QualifiedScope<'a>>,
+    attributes: Vec<ExprKey<'a>>,
+    block: Option<ExprKey<'a>>,
+}
+
+impl<'storage, 'a> ScopeBuilder<'storage, 'a> {
+    pub(crate) fn new(storage: &'storage mut Storage<'a>) -> Self {
+        ScopeBuilder {
+            storage,
+            scope: None,
+            attributes: Vec::new(),
+            block: None,
+        }
+    }
+
+    pub fn with_scope(mut self, scope: QualifiedScope<'a>) -> Self {
+        self.scope = Some(scope);
+        self
+    }
+
+    pub fn add_attribute(mut self, attribute: ExprKey<'a>) -> Self {
+        self.attributes.push(attribute);
+        self
+    }
+
+    pub fn add_attributes<I>(mut self, attributes: I) -> Self
+    where
+        I: IntoIterator<Item = ExprKey<'a>>,
+    {
+        self.attributes.extend(attributes);
+        self
+    }
+
+    pub fn with_block(mut self, block: ExprKey<'a>) -> Self {
+        self.block = Some(block);
+        self
+    }
+
+    pub fn build(self) -> ExprKey<'a> {
+        self.storage
+            .add_expr(ExprOwned::Scope(Scope::new(
+                self.scope.expect("Scope must be provided"),
+                self.attributes,
+                self.block.expect("Block must be provided"),
+            )))
+            .expect("Failed to create scope expression")
     }
 }
 

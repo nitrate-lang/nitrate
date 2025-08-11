@@ -1,29 +1,35 @@
+use crate::parser::QualifiedScope;
+
 use super::storage::ExprKey;
 
 #[derive(Debug, Clone)]
 pub struct Scope<'a> {
-    name: &'a str,
+    scope: QualifiedScope<'a>,
     attributes: Vec<ExprKey<'a>>,
     block: ExprKey<'a>,
 }
 
 impl<'a> Scope<'a> {
     #[must_use]
-    pub fn new(name: &'a str, attributes: Vec<ExprKey<'a>>, block: ExprKey<'a>) -> Self {
+    pub fn new(
+        scope: QualifiedScope<'a>,
+        attributes: Vec<ExprKey<'a>>,
+        block: ExprKey<'a>,
+    ) -> Self {
         Scope {
-            name,
+            scope,
             attributes,
             block,
         }
     }
 
     #[must_use]
-    pub fn name(&self) -> &'a str {
-        self.name
+    pub fn scope(&self) -> &QualifiedScope<'a> {
+        &self.scope
     }
 
-    pub fn set_name(&mut self, name: &'a str) {
-        self.name = name;
+    pub fn set_scope(&mut self, scope: QualifiedScope<'a>) {
+        self.scope = scope;
     }
 
     #[must_use]

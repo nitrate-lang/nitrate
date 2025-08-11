@@ -268,7 +268,7 @@ impl std::fmt::Debug for Printable<'_, '_> {
 
             ExprRef::Scope(x) => f
                 .debug_struct("Scope")
-                .field("name", &x.name())
+                .field("name", &x.scope().to_string())
                 .field(
                     "attributes",
                     &x.attributes()
