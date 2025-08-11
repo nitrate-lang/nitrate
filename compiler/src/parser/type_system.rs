@@ -26,12 +26,10 @@ impl<'storage, 'logger, 'a> Parser<'storage, 'logger, 'a> {
 
         if !self.lexer.skip_if(&Token::Punct(Punct::Colon)) {
             let Some(minimum) = self.parse_expression() else {
-                self.set_failed_bit();
                 return None;
             };
 
             if !self.lexer.skip_if(&Token::Punct(Punct::Colon)) {
-                self.set_failed_bit();
                 error!(
                     self.log,
                     "[P0???]: refinement type: expected ':' after minimum range constraint\n--> {}",
@@ -46,12 +44,10 @@ impl<'storage, 'logger, 'a> Parser<'storage, 'logger, 'a> {
 
         if !self.lexer.skip_if(&Token::Punct(Punct::RightBracket)) {
             let Some(maximum) = self.parse_expression() else {
-                self.set_failed_bit();
                 return None;
             };
 
             if !self.lexer.skip_if(&Token::Punct(Punct::RightBracket)) {
-                self.set_failed_bit();
                 error!(
                     self.log,
                     "[P0???]: refinement type: expected ']' to close range constraints\n--> {}",
@@ -76,7 +72,6 @@ impl<'storage, 'logger, 'a> Parser<'storage, 'logger, 'a> {
 
         if self.lexer.next_is(&Token::Punct(Punct::LeftBracket)) {
             let Some((minimum, maximum)) = self.parse_refinement_range() else {
-                self.set_failed_bit();
                 return None;
             };
 
@@ -88,7 +83,6 @@ impl<'storage, 'logger, 'a> Parser<'storage, 'logger, 'a> {
         }
 
         let Some(width) = self.parse_expression() else {
-            self.set_failed_bit();
             return None;
         };
 
@@ -101,7 +95,6 @@ impl<'storage, 'logger, 'a> Parser<'storage, 'logger, 'a> {
         }
 
         if !self.lexer.next_is(&Token::Punct(Punct::LeftBracket)) {
-            self.set_failed_bit();
             error!(
                 self.log,
                 "[P0???]: refinement type: expected '[' for range constraints\n--> {}",
@@ -112,7 +105,6 @@ impl<'storage, 'logger, 'a> Parser<'storage, 'logger, 'a> {
         }
 
         let Some((minimum, maximum)) = self.parse_refinement_range() else {
-            self.set_failed_bit();
             return None;
         };
 
@@ -164,7 +156,6 @@ impl<'storage, 'logger, 'a> Parser<'storage, 'logger, 'a> {
         };
 
         let Some(argument_value) = type_or_expression else {
-            self.set_failed_bit();
             error!(
                 self.log,
                 "[P0???]: generic type: expected type or expression after generic argument name\n--> {}",
@@ -209,7 +200,6 @@ impl<'storage, 'logger, 'a> Parser<'storage, 'logger, 'a> {
             }
 
             let Some(generic_argument) = self.parse_generic_argument() else {
-                self.set_failed_bit();
                 return None;
             };
 
@@ -225,7 +215,6 @@ impl<'storage, 'logger, 'a> Parser<'storage, 'logger, 'a> {
                     || self.lexer.next_is(&Token::Op(Op::BitRotr));
 
                 if !any_terminator {
-                    self.set_failed_bit();
                     error!(
                         self.log,
                         "[P0???]: generic type: expected ',' or '>' after generic argument\n--> {}",
@@ -256,7 +245,6 @@ impl<'storage, 'logger, 'a> Parser<'storage, 'logger, 'a> {
         let is_already_parsing_generic_type = self.generic_type_depth != 0;
 
         let Some(generic_args) = self.parse_generic_arguments() else {
-            self.set_failed_bit();
             return None;
         };
 
@@ -264,7 +252,6 @@ impl<'storage, 'logger, 'a> Parser<'storage, 'logger, 'a> {
             match self.generic_type_depth {
                 0 => {}
                 -1 => {
-                    self.set_failed_bit();
                     error!(
                         self.log,
                         "[P0???]: generic type: unexpected '>' delimiter\n--> {}",
@@ -274,7 +261,6 @@ impl<'storage, 'logger, 'a> Parser<'storage, 'logger, 'a> {
                     return None;
                 }
                 _ => {
-                    self.set_failed_bit();
                     error!(
                         self.log,
                         "[P0???]: generic type: unexpected '>>' delimiter\n--> {}",
@@ -311,7 +297,6 @@ impl<'storage, 'logger, 'a> Parser<'storage, 'logger, 'a> {
             }
 
             let Some(element) = self.parse_type() else {
-                self.set_failed_bit();
                 return None;
             };
 
@@ -321,7 +306,6 @@ impl<'storage, 'logger, 'a> Parser<'storage, 'logger, 'a> {
                 if self.lexer.skip_if(&Token::Punct(Punct::RightBrace)) {
                     break;
                 } else {
-                    self.set_failed_bit();
                     error!(
                         self.log,
                         "[P0???]: tuple type: expected ',' or '}}' after element type\n--> {}",
@@ -350,12 +334,10 @@ impl<'storage, 'logger, 'a> Parser<'storage, 'logger, 'a> {
         self.lexer.skip();
 
         let Some(array_count) = self.parse_expression() else {
-            self.set_failed_bit();
             return None;
         };
 
         if !self.lexer.skip_if(&Token::Punct(Punct::RightBracket)) {
-            self.set_failed_bit();
             error!(
                 self.log,
                 "[P0???]: array type: expected ']' to close\n--> {}",
@@ -379,12 +361,10 @@ impl<'storage, 'logger, 'a> Parser<'storage, 'logger, 'a> {
         self.lexer.skip();
 
         let Some(value_type) = self.parse_type() else {
-            self.set_failed_bit();
             return None;
         };
 
         if !self.lexer.skip_if(&Token::Punct(Punct::RightBracket)) {
-            self.set_failed_bit();
             error!(
                 self.log,
                 "[P0???]: map type: expected ']' to close\n--> {}",
@@ -427,7 +407,6 @@ impl<'storage, 'logger, 'a> Parser<'storage, 'logger, 'a> {
         self.lexer.skip();
 
         let Some(something_type) = self.parse_type() else {
-            self.set_failed_bit();
             return None;
         };
 
@@ -443,7 +422,6 @@ impl<'storage, 'logger, 'a> Parser<'storage, 'logger, 'a> {
             return self.parse_rest_of_slice_type(something_type);
         }
 
-        self.set_failed_bit();
         error!(
             self.log,
             "[P0???]: type: expected ';', ']', or '->' for array, slice, and map type respectively\n--> {}",
@@ -482,7 +460,6 @@ impl<'storage, 'logger, 'a> Parser<'storage, 'logger, 'a> {
             || (self.lexer.skip_if(&Token::Keyword(Keyword::Const)) && false);
 
         let Some(target) = self.parse_type() else {
-            self.set_failed_bit();
             return None;
         };
 
@@ -515,7 +492,6 @@ impl<'storage, 'logger, 'a> Parser<'storage, 'logger, 'a> {
             || (self.lexer.skip_if(&Token::Keyword(Keyword::Const)) && false);
 
         let Some(target) = self.parse_type() else {
-            self.set_failed_bit();
             return None;
         };
 
@@ -543,7 +519,6 @@ impl<'storage, 'logger, 'a> Parser<'storage, 'logger, 'a> {
             }
 
             let Some(the_attribute) = self.parse_expression() else {
-                self.set_failed_bit();
                 return None;
             };
 
@@ -553,7 +528,6 @@ impl<'storage, 'logger, 'a> Parser<'storage, 'logger, 'a> {
                 if self.lexer.skip_if(&Token::Punct(Punct::RightBracket)) {
                     break;
                 } else {
-                    self.set_failed_bit();
                     error!(
                         self.log,
                         "[P0???]: function type: expected ',' or ']' after attribute expression\n--> {}",
@@ -595,7 +569,6 @@ impl<'storage, 'logger, 'a> Parser<'storage, 'logger, 'a> {
 
             let parameter_type = if self.lexer.skip_if(&Token::Punct(Punct::Colon)) {
                 let Some(parameter_type) = self.parse_type() else {
-                    self.set_failed_bit();
                     return None;
                 };
 
@@ -606,7 +579,6 @@ impl<'storage, 'logger, 'a> Parser<'storage, 'logger, 'a> {
 
             let parameter_default = if self.lexer.skip_if(&Token::Op(Op::Set)) {
                 let Some(parameter_default) = self.parse_expression() else {
-                    self.set_failed_bit();
                     return None;
                 };
 
@@ -625,7 +597,6 @@ impl<'storage, 'logger, 'a> Parser<'storage, 'logger, 'a> {
                 if self.lexer.skip_if(&Token::Punct(Punct::RightParen)) {
                     break;
                 } else {
-                    self.set_failed_bit();
                     error!(
                         self.log,
                         "[P0???]: function type: expected ',' or ')' after parameter\n--> {}",
@@ -651,20 +622,17 @@ impl<'storage, 'logger, 'a> Parser<'storage, 'logger, 'a> {
         self.lexer.skip();
 
         let Some(attributes) = self.parse_function_attributes() else {
-            self.set_failed_bit();
             return None;
         };
 
         let _ignored_name = self.lexer.next_if_name();
 
         let Some(parameters) = self.parse_function_parameters() else {
-            self.set_failed_bit();
             return None;
         };
 
         let return_type = if self.lexer.skip_if(&Token::Op(Op::Arrow)) {
             let Some(return_type) = self.parse_type() else {
-                self.set_failed_bit();
                 return None;
             };
 
@@ -693,7 +661,6 @@ impl<'storage, 'logger, 'a> Parser<'storage, 'logger, 'a> {
         self.lexer.skip();
 
         if !self.lexer.skip_if(&Token::Punct(Punct::LeftParen)) {
-            self.set_failed_bit();
             error!(
                 self.log,
                 "[P0???]: opaque type: expected '(' after 'opaque'\n--> {}",
@@ -708,7 +675,6 @@ impl<'storage, 'logger, 'a> Parser<'storage, 'logger, 'a> {
         }
 
         let Some(opaque_identity) = self.lexer.next_if_string() else {
-            self.set_failed_bit();
             error!(
                 self.log,
                 "[P0???]: opaque type: expected string literal after 'opaque('\n--> {}",
@@ -723,7 +689,6 @@ impl<'storage, 'logger, 'a> Parser<'storage, 'logger, 'a> {
         };
 
         if !self.lexer.skip_if(&Token::Punct(Punct::RightParen)) {
-            self.set_failed_bit();
             error!(
                 self.log,
                 "[P0???]: opaque type: expected ')' to close\n--> {}",
@@ -840,7 +805,6 @@ impl<'storage, 'logger, 'a> Parser<'storage, 'logger, 'a> {
             Token::Keyword(Keyword::Opaque) => self.parse_opaque_type(),
 
             Token::Integer(int) => {
-                self.set_failed_bit();
                 error!(
                     self.log,
                     "[P0???]: type: unexpected integer '{}'\n--> {}", int, current_pos
@@ -850,7 +814,6 @@ impl<'storage, 'logger, 'a> Parser<'storage, 'logger, 'a> {
             }
 
             Token::Float(float) => {
-                self.set_failed_bit();
                 error!(
                     self.log,
                     "[P0???]: type: unexpected float '{}'\n--> {}", float, current_pos
@@ -860,7 +823,6 @@ impl<'storage, 'logger, 'a> Parser<'storage, 'logger, 'a> {
             }
 
             Token::Keyword(func) => {
-                self.set_failed_bit();
                 error!(
                     self.log,
                     "[P0???]: type: unexpected keyword '{}'\n--> {}", func, current_pos
@@ -870,7 +832,6 @@ impl<'storage, 'logger, 'a> Parser<'storage, 'logger, 'a> {
             }
 
             Token::String(string) => {
-                self.set_failed_bit();
                 error!(
                     self.log,
                     "[P0???]: type: unexpected string '{}'\n--> {}", string, current_pos
@@ -880,7 +841,6 @@ impl<'storage, 'logger, 'a> Parser<'storage, 'logger, 'a> {
             }
 
             Token::BString(bstring) => {
-                self.set_failed_bit();
                 error!(
                     self.log,
                     "[P0???]: type: unexpected bstring '{}'\n--> {}", bstring, current_pos
@@ -890,7 +850,6 @@ impl<'storage, 'logger, 'a> Parser<'storage, 'logger, 'a> {
             }
 
             Token::Char(char) => {
-                self.set_failed_bit();
                 error!(
                     self.log,
                     "[P0???]: type: unexpected character '{}'\n--> {}", char, current_pos
@@ -900,7 +859,6 @@ impl<'storage, 'logger, 'a> Parser<'storage, 'logger, 'a> {
             }
 
             Token::Punct(punc) => {
-                self.set_failed_bit();
                 error!(
                     self.log,
                     "[P0???]: type: unexpected punctuation '{}'\n--> {}", punc, current_pos
@@ -910,7 +868,6 @@ impl<'storage, 'logger, 'a> Parser<'storage, 'logger, 'a> {
             }
 
             Token::Op(op) => {
-                self.set_failed_bit();
                 error!(
                     self.log,
                     "[P0???]: type: unexpected operator '{}'\n--> {}", op, current_pos
@@ -920,7 +877,6 @@ impl<'storage, 'logger, 'a> Parser<'storage, 'logger, 'a> {
             }
 
             Token::Comment(_) => {
-                self.set_failed_bit();
                 error!(
                     self.log,
                     "[P0???]: type: unexpected comment\n--> {}", current_pos
@@ -930,7 +886,6 @@ impl<'storage, 'logger, 'a> Parser<'storage, 'logger, 'a> {
             }
 
             Token::Eof => {
-                self.set_failed_bit();
                 error!(
                     self.log,
                     "[P0???]: type: unexpected end of file\n--> {}", current_pos
@@ -940,7 +895,6 @@ impl<'storage, 'logger, 'a> Parser<'storage, 'logger, 'a> {
             }
 
             Token::Illegal => {
-                self.set_failed_bit();
                 error!(
                     self.log,
                     "[P0???]: type: unexpected invalid token\n--> {}", current_pos
@@ -1014,112 +968,107 @@ impl<'storage, 'logger, 'a> Parser<'storage, 'logger, 'a> {
 fn test_parse_type() {
     let source = "Option<[str -> Vec<{u8, str: 48, Set<Address<str>>: 2: [1:]}>]>: 1";
 
-    let expected = r#"Block {
-    elements: [
-        RefinementType {
-            base: GenericType {
-                base: TypeName {
-                    name: "Option",
-                },
-                args: [
-                    (
-                        "",
-                        MapType {
-                            key: TypeName {
-                                name: "str",
-                            },
-                            value: GenericType {
-                                base: TypeName {
-                                    name: "Vec",
-                                },
-                                args: [
-                                    (
-                                        "",
-                                        TupleType {
-                                            elements: [
-                                                u8,
-                                                RefinementType {
-                                                    base: TypeName {
-                                                        name: "str",
-                                                    },
-                                                    width: Some(
-                                                        IntegerLit {
-                                                            value: 48,
-                                                            kind: Decimal,
-                                                        },
-                                                    ),
-                                                    min: None,
-                                                    max: None,
-                                                },
-                                                RefinementType {
-                                                    base: GenericType {
-                                                        base: TypeName {
-                                                            name: "Set",
-                                                        },
-                                                        args: [
-                                                            (
-                                                                "",
-                                                                GenericType {
-                                                                    base: TypeName {
-                                                                        name: "Address",
-                                                                    },
-                                                                    args: [
-                                                                        (
-                                                                            "",
-                                                                            TypeName {
-                                                                                name: "str",
-                                                                            },
-                                                                        ),
-                                                                    ],
-                                                                },
-                                                            ),
-                                                        ],
-                                                    },
-                                                    width: Some(
-                                                        IntegerLit {
-                                                            value: 2,
-                                                            kind: Decimal,
-                                                        },
-                                                    ),
-                                                    min: Some(
-                                                        IntegerLit {
-                                                            value: 1,
-                                                            kind: Decimal,
-                                                        },
-                                                    ),
-                                                    max: None,
-                                                },
-                                            ],
-                                        },
-                                    ),
-                                ],
-                            },
+    let expected = r#"RefinementType {
+    base: GenericType {
+        base: TypeName {
+            name: "Option",
+        },
+        args: [
+            (
+                "",
+                MapType {
+                    key: TypeName {
+                        name: "str",
+                    },
+                    value: GenericType {
+                        base: TypeName {
+                            name: "Vec",
                         },
-                    ),
-                ],
-            },
-            width: Some(
-                IntegerLit {
-                    value: 1,
-                    kind: Decimal,
+                        args: [
+                            (
+                                "",
+                                TupleType {
+                                    elements: [
+                                        u8,
+                                        RefinementType {
+                                            base: TypeName {
+                                                name: "str",
+                                            },
+                                            width: Some(
+                                                IntegerLit {
+                                                    value: 48,
+                                                    kind: Dec,
+                                                },
+                                            ),
+                                            min: None,
+                                            max: None,
+                                        },
+                                        RefinementType {
+                                            base: GenericType {
+                                                base: TypeName {
+                                                    name: "Set",
+                                                },
+                                                args: [
+                                                    (
+                                                        "",
+                                                        GenericType {
+                                                            base: TypeName {
+                                                                name: "Address",
+                                                            },
+                                                            args: [
+                                                                (
+                                                                    "",
+                                                                    TypeName {
+                                                                        name: "str",
+                                                                    },
+                                                                ),
+                                                            ],
+                                                        },
+                                                    ),
+                                                ],
+                                            },
+                                            width: Some(
+                                                IntegerLit {
+                                                    value: 2,
+                                                    kind: Dec,
+                                                },
+                                            ),
+                                            min: Some(
+                                                IntegerLit {
+                                                    value: 1,
+                                                    kind: Dec,
+                                                },
+                                            ),
+                                            max: None,
+                                        },
+                                    ],
+                                },
+                            ),
+                        ],
+                    },
                 },
             ),
-            min: None,
-            max: None,
+        ],
+    },
+    width: Some(
+        IntegerLit {
+            value: 1,
+            kind: Dec,
         },
-    ],
+    ),
+    min: None,
+    max: None,
 }"#;
 
     let lexer = Lexer::new(source.as_bytes(), "test").expect("Failed to create lexer");
     let mut storage = Storage::new();
     let mut logger = slog::Logger::root(slog::Discard, slog::o!());
 
-    let model = Parser::new(lexer, &mut storage, &mut logger)
-        .parse()
-        .expect("Failed to parse source");
-    assert!(!model.any_errors(), "Parsing failed with errors");
+    let mut parser = Parser::new(lexer, &mut storage, &mut logger);
+    let model = parser.parse_type().expect("Failed to parse source");
+    assert!(!parser.has_failed(), "Parsing failed with errors");
 
-    let tree = model.tree().as_printable(&storage);
+    let tree = model.as_printable(&storage);
     let serialized = format!("{:#?}", tree);
 
     assert_eq!(

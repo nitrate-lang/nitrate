@@ -4,38 +4,6 @@ use crate::parsetree::*;
 use slog::error;
 
 impl<'storage, 'logger, 'a> Parser<'storage, 'logger, 'a> {
-    pub(crate) fn parse_expression(&mut self) -> Option<ExprKey<'a>> {
-        let mut parenthesis_count = 0;
-        while self.lexer.skip_if(&Token::Punct(Punct::LeftParen)) {
-            parenthesis_count += 1;
-        }
-
-        let Some(expr) = self.parse_expression_primary() else {
-            self.set_failed_bit();
-            return None;
-        };
-
-        self.storage.add_parentheses(expr);
-
-        for _ in 0..parenthesis_count {
-            if !self.lexer.skip_if(&Token::Punct(Punct::RightParen)) {
-                self.set_failed_bit();
-                error!(
-                    self.log,
-                    "[P????]: expr: expected closing parenthesis\n--> {}",
-                    self.lexer.sync_position()
-                );
-                return None;
-            }
-        }
-
-        // TODO: Binary expression parsing logic
-        // TODO: Unary prefix expression parsing logic
-        // TODO: Unary postfix expression parsing logic
-
-        Some(expr)
-    }
-
     fn parse_integer_literal(&mut self, value: u128, kind: IntegerKind) -> ExprKey<'a> {
         let mut bb = Builder::new(self.storage).create_integer().with_kind(kind);
 
@@ -147,6 +115,174 @@ impl<'storage, 'logger, 'a> Parser<'storage, 'logger, 'a> {
         self.lexer.rewind(rewind_pos);
 
         self.parse_type_alias()
+    }
+
+    fn parse_if(&mut self) -> Option<ExprKey<'a>> {
+        // TODO: Implement if expression parsing logic
+        self.set_failed_bit();
+        error!(self.log, "If expression parsing not implemented yet");
+        None
+    }
+
+    fn parse_for(&mut self) -> Option<ExprKey<'a>> {
+        // TODO: Implement for expression parsing logic
+        self.set_failed_bit();
+        error!(self.log, "For expression parsing not implemented yet");
+        None
+    }
+
+    fn parse_while(&mut self) -> Option<ExprKey<'a>> {
+        // TODO: Implement while expression parsing logic
+        self.set_failed_bit();
+        error!(self.log, "While expression parsing not implemented yet");
+        None
+    }
+
+    fn parse_do(&mut self) -> Option<ExprKey<'a>> {
+        // TODO: Implement do expression parsing logic
+        self.set_failed_bit();
+        error!(self.log, "Do expression parsing not implemented yet");
+        None
+    }
+
+    fn parse_switch(&mut self) -> Option<ExprKey<'a>> {
+        // TODO: Implement switch expression parsing logic
+        self.set_failed_bit();
+        error!(self.log, "Switch expression parsing not implemented yet");
+        None
+    }
+
+    fn parse_break(&mut self) -> Option<ExprKey<'a>> {
+        assert!(self.lexer.peek_t() == Token::Keyword(Keyword::Break));
+        self.lexer.skip();
+
+        // TODO: Implement break branch label parsing logic
+
+        Some(Builder::new(self.storage).create_break().build())
+    }
+
+    fn parse_continue(&mut self) -> Option<ExprKey<'a>> {
+        assert!(self.lexer.peek_t() == Token::Keyword(Keyword::Continue));
+        self.lexer.skip();
+
+        // TODO: Implement continue branch label parsing logic
+
+        Some(Builder::new(self.storage).create_continue().build())
+    }
+
+    fn parse_return(&mut self) -> Option<ExprKey<'a>> {
+        // TODO: Implement return expression parsing logic
+        self.set_failed_bit();
+        error!(self.log, "Return expression parsing not implemented yet");
+        None
+    }
+
+    fn parse_foreach(&mut self) -> Option<ExprKey<'a>> {
+        // TODO: Implement foreach expression parsing logic
+        self.set_failed_bit();
+        error!(self.log, "Foreach expression parsing not implemented yet");
+        None
+    }
+
+    fn parse_await(&mut self) -> Option<ExprKey<'a>> {
+        assert!(self.lexer.peek_t() == Token::Keyword(Keyword::Await));
+        self.lexer.skip();
+
+        let Some(expr) = self.parse_expression() else {
+            self.set_failed_bit();
+            return None;
+        };
+
+        Some(
+            Builder::new(self.storage)
+                .create_await()
+                .with_expression(expr)
+                .build(),
+        )
+    }
+
+    fn parse_asm(&mut self) -> Option<ExprKey<'a>> {
+        // TODO: Implement asm expression parsing logic
+        self.set_failed_bit();
+        error!(self.log, "Asm expression parsing not implemented yet");
+        None
+    }
+
+    fn parse_assert(&mut self) -> Option<ExprKey<'a>> {
+        // TODO: Implement assert expression parsing logic
+        self.set_failed_bit();
+        error!(self.log, "Assert expression parsing not implemented yet");
+        None
+    }
+
+    fn parse_type_alias(&mut self) -> Option<ExprKey<'a>> {
+        // TODO: Implement type alias parsing logic
+        self.set_failed_bit();
+        error!(self.log, "Type alias parsing not implemented yet");
+        None
+    }
+
+    fn parse_enum(&mut self) -> Option<ExprKey<'a>> {
+        // TODO: Implement enum parsing logic
+        self.set_failed_bit();
+        error!(self.log, "Enum parsing not implemented yet");
+        None
+    }
+
+    fn parse_struct(&mut self) -> Option<ExprKey<'a>> {
+        // TODO: Implement struct parsing logic
+        self.set_failed_bit();
+        error!(self.log, "Struct parsing not implemented yet");
+        None
+    }
+
+    fn parse_class(&mut self) -> Option<ExprKey<'a>> {
+        // TODO: Implement class parsing logic
+        self.set_failed_bit();
+        error!(self.log, "Class parsing not implemented yet");
+        None
+    }
+
+    fn parse_trait(&mut self) -> Option<ExprKey<'a>> {
+        // TODO: Implement trait parsing logic
+        self.set_failed_bit();
+        error!(self.log, "Trait parsing not implemented yet");
+        None
+    }
+
+    fn parse_implementation(&mut self) -> Option<ExprKey<'a>> {
+        // TODO: Implement implementation parsing logic
+        self.set_failed_bit();
+        error!(self.log, "Implementation parsing not implemented yet");
+        None
+    }
+
+    fn parse_contract(&mut self) -> Option<ExprKey<'a>> {
+        // TODO: Implement contract parsing logic
+        self.set_failed_bit();
+        error!(self.log, "Contract parsing not implemented yet");
+        None
+    }
+
+    fn parse_function(&mut self) -> Option<ExprKey<'a>> {
+        // TODO: Implement function parsing logic
+        self.set_failed_bit();
+        error!(self.log, "Function parsing not implemented yet");
+        None
+    }
+
+    fn parse_let_variable(&mut self) -> Option<ExprKey<'a>> {
+        // TODO: Implement let variable parsing logic
+        self.set_failed_bit();
+        error!(self.log, "Let variable parsing not implemented yet");
+        None
+    }
+
+    fn parse_var_variable(&mut self) -> Option<ExprKey<'a>> {
+        // TODO: Implement var variable parsing logic
+        self.set_failed_bit();
+        error!(self.log, "Var variable parsing not implemented yet");
+        None
     }
 
     fn parse_expression_primary(&mut self) -> Option<ExprKey<'a>> {
@@ -279,5 +415,44 @@ impl<'storage, 'logger, 'a> Parser<'storage, 'logger, 'a> {
                 None
             }
         }
+    }
+
+    pub(crate) fn parse_expression(&mut self) -> Option<ExprKey<'a>> {
+        let mut parenthesis_count = 0;
+        while self.lexer.skip_if(&Token::Punct(Punct::LeftParen)) {
+            parenthesis_count += 1;
+        }
+
+        let Some(mut expr) = self.parse_expression_primary() else {
+            self.set_failed_bit();
+            return None;
+        };
+
+        if self.lexer.skip_if(&Token::Punct(Punct::Semicolon)) {
+            expr = Builder::new(self.storage)
+                .create_statement()
+                .with_expression(expr)
+                .build();
+        }
+
+        self.storage.add_parentheses(expr);
+
+        for _ in 0..parenthesis_count {
+            if !self.lexer.skip_if(&Token::Punct(Punct::RightParen)) {
+                self.set_failed_bit();
+                error!(
+                    self.log,
+                    "[P????]: expr: expected closing parenthesis\n--> {}",
+                    self.lexer.sync_position()
+                );
+                return None;
+            }
+        }
+
+        // TODO: Binary expression parsing logic
+        // TODO: Unary prefix expression parsing logic
+        // TODO: Unary postfix expression parsing logic
+
+        Some(expr)
     }
 }
