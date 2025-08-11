@@ -57,13 +57,6 @@ impl<'storage, 'a> Builder<'storage, 'a> {
     }
 
     #[must_use]
-    pub fn create_char(self, char: char) -> ExprKey<'a> {
-        self.storage
-            .add_expr(ExprOwned::CharLit(char))
-            .expect("Failed to create char literal")
-    }
-
-    #[must_use]
     pub fn create_list(self) -> ListBuilder<'storage, 'a> {
         ListBuilder::new(self.storage)
     }

@@ -59,7 +59,6 @@ pub enum ExprKind {
     FloatLit,
     StringLit,
     BStringLit,
-    CharLit,
     ListLit,
     ObjectLit,
 
@@ -155,7 +154,6 @@ pub(crate) enum ExprOwned<'a> {
     FloatLit(f64),
     StringLit(StringData<'a>),
     BStringLit(BStringData<'a>),
-    CharLit(char),
     ListLit(ListLit<'a>),
     ObjectLit(ObjectLit<'a>),
 
@@ -251,7 +249,6 @@ pub enum ExprRef<'storage, 'a> {
     FloatLit(f64),
     StringLit(&'storage StringData<'a>),
     BStringLit(&'storage BStringData<'a>),
-    CharLit(char),
     ListLit(&'storage ListLit<'a>),
     ObjectLit(&'storage ObjectLit<'a>),
 
@@ -314,7 +311,6 @@ pub enum ExprRefMut<'storage, 'a> {
     FloatLit(f64),
     StringLit(&'storage StringData<'a>),
     BStringLit(&'storage BStringData<'a>),
-    CharLit(char),
     ListLit(&'storage mut ListLit<'a>),
     ObjectLit(&'storage mut ObjectLit<'a>),
 
@@ -379,7 +375,6 @@ impl TryInto<TypeKind> for ExprKind {
             | ExprKind::FloatLit
             | ExprKind::StringLit
             | ExprKind::BStringLit
-            | ExprKind::CharLit
             | ExprKind::ListLit
             | ExprKind::ObjectLit
             | ExprKind::UnaryExpr
@@ -444,7 +439,6 @@ impl TryFrom<u8> for ExprKind {
             x if x == ExprKind::FloatLit as u8 => Ok(ExprKind::FloatLit),
             x if x == ExprKind::StringLit as u8 => Ok(ExprKind::StringLit),
             x if x == ExprKind::BStringLit as u8 => Ok(ExprKind::BStringLit),
-            x if x == ExprKind::CharLit as u8 => Ok(ExprKind::CharLit),
             x if x == ExprKind::ListLit as u8 => Ok(ExprKind::ListLit),
             x if x == ExprKind::ObjectLit as u8 => Ok(ExprKind::ObjectLit),
 
@@ -549,7 +543,6 @@ impl<'a> TryInto<TypeOwned<'a>> for ExprOwned<'a> {
             | ExprOwned::FloatLit(_)
             | ExprOwned::StringLit(_)
             | ExprOwned::BStringLit(_)
-            | ExprOwned::CharLit(_)
             | ExprOwned::ListLit(_)
             | ExprOwned::ObjectLit(_)
             | ExprOwned::UnaryExpr(_)

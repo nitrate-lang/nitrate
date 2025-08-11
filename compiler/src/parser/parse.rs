@@ -74,10 +74,16 @@ impl<'storage, 'logger, 'a> Parser<'storage, 'logger, 'a> {
         let mut expressions = Vec::new();
         while !self.lexer.is_eof() {
             let Some(expression) = self.parse_expression() else {
-                // Resynchronize the lexer to the next semicolon
                 let before_pos = self.lexer.sync_position();
-                while !self.lexer.is_eof() && self.lexer.next_t() != Token::Punct(Punct::Semicolon)
-                {
+                loop {
+                    match self.lexer.next_t() {
+                        Token::Punct(Punct::Semicolon) | Token::Illegal | Token::Eof => {
+                            // Resynchronize the lexer to the next semicolon
+                            break;
+                        }
+
+                        _ => {}
+                    }
                 }
 
                 if before_pos == self.lexer.sync_position() {

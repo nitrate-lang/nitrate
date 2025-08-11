@@ -43,10 +43,6 @@ impl<'a> Parser<'_, '_, 'a> {
             .build()
     }
 
-    fn parse_char_literal(&mut self, value: char) -> ExprKey<'a> {
-        Builder::new(self.storage).create_char(value)
-    }
-
     fn parse_literal_suffix(&mut self, lit: ExprKey<'a>) -> ExprKey<'a> {
         let bb = Builder::new(self.storage);
         let type_name = match self.lexer.peek_t() {
@@ -308,12 +304,6 @@ impl<'a> Parser<'_, '_, 'a> {
             Token::BString(data) => {
                 self.lexer.skip_tok();
                 let lit = self.parse_bstring_literal(data);
-                Some(self.parse_literal_suffix(lit))
-            }
-
-            Token::Char(character) => {
-                self.lexer.skip_tok();
-                let lit = self.parse_char_literal(character);
                 Some(self.parse_literal_suffix(lit))
             }
 

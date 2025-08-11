@@ -4,7 +4,6 @@ use super::token::{
 };
 use log::error;
 use smallvec::SmallVec;
-use stackvector::StackVec;
 
 #[derive(Debug, Clone, Copy, PartialEq, PartialOrd, Hash)]
 pub enum LexerConstructionError {
@@ -829,153 +828,6 @@ impl<'a> Lexer<'a> {
     }
 
     #[inline(always)]
-    fn parse_char_escape(&mut self, start_pos: &SourcePosition) -> Result<u8, ()> {
-        match self.peek_byte() {
-            Ok(b'0') => {
-                self.advance(b'0');
-                Ok(b'\0')
-            }
-            Ok(b'a') => {
-                self.advance(b'a');
-                Ok(b'\x07')
-            }
-            Ok(b'b') => {
-                self.advance(b'b');
-                Ok(b'\x08')
-            }
-            Ok(b't') => {
-                self.advance(b't');
-                Ok(b'\t')
-            }
-            Ok(b'n') => {
-                self.advance(b'n');
-                Ok(b'\n')
-            }
-            Ok(b'v') => {
-                self.advance(b'v');
-                Ok(b'\x0b')
-            }
-            Ok(b'f') => {
-                self.advance(b'f');
-                Ok(b'\x0c')
-            }
-            Ok(b'r') => {
-                self.advance(b'r');
-                Ok(b'\r')
-            }
-            Ok(b'\\') => {
-                self.advance(b'\\');
-                Ok(b'\\')
-            }
-            Ok(b'\'') => {
-                self.advance(b'\'');
-                Ok(b'\'')
-            }
-            Ok(b) => {
-                error!(
-                    "[L0500]: Invalid escape sequence '\\{}' in character literal\n--> {}",
-                    b as char, start_pos
-                );
-
-                Err(())
-            }
-
-            Err(()) => {
-                error!(
-                    "[L0501]: Unexpected end of input while parsing character literal\n--> {start_pos}"
-                );
-                Err(())
-            }
-        }
-    }
-
-    #[inline(always)]
-    fn parse_char(&mut self) -> Result<Token<'a>, ()> {
-        let start_pos = self.reader_position();
-
-        assert!(self.peek_byte().expect("Failed to peek byte") == b'\'');
-        self.advance(b'\'');
-
-        // Lets use more than 4 bytes for debugability of misuses of single quotes.
-        let mut char_buffer = StackVec::<[u8; 32]>::new();
-
-        loop {
-            if char_buffer.len() >= char_buffer.capacity() {
-                error!(
-                    "[L0502]: Character literal '{}' is too long. Did you mean to use a string literal?\n--> {}",
-                    str::from_utf8(&char_buffer).unwrap_or("<invalid utf-8>"),
-                    start_pos
-                );
-
-                return Err(());
-            }
-
-            match self.peek_byte() {
-                Ok(b'\\') => {
-                    self.advance(b'\\');
-
-                    if let Ok(escaped_char) = self.parse_char_escape(&start_pos) {
-                        char_buffer.push(escaped_char);
-                    } else {
-                        return Err(());
-                    }
-                }
-
-                Ok(b'\'') => {
-                    self.advance(b'\'');
-
-                    if let Ok(chars_buffer) = str::from_utf8(&char_buffer) {
-                        if chars_buffer.is_empty() {
-                            error!(
-                                "[L0503]: Character literal is empty. Did you forget to specify the character?\n--> {start_pos}"
-                            );
-
-                            return Err(());
-                        }
-
-                        let mut chars_iter = chars_buffer.chars();
-                        let character = chars_iter
-                            .next()
-                            .expect("Character literal should not be empty");
-
-                        if chars_iter.next().is_some() {
-                            error!(
-                                "[L0502]: Character literal '{}' contains more than one character. Did you mean to use a string literal?\n--> {}",
-                                str::from_utf8(&char_buffer).unwrap_or("<invalid utf-8>"),
-                                start_pos
-                            );
-
-                            return Err(());
-                        }
-
-                        return Ok(Token::Char(character));
-                    }
-                    error!(
-                        "[L0504]: Character literal '{:?}' contains some invalid utf-8 bytes\n--> {}",
-                        char_buffer.as_slice() as &[u8],
-                        start_pos
-                    );
-
-                    return Err(());
-                }
-
-                Ok(b) => {
-                    self.advance(b);
-                    char_buffer.push(b);
-                }
-
-                Err(()) => {
-                    error!(
-                        "[L0501]: Unexpected end of input while parsing character literal\n--> {start_pos}"
-                    );
-
-                    return Err(());
-                }
-            }
-        }
-    }
-
-    #[inline(always)]
     fn parse_comment(&mut self) -> Result<Token<'a>, ()> {
         let start_pos = self.reader_position();
         let mut comment_bytes = self.read_while(|b| b != b'\n');
@@ -1009,7 +861,7 @@ impl<'a> Lexer<'a> {
         let b = self.peek_byte()?;
 
         match b {
-            b'(' | b')' | b'[' | b']' | b'{' | b'}' | b',' | b';' | b'@' => {
+            b'(' | b')' | b'[' | b']' | b'{' | b'}' | b',' | b';' | b'@' | b'\'' => {
                 match self.advance(b) {
                     b'(' => Ok(Token::Punct(Punct::LeftParen)),
                     b')' => Ok(Token::Punct(Punct::RightParen)),
@@ -1020,6 +872,7 @@ impl<'a> Lexer<'a> {
                     b',' => Ok(Token::Punct(Punct::Comma)),
                     b';' => Ok(Token::Punct(Punct::Semicolon)),
                     b'@' => Ok(Token::Punct(Punct::AtSign)),
+                    b'\'' => Ok(Token::Punct(Punct::SingleQuote)),
                     _ => unreachable!(), // All cases are handled above
                 }
             }
@@ -1301,7 +1154,6 @@ impl<'a> Lexer<'a> {
                 }
                 b if b.is_ascii_digit() => self.parse_number(),
                 b'"' => self.parse_string(),
-                b'\'' => self.parse_char(),
                 b'#' => self.parse_comment(),
                 _ => self.parse_operator_or_punctuation(),
             },

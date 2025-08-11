@@ -133,11 +133,9 @@ impl<'a> Parser<'_, '_, 'a> {
 
         let current_pos = self.lexer.sync_position();
         let type_or_expression = match self.lexer.peek_t() {
-            Token::Integer(_)
-            | Token::Float(_)
-            | Token::String(_)
-            | Token::BString(_)
-            | Token::Char(_) => self.parse_expression(),
+            Token::Integer(_) | Token::Float(_) | Token::String(_) | Token::BString(_) => {
+                self.parse_expression()
+            }
 
             Token::Op(Op::Add) => {
                 self.lexer.skip_tok();
@@ -799,15 +797,6 @@ impl<'a> Parser<'_, '_, 'a> {
                 error!(
                     self.log,
                     "[P0???]: type: unexpected bstring '{}'\n--> {}", bstring, current_pos
-                );
-
-                None
-            }
-
-            Token::Char(char) => {
-                error!(
-                    self.log,
-                    "[P0???]: type: unexpected character '{}'\n--> {}", char, current_pos
                 );
 
                 None

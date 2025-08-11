@@ -181,8 +181,6 @@ impl std::fmt::Debug for Printable<'_, '_> {
                 .field("value", &x.get())
                 .finish(),
 
-            ExprRef::CharLit(ch) => f.debug_struct("CharLit").field("value", &ch).finish(),
-
             ExprRef::ListLit(x) => f
                 .debug_list()
                 .entries(x.elements().iter().map(|e| e.as_printable(self.storage)))

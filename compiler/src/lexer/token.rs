@@ -424,6 +424,7 @@ pub enum Punct {
     Semicolon,    /* ';' */
     Colon,        /* ':' */
     AtSign,       /* '@' */
+    SingleQuote,  /* ''' */
 }
 
 impl std::fmt::Display for Punct {
@@ -439,6 +440,7 @@ impl std::fmt::Display for Punct {
             Punct::Semicolon => write!(f, ";"),
             Punct::Colon => write!(f, ":"),
             Punct::AtSign => write!(f, "@"),
+            Punct::SingleQuote => write!(f, "'"),
         }
     }
 }
@@ -602,7 +604,6 @@ pub enum Token<'a> {
     Float(f64),
     String(StringData<'a>),
     BString(BStringData<'a>),
-    Char(char),
     Comment(Comment<'a>),
     Keyword(Keyword),
     Punct(Punct),
@@ -619,7 +620,6 @@ impl std::fmt::Display for Token<'_> {
             Token::Float(float) => write!(f, "{float}"),
             Token::String(s) => write!(f, "{s}"),
             Token::BString(s) => write!(f, "{s}"),
-            Token::Char(c) => write!(f, "'{c}'"),
             Token::Comment(c) => write!(f, "{c}"),
             Token::Keyword(kw) => write!(f, "{kw}"),
             Token::Punct(p) => write!(f, "{p}"),

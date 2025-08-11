@@ -219,7 +219,6 @@ impl<'a> ExprKey<'a> {
             | ExprKind::FloatLit
             | ExprKind::StringLit
             | ExprKind::BStringLit
-            | ExprKind::CharLit
             | ExprKind::ListLit
             | ExprKind::ObjectLit
             | ExprKind::UnaryExpr
@@ -379,8 +378,7 @@ impl<'a> Storage<'a> {
             | ExprKind::UnmanagedRefType
             | ExprKind::GenericType
             | ExprKind::OpaqueType
-            | ExprKind::Discard
-            | ExprKind::CharLit => {}
+            | ExprKind::Discard => {}
 
             ExprKind::IntegerLit => self.integers.reserve(additional),
             ExprKind::FloatLit => self.floats.reserve(additional),
@@ -468,8 +466,6 @@ impl<'a> Storage<'a> {
                 .inspect(|_| {
                     self.binaries.push(node);
                 }),
-
-            ExprOwned::CharLit(ch) => ExprKey::new(ExprKind::CharLit, ch as usize),
 
             ExprOwned::ListLit(node) => {
                 ExprKey::new(ExprKind::ListLit, self.lists.len()).inspect(|_| {
@@ -685,7 +681,6 @@ impl<'a> Storage<'a> {
             ExprKind::FloatLit => self.floats.get(index).map(|&f| ExprRef::FloatLit(f)),
             ExprKind::StringLit => self.strings.get(index).map(ExprRef::StringLit),
             ExprKind::BStringLit => self.binaries.get(index).map(ExprRef::BStringLit),
-            ExprKind::CharLit => char::from_u32(index as u32).map(ExprRef::CharLit),
             ExprKind::ListLit => self.lists.get(index).map(ExprRef::ListLit),
             ExprKind::ObjectLit => self.objects.get(index).map(ExprRef::ObjectLit),
 
@@ -757,7 +752,6 @@ impl<'a> Storage<'a> {
             ExprKind::FloatLit => self.floats.get(index).map(|&f| ExprRefMut::FloatLit(f)),
             ExprKind::StringLit => self.strings.get(index).map(ExprRefMut::StringLit),
             ExprKind::BStringLit => self.binaries.get(index).map(ExprRefMut::BStringLit),
-            ExprKind::CharLit => char::from_u32(index as u32).map(ExprRefMut::CharLit),
             ExprKind::ListLit => self.lists.get_mut(index).map(ExprRefMut::ListLit),
             ExprKind::ObjectLit => self.objects.get_mut(index).map(ExprRefMut::ObjectLit),
 
