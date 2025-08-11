@@ -13,7 +13,7 @@ pub(crate) struct SourcePreamble<'a> {
     pub insource_config: HashSet<StringData<'a>>,
 }
 
-impl<'a> Parser<'_, '_, 'a> {
+impl<'a> Parser<'a, '_, '_, '_> {
     fn parse_macro_prefix(&mut self) -> Option<(&'a str, Vec<ExprKey<'a>>)> {
         while self.lexer.skip_if(&Token::Punct(Punct::Semicolon)) {}
         if !self.lexer.skip_if(&Token::Punct(Punct::AtSign)) {

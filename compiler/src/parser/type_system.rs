@@ -7,6 +7,8 @@ use slog::{error, info};
 #[allow(unused_imports)]
 use crate::lexer::Lexer;
 #[allow(unused_imports)]
+use crate::parser::SymbolTable;
+#[allow(unused_imports)]
 use crate::parsetree::Storage;
 
 #[derive(Default)]
@@ -22,7 +24,7 @@ impl RefinementOptions<'_> {
     }
 }
 
-impl<'a> Parser<'_, '_, 'a> {
+impl<'a> Parser<'a, '_, '_, '_> {
     fn parse_refinement_range(&mut self) -> Option<(Option<ExprKey<'a>>, Option<ExprKey<'a>>)> {
         assert!(self.lexer.peek_t() == Token::Punct(Punct::LeftBracket));
         self.lexer.skip_tok();
@@ -1006,9 +1008,10 @@ fn test_parse_type() {
 
     let lexer = Lexer::new(source.as_bytes(), "test").expect("Failed to create lexer");
     let mut storage = Storage::new();
+    let mut symtab = SymbolTable::default();
     let mut logger = slog::Logger::root(slog::Discard, slog::o!());
 
-    let mut parser = Parser::new(lexer, &mut storage, &mut logger);
+    let mut parser = Parser::new(lexer, &mut storage, &mut symtab, &mut logger);
     let model = parser.parse_type().expect("Failed to parse source");
     assert!(!parser.has_failed(), "Parsing failed with errors");
 

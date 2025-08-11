@@ -72,6 +72,7 @@ fn program() -> i32 {
     };
 
     let mut storage = Storage::new();
+    let mut symbol_table = SymbolTable::default();
 
     let do_parse = || {
         let decorator = TermDecorator::new().build();
@@ -82,7 +83,7 @@ fn program() -> i32 {
         let drain = Async::new(drain.fuse()).build().fuse();
         let mut root_logger = Logger::root(drain, o!());
 
-        let mut parser = Parser::new(lexer, &mut storage, &mut root_logger);
+        let mut parser = Parser::new(lexer, &mut storage, &mut symbol_table, &mut root_logger);
 
         parser.parse()
     };

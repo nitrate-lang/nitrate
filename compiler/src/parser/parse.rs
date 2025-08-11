@@ -1,27 +1,34 @@
 use super::source_model::SourceModel;
+use super::symbol_table::SymbolTable;
 use crate::lexer::{Lexer, Punct, Token};
+use crate::parser::QualifiedScope;
 use crate::parsetree::{Builder, Storage};
 use slog::{Logger, error, info};
+use smallvec::SmallVec;
 
-pub struct Parser<'storage, 'logger, 'a> {
+pub struct Parser<'a, 'storage, 'symbol_table, 'logger> {
     pub(crate) lexer: Lexer<'a>,
     pub(crate) storage: &'storage mut Storage<'a>,
+    pub(crate) symbol_table: &'symbol_table mut SymbolTable<'a>,
+    pub(crate) scope: QualifiedScope<'a>,
     pub(crate) log: &'logger mut Logger,
-    // Source files are 2^32 bytes max, so this won't overflow
     pub(crate) generic_type_depth: i64,
     pub(crate) generic_type_suffix_terminator_ambiguity: bool,
     failed_bit: bool,
 }
 
-impl<'storage, 'logger, 'a> Parser<'storage, 'logger, 'a> {
+impl<'a, 'storage, 'symbol_table, 'logger> Parser<'a, 'storage, 'symbol_table, 'logger> {
     pub fn new(
         lexer: Lexer<'a>,
         storage: &'storage mut Storage<'a>,
+        symbol_table: &'symbol_table mut SymbolTable<'a>,
         log: &'logger mut Logger,
     ) -> Self {
         Parser {
             lexer,
             storage,
+            symbol_table,
+            scope: QualifiedScope::new(SmallVec::new()),
             log,
             generic_type_depth: 0,
             generic_type_suffix_terminator_ambiguity: false,
@@ -36,6 +43,14 @@ impl<'storage, 'logger, 'a> Parser<'storage, 'logger, 'a> {
 
     pub fn get_storage_mut(&mut self) -> &mut Storage<'a> {
         self.storage
+    }
+
+    pub fn get_symbol_table(&self) -> &SymbolTable<'a> {
+        self.symbol_table
+    }
+
+    pub fn get_symbol_table_mut(&mut self) -> &mut SymbolTable<'a> {
+        self.symbol_table
     }
 
     #[must_use]

@@ -5,12 +5,18 @@ use nitrate_compiler::parsetree::*;
 
 struct ParserUtil {
     storage: Storage<'static>,
+    symbol_table: SymbolTable<'static>,
     logger: slog::Logger,
 }
 
 fn parse_type(source_code: &'static str, util: &mut ParserUtil) {
     let lexer = Lexer::new(source_code.as_bytes(), "").expect("Failed to create lexer");
-    let mut parser = Parser::new(lexer, &mut util.storage, &mut util.logger);
+    let mut parser = Parser::new(
+        lexer,
+        &mut util.storage,
+        &mut util.symbol_table,
+        &mut util.logger,
+    );
     parser.parse_type().expect("Failed to parse type");
 }
 
@@ -90,6 +96,7 @@ fn monster(util: &mut ParserUtil) {
 fn parse_type_benchmark(c: &mut Criterion) {
     let mut util = ParserUtil {
         storage: Storage::new(),
+        symbol_table: SymbolTable::default(),
         logger: slog::Logger::root(slog::Discard, slog::o!()),
     };
 
