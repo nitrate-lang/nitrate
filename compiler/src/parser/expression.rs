@@ -152,18 +152,56 @@ impl<'a> Parser<'_, '_, 'a> {
         assert!(self.lexer.peek_t() == Token::Keyword(Keyword::Break));
         self.lexer.skip_tok();
 
-        // TODO: Implement break branch label parsing logic
+        let branch_label = if self.lexer.skip_if(&Token::Punct(Punct::SingleQuote)) {
+            let Some(label) = self.lexer.next_if_name() else {
+                error!(
+                    self.log,
+                    "[P????]: expr: break: expected branch label after single quote\n--> {}",
+                    self.lexer.sync_position()
+                );
 
-        Some(Builder::new(self.storage).create_break().build())
+                return None;
+            };
+
+            Some(label.name())
+        } else {
+            None
+        };
+
+        Some(
+            Builder::new(self.storage)
+                .create_break()
+                .with_label(branch_label)
+                .build(),
+        )
     }
 
     fn parse_continue(&mut self) -> Option<ExprKey<'a>> {
         assert!(self.lexer.peek_t() == Token::Keyword(Keyword::Continue));
         self.lexer.skip_tok();
 
-        // TODO: Implement continue branch label parsing logic
+        let branch_label = if self.lexer.skip_if(&Token::Punct(Punct::SingleQuote)) {
+            let Some(label) = self.lexer.next_if_name() else {
+                error!(
+                    self.log,
+                    "[P????]: expr: continue: expected branch label after single quote\n--> {}",
+                    self.lexer.sync_position()
+                );
 
-        Some(Builder::new(self.storage).create_continue().build())
+                return None;
+            };
+
+            Some(label.name())
+        } else {
+            None
+        };
+
+        Some(
+            Builder::new(self.storage)
+                .create_continue()
+                .with_label(branch_label)
+                .build(),
+        )
     }
 
     fn parse_return(&mut self) -> Option<ExprKey<'a>> {
