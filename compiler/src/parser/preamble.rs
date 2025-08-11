@@ -81,11 +81,9 @@ impl<'storage, 'logger, 'a> Parser<'storage, 'logger, 'a> {
             if let Ok(minor) = minor_str[1..].parse() {
                 pair.1 = Some(minor);
             }
-        } else {
-            if let Ok(major) = input.parse() {
-                pair.0 = Some(major);
-                pair.1 = Some(0);
-            }
+        } else if let Ok(major) = input.parse() {
+            pair.0 = Some(major);
+            pair.1 = Some(0);
         }
 
         pair.0.zip(pair.1).map(|(major, minor)| (major, minor))

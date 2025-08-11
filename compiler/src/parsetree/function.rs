@@ -52,7 +52,7 @@ impl<'a> Function<'a> {
             parameters,
             return_type,
             attributes,
-            definition: definition,
+            definition,
         }
     }
 

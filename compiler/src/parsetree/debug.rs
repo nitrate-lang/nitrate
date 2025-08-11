@@ -46,7 +46,7 @@ struct ForeachBinding<'storage, 'a> {
     type_: Option<Printable<'storage, 'a>>,
 }
 
-impl<'storage, 'a> std::fmt::Debug for Printable<'storage, 'a> {
+impl std::fmt::Debug for Printable<'_, '_> {
     fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
         match self.expr.get(self.storage) {
             ExprRef::Bool => write!(f, "bool"),
@@ -262,7 +262,7 @@ impl<'storage, 'a> std::fmt::Debug for Printable<'storage, 'a> {
                 .field("value", &x.value().map(|v| v.as_printable(self.storage)))
                 .finish(),
 
-            ExprRef::Identifier(name) => write!(f, "{}", name),
+            ExprRef::Identifier(name) => write!(f, "{name}"),
 
             ExprRef::If(x) => f
                 .debug_struct("If")

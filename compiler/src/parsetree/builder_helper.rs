@@ -761,17 +761,17 @@ impl<'storage, 'a> BlockBuilder<'storage, 'a> {
         self
     }
 
-    pub fn add_statement(mut self, expression: ExprKey<'a>) -> Option<Self> {
+    pub fn add_statement(mut self, expression: ExprKey<'a>) -> Self {
         let statement = Builder::new(self.storage)
             .create_statement()
             .with_expression(expression)
             .build();
 
         self.elements.push(statement);
-        Some(self)
+        self
     }
 
-    pub fn add_statements<I>(mut self, elements: I) -> Option<Self>
+    pub fn add_statements<I>(mut self, elements: I) -> Self
     where
         I: IntoIterator<Item = ExprKey<'a>>,
     {
@@ -784,7 +784,7 @@ impl<'storage, 'a> BlockBuilder<'storage, 'a> {
             self.elements.push(statement);
         }
 
-        Some(self)
+        self
     }
 
     pub fn build(self) -> ExprKey<'a> {

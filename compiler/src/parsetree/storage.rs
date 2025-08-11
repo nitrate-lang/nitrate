@@ -2,7 +2,9 @@ use crate::lexer::{BStringData, StringData};
 
 use super::bin_expr::BinExpr;
 use super::block::Block;
-use super::control_flow::*;
+use super::control_flow::{
+    Assert, Await, Break, Continue, DoWhileLoop, ForEach, If, Return, Switch, WhileLoop,
+};
 use super::expression::{ExprKind, ExprOwned, ExprRef, ExprRefMut, TypeKind, TypeOwned};
 use super::function::Function;
 use super::list::ListLit;
@@ -35,7 +37,7 @@ impl<'a> ExprKey<'a> {
         let variant_bits = (variant as u32 + 1) << 26;
 
         can_store_index.then_some(ExprKey {
-            id: NonZeroU32::new(variant_bits | index as u32).expect("ID must be non-zero"),
+            id: NonZeroU32::new(variant_bits | index as u64 as u32).expect("ID must be non-zero"),
             _marker: std::marker::PhantomData,
         })
     }
@@ -51,24 +53,21 @@ impl<'a> ExprKey<'a> {
         }
     }
 
-    pub(crate) fn variant_index(&self) -> ExprKind {
+    pub(crate) fn variant_index(self) -> ExprKind {
         let number = ((self.id.get() >> 26) as u8) - 1;
         ExprKind::try_from(number).expect("Invalid variant index")
     }
 
-    fn instance_index(&self) -> usize {
+    fn instance_index(self) -> usize {
         (self.id.get() & 0x03FFFFFF) as usize
     }
 
-    pub fn get<'storage>(&self, storage: &'storage Storage<'a>) -> ExprRef<'storage, 'a> {
-        storage.get_expr(*self)
+    pub fn get<'storage>(self, storage: &'storage Storage<'a>) -> ExprRef<'storage, 'a> {
+        storage.get_expr(self)
     }
 
-    pub fn get_mut<'storage>(
-        &mut self,
-        storage: &'storage mut Storage<'a>,
-    ) -> ExprRefMut<'storage, 'a> {
-        storage.get_expr_mut(*self)
+    pub fn get_mut<'storage>(self, storage: &'storage mut Storage<'a>) -> ExprRefMut<'storage, 'a> {
+        storage.get_expr_mut(self)
     }
 }
 
@@ -80,7 +79,7 @@ impl<'a> TypeKey<'a> {
         let variant_bits = (variant as u32 + 1) << 26;
 
         can_store_index.then_some(TypeKey {
-            id: NonZeroU32::new(variant_bits | index as u32).expect("ID must be non-zero"),
+            id: NonZeroU32::new(variant_bits | index as u64 as u32).expect("ID must be non-zero"),
             _marker: std::marker::PhantomData,
         })
     }
@@ -96,7 +95,7 @@ impl<'a> TypeKey<'a> {
         }
     }
 
-    pub(crate) fn variant_index(&self) -> TypeKind {
+    pub(crate) fn variant_index(self) -> TypeKind {
         let number = ((self.id.get() >> 26) as u8) - 1;
 
         match number {
@@ -134,22 +133,22 @@ impl<'a> TypeKey<'a> {
         }
     }
 
-    fn instance_index(&self) -> usize {
+    fn instance_index(self) -> usize {
         (self.id.get() & 0x03FFFFFF) as usize
     }
 
-    pub fn get<'storage>(&self, storage: &'storage Storage<'a>) -> &'storage TypeOwned<'a> {
-        storage.get_type(*self)
+    pub fn get<'storage>(self, storage: &'storage Storage<'a>) -> &'storage TypeOwned<'a> {
+        storage.get_type(self)
     }
 }
 
-impl<'a> std::fmt::Display for ExprKey<'a> {
+impl std::fmt::Display for ExprKey<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{:?}({})", self.variant_index(), self.instance_index())
     }
 }
 
-impl<'a> std::fmt::Display for TypeKey<'a> {
+impl std::fmt::Display for TypeKey<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{:?}({})", self.variant_index(), self.instance_index())
     }
@@ -164,15 +163,15 @@ impl<'a> TryInto<TypeKey<'a>> for ExprKey<'a> {
     }
 }
 
-impl<'a> Into<ExprKey<'a>> for TypeKey<'a> {
-    fn into(self) -> ExprKey<'a> {
-        ExprKey::new(self.variant_index().into(), self.instance_index())
+impl<'a> From<TypeKey<'a>> for ExprKey<'a> {
+    fn from(value: TypeKey<'a>) -> Self {
+        ExprKey::new(value.variant_index().into(), value.instance_index())
             .expect("TypeRef should be convertible to ExprRef")
     }
 }
 
 impl<'a> ExprKey<'a> {
-    pub fn is_discard(&self) -> bool {
+    pub fn is_discard(self) -> bool {
         self.variant_index() == ExprKind::Discard
     }
 
@@ -180,7 +179,7 @@ impl<'a> ExprKey<'a> {
         *self = ExprKey::new_single(ExprKind::Discard);
     }
 
-    pub fn is_type(&self) -> bool {
+    pub fn is_type(self) -> bool {
         match self.variant_index() {
             ExprKind::Bool
             | ExprKind::UInt8
@@ -243,17 +242,17 @@ impl<'a> ExprKey<'a> {
         storage.has_parentheses(*self)
     }
 
-    pub fn add_parentheses(&self, storage: &mut Storage<'a>) {
-        storage.add_parentheses(*self)
+    pub fn add_parentheses(self, storage: &mut Storage<'a>) {
+        storage.add_parentheses(self)
     }
 }
 
 impl<'a> TypeKey<'a> {
-    pub fn has_parentheses(&self, storage: &Storage<'a>) -> bool {
+    pub fn has_parentheses(self, storage: &Storage<'a>) -> bool {
         storage.has_parentheses(self.to_owned().into())
     }
 
-    pub fn add_parentheses(&self, storage: &mut Storage<'a>) {
+    pub fn add_parentheses(self, storage: &mut Storage<'a>) {
         storage.add_parentheses(self.to_owned().into())
     }
 }
@@ -290,6 +289,12 @@ pub struct Storage<'a> {
     dedup_types: BiMap<TypeKey<'a>, TypeOwned<'a>>,
 
     has_parentheses: HashSet<ExprKey<'a>>,
+}
+
+impl<'a> Default for Storage<'a> {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl<'a> Storage<'a> {
@@ -366,15 +371,14 @@ impl<'a> Storage<'a> {
             | ExprKind::ManagedRefType
             | ExprKind::UnmanagedRefType
             | ExprKind::GenericType
-            | ExprKind::OpaqueType => {}
-
-            ExprKind::Discard => {}
+            | ExprKind::OpaqueType
+            | ExprKind::Discard
+            | ExprKind::CharLit => {}
 
             ExprKind::IntegerLit => self.integers.reserve(additional),
             ExprKind::FloatLit => self.floats.reserve(additional),
             ExprKind::StringLit => self.strings.reserve(additional),
             ExprKind::BStringLit => self.binaries.reserve(additional),
-            ExprKind::CharLit => {}
             ExprKind::ListLit => self.lists.reserve(additional),
             ExprKind::ObjectLit => self.objects.reserve(additional),
 
@@ -645,13 +649,11 @@ impl<'a> Storage<'a> {
 
                 if let Some(type_key) = self.dedup_types.get_by_right(&other) {
                     Some(*type_key)
+                } else if let Some(key) = TypeKey::new(kind, self.dedup_types.len()) {
+                    self.dedup_types.insert(key, other);
+                    Some(key)
                 } else {
-                    if let Some(key) = TypeKey::new(kind, self.dedup_types.len()) {
-                        self.dedup_types.insert(key, other);
-                        Some(key)
-                    } else {
-                        None
-                    }
+                    None
                 }
             }
         }

@@ -1,7 +1,9 @@
 use super::array_type::ArrayType;
 use super::bin_expr::BinExpr;
 use super::block::Block;
-use super::control_flow::*;
+use super::control_flow::{
+    Assert, Await, Break, Continue, DoWhileLoop, ForEach, If, Return, Switch, WhileLoop,
+};
 use super::function::Function;
 use super::function_type::FunctionType;
 use super::generic_type::GenericType;
@@ -471,9 +473,9 @@ impl TryFrom<u8> for ExprKind {
     }
 }
 
-impl Into<ExprKind> for TypeKind {
-    fn into(self) -> ExprKind {
-        match self {
+impl From<TypeKind> for ExprKind {
+    fn from(val: TypeKind) -> ExprKind {
+        match val {
             TypeKind::Bool => ExprKind::Bool,
             TypeKind::UInt8 => ExprKind::UInt8,
             TypeKind::UInt16 => ExprKind::UInt16,
@@ -571,9 +573,9 @@ impl<'a> TryInto<TypeOwned<'a>> for ExprOwned<'a> {
     }
 }
 
-impl<'a> Into<ExprOwned<'a>> for TypeOwned<'a> {
-    fn into(self) -> ExprOwned<'a> {
-        match self {
+impl<'a> From<TypeOwned<'a>> for ExprOwned<'a> {
+    fn from(val: TypeOwned<'a>) -> ExprOwned<'a> {
+        match val {
             TypeOwned::Bool => ExprOwned::Bool,
             TypeOwned::UInt8 => ExprOwned::UInt8,
             TypeOwned::UInt16 => ExprOwned::UInt16,
@@ -607,9 +609,9 @@ impl<'a> Into<ExprOwned<'a>> for TypeOwned<'a> {
     }
 }
 
-impl<'storage, 'a> Into<ExprRef<'storage, 'a>> for &'storage TypeOwned<'a> {
-    fn into(self) -> ExprRef<'storage, 'a> {
-        match self {
+impl<'storage, 'a> From<&'storage TypeOwned<'a>> for ExprRef<'storage, 'a> {
+    fn from(val: &'storage TypeOwned<'a>) -> ExprRef<'storage, 'a> {
+        match val {
             TypeOwned::Bool => ExprRef::Bool,
             TypeOwned::UInt8 => ExprRef::UInt8,
             TypeOwned::UInt16 => ExprRef::UInt16,
@@ -643,9 +645,9 @@ impl<'storage, 'a> Into<ExprRef<'storage, 'a>> for &'storage TypeOwned<'a> {
     }
 }
 
-impl<'storage, 'a> Into<ExprRefMut<'storage, 'a>> for &'storage TypeOwned<'a> {
-    fn into(self) -> ExprRefMut<'storage, 'a> {
-        match self {
+impl<'storage, 'a> From<&'storage TypeOwned<'a>> for ExprRefMut<'storage, 'a> {
+    fn from(val: &'storage TypeOwned<'a>) -> ExprRefMut<'storage, 'a> {
+        match val {
             TypeOwned::Bool => ExprRefMut::Bool,
             TypeOwned::UInt8 => ExprRefMut::UInt8,
             TypeOwned::UInt16 => ExprRefMut::UInt16,
