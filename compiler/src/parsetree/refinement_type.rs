@@ -23,18 +23,22 @@ impl<'a> RefinementType<'a> {
         }
     }
 
+    #[must_use]
     pub fn base(&self) -> TypeKey<'a> {
         self.base
     }
 
+    #[must_use]
     pub fn width(&self) -> Option<ExprKey<'a>> {
         self.width
     }
 
+    #[must_use]
     pub fn min(&self) -> Option<ExprKey<'a>> {
         self.min
     }
 
+    #[must_use]
     pub fn max(&self) -> Option<ExprKey<'a>> {
         self.max
     }

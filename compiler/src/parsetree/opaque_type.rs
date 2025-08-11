@@ -10,10 +10,12 @@ impl<'a> OpaqueType<'a> {
         OpaqueType { identity }
     }
 
+    #[must_use]
     pub fn into_inner(self) -> StringData<'a> {
         self.identity
     }
 
+    #[must_use]
     pub fn identity(&self) -> &str {
         self.identity.get()
     }

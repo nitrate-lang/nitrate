@@ -93,14 +93,17 @@ impl<'a> BinExpr<'a> {
         }
     }
 
+    #[must_use]
     pub fn left(&self) -> ExprKey<'a> {
         self.left
     }
 
+    #[must_use]
     pub fn op(&self) -> BinExprOp {
         self.operator
     }
 
+    #[must_use]
     pub fn right(&self) -> ExprKey<'a> {
         self.right
     }

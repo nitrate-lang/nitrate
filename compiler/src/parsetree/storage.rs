@@ -62,6 +62,7 @@ impl<'a> ExprKey<'a> {
         (self.id.get() & 0x03FFFFFF) as usize
     }
 
+    #[must_use]
     pub fn get<'storage>(self, storage: &'storage Storage<'a>) -> ExprRef<'storage, 'a> {
         storage.get_expr(self)
     }
@@ -137,6 +138,7 @@ impl<'a> TypeKey<'a> {
         (self.id.get() & 0x03FFFFFF) as usize
     }
 
+    #[must_use]
     pub fn get<'storage>(self, storage: &'storage Storage<'a>) -> &'storage TypeOwned<'a> {
         storage.get_type(self)
     }
@@ -171,6 +173,7 @@ impl<'a> From<TypeKey<'a>> for ExprKey<'a> {
 }
 
 impl<'a> ExprKey<'a> {
+    #[must_use]
     pub fn is_discard(self) -> bool {
         self.variant_index() == ExprKind::Discard
     }
@@ -179,6 +182,7 @@ impl<'a> ExprKey<'a> {
         *self = ExprKey::new_single(ExprKind::Discard);
     }
 
+    #[must_use]
     pub fn is_type(self) -> bool {
         match self.variant_index() {
             ExprKind::Bool
@@ -238,22 +242,24 @@ impl<'a> ExprKey<'a> {
         }
     }
 
+    #[must_use]
     pub fn has_parentheses(&self, storage: &Storage<'a>) -> bool {
         storage.has_parentheses(*self)
     }
 
     pub fn add_parentheses(self, storage: &mut Storage<'a>) {
-        storage.add_parentheses(self)
+        storage.add_parentheses(self);
     }
 }
 
 impl<'a> TypeKey<'a> {
+    #[must_use]
     pub fn has_parentheses(self, storage: &Storage<'a>) -> bool {
-        storage.has_parentheses(self.to_owned().into())
+        storage.has_parentheses(self.into())
     }
 
     pub fn add_parentheses(self, storage: &mut Storage<'a>) {
-        storage.add_parentheses(self.to_owned().into())
+        storage.add_parentheses(self.into());
     }
 }
 
@@ -291,7 +297,7 @@ pub struct Storage<'a> {
     has_parentheses: HashSet<ExprKey<'a>>,
 }
 
-impl<'a> Default for Storage<'a> {
+impl Default for Storage<'_> {
     fn default() -> Self {
         Self::new()
     }
@@ -300,6 +306,7 @@ impl<'a> Default for Storage<'a> {
 impl<'a> Storage<'a> {
     const STRING_LIT_EMPTY_INDEX: usize = 0;
 
+    #[must_use]
     pub fn new() -> Self {
         let mut storage = Storage {
             integers: Vec::new(),
@@ -435,7 +442,7 @@ impl<'a> Storage<'a> {
             | ExprOwned::GenericType(_)
             | ExprOwned::OpaqueType(_) => self
                 .add_type(expr.try_into().expect("Expected a type node"))
-                .map(|key| key.into()),
+                .map(std::convert::Into::into),
 
             ExprOwned::Discard => Some(ExprKey::new_single(ExprKind::Discard)),
 
@@ -783,6 +790,7 @@ impl<'a> Storage<'a> {
         .expect("Expression not found in storage")
     }
 
+    #[must_use]
     pub fn get_type(&self, id: TypeKey<'a>) -> &TypeOwned<'a> {
         match id.variant_index() {
             TypeKind::Bool => &TypeOwned::Bool,
@@ -810,6 +818,7 @@ impl<'a> Storage<'a> {
         }
     }
 
+    #[must_use]
     pub fn has_parentheses(&self, key: ExprKey<'a>) -> bool {
         self.has_parentheses.contains(&key)
     }

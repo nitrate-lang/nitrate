@@ -10,10 +10,12 @@ impl<'a> Statement<'a> {
         Statement { expr }
     }
 
+    #[must_use]
     pub fn into_inner(self) -> ExprKey<'a> {
         self.expr
     }
 
+    #[must_use]
     pub fn get(&self) -> ExprKey<'a> {
         self.expr
     }

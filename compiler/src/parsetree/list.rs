@@ -10,10 +10,12 @@ impl<'a> ListLit<'a> {
         ListLit { elements }
     }
 
+    #[must_use]
     pub fn into_inner(self) -> Vec<ExprKey<'a>> {
         self.elements
     }
 
+    #[must_use]
     pub fn elements(&self) -> &[ExprKey<'a>] {
         &self.elements
     }

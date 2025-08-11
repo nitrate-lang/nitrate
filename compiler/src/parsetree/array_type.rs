@@ -11,10 +11,12 @@ impl<'a> ArrayType<'a> {
         ArrayType { element, count }
     }
 
+    #[must_use]
     pub fn element(&self) -> TypeKey<'a> {
         self.element
     }
 
+    #[must_use]
     pub fn count(&self) -> ExprKey<'a> {
         self.count
     }

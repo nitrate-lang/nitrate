@@ -1,6 +1,6 @@
 use super::source_model::SourceModel;
-use crate::lexer::*;
-use crate::parsetree::*;
+use crate::lexer::{Lexer, Punct, Token};
+use crate::parsetree::{Builder, Storage};
 use slog::{Logger, error, info};
 
 pub struct Parser<'storage, 'logger, 'a> {
@@ -29,6 +29,7 @@ impl<'storage, 'logger, 'a> Parser<'storage, 'logger, 'a> {
         }
     }
 
+    #[must_use]
     pub fn get_storage(&self) -> &Storage<'a> {
         self.storage
     }
@@ -37,6 +38,7 @@ impl<'storage, 'logger, 'a> Parser<'storage, 'logger, 'a> {
         self.storage
     }
 
+    #[must_use]
     pub fn has_failed(&self) -> bool {
         self.failed_bit
     }
@@ -45,6 +47,7 @@ impl<'storage, 'logger, 'a> Parser<'storage, 'logger, 'a> {
         self.failed_bit = true;
     }
 
+    #[must_use]
     pub fn is_supported(&self, language_version: (u32, u32)) -> bool {
         matches!(language_version, (1, _))
     }

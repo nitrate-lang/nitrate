@@ -10,6 +10,7 @@ impl<'a> SliceType<'a> {
         SliceType { element }
     }
 
+    #[must_use]
     pub fn element(&self) -> TypeKey<'a> {
         self.element
     }

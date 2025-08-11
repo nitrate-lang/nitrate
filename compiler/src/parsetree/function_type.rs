@@ -21,14 +21,17 @@ impl<'a> FunctionType<'a> {
         }
     }
 
+    #[must_use]
     pub fn parameters(&self) -> &[FunctionParameter<'a>] {
         &self.parameters
     }
 
+    #[must_use]
     pub fn return_type(&self) -> TypeKey<'a> {
         self.return_type
     }
 
+    #[must_use]
     pub fn attributes(&self) -> &[ExprKey<'a>] {
         &self.attributes
     }

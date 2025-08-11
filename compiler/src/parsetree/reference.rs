@@ -11,10 +11,12 @@ impl<'a> ManagedRefType<'a> {
         ManagedRefType { target, is_mutable }
     }
 
+    #[must_use]
     pub fn target(&self) -> TypeKey<'a> {
         self.target
     }
 
+    #[must_use]
     pub fn is_mutable(&self) -> bool {
         self.is_mutable
     }
@@ -31,10 +33,12 @@ impl<'a> UnmanagedRefType<'a> {
         UnmanagedRefType { target, is_mutable }
     }
 
+    #[must_use]
     pub fn target(&self) -> TypeKey<'a> {
         self.target
     }
 
+    #[must_use]
     pub fn is_mutable(&self) -> bool {
         self.is_mutable
     }

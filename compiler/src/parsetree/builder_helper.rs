@@ -2,7 +2,7 @@ use super::array_type::ArrayType;
 use super::bin_expr::{BinExpr, BinExprOp};
 use super::block::Block;
 use super::builder::Builder;
-use super::control_flow::*;
+use super::control_flow::{Assert, Await, Break, Continue, ForEach, If, Return, WhileLoop};
 use super::expression::{ExprOwned, ExprRef, TypeOwned};
 use super::function::{Function, FunctionParameter};
 use super::function_type::FunctionType;

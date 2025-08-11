@@ -7,6 +7,7 @@ pub struct Printable<'storage, 'a> {
 }
 
 impl<'storage, 'a> ExprKey<'a> {
+    #[must_use]
     pub fn as_printable(&self, storage: &'storage Storage<'a>) -> Printable<'storage, 'a> {
         Printable {
             storage,
@@ -16,6 +17,7 @@ impl<'storage, 'a> ExprKey<'a> {
 }
 
 impl<'storage, 'a> TypeKey<'a> {
+    #[must_use]
     pub fn as_printable(&self, storage: &'storage Storage<'a>) -> Printable<'storage, 'a> {
         Printable {
             storage,

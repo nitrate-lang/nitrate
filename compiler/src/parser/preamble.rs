@@ -1,7 +1,7 @@
 use super::parse::Parser;
 use super::source_model::CopyrightInfo;
-use crate::lexer::*;
-use crate::parsetree::*;
+use crate::lexer::{Punct, StringData, Token};
+use crate::parsetree::{ExprKey, ExprRef};
 use slog::error;
 use spdx::{LicenseId, license_id};
 use std::collections::HashSet;
@@ -13,7 +13,7 @@ pub(crate) struct SourcePreamble<'a> {
     pub insource_config: HashSet<StringData<'a>>,
 }
 
-impl<'storage, 'logger, 'a> Parser<'storage, 'logger, 'a> {
+impl<'a> Parser<'_, '_, 'a> {
     fn parse_macro_prefix(&mut self) -> Option<(&'a str, Vec<ExprKey<'a>>)> {
         while self.lexer.skip_if(&Token::Punct(Punct::Semicolon)) {}
         if !self.lexer.skip_if(&Token::Punct(Punct::AtSign)) {
@@ -71,7 +71,7 @@ impl<'storage, 'logger, 'a> Parser<'storage, 'logger, 'a> {
         let mut pair = (None, None);
 
         let input = number.to_string();
-        if let Some(dot_pos) = input.find(".") {
+        if let Some(dot_pos) = input.find('.') {
             let (major_str, minor_str) = input.split_at(dot_pos);
 
             if let Ok(major) = major_str.parse() {

@@ -55,14 +55,17 @@ impl<'a> UnaryExpr<'a> {
         }
     }
 
+    #[must_use]
     pub fn operand(&self) -> ExprKey<'a> {
         self.operand
     }
 
+    #[must_use]
     pub fn operator(&self) -> UnaryExprOp {
         self.operator
     }
 
+    #[must_use]
     pub fn is_postfix(&self) -> bool {
         self.is_postfix
     }

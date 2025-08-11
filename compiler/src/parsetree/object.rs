@@ -11,10 +11,12 @@ impl<'a> ObjectLit<'a> {
         ObjectLit { fields }
     }
 
+    #[must_use]
     pub fn into_inner(self) -> BTreeMap<&'a str, ExprKey<'a>> {
         self.fields
     }
 
+    #[must_use]
     pub fn get(&self) -> &BTreeMap<&'a str, ExprKey<'a>> {
         &self.fields
     }

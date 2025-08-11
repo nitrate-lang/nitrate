@@ -1,5 +1,5 @@
-use crate::lexer::*;
-use crate::parsetree::*;
+use crate::lexer::StringData;
+use crate::parsetree::ExprKey;
 use spdx::LicenseId;
 use std::collections::HashSet;
 
@@ -17,10 +17,12 @@ impl<'a> CopyrightInfo<'a> {
         }
     }
 
+    #[must_use]
     pub fn holder_name(&self) -> &StringData<'a> {
         &self.holder_name
     }
 
+    #[must_use]
     pub fn copyright_year(&self) -> u16 {
         self.copyright_year
     }
@@ -55,26 +57,32 @@ impl<'a> SourceModel<'a> {
         }
     }
 
+    #[must_use]
     pub fn version(&self) -> (u32, u32) {
         self.language_version
     }
 
+    #[must_use]
     pub fn copyright(&self) -> Option<&CopyrightInfo<'a>> {
         self.copyright.as_ref()
     }
 
+    #[must_use]
     pub fn license_name(&self) -> Option<&LicenseId> {
         self.license_id.as_ref()
     }
 
+    #[must_use]
     pub fn insource_config(&self) -> &HashSet<StringData<'a>> {
         &self.insource_config
     }
 
+    #[must_use]
     pub fn tree(&self) -> ExprKey<'a> {
         self.tree
     }
 
+    #[must_use]
     pub fn any_errors(&self) -> bool {
         self.any_errors
     }

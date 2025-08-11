@@ -20,6 +20,7 @@ impl<'a> If<'a> {
         }
     }
 
+    #[must_use]
     pub fn condition(&self) -> &ExprKey<'a> {
         &self.condition
     }
@@ -28,6 +29,7 @@ impl<'a> If<'a> {
         self.condition = condition;
     }
 
+    #[must_use]
     pub fn then_branch(&self) -> &ExprKey<'a> {
         &self.then_branch
     }
@@ -36,6 +38,7 @@ impl<'a> If<'a> {
         self.then_branch = then_branch;
     }
 
+    #[must_use]
     pub fn else_branch(&self) -> Option<&ExprKey<'a>> {
         self.else_branch.as_ref()
     }
@@ -56,6 +59,7 @@ impl<'a> WhileLoop<'a> {
         WhileLoop { condition, body }
     }
 
+    #[must_use]
     pub fn condition(&self) -> &ExprKey<'a> {
         &self.condition
     }
@@ -64,6 +68,7 @@ impl<'a> WhileLoop<'a> {
         self.condition = condition;
     }
 
+    #[must_use]
     pub fn body(&self) -> &ExprKey<'a> {
         &self.body
     }
@@ -84,6 +89,7 @@ impl<'a> DoWhileLoop<'a> {
         DoWhileLoop { condition, body }
     }
 
+    #[must_use]
     pub fn condition(&self) -> &ExprKey<'a> {
         &self.condition
     }
@@ -92,6 +98,7 @@ impl<'a> DoWhileLoop<'a> {
         self.condition = condition;
     }
 
+    #[must_use]
     pub fn body(&self) -> &ExprKey<'a> {
         &self.body
     }
@@ -121,6 +128,7 @@ impl<'a> Switch<'a> {
         }
     }
 
+    #[must_use]
     pub fn condition(&self) -> &ExprKey<'a> {
         &self.condition
     }
@@ -129,6 +137,7 @@ impl<'a> Switch<'a> {
         self.condition = condition;
     }
 
+    #[must_use]
     pub fn cases(&self) -> &[(ExprKey<'a>, ExprKey<'a>)] {
         &self.cases
     }
@@ -137,6 +146,7 @@ impl<'a> Switch<'a> {
         &mut self.cases
     }
 
+    #[must_use]
     pub fn default_case(&self) -> Option<&ExprKey<'a>> {
         self.default_case.as_ref()
     }
@@ -156,6 +166,7 @@ impl<'a> Break<'a> {
         Break { label }
     }
 
+    #[must_use]
     pub fn label(&self) -> Option<&'a str> {
         self.label
     }
@@ -175,6 +186,7 @@ impl<'a> Continue<'a> {
         Continue { label }
     }
 
+    #[must_use]
     pub fn label(&self) -> Option<&'a str> {
         self.label
     }
@@ -194,6 +206,7 @@ impl<'a> Return<'a> {
         Return { value }
     }
 
+    #[must_use]
     pub fn value(&self) -> Option<ExprKey<'a>> {
         self.value
     }
@@ -223,6 +236,7 @@ impl<'a> ForEach<'a> {
         }
     }
 
+    #[must_use]
     pub fn iterable(&self) -> &ExprKey<'a> {
         &self.iterable
     }
@@ -231,6 +245,7 @@ impl<'a> ForEach<'a> {
         self.iterable = iterable;
     }
 
+    #[must_use]
     pub fn bindings(&self) -> &[(&'a str, Option<TypeKey<'a>>)] {
         &self.bindings
     }
@@ -239,6 +254,7 @@ impl<'a> ForEach<'a> {
         &mut self.bindings
     }
 
+    #[must_use]
     pub fn body(&self) -> &ExprKey<'a> {
         &self.body
     }
@@ -258,6 +274,7 @@ impl<'a> Await<'a> {
         Await { expression }
     }
 
+    #[must_use]
     pub fn expression(&self) -> &ExprKey<'a> {
         &self.expression
     }
@@ -278,6 +295,7 @@ impl<'a> Assert<'a> {
         Assert { condition, message }
     }
 
+    #[must_use]
     pub fn condition(&self) -> &ExprKey<'a> {
         &self.condition
     }
@@ -286,6 +304,7 @@ impl<'a> Assert<'a> {
         self.condition = condition;
     }
 
+    #[must_use]
     pub fn message(&self) -> Option<&ExprKey<'a>> {
         self.message.as_ref()
     }

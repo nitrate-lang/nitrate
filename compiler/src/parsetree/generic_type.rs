@@ -11,10 +11,12 @@ impl<'a> GenericType<'a> {
         GenericType { base, args }
     }
 
+    #[must_use]
     pub fn base(&self) -> TypeKey<'a> {
         self.base
     }
 
+    #[must_use]
     pub fn arguments(&self) -> &[(&'a str, ExprKey<'a>)] {
         &self.args
     }

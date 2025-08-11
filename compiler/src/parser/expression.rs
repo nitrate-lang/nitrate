@@ -1,9 +1,9 @@
-use super::parse::*;
-use crate::lexer::*;
-use crate::parsetree::{node::BinExprOp, *};
+use super::parse::Parser;
+use crate::lexer::{BStringData, IntegerKind, Keyword, Punct, StringData, Token};
+use crate::parsetree::{Builder, ExprKey, node::BinExprOp};
 use slog::error;
 
-impl<'storage, 'logger, 'a> Parser<'storage, 'logger, 'a> {
+impl<'a> Parser<'_, '_, 'a> {
     fn parse_integer_literal(&mut self, value: u128, kind: IntegerKind) -> ExprKey<'a> {
         let mut bb = Builder::new(self.storage).create_integer().with_kind(kind);
 

@@ -11,10 +11,12 @@ impl<'a> MapType<'a> {
         MapType { key, value }
     }
 
+    #[must_use]
     pub fn key(&self) -> TypeKey<'a> {
         self.key
     }
 
+    #[must_use]
     pub fn value(&self) -> TypeKey<'a> {
         self.value
     }

@@ -29,10 +29,12 @@ impl<'a> Variable<'a> {
         }
     }
 
+    #[must_use]
     pub fn kind(&self) -> VariableKind {
         self.kind
     }
 
+    #[must_use]
     pub fn name(&self) -> &'a str {
         self.name
     }
@@ -41,6 +43,7 @@ impl<'a> Variable<'a> {
         self.name = name;
     }
 
+    #[must_use]
     pub fn get_type(&self) -> Option<TypeKey<'a>> {
         self.var_type
     }
@@ -49,6 +52,7 @@ impl<'a> Variable<'a> {
         self.var_type = var_type;
     }
 
+    #[must_use]
     pub fn value(&self) -> Option<ExprKey<'a>> {
         self.value
     }

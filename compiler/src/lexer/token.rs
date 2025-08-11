@@ -13,6 +13,7 @@ pub struct Name<'a> {
 }
 
 impl<'a> Name<'a> {
+    #[must_use]
     pub fn new(name: &'a str) -> Self {
         Name {
             name,
@@ -20,6 +21,7 @@ impl<'a> Name<'a> {
         }
     }
 
+    #[must_use]
     pub fn new_typical(name: &'a str) -> Self {
         assert!(Name::is_typical(name), "Expected a typical identifier");
         Name {
@@ -28,6 +30,7 @@ impl<'a> Name<'a> {
         }
     }
 
+    #[must_use]
     pub fn new_atypical(name: &'a str) -> Self {
         assert!(Name::is_atypical(name), "Expected an atypical identifier");
         Name {
@@ -36,18 +39,22 @@ impl<'a> Name<'a> {
         }
     }
 
+    #[must_use]
     pub const fn into_name(self) -> &'a str {
         self.name
     }
 
+    #[must_use]
     pub const fn name(&self) -> &'a str {
         self.name
     }
 
+    #[must_use]
     pub const fn kind(&self) -> IdentifierKind {
         self.kind
     }
 
+    #[must_use]
     pub fn is_typical(name: &str) -> bool {
         let mut iter = name.chars();
 
@@ -60,10 +67,12 @@ impl<'a> Name<'a> {
         false
     }
 
+    #[must_use]
     pub fn is_atypical(name: &str) -> bool {
         !Self::is_typical(name)
     }
 
+    #[must_use]
     pub fn get_kind(name: &str) -> IdentifierKind {
         if Self::is_typical(name) {
             IdentifierKind::Typical
@@ -73,7 +82,7 @@ impl<'a> Name<'a> {
     }
 }
 
-impl<'a> std::fmt::Display for Name<'a> {
+impl std::fmt::Display for Name<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self.kind() {
             IdentifierKind::Typical => write!(f, "{}", self.name()),
@@ -97,18 +106,22 @@ pub struct Integer {
 }
 
 impl Integer {
+    #[must_use]
     pub const fn new(value: u128, kind: IntegerKind) -> Self {
         Integer { value, kind }
     }
 
+    #[must_use]
     pub const fn value(&self) -> u128 {
         self.value
     }
 
+    #[must_use]
     pub const fn into_value(self) -> u128 {
         self.value
     }
 
+    #[must_use]
     pub const fn kind(&self) -> IntegerKind {
         self.kind
     }
@@ -137,18 +150,21 @@ pub struct StringData<'a> {
 }
 
 impl<'a> StringData<'a> {
+    #[must_use]
     pub const fn from_ref(data: &'a str) -> Self {
         StringData {
             data: StringDataStorage::RefString(data),
         }
     }
 
+    #[must_use]
     pub fn from_dyn(data: String) -> Self {
         StringData {
             data: StringDataStorage::DynString(data),
         }
     }
 
+    #[must_use]
     pub fn get(&self) -> &str {
         match &self.data {
             StringDataStorage::RefString(s) => s,
@@ -157,13 +173,13 @@ impl<'a> StringData<'a> {
     }
 }
 
-impl<'a> std::fmt::Debug for StringData<'a> {
+impl std::fmt::Debug for StringData<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "StringData({:?})", self.get())
     }
 }
 
-impl<'a> std::fmt::Display for StringData<'a> {
+impl std::fmt::Display for StringData<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "\"{}\"", self.get())
     }
@@ -181,18 +197,21 @@ pub struct BStringData<'a> {
 }
 
 impl<'a> BStringData<'a> {
+    #[must_use]
     pub const fn from_ref(data: &'a [u8]) -> Self {
         BStringData {
             data: BStringDataStorage::RefString(data),
         }
     }
 
+    #[must_use]
     pub fn from_dyn(data: SmallVec<[u8; 64]>) -> Self {
         BStringData {
             data: BStringDataStorage::DynString(data),
         }
     }
 
+    #[must_use]
     pub fn get(&self) -> &[u8] {
         match &self.data {
             BStringDataStorage::RefString(s) => s,
@@ -201,16 +220,16 @@ impl<'a> BStringData<'a> {
     }
 }
 
-impl<'a> std::fmt::Debug for BStringData<'a> {
+impl std::fmt::Debug for BStringData<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "BStringData({:?})", self.get())
     }
 }
 
-impl<'a> std::fmt::Display for BStringData<'a> {
+impl std::fmt::Display for BStringData<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         for byte in self.get() {
-            write!(f, "{:02x} ", byte)?;
+            write!(f, "{byte:02x} ")?;
         }
         Ok(())
     }
@@ -229,24 +248,28 @@ pub struct Comment<'a> {
 }
 
 impl<'a> Comment<'a> {
+    #[must_use]
     pub const fn new(text: &'a str, kind: CommentKind) -> Self {
         Comment { text, kind }
     }
 
+    #[must_use]
     pub const fn text(&self) -> &str {
         self.text
     }
 
+    #[must_use]
     pub const fn into_text(self) -> &'a str {
         self.text
     }
 
+    #[must_use]
     pub const fn kind(&self) -> CommentKind {
         self.kind
     }
 }
 
-impl<'a> std::fmt::Display for Comment<'a> {
+impl std::fmt::Display for Comment<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self.kind() {
             CommentKind::SingleLine => write!(f, "#{}", self.text()),
@@ -588,19 +611,19 @@ pub enum Token<'a> {
     Illegal,
 }
 
-impl<'a> std::fmt::Display for Token<'a> {
+impl std::fmt::Display for Token<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Token::Name(id) => write!(f, "{}", id),
-            Token::Integer(int) => write!(f, "{}", int),
-            Token::Float(float) => write!(f, "{}", float),
-            Token::String(s) => write!(f, "{}", s),
-            Token::BString(s) => write!(f, "{}", s),
-            Token::Char(c) => write!(f, "'{}'", c),
-            Token::Comment(c) => write!(f, "{}", c),
-            Token::Keyword(kw) => write!(f, "{}", kw),
-            Token::Punct(p) => write!(f, "{}", p),
-            Token::Op(op) => write!(f, "{}", op),
+            Token::Name(id) => write!(f, "{id}"),
+            Token::Integer(int) => write!(f, "{int}"),
+            Token::Float(float) => write!(f, "{float}"),
+            Token::String(s) => write!(f, "{s}"),
+            Token::BString(s) => write!(f, "{s}"),
+            Token::Char(c) => write!(f, "'{c}'"),
+            Token::Comment(c) => write!(f, "{c}"),
+            Token::Keyword(kw) => write!(f, "{kw}"),
+            Token::Punct(p) => write!(f, "{p}"),
+            Token::Op(op) => write!(f, "{op}"),
             Token::Eof => write!(f, ""),
             Token::Illegal => write!(f, "<illegal>"),
         }
@@ -616,6 +639,7 @@ pub struct SourcePosition<'a> {
 }
 
 impl<'a> SourcePosition<'a> {
+    #[must_use]
     pub const fn new(line: u32, column: u32, offset: u32, filename: &'a str) -> Self {
         SourcePosition {
             line,
@@ -625,18 +649,22 @@ impl<'a> SourcePosition<'a> {
         }
     }
 
+    #[must_use]
     pub const fn line(&self) -> u32 {
         self.line
     }
 
+    #[must_use]
     pub const fn column(&self) -> u32 {
         self.column
     }
 
+    #[must_use]
     pub const fn offset(&self) -> usize {
         self.offset as usize
     }
 
+    #[must_use]
     pub const fn filename(&self) -> &'a str {
         self.filename
     }
@@ -664,6 +692,7 @@ pub struct AnnotatedToken<'a> {
 }
 
 impl<'a> AnnotatedToken<'a> {
+    #[must_use]
     pub const fn new(token: Token<'a>, start: SourcePosition<'a>, end: SourcePosition<'a>) -> Self {
         AnnotatedToken {
             token,
@@ -677,14 +706,17 @@ impl<'a> AnnotatedToken<'a> {
         }
     }
 
+    #[must_use]
     pub const fn token(&self) -> &Token {
         &self.token
     }
 
+    #[must_use]
     pub fn into_token(self) -> Token<'a> {
         self.token
     }
 
+    #[must_use]
     pub const fn start(&self) -> SourcePosition<'a> {
         SourcePosition::new(
             self.start_line,
@@ -694,6 +726,7 @@ impl<'a> AnnotatedToken<'a> {
         )
     }
 
+    #[must_use]
     pub const fn end(&self) -> SourcePosition<'a> {
         SourcePosition::new(
             self.end_line,
@@ -703,6 +736,7 @@ impl<'a> AnnotatedToken<'a> {
         )
     }
 
+    #[must_use]
     pub const fn range(&self) -> (SourcePosition<'a>, SourcePosition<'a>) {
         (self.start(), self.end())
     }

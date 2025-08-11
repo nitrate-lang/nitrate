@@ -10,10 +10,12 @@ impl<'a> TupleType<'a> {
         TupleType { elements }
     }
 
+    #[must_use]
     pub fn into_inner(self) -> Vec<TypeKey<'a>> {
         self.elements
     }
 
+    #[must_use]
     pub fn elements(&self) -> &[TypeKey<'a>] {
         &self.elements
     }

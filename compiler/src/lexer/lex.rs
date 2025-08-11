@@ -1,4 +1,7 @@
-use super::token::*;
+use super::token::{
+    AnnotatedToken, BStringData, Comment, CommentKind, Integer, IntegerKind, Keyword, Name, Op,
+    Punct, SourcePosition, StringData, Token,
+};
 use log::error;
 use smallvec::SmallVec;
 use stackvector::StackVec;
@@ -105,6 +108,7 @@ impl<'a> Lexer<'a> {
     }
 
     #[inline(always)]
+    #[must_use]
     pub fn sync_position(&self) -> SourcePosition<'a> {
         self.sync_pos
     }
@@ -256,26 +260,19 @@ impl<'a> Lexer<'a> {
 
         let identifier = self.read_while(|b| b != b'`');
 
-        match self.peek_byte() {
-            Ok(b'`') => {
-                self.advance(b'`');
-            }
-            _ => {
-                error!(
-                    "[L0000]: Unterminated atypical identifier. Did you forget the '`' terminator?\n--> {}",
-                    start_pos
-                );
-                return Err(());
-            }
+        if let Ok(b'`') = self.peek_byte() {
+            self.advance(b'`');
+        } else {
+            error!(
+                "[L0000]: Unterminated atypical identifier. Did you forget the '`' terminator?\n--> {start_pos}"
+            );
+            return Err(());
         }
 
         if let Ok(identifier) = str::from_utf8(identifier) {
             Ok(Token::Name(Name::new_atypical(identifier)))
         } else {
-            error!(
-                "[L0001]: Identifier contains some invalid utf-8 bytes\n--> {}",
-                start_pos
-            );
+            error!("[L0001]: Identifier contains some invalid utf-8 bytes\n--> {start_pos}");
 
             Err(())
         }
@@ -364,10 +361,7 @@ impl<'a> Lexer<'a> {
         } else if let Ok(identifier) = str::from_utf8(name) {
             Ok(Token::Name(Name::new_typical(identifier)))
         } else {
-            error!(
-                "[L0100]: Identifier contains some invalid utf-8 bytes\n--> {}",
-                start_pos
-            );
+            error!("[L0100]: Identifier contains some invalid utf-8 bytes\n--> {start_pos}");
 
             Err(())
         }
@@ -375,10 +369,10 @@ impl<'a> Lexer<'a> {
 
     #[inline(always)]
     fn convert_float_repr(&self, str_bytes: &str) -> Result<f64, ()> {
-        match str_bytes.replace("_", "").parse::<f64>() {
+        match str_bytes.replace('_', "").parse::<f64>() {
             Ok(value) => Ok(value),
             Err(e) => {
-                error!("[L0200]: Invalid float literal: {}", e);
+                error!("[L0200]: Invalid float literal: {e}");
                 Err(())
             }
         }
@@ -430,7 +424,7 @@ impl<'a> Lexer<'a> {
                 str::from_utf8(&[*digit]).expect("Unexpected non-utf8 digit"),
                 base,
             ) {
-                if let Some(y) = number.checked_mul(base as u128) {
+                if let Some(y) = number.checked_mul(u128::from(base)) {
                     if let Some(sum) = y.checked_add(digit) {
                         number = sum;
                         continue;
@@ -438,10 +432,7 @@ impl<'a> Lexer<'a> {
                 }
             }
 
-            error!(
-                "[L0300]: Integer literal is too large to fit in u128\n--> {}",
-                start_pos
-            );
+            error!("[L0300]: Integer literal is too large to fit in u128\n--> {start_pos}");
             return Err(());
         }
 
@@ -465,8 +456,7 @@ impl<'a> Lexer<'a> {
                     literal = self.read_while(|b| b == b'0' || b == b'1' || b == b'_');
                     if literal.is_empty() {
                         error!(
-                            "[L0301]: Binary integer literal must contain at least one digit after '0b'\n--> {}",
-                            start_pos
+                            "[L0301]: Binary integer literal must contain at least one digit after '0b'\n--> {start_pos}"
                         );
                         return Err(());
                     }
@@ -479,8 +469,7 @@ impl<'a> Lexer<'a> {
                     literal = self.read_while(|b| (b'0'..=b'7').contains(&b) || b == b'_');
                     if literal.is_empty() {
                         error!(
-                            "[L0302]: Octal literal must contain at least one digit after '0o'\n--> {}",
-                            start_pos
+                            "[L0302]: Octal literal must contain at least one digit after '0o'\n--> {start_pos}"
                         );
                         return Err(());
                     }
@@ -493,8 +482,7 @@ impl<'a> Lexer<'a> {
                     literal = self.read_while(|b| b.is_ascii_digit() || b == b'_');
                     if literal.is_empty() {
                         error!(
-                            "[L0303]: Decimal literal must contain at least one digit after '0d'\n--> {}",
-                            start_pos
+                            "[L0303]: Decimal literal must contain at least one digit after '0d'\n--> {start_pos}"
                         );
                         return Err(());
                     }
@@ -507,8 +495,7 @@ impl<'a> Lexer<'a> {
                     literal = self.read_while(|b| b.is_ascii_hexdigit() || b == b'_');
                     if literal.is_empty() {
                         error!(
-                            "[L0304]: Hexadecimal literal must contain at least one digit after '0x'\n--> {}",
-                            start_pos
+                            "[L0304]: Hexadecimal literal must contain at least one digit after '0x'\n--> {start_pos}"
                         );
                         return Err(());
                     }
@@ -552,7 +539,7 @@ impl<'a> Lexer<'a> {
             } else {
                 error!(
                     "[L0400]: Invalid hex escape sequence '\\x{}' in string literal. Expected two hex digits (0-9, a-f, A-F) after '\\x'.\n--> {}",
-                    str::from_utf8(&digits[..i + 1]).unwrap_or("<invalid utf-8>"),
+                    str::from_utf8(&digits[..=i]).unwrap_or("<invalid utf-8>"),
                     start_pos
                 );
 
@@ -613,8 +600,7 @@ impl<'a> Lexer<'a> {
     ) -> Result<StringEscape, ()> {
         if self.peek_byte()? != b'{' {
             error!(
-                "[L0402]: Invalid unicode escape in string literal. Expected '{{' after '\\u'.\n--> {}",
-                start_pos
+                "[L0402]: Invalid unicode escape in string literal. Expected '{{' after '\\u'.\n--> {start_pos}"
             );
             return Err(());
         }
@@ -627,8 +613,7 @@ impl<'a> Lexer<'a> {
                 self.advance(b'+');
             } else {
                 error!(
-                    "[L0403]: Invalid unicode escape in string literal. Expected '+' after '\\uU'.\n--> {}",
-                    start_pos
+                    "[L0403]: Invalid unicode escape in string literal. Expected '+' after '\\uU'.\n--> {start_pos}"
                 );
                 return Err(());
             }
@@ -637,8 +622,7 @@ impl<'a> Lexer<'a> {
         let digits = self.read_while(|b| b.is_ascii_hexdigit());
         if digits.is_empty() {
             error!(
-                "[L0404]: Invalid unicode escape in string literal. Expected at least one hex digit after '\\u{{'.\n--> {}",
-                start_pos
+                "[L0404]: Invalid unicode escape in string literal. Expected at least one hex digit after '\\u{{'.\n--> {start_pos}"
             );
             return Err(());
         }
@@ -657,9 +641,9 @@ impl<'a> Lexer<'a> {
             let digit = digit.to_ascii_lowercase();
 
             if digit.is_ascii_digit() {
-                value = (value << 4) | (digit - b'0') as u32
+                value = (value << 4) | u32::from(digit - b'0');
             } else {
-                value = (value << 4) | (digit - b'a' + 10) as u32
+                value = (value << 4) | u32::from(digit - b'a' + 10);
             }
         }
 
@@ -676,8 +660,7 @@ impl<'a> Lexer<'a> {
 
         if self.peek_byte()? != b'}' {
             error!(
-                "[L0406]: Invalid unicode escape in string literal. Expected '}}' after '\\u{{'.\n--> {}",
-                start_pos
+                "[L0406]: Invalid unicode escape in string literal. Expected '}}' after '\\u{{'.\n--> {start_pos}"
             );
             return Err(());
         }
@@ -760,8 +743,7 @@ impl<'a> Lexer<'a> {
 
             Err(()) => {
                 error!(
-                    "[L0408]: Unexpected end of input while parsing string literal\n--> {}",
-                    start_pos
+                    "[L0408]: Unexpected end of input while parsing string literal\n--> {start_pos}"
                 );
                 Err(())
             }
@@ -816,14 +798,12 @@ impl<'a> Lexer<'a> {
 
                         if let Ok(utf8_str) = str::from_utf8(buffer) {
                             return Ok(Token::String(StringData::from_ref(utf8_str)));
-                        } else {
-                            return Ok(Token::BString(BStringData::from_ref(buffer)));
                         }
+                        return Ok(Token::BString(BStringData::from_ref(buffer)));
                     } else if let Ok(utf8_str) = String::from_utf8(storage.to_vec()) {
                         return Ok(Token::String(StringData::from_dyn(utf8_str)));
-                    } else {
-                        return Ok(Token::BString(BStringData::from_dyn(storage)));
                     }
+                    return Ok(Token::BString(BStringData::from_dyn(storage)));
                 }
 
                 Ok(b) => {
@@ -837,8 +817,7 @@ impl<'a> Lexer<'a> {
 
                 Err(()) => {
                     error!(
-                        "[L0408]: Unexpected end of input while parsing string literal\n--> {}",
-                        start_pos
+                        "[L0408]: Unexpected end of input while parsing string literal\n--> {start_pos}"
                     );
                     return Err(());
                 }
@@ -900,8 +879,7 @@ impl<'a> Lexer<'a> {
 
             Err(()) => {
                 error!(
-                    "[L0501]: Unexpected end of input while parsing character literal\n--> {}",
-                    start_pos
+                    "[L0501]: Unexpected end of input while parsing character literal\n--> {start_pos}"
                 );
                 Err(())
             }
@@ -946,8 +924,7 @@ impl<'a> Lexer<'a> {
                     if let Ok(chars_buffer) = str::from_utf8(&char_buffer) {
                         if chars_buffer.is_empty() {
                             error!(
-                                "[L0503]: Character literal is empty. Did you forget to specify the character?\n--> {}",
-                                start_pos
+                                "[L0503]: Character literal is empty. Did you forget to specify the character?\n--> {start_pos}"
                             );
 
                             return Err(());
@@ -969,15 +946,14 @@ impl<'a> Lexer<'a> {
                         }
 
                         return Ok(Token::Char(character));
-                    } else {
-                        error!(
-                            "[L0504]: Character literal '{:?}' contains some invalid utf-8 bytes\n--> {}",
-                            char_buffer.as_slice() as &[u8],
-                            start_pos
-                        );
-
-                        return Err(());
                     }
+                    error!(
+                        "[L0504]: Character literal '{:?}' contains some invalid utf-8 bytes\n--> {}",
+                        char_buffer.as_slice() as &[u8],
+                        start_pos
+                    );
+
+                    return Err(());
                 }
 
                 Ok(b) => {
@@ -987,8 +963,7 @@ impl<'a> Lexer<'a> {
 
                 Err(()) => {
                     error!(
-                        "[L0501]: Unexpected end of input while parsing character literal\n--> {}",
-                        start_pos
+                        "[L0501]: Unexpected end of input while parsing character literal\n--> {start_pos}"
                     );
 
                     return Err(());
@@ -1013,8 +988,7 @@ impl<'a> Lexer<'a> {
             )))
         } else {
             error!(
-                "[L0600]: Single-line comment contains some invalid utf-8 bytes\n--> {}",
-                start_pos
+                "[L0600]: Single-line comment contains some invalid utf-8 bytes\n--> {start_pos}"
             );
 
             Err(())

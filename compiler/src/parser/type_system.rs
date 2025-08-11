@@ -1,6 +1,6 @@
-use super::parse::*;
-use crate::lexer::*;
-use crate::parsetree::{node::FunctionParameter, *};
+use super::parse::Parser;
+use crate::lexer::{Keyword, Name, Op, Punct, Token};
+use crate::parsetree::{Builder, ExprKey, TypeKey, node::FunctionParameter};
 use slog::{error, info};
 
 #[derive(Default)]
@@ -10,13 +10,13 @@ struct RefinementOptions<'a> {
     width: Option<ExprKey<'a>>,
 }
 
-impl<'a> RefinementOptions<'a> {
+impl RefinementOptions<'_> {
     fn has_any(&self) -> bool {
         self.minimum.is_some() || self.maximum.is_some() || self.width.is_some()
     }
 }
 
-impl<'storage, 'logger, 'a> Parser<'storage, 'logger, 'a> {
+impl<'a> Parser<'_, '_, 'a> {
     fn parse_refinement_range(&mut self) -> Option<(Option<ExprKey<'a>>, Option<ExprKey<'a>>)> {
         assert!(self.lexer.peek_t() == Token::Punct(Punct::LeftBracket));
         self.lexer.skip_tok();
@@ -138,7 +138,7 @@ impl<'storage, 'logger, 'a> Parser<'storage, 'logger, 'a> {
                 self.parse_expression()
             }
 
-            _ => self.parse_type().map(|t| t.into()),
+            _ => self.parse_type().map(std::convert::Into::into),
         };
 
         let Some(argument_value) = type_or_expression else {
@@ -285,19 +285,18 @@ impl<'storage, 'logger, 'a> Parser<'storage, 'logger, 'a> {
             if !self.lexer.skip_if(&Token::Punct(Punct::Comma)) {
                 if self.lexer.skip_if(&Token::Punct(Punct::RightBrace)) {
                     break;
-                } else {
-                    error!(
-                        self.log,
-                        "[P0???]: tuple type: expected ',' or '}}' after element type\n--> {}",
-                        self.lexer.sync_position()
-                    );
-                    info!(
-                        self.log,
-                        "[P0???]: tuple type: syntax hint: {{<type1>, <type2>, ...}}"
-                    );
-
-                    return None;
                 }
+                error!(
+                    self.log,
+                    "[P0???]: tuple type: expected ',' or '}}' after element type\n--> {}",
+                    self.lexer.sync_position()
+                );
+                info!(
+                    self.log,
+                    "[P0???]: tuple type: syntax hint: {{<type1>, <type2>, ...}}"
+                );
+
+                return None;
             }
         }
 
@@ -497,15 +496,14 @@ impl<'storage, 'logger, 'a> Parser<'storage, 'logger, 'a> {
             if !self.lexer.skip_if(&Token::Punct(Punct::Comma)) {
                 if self.lexer.skip_if(&Token::Punct(Punct::RightBracket)) {
                     break;
-                } else {
-                    error!(
-                        self.log,
-                        "[P0???]: function type: expected ',' or ']' after attribute expression\n--> {}",
-                        self.lexer.sync_position()
-                    );
-
-                    return None;
                 }
+                error!(
+                    self.log,
+                    "[P0???]: function type: expected ',' or ']' after attribute expression\n--> {}",
+                    self.lexer.sync_position()
+                );
+
+                return None;
             }
         }
 
@@ -558,15 +556,14 @@ impl<'storage, 'logger, 'a> Parser<'storage, 'logger, 'a> {
             if !self.lexer.skip_if(&Token::Punct(Punct::Comma)) {
                 if self.lexer.skip_if(&Token::Punct(Punct::RightParen)) {
                     break;
-                } else {
-                    error!(
-                        self.log,
-                        "[P0???]: function type: expected ',' or ')' after parameter\n--> {}",
-                        self.lexer.sync_position()
-                    );
-
-                    return None;
                 }
+                error!(
+                    self.log,
+                    "[P0???]: function type: expected ',' or ')' after parameter\n--> {}",
+                    self.lexer.sync_position()
+                );
+
+                return None;
             }
         }
 

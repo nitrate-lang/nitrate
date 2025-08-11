@@ -9,6 +9,7 @@ pub struct FunctionParameter<'a> {
 }
 
 impl<'a> FunctionParameter<'a> {
+    #[must_use]
     pub fn new(name: &'a str, param_type: TypeKey<'a>, default_value: Option<ExprKey<'a>>) -> Self {
         FunctionParameter {
             name,
@@ -17,14 +18,17 @@ impl<'a> FunctionParameter<'a> {
         }
     }
 
+    #[must_use]
     pub fn name(&self) -> &'a str {
         self.name
     }
 
+    #[must_use]
     pub fn param_type(&self) -> TypeKey<'a> {
         self.param_type
     }
 
+    #[must_use]
     pub fn default_value(&self) -> Option<ExprKey<'a>> {
         self.default_value
     }
@@ -48,14 +52,15 @@ impl<'a> Function<'a> {
         definition: Option<Block<'a>>,
     ) -> Self {
         Function {
-            name,
             parameters,
             return_type,
             attributes,
+            name,
             definition,
         }
     }
 
+    #[must_use]
     pub fn parameters(&self) -> &[FunctionParameter<'a>] {
         &self.parameters
     }
@@ -64,6 +69,7 @@ impl<'a> Function<'a> {
         &mut self.parameters
     }
 
+    #[must_use]
     pub fn return_type(&self) -> Option<TypeKey<'a>> {
         self.return_type
     }
@@ -72,6 +78,7 @@ impl<'a> Function<'a> {
         self.return_type = ty;
     }
 
+    #[must_use]
     pub fn attributes(&self) -> &[ExprKey<'a>] {
         &self.attributes
     }
@@ -80,6 +87,7 @@ impl<'a> Function<'a> {
         &mut self.attributes
     }
 
+    #[must_use]
     pub fn name(&self) -> &'a str {
         self.name
     }
@@ -88,6 +96,7 @@ impl<'a> Function<'a> {
         self.name = name;
     }
 
+    #[must_use]
     pub fn definition(&self) -> Option<&Block<'a>> {
         self.definition.as_ref()
     }
