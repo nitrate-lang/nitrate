@@ -3,11 +3,8 @@ use super::expression::{ExprOwned, TypeOwned};
 use super::opaque_type::OpaqueType;
 use super::storage::{ExprKey, Storage, TypeKey};
 use super::tuple_type::TupleType;
+use super::variable::VariableKind;
 use crate::lexer::StringData;
-
-pub use super::bin_expr::BinExprOp;
-pub use super::function::FunctionParameter;
-pub use super::variable::VariableKind;
 
 #[derive(Debug)]
 pub struct Builder<'storage, 'a> {

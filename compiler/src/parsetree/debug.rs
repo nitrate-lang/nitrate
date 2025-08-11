@@ -34,14 +34,14 @@ struct Parameter<'storage, 'a> {
 
 #[derive(Debug)]
 #[allow(dead_code)]
-pub struct SwitchCase<'storage, 'a> {
+struct SwitchCase<'storage, 'a> {
     value: Printable<'storage, 'a>,
     body: Printable<'storage, 'a>,
 }
 
 #[derive(Debug)]
 #[allow(dead_code)]
-pub struct ForeachBinding<'storage, 'a> {
+struct ForeachBinding<'storage, 'a> {
     name: &'a str,
     type_: Option<Printable<'storage, 'a>>,
 }

@@ -1,6 +1,6 @@
 use super::parse::*;
 use crate::lexer::*;
-use crate::parsetree::*;
+use crate::parsetree::{node::BinExprOp, *};
 use slog::error;
 
 impl<'storage, 'logger, 'a> Parser<'storage, 'logger, 'a> {

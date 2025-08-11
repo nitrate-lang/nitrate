@@ -1,6 +1,6 @@
 use super::parse::*;
 use crate::lexer::*;
-use crate::parsetree::*;
+use crate::parsetree::{node::FunctionParameter, *};
 use slog::{error, info};
 
 #[derive(Default)]
