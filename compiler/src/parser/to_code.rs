@@ -2,7 +2,7 @@ use crate::lexer::{Integer, Keyword, Name, Op, Punct, Token};
 use crate::parsetree::node::{
     ArrayType, Assert, Await, BinExpr, BinExprOp, Block, Break, Continue, DoWhileLoop, ForEach,
     Function, FunctionType, GenericType, If, IntegerLit, ListLit, ManagedRefType, MapType,
-    ObjectLit, RefinementType, Return, SliceType, Statement, Switch, TupleType, UnaryExpr,
+    ObjectLit, RefinementType, Return, Scope, SliceType, Statement, Switch, TupleType, UnaryExpr,
     UnaryExprOp, UnmanagedRefType, Variable, VariableKind, WhileLoop,
 };
 use crate::parsetree::{ExprKey, ExprRef, Storage, TypeKey, TypeOwned};
@@ -377,6 +377,27 @@ impl<'a> ToCode<'a> for Variable<'a> {
     }
 }
 
+impl<'a> ToCode<'a> for Scope<'a> {
+    fn to_code(&self, bank: &Storage<'a>, tokens: &mut Vec<Token<'a>>, options: &CodeFormat) {
+        tokens.push(Token::Keyword(Keyword::Scope));
+
+        if !self.name().is_empty() {
+            tokens.push(Token::Name(Name::new(self.name())));
+        }
+
+        if !self.attributes().is_empty() {
+            tokens.push(Token::Punct(Punct::LeftBracket));
+            for (i, attr) in self.attributes().iter().enumerate() {
+                (i > 0).then(|| tokens.push(Token::Punct(Punct::Comma)));
+                attr.to_code(bank, tokens, options);
+            }
+            tokens.push(Token::Punct(Punct::RightBracket));
+        }
+
+        self.block().to_code(bank, tokens, options);
+    }
+}
+
 impl<'a> ToCode<'a> for If<'a> {
     fn to_code(&self, _bank: &Storage<'a>, _tokens: &mut Vec<Token<'a>>, _options: &CodeFormat) {
         // TODO: Implement If to_code
@@ -509,6 +530,7 @@ impl<'a> ToCode<'a> for ExprKey<'a> {
             ExprRef::Function(e) => e.to_code(bank, tokens, options),
             ExprRef::Variable(e) => e.to_code(bank, tokens, options),
             ExprRef::Identifier(name) => tokens.push(Token::Name(Name::new(name))),
+            ExprRef::Scope(e) => e.to_code(bank, tokens, options),
 
             ExprRef::If(e) => e.to_code(bank, tokens, options),
             ExprRef::WhileLoop(e) => e.to_code(bank, tokens, options),

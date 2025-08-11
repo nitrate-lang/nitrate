@@ -300,6 +300,13 @@ impl<'a> Parser<'a, '_, '_, '_> {
         None
     }
 
+    fn parse_scope(&mut self) -> Option<ExprKey<'a>> {
+        // TODO: Implement scope parsing logic
+        self.set_failed_bit();
+        error!(self.log, "Scope parsing not implemented yet");
+        None
+    }
+
     fn parse_enum(&mut self) -> Option<ExprKey<'a>> {
         // TODO: Implement enum parsing logic
         self.set_failed_bit();
@@ -404,6 +411,7 @@ impl<'a> Parser<'a, '_, '_, '_> {
                 Some(Builder::new(self.storage).create_boolean(false))
             }
 
+            Token::Keyword(Keyword::Scope) => self.parse_scope(),
             Token::Keyword(Keyword::Enum) => self.parse_enum(),
             Token::Keyword(Keyword::Struct) => self.parse_struct(),
             Token::Keyword(Keyword::Class) => self.parse_class(),

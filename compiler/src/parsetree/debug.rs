@@ -266,6 +266,19 @@ impl std::fmt::Debug for Printable<'_, '_> {
 
             ExprRef::Identifier(name) => write!(f, "{name}"),
 
+            ExprRef::Scope(x) => f
+                .debug_struct("Scope")
+                .field("name", &x.name())
+                .field(
+                    "attributes",
+                    &x.attributes()
+                        .iter()
+                        .map(|a| a.as_printable(self.storage))
+                        .collect::<Vec<_>>(),
+                )
+                .field("body", &x.block().as_printable(self.storage))
+                .finish(),
+
             ExprRef::If(x) => f
                 .debug_struct("If")
                 .field("condition", &x.condition().as_printable(self.storage))

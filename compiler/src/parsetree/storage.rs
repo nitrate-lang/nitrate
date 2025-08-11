@@ -1,18 +1,5 @@
 use crate::lexer::{BStringData, StringData};
-
-use super::bin_expr::BinExpr;
-use super::block::Block;
-use super::control_flow::{
-    Assert, Await, Break, Continue, DoWhileLoop, ForEach, If, Return, Switch, WhileLoop,
-};
-use super::expression::{ExprKind, ExprOwned, ExprRef, ExprRefMut, TypeKind, TypeOwned};
-use super::function::Function;
-use super::list::ListLit;
-use super::number::IntegerLit;
-use super::object::ObjectLit;
-use super::statement::Statement;
-use super::unary_expr::UnaryExpr;
-use super::variable::Variable;
+use crate::parsetree::{node::*, *};
 use bimap::BiMap;
 use hashbrown::HashSet;
 use std::num::NonZeroU32;
@@ -229,6 +216,7 @@ impl<'a> ExprKey<'a> {
             | ExprKind::Function
             | ExprKind::Variable
             | ExprKind::Identifier
+            | ExprKind::Scope
             | ExprKind::If
             | ExprKind::WhileLoop
             | ExprKind::DoWhileLoop
@@ -280,6 +268,7 @@ pub struct Storage<'a> {
     functions: Vec<Function<'a>>,
     variables: Vec<Variable<'a>>,
     identifiers: Vec<&'a str>,
+    scopes: Vec<Scope<'a>>,
 
     ifs: Vec<If<'a>>,
     while_loops: Vec<WhileLoop<'a>>,
@@ -324,6 +313,7 @@ impl<'a> Storage<'a> {
             functions: Vec::new(),
             variables: Vec::new(),
             identifiers: Vec::new(),
+            scopes: Vec::new(),
 
             ifs: Vec::new(),
             while_loops: Vec::new(),
@@ -397,6 +387,7 @@ impl<'a> Storage<'a> {
             ExprKind::Function => self.functions.reserve(additional),
             ExprKind::Variable => self.variables.reserve(additional),
             ExprKind::Identifier => self.identifiers.reserve(additional),
+            ExprKind::Scope => self.scopes.reserve(additional),
 
             ExprKind::If => self.ifs.reserve(additional),
             ExprKind::WhileLoop => self.while_loops.reserve(additional),
@@ -522,6 +513,12 @@ impl<'a> Storage<'a> {
             ExprOwned::Identifier(node) => {
                 ExprKey::new(ExprKind::Identifier, self.identifiers.len()).inspect(|_| {
                     self.identifiers.push(node);
+                })
+            }
+
+            ExprOwned::Scope(node) => {
+                ExprKey::new(ExprKind::Scope, self.scopes.len()).inspect(|_| {
+                    self.scopes.push(node);
                 })
             }
 
@@ -709,6 +706,7 @@ impl<'a> Storage<'a> {
                 .identifiers
                 .get(index)
                 .map(|&id| ExprRef::Identifier(id)),
+            ExprKind::Scope => self.scopes.get(index).map(ExprRef::Scope),
 
             ExprKind::If => self.ifs.get(index).map(ExprRef::If),
             ExprKind::WhileLoop => self.while_loops.get(index).map(ExprRef::WhileLoop),
@@ -784,6 +782,7 @@ impl<'a> Storage<'a> {
                 .identifiers
                 .get_mut(index)
                 .map(|id| ExprRefMut::Identifier(id)),
+            ExprKind::Scope => self.scopes.get_mut(index).map(ExprRefMut::Scope),
 
             ExprKind::If => self.ifs.get_mut(index).map(ExprRefMut::If),
             ExprKind::WhileLoop => self.while_loops.get_mut(index).map(ExprRefMut::WhileLoop),

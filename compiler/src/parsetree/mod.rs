@@ -15,6 +15,7 @@ mod number;
 mod object;
 mod reference;
 mod refinement_type;
+mod scope;
 mod slice_type;
 mod statement;
 mod storage;
@@ -24,7 +25,7 @@ mod variable;
 
 pub use builder::*;
 pub use debug::*;
-pub use expression::{ExprKind, ExprRef, ExprRefMut, TypeOwned};
+pub use expression::{ExprKind, ExprOwned, ExprRef, ExprRefMut, TypeKind, TypeOwned};
 pub use storage::{ExprKey, Storage, TypeKey};
 
 pub mod node {
@@ -43,6 +44,7 @@ pub mod node {
     pub use super::object::ObjectLit;
     pub use super::reference::{ManagedRefType, UnmanagedRefType};
     pub use super::refinement_type::RefinementType;
+    pub use super::scope::Scope;
     pub use super::slice_type::SliceType;
     pub use super::statement::Statement;
     pub use super::tuple_type::TupleType;

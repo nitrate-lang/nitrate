@@ -13,6 +13,7 @@ use super::number::IntegerLit;
 use super::object::ObjectLit;
 use super::reference::{ManagedRefType, UnmanagedRefType};
 use super::refinement_type::RefinementType;
+use super::scope::Scope;
 use super::slice_type::SliceType;
 use super::statement::Statement;
 use super::tuple_type::TupleType;
@@ -70,6 +71,7 @@ pub enum ExprKind {
     Function,
     Variable,
     Identifier,
+    Scope,
 
     If,
     WhileLoop,
@@ -84,7 +86,7 @@ pub enum ExprKind {
 }
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
-pub(crate) enum TypeKind {
+pub enum TypeKind {
     Bool,
     UInt8,
     UInt16,
@@ -117,7 +119,7 @@ pub(crate) enum TypeKind {
 }
 
 #[derive(Debug, Clone)]
-pub(crate) enum ExprOwned<'a> {
+pub enum ExprOwned<'a> {
     Bool,
     UInt8,
     UInt16,
@@ -166,6 +168,7 @@ pub(crate) enum ExprOwned<'a> {
     Function(Function<'a>),
     Variable(Variable<'a>),
     Identifier(&'a str),
+    Scope(Scope<'a>),
 
     If(If<'a>),
     WhileLoop(WhileLoop<'a>),
@@ -262,6 +265,7 @@ pub enum ExprRef<'storage, 'a> {
     Function(&'storage Function<'a>),
     Variable(&'storage Variable<'a>),
     Identifier(&'a str),
+    Scope(&'storage Scope<'a>),
 
     If(&'storage If<'a>),
     WhileLoop(&'storage WhileLoop<'a>),
@@ -325,6 +329,7 @@ pub enum ExprRefMut<'storage, 'a> {
     Function(&'storage mut Function<'a>),
     Variable(&'storage mut Variable<'a>),
     Identifier(&'a str),
+    Scope(&'storage mut Scope<'a>),
 
     If(&'storage mut If<'a>),
     WhileLoop(&'storage mut WhileLoop<'a>),
@@ -388,6 +393,7 @@ impl TryInto<TypeKind> for ExprKind {
             | ExprKind::Function
             | ExprKind::Variable
             | ExprKind::Identifier
+            | ExprKind::Scope
             | ExprKind::If
             | ExprKind::WhileLoop
             | ExprKind::DoWhileLoop
@@ -455,6 +461,7 @@ impl TryFrom<u8> for ExprKind {
             x if x == ExprKind::Function as u8 => Ok(ExprKind::Function),
             x if x == ExprKind::Variable as u8 => Ok(ExprKind::Variable),
             x if x == ExprKind::Identifier as u8 => Ok(ExprKind::Identifier),
+            x if x == ExprKind::Scope as u8 => Ok(ExprKind::Scope),
 
             x if x == ExprKind::If as u8 => Ok(ExprKind::If),
             x if x == ExprKind::WhileLoop as u8 => Ok(ExprKind::WhileLoop),
@@ -558,6 +565,7 @@ impl<'a> TryInto<TypeOwned<'a>> for ExprOwned<'a> {
             | ExprOwned::Function(_)
             | ExprOwned::Variable(_)
             | ExprOwned::Identifier(_)
+            | ExprOwned::Scope(_)
             | ExprOwned::If(_)
             | ExprOwned::WhileLoop(_)
             | ExprOwned::DoWhileLoop(_)
