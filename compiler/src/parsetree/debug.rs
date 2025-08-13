@@ -259,6 +259,14 @@ impl std::fmt::Debug for Printable<'_, '_> {
             ExprRef::Variable(x) => f
                 .debug_struct("Variable")
                 .field("kind", &x.kind())
+                .field("is_mutable", &x.is_mutable())
+                .field(
+                    "attributes",
+                    &x.attributes()
+                        .iter()
+                        .map(|a| a.as_printable(self.storage))
+                        .collect::<Vec<_>>(),
+                )
                 .field("name", &x.name())
                 .field("type", &x.get_type().map(|t| t.as_printable(self.storage)))
                 .field("value", &x.value().map(|v| v.as_printable(self.storage)))

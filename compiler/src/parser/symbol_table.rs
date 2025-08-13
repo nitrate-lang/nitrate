@@ -25,12 +25,14 @@ impl<'a> QualifiedScope<'a> {
         self.parts.is_empty()
     }
 
-    pub fn into_parent(mut self) -> QualifiedScope<'a> {
+    pub fn pop(&mut self) {
         if !self.parts.is_empty() {
             self.parts.pop();
         }
+    }
 
-        self
+    pub fn push(&mut self, part: &'a str) {
+        self.parts.push(part);
     }
 
     pub fn names(&self) -> &[&'a str] {
@@ -81,7 +83,7 @@ impl<'a> SymbolTable<'a> {
                 return None;
             }
 
-            search_scope = search_scope.into_parent();
+            search_scope.pop();
         }
     }
 }

@@ -9,6 +9,8 @@ pub enum VariableKind {
 #[derive(Debug, Clone)]
 pub struct Variable<'a> {
     kind: VariableKind,
+    is_mutable: bool,
+    attributes: Vec<ExprKey<'a>>,
     name: &'a str,
     var_type: Option<TypeKey<'a>>,
     value: Option<ExprKey<'a>>,
@@ -18,12 +20,16 @@ impl<'a> Variable<'a> {
     #[must_use]
     pub(crate) fn new(
         kind: VariableKind,
+        is_mutable: bool,
+        attributes: Vec<ExprKey<'a>>,
         name: &'a str,
         var_type: Option<TypeKey<'a>>,
         value: Option<ExprKey<'a>>,
     ) -> Self {
         Variable {
             kind,
+            is_mutable,
+            attributes,
             name,
             var_type,
             value,
@@ -33,6 +39,25 @@ impl<'a> Variable<'a> {
     #[must_use]
     pub fn kind(&self) -> VariableKind {
         self.kind
+    }
+
+    #[must_use]
+    pub fn is_mutable(&self) -> bool {
+        self.is_mutable
+    }
+
+    pub fn set_mutable(&mut self, is_mutable: bool) {
+        self.is_mutable = is_mutable;
+    }
+
+    #[must_use]
+    pub fn attributes(&self) -> &[ExprKey<'a>] {
+        &self.attributes
+    }
+
+    #[must_use]
+    pub fn attributes_mut(&mut self) -> &mut Vec<ExprKey<'a>> {
+        &mut self.attributes
     }
 
     #[must_use]

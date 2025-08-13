@@ -88,7 +88,7 @@ impl<'a, 'storage, 'symbol_table, 'logger> Parser<'a, 'storage, 'symbol_table, '
 
         let mut expressions = Vec::new();
         while !self.lexer.is_eof() {
-            let Some(expression) = self.parse_expression() else {
+            let Some(mut expression) = self.parse_expression() else {
                 let before_pos = self.lexer.sync_position();
                 loop {
                     match self.lexer.next_t() {
@@ -108,6 +108,13 @@ impl<'a, 'storage, 'symbol_table, 'logger> Parser<'a, 'storage, 'symbol_table, '
 
                 continue;
             };
+
+            if self.lexer.skip_if(&Token::Punct(Punct::Semicolon)) {
+                expression = Builder::new(self.storage)
+                    .create_statement()
+                    .with_expression(expression)
+                    .build();
+            }
 
             expressions.push(expression);
         }

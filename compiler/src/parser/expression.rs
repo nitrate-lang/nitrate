@@ -1,5 +1,5 @@
 use super::parse::Parser;
-use crate::lexer::{BStringData, IntegerKind, Keyword, Punct, StringData, Token};
+use crate::lexer::{BStringData, IntegerKind, Keyword, Op, Punct, StringData, Token};
 use crate::parsetree::{Builder, ExprKey, node::BinExprOp};
 use slog::error;
 
@@ -80,6 +80,38 @@ impl<'a> Parser<'a, '_, '_, '_> {
         } else {
             lit
         }
+    }
+
+    fn parse_attributes(&mut self) -> Option<Vec<ExprKey<'a>>> {
+        let mut attributes = Vec::new();
+
+        if !self.lexer.skip_if(&Token::Punct(Punct::LeftBracket)) {
+            return Some(attributes);
+        }
+
+        self.lexer.skip_if(&Token::Punct(Punct::Comma));
+        loop {
+            if self.lexer.skip_if(&Token::Punct(Punct::RightBracket)) {
+                break;
+            }
+
+            attributes.push(self.parse_expression()?);
+
+            if !self.lexer.skip_if(&Token::Punct(Punct::Comma)) {
+                if self.lexer.skip_if(&Token::Punct(Punct::RightBracket)) {
+                    break;
+                }
+                error!(
+                    self.log,
+                    "[P0???]: expected ',' or ']' after attribute expression\n--> {}",
+                    self.lexer.sync_position()
+                );
+
+                return None;
+            }
+        }
+
+        Some(attributes)
     }
 
     fn parse_type_or_type_alias(&mut self) -> Option<ExprKey<'a>> {
@@ -301,10 +333,38 @@ impl<'a> Parser<'a, '_, '_, '_> {
     }
 
     fn parse_scope(&mut self) -> Option<ExprKey<'a>> {
-        // TODO: Implement scope parsing logic
-        self.set_failed_bit();
-        error!(self.log, "Scope parsing not implemented yet");
-        None
+        assert!(self.lexer.peek_t() == Token::Keyword(Keyword::Scope));
+        self.lexer.skip_tok();
+
+        let attributes = self.parse_attributes()?;
+
+        let Some(name_token) = self.lexer.next_if_name() else {
+            error!(
+                self.log,
+                "[P????]: expr: scope: expected scope name after 'scope'\n--> {}",
+                self.lexer.sync_position()
+            );
+            return None;
+        };
+
+        self.scope.push(name_token.name());
+        let new_scope = self.scope.clone();
+
+        let Some(block) = self.parse_block() else {
+            self.scope.pop();
+            return None;
+        };
+
+        self.scope.pop();
+
+        Some(
+            Builder::new(self.storage)
+                .create_scope()
+                .with_scope(new_scope)
+                .add_attributes(attributes)
+                .with_block(block)
+                .build(),
+        )
     }
 
     fn parse_enum(&mut self) -> Option<ExprKey<'a>> {
@@ -357,17 +417,91 @@ impl<'a> Parser<'a, '_, '_, '_> {
     }
 
     fn parse_let_variable(&mut self) -> Option<ExprKey<'a>> {
-        // TODO: Implement let variable parsing logic
-        self.set_failed_bit();
-        error!(self.log, "Let variable parsing not implemented yet");
-        None
+        assert!(self.lexer.peek_t() == Token::Keyword(Keyword::Let));
+        self.lexer.skip_tok();
+
+        let attributes = self.parse_attributes()?;
+
+        let is_mutable = self.lexer.skip_if(&Token::Keyword(Keyword::Mut));
+        if !is_mutable {
+            self.lexer.skip_if(&Token::Keyword(Keyword::Const));
+        }
+
+        let Some(name_token) = self.lexer.next_if_name() else {
+            error!(
+                self.log,
+                "[P????]: expr: let: expected variable name\n--> {}",
+                self.lexer.sync_position()
+            );
+            return None;
+        };
+
+        let type_annotation = if self.lexer.skip_if(&Token::Punct(Punct::Colon)) {
+            Some(self.parse_type()?)
+        } else {
+            None
+        };
+
+        let initializer = if self.lexer.skip_if(&Token::Op(Op::Set)) {
+            Some(self.parse_expression()?)
+        } else {
+            None
+        };
+
+        Some(
+            Builder::new(self.storage)
+                .create_let()
+                .with_mutability(is_mutable)
+                .with_attributes(attributes)
+                .with_name(name_token.name())
+                .with_type(type_annotation)
+                .with_value(initializer)
+                .build(),
+        )
     }
 
     fn parse_var_variable(&mut self) -> Option<ExprKey<'a>> {
-        // TODO: Implement var variable parsing logic
-        self.set_failed_bit();
-        error!(self.log, "Var variable parsing not implemented yet");
-        None
+        assert!(self.lexer.peek_t() == Token::Keyword(Keyword::Var));
+        self.lexer.skip_tok();
+
+        let attributes = self.parse_attributes()?;
+
+        let is_mutable = self.lexer.skip_if(&Token::Keyword(Keyword::Mut));
+        if !is_mutable {
+            self.lexer.skip_if(&Token::Keyword(Keyword::Const));
+        }
+
+        let Some(name_token) = self.lexer.next_if_name() else {
+            error!(
+                self.log,
+                "[P????]: expr: var: expected variable name\n--> {}",
+                self.lexer.sync_position()
+            );
+            return None;
+        };
+
+        let type_annotation = if self.lexer.skip_if(&Token::Punct(Punct::Colon)) {
+            Some(self.parse_type()?)
+        } else {
+            None
+        };
+
+        let initializer = if self.lexer.skip_if(&Token::Op(Op::Set)) {
+            Some(self.parse_expression()?)
+        } else {
+            None
+        };
+
+        Some(
+            Builder::new(self.storage)
+                .create_var()
+                .with_mutability(is_mutable)
+                .with_attributes(attributes)
+                .with_name(name_token.name())
+                .with_type(type_annotation)
+                .with_value(initializer)
+                .build(),
+        )
     }
 
     fn parse_expression_primary(&mut self) -> Option<ExprKey<'a>> {
@@ -513,17 +647,10 @@ impl<'a> Parser<'a, '_, '_, '_> {
             parenthesis_count += 1;
         }
 
-        let Some(mut expr) = self.parse_expression_primary() else {
+        let Some(expr) = self.parse_expression_primary() else {
             self.set_failed_bit();
             return None;
         };
-
-        if self.lexer.skip_if(&Token::Punct(Punct::Semicolon)) {
-            expr = Builder::new(self.storage)
-                .create_statement()
-                .with_expression(expr)
-                .build();
-        }
 
         self.storage.add_parentheses(expr);
 
@@ -564,7 +691,7 @@ impl<'a> Parser<'a, '_, '_, '_> {
                 break;
             }
 
-            let Some(expression) = self.parse_expression() else {
+            let Some(mut expression) = self.parse_expression() else {
                 let before_pos = self.lexer.sync_position();
                 loop {
                     match self.lexer.next_t() {
@@ -589,6 +716,13 @@ impl<'a> Parser<'a, '_, '_, '_> {
 
                 continue;
             };
+
+            if self.lexer.skip_if(&Token::Punct(Punct::Semicolon)) {
+                expression = Builder::new(self.storage)
+                    .create_statement()
+                    .with_expression(expression)
+                    .build();
+            }
 
             elements.push(expression);
         }

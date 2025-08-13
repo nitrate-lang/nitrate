@@ -840,6 +840,8 @@ impl<'storage, 'a> FunctionBuilder<'storage, 'a> {
 pub struct VariableBuilder<'storage, 'a> {
     storage: &'storage mut Storage<'a>,
     kind: Option<VariableKind>,
+    is_mutable: bool,
+    attributes: Vec<ExprKey<'a>>,
     name: &'a str,
     ty: Option<TypeKey<'a>>,
     value: Option<ExprKey<'a>>,
@@ -850,6 +852,8 @@ impl<'storage, 'a> VariableBuilder<'storage, 'a> {
         VariableBuilder {
             storage,
             kind: None,
+            is_mutable: false,
+            attributes: Vec::new(),
             name: "",
             ty: None,
             value: None,
@@ -861,24 +865,41 @@ impl<'storage, 'a> VariableBuilder<'storage, 'a> {
         self
     }
 
+    pub fn with_mutability(mut self, is_mutable: bool) -> Self {
+        self.is_mutable = is_mutable;
+        self
+    }
+
+    pub fn add_attribute(mut self, attribute: ExprKey<'a>) -> Self {
+        self.attributes.push(attribute);
+        self
+    }
+
+    pub fn with_attributes(mut self, attributes: Vec<ExprKey<'a>>) -> Self {
+        self.attributes = attributes;
+        self
+    }
+
     pub fn with_name(mut self, name: &'a str) -> Self {
         self.name = name;
         self
     }
 
-    pub fn with_type(mut self, ty: TypeKey<'a>) -> Self {
-        self.ty = Some(ty);
+    pub fn with_type(mut self, ty: Option<TypeKey<'a>>) -> Self {
+        self.ty = ty;
         self
     }
 
-    pub fn with_value(mut self, value: ExprKey<'a>) -> Self {
-        self.value = Some(value);
+    pub fn with_value(mut self, value: Option<ExprKey<'a>>) -> Self {
+        self.value = value;
         self
     }
 
     pub fn build(self) -> ExprKey<'a> {
         self.storage.add_expr(ExprOwned::Variable(Variable::new(
             self.kind.expect("Variable kind must be provided"),
+            self.is_mutable,
+            self.attributes,
             self.name,
             self.ty,
             self.value,
