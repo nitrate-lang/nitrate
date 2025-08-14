@@ -343,11 +343,10 @@ impl<'a> ToCode<'a> for Function<'a> {
         }
         tokens.push(Token::Punct(Punct::RightParen));
 
-        if let Some(return_type) = self.return_type() {
-            if !matches!(return_type.get(bank), TypeOwned::InferType) {
-                tokens.push(Token::Op(Op::Arrow));
-                return_type.to_code(bank, tokens, options);
-            }
+        let return_type = self.return_type();
+        if !matches!(return_type.get(bank), TypeOwned::InferType) {
+            tokens.push(Token::Op(Op::Arrow));
+            return_type.to_code(bank, tokens, options);
         }
 
         if let Some(definition) = self.definition() {
@@ -365,10 +364,9 @@ impl<'a> ToCode<'a> for Variable<'a> {
 
         tokens.push(Token::Name(Name::new(self.name())));
 
-        if let Some(var_type) = self.get_type() {
-            tokens.push(Token::Punct(Punct::Colon));
-            var_type.to_code(bank, tokens, options);
-        }
+        let var_type = self.get_type();
+        tokens.push(Token::Punct(Punct::Colon));
+        var_type.to_code(bank, tokens, options);
 
         if let Some(value) = self.value() {
             tokens.push(Token::Op(Op::Set));

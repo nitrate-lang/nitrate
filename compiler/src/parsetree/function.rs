@@ -1,4 +1,3 @@
-use super::block::Block;
 use super::storage::{ExprKey, TypeKey};
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -37,10 +36,10 @@ impl<'a> FunctionParameter<'a> {
 #[derive(Debug, Clone)]
 pub struct Function<'a> {
     parameters: Vec<FunctionParameter<'a>>,
-    return_type: Option<TypeKey<'a>>,
+    return_type: TypeKey<'a>,
     attributes: Vec<ExprKey<'a>>,
     name: &'a str,
-    definition: Option<Block<'a>>,
+    definition: Option<ExprKey<'a>>,
 }
 
 impl<'a> Function<'a> {
@@ -48,9 +47,9 @@ impl<'a> Function<'a> {
     pub(crate) fn new(
         name: &'a str,
         parameters: Vec<FunctionParameter<'a>>,
-        return_type: Option<TypeKey<'a>>,
+        return_type: TypeKey<'a>,
         attributes: Vec<ExprKey<'a>>,
-        definition: Option<Block<'a>>,
+        definition: Option<ExprKey<'a>>,
     ) -> Self {
         Function {
             parameters,
@@ -72,11 +71,11 @@ impl<'a> Function<'a> {
     }
 
     #[must_use]
-    pub fn return_type(&self) -> Option<TypeKey<'a>> {
+    pub fn return_type(&self) -> TypeKey<'a> {
         self.return_type
     }
 
-    pub fn set_return_type(&mut self, ty: Option<TypeKey<'a>>) {
+    pub fn set_return_type(&mut self, ty: TypeKey<'a>) {
         self.return_type = ty;
     }
 
@@ -100,12 +99,11 @@ impl<'a> Function<'a> {
     }
 
     #[must_use]
-    pub fn definition(&self) -> Option<&Block<'a>> {
+    pub fn definition(&self) -> Option<&ExprKey<'a>> {
         self.definition.as_ref()
     }
 
-    #[must_use]
-    pub fn definition_mut(&mut self) -> Option<&mut Block<'a>> {
-        self.definition.as_mut()
+    pub fn set_definition(&mut self, definition: Option<ExprKey<'a>>) {
+        self.definition = definition;
     }
 }

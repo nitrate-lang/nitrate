@@ -447,6 +447,25 @@ impl<'a> Parser<'a, '_, '_, '_> {
     }
 
     fn parse_function(&mut self) -> Option<ExprKey<'a>> {
+        if self.lexer.peek_t() == Token::Punct(Punct::LeftBrace) {
+            let block = self.parse_block()?;
+
+            let infer_type = Builder::new(self.storage).get_infer_type();
+
+            return Some(
+                Builder::new(self.storage)
+                    .create_function()
+                    .with_definition(block)
+                    .with_return_type(infer_type)
+                    .build(),
+            );
+        }
+
+        assert!(self.lexer.peek_t() == Token::Keyword(Keyword::Fn));
+        self.lexer.skip_tok();
+
+        //
+
         // TODO: Implement function parsing logic
         self.set_failed_bit();
         error!(self.log, "Function parsing not implemented yet");
@@ -474,9 +493,9 @@ impl<'a> Parser<'a, '_, '_, '_> {
         };
 
         let type_annotation = if self.lexer.skip_if(&Token::Punct(Punct::Colon)) {
-            Some(self.parse_type()?)
+            self.parse_type()?
         } else {
-            None
+            Builder::new(self.storage).get_infer_type()
         };
 
         let initializer = if self.lexer.skip_if(&Token::Op(Op::Set)) {
@@ -518,9 +537,9 @@ impl<'a> Parser<'a, '_, '_, '_> {
         };
 
         let type_annotation = if self.lexer.skip_if(&Token::Punct(Punct::Colon)) {
-            Some(self.parse_type()?)
+            self.parse_type()?
         } else {
-            None
+            Builder::new(self.storage).get_infer_type()
         };
 
         let initializer = if self.lexer.skip_if(&Token::Op(Op::Set)) {
@@ -606,6 +625,7 @@ impl<'a> Parser<'a, '_, '_, '_> {
             Token::Keyword(Keyword::Await) => self.parse_await(),
             Token::Keyword(Keyword::Asm) => self.parse_asm(),
             Token::Keyword(Keyword::Assert) => self.parse_assert(),
+            Token::Punct(Punct::LeftBrace) => self.parse_function(),
 
             Token::Keyword(keyword) => {
                 self.set_failed_bit();

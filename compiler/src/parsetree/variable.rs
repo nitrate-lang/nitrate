@@ -12,7 +12,7 @@ pub struct Variable<'a> {
     is_mutable: bool,
     attributes: Vec<ExprKey<'a>>,
     name: &'a str,
-    var_type: Option<TypeKey<'a>>,
+    var_type: TypeKey<'a>,
     value: Option<ExprKey<'a>>,
 }
 
@@ -23,7 +23,7 @@ impl<'a> Variable<'a> {
         is_mutable: bool,
         attributes: Vec<ExprKey<'a>>,
         name: &'a str,
-        var_type: Option<TypeKey<'a>>,
+        var_type: TypeKey<'a>,
         value: Option<ExprKey<'a>>,
     ) -> Self {
         Variable {
@@ -70,11 +70,11 @@ impl<'a> Variable<'a> {
     }
 
     #[must_use]
-    pub fn get_type(&self) -> Option<TypeKey<'a>> {
+    pub fn get_type(&self) -> TypeKey<'a> {
         self.var_type
     }
 
-    pub fn set_type(&mut self, var_type: Option<TypeKey<'a>>) {
+    pub fn set_type(&mut self, var_type: TypeKey<'a>) {
         self.var_type = var_type;
     }
 

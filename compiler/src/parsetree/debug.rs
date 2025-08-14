@@ -240,10 +240,7 @@ impl std::fmt::Debug for Printable<'_, '_> {
 
                 f.debug_struct("Function")
                     .field("parameters", &parameters)
-                    .field(
-                        "return_type",
-                        &x.return_type().map(|t| t.as_printable(self.storage)),
-                    )
+                    .field("return_type", &x.return_type().as_printable(self.storage))
                     .field(
                         "attributes",
                         &x.attributes()
@@ -252,7 +249,10 @@ impl std::fmt::Debug for Printable<'_, '_> {
                             .collect::<Vec<_>>(),
                     )
                     .field("name", &x.name())
-                    .field("definition", &x.definition())
+                    .field(
+                        "definition",
+                        &x.definition().map(|d| d.as_printable(self.storage)),
+                    )
                     .finish()
             }
 
@@ -268,7 +268,7 @@ impl std::fmt::Debug for Printable<'_, '_> {
                         .collect::<Vec<_>>(),
                 )
                 .field("name", &x.name())
-                .field("type", &x.get_type().map(|t| t.as_printable(self.storage)))
+                .field("type", &x.get_type().as_printable(self.storage))
                 .field("value", &x.value().map(|v| v.as_printable(self.storage)))
                 .finish(),
 

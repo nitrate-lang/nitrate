@@ -809,29 +809,18 @@ impl<'storage, 'a> FunctionBuilder<'storage, 'a> {
         self
     }
 
-    pub fn with_definition(mut self, definition: ExprKey<'a>) -> Option<Self> {
-        match definition.get(self.storage) {
-            ExprRef::Block(_) => {
-                self.definition = Some(definition);
-                Some(self)
-            }
-
-            _ => None,
-        }
+    pub fn with_definition(mut self, definition: ExprKey<'a>) -> Self {
+        self.definition = Some(definition);
+        self
     }
 
     pub fn build(self) -> ExprKey<'a> {
-        let definition = self.definition.map(|d| match d.get(self.storage) {
-            ExprRef::Block(block) => block.to_owned(),
-            _ => panic!("Function definition must be a block expression"),
-        });
-
         self.storage.add_expr(ExprOwned::Function(Function::new(
             self.name,
             self.parameters,
-            self.return_type,
+            self.return_type.expect("Return type must be provided"),
             self.attributes,
-            definition,
+            self.definition,
         )))
     }
 }
@@ -885,8 +874,8 @@ impl<'storage, 'a> VariableBuilder<'storage, 'a> {
         self
     }
 
-    pub fn with_type(mut self, ty: Option<TypeKey<'a>>) -> Self {
-        self.ty = ty;
+    pub fn with_type(mut self, ty: TypeKey<'a>) -> Self {
+        self.ty = Some(ty);
         self
     }
 
@@ -901,7 +890,7 @@ impl<'storage, 'a> VariableBuilder<'storage, 'a> {
             self.is_mutable,
             self.attributes,
             self.name,
-            self.ty,
+            self.ty.expect("Variable type must be provided"),
             self.value,
         )))
     }
