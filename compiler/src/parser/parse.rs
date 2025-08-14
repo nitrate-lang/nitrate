@@ -9,7 +9,7 @@ use smallvec::SmallVec;
 pub struct Parser<'a, 'storage, 'symbol_table, 'logger> {
     pub(crate) lexer: Lexer<'a>,
     pub(crate) storage: &'storage mut Storage<'a>,
-    pub(crate) symbol_table: &'symbol_table mut SymbolTable<'a>,
+    pub(crate) symtab: &'symbol_table mut SymbolTable<'a>,
     pub(crate) scope: QualifiedScope<'a>,
     pub(crate) log: &'logger mut Logger,
     pub(crate) generic_type_depth: i64,
@@ -27,7 +27,7 @@ impl<'a, 'storage, 'symbol_table, 'logger> Parser<'a, 'storage, 'symbol_table, '
         Parser {
             lexer,
             storage,
-            symbol_table,
+            symtab: symbol_table,
             scope: QualifiedScope::new(SmallVec::new()),
             log,
             generic_type_depth: 0,
@@ -46,11 +46,11 @@ impl<'a, 'storage, 'symbol_table, 'logger> Parser<'a, 'storage, 'symbol_table, '
     }
 
     pub fn get_symbol_table(&self) -> &SymbolTable<'a> {
-        self.symbol_table
+        self.symtab
     }
 
     pub fn get_symbol_table_mut(&mut self) -> &mut SymbolTable<'a> {
-        self.symbol_table
+        self.symtab
     }
 
     #[must_use]

@@ -40,9 +40,13 @@ impl<'a> QualifiedScope<'a> {
     }
 }
 
-impl std::string::ToString for QualifiedScope<'_> {
-    fn to_string(&self) -> String {
-        self.parts.iter().cloned().collect::<Vec<_>>().join("::")
+impl std::fmt::Display for QualifiedScope<'_> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{}",
+            self.parts.iter().cloned().collect::<Vec<_>>().join("::")
+        )
     }
 }
 
@@ -85,6 +89,17 @@ impl<'a> SymbolTable<'a> {
 
             search_scope.pop();
         }
+    }
+}
+
+impl<'a> std::fmt::Display for SymbolTable<'a> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        for (scope, symbols) in &self.scopes {
+            for (name, symbol) in symbols {
+                writeln!(f, "{}::{}: {:?}", scope, name, symbol)?;
+            }
+        }
+        Ok(())
     }
 }
 

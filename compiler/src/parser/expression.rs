@@ -130,7 +130,7 @@ impl<'a> Parser<'a, '_, '_, '_> {
                 self.set_failed_bit();
                 error!(
                     self.log,
-                    "[P????]: expr: type: expected closing parenthesis\n--> {}",
+                    "[P????]: type expression: expected closing parenthesis\n--> {}",
                     self.lexer.sync_position()
                 );
 
@@ -158,7 +158,7 @@ impl<'a> Parser<'a, '_, '_, '_> {
                     self.set_failed_bit();
                     error!(
                         self.log,
-                        "[P????]: expr: if: expected else block after 'else if'\n--> {}",
+                        "[P????]: if: expected else block after 'else if'\n--> {}",
                         self.lexer.sync_position()
                     );
                     return None;
@@ -218,7 +218,7 @@ impl<'a> Parser<'a, '_, '_, '_> {
         if !self.lexer.skip_if(&Token::Keyword(Keyword::While)) {
             error!(
                 self.log,
-                "[P????]: expr: do: expected 'while' after 'do' block\n--> {}",
+                "[P????]: do-while: expected 'while' after 'do' block\n--> {}",
                 self.lexer.sync_position()
             );
 
@@ -251,7 +251,7 @@ impl<'a> Parser<'a, '_, '_, '_> {
             let Some(label) = self.lexer.next_if_name() else {
                 error!(
                     self.log,
-                    "[P????]: expr: break: expected branch label after single quote\n--> {}",
+                    "[P????]: break: expected branch label after single quote\n--> {}",
                     self.lexer.sync_position()
                 );
 
@@ -279,7 +279,7 @@ impl<'a> Parser<'a, '_, '_, '_> {
             let Some(label) = self.lexer.next_if_name() else {
                 error!(
                     self.log,
-                    "[P????]: expr: continue: expected branch label after single quote\n--> {}",
+                    "[P????]: continue: expected branch label after single quote\n--> {}",
                     self.lexer.sync_position()
                 );
 
@@ -378,7 +378,7 @@ impl<'a> Parser<'a, '_, '_, '_> {
         let Some(name_token) = self.lexer.next_if_name() else {
             error!(
                 self.log,
-                "[P????]: expr: scope: expected scope name after 'scope'\n--> {}",
+                "[P????]: scope: expected scope name\n--> {}",
                 self.lexer.sync_position()
             );
             return None;
@@ -466,6 +466,7 @@ impl<'a> Parser<'a, '_, '_, '_> {
 
         let attributes = self.parse_attributes()?;
 
+        let name_pos = self.lexer.peek_tok().start();
         let function_name = self
             .lexer
             .next_if_name()
@@ -486,16 +487,29 @@ impl<'a> Parser<'a, '_, '_, '_> {
             None
         };
 
-        Some(
-            Builder::new(self.storage)
-                .create_function()
-                .with_attributes(attributes)
-                .with_name(function_name)
-                .with_parameters(parameters)
-                .with_return_type(return_type)
-                .with_definition(body)
-                .build(),
-        )
+        let function = Builder::new(self.storage)
+            .create_function()
+            .with_attributes(attributes)
+            .with_name(function_name)
+            .with_parameters(parameters)
+            .with_return_type(return_type)
+            .with_definition(body)
+            .build();
+
+        if !function_name.is_empty() {
+            let current_scope = self.scope.clone();
+            if !self.symtab.insert(current_scope, function_name, function) {
+                self.set_failed_bit();
+                error!(
+                    self.log,
+                    "[P????]: function: duplicate function '{}'\n--> {}", function_name, name_pos
+                );
+
+                return None;
+            }
+        }
+
+        Some(function)
     }
 
     fn parse_let_variable(&mut self) -> Option<ExprKey<'a>> {
@@ -509,10 +523,12 @@ impl<'a> Parser<'a, '_, '_, '_> {
             self.lexer.skip_if(&Token::Keyword(Keyword::Const));
         }
 
-        let Some(name_token) = self.lexer.next_if_name() else {
+        let variable_name = if let Some(name_token) = self.lexer.next_if_name() {
+            name_token.name()
+        } else {
             error!(
                 self.log,
-                "[P????]: expr: let: expected variable name\n--> {}",
+                "[P????]: let: expected variable name\n--> {}",
                 self.lexer.sync_position()
             );
             return None;
@@ -530,16 +546,28 @@ impl<'a> Parser<'a, '_, '_, '_> {
             None
         };
 
-        Some(
-            Builder::new(self.storage)
-                .create_let()
-                .with_mutability(is_mutable)
-                .with_attributes(attributes)
-                .with_name(name_token.name())
-                .with_type(type_annotation)
-                .with_value(initializer)
-                .build(),
-        )
+        let variable = Builder::new(self.storage)
+            .create_let()
+            .with_mutability(is_mutable)
+            .with_attributes(attributes)
+            .with_name(variable_name)
+            .with_type(type_annotation)
+            .with_value(initializer)
+            .build();
+
+        let current_scope = self.scope.clone();
+        if !self.symtab.insert(current_scope, variable_name, variable) {
+            error!(
+                self.log,
+                "[P????]: let: duplicate variable '{}'\n--> {}",
+                variable_name,
+                self.lexer.sync_position()
+            );
+
+            return None;
+        }
+
+        Some(variable)
     }
 
     fn parse_var_variable(&mut self) -> Option<ExprKey<'a>> {
@@ -553,10 +581,12 @@ impl<'a> Parser<'a, '_, '_, '_> {
             self.lexer.skip_if(&Token::Keyword(Keyword::Const));
         }
 
-        let Some(name_token) = self.lexer.next_if_name() else {
+        let variable_name = if let Some(name_token) = self.lexer.next_if_name() {
+            name_token.name()
+        } else {
             error!(
                 self.log,
-                "[P????]: expr: var: expected variable name\n--> {}",
+                "[P????]: var: expected variable name\n--> {}",
                 self.lexer.sync_position()
             );
             return None;
@@ -574,16 +604,28 @@ impl<'a> Parser<'a, '_, '_, '_> {
             None
         };
 
-        Some(
-            Builder::new(self.storage)
-                .create_var()
-                .with_mutability(is_mutable)
-                .with_attributes(attributes)
-                .with_name(name_token.name())
-                .with_type(type_annotation)
-                .with_value(initializer)
-                .build(),
-        )
+        let variable = Builder::new(self.storage)
+            .create_var()
+            .with_mutability(is_mutable)
+            .with_attributes(attributes)
+            .with_name(variable_name)
+            .with_type(type_annotation)
+            .with_value(initializer)
+            .build();
+
+        let current_scope = self.scope.clone();
+        if !self.symtab.insert(current_scope, variable_name, variable) {
+            error!(
+                self.log,
+                "[P????]: var: duplicate variable '{}'\n--> {}",
+                variable_name,
+                self.lexer.sync_position()
+            );
+
+            return None;
+        }
+
+        Some(variable)
     }
 
     fn parse_expression_primary(&mut self) -> Option<ExprKey<'a>> {
@@ -794,7 +836,7 @@ impl<'a> Parser<'a, '_, '_, '_> {
                     self.set_failed_bit();
                     error!(
                         self.log,
-                        "[P????]: expr: block: failed to parse expression\n--> {}",
+                        "[P????]: block: failed to parse expression\n--> {}",
                         self.lexer.sync_position()
                     );
 
