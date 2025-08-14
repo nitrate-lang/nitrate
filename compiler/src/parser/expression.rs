@@ -82,7 +82,7 @@ impl<'a> Parser<'a, '_, '_, '_> {
         }
     }
 
-    fn parse_attributes(&mut self) -> Option<Vec<ExprKey<'a>>> {
+    pub(crate) fn parse_attributes(&mut self) -> Option<Vec<ExprKey<'a>>> {
         let mut attributes = Vec::new();
 
         if !self.lexer.skip_if(&Token::Punct(Punct::LeftBracket)) {
@@ -448,7 +448,7 @@ impl<'a> Parser<'a, '_, '_, '_> {
 
     fn parse_function(&mut self) -> Option<ExprKey<'a>> {
         if self.lexer.peek_t() == Token::Punct(Punct::LeftBrace) {
-            let block = self.parse_block()?;
+            let block = Some(self.parse_block()?);
 
             let infer_type = Builder::new(self.storage).get_infer_type();
 
@@ -464,12 +464,38 @@ impl<'a> Parser<'a, '_, '_, '_> {
         assert!(self.lexer.peek_t() == Token::Keyword(Keyword::Fn));
         self.lexer.skip_tok();
 
-        //
+        let attributes = self.parse_attributes()?;
 
-        // TODO: Implement function parsing logic
-        self.set_failed_bit();
-        error!(self.log, "Function parsing not implemented yet");
-        None
+        let function_name = self
+            .lexer
+            .next_if_name()
+            .map(|t| t.name())
+            .unwrap_or_default();
+
+        let parameters = self.parse_function_parameters()?;
+
+        let return_type = if self.lexer.skip_if(&Token::Op(Op::Arrow)) {
+            self.parse_type()?
+        } else {
+            Builder::new(self.storage).get_infer_type()
+        };
+
+        let body = if self.lexer.next_is(&Token::Punct(Punct::LeftBrace)) {
+            Some(self.parse_block()?)
+        } else {
+            None
+        };
+
+        Some(
+            Builder::new(self.storage)
+                .create_function()
+                .with_attributes(attributes)
+                .with_name(function_name)
+                .with_parameters(parameters)
+                .with_return_type(return_type)
+                .with_definition(body)
+                .build(),
+        )
     }
 
     fn parse_let_variable(&mut self) -> Option<ExprKey<'a>> {

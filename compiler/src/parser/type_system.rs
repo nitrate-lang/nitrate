@@ -483,40 +483,7 @@ impl<'a> Parser<'a, '_, '_, '_> {
         )
     }
 
-    fn parse_function_attributes(&mut self) -> Option<Vec<ExprKey<'a>>> {
-        let mut attributes = Vec::new();
-
-        if !self.lexer.skip_if(&Token::Punct(Punct::LeftBracket)) {
-            return Some(attributes);
-        }
-
-        self.lexer.skip_if(&Token::Punct(Punct::Comma));
-
-        loop {
-            if self.lexer.skip_if(&Token::Punct(Punct::RightBracket)) {
-                break;
-            }
-
-            attributes.push(self.parse_expression()?);
-
-            if !self.lexer.skip_if(&Token::Punct(Punct::Comma)) {
-                if self.lexer.skip_if(&Token::Punct(Punct::RightBracket)) {
-                    break;
-                }
-                error!(
-                    self.log,
-                    "[P0???]: function type: expected ',' or ']' after attribute expression\n--> {}",
-                    self.lexer.sync_position()
-                );
-
-                return None;
-            }
-        }
-
-        Some(attributes)
-    }
-
-    fn parse_function_parameters(&mut self) -> Option<Vec<FunctionParameter<'a>>> {
+    pub(crate) fn parse_function_parameters(&mut self) -> Option<Vec<FunctionParameter<'a>>> {
         /*
          * Syntax for defining function parameters is as follows:
          *  <parameter> ::= <name>? (':' <type>)? ('=' <expression>)?
@@ -565,7 +532,7 @@ impl<'a> Parser<'a, '_, '_, '_> {
                 }
                 error!(
                     self.log,
-                    "[P0???]: function type: expected ',' or ')' after parameter\n--> {}",
+                    "[P0???]: function: expected ',' or ')' after parameter\n--> {}",
                     self.lexer.sync_position()
                 );
 
@@ -586,7 +553,7 @@ impl<'a> Parser<'a, '_, '_, '_> {
         assert!(self.lexer.peek_t() == Token::Keyword(Keyword::Fn));
         self.lexer.skip_tok();
 
-        let attributes = self.parse_function_attributes()?;
+        let attributes = self.parse_attributes()?;
         let _ignored_name = self.lexer.next_if_name();
         let parameters = self.parse_function_parameters()?;
 

@@ -809,8 +809,8 @@ impl<'storage, 'a> FunctionBuilder<'storage, 'a> {
         self
     }
 
-    pub fn with_definition(mut self, definition: ExprKey<'a>) -> Self {
-        self.definition = Some(definition);
+    pub fn with_definition(mut self, definition: Option<ExprKey<'a>>) -> Self {
+        self.definition = definition;
         self
     }
 
