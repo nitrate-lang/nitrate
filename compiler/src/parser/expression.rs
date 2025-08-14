@@ -211,10 +211,29 @@ impl<'a> Parser<'a, '_, '_, '_> {
     }
 
     fn parse_do(&mut self) -> Option<ExprKey<'a>> {
-        // TODO: Implement do expression parsing logic
-        self.set_failed_bit();
-        error!(self.log, "Do expression parsing not implemented yet");
-        None
+        assert!(self.lexer.peek_t() == Token::Keyword(Keyword::Do));
+        self.lexer.skip_tok();
+
+        let body = self.parse_block()?;
+        if !self.lexer.skip_if(&Token::Keyword(Keyword::While)) {
+            error!(
+                self.log,
+                "[P????]: expr: do: expected 'while' after 'do' block\n--> {}",
+                self.lexer.sync_position()
+            );
+
+            return None;
+        }
+
+        let condition = self.parse_expression()?;
+
+        Some(
+            Builder::new(self.storage)
+                .create_do_while_loop()
+                .with_body(body)
+                .with_condition(condition)
+                .build(),
+        )
     }
 
     fn parse_switch(&mut self) -> Option<ExprKey<'a>> {
@@ -281,10 +300,21 @@ impl<'a> Parser<'a, '_, '_, '_> {
     }
 
     fn parse_return(&mut self) -> Option<ExprKey<'a>> {
-        // TODO: Implement return expression parsing logic
-        self.set_failed_bit();
-        error!(self.log, "Return expression parsing not implemented yet");
-        None
+        assert!(self.lexer.peek_t() == Token::Keyword(Keyword::Ret));
+        self.lexer.skip_tok();
+
+        let value = if self.lexer.next_is(&Token::Punct(Punct::Semicolon)) {
+            None
+        } else {
+            Some(self.parse_expression()?)
+        };
+
+        Some(
+            Builder::new(self.storage)
+                .create_return()
+                .with_value(value)
+                .build(),
+        )
     }
 
     fn parse_foreach(&mut self) -> Option<ExprKey<'a>> {
@@ -319,10 +349,17 @@ impl<'a> Parser<'a, '_, '_, '_> {
     }
 
     fn parse_assert(&mut self) -> Option<ExprKey<'a>> {
-        // TODO: Implement assert expression parsing logic
-        self.set_failed_bit();
-        error!(self.log, "Assert expression parsing not implemented yet");
-        None
+        assert!(self.lexer.peek_t() == Token::Keyword(Keyword::Assert));
+        self.lexer.skip_tok();
+
+        let condition = self.parse_expression()?;
+
+        Some(
+            Builder::new(self.storage)
+                .create_assert()
+                .with_condition(condition)
+                .build(),
+        )
     }
 
     fn parse_type_alias(&mut self) -> Option<ExprKey<'a>> {
@@ -689,6 +726,10 @@ impl<'a> Parser<'a, '_, '_, '_> {
         loop {
             if self.lexer.skip_if(&Token::Punct(Punct::RightBrace)) {
                 break;
+            }
+
+            if self.lexer.skip_if(&Token::Punct(Punct::Semicolon)) {
+                continue;
             }
 
             let Some(mut expression) = self.parse_expression() else {

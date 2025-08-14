@@ -88,6 +88,10 @@ impl<'a, 'storage, 'symbol_table, 'logger> Parser<'a, 'storage, 'symbol_table, '
 
         let mut expressions = Vec::new();
         while !self.lexer.is_eof() {
+            if self.lexer.skip_if(&Token::Punct(Punct::Semicolon)) {
+                continue;
+            }
+
             let Some(mut expression) = self.parse_expression() else {
                 let before_pos = self.lexer.sync_position();
                 loop {
