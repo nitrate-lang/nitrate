@@ -1,9 +1,9 @@
 use super::parse::Parser;
 use crate::lexer::{BStringData, IntegerKind, Keyword, Op, Punct, StringData, Token};
 use crate::parsetree::{Builder, ExprKey, node::BinExprOp};
-use slog::error;
+use log::error;
 
-impl<'a> Parser<'a, '_, '_, '_> {
+impl<'a> Parser<'a, '_, '_> {
     fn parse_integer_literal(&mut self, value: u128, kind: IntegerKind) -> ExprKey<'a> {
         let mut bb = Builder::new(self.storage).create_integer().with_kind(kind);
 
@@ -102,7 +102,6 @@ impl<'a> Parser<'a, '_, '_, '_> {
                     break;
                 }
                 error!(
-                    self.log,
                     "[P0???]: expected ',' or ']' after attribute expression\n--> {}",
                     self.lexer.sync_position()
                 );
@@ -129,7 +128,6 @@ impl<'a> Parser<'a, '_, '_, '_> {
             if !self.lexer.skip_if(&Token::Punct(Punct::RightParen)) {
                 self.set_failed_bit();
                 error!(
-                    self.log,
                     "[P????]: type expression: expected closing parenthesis\n--> {}",
                     self.lexer.sync_position()
                 );
@@ -157,7 +155,6 @@ impl<'a> Parser<'a, '_, '_, '_> {
                 let Some(else_if_branch) = self.parse_if() else {
                     self.set_failed_bit();
                     error!(
-                        self.log,
                         "[P????]: if: expected else block after 'else if'\n--> {}",
                         self.lexer.sync_position()
                     );
@@ -185,7 +182,7 @@ impl<'a> Parser<'a, '_, '_, '_> {
     fn parse_for(&mut self) -> Option<ExprKey<'a>> {
         // TODO: Implement for expression parsing logic
         self.set_failed_bit();
-        error!(self.log, "For expression parsing not implemented yet");
+        error!("For expression parsing not implemented yet");
         None
     }
 
@@ -217,7 +214,6 @@ impl<'a> Parser<'a, '_, '_, '_> {
         let body = self.parse_block()?;
         if !self.lexer.skip_if(&Token::Keyword(Keyword::While)) {
             error!(
-                self.log,
                 "[P????]: do-while: expected 'while' after 'do' block\n--> {}",
                 self.lexer.sync_position()
             );
@@ -239,7 +235,7 @@ impl<'a> Parser<'a, '_, '_, '_> {
     fn parse_switch(&mut self) -> Option<ExprKey<'a>> {
         // TODO: Implement switch expression parsing logic
         self.set_failed_bit();
-        error!(self.log, "Switch expression parsing not implemented yet");
+        error!("Switch expression parsing not implemented yet");
         None
     }
 
@@ -250,7 +246,6 @@ impl<'a> Parser<'a, '_, '_, '_> {
         let branch_label = if self.lexer.skip_if(&Token::Punct(Punct::SingleQuote)) {
             let Some(label) = self.lexer.next_if_name() else {
                 error!(
-                    self.log,
                     "[P????]: break: expected branch label after single quote\n--> {}",
                     self.lexer.sync_position()
                 );
@@ -278,7 +273,6 @@ impl<'a> Parser<'a, '_, '_, '_> {
         let branch_label = if self.lexer.skip_if(&Token::Punct(Punct::SingleQuote)) {
             let Some(label) = self.lexer.next_if_name() else {
                 error!(
-                    self.log,
                     "[P????]: continue: expected branch label after single quote\n--> {}",
                     self.lexer.sync_position()
                 );
@@ -320,7 +314,7 @@ impl<'a> Parser<'a, '_, '_, '_> {
     fn parse_foreach(&mut self) -> Option<ExprKey<'a>> {
         // TODO: Implement foreach expression parsing logic
         self.set_failed_bit();
-        error!(self.log, "Foreach expression parsing not implemented yet");
+        error!("Foreach expression parsing not implemented yet");
         None
     }
 
@@ -344,7 +338,7 @@ impl<'a> Parser<'a, '_, '_, '_> {
     fn parse_asm(&mut self) -> Option<ExprKey<'a>> {
         // TODO: Implement asm expression parsing logic
         self.set_failed_bit();
-        error!(self.log, "Asm expression parsing not implemented yet");
+        error!("Asm expression parsing not implemented yet");
         None
     }
 
@@ -365,7 +359,7 @@ impl<'a> Parser<'a, '_, '_, '_> {
     fn parse_type_alias(&mut self) -> Option<ExprKey<'a>> {
         // TODO: Implement type alias parsing logic
         self.set_failed_bit();
-        error!(self.log, "Type alias parsing not implemented yet");
+        error!("Type alias parsing not implemented yet");
         None
     }
 
@@ -377,7 +371,6 @@ impl<'a> Parser<'a, '_, '_, '_> {
 
         let Some(name_token) = self.lexer.next_if_name() else {
             error!(
-                self.log,
                 "[P????]: scope: expected scope name\n--> {}",
                 self.lexer.sync_position()
             );
@@ -407,42 +400,42 @@ impl<'a> Parser<'a, '_, '_, '_> {
     fn parse_enum(&mut self) -> Option<ExprKey<'a>> {
         // TODO: Implement enum parsing logic
         self.set_failed_bit();
-        error!(self.log, "Enum parsing not implemented yet");
+        error!("Enum parsing not implemented yet");
         None
     }
 
     fn parse_struct(&mut self) -> Option<ExprKey<'a>> {
         // TODO: Implement struct parsing logic
         self.set_failed_bit();
-        error!(self.log, "Struct parsing not implemented yet");
+        error!("Struct parsing not implemented yet");
         None
     }
 
     fn parse_class(&mut self) -> Option<ExprKey<'a>> {
         // TODO: Implement class parsing logic
         self.set_failed_bit();
-        error!(self.log, "Class parsing not implemented yet");
+        error!("Class parsing not implemented yet");
         None
     }
 
     fn parse_trait(&mut self) -> Option<ExprKey<'a>> {
         // TODO: Implement trait parsing logic
         self.set_failed_bit();
-        error!(self.log, "Trait parsing not implemented yet");
+        error!("Trait parsing not implemented yet");
         None
     }
 
     fn parse_implementation(&mut self) -> Option<ExprKey<'a>> {
         // TODO: Implement implementation parsing logic
         self.set_failed_bit();
-        error!(self.log, "Implementation parsing not implemented yet");
+        error!("Implementation parsing not implemented yet");
         None
     }
 
     fn parse_contract(&mut self) -> Option<ExprKey<'a>> {
         // TODO: Implement contract parsing logic
         self.set_failed_bit();
-        error!(self.log, "Contract parsing not implemented yet");
+        error!("Contract parsing not implemented yet");
         None
     }
 
@@ -501,8 +494,8 @@ impl<'a> Parser<'a, '_, '_, '_> {
             if !self.symtab.insert(current_scope, function_name, function) {
                 self.set_failed_bit();
                 error!(
-                    self.log,
-                    "[P????]: function: duplicate function '{}'\n--> {}", function_name, name_pos
+                    "[P????]: function: duplicate function '{}'\n--> {}",
+                    function_name, name_pos
                 );
 
                 return None;
@@ -523,11 +516,11 @@ impl<'a> Parser<'a, '_, '_, '_> {
             self.lexer.skip_if(&Token::Keyword(Keyword::Const));
         }
 
+        let name_pos = self.lexer.peek_tok().start();
         let variable_name = if let Some(name_token) = self.lexer.next_if_name() {
             name_token.name()
         } else {
             error!(
-                self.log,
                 "[P????]: let: expected variable name\n--> {}",
                 self.lexer.sync_position()
             );
@@ -558,10 +551,8 @@ impl<'a> Parser<'a, '_, '_, '_> {
         let current_scope = self.scope.clone();
         if !self.symtab.insert(current_scope, variable_name, variable) {
             error!(
-                self.log,
                 "[P????]: let: duplicate variable '{}'\n--> {}",
-                variable_name,
-                self.lexer.sync_position()
+                variable_name, name_pos
             );
 
             return None;
@@ -581,11 +572,11 @@ impl<'a> Parser<'a, '_, '_, '_> {
             self.lexer.skip_if(&Token::Keyword(Keyword::Const));
         }
 
+        let name_pos = self.lexer.peek_tok().start();
         let variable_name = if let Some(name_token) = self.lexer.next_if_name() {
             name_token.name()
         } else {
             error!(
-                self.log,
                 "[P????]: var: expected variable name\n--> {}",
                 self.lexer.sync_position()
             );
@@ -616,10 +607,8 @@ impl<'a> Parser<'a, '_, '_, '_> {
         let current_scope = self.scope.clone();
         if !self.symtab.insert(current_scope, variable_name, variable) {
             error!(
-                self.log,
                 "[P????]: var: duplicate variable '{}'\n--> {}",
-                variable_name,
-                self.lexer.sync_position()
+                variable_name, name_pos
             );
 
             return None;
@@ -698,7 +687,6 @@ impl<'a> Parser<'a, '_, '_, '_> {
             Token::Keyword(keyword) => {
                 self.set_failed_bit();
                 error!(
-                    self.log,
                     "[P????]: expr: unexpected keyword '{}'\n--> {}",
                     keyword,
                     self.lexer.sync_position()
@@ -710,7 +698,6 @@ impl<'a> Parser<'a, '_, '_, '_> {
             Token::Op(op) => {
                 self.set_failed_bit();
                 error!(
-                    self.log,
                     "[P????]: expr: unexpected operator '{}'\n--> {}",
                     op,
                     self.lexer.sync_position()
@@ -722,7 +709,6 @@ impl<'a> Parser<'a, '_, '_, '_> {
             Token::Punct(punct) => {
                 self.set_failed_bit();
                 error!(
-                    self.log,
                     "[P????]: expr: unexpected punctuation '{}'\n--> {}",
                     punct,
                     self.lexer.sync_position()
@@ -734,7 +720,6 @@ impl<'a> Parser<'a, '_, '_, '_> {
             Token::Comment(_) => {
                 self.set_failed_bit();
                 error!(
-                    self.log,
                     "[P????]: expr: unexpected comment\n--> {}",
                     self.lexer.sync_position()
                 );
@@ -745,7 +730,6 @@ impl<'a> Parser<'a, '_, '_, '_> {
             Token::Eof => {
                 self.set_failed_bit();
                 error!(
-                    self.log,
                     "[P????]: expr: unexpected end of file\n--> {}",
                     self.lexer.sync_position()
                 );
@@ -756,7 +740,6 @@ impl<'a> Parser<'a, '_, '_, '_> {
             Token::Illegal => {
                 self.set_failed_bit();
                 error!(
-                    self.log,
                     "[P????]: expr: illegal token\n--> {}",
                     self.lexer.sync_position()
                 );
@@ -783,7 +766,6 @@ impl<'a> Parser<'a, '_, '_, '_> {
             if !self.lexer.skip_if(&Token::Punct(Punct::RightParen)) {
                 self.set_failed_bit();
                 error!(
-                    self.log,
                     "[P????]: expr: expected closing parenthesis\n--> {}",
                     self.lexer.sync_position()
                 );
@@ -802,7 +784,6 @@ impl<'a> Parser<'a, '_, '_, '_> {
         if !self.lexer.skip_if(&Token::Punct(Punct::LeftBrace)) {
             self.set_failed_bit();
             error!(
-                self.log,
                 "[P????]: expr: block: expected opening brace\n--> {}",
                 self.lexer.sync_position()
             );
@@ -835,7 +816,6 @@ impl<'a> Parser<'a, '_, '_, '_> {
                 if before_pos == self.lexer.sync_position() {
                     self.set_failed_bit();
                     error!(
-                        self.log,
                         "[P????]: block: failed to parse expression\n--> {}",
                         self.lexer.sync_position()
                     );

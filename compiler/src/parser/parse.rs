@@ -3,33 +3,30 @@ use super::symbol_table::SymbolTable;
 use crate::lexer::{Lexer, Punct, Token};
 use crate::parser::QualifiedScope;
 use crate::parsetree::{Builder, Storage};
-use slog::{Logger, error, info};
+use log::{error, info};
 use smallvec::SmallVec;
 
-pub struct Parser<'a, 'storage, 'symbol_table, 'logger> {
+pub struct Parser<'a, 'storage, 'symbol_table> {
     pub(crate) lexer: Lexer<'a>,
     pub(crate) storage: &'storage mut Storage<'a>,
     pub(crate) symtab: &'symbol_table mut SymbolTable<'a>,
     pub(crate) scope: QualifiedScope<'a>,
-    pub(crate) log: &'logger mut Logger,
     pub(crate) generic_type_depth: i64,
     pub(crate) generic_type_suffix_terminator_ambiguity: bool,
     failed_bit: bool,
 }
 
-impl<'a, 'storage, 'symbol_table, 'logger> Parser<'a, 'storage, 'symbol_table, 'logger> {
+impl<'a, 'storage, 'symbol_table> Parser<'a, 'storage, 'symbol_table> {
     pub fn new(
         lexer: Lexer<'a>,
         storage: &'storage mut Storage<'a>,
         symbol_table: &'symbol_table mut SymbolTable<'a>,
-        log: &'logger mut Logger,
     ) -> Self {
         Parser {
             lexer,
             storage,
             symtab: symbol_table,
             scope: QualifiedScope::new(SmallVec::new()),
-            log,
             generic_type_depth: 0,
             generic_type_suffix_terminator_ambiguity: false,
             failed_bit: false,
@@ -73,15 +70,10 @@ impl<'a, 'storage, 'symbol_table, 'logger> Parser<'a, 'storage, 'symbol_table, '
         if !self.is_supported(preamble.language_version) {
             self.set_failed_bit();
             error!(
-                self.log,
                 "[P????]: This compiler does not support Nitrate version {}.{}.",
-                preamble.language_version.0,
-                preamble.language_version.1
+                preamble.language_version.0, preamble.language_version.1
             );
-            info!(
-                self.log,
-                "[P????]: Consider upgrading to a newer version of the compiler."
-            );
+            info!("[P????]: Consider upgrading to a newer version of the compiler.");
 
             return None;
         }

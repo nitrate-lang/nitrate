@@ -1,11 +1,7 @@
 use nitrate_compiler::lexer::*;
 use nitrate_compiler::parser::*;
 use nitrate_compiler::parsetree::*;
-use slog::{Drain, Logger, Record, o};
-use slog_async::Async;
-use slog_term::*;
 use std::io::Read;
-use std::io::Write;
 
 fn read_source_file(filename: &str) -> std::io::Result<Vec<u8>> {
     let mut file = std::fs::File::open(filename)?;
@@ -14,42 +10,10 @@ fn read_source_file(filename: &str) -> std::io::Result<Vec<u8>> {
     Ok(contents)
 }
 
-fn custom_log_header_printer(
-    _: &dyn ThreadSafeTimestampFn<Output = std::io::Result<()>>,
-    mut rd: &mut dyn RecordDecorator,
-    record: &Record,
-    use_file_location: bool,
-) -> std::io::Result<bool> {
-    rd.start_level()?;
-    write!(rd, "{}", record.level().as_short_str())?;
-
-    if use_file_location {
-        rd.start_whitespace()?;
-        write!(rd, " ")?;
-
-        rd.start_location()?;
-        write!(
-            rd,
-            "[{}:{}:{}]:",
-            record.location().file,
-            record.location().line,
-            record.location().column
-        )?;
-    }
-
-    rd.start_whitespace()?;
-    write!(rd, " ")?;
-
-    rd.start_msg()?;
-    let mut count_rd = CountingWriter::new(&mut rd);
-    write!(count_rd, "{}", record.msg())?;
-    Ok(count_rd.count() != 0)
-}
-
 fn program() -> i32 {
     env_logger::Builder::from_default_env()
         .format_timestamp(None)
-        .format_level(false)
+        .format_level(true)
         .format_target(false)
         .init();
 
@@ -73,22 +37,9 @@ fn program() -> i32 {
 
     let mut storage = Storage::new();
     let mut symbol_table = SymbolTable::default();
+    let mut parser = Parser::new(lexer, &mut storage, &mut symbol_table);
 
-    let do_parse = || {
-        let decorator = TermDecorator::new().build();
-        let drain = slog_term::FullFormat::new(decorator)
-            .use_custom_header_print(custom_log_header_printer)
-            .build()
-            .fuse();
-        let drain = Async::new(drain.fuse()).build().fuse();
-        let mut root_logger = Logger::root(drain, o!());
-
-        let mut parser = Parser::new(lexer, &mut storage, &mut symbol_table, &mut root_logger);
-
-        parser.parse()
-    };
-
-    let Some(model) = do_parse() else {
+    let Some(model) = parser.parse() else {
         eprintln!("Failed to parse source code in file: {}", filename);
         return 1;
     };

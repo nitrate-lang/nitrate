@@ -2,7 +2,7 @@ use super::parse::Parser;
 use super::source_model::CopyrightInfo;
 use crate::lexer::{Punct, StringData, Token};
 use crate::parsetree::{ExprKey, ExprRef};
-use slog::error;
+use log::error;
 use spdx::{LicenseId, license_id};
 use std::collections::HashSet;
 
@@ -13,7 +13,7 @@ pub(crate) struct SourcePreamble<'a> {
     pub insource_config: HashSet<StringData<'a>>,
 }
 
-impl<'a> Parser<'a, '_, '_, '_> {
+impl<'a> Parser<'a, '_, '_> {
     fn parse_macro_prefix(&mut self) -> Option<(&'a str, Vec<ExprKey<'a>>)> {
         while self.lexer.skip_if(&Token::Punct(Punct::Semicolon)) {}
         if !self.lexer.skip_if(&Token::Punct(Punct::AtSign)) {
@@ -23,7 +23,6 @@ impl<'a> Parser<'a, '_, '_, '_> {
         let Some(macro_name) = self.lexer.next_if_name() else {
             self.set_failed_bit();
             error!(
-                self.log,
                 "[P????]: Expected macro name after '@'\n--> {}",
                 self.lexer.sync_position()
             );
@@ -41,7 +40,6 @@ impl<'a> Parser<'a, '_, '_, '_> {
             let Some(macro_argument) = self.parse_expression() else {
                 self.set_failed_bit();
                 error!(
-                    self.log,
                     "[P????]: Unable to parse argument expression for macro '{}'\n--> {}",
                     macro_name.name(),
                     self.lexer.sync_position()
@@ -55,7 +53,6 @@ impl<'a> Parser<'a, '_, '_, '_> {
                 if !self.lexer.skip_if(&Token::Punct(Punct::Semicolon)) {
                     self.set_failed_bit();
                     error!(
-                        self.log,
                         "[P????]: Expected ',' or ';' after macro argument expression\n--> {}",
                         self.lexer.sync_position()
                     );
@@ -93,7 +90,6 @@ impl<'a> Parser<'a, '_, '_, '_> {
         if macro_args.len() != 1 {
             self.set_failed_bit();
             error!(
-                self.log,
                 "[P????]: Expected exactly one argument (e.g. '1.0') for 'nitrate' (language version) macro\n--> {}",
                 self.lexer.sync_position()
             );
@@ -103,7 +99,6 @@ impl<'a> Parser<'a, '_, '_, '_> {
         let ExprRef::FloatLit(float) = macro_args[0].get(self.storage) else {
             self.set_failed_bit();
             error!(
-                self.log,
                 "[P????]: Expected a float literal (e.g. '1.0') for 'nitrate' (language version) macro argument\n--> {}",
                 self.lexer.sync_position()
             );
@@ -113,7 +108,6 @@ impl<'a> Parser<'a, '_, '_, '_> {
         let Some((major, minor)) = self.parse_preamble_version_number(float) else {
             self.set_failed_bit();
             error!(
-                self.log,
                 "[P????]: Invalid version format '{}'. Expected 'major.minor' (e.g. '1.0') for 'nitrate' (language version) macro argument\n--> {}",
                 float,
                 self.lexer.sync_position()
@@ -132,7 +126,6 @@ impl<'a> Parser<'a, '_, '_, '_> {
         if macro_args.len() != 2 {
             self.set_failed_bit();
             error!(
-                self.log,
                 "[P????]: Expected exactly two arguments (year and holder's name) for @copyright\n--> {}",
                 self.lexer.sync_position()
             );
@@ -142,7 +135,6 @@ impl<'a> Parser<'a, '_, '_, '_> {
         let ExprRef::IntegerLit(copyright_year) = macro_args[0].get(self.storage) else {
             self.set_failed_bit();
             error!(
-                self.log,
                 "[P????]: Unable to parse @copyright; expected an integer literal for the first argument (copyright year)\n--> {}",
                 self.lexer.sync_position()
             );
@@ -152,7 +144,6 @@ impl<'a> Parser<'a, '_, '_, '_> {
         let ExprRef::StringLit(holder_name) = macro_args[1].get(self.storage) else {
             self.set_failed_bit();
             error!(
-                self.log,
                 "[P????]: Unable to parse @copyright; expected a string literal for the second argument (copyright holder's name)\n--> {}",
                 self.lexer.sync_position()
             );
@@ -170,7 +161,6 @@ impl<'a> Parser<'a, '_, '_, '_> {
         if macro_args.len() != 1 {
             self.set_failed_bit();
             error!(
-                self.log,
                 "[P????]: Expected exactly one argument (SPDX license ID string) for 'license' macro\n--> {}",
                 self.lexer.sync_position()
             );
@@ -180,7 +170,6 @@ impl<'a> Parser<'a, '_, '_, '_> {
         let ExprRef::StringLit(license_name) = macro_args[0].get(self.storage) else {
             self.set_failed_bit();
             error!(
-                self.log,
                 "[P????]: Expected a string literal (SPDX license ID) for 'license' macro argument\n--> {}",
                 self.lexer.sync_position()
             );
@@ -189,7 +178,6 @@ impl<'a> Parser<'a, '_, '_, '_> {
 
         let Some(license_id) = license_id(license_name.get()) else {
             error!(
-                self.log,
                 "[P????]: The SPDX license database does not contain \"{}\". Only valid SPDX license IDs are allowed.\n--> {}",
                 license_name.get(),
                 self.lexer.sync_position()
@@ -209,7 +197,6 @@ impl<'a> Parser<'a, '_, '_, '_> {
         if macro_args.len() != 1 {
             self.set_failed_bit();
             error!(
-                self.log,
                 "[P????]: Expected a list of strings for 'insource' macro\n--> {}",
                 self.lexer.sync_position()
             );
@@ -219,7 +206,6 @@ impl<'a> Parser<'a, '_, '_, '_> {
         let ExprRef::ListLit(list) = macro_args[0].get(self.storage) else {
             self.set_failed_bit();
             error!(
-                self.log,
                 "[P????]: Expected a list of strings for 'insource' macro argument\n--> {}",
                 self.lexer.sync_position()
             );
@@ -232,7 +218,6 @@ impl<'a> Parser<'a, '_, '_, '_> {
             let ExprRef::StringLit(option) = element.get(self.storage) else {
                 self.set_failed_bit();
                 error!(
-                    self.log,
                     "[P????]: Expected a string literal in the list for 'insource' macro argument\n--> {}",
                     self.lexer.sync_position()
                 );
@@ -276,7 +261,6 @@ impl<'a> Parser<'a, '_, '_, '_> {
                 _ => {
                     self.set_failed_bit();
                     error!(
-                        self.log,
                         "[P????]: Unknown macro '{}'\n--> {}",
                         macro_name,
                         self.lexer.sync_position()

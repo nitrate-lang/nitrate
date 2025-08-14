@@ -1,8 +1,7 @@
 use super::parse::Parser;
 use crate::lexer::{Keyword, Name, Op, Punct, Token};
 use crate::parsetree::{Builder, ExprKey, TypeKey, node::FunctionParameter};
-
-use slog::{error, info};
+use log::{error, info};
 
 #[allow(unused_imports)]
 use crate::lexer::Lexer;
@@ -24,7 +23,7 @@ impl RefinementOptions<'_> {
     }
 }
 
-impl<'a> Parser<'a, '_, '_, '_> {
+impl<'a> Parser<'a, '_, '_> {
     fn parse_refinement_range(&mut self) -> Option<(Option<ExprKey<'a>>, Option<ExprKey<'a>>)> {
         assert!(self.lexer.peek_t() == Token::Punct(Punct::LeftBracket));
         self.lexer.skip_tok();
@@ -37,7 +36,6 @@ impl<'a> Parser<'a, '_, '_, '_> {
 
             if !self.lexer.skip_if(&Token::Punct(Punct::Colon)) {
                 error!(
-                    self.log,
                     "[P0???]: refinement type: expected ':' after minimum range constraint\n--> {}",
                     self.lexer.sync_position()
                 );
@@ -53,7 +51,6 @@ impl<'a> Parser<'a, '_, '_, '_> {
 
             if !self.lexer.skip_if(&Token::Punct(Punct::RightBracket)) {
                 error!(
-                    self.log,
                     "[P0???]: refinement type: expected ']' to close range constraints\n--> {}",
                     self.lexer.sync_position()
                 );
@@ -96,7 +93,6 @@ impl<'a> Parser<'a, '_, '_, '_> {
 
         if !self.lexer.next_is(&Token::Punct(Punct::LeftBracket)) {
             error!(
-                self.log,
                 "[P0???]: refinement type: expected '[' for range constraints\n--> {}",
                 self.lexer.sync_position()
             );
@@ -149,12 +145,10 @@ impl<'a> Parser<'a, '_, '_, '_> {
 
         let Some(argument_value) = type_or_expression else {
             error!(
-                self.log,
                 "[P0???]: generic type: expected type or expression after generic argument name\n--> {}",
                 current_pos
             );
             info!(
-                self.log,
                 "[P0???]: generic type: syntax hint: if you want to use a Refinement Type as the generic argument, wrap the type in parentheses, e.g. `Vec<(i32: [1: 10])>`"
             );
             return None;
@@ -206,7 +200,6 @@ impl<'a> Parser<'a, '_, '_, '_> {
 
                 if !any_terminator {
                     error!(
-                        self.log,
                         "[P0???]: generic type: expected ',' or '>' after generic argument\n--> {}",
                         self.lexer.sync_position()
                     );
@@ -241,7 +234,6 @@ impl<'a> Parser<'a, '_, '_, '_> {
                 0 => {}
                 -1 => {
                     error!(
-                        self.log,
                         "[P0???]: generic type: unexpected '>' delimiter\n--> {}",
                         self.lexer.sync_position()
                     );
@@ -250,7 +242,6 @@ impl<'a> Parser<'a, '_, '_, '_> {
                 }
                 _ => {
                     error!(
-                        self.log,
                         "[P0???]: generic type: unexpected '>>' delimiter\n--> {}",
                         self.lexer.sync_position()
                     );
@@ -293,14 +284,10 @@ impl<'a> Parser<'a, '_, '_, '_> {
                     break;
                 }
                 error!(
-                    self.log,
                     "[P0???]: tuple type: expected ',' or '}}' after element type\n--> {}",
                     self.lexer.sync_position()
                 );
-                info!(
-                    self.log,
-                    "[P0???]: tuple type: syntax hint: {{<type1>, <type2>, ...}}"
-                );
+                info!("[P0???]: tuple type: syntax hint: {{<type1>, <type2>, ...}}");
 
                 return None;
             }
@@ -322,7 +309,6 @@ impl<'a> Parser<'a, '_, '_, '_> {
 
         if !self.lexer.skip_if(&Token::Punct(Punct::RightBracket)) {
             error!(
-                self.log,
                 "[P0???]: array type: expected ']' to close\n--> {}",
                 self.lexer.sync_position()
             );
@@ -347,7 +333,6 @@ impl<'a> Parser<'a, '_, '_, '_> {
 
         if !self.lexer.skip_if(&Token::Punct(Punct::RightBracket)) {
             error!(
-                self.log,
                 "[P0???]: map type: expected ']' to close\n--> {}",
                 self.lexer.sync_position()
             );
@@ -402,19 +387,12 @@ impl<'a> Parser<'a, '_, '_, '_> {
         }
 
         error!(
-            self.log,
             "[P0???]: type: expected ';', ']', or '->' for array, slice, and map type respectively\n--> {}",
             self.lexer.sync_position()
         );
-        info!(
-            self.log,
-            "[P0???]: array type: syntax hint: [<type>; <length>]"
-        );
-        info!(self.log, "[P0???]: slice type: syntax hint: [<type>]");
-        info!(
-            self.log,
-            "[P0???]: map   type: syntax hint: [<key_type> -> <value_type>]"
-        );
+        info!("[P0???]: array type: syntax hint: [<type>; <length>]");
+        info!("[P0???]: slice type: syntax hint: [<type>]");
+        info!("[P0???]: map   type: syntax hint: [<key_type> -> <value_type>]");
 
         None
     }
@@ -531,7 +509,6 @@ impl<'a> Parser<'a, '_, '_, '_> {
                     break;
                 }
                 error!(
-                    self.log,
                     "[P0???]: function: expected ',' or ')' after parameter\n--> {}",
                     self.lexer.sync_position()
                 );
@@ -584,42 +561,30 @@ impl<'a> Parser<'a, '_, '_, '_> {
 
         if !self.lexer.skip_if(&Token::Punct(Punct::LeftParen)) {
             error!(
-                self.log,
                 "[P0???]: opaque type: expected '(' after 'opaque'\n--> {}",
                 self.lexer.sync_position()
             );
-            info!(
-                self.log,
-                "[P0???]: opaque type: syntax hint: opaque(<string>)"
-            );
+            info!("[P0???]: opaque type: syntax hint: opaque(<string>)");
 
             return None;
         }
 
         let Some(opaque_identity) = self.lexer.next_if_string() else {
             error!(
-                self.log,
                 "[P0???]: opaque type: expected string literal after 'opaque('\n--> {}",
                 self.lexer.sync_position()
             );
-            info!(
-                self.log,
-                "[P0???]: opaque type: syntax hint: opaque(<string>)"
-            );
+            info!("[P0???]: opaque type: syntax hint: opaque(<string>)");
 
             return None;
         };
 
         if !self.lexer.skip_if(&Token::Punct(Punct::RightParen)) {
             error!(
-                self.log,
                 "[P0???]: opaque type: expected ')' to close\n--> {}",
                 self.lexer.sync_position()
             );
-            info!(
-                self.log,
-                "[P0???]: opaque type: syntax hint: opaque(<string>)"
-            );
+            info!("[P0???]: opaque type: syntax hint: opaque(<string>)");
 
             return None;
         }
@@ -728,8 +693,8 @@ impl<'a> Parser<'a, '_, '_, '_> {
 
             Token::Integer(int) => {
                 error!(
-                    self.log,
-                    "[P0???]: type: unexpected integer '{}'\n--> {}", int, current_pos
+                    "[P0???]: type: unexpected integer '{}'\n--> {}",
+                    int, current_pos
                 );
 
                 None
@@ -737,8 +702,8 @@ impl<'a> Parser<'a, '_, '_, '_> {
 
             Token::Float(float) => {
                 error!(
-                    self.log,
-                    "[P0???]: type: unexpected float '{}'\n--> {}", float, current_pos
+                    "[P0???]: type: unexpected float '{}'\n--> {}",
+                    float, current_pos
                 );
 
                 None
@@ -746,8 +711,8 @@ impl<'a> Parser<'a, '_, '_, '_> {
 
             Token::Keyword(func) => {
                 error!(
-                    self.log,
-                    "[P0???]: type: unexpected keyword '{}'\n--> {}", func, current_pos
+                    "[P0???]: type: unexpected keyword '{}'\n--> {}",
+                    func, current_pos
                 );
 
                 None
@@ -755,8 +720,8 @@ impl<'a> Parser<'a, '_, '_, '_> {
 
             Token::String(string) => {
                 error!(
-                    self.log,
-                    "[P0???]: type: unexpected string '{}'\n--> {}", string, current_pos
+                    "[P0???]: type: unexpected string '{}'\n--> {}",
+                    string, current_pos
                 );
 
                 None
@@ -764,8 +729,8 @@ impl<'a> Parser<'a, '_, '_, '_> {
 
             Token::BString(bstring) => {
                 error!(
-                    self.log,
-                    "[P0???]: type: unexpected bstring '{}'\n--> {}", bstring, current_pos
+                    "[P0???]: type: unexpected bstring '{}'\n--> {}",
+                    bstring, current_pos
                 );
 
                 None
@@ -773,8 +738,8 @@ impl<'a> Parser<'a, '_, '_, '_> {
 
             Token::Punct(punc) => {
                 error!(
-                    self.log,
-                    "[P0???]: type: unexpected punctuation '{}'\n--> {}", punc, current_pos
+                    "[P0???]: type: unexpected punctuation '{}'\n--> {}",
+                    punc, current_pos
                 );
 
                 None
@@ -782,35 +747,29 @@ impl<'a> Parser<'a, '_, '_, '_> {
 
             Token::Op(op) => {
                 error!(
-                    self.log,
-                    "[P0???]: type: unexpected operator '{}'\n--> {}", op, current_pos
+                    "[P0???]: type: unexpected operator '{}'\n--> {}",
+                    op, current_pos
                 );
 
                 None
             }
 
             Token::Comment(_) => {
-                error!(
-                    self.log,
-                    "[P0???]: type: unexpected comment\n--> {}", current_pos
-                );
+                error!("[P0???]: type: unexpected comment\n--> {}", current_pos);
 
                 None
             }
 
             Token::Eof => {
-                error!(
-                    self.log,
-                    "[P0???]: type: unexpected end of file\n--> {}", current_pos
-                );
+                error!("[P0???]: type: unexpected end of file\n--> {}", current_pos);
 
                 None
             }
 
             Token::Illegal => {
                 error!(
-                    self.log,
-                    "[P0???]: type: unexpected invalid token\n--> {}", current_pos
+                    "[P0???]: type: unexpected invalid token\n--> {}",
+                    current_pos
                 );
 
                 None
@@ -840,7 +799,6 @@ impl<'a> Parser<'a, '_, '_, '_> {
             if !self.lexer.skip_if(&Token::Punct(Punct::RightParen)) {
                 self.set_failed_bit();
                 error!(
-                    self.log,
                     "[P0???]: type: expected ')' to close\n--> {}",
                     self.lexer.sync_position()
                 );
@@ -976,9 +934,8 @@ fn test_parse_type() {
     let lexer = Lexer::new(source.as_bytes(), "test").expect("Failed to create lexer");
     let mut storage = Storage::new();
     let mut symtab = SymbolTable::default();
-    let mut logger = slog::Logger::root(slog::Discard, slog::o!());
 
-    let mut parser = Parser::new(lexer, &mut storage, &mut symtab, &mut logger);
+    let mut parser = Parser::new(lexer, &mut storage, &mut symtab);
     let model = parser.parse_type().expect("Failed to parse source");
     assert!(!parser.has_failed(), "Parsing failed with errors");
 

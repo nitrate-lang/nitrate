@@ -4,3 +4,4 @@
 pub mod lexer;
 pub mod parser;
 pub mod parsetree;
+mod semantic_analyzer;
