@@ -4,7 +4,6 @@ mod block;
 mod builder;
 mod builder_helper;
 mod control_flow;
-mod debug;
 mod expression;
 mod function;
 mod function_type;
@@ -24,9 +23,8 @@ mod unary_expr;
 mod variable;
 
 pub use builder::*;
-pub use debug::*;
 pub use expression::{ExprKind, ExprOwned, ExprRef, ExprRefMut, TypeKind, TypeOwned, TypeRef};
-pub use storage::{ExprKey, Storage, TypeKey};
+pub use storage::{ExprKey, TLS_NODE_STORAGE, TypeKey};
 
 pub mod node {
     pub use super::array_type::ArrayType;

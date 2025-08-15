@@ -1,16 +1,14 @@
 use criterion::{Criterion, criterion_group, criterion_main};
 use nitrate_compiler::lexical::*;
-use nitrate_compiler::parsetree::*;
 use nitrate_compiler::syntax::*;
 
 struct ParserUtil {
-    storage: Storage<'static>,
     symbol_table: SymbolTable<'static>,
 }
 
 fn parse_type(source_code: &'static str, util: &mut ParserUtil) {
     let lexer = Lexer::new(source_code.as_bytes(), "").expect("Failed to create lexer");
-    let mut parser = Parser::new(lexer, &mut util.storage, &mut util.symbol_table);
+    let mut parser = Parser::new(lexer, &mut util.symbol_table);
     parser.parse_type().expect("Failed to parse type");
 }
 
@@ -89,7 +87,6 @@ fn monster(util: &mut ParserUtil) {
 
 fn parse_type_benchmark(c: &mut Criterion) {
     let mut util = ParserUtil {
-        storage: Storage::new(),
         symbol_table: SymbolTable::default(),
     };
 

@@ -215,7 +215,7 @@ pub enum TypeOwned<'a> {
     OpaqueType(StringData<'a>),
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Clone, Copy)]
 pub enum TypeRef<'storage, 'a> {
     Bool,
     UInt8,
@@ -248,7 +248,7 @@ pub enum TypeRef<'storage, 'a> {
     OpaqueType(&'storage StringData<'a>),
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Clone, Copy)]
 pub enum ExprRef<'storage, 'a> {
     Bool,
     UInt8,
@@ -312,7 +312,6 @@ pub enum ExprRef<'storage, 'a> {
     Assert(&'storage Assert<'a>),
 }
 
-#[derive(Debug)]
 pub enum ExprRefMut<'storage, 'a> {
     Bool,
     UInt8,

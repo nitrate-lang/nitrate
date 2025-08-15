@@ -1,7 +1,6 @@
 use log::error;
 use nitrate_compiler::lexical::*;
 use nitrate_compiler::syntax::*;
-use nitrate_compiler::parsetree::*;
 use std::io::Read;
 
 fn read_source_file(filename: &str) -> std::io::Result<Vec<u8>> {
@@ -36,9 +35,8 @@ fn program() -> i32 {
         return 1;
     };
 
-    let mut storage = Storage::new();
     let mut symbol_table = SymbolTable::default();
-    let mut parser = Parser::new(lexer, &mut storage, &mut symbol_table);
+    let mut parser = Parser::new(lexer, &mut symbol_table);
 
     let Some(model) = parser.parse() else {
         eprintln!("Failed to parse source code in file: {}", filename);
@@ -53,7 +51,7 @@ fn program() -> i32 {
     // let parsetree_resolve =
 
     println!("Parsing succeeded for file: {}", filename);
-    println!("model = {:#?}", model.tree().as_printable(&storage));
+    println!("model = {:#?}", model.tree());
 
     0
 }

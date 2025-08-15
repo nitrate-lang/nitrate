@@ -2,16 +2,11 @@ use crate::lexical::{BStringData, StringData};
 use crate::parsetree::{node::*, *};
 use bimap::BiMap;
 use hashbrown::HashSet;
+use std::cell::RefCell;
 use std::num::NonZeroU32;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, PartialEq, Eq, Hash)]
 pub struct ExprKey<'a> {
-    id: NonZeroU32,
-    _marker: std::marker::PhantomData<&'a ()>,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub struct TypeKey<'a> {
     id: NonZeroU32,
     _marker: std::marker::PhantomData<&'a ()>,
 }
@@ -29,7 +24,7 @@ impl<'a> ExprKey<'a> {
         })
     }
 
-    pub fn new_single(variant: ExprKind) -> Self {
+    fn new_single(variant: ExprKind) -> Self {
         assert!((variant as u32) < 64, "Variant index must be less than 64");
 
         let variant_bits = (variant as u32 + 1) << 26;
@@ -50,96 +45,90 @@ impl<'a> ExprKey<'a> {
     }
 
     #[must_use]
-    pub fn get<'storage>(self, storage: &'storage Storage<'a>) -> ExprRef<'storage, 'a> {
-        storage.get_expr(self)
-    }
+    pub fn get<'storage>(self) -> ExprRef<'storage, 'a> {
+        TLS_NODE_STORAGE.with(|storage| {
+            // SAFETY: I DONT KNOW WHAT I'M DOING!!! I MISS C++
+            let storage_lifetime_a = unsafe {
+                std::mem::transmute::<&Storage<'static>, &Storage<'a>>(&storage.borrow())
+            };
 
-    pub fn get_mut<'storage>(self, storage: &'storage mut Storage<'a>) -> ExprRefMut<'storage, 'a> {
-        storage.get_expr_mut(self)
-    }
-}
-
-impl<'a> TypeKey<'a> {
-    fn new(variant: TypeKind, index: usize) -> Option<Self> {
-        assert!((variant as u32) < 64, "Variant index must be less than 64");
-
-        let can_store_index = index < (1 << 26);
-        let variant_bits = (variant as u32 + 1) << 26;
-
-        can_store_index.then_some(TypeKey {
-            id: NonZeroU32::new(variant_bits | index as u64 as u32).expect("ID must be non-zero"),
-            _marker: std::marker::PhantomData,
+            storage_lifetime_a.get_expr(self)
         })
     }
 
-    fn new_single(variant: TypeKind) -> Self {
-        assert!((variant as u32) < 64, "Variant index must be less than 64");
+    pub fn get_mut<'storage>(self) -> ExprRefMut<'storage, 'a> {
+        TLS_NODE_STORAGE.with(|storage| {
+            let storage_lifetime_a = unsafe {
+                std::mem::transmute::<&mut Storage<'static>, &mut Storage<'a>>(
+                    &mut storage.borrow_mut(),
+                )
+            };
 
-        let variant_bits = (variant as u32 + 1) << 26;
-
-        TypeKey {
-            id: NonZeroU32::new(variant_bits).expect("ID must be non-zero"),
-            _marker: std::marker::PhantomData,
-        }
-    }
-
-    fn variant_index(self) -> TypeKind {
-        let number = ((self.id.get() >> 26) as u8) - 1;
-
-        match number {
-            x if x == TypeKind::Bool as u8 => TypeKind::Bool,
-            x if x == TypeKind::UInt8 as u8 => TypeKind::UInt8,
-            x if x == TypeKind::UInt16 as u8 => TypeKind::UInt16,
-            x if x == TypeKind::UInt32 as u8 => TypeKind::UInt32,
-            x if x == TypeKind::UInt64 as u8 => TypeKind::UInt64,
-            x if x == TypeKind::UInt128 as u8 => TypeKind::UInt128,
-            x if x == TypeKind::Int8 as u8 => TypeKind::Int8,
-            x if x == TypeKind::Int16 as u8 => TypeKind::Int16,
-            x if x == TypeKind::Int32 as u8 => TypeKind::Int32,
-            x if x == TypeKind::Int64 as u8 => TypeKind::Int64,
-            x if x == TypeKind::Int128 as u8 => TypeKind::Int128,
-            x if x == TypeKind::Float8 as u8 => TypeKind::Float8,
-            x if x == TypeKind::Float16 as u8 => TypeKind::Float16,
-            x if x == TypeKind::Float32 as u8 => TypeKind::Float32,
-            x if x == TypeKind::Float64 as u8 => TypeKind::Float64,
-            x if x == TypeKind::Float128 as u8 => TypeKind::Float128,
-
-            x if x == TypeKind::InferType as u8 => TypeKind::InferType,
-            x if x == TypeKind::TypeName as u8 => TypeKind::TypeName,
-            x if x == TypeKind::RefinementType as u8 => TypeKind::RefinementType,
-            x if x == TypeKind::TupleType as u8 => TypeKind::TupleType,
-            x if x == TypeKind::ArrayType as u8 => TypeKind::ArrayType,
-            x if x == TypeKind::MapType as u8 => TypeKind::MapType,
-            x if x == TypeKind::SliceType as u8 => TypeKind::SliceType,
-            x if x == TypeKind::FunctionType as u8 => TypeKind::FunctionType,
-            x if x == TypeKind::ManagedRefType as u8 => TypeKind::ManagedRefType,
-            x if x == TypeKind::UnmanagedRefType as u8 => TypeKind::UnmanagedRefType,
-            x if x == TypeKind::GenericType as u8 => TypeKind::GenericType,
-            x if x == TypeKind::OpaqueType as u8 => TypeKind::OpaqueType,
-
-            _ => unreachable!(),
-        }
-    }
-
-    fn instance_index(self) -> usize {
-        (self.id.get() & 0x03FF_FFFF) as usize
-    }
-
-    #[must_use]
-    pub fn get<'storage>(self, storage: &'storage Storage<'a>) -> TypeRef<'storage, 'a> {
-        storage.get_type(self)
+            storage_lifetime_a.get_expr_mut(self)
+        })
     }
 }
 
-impl std::fmt::Display for ExprKey<'_> {
+impl std::fmt::Debug for ExprKey<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{:?}({})", self.variant_index(), self.instance_index())
-    }
-}
+        match self.get() {
+            ExprRef::Bool => write!(f, "Bool"),
+            ExprRef::UInt8 => write!(f, "UInt8"),
+            ExprRef::UInt16 => write!(f, "UInt16"),
+            ExprRef::UInt32 => write!(f, "UInt32"),
+            ExprRef::UInt64 => write!(f, "UInt64"),
+            ExprRef::UInt128 => write!(f, "UInt128"),
+            ExprRef::Int8 => write!(f, "Int8"),
+            ExprRef::Int16 => write!(f, "Int16"),
+            ExprRef::Int32 => write!(f, "Int32"),
+            ExprRef::Int64 => write!(f, "Int64"),
+            ExprRef::Int128 => write!(f, "Int128"),
+            ExprRef::Float8 => write!(f, "Float8"),
+            ExprRef::Float16 => write!(f, "Float16"),
+            ExprRef::Float32 => write!(f, "Float32"),
+            ExprRef::Float64 => write!(f, "Float64"),
+            ExprRef::Float128 => write!(f, "Float128"),
+            ExprRef::InferType => write!(f, "InferType"),
+            ExprRef::Discard => write!(f, "Discard"),
 
-impl std::fmt::Display for TypeKey<'_> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{:?}({})", self.variant_index(), self.instance_index())
+            ExprRef::TypeName(x) => x.fmt(f),
+            ExprRef::RefinementType(x) => x.fmt(f),
+            ExprRef::TupleType(x) => x.fmt(f),
+            ExprRef::ArrayType(x) => x.fmt(f),
+            ExprRef::MapType(x) => x.fmt(f),
+            ExprRef::SliceType(x) => x.fmt(f),
+            ExprRef::FunctionType(x) => x.fmt(f),
+            ExprRef::ManagedRefType(x) => x.fmt(f),
+            ExprRef::UnmanagedRefType(x) => x.fmt(f),
+            ExprRef::GenericType(x) => x.fmt(f),
+            ExprRef::OpaqueType(x) => x.fmt(f),
+
+            ExprRef::BooleanLit(x) => x.fmt(f),
+            ExprRef::IntegerLit(x) => x.fmt(f),
+            ExprRef::FloatLit(x) => x.fmt(f),
+            ExprRef::StringLit(x) => x.fmt(f),
+            ExprRef::BStringLit(x) => x.fmt(f),
+            ExprRef::ListLit(x) => x.fmt(f),
+            ExprRef::ObjectLit(x) => x.fmt(f),
+            ExprRef::UnaryExpr(x) => x.fmt(f),
+            ExprRef::BinExpr(x) => x.fmt(f),
+            ExprRef::Statement(x) => x.fmt(f),
+            ExprRef::Block(x) => x.fmt(f),
+            ExprRef::Function(x) => x.fmt(f),
+            ExprRef::Variable(x) => x.fmt(f),
+            ExprRef::Identifier(x) => x.fmt(f),
+            ExprRef::Scope(x) => x.fmt(f),
+            ExprRef::If(x) => x.fmt(f),
+            ExprRef::WhileLoop(x) => x.fmt(f),
+            ExprRef::DoWhileLoop(x) => x.fmt(f),
+            ExprRef::Switch(x) => x.fmt(f),
+            ExprRef::Break(x) => x.fmt(f),
+            ExprRef::Continue(x) => x.fmt(f),
+            ExprRef::Return(x) => x.fmt(f),
+            ExprRef::ForEach(x) => x.fmt(f),
+            ExprRef::Await(x) => x.fmt(f),
+            ExprRef::Assert(x) => x.fmt(f),
+        }
     }
 }
 
@@ -231,28 +220,148 @@ impl<'a> ExprKey<'a> {
     }
 
     #[must_use]
-    pub fn has_parentheses(&self, storage: &Storage<'a>) -> bool {
-        storage.has_parentheses(*self)
+    pub fn has_parentheses(&self) -> bool {
+        TLS_NODE_STORAGE.with(|storage| {
+            let storage_lifetime_a = unsafe {
+                std::mem::transmute::<&Storage<'static>, &Storage<'a>>(&storage.borrow())
+            };
+
+            storage_lifetime_a.has_parentheses(*self)
+        })
     }
 
-    pub fn add_parentheses(self, storage: &mut Storage<'a>) {
-        storage.add_parentheses(self);
+    pub fn add_parentheses(self) {
+        TLS_NODE_STORAGE.with(|storage| {
+            let storage_lifetime_a = unsafe {
+                std::mem::transmute::<&mut Storage<'static>, &mut Storage<'a>>(
+                    &mut storage.borrow_mut(),
+                )
+            };
+
+            storage_lifetime_a.add_parentheses(self);
+        });
+    }
+}
+
+#[derive(Clone, Copy, PartialEq, Eq, Hash)]
+pub struct TypeKey<'a> {
+    id: NonZeroU32,
+    _marker: std::marker::PhantomData<&'a ()>,
+}
+
+impl<'a> TypeKey<'a> {
+    fn new(variant: TypeKind, index: usize) -> Option<Self> {
+        assert!((variant as u32) < 64, "Variant index must be less than 64");
+
+        let can_store_index = index < (1 << 26);
+        let variant_bits = (variant as u32 + 1) << 26;
+
+        can_store_index.then_some(TypeKey {
+            id: NonZeroU32::new(variant_bits | index as u64 as u32).expect("ID must be non-zero"),
+            _marker: std::marker::PhantomData,
+        })
+    }
+
+    fn new_single(variant: TypeKind) -> Self {
+        assert!((variant as u32) < 64, "Variant index must be less than 64");
+
+        let variant_bits = (variant as u32 + 1) << 26;
+
+        TypeKey {
+            id: NonZeroU32::new(variant_bits).expect("ID must be non-zero"),
+            _marker: std::marker::PhantomData,
+        }
+    }
+
+    fn variant_index(self) -> TypeKind {
+        let number = ((self.id.get() >> 26) as u8) - 1;
+
+        match number {
+            x if x == TypeKind::Bool as u8 => TypeKind::Bool,
+            x if x == TypeKind::UInt8 as u8 => TypeKind::UInt8,
+            x if x == TypeKind::UInt16 as u8 => TypeKind::UInt16,
+            x if x == TypeKind::UInt32 as u8 => TypeKind::UInt32,
+            x if x == TypeKind::UInt64 as u8 => TypeKind::UInt64,
+            x if x == TypeKind::UInt128 as u8 => TypeKind::UInt128,
+            x if x == TypeKind::Int8 as u8 => TypeKind::Int8,
+            x if x == TypeKind::Int16 as u8 => TypeKind::Int16,
+            x if x == TypeKind::Int32 as u8 => TypeKind::Int32,
+            x if x == TypeKind::Int64 as u8 => TypeKind::Int64,
+            x if x == TypeKind::Int128 as u8 => TypeKind::Int128,
+            x if x == TypeKind::Float8 as u8 => TypeKind::Float8,
+            x if x == TypeKind::Float16 as u8 => TypeKind::Float16,
+            x if x == TypeKind::Float32 as u8 => TypeKind::Float32,
+            x if x == TypeKind::Float64 as u8 => TypeKind::Float64,
+            x if x == TypeKind::Float128 as u8 => TypeKind::Float128,
+
+            x if x == TypeKind::InferType as u8 => TypeKind::InferType,
+            x if x == TypeKind::TypeName as u8 => TypeKind::TypeName,
+            x if x == TypeKind::RefinementType as u8 => TypeKind::RefinementType,
+            x if x == TypeKind::TupleType as u8 => TypeKind::TupleType,
+            x if x == TypeKind::ArrayType as u8 => TypeKind::ArrayType,
+            x if x == TypeKind::MapType as u8 => TypeKind::MapType,
+            x if x == TypeKind::SliceType as u8 => TypeKind::SliceType,
+            x if x == TypeKind::FunctionType as u8 => TypeKind::FunctionType,
+            x if x == TypeKind::ManagedRefType as u8 => TypeKind::ManagedRefType,
+            x if x == TypeKind::UnmanagedRefType as u8 => TypeKind::UnmanagedRefType,
+            x if x == TypeKind::GenericType as u8 => TypeKind::GenericType,
+            x if x == TypeKind::OpaqueType as u8 => TypeKind::OpaqueType,
+
+            _ => unreachable!(),
+        }
+    }
+
+    fn instance_index(self) -> usize {
+        (self.id.get() & 0x03FF_FFFF) as usize
+    }
+
+    #[must_use]
+    pub fn get<'storage>(self) -> TypeRef<'storage, 'a> {
+        TLS_NODE_STORAGE.with(|storage| {
+            // SAFETY: I DONT KNOW WHAT I'M DOING!!! I MISS C++
+            let storage_lifetime_a = unsafe {
+                std::mem::transmute::<&Storage<'static>, &Storage<'a>>(&storage.borrow())
+            };
+
+            storage_lifetime_a.get_type(self)
+        })
+    }
+}
+
+impl std::fmt::Debug for TypeKey<'_> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let expr_key: ExprKey = (*self).into();
+        expr_key.fmt(f)
     }
 }
 
 impl<'a> TypeKey<'a> {
     #[must_use]
-    pub fn has_parentheses(self, storage: &Storage<'a>) -> bool {
-        storage.has_parentheses(self.into())
+    pub fn has_parentheses(self) -> bool {
+        TLS_NODE_STORAGE.with(|storage| {
+            let storage_lifetime_a = unsafe {
+                std::mem::transmute::<&Storage<'static>, &Storage<'a>>(&storage.borrow())
+            };
+
+            storage_lifetime_a.has_parentheses(self.into())
+        })
     }
 
-    pub fn add_parentheses(self, storage: &mut Storage<'a>) {
-        storage.add_parentheses(self.into());
+    pub fn add_parentheses(self) {
+        TLS_NODE_STORAGE.with(|storage| {
+            let storage_lifetime_a = unsafe {
+                std::mem::transmute::<&mut Storage<'static>, &mut Storage<'a>>(
+                    &mut storage.borrow_mut(),
+                )
+            };
+
+            storage_lifetime_a.add_parentheses(self.into());
+        });
     }
 }
 
-#[derive(Debug, Clone)]
-pub struct Storage<'a> {
+#[derive(Debug)]
+pub(crate) struct Storage<'a> {
     integers: Vec<IntegerLit>,
     floats: Vec<f64>,
     strings: Vec<StringData<'a>>,
@@ -296,7 +405,7 @@ impl<'a> Storage<'a> {
     const STRING_LIT_EMPTY_INDEX: usize = 0;
 
     #[must_use]
-    pub fn new() -> Self {
+    fn new() -> Self {
         let mut storage = Storage {
             integers: Vec::new(),
             floats: Vec::new(),
@@ -337,69 +446,6 @@ impl<'a> Storage<'a> {
         }
 
         storage
-    }
-
-    pub fn reserve(&mut self, kind: ExprKind, additional: usize) {
-        match kind {
-            ExprKind::Bool
-            | ExprKind::UInt8
-            | ExprKind::UInt16
-            | ExprKind::UInt32
-            | ExprKind::UInt64
-            | ExprKind::UInt128
-            | ExprKind::Int8
-            | ExprKind::Int16
-            | ExprKind::Int32
-            | ExprKind::Int64
-            | ExprKind::Int128
-            | ExprKind::Float8
-            | ExprKind::Float16
-            | ExprKind::Float32
-            | ExprKind::Float64
-            | ExprKind::Float128
-            | ExprKind::InferType
-            | ExprKind::TypeName
-            | ExprKind::RefinementType
-            | ExprKind::TupleType
-            | ExprKind::ArrayType
-            | ExprKind::MapType
-            | ExprKind::SliceType
-            | ExprKind::FunctionType
-            | ExprKind::ManagedRefType
-            | ExprKind::UnmanagedRefType
-            | ExprKind::GenericType
-            | ExprKind::OpaqueType
-            | ExprKind::Discard
-            | ExprKind::BooleanLit => {}
-
-            ExprKind::IntegerLit => self.integers.reserve(additional),
-            ExprKind::FloatLit => self.floats.reserve(additional),
-            ExprKind::StringLit => self.strings.reserve(additional),
-            ExprKind::BStringLit => self.binaries.reserve(additional),
-            ExprKind::ListLit => self.lists.reserve(additional),
-            ExprKind::ObjectLit => self.objects.reserve(additional),
-
-            ExprKind::UnaryExpr => self.unary_exprs.reserve(additional),
-            ExprKind::BinExpr => self.bin_exprs.reserve(additional),
-            ExprKind::Statement => self.statements.reserve(additional),
-            ExprKind::Block => self.blocks.reserve(additional),
-
-            ExprKind::Function => self.functions.reserve(additional),
-            ExprKind::Variable => self.variables.reserve(additional),
-            ExprKind::Identifier => self.identifiers.reserve(additional),
-            ExprKind::Scope => self.scopes.reserve(additional),
-
-            ExprKind::If => self.ifs.reserve(additional),
-            ExprKind::WhileLoop => self.while_loops.reserve(additional),
-            ExprKind::DoWhileLoop => self.do_while_loops.reserve(additional),
-            ExprKind::Switch => self.switches.reserve(additional),
-            ExprKind::Break => self.breaks.reserve(additional),
-            ExprKind::Continue => self.continues.reserve(additional),
-            ExprKind::Return => self.returns.reserve(additional),
-            ExprKind::ForEach => self.for_eachs.reserve(additional),
-            ExprKind::Await => self.awaits.reserve(additional),
-            ExprKind::Assert => self.asserts.reserve(additional),
-        }
     }
 
     pub(crate) fn add_expr(&mut self, expr: ExprOwned<'a>) -> ExprKey<'a> {
@@ -651,7 +697,7 @@ impl<'a> Storage<'a> {
         result.expect("Failed to create type key")
     }
 
-    pub fn get_expr(&self, id: ExprKey<'a>) -> ExprRef<'_, 'a> {
+    fn get_expr(&self, id: ExprKey<'a>) -> ExprRef<'_, 'a> {
         let index = id.instance_index();
 
         match id.variant_index() {
@@ -727,7 +773,7 @@ impl<'a> Storage<'a> {
         .expect("Expression not found in storage")
     }
 
-    pub fn get_expr_mut(&mut self, id: ExprKey<'a>) -> ExprRefMut<'_, 'a> {
+    fn get_expr_mut(&mut self, id: ExprKey<'a>) -> ExprRefMut<'_, 'a> {
         let index = id.instance_index();
 
         match id.variant_index() {
@@ -807,7 +853,7 @@ impl<'a> Storage<'a> {
     }
 
     #[must_use]
-    pub fn get_type(&self, id: TypeKey<'a>) -> TypeRef<'_, 'a> {
+    fn get_type(&self, id: TypeKey<'a>) -> TypeRef<'_, 'a> {
         match id.variant_index() {
             TypeKind::Bool => TypeRef::Bool,
             TypeKind::UInt8 => TypeRef::UInt8,
@@ -868,11 +914,15 @@ impl<'a> Storage<'a> {
     }
 
     #[must_use]
-    pub fn has_parentheses(&self, key: ExprKey<'a>) -> bool {
+    fn has_parentheses(&self, key: ExprKey<'a>) -> bool {
         self.has_parentheses.contains(&key)
     }
 
-    pub fn add_parentheses(&mut self, key: ExprKey<'a>) {
+    fn add_parentheses(&mut self, key: ExprKey<'a>) {
         self.has_parentheses.insert(key);
     }
+}
+
+thread_local! {
+    pub static TLS_NODE_STORAGE: RefCell<Storage<'static>> = RefCell::new(Storage::new());
 }

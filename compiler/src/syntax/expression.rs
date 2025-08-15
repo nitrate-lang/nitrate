@@ -3,9 +3,9 @@ use crate::lexical::{BStringData, IntegerKind, Keyword, Op, Punct, StringData, T
 use crate::parsetree::{Builder, ExprKey, node::BinExprOp};
 use log::error;
 
-impl<'a> Parser<'a, '_, '_> {
+impl<'a> Parser<'a, '_> {
     fn parse_integer_literal(&mut self, value: u128, kind: IntegerKind) -> ExprKey<'a> {
-        let mut bb = Builder::new(self.storage).create_integer().with_kind(kind);
+        let mut bb = Builder::new().create_integer().with_kind(kind);
 
         if value <= 0xff {
             bb = bb.with_u8(value as u8);
@@ -23,28 +23,19 @@ impl<'a> Parser<'a, '_, '_> {
     }
 
     fn parse_float_literal(&mut self, value: f64) -> ExprKey<'a> {
-        Builder::new(self.storage)
-            .create_float()
-            .with_value(value)
-            .build()
+        Builder::new().create_float().with_value(value).build()
     }
 
     fn parse_string_literal(&mut self, content: StringData<'a>) -> ExprKey<'a> {
-        Builder::new(self.storage)
-            .create_string()
-            .with_string(content)
-            .build()
+        Builder::new().create_string().with_string(content).build()
     }
 
     fn parse_bstring_literal(&mut self, content: BStringData<'a>) -> ExprKey<'a> {
-        Builder::new(self.storage)
-            .create_bstring()
-            .with_value(content)
-            .build()
+        Builder::new().create_bstring().with_value(content).build()
     }
 
     fn parse_literal_suffix(&mut self, lit: ExprKey<'a>) -> ExprKey<'a> {
-        let bb = Builder::new(self.storage);
+        let bb = Builder::new();
         let type_name = match self.lexer.peek_t() {
             Token::Name(name) => Some(bb.create_type_name(name.name())),
 
@@ -71,7 +62,7 @@ impl<'a> Parser<'a, '_, '_> {
         if let Some(type_name) = type_name {
             self.lexer.skip_tok();
 
-            Builder::new(self.storage)
+            Builder::new()
                 .create_binexpr()
                 .with_left(lit)
                 .with_operator(BinExprOp::As)
@@ -170,7 +161,7 @@ impl<'a> Parser<'a, '_, '_> {
         };
 
         Some(
-            Builder::new(self.storage)
+            Builder::new()
                 .create_if()
                 .with_condition(condition)
                 .with_then_branch(then_branch)
@@ -191,7 +182,7 @@ impl<'a> Parser<'a, '_, '_> {
         self.lexer.skip_tok();
 
         let condition = if self.lexer.next_is(&Token::Punct(Punct::LeftBrace)) {
-            Builder::new(self.storage).create_boolean(true)
+            Builder::new().create_boolean(true)
         } else {
             self.parse_expression()?
         };
@@ -199,7 +190,7 @@ impl<'a> Parser<'a, '_, '_> {
         let body = self.parse_block()?;
 
         Some(
-            Builder::new(self.storage)
+            Builder::new()
                 .create_while_loop()
                 .with_condition(condition)
                 .with_body(body)
@@ -224,7 +215,7 @@ impl<'a> Parser<'a, '_, '_> {
         let condition = self.parse_expression()?;
 
         Some(
-            Builder::new(self.storage)
+            Builder::new()
                 .create_do_while_loop()
                 .with_body(body)
                 .with_condition(condition)
@@ -259,7 +250,7 @@ impl<'a> Parser<'a, '_, '_> {
         };
 
         Some(
-            Builder::new(self.storage)
+            Builder::new()
                 .create_break()
                 .with_label(branch_label)
                 .build(),
@@ -286,7 +277,7 @@ impl<'a> Parser<'a, '_, '_> {
         };
 
         Some(
-            Builder::new(self.storage)
+            Builder::new()
                 .create_continue()
                 .with_label(branch_label)
                 .build(),
@@ -303,12 +294,7 @@ impl<'a> Parser<'a, '_, '_> {
             Some(self.parse_expression()?)
         };
 
-        Some(
-            Builder::new(self.storage)
-                .create_return()
-                .with_value(value)
-                .build(),
-        )
+        Some(Builder::new().create_return().with_value(value).build())
     }
 
     fn parse_foreach(&mut self) -> Option<ExprKey<'a>> {
@@ -327,12 +313,7 @@ impl<'a> Parser<'a, '_, '_> {
             return None;
         };
 
-        Some(
-            Builder::new(self.storage)
-                .create_await()
-                .with_expression(expr)
-                .build(),
-        )
+        Some(Builder::new().create_await().with_expression(expr).build())
     }
 
     fn parse_asm(&mut self) -> Option<ExprKey<'a>> {
@@ -349,7 +330,7 @@ impl<'a> Parser<'a, '_, '_> {
         let condition = self.parse_expression()?;
 
         Some(
-            Builder::new(self.storage)
+            Builder::new()
                 .create_assert()
                 .with_condition(condition)
                 .build(),
@@ -388,7 +369,7 @@ impl<'a> Parser<'a, '_, '_> {
         self.scope.pop();
 
         Some(
-            Builder::new(self.storage)
+            Builder::new()
                 .create_scope()
                 .with_scope(new_scope)
                 .add_attributes(attributes)
@@ -443,10 +424,10 @@ impl<'a> Parser<'a, '_, '_> {
         if self.lexer.peek_t() == Token::Punct(Punct::LeftBrace) {
             let block = Some(self.parse_block()?);
 
-            let infer_type = Builder::new(self.storage).get_infer_type();
+            let infer_type = Builder::new().get_infer_type();
 
             return Some(
-                Builder::new(self.storage)
+                Builder::new()
                     .create_function()
                     .with_definition(block)
                     .with_return_type(infer_type)
@@ -471,7 +452,7 @@ impl<'a> Parser<'a, '_, '_> {
         let return_type = if self.lexer.skip_if(&Token::Op(Op::Arrow)) {
             self.parse_type()?
         } else {
-            Builder::new(self.storage).get_infer_type()
+            Builder::new().get_infer_type()
         };
 
         let body = if self.lexer.next_is(&Token::Punct(Punct::LeftBrace)) {
@@ -480,7 +461,7 @@ impl<'a> Parser<'a, '_, '_> {
             None
         };
 
-        let function = Builder::new(self.storage)
+        let function = Builder::new()
             .create_function()
             .with_attributes(attributes)
             .with_name(function_name)
@@ -530,7 +511,7 @@ impl<'a> Parser<'a, '_, '_> {
         let type_annotation = if self.lexer.skip_if(&Token::Punct(Punct::Colon)) {
             self.parse_type()?
         } else {
-            Builder::new(self.storage).get_infer_type()
+            Builder::new().get_infer_type()
         };
 
         let initializer = if self.lexer.skip_if(&Token::Op(Op::Set)) {
@@ -539,7 +520,7 @@ impl<'a> Parser<'a, '_, '_> {
             None
         };
 
-        let variable = Builder::new(self.storage)
+        let variable = Builder::new()
             .create_let()
             .with_mutability(is_mutable)
             .with_attributes(attributes)
@@ -586,7 +567,7 @@ impl<'a> Parser<'a, '_, '_> {
         let type_annotation = if self.lexer.skip_if(&Token::Punct(Punct::Colon)) {
             self.parse_type()?
         } else {
-            Builder::new(self.storage).get_infer_type()
+            Builder::new().get_infer_type()
         };
 
         let initializer = if self.lexer.skip_if(&Token::Op(Op::Set)) {
@@ -595,7 +576,7 @@ impl<'a> Parser<'a, '_, '_> {
             None
         };
 
-        let variable = Builder::new(self.storage)
+        let variable = Builder::new()
             .create_var()
             .with_mutability(is_mutable)
             .with_attributes(attributes)
@@ -645,17 +626,17 @@ impl<'a> Parser<'a, '_, '_> {
 
             Token::Name(name) => {
                 self.lexer.skip_tok();
-                Some(Builder::new(self.storage).create_identifier(name.name()))
+                Some(Builder::new().create_identifier(name.name()))
             }
 
             Token::Keyword(Keyword::True) => {
                 self.lexer.skip_tok();
-                Some(Builder::new(self.storage).create_boolean(true))
+                Some(Builder::new().create_boolean(true))
             }
 
             Token::Keyword(Keyword::False) => {
                 self.lexer.skip_tok();
-                Some(Builder::new(self.storage).create_boolean(false))
+                Some(Builder::new().create_boolean(false))
             }
 
             Token::Keyword(Keyword::Scope) => self.parse_scope(),
@@ -760,7 +741,7 @@ impl<'a> Parser<'a, '_, '_> {
             return None;
         };
 
-        self.storage.add_parentheses(expr);
+        expr.add_parentheses();
 
         for _ in 0..parenthesis_count {
             if !self.lexer.skip_if(&Token::Punct(Punct::RightParen)) {
@@ -827,7 +808,7 @@ impl<'a> Parser<'a, '_, '_> {
             };
 
             if self.lexer.skip_if(&Token::Punct(Punct::Semicolon)) {
-                expression = Builder::new(self.storage)
+                expression = Builder::new()
                     .create_statement()
                     .with_expression(expression)
                     .build();
@@ -837,7 +818,7 @@ impl<'a> Parser<'a, '_, '_> {
         }
 
         Some(
-            Builder::new(self.storage)
+            Builder::new()
                 .create_block()
                 .add_expressions(elements)
                 .build(),

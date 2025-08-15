@@ -5,33 +5,33 @@ use crate::parsetree::node::{
     ObjectLit, RefinementType, Return, Scope, SliceType, Statement, Switch, TupleType, UnaryExpr,
     UnaryExprOp, UnmanagedRefType, Variable, VariableKind, WhileLoop,
 };
-use crate::parsetree::{ExprKey, ExprRef, Storage, TypeKey, TypeRef};
+use crate::parsetree::{ExprKey, ExprRef, TypeKey, TypeRef};
 
 #[derive(Debug, Default, Clone, PartialEq, PartialOrd, Hash)]
 pub struct CodeFormat {}
 
 pub trait ToCode<'a> {
-    fn to_code(&self, bank: &Storage<'a>, tokens: &mut Vec<Token<'a>>, options: &CodeFormat);
+    fn to_code(&self, tokens: &mut Vec<Token<'a>>, options: &CodeFormat);
 }
 
 impl<'a> ToCode<'a> for RefinementType<'a> {
-    fn to_code(&self, bank: &Storage<'a>, tokens: &mut Vec<Token<'a>>, options: &CodeFormat) {
-        self.base().to_code(bank, tokens, options);
+    fn to_code(&self, tokens: &mut Vec<Token<'a>>, options: &CodeFormat) {
+        self.base().to_code(tokens, options);
 
         if let Some(width) = self.width() {
             tokens.push(Token::Punct(Punct::Colon));
-            width.to_code(bank, tokens, options);
+            width.to_code(tokens, options);
         }
 
         if self.min().is_some() || self.max().is_some() {
             tokens.push(Token::Punct(Punct::Colon));
             tokens.push(Token::Punct(Punct::LeftBracket));
             if let Some(min) = self.min() {
-                min.to_code(bank, tokens, options);
+                min.to_code(tokens, options);
             }
             tokens.push(Token::Punct(Punct::Colon));
             if let Some(max) = self.max() {
-                max.to_code(bank, tokens, options);
+                max.to_code(tokens, options);
             }
             tokens.push(Token::Punct(Punct::RightBracket));
         }
@@ -39,53 +39,53 @@ impl<'a> ToCode<'a> for RefinementType<'a> {
 }
 
 impl<'a> ToCode<'a> for TupleType<'a> {
-    fn to_code(&self, bank: &Storage<'a>, tokens: &mut Vec<Token<'a>>, options: &CodeFormat) {
+    fn to_code(&self, tokens: &mut Vec<Token<'a>>, options: &CodeFormat) {
         tokens.push(Token::Punct(Punct::LeftBrace));
         for (i, ty) in self.elements().iter().enumerate() {
             (i > 0).then(|| tokens.push(Token::Punct(Punct::Comma)));
-            ty.to_code(bank, tokens, options);
+            ty.to_code(tokens, options);
         }
         tokens.push(Token::Punct(Punct::RightBrace));
     }
 }
 
 impl<'a> ToCode<'a> for ArrayType<'a> {
-    fn to_code(&self, bank: &Storage<'a>, tokens: &mut Vec<Token<'a>>, options: &CodeFormat) {
+    fn to_code(&self, tokens: &mut Vec<Token<'a>>, options: &CodeFormat) {
         tokens.push(Token::Punct(Punct::LeftBracket));
-        self.element().to_code(bank, tokens, options);
+        self.element().to_code(tokens, options);
         tokens.push(Token::Punct(Punct::Semicolon));
-        self.count().to_code(bank, tokens, options);
+        self.count().to_code(tokens, options);
         tokens.push(Token::Punct(Punct::RightBracket));
     }
 }
 
 impl<'a> ToCode<'a> for MapType<'a> {
-    fn to_code(&self, bank: &Storage<'a>, tokens: &mut Vec<Token<'a>>, options: &CodeFormat) {
+    fn to_code(&self, tokens: &mut Vec<Token<'a>>, options: &CodeFormat) {
         tokens.push(Token::Punct(Punct::LeftBracket));
-        self.key().to_code(bank, tokens, options);
+        self.key().to_code(tokens, options);
         tokens.push(Token::Op(Op::Arrow));
-        self.value().to_code(bank, tokens, options);
+        self.value().to_code(tokens, options);
         tokens.push(Token::Punct(Punct::RightBracket));
     }
 }
 
 impl<'a> ToCode<'a> for SliceType<'a> {
-    fn to_code(&self, bank: &Storage<'a>, tokens: &mut Vec<Token<'a>>, options: &CodeFormat) {
+    fn to_code(&self, tokens: &mut Vec<Token<'a>>, options: &CodeFormat) {
         tokens.push(Token::Punct(Punct::LeftBracket));
-        self.element().to_code(bank, tokens, options);
+        self.element().to_code(tokens, options);
         tokens.push(Token::Punct(Punct::RightBracket));
     }
 }
 
 impl<'a> ToCode<'a> for FunctionType<'a> {
-    fn to_code(&self, bank: &Storage<'a>, tokens: &mut Vec<Token<'a>>, options: &CodeFormat) {
+    fn to_code(&self, tokens: &mut Vec<Token<'a>>, options: &CodeFormat) {
         tokens.push(Token::Keyword(Keyword::Fn));
 
         if !self.attributes().is_empty() {
             tokens.push(Token::Punct(Punct::LeftBracket));
             for (i, attr) in self.attributes().iter().enumerate() {
                 (i > 0).then(|| tokens.push(Token::Punct(Punct::Comma)));
-                attr.to_code(bank, tokens, options);
+                attr.to_code(tokens, options);
             }
             tokens.push(Token::Punct(Punct::RightBracket));
         }
@@ -97,39 +97,39 @@ impl<'a> ToCode<'a> for FunctionType<'a> {
             tokens.push(Token::Name(Name::new(param.name())));
 
             let param_ty = param.type_();
-            if !matches!(param_ty.get(bank), TypeRef::InferType) {
+            if !matches!(param_ty.get(), TypeRef::InferType) {
                 tokens.push(Token::Punct(Punct::Colon));
-                param_ty.to_code(bank, tokens, options);
+                param_ty.to_code(tokens, options);
             }
 
             if let Some(default_expr) = param.default() {
                 tokens.push(Token::Op(Op::Set));
-                default_expr.to_code(bank, tokens, options);
+                default_expr.to_code(tokens, options);
             }
         }
         tokens.push(Token::Punct(Punct::RightParen));
 
         let return_type = self.return_type();
-        if !matches!(return_type.get(bank), TypeRef::InferType) {
+        if !matches!(return_type.get(), TypeRef::InferType) {
             tokens.push(Token::Op(Op::Arrow));
-            return_type.to_code(bank, tokens, options);
+            return_type.to_code(tokens, options);
         }
     }
 }
 
 impl<'a> ToCode<'a> for ManagedRefType<'a> {
-    fn to_code(&self, bank: &Storage<'a>, tokens: &mut Vec<Token<'a>>, options: &CodeFormat) {
+    fn to_code(&self, tokens: &mut Vec<Token<'a>>, options: &CodeFormat) {
         tokens.push(Token::Op(Op::BitAnd));
         if self.is_mutable() {
             tokens.push(Token::Keyword(Keyword::Mut));
         }
 
-        self.target().to_code(bank, tokens, options);
+        self.target().to_code(tokens, options);
     }
 }
 
 impl<'a> ToCode<'a> for UnmanagedRefType<'a> {
-    fn to_code(&self, bank: &Storage<'a>, tokens: &mut Vec<Token<'a>>, options: &CodeFormat) {
+    fn to_code(&self, tokens: &mut Vec<Token<'a>>, options: &CodeFormat) {
         tokens.push(Token::Op(Op::Mul));
         if self.is_mutable() {
             tokens.push(Token::Keyword(Keyword::Mut));
@@ -137,13 +137,13 @@ impl<'a> ToCode<'a> for UnmanagedRefType<'a> {
             tokens.push(Token::Keyword(Keyword::Const));
         }
 
-        self.target().to_code(bank, tokens, options);
+        self.target().to_code(tokens, options);
     }
 }
 
 impl<'a> ToCode<'a> for GenericType<'a> {
-    fn to_code(&self, bank: &Storage<'a>, tokens: &mut Vec<Token<'a>>, options: &CodeFormat) {
-        self.base().to_code(bank, tokens, options);
+    fn to_code(&self, tokens: &mut Vec<Token<'a>>, options: &CodeFormat) {
+        self.base().to_code(tokens, options);
 
         tokens.push(Token::Op(Op::LogicLt));
         for (i, (name, value)) in self.arguments().iter().enumerate() {
@@ -152,14 +152,14 @@ impl<'a> ToCode<'a> for GenericType<'a> {
                 tokens.push(Token::Name(Name::new(name)));
                 tokens.push(Token::Punct(Punct::Colon));
             }
-            value.to_code(bank, tokens, options);
+            value.to_code(tokens, options);
         }
         tokens.push(Token::Op(Op::LogicGt));
     }
 }
 
 impl<'a> ToCode<'a> for IntegerLit {
-    fn to_code(&self, _bank: &Storage<'a>, tokens: &mut Vec<Token<'a>>, _options: &CodeFormat) {
+    fn to_code(&self, tokens: &mut Vec<Token<'a>>, _options: &CodeFormat) {
         let u128 = self
             .try_to_u128()
             .expect("IntegerLit apint::UInt value should fit in u128");
@@ -170,24 +170,24 @@ impl<'a> ToCode<'a> for IntegerLit {
 }
 
 impl<'a> ToCode<'a> for ListLit<'a> {
-    fn to_code(&self, bank: &Storage<'a>, tokens: &mut Vec<Token<'a>>, options: &CodeFormat) {
+    fn to_code(&self, tokens: &mut Vec<Token<'a>>, options: &CodeFormat) {
         tokens.push(Token::Punct(Punct::LeftBracket));
         for (i, expr) in self.elements().iter().enumerate() {
             (i > 0).then(|| tokens.push(Token::Punct(Punct::Comma)));
-            expr.to_code(bank, tokens, options);
+            expr.to_code(tokens, options);
         }
         tokens.push(Token::Punct(Punct::RightBracket));
     }
 }
 
 impl<'a> ToCode<'a> for ObjectLit<'a> {
-    fn to_code(&self, bank: &Storage<'a>, tokens: &mut Vec<Token<'a>>, options: &CodeFormat) {
+    fn to_code(&self, tokens: &mut Vec<Token<'a>>, options: &CodeFormat) {
         tokens.push(Token::Punct(Punct::LeftBracket));
         for (key, value) in self.get() {
             tokens.push(Token::Name(Name::new(key)));
             tokens.push(Token::Punct(Punct::Colon));
 
-            value.to_code(bank, tokens, options);
+            value.to_code(tokens, options);
             tokens.push(Token::Punct(Punct::Comma));
         }
         tokens.push(Token::Punct(Punct::RightBracket));
@@ -195,7 +195,7 @@ impl<'a> ToCode<'a> for ObjectLit<'a> {
 }
 
 impl<'a> ToCode<'a> for UnaryExprOp {
-    fn to_code(&self, _bank: &Storage<'a>, tokens: &mut Vec<Token<'a>>, _options: &CodeFormat) {
+    fn to_code(&self, tokens: &mut Vec<Token<'a>>, _options: &CodeFormat) {
         let operator = Token::Op(match self {
             UnaryExprOp::Add => Op::Add,
             UnaryExprOp::Sub => Op::Sub,
@@ -216,19 +216,19 @@ impl<'a> ToCode<'a> for UnaryExprOp {
 }
 
 impl<'a> ToCode<'a> for UnaryExpr<'a> {
-    fn to_code(&self, bank: &Storage<'a>, tokens: &mut Vec<Token<'a>>, options: &CodeFormat) {
+    fn to_code(&self, tokens: &mut Vec<Token<'a>>, options: &CodeFormat) {
         if self.is_postfix() {
-            self.operand().to_code(bank, tokens, options);
-            self.operator().to_code(bank, tokens, options);
+            self.operand().to_code(tokens, options);
+            self.operator().to_code(tokens, options);
         } else {
-            self.operator().to_code(bank, tokens, options);
-            self.operand().to_code(bank, tokens, options);
+            self.operator().to_code(tokens, options);
+            self.operand().to_code(tokens, options);
         }
     }
 }
 
 impl<'a> ToCode<'a> for BinExprOp {
-    fn to_code(&self, _bank: &Storage<'a>, tokens: &mut Vec<Token<'a>>, _options: &CodeFormat) {
+    fn to_code(&self, tokens: &mut Vec<Token<'a>>, _options: &CodeFormat) {
         let operator = Token::Op(match self {
             BinExprOp::Add => Op::Add,
             BinExprOp::Sub => Op::Sub,
@@ -283,39 +283,39 @@ impl<'a> ToCode<'a> for BinExprOp {
 }
 
 impl<'a> ToCode<'a> for BinExpr<'a> {
-    fn to_code(&self, bank: &Storage<'a>, tokens: &mut Vec<Token<'a>>, options: &CodeFormat) {
-        self.left().to_code(bank, tokens, options);
-        self.op().to_code(bank, tokens, options);
-        self.right().to_code(bank, tokens, options);
+    fn to_code(&self, tokens: &mut Vec<Token<'a>>, options: &CodeFormat) {
+        self.left().to_code(tokens, options);
+        self.op().to_code(tokens, options);
+        self.right().to_code(tokens, options);
     }
 }
 
 impl<'a> ToCode<'a> for Statement<'a> {
-    fn to_code(&self, bank: &Storage<'a>, tokens: &mut Vec<Token<'a>>, options: &CodeFormat) {
-        self.get().to_code(bank, tokens, options);
+    fn to_code(&self, tokens: &mut Vec<Token<'a>>, options: &CodeFormat) {
+        self.get().to_code(tokens, options);
         tokens.push(Token::Punct(Punct::Semicolon));
     }
 }
 
 impl<'a> ToCode<'a> for Block<'a> {
-    fn to_code(&self, bank: &Storage<'a>, tokens: &mut Vec<Token<'a>>, options: &CodeFormat) {
+    fn to_code(&self, tokens: &mut Vec<Token<'a>>, options: &CodeFormat) {
         tokens.push(Token::Punct(Punct::LeftBrace));
         for expr in self.elements() {
-            expr.to_code(bank, tokens, options);
+            expr.to_code(tokens, options);
         }
         tokens.push(Token::Punct(Punct::RightBrace));
     }
 }
 
 impl<'a> ToCode<'a> for Function<'a> {
-    fn to_code(&self, bank: &Storage<'a>, tokens: &mut Vec<Token<'a>>, options: &CodeFormat) {
+    fn to_code(&self, tokens: &mut Vec<Token<'a>>, options: &CodeFormat) {
         tokens.push(Token::Keyword(Keyword::Fn));
 
         if !self.attributes().is_empty() {
             tokens.push(Token::Punct(Punct::LeftBracket));
             for (i, attr) in self.attributes().iter().enumerate() {
                 (i > 0).then(|| tokens.push(Token::Punct(Punct::Comma)));
-                attr.to_code(bank, tokens, options);
+                attr.to_code(tokens, options);
             }
             tokens.push(Token::Punct(Punct::RightBracket));
         }
@@ -331,32 +331,32 @@ impl<'a> ToCode<'a> for Function<'a> {
             tokens.push(Token::Name(Name::new(param.name())));
 
             let param_ty = param.type_();
-            if !matches!(param_ty.get(bank), TypeRef::InferType) {
+            if !matches!(param_ty.get(), TypeRef::InferType) {
                 tokens.push(Token::Punct(Punct::Colon));
-                param_ty.to_code(bank, tokens, options);
+                param_ty.to_code(tokens, options);
             }
 
             if let Some(default_expr) = param.default() {
                 tokens.push(Token::Op(Op::Set));
-                default_expr.to_code(bank, tokens, options);
+                default_expr.to_code(tokens, options);
             }
         }
         tokens.push(Token::Punct(Punct::RightParen));
 
         let return_type = self.return_type();
-        if !matches!(return_type.get(bank), TypeRef::InferType) {
+        if !matches!(return_type.get(), TypeRef::InferType) {
             tokens.push(Token::Op(Op::Arrow));
-            return_type.to_code(bank, tokens, options);
+            return_type.to_code(tokens, options);
         }
 
         if let Some(definition) = self.definition() {
-            definition.to_code(bank, tokens, options);
+            definition.to_code(tokens, options);
         }
     }
 }
 
 impl<'a> ToCode<'a> for Variable<'a> {
-    fn to_code(&self, bank: &Storage<'a>, tokens: &mut Vec<Token<'a>>, options: &CodeFormat) {
+    fn to_code(&self, tokens: &mut Vec<Token<'a>>, options: &CodeFormat) {
         match self.kind() {
             VariableKind::Let => tokens.push(Token::Keyword(Keyword::Let)),
             VariableKind::Var => tokens.push(Token::Keyword(Keyword::Var)),
@@ -366,17 +366,17 @@ impl<'a> ToCode<'a> for Variable<'a> {
 
         let var_type = self.get_type();
         tokens.push(Token::Punct(Punct::Colon));
-        var_type.to_code(bank, tokens, options);
+        var_type.to_code(tokens, options);
 
         if let Some(value) = self.value() {
             tokens.push(Token::Op(Op::Set));
-            value.to_code(bank, tokens, options);
+            value.to_code(tokens, options);
         }
     }
 }
 
 impl<'a> ToCode<'a> for Scope<'a> {
-    fn to_code(&self, bank: &Storage<'a>, tokens: &mut Vec<Token<'a>>, options: &CodeFormat) {
+    fn to_code(&self, tokens: &mut Vec<Token<'a>>, options: &CodeFormat) {
         tokens.push(Token::Keyword(Keyword::Scope));
 
         for (i, name) in self.scope().names().iter().enumerate() {
@@ -388,90 +388,90 @@ impl<'a> ToCode<'a> for Scope<'a> {
             tokens.push(Token::Punct(Punct::LeftBracket));
             for (i, attr) in self.attributes().iter().enumerate() {
                 (i > 0).then(|| tokens.push(Token::Punct(Punct::Comma)));
-                attr.to_code(bank, tokens, options);
+                attr.to_code(tokens, options);
             }
             tokens.push(Token::Punct(Punct::RightBracket));
         }
 
-        self.block().to_code(bank, tokens, options);
+        self.block().to_code(tokens, options);
     }
 }
 
 impl<'a> ToCode<'a> for If<'a> {
-    fn to_code(&self, _bank: &Storage<'a>, _tokens: &mut Vec<Token<'a>>, _options: &CodeFormat) {
+    fn to_code(&self, _tokens: &mut Vec<Token<'a>>, _options: &CodeFormat) {
         // TODO: Implement If to_code
     }
 }
 
 impl<'a> ToCode<'a> for WhileLoop<'a> {
-    fn to_code(&self, _bank: &Storage<'a>, _tokens: &mut Vec<Token<'a>>, _options: &CodeFormat) {
+    fn to_code(&self, _tokens: &mut Vec<Token<'a>>, _options: &CodeFormat) {
         // TODO: Implement WhileLoop to_code
     }
 }
 
 impl<'a> ToCode<'a> for DoWhileLoop<'a> {
-    fn to_code(&self, _bank: &Storage<'a>, _tokens: &mut Vec<Token<'a>>, _options: &CodeFormat) {
+    fn to_code(&self, _tokens: &mut Vec<Token<'a>>, _options: &CodeFormat) {
         // TODO: Implement DoWhileLoop to_code
     }
 }
 
 impl<'a> ToCode<'a> for Switch<'a> {
-    fn to_code(&self, _bank: &Storage<'a>, _tokens: &mut Vec<Token<'a>>, _options: &CodeFormat) {
+    fn to_code(&self, _tokens: &mut Vec<Token<'a>>, _options: &CodeFormat) {
         // TODO: Implement Switch to_code
     }
 }
 
 impl<'a> ToCode<'a> for Break<'a> {
-    fn to_code(&self, _bank: &Storage<'a>, _tokens: &mut Vec<Token<'a>>, _options: &CodeFormat) {
+    fn to_code(&self, _tokens: &mut Vec<Token<'a>>, _options: &CodeFormat) {
         // TODO: Implement Break to_code
     }
 }
 
 impl<'a> ToCode<'a> for Continue<'a> {
-    fn to_code(&self, _bank: &Storage<'a>, _tokens: &mut Vec<Token<'a>>, _options: &CodeFormat) {
+    fn to_code(&self, _tokens: &mut Vec<Token<'a>>, _options: &CodeFormat) {
         // TODO: Implement Continue to_code
     }
 }
 
 impl<'a> ToCode<'a> for Return<'a> {
-    fn to_code(&self, bank: &Storage<'a>, tokens: &mut Vec<Token<'a>>, options: &CodeFormat) {
+    fn to_code(&self, tokens: &mut Vec<Token<'a>>, options: &CodeFormat) {
         tokens.push(Token::Keyword(Keyword::Ret));
         if let Some(value) = self.value() {
-            value.to_code(bank, tokens, options);
+            value.to_code(tokens, options);
         }
     }
 }
 
 impl<'a> ToCode<'a> for ForEach<'a> {
-    fn to_code(&self, _bank: &Storage<'a>, _tokens: &mut Vec<Token<'a>>, _options: &CodeFormat) {
+    fn to_code(&self, _tokens: &mut Vec<Token<'a>>, _options: &CodeFormat) {
         // TODO: Implement ForEach to_code
     }
 }
 
 impl<'a> ToCode<'a> for Await<'a> {
-    fn to_code(&self, _bank: &Storage<'a>, _tokens: &mut Vec<Token<'a>>, _options: &CodeFormat) {
+    fn to_code(&self, _tokens: &mut Vec<Token<'a>>, _options: &CodeFormat) {
         // TODO: Implement Await to_code
     }
 }
 
 impl<'a> ToCode<'a> for Assert<'a> {
-    fn to_code(&self, _bank: &Storage<'a>, _tokens: &mut Vec<Token<'a>>, _options: &CodeFormat) {
+    fn to_code(&self, _tokens: &mut Vec<Token<'a>>, _options: &CodeFormat) {
         // TODO: Implement Assert to_code
     }
 }
 
 impl<'a> ToCode<'a> for ExprKey<'a> {
-    fn to_code(&self, bank: &Storage<'a>, tokens: &mut Vec<Token<'a>>, options: &CodeFormat) {
+    fn to_code(&self, tokens: &mut Vec<Token<'a>>, options: &CodeFormat) {
         if self.is_discard() {
             return;
         }
 
-        let has_parentheses = self.has_parentheses(bank);
+        let has_parentheses = self.has_parentheses();
         if has_parentheses {
             tokens.push(Token::Punct(Punct::LeftParen));
         }
 
-        match self.get(bank) {
+        match self.get() {
             ExprRef::Bool => tokens.push(Token::Name(Name::new("bool"))),
             ExprRef::UInt8 => tokens.push(Token::Name(Name::new("u8"))),
             ExprRef::UInt16 => tokens.push(Token::Name(Name::new("u16"))),
@@ -491,15 +491,15 @@ impl<'a> ToCode<'a> for ExprKey<'a> {
 
             ExprRef::InferType => tokens.push(Token::Name(Name::new("_"))),
             ExprRef::TypeName(e) => tokens.push(Token::Name(Name::new(e))),
-            ExprRef::RefinementType(e) => e.to_code(bank, tokens, options),
-            ExprRef::TupleType(e) => e.to_code(bank, tokens, options),
-            ExprRef::ArrayType(e) => e.to_code(bank, tokens, options),
-            ExprRef::MapType(e) => e.to_code(bank, tokens, options),
-            ExprRef::SliceType(e) => e.to_code(bank, tokens, options),
-            ExprRef::FunctionType(e) => e.to_code(bank, tokens, options),
-            ExprRef::ManagedRefType(e) => e.to_code(bank, tokens, options),
-            ExprRef::UnmanagedRefType(e) => e.to_code(bank, tokens, options),
-            ExprRef::GenericType(e) => e.to_code(bank, tokens, options),
+            ExprRef::RefinementType(e) => e.to_code(tokens, options),
+            ExprRef::TupleType(e) => e.to_code(tokens, options),
+            ExprRef::ArrayType(e) => e.to_code(tokens, options),
+            ExprRef::MapType(e) => e.to_code(tokens, options),
+            ExprRef::SliceType(e) => e.to_code(tokens, options),
+            ExprRef::FunctionType(e) => e.to_code(tokens, options),
+            ExprRef::ManagedRefType(e) => e.to_code(tokens, options),
+            ExprRef::UnmanagedRefType(e) => e.to_code(tokens, options),
+            ExprRef::GenericType(e) => e.to_code(tokens, options),
             ExprRef::OpaqueType(e) => {
                 tokens.push(Token::Keyword(Keyword::Opaque));
                 tokens.push(Token::Punct(Punct::LeftParen));
@@ -514,33 +514,33 @@ impl<'a> ToCode<'a> for ExprKey<'a> {
             } else {
                 Keyword::False
             })),
-            ExprRef::IntegerLit(e) => e.to_code(bank, tokens, options),
+            ExprRef::IntegerLit(e) => e.to_code(tokens, options),
             ExprRef::FloatLit(e) => tokens.push(Token::Float(e)),
             ExprRef::StringLit(e) => tokens.push(Token::String(e.clone())),
             ExprRef::BStringLit(e) => tokens.push(Token::BString(e.clone())),
-            ExprRef::ListLit(e) => e.to_code(bank, tokens, options),
-            ExprRef::ObjectLit(e) => e.to_code(bank, tokens, options),
+            ExprRef::ListLit(e) => e.to_code(tokens, options),
+            ExprRef::ObjectLit(e) => e.to_code(tokens, options),
 
-            ExprRef::UnaryExpr(e) => e.to_code(bank, tokens, options),
-            ExprRef::BinExpr(e) => e.to_code(bank, tokens, options),
-            ExprRef::Statement(e) => e.to_code(bank, tokens, options),
-            ExprRef::Block(e) => e.to_code(bank, tokens, options),
+            ExprRef::UnaryExpr(e) => e.to_code(tokens, options),
+            ExprRef::BinExpr(e) => e.to_code(tokens, options),
+            ExprRef::Statement(e) => e.to_code(tokens, options),
+            ExprRef::Block(e) => e.to_code(tokens, options),
 
-            ExprRef::Function(e) => e.to_code(bank, tokens, options),
-            ExprRef::Variable(e) => e.to_code(bank, tokens, options),
+            ExprRef::Function(e) => e.to_code(tokens, options),
+            ExprRef::Variable(e) => e.to_code(tokens, options),
             ExprRef::Identifier(name) => tokens.push(Token::Name(Name::new(name))),
-            ExprRef::Scope(e) => e.to_code(bank, tokens, options),
+            ExprRef::Scope(e) => e.to_code(tokens, options),
 
-            ExprRef::If(e) => e.to_code(bank, tokens, options),
-            ExprRef::WhileLoop(e) => e.to_code(bank, tokens, options),
-            ExprRef::DoWhileLoop(e) => e.to_code(bank, tokens, options),
-            ExprRef::Switch(e) => e.to_code(bank, tokens, options),
-            ExprRef::Break(e) => e.to_code(bank, tokens, options),
-            ExprRef::Continue(e) => e.to_code(bank, tokens, options),
-            ExprRef::Return(e) => e.to_code(bank, tokens, options),
-            ExprRef::ForEach(e) => e.to_code(bank, tokens, options),
-            ExprRef::Await(e) => e.to_code(bank, tokens, options),
-            ExprRef::Assert(e) => e.to_code(bank, tokens, options),
+            ExprRef::If(e) => e.to_code(tokens, options),
+            ExprRef::WhileLoop(e) => e.to_code(tokens, options),
+            ExprRef::DoWhileLoop(e) => e.to_code(tokens, options),
+            ExprRef::Switch(e) => e.to_code(tokens, options),
+            ExprRef::Break(e) => e.to_code(tokens, options),
+            ExprRef::Continue(e) => e.to_code(tokens, options),
+            ExprRef::Return(e) => e.to_code(tokens, options),
+            ExprRef::ForEach(e) => e.to_code(tokens, options),
+            ExprRef::Await(e) => e.to_code(tokens, options),
+            ExprRef::Assert(e) => e.to_code(tokens, options),
         }
 
         if has_parentheses {
@@ -550,14 +550,14 @@ impl<'a> ToCode<'a> for ExprKey<'a> {
 }
 
 impl<'a> ToCode<'a> for TypeKey<'a> {
-    fn to_code(&self, bank: &Storage<'a>, tokens: &mut Vec<Token<'a>>, options: &CodeFormat) {
-        let has_parentheses = self.has_parentheses(bank);
+    fn to_code(&self, tokens: &mut Vec<Token<'a>>, options: &CodeFormat) {
+        let has_parentheses = self.has_parentheses();
 
         if has_parentheses {
             tokens.push(Token::Punct(Punct::LeftParen));
         }
 
-        match self.get(bank) {
+        match self.get() {
             TypeRef::Bool => tokens.push(Token::Name(Name::new("bool"))),
             TypeRef::UInt8 => tokens.push(Token::Name(Name::new("u8"))),
             TypeRef::UInt16 => tokens.push(Token::Name(Name::new("u16"))),
@@ -577,15 +577,15 @@ impl<'a> ToCode<'a> for TypeKey<'a> {
 
             TypeRef::InferType => tokens.push(Token::Name(Name::new("_"))),
             TypeRef::TypeName(e) => tokens.push(Token::Name(Name::new(e))),
-            TypeRef::RefinementType(e) => e.to_code(bank, tokens, options),
-            TypeRef::TupleType(e) => e.to_code(bank, tokens, options),
-            TypeRef::ArrayType(e) => e.to_code(bank, tokens, options),
-            TypeRef::MapType(e) => e.to_code(bank, tokens, options),
-            TypeRef::SliceType(e) => e.to_code(bank, tokens, options),
-            TypeRef::FunctionType(e) => e.to_code(bank, tokens, options),
-            TypeRef::ManagedRefType(e) => e.to_code(bank, tokens, options),
-            TypeRef::UnmanagedRefType(e) => e.to_code(bank, tokens, options),
-            TypeRef::GenericType(e) => e.to_code(bank, tokens, options),
+            TypeRef::RefinementType(e) => e.to_code(tokens, options),
+            TypeRef::TupleType(e) => e.to_code(tokens, options),
+            TypeRef::ArrayType(e) => e.to_code(tokens, options),
+            TypeRef::MapType(e) => e.to_code(tokens, options),
+            TypeRef::SliceType(e) => e.to_code(tokens, options),
+            TypeRef::FunctionType(e) => e.to_code(tokens, options),
+            TypeRef::ManagedRefType(e) => e.to_code(tokens, options),
+            TypeRef::UnmanagedRefType(e) => e.to_code(tokens, options),
+            TypeRef::GenericType(e) => e.to_code(tokens, options),
             TypeRef::OpaqueType(e) => {
                 tokens.push(Token::Keyword(Keyword::Opaque));
                 tokens.push(Token::Punct(Punct::LeftParen));

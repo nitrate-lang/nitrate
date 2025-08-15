@@ -13,7 +13,7 @@ pub(crate) struct SourcePreamble<'a> {
     pub insource_config: HashSet<StringData<'a>>,
 }
 
-impl<'a> Parser<'a, '_, '_> {
+impl<'a> Parser<'a, '_> {
     fn parse_macro_prefix(&mut self) -> Option<(&'a str, Vec<ExprKey<'a>>)> {
         while self.lexer.skip_if(&Token::Punct(Punct::Semicolon)) {}
         if !self.lexer.skip_if(&Token::Punct(Punct::AtSign)) {
@@ -96,7 +96,7 @@ impl<'a> Parser<'a, '_, '_> {
             return None;
         }
 
-        let ExprRef::FloatLit(float) = macro_args[0].get(self.storage) else {
+        let ExprRef::FloatLit(float) = macro_args[0].get() else {
             self.set_failed_bit();
             error!(
                 "[P????]: Expected a float literal (e.g. '1.0') for 'nitrate' (language version) macro argument\n--> {}",
@@ -132,7 +132,7 @@ impl<'a> Parser<'a, '_, '_> {
             return None;
         }
 
-        let ExprRef::IntegerLit(copyright_year) = macro_args[0].get(self.storage) else {
+        let ExprRef::IntegerLit(copyright_year) = macro_args[0].get() else {
             self.set_failed_bit();
             error!(
                 "[P????]: Unable to parse @copyright; expected an integer literal for the first argument (copyright year)\n--> {}",
@@ -141,7 +141,7 @@ impl<'a> Parser<'a, '_, '_> {
             return None;
         };
 
-        let ExprRef::StringLit(holder_name) = macro_args[1].get(self.storage) else {
+        let ExprRef::StringLit(holder_name) = macro_args[1].get() else {
             self.set_failed_bit();
             error!(
                 "[P????]: Unable to parse @copyright; expected a string literal for the second argument (copyright holder's name)\n--> {}",
@@ -167,7 +167,7 @@ impl<'a> Parser<'a, '_, '_> {
             return None;
         }
 
-        let ExprRef::StringLit(license_name) = macro_args[0].get(self.storage) else {
+        let ExprRef::StringLit(license_name) = macro_args[0].get() else {
             self.set_failed_bit();
             error!(
                 "[P????]: Expected a string literal (SPDX license ID) for 'license' macro argument\n--> {}",
@@ -203,7 +203,7 @@ impl<'a> Parser<'a, '_, '_> {
             return None;
         }
 
-        let ExprRef::ListLit(list) = macro_args[0].get(self.storage) else {
+        let ExprRef::ListLit(list) = macro_args[0].get() else {
             self.set_failed_bit();
             error!(
                 "[P????]: Expected a list of strings for 'insource' macro argument\n--> {}",
@@ -215,7 +215,7 @@ impl<'a> Parser<'a, '_, '_> {
 
         let mut config = HashSet::new();
         for element in list.elements() {
-            let ExprRef::StringLit(option) = element.get(self.storage) else {
+            let ExprRef::StringLit(option) = element.get() else {
                 self.set_failed_bit();
                 error!(
                     "[P????]: Expected a string literal in the list for 'insource' macro argument\n--> {}",

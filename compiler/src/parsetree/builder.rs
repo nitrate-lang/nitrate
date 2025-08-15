@@ -11,6 +11,7 @@ use super::storage::{ExprKey, Storage, TypeKey};
 use super::tuple_type::TupleType;
 use super::variable::VariableKind;
 use crate::lexical::StringData;
+use crate::parsetree::TLS_NODE_STORAGE;
 use crate::parsetree::builder_helper::ScopeBuilder;
 
 #[derive(Debug)]
@@ -19,12 +20,12 @@ pub struct Builder<'storage, 'a> {
 }
 
 impl<'storage, 'a> Builder<'storage, 'a> {
-    pub fn new(storage: &'storage mut Storage<'a>) -> Self {
-        Builder { storage }
-    }
-
-    pub fn get_storage(&mut self) -> &mut Storage<'a> {
-        self.storage
+    pub fn new() -> Self {
+        Builder {
+            storage: TLS_NODE_STORAGE.with(|s| unsafe {
+                std::mem::transmute::<&mut Storage<'static>, &mut Storage<'a>>(&mut *s.as_ptr())
+            }),
+        }
     }
 
     #[must_use]

@@ -1,6 +1,7 @@
 use crate::lexical::{BStringData, IntegerKind, StringData};
-use crate::syntax::QualifiedScope;
+use crate::parsetree::storage::Storage;
 use crate::parsetree::{node::*, *};
+use crate::syntax::QualifiedScope;
 use apint::UInt;
 use std::collections::BTreeMap;
 
@@ -714,7 +715,7 @@ impl<'storage, 'a> BlockBuilder<'storage, 'a> {
     }
 
     pub fn add_statement(mut self, expression: ExprKey<'a>) -> Self {
-        let statement = Builder::new(self.storage)
+        let statement = Builder::new()
             .create_statement()
             .with_expression(expression)
             .build();
@@ -728,7 +729,7 @@ impl<'storage, 'a> BlockBuilder<'storage, 'a> {
         I: IntoIterator<Item = ExprKey<'a>>,
     {
         for expression in elements {
-            let statement = Builder::new(self.storage)
+            let statement = Builder::new()
                 .create_statement()
                 .with_expression(expression)
                 .build();

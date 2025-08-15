@@ -1,5 +1,5 @@
 #[allow(unused_imports)]
-use crate::parsetree::{Builder, ExprKey, Storage, node};
+use crate::parsetree::{Builder, ExprKey, node};
 use smallvec::SmallVec;
 use std::collections::HashMap;
 
@@ -105,25 +105,12 @@ impl<'a> std::fmt::Display for SymbolTable<'a> {
 
 #[test]
 fn test_symbol_table() {
-    let mut storage = Storage::default();
     let mut symbol_table = SymbolTable::default();
 
-    let func_1 = Builder::new(&mut storage)
-        .create_function()
-        .with_name("foo")
-        .build();
-    let func_2 = Builder::new(&mut storage)
-        .create_function()
-        .with_name("foo")
-        .build();
-    let func_3 = Builder::new(&mut storage)
-        .create_function()
-        .with_name("foo")
-        .build();
-    let func_4 = Builder::new(&mut storage)
-        .create_function()
-        .with_name("foo")
-        .build();
+    let func_1 = Builder::new().create_function().with_name("foo").build();
+    let func_2 = Builder::new().create_function().with_name("foo").build();
+    let func_3 = Builder::new().create_function().with_name("foo").build();
+    let func_4 = Builder::new().create_function().with_name("foo").build();
 
     let symbols = [
         (QualifiedScope::parse(""), "foo", func_1),

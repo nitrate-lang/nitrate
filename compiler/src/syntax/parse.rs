@@ -1,14 +1,13 @@
 use super::source_model::SourceModel;
 use super::symbol_table::SymbolTable;
 use crate::lexical::{Lexer, Punct, Token};
+use crate::parsetree::Builder;
 use crate::syntax::QualifiedScope;
-use crate::parsetree::{Builder, Storage};
 use log::{error, info};
 use smallvec::SmallVec;
 
-pub struct Parser<'a, 'storage, 'symbol_table> {
+pub struct Parser<'a, 'symbol_table> {
     pub(crate) lexer: Lexer<'a>,
-    pub(crate) storage: &'storage mut Storage<'a>,
     pub(crate) symtab: &'symbol_table mut SymbolTable<'a>,
     pub(crate) scope: QualifiedScope<'a>,
     pub(crate) generic_type_depth: i64,
@@ -16,30 +15,16 @@ pub struct Parser<'a, 'storage, 'symbol_table> {
     failed_bit: bool,
 }
 
-impl<'a, 'storage, 'symbol_table> Parser<'a, 'storage, 'symbol_table> {
-    pub fn new(
-        lexer: Lexer<'a>,
-        storage: &'storage mut Storage<'a>,
-        symbol_table: &'symbol_table mut SymbolTable<'a>,
-    ) -> Self {
+impl<'a, 'symbol_table> Parser<'a, 'symbol_table> {
+    pub fn new(lexer: Lexer<'a>, symbol_table: &'symbol_table mut SymbolTable<'a>) -> Self {
         Parser {
             lexer,
-            storage,
             symtab: symbol_table,
             scope: QualifiedScope::new(SmallVec::new()),
             generic_type_depth: 0,
             generic_type_suffix_terminator_ambiguity: false,
             failed_bit: false,
         }
-    }
-
-    #[must_use]
-    pub fn get_storage(&self) -> &Storage<'a> {
-        self.storage
-    }
-
-    pub fn get_storage_mut(&mut self) -> &mut Storage<'a> {
-        self.storage
     }
 
     pub fn get_symbol_table(&self) -> &SymbolTable<'a> {
@@ -106,7 +91,7 @@ impl<'a, 'storage, 'symbol_table> Parser<'a, 'storage, 'symbol_table> {
             };
 
             if self.lexer.skip_if(&Token::Punct(Punct::Semicolon)) {
-                expression = Builder::new(self.storage)
+                expression = Builder::new()
                     .create_statement()
                     .with_expression(expression)
                     .build();
@@ -115,7 +100,7 @@ impl<'a, 'storage, 'symbol_table> Parser<'a, 'storage, 'symbol_table> {
             expressions.push(expression);
         }
 
-        let block = Builder::new(self.storage)
+        let block = Builder::new()
             .create_block()
             .add_expressions(expressions)
             .build();
