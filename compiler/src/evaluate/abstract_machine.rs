@@ -81,7 +81,7 @@ impl<'a> AbstractMachine<'a> {
             match string_to_print {
                 Expr::StringLit(string) => {
                     print!("{}", string.get());
-                    Ok(Builder::new().get_unit().into())
+                    Ok(Builder::get_unit().into())
                 }
                 _ => Err(FunctionError::TypeError),
             }
@@ -135,7 +135,7 @@ impl<'a> AbstractMachine<'a> {
             | Expr::GenericType(_)
             | Expr::HasParenthesesType(_) => {
                 let type_expression = expression
-                    .to_owned()
+                    .clone()
                     .try_into()
                     .expect("Expected type expression");
                 self.evaluate_type(&type_expression).into()
@@ -144,30 +144,28 @@ impl<'a> AbstractMachine<'a> {
             Expr::Discard => Expr::Discard,
             Expr::HasParentheses(expr) => self.evaluate(expr.deref()),
 
-            Expr::BooleanLit(_)
-            | Expr::IntegerLit(_)
-            | Expr::FloatLit(_)
-            | Expr::StringLit(_)
-            | Expr::BStringLit(_) => expression.clone(),
+            Expr::BooleanLit(bool) => Expr::BooleanLit(bool.clone()),
+            Expr::IntegerLit(int) => Expr::IntegerLit(int.clone()),
+            Expr::FloatLit(float) => Expr::FloatLit(float.clone()),
+            Expr::StringLit(string) => Expr::StringLit(string.clone()),
+            Expr::BStringLit(bstring) => Expr::BStringLit(bstring.clone()),
 
             Expr::ListLit(list) => {
                 let mut elements = list.elements().to_vec();
-
-                for elem in &mut elements {
-                    *elem = self.evaluate(elem);
+                for entry in &mut elements {
+                    *entry = self.evaluate(&entry);
                 }
 
-                Builder::new().create_list().add_elements(elements).build()
+                Builder::create_list().add_elements(elements).build()
             }
 
             Expr::ObjectLit(object) => {
-                let mut fields = object.get().clone();
-
+                let mut fields = object.get().to_owned();
                 for value in &mut fields.values_mut() {
                     *value = self.evaluate(value);
                 }
 
-                Builder::new().create_object().add_fields(fields).build()
+                Builder::create_object().add_fields(fields).build()
             }
 
             Expr::UnaryExpr(_) => {
@@ -182,7 +180,7 @@ impl<'a> AbstractMachine<'a> {
 
             Expr::Statement(statement) => {
                 self.evaluate(&statement.get());
-                Builder::new().get_unit().into()
+                Builder::get_unit().into()
             }
 
             Expr::Block(block) => {
@@ -191,7 +189,7 @@ impl<'a> AbstractMachine<'a> {
                     result = Some(self.evaluate(&expr));
                 }
 
-                result.unwrap_or_else(|| Builder::new().get_unit().into())
+                result.unwrap_or_else(|| Builder::get_unit().into())
             }
 
             Expr::Function(_) => {
@@ -268,7 +266,7 @@ impl<'a> AbstractMachine<'a> {
 
     pub fn evaluate_type(&mut self, type_expression: &Type<'a>) -> Type<'a> {
         if self.already_evaluated_types.contains(type_expression) {
-            return type_expression.clone();
+            return type_expression.to_owned();
         }
 
         let result = match type_expression {
@@ -305,8 +303,7 @@ impl<'a> AbstractMachine<'a> {
                 max = max.map(|m| self.evaluate(&m));
                 base_type = self.evaluate_type(&base_type);
 
-                Builder::new()
-                    .create_refinement_type()
+                Builder::create_refinement_type()
                     .with_width(width)
                     .with_minimum(min)
                     .with_maximum(max)
@@ -320,10 +317,7 @@ impl<'a> AbstractMachine<'a> {
                     *t = self.evaluate_type(t);
                 }
 
-                Builder::new()
-                    .create_tuple_type()
-                    .add_elements(elements)
-                    .build()
+                Builder::create_tuple_type().add_elements(elements).build()
             }
 
             Type::ArrayType(array_type) => {
@@ -332,8 +326,7 @@ impl<'a> AbstractMachine<'a> {
                 element_type = self.evaluate_type(&element_type);
                 count = self.evaluate(&count);
 
-                Builder::new()
-                    .create_array_type()
+                Builder::create_array_type()
                     .with_element(element_type)
                     .with_count(count)
                     .build()
@@ -345,8 +338,7 @@ impl<'a> AbstractMachine<'a> {
                 key_type = self.evaluate_type(&key_type);
                 value_type = self.evaluate_type(&value_type);
 
-                Builder::new()
-                    .create_map_type()
+                Builder::create_map_type()
                     .with_key(key_type)
                     .with_value(value_type)
                     .build()
@@ -355,8 +347,7 @@ impl<'a> AbstractMachine<'a> {
             Type::SliceType(slice_type) => {
                 let element_type = self.evaluate_type(&slice_type.element());
 
-                Builder::new()
-                    .create_slice_type()
+                Builder::create_slice_type()
                     .with_element(element_type)
                     .build()
             }
@@ -380,8 +371,7 @@ impl<'a> AbstractMachine<'a> {
 
                 return_type = self.evaluate_type(&return_type);
 
-                Builder::new()
-                    .create_function_type()
+                Builder::create_function_type()
                     .add_attributes(attributes)
                     .add_parameters(parameters)
                     .with_return_type(return_type)
@@ -392,8 +382,7 @@ impl<'a> AbstractMachine<'a> {
                 let is_mutable = ref_type.is_mutable();
                 let target_type = self.evaluate_type(&ref_type.target());
 
-                Builder::new()
-                    .create_managed_type()
+                Builder::create_managed_type()
                     .with_mutability(is_mutable)
                     .with_target(target_type)
                     .build()
@@ -403,8 +392,7 @@ impl<'a> AbstractMachine<'a> {
                 let is_mutable = ref_type.is_mutable();
                 let target_type = self.evaluate_type(&ref_type.target());
 
-                Builder::new()
-                    .create_unmanaged_type()
+                Builder::create_unmanaged_type()
                     .with_mutability(is_mutable)
                     .with_target(target_type)
                     .build()
@@ -420,8 +408,7 @@ impl<'a> AbstractMachine<'a> {
 
                 base = self.evaluate_type(&base);
 
-                Builder::new()
-                    .create_generic_type()
+                Builder::create_generic_type()
                     .with_base(base)
                     .add_arguments(arguments)
                     .build()

@@ -66,10 +66,10 @@ impl std::fmt::Display for SymbolTable<'_> {
 fn test_symbol_table() {
     let mut symbol_table = SymbolTable::default();
 
-    let func_1 = Builder::new().create_function().with_name("foo").build();
-    let func_2 = Builder::new().create_function().with_name("foo").build();
-    let func_3 = Builder::new().create_function().with_name("foo").build();
-    let func_4 = Builder::new().create_function().with_name("foo").build();
+    let func_1 = Builder::create_function().with_name("foo").build();
+    let func_2 = Builder::create_function().with_name("foo").build();
+    let func_3 = Builder::create_function().with_name("foo").build();
+    let func_4 = Builder::create_function().with_name("foo").build();
 
     let symbols = [
         (QualifiedScope::parse(""), "foo", func_1.clone()),

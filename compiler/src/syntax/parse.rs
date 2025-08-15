@@ -91,8 +91,7 @@ impl<'a, 'symbol_table> Parser<'a, 'symbol_table> {
             };
 
             if self.lexer.skip_if(&Token::Punct(Punct::Semicolon)) {
-                expression = Builder::new()
-                    .create_statement()
+                expression = Builder::create_statement()
                     .with_expression(expression)
                     .build();
             }
@@ -100,10 +99,7 @@ impl<'a, 'symbol_table> Parser<'a, 'symbol_table> {
             expressions.push(expression);
         }
 
-        let block = Builder::new()
-            .create_block()
-            .add_expressions(expressions)
-            .build();
+        let block = Builder::create_block().add_expressions(expressions).build();
 
         Some(SourceModel::new(
             preamble.language_version,

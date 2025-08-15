@@ -662,8 +662,7 @@ impl<'a> BlockBuilder<'a> {
     }
 
     pub fn add_statement(mut self, expression: Expr<'a>) -> Self {
-        let statement = Builder::new()
-            .create_statement()
+        let statement = Builder::create_statement()
             .with_expression(expression)
             .build();
 
@@ -676,8 +675,7 @@ impl<'a> BlockBuilder<'a> {
         I: IntoIterator<Item = Expr<'a>>,
     {
         for expression in elements {
-            let statement = Builder::new()
-                .create_statement()
+            let statement = Builder::create_statement()
                 .with_expression(expression)
                 .build();
 

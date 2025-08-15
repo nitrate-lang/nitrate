@@ -13,14 +13,8 @@ use crate::lexical::StringData;
 use crate::parsetree::builder_helper::ScopeBuilder;
 use std::rc::Rc;
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct Builder {}
-
-impl<'a> Default for Builder {
-    fn default() -> Self {
-        Self::new()
-    }
-}
 
 impl<'a> Builder {
     #[must_use]
@@ -29,297 +23,297 @@ impl<'a> Builder {
     }
 
     #[must_use]
-    pub fn get_discard(self) -> Expr<'a> {
+    pub fn get_discard() -> Expr<'a> {
         Expr::Discard
     }
 
     #[must_use]
-    pub fn create_boolean(self, value: bool) -> Expr<'a> {
+    pub fn create_boolean(value: bool) -> Expr<'a> {
         Expr::BooleanLit(value)
     }
 
     #[must_use]
-    pub fn create_integer(self) -> IntegerBuilder {
+    pub fn create_integer() -> IntegerBuilder {
         IntegerBuilder::new()
     }
 
     #[must_use]
-    pub fn create_float(self) -> FloatBuilder {
+    pub fn create_float() -> FloatBuilder {
         FloatBuilder::new()
     }
 
     #[must_use]
-    pub fn create_string(self) -> StringBuilder<'a> {
+    pub fn create_string() -> StringBuilder<'a> {
         StringBuilder::new()
     }
 
     #[must_use]
-    pub fn create_bstring(self) -> BStringBuilder<'a> {
+    pub fn create_bstring() -> BStringBuilder<'a> {
         BStringBuilder::new()
     }
 
     #[must_use]
-    pub fn create_list(self) -> ListBuilder<'a> {
+    pub fn create_list() -> ListBuilder<'a> {
         ListBuilder::new()
     }
 
     #[must_use]
-    pub fn create_object(self) -> ObjectBuilder<'a> {
+    pub fn create_object() -> ObjectBuilder<'a> {
         ObjectBuilder::new()
     }
 
     #[must_use]
-    pub fn create_unary_expr(self) -> UnaryExprBuilder<'a> {
+    pub fn create_unary_expr() -> UnaryExprBuilder<'a> {
         UnaryExprBuilder::new()
     }
 
     #[must_use]
-    pub fn create_binexpr(self) -> BinExprBuilder<'a> {
+    pub fn create_binexpr() -> BinExprBuilder<'a> {
         BinExprBuilder::new()
     }
 
     #[must_use]
-    pub fn create_statement(self) -> StatementBuilder<'a> {
+    pub fn create_statement() -> StatementBuilder<'a> {
         StatementBuilder::new()
     }
 
     #[must_use]
-    pub fn create_block(self) -> BlockBuilder<'a> {
+    pub fn create_block() -> BlockBuilder<'a> {
         BlockBuilder::new()
     }
 
     #[must_use]
-    pub fn create_function(self) -> FunctionBuilder<'a> {
+    pub fn create_function() -> FunctionBuilder<'a> {
         FunctionBuilder::new()
     }
 
     #[must_use]
-    pub fn create_variable(self) -> VariableBuilder<'a> {
+    pub fn create_variable() -> VariableBuilder<'a> {
         VariableBuilder::new()
     }
 
     #[must_use]
-    pub fn create_identifier(self, name: &'a str) -> Expr<'a> {
+    pub fn create_identifier(name: &'a str) -> Expr<'a> {
         Expr::Identifier(Rc::new(name))
     }
 
     #[must_use]
-    pub fn create_scope(self) -> ScopeBuilder<'a> {
+    pub fn create_scope() -> ScopeBuilder<'a> {
         ScopeBuilder::new()
     }
 
     #[must_use]
-    pub fn create_let(self) -> VariableBuilder<'a> {
-        self.create_variable().with_kind(VariableKind::Let)
+    pub fn create_let() -> VariableBuilder<'a> {
+        Self::create_variable().with_kind(VariableKind::Let)
     }
 
     #[must_use]
-    pub fn create_var(self) -> VariableBuilder<'a> {
-        self.create_variable().with_kind(VariableKind::Var)
+    pub fn create_var() -> VariableBuilder<'a> {
+        Self::create_variable().with_kind(VariableKind::Var)
     }
 
     #[must_use]
-    pub fn create_if(self) -> IfBuilder<'a> {
+    pub fn create_if() -> IfBuilder<'a> {
         IfBuilder::new()
     }
 
     #[must_use]
-    pub fn create_while_loop(self) -> WhileLoopBuilder<'a> {
+    pub fn create_while_loop() -> WhileLoopBuilder<'a> {
         WhileLoopBuilder::new()
     }
 
     #[must_use]
-    pub fn create_do_while_loop(self) -> DoWhileLoopBuilder<'a> {
+    pub fn create_do_while_loop() -> DoWhileLoopBuilder<'a> {
         DoWhileLoopBuilder::new()
     }
 
     #[must_use]
-    pub fn create_switch(self) -> SwitchBuilder<'a> {
+    pub fn create_switch() -> SwitchBuilder<'a> {
         SwitchBuilder::new()
     }
 
     #[must_use]
-    pub fn create_break(self) -> BreakBuilder<'a> {
+    pub fn create_break() -> BreakBuilder<'a> {
         BreakBuilder::new()
     }
 
     #[must_use]
-    pub fn create_continue(self) -> ContinueBuilder<'a> {
+    pub fn create_continue() -> ContinueBuilder<'a> {
         ContinueBuilder::new()
     }
 
     #[must_use]
-    pub fn create_return(self) -> ReturnBuilder<'a> {
+    pub fn create_return() -> ReturnBuilder<'a> {
         ReturnBuilder::new()
     }
 
     #[must_use]
-    pub fn create_for_each(self) -> ForEachBuilder<'a> {
+    pub fn create_for_each() -> ForEachBuilder<'a> {
         ForEachBuilder::new()
     }
 
     #[must_use]
-    pub fn create_await(self) -> AwaitBuilder<'a> {
+    pub fn create_await() -> AwaitBuilder<'a> {
         AwaitBuilder::new()
     }
 
     #[must_use]
-    pub fn create_assert(self) -> AssertBuilder<'a> {
+    pub fn create_assert() -> AssertBuilder<'a> {
         AssertBuilder::new()
     }
 
     #[must_use]
-    pub fn get_bool(self) -> Type<'a> {
+    pub fn get_bool() -> Type<'a> {
         Type::Bool
     }
 
     #[must_use]
-    pub fn get_u8(self) -> Type<'a> {
+    pub fn get_u8() -> Type<'a> {
         Type::UInt8
     }
 
     #[must_use]
-    pub fn get_u16(self) -> Type<'a> {
+    pub fn get_u16() -> Type<'a> {
         Type::UInt16
     }
 
     #[must_use]
-    pub fn get_u32(self) -> Type<'a> {
+    pub fn get_u32() -> Type<'a> {
         Type::UInt32
     }
 
     #[must_use]
-    pub fn get_u64(self) -> Type<'a> {
+    pub fn get_u64() -> Type<'a> {
         Type::UInt64
     }
 
     #[must_use]
-    pub fn get_u128(self) -> Type<'a> {
+    pub fn get_u128() -> Type<'a> {
         Type::UInt128
     }
 
     #[must_use]
-    pub fn get_i8(self) -> Type<'a> {
+    pub fn get_i8() -> Type<'a> {
         Type::Int8
     }
 
     #[must_use]
-    pub fn get_i16(self) -> Type<'a> {
+    pub fn get_i16() -> Type<'a> {
         Type::Int16
     }
 
     #[must_use]
-    pub fn get_i32(self) -> Type<'a> {
+    pub fn get_i32() -> Type<'a> {
         Type::Int32
     }
 
     #[must_use]
-    pub fn get_i64(self) -> Type<'a> {
+    pub fn get_i64() -> Type<'a> {
         Type::Int64
     }
 
     #[must_use]
-    pub fn get_i128(self) -> Type<'a> {
+    pub fn get_i128() -> Type<'a> {
         Type::Int128
     }
 
     #[must_use]
-    pub fn get_f8(self) -> Type<'a> {
+    pub fn get_f8() -> Type<'a> {
         Type::Float8
     }
 
     #[must_use]
-    pub fn get_f16(self) -> Type<'a> {
+    pub fn get_f16() -> Type<'a> {
         Type::Float16
     }
 
     #[must_use]
-    pub fn get_f32(self) -> Type<'a> {
+    pub fn get_f32() -> Type<'a> {
         Type::Float32
     }
 
     #[must_use]
-    pub fn get_f64(self) -> Type<'a> {
+    pub fn get_f64() -> Type<'a> {
         Type::Float64
     }
 
     #[must_use]
-    pub fn get_f128(self) -> Type<'a> {
+    pub fn get_f128() -> Type<'a> {
         Type::Float128
     }
 
     #[must_use]
-    pub fn get_infer_type(self) -> Type<'a> {
+    pub fn get_infer_type() -> Type<'a> {
         Type::InferType
     }
 
     #[must_use]
-    pub fn get_unit(self) -> Type<'a> {
+    pub fn get_unit() -> Type<'a> {
         Type::TupleType(Rc::new(TupleType::new(vec![])))
     }
 
     #[must_use]
-    pub fn create_type_name(self, name: &'a str) -> Type<'a> {
+    pub fn create_type_name(name: &'a str) -> Type<'a> {
         Type::TypeName(name)
     }
 
     #[must_use]
-    pub fn create_refinement_type(self) -> RefinementTypeBuilder<'a> {
+    pub fn create_refinement_type() -> RefinementTypeBuilder<'a> {
         RefinementTypeBuilder::new()
     }
 
     #[must_use]
-    pub fn create_tuple_type(self) -> TupleTypeBuilder<'a> {
+    pub fn create_tuple_type() -> TupleTypeBuilder<'a> {
         TupleTypeBuilder::new()
     }
 
     #[must_use]
-    pub fn create_array_type(self) -> ArrayTypeBuilder<'a> {
+    pub fn create_array_type() -> ArrayTypeBuilder<'a> {
         ArrayTypeBuilder::new()
     }
 
     #[must_use]
-    pub fn create_map_type(self) -> MapTypeBuilder<'a> {
+    pub fn create_map_type() -> MapTypeBuilder<'a> {
         MapTypeBuilder::new()
     }
 
     #[must_use]
-    pub fn create_slice_type(self) -> SliceTypeBuilder<'a> {
+    pub fn create_slice_type() -> SliceTypeBuilder<'a> {
         SliceTypeBuilder::new()
     }
 
     #[must_use]
-    pub fn create_function_type(self) -> FunctionTypeBuilder<'a> {
+    pub fn create_function_type() -> FunctionTypeBuilder<'a> {
         FunctionTypeBuilder::new()
     }
 
     #[must_use]
-    pub fn create_managed_type(self) -> ManagedRefTypeBuilder<'a> {
+    pub fn create_managed_type() -> ManagedRefTypeBuilder<'a> {
         ManagedRefTypeBuilder::new()
     }
 
     #[must_use]
-    pub fn create_unmanaged_type(self) -> UnmanagedRefTypeBuilder<'a> {
+    pub fn create_unmanaged_type() -> UnmanagedRefTypeBuilder<'a> {
         UnmanagedRefTypeBuilder::new()
     }
 
     #[must_use]
-    pub fn create_generic_type(self) -> GenericTypeBuilder<'a> {
+    pub fn create_generic_type() -> GenericTypeBuilder<'a> {
         GenericTypeBuilder::new()
     }
 
     #[must_use]
-    pub fn create_opaque_type(self, identity: StringData<'a>) -> Type<'a> {
+    pub fn create_opaque_type(identity: StringData<'a>) -> Type<'a> {
         Type::OpaqueType(Rc::new(identity))
     }
 
     #[must_use]
-    pub fn create_type_parentheses(self, inner: Type<'a>) -> Type<'a> {
+    pub fn create_type_parentheses(inner: Type<'a>) -> Type<'a> {
         Type::HasParenthesesType(Rc::new(inner))
     }
 
     #[must_use]
-    pub fn create_parentheses(self, inner: Expr<'a>) -> Expr<'a> {
+    pub fn create_parentheses(inner: Expr<'a>) -> Expr<'a> {
         Expr::HasParentheses(Rc::new(inner))
     }
 }

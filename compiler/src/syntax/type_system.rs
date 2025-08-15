@@ -214,8 +214,8 @@ impl<'a> Parser<'a, '_> {
         self.lexer.skip_tok();
 
         let basis_type = match type_name {
-            "_" => Builder::new().get_infer_type(),
-            type_name => Builder::new().create_type_name(type_name),
+            "_" => Builder::get_infer_type(),
+            type_name => Builder::create_type_name(type_name),
         };
 
         if !self.lexer.next_is(&Token::Op(Op::LogicLt)) {
@@ -252,8 +252,7 @@ impl<'a> Parser<'a, '_> {
         }
 
         Some(
-            Builder::new()
-                .create_generic_type()
+            Builder::create_generic_type()
                 .with_base(basis_type)
                 .add_arguments(generic_args)
                 .build(),
@@ -291,8 +290,7 @@ impl<'a> Parser<'a, '_> {
         }
 
         Some(
-            Builder::new()
-                .create_tuple_type()
+            Builder::create_tuple_type()
                 .add_elements(tuple_elements)
                 .build(),
         )
@@ -314,8 +312,7 @@ impl<'a> Parser<'a, '_> {
         }
 
         Some(
-            Builder::new()
-                .create_array_type()
+            Builder::create_array_type()
                 .with_element(element_type)
                 .with_count(array_count)
                 .build(),
@@ -338,8 +335,7 @@ impl<'a> Parser<'a, '_> {
         }
 
         Some(
-            Builder::new()
-                .create_map_type()
+            Builder::create_map_type()
                 .with_key(key_type)
                 .with_value(value_type)
                 .build(),
@@ -358,8 +354,7 @@ impl<'a> Parser<'a, '_> {
         self.lexer.skip_tok();
 
         Some(
-            Builder::new()
-                .create_slice_type()
+            Builder::create_slice_type()
                 .with_element(element_type)
                 .build(),
         )
@@ -418,8 +413,7 @@ impl<'a> Parser<'a, '_> {
         let target = self.parse_type()?;
 
         Some(
-            Builder::new()
-                .create_managed_type()
+            Builder::create_managed_type()
                 .with_target(target)
                 .with_mutability(is_mutable)
                 .build(),
@@ -450,8 +444,7 @@ impl<'a> Parser<'a, '_> {
         let target = self.parse_type()?;
 
         Some(
-            Builder::new()
-                .create_unmanaged_type()
+            Builder::create_unmanaged_type()
                 .with_target(target)
                 .with_mutability(is_mutable)
                 .build(),
@@ -486,7 +479,7 @@ impl<'a> Parser<'a, '_> {
             let parameter_type = if self.lexer.skip_if(&Token::Punct(Punct::Colon)) {
                 self.parse_type()?
             } else {
-                Builder::new().get_infer_type()
+                Builder::get_infer_type()
             };
 
             let parameter_default = if self.lexer.skip_if(&Token::Op(Op::Set)) {
@@ -534,12 +527,11 @@ impl<'a> Parser<'a, '_> {
         let return_type = if self.lexer.skip_if(&Token::Op(Op::Arrow)) {
             self.parse_type()?
         } else {
-            Builder::new().get_infer_type()
+            Builder::get_infer_type()
         };
 
         Some(
-            Builder::new()
-                .create_function_type()
+            Builder::create_function_type()
                 .add_attributes(attributes)
                 .add_parameters(parameters)
                 .with_return_type(return_type)
@@ -586,7 +578,7 @@ impl<'a> Parser<'a, '_> {
             return None;
         }
 
-        Some(Builder::new().create_opaque_type(opaque_identity))
+        Some(Builder::create_opaque_type(opaque_identity))
     }
 
     fn parse_type_primary(&mut self) -> Option<Type<'a>> {
@@ -602,82 +594,82 @@ impl<'a> Parser<'a, '_> {
         let result = match first_token.into_token() {
             Token::Keyword(Keyword::Bool) => {
                 self.lexer.skip_tok();
-                Some(Builder::new().get_bool())
+                Some(Builder::get_bool())
             }
 
             Token::Keyword(Keyword::U8) => {
                 self.lexer.skip_tok();
-                Some(Builder::new().get_u8())
+                Some(Builder::get_u8())
             }
 
             Token::Keyword(Keyword::U16) => {
                 self.lexer.skip_tok();
-                Some(Builder::new().get_u16())
+                Some(Builder::get_u16())
             }
 
             Token::Keyword(Keyword::U32) => {
                 self.lexer.skip_tok();
-                Some(Builder::new().get_u32())
+                Some(Builder::get_u32())
             }
 
             Token::Keyword(Keyword::U64) => {
                 self.lexer.skip_tok();
-                Some(Builder::new().get_u64())
+                Some(Builder::get_u64())
             }
 
             Token::Keyword(Keyword::U128) => {
                 self.lexer.skip_tok();
-                Some(Builder::new().get_u128())
+                Some(Builder::get_u128())
             }
 
             Token::Keyword(Keyword::I8) => {
                 self.lexer.skip_tok();
-                Some(Builder::new().get_i8())
+                Some(Builder::get_i8())
             }
 
             Token::Keyword(Keyword::I16) => {
                 self.lexer.skip_tok();
-                Some(Builder::new().get_i16())
+                Some(Builder::get_i16())
             }
 
             Token::Keyword(Keyword::I32) => {
                 self.lexer.skip_tok();
-                Some(Builder::new().get_i32())
+                Some(Builder::get_i32())
             }
 
             Token::Keyword(Keyword::I64) => {
                 self.lexer.skip_tok();
-                Some(Builder::new().get_i64())
+                Some(Builder::get_i64())
             }
 
             Token::Keyword(Keyword::I128) => {
                 self.lexer.skip_tok();
-                Some(Builder::new().get_i128())
+                Some(Builder::get_i128())
             }
 
             Token::Keyword(Keyword::F8) => {
                 self.lexer.skip_tok();
-                Some(Builder::new().get_f8())
+                Some(Builder::get_f8())
             }
 
             Token::Keyword(Keyword::F16) => {
                 self.lexer.skip_tok();
-                Some(Builder::new().get_f16())
+                Some(Builder::get_f16())
             }
 
             Token::Keyword(Keyword::F32) => {
                 self.lexer.skip_tok();
-                Some(Builder::new().get_f32())
+                Some(Builder::get_f32())
             }
 
             Token::Keyword(Keyword::F64) => {
                 self.lexer.skip_tok();
-                Some(Builder::new().get_f64())
+                Some(Builder::get_f64())
             }
 
             Token::Keyword(Keyword::F128) => {
                 self.lexer.skip_tok();
-                Some(Builder::new().get_f128())
+                Some(Builder::get_f128())
             }
 
             Token::Name(name) => self.parse_named_type(name.name()),
@@ -787,7 +779,7 @@ impl<'a> Parser<'a, '_> {
                 return None;
             }
 
-            Some(Builder::new().create_type_parentheses(inner))
+            Some(Builder::create_type_parentheses(inner))
         } else {
             let Some(the_type) = self.parse_type_primary() else {
                 self.set_failed_bit();
@@ -801,8 +793,7 @@ impl<'a> Parser<'a, '_> {
 
             if refinement.has_any() {
                 return Some(
-                    Builder::new()
-                        .create_refinement_type()
+                    Builder::create_refinement_type()
                         .with_base(the_type)
                         .with_width(refinement.width)
                         .with_minimum(refinement.minimum)
