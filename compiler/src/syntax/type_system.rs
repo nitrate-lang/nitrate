@@ -1,6 +1,6 @@
 use super::parse::Parser;
 use crate::lexical::{Keyword, Name, Op, Punct, Token};
-use crate::parsetree::{Builder, Expr, Type, node::FunctionParameter};
+use crate::parsetree::{Builder, Expr, Type, nodes::FunctionParameter};
 use log::{error, info};
 use std::sync::Arc;
 

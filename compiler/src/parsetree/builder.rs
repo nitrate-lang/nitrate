@@ -6,7 +6,7 @@ use super::builder_helper::{
     ReturnBuilder, SliceTypeBuilder, StatementBuilder, StringBuilder, SwitchBuilder,
     TupleTypeBuilder, UnaryExprBuilder, UnmanagedRefTypeBuilder, VariableBuilder, WhileLoopBuilder,
 };
-use super::expression::{Expr, Type};
+use super::node::{Expr, Type};
 use super::types::TupleType;
 use super::variable::VariableKind;
 use crate::lexical::StringData;

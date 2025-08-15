@@ -1,4 +1,4 @@
-use super::expression::Expr;
+use super::node::Expr;
 use crate::syntax::QualifiedScope;
 use std::sync::Arc;
 

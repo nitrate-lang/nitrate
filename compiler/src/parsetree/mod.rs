@@ -3,9 +3,9 @@ mod block;
 mod builder;
 mod builder_helper;
 mod control_flow;
-mod expression;
 mod function;
 mod list;
+mod node;
 mod number;
 mod object;
 mod scope;
@@ -15,9 +15,9 @@ mod unary_expr;
 mod variable;
 
 pub use builder::*;
-pub use expression::{Expr, Type};
+pub use node::{Expr, Type};
 
-pub mod node {
+pub mod nodes {
     pub use super::bin_expr::{BinExpr, BinExprOp};
     pub use super::block::Block;
     pub use super::control_flow::{

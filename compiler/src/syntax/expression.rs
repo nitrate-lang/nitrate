@@ -1,6 +1,6 @@
 use super::parse::Parser;
 use crate::lexical::{BStringData, IntegerKind, Keyword, Op, Punct, StringData, Token};
-use crate::parsetree::{Builder, Expr, node::BinExprOp};
+use crate::parsetree::{Builder, Expr, nodes::BinExprOp};
 use log::error;
 use std::sync::Arc;
 

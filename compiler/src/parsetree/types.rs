@@ -1,5 +1,5 @@
-use super::expression::{Expr, Type};
 use super::function::FunctionParameter;
+use super::node::{Expr, Type};
 use std::sync::Arc;
 
 #[derive(Debug, Clone, PartialEq)]

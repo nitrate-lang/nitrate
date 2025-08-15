@@ -1,5 +1,5 @@
 #[allow(unused_imports)]
-use crate::parsetree::{Builder, Expr, node};
+use crate::parsetree::{Builder, Expr, nodes};
 use smallvec::SmallVec;
 use std::collections::HashMap;
 use std::sync::Arc;

@@ -1,4 +1,4 @@
-use super::expression::{Expr, Type};
+use super::node::{Expr, Type};
 use std::sync::Arc;
 
 #[derive(Debug, Clone, Copy, PartialEq)]

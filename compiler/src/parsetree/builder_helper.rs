@@ -1,7 +1,7 @@
 use crate::lexical::{BStringData, IntegerKind, StringData};
 use crate::parsetree::{
     Builder, Expr, Type,
-    node::{
+    nodes::{
         ArrayType, Assert, Await, BinExpr, BinExprOp, Block, Break, Continue, DoWhileLoop, ForEach,
         Function, FunctionParameter, FunctionType, GenericType, If, IntegerLit, ListLit,
         ManagedRefType, MapType, ObjectLit, RefinementType, Return, Scope, SliceType, Statement,
