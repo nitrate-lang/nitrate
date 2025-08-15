@@ -3,6 +3,7 @@ use super::source_model::CopyrightInfo;
 use crate::lexical::{Punct, StringData, Token};
 use crate::parsetree::Expr;
 use log::error;
+use ordered_float::NotNan;
 use spdx::{LicenseId, license_id};
 use std::collections::HashSet;
 use std::ops::Deref;
@@ -65,7 +66,7 @@ impl<'a> Parser<'a, '_> {
         Some((macro_name.name(), macro_args))
     }
 
-    fn parse_preamble_version_number(&self, number: f64) -> Option<(u32, u32)> {
+    fn parse_preamble_version_number(&self, number: NotNan<f64>) -> Option<(u32, u32)> {
         let mut pair = (None, None);
 
         let input = number.to_string();

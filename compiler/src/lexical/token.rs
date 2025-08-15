@@ -1,3 +1,4 @@
+use ordered_float::NotNan;
 use smallvec::SmallVec;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Hash)]
@@ -601,7 +602,7 @@ impl std::fmt::Display for Op {
 pub enum Token<'a> {
     Name(Name<'a>),
     Integer(Integer),
-    Float(f64),
+    Float(NotNan<f64>),
     String(StringData<'a>),
     BString(BStringData<'a>),
     Comment(Comment<'a>),

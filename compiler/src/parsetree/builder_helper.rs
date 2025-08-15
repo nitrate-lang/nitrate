@@ -10,6 +10,7 @@ use crate::parsetree::{
     },
 };
 use apint::UInt;
+use ordered_float::NotNan;
 use std::collections::BTreeMap;
 use std::rc::Rc;
 
@@ -400,7 +401,7 @@ impl IntegerBuilder {
 
 #[derive(Debug)]
 pub struct FloatBuilder {
-    value: Option<f64>,
+    value: Option<NotNan<f64>>,
 }
 
 impl FloatBuilder {
@@ -408,7 +409,7 @@ impl FloatBuilder {
         FloatBuilder { value: None }
     }
 
-    pub fn with_value(mut self, value: f64) -> Self {
+    pub fn with_value(mut self, value: NotNan<f64>) -> Self {
         self.value = Some(value);
         self
     }

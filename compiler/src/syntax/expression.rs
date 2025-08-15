@@ -2,6 +2,7 @@ use super::parse::Parser;
 use crate::lexical::{BStringData, IntegerKind, Keyword, Op, Punct, StringData, Token};
 use crate::parsetree::{Builder, Expr, nodes::BinExprOp};
 use log::error;
+use ordered_float::NotNan;
 
 impl<'a> Parser<'a, '_> {
     fn parse_integer_literal(&mut self, value: u128, kind: IntegerKind) -> Expr<'a> {
@@ -22,7 +23,7 @@ impl<'a> Parser<'a, '_> {
         bb.build()
     }
 
-    fn parse_float_literal(&mut self, value: f64) -> Expr<'a> {
+    fn parse_float_literal(&mut self, value: NotNan<f64>) -> Expr<'a> {
         Builder::new().create_float().with_value(value).build()
     }
 

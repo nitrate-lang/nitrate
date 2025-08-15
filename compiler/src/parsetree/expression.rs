@@ -4,7 +4,7 @@ use apint::UInt;
 use smallvec::SmallVec;
 use std::collections::BTreeMap;
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct IntegerLit {
     value: UInt,
     kind: IntegerKind,
@@ -18,11 +18,6 @@ impl IntegerLit {
         } else {
             None
         }
-    }
-
-    #[must_use]
-    pub fn into_inner(self) -> UInt {
-        self.value
     }
 
     #[must_use]
@@ -51,7 +46,7 @@ impl std::ops::Deref for IntegerLit {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct ListLit<'a> {
     elements: Vec<Expr<'a>>,
 }
@@ -60,11 +55,6 @@ impl<'a> ListLit<'a> {
     #[must_use]
     pub(crate) fn new(elements: Vec<Expr<'a>>) -> Self {
         ListLit { elements }
-    }
-
-    #[must_use]
-    pub fn into_inner(self) -> Vec<Expr<'a>> {
-        self.elements
     }
 
     #[must_use]
@@ -78,7 +68,7 @@ impl<'a> ListLit<'a> {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct ObjectLit<'a> {
     fields: BTreeMap<&'a str, Expr<'a>>,
 }
@@ -105,7 +95,7 @@ impl<'a> ObjectLit<'a> {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum UnaryExprOp {
     /*----------------------------------------------------------------*
      * Arithmetic Operators                                           *
@@ -144,7 +134,7 @@ pub enum UnaryExprOp {
     Question, /* '?':          "Ternary Operator" */
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct UnaryExpr<'a> {
     operand: Expr<'a>,
     operator: UnaryExprOp,
@@ -177,7 +167,7 @@ impl<'a> UnaryExpr<'a> {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum BinExprOp {
     /*----------------------------------------------------------------*
      * Arithmetic Operators                                           *
@@ -254,7 +244,7 @@ pub enum BinExprOp {
     Spaceship, /* '<=>':        "Spaceship Operator" */
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct BinExpr<'a> {
     left: Expr<'a>,
     right: Expr<'a>,
@@ -287,7 +277,7 @@ impl<'a> BinExpr<'a> {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Statement<'a> {
     expr: Expr<'a>,
 }
@@ -296,11 +286,6 @@ impl<'a> Statement<'a> {
     #[must_use]
     pub(crate) fn new(expr: Expr<'a>) -> Self {
         Statement { expr }
-    }
-
-    #[must_use]
-    pub fn into_inner(self) -> Expr<'a> {
-        self.expr
     }
 
     #[must_use]
@@ -313,7 +298,7 @@ impl<'a> Statement<'a> {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Block<'a> {
     elements: Vec<Expr<'a>>,
 }
@@ -322,11 +307,6 @@ impl<'a> Block<'a> {
     #[must_use]
     pub(crate) fn new(items: Vec<Expr<'a>>) -> Self {
         Block { elements: items }
-    }
-
-    #[must_use]
-    pub fn into_inner(self) -> Vec<Expr<'a>> {
-        self.elements
     }
 
     #[must_use]
@@ -340,7 +320,7 @@ impl<'a> Block<'a> {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct FunctionParameter<'a> {
     name: &'a str,
     param_type: Type<'a>,
@@ -373,7 +353,7 @@ impl<'a> FunctionParameter<'a> {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Function<'a> {
     parameters: Vec<FunctionParameter<'a>>,
     return_type: Type<'a>,
@@ -448,13 +428,13 @@ impl<'a> Function<'a> {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum VariableKind {
     Let,
     Var,
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Variable<'a> {
     kind: VariableKind,
     is_mutable: bool,
@@ -577,7 +557,7 @@ impl<'a> QualifiedScope<'a> {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Scope<'a> {
     scope: QualifiedScope<'a>,
     attributes: Vec<Expr<'a>>,
@@ -622,7 +602,7 @@ impl<'a> Scope<'a> {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct If<'a> {
     condition: Expr<'a>,
     then_branch: Expr<'a>,
@@ -671,7 +651,7 @@ impl<'a> If<'a> {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct WhileLoop<'a> {
     condition: Expr<'a>,
     body: Expr<'a>,
@@ -702,7 +682,7 @@ impl<'a> WhileLoop<'a> {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct DoWhileLoop<'a> {
     condition: Expr<'a>,
     body: Expr<'a>,
@@ -733,7 +713,7 @@ impl<'a> DoWhileLoop<'a> {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Switch<'a> {
     condition: Expr<'a>,
     cases: Vec<(Expr<'a>, Expr<'a>)>,
@@ -783,7 +763,7 @@ impl<'a> Switch<'a> {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Break<'a> {
     label: Option<&'a str>,
 }
@@ -804,7 +784,7 @@ impl<'a> Break<'a> {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Continue<'a> {
     label: Option<&'a str>,
 }
@@ -825,7 +805,7 @@ impl<'a> Continue<'a> {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Return<'a> {
     value: Option<Expr<'a>>,
 }
@@ -846,7 +826,7 @@ impl<'a> Return<'a> {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct ForEach<'a> {
     iterable: Expr<'a>,
     bindings: Vec<(&'a str, Option<Type<'a>>)>,
@@ -896,7 +876,7 @@ impl<'a> ForEach<'a> {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Await<'a> {
     expression: Expr<'a>,
 }
@@ -917,7 +897,7 @@ impl<'a> Await<'a> {
     }
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Assert<'a> {
     condition: Expr<'a>,
     message: Option<Expr<'a>>,

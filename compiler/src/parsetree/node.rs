@@ -1,3 +1,5 @@
+use ordered_float::NotNan;
+
 use super::expression::{
     Assert, Await, BinExpr, Block, Break, Continue, DoWhileLoop, ForEach, Function, If, IntegerLit,
     ListLit, ObjectLit, Return, Scope, Statement, Switch, UnaryExpr, Variable, WhileLoop,
@@ -9,7 +11,7 @@ use super::types::{
 use crate::lexical::{BStringData, StringData};
 use std::rc::Rc;
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Expr<'a> {
     Bool,
     UInt8,
@@ -46,7 +48,7 @@ pub enum Expr<'a> {
 
     BooleanLit(bool),
     IntegerLit(Rc<IntegerLit>),
-    FloatLit(f64),
+    FloatLit(NotNan<f64>),
     StringLit(Rc<StringData<'a>>),
     BStringLit(Rc<BStringData<'a>>),
     ListLit(Rc<ListLit<'a>>),
@@ -74,7 +76,7 @@ pub enum Expr<'a> {
     Assert(Rc<Assert<'a>>),
 }
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Type<'a> {
     Bool,
     UInt8,

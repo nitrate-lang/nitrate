@@ -3,6 +3,7 @@ use super::token::{
     Punct, SourcePosition, StringData, Token,
 };
 use log::error;
+use ordered_float::NotNan;
 use smallvec::SmallVec;
 
 #[derive(Debug, Clone, Copy, PartialEq, PartialOrd, Hash)]
@@ -185,7 +186,7 @@ impl<'a> Lexer<'a> {
     }
 
     #[inline(always)]
-    pub fn next_if_float(&mut self) -> Option<f64> {
+    pub fn next_if_float(&mut self) -> Option<NotNan<f64>> {
         if let Token::Float(float) = self.peek_t() {
             self.skip_tok();
             Some(float)
@@ -367,9 +368,9 @@ impl<'a> Lexer<'a> {
     }
 
     #[inline(always)]
-    fn convert_float_repr(&self, str_bytes: &str) -> Result<f64, ()> {
+    fn convert_float_repr(&self, str_bytes: &str) -> Result<NotNan<f64>, ()> {
         match str_bytes.replace('_', "").parse::<f64>() {
-            Ok(value) => Ok(value),
+            Ok(value) => Ok(NotNan::new(value).unwrap()),
             Err(e) => {
                 error!("[L0200]: Invalid float literal: {e}");
                 Err(())
