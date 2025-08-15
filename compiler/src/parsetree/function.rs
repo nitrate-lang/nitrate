@@ -23,12 +23,12 @@ impl<'a> FunctionParameter<'a> {
     }
 
     #[must_use]
-    pub fn param_type(&self) -> TypeKey<'a> {
+    pub fn type_(&self) -> TypeKey<'a> {
         self.param_type
     }
 
     #[must_use]
-    pub fn default_value(&self) -> Option<ExprKey<'a>> {
+    pub fn default(&self) -> Option<ExprKey<'a>> {
         self.default_value
     }
 }

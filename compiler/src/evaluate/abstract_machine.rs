@@ -276,45 +276,44 @@ impl<'a, 'storage> AbstractMachine<'a, 'storage> {
             | TypeRef::OpaqueType(_) => type_expression,
 
             TypeRef::RefinementType(refinement_type) => {
-                let (base_type, width, min, max) = (
-                    refinement_type.base(),
+                let (mut width, mut min, mut max, mut base_type) = (
                     refinement_type.width(),
                     refinement_type.min(),
                     refinement_type.max(),
+                    refinement_type.base(),
                 );
 
-                let base_type = self.evaluate_type(base_type);
-                let width = width.map(|w| self.evaluate(w));
-                let min = min.map(|m| self.evaluate(m));
-                let max = max.map(|m| self.evaluate(m));
+                width = width.map(|w| self.evaluate(w));
+                min = min.map(|m| self.evaluate(m));
+                max = max.map(|m| self.evaluate(m));
+                base_type = self.evaluate_type(base_type);
 
                 Builder::new(self.storage)
                     .create_refinement_type()
-                    .with_base(base_type)
                     .with_width(width)
                     .with_minimum(min)
                     .with_maximum(max)
+                    .with_base(base_type)
                     .build()
             }
 
             TypeRef::TupleType(tuple_type) => {
-                let element_types = tuple_type
-                    .elements()
-                    .to_vec()
-                    .iter_mut()
-                    .map(|t| self.evaluate_type(*t))
-                    .collect::<Vec<_>>();
+                let mut elements = tuple_type.elements().to_vec();
+                for t in &mut elements {
+                    *t = self.evaluate_type(*t);
+                }
 
                 Builder::new(self.storage)
                     .create_tuple_type()
-                    .add_elements(element_types)
+                    .add_elements(elements)
                     .build()
             }
 
             TypeRef::ArrayType(array_type) => {
-                let (element_type, count) = (array_type.element(), array_type.count());
-                let element_type = self.evaluate_type(element_type);
-                let count = self.evaluate(count);
+                let (mut element_type, mut count) = (array_type.element(), array_type.count());
+
+                element_type = self.evaluate_type(element_type);
+                count = self.evaluate(count);
 
                 Builder::new(self.storage)
                     .create_array_type()
@@ -324,9 +323,10 @@ impl<'a, 'storage> AbstractMachine<'a, 'storage> {
             }
 
             TypeRef::MapType(map_type) => {
-                let (key_type, value_type) = (map_type.key(), map_type.value());
-                let key_type = self.evaluate_type(key_type);
-                let value_type = self.evaluate_type(value_type);
+                let (mut key_type, mut value_type) = (map_type.key(), map_type.value());
+
+                key_type = self.evaluate_type(key_type);
+                value_type = self.evaluate_type(value_type);
 
                 Builder::new(self.storage)
                     .create_map_type()
@@ -345,28 +345,23 @@ impl<'a, 'storage> AbstractMachine<'a, 'storage> {
             }
 
             TypeRef::FunctionType(function_type) => {
-                let (mut attributes, mut parameters, return_type) = (
+                let (mut attributes, mut parameters, mut return_type) = (
                     function_type.attributes().to_vec(),
                     function_type.parameters().to_vec(),
                     function_type.return_type(),
                 );
 
-                let attributes = attributes
-                    .iter_mut()
-                    .map(|attr| self.evaluate(*attr))
-                    .collect::<Vec<_>>();
+                for attribute in &mut attributes {
+                    *attribute = self.evaluate(*attribute);
+                }
 
-                let parameters = parameters
-                    .iter_mut()
-                    .map(|param| {
-                        let param_type = self.evaluate_type(param.param_type());
-                        let default = param.default_value().map(|d| self.evaluate(d));
+                for parameter in &mut parameters {
+                    let type_ = self.evaluate_type(parameter.type_());
+                    let default = parameter.default().map(|d| self.evaluate(d));
+                    *parameter = FunctionParameter::new(parameter.name(), type_, default);
+                }
 
-                        FunctionParameter::new(param.name(), param_type, default)
-                    })
-                    .collect::<Vec<_>>();
-
-                let return_type = self.evaluate_type(return_type);
+                return_type = self.evaluate_type(return_type);
 
                 Builder::new(self.storage)
                     .create_function_type()
@@ -399,20 +394,19 @@ impl<'a, 'storage> AbstractMachine<'a, 'storage> {
             }
 
             TypeRef::GenericType(generic_type) => {
-                let (generic_base, mut generic_args) =
-                    (generic_type.base(), generic_type.arguments().to_vec());
+                let (mut arguments, mut base) =
+                    (generic_type.arguments().to_vec(), generic_type.base());
 
-                let generic_args = generic_args
-                    .iter_mut()
-                    .map(|(name, arg)| (*name, self.evaluate(*arg)))
-                    .collect::<Vec<_>>();
+                for argument in &mut arguments {
+                    *argument = (argument.0, self.evaluate(argument.1));
+                }
 
-                let generic_base = self.evaluate_type(generic_base);
+                base = self.evaluate_type(base);
 
                 Builder::new(self.storage)
                     .create_generic_type()
-                    .with_base(generic_base)
-                    .add_arguments(generic_args)
+                    .with_base(base)
+                    .add_arguments(arguments)
                     .build()
             }
         }
