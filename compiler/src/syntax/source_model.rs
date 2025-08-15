@@ -1,4 +1,4 @@
-use crate::lexer::StringData;
+use crate::lexical::StringData;
 use crate::parsetree::ExprKey;
 use spdx::LicenseId;
 use std::collections::HashSet;

@@ -1,5 +1,5 @@
-use crate::lexer::{BStringData, IntegerKind, StringData};
-use crate::parser::QualifiedScope;
+use crate::lexical::{BStringData, IntegerKind, StringData};
+use crate::syntax::QualifiedScope;
 use crate::parsetree::{node::*, *};
 use apint::UInt;
 use std::collections::BTreeMap;

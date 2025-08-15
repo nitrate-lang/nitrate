@@ -1,5 +1,5 @@
 use super::parse::Parser;
-use crate::lexer::{BStringData, IntegerKind, Keyword, Op, Punct, StringData, Token};
+use crate::lexical::{BStringData, IntegerKind, Keyword, Op, Punct, StringData, Token};
 use crate::parsetree::{Builder, ExprKey, node::BinExprOp};
 use log::error;
 

@@ -1,4 +1,4 @@
-use crate::parser::QualifiedScope;
+use crate::syntax::QualifiedScope;
 
 use super::storage::ExprKey;
 

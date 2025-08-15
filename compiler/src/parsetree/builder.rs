@@ -10,7 +10,7 @@ use super::expression::{ExprOwned, TypeOwned};
 use super::storage::{ExprKey, Storage, TypeKey};
 use super::tuple_type::TupleType;
 use super::variable::VariableKind;
-use crate::lexer::StringData;
+use crate::lexical::StringData;
 use crate::parsetree::builder_helper::ScopeBuilder;
 
 #[derive(Debug)]

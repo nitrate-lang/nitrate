@@ -19,7 +19,7 @@ use super::statement::Statement;
 use super::tuple_type::TupleType;
 use super::unary_expr::UnaryExpr;
 use super::variable::Variable;
-use crate::lexer::{BStringData, StringData};
+use crate::lexical::{BStringData, StringData};
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub enum ExprKind {

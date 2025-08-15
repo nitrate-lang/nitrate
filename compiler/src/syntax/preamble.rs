@@ -1,6 +1,6 @@
 use super::parse::Parser;
 use super::source_model::CopyrightInfo;
-use crate::lexer::{Punct, StringData, Token};
+use crate::lexical::{Punct, StringData, Token};
 use crate::parsetree::{ExprKey, ExprRef};
 use log::error;
 use spdx::{LicenseId, license_id};

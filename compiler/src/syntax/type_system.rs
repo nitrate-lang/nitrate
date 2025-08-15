@@ -1,14 +1,14 @@
 use super::parse::Parser;
-use crate::lexer::{Keyword, Name, Op, Punct, Token};
+use crate::lexical::{Keyword, Name, Op, Punct, Token};
 use crate::parsetree::{Builder, ExprKey, TypeKey, node::FunctionParameter};
 use log::{error, info};
 
 #[allow(unused_imports)]
-use crate::lexer::Lexer;
-#[allow(unused_imports)]
-use crate::parser::SymbolTable;
+use crate::lexical::Lexer;
 #[allow(unused_imports)]
 use crate::parsetree::Storage;
+#[allow(unused_imports)]
+use crate::syntax::SymbolTable;
 
 #[derive(Default)]
 struct RefinementOptions<'a> {

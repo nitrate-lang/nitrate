@@ -1,7 +1,7 @@
 use criterion::{Criterion, criterion_group, criterion_main};
-use nitrate_compiler::lexer::*;
-use nitrate_compiler::parser::*;
+use nitrate_compiler::lexical::*;
 use nitrate_compiler::parsetree::*;
+use nitrate_compiler::syntax::*;
 
 struct ParserUtil {
     storage: Storage<'static>,

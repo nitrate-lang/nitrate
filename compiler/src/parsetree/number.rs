@@ -1,4 +1,4 @@
-use crate::lexer::IntegerKind;
+use crate::lexical::IntegerKind;
 use apint::UInt;
 
 #[derive(Debug, Clone)]

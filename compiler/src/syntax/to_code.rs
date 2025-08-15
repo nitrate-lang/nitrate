@@ -1,4 +1,4 @@
-use crate::lexer::{Integer, Keyword, Name, Op, Punct, Token};
+use crate::lexical::{Integer, Keyword, Name, Op, Punct, Token};
 use crate::parsetree::node::{
     ArrayType, Assert, Await, BinExpr, BinExprOp, Block, Break, Continue, DoWhileLoop, ForEach,
     Function, FunctionType, GenericType, If, IntegerLit, ListLit, ManagedRefType, MapType,

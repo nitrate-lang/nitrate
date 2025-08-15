@@ -1,7 +1,7 @@
 use super::source_model::SourceModel;
 use super::symbol_table::SymbolTable;
-use crate::lexer::{Lexer, Punct, Token};
-use crate::parser::QualifiedScope;
+use crate::lexical::{Lexer, Punct, Token};
+use crate::syntax::QualifiedScope;
 use crate::parsetree::{Builder, Storage};
 use log::{error, info};
 use smallvec::SmallVec;

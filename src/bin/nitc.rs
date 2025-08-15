@@ -1,6 +1,6 @@
 use log::error;
-use nitrate_compiler::lexer::*;
-use nitrate_compiler::parser::*;
+use nitrate_compiler::lexical::*;
+use nitrate_compiler::syntax::*;
 use nitrate_compiler::parsetree::*;
 use std::io::Read;
 

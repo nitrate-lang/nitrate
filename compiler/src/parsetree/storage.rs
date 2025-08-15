@@ -1,4 +1,4 @@
-use crate::lexer::{BStringData, StringData};
+use crate::lexical::{BStringData, StringData};
 use crate::parsetree::{node::*, *};
 use bimap::BiMap;
 use hashbrown::HashSet;
