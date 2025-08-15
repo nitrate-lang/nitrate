@@ -5,7 +5,6 @@ use crate::parsetree::Expr;
 use log::error;
 use spdx::{LicenseId, license_id};
 use std::collections::HashSet;
-use std::ops::Deref;
 use std::sync::Arc;
 
 pub(crate) struct SourcePreamble<'a> {
@@ -137,7 +136,7 @@ impl<'a> Parser<'a, '_> {
             return None;
         }
 
-        let Expr::IntegerLit(copyright_year) = macro_args[0].deref() else {
+        let Expr::IntegerLit(copyright_year) = &*macro_args[0] else {
             self.set_failed_bit();
             error!(
                 "[P????]: Unable to parse @copyright; expected an integer literal for the first argument (copyright year)\n--> {}",
@@ -146,7 +145,7 @@ impl<'a> Parser<'a, '_> {
             return None;
         };
 
-        let Expr::StringLit(holder_name) = macro_args[1].deref() else {
+        let Expr::StringLit(holder_name) = &*macro_args[1] else {
             self.set_failed_bit();
             error!(
                 "[P????]: Unable to parse @copyright; expected a string literal for the second argument (copyright holder's name)\n--> {}",
@@ -175,7 +174,7 @@ impl<'a> Parser<'a, '_> {
             return None;
         }
 
-        let Expr::StringLit(license_name) = macro_args[0].deref() else {
+        let Expr::StringLit(license_name) = &*macro_args[0] else {
             self.set_failed_bit();
             error!(
                 "[P????]: Expected a string literal (SPDX license ID) for 'license' macro argument\n--> {}",
@@ -211,7 +210,7 @@ impl<'a> Parser<'a, '_> {
             return None;
         }
 
-        let Expr::ListLit(list) = macro_args[0].deref() else {
+        let Expr::ListLit(list) = &*macro_args[0] else {
             self.set_failed_bit();
             error!(
                 "[P????]: Expected a list of strings for 'insource' macro argument\n--> {}",
@@ -223,7 +222,7 @@ impl<'a> Parser<'a, '_> {
 
         let mut config = HashSet::new();
         for element in list.elements() {
-            let Expr::StringLit(option) = element.deref() else {
+            let Expr::StringLit(option) = &**element else {
                 self.set_failed_bit();
                 error!(
                     "[P????]: Expected a string literal in the list for 'insource' macro argument\n--> {}",

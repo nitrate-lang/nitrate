@@ -214,7 +214,7 @@ impl<'a> Lexer<'a> {
             self.current_peek_pos = SourcePosition::new(
                 current.line(),
                 current.column() + 1,
-                (current.offset() + 1) as u32,
+                current.offset() + 1,
                 current.filename(),
             );
         }

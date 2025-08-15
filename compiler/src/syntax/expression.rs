@@ -478,10 +478,7 @@ impl<'a> Parser<'a, '_> {
                 .insert(current_scope, function_name, function.clone())
             {
                 self.set_failed_bit();
-                error!(
-                    "[P????]: function: duplicate function '{}'\n--> {}",
-                    function_name, name_pos
-                );
+                error!("[P????]: function: duplicate function '{function_name}'\n--> {name_pos}");
 
                 return None;
             }
@@ -538,10 +535,7 @@ impl<'a> Parser<'a, '_> {
             .symtab
             .insert(current_scope, variable_name, variable.clone())
         {
-            error!(
-                "[P????]: let: duplicate variable '{}'\n--> {}",
-                variable_name, name_pos
-            );
+            error!("[P????]: let: duplicate variable '{variable_name}'\n--> {name_pos}");
 
             return None;
         }
@@ -597,10 +591,7 @@ impl<'a> Parser<'a, '_> {
             .symtab
             .insert(current_scope, variable_name, variable.clone())
         {
-            error!(
-                "[P????]: var: duplicate variable '{}'\n--> {}",
-                variable_name, name_pos
-            );
+            error!("[P????]: var: duplicate variable '{variable_name}'\n--> {name_pos}");
 
             return None;
         }

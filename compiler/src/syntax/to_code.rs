@@ -482,7 +482,7 @@ impl<'a> ToCode<'a> for Assert<'a> {
 
 impl<'a> ToCode<'a> for Arc<Expr<'a>> {
     fn to_code(&self, tokens: &mut Vec<Token<'a>>, options: &CodeFormat) {
-        match self.deref() {
+        match &**self {
             Expr::Discard => {}
 
             Expr::HasParentheses(inner) => {

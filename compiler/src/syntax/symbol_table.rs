@@ -10,10 +10,12 @@ pub struct QualifiedScope<'a> {
 }
 
 impl<'a> QualifiedScope<'a> {
+    #[must_use]
     pub fn new(parts: SmallVec<[&'a str; 8]>) -> Self {
         Self { parts }
     }
 
+    #[must_use]
     pub fn parse(scope: &'a str) -> Self {
         let parts = scope
             .split("::")
@@ -22,6 +24,7 @@ impl<'a> QualifiedScope<'a> {
         Self { parts }
     }
 
+    #[must_use]
     pub fn is_root(&self) -> bool {
         self.parts.is_empty()
     }
@@ -36,6 +39,7 @@ impl<'a> QualifiedScope<'a> {
         self.parts.push(part);
     }
 
+    #[must_use]
     pub fn names(&self) -> &[&'a str] {
         &self.parts
     }
@@ -46,7 +50,7 @@ impl std::fmt::Display for QualifiedScope<'_> {
         write!(
             f,
             "{}",
-            self.parts.iter().cloned().collect::<Vec<_>>().join("::")
+            self.parts.iter().copied().collect::<Vec<_>>().join("::")
         )
     }
 }
@@ -65,11 +69,12 @@ impl<'a> SymbolTable<'a> {
     ) -> bool {
         self.scopes
             .entry(symbol_scope.clone())
-            .or_insert_with(HashMap::new)
+            .or_default()
             .insert(symbol_name, symbol)
             .is_none()
     }
 
+    #[must_use]
     pub fn resolve(
         &self,
         current_scope: QualifiedScope<'a>,
@@ -93,11 +98,11 @@ impl<'a> SymbolTable<'a> {
     }
 }
 
-impl<'a> std::fmt::Display for SymbolTable<'a> {
+impl std::fmt::Display for SymbolTable<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         for (scope, symbols) in &self.scopes {
             for (name, symbol) in symbols {
-                writeln!(f, "{}::{}: {:?}", scope, name, symbol)?;
+                writeln!(f, "{scope}::{name}: {symbol:?}")?;
             }
         }
         Ok(())

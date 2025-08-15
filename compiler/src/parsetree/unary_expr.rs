@@ -49,11 +49,7 @@ pub struct UnaryExpr<'a> {
 
 impl<'a> UnaryExpr<'a> {
     #[must_use]
-    pub(crate) fn new(
-        operand: Arc<Expr<'a>>,
-        operator: UnaryExprOp,
-        is_postfix: bool,
-    ) -> Self {
+    pub(crate) fn new(operand: Arc<Expr<'a>>, operator: UnaryExprOp, is_postfix: bool) -> Self {
         UnaryExpr {
             operand,
             operator,

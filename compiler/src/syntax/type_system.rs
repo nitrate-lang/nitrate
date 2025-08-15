@@ -144,8 +144,7 @@ impl<'a> Parser<'a, '_> {
 
         let Some(argument_value) = type_or_expression else {
             error!(
-                "[P0???]: generic type: expected type or expression after generic argument name\n--> {}",
-                current_pos
+                "[P0???]: generic type: expected type or expression after generic argument name\n--> {current_pos}"
             );
             info!(
                 "[P0???]: generic type: syntax hint: if you want to use a Refinement Type as the generic argument, wrap the type in parentheses, e.g. `Vec<(i32: [1: 10])>`"
@@ -691,85 +690,61 @@ impl<'a> Parser<'a, '_> {
             Token::Keyword(Keyword::Opaque) => self.parse_opaque_type(),
 
             Token::Integer(int) => {
-                error!(
-                    "[P0???]: type: unexpected integer '{}'\n--> {}",
-                    int, current_pos
-                );
+                error!("[P0???]: type: unexpected integer '{int}'\n--> {current_pos}");
 
                 None
             }
 
             Token::Float(float) => {
-                error!(
-                    "[P0???]: type: unexpected float '{}'\n--> {}",
-                    float, current_pos
-                );
+                error!("[P0???]: type: unexpected float '{float}'\n--> {current_pos}");
 
                 None
             }
 
             Token::Keyword(func) => {
-                error!(
-                    "[P0???]: type: unexpected keyword '{}'\n--> {}",
-                    func, current_pos
-                );
+                error!("[P0???]: type: unexpected keyword '{func}'\n--> {current_pos}");
 
                 None
             }
 
             Token::String(string) => {
-                error!(
-                    "[P0???]: type: unexpected string '{}'\n--> {}",
-                    string, current_pos
-                );
+                error!("[P0???]: type: unexpected string '{string}'\n--> {current_pos}");
 
                 None
             }
 
             Token::BString(bstring) => {
-                error!(
-                    "[P0???]: type: unexpected bstring '{}'\n--> {}",
-                    bstring, current_pos
-                );
+                error!("[P0???]: type: unexpected bstring '{bstring}'\n--> {current_pos}");
 
                 None
             }
 
             Token::Punct(punc) => {
-                error!(
-                    "[P0???]: type: unexpected punctuation '{}'\n--> {}",
-                    punc, current_pos
-                );
+                error!("[P0???]: type: unexpected punctuation '{punc}'\n--> {current_pos}");
 
                 None
             }
 
             Token::Op(op) => {
-                error!(
-                    "[P0???]: type: unexpected operator '{}'\n--> {}",
-                    op, current_pos
-                );
+                error!("[P0???]: type: unexpected operator '{op}'\n--> {current_pos}");
 
                 None
             }
 
             Token::Comment(_) => {
-                error!("[P0???]: type: unexpected comment\n--> {}", current_pos);
+                error!("[P0???]: type: unexpected comment\n--> {current_pos}");
 
                 None
             }
 
             Token::Eof => {
-                error!("[P0???]: type: unexpected end of file\n--> {}", current_pos);
+                error!("[P0???]: type: unexpected end of file\n--> {current_pos}");
 
                 None
             }
 
             Token::Illegal => {
-                error!(
-                    "[P0???]: type: unexpected invalid token\n--> {}",
-                    current_pos
-                );
+                error!("[P0???]: type: unexpected invalid token\n--> {current_pos}");
 
                 None
             }

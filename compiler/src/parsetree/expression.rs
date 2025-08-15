@@ -227,13 +227,15 @@ impl<'a> From<Type<'a>> for Expr<'a> {
     }
 }
 
-impl<'a> Expr<'a> {
+impl Expr<'_> {
+    #[must_use]
     pub fn is_discard(&self) -> bool {
         matches!(self, Expr::Discard)
     }
 }
 
-impl<'a> Type<'a> {
+impl Type<'_> {
+    #[must_use]
     pub fn is_known(&self) -> bool {
         matches!(self, Type::InferType)
     }

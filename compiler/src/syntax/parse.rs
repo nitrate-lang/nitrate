@@ -27,6 +27,7 @@ impl<'a, 'symbol_table> Parser<'a, 'symbol_table> {
         }
     }
 
+    #[must_use]
     pub fn get_symbol_table(&self) -> &SymbolTable<'a> {
         self.symtab
     }

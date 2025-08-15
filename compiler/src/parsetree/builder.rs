@@ -17,7 +17,14 @@ use std::sync::Arc;
 #[derive(Debug)]
 pub struct Builder {}
 
+impl<'a> Default for Builder {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl<'a> Builder {
+    #[must_use]
     pub fn new() -> Self {
         Builder {}
     }
