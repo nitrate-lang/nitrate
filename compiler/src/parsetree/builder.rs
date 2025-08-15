@@ -7,7 +7,7 @@ use super::builder_helper::{
     TupleTypeBuilder, UnaryExprBuilder, UnmanagedRefTypeBuilder, VariableBuilder, WhileLoopBuilder,
 };
 use super::expression::{Expr, Type};
-use super::tuple_type::TupleType;
+use super::types::TupleType;
 use super::variable::VariableKind;
 use crate::lexical::StringData;
 use crate::parsetree::builder_helper::ScopeBuilder;

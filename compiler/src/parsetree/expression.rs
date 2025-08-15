@@ -1,22 +1,15 @@
-use super::array_type::ArrayType;
 use super::bin_expr::BinExpr;
 use super::block::Block;
 use super::control_flow::{
     Assert, Await, Break, Continue, DoWhileLoop, ForEach, If, Return, Switch, WhileLoop,
 };
 use super::function::Function;
-use super::function_type::FunctionType;
-use super::generic_type::GenericType;
 use super::list::ListLit;
-use super::map_type::MapType;
 use super::number::IntegerLit;
 use super::object::ObjectLit;
-use super::reference::{ManagedRefType, UnmanagedRefType};
-use super::refinement_type::RefinementType;
 use super::scope::Scope;
-use super::slice_type::SliceType;
 use super::statement::Statement;
-use super::tuple_type::TupleType;
+use super::types::*;
 use super::unary_expr::UnaryExpr;
 use super::variable::Variable;
 use crate::lexical::{BStringData, StringData};
