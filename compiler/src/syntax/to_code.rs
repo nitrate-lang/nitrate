@@ -427,7 +427,7 @@ impl<'a> ToCode<'a> for DoWhileLoop<'a> {
 
 impl<'a> ToCode<'a> for Switch<'a> {
     fn to_code(&self, _tokens: &mut Vec<Token<'a>>, _options: &CodeFormat) {
-        // TODO: Implement Switch to_code
+        // TODO: Switch to_code
     }
 }
 
@@ -462,7 +462,7 @@ impl<'a> ToCode<'a> for Return<'a> {
 
 impl<'a> ToCode<'a> for ForEach<'a> {
     fn to_code(&self, _tokens: &mut Vec<Token<'a>>, _options: &CodeFormat) {
-        // TODO: Implement ForEach to_code
+        // TODO: ForEach to_code
     }
 }
 
@@ -475,7 +475,7 @@ impl<'a> ToCode<'a> for Await<'a> {
 
 impl<'a> ToCode<'a> for Assert<'a> {
     fn to_code(&self, _tokens: &mut Vec<Token<'a>>, _options: &CodeFormat) {
-        // TODO: Implement Assert to_code
+        // TODO: Assert to_code
     }
 }
 

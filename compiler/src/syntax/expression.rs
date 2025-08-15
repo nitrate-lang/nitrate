@@ -169,7 +169,7 @@ impl<'a> Parser<'a, '_> {
     }
 
     fn parse_for(&mut self) -> Option<Expr<'a>> {
-        // TODO: Implement for expression parsing logic
+        // TODO: for expression parsing logic
         self.set_failed_bit();
         error!("For expression parsing not implemented yet");
         None
@@ -220,7 +220,7 @@ impl<'a> Parser<'a, '_> {
     }
 
     fn parse_switch(&mut self) -> Option<Expr<'a>> {
-        // TODO: Implement switch expression parsing logic
+        // TODO: switch expression parsing logic
         self.set_failed_bit();
         error!("Switch expression parsing not implemented yet");
         None
@@ -284,7 +284,7 @@ impl<'a> Parser<'a, '_> {
     }
 
     fn parse_foreach(&mut self) -> Option<Expr<'a>> {
-        // TODO: Implement foreach expression parsing logic
+        // TODO: foreach expression parsing logic
         self.set_failed_bit();
         error!("Foreach expression parsing not implemented yet");
         None
@@ -303,7 +303,7 @@ impl<'a> Parser<'a, '_> {
     }
 
     fn parse_asm(&mut self) -> Option<Expr<'a>> {
-        // TODO: Implement asm expression parsing logic
+        // TODO: asm expression parsing logic
         self.set_failed_bit();
         error!("Asm expression parsing not implemented yet");
         None
@@ -319,7 +319,7 @@ impl<'a> Parser<'a, '_> {
     }
 
     fn parse_type_alias(&mut self) -> Option<Expr<'a>> {
-        // TODO: Implement type alias parsing logic
+        // TODO: type alias parsing logic
         self.set_failed_bit();
         error!("Type alias parsing not implemented yet");
         None
@@ -359,42 +359,42 @@ impl<'a> Parser<'a, '_> {
     }
 
     fn parse_enum(&mut self) -> Option<Expr<'a>> {
-        // TODO: Implement enum parsing logic
+        // TODO: enum parsing logic
         self.set_failed_bit();
         error!("Enum parsing not implemented yet");
         None
     }
 
     fn parse_struct(&mut self) -> Option<Expr<'a>> {
-        // TODO: Implement struct parsing logic
+        // TODO: struct parsing logic
         self.set_failed_bit();
         error!("Struct parsing not implemented yet");
         None
     }
 
     fn parse_class(&mut self) -> Option<Expr<'a>> {
-        // TODO: Implement class parsing logic
+        // TODO: class parsing logic
         self.set_failed_bit();
         error!("Class parsing not implemented yet");
         None
     }
 
     fn parse_trait(&mut self) -> Option<Expr<'a>> {
-        // TODO: Implement trait parsing logic
+        // TODO: trait parsing logic
         self.set_failed_bit();
         error!("Trait parsing not implemented yet");
         None
     }
 
     fn parse_implementation(&mut self) -> Option<Expr<'a>> {
-        // TODO: Implement implementation parsing logic
+        // TODO: implementation parsing logic
         self.set_failed_bit();
         error!("Implementation parsing not implemented yet");
         None
     }
 
     fn parse_contract(&mut self) -> Option<Expr<'a>> {
-        // TODO: Implement contract parsing logic
+        // TODO: contract parsing logic
         self.set_failed_bit();
         error!("Contract parsing not implemented yet");
         None
@@ -732,9 +732,9 @@ impl<'a> Parser<'a, '_> {
             }
         }
 
-        // TODO: Binary expression parsing logic
-        // TODO: Unary prefix expression parsing logic
-        // TODO: Unary postfix expression parsing logic
+        // TODO: binary expression parsing logic
+        // TODO: unary prefix expression parsing logic
+        // TODO: unary postfix expression parsing logic
 
         Some(expr)
     }

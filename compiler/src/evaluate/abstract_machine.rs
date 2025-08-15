@@ -172,12 +172,12 @@ impl<'a> AbstractMachine<'a> {
             }
 
             Expr::UnaryExpr(_) => {
-                // TODO: Evaluate variant
+                // TODO: Evaluate unary expression
                 unimplemented!()
             }
 
             Expr::BinExpr(_) => {
-                // TODO: Evaluate variant
+                // TODO: Evaluate binary expression
                 unimplemented!()
             }
 
@@ -196,72 +196,72 @@ impl<'a> AbstractMachine<'a> {
             }
 
             Expr::Function(_) => {
-                // TODO: Evaluate variant
+                // TODO: Evaluate function definition
                 unimplemented!()
             }
 
             Expr::Variable(_) => {
-                // TODO: Evaluate variant
+                // TODO: Evaluate variable declaration
                 unimplemented!()
             }
 
             Expr::Identifier(_) => {
-                // TODO: Evaluate variant
+                // TODO: Evaluate identifier
                 unimplemented!()
             }
 
             Expr::Scope(_) => {
-                // TODO: Evaluate variant
+                // TODO: Evaluate scope
                 unimplemented!()
             }
 
             Expr::If(_) => {
-                // TODO: Evaluate variant
+                // TODO: Evaluate if
                 unimplemented!()
             }
 
             Expr::WhileLoop(_) => {
-                // TODO: Evaluate variant
+                // TODO: Evaluate while loop
                 unimplemented!()
             }
 
             Expr::DoWhileLoop(_) => {
-                // TODO: Evaluate variant
+                // TODO: Evaluate do-while loop
                 unimplemented!()
             }
 
             Expr::Switch(_) => {
-                // TODO: Evaluate variant
+                // TODO: Evaluate switch
                 unimplemented!()
             }
 
             Expr::Break(_) => {
-                // TODO: Evaluate variant
+                // TODO: Evaluate break
                 unimplemented!()
             }
 
             Expr::Continue(_) => {
-                // TODO: Evaluate variant
+                // TODO: Evaluate continue
                 unimplemented!()
             }
 
             Expr::Return(_) => {
-                // TODO: Evaluate variant
+                // TODO: Evaluate return
                 unimplemented!()
             }
 
             Expr::ForEach(_) => {
-                // TODO: Evaluate variant
+                // TODO: Evaluate for-each
                 unimplemented!()
             }
 
             Expr::Await(_) => {
-                // TODO: Evaluate variant
+                // TODO: Evaluate await
                 unimplemented!()
             }
 
             Expr::Assert(_) => {
-                // TODO: Evaluate variant
+                // TODO: Evaluate assert
                 unimplemented!()
             }
         }
