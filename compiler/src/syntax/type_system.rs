@@ -138,7 +138,7 @@ impl<'a> Parser<'a, '_> {
                 self.parse_expression()
             }
 
-            _ => self.parse_type().map(|x| x.into()),
+            _ => self.parse_type().map(std::convert::Into::into),
         };
 
         let Some(argument_value) = type_or_expression else {
