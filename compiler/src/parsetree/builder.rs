@@ -6,9 +6,9 @@ use super::builder_helper::{
     ReturnBuilder, SliceTypeBuilder, StatementBuilder, StringBuilder, SwitchBuilder,
     TupleTypeBuilder, UnaryExprBuilder, UnmanagedRefTypeBuilder, VariableBuilder, WhileLoopBuilder,
 };
-use super::expression::*;
+use super::expression::VariableKind;
 use super::node::{Expr, Type};
-use super::types::*;
+use super::types::TupleType;
 use crate::lexical::StringData;
 use crate::parsetree::builder_helper::ScopeBuilder;
 use std::rc::Rc;

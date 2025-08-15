@@ -1,5 +1,11 @@
-use super::expression::*;
-use super::types::*;
+use super::expression::{
+    Assert, Await, BinExpr, Block, Break, Continue, DoWhileLoop, ForEach, Function, If, IntegerLit,
+    ListLit, ObjectLit, Return, Scope, Statement, Switch, UnaryExpr, Variable, WhileLoop,
+};
+use super::types::{
+    ArrayType, FunctionType, GenericType, ManagedRefType, MapType, RefinementType, SliceType,
+    TupleType, UnmanagedRefType,
+};
 use crate::lexical::{BStringData, StringData};
 use std::rc::Rc;
 use std::sync::Arc;

@@ -5,11 +5,7 @@ use std::sync::Arc;
 
 impl std::fmt::Display for QualifiedScope<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "{}",
-            self.names().iter().copied().collect::<Vec<_>>().join("::")
-        )
+        write!(f, "{}", self.names().to_vec().join("::"))
     }
 }
 
