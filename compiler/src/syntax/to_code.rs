@@ -7,7 +7,6 @@ use crate::parsetree::nodes::{
 };
 use crate::parsetree::{Expr, Type};
 use std::ops::Deref;
-use std::sync::Arc;
 
 // FIXME: Keep this in sync with the parser
 
@@ -480,9 +479,9 @@ impl<'a> ToCode<'a> for Assert<'a> {
     }
 }
 
-impl<'a> ToCode<'a> for Arc<Expr<'a>> {
+impl<'a> ToCode<'a> for Expr<'a> {
     fn to_code(&self, tokens: &mut Vec<Token<'a>>, options: &CodeFormat) {
-        match &**self {
+        match self {
             Expr::Discard => {}
 
             Expr::HasParentheses(inner) => {
@@ -538,8 +537,8 @@ impl<'a> ToCode<'a> for Arc<Expr<'a>> {
             })),
             Expr::IntegerLit(e) => e.to_code(tokens, options),
             Expr::FloatLit(e) => tokens.push(Token::Float(*e)),
-            Expr::StringLit(e) => tokens.push(Token::String(e.clone())),
-            Expr::BStringLit(e) => tokens.push(Token::BString(e.clone())),
+            Expr::StringLit(e) => tokens.push(Token::String(e.deref().clone())),
+            Expr::BStringLit(e) => tokens.push(Token::BString(e.deref().clone())),
             Expr::ListLit(e) => e.to_code(tokens, options),
             Expr::ObjectLit(e) => e.to_code(tokens, options),
 

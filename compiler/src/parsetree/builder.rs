@@ -12,7 +12,6 @@ use super::types::TupleType;
 use crate::lexical::StringData;
 use crate::parsetree::builder_helper::ScopeBuilder;
 use std::rc::Rc;
-use std::sync::Arc;
 
 #[derive(Debug)]
 pub struct Builder {}
@@ -30,13 +29,13 @@ impl<'a> Builder {
     }
 
     #[must_use]
-    pub fn get_discard(self) -> Arc<Expr<'a>> {
-        Arc::new(Expr::Discard)
+    pub fn get_discard(self) -> Expr<'a> {
+        Expr::Discard
     }
 
     #[must_use]
-    pub fn create_boolean(self, value: bool) -> Arc<Expr<'a>> {
-        Arc::new(Expr::BooleanLit(value))
+    pub fn create_boolean(self, value: bool) -> Expr<'a> {
+        Expr::BooleanLit(value)
     }
 
     #[must_use]
@@ -100,8 +99,8 @@ impl<'a> Builder {
     }
 
     #[must_use]
-    pub fn create_identifier(self, name: &'a str) -> Arc<Expr<'a>> {
-        Arc::new(Expr::Identifier(name))
+    pub fn create_identifier(self, name: &'a str) -> Expr<'a> {
+        Expr::Identifier(Rc::new(name))
     }
 
     #[must_use]
@@ -320,7 +319,7 @@ impl<'a> Builder {
     }
 
     #[must_use]
-    pub fn create_parentheses(self, inner: Arc<Expr<'a>>) -> Arc<Expr<'a>> {
-        Arc::new(Expr::HasParentheses(inner))
+    pub fn create_parentheses(self, inner: Expr<'a>) -> Expr<'a> {
+        Expr::HasParentheses(Rc::new(inner))
     }
 }

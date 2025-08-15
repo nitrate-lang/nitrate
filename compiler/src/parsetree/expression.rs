@@ -3,7 +3,6 @@ use crate::lexical::IntegerKind;
 use apint::UInt;
 use smallvec::SmallVec;
 use std::collections::BTreeMap;
-use std::sync::Arc;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct IntegerLit {
@@ -54,54 +53,54 @@ impl std::ops::Deref for IntegerLit {
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct ListLit<'a> {
-    elements: Vec<Arc<Expr<'a>>>,
+    elements: Vec<Expr<'a>>,
 }
 
 impl<'a> ListLit<'a> {
     #[must_use]
-    pub(crate) fn new(elements: Vec<Arc<Expr<'a>>>) -> Self {
+    pub(crate) fn new(elements: Vec<Expr<'a>>) -> Self {
         ListLit { elements }
     }
 
     #[must_use]
-    pub fn into_inner(self) -> Vec<Arc<Expr<'a>>> {
+    pub fn into_inner(self) -> Vec<Expr<'a>> {
         self.elements
     }
 
     #[must_use]
-    pub fn elements(&self) -> &[Arc<Expr<'a>>] {
+    pub fn elements(&self) -> &[Expr<'a>] {
         &self.elements
     }
 
     #[must_use]
-    pub fn elements_mut(&mut self) -> &mut Vec<Arc<Expr<'a>>> {
+    pub fn elements_mut(&mut self) -> &mut Vec<Expr<'a>> {
         &mut self.elements
     }
 }
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct ObjectLit<'a> {
-    fields: BTreeMap<&'a str, Arc<Expr<'a>>>,
+    fields: BTreeMap<&'a str, Expr<'a>>,
 }
 
 impl<'a> ObjectLit<'a> {
     #[must_use]
-    pub(crate) fn new(fields: BTreeMap<&'a str, Arc<Expr<'a>>>) -> Self {
+    pub(crate) fn new(fields: BTreeMap<&'a str, Expr<'a>>) -> Self {
         ObjectLit { fields }
     }
 
     #[must_use]
-    pub fn into_inner(self) -> BTreeMap<&'a str, Arc<Expr<'a>>> {
+    pub fn into_inner(self) -> BTreeMap<&'a str, Expr<'a>> {
         self.fields
     }
 
     #[must_use]
-    pub fn get(&self) -> &BTreeMap<&'a str, Arc<Expr<'a>>> {
+    pub fn get(&self) -> &BTreeMap<&'a str, Expr<'a>> {
         &self.fields
     }
 
     #[must_use]
-    pub fn get_mut(&mut self) -> &mut BTreeMap<&'a str, Arc<Expr<'a>>> {
+    pub fn get_mut(&mut self) -> &mut BTreeMap<&'a str, Expr<'a>> {
         &mut self.fields
     }
 }
@@ -147,14 +146,14 @@ pub enum UnaryExprOp {
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct UnaryExpr<'a> {
-    operand: Arc<Expr<'a>>,
+    operand: Expr<'a>,
     operator: UnaryExprOp,
     is_postfix: bool,
 }
 
 impl<'a> UnaryExpr<'a> {
     #[must_use]
-    pub(crate) fn new(operand: Arc<Expr<'a>>, operator: UnaryExprOp, is_postfix: bool) -> Self {
+    pub(crate) fn new(operand: Expr<'a>, operator: UnaryExprOp, is_postfix: bool) -> Self {
         UnaryExpr {
             operand,
             operator,
@@ -163,7 +162,7 @@ impl<'a> UnaryExpr<'a> {
     }
 
     #[must_use]
-    pub fn operand(&self) -> Arc<Expr<'a>> {
+    pub fn operand(&self) -> Expr<'a> {
         self.operand.clone()
     }
 
@@ -257,14 +256,14 @@ pub enum BinExprOp {
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct BinExpr<'a> {
-    left: Arc<Expr<'a>>,
-    right: Arc<Expr<'a>>,
+    left: Expr<'a>,
+    right: Expr<'a>,
     operator: BinExprOp,
 }
 
 impl<'a> BinExpr<'a> {
     #[must_use]
-    pub(crate) fn new(left: Arc<Expr<'a>>, operator: BinExprOp, right: Arc<Expr<'a>>) -> Self {
+    pub(crate) fn new(left: Expr<'a>, operator: BinExprOp, right: Expr<'a>) -> Self {
         BinExpr {
             left,
             right,
@@ -273,7 +272,7 @@ impl<'a> BinExpr<'a> {
     }
 
     #[must_use]
-    pub fn left(&self) -> Arc<Expr<'a>> {
+    pub fn left(&self) -> Expr<'a> {
         self.left.clone()
     }
 
@@ -283,60 +282,60 @@ impl<'a> BinExpr<'a> {
     }
 
     #[must_use]
-    pub fn right(&self) -> Arc<Expr<'a>> {
+    pub fn right(&self) -> Expr<'a> {
         self.right.clone()
     }
 }
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Statement<'a> {
-    expr: Arc<Expr<'a>>,
+    expr: Expr<'a>,
 }
 
 impl<'a> Statement<'a> {
     #[must_use]
-    pub(crate) fn new(expr: Arc<Expr<'a>>) -> Self {
+    pub(crate) fn new(expr: Expr<'a>) -> Self {
         Statement { expr }
     }
 
     #[must_use]
-    pub fn into_inner(self) -> Arc<Expr<'a>> {
+    pub fn into_inner(self) -> Expr<'a> {
         self.expr
     }
 
     #[must_use]
-    pub fn get(&self) -> Arc<Expr<'a>> {
+    pub fn get(&self) -> Expr<'a> {
         self.expr.clone()
     }
 
-    pub fn set(&mut self, expr: Arc<Expr<'a>>) {
+    pub fn set(&mut self, expr: Expr<'a>) {
         self.expr = expr;
     }
 }
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Block<'a> {
-    elements: Vec<Arc<Expr<'a>>>,
+    elements: Vec<Expr<'a>>,
 }
 
 impl<'a> Block<'a> {
     #[must_use]
-    pub(crate) fn new(items: Vec<Arc<Expr<'a>>>) -> Self {
+    pub(crate) fn new(items: Vec<Expr<'a>>) -> Self {
         Block { elements: items }
     }
 
     #[must_use]
-    pub fn into_inner(self) -> Vec<Arc<Expr<'a>>> {
+    pub fn into_inner(self) -> Vec<Expr<'a>> {
         self.elements
     }
 
     #[must_use]
-    pub fn elements(&self) -> &[Arc<Expr<'a>>] {
+    pub fn elements(&self) -> &[Expr<'a>] {
         &self.elements
     }
 
     #[must_use]
-    pub fn elements_mut(&mut self) -> &mut Vec<Arc<Expr<'a>>> {
+    pub fn elements_mut(&mut self) -> &mut Vec<Expr<'a>> {
         &mut self.elements
     }
 }
@@ -345,12 +344,12 @@ impl<'a> Block<'a> {
 pub struct FunctionParameter<'a> {
     name: &'a str,
     param_type: Type<'a>,
-    default_value: Option<Arc<Expr<'a>>>,
+    default_value: Option<Expr<'a>>,
 }
 
 impl<'a> FunctionParameter<'a> {
     #[must_use]
-    pub fn new(name: &'a str, param_type: Type<'a>, default_value: Option<Arc<Expr<'a>>>) -> Self {
+    pub fn new(name: &'a str, param_type: Type<'a>, default_value: Option<Expr<'a>>) -> Self {
         FunctionParameter {
             name,
             param_type,
@@ -369,7 +368,7 @@ impl<'a> FunctionParameter<'a> {
     }
 
     #[must_use]
-    pub fn default(&self) -> Option<Arc<Expr<'a>>> {
+    pub fn default(&self) -> Option<Expr<'a>> {
         self.default_value.clone()
     }
 }
@@ -378,9 +377,9 @@ impl<'a> FunctionParameter<'a> {
 pub struct Function<'a> {
     parameters: Vec<FunctionParameter<'a>>,
     return_type: Type<'a>,
-    attributes: Vec<Arc<Expr<'a>>>,
+    attributes: Vec<Expr<'a>>,
     name: &'a str,
-    definition: Option<Arc<Expr<'a>>>,
+    definition: Option<Expr<'a>>,
 }
 
 impl<'a> Function<'a> {
@@ -389,8 +388,8 @@ impl<'a> Function<'a> {
         name: &'a str,
         parameters: Vec<FunctionParameter<'a>>,
         return_type: Type<'a>,
-        attributes: Vec<Arc<Expr<'a>>>,
-        definition: Option<Arc<Expr<'a>>>,
+        attributes: Vec<Expr<'a>>,
+        definition: Option<Expr<'a>>,
     ) -> Self {
         Function {
             parameters,
@@ -421,12 +420,12 @@ impl<'a> Function<'a> {
     }
 
     #[must_use]
-    pub fn attributes(&self) -> &[Arc<Expr<'a>>] {
+    pub fn attributes(&self) -> &[Expr<'a>] {
         &self.attributes
     }
 
     #[must_use]
-    pub fn attributes_mut(&mut self) -> &mut Vec<Arc<Expr<'a>>> {
+    pub fn attributes_mut(&mut self) -> &mut Vec<Expr<'a>> {
         &mut self.attributes
     }
 
@@ -440,11 +439,11 @@ impl<'a> Function<'a> {
     }
 
     #[must_use]
-    pub fn definition(&self) -> Option<&Arc<Expr<'a>>> {
+    pub fn definition(&self) -> Option<&Expr<'a>> {
         self.definition.as_ref()
     }
 
-    pub fn set_definition(&mut self, definition: Option<Arc<Expr<'a>>>) {
+    pub fn set_definition(&mut self, definition: Option<Expr<'a>>) {
         self.definition = definition;
     }
 }
@@ -459,10 +458,10 @@ pub enum VariableKind {
 pub struct Variable<'a> {
     kind: VariableKind,
     is_mutable: bool,
-    attributes: Vec<Arc<Expr<'a>>>,
+    attributes: Vec<Expr<'a>>,
     name: &'a str,
     var_type: Type<'a>,
-    value: Option<Arc<Expr<'a>>>,
+    value: Option<Expr<'a>>,
 }
 
 impl<'a> Variable<'a> {
@@ -470,10 +469,10 @@ impl<'a> Variable<'a> {
     pub(crate) fn new(
         kind: VariableKind,
         is_mutable: bool,
-        attributes: Vec<Arc<Expr<'a>>>,
+        attributes: Vec<Expr<'a>>,
         name: &'a str,
         var_type: Type<'a>,
-        value: Option<Arc<Expr<'a>>>,
+        value: Option<Expr<'a>>,
     ) -> Self {
         Variable {
             kind,
@@ -500,12 +499,12 @@ impl<'a> Variable<'a> {
     }
 
     #[must_use]
-    pub fn attributes(&self) -> &[Arc<Expr<'a>>] {
+    pub fn attributes(&self) -> &[Expr<'a>] {
         &self.attributes
     }
 
     #[must_use]
-    pub fn attributes_mut(&mut self) -> &mut Vec<Arc<Expr<'a>>> {
+    pub fn attributes_mut(&mut self) -> &mut Vec<Expr<'a>> {
         &mut self.attributes
     }
 
@@ -528,11 +527,11 @@ impl<'a> Variable<'a> {
     }
 
     #[must_use]
-    pub fn value(&self) -> Option<Arc<Expr<'a>>> {
+    pub fn value(&self) -> Option<Expr<'a>> {
         self.value.clone()
     }
 
-    pub fn set_value(&mut self, value: Option<Arc<Expr<'a>>>) {
+    pub fn set_value(&mut self, value: Option<Expr<'a>>) {
         self.value = value;
     }
 }
@@ -581,17 +580,13 @@ impl<'a> QualifiedScope<'a> {
 #[derive(Debug, Clone, PartialEq)]
 pub struct Scope<'a> {
     scope: QualifiedScope<'a>,
-    attributes: Vec<Arc<Expr<'a>>>,
-    block: Arc<Expr<'a>>,
+    attributes: Vec<Expr<'a>>,
+    block: Expr<'a>,
 }
 
 impl<'a> Scope<'a> {
     #[must_use]
-    pub fn new(
-        scope: QualifiedScope<'a>,
-        attributes: Vec<Arc<Expr<'a>>>,
-        block: Arc<Expr<'a>>,
-    ) -> Self {
+    pub fn new(scope: QualifiedScope<'a>, attributes: Vec<Expr<'a>>, block: Expr<'a>) -> Self {
         Scope {
             scope,
             attributes,
@@ -609,37 +604,37 @@ impl<'a> Scope<'a> {
     }
 
     #[must_use]
-    pub fn attributes(&self) -> &[Arc<Expr<'a>>] {
+    pub fn attributes(&self) -> &[Expr<'a>] {
         &self.attributes
     }
 
-    pub fn attributes_mut(&mut self) -> &mut Vec<Arc<Expr<'a>>> {
+    pub fn attributes_mut(&mut self) -> &mut Vec<Expr<'a>> {
         &mut self.attributes
     }
 
     #[must_use]
-    pub fn block(&self) -> Arc<Expr<'a>> {
+    pub fn block(&self) -> Expr<'a> {
         self.block.clone()
     }
 
-    pub fn set_block(&mut self, block: Arc<Expr<'a>>) {
+    pub fn set_block(&mut self, block: Expr<'a>) {
         self.block = block;
     }
 }
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct If<'a> {
-    condition: Arc<Expr<'a>>,
-    then_branch: Arc<Expr<'a>>,
-    else_branch: Option<Arc<Expr<'a>>>,
+    condition: Expr<'a>,
+    then_branch: Expr<'a>,
+    else_branch: Option<Expr<'a>>,
 }
 
 impl<'a> If<'a> {
     #[must_use]
     pub(crate) fn new(
-        condition: Arc<Expr<'a>>,
-        then_branch: Arc<Expr<'a>>,
-        else_branch: Option<Arc<Expr<'a>>>,
+        condition: Expr<'a>,
+        then_branch: Expr<'a>,
+        else_branch: Option<Expr<'a>>,
     ) -> Self {
         If {
             condition,
@@ -649,108 +644,108 @@ impl<'a> If<'a> {
     }
 
     #[must_use]
-    pub fn condition(&self) -> &Arc<Expr<'a>> {
+    pub fn condition(&self) -> &Expr<'a> {
         &self.condition
     }
 
-    pub fn set_condition(&mut self, condition: Arc<Expr<'a>>) {
+    pub fn set_condition(&mut self, condition: Expr<'a>) {
         self.condition = condition;
     }
 
     #[must_use]
-    pub fn then_branch(&self) -> &Arc<Expr<'a>> {
+    pub fn then_branch(&self) -> &Expr<'a> {
         &self.then_branch
     }
 
-    pub fn set_then_branch(&mut self, then_branch: Arc<Expr<'a>>) {
+    pub fn set_then_branch(&mut self, then_branch: Expr<'a>) {
         self.then_branch = then_branch;
     }
 
     #[must_use]
-    pub fn else_branch(&self) -> Option<&Arc<Expr<'a>>> {
+    pub fn else_branch(&self) -> Option<&Expr<'a>> {
         self.else_branch.as_ref()
     }
 
-    pub fn set_else_branch(&mut self, else_branch: Option<Arc<Expr<'a>>>) {
+    pub fn set_else_branch(&mut self, else_branch: Option<Expr<'a>>) {
         self.else_branch = else_branch;
     }
 }
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct WhileLoop<'a> {
-    condition: Arc<Expr<'a>>,
-    body: Arc<Expr<'a>>,
+    condition: Expr<'a>,
+    body: Expr<'a>,
 }
 
 impl<'a> WhileLoop<'a> {
     #[must_use]
-    pub(crate) fn new(condition: Arc<Expr<'a>>, body: Arc<Expr<'a>>) -> Self {
+    pub(crate) fn new(condition: Expr<'a>, body: Expr<'a>) -> Self {
         WhileLoop { condition, body }
     }
 
     #[must_use]
-    pub fn condition(&self) -> &Arc<Expr<'a>> {
+    pub fn condition(&self) -> &Expr<'a> {
         &self.condition
     }
 
-    pub fn set_condition(&mut self, condition: Arc<Expr<'a>>) {
+    pub fn set_condition(&mut self, condition: Expr<'a>) {
         self.condition = condition;
     }
 
     #[must_use]
-    pub fn body(&self) -> &Arc<Expr<'a>> {
+    pub fn body(&self) -> &Expr<'a> {
         &self.body
     }
 
-    pub fn set_body(&mut self, body: Arc<Expr<'a>>) {
+    pub fn set_body(&mut self, body: Expr<'a>) {
         self.body = body;
     }
 }
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct DoWhileLoop<'a> {
-    condition: Arc<Expr<'a>>,
-    body: Arc<Expr<'a>>,
+    condition: Expr<'a>,
+    body: Expr<'a>,
 }
 
 impl<'a> DoWhileLoop<'a> {
     #[must_use]
-    pub(crate) fn new(condition: Arc<Expr<'a>>, body: Arc<Expr<'a>>) -> Self {
+    pub(crate) fn new(condition: Expr<'a>, body: Expr<'a>) -> Self {
         DoWhileLoop { condition, body }
     }
 
     #[must_use]
-    pub fn condition(&self) -> &Arc<Expr<'a>> {
+    pub fn condition(&self) -> &Expr<'a> {
         &self.condition
     }
 
-    pub fn set_condition(&mut self, condition: Arc<Expr<'a>>) {
+    pub fn set_condition(&mut self, condition: Expr<'a>) {
         self.condition = condition;
     }
 
     #[must_use]
-    pub fn body(&self) -> &Arc<Expr<'a>> {
+    pub fn body(&self) -> &Expr<'a> {
         &self.body
     }
 
-    pub fn set_body(&mut self, body: Arc<Expr<'a>>) {
+    pub fn set_body(&mut self, body: Expr<'a>) {
         self.body = body;
     }
 }
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Switch<'a> {
-    condition: Arc<Expr<'a>>,
-    cases: Vec<(Arc<Expr<'a>>, Arc<Expr<'a>>)>,
-    default_case: Option<Arc<Expr<'a>>>,
+    condition: Expr<'a>,
+    cases: Vec<(Expr<'a>, Expr<'a>)>,
+    default_case: Option<Expr<'a>>,
 }
 
 impl<'a> Switch<'a> {
     #[must_use]
     pub(crate) fn new(
-        condition: Arc<Expr<'a>>,
-        cases: Vec<(Arc<Expr<'a>>, Arc<Expr<'a>>)>,
-        default_case: Option<Arc<Expr<'a>>>,
+        condition: Expr<'a>,
+        cases: Vec<(Expr<'a>, Expr<'a>)>,
+        default_case: Option<Expr<'a>>,
     ) -> Self {
         Switch {
             condition,
@@ -760,30 +755,30 @@ impl<'a> Switch<'a> {
     }
 
     #[must_use]
-    pub fn condition(&self) -> &Arc<Expr<'a>> {
+    pub fn condition(&self) -> &Expr<'a> {
         &self.condition
     }
 
-    pub fn set_condition(&mut self, condition: Arc<Expr<'a>>) {
+    pub fn set_condition(&mut self, condition: Expr<'a>) {
         self.condition = condition;
     }
 
     #[must_use]
-    pub fn cases(&self) -> &[(Arc<Expr<'a>>, Arc<Expr<'a>>)] {
+    pub fn cases(&self) -> &[(Expr<'a>, Expr<'a>)] {
         &self.cases
     }
 
     #[must_use]
-    pub fn cases_mut(&mut self) -> &mut Vec<(Arc<Expr<'a>>, Arc<Expr<'a>>)> {
+    pub fn cases_mut(&mut self) -> &mut Vec<(Expr<'a>, Expr<'a>)> {
         &mut self.cases
     }
 
     #[must_use]
-    pub fn default_case(&self) -> Option<&Arc<Expr<'a>>> {
+    pub fn default_case(&self) -> Option<&Expr<'a>> {
         self.default_case.as_ref()
     }
 
-    pub fn set_default_case(&mut self, default_case: Option<Arc<Expr<'a>>>) {
+    pub fn set_default_case(&mut self, default_case: Option<Expr<'a>>) {
         self.default_case = default_case;
     }
 }
@@ -832,38 +827,38 @@ impl<'a> Continue<'a> {
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Return<'a> {
-    value: Option<Arc<Expr<'a>>>,
+    value: Option<Expr<'a>>,
 }
 
 impl<'a> Return<'a> {
     #[must_use]
-    pub(crate) fn new(value: Option<Arc<Expr<'a>>>) -> Self {
+    pub(crate) fn new(value: Option<Expr<'a>>) -> Self {
         Return { value }
     }
 
     #[must_use]
-    pub fn value(&self) -> Option<Arc<Expr<'a>>> {
+    pub fn value(&self) -> Option<Expr<'a>> {
         self.value.clone()
     }
 
-    pub fn set_value(&mut self, value: Option<Arc<Expr<'a>>>) {
+    pub fn set_value(&mut self, value: Option<Expr<'a>>) {
         self.value = value;
     }
 }
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct ForEach<'a> {
-    iterable: Arc<Expr<'a>>,
+    iterable: Expr<'a>,
     bindings: Vec<(&'a str, Option<Type<'a>>)>,
-    body: Arc<Expr<'a>>,
+    body: Expr<'a>,
 }
 
 impl<'a> ForEach<'a> {
     #[must_use]
     pub(crate) fn new(
         bindings: Vec<(&'a str, Option<Type<'a>>)>,
-        iterable: Arc<Expr<'a>>,
-        body: Arc<Expr<'a>>,
+        iterable: Expr<'a>,
+        body: Expr<'a>,
     ) -> Self {
         ForEach {
             iterable,
@@ -873,11 +868,11 @@ impl<'a> ForEach<'a> {
     }
 
     #[must_use]
-    pub fn iterable(&self) -> &Arc<Expr<'a>> {
+    pub fn iterable(&self) -> &Expr<'a> {
         &self.iterable
     }
 
-    pub fn set_iterable(&mut self, iterable: Arc<Expr<'a>>) {
+    pub fn set_iterable(&mut self, iterable: Expr<'a>) {
         self.iterable = iterable;
     }
 
@@ -892,63 +887,63 @@ impl<'a> ForEach<'a> {
     }
 
     #[must_use]
-    pub fn body(&self) -> &Arc<Expr<'a>> {
+    pub fn body(&self) -> &Expr<'a> {
         &self.body
     }
 
-    pub fn set_body(&mut self, body: Arc<Expr<'a>>) {
+    pub fn set_body(&mut self, body: Expr<'a>) {
         self.body = body;
     }
 }
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Await<'a> {
-    expression: Arc<Expr<'a>>,
+    expression: Expr<'a>,
 }
 
 impl<'a> Await<'a> {
     #[must_use]
-    pub(crate) fn new(expression: Arc<Expr<'a>>) -> Self {
+    pub(crate) fn new(expression: Expr<'a>) -> Self {
         Await { expression }
     }
 
     #[must_use]
-    pub fn expression(&self) -> &Arc<Expr<'a>> {
+    pub fn expression(&self) -> &Expr<'a> {
         &self.expression
     }
 
-    pub fn set_expression(&mut self, expression: Arc<Expr<'a>>) {
+    pub fn set_expression(&mut self, expression: Expr<'a>) {
         self.expression = expression;
     }
 }
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Assert<'a> {
-    condition: Arc<Expr<'a>>,
-    message: Option<Arc<Expr<'a>>>,
+    condition: Expr<'a>,
+    message: Option<Expr<'a>>,
 }
 
 impl<'a> Assert<'a> {
     #[must_use]
-    pub(crate) fn new(condition: Arc<Expr<'a>>, message: Option<Arc<Expr<'a>>>) -> Self {
+    pub(crate) fn new(condition: Expr<'a>, message: Option<Expr<'a>>) -> Self {
         Assert { condition, message }
     }
 
     #[must_use]
-    pub fn condition(&self) -> &Arc<Expr<'a>> {
+    pub fn condition(&self) -> &Expr<'a> {
         &self.condition
     }
 
-    pub fn set_condition(&mut self, condition: Arc<Expr<'a>>) {
+    pub fn set_condition(&mut self, condition: Expr<'a>) {
         self.condition = condition;
     }
 
     #[must_use]
-    pub fn message(&self) -> Option<&Arc<Expr<'a>>> {
+    pub fn message(&self) -> Option<&Expr<'a>> {
         self.message.as_ref()
     }
 
-    pub fn set_message(&mut self, message: Option<Arc<Expr<'a>>>) {
+    pub fn set_message(&mut self, message: Option<Expr<'a>>) {
         self.message = message;
     }
 }

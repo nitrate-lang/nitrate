@@ -8,7 +8,6 @@ use super::types::{
 };
 use crate::lexical::{BStringData, StringData};
 use std::rc::Rc;
-use std::sync::Arc;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Expr<'a> {
@@ -43,36 +42,36 @@ pub enum Expr<'a> {
     HasParenthesesType(Rc<Type<'a>>),
 
     Discard,
-    HasParentheses(Arc<Expr<'a>>),
+    HasParentheses(Rc<Expr<'a>>),
 
     BooleanLit(bool),
-    IntegerLit(IntegerLit),
+    IntegerLit(Rc<IntegerLit>),
     FloatLit(f64),
-    StringLit(StringData<'a>),
-    BStringLit(BStringData<'a>),
-    ListLit(ListLit<'a>),
-    ObjectLit(ObjectLit<'a>),
+    StringLit(Rc<StringData<'a>>),
+    BStringLit(Rc<BStringData<'a>>),
+    ListLit(Rc<ListLit<'a>>),
+    ObjectLit(Rc<ObjectLit<'a>>),
 
-    UnaryExpr(UnaryExpr<'a>),
-    BinExpr(BinExpr<'a>),
-    Statement(Statement<'a>),
-    Block(Block<'a>),
+    UnaryExpr(Rc<UnaryExpr<'a>>),
+    BinExpr(Rc<BinExpr<'a>>),
+    Statement(Rc<Statement<'a>>),
+    Block(Rc<Block<'a>>),
 
-    Function(Function<'a>),
-    Variable(Variable<'a>),
-    Identifier(&'a str),
-    Scope(Scope<'a>),
+    Function(Rc<Function<'a>>),
+    Variable(Rc<Variable<'a>>),
+    Identifier(Rc<&'a str>),
+    Scope(Rc<Scope<'a>>),
 
-    If(If<'a>),
-    WhileLoop(WhileLoop<'a>),
-    DoWhileLoop(DoWhileLoop<'a>),
-    Switch(Switch<'a>),
-    Break(Break<'a>),
-    Continue(Continue<'a>),
-    Return(Return<'a>),
-    ForEach(ForEach<'a>),
-    Await(Await<'a>),
-    Assert(Assert<'a>),
+    If(Rc<If<'a>>),
+    WhileLoop(Rc<WhileLoop<'a>>),
+    DoWhileLoop(Rc<DoWhileLoop<'a>>),
+    Switch(Rc<Switch<'a>>),
+    Break(Rc<Break<'a>>),
+    Continue(Rc<Continue<'a>>),
+    Return(Rc<Return<'a>>),
+    ForEach(Rc<ForEach<'a>>),
+    Await(Rc<Await<'a>>),
+    Assert(Rc<Assert<'a>>),
 }
 
 #[derive(Debug, Clone, PartialEq)]

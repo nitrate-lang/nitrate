@@ -1,7 +1,6 @@
 #[allow(unused_imports)]
 use crate::parsetree::{Builder, Expr, nodes, nodes::QualifiedScope};
 use std::collections::HashMap;
-use std::sync::Arc;
 
 impl std::fmt::Display for QualifiedScope<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -11,7 +10,7 @@ impl std::fmt::Display for QualifiedScope<'_> {
 
 #[derive(Debug, Clone, Default)]
 pub struct SymbolTable<'a> {
-    scopes: HashMap<QualifiedScope<'a>, HashMap<&'a str, Arc<Expr<'a>>>>,
+    scopes: HashMap<QualifiedScope<'a>, HashMap<&'a str, Expr<'a>>>,
 }
 
 impl<'a> SymbolTable<'a> {
@@ -19,7 +18,7 @@ impl<'a> SymbolTable<'a> {
         &mut self,
         symbol_scope: QualifiedScope<'a>,
         symbol_name: &'a str,
-        symbol: Arc<Expr<'a>>,
+        symbol: Expr<'a>,
     ) -> bool {
         self.scopes
             .entry(symbol_scope.clone())
@@ -33,7 +32,7 @@ impl<'a> SymbolTable<'a> {
         &self,
         current_scope: QualifiedScope<'a>,
         symbol_name: &str,
-    ) -> Option<Arc<Expr<'a>>> {
+    ) -> Option<Expr<'a>> {
         let mut search_scope = current_scope;
 
         loop {

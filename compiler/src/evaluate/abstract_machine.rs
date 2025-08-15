@@ -43,7 +43,7 @@
 // }
 
 // pub type Function<'a, 'storage> =
-//     fn(&mut AbstractMachine<'a, 'storage>) -> Result<Arc<Expr<'a>>, FunctionError>;
+//     fn(&mut AbstractMachine<'a, 'storage>) -> Result<Expr<'a>, FunctionError>;
 
 // pub struct AbstractMachine<'a, 'storage>
 // where
@@ -108,7 +108,7 @@
 //         self.provided_functions.insert(name, callback)
 //     }
 
-//     pub fn evaluate(&mut self, storage: &mut Storage<'a>, expression: Arc<Expr<'a>>) -> Arc<Expr<'a>> {
+//     pub fn evaluate(&mut self, storage: &mut Storage<'a>, expression: Expr<'a>) -> Expr<'a> {
 //         let s = storage;
 
 //         match expression.get() {

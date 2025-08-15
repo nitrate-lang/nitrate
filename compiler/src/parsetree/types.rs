@@ -1,22 +1,21 @@
 use super::expression::FunctionParameter;
 use super::node::{Expr, Type};
-use std::sync::Arc;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct RefinementType<'a> {
     base: Type<'a>,
-    width: Option<Arc<Expr<'a>>>,
-    min: Option<Arc<Expr<'a>>>,
-    max: Option<Arc<Expr<'a>>>,
+    width: Option<Expr<'a>>,
+    min: Option<Expr<'a>>,
+    max: Option<Expr<'a>>,
 }
 
 impl<'a> RefinementType<'a> {
     #[must_use]
     pub(crate) fn new(
         base: Type<'a>,
-        width: Option<Arc<Expr<'a>>>,
-        min: Option<Arc<Expr<'a>>>,
-        max: Option<Arc<Expr<'a>>>,
+        width: Option<Expr<'a>>,
+        min: Option<Expr<'a>>,
+        max: Option<Expr<'a>>,
     ) -> Self {
         RefinementType {
             base,
@@ -32,17 +31,17 @@ impl<'a> RefinementType<'a> {
     }
 
     #[must_use]
-    pub fn width(&self) -> Option<Arc<Expr<'a>>> {
+    pub fn width(&self) -> Option<Expr<'a>> {
         self.width.clone()
     }
 
     #[must_use]
-    pub fn min(&self) -> Option<Arc<Expr<'a>>> {
+    pub fn min(&self) -> Option<Expr<'a>> {
         self.min.clone()
     }
 
     #[must_use]
-    pub fn max(&self) -> Option<Arc<Expr<'a>>> {
+    pub fn max(&self) -> Option<Expr<'a>> {
         self.max.clone()
     }
 }
@@ -72,12 +71,12 @@ impl<'a> TupleType<'a> {
 #[derive(Debug, Clone, PartialEq)]
 pub struct ArrayType<'a> {
     element: Type<'a>,
-    count: Arc<Expr<'a>>,
+    count: Expr<'a>,
 }
 
 impl<'a> ArrayType<'a> {
     #[must_use]
-    pub(crate) fn new(element: Type<'a>, count: Arc<Expr<'a>>) -> Self {
+    pub(crate) fn new(element: Type<'a>, count: Expr<'a>) -> Self {
         ArrayType { element, count }
     }
 
@@ -87,7 +86,7 @@ impl<'a> ArrayType<'a> {
     }
 
     #[must_use]
-    pub fn count(&self) -> Arc<Expr<'a>> {
+    pub fn count(&self) -> Expr<'a> {
         self.count.clone()
     }
 }
@@ -136,7 +135,7 @@ impl<'a> SliceType<'a> {
 pub struct FunctionType<'a> {
     parameters: Vec<FunctionParameter<'a>>,
     return_type: Type<'a>,
-    attributes: Vec<Arc<Expr<'a>>>,
+    attributes: Vec<Expr<'a>>,
 }
 
 impl<'a> FunctionType<'a> {
@@ -144,7 +143,7 @@ impl<'a> FunctionType<'a> {
     pub(crate) fn new(
         parameters: Vec<FunctionParameter<'a>>,
         return_type: Type<'a>,
-        attributes: Vec<Arc<Expr<'a>>>,
+        attributes: Vec<Expr<'a>>,
     ) -> Self {
         FunctionType {
             parameters,
@@ -164,7 +163,7 @@ impl<'a> FunctionType<'a> {
     }
 
     #[must_use]
-    pub fn attributes(&self) -> &[Arc<Expr<'a>>] {
+    pub fn attributes(&self) -> &[Expr<'a>] {
         &self.attributes
     }
 }
@@ -218,12 +217,12 @@ impl<'a> UnmanagedRefType<'a> {
 #[derive(Debug, Clone, PartialEq)]
 pub struct GenericType<'a> {
     base: Type<'a>,
-    args: Vec<(&'a str, Arc<Expr<'a>>)>,
+    args: Vec<(&'a str, Expr<'a>)>,
 }
 
 impl<'a> GenericType<'a> {
     #[must_use]
-    pub(crate) fn new(base: Type<'a>, args: Vec<(&'a str, Arc<Expr<'a>>)>) -> Self {
+    pub(crate) fn new(base: Type<'a>, args: Vec<(&'a str, Expr<'a>)>) -> Self {
         GenericType { base, args }
     }
 
@@ -233,7 +232,7 @@ impl<'a> GenericType<'a> {
     }
 
     #[must_use]
-    pub fn arguments(&self) -> &[(&'a str, Arc<Expr<'a>>)] {
+    pub fn arguments(&self) -> &[(&'a str, Expr<'a>)] {
         &self.args
     }
 }

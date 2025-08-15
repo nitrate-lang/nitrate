@@ -2,7 +2,6 @@ use super::parse::Parser;
 use crate::lexical::{Keyword, Name, Op, Punct, Token};
 use crate::parsetree::{Builder, Expr, Type, nodes::FunctionParameter};
 use log::{error, info};
-use std::sync::Arc;
 
 #[allow(unused_imports)]
 use crate::lexical::Lexer;
@@ -11,9 +10,9 @@ use crate::syntax::SymbolTable;
 
 #[derive(Default)]
 struct RefinementOptions<'a> {
-    minimum: Option<Arc<Expr<'a>>>,
-    maximum: Option<Arc<Expr<'a>>>,
-    width: Option<Arc<Expr<'a>>>,
+    minimum: Option<Expr<'a>>,
+    maximum: Option<Expr<'a>>,
+    width: Option<Expr<'a>>,
 }
 
 impl RefinementOptions<'_> {
@@ -23,7 +22,7 @@ impl RefinementOptions<'_> {
 }
 
 impl<'a> Parser<'a, '_> {
-    fn parse_refinement_range(&mut self) -> Option<(Option<Arc<Expr<'a>>>, Option<Arc<Expr<'a>>>)> {
+    fn parse_refinement_range(&mut self) -> Option<(Option<Expr<'a>>, Option<Expr<'a>>)> {
         assert!(self.lexer.peek_t() == Token::Punct(Punct::LeftBracket));
         self.lexer.skip_tok();
 
@@ -108,7 +107,7 @@ impl<'a> Parser<'a, '_> {
         })
     }
 
-    fn parse_generic_argument(&mut self) -> Option<(&'a str, Arc<Expr<'a>>)> {
+    fn parse_generic_argument(&mut self) -> Option<(&'a str, Expr<'a>)> {
         let mut argument_name: &'a str = "";
 
         if let Token::Name(name) = self.lexer.peek_t() {
@@ -139,7 +138,7 @@ impl<'a> Parser<'a, '_> {
                 self.parse_expression()
             }
 
-            _ => self.parse_type().map(|x| Arc::new(x.into())),
+            _ => self.parse_type().map(|x| x.into()),
         };
 
         let Some(argument_value) = type_or_expression else {
@@ -155,7 +154,7 @@ impl<'a> Parser<'a, '_> {
         Some((argument_name, argument_value))
     }
 
-    fn parse_generic_arguments(&mut self) -> Option<Vec<(&'a str, Arc<Expr<'a>>)>> {
+    fn parse_generic_arguments(&mut self) -> Option<Vec<(&'a str, Expr<'a>)>> {
         assert!(self.lexer.peek_t() == Token::Op(Op::LogicLt));
         self.lexer.skip_tok();
 

@@ -5,7 +5,7 @@ use crate::parsetree::Expr;
 use log::error;
 use spdx::{LicenseId, license_id};
 use std::collections::HashSet;
-use std::sync::Arc;
+use std::ops::Deref;
 
 pub(crate) struct SourcePreamble<'a> {
     pub language_version: (u32, u32),
@@ -15,7 +15,7 @@ pub(crate) struct SourcePreamble<'a> {
 }
 
 impl<'a> Parser<'a, '_> {
-    fn parse_macro_prefix(&mut self) -> Option<(&'a str, Vec<Arc<Expr<'a>>>)> {
+    fn parse_macro_prefix(&mut self) -> Option<(&'a str, Vec<Expr<'a>>)> {
         while self.lexer.skip_if(&Token::Punct(Punct::Semicolon)) {}
         if !self.lexer.skip_if(&Token::Punct(Punct::AtSign)) {
             return None;
@@ -87,10 +87,7 @@ impl<'a> Parser<'a, '_> {
         pair.0.zip(pair.1)
     }
 
-    fn parse_preamble_version_macro(
-        &mut self,
-        macro_args: Vec<Arc<Expr<'a>>>,
-    ) -> Option<(u32, u32)> {
+    fn parse_preamble_version_macro(&mut self, macro_args: Vec<Expr<'a>>) -> Option<(u32, u32)> {
         if macro_args.len() != 1 {
             self.set_failed_bit();
             error!(
@@ -100,7 +97,7 @@ impl<'a> Parser<'a, '_> {
             return None;
         }
 
-        let Expr::FloatLit(float) = *macro_args[0] else {
+        let Expr::FloatLit(float) = macro_args[0] else {
             self.set_failed_bit();
             error!(
                 "[P????]: Expected a float literal (e.g. '1.0') for 'nitrate' (language version) macro argument\n--> {}",
@@ -125,7 +122,7 @@ impl<'a> Parser<'a, '_> {
 
     fn parse_preamble_copyright_macro(
         &mut self,
-        macro_args: Vec<Arc<Expr<'a>>>,
+        macro_args: Vec<Expr<'a>>,
     ) -> Option<CopyrightInfo<'a>> {
         if macro_args.len() != 2 {
             self.set_failed_bit();
@@ -136,7 +133,7 @@ impl<'a> Parser<'a, '_> {
             return None;
         }
 
-        let Expr::IntegerLit(copyright_year) = &*macro_args[0] else {
+        let Expr::IntegerLit(copyright_year) = &macro_args[0] else {
             self.set_failed_bit();
             error!(
                 "[P????]: Unable to parse @copyright; expected an integer literal for the first argument (copyright year)\n--> {}",
@@ -145,7 +142,7 @@ impl<'a> Parser<'a, '_> {
             return None;
         };
 
-        let Expr::StringLit(holder_name) = &*macro_args[1] else {
+        let Expr::StringLit(holder_name) = &macro_args[1] else {
             self.set_failed_bit();
             error!(
                 "[P????]: Unable to parse @copyright; expected a string literal for the second argument (copyright holder's name)\n--> {}",
@@ -156,15 +153,12 @@ impl<'a> Parser<'a, '_> {
         };
 
         Some(CopyrightInfo::new(
-            holder_name.to_owned(),
+            holder_name.deref().to_owned(),
             copyright_year.get_u128() as u16,
         ))
     }
 
-    fn parse_preamble_license_macro(
-        &mut self,
-        macro_args: Vec<Arc<Expr<'a>>>,
-    ) -> Option<LicenseId> {
+    fn parse_preamble_license_macro(&mut self, macro_args: Vec<Expr<'a>>) -> Option<LicenseId> {
         if macro_args.len() != 1 {
             self.set_failed_bit();
             error!(
@@ -174,7 +168,7 @@ impl<'a> Parser<'a, '_> {
             return None;
         }
 
-        let Expr::StringLit(license_name) = &*macro_args[0] else {
+        let Expr::StringLit(license_name) = &macro_args[0] else {
             self.set_failed_bit();
             error!(
                 "[P????]: Expected a string literal (SPDX license ID) for 'license' macro argument\n--> {}",
@@ -199,7 +193,7 @@ impl<'a> Parser<'a, '_> {
 
     fn parse_preamble_insource_macro(
         &mut self,
-        macro_args: Vec<Arc<Expr<'a>>>,
+        macro_args: Vec<Expr<'a>>,
     ) -> Option<HashSet<StringData<'a>>> {
         if macro_args.len() != 1 {
             self.set_failed_bit();
@@ -210,7 +204,7 @@ impl<'a> Parser<'a, '_> {
             return None;
         }
 
-        let Expr::ListLit(list) = &*macro_args[0] else {
+        let Expr::ListLit(list) = &macro_args[0] else {
             self.set_failed_bit();
             error!(
                 "[P????]: Expected a list of strings for 'insource' macro argument\n--> {}",
@@ -222,7 +216,7 @@ impl<'a> Parser<'a, '_> {
 
         let mut config = HashSet::new();
         for element in list.elements() {
-            let Expr::StringLit(option) = &**element else {
+            let Expr::StringLit(option) = &element else {
                 self.set_failed_bit();
                 error!(
                     "[P????]: Expected a string literal in the list for 'insource' macro argument\n--> {}",
@@ -232,7 +226,7 @@ impl<'a> Parser<'a, '_> {
                 return None;
             };
 
-            config.insert(option.to_owned());
+            config.insert(option.deref().to_owned());
         }
 
         Some(config)

@@ -2,7 +2,6 @@ use crate::lexical::StringData;
 use crate::parsetree::Expr;
 use spdx::LicenseId;
 use std::collections::HashSet;
-use std::sync::Arc;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct CopyrightInfo<'a> {
@@ -35,7 +34,7 @@ pub struct SourceModel<'a> {
     copyright: Option<CopyrightInfo<'a>>,
     license_id: Option<LicenseId>,
     insource_config: HashSet<StringData<'a>>,
-    tree: Arc<Expr<'a>>,
+    tree: Expr<'a>,
     any_errors: bool,
 }
 
@@ -45,7 +44,7 @@ impl<'a> SourceModel<'a> {
         copyright: Option<CopyrightInfo<'a>>,
         license_id: Option<LicenseId>,
         insource_config: HashSet<StringData<'a>>,
-        tree: Arc<Expr<'a>>,
+        tree: Expr<'a>,
         any_errors: bool,
     ) -> Self {
         SourceModel {
@@ -79,7 +78,7 @@ impl<'a> SourceModel<'a> {
     }
 
     #[must_use]
-    pub fn tree(&self) -> Arc<Expr<'a>> {
+    pub fn tree(&self) -> Expr<'a> {
         self.tree.clone()
     }
 
