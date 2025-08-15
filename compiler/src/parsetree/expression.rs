@@ -118,7 +118,7 @@ pub enum TypeKind {
     OpaqueType,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum ExprOwned<'a> {
     Bool,
     UInt8,
@@ -182,7 +182,7 @@ pub enum ExprOwned<'a> {
     Assert(Assert<'a>),
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum TypeOwned<'a> {
     Bool,
     UInt8,
@@ -213,166 +213,6 @@ pub enum TypeOwned<'a> {
     UnmanagedRefType(UnmanagedRefType<'a>),
     GenericType(GenericType<'a>),
     OpaqueType(StringData<'a>),
-}
-
-#[derive(Clone, Copy)]
-pub enum TypeRef<'storage, 'a> {
-    Bool,
-    UInt8,
-    UInt16,
-    UInt32,
-    UInt64,
-    UInt128,
-    Int8,
-    Int16,
-    Int32,
-    Int64,
-    Int128,
-    Float8,
-    Float16,
-    Float32,
-    Float64,
-    Float128,
-
-    InferType,
-    TypeName(&'a str),
-    RefinementType(&'storage RefinementType<'a>),
-    TupleType(&'storage TupleType<'a>),
-    ArrayType(&'storage ArrayType<'a>),
-    MapType(&'storage MapType<'a>),
-    SliceType(&'storage SliceType<'a>),
-    FunctionType(&'storage FunctionType<'a>),
-    ManagedRefType(&'storage ManagedRefType<'a>),
-    UnmanagedRefType(&'storage UnmanagedRefType<'a>),
-    GenericType(&'storage GenericType<'a>),
-    OpaqueType(&'storage StringData<'a>),
-}
-
-#[derive(Clone, Copy)]
-pub enum ExprRef<'storage, 'a> {
-    Bool,
-    UInt8,
-    UInt16,
-    UInt32,
-    UInt64,
-    UInt128,
-    Int8,
-    Int16,
-    Int32,
-    Int64,
-    Int128,
-    Float8,
-    Float16,
-    Float32,
-    Float64,
-    Float128,
-
-    InferType,
-    TypeName(&'a str),
-    RefinementType(&'storage RefinementType<'a>),
-    TupleType(&'storage TupleType<'a>),
-    ArrayType(&'storage ArrayType<'a>),
-    MapType(&'storage MapType<'a>),
-    SliceType(&'storage SliceType<'a>),
-    FunctionType(&'storage FunctionType<'a>),
-    ManagedRefType(&'storage ManagedRefType<'a>),
-    UnmanagedRefType(&'storage UnmanagedRefType<'a>),
-    GenericType(&'storage GenericType<'a>),
-    OpaqueType(&'storage StringData<'a>),
-
-    Discard,
-
-    BooleanLit(bool),
-    IntegerLit(&'storage IntegerLit),
-    FloatLit(f64),
-    StringLit(&'storage StringData<'a>),
-    BStringLit(&'storage BStringData<'a>),
-    ListLit(&'storage ListLit<'a>),
-    ObjectLit(&'storage ObjectLit<'a>),
-
-    UnaryExpr(&'storage UnaryExpr<'a>),
-    BinExpr(&'storage BinExpr<'a>),
-    Statement(&'storage Statement<'a>),
-    Block(&'storage Block<'a>),
-
-    Function(&'storage Function<'a>),
-    Variable(&'storage Variable<'a>),
-    Identifier(&'a str),
-    Scope(&'storage Scope<'a>),
-
-    If(&'storage If<'a>),
-    WhileLoop(&'storage WhileLoop<'a>),
-    DoWhileLoop(&'storage DoWhileLoop<'a>),
-    Switch(&'storage Switch<'a>),
-    Break(&'storage Break<'a>),
-    Continue(&'storage Continue<'a>),
-    Return(&'storage Return<'a>),
-    ForEach(&'storage ForEach<'a>),
-    Await(&'storage Await<'a>),
-    Assert(&'storage Assert<'a>),
-}
-
-pub enum ExprRefMut<'storage, 'a> {
-    Bool,
-    UInt8,
-    UInt16,
-    UInt32,
-    UInt64,
-    UInt128,
-    Int8,
-    Int16,
-    Int32,
-    Int64,
-    Int128,
-    Float8,
-    Float16,
-    Float32,
-    Float64,
-    Float128,
-
-    InferType,
-    TypeName(&'a str),
-    RefinementType(&'storage RefinementType<'a>),
-    TupleType(&'storage TupleType<'a>),
-    ArrayType(&'storage ArrayType<'a>),
-    MapType(&'storage MapType<'a>),
-    SliceType(&'storage SliceType<'a>),
-    FunctionType(&'storage FunctionType<'a>),
-    ManagedRefType(&'storage ManagedRefType<'a>),
-    UnmanagedRefType(&'storage UnmanagedRefType<'a>),
-    GenericType(&'storage GenericType<'a>),
-    OpaqueType(&'storage StringData<'a>),
-
-    Discard,
-
-    BooleanLit(bool),
-    IntegerLit(&'storage IntegerLit),
-    FloatLit(f64),
-    StringLit(&'storage StringData<'a>),
-    BStringLit(&'storage BStringData<'a>),
-    ListLit(&'storage mut ListLit<'a>),
-    ObjectLit(&'storage mut ObjectLit<'a>),
-
-    UnaryExpr(&'storage mut UnaryExpr<'a>),
-    BinExpr(&'storage mut BinExpr<'a>),
-    Statement(&'storage mut Statement<'a>),
-    Block(&'storage mut Block<'a>),
-
-    Function(&'storage mut Function<'a>),
-    Variable(&'storage mut Variable<'a>),
-    Identifier(&'a str),
-    Scope(&'storage mut Scope<'a>),
-
-    If(&'storage mut If<'a>),
-    WhileLoop(&'storage mut WhileLoop<'a>),
-    DoWhileLoop(&'storage mut DoWhileLoop<'a>),
-    Switch(&'storage mut Switch<'a>),
-    Break(&'storage mut Break<'a>),
-    Continue(&'storage mut Continue<'a>),
-    Return(&'storage mut Return<'a>),
-    ForEach(&'storage mut ForEach<'a>),
-    Await(&'storage mut Await<'a>),
-    Assert(&'storage mut Assert<'a>),
 }
 
 impl TryInto<TypeKind> for ExprKind {
@@ -644,78 +484,6 @@ impl<'a> From<TypeOwned<'a>> for ExprOwned<'a> {
             TypeOwned::UnmanagedRefType(x) => ExprOwned::UnmanagedRefType(x),
             TypeOwned::GenericType(x) => ExprOwned::GenericType(x),
             TypeOwned::OpaqueType(x) => ExprOwned::OpaqueType(x),
-        }
-    }
-}
-
-impl<'storage, 'a> From<TypeRef<'storage, 'a>> for ExprRef<'storage, 'a> {
-    fn from(val: TypeRef<'storage, 'a>) -> ExprRef<'storage, 'a> {
-        match val {
-            TypeRef::Bool => ExprRef::Bool,
-            TypeRef::UInt8 => ExprRef::UInt8,
-            TypeRef::UInt16 => ExprRef::UInt16,
-            TypeRef::UInt32 => ExprRef::UInt32,
-            TypeRef::UInt64 => ExprRef::UInt64,
-            TypeRef::UInt128 => ExprRef::UInt128,
-            TypeRef::Int8 => ExprRef::Int8,
-            TypeRef::Int16 => ExprRef::Int16,
-            TypeRef::Int32 => ExprRef::Int32,
-            TypeRef::Int64 => ExprRef::Int64,
-            TypeRef::Int128 => ExprRef::Int128,
-            TypeRef::Float8 => ExprRef::Float8,
-            TypeRef::Float16 => ExprRef::Float16,
-            TypeRef::Float32 => ExprRef::Float32,
-            TypeRef::Float64 => ExprRef::Float64,
-            TypeRef::Float128 => ExprRef::Float128,
-
-            TypeRef::InferType => ExprRef::InferType,
-            TypeRef::TypeName(x) => ExprRef::TypeName(x),
-            TypeRef::RefinementType(x) => ExprRef::RefinementType(x),
-            TypeRef::TupleType(x) => ExprRef::TupleType(x),
-            TypeRef::ArrayType(x) => ExprRef::ArrayType(x),
-            TypeRef::MapType(x) => ExprRef::MapType(x),
-            TypeRef::SliceType(x) => ExprRef::SliceType(x),
-            TypeRef::FunctionType(x) => ExprRef::FunctionType(x),
-            TypeRef::ManagedRefType(x) => ExprRef::ManagedRefType(x),
-            TypeRef::UnmanagedRefType(x) => ExprRef::UnmanagedRefType(x),
-            TypeRef::GenericType(x) => ExprRef::GenericType(x),
-            TypeRef::OpaqueType(x) => ExprRef::OpaqueType(x),
-        }
-    }
-}
-
-impl<'storage, 'a> From<TypeRef<'storage, 'a>> for ExprRefMut<'storage, 'a> {
-    fn from(val: TypeRef<'storage, 'a>) -> ExprRefMut<'storage, 'a> {
-        match val {
-            TypeRef::Bool => ExprRefMut::Bool,
-            TypeRef::UInt8 => ExprRefMut::UInt8,
-            TypeRef::UInt16 => ExprRefMut::UInt16,
-            TypeRef::UInt32 => ExprRefMut::UInt32,
-            TypeRef::UInt64 => ExprRefMut::UInt64,
-            TypeRef::UInt128 => ExprRefMut::UInt128,
-            TypeRef::Int8 => ExprRefMut::Int8,
-            TypeRef::Int16 => ExprRefMut::Int16,
-            TypeRef::Int32 => ExprRefMut::Int32,
-            TypeRef::Int64 => ExprRefMut::Int64,
-            TypeRef::Int128 => ExprRefMut::Int128,
-            TypeRef::Float8 => ExprRefMut::Float8,
-            TypeRef::Float16 => ExprRefMut::Float16,
-            TypeRef::Float32 => ExprRefMut::Float32,
-            TypeRef::Float64 => ExprRefMut::Float64,
-            TypeRef::Float128 => ExprRefMut::Float128,
-
-            TypeRef::InferType => ExprRefMut::InferType,
-            TypeRef::TypeName(x) => ExprRefMut::TypeName(x),
-            TypeRef::RefinementType(x) => ExprRefMut::RefinementType(x),
-            TypeRef::TupleType(x) => ExprRefMut::TupleType(x),
-            TypeRef::ArrayType(x) => ExprRefMut::ArrayType(x),
-            TypeRef::MapType(x) => ExprRefMut::MapType(x),
-            TypeRef::SliceType(x) => ExprRefMut::SliceType(x),
-            TypeRef::FunctionType(x) => ExprRefMut::FunctionType(x),
-            TypeRef::ManagedRefType(x) => ExprRefMut::ManagedRefType(x),
-            TypeRef::UnmanagedRefType(x) => ExprRefMut::UnmanagedRefType(x),
-            TypeRef::GenericType(x) => ExprRefMut::GenericType(x),
-            TypeRef::OpaqueType(x) => ExprRefMut::OpaqueType(x),
         }
     }
 }

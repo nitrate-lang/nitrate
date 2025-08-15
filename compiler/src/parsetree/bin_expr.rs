@@ -1,6 +1,7 @@
-use super::storage::ExprKey;
+use super::expression::ExprOwned;
+use std::sync::Arc;
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub enum BinExprOp {
     /*----------------------------------------------------------------*
      * Arithmetic Operators                                           *
@@ -77,16 +78,20 @@ pub enum BinExprOp {
     Spaceship, /* '<=>':        "Spaceship Operator" */
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct BinExpr<'a> {
-    left: ExprKey<'a>,
-    right: ExprKey<'a>,
+    left: Arc<ExprOwned<'a>>,
+    right: Arc<ExprOwned<'a>>,
     operator: BinExprOp,
 }
 
 impl<'a> BinExpr<'a> {
     #[must_use]
-    pub(crate) fn new(left: ExprKey<'a>, operator: BinExprOp, right: ExprKey<'a>) -> Self {
+    pub(crate) fn new(
+        left: Arc<ExprOwned<'a>>,
+        operator: BinExprOp,
+        right: Arc<ExprOwned<'a>>,
+    ) -> Self {
         BinExpr {
             left,
             right,
@@ -95,8 +100,8 @@ impl<'a> BinExpr<'a> {
     }
 
     #[must_use]
-    pub fn left(&self) -> ExprKey<'a> {
-        self.left
+    pub fn left(&self) -> Arc<ExprOwned<'a>> {
+        self.left.clone()
     }
 
     #[must_use]
@@ -105,7 +110,7 @@ impl<'a> BinExpr<'a> {
     }
 
     #[must_use]
-    pub fn right(&self) -> ExprKey<'a> {
-        self.right
+    pub fn right(&self) -> Arc<ExprOwned<'a>> {
+        self.right.clone()
     }
 }

@@ -43,7 +43,7 @@
 // }
 
 // pub type Function<'a, 'storage> =
-//     fn(&mut AbstractMachine<'a, 'storage>) -> Result<ExprKey<'a>, FunctionError>;
+//     fn(&mut AbstractMachine<'a, 'storage>) -> Result<Arc<ExprOwned<'a>>, FunctionError>;
 
 // pub struct AbstractMachine<'a, 'storage>
 // where
@@ -54,7 +54,7 @@
 //     tasks: Vec<Task<'a>>,
 //     current_task: usize,
 
-//     already_evaluated_types: HashSet<TypeKey<'a>>,
+//     already_evaluated_types: HashSet<Rc<TypeOwned<'a>>>,
 // }
 
 // impl<'a, 'storage> AbstractMachine<'a, 'storage> {
@@ -108,7 +108,7 @@
 //         self.provided_functions.insert(name, callback)
 //     }
 
-//     pub fn evaluate(&mut self, storage: &mut Storage<'a>, expression: ExprKey<'a>) -> ExprKey<'a> {
+//     pub fn evaluate(&mut self, storage: &mut Storage<'a>, expression: Arc<ExprOwned<'a>>) -> Arc<ExprOwned<'a>> {
 //         let s = storage;
 
 //         match expression.get() {
@@ -273,8 +273,8 @@
 //     pub fn evaluate_type(
 //         &mut self,
 //         storage: &mut Storage<'a>,
-//         type_expression: TypeKey<'a>,
-//     ) -> TypeKey<'a> {
+//         type_expression: Rc<TypeOwned<'a>>,
+//     ) -> Rc<TypeOwned<'a>> {
 //         let s = storage;
 
 //         if self.already_evaluated_types.contains(&type_expression) {

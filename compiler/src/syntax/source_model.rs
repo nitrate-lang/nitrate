@@ -1,7 +1,8 @@
 use crate::lexical::StringData;
-use crate::parsetree::ExprKey;
+use crate::parsetree::ExprOwned;
 use spdx::LicenseId;
 use std::collections::HashSet;
+use std::sync::Arc;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct CopyrightInfo<'a> {
@@ -34,7 +35,7 @@ pub struct SourceModel<'a> {
     copyright: Option<CopyrightInfo<'a>>,
     license_id: Option<LicenseId>,
     insource_config: HashSet<StringData<'a>>,
-    tree: ExprKey<'a>,
+    tree: Arc<ExprOwned<'a>>,
     any_errors: bool,
 }
 
@@ -44,7 +45,7 @@ impl<'a> SourceModel<'a> {
         copyright: Option<CopyrightInfo<'a>>,
         license_id: Option<LicenseId>,
         insource_config: HashSet<StringData<'a>>,
-        tree: ExprKey<'a>,
+        tree: Arc<ExprOwned<'a>>,
         any_errors: bool,
     ) -> Self {
         SourceModel {
@@ -78,8 +79,8 @@ impl<'a> SourceModel<'a> {
     }
 
     #[must_use]
-    pub fn tree(&self) -> ExprKey<'a> {
-        self.tree
+    pub fn tree(&self) -> Arc<ExprOwned<'a>> {
+        self.tree.clone()
     }
 
     #[must_use]

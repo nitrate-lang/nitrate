@@ -1,7 +1,7 @@
 use crate::lexical::IntegerKind;
 use apint::UInt;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct IntegerLit {
     value: UInt,
     kind: IntegerKind,

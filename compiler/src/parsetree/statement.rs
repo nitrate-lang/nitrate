@@ -1,27 +1,28 @@
-use super::storage::ExprKey;
+use super::expression::ExprOwned;
+use std::sync::Arc;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Statement<'a> {
-    expr: ExprKey<'a>,
+    expr: Arc<ExprOwned<'a>>,
 }
 
 impl<'a> Statement<'a> {
     #[must_use]
-    pub(crate) fn new(expr: ExprKey<'a>) -> Self {
+    pub(crate) fn new(expr: Arc<ExprOwned<'a>>) -> Self {
         Statement { expr }
     }
 
     #[must_use]
-    pub fn into_inner(self) -> ExprKey<'a> {
+    pub fn into_inner(self) -> Arc<ExprOwned<'a>> {
         self.expr
     }
 
     #[must_use]
-    pub fn get(&self) -> ExprKey<'a> {
-        self.expr
+    pub fn get(&self) -> Arc<ExprOwned<'a>> {
+        self.expr.clone()
     }
 
-    pub fn set(&mut self, expr: ExprKey<'a>) {
+    pub fn set(&mut self, expr: Arc<ExprOwned<'a>>) {
         self.expr = expr;
     }
 }

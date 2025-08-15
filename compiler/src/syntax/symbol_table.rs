@@ -1,7 +1,8 @@
 #[allow(unused_imports)]
-use crate::parsetree::{Builder, ExprKey, node};
+use crate::parsetree::{Builder, ExprOwned, node};
 use smallvec::SmallVec;
 use std::collections::HashMap;
+use std::sync::Arc;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct QualifiedScope<'a> {
@@ -52,7 +53,7 @@ impl std::fmt::Display for QualifiedScope<'_> {
 
 #[derive(Debug, Clone, Default)]
 pub struct SymbolTable<'a> {
-    scopes: HashMap<QualifiedScope<'a>, HashMap<&'a str, ExprKey<'a>>>,
+    scopes: HashMap<QualifiedScope<'a>, HashMap<&'a str, Arc<ExprOwned<'a>>>>,
 }
 
 impl<'a> SymbolTable<'a> {
@@ -60,7 +61,7 @@ impl<'a> SymbolTable<'a> {
         &mut self,
         symbol_scope: QualifiedScope<'a>,
         symbol_name: &'a str,
-        symbol: ExprKey<'a>,
+        symbol: Arc<ExprOwned<'a>>,
     ) -> bool {
         self.scopes
             .entry(symbol_scope.clone())
@@ -73,13 +74,13 @@ impl<'a> SymbolTable<'a> {
         &self,
         current_scope: QualifiedScope<'a>,
         symbol_name: &str,
-    ) -> Option<ExprKey<'a>> {
+    ) -> Option<Arc<ExprOwned<'a>>> {
         let mut search_scope = current_scope;
 
         loop {
             if let Some(available_symbols) = self.scopes.get(&search_scope) {
                 if let Some(symbol) = available_symbols.get(symbol_name) {
-                    return Some(*symbol);
+                    return Some(symbol.clone());
                 }
             }
 
@@ -113,10 +114,14 @@ fn test_symbol_table() {
     let func_4 = Builder::new().create_function().with_name("foo").build();
 
     let symbols = [
-        (QualifiedScope::parse(""), "foo", func_1),
-        (QualifiedScope::parse("app"), "foo", func_2),
-        (QualifiedScope::parse("app::sub"), "foo", func_3),
-        (QualifiedScope::parse("app::sub::subsub"), "foo", func_4),
+        (QualifiedScope::parse(""), "foo", func_1.clone()),
+        (QualifiedScope::parse("app"), "foo", func_2.clone()),
+        (QualifiedScope::parse("app::sub"), "foo", func_3.clone()),
+        (
+            QualifiedScope::parse("app::sub::subsub"),
+            "foo",
+            func_4.clone(),
+        ),
     ];
 
     for (scope, name, symbol) in symbols.clone() {
@@ -125,32 +130,32 @@ fn test_symbol_table() {
 
     assert_eq!(
         symbol_table.resolve(QualifiedScope::parse(""), "foo"),
-        Some(func_1)
+        Some(func_1.clone())
     );
 
     assert_eq!(
         symbol_table.resolve(QualifiedScope::parse("other"), "foo"),
-        Some(func_1)
+        Some(func_1.clone())
     );
 
     assert_eq!(
         symbol_table.resolve(QualifiedScope::parse("app"), "foo"),
-        Some(func_2)
+        Some(func_2.clone())
     );
 
     assert_eq!(
         symbol_table.resolve(QualifiedScope::parse("app::sub"), "foo"),
-        Some(func_3)
+        Some(func_3.clone())
     );
 
     assert_eq!(
         symbol_table.resolve(QualifiedScope::parse("app::sub::subsub"), "foo"),
-        Some(func_4)
+        Some(func_4.clone())
     );
 
     assert_eq!(
         symbol_table.resolve(QualifiedScope::parse("app::sub::subsub::other"), "foo"),
-        Some(func_4)
+        Some(func_4.clone())
     );
 
     assert_eq!(
@@ -158,7 +163,7 @@ fn test_symbol_table() {
             QualifiedScope::parse("app::sub::subsub::other::deep::in::code"),
             "foo"
         ),
-        Some(func_4)
+        Some(func_4.clone())
     );
 
     assert_eq!(

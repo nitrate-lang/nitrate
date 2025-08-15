@@ -1,24 +1,25 @@
-use super::storage::{ExprKey, TypeKey};
+use super::expression::{ExprOwned, TypeOwned};
+use std::{rc::Rc, sync::Arc};
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct ArrayType<'a> {
-    element: TypeKey<'a>,
-    count: ExprKey<'a>,
+    element: Rc<TypeOwned<'a>>,
+    count: Arc<ExprOwned<'a>>,
 }
 
 impl<'a> ArrayType<'a> {
     #[must_use]
-    pub(crate) fn new(element: TypeKey<'a>, count: ExprKey<'a>) -> Self {
+    pub(crate) fn new(element: Rc<TypeOwned<'a>>, count: Arc<ExprOwned<'a>>) -> Self {
         ArrayType { element, count }
     }
 
     #[must_use]
-    pub fn element(&self) -> TypeKey<'a> {
-        self.element
+    pub fn element(&self) -> Rc<TypeOwned<'a>> {
+        self.element.clone()
     }
 
     #[must_use]
-    pub fn count(&self) -> ExprKey<'a> {
-        self.count
+    pub fn count(&self) -> Arc<ExprOwned<'a>> {
+        self.count.clone()
     }
 }

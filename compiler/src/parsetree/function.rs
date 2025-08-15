@@ -1,15 +1,20 @@
-use super::storage::{ExprKey, TypeKey};
+use super::expression::{ExprOwned, TypeOwned};
+use std::{rc::Rc, sync::Arc};
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct FunctionParameter<'a> {
     name: &'a str,
-    param_type: TypeKey<'a>,
-    default_value: Option<ExprKey<'a>>,
+    param_type: Rc<TypeOwned<'a>>,
+    default_value: Option<Arc<ExprOwned<'a>>>,
 }
 
 impl<'a> FunctionParameter<'a> {
     #[must_use]
-    pub fn new(name: &'a str, param_type: TypeKey<'a>, default_value: Option<ExprKey<'a>>) -> Self {
+    pub fn new(
+        name: &'a str,
+        param_type: Rc<TypeOwned<'a>>,
+        default_value: Option<Arc<ExprOwned<'a>>>,
+    ) -> Self {
         FunctionParameter {
             name,
             param_type,
@@ -23,23 +28,23 @@ impl<'a> FunctionParameter<'a> {
     }
 
     #[must_use]
-    pub fn type_(&self) -> TypeKey<'a> {
-        self.param_type
+    pub fn type_(&self) -> Rc<TypeOwned<'a>> {
+        self.param_type.clone()
     }
 
     #[must_use]
-    pub fn default(&self) -> Option<ExprKey<'a>> {
-        self.default_value
+    pub fn default(&self) -> Option<Arc<ExprOwned<'a>>> {
+        self.default_value.clone()
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Function<'a> {
     parameters: Vec<FunctionParameter<'a>>,
-    return_type: TypeKey<'a>,
-    attributes: Vec<ExprKey<'a>>,
+    return_type: Rc<TypeOwned<'a>>,
+    attributes: Vec<Arc<ExprOwned<'a>>>,
     name: &'a str,
-    definition: Option<ExprKey<'a>>,
+    definition: Option<Arc<ExprOwned<'a>>>,
 }
 
 impl<'a> Function<'a> {
@@ -47,9 +52,9 @@ impl<'a> Function<'a> {
     pub(crate) fn new(
         name: &'a str,
         parameters: Vec<FunctionParameter<'a>>,
-        return_type: TypeKey<'a>,
-        attributes: Vec<ExprKey<'a>>,
-        definition: Option<ExprKey<'a>>,
+        return_type: Rc<TypeOwned<'a>>,
+        attributes: Vec<Arc<ExprOwned<'a>>>,
+        definition: Option<Arc<ExprOwned<'a>>>,
     ) -> Self {
         Function {
             parameters,
@@ -71,21 +76,21 @@ impl<'a> Function<'a> {
     }
 
     #[must_use]
-    pub fn return_type(&self) -> TypeKey<'a> {
-        self.return_type
+    pub fn return_type(&self) -> Rc<TypeOwned<'a>> {
+        self.return_type.clone()
     }
 
-    pub fn set_return_type(&mut self, ty: TypeKey<'a>) {
+    pub fn set_return_type(&mut self, ty: Rc<TypeOwned<'a>>) {
         self.return_type = ty;
     }
 
     #[must_use]
-    pub fn attributes(&self) -> &[ExprKey<'a>] {
+    pub fn attributes(&self) -> &[Arc<ExprOwned<'a>>] {
         &self.attributes
     }
 
     #[must_use]
-    pub fn attributes_mut(&mut self) -> &mut Vec<ExprKey<'a>> {
+    pub fn attributes_mut(&mut self) -> &mut Vec<Arc<ExprOwned<'a>>> {
         &mut self.attributes
     }
 
@@ -99,11 +104,11 @@ impl<'a> Function<'a> {
     }
 
     #[must_use]
-    pub fn definition(&self) -> Option<&ExprKey<'a>> {
+    pub fn definition(&self) -> Option<&Arc<ExprOwned<'a>>> {
         self.definition.as_ref()
     }
 
-    pub fn set_definition(&mut self, definition: Option<ExprKey<'a>>) {
+    pub fn set_definition(&mut self, definition: Option<Arc<ExprOwned<'a>>>) {
         self.definition = definition;
     }
 }

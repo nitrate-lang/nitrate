@@ -17,14 +17,12 @@ mod refinement_type;
 mod scope;
 mod slice_type;
 mod statement;
-mod storage;
 mod tuple_type;
 mod unary_expr;
 mod variable;
 
 pub use builder::*;
-pub use expression::{ExprKind, ExprOwned, ExprRef, ExprRefMut, TypeKind, TypeOwned, TypeRef};
-pub use storage::{ExprKey, TLS_NODE_STORAGE, TypeKey};
+pub use expression::{ExprKind, ExprOwned, TypeKind, TypeOwned};
 
 pub mod node {
     pub use super::array_type::ArrayType;

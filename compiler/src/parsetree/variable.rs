@@ -1,19 +1,20 @@
-use super::storage::{ExprKey, TypeKey};
+use super::expression::{ExprOwned, TypeOwned};
+use std::{rc::Rc, sync::Arc};
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub enum VariableKind {
     Let,
     Var,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Variable<'a> {
     kind: VariableKind,
     is_mutable: bool,
-    attributes: Vec<ExprKey<'a>>,
+    attributes: Vec<Arc<ExprOwned<'a>>>,
     name: &'a str,
-    var_type: TypeKey<'a>,
-    value: Option<ExprKey<'a>>,
+    var_type: Rc<TypeOwned<'a>>,
+    value: Option<Arc<ExprOwned<'a>>>,
 }
 
 impl<'a> Variable<'a> {
@@ -21,10 +22,10 @@ impl<'a> Variable<'a> {
     pub(crate) fn new(
         kind: VariableKind,
         is_mutable: bool,
-        attributes: Vec<ExprKey<'a>>,
+        attributes: Vec<Arc<ExprOwned<'a>>>,
         name: &'a str,
-        var_type: TypeKey<'a>,
-        value: Option<ExprKey<'a>>,
+        var_type: Rc<TypeOwned<'a>>,
+        value: Option<Arc<ExprOwned<'a>>>,
     ) -> Self {
         Variable {
             kind,
@@ -51,12 +52,12 @@ impl<'a> Variable<'a> {
     }
 
     #[must_use]
-    pub fn attributes(&self) -> &[ExprKey<'a>] {
+    pub fn attributes(&self) -> &[Arc<ExprOwned<'a>>] {
         &self.attributes
     }
 
     #[must_use]
-    pub fn attributes_mut(&mut self) -> &mut Vec<ExprKey<'a>> {
+    pub fn attributes_mut(&mut self) -> &mut Vec<Arc<ExprOwned<'a>>> {
         &mut self.attributes
     }
 
@@ -70,20 +71,20 @@ impl<'a> Variable<'a> {
     }
 
     #[must_use]
-    pub fn get_type(&self) -> TypeKey<'a> {
-        self.var_type
+    pub fn get_type(&self) -> Rc<TypeOwned<'a>> {
+        self.var_type.clone()
     }
 
-    pub fn set_type(&mut self, var_type: TypeKey<'a>) {
+    pub fn set_type(&mut self, var_type: Rc<TypeOwned<'a>>) {
         self.var_type = var_type;
     }
 
     #[must_use]
-    pub fn value(&self) -> Option<ExprKey<'a>> {
-        self.value
+    pub fn value(&self) -> Option<Arc<ExprOwned<'a>>> {
+        self.value.clone()
     }
 
-    pub fn set_value(&mut self, value: Option<ExprKey<'a>>) {
+    pub fn set_value(&mut self, value: Option<Arc<ExprOwned<'a>>>) {
         self.value = value;
     }
 }

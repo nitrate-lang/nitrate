@@ -1,6 +1,7 @@
-use super::storage::ExprKey;
+use super::expression::ExprOwned;
+use std::sync::Arc;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub enum UnaryExprOp {
     /*----------------------------------------------------------------*
      * Arithmetic Operators                                           *
@@ -39,16 +40,20 @@ pub enum UnaryExprOp {
     Question, /* '?':          "Ternary Operator" */
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct UnaryExpr<'a> {
-    operand: ExprKey<'a>,
+    operand: Arc<ExprOwned<'a>>,
     operator: UnaryExprOp,
     is_postfix: bool,
 }
 
 impl<'a> UnaryExpr<'a> {
     #[must_use]
-    pub(crate) fn new(operand: ExprKey<'a>, operator: UnaryExprOp, is_postfix: bool) -> Self {
+    pub(crate) fn new(
+        operand: Arc<ExprOwned<'a>>,
+        operator: UnaryExprOp,
+        is_postfix: bool,
+    ) -> Self {
         UnaryExpr {
             operand,
             operator,
@@ -57,8 +62,8 @@ impl<'a> UnaryExpr<'a> {
     }
 
     #[must_use]
-    pub fn operand(&self) -> ExprKey<'a> {
-        self.operand
+    pub fn operand(&self) -> Arc<ExprOwned<'a>> {
+        self.operand.clone()
     }
 
     #[must_use]

@@ -1,24 +1,25 @@
-use super::storage::TypeKey;
+use super::expression::TypeOwned;
+use std::rc::Rc;
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct MapType<'a> {
-    key: TypeKey<'a>,
-    value: TypeKey<'a>,
+    key: Rc<TypeOwned<'a>>,
+    value: Rc<TypeOwned<'a>>,
 }
 
 impl<'a> MapType<'a> {
     #[must_use]
-    pub(crate) fn new(key: TypeKey<'a>, value: TypeKey<'a>) -> Self {
+    pub(crate) fn new(key: Rc<TypeOwned<'a>>, value: Rc<TypeOwned<'a>>) -> Self {
         MapType { key, value }
     }
 
     #[must_use]
-    pub fn key(&self) -> TypeKey<'a> {
-        self.key
+    pub fn key(&self) -> Rc<TypeOwned<'a>> {
+        self.key.clone()
     }
 
     #[must_use]
-    pub fn value(&self) -> TypeKey<'a> {
-        self.value
+    pub fn value(&self) -> Rc<TypeOwned<'a>> {
+        self.value.clone()
     }
 }
