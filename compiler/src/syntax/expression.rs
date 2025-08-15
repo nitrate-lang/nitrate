@@ -1,12 +1,12 @@
 use super::parse::Parser;
 use crate::lexical::{BStringData, IntegerKind, Keyword, Op, Punct, StringData, Token};
-use crate::parsetree::{Builder, ExprOwned, node::BinExprOp};
+use crate::parsetree::{Builder, Expr, node::BinExprOp};
 use log::error;
 use std::ops::Deref;
 use std::sync::Arc;
 
 impl<'a> Parser<'a, '_> {
-    fn parse_integer_literal(&mut self, value: u128, kind: IntegerKind) -> Arc<ExprOwned<'a>> {
+    fn parse_integer_literal(&mut self, value: u128, kind: IntegerKind) -> Arc<Expr<'a>> {
         let mut bb = Builder::new().create_integer().with_kind(kind);
 
         if value <= 0xff {
@@ -24,19 +24,19 @@ impl<'a> Parser<'a, '_> {
         bb.build()
     }
 
-    fn parse_float_literal(&mut self, value: f64) -> Arc<ExprOwned<'a>> {
+    fn parse_float_literal(&mut self, value: f64) -> Arc<Expr<'a>> {
         Builder::new().create_float().with_value(value).build()
     }
 
-    fn parse_string_literal(&mut self, content: StringData<'a>) -> Arc<ExprOwned<'a>> {
+    fn parse_string_literal(&mut self, content: StringData<'a>) -> Arc<Expr<'a>> {
         Builder::new().create_string().with_string(content).build()
     }
 
-    fn parse_bstring_literal(&mut self, content: BStringData<'a>) -> Arc<ExprOwned<'a>> {
+    fn parse_bstring_literal(&mut self, content: BStringData<'a>) -> Arc<Expr<'a>> {
         Builder::new().create_bstring().with_value(content).build()
     }
 
-    fn parse_literal_suffix(&mut self, lit: Arc<ExprOwned<'a>>) -> Arc<ExprOwned<'a>> {
+    fn parse_literal_suffix(&mut self, lit: Arc<Expr<'a>>) -> Arc<Expr<'a>> {
         let bb = Builder::new();
         let type_name = match self.lexer.peek_t() {
             Token::Name(name) => Some(bb.create_type_name(name.name())),
@@ -75,7 +75,7 @@ impl<'a> Parser<'a, '_> {
         }
     }
 
-    pub(crate) fn parse_attributes(&mut self) -> Option<Vec<Arc<ExprOwned<'a>>>> {
+    pub(crate) fn parse_attributes(&mut self) -> Option<Vec<Arc<Expr<'a>>>> {
         let mut attributes = Vec::new();
 
         if !self.lexer.skip_if(&Token::Punct(Punct::LeftBracket)) {
@@ -106,7 +106,7 @@ impl<'a> Parser<'a, '_> {
         Some(attributes)
     }
 
-    fn parse_type_or_type_alias(&mut self) -> Option<Arc<ExprOwned<'a>>> {
+    fn parse_type_or_type_alias(&mut self) -> Option<Arc<Expr<'a>>> {
         assert!(self.lexer.peek_t() == Token::Keyword(Keyword::Type));
 
         let rewind_pos = self.lexer.sync_position();
@@ -136,7 +136,7 @@ impl<'a> Parser<'a, '_> {
         self.parse_type_alias()
     }
 
-    fn parse_if(&mut self) -> Option<Arc<ExprOwned<'a>>> {
+    fn parse_if(&mut self) -> Option<Arc<Expr<'a>>> {
         assert!(self.lexer.peek_t() == Token::Keyword(Keyword::If));
         self.lexer.skip_tok();
 
@@ -172,14 +172,14 @@ impl<'a> Parser<'a, '_> {
         )
     }
 
-    fn parse_for(&mut self) -> Option<Arc<ExprOwned<'a>>> {
+    fn parse_for(&mut self) -> Option<Arc<Expr<'a>>> {
         // TODO: Implement for expression parsing logic
         self.set_failed_bit();
         error!("For expression parsing not implemented yet");
         None
     }
 
-    fn parse_while(&mut self) -> Option<Arc<ExprOwned<'a>>> {
+    fn parse_while(&mut self) -> Option<Arc<Expr<'a>>> {
         assert!(self.lexer.peek_t() == Token::Keyword(Keyword::While));
         self.lexer.skip_tok();
 
@@ -200,7 +200,7 @@ impl<'a> Parser<'a, '_> {
         )
     }
 
-    fn parse_do(&mut self) -> Option<Arc<ExprOwned<'a>>> {
+    fn parse_do(&mut self) -> Option<Arc<Expr<'a>>> {
         assert!(self.lexer.peek_t() == Token::Keyword(Keyword::Do));
         self.lexer.skip_tok();
 
@@ -225,14 +225,14 @@ impl<'a> Parser<'a, '_> {
         )
     }
 
-    fn parse_switch(&mut self) -> Option<Arc<ExprOwned<'a>>> {
+    fn parse_switch(&mut self) -> Option<Arc<Expr<'a>>> {
         // TODO: Implement switch expression parsing logic
         self.set_failed_bit();
         error!("Switch expression parsing not implemented yet");
         None
     }
 
-    fn parse_break(&mut self) -> Option<Arc<ExprOwned<'a>>> {
+    fn parse_break(&mut self) -> Option<Arc<Expr<'a>>> {
         assert!(self.lexer.peek_t() == Token::Keyword(Keyword::Break));
         self.lexer.skip_tok();
 
@@ -259,7 +259,7 @@ impl<'a> Parser<'a, '_> {
         )
     }
 
-    fn parse_continue(&mut self) -> Option<Arc<ExprOwned<'a>>> {
+    fn parse_continue(&mut self) -> Option<Arc<Expr<'a>>> {
         assert!(self.lexer.peek_t() == Token::Keyword(Keyword::Continue));
         self.lexer.skip_tok();
 
@@ -286,7 +286,7 @@ impl<'a> Parser<'a, '_> {
         )
     }
 
-    fn parse_return(&mut self) -> Option<Arc<ExprOwned<'a>>> {
+    fn parse_return(&mut self) -> Option<Arc<Expr<'a>>> {
         assert!(self.lexer.peek_t() == Token::Keyword(Keyword::Ret));
         self.lexer.skip_tok();
 
@@ -299,14 +299,14 @@ impl<'a> Parser<'a, '_> {
         Some(Builder::new().create_return().with_value(value).build())
     }
 
-    fn parse_foreach(&mut self) -> Option<Arc<ExprOwned<'a>>> {
+    fn parse_foreach(&mut self) -> Option<Arc<Expr<'a>>> {
         // TODO: Implement foreach expression parsing logic
         self.set_failed_bit();
         error!("Foreach expression parsing not implemented yet");
         None
     }
 
-    fn parse_await(&mut self) -> Option<Arc<ExprOwned<'a>>> {
+    fn parse_await(&mut self) -> Option<Arc<Expr<'a>>> {
         assert!(self.lexer.peek_t() == Token::Keyword(Keyword::Await));
         self.lexer.skip_tok();
 
@@ -318,14 +318,14 @@ impl<'a> Parser<'a, '_> {
         Some(Builder::new().create_await().with_expression(expr).build())
     }
 
-    fn parse_asm(&mut self) -> Option<Arc<ExprOwned<'a>>> {
+    fn parse_asm(&mut self) -> Option<Arc<Expr<'a>>> {
         // TODO: Implement asm expression parsing logic
         self.set_failed_bit();
         error!("Asm expression parsing not implemented yet");
         None
     }
 
-    fn parse_assert(&mut self) -> Option<Arc<ExprOwned<'a>>> {
+    fn parse_assert(&mut self) -> Option<Arc<Expr<'a>>> {
         assert!(self.lexer.peek_t() == Token::Keyword(Keyword::Assert));
         self.lexer.skip_tok();
 
@@ -339,14 +339,14 @@ impl<'a> Parser<'a, '_> {
         )
     }
 
-    fn parse_type_alias(&mut self) -> Option<Arc<ExprOwned<'a>>> {
+    fn parse_type_alias(&mut self) -> Option<Arc<Expr<'a>>> {
         // TODO: Implement type alias parsing logic
         self.set_failed_bit();
         error!("Type alias parsing not implemented yet");
         None
     }
 
-    fn parse_scope(&mut self) -> Option<Arc<ExprOwned<'a>>> {
+    fn parse_scope(&mut self) -> Option<Arc<Expr<'a>>> {
         assert!(self.lexer.peek_t() == Token::Keyword(Keyword::Scope));
         self.lexer.skip_tok();
 
@@ -380,49 +380,49 @@ impl<'a> Parser<'a, '_> {
         )
     }
 
-    fn parse_enum(&mut self) -> Option<Arc<ExprOwned<'a>>> {
+    fn parse_enum(&mut self) -> Option<Arc<Expr<'a>>> {
         // TODO: Implement enum parsing logic
         self.set_failed_bit();
         error!("Enum parsing not implemented yet");
         None
     }
 
-    fn parse_struct(&mut self) -> Option<Arc<ExprOwned<'a>>> {
+    fn parse_struct(&mut self) -> Option<Arc<Expr<'a>>> {
         // TODO: Implement struct parsing logic
         self.set_failed_bit();
         error!("Struct parsing not implemented yet");
         None
     }
 
-    fn parse_class(&mut self) -> Option<Arc<ExprOwned<'a>>> {
+    fn parse_class(&mut self) -> Option<Arc<Expr<'a>>> {
         // TODO: Implement class parsing logic
         self.set_failed_bit();
         error!("Class parsing not implemented yet");
         None
     }
 
-    fn parse_trait(&mut self) -> Option<Arc<ExprOwned<'a>>> {
+    fn parse_trait(&mut self) -> Option<Arc<Expr<'a>>> {
         // TODO: Implement trait parsing logic
         self.set_failed_bit();
         error!("Trait parsing not implemented yet");
         None
     }
 
-    fn parse_implementation(&mut self) -> Option<Arc<ExprOwned<'a>>> {
+    fn parse_implementation(&mut self) -> Option<Arc<Expr<'a>>> {
         // TODO: Implement implementation parsing logic
         self.set_failed_bit();
         error!("Implementation parsing not implemented yet");
         None
     }
 
-    fn parse_contract(&mut self) -> Option<Arc<ExprOwned<'a>>> {
+    fn parse_contract(&mut self) -> Option<Arc<Expr<'a>>> {
         // TODO: Implement contract parsing logic
         self.set_failed_bit();
         error!("Contract parsing not implemented yet");
         None
     }
 
-    fn parse_function(&mut self) -> Option<Arc<ExprOwned<'a>>> {
+    fn parse_function(&mut self) -> Option<Arc<Expr<'a>>> {
         if self.lexer.peek_t() == Token::Punct(Punct::LeftBrace) {
             let block = Some(self.parse_block()?);
 
@@ -491,7 +491,7 @@ impl<'a> Parser<'a, '_> {
         Some(function)
     }
 
-    fn parse_let_variable(&mut self) -> Option<Arc<ExprOwned<'a>>> {
+    fn parse_let_variable(&mut self) -> Option<Arc<Expr<'a>>> {
         assert!(self.lexer.peek_t() == Token::Keyword(Keyword::Let));
         self.lexer.skip_tok();
 
@@ -550,7 +550,7 @@ impl<'a> Parser<'a, '_> {
         Some(variable)
     }
 
-    fn parse_var_variable(&mut self) -> Option<Arc<ExprOwned<'a>>> {
+    fn parse_var_variable(&mut self) -> Option<Arc<Expr<'a>>> {
         assert!(self.lexer.peek_t() == Token::Keyword(Keyword::Var));
         self.lexer.skip_tok();
 
@@ -609,7 +609,7 @@ impl<'a> Parser<'a, '_> {
         Some(variable)
     }
 
-    fn parse_expression_primary(&mut self) -> Option<Arc<ExprOwned<'a>>> {
+    fn parse_expression_primary(&mut self) -> Option<Arc<Expr<'a>>> {
         match self.lexer.peek_t() {
             Token::Integer(int) => {
                 self.lexer.skip_tok();
@@ -741,7 +741,7 @@ impl<'a> Parser<'a, '_> {
         }
     }
 
-    pub fn parse_expression(&mut self) -> Option<Arc<ExprOwned<'a>>> {
+    pub fn parse_expression(&mut self) -> Option<Arc<Expr<'a>>> {
         let mut parenthesis_count = 0;
         while self.lexer.skip_if(&Token::Punct(Punct::LeftParen)) {
             parenthesis_count += 1;
@@ -773,7 +773,7 @@ impl<'a> Parser<'a, '_> {
         Some(expr)
     }
 
-    pub(crate) fn parse_block(&mut self) -> Option<Arc<ExprOwned<'a>>> {
+    pub(crate) fn parse_block(&mut self) -> Option<Arc<Expr<'a>>> {
         if !self.lexer.skip_if(&Token::Punct(Punct::LeftBrace)) {
             self.set_failed_bit();
             error!(

@@ -1,6 +1,6 @@
 use super::parse::Parser;
 use crate::lexical::{Keyword, Name, Op, Punct, Token};
-use crate::parsetree::{Builder, ExprOwned, TypeOwned, node::FunctionParameter};
+use crate::parsetree::{Builder, Expr, Type, node::FunctionParameter};
 use log::{error, info};
 use std::ops::Deref;
 use std::rc::Rc;
@@ -13,9 +13,9 @@ use crate::syntax::SymbolTable;
 
 #[derive(Default)]
 struct RefinementOptions<'a> {
-    minimum: Option<Arc<ExprOwned<'a>>>,
-    maximum: Option<Arc<ExprOwned<'a>>>,
-    width: Option<Arc<ExprOwned<'a>>>,
+    minimum: Option<Arc<Expr<'a>>>,
+    maximum: Option<Arc<Expr<'a>>>,
+    width: Option<Arc<Expr<'a>>>,
 }
 
 impl RefinementOptions<'_> {
@@ -25,9 +25,7 @@ impl RefinementOptions<'_> {
 }
 
 impl<'a> Parser<'a, '_> {
-    fn parse_refinement_range(
-        &mut self,
-    ) -> Option<(Option<Arc<ExprOwned<'a>>>, Option<Arc<ExprOwned<'a>>>)> {
+    fn parse_refinement_range(&mut self) -> Option<(Option<Arc<Expr<'a>>>, Option<Arc<Expr<'a>>>)> {
         assert!(self.lexer.peek_t() == Token::Punct(Punct::LeftBracket));
         self.lexer.skip_tok();
 
@@ -112,7 +110,7 @@ impl<'a> Parser<'a, '_> {
         })
     }
 
-    fn parse_generic_argument(&mut self) -> Option<(&'a str, Arc<ExprOwned<'a>>)> {
+    fn parse_generic_argument(&mut self) -> Option<(&'a str, Arc<Expr<'a>>)> {
         let mut argument_name: &'a str = "";
 
         if let Token::Name(name) = self.lexer.peek_t() {
@@ -162,7 +160,7 @@ impl<'a> Parser<'a, '_> {
         Some((argument_name, argument_value))
     }
 
-    fn parse_generic_arguments(&mut self) -> Option<Vec<(&'a str, Arc<ExprOwned<'a>>)>> {
+    fn parse_generic_arguments(&mut self) -> Option<Vec<(&'a str, Arc<Expr<'a>>)>> {
         assert!(self.lexer.peek_t() == Token::Op(Op::LogicLt));
         self.lexer.skip_tok();
 
@@ -217,7 +215,7 @@ impl<'a> Parser<'a, '_> {
         Some(arguments)
     }
 
-    fn parse_named_type(&mut self, type_name: &'a str) -> Option<Rc<TypeOwned<'a>>> {
+    fn parse_named_type(&mut self, type_name: &'a str) -> Option<Rc<Type<'a>>> {
         assert!(self.lexer.peek_t() == Token::Name(Name::new(type_name)));
         self.lexer.skip_tok();
 
@@ -268,7 +266,7 @@ impl<'a> Parser<'a, '_> {
         )
     }
 
-    fn parse_tuple_type(&mut self) -> Option<Rc<TypeOwned<'a>>> {
+    fn parse_tuple_type(&mut self) -> Option<Rc<Type<'a>>> {
         assert!(self.lexer.peek_t() == Token::Punct(Punct::LeftBrace));
         self.lexer.skip_tok();
 
@@ -306,10 +304,7 @@ impl<'a> Parser<'a, '_> {
         )
     }
 
-    fn parse_rest_of_array(
-        &mut self,
-        element_type: Rc<TypeOwned<'a>>,
-    ) -> Option<Rc<TypeOwned<'a>>> {
+    fn parse_rest_of_array(&mut self, element_type: Rc<Type<'a>>) -> Option<Rc<Type<'a>>> {
         assert!(self.lexer.peek_t() == Token::Punct(Punct::Semicolon));
         self.lexer.skip_tok();
 
@@ -333,7 +328,7 @@ impl<'a> Parser<'a, '_> {
         )
     }
 
-    fn parse_rest_of_map_type(&mut self, key_type: Rc<TypeOwned<'a>>) -> Option<Rc<TypeOwned<'a>>> {
+    fn parse_rest_of_map_type(&mut self, key_type: Rc<Type<'a>>) -> Option<Rc<Type<'a>>> {
         assert!(self.lexer.peek_t() == Token::Op(Op::Arrow));
         self.lexer.skip_tok();
 
@@ -357,10 +352,7 @@ impl<'a> Parser<'a, '_> {
         )
     }
 
-    fn parse_rest_of_slice_type(
-        &mut self,
-        element_type: Rc<TypeOwned<'a>>,
-    ) -> Option<Rc<TypeOwned<'a>>> {
+    fn parse_rest_of_slice_type(&mut self, element_type: Rc<Type<'a>>) -> Option<Rc<Type<'a>>> {
         /*
          * The syntax for defining a slice type is as follows:
          * [<type>]
@@ -379,7 +371,7 @@ impl<'a> Parser<'a, '_> {
         )
     }
 
-    fn parse_array_or_slice_or_map(&mut self) -> Option<Rc<TypeOwned<'a>>> {
+    fn parse_array_or_slice_or_map(&mut self) -> Option<Rc<Type<'a>>> {
         assert!(self.lexer.peek_t() == Token::Punct(Punct::LeftBracket));
         self.lexer.skip_tok();
 
@@ -408,7 +400,7 @@ impl<'a> Parser<'a, '_> {
         None
     }
 
-    fn parse_managed_type(&mut self) -> Option<Rc<TypeOwned<'a>>> {
+    fn parse_managed_type(&mut self) -> Option<Rc<Type<'a>>> {
         /*
          * The syntax for defining a managed reference type is as follows:
          * &mut <type>
@@ -440,7 +432,7 @@ impl<'a> Parser<'a, '_> {
         )
     }
 
-    fn parse_unmanaged_type(&mut self) -> Option<Rc<TypeOwned<'a>>> {
+    fn parse_unmanaged_type(&mut self) -> Option<Rc<Type<'a>>> {
         /*
          * The syntax for defining an unmanaged reference type is as follows:
          * *mut <type>
@@ -531,7 +523,7 @@ impl<'a> Parser<'a, '_> {
         Some(parameters)
     }
 
-    fn parse_function_type(&mut self) -> Option<Rc<TypeOwned<'a>>> {
+    fn parse_function_type(&mut self) -> Option<Rc<Type<'a>>> {
         /*
          * The syntax for defining a function type is as follows:
          * <return_type> ::= "->" <type>
@@ -561,7 +553,7 @@ impl<'a> Parser<'a, '_> {
         )
     }
 
-    fn parse_opaque_type(&mut self) -> Option<Rc<TypeOwned<'a>>> {
+    fn parse_opaque_type(&mut self) -> Option<Rc<Type<'a>>> {
         /*
          * The syntax for defining an opaque type is as follows:
          * opaque(<string>)
@@ -603,7 +595,7 @@ impl<'a> Parser<'a, '_> {
         Some(Builder::new().create_opaque_type(opaque_identity))
     }
 
-    fn parse_type_primary(&mut self) -> Option<Rc<TypeOwned<'a>>> {
+    fn parse_type_primary(&mut self) -> Option<Rc<Type<'a>>> {
         let first_token = self.lexer.peek_tok();
         let current_pos = first_token.start();
 
@@ -794,7 +786,7 @@ impl<'a> Parser<'a, '_> {
         result
     }
 
-    pub fn parse_type(&mut self) -> Option<Rc<TypeOwned<'a>>> {
+    pub fn parse_type(&mut self) -> Option<Rc<Type<'a>>> {
         /*
          * The syntax for defining a type is as follows:
          * <type>

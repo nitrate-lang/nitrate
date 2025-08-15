@@ -1,4 +1,4 @@
-use super::expression::ExprOwned;
+use super::expression::Expr;
 use std::sync::Arc;
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -42,7 +42,7 @@ pub enum UnaryExprOp {
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct UnaryExpr<'a> {
-    operand: Arc<ExprOwned<'a>>,
+    operand: Arc<Expr<'a>>,
     operator: UnaryExprOp,
     is_postfix: bool,
 }
@@ -50,7 +50,7 @@ pub struct UnaryExpr<'a> {
 impl<'a> UnaryExpr<'a> {
     #[must_use]
     pub(crate) fn new(
-        operand: Arc<ExprOwned<'a>>,
+        operand: Arc<Expr<'a>>,
         operator: UnaryExprOp,
         is_postfix: bool,
     ) -> Self {
@@ -62,7 +62,7 @@ impl<'a> UnaryExpr<'a> {
     }
 
     #[must_use]
-    pub fn operand(&self) -> Arc<ExprOwned<'a>> {
+    pub fn operand(&self) -> Arc<Expr<'a>> {
         self.operand.clone()
     }
 

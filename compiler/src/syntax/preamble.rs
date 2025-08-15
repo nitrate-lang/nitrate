@@ -1,7 +1,7 @@
 use super::parse::Parser;
 use super::source_model::CopyrightInfo;
 use crate::lexical::{Punct, StringData, Token};
-use crate::parsetree::ExprOwned;
+use crate::parsetree::Expr;
 use log::error;
 use spdx::{LicenseId, license_id};
 use std::collections::HashSet;
@@ -16,7 +16,7 @@ pub(crate) struct SourcePreamble<'a> {
 }
 
 impl<'a> Parser<'a, '_> {
-    fn parse_macro_prefix(&mut self) -> Option<(&'a str, Vec<Arc<ExprOwned<'a>>>)> {
+    fn parse_macro_prefix(&mut self) -> Option<(&'a str, Vec<Arc<Expr<'a>>>)> {
         while self.lexer.skip_if(&Token::Punct(Punct::Semicolon)) {}
         if !self.lexer.skip_if(&Token::Punct(Punct::AtSign)) {
             return None;
@@ -90,7 +90,7 @@ impl<'a> Parser<'a, '_> {
 
     fn parse_preamble_version_macro(
         &mut self,
-        macro_args: Vec<Arc<ExprOwned<'a>>>,
+        macro_args: Vec<Arc<Expr<'a>>>,
     ) -> Option<(u32, u32)> {
         if macro_args.len() != 1 {
             self.set_failed_bit();
@@ -101,7 +101,7 @@ impl<'a> Parser<'a, '_> {
             return None;
         }
 
-        let ExprOwned::FloatLit(float) = *macro_args[0] else {
+        let Expr::FloatLit(float) = *macro_args[0] else {
             self.set_failed_bit();
             error!(
                 "[P????]: Expected a float literal (e.g. '1.0') for 'nitrate' (language version) macro argument\n--> {}",
@@ -126,7 +126,7 @@ impl<'a> Parser<'a, '_> {
 
     fn parse_preamble_copyright_macro(
         &mut self,
-        macro_args: Vec<Arc<ExprOwned<'a>>>,
+        macro_args: Vec<Arc<Expr<'a>>>,
     ) -> Option<CopyrightInfo<'a>> {
         if macro_args.len() != 2 {
             self.set_failed_bit();
@@ -137,7 +137,7 @@ impl<'a> Parser<'a, '_> {
             return None;
         }
 
-        let ExprOwned::IntegerLit(copyright_year) = macro_args[0].deref() else {
+        let Expr::IntegerLit(copyright_year) = macro_args[0].deref() else {
             self.set_failed_bit();
             error!(
                 "[P????]: Unable to parse @copyright; expected an integer literal for the first argument (copyright year)\n--> {}",
@@ -146,7 +146,7 @@ impl<'a> Parser<'a, '_> {
             return None;
         };
 
-        let ExprOwned::StringLit(holder_name) = macro_args[1].deref() else {
+        let Expr::StringLit(holder_name) = macro_args[1].deref() else {
             self.set_failed_bit();
             error!(
                 "[P????]: Unable to parse @copyright; expected a string literal for the second argument (copyright holder's name)\n--> {}",
@@ -164,7 +164,7 @@ impl<'a> Parser<'a, '_> {
 
     fn parse_preamble_license_macro(
         &mut self,
-        macro_args: Vec<Arc<ExprOwned<'a>>>,
+        macro_args: Vec<Arc<Expr<'a>>>,
     ) -> Option<LicenseId> {
         if macro_args.len() != 1 {
             self.set_failed_bit();
@@ -175,7 +175,7 @@ impl<'a> Parser<'a, '_> {
             return None;
         }
 
-        let ExprOwned::StringLit(license_name) = macro_args[0].deref() else {
+        let Expr::StringLit(license_name) = macro_args[0].deref() else {
             self.set_failed_bit();
             error!(
                 "[P????]: Expected a string literal (SPDX license ID) for 'license' macro argument\n--> {}",
@@ -200,7 +200,7 @@ impl<'a> Parser<'a, '_> {
 
     fn parse_preamble_insource_macro(
         &mut self,
-        macro_args: Vec<Arc<ExprOwned<'a>>>,
+        macro_args: Vec<Arc<Expr<'a>>>,
     ) -> Option<HashSet<StringData<'a>>> {
         if macro_args.len() != 1 {
             self.set_failed_bit();
@@ -211,7 +211,7 @@ impl<'a> Parser<'a, '_> {
             return None;
         }
 
-        let ExprOwned::ListLit(list) = macro_args[0].deref() else {
+        let Expr::ListLit(list) = macro_args[0].deref() else {
             self.set_failed_bit();
             error!(
                 "[P????]: Expected a list of strings for 'insource' macro argument\n--> {}",
@@ -223,7 +223,7 @@ impl<'a> Parser<'a, '_> {
 
         let mut config = HashSet::new();
         for element in list.elements() {
-            let ExprOwned::StringLit(option) = element.deref() else {
+            let Expr::StringLit(option) = element.deref() else {
                 self.set_failed_bit();
                 error!(
                     "[P????]: Expected a string literal in the list for 'insource' macro argument\n--> {}",

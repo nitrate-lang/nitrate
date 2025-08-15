@@ -5,7 +5,7 @@
 //     ObjectLit, RefinementType, Return, Scope, SliceType, Statement, Switch, TupleType, UnaryExpr,
 //     UnaryExprOp, UnmanagedRefType, Variable, VariableKind, WhileLoop,
 // };
-// use crate::parsetree::{ExprOwned, TypeOwned};
+// use crate::parsetree::{Expr, Type};
 
 // #[derive(Debug, Default, Clone, PartialEq, PartialOrd, Hash)]
 // pub struct CodeFormat {}
@@ -460,7 +460,7 @@
 //     }
 // }
 
-// impl<'a> ToCode<'a> for Arc<ExprOwned<'a>> {
+// impl<'a> ToCode<'a> for Arc<Expr<'a>> {
 //     fn to_code(&self, tokens: &mut Vec<Token<'a>>, options: &CodeFormat) {
 //         if self.is_discard() {
 //             return;
@@ -549,7 +549,7 @@
 //     }
 // }
 
-// impl<'a> ToCode<'a> for Rc<TypeOwned<'a>> {
+// impl<'a> ToCode<'a> for Rc<Type<'a>> {
 //     fn to_code(&self, tokens: &mut Vec<Token<'a>>, options: &CodeFormat) {
 //         let has_parentheses = self.has_parentheses();
 

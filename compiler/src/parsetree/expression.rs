@@ -119,7 +119,7 @@ pub enum TypeKind {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub enum ExprOwned<'a> {
+pub enum Expr<'a> {
     Bool,
     UInt8,
     UInt16,
@@ -183,7 +183,7 @@ pub enum ExprOwned<'a> {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub enum TypeOwned<'a> {
+pub enum Type<'a> {
     Bool,
     UInt8,
     UInt16,
@@ -387,103 +387,103 @@ impl From<TypeKind> for ExprKind {
     }
 }
 
-impl<'a> TryInto<TypeOwned<'a>> for ExprOwned<'a> {
+impl<'a> TryInto<Type<'a>> for Expr<'a> {
     type Error = Self;
 
-    fn try_into(self) -> Result<TypeOwned<'a>, Self::Error> {
+    fn try_into(self) -> Result<Type<'a>, Self::Error> {
         match self {
-            ExprOwned::Bool => Ok(TypeOwned::Bool),
-            ExprOwned::UInt8 => Ok(TypeOwned::UInt8),
-            ExprOwned::UInt16 => Ok(TypeOwned::UInt16),
-            ExprOwned::UInt32 => Ok(TypeOwned::UInt32),
-            ExprOwned::UInt64 => Ok(TypeOwned::UInt64),
-            ExprOwned::UInt128 => Ok(TypeOwned::UInt128),
-            ExprOwned::Int8 => Ok(TypeOwned::Int8),
-            ExprOwned::Int16 => Ok(TypeOwned::Int16),
-            ExprOwned::Int32 => Ok(TypeOwned::Int32),
-            ExprOwned::Int64 => Ok(TypeOwned::Int64),
-            ExprOwned::Int128 => Ok(TypeOwned::Int128),
-            ExprOwned::Float8 => Ok(TypeOwned::Float8),
-            ExprOwned::Float16 => Ok(TypeOwned::Float16),
-            ExprOwned::Float32 => Ok(TypeOwned::Float32),
-            ExprOwned::Float64 => Ok(TypeOwned::Float64),
-            ExprOwned::Float128 => Ok(TypeOwned::Float128),
+            Expr::Bool => Ok(Type::Bool),
+            Expr::UInt8 => Ok(Type::UInt8),
+            Expr::UInt16 => Ok(Type::UInt16),
+            Expr::UInt32 => Ok(Type::UInt32),
+            Expr::UInt64 => Ok(Type::UInt64),
+            Expr::UInt128 => Ok(Type::UInt128),
+            Expr::Int8 => Ok(Type::Int8),
+            Expr::Int16 => Ok(Type::Int16),
+            Expr::Int32 => Ok(Type::Int32),
+            Expr::Int64 => Ok(Type::Int64),
+            Expr::Int128 => Ok(Type::Int128),
+            Expr::Float8 => Ok(Type::Float8),
+            Expr::Float16 => Ok(Type::Float16),
+            Expr::Float32 => Ok(Type::Float32),
+            Expr::Float64 => Ok(Type::Float64),
+            Expr::Float128 => Ok(Type::Float128),
 
-            ExprOwned::InferType => Ok(TypeOwned::InferType),
-            ExprOwned::TypeName(x) => Ok(TypeOwned::TypeName(x)),
-            ExprOwned::RefinementType(x) => Ok(TypeOwned::RefinementType(x)),
-            ExprOwned::TupleType(x) => Ok(TypeOwned::TupleType(x)),
-            ExprOwned::ArrayType(x) => Ok(TypeOwned::ArrayType(x)),
-            ExprOwned::MapType(x) => Ok(TypeOwned::MapType(x)),
-            ExprOwned::SliceType(x) => Ok(TypeOwned::SliceType(x)),
-            ExprOwned::FunctionType(x) => Ok(TypeOwned::FunctionType(x)),
-            ExprOwned::ManagedRefType(x) => Ok(TypeOwned::ManagedRefType(x)),
-            ExprOwned::UnmanagedRefType(x) => Ok(TypeOwned::UnmanagedRefType(x)),
-            ExprOwned::GenericType(x) => Ok(TypeOwned::GenericType(x)),
-            ExprOwned::OpaqueType(x) => Ok(TypeOwned::OpaqueType(x)),
+            Expr::InferType => Ok(Type::InferType),
+            Expr::TypeName(x) => Ok(Type::TypeName(x)),
+            Expr::RefinementType(x) => Ok(Type::RefinementType(x)),
+            Expr::TupleType(x) => Ok(Type::TupleType(x)),
+            Expr::ArrayType(x) => Ok(Type::ArrayType(x)),
+            Expr::MapType(x) => Ok(Type::MapType(x)),
+            Expr::SliceType(x) => Ok(Type::SliceType(x)),
+            Expr::FunctionType(x) => Ok(Type::FunctionType(x)),
+            Expr::ManagedRefType(x) => Ok(Type::ManagedRefType(x)),
+            Expr::UnmanagedRefType(x) => Ok(Type::UnmanagedRefType(x)),
+            Expr::GenericType(x) => Ok(Type::GenericType(x)),
+            Expr::OpaqueType(x) => Ok(Type::OpaqueType(x)),
 
-            ExprOwned::Discard
-            | ExprOwned::BooleanLit(_)
-            | ExprOwned::IntegerLit(_)
-            | ExprOwned::FloatLit(_)
-            | ExprOwned::StringLit(_)
-            | ExprOwned::BStringLit(_)
-            | ExprOwned::ListLit(_)
-            | ExprOwned::ObjectLit(_)
-            | ExprOwned::UnaryExpr(_)
-            | ExprOwned::BinExpr(_)
-            | ExprOwned::Statement(_)
-            | ExprOwned::Block(_)
-            | ExprOwned::Function(_)
-            | ExprOwned::Variable(_)
-            | ExprOwned::Identifier(_)
-            | ExprOwned::Scope(_)
-            | ExprOwned::If(_)
-            | ExprOwned::WhileLoop(_)
-            | ExprOwned::DoWhileLoop(_)
-            | ExprOwned::Switch(_)
-            | ExprOwned::Break(_)
-            | ExprOwned::Continue(_)
-            | ExprOwned::Return(_)
-            | ExprOwned::ForEach(_)
-            | ExprOwned::Await(_)
-            | ExprOwned::Assert(_) => Err(self),
+            Expr::Discard
+            | Expr::BooleanLit(_)
+            | Expr::IntegerLit(_)
+            | Expr::FloatLit(_)
+            | Expr::StringLit(_)
+            | Expr::BStringLit(_)
+            | Expr::ListLit(_)
+            | Expr::ObjectLit(_)
+            | Expr::UnaryExpr(_)
+            | Expr::BinExpr(_)
+            | Expr::Statement(_)
+            | Expr::Block(_)
+            | Expr::Function(_)
+            | Expr::Variable(_)
+            | Expr::Identifier(_)
+            | Expr::Scope(_)
+            | Expr::If(_)
+            | Expr::WhileLoop(_)
+            | Expr::DoWhileLoop(_)
+            | Expr::Switch(_)
+            | Expr::Break(_)
+            | Expr::Continue(_)
+            | Expr::Return(_)
+            | Expr::ForEach(_)
+            | Expr::Await(_)
+            | Expr::Assert(_) => Err(self),
         }
     }
 }
 
-impl<'a> From<TypeOwned<'a>> for ExprOwned<'a> {
-    fn from(val: TypeOwned<'a>) -> ExprOwned<'a> {
+impl<'a> From<Type<'a>> for Expr<'a> {
+    fn from(val: Type<'a>) -> Expr<'a> {
         match val {
-            TypeOwned::Bool => ExprOwned::Bool,
-            TypeOwned::UInt8 => ExprOwned::UInt8,
-            TypeOwned::UInt16 => ExprOwned::UInt16,
-            TypeOwned::UInt32 => ExprOwned::UInt32,
-            TypeOwned::UInt64 => ExprOwned::UInt64,
-            TypeOwned::UInt128 => ExprOwned::UInt128,
-            TypeOwned::Int8 => ExprOwned::Int8,
-            TypeOwned::Int16 => ExprOwned::Int16,
-            TypeOwned::Int32 => ExprOwned::Int32,
-            TypeOwned::Int64 => ExprOwned::Int64,
-            TypeOwned::Int128 => ExprOwned::Int128,
-            TypeOwned::Float8 => ExprOwned::Float8,
-            TypeOwned::Float16 => ExprOwned::Float16,
-            TypeOwned::Float32 => ExprOwned::Float32,
-            TypeOwned::Float64 => ExprOwned::Float64,
-            TypeOwned::Float128 => ExprOwned::Float128,
+            Type::Bool => Expr::Bool,
+            Type::UInt8 => Expr::UInt8,
+            Type::UInt16 => Expr::UInt16,
+            Type::UInt32 => Expr::UInt32,
+            Type::UInt64 => Expr::UInt64,
+            Type::UInt128 => Expr::UInt128,
+            Type::Int8 => Expr::Int8,
+            Type::Int16 => Expr::Int16,
+            Type::Int32 => Expr::Int32,
+            Type::Int64 => Expr::Int64,
+            Type::Int128 => Expr::Int128,
+            Type::Float8 => Expr::Float8,
+            Type::Float16 => Expr::Float16,
+            Type::Float32 => Expr::Float32,
+            Type::Float64 => Expr::Float64,
+            Type::Float128 => Expr::Float128,
 
-            TypeOwned::InferType => ExprOwned::InferType,
-            TypeOwned::TypeName(x) => ExprOwned::TypeName(x),
-            TypeOwned::RefinementType(x) => ExprOwned::RefinementType(x),
-            TypeOwned::TupleType(x) => ExprOwned::TupleType(x),
-            TypeOwned::ArrayType(x) => ExprOwned::ArrayType(x),
-            TypeOwned::MapType(x) => ExprOwned::MapType(x),
-            TypeOwned::SliceType(x) => ExprOwned::SliceType(x),
-            TypeOwned::FunctionType(x) => ExprOwned::FunctionType(x),
-            TypeOwned::ManagedRefType(x) => ExprOwned::ManagedRefType(x),
-            TypeOwned::UnmanagedRefType(x) => ExprOwned::UnmanagedRefType(x),
-            TypeOwned::GenericType(x) => ExprOwned::GenericType(x),
-            TypeOwned::OpaqueType(x) => ExprOwned::OpaqueType(x),
+            Type::InferType => Expr::InferType,
+            Type::TypeName(x) => Expr::TypeName(x),
+            Type::RefinementType(x) => Expr::RefinementType(x),
+            Type::TupleType(x) => Expr::TupleType(x),
+            Type::ArrayType(x) => Expr::ArrayType(x),
+            Type::MapType(x) => Expr::MapType(x),
+            Type::SliceType(x) => Expr::SliceType(x),
+            Type::FunctionType(x) => Expr::FunctionType(x),
+            Type::ManagedRefType(x) => Expr::ManagedRefType(x),
+            Type::UnmanagedRefType(x) => Expr::UnmanagedRefType(x),
+            Type::GenericType(x) => Expr::GenericType(x),
+            Type::OpaqueType(x) => Expr::OpaqueType(x),
         }
     }
 }

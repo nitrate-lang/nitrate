@@ -1,20 +1,20 @@
-use super::expression::{ExprOwned, TypeOwned};
+use super::expression::{Expr, Type};
 use super::function::FunctionParameter;
 use std::{rc::Rc, sync::Arc};
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct FunctionType<'a> {
     parameters: Vec<FunctionParameter<'a>>,
-    return_type: Rc<TypeOwned<'a>>,
-    attributes: Vec<Arc<ExprOwned<'a>>>,
+    return_type: Rc<Type<'a>>,
+    attributes: Vec<Arc<Expr<'a>>>,
 }
 
 impl<'a> FunctionType<'a> {
     #[must_use]
     pub(crate) fn new(
         parameters: Vec<FunctionParameter<'a>>,
-        return_type: Rc<TypeOwned<'a>>,
-        attributes: Vec<Arc<ExprOwned<'a>>>,
+        return_type: Rc<Type<'a>>,
+        attributes: Vec<Arc<Expr<'a>>>,
     ) -> Self {
         FunctionType {
             parameters,
@@ -29,12 +29,12 @@ impl<'a> FunctionType<'a> {
     }
 
     #[must_use]
-    pub fn return_type(&self) -> Rc<TypeOwned<'a>> {
+    pub fn return_type(&self) -> Rc<Type<'a>> {
         self.return_type.clone()
     }
 
     #[must_use]
-    pub fn attributes(&self) -> &[Arc<ExprOwned<'a>>] {
+    pub fn attributes(&self) -> &[Arc<Expr<'a>>] {
         &self.attributes
     }
 }

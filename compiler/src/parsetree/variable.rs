@@ -1,4 +1,4 @@
-use super::expression::{ExprOwned, TypeOwned};
+use super::expression::{Expr, Type};
 use std::{rc::Rc, sync::Arc};
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -11,10 +11,10 @@ pub enum VariableKind {
 pub struct Variable<'a> {
     kind: VariableKind,
     is_mutable: bool,
-    attributes: Vec<Arc<ExprOwned<'a>>>,
+    attributes: Vec<Arc<Expr<'a>>>,
     name: &'a str,
-    var_type: Rc<TypeOwned<'a>>,
-    value: Option<Arc<ExprOwned<'a>>>,
+    var_type: Rc<Type<'a>>,
+    value: Option<Arc<Expr<'a>>>,
 }
 
 impl<'a> Variable<'a> {
@@ -22,10 +22,10 @@ impl<'a> Variable<'a> {
     pub(crate) fn new(
         kind: VariableKind,
         is_mutable: bool,
-        attributes: Vec<Arc<ExprOwned<'a>>>,
+        attributes: Vec<Arc<Expr<'a>>>,
         name: &'a str,
-        var_type: Rc<TypeOwned<'a>>,
-        value: Option<Arc<ExprOwned<'a>>>,
+        var_type: Rc<Type<'a>>,
+        value: Option<Arc<Expr<'a>>>,
     ) -> Self {
         Variable {
             kind,
@@ -52,12 +52,12 @@ impl<'a> Variable<'a> {
     }
 
     #[must_use]
-    pub fn attributes(&self) -> &[Arc<ExprOwned<'a>>] {
+    pub fn attributes(&self) -> &[Arc<Expr<'a>>] {
         &self.attributes
     }
 
     #[must_use]
-    pub fn attributes_mut(&mut self) -> &mut Vec<Arc<ExprOwned<'a>>> {
+    pub fn attributes_mut(&mut self) -> &mut Vec<Arc<Expr<'a>>> {
         &mut self.attributes
     }
 
@@ -71,20 +71,20 @@ impl<'a> Variable<'a> {
     }
 
     #[must_use]
-    pub fn get_type(&self) -> Rc<TypeOwned<'a>> {
+    pub fn get_type(&self) -> Rc<Type<'a>> {
         self.var_type.clone()
     }
 
-    pub fn set_type(&mut self, var_type: Rc<TypeOwned<'a>>) {
+    pub fn set_type(&mut self, var_type: Rc<Type<'a>>) {
         self.var_type = var_type;
     }
 
     #[must_use]
-    pub fn value(&self) -> Option<Arc<ExprOwned<'a>>> {
+    pub fn value(&self) -> Option<Arc<Expr<'a>>> {
         self.value.clone()
     }
 
-    pub fn set_value(&mut self, value: Option<Arc<ExprOwned<'a>>>) {
+    pub fn set_value(&mut self, value: Option<Arc<Expr<'a>>>) {
         self.value = value;
     }
 }

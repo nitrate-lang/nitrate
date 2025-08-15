@@ -1,4 +1,4 @@
-use super::expression::ExprOwned;
+use super::expression::Expr;
 use std::sync::Arc;
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -80,17 +80,17 @@ pub enum BinExprOp {
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct BinExpr<'a> {
-    left: Arc<ExprOwned<'a>>,
-    right: Arc<ExprOwned<'a>>,
+    left: Arc<Expr<'a>>,
+    right: Arc<Expr<'a>>,
     operator: BinExprOp,
 }
 
 impl<'a> BinExpr<'a> {
     #[must_use]
     pub(crate) fn new(
-        left: Arc<ExprOwned<'a>>,
+        left: Arc<Expr<'a>>,
         operator: BinExprOp,
-        right: Arc<ExprOwned<'a>>,
+        right: Arc<Expr<'a>>,
     ) -> Self {
         BinExpr {
             left,
@@ -100,7 +100,7 @@ impl<'a> BinExpr<'a> {
     }
 
     #[must_use]
-    pub fn left(&self) -> Arc<ExprOwned<'a>> {
+    pub fn left(&self) -> Arc<Expr<'a>> {
         self.left.clone()
     }
 
@@ -110,7 +110,7 @@ impl<'a> BinExpr<'a> {
     }
 
     #[must_use]
-    pub fn right(&self) -> Arc<ExprOwned<'a>> {
+    pub fn right(&self) -> Arc<Expr<'a>> {
         self.right.clone()
     }
 }

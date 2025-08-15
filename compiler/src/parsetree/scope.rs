@@ -1,20 +1,20 @@
-use super::expression::ExprOwned;
+use super::expression::Expr;
 use crate::syntax::QualifiedScope;
 use std::sync::Arc;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct Scope<'a> {
     scope: QualifiedScope<'a>,
-    attributes: Vec<Arc<ExprOwned<'a>>>,
-    block: Arc<ExprOwned<'a>>,
+    attributes: Vec<Arc<Expr<'a>>>,
+    block: Arc<Expr<'a>>,
 }
 
 impl<'a> Scope<'a> {
     #[must_use]
     pub fn new(
         scope: QualifiedScope<'a>,
-        attributes: Vec<Arc<ExprOwned<'a>>>,
-        block: Arc<ExprOwned<'a>>,
+        attributes: Vec<Arc<Expr<'a>>>,
+        block: Arc<Expr<'a>>,
     ) -> Self {
         Scope {
             scope,
@@ -33,20 +33,20 @@ impl<'a> Scope<'a> {
     }
 
     #[must_use]
-    pub fn attributes(&self) -> &[Arc<ExprOwned<'a>>] {
+    pub fn attributes(&self) -> &[Arc<Expr<'a>>] {
         &self.attributes
     }
 
-    pub fn attributes_mut(&mut self) -> &mut Vec<Arc<ExprOwned<'a>>> {
+    pub fn attributes_mut(&mut self) -> &mut Vec<Arc<Expr<'a>>> {
         &mut self.attributes
     }
 
     #[must_use]
-    pub fn block(&self) -> Arc<ExprOwned<'a>> {
+    pub fn block(&self) -> Arc<Expr<'a>> {
         self.block.clone()
     }
 
-    pub fn set_block(&mut self, block: Arc<ExprOwned<'a>>) {
+    pub fn set_block(&mut self, block: Arc<Expr<'a>>) {
         self.block = block;
     }
 }

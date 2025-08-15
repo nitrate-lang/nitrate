@@ -1,20 +1,20 @@
-use super::expression::TypeOwned;
+use super::expression::Type;
 use std::rc::Rc;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct ManagedRefType<'a> {
-    target: Rc<TypeOwned<'a>>,
+    target: Rc<Type<'a>>,
     is_mutable: bool,
 }
 
 impl<'a> ManagedRefType<'a> {
     #[must_use]
-    pub(crate) fn new(target: Rc<TypeOwned<'a>>, is_mutable: bool) -> Self {
+    pub(crate) fn new(target: Rc<Type<'a>>, is_mutable: bool) -> Self {
         ManagedRefType { target, is_mutable }
     }
 
     #[must_use]
-    pub fn target(&self) -> Rc<TypeOwned<'a>> {
+    pub fn target(&self) -> Rc<Type<'a>> {
         self.target.clone()
     }
 
@@ -26,18 +26,18 @@ impl<'a> ManagedRefType<'a> {
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct UnmanagedRefType<'a> {
-    target: Rc<TypeOwned<'a>>,
+    target: Rc<Type<'a>>,
     is_mutable: bool,
 }
 
 impl<'a> UnmanagedRefType<'a> {
     #[must_use]
-    pub(crate) fn new(target: Rc<TypeOwned<'a>>, is_mutable: bool) -> Self {
+    pub(crate) fn new(target: Rc<Type<'a>>, is_mutable: bool) -> Self {
         UnmanagedRefType { target, is_mutable }
     }
 
     #[must_use]
-    pub fn target(&self) -> Rc<TypeOwned<'a>> {
+    pub fn target(&self) -> Rc<Type<'a>> {
         self.target.clone()
     }
 
