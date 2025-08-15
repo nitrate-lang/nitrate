@@ -1,4 +1,4 @@
-use std::ops::Deref;
+use std::{collections::BTreeMap, ops::Deref};
 
 use crate::parsetree::{nodes::*, *};
 use hashbrown::{HashMap, HashSet};
@@ -105,26 +105,27 @@ impl<'a> AbstractMachine<'a> {
 
     pub fn evaluate(&mut self, expression: &Expr<'a>) -> Expr<'a> {
         match expression {
-            Expr::Bool
-            | Expr::UInt8
-            | Expr::UInt16
-            | Expr::UInt32
-            | Expr::UInt64
-            | Expr::UInt128
-            | Expr::Int8
-            | Expr::Int16
-            | Expr::Int32
-            | Expr::Int64
-            | Expr::Int128
-            | Expr::Float8
-            | Expr::Float16
-            | Expr::Float32
-            | Expr::Float64
-            | Expr::Float128
-            | Expr::InferType
-            | Expr::TypeName(_)
-            | Expr::OpaqueType(_)
-            | Expr::RefinementType(_)
+            Expr::Bool => Expr::Bool,
+            Expr::UInt8 => Expr::UInt8,
+            Expr::UInt16 => Expr::UInt16,
+            Expr::UInt32 => Expr::UInt32,
+            Expr::UInt64 => Expr::UInt64,
+            Expr::UInt128 => Expr::UInt128,
+            Expr::Int8 => Expr::Int8,
+            Expr::Int16 => Expr::Int16,
+            Expr::Int32 => Expr::Int32,
+            Expr::Int64 => Expr::Int64,
+            Expr::Int128 => Expr::Int128,
+            Expr::Float8 => Expr::Float8,
+            Expr::Float16 => Expr::Float16,
+            Expr::Float32 => Expr::Float32,
+            Expr::Float64 => Expr::Float64,
+            Expr::Float128 => Expr::Float128,
+            Expr::InferType => Expr::InferType,
+            Expr::TypeName(str) => Expr::TypeName(str),
+            Expr::OpaqueType(identity) => Expr::OpaqueType(identity.clone()),
+
+            Expr::RefinementType(_)
             | Expr::TupleType(_)
             | Expr::ArrayType(_)
             | Expr::MapType(_)
@@ -144,26 +145,28 @@ impl<'a> AbstractMachine<'a> {
             Expr::Discard => Expr::Discard,
             Expr::HasParentheses(expr) => self.evaluate(expr.deref()),
 
-            Expr::BooleanLit(bool) => Expr::BooleanLit(bool.clone()),
+            Expr::BooleanLit(bool) => Expr::BooleanLit(bool.to_owned()),
             Expr::IntegerLit(int) => Expr::IntegerLit(int.clone()),
-            Expr::FloatLit(float) => Expr::FloatLit(float.clone()),
+            Expr::FloatLit(float) => Expr::FloatLit(float.to_owned()),
             Expr::StringLit(string) => Expr::StringLit(string.clone()),
             Expr::BStringLit(bstring) => Expr::BStringLit(bstring.clone()),
 
             Expr::ListLit(list) => {
-                let mut elements = list.elements().to_vec();
-                for entry in &mut elements {
-                    *entry = self.evaluate(&entry);
-                }
+                let elements = list
+                    .elements()
+                    .iter()
+                    .map(|e| self.evaluate(e))
+                    .collect::<Vec<_>>();
 
                 Builder::create_list().add_elements(elements).build()
             }
 
             Expr::ObjectLit(object) => {
-                let mut fields = object.get().to_owned();
-                for value in &mut fields.values_mut() {
-                    *value = self.evaluate(value);
-                }
+                let fields = object
+                    .get()
+                    .iter()
+                    .map(|(k, v)| (*k, self.evaluate(v)))
+                    .collect::<BTreeMap<_, _>>();
 
                 Builder::create_object().add_fields(fields).build()
             }
@@ -185,8 +188,8 @@ impl<'a> AbstractMachine<'a> {
 
             Expr::Block(block) => {
                 let mut result = None;
-                for expr in block.elements().to_owned() {
-                    result = Some(self.evaluate(&expr));
+                for element in block.elements() {
+                    result = Some(self.evaluate(element));
                 }
 
                 result.unwrap_or_else(|| Builder::get_unit().into())
@@ -270,106 +273,93 @@ impl<'a> AbstractMachine<'a> {
         }
 
         let result = match type_expression {
-            Type::Bool
-            | Type::UInt8
-            | Type::UInt16
-            | Type::UInt32
-            | Type::UInt64
-            | Type::UInt128
-            | Type::Int8
-            | Type::Int16
-            | Type::Int32
-            | Type::Int64
-            | Type::Int128
-            | Type::Float8
-            | Type::Float16
-            | Type::Float32
-            | Type::Float64
-            | Type::Float128
-            | Type::InferType
-            | Type::TypeName(_)
-            | Type::OpaqueType(_) => type_expression.to_owned(),
+            Type::Bool => Type::Bool,
+            Type::UInt8 => Type::UInt8,
+            Type::UInt16 => Type::UInt16,
+            Type::UInt32 => Type::UInt32,
+            Type::UInt64 => Type::UInt64,
+            Type::UInt128 => Type::UInt128,
+            Type::Int8 => Type::Int8,
+            Type::Int16 => Type::Int16,
+            Type::Int32 => Type::Int32,
+            Type::Int64 => Type::Int64,
+            Type::Int128 => Type::Int128,
+            Type::Float8 => Type::Float8,
+            Type::Float16 => Type::Float16,
+            Type::Float32 => Type::Float32,
+            Type::Float64 => Type::Float64,
+            Type::Float128 => Type::Float128,
+            Type::InferType => Type::InferType,
+            Type::TypeName(name) => Type::TypeName(*name),
+            Type::OpaqueType(identity) => Type::OpaqueType(identity.clone()),
 
-            Type::RefinementType(refinement_type) => {
-                let (mut width, mut min, mut max, mut base_type) = (
-                    refinement_type.width(),
-                    refinement_type.min(),
-                    refinement_type.max(),
-                    refinement_type.base(),
-                );
-
-                width = width.map(|w| self.evaluate(&w));
-                min = min.map(|m| self.evaluate(&m));
-                max = max.map(|m| self.evaluate(&m));
-                base_type = self.evaluate_type(&base_type);
+            Type::RefinementType(refinement) => {
+                let width = refinement.width().map(|w| self.evaluate(&w));
+                let min = refinement.min().map(|m| self.evaluate(&m));
+                let max = refinement.max().map(|m| self.evaluate(&m));
+                let base = self.evaluate_type(&refinement.base());
 
                 Builder::create_refinement_type()
                     .with_width(width)
                     .with_minimum(min)
                     .with_maximum(max)
-                    .with_base(base_type)
+                    .with_base(base)
                     .build()
             }
 
-            Type::TupleType(tuple_type) => {
-                let mut elements = tuple_type.elements().to_vec();
-                for t in &mut elements {
-                    *t = self.evaluate_type(t);
-                }
+            Type::TupleType(tuple) => {
+                let elements = tuple
+                    .elements()
+                    .iter()
+                    .map(|t| self.evaluate_type(t))
+                    .collect::<Vec<_>>();
 
                 Builder::create_tuple_type().add_elements(elements).build()
             }
 
-            Type::ArrayType(array_type) => {
-                let (mut element_type, mut count) = (array_type.element(), array_type.count());
-
-                element_type = self.evaluate_type(&element_type);
-                count = self.evaluate(&count);
+            Type::ArrayType(array) => {
+                let element = self.evaluate_type(&array.element());
+                let count = self.evaluate(&array.count());
 
                 Builder::create_array_type()
-                    .with_element(element_type)
+                    .with_element(element)
                     .with_count(count)
                     .build()
             }
 
-            Type::MapType(map_type) => {
-                let (mut key_type, mut value_type) = (map_type.key(), map_type.value());
-
-                key_type = self.evaluate_type(&key_type);
-                value_type = self.evaluate_type(&value_type);
+            Type::MapType(map) => {
+                let key = self.evaluate_type(&map.key());
+                let value = self.evaluate_type(&map.value());
 
                 Builder::create_map_type()
-                    .with_key(key_type)
-                    .with_value(value_type)
+                    .with_key(key)
+                    .with_value(value)
                     .build()
             }
 
-            Type::SliceType(slice_type) => {
-                let element_type = self.evaluate_type(&slice_type.element());
-
-                Builder::create_slice_type()
-                    .with_element(element_type)
-                    .build()
+            Type::SliceType(slice) => {
+                let element = self.evaluate_type(&slice.element());
+                Builder::create_slice_type().with_element(element).build()
             }
 
             Type::FunctionType(function_type) => {
-                let (mut attributes, mut parameters, mut return_type) = (
-                    function_type.attributes().to_vec(),
-                    function_type.parameters().to_vec(),
-                    function_type.return_type(),
-                );
+                let attributes = function_type
+                    .attributes()
+                    .iter()
+                    .map(|a| self.evaluate(a))
+                    .collect::<Vec<_>>();
 
-                for attribute in &mut attributes {
-                    *attribute = self.evaluate(attribute);
-                }
+                let parameters = function_type
+                    .parameters()
+                    .iter()
+                    .map(|p| {
+                        let type_ = self.evaluate_type(&p.type_());
+                        let default = p.default().map(|d| self.evaluate(&d));
+                        FunctionParameter::new(p.name(), type_, default)
+                    })
+                    .collect::<Vec<_>>();
 
-                for parameter in &mut parameters {
-                    let type_ = self.evaluate_type(&parameter.type_());
-                    let default = parameter.default().map(|d| self.evaluate(&d));
-                    *parameter = FunctionParameter::new(parameter.name(), type_, default);
-                }
-
-                return_type = self.evaluate_type(&return_type);
+                let return_type = self.evaluate_type(&function_type.return_type());
 
                 Builder::create_function_type()
                     .add_attributes(attributes)
@@ -399,14 +389,13 @@ impl<'a> AbstractMachine<'a> {
             }
 
             Type::GenericType(generic_type) => {
-                let (mut arguments, mut base) =
-                    (generic_type.arguments().to_vec(), generic_type.base());
+                let arguments = generic_type
+                    .arguments()
+                    .iter()
+                    .map(|(name, type_)| (*name, self.evaluate(type_)))
+                    .collect::<Vec<_>>();
 
-                for argument in &mut arguments {
-                    *argument = (argument.0, self.evaluate(&argument.1));
-                }
-
-                base = self.evaluate_type(&base);
+                let base = self.evaluate_type(&generic_type.base());
 
                 Builder::create_generic_type()
                     .with_base(base)
