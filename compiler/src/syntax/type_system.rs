@@ -813,7 +813,7 @@ impl<'a> Parser<'a, '_> {
                 return None;
             }
 
-            Some(Builder::new().create_has_parentheses(inner))
+            Some(Builder::new().create_type_parentheses(inner))
         } else {
             let Some(the_type) = self.parse_type_primary() else {
                 self.set_failed_bit();

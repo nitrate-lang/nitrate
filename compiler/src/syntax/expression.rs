@@ -746,13 +746,14 @@ impl<'a> Parser<'a, '_> {
             parenthesis_count += 1;
         }
 
-        let Some(expr) = self.parse_expression_primary() else {
+        let Some(mut expr) = self.parse_expression_primary() else {
             self.set_failed_bit();
             return None;
         };
 
-        // FIXME: Handle parenthesis correctly
-        // expr.add_parentheses();
+        if parenthesis_count > 0 {
+            expr = Builder::new().create_parentheses(expr);
+        }
 
         for _ in 0..parenthesis_count {
             if !self.lexer.skip_if(&Token::Punct(Punct::RightParen)) {

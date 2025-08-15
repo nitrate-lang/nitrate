@@ -21,6 +21,7 @@ use super::unary_expr::UnaryExpr;
 use super::variable::Variable;
 use crate::lexical::{BStringData, StringData};
 use std::rc::Rc;
+use std::sync::Arc;
 
 #[derive(Debug, Clone, PartialEq)]
 pub enum Expr<'a> {
@@ -40,7 +41,6 @@ pub enum Expr<'a> {
     Float32,
     Float64,
     Float128,
-
     InferType,
     TypeName(&'a str),
     RefinementType(Rc<RefinementType<'a>>),
@@ -53,9 +53,10 @@ pub enum Expr<'a> {
     UnmanagedRefType(Rc<UnmanagedRefType<'a>>),
     GenericType(Rc<GenericType<'a>>),
     OpaqueType(Rc<StringData<'a>>),
-    HasParentheses(Rc<Type<'a>>),
+    HasParenthesesType(Rc<Type<'a>>),
 
     Discard,
+    HasParentheses(Arc<Expr<'a>>),
 
     BooleanLit(bool),
     IntegerLit(IntegerLit),
@@ -118,7 +119,8 @@ pub enum Type<'a> {
     UnmanagedRefType(Rc<UnmanagedRefType<'a>>),
     GenericType(Rc<GenericType<'a>>),
     OpaqueType(Rc<StringData<'a>>),
-    HasParentheses(Rc<Type<'a>>),
+
+    HasParenthesesType(Rc<Type<'a>>),
 }
 
 impl<'a> TryInto<Type<'a>> for Expr<'a> {
@@ -155,9 +157,10 @@ impl<'a> TryInto<Type<'a>> for Expr<'a> {
             Expr::UnmanagedRefType(x) => Ok(Type::UnmanagedRefType(x)),
             Expr::GenericType(x) => Ok(Type::GenericType(x)),
             Expr::OpaqueType(x) => Ok(Type::OpaqueType(x)),
-            Expr::HasParentheses(x) => Ok(Type::HasParentheses(x)),
+            Expr::HasParenthesesType(x) => Ok(Type::HasParenthesesType(x)),
 
             Expr::Discard
+            | Expr::HasParentheses(_)
             | Expr::BooleanLit(_)
             | Expr::IntegerLit(_)
             | Expr::FloatLit(_)
@@ -219,7 +222,7 @@ impl<'a> From<Type<'a>> for Expr<'a> {
             Type::UnmanagedRefType(x) => Expr::UnmanagedRefType(x),
             Type::GenericType(x) => Expr::GenericType(x),
             Type::OpaqueType(x) => Expr::OpaqueType(x),
-            Type::HasParentheses(x) => Expr::HasParentheses(x),
+            Type::HasParenthesesType(x) => Expr::HasParenthesesType(x),
         }
     }
 }

@@ -460,11 +460,15 @@ impl<'a> ToCode<'a> for Assert<'a> {
 
 impl<'a> ToCode<'a> for Arc<Expr<'a>> {
     fn to_code(&self, tokens: &mut Vec<Token<'a>>, options: &CodeFormat) {
-        if self.is_discard() {
-            return;
-        }
-
         match self.deref() {
+            Expr::Discard => {}
+
+            Expr::HasParentheses(inner) => {
+                tokens.push(Token::Punct(Punct::LeftParen));
+                inner.to_code(tokens, options);
+                tokens.push(Token::Punct(Punct::RightParen));
+            }
+
             Expr::Bool => tokens.push(Token::Name(Name::new("bool"))),
             Expr::UInt8 => tokens.push(Token::Name(Name::new("u8"))),
             Expr::UInt16 => tokens.push(Token::Name(Name::new("u16"))),
@@ -499,13 +503,11 @@ impl<'a> ToCode<'a> for Arc<Expr<'a>> {
                 tokens.push(Token::String(e.deref().clone()));
                 tokens.push(Token::Punct(Punct::RightParen));
             }
-            Expr::HasParentheses(e) => {
+            Expr::HasParenthesesType(e) => {
                 tokens.push(Token::Punct(Punct::LeftParen));
                 e.to_code(tokens, options);
                 tokens.push(Token::Punct(Punct::RightParen));
             }
-
-            Expr::Discard => {}
 
             Expr::BooleanLit(e) => tokens.push(Token::Keyword(if *e {
                 Keyword::True
@@ -580,7 +582,7 @@ impl<'a> ToCode<'a> for Type<'a> {
                 tokens.push(Token::String(e.deref().clone()));
                 tokens.push(Token::Punct(Punct::RightParen));
             }
-            Type::HasParentheses(e) => {
+            Type::HasParenthesesType(e) => {
                 tokens.push(Token::Punct(Punct::LeftParen));
                 e.to_code(tokens, options);
                 tokens.push(Token::Punct(Punct::RightParen));

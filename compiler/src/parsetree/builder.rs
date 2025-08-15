@@ -308,7 +308,12 @@ impl<'a> Builder {
     }
 
     #[must_use]
-    pub fn create_has_parentheses(self, inner: Type<'a>) -> Type<'a> {
-        Type::HasParentheses(Rc::new(inner))
+    pub fn create_type_parentheses(self, inner: Type<'a>) -> Type<'a> {
+        Type::HasParenthesesType(Rc::new(inner))
+    }
+
+    #[must_use]
+    pub fn create_parentheses(self, inner: Arc<Expr<'a>>) -> Arc<Expr<'a>> {
+        Arc::new(Expr::HasParentheses(inner))
     }
 }
