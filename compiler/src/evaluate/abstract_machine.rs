@@ -2,7 +2,7 @@ use crate::parsetree::{
     Builder, ExprKey, ExprRef, Storage, TypeKey, TypeRef,
     node::{FunctionParameter, Variable},
 };
-use hashbrown::HashMap;
+use hashbrown::{HashMap, HashSet};
 
 #[derive(Debug, Default)]
 struct CallFrame<'a> {
@@ -54,6 +54,8 @@ where
     provided_functions: HashMap<&'a str, Function<'a, 'storage>>,
     tasks: Vec<Task<'a>>,
     current_task: usize,
+
+    already_evaluated_types: HashSet<TypeKey<'a>>,
 }
 
 impl<'a, 'storage> AbstractMachine<'a, 'storage> {
@@ -64,6 +66,7 @@ impl<'a, 'storage> AbstractMachine<'a, 'storage> {
             provided_functions: HashMap::new(),
             tasks: Vec::from([Task::new(0)]),
             current_task: 0,
+            already_evaluated_types: HashSet::new(),
         };
 
         abstract_machine.setup_builtins();
@@ -254,7 +257,11 @@ impl<'a, 'storage> AbstractMachine<'a, 'storage> {
     }
 
     pub fn evaluate_type(&mut self, type_expression: TypeKey<'a>) -> TypeKey<'a> {
-        match type_expression.get(self.storage) {
+        if self.already_evaluated_types.contains(&type_expression) {
+            return type_expression;
+        }
+
+        let result = match type_expression.get(self.storage) {
             TypeRef::Bool
             | TypeRef::UInt8
             | TypeRef::UInt16
@@ -409,6 +416,10 @@ impl<'a, 'storage> AbstractMachine<'a, 'storage> {
                     .add_arguments(arguments)
                     .build()
             }
-        }
+        };
+
+        self.already_evaluated_types.insert(result);
+
+        result
     }
 }
