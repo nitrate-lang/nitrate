@@ -9,6 +9,8 @@ use crate::parsetree::{Expr, Type};
 use std::ops::Deref;
 use std::sync::Arc;
 
+// FIXME: Keep this in sync with the parser
+
 #[derive(Debug, Default, Clone, PartialEq, PartialOrd, Hash)]
 pub struct CodeFormat {}
 
@@ -396,20 +398,31 @@ impl<'a> ToCode<'a> for Scope<'a> {
 }
 
 impl<'a> ToCode<'a> for If<'a> {
-    fn to_code(&self, _tokens: &mut Vec<Token<'a>>, _options: &CodeFormat) {
-        // TODO: Implement If to_code
+    fn to_code(&self, tokens: &mut Vec<Token<'a>>, options: &CodeFormat) {
+        tokens.push(Token::Keyword(Keyword::If));
+        self.condition().to_code(tokens, options);
+        self.then_branch().to_code(tokens, options);
+        if let Some(else_branch) = self.else_branch() {
+            tokens.push(Token::Keyword(Keyword::Else));
+            else_branch.to_code(tokens, options);
+        }
     }
 }
 
 impl<'a> ToCode<'a> for WhileLoop<'a> {
-    fn to_code(&self, _tokens: &mut Vec<Token<'a>>, _options: &CodeFormat) {
-        // TODO: Implement WhileLoop to_code
+    fn to_code(&self, tokens: &mut Vec<Token<'a>>, options: &CodeFormat) {
+        tokens.push(Token::Keyword(Keyword::While));
+        self.condition().to_code(tokens, options);
+        self.body().to_code(tokens, options);
     }
 }
 
 impl<'a> ToCode<'a> for DoWhileLoop<'a> {
-    fn to_code(&self, _tokens: &mut Vec<Token<'a>>, _options: &CodeFormat) {
-        // TODO: Implement DoWhileLoop to_code
+    fn to_code(&self, tokens: &mut Vec<Token<'a>>, options: &CodeFormat) {
+        tokens.push(Token::Keyword(Keyword::Do));
+        self.body().to_code(tokens, options);
+        tokens.push(Token::Keyword(Keyword::While));
+        self.condition().to_code(tokens, options);
     }
 }
 
@@ -420,14 +433,22 @@ impl<'a> ToCode<'a> for Switch<'a> {
 }
 
 impl<'a> ToCode<'a> for Break<'a> {
-    fn to_code(&self, _tokens: &mut Vec<Token<'a>>, _options: &CodeFormat) {
-        // TODO: Implement Break to_code
+    fn to_code(&self, tokens: &mut Vec<Token<'a>>, _options: &CodeFormat) {
+        tokens.push(Token::Keyword(Keyword::Break));
+        if let Some(label) = self.label() {
+            tokens.push(Token::Punct(Punct::SingleQuote));
+            tokens.push(Token::Name(Name::new(label)));
+        }
     }
 }
 
 impl<'a> ToCode<'a> for Continue<'a> {
-    fn to_code(&self, _tokens: &mut Vec<Token<'a>>, _options: &CodeFormat) {
-        // TODO: Implement Continue to_code
+    fn to_code(&self, tokens: &mut Vec<Token<'a>>, _options: &CodeFormat) {
+        tokens.push(Token::Keyword(Keyword::Continue));
+        if let Some(label) = self.label() {
+            tokens.push(Token::Punct(Punct::SingleQuote));
+            tokens.push(Token::Name(Name::new(label)));
+        }
     }
 }
 
@@ -447,8 +468,9 @@ impl<'a> ToCode<'a> for ForEach<'a> {
 }
 
 impl<'a> ToCode<'a> for Await<'a> {
-    fn to_code(&self, _tokens: &mut Vec<Token<'a>>, _options: &CodeFormat) {
-        // TODO: Implement Await to_code
+    fn to_code(&self, tokens: &mut Vec<Token<'a>>, options: &CodeFormat) {
+        tokens.push(Token::Keyword(Keyword::Await));
+        self.expression().to_code(tokens, options);
     }
 }
 
