@@ -1,3 +1,3 @@
 mod abstract_machine;
 
-// pub use abstract_machine::AbstractMachine;
+pub use abstract_machine::AbstractMachine;

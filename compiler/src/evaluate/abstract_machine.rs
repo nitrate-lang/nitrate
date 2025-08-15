@@ -68,24 +68,24 @@ impl<'a> AbstractMachine<'a> {
     }
 
     fn setup_builtins(&mut self) {
-        // self.provide_function("std::intrinsic::print", |m| {
-        //     let string_to_print = m.tasks[m.current_task]
-        //         .call_stack
-        //         .last()
-        //         .expect("No call frame found")
-        //         .get("msg")
-        //         .ok_or(FunctionError::MissingArgument)?
-        //         .value()
-        //         .ok_or(FunctionError::MissingArgument)?;
+        self.provide_function("std::intrinsic::print", |m| {
+            let string_to_print = m.tasks[m.current_task]
+                .call_stack
+                .last()
+                .expect("No call frame found")
+                .get("msg")
+                .ok_or(FunctionError::MissingArgument)?
+                .value()
+                .ok_or(FunctionError::MissingArgument)?;
 
-        //     match string_to_print.get(m.storage) {
-        //         Expr::StringLit(string) => {
-        //             print!("{}", string.get());
-        //             Ok(Builder::new(m.storage).get_unit().into())
-        //         }
-        //         _ => Err(FunctionError::TypeError),
-        //     }
-        // });
+            match string_to_print {
+                Expr::StringLit(string) => {
+                    print!("{}", string.get());
+                    Ok(Builder::new().get_unit().into())
+                }
+                _ => Err(FunctionError::TypeError),
+            }
+        });
 
         // TODO: Implement other intrinsic functions
     }
@@ -103,7 +103,7 @@ impl<'a> AbstractMachine<'a> {
         self.provided_functions.insert(name, callback)
     }
 
-    pub fn evaluate(&mut self, expression: Expr<'a>) -> Expr<'a> {
+    pub fn evaluate(&mut self, expression: &Expr<'a>) -> Expr<'a> {
         match expression {
             Expr::Bool
             | Expr::UInt8
@@ -134,26 +134,27 @@ impl<'a> AbstractMachine<'a> {
             | Expr::UnmanagedRefType(_)
             | Expr::GenericType(_)
             | Expr::HasParenthesesType(_) => {
-                let type_expression = expression.try_into().expect("Expected type expression");
-                self.evaluate_type(type_expression).into()
+                let type_expression = expression
+                    .to_owned()
+                    .try_into()
+                    .expect("Expected type expression");
+                self.evaluate_type(&type_expression).into()
             }
 
-            Expr::Discard => {
-                return Builder::new().get_discard();
-            }
-            Expr::HasParentheses(expr) => self.evaluate(expr.deref().clone()),
+            Expr::Discard => Expr::Discard,
+            Expr::HasParentheses(expr) => self.evaluate(expr.deref()),
 
             Expr::BooleanLit(_)
             | Expr::IntegerLit(_)
             | Expr::FloatLit(_)
             | Expr::StringLit(_)
-            | Expr::BStringLit(_) => expression,
+            | Expr::BStringLit(_) => expression.clone(),
 
             Expr::ListLit(list) => {
                 let mut elements = list.elements().to_vec();
 
                 for elem in &mut elements {
-                    *elem = self.evaluate(elem.clone());
+                    *elem = self.evaluate(elem);
                 }
 
                 Builder::new().create_list().add_elements(elements).build()
@@ -163,7 +164,7 @@ impl<'a> AbstractMachine<'a> {
                 let mut fields = object.get().clone();
 
                 for value in &mut fields.values_mut() {
-                    *value = self.evaluate(value.clone());
+                    *value = self.evaluate(value);
                 }
 
                 Builder::new().create_object().add_fields(fields).build()
@@ -180,14 +181,14 @@ impl<'a> AbstractMachine<'a> {
             }
 
             Expr::Statement(statement) => {
-                self.evaluate(statement.get());
+                self.evaluate(&statement.get());
                 Builder::new().get_unit().into()
             }
 
             Expr::Block(block) => {
                 let mut result = None;
                 for expr in block.elements().to_owned() {
-                    result = Some(self.evaluate(expr));
+                    result = Some(self.evaluate(&expr));
                 }
 
                 result.unwrap_or_else(|| Builder::new().get_unit().into())
@@ -265,9 +266,9 @@ impl<'a> AbstractMachine<'a> {
         }
     }
 
-    pub fn evaluate_type(&mut self, type_expression: Type<'a>) -> Type<'a> {
-        if self.already_evaluated_types.contains(&type_expression) {
-            return type_expression;
+    pub fn evaluate_type(&mut self, type_expression: &Type<'a>) -> Type<'a> {
+        if self.already_evaluated_types.contains(type_expression) {
+            return type_expression.clone();
         }
 
         let result = match type_expression {
@@ -289,7 +290,7 @@ impl<'a> AbstractMachine<'a> {
             | Type::Float128
             | Type::InferType
             | Type::TypeName(_)
-            | Type::OpaqueType(_) => type_expression,
+            | Type::OpaqueType(_) => type_expression.to_owned(),
 
             Type::RefinementType(refinement_type) => {
                 let (mut width, mut min, mut max, mut base_type) = (
@@ -299,10 +300,10 @@ impl<'a> AbstractMachine<'a> {
                     refinement_type.base(),
                 );
 
-                width = width.map(|w| self.evaluate(w));
-                min = min.map(|m| self.evaluate(m));
-                max = max.map(|m| self.evaluate(m));
-                base_type = self.evaluate_type(base_type);
+                width = width.map(|w| self.evaluate(&w));
+                min = min.map(|m| self.evaluate(&m));
+                max = max.map(|m| self.evaluate(&m));
+                base_type = self.evaluate_type(&base_type);
 
                 Builder::new()
                     .create_refinement_type()
@@ -316,7 +317,7 @@ impl<'a> AbstractMachine<'a> {
             Type::TupleType(tuple_type) => {
                 let mut elements = tuple_type.elements().to_vec();
                 for t in &mut elements {
-                    *t = self.evaluate_type(t.clone());
+                    *t = self.evaluate_type(t);
                 }
 
                 Builder::new()
@@ -328,8 +329,8 @@ impl<'a> AbstractMachine<'a> {
             Type::ArrayType(array_type) => {
                 let (mut element_type, mut count) = (array_type.element(), array_type.count());
 
-                element_type = self.evaluate_type(element_type);
-                count = self.evaluate(count);
+                element_type = self.evaluate_type(&element_type);
+                count = self.evaluate(&count);
 
                 Builder::new()
                     .create_array_type()
@@ -341,8 +342,8 @@ impl<'a> AbstractMachine<'a> {
             Type::MapType(map_type) => {
                 let (mut key_type, mut value_type) = (map_type.key(), map_type.value());
 
-                key_type = self.evaluate_type(key_type);
-                value_type = self.evaluate_type(value_type);
+                key_type = self.evaluate_type(&key_type);
+                value_type = self.evaluate_type(&value_type);
 
                 Builder::new()
                     .create_map_type()
@@ -352,7 +353,7 @@ impl<'a> AbstractMachine<'a> {
             }
 
             Type::SliceType(slice_type) => {
-                let element_type = self.evaluate_type(slice_type.element());
+                let element_type = self.evaluate_type(&slice_type.element());
 
                 Builder::new()
                     .create_slice_type()
@@ -368,16 +369,16 @@ impl<'a> AbstractMachine<'a> {
                 );
 
                 for attribute in &mut attributes {
-                    *attribute = self.evaluate(attribute.to_owned());
+                    *attribute = self.evaluate(attribute);
                 }
 
                 for parameter in &mut parameters {
-                    let type_ = self.evaluate_type(parameter.type_());
-                    let default = parameter.default().map(|d| self.evaluate(d));
+                    let type_ = self.evaluate_type(&parameter.type_());
+                    let default = parameter.default().map(|d| self.evaluate(&d));
                     *parameter = FunctionParameter::new(parameter.name(), type_, default);
                 }
 
-                return_type = self.evaluate_type(return_type);
+                return_type = self.evaluate_type(&return_type);
 
                 Builder::new()
                     .create_function_type()
@@ -389,7 +390,7 @@ impl<'a> AbstractMachine<'a> {
 
             Type::ManagedRefType(ref_type) => {
                 let is_mutable = ref_type.is_mutable();
-                let target_type = self.evaluate_type(ref_type.target());
+                let target_type = self.evaluate_type(&ref_type.target());
 
                 Builder::new()
                     .create_managed_type()
@@ -400,7 +401,7 @@ impl<'a> AbstractMachine<'a> {
 
             Type::UnmanagedRefType(ref_type) => {
                 let is_mutable = ref_type.is_mutable();
-                let target_type = self.evaluate_type(ref_type.target());
+                let target_type = self.evaluate_type(&ref_type.target());
 
                 Builder::new()
                     .create_unmanaged_type()
@@ -414,10 +415,10 @@ impl<'a> AbstractMachine<'a> {
                     (generic_type.arguments().to_vec(), generic_type.base());
 
                 for argument in &mut arguments {
-                    *argument = (argument.0, self.evaluate(argument.1.to_owned()));
+                    *argument = (argument.0, self.evaluate(&argument.1));
                 }
 
-                base = self.evaluate_type(base);
+                base = self.evaluate_type(&base);
 
                 Builder::new()
                     .create_generic_type()
@@ -426,9 +427,7 @@ impl<'a> AbstractMachine<'a> {
                     .build()
             }
 
-            Type::HasParenthesesType(inner_type) => {
-                self.evaluate_type(inner_type.deref().to_owned())
-            }
+            Type::HasParenthesesType(inner_type) => self.evaluate_type(inner_type),
         };
 
         self.already_evaluated_types.insert(result.clone());
