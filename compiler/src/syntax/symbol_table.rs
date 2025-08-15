@@ -1,56 +1,14 @@
 #[allow(unused_imports)]
-use crate::parsetree::{Builder, Expr, nodes};
-use smallvec::SmallVec;
+use crate::parsetree::{Builder, Expr, nodes, nodes::QualifiedScope};
 use std::collections::HashMap;
 use std::sync::Arc;
-
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct QualifiedScope<'a> {
-    parts: SmallVec<[&'a str; 8]>,
-}
-
-impl<'a> QualifiedScope<'a> {
-    #[must_use]
-    pub fn new(parts: SmallVec<[&'a str; 8]>) -> Self {
-        Self { parts }
-    }
-
-    #[must_use]
-    pub fn parse(scope: &'a str) -> Self {
-        let parts = scope
-            .split("::")
-            .filter(|s| !s.is_empty())
-            .collect::<SmallVec<[&'a str; 8]>>();
-        Self { parts }
-    }
-
-    #[must_use]
-    pub fn is_root(&self) -> bool {
-        self.parts.is_empty()
-    }
-
-    pub fn pop(&mut self) {
-        if !self.parts.is_empty() {
-            self.parts.pop();
-        }
-    }
-
-    pub fn push(&mut self, part: &'a str) {
-        self.parts.push(part);
-    }
-
-    #[must_use]
-    pub fn names(&self) -> &[&'a str] {
-        &self.parts
-    }
-}
 
 impl std::fmt::Display for QualifiedScope<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
             "{}",
-            self.parts.iter().copied().collect::<Vec<_>>().join("::")
+            self.names().iter().copied().collect::<Vec<_>>().join("::")
         )
     }
 }

@@ -1,17 +1,5 @@
-use super::bin_expr::BinExpr;
-use super::block::Block;
-use super::control_flow::{
-    Assert, Await, Break, Continue, DoWhileLoop, ForEach, If, Return, Switch, WhileLoop,
-};
-use super::function::Function;
-use super::list::ListLit;
-use super::number::IntegerLit;
-use super::object::ObjectLit;
-use super::scope::Scope;
-use super::statement::Statement;
+use super::expression::*;
 use super::types::*;
-use super::unary_expr::UnaryExpr;
-use super::variable::Variable;
 use crate::lexical::{BStringData, StringData};
 use std::rc::Rc;
 use std::sync::Arc;

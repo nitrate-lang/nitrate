@@ -1,8 +1,7 @@
 use super::source_model::SourceModel;
 use super::symbol_table::SymbolTable;
 use crate::lexical::{Lexer, Punct, Token};
-use crate::parsetree::Builder;
-use crate::syntax::QualifiedScope;
+use crate::parsetree::{Builder, nodes::QualifiedScope};
 use log::{error, info};
 use smallvec::SmallVec;
 

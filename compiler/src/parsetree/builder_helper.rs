@@ -4,11 +4,11 @@ use crate::parsetree::{
     nodes::{
         ArrayType, Assert, Await, BinExpr, BinExprOp, Block, Break, Continue, DoWhileLoop, ForEach,
         Function, FunctionParameter, FunctionType, GenericType, If, IntegerLit, ListLit,
-        ManagedRefType, MapType, ObjectLit, RefinementType, Return, Scope, SliceType, Statement,
-        TupleType, UnaryExpr, UnaryExprOp, UnmanagedRefType, Variable, VariableKind, WhileLoop,
+        ManagedRefType, MapType, ObjectLit, QualifiedScope, RefinementType, Return, Scope,
+        SliceType, Statement, Switch, TupleType, UnaryExpr, UnaryExprOp, UnmanagedRefType,
+        Variable, VariableKind, WhileLoop,
     },
 };
-use crate::syntax::QualifiedScope;
 use apint::UInt;
 use std::collections::BTreeMap;
 use std::rc::Rc;
@@ -1043,7 +1043,7 @@ impl<'a> SwitchBuilder<'a> {
     }
 
     pub fn build(self) -> Arc<Expr<'a>> {
-        let expr = super::control_flow::Switch::new(
+        let expr = Switch::new(
             self.condition.expect("Condition must be provided"),
             self.cases,
             self.default,

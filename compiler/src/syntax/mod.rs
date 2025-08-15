@@ -8,5 +8,5 @@ mod type_system;
 
 pub use parse::Parser;
 pub use source_model::{CopyrightInfo, SourceModel};
-pub use symbol_table::{QualifiedScope, SymbolTable};
+pub use symbol_table::SymbolTable;
 pub use to_code::*;

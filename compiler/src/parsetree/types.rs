@@ -1,4 +1,4 @@
-use super::function::FunctionParameter;
+use super::expression::FunctionParameter;
 use super::node::{Expr, Type};
 use std::sync::Arc;
 
