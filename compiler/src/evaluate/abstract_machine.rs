@@ -1,4 +1,7 @@
-use crate::parsetree::{Builder, ExprKey, ExprRef, Storage, TypeKey, TypeRef, node::Variable};
+use crate::parsetree::{
+    Builder, ExprKey, ExprRef, Storage, TypeKey, TypeRef,
+    node::{FunctionParameter, Variable},
+};
 use hashbrown::HashMap;
 
 #[derive(Debug, Default)]
@@ -341,9 +344,36 @@ impl<'a, 'storage> AbstractMachine<'a, 'storage> {
                     .build()
             }
 
-            TypeRef::FunctionType(_) => {
-                // TODO: Evaluate variant
-                unimplemented!()
+            TypeRef::FunctionType(function_type) => {
+                let (mut attributes, mut parameters, return_type) = (
+                    function_type.attributes().to_vec(),
+                    function_type.parameters().to_vec(),
+                    function_type.return_type(),
+                );
+
+                let attributes = attributes
+                    .iter_mut()
+                    .map(|attr| self.evaluate(*attr))
+                    .collect::<Vec<_>>();
+
+                let parameters = parameters
+                    .iter_mut()
+                    .map(|param| {
+                        let param_type = self.evaluate_type(param.param_type());
+                        let default = param.default_value().map(|d| self.evaluate(d));
+
+                        FunctionParameter::new(param.name(), param_type, default)
+                    })
+                    .collect::<Vec<_>>();
+
+                let return_type = self.evaluate_type(return_type);
+
+                Builder::new(self.storage)
+                    .create_function_type()
+                    .add_attributes(attributes)
+                    .add_parameters(parameters)
+                    .with_return_type(return_type)
+                    .build()
             }
 
             TypeRef::ManagedRefType(ref_type) => {
