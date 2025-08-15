@@ -22,7 +22,7 @@ mod unary_expr;
 mod variable;
 
 pub use builder::*;
-pub use expression::{ExprKind, Expr, TypeKind, Type};
+pub use expression::{Expr, Type};
 
 pub mod node {
     pub use super::array_type::ArrayType;

@@ -1,20 +1,20 @@
 use super::expression::{Expr, Type};
-use std::{rc::Rc, sync::Arc};
+use std::sync::Arc;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct GenericType<'a> {
-    base: Rc<Type<'a>>,
+    base: Type<'a>,
     args: Vec<(&'a str, Arc<Expr<'a>>)>,
 }
 
 impl<'a> GenericType<'a> {
     #[must_use]
-    pub(crate) fn new(base: Rc<Type<'a>>, args: Vec<(&'a str, Arc<Expr<'a>>)>) -> Self {
+    pub(crate) fn new(base: Type<'a>, args: Vec<(&'a str, Arc<Expr<'a>>)>) -> Self {
         GenericType { base, args }
     }
 
     #[must_use]
-    pub fn base(&self) -> Rc<Type<'a>> {
+    pub fn base(&self) -> Type<'a> {
         self.base.clone()
     }
 

@@ -8,7 +8,7 @@ use std::sync::Arc;
 
 #[derive(Debug)]
 pub struct RefinementTypeBuilder<'a> {
-    base: Option<Rc<Type<'a>>>,
+    base: Option<Type<'a>>,
     width: Option<Arc<Expr<'a>>>,
     minimum: Option<Arc<Expr<'a>>>,
     maximum: Option<Arc<Expr<'a>>>,
@@ -24,7 +24,7 @@ impl<'a> RefinementTypeBuilder<'a> {
         }
     }
 
-    pub fn with_base(mut self, base: Rc<Type<'a>>) -> Self {
+    pub fn with_base(mut self, base: Type<'a>) -> Self {
         self.base = Some(base);
         self
     }
@@ -44,8 +44,8 @@ impl<'a> RefinementTypeBuilder<'a> {
         self
     }
 
-    pub fn build(self) -> Rc<Type<'a>> {
-        Rc::new(Type::RefinementType(RefinementType::new(
+    pub fn build(self) -> Type<'a> {
+        Type::RefinementType(Rc::new(RefinementType::new(
             self.base.expect("Principal type must be provided"),
             self.width,
             self.minimum,
@@ -56,7 +56,7 @@ impl<'a> RefinementTypeBuilder<'a> {
 
 #[derive(Debug)]
 pub struct TupleTypeBuilder<'a> {
-    elements: Vec<Rc<Type<'a>>>,
+    elements: Vec<Type<'a>>,
 }
 
 impl<'a> TupleTypeBuilder<'a> {
@@ -66,27 +66,27 @@ impl<'a> TupleTypeBuilder<'a> {
         }
     }
 
-    pub fn add_element(mut self, ty: Rc<Type<'a>>) -> Self {
+    pub fn add_element(mut self, ty: Type<'a>) -> Self {
         self.elements.push(ty);
         self
     }
 
     pub fn add_elements<I>(mut self, elements: I) -> Self
     where
-        I: IntoIterator<Item = Rc<Type<'a>>>,
+        I: IntoIterator<Item = Type<'a>>,
     {
         self.elements.extend(elements);
         self
     }
 
-    pub fn build(self) -> Rc<Type<'a>> {
-        Rc::new(Type::TupleType(TupleType::new(self.elements)))
+    pub fn build(self) -> Type<'a> {
+        Type::TupleType(Rc::new(TupleType::new(self.elements)))
     }
 }
 
 #[derive(Debug)]
 pub struct ArrayTypeBuilder<'a> {
-    element: Option<Rc<Type<'a>>>,
+    element: Option<Type<'a>>,
     count: Option<Arc<Expr<'a>>>,
 }
 
@@ -98,7 +98,7 @@ impl<'a> ArrayTypeBuilder<'a> {
         }
     }
 
-    pub fn with_element(mut self, element: Rc<Type<'a>>) -> Self {
+    pub fn with_element(mut self, element: Type<'a>) -> Self {
         self.element = Some(element);
         self
     }
@@ -108,8 +108,8 @@ impl<'a> ArrayTypeBuilder<'a> {
         self
     }
 
-    pub fn build(self) -> Rc<Type<'a>> {
-        Rc::new(Type::ArrayType(ArrayType::new(
+    pub fn build(self) -> Type<'a> {
+        Type::ArrayType(Rc::new(ArrayType::new(
             self.element.expect("Element type must be provided"),
             self.count.expect("Array length must be provided"),
         )))
@@ -118,8 +118,8 @@ impl<'a> ArrayTypeBuilder<'a> {
 
 #[derive(Debug)]
 pub struct MapTypeBuilder<'a> {
-    key: Option<Rc<Type<'a>>>,
-    value: Option<Rc<Type<'a>>>,
+    key: Option<Type<'a>>,
+    value: Option<Type<'a>>,
 }
 
 impl<'a> MapTypeBuilder<'a> {
@@ -130,18 +130,18 @@ impl<'a> MapTypeBuilder<'a> {
         }
     }
 
-    pub fn with_key(mut self, key: Rc<Type<'a>>) -> Self {
+    pub fn with_key(mut self, key: Type<'a>) -> Self {
         self.key = Some(key);
         self
     }
 
-    pub fn with_value(mut self, value: Rc<Type<'a>>) -> Self {
+    pub fn with_value(mut self, value: Type<'a>) -> Self {
         self.value = Some(value);
         self
     }
 
-    pub fn build(self) -> Rc<Type<'a>> {
-        Rc::new(Type::MapType(MapType::new(
+    pub fn build(self) -> Type<'a> {
+        Type::MapType(Rc::new(MapType::new(
             self.key.expect("Key type must be provided"),
             self.value.expect("Value type must be provided"),
         )))
@@ -150,7 +150,7 @@ impl<'a> MapTypeBuilder<'a> {
 
 #[derive(Debug)]
 pub struct SliceTypeBuilder<'a> {
-    element: Option<Rc<Type<'a>>>,
+    element: Option<Type<'a>>,
 }
 
 impl<'a> SliceTypeBuilder<'a> {
@@ -158,13 +158,13 @@ impl<'a> SliceTypeBuilder<'a> {
         SliceTypeBuilder { element: None }
     }
 
-    pub fn with_element(mut self, element: Rc<Type<'a>>) -> Self {
+    pub fn with_element(mut self, element: Type<'a>) -> Self {
         self.element = Some(element);
         self
     }
 
-    pub fn build(self) -> Rc<Type<'a>> {
-        Rc::new(Type::SliceType(SliceType::new(
+    pub fn build(self) -> Type<'a> {
+        Type::SliceType(Rc::new(SliceType::new(
             self.element.expect("Element type must be provided"),
         )))
     }
@@ -173,7 +173,7 @@ impl<'a> SliceTypeBuilder<'a> {
 #[derive(Debug)]
 pub struct FunctionTypeBuilder<'a> {
     parameters: Vec<FunctionParameter<'a>>,
-    return_type: Option<Rc<Type<'a>>>,
+    return_type: Option<Type<'a>>,
     attributes: Vec<Arc<Expr<'a>>>,
 }
 
@@ -189,7 +189,7 @@ impl<'a> FunctionTypeBuilder<'a> {
     pub fn add_parameter(
         mut self,
         name: &'a str,
-        ty: Rc<Type<'a>>,
+        ty: Type<'a>,
         default_value: Option<Arc<Expr<'a>>>,
     ) -> Self {
         self.parameters
@@ -205,7 +205,7 @@ impl<'a> FunctionTypeBuilder<'a> {
         self
     }
 
-    pub fn with_return_type(mut self, ty: Rc<Type<'a>>) -> Self {
+    pub fn with_return_type(mut self, ty: Type<'a>) -> Self {
         self.return_type = Some(ty);
         self
     }
@@ -223,8 +223,8 @@ impl<'a> FunctionTypeBuilder<'a> {
         self
     }
 
-    pub fn build(self) -> Rc<Type<'a>> {
-        Rc::new(Type::FunctionType(FunctionType::new(
+    pub fn build(self) -> Type<'a> {
+        Type::FunctionType(Rc::new(FunctionType::new(
             self.parameters,
             self.return_type.expect("Return type must be provided"),
             self.attributes,
@@ -234,7 +234,7 @@ impl<'a> FunctionTypeBuilder<'a> {
 
 #[derive(Debug)]
 pub struct ManagedRefTypeBuilder<'a> {
-    target: Option<Rc<Type<'a>>>,
+    target: Option<Type<'a>>,
     is_mutable: bool,
 }
 
@@ -246,7 +246,7 @@ impl<'a> ManagedRefTypeBuilder<'a> {
         }
     }
 
-    pub fn with_target(mut self, target: Rc<Type<'a>>) -> Self {
+    pub fn with_target(mut self, target: Type<'a>) -> Self {
         self.target = Some(target);
         self
     }
@@ -256,8 +256,8 @@ impl<'a> ManagedRefTypeBuilder<'a> {
         self
     }
 
-    pub fn build(self) -> Rc<Type<'a>> {
-        Rc::new(Type::ManagedRefType(ManagedRefType::new(
+    pub fn build(self) -> Type<'a> {
+        Type::ManagedRefType(Rc::new(ManagedRefType::new(
             self.target.expect("Target type must be provided"),
             self.is_mutable,
         )))
@@ -266,7 +266,7 @@ impl<'a> ManagedRefTypeBuilder<'a> {
 
 #[derive(Debug)]
 pub struct UnmanagedRefTypeBuilder<'a> {
-    target: Option<Rc<Type<'a>>>,
+    target: Option<Type<'a>>,
     is_mutable: bool,
 }
 
@@ -278,7 +278,7 @@ impl<'a> UnmanagedRefTypeBuilder<'a> {
         }
     }
 
-    pub fn with_target(mut self, target: Rc<Type<'a>>) -> Self {
+    pub fn with_target(mut self, target: Type<'a>) -> Self {
         self.target = Some(target);
         self
     }
@@ -288,8 +288,8 @@ impl<'a> UnmanagedRefTypeBuilder<'a> {
         self
     }
 
-    pub fn build(self) -> Rc<Type<'a>> {
-        Rc::new(Type::UnmanagedRefType(UnmanagedRefType::new(
+    pub fn build(self) -> Type<'a> {
+        Type::UnmanagedRefType(Rc::new(UnmanagedRefType::new(
             self.target.expect("Target type must be provided"),
             self.is_mutable,
         )))
@@ -298,7 +298,7 @@ impl<'a> UnmanagedRefTypeBuilder<'a> {
 
 #[derive(Debug)]
 pub struct GenericTypeBuilder<'a> {
-    base: Option<Rc<Type<'a>>>,
+    base: Option<Type<'a>>,
     arguments: Vec<(&'a str, Arc<Expr<'a>>)>,
 }
 
@@ -310,7 +310,7 @@ impl<'a> GenericTypeBuilder<'a> {
         }
     }
 
-    pub fn with_base(mut self, base: Rc<Type<'a>>) -> Self {
+    pub fn with_base(mut self, base: Type<'a>) -> Self {
         self.base = Some(base);
         self
     }
@@ -328,8 +328,8 @@ impl<'a> GenericTypeBuilder<'a> {
         self
     }
 
-    pub fn build(self) -> Rc<Type<'a>> {
-        Rc::new(Type::GenericType(GenericType::new(
+    pub fn build(self) -> Type<'a> {
+        Type::GenericType(Rc::new(GenericType::new(
             self.base.expect("Principal type must be provided"),
             self.arguments,
         )))
@@ -694,7 +694,7 @@ impl<'a> BlockBuilder<'a> {
 pub struct FunctionBuilder<'a> {
     name: &'a str,
     parameters: Vec<FunctionParameter<'a>>,
-    return_type: Option<Rc<Type<'a>>>,
+    return_type: Option<Type<'a>>,
     attributes: Vec<Arc<Expr<'a>>>,
     definition: Option<Arc<Expr<'a>>>,
 }
@@ -718,7 +718,7 @@ impl<'a> FunctionBuilder<'a> {
     pub fn with_parameter(
         mut self,
         name: &'a str,
-        ty: Rc<Type<'a>>,
+        ty: Type<'a>,
         default_value: Option<Arc<Expr<'a>>>,
     ) -> Self {
         self.parameters
@@ -734,7 +734,7 @@ impl<'a> FunctionBuilder<'a> {
         self
     }
 
-    pub fn with_return_type(mut self, ty: Rc<Type<'a>>) -> Self {
+    pub fn with_return_type(mut self, ty: Type<'a>) -> Self {
         self.return_type = Some(ty);
         self
     }
@@ -774,7 +774,7 @@ pub struct VariableBuilder<'a> {
     is_mutable: bool,
     attributes: Vec<Arc<Expr<'a>>>,
     name: &'a str,
-    ty: Option<Rc<Type<'a>>>,
+    ty: Option<Type<'a>>,
     value: Option<Arc<Expr<'a>>>,
 }
 
@@ -815,7 +815,7 @@ impl<'a> VariableBuilder<'a> {
         self
     }
 
-    pub fn with_type(mut self, ty: Rc<Type<'a>>) -> Self {
+    pub fn with_type(mut self, ty: Type<'a>) -> Self {
         self.ty = Some(ty);
         self
     }
@@ -1113,7 +1113,7 @@ impl<'a> ReturnBuilder<'a> {
 
 #[derive(Debug)]
 pub struct ForEachBuilder<'a> {
-    bindings: Vec<(&'a str, Option<Rc<Type<'a>>>)>,
+    bindings: Vec<(&'a str, Option<Type<'a>>)>,
     iterable: Option<Arc<Expr<'a>>>,
     body: Option<Arc<Expr<'a>>>,
 }
@@ -1127,14 +1127,14 @@ impl<'a> ForEachBuilder<'a> {
         }
     }
 
-    pub fn add_binding(mut self, name: &'a str, ty: Option<Rc<Type<'a>>>) -> Self {
+    pub fn add_binding(mut self, name: &'a str, ty: Option<Type<'a>>) -> Self {
         self.bindings.push((name, ty));
         self
     }
 
     pub fn add_bindings<I>(mut self, bindings: I) -> Self
     where
-        I: IntoIterator<Item = (&'a str, Option<Rc<Type<'a>>>)>,
+        I: IntoIterator<Item = (&'a str, Option<Type<'a>>)>,
     {
         self.bindings.extend(bindings);
         self

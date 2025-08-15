@@ -1,9 +1,9 @@
 use super::expression::{Expr, Type};
-use std::{rc::Rc, sync::Arc};
+use std::sync::Arc;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct RefinementType<'a> {
-    base: Rc<Type<'a>>,
+    base: Type<'a>,
     width: Option<Arc<Expr<'a>>>,
     min: Option<Arc<Expr<'a>>>,
     max: Option<Arc<Expr<'a>>>,
@@ -12,7 +12,7 @@ pub struct RefinementType<'a> {
 impl<'a> RefinementType<'a> {
     #[must_use]
     pub(crate) fn new(
-        base: Rc<Type<'a>>,
+        base: Type<'a>,
         width: Option<Arc<Expr<'a>>>,
         min: Option<Arc<Expr<'a>>>,
         max: Option<Arc<Expr<'a>>>,
@@ -26,7 +26,7 @@ impl<'a> RefinementType<'a> {
     }
 
     #[must_use]
-    pub fn base(&self) -> Rc<Type<'a>> {
+    pub fn base(&self) -> Type<'a> {
         self.base.clone()
     }
 

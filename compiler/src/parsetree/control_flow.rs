@@ -1,5 +1,5 @@
 use super::expression::{Expr, Type};
-use std::{rc::Rc, sync::Arc};
+use std::sync::Arc;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct If<'a> {
@@ -228,14 +228,14 @@ impl<'a> Return<'a> {
 #[derive(Debug, Clone, PartialEq)]
 pub struct ForEach<'a> {
     iterable: Arc<Expr<'a>>,
-    bindings: Vec<(&'a str, Option<Rc<Type<'a>>>)>,
+    bindings: Vec<(&'a str, Option<Type<'a>>)>,
     body: Arc<Expr<'a>>,
 }
 
 impl<'a> ForEach<'a> {
     #[must_use]
     pub(crate) fn new(
-        bindings: Vec<(&'a str, Option<Rc<Type<'a>>>)>,
+        bindings: Vec<(&'a str, Option<Type<'a>>)>,
         iterable: Arc<Expr<'a>>,
         body: Arc<Expr<'a>>,
     ) -> Self {
@@ -256,12 +256,12 @@ impl<'a> ForEach<'a> {
     }
 
     #[must_use]
-    pub fn bindings(&self) -> &[(&'a str, Option<Rc<Type<'a>>>)] {
+    pub fn bindings(&self) -> &[(&'a str, Option<Type<'a>>)] {
         &self.bindings
     }
 
     #[must_use]
-    pub fn bindings_mut(&mut self) -> &mut Vec<(&'a str, Option<Rc<Type<'a>>>)> {
+    pub fn bindings_mut(&mut self) -> &mut Vec<(&'a str, Option<Type<'a>>)> {
         &mut self.bindings
     }
 

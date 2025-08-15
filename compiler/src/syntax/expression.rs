@@ -2,7 +2,6 @@ use super::parse::Parser;
 use crate::lexical::{BStringData, IntegerKind, Keyword, Op, Punct, StringData, Token};
 use crate::parsetree::{Builder, Expr, node::BinExprOp};
 use log::error;
-use std::ops::Deref;
 use std::sync::Arc;
 
 impl<'a> Parser<'a, '_> {
@@ -68,7 +67,7 @@ impl<'a> Parser<'a, '_> {
                 .create_binexpr()
                 .with_left(lit)
                 .with_operator(BinExprOp::As)
-                .with_right(Arc::new(type_name.deref().clone().into()))
+                .with_right(Arc::new(type_name.into()))
                 .build()
         } else {
             lit
@@ -128,7 +127,7 @@ impl<'a> Parser<'a, '_> {
                 return None;
             }
 
-            return Some(Arc::new(the_type.deref().clone().into()));
+            return Some(Arc::new(the_type.into()));
         }
 
         self.lexer.rewind(rewind_pos);

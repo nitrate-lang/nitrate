@@ -1,20 +1,16 @@
 use super::expression::{Expr, Type};
-use std::{rc::Rc, sync::Arc};
+use std::sync::Arc;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct FunctionParameter<'a> {
     name: &'a str,
-    param_type: Rc<Type<'a>>,
+    param_type: Type<'a>,
     default_value: Option<Arc<Expr<'a>>>,
 }
 
 impl<'a> FunctionParameter<'a> {
     #[must_use]
-    pub fn new(
-        name: &'a str,
-        param_type: Rc<Type<'a>>,
-        default_value: Option<Arc<Expr<'a>>>,
-    ) -> Self {
+    pub fn new(name: &'a str, param_type: Type<'a>, default_value: Option<Arc<Expr<'a>>>) -> Self {
         FunctionParameter {
             name,
             param_type,
@@ -28,7 +24,7 @@ impl<'a> FunctionParameter<'a> {
     }
 
     #[must_use]
-    pub fn type_(&self) -> Rc<Type<'a>> {
+    pub fn type_(&self) -> Type<'a> {
         self.param_type.clone()
     }
 
@@ -41,7 +37,7 @@ impl<'a> FunctionParameter<'a> {
 #[derive(Debug, Clone, PartialEq)]
 pub struct Function<'a> {
     parameters: Vec<FunctionParameter<'a>>,
-    return_type: Rc<Type<'a>>,
+    return_type: Type<'a>,
     attributes: Vec<Arc<Expr<'a>>>,
     name: &'a str,
     definition: Option<Arc<Expr<'a>>>,
@@ -52,7 +48,7 @@ impl<'a> Function<'a> {
     pub(crate) fn new(
         name: &'a str,
         parameters: Vec<FunctionParameter<'a>>,
-        return_type: Rc<Type<'a>>,
+        return_type: Type<'a>,
         attributes: Vec<Arc<Expr<'a>>>,
         definition: Option<Arc<Expr<'a>>>,
     ) -> Self {
@@ -76,11 +72,11 @@ impl<'a> Function<'a> {
     }
 
     #[must_use]
-    pub fn return_type(&self) -> Rc<Type<'a>> {
+    pub fn return_type(&self) -> Type<'a> {
         self.return_type.clone()
     }
 
-    pub fn set_return_type(&mut self, ty: Rc<Type<'a>>) {
+    pub fn set_return_type(&mut self, ty: Type<'a>) {
         self.return_type = ty;
     }
 

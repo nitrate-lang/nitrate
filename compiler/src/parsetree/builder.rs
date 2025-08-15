@@ -163,98 +163,98 @@ impl<'a> Builder {
     }
 
     #[must_use]
-    pub fn get_bool(self) -> Rc<Type<'a>> {
-        Rc::new(Type::Bool)
+    pub fn get_bool(self) -> Type<'a> {
+        Type::Bool
     }
 
     #[must_use]
-    pub fn get_u8(self) -> Rc<Type<'a>> {
-        Rc::new(Type::UInt8)
+    pub fn get_u8(self) -> Type<'a> {
+        Type::UInt8
     }
 
     #[must_use]
-    pub fn get_u16(self) -> Rc<Type<'a>> {
-        Rc::new(Type::UInt16)
+    pub fn get_u16(self) -> Type<'a> {
+        Type::UInt16
     }
 
     #[must_use]
-    pub fn get_u32(self) -> Rc<Type<'a>> {
-        Rc::new(Type::UInt32)
+    pub fn get_u32(self) -> Type<'a> {
+        Type::UInt32
     }
 
     #[must_use]
-    pub fn get_u64(self) -> Rc<Type<'a>> {
-        Rc::new(Type::UInt64)
+    pub fn get_u64(self) -> Type<'a> {
+        Type::UInt64
     }
 
     #[must_use]
-    pub fn get_u128(self) -> Rc<Type<'a>> {
-        Rc::new(Type::UInt128)
+    pub fn get_u128(self) -> Type<'a> {
+        Type::UInt128
     }
 
     #[must_use]
-    pub fn get_i8(self) -> Rc<Type<'a>> {
-        Rc::new(Type::Int8)
+    pub fn get_i8(self) -> Type<'a> {
+        Type::Int8
     }
 
     #[must_use]
-    pub fn get_i16(self) -> Rc<Type<'a>> {
-        Rc::new(Type::Int16)
+    pub fn get_i16(self) -> Type<'a> {
+        Type::Int16
     }
 
     #[must_use]
-    pub fn get_i32(self) -> Rc<Type<'a>> {
-        Rc::new(Type::Int32)
+    pub fn get_i32(self) -> Type<'a> {
+        Type::Int32
     }
 
     #[must_use]
-    pub fn get_i64(self) -> Rc<Type<'a>> {
-        Rc::new(Type::Int64)
+    pub fn get_i64(self) -> Type<'a> {
+        Type::Int64
     }
 
     #[must_use]
-    pub fn get_i128(self) -> Rc<Type<'a>> {
-        Rc::new(Type::Int128)
+    pub fn get_i128(self) -> Type<'a> {
+        Type::Int128
     }
 
     #[must_use]
-    pub fn get_f8(self) -> Rc<Type<'a>> {
-        Rc::new(Type::Float8)
+    pub fn get_f8(self) -> Type<'a> {
+        Type::Float8
     }
 
     #[must_use]
-    pub fn get_f16(self) -> Rc<Type<'a>> {
-        Rc::new(Type::Float16)
+    pub fn get_f16(self) -> Type<'a> {
+        Type::Float16
     }
 
     #[must_use]
-    pub fn get_f32(self) -> Rc<Type<'a>> {
-        Rc::new(Type::Float32)
+    pub fn get_f32(self) -> Type<'a> {
+        Type::Float32
     }
 
     #[must_use]
-    pub fn get_f64(self) -> Rc<Type<'a>> {
-        Rc::new(Type::Float64)
+    pub fn get_f64(self) -> Type<'a> {
+        Type::Float64
     }
 
     #[must_use]
-    pub fn get_f128(self) -> Rc<Type<'a>> {
-        Rc::new(Type::Float128)
+    pub fn get_f128(self) -> Type<'a> {
+        Type::Float128
     }
 
     #[must_use]
-    pub fn get_infer_type(self) -> Rc<Type<'a>> {
-        Rc::new(Type::InferType)
+    pub fn get_infer_type(self) -> Type<'a> {
+        Type::InferType
     }
 
     #[must_use]
-    pub fn get_unit(self) -> Rc<Type<'a>> {
-        Rc::new(Type::TupleType(TupleType::new(vec![])))
+    pub fn get_unit(self) -> Type<'a> {
+        Type::TupleType(Rc::new(TupleType::new(vec![])))
     }
 
     #[must_use]
-    pub fn create_type_name(self, name: &'a str) -> Rc<Type<'a>> {
-        Rc::new(Type::TypeName(name))
+    pub fn create_type_name(self, name: &'a str) -> Type<'a> {
+        Type::TypeName(name)
     }
 
     #[must_use]
@@ -303,7 +303,12 @@ impl<'a> Builder {
     }
 
     #[must_use]
-    pub fn create_opaque_type(self, identity: StringData<'a>) -> Rc<Type<'a>> {
-        Rc::new(Type::OpaqueType(identity))
+    pub fn create_opaque_type(self, identity: StringData<'a>) -> Type<'a> {
+        Type::OpaqueType(Rc::new(identity))
+    }
+
+    #[must_use]
+    pub fn create_has_parentheses(self, inner: Type<'a>) -> Type<'a> {
+        Type::HasParentheses(Rc::new(inner))
     }
 }

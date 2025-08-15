@@ -54,7 +54,7 @@
 //     tasks: Vec<Task<'a>>,
 //     current_task: usize,
 
-//     already_evaluated_types: HashSet<Rc<Type<'a>>>,
+//     already_evaluated_types: HashSet<Type<'a>>,
 // }
 
 // impl<'a, 'storage> AbstractMachine<'a, 'storage> {
@@ -273,8 +273,8 @@
 //     pub fn evaluate_type(
 //         &mut self,
 //         storage: &mut Storage<'a>,
-//         type_expression: Rc<Type<'a>>,
-//     ) -> Rc<Type<'a>> {
+//         type_expression: Type<'a>,
+//     ) -> Type<'a> {
 //         let s = storage;
 
 //         if self.already_evaluated_types.contains(&type_expression) {

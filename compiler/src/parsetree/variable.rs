@@ -1,5 +1,5 @@
 use super::expression::{Expr, Type};
-use std::{rc::Rc, sync::Arc};
+use std::sync::Arc;
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum VariableKind {
@@ -13,7 +13,7 @@ pub struct Variable<'a> {
     is_mutable: bool,
     attributes: Vec<Arc<Expr<'a>>>,
     name: &'a str,
-    var_type: Rc<Type<'a>>,
+    var_type: Type<'a>,
     value: Option<Arc<Expr<'a>>>,
 }
 
@@ -24,7 +24,7 @@ impl<'a> Variable<'a> {
         is_mutable: bool,
         attributes: Vec<Arc<Expr<'a>>>,
         name: &'a str,
-        var_type: Rc<Type<'a>>,
+        var_type: Type<'a>,
         value: Option<Arc<Expr<'a>>>,
     ) -> Self {
         Variable {
@@ -71,11 +71,11 @@ impl<'a> Variable<'a> {
     }
 
     #[must_use]
-    pub fn get_type(&self) -> Rc<Type<'a>> {
+    pub fn get_type(&self) -> Type<'a> {
         self.var_type.clone()
     }
 
-    pub fn set_type(&mut self, var_type: Rc<Type<'a>>) {
+    pub fn set_type(&mut self, var_type: Type<'a>) {
         self.var_type = var_type;
     }
 
