@@ -126,7 +126,7 @@ impl<'a> TypeKey<'a> {
     }
 
     #[must_use]
-    pub fn get<'storage>(self, storage: &'storage Storage<'a>) -> &'storage TypeOwned<'a> {
+    pub fn get<'storage>(self, storage: &'storage Storage<'a>) -> TypeRef<'storage, 'a> {
         storage.get_type(self)
     }
 }
@@ -807,30 +807,63 @@ impl<'a> Storage<'a> {
     }
 
     #[must_use]
-    pub fn get_type(&self, id: TypeKey<'a>) -> &TypeOwned<'a> {
+    pub fn get_type(&self, id: TypeKey<'a>) -> TypeRef<'_, 'a> {
         match id.variant_index() {
-            TypeKind::Bool => &TypeOwned::Bool,
-            TypeKind::UInt8 => &TypeOwned::UInt8,
-            TypeKind::UInt16 => &TypeOwned::UInt16,
-            TypeKind::UInt32 => &TypeOwned::UInt32,
-            TypeKind::UInt64 => &TypeOwned::UInt64,
-            TypeKind::UInt128 => &TypeOwned::UInt128,
-            TypeKind::Int8 => &TypeOwned::Int8,
-            TypeKind::Int16 => &TypeOwned::Int16,
-            TypeKind::Int32 => &TypeOwned::Int32,
-            TypeKind::Int64 => &TypeOwned::Int64,
-            TypeKind::Int128 => &TypeOwned::Int128,
-            TypeKind::Float8 => &TypeOwned::Float8,
-            TypeKind::Float16 => &TypeOwned::Float16,
-            TypeKind::Float32 => &TypeOwned::Float32,
-            TypeKind::Float64 => &TypeOwned::Float64,
-            TypeKind::Float128 => &TypeOwned::Float128,
-            TypeKind::InferType => &TypeOwned::InferType,
+            TypeKind::Bool => TypeRef::Bool,
+            TypeKind::UInt8 => TypeRef::UInt8,
+            TypeKind::UInt16 => TypeRef::UInt16,
+            TypeKind::UInt32 => TypeRef::UInt32,
+            TypeKind::UInt64 => TypeRef::UInt64,
+            TypeKind::UInt128 => TypeRef::UInt128,
+            TypeKind::Int8 => TypeRef::Int8,
+            TypeKind::Int16 => TypeRef::Int16,
+            TypeKind::Int32 => TypeRef::Int32,
+            TypeKind::Int64 => TypeRef::Int64,
+            TypeKind::Int128 => TypeRef::Int128,
+            TypeKind::Float8 => TypeRef::Float8,
+            TypeKind::Float16 => TypeRef::Float16,
+            TypeKind::Float32 => TypeRef::Float32,
+            TypeKind::Float64 => TypeRef::Float64,
+            TypeKind::Float128 => TypeRef::Float128,
+            TypeKind::InferType => TypeRef::InferType,
 
-            _ => self
+            _ => match self
                 .dedup_types
                 .get_by_left(&id)
-                .expect("TypeKey not found in storage"),
+                .expect("TypeKey not found in storage")
+            {
+                TypeOwned::Bool
+                | TypeOwned::UInt8
+                | TypeOwned::UInt16
+                | TypeOwned::UInt32
+                | TypeOwned::UInt64
+                | TypeOwned::UInt128
+                | TypeOwned::Int8
+                | TypeOwned::Int16
+                | TypeOwned::Int32
+                | TypeOwned::Int64
+                | TypeOwned::Int128
+                | TypeOwned::Float8
+                | TypeOwned::Float16
+                | TypeOwned::Float32
+                | TypeOwned::Float64
+                | TypeOwned::Float128
+                | TypeOwned::InferType => {
+                    unreachable!()
+                }
+
+                TypeOwned::TypeName(node) => TypeRef::TypeName(node),
+                TypeOwned::RefinementType(node) => TypeRef::RefinementType(node),
+                TypeOwned::TupleType(node) => TypeRef::TupleType(node),
+                TypeOwned::ArrayType(node) => TypeRef::ArrayType(node),
+                TypeOwned::MapType(node) => TypeRef::MapType(node),
+                TypeOwned::SliceType(node) => TypeRef::SliceType(node),
+                TypeOwned::FunctionType(node) => TypeRef::FunctionType(node),
+                TypeOwned::ManagedRefType(node) => TypeRef::ManagedRefType(node),
+                TypeOwned::UnmanagedRefType(node) => TypeRef::UnmanagedRefType(node),
+                TypeOwned::GenericType(node) => TypeRef::GenericType(node),
+                TypeOwned::OpaqueType(node) => TypeRef::OpaqueType(node),
+            },
         }
     }
 

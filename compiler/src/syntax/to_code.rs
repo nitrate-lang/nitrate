@@ -5,7 +5,7 @@ use crate::parsetree::node::{
     ObjectLit, RefinementType, Return, Scope, SliceType, Statement, Switch, TupleType, UnaryExpr,
     UnaryExprOp, UnmanagedRefType, Variable, VariableKind, WhileLoop,
 };
-use crate::parsetree::{ExprKey, ExprRef, Storage, TypeKey, TypeOwned};
+use crate::parsetree::{ExprKey, ExprRef, Storage, TypeKey, TypeRef};
 
 #[derive(Debug, Default, Clone, PartialEq, PartialOrd, Hash)]
 pub struct CodeFormat {}
@@ -97,7 +97,7 @@ impl<'a> ToCode<'a> for FunctionType<'a> {
             tokens.push(Token::Name(Name::new(param.name())));
 
             let param_ty = param.param_type();
-            if !matches!(param_ty.get(bank), TypeOwned::InferType) {
+            if !matches!(param_ty.get(bank), TypeRef::InferType) {
                 tokens.push(Token::Punct(Punct::Colon));
                 param_ty.to_code(bank, tokens, options);
             }
@@ -110,7 +110,7 @@ impl<'a> ToCode<'a> for FunctionType<'a> {
         tokens.push(Token::Punct(Punct::RightParen));
 
         let return_type = self.return_type();
-        if !matches!(return_type.get(bank), TypeOwned::InferType) {
+        if !matches!(return_type.get(bank), TypeRef::InferType) {
             tokens.push(Token::Op(Op::Arrow));
             return_type.to_code(bank, tokens, options);
         }
@@ -331,7 +331,7 @@ impl<'a> ToCode<'a> for Function<'a> {
             tokens.push(Token::Name(Name::new(param.name())));
 
             let param_ty = param.param_type();
-            if !matches!(param_ty.get(bank), TypeOwned::InferType) {
+            if !matches!(param_ty.get(bank), TypeRef::InferType) {
                 tokens.push(Token::Punct(Punct::Colon));
                 param_ty.to_code(bank, tokens, options);
             }
@@ -344,7 +344,7 @@ impl<'a> ToCode<'a> for Function<'a> {
         tokens.push(Token::Punct(Punct::RightParen));
 
         let return_type = self.return_type();
-        if !matches!(return_type.get(bank), TypeOwned::InferType) {
+        if !matches!(return_type.get(bank), TypeRef::InferType) {
             tokens.push(Token::Op(Op::Arrow));
             return_type.to_code(bank, tokens, options);
         }
@@ -558,35 +558,35 @@ impl<'a> ToCode<'a> for TypeKey<'a> {
         }
 
         match self.get(bank) {
-            TypeOwned::Bool => tokens.push(Token::Name(Name::new("bool"))),
-            TypeOwned::UInt8 => tokens.push(Token::Name(Name::new("u8"))),
-            TypeOwned::UInt16 => tokens.push(Token::Name(Name::new("u16"))),
-            TypeOwned::UInt32 => tokens.push(Token::Name(Name::new("u32"))),
-            TypeOwned::UInt64 => tokens.push(Token::Name(Name::new("u64"))),
-            TypeOwned::UInt128 => tokens.push(Token::Name(Name::new("u128"))),
-            TypeOwned::Int8 => tokens.push(Token::Name(Name::new("i8"))),
-            TypeOwned::Int16 => tokens.push(Token::Name(Name::new("i16"))),
-            TypeOwned::Int32 => tokens.push(Token::Name(Name::new("i32"))),
-            TypeOwned::Int64 => tokens.push(Token::Name(Name::new("i64"))),
-            TypeOwned::Int128 => tokens.push(Token::Name(Name::new("i128"))),
-            TypeOwned::Float8 => tokens.push(Token::Name(Name::new("f8"))),
-            TypeOwned::Float16 => tokens.push(Token::Name(Name::new("f16"))),
-            TypeOwned::Float32 => tokens.push(Token::Name(Name::new("f32"))),
-            TypeOwned::Float64 => tokens.push(Token::Name(Name::new("f64"))),
-            TypeOwned::Float128 => tokens.push(Token::Name(Name::new("f128"))),
+            TypeRef::Bool => tokens.push(Token::Name(Name::new("bool"))),
+            TypeRef::UInt8 => tokens.push(Token::Name(Name::new("u8"))),
+            TypeRef::UInt16 => tokens.push(Token::Name(Name::new("u16"))),
+            TypeRef::UInt32 => tokens.push(Token::Name(Name::new("u32"))),
+            TypeRef::UInt64 => tokens.push(Token::Name(Name::new("u64"))),
+            TypeRef::UInt128 => tokens.push(Token::Name(Name::new("u128"))),
+            TypeRef::Int8 => tokens.push(Token::Name(Name::new("i8"))),
+            TypeRef::Int16 => tokens.push(Token::Name(Name::new("i16"))),
+            TypeRef::Int32 => tokens.push(Token::Name(Name::new("i32"))),
+            TypeRef::Int64 => tokens.push(Token::Name(Name::new("i64"))),
+            TypeRef::Int128 => tokens.push(Token::Name(Name::new("i128"))),
+            TypeRef::Float8 => tokens.push(Token::Name(Name::new("f8"))),
+            TypeRef::Float16 => tokens.push(Token::Name(Name::new("f16"))),
+            TypeRef::Float32 => tokens.push(Token::Name(Name::new("f32"))),
+            TypeRef::Float64 => tokens.push(Token::Name(Name::new("f64"))),
+            TypeRef::Float128 => tokens.push(Token::Name(Name::new("f128"))),
 
-            TypeOwned::InferType => tokens.push(Token::Name(Name::new("_"))),
-            TypeOwned::TypeName(e) => tokens.push(Token::Name(Name::new(e))),
-            TypeOwned::RefinementType(e) => e.to_code(bank, tokens, options),
-            TypeOwned::TupleType(e) => e.to_code(bank, tokens, options),
-            TypeOwned::ArrayType(e) => e.to_code(bank, tokens, options),
-            TypeOwned::MapType(e) => e.to_code(bank, tokens, options),
-            TypeOwned::SliceType(e) => e.to_code(bank, tokens, options),
-            TypeOwned::FunctionType(e) => e.to_code(bank, tokens, options),
-            TypeOwned::ManagedRefType(e) => e.to_code(bank, tokens, options),
-            TypeOwned::UnmanagedRefType(e) => e.to_code(bank, tokens, options),
-            TypeOwned::GenericType(e) => e.to_code(bank, tokens, options),
-            TypeOwned::OpaqueType(e) => {
+            TypeRef::InferType => tokens.push(Token::Name(Name::new("_"))),
+            TypeRef::TypeName(e) => tokens.push(Token::Name(Name::new(e))),
+            TypeRef::RefinementType(e) => e.to_code(bank, tokens, options),
+            TypeRef::TupleType(e) => e.to_code(bank, tokens, options),
+            TypeRef::ArrayType(e) => e.to_code(bank, tokens, options),
+            TypeRef::MapType(e) => e.to_code(bank, tokens, options),
+            TypeRef::SliceType(e) => e.to_code(bank, tokens, options),
+            TypeRef::FunctionType(e) => e.to_code(bank, tokens, options),
+            TypeRef::ManagedRefType(e) => e.to_code(bank, tokens, options),
+            TypeRef::UnmanagedRefType(e) => e.to_code(bank, tokens, options),
+            TypeRef::GenericType(e) => e.to_code(bank, tokens, options),
+            TypeRef::OpaqueType(e) => {
                 tokens.push(Token::Keyword(Keyword::Opaque));
                 tokens.push(Token::Punct(Punct::LeftParen));
                 tokens.push(Token::String(e.clone()));

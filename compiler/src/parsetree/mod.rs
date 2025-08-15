@@ -25,7 +25,7 @@ mod variable;
 
 pub use builder::*;
 pub use debug::*;
-pub use expression::{ExprKind, ExprOwned, ExprRef, ExprRefMut, TypeKind, TypeOwned};
+pub use expression::{ExprKind, ExprOwned, ExprRef, ExprRefMut, TypeKind, TypeOwned, TypeRef};
 pub use storage::{ExprKey, Storage, TypeKey};
 
 pub mod node {
