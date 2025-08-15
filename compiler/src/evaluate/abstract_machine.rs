@@ -342,24 +342,20 @@ impl<'a> AbstractMachine<'a> {
                 Builder::create_slice_type().with_element(element).build()
             }
 
-            Type::FunctionType(function_type) => {
-                let attributes = function_type
-                    .attributes()
-                    .iter()
-                    .map(|a| self.evaluate(a))
-                    .collect::<Vec<_>>();
+            Type::FunctionType(function) => {
+                let attributes = function.attributes().to_vec();
 
-                let parameters = function_type
+                let parameters = function
                     .parameters()
                     .iter()
                     .map(|p| {
                         let type_ = self.evaluate_type(&p.type_());
-                        let default = p.default().map(|d| self.evaluate(&d));
+                        let default = p.default();
                         FunctionParameter::new(p.name(), type_, default)
                     })
                     .collect::<Vec<_>>();
 
-                let return_type = self.evaluate_type(&function_type.return_type());
+                let return_type = self.evaluate_type(&function.return_type());
 
                 Builder::create_function_type()
                     .add_attributes(attributes)
@@ -368,9 +364,9 @@ impl<'a> AbstractMachine<'a> {
                     .build()
             }
 
-            Type::ManagedRefType(ref_type) => {
-                let is_mutable = ref_type.is_mutable();
-                let target_type = self.evaluate_type(&ref_type.target());
+            Type::ManagedRefType(reference) => {
+                let is_mutable = reference.is_mutable();
+                let target_type = self.evaluate_type(&reference.target());
 
                 Builder::create_managed_type()
                     .with_mutability(is_mutable)
@@ -378,9 +374,9 @@ impl<'a> AbstractMachine<'a> {
                     .build()
             }
 
-            Type::UnmanagedRefType(ref_type) => {
-                let is_mutable = ref_type.is_mutable();
-                let target_type = self.evaluate_type(&ref_type.target());
+            Type::UnmanagedRefType(reference) => {
+                let is_mutable = reference.is_mutable();
+                let target_type = self.evaluate_type(&reference.target());
 
                 Builder::create_unmanaged_type()
                     .with_mutability(is_mutable)
@@ -388,22 +384,24 @@ impl<'a> AbstractMachine<'a> {
                     .build()
             }
 
-            Type::GenericType(generic_type) => {
-                let arguments = generic_type
+            Type::GenericType(generic) => {
+                // TODO: Instantiate generic base with type arguments
+
+                let arguments = generic
                     .arguments()
                     .iter()
                     .map(|(name, type_)| (*name, self.evaluate(type_)))
                     .collect::<Vec<_>>();
 
-                let base = self.evaluate_type(&generic_type.base());
+                let base = self.evaluate_type(&generic.base());
 
                 Builder::create_generic_type()
-                    .with_base(base)
                     .add_arguments(arguments)
+                    .with_base(base)
                     .build()
             }
 
-            Type::HasParenthesesType(inner_type) => self.evaluate_type(inner_type),
+            Type::HasParenthesesType(inner) => self.evaluate_type(inner),
         };
 
         self.already_evaluated_types.insert(result.clone());
