@@ -1,3 +1,4 @@
+use log::error;
 use nitrate_compiler::lexer::*;
 use nitrate_compiler::parser::*;
 use nitrate_compiler::parsetree::*;
@@ -45,16 +46,16 @@ fn program() -> i32 {
     };
 
     if model.any_errors() {
-        eprintln!("Parsing completed with errors in file: {}", filename);
-        println!("model = {:#?}", model.tree().as_printable(&storage));
-
-        1
-    } else {
-        println!("Parsing succeeded for file: {}", filename);
-        println!("model = {:#?}", model.tree().as_printable(&storage));
-
-        0
+        error!("Compilation failed: {}", filename);
+        return 1;
     }
+
+    // let parsetree_resolve =
+
+    println!("Parsing succeeded for file: {}", filename);
+    println!("model = {:#?}", model.tree().as_printable(&storage));
+
+    0
 }
 
 fn main() {
