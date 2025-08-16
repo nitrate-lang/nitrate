@@ -26,23 +26,23 @@ impl<'a> RefinementType<'a> {
     }
 
     #[must_use]
-    pub fn base(&self) -> Type<'a> {
-        self.base.clone()
+    pub fn base(&self) -> &Type<'a> {
+        &self.base
     }
 
     #[must_use]
-    pub fn width(&self) -> Option<Expr<'a>> {
-        self.width.clone()
+    pub fn width(&self) -> Option<&Expr<'a>> {
+        self.width.as_ref()
     }
 
     #[must_use]
-    pub fn min(&self) -> Option<Expr<'a>> {
-        self.min.clone()
+    pub fn min(&self) -> Option<&Expr<'a>> {
+        self.min.as_ref()
     }
 
     #[must_use]
-    pub fn max(&self) -> Option<Expr<'a>> {
-        self.max.clone()
+    pub fn max(&self) -> Option<&Expr<'a>> {
+        self.max.as_ref()
     }
 }
 
@@ -76,13 +76,13 @@ impl<'a> ArrayType<'a> {
     }
 
     #[must_use]
-    pub fn element(&self) -> Type<'a> {
-        self.element.clone()
+    pub fn element(&self) -> &Type<'a> {
+        &self.element
     }
 
     #[must_use]
-    pub fn count(&self) -> Expr<'a> {
-        self.count.clone()
+    pub fn count(&self) -> &Expr<'a> {
+        &self.count
     }
 }
 
@@ -99,13 +99,13 @@ impl<'a> MapType<'a> {
     }
 
     #[must_use]
-    pub fn key(&self) -> Type<'a> {
-        self.key.clone()
+    pub fn key(&self) -> &Type<'a> {
+        &self.key
     }
 
     #[must_use]
-    pub fn value(&self) -> Type<'a> {
-        self.value.clone()
+    pub fn value(&self) -> &Type<'a> {
+        &self.value
     }
 }
 
@@ -121,8 +121,8 @@ impl<'a> SliceType<'a> {
     }
 
     #[must_use]
-    pub fn element(&self) -> Type<'a> {
-        self.element.clone()
+    pub fn element(&self) -> &Type<'a> {
+        &self.element
     }
 }
 
@@ -148,18 +148,18 @@ impl<'a> FunctionType<'a> {
     }
 
     #[must_use]
+    pub fn attributes(&self) -> &[Expr<'a>] {
+        &self.attributes
+    }
+
+    #[must_use]
     pub fn parameters(&self) -> &[FunctionParameter<'a>] {
         &self.parameters
     }
 
     #[must_use]
-    pub fn return_type(&self) -> Type<'a> {
-        self.return_type.clone()
-    }
-
-    #[must_use]
-    pub fn attributes(&self) -> &[Expr<'a>] {
-        &self.attributes
+    pub fn return_type(&self) -> &Type<'a> {
+        &self.return_type
     }
 }
 
@@ -176,8 +176,8 @@ impl<'a> ManagedRefType<'a> {
     }
 
     #[must_use]
-    pub fn target(&self) -> Type<'a> {
-        self.target.clone()
+    pub fn target(&self) -> &Type<'a> {
+        &self.target
     }
 
     #[must_use]
@@ -199,8 +199,8 @@ impl<'a> UnmanagedRefType<'a> {
     }
 
     #[must_use]
-    pub fn target(&self) -> Type<'a> {
-        self.target.clone()
+    pub fn target(&self) -> &Type<'a> {
+        &self.target
     }
 
     #[must_use]
@@ -222,8 +222,8 @@ impl<'a> GenericType<'a> {
     }
 
     #[must_use]
-    pub fn base(&self) -> Type<'a> {
-        self.base.clone()
+    pub fn base(&self) -> &Type<'a> {
+        &self.base
     }
 
     #[must_use]
