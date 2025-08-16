@@ -58,6 +58,11 @@ impl<'a> Builder {
     }
 
     #[must_use]
+    pub fn create_unit() -> Expr<'a> {
+        Expr::UnitLit
+    }
+
+    #[must_use]
     pub fn create_object() -> ObjectBuilder<'a> {
         ObjectBuilder::new()
     }
@@ -248,7 +253,7 @@ impl<'a> Builder {
     }
 
     #[must_use]
-    pub fn get_unit() -> Type<'a> {
+    pub fn get_unit_type() -> Type<'a> {
         Type::TupleType(Rc::new(TupleType::new(vec![])))
     }
 

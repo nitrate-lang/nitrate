@@ -17,8 +17,10 @@ impl<'a> AbstractMachine<'a> {
 
     pub(crate) fn evaluate_object(&mut self, object: &Object<'a>) -> Result<Expr<'a>, EvalError> {
         let mut fields = BTreeMap::new();
+
         for (key, value) in object.get() {
-            fields.insert(key.to_owned(), self.evaluate(value)?);
+            let evaluated_value = self.evaluate(value)?;
+            fields.insert(key.to_owned(), evaluated_value);
         }
 
         Ok(Builder::create_object().add_fields(fields).build())
@@ -42,7 +44,7 @@ impl<'a> AbstractMachine<'a> {
         statement: &Statement<'a>,
     ) -> Result<Expr<'a>, EvalError> {
         self.evaluate(&statement.get())?;
-        Ok(Builder::get_unit().into())
+        Ok(Builder::create_unit())
     }
 
     pub(crate) fn evaluate_block(&mut self, block: &Block<'a>) -> Result<Expr<'a>, EvalError> {
@@ -51,6 +53,6 @@ impl<'a> AbstractMachine<'a> {
             result = Some(self.evaluate(element)?);
         }
 
-        Ok(result.unwrap_or_else(|| Builder::get_unit().into()))
+        Ok(result.unwrap_or_else(|| Builder::create_unit()))
     }
 }

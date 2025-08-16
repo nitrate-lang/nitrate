@@ -29,6 +29,7 @@ pub enum Expr<'a> {
     Float32,
     Float64,
     Float128,
+    UnitType,
     InferType,
     TypeName(&'a str),
     RefinementType(Rc<RefinementType<'a>>),
@@ -51,6 +52,7 @@ pub enum Expr<'a> {
     FloatLit(NotNan<f64>),
     StringLit(Rc<StringData<'a>>),
     BStringLit(Rc<BStringData<'a>>),
+    UnitLit,
 
     List(Rc<List<'a>>),
     Object(Rc<Object<'a>>),
@@ -94,7 +96,7 @@ pub enum Type<'a> {
     Float32,
     Float64,
     Float128,
-
+    UnitType,
     InferType,
     TypeName(&'a str),
     RefinementType(Rc<RefinementType<'a>>),
@@ -107,7 +109,6 @@ pub enum Type<'a> {
     UnmanagedRefType(Rc<UnmanagedRefType<'a>>),
     GenericType(Rc<GenericType<'a>>),
     OpaqueType(Rc<StringData<'a>>),
-
     HasParenthesesType(Rc<Type<'a>>),
 }
 
@@ -132,6 +133,7 @@ impl<'a> TryInto<Type<'a>> for Expr<'a> {
             Expr::Float32 => Ok(Type::Float32),
             Expr::Float64 => Ok(Type::Float64),
             Expr::Float128 => Ok(Type::Float128),
+            Expr::UnitType => Ok(Type::UnitType),
 
             Expr::InferType => Ok(Type::InferType),
             Expr::TypeName(x) => Ok(Type::TypeName(x)),
@@ -154,6 +156,7 @@ impl<'a> TryInto<Type<'a>> for Expr<'a> {
             | Expr::FloatLit(_)
             | Expr::StringLit(_)
             | Expr::BStringLit(_)
+            | Expr::UnitLit
             | Expr::List(_)
             | Expr::Object(_)
             | Expr::UnaryExpr(_)
@@ -197,6 +200,7 @@ impl<'a> From<Type<'a>> for Expr<'a> {
             Type::Float32 => Expr::Float32,
             Type::Float64 => Expr::Float64,
             Type::Float128 => Expr::Float128,
+            Type::UnitType => Expr::UnitType,
 
             Type::InferType => Expr::InferType,
             Type::TypeName(x) => Expr::TypeName(x),

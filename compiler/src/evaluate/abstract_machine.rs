@@ -84,7 +84,7 @@ impl<'a> AbstractMachine<'a> {
             match string_to_print {
                 Expr::StringLit(string) => {
                     print!("{}", string.get());
-                    Ok(Builder::get_unit().into())
+                    Ok(Builder::create_unit())
                 }
                 _ => Err(FunctionError::TypeError),
             }
@@ -124,6 +124,7 @@ impl<'a> AbstractMachine<'a> {
             Expr::Float32 => Ok(Expr::Float32),
             Expr::Float64 => Ok(Expr::Float64),
             Expr::Float128 => Ok(Expr::Float128),
+            Expr::UnitType => Ok(Expr::UnitType),
             Expr::InferType => Ok(Expr::InferType),
             Expr::TypeName(t) => Ok(Expr::TypeName(t)),
             Expr::OpaqueType(t) => Ok(Expr::OpaqueType(t.clone())),
@@ -146,6 +147,7 @@ impl<'a> AbstractMachine<'a> {
             Expr::FloatLit(e) => Ok(Expr::FloatLit(e.to_owned())),
             Expr::StringLit(e) => Ok(Expr::StringLit(e.clone())),
             Expr::BStringLit(e) => Ok(Expr::BStringLit(e.clone())),
+            Expr::UnitLit => Ok(Expr::UnitLit),
 
             Expr::List(e) => self.evaluate_list(e),
             Expr::Object(e) => self.evaluate_object(e),

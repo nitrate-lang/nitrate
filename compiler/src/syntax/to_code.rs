@@ -506,6 +506,10 @@ impl<'a> ToCode<'a> for Expr<'a> {
             Expr::Float32 => tokens.push(Token::Name(Name::new("f32"))),
             Expr::Float64 => tokens.push(Token::Name(Name::new("f64"))),
             Expr::Float128 => tokens.push(Token::Name(Name::new("f128"))),
+            Expr::UnitType => {
+                tokens.push(Token::Punct(Punct::LeftParen));
+                tokens.push(Token::Punct(Punct::RightParen));
+            }
 
             Expr::InferType => tokens.push(Token::Name(Name::new("_"))),
             Expr::TypeName(e) => tokens.push(Token::Name(Name::new(e))),
@@ -539,6 +543,10 @@ impl<'a> ToCode<'a> for Expr<'a> {
             Expr::FloatLit(e) => tokens.push(Token::Float(*e)),
             Expr::StringLit(e) => tokens.push(Token::String(e.deref().clone())),
             Expr::BStringLit(e) => tokens.push(Token::BString(e.deref().clone())),
+            Expr::UnitLit => {
+                tokens.push(Token::Punct(Punct::LeftBracket));
+                tokens.push(Token::Punct(Punct::RightBracket));
+            }
 
             Expr::List(e) => e.to_code(tokens, options),
             Expr::Object(e) => e.to_code(tokens, options),
@@ -585,6 +593,10 @@ impl<'a> ToCode<'a> for Type<'a> {
             Type::Float32 => tokens.push(Token::Name(Name::new("f32"))),
             Type::Float64 => tokens.push(Token::Name(Name::new("f64"))),
             Type::Float128 => tokens.push(Token::Name(Name::new("f128"))),
+            Type::UnitType => {
+                tokens.push(Token::Punct(Punct::LeftParen));
+                tokens.push(Token::Punct(Punct::RightParen));
+            }
 
             Type::InferType => tokens.push(Token::Name(Name::new("_"))),
             Type::TypeName(e) => tokens.push(Token::Name(Name::new(e))),

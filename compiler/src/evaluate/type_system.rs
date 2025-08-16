@@ -173,6 +173,7 @@ impl<'a> AbstractMachine<'a> {
             Type::Float32 => Ok(Type::Float32),
             Type::Float64 => Ok(Type::Float64),
             Type::Float128 => Ok(Type::Float128),
+            Type::UnitType => Ok(Type::UnitType),
             Type::InferType => Ok(Type::InferType),
             Type::TypeName(name) => Ok(Type::TypeName(name)),
             Type::OpaqueType(identity) => Ok(Type::OpaqueType(identity.clone())),

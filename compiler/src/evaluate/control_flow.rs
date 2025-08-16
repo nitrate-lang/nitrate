@@ -12,7 +12,7 @@ impl<'a> AbstractMachine<'a> {
         } else if let Some(else_branch) = if_expr.else_branch() {
             self.evaluate(else_branch)
         } else {
-            Ok(Builder::get_unit().into())
+            Ok(Builder::create_unit())
         }
     }
 
@@ -32,7 +32,7 @@ impl<'a> AbstractMachine<'a> {
             }
         }
 
-        Ok(Builder::get_unit().into())
+        Ok(Builder::create_unit())
     }
 
     pub(crate) fn evaluate_do_while(
@@ -52,6 +52,6 @@ impl<'a> AbstractMachine<'a> {
             }
         }
 
-        Ok(Builder::get_unit().into())
+        Ok(Builder::create_unit())
     }
 }
