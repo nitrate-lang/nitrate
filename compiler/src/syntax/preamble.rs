@@ -205,7 +205,7 @@ impl<'a> Parser<'a, '_> {
             return None;
         }
 
-        let Expr::ListLit(list) = &macro_args[0] else {
+        let Expr::List(list) = &macro_args[0] else {
             self.set_failed_bit();
             error!(
                 "[P????]: Expected a list of strings for 'insource' macro argument\n--> {}",

@@ -147,8 +147,8 @@ impl<'a> AbstractMachine<'a> {
             Expr::StringLit(e) => Ok(Expr::StringLit(e.clone())),
             Expr::BStringLit(e) => Ok(Expr::BStringLit(e.clone())),
 
-            Expr::ListLit(e) => self.evaluate_list(e),
-            Expr::ObjectLit(e) => self.evaluate_object(e),
+            Expr::List(e) => self.evaluate_list(e),
+            Expr::Object(e) => self.evaluate_object(e),
             Expr::UnaryExpr(e) => self.evaluate_unaryexpr(e),
             Expr::BinExpr(e) => self.evaluate_binexpr(e),
             Expr::Statement(e) => self.evaluate_statement(e),

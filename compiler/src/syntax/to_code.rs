@@ -1,9 +1,9 @@
 use crate::lexical::{Integer, Keyword, Name, Op, Punct, Token};
 use crate::parsetree::nodes::{
     ArrayType, Assert, Await, BinExpr, BinExprOp, Block, Break, Continue, DoWhileLoop, ForEach,
-    Function, FunctionType, GenericType, If, IntegerLit, ListLit, ManagedRefType, MapType,
-    ObjectLit, RefinementType, Return, Scope, SliceType, Statement, Switch, TupleType, UnaryExpr,
-    UnaryExprOp, UnmanagedRefType, Variable, VariableKind, WhileLoop,
+    Function, FunctionType, GenericType, If, IntegerLit, List, ManagedRefType, MapType, Object,
+    RefinementType, Return, Scope, SliceType, Statement, Switch, TupleType, UnaryExpr, UnaryExprOp,
+    UnmanagedRefType, Variable, VariableKind, WhileLoop,
 };
 use crate::parsetree::{Expr, Type};
 use std::ops::Deref;
@@ -170,7 +170,7 @@ impl<'a> ToCode<'a> for IntegerLit {
     }
 }
 
-impl<'a> ToCode<'a> for ListLit<'a> {
+impl<'a> ToCode<'a> for List<'a> {
     fn to_code(&self, tokens: &mut Vec<Token<'a>>, options: &CodeFormat) {
         tokens.push(Token::Punct(Punct::LeftBracket));
         for (i, expr) in self.elements().iter().enumerate() {
@@ -181,7 +181,7 @@ impl<'a> ToCode<'a> for ListLit<'a> {
     }
 }
 
-impl<'a> ToCode<'a> for ObjectLit<'a> {
+impl<'a> ToCode<'a> for Object<'a> {
     fn to_code(&self, tokens: &mut Vec<Token<'a>>, options: &CodeFormat) {
         tokens.push(Token::Punct(Punct::LeftBracket));
         for (key, value) in self.get() {
@@ -539,9 +539,9 @@ impl<'a> ToCode<'a> for Expr<'a> {
             Expr::FloatLit(e) => tokens.push(Token::Float(*e)),
             Expr::StringLit(e) => tokens.push(Token::String(e.deref().clone())),
             Expr::BStringLit(e) => tokens.push(Token::BString(e.deref().clone())),
-            Expr::ListLit(e) => e.to_code(tokens, options),
-            Expr::ObjectLit(e) => e.to_code(tokens, options),
 
+            Expr::List(e) => e.to_code(tokens, options),
+            Expr::Object(e) => e.to_code(tokens, options),
             Expr::UnaryExpr(e) => e.to_code(tokens, options),
             Expr::BinExpr(e) => e.to_code(tokens, options),
             Expr::Statement(e) => e.to_code(tokens, options),

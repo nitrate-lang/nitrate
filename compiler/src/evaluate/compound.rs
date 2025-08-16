@@ -4,7 +4,7 @@ use super::abstract_machine::*;
 use crate::parsetree::{nodes::*, *};
 
 impl<'a> AbstractMachine<'a> {
-    pub(crate) fn evaluate_list(&mut self, list: &ListLit<'a>) -> Result<Expr<'a>, EvalError> {
+    pub(crate) fn evaluate_list(&mut self, list: &List<'a>) -> Result<Expr<'a>, EvalError> {
         let mut elements = Vec::new();
         elements.reserve(list.elements().len());
 
@@ -15,10 +15,7 @@ impl<'a> AbstractMachine<'a> {
         Ok(Builder::create_list().add_elements(elements).build())
     }
 
-    pub(crate) fn evaluate_object(
-        &mut self,
-        object: &ObjectLit<'a>,
-    ) -> Result<Expr<'a>, EvalError> {
+    pub(crate) fn evaluate_object(&mut self, object: &Object<'a>) -> Result<Expr<'a>, EvalError> {
         let mut fields = BTreeMap::new();
         for (key, value) in object.get() {
             fields.insert(key.to_owned(), self.evaluate(value)?);

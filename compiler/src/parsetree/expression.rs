@@ -47,14 +47,14 @@ impl std::ops::Deref for IntegerLit {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct ListLit<'a> {
+pub struct List<'a> {
     elements: Vec<Expr<'a>>,
 }
 
-impl<'a> ListLit<'a> {
+impl<'a> List<'a> {
     #[must_use]
     pub(crate) fn new(elements: Vec<Expr<'a>>) -> Self {
-        ListLit { elements }
+        List { elements }
     }
 
     #[must_use]
@@ -69,14 +69,14 @@ impl<'a> ListLit<'a> {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct ObjectLit<'a> {
+pub struct Object<'a> {
     fields: BTreeMap<&'a str, Expr<'a>>,
 }
 
-impl<'a> ObjectLit<'a> {
+impl<'a> Object<'a> {
     #[must_use]
     pub(crate) fn new(fields: BTreeMap<&'a str, Expr<'a>>) -> Self {
-        ObjectLit { fields }
+        Object { fields }
     }
 
     #[must_use]

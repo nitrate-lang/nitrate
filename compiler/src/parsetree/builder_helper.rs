@@ -3,10 +3,10 @@ use crate::parsetree::{
     Builder, Expr, Type,
     nodes::{
         ArrayType, Assert, Await, BinExpr, BinExprOp, Block, Break, Continue, DoWhileLoop, ForEach,
-        Function, FunctionParameter, FunctionType, GenericType, If, IntegerLit, ListLit,
-        ManagedRefType, MapType, ObjectLit, QualifiedScope, RefinementType, Return, Scope,
-        SliceType, Statement, Switch, TupleType, UnaryExpr, UnaryExprOp, UnmanagedRefType,
-        Variable, VariableKind, WhileLoop,
+        Function, FunctionParameter, FunctionType, GenericType, If, IntegerLit, List,
+        ManagedRefType, MapType, Object, QualifiedScope, RefinementType, Return, Scope, SliceType,
+        Statement, Switch, TupleType, UnaryExpr, UnaryExprOp, UnmanagedRefType, Variable,
+        VariableKind, WhileLoop,
     },
 };
 use apint::UInt;
@@ -490,7 +490,7 @@ impl<'a> ListBuilder<'a> {
     }
 
     pub fn build(self) -> Expr<'a> {
-        Expr::ListLit(Rc::new(ListLit::new(self.elements)))
+        Expr::List(Rc::new(List::new(self.elements)))
     }
 }
 
@@ -520,7 +520,7 @@ impl<'a> ObjectBuilder<'a> {
     }
 
     pub fn build(self) -> Expr<'a> {
-        Expr::ObjectLit(Rc::new(ObjectLit::new(self.fields)))
+        Expr::Object(Rc::new(Object::new(self.fields)))
     }
 }
 

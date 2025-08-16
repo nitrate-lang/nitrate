@@ -2,7 +2,7 @@ use ordered_float::NotNan;
 
 use super::expression::{
     Assert, Await, BinExpr, Block, Break, Continue, DoWhileLoop, ForEach, Function, If, IntegerLit,
-    ListLit, ObjectLit, Return, Scope, Statement, Switch, UnaryExpr, Variable, WhileLoop,
+    List, Object, Return, Scope, Statement, Switch, UnaryExpr, Variable, WhileLoop,
 };
 use super::types::{
     ArrayType, FunctionType, GenericType, ManagedRefType, MapType, RefinementType, SliceType,
@@ -51,9 +51,9 @@ pub enum Expr<'a> {
     FloatLit(NotNan<f64>),
     StringLit(Rc<StringData<'a>>),
     BStringLit(Rc<BStringData<'a>>),
-    ListLit(Rc<ListLit<'a>>),
-    ObjectLit(Rc<ObjectLit<'a>>),
 
+    List(Rc<List<'a>>),
+    Object(Rc<Object<'a>>),
     UnaryExpr(Rc<UnaryExpr<'a>>),
     BinExpr(Rc<BinExpr<'a>>),
     Statement(Rc<Statement<'a>>),
@@ -154,8 +154,8 @@ impl<'a> TryInto<Type<'a>> for Expr<'a> {
             | Expr::FloatLit(_)
             | Expr::StringLit(_)
             | Expr::BStringLit(_)
-            | Expr::ListLit(_)
-            | Expr::ObjectLit(_)
+            | Expr::List(_)
+            | Expr::Object(_)
             | Expr::UnaryExpr(_)
             | Expr::BinExpr(_)
             | Expr::Statement(_)
