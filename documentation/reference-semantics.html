@@ -159,15 +159,15 @@
       <tr>
         <td class="var"><a href="static-lifetime">Static</a> Lifetime</td>
         <td class="cell">
-          <pre class="invalid"><code lang="rust">&'static sec imm T</code></pre>
-          <pre class="invalid"><code lang="rust">&'static sec mut T</code></pre>
+          <pre class="valid"><code lang="rust">&'static sec imm T</code></pre>
+          <pre class="valid"><code lang="rust">&'static sec mut T</code></pre>
         </td>
         <td class="cell">
           <pre class="invalid"><code lang="rust">&'static pro imm T</code></pre>
           <pre class="invalid"><code lang="rust">&'static pro mut T</code></pre>
         </td>
         <td class="cell">
-          <pre class="invalid"><code lang="rust">&'static pub imm T</code></pre>
+          <pre class="valid"><code lang="rust">&'static pub imm T</code></pre>
           <pre class="invalid"><code lang="rust">&'static pub mut T</code></pre>
         </td>
       </tr>
@@ -219,15 +219,15 @@
       <tr>
         <td class="var"><a href="fixed-lifetime">Fixed</a> Lifetime</td>
         <td class="cell">
-          <pre class="invalid"><code lang="rust">&'custom sec imm T</code></pre>
-          <pre class="invalid"><code lang="rust">&'custom sec mut T</code></pre>
+          <pre class="valid"><code lang="rust">&'custom sec imm T</code></pre>
+          <pre class="valid"><code lang="rust">&'custom sec mut T</code></pre>
         </td>
         <td class="cell">
           <pre class="invalid"><code lang="rust">&'custom pro imm T</code></pre>
           <pre class="invalid"><code lang="rust">&'custom pro mut T</code></pre>
         </td>
         <td class="cell">
-          <pre class="invalid"><code lang="rust">&'custom pub imm T</code></pre>
+          <pre class="valid"><code lang="rust">&'custom pub imm T</code></pre>
           <pre class="invalid"><code lang="rust">&'custom pub mut T</code></pre>
         </td>
       </tr>
