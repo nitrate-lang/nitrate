@@ -168,64 +168,21 @@ impl<'a> AbstractMachine<'a> {
             Expr::Statement(e) => self.evaluate_statement(e),
             Expr::Block(e) => self.evaluate_block(e),
 
-            Expr::Function(_) => {
-                // TODO: Evaluate function definition
-                unimplemented!()
-            }
-
-            Expr::Variable(_) => {
-                // TODO: Evaluate variable declaration
-                unimplemented!()
-            }
-
-            Expr::Identifier(_) => {
-                // TODO: Evaluate identifier
-                unimplemented!()
-            }
-
-            Expr::Scope(_) => {
-                // TODO: Evaluate scope
-                unimplemented!()
-            }
+            Expr::Function(e) => self.evaluate_function(e),
+            Expr::Variable(e) => self.evaluate_variable(e),
+            Expr::Identifier(e) => self.evaluate_identifier(e),
+            Expr::Scope(e) => self.evaluate_scope(e),
 
             Expr::If(e) => self.evaluate_if(e),
             Expr::WhileLoop(e) => self.evaluate_while(e),
             Expr::DoWhileLoop(e) => self.evaluate_do_while(e),
-
-            Expr::Switch(_) => {
-                // TODO: Evaluate switch
-                unimplemented!()
-            }
-
-            Expr::Break(_) => {
-                // TODO: Evaluate break
-                unimplemented!()
-            }
-
-            Expr::Continue(_) => {
-                // TODO: Evaluate continue
-                unimplemented!()
-            }
-
-            Expr::Return(_) => {
-                // TODO: Evaluate return
-                unimplemented!()
-            }
-
-            Expr::ForEach(_) => {
-                // TODO: Evaluate for-each
-                unimplemented!()
-            }
-
-            Expr::Await(_) => {
-                // TODO: Evaluate await
-                unimplemented!()
-            }
-
-            Expr::Assert(_) => {
-                // TODO: Evaluate assert
-                unimplemented!()
-            }
+            Expr::Switch(e) => self.evaluate_switch(e),
+            Expr::Break(e) => self.evaluate_break(e),
+            Expr::Continue(e) => self.evaluate_continue(e),
+            Expr::Return(e) => self.evaluate_return(e),
+            Expr::ForEach(e) => self.evaluate_for_each(e),
+            Expr::Await(e) => self.evaluate_await(e),
+            Expr::Assert(e) => self.evaluate_assert(e),
         }
     }
 }

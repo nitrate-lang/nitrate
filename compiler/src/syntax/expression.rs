@@ -72,6 +72,36 @@ impl<'a> Parser<'a, '_> {
         }
     }
 
+    pub(crate) fn parse_list(&mut self) -> Option<Expr<'a>> {
+        assert!(self.lexer.peek_t() == Token::Punct(Punct::LeftBracket));
+        self.lexer.skip_tok();
+
+        let mut elements = Vec::new();
+        self.lexer.skip_if(&Token::Punct(Punct::Comma));
+
+        loop {
+            if self.lexer.skip_if(&Token::Punct(Punct::RightBracket)) {
+                break;
+            }
+
+            elements.push(self.parse_expression()?);
+
+            if !self.lexer.skip_if(&Token::Punct(Punct::Comma)) {
+                if self.lexer.skip_if(&Token::Punct(Punct::RightBracket)) {
+                    break;
+                }
+                error!(
+                    "[P0???]: list: expected ',' or ']' after element expression\n--> {}",
+                    self.lexer.sync_position()
+                );
+
+                return None;
+            }
+        }
+
+        Some(Builder::create_list().add_elements(elements).build())
+    }
+
     pub(crate) fn parse_attributes(&mut self) -> Option<Vec<Expr<'a>>> {
         let mut attributes = Vec::new();
 
@@ -598,6 +628,8 @@ impl<'a> Parser<'a, '_> {
                 let lit = self.parse_bstring_literal(data);
                 Some(self.parse_literal_suffix(lit))
             }
+
+            Token::Punct(Punct::LeftBracket) => self.parse_list(),
 
             Token::Name(name) => {
                 self.lexer.skip_tok();

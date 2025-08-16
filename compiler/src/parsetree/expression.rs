@@ -761,10 +761,6 @@ impl<'a> Break<'a> {
     pub fn label(&self) -> Option<&'a str> {
         self.label
     }
-
-    pub fn set_label(&mut self, label: Option<&'a str>) {
-        self.label = label;
-    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -781,10 +777,6 @@ impl<'a> Continue<'a> {
     #[must_use]
     pub fn label(&self) -> Option<&'a str> {
         self.label
-    }
-
-    pub fn set_label(&mut self, label: Option<&'a str>) {
-        self.label = label;
     }
 }
 

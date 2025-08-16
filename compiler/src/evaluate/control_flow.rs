@@ -1,7 +1,7 @@
 use super::abstract_machine::{AbstractMachine, EvalError};
 use crate::parsetree::{
     Builder, Expr,
-    nodes::{DoWhileLoop, If, WhileLoop},
+    nodes::{Assert, Await, Break, Continue, DoWhileLoop, ForEach, If, Return, Switch, WhileLoop},
 };
 
 impl<'a> AbstractMachine<'a> {
@@ -56,5 +56,49 @@ impl<'a> AbstractMachine<'a> {
         }
 
         Ok(Builder::create_unit())
+    }
+
+    pub(crate) fn evaluate_switch(
+        &mut self,
+        _switch_expr: &Switch<'a>,
+    ) -> Result<Expr<'a>, EvalError> {
+        // TODO: Evaluate switch
+        unimplemented!()
+    }
+
+    pub(crate) fn evaluate_break(&mut self, _break: &Break<'a>) -> Result<Expr<'a>, EvalError> {
+        // TODO: Evaluate break
+        unimplemented!()
+    }
+
+    pub(crate) fn evaluate_continue(
+        &mut self,
+        _continue: &Continue<'a>,
+    ) -> Result<Expr<'a>, EvalError> {
+        // TODO: Evaluate continue
+        unimplemented!()
+    }
+
+    pub(crate) fn evaluate_return(&mut self, _return: &Return<'a>) -> Result<Expr<'a>, EvalError> {
+        // TODO: Evaluate return
+        unimplemented!()
+    }
+
+    pub(crate) fn evaluate_for_each(
+        &mut self,
+        _for_each: &ForEach<'a>,
+    ) -> Result<Expr<'a>, EvalError> {
+        // TODO: Evaluate for_each
+        unimplemented!()
+    }
+
+    pub(crate) fn evaluate_await(&mut self, _await: &Await<'a>) -> Result<Expr<'a>, EvalError> {
+        // TODO: Evaluate await
+        unimplemented!()
+    }
+
+    pub(crate) fn evaluate_assert(&mut self, _assert: &Assert<'a>) -> Result<Expr<'a>, EvalError> {
+        // TODO: Evaluate assert
+        unimplemented!()
     }
 }
