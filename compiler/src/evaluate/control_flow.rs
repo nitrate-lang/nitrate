@@ -1,14 +1,17 @@
-use super::abstract_machine::*;
-use crate::parsetree::{nodes::*, *};
+use super::abstract_machine::{AbstractMachine, EvalError};
+use crate::parsetree::{
+    Builder, Expr,
+    nodes::{DoWhileLoop, If, WhileLoop},
+};
 
 impl<'a> AbstractMachine<'a> {
     pub(crate) fn evaluate_if(&mut self, if_expr: &If<'a>) -> Result<Expr<'a>, EvalError> {
-        let Expr::BooleanLit(b) = self.evaluate(&if_expr.condition())? else {
+        let Expr::BooleanLit(b) = self.evaluate(if_expr.condition())? else {
             return Err(EvalError::TypeError);
         };
 
         if b {
-            self.evaluate(&if_expr.then_branch())
+            self.evaluate(if_expr.then_branch())
         } else if let Some(else_branch) = if_expr.else_branch() {
             self.evaluate(else_branch)
         } else {
@@ -21,9 +24,9 @@ impl<'a> AbstractMachine<'a> {
         while_loop: &WhileLoop<'a>,
     ) -> Result<Expr<'a>, EvalError> {
         loop {
-            match self.evaluate(&while_loop.condition())? {
+            match self.evaluate(while_loop.condition())? {
                 Expr::BooleanLit(true) => {
-                    self.evaluate(&while_loop.body())?;
+                    self.evaluate(while_loop.body())?;
                 }
 
                 Expr::BooleanLit(false) => break,
@@ -39,12 +42,12 @@ impl<'a> AbstractMachine<'a> {
         &mut self,
         do_while_loop: &DoWhileLoop<'a>,
     ) -> Result<Expr<'a>, EvalError> {
-        self.evaluate(&do_while_loop.body())?;
+        self.evaluate(do_while_loop.body())?;
 
         loop {
-            match self.evaluate(&do_while_loop.condition())? {
+            match self.evaluate(do_while_loop.condition())? {
                 Expr::BooleanLit(true) => {
-                    self.evaluate(&do_while_loop.body())?;
+                    self.evaluate(do_while_loop.body())?;
                 }
 
                 Expr::BooleanLit(false) => break,

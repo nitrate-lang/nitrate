@@ -1,7 +1,10 @@
 use std::collections::BTreeMap;
 
-use super::abstract_machine::*;
-use crate::parsetree::{nodes::*, *};
+use super::abstract_machine::{AbstractMachine, EvalError};
+use crate::parsetree::{
+    Builder, Expr,
+    nodes::{BinExpr, Block, List, Object, Statement, UnaryExpr},
+};
 
 impl<'a> AbstractMachine<'a> {
     pub(crate) fn evaluate_list(&mut self, list: &List<'a>) -> Result<Expr<'a>, EvalError> {
@@ -53,6 +56,6 @@ impl<'a> AbstractMachine<'a> {
             result = Some(self.evaluate(element)?);
         }
 
-        Ok(result.unwrap_or_else(|| Builder::create_unit()))
+        Ok(result.unwrap_or_else(Builder::create_unit))
     }
 }

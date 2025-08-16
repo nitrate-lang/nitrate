@@ -1,6 +1,5 @@
-use crate::parsetree::{nodes::*, *};
+use crate::parsetree::{Builder, Expr, Type, nodes::Variable};
 use hashbrown::{HashMap, HashSet};
-use std::ops::Deref;
 
 #[derive(Debug, Default)]
 struct CallFrame<'a> {
@@ -24,7 +23,7 @@ struct Task<'a> {
     _task_id: u64,
 }
 
-impl<'a> Task<'a> {
+impl Task<'_> {
     fn new(task_id: u64) -> Self {
         let call_stack = Vec::from([CallFrame::default()]);
         Task {
@@ -55,7 +54,14 @@ pub struct AbstractMachine<'a> {
     pub(crate) already_evaluated_types: HashSet<Type<'a>>,
 }
 
+impl Default for AbstractMachine<'_> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl<'a> AbstractMachine<'a> {
+    #[must_use]
     pub fn new() -> Self {
         let mut abstract_machine = AbstractMachine {
             _global_variables: HashMap::new(),
@@ -128,19 +134,25 @@ impl<'a> AbstractMachine<'a> {
             Expr::InferType => Ok(Expr::InferType),
             Expr::TypeName(t) => Ok(Expr::TypeName(t)),
             Expr::OpaqueType(t) => Ok(Expr::OpaqueType(t.clone())),
-            Expr::RefinementType(t) => self.evaluate_refinement_type(t).map(|t| t.into()),
-            Expr::TupleType(t) => self.evaluate_tuple_type(t).map(|t| t.into()),
-            Expr::ArrayType(t) => self.evaluate_array_type(t).map(|t| t.into()),
-            Expr::MapType(t) => self.evaluate_map_type(t).map(|t| t.into()),
-            Expr::SliceType(t) => self.evaluate_slice_type(t).map(|t| t.into()),
-            Expr::FunctionType(t) => self.evaluate_function_type(t).map(|t| t.into()),
-            Expr::ManagedRefType(t) => self.evaluate_managed_ref_type(t).map(|t| t.into()),
-            Expr::UnmanagedRefType(t) => self.evaluate_unmanaged_ref_type(t).map(|t| t.into()),
-            Expr::GenericType(t) => self.evaluate_generic_type(t).map(|t| t.into()),
-            Expr::HasParenthesesType(t) => self.evaluate_type(t).map(|t| t.into()),
+            Expr::RefinementType(t) => self
+                .evaluate_refinement_type(t)
+                .map(std::convert::Into::into),
+            Expr::TupleType(t) => self.evaluate_tuple_type(t).map(std::convert::Into::into),
+            Expr::ArrayType(t) => self.evaluate_array_type(t).map(std::convert::Into::into),
+            Expr::MapType(t) => self.evaluate_map_type(t).map(std::convert::Into::into),
+            Expr::SliceType(t) => self.evaluate_slice_type(t).map(std::convert::Into::into),
+            Expr::FunctionType(t) => self.evaluate_function_type(t).map(std::convert::Into::into),
+            Expr::ManagedRefType(t) => self
+                .evaluate_managed_ref_type(t)
+                .map(std::convert::Into::into),
+            Expr::UnmanagedRefType(t) => self
+                .evaluate_unmanaged_ref_type(t)
+                .map(std::convert::Into::into),
+            Expr::GenericType(t) => self.evaluate_generic_type(t).map(std::convert::Into::into),
+            Expr::HasParenthesesType(t) => self.evaluate_type(t).map(std::convert::Into::into),
 
             Expr::Discard => Ok(Expr::Discard),
-            Expr::HasParentheses(e) => self.evaluate(e.deref()),
+            Expr::HasParentheses(e) => self.evaluate(e),
 
             Expr::BooleanLit(e) => Ok(Expr::BooleanLit(e.to_owned())),
             Expr::IntegerLit(e) => Ok(Expr::IntegerLit(e.clone())),

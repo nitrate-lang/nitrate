@@ -1,5 +1,11 @@
-use super::abstract_machine::*;
-use crate::parsetree::{nodes::*, *};
+use super::abstract_machine::{AbstractMachine, EvalError};
+use crate::parsetree::{
+    Builder, Expr, Type,
+    nodes::{
+        ArrayType, FunctionParameter, FunctionType, GenericType, ManagedRefType, MapType,
+        RefinementType, SliceType, TupleType, UnmanagedRefType,
+    },
+};
 
 impl<'a> AbstractMachine<'a> {
     pub(crate) fn evaluate_refinement_type(
