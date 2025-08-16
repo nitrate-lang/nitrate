@@ -89,7 +89,7 @@ impl<'a> TupleTypeBuilder<'a> {
 
     pub fn build(self) -> Type<'a> {
         if self.elements.is_empty() {
-            return Type::UnitType;
+            Type::UnitType
         } else {
             Type::TupleType(Rc::new(TupleType::new(self.elements)))
         }
