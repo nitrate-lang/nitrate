@@ -47,7 +47,14 @@
 
     .ref-syntax-table .invalid {
       background-color: rgb(241, 162, 162);
+    }
 
+    .ref-syntax-table .unsafe {
+      background-image: repeating-linear-gradient(45deg,
+          rgba(255, 0, 0, 0.2),
+          rgba(255, 0, 0, 0.2) 10px,
+          rgba(255, 166, 0, 0.25) 10px,
+          rgba(255, 166, 0, 0.25) 20px);
     }
 
     .ref-syntax-table pre:hover {
@@ -206,56 +213,56 @@
       <tr>
         <td class="var"><a href="static-lifetime">Static</a> Lifetime</td>
         <td class="cell">
-          <pre class="invalid"><code lang="rust">*'static sec imm T</code></pre>
-          <pre class="invalid"><code lang="rust">*'static sec mut T</code></pre>
+          <pre class="valid"><code lang="rust">*'static sec imm T</code></pre>
+          <pre class="valid"><code lang="rust">*'static sec mut T</code></pre>
         </td>
         <td class="cell">
-          <pre class="invalid"><code lang="rust">*'static pub imm T</code></pre>
-          <pre class="invalid"><code lang="rust">*'static pub mut T</code></pre>
+          <pre class="valid"><code lang="rust">*'static pub imm T</code></pre>
+          <pre class="unsafe"><code lang="rust">*'static pub mut T</code></pre>
         </td>
       </tr>
       <tr>
         <td class="var"><a href="dynamic-lifetime">Dynamic</a> Lifetime</td>
         <td class="cell">
-          <pre class="invalid"><code lang="rust">*'dynamic sec imm T</code></pre>
-          <pre class="invalid"><code lang="rust">*'dynamic sec mut T</code></pre>
+          <pre class="valid"><code lang="rust">*'dynamic sec imm T</code></pre>
+          <pre class="valid"><code lang="rust">*'dynamic sec mut T</code></pre>
         </td>
         <td class="cell">
-          <pre class="invalid"><code lang="rust">*'dynamic pub imm T</code></pre>
-          <pre class="invalid"><code lang="rust">*'dynamic pub mut T</code></pre>
+          <pre class="valid"><code lang="rust">*'dynamic pub imm T</code></pre>
+          <pre class="unsafe"><code lang="rust">*'dynamic pub mut T</code></pre>
         </td>
       </tr>
       <tr>
         <td class="var"><a href="thread-lifetime">Thread</a> Lifetime</td>
         <td class="cell">
-          <pre class="invalid"><code lang="rust">*'thread sec imm T</code></pre>
-          <pre class="invalid"><code lang="rust">*'thread sec mut T</code></pre>
+          <pre class="valid"><code lang="rust">*'thread sec imm T</code></pre>
+          <pre class="valid"><code lang="rust">*'thread sec mut T</code></pre>
         </td>
         <td class="cell">
-          <pre class="invalid"><code lang="rust">*'thread pub imm T</code></pre>
-          <pre class="invalid"><code lang="rust">*'thread pub mut T</code></pre>
+          <pre class="valid"><code lang="rust">*'thread pub imm T</code></pre>
+          <pre class="unsafe"><code lang="rust">*'thread pub mut T</code></pre>
         </td>
       </tr>
       <tr>
         <td class="var"><a href="task-lifetime">Task</a> Lifetime</td>
         <td class="cell">
-          <pre class="invalid"><code lang="rust">*'task sec imm T</code></pre>
-          <pre class="invalid"><code lang="rust">*'task sec mut T</code></pre>
+          <pre class="valid"><code lang="rust">*'task sec imm T</code></pre>
+          <pre class="valid"><code lang="rust">*'task sec mut T</code></pre>
         </td>
         <td class="cell">
-          <pre class="invalid"><code lang="rust">*'task pub imm T</code></pre>
-          <pre class="invalid"><code lang="rust">*'task pub mut T</code></pre>
+          <pre class="valid"><code lang="rust">*'task pub imm T</code></pre>
+          <pre class="unsafe"><code lang="rust">*'task pub mut T</code></pre>
         </td>
       </tr>
       <tr>
         <td class="var"><a href="fixed-lifetime">Fixed</a> Lifetime</td>
         <td class="cell">
-          <pre class="invalid"><code lang="rust">*'custom sec imm T</code></pre>
-          <pre class="invalid"><code lang="rust">*'custom sec mut T</code></pre>
+          <pre class="valid"><code lang="rust">*'custom sec imm T</code></pre>
+          <pre class="valid"><code lang="rust">*'custom sec mut T</code></pre>
         </td>
         <td class="cell">
-          <pre class="invalid"><code lang="rust">*'custom pub imm T</code></pre>
-          <pre class="invalid"><code lang="rust">*'custom pub mut T</code></pre>
+          <pre class="valid"><code lang="rust">*'custom pub imm T</code></pre>
+          <pre class="unsafe"><code lang="rust">*'custom pub mut T</code></pre>
         </td>
       </tr>
     </tbody>
