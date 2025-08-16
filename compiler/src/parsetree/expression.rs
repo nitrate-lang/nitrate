@@ -875,12 +875,12 @@ impl<'a> Await<'a> {
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Assert<'a> {
     condition: Expr<'a>,
-    message: Option<Expr<'a>>,
+    message: Expr<'a>,
 }
 
 impl<'a> Assert<'a> {
     #[must_use]
-    pub(crate) fn new(condition: Expr<'a>, message: Option<Expr<'a>>) -> Self {
+    pub(crate) fn new(condition: Expr<'a>, message: Expr<'a>) -> Self {
         Assert { condition, message }
     }
 
@@ -894,11 +894,11 @@ impl<'a> Assert<'a> {
     }
 
     #[must_use]
-    pub fn message(&self) -> Option<&Expr<'a>> {
-        self.message.as_ref()
+    pub fn message(&self) -> &Expr<'a> {
+        &self.message
     }
 
-    pub fn set_message(&mut self, message: Option<Expr<'a>>) {
+    pub fn set_message(&mut self, message: Expr<'a>) {
         self.message = message;
     }
 }

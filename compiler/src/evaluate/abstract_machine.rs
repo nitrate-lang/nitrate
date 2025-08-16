@@ -34,9 +34,11 @@ impl Task<'_> {
     }
 }
 
+#[derive(Debug)]
 pub enum EvalError {
     TypeError,
     MissingArgument,
+    ProgramaticAssertionFailed(String),
 }
 
 pub type Function<'a> = fn(&mut AbstractMachine<'a>) -> Result<Expr<'a>, EvalError>;

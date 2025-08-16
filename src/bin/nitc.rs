@@ -49,9 +49,14 @@ fn program() -> i32 {
         return 1;
     }
 
-    let Ok(result) = AbstractMachine::new().evaluate(&model.tree()) else {
-        error!("Evaluation failed for file: {}", filename);
-        return 1;
+    let result = match AbstractMachine::new().evaluate(&model.tree()) {
+        Ok(result) => result,
+
+        Err(e) => {
+            error!("Evaluation failed for file: {}", filename);
+            error!("Error: {:?}", e);
+            return 1;
+        }
     };
 
     println!("result = {:#?}", result);

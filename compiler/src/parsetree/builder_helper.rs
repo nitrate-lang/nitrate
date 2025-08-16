@@ -1206,15 +1206,15 @@ impl<'a> AssertBuilder<'a> {
         self
     }
 
-    pub fn with_message(mut self, message: Option<Expr<'a>>) -> Self {
-        self.message = message;
+    pub fn with_message(mut self, message: Expr<'a>) -> Self {
+        self.message = Some(message);
         self
     }
 
     pub fn build(self) -> Expr<'a> {
         let expr = Assert::new(
             self.condition.expect("Condition must be provided"),
-            self.message,
+            self.message.expect("Message must be provided"),
         );
 
         Expr::Assert(Rc::new(expr))

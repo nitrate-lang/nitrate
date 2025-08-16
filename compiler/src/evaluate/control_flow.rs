@@ -6,11 +6,7 @@ use crate::parsetree::{
 
 impl<'a> AbstractMachine<'a> {
     pub(crate) fn evaluate_if(&mut self, if_expr: &If<'a>) -> Result<Expr<'a>, EvalError> {
-        let Expr::BooleanLit(b) = self.evaluate(if_expr.condition())? else {
-            return Err(EvalError::TypeError);
-        };
-
-        if b {
+        if let Expr::BooleanLit(true) = self.evaluate(if_expr.condition())? {
             self.evaluate(if_expr.then_branch())
         } else if let Some(else_branch) = if_expr.else_branch() {
             self.evaluate(else_branch)
@@ -29,9 +25,7 @@ impl<'a> AbstractMachine<'a> {
                     self.evaluate(while_loop.body())?;
                 }
 
-                Expr::BooleanLit(false) => break,
-
-                _ => return Err(EvalError::TypeError),
+                _ => break,
             }
         }
 
@@ -50,8 +44,7 @@ impl<'a> AbstractMachine<'a> {
                     self.evaluate(do_while_loop.body())?;
                 }
 
-                Expr::BooleanLit(false) => break,
-                _ => return Err(EvalError::TypeError),
+                _ => break,
             }
         }
 
@@ -97,8 +90,21 @@ impl<'a> AbstractMachine<'a> {
         unimplemented!()
     }
 
-    pub(crate) fn evaluate_assert(&mut self, _assert: &Assert<'a>) -> Result<Expr<'a>, EvalError> {
-        // TODO: Evaluate assert
-        unimplemented!()
+    pub(crate) fn evaluate_assert(&mut self, assert: &Assert<'a>) -> Result<Expr<'a>, EvalError> {
+        let condition = self.evaluate(assert.condition())?;
+        let message = self.evaluate(assert.message())?;
+
+        match condition {
+            Expr::BooleanLit(true) => Ok(Builder::create_unit()),
+
+            _ => {
+                let message_string = match message {
+                    Expr::StringLit(s) => s.get().to_string(),
+                    _ => return Err(EvalError::TypeError),
+                };
+
+                Err(EvalError::ProgramaticAssertionFailed(message_string))
+            }
+        }
     }
 }

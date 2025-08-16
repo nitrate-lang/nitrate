@@ -343,9 +343,42 @@ impl<'a> Parser<'a, '_> {
         assert!(self.lexer.peek_t() == Token::Keyword(Keyword::Assert));
         self.lexer.skip_tok();
 
-        let condition = self.parse_expression()?;
+        if !self.lexer.skip_if(&Token::Punct(Punct::LeftParen)) {
+            self.set_failed_bit();
+            error!(
+                "[P????]: assert: expected opening parenthesis\n--> {}",
+                self.lexer.sync_position()
+            );
+            return None;
+        }
 
-        Some(Builder::create_assert().with_condition(condition).build())
+        self.lexer.skip_if(&Token::Punct(Punct::Comma));
+        let condition = self.parse_expression()?;
+        self.lexer.skip_if(&Token::Punct(Punct::Comma));
+
+        let message = if !self.lexer.next_is(&Token::Punct(Punct::RightParen)) {
+            self.parse_expression()?
+        } else {
+            Builder::create_string()
+                .with_string(StringData::from_ref(""))
+                .build()
+        };
+
+        if !self.lexer.skip_if(&Token::Punct(Punct::RightParen)) {
+            self.set_failed_bit();
+            error!(
+                "[P????]: assert: expected closing parenthesis\n--> {}",
+                self.lexer.sync_position()
+            );
+            return None;
+        }
+
+        Some(
+            Builder::create_assert()
+                .with_condition(condition)
+                .with_message(message)
+                .build(),
+        )
     }
 
     fn parse_type_alias(&mut self) -> Option<Expr<'a>> {
