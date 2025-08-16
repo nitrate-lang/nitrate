@@ -340,7 +340,6 @@ impl<'a> Parser<'a, '_> {
         };
 
         self.scope.push(name_token.name());
-        let new_scope = self.scope.clone();
 
         let Some(block) = self.parse_block() else {
             self.scope.pop();
@@ -351,7 +350,7 @@ impl<'a> Parser<'a, '_> {
 
         Some(
             Builder::create_scope()
-                .with_scope(new_scope)
+                .with_name(name_token.name())
                 .add_attributes(attributes)
                 .with_block(block)
                 .build(),

@@ -4,9 +4,9 @@ use crate::parsetree::{
     nodes::{
         ArrayType, Assert, Await, BinExpr, BinExprOp, Block, Break, Continue, DoWhileLoop, ForEach,
         Function, FunctionParameter, FunctionType, GenericType, If, IntegerLit, List,
-        ManagedRefType, MapType, Object, QualifiedScope, RefinementType, Return, Scope, SliceType,
-        Statement, Switch, TupleType, UnaryExpr, UnaryExprOp, UnmanagedRefType, Variable,
-        VariableKind, WhileLoop,
+        ManagedRefType, MapType, Object, RefinementType, Return, Scope, SliceType, Statement,
+        Switch, TupleType, UnaryExpr, UnaryExprOp, UnmanagedRefType, Variable, VariableKind,
+        WhileLoop,
     },
 };
 use apint::UInt;
@@ -843,7 +843,7 @@ impl<'a> VariableBuilder<'a> {
 
 #[derive(Debug)]
 pub struct ScopeBuilder<'a> {
-    scope: Option<QualifiedScope<'a>>,
+    name: Option<&'a str>,
     attributes: Vec<Expr<'a>>,
     block: Option<Expr<'a>>,
 }
@@ -851,14 +851,14 @@ pub struct ScopeBuilder<'a> {
 impl<'a> ScopeBuilder<'a> {
     pub(crate) fn new() -> Self {
         ScopeBuilder {
-            scope: None,
+            name: None,
             attributes: Vec::new(),
             block: None,
         }
     }
 
-    pub fn with_scope(mut self, scope: QualifiedScope<'a>) -> Self {
-        self.scope = Some(scope);
+    pub fn with_name(mut self, name: &'a str) -> Self {
+        self.name = Some(name);
         self
     }
 
@@ -882,7 +882,7 @@ impl<'a> ScopeBuilder<'a> {
 
     pub fn build(self) -> Expr<'a> {
         Expr::Scope(Rc::new(Scope::new(
-            self.scope.expect("Scope must be provided"),
+            self.name.expect("Name must be provided"),
             self.attributes,
             self.block.expect("Block must be provided"),
         )))

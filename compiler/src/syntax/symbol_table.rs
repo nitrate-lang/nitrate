@@ -4,7 +4,7 @@ use std::collections::HashMap;
 
 impl std::fmt::Display for QualifiedScope<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", self.names().to_vec().join("::"))
+        write!(f, "{}", self.scopes().to_vec().join("::"))
     }
 }
 

@@ -501,69 +501,69 @@ impl<'a> Variable<'a> {
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct QualifiedScope<'a> {
-    parts: SmallVec<[&'a str; 3]>,
+    scopes: SmallVec<[&'a str; 3]>,
 }
 
 impl<'a> QualifiedScope<'a> {
     #[must_use]
-    pub fn new(parts: SmallVec<[&'a str; 3]>) -> Self {
-        Self { parts }
+    pub fn new(scopes: SmallVec<[&'a str; 3]>) -> Self {
+        Self { scopes }
     }
 
     #[must_use]
-    pub fn parse(scope: &'a str) -> Self {
-        let parts = scope
+    pub fn parse(qualified_scope: &'a str) -> Self {
+        let parts = qualified_scope
             .split("::")
             .filter(|s| !s.is_empty())
             .collect::<SmallVec<[&'a str; 3]>>();
-        Self { parts }
+        Self { scopes: parts }
     }
 
     #[must_use]
     pub fn is_root(&self) -> bool {
-        self.parts.is_empty()
+        self.scopes.is_empty()
     }
 
     pub fn pop(&mut self) {
-        if !self.parts.is_empty() {
-            self.parts.pop();
+        if !self.scopes.is_empty() {
+            self.scopes.pop();
         }
     }
 
-    pub fn push(&mut self, part: &'a str) {
-        self.parts.push(part);
+    pub fn push(&mut self, scope: &'a str) {
+        self.scopes.push(scope);
     }
 
     #[must_use]
-    pub fn names(&self) -> &[&'a str] {
-        &self.parts
+    pub fn scopes(&self) -> &[&'a str] {
+        &self.scopes
     }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct Scope<'a> {
-    scope: QualifiedScope<'a>,
+    name: &'a str,
     attributes: Vec<Expr<'a>>,
     block: Expr<'a>,
 }
 
 impl<'a> Scope<'a> {
     #[must_use]
-    pub fn new(scope: QualifiedScope<'a>, attributes: Vec<Expr<'a>>, block: Expr<'a>) -> Self {
+    pub fn new(name: &'a str, attributes: Vec<Expr<'a>>, block: Expr<'a>) -> Self {
         Scope {
-            scope,
+            name,
             attributes,
             block,
         }
     }
 
     #[must_use]
-    pub fn scope(&self) -> &QualifiedScope<'a> {
-        &self.scope
+    pub fn name(&self) -> &'a str {
+        self.name
     }
 
-    pub fn set_scope(&mut self, scope: QualifiedScope<'a>) {
-        self.scope = scope;
+    pub fn set_name(&mut self, name: &'a str) {
+        self.name = name;
     }
 
     #[must_use]
