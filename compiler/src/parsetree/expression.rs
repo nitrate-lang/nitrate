@@ -80,11 +80,6 @@ impl<'a> Object<'a> {
     }
 
     #[must_use]
-    pub fn into_inner(self) -> BTreeMap<&'a str, Expr<'a>> {
-        self.fields
-    }
-
-    #[must_use]
     pub fn get(&self) -> &BTreeMap<&'a str, Expr<'a>> {
         &self.fields
     }

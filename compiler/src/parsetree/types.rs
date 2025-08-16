@@ -58,11 +58,6 @@ impl<'a> TupleType<'a> {
     }
 
     #[must_use]
-    pub fn into_inner(self) -> Vec<Type<'a>> {
-        self.elements
-    }
-
-    #[must_use]
     pub fn elements(&self) -> &[Type<'a>] {
         &self.elements
     }
