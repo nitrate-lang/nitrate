@@ -1,6 +1,5 @@
 use crate::parsetree::{nodes::*, *};
 use hashbrown::{HashMap, HashSet};
-use std::collections::BTreeMap;
 use std::ops::Deref;
 
 #[derive(Debug, Default)]
@@ -140,57 +139,20 @@ impl<'a> AbstractMachine<'a> {
             Expr::HasParenthesesType(t) => self.evaluate_type(t).map(|t| t.into()),
 
             Expr::Discard => Ok(Expr::Discard),
-            Expr::HasParentheses(expr) => self.evaluate(expr.deref()),
+            Expr::HasParentheses(e) => self.evaluate(e.deref()),
 
-            Expr::BooleanLit(bool) => Ok(Expr::BooleanLit(bool.to_owned())),
-            Expr::IntegerLit(int) => Ok(Expr::IntegerLit(int.clone())),
-            Expr::FloatLit(float) => Ok(Expr::FloatLit(float.to_owned())),
-            Expr::StringLit(string) => Ok(Expr::StringLit(string.clone())),
-            Expr::BStringLit(bstring) => Ok(Expr::BStringLit(bstring.clone())),
+            Expr::BooleanLit(e) => Ok(Expr::BooleanLit(e.to_owned())),
+            Expr::IntegerLit(e) => Ok(Expr::IntegerLit(e.clone())),
+            Expr::FloatLit(e) => Ok(Expr::FloatLit(e.to_owned())),
+            Expr::StringLit(e) => Ok(Expr::StringLit(e.clone())),
+            Expr::BStringLit(e) => Ok(Expr::BStringLit(e.clone())),
 
-            Expr::ListLit(list) => {
-                let mut elements = Vec::new();
-                elements.reserve(list.elements().len());
-
-                for element in list.elements() {
-                    elements.push(self.evaluate(element)?);
-                }
-
-                Ok(Builder::create_list().add_elements(elements).build())
-            }
-
-            Expr::ObjectLit(object) => {
-                let mut fields = BTreeMap::new();
-                for (key, value) in object.get() {
-                    fields.insert(key.to_owned(), self.evaluate(value)?);
-                }
-
-                Ok(Builder::create_object().add_fields(fields).build())
-            }
-
-            Expr::UnaryExpr(_) => {
-                // TODO: Evaluate unary expression
-                unimplemented!()
-            }
-
-            Expr::BinExpr(_) => {
-                // TODO: Evaluate binary expression
-                unimplemented!()
-            }
-
-            Expr::Statement(statement) => {
-                self.evaluate(&statement.get())?;
-                Ok(Builder::get_unit().into())
-            }
-
-            Expr::Block(block) => {
-                let mut result = None;
-                for element in block.elements() {
-                    result = Some(self.evaluate(element)?);
-                }
-
-                Ok(result.unwrap_or_else(|| Builder::get_unit().into()))
-            }
+            Expr::ListLit(e) => self.evaluate_list(e),
+            Expr::ObjectLit(e) => self.evaluate_object(e),
+            Expr::UnaryExpr(e) => self.evaluate_unaryexpr(e),
+            Expr::BinExpr(e) => self.evaluate_binexpr(e),
+            Expr::Statement(e) => self.evaluate_statement(e),
+            Expr::Block(e) => self.evaluate_block(e),
 
             Expr::Function(_) => {
                 // TODO: Evaluate function definition
@@ -212,41 +174,9 @@ impl<'a> AbstractMachine<'a> {
                 unimplemented!()
             }
 
-            Expr::If(if_expr) => {
-                let Expr::BooleanLit(b) = self.evaluate(&if_expr.condition())? else {
-                    return Err(EvalError::TypeError);
-                };
-
-                if b {
-                    self.evaluate(&if_expr.then_branch())
-                } else if let Some(else_branch) = if_expr.else_branch() {
-                    self.evaluate(else_branch)
-                } else {
-                    Ok(Builder::get_unit().into())
-                }
-            }
-
-            Expr::WhileLoop(while_loop) => {
-                loop {
-                    let condition = self.evaluate(&while_loop.condition())?;
-                    match condition {
-                        Expr::BooleanLit(true) => {
-                            self.evaluate(&while_loop.body())?;
-                        }
-
-                        Expr::BooleanLit(false) => break,
-
-                        _ => return Err(EvalError::TypeError),
-                    }
-                }
-
-                Ok(Builder::get_unit().into())
-            }
-
-            Expr::DoWhileLoop(_) => {
-                // TODO: Evaluate do-while loop
-                unimplemented!()
-            }
+            Expr::If(e) => self.evaluate_if(e),
+            Expr::WhileLoop(e) => self.evaluate_while(e),
+            Expr::DoWhileLoop(e) => self.evaluate_do_while(e),
 
             Expr::Switch(_) => {
                 // TODO: Evaluate switch
