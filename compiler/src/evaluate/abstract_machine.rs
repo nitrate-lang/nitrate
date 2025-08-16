@@ -34,16 +34,12 @@ impl Task<'_> {
     }
 }
 
-pub enum FunctionError {
-    MissingArgument,
-    TypeError,
-}
-
-pub type Function<'a> = fn(&mut AbstractMachine<'a>) -> Result<Expr<'a>, FunctionError>;
-
 pub enum EvalError {
     TypeError,
+    MissingArgument,
 }
+
+pub type Function<'a> = fn(&mut AbstractMachine<'a>) -> Result<Expr<'a>, EvalError>;
 
 pub struct AbstractMachine<'a> {
     _global_variables: HashMap<&'a str, Variable<'a>>,
@@ -72,36 +68,30 @@ impl<'a> AbstractMachine<'a> {
         };
 
         abstract_machine.setup_builtins();
-        abstract_machine.setup_runtime();
         abstract_machine
+    }
+
+    pub fn get_parameter(&self, name: &str) -> Option<&Variable<'a>> {
+        self.tasks[self.current_task].call_stack.last()?.get(name)
+    }
+
+    pub fn get_parameter_value(&self, name: &str) -> Option<&Expr<'a>> {
+        self.get_parameter(name)?.value()
     }
 
     fn setup_builtins(&mut self) {
         self.provide_function("std::intrinsic::print", |m| {
-            let string_to_print = m.tasks[m.current_task]
-                .call_stack
-                .last()
-                .expect("No call frame found")
-                .get("msg")
-                .ok_or(FunctionError::MissingArgument)?
-                .value()
-                .ok_or(FunctionError::MissingArgument)?;
+            let Expr::StringLit(string) = m
+                .get_parameter_value("message")
+                .ok_or(EvalError::MissingArgument)?
+            else {
+                return Err(EvalError::TypeError);
+            };
 
-            match string_to_print {
-                Expr::StringLit(string) => {
-                    print!("{}", string.get());
-                    Ok(Builder::create_unit())
-                }
-                _ => Err(FunctionError::TypeError),
-            }
+            print!("{}", string.get());
+
+            Ok(Builder::create_unit())
         });
-
-        // TODO: Implement other intrinsic functions
-    }
-
-    fn setup_runtime(&mut self) {
-        // TODO: Implement runtime setup logic
-        // Create some global variables, garbage collector?, etc.
     }
 
     pub fn provide_function(
