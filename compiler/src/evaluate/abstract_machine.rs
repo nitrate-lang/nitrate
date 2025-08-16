@@ -391,23 +391,35 @@ impl<'a> AbstractMachine<'a> {
                 unimplemented!()
             }
 
-            Expr::If(if_expr) => match self.evaluate(&if_expr.condition())? {
-                Expr::BooleanLit(b) => {
-                    if b {
-                        self.evaluate(&if_expr.then_branch())
-                    } else if let Some(else_branch) = if_expr.else_branch() {
-                        self.evaluate(else_branch)
-                    } else {
-                        Ok(Builder::get_unit().into())
+            Expr::If(if_expr) => {
+                let Expr::BooleanLit(b) = self.evaluate(&if_expr.condition())? else {
+                    return Err(EvalError::TypeError);
+                };
+
+                if b {
+                    self.evaluate(&if_expr.then_branch())
+                } else if let Some(else_branch) = if_expr.else_branch() {
+                    self.evaluate(else_branch)
+                } else {
+                    Ok(Builder::get_unit().into())
+                }
+            }
+
+            Expr::WhileLoop(while_loop) => {
+                loop {
+                    let condition = self.evaluate(&while_loop.condition())?;
+                    match condition {
+                        Expr::BooleanLit(true) => {
+                            self.evaluate(&while_loop.body())?;
+                        }
+
+                        Expr::BooleanLit(false) => break,
+
+                        _ => return Err(EvalError::TypeError),
                     }
                 }
 
-                _ => panic!("Condition did not evaluate to a boolean"),
-            },
-
-            Expr::WhileLoop(_) => {
-                // TODO: Evaluate while loop
-                unimplemented!()
+                Ok(Builder::get_unit().into())
             }
 
             Expr::DoWhileLoop(_) => {

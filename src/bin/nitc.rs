@@ -1,4 +1,5 @@
 use log::error;
+use nitrate_compiler::evaluate::AbstractMachine;
 use nitrate_compiler::lexical::*;
 use nitrate_compiler::syntax::*;
 use std::io::Read;
@@ -48,10 +49,12 @@ fn program() -> i32 {
         return 1;
     }
 
-    // let parsetree_resolve =
+    let Ok(result) = AbstractMachine::new().evaluate(&model.tree()) else {
+        error!("Evaluation failed for file: {}", filename);
+        return 1;
+    };
 
-    println!("Parsing succeeded for file: {}", filename);
-    println!("model = {:#?}", model.tree());
+    println!("result = {:#?}", result);
 
     0
 }
