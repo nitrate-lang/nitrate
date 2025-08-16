@@ -289,11 +289,15 @@ impl<'a> Parser<'a, '_> {
             }
         }
 
-        Some(
-            Builder::create_tuple_type()
-                .add_elements(tuple_elements)
-                .build(),
-        )
+        if tuple_elements.is_empty() {
+            Some(Builder::get_unit_type())
+        } else {
+            Some(
+                Builder::create_tuple_type()
+                    .add_elements(tuple_elements)
+                    .build(),
+            )
+        }
     }
 
     fn parse_rest_of_array(&mut self, element_type: Type<'a>) -> Option<Type<'a>> {
@@ -759,6 +763,10 @@ impl<'a> Parser<'a, '_> {
          */
 
         if self.lexer.skip_if(&Token::Punct(Punct::LeftParen)) {
+            if self.lexer.skip_if(&Token::Punct(Punct::RightParen)) {
+                return Some(Builder::get_unit_type());
+            }
+
             let Some(inner) = self.parse_type() else {
                 self.set_failed_bit();
                 error!(

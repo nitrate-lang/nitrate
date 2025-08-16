@@ -544,8 +544,8 @@ impl<'a> ToCode<'a> for Expr<'a> {
             Expr::StringLit(e) => tokens.push(Token::String(e.deref().clone())),
             Expr::BStringLit(e) => tokens.push(Token::BString(e.deref().clone())),
             Expr::UnitLit => {
-                tokens.push(Token::Punct(Punct::LeftBracket));
-                tokens.push(Token::Punct(Punct::RightBracket));
+                tokens.push(Token::Punct(Punct::LeftParen));
+                tokens.push(Token::Punct(Punct::RightParen));
             }
 
             Expr::List(e) => e.to_code(tokens, options),
