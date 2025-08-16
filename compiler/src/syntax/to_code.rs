@@ -162,6 +162,7 @@ impl<'a> ToCode<'a> for GenericType<'a> {
 impl<'a> ToCode<'a> for IntegerLit {
     fn to_code(&self, tokens: &mut Vec<Token<'a>>, _options: &CodeFormat) {
         let u128 = self
+            .get()
             .try_to_u128()
             .expect("IntegerLit apint::UInt value should fit in u128");
 

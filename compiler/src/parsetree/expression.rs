@@ -38,14 +38,6 @@ impl IntegerLit {
     }
 }
 
-impl std::ops::Deref for IntegerLit {
-    type Target = UInt;
-
-    fn deref(&self) -> &Self::Target {
-        &self.value
-    }
-}
-
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct List<'a> {
     elements: Vec<Expr<'a>>,
@@ -147,8 +139,8 @@ impl<'a> UnaryExpr<'a> {
     }
 
     #[must_use]
-    pub fn operand(&self) -> Expr<'a> {
-        self.operand.clone()
+    pub fn operand(&self) -> &Expr<'a> {
+        &self.operand
     }
 
     #[must_use]
@@ -257,8 +249,8 @@ impl<'a> BinExpr<'a> {
     }
 
     #[must_use]
-    pub fn left(&self) -> Expr<'a> {
-        self.left.clone()
+    pub fn left(&self) -> &Expr<'a> {
+        &self.left
     }
 
     #[must_use]
@@ -267,8 +259,8 @@ impl<'a> BinExpr<'a> {
     }
 
     #[must_use]
-    pub fn right(&self) -> Expr<'a> {
-        self.right.clone()
+    pub fn right(&self) -> &Expr<'a> {
+        &self.right
     }
 }
 
@@ -284,8 +276,8 @@ impl<'a> Statement<'a> {
     }
 
     #[must_use]
-    pub fn get(&self) -> Expr<'a> {
-        self.expr.clone()
+    pub fn get(&self) -> &Expr<'a> {
+        &self.expr
     }
 
     pub fn set(&mut self, expr: Expr<'a>) {
@@ -338,13 +330,13 @@ impl<'a> FunctionParameter<'a> {
     }
 
     #[must_use]
-    pub fn type_(&self) -> Type<'a> {
-        self.param_type.clone()
+    pub fn type_(&self) -> &Type<'a> {
+        &self.param_type
     }
 
     #[must_use]
-    pub fn default(&self) -> Option<Expr<'a>> {
-        self.default_value.clone()
+    pub fn default(&self) -> Option<&Expr<'a>> {
+        self.default_value.as_ref()
     }
 }
 
@@ -386,8 +378,8 @@ impl<'a> Function<'a> {
     }
 
     #[must_use]
-    pub fn return_type(&self) -> Type<'a> {
-        self.return_type.clone()
+    pub fn return_type(&self) -> &Type<'a> {
+        &self.return_type
     }
 
     pub fn set_return_type(&mut self, ty: Type<'a>) {
@@ -493,8 +485,8 @@ impl<'a> Variable<'a> {
     }
 
     #[must_use]
-    pub fn get_type(&self) -> Type<'a> {
-        self.var_type.clone()
+    pub fn get_type(&self) -> &Type<'a> {
+        &self.var_type
     }
 
     pub fn set_type(&mut self, var_type: Type<'a>) {
@@ -502,8 +494,8 @@ impl<'a> Variable<'a> {
     }
 
     #[must_use]
-    pub fn value(&self) -> Option<Expr<'a>> {
-        self.value.clone()
+    pub fn value(&self) -> Option<&Expr<'a>> {
+        self.value.as_ref()
     }
 
     pub fn set_value(&mut self, value: Option<Expr<'a>>) {
@@ -588,8 +580,8 @@ impl<'a> Scope<'a> {
     }
 
     #[must_use]
-    pub fn block(&self) -> Expr<'a> {
-        self.block.clone()
+    pub fn block(&self) -> &Expr<'a> {
+        &self.block
     }
 
     pub fn set_block(&mut self, block: Expr<'a>) {
@@ -812,8 +804,8 @@ impl<'a> Return<'a> {
     }
 
     #[must_use]
-    pub fn value(&self) -> Option<Expr<'a>> {
-        self.value.clone()
+    pub fn value(&self) -> Option<&Expr<'a>> {
+        self.value.as_ref()
     }
 
     pub fn set_value(&mut self, value: Option<Expr<'a>>) {

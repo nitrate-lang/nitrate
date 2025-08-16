@@ -97,7 +97,11 @@ impl<'a> AbstractMachine<'a> {
         for parameter in function.parameters() {
             let type_ = self.evaluate_type(&parameter.type_())?;
             let default = parameter.default();
-            parameters.push(FunctionParameter::new(parameter.name(), type_, default));
+            parameters.push(FunctionParameter::new(
+                parameter.name(),
+                type_,
+                default.cloned(),
+            ));
         }
 
         let return_type = self.evaluate_type(&function.return_type())?;
