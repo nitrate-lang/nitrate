@@ -1,7 +1,7 @@
-use std::{collections::BTreeMap, ops::Deref};
-
 use crate::parsetree::{nodes::*, *};
 use hashbrown::{HashMap, HashSet};
+use std::collections::BTreeMap;
+use std::ops::Deref;
 
 #[derive(Debug, Default)]
 struct CallFrame<'a> {
@@ -280,6 +280,140 @@ impl<'a> AbstractMachine<'a> {
         }
     }
 
+    fn evaluate_refinement_type(
+        &mut self,
+        refinement: &RefinementType<'a>,
+    ) -> Result<Type<'a>, EvalError> {
+        let width = match refinement.width() {
+            Some(w) => Some(self.evaluate(&w)?),
+            None => None,
+        };
+
+        let min = match refinement.min() {
+            Some(m) => Some(self.evaluate(&m)?),
+            None => None,
+        };
+
+        let max = match refinement.max() {
+            Some(m) => Some(self.evaluate(&m)?),
+            None => None,
+        };
+
+        let base = self.evaluate_type(&refinement.base())?;
+
+        Ok(Builder::create_refinement_type()
+            .with_width(width)
+            .with_minimum(min)
+            .with_maximum(max)
+            .with_base(base)
+            .build())
+    }
+
+    fn evaluate_tuple_type(&mut self, tuple: &TupleType<'a>) -> Result<Type<'a>, EvalError> {
+        let mut elements = Vec::new();
+        elements.reserve(tuple.elements().len());
+
+        for element in tuple.elements() {
+            elements.push(self.evaluate_type(element)?);
+        }
+
+        Ok(Builder::create_tuple_type().add_elements(elements).build())
+    }
+
+    fn evaluate_array_type(&mut self, array: &ArrayType<'a>) -> Result<Type<'a>, EvalError> {
+        let element = self.evaluate_type(&array.element())?;
+        let count = self.evaluate(&array.count())?;
+
+        Ok(Builder::create_array_type()
+            .with_element(element)
+            .with_count(count)
+            .build())
+    }
+
+    fn evaluate_map_type(&mut self, map: &MapType<'a>) -> Result<Type<'a>, EvalError> {
+        let key = self.evaluate_type(&map.key())?;
+        let value = self.evaluate_type(&map.value())?;
+
+        Ok(Builder::create_map_type()
+            .with_key(key)
+            .with_value(value)
+            .build())
+    }
+
+    fn evaluate_slice_type(&mut self, slice: &SliceType<'a>) -> Result<Type<'a>, EvalError> {
+        let element = self.evaluate_type(&slice.element())?;
+        Ok(Builder::create_slice_type().with_element(element).build())
+    }
+
+    fn evaluate_function_type(
+        &mut self,
+        function: &FunctionType<'a>,
+    ) -> Result<Type<'a>, EvalError> {
+        let attributes = function.attributes().to_vec();
+
+        let mut parameters = Vec::new();
+        parameters.reserve(function.parameters().len());
+
+        for parameter in function.parameters() {
+            let type_ = self.evaluate_type(&parameter.type_())?;
+            let default = parameter.default();
+            parameters.push(FunctionParameter::new(parameter.name(), type_, default));
+        }
+
+        let return_type = self.evaluate_type(&function.return_type())?;
+
+        Ok(Builder::create_function_type()
+            .add_attributes(attributes)
+            .add_parameters(parameters)
+            .with_return_type(return_type)
+            .build())
+    }
+
+    fn evaluate_managed_ref_type(
+        &mut self,
+        reference: &ManagedRefType<'a>,
+    ) -> Result<Type<'a>, EvalError> {
+        let is_mutable = reference.is_mutable();
+        let target_type = self.evaluate_type(&reference.target())?;
+
+        Ok(Builder::create_managed_type()
+            .with_mutability(is_mutable)
+            .with_target(target_type)
+            .build())
+    }
+
+    fn evaluate_unmanaged_ref_type(
+        &mut self,
+        reference: &UnmanagedRefType<'a>,
+    ) -> Result<Type<'a>, EvalError> {
+        let is_mutable = reference.is_mutable();
+        let target_type = self.evaluate_type(&reference.target())?;
+
+        Ok(Builder::create_unmanaged_type()
+            .with_mutability(is_mutable)
+            .with_target(target_type)
+            .build())
+    }
+
+    fn evaluate_generic_type(&mut self, generic: &GenericType<'a>) -> Result<Type<'a>, EvalError> {
+        // TODO: Instantiate generic base with type arguments
+
+        let mut arguments = Vec::new();
+        arguments.reserve(generic.arguments().len());
+
+        for (name, value) in generic.arguments() {
+            let evaluated_type = self.evaluate(value)?;
+            arguments.push((*name, evaluated_type));
+        }
+
+        let base = self.evaluate_type(&generic.base())?;
+
+        Ok(Builder::create_generic_type()
+            .add_arguments(arguments)
+            .with_base(base)
+            .build())
+    }
+
     pub fn evaluate_type(&mut self, type_expression: &Type<'a>) -> Result<Type<'a>, EvalError> {
         if self.already_evaluated_types.contains(type_expression) {
             return Ok(type_expression.to_owned());
@@ -305,129 +439,15 @@ impl<'a> AbstractMachine<'a> {
             Type::InferType => Ok(Type::InferType),
             Type::TypeName(name) => Ok(Type::TypeName(*name)),
             Type::OpaqueType(identity) => Ok(Type::OpaqueType(identity.clone())),
-
-            Type::RefinementType(refinement) => {
-                let width = match refinement.width() {
-                    Some(w) => Some(self.evaluate(&w)?),
-                    None => None,
-                };
-
-                let min = match refinement.min() {
-                    Some(m) => Some(self.evaluate(&m)?),
-                    None => None,
-                };
-
-                let max = match refinement.max() {
-                    Some(m) => Some(self.evaluate(&m)?),
-                    None => None,
-                };
-
-                let base = self.evaluate_type(&refinement.base())?;
-
-                Ok(Builder::create_refinement_type()
-                    .with_width(width)
-                    .with_minimum(min)
-                    .with_maximum(max)
-                    .with_base(base)
-                    .build())
-            }
-
-            Type::TupleType(tuple) => {
-                let mut elements = Vec::new();
-                elements.reserve(tuple.elements().len());
-
-                for element in tuple.elements() {
-                    elements.push(self.evaluate_type(element)?);
-                }
-
-                Ok(Builder::create_tuple_type().add_elements(elements).build())
-            }
-
-            Type::ArrayType(array) => {
-                let element = self.evaluate_type(&array.element())?;
-                let count = self.evaluate(&array.count())?;
-
-                Ok(Builder::create_array_type()
-                    .with_element(element)
-                    .with_count(count)
-                    .build())
-            }
-
-            Type::MapType(map) => {
-                let key = self.evaluate_type(&map.key())?;
-                let value = self.evaluate_type(&map.value())?;
-
-                Ok(Builder::create_map_type()
-                    .with_key(key)
-                    .with_value(value)
-                    .build())
-            }
-
-            Type::SliceType(slice) => {
-                let element = self.evaluate_type(&slice.element())?;
-                Ok(Builder::create_slice_type().with_element(element).build())
-            }
-
-            Type::FunctionType(function) => {
-                let attributes = function.attributes().to_vec();
-
-                let mut parameters = Vec::new();
-                parameters.reserve(function.parameters().len());
-
-                for parameter in function.parameters() {
-                    let type_ = self.evaluate_type(&parameter.type_())?;
-                    let default = parameter.default();
-                    parameters.push(FunctionParameter::new(parameter.name(), type_, default));
-                }
-
-                let return_type = self.evaluate_type(&function.return_type())?;
-
-                Ok(Builder::create_function_type()
-                    .add_attributes(attributes)
-                    .add_parameters(parameters)
-                    .with_return_type(return_type)
-                    .build())
-            }
-
-            Type::ManagedRefType(reference) => {
-                let is_mutable = reference.is_mutable();
-                let target_type = self.evaluate_type(&reference.target())?;
-
-                Ok(Builder::create_managed_type()
-                    .with_mutability(is_mutable)
-                    .with_target(target_type)
-                    .build())
-            }
-
-            Type::UnmanagedRefType(reference) => {
-                let is_mutable = reference.is_mutable();
-                let target_type = self.evaluate_type(&reference.target())?;
-
-                Ok(Builder::create_unmanaged_type()
-                    .with_mutability(is_mutable)
-                    .with_target(target_type)
-                    .build())
-            }
-
-            Type::GenericType(generic) => {
-                // TODO: Instantiate generic base with type arguments
-
-                let mut arguments = Vec::new();
-                arguments.reserve(generic.arguments().len());
-
-                for (name, value) in generic.arguments() {
-                    let evaluated_type = self.evaluate(value)?;
-                    arguments.push((*name, evaluated_type));
-                }
-
-                let base = self.evaluate_type(&generic.base())?;
-
-                Ok(Builder::create_generic_type()
-                    .add_arguments(arguments)
-                    .with_base(base)
-                    .build())
-            }
-
+            Type::RefinementType(refinement) => self.evaluate_refinement_type(refinement),
+            Type::TupleType(tuple) => self.evaluate_tuple_type(tuple),
+            Type::ArrayType(array) => self.evaluate_array_type(array),
+            Type::MapType(map) => self.evaluate_map_type(map),
+            Type::SliceType(slice) => self.evaluate_slice_type(slice),
+            Type::FunctionType(function) => self.evaluate_function_type(function),
+            Type::ManagedRefType(reference) => self.evaluate_managed_ref_type(reference),
+            Type::UnmanagedRefType(reference) => self.evaluate_unmanaged_ref_type(reference),
+            Type::GenericType(generic) => self.evaluate_generic_type(generic),
             Type::HasParenthesesType(inner) => self.evaluate_type(inner),
         };
 
