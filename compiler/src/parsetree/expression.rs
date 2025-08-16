@@ -279,10 +279,6 @@ impl<'a> Statement<'a> {
     pub fn get(&self) -> &Expr<'a> {
         &self.expr
     }
-
-    pub fn set(&mut self, expr: Expr<'a>) {
-        self.expr = expr;
-    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -505,12 +501,12 @@ impl<'a> Variable<'a> {
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct QualifiedScope<'a> {
-    parts: SmallVec<[&'a str; 8]>,
+    parts: SmallVec<[&'a str; 3]>,
 }
 
 impl<'a> QualifiedScope<'a> {
     #[must_use]
-    pub fn new(parts: SmallVec<[&'a str; 8]>) -> Self {
+    pub fn new(parts: SmallVec<[&'a str; 3]>) -> Self {
         Self { parts }
     }
 
@@ -519,7 +515,7 @@ impl<'a> QualifiedScope<'a> {
         let parts = scope
             .split("::")
             .filter(|s| !s.is_empty())
-            .collect::<SmallVec<[&'a str; 8]>>();
+            .collect::<SmallVec<[&'a str; 3]>>();
         Self { parts }
     }
 

@@ -66,69 +66,80 @@ impl std::fmt::Display for SymbolTable<'_> {
 fn test_symbol_table() {
     let mut symbol_table = SymbolTable::default();
 
-    let func_1 = Builder::create_function().with_name("foo").build();
-    let func_2 = Builder::create_function().with_name("foo").build();
-    let func_3 = Builder::create_function().with_name("foo").build();
-    let func_4 = Builder::create_function().with_name("foo").build();
+    let func_1 = Builder::create_function()
+        .with_name("foo")
+        .with_return_type(Builder::get_u8())
+        .build();
+
+    let func_2 = Builder::create_function()
+        .with_name("foo")
+        .with_return_type(Builder::get_u16())
+        .build();
+
+    let func_3 = Builder::create_function()
+        .with_name("foo")
+        .with_return_type(Builder::get_u32())
+        .build();
+
+    let func_4 = Builder::create_function()
+        .with_name("bar")
+        .with_return_type(Builder::get_u64())
+        .build();
 
     let symbols = [
-        (QualifiedScope::parse(""), "foo", func_1.clone()),
-        (QualifiedScope::parse("app"), "foo", func_2.clone()),
-        (QualifiedScope::parse("app::sub"), "foo", func_3.clone()),
-        (
-            QualifiedScope::parse("app::sub::subsub"),
-            "foo",
-            func_4.clone(),
-        ),
+        (QualifiedScope::parse(""), func_1.clone()),
+        (QualifiedScope::parse("app"), func_2.clone()),
+        (QualifiedScope::parse("app::sub"), func_3.clone()),
+        (QualifiedScope::parse("app::sub"), func_4.clone()),
     ];
 
-    for (scope, name, symbol) in symbols.clone() {
+    for (scope, symbol) in symbols.clone() {
+        let name = match &symbol {
+            Expr::Function(func) => func.name(),
+            _ => panic!("Expected a function expression"),
+        };
+
         assert!(symbol_table.insert(scope, name, symbol));
     }
 
     assert_eq!(
+        // Resolve func_1 in the root scope
         symbol_table.resolve(QualifiedScope::parse(""), "foo"),
         Some(func_1.clone())
     );
 
     assert_eq!(
-        symbol_table.resolve(QualifiedScope::parse("other"), "foo"),
+        // Resolve func_1 in the root (because it the closest parent scope with a match)
+        symbol_table.resolve(QualifiedScope::parse("this::is::cool"), "foo"),
         Some(func_1.clone())
     );
 
     assert_eq!(
+        // Resolve func_2 in the ::app scope
         symbol_table.resolve(QualifiedScope::parse("app"), "foo"),
         Some(func_2.clone())
     );
 
     assert_eq!(
+        // Resolve func_2 in the ::app (because it is the closest parent scope with a match)
+        symbol_table.resolve(QualifiedScope::parse("app::deeper::namespace"), "foo"),
+        Some(func_2.clone())
+    );
+
+    assert_eq!(
+        // Resolve func_3 in the app::sub scope
         symbol_table.resolve(QualifiedScope::parse("app::sub"), "foo"),
         Some(func_3.clone())
     );
 
     assert_eq!(
-        symbol_table.resolve(QualifiedScope::parse("app::sub::subsub"), "foo"),
+        // Resolve func_4 in the app::sub scope
+        symbol_table.resolve(QualifiedScope::parse("app::sub"), "bar"),
         Some(func_4.clone())
     );
 
     assert_eq!(
-        symbol_table.resolve(QualifiedScope::parse("app::sub::subsub::other"), "foo"),
-        Some(func_4.clone())
-    );
-
-    assert_eq!(
-        symbol_table.resolve(
-            QualifiedScope::parse("app::sub::subsub::other::deep::in::code"),
-            "foo"
-        ),
-        Some(func_4.clone())
-    );
-
-    assert_eq!(
-        symbol_table.resolve(
-            QualifiedScope::parse("app::sub::subsub::other::deep::in::code"),
-            "bar"
-        ),
-        None
+        symbol_table.resolve(QualifiedScope::parse("app::sub::deeper"), "foo"),
+        Some(func_3.clone())
     );
 }
