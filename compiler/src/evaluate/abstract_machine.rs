@@ -149,7 +149,10 @@ impl<'a> AbstractMachine<'a> {
 
     fn evaluate_array_type(&mut self, array: &ArrayType<'a>) -> Result<Type<'a>, EvalError> {
         let element = self.evaluate_type(&array.element())?;
-        let count = self.evaluate(&array.count())?;
+        let count = match self.evaluate(&array.count())? {
+            Expr::IntegerLit(count) => Expr::IntegerLit(count),
+            _ => return Err(EvalError::TypeError), // Expecting integer array size
+        };
 
         Ok(Builder::create_array_type()
             .with_element(element)
@@ -229,8 +232,8 @@ impl<'a> AbstractMachine<'a> {
         arguments.reserve(generic.arguments().len());
 
         for (name, value) in generic.arguments() {
-            let evaluated_type = self.evaluate(value)?;
-            arguments.push((*name, evaluated_type));
+            let evaluated_value = self.evaluate(value)?;
+            arguments.push((name.to_owned(), evaluated_value));
         }
 
         let base = self.evaluate_type(&generic.base())?;
@@ -264,7 +267,7 @@ impl<'a> AbstractMachine<'a> {
             Type::Float64 => Ok(Type::Float64),
             Type::Float128 => Ok(Type::Float128),
             Type::InferType => Ok(Type::InferType),
-            Type::TypeName(name) => Ok(Type::TypeName(*name)),
+            Type::TypeName(name) => Ok(Type::TypeName(name)),
             Type::OpaqueType(identity) => Ok(Type::OpaqueType(identity.clone())),
             Type::RefinementType(refinement) => self.evaluate_refinement_type(refinement),
             Type::TupleType(tuple) => self.evaluate_tuple_type(tuple),
@@ -338,7 +341,7 @@ impl<'a> AbstractMachine<'a> {
             Expr::ObjectLit(object) => {
                 let mut fields = BTreeMap::new();
                 for (key, value) in object.get() {
-                    fields.insert(*key, self.evaluate(value)?);
+                    fields.insert(key.to_owned(), self.evaluate(value)?);
                 }
 
                 Ok(Builder::create_object().add_fields(fields).build())
