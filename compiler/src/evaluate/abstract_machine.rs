@@ -124,22 +124,16 @@ impl<'a> AbstractMachine<'a> {
             Expr::InferType => Ok(Expr::InferType),
             Expr::TypeName(t) => Ok(Expr::TypeName(t)),
             Expr::OpaqueType(t) => Ok(Expr::OpaqueType(t.clone())),
-            Expr::RefinementType(t) => self
-                .evaluate_refinement_type(t)
-                .map(std::convert::Into::into),
-            Expr::TupleType(t) => self.evaluate_tuple_type(t).map(std::convert::Into::into),
-            Expr::ArrayType(t) => self.evaluate_array_type(t).map(std::convert::Into::into),
-            Expr::MapType(t) => self.evaluate_map_type(t).map(std::convert::Into::into),
-            Expr::SliceType(t) => self.evaluate_slice_type(t).map(std::convert::Into::into),
-            Expr::FunctionType(t) => self.evaluate_function_type(t).map(std::convert::Into::into),
-            Expr::ManagedRefType(t) => self
-                .evaluate_managed_ref_type(t)
-                .map(std::convert::Into::into),
-            Expr::UnmanagedRefType(t) => self
-                .evaluate_unmanaged_ref_type(t)
-                .map(std::convert::Into::into),
-            Expr::GenericType(t) => self.evaluate_generic_type(t).map(std::convert::Into::into),
-            Expr::HasParenthesesType(t) => self.evaluate_type(t).map(std::convert::Into::into),
+            Expr::RefinementType(t) => self.evaluate_refinement_type(t).map(Into::into),
+            Expr::TupleType(t) => self.evaluate_tuple_type(t).map(Into::into),
+            Expr::ArrayType(t) => self.evaluate_array_type(t).map(Into::into),
+            Expr::MapType(t) => self.evaluate_map_type(t).map(Into::into),
+            Expr::SliceType(t) => self.evaluate_slice_type(t).map(Into::into),
+            Expr::FunctionType(t) => self.evaluate_function_type(t).map(Into::into),
+            Expr::ManagedRefType(t) => self.evaluate_managed_ref_type(t).map(Into::into),
+            Expr::UnmanagedRefType(t) => self.evaluate_unmanaged_ref_type(t).map(Into::into),
+            Expr::GenericType(t) => self.evaluate_generic_type(t).map(Into::into),
+            Expr::HasParenthesesType(t) => self.evaluate_type(t).map(Into::into),
 
             Expr::Discard => Ok(Expr::Discard),
             Expr::HasParentheses(e) => self.evaluate(e),
