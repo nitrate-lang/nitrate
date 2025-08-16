@@ -13,7 +13,7 @@ impl<'a> CallFrame<'a> {
         self.function_locals.get(name)
     }
 
-    fn set(&mut self, name: &'a str, variable: Variable<'a>) {
+    fn _set(&mut self, name: &'a str, variable: Variable<'a>) {
         self.function_locals.insert(name, variable);
     }
 }
@@ -21,8 +21,8 @@ impl<'a> CallFrame<'a> {
 #[derive(Debug)]
 struct Task<'a> {
     call_stack: Vec<CallFrame<'a>>,
-    task_locals: HashMap<&'a str, Variable<'a>>,
-    task_id: u64,
+    _task_locals: HashMap<&'a str, Variable<'a>>,
+    _task_id: u64,
 }
 
 impl<'a> Task<'a> {
@@ -30,8 +30,8 @@ impl<'a> Task<'a> {
         let call_stack = Vec::from([CallFrame::default()]);
         Task {
             call_stack,
-            task_locals: HashMap::new(),
-            task_id,
+            _task_locals: HashMap::new(),
+            _task_id: task_id,
         }
     }
 }
@@ -48,7 +48,7 @@ pub enum EvalError {
 }
 
 pub struct AbstractMachine<'a> {
-    global_variables: HashMap<&'a str, Variable<'a>>,
+    _global_variables: HashMap<&'a str, Variable<'a>>,
     provided_functions: HashMap<&'a str, Function<'a>>,
     tasks: Vec<Task<'a>>,
     current_task: usize,
@@ -59,7 +59,7 @@ pub struct AbstractMachine<'a> {
 impl<'a> AbstractMachine<'a> {
     pub fn new() -> Self {
         let mut abstract_machine = AbstractMachine {
-            global_variables: HashMap::new(),
+            _global_variables: HashMap::new(),
             provided_functions: HashMap::new(),
             tasks: Vec::from([Task::new(0)]),
             current_task: 0,
@@ -105,179 +105,6 @@ impl<'a> AbstractMachine<'a> {
         callback: Function<'a>,
     ) -> Option<Function<'a>> {
         self.provided_functions.insert(name, callback)
-    }
-
-    pub fn evaluate(&mut self, expression: &Expr<'a>) -> Result<Expr<'a>, EvalError> {
-        match expression {
-            Expr::Bool => Ok(Expr::Bool),
-            Expr::UInt8 => Ok(Expr::UInt8),
-            Expr::UInt16 => Ok(Expr::UInt16),
-            Expr::UInt32 => Ok(Expr::UInt32),
-            Expr::UInt64 => Ok(Expr::UInt64),
-            Expr::UInt128 => Ok(Expr::UInt128),
-            Expr::Int8 => Ok(Expr::Int8),
-            Expr::Int16 => Ok(Expr::Int16),
-            Expr::Int32 => Ok(Expr::Int32),
-            Expr::Int64 => Ok(Expr::Int64),
-            Expr::Int128 => Ok(Expr::Int128),
-            Expr::Float8 => Ok(Expr::Float8),
-            Expr::Float16 => Ok(Expr::Float16),
-            Expr::Float32 => Ok(Expr::Float32),
-            Expr::Float64 => Ok(Expr::Float64),
-            Expr::Float128 => Ok(Expr::Float128),
-            Expr::InferType => Ok(Expr::InferType),
-            Expr::TypeName(str) => Ok(Expr::TypeName(str)),
-            Expr::OpaqueType(identity) => Ok(Expr::OpaqueType(identity.clone())),
-
-            Expr::RefinementType(_)
-            | Expr::TupleType(_)
-            | Expr::ArrayType(_)
-            | Expr::MapType(_)
-            | Expr::SliceType(_)
-            | Expr::FunctionType(_)
-            | Expr::ManagedRefType(_)
-            | Expr::UnmanagedRefType(_)
-            | Expr::GenericType(_)
-            | Expr::HasParenthesesType(_) => {
-                let type_expression = expression
-                    .clone()
-                    .try_into()
-                    .expect("Expected type expression");
-                self.evaluate_type(&type_expression).map(|t| t.into())
-            }
-
-            Expr::Discard => Ok(Expr::Discard),
-            Expr::HasParentheses(expr) => self.evaluate(expr.deref()),
-
-            Expr::BooleanLit(bool) => Ok(Expr::BooleanLit(bool.to_owned())),
-            Expr::IntegerLit(int) => Ok(Expr::IntegerLit(int.clone())),
-            Expr::FloatLit(float) => Ok(Expr::FloatLit(float.to_owned())),
-            Expr::StringLit(string) => Ok(Expr::StringLit(string.clone())),
-            Expr::BStringLit(bstring) => Ok(Expr::BStringLit(bstring.clone())),
-
-            Expr::ListLit(list) => {
-                let mut elements = Vec::new();
-                elements.reserve(list.elements().len());
-
-                for element in list.elements() {
-                    elements.push(self.evaluate(element)?);
-                }
-
-                Ok(Builder::create_list().add_elements(elements).build())
-            }
-
-            Expr::ObjectLit(object) => {
-                let mut fields = BTreeMap::new();
-                for (key, value) in object.get() {
-                    fields.insert(*key, self.evaluate(value)?);
-                }
-
-                Ok(Builder::create_object().add_fields(fields).build())
-            }
-
-            Expr::UnaryExpr(_) => {
-                // TODO: Evaluate unary expression
-                unimplemented!()
-            }
-
-            Expr::BinExpr(_) => {
-                // TODO: Evaluate binary expression
-                unimplemented!()
-            }
-
-            Expr::Statement(statement) => {
-                self.evaluate(&statement.get())?;
-                Ok(Builder::get_unit().into())
-            }
-
-            Expr::Block(block) => {
-                let mut result = None;
-                for element in block.elements() {
-                    result = Some(self.evaluate(element)?);
-                }
-
-                Ok(result.unwrap_or_else(|| Builder::get_unit().into()))
-            }
-
-            Expr::Function(_) => {
-                // TODO: Evaluate function definition
-                unimplemented!()
-            }
-
-            Expr::Variable(_) => {
-                // TODO: Evaluate variable declaration
-                unimplemented!()
-            }
-
-            Expr::Identifier(_) => {
-                // TODO: Evaluate identifier
-                unimplemented!()
-            }
-
-            Expr::Scope(_) => {
-                // TODO: Evaluate scope
-                unimplemented!()
-            }
-
-            Expr::If(if_expr) => match self.evaluate(&if_expr.condition())? {
-                Expr::BooleanLit(b) => {
-                    if b {
-                        self.evaluate(&if_expr.then_branch())
-                    } else if let Some(else_branch) = if_expr.else_branch() {
-                        self.evaluate(else_branch)
-                    } else {
-                        Ok(Builder::get_unit().into())
-                    }
-                }
-
-                _ => panic!("Condition did not evaluate to a boolean"),
-            },
-
-            Expr::WhileLoop(_) => {
-                // TODO: Evaluate while loop
-                unimplemented!()
-            }
-
-            Expr::DoWhileLoop(_) => {
-                // TODO: Evaluate do-while loop
-                unimplemented!()
-            }
-
-            Expr::Switch(_) => {
-                // TODO: Evaluate switch
-                unimplemented!()
-            }
-
-            Expr::Break(_) => {
-                // TODO: Evaluate break
-                unimplemented!()
-            }
-
-            Expr::Continue(_) => {
-                // TODO: Evaluate continue
-                unimplemented!()
-            }
-
-            Expr::Return(_) => {
-                // TODO: Evaluate return
-                unimplemented!()
-            }
-
-            Expr::ForEach(_) => {
-                // TODO: Evaluate for-each
-                unimplemented!()
-            }
-
-            Expr::Await(_) => {
-                // TODO: Evaluate await
-                unimplemented!()
-            }
-
-            Expr::Assert(_) => {
-                // TODO: Evaluate assert
-                unimplemented!()
-            }
-        }
     }
 
     fn evaluate_refinement_type(
@@ -454,5 +281,171 @@ impl<'a> AbstractMachine<'a> {
         result.inspect(|t| {
             self.already_evaluated_types.insert(t.clone());
         })
+    }
+
+    pub fn evaluate(&mut self, expression: &Expr<'a>) -> Result<Expr<'a>, EvalError> {
+        match expression {
+            Expr::Bool => Ok(Expr::Bool),
+            Expr::UInt8 => Ok(Expr::UInt8),
+            Expr::UInt16 => Ok(Expr::UInt16),
+            Expr::UInt32 => Ok(Expr::UInt32),
+            Expr::UInt64 => Ok(Expr::UInt64),
+            Expr::UInt128 => Ok(Expr::UInt128),
+            Expr::Int8 => Ok(Expr::Int8),
+            Expr::Int16 => Ok(Expr::Int16),
+            Expr::Int32 => Ok(Expr::Int32),
+            Expr::Int64 => Ok(Expr::Int64),
+            Expr::Int128 => Ok(Expr::Int128),
+            Expr::Float8 => Ok(Expr::Float8),
+            Expr::Float16 => Ok(Expr::Float16),
+            Expr::Float32 => Ok(Expr::Float32),
+            Expr::Float64 => Ok(Expr::Float64),
+            Expr::Float128 => Ok(Expr::Float128),
+            Expr::InferType => Ok(Expr::InferType),
+            Expr::TypeName(t) => Ok(Expr::TypeName(t)),
+            Expr::OpaqueType(t) => Ok(Expr::OpaqueType(t.clone())),
+            Expr::RefinementType(t) => self.evaluate_refinement_type(t).map(|t| t.into()),
+            Expr::TupleType(t) => self.evaluate_tuple_type(t).map(|t| t.into()),
+            Expr::ArrayType(t) => self.evaluate_array_type(t).map(|t| t.into()),
+            Expr::MapType(t) => self.evaluate_map_type(t).map(|t| t.into()),
+            Expr::SliceType(t) => self.evaluate_slice_type(t).map(|t| t.into()),
+            Expr::FunctionType(t) => self.evaluate_function_type(t).map(|t| t.into()),
+            Expr::ManagedRefType(t) => self.evaluate_managed_ref_type(t).map(|t| t.into()),
+            Expr::UnmanagedRefType(t) => self.evaluate_unmanaged_ref_type(t).map(|t| t.into()),
+            Expr::GenericType(t) => self.evaluate_generic_type(t).map(|t| t.into()),
+            Expr::HasParenthesesType(t) => self.evaluate_type(t).map(|t| t.into()),
+
+            Expr::Discard => Ok(Expr::Discard),
+            Expr::HasParentheses(expr) => self.evaluate(expr.deref()),
+
+            Expr::BooleanLit(bool) => Ok(Expr::BooleanLit(bool.to_owned())),
+            Expr::IntegerLit(int) => Ok(Expr::IntegerLit(int.clone())),
+            Expr::FloatLit(float) => Ok(Expr::FloatLit(float.to_owned())),
+            Expr::StringLit(string) => Ok(Expr::StringLit(string.clone())),
+            Expr::BStringLit(bstring) => Ok(Expr::BStringLit(bstring.clone())),
+
+            Expr::ListLit(list) => {
+                let mut elements = Vec::new();
+                elements.reserve(list.elements().len());
+
+                for element in list.elements() {
+                    elements.push(self.evaluate(element)?);
+                }
+
+                Ok(Builder::create_list().add_elements(elements).build())
+            }
+
+            Expr::ObjectLit(object) => {
+                let mut fields = BTreeMap::new();
+                for (key, value) in object.get() {
+                    fields.insert(*key, self.evaluate(value)?);
+                }
+
+                Ok(Builder::create_object().add_fields(fields).build())
+            }
+
+            Expr::UnaryExpr(_) => {
+                // TODO: Evaluate unary expression
+                unimplemented!()
+            }
+
+            Expr::BinExpr(_) => {
+                // TODO: Evaluate binary expression
+                unimplemented!()
+            }
+
+            Expr::Statement(statement) => {
+                self.evaluate(&statement.get())?;
+                Ok(Builder::get_unit().into())
+            }
+
+            Expr::Block(block) => {
+                let mut result = None;
+                for element in block.elements() {
+                    result = Some(self.evaluate(element)?);
+                }
+
+                Ok(result.unwrap_or_else(|| Builder::get_unit().into()))
+            }
+
+            Expr::Function(_) => {
+                // TODO: Evaluate function definition
+                unimplemented!()
+            }
+
+            Expr::Variable(_) => {
+                // TODO: Evaluate variable declaration
+                unimplemented!()
+            }
+
+            Expr::Identifier(_) => {
+                // TODO: Evaluate identifier
+                unimplemented!()
+            }
+
+            Expr::Scope(_) => {
+                // TODO: Evaluate scope
+                unimplemented!()
+            }
+
+            Expr::If(if_expr) => match self.evaluate(&if_expr.condition())? {
+                Expr::BooleanLit(b) => {
+                    if b {
+                        self.evaluate(&if_expr.then_branch())
+                    } else if let Some(else_branch) = if_expr.else_branch() {
+                        self.evaluate(else_branch)
+                    } else {
+                        Ok(Builder::get_unit().into())
+                    }
+                }
+
+                _ => panic!("Condition did not evaluate to a boolean"),
+            },
+
+            Expr::WhileLoop(_) => {
+                // TODO: Evaluate while loop
+                unimplemented!()
+            }
+
+            Expr::DoWhileLoop(_) => {
+                // TODO: Evaluate do-while loop
+                unimplemented!()
+            }
+
+            Expr::Switch(_) => {
+                // TODO: Evaluate switch
+                unimplemented!()
+            }
+
+            Expr::Break(_) => {
+                // TODO: Evaluate break
+                unimplemented!()
+            }
+
+            Expr::Continue(_) => {
+                // TODO: Evaluate continue
+                unimplemented!()
+            }
+
+            Expr::Return(_) => {
+                // TODO: Evaluate return
+                unimplemented!()
+            }
+
+            Expr::ForEach(_) => {
+                // TODO: Evaluate for-each
+                unimplemented!()
+            }
+
+            Expr::Await(_) => {
+                // TODO: Evaluate await
+                unimplemented!()
+            }
+
+            Expr::Assert(_) => {
+                // TODO: Evaluate assert
+                unimplemented!()
+            }
+        }
     }
 }
