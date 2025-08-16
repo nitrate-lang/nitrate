@@ -13,6 +13,7 @@
     }
 
     .ref-syntax-table th {
+      background-color: #f2f2f2;
       border: 3px solid #ccc;
       padding: 10px;
       font-weight: bold;
@@ -24,11 +25,10 @@
       padding: 0;
     }
 
-    .ref-syntax-table th,
     .ref-syntax-table .var {
       background-color: #f2f2f2;
       font-weight: bold;
-      padding-right: 10px;
+      padding: 0px 10px;
     }
 
     .ref-syntax-table a {
@@ -62,7 +62,6 @@
       <tr>
         <th>Managed References</th>
         <th><a href="#exclusive-ownership">Exclusive</a> Ownership</th>
-        <th><a href="#thread-ownership">Thread</a> Ownership</th>
         <th><a href="#shared-ownership">Shared</a> Ownership</th>
       </tr>
     </thead>
@@ -72,10 +71,6 @@
         <td class="cell">
           <pre class="invalid"><code lang="rust">%'static sec imm T</code></pre>
           <pre class="invalid"><code lang="rust">%'static sec mut T</code></pre>
-        </td>
-        <td class="cell">
-          <pre class="invalid"><code lang="rust">%'static pro imm T</code></pre>
-          <pre class="invalid"><code lang="rust">%'static pro mut T</code></pre>
         </td>
         <td class="cell">
           <pre class="invalid"><code lang="rust">%'static pub imm T</code></pre>
@@ -89,10 +84,6 @@
           <pre class="invalid"><code lang="rust">%'dynamic sec mut T</code></pre>
         </td>
         <td class="cell">
-          <pre class="invalid"><code lang="rust">%'dynamic pro imm T</code></pre>
-          <pre class="invalid"><code lang="rust">%'dynamic pro mut T</code></pre>
-        </td>
-        <td class="cell">
           <pre class="invalid"><code lang="rust">%'dynamic pub imm T</code></pre>
           <pre class="invalid"><code lang="rust">%'dynamic pub mut T</code></pre>
         </td>
@@ -102,10 +93,6 @@
         <td class="cell">
           <pre class="invalid"><code lang="rust">%'thread sec imm T</code></pre>
           <pre class="invalid"><code lang="rust">%'thread sec mut T</code></pre>
-        </td>
-        <td class="cell">
-          <pre class="invalid"><code lang="rust">%'thread pro imm T</code></pre>
-          <pre class="invalid"><code lang="rust">%'thread pro mut T</code></pre>
         </td>
         <td class="cell">
           <pre class="invalid"><code lang="rust">%'thread pub imm T</code></pre>
@@ -119,10 +106,6 @@
           <pre class="invalid"><code lang="rust">%'task sec mut T</code></pre>
         </td>
         <td class="cell">
-          <pre class="invalid"><code lang="rust">%'task pro imm T</code></pre>
-          <pre class="invalid"><code lang="rust">%'task pro mut T</code></pre>
-        </td>
-        <td class="cell">
           <pre class="invalid"><code lang="rust">%'task pub imm T</code></pre>
           <pre class="invalid"><code lang="rust">%'task pub mut T</code></pre>
         </td>
@@ -132,10 +115,6 @@
         <td class="cell">
           <pre class="invalid"><code lang="rust">%'custom sec imm T</code></pre>
           <pre class="invalid"><code lang="rust">%'custom sec mut T</code></pre>
-        </td>
-        <td class="cell">
-          <pre class="invalid"><code lang="rust">%'custom pro imm T</code></pre>
-          <pre class="invalid"><code lang="rust">%'custom pro mut T</code></pre>
         </td>
         <td class="cell">
           <pre class="invalid"><code lang="rust">%'custom pub imm T</code></pre>
@@ -151,7 +130,6 @@
       <tr>
         <th>Unmanaged References</th>
         <th><a href="#exclusive-ownership">Exclusive</a> Ownership</th>
-        <th><a href="#thread-ownership">Thread</a> Ownership</th>
         <th><a href="#shared-ownership">Shared</a> Ownership</th>
       </tr>
     </thead>
@@ -161,10 +139,6 @@
         <td class="cell">
           <pre class="valid"><code lang="rust">&'static sec imm T</code></pre>
           <pre class="valid"><code lang="rust">&'static sec mut T</code></pre>
-        </td>
-        <td class="cell">
-          <pre class="invalid"><code lang="rust">&'static pro imm T</code></pre>
-          <pre class="invalid"><code lang="rust">&'static pro mut T</code></pre>
         </td>
         <td class="cell">
           <pre class="valid"><code lang="rust">&'static pub imm T</code></pre>
@@ -178,10 +152,6 @@
           <pre class="invalid"><code lang="rust">&'dynamic sec mut T</code></pre>
         </td>
         <td class="cell">
-          <pre class="invalid"><code lang="rust">&'dynamic pro imm T</code></pre>
-          <pre class="invalid"><code lang="rust">&'dynamic pro mut T</code></pre>
-        </td>
-        <td class="cell">
           <pre class="invalid"><code lang="rust">&'dynamic pub imm T</code></pre>
           <pre class="invalid"><code lang="rust">&'dynamic pub mut T</code></pre>
         </td>
@@ -191,10 +161,6 @@
         <td class="cell">
           <pre class="invalid"><code lang="rust">&'thread sec imm T</code></pre>
           <pre class="invalid"><code lang="rust">&'thread sec mut T</code></pre>
-        </td>
-        <td class="cell">
-          <pre class="invalid"><code lang="rust">&'thread pro imm T</code></pre>
-          <pre class="invalid"><code lang="rust">&'thread pro mut T</code></pre>
         </td>
         <td class="cell">
           <pre class="invalid"><code lang="rust">&'thread pub imm T</code></pre>
@@ -208,10 +174,6 @@
           <pre class="invalid"><code lang="rust">&'task sec mut T</code></pre>
         </td>
         <td class="cell">
-          <pre class="invalid"><code lang="rust">&'task pro imm T</code></pre>
-          <pre class="invalid"><code lang="rust">&'task pro mut T</code></pre>
-        </td>
-        <td class="cell">
           <pre class="invalid"><code lang="rust">&'task pub imm T</code></pre>
           <pre class="invalid"><code lang="rust">&'task pub mut T</code></pre>
         </td>
@@ -221,10 +183,6 @@
         <td class="cell">
           <pre class="valid"><code lang="rust">&'custom sec imm T</code></pre>
           <pre class="valid"><code lang="rust">&'custom sec mut T</code></pre>
-        </td>
-        <td class="cell">
-          <pre class="invalid"><code lang="rust">&'custom pro imm T</code></pre>
-          <pre class="invalid"><code lang="rust">&'custom pro mut T</code></pre>
         </td>
         <td class="cell">
           <pre class="valid"><code lang="rust">&'custom pub imm T</code></pre>
@@ -240,7 +198,6 @@
       <tr>
         <th>Raw Pointers</th>
         <th><a href="#exclusive-ownership">Exclusive</a> Ownership</th>
-        <th><a href="#thread-ownership">Thread</a> Ownership</th>
         <th><a href="#shared-ownership">Shared</a> Ownership</th>
       </tr>
     </thead>
@@ -250,10 +207,6 @@
         <td class="cell">
           <pre class="invalid"><code lang="rust">*'static sec imm T</code></pre>
           <pre class="invalid"><code lang="rust">*'static sec mut T</code></pre>
-        </td>
-        <td class="cell">
-          <pre class="invalid"><code lang="rust">*'static pro imm T</code></pre>
-          <pre class="invalid"><code lang="rust">*'static pro mut T</code></pre>
         </td>
         <td class="cell">
           <pre class="invalid"><code lang="rust">*'static pub imm T</code></pre>
@@ -267,10 +220,6 @@
           <pre class="invalid"><code lang="rust">*'dynamic sec mut T</code></pre>
         </td>
         <td class="cell">
-          <pre class="invalid"><code lang="rust">*'dynamic pro imm T</code></pre>
-          <pre class="invalid"><code lang="rust">*'dynamic pro mut T</code></pre>
-        </td>
-        <td class="cell">
           <pre class="invalid"><code lang="rust">*'dynamic pub imm T</code></pre>
           <pre class="invalid"><code lang="rust">*'dynamic pub mut T</code></pre>
         </td>
@@ -280,10 +229,6 @@
         <td class="cell">
           <pre class="invalid"><code lang="rust">*'thread sec imm T</code></pre>
           <pre class="invalid"><code lang="rust">*'thread sec mut T</code></pre>
-        </td>
-        <td class="cell">
-          <pre class="invalid"><code lang="rust">*'thread pro imm T</code></pre>
-          <pre class="invalid"><code lang="rust">*'thread pro mut T</code></pre>
         </td>
         <td class="cell">
           <pre class="invalid"><code lang="rust">*'thread pub imm T</code></pre>
@@ -297,10 +242,6 @@
           <pre class="invalid"><code lang="rust">*'task sec mut T</code></pre>
         </td>
         <td class="cell">
-          <pre class="invalid"><code lang="rust">*'task pro imm T</code></pre>
-          <pre class="invalid"><code lang="rust">*'task pro mut T</code></pre>
-        </td>
-        <td class="cell">
           <pre class="invalid"><code lang="rust">*'task pub imm T</code></pre>
           <pre class="invalid"><code lang="rust">*'task pub mut T</code></pre>
         </td>
@@ -310,10 +251,6 @@
         <td class="cell">
           <pre class="invalid"><code lang="rust">*'custom sec imm T</code></pre>
           <pre class="invalid"><code lang="rust">*'custom sec mut T</code></pre>
-        </td>
-        <td class="cell">
-          <pre class="invalid"><code lang="rust">*'custom pro imm T</code></pre>
-          <pre class="invalid"><code lang="rust">*'custom pro mut T</code></pre>
         </td>
         <td class="cell">
           <pre class="invalid"><code lang="rust">*'custom pub imm T</code></pre>
