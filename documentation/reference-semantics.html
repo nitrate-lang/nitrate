@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Document</title>
+  <title>Reference Semantics - Nitrate Language</title>
 
   <style>
     .ref-syntax-table {
@@ -150,7 +150,7 @@
         </td>
         <td class="cell">
           <pre class="valid"><code lang="rust">&'static pub imm T</code></pre>
-          <pre class="invalid"><code lang="rust">&'static pub mut T</code></pre>
+          <pre class="unsafe"><code lang="rust">&'static pub mut T</code></pre>
         </td>
       </tr>
       <tr>
@@ -172,7 +172,7 @@
         </td>
         <td class="cell">
           <pre class="valid"><code lang="rust">&'thread pub imm T</code></pre>
-          <pre class="invalid"><code lang="rust">&'thread pub mut T</code></pre>
+          <pre class="unsafe"><code lang="rust">&'thread pub mut T</code></pre>
         </td>
       </tr>
       <tr>
@@ -183,7 +183,7 @@
         </td>
         <td class="cell">
           <pre class="valid"><code lang="rust">&'task pub imm T</code></pre>
-          <pre class="invalid"><code lang="rust">&'task pub mut T</code></pre>
+          <pre class="unsafe"><code lang="rust">&'task pub mut T</code></pre>
         </td>
       </tr>
       <tr>
@@ -194,7 +194,7 @@
         </td>
         <td class="cell">
           <pre class="valid"><code lang="rust">&'custom pub imm T</code></pre>
-          <pre class="invalid"><code lang="rust">&'custom pub mut T</code></pre>
+          <pre class="unsafe"><code lang="rust">&'custom pub mut T</code></pre>
         </td>
       </tr>
     </tbody>
