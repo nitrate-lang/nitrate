@@ -77,56 +77,56 @@
       <tr>
         <td class="var"><a href="static-lifetime">Static</a> Lifetime</td>
         <td class="cell">
-          <pre class="invalid"><code lang="rust">%'static sec imm T</code></pre>
-          <pre class="invalid"><code lang="rust">%'static sec mut T</code></pre>
+          <pre class="invalid"><code lang="rust">%'static iso const T</code></pre>
+          <pre class="invalid"><code lang="rust">%'static mut T</code></pre>
         </td>
         <td class="cell">
-          <pre class="invalid"><code lang="rust">%'static pub imm T</code></pre>
-          <pre class="invalid"><code lang="rust">%'static pub mut T</code></pre>
+          <pre class="invalid"><code lang="rust">%'static const T</code></pre>
+          <pre class="invalid"><code lang="rust">%'static poly mut T</code></pre>
         </td>
       </tr>
       <tr>
         <td class="var"><a href="dynamic-lifetime">Dynamic</a> Lifetime</td>
         <td class="cell">
-          <pre class="valid"><code lang="rust">%'dynamic sec imm T</code></pre>
-          <pre class="valid"><code lang="rust">%'dynamic sec mut T</code></pre>
+          <pre class="valid"><code lang="rust">%'dynamic iso const T</code></pre>
+          <pre class="valid"><code lang="rust">%'dynamic mut T</code></pre>
         </td>
         <td class="cell">
-          <pre class="valid"><code lang="rust">%'dynamic pub imm T</code></pre>
-          <pre class="unsafe"><code lang="rust">%'dynamic pub mut T</code></pre>
+          <pre class="valid"><code lang="rust">%'dynamic const T</code></pre>
+          <pre class="unsafe"><code lang="rust">%'dynamic poly mut T</code></pre>
         </td>
       </tr>
       <tr>
         <td class="var"><a href="thread-lifetime">Thread</a> Lifetime</td>
         <td class="cell">
-          <pre class="invalid"><code lang="rust">%'thread sec imm T</code></pre>
-          <pre class="invalid"><code lang="rust">%'thread sec mut T</code></pre>
+          <pre class="invalid"><code lang="rust">%'thread iso const T</code></pre>
+          <pre class="invalid"><code lang="rust">%'thread mut T</code></pre>
         </td>
         <td class="cell">
-          <pre class="invalid"><code lang="rust">%'thread pub imm T</code></pre>
-          <pre class="invalid"><code lang="rust">%'thread pub mut T</code></pre>
+          <pre class="invalid"><code lang="rust">%'thread const T</code></pre>
+          <pre class="invalid"><code lang="rust">%'thread poly mut T</code></pre>
         </td>
       </tr>
       <tr>
         <td class="var"><a href="task-lifetime">Task</a> Lifetime</td>
         <td class="cell">
-          <pre class="invalid"><code lang="rust">%'task sec imm T</code></pre>
-          <pre class="invalid"><code lang="rust">%'task sec mut T</code></pre>
+          <pre class="invalid"><code lang="rust">%'task iso const T</code></pre>
+          <pre class="invalid"><code lang="rust">%'task mut T</code></pre>
         </td>
         <td class="cell">
-          <pre class="invalid"><code lang="rust">%'task pub imm T</code></pre>
-          <pre class="invalid"><code lang="rust">%'task pub mut T</code></pre>
+          <pre class="invalid"><code lang="rust">%'task const T</code></pre>
+          <pre class="invalid"><code lang="rust">%'task poly mut T</code></pre>
         </td>
       </tr>
       <tr>
         <td class="var"><a href="fixed-lifetime">Fixed</a> Lifetime</td>
         <td class="cell">
-          <pre class="invalid"><code lang="rust">%'custom sec imm T</code></pre>
-          <pre class="invalid"><code lang="rust">%'custom sec mut T</code></pre>
+          <pre class="invalid"><code lang="rust">%'custom iso const T</code></pre>
+          <pre class="invalid"><code lang="rust">%'custom mut T</code></pre>
         </td>
         <td class="cell">
-          <pre class="invalid"><code lang="rust">%'custom pub imm T</code></pre>
-          <pre class="invalid"><code lang="rust">%'custom pub mut T</code></pre>
+          <pre class="invalid"><code lang="rust">%'custom const T</code></pre>
+          <pre class="invalid"><code lang="rust">%'custom poly mut T</code></pre>
         </td>
       </tr>
     </tbody>
@@ -145,56 +145,56 @@
       <tr>
         <td class="var"><a href="static-lifetime">Static</a> Lifetime</td>
         <td class="cell">
-          <pre class="valid"><code lang="rust">&'static sec imm T</code></pre>
-          <pre class="valid"><code lang="rust">&'static sec mut T</code></pre>
+          <pre class="valid"><code lang="rust">&'static iso const T</code></pre>
+          <pre class="valid"><code lang="rust">&'static mut T</code></pre>
         </td>
         <td class="cell">
-          <pre class="valid"><code lang="rust">&'static pub imm T</code></pre>
-          <pre class="unsafe"><code lang="rust">&'static pub mut T</code></pre>
+          <pre class="valid"><code lang="rust">&'static const T</code></pre>
+          <pre class="unsafe"><code lang="rust">&'static poly mut T</code></pre>
         </td>
       </tr>
       <tr>
         <td class="var"><a href="dynamic-lifetime">Dynamic</a> Lifetime</td>
         <td class="cell">
-          <pre class="invalid"><code lang="rust">&'dynamic sec imm T</code></pre>
-          <pre class="invalid"><code lang="rust">&'dynamic sec mut T</code></pre>
+          <pre class="invalid"><code lang="rust">&'dynamic iso const T</code></pre>
+          <pre class="invalid"><code lang="rust">&'dynamic mut T</code></pre>
         </td>
         <td class="cell">
-          <pre class="invalid"><code lang="rust">&'dynamic pub imm T</code></pre>
-          <pre class="invalid"><code lang="rust">&'dynamic pub mut T</code></pre>
+          <pre class="invalid"><code lang="rust">&'dynamic const T</code></pre>
+          <pre class="invalid"><code lang="rust">&'dynamic poly mut T</code></pre>
         </td>
       </tr>
       <tr>
         <td class="var"><a href="thread-lifetime">Thread</a> Lifetime</td>
         <td class="cell">
-          <pre class="valid"><code lang="rust">&'thread sec imm T</code></pre>
-          <pre class="valid"><code lang="rust">&'thread sec mut T</code></pre>
+          <pre class="valid"><code lang="rust">&'thread iso const T</code></pre>
+          <pre class="valid"><code lang="rust">&'thread mut T</code></pre>
         </td>
         <td class="cell">
-          <pre class="valid"><code lang="rust">&'thread pub imm T</code></pre>
-          <pre class="unsafe"><code lang="rust">&'thread pub mut T</code></pre>
+          <pre class="valid"><code lang="rust">&'thread const T</code></pre>
+          <pre class="unsafe"><code lang="rust">&'thread poly mut T</code></pre>
         </td>
       </tr>
       <tr>
         <td class="var"><a href="task-lifetime">Task</a> Lifetime</td>
         <td class="cell">
-          <pre class="valid"><code lang="rust">&'task sec imm T</code></pre>
-          <pre class="valid"><code lang="rust">&'task sec mut T</code></pre>
+          <pre class="valid"><code lang="rust">&'task iso const T</code></pre>
+          <pre class="valid"><code lang="rust">&'task mut T</code></pre>
         </td>
         <td class="cell">
-          <pre class="valid"><code lang="rust">&'task pub imm T</code></pre>
-          <pre class="unsafe"><code lang="rust">&'task pub mut T</code></pre>
+          <pre class="valid"><code lang="rust">&'task const T</code></pre>
+          <pre class="unsafe"><code lang="rust">&'task poly mut T</code></pre>
         </td>
       </tr>
       <tr>
         <td class="var"><a href="fixed-lifetime">Fixed</a> Lifetime</td>
         <td class="cell">
-          <pre class="valid"><code lang="rust">&'custom sec imm T</code></pre>
-          <pre class="valid"><code lang="rust">&'custom sec mut T</code></pre>
+          <pre class="valid"><code lang="rust">&'custom iso const T</code></pre>
+          <pre class="valid"><code lang="rust">&'custom mut T</code></pre>
         </td>
         <td class="cell">
-          <pre class="valid"><code lang="rust">&'custom pub imm T</code></pre>
-          <pre class="unsafe"><code lang="rust">&'custom pub mut T</code></pre>
+          <pre class="valid"><code lang="rust">&'custom const T</code></pre>
+          <pre class="unsafe"><code lang="rust">&'custom poly mut T</code></pre>
         </td>
       </tr>
     </tbody>
@@ -213,56 +213,56 @@
       <tr>
         <td class="var"><a href="static-lifetime">Static</a> Lifetime</td>
         <td class="cell">
-          <pre class="valid"><code lang="rust">*'static sec imm T</code></pre>
-          <pre class="valid"><code lang="rust">*'static sec mut T</code></pre>
+          <pre class="valid"><code lang="rust">*'static iso const T</code></pre>
+          <pre class="valid"><code lang="rust">*'static mut T</code></pre>
         </td>
         <td class="cell">
-          <pre class="valid"><code lang="rust">*'static pub imm T</code></pre>
-          <pre class="unsafe"><code lang="rust">*'static pub mut T</code></pre>
+          <pre class="valid"><code lang="rust">*'static const T</code></pre>
+          <pre class="unsafe"><code lang="rust">*'static poly mut T</code></pre>
         </td>
       </tr>
       <tr>
         <td class="var"><a href="dynamic-lifetime">Dynamic</a> Lifetime</td>
         <td class="cell">
-          <pre class="valid"><code lang="rust">*'dynamic sec imm T</code></pre>
-          <pre class="valid"><code lang="rust">*'dynamic sec mut T</code></pre>
+          <pre class="valid"><code lang="rust">*'dynamic iso const T</code></pre>
+          <pre class="valid"><code lang="rust">*'dynamic mut T</code></pre>
         </td>
         <td class="cell">
-          <pre class="valid"><code lang="rust">*'dynamic pub imm T</code></pre>
-          <pre class="unsafe"><code lang="rust">*'dynamic pub mut T</code></pre>
+          <pre class="valid"><code lang="rust">*'dynamic const T</code></pre>
+          <pre class="unsafe"><code lang="rust">*'dynamic poly mut T</code></pre>
         </td>
       </tr>
       <tr>
         <td class="var"><a href="thread-lifetime">Thread</a> Lifetime</td>
         <td class="cell">
-          <pre class="valid"><code lang="rust">*'thread sec imm T</code></pre>
-          <pre class="valid"><code lang="rust">*'thread sec mut T</code></pre>
+          <pre class="valid"><code lang="rust">*'thread iso const T</code></pre>
+          <pre class="valid"><code lang="rust">*'thread mut T</code></pre>
         </td>
         <td class="cell">
-          <pre class="valid"><code lang="rust">*'thread pub imm T</code></pre>
-          <pre class="unsafe"><code lang="rust">*'thread pub mut T</code></pre>
+          <pre class="valid"><code lang="rust">*'thread const T</code></pre>
+          <pre class="unsafe"><code lang="rust">*'thread poly mut T</code></pre>
         </td>
       </tr>
       <tr>
         <td class="var"><a href="task-lifetime">Task</a> Lifetime</td>
         <td class="cell">
-          <pre class="valid"><code lang="rust">*'task sec imm T</code></pre>
-          <pre class="valid"><code lang="rust">*'task sec mut T</code></pre>
+          <pre class="valid"><code lang="rust">*'task iso const T</code></pre>
+          <pre class="valid"><code lang="rust">*'task mut T</code></pre>
         </td>
         <td class="cell">
-          <pre class="valid"><code lang="rust">*'task pub imm T</code></pre>
-          <pre class="unsafe"><code lang="rust">*'task pub mut T</code></pre>
+          <pre class="valid"><code lang="rust">*'task const T</code></pre>
+          <pre class="unsafe"><code lang="rust">*'task poly mut T</code></pre>
         </td>
       </tr>
       <tr>
         <td class="var"><a href="fixed-lifetime">Fixed</a> Lifetime</td>
         <td class="cell">
-          <pre class="valid"><code lang="rust">*'custom sec imm T</code></pre>
-          <pre class="valid"><code lang="rust">*'custom sec mut T</code></pre>
+          <pre class="valid"><code lang="rust">*'custom iso const T</code></pre>
+          <pre class="valid"><code lang="rust">*'custom mut T</code></pre>
         </td>
         <td class="cell">
-          <pre class="valid"><code lang="rust">*'custom pub imm T</code></pre>
-          <pre class="unsafe"><code lang="rust">*'custom pub mut T</code></pre>
+          <pre class="valid"><code lang="rust">*'custom const T</code></pre>
+          <pre class="unsafe"><code lang="rust">*'custom poly mut T</code></pre>
         </td>
       </tr>
     </tbody>

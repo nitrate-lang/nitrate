@@ -314,6 +314,8 @@ impl<'a> Lexer<'a> {
             b"static" => Some(Keyword::Static),
             b"mut" => Some(Keyword::Mut),
             b"const" => Some(Keyword::Const),
+            b"poly" => Some(Keyword::Poly),
+            b"iso" => Some(Keyword::Iso),
             b"pub" => Some(Keyword::Pub),
             b"sec" => Some(Keyword::Sec),
             b"pro" => Some(Keyword::Pro),

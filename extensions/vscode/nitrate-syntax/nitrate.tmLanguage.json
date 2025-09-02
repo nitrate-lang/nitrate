@@ -43,7 +43,7 @@
         },
         {
           "name": "storage.modifier.nit",
-          "match": "\\b(safe|unsafe|promise|static|mut|const|pub|sec|pro)\\b"
+          "match": "\\b(safe|unsafe|promise|static|mut|const|poly|iso|pub|sec|pro)\\b"
         },
         {
           "name": "constant.language.nit",

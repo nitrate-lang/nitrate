@@ -4,7 +4,7 @@
   "publisher": "nitrate",
   "description": "Nitrate syntax highlighting support",
   "icon": "./icons/icon-light.png",
-  "version": "3.1.0",
+  "version": "3.2.0",
   "repository": "https://github.com/Kracken256/nitrate/extensions/vscode/nitrate-syntax",
   "engines": {
     "vscode": "^1.92.0"

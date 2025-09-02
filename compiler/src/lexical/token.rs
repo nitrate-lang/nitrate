@@ -302,6 +302,8 @@ pub enum Keyword {
     Static,  /* 'static' */
     Mut,     /* 'mut' */
     Const,   /* 'const' */
+    Poly,    /* 'poly' */
+    Iso,     /* 'iso' */
     Pub,     /* 'pub' */
     Sec,     /* 'sec' */
     Pro,     /* 'pro' */
@@ -369,6 +371,8 @@ impl std::fmt::Display for Keyword {
             Keyword::Static => write!(f, "static"),
             Keyword::Mut => write!(f, "mut"),
             Keyword::Const => write!(f, "const"),
+            Keyword::Poly => write!(f, "poly"),
+            Keyword::Iso => write!(f, "iso"),
             Keyword::Pub => write!(f, "pub"),
             Keyword::Sec => write!(f, "sec"),
             Keyword::Pro => write!(f, "pro"),
