@@ -902,3 +902,77 @@ impl<'a> Assert<'a> {
         self.message = message;
     }
 }
+
+pub type CallArguments<'a> = Vec<(Option<&'a str>, Expr<'a>)>;
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct DirectCall<'a> {
+    callee: &'a str,
+    arguments: CallArguments<'a>,
+}
+
+impl<'a> DirectCall<'a> {
+    #[must_use]
+    pub fn new(callee: &'a str, arguments: CallArguments<'a>) -> Self {
+        DirectCall { callee, arguments }
+    }
+
+    #[must_use]
+    pub fn callee(&self) -> &'a str {
+        self.callee
+    }
+
+    pub fn set_callee(&mut self, callee: &'a str) {
+        self.callee = callee;
+    }
+
+    #[must_use]
+    pub fn arguments(&self) -> &[(Option<&'a str>, Expr<'a>)] {
+        &self.arguments
+    }
+
+    #[must_use]
+    pub fn arguments_mut(&mut self) -> &mut CallArguments<'a> {
+        &mut self.arguments
+    }
+
+    pub fn set_arguments(&mut self, arguments: CallArguments<'a>) {
+        self.arguments = arguments;
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct IndirectCall<'a> {
+    callee: Expr<'a>,
+    arguments: CallArguments<'a>,
+}
+
+impl<'a> IndirectCall<'a> {
+    #[must_use]
+    pub fn new(callee: Expr<'a>, arguments: CallArguments<'a>) -> Self {
+        IndirectCall { callee, arguments }
+    }
+
+    #[must_use]
+    pub fn callee(&self) -> &Expr<'a> {
+        &self.callee
+    }
+
+    pub fn set_callee(&mut self, callee: Expr<'a>) {
+        self.callee = callee;
+    }
+
+    #[must_use]
+    pub fn arguments(&self) -> &[(Option<&'a str>, Expr<'a>)] {
+        &self.arguments
+    }
+
+    #[must_use]
+    pub fn arguments_mut(&mut self) -> &mut CallArguments<'a> {
+        &mut self.arguments
+    }
+
+    pub fn set_arguments(&mut self, arguments: CallArguments<'a>) {
+        self.arguments = arguments;
+    }
+}

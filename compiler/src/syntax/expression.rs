@@ -1,8 +1,7 @@
 use super::parse::Parser;
-use crate::lexical::{BStringData, IntegerKind, Keyword, Op, Punct, StringData, Token};
+use crate::lexical::{IntegerKind, Keyword, Op, Punct, Token};
 use crate::parsetree::{Builder, Expr, nodes::BinExprOp};
 use log::error;
-use ordered_float::NotNan;
 
 impl<'a> Parser<'a, '_> {
     fn parse_integer_literal(&mut self, value: u128, kind: IntegerKind) -> Expr<'a> {
@@ -21,18 +20,6 @@ impl<'a> Parser<'a, '_> {
         }
 
         bb.build()
-    }
-
-    fn parse_float_literal(&mut self, value: NotNan<f64>) -> Expr<'a> {
-        Builder::create_float().with_value(value).build()
-    }
-
-    fn parse_string_literal(&mut self, content: StringData<'a>) -> Expr<'a> {
-        Builder::create_string().with_string(content).build()
-    }
-
-    fn parse_bstring_literal(&mut self, content: BStringData<'a>) -> Expr<'a> {
-        Builder::create_bstring().with_value(content).build()
     }
 
     fn parse_literal_suffix(&mut self, lit: Expr<'a>) -> Expr<'a> {
@@ -359,9 +346,7 @@ impl<'a> Parser<'a, '_> {
         let message = if !self.lexer.next_is(&Token::Punct(Punct::RightParen)) {
             self.parse_expression()?
         } else {
-            Builder::create_string()
-                .with_string(StringData::from_ref(""))
-                .build()
+            Builder::create_string_from_ref("")
         };
 
         if !self.lexer.skip_if(&Token::Punct(Punct::RightParen)) {
@@ -646,19 +631,19 @@ impl<'a> Parser<'a, '_> {
 
             Token::Float(float) => {
                 self.lexer.skip_tok();
-                let lit = self.parse_float_literal(float);
+                let lit = Builder::create_float(float);
                 Some(self.parse_literal_suffix(lit))
             }
 
             Token::String(string) => {
                 self.lexer.skip_tok();
-                let lit = self.parse_string_literal(string);
+                let lit = Builder::create_string_from(string);
                 Some(self.parse_literal_suffix(lit))
             }
 
             Token::BString(data) => {
                 self.lexer.skip_tok();
-                let lit = self.parse_bstring_literal(data);
+                let lit = Builder::create_bstring_from(data);
                 Some(self.parse_literal_suffix(lit))
             }
 

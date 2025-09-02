@@ -1,4 +1,4 @@
-use super::abstract_machine::{AbstractMachine, EvalError};
+use super::abstract_machine::{AbstractMachine, EvalCancel};
 use crate::parsetree::{
     Builder, Expr, Type,
     nodes::{
@@ -11,7 +11,7 @@ impl<'a> AbstractMachine<'a> {
     pub(crate) fn evaluate_refinement_type(
         &mut self,
         refinement: &RefinementType<'a>,
-    ) -> Result<Type<'a>, EvalError> {
+    ) -> Result<Type<'a>, EvalCancel<'a>> {
         let width = match refinement.width() {
             Some(w) => Some(self.evaluate(&w)?),
             None => None,
@@ -40,7 +40,7 @@ impl<'a> AbstractMachine<'a> {
     pub(crate) fn evaluate_tuple_type(
         &mut self,
         tuple: &TupleType<'a>,
-    ) -> Result<Type<'a>, EvalError> {
+    ) -> Result<Type<'a>, EvalCancel<'a>> {
         let mut elements = Vec::new();
         elements.reserve(tuple.elements().len());
 
@@ -54,11 +54,11 @@ impl<'a> AbstractMachine<'a> {
     pub(crate) fn evaluate_array_type(
         &mut self,
         array: &ArrayType<'a>,
-    ) -> Result<Type<'a>, EvalError> {
+    ) -> Result<Type<'a>, EvalCancel<'a>> {
         let element = self.evaluate_type(&array.element())?;
         let count = match self.evaluate(&array.count())? {
             Expr::IntegerLit(count) => Expr::IntegerLit(count),
-            _ => return Err(EvalError::TypeError), // Expecting integer array size
+            _ => return Err(EvalCancel::TypeError), // Expecting integer array size
         };
 
         Ok(Builder::create_array_type()
@@ -67,7 +67,10 @@ impl<'a> AbstractMachine<'a> {
             .build())
     }
 
-    pub(crate) fn evaluate_map_type(&mut self, map: &MapType<'a>) -> Result<Type<'a>, EvalError> {
+    pub(crate) fn evaluate_map_type(
+        &mut self,
+        map: &MapType<'a>,
+    ) -> Result<Type<'a>, EvalCancel<'a>> {
         let key = self.evaluate_type(&map.key())?;
         let value = self.evaluate_type(&map.value())?;
 
@@ -80,7 +83,7 @@ impl<'a> AbstractMachine<'a> {
     pub(crate) fn evaluate_slice_type(
         &mut self,
         slice: &SliceType<'a>,
-    ) -> Result<Type<'a>, EvalError> {
+    ) -> Result<Type<'a>, EvalCancel<'a>> {
         let element = self.evaluate_type(&slice.element())?;
         Ok(Builder::create_slice_type().with_element(element).build())
     }
@@ -88,7 +91,7 @@ impl<'a> AbstractMachine<'a> {
     pub(crate) fn evaluate_function_type(
         &mut self,
         function: &FunctionType<'a>,
-    ) -> Result<Type<'a>, EvalError> {
+    ) -> Result<Type<'a>, EvalCancel<'a>> {
         let attributes = function.attributes().to_vec();
 
         let mut parameters = Vec::new();
@@ -116,7 +119,7 @@ impl<'a> AbstractMachine<'a> {
     pub(crate) fn evaluate_managed_ref_type(
         &mut self,
         reference: &ManagedRefType<'a>,
-    ) -> Result<Type<'a>, EvalError> {
+    ) -> Result<Type<'a>, EvalCancel<'a>> {
         let is_mutable = reference.is_mutable();
         let target_type = self.evaluate_type(&reference.target())?;
 
@@ -129,7 +132,7 @@ impl<'a> AbstractMachine<'a> {
     pub(crate) fn evaluate_unmanaged_ref_type(
         &mut self,
         reference: &UnmanagedRefType<'a>,
-    ) -> Result<Type<'a>, EvalError> {
+    ) -> Result<Type<'a>, EvalCancel<'a>> {
         let is_mutable = reference.is_mutable();
         let target_type = self.evaluate_type(&reference.target())?;
 
@@ -142,7 +145,7 @@ impl<'a> AbstractMachine<'a> {
     pub(crate) fn evaluate_generic_type(
         &mut self,
         generic: &GenericType<'a>,
-    ) -> Result<Type<'a>, EvalError> {
+    ) -> Result<Type<'a>, EvalCancel<'a>> {
         // TODO: Instantiate generic base with type arguments
 
         let mut arguments = Vec::new();
@@ -161,7 +164,10 @@ impl<'a> AbstractMachine<'a> {
             .build())
     }
 
-    pub fn evaluate_type(&mut self, type_expression: &Type<'a>) -> Result<Type<'a>, EvalError> {
+    pub fn evaluate_type(
+        &mut self,
+        type_expression: &Type<'a>,
+    ) -> Result<Type<'a>, EvalCancel<'a>> {
         if self.already_evaluated_types.contains(type_expression) {
             return Ok(type_expression.to_owned());
         }

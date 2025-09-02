@@ -2,7 +2,7 @@ use crate::parsetree::{Builder, Expr, Type, nodes::Variable};
 use hashbrown::{HashMap, HashSet};
 
 #[derive(Debug, Default)]
-struct CallFrame<'a> {
+pub(crate) struct CallFrame<'a> {
     function_locals: HashMap<&'a str, Variable<'a>>,
 }
 
@@ -17,37 +17,37 @@ impl<'a> CallFrame<'a> {
 }
 
 #[derive(Debug)]
-struct Task<'a> {
-    call_stack: Vec<CallFrame<'a>>,
-    _task_locals: HashMap<&'a str, Variable<'a>>,
-    _task_id: u64,
+pub(crate) struct Task<'a> {
+    pub(crate) call_stack: Vec<CallFrame<'a>>,
+    pub(crate) _task_locals: HashMap<&'a str, Variable<'a>>,
 }
 
 impl Task<'_> {
-    fn new(task_id: u64) -> Self {
+    fn new() -> Self {
         let call_stack = Vec::from([CallFrame::default()]);
         Task {
             call_stack,
             _task_locals: HashMap::new(),
-            _task_id: task_id,
         }
     }
 }
 
 #[derive(Debug)]
-pub enum EvalError {
+pub enum EvalCancel<'a> {
+    FunctionReturn(Expr<'a>),
     TypeError,
     MissingArgument,
+    CallFrameStackEmpty,
     ProgramaticAssertionFailed(String),
 }
 
-pub type Function<'a> = fn(&mut AbstractMachine<'a>) -> Result<Expr<'a>, EvalError>;
+pub type Function<'a> = fn(&mut AbstractMachine<'a>) -> Result<Expr<'a>, EvalCancel<'a>>;
 
 pub struct AbstractMachine<'a> {
     _global_variables: HashMap<&'a str, Variable<'a>>,
     provided_functions: HashMap<&'a str, Function<'a>>,
-    tasks: Vec<Task<'a>>,
-    current_task: usize,
+    pub(crate) tasks: Vec<Task<'a>>,
+    pub(crate) current_task: usize,
 
     pub(crate) already_evaluated_types: HashSet<Type<'a>>,
 }
@@ -64,7 +64,7 @@ impl<'a> AbstractMachine<'a> {
         let mut abstract_machine = AbstractMachine {
             _global_variables: HashMap::new(),
             provided_functions: HashMap::new(),
-            tasks: Vec::from([Task::new(0)]),
+            tasks: Vec::from([Task::new()]),
             current_task: 0,
             already_evaluated_types: HashSet::new(),
         };
@@ -85,9 +85,9 @@ impl<'a> AbstractMachine<'a> {
         self.provide_function("std::intrinsic::print", |m| {
             let Expr::StringLit(string) = m
                 .get_parameter_value("message")
-                .ok_or(EvalError::MissingArgument)?
+                .ok_or(EvalCancel::MissingArgument)?
             else {
-                return Err(EvalError::TypeError);
+                return Err(EvalCancel::TypeError);
             };
 
             print!("{}", string.get());
@@ -104,7 +104,7 @@ impl<'a> AbstractMachine<'a> {
         self.provided_functions.insert(name, callback)
     }
 
-    pub fn evaluate(&mut self, expression: &Expr<'a>) -> Result<Expr<'a>, EvalError> {
+    pub fn evaluate(&mut self, expression: &Expr<'a>) -> Result<Expr<'a>, EvalCancel<'a>> {
         match expression {
             Expr::Bool => Ok(Expr::Bool),
             Expr::UInt8 => Ok(Expr::UInt8),
@@ -169,6 +169,8 @@ impl<'a> AbstractMachine<'a> {
             Expr::ForEach(e) => self.evaluate_for_each(e),
             Expr::Await(e) => self.evaluate_await(e),
             Expr::Assert(e) => self.evaluate_assert(e),
+            Expr::DirectCall(e) => self.evaluate_direct_call(e),
+            Expr::IndirectCall(e) => self.evaluate_indirect_call(e),
         }
     }
 }

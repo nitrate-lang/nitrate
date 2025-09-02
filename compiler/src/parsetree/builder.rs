@@ -1,15 +1,17 @@
+use ordered_float::NotNan;
+
 use super::builder_helper::{
-    ArrayTypeBuilder, AssertBuilder, AwaitBuilder, BStringBuilder, BinExprBuilder, BlockBuilder,
-    BreakBuilder, ContinueBuilder, DoWhileLoopBuilder, FloatBuilder, ForEachBuilder,
-    FunctionBuilder, FunctionTypeBuilder, GenericTypeBuilder, IfBuilder, IntegerBuilder,
+    ArrayTypeBuilder, AssertBuilder, AwaitBuilder, BinExprBuilder, BlockBuilder, BreakBuilder,
+    ContinueBuilder, DirectCallBuilder, DoWhileLoopBuilder, ForEachBuilder, FunctionBuilder,
+    FunctionTypeBuilder, GenericTypeBuilder, IfBuilder, IndirectCallBuilder, IntegerBuilder,
     ListBuilder, ManagedRefTypeBuilder, MapTypeBuilder, ObjectBuilder, RefinementTypeBuilder,
-    ReturnBuilder, SliceTypeBuilder, StatementBuilder, StringBuilder, SwitchBuilder,
-    TupleTypeBuilder, UnaryExprBuilder, UnmanagedRefTypeBuilder, VariableBuilder, WhileLoopBuilder,
+    ReturnBuilder, SliceTypeBuilder, StatementBuilder, SwitchBuilder, TupleTypeBuilder,
+    UnaryExprBuilder, UnmanagedRefTypeBuilder, VariableBuilder, WhileLoopBuilder,
 };
 use super::expression::VariableKind;
 use super::node::{Expr, Type};
 use super::types::TupleType;
-use crate::lexical::StringData;
+use crate::lexical::{BStringData, StringData};
 use crate::parsetree::builder_helper::ScopeBuilder;
 use std::rc::Rc;
 
@@ -38,18 +40,38 @@ impl<'a> Builder {
     }
 
     #[must_use]
-    pub fn create_float() -> FloatBuilder {
-        FloatBuilder::new()
+    pub fn create_float(x: NotNan<f64>) -> Expr<'a> {
+        Expr::FloatLit(x)
     }
 
     #[must_use]
-    pub fn create_string() -> StringBuilder<'a> {
-        StringBuilder::new()
+    pub fn create_string_from_ref(str: &'a str) -> Expr<'a> {
+        Expr::StringLit(Rc::new(StringData::from_ref(str)))
     }
 
     #[must_use]
-    pub fn create_bstring() -> BStringBuilder<'a> {
-        BStringBuilder::new()
+    pub fn create_string(str: String) -> Expr<'a> {
+        Expr::StringLit(Rc::new(StringData::from_dyn(str)))
+    }
+
+    #[must_use]
+    pub fn create_string_from(storage: StringData<'a>) -> Expr<'a> {
+        Expr::StringLit(Rc::new(storage))
+    }
+
+    #[must_use]
+    pub fn create_bstring_from_ref(bytes: &'a [u8]) -> Expr<'a> {
+        Expr::BStringLit(Rc::new(BStringData::from_ref(bytes)))
+    }
+
+    #[must_use]
+    pub fn create_bstring(bytes: Vec<u8>) -> Expr<'a> {
+        Expr::BStringLit(Rc::new(BStringData::from_dyn(bytes)))
+    }
+
+    #[must_use]
+    pub fn create_bstring_from(storage: BStringData<'a>) -> Expr<'a> {
+        Expr::BStringLit(Rc::new(storage))
     }
 
     #[must_use]
@@ -165,6 +187,16 @@ impl<'a> Builder {
     #[must_use]
     pub fn create_assert() -> AssertBuilder<'a> {
         AssertBuilder::new()
+    }
+
+    #[must_use]
+    pub fn create_direct_call() -> DirectCallBuilder<'a> {
+        DirectCallBuilder::new()
+    }
+
+    #[must_use]
+    pub fn create_indirect_call() -> IndirectCallBuilder<'a> {
+        IndirectCallBuilder::new()
     }
 
     #[must_use]

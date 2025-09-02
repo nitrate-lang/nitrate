@@ -1,5 +1,4 @@
 use ordered_float::NotNan;
-use smallvec::SmallVec;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Hash)]
 pub enum IdentifierKind {
@@ -189,7 +188,7 @@ impl std::fmt::Display for StringData<'_> {
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Hash)]
 enum BStringDataStorage<'a> {
     RefString(&'a [u8]),
-    DynString(SmallVec<[u8; 64]>),
+    DynString(Vec<u8>),
 }
 
 #[derive(Clone, PartialEq, Eq, PartialOrd, Hash)]
@@ -206,7 +205,7 @@ impl<'a> BStringData<'a> {
     }
 
     #[must_use]
-    pub fn from_dyn(data: SmallVec<[u8; 64]>) -> Self {
+    pub fn from_dyn(data: Vec<u8>) -> Self {
         BStringData {
             data: BStringDataStorage::DynString(data),
         }

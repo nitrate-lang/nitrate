@@ -1,16 +1,15 @@
-use crate::lexical::{BStringData, IntegerKind, StringData};
+use crate::lexical::IntegerKind;
 use crate::parsetree::{
     Builder, Expr, Type,
     nodes::{
-        ArrayType, Assert, Await, BinExpr, BinExprOp, Block, Break, Continue, DoWhileLoop, ForEach,
-        Function, FunctionParameter, FunctionType, GenericType, If, IntegerLit, List,
-        ManagedRefType, MapType, Object, RefinementType, Return, Scope, SliceType, Statement,
-        Switch, TupleType, UnaryExpr, UnaryExprOp, UnmanagedRefType, Variable, VariableKind,
-        WhileLoop,
+        ArrayType, Assert, Await, BinExpr, BinExprOp, Block, Break, CallArguments, Continue,
+        DirectCall, DoWhileLoop, ForEach, Function, FunctionParameter, FunctionType, GenericType,
+        If, IndirectCall, IntegerLit, List, ManagedRefType, MapType, Object, RefinementType,
+        Return, Scope, SliceType, Statement, Switch, TupleType, UnaryExpr, UnaryExprOp,
+        UnmanagedRefType, Variable, VariableKind, WhileLoop,
     },
 };
 use apint::UInt;
-use ordered_float::NotNan;
 use std::collections::BTreeMap;
 use std::rc::Rc;
 
@@ -400,66 +399,6 @@ impl IntegerBuilder {
         .expect("Invalid integer value");
 
         Expr::IntegerLit(Rc::new(lit))
-    }
-}
-
-#[derive(Debug)]
-pub struct FloatBuilder {
-    value: Option<NotNan<f64>>,
-}
-
-impl FloatBuilder {
-    pub(crate) fn new() -> Self {
-        FloatBuilder { value: None }
-    }
-
-    pub fn with_value(mut self, value: NotNan<f64>) -> Self {
-        self.value = Some(value);
-        self
-    }
-
-    pub fn build<'a>(self) -> Expr<'a> {
-        Expr::FloatLit(self.value.expect("Float value must be provided"))
-    }
-}
-
-#[derive(Debug)]
-pub struct StringBuilder<'a> {
-    value: Option<StringData<'a>>,
-}
-
-impl<'a> StringBuilder<'a> {
-    pub(crate) fn new() -> Self {
-        StringBuilder { value: None }
-    }
-
-    pub fn with_string(mut self, value: StringData<'a>) -> Self {
-        self.value = Some(value);
-        self
-    }
-
-    pub fn build(self) -> Expr<'a> {
-        Expr::StringLit(Rc::new(self.value.expect("String value must be provided")))
-    }
-}
-
-#[derive(Debug)]
-pub struct BStringBuilder<'a> {
-    value: Option<BStringData<'a>>,
-}
-
-impl<'a> BStringBuilder<'a> {
-    pub(crate) fn new() -> Self {
-        BStringBuilder { value: None }
-    }
-
-    pub fn with_value(mut self, value: BStringData<'a>) -> Self {
-        self.value = Some(value);
-        self
-    }
-
-    pub fn build(self) -> Expr<'a> {
-        Expr::BStringLit(Rc::new(self.value.expect("BString value must be provided")))
     }
 }
 
@@ -1218,5 +1157,86 @@ impl<'a> AssertBuilder<'a> {
         );
 
         Expr::Assert(Rc::new(expr))
+    }
+}
+
+#[derive(Debug)]
+pub struct DirectCallBuilder<'a> {
+    callee: &'a str,
+    arguments: CallArguments<'a>,
+}
+
+impl<'a> DirectCallBuilder<'a> {
+    pub(crate) fn new() -> Self {
+        DirectCallBuilder {
+            callee: "",
+            arguments: Vec::new(),
+        }
+    }
+
+    pub fn with_callee(mut self, callee: &'a str) -> Self {
+        self.callee = callee;
+        self
+    }
+
+    pub fn add_argument(mut self, name: Option<&'a str>, value: Expr<'a>) -> Self {
+        self.arguments.push((name, value));
+        self
+    }
+
+    pub fn add_arguments<I>(mut self, arguments: I) -> Self
+    where
+        I: IntoIterator<Item = (Option<&'a str>, Expr<'a>)>,
+    {
+        self.arguments.extend(arguments);
+        self
+    }
+
+    pub fn build(self) -> Expr<'a> {
+        let expr = DirectCall::new(self.callee, self.arguments);
+
+        Expr::DirectCall(Rc::new(expr))
+    }
+}
+
+#[derive(Debug)]
+pub struct IndirectCallBuilder<'a> {
+    callee: Option<Expr<'a>>,
+    arguments: CallArguments<'a>,
+}
+
+impl<'a> IndirectCallBuilder<'a> {
+    pub(crate) fn new() -> Self {
+        IndirectCallBuilder {
+            callee: None,
+            arguments: Vec::new(),
+        }
+    }
+
+    pub fn with_callee(mut self, callee: Expr<'a>) -> Self {
+        self.callee = Some(callee);
+        self
+    }
+
+    pub fn add_argument(mut self, name: Option<&'a str>, value: Expr<'a>) -> Self {
+        self.arguments.push((name, value));
+        self
+    }
+
+    pub fn add_arguments<I>(mut self, arguments: I) -> Self
+    where
+        I: IntoIterator<Item = (Option<&'a str>, Expr<'a>)>,
+    {
+        self.arguments.extend(arguments);
+        self
+    }
+
+    pub fn build(self) -> Expr<'a> {
+        let expr = IndirectCall::new(
+            self.callee.expect("Callee must be provided"),
+            self.arguments,
+        );
+
+        Expr::IndirectCall(Rc::new(expr))
     }
 }

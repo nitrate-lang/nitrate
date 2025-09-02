@@ -808,7 +808,7 @@ impl<'a> Lexer<'a> {
                     } else if let Ok(utf8_str) = String::from_utf8(storage.to_vec()) {
                         return Ok(Token::String(StringData::from_dyn(utf8_str)));
                     }
-                    return Ok(Token::BString(BStringData::from_dyn(storage)));
+                    return Ok(Token::BString(BStringData::from_dyn(storage.to_vec())));
                 }
 
                 Ok(b) => {
