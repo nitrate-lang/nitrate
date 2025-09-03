@@ -11,6 +11,9 @@ use crate::{
 
 impl<'a> AbstractMachine<'a> {
     pub(crate) fn evaluate_if(&mut self, if_expr: &If<'a>) -> Result<Expr<'a>, Unwind<'a>> {
+        // TODO: Write tests
+        // TODO: Verify logic
+
         if let Expr::Boolean(true) = self.evaluate(if_expr.condition())? {
             self.evaluate(if_expr.then_branch())
         } else if let Some(else_branch) = if_expr.else_branch() {
@@ -24,6 +27,9 @@ impl<'a> AbstractMachine<'a> {
         &mut self,
         while_loop: &WhileLoop<'a>,
     ) -> Result<Expr<'a>, Unwind<'a>> {
+        // TODO: Write tests
+        // TODO: Verify logic
+
         loop {
             match self.evaluate(while_loop.condition())? {
                 Expr::Boolean(true) => {
@@ -41,6 +47,9 @@ impl<'a> AbstractMachine<'a> {
         &mut self,
         do_while_loop: &DoWhileLoop<'a>,
     ) -> Result<Expr<'a>, Unwind<'a>> {
+        // TODO: Write tests
+        // TODO: Verify logic
+
         self.evaluate(do_while_loop.body())?;
 
         loop {
@@ -60,11 +69,17 @@ impl<'a> AbstractMachine<'a> {
         &mut self,
         _switch_expr: &Switch<'a>,
     ) -> Result<Expr<'a>, Unwind<'a>> {
+        // TODO: Write tests
+        // TODO: Verify logic
+
         // TODO: Evaluate switch
         unimplemented!()
     }
 
     pub(crate) fn evaluate_break(&mut self, _break: &Break<'a>) -> Result<Expr<'a>, Unwind<'a>> {
+        // TODO: Write tests
+        // TODO: Verify logic
+
         // TODO: Evaluate break
         unimplemented!()
     }
@@ -73,11 +88,17 @@ impl<'a> AbstractMachine<'a> {
         &mut self,
         _continue: &Continue<'a>,
     ) -> Result<Expr<'a>, Unwind<'a>> {
+        // TODO: Write tests
+        // TODO: Verify logic
+
         // TODO: Evaluate continue
         unimplemented!()
     }
 
     pub(crate) fn evaluate_return(&mut self, return_: &Return<'a>) -> Result<Expr<'a>, Unwind<'a>> {
+        // TODO: Write tests
+        // TODO: Verify logic
+
         let return_value = return_
             .value()
             .map_or(Ok(Builder::create_unit()), |v| self.evaluate(v))?;
@@ -90,16 +111,25 @@ impl<'a> AbstractMachine<'a> {
         &mut self,
         _for_each: &ForEach<'a>,
     ) -> Result<Expr<'a>, Unwind<'a>> {
+        // TODO: Write tests
+        // TODO: Verify logic
+
         // TODO: Evaluate for_each
         unimplemented!()
     }
 
     pub(crate) fn evaluate_await(&mut self, _await: &Await<'a>) -> Result<Expr<'a>, Unwind<'a>> {
+        // TODO: Write tests
+        // TODO: Verify logic
+
         // TODO: Evaluate await
         unimplemented!()
     }
 
     pub(crate) fn evaluate_assert(&mut self, assert: &Assert<'a>) -> Result<Expr<'a>, Unwind<'a>> {
+        // TODO: Write tests
+        // TODO: Verify logic
+
         let condition = self.evaluate(assert.condition())?;
         let message = self.evaluate(assert.message())?;
 
@@ -118,6 +148,9 @@ impl<'a> AbstractMachine<'a> {
     }
 
     pub(crate) fn evaluate_call(&mut self, call: &Call<'a>) -> Result<Expr<'a>, Unwind<'a>> {
+        // TODO: Write tests
+        // TODO: Verify logic
+
         enum ExprOrIntrinsic<'a> {
             Expr(Expr<'a>),
             Intrinsic(IntrinsicFunction<'a>),

@@ -9,6 +9,12 @@ impl<'a> AbstractMachine<'a> {
         &mut self,
         variable: &Variable<'a>,
     ) -> Result<Expr<'a>, Unwind<'a>> {
+        // TODO: Write tests
+        // TODO: Verify logic
+
+        // FIXME: Properly handle variable storage class attributes
+        // TODO: Analyze and implement interaction with closures
+
         if self.current_task().in_function() {
             let initializer = variable.value().ok_or(Unwind::TypeError)?;
             let value = self.evaluate(initializer)?;
@@ -30,12 +36,20 @@ impl<'a> AbstractMachine<'a> {
     }
 
     pub(crate) fn evaluate_identifier(&mut self, name: &'a str) -> Result<Expr<'a>, Unwind<'a>> {
+        // TODO: Write tests
+        // TODO: Verify logic
+
+        // FIXME: What about lvalue vs rvalue?
+
         self.resolve(name)
             .cloned()
             .ok_or(Unwind::UnresolvedIdentifier(name))
     }
 
     pub(crate) fn evaluate_scope(&mut self, scope: &Scope<'a>) -> Result<Expr<'a>, Unwind<'a>> {
+        // TODO: Write tests
+        // TODO: Verify logic
+
         for element in scope.elements() {
             self.evaluate(element)?;
         }

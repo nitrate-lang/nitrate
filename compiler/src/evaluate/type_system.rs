@@ -12,6 +12,9 @@ impl<'a> AbstractMachine<'a> {
         &mut self,
         refinement: &RefinementType<'a>,
     ) -> Result<Type<'a>, Unwind<'a>> {
+        // TODO: Write tests
+        // TODO: Verify logic
+
         let width = match refinement.width() {
             Some(w) => Some(self.evaluate(&w)?),
             None => None,
@@ -41,6 +44,9 @@ impl<'a> AbstractMachine<'a> {
         &mut self,
         tuple: &TupleType<'a>,
     ) -> Result<Type<'a>, Unwind<'a>> {
+        // TODO: Write tests
+        // TODO: Verify logic
+
         let mut elements = Vec::new();
         elements.reserve(tuple.elements().len());
 
@@ -55,6 +61,9 @@ impl<'a> AbstractMachine<'a> {
         &mut self,
         array: &ArrayType<'a>,
     ) -> Result<Type<'a>, Unwind<'a>> {
+        // TODO: Write tests
+        // TODO: Verify logic
+
         let element = self.evaluate_type(&array.element())?;
         let count = match self.evaluate(&array.count())? {
             Expr::Integer(count) => Expr::Integer(count),
@@ -68,6 +77,9 @@ impl<'a> AbstractMachine<'a> {
     }
 
     pub(crate) fn evaluate_map_type(&mut self, map: &MapType<'a>) -> Result<Type<'a>, Unwind<'a>> {
+        // TODO: Write tests
+        // TODO: Verify logic
+
         let key = self.evaluate_type(&map.key())?;
         let value = self.evaluate_type(&map.value())?;
 
@@ -81,6 +93,9 @@ impl<'a> AbstractMachine<'a> {
         &mut self,
         slice: &SliceType<'a>,
     ) -> Result<Type<'a>, Unwind<'a>> {
+        // TODO: Write tests
+        // TODO: Verify logic
+
         let element = self.evaluate_type(&slice.element())?;
         Ok(Builder::create_slice_type().with_element(element).build())
     }
@@ -89,6 +104,9 @@ impl<'a> AbstractMachine<'a> {
         &mut self,
         function: &FunctionType<'a>,
     ) -> Result<Type<'a>, Unwind<'a>> {
+        // TODO: Write tests
+        // TODO: Verify logic
+
         let attributes = function.attributes().to_vec();
 
         let mut parameters = Vec::new();
@@ -117,6 +135,9 @@ impl<'a> AbstractMachine<'a> {
         &mut self,
         reference: &ManagedRefType<'a>,
     ) -> Result<Type<'a>, Unwind<'a>> {
+        // TODO: Write tests
+        // TODO: Verify logic
+
         let is_mutable = reference.is_mutable();
         let target_type = self.evaluate_type(&reference.target())?;
 
@@ -130,6 +151,9 @@ impl<'a> AbstractMachine<'a> {
         &mut self,
         reference: &UnmanagedRefType<'a>,
     ) -> Result<Type<'a>, Unwind<'a>> {
+        // TODO: Write tests
+        // TODO: Verify logic
+
         let is_mutable = reference.is_mutable();
         let target_type = self.evaluate_type(&reference.target())?;
 
@@ -143,6 +167,9 @@ impl<'a> AbstractMachine<'a> {
         &mut self,
         generic: &GenericType<'a>,
     ) -> Result<Type<'a>, Unwind<'a>> {
+        // TODO: Write tests
+        // TODO: Verify logic
+
         // TODO: Instantiate generic base with type arguments
 
         let mut arguments = Vec::new();
@@ -162,6 +189,9 @@ impl<'a> AbstractMachine<'a> {
     }
 
     pub fn evaluate_type(&mut self, type_expression: &Type<'a>) -> Result<Type<'a>, Unwind<'a>> {
+        // TODO: Write tests
+        // TODO: Verify logic
+
         if self.already_evaluated_types.contains(type_expression) {
             return Ok(type_expression.to_owned());
         }

@@ -8,6 +8,9 @@ use crate::parsetree::{
 
 impl<'a> AbstractMachine<'a> {
     pub(crate) fn evaluate_list(&mut self, list: &List<'a>) -> Result<Expr<'a>, Unwind<'a>> {
+        // TODO: Write tests
+        // TODO: Verify logic
+
         let mut elements = Vec::new();
         elements.reserve(list.elements().len());
 
@@ -19,6 +22,9 @@ impl<'a> AbstractMachine<'a> {
     }
 
     pub(crate) fn evaluate_object(&mut self, object: &Object<'a>) -> Result<Expr<'a>, Unwind<'a>> {
+        // TODO: Write tests
+        // TODO: Verify logic
+
         let mut fields = BTreeMap::new();
 
         for (key, value) in object.get() {
@@ -33,6 +39,9 @@ impl<'a> AbstractMachine<'a> {
         &mut self,
         _uexpr: &UnaryExpr<'a>,
     ) -> Result<Expr<'a>, Unwind<'a>> {
+        // TODO: Write tests
+        // TODO: Verify logic
+
         // TODO: Evaluate unary expression
         unimplemented!()
     }
@@ -41,6 +50,9 @@ impl<'a> AbstractMachine<'a> {
         &mut self,
         _bexpr: &BinExpr<'a>,
     ) -> Result<Expr<'a>, Unwind<'a>> {
+        // TODO: Write tests
+        // TODO: Verify logic
+
         // TODO: Evaluate binary expression
         unimplemented!()
     }
@@ -49,11 +61,17 @@ impl<'a> AbstractMachine<'a> {
         &mut self,
         statement: &Statement<'a>,
     ) -> Result<Expr<'a>, Unwind<'a>> {
+        // TODO: Write tests
+        // TODO: Verify logic
+
         self.evaluate(&statement.get())?;
         Ok(Builder::create_unit())
     }
 
     pub(crate) fn evaluate_block(&mut self, block: &Block<'a>) -> Result<Expr<'a>, Unwind<'a>> {
+        // TODO: Write tests
+        // TODO: Verify logic
+
         let mut result = None;
         for element in block.elements() {
             result = Some(self.evaluate(element)?);
