@@ -734,21 +734,9 @@ impl<'a> Parser<'a, '_> {
     }
 
     pub fn parse_expression(&mut self) -> Option<Expr<'a>> {
-        let mut parenthesis_count = 0;
-        while self.lexer.skip_if(&Token::Punct(Punct::LeftParen)) {
-            parenthesis_count += 1;
-        }
+        let primary = if self.lexer.skip_if(&Token::Punct(Punct::LeftParen)) {
+            let inner = self.parse_expression()?;
 
-        let Some(mut expr) = self.parse_expression_primary() else {
-            self.set_failed_bit();
-            return None;
-        };
-
-        if parenthesis_count > 0 {
-            expr = Builder::create_parentheses(expr);
-        }
-
-        for _ in 0..parenthesis_count {
             if !self.lexer.skip_if(&Token::Punct(Punct::RightParen)) {
                 self.set_failed_bit();
                 error!(
@@ -757,16 +745,20 @@ impl<'a> Parser<'a, '_> {
                 );
                 return None;
             }
-        }
+
+            Builder::create_parentheses(inner)
+        } else {
+            self.parse_expression_primary()?
+        };
 
         // TODO: binary expression parsing logic
         // TODO: unary prefix expression parsing logic
         // TODO: unary postfix expression parsing logic
 
-        Some(expr)
+        Some(primary)
     }
 
-    pub(crate) fn parse_block_as_elements(&mut self) -> Option<Vec<Expr<'a>>> {
+    pub fn parse_block_as_elements(&mut self) -> Option<Vec<Expr<'a>>> {
         if !self.lexer.skip_if(&Token::Punct(Punct::LeftBrace)) {
             self.set_failed_bit();
             error!(
