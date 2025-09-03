@@ -1,5 +1,6 @@
 use crate::parsetree::{Builder, Expr, Type};
 use hashbrown::{HashMap, HashSet};
+use std::rc::Rc;
 
 #[derive(Debug, Default)]
 pub(crate) struct CallFrame<'a> {
@@ -54,7 +55,8 @@ pub enum Unwind<'a> {
     ProgramaticAssertionFailed(String),
 }
 
-pub type IntrinsicFunction<'a> = fn(&mut AbstractMachine<'a>) -> Result<Expr<'a>, Unwind<'a>>;
+pub type IntrinsicFunction<'a> =
+    Rc<dyn Fn(&mut AbstractMachine<'a>) -> Result<Expr<'a>, Unwind<'a>>>;
 
 pub struct AbstractMachine<'a> {
     global_variables: HashMap<&'a str, Expr<'a>>,
@@ -87,7 +89,7 @@ impl<'a> AbstractMachine<'a> {
     }
 
     fn setup_builtins(&mut self) {
-        self.provide_function("std::intrinsic::print", |m| {
+        self.provide_function("std::intrinsic::print", |m: &mut AbstractMachine<'a>| {
             let Expr::String(string) = m.get_parameter("message").ok_or(Unwind::MissingArgument)?
             else {
                 return Err(Unwind::TypeError);
@@ -131,20 +133,19 @@ impl<'a> AbstractMachine<'a> {
         None
     }
 
-    pub fn resolve_intrinsic(&self, name: &str) -> Option<&IntrinsicFunction<'a>> {
-        self.provided_functions.get(name)
+    pub fn resolve_intrinsic(&self, name: &str) -> Option<IntrinsicFunction<'a>> {
+        self.provided_functions.get(name).cloned()
     }
 
     pub fn get_parameter(&self, name: &str) -> Option<&Expr<'a>> {
         self.current_task().call_stack.last()?.get(name)
     }
 
-    pub fn provide_function(
-        &mut self,
-        name: &'a str,
-        callback: IntrinsicFunction<'a>,
-    ) -> Option<IntrinsicFunction<'a>> {
-        self.provided_functions.insert(name, callback)
+    pub fn provide_function<F>(&mut self, name: &'a str, callback: F)
+    where
+        F: Fn(&mut AbstractMachine<'a>) -> Result<Expr<'a>, Unwind<'a>> + 'static,
+    {
+        self.provided_functions.insert(name, Rc::new(callback));
     }
 
     pub fn evaluate(&mut self, expression: &Expr<'a>) -> Result<Expr<'a>, Unwind<'a>> {
