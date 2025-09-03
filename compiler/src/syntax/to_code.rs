@@ -204,7 +204,7 @@ impl<'a> ToCode<'a> for List<'a> {
 impl<'a> ToCode<'a> for Object<'a> {
     fn to_code(&self, tokens: &mut Vec<Token<'a>>, options: &CodeFormat) {
         tokens.push(Token::Punct(Punct::LeftBracket));
-        for (key, value) in self.get() {
+        for (key, value) in self.fields() {
             tokens.push(Token::Name(Name::new(key)));
             tokens.push(Token::Punct(Punct::Colon));
 
@@ -602,6 +602,10 @@ impl<'a> ToCode<'a> for Expr<'a> {
                 tokens.push(Token::Punct(Punct::RightParen));
             }
 
+            Expr::TypeEnvelop(t) => {
+                tokens.push(Token::Keyword(Keyword::Type));
+                t.to_code(tokens, options);
+            }
             Expr::List(e) => e.to_code(tokens, options),
             Expr::Object(e) => e.to_code(tokens, options),
             Expr::UnaryExpr(e) => e.to_code(tokens, options),

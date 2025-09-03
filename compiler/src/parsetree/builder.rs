@@ -100,6 +100,11 @@ impl<'a> Builder {
     }
 
     #[must_use]
+    pub fn create_type_envelop(inner: Type<'a>) -> Expr<'a> {
+        Expr::TypeEnvelop(Rc::new(inner))
+    }
+
+    #[must_use]
     pub fn create_list() -> ListBuilder<'a> {
         ListBuilder::new()
     }

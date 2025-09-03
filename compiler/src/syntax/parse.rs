@@ -65,7 +65,9 @@ impl<'a, 'symbol_table> Parser<'a, 'symbol_table> {
 
         let mut expressions = Vec::new();
         while !self.lexer.is_eof() {
-            if self.lexer.skip_if(&Token::Punct(Punct::Semicolon)) {
+            if self.lexer.skip_if(&Token::Punct(Punct::Semicolon))
+                || self.lexer.next_if_comment().is_some()
+            {
                 continue;
             }
 

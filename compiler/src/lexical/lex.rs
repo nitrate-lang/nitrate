@@ -196,6 +196,16 @@ impl<'a> Lexer<'a> {
     }
 
     #[inline(always)]
+    pub fn next_if_comment(&mut self) -> Option<Comment<'a>> {
+        if let Token::Comment(comment) = self.peek_t() {
+            self.skip_tok();
+            Some(comment)
+        } else {
+            None
+        }
+    }
+
+    #[inline(always)]
     fn reader_position(&self) -> SourcePosition<'a> {
         self.current_peek_pos
     }

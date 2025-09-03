@@ -197,6 +197,7 @@ impl<'a> AbstractMachine<'a> {
             Expr::BString(e) => Ok(Expr::BString(e.clone())),
             Expr::Unit => Ok(Expr::Unit),
 
+            Expr::TypeEnvelop(t) => self.evaluate_type_envelop(t),
             Expr::List(e) => self.evaluate_list(e),
             Expr::Object(e) => self.evaluate_object(e),
             Expr::UnaryExpr(e) => self.evaluate_unaryexpr(e),

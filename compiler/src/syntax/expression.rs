@@ -143,7 +143,7 @@ impl<'a> Parser<'a, '_> {
                 return None;
             }
 
-            return Some(the_type.into());
+            return Some(Builder::create_type_envelop(the_type));
         }
 
         self.lexer.rewind(rewind_pos);
@@ -900,7 +900,9 @@ impl<'a> Parser<'a, '_> {
                 break;
             }
 
-            if self.lexer.skip_if(&Token::Punct(Punct::Semicolon)) {
+            if self.lexer.skip_if(&Token::Punct(Punct::Semicolon))
+                || self.lexer.next_if_comment().is_some()
+            {
                 continue;
             }
 

@@ -78,13 +78,23 @@ impl<'a> Object<'a> {
     }
 
     #[must_use]
-    pub fn get(&self) -> &BTreeMap<&'a str, Expr<'a>> {
+    pub fn fields(&self) -> &BTreeMap<&'a str, Expr<'a>> {
         &self.fields
     }
 
     #[must_use]
-    pub fn get_mut(&mut self) -> &mut BTreeMap<&'a str, Expr<'a>> {
+    pub fn fields_mut(&mut self) -> &mut BTreeMap<&'a str, Expr<'a>> {
         &mut self.fields
+    }
+
+    #[must_use]
+    pub fn access(&self, key: &'a str) -> Option<&Expr<'a>> {
+        self.fields.get(key)
+    }
+
+    #[must_use]
+    pub fn access_mut(&mut self, key: &'a str) -> Option<&mut Expr<'a>> {
+        self.fields_mut().get_mut(key)
     }
 }
 

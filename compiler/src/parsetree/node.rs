@@ -56,6 +56,7 @@ pub enum Expr<'a> {
     BString(Rc<BStringData<'a>>),
     Unit,
 
+    TypeEnvelop(Rc<Type<'a>>),
     List(Rc<List<'a>>),
     Object(Rc<Object<'a>>),
     UnaryExpr(Rc<UnaryExpr<'a>>),
@@ -164,6 +165,7 @@ impl<'a> TryInto<Type<'a>> for Expr<'a> {
             | Expr::String(_)
             | Expr::BString(_)
             | Expr::Unit
+            | Expr::TypeEnvelop(_)
             | Expr::List(_)
             | Expr::Object(_)
             | Expr::UnaryExpr(_)

@@ -2,11 +2,22 @@ use std::collections::BTreeMap;
 
 use super::abstract_machine::{AbstractMachine, Unwind};
 use crate::parsetree::{
-    Builder, Expr,
+    Builder, Expr, Type,
     nodes::{BinExpr, Block, List, Object, Statement, UnaryExpr},
 };
 
 impl<'a> AbstractMachine<'a> {
+    pub(crate) fn evaluate_type_envelop(
+        &mut self,
+        content: &Type<'a>,
+    ) -> Result<Expr<'a>, Unwind<'a>> {
+        let evaluated_type = self.evaluate_type(content)?;
+
+        Ok(Builder::create_object()
+            .add_field("inner", evaluated_type.into())
+            .build())
+    }
+
     pub(crate) fn evaluate_list(&mut self, list: &List<'a>) -> Result<Expr<'a>, Unwind<'a>> {
         // TODO: Write tests
         // TODO: Verify logic
@@ -27,7 +38,7 @@ impl<'a> AbstractMachine<'a> {
 
         let mut fields = BTreeMap::new();
 
-        for (key, value) in object.get() {
+        for (key, value) in object.fields() {
             let evaluated_value = self.evaluate(value)?;
             fields.insert(key.to_owned(), evaluated_value);
         }

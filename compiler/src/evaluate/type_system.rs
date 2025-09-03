@@ -225,8 +225,17 @@ impl<'a> AbstractMachine<'a> {
     ) -> Result<Type<'a>, Unwind<'a>> {
         // TODO: Write tests
         // TODO: Verify logic
-        // TODO: Implement evaluation logic
-        unimplemented!()
+
+        let Expr::Object(object) = self.evaluate(&latent_type)? else {
+            return Err(Unwind::TypeError);
+        };
+
+        object
+            .access("inner")
+            .ok_or(Unwind::TypeError)?
+            .to_owned()
+            .try_into()
+            .map_err(|_| Unwind::TypeError)
     }
 
     pub fn evaluate_type(&mut self, type_expression: &Type<'a>) -> Result<Type<'a>, Unwind<'a>> {
