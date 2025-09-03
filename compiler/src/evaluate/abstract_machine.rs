@@ -90,12 +90,13 @@ impl<'a> AbstractMachine<'a> {
 
     fn setup_builtins(&mut self) {
         self.provide_function("std::intrinsic::print", |m: &mut AbstractMachine<'a>| {
-            let Expr::String(string) = m.get_parameter("message").ok_or(Unwind::MissingArgument)?
-            else {
-                return Err(Unwind::TypeError);
-            };
+            let value = m.get_parameter("message").ok_or(Unwind::MissingArgument)?;
 
-            print!("{}", string.get());
+            if let Expr::String(string) = value {
+                print!("{}", string.get());
+            } else {
+                print!("{:#?}", value);
+            }
 
             Ok(Builder::create_unit())
         });
