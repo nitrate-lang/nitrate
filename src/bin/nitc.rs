@@ -50,11 +50,24 @@ fn program() -> i32 {
     //     return 1;
     // }
 
-    let ast = Builder::create_call()
-        .with_callee_name("std::intrinsic::print")
-        .add_argument(
-            Some("message"),
-            Builder::create_string_from_ref("Hello, World!\n"),
+    let ast = Builder::create_block()
+        .add_statement(
+            Builder::create_call()
+                .with_callee_name("std::intrinsic::print")
+                .add_argument(
+                    Some("message"),
+                    Builder::create_string_from_ref("Hello, World!\n"),
+                )
+                .build(),
+        )
+        .add_element(
+            Builder::create_call()
+                .with_callee_name("std::intrinsic::print")
+                .add_argument(
+                    Some("message"),
+                    Builder::create_string_from_ref("Hello, World again!\n"),
+                )
+                .build(),
         )
         .build();
 

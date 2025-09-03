@@ -784,7 +784,7 @@ impl<'a> VariableBuilder<'a> {
 pub struct ScopeBuilder<'a> {
     name: Option<&'a str>,
     attributes: Vec<Expr<'a>>,
-    block: Option<Expr<'a>>,
+    elements: Vec<Expr<'a>>,
 }
 
 impl<'a> ScopeBuilder<'a> {
@@ -792,7 +792,7 @@ impl<'a> ScopeBuilder<'a> {
         ScopeBuilder {
             name: None,
             attributes: Vec::new(),
-            block: None,
+            elements: Vec::new(),
         }
     }
 
@@ -814,8 +814,16 @@ impl<'a> ScopeBuilder<'a> {
         self
     }
 
-    pub fn with_block(mut self, block: Expr<'a>) -> Self {
-        self.block = Some(block);
+    pub fn add_element(mut self, element: Expr<'a>) -> Self {
+        self.elements.push(element);
+        self
+    }
+
+    pub fn add_elements<I>(mut self, elements: I) -> Self
+    where
+        I: IntoIterator<Item = Expr<'a>>,
+    {
+        self.elements.extend(elements);
         self
     }
 
@@ -823,7 +831,7 @@ impl<'a> ScopeBuilder<'a> {
         Expr::Scope(Rc::new(Scope::new(
             self.name.expect("Name must be provided"),
             self.attributes,
-            self.block.expect("Block must be provided"),
+            self.elements,
         )))
     }
 }

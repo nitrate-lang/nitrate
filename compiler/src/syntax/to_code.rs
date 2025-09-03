@@ -1,9 +1,9 @@
 use crate::lexical::{Integer, Keyword, Name, Op, Punct, Token};
 use crate::parsetree::nodes::{
-    ArrayType, Assert, Await, BinExpr, BinExprOp, Block, Break, Continue, DoWhileLoop, ForEach,
-    Function, FunctionType, GenericType, If, Call, IntegerLit, List, ManagedRefType,
-    MapType, Object, RefinementType, Return, Scope, SliceType, Statement, Switch, TupleType,
-    UnaryExpr, UnaryExprOp, UnmanagedRefType, Variable, VariableKind, WhileLoop,
+    ArrayType, Assert, Await, BinExpr, BinExprOp, Block, Break, Call, Continue, DoWhileLoop,
+    ForEach, Function, FunctionType, GenericType, If, IntegerLit, List, ManagedRefType, MapType,
+    Object, RefinementType, Return, Scope, SliceType, Statement, Switch, TupleType, UnaryExpr,
+    UnaryExprOp, UnmanagedRefType, Variable, VariableKind, WhileLoop,
 };
 use crate::parsetree::{Expr, Type};
 use std::ops::Deref;
@@ -389,7 +389,11 @@ impl<'a> ToCode<'a> for Scope<'a> {
             tokens.push(Token::Punct(Punct::RightBracket));
         }
 
-        self.block().to_code(tokens, options);
+        tokens.push(Token::Punct(Punct::LeftBrace));
+        for expr in self.elements() {
+            expr.to_code(tokens, options);
+        }
+        tokens.push(Token::Punct(Punct::RightBrace));
     }
 }
 

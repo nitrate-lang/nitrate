@@ -1,6 +1,6 @@
 use super::abstract_machine::{AbstractMachine, Unwind};
 use crate::parsetree::{
-    Expr,
+    Builder, Expr,
     nodes::{Function, Scope, Variable},
 };
 
@@ -21,19 +21,16 @@ impl<'a> AbstractMachine<'a> {
         unimplemented!()
     }
 
-    pub(crate) fn evaluate_identifier(
-        &mut self,
-        _name: &'a str,
-    ) -> Result<Expr<'a>, Unwind<'a>> {
+    pub(crate) fn evaluate_identifier(&mut self, _name: &'a str) -> Result<Expr<'a>, Unwind<'a>> {
         // TODO: Implement identifier evaluation
         unimplemented!()
     }
 
-    pub(crate) fn evaluate_scope(
-        &mut self,
-        _scope: &Scope<'a>,
-    ) -> Result<Expr<'a>, Unwind<'a>> {
-        // TODO: Implement scope evaluation
-        unimplemented!()
+    pub(crate) fn evaluate_scope(&mut self, scope: &Scope<'a>) -> Result<Expr<'a>, Unwind<'a>> {
+        for element in scope.elements() {
+            self.evaluate(element)?;
+        }
+
+        Ok(Builder::create_unit())
     }
 }

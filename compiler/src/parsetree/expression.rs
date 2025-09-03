@@ -554,16 +554,16 @@ impl<'a> QualifiedScope<'a> {
 pub struct Scope<'a> {
     name: &'a str,
     attributes: Vec<Expr<'a>>,
-    block: Expr<'a>,
+    elements: Vec<Expr<'a>>,
 }
 
 impl<'a> Scope<'a> {
     #[must_use]
-    pub fn new(name: &'a str, attributes: Vec<Expr<'a>>, block: Expr<'a>) -> Self {
+    pub fn new(name: &'a str, attributes: Vec<Expr<'a>>, elements: Vec<Expr<'a>>) -> Self {
         Scope {
             name,
             attributes,
-            block,
+            elements,
         }
     }
 
@@ -586,12 +586,12 @@ impl<'a> Scope<'a> {
     }
 
     #[must_use]
-    pub fn block(&self) -> &Expr<'a> {
-        &self.block
+    pub fn elements(&self) -> &[Expr<'a>] {
+        &self.elements
     }
 
-    pub fn set_block(&mut self, block: Expr<'a>) {
-        self.block = block;
+    pub fn elements_mut(&mut self) -> &mut Vec<Expr<'a>> {
+        &mut self.elements
     }
 }
 

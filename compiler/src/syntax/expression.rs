@@ -389,7 +389,7 @@ impl<'a> Parser<'a, '_> {
 
         self.scope.push(name_token.name());
 
-        let Some(block) = self.parse_block() else {
+        let Some(elements) = self.parse_block_as_elements() else {
             self.scope.pop();
             return None;
         };
@@ -400,7 +400,7 @@ impl<'a> Parser<'a, '_> {
             Builder::create_scope()
                 .with_name(name_token.name())
                 .add_attributes(attributes)
-                .with_block(block)
+                .add_elements(elements)
                 .build(),
         )
     }
@@ -788,7 +788,7 @@ impl<'a> Parser<'a, '_> {
         Some(expr)
     }
 
-    pub(crate) fn parse_block(&mut self) -> Option<Expr<'a>> {
+    pub(crate) fn parse_block_as_elements(&mut self) -> Option<Vec<Expr<'a>>> {
         if !self.lexer.skip_if(&Token::Punct(Punct::LeftBrace)) {
             self.set_failed_bit();
             error!(
@@ -843,6 +843,14 @@ impl<'a> Parser<'a, '_> {
             elements.push(expression);
         }
 
-        Some(Builder::create_block().add_expressions(elements).build())
+        Some(elements)
+    }
+
+    pub(crate) fn parse_block(&mut self) -> Option<Expr<'a>> {
+        Some(
+            Builder::create_block()
+                .add_expressions(self.parse_block_as_elements()?)
+                .build(),
+        )
     }
 }

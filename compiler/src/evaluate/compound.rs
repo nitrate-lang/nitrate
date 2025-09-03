@@ -18,10 +18,7 @@ impl<'a> AbstractMachine<'a> {
         Ok(Builder::create_list().add_elements(elements).build())
     }
 
-    pub(crate) fn evaluate_object(
-        &mut self,
-        object: &Object<'a>,
-    ) -> Result<Expr<'a>, Unwind<'a>> {
+    pub(crate) fn evaluate_object(&mut self, object: &Object<'a>) -> Result<Expr<'a>, Unwind<'a>> {
         let mut fields = BTreeMap::new();
 
         for (key, value) in object.get() {

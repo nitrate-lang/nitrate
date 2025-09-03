@@ -67,10 +67,7 @@ impl<'a> AbstractMachine<'a> {
             .build())
     }
 
-    pub(crate) fn evaluate_map_type(
-        &mut self,
-        map: &MapType<'a>,
-    ) -> Result<Type<'a>, Unwind<'a>> {
+    pub(crate) fn evaluate_map_type(&mut self, map: &MapType<'a>) -> Result<Type<'a>, Unwind<'a>> {
         let key = self.evaluate_type(&map.key())?;
         let value = self.evaluate_type(&map.value())?;
 
@@ -164,10 +161,7 @@ impl<'a> AbstractMachine<'a> {
             .build())
     }
 
-    pub fn evaluate_type(
-        &mut self,
-        type_expression: &Type<'a>,
-    ) -> Result<Type<'a>, Unwind<'a>> {
+    pub fn evaluate_type(&mut self, type_expression: &Type<'a>) -> Result<Type<'a>, Unwind<'a>> {
         if self.already_evaluated_types.contains(type_expression) {
             return Ok(type_expression.to_owned());
         }
