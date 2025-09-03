@@ -13,23 +13,37 @@ impl<'a> AbstractMachine<'a> {
         &mut self,
         refinement: &RefinementType<'a>,
     ) -> Result<Type<'a>, Unwind<'a>> {
-        // TODO: Write tests
-        // TODO: Verify logic
+        /*
+         * The order of evaluation:
+         * 1. Base type
+         * 2. Width
+         * 3. Minimum
+         * 4. Maximum
+         *
+         * ------------------
+         * let R = `<refinement type>`;
+         * let base  = eval(R.get_base());
+         * let width = eval(R.get_width());
+         * let min   = eval(R.get_min());
+         * let max   = eval(R.get_max());
+         *
+         * ret type(base: width: [min: max]);
+         */
 
         let base = self.evaluate_type(&refinement.base())?;
 
         let width = match refinement.width() {
-            Some(w) => Some(self.evaluate(&w)?),
+            Some(width) => Some(self.evaluate(&width)?),
             None => None,
         };
 
         let min = match refinement.min() {
-            Some(m) => Some(self.evaluate(&m)?),
+            Some(min) => Some(self.evaluate(&min)?),
             None => None,
         };
 
         let max = match refinement.max() {
-            Some(m) => Some(self.evaluate(&m)?),
+            Some(max) => Some(self.evaluate(&max)?),
             None => None,
         };
 
