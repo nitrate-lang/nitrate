@@ -42,6 +42,7 @@ pub enum Expr<'a> {
     GenericType(Rc<GenericType<'a>>),
     OpaqueType(Rc<StringData<'a>>),
     StructType(Rc<StructType<'a>>),
+    LatentType(Rc<Expr<'a>>),
     HasParenthesesType(Rc<Type<'a>>),
 
     Discard,
@@ -111,6 +112,7 @@ pub enum Type<'a> {
     GenericType(Rc<GenericType<'a>>),
     OpaqueType(Rc<StringData<'a>>),
     StructType(Rc<StructType<'a>>),
+    LatentType(Rc<Expr<'a>>),
     HasParenthesesType(Rc<Type<'a>>),
 }
 
@@ -150,6 +152,7 @@ impl<'a> TryInto<Type<'a>> for Expr<'a> {
             Expr::GenericType(x) => Ok(Type::GenericType(x)),
             Expr::OpaqueType(x) => Ok(Type::OpaqueType(x)),
             Expr::StructType(x) => Ok(Type::StructType(x)),
+            Expr::LatentType(x) => Ok(Type::LatentType(x)),
             Expr::HasParenthesesType(x) => Ok(Type::HasParenthesesType(x)),
 
             Expr::Discard
@@ -219,6 +222,7 @@ impl<'a> From<Type<'a>> for Expr<'a> {
             Type::GenericType(x) => Expr::GenericType(x),
             Type::OpaqueType(x) => Expr::OpaqueType(x),
             Type::StructType(x) => Expr::StructType(x),
+            Type::LatentType(x) => Expr::LatentType(x),
             Type::HasParenthesesType(x) => Expr::HasParenthesesType(x),
         }
     }

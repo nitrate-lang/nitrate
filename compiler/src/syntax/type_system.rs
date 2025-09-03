@@ -681,6 +681,13 @@ impl<'a> Parser<'a, '_> {
             Token::Punct(Punct::LeftBracket) => self.parse_array_or_slice_or_map(),
             Token::Op(Op::BitAnd) => self.parse_managed_type(),
             Token::Op(Op::Mul) => self.parse_unmanaged_type(),
+
+            Token::Op(Op::Add) => {
+                self.lexer.skip_tok();
+                let latent_expr = self.parse_expression()?;
+                Some(Builder::create_latent_type(latent_expr))
+            }
+
             Token::Keyword(Keyword::Fn) => self.parse_function_type(),
             Token::Keyword(Keyword::Opaque) => self.parse_opaque_type(),
 

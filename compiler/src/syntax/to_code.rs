@@ -569,6 +569,10 @@ impl<'a> ToCode<'a> for Expr<'a> {
                 tokens.push(Token::Punct(Punct::RightParen));
             }
             Expr::StructType(e) => e.to_code(tokens, options),
+            Expr::LatentType(e) => {
+                tokens.push(Token::Op(Op::Add));
+                e.to_code(tokens, options);
+            }
             Expr::HasParenthesesType(e) => {
                 tokens.push(Token::Punct(Punct::LeftParen));
                 e.to_code(tokens, options);
@@ -658,6 +662,10 @@ impl<'a> ToCode<'a> for Type<'a> {
                 tokens.push(Token::Punct(Punct::RightParen));
             }
             Type::StructType(e) => e.to_code(tokens, options),
+            Type::LatentType(e) => {
+                tokens.push(Token::Op(Op::Add));
+                e.to_code(tokens, options);
+            }
             Type::HasParenthesesType(e) => {
                 tokens.push(Token::Punct(Punct::LeftParen));
                 e.to_code(tokens, options);

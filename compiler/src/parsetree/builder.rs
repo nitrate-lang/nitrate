@@ -369,6 +369,11 @@ impl<'a> Builder {
     }
 
     #[must_use]
+    pub fn create_latent_type(expr: Expr<'a>) -> Type<'a> {
+        Type::LatentType(Rc::new(expr))
+    }
+
+    #[must_use]
     pub fn create_type_parentheses(inner: Type<'a>) -> Type<'a> {
         Type::HasParenthesesType(Rc::new(inner))
     }

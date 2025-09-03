@@ -219,6 +219,16 @@ impl<'a> AbstractMachine<'a> {
         Ok(Builder::create_struct_type().add_fields(fields).build())
     }
 
+    pub(crate) fn evaluate_latent_type(
+        &mut self,
+        latent_type: Rc<Expr<'a>>,
+    ) -> Result<Type<'a>, Unwind<'a>> {
+        // TODO: Write tests
+        // TODO: Verify logic
+        // TODO: Implement evaluation logic
+        unimplemented!()
+    }
+
     pub fn evaluate_type(&mut self, type_expression: &Type<'a>) -> Result<Type<'a>, Unwind<'a>> {
         // TODO: Write tests
         // TODO: Verify logic
@@ -258,6 +268,7 @@ impl<'a> AbstractMachine<'a> {
             Type::UnmanagedRefType(reference) => self.evaluate_unmanaged_ref_type(reference),
             Type::GenericType(generic) => self.evaluate_generic_type(generic),
             Type::StructType(struct_type) => self.evaluate_struct_type(struct_type.clone()),
+            Type::LatentType(latent_type) => self.evaluate_latent_type(latent_type.clone()),
             Type::HasParenthesesType(inner) => self.evaluate_type(inner),
         };
 
