@@ -1,25 +1,25 @@
-use crate::parsetree::{Builder, Expr, Type, nodes::Variable};
+use crate::parsetree::{Builder, Expr, Type};
 use hashbrown::{HashMap, HashSet};
 
 #[derive(Debug, Default)]
 pub(crate) struct CallFrame<'a> {
-    function_locals: HashMap<&'a str, Variable<'a>>,
+    local_variables: HashMap<&'a str, Expr<'a>>,
 }
 
 impl<'a> CallFrame<'a> {
-    fn get(&self, name: &str) -> Option<&Variable<'a>> {
-        self.function_locals.get(name)
+    fn get(&self, name: &str) -> Option<&Expr<'a>> {
+        self.local_variables.get(name)
     }
 
-    fn _set(&mut self, name: &'a str, variable: Variable<'a>) {
-        self.function_locals.insert(name, variable);
+    pub(crate) fn set(&mut self, name: &'a str, expr: Expr<'a>) {
+        self.local_variables.insert(name, expr);
     }
 }
 
 #[derive(Debug)]
 pub(crate) struct Task<'a> {
     pub(crate) call_stack: Vec<CallFrame<'a>>,
-    pub(crate) _task_locals: HashMap<&'a str, Variable<'a>>,
+    pub(crate) task_locals: HashMap<&'a str, Expr<'a>>,
 }
 
 impl Task<'_> {
@@ -27,25 +27,25 @@ impl Task<'_> {
         let call_stack = Vec::from([CallFrame::default()]);
         Task {
             call_stack,
-            _task_locals: HashMap::new(),
+            task_locals: HashMap::new(),
         }
     }
 }
 
 #[derive(Debug)]
-pub enum EvalCancel<'a> {
+pub enum Unwind<'a> {
     FunctionReturn(Expr<'a>),
     TypeError,
     MissingArgument,
-    CallFrameStackEmpty,
+    UnknownCallee(&'a str),
     ProgramaticAssertionFailed(String),
 }
 
-pub type Function<'a> = fn(&mut AbstractMachine<'a>) -> Result<Expr<'a>, EvalCancel<'a>>;
+pub type IntrinsicFunction<'a> = fn(&mut AbstractMachine<'a>) -> Result<Expr<'a>, Unwind<'a>>;
 
 pub struct AbstractMachine<'a> {
-    _global_variables: HashMap<&'a str, Variable<'a>>,
-    provided_functions: HashMap<&'a str, Function<'a>>,
+    global_variables: HashMap<&'a str, Expr<'a>>,
+    provided_functions: HashMap<&'a str, IntrinsicFunction<'a>>,
     pub(crate) tasks: Vec<Task<'a>>,
     pub(crate) current_task: usize,
 
@@ -62,7 +62,7 @@ impl<'a> AbstractMachine<'a> {
     #[must_use]
     pub fn new() -> Self {
         let mut abstract_machine = AbstractMachine {
-            _global_variables: HashMap::new(),
+            global_variables: HashMap::new(),
             provided_functions: HashMap::new(),
             tasks: Vec::from([Task::new()]),
             current_task: 0,
@@ -73,21 +73,12 @@ impl<'a> AbstractMachine<'a> {
         abstract_machine
     }
 
-    pub fn get_parameter(&self, name: &str) -> Option<&Variable<'a>> {
-        self.tasks[self.current_task].call_stack.last()?.get(name)
-    }
-
-    pub fn get_parameter_value(&self, name: &str) -> Option<&Expr<'a>> {
-        self.get_parameter(name)?.value()
-    }
-
     fn setup_builtins(&mut self) {
         self.provide_function("std::intrinsic::print", |m| {
-            let Expr::StringLit(string) = m
-                .get_parameter_value("message")
-                .ok_or(EvalCancel::MissingArgument)?
+            let Expr::StringLit(string) =
+                m.get_parameter("message").ok_or(Unwind::MissingArgument)?
             else {
-                return Err(EvalCancel::TypeError);
+                return Err(Unwind::TypeError);
             };
 
             print!("{}", string.get());
@@ -96,15 +87,43 @@ impl<'a> AbstractMachine<'a> {
         });
     }
 
+    pub fn resolve(&self, name: &str) -> Option<&Expr<'a>> {
+        if let Some(local_var) = self.tasks[self.current_task]
+            .call_stack
+            .last()
+            .and_then(|frame| frame.get(name))
+        {
+            return Some(local_var);
+        }
+
+        if let Some(task_local_var) = self.tasks[self.current_task].task_locals.get(name) {
+            return Some(task_local_var);
+        }
+
+        if let Some(global_var) = self.global_variables.get(name) {
+            return Some(global_var);
+        }
+
+        None
+    }
+
+    pub fn resolve_intrinsic(&self, name: &str) -> Option<&IntrinsicFunction<'a>> {
+        self.provided_functions.get(name)
+    }
+
+    pub fn get_parameter(&self, name: &str) -> Option<&Expr<'a>> {
+        self.tasks[self.current_task].call_stack.last()?.get(name)
+    }
+
     pub fn provide_function(
         &mut self,
         name: &'a str,
-        callback: Function<'a>,
-    ) -> Option<Function<'a>> {
+        callback: IntrinsicFunction<'a>,
+    ) -> Option<IntrinsicFunction<'a>> {
         self.provided_functions.insert(name, callback)
     }
 
-    pub fn evaluate(&mut self, expression: &Expr<'a>) -> Result<Expr<'a>, EvalCancel<'a>> {
+    pub fn evaluate(&mut self, expression: &Expr<'a>) -> Result<Expr<'a>, Unwind<'a>> {
         match expression {
             Expr::Bool => Ok(Expr::Bool),
             Expr::UInt8 => Ok(Expr::UInt8),
@@ -169,8 +188,7 @@ impl<'a> AbstractMachine<'a> {
             Expr::ForEach(e) => self.evaluate_for_each(e),
             Expr::Await(e) => self.evaluate_await(e),
             Expr::Assert(e) => self.evaluate_assert(e),
-            Expr::DirectCall(e) => self.evaluate_direct_call(e),
-            Expr::IndirectCall(e) => self.evaluate_indirect_call(e),
+            Expr::Call(e) => self.evaluate_call(e),
         }
     }
 }

@@ -1,13 +1,13 @@
 use std::collections::BTreeMap;
 
-use super::abstract_machine::{AbstractMachine, EvalCancel};
+use super::abstract_machine::{AbstractMachine, Unwind};
 use crate::parsetree::{
     Builder, Expr,
     nodes::{BinExpr, Block, List, Object, Statement, UnaryExpr},
 };
 
 impl<'a> AbstractMachine<'a> {
-    pub(crate) fn evaluate_list(&mut self, list: &List<'a>) -> Result<Expr<'a>, EvalCancel<'a>> {
+    pub(crate) fn evaluate_list(&mut self, list: &List<'a>) -> Result<Expr<'a>, Unwind<'a>> {
         let mut elements = Vec::new();
         elements.reserve(list.elements().len());
 
@@ -21,7 +21,7 @@ impl<'a> AbstractMachine<'a> {
     pub(crate) fn evaluate_object(
         &mut self,
         object: &Object<'a>,
-    ) -> Result<Expr<'a>, EvalCancel<'a>> {
+    ) -> Result<Expr<'a>, Unwind<'a>> {
         let mut fields = BTreeMap::new();
 
         for (key, value) in object.get() {
@@ -35,7 +35,7 @@ impl<'a> AbstractMachine<'a> {
     pub(crate) fn evaluate_unaryexpr(
         &mut self,
         _uexpr: &UnaryExpr<'a>,
-    ) -> Result<Expr<'a>, EvalCancel<'a>> {
+    ) -> Result<Expr<'a>, Unwind<'a>> {
         // TODO: Evaluate unary expression
         unimplemented!()
     }
@@ -43,7 +43,7 @@ impl<'a> AbstractMachine<'a> {
     pub(crate) fn evaluate_binexpr(
         &mut self,
         _bexpr: &BinExpr<'a>,
-    ) -> Result<Expr<'a>, EvalCancel<'a>> {
+    ) -> Result<Expr<'a>, Unwind<'a>> {
         // TODO: Evaluate binary expression
         unimplemented!()
     }
@@ -51,12 +51,12 @@ impl<'a> AbstractMachine<'a> {
     pub(crate) fn evaluate_statement(
         &mut self,
         statement: &Statement<'a>,
-    ) -> Result<Expr<'a>, EvalCancel<'a>> {
+    ) -> Result<Expr<'a>, Unwind<'a>> {
         self.evaluate(&statement.get())?;
         Ok(Builder::create_unit())
     }
 
-    pub(crate) fn evaluate_block(&mut self, block: &Block<'a>) -> Result<Expr<'a>, EvalCancel<'a>> {
+    pub(crate) fn evaluate_block(&mut self, block: &Block<'a>) -> Result<Expr<'a>, Unwind<'a>> {
         let mut result = None;
         for element in block.elements() {
             result = Some(self.evaluate(element)?);

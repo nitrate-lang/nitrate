@@ -2,11 +2,11 @@ use crate::lexical::IntegerKind;
 use crate::parsetree::{
     Builder, Expr, Type,
     nodes::{
-        ArrayType, Assert, Await, BinExpr, BinExprOp, Block, Break, CallArguments, Continue,
-        DirectCall, DoWhileLoop, ForEach, Function, FunctionParameter, FunctionType, GenericType,
-        If, IndirectCall, IntegerLit, List, ManagedRefType, MapType, Object, RefinementType,
-        Return, Scope, SliceType, Statement, Switch, TupleType, UnaryExpr, UnaryExprOp,
-        UnmanagedRefType, Variable, VariableKind, WhileLoop,
+        ArrayType, Assert, Await, BinExpr, BinExprOp, Block, Break, Call, CallArguments, Continue,
+        DoWhileLoop, ForEach, Function, FunctionParameter, FunctionType, GenericType, If,
+        IntegerLit, List, ManagedRefType, MapType, Object, RefinementType, Return, Scope,
+        SliceType, Statement, Switch, TupleType, UnaryExpr, UnaryExprOp, UnmanagedRefType,
+        Variable, VariableKind, WhileLoop,
     },
 };
 use apint::UInt;
@@ -1161,53 +1161,14 @@ impl<'a> AssertBuilder<'a> {
 }
 
 #[derive(Debug)]
-pub struct DirectCallBuilder<'a> {
-    callee: &'a str,
-    arguments: CallArguments<'a>,
-}
-
-impl<'a> DirectCallBuilder<'a> {
-    pub(crate) fn new() -> Self {
-        DirectCallBuilder {
-            callee: "",
-            arguments: Vec::new(),
-        }
-    }
-
-    pub fn with_callee(mut self, callee: &'a str) -> Self {
-        self.callee = callee;
-        self
-    }
-
-    pub fn add_argument(mut self, name: Option<&'a str>, value: Expr<'a>) -> Self {
-        self.arguments.push((name, value));
-        self
-    }
-
-    pub fn add_arguments<I>(mut self, arguments: I) -> Self
-    where
-        I: IntoIterator<Item = (Option<&'a str>, Expr<'a>)>,
-    {
-        self.arguments.extend(arguments);
-        self
-    }
-
-    pub fn build(self) -> Expr<'a> {
-        let expr = DirectCall::new(self.callee, self.arguments);
-
-        Expr::DirectCall(Rc::new(expr))
-    }
-}
-
-#[derive(Debug)]
-pub struct IndirectCallBuilder<'a> {
+pub struct CallBuilder<'a> {
     callee: Option<Expr<'a>>,
     arguments: CallArguments<'a>,
 }
 
-impl<'a> IndirectCallBuilder<'a> {
+impl<'a> CallBuilder<'a> {
     pub(crate) fn new() -> Self {
-        IndirectCallBuilder {
+        CallBuilder {
             callee: None,
             arguments: Vec::new(),
         }
@@ -1218,6 +1179,11 @@ impl<'a> IndirectCallBuilder<'a> {
         self
     }
 
+    pub fn with_callee_name(mut self, callee: &'a str) -> Self {
+        self.callee = Some(Builder::create_identifier(callee));
+        self
+    }
+
     pub fn add_argument(mut self, name: Option<&'a str>, value: Expr<'a>) -> Self {
         self.arguments.push((name, value));
         self
@@ -1232,11 +1198,11 @@ impl<'a> IndirectCallBuilder<'a> {
     }
 
     pub fn build(self) -> Expr<'a> {
-        let expr = IndirectCall::new(
+        let expr = Call::new(
             self.callee.expect("Callee must be provided"),
             self.arguments,
         );
 
-        Expr::IndirectCall(Rc::new(expr))
+        Expr::Call(Rc::new(expr))
     }
 }

@@ -409,6 +409,16 @@ impl<'a> Function<'a> {
     pub fn set_definition(&mut self, definition: Option<Expr<'a>>) {
         self.definition = definition;
     }
+
+    #[must_use]
+    pub fn is_definition(&self) -> bool {
+        self.definition.is_some()
+    }
+
+    #[must_use]
+    pub fn is_declaration(&self) -> bool {
+        self.definition.is_none()
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -906,51 +916,15 @@ impl<'a> Assert<'a> {
 pub type CallArguments<'a> = Vec<(Option<&'a str>, Expr<'a>)>;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct DirectCall<'a> {
-    callee: &'a str,
-    arguments: CallArguments<'a>,
-}
-
-impl<'a> DirectCall<'a> {
-    #[must_use]
-    pub fn new(callee: &'a str, arguments: CallArguments<'a>) -> Self {
-        DirectCall { callee, arguments }
-    }
-
-    #[must_use]
-    pub fn callee(&self) -> &'a str {
-        self.callee
-    }
-
-    pub fn set_callee(&mut self, callee: &'a str) {
-        self.callee = callee;
-    }
-
-    #[must_use]
-    pub fn arguments(&self) -> &[(Option<&'a str>, Expr<'a>)] {
-        &self.arguments
-    }
-
-    #[must_use]
-    pub fn arguments_mut(&mut self) -> &mut CallArguments<'a> {
-        &mut self.arguments
-    }
-
-    pub fn set_arguments(&mut self, arguments: CallArguments<'a>) {
-        self.arguments = arguments;
-    }
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct IndirectCall<'a> {
+pub struct Call<'a> {
     callee: Expr<'a>,
     arguments: CallArguments<'a>,
 }
 
-impl<'a> IndirectCall<'a> {
+impl<'a> Call<'a> {
     #[must_use]
     pub fn new(callee: Expr<'a>, arguments: CallArguments<'a>) -> Self {
-        IndirectCall { callee, arguments }
+        Call { callee, arguments }
     }
 
     #[must_use]

@@ -1,9 +1,9 @@
 use crate::lexical::{Integer, Keyword, Name, Op, Punct, Token};
 use crate::parsetree::nodes::{
-    ArrayType, Assert, Await, BinExpr, BinExprOp, Block, Break, Continue, DirectCall, DoWhileLoop,
-    ForEach, Function, FunctionType, GenericType, If, IndirectCall, IntegerLit, List,
-    ManagedRefType, MapType, Object, RefinementType, Return, Scope, SliceType, Statement, Switch,
-    TupleType, UnaryExpr, UnaryExprOp, UnmanagedRefType, Variable, VariableKind, WhileLoop,
+    ArrayType, Assert, Await, BinExpr, BinExprOp, Block, Break, Continue, DoWhileLoop, ForEach,
+    Function, FunctionType, GenericType, If, Call, IntegerLit, List, ManagedRefType,
+    MapType, Object, RefinementType, Return, Scope, SliceType, Statement, Switch, TupleType,
+    UnaryExpr, UnaryExprOp, UnmanagedRefType, Variable, VariableKind, WhileLoop,
 };
 use crate::parsetree::{Expr, Type};
 use std::ops::Deref;
@@ -476,25 +476,7 @@ impl<'a> ToCode<'a> for Assert<'a> {
     }
 }
 
-impl<'a> ToCode<'a> for DirectCall<'a> {
-    fn to_code(&self, tokens: &mut Vec<Token<'a>>, options: &CodeFormat) {
-        tokens.push(Token::Name(Name::new(self.callee())));
-
-        tokens.push(Token::Punct(Punct::LeftParen));
-        for (i, arg) in self.arguments().iter().enumerate() {
-            (i > 0).then(|| tokens.push(Token::Punct(Punct::Comma)));
-            if let Some(param_name) = arg.0 {
-                tokens.push(Token::Name(Name::new(param_name)));
-                tokens.push(Token::Punct(Punct::Colon));
-            }
-
-            arg.1.to_code(tokens, options);
-        }
-        tokens.push(Token::Punct(Punct::RightParen));
-    }
-}
-
-impl<'a> ToCode<'a> for IndirectCall<'a> {
+impl<'a> ToCode<'a> for Call<'a> {
     fn to_code(&self, tokens: &mut Vec<Token<'a>>, options: &CodeFormat) {
         self.callee().to_code(tokens, options);
 
@@ -603,8 +585,7 @@ impl<'a> ToCode<'a> for Expr<'a> {
             Expr::ForEach(e) => e.to_code(tokens, options),
             Expr::Await(e) => e.to_code(tokens, options),
             Expr::Assert(e) => e.to_code(tokens, options),
-            Expr::DirectCall(e) => e.to_code(tokens, options),
-            Expr::IndirectCall(e) => e.to_code(tokens, options),
+            Expr::Call(e) => e.to_code(tokens, options),
         }
     }
 }

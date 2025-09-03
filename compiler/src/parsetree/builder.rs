@@ -2,11 +2,11 @@ use ordered_float::NotNan;
 
 use super::builder_helper::{
     ArrayTypeBuilder, AssertBuilder, AwaitBuilder, BinExprBuilder, BlockBuilder, BreakBuilder,
-    ContinueBuilder, DirectCallBuilder, DoWhileLoopBuilder, ForEachBuilder, FunctionBuilder,
-    FunctionTypeBuilder, GenericTypeBuilder, IfBuilder, IndirectCallBuilder, IntegerBuilder,
-    ListBuilder, ManagedRefTypeBuilder, MapTypeBuilder, ObjectBuilder, RefinementTypeBuilder,
-    ReturnBuilder, SliceTypeBuilder, StatementBuilder, SwitchBuilder, TupleTypeBuilder,
-    UnaryExprBuilder, UnmanagedRefTypeBuilder, VariableBuilder, WhileLoopBuilder,
+    CallBuilder, ContinueBuilder, DoWhileLoopBuilder, ForEachBuilder, FunctionBuilder,
+    FunctionTypeBuilder, GenericTypeBuilder, IfBuilder, IntegerBuilder, ListBuilder,
+    ManagedRefTypeBuilder, MapTypeBuilder, ObjectBuilder, RefinementTypeBuilder, ReturnBuilder,
+    SliceTypeBuilder, StatementBuilder, SwitchBuilder, TupleTypeBuilder, UnaryExprBuilder,
+    UnmanagedRefTypeBuilder, VariableBuilder, WhileLoopBuilder,
 };
 use super::expression::VariableKind;
 use super::node::{Expr, Type};
@@ -190,13 +190,8 @@ impl<'a> Builder {
     }
 
     #[must_use]
-    pub fn create_direct_call() -> DirectCallBuilder<'a> {
-        DirectCallBuilder::new()
-    }
-
-    #[must_use]
-    pub fn create_indirect_call() -> IndirectCallBuilder<'a> {
-        IndirectCallBuilder::new()
+    pub fn create_call() -> CallBuilder<'a> {
+        CallBuilder::new()
     }
 
     #[must_use]

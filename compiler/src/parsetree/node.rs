@@ -1,9 +1,8 @@
 use ordered_float::NotNan;
 
 use super::expression::{
-    Assert, Await, BinExpr, Block, Break, Continue, DirectCall, DoWhileLoop, ForEach, Function, If,
-    IndirectCall, IntegerLit, List, Object, Return, Scope, Statement, Switch, UnaryExpr, Variable,
-    WhileLoop,
+    Assert, Await, BinExpr, Block, Break, Call, Continue, DoWhileLoop, ForEach, Function, If,
+    IntegerLit, List, Object, Return, Scope, Statement, Switch, UnaryExpr, Variable, WhileLoop,
 };
 use super::types::{
     ArrayType, FunctionType, GenericType, ManagedRefType, MapType, RefinementType, SliceType,
@@ -77,8 +76,7 @@ pub enum Expr<'a> {
     ForEach(Rc<ForEach<'a>>),
     Await(Rc<Await<'a>>),
     Assert(Rc<Assert<'a>>),
-    DirectCall(Rc<DirectCall<'a>>),
-    IndirectCall(Rc<IndirectCall<'a>>),
+    Call(Rc<Call<'a>>),
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -180,8 +178,7 @@ impl<'a> TryInto<Type<'a>> for Expr<'a> {
             | Expr::ForEach(_)
             | Expr::Await(_)
             | Expr::Assert(_)
-            | Expr::DirectCall(_)
-            | Expr::IndirectCall(_) => Err(self),
+            | Expr::Call(_) => Err(self),
         }
     }
 }
