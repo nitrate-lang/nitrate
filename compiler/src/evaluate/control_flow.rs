@@ -3,11 +3,12 @@ use crate::{
     parsetree::{
         Builder, Expr,
         nodes::{
-            Assert, Await, Break, Call, Continue, DoWhileLoop, ForEach, If, Return, Switch,
-            WhileLoop,
+            Assert, Await, Break, Call, Continue, DoWhileLoop, ForEach, Function, If, Return,
+            Switch, WhileLoop,
         },
     },
 };
+use std::rc::Rc;
 
 impl<'a> AbstractMachine<'a> {
     pub(crate) fn evaluate_if(&mut self, if_expr: &If<'a>) -> Result<Expr<'a>, Unwind<'a>> {
@@ -151,23 +152,26 @@ impl<'a> AbstractMachine<'a> {
         // TODO: Write tests
         // TODO: Verify logic
 
-        enum ExprOrIntrinsic<'a> {
-            Expr(Expr<'a>),
+        enum Callee<'a> {
+            FunctionCode(Rc<Function<'a>>),
             Intrinsic(IntrinsicFunction<'a>),
         }
 
         let callee = match self.evaluate(call.callee()) {
-            Ok(callee) => Ok(ExprOrIntrinsic::Expr(callee)),
+            Ok(Expr::Function(function)) if function.is_definition() => {
+                Ok(Callee::FunctionCode(function))
+            }
 
             Err(Unwind::UnresolvedIdentifier(callee_name)) => {
                 if let Some(intrinsic) = self.resolve_intrinsic(&callee_name) {
-                    Ok(ExprOrIntrinsic::Intrinsic(intrinsic.to_owned()))
+                    Ok(Callee::Intrinsic(intrinsic.to_owned()))
                 } else {
                     Err(Unwind::UnknownCallee(callee_name))
                 }
             }
 
             Err(e) => Err(e),
+            _ => Err(Unwind::TypeError),
         }?;
 
         let mut callframe = CallFrame::default();
@@ -180,15 +184,8 @@ impl<'a> AbstractMachine<'a> {
         self.current_task_mut().callstack_mut().push(callframe);
 
         let result = match callee {
-            ExprOrIntrinsic::Expr(Expr::Function(function)) if function.is_definition() => {
-                self.evaluate(function.definition().unwrap())
-            }
-
-            ExprOrIntrinsic::Intrinsic(intrinsic) => intrinsic(self),
-
-            _ => {
-                return Err(Unwind::UnknownCallee("?".to_string()));
-            }
+            Callee::FunctionCode(function) => self.evaluate(function.definition().unwrap()),
+            Callee::Intrinsic(intrinsic) => intrinsic(self),
         };
 
         self.current_task_mut().callstack_mut().pop();

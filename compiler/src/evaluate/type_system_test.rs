@@ -31,12 +31,20 @@ fn refinement_type_evaluation_ordering() {
     use std::sync::Arc;
     use std::sync::Mutex;
 
-    // FIXME: Update test to ensure the refinement base ordering is correct
-
-    // The type: `u8: emit(7): [emit(8):emit(9)]`
+    // The type: `+{emit(o: 6); type(u8)}(): emit(o: 7): [emit(o: 8): emit(o: 9)]`
 
     let input_type = Builder::create_refinement_type()
-        .with_base(Builder::get_u8())
+        .with_base(Builder::create_latent_type(
+            Builder::create_block()
+                .add_statement(
+                    Builder::create_call()
+                        .with_callee_name("emit")
+                        .add_argument(Some("o"), Builder::create_u8(6))
+                        .build(),
+                )
+                .add_element(Builder::create_type_envelop(Builder::get_u8()))
+                .build(),
+        ))
         .with_width(Some(
             Builder::create_call()
                 .with_callee_name("emit")
@@ -65,6 +73,7 @@ fn refinement_type_evaluation_ordering() {
         .build();
 
     let expected_observable_behavioral_ordering = [
+        Builder::create_u8(6),
         Builder::create_u8(7),
         Builder::create_u8(8),
         Builder::create_u8(9),
