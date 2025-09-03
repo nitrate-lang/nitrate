@@ -1,19 +1,10 @@
 use super::abstract_machine::{AbstractMachine, Unwind};
 use crate::parsetree::{
     Builder, Expr,
-    nodes::{Function, Scope, Variable},
+    nodes::{Scope, Variable},
 };
-use std::rc::Rc;
 
 impl<'a> AbstractMachine<'a> {
-    pub(crate) fn evaluate_function(
-        &mut self,
-        _function: Rc<Function<'a>>,
-    ) -> Result<Expr<'a>, Unwind<'a>> {
-        // TODO: Implement function evaluation
-        unimplemented!()
-    }
-
     pub(crate) fn evaluate_variable(
         &mut self,
         variable: &Variable<'a>,
@@ -38,9 +29,10 @@ impl<'a> AbstractMachine<'a> {
         Ok(Builder::create_unit())
     }
 
-    pub(crate) fn evaluate_identifier(&mut self, _name: &'a str) -> Result<Expr<'a>, Unwind<'a>> {
-        // TODO: Implement identifier evaluation
-        unimplemented!()
+    pub(crate) fn evaluate_identifier(&mut self, name: &'a str) -> Result<Expr<'a>, Unwind<'a>> {
+        self.resolve(name)
+            .cloned()
+            .ok_or(Unwind::UnresolvedIdentifier(name))
     }
 
     pub(crate) fn evaluate_scope(&mut self, scope: &Scope<'a>) -> Result<Expr<'a>, Unwind<'a>> {

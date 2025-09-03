@@ -635,7 +635,6 @@ impl<'a> BlockBuilder<'a> {
 
 #[derive(Debug)]
 pub struct FunctionBuilder<'a> {
-    name: &'a str,
     parameters: Vec<FunctionParameter<'a>>,
     return_type: Option<Type<'a>>,
     attributes: Vec<Expr<'a>>,
@@ -645,17 +644,11 @@ pub struct FunctionBuilder<'a> {
 impl<'a> FunctionBuilder<'a> {
     pub(crate) fn new() -> Self {
         FunctionBuilder {
-            name: "",
             parameters: Vec::new(),
             return_type: None,
             attributes: Vec::new(),
             definition: None,
         }
-    }
-
-    pub fn with_name(mut self, name: &'a str) -> Self {
-        self.name = name;
-        self
     }
 
     pub fn with_parameter(
@@ -702,7 +695,6 @@ impl<'a> FunctionBuilder<'a> {
 
     pub fn build(self) -> Expr<'a> {
         Expr::Function(Rc::new(Function::new(
-            self.name,
             self.parameters,
             self.return_type.expect("Return type must be provided"),
             self.attributes,

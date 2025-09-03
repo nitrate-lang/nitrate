@@ -465,14 +465,6 @@ impl<'a> Parser<'a, '_> {
         self.lexer.skip_tok();
 
         let attributes = self.parse_attributes()?;
-
-        let name_pos = self.lexer.peek_tok().start();
-        let function_name = self
-            .lexer
-            .next_if_name()
-            .map(|t| t.name())
-            .unwrap_or_default();
-
         let parameters = self.parse_function_parameters()?;
 
         let return_type = if self.lexer.skip_if(&Token::Op(Op::Arrow)) {
@@ -489,24 +481,10 @@ impl<'a> Parser<'a, '_> {
 
         let function = Builder::create_function()
             .with_attributes(attributes)
-            .with_name(function_name)
             .with_parameters(parameters)
             .with_return_type(return_type)
             .with_definition(body)
             .build();
-
-        if !function_name.is_empty() {
-            let current_scope = self.scope.clone();
-            if !self
-                .symtab
-                .insert(current_scope, function_name, function.clone())
-            {
-                self.set_failed_bit();
-                error!("[P????]: function: duplicate function '{function_name}'\n--> {name_pos}");
-
-                return None;
-            }
-        }
 
         Some(function)
     }
@@ -558,9 +536,9 @@ impl<'a> Parser<'a, '_> {
             .symtab
             .insert(current_scope, variable_name, variable.clone())
         {
+            self.set_failed_bit();
             error!("[P????]: let: duplicate variable '{variable_name}'\n--> {name_pos}");
-
-            return None;
+            // Fallthrough
         }
 
         Some(variable)
@@ -613,9 +591,9 @@ impl<'a> Parser<'a, '_> {
             .symtab
             .insert(current_scope, variable_name, variable.clone())
         {
+            self.set_failed_bit();
             error!("[P????]: var: duplicate variable '{variable_name}'\n--> {name_pos}");
-
-            return None;
+            // Fallthrough
         }
 
         Some(variable)

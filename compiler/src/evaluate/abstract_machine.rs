@@ -194,7 +194,7 @@ impl<'a> AbstractMachine<'a> {
             Expr::Statement(e) => self.evaluate_statement(e),
             Expr::Block(e) => self.evaluate_block(e),
 
-            Expr::Function(e) => self.evaluate_function(e.clone()),
+            Expr::Function(_) => Ok(expression.clone()),
             Expr::Variable(e) => self.evaluate_variable(e),
             Expr::Identifier(e) => self.evaluate_identifier(e),
             Expr::Scope(e) => self.evaluate_scope(e),

@@ -322,10 +322,6 @@ impl<'a> ToCode<'a> for Function<'a> {
             tokens.push(Token::Punct(Punct::RightBracket));
         }
 
-        if !self.name().is_empty() {
-            tokens.push(Token::Name(Name::new(self.name())));
-        }
-
         tokens.push(Token::Punct(Punct::LeftParen));
         for (i, param) in self.parameters().iter().enumerate() {
             (i > 0).then(|| tokens.push(Token::Punct(Punct::Comma)));

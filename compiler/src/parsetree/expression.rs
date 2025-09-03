@@ -4,7 +4,7 @@ use apint::UInt;
 use smallvec::SmallVec;
 use std::collections::BTreeMap;
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Clone, PartialEq, Eq, Hash)]
 pub struct Integer {
     value: UInt,
     kind: IntegerKind,
@@ -35,6 +35,12 @@ impl Integer {
     #[must_use]
     pub fn kind(&self) -> IntegerKind {
         self.kind
+    }
+}
+
+impl std::fmt::Debug for Integer {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "Integer({}, {:?})", self.get_u128(), self.kind())
     }
 }
 
@@ -341,14 +347,12 @@ pub struct Function<'a> {
     parameters: Vec<FunctionParameter<'a>>,
     return_type: Type<'a>,
     attributes: Vec<Expr<'a>>,
-    name: &'a str,
     definition: Option<Expr<'a>>,
 }
 
 impl<'a> Function<'a> {
     #[must_use]
     pub(crate) fn new(
-        name: &'a str,
         parameters: Vec<FunctionParameter<'a>>,
         return_type: Type<'a>,
         attributes: Vec<Expr<'a>>,
@@ -358,7 +362,6 @@ impl<'a> Function<'a> {
             parameters,
             return_type,
             attributes,
-            name,
             definition,
         }
     }
@@ -390,15 +393,6 @@ impl<'a> Function<'a> {
     #[must_use]
     pub fn attributes_mut(&mut self) -> &mut Vec<Expr<'a>> {
         &mut self.attributes
-    }
-
-    #[must_use]
-    pub fn name(&self) -> &'a str {
-        self.name
-    }
-
-    pub fn set_name(&mut self, name: &'a str) {
-        self.name = name;
     }
 
     #[must_use]
