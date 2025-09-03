@@ -658,8 +658,6 @@ impl<'a> Parser<'a, '_> {
     }
 
     fn parse_identifier(&mut self) -> Option<Expr<'a>> {
-        // TODO: Test me
-
         let mut parts = Vec::new();
         let mut last_was_scope = false;
 
