@@ -3,10 +3,10 @@ use crate::parsetree::{
     Builder, Expr, Type,
     nodes::{
         ArrayType, Assert, Await, BinExpr, BinExprOp, Block, Break, Call, CallArguments, Continue,
-        DoWhileLoop, ForEach, Function, FunctionParameter, FunctionType, GenericType, If,
-        IntegerLit, List, ManagedRefType, MapType, Object, RefinementType, Return, Scope,
-        SliceType, Statement, Switch, TupleType, UnaryExpr, UnaryExprOp, UnmanagedRefType,
-        Variable, VariableKind, WhileLoop,
+        DoWhileLoop, ForEach, Function, FunctionParameter, FunctionType, GenericType, If, Integer,
+        List, ManagedRefType, MapType, Object, RefinementType, Return, Scope, SliceType, Statement,
+        Switch, TupleType, UnaryExpr, UnaryExprOp, UnmanagedRefType, Variable, VariableKind,
+        WhileLoop,
     },
 };
 use apint::UInt;
@@ -392,13 +392,13 @@ impl IntegerBuilder {
     }
 
     pub fn build<'a>(self) -> Expr<'a> {
-        let lit = IntegerLit::new(
+        let lit = Integer::new(
             self.value.expect("Integer value must be provided"),
             self.kind.unwrap_or(IntegerKind::Dec),
         )
         .expect("Invalid integer value");
 
-        Expr::IntegerLit(Rc::new(lit))
+        Expr::Integer(Rc::new(lit))
     }
 }
 

@@ -5,16 +5,16 @@ use smallvec::SmallVec;
 use std::collections::BTreeMap;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct IntegerLit {
+pub struct Integer {
     value: UInt,
     kind: IntegerKind,
 }
 
-impl IntegerLit {
+impl Integer {
     #[must_use]
     pub(crate) fn new(value: UInt, kind: IntegerKind) -> Option<Self> {
         if value.try_to_u128().is_ok() {
-            Some(IntegerLit { value, kind })
+            Some(Integer { value, kind })
         } else {
             None
         }

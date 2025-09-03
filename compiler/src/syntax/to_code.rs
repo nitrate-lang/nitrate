@@ -1,9 +1,9 @@
 use crate::lexical::{Integer, Keyword, Name, Op, Punct, Token};
 use crate::parsetree::nodes::{
     ArrayType, Assert, Await, BinExpr, BinExprOp, Block, Break, Call, Continue, DoWhileLoop,
-    ForEach, Function, FunctionType, GenericType, If, IntegerLit, List, ManagedRefType, MapType,
-    Object, RefinementType, Return, Scope, SliceType, Statement, Switch, TupleType, UnaryExpr,
-    UnaryExprOp, UnmanagedRefType, Variable, VariableKind, WhileLoop,
+    ForEach, Function, FunctionType, GenericType, If, List, ManagedRefType, MapType, Object,
+    RefinementType, Return, Scope, SliceType, Statement, Switch, TupleType, UnaryExpr, UnaryExprOp,
+    UnmanagedRefType, Variable, VariableKind, WhileLoop,
 };
 use crate::parsetree::{Expr, Type};
 use std::ops::Deref;
@@ -159,7 +159,7 @@ impl<'a> ToCode<'a> for GenericType<'a> {
     }
 }
 
-impl<'a> ToCode<'a> for IntegerLit {
+impl<'a> ToCode<'a> for crate::parsetree::nodes::Integer {
     fn to_code(&self, tokens: &mut Vec<Token<'a>>, _options: &CodeFormat) {
         let u128 = self
             .get()
@@ -475,8 +475,14 @@ impl<'a> ToCode<'a> for Await<'a> {
 }
 
 impl<'a> ToCode<'a> for Assert<'a> {
-    fn to_code(&self, _tokens: &mut Vec<Token<'a>>, _options: &CodeFormat) {
-        // TODO: Assert to_code
+    fn to_code(&self, tokens: &mut Vec<Token<'a>>, options: &CodeFormat) {
+        tokens.push(Token::Keyword(Keyword::Assert));
+
+        tokens.push(Token::Punct(Punct::LeftParen));
+        self.condition().to_code(tokens, options);
+        tokens.push(Token::Punct(Punct::Comma));
+        self.message().to_code(tokens, options);
+        tokens.push(Token::Punct(Punct::RightParen));
     }
 }
 
@@ -553,16 +559,16 @@ impl<'a> ToCode<'a> for Expr<'a> {
                 tokens.push(Token::Punct(Punct::RightParen));
             }
 
-            Expr::BooleanLit(e) => tokens.push(Token::Keyword(if *e {
+            Expr::Boolean(e) => tokens.push(Token::Keyword(if *e {
                 Keyword::True
             } else {
                 Keyword::False
             })),
-            Expr::IntegerLit(e) => e.to_code(tokens, options),
-            Expr::FloatLit(e) => tokens.push(Token::Float(*e)),
-            Expr::StringLit(e) => tokens.push(Token::String(e.deref().clone())),
-            Expr::BStringLit(e) => tokens.push(Token::BString(e.deref().clone())),
-            Expr::UnitLit => {
+            Expr::Integer(e) => e.to_code(tokens, options),
+            Expr::Float(e) => tokens.push(Token::Float(*e)),
+            Expr::String(e) => tokens.push(Token::String(e.deref().clone())),
+            Expr::BString(e) => tokens.push(Token::BString(e.deref().clone())),
+            Expr::Unit => {
                 tokens.push(Token::Punct(Punct::LeftParen));
                 tokens.push(Token::Punct(Punct::RightParen));
             }

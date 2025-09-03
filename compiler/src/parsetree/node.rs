@@ -2,7 +2,7 @@ use ordered_float::NotNan;
 
 use super::expression::{
     Assert, Await, BinExpr, Block, Break, Call, Continue, DoWhileLoop, ForEach, Function, If,
-    IntegerLit, List, Object, Return, Scope, Statement, Switch, UnaryExpr, Variable, WhileLoop,
+    Integer, List, Object, Return, Scope, Statement, Switch, UnaryExpr, Variable, WhileLoop,
 };
 use super::types::{
     ArrayType, FunctionType, GenericType, ManagedRefType, MapType, RefinementType, SliceType,
@@ -47,12 +47,12 @@ pub enum Expr<'a> {
     Discard,
     HasParentheses(Rc<Expr<'a>>),
 
-    BooleanLit(bool),
-    IntegerLit(Rc<IntegerLit>),
-    FloatLit(NotNan<f64>),
-    StringLit(Rc<StringData<'a>>),
-    BStringLit(Rc<BStringData<'a>>),
-    UnitLit,
+    Boolean(bool),
+    Integer(Rc<Integer>),
+    Float(NotNan<f64>),
+    String(Rc<StringData<'a>>),
+    BString(Rc<BStringData<'a>>),
+    Unit,
 
     List(Rc<List<'a>>),
     Object(Rc<Object<'a>>),
@@ -152,12 +152,12 @@ impl<'a> TryInto<Type<'a>> for Expr<'a> {
 
             Expr::Discard
             | Expr::HasParentheses(_)
-            | Expr::BooleanLit(_)
-            | Expr::IntegerLit(_)
-            | Expr::FloatLit(_)
-            | Expr::StringLit(_)
-            | Expr::BStringLit(_)
-            | Expr::UnitLit
+            | Expr::Boolean(_)
+            | Expr::Integer(_)
+            | Expr::Float(_)
+            | Expr::String(_)
+            | Expr::BString(_)
+            | Expr::Unit
             | Expr::List(_)
             | Expr::Object(_)
             | Expr::UnaryExpr(_)

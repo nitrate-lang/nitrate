@@ -98,7 +98,7 @@ impl<'a> Parser<'a, '_> {
             return None;
         }
 
-        let Expr::FloatLit(float) = macro_args[0] else {
+        let Expr::Float(float) = macro_args[0] else {
             self.set_failed_bit();
             error!(
                 "[P????]: Expected a float literal (e.g. '1.0') for 'nitrate' (language version) macro argument\n--> {}",
@@ -134,7 +134,7 @@ impl<'a> Parser<'a, '_> {
             return None;
         }
 
-        let Expr::IntegerLit(copyright_year) = &macro_args[0] else {
+        let Expr::Integer(copyright_year) = &macro_args[0] else {
             self.set_failed_bit();
             error!(
                 "[P????]: Unable to parse @copyright; expected an integer literal for the first argument (copyright year)\n--> {}",
@@ -143,7 +143,7 @@ impl<'a> Parser<'a, '_> {
             return None;
         };
 
-        let Expr::StringLit(holder_name) = &macro_args[1] else {
+        let Expr::String(holder_name) = &macro_args[1] else {
             self.set_failed_bit();
             error!(
                 "[P????]: Unable to parse @copyright; expected a string literal for the second argument (copyright holder's name)\n--> {}",
@@ -169,7 +169,7 @@ impl<'a> Parser<'a, '_> {
             return None;
         }
 
-        let Expr::StringLit(license_name) = &macro_args[0] else {
+        let Expr::String(license_name) = &macro_args[0] else {
             self.set_failed_bit();
             error!(
                 "[P????]: Expected a string literal (SPDX license ID) for 'license' macro argument\n--> {}",
@@ -217,7 +217,7 @@ impl<'a> Parser<'a, '_> {
 
         let mut config = HashSet::new();
         for element in list.elements() {
-            let Expr::StringLit(option) = &element else {
+            let Expr::String(option) = &element else {
                 self.set_failed_bit();
                 error!(
                     "[P????]: Expected a string literal in the list for 'insource' macro argument\n--> {}",

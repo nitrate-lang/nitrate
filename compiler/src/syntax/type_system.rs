@@ -846,7 +846,7 @@ fn test_parse_type() {
                                                 name: "str",
                                             },
                                             width: Some(
-                                                IntegerLit {
+                                                Integer {
                                                     value: 48,
                                                     kind: Dec,
                                                 },
@@ -879,13 +879,13 @@ fn test_parse_type() {
                                                 ],
                                             },
                                             width: Some(
-                                                IntegerLit {
+                                                Integer {
                                                     value: 2,
                                                     kind: Dec,
                                                 },
                                             ),
                                             min: Some(
-                                                IntegerLit {
+                                                Integer {
                                                     value: 1,
                                                     kind: Dec,
                                                 },
@@ -902,7 +902,7 @@ fn test_parse_type() {
         ],
     },
     width: Some(
-        IntegerLit {
+        Integer {
             value: 1,
             kind: Dec,
         },

@@ -57,7 +57,7 @@ impl<'a> AbstractMachine<'a> {
     ) -> Result<Type<'a>, Unwind<'a>> {
         let element = self.evaluate_type(&array.element())?;
         let count = match self.evaluate(&array.count())? {
-            Expr::IntegerLit(count) => Expr::IntegerLit(count),
+            Expr::Integer(count) => Expr::Integer(count),
             _ => return Err(Unwind::TypeError), // Expecting integer array size
         };
 

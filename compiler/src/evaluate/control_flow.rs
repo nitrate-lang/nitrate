@@ -11,7 +11,7 @@ use crate::{
 
 impl<'a> AbstractMachine<'a> {
     pub(crate) fn evaluate_if(&mut self, if_expr: &If<'a>) -> Result<Expr<'a>, Unwind<'a>> {
-        if let Expr::BooleanLit(true) = self.evaluate(if_expr.condition())? {
+        if let Expr::Boolean(true) = self.evaluate(if_expr.condition())? {
             self.evaluate(if_expr.then_branch())
         } else if let Some(else_branch) = if_expr.else_branch() {
             self.evaluate(else_branch)
@@ -26,7 +26,7 @@ impl<'a> AbstractMachine<'a> {
     ) -> Result<Expr<'a>, Unwind<'a>> {
         loop {
             match self.evaluate(while_loop.condition())? {
-                Expr::BooleanLit(true) => {
+                Expr::Boolean(true) => {
                     self.evaluate(while_loop.body())?;
                 }
 
@@ -45,7 +45,7 @@ impl<'a> AbstractMachine<'a> {
 
         loop {
             match self.evaluate(do_while_loop.condition())? {
-                Expr::BooleanLit(true) => {
+                Expr::Boolean(true) => {
                     self.evaluate(do_while_loop.body())?;
                 }
 
@@ -104,11 +104,11 @@ impl<'a> AbstractMachine<'a> {
         let message = self.evaluate(assert.message())?;
 
         match condition {
-            Expr::BooleanLit(true) => Ok(Builder::create_unit()),
+            Expr::Boolean(true) => Ok(Builder::create_unit()),
 
             _ => {
                 let message_string = match message {
-                    Expr::StringLit(s) => s.get().to_string(),
+                    Expr::String(s) => s.get().to_string(),
                     _ => return Err(Unwind::TypeError),
                 };
 

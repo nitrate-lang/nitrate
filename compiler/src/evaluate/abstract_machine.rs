@@ -75,8 +75,7 @@ impl<'a> AbstractMachine<'a> {
 
     fn setup_builtins(&mut self) {
         self.provide_function("std::intrinsic::print", |m| {
-            let Expr::StringLit(string) =
-                m.get_parameter("message").ok_or(Unwind::MissingArgument)?
+            let Expr::String(string) = m.get_parameter("message").ok_or(Unwind::MissingArgument)?
             else {
                 return Err(Unwind::TypeError);
             };
@@ -159,12 +158,12 @@ impl<'a> AbstractMachine<'a> {
             Expr::Discard => Ok(Expr::Discard),
             Expr::HasParentheses(e) => self.evaluate(e),
 
-            Expr::BooleanLit(e) => Ok(Expr::BooleanLit(e.to_owned())),
-            Expr::IntegerLit(e) => Ok(Expr::IntegerLit(e.clone())),
-            Expr::FloatLit(e) => Ok(Expr::FloatLit(e.to_owned())),
-            Expr::StringLit(e) => Ok(Expr::StringLit(e.clone())),
-            Expr::BStringLit(e) => Ok(Expr::BStringLit(e.clone())),
-            Expr::UnitLit => Ok(Expr::UnitLit),
+            Expr::Boolean(e) => Ok(Expr::Boolean(e.to_owned())),
+            Expr::Integer(e) => Ok(Expr::Integer(e.clone())),
+            Expr::Float(e) => Ok(Expr::Float(e.to_owned())),
+            Expr::String(e) => Ok(Expr::String(e.clone())),
+            Expr::BString(e) => Ok(Expr::BString(e.clone())),
+            Expr::Unit => Ok(Expr::Unit),
 
             Expr::List(e) => self.evaluate_list(e),
             Expr::Object(e) => self.evaluate_object(e),
