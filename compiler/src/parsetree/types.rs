@@ -232,21 +232,21 @@ impl<'a> GenericType<'a> {
     }
 }
 
-pub type StructMember<'a> = (&'a str, Type<'a>, Option<Expr<'a>>);
+pub type StructField<'a> = (&'a str, Type<'a>, Option<Expr<'a>>);
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct StructType<'a> {
-    fields: Vec<StructMember<'a>>,
+    fields: Vec<StructField<'a>>,
 }
 
 impl<'a> StructType<'a> {
     #[must_use]
-    pub(crate) fn new(fields: Vec<StructMember<'a>>) -> Self {
+    pub(crate) fn new(fields: Vec<StructField<'a>>) -> Self {
         StructType { fields }
     }
 
     #[must_use]
-    pub fn fields(&self) -> &[StructMember<'a>] {
+    pub fn fields(&self) -> &[StructField<'a>] {
         &self.fields
     }
 }

@@ -5,7 +5,7 @@ use crate::parsetree::{
         ArrayType, Assert, Await, BinExpr, BinExprOp, Block, Break, Call, CallArguments, Continue,
         DoWhileLoop, ForEach, Function, FunctionParameter, FunctionType, GenericType, If, Integer,
         List, ManagedRefType, MapType, Object, RefinementType, Return, Scope, SliceType, Statement,
-        StructMember, StructType, Switch, TupleType, UnaryExpr, UnaryExprOp, UnmanagedRefType,
+        StructField, StructType, Switch, TupleType, UnaryExpr, UnaryExprOp, UnmanagedRefType,
         Variable, VariableKind, WhileLoop,
     },
 };
@@ -349,7 +349,7 @@ impl<'a> GenericTypeBuilder<'a> {
 
 #[derive(Debug)]
 pub struct StructTypeBuilder<'a> {
-    fields: Vec<StructMember<'a>>,
+    fields: Vec<StructField<'a>>,
 }
 
 impl<'a> StructTypeBuilder<'a> {
@@ -369,7 +369,7 @@ impl<'a> StructTypeBuilder<'a> {
 
     pub fn add_fields<I>(mut self, fields: I) -> Self
     where
-        I: IntoIterator<Item = StructMember<'a>>,
+        I: IntoIterator<Item = StructField<'a>>,
     {
         self.fields.extend(fields);
         self

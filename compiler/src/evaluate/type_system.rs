@@ -16,6 +16,8 @@ impl<'a> AbstractMachine<'a> {
         // TODO: Write tests
         // TODO: Verify logic
 
+        let base = self.evaluate_type(&refinement.base())?;
+
         let width = match refinement.width() {
             Some(w) => Some(self.evaluate(&w)?),
             None => None,
@@ -31,13 +33,11 @@ impl<'a> AbstractMachine<'a> {
             None => None,
         };
 
-        let base = self.evaluate_type(&refinement.base())?;
-
         Ok(Builder::create_refinement_type()
+            .with_base(base)
             .with_width(width)
             .with_minimum(min)
             .with_maximum(max)
-            .with_base(base)
             .build())
     }
 
@@ -171,7 +171,7 @@ impl<'a> AbstractMachine<'a> {
         // TODO: Write tests
         // TODO: Verify logic
 
-        // TODO: Instantiate generic base with type arguments
+        let base = self.evaluate_type(&generic.base())?;
 
         let mut arguments = Vec::new();
         arguments.reserve(generic.arguments().len());
@@ -181,11 +181,9 @@ impl<'a> AbstractMachine<'a> {
             arguments.push((name.to_owned(), evaluated_value));
         }
 
-        let base = self.evaluate_type(&generic.base())?;
-
         Ok(Builder::create_generic_type()
-            .add_arguments(arguments)
             .with_base(base)
+            .add_arguments(arguments)
             .build())
     }
 
@@ -196,7 +194,15 @@ impl<'a> AbstractMachine<'a> {
         // TODO: Write tests
         // TODO: Verify logic
 
-        Ok(Type::StructType(struct_type))
+        let mut fields = Vec::new();
+        fields.reserve(struct_type.fields().len());
+
+        for (name, type_, default) in struct_type.fields() {
+            let evaluated_type = self.evaluate_type(type_)?;
+            fields.push((*name, evaluated_type, default.clone()));
+        }
+
+        Ok(Builder::create_struct_type().add_fields(fields).build())
     }
 
     pub fn evaluate_type(&mut self, type_expression: &Type<'a>) -> Result<Type<'a>, Unwind<'a>> {
