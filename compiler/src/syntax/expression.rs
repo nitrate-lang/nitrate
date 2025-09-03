@@ -531,6 +531,8 @@ impl<'a> Parser<'a, '_> {
 
         let body = if self.lexer.next_is(&Token::Punct(Punct::LeftBrace)) {
             Some(self.parse_block()?)
+        } else if self.lexer.skip_if(&Token::Op(Op::BlockArrow)) {
+            Some(self.parse_expression()?)
         } else {
             None
         };
