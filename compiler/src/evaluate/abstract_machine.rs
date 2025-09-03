@@ -18,17 +18,29 @@ impl<'a> CallFrame<'a> {
 
 #[derive(Debug)]
 pub(crate) struct Task<'a> {
-    pub(crate) call_stack: Vec<CallFrame<'a>>,
-    pub(crate) task_locals: HashMap<&'a str, Expr<'a>>,
+    call_stack: Vec<CallFrame<'a>>,
+    task_locals: HashMap<&'a str, Expr<'a>>,
 }
 
-impl Task<'_> {
+impl<'a> Task<'a> {
     fn new() -> Self {
         let call_stack = Vec::from([CallFrame::default()]);
         Task {
             call_stack,
             task_locals: HashMap::new(),
         }
+    }
+
+    pub(crate) fn callstack_mut(&mut self) -> &mut Vec<CallFrame<'a>> {
+        &mut self.call_stack
+    }
+
+    pub(crate) fn in_function(&self) -> bool {
+        !self.call_stack.is_empty()
+    }
+
+    pub(crate) fn add_task_local(&mut self, name: &'a str, expr: Expr<'a>) {
+        self.task_locals.insert(name, expr);
     }
 }
 
@@ -38,6 +50,7 @@ pub enum Unwind<'a> {
     TypeError,
     MissingArgument,
     UnknownCallee(&'a str),
+    UnresolvedIdentifier(&'a str),
     ProgramaticAssertionFailed(String),
 }
 
@@ -46,8 +59,8 @@ pub type IntrinsicFunction<'a> = fn(&mut AbstractMachine<'a>) -> Result<Expr<'a>
 pub struct AbstractMachine<'a> {
     global_variables: HashMap<&'a str, Expr<'a>>,
     provided_functions: HashMap<&'a str, IntrinsicFunction<'a>>,
-    pub(crate) tasks: Vec<Task<'a>>,
-    pub(crate) current_task: usize,
+    tasks: Vec<Task<'a>>,
+    current_task: usize,
 
     pub(crate) already_evaluated_types: HashSet<Type<'a>>,
 }
@@ -86,8 +99,17 @@ impl<'a> AbstractMachine<'a> {
         });
     }
 
+    pub(crate) fn current_task(&self) -> &Task<'a> {
+        &self.tasks[self.current_task]
+    }
+
+    pub(crate) fn current_task_mut(&mut self) -> &mut Task<'a> {
+        &mut self.tasks[self.current_task]
+    }
+
     pub fn resolve(&self, name: &str) -> Option<&Expr<'a>> {
-        if let Some(local_var) = self.tasks[self.current_task]
+        if let Some(local_var) = self
+            .current_task()
             .call_stack
             .last()
             .and_then(|frame| frame.get(name))
@@ -95,7 +117,7 @@ impl<'a> AbstractMachine<'a> {
             return Some(local_var);
         }
 
-        if let Some(task_local_var) = self.tasks[self.current_task].task_locals.get(name) {
+        if let Some(task_local_var) = self.current_task().task_locals.get(name) {
             return Some(task_local_var);
         }
 
@@ -111,7 +133,7 @@ impl<'a> AbstractMachine<'a> {
     }
 
     pub fn get_parameter(&self, name: &str) -> Option<&Expr<'a>> {
-        self.tasks[self.current_task].call_stack.last()?.get(name)
+        self.current_task().call_stack.last()?.get(name)
     }
 
     pub fn provide_function(
@@ -172,7 +194,7 @@ impl<'a> AbstractMachine<'a> {
             Expr::Statement(e) => self.evaluate_statement(e),
             Expr::Block(e) => self.evaluate_block(e),
 
-            Expr::Function(e) => self.evaluate_function(e),
+            Expr::Function(e) => self.evaluate_function(e.clone()),
             Expr::Variable(e) => self.evaluate_variable(e),
             Expr::Identifier(e) => self.evaluate_identifier(e),
             Expr::Scope(e) => self.evaluate_scope(e),

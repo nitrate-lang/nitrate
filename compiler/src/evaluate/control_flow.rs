@@ -125,7 +125,7 @@ impl<'a> AbstractMachine<'a> {
             callframe.set(name, self.evaluate(value)?);
         }
 
-        self.tasks[self.current_task].call_stack.push(callframe);
+        self.current_task_mut().callstack_mut().push(callframe);
 
         let result = match call.callee() {
             Expr::Function(function) if function.is_definition() => {
@@ -145,7 +145,7 @@ impl<'a> AbstractMachine<'a> {
             }
         };
 
-        self.tasks[self.current_task].call_stack.pop();
+        self.current_task_mut().callstack_mut().pop();
 
         match result {
             Err(Unwind::FunctionReturn(value)) => Ok(value),
