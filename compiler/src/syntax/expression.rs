@@ -6,7 +6,7 @@ use log::error;
 
 impl<'a> Parser<'a, '_> {
     fn parse_integer_literal(&mut self, value: u128, kind: IntegerKind) -> Expr<'a> {
-        let mut bb = Builder::create_integer().with_kind(kind);
+        let mut bb = Builder::create_integer_with_kind().with_kind(kind);
 
         if value <= 0xff {
             bb = bb.with_u8(value as u8);

@@ -34,7 +34,32 @@ impl<'a> Builder {
     }
 
     #[must_use]
-    pub fn create_integer() -> IntegerBuilder {
+    pub fn create_u8(x: u8) -> Expr<'a> {
+        IntegerBuilder::new().with_u8(x).build()
+    }
+
+    #[must_use]
+    pub fn create_u16(x: u16) -> Expr<'a> {
+        IntegerBuilder::new().with_u16(x).build()
+    }
+
+    #[must_use]
+    pub fn create_u32(x: u32) -> Expr<'a> {
+        IntegerBuilder::new().with_u32(x).build()
+    }
+
+    #[must_use]
+    pub fn create_u64(x: u64) -> Expr<'a> {
+        IntegerBuilder::new().with_u64(x).build()
+    }
+
+    #[must_use]
+    pub fn create_u128(x: u128) -> Expr<'a> {
+        IntegerBuilder::new().with_u128(x).build()
+    }
+
+    #[must_use]
+    pub fn create_integer_with_kind() -> IntegerBuilder {
         IntegerBuilder::new()
     }
 
