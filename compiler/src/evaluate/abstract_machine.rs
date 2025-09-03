@@ -36,7 +36,7 @@ impl<'a> Task<'a> {
     }
 
     pub(crate) fn in_function(&self) -> bool {
-        !self.call_stack.is_empty()
+        self.call_stack.len() > 1
     }
 
     pub(crate) fn add_task_local(&mut self, name: &'a str, expr: Expr<'a>) {

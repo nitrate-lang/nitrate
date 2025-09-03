@@ -1,5 +1,6 @@
 use super::parse::Parser;
 use crate::lexical::{IntegerKind, Keyword, Op, Punct, Token};
+use crate::parsetree::nodes::CallArguments;
 use crate::parsetree::{Builder, Expr, nodes::BinExprOp};
 use log::error;
 
@@ -447,6 +448,61 @@ impl<'a> Parser<'a, '_> {
         None
     }
 
+    fn parse_function_argument(&mut self) -> Option<(Option<&'a str>, Expr<'a>)> {
+        let mut argument_name = None;
+
+        if let Token::Name(name) = self.lexer.peek_t() {
+            /* Named function argument syntax is ambiguous,
+             * an identifier can be followed by a colon
+             * to indicate a named argument (followed by the expression value).
+             * However, if it is not followed by a colon, the identifier is
+             * to be parsed as an expression.
+             */
+            let rewind_pos = self.lexer.sync_position();
+            self.lexer.skip_tok();
+
+            if self.lexer.skip_if(&Token::Punct(Punct::Colon)) {
+                argument_name = Some(name.name());
+            } else {
+                self.lexer.rewind(rewind_pos);
+            }
+        }
+
+        let argument_value = self.parse_expression()?;
+
+        Some((argument_name, argument_value))
+    }
+
+    fn parse_function_arguments(&mut self) -> Option<CallArguments<'a>> {
+        assert!(self.lexer.peek_t() == Token::Punct(Punct::LeftParen));
+        self.lexer.skip_tok();
+
+        let mut arguments = CallArguments::new();
+        self.lexer.skip_if(&Token::Punct(Punct::Comma));
+
+        loop {
+            if self.lexer.skip_if(&Token::Punct(Punct::RightParen)) {
+                break;
+            }
+
+            let function_argument = self.parse_function_argument()?;
+            arguments.push(function_argument);
+
+            if !self.lexer.skip_if(&Token::Punct(Punct::Comma)) {
+                if !self.lexer.next_is(&Token::Punct(Punct::RightParen)) {
+                    error!(
+                        "[P0???]: function call: expected ',' or ')' after function argument\n--> {}",
+                        self.lexer.sync_position()
+                    );
+
+                    return None;
+                }
+            }
+        }
+
+        Some(arguments)
+    }
+
     fn parse_function(&mut self) -> Option<Expr<'a>> {
         if self.lexer.peek_t() == Token::Punct(Punct::LeftBrace) {
             let block = Some(self.parse_block()?);
@@ -750,6 +806,18 @@ impl<'a> Parser<'a, '_> {
         } else {
             self.parse_expression_primary()?
         };
+
+        // FIXME: Just get basic calls working
+        if self.lexer.next_is(&Token::Punct(Punct::LeftParen)) {
+            let args = self.parse_function_arguments()?;
+
+            return Some(
+                Builder::create_call()
+                    .with_callee(primary)
+                    .add_arguments(args)
+                    .build(),
+            );
+        }
 
         // TODO: binary expression parsing logic
         // TODO: unary prefix expression parsing logic

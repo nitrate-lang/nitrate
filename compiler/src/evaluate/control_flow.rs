@@ -1,5 +1,5 @@
 use crate::{
-    evaluate::abstract_machine::{AbstractMachine, CallFrame, Unwind},
+    evaluate::abstract_machine::{AbstractMachine, CallFrame, IntrinsicFunction, Unwind},
     parsetree::{
         Builder, Expr,
         nodes::{
@@ -118,6 +118,25 @@ impl<'a> AbstractMachine<'a> {
     }
 
     pub(crate) fn evaluate_call(&mut self, call: &Call<'a>) -> Result<Expr<'a>, Unwind<'a>> {
+        enum ExprOrIntrinsic<'a> {
+            Expr(Expr<'a>),
+            Intrinsic(IntrinsicFunction<'a>),
+        }
+
+        let callee = match self.evaluate(call.callee()) {
+            Ok(callee) => Ok(ExprOrIntrinsic::Expr(callee)),
+
+            Err(Unwind::UnresolvedIdentifier(callee_name)) => {
+                if let Some(intrinsic) = self.resolve_intrinsic(callee_name) {
+                    Ok(ExprOrIntrinsic::Intrinsic(intrinsic.to_owned()))
+                } else {
+                    Err(Unwind::UnknownCallee(callee_name))
+                }
+            }
+
+            Err(e) => Err(e),
+        }?;
+
         let mut callframe = CallFrame::default();
 
         for (provided_name, value) in call.arguments() {
@@ -127,18 +146,12 @@ impl<'a> AbstractMachine<'a> {
 
         self.current_task_mut().callstack_mut().push(callframe);
 
-        let result = match call.callee() {
-            Expr::Function(function) if function.is_definition() => {
+        let result = match callee {
+            ExprOrIntrinsic::Expr(Expr::Function(function)) if function.is_definition() => {
                 self.evaluate(function.definition().unwrap())
             }
 
-            Expr::Identifier(callee_name) => {
-                if let Some(intrinsic) = self.resolve_intrinsic(callee_name) {
-                    intrinsic(self)
-                } else {
-                    Err(Unwind::UnknownCallee(callee_name))
-                }
-            }
+            ExprOrIntrinsic::Intrinsic(intrinsic) => intrinsic(self),
 
             _ => {
                 return Err(Unwind::UnknownCallee("?"));
