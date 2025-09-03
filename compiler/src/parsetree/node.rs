@@ -1,6 +1,7 @@
 use super::expression::{
-    Assert, Await, BinExpr, Block, Break, Call, Continue, DoWhileLoop, ForEach, Function, If,
-    Integer, List, Object, Return, Scope, Statement, Switch, UnaryExpr, Variable, WhileLoop,
+    Assert, Await, BinExpr, Block, Break, Call, Continue, DoWhileLoop, ForEach, Function,
+    Identifier, If, Integer, List, Object, Return, Scope, Statement, Switch, UnaryExpr, Variable,
+    WhileLoop,
 };
 use super::types::{
     ArrayType, FunctionType, GenericType, ManagedRefType, MapType, RefinementType, SliceType,
@@ -64,7 +65,7 @@ pub enum Expr<'a> {
 
     Function(Rc<Function<'a>>),
     Variable(Rc<Variable<'a>>),
-    Identifier(Rc<&'a str>),
+    Identifier(Rc<Identifier<'a>>),
     Scope(Rc<Scope<'a>>),
 
     If(Rc<If<'a>>),

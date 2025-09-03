@@ -11,6 +11,7 @@ use super::node::{Expr, Type};
 use super::types::TupleType;
 use crate::lexical::{BStringData, StringData};
 use crate::parsetree::builder_helper::ScopeBuilder;
+use crate::parsetree::nodes::Identifier;
 use ordered_float::NotNan;
 use std::rc::Rc;
 
@@ -144,8 +145,14 @@ impl<'a> Builder {
     }
 
     #[must_use]
+    pub fn create_qualified_identifier(segments: Vec<&'a str>) -> Expr<'a> {
+        Expr::Identifier(Rc::new(Identifier::new(segments)))
+    }
+
+    #[must_use]
     pub fn create_identifier(name: &'a str) -> Expr<'a> {
-        Expr::Identifier(Rc::new(name))
+        let parts = name.split("::").collect::<Vec<&'a str>>();
+        Self::create_qualified_identifier(parts)
     }
 
     #[must_use]

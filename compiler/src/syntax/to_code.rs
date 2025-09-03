@@ -1,9 +1,9 @@
 use crate::lexical::{Integer, Keyword, Name, Op, Punct, Token};
 use crate::parsetree::nodes::{
     ArrayType, Assert, Await, BinExpr, BinExprOp, Block, Break, Call, Continue, DoWhileLoop,
-    ForEach, Function, FunctionType, GenericType, If, List, ManagedRefType, MapType, Object,
-    RefinementType, Return, Scope, SliceType, Statement, StructType, Switch, TupleType, UnaryExpr,
-    UnaryExprOp, UnmanagedRefType, Variable, VariableKind, WhileLoop,
+    ForEach, Function, FunctionType, GenericType, Identifier, If, List, ManagedRefType, MapType,
+    Object, RefinementType, Return, Scope, SliceType, Statement, StructType, Switch, TupleType,
+    UnaryExpr, UnaryExprOp, UnmanagedRefType, Variable, VariableKind, WhileLoop,
 };
 use crate::parsetree::{Expr, Type};
 use std::ops::Deref;
@@ -390,6 +390,15 @@ impl<'a> ToCode<'a> for Variable<'a> {
     }
 }
 
+impl<'a> ToCode<'a> for Identifier<'a> {
+    fn to_code(&self, tokens: &mut Vec<Token<'a>>, _options: &CodeFormat) {
+        for (i, segment) in self.segments().iter().enumerate() {
+            (i > 0).then(|| tokens.push(Token::Op(Op::Scope)));
+            tokens.push(Token::Name(Name::new(segment)));
+        }
+    }
+}
+
 impl<'a> ToCode<'a> for Scope<'a> {
     fn to_code(&self, tokens: &mut Vec<Token<'a>>, options: &CodeFormat) {
         tokens.push(Token::Keyword(Keyword::Scope));
@@ -602,7 +611,7 @@ impl<'a> ToCode<'a> for Expr<'a> {
 
             Expr::Function(e) => e.to_code(tokens, options),
             Expr::Variable(e) => e.to_code(tokens, options),
-            Expr::Identifier(name) => tokens.push(Token::Name(Name::new(name))),
+            Expr::Identifier(e) => e.to_code(tokens, options),
             Expr::Scope(e) => e.to_code(tokens, options),
 
             Expr::If(e) => e.to_code(tokens, options),

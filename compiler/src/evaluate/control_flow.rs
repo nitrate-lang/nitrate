@@ -160,7 +160,7 @@ impl<'a> AbstractMachine<'a> {
             Ok(callee) => Ok(ExprOrIntrinsic::Expr(callee)),
 
             Err(Unwind::UnresolvedIdentifier(callee_name)) => {
-                if let Some(intrinsic) = self.resolve_intrinsic(callee_name) {
+                if let Some(intrinsic) = self.resolve_intrinsic(&callee_name) {
                     Ok(ExprOrIntrinsic::Intrinsic(intrinsic.to_owned()))
                 } else {
                     Err(Unwind::UnknownCallee(callee_name))
@@ -187,7 +187,7 @@ impl<'a> AbstractMachine<'a> {
             ExprOrIntrinsic::Intrinsic(intrinsic) => intrinsic(self),
 
             _ => {
-                return Err(Unwind::UnknownCallee("?"));
+                return Err(Unwind::UnknownCallee("?".to_string()));
             }
         };
 

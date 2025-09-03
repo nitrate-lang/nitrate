@@ -504,6 +504,37 @@ impl<'a> Variable<'a> {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct Identifier<'a> {
+    full_name: String,
+    segments: Vec<&'a str>,
+}
+
+impl<'a> Identifier<'a> {
+    #[must_use]
+    pub(crate) fn new(segments: Vec<&'a str>) -> Self {
+        Identifier {
+            full_name: segments.join("::"),
+            segments,
+        }
+    }
+
+    #[must_use]
+    pub fn full_name(&self) -> &str {
+        &self.full_name
+    }
+
+    #[must_use]
+    pub fn segments(&self) -> &[&'a str] {
+        &self.segments
+    }
+
+    #[must_use]
+    pub fn is_absolute(&self) -> bool {
+        self.segments.first() == Some(&"")
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct QualifiedScope<'a> {
     scopes: SmallVec<[&'a str; 3]>,
 }

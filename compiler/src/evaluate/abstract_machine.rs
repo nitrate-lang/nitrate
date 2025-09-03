@@ -50,8 +50,8 @@ pub enum Unwind<'a> {
     FunctionReturn(Expr<'a>),
     TypeError,
     MissingArgument,
-    UnknownCallee(&'a str),
-    UnresolvedIdentifier(&'a str),
+    UnknownCallee(String),
+    UnresolvedIdentifier(String),
     ProgramaticAssertionFailed(String),
 }
 

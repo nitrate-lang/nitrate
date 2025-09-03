@@ -657,6 +657,64 @@ impl<'a> Parser<'a, '_> {
         Some(variable)
     }
 
+    fn parse_identifier(&mut self) -> Option<Expr<'a>> {
+        // TODO: Test me
+
+        let mut parts = Vec::new();
+        let mut last_was_scope = false;
+
+        let pos = self.lexer.sync_position();
+
+        loop {
+            match self.lexer.peek_t() {
+                Token::Name(name) => {
+                    if !parts.is_empty() && !last_was_scope {
+                        break;
+                    }
+
+                    self.lexer.skip_tok();
+                    parts.push(name.name());
+
+                    last_was_scope = false;
+                }
+
+                Token::Op(Op::Scope) => {
+                    if last_was_scope {
+                        break;
+                    }
+
+                    self.lexer.skip_tok();
+
+                    // For absolute scoping
+                    if parts.is_empty() {
+                        parts.push("");
+                    }
+
+                    last_was_scope = true;
+                }
+
+                _ => {
+                    break;
+                }
+            }
+        }
+
+        if parts.is_empty() {
+            error!("[P????]: identifier: expected identifier name\n--> {}", pos);
+            return None;
+        }
+
+        if last_was_scope {
+            error!(
+                "[P????]: identifier: unexpected trailing scope resolution operator\n--> {}",
+                self.lexer.sync_position()
+            );
+            return None;
+        }
+
+        Some(Builder::create_qualified_identifier(parts))
+    }
+
     fn parse_expression_primary(&mut self) -> Option<Expr<'a>> {
         match self.lexer.peek_t() {
             Token::Integer(int) => {
@@ -685,10 +743,7 @@ impl<'a> Parser<'a, '_> {
 
             Token::Punct(Punct::LeftBracket) => self.parse_list(),
 
-            Token::Name(name) => {
-                self.lexer.skip_tok();
-                Some(Builder::create_identifier(name.name()))
-            }
+            Token::Name(_) | Token::Op(Op::Scope) => self.parse_identifier(),
 
             Token::Keyword(Keyword::True) => {
                 self.lexer.skip_tok();

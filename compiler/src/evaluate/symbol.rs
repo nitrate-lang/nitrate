@@ -1,7 +1,7 @@
 use super::abstract_machine::{AbstractMachine, Unwind};
 use crate::parsetree::{
     Builder, Expr,
-    nodes::{Scope, Variable},
+    nodes::{Identifier, Scope, Variable},
 };
 
 impl<'a> AbstractMachine<'a> {
@@ -35,15 +35,20 @@ impl<'a> AbstractMachine<'a> {
         Ok(Builder::create_unit())
     }
 
-    pub(crate) fn evaluate_identifier(&mut self, name: &'a str) -> Result<Expr<'a>, Unwind<'a>> {
+    pub(crate) fn evaluate_identifier(
+        &mut self,
+        identifier: &Identifier<'a>,
+    ) -> Result<Expr<'a>, Unwind<'a>> {
         // TODO: Write tests
         // TODO: Verify logic
 
         // FIXME: What about lvalue vs rvalue?
 
-        self.resolve(name)
+        self.resolve(identifier.full_name())
             .cloned()
-            .ok_or(Unwind::UnresolvedIdentifier(name))
+            .ok_or(Unwind::UnresolvedIdentifier(
+                identifier.full_name().to_string(),
+            ))
     }
 
     pub(crate) fn evaluate_scope(&mut self, scope: &Scope<'a>) -> Result<Expr<'a>, Unwind<'a>> {
