@@ -3,9 +3,10 @@ use crate::parsetree::{
     Builder, Expr, Type,
     nodes::{
         ArrayType, FunctionParameter, FunctionType, GenericType, ManagedRefType, MapType,
-        RefinementType, SliceType, TupleType, UnmanagedRefType,
+        RefinementType, SliceType, StructType, TupleType, UnmanagedRefType,
     },
 };
+use std::rc::Rc;
 
 impl<'a> AbstractMachine<'a> {
     pub(crate) fn evaluate_refinement_type(
@@ -188,6 +189,16 @@ impl<'a> AbstractMachine<'a> {
             .build())
     }
 
+    pub(crate) fn evaluate_struct_type(
+        &mut self,
+        struct_type: Rc<StructType<'a>>,
+    ) -> Result<Type<'a>, Unwind<'a>> {
+        // TODO: Write tests
+        // TODO: Verify logic
+
+        Ok(Type::StructType(struct_type))
+    }
+
     pub fn evaluate_type(&mut self, type_expression: &Type<'a>) -> Result<Type<'a>, Unwind<'a>> {
         // TODO: Write tests
         // TODO: Verify logic
@@ -226,6 +237,7 @@ impl<'a> AbstractMachine<'a> {
             Type::ManagedRefType(reference) => self.evaluate_managed_ref_type(reference),
             Type::UnmanagedRefType(reference) => self.evaluate_unmanaged_ref_type(reference),
             Type::GenericType(generic) => self.evaluate_generic_type(generic),
+            Type::StructType(struct_type) => self.evaluate_struct_type(struct_type.clone()),
             Type::HasParenthesesType(inner) => self.evaluate_type(inner),
         };
 

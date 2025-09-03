@@ -2,8 +2,8 @@ use crate::lexical::{Integer, Keyword, Name, Op, Punct, Token};
 use crate::parsetree::nodes::{
     ArrayType, Assert, Await, BinExpr, BinExprOp, Block, Break, Call, Continue, DoWhileLoop,
     ForEach, Function, FunctionType, GenericType, If, List, ManagedRefType, MapType, Object,
-    RefinementType, Return, Scope, SliceType, Statement, Switch, TupleType, UnaryExpr, UnaryExprOp,
-    UnmanagedRefType, Variable, VariableKind, WhileLoop,
+    RefinementType, Return, Scope, SliceType, Statement, StructType, Switch, TupleType, UnaryExpr,
+    UnaryExprOp, UnmanagedRefType, Variable, VariableKind, WhileLoop,
 };
 use crate::parsetree::{Expr, Type};
 use std::ops::Deref;
@@ -156,6 +156,25 @@ impl<'a> ToCode<'a> for GenericType<'a> {
             value.to_code(tokens, options);
         }
         tokens.push(Token::Op(Op::LogicGt));
+    }
+}
+
+impl<'a> ToCode<'a> for StructType<'a> {
+    fn to_code(&self, tokens: &mut Vec<Token<'a>>, options: &CodeFormat) {
+        tokens.push(Token::Keyword(Keyword::Struct));
+
+        tokens.push(Token::Punct(Punct::LeftBrace));
+        for (i, (name, ty, default)) in self.fields().iter().enumerate() {
+            (i > 0).then(|| tokens.push(Token::Punct(Punct::Comma)));
+            tokens.push(Token::Name(Name::new(name)));
+            tokens.push(Token::Punct(Punct::Colon));
+            ty.to_code(tokens, options);
+            if let Some(default) = default {
+                tokens.push(Token::Op(Op::Set));
+                default.to_code(tokens, options);
+            }
+        }
+        tokens.push(Token::Punct(Punct::RightBrace));
     }
 }
 
@@ -549,6 +568,7 @@ impl<'a> ToCode<'a> for Expr<'a> {
                 tokens.push(Token::String(e.deref().clone()));
                 tokens.push(Token::Punct(Punct::RightParen));
             }
+            Expr::StructType(e) => e.to_code(tokens, options),
             Expr::HasParenthesesType(e) => {
                 tokens.push(Token::Punct(Punct::LeftParen));
                 e.to_code(tokens, options);
@@ -637,6 +657,7 @@ impl<'a> ToCode<'a> for Type<'a> {
                 tokens.push(Token::String(e.deref().clone()));
                 tokens.push(Token::Punct(Punct::RightParen));
             }
+            Type::StructType(e) => e.to_code(tokens, options),
             Type::HasParenthesesType(e) => {
                 tokens.push(Token::Punct(Punct::LeftParen));
                 e.to_code(tokens, options);

@@ -1,14 +1,13 @@
-use ordered_float::NotNan;
-
 use super::expression::{
     Assert, Await, BinExpr, Block, Break, Call, Continue, DoWhileLoop, ForEach, Function, If,
     Integer, List, Object, Return, Scope, Statement, Switch, UnaryExpr, Variable, WhileLoop,
 };
 use super::types::{
     ArrayType, FunctionType, GenericType, ManagedRefType, MapType, RefinementType, SliceType,
-    TupleType, UnmanagedRefType,
+    StructType, TupleType, UnmanagedRefType,
 };
 use crate::lexical::{BStringData, StringData};
+use ordered_float::NotNan;
 use std::rc::Rc;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -42,6 +41,7 @@ pub enum Expr<'a> {
     UnmanagedRefType(Rc<UnmanagedRefType<'a>>),
     GenericType(Rc<GenericType<'a>>),
     OpaqueType(Rc<StringData<'a>>),
+    StructType(Rc<StructType<'a>>),
     HasParenthesesType(Rc<Type<'a>>),
 
     Discard,
@@ -110,6 +110,7 @@ pub enum Type<'a> {
     UnmanagedRefType(Rc<UnmanagedRefType<'a>>),
     GenericType(Rc<GenericType<'a>>),
     OpaqueType(Rc<StringData<'a>>),
+    StructType(Rc<StructType<'a>>),
     HasParenthesesType(Rc<Type<'a>>),
 }
 
@@ -148,6 +149,7 @@ impl<'a> TryInto<Type<'a>> for Expr<'a> {
             Expr::UnmanagedRefType(x) => Ok(Type::UnmanagedRefType(x)),
             Expr::GenericType(x) => Ok(Type::GenericType(x)),
             Expr::OpaqueType(x) => Ok(Type::OpaqueType(x)),
+            Expr::StructType(x) => Ok(Type::StructType(x)),
             Expr::HasParenthesesType(x) => Ok(Type::HasParenthesesType(x)),
 
             Expr::Discard
@@ -216,6 +218,7 @@ impl<'a> From<Type<'a>> for Expr<'a> {
             Type::UnmanagedRefType(x) => Expr::UnmanagedRefType(x),
             Type::GenericType(x) => Expr::GenericType(x),
             Type::OpaqueType(x) => Expr::OpaqueType(x),
+            Type::StructType(x) => Expr::StructType(x),
             Type::HasParenthesesType(x) => Expr::HasParenthesesType(x),
         }
     }

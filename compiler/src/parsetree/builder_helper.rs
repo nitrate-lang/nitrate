@@ -5,8 +5,8 @@ use crate::parsetree::{
         ArrayType, Assert, Await, BinExpr, BinExprOp, Block, Break, Call, CallArguments, Continue,
         DoWhileLoop, ForEach, Function, FunctionParameter, FunctionType, GenericType, If, Integer,
         List, ManagedRefType, MapType, Object, RefinementType, Return, Scope, SliceType, Statement,
-        Switch, TupleType, UnaryExpr, UnaryExprOp, UnmanagedRefType, Variable, VariableKind,
-        WhileLoop,
+        StructMember, StructType, Switch, TupleType, UnaryExpr, UnaryExprOp, UnmanagedRefType,
+        Variable, VariableKind, WhileLoop,
     },
 };
 use apint::UInt;
@@ -344,6 +344,39 @@ impl<'a> GenericTypeBuilder<'a> {
             self.base.expect("Principal type must be provided"),
             self.arguments,
         )))
+    }
+}
+
+#[derive(Debug)]
+pub struct StructTypeBuilder<'a> {
+    fields: Vec<StructMember<'a>>,
+}
+
+impl<'a> StructTypeBuilder<'a> {
+    pub(crate) fn new() -> Self {
+        StructTypeBuilder { fields: Vec::new() }
+    }
+
+    pub fn add_field(
+        mut self,
+        name: &'a str,
+        ty: Type<'a>,
+        default_value: Option<Expr<'a>>,
+    ) -> Self {
+        self.fields.push((name, ty, default_value));
+        self
+    }
+
+    pub fn add_fields<I>(mut self, fields: I) -> Self
+    where
+        I: IntoIterator<Item = StructMember<'a>>,
+    {
+        self.fields.extend(fields);
+        self
+    }
+
+    pub fn build(self) -> Type<'a> {
+        Type::StructType(Rc::new(StructType::new(self.fields)))
     }
 }
 

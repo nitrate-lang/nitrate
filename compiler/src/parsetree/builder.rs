@@ -1,18 +1,17 @@
-use ordered_float::NotNan;
-
 use super::builder_helper::{
     ArrayTypeBuilder, AssertBuilder, AwaitBuilder, BinExprBuilder, BlockBuilder, BreakBuilder,
     CallBuilder, ContinueBuilder, DoWhileLoopBuilder, ForEachBuilder, FunctionBuilder,
     FunctionTypeBuilder, GenericTypeBuilder, IfBuilder, IntegerBuilder, ListBuilder,
     ManagedRefTypeBuilder, MapTypeBuilder, ObjectBuilder, RefinementTypeBuilder, ReturnBuilder,
-    SliceTypeBuilder, StatementBuilder, SwitchBuilder, TupleTypeBuilder, UnaryExprBuilder,
-    UnmanagedRefTypeBuilder, VariableBuilder, WhileLoopBuilder,
+    SliceTypeBuilder, StatementBuilder, StructTypeBuilder, SwitchBuilder, TupleTypeBuilder,
+    UnaryExprBuilder, UnmanagedRefTypeBuilder, VariableBuilder, WhileLoopBuilder,
 };
 use super::expression::VariableKind;
 use super::node::{Expr, Type};
 use super::types::TupleType;
 use crate::lexical::{BStringData, StringData};
 use crate::parsetree::builder_helper::ScopeBuilder;
+use ordered_float::NotNan;
 use std::rc::Rc;
 
 #[derive(Debug, Default)]
@@ -337,6 +336,11 @@ impl<'a> Builder {
     #[must_use]
     pub fn create_opaque_type(identity: StringData<'a>) -> Type<'a> {
         Type::OpaqueType(Rc::new(identity))
+    }
+
+    #[must_use]
+    pub fn create_struct_type() -> StructTypeBuilder<'a> {
+        StructTypeBuilder::new()
     }
 
     #[must_use]
