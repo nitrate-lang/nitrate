@@ -8,6 +8,25 @@ use nitrate_parsetree::{
 
 type Precedence = u32;
 
+#[repr(u32)]
+enum Rank {
+    P1 = 15,
+    P2 = 14,
+    P3 = 13,
+    P4 = 12,
+    P5 = 11,
+    P6 = 10,
+    P7 = 9,
+    P8 = 8,
+    P9 = 7,
+    P10 = 6,
+    P11 = 5,
+    P12 = 4,
+    P13 = 3,
+    P14 = 2,
+    P15 = 1,
+}
+
 #[derive(PartialEq, PartialOrd, Eq, Clone, Copy)]
 enum Associativity {
     LeftToRight,
@@ -18,26 +37,54 @@ impl<'a> Parser<'a, '_> {
     fn get_precedence(op: Op) -> Option<(Associativity, Precedence, BinExprOp)> {
         type Assoc = Associativity;
 
-        Some(match op {
-            Op::Add => (Assoc::LeftToRight, 1, BinExprOp::Add),
-            Op::Sub => (Assoc::LeftToRight, 1, BinExprOp::Sub),
-            Op::Mul => (Assoc::LeftToRight, 2, BinExprOp::Mul),
-            Op::Div => (Assoc::LeftToRight, 2, BinExprOp::Div),
+        /*
+         * Group ranked (from high to low):
+         * L2R: scope resolution
+         * L2R: postfix function call, array indexing, member access
+         * R2L: unary (add, sub, logic not, bit not, dereference, address-of, sizeof, typeof, alignof)
+         * L2R: mul, div, mod
+         * L2R: add, sub
+         * L2R: bit shift (shl, shr), bit rotate (rol, ror)
+         * L2R: spaceship
+         * L2R: comparison (lt, le, gt, ge)
+         * L2R: equality (eq, ne)
+         * L2R: bit and
+         * L2R: bit xor
+         * L2R: bit or
+         * L2R: logic and
+         * L2R: logic xor
+         * L2R: logic or
+         * R2L: assignment (all variants)
+         */
+
+        let (associativity, precedence, bin_expr_op) = match op {
+            Op::Scope => (Assoc::LeftToRight, Rank::P1, BinExprOp::Scope),
+            Op::Dot => (Assoc::LeftToRight, Rank::P2, BinExprOp::Dot),
 
             _ => return None,
-        })
+        };
+
+        Some((associativity, precedence as Precedence, bin_expr_op))
     }
 
     fn get_prefix_precedence(op: Op) -> Option<(Associativity, Precedence, UnaryExprOp)> {
         type Assoc = Associativity;
 
-        Some(match op {
-            Op::Add => (Assoc::LeftToRight, Precedence::MAX, UnaryExprOp::Add),
-            Op::Sub => (Assoc::LeftToRight, Precedence::MAX, UnaryExprOp::Sub),
-            Op::Mul => (Assoc::LeftToRight, Precedence::MAX, UnaryExprOp::Mul),
+        let (associativity, precedence, bin_expr_op) = match op {
+            Op::Add => (Assoc::RightToLeft, Rank::P3, UnaryExprOp::Add),
+            Op::Sub => (Assoc::RightToLeft, Rank::P3, UnaryExprOp::Sub),
+            Op::LogicNot => (Assoc::RightToLeft, Rank::P3, UnaryExprOp::LogicNot),
+            Op::BitNot => (Assoc::RightToLeft, Rank::P3, UnaryExprOp::BitNot),
+            Op::Mul => (Assoc::RightToLeft, Rank::P3, UnaryExprOp::Deref),
+            Op::BitAnd => (Assoc::RightToLeft, Rank::P3, UnaryExprOp::AddressOf),
+            Op::Sizeof => (Assoc::RightToLeft, Rank::P3, UnaryExprOp::Sizeof),
+            Op::Typeof => (Assoc::RightToLeft, Rank::P3, UnaryExprOp::Typeof),
+            Op::Alignof => (Assoc::RightToLeft, Rank::P3, UnaryExprOp::Alignof),
 
             _ => return None,
-        })
+        };
+
+        Some((associativity, precedence as Precedence, bin_expr_op))
     }
 
     fn parse_expression_precedence(
