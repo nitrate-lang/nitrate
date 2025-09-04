@@ -219,16 +219,13 @@ impl<'a> ToCode<'a> for UnaryExprOp {
         let operator = Token::Op(match self {
             UnaryExprOp::Add => Op::Add,
             UnaryExprOp::Sub => Op::Sub,
-            UnaryExprOp::Mul => Op::Mul,
-            UnaryExprOp::BitAnd => Op::BitAnd,
+            UnaryExprOp::Deref => Op::Mul,
+            UnaryExprOp::AddressOf => Op::BitAnd,
             UnaryExprOp::BitNot => Op::BitNot,
             UnaryExprOp::LogicNot => Op::LogicNot,
-            UnaryExprOp::Inc => Op::Inc,
-            UnaryExprOp::Dec => Op::Dec,
             UnaryExprOp::Sizeof => Op::Sizeof,
             UnaryExprOp::Alignof => Op::Alignof,
             UnaryExprOp::Typeof => Op::Typeof,
-            UnaryExprOp::Question => Op::Question,
         });
 
         tokens.push(operator);

@@ -111,15 +111,15 @@ pub enum UnaryExprOp {
     /*----------------------------------------------------------------*
      * Arithmetic Operators                                           *
      *----------------------------------------------------------------*/
-    Add, /* '+': "Addition Operator" */
-    Sub, /* '-': "Subtraction Operator" */
-    Mul, /* '*': "Multiplication Operator" */
+    Add,   /* '+': "Addition Operator" */
+    Sub,   /* '-': "Subtraction Operator" */
+    Deref, /* '*': "Multiplication Operator" */
 
     /*----------------------------------------------------------------*
      * Bitwise Operators                                              *
      *----------------------------------------------------------------*/
-    BitAnd, /* '&':   "Bitwise AND Operator" */
-    BitNot, /* '~':   "Bitwise NOT Operator" */
+    AddressOf, /* '&':   "Bitwise AND Operator" */
+    BitNot,    /* '~':   "Bitwise NOT Operator" */
 
     /*----------------------------------------------------------------*
      * Logical Operators                                              *
@@ -127,22 +127,11 @@ pub enum UnaryExprOp {
     LogicNot, /* '!':  "Logical NOT Operator" */
 
     /*----------------------------------------------------------------*
-     * Assignment Operators                                           *
-     *----------------------------------------------------------------*/
-    Inc, /* '++':   "Increment Operator" */
-    Dec, /* '--':   "Decrement Operator" */
-
-    /*----------------------------------------------------------------*
      * Type System Operators                                          *
      *----------------------------------------------------------------*/
     Sizeof,  /* 'sizeof':     "Size Of Operator" */
     Alignof, /* 'alignof':    "Alignment Of Operator" */
     Typeof,  /* 'typeof':     "Type Of Operator" */
-
-    /*----------------------------------------------------------------*
-     * Special Operators                                              *
-     *----------------------------------------------------------------*/
-    Question, /* '?':          "Ternary Operator" */
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
