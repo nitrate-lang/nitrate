@@ -4,18 +4,17 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+nitrate_evaluate = { path = "compiler/nitrate_evaluate" }
+nitrate_lexical = { path = "compiler/nitrate_lexical" }
+nitrate_parsetree = { path = "compiler/nitrate_parsetree" }
+nitrate_resolution = { path = "compiler/nitrate_resolution" }
+nitrate_syntax = { path = "compiler/nitrate_syntax" }
+
 env_logger = "0.11.8"
-hashbrown = "0.15.4"
-nitrate_compiler = { path = "compiler" }
-tracking-allocator = "0.4.0"
 log = "0.4.27"
-smallvec = "1.15.1"
-stackvector = "1.1.1"
-tracing = "0.1.41"
-tracing-subscriber = "0.3.19"
 slog = "2.7.0"
 slog-async = "2.8.0"
 slog-term = "2.9.1"
 
 [workspace]
-members = ["compiler"]
+members = ["compiler/*"]
