@@ -9,12 +9,13 @@ nitrate_lexical = { path = "compiler/nitrate_lexical" }
 nitrate_parsetree = { path = "compiler/nitrate_parsetree" }
 nitrate_resolution = { path = "compiler/nitrate_resolution" }
 nitrate_syntax = { path = "compiler/nitrate_syntax" }
+nitrate_execute = { path = "compiler/nitrate_execute" }
 
 env_logger = "0.11.8"
-log = "0.4.27"
+log = "0.4.28"
 slog = "2.7.0"
 slog-async = "2.8.0"
-slog-term = "2.9.1"
+slog-term = "2.9.2"
 
 [workspace]
 members = ["compiler/*"]

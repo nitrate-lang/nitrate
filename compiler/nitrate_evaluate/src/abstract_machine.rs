@@ -91,20 +91,6 @@ impl<'a> AbstractMachine<'a> {
         abstract_machine
     }
 
-    fn setup_builtins(&mut self) {
-        self.provide_function("std::intrinsic::print", |m: &mut AbstractMachine<'a>| {
-            let value = m.get_parameter("message").ok_or(Unwind::MissingArgument)?;
-
-            if let Expr::String(string) = value {
-                print!("{}", string.get());
-            } else {
-                print!("{:#?}", value);
-            }
-
-            Ok(Builder::create_unit())
-        });
-    }
-
     pub(crate) fn current_task(&self) -> &Task<'a> {
         &self.tasks[self.current_task]
     }
@@ -117,7 +103,7 @@ impl<'a> AbstractMachine<'a> {
         self.provided_functions.get(name).cloned()
     }
 
-    pub fn resolve(&self, name: &str) -> Option<&Expr<'a>> {
+    pub(crate) fn resolve(&self, name: &str) -> Option<&Expr<'a>> {
         // TODO: Write tests
         // TODO: Verify logic
 
@@ -150,6 +136,20 @@ impl<'a> AbstractMachine<'a> {
         F: Fn(&mut AbstractMachine<'a>) -> Result<Expr<'a>, Unwind<'a>> + 'static,
     {
         self.provided_functions.insert(name, Rc::new(callback));
+    }
+
+    pub fn setup_builtins(&mut self) {
+        self.provide_function("std::intrinsic::print", |m: &mut AbstractMachine<'a>| {
+            let value = m.get_parameter("message").ok_or(Unwind::MissingArgument)?;
+
+            if let Expr::String(string) = value {
+                print!("{}", string.get());
+            } else {
+                print!("{:#?}", value);
+            }
+
+            Ok(Builder::create_unit())
+        });
     }
 
     pub fn evaluate(&mut self, expression: &Expr<'a>) -> Result<Expr<'a>, Unwind<'a>> {
