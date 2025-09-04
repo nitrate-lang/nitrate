@@ -11,19 +11,20 @@ type Precedence = u32;
 #[repr(u32)]
 enum PrecedenceRank {
     Assign,
+    Range,
     LogicOr,
     LogicXor,
     LogicAnd,
+    Comparison,
     BitOr,
     BitXor,
     BitAnd,
-    Equality,
-    Comparison,
     BitShiftAndRotate,
     AddSub,
     MulDivMod,
-    Prefix,
-    Access,
+    Cast,
+    Unary,
+    FieldAccess,
     Scope,
 }
 
@@ -37,32 +38,14 @@ impl<'a> Parser<'a, '_> {
     fn get_precedence(op: Op) -> Option<(Associativity, Precedence)> {
         type Assoc = Associativity;
 
-        /*
-         * Group ranked (from high to low):
-         * L2R: scope resolution
-         * L2R: postfix function call, array indexing, member access
-         * R2L: unary (add, sub, logic not, bit not, dereference, address-of, sizeof, typeof, alignof)
-         * L2R: mul, div, mod
-         * L2R: add, sub
-         * L2R: bit shift (shl, shr), bit rotate (rol, ror)
-         * L2R: spaceship
-         * L2R: comparison (lt, le, gt, ge)
-         * L2R: equality (eq, ne)
-         * L2R: bit and
-         * L2R: bit xor
-         * L2R: bit or
-         * L2R: logic and
-         * L2R: logic xor
-         * L2R: logic or
-         * R2L: assignment (all variants)
-         */
-
         // TODO: Handle function call and array indexing
 
         let (associativity, precedence) = match op {
             Op::Scope => (Assoc::LeftToRight, PrecedenceRank::Scope),
 
-            Op::Dot | Op::Arrow => (Assoc::LeftToRight, PrecedenceRank::Access),
+            Op::Dot | Op::Arrow => (Assoc::LeftToRight, PrecedenceRank::FieldAccess),
+
+            Op::As | Op::BitcastAs => (Assoc::LeftToRight, PrecedenceRank::Cast),
 
             Op::Mul | Op::Div | Op::Mod => (Assoc::LeftToRight, PrecedenceRank::MulDivMod),
 
@@ -72,18 +55,19 @@ impl<'a> Parser<'a, '_> {
                 (Assoc::LeftToRight, PrecedenceRank::BitShiftAndRotate)
             }
 
-            Op::LogicLt | Op::LogicLe | Op::LogicGt | Op::LogicGe => {
-                (Assoc::LeftToRight, PrecedenceRank::Comparison)
-            }
-
-            Op::LogicEq | Op::LogicNe => (Assoc::LeftToRight, PrecedenceRank::Equality),
-
             Op::BitAnd => (Assoc::LeftToRight, PrecedenceRank::BitAnd),
             Op::BitXor => (Assoc::LeftToRight, PrecedenceRank::BitXor),
             Op::BitOr => (Assoc::LeftToRight, PrecedenceRank::BitOr),
+
+            Op::LogicEq | Op::LogicNe | Op::LogicLt | Op::LogicGt | Op::LogicLe | Op::LogicGe => {
+                (Assoc::LeftToRight, PrecedenceRank::Comparison)
+            }
+
             Op::LogicAnd => (Assoc::LeftToRight, PrecedenceRank::LogicAnd),
             Op::LogicXor => (Assoc::LeftToRight, PrecedenceRank::LogicXor),
             Op::LogicOr => (Assoc::LeftToRight, PrecedenceRank::LogicOr),
+
+            Op::Range => (Assoc::LeftToRight, PrecedenceRank::Range),
 
             Op::Set
             | Op::SetPlus
@@ -102,8 +86,7 @@ impl<'a> Parser<'a, '_> {
             | Op::SetLogicOr
             | Op::SetLogicXor => (Assoc::RightToLeft, PrecedenceRank::Assign),
 
-            // Op::BlockArrow => (Assoc::RightToLeft, Priority::P01, BinExprOp::BlockArrow),
-            Op::As | Op::BitcastAs | Op::Ellipsis | Op::Range | Op::BlockArrow => {
+            Op::Ellipsis | Op::BlockArrow => {
                 // TODO: Handle these operators
                 return None;
             }
@@ -120,15 +103,15 @@ impl<'a> Parser<'a, '_> {
         type Assoc = Associativity;
 
         let (associativity, precedence) = match op {
-            Op::Add => (Assoc::RightToLeft, PrecedenceRank::Prefix),
-            Op::Sub => (Assoc::RightToLeft, PrecedenceRank::Prefix),
-            Op::LogicNot => (Assoc::RightToLeft, PrecedenceRank::Prefix),
-            Op::BitNot => (Assoc::RightToLeft, PrecedenceRank::Prefix),
-            Op::Mul => (Assoc::RightToLeft, PrecedenceRank::Prefix),
-            Op::BitAnd => (Assoc::RightToLeft, PrecedenceRank::Prefix),
-            Op::Sizeof => (Assoc::RightToLeft, PrecedenceRank::Prefix),
-            Op::Typeof => (Assoc::RightToLeft, PrecedenceRank::Prefix),
-            Op::Alignof => (Assoc::RightToLeft, PrecedenceRank::Prefix),
+            Op::Add => (Assoc::RightToLeft, PrecedenceRank::Unary),
+            Op::Sub => (Assoc::RightToLeft, PrecedenceRank::Unary),
+            Op::LogicNot => (Assoc::RightToLeft, PrecedenceRank::Unary),
+            Op::BitNot => (Assoc::RightToLeft, PrecedenceRank::Unary),
+            Op::Mul => (Assoc::RightToLeft, PrecedenceRank::Unary),
+            Op::BitAnd => (Assoc::RightToLeft, PrecedenceRank::Unary),
+            Op::Sizeof => (Assoc::RightToLeft, PrecedenceRank::Unary),
+            Op::Typeof => (Assoc::RightToLeft, PrecedenceRank::Unary),
+            Op::Alignof => (Assoc::RightToLeft, PrecedenceRank::Unary),
 
             _ => return None,
         };
