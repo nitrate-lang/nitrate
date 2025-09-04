@@ -311,21 +311,20 @@ impl<'a> Parser<'a, '_> {
             match self.lexer.peek_t() {
                 Token::Op(next_op) => {
                     let operation = Operation::Operator(next_op);
-                    let Some((assoc, new_precedence)) = get_precedence(operation) else {
+                    let Some((assoc, op_precedence)) = get_precedence(operation) else {
                         return Some(sofar);
                     };
 
-                    if new_precedence < min_precedence_to_proceed {
+                    if op_precedence < min_precedence_to_proceed {
                         return Some(sofar);
                     }
 
                     self.lexer.skip_tok();
 
-                    // TODO: Reason about this code
                     let right_expr = if assoc == Associativity::LeftToRight {
-                        self.parse_expression_precedence(new_precedence + 1)?
+                        self.parse_expression_precedence(op_precedence + 1)?
                     } else {
-                        self.parse_expression_precedence(new_precedence)?
+                        self.parse_expression_precedence(op_precedence)?
                     };
 
                     sofar = Builder::create_binexpr()
