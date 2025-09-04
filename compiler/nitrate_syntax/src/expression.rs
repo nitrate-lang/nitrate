@@ -3,7 +3,7 @@ use log::error;
 use nitrate_lexical::{IntegerKind, Keyword, Op, Punct, Token};
 use nitrate_parsetree::{
     Builder,
-    kind::{BinExprOp, Expr, UnaryExprOp},
+    kind::{BinExprOp, CallArguments, Expr, UnaryExprOp},
 };
 
 type Precedence = u32;
@@ -276,7 +276,7 @@ impl<'a> Parser<'a, '_> {
                 return Some(
                     Builder::create_unary_expr()
                         .with_prefix()
-                        .with_operator(UnaryExprOp::try_from(prefix_op).expect("unary op"))
+                        .with_operator(UnaryExprOp::try_from(prefix_op).expect("invalid unary_op"))
                         .with_operand(operand)
                         .build(),
                 );
@@ -308,31 +308,87 @@ impl<'a> Parser<'a, '_> {
         let mut sofar = self.parse_prefix()?;
 
         loop {
-            let Token::Op(next_op) = self.lexer.peek_t() else {
-                return Some(sofar);
-            };
+            match self.lexer.peek_t() {
+                Token::Op(next_op) => {
+                    let operation = Operation::Operator(next_op);
+                    let Some((assoc, new_precedence)) = get_precedence(operation) else {
+                        return Some(sofar);
+                    };
 
-            let Some((assoc, new_precedence)) = get_precedence(Operation::Operator(next_op)) else {
-                return Some(sofar);
-            };
+                    if new_precedence < min_precedence_to_proceed {
+                        return Some(sofar);
+                    }
 
-            if new_precedence < min_precedence_to_proceed {
-                return Some(sofar);
+                    self.lexer.skip_tok();
+
+                    // TODO: Reason about this code
+                    let right_expr = if assoc == Associativity::LeftToRight {
+                        self.parse_expression_precedence(new_precedence + 1)?
+                    } else {
+                        self.parse_expression_precedence(new_precedence)?
+                    };
+
+                    sofar = Builder::create_binexpr()
+                        .with_left(sofar)
+                        .with_operator(BinExprOp::try_from(next_op).expect("invalid bin_op"))
+                        .with_right(right_expr)
+                        .build();
+                }
+
+                Token::Punct(Punct::LeftParen) => {
+                    let operation = Operation::FunctionCall;
+                    let Some((_, new_precedence)) = get_precedence(operation) else {
+                        return Some(sofar);
+                    };
+
+                    if new_precedence < min_precedence_to_proceed {
+                        return Some(sofar);
+                    }
+
+                    let call_arguments = self.parse_function_arguments()?;
+
+                    sofar = Builder::create_call()
+                        .with_callee(sofar)
+                        .add_arguments(call_arguments)
+                        .build();
+                }
+
+                Token::Punct(Punct::LeftBracket) => {
+                    let operation = Operation::Index;
+                    let Some((_, new_precedence)) = get_precedence(operation) else {
+                        return Some(sofar);
+                    };
+
+                    if new_precedence < min_precedence_to_proceed {
+                        return Some(sofar);
+                    }
+
+                    self.lexer.skip_tok();
+
+                    let index = self.parse_expression()?;
+
+                    if !self.lexer.skip_if(&Token::Punct(Punct::RightBracket)) {
+                        self.set_failed_bit();
+                        error!(
+                            "[P????]: expr: expected closing bracket\n--> {}",
+                            self.lexer.sync_position()
+                        );
+                        return None;
+                    }
+
+                    todo!();
+                    // TODO: Use index builder
+
+                    // sofar = Builder::create_index()
+                    //     .with_collection(sofar)
+                    //     .with_index(index)
+                    //     .build();
+                }
+
+                _ => {
+                    return Some(sofar);
+                }
             }
-
-            self.lexer.skip_tok();
-
-            let right_expr = if assoc == Associativity::LeftToRight {
-                self.parse_expression_precedence(new_precedence + 1)?
-            } else {
-                self.parse_expression_precedence(new_precedence)?
-            };
-
-            sofar = Builder::create_binexpr()
-                .with_left(sofar)
-                .with_operator(BinExprOp::try_from(next_op).expect("binexpr op"))
-                .with_right(right_expr)
-                .build();
         }
     }
 
@@ -935,6 +991,61 @@ impl<'a> Parser<'a, '_> {
         }
 
         Some(variable)
+    }
+
+    fn parse_function_argument(&mut self) -> Option<(Option<&'a str>, Expr<'a>)> {
+        let mut argument_name = None;
+
+        if let Token::Name(name) = self.lexer.peek_t() {
+            /* Named function argument syntax is ambiguous,
+             * an identifier can be followed by a colon
+             * to indicate a named argument (followed by the expression value).
+             * However, if it is not followed by a colon, the identifier is
+             * to be parsed as an expression.
+             */
+            let rewind_pos = self.lexer.sync_position();
+            self.lexer.skip_tok();
+
+            if self.lexer.skip_if(&Token::Punct(Punct::Colon)) {
+                argument_name = Some(name.name());
+            } else {
+                self.lexer.rewind(rewind_pos);
+            }
+        }
+
+        let argument_value = self.parse_expression()?;
+
+        Some((argument_name, argument_value))
+    }
+
+    fn parse_function_arguments(&mut self) -> Option<CallArguments<'a>> {
+        assert!(self.lexer.peek_t() == Token::Punct(Punct::LeftParen));
+        self.lexer.skip_tok();
+
+        let mut arguments = CallArguments::new();
+        self.lexer.skip_if(&Token::Punct(Punct::Comma));
+
+        loop {
+            if self.lexer.skip_if(&Token::Punct(Punct::RightParen)) {
+                break;
+            }
+
+            let function_argument = self.parse_function_argument()?;
+            arguments.push(function_argument);
+
+            if !self.lexer.skip_if(&Token::Punct(Punct::Comma))
+                && !self.lexer.next_is(&Token::Punct(Punct::RightParen))
+            {
+                error!(
+                    "[P0???]: function call: expected ',' or ')' after function argument\n--> {}",
+                    self.lexer.sync_position()
+                );
+
+                return None;
+            }
+        }
+
+        Some(arguments)
     }
 
     pub fn parse_block_as_elements(&mut self) -> Option<Vec<Expr<'a>>> {
