@@ -1,0 +1,21 @@
+[package]
+name = "nitrate_syntax"
+version = "0.1.0"
+edition = "2024"
+
+[dev-dependencies]
+criterion = { version = "0.7.0", features = ["html_reports"] }
+
+[[bench]]
+name = "parse_type_bench"
+harness = false
+
+[dependencies]
+nitrate_lexical = { path = "../nitrate_lexical" }
+nitrate_parsetree = { path = "../nitrate_parsetree" }
+
+hashbrown = "0.16.0"
+log = "0.4.27"
+smallvec = "1.15.1"
+ordered-float = "5.0.0"
+spdx = "0.12.0"

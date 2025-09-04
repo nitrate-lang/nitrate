@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Reference Semantics - Nitrate Language</title>
+
+  <style>
+    .ref-syntax-table {
+      border-collapse: collapse;
+      text-align: right;
+    }
+
+    .ref-syntax-table th {
+      background-color: #f2f2f2;
+      border: 3px solid #ccc;
+      padding: 10px;
+      font-weight: bold;
+    }
+
+
+    .ref-syntax-table td {
+      border: 3px solid #ccc;
+      padding: 0;
+    }
+
+    .ref-syntax-table .var {
+      background-color: #f2f2f2;
+      font-weight: bold;
+      padding: 0px 10px;
+    }
+
+    .ref-syntax-table a {
+      color: rgb(10, 52, 190);
+    }
+
+    .ref-syntax-table pre {
+      margin: 0;
+      padding: 2px 16px;
+      font-family: monospace;
+    }
+
+    .ref-syntax-table .valid {
+      background-color: #8af18a;
+    }
+
+    .ref-syntax-table .invalid {
+      background-color: rgb(241, 162, 162);
+    }
+
+    .ref-syntax-table .unsafe {
+      background-image: repeating-linear-gradient(45deg,
+          rgba(255, 0, 0, 0.2),
+          rgba(255, 0, 0, 0.2) 10px,
+          rgba(255, 166, 0, 0.25) 10px,
+          rgba(255, 166, 0, 0.25) 20px);
+    }
+
+    .ref-syntax-table pre:hover {
+      background-color: rgb(252, 252, 142);
+      cursor: pointer;
+    }
+  </style>
+</head>
+
+<body>
+  <table class="ref-syntax-table">
+    <thead>
+      <tr>
+        <th>Managed References</th>
+        <th><a href="#exclusive-access">Exclusive</a> Access</th>
+        <th><a href="#shared-access">Shared</a> Access</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="var"><a href="static-lifetime">Static</a> Lifetime</td>
+        <td class="cell">
+          <pre class="invalid"><code lang="rust">%'static iso const T</code></pre>
+          <pre class="invalid"><code lang="rust">%'static mut T</code></pre>
+        </td>
+        <td class="cell">
+          <pre class="invalid"><code lang="rust">%'static const T</code></pre>
+          <pre class="invalid"><code lang="rust">%'static poly mut T</code></pre>
+        </td>
+      </tr>
+      <tr>
+        <td class="var"><a href="dynamic-lifetime">Dynamic</a> Lifetime</td>
+        <td class="cell">
+          <pre class="valid"><code lang="rust">%'dynamic iso const T</code></pre>
+          <pre class="valid"><code lang="rust">%'dynamic mut T</code></pre>
+        </td>
+        <td class="cell">
+          <pre class="valid"><code lang="rust">%'dynamic const T</code></pre>
+          <pre class="unsafe"><code lang="rust">%'dynamic poly mut T</code></pre>
+        </td>
+      </tr>
+      <tr>
+        <td class="var"><a href="thread-lifetime">Thread</a> Lifetime</td>
+        <td class="cell">
+          <pre class="invalid"><code lang="rust">%'thread iso const T</code></pre>
+          <pre class="invalid"><code lang="rust">%'thread mut T</code></pre>
+        </td>
+        <td class="cell">
+          <pre class="invalid"><code lang="rust">%'thread const T</code></pre>
+          <pre class="invalid"><code lang="rust">%'thread poly mut T</code></pre>
+        </td>
+      </tr>
+      <tr>
+        <td class="var"><a href="task-lifetime">Task</a> Lifetime</td>
+        <td class="cell">
+          <pre class="invalid"><code lang="rust">%'task iso const T</code></pre>
+          <pre class="invalid"><code lang="rust">%'task mut T</code></pre>
+        </td>
+        <td class="cell">
+          <pre class="invalid"><code lang="rust">%'task const T</code></pre>
+          <pre class="invalid"><code lang="rust">%'task poly mut T</code></pre>
+        </td>
+      </tr>
+      <tr>
+        <td class="var"><a href="fixed-lifetime">Fixed</a> Lifetime</td>
+        <td class="cell">
+          <pre class="invalid"><code lang="rust">%'custom iso const T</code></pre>
+          <pre class="invalid"><code lang="rust">%'custom mut T</code></pre>
+        </td>
+        <td class="cell">
+          <pre class="invalid"><code lang="rust">%'custom const T</code></pre>
+          <pre class="invalid"><code lang="rust">%'custom poly mut T</code></pre>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+  <br>
+  <br>
+  <table class="ref-syntax-table">
+    <thead>
+      <tr>
+        <th>Unmanaged References</th>
+        <th><a href="#exclusive-access">Exclusive</a> Access</th>
+        <th><a href="#shared-access">Shared</a> Access</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="var"><a href="static-lifetime">Static</a> Lifetime</td>
+        <td class="cell">
+          <pre class="valid"><code lang="rust">&'static iso const T</code></pre>
+          <pre class="valid"><code lang="rust">&'static mut T</code></pre>
+        </td>
+        <td class="cell">
+          <pre class="valid"><code lang="rust">&'static const T</code></pre>
+          <pre class="unsafe"><code lang="rust">&'static poly mut T</code></pre>
+        </td>
+      </tr>
+      <tr>
+        <td class="var"><a href="dynamic-lifetime">Dynamic</a> Lifetime</td>
+        <td class="cell">
+          <pre class="invalid"><code lang="rust">&'dynamic iso const T</code></pre>
+          <pre class="invalid"><code lang="rust">&'dynamic mut T</code></pre>
+        </td>
+        <td class="cell">
+          <pre class="invalid"><code lang="rust">&'dynamic const T</code></pre>
+          <pre class="invalid"><code lang="rust">&'dynamic poly mut T</code></pre>
+        </td>
+      </tr>
+      <tr>
+        <td class="var"><a href="thread-lifetime">Thread</a> Lifetime</td>
+        <td class="cell">
+          <pre class="valid"><code lang="rust">&'thread iso const T</code></pre>
+          <pre class="valid"><code lang="rust">&'thread mut T</code></pre>
+        </td>
+        <td class="cell">
+          <pre class="valid"><code lang="rust">&'thread const T</code></pre>
+          <pre class="unsafe"><code lang="rust">&'thread poly mut T</code></pre>
+        </td>
+      </tr>
+      <tr>
+        <td class="var"><a href="task-lifetime">Task</a> Lifetime</td>
+        <td class="cell">
+          <pre class="valid"><code lang="rust">&'task iso const T</code></pre>
+          <pre class="valid"><code lang="rust">&'task mut T</code></pre>
+        </td>
+        <td class="cell">
+          <pre class="valid"><code lang="rust">&'task const T</code></pre>
+          <pre class="unsafe"><code lang="rust">&'task poly mut T</code></pre>
+        </td>
+      </tr>
+      <tr>
+        <td class="var"><a href="fixed-lifetime">Fixed</a> Lifetime</td>
+        <td class="cell">
+          <pre class="valid"><code lang="rust">&'custom iso const T</code></pre>
+          <pre class="valid"><code lang="rust">&'custom mut T</code></pre>
+        </td>
+        <td class="cell">
+          <pre class="valid"><code lang="rust">&'custom const T</code></pre>
+          <pre class="unsafe"><code lang="rust">&'custom poly mut T</code></pre>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+  <br>
+  <br>
+  <table class="ref-syntax-table">
+    <thead>
+      <tr>
+        <th>Raw Pointers</th>
+        <th><a href="#exclusive-access">Exclusive</a> Access</th>
+        <th><a href="#shared-access">Shared</a> Access</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td class="var"><a href="static-lifetime">Static</a> Lifetime</td>
+        <td class="cell">
+          <pre class="valid"><code lang="rust">*'static iso const T</code></pre>
+          <pre class="valid"><code lang="rust">*'static mut T</code></pre>
+        </td>
+        <td class="cell">
+          <pre class="valid"><code lang="rust">*'static const T</code></pre>
+          <pre class="unsafe"><code lang="rust">*'static poly mut T</code></pre>
+        </td>
+      </tr>
+      <tr>
+        <td class="var"><a href="dynamic-lifetime">Dynamic</a> Lifetime</td>
+        <td class="cell">
+          <pre class="valid"><code lang="rust">*'dynamic iso const T</code></pre>
+          <pre class="valid"><code lang="rust">*'dynamic mut T</code></pre>
+        </td>
+        <td class="cell">
+          <pre class="valid"><code lang="rust">*'dynamic const T</code></pre>
+          <pre class="unsafe"><code lang="rust">*'dynamic poly mut T</code></pre>
+        </td>
+      </tr>
+      <tr>
+        <td class="var"><a href="thread-lifetime">Thread</a> Lifetime</td>
+        <td class="cell">
+          <pre class="valid"><code lang="rust">*'thread iso const T</code></pre>
+          <pre class="valid"><code lang="rust">*'thread mut T</code></pre>
+        </td>
+        <td class="cell">
+          <pre class="valid"><code lang="rust">*'thread const T</code></pre>
+          <pre class="unsafe"><code lang="rust">*'thread poly mut T</code></pre>
+        </td>
+      </tr>
+      <tr>
+        <td class="var"><a href="task-lifetime">Task</a> Lifetime</td>
+        <td class="cell">
+          <pre class="valid"><code lang="rust">*'task iso const T</code></pre>
+          <pre class="valid"><code lang="rust">*'task mut T</code></pre>
+        </td>
+        <td class="cell">
+          <pre class="valid"><code lang="rust">*'task const T</code></pre>
+          <pre class="unsafe"><code lang="rust">*'task poly mut T</code></pre>
+        </td>
+      </tr>
+      <tr>
+        <td class="var"><a href="fixed-lifetime">Fixed</a> Lifetime</td>
+        <td class="cell">
+          <pre class="valid"><code lang="rust">*'custom iso const T</code></pre>
+          <pre class="valid"><code lang="rust">*'custom mut T</code></pre>
+        </td>
+        <td class="cell">
+          <pre class="valid"><code lang="rust">*'custom const T</code></pre>
+          <pre class="unsafe"><code lang="rust">*'custom poly mut T</code></pre>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</body>
+
+</html>

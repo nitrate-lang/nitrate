@@ -1,53 +1,8 @@
-use nitrate_compiler::lexer::*;
-use nitrate_compiler::parser::*;
-use nitrate_compiler::parsetree::*;
-use slog::{Drain, Logger, o};
-use slog_async::Async;
-use slog_term::*;
+use log::error;
+use nitrate_evaluate::AbstractMachine;
+use nitrate_lexical::*;
+use nitrate_syntax::*;
 use std::io::Read;
-
-use tracking_allocator::{AllocationGroupId, AllocationRegistry, AllocationTracker, Allocator};
-
-use std::alloc::System;
-
-#[global_allocator]
-static GLOBAL: Allocator<System> = Allocator::system();
-
-struct StdoutTracker;
-
-impl AllocationTracker for StdoutTracker {
-    fn allocated(
-        &self,
-        addr: usize,
-        object_size: usize,
-        _wrapped_size: usize,
-        _group_id: AllocationGroupId,
-    ) {
-        println!("{:016x} A {:016x}", addr, object_size);
-    }
-
-    fn deallocated(
-        &self,
-        addr: usize,
-        object_size: usize,
-        _wrapped_size: usize,
-        _source_group_id: AllocationGroupId,
-        _current_group_id: AllocationGroupId,
-    ) {
-        println!("{:016x} D {:016x}", addr, object_size);
-    }
-}
-
-pub fn enable_allocation_tracking() {
-    let _ = AllocationRegistry::set_global_tracker(StdoutTracker)
-        .expect("no other global tracker should be set yet");
-
-    AllocationRegistry::enable_tracking();
-}
-
-pub fn disable_allocation_tracking() {
-    AllocationRegistry::disable_tracking();
-}
 
 fn read_source_file(filename: &str) -> std::io::Result<Vec<u8>> {
     let mut file = std::fs::File::open(filename)?;
@@ -56,65 +11,60 @@ fn read_source_file(filename: &str) -> std::io::Result<Vec<u8>> {
     Ok(contents)
 }
 
-fn main() -> Result<(), Box<dyn std::error::Error>> {
-    // enable_allocation_tracking();
-
+fn program() -> i32 {
     env_logger::Builder::from_default_env()
         .format_timestamp(None)
-        .format_level(false)
+        .format_level(true)
         .format_target(false)
         .init();
 
     let args: Vec<String> = std::env::args().collect();
     if args.len() < 2 {
         eprintln!("Usage: {} <source_file>", args[0]);
-        std::process::exit(1);
+        return 1;
     }
 
     let filename = &args[1];
 
-    let source_code = read_source_file(filename)
-        .map_err(|e| format!("Failed to read source file {}: {}", filename, e))?;
+    let Ok(source_code) = read_source_file(filename) else {
+        eprintln!("Failed to read source file: {}", filename);
+        return 1;
+    };
 
-    let lexer = Lexer::new(&source_code, filename)
-        .map_err(|e| format!("Failed to create lexer for file {}: {}", filename, e))?;
+    let Ok(lexer) = Lexer::new(&source_code, filename) else {
+        eprintln!("Failed to create lexer for file: {}", filename);
+        return 1;
+    };
 
-    let mut storage = Storage::new();
+    let mut symbol_table = SymbolTable::default();
+    let mut parser = Parser::new(lexer, &mut symbol_table);
 
-    // Create a drain that outputs to the terminal
-    let decorator = TermDecorator::new().build();
-    let drain = slog_term::FullFormat::new(decorator)
-        .use_custom_header_print(|_, w, msg, _| {
-            let message = msg.msg().to_string();
-            w.write(message.as_bytes())?;
+    let Some(model) = parser.parse() else {
+        eprintln!("Failed to parse source code in file: {}", filename);
+        return 1;
+    };
 
-            // Return true if any message was written?
-            Ok(!message.is_empty())
-        })
-        .build()
-        .fuse();
-    let drain = Async::new(drain.fuse()).build().fuse();
-    let root_logger = Logger::root(drain, o!());
-
-    let mut parser = Parser::new(lexer, &mut storage, Some(root_logger));
-
-    {
-        let model = parser.parse().map_or_else(
-            || Err(format!("Failed to parse source code in file {}", filename)),
-            |tree| Ok(tree),
-        )?;
-
-        if !parser.has_failed() {
-            println!("model = {:#?}", model.tree().as_printable(&storage));
-            // let mut tokens = Vec::new();
-            // model.tree().to_code(&storage, &mut tokens, &CodeFormat {});
-
-            // for token in tokens {
-            //     println!("{}", token);
-            // }
-            println!("Successfully parsed file: {}", filename);
-        }
+    if model.any_errors() {
+        error!("Compilation failed: {}", filename);
+        return 1;
     }
 
-    Ok(())
+    let result = match AbstractMachine::new().evaluate(&model.tree()) {
+        Ok(result) => result,
+
+        Err(e) => {
+            error!("Evaluation failed for file: {}", filename);
+            error!("Error: {:?}", e);
+            return 1;
+        }
+    };
+
+    println!("result = {:#?}", result);
+
+    0
+}
+
+fn main() {
+    let exit_code = program();
+    std::process::exit(exit_code);
 }
