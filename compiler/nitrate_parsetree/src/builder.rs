@@ -7,10 +7,11 @@ use std::rc::Rc;
 use crate::builder_helper::{
     ArrayTypeBuilder, AssertBuilder, AwaitBuilder, BinExprBuilder, BlockBuilder, BreakBuilder,
     CallBuilder, ContinueBuilder, DoWhileLoopBuilder, ForEachBuilder, FunctionBuilder,
-    FunctionTypeBuilder, GenericTypeBuilder, IfBuilder, IntegerBuilder, ListBuilder,
-    ManagedRefTypeBuilder, MapTypeBuilder, ObjectBuilder, RefinementTypeBuilder, ReturnBuilder,
-    ScopeBuilder, SliceTypeBuilder, StatementBuilder, StructTypeBuilder, SwitchBuilder,
-    TupleTypeBuilder, UnaryExprBuilder, UnmanagedRefTypeBuilder, VariableBuilder, WhileLoopBuilder,
+    FunctionTypeBuilder, GenericTypeBuilder, IfBuilder, IndexAccessBuilder, IntegerBuilder,
+    ListBuilder, ManagedRefTypeBuilder, MapTypeBuilder, ObjectBuilder, RefinementTypeBuilder,
+    ReturnBuilder, ScopeBuilder, SliceTypeBuilder, StatementBuilder, StructTypeBuilder,
+    SwitchBuilder, TupleTypeBuilder, UnaryExprBuilder, UnmanagedRefTypeBuilder, VariableBuilder,
+    WhileLoopBuilder,
 };
 
 #[derive(Debug, Default)]
@@ -156,6 +157,11 @@ impl<'a> Builder {
     pub fn create_identifier(name: &'a str) -> Expr<'a> {
         let parts = name.split("::").collect::<Vec<&'a str>>();
         Self::create_qualified_identifier(parts)
+    }
+
+    #[must_use]
+    pub fn create_index_access() -> IndexAccessBuilder<'a> {
+        IndexAccessBuilder::new()
     }
 
     #[must_use]

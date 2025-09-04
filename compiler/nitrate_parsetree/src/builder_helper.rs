@@ -7,8 +7,8 @@ use std::rc::Rc;
 use crate::kind::{
     ArrayType, Assert, Await, BinExpr, BinExprOp, Block, Break, Call, CallArguments, Continue,
     DoWhileLoop, Expr, ForEach, Function, FunctionParameter, FunctionType, GenericType, If,
-    Integer, List, ManagedRefType, MapType, Object, RefinementType, Return, Scope, SliceType,
-    Statement, StructField, StructType, Switch, TupleType, Type, UnaryExpr, UnaryExprOp,
+    IndexAccess, Integer, List, ManagedRefType, MapType, Object, RefinementType, Return, Scope,
+    SliceType, Statement, StructField, StructType, Switch, TupleType, Type, UnaryExpr, UnaryExprOp,
     UnmanagedRefType, Variable, VariableKind, WhileLoop,
 };
 
@@ -800,6 +800,39 @@ impl<'a> VariableBuilder<'a> {
             self.name,
             self.ty.expect("Variable type must be provided"),
             self.value,
+        )))
+    }
+}
+
+#[derive(Debug)]
+pub struct IndexAccessBuilder<'a> {
+    collection: Option<Expr<'a>>,
+    index: Option<Expr<'a>>,
+}
+
+impl<'a> IndexAccessBuilder<'a> {
+    pub(crate) fn new() -> Self {
+        IndexAccessBuilder {
+            collection: None,
+            index: None,
+        }
+    }
+
+    pub fn with_collection(mut self, collection: Expr<'a>) -> Self {
+        self.collection = Some(collection);
+        self
+    }
+
+    pub fn with_index(mut self, index: Expr<'a>) -> Self {
+        self.index = Some(index);
+        self
+    }
+
+    pub fn build(self) -> Expr<'a> {
+        Expr::IndexAccess(Rc::new(IndexAccess::new(
+            self.collection
+                .expect("Collection expression must be provided"),
+            self.index.expect("Index expression must be provided"),
         )))
     }
 }

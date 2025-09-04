@@ -657,6 +657,37 @@ impl<'a> Identifier<'a> {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct IndexAccess<'a> {
+    collection: Expr<'a>,
+    index: Expr<'a>,
+}
+
+impl<'a> IndexAccess<'a> {
+    #[must_use]
+    pub(crate) fn new(collection: Expr<'a>, index: Expr<'a>) -> Self {
+        IndexAccess { collection, index }
+    }
+
+    #[must_use]
+    pub fn collection(&self) -> &Expr<'a> {
+        &self.collection
+    }
+
+    pub fn set_collection(&mut self, collection: Expr<'a>) {
+        self.collection = collection;
+    }
+
+    #[must_use]
+    pub fn index(&self) -> &Expr<'a> {
+        &self.index
+    }
+
+    pub fn set_index(&mut self, index: Expr<'a>) {
+        self.index = index;
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct QualifiedScope<'a> {
     scopes: SmallVec<[&'a str; 3]>,
 }
@@ -1160,6 +1191,7 @@ pub enum Expr<'a> {
     Function(Rc<Function<'a>>),
     Variable(Rc<Variable<'a>>),
     Identifier(Rc<Identifier<'a>>),
+    IndexAccess(Rc<IndexAccess<'a>>),
     Scope(Rc<Scope<'a>>),
 
     If(Rc<If<'a>>),
@@ -1232,6 +1264,7 @@ impl<'a> TryInto<Type<'a>> for Expr<'a> {
             | Expr::Function(_)
             | Expr::Variable(_)
             | Expr::Identifier(_)
+            | Expr::IndexAccess(_)
             | Expr::Scope(_)
             | Expr::If(_)
             | Expr::WhileLoop(_)
@@ -1318,6 +1351,7 @@ impl<'a> std::fmt::Debug for Expr<'a> {
                 .debug_struct("Identifier")
                 .field("name", &e.full_name())
                 .finish(),
+            Expr::IndexAccess(e) => e.fmt(f),
             Expr::Scope(e) => e.fmt(f),
 
             Expr::If(e) => e.fmt(f),

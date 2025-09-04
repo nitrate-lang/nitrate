@@ -1,9 +1,10 @@
 use nitrate_lexical::{Integer, Keyword, Name, Op, Punct, Token};
 use nitrate_parsetree::kind::{
     ArrayType, Assert, Await, BinExpr, BinExprOp, Block, Break, Call, Continue, DoWhileLoop, Expr,
-    ForEach, Function, FunctionType, GenericType, Identifier, If, List, ManagedRefType, MapType,
-    Object, RefinementType, Return, Scope, SliceType, Statement, StructType, Switch, TupleType,
-    Type, UnaryExpr, UnaryExprOp, UnmanagedRefType, Variable, VariableKind, WhileLoop,
+    ForEach, Function, FunctionType, GenericType, Identifier, If, IndexAccess, List,
+    ManagedRefType, MapType, Object, RefinementType, Return, Scope, SliceType, Statement,
+    StructType, Switch, TupleType, Type, UnaryExpr, UnaryExprOp, UnmanagedRefType, Variable,
+    VariableKind, WhileLoop,
 };
 use std::ops::Deref;
 
@@ -394,6 +395,15 @@ impl<'a> ToCode<'a> for Identifier<'a> {
     }
 }
 
+impl<'a> ToCode<'a> for IndexAccess<'a> {
+    fn to_code(&self, tokens: &mut Vec<Token<'a>>, options: &CodeFormat) {
+        self.collection().to_code(tokens, options);
+        tokens.push(Token::Punct(Punct::LeftBracket));
+        self.index().to_code(tokens, options);
+        tokens.push(Token::Punct(Punct::RightBracket));
+    }
+}
+
 impl<'a> ToCode<'a> for Scope<'a> {
     fn to_code(&self, tokens: &mut Vec<Token<'a>>, options: &CodeFormat) {
         tokens.push(Token::Keyword(Keyword::Scope));
@@ -610,6 +620,7 @@ impl<'a> ToCode<'a> for Expr<'a> {
 
             Expr::Function(e) => e.to_code(tokens, options),
             Expr::Variable(e) => e.to_code(tokens, options),
+            Expr::IndexAccess(e) => e.to_code(tokens, options),
             Expr::Scope(e) => e.to_code(tokens, options),
 
             Expr::If(e) => e.to_code(tokens, options),

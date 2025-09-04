@@ -211,6 +211,7 @@ impl<'a> AbstractMachine<'a> {
             Expr::Function(_) => Ok(expression.clone()),
             Expr::Variable(e) => self.evaluate_variable(e),
             Expr::Identifier(e) => self.evaluate_identifier(e),
+            Expr::IndexAccess(e) => self.evaluate_index_access(e),
             Expr::Scope(e) => self.evaluate_scope(e),
 
             Expr::If(e) => self.evaluate_if(e),

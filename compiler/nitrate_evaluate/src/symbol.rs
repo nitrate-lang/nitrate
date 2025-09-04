@@ -1,7 +1,7 @@
 use super::abstract_machine::{AbstractMachine, Unwind};
 use nitrate_parsetree::{
-    kind::{Expr, Identifier, Scope, Variable},
     Builder,
+    kind::{Expr, Identifier, IndexAccess, Scope, Variable},
 };
 
 impl<'a> AbstractMachine<'a> {
@@ -49,6 +49,16 @@ impl<'a> AbstractMachine<'a> {
             .ok_or(Unwind::UnresolvedIdentifier(
                 identifier.full_name().to_string(),
             ))
+    }
+
+    pub(crate) fn evaluate_index_access(
+        &mut self,
+        _index_access: &IndexAccess<'a>,
+    ) -> Result<Expr<'a>, Unwind<'a>> {
+        // TODO: Write tests
+        // TODO: Verify logic
+
+        todo!("Implement index access evaluation")
     }
 
     pub(crate) fn evaluate_scope(&mut self, scope: &Scope<'a>) -> Result<Expr<'a>, Unwind<'a>> {
