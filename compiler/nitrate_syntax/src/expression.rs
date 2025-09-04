@@ -24,6 +24,7 @@ enum PrecedenceRank {
     MulDivMod,
     Cast,
     Unary,
+    FunctionCallAndIndexing,
     FieldAccess,
     Scope,
 }
@@ -34,39 +35,42 @@ enum Associativity {
     RightToLeft,
 }
 
-fn get_precedence(op: Op) -> Option<(Associativity, Precedence)> {
-    type Assoc = Associativity;
+enum Operation {
+    Operator(Op),
+    FunctionCall,
+    Index,
+}
 
-    // TODO: Handle function call and array indexing
+fn get_precedence_of_operator(operator: Op) -> Option<(Associativity, Precedence)> {
+    let (associativity, precedence) = match operator {
+        Op::Scope => (Associativity::LeftToRight, PrecedenceRank::Scope),
 
-    let (associativity, precedence) = match op {
-        Op::Scope => (Assoc::LeftToRight, PrecedenceRank::Scope),
+        Op::Dot | Op::Arrow => (Associativity::LeftToRight, PrecedenceRank::FieldAccess),
 
-        Op::Dot | Op::Arrow => (Assoc::LeftToRight, PrecedenceRank::FieldAccess),
+        Op::As | Op::BitcastAs => (Associativity::LeftToRight, PrecedenceRank::Cast),
 
-        Op::As | Op::BitcastAs => (Assoc::LeftToRight, PrecedenceRank::Cast),
+        Op::Mul | Op::Div | Op::Mod => (Associativity::LeftToRight, PrecedenceRank::MulDivMod),
 
-        Op::Mul | Op::Div | Op::Mod => (Assoc::LeftToRight, PrecedenceRank::MulDivMod),
+        Op::Add | Op::Sub => (Associativity::LeftToRight, PrecedenceRank::AddSub),
 
-        Op::Add | Op::Sub => (Assoc::LeftToRight, PrecedenceRank::AddSub),
+        Op::BitShl | Op::BitShr | Op::BitRol | Op::BitRor => (
+            Associativity::LeftToRight,
+            PrecedenceRank::BitShiftAndRotate,
+        ),
 
-        Op::BitShl | Op::BitShr | Op::BitRol | Op::BitRor => {
-            (Assoc::LeftToRight, PrecedenceRank::BitShiftAndRotate)
-        }
-
-        Op::BitAnd => (Assoc::LeftToRight, PrecedenceRank::BitAnd),
-        Op::BitXor => (Assoc::LeftToRight, PrecedenceRank::BitXor),
-        Op::BitOr => (Assoc::LeftToRight, PrecedenceRank::BitOr),
+        Op::BitAnd => (Associativity::LeftToRight, PrecedenceRank::BitAnd),
+        Op::BitXor => (Associativity::LeftToRight, PrecedenceRank::BitXor),
+        Op::BitOr => (Associativity::LeftToRight, PrecedenceRank::BitOr),
 
         Op::LogicEq | Op::LogicNe | Op::LogicLt | Op::LogicGt | Op::LogicLe | Op::LogicGe => {
-            (Assoc::LeftToRight, PrecedenceRank::Comparison)
+            (Associativity::LeftToRight, PrecedenceRank::Comparison)
         }
 
-        Op::LogicAnd => (Assoc::LeftToRight, PrecedenceRank::LogicAnd),
-        Op::LogicXor => (Assoc::LeftToRight, PrecedenceRank::LogicXor),
-        Op::LogicOr => (Assoc::LeftToRight, PrecedenceRank::LogicOr),
+        Op::LogicAnd => (Associativity::LeftToRight, PrecedenceRank::LogicAnd),
+        Op::LogicXor => (Associativity::LeftToRight, PrecedenceRank::LogicXor),
+        Op::LogicOr => (Associativity::LeftToRight, PrecedenceRank::LogicOr),
 
-        Op::Range => (Assoc::LeftToRight, PrecedenceRank::Range),
+        Op::Range => (Associativity::LeftToRight, PrecedenceRank::Range),
 
         Op::Set
         | Op::SetPlus
@@ -83,7 +87,7 @@ fn get_precedence(op: Op) -> Option<(Associativity, Precedence)> {
         | Op::SetBitRotr
         | Op::SetLogicAnd
         | Op::SetLogicOr
-        | Op::SetLogicXor => (Assoc::RightToLeft, PrecedenceRank::Assign),
+        | Op::SetLogicXor => (Associativity::RightToLeft, PrecedenceRank::Assign),
 
         Op::BitNot
         | Op::LogicNot
@@ -97,6 +101,17 @@ fn get_precedence(op: Op) -> Option<(Associativity, Precedence)> {
     };
 
     Some((associativity, precedence as Precedence))
+}
+
+fn get_precedence(operation: Operation) -> Option<(Associativity, Precedence)> {
+    match operation {
+        Operation::Operator(operator) => get_precedence_of_operator(operator),
+
+        Operation::FunctionCall | Operation::Index => Some((
+            Associativity::LeftToRight,
+            PrecedenceRank::FunctionCallAndIndexing as Precedence,
+        )),
+    }
 }
 
 fn get_prefix_precedence(op: Op) -> Option<Precedence> {
@@ -118,6 +133,139 @@ fn get_prefix_precedence(op: Op) -> Option<Precedence> {
 }
 
 impl<'a> Parser<'a, '_> {
+    fn parse_expression_primary(&mut self) -> Option<Expr<'a>> {
+        match self.lexer.peek_t() {
+            Token::Integer(int) => {
+                self.lexer.skip_tok();
+                let lit = Self::parse_integer_literal(int.value(), int.kind());
+                Some(self.parse_literal_suffix(lit))
+            }
+
+            Token::Float(float) => {
+                self.lexer.skip_tok();
+                let lit = Builder::create_float(float);
+                Some(self.parse_literal_suffix(lit))
+            }
+
+            Token::String(string) => {
+                self.lexer.skip_tok();
+                let lit = Builder::create_string_from(string);
+                Some(self.parse_literal_suffix(lit))
+            }
+
+            Token::BString(data) => {
+                self.lexer.skip_tok();
+                let lit = Builder::create_bstring_from(data);
+                Some(self.parse_literal_suffix(lit))
+            }
+
+            Token::Punct(Punct::LeftBracket) => self.parse_list(),
+
+            Token::Name(name) => {
+                self.lexer.skip_tok();
+                Some(Builder::create_identifier(name.name()))
+            }
+
+            Token::Keyword(Keyword::True) => {
+                self.lexer.skip_tok();
+                Some(Builder::create_boolean(true))
+            }
+
+            Token::Keyword(Keyword::False) => {
+                self.lexer.skip_tok();
+                Some(Builder::create_boolean(false))
+            }
+
+            Token::Keyword(Keyword::Scope) => self.parse_scope(),
+            Token::Keyword(Keyword::Enum) => self.parse_enum(),
+            Token::Keyword(Keyword::Struct) => self.parse_struct(),
+            Token::Keyword(Keyword::Class) => self.parse_class(),
+            Token::Keyword(Keyword::Trait) => self.parse_trait(),
+            Token::Keyword(Keyword::Impl) => self.parse_implementation(),
+            Token::Keyword(Keyword::Contract) => self.parse_contract(),
+            Token::Keyword(Keyword::Let) => self.parse_let_variable(),
+            Token::Keyword(Keyword::Var) => self.parse_var_variable(),
+            Token::Keyword(Keyword::Type) => self.parse_type_or_type_alias(),
+            Token::Keyword(Keyword::Fn) | Token::Punct(Punct::LeftBrace) => self.parse_function(),
+
+            Token::Keyword(Keyword::If) => self.parse_if(),
+            Token::Keyword(Keyword::For) => self.parse_for(),
+            Token::Keyword(Keyword::While) => self.parse_while(),
+            Token::Keyword(Keyword::Do) => self.parse_do(),
+            Token::Keyword(Keyword::Switch) => self.parse_switch(),
+            Token::Keyword(Keyword::Break) => self.parse_break(),
+            Token::Keyword(Keyword::Continue) => self.parse_continue(),
+            Token::Keyword(Keyword::Ret) => self.parse_return(),
+            Token::Keyword(Keyword::Foreach) => self.parse_foreach(),
+            Token::Keyword(Keyword::Await) => self.parse_await(),
+            Token::Keyword(Keyword::Asm) => self.parse_asm(),
+            Token::Keyword(Keyword::Assert) => self.parse_assert(),
+
+            Token::Keyword(keyword) => {
+                self.set_failed_bit();
+                error!(
+                    "[P????]: expr: unexpected keyword '{}'\n--> {}",
+                    keyword,
+                    self.lexer.sync_position()
+                );
+
+                None
+            }
+
+            Token::Op(op) => {
+                self.set_failed_bit();
+                error!(
+                    "[P????]: expr: unexpected operator '{}'\n--> {}",
+                    op,
+                    self.lexer.sync_position()
+                );
+
+                None
+            }
+
+            Token::Punct(punct) => {
+                self.set_failed_bit();
+                error!(
+                    "[P????]: expr: unexpected punctuation '{}'\n--> {}",
+                    punct,
+                    self.lexer.sync_position()
+                );
+
+                None
+            }
+
+            Token::Comment(_) => {
+                self.set_failed_bit();
+                error!(
+                    "[P????]: expr: unexpected comment\n--> {}",
+                    self.lexer.sync_position()
+                );
+
+                None
+            }
+
+            Token::Eof => {
+                self.set_failed_bit();
+                error!(
+                    "[P????]: expr: unexpected end of file\n--> {}",
+                    self.lexer.sync_position()
+                );
+
+                None
+            }
+
+            Token::Illegal => {
+                self.set_failed_bit();
+                error!(
+                    "[P????]: expr: illegal token\n--> {}",
+                    self.lexer.sync_position()
+                );
+
+                None
+            }
+        }
+    }
+
     fn parse_prefix(&mut self) -> Option<Expr<'a>> {
         if let Token::Op(prefix_op) = self.lexer.peek_t() {
             if let Some(precedence) = get_prefix_precedence(prefix_op) {
@@ -155,7 +303,7 @@ impl<'a> Parser<'a, '_> {
 
     fn parse_expression_precedence(
         &mut self,
-        min_precedence_continue: Precedence,
+        min_precedence_to_proceed: Precedence,
     ) -> Option<Expr<'a>> {
         let mut sofar = self.parse_prefix()?;
 
@@ -164,17 +312,17 @@ impl<'a> Parser<'a, '_> {
                 return Some(sofar);
             };
 
-            let Some((associativity, new_precedence)) = get_precedence(next_op) else {
+            let Some((assoc, new_precedence)) = get_precedence(Operation::Operator(next_op)) else {
                 return Some(sofar);
             };
 
-            if new_precedence < min_precedence_continue {
+            if new_precedence < min_precedence_to_proceed {
                 return Some(sofar);
             }
 
             self.lexer.skip_tok();
 
-            let right_expr = if associativity == Associativity::LeftToRight {
+            let right_expr = if assoc == Associativity::LeftToRight {
                 self.parse_expression_precedence(new_precedence + 1)?
             } else {
                 self.parse_expression_precedence(new_precedence)?
@@ -787,139 +935,6 @@ impl<'a> Parser<'a, '_> {
         }
 
         Some(variable)
-    }
-
-    fn parse_expression_primary(&mut self) -> Option<Expr<'a>> {
-        match self.lexer.peek_t() {
-            Token::Integer(int) => {
-                self.lexer.skip_tok();
-                let lit = Self::parse_integer_literal(int.value(), int.kind());
-                Some(self.parse_literal_suffix(lit))
-            }
-
-            Token::Float(float) => {
-                self.lexer.skip_tok();
-                let lit = Builder::create_float(float);
-                Some(self.parse_literal_suffix(lit))
-            }
-
-            Token::String(string) => {
-                self.lexer.skip_tok();
-                let lit = Builder::create_string_from(string);
-                Some(self.parse_literal_suffix(lit))
-            }
-
-            Token::BString(data) => {
-                self.lexer.skip_tok();
-                let lit = Builder::create_bstring_from(data);
-                Some(self.parse_literal_suffix(lit))
-            }
-
-            Token::Punct(Punct::LeftBracket) => self.parse_list(),
-
-            Token::Name(name) => {
-                self.lexer.skip_tok();
-                Some(Builder::create_identifier(name.name()))
-            }
-
-            Token::Keyword(Keyword::True) => {
-                self.lexer.skip_tok();
-                Some(Builder::create_boolean(true))
-            }
-
-            Token::Keyword(Keyword::False) => {
-                self.lexer.skip_tok();
-                Some(Builder::create_boolean(false))
-            }
-
-            Token::Keyword(Keyword::Scope) => self.parse_scope(),
-            Token::Keyword(Keyword::Enum) => self.parse_enum(),
-            Token::Keyword(Keyword::Struct) => self.parse_struct(),
-            Token::Keyword(Keyword::Class) => self.parse_class(),
-            Token::Keyword(Keyword::Trait) => self.parse_trait(),
-            Token::Keyword(Keyword::Impl) => self.parse_implementation(),
-            Token::Keyword(Keyword::Contract) => self.parse_contract(),
-            Token::Keyword(Keyword::Let) => self.parse_let_variable(),
-            Token::Keyword(Keyword::Var) => self.parse_var_variable(),
-            Token::Keyword(Keyword::Type) => self.parse_type_or_type_alias(),
-            Token::Keyword(Keyword::Fn) | Token::Punct(Punct::LeftBrace) => self.parse_function(),
-
-            Token::Keyword(Keyword::If) => self.parse_if(),
-            Token::Keyword(Keyword::For) => self.parse_for(),
-            Token::Keyword(Keyword::While) => self.parse_while(),
-            Token::Keyword(Keyword::Do) => self.parse_do(),
-            Token::Keyword(Keyword::Switch) => self.parse_switch(),
-            Token::Keyword(Keyword::Break) => self.parse_break(),
-            Token::Keyword(Keyword::Continue) => self.parse_continue(),
-            Token::Keyword(Keyword::Ret) => self.parse_return(),
-            Token::Keyword(Keyword::Foreach) => self.parse_foreach(),
-            Token::Keyword(Keyword::Await) => self.parse_await(),
-            Token::Keyword(Keyword::Asm) => self.parse_asm(),
-            Token::Keyword(Keyword::Assert) => self.parse_assert(),
-
-            Token::Keyword(keyword) => {
-                self.set_failed_bit();
-                error!(
-                    "[P????]: expr: unexpected keyword '{}'\n--> {}",
-                    keyword,
-                    self.lexer.sync_position()
-                );
-
-                None
-            }
-
-            Token::Op(op) => {
-                self.set_failed_bit();
-                error!(
-                    "[P????]: expr: unexpected operator '{}'\n--> {}",
-                    op,
-                    self.lexer.sync_position()
-                );
-
-                None
-            }
-
-            Token::Punct(punct) => {
-                self.set_failed_bit();
-                error!(
-                    "[P????]: expr: unexpected punctuation '{}'\n--> {}",
-                    punct,
-                    self.lexer.sync_position()
-                );
-
-                None
-            }
-
-            Token::Comment(_) => {
-                self.set_failed_bit();
-                error!(
-                    "[P????]: expr: unexpected comment\n--> {}",
-                    self.lexer.sync_position()
-                );
-
-                None
-            }
-
-            Token::Eof => {
-                self.set_failed_bit();
-                error!(
-                    "[P????]: expr: unexpected end of file\n--> {}",
-                    self.lexer.sync_position()
-                );
-
-                None
-            }
-
-            Token::Illegal => {
-                self.set_failed_bit();
-                error!(
-                    "[P????]: expr: illegal token\n--> {}",
-                    self.lexer.sync_position()
-                );
-
-                None
-            }
-        }
     }
 
     pub fn parse_block_as_elements(&mut self) -> Option<Vec<Expr<'a>>> {
