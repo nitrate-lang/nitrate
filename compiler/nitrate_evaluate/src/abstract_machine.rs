@@ -113,6 +113,10 @@ impl<'a> AbstractMachine<'a> {
         &mut self.tasks[self.current_task]
     }
 
+    pub(crate) fn resolve_intrinsic(&self, name: &str) -> Option<IntrinsicFunction<'a>> {
+        self.provided_functions.get(name).cloned()
+    }
+
     pub fn resolve(&self, name: &str) -> Option<&Expr<'a>> {
         // TODO: Write tests
         // TODO: Verify logic
@@ -135,10 +139,6 @@ impl<'a> AbstractMachine<'a> {
         }
 
         None
-    }
-
-    pub fn resolve_intrinsic(&self, name: &str) -> Option<IntrinsicFunction<'a>> {
-        self.provided_functions.get(name).cloned()
     }
 
     pub fn get_parameter(&self, name: &str) -> Option<&Expr<'a>> {
