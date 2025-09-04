@@ -3,28 +3,28 @@ use log::error;
 use nitrate_lexical::{IntegerKind, Keyword, Op, Punct, Token};
 use nitrate_parsetree::{
     Builder,
-    kind::{BinExprOp, CallArguments, Expr, UnaryExprOp},
+    kind::{BinExprOp, Expr, UnaryExprOp},
 };
 
 type Precedence = u32;
 
 #[repr(u32)]
-enum Rank {
-    P1 = 15,
-    P2 = 14,
-    P3 = 13,
-    P4 = 12,
-    P5 = 11,
-    P6 = 10,
-    P7 = 9,
-    P8 = 8,
-    P9 = 7,
-    P10 = 6,
-    P11 = 5,
-    P12 = 4,
-    P13 = 3,
-    P14 = 2,
-    P15 = 1,
+enum PrecedenceRank {
+    Assign,
+    LogicOr,
+    LogicXor,
+    LogicAnd,
+    BitOr,
+    BitXor,
+    BitAnd,
+    Equality,
+    Comparison,
+    BitShiftAndRotate,
+    AddSub,
+    MulDivMod,
+    Prefix,
+    Access,
+    Scope,
 }
 
 #[derive(PartialEq, PartialOrd, Eq, Clone, Copy)]
@@ -34,7 +34,7 @@ enum Associativity {
 }
 
 impl<'a> Parser<'a, '_> {
-    fn get_precedence(op: Op) -> Option<(Associativity, Precedence, BinExprOp)> {
+    fn get_precedence(op: Op) -> Option<(Associativity, Precedence)> {
         type Assoc = Associativity;
 
         /*
@@ -57,34 +57,83 @@ impl<'a> Parser<'a, '_> {
          * R2L: assignment (all variants)
          */
 
-        let (associativity, precedence, bin_expr_op) = match op {
-            Op::Scope => (Assoc::LeftToRight, Rank::P1, BinExprOp::Scope),
-            Op::Dot => (Assoc::LeftToRight, Rank::P2, BinExprOp::Dot),
+        // TODO: Handle function call and array indexing
 
-            _ => return None,
+        let (associativity, precedence) = match op {
+            Op::Scope => (Assoc::LeftToRight, PrecedenceRank::Scope),
+
+            Op::Dot | Op::Arrow => (Assoc::LeftToRight, PrecedenceRank::Access),
+
+            Op::Mul | Op::Div | Op::Mod => (Assoc::LeftToRight, PrecedenceRank::MulDivMod),
+
+            Op::Add | Op::Sub => (Assoc::LeftToRight, PrecedenceRank::AddSub),
+
+            Op::BitShl | Op::BitShr | Op::BitRol | Op::BitRor => {
+                (Assoc::LeftToRight, PrecedenceRank::BitShiftAndRotate)
+            }
+
+            Op::LogicLt | Op::LogicLe | Op::LogicGt | Op::LogicGe => {
+                (Assoc::LeftToRight, PrecedenceRank::Comparison)
+            }
+
+            Op::LogicEq | Op::LogicNe => (Assoc::LeftToRight, PrecedenceRank::Equality),
+
+            Op::BitAnd => (Assoc::LeftToRight, PrecedenceRank::BitAnd),
+            Op::BitXor => (Assoc::LeftToRight, PrecedenceRank::BitXor),
+            Op::BitOr => (Assoc::LeftToRight, PrecedenceRank::BitOr),
+            Op::LogicAnd => (Assoc::LeftToRight, PrecedenceRank::LogicAnd),
+            Op::LogicXor => (Assoc::LeftToRight, PrecedenceRank::LogicXor),
+            Op::LogicOr => (Assoc::LeftToRight, PrecedenceRank::LogicOr),
+
+            Op::Set
+            | Op::SetPlus
+            | Op::SetMinus
+            | Op::SetTimes
+            | Op::SetSlash
+            | Op::SetPercent
+            | Op::SetBitAnd
+            | Op::SetBitOr
+            | Op::SetBitXor
+            | Op::SetBitShl
+            | Op::SetBitShr
+            | Op::SetBitRotl
+            | Op::SetBitRotr
+            | Op::SetLogicAnd
+            | Op::SetLogicOr
+            | Op::SetLogicXor => (Assoc::RightToLeft, PrecedenceRank::Assign),
+
+            // Op::BlockArrow => (Assoc::RightToLeft, Priority::P01, BinExprOp::BlockArrow),
+            Op::As | Op::BitcastAs | Op::Ellipsis | Op::Range | Op::BlockArrow => {
+                // TODO: Handle these operators
+                return None;
+            }
+
+            Op::BitNot | Op::LogicNot | Op::Sizeof | Op::Typeof | Op::Alignof => {
+                return None;
+            }
         };
 
-        Some((associativity, precedence as Precedence, bin_expr_op))
+        Some((associativity, precedence as Precedence))
     }
 
-    fn get_prefix_precedence(op: Op) -> Option<(Associativity, Precedence, UnaryExprOp)> {
+    fn get_prefix_precedence(op: Op) -> Option<(Associativity, Precedence)> {
         type Assoc = Associativity;
 
-        let (associativity, precedence, bin_expr_op) = match op {
-            Op::Add => (Assoc::RightToLeft, Rank::P3, UnaryExprOp::Add),
-            Op::Sub => (Assoc::RightToLeft, Rank::P3, UnaryExprOp::Sub),
-            Op::LogicNot => (Assoc::RightToLeft, Rank::P3, UnaryExprOp::LogicNot),
-            Op::BitNot => (Assoc::RightToLeft, Rank::P3, UnaryExprOp::BitNot),
-            Op::Mul => (Assoc::RightToLeft, Rank::P3, UnaryExprOp::Deref),
-            Op::BitAnd => (Assoc::RightToLeft, Rank::P3, UnaryExprOp::AddressOf),
-            Op::Sizeof => (Assoc::RightToLeft, Rank::P3, UnaryExprOp::Sizeof),
-            Op::Typeof => (Assoc::RightToLeft, Rank::P3, UnaryExprOp::Typeof),
-            Op::Alignof => (Assoc::RightToLeft, Rank::P3, UnaryExprOp::Alignof),
+        let (associativity, precedence) = match op {
+            Op::Add => (Assoc::RightToLeft, PrecedenceRank::Prefix),
+            Op::Sub => (Assoc::RightToLeft, PrecedenceRank::Prefix),
+            Op::LogicNot => (Assoc::RightToLeft, PrecedenceRank::Prefix),
+            Op::BitNot => (Assoc::RightToLeft, PrecedenceRank::Prefix),
+            Op::Mul => (Assoc::RightToLeft, PrecedenceRank::Prefix),
+            Op::BitAnd => (Assoc::RightToLeft, PrecedenceRank::Prefix),
+            Op::Sizeof => (Assoc::RightToLeft, PrecedenceRank::Prefix),
+            Op::Typeof => (Assoc::RightToLeft, PrecedenceRank::Prefix),
+            Op::Alignof => (Assoc::RightToLeft, PrecedenceRank::Prefix),
 
             _ => return None,
         };
 
-        Some((associativity, precedence as Precedence, bin_expr_op))
+        Some((associativity, precedence as Precedence))
     }
 
     fn parse_expression_precedence(
@@ -98,7 +147,7 @@ impl<'a> Parser<'a, '_> {
                 return Some(sofar);
             };
 
-            let Some((associativity, new_precedence, op)) = Self::get_precedence(next_op) else {
+            let Some((associativity, new_precedence)) = Self::get_precedence(next_op) else {
                 return Some(sofar);
             };
 
@@ -116,7 +165,7 @@ impl<'a> Parser<'a, '_> {
 
             sofar = Builder::create_binexpr()
                 .with_left(sofar)
-                .with_operator(op)
+                .with_operator(BinExprOp::try_from(next_op).expect("binexpr op"))
                 .with_right(right_expr)
                 .build();
         }
@@ -124,7 +173,7 @@ impl<'a> Parser<'a, '_> {
 
     fn parse_prefix(&mut self) -> Option<Expr<'a>> {
         if let Token::Op(prefix_op) = self.lexer.peek_t() {
-            if let Some((assoc, precedence, unary_op)) = Self::get_prefix_precedence(prefix_op) {
+            if let Some((assoc, precedence)) = Self::get_prefix_precedence(prefix_op) {
                 self.lexer.skip_tok();
 
                 let right = if assoc == Associativity::LeftToRight {
@@ -136,7 +185,7 @@ impl<'a> Parser<'a, '_> {
                 return Some(
                     Builder::create_unary_expr()
                         .with_prefix()
-                        .with_operator(unary_op)
+                        .with_operator(UnaryExprOp::try_from(prefix_op).expect("unary op"))
                         .with_operand(right)
                         .build(),
                 );
@@ -608,61 +657,6 @@ impl<'a> Parser<'a, '_> {
         None
     }
 
-    fn parse_function_argument(&mut self) -> Option<(Option<&'a str>, Expr<'a>)> {
-        let mut argument_name = None;
-
-        if let Token::Name(name) = self.lexer.peek_t() {
-            /* Named function argument syntax is ambiguous,
-             * an identifier can be followed by a colon
-             * to indicate a named argument (followed by the expression value).
-             * However, if it is not followed by a colon, the identifier is
-             * to be parsed as an expression.
-             */
-            let rewind_pos = self.lexer.sync_position();
-            self.lexer.skip_tok();
-
-            if self.lexer.skip_if(&Token::Punct(Punct::Colon)) {
-                argument_name = Some(name.name());
-            } else {
-                self.lexer.rewind(rewind_pos);
-            }
-        }
-
-        let argument_value = self.parse_expression()?;
-
-        Some((argument_name, argument_value))
-    }
-
-    fn parse_function_arguments(&mut self) -> Option<CallArguments<'a>> {
-        assert!(self.lexer.peek_t() == Token::Punct(Punct::LeftParen));
-        self.lexer.skip_tok();
-
-        let mut arguments = CallArguments::new();
-        self.lexer.skip_if(&Token::Punct(Punct::Comma));
-
-        loop {
-            if self.lexer.skip_if(&Token::Punct(Punct::RightParen)) {
-                break;
-            }
-
-            let function_argument = self.parse_function_argument()?;
-            arguments.push(function_argument);
-
-            if !self.lexer.skip_if(&Token::Punct(Punct::Comma))
-                && !self.lexer.next_is(&Token::Punct(Punct::RightParen))
-            {
-                error!(
-                    "[P0???]: function call: expected ',' or ')' after function argument\n--> {}",
-                    self.lexer.sync_position()
-                );
-
-                return None;
-            }
-        }
-
-        Some(arguments)
-    }
-
     fn parse_function(&mut self) -> Option<Expr<'a>> {
         if self.lexer.peek_t() == Token::Punct(Punct::LeftBrace) {
             let block = Some(self.parse_block()?);
@@ -817,62 +811,6 @@ impl<'a> Parser<'a, '_> {
         Some(variable)
     }
 
-    fn parse_identifier(&mut self) -> Option<Expr<'a>> {
-        let mut parts = Vec::new();
-        let mut last_was_scope = false;
-
-        let pos = self.lexer.sync_position();
-
-        loop {
-            match self.lexer.peek_t() {
-                Token::Name(name) => {
-                    if !parts.is_empty() && !last_was_scope {
-                        break;
-                    }
-
-                    self.lexer.skip_tok();
-                    parts.push(name.name());
-
-                    last_was_scope = false;
-                }
-
-                Token::Op(Op::Scope) => {
-                    if last_was_scope {
-                        break;
-                    }
-
-                    self.lexer.skip_tok();
-
-                    // For absolute scoping
-                    if parts.is_empty() {
-                        parts.push("");
-                    }
-
-                    last_was_scope = true;
-                }
-
-                _ => {
-                    break;
-                }
-            }
-        }
-
-        if parts.is_empty() {
-            error!("[P????]: identifier: expected identifier name\n--> {pos}");
-            return None;
-        }
-
-        if last_was_scope {
-            error!(
-                "[P????]: identifier: unexpected trailing scope resolution operator\n--> {}",
-                self.lexer.sync_position()
-            );
-            return None;
-        }
-
-        Some(Builder::create_qualified_identifier(parts))
-    }
-
     fn parse_expression_primary(&mut self) -> Option<Expr<'a>> {
         match self.lexer.peek_t() {
             Token::Integer(int) => {
@@ -901,7 +839,10 @@ impl<'a> Parser<'a, '_> {
 
             Token::Punct(Punct::LeftBracket) => self.parse_list(),
 
-            Token::Name(_) | Token::Op(Op::Scope) => self.parse_identifier(),
+            Token::Name(name) => {
+                self.lexer.skip_tok();
+                Some(Builder::create_identifier(name.name()))
+            }
 
             Token::Keyword(Keyword::True) => {
                 self.lexer.skip_tok();
