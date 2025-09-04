@@ -4,13 +4,11 @@
 mod builder;
 mod builder_helper;
 mod expression;
-mod node;
 mod types;
 
-pub use builder::*;
-pub use node::{Expr, Type};
+pub use builder::Builder;
 
-pub mod nodes {
+pub mod kind {
     pub use super::expression::*;
     pub use super::types::*;
 }

@@ -2,7 +2,7 @@ use super::parse::Parser;
 use super::source_model::CopyrightInfo;
 use log::error;
 use nitrate_lexical::{Punct, StringData, Token};
-use nitrate_parsetree::Expr;
+use nitrate_parsetree::kind::Expr;
 use ordered_float::NotNan;
 use spdx::{LicenseId, license_id};
 use std::collections::HashSet;

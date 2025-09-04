@@ -1,19 +1,17 @@
-use super::builder_helper::{
+use crate::expression::VariableKind;
+use crate::expression::{Expr, Identifier};
+use crate::types::{TupleType, Type};
+use nitrate_lexical::{BStringData, NotNan, StringData};
+use std::rc::Rc;
+
+use crate::builder_helper::{
     ArrayTypeBuilder, AssertBuilder, AwaitBuilder, BinExprBuilder, BlockBuilder, BreakBuilder,
     CallBuilder, ContinueBuilder, DoWhileLoopBuilder, ForEachBuilder, FunctionBuilder,
     FunctionTypeBuilder, GenericTypeBuilder, IfBuilder, IntegerBuilder, ListBuilder,
     ManagedRefTypeBuilder, MapTypeBuilder, ObjectBuilder, RefinementTypeBuilder, ReturnBuilder,
-    SliceTypeBuilder, StatementBuilder, StructTypeBuilder, SwitchBuilder, TupleTypeBuilder,
-    UnaryExprBuilder, UnmanagedRefTypeBuilder, VariableBuilder, WhileLoopBuilder,
+    ScopeBuilder, SliceTypeBuilder, StatementBuilder, StructTypeBuilder, SwitchBuilder,
+    TupleTypeBuilder, UnaryExprBuilder, UnmanagedRefTypeBuilder, VariableBuilder, WhileLoopBuilder,
 };
-use super::expression::VariableKind;
-use super::node::{Expr, Type};
-use super::types::TupleType;
-use crate::builder_helper::ScopeBuilder;
-use crate::nodes::Identifier;
-use nitrate_lexical::{BStringData, StringData};
-use ordered_float::NotNan;
-use std::rc::Rc;
 
 #[derive(Debug, Default)]
 pub struct Builder {}

@@ -1,5 +1,8 @@
 use hashbrown::{HashMap, HashSet};
-use nitrate_parsetree::{Builder, Expr, Type};
+use nitrate_parsetree::{
+    Builder,
+    kind::{Expr, Type},
+};
 use std::rc::Rc;
 
 #[derive(Debug, Default)]

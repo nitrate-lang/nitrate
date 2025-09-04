@@ -1,7 +1,10 @@
 use super::parse::Parser;
 use log::{error, info};
 use nitrate_lexical::{Keyword, Name, Op, Punct, Token};
-use nitrate_parsetree::{Builder, Expr, Type, nodes::FunctionParameter};
+use nitrate_parsetree::{
+    Builder,
+    kind::{Expr, FunctionParameter, Type},
+};
 
 #[allow(unused_imports)]
 use crate::SymbolTable;

@@ -1,10 +1,10 @@
 use super::abstract_machine::{AbstractMachine, Unwind};
 use nitrate_parsetree::{
-    Builder, Expr, Type,
-    nodes::{
-        ArrayType, FunctionParameter, FunctionType, GenericType, ManagedRefType, MapType,
-        RefinementType, SliceType, StructType, TupleType, UnmanagedRefType,
+    kind::{
+        ArrayType, Expr, FunctionParameter, FunctionType, GenericType, ManagedRefType, MapType,
+        RefinementType, SliceType, StructType, TupleType, Type, UnmanagedRefType,
     },
+    Builder,
 };
 use std::rc::Rc;
 

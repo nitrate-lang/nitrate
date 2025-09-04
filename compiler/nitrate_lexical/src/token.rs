@@ -1,4 +1,4 @@
-use ordered_float::NotNan;
+pub use ordered_float::NotNan;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Hash)]
 pub enum IdentifierKind {

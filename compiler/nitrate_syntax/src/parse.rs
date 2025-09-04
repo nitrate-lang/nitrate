@@ -2,7 +2,7 @@ use super::source_model::SourceModel;
 use super::symbol_table::SymbolTable;
 use log::{error, info};
 use nitrate_lexical::{Lexer, Punct, Token};
-use nitrate_parsetree::{Builder, nodes::QualifiedScope};
+use nitrate_parsetree::{Builder, kind::QualifiedScope};
 use smallvec::SmallVec;
 
 pub struct Parser<'a, 'symbol_table> {

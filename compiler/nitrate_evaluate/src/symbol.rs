@@ -1,7 +1,7 @@
 use super::abstract_machine::{AbstractMachine, Unwind};
 use nitrate_parsetree::{
-    Builder, Expr,
-    nodes::{Identifier, Scope, Variable},
+    kind::{Expr, Identifier, Scope, Variable},
+    Builder,
 };
 
 impl<'a> AbstractMachine<'a> {

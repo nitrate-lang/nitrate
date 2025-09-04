@@ -2,8 +2,8 @@ use super::parse::Parser;
 use log::error;
 use nitrate_lexical::{IntegerKind, Keyword, Op, Punct, Token};
 use nitrate_parsetree::{
-    Builder, Expr,
-    nodes::{BinExprOp, CallArguments},
+    Builder,
+    kind::{BinExprOp, CallArguments, Expr},
 };
 
 impl<'a> Parser<'a, '_> {

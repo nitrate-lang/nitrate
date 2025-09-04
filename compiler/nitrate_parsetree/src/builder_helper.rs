@@ -1,17 +1,16 @@
-use crate::{
-    Builder, Expr, Type,
-    nodes::{
-        ArrayType, Assert, Await, BinExpr, BinExprOp, Block, Break, Call, CallArguments, Continue,
-        DoWhileLoop, ForEach, Function, FunctionParameter, FunctionType, GenericType, If, Integer,
-        List, ManagedRefType, MapType, Object, RefinementType, Return, Scope, SliceType, Statement,
-        StructField, StructType, Switch, TupleType, UnaryExpr, UnaryExprOp, UnmanagedRefType,
-        Variable, VariableKind, WhileLoop,
-    },
-};
+use crate::Builder;
 use apint::UInt;
 use nitrate_lexical::IntegerKind;
 use std::collections::BTreeMap;
 use std::rc::Rc;
+
+use crate::kind::{
+    ArrayType, Assert, Await, BinExpr, BinExprOp, Block, Break, Call, CallArguments, Continue,
+    DoWhileLoop, Expr, ForEach, Function, FunctionParameter, FunctionType, GenericType, If,
+    Integer, List, ManagedRefType, MapType, Object, RefinementType, Return, Scope, SliceType,
+    Statement, StructField, StructType, Switch, TupleType, Type, UnaryExpr, UnaryExprOp,
+    UnmanagedRefType, Variable, VariableKind, WhileLoop,
+};
 
 #[derive(Debug)]
 pub struct RefinementTypeBuilder<'a> {

@@ -1,5 +1,8 @@
 #[allow(unused_imports)]
-use nitrate_parsetree::{Builder, Expr, nodes, nodes::QualifiedScope};
+use nitrate_parsetree::{
+    Builder,
+    kind::{Expr, QualifiedScope},
+};
 use std::collections::HashMap;
 
 #[derive(Debug, Clone, Default)]

@@ -1,5 +1,5 @@
 use nitrate_lexical::StringData;
-use nitrate_parsetree::Expr;
+use nitrate_parsetree::kind::Expr;
 use spdx::LicenseId;
 use std::collections::HashSet;
 

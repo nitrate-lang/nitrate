@@ -1,9 +1,9 @@
 use super::abstract_machine::{AbstractMachine, CallFrame, IntrinsicFunction, Unwind};
 use nitrate_parsetree::{
-    Builder, Expr,
-    nodes::{
-        Assert, Await, Break, Call, Continue, DoWhileLoop, ForEach, Function, If, Return, Switch,
-        WhileLoop,
+    Builder,
+    kind::{
+        Assert, Await, Break, Call, Continue, DoWhileLoop, Expr, ForEach, Function, If, Return,
+        Switch, WhileLoop,
     },
 };
 use std::rc::Rc;

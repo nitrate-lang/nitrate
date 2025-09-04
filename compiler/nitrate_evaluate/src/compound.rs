@@ -1,7 +1,7 @@
 use super::abstract_machine::{AbstractMachine, Unwind};
 use nitrate_parsetree::{
-    Builder, Expr, Type,
-    nodes::{BinExpr, Block, List, Object, Statement, UnaryExpr},
+    kind::{BinExpr, Block, Expr, List, Object, Statement, Type, UnaryExpr},
+    Builder,
 };
 use std::collections::BTreeMap;
 

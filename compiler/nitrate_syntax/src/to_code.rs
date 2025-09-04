@@ -1,11 +1,10 @@
-use nitrate_parsetree::nodes::{
-    ArrayType, Assert, Await, BinExpr, BinExprOp, Block, Break, Call, Continue, DoWhileLoop,
+use nitrate_lexical::{Integer, Keyword, Name, Op, Punct, Token};
+use nitrate_parsetree::kind::{
+    ArrayType, Assert, Await, BinExpr, BinExprOp, Block, Break, Call, Continue, DoWhileLoop, Expr,
     ForEach, Function, FunctionType, GenericType, Identifier, If, List, ManagedRefType, MapType,
     Object, RefinementType, Return, Scope, SliceType, Statement, StructType, Switch, TupleType,
-    UnaryExpr, UnaryExprOp, UnmanagedRefType, Variable, VariableKind, WhileLoop,
+    Type, UnaryExpr, UnaryExprOp, UnmanagedRefType, Variable, VariableKind, WhileLoop,
 };
-use nitrate_parsetree::{Expr, Type};
-use nitrate_lexical::{Integer, Keyword, Name, Op, Punct, Token};
 use std::ops::Deref;
 
 // FIXME: Keep this in sync with the parser
@@ -178,7 +177,7 @@ impl<'a> ToCode<'a> for StructType<'a> {
     }
 }
 
-impl<'a> ToCode<'a> for nitrate_parsetree::nodes::Integer {
+impl<'a> ToCode<'a> for nitrate_parsetree::kind::Integer {
     fn to_code(&self, tokens: &mut Vec<Token<'a>>, _options: &CodeFormat) {
         let u128 = self
             .get()

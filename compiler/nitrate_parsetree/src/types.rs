@@ -1,5 +1,6 @@
-use super::expression::FunctionParameter;
-use super::node::{Expr, Type};
+use crate::expression::{Expr, FunctionParameter, Identifier};
+use nitrate_lexical::StringData;
+use std::rc::Rc;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct RefinementType<'a> {
@@ -248,5 +249,88 @@ impl<'a> StructType<'a> {
     #[must_use]
     pub fn fields(&self) -> &[StructField<'a>] {
         &self.fields
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub enum Type<'a> {
+    Bool,
+    UInt8,
+    UInt16,
+    UInt32,
+    UInt64,
+    UInt128,
+    Int8,
+    Int16,
+    Int32,
+    Int64,
+    Int128,
+    Float8,
+    Float16,
+    Float32,
+    Float64,
+    Float128,
+    UnitType,
+    InferType,
+    TypeName(Rc<Identifier<'a>>),
+    RefinementType(Rc<RefinementType<'a>>),
+    TupleType(Rc<TupleType<'a>>),
+    ArrayType(Rc<ArrayType<'a>>),
+    MapType(Rc<MapType<'a>>),
+    SliceType(Rc<SliceType<'a>>),
+    FunctionType(Rc<FunctionType<'a>>),
+    ManagedRefType(Rc<ManagedRefType<'a>>),
+    UnmanagedRefType(Rc<UnmanagedRefType<'a>>),
+    GenericType(Rc<GenericType<'a>>),
+    OpaqueType(Rc<StringData<'a>>),
+    StructType(Rc<StructType<'a>>),
+    LatentType(Rc<Expr<'a>>),
+    HasParenthesesType(Rc<Type<'a>>),
+}
+
+impl<'a> From<Type<'a>> for Expr<'a> {
+    fn from(val: Type<'a>) -> Expr<'a> {
+        match val {
+            Type::Bool => Expr::Bool,
+            Type::UInt8 => Expr::UInt8,
+            Type::UInt16 => Expr::UInt16,
+            Type::UInt32 => Expr::UInt32,
+            Type::UInt64 => Expr::UInt64,
+            Type::UInt128 => Expr::UInt128,
+            Type::Int8 => Expr::Int8,
+            Type::Int16 => Expr::Int16,
+            Type::Int32 => Expr::Int32,
+            Type::Int64 => Expr::Int64,
+            Type::Int128 => Expr::Int128,
+            Type::Float8 => Expr::Float8,
+            Type::Float16 => Expr::Float16,
+            Type::Float32 => Expr::Float32,
+            Type::Float64 => Expr::Float64,
+            Type::Float128 => Expr::Float128,
+            Type::UnitType => Expr::UnitType,
+
+            Type::InferType => Expr::InferType,
+            Type::TypeName(x) => Expr::TypeName(x),
+            Type::RefinementType(x) => Expr::RefinementType(x),
+            Type::TupleType(x) => Expr::TupleType(x),
+            Type::ArrayType(x) => Expr::ArrayType(x),
+            Type::MapType(x) => Expr::MapType(x),
+            Type::SliceType(x) => Expr::SliceType(x),
+            Type::FunctionType(x) => Expr::FunctionType(x),
+            Type::ManagedRefType(x) => Expr::ManagedRefType(x),
+            Type::UnmanagedRefType(x) => Expr::UnmanagedRefType(x),
+            Type::GenericType(x) => Expr::GenericType(x),
+            Type::OpaqueType(x) => Expr::OpaqueType(x),
+            Type::StructType(x) => Expr::StructType(x),
+            Type::LatentType(x) => Expr::LatentType(x),
+            Type::HasParenthesesType(x) => Expr::HasParenthesesType(x),
+        }
+    }
+}
+
+impl Type<'_> {
+    #[must_use]
+    pub fn is_known(&self) -> bool {
+        matches!(self, Type::InferType)
     }
 }
