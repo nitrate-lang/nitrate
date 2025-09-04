@@ -261,7 +261,7 @@ impl<'a> Parser<'a, '_> {
         }
 
         if segments.is_empty() {
-            error!("[P????]: type name: expected type name\n--> {}", pos);
+            error!("[P????]: type name: expected type name\n--> {pos}");
             return None;
         }
 

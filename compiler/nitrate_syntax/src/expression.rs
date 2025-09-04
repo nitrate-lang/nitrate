@@ -346,10 +346,10 @@ impl<'a> Parser<'a, '_> {
         let condition = self.parse_expression()?;
         self.lexer.skip_if(&Token::Punct(Punct::Comma));
 
-        let message = if !self.lexer.next_is(&Token::Punct(Punct::RightParen)) {
-            self.parse_expression()?
-        } else {
+        let message = if self.lexer.next_is(&Token::Punct(Punct::RightParen)) {
             Builder::create_string_from_ref("")
+        } else {
+            self.parse_expression()?
         };
 
         if !self.lexer.skip_if(&Token::Punct(Punct::RightParen)) {
@@ -490,15 +490,15 @@ impl<'a> Parser<'a, '_> {
             let function_argument = self.parse_function_argument()?;
             arguments.push(function_argument);
 
-            if !self.lexer.skip_if(&Token::Punct(Punct::Comma)) {
-                if !self.lexer.next_is(&Token::Punct(Punct::RightParen)) {
-                    error!(
-                        "[P0???]: function call: expected ',' or ')' after function argument\n--> {}",
-                        self.lexer.sync_position()
-                    );
+            if !self.lexer.skip_if(&Token::Punct(Punct::Comma))
+                && !self.lexer.next_is(&Token::Punct(Punct::RightParen))
+            {
+                error!(
+                    "[P0???]: function call: expected ',' or ')' after function argument\n--> {}",
+                    self.lexer.sync_position()
+                );
 
-                    return None;
-                }
+                return None;
             }
         }
 
@@ -700,7 +700,7 @@ impl<'a> Parser<'a, '_> {
         }
 
         if parts.is_empty() {
-            error!("[P????]: identifier: expected identifier name\n--> {}", pos);
+            error!("[P????]: identifier: expected identifier name\n--> {pos}");
             return None;
         }
 
