@@ -3,10 +3,121 @@ use log::error;
 use nitrate_lexical::{IntegerKind, Keyword, Op, Punct, Token};
 use nitrate_parsetree::{
     Builder,
-    kind::{BinExprOp, CallArguments, Expr},
+    kind::{BinExprOp, CallArguments, Expr, UnaryExprOp},
 };
 
+type Precedence = u32;
+
+#[derive(PartialEq, PartialOrd, Eq, Clone, Copy)]
+enum Associativity {
+    LeftToRight,
+    RightToLeft,
+}
+
 impl<'a> Parser<'a, '_> {
+    fn get_precedence(op: Op) -> Option<(Associativity, Precedence, BinExprOp)> {
+        type Assoc = Associativity;
+
+        Some(match op {
+            Op::Add => (Assoc::LeftToRight, 1, BinExprOp::Add),
+            Op::Sub => (Assoc::LeftToRight, 1, BinExprOp::Sub),
+            Op::Mul => (Assoc::LeftToRight, 2, BinExprOp::Mul),
+            Op::Div => (Assoc::LeftToRight, 2, BinExprOp::Div),
+
+            _ => return None,
+        })
+    }
+
+    fn get_prefix_precedence(op: Op) -> Option<(Associativity, Precedence, UnaryExprOp)> {
+        type Assoc = Associativity;
+
+        Some(match op {
+            Op::Add => (Assoc::LeftToRight, Precedence::MAX, UnaryExprOp::Add),
+            Op::Sub => (Assoc::LeftToRight, Precedence::MAX, UnaryExprOp::Sub),
+            Op::Mul => (Assoc::LeftToRight, Precedence::MAX, UnaryExprOp::Mul),
+
+            _ => return None,
+        })
+    }
+
+    fn parse_expression_precedence(
+        &mut self,
+        min_precedence_continue: Precedence,
+    ) -> Option<Expr<'a>> {
+        let mut sofar = self.parse_prefix()?;
+
+        loop {
+            let Token::Op(next_op) = self.lexer.peek_t() else {
+                return Some(sofar);
+            };
+
+            let Some((associativity, new_precedence, op)) = Self::get_precedence(next_op) else {
+                return Some(sofar);
+            };
+
+            if new_precedence < min_precedence_continue {
+                return Some(sofar);
+            }
+
+            self.lexer.skip_tok();
+
+            let right_expr = if associativity == Associativity::LeftToRight {
+                self.parse_expression_precedence(new_precedence + 1)?
+            } else {
+                self.parse_expression_precedence(new_precedence)?
+            };
+
+            sofar = Builder::create_binexpr()
+                .with_left(sofar)
+                .with_operator(op)
+                .with_right(right_expr)
+                .build();
+        }
+    }
+
+    fn parse_prefix(&mut self) -> Option<Expr<'a>> {
+        if let Token::Op(prefix_op) = self.lexer.peek_t() {
+            if let Some((assoc, precedence, unary_op)) = Self::get_prefix_precedence(prefix_op) {
+                self.lexer.skip_tok();
+
+                let right = if assoc == Associativity::LeftToRight {
+                    self.parse_expression_precedence(precedence + 1)?
+                } else {
+                    self.parse_expression_precedence(precedence)?
+                };
+
+                return Some(
+                    Builder::create_unary_expr()
+                        .with_prefix()
+                        .with_operator(unary_op)
+                        .with_operand(right)
+                        .build(),
+                );
+            }
+        }
+
+        if self.lexer.skip_if(&Token::Punct(Punct::LeftParen)) {
+            let inner = self.parse_expression()?;
+
+            if !self.lexer.skip_if(&Token::Punct(Punct::RightParen)) {
+                self.set_failed_bit();
+                error!(
+                    "[P????]: expr: expected closing parenthesis\n--> {}",
+                    self.lexer.sync_position()
+                );
+                return None;
+            }
+
+            return Some(Builder::create_parentheses(inner));
+        }
+
+        self.parse_expression_primary()
+    }
+
+    pub fn parse_expression(&mut self) -> Option<Expr<'a>> {
+        self.parse_expression_precedence(Precedence::MIN)
+    }
+
     fn parse_integer_literal(value: u128, kind: IntegerKind) -> Expr<'a> {
         let mut bb = Builder::create_integer_with_kind().with_kind(kind);
 
@@ -843,43 +954,6 @@ impl<'a> Parser<'a, '_> {
                 None
             }
         }
-    }
-
-    pub fn parse_expression(&mut self) -> Option<Expr<'a>> {
-        let primary = if self.lexer.skip_if(&Token::Punct(Punct::LeftParen)) {
-            let inner = self.parse_expression()?;
-
-            if !self.lexer.skip_if(&Token::Punct(Punct::RightParen)) {
-                self.set_failed_bit();
-                error!(
-                    "[P????]: expr: expected closing parenthesis\n--> {}",
-                    self.lexer.sync_position()
-                );
-                return None;
-            }
-
-            Builder::create_parentheses(inner)
-        } else {
-            self.parse_expression_primary()?
-        };
-
-        // FIXME: Just get basic calls working
-        if self.lexer.next_is(&Token::Punct(Punct::LeftParen)) {
-            let args = self.parse_function_arguments()?;
-
-            return Some(
-                Builder::create_call()
-                    .with_callee(primary)
-                    .add_arguments(args)
-                    .build(),
-            );
-        }
-
-        // TODO: binary expression parsing logic
-        // TODO: unary prefix expression parsing logic
-        // TODO: unary postfix expression parsing logic
-
-        Some(primary)
     }
 
     pub fn parse_block_as_elements(&mut self) -> Option<Vec<Expr<'a>>> {
