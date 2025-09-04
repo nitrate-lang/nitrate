@@ -34,93 +34,93 @@ enum Associativity {
     RightToLeft,
 }
 
+fn get_precedence(op: Op) -> Option<(Associativity, Precedence)> {
+    type Assoc = Associativity;
+
+    // TODO: Handle function call and array indexing
+
+    let (associativity, precedence) = match op {
+        Op::Scope => (Assoc::LeftToRight, PrecedenceRank::Scope),
+
+        Op::Dot | Op::Arrow => (Assoc::LeftToRight, PrecedenceRank::FieldAccess),
+
+        Op::As | Op::BitcastAs => (Assoc::LeftToRight, PrecedenceRank::Cast),
+
+        Op::Mul | Op::Div | Op::Mod => (Assoc::LeftToRight, PrecedenceRank::MulDivMod),
+
+        Op::Add | Op::Sub => (Assoc::LeftToRight, PrecedenceRank::AddSub),
+
+        Op::BitShl | Op::BitShr | Op::BitRol | Op::BitRor => {
+            (Assoc::LeftToRight, PrecedenceRank::BitShiftAndRotate)
+        }
+
+        Op::BitAnd => (Assoc::LeftToRight, PrecedenceRank::BitAnd),
+        Op::BitXor => (Assoc::LeftToRight, PrecedenceRank::BitXor),
+        Op::BitOr => (Assoc::LeftToRight, PrecedenceRank::BitOr),
+
+        Op::LogicEq | Op::LogicNe | Op::LogicLt | Op::LogicGt | Op::LogicLe | Op::LogicGe => {
+            (Assoc::LeftToRight, PrecedenceRank::Comparison)
+        }
+
+        Op::LogicAnd => (Assoc::LeftToRight, PrecedenceRank::LogicAnd),
+        Op::LogicXor => (Assoc::LeftToRight, PrecedenceRank::LogicXor),
+        Op::LogicOr => (Assoc::LeftToRight, PrecedenceRank::LogicOr),
+
+        Op::Range => (Assoc::LeftToRight, PrecedenceRank::Range),
+
+        Op::Set
+        | Op::SetPlus
+        | Op::SetMinus
+        | Op::SetTimes
+        | Op::SetSlash
+        | Op::SetPercent
+        | Op::SetBitAnd
+        | Op::SetBitOr
+        | Op::SetBitXor
+        | Op::SetBitShl
+        | Op::SetBitShr
+        | Op::SetBitRotl
+        | Op::SetBitRotr
+        | Op::SetLogicAnd
+        | Op::SetLogicOr
+        | Op::SetLogicXor => (Assoc::RightToLeft, PrecedenceRank::Assign),
+
+        Op::BitNot
+        | Op::LogicNot
+        | Op::Sizeof
+        | Op::Typeof
+        | Op::Alignof
+        | Op::Ellipsis
+        | Op::BlockArrow => {
+            return None;
+        }
+    };
+
+    Some((associativity, precedence as Precedence))
+}
+
+fn get_prefix_precedence(op: Op) -> Option<Precedence> {
+    let precedence = match op {
+        Op::Add => PrecedenceRank::Unary,
+        Op::Sub => PrecedenceRank::Unary,
+        Op::LogicNot => PrecedenceRank::Unary,
+        Op::BitNot => PrecedenceRank::Unary,
+        Op::Mul => PrecedenceRank::Unary,
+        Op::BitAnd => PrecedenceRank::Unary,
+        Op::Sizeof => PrecedenceRank::Unary,
+        Op::Typeof => PrecedenceRank::Unary,
+        Op::Alignof => PrecedenceRank::Unary,
+
+        _ => return None,
+    };
+
+    Some(precedence as Precedence)
+}
+
 impl<'a> Parser<'a, '_> {
-    fn get_precedence(op: Op) -> Option<(Associativity, Precedence)> {
-        type Assoc = Associativity;
-
-        // TODO: Handle function call and array indexing
-
-        let (associativity, precedence) = match op {
-            Op::Scope => (Assoc::LeftToRight, PrecedenceRank::Scope),
-
-            Op::Dot | Op::Arrow => (Assoc::LeftToRight, PrecedenceRank::FieldAccess),
-
-            Op::As | Op::BitcastAs => (Assoc::LeftToRight, PrecedenceRank::Cast),
-
-            Op::Mul | Op::Div | Op::Mod => (Assoc::LeftToRight, PrecedenceRank::MulDivMod),
-
-            Op::Add | Op::Sub => (Assoc::LeftToRight, PrecedenceRank::AddSub),
-
-            Op::BitShl | Op::BitShr | Op::BitRol | Op::BitRor => {
-                (Assoc::LeftToRight, PrecedenceRank::BitShiftAndRotate)
-            }
-
-            Op::BitAnd => (Assoc::LeftToRight, PrecedenceRank::BitAnd),
-            Op::BitXor => (Assoc::LeftToRight, PrecedenceRank::BitXor),
-            Op::BitOr => (Assoc::LeftToRight, PrecedenceRank::BitOr),
-
-            Op::LogicEq | Op::LogicNe | Op::LogicLt | Op::LogicGt | Op::LogicLe | Op::LogicGe => {
-                (Assoc::LeftToRight, PrecedenceRank::Comparison)
-            }
-
-            Op::LogicAnd => (Assoc::LeftToRight, PrecedenceRank::LogicAnd),
-            Op::LogicXor => (Assoc::LeftToRight, PrecedenceRank::LogicXor),
-            Op::LogicOr => (Assoc::LeftToRight, PrecedenceRank::LogicOr),
-
-            Op::Range => (Assoc::LeftToRight, PrecedenceRank::Range),
-
-            Op::Set
-            | Op::SetPlus
-            | Op::SetMinus
-            | Op::SetTimes
-            | Op::SetSlash
-            | Op::SetPercent
-            | Op::SetBitAnd
-            | Op::SetBitOr
-            | Op::SetBitXor
-            | Op::SetBitShl
-            | Op::SetBitShr
-            | Op::SetBitRotl
-            | Op::SetBitRotr
-            | Op::SetLogicAnd
-            | Op::SetLogicOr
-            | Op::SetLogicXor => (Assoc::RightToLeft, PrecedenceRank::Assign),
-
-            Op::BitNot
-            | Op::LogicNot
-            | Op::Sizeof
-            | Op::Typeof
-            | Op::Alignof
-            | Op::Ellipsis
-            | Op::BlockArrow => {
-                return None;
-            }
-        };
-
-        Some((associativity, precedence as Precedence))
-    }
-
-    fn get_prefix_precedence(op: Op) -> Option<Precedence> {
-        let precedence = match op {
-            Op::Add => PrecedenceRank::Unary,
-            Op::Sub => PrecedenceRank::Unary,
-            Op::LogicNot => PrecedenceRank::Unary,
-            Op::BitNot => PrecedenceRank::Unary,
-            Op::Mul => PrecedenceRank::Unary,
-            Op::BitAnd => PrecedenceRank::Unary,
-            Op::Sizeof => PrecedenceRank::Unary,
-            Op::Typeof => PrecedenceRank::Unary,
-            Op::Alignof => PrecedenceRank::Unary,
-
-            _ => return None,
-        };
-
-        Some(precedence as Precedence)
-    }
-
     fn parse_prefix(&mut self) -> Option<Expr<'a>> {
         if let Token::Op(prefix_op) = self.lexer.peek_t() {
-            if let Some(precedence) = Self::get_prefix_precedence(prefix_op) {
+            if let Some(precedence) = get_prefix_precedence(prefix_op) {
                 self.lexer.skip_tok();
 
                 let operand = self.parse_expression_precedence(precedence)?;
@@ -164,7 +164,7 @@ impl<'a> Parser<'a, '_> {
                 return Some(sofar);
             };
 
-            let Some((associativity, new_precedence)) = Self::get_precedence(next_op) else {
+            let Some((associativity, new_precedence)) = get_precedence(next_op) else {
                 return Some(sofar);
             };
 
