@@ -1,6 +1,6 @@
 use apint::UInt;
-use nitrate_lexical::IntegerKind;
 use nitrate_lexical::{BStringData, StringData};
+use nitrate_lexical::{IntegerKind, Op};
 use ordered_float::NotNan;
 use smallvec::SmallVec;
 use std::{collections::BTreeMap, rc::Rc};
@@ -134,6 +134,66 @@ pub enum UnaryExprOp {
     Typeof,  /* 'typeof':     "Type Of Operator" */
 }
 
+impl TryFrom<Op> for UnaryExprOp {
+    type Error = ();
+
+    fn try_from(op: Op) -> Result<Self, Self::Error> {
+        match op {
+            Op::Add => Ok(UnaryExprOp::Add),
+            Op::Sub => Ok(UnaryExprOp::Sub),
+            Op::Mul => Ok(UnaryExprOp::Deref),
+            Op::BitAnd => Ok(UnaryExprOp::AddressOf),
+            Op::BitNot => Ok(UnaryExprOp::BitNot),
+            Op::LogicNot => Ok(UnaryExprOp::LogicNot),
+            Op::Sizeof => Ok(UnaryExprOp::Sizeof),
+            Op::Typeof => Ok(UnaryExprOp::Typeof),
+            Op::Alignof => Ok(UnaryExprOp::Alignof),
+
+            Op::Div
+            | Op::Mod
+            | Op::BitOr
+            | Op::BitXor
+            | Op::BitShl
+            | Op::BitShr
+            | Op::BitRol
+            | Op::BitRor
+            | Op::LogicAnd
+            | Op::LogicOr
+            | Op::LogicXor
+            | Op::LogicLt
+            | Op::LogicGt
+            | Op::LogicLe
+            | Op::LogicGe
+            | Op::LogicEq
+            | Op::LogicNe
+            | Op::Set
+            | Op::SetPlus
+            | Op::SetMinus
+            | Op::SetTimes
+            | Op::SetSlash
+            | Op::SetPercent
+            | Op::SetBitAnd
+            | Op::SetBitOr
+            | Op::SetBitXor
+            | Op::SetBitShl
+            | Op::SetBitShr
+            | Op::SetBitRotl
+            | Op::SetBitRotr
+            | Op::SetLogicAnd
+            | Op::SetLogicOr
+            | Op::SetLogicXor
+            | Op::As
+            | Op::BitcastAs
+            | Op::Dot
+            | Op::Ellipsis
+            | Op::Scope
+            | Op::Arrow
+            | Op::BlockArrow
+            | Op::Range => Err(()),
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct UnaryExpr<'a> {
     operand: Expr<'a>,
@@ -225,7 +285,8 @@ pub enum BinExprOp {
     /*----------------------------------------------------------------*
      * Type System Operators                                          *
      *----------------------------------------------------------------*/
-    As, /* 'as':         "Type Cast Operator" */
+    As,        /* 'as':         "Type Cast Operator" */
+    BitcastAs, /* 'bitcast_as': "Bitwise Type Cast Operator" */
 
     /*----------------------------------------------------------------*
      * Syntactic Operators                                            *
@@ -239,8 +300,63 @@ pub enum BinExprOp {
     /*----------------------------------------------------------------*
      * Special Operators                                              *
      *----------------------------------------------------------------*/
-    Range,     /* '..':         "Range Operator" */
-    Spaceship, /* '<=>':        "Spaceship Operator" */
+    Range, /* '..':         "Range Operator" */
+}
+
+impl TryFrom<Op> for BinExprOp {
+    type Error = ();
+
+    fn try_from(op: Op) -> Result<Self, Self::Error> {
+        match op {
+            Op::Add => Ok(BinExprOp::Add),
+            Op::Sub => Ok(BinExprOp::Sub),
+            Op::Mul => Ok(BinExprOp::Mul),
+            Op::Div => Ok(BinExprOp::Div),
+            Op::Mod => Ok(BinExprOp::Mod),
+            Op::BitAnd => Ok(BinExprOp::BitAnd),
+            Op::BitOr => Ok(BinExprOp::BitOr),
+            Op::BitXor => Ok(BinExprOp::BitXor),
+            Op::BitShl => Ok(BinExprOp::BitShl),
+            Op::BitShr => Ok(BinExprOp::BitShr),
+            Op::BitRol => Ok(BinExprOp::BitRol),
+            Op::BitRor => Ok(BinExprOp::BitRor),
+            Op::LogicAnd => Ok(BinExprOp::LogicAnd),
+            Op::LogicOr => Ok(BinExprOp::LogicOr),
+            Op::LogicXor => Ok(BinExprOp::LogicXor),
+            Op::LogicLt => Ok(BinExprOp::LogicLt),
+            Op::LogicGt => Ok(BinExprOp::LogicGt),
+            Op::LogicLe => Ok(BinExprOp::LogicLe),
+            Op::LogicGe => Ok(BinExprOp::LogicGe),
+            Op::LogicEq => Ok(BinExprOp::LogicEq),
+            Op::LogicNe => Ok(BinExprOp::LogicNe),
+            Op::Set => Ok(BinExprOp::Set),
+            Op::SetPlus => Ok(BinExprOp::SetPlus),
+            Op::SetMinus => Ok(BinExprOp::SetMinus),
+            Op::SetTimes => Ok(BinExprOp::SetTimes),
+            Op::SetSlash => Ok(BinExprOp::SetSlash),
+            Op::SetPercent => Ok(BinExprOp::SetPercent),
+            Op::SetBitAnd => Ok(BinExprOp::SetBitAnd),
+            Op::SetBitOr => Ok(BinExprOp::SetBitOr),
+            Op::SetBitXor => Ok(BinExprOp::SetBitXor),
+            Op::SetBitShl => Ok(BinExprOp::SetBitShl),
+            Op::SetBitShr => Ok(BinExprOp::SetBitShr),
+            Op::SetBitRotl => Ok(BinExprOp::SetBitRotl),
+            Op::SetBitRotr => Ok(BinExprOp::SetBitRotr),
+            Op::SetLogicAnd => Ok(BinExprOp::SetLogicAnd),
+            Op::SetLogicOr => Ok(BinExprOp::SetLogicOr),
+            Op::SetLogicXor => Ok(BinExprOp::SetLogicXor),
+            Op::As => Ok(BinExprOp::As),
+            Op::BitcastAs => Ok(BinExprOp::BitcastAs),
+            Op::Dot => Ok(BinExprOp::Dot),
+            Op::Ellipsis => Ok(BinExprOp::Ellipsis),
+            Op::Scope => Ok(BinExprOp::Scope),
+            Op::Arrow => Ok(BinExprOp::Arrow),
+            Op::BlockArrow => Ok(BinExprOp::BlockArrow),
+            Op::Range => Ok(BinExprOp::Range),
+
+            Op::BitNot | Op::LogicNot | Op::Sizeof | Op::Typeof | Op::Alignof => Err(()),
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]

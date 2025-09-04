@@ -527,8 +527,7 @@ pub enum Op {
     /*----------------------------------------------------------------*
      * Special Operators                                              *
      *----------------------------------------------------------------*/
-    Range,     /* '..':         "Range Operator" */
-    Spaceship, /* '<=>':        "Spaceship Operator" */
+    Range, /* '..':         "Range Operator" */
 }
 
 impl std::fmt::Display for Op {
@@ -590,7 +589,6 @@ impl std::fmt::Display for Op {
             Op::BlockArrow => write!(f, "=>"),
 
             Op::Range => write!(f, ".."),
-            Op::Spaceship => write!(f, "<=>"),
         }
     }
 }

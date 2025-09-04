@@ -285,13 +285,13 @@ impl<'a> ToCode<'a> for BinExprOp {
             BinExprOp::SetLogicOr => Op::SetLogicOr,
             BinExprOp::SetLogicXor => Op::SetLogicXor,
             BinExprOp::As => Op::As,
+            BinExprOp::BitcastAs => Op::BitcastAs,
             BinExprOp::Dot => Op::Dot,
             BinExprOp::Ellipsis => Op::Ellipsis,
             BinExprOp::Scope => Op::Scope,
             BinExprOp::Arrow => Op::Arrow,
             BinExprOp::BlockArrow => Op::BlockArrow,
             BinExprOp::Range => Op::Range,
-            BinExprOp::Spaceship => Op::Spaceship,
         });
 
         tokens.push(operator);

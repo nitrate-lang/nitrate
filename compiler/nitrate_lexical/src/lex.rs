@@ -1027,13 +1027,7 @@ impl<'a> Lexer<'a> {
                 match self.peek_byte() {
                     Ok(b'=') => {
                         self.advance(b'=');
-                        match self.peek_byte() {
-                            Ok(b'>') => {
-                                self.advance(b'>');
-                                Ok(Token::Op(Op::Spaceship))
-                            }
-                            _ => Ok(Token::Op(Op::LogicLe)),
-                        }
+                        Ok(Token::Op(Op::LogicLe))
                     }
                     Ok(b'<') => {
                         self.advance(b'<');
