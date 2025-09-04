@@ -1,5 +1,4 @@
 #![warn(clippy::pedantic)]
-#![allow(clippy::inline_always)]
 
 pub fn add(left: u64, right: u64) -> u64 {
     left + right

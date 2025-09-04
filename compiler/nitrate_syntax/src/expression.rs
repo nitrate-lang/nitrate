@@ -7,7 +7,7 @@ use nitrate_parsetree::{
 };
 
 impl<'a> Parser<'a, '_> {
-    fn parse_integer_literal(&mut self, value: u128, kind: IntegerKind) -> Expr<'a> {
+    fn parse_integer_literal(value: u128, kind: IntegerKind) -> Expr<'a> {
         let mut bb = Builder::create_integer_with_kind().with_kind(kind);
 
         if value <= 0xff {
@@ -719,7 +719,7 @@ impl<'a> Parser<'a, '_> {
         match self.lexer.peek_t() {
             Token::Integer(int) => {
                 self.lexer.skip_tok();
-                let lit = self.parse_integer_literal(int.value(), int.kind());
+                let lit = Self::parse_integer_literal(int.value(), int.kind());
                 Some(self.parse_literal_suffix(lit))
             }
 
@@ -765,7 +765,7 @@ impl<'a> Parser<'a, '_> {
             Token::Keyword(Keyword::Let) => self.parse_let_variable(),
             Token::Keyword(Keyword::Var) => self.parse_var_variable(),
             Token::Keyword(Keyword::Type) => self.parse_type_or_type_alias(),
-            Token::Keyword(Keyword::Fn) => self.parse_function(),
+            Token::Keyword(Keyword::Fn) | Token::Punct(Punct::LeftBrace) => self.parse_function(),
 
             Token::Keyword(Keyword::If) => self.parse_if(),
             Token::Keyword(Keyword::For) => self.parse_for(),
@@ -779,7 +779,6 @@ impl<'a> Parser<'a, '_> {
             Token::Keyword(Keyword::Await) => self.parse_await(),
             Token::Keyword(Keyword::Asm) => self.parse_asm(),
             Token::Keyword(Keyword::Assert) => self.parse_assert(),
-            Token::Punct(Punct::LeftBrace) => self.parse_function(),
 
             Token::Keyword(keyword) => {
                 self.set_failed_bit();

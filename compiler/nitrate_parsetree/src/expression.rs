@@ -31,6 +31,8 @@ impl Integer {
         &self.value
     }
 
+    /// # Panics
+    /// This function will panic if the value cannot be represented as a `u128`.
     #[must_use]
     pub fn get_u128(&self) -> u128 {
         self.value

@@ -1,5 +1,4 @@
 #![warn(clippy::pedantic)]
-#![allow(clippy::inline_always)]
 
 mod expression;
 mod parse;

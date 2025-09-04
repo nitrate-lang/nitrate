@@ -2,8 +2,8 @@ use super::parse::Parser;
 use log::{error, info};
 use nitrate_lexical::{Keyword, Name, Op, Punct, Token};
 use nitrate_parsetree::{
-    Builder,
     kind::{Expr, FunctionParameter, Type},
+    Builder,
 };
 
 #[allow(unused_imports)]
@@ -532,7 +532,7 @@ impl<'a> Parser<'a, '_> {
             let parameter_name = self
                 .lexer
                 .next_if_name()
-                .unwrap_or(Name::new(""))
+                .unwrap_or(Name::new("").unwrap())
                 .into_name();
 
             let parameter_type = if self.lexer.skip_if(&Token::Punct(Punct::Colon)) {

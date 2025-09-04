@@ -96,7 +96,7 @@ impl<'a> ToCode<'a> for FunctionType<'a> {
         for (i, param) in self.parameters().iter().enumerate() {
             (i > 0).then(|| tokens.push(Token::Punct(Punct::Comma)));
 
-            tokens.push(Token::Name(Name::new(param.name())));
+            tokens.push(Token::Name(Name::new(param.name()).expect("invalid name")));
 
             if param.type_().is_known() {
                 tokens.push(Token::Punct(Punct::Colon));
@@ -149,7 +149,7 @@ impl<'a> ToCode<'a> for GenericType<'a> {
         for (i, (name, value)) in self.arguments().iter().enumerate() {
             (i > 0).then(|| tokens.push(Token::Punct(Punct::Comma)));
             if !name.is_empty() {
-                tokens.push(Token::Name(Name::new(name)));
+                tokens.push(Token::Name(Name::new(name).expect("invalid name")));
                 tokens.push(Token::Punct(Punct::Colon));
             }
             value.to_code(tokens, options);
@@ -165,7 +165,7 @@ impl<'a> ToCode<'a> for StructType<'a> {
         tokens.push(Token::Punct(Punct::LeftBrace));
         for (i, (name, ty, default)) in self.fields().iter().enumerate() {
             (i > 0).then(|| tokens.push(Token::Punct(Punct::Comma)));
-            tokens.push(Token::Name(Name::new(name)));
+            tokens.push(Token::Name(Name::new(name).expect("invalid name")));
             tokens.push(Token::Punct(Punct::Colon));
             ty.to_code(tokens, options);
             if let Some(default) = default {
@@ -204,7 +204,7 @@ impl<'a> ToCode<'a> for Object<'a> {
     fn to_code(&self, tokens: &mut Vec<Token<'a>>, options: &CodeFormat) {
         tokens.push(Token::Punct(Punct::LeftBracket));
         for (key, value) in self.fields() {
-            tokens.push(Token::Name(Name::new(key)));
+            tokens.push(Token::Name(Name::new(key).expect("invalid name")));
             tokens.push(Token::Punct(Punct::Colon));
 
             value.to_code(tokens, options);
@@ -344,7 +344,7 @@ impl<'a> ToCode<'a> for Function<'a> {
         for (i, param) in self.parameters().iter().enumerate() {
             (i > 0).then(|| tokens.push(Token::Punct(Punct::Comma)));
 
-            tokens.push(Token::Name(Name::new(param.name())));
+            tokens.push(Token::Name(Name::new(param.name()).expect("invalid name")));
 
             if param.type_().is_known() {
                 tokens.push(Token::Punct(Punct::Colon));
@@ -376,7 +376,7 @@ impl<'a> ToCode<'a> for Variable<'a> {
             VariableKind::Var => tokens.push(Token::Keyword(Keyword::Var)),
         }
 
-        tokens.push(Token::Name(Name::new(self.name())));
+        tokens.push(Token::Name(Name::new(self.name()).expect("invalid name")));
 
         let var_type = self.get_type();
         tokens.push(Token::Punct(Punct::Colon));
@@ -393,7 +393,7 @@ impl<'a> ToCode<'a> for Identifier<'a> {
     fn to_code(&self, tokens: &mut Vec<Token<'a>>, _options: &CodeFormat) {
         for (i, segment) in self.segments().iter().enumerate() {
             (i > 0).then(|| tokens.push(Token::Op(Op::Scope)));
-            tokens.push(Token::Name(Name::new(segment)));
+            tokens.push(Token::Name(Name::new(segment).expect("invalid name")));
         }
     }
 }
@@ -401,7 +401,7 @@ impl<'a> ToCode<'a> for Identifier<'a> {
 impl<'a> ToCode<'a> for Scope<'a> {
     fn to_code(&self, tokens: &mut Vec<Token<'a>>, options: &CodeFormat) {
         tokens.push(Token::Keyword(Keyword::Scope));
-        tokens.push(Token::Name(Name::new(self.name())));
+        tokens.push(Token::Name(Name::new(self.name()).expect("invalid name")));
 
         if !self.attributes().is_empty() {
             tokens.push(Token::Punct(Punct::LeftBracket));
@@ -460,7 +460,7 @@ impl<'a> ToCode<'a> for Break<'a> {
         tokens.push(Token::Keyword(Keyword::Break));
         if let Some(label) = self.label() {
             tokens.push(Token::Punct(Punct::SingleQuote));
-            tokens.push(Token::Name(Name::new(label)));
+            tokens.push(Token::Name(Name::new(label).expect("invalid name")));
         }
     }
 }
@@ -470,7 +470,7 @@ impl<'a> ToCode<'a> for Continue<'a> {
         tokens.push(Token::Keyword(Keyword::Continue));
         if let Some(label) = self.label() {
             tokens.push(Token::Punct(Punct::SingleQuote));
-            tokens.push(Token::Name(Name::new(label)));
+            tokens.push(Token::Name(Name::new(label).expect("invalid name")));
         }
     }
 }
@@ -517,7 +517,7 @@ impl<'a> ToCode<'a> for Call<'a> {
         for (i, arg) in self.arguments().iter().enumerate() {
             (i > 0).then(|| tokens.push(Token::Punct(Punct::Comma)));
             if let Some(param_name) = arg.0 {
-                tokens.push(Token::Name(Name::new(param_name)));
+                tokens.push(Token::Name(Name::new(param_name).expect("invalid name")));
                 tokens.push(Token::Punct(Punct::Colon));
             }
 
@@ -538,29 +538,29 @@ impl<'a> ToCode<'a> for Expr<'a> {
                 tokens.push(Token::Punct(Punct::RightParen));
             }
 
-            Expr::Bool => tokens.push(Token::Name(Name::new("bool"))),
-            Expr::UInt8 => tokens.push(Token::Name(Name::new("u8"))),
-            Expr::UInt16 => tokens.push(Token::Name(Name::new("u16"))),
-            Expr::UInt32 => tokens.push(Token::Name(Name::new("u32"))),
-            Expr::UInt64 => tokens.push(Token::Name(Name::new("u64"))),
-            Expr::UInt128 => tokens.push(Token::Name(Name::new("u128"))),
-            Expr::Int8 => tokens.push(Token::Name(Name::new("i8"))),
-            Expr::Int16 => tokens.push(Token::Name(Name::new("i16"))),
-            Expr::Int32 => tokens.push(Token::Name(Name::new("i32"))),
-            Expr::Int64 => tokens.push(Token::Name(Name::new("i64"))),
-            Expr::Int128 => tokens.push(Token::Name(Name::new("i128"))),
-            Expr::Float8 => tokens.push(Token::Name(Name::new("f8"))),
-            Expr::Float16 => tokens.push(Token::Name(Name::new("f16"))),
-            Expr::Float32 => tokens.push(Token::Name(Name::new("f32"))),
-            Expr::Float64 => tokens.push(Token::Name(Name::new("f64"))),
-            Expr::Float128 => tokens.push(Token::Name(Name::new("f128"))),
+            Expr::Bool => tokens.push(Token::Name(Name::new("bool").expect("invalid name"))),
+            Expr::UInt8 => tokens.push(Token::Name(Name::new("u8").expect("invalid name"))),
+            Expr::UInt16 => tokens.push(Token::Name(Name::new("u16").expect("invalid name"))),
+            Expr::UInt32 => tokens.push(Token::Name(Name::new("u32").expect("invalid name"))),
+            Expr::UInt64 => tokens.push(Token::Name(Name::new("u64").expect("invalid name"))),
+            Expr::UInt128 => tokens.push(Token::Name(Name::new("u128").expect("invalid name"))),
+            Expr::Int8 => tokens.push(Token::Name(Name::new("i8").expect("invalid name"))),
+            Expr::Int16 => tokens.push(Token::Name(Name::new("i16").expect("invalid name"))),
+            Expr::Int32 => tokens.push(Token::Name(Name::new("i32").expect("invalid name"))),
+            Expr::Int64 => tokens.push(Token::Name(Name::new("i64").expect("invalid name"))),
+            Expr::Int128 => tokens.push(Token::Name(Name::new("i128").expect("invalid name"))),
+            Expr::Float8 => tokens.push(Token::Name(Name::new("f8").expect("invalid name"))),
+            Expr::Float16 => tokens.push(Token::Name(Name::new("f16").expect("invalid name"))),
+            Expr::Float32 => tokens.push(Token::Name(Name::new("f32").expect("invalid name"))),
+            Expr::Float64 => tokens.push(Token::Name(Name::new("f64").expect("invalid name"))),
+            Expr::Float128 => tokens.push(Token::Name(Name::new("f128").expect("invalid name"))),
             Expr::UnitType => {
                 tokens.push(Token::Punct(Punct::LeftParen));
                 tokens.push(Token::Punct(Punct::RightParen));
             }
 
-            Expr::InferType => tokens.push(Token::Name(Name::new("_"))),
-            Expr::TypeName(e) => e.to_code(tokens, options),
+            Expr::InferType => tokens.push(Token::Name(Name::new("_").expect("invalid name"))),
+            Expr::TypeName(e) | Expr::Identifier(e) => e.to_code(tokens, options),
             Expr::RefinementType(e) => e.to_code(tokens, options),
             Expr::TupleType(e) => e.to_code(tokens, options),
             Expr::ArrayType(e) => e.to_code(tokens, options),
@@ -614,7 +614,6 @@ impl<'a> ToCode<'a> for Expr<'a> {
 
             Expr::Function(e) => e.to_code(tokens, options),
             Expr::Variable(e) => e.to_code(tokens, options),
-            Expr::Identifier(e) => e.to_code(tokens, options),
             Expr::Scope(e) => e.to_code(tokens, options),
 
             Expr::If(e) => e.to_code(tokens, options),
@@ -635,28 +634,28 @@ impl<'a> ToCode<'a> for Expr<'a> {
 impl<'a> ToCode<'a> for Type<'a> {
     fn to_code(&self, tokens: &mut Vec<Token<'a>>, options: &CodeFormat) {
         match self {
-            Type::Bool => tokens.push(Token::Name(Name::new("bool"))),
-            Type::UInt8 => tokens.push(Token::Name(Name::new("u8"))),
-            Type::UInt16 => tokens.push(Token::Name(Name::new("u16"))),
-            Type::UInt32 => tokens.push(Token::Name(Name::new("u32"))),
-            Type::UInt64 => tokens.push(Token::Name(Name::new("u64"))),
-            Type::UInt128 => tokens.push(Token::Name(Name::new("u128"))),
-            Type::Int8 => tokens.push(Token::Name(Name::new("i8"))),
-            Type::Int16 => tokens.push(Token::Name(Name::new("i16"))),
-            Type::Int32 => tokens.push(Token::Name(Name::new("i32"))),
-            Type::Int64 => tokens.push(Token::Name(Name::new("i64"))),
-            Type::Int128 => tokens.push(Token::Name(Name::new("i128"))),
-            Type::Float8 => tokens.push(Token::Name(Name::new("f8"))),
-            Type::Float16 => tokens.push(Token::Name(Name::new("f16"))),
-            Type::Float32 => tokens.push(Token::Name(Name::new("f32"))),
-            Type::Float64 => tokens.push(Token::Name(Name::new("f64"))),
-            Type::Float128 => tokens.push(Token::Name(Name::new("f128"))),
+            Type::Bool => tokens.push(Token::Name(Name::new("bool").expect("invalid name"))),
+            Type::UInt8 => tokens.push(Token::Name(Name::new("u8").expect("invalid name"))),
+            Type::UInt16 => tokens.push(Token::Name(Name::new("u16").expect("invalid name"))),
+            Type::UInt32 => tokens.push(Token::Name(Name::new("u32").expect("invalid name"))),
+            Type::UInt64 => tokens.push(Token::Name(Name::new("u64").expect("invalid name"))),
+            Type::UInt128 => tokens.push(Token::Name(Name::new("u128").expect("invalid name"))),
+            Type::Int8 => tokens.push(Token::Name(Name::new("i8").expect("invalid name"))),
+            Type::Int16 => tokens.push(Token::Name(Name::new("i16").expect("invalid name"))),
+            Type::Int32 => tokens.push(Token::Name(Name::new("i32").expect("invalid name"))),
+            Type::Int64 => tokens.push(Token::Name(Name::new("i64").expect("invalid name"))),
+            Type::Int128 => tokens.push(Token::Name(Name::new("i128").expect("invalid name"))),
+            Type::Float8 => tokens.push(Token::Name(Name::new("f8").expect("invalid name"))),
+            Type::Float16 => tokens.push(Token::Name(Name::new("f16").expect("invalid name"))),
+            Type::Float32 => tokens.push(Token::Name(Name::new("f32").expect("invalid name"))),
+            Type::Float64 => tokens.push(Token::Name(Name::new("f64").expect("invalid name"))),
+            Type::Float128 => tokens.push(Token::Name(Name::new("f128").expect("invalid name"))),
             Type::UnitType => {
                 tokens.push(Token::Punct(Punct::LeftParen));
                 tokens.push(Token::Punct(Punct::RightParen));
             }
 
-            Type::InferType => tokens.push(Token::Name(Name::new("_"))),
+            Type::InferType => tokens.push(Token::Name(Name::new("_").expect("invalid name"))),
             Type::TypeName(e) => e.to_code(tokens, options),
             Type::RefinementType(e) => e.to_code(tokens, options),
             Type::TupleType(e) => e.to_code(tokens, options),

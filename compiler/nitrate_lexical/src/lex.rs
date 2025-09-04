@@ -33,6 +33,10 @@ enum StringEscape {
 }
 
 impl<'a> Lexer<'a> {
+    /// Creates a new lexer instance from the given source code and filename.
+    /// The source code must not exceed 4 GiB in size.
+    /// # Errors
+    /// Returns `LexerConstructionError::SourceTooBig` if the source code exceeds 4 GiB in size.
     pub fn new(src: &'a [u8], filename: &'a str) -> Result<Self, LexerConstructionError> {
         // Must not be increased beyond u32::MAX, as the lexer/compiler pipeline
         // assumes that offsets are representable as u32 values. However, it is
@@ -280,7 +284,9 @@ impl<'a> Lexer<'a> {
         }
 
         if let Ok(identifier) = str::from_utf8(identifier) {
-            Ok(Token::Name(Name::new_atypical(identifier)))
+            Ok(Token::Name(
+                Name::new_atypical(identifier).expect("Failed to create atypical identifier"),
+            ))
         } else {
             error!("[L0001]: Identifier contains some invalid utf-8 bytes\n--> {start_pos}");
 
@@ -371,7 +377,9 @@ impl<'a> Lexer<'a> {
         } {
             Ok(Token::Keyword(keyword))
         } else if let Ok(identifier) = str::from_utf8(name) {
-            Ok(Token::Name(Name::new_typical(identifier)))
+            Ok(Token::Name(
+                Name::new_typical(identifier).expect("Failed to create typical identifier"),
+            ))
         } else {
             error!("[L0100]: Identifier contains some invalid utf-8 bytes\n--> {start_pos}");
 
@@ -380,7 +388,7 @@ impl<'a> Lexer<'a> {
     }
 
     #[inline(always)]
-    fn convert_float_repr(&self, str_bytes: &str) -> Result<NotNan<f64>, ()> {
+    fn convert_float_repr(str_bytes: &str) -> Result<NotNan<f64>, ()> {
         match str_bytes.replace('_', "").parse::<f64>() {
             Ok(value) => Ok(NotNan::new(value).unwrap()),
             Err(e) => {
@@ -406,7 +414,7 @@ impl<'a> Lexer<'a> {
                     )
                     .expect("Failed to convert float literal to str");
 
-                    if let Ok(result) = self.convert_float_repr(literal) {
+                    if let Ok(result) = Self::convert_float_repr(literal) {
                         return Ok(Token::Float(result));
                     }
                 }
@@ -420,12 +428,7 @@ impl<'a> Lexer<'a> {
     }
 
     #[inline(always)]
-    fn radix_decode(
-        &self,
-        digits: &[u8],
-        base: u32,
-        start_pos: &SourcePosition,
-    ) -> Result<u128, ()> {
+    fn radix_decode(digits: &[u8], base: u32, start_pos: &SourcePosition) -> Result<u128, ()> {
         let mut number = 0u128;
 
         for digit in digits {
@@ -524,16 +527,16 @@ impl<'a> Lexer<'a> {
             }
         }
 
-        let number = self.radix_decode(literal, base_prefix.unwrap_or(10u32), &start_pos)?;
+        let number = Self::radix_decode(literal, base_prefix.unwrap_or(10u32), &start_pos)?;
 
         Ok(Token::Integer(Integer::new(
             number,
             match base_prefix {
-                None => IntegerKind::Dec,
                 Some(2) => IntegerKind::Bin,
                 Some(8) => IntegerKind::Oct,
-                Some(10) => IntegerKind::Dec,
                 Some(16) => IntegerKind::Hex,
+                Some(10) | None => IntegerKind::Dec,
+
                 _ => unreachable!(),
             },
         )))

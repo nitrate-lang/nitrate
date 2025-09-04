@@ -66,7 +66,7 @@ impl<'a> Parser<'a, '_> {
         Some((macro_name.name(), macro_args))
     }
 
-    fn parse_preamble_version_number(&self, number: NotNan<f64>) -> Option<(u32, u32)> {
+    fn parse_preamble_version_number(number: NotNan<f64>) -> Option<(u32, u32)> {
         let mut pair = (None, None);
 
         let input = number.to_string();
@@ -107,7 +107,7 @@ impl<'a> Parser<'a, '_> {
             return None;
         };
 
-        let Some((major, minor)) = self.parse_preamble_version_number(float) else {
+        let Some((major, minor)) = Self::parse_preamble_version_number(float) else {
             self.set_failed_bit();
             error!(
                 "[P????]: Invalid version format '{}'. Expected 'major.minor' (e.g. '1.0') for 'nitrate' (language version) macro argument\n--> {}",

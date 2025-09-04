@@ -14,29 +14,27 @@ pub struct Name<'a> {
 
 impl<'a> Name<'a> {
     #[must_use]
-    pub fn new(name: &'a str) -> Self {
-        Name {
+    pub fn new(name: &'a str) -> Option<Self> {
+        Some(Name {
             name,
-            kind: Name::get_kind(name),
-        }
+            kind: Name::get_kind(name)?,
+        })
     }
 
     #[must_use]
-    pub fn new_typical(name: &'a str) -> Self {
-        assert!(Name::is_typical(name), "Expected a typical identifier");
-        Name {
+    pub fn new_typical(name: &'a str) -> Option<Self> {
+        Name::is_typical(name).then_some(Name {
             name,
             kind: IdentifierKind::Typical,
-        }
+        })
     }
 
     #[must_use]
-    pub fn new_atypical(name: &'a str) -> Self {
-        assert!(Name::is_atypical(name), "Expected an atypical identifier");
-        Name {
+    pub fn new_atypical(name: &'a str) -> Option<Self> {
+        Name::is_atypical(name).then_some(Name {
             name,
             kind: IdentifierKind::Atypical,
-        }
+        })
     }
 
     #[must_use]
@@ -69,15 +67,17 @@ impl<'a> Name<'a> {
 
     #[must_use]
     pub fn is_atypical(name: &str) -> bool {
-        !Self::is_typical(name)
+        !name.contains('`')
     }
 
     #[must_use]
-    pub fn get_kind(name: &str) -> IdentifierKind {
+    pub fn get_kind(name: &str) -> Option<IdentifierKind> {
         if Self::is_typical(name) {
-            IdentifierKind::Typical
+            Some(IdentifierKind::Typical)
+        } else if Self::is_atypical(name) {
+            Some(IdentifierKind::Atypical)
         } else {
-            IdentifierKind::Atypical
+            None
         }
     }
 }

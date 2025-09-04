@@ -1,5 +1,4 @@
 #![warn(clippy::pedantic)]
-#![allow(clippy::inline_always)]
 
 mod abstract_machine;
 mod compound;
