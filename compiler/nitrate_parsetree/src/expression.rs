@@ -1000,7 +1000,7 @@ impl<'a> Call<'a> {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Clone, PartialEq, Eq, Hash)]
 pub enum Expr<'a> {
     Bool,
     UInt8,
@@ -1148,5 +1148,79 @@ impl Expr<'_> {
     #[must_use]
     pub fn is_discard(&self) -> bool {
         matches!(self, Expr::Discard)
+    }
+}
+
+impl<'a> std::fmt::Debug for Expr<'a> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Expr::Bool => write!(f, "bool"),
+            Expr::UInt8 => write!(f, "u8"),
+            Expr::UInt16 => write!(f, "u16"),
+            Expr::UInt32 => write!(f, "u32"),
+            Expr::UInt64 => write!(f, "u64"),
+            Expr::UInt128 => write!(f, "u128"),
+            Expr::Int8 => write!(f, "i8"),
+            Expr::Int16 => write!(f, "i16"),
+            Expr::Int32 => write!(f, "i32"),
+            Expr::Int64 => write!(f, "i64"),
+            Expr::Int128 => write!(f, "i128"),
+            Expr::Float8 => write!(f, "f8"),
+            Expr::Float16 => write!(f, "f16"),
+            Expr::Float32 => write!(f, "f32"),
+            Expr::Float64 => write!(f, "f64"),
+            Expr::Float128 => write!(f, "f128"),
+            Expr::UnitType => write!(f, "()"),
+            Expr::InferType => write!(f, "_"),
+            Expr::TypeName(e) => e.fmt(f),
+            Expr::RefinementType(e) => e.fmt(f),
+            Expr::TupleType(e) => e.fmt(f),
+            Expr::ArrayType(e) => e.fmt(f),
+            Expr::MapType(e) => e.fmt(f),
+            Expr::SliceType(e) => e.fmt(f),
+            Expr::FunctionType(e) => e.fmt(f),
+            Expr::ManagedRefType(e) => e.fmt(f),
+            Expr::UnmanagedRefType(e) => e.fmt(f),
+            Expr::GenericType(e) => e.fmt(f),
+            Expr::OpaqueType(e) => e.fmt(f),
+            Expr::StructType(e) => e.fmt(f),
+            Expr::LatentType(e) => e.fmt(f),
+            Expr::HasParenthesesType(e) => e.fmt(f),
+
+            Expr::Discard => write!(f, ""),
+            Expr::HasParentheses(e) => e.fmt(f),
+
+            Expr::Boolean(e) => e.fmt(f),
+            Expr::Integer(e) => e.fmt(f),
+            Expr::Float(e) => e.fmt(f),
+            Expr::String(e) => e.fmt(f),
+            Expr::BString(e) => e.fmt(f),
+            Expr::Unit => write!(f, "()"),
+
+            Expr::TypeEnvelop(e) => e.fmt(f),
+            Expr::List(e) => e.fmt(f),
+            Expr::Object(e) => e.fmt(f),
+            Expr::UnaryExpr(e) => e.fmt(f),
+            Expr::BinExpr(e) => e.fmt(f),
+            Expr::Statement(e) => e.fmt(f),
+            Expr::Block(e) => e.fmt(f),
+
+            Expr::Function(e) => e.fmt(f),
+            Expr::Variable(e) => e.fmt(f),
+            Expr::Identifier(e) => e.fmt(f),
+            Expr::Scope(e) => e.fmt(f),
+
+            Expr::If(e) => e.fmt(f),
+            Expr::WhileLoop(e) => e.fmt(f),
+            Expr::DoWhileLoop(e) => e.fmt(f),
+            Expr::Switch(e) => e.fmt(f),
+            Expr::Break(e) => e.fmt(f),
+            Expr::Continue(e) => e.fmt(f),
+            Expr::Return(e) => e.fmt(f),
+            Expr::ForEach(e) => e.fmt(f),
+            Expr::Await(e) => e.fmt(f),
+            Expr::Assert(e) => e.fmt(f),
+            Expr::Call(e) => e.fmt(f),
+        }
     }
 }
