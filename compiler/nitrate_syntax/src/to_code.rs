@@ -291,7 +291,6 @@ impl<'a> ToCode<'a> for BinExprOp {
             BinExprOp::Arrow => Op::Arrow,
             BinExprOp::BlockArrow => Op::BlockArrow,
             BinExprOp::Range => Op::Range,
-            BinExprOp::Question => Op::Question,
             BinExprOp::Spaceship => Op::Spaceship,
         });
 

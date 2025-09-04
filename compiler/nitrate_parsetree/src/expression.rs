@@ -240,7 +240,6 @@ pub enum BinExprOp {
      * Special Operators                                              *
      *----------------------------------------------------------------*/
     Range,     /* '..':         "Range Operator" */
-    Question,  /* '?':          "Ternary Operator" */
     Spaceship, /* '<=>':        "Spaceship Operator" */
 }
 

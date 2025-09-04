@@ -904,10 +904,6 @@ impl<'a> Lexer<'a> {
                 }
             }
 
-            b'?' => {
-                self.advance(b'?');
-                Ok(Token::Op(Op::Question))
-            }
             b'~' => {
                 self.advance(b'~');
                 Ok(Token::Op(Op::BitNot))
@@ -919,10 +915,6 @@ impl<'a> Lexer<'a> {
                         self.advance(b'=');
                         Ok(Token::Op(Op::SetPlus))
                     }
-                    Ok(b'+') => {
-                        self.advance(b'+');
-                        Ok(Token::Op(Op::Inc))
-                    }
                     _ => Ok(Token::Op(Op::Add)),
                 }
             }
@@ -932,10 +924,6 @@ impl<'a> Lexer<'a> {
                     Ok(b'=') => {
                         self.advance(b'=');
                         Ok(Token::Op(Op::SetMinus))
-                    }
-                    Ok(b'-') => {
-                        self.advance(b'-');
-                        Ok(Token::Op(Op::Dec))
                     }
                     Ok(b'>') => {
                         self.advance(b'>');

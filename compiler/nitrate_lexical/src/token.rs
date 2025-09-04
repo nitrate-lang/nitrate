@@ -505,8 +505,6 @@ pub enum Op {
     SetLogicAnd, /* '&&=':  "Logical AND Assignment Operator" */
     SetLogicOr,  /* '||=':  "Logical OR Assignment Operator" */
     SetLogicXor, /* '^^=':  "Logical XOR Assignment Operator" */
-    Inc,         /* '++':   "Increment Operator" */
-    Dec,         /* '--':   "Decrement Operator" */
 
     /*----------------------------------------------------------------*
      * Type System Operators                                          *
@@ -530,7 +528,6 @@ pub enum Op {
      * Special Operators                                              *
      *----------------------------------------------------------------*/
     Range,     /* '..':         "Range Operator" */
-    Question,  /* '?':          "Ternary Operator" */
     Spaceship, /* '<=>':        "Spaceship Operator" */
 }
 
@@ -579,8 +576,6 @@ impl std::fmt::Display for Op {
             Op::SetLogicAnd => write!(f, "&&="),
             Op::SetLogicOr => write!(f, "||="),
             Op::SetLogicXor => write!(f, "^^="),
-            Op::Inc => write!(f, "++"),
-            Op::Dec => write!(f, "--"),
 
             Op::As => write!(f, "as"),
             Op::BitcastAs => write!(f, "bitcast_as"),
@@ -595,7 +590,6 @@ impl std::fmt::Display for Op {
             Op::BlockArrow => write!(f, "=>"),
 
             Op::Range => write!(f, ".."),
-            Op::Question => write!(f, "?"),
             Op::Spaceship => write!(f, "<=>"),
         }
     }
