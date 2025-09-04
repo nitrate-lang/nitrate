@@ -1185,13 +1185,13 @@ impl<'a> std::fmt::Debug for Expr<'a> {
             Expr::ManagedRefType(e) => e.fmt(f),
             Expr::UnmanagedRefType(e) => e.fmt(f),
             Expr::GenericType(e) => e.fmt(f),
-            Expr::OpaqueType(e) => e.fmt(f),
+            Expr::OpaqueType(e) => f.debug_struct("OpaqueType").field("name", e).finish(),
             Expr::StructType(e) => e.fmt(f),
-            Expr::LatentType(e) => e.fmt(f),
-            Expr::HasParenthesesType(e) => e.fmt(f),
+            Expr::LatentType(e) => f.debug_struct("LatentType").field("type", e).finish(),
+            Expr::HasParenthesesType(e) => f.debug_struct("Parentheses").field("type", e).finish(),
 
             Expr::Discard => write!(f, ""),
-            Expr::HasParentheses(e) => e.fmt(f),
+            Expr::HasParentheses(e) => f.debug_struct("Parentheses").field("expr", e).finish(),
 
             Expr::Boolean(e) => e.fmt(f),
             Expr::Integer(e) => e.fmt(f),
@@ -1200,7 +1200,7 @@ impl<'a> std::fmt::Debug for Expr<'a> {
             Expr::BString(e) => e.fmt(f),
             Expr::Unit => write!(f, "()"),
 
-            Expr::TypeEnvelop(e) => e.fmt(f),
+            Expr::TypeEnvelop(e) => f.debug_struct("TypeEnvelop").field("type", e).finish(),
             Expr::List(e) => e.fmt(f),
             Expr::Object(e) => e.fmt(f),
             Expr::UnaryExpr(e) => e.fmt(f),

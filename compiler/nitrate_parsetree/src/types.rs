@@ -337,42 +337,7 @@ impl Type<'_> {
 
 impl<'a> std::fmt::Debug for Type<'a> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Type::Bool => write!(f, "bool"),
-            Type::UInt8 => write!(f, "u8"),
-            Type::UInt16 => write!(f, "u16"),
-            Type::UInt32 => write!(f, "u32"),
-            Type::UInt64 => write!(f, "u64"),
-            Type::UInt128 => write!(f, "u128"),
-            Type::Int8 => write!(f, "i8"),
-            Type::Int16 => write!(f, "i16"),
-            Type::Int32 => write!(f, "i32"),
-            Type::Int64 => write!(f, "i64"),
-            Type::Int128 => write!(f, "i128"),
-            Type::Float8 => write!(f, "f8"),
-            Type::Float16 => write!(f, "f16"),
-            Type::Float32 => write!(f, "f32"),
-            Type::Float64 => write!(f, "f64"),
-            Type::Float128 => write!(f, "f128"),
-            Type::UnitType => write!(f, "()"),
-            Type::InferType => write!(f, "_"),
-            Type::TypeName(e) => f
-                .debug_struct("TypeName")
-                .field("name", &e.full_name())
-                .finish(),
-            Type::RefinementType(e) => e.fmt(f),
-            Type::TupleType(e) => e.fmt(f),
-            Type::ArrayType(e) => e.fmt(f),
-            Type::MapType(e) => e.fmt(f),
-            Type::SliceType(e) => e.fmt(f),
-            Type::FunctionType(e) => e.fmt(f),
-            Type::ManagedRefType(e) => e.fmt(f),
-            Type::UnmanagedRefType(e) => e.fmt(f),
-            Type::GenericType(e) => e.fmt(f),
-            Type::OpaqueType(e) => e.fmt(f),
-            Type::StructType(e) => e.fmt(f),
-            Type::LatentType(e) => e.fmt(f),
-            Type::HasParenthesesType(e) => e.fmt(f),
-        }
+        let expr: Expr<'a> = self.to_owned().into();
+        expr.fmt(f)
     }
 }
