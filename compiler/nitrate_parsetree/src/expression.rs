@@ -196,9 +196,9 @@ impl TryFrom<Op> for UnaryExprOp {
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct UnaryExpr<'a> {
-    operand: Expr<'a>,
     operator: UnaryExprOp,
     is_postfix: bool,
+    operand: Expr<'a>,
 }
 
 impl<'a> UnaryExpr<'a> {
@@ -361,9 +361,9 @@ impl TryFrom<Op> for BinExprOp {
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct BinExpr<'a> {
+    operator: BinExprOp,
     left: Expr<'a>,
     right: Expr<'a>,
-    operator: BinExprOp,
 }
 
 impl<'a> BinExpr<'a> {
