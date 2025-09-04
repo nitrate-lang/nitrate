@@ -376,13 +376,10 @@ impl<'a> Parser<'a, '_> {
                         return None;
                     }
 
-                    todo!();
-                    // TODO: Use index builder
-
-                    // sofar = Builder::create_index()
-                    //     .with_collection(sofar)
-                    //     .with_index(index)
-                    //     .build();
+                    sofar = Builder::create_index_access()
+                        .with_collection(sofar)
+                        .with_index(index)
+                        .build();
                 }
 
                 _ => {
