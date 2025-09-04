@@ -321,8 +321,14 @@ impl<'a> Builder {
     }
 
     #[must_use]
+    pub fn create_qualified_type_name(segments: Vec<&'a str>) -> Type<'a> {
+        Type::TypeName(Rc::new(Identifier::new(segments)))
+    }
+
+    #[must_use]
     pub fn create_type_name(name: &'a str) -> Type<'a> {
-        Type::TypeName(name)
+        let parts = name.split("::").collect::<Vec<&'a str>>();
+        Self::create_qualified_type_name(parts)
     }
 
     #[must_use]

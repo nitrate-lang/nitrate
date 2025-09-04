@@ -561,7 +561,7 @@ impl<'a> ToCode<'a> for Expr<'a> {
             }
 
             Expr::InferType => tokens.push(Token::Name(Name::new("_"))),
-            Expr::TypeName(e) => tokens.push(Token::Name(Name::new(e))),
+            Expr::TypeName(e) => e.to_code(tokens, options),
             Expr::RefinementType(e) => e.to_code(tokens, options),
             Expr::TupleType(e) => e.to_code(tokens, options),
             Expr::ArrayType(e) => e.to_code(tokens, options),
@@ -658,7 +658,7 @@ impl<'a> ToCode<'a> for Type<'a> {
             }
 
             Type::InferType => tokens.push(Token::Name(Name::new("_"))),
-            Type::TypeName(e) => tokens.push(Token::Name(Name::new(e))),
+            Type::TypeName(e) => e.to_code(tokens, options),
             Type::RefinementType(e) => e.to_code(tokens, options),
             Type::TupleType(e) => e.to_code(tokens, options),
             Type::ArrayType(e) => e.to_code(tokens, options),

@@ -265,7 +265,7 @@ impl<'a> AbstractMachine<'a> {
             Type::Float128 => Ok(Type::Float128),
             Type::UnitType => Ok(Type::UnitType),
             Type::InferType => Ok(Type::InferType),
-            Type::TypeName(name) => Ok(Type::TypeName(name)),
+            Type::TypeName(name) => Ok(Type::TypeName(name.to_owned())),
             Type::OpaqueType(identity) => Ok(Type::OpaqueType(identity.clone())),
             Type::RefinementType(refinement) => self.evaluate_refinement_type(refinement),
             Type::TupleType(tuple) => self.evaluate_tuple_type(tuple),

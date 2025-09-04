@@ -172,7 +172,7 @@ impl<'a> AbstractMachine<'a> {
             Expr::Float128 => Ok(Expr::Float128),
             Expr::UnitType => Ok(Expr::UnitType),
             Expr::InferType => Ok(Expr::InferType),
-            Expr::TypeName(t) => Ok(Expr::TypeName(t)),
+            Expr::TypeName(t) => Ok(Expr::TypeName(t.to_owned())),
             Expr::OpaqueType(t) => Ok(Expr::OpaqueType(t.clone())),
             Expr::RefinementType(t) => self.evaluate_refinement_type(t).map(Into::into),
             Expr::TupleType(t) => self.evaluate_tuple_type(t).map(Into::into),

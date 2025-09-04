@@ -209,22 +209,74 @@ impl<'a> Parser<'a, '_> {
         Some(arguments)
     }
 
-    fn parse_named_type(&mut self, type_name: &'a str) -> Option<Type<'a>> {
-        assert!(self.lexer.peek_t() == Token::Name(Name::new(type_name)));
-        self.lexer.skip_tok();
+    fn parse_type_name(&mut self) -> Option<Type<'a>> {
+        match self.lexer.peek_t() {
+            Token::Name(name) if name.name() == "_" => {
+                self.lexer.skip_tok();
+                return Some(Builder::get_infer_type());
+            }
+            _ => {}
+        }
 
-        let basis_type = match type_name {
-            "_" => Builder::get_infer_type(),
-            type_name => Builder::create_type_name(type_name),
-        };
+        let mut segments = Vec::new();
+        let mut last_was_scope = false;
+
+        let pos = self.lexer.sync_position();
+
+        loop {
+            match self.lexer.peek_t() {
+                Token::Name(name) => {
+                    if last_was_scope || segments.is_empty() {
+                        self.lexer.skip_tok();
+                        segments.push(name.name());
+
+                        last_was_scope = false;
+                    } else {
+                        break;
+                    }
+                }
+
+                Token::Op(Op::Scope) => {
+                    if last_was_scope {
+                        break;
+                    }
+
+                    self.lexer.skip_tok();
+
+                    // For absolute scoping
+                    if segments.is_empty() {
+                        segments.push("");
+                    }
+
+                    last_was_scope = true;
+                }
+
+                _ => {
+                    break;
+                }
+            }
+        }
+
+        if segments.is_empty() {
+            error!("[P????]: type name: expected type name\n--> {}", pos);
+            return None;
+        }
+
+        if last_was_scope {
+            error!(
+                "[P0???]: type name: unexpected '::' at end of type name\n--> {}",
+                self.lexer.sync_position()
+            );
+
+            return None;
+        }
 
         if !self.lexer.next_is(&Token::Op(Op::LogicLt)) {
-            return Some(basis_type);
+            return Some(Builder::create_qualified_type_name(segments));
         }
 
         let is_already_parsing_generic_type = self.generic_type_depth != 0;
-
-        let generic_args = self.parse_generic_arguments()?;
+        let generic_arguments = self.parse_generic_arguments()?;
 
         if !is_already_parsing_generic_type {
             match self.generic_type_depth {
@@ -253,8 +305,8 @@ impl<'a> Parser<'a, '_> {
 
         Some(
             Builder::create_generic_type()
-                .with_base(basis_type)
-                .add_arguments(generic_args)
+                .with_base(Builder::create_qualified_type_name(segments))
+                .add_arguments(generic_arguments)
                 .build(),
         )
     }
@@ -676,7 +728,7 @@ impl<'a> Parser<'a, '_> {
                 Some(Builder::get_f128())
             }
 
-            Token::Name(name) => self.parse_named_type(name.name()),
+            Token::Name(_) | Token::Op(Op::Scope) => self.parse_type_name(),
             Token::Punct(Punct::LeftBrace) => self.parse_tuple_type(),
             Token::Punct(Punct::LeftBracket) => self.parse_array_or_slice_or_map(),
             Token::Op(Op::BitAnd) => self.parse_managed_type(),
