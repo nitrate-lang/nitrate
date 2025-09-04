@@ -1061,7 +1061,7 @@ impl<'a> Lexer<'a> {
                                         self.advance(b'=');
                                         Ok(Token::Op(Op::SetBitRotl))
                                     }
-                                    _ => Ok(Token::Op(Op::BitRotl)),
+                                    _ => Ok(Token::Op(Op::BitRol)),
                                 }
                             }
                             _ => Ok(Token::Op(Op::BitShl)),
@@ -1091,7 +1091,7 @@ impl<'a> Lexer<'a> {
                                         self.advance(b'=');
                                         Ok(Token::Op(Op::SetBitRotr))
                                     }
-                                    _ => Ok(Token::Op(Op::BitRotr)),
+                                    _ => Ok(Token::Op(Op::BitRor)),
                                 }
                             }
                             _ => Ok(Token::Op(Op::BitShr)),

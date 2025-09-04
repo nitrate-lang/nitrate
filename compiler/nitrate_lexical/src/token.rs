@@ -463,14 +463,14 @@ pub enum Op {
     /*----------------------------------------------------------------*
      * Bitwise Operators                                              *
      *----------------------------------------------------------------*/
-    BitAnd,  /* '&':   "Bitwise AND Operator" */
-    BitOr,   /* '|':   "Bitwise OR Operator" */
-    BitXor,  /* '^':   "Bitwise XOR Operator" */
-    BitNot,  /* '~':   "Bitwise NOT Operator" */
-    BitShl,  /* '<<':  "Bitwise Left-Shift Operator" */
-    BitShr,  /* '>>':  "Bitwise Right-Shift Operator" */
-    BitRotl, /* '<<<': "Bitwise Left-Rotate Operator" */
-    BitRotr, /* '>>>': "Bitwise Right-Rotate Operator" */
+    BitAnd, /* '&':   "Bitwise AND Operator" */
+    BitOr,  /* '|':   "Bitwise OR Operator" */
+    BitXor, /* '^':   "Bitwise XOR Operator" */
+    BitNot, /* '~':   "Bitwise NOT Operator" */
+    BitShl, /* '<<':  "Bitwise Left-Shift Operator" */
+    BitShr, /* '>>':  "Bitwise Right-Shift Operator" */
+    BitRol, /* '<<<': "Bitwise Left-Rotate Operator" */
+    BitRor, /* '>>>': "Bitwise Right-Rotate Operator" */
 
     /*----------------------------------------------------------------*
      * Logical Operators                                              *
@@ -549,8 +549,8 @@ impl std::fmt::Display for Op {
             Op::BitNot => write!(f, "~"),
             Op::BitShl => write!(f, "<<"),
             Op::BitShr => write!(f, ">>"),
-            Op::BitRotl => write!(f, "<<<"),
-            Op::BitRotr => write!(f, ">>>"),
+            Op::BitRol => write!(f, "<<<"),
+            Op::BitRor => write!(f, ">>>"),
 
             Op::LogicAnd => write!(f, "&&"),
             Op::LogicOr => write!(f, "||"),

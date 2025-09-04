@@ -2,8 +2,8 @@ use super::parse::Parser;
 use log::{error, info};
 use nitrate_lexical::{Keyword, Name, Op, Punct, Token};
 use nitrate_parsetree::{
-    kind::{Expr, FunctionParameter, Type},
     Builder,
+    kind::{Expr, FunctionParameter, Type},
 };
 
 #[allow(unused_imports)]
@@ -179,7 +179,7 @@ impl<'a> Parser<'a, '_> {
                 break;
             }
 
-            if self.lexer.skip_if(&Token::Op(Op::BitRotr)) {
+            if self.lexer.skip_if(&Token::Op(Op::BitRor)) {
                 self.generic_type_depth -= 3;
                 self.generic_type_suffix_terminator_ambiguity = true;
                 break;
@@ -196,7 +196,7 @@ impl<'a> Parser<'a, '_> {
             if !self.lexer.skip_if(&Token::Punct(Punct::Comma)) {
                 let any_terminator = self.lexer.next_is(&Token::Op(Op::LogicGt))
                     || self.lexer.next_is(&Token::Op(Op::BitShr))
-                    || self.lexer.next_is(&Token::Op(Op::BitRotr));
+                    || self.lexer.next_is(&Token::Op(Op::BitRor));
 
                 if !any_terminator {
                     error!(

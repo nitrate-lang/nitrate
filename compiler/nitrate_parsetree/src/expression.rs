@@ -181,13 +181,13 @@ pub enum BinExprOp {
     /*----------------------------------------------------------------*
      * Bitwise Operators                                              *
      *----------------------------------------------------------------*/
-    BitAnd,  /* '&':   "Bitwise AND Operator" */
-    BitOr,   /* '|':   "Bitwise OR Operator" */
-    BitXor,  /* '^':   "Bitwise XOR Operator" */
-    BitShl,  /* '<<':  "Bitwise Left-Shift Operator" */
-    BitShr,  /* '>>':  "Bitwise Right-Shift Operator" */
-    BitRotl, /* '<<<': "Bitwise Left-Rotate Operator" */
-    BitRotr, /* '>>>': "Bitwise Right-Rotate Operator" */
+    BitAnd, /* '&':   "Bitwise AND Operator" */
+    BitOr,  /* '|':   "Bitwise OR Operator" */
+    BitXor, /* '^':   "Bitwise XOR Operator" */
+    BitShl, /* '<<':  "Bitwise Left-Shift Operator" */
+    BitShr, /* '>>':  "Bitwise Right-Shift Operator" */
+    BitRol, /* '<<<': "Bitwise Left-Rotate Operator" */
+    BitRor, /* '>>>': "Bitwise Right-Rotate Operator" */
 
     /*----------------------------------------------------------------*
      * Logical Operators                                              *
