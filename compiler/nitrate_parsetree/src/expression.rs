@@ -1172,7 +1172,10 @@ impl<'a> std::fmt::Debug for Expr<'a> {
             Expr::Float128 => write!(f, "f128"),
             Expr::UnitType => write!(f, "()"),
             Expr::InferType => write!(f, "_"),
-            Expr::TypeName(e) => e.fmt(f),
+            Expr::TypeName(e) => f
+                .debug_struct("TypeName")
+                .field("name", &e.full_name())
+                .finish(),
             Expr::RefinementType(e) => e.fmt(f),
             Expr::TupleType(e) => e.fmt(f),
             Expr::ArrayType(e) => e.fmt(f),
@@ -1207,7 +1210,10 @@ impl<'a> std::fmt::Debug for Expr<'a> {
 
             Expr::Function(e) => e.fmt(f),
             Expr::Variable(e) => e.fmt(f),
-            Expr::Identifier(e) => e.fmt(f),
+            Expr::Identifier(e) => f
+                .debug_struct("Identifier")
+                .field("name", &e.full_name())
+                .finish(),
             Expr::Scope(e) => e.fmt(f),
 
             Expr::If(e) => e.fmt(f),

@@ -356,7 +356,10 @@ impl<'a> std::fmt::Debug for Type<'a> {
             Type::Float128 => write!(f, "f128"),
             Type::UnitType => write!(f, "()"),
             Type::InferType => write!(f, "_"),
-            Type::TypeName(e) => e.fmt(f),
+            Type::TypeName(e) => f
+                .debug_struct("TypeName")
+                .field("name", &e.full_name())
+                .finish(),
             Type::RefinementType(e) => e.fmt(f),
             Type::TupleType(e) => e.fmt(f),
             Type::ArrayType(e) => e.fmt(f),
