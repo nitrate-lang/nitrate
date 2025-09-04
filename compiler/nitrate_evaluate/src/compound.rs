@@ -1,7 +1,7 @@
 use super::abstract_machine::{AbstractMachine, Unwind};
 use nitrate_parsetree::{
-    kind::{BinExpr, Block, Expr, List, Object, Statement, Type, UnaryExpr},
     Builder,
+    kind::{BinExpr, Block, Expr, List, Object, Statement, Type, UnaryExpr},
 };
 use std::collections::BTreeMap;
 
@@ -18,8 +18,7 @@ impl<'a> AbstractMachine<'a> {
     }
 
     pub(crate) fn evaluate_list(&mut self, list: &List<'a>) -> Result<Expr<'a>, Unwind<'a>> {
-        // TODO: Write tests
-        // TODO: Verify logic
+        // TODO: Verify and write tests
 
         let mut elements = Vec::new();
         elements.reserve(list.elements().len());
@@ -32,8 +31,7 @@ impl<'a> AbstractMachine<'a> {
     }
 
     pub(crate) fn evaluate_object(&mut self, object: &Object<'a>) -> Result<Expr<'a>, Unwind<'a>> {
-        // TODO: Write tests
-        // TODO: Verify logic
+        // TODO: Verify and write tests
 
         let mut fields = BTreeMap::new();
 
@@ -49,8 +47,7 @@ impl<'a> AbstractMachine<'a> {
         &mut self,
         _uexpr: &UnaryExpr<'a>,
     ) -> Result<Expr<'a>, Unwind<'a>> {
-        // TODO: Write tests
-        // TODO: Verify logic
+        // TODO: Verify and write tests
 
         // TODO: Evaluate unary expression
         unimplemented!()
@@ -60,8 +57,7 @@ impl<'a> AbstractMachine<'a> {
         &mut self,
         _bexpr: &BinExpr<'a>,
     ) -> Result<Expr<'a>, Unwind<'a>> {
-        // TODO: Write tests
-        // TODO: Verify logic
+        // TODO: Verify and write tests
 
         // TODO: Evaluate binary expression
         unimplemented!()
@@ -71,16 +67,14 @@ impl<'a> AbstractMachine<'a> {
         &mut self,
         statement: &Statement<'a>,
     ) -> Result<Expr<'a>, Unwind<'a>> {
-        // TODO: Write tests
-        // TODO: Verify logic
+        // TODO: Verify and write tests
 
         self.evaluate(&statement.get())?;
         Ok(Builder::create_unit())
     }
 
     pub(crate) fn evaluate_block(&mut self, block: &Block<'a>) -> Result<Expr<'a>, Unwind<'a>> {
-        // TODO: Write tests
-        // TODO: Verify logic
+        // TODO: Verify and write tests
 
         let mut result = None;
         for element in block.elements() {

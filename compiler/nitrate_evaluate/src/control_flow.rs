@@ -10,8 +10,7 @@ use std::rc::Rc;
 
 impl<'a> AbstractMachine<'a> {
     pub(crate) fn evaluate_if(&mut self, if_expr: &If<'a>) -> Result<Expr<'a>, Unwind<'a>> {
-        // TODO: Write tests
-        // TODO: Verify logic
+        // TODO: Verify and write tests
 
         if let Expr::Boolean(true) = self.evaluate(if_expr.condition())? {
             self.evaluate(if_expr.then_branch())
@@ -26,8 +25,7 @@ impl<'a> AbstractMachine<'a> {
         &mut self,
         while_loop: &WhileLoop<'a>,
     ) -> Result<Expr<'a>, Unwind<'a>> {
-        // TODO: Write tests
-        // TODO: Verify logic
+        // TODO: Verify and write tests
 
         loop {
             match self.evaluate(while_loop.condition())? {
@@ -46,8 +44,7 @@ impl<'a> AbstractMachine<'a> {
         &mut self,
         do_while_loop: &DoWhileLoop<'a>,
     ) -> Result<Expr<'a>, Unwind<'a>> {
-        // TODO: Write tests
-        // TODO: Verify logic
+        // TODO: Verify and write tests
 
         self.evaluate(do_while_loop.body())?;
 
@@ -68,16 +65,14 @@ impl<'a> AbstractMachine<'a> {
         &mut self,
         _switch_expr: &Switch<'a>,
     ) -> Result<Expr<'a>, Unwind<'a>> {
-        // TODO: Write tests
-        // TODO: Verify logic
+        // TODO: Verify and write tests
 
         // TODO: Evaluate switch
         unimplemented!()
     }
 
     pub(crate) fn evaluate_break(&mut self, _break: &Break<'a>) -> Result<Expr<'a>, Unwind<'a>> {
-        // TODO: Write tests
-        // TODO: Verify logic
+        // TODO: Verify and write tests
 
         // TODO: Evaluate break
         unimplemented!()
@@ -87,16 +82,14 @@ impl<'a> AbstractMachine<'a> {
         &mut self,
         _continue: &Continue<'a>,
     ) -> Result<Expr<'a>, Unwind<'a>> {
-        // TODO: Write tests
-        // TODO: Verify logic
+        // TODO: Verify and write tests
 
         // TODO: Evaluate continue
         unimplemented!()
     }
 
     pub(crate) fn evaluate_return(&mut self, return_: &Return<'a>) -> Result<Expr<'a>, Unwind<'a>> {
-        // TODO: Write tests
-        // TODO: Verify logic
+        // TODO: Verify and write tests
 
         let return_value = return_
             .value()
@@ -110,24 +103,21 @@ impl<'a> AbstractMachine<'a> {
         &mut self,
         _for_each: &ForEach<'a>,
     ) -> Result<Expr<'a>, Unwind<'a>> {
-        // TODO: Write tests
-        // TODO: Verify logic
+        // TODO: Verify and write tests
 
         // TODO: Evaluate for_each
         unimplemented!()
     }
 
     pub(crate) fn evaluate_await(&mut self, _await: &Await<'a>) -> Result<Expr<'a>, Unwind<'a>> {
-        // TODO: Write tests
-        // TODO: Verify logic
+        // TODO: Verify and write tests
 
         // TODO: Evaluate await
         unimplemented!()
     }
 
     pub(crate) fn evaluate_assert(&mut self, assert: &Assert<'a>) -> Result<Expr<'a>, Unwind<'a>> {
-        // TODO: Write tests
-        // TODO: Verify logic
+        // TODO: Verify and write tests
 
         let condition = self.evaluate(assert.condition())?;
         let message = self.evaluate(assert.message())?;
@@ -147,8 +137,7 @@ impl<'a> AbstractMachine<'a> {
     }
 
     pub(crate) fn evaluate_call(&mut self, call: &Call<'a>) -> Result<Expr<'a>, Unwind<'a>> {
-        // TODO: Write tests
-        // TODO: Verify logic
+        // TODO: Verify and write tests
 
         enum Callee<'a> {
             FunctionCode(Rc<Function<'a>>),

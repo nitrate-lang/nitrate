@@ -104,8 +104,7 @@ impl<'a> AbstractMachine<'a> {
     }
 
     pub(crate) fn resolve(&self, name: &str) -> Option<&Expr<'a>> {
-        // TODO: Write tests
-        // TODO: Verify logic
+        // TODO: Verify and write tests
 
         if let Some(local_var) = self
             .current_task()
@@ -153,8 +152,7 @@ impl<'a> AbstractMachine<'a> {
     }
 
     pub fn evaluate(&mut self, expression: &Expr<'a>) -> Result<Expr<'a>, Unwind<'a>> {
-        // TODO: Write tests
-        // TODO: Verify logic
+        // TODO: Verify and write tests
 
         match expression {
             Expr::Bool => Ok(Expr::Bool),

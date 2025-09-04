@@ -9,8 +9,7 @@ impl<'a> AbstractMachine<'a> {
         &mut self,
         variable: &Variable<'a>,
     ) -> Result<Expr<'a>, Unwind<'a>> {
-        // TODO: Write tests
-        // TODO: Verify logic
+        // TODO: Verify and write tests
 
         // FIXME: Properly handle variable storage class attributes
         // TODO: Analyze and implement interaction with closures
@@ -39,8 +38,7 @@ impl<'a> AbstractMachine<'a> {
         &mut self,
         identifier: &Identifier<'a>,
     ) -> Result<Expr<'a>, Unwind<'a>> {
-        // TODO: Write tests
-        // TODO: Verify logic
+        // TODO: Verify and write tests
 
         // FIXME: What about lvalue vs rvalue?
 
@@ -55,15 +53,13 @@ impl<'a> AbstractMachine<'a> {
         &mut self,
         _index_access: &IndexAccess<'a>,
     ) -> Result<Expr<'a>, Unwind<'a>> {
-        // TODO: Write tests
-        // TODO: Verify logic
+        // TODO: Verify and write tests
 
         todo!("Implement index access evaluation")
     }
 
     pub(crate) fn evaluate_scope(&mut self, scope: &Scope<'a>) -> Result<Expr<'a>, Unwind<'a>> {
-        // TODO: Write tests
-        // TODO: Verify logic
+        // TODO: Verify and write tests
 
         for element in scope.elements() {
             self.evaluate(element)?;

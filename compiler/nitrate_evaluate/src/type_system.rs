@@ -1,10 +1,10 @@
 use super::abstract_machine::{AbstractMachine, Unwind};
 use nitrate_parsetree::{
+    Builder,
     kind::{
         ArrayType, Expr, FunctionParameter, FunctionType, GenericType, ManagedRefType, MapType,
         RefinementType, SliceType, StructType, TupleType, Type, UnmanagedRefType,
     },
-    Builder,
 };
 use std::rc::Rc;
 
@@ -59,8 +59,7 @@ impl<'a> AbstractMachine<'a> {
         &mut self,
         tuple: &TupleType<'a>,
     ) -> Result<Type<'a>, Unwind<'a>> {
-        // TODO: Write tests
-        // TODO: Verify logic
+        // TODO: Verify and write tests
 
         let mut elements = Vec::new();
         elements.reserve(tuple.elements().len());
@@ -76,8 +75,7 @@ impl<'a> AbstractMachine<'a> {
         &mut self,
         array: &ArrayType<'a>,
     ) -> Result<Type<'a>, Unwind<'a>> {
-        // TODO: Write tests
-        // TODO: Verify logic
+        // TODO: Verify and write tests
 
         let element = self.evaluate_type(&array.element())?;
         let count = match self.evaluate(&array.count())? {
@@ -92,8 +90,7 @@ impl<'a> AbstractMachine<'a> {
     }
 
     pub(crate) fn evaluate_map_type(&mut self, map: &MapType<'a>) -> Result<Type<'a>, Unwind<'a>> {
-        // TODO: Write tests
-        // TODO: Verify logic
+        // TODO: Verify and write tests
 
         let key = self.evaluate_type(&map.key())?;
         let value = self.evaluate_type(&map.value())?;
@@ -108,8 +105,7 @@ impl<'a> AbstractMachine<'a> {
         &mut self,
         slice: &SliceType<'a>,
     ) -> Result<Type<'a>, Unwind<'a>> {
-        // TODO: Write tests
-        // TODO: Verify logic
+        // TODO: Verify and write tests
 
         let element = self.evaluate_type(&slice.element())?;
         Ok(Builder::create_slice_type().with_element(element).build())
@@ -119,8 +115,7 @@ impl<'a> AbstractMachine<'a> {
         &mut self,
         function: &FunctionType<'a>,
     ) -> Result<Type<'a>, Unwind<'a>> {
-        // TODO: Write tests
-        // TODO: Verify logic
+        // TODO: Verify and write tests
 
         let attributes = function.attributes().to_vec();
 
@@ -150,8 +145,7 @@ impl<'a> AbstractMachine<'a> {
         &mut self,
         reference: &ManagedRefType<'a>,
     ) -> Result<Type<'a>, Unwind<'a>> {
-        // TODO: Write tests
-        // TODO: Verify logic
+        // TODO: Verify and write tests
 
         let is_mutable = reference.is_mutable();
         let target_type = self.evaluate_type(&reference.target())?;
@@ -166,8 +160,7 @@ impl<'a> AbstractMachine<'a> {
         &mut self,
         reference: &UnmanagedRefType<'a>,
     ) -> Result<Type<'a>, Unwind<'a>> {
-        // TODO: Write tests
-        // TODO: Verify logic
+        // TODO: Verify and write tests
 
         let is_mutable = reference.is_mutable();
         let target_type = self.evaluate_type(&reference.target())?;
@@ -182,8 +175,7 @@ impl<'a> AbstractMachine<'a> {
         &mut self,
         generic: &GenericType<'a>,
     ) -> Result<Type<'a>, Unwind<'a>> {
-        // TODO: Write tests
-        // TODO: Verify logic
+        // TODO: Verify and write tests
 
         let base = self.evaluate_type(&generic.base())?;
 
@@ -205,8 +197,7 @@ impl<'a> AbstractMachine<'a> {
         &mut self,
         struct_type: Rc<StructType<'a>>,
     ) -> Result<Type<'a>, Unwind<'a>> {
-        // TODO: Write tests
-        // TODO: Verify logic
+        // TODO: Verify and write tests
 
         let mut fields = Vec::new();
         fields.reserve(struct_type.fields().len());
@@ -223,8 +214,7 @@ impl<'a> AbstractMachine<'a> {
         &mut self,
         latent_type: Rc<Expr<'a>>,
     ) -> Result<Type<'a>, Unwind<'a>> {
-        // TODO: Write tests
-        // TODO: Verify logic
+        // TODO: Verify and write tests
 
         let Expr::Object(object) = self.evaluate(&latent_type)? else {
             return Err(Unwind::TypeError);
@@ -239,8 +229,7 @@ impl<'a> AbstractMachine<'a> {
     }
 
     pub fn evaluate_type(&mut self, type_expression: &Type<'a>) -> Result<Type<'a>, Unwind<'a>> {
-        // TODO: Write tests
-        // TODO: Verify logic
+        // TODO: Verify and write tests
 
         if self.already_evaluated_types.contains(type_expression) {
             return Ok(type_expression.to_owned());
