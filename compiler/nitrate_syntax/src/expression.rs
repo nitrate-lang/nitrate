@@ -86,12 +86,13 @@ impl<'a> Parser<'a, '_> {
             | Op::SetLogicOr
             | Op::SetLogicXor => (Assoc::RightToLeft, PrecedenceRank::Assign),
 
-            Op::Ellipsis | Op::BlockArrow => {
-                // TODO: Handle these operators
-                return None;
-            }
-
-            Op::BitNot | Op::LogicNot | Op::Sizeof | Op::Typeof | Op::Alignof => {
+            Op::BitNot
+            | Op::LogicNot
+            | Op::Sizeof
+            | Op::Typeof
+            | Op::Alignof
+            | Op::Ellipsis
+            | Op::BlockArrow => {
                 return None;
             }
         };
@@ -99,24 +100,57 @@ impl<'a> Parser<'a, '_> {
         Some((associativity, precedence as Precedence))
     }
 
-    fn get_prefix_precedence(op: Op) -> Option<(Associativity, Precedence)> {
-        type Assoc = Associativity;
-
-        let (associativity, precedence) = match op {
-            Op::Add => (Assoc::RightToLeft, PrecedenceRank::Unary),
-            Op::Sub => (Assoc::RightToLeft, PrecedenceRank::Unary),
-            Op::LogicNot => (Assoc::RightToLeft, PrecedenceRank::Unary),
-            Op::BitNot => (Assoc::RightToLeft, PrecedenceRank::Unary),
-            Op::Mul => (Assoc::RightToLeft, PrecedenceRank::Unary),
-            Op::BitAnd => (Assoc::RightToLeft, PrecedenceRank::Unary),
-            Op::Sizeof => (Assoc::RightToLeft, PrecedenceRank::Unary),
-            Op::Typeof => (Assoc::RightToLeft, PrecedenceRank::Unary),
-            Op::Alignof => (Assoc::RightToLeft, PrecedenceRank::Unary),
+    fn get_prefix_precedence(op: Op) -> Option<Precedence> {
+        let precedence = match op {
+            Op::Add => PrecedenceRank::Unary,
+            Op::Sub => PrecedenceRank::Unary,
+            Op::LogicNot => PrecedenceRank::Unary,
+            Op::BitNot => PrecedenceRank::Unary,
+            Op::Mul => PrecedenceRank::Unary,
+            Op::BitAnd => PrecedenceRank::Unary,
+            Op::Sizeof => PrecedenceRank::Unary,
+            Op::Typeof => PrecedenceRank::Unary,
+            Op::Alignof => PrecedenceRank::Unary,
 
             _ => return None,
         };
 
-        Some((associativity, precedence as Precedence))
+        Some(precedence as Precedence)
+    }
+
+    fn parse_prefix(&mut self) -> Option<Expr<'a>> {
+        if let Token::Op(prefix_op) = self.lexer.peek_t() {
+            if let Some(precedence) = Self::get_prefix_precedence(prefix_op) {
+                self.lexer.skip_tok();
+
+                let operand = self.parse_expression_precedence(precedence)?;
+
+                return Some(
+                    Builder::create_unary_expr()
+                        .with_prefix()
+                        .with_operator(UnaryExprOp::try_from(prefix_op).expect("unary op"))
+                        .with_operand(operand)
+                        .build(),
+                );
+            }
+        }
+
+        if self.lexer.skip_if(&Token::Punct(Punct::LeftParen)) {
+            let inner = self.parse_expression()?;
+
+            if !self.lexer.skip_if(&Token::Punct(Punct::RightParen)) {
+                self.set_failed_bit();
+                error!(
+                    "[P????]: expr: expected closing parenthesis\n--> {}",
+                    self.lexer.sync_position()
+                );
+                return None;
+            }
+
+            return Some(Builder::create_parentheses(inner));
+        }
+
+        self.parse_expression_primary()
     }
 
     fn parse_expression_precedence(
@@ -152,45 +186,6 @@ impl<'a> Parser<'a, '_> {
                 .with_right(right_expr)
                 .build();
         }
-    }
-
-    fn parse_prefix(&mut self) -> Option<Expr<'a>> {
-        if let Token::Op(prefix_op) = self.lexer.peek_t() {
-            if let Some((assoc, precedence)) = Self::get_prefix_precedence(prefix_op) {
-                self.lexer.skip_tok();
-
-                let right = if assoc == Associativity::LeftToRight {
-                    self.parse_expression_precedence(precedence + 1)?
-                } else {
-                    self.parse_expression_precedence(precedence)?
-                };
-
-                return Some(
-                    Builder::create_unary_expr()
-                        .with_prefix()
-                        .with_operator(UnaryExprOp::try_from(prefix_op).expect("unary op"))
-                        .with_operand(right)
-                        .build(),
-                );
-            }
-        }
-
-        if self.lexer.skip_if(&Token::Punct(Punct::LeftParen)) {
-            let inner = self.parse_expression()?;
-
-            if !self.lexer.skip_if(&Token::Punct(Punct::RightParen)) {
-                self.set_failed_bit();
-                error!(
-                    "[P????]: expr: expected closing parenthesis\n--> {}",
-                    self.lexer.sync_position()
-                );
-                return None;
-            }
-
-            return Some(Builder::create_parentheses(inner));
-        }
-
-        self.parse_expression_primary()
     }
 
     pub fn parse_expression(&mut self) -> Option<Expr<'a>> {
