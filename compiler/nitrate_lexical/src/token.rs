@@ -734,7 +734,7 @@ mod tests {
             vec![IdentifierKind::Typical, IdentifierKind::Atypical]
         );
 
-        let inputs = [
+        let test_vectors = [
             ("foo", Some(IdentifierKind::Typical)),
             ("_bar", Some(IdentifierKind::Typical)),
             ("baz123", Some(IdentifierKind::Typical)),
@@ -753,7 +753,7 @@ mod tests {
             ("`", None),
         ];
 
-        for (input, expected) in inputs {
+        for (input, expected) in test_vectors {
             let name = Name::new(input);
 
             if let Some(expected_kind) = expected {
@@ -794,7 +794,7 @@ mod tests {
 
         let prime_u128 = 0xa8b437b5f0bd41f1e97765f63699f65d_u128;
 
-        let inputs = [
+        let test_vectors = [
             (0_u128, IntegerKind::Bin, "0b0"),
             (0_u128, IntegerKind::Oct, "0o0"),
             (0_u128, IntegerKind::Dec, "0"),
@@ -841,7 +841,7 @@ mod tests {
             ),
         ];
 
-        for (value, kind, expected_str) in inputs {
+        for (value, kind, expected_str) in test_vectors {
             let integer = Integer::new(value, kind);
             assert_eq!(integer.value(), value);
             assert_eq!(integer.kind(), kind);
@@ -882,7 +882,7 @@ mod tests {
             vec![CommentKind::SingleLine]
         );
 
-        let inputs = [
+        let test_vectors = [
             (
                 " This is a single-line comment",
                 CommentKind::SingleLine,
@@ -895,7 +895,7 @@ mod tests {
             ),
         ];
 
-        for (text, kind, expected_str) in inputs {
+        for (text, kind, expected_str) in test_vectors {
             let comment = Comment::new(text, kind);
             assert_eq!(comment.text(), text);
             assert_eq!(comment.kind(), kind);
@@ -1053,7 +1053,7 @@ mod tests {
 
     #[test]
     fn test_token_structure() {
-        let inputs = [
+        let test_vectors = [
             (Token::Name(Name::new("example").unwrap()), "example"),
             (Token::Integer(Integer::new(42, IntegerKind::Dec)), "42"),
             (Token::Float(NotNan::new(3.14).unwrap()), "3.14"),
@@ -1073,7 +1073,7 @@ mod tests {
             (Token::Illegal, "<illegal>"),
         ];
 
-        for (token, expected_str) in inputs {
+        for (token, expected_str) in test_vectors {
             assert_eq!(format!("{}", token), expected_str);
         }
     }
@@ -1099,7 +1099,7 @@ mod tests {
 
     #[test]
     fn test_annotated_token_structure() {
-        let inputs = [
+        let test_vectors = [
             (
                 Token::Name(Name::new("example").unwrap()),
                 SourcePosition::new(1, 0, 10, "file.txt"),
@@ -1168,7 +1168,7 @@ mod tests {
             ),
         ];
 
-        for (token, start, end, expected_str) in inputs {
+        for (token, start, end, expected_str) in test_vectors {
             let annotated_token = AnnotatedToken::new(token.clone(), start, end);
             assert_eq!(annotated_token.token(), &token);
             assert_eq!(annotated_token.start(), start);
