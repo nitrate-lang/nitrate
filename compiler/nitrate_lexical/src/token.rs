@@ -235,7 +235,6 @@ impl std::fmt::Display for BStringData<'_> {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Hash)]
 pub enum CommentKind {
     SingleLine,
-    MultiLine,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Hash)]
@@ -270,7 +269,6 @@ impl std::fmt::Display for Comment<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self.kind() {
             CommentKind::SingleLine => write!(f, "#{}", self.text()),
-            CommentKind::MultiLine => unimplemented!(),
         }
     }
 }
@@ -893,6 +891,84 @@ mod tests {
             format!("{}", BStringData::from_ref(b"test2")),
             "[116, 101, 115, 116, 50]",
             "Display implementation for BStringData should match the expected format"
+        );
+    }
+
+    #[test]
+    fn test_comment_token_structure() {
+        // Error if more than one variant is later added
+        // to CommentKind without updating this test
+        let _ = match CommentKind::SingleLine {
+            CommentKind::SingleLine => "SingleLine",
+        };
+
+        let inputs = [
+            (
+                " This is a single-line comment",
+                CommentKind::SingleLine,
+                "# This is a single-line comment",
+            ),
+            (
+                "This is another single-line comment",
+                CommentKind::SingleLine,
+                "#This is another single-line comment",
+            ),
+        ];
+
+        for (text, kind, expected_str) in inputs {
+            let comment = Comment::new(text, kind);
+            assert_eq!(comment.text(), text);
+            assert_eq!(comment.kind(), kind);
+            assert_eq!(format!("{}", comment), expected_str);
+        }
+    }
+
+    // TODO: Keywords, Punct, Op tests
+
+    #[test]
+    fn test_token_structure() {
+        let inputs = [
+            (Token::Name(Name::new("example").unwrap()), "example"),
+            (Token::Integer(Integer::new(42, IntegerKind::Dec)), "42"),
+            (Token::Float(NotNan::new(3.14).unwrap()), "3.14"),
+            (Token::String(StringData::from_ref("hello")), "\"hello\""),
+            (
+                Token::BString(BStringData::from_ref(b"world")),
+                "[119, 111, 114, 108, 100]",
+            ),
+            (
+                Token::Comment(Comment::new(" This is a comment", CommentKind::SingleLine)),
+                "# This is a comment",
+            ),
+            (Token::Keyword(Keyword::Let), "let"),
+            (Token::Punct(Punct::LeftParen), "("),
+            (Token::Op(Op::Add), "+"),
+            (Token::Eof, ""),
+            (Token::Illegal, "<illegal>"),
+        ];
+
+        for (token, expected_str) in inputs {
+            assert_eq!(format!("{}", token), expected_str);
+        }
+    }
+
+    #[test]
+    fn test_source_position_structure() {
+        let line = 2_u32;
+        let column = 5_u32;
+        let offset = 15_u32;
+        let filename = "test_file.txt";
+
+        let position = SourcePosition::new(line, column, offset, filename);
+        assert_eq!(position.line(), line);
+        assert_eq!(position.column(), column);
+        assert_eq!(position.offset(), offset);
+        assert_eq!(position.filename(), filename);
+
+        assert_eq!(
+            format!("{}", position),
+            format!("{}:{}:{}", filename, line + 1, column + 1),
+            "Display implementation for SourcePosition should match the expected format"
         );
     }
 }
