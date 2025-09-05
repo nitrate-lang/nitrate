@@ -118,11 +118,6 @@ impl Integer {
     }
 
     #[must_use]
-    pub const fn into_value(self) -> u128 {
-        self.value
-    }
-
-    #[must_use]
     pub const fn kind(&self) -> IntegerKind {
         self.kind
     }
@@ -252,11 +247,6 @@ impl<'a> Comment<'a> {
 
     #[must_use]
     pub const fn text(&self) -> &str {
-        self.text
-    }
-
-    #[must_use]
-    pub const fn into_text(self) -> &'a str {
         self.text
     }
 
@@ -739,6 +729,11 @@ mod tests {
     use super::*;
     #[test]
     fn test_name_token_structure() {
+        assert_eq!(
+            enum_iterator::all::<IdentifierKind>().collect::<Vec<_>>(),
+            vec![IdentifierKind::Typical, IdentifierKind::Atypical]
+        );
+
         let inputs = [
             ("foo", Some(IdentifierKind::Typical)),
             ("_bar", Some(IdentifierKind::Typical)),
@@ -771,19 +766,32 @@ mod tests {
                     IdentifierKind::Typical => format!("{}", input),
                 };
 
-                assert_eq!(
-                    format!("{}", name),
-                    expected_display_str,
-                    "Display implementation for Name should match the original input"
-                );
+                assert_eq!(format!("{}", name), expected_display_str);
+                assert_eq!(name.into_name(), input);
             } else {
                 assert!(name.is_none(), "input: {:?}", input);
             }
+
+            assert!(expected == None || Name::new_atypical(input).is_some());
+            assert_eq!(
+                Name::new_typical(input).is_some(),
+                expected == Some(IdentifierKind::Typical),
+            );
         }
     }
 
     #[test]
     fn test_integer_token_structure() {
+        assert_eq!(
+            enum_iterator::all::<IntegerKind>().collect::<Vec<_>>(),
+            vec![
+                IntegerKind::Bin,
+                IntegerKind::Oct,
+                IntegerKind::Dec,
+                IntegerKind::Hex
+            ]
+        );
+
         let prime_u128 = 0xa8b437b5f0bd41f1e97765f63699f65d_u128;
 
         let inputs = [
@@ -843,55 +851,27 @@ mod tests {
 
     #[test]
     fn test_string_data_structure() {
+        assert_eq!(StringData::from_ref("hello").get(), "hello");
+        assert_eq!(StringData::from_dyn("world".to_string()).get(), "world");
+        assert_eq!(format!("{}", StringData::from_ref("test")), "\"test\"");
         assert_eq!(
-            StringData::from_ref("hello").get(),
-            "hello",
-            "StringData from_ref should return the original string slice"
-        );
-
-        assert_eq!(
-            StringData::from_dyn("world".to_string()).get(),
-            "world",
-            "StringData from_dyn should return the original string"
-        );
-
-        assert_eq!(
-            format!("{:?}", StringData::from_ref("test")),
-            "StringData(\"test\")",
-            "Debug implementation for StringData should match the expected format"
-        );
-
-        assert_eq!(
-            format!("{}", StringData::from_ref("test2")),
-            "\"test2\"",
-            "Display implementation for StringData should match the expected format"
+            format!("{:?}", StringData::from_ref("test2")),
+            "StringData(\"test2\")",
         );
     }
 
     #[test]
     fn test_binary_data_structure() {
+        assert_eq!(BStringData::from_ref(b"hello").get(), b"hello");
+        assert_eq!(BStringData::from_dyn(b"world".to_vec()).get(), b"world");
         assert_eq!(
-            BStringData::from_ref(b"hello").get(),
-            b"hello",
-            "BStringData from_ref should return the original byte-string slice"
+            format!("{}", BStringData::from_ref(b"test")),
+            "[116, 101, 115, 116]"
         );
 
         assert_eq!(
-            BStringData::from_dyn(b"world".to_vec()).get(),
-            b"world",
-            "BStringData from_dyn should return the original byte-string"
-        );
-
-        assert_eq!(
-            format!("{:?}", BStringData::from_ref(b"test")),
-            "BStringData([116, 101, 115, 116])",
-            "Debug implementation for BStringData should match the expected format"
-        );
-
-        assert_eq!(
-            format!("{}", BStringData::from_ref(b"test2")),
-            "[116, 101, 115, 116, 50]",
-            "Display implementation for BStringData should match the expected format"
+            format!("{:?}", BStringData::from_ref(b"test2")),
+            "BStringData([116, 101, 115, 116, 50])"
         );
     }
 
@@ -1113,8 +1093,7 @@ mod tests {
 
         assert_eq!(
             format!("{}", position),
-            format!("{}:{}:{}", filename, line + 1, column + 1),
-            "Display implementation for SourcePosition should match the expected format"
+            format!("{}:{}:{}", filename, line + 1, column + 1)
         );
     }
 
