@@ -1,6 +1,7 @@
+use enum_iterator::Sequence;
 pub use ordered_float::NotNan;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Hash, Sequence)]
 pub enum IdentifierKind {
     Typical,
     Atypical,
@@ -91,7 +92,7 @@ impl std::fmt::Display for Name<'_> {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Hash, Sequence)]
 pub enum IntegerKind {
     Bin,
     Oct,
@@ -232,7 +233,7 @@ impl std::fmt::Display for BStringData<'_> {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Hash, Sequence)]
 pub enum CommentKind {
     SingleLine,
 }
@@ -273,7 +274,7 @@ impl std::fmt::Display for Comment<'_> {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Hash, Sequence)]
 pub enum Keyword {
     /* Storage */
     Let,      /* 'let' */
@@ -411,7 +412,7 @@ impl std::fmt::Display for Keyword {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Hash, Sequence)]
 pub enum Punct {
     LeftParen,    /* '(' */
     RightParen,   /* ')' */
@@ -444,7 +445,7 @@ impl std::fmt::Display for Punct {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Hash, Sequence)]
 pub enum Op {
     /*----------------------------------------------------------------*
      * Arithmetic Operators                                           *
@@ -896,11 +897,10 @@ mod tests {
 
     #[test]
     fn test_comment_token_structure() {
-        // Error if more than one variant is later added
-        // to CommentKind without updating this test
-        let _ = match CommentKind::SingleLine {
-            CommentKind::SingleLine => "SingleLine",
-        };
+        assert_eq!(
+            enum_iterator::all::<CommentKind>().collect::<Vec<_>>(),
+            vec![CommentKind::SingleLine]
+        );
 
         let inputs = [
             (
@@ -925,17 +925,150 @@ mod tests {
 
     #[test]
     fn test_keyword_structure() {
-        // TODO: Test keywords
+        for keyword in enum_iterator::all::<Keyword>() {
+            let keyword_str = match keyword {
+                Keyword::Let => "let",
+                Keyword::Var => "var",
+                Keyword::Fn => "fn",
+                Keyword::Enum => "enum",
+                Keyword::Struct => "struct",
+                Keyword::Class => "class",
+                Keyword::Contract => "contract",
+                Keyword::Trait => "trait",
+                Keyword::Impl => "impl",
+                Keyword::Type => "type",
+                Keyword::Scope => "scope",
+                Keyword::Import => "import",
+                Keyword::Safe => "safe",
+                Keyword::Unsafe => "unsafe",
+                Keyword::Promise => "promise",
+                Keyword::Static => "static",
+                Keyword::Mut => "mut",
+                Keyword::Const => "const",
+                Keyword::Poly => "poly",
+                Keyword::Iso => "iso",
+                Keyword::Pub => "pub",
+                Keyword::Sec => "sec",
+                Keyword::Pro => "pro",
+                Keyword::If => "if",
+                Keyword::Else => "else",
+                Keyword::For => "for",
+                Keyword::While => "while",
+                Keyword::Do => "do",
+                Keyword::Switch => "switch",
+                Keyword::Break => "break",
+                Keyword::Continue => "continue",
+                Keyword::Ret => "ret",
+                Keyword::Foreach => "foreach",
+                Keyword::Async => "async",
+                Keyword::Await => "await",
+                Keyword::Asm => "asm",
+                Keyword::Assert => "assert",
+                Keyword::Null => "null",
+                Keyword::True => "true",
+                Keyword::False => "false",
+                Keyword::Bool => "bool",
+                Keyword::U8 => "u8",
+                Keyword::U16 => "u16",
+                Keyword::U32 => "u32",
+                Keyword::U64 => "u64",
+                Keyword::U128 => "u128",
+                Keyword::I8 => "i8",
+                Keyword::I16 => "i16",
+                Keyword::I32 => "i32",
+                Keyword::I64 => "i64",
+                Keyword::I128 => "i128",
+                Keyword::F8 => "f8",
+                Keyword::F16 => "f16",
+                Keyword::F32 => "f32",
+                Keyword::F64 => "f64",
+                Keyword::F128 => "f128",
+                Keyword::Opaque => "opaque",
+            };
+
+            assert_eq!(format!("{}", keyword), keyword_str);
+        }
     }
 
     #[test]
     fn test_punct_structure() {
-        // TODO: Test puncts
+        for punct in enum_iterator::all::<Punct>() {
+            let punct_str = match punct {
+                Punct::LeftParen => "(",
+                Punct::RightParen => ")",
+                Punct::LeftBracket => "[",
+                Punct::RightBracket => "]",
+                Punct::LeftBrace => "{",
+                Punct::RightBrace => "}",
+                Punct::Comma => ",",
+                Punct::Semicolon => ";",
+                Punct::Colon => ":",
+                Punct::AtSign => "@",
+                Punct::SingleQuote => "'",
+            };
+
+            assert_eq!(format!("{}", punct), punct_str);
+        }
     }
 
     #[test]
     fn test_operator_structure() {
-        // TODO: Test ops
+        for operator in enum_iterator::all::<Op>() {
+            let operator_str = match operator {
+                Op::Add => "+",
+                Op::Sub => "-",
+                Op::Mul => "*",
+                Op::Div => "/",
+                Op::Mod => "%",
+                Op::BitAnd => "&",
+                Op::BitOr => "|",
+                Op::BitXor => "^",
+                Op::BitNot => "~",
+                Op::BitShl => "<<",
+                Op::BitShr => ">>",
+                Op::BitRol => "<<<",
+                Op::BitRor => ">>>",
+                Op::LogicAnd => "&&",
+                Op::LogicOr => "||",
+                Op::LogicXor => "^^",
+                Op::LogicNot => "!",
+                Op::LogicLt => "<",
+                Op::LogicGt => ">",
+                Op::LogicLe => "<=",
+                Op::LogicGe => ">=",
+                Op::LogicEq => "==",
+                Op::LogicNe => "!=",
+                Op::Set => "=",
+                Op::SetPlus => "+=",
+                Op::SetMinus => "-=",
+                Op::SetTimes => "*=",
+                Op::SetSlash => "/=",
+                Op::SetPercent => "%=",
+                Op::SetBitAnd => "&=",
+                Op::SetBitOr => "|=",
+                Op::SetBitXor => "^=",
+                Op::SetBitShl => "<<=",
+                Op::SetBitShr => ">>=",
+                Op::SetBitRotl => "<<<=",
+                Op::SetBitRotr => ">>>=",
+                Op::SetLogicAnd => "&&=",
+                Op::SetLogicOr => "||=",
+                Op::SetLogicXor => "^^=",
+                Op::As => "as",
+                Op::BitcastAs => "bitcast_as",
+                Op::Sizeof => "sizeof",
+                Op::Alignof => "alignof",
+                Op::Typeof => "typeof",
+                Op::Dot => ".",
+                Op::Ellipsis => "...",
+                Op::Scope => "::",
+                Op::Arrow => "->",
+                Op::BlockArrow => "=>",
+                Op::Range => "..",
+            };
+
+            assert_eq!(format!("{}", operator), operator_str);
+        }
     }
 
     #[test]
