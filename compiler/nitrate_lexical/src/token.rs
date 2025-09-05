@@ -228,10 +228,7 @@ impl std::fmt::Debug for BStringData<'_> {
 
 impl std::fmt::Display for BStringData<'_> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        for byte in self.get() {
-            write!(f, "{byte:02x} ")?;
-        }
-        Ok(())
+        write!(f, "{:?}", self.get())
     }
 }
 
@@ -847,6 +844,55 @@ mod tests {
 
     #[test]
     fn test_string_data_structure() {
-        //
+        assert_eq!(
+            StringData::from_ref("hello").get(),
+            "hello",
+            "StringData from_ref should return the original string slice"
+        );
+
+        assert_eq!(
+            StringData::from_dyn("world".to_string()).get(),
+            "world",
+            "StringData from_dyn should return the original string"
+        );
+
+        assert_eq!(
+            format!("{:?}", StringData::from_ref("test")),
+            "StringData(\"test\")",
+            "Debug implementation for StringData should match the expected format"
+        );
+
+        assert_eq!(
+            format!("{}", StringData::from_ref("test2")),
+            "\"test2\"",
+            "Display implementation for StringData should match the expected format"
+        );
+    }
+
+    #[test]
+    fn test_binary_data_structure() {
+        assert_eq!(
+            BStringData::from_ref(b"hello").get(),
+            b"hello",
+            "BStringData from_ref should return the original byte-string slice"
+        );
+
+        assert_eq!(
+            BStringData::from_dyn(b"world".to_vec()).get(),
+            b"world",
+            "BStringData from_dyn should return the original byte-string"
+        );
+
+        assert_eq!(
+            format!("{:?}", BStringData::from_ref(b"test")),
+            "BStringData([116, 101, 115, 116])",
+            "Debug implementation for BStringData should match the expected format"
+        );
+
+        assert_eq!(
+            format!("{}", BStringData::from_ref(b"test2")),
+            "[116, 101, 115, 116, 50]",
+            "Display implementation for BStringData should match the expected format"
+        );
     }
 }
