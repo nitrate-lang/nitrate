@@ -1178,26 +1178,238 @@ mod tests {
         );
     }
 
-    // #[test]
-    // fn test_parse_string_escape() {
-    //     let test_vector = [
-    //         // "👀 Hello, 🔥😂 \0\a\b\t\n\v\f\r\\\'\"\x38\x0fA\o0171"
-    //         0x22, 0xf0, 0x9f, 0x91, 0x80, 0x20, 0x48, 0x65, 0x6c, 0x6c, 0x6f, 0x2c, 0x20, 0xf0,
-    //         0x9f, 0x94, 0xa5, 0xf0, 0x9f, 0x98, 0x82, 0x20, 0x5c, 0x30, 0x5c, 0x61, 0x5c, 0x62,
-    //         0x5c, 0x74, 0x5c, 0x6e, 0x5c, 0x76, 0x5c, 0x66, 0x5c, 0x72, 0x5c, 0x5c, 0x5c, 0x27,
-    //         0x5c, 0x22, 0x5c, 0x78, 0x33, 0x38, 0x5c, 0x78, 0x30, 0x66, 0x41, 0x5c, 0x6f, 0x30,
-    //         0x31, 0x37, 0x31, 0x22,
-    //     ];
+    #[test]
+    fn test_lex_next_tok() {
+        // TODO: Write test
+    }
 
-    //     let expected = "👀 Hello, 🔥😂 \0\u{7}\u{8}\t\n\u{b}\u{c}\r\\'\"8\u{f}A\u{f}1";
+    #[test]
+    fn test_lex_peek_tok() {
+        // TODO: Write test
+    }
 
-    //     let mut lexer = Lexer::new(&test_vector, "test_file").expect("Failed to create lexer");
+    #[test]
+    fn test_lex_skip_tok() {
+        // TODO: Write test
+    }
 
-    //     match lexer.next_tok().token() {
-    //         Token::String(s) => {
-    //             assert_eq!(s.get(), expected, "Parsed string does not match expected");
-    //         }
-    //         _ => panic!("Expected a string token"),
-    //     }
-    // }
+    #[test]
+    fn test_lex_next_t() {
+        // TODO: Write test
+    }
+
+    #[test]
+    fn test_lex_peek_t() {
+        // TODO: Write test
+    }
+
+    #[test]
+    fn test_lex_next_is() {
+        // TODO: Write test
+    }
+
+    #[test]
+    fn test_lex_skip_if() {
+        // TODO: Write test
+    }
+
+    #[test]
+    fn test_lex_sync_position() {
+        // TODO: Write test
+    }
+
+    #[test]
+    fn test_lex_is_eof() {
+        // TODO: Write test
+    }
+
+    #[test]
+    fn test_lex_unwind() {
+        // TODO: Write test
+    }
+
+    #[test]
+    fn test_lex_next_if_string() {
+        // TODO: Write test
+    }
+
+    #[test]
+    fn test_lex_next_if_bstring() {
+        // TODO: Write test
+    }
+
+    #[test]
+    fn test_lex_next_if_name() {
+        // TODO: Write test
+    }
+
+    #[test]
+    fn test_lex_next_if_keyword() {
+        // TODO: Write test
+    }
+
+    #[test]
+    fn test_lex_next_if_op() {
+        // TODO: Write test
+    }
+
+    #[test]
+    fn test_lex_next_if_integer() {
+        // TODO: Write test
+    }
+
+    #[test]
+    fn test_lex_next_if_float() {
+        // TODO: Write test
+    }
+
+    #[test]
+    fn test_lex_next_if_comment() {
+        // TODO: Write test
+    }
+
+    #[test]
+    fn test_lex_read_position() {
+        // TODO: Write test
+    }
+
+    #[test]
+    fn test_lex_advance() {
+        // TODO: Write test
+    }
+
+    #[test]
+    fn test_lex_peek_byte() {
+        // TODO: Write test
+    }
+
+    #[test]
+    fn test_lex_read_while() {
+        // TODO: Write test
+    }
+
+    #[test]
+    fn test_parse_atypical_identifier() {
+        // TODO: Write test
+    }
+
+    #[test]
+    fn test_parse_typical_identifier() {
+        // TODO: Write test
+    }
+
+    #[test]
+    fn test_lex_float_repr() {
+        // TODO: Write test
+    }
+
+    #[test]
+    fn test_lex_float() {
+        // TODO: Write test
+    }
+
+    #[test]
+    fn test_lex_decode() {
+        // TODO: Write test
+    }
+
+    #[test]
+    fn test_parse_number() {
+        // TODO: Write test
+    }
+
+    #[test]
+    fn test_parse_string_hex_escape() {
+        // TODO: Write test
+    }
+
+    #[test]
+    fn test_parse_string_octal_escape() {
+        // TODO: Write test
+    }
+
+    #[test]
+    fn test_parse_string_unicode_escape() {
+        // TODO: Write test
+    }
+
+    #[test]
+    fn test_parse_string_escape() {
+        // TODO: Write test
+    }
+
+    #[test]
+    fn test_parse_string() {
+        // TODO: Write test
+    }
+
+    #[test]
+    fn test_parse_comment() {
+        // TODO: Write test
+    }
+
+    #[test]
+    fn test_parse_operator_or_punctuation() {
+        // TODO: Write test
+    }
+
+    #[test]
+    fn test_parse_next_token() {
+        // TODO: Write test
+    }
+
+    #[test]
+    fn lexer_test_vectors_names() {
+        // TODO: Write test
+    }
+
+    #[test]
+    fn lexer_test_vectors_integers() {
+        // TODO: Write test
+    }
+
+    #[test]
+    fn lexer_test_vectors_floats() {
+        // TODO: Write test
+    }
+
+    #[test]
+    fn lexer_test_vectors_strings() {
+        // TODO: Write test
+    }
+
+    #[test]
+    fn lexer_test_vectors_bstrings() {
+        // TODO: Write test
+    }
+
+    #[test]
+    fn lexer_test_vectors_comments() {
+        // TODO: Write test
+    }
+
+    #[test]
+    fn lexer_test_vectors_keywords() {
+        // TODO: Write test
+    }
+
+    #[test]
+    fn lexer_test_vectors_puncts() {
+        // TODO: Write test
+    }
+
+    #[test]
+    fn lexer_test_vectors_ops() {
+        // TODO: Write test
+    }
+
+    #[test]
+    fn lexer_test_vectors_eof() {
+        // TODO: Write test
+    }
+
+    #[test]
+    fn lexer_test_vectors_illegals() {
+        // TODO: Write test
+    }
 }
