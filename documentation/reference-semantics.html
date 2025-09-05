@@ -224,11 +224,11 @@
       <tr>
         <td class="var"><a href="dynamic-lifetime">Dynamic</a> Lifetime</td>
         <td class="cell">
-          <pre class="valid"><code lang="rust">*'dynamic iso const T</code></pre>
-          <pre class="valid"><code lang="rust">*'dynamic mut T</code></pre>
+          <pre class="unsafe"><code lang="rust">*'dynamic iso const T</code></pre>
+          <pre class="unsafe"><code lang="rust">*'dynamic mut T</code></pre>
         </td>
         <td class="cell">
-          <pre class="valid"><code lang="rust">*'dynamic const T</code></pre>
+          <pre class="unsafe"><code lang="rust">*'dynamic const T</code></pre>
           <pre class="unsafe"><code lang="rust">*'dynamic poly mut T</code></pre>
         </td>
       </tr>
