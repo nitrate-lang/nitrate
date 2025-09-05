@@ -87,11 +87,13 @@ impl<'a> Lexer<'a> {
     }
 
     #[inline(always)]
+    #[must_use]
     pub fn peek_t(&mut self) -> Token<'a> {
         self.peek_tok().into_token()
     }
 
     #[inline(always)]
+    #[must_use]
     pub fn next_is(&mut self, matches: &Token<'a>) -> bool {
         &self.peek_t() == matches
     }
@@ -113,6 +115,7 @@ impl<'a> Lexer<'a> {
     }
 
     #[inline(always)]
+    #[must_use]
     pub fn is_eof(&mut self) -> bool {
         self.peek_t() == Token::Eof
     }
@@ -205,6 +208,7 @@ impl<'a> Lexer<'a> {
     }
 
     #[inline(always)]
+    #[must_use]
     fn reader_position(&self) -> SourcePosition<'a> {
         self.current_peek_pos
     }
@@ -233,6 +237,7 @@ impl<'a> Lexer<'a> {
     }
 
     #[inline(always)]
+    #[must_use]
     fn peek_byte(&self) -> Result<u8, ()> {
         self.source
             .get(self.reader_position().offset() as usize)
