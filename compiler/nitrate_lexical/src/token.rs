@@ -923,7 +923,20 @@ mod tests {
         }
     }
 
-    // TODO: Keywords, Punct, Op tests
+    #[test]
+    fn test_keyword_structure() {
+        // TODO: Test keywords
+    }
+
+    #[test]
+    fn test_punct_structure() {
+        // TODO: Test puncts
+    }
+
+    #[test]
+    fn test_operator_structure() {
+        // TODO: Test ops
+    }
 
     #[test]
     fn test_token_structure() {
@@ -970,5 +983,87 @@ mod tests {
             format!("{}:{}:{}", filename, line + 1, column + 1),
             "Display implementation for SourcePosition should match the expected format"
         );
+    }
+
+    #[test]
+    fn test_annotated_token_structure() {
+        let inputs = [
+            (
+                Token::Name(Name::new("example").unwrap()),
+                SourcePosition::new(1, 0, 10, "file.txt"),
+                SourcePosition::new(1, 7, 17, "file.txt"),
+                "example",
+            ),
+            (
+                Token::Integer(Integer::new(42, IntegerKind::Dec)),
+                SourcePosition::new(2, 5, 25, "file.txt"),
+                SourcePosition::new(2, 7, 27, "file.txt"),
+                "42",
+            ),
+            (
+                Token::Float(NotNan::new(3.14).unwrap()),
+                SourcePosition::new(3, 0, 30, "file.txt"),
+                SourcePosition::new(3, 5, 35, "file.txt"),
+                "3.14",
+            ),
+            (
+                Token::String(StringData::from_ref("hello")),
+                SourcePosition::new(4, 0, 40, "file.txt"),
+                SourcePosition::new(4, 6, 46, "file.txt"),
+                "\"hello\"",
+            ),
+            (
+                Token::BString(BStringData::from_ref(b"world")),
+                SourcePosition::new(5, 0, 50, "file.txt"),
+                SourcePosition::new(5, 6, 56, "file.txt"),
+                "[119, 111, 114, 108, 100]",
+            ),
+            (
+                Token::Comment(Comment::new(" This is a comment", CommentKind::SingleLine)),
+                SourcePosition::new(6, 0, 60, "file.txt"),
+                SourcePosition::new(6, 7, 67, "file.txt"),
+                "# This is a comment",
+            ),
+            (
+                Token::Keyword(Keyword::Let),
+                SourcePosition::new(7, 0, 70, "file.txt"),
+                SourcePosition::new(7, 3, 73, "file.txt"),
+                "let",
+            ),
+            (
+                Token::Punct(Punct::LeftParen),
+                SourcePosition::new(8, 0, 80, "file.txt"),
+                SourcePosition::new(8, 1, 81, "file.txt"),
+                "(",
+            ),
+            (
+                Token::Op(Op::Add),
+                SourcePosition::new(9, 0, 90, "file.txt"),
+                SourcePosition::new(9, 1, 91, "file.txt"),
+                "+",
+            ),
+            (
+                Token::Eof,
+                SourcePosition::new(10, 0, 100, "file.txt"),
+                SourcePosition::new(10, 0, 100, "file.txt"),
+                "",
+            ),
+            (
+                Token::Illegal,
+                SourcePosition::new(11, 0, 110, "file.txt"),
+                SourcePosition::new(11, 8, 118, "file.txt"),
+                "<illegal>",
+            ),
+        ];
+
+        for (token, start, end, expected_str) in inputs {
+            let annotated_token = AnnotatedToken::new(token.clone(), start, end);
+            assert_eq!(annotated_token.token(), &token);
+            assert_eq!(annotated_token.start(), start);
+            assert_eq!(annotated_token.end(), end);
+            assert_eq!(annotated_token.range(), (start, end));
+            assert_eq!(format!("{}", annotated_token.token()), expected_str);
+            assert_eq!(format!("{}", annotated_token.into_token()), expected_str);
+        }
     }
 }
