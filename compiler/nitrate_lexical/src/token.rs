@@ -737,3 +737,116 @@ impl<'a> AnnotatedToken<'a> {
         (self.start(), self.end())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn test_name_token_structure() {
+        let inputs = [
+            ("foo", Some(IdentifierKind::Typical)),
+            ("_bar", Some(IdentifierKind::Typical)),
+            ("baz123", Some(IdentifierKind::Typical)),
+            ("0wierd", Some(IdentifierKind::Atypical)),
+            ("123", Some(IdentifierKind::Atypical)),
+            ("!@#$%", Some(IdentifierKind::Atypical)),
+            ("λ", Some(IdentifierKind::Typical)),
+            ("变量", Some(IdentifierKind::Typical)),
+            ("🔥", Some(IdentifierKind::Typical)),
+            ("1🔥", Some(IdentifierKind::Atypical)),
+            ("🔥`", None),
+            ("with space", Some(IdentifierKind::Atypical)),
+            (" ", Some(IdentifierKind::Atypical)),
+            ("\n", Some(IdentifierKind::Atypical)),
+            ("", Some(IdentifierKind::Atypical)),
+            ("`", None),
+        ];
+
+        for (input, expected) in inputs {
+            let name = Name::new(input);
+
+            if let Some(expected_kind) = expected {
+                let name = name.expect(&format!("input: {:?}", input));
+                assert_eq!(name.kind(), expected_kind, "input: {:?}", input);
+                assert_eq!(name.name(), input, "input: {:?}", input);
+
+                let expected_display_str = match expected_kind {
+                    IdentifierKind::Atypical => format!("`{}`", input),
+                    IdentifierKind::Typical => format!("{}", input),
+                };
+
+                assert_eq!(
+                    format!("{}", name),
+                    expected_display_str,
+                    "Display implementation for Name should match the original input"
+                );
+            } else {
+                assert!(name.is_none(), "input: {:?}", input);
+            }
+        }
+    }
+
+    #[test]
+    fn test_integer_token_structure() {
+        let prime_u128 = 0xa8b437b5f0bd41f1e97765f63699f65d_u128;
+
+        let inputs = [
+            (0_u128, IntegerKind::Bin, "0b0"),
+            (0_u128, IntegerKind::Oct, "0o0"),
+            (0_u128, IntegerKind::Dec, "0"),
+            (0_u128, IntegerKind::Hex, "0x0"),
+            (
+                prime_u128,
+                IntegerKind::Bin,
+                "0b10101000101101000011011110110101111100001011110101000001111100011110100101110111011001011111011000110110100110011111011001011101",
+            ),
+            (
+                prime_u128,
+                IntegerKind::Oct,
+                "0o2505503366574136501743645673137306646373135",
+            ),
+            (
+                prime_u128,
+                IntegerKind::Dec,
+                "224246046673732952298033213736759195229",
+            ),
+            (
+                prime_u128,
+                IntegerKind::Hex,
+                "0xa8b437b5f0bd41f1e97765f63699f65d",
+            ),
+            (
+                u128::MAX,
+                IntegerKind::Bin,
+                "0b11111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111111",
+            ),
+            (
+                u128::MAX,
+                IntegerKind::Oct,
+                "0o3777777777777777777777777777777777777777777",
+            ),
+            (
+                u128::MAX,
+                IntegerKind::Dec,
+                "340282366920938463463374607431768211455",
+            ),
+            (
+                u128::MAX,
+                IntegerKind::Hex,
+                "0xffffffffffffffffffffffffffffffff",
+            ),
+        ];
+
+        for (value, kind, expected_str) in inputs {
+            let integer = Integer::new(value, kind);
+            assert_eq!(integer.value(), value);
+            assert_eq!(integer.kind(), kind);
+            assert_eq!(format!("{}", integer), expected_str);
+        }
+    }
+
+    #[test]
+    fn test_string_data_structure() {
+        //
+    }
+}
