@@ -1,5 +1,5 @@
 use hashbrown::{HashMap, HashSet};
-use nitrate_parsetree::{
+use nitrate_structure::{
     Builder,
     kind::{Expr, Type},
 };

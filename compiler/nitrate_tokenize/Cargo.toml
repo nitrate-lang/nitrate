@@ -1,5 +1,5 @@
 [package]
-name = "nitrate_lexical"
+name = "nitrate_tokenize"
 version = "0.1.0"
 edition = "2024"
 

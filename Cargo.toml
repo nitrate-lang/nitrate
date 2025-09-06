@@ -5,10 +5,10 @@ edition = "2024"
 
 [dependencies]
 nitrate_evaluate = { path = "compiler/nitrate_evaluate" }
-nitrate_lexical = { path = "compiler/nitrate_lexical" }
-nitrate_parsetree = { path = "compiler/nitrate_parsetree" }
-nitrate_resolution = { path = "compiler/nitrate_resolution" }
-nitrate_syntax = { path = "compiler/nitrate_syntax" }
+nitrate_tokenize = { path = "compiler/nitrate_tokenize" }
+nitrate_structure = { path = "compiler/nitrate_structure" }
+nitrate_resolve = { path = "compiler/nitrate_resolve" }
+nitrate_parse = { path = "compiler/nitrate_parse" }
 nitrate_execute = { path = "compiler/nitrate_execute" }
 
 env_logger = "0.11.8"

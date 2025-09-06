@@ -1,7 +1,7 @@
 use super::parse::Parser;
 use log::{error, info};
-use nitrate_lexical::{Keyword, Name, Op, Punct, Token};
-use nitrate_parsetree::{
+use nitrate_tokenize::{Keyword, Name, Op, Punct, Token};
+use nitrate_structure::{
     Builder,
     kind::{Expr, FunctionParameter, Type},
 };
@@ -9,7 +9,7 @@ use nitrate_parsetree::{
 #[allow(unused_imports)]
 use crate::SymbolTable;
 #[allow(unused_imports)]
-use nitrate_lexical::Lexer;
+use nitrate_tokenize::Lexer;
 
 #[derive(Default)]
 struct RefinementOptions<'a> {

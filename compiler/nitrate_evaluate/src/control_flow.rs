@@ -1,5 +1,5 @@
 use super::abstract_machine::{AbstractMachine, CallFrame, IntrinsicFunction, Unwind};
-use nitrate_parsetree::{
+use nitrate_structure::{
     Builder,
     kind::{
         Assert, Await, Break, Call, Continue, DoWhileLoop, Expr, ForEach, Function, If, Return,

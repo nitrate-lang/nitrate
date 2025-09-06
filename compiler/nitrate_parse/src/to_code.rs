@@ -1,5 +1,5 @@
-use nitrate_lexical::{Integer, Keyword, Name, Op, Punct, Token};
-use nitrate_parsetree::kind::{
+use nitrate_tokenize::{Integer, Keyword, Name, Op, Punct, Token};
+use nitrate_structure::kind::{
     ArrayType, Assert, Await, BinExpr, BinExprOp, Block, Break, Call, Continue, DoWhileLoop, Expr,
     ForEach, Function, FunctionType, GenericType, Identifier, If, IndexAccess, List,
     ManagedRefType, MapType, Object, RefinementType, Return, Scope, SliceType, Statement,
@@ -178,7 +178,7 @@ impl<'a> ToCode<'a> for StructType<'a> {
     }
 }
 
-impl<'a> ToCode<'a> for nitrate_parsetree::kind::Integer {
+impl<'a> ToCode<'a> for nitrate_structure::kind::Integer {
     fn to_code(&self, tokens: &mut Vec<Token<'a>>, _options: &CodeFormat) {
         let u128 = self
             .get()

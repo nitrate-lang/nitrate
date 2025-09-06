@@ -1,5 +1,5 @@
-use nitrate_lexical::StringData;
-use nitrate_parsetree::kind::Expr;
+use nitrate_structure::kind::Expr;
+use nitrate_tokenize::StringData;
 use spdx::LicenseId;
 use std::collections::HashSet;
 

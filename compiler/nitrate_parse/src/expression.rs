@@ -1,7 +1,7 @@
 use super::parse::Parser;
 use log::error;
-use nitrate_lexical::{IntegerKind, Keyword, Op, Punct, Token};
-use nitrate_parsetree::{
+use nitrate_tokenize::{IntegerKind, Keyword, Op, Punct, Token};
+use nitrate_structure::{
     Builder,
     kind::{BinExprOp, CallArguments, Expr, UnaryExprOp},
 };

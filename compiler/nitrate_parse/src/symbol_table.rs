@@ -1,5 +1,5 @@
 #[allow(unused_imports)]
-use nitrate_parsetree::{
+use nitrate_structure::{
     Builder,
     kind::{Expr, QualifiedScope},
 };

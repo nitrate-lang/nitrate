@@ -1,5 +1,5 @@
 use crate::expression::{Expr, FunctionParameter, Identifier};
-use nitrate_lexical::StringData;
+use nitrate_tokenize::StringData;
 use std::rc::Rc;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]

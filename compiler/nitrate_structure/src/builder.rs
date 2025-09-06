@@ -1,7 +1,7 @@
 use crate::expression::VariableKind;
 use crate::expression::{Expr, Identifier};
 use crate::types::{TupleType, Type};
-use nitrate_lexical::{BStringData, NotNan, StringData};
+use nitrate_tokenize::{BStringData, NotNan, StringData};
 use std::rc::Rc;
 
 use crate::builder_helper::{

@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-nitrate_lexical = { path = "../nitrate_lexical" }
-nitrate_parsetree = { path = "../nitrate_parsetree" }
-nitrate_syntax = { path = "../nitrate_syntax" }
+nitrate_tokenize = { path = "../nitrate_tokenize" }
+nitrate_structure = { path = "../nitrate_structure" }
+nitrate_parse = { path = "../nitrate_parse" }
 nitrate_evaluate = { path = "../nitrate_evaluate" }

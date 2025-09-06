@@ -1,6 +1,6 @@
 use crate::Builder;
 use apint::UInt;
-use nitrate_lexical::IntegerKind;
+use nitrate_tokenize::IntegerKind;
 use std::collections::BTreeMap;
 use std::rc::Rc;
 

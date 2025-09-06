@@ -516,10 +516,10 @@ dependencies = [
  "log",
  "nitrate_evaluate",
  "nitrate_execute",
- "nitrate_lexical",
- "nitrate_parsetree",
- "nitrate_resolution",
- "nitrate_syntax",
+ "nitrate_parse",
+ "nitrate_resolve",
+ "nitrate_structure",
+ "nitrate_tokenize",
  "slog",
  "slog-async",
  "slog-term",
@@ -531,8 +531,8 @@ version = "0.1.0"
 dependencies = [
  "hashbrown",
  "log",
- "nitrate_lexical",
- "nitrate_parsetree",
+ "nitrate_structure",
+ "nitrate_tokenize",
  "ordered-float",
  "smallvec 1.15.1",
  "spdx",
@@ -543,49 +543,49 @@ name = "nitrate_execute"
 version = "0.1.0"
 dependencies = [
  "nitrate_evaluate",
- "nitrate_lexical",
- "nitrate_parsetree",
- "nitrate_syntax",
+ "nitrate_parse",
+ "nitrate_structure",
+ "nitrate_tokenize",
 ]
 
 [[package]]
-name = "nitrate_lexical"
+name = "nitrate_parse"
+version = "0.1.0"
+dependencies = [
+ "criterion",
+ "hashbrown",
+ "log",
+ "nitrate_structure",
+ "nitrate_tokenize",
+ "ordered-float",
+ "smallvec 1.15.1",
+ "spdx",
+]
+
+[[package]]
+name = "nitrate_resolve"
+version = "0.1.0"
+
+[[package]]
+name = "nitrate_structure"
+version = "0.1.0"
+dependencies = [
+ "apint",
+ "hashbrown",
+ "log",
+ "nitrate_tokenize",
+ "ordered-float",
+ "smallvec 1.15.1",
+]
+
+[[package]]
+name = "nitrate_tokenize"
 version = "0.1.0"
 dependencies = [
  "enum-iterator",
  "log",
  "ordered-float",
  "smallvec 1.15.1",
-]
-
-[[package]]
-name = "nitrate_parsetree"
-version = "0.1.0"
-dependencies = [
- "apint",
- "hashbrown",
- "log",
- "nitrate_lexical",
- "ordered-float",
- "smallvec 1.15.1",
-]
-
-[[package]]
-name = "nitrate_resolution"
-version = "0.1.0"
-
-[[package]]
-name = "nitrate_syntax"
-version = "0.1.0"
-dependencies = [
- "criterion",
- "hashbrown",
- "log",
- "nitrate_lexical",
- "nitrate_parsetree",
- "ordered-float",
- "smallvec 1.15.1",
- "spdx",
 ]
 
 [[package]]

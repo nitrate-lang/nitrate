@@ -1,6 +1,6 @@
 use apint::UInt;
-use nitrate_lexical::{BStringData, StringData};
-use nitrate_lexical::{IntegerKind, Op};
+use nitrate_tokenize::{BStringData, StringData};
+use nitrate_tokenize::{IntegerKind, Op};
 use ordered_float::NotNan;
 use smallvec::SmallVec;
 use std::{collections::BTreeMap, rc::Rc};

@@ -1,5 +1,5 @@
 [package]
-name = "nitrate_syntax"
+name = "nitrate_parse"
 version = "0.1.0"
 edition = "2024"
 
@@ -11,8 +11,8 @@ name = "parse_type_bench"
 harness = false
 
 [dependencies]
-nitrate_lexical = { path = "../nitrate_lexical" }
-nitrate_parsetree = { path = "../nitrate_parsetree" }
+nitrate_tokenize = { path = "../nitrate_tokenize" }
+nitrate_structure = { path = "../nitrate_structure" }
 
 hashbrown = "0.16.0"
 log = "0.4.27"

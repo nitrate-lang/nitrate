@@ -1,10 +1,10 @@
 [package]
-name = "nitrate_parsetree"
+name = "nitrate_structure"
 version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-nitrate_lexical = { path = "../nitrate_lexical" }
+nitrate_tokenize = { path = "../nitrate_tokenize" }
 
 apint = "0.2.0"
 hashbrown = "0.16.0"

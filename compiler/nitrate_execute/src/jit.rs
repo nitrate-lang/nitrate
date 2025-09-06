@@ -1,7 +1,7 @@
 use nitrate_evaluate::AbstractMachine;
-use nitrate_lexical::*;
-use nitrate_parsetree::kind::Expr;
-use nitrate_syntax::*;
+use nitrate_tokenize::*;
+use nitrate_parse::*;
+use nitrate_structure::kind::Expr;
 
 pub enum JitError {
     LexicalError,
@@ -38,7 +38,7 @@ impl JitCompiler {
             return Err(JitError::ParseError);
         }
 
-        // TODO: Invoke nitrate_resolution crate here
+        // TODO: Invoke nitrate_resolve crate here
         // TODO: Run nitrate_optimize crate here
 
         AbstractMachine::new()

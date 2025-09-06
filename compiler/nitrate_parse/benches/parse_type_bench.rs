@@ -1,6 +1,6 @@
 use criterion::{Criterion, criterion_group, criterion_main};
-use nitrate_lexical::*;
-use nitrate_syntax::*;
+use nitrate_tokenize::*;
+use nitrate_parse::*;
 
 struct ParserUtil {
     symbol_table: SymbolTable<'static>,
