@@ -1,18 +1,14 @@
-use log::error;
-use std::io::Read;
+use nitrate_translation::{TranslationError, TranslationOptionsBuilder, compile_code};
 
-use nitrate::translation::evaluate::AbstractMachine;
-use nitrate::translation::parse::{Parser, SymbolTable};
-use nitrate::translation::tokenize::Lexer;
-
-fn read_source_file(filename: &str) -> std::io::Result<Vec<u8>> {
-    let mut file = std::fs::File::open(filename)?;
-    let mut contents = Vec::new();
-    file.read_to_end(&mut contents)?;
-    Ok(contents)
+#[derive(Debug)]
+enum Error {
+    NotEnoughArguments,
+    OpenInputFileFailed(std::io::Error),
+    CreateOutputFileFailed(std::io::Error),
+    CompilationFailed(TranslationError),
 }
 
-fn program() -> i32 {
+fn program() -> Result<(), Error> {
     env_logger::Builder::from_default_env()
         .format_timestamp(None)
         .format_level(true)
@@ -20,52 +16,59 @@ fn program() -> i32 {
         .init();
 
     let args: Vec<String> = std::env::args().collect();
-    if args.len() < 2 {
-        eprintln!("Usage: {} <source_file>", args[0]);
-        return 1;
+    if args.len() < 3 {
+        return Err(Error::NotEnoughArguments);
     }
 
     let filename = &args[1];
+    let target_filename = &args[2];
 
-    let Ok(source_code) = read_source_file(filename) else {
-        eprintln!("Failed to read source file: {}", filename);
-        return 1;
-    };
-
-    let Ok(lexer) = Lexer::new(&source_code, filename) else {
-        eprintln!("Failed to create lexer for file: {}", filename);
-        return 1;
-    };
-
-    let mut symbol_table = SymbolTable::default();
-    let mut parser = Parser::new(lexer, &mut symbol_table);
-
-    let Some(model) = parser.parse() else {
-        eprintln!("Failed to parse source code in file: {}", filename);
-        return 1;
-    };
-
-    if model.any_errors() {
-        error!("Compilation failed: {}", filename);
-        return 1;
-    }
-
-    let result = match AbstractMachine::new().evaluate(&model.tree()) {
-        Ok(result) => result,
-
+    let mut file = match std::fs::File::open(filename) {
+        Ok(f) => f,
         Err(e) => {
-            error!("Evaluation failed for file: {}", filename);
-            error!("Error: {:?}", e);
-            return 1;
+            return Err(Error::OpenInputFileFailed(e));
         }
     };
 
-    println!("result = {:#?}", result);
+    let mut machine_code = match std::fs::File::create(target_filename) {
+        Ok(f) => f,
+        Err(e) => {
+            return Err(Error::CreateOutputFileFailed(e));
+        }
+    };
 
-    0
+    if let Err(error) = compile_code(
+        &mut file,
+        &mut machine_code,
+        &TranslationOptionsBuilder::default_debug_build_options()
+            .build()
+            .unwrap(),
+    ) {
+        return Err(Error::CompilationFailed(error));
+    }
+
+    Ok(())
 }
 
-fn main() {
-    let exit_code = program();
-    std::process::exit(exit_code);
+fn main() -> () {
+    match program() {
+        Ok(()) => {}
+
+        Err(Error::NotEnoughArguments) => {
+            eprintln!("Not enough arguments. Usage: nitc <input-file> <output-file>");
+            std::process::exit(1);
+        }
+        Err(Error::OpenInputFileFailed(io)) => {
+            eprintln!("Failed to open input file: {}", io);
+            std::process::exit(1);
+        }
+        Err(Error::CreateOutputFileFailed(io)) => {
+            eprintln!("Failed to create output file: {}", io);
+            std::process::exit(1);
+        }
+        Err(Error::CompilationFailed(error)) => {
+            eprintln!("Compilation failed: {:?}", error);
+            std::process::exit(1);
+        }
+    }
 }

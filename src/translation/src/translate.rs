@@ -2,8 +2,9 @@ use crate::{TranslationOptions, TranslationOptionsBuilder};
 use nitrate_parse::{Parser, SourceModel, SymbolTable};
 use nitrate_tokenize::Lexer;
 
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub enum TranslationError {
-    IoError(std::io::Error),
+    ScannerError,
     LexerError(nitrate_tokenize::LexerError),
     SyntaxError,
     NameResolutionError,
@@ -38,7 +39,7 @@ fn scan_into_memory(source_code: &mut dyn std::io::Read) -> Result<String, Trans
 
     source_code
         .read_to_string(&mut source_str)
-        .map_err(TranslationError::IoError)?;
+        .map_err(|_| TranslationError::ScannerError)?;
 
     Ok(source_str)
 }
