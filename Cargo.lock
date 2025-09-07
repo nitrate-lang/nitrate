@@ -361,11 +361,17 @@ version = "0.1.0"
 dependencies = [
  "env_logger",
  "log",
+ "nitrate_diagnosis",
+ "nitrate_optimization",
  "nitrate_translation",
  "slog",
  "slog-async",
  "slog-term",
 ]
+
+[[package]]
+name = "nitrate_diagnosis"
+version = "0.1.0"
 
 [[package]]
 name = "nitrate_evaluate"
@@ -379,6 +385,10 @@ dependencies = [
  "smallvec 1.15.1",
  "spdx",
 ]
+
+[[package]]
+name = "nitrate_optimization"
+version = "0.1.0"
 
 [[package]]
 name = "nitrate_parse"
