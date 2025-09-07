@@ -1,6 +1,6 @@
 use crate::expression::{Expr, FunctionParameter, Identifier};
 use nitrate_tokenize::StringData;
-use std::rc::Rc;
+use std::sync::Arc;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct RefinementType<'a> {
@@ -272,20 +272,20 @@ pub enum Type<'a> {
     Float128,
     UnitType,
     InferType,
-    TypeName(Rc<Identifier<'a>>),
-    RefinementType(Rc<RefinementType<'a>>),
-    TupleType(Rc<TupleType<'a>>),
-    ArrayType(Rc<ArrayType<'a>>),
-    MapType(Rc<MapType<'a>>),
-    SliceType(Rc<SliceType<'a>>),
-    FunctionType(Rc<FunctionType<'a>>),
-    ManagedRefType(Rc<ManagedRefType<'a>>),
-    UnmanagedRefType(Rc<UnmanagedRefType<'a>>),
-    GenericType(Rc<GenericType<'a>>),
-    OpaqueType(Rc<StringData<'a>>),
-    StructType(Rc<StructType<'a>>),
-    LatentType(Rc<Expr<'a>>),
-    HasParenthesesType(Rc<Type<'a>>),
+    TypeName(Arc<Identifier<'a>>),
+    RefinementType(Arc<RefinementType<'a>>),
+    TupleType(Arc<TupleType<'a>>),
+    ArrayType(Arc<ArrayType<'a>>),
+    MapType(Arc<MapType<'a>>),
+    SliceType(Arc<SliceType<'a>>),
+    FunctionType(Arc<FunctionType<'a>>),
+    ManagedRefType(Arc<ManagedRefType<'a>>),
+    UnmanagedRefType(Arc<UnmanagedRefType<'a>>),
+    GenericType(Arc<GenericType<'a>>),
+    OpaqueType(Arc<StringData<'a>>),
+    StructType(Arc<StructType<'a>>),
+    LatentType(Arc<Expr<'a>>),
+    HasParenthesesType(Arc<Type<'a>>),
 }
 
 impl<'a> From<Type<'a>> for Expr<'a> {

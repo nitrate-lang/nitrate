@@ -1,4 +1,4 @@
-use nitrate_structure::kind::Expr;
+use crate::kind::Expr;
 use nitrate_tokenize::StringData;
 use spdx::LicenseId;
 use std::collections::HashSet;
@@ -10,7 +10,7 @@ pub struct CopyrightInfo<'a> {
 }
 
 impl<'a> CopyrightInfo<'a> {
-    pub(crate) fn new(holder_name: StringData<'a>, copyright_year: u16) -> Self {
+    pub fn new(holder_name: StringData<'a>, copyright_year: u16) -> Self {
         CopyrightInfo {
             holder_name,
             copyright_year,
@@ -39,7 +39,7 @@ pub struct SourceModel<'a> {
 }
 
 impl<'a> SourceModel<'a> {
-    pub(crate) fn new(
+    pub fn new(
         language_version: (u32, u32),
         copyright: Option<CopyrightInfo<'a>>,
         license_id: Option<LicenseId>,

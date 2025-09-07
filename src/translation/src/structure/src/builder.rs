@@ -2,7 +2,7 @@ use crate::expression::VariableKind;
 use crate::expression::{Expr, Identifier};
 use crate::types::{TupleType, Type};
 use nitrate_tokenize::{BStringData, NotNan, StringData};
-use std::rc::Rc;
+use std::sync::Arc;
 
 use crate::builder_helper::{
     ArrayTypeBuilder, AssertBuilder, AwaitBuilder, BinExprBuilder, BlockBuilder, BreakBuilder,
@@ -70,37 +70,37 @@ impl<'a> Builder {
 
     #[must_use]
     pub fn create_string_from_ref(str: &'a str) -> Expr<'a> {
-        Expr::String(Rc::new(StringData::from_ref(str)))
+        Expr::String(Arc::new(StringData::from_ref(str)))
     }
 
     #[must_use]
     pub fn create_string(str: String) -> Expr<'a> {
-        Expr::String(Rc::new(StringData::from_dyn(str)))
+        Expr::String(Arc::new(StringData::from_dyn(str)))
     }
 
     #[must_use]
     pub fn create_string_from(storage: StringData<'a>) -> Expr<'a> {
-        Expr::String(Rc::new(storage))
+        Expr::String(Arc::new(storage))
     }
 
     #[must_use]
     pub fn create_bstring_from_ref(bytes: &'a [u8]) -> Expr<'a> {
-        Expr::BString(Rc::new(BStringData::from_ref(bytes)))
+        Expr::BString(Arc::new(BStringData::from_ref(bytes)))
     }
 
     #[must_use]
     pub fn create_bstring(bytes: Vec<u8>) -> Expr<'a> {
-        Expr::BString(Rc::new(BStringData::from_dyn(bytes)))
+        Expr::BString(Arc::new(BStringData::from_dyn(bytes)))
     }
 
     #[must_use]
     pub fn create_bstring_from(storage: BStringData<'a>) -> Expr<'a> {
-        Expr::BString(Rc::new(storage))
+        Expr::BString(Arc::new(storage))
     }
 
     #[must_use]
     pub fn create_type_envelop(inner: Type<'a>) -> Expr<'a> {
-        Expr::TypeEnvelop(Rc::new(inner))
+        Expr::TypeEnvelop(Arc::new(inner))
     }
 
     #[must_use]
@@ -150,7 +150,7 @@ impl<'a> Builder {
 
     #[must_use]
     pub fn create_qualified_identifier(segments: Vec<&'a str>) -> Expr<'a> {
-        Expr::Identifier(Rc::new(Identifier::new(segments)))
+        Expr::Identifier(Arc::new(Identifier::new(segments)))
     }
 
     #[must_use]
@@ -321,12 +321,12 @@ impl<'a> Builder {
 
     #[must_use]
     pub fn get_unit_type() -> Type<'a> {
-        Type::TupleType(Rc::new(TupleType::new(vec![])))
+        Type::TupleType(Arc::new(TupleType::new(vec![])))
     }
 
     #[must_use]
     pub fn create_qualified_type_name(segments: Vec<&'a str>) -> Type<'a> {
-        Type::TypeName(Rc::new(Identifier::new(segments)))
+        Type::TypeName(Arc::new(Identifier::new(segments)))
     }
 
     #[must_use]
@@ -382,7 +382,7 @@ impl<'a> Builder {
 
     #[must_use]
     pub fn create_opaque_type(identity: StringData<'a>) -> Type<'a> {
-        Type::OpaqueType(Rc::new(identity))
+        Type::OpaqueType(Arc::new(identity))
     }
 
     #[must_use]
@@ -392,16 +392,16 @@ impl<'a> Builder {
 
     #[must_use]
     pub fn create_latent_type(expr: Expr<'a>) -> Type<'a> {
-        Type::LatentType(Rc::new(expr))
+        Type::LatentType(Arc::new(expr))
     }
 
     #[must_use]
     pub fn create_type_parentheses(inner: Type<'a>) -> Type<'a> {
-        Type::HasParenthesesType(Rc::new(inner))
+        Type::HasParenthesesType(Arc::new(inner))
     }
 
     #[must_use]
     pub fn create_parentheses(inner: Expr<'a>) -> Expr<'a> {
-        Expr::HasParentheses(Rc::new(inner))
+        Expr::HasParentheses(Arc::new(inner))
     }
 }

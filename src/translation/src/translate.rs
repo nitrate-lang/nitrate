@@ -1,6 +1,9 @@
 use crate::{TranslationOptions, TranslationOptionsBuilder};
-use nitrate_parse::{Parser, SourceModel, SymbolTable};
+use nitrate_parse::{Parser, SymbolTable};
+use nitrate_structure::SourceModel;
 use nitrate_tokenize::Lexer;
+use threadpool::ThreadPool;
+use threadpool_scope::scope_with;
 
 #[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub enum TranslationError {
@@ -78,10 +81,18 @@ pub fn compile_code(
 
     // TODO: Perform name resolution
     // TODO: Perform type checking
-    // TODO: Perform required diagnostics
-    // TODO: Perform non-essential diagnostics
-    // TODO: Perform required optimizations
-    // TODO: Perform non-essential optimizations
+
+    let pool = ThreadPool::new(32);
+
+    scope_with(&pool, |scope| {
+        for diagnostic in &options.diagnostic_passes {
+            scope.execute(|| {
+                diagnostic.diagnose(&model, &options.drain);
+            });
+        }
+    });
+
+    // TODO: Perform optimizations
     // TODO: Generate code
 
     Err(TranslationError::NameResolutionError)

@@ -1,5 +1,6 @@
 use crate::DiagnosticDrain;
+use nitrate_structure::SourceModel;
 
-pub trait Diagnose<Subject> {
-    fn diagnose(&mut self, subject: &Subject, drain: &DiagnosticDrain);
+pub trait Diagnose {
+    fn diagnose<'a>(&self, subject: &SourceModel<'a>, drain: &DiagnosticDrain);
 }

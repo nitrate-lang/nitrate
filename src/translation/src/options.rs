@@ -1,19 +1,12 @@
-use nitrate_diagnosis::Diagnose;
-use nitrate_parse::SourceModel;
-
-type SourceModelDiagnostic<'a> = Box<dyn Diagnose<SourceModel<'a>>>;
-
-#[derive(Default)]
-pub struct DiagnosticOptions<'a> {
-    pub source_model_diagnostics: Vec<SourceModelDiagnostic<'a>>,
-}
+use nitrate_diagnosis::{Diagnose, DiagnosticDrain};
 
 #[derive(Default)]
 pub struct OptimizationOptions {}
 
 #[derive(Default)]
-pub struct TranslationOptions<'a> {
+pub struct TranslationOptions {
     pub source_name_for_debug_messages: String,
-    pub diagnostic: DiagnosticOptions<'a>,
+    pub drain: DiagnosticDrain,
+    pub diagnostic_passes: Vec<Box<dyn Diagnose + Sync>>,
     pub optimization: OptimizationOptions,
 }

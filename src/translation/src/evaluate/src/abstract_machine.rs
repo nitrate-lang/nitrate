@@ -184,8 +184,8 @@ impl<'a> AbstractMachine<'a> {
             Expr::ManagedRefType(t) => self.evaluate_managed_ref_type(t).map(Into::into),
             Expr::UnmanagedRefType(t) => self.evaluate_unmanaged_ref_type(t).map(Into::into),
             Expr::GenericType(t) => self.evaluate_generic_type(t).map(Into::into),
-            Expr::StructType(t) => self.evaluate_struct_type(t.to_owned()).map(Into::into),
-            Expr::LatentType(t) => self.evaluate_latent_type(t.to_owned()).map(Into::into),
+            Expr::StructType(t) => self.evaluate_struct_type(t).map(Into::into),
+            Expr::LatentType(t) => self.evaluate_latent_type(t).map(Into::into),
             Expr::HasParenthesesType(t) => self.evaluate_type(t).map(Into::into),
 
             Expr::Discard => Ok(Expr::Discard),

@@ -10,3 +10,5 @@ nitrate_structure = { path = "src/structure" }
 nitrate_resolve = { path = "src/resolve" }
 nitrate_parse = { path = "src/parse" }
 nitrate_diagnosis = { path = "../diagnosis" }
+threadpool_scope = "0.1.0"
+threadpool = "1.8.1"

@@ -6,7 +6,6 @@ use nitrate_structure::{
         RefinementType, SliceType, StructType, TupleType, Type, UnmanagedRefType,
     },
 };
-use std::rc::Rc;
 
 impl<'a> AbstractMachine<'a> {
     pub(crate) fn evaluate_refinement_type(
@@ -195,7 +194,7 @@ impl<'a> AbstractMachine<'a> {
 
     pub(crate) fn evaluate_struct_type(
         &mut self,
-        struct_type: Rc<StructType<'a>>,
+        struct_type: &StructType<'a>,
     ) -> Result<Type<'a>, Unwind<'a>> {
         // TODO: Verify and write tests
 
@@ -212,11 +211,11 @@ impl<'a> AbstractMachine<'a> {
 
     pub(crate) fn evaluate_latent_type(
         &mut self,
-        latent_type: Rc<Expr<'a>>,
+        latent_type: &Expr<'a>,
     ) -> Result<Type<'a>, Unwind<'a>> {
         // TODO: Verify and write tests
 
-        let Expr::Object(object) = self.evaluate(&latent_type)? else {
+        let Expr::Object(object) = self.evaluate(latent_type)? else {
             return Err(Unwind::TypeError);
         };
 
@@ -265,8 +264,8 @@ impl<'a> AbstractMachine<'a> {
             Type::ManagedRefType(reference) => self.evaluate_managed_ref_type(reference),
             Type::UnmanagedRefType(reference) => self.evaluate_unmanaged_ref_type(reference),
             Type::GenericType(generic) => self.evaluate_generic_type(generic),
-            Type::StructType(struct_type) => self.evaluate_struct_type(struct_type.clone()),
-            Type::LatentType(latent_type) => self.evaluate_latent_type(latent_type.clone()),
+            Type::StructType(struct_type) => self.evaluate_struct_type(struct_type),
+            Type::LatentType(latent_type) => self.evaluate_latent_type(latent_type),
             Type::HasParenthesesType(inner) => self.evaluate_type(inner),
         };
 

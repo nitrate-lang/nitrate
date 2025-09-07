@@ -6,7 +6,7 @@ use nitrate_structure::{
         Switch, WhileLoop,
     },
 };
-use std::rc::Rc;
+use std::sync::Arc;
 
 impl<'a> AbstractMachine<'a> {
     pub(crate) fn evaluate_if(&mut self, if_expr: &If<'a>) -> Result<Expr<'a>, Unwind<'a>> {
@@ -140,7 +140,7 @@ impl<'a> AbstractMachine<'a> {
         // TODO: Verify and write tests
 
         enum Callee<'a> {
-            FunctionCode(Rc<Function<'a>>),
+            FunctionCode(Arc<Function<'a>>),
             Intrinsic(IntrinsicFunction<'a>),
         }
 

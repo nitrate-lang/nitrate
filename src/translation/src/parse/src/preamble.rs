@@ -1,7 +1,6 @@
 use super::parse::Parser;
-use super::source_model::CopyrightInfo;
 use log::error;
-use nitrate_structure::kind::Expr;
+use nitrate_structure::{CopyrightInfo, kind::Expr};
 use nitrate_tokenize::{Punct, StringData, Token};
 use ordered_float::NotNan;
 use spdx::{LicenseId, license_id};
