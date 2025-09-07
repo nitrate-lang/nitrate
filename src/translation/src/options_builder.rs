@@ -1,21 +1,11 @@
 use crate::TranslationOptions;
 
-#[derive(Debug, Clone)]
-pub struct TranslationOptionsBuilder {
-    options: TranslationOptions,
+#[derive(Default)]
+pub struct TranslationOptionsBuilder<'a> {
+    options: TranslationOptions<'a>,
 }
 
-impl Default for TranslationOptionsBuilder {
-    fn default() -> Self {
-        Self {
-            options: TranslationOptions {
-                source_name_for_debug_messages: String::default(),
-            },
-        }
-    }
-}
-
-impl TranslationOptionsBuilder {
+impl<'a> TranslationOptionsBuilder<'a> {
     pub fn default_debug_build_options() -> Self {
         let b = Self::default();
         // Set default debug options here
@@ -28,7 +18,7 @@ impl TranslationOptionsBuilder {
         b
     }
 
-    pub fn build(self) -> Option<TranslationOptions> {
+    pub fn build(self) -> Option<TranslationOptions<'a>> {
         Some(self.options)
     }
 }

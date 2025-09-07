@@ -372,6 +372,9 @@ dependencies = [
 [[package]]
 name = "nitrate_diagnosis"
 version = "0.1.0"
+dependencies = [
+ "slog",
+]
 
 [[package]]
 name = "nitrate_evaluate"
@@ -433,6 +436,7 @@ dependencies = [
 name = "nitrate_translation"
 version = "0.1.0"
 dependencies = [
+ "nitrate_diagnosis",
  "nitrate_evaluate",
  "nitrate_parse",
  "nitrate_resolve",
