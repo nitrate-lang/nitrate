@@ -4,12 +4,12 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-nitrate_evaluate = { path = "compiler/nitrate_evaluate" }
-nitrate_tokenize = { path = "compiler/nitrate_tokenize" }
-nitrate_structure = { path = "compiler/nitrate_structure" }
-nitrate_resolve = { path = "compiler/nitrate_resolve" }
-nitrate_parse = { path = "compiler/nitrate_parse" }
-nitrate_execute = { path = "compiler/nitrate_execute" }
+nitrate_evaluate = { path = "translate/nitrate_evaluate" }
+nitrate_tokenize = { path = "translatee/nitrate_tokenize" }
+nitrate_structure = { path = "translatee/nitrate_structure" }
+nitrate_resolve = { path = "translate/nitrate_resolve" }
+nitrate_parse = { path = "translate/nitrate_parse" }
+nitrate_execute = { path = "translate/nitrate_execute" }
 
 env_logger = "0.11.8"
 log = "0.4.28"
@@ -18,4 +18,4 @@ slog-async = "2.8.0"
 slog-term = "2.9.2"
 
 [workspace]
-members = ["compiler/*"]
+members = ["translate/*"]

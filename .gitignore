@@ -36,8 +36,8 @@ install/
 example.nit
 out.json
 
-compiler/lexer/corpus/
-compiler/lexer/corpus-min/
+translate/lexer/corpus/
+translate/lexer/corpus-min/
 fuzz-*.log
 runtime/libazide-gc/target/
 
@@ -45,6 +45,6 @@ runtime/libazide-gc/target/
 # Added by cargo
 
 /target
-compiler.old
+translate.old
 trace.txt
 test.nit
