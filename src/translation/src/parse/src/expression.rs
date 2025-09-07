@@ -1,10 +1,10 @@
 use super::parse::Parser;
 use log::error;
-use nitrate_tokenize::{IntegerKind, Keyword, Op, Punct, Token};
 use nitrate_structure::{
     Builder,
     kind::{BinExprOp, CallArguments, Expr, UnaryExprOp},
 };
+use nitrate_tokenize::{IntegerKind, Keyword, Op, Punct, Token};
 
 type Precedence = u32;
 
@@ -1044,7 +1044,7 @@ impl<'a> Parser<'a, '_> {
         Some(arguments)
     }
 
-    pub fn parse_block_as_elements(&mut self) -> Option<Vec<Expr<'a>>> {
+    pub(crate) fn parse_block_as_elements(&mut self) -> Option<Vec<Expr<'a>>> {
         if !self.lexer.skip_if(&Token::Punct(Punct::LeftBrace)) {
             self.set_failed_bit();
             error!(

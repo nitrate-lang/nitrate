@@ -7,7 +7,7 @@ use ordered_float::NotNan;
 use smallvec::SmallVec;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Hash)]
-pub enum LexerConstructionError {
+pub enum LexerError {
     SourceTooBig,
 }
 
@@ -36,10 +36,10 @@ impl<'a> Lexer<'a> {
     /// Creates a new lexer instance from the given source code and filename.
     /// The source code must not exceed 4 GiB in size.
     /// # Errors
-    /// Returns `LexerConstructionError::SourceTooBig` if the source code exceeds 4 GiB in size.
-    pub fn new(src: &'a [u8], filename: &'a str) -> Result<Self, LexerConstructionError> {
+    /// Returns `LexerError::SourceTooBig` if the source code exceeds 4 GiB in size.
+    pub fn new(src: &'a [u8], filename: &'a str) -> Result<Self, LexerError> {
         if src.len() > MAX_SOURCE_SIZE {
-            Err(LexerConstructionError::SourceTooBig)
+            Err(LexerError::SourceTooBig)
         } else {
             Ok(Lexer {
                 source: src,
@@ -1174,7 +1174,7 @@ mod tests {
         assert!(Lexer::new(b"", "empty_file").is_ok());
         assert_eq!(
             Lexer::new(&vec![0u8; MAX_SOURCE_SIZE + 1], "too_big_file").err(),
-            Some(LexerConstructionError::SourceTooBig)
+            Some(LexerError::SourceTooBig)
         );
     }
 
