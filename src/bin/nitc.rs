@@ -1,8 +1,8 @@
 use log::error;
-use nitrate_translate::{
-    nitrate_evaluate::AbstractMachine,
-    nitrate_parse::{Parser, SymbolTable},
-    nitrate_tokenize::Lexer,
+use nitrate_translation::{
+    evaluate::AbstractMachine,
+    parse::{Parser, SymbolTable},
+    tokenize::Lexer,
 };
 use std::io::Read;
 

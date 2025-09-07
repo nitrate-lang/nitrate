@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-nitrate_translate = { path = "src/translation" }
+nitrate_translation = { path = "src/translation" }
 
 env_logger = "0.11.8"
 log = "0.4.28"

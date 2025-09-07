@@ -1,1 +1,1 @@
-pub use nitrate_translate::*;
+pub use nitrate_translation as translation;

@@ -1,11 +1,11 @@
 [package]
-name = "nitrate_translate"
+name = "nitrate_translation"
 version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-nitrate_evaluate = { path = "src/nitrate_evaluate" }
-nitrate_tokenize = { path = "src/nitrate_tokenize" }
-nitrate_structure = { path = "src/nitrate_structure" }
-nitrate_resolve = { path = "src/nitrate_resolve" }
-nitrate_parse = { path = "src/nitrate_parse" }
+nitrate_evaluate = { path = "src/evaluate" }
+nitrate_tokenize = { path = "src/tokenize" }
+nitrate_structure = { path = "src/structure" }
+nitrate_resolve = { path = "src/resolve" }
+nitrate_parse = { path = "src/parse" }
