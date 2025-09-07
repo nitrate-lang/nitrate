@@ -1,7 +1,9 @@
 use log::error;
-use nitrate_evaluate::AbstractMachine;
-use nitrate_tokenize::*;
-use nitrate_parse::*;
+use nitrate_translate::{
+    nitrate_evaluate::AbstractMachine,
+    nitrate_parse::{Parser, SymbolTable},
+    nitrate_tokenize::Lexer,
+};
 use std::io::Read;
 
 fn read_source_file(filename: &str) -> std::io::Result<Vec<u8>> {
