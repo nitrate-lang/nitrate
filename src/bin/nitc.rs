@@ -1,10 +1,9 @@
 use log::error;
-use nitrate_translation::{
-    evaluate::AbstractMachine,
-    parse::{Parser, SymbolTable},
-    tokenize::Lexer,
-};
 use std::io::Read;
+
+use nitrate::translation::evaluate::AbstractMachine;
+use nitrate::translation::parse::{Parser, SymbolTable};
+use nitrate::translation::tokenize::Lexer;
 
 fn read_source_file(filename: &str) -> std::io::Result<Vec<u8>> {
     let mut file = std::fs::File::open(filename)?;
